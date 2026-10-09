@@ -5,6 +5,8 @@ Authors: Michael Stoll
 -/
 module
 
+public import Ratpoints.Spec.Basic
+
 /-!
 # The specification
 

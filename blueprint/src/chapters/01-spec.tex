@@ -6,7 +6,7 @@
 This chapter states the specification of the points that ratpoints finds, settled in stage~A, and
 describes the work of stage~B: the specification in Lean, the brute-force reference and the
 command-line program, together with the statements that comparator certifies. Proposed names are set
-as \lname{Ratpoints.binaryForm}; they become links to the formal declarations once these exist. The
+as \lname{Ratpoints.bruteForce}; they become links to the formal declarations once these exist. The
 specification is the one part whose correctness no proof can check, so wherever there is a choice it
 copies what the C code computes, and each of its clauses is compared with ratpoints~3.1.1 below
 (Section~\ref{sec:spec-evidence} summarizes the evidence). Where the library function
@@ -23,8 +23,8 @@ the height bound.
 \section{The binary form}
 
 \begin{definition}[The binary form]\label{def:binaryForm}
-  Proposed names: \lname{Ratpoints.degree}, \lname{Ratpoints.binaryForm}. For integers $x$ and
-  $z$,
+  \lean{Ratpoints.degree, Ratpoints.binaryForm}\leanok
+  For integers $x$ and $z$,
   \[ F_c(x, z) = \sum_{i=0}^{d} c_i\, x^i z^{D-i}. \]
 \end{definition}
 
@@ -57,7 +57,7 @@ check of stage~C1, each in the manner of the C code and each proved equal to $F_
 
 \begin{definition}[The binary form of degree $N$]\label{def:binaryFormPoly}
   \uses{def:binaryForm}
-  Proposed names: \lname{Ratpoints.binaryFormPoly}, \lname{Ratpoints.eval\_binaryFormPoly}.
+  \lean{Ratpoints.binaryFormPoly, Ratpoints.eval_binaryFormPoly}\leanok
   \[ \Phi_c = \sum_{i=0}^{n} c_i X^i Z^{N-i} \in \QQ[X, Z], \]
   the polynomial made homogeneous of degree $N$, which is the form the refusals speak about (the
   C code's ``polynomial not squarefree as a binary form of even degree''). When
@@ -95,7 +95,8 @@ These are candidates for \verb|Ratpoints/Mathlib|. With them, ``$\Phi_c$ squaref
 
 \begin{definition}[Normalized point of height at most $H$]\label{def:IsPoint}
   \uses{def:binaryForm}
-  Proposed name: \lname{Ratpoints.IsPoint}. A triple $(x, y, z)$ of integers is a
+  \lean{Ratpoints.IsPoint}\leanok
+  A triple $(x, y, z)$ of integers is a
   \emph{normalized point of height at most $H$} on $y^2 = F_c(x, z)$ if
   \[ y^2 = F_c(x, z), \quad \gcd(x, z) = 1, \quad z > 0 \text{ or } (z = 0 \text{ and } x = 1),
      \quad |x| \le H, \quad z \le H. \]
@@ -132,8 +133,8 @@ Its clauses, compared with the program:
 
 \begin{definition}[The set of points]\label{def:points}
   \uses{def:IsPoint}
-  Proposed names: \lname{Ratpoints.points}, \lname{Ratpoints.finite\_setOf\_isPoint},
-  \lname{Ratpoints.mem\_points}. The finite set of normalized points of height at most $H$ on
+  \lean{Ratpoints.points, Ratpoints.finite_setOf_isPoint, Ratpoints.mem_points}\leanok
+  The finite set of normalized points of height at most $H$ on
   $y^2 = F_c(x, z)$. It is finite because $|x| \le H$, $0 \le z \le H$ and
   $|y| \le y^2 = F_c(x, z) \le \sum_i |c_i| H^D$.
 \end{definition}
