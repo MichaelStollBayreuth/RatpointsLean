@@ -1,0 +1,57 @@
+name = "Ratpoints"
+defaultTargets = ["RatpointsModel", "Ratpoints"]
+
+[leanOptions]
+pp.unicode.fun = true
+autoImplicit = false
+relaxedAutoImplicit = false
+# Every public definition, structure and field has a docstring (a core linter, so it also covers
+# the model; theorems and instances are exempt).
+linter.missingDocs = true
+# Mathlib's standard style linters (the `weak.` prefix is needed for options that Mathlib, not
+# Lean, registers, and makes the model, which does not import Mathlib, ignore them), plus the two
+# `omega` analyzers: every `omega` that `lia` can replace is reported, and every `omega` that
+# `lia` cannot replace is reported too (a `lia` bug to minimize).
+weak.linter.mathlibStandardSet = true
+weak.linter.style.header = true
+weak.linter.style.longFile = 1500
+weak.linter.tacticAnalysis.omegaToLia = true
+weak.linter.tacticAnalysis.regressions.omegaToLia = true
+
+[[require]]
+name = "mathlib"
+git = "https://github.com/leanprover-community/mathlib4.git"
+rev = "v4.35.0-rc4"
+
+# Only used by `lake build Ratpoints:docs`, which generates the API documentation deployed
+# alongside the blueprint (see .github/workflows/deploy-pages.yml). A plain `lake build` does not
+# build it. Keep `rev` in sync with `lean-toolchain`.
+[[require]]
+name = "doc-gen4"
+git = "https://github.com/leanprover/doc-gen4.git"
+rev = "v4.35.0-rc4"
+
+# The executable model of ratpoints: plain code on core and Std, no Mathlib
+# (`scripts/check_layout.py` checks the imports). Kept apart from the proofs so that a proof
+# broken by a toolchain change never stops the executable or the differential tests.
+[[lean_lib]]
+name = "RatpointsModel"
+roots = ["Ratpoints.Model"]
+
+# Everything: the root `Ratpoints` imports every module under `Ratpoints/` (the mk_all listing,
+# checked in CI), so this library also covers the specification, the contracts and their
+# proofs, and the candidates for Mathlib. Each part root (`Ratpoints.Model`, `Ratpoints.Spec`,
+# `Ratpoints.Proof`) imports the modules of its folder, which `scripts/check_layout.py` checks.
+[[lean_lib]]
+name = "Ratpoints"
+
+# Comparator (https://github.com/leanprover/comparator) verification harness. Not part of
+# `defaultTargets`, so a plain `lake build` ignores it (and never builds the deliberate `sorry`s
+# in `comparator/Challenge.lean`). See comparator/README.md.
+[[lean_lib]]
+name = "Challenge"
+srcDir = "comparator"
+
+[[lean_lib]]
+name = "Solution"
+srcDir = "comparator"

@@ -1,0 +1,63 @@
+\chapter*{About this blueprint}
+\addcontentsline{toc}{chapter}{About this blueprint}
+
+ratpoints is a C program that finds the rational points of bounded height on curves
+$y^2 = F(x, z)$, where $F$ is a binary form of even degree with integer coefficients, by sieving.
+This blueprint describes a Lean~4 development that verifies it in four parts:
+\begin{enumerate}
+  \item a \emph{specification}, short enough to read in full: the binary form of the polynomial
+    and the predicate ``is a normalized point of height at most $H$'';
+  \item an \emph{executable model} of ratpoints in Lean, which mirrors the hardware-independent
+    structure of the C code function by function: the same loops, tables, bit arrays of 64-bit
+    words and index arithmetic; it uses only Lean core and \verb|Std|, not Mathlib, so that the
+    executable and the differential tests do not depend on the proofs;
+  \item \emph{proofs} that the model meets the specification, for every choice of the sieving
+    parameters;
+  \item the \emph{link to the C code}: a record of which Lean definition models which lines of C,
+    and differential tests that run the model and the C program on the same inputs.
+\end{enumerate}
+Lean has no semantics of C, so the last part is a record and a test, not a proof. What one has to
+read and trust is the specification, the fact that the executable runs the model, and, until
+Mathlib has Sturm's theorem, the statement of it that the theorems about the Sturm step assume.
+The main theorems are certified by \href{https://github.com/leanprover/comparator}{Comparator},
+which checks the proofs of the library against statements written down separately, over a
+verbatim copy of the specification, with the standard axioms only
+(Section~\ref{sec:comparator-ab}).
+
+The C code is that of one release of ratpoints, at present 3.1.1, which fixed the defects found
+while this project was planned, so that the specification describes the fixed behaviour. The
+project moves to each new release, and a new optimization of the C code comes, as far as
+possible, with its soundness proof here.
+
+\emph{How to read the nodes.} A definition node of the specification states what it defines. A
+node of the model describes one component (a C function, a loop, or a small group of helpers): it
+names the Lean definition and its contract with \verb|\lean|, says in words what the contract
+promises, and links to the C code it models at the commit of ratpoints that the project pins.
+Each component is one definition with its contract, a separate theorem proved with the program
+logic of Lean core. The appendix records, for every line of code of the C files, the Lean
+declarations that model it or the reason why the model leaves it out.
+
+\emph{Stages.} The work proceeds in stages, each of which begins with a chapter of this blueprint
+that lists the components of the stage with their contracts and proposed names:
+\begin{itemize}
+  \item[A] the set-up: the repository, the libraries, the CI, the correspondence record and the
+    comparator harness; and the specification, settled before any Lean code
+    (Chapter~\ref{chap:spec});
+  \item[B] the specification in Lean, a brute-force reference proved to compute it, and the
+    command-line program (Chapter~\ref{chap:spec});
+  \item[C1] the plain sieve in the skeleton of the C code, with the theorem that the output is
+    exactly the set of points, without duplicates;
+  \item[C2] bit arrays of 64-bit words;
+  \item[D] the set-up: degree, the squarefree test and the refusals, the points at infinity, the
+    reversal;
+  \item[E] the 2-adic information and the denominator side;
+  \item[F] the numerator side: the faithful tables and the three stages of the sieve;
+  \item[G] the order of the output and the callback protocol;
+  \item[H] the search region and the Sturm step, with Sturm's theorem as a hypothesis;
+  \item[I] optionally, the C program's choice of the sieving parameters.
+\end{itemize}
+
+\input{chapters/01-spec}
+
+\appendix
+\input{generated/correspondence}

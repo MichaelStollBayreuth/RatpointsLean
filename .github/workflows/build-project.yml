@@ -1,0 +1,89 @@
+name: Build and check
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch: # Allow manual triggering of the workflow from the GitHub Actions interface
+
+# Cancel previous runs if a new commit is pushed to the same PR or branch
+concurrency:
+  group: ${{ github.ref }}  # Group runs by the ref (branch or PR)
+  cancel-in-progress: true  # Cancel any ongoing runs in the same group
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Build and check
+    steps:
+      - name: Checkout RatpointsLean
+        uses: actions/checkout@v7
+
+      - name: Install and configure Lean, and get mathlib cache
+        uses: leanprover/lean-action@50fcf42d2e460296f1a34b402e990d1b24f8b596 # v1.6.0
+        with:
+          auto-config: false
+          use-github-cache: false
+          use-mathlib-cache: true
+
+      # The checks that need no build come first.
+      - name: Check the layout (imports, the restrictions on the model, axioms)
+        run: python3 scripts/check_layout.py
+
+      - name: Lint the style
+        run: python3 scripts/style_lint.py Ratpoints comparator/Solution.lean
+
+      - name: Check the length of the lines of the Lean files
+        run: |
+          ! grep -rn --include='*.lean' '.\{101,\}' Ratpoints Ratpoints.lean comparator scripts \
+            blueprint/checkdecls.lean
+
+      # `--lib` is required: without it, mk_all also visits the comparator libraries, which have
+      # no module folder of their own. There is no `|| echo` here on purpose: that would swallow
+      # the non-zero exit status and let the step pass while the check failed.
+      - name: Check that Ratpoints.lean is up to date
+        run: ~/.elan/bin/lake exe mk_all --check --lib Ratpoints
+
+      # One entry per commit, restored from the newest one with the same toolchain and
+      # manifest: `actions/cache` never overwrites an entry, so a key without the commit would
+      # keep the build of the first run forever.
+      - name: Cache build artifacts
+        uses: actions/cache@v6
+        with:
+          path: .lake/build
+          key: LakeBuild-${{ runner.os }}-${{ hashFiles('lean-toolchain') }}-${{ hashFiles('lake-manifest.json') }}-${{ github.sha }}
+          restore-keys: LakeBuild-${{ runner.os }}-${{ hashFiles('lean-toolchain') }}-${{ hashFiles('lake-manifest.json') }}-
+
+      # The model first: it needs no Mathlib, and the executable and the differential tests
+      # depend on it alone. `--wfail` turns every warning, the linters' included, into a failure.
+      - name: Build the model
+        run: ~/.elan/bin/lake build --wfail RatpointsModel
+
+      - name: Build the specification and the proofs
+        run: ~/.elan/bin/lake build --wfail Ratpoints
+
+      - name: Build the comparator solution
+        run: ~/.elan/bin/lake build --wfail Solution
+
+      # The challenge states the main theorems with `sorry`, so its warnings are expected.
+      - name: Build the comparator challenge
+        run: ~/.elan/bin/lake build Challenge
+
+      - name: Test the scripts
+        run: python3 -m unittest discover -s scripts -p 'test_*.py'
+
+      - name: Fetch ratpoints at the pinned commit
+        run: |
+          git clone --quiet "$(python3 scripts/correspondence.py pin --field repository)" \
+            "$RUNNER_TEMP/ratpoints"
+          git -C "$RUNNER_TEMP/ratpoints" checkout --quiet --detach \
+            "$(python3 scripts/correspondence.py pin --field commit)"
+
+      - name: Check the correspondence with the C code
+        run: python3 scripts/correspondence.py check --repo "$RUNNER_TEMP/ratpoints"

@@ -1,0 +1,47 @@
+## macOS
+.DS_Store
+## Lake
+.lake/*
+.cache/*
+## PDFs (papers are copyrighted); the blueprint's own PDF is built into blueprint/print/.
+*.pdf
+## Blueprint
+/blueprint/print/
+/blueprint/web/
+/blueprint/src/web.paux
+/blueprint/src/web.bbl
+/blueprint/lean_decls
+## TeX
+*.aux
+*.lof
+*.log
+*.lot
+*.fls
+*.out
+*.toc
+*.fmt
+*.fot
+*.cb
+*.cb2
+.*.lb
+*.bbl
+*.bcf
+*.blg
+*-blx.aux
+*-blx.bib
+*.run.xml
+*.fdb_latexmk
+*.synctex
+*.synctex(busy)
+*.synctex.gz
+*.synctex.gz(busy)
+*.pdfsync
+## Python
+__pycache__/
+## Working notes, the notes for Claude Code sessions and the author's local tooling (local/),
+## not part of the project
+/PLAN.md
+/local/
+CLAUDE.md
+CLAUDE.local.md
+.claude/

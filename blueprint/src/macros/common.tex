@@ -1,0 +1,31 @@
+% Macros and settings used by both the pdf and the web version.
+
+% Theorem-like environments (numbered within chapters). The dependency graph draws definition,
+% lemma, proposition, theorem and corollary (the default of the `thms=` option in web.tex), not
+% remark.
+\newtheorem{theorem}{Theorem}[chapter]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{remark}[theorem]{Remark}
+
+% Notation.
+\newcommand{\QQ}{\mathbb{Q}}
+\newcommand{\ZZ}{\mathbb{Z}}
+\newcommand{\NN}{\mathbb{N}}
+
+% The ratpoints commit the line numbers of the C code refer to: the pin of
+% correspondence/ratpoints.toml (scripts/correspondence.py checks that the two agree).
+\newcommand{\ratpointscommit}{1a998538dfa835bb1bce6047e75302cc01517443}
+% A link to lines #2 to #3 of the C file #1 of ratpoints at that commit. Inside a node of the
+% dependency graph that names declarations with \lean, the \csource links must be exactly the
+% ranges named in the `C:` paragraphs of the docstrings of the model declarations it names;
+% prose and remarks may link to any range. scripts/correspondence.py checks this, and every link
+% is locked with the text it shows (correspondence/README.md).
+\newcommand{\csource}[3]{\href{https://github.com/MichaelStollBayreuth/ratpoints/blob/\ratpointscommit/#1\#L#2-L#3}{\nolinkurl{#1:#2-#3}}}
+
+% Marks a place where the formal statement or the model deviates from the C code or the manual.
+\newcommand{\formalnote}[1]{\par\smallskip\noindent\textit{Formalization:} #1\par\smallskip}
