@@ -344,10 +344,22 @@ def run (args : List String) : String × UInt32 :=
   | .error f => (f.message, f.status)
 
 /-- The program `ratpoints-lean`: it prints the text of `Ratpoints.Cli.run` on the standard
-output and exits with its status. -/
+output, in one write once it is computed, and exits with its status. Like ratpoints, it ignores
+a failed write, but for one case: when the reader of the output is gone, the write fails with
+`IO.Error.resourceVanished`, since the Lean runtime ignores the signal `SIGPIPE` that ends
+ratpoints then, and the program exits quietly with the status 141 that the shell reports for
+ratpoints (where `SIGPIPE` has its default action). It flushes the standard output itself, since
+a short output waits in the buffer of the C library until the exit, where a failed write goes
+unnoticed. -/
 def main (args : List String) : IO UInt32 := do
   let (out, status) := run args
-  IO.print out
+  let stdout ← IO.getStdout
+  try
+    stdout.putStr out
+    stdout.flush
+  catch
+    | .resourceVanished .. => return 141
+    | _ => pure ()
   return status
 
 /-! ### Examples

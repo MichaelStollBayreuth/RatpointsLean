@@ -313,7 +313,14 @@ that they mirror:
   exits with its status; otherwise it prints, as ratpoints does with \verb|-q|, the line
   \verb|(x : y : z)| of the default format of \verb|main.c| (\csource{main.c}{681}{685}) for
   each triple of $\mathrm{bruteForce}(c, H)$, in the order of that list, and exits with
-  status~0.
+  status~0. It writes its output once it is computed and, like ratpoints, ignores a failed write,
+  but for one case: when the reader of the output is gone, the signal \verb|SIGPIPE| ends
+  ratpoints, and the shell reports the status $141 = 128 + 13$; the Lean runtime ignores that
+  signal, so that the write of \verb|ratpoints-lean| fails instead, and it exits quietly with
+  status~141. Since ratpoints flushes its output after every point (line 187 of \verb|main.c|), a
+  reader that leaves early, like \verb|head|, ends it at the next point, while
+  \verb|ratpoints-lean| notices only a reader that is gone when it writes: an output that fits
+  into the pipe ends with status~0.
 \end{definition}
 
 \section{The differential tests of stage~B}
@@ -340,17 +347,22 @@ the pin and with its recorded outputs, in six suites:
   \item 219 hand-written command lines (\verb|scripts/difftest_cases.py|) for the checks that
     \verb|main.c| makes on the coefficients, the height and the options: white space and signs,
     the bounds of a \verb|long|, the grammar of \verb|strtod|, every option with a missing or
-    malformed argument, and the order of the checks; and the usage of \verb|ratpoints-lean|;
+    malformed argument, and the order of the checks; besides these, the usage of
+    \verb|ratpoints-lean|, and failed writes: a standard output that is a pipe without a reader,
+    where \verb|SIGPIPE| must end the C program and \verb|ratpoints-lean| must exit with
+    status~141, both without a message (unless nothing is written), and a full device, where both
+    must ignore the failure;
   \item 700 random command lines, with words that the readers of numbers of \verb|main.c| accept
     or refuse in many ways, against the C program.
 \end{itemize}
 Point lists are compared as sets (the order of the program is a theorem of stage~G about
 \verb|findPoints|), and for a run without \verb|-q| with the point lines of the report of the C
-program; messages and exit codes are compared exactly, with the banner and the usage of the two
-programs exchanged. On a command line with an option that \verb|ratpoints-lean| does not support
-yet, it must fail as the C program does if that fails before the option, and else exit with
-status~12. CI builds the C program at the pin (\verb|make|, with \verb|libgmp-dev|) and the Lean
-program, and runs the script.
+program; messages and exit codes are compared exactly (but for a pipe without a reader, where the
+two programs end differently by design), with the banner and the usage of the two programs
+exchanged. On a command line with an option that \verb|ratpoints-lean| does not support yet, it must
+fail as the C program does if that fails before the option, and else exit with status~12. CI builds
+the C program at the pin (\verb|make|, with \verb|libgmp-dev|) and the Lean program, and runs the
+script.
 
 \section{Files and names}
 

@@ -13,7 +13,11 @@ and compares it with the recorded outputs and with the C program:
           |a| <= h and b <= h, which is what the C program prints at height h;
   random  random polynomials at small heights against the C program;
   errors  the command lines of scripts/difftest_cases.py, for the checks that main.c makes on
-          the coefficients, the height and the options, against the C program;
+          the coefficients, the height and the options, against the C program; the usage; and
+          failed writes: a standard output whose reader is gone, which ends the C program by
+          SIGPIPE, where ratpoints-lean (the Lean runtime ignores SIGPIPE) is to exit quietly
+          with the status 141 that the shell reports for that, and a full device, whose failed
+          writes both programs ignore;
   fuzz    random command lines (scripts/difftest_cases.py) against the C program.
 
 ratpoints-lean prints the points as ratpoints does with -q. They are compared as sets, until the
@@ -47,6 +51,7 @@ import os
 import random
 import re
 import shlex
+import signal
 import subprocess
 import sys
 import tomllib
@@ -103,6 +108,37 @@ def as_bytes(arg):
 def run(prog, args):
     r = subprocess.run([str(prog), *args], capture_output=True, timeout=TIMEOUT)
     return r.stdout.decode('latin-1'), r.returncode
+
+
+def closed_pipe(prog, args):
+    """The return code (minus the signal that ends the program, if one does) and the standard
+    error of `prog` on the command line `args` when its standard output is a pipe that nobody
+    reads: its reader was closed before the program started. subprocess restores the default
+    action of SIGPIPE in the program."""
+    r, w = os.pipe()
+    os.close(r)
+    try:
+        p = subprocess.run([str(prog), *args], stdout=w, stderr=subprocess.PIPE, timeout=TIMEOUT)
+    finally:
+        os.close(w)
+    return p.returncode, p.stderr.decode('latin-1')
+
+
+def full_device(prog, args):
+    """The return code and the standard error of `prog` on the command line `args` when its
+    standard output is /dev/full, on which every write fails."""
+    with open('/dev/full', 'w') as f:
+        p = subprocess.run([str(prog), *args], stdout=f, stderr=subprocess.PIPE, timeout=TIMEOUT)
+    return p.returncode, p.stderr.decode('latin-1')
+
+
+def special(cfg, tally, label, ok, detail):
+    """Record a check that is not a comparison of outputs."""
+    tally.compared += 1
+    if not ok:
+        tally.failures.append(f'{label}: {detail}')
+    if cfg.verbose:
+        print(('ok   ' if ok else 'FAIL ') + label)
 
 
 def read_options(opts):
@@ -317,10 +353,23 @@ def suite_errors(cfg, tally):
     usage = cfg.c_usage[cfg.c_usage.index('Usage: '):]
     usage = (usage.replace('Usage: ratpoints ', 'Usage: ratpoints-lean ')
              .replace('\n' + ' ' * 17, '\n' + ' ' * 22))
-    tally.compared += 1
-    if not (cfg.lean_usage.startswith('\nThis is ratpoints-lean-') and
-            cfg.lean_usage.endswith(usage)):
-        tally.failures.append(f'the banner and the usage of ratpoints-lean: {cfg.lean_usage!r}')
+    special(cfg, tally, 'the banner and the usage',
+            cfg.lean_usage.startswith('\nThis is ratpoints-lean-') and
+            cfg.lean_usage.endswith(usage), repr(cfg.lean_usage))
+    # Short and long outputs (ratpoints-lean's write fails in its flush or in the write itself),
+    # an error message, and no output at all, where neither program notices the closed pipe.
+    for args, writes in ((['1 0 1', '10', '-q'], True), (['1 0 1', '300', '-q'], True),
+                         (['1 2 x', '10'], True), (['-1 0 -1', '10', '-q'], False)):
+        lean, c = closed_pipe(cfg.lean, args), closed_pipe(cfg.c, args)
+        ok = ((c, lean) == ((-signal.SIGPIPE, ''), (128 + signal.SIGPIPE, '')) if writes else
+              c == lean == (0, ''))
+        special(cfg, tally, f'a closed pipe: {args}', ok,
+                f'ratpoints-lean gives {lean}, the C program {c}')
+    if os.path.exists('/dev/full'):
+        for args in (['1 0 1', '10', '-q'], ['1 0 1', '300', '-q'], ['1 2 x', '10']):
+            lean, c = full_device(cfg.lean, args), full_device(cfg.c, args)
+            special(cfg, tally, f'a full device: {args}', lean == c and c[1] == '',
+                    f'ratpoints-lean gives {lean}, the C program {c}')
     for args, note in difftest_cases.CASES:
         against_c(cfg, tally, f'{note}: {args}', args)
 
