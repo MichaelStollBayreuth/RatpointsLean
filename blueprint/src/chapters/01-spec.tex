@@ -6,12 +6,12 @@
 This chapter states the specification of the points that ratpoints finds, settled in stage~A, and
 describes the work of stage~B: the specification in Lean, the brute-force reference and the
 command-line program, together with the statements that comparator certifies. Proposed names are set
-as \lname{Ratpoints.bruteForce}; they become links to the formal declarations once these exist. The
-specification is the one part whose correctness no proof can check, so wherever there is a choice it
-copies what the C code computes, and each of its clauses is compared with ratpoints~3.1.1 below
-(Section~\ref{sec:spec-evidence} summarizes the evidence). Where the library function
-\verb|find_points| and the command-line program differ, as in the order of the checks on the input,
-the specification and the model follow the program.
+as \lname{Ratpoints.mem\_bruteForce\_iff}; they become links to the formal declarations once these
+exist. The specification is the one part whose correctness no proof can check, so wherever there is
+a choice it copies what the C code computes, and each of its clauses is compared with
+ratpoints~3.1.1 below (Section~\ref{sec:spec-evidence} summarizes the evidence). Where the library
+function \verb|find_points| and the command-line program differ, as in the order of the checks on
+the input, the specification and the model follow the program.
 
 Throughout, $c = [c_0, c_1, \dots, c_n]$ is a list of integers, the coefficient list of the
 program's input with the constant term first, so that $n + 1$ is its length; $d$ is its
@@ -192,12 +192,12 @@ those with even $d$ and $c_0 = c_1 = 0$; under \verb|-s -k| only those with $N -
 \section{The brute-force reference}\label{sec:bruteForce}
 
 \begin{definition}[Brute-force search]\label{def:bruteForce}
-  Proposed name: \lname{Ratpoints.bruteForce}, in the model. The list of the triples found by
-  testing, in this order, the candidate $(1, 0)$ if $H \ge 1$, and then the pairs $(x, z)$ with
-  $1 \le z \le H$, $-H \le x \le H$ and $\gcd(x, z) = 1$, with $z$ ascending and, for each $z$,
-  $x$ ascending. For each candidate, $v = F_c(x, z)$ is computed; if $v \ge 0$ and $v = y^2$ for
-  $y = \lfloor \sqrt{v} \rfloor$, the triple $(x, y, z)$ is output, followed by $(x, -y, z)$ if
-  $y \ne 0$.
+  \lean{Ratpoints.bruteForce}\leanok
+  The list, computed in the model, of the triples found by testing, in this order, the candidate
+  $(1, 0)$ if $H \ge 1$, and then the pairs $(x, z)$ with $1 \le z \le H$, $-H \le x \le H$ and
+  $\gcd(x, z) = 1$, with $z$ ascending and, for each $z$, $x$ ascending. For each candidate, $v =
+  F_c(x, z)$ is computed; if $v \ge 0$ and $v = y^2$ for $y = \lfloor \sqrt{v} \rfloor$, the triple
+  $(x, y, z)$ is output, followed by $(x, -y, z)$ if $y \ne 0$.
 \end{definition}
 
 This is the core of \verb|verify-test4.py| of the C repository (which compares point sets

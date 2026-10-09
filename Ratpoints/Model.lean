@@ -5,6 +5,8 @@ Authors: Michael Stoll
 -/
 module
 
+public import Ratpoints.Model.BruteForce
+
 /-!
 # The executable model of ratpoints
 
