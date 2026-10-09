@@ -151,7 +151,8 @@ those with even $d$ and $c_0 = c_1 = 0$; under \verb|-s -k| only those with $N -
 \section{The brute-force reference}\label{sec:bruteForce}
 
 \begin{definition}[Brute-force search]\label{def:bruteForce}
-  \lean{Ratpoints.bruteForce}\leanok
+  \lean{Ratpoints.bruteForce, Ratpoints.BruteForce.pointsOfDen, Ratpoints.BruteForce.pointsAbove, Ratpoints.BruteForce.numerators, Ratpoints.BruteForce.scaledCoeffs, Ratpoints.BruteForce.horner}
+  \leanok
   The list, computed in the model, of the triples found by testing, in this order, the candidate
   $(1, 0)$ if $H \ge 1$, and then the pairs $(x, z)$ with $1 \le z \le H$, $-H \le x \le H$ and
   $\gcd(x, z) = 1$, with $z$ ascending and, for each $z$, $x$ ascending. For each candidate, $v =
@@ -331,8 +332,8 @@ the pin and with its recorded outputs, in six suites:
   \item \verb|test4.sh| against \verb|testbase4|, split at the \verb|#| header lines (five of
     which are glued to the end of the preceding output line): 533 of its 582 runs; the others
     are 21 whose output the script filters, 9 that the C program refuses as not squarefree,
-    which wait for stage~D, and 19 with heights from $30000$ to $100000$, which wait for
-    stage~C1;
+    which wait for stage~D, and 19 with heights from $30000$ to $100000$, which wait for the
+    faster sieves of the later stages (Section~\ref{sec:sieveCli});
   \item \verb|test3.sh| invocation by invocation against the C program, since it has no announce
     lines: 13 of its 21 runs (5 have filtered outputs, one is a refusal, and two have heights too
     large for the brute force);
@@ -343,7 +344,8 @@ the pin and with its recorded outputs, in six suites:
     runs need no run of the C program;
   \item 300 random polynomials of degree 1 to 8 with coefficients from $-10$ to $10$ at heights
     up to 30, against the C program (from stage~C1 on, when \verb|ratpoints-lean| runs the sieve,
-    also the brute force against both at tiny heights);
+    a theorem says that the sieve returns the list of the brute force, which then needs no test
+    of its own);
   \item 219 hand-written command lines (\verb|scripts/difftest_cases.py|) for the checks that
     \verb|main.c| makes on the coefficients, the height and the options: white space and signs,
     the bounds of a \verb|long|, the grammar of \verb|strtod|, every option with a missing or

@@ -1,0 +1,435 @@
+% Stage C1: the plain sieve in the skeleton of the C code, with the theorem that it returns the list
+% of the brute-force reference. Proposed names are set with \lname and become \lean once the
+% declarations exist.
+\chapter{The plain sieve}\label{chap:sieve}
+
+Stage~C1 replaces the brute-force reference in the program by a sieve in the skeleton of the C
+function \verb|find_points_work_1|, with the simplest component in each place: the denominators
+$1, \dots, H$ in order, the numerators $-H, \dots, H$, one Boolean per numerator, prime moduli
+with tables of admissible residues, the test for common factors, the exact check, the delivery of
+$\pm y$, and the points at infinity computed directly from $d$ and $c_d$. Every row of the sieve is
+\emph{sound}: it lets every point through. So for every well-formed choice of the sieving
+parameters the sieve returns exactly the list of the brute-force reference, the same points in the
+same order, and membership and no duplicates follow from Theorem~\ref{thm:bruteForce}.
+
+The later stages contribute in four ways. A \emph{data refinement} computes the same predicate in
+another way, with a lemma that it does: the bit arrays of words of stage~C2, the faithful tables
+and the packing of stage~F; the equation with the reference survives it. A \emph{transformation},
+the reversal of stage~D, is a bijection of the point sets that preserves the box. A \emph{sound
+filter} comes with the lemma that every point passes it: the 2-adic information and the tests on
+the denominators of stage~E, the composite moduli and the third stage of stage~F. An
+\emph{enumeration refinement} visits the denominators that carry points in another order: the loop
+shapes of stage~E. From the reversal on, and with the divisor order of stage~E, the statement is
+that the output is a permutation of the reference, which still gives membership and no duplicates;
+stage~G proves the order of the program.
+
+\section{What a default run of the C code does}\label{sec:skeleton}
+
+\verb|find_points| (\csource{find_points.c}{5226}{5242}) calls \verb|find_points_work|, which
+refuses a degree outside $0, \dots, 100$ (\csource{find_points.c}{4557}{4558}) and calls
+\verb|find_points_work_1|. In a run without options, that function:
+\begin{enumerate}
+  \item drops the leading zero coefficients, refusing the form as not squarefree when that lowers
+    $\lceil n/2 \rceil$, refuses degree $0$ and a height below $1$, and caps the parameters
+    (\csource{find_points.c}{4624}{4658}); it reverses the polynomial in some cases
+    (\csource{find_points.c}{4732}{4803}; stage~D);
+  \item computes the search region by the Sturm step (stage~H) and decides whether there are
+    points at infinity (\csource{find_points.c}{4894}{4899});
+  \item sets up the tests on the denominators (squares or divisors times squares, Jacobi symbols)
+    and the 2-adic information, with an exit when no class of denominators modulo $64$ admits a
+    numerator (stage~E);
+  \item chooses the moduli and the forbidden divisors, examining each prime: the table
+    \verb|is_f_square| of the residues $x$ modulo $p$ for which $f(x)$ is a square modulo $p$
+    (\csource{find_points.c}{1703}{1747}), with an exit when there are no points modulo $p$
+    (stage~D);
+  \item delivers the points at infinity (\csource{find_points.c}{5068}{5105});
+  \item runs over the denominators in blocks (\csource{find_points.c}{5152}{5159}); for each
+    denominator $b$ that passes its tests, it sieves the numerators of the search region in pieces
+    of bit arrays with the rows of the moduli of the first two stages (\verb|sift| and
+    \verb|_ratpoints_sift0|), tests each survivor for common factors with $b$
+    (\csource{sift.c}{318}{343}), then with the primes of the third stage one numerator at a time,
+    and checks the rest exactly, delivering $(a, y, b)$ and, for $y \ne 0$, $(a, -y, b)$
+    (\csource{find_points.c}{5262}{5326}).
+\end{enumerate}
+C1 models what decides which points are found, each in its simplest form. Most of the rest only
+spares work; the refusals, the reversal and the exit when there are no points modulo $p$ (D) and
+the options of the output (G) come in their stages.
+
+\section{The parameters}\label{sec:params}
+
+\begin{definition}[The primes of the sieve]\label{def:primeTable}
+  Proposed names: \lname{Ratpoints.primeTable}, \lname{Ratpoints.numPrimes},
+  \lname{Ratpoints.prime\_of\_mem\_primeTable}.
+  The 171 odd primes below $1024$, in increasing order, the table of \verb|primes.h|
+  (\csource{primes.h}{29}{40}); every entry is a prime. The default build of ratpoints uses the
+  first $53$ of them, those below $256$ (\csource{rp-private.h}{335}{338}).
+\end{definition}
+
+\begin{definition}[Sieving parameters]\label{def:Params}
+  \uses{def:primeTable}
+  Proposed names: \lname{Ratpoints.Params}, \lname{Ratpoints.Params.WF}.
+  The free choices of the sieve: the moduli, a list of primes in the order of the stages; the cut
+  points $s_1 \le s_2$, positions in that list, which end the first and the second stage (the
+  third stage is the rest of the list); at most how many forbidden divisors are tested; and
+  whether the Jacobi test runs. The parameters are \emph{well-formed} when every modulus is a
+  prime of the table and $s_1 \le s_2 \le$ the number of moduli.
+\end{definition}
+
+\begin{definition}[The parameters of the executable]\label{def:sieveParams}
+  \uses{def:Params}
+  Proposed names: \lname{Ratpoints.SieveOptions}, \lname{Ratpoints.sieveParams},
+  \lname{Ratpoints.defaultParams}, \lname{Ratpoints.wf\_sieveParams},
+  \lname{Ratpoints.wf\_defaultParams}.
+  The parameters made from the values of the options \verb|-p|, \verb|-n|, \verb|-N|, \verb|-P|,
+  \verb|-F| and \verb|-j|/\verb|-J|, with the defaults and caps of ratpoints
+  (\csource{ratpoints.h}{333}{340}, \csource{ratpoints.h}{345}{352},
+  \csource{find_points.c}{4643}{4649}, \csource{find_points.c}{4655}{4656},
+  \csource{find_points.c}{4662}{4665}): $q$ primes are taken, $q = 30$ unless \verb|-p| gives a
+  value $k \ge 0$, then $q = \min(k, 53)$; $s_2 = \min(N, q)$ and $s_1 = \min(n, s_2)$ for the
+  values of \verb|-N| and \verb|-n|, $s_2 = q$ and $s_1 = s_2$ when they are absent or negative;
+  the moduli are the first $\min(q + P, 53)$ primes of the table for the value $P \ge 0$ of
+  \verb|-P|, the first $q$ when it is absent or negative; at most $\min(F, 171)$ forbidden
+  divisors for the value $F \ge 0$ of \verb|-F|, $64$ otherwise; the Jacobi test unless
+  \verb|-j| is the last of \verb|-j| and \verb|-J|. The default parameters are those of no
+  options: the first 30 primes, all in the first stage. Every parameter set made this way is
+  well-formed.
+\end{definition}
+
+\verb|Params| holds the choices that the theorems quantify over: which moduli the sieve uses, in
+which order and in which stage. ratpoints makes them from the curve (\verb|sieving_info|, which
+ranks the primes and may look past the 30th when the curve needs it), and moves the end of the
+third stage during the run (\verb|adapt_primes|; with \verb|-A 2| also $s_2$). None of this
+changes the points found or their order, since a modulus only removes candidates that are not
+points (\verb|-q| suppresses the report of the moduli used, which does depend on the choice). So the
+model takes the choice as an input, and the theorems hold for every well-formed choice. They
+quantify over the parameters that \verb|Params.WF| admits, a definition of a few lines in the
+model, which has no Mathlib, so the comparator challenge imports it; the runs of the executable
+need no such reading, since \verb|wf_sieveParams|, certified with the main theorems, shows that
+every parameter set the command line produces is well-formed, which also rules out a
+well-formedness that nothing satisfies. C1 reads only the moduli and treats all stages alike; the
+cut points, the forbidden divisors and the Jacobi switch are read from stages~E and~F on, and
+further choices (the block length, the length of the pieces) join \verb|Params| with the
+components that use them. Well-formedness constrains a field only as far as its component needs
+it to be meaningful.
+
+\section{The table of a prime}\label{sec:primeTables}
+
+Write $f = \sum_{i \le d} c_i x^i$ for the polynomial of degree $d$. For a prime $p$ and a
+denominator $b$ not divisible by $p$, $F_c(a, b) \equiv b^D f(a b^{-1}) \pmod p$, and $b^D$ is the
+square of a unit since $D$ is even; so if $F_c(a, b) = y^2$, then $f(a b^{-1})$ is a square
+modulo $p$ (zero included). If $p > 1$ divides $b$ and $\gcd(a, b) = 1$, then $p$ does not divide
+$a$. These two facts make sound the rows that the tables below define.
+
+\begin{definition}[Squares and inverses modulo a prime]\label{def:squaresMod}
+  Proposed names: \lname{Ratpoints.Sieve.squaresMod}, \lname{Ratpoints.Sieve.inversesMod},
+  \lname{Ratpoints.Sieve.getElem!\_squaresMod\_mul\_self\_mod},
+  \lname{Ratpoints.Sieve.getElem!\_inversesMod\_mul\_mod}.
+  The table of the squares modulo $p$, made as the generator of the tables of ratpoints makes it:
+  zero, and the squares of the odd residues (\csource{gen_find_points_h.c}{69}{88}); and the
+  table of the inverses modulo $p$ of the residues $1, \dots, p - 1$, each the least positive one
+  found by trial (\csource{gen_find_points_h.c}{33}{44}, \csource{gen_find_points_h.c}{90}{100}).
+  The squares of all residues are marked, and $r \cdot r^{-1} \equiv 1 \pmod p$ for a prime $p$.
+\end{definition}
+
+\begin{definition}[The table of a prime]\label{def:examinePrime}
+  \uses{def:squaresMod}
+  Proposed names: \lname{Ratpoints.Sieve.evalMod}, \lname{Ratpoints.Sieve.Entry},
+  \lname{Ratpoints.Sieve.examinePrime}, \lname{Ratpoints.Sieve.natCast\_evalMod}.
+  For a prime $p$: the coefficients reduced modulo $p$, and for each residue $x$ modulo $p$
+  whether $f(x)$ is a square modulo $p$, with $f(x)$ computed by Horner's rule modulo $p$
+  (\csource{find_points.c}{1703}{1747}); kept, as the sieve entry of ratpoints keeps it
+  (\csource{rp-private.h}{542}{555}), together with $p$ and the inverses modulo $p$
+  (\csource{find_points.c}{1795}{1824}).
+\end{definition}
+
+\begin{definition}[The rows of a denominator]\label{def:admits}
+  \uses{def:examinePrime}
+  Proposed names: \lname{Ratpoints.Sieve.Entry.admits}, \lname{Ratpoints.Sieve.survives}.
+  The row of the denominator $b$ in the table of $p$ admits the numerator $a$ when, for the
+  residues $r = b \bmod p$ and $x = a \bmod p$, the table's entry at $x r^{-1} \bmod p$ is true if
+  $r \ne 0$, and $x \ne 0$ if $r = 0$. This is what the bit of $a$ says in the row of $r$ in
+  ratpoints, where the rows are bit patterns built from the table (\csource{init.c}{118}{246})
+  and, for $r = 0$, a fixed pattern that does not depend on the curve
+  (\csource{gen_find_points_h.c}{102}{134}). A numerator \emph{survives} the moduli for $b$ when
+  the row of $b$ in the table of every modulus admits it; this test, a function of the numerator,
+  is the interface between the sieve and the check, and the bit arrays of stage~C2 are specified
+  against it.
+\end{definition}
+
+\begin{lemma}[A square value of the form gives a square value of $f$]\label{lem:isSquare_div}
+  Proposed name: \lname{Ratpoints.isSquare\_sum\_mul\_div\_pow\_of\_sq\_eq}.
+  In a field, if $b \ne 0$, $D$ is even, $d \le D$ and
+  $y^2 = \sum_{i \le d} f_i\, a^i b^{D - i}$, then $\sum_{i \le d} f_i\, (a/b)^i$ is the square of
+  $y / b^{D/2}$.
+\end{lemma}
+
+Mathlib has the identity behind this in the form of polynomials, \verb|Polynomial.eval_homogenize|;
+the sum form, with its few lines of proof, suits the definition of $F_c$.
+
+\begin{lemma}[The rows let every point through]\label{lem:admits_examinePrime}
+  \uses{def:admits, def:binaryForm}
+  Proposed name: \lname{Ratpoints.Sieve.admits\_examinePrime\_of\_sq\_eq}.
+  Let $p$ be a prime, $b$ a natural number, $\gcd(a, b) = 1$ and $y^2 = F_c(a, b)$. Then the row
+  of $b$ in the table of $p$ for the degree of $c$ admits $a$.
+\end{lemma}
+
+\begin{proof}
+  \uses{lem:isSquare_div}
+  The tables are what they claim to be: the squares, the inverses and Horner's rule modulo $p$
+  compute their definitions. For $p \nmid b$, cast $y^2 = F_c(a, b)$ to $\ZZ/p\ZZ$ and apply
+  Lemma~\ref{lem:isSquare_div}; the table of squares then has the entry at $a b^{-1}$. For
+  $p \mid b$, a common divisor $p > 1$ of $a$ and $b$ would divide $\gcd(a, b) = 1$, so
+  $p \nmid a$.
+\end{proof}
+
+Lemma~\ref{lem:admits_examinePrime} needs neither $b \ge 1$ nor an odd prime, so at its use the
+sieve's denominators and the primes of the table need no side conditions.
+
+\section{The sieve}\label{sec:sieve}
+
+The model follows the rules of the translation throughout. A C \verb|long| is an \verb|Int|; the
+obligation that its value lies in the range of the type comes with the faithful components that
+compute in \verb|long|s (D, F). The remainder \verb|mod()| of the C code is Lean's Euclidean
+\verb|%|. The tables that the build of ratpoints generates (the squares, the inverses, the row of
+$0$) are Lean functions with lemmas that they compute what they claim, checked against the
+generated header by \verb|#guard| examples, and as a whole with the faithful rows of stage~F. Each
+loop of the sieve is a definition of type \verb|Id α| that its callers bind with \verb|←|, so that
+its contract, an \verb|@[spec]| theorem proved with the program logic of Lean core and with loop
+invariants that are named definitions, applies at the call; only \verb|findPoints| runs a
+component with \verb|Id.run|. The tables of a prime are folds and maps, specified by ordinary
+lemmas.
+
+\begin{definition}[The sieve of one denominator]\label{def:sieveDen}
+  \uses{def:admits}
+  Proposed names: \lname{Ratpoints.Sieve.sieveDen}, \lname{Ratpoints.Sieve.sieveDen\_spec}.
+  An array of $2H + 1$ Booleans, one per numerator $a = i - H$, all true at the start; for each
+  modulus in turn, every entry is replaced by its conjunction with the row of $b$ at $a$. Its
+  contract: entry $i$ is the survivor test of the numerator $i - H$. These are the ANDs of the
+  first stage of ratpoints in the build with 64-bit bit arrays (\csource{sift.c}{943}{1022}) and
+  of its second stage (\csource{sift.c}{1184}{1202}); the default build does the first in chunks
+  of registers.
+\end{definition}
+
+\begin{definition}[The survivors of one denominator]\label{def:checkDen}
+  \uses{def:bruteForce}
+  Proposed names: \lname{Ratpoints.Sieve.checkDen}, \lname{Ratpoints.Sieve.checkDen\_spec}.
+  The numerators whose entry in a given array of Booleans is true, in increasing order
+  (\csource{sift.c}{1213}{1296}), each tested for common factors with $b$
+  (\csource{sift.c}{318}{343}, \csource{sift.c}{438}{446}) and checked exactly: $F_c(a, b)$ by
+  Horner's rule on the products $c_k b^{d-k}$, computed once per denominator, then $(a, y, b)$
+  and, for $y \ne 0$, $(a, -y, b)$ when $F_c(a, b) = y^2$ with $y \ge 0$
+  (\csource{find_points.c}{5262}{5304}, \csource{find_points.c}{5312}{5326}); the exact check is
+  that of the brute-force reference. Its contract: if entry $i$ is $k(i - H)$ for every $i$, for a
+  test $k$ of the numerators, then the result is what the brute-force reference finds over the
+  denominator $b$ and the numerators $-H, \dots, H$ that pass $k$.
+\end{definition}
+
+\begin{definition}[The denominators]\label{def:sieveRun}
+  \uses{def:sieveDen, def:checkDen}
+  Proposed names: \lname{Ratpoints.Sieve.sieveRun}, \lname{Ratpoints.Sieve.sieveRun\_spec}.
+  The denominators $b = 1, \dots, H$ in increasing order, each sieved and its survivors checked,
+  the points appended in turn (\csource{find_points.c}{4059}{4075},
+  \csource{find_points.c}{5152}{5159}). Its contract: the result is the concatenation over
+  $b = 1, \dots, H$ of what the brute-force reference finds over $b$ and the numerators that
+  survive the moduli for $b$, that is, the part of the reference with $z \ge 1$, its numerators
+  filtered by the moduli.
+\end{definition}
+
+\begin{definition}[The points at infinity]\label{def:pointsAtInfinity}
+  \uses{def:bruteForce}
+  Proposed names: \lname{Ratpoints.Sieve.pointsAtInfinity},
+  \lname{Ratpoints.Sieve.pointsAtInfinity\_eq\_pointsOfDen}.
+  $(1, 0, 0)$ for odd $d$; for even $d$, $(1, s, 0)$ and $(1, -s, 0)$ when $c_d = s^2$ with
+  $s > 0$, $(1, 0, 0)$ when $c_d = 0$, and nothing when $c_d$ is not a square
+  (\csource{find_points.c}{4894}{4899}, \csource{find_points.c}{5068}{5105}). These are the
+  points of the candidate $(1, 0)$ of the brute-force reference.
+\end{definition}
+
+\begin{definition}[The plain sieve]\label{def:findPoints}
+  \uses{def:Params, def:sieveRun, def:pointsAtInfinity}
+  Proposed names: \lname{Ratpoints.Refusal}, \lname{Ratpoints.findPoints}.
+  Refuse more than 101 coefficients, fewer than two, and $H = 0$, in the order of the program,
+  with its errors 3, 5 and~4 (Section~\ref{sec:refusals}); the library refuses the same inputs
+  as bad arguments (\csource{find_points.c}{4557}{4558}, \csource{find_points.c}{4633}{4633},
+  \csource{find_points.c}{4658}{4658}). Otherwise make the table of each modulus and return the
+  points at infinity followed by the points of the denominators.
+\end{definition}
+
+Each component differs from the C code in a stated way, recorded in the \verb|Deviation:|
+paragraph of the component whose range holds it:
+\begin{itemize}
+  \item the Booleans stand for the bit arrays of words, the pieces and the end masks (C2), and the
+    walk upwards for the walk by trailing zeros;
+  \item every denominator from $1$ to $H$, one after the other, for the loop shapes, the tests on
+    the denominators and the blocks (E), and the threads, which deliver the blocks in the same
+    order;
+  \item every numerator from $-H$ to $H$ for the search region (H) and the 2-adic classes (E, F);
+  \item one table per prime and every modulus applied to every numerator before the test for
+    common factors, for the composite moduli, the packing, the three stages and their correction
+    during the run (F), whose third stage runs after the test for common factors and skips the
+    primes that divide $b$;
+  \item a plain $\gcd$ for the branch-free binary $\gcd$ of \verb|relprime| (F);
+  \item Horner's rule modulo $p$ reduced at every step for the reduction of ratpoints on a fixed
+    schedule (F), and the coefficients as integers for its two paths through \verb|long|s and GMP
+    integers (D);
+  \item the products $c_k b^{d-k}$ computed for every denominator, where ratpoints computes them
+    when the first survivor reaches the check;
+  \item no reversal (D), and a list of points for the callback \verb|process|, with no stop it may
+    request, no \verb|NO_Y| and no \verb|NO_CHECK| (G);
+  \item no failure for lack of memory, which the model cannot meet.
+\end{itemize}
+C1 runs on every input it does not refuse, including the zero polynomial and the inputs that
+ratpoints refuses as not squarefree, on which it returns the points of the specification; there
+the points at infinity need the case $y = 0$, which ratpoints never meets.
+
+\section{The theorems}\label{sec:sieveTheorems}
+
+\begin{lemma}[Sound filters]\label{lem:flatMap_sound}
+  \uses{def:bruteForce}
+  Proposed names: \lname{List.flatMap\_filter\_of\_ne},
+  \lname{Ratpoints.BruteForce.pointsOfDen\_filter\_of\_ne}.
+  If every element $x$ of a list with $g(x)$ nonempty passes the test $k$, then filtering the
+  list by $k$ before applying $g$ does not change the concatenation of the $g(x)$. In particular a
+  filter of the numerators that every point passes does not change what the brute-force reference
+  finds over a denominator.
+\end{lemma}
+
+\begin{lemma}[Every point survives]\label{lem:survives}
+  \uses{def:admits, def:Params}
+  Proposed name: \lname{Ratpoints.Sieve.survives\_of\_mem\_pointsOfDen}.
+  For well-formed parameters, a numerator over which the exact check finds a point for the
+  denominator $b$ survives the tables of the moduli for $b$.
+\end{lemma}
+
+\begin{proof}
+  \uses{lem:admits_examinePrime}
+  Every modulus is a prime of the table; apply Lemma~\ref{lem:admits_examinePrime} to each.
+\end{proof}
+
+\begin{theorem}[The plain sieve returns the reference]\label{thm:findPoints_eq_bruteForce}
+  \uses{def:findPoints, def:Params, def:bruteForce}
+  Proposed names: \lname{Ratpoints.findPoints\_eq\_ok\_bruteForce},
+  \lname{Ratpoints.eq\_bruteForce\_of\_findPoints\_eq\_ok}.
+  For well-formed parameters, $2$ to $101$ coefficients and $H \ge 1$,
+  $\mathrm{findPoints}(c, H, P)$ returns $\mathrm{bruteForce}(c, H)$; so for well-formed
+  parameters, every list that $\mathrm{findPoints}$ returns is that of the brute-force reference.
+\end{theorem}
+
+\begin{proof}
+  \uses{def:sieveRun, def:pointsAtInfinity, lem:survives, lem:flatMap_sound}
+  By the contract of the denominators, the sieve returns the part of the reference with
+  $z \ge 1$, the numerators of each denominator filtered by the survivor test; by
+  Lemma~\ref{lem:survives} every numerator over which the exact check finds a point survives, so
+  by Lemma~\ref{lem:flatMap_sound} the filter changes nothing. The points at infinity are those of
+  the candidate $(1, 0)$ of the reference.
+\end{proof}
+
+\begin{theorem}[The points, each once; the refusals]\label{thm:findPoints}
+  \uses{def:findPoints, def:Params, def:IsPoint, def:points}
+  Proposed names: \lname{Ratpoints.mem\_iff\_isPoint\_of\_findPoints\_eq\_ok},
+  \lname{Ratpoints.nodup\_of\_findPoints\_eq\_ok},
+  \lname{Ratpoints.toFinset\_eq\_points\_of\_findPoints\_eq\_ok},
+  \lname{Ratpoints.exists\_findPoints\_eq\_error\_iff}.
+  For well-formed parameters, if $\mathrm{findPoints}(c, H, P)$ returns the list $L$, then a
+  triple lies in $L$ if and only if it is a normalized point of height at most $H$, $L$ has no
+  duplicates, and its set of elements is $\mathrm{points}(c, H)$. $\mathrm{findPoints}(c, H, P)$
+  refuses the input exactly when $c$ has fewer than two or more than 101 entries or $H = 0$.
+\end{theorem}
+
+\begin{proof}
+  \uses{thm:findPoints_eq_bruteForce, thm:bruteForce}
+  The first three statements follow from Theorem~\ref{thm:findPoints_eq_bruteForce} and
+  Theorem~\ref{thm:bruteForce}; the refusals are the three tests of $\mathrm{findPoints}$.
+\end{proof}
+
+\begin{verbatim}
+theorem mem_iff_isPoint_of_findPoints_eq_ok (hP : P.WF)
+    (h : findPoints c H P = .ok L) : p ∈ L ↔ IsPoint c H p
+theorem nodup_of_findPoints_eq_ok (hP : P.WF) (h : findPoints c H P = .ok L) :
+    L.Nodup
+theorem exists_findPoints_eq_error_iff :
+    (∃ e, findPoints c H P = .error e) ↔ c.length < 2 ∨ 101 < c.length ∨ H = 0
+theorem wf_sieveParams (o : SieveOptions) : (sieveParams o).WF
+\end{verbatim}
+
+\verb|mem_iff_isPoint_of_findPoints_eq_ok| and \verb|nodup_of_findPoints_eq_ok| are the main
+theorems of the project; later stages add the options of \verb|findPoints| as an argument and,
+from stage~H on, the hypothesis of Sturm's theorem. The refusal theorem has its C1 form: stage~D
+adds the disjunct that $\Phi_c$ is not squarefree. The equation with the brute-force reference
+holds until the reversal of stage~D and the divisor order of stage~E change the order of the
+output; from then on the theorem is that the output is a permutation of the reference. Comparator
+certifies the two main theorems, the refusal theorem, which rules out a \verb|findPoints| that
+refuses every input, and \verb|wf_sieveParams|: the challenge states them with \verb|sorry| over
+\verb|findPoints|, \verb|Params|, \verb|Params.WF|, \verb|SieveOptions| and \verb|sieveParams|,
+imported from the model, never restated, since a definition of the model elaborates without
+Mathlib to other instance terms. Each main theorem gets a guard on its axioms. The contracts need
+only the program logic of Lean core and stay in a file without Mathlib, so that their
+\verb|grind| calls see only the lemmas of core, untouched by Mathlib's updates; that file also
+states the result of \verb|sieveRun| as a plain equation, so that the files with Mathlib need no
+program logic. The soundness of the rows needs Mathlib, through $\ZZ/p\ZZ$.
+
+\section{The command-line program and the differential tests}\label{sec:sieveCli}
+
+\verb|ratpoints-lean| reads the values of \verb|-p|, \verb|-n|, \verb|-N|, \verb|-P|, \verb|-F|
+and \verb|-j|/\verb|-J| into \verb|SieveOptions|, with the checks of \verb|main.c| unchanged, and
+runs \verb|findPoints| with \verb|sieveParams| of them; the other options stay as in stage~B. So
+the reading of the options (Definition~\ref{def:cliInput}) returns these values from now on, and
+the program (Definition~\ref{def:cliRun}) prints the points of the sieve. Since these are those of
+the brute-force reference, every differential test of stage~B applies unchanged, and the brute
+force needs no test of its own: Theorem~\ref{thm:findPoints_eq_bruteForce} says that the sieve
+returns its list. Compiled, the plain sieve handles about $1.5 \cdot 10^7$ candidates per second
+with the 30 default moduli: $0.13$~seconds at $H = 1000$, against $0.3$ to $0.9$~seconds for the
+reference; so the tests rise to heights of a few thousand, while the runs of \verb|test4.sh| with
+heights from $30000$ to $100000$, minutes to tens of minutes each, wait for the bit arrays of
+stage~C2. A further suite runs both programs with other parameters (no moduli, all 53 primes,
+the cut points in several positions, a third stage) on the same inputs.
+
+\section{Files, names and order of work}
+
+The interface (\verb|primeTable|, \verb|Params|, \verb|SieveOptions|, \verb|sieveParams|,
+\verb|Refusal|, \verb|findPoints|) lives in the namespace \verb|Ratpoints|, the components of the
+sieve in \verb|Ratpoints.Sieve|, and the general list lemma in \verb|Ratpoints/Mathlib| under its
+name in Mathlib's namespace. The model goes into \verb|Ratpoints/Model/Params.lean|,
+\verb|Ratpoints/Model/Sieve.lean| and \verb|Ratpoints/Model/FindPoints.lean|; the contracts, without
+Mathlib, into \verb|Ratpoints/Proof/Sieve.lean|; the well-formedness and the primes into
+\verb|Ratpoints/Proof/Params.lean|, the tables and the soundness of the rows into
+\verb|Ratpoints/Proof/Tables.lean|, and the main theorems into
+\verb|Ratpoints/Proof/FindPoints.lean|. One commit per item, each passing the project's checks:
+\begin{enumerate}
+  \item[C1.1] The parameters (Definitions~\ref{def:primeTable} to~\ref{def:sieveParams}) with
+    their lemmas.
+  \item[C1.2] The tables of a prime and the rows (Definitions~\ref{def:squaresMod}
+    to~\ref{def:admits}) with \verb|#guard| examples against the tables of ratpoints, and
+    Lemmas~\ref{lem:isSquare_div} and~\ref{lem:admits_examinePrime}.
+  \item[C1.3] The sieve of one denominator and its contract, with \verb|#guard| examples.
+  \item[C1.4] The survivors of one denominator and its contract, with \verb|#guard| examples.
+  \item[C1.5] The denominators and their contract.
+  \item[C1.6] The points at infinity, \verb|findPoints| with \verb|#guard| examples against the
+    C program, Lemmas~\ref{lem:flatMap_sound} and~\ref{lem:survives},
+    Theorems~\ref{thm:findPoints_eq_bruteForce} and~\ref{thm:findPoints} with their axiom guards,
+    the comparator challenge with its solution and description, and the main results of
+    \verb|formalization.yaml|.
+  \item[C1.7] \verb|ratpoints-lean| on the sieve, with the options of \verb|SieveOptions|, the
+    nodes of the program and the description of the repository brought up to date, and the
+    differential tests with their new heights and the suite of parameters.
+\end{enumerate}
+
+\section{The evidence}\label{sec:sieve-evidence}
+
+Three checks, made while this chapter was written:
+\begin{itemize}
+  \item a reading of the C code of a default run at the pin, which fixed the steps of
+    Section~\ref{sec:skeleton}, the meaning of a row (the entry of \verb|is_f_square| at
+    $a b^{-1}$ for $p \nmid b$, ``$p \nmid a$'' for $p \mid b$, where the curve plays no part),
+    and the fact that the points found and their order do not depend on the moduli, their order or
+    the cut points;
+  \item a prototype in Lean of the model of this chapter and of all its proofs: the model agrees
+    with the brute-force reference on examples, among them the zero polynomial, a polynomial of
+    degree $0$, no moduli and all 53 primes; the three contracts go through with \verb|vcgen| in
+    at most 12 lines each and under half a second each (a rewrite of the entries of the array
+    before \verb|grind|, which otherwise times out on the bound proofs that \verb|vcgen| builds for
+    \verb|Vector.set|); the soundness of the rows, the equation with the reference and its
+    corollaries take the standard axioms only, with no proof longer than 12 lines;
+  \item the prototype compiled as a program and timed against the brute-force reference on four
+    curves at heights 100, 300 and 1000.
+\end{itemize}
