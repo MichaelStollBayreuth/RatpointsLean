@@ -32,8 +32,9 @@ The statements come in stage by stage, as the blueprint describes them: the theo
 (the brute-force reference finds exactly the points, without duplicates), the membership and
 no-duplicates theorems for `findPoints` together with the well-formedness of the default
 parameters, which rules out a `P.WF` that nothing satisfies (stage C1), and the refusal theorem
-(stage D). Until the first of them `Challenge.lean` and `Solution.lean` hold no theorem and there
-is no `challenges.json`.
+(stage D). The theorems of stage B are in: `challenges.json` lists
+`challenge_mem_bruteForce_iff` and `challenge_nodup_bruteForce`, and Comparator accepted the
+solution on 2026-10-09.
 
 ## Running
 

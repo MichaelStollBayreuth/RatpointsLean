@@ -5,13 +5,12 @@
 
 This chapter states the specification of the points that ratpoints finds, settled in stage~A, and
 describes the work of stage~B: the specification in Lean, the brute-force reference and the
-command-line program, together with the statements that comparator certifies. Proposed names are set
-as \lname{Ratpoints.mem\_bruteForce\_iff}; they become links to the formal declarations once these
-exist. The specification is the one part whose correctness no proof can check, so wherever there is
-a choice it copies what the C code computes, and each of its clauses is compared with
-ratpoints~3.1.1 below (Section~\ref{sec:spec-evidence} summarizes the evidence). Where the library
-function \verb|find_points| and the command-line program differ, as in the order of the checks on
-the input, the specification and the model follow the program.
+command-line program, together with the statements that comparator certifies. The specification is
+the one part whose correctness no proof can check, so wherever there is a choice it copies what the
+C code computes, and each of its clauses is compared with ratpoints~3.1.1 below
+(Section~\ref{sec:spec-evidence} summarizes the evidence). Where the library function
+\verb|find_points| and the command-line program differ, as in the order of the checks on the input,
+the specification and the model follow the program.
 
 Throughout, $c = [c_0, c_1, \dots, c_n]$ is a list of integers, the coefficient list of the
 program's input with the constant term first, so that $n + 1$ is its length; $d$ is its
@@ -218,13 +217,15 @@ reference is compared as a set.
 
 \begin{theorem}[The brute-force reference finds exactly the points]\label{thm:bruteForce}
   \uses{def:bruteForce, def:IsPoint, def:points}
-  Proposed names: \lname{Ratpoints.mem\_bruteForce\_iff}, \lname{Ratpoints.nodup\_bruteForce},
-  \lname{Ratpoints.toFinset\_bruteForce}. For every list $c$ and every $H$: a triple lies in
+  \lean{Ratpoints.mem_bruteForce_iff, Ratpoints.nodup_bruteForce, Ratpoints.toFinset_bruteForce}
+  \leanok
+  For every list $c$ and every $H$: a triple lies in
   $\mathrm{bruteForce}(c, H)$ if and only if it is a normalized point of height at most $H$;
   the list has no duplicates; and its set of elements is $\mathrm{points}(c, H)$.
 \end{theorem}
 
 \begin{proof}
+  \leanok
   The candidate $(1, 0)$ gives the points with $z = 0$, since $\gcd(x, 0) = 1$ and the
   normalization force $x = 1$; the pairs give those with $z > 0$. The model's evaluation is
   $F_c$, and $v = (\lfloor \sqrt{v} \rfloor)^2$ holds exactly when $v \ge 0$ is a square. The

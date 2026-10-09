@@ -62,6 +62,9 @@ def pointsOfDen (c : List Int) (d : Nat) (z : Int) (xs : List Int) : List (Int �
   let f := if d % 2 = 1 then z else 1
   xs.flatMap fun x ↦ if Int.gcd x z = 1 then pointsAbove x z (horner w x * f) else []
 
+/-- The numerators `-H, …, H`, in ascending order. -/
+def numerators (H : Nat) : List Int := (List.range (2 * H + 1)).map fun (i : Nat) ↦ (i : Int) - H
+
 end BruteForce
 
 open BruteForce in
@@ -71,9 +74,9 @@ candidate `(1, 0)` if `1 ≤ H`, then the pairs `(x, z)` with `1 ≤ z ≤ H`, `
 when `F(x, z) = y ^ 2` with `y > 0`, and `(x, 0, z)` when `F(x, z) = 0`. -/
 def bruteForce (c : List Int) (H : Nat) : List (Int × Int × Int) :=
   let d := degree c
+  let xs := numerators H
   (if 1 ≤ H then pointsOfDen c d 0 [1] else []) ++
-    (List.range H).flatMap fun (j : Nat) ↦
-      pointsOfDen c d (j + 1 : Nat) ((List.range (2 * H + 1)).map fun (i : Nat) ↦ (i : Int) - H)
+    (List.range H).flatMap fun (j : Nat) ↦ pointsOfDen c d (j + 1 : Nat) xs
 
 /-! ### Examples from the C program at the pin (`ratpoints c H -q`) -/
 
