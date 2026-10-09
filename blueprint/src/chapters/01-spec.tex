@@ -1,16 +1,15 @@
-% Stages A and B: the specification, the brute-force reference, the command-line program and the
-% statements comparator certifies. Proposed names are set with \lname and become \lean once the
-% declarations exist.
+% Stages A and B: the specification, the brute-force reference, the statements comparator
+% certifies, and the command-line program ratpoints-lean with its differential tests.
 \chapter{The specification and the brute-force reference}\label{chap:spec}
 
-This chapter states the specification of the points that ratpoints finds, settled in stage~A, and
-describes the work of stage~B: the specification in Lean, the brute-force reference and the
-command-line program, together with the statements that comparator certifies. The specification is
-the one part whose correctness no proof can check, so wherever there is a choice it copies what the
-C code computes, and each of its clauses is compared with ratpoints~3.1.1 below
-(Section~\ref{sec:spec-evidence} summarizes the evidence). Where the library function
-\verb|find_points| and the command-line program differ, as in the order of the checks on the input,
-the specification and the model follow the program.
+This chapter states the specification of the points that ratpoints finds, the brute-force reference
+that lists them, the statements that comparator certifies, and the command-line program
+\verb|ratpoints-lean| with its differential tests. The specification is the one part whose
+correctness no proof can check, so wherever there is a choice it copies what the C code computes,
+and each of its clauses is compared with ratpoints~3.1.1 below (Section~\ref{sec:spec-evidence}
+summarizes the evidence). Where the library function \verb|find_points| and the command-line program
+differ, as in the order of the checks on the input, the specification and the model follow the
+program.
 
 Throughout, $c = [c_0, c_1, \dots, c_n]$ is a list of integers, the coefficient list of the
 program's input with the constant term first, so that $n + 1$ is its length; $d$ is its
@@ -27,18 +26,6 @@ the height bound.
   \[ F_c(x, z) = \sum_{i=0}^{d} c_i\, x^i z^{D-i}. \]
 \end{definition}
 
-\begin{verbatim}
-/-- The degree of the polynomial `∑ cᵢ Xⁱ`: the largest index of a nonzero
-entry of `c`, or `0` if there is none. -/
-def degree (c : List ℤ) : ℕ := (c.reverse.dropWhile (· == 0)).length - 1
-
-/-- The binary form `F(x, z) = ∑ cᵢ xⁱ z^(D - i)` of even degree
-`D = d + d % 2` of the polynomial of degree `d` with coefficient list `c`. -/
-def binaryForm (c : List ℤ) (x z : ℤ) : ℤ :=
-  ∑ i ∈ Finset.range (degree c + 1),
-    c.getD i 0 * x ^ i * z ^ (degree c + degree c % 2 - i)
-\end{verbatim}
-
 \begin{remark}[What the C code computes]\label{rem:degree}
   This is the form the C code evaluates. The library drops the leading zero coefficients
   (\csource{find_points.c}{4624}{4632}), so it works with the degree $d$, and its exact check
@@ -51,8 +38,9 @@ def binaryForm (c : List ℤ) (x z : ℤ) : ℤ :=
   accepted run of the empirical checks, with and without \verb|-s| and \verb|-k|.
 \end{remark}
 
-The model gets its own evaluations of the form, the brute-force reference of stage~B and the exact
-check of stage~C1, each in the manner of the C code and each proved equal to $F_c$.
+The model evaluates the form in the manner of the C code, in the brute-force reference
+(Section~\ref{sec:bruteForce}) and, from stage~C1 on, in the exact check of the sieve, and each of
+these evaluations is proved equal to $F_c$.
 
 \begin{definition}[The binary form of degree $N$]\label{def:binaryFormPoly}
   \uses{def:binaryForm}
@@ -64,21 +52,12 @@ check of stage~C1, each in the manner of the C code and each proved equal to $F_
   $\Phi_c$ is squarefree, $D = N$ and $\Phi_c(x, z) = F_c(x, z)$ for all integers $x$ and $z$.
 \end{definition}
 
-\begin{verbatim}
-noncomputable def binaryFormPoly (c : List ℤ) : MvPolynomial (Fin 2) ℚ :=
-  ∑ i ∈ Finset.range c.length,
-    MvPolynomial.C (c.getD i 0 : ℚ) * MvPolynomial.X 0 ^ i *
-      MvPolynomial.X 1 ^ (2 * (c.length / 2) - i)
-
-theorem eval_binaryFormPoly (h : c.length / 2 ≤ (degree c + 1) / 2) (x z : ℤ) :
-    MvPolynomial.eval ![(x : ℚ), z] (binaryFormPoly c) = (binaryForm c x z : ℚ)
-\end{verbatim}
-
 The refusal theorem uses Mathlib's \verb|Squarefree|: no square of a non-unit divides $\Phi_c$. The
 units of $\QQ[X, Z]$ are the nonzero constants, so this is squarefreeness over $\QQ$ (over $\ZZ$,
 $4(X^2 + Z^2)$ would not be squarefree, while the program accepts \verb|4 0 4|), and $0$ is not
-squarefree. The coefficients are written \verb|c.getD i 0|, since Mathlib's notation \verb|c[...]|
-for cycles makes \verb|c[i]| fail for a list named \verb|c| wherever all of Mathlib is imported.
+squarefree. In the Lean definitions the coefficients are written \verb|c.getD i 0|, since Mathlib's
+notation \verb|c[...]| for cycles makes \verb|c[i]| fail for a list named \verb|c| wherever all of
+Mathlib is imported.
 
 $\Phi_c$ is also Mathlib's homogenization \verb|Polynomial.homogenize f N| of
 $f = \sum c_i X^i \in \QQ[X]$, which stage~D will use. Mathlib says nothing yet about the
@@ -100,12 +79,6 @@ These are candidates for \verb|Ratpoints/Mathlib|. With them, ``$\Phi_c$ squaref
   \[ y^2 = F_c(x, z), \quad \gcd(x, z) = 1, \quad z > 0 \text{ or } (z = 0 \text{ and } x = 1),
      \quad |x| \le H, \quad z \le H. \]
 \end{definition}
-
-\begin{verbatim}
-def IsPoint (c : List ℤ) (H : ℕ) (p : ℤ × ℤ × ℤ) : Prop :=
-  p.2.1 ^ 2 = binaryForm c p.1 p.2.2 ∧ Int.gcd p.1 p.2.2 = 1 ∧
-    (0 < p.2.2 ∨ p.2.2 = 0 ∧ p.1 = 1) ∧ |p.1| ≤ H ∧ p.2.2 ≤ H
-\end{verbatim}
 
 Its clauses, compared with the program:
 \begin{itemize}
@@ -138,15 +111,6 @@ Its clauses, compared with the program:
   $|y| \le y^2 = F_c(x, z) \le \sum_i |c_i| H^D$.
 \end{definition}
 
-\begin{verbatim}
-theorem finite_setOf_isPoint (c : List ℤ) (H : ℕ) : {p | IsPoint c H p}.Finite
-
-noncomputable def points (c : List ℤ) (H : ℕ) : Finset (ℤ × ℤ × ℤ) :=
-  (finite_setOf_isPoint c H).toFinset
-
-theorem mem_points : p ∈ points c H ↔ IsPoint c H p
-\end{verbatim}
-
 \verb|IsPoint| is decidable (through a named instance built with \verb|inferInstanceAs|, since
 instance search does not unfold a definition), and \verb|degree| and \verb|binaryForm| are
 computable, so the specification file can check facts taken from the program's output by
@@ -157,21 +121,17 @@ coefficient $2$ is not a square.
 
 \section{The refusals}\label{sec:refusals}
 
-The refusal theorem belongs to stage~D, but its predicate is part of the specification:
-\begin{verbatim}
-theorem exists_findPoints_eq_error_iff (hP : P.WF) :
-    (∃ e, findPoints c H P = .error e) ↔
-      c.length < 2 ∨ 101 < c.length ∨ H = 0 ∨ ¬ Squarefree (binaryFormPoly c)
-\end{verbatim}
-In a default run with $2$ to $101$ coefficients and $1 \le H \le 2^{63} - 1$, the program refuses
-exactly the inputs for which $\Phi_c$ is not squarefree. The reason: $\Phi_c = Z^{N - d}\,
-\Phi^0$, where $\Phi^0$ is the homogenization of $f = \sum c_i x^i$ in degree $d$, which is
-prime to $Z$; so $\Phi_c$ is squarefree if and only if $N - d \le 1$ and $f$ is squarefree. The
-library tests the first condition when it drops the leading zeros
-(\csource{find_points.c}{4624}{4632}) and the second with the remainder sequence of $f$ and $f'$
-in the Sturm step (\csource{sturm.c}{120}{143}); its test of $c_0 = c_1 = 0$ in the reversal
-(\csource{find_points.c}{4744}{4749}) catches $X^2 \mid \Phi_c$, which the remainder sequence
-would also catch.
+The refusal theorem belongs to stage~D, but its predicate is part of the specification: for
+well-formed sieving parameters, \verb|findPoints| refuses $(c, H)$ if and only if $c$ has fewer than
+two or more than 101 entries, $H = 0$, or $\Phi_c$ is not squarefree. In a default run with $2$ to
+$101$ coefficients and $1 \le H \le 2^{63} - 1$, the program refuses exactly the inputs for which
+$\Phi_c$ is not squarefree. The reason: $\Phi_c = Z^{N - d}\, \Phi^0$, where $\Phi^0$ is the
+homogenization of $f = \sum c_i x^i$ in degree $d$, which is prime to $Z$; so $\Phi_c$ is squarefree
+if and only if $N - d \le 1$ and $f$ is squarefree. The library tests the first condition when it
+drops the leading zeros (\csource{find_points.c}{4624}{4632}) and the second with the remainder
+sequence of $f$ and $f'$ in the Sturm step (\csource{sturm.c}{120}{143}); its test of $c_0 = c_1 =
+0$ in the reversal (\csource{find_points.c}{4744}{4749}) catches $X^2 \mid \Phi_c$, which the
+remainder sequence would also catch.
 
 The model keeps the bound of 101 coefficients (\verb|RATPOINTS_MAX_DEGREE| $= 100$), which 3.1.1
 imposes in the library (\csource{find_points.c}{4557}{4558}) as well as in the program. In the
@@ -199,21 +159,20 @@ those with even $d$ and $c_0 = c_1 = 0$; under \verb|-s -k| only those with $N -
   $(x, y, z)$ is output, followed by $(x, -y, z)$ if $y \ne 0$.
 \end{definition}
 
-This is the core of \verb|verify-test4.py| of the C repository (which compares point sets
-only), in the model (Lean core, no Mathlib). It evaluates $F_c$ as the C code's exact check does
-(Horner's rule in $x$ on the products $c_k z^{d-k}$, computed once per $z$, and one more factor
-$z$ when $d$ is odd), so that the candidate $(1, 0)$ needs no case of its own, and it takes the
-square root with \verb|Nat.sqrt|. It takes no hypothesis on $c$ or $H$, and it models no C code,
-so it cites none. Written as nested \verb|List.flatMap|s rather than loops, its membership proof
-is direct. A compiled prototype tests about $10^6$ coprime pairs per second (Lean's \verb|Int| is
-a GMP number beyond $\pm 2^{31}$, which $F_c$ exceeds at small heights already), so whole test
-suites fit at heights up to about $1000$; there are about $1.2\, H^2$ coprime pairs per curve.
-Its order is the program's for the inputs that the program neither reverses nor searches in
-divisor order: on the \verb|test4.sh| runs of height at most $1000$ that use only the
-coefficients, the height, \verb|-q| and tuning options, it reproduces the C output byte for byte
-in 167 of 195 cases, and the other 28 (reversed polynomials, and odd degree with $|c_d| \ne 1$)
-agree as sets. The order of the program is a theorem of stage~G about \verb|findPoints|; the
-reference is compared as a set.
+This is the core of \verb|verify-test4.py| of the C repository (which compares point sets only), in
+the model (Lean core, no Mathlib). It evaluates $F_c$ as the C code's exact check does (Horner's
+rule in $x$ on the products $c_k z^{d-k}$, computed once per $z$, and one more factor $z$ when $d$
+is odd), so that the candidate $(1, 0)$ needs no case of its own, and it takes the square root with
+\verb|Nat.sqrt|. It takes no hypothesis on $c$ or $H$, and it models no C code, so it cites none.
+Written as nested \verb|List.flatMap|s rather than loops, its membership proof is direct. Compiled,
+it tests one to two million coprime pairs per second (Lean's \verb|Int| is a GMP number beyond $\pm
+2^{31}$, which $F_c$ exceeds at small heights already), so whole test suites fit at heights up to
+about $1000$; there are about $1.2\, H^2$ coprime pairs per curve. Its order is the program's for
+the inputs that the program neither reverses nor searches in divisor order: on the \verb|test4.sh|
+runs of height at most $1000$ that print points with \verb|-q|, \verb|ratpoints-lean| reproduces the
+output of the C program byte for byte, except for reversed polynomials and for odd degree with
+$|c_d| \ne 1$, where the two agree as sets. The order of the program is a theorem of stage~G about
+\verb|findPoints|; the reference is compared as a set.
 
 \begin{theorem}[The brute-force reference finds exactly the points]\label{thm:bruteForce}
   \uses{def:bruteForce, def:IsPoint, def:points}
@@ -233,28 +192,17 @@ reference is compared as a set.
   statement follows from the first two.
 \end{proof}
 
-\begin{verbatim}
-theorem mem_bruteForce_iff : p ∈ bruteForce c H ↔ IsPoint c H p
-theorem nodup_bruteForce (c : List ℤ) (H : ℕ) : (bruteForce c H).Nodup
-theorem toFinset_bruteForce (c : List ℤ) (H : ℕ) :
-    (bruteForce c H).toFinset = points c H
-\end{verbatim}
-
 \section{What comparator certifies}\label{sec:comparator-ab}
 
 \verb|comparator/Challenge.lean| imports Mathlib and the model. It restates \verb|degree|,
-\verb|binaryForm| and \verb|IsPoint| verbatim and states, with \verb|sorry|,
-\begin{verbatim}
-theorem challenge_mem_bruteForce_iff (c : List ℤ) (H : ℕ) (p : ℤ × ℤ × ℤ) :
-    p ∈ Ratpoints.bruteForce c H ↔ Ratpoints.IsPoint c H p
-theorem challenge_nodup_bruteForce (c : List ℤ) (H : ℕ) :
-    (Ratpoints.bruteForce c H).Nodup
-\end{verbatim}
-\verb|comparator/Solution.lean| proves them by the library's theorems. \verb|binaryFormPoly|
+\verb|binaryForm| and \verb|IsPoint| verbatim and states, with \verb|sorry|, the first two
+statements of Theorem~\ref{thm:bruteForce} (\verb|challenge_mem_bruteForce_iff| and
+\verb|challenge_nodup_bruteForce|); \verb|comparator/Solution.lean| proves them by
+\verb|Ratpoints.mem_bruteForce_iff| and \verb|Ratpoints.nodup_bruteForce|. \verb|binaryFormPoly|
 joins the challenge with the refusal theorem (stage~D), and \verb|points| stays out of it:
 comparator compares the full declarations that a certified statement reaches, the proofs of
 theorems included, so the finiteness proof inside \verb|points| would have to be reproduced
-term for term; and the two theorems above say everything the \verb|Finset| statement says. (A
+term for term; and these two theorems say everything the \verb|Finset| statement says. (A
 computable \verb|points|, filtering an explicit box with the bound $\max |F_c|$ for $|y|$,
 would avoid the proof term, but it is not needed.) The specification can be restated because
 it is elaborated with Mathlib, as the challenge is; a definition of the model, elaborated
@@ -266,7 +214,7 @@ default parameters.
 
 The Lean program is a program of its own, the executable \verb|ratpoints-lean|, with the command
 line of ratpoints. Eventually it offers the full functionality of ratpoints except the threads
-and the other hardware-dependent features. In stage~B it prints the points of the brute-force
+and the other hardware-dependent features. For now it prints the points of the brute-force
 reference, so that the test scripts of the C repository can run it as \verb|RP=ratpoints-lean|:
 \begin{itemize}
   \item it behaves as with \verb|-q|, printing exactly one line \verb|(x : y : z)| per point and
@@ -291,8 +239,8 @@ reference, so that the test scripts of the C repository can run it as \verb|RP=r
     otherwise turn into a search of the whole box that never ends), and an
     unknown option with error~6, as \verb|main.c| does;
   \item its banner starts with the line \verb|This is ratpoints-lean-0.1|, so that
-    \verb|test4.sh| filters it as it does the C program's, and the harness ignores the rest of
-    the banner;
+    \verb|test4.sh| filters it as it does the C program's, and the differential tests exchange
+    the banners and the usages of the two programs;
   \item it does not refuse a polynomial that is not squarefree: that is the squarefree test of
     stage~D; the test harness skips the inputs that the C program refuses.
 \end{itemize}
@@ -404,27 +352,17 @@ yet, it must fail as the C program does if that fails before the option, and els
 status~12. CI builds the C program at the pin (\verb|make|, with \verb|libgmp-dev|) and the Lean
 program, and runs the script.
 
-\section{Files, names and order of work}
+\section{Files and names}
 
 All declarations live in the namespace \verb|Ratpoints|. The module says which part a
-declaration belongs to (the model, the specification or the proofs), and
-\verb|scripts/check_layout.py| keeps the parts' imports apart. One commit per item, each passing
-the project's checks:
-\begin{enumerate}
-  \item[B1] \verb|Ratpoints/Spec/Basic.lean|, with the definitions and theorems of this chapter's
-    first two sections (from \verb|degree| to \verb|mem_points|) and the examples by
-    \verb|decide|; the blueprint nodes of those sections become \verb|\lean| nodes.
-  \item[B2] \verb|Ratpoints/Model/BruteForce.lean|: \verb|bruteForce|, with \verb|#guard|
-    examples taken from the C program.
-  \item[B3] \verb|Ratpoints/Proof/BruteForce.lean|: the three theorems of
-    Theorem~\ref{thm:bruteForce}, each with an axiom guard (\verb|#print axioms| under
-    \verb|#guard_msgs|); the comparator challenge, solution and \verb|challenges.json|;
-    \verb|formalization.yaml|.
-  \item[B4] \verb|Ratpoints/Model/Cli.lean|, \verb|Main.lean| and the \verb|lean_exe| target
-    \verb|ratpoints-lean|, with the correspondence entries for \verb|main.c|.
-  \item[B5] \verb|scripts/difftest.py|, with the command lines of
-    \verb|scripts/difftest_cases.py|, and its CI job.
-\end{enumerate}
+declaration belongs to, and \verb|scripts/check_layout.py| keeps the parts' imports apart: the
+specification is \verb|Ratpoints/Spec/Basic.lean|, with examples by \verb|decide| taken from the
+output of the program; the brute-force reference is \verb|Ratpoints/Model/BruteForce.lean|, with
+\verb|#guard| examples taken from the C program, and its theorems are in
+\verb|Ratpoints/Proof/BruteForce.lean|, each with a guard on its axioms (\verb|#print axioms|
+under \verb|#guard_msgs|); the program is \verb|Ratpoints/Model/Cli.lean| with \verb|Main.lean|;
+the statements for comparator are in \verb|comparator/|, and the differential tests in
+\verb|scripts/difftest.py|.
 
 \section{The evidence}\label{sec:spec-evidence}
 
