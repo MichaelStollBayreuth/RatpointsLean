@@ -6,6 +6,7 @@ Authors: Michael Stoll
 module
 
 public import Ratpoints.Model.BruteForce
+public import Ratpoints.Model.Cli
 
 /-!
 # The executable model of ratpoints

@@ -18,9 +18,9 @@ file & lines of code & modelled & excluded & not yet recorded \\
 \texttt{primes.h} & 11 & 0 & 0 & 11 \\
 \texttt{gen\_find\_points\_h.c} & 76 & 0 & 0 & 76 \\
 \texttt{gen\_init\_sieve\_h.c} & 26 & 0 & 0 & 26 \\
-\texttt{main.c} & 779 & 0 & 0 & 779 \\
+\texttt{main.c} & 779 & 195 & 0 & 584 \\
 \hline
-total & 5883 & 0 & 0 & 5883 \\
+total & 5883 & 195 & 0 & 5688 \\
 \end{tabular}
 \end{center}
 
@@ -71,5 +71,46 @@ total & 5883 & 0 & 0 & 5883 \\
 
 \section*{\texttt{main.c}}
 \begin{itemize}
-\item \csource{main.c}{29}{1056}: not yet recorded (779 lines of code)
+\item \csource{main.c}{29}{37}: not yet recorded (8 lines of code)
+\item \csource{main.c}{43}{48}: modelled by \lname{Ratpoints.Cli.banner}
+  (deviation of \lname{Ratpoints.Cli.banner}: the text is that of \texttt{ratpoints-{}lean}.)
+\item \csource{main.c}{54}{73}: not yet recorded (13 lines of code)
+\item \csource{main.c}{77}{88}: modelled by \lname{Ratpoints.Cli.usage}
+  (deviation of \lname{Ratpoints.Cli.usage}: the program is called \texttt{ratpoints-{}lean}, and the lines below the first are indented to match.)
+\item \csource{main.c}{94}{207}: not yet recorded (83 lines of code)
+\item \csource{main.c}{210}{214}: modelled by \lname{Ratpoints.Cli.input}
+  (deviation of \lname{Ratpoints.Cli.input}: \texttt{read\_input} never returns a value other than 0, so the usage that \texttt{main.c} prints then (lines 212 and 213) has no counterpart.)
+\item \csource{main.c}{215}{357}: not yet recorded (89 lines of code)
+\item \csource{main.c}{362}{375}: modelled by \lname{Ratpoints.Cli.coefficients}
+  (deviation of \lname{Ratpoints.Cli.coefficients}: a list of \texttt{Int}s for the array of 101 GMP integers; the integers beyond the 101st, which \texttt{main.c} reads into the variable \texttt{fff} only to check them, are read like the others.)
+\item \csource{main.c}{378}{379}: modelled by \lname{Ratpoints.Cli.heightBound}
+\item \csource{main.c}{380}{390}: not yet recorded (9 lines of code)
+\item \csource{main.c}{393}{397}: modelled by \lname{Ratpoints.Cli.checkOptions}
+  (deviation of \lname{Ratpoints.Cli.checkOptions}: the arguments of the options are checked and then ignored. An option of ratpoints that \texttt{ratpoints-{}lean} does not support yet, whose cases are lines 398-436, 533-577 and 594-666 of \texttt{main.c}, ends the reading with the exit status 12; of these lines, only the error 6 on a word \texttt{-{}f…} or \texttt{-{}d…} that names no option (lines 575 and 664) is kept.)
+\item \csource{main.c}{398}{436}: not yet recorded (33 lines of code)
+\item \csource{main.c}{437}{532}: modelled by \lname{Ratpoints.Cli.checkOptions}
+  (deviation of \lname{Ratpoints.Cli.checkOptions}: the arguments of the options are checked and then ignored. An option of ratpoints that \texttt{ratpoints-{}lean} does not support yet, whose cases are lines 398-436, 533-577 and 594-666 of \texttt{main.c}, ends the reading with the exit status 12; of these lines, only the error 6 on a word \texttt{-{}f…} or \texttt{-{}d…} that names no option (lines 575 and 664) is kept.)
+\item \csource{main.c}{533}{577}: not yet recorded (45 lines of code)
+\item \csource{main.c}{578}{593}: modelled by \lname{Ratpoints.Cli.checkOptions}
+  (deviation of \lname{Ratpoints.Cli.checkOptions}: the arguments of the options are checked and then ignored. An option of ratpoints that \texttt{ratpoints-{}lean} does not support yet, whose cases are lines 398-436, 533-577 and 594-666 of \texttt{main.c}, ends the reading with the exit status 12; of these lines, only the error 6 on a word \texttt{-{}f…} or \texttt{-{}d…} that names no option (lines 575 and 664) is kept.)
+\item \csource{main.c}{594}{666}: not yet recorded (73 lines of code)
+\item \csource{main.c}{667}{668}: modelled by \lname{Ratpoints.Cli.checkOptions}
+  (deviation of \lname{Ratpoints.Cli.checkOptions}: the arguments of the options are checked and then ignored. An option of ratpoints that \texttt{ratpoints-{}lean} does not support yet, whose cases are lines 398-436, 533-577 and 594-666 of \texttt{main.c}, ends the reading with the exit status 12; of these lines, only the error 6 on a word \texttt{-{}f…} or \texttt{-{}d…} that names no option (lines 575 and 664) is kept.)
+\item \csource{main.c}{669}{679}: not yet recorded (8 lines of code)
+\item \csource{main.c}{681}{685}: modelled by \lname{Ratpoints.Cli.pointLine}
+  (deviation of \lname{Ratpoints.Cli.pointLine}: the format is always this one, since \texttt{ratpoints-{}lean} does not support \texttt{-{}f}, \texttt{-{}x} and \texttt{-{}y} yet, and the line is written directly rather than by the interpreter of formats in \texttt{process}.)
+\item \csource{main.c}{688}{692}: not yet recorded (4 lines of code)
+\item \csource{main.c}{700}{717}: modelled by \lname{Ratpoints.Cli.intOfWord?}
+\item \csource{main.c}{724}{728}: modelled by \lname{Ratpoints.Cli.onlyWord?}
+\item \csource{main.c}{733}{740}: modelled by \lname{Ratpoints.Cli.longOfString?}
+  (deviation of \lname{Ratpoints.Cli.longOfString?}: an \texttt{Int} for a \texttt{long}.)
+\item \csource{main.c}{746}{752}: modelled by \lname{Ratpoints.Cli.isDouble}
+  (deviation of \lname{Ratpoints.Cli.isDouble}: only whether \texttt{s} is a number, not the double it denotes, which the options that take a real number do not need, since they are ignored.)
+\item \csource{main.c}{761}{1033}: not yet recorded (213 lines of code)
+\item \csource{main.c}{1036}{1043}: modelled by \lname{Ratpoints.Cli.Failure.message}
+  (deviation of \lname{Ratpoints.Cli.Failure.message}: the banner and the usage are those of \texttt{ratpoints-{}lean}, and the message on an option that \texttt{ratpoints-{}lean} does not support yet is new.)
+\item \csource{main.c}{1044}{1049}: not yet recorded (6 lines of code)
+\item \csource{main.c}{1050}{1053}: modelled by \lname{Ratpoints.Cli.Failure.message}
+  (deviation of \lname{Ratpoints.Cli.Failure.message}: the banner and the usage are those of \texttt{ratpoints-{}lean}, and the message on an option that \texttt{ratpoints-{}lean} does not support yet is new.)
+\item \csource{main.c}{1054}{1056}: modelled by \lname{Ratpoints.Cli.Failure.status}
 \end{itemize}

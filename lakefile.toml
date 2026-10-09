@@ -1,5 +1,5 @@
 name = "Ratpoints"
-defaultTargets = ["RatpointsModel", "Ratpoints"]
+defaultTargets = ["RatpointsModel", "Ratpoints", "ratpoints-lean"]
 
 [leanOptions]
 pp.unicode.fun = true
@@ -44,6 +44,12 @@ roots = ["Ratpoints.Model"]
 # `Ratpoints.Proof`) imports the modules of its folder, which `scripts/check_layout.py` checks.
 [[lean_lib]]
 name = "Ratpoints"
+
+# The command-line program ratpoints-lean (`lake exe ratpoints-lean 'a_0 a_1 ... a_n' H`). Its
+# root `Main.lean` imports only the model.
+[[lean_exe]]
+name = "ratpoints-lean"
+root = "Main"
 
 # Comparator (https://github.com/leanprover/comparator) verification harness. Not part of
 # `defaultTargets`, so a plain `lake build` ignores it (and never builds the deliberate `sorry`s

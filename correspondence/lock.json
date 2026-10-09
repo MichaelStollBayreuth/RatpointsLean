@@ -1,16 +1,135 @@
 {
   "commit": "1a998538dfa835bb1bce6047e75302cc01517443",
-  "ranges": {},
+  "ranges": {
+    "main.c:1036-1043": {
+      "hash": "f31091ab852d45657454a9dcae84f9f83bc6980b7ccbc787f38098c89d611761",
+      "owners": [
+        "Ratpoints.Cli.Failure.message"
+      ]
+    },
+    "main.c:1050-1053": {
+      "hash": "792aa99d9060a1f3dad924913520dac6cfa8d2370e5f5e68723234d5799ed498",
+      "owners": [
+        "Ratpoints.Cli.Failure.message"
+      ]
+    },
+    "main.c:1054-1056": {
+      "hash": "20b031059b8270d26bb6093f478bb04dca3324d5c7ada50be9393ad75b92c269",
+      "owners": [
+        "Ratpoints.Cli.Failure.status"
+      ]
+    },
+    "main.c:210-214": {
+      "hash": "d9a9ff394f811c615df96cefdbe19b0050cd1be40033a26307ca770e51991556",
+      "owners": [
+        "Ratpoints.Cli.input"
+      ]
+    },
+    "main.c:362-375": {
+      "hash": "88815e6b89ef4a589fbda0b2d2650b0d12641b030959246c46463bd5ec164f73",
+      "owners": [
+        "Ratpoints.Cli.coefficients"
+      ]
+    },
+    "main.c:378-379": {
+      "hash": "ad68882ec3ff52514e531bc357c799ee31cb2cd174d9ae21156ea5a61e1fd446",
+      "owners": [
+        "Ratpoints.Cli.heightBound"
+      ]
+    },
+    "main.c:393-397": {
+      "hash": "d192730a6c089c273e4f0a92f5d01f87710f4567b148bdfb77455ab52faf9976",
+      "owners": [
+        "Ratpoints.Cli.checkOptions"
+      ]
+    },
+    "main.c:43-48": {
+      "hash": "68f1467346b3eea05826977ba83410cf52afdbede12c93405bc715e8e626b94f",
+      "owners": [
+        "Ratpoints.Cli.banner"
+      ]
+    },
+    "main.c:437-532": {
+      "hash": "cb369a044d4e015ad1613a61c815facdfb9e44a80184a3483ee9e372a58dedb1",
+      "owners": [
+        "Ratpoints.Cli.checkOptions"
+      ]
+    },
+    "main.c:578-593": {
+      "hash": "d685f932cce28b6bc0893576b4d4cbdc580326959af02cce7ba8ec4a502fe9fe",
+      "owners": [
+        "Ratpoints.Cli.checkOptions"
+      ]
+    },
+    "main.c:667-668": {
+      "hash": "c5d6e99bb193cd4f3a6d044a42a7b645f58102c74a0ab416f91a77d65b40eb53",
+      "owners": [
+        "Ratpoints.Cli.checkOptions"
+      ]
+    },
+    "main.c:681-685": {
+      "hash": "292dae0b0ec69dd51d1dfb288cfad46d362f94a0df22da53a67758e22ba8d2d4",
+      "owners": [
+        "Ratpoints.Cli.pointLine"
+      ]
+    },
+    "main.c:700-717": {
+      "hash": "32e4fa6a7c292ceb5f7e00d05394e47ff31b1c2d2d13d081bcb63bf15277c988",
+      "owners": [
+        "Ratpoints.Cli.intOfWord?"
+      ]
+    },
+    "main.c:724-728": {
+      "hash": "d82f8424b55fb0b8eb550c81819ab9fe17dd0e3aa63a570ea169d238459beb96",
+      "owners": [
+        "Ratpoints.Cli.onlyWord?"
+      ]
+    },
+    "main.c:733-740": {
+      "hash": "ed2b00c7b13b3bf908a384c7bc79b87029beac04be62bd54d5760f452aa7af65",
+      "owners": [
+        "Ratpoints.Cli.longOfString?"
+      ]
+    },
+    "main.c:746-752": {
+      "hash": "886bc941fe19aef714336ef90c7824caa056e38403daae2956e59b0453aa76d8",
+      "owners": [
+        "Ratpoints.Cli.isDouble"
+      ]
+    },
+    "main.c:77-88": {
+      "hash": "bc57ca5e839614cecaf19dbe5e4ca2b621abd9ae7a07da1c269da5abfa934fd6",
+      "owners": [
+        "Ratpoints.Cli.usage"
+      ]
+    }
+  },
   "citations": {
     "find_points.c:4557-4558": "9f923fbce4432b066ae057ca5317d37d1f00cb9d18df83d876251a6a91a8f0d2",
     "find_points.c:4624-4632": "f3e5168a17adc4062768840cfedc59f6f95c166daf5ccf1f5aafa1817e32fa18",
     "find_points.c:4744-4749": "88f12a1f83c6f645053bd2e0a2e6704b7e98a71cc7af56df363302fcd89a0cf8",
     "find_points.c:5068-5105": "8ea7d10d9124dad1e7867ec5e990ce28ec1d6bf0d714131c2c3543b46e466146",
     "find_points.c:5291-5298": "59be21253a393b15906c9777ff55e06fc8d7892100b07d836b782b08a633be75",
+    "main.c:43-48": "68f1467346b3eea05826977ba83410cf52afdbede12c93405bc715e8e626b94f",
+    "main.c:77-88": "bc57ca5e839614cecaf19dbe5e4ca2b621abd9ae7a07da1c269da5abfa934fd6",
+    "main.c:210-214": "d9a9ff394f811c615df96cefdbe19b0050cd1be40033a26307ca770e51991556",
+    "main.c:362-375": "88815e6b89ef4a589fbda0b2d2650b0d12641b030959246c46463bd5ec164f73",
     "main.c:362-380": "1482e5304bc73ebf8d5e939131d46195083cbaae4c5895bde58ce49181dba64c",
+    "main.c:378-379": "ad68882ec3ff52514e531bc357c799ee31cb2cd174d9ae21156ea5a61e1fd446",
+    "main.c:393-397": "d192730a6c089c273e4f0a92f5d01f87710f4567b148bdfb77455ab52faf9976",
     "main.c:437-532": "cb369a044d4e015ad1613a61c815facdfb9e44a80184a3483ee9e372a58dedb1",
+    "main.c:578-593": "d685f932cce28b6bc0893576b4d4cbdc580326959af02cce7ba8ec4a502fe9fe",
+    "main.c:667-668": "c5d6e99bb193cd4f3a6d044a42a7b645f58102c74a0ab416f91a77d65b40eb53",
+    "main.c:681-685": "292dae0b0ec69dd51d1dfb288cfad46d362f94a0df22da53a67758e22ba8d2d4",
+    "main.c:700-717": "32e4fa6a7c292ceb5f7e00d05394e47ff31b1c2d2d13d081bcb63bf15277c988",
     "main.c:700-740": "c76851d6f52b2f8f231ea72aee827440efa1b09198d754ecaafe6bab94cf90b7",
+    "main.c:724-728": "d82f8424b55fb0b8eb550c81819ab9fe17dd0e3aa63a570ea169d238459beb96",
+    "main.c:733-740": "ed2b00c7b13b3bf908a384c7bc79b87029beac04be62bd54d5760f452aa7af65",
+    "main.c:746-752": "886bc941fe19aef714336ef90c7824caa056e38403daae2956e59b0453aa76d8",
+    "main.c:1036-1043": "f31091ab852d45657454a9dcae84f9f83bc6980b7ccbc787f38098c89d611761",
     "main.c:1036-1056": "87506efbe9563c86abde6ad188ff7ad82529533863cb59dc978f3d73fcc31406",
+    "main.c:1050-1053": "792aa99d9060a1f3dad924913520dac6cfa8d2370e5f5e68723234d5799ed498",
+    "main.c:1054-1056": "20b031059b8270d26bb6093f478bb04dca3324d5c7ada50be9393ad75b92c269",
     "sift.c:318-343": "eb81df87599d191f3bba67e917a79cd1831cd70ff41b281ebfcb3b70a5acfda3",
     "sturm.c:120-143": "725fb9bdc1a277ac79f4b8d2c7fb1b9eed69c8cf066e703bbb4fe3a42f0f4228"
   }

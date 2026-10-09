@@ -284,12 +284,13 @@ reference, so that the test scripts of the C repository can run it as \verb|RP=r
     of the C program they did not change the \verb|-q| output); from stage~C1 on,
     \verb|-n -N -P -p -F -j -J| go into the sieving parameters \verb|P|, while the others, which
     tune only the C program's heuristics and its threads, stay ignored;
-  \item it answers every other option of ratpoints, which it does not support yet, with a message
-    and an exit status of its own (an ignored search interval or denominator range, \verb|-l|,
+  \item it answers every other option of ratpoints, which it does not support yet, with the
+    message \verb|Option <opt> is not supported by ratpoints-lean yet.| and the exit status 12,
+    which \verb|main.c| does not use (an ignored search interval or denominator range, \verb|-l|,
     \verb|-u|, \verb|-dl| or \verb|-du|, on one of the runs with heights up to $2^{63} - 1$ would
     otherwise turn into a search of the whole box that never ends), and an
     unknown option with error~6, as \verb|main.c| does;
-  \item its banner starts with the line \verb|This is ratpoints-lean-<version>|, so that
+  \item its banner starts with the line \verb|This is ratpoints-lean-0.1|, so that
     \verb|test4.sh| filters it as it does the C program's, and the harness ignores the rest of
     the banner;
   \item it does not refuse a polynomial that is not squarefree: that is the squarefree test of
@@ -298,9 +299,74 @@ reference, so that the test scripts of the C repository can run it as \verb|RP=r
 The numbers need a reader of their own that mirrors \verb|scan_mpz| and \verb|scan_long|
 (\csource{main.c}{700}{740}): \verb|main.c| accepts a leading \verb|+| and any C white space
 around and between the numbers (\verb|test4.sh| has a tab-separated list and a height ending in
-a carriage return), which core's \verb|String.toInt?| does not. The program lives in the model
-library (\verb|Ratpoints/Model/Cli.lean|, citing the lines of \verb|main.c| it mirrors), with a
-one-line \verb|Main.lean|, as a \verb|lean_exe| target.
+a carriage return), which core's \verb|String.toInt?| does not; and core's \verb|String.toNat?|
+accepts the digit separator \verb|_|, which \verb|main.c| refuses. The program lives in the model
+library, in \verb|Ratpoints/Model/Cli.lean|, with a \verb|Main.lean| that imports only the model,
+as the \verb|lean_exe| target \verb|ratpoints-lean|. Its parts, with the lines of \verb|main.c|
+that they mirror:
+
+\begin{definition}[Reading numbers]\label{def:cliNumbers}
+  \lean{Ratpoints.Cli.intOfWord?, Ratpoints.Cli.onlyWord?, Ratpoints.Cli.longOfString?, Ratpoints.Cli.isDouble}
+  \leanok
+  The readers of the numbers of the command line, on the words of an argument, its maximal runs
+  of characters other than C white space (the space and the characters from tab to carriage
+  return): an integer of the coefficient list as \verb|scan_mpz| reads it, an optional sign
+  \verb|+| or \verb|-| and at least one decimal digit, of any size
+  (\csource{main.c}{700}{717}); the one word of an argument with only white space around it,
+  which \verb|strtol| and \verb|strtod| skip before a number and \verb|only_space_after| checks
+  after it (\csource{main.c}{724}{728}); a C \verb|long| as \verb|scan_long| reads it, an
+  integer from $-2^{63}$ to $2^{63} - 1$ (\csource{main.c}{733}{740}); and whether an argument
+  is a real number as \verb|scan_double| reads it with \verb|strtod| in the C locale: a decimal
+  or hexadecimal floating constant or an infinity, a value beyond the range of the doubles
+  included, but no NaN (\csource{main.c}{746}{752}).
+\end{definition}
+
+\begin{definition}[The failures]\label{def:cliFailure}
+  \lean{Ratpoints.Cli.Failure, Ratpoints.Cli.Failure.message, Ratpoints.Cli.Failure.status, Ratpoints.Cli.banner, Ratpoints.Cli.usage}
+  \leanok
+  The ways in which \verb|ratpoints-lean| refuses its command line, with the message and the
+  exit status of each. These are the errors of \verb|main.c| that the command line can cause, 2
+  (fewer than two arguments), 3 (more than 101 coefficients), 4 (a height bound that is not a
+  C \verb|long| of at least $1$), 5 (fewer than two coefficients), 6 (a malformed option) and
+  11 (a coefficient that is not an integer), on which \verb|main.c| prints a blank line, the
+  message and a blank line, and exits with the number of the error
+  (\csource{main.c}{1036}{1043}, \csource{main.c}{1050}{1053}, \csource{main.c}{1054}{1056});
+  on error~2 it prints the banner (\csource{main.c}{43}{48}) and the usage
+  (\csource{main.c}{77}{88}) instead of a message, and on error~6 both. The banner is that of
+  \verb|ratpoints-lean| and the usage that of ratpoints, with the name of the program changed.
+  The last failure is an option of ratpoints that \verb|ratpoints-lean| does not support yet,
+  with the exit status 12.
+\end{definition}
+
+\begin{definition}[The command line]\label{def:cliInput}
+  \uses{def:cliNumbers, def:cliFailure}
+  \lean{Ratpoints.Cli.coefficients, Ratpoints.Cli.heightBound, Ratpoints.Cli.checkOptions, Ratpoints.Cli.input}
+  \leanok
+  The coefficient list and the height bound of a command line, or its first failure, in the
+  order of \verb|main.c|: fewer than two arguments fail (\csource{main.c}{210}{214}); the first
+  argument gives the coefficients, constant term first, integers separated by white space, and
+  fails on a word that is not an integer, wherever it stands, then on more than 101 integers,
+  then on fewer than two (\csource{main.c}{362}{375}); the second gives the height bound, a C
+  \verb|long| of at least $1$ (\csource{main.c}{378}{379}); and the options are read from left
+  to right, each told by the character after its \verb|-| and, for \verb|-f| and \verb|-d|, by
+  the one after that (\csource{main.c}{393}{397}, \csource{main.c}{667}{668}). The tuning
+  options, of which \verb|-p -F -t -n -N -R -A -P| take a C \verb|long| and
+  \verb|-r -U -C -Q -W| a real number, have their arguments checked and are ignored
+  (\csource{main.c}{437}{532}), as are \verb|-q|, \verb|-v|, \verb|-j| and \verb|-J|
+  (\csource{main.c}{578}{593}); an option of ratpoints that is not supported yet ends the
+  reading, its arguments unchecked, and any other word fails with error~6.
+\end{definition}
+
+\begin{definition}[The program]\label{def:cliRun}
+  \uses{def:cliInput, def:cliFailure, def:bruteForce}
+  \lean{Ratpoints.Cli.pointLine, Ratpoints.Cli.run, Ratpoints.Cli.main}
+  \leanok
+  \verb|ratpoints-lean| reads its command line. On a failure it prints the failure's message and
+  exits with its status; otherwise it prints, as ratpoints does with \verb|-q|, the line
+  \verb|(x : y : z)| of the default format of \verb|main.c| (\csource{main.c}{681}{685}) for
+  each triple of $\mathrm{bruteForce}(c, H)$, in the order of that list, and exits with
+  status~0.
+\end{definition}
 
 \section{The differential tests of stage~B}
 

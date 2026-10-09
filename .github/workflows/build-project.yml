@@ -37,12 +37,12 @@ jobs:
         run: python3 scripts/check_layout.py
 
       - name: Lint the style
-        run: python3 scripts/style_lint.py Ratpoints comparator/Solution.lean
+        run: python3 scripts/style_lint.py Ratpoints Main.lean comparator/Solution.lean
 
       - name: Check the length of the lines of the Lean files
         run: |
-          ! grep -rn --include='*.lean' '.\{101,\}' Ratpoints Ratpoints.lean comparator scripts \
-            blueprint/checkdecls.lean
+          ! grep -rn --include='*.lean' '.\{101,\}' Ratpoints Ratpoints.lean Main.lean comparator \
+            scripts blueprint/checkdecls.lean
 
       # `--lib` is required: without it, mk_all also visits the comparator libraries, which have
       # no module folder of their own. There is no `|| echo` here on purpose: that would swallow
@@ -67,6 +67,9 @@ jobs:
 
       - name: Build the specification and the proofs
         run: ~/.elan/bin/lake build --wfail Ratpoints
+
+      - name: Build ratpoints-lean
+        run: ~/.elan/bin/lake build --wfail ratpoints-lean
 
       - name: Build the comparator solution
         run: ~/.elan/bin/lake build --wfail Solution
