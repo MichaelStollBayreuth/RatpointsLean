@@ -90,3 +90,14 @@ jobs:
 
       - name: Check the correspondence with the C code
         run: python3 scripts/correspondence.py check --repo "$RUNNER_TEMP/ratpoints"
+
+      - name: Build the C program at the pinned commit
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq libgmp-dev
+          make -C "$RUNNER_TEMP/ratpoints" ratpoints
+
+      - name: Compare ratpoints-lean with the C program (scripts/difftest.py)
+        run: >
+          python3 scripts/difftest.py --repo "$RUNNER_TEMP/ratpoints"
+          --c "$RUNNER_TEMP/ratpoints/ratpoints"

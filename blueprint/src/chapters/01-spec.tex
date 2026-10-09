@@ -370,30 +370,39 @@ that they mirror:
 
 \section{The differential tests of stage~B}
 
-A script \verb|scripts/difftest.py| compares \verb|ratpoints-lean| with the C program built at the
-pin (and with the recorded outputs):
+The script \verb|scripts/difftest.py| compares \verb|ratpoints-lean| with the C program built at
+the pin and with its recorded outputs, in six suites:
 \begin{itemize}
   \item \verb|test4.sh| against \verb|testbase4|, split at the \verb|#| header lines (five of
-    which are glued to the end of the preceding output line). Of its 582 runs, 128 use only the
-    coefficients, the height and \verb|-q| (121 print points, 6 are refused as not squarefree,
-    one has too many coefficients), 93 more add only tuning options, and 24 fail on the first
-    two arguments. The harness compares all of these except the 19 with heights from $30000$ to
-    $100000$, which wait for stage~C1, and the 6 refusals, which wait for stage~D: point lists as
-    sets, error messages and exit codes exactly;
-  \item \verb|test3.sh| invocation by invocation against the C program built at the pin, since
-    it has no announce lines: the 10 runs at small heights that use only the coefficients, the
-    height and \verb|-q| (two more have heights too large for the brute force, and one is a
-    refusal for stage~D);
+    which are glued to the end of the preceding output line): 533 of its 582 runs; the others
+    are 21 whose output the script filters, 9 that the C program refuses as not squarefree,
+    which wait for stage~D, and 19 with heights from $30000$ to $100000$, which wait for
+    stage~C1;
+  \item \verb|test3.sh| invocation by invocation against the C program, since it has no announce
+    lines: 13 of its 21 runs (5 have filtered outputs, one is a refusal, and two have heights too
+    large for the brute force);
   \item the curves of \verb|testdata.h|, \verb|testdata-many.h| and \verb|testdata-degrees.h|,
-    read from the pinned checkout, at a reduced height $h$: the C program run at height $h$
-    prints exactly the reference lines of \verb|testbase*| restricted to $|a| \le h$ and
-    $b \le h$, in the same order (checked for $h = 10, 100, 1000$), so these need no run of the C
-    program; each line is compared as a set until stages D and~E;
-  \item random polynomials at small heights against the C program (from stage~C1 on, when
-    \verb|ratpoints-lean| runs the sieve, also the brute force against both at tiny heights).
+    read from the pinned checkout, at a reduced height $h$ ($100$ by default): the C program run
+    at height $h$ prints exactly the reference lines of \verb|testbase*| restricted to
+    $|a| \le h$ and $b \le h$, in the same order (checked for $h = 10, 100, 1000$), so these 1206
+    runs need no run of the C program;
+  \item 300 random polynomials of degree 1 to 8 with coefficients from $-10$ to $10$ at heights
+    up to 30, against the C program (from stage~C1 on, when \verb|ratpoints-lean| runs the sieve,
+    also the brute force against both at tiny heights);
+  \item 219 hand-written command lines (\verb|scripts/difftest_cases.py|) for the checks that
+    \verb|main.c| makes on the coefficients, the height and the options: white space and signs,
+    the bounds of a \verb|long|, the grammar of \verb|strtod|, every option with a missing or
+    malformed argument, and the order of the checks; and the usage of \verb|ratpoints-lean|;
+  \item 700 random command lines, with words that the readers of numbers of \verb|main.c| accept
+    or refuse in many ways, against the C program.
 \end{itemize}
-CI builds the C program at the pin (\verb|make|, with \verb|libgmp-dev|) and the Lean program,
-and runs the script.
+Point lists are compared as sets (the order of the program is a theorem of stage~G about
+\verb|findPoints|), and for a run without \verb|-q| with the point lines of the report of the C
+program; messages and exit codes are compared exactly, with the banner and the usage of the two
+programs exchanged. On a command line with an option that \verb|ratpoints-lean| does not support
+yet, it must fail as the C program does if that fails before the option, and else exit with
+status~12. CI builds the C program at the pin (\verb|make|, with \verb|libgmp-dev|) and the Lean
+program, and runs the script.
 
 \section{Files, names and order of work}
 
@@ -413,7 +422,8 @@ the project's checks:
     \verb|formalization.yaml|.
   \item[B4] \verb|Ratpoints/Model/Cli.lean|, \verb|Main.lean| and the \verb|lean_exe| target
     \verb|ratpoints-lean|, with the correspondence entries for \verb|main.c|.
-  \item[B5] \verb|scripts/difftest.py| and its CI job.
+  \item[B5] \verb|scripts/difftest.py|, with the command lines of
+    \verb|scripts/difftest_cases.py|, and its CI job.
 \end{enumerate}
 
 \section{The evidence}\label{sec:spec-evidence}

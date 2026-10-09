@@ -11,11 +11,11 @@ new optimization of the C code comes, as far as possible, with its soundness pro
 
 **Status.** Stage A is done: the repository, the libraries, CI, the blueprint skeleton, the
 correspondence record and its checks, the comparator harness, and the blueprint chapter that settles
-the specification. Stage B is under way: the specification is in Lean, the brute-force reference
-lists exactly its points, each once (certified by Comparator), and the command-line program
-`ratpoints-lean` prints them; the differential tests against the C program come next. The blueprint
-and the API documentation will be at <https://michaelstollbayreuth.github.io/RatpointsLean/> once
-the repository is public.
+the specification. Stage B is done: the specification is in Lean, the brute-force reference lists
+exactly its points, each once (certified by Comparator), and the command-line program
+`ratpoints-lean` prints them; differential tests in CI compare it with the C program. Stage C1, the
+plain sieve, comes next. The blueprint and the API documentation will be at
+<https://michaelstollbayreuth.github.io/RatpointsLean/> once the repository is public.
 
 ## Layout
 
@@ -40,11 +40,14 @@ lake build                                   # the model, the library and ratpoi
 lake exe ratpoints-lean '-2 0 0 1' 130       # the points of height at most 130 on y² = x³ - 2
 python3 scripts/check_layout.py              # imports, the restrictions on the model, axioms
 python3 scripts/correspondence.py check      # the correspondence with the C code at the pin
+python3 scripts/difftest.py                  # ratpoints-lean against the C program
 ```
 
-`scripts/correspondence.py` reads the C code from a clone of ratpoints that contains the pinned
-commit, given by `--repo PATH` or the environment variable `RATPOINTS_REPO`. CI runs these checks
-and more (`.github/workflows/build-project.yml`). `scripts/run-comparator.sh` runs Comparator
+`scripts/correspondence.py` and `scripts/difftest.py` read the C code and the test suites from a
+clone of ratpoints that contains the pinned commit, given by `--repo PATH` or the environment
+variable `RATPOINTS_REPO`; `scripts/difftest.py` also runs the C program built there (or the one
+that `--c PATH` or `RATPOINTS_BIN` names). CI runs these checks and more
+(`.github/workflows/build-project.yml`). `scripts/run-comparator.sh` runs Comparator
 (`comparator/README.md`).
 
 ## The program `ratpoints-lean`
