@@ -5,6 +5,7 @@ Authors: Michael Stoll
 -/
 module
 
+public import Mathlib.Data.Nat.Prime.Defs
 public import Ratpoints.Model.FindPoints
 public import Ratpoints.Spec.Basic
 
@@ -69,18 +70,14 @@ end BruteForce
 
 namespace Sieve
 
-/-- Every modulus of well-formed parameters is a prime of the table
-(`Ratpoints.prime_of_mem_primeTable`), so that `Ratpoints.Sieve.admits_examinePrime_of_sq_eq`
-applies to each. -/
-theorem survives_of_mem_pointsOfDen {c : List ℤ} {P : Params} (hP : P.WF) {b : ℕ}
+theorem survives_of_mem_pointsOfDen {c : List ℤ} {ms : List ℕ} (hms : ∀ p ∈ ms, p.Prime) {b : ℕ}
     {xs : List ℤ} {q : ℤ × ℤ × ℤ} (hq : q ∈ pointsOfDen c (BruteForce.degree c) b xs) :
-    survives (P.moduli.map (examinePrime c (BruteForce.degree c))) b q.1 = true := by
+    survives (ms.map (examinePrime c (BruteForce.degree c))) b q.1 = true := by
   obtain ⟨x, y, z⟩ := q
   obtain ⟨-, rfl, hg, hy⟩ := mem_pointsOfDen_iff.mp hq
   rw [horner_scaledCoeffs_mul] at hy
   simp only [survives, List.all_map, List.all_eq_true, Function.comp_apply]
-  exact fun p hp ↦ admits_examinePrime_of_sq_eq
-    (prime_of_mem_primeTable (hP.mem_primeTable p hp)) hg hy
+  exact fun p hp ↦ admits_examinePrime_of_sq_eq (hms p hp) hg hy
 
 theorem pointsAtInfinity_eq_pointsOfDen (c : List ℤ) (d : ℕ) :
     pointsAtInfinity c d = pointsOfDen c d 0 [1] := by
@@ -106,7 +103,7 @@ theorem findPoints_eq_ok_bruteForce {c : List ℤ} {H : ℕ} {P : Params} (hP : 
   refine pointsOfDen_filter_of_ne fun x _ hx ↦ ?_
   obtain ⟨q, hq⟩ := List.exists_mem_of_ne_nil _ hx
   obtain rfl : q.1 = x := List.mem_singleton.mp (mem_pointsOfDen_iff.mp hq).1
-  exact survives_of_mem_pointsOfDen hP hq
+  exact survives_of_mem_pointsOfDen (fun _ ↦ hP.prime_of_mem) hq
 
 /-- `Ratpoints.findPoints` refuses exactly the inputs with fewer than two or more than
 `Ratpoints.maxDegree + 1` coefficients and the height bound `0`; comparator certifies this

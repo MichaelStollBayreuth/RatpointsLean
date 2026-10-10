@@ -71,13 +71,14 @@ the options of the output (G) come in their stages.
 
 \begin{definition}[Sieving parameters]\label{def:Params}
   \uses{def:primeTable}
-  \lean{Ratpoints.Params, Ratpoints.Params.WF}
+  \lean{Ratpoints.Params, Ratpoints.Params.WF, Ratpoints.Params.WF.prime_of_mem}
   \leanok
   The free choices of the sieve: the moduli, a list of primes in the order of the stages; the cut
   points $s_1 \le s_2$, positions in that list, which end the first and the second stage (the
   third stage is the rest of the list); at most how many forbidden divisors are tested; and
   whether the Jacobi test runs. The parameters are \emph{well-formed} when every modulus is a
-  prime of the table and $s_1 \le s_2 \le$ the number of moduli.
+  prime of the table and $s_1 \le s_2 \le$ the number of moduli; so the moduli of well-formed
+  parameters are primes.
 \end{definition}
 
 \begin{definition}[The parameters of the executable]\label{def:sieveParams}
@@ -141,7 +142,7 @@ $a$. These two facts make sound the rows that the tables below define.
 
 \begin{definition}[The table of a prime]\label{def:examinePrime}
   \uses{def:squaresMod}
-  \lean{Ratpoints.Sieve.evalMod, Ratpoints.Sieve.Entry, Ratpoints.Sieve.examinePrime, Ratpoints.Sieve.natCast_evalMod}
+  \lean{Ratpoints.Sieve.evalMod, Ratpoints.Sieve.Entry, Ratpoints.Sieve.examinePrime, Ratpoints.Sieve.natCast_evalMod, Ratpoints.Sieve.getElem!_isFSquare_examinePrime_of_isSquare}
   \leanok
   For a prime $p$: for each residue $x$ modulo $p$ whether $f(x)$ is a square modulo $p$, with
   $f(x)$ computed by Horner's rule modulo $p$ from the coefficients reduced modulo $p$
@@ -335,17 +336,17 @@ the points at infinity need the case $y = 0$, which ratpoints never meets.
 \end{proof}
 
 \begin{lemma}[Every point survives]\label{lem:survives}
-  \uses{def:admits, def:Params}
+  \uses{def:admits, def:bruteForce}
   \lean{Ratpoints.Sieve.survives_of_mem_pointsOfDen}
   \leanok
-  For well-formed parameters, a numerator over which the exact check finds a point for the
-  denominator $b$ survives the tables of the moduli for $b$.
+  A numerator over which the exact check finds a point for the denominator $b$ survives the
+  tables of any primes for $b$.
 \end{lemma}
 
 \begin{proof}
   \uses{lem:admits_examinePrime}
   \leanok
-  Every modulus is a prime of the table; apply Lemma~\ref{lem:admits_examinePrime} to each.
+  Apply Lemma~\ref{lem:admits_examinePrime} to each prime.
 \end{proof}
 
 \begin{theorem}[The plain sieve returns the reference]\label{thm:findPoints_eq_bruteForce}
@@ -361,9 +362,10 @@ the points at infinity need the case $y = 0$, which ratpoints never meets.
   \uses{def:sieveRun, def:pointsAtInfinity, lem:survives, lem:flatMap_sound}
   \leanok
   By the contract of the denominators, the sieve returns the part of the reference with
-  $z \ge 1$, the numerators of each denominator filtered by the survivor test; by
-  Lemma~\ref{lem:survives} every numerator over which the exact check finds a point survives, so
-  by Lemma~\ref{lem:flatMap_sound} the filter changes nothing. The points at infinity are those of
+  $z \ge 1$, the numerators of each denominator filtered by the survivor test; the moduli of
+  well-formed parameters are primes, so by Lemma~\ref{lem:survives} every numerator over which
+  the exact check finds a point survives, and by Lemma~\ref{lem:flatMap_sound} the filter changes
+  nothing. The points at infinity are those of
   the candidate $(1, 0)$ of the reference.
 \end{proof}
 

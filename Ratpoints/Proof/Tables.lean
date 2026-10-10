@@ -31,6 +31,8 @@ in `ℕ`; the proofs go through `ZMod p`.
 * `Ratpoints.Sieve.getElem!_squaresMod_mul_self_mod`,
   `Ratpoints.Sieve.getElem!_inversesMod_mul_mod`, `Ratpoints.Sieve.natCast_evalMod`: the tables
   compute their definitions.
+* `Ratpoints.Sieve.getElem!_isFSquare_examinePrime_of_isSquare`: the table of a prime marks every
+  residue at which `f` takes a square value.
 * `Ratpoints.Sieve.admits_examinePrime_of_sq_eq`: the rows let every point through.
 -/
 
@@ -187,17 +189,24 @@ theorem toNat_emod_ne_zero_of_gcd_eq_one {p : ℕ} (hp : 1 < p) {a : ℤ} {b : �
   rw [hab, Nat.dvd_one] at this
   lia
 
-theorem isSquare_natCast_evalMod_of_sq_eq {c : List ℤ} {p : ℕ} [Fact p.Prime] {a y : ℤ} {b : ℕ}
-    (hb : b % p ≠ 0) (hy : y ^ 2 = binaryForm c a b) :
-    IsSquare (evalMod ((List.range (degree c + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat) p
-      ((a % (p : ℤ)).toNat * (inversesMod p)[b % p]! % p) : ZMod p) := by
+/-- The table of the prime `p` marks every residue `t` at which `f = ∑ cₖ Xᵏ` takes a square value
+modulo `p`. -/
+theorem getElem!_isFSquare_examinePrime_of_isSquare {c : List ℤ} {d p t : ℕ} (hp : p.Prime)
+    (ht : t < p) (h : IsSquare (∑ k ∈ Finset.range (d + 1), (c.getD k 0 : ZMod p) * t ^ k)) :
+    (examinePrime c d p).isFSquare[t]! = true := by
+  have : NeZero p := ⟨hp.ne_zero⟩
+  rw [← natCast_evalMod_map_range c d t] at h
+  obtain ⟨s, hs, h⟩ := ZMod.exists_eq_mul_self_mod_of_isSquare (evalMod_lt _ hp.pos _) h
+  rw [getElem!_isFSquare_examinePrime _ _ ht, h]
+  exact getElem!_squaresMod_mul_self_mod hp hs
+
+theorem isSquare_sum_mul_div_pow_of_sq_eq_binaryForm {c : List ℤ} {p : ℕ} [Fact p.Prime]
+    {a y : ℤ} {b : ℕ} (hb : b % p ≠ 0) (hy : y ^ 2 = binaryForm c a b) :
+    IsSquare (∑ k ∈ Finset.range (degree c + 1), (c.getD k 0 : ZMod p) * (a / b : ZMod p) ^ k) := by
   have hb' : (b : ZMod p) ≠ 0 :=
     fun h ↦ hb (Nat.mod_eq_zero_of_dvd ((ZMod.natCast_eq_zero_iff _ _).mp h))
   have h2 := congr(($hy : ZMod p))
   push_cast [binaryForm] at h2
-  rw [natCast_evalMod_map_range,
-    natCast_mul_getElem!_inversesMod_mod _ (Nat.mod_lt _ (NeZero.pos p)) hb,
-    ZMod.natCast_toNat_emod, ZMod.natCast_mod]
   exact isSquare_sum_mul_div_pow_of_sq_eq (by lia) (Nat.even_iff.mpr (by lia)) hb' h2
 
 /-- The row of the denominator `b` in the table of the prime `p` admits the numerator `a` of every
@@ -209,10 +218,10 @@ theorem admits_examinePrime_of_sq_eq {c : List ℤ} {p : ℕ} (hp : p.Prime) {a 
   simp only [Entry.admits, p_examinePrime, inverses_examinePrime]
   by_cases hb : b % p = 0 <;> simp only [hb, ↓reduceIte]
   · simpa using toNat_emod_ne_zero_of_gcd_eq_one hp.one_lt hab hb
-  · obtain ⟨s, hs, h⟩ := ZMod.exists_eq_mul_self_mod_of_isSquare (evalMod_lt _ hp.pos _)
-      (isSquare_natCast_evalMod_of_sq_eq hb hy)
-    rw [getElem!_isFSquare_examinePrime _ _ (Nat.mod_lt _ hp.pos), BruteForce.degree_eq, h]
-    exact getElem!_squaresMod_mul_self_mod hp hs
+  · refine getElem!_isFSquare_examinePrime_of_isSquare hp (Nat.mod_lt _ hp.pos) ?_
+    rw [BruteForce.degree_eq, natCast_mul_getElem!_inversesMod_mod _ (Nat.mod_lt _ hp.pos) hb,
+      ZMod.natCast_toNat_emod, ZMod.natCast_mod]
+    exact isSquare_sum_mul_div_pow_of_sq_eq_binaryForm hb hy
 
 end Sieve
 

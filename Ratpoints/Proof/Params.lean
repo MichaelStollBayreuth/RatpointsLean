@@ -15,7 +15,8 @@ import Mathlib.Tactic.NormNum.Prime
 
 ## Main statements
 
-* `Ratpoints.prime_of_mem_primeTable`: every entry of `Ratpoints.primeTable` is a prime.
+* `Ratpoints.prime_of_mem_primeTable`: every entry of `Ratpoints.primeTable` is a prime, so that
+  the moduli of well-formed parameters are primes (`Ratpoints.Params.WF.prime_of_mem`).
 * `Ratpoints.wf_sieveParams`: every parameter set that the options of the program give is
   well-formed; comparator certifies this (`comparator/Challenge.lean`), which also rules out a
   well-formedness that nothing satisfies.
@@ -30,6 +31,9 @@ theorem prime_of_mem_primeTable {p : ℕ} (h : p ∈ primeTable) : p.Prime := by
   rw [primeTable, List.mem_toArray] at h
   repeat' obtain rfl | h := List.mem_cons.mp h
   all_goals first | exact absurd h List.not_mem_nil | norm_num
+
+theorem Params.WF.prime_of_mem {P : Params} (hP : P.WF) {p : ℕ} (hp : p ∈ P.moduli) : p.Prime :=
+  prime_of_mem_primeTable (hP.mem_primeTable p hp)
 
 theorem numPrimes_le_size_primeTable : numPrimes ≤ primeTable.size :=
   (List.length_filter_le _ _).trans_eq primeTable.length_toList
