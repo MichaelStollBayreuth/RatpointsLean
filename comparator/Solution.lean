@@ -23,4 +23,21 @@ theorem challenge_mem_bruteForce_iff (c : List ℤ) (H : ℕ) (p : ℤ × ℤ ×
 theorem challenge_nodup_bruteForce (c : List ℤ) (H : ℕ) : (Ratpoints.bruteForce c H).Nodup :=
   Ratpoints.nodup_bruteForce c H
 
+theorem challenge_mem_iff_isPoint_of_findPoints_eq_ok (c : List ℤ) (H : ℕ) (P : Ratpoints.Params)
+    (L : List (ℤ × ℤ × ℤ)) (hP : P.WF) (h : Ratpoints.findPoints c H P = .ok L)
+    (p : ℤ × ℤ × ℤ) : p ∈ L ↔ Ratpoints.IsPoint c H p :=
+  Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok hP h
+
+theorem challenge_nodup_of_findPoints_eq_ok (c : List ℤ) (H : ℕ) (P : Ratpoints.Params)
+    (L : List (ℤ × ℤ × ℤ)) (hP : P.WF) (h : Ratpoints.findPoints c H P = .ok L) : L.Nodup :=
+  Ratpoints.nodup_of_findPoints_eq_ok hP h
+
+theorem challenge_exists_findPoints_eq_error_iff (c : List ℤ) (H : ℕ) (P : Ratpoints.Params) :
+    (∃ e, Ratpoints.findPoints c H P = .error e) ↔
+      c.length < 2 ∨ Ratpoints.maxDegree + 1 < c.length ∨ H = 0 :=
+  Ratpoints.exists_findPoints_eq_error_iff
+
+theorem challenge_wf_sieveParams (o : Ratpoints.SieveOptions) : (Ratpoints.sieveParams o).WF :=
+  Ratpoints.wf_sieveParams o
+
 end

@@ -17,10 +17,11 @@ The components of the plain sieve, each in the simplest form of its place in the
 `find_points_work_1`: the table of a prime (`Ratpoints.Sieve.examinePrime`), the rows of a
 denominator (`Ratpoints.Sieve.Entry.admits`), the sieve of one denominator with one Boolean per
 numerator (`Ratpoints.Sieve.sieveDen`), the test for common factors and the exact check of its
-survivors (`Ratpoints.Sieve.checkDen`), and the denominators `1, …, H` in turn
-(`Ratpoints.Sieve.sieveRun`). Every row lets every point through, so the sieve finds exactly the
-points of the brute-force reference with `z ≥ 1`, in the same order. The tables that the build of
-ratpoints generates (the squares, the inverses, the row of `0`) are Lean functions here.
+survivors (`Ratpoints.Sieve.checkDen`), the denominators `1, …, H` in turn
+(`Ratpoints.Sieve.sieveRun`), and the points at infinity (`Ratpoints.Sieve.pointsAtInfinity`).
+Every row lets every point through, so the sieve finds exactly the points of the brute-force
+reference, in the same order. The tables that the build of ratpoints generates (the squares, the
+inverses, the row of `0`) are Lean functions here.
 
 ## Main definitions
 
@@ -30,6 +31,7 @@ ratpoints generates (the squares, the inverses, the row of `0`) are Lean functio
 * `Ratpoints.Sieve.Entry.admits`, `Ratpoints.Sieve.survives`: the rows of a denominator.
 * `Ratpoints.Sieve.sieveDen`, `Ratpoints.Sieve.checkDen`, `Ratpoints.Sieve.sieveRun`: the sieve
   of one denominator, its survivors, and all denominators.
+* `Ratpoints.Sieve.pointsAtInfinity`: the points at infinity.
 -/
 
 @[expose] public section
@@ -218,6 +220,20 @@ def sieveRun (c : List Int) (d H : Nat) (entries : List Entry) :
     out := out ++ pts
   return out
 
+/-- The points at infinity of the polynomial of degree `d` with the coefficient list `c`:
+`(1, 0, 0)` for odd `d`; for even `d`, `(1, s, 0)` and `(1, -s, 0)` when `c_d = s ^ 2` with
+`s > 0`, `(1, 0, 0)` when `c_d = 0`, and none when `c_d` is not a square.
+
+C: `find_points.c:4634`, `find_points.c:4894-4899`, `find_points.c:5068-5105`
+
+Deviation: a list of points for the callback `process`, with no stop it may request, no reversal
+(stage D), no `RATPOINTS_NO_Y` and no `RATPOINTS_NO_CHECK` (stage G), and no output under
+`RATPOINTS_VERBOSE`; the case `c_d = 0`, that of the zero polynomial, which ratpoints refuses before
+it gets here, gives the one point `(1, 0, 0)`, which the cited lines, delivering `-y` without a
+test `y ≠ 0`, would deliver twice. -/
+def pointsAtInfinity (c : List Int) (d : Nat) : List (Int × Int × Int) :=
+  if d % 2 = 1 then [(1, 0, 0)] else BruteForce.pointsAbove 1 0 (c.getD d 0)
+
 /-! ### Examples -/
 
 -- The rows of 3, 5, 7, 11 and 13 in the tables `squares` and `inverses` that the build of
@@ -264,6 +280,9 @@ def sieveRun (c : List Int) (d H : Nat) (entries : List Entry) :
 #guard (Id.run (sieveRun [-2, 0, 0, 1] 3 130
     ([3, 5, 7, 11, 13].map (examinePrime [-2, 0, 0, 1] 3)))).toList ==
   [(3, 5, 1), (3, -5, 1), (129, 3830, 100), (129, -3830, 100)]
+
+#guard pointsAtInfinity [1, 0, 0, 0, 9] 4 == [(1, 3, 0), (1, -3, 0)] &&
+  pointsAtInfinity [1, 0, 0, 0, 2] 4 == [] && pointsAtInfinity [1, 2, 3, 4] 3 == [(1, 0, 0)]
 
 end Sieve
 

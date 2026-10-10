@@ -84,6 +84,26 @@ status:
       sorry_count: 0
       axioms: ["propext", "Classical.choice", "Quot.sound"]
       comparator_config: "comparator/challenges.json"
+    - declaration: "Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok"
+      file: "Ratpoints/Proof/FindPoints.lean"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: "comparator/challenges.json"
+    - declaration: "Ratpoints.nodup_of_findPoints_eq_ok"
+      file: "Ratpoints/Proof/FindPoints.lean"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: "comparator/challenges.json"
+    - declaration: "Ratpoints.exists_findPoints_eq_error_iff"
+      file: "Ratpoints/Proof/FindPoints.lean"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: "comparator/challenges.json"
+    - declaration: "Ratpoints.wf_sieveParams"
+      file: "Ratpoints/Proof/Params.lean"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: "comparator/challenges.json"
 
 # how it was produced.
 automation:
@@ -147,15 +167,22 @@ alignment:
         brute-force reference Ratpoints.bruteForce lists exactly these points, each once
         (Ratpoints.mem_bruteForce_iff, Ratpoints.nodup_bruteForce), certified by comparator
     - source: "find_points returns each such point exactly once"
-      lean: ""
-      module: ""
-      status: "not-formalized"
-      note: "the membership and no-duplicates theorems, from stage C1 on"
+      lean: "Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok"
+      module: "Ratpoints.Proof.FindPoints"
+      status: "partially-formalized"
+      note: >
+        for the plain sieve of stage C1 and every well-formed choice of the sieving parameters
+        (Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok, Ratpoints.nodup_of_findPoints_eq_ok),
+        certified by comparator; the later stages bring Ratpoints.findPoints closer to the C code,
+        and the theorems move with it
     - source: "the refusals: fewer than two or more than maxDegree + 1 = 101 coefficients, H = 0, a binary form that is not squarefree"
-      lean: ""
-      module: ""
-      status: "not-formalized"
-      note: "the refusal theorem, stage D"
+      lean: "Ratpoints.exists_findPoints_eq_error_iff"
+      module: "Ratpoints.Proof.FindPoints"
+      status: "partially-formalized"
+      note: >
+        the refusal theorem in its form of stage C1 (fewer than two or more than maxDegree + 1
+        coefficients, H = 0), certified by comparator; stage D adds the binary form that is not
+        squarefree
     - source: "the order of the output"
       lean: ""
       module: ""

@@ -1,6 +1,5 @@
 % Stage C1: the plain sieve in the skeleton of the C code, with the theorem that it returns the list
-% of the brute-force reference. Proposed names are set with \lname and become \lean once the
-% declarations exist.
+% of the brute-force reference.
 \chapter{The plain sieve}\label{chap:sieve}
 
 Stage~C1 replaces the brute-force reference in the program by a sieve in the skeleton of the C
@@ -179,6 +178,11 @@ $a$. These two facts make sound the rows that the tables below define.
   $y / b^{D/2}$.
 \end{lemma}
 
+\begin{proof}
+  \leanok
+  The form is $b^D \sum_{i \le d} f_i\, (a/b)^i$, and $b^D$ is the square of $b^{D/2}$.
+\end{proof}
+
 Mathlib has the identity behind this in the form of polynomials, \verb|Polynomial.eval_homogenize|;
 the sum form, with its few lines of proof, suits the definition of $F_c$.
 
@@ -261,22 +265,25 @@ lemmas.
 
 \begin{definition}[The points at infinity]\label{def:pointsAtInfinity}
   \uses{def:bruteForce}
-  Proposed names: \lname{Ratpoints.Sieve.pointsAtInfinity},
-  \lname{Ratpoints.Sieve.pointsAtInfinity\_eq\_pointsOfDen}.
+  \lean{Ratpoints.Sieve.pointsAtInfinity, Ratpoints.Sieve.pointsAtInfinity_eq_pointsOfDen}
+  \leanok
   $(1, 0, 0)$ for odd $d$; for even $d$, $(1, s, 0)$ and $(1, -s, 0)$ when $c_d = s^2$ with
   $s > 0$, $(1, 0, 0)$ when $c_d = 0$, and nothing when $c_d$ is not a square
-  (\csource{find_points.c}{4894}{4899}, \csource{find_points.c}{5068}{5105}). These are the
+  (\csource{find_points.c}{4634}{4634}, \csource{find_points.c}{4894}{4899},
+  \csource{find_points.c}{5068}{5105}). These are the
   points of the candidate $(1, 0)$ of the brute-force reference.
 \end{definition}
 
 \begin{definition}[The plain sieve]\label{def:findPoints}
   \uses{def:Params, def:sieveRun, def:pointsAtInfinity, def:maxDegree}
-  Proposed names: \lname{Ratpoints.Refusal}, \lname{Ratpoints.findPoints}.
+  \lean{Ratpoints.Refusal, Ratpoints.findPoints}
+  \leanok
   Refuse more than $\mathrm{maxDegree} + 1$ coefficients, fewer than two, and $H = 0$, in the order
-  of the program,
-  with its errors 3, 5 and~4 (Section~\ref{sec:refusals}); the library refuses the same inputs
-  as bad arguments (\csource{find_points.c}{4557}{4558}, \csource{find_points.c}{4633}{4633},
-  \csource{find_points.c}{4658}{4658}). Otherwise make the table of each modulus and return the
+  of the program, with its errors 3, 5 and~4 (Section~\ref{sec:refusals}); the library refuses
+  them as bad arguments (\csource{find_points.c}{4557}{4558}, \csource{find_points.c}{4624}{4633},
+  \csource{find_points.c}{4658}{4658}), after it has dropped the leading zeros and refused as not
+  squarefree a form that loses $\lceil n/2 \rceil$ with them, which C1 does not refuse
+  (stage~D). Otherwise drop the leading zeros, make the table of each modulus and return the
   points at infinity followed by the points of the denominators.
 \end{definition}
 
@@ -303,7 +310,7 @@ paragraph of the component whose range holds it:
   \item the products $c_k b^{d-k}$ computed for every denominator, where ratpoints computes them
     when the first survivor reaches the check;
   \item no reversal (D), and a list of points for the callback \verb|process|, with no stop it may
-    request, no \verb|NO_Y| and no \verb|NO_CHECK| (G);
+    request, no \verb|NO_Y| and no \verb|NO_CHECK| (G), and no output under \verb|VERBOSE|;
   \item no failure for lack of memory, which the model cannot meet.
 \end{itemize}
 C1 runs on every input it does not refuse, including the zero polynomial and the inputs that
@@ -314,30 +321,37 @@ the points at infinity need the case $y = 0$, which ratpoints never meets.
 
 \begin{lemma}[Sound filters]\label{lem:flatMap_sound}
   \uses{def:bruteForce}
-  Proposed names: \lname{List.flatMap\_filter\_of\_ne},
-  \lname{Ratpoints.BruteForce.pointsOfDen\_filter\_of\_ne}.
+  \lean{List.flatMap_filter_of_ne, Ratpoints.BruteForce.pointsOfDen_filter_of_ne}
+  \leanok
   If every element $x$ of a list with $g(x)$ nonempty passes the test $k$, then filtering the
   list by $k$ before applying $g$ does not change the concatenation of the $g(x)$. In particular a
   filter of the numerators that every point passes does not change what the brute-force reference
   finds over a denominator.
 \end{lemma}
 
+\begin{proof}
+  \leanok
+  By induction on the list: an element that fails the test contributes nothing.
+\end{proof}
+
 \begin{lemma}[Every point survives]\label{lem:survives}
   \uses{def:admits, def:Params}
-  Proposed name: \lname{Ratpoints.Sieve.survives\_of\_mem\_pointsOfDen}.
+  \lean{Ratpoints.Sieve.survives_of_mem_pointsOfDen}
+  \leanok
   For well-formed parameters, a numerator over which the exact check finds a point for the
   denominator $b$ survives the tables of the moduli for $b$.
 \end{lemma}
 
 \begin{proof}
   \uses{lem:admits_examinePrime}
+  \leanok
   Every modulus is a prime of the table; apply Lemma~\ref{lem:admits_examinePrime} to each.
 \end{proof}
 
 \begin{theorem}[The plain sieve returns the reference]\label{thm:findPoints_eq_bruteForce}
   \uses{def:findPoints, def:Params, def:bruteForce}
-  Proposed names: \lname{Ratpoints.findPoints\_eq\_ok\_bruteForce},
-  \lname{Ratpoints.eq\_bruteForce\_of\_findPoints\_eq\_ok}.
+  \lean{Ratpoints.findPoints_eq_ok_bruteForce, Ratpoints.eq_bruteForce_of_findPoints_eq_ok}
+  \leanok
   For well-formed parameters, $2$ to $\mathrm{maxDegree} + 1$ coefficients and $H \ge 1$,
   $\mathrm{findPoints}(c, H, P)$ returns $\mathrm{bruteForce}(c, H)$; so for well-formed
   parameters, every list that $\mathrm{findPoints}$ returns is that of the brute-force reference.
@@ -345,6 +359,7 @@ the points at infinity need the case $y = 0$, which ratpoints never meets.
 
 \begin{proof}
   \uses{def:sieveRun, def:pointsAtInfinity, lem:survives, lem:flatMap_sound}
+  \leanok
   By the contract of the denominators, the sieve returns the part of the reference with
   $z \ge 1$, the numerators of each denominator filtered by the survivor test; by
   Lemma~\ref{lem:survives} every numerator over which the exact check finds a point survives, so
@@ -354,10 +369,8 @@ the points at infinity need the case $y = 0$, which ratpoints never meets.
 
 \begin{theorem}[The points, each once; the refusals]\label{thm:findPoints}
   \uses{def:findPoints, def:Params, def:IsPoint, def:points}
-  Proposed names: \lname{Ratpoints.mem\_iff\_isPoint\_of\_findPoints\_eq\_ok},
-  \lname{Ratpoints.nodup\_of\_findPoints\_eq\_ok},
-  \lname{Ratpoints.toFinset\_eq\_points\_of\_findPoints\_eq\_ok},
-  \lname{Ratpoints.exists\_findPoints\_eq\_error\_iff}.
+  \lean{Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok, Ratpoints.nodup_of_findPoints_eq_ok, Ratpoints.toFinset_eq_points_of_findPoints_eq_ok, Ratpoints.exists_findPoints_eq_error_iff}
+  \leanok
   For well-formed parameters, if $\mathrm{findPoints}(c, H, P)$ returns the list $L$, then a
   triple lies in $L$ if and only if it is a normalized point of height at most $H$, $L$ has no
   duplicates, and its set of elements is $\mathrm{points}(c, H)$. $\mathrm{findPoints}(c, H, P)$
@@ -367,6 +380,7 @@ the points at infinity need the case $y = 0$, which ratpoints never meets.
 
 \begin{proof}
   \uses{thm:findPoints_eq_bruteForce, thm:bruteForce}
+  \leanok
   The first three statements follow from Theorem~\ref{thm:findPoints_eq_bruteForce} and
   Theorem~\ref{thm:bruteForce}; the refusals are the three tests of $\mathrm{findPoints}$.
 \end{proof}

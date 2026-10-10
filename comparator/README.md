@@ -6,14 +6,15 @@ build, using only the permitted axioms (`propext`, `Quot.sound`, `Classical.choi
 
 ## What is checked
 
-- [`Challenge.lean`](Challenge.lean) may import only Mathlib and the model (`Ratpoints.Model`).
-  It restates the specification verbatim (`degree`, `binaryForm` and `IsPoint`; `binaryFormPoly`
-  joins with the refusal theorem in stage D, and `points` stays out, as the blueprint explains)
-  and states the main theorems with `sorry`. The main theorems speak about the model's
-  `findPoints` (and, in stage B, the brute-force reference), which the challenge imports: the
-  model is trusted in the sense that it is the code the executable runs, and nothing else. The
-  specification, by contrast, is reproduced in the challenge, so a solution whose library changed
-  it is rejected.
+- [`Challenge.lean`](Challenge.lean) may import only Mathlib and the model (`Ratpoints.Model`). It
+  restates the specification verbatim (`degree`, `binaryForm` and `IsPoint`; `binaryFormPoly` joins
+  with the refusal theorem in stage D, and `points` stays out, as the blueprint explains) and states
+  the main theorems with `sorry`. The main theorems speak about the model's `findPoints` (and, in
+  stage B, the brute-force reference), which the challenge imports with `Params`, `Params.WF`,
+  `SieveOptions`, `sieveParams` and `maxDegree`: the model is trusted in the sense that it is the
+  code the executable runs, and nothing else, and a definition of the model, which elaborates
+  without Mathlib, is never restated. The specification, by contrast, is reproduced in the
+  challenge, so a solution whose library changed it is rejected.
 - [`Solution.lean`](Solution.lean) imports the library and proves the same statements by its
   theorems.
 
@@ -29,12 +30,16 @@ checks that each challenge theorem in the solution
 3. is accepted by the Lean kernel.
 
 The statements come in stage by stage, as the blueprint describes them: the theorems of stage B
-(the brute-force reference finds exactly the points, without duplicates), the membership and
-no-duplicates theorems for `findPoints` together with the well-formedness of the default
-parameters, which rules out a `P.WF` that nothing satisfies (stage C1), and the refusal theorem
-(stage D). The theorems of stage B are in: `challenges.json` lists
-`challenge_mem_bruteForce_iff` and `challenge_nodup_bruteForce`, and Comparator accepted the
-solution on 2026-10-09.
+(the brute-force reference finds exactly the points, without duplicates); from stage C1 on, the
+membership and no-duplicates theorems for `findPoints` for well-formed parameters, the refusal
+theorem in its form of stage C1, which rules out a `findPoints` that refuses every input, and the
+well-formedness of every parameter set that the options of the program give, which rules out a
+`P.WF` that nothing satisfies; stage D adds the refusal of a form that is not squarefree to the
+refusal theorem. `challenges.json` lists `challenge_mem_bruteForce_iff` and
+`challenge_nodup_bruteForce`, which Comparator accepted on 2026-10-09, and
+`challenge_mem_iff_isPoint_of_findPoints_eq_ok`, `challenge_nodup_of_findPoints_eq_ok`,
+`challenge_exists_findPoints_eq_error_iff` and `challenge_wf_sieveParams`, which Comparator
+accepted on 2026-10-10.
 
 ## Running
 

@@ -20,11 +20,15 @@ sense that it is the code the executable runs, while the specification is reprod
 that a solution that changed it would be rejected.
 
 The statements come in stage by stage, as `comparator/README.md` lists them: the two theorems of
-stage B (the brute-force reference finds exactly the points, without duplicates), then the
-membership and no-duplicates theorems for `findPoints` together with the well-formedness of the
-default parameters (stage C1), and the refusal theorem (stage D). The file imports exactly the
-public imports of `Ratpoints/Spec/Basic.lean`, so that the restated definitions elaborate to the
-same terms as there.
+stage B (the brute-force reference finds exactly the points, without duplicates); then, from stage
+C1 on, the membership and no-duplicates theorems for `findPoints` for well-formed parameters, the
+refusal theorem, which rules out a `findPoints` that refuses every input (in its form of stage C1;
+stage D adds the refusal of a form that is not squarefree), and the well-formedness of every
+parameter set that the options of the program give, which rules out a well-formedness that nothing
+satisfies. `findPoints`, `Params`, `Params.WF`, `SieveOptions`, `sieveParams` and `maxDegree` come
+from the model, never restated, since a definition of the model elaborates without Mathlib to other
+instance terms. The file imports exactly the public imports of `Ratpoints/Spec/Basic.lean`, so that
+the restated definitions elaborate to the same terms as there.
 -/
 
 @[expose] public section
@@ -53,6 +57,23 @@ theorem challenge_mem_bruteForce_iff (c : List ℤ) (H : ℕ) (p : ℤ × ℤ ×
   sorry
 
 theorem challenge_nodup_bruteForce (c : List ℤ) (H : ℕ) : (Ratpoints.bruteForce c H).Nodup :=
+  sorry
+
+theorem challenge_mem_iff_isPoint_of_findPoints_eq_ok (c : List ℤ) (H : ℕ) (P : Ratpoints.Params)
+    (L : List (ℤ × ℤ × ℤ)) (hP : P.WF) (h : Ratpoints.findPoints c H P = .ok L)
+    (p : ℤ × ℤ × ℤ) : p ∈ L ↔ Ratpoints.IsPoint c H p :=
+  sorry
+
+theorem challenge_nodup_of_findPoints_eq_ok (c : List ℤ) (H : ℕ) (P : Ratpoints.Params)
+    (L : List (ℤ × ℤ × ℤ)) (hP : P.WF) (h : Ratpoints.findPoints c H P = .ok L) : L.Nodup :=
+  sorry
+
+theorem challenge_exists_findPoints_eq_error_iff (c : List ℤ) (H : ℕ) (P : Ratpoints.Params) :
+    (∃ e, Ratpoints.findPoints c H P = .error e) ↔
+      c.length < 2 ∨ Ratpoints.maxDegree + 1 < c.length ∨ H = 0 :=
+  sorry
+
+theorem challenge_wf_sieveParams (o : Ratpoints.SieveOptions) : (Ratpoints.sieveParams o).WF :=
   sorry
 
 end

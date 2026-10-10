@@ -1,7 +1,9 @@
 {
   "challenge_module": "Challenge",
   "solution_module": "Solution",
-  "theorem_names": ["challenge_mem_bruteForce_iff", "challenge_nodup_bruteForce"],
+  "theorem_names": ["challenge_mem_bruteForce_iff", "challenge_nodup_bruteForce",
+    "challenge_mem_iff_isPoint_of_findPoints_eq_ok", "challenge_nodup_of_findPoints_eq_ok",
+    "challenge_exists_findPoints_eq_error_iff", "challenge_wf_sieveParams"],
   "permitted_axioms": ["propext", "Quot.sound", "Classical.choice"],
   "enable_nanoda": false
 }

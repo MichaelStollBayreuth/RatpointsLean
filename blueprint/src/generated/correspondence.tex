@@ -9,7 +9,7 @@ The model is checked against ratpoints v3.1.1 (commit \texttt{1a998538dfa8}). Th
 \begin{tabular}{lrrrr}
 file & lines of code & modelled & excluded & not yet recorded \\
 \hline
-\texttt{find\_points.c} & 3244 & 156 & 0 & 3088 \\
+\texttt{find\_points.c} & 3244 & 206 & 0 & 3038 \\
 \texttt{sift.c} & 820 & 234 & 0 & 586 \\
 \texttt{init.c} & 302 & 155 & 8 & 139 \\
 \texttt{sturm.c} & 215 & 0 & 0 & 215 \\
@@ -20,7 +20,7 @@ file & lines of code & modelled & excluded & not yet recorded \\
 \texttt{gen\_init\_sieve\_h.c} & 26 & 13 & 0 & 13 \\
 \texttt{main.c} & 779 & 195 & 0 & 584 \\
 \hline
-total & 5883 & 874 & 8 & 5001 \\
+total & 5883 & 924 & 8 & 4951 \\
 \end{tabular}
 \end{center}
 
@@ -38,16 +38,32 @@ total & 5883 & 874 & 8 & 5001 \\
 \item \csource{find_points.c}{1825}{4058}: not yet recorded (1339 lines of code)
 \item \csource{find_points.c}{4059}{4075}: modelled by \lname{Ratpoints.Sieve.sieveRun}
   (deviation of \lname{Ratpoints.Sieve.sieveRun}: every denominator from \texttt{1} to \texttt{H}, one after the other, for the denominator range \texttt{b\_low, …, b\_high} (stage H), the loop shapes, the tests on the denominators and the blocks (stage E), and for the threads, which deliver the blocks in the same order; the residues of \texttt{b} divided by \texttt{2\textasciicircum{}k} modulo the moduli of the first two stages, which ratpoints computes once per denominator (\texttt{fill\_bp\_list}, \texttt{k} the stride of the packing), are the residues \texttt{b mod p} that \texttt{Ratpoints.Sieve.Entry.admits} computes for each numerator (stage F); no stop by the callback (stage G), and no correction of the moduli between the blocks (stage F).)
-\item \csource{find_points.c}{4076}{4641}: not yet recorded (380 lines of code)
+\item \csource{find_points.c}{4076}{4552}: not yet recorded (322 lines of code)
+\item \csource{find_points.c}{4557}{4558}: modelled by \lname{Ratpoints.findPoints}
+  (deviation of \lname{Ratpoints.findPoints}: the refusals of the program, with its errors (\texttt{Ratpoints.Refusal}), for the library's \texttt{RATPOINTS\_BAD\_ARGS}: fewer than two coefficients are refused on the length of \texttt{c}, as the program refuses them, where the library refuses an empty list as a negative degree and one coefficient as the degree 0; the degree with the leading zeros dropped is \texttt{Ratpoints.BruteForce.degree c}; no refusal of a form that is not squarefree and no exit when there are no points modulo a prime (stage D), so that the zero polynomial and the forms that ratpoints refuses get the points of the specification; no reversal (stage D), no search region (stage H); no failure for lack of memory, which the model cannot meet.)
+\item \csource{find_points.c}{4559}{4623}: not yet recorded (43 lines of code)
+\item \csource{find_points.c}{4624}{4633}: modelled by \lname{Ratpoints.findPoints}
+  (deviation of \lname{Ratpoints.findPoints}: the refusals of the program, with its errors (\texttt{Ratpoints.Refusal}), for the library's \texttt{RATPOINTS\_BAD\_ARGS}: fewer than two coefficients are refused on the length of \texttt{c}, as the program refuses them, where the library refuses an empty list as a negative degree and one coefficient as the degree 0; the degree with the leading zeros dropped is \texttt{Ratpoints.BruteForce.degree c}; no refusal of a form that is not squarefree and no exit when there are no points modulo a prime (stage D), so that the zero polynomial and the forms that ratpoints refuses get the points of the specification; no reversal (stage D), no search region (stage H); no failure for lack of memory, which the model cannot meet.)
+\item \csource{find_points.c}{4634}{4634}: modelled by \lname{Ratpoints.Sieve.pointsAtInfinity}
+  (deviation of \lname{Ratpoints.Sieve.pointsAtInfinity}: a list of points for the callback \texttt{process}, with no stop it may request, no reversal (stage D), no \texttt{RATPOINTS\_NO\_Y} and no \texttt{RATPOINTS\_NO\_CHECK} (stage G), and no output under \texttt{RATPOINTS\_VERBOSE}; the case \texttt{c\_d = 0}, that of the zero polynomial, which ratpoints refuses before it gets here, gives the one point \texttt{(1, 0, 0)}, which the cited lines, delivering \texttt{-{}y} without a test \texttt{y ≠ 0}, would deliver twice.)
+\item \csource{find_points.c}{4636}{4641}: not yet recorded (4 lines of code)
 \item \csource{find_points.c}{4643}{4649}: modelled by \lname{Ratpoints.sieveParams}
   (deviation of \lname{Ratpoints.sieveParams}: the moduli are the first primes of the table, in increasing order, where ratpoints ranks the primes by what they say about the curve (\texttt{sieving\_info}), looks past the first \texttt{q} when \texttt{-{}p} is absent and the curve needs it, chooses the cut points from the curve when \texttt{-{}n} or \texttt{-{}N} is absent or negative, and corrects the choice during the run (\texttt{adapt\_primes}); the third stage is the rest of the list after \texttt{s₂}, where ratpoints takes \texttt{P} primes after \texttt{s₂}, or primes up to all \texttt{Ratpoints.numPrimes} when \texttt{-{}P} is absent or negative.)
 \item \csource{find_points.c}{4654}{4654}: not yet recorded (1 lines of code)
 \item \csource{find_points.c}{4655}{4656}: modelled by \lname{Ratpoints.sieveParams}
   (deviation of \lname{Ratpoints.sieveParams}: the moduli are the first primes of the table, in increasing order, where ratpoints ranks the primes by what they say about the curve (\texttt{sieving\_info}), looks past the first \texttt{q} when \texttt{-{}p} is absent and the curve needs it, chooses the cut points from the curve when \texttt{-{}n} or \texttt{-{}N} is absent or negative, and corrects the choice during the run (\texttt{adapt\_primes}); the third stage is the rest of the list after \texttt{s₂}, where ratpoints takes \texttt{P} primes after \texttt{s₂}, or primes up to all \texttt{Ratpoints.numPrimes} when \texttt{-{}P} is absent or negative.)
-\item \csource{find_points.c}{4658}{4661}: not yet recorded (4 lines of code)
+\item \csource{find_points.c}{4658}{4658}: modelled by \lname{Ratpoints.findPoints}
+  (deviation of \lname{Ratpoints.findPoints}: the refusals of the program, with its errors (\texttt{Ratpoints.Refusal}), for the library's \texttt{RATPOINTS\_BAD\_ARGS}: fewer than two coefficients are refused on the length of \texttt{c}, as the program refuses them, where the library refuses an empty list as a negative degree and one coefficient as the degree 0; the degree with the leading zeros dropped is \texttt{Ratpoints.BruteForce.degree c}; no refusal of a form that is not squarefree and no exit when there are no points modulo a prime (stage D), so that the zero polynomial and the forms that ratpoints refuses get the points of the specification; no reversal (stage D), no search region (stage H); no failure for lack of memory, which the model cannot meet.)
+\item \csource{find_points.c}{4659}{4661}: not yet recorded (3 lines of code)
 \item \csource{find_points.c}{4662}{4665}: modelled by \lname{Ratpoints.sieveParams}
   (deviation of \lname{Ratpoints.sieveParams}: the moduli are the first primes of the table, in increasing order, where ratpoints ranks the primes by what they say about the curve (\texttt{sieving\_info}), looks past the first \texttt{q} when \texttt{-{}p} is absent and the curve needs it, chooses the cut points from the curve when \texttt{-{}n} or \texttt{-{}N} is absent or negative, and corrects the choice during the run (\texttt{adapt\_primes}); the third stage is the rest of the list after \texttt{s₂}, where ratpoints takes \texttt{P} primes after \texttt{s₂}, or primes up to all \texttt{Ratpoints.numPrimes} when \texttt{-{}P} is absent or negative.)
-\item \csource{find_points.c}{4666}{5151}: not yet recorded (372 lines of code)
+\item \csource{find_points.c}{4666}{4892}: not yet recorded (172 lines of code)
+\item \csource{find_points.c}{4894}{4899}: modelled by \lname{Ratpoints.Sieve.pointsAtInfinity}
+  (deviation of \lname{Ratpoints.Sieve.pointsAtInfinity}: a list of points for the callback \texttt{process}, with no stop it may request, no reversal (stage D), no \texttt{RATPOINTS\_NO\_Y} and no \texttt{RATPOINTS\_NO\_CHECK} (stage G), and no output under \texttt{RATPOINTS\_VERBOSE}; the case \texttt{c\_d = 0}, that of the zero polynomial, which ratpoints refuses before it gets here, gives the one point \texttt{(1, 0, 0)}, which the cited lines, delivering \texttt{-{}y} without a test \texttt{y ≠ 0}, would deliver twice.)
+\item \csource{find_points.c}{4905}{5066}: not yet recorded (129 lines of code)
+\item \csource{find_points.c}{5068}{5105}: modelled by \lname{Ratpoints.Sieve.pointsAtInfinity}
+  (deviation of \lname{Ratpoints.Sieve.pointsAtInfinity}: a list of points for the callback \texttt{process}, with no stop it may request, no reversal (stage D), no \texttt{RATPOINTS\_NO\_Y} and no \texttt{RATPOINTS\_NO\_CHECK} (stage G), and no output under \texttt{RATPOINTS\_VERBOSE}; the case \texttt{c\_d = 0}, that of the zero polynomial, which ratpoints refuses before it gets here, gives the one point \texttt{(1, 0, 0)}, which the cited lines, delivering \texttt{-{}y} without a test \texttt{y ≠ 0}, would deliver twice.)
+\item \csource{find_points.c}{5106}{5151}: not yet recorded (33 lines of code)
 \item \csource{find_points.c}{5152}{5160}: modelled by \lname{Ratpoints.Sieve.sieveRun}
   (deviation of \lname{Ratpoints.Sieve.sieveRun}: every denominator from \texttt{1} to \texttt{H}, one after the other, for the denominator range \texttt{b\_low, …, b\_high} (stage H), the loop shapes, the tests on the denominators and the blocks (stage E), and for the threads, which deliver the blocks in the same order; the residues of \texttt{b} divided by \texttt{2\textasciicircum{}k} modulo the moduli of the first two stages, which ratpoints computes once per denominator (\texttt{fill\_bp\_list}, \texttt{k} the stride of the packing), are the residues \texttt{b mod p} that \texttt{Ratpoints.Sieve.Entry.admits} computes for each numerator (stage F); no stop by the callback (stage G), and no correction of the moduli between the blocks (stage F).)
 \item \csource{find_points.c}{5161}{5242}: not yet recorded (53 lines of code)
