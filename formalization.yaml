@@ -57,8 +57,8 @@ classification:
 # project status
 status:
   scope: >
-    Stages A, B and C1, and stage C2 up to its differential tests. Stage A set up the Lake project with the libraries of the model (Lean core
-    and Std only), the specification and the proofs, the CI, the blueprint, the correspondence
+    Stages A, B, C1 and C2. Stage A set up the Lake project with the libraries of the model (Lean
+    core and Std only), the specification and the proofs, the CI, the blueprint, the correspondence
     record with its checking script, and the comparator harness, and settled the specification in
     the blueprint. Stage B: the specification in Lean (the binary form, the normalized points of
     height at most H, the finite set of them, and the binary form over Q that the refusals speak
@@ -83,8 +83,9 @@ status:
     sentinel, one piece with the masks at its ends, one denominator in pieces, and the run), with
     the contracts of its loops proved with the program logic of Lean core for every width of the
     bit arrays, and the plain sieve of stage C1 kept as its reference; findPoints and
-    ratpoints-lean run it, and the main theorems keep their statements. Next: the differential
-    tests at the heights that the bit arrays allow; the introduction of the blueprint lists the
+    ratpoints-lean run it, and the main theorems keep their statements; the differential tests
+    search up to height 30000, and the runs of test4.sh up to height 100000 form a suite run
+    locally. Next: stage D, the set-up of the search; the introduction of the blueprint lists the
     later stages (the set-up, the denominator and numerator sides, the order and protocol, the
     search region and the Sturm step).
   sorry_count: 0

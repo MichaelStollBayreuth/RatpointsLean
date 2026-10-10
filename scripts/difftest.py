@@ -23,7 +23,9 @@ and compares it with the recorded outputs and with the C program:
           give no moduli, all the primes of the default build, the cut points in several
           positions, a third stage and the defaults, on point-rich and on random curves
           against the C program, whose points do not depend on them;
-  high    point-rich curves at the heights 2000 and 5000 against the C program.
+  high    point-rich curves at the heights 2000, 5000 and 30000 against the C program;
+  test4high  the invocations of test4.sh that search with a height bound above --max-height and
+          at most --test4-max-height, a few minutes in all: run locally, not by default.
 
 ratpoints-lean prints the points as ratpoints does with -q. They are compared as sets, until the
 model visits the points in the order of the C program, and without -q with the point lines of the
@@ -45,7 +47,8 @@ options:
                      environment variable RATPOINTS_REPO); the test files are read at the pin
   --suites LIST      comma-separated suites (default: test4,test3,rptest,random,errors,fuzz,
                      params,high)
-  --max-height H     the largest height of a search (default: 5000)
+  --max-height H     the largest height of a search (default: 30000)
+  --test4-max-height H  the largest height of a search of the suite test4high (default: 100000)
   --rptest-height h  the reduced height of the rptest suites (default: 100)
   --random N         the number of random polynomials (default: 300)
   --fuzz N           the number of rounds of random command lines, seven each (default: 100)
@@ -87,7 +90,7 @@ PARAM_OPTIONS = [['-p', '0'], ['-p', '53'], ['-p', '200'], ['-n', '0'], ['-n', '
 PARAM_CURVES = [('1 0 126 0 441', 200), ('-2 0 0 1', 130), ('1 1 1 1 0', 60),
                 ('1 2 3 4 5 6 7', 60), ('-1 0 9', 100), ('0 0 1', 40)]
 # The high suite: the first four of these curves at larger heights.
-HIGH_HEIGHTS = [2000, 5000]
+HIGH_HEIGHTS = [2000, 5000, 30000]
 TIMEOUT = 600
 
 
@@ -286,7 +289,10 @@ def split_test4(text):
     return runs
 
 
-def suite_test4(cfg, tally):
+def suite_test4(cfg, tally, window=None):
+    """The invocations of test4.sh, a search with a height bound above --max-height skipped; with
+    `window = (low, high)`, only the searches with a height bound in (low, high], the rest being
+    left to the plain call."""
     for r in split_test4(git_show(cfg.repo, cfg.commit, 'testbase4')):
         label = f'testbase4:{r.line} {r.args}'
         out, code = r.out, None
@@ -296,6 +302,12 @@ def suite_test4(cfg, tally):
         if code == 0:  # e() keeps one newline at the end, also of an empty output
             text = text.rstrip('\n') + '\n' if text.strip('\n') else ''
         k, quiet = read_options(r.args[2:])
+        if window is not None:
+            searches = (r.filt is None and not (len(r.args) >= 2 and k is not None) and
+                        not code and 'Polynomial is not square-free.' not in text)
+            if searches and window[0] < (height(r.args[1]) or 0) <= window[1]:
+                check(cfg, tally, label, r.args, (text, 0), 'points' if quiet else 'report')
+            continue
         if r.filt is not None:
             tally.skip('output filtered')
         elif len(r.args) >= 2 and k is not None:
@@ -409,6 +421,10 @@ def suite_high(cfg, tally):
             against_c(cfg, tally, f'high {args}', args)
 
 
+def suite_test4high(cfg, tally):
+    suite_test4(cfg, tally, (cfg.max_height, cfg.test4_max_height))
+
+
 def suite_fuzz(cfg, tally):
     rng = random.Random(cfg.seed)
     for i in range(cfg.fuzz):
@@ -418,7 +434,9 @@ def suite_fuzz(cfg, tally):
 
 SUITES = {'test4': suite_test4, 'test3': suite_test3, 'rptest': suite_rptest,
           'random': suite_random, 'errors': suite_errors, 'fuzz': suite_fuzz,
-          'params': suite_params, 'high': suite_high}
+          'params': suite_params, 'high': suite_high, 'test4high': suite_test4high}
+# The suites that run by default (in CI): all but test4high.
+DEFAULT_SUITES = ['test4', 'test3', 'rptest', 'random', 'errors', 'fuzz', 'params', 'high']
 
 
 def main(argv=None):
@@ -427,8 +445,9 @@ def main(argv=None):
                     'ratpoints-lean')
     ap.add_argument('--c', type=Path)
     ap.add_argument('--repo', type=Path)
-    ap.add_argument('--suites', default=','.join(SUITES))
-    ap.add_argument('--max-height', type=int, default=5000)
+    ap.add_argument('--suites', default=','.join(DEFAULT_SUITES))
+    ap.add_argument('--max-height', type=int, default=30000)
+    ap.add_argument('--test4-max-height', type=int, default=100000)
     ap.add_argument('--rptest-height', type=int, default=100)
     ap.add_argument('--random', type=int, default=300)
     ap.add_argument('--fuzz', type=int, default=100)

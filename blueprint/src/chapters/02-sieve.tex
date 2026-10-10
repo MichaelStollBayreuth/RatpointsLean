@@ -425,10 +425,9 @@ the brute-force reference, every differential test of stage~B applies unchanged,
 force needs no test of its own: Theorem~\ref{thm:findPoints_eq_bruteForce} says that the sieve
 returns its list. Compiled, the plain sieve takes $0.16$~seconds at $H = 1000$, $1.3$ at $H = 3000$
 and $3.6$ at $H = 5000$ on a curve of degree~$6$ with the 30 default moduli, against $0.3$ to
-$0.9$~seconds for the reference at $H = 1000$; so the differential tests search up to height
-$5000$, with a suite of point-rich curves at the heights $2000$ and $5000$, while the runs of
-\verb|test4.sh| with heights from $30000$ to $100000$, minutes to tens of minutes each, wait for
-the bit arrays of stage~C2. A further suite runs both programs with other parameters (no moduli,
+$0.9$~seconds for the reference at $H = 1000$; so the differential tests of stage~C1 searched up
+to height $5000$, with a suite of point-rich curves at the heights $2000$ and $5000$, and the bit
+arrays of stage~C2 raise these heights (Section~\ref{sec:wordsCli}). A further suite runs both programs with other parameters (no moduli,
 all 53 primes and a cap above them, the cut points in several positions, a third stage, no Jacobi
 test, no forbidden divisors and many, and negative values, which mean the defaults) on point-rich
 and on random curves.
