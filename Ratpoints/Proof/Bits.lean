@@ -18,8 +18,8 @@ pass a test which fails from some position on, the position of the cursor of a l
 the residues modulo `p` of the integers from `w0` on, the bits of the word `~~~0` and of the masks
 `~~~0 <<< n` and `~~~0 >>> n`, the lowest bit and the lowest set bit of a word, the word
 `x &&& (x - 1)`, which is `x` with its lowest set bit cleared, the bits of a word set one at a time,
-the 64 bits of two words from a position within the first, and the bits of a word and-ed in turn
-with the words of a list.
+the 64 bits of two words from a position within the first, the bits of a word and-ed in turn with
+the words of a list, and the numerators of the set bits of a list of words, read in turn.
 
 ## Main statements
 
@@ -40,6 +40,9 @@ with the words of a list.
 * `Int.toNat_add_emod_of_lt`, `Int.toNat_add_add_emod`: the residues modulo `p` of `w0 + j` before
   and from the first multiple of `p` from `w0` on.
 * `UInt64.getLsbD_foldl_and`: the bits of a word and-ed in turn with the words of a list.
+* `UInt64.flatMap_range_map_filter_getLsbD`: the numerators `a + 64 y + t` of the set bits `t` of
+  the words `y < m`, in increasing order, are those of `a, …, a + 64 m - 1` that pass a test `p`,
+  when the bits are the test of their numerators.
 
 ## Implementation notes
 
@@ -235,6 +238,26 @@ theorem getLsbD_foldl_and {α : Type u} (f : α → UInt64) (l : List α) (init 
   induction l generalizing init with
   | nil => simp
   | cons a l ih => simp [ih, Bool.and_assoc]
+
+/-- The set bits `t` of the words `f y`, `y < m`, read as the integers `a + 64 y + t`, in
+increasing order, are the integers `a, …, a + 64 m - 1` that pass `p`, when bit `t` of word `y` is
+`t < 64` and `p (a + 64 y + t)`. -/
+theorem flatMap_range_map_filter_getLsbD {f : Nat → UInt64} {a : Int} {p : Int → Bool} {m : Nat}
+    (hf : ∀ y < m, ∀ t, (f y).toBitVec.getLsbD t = (decide (t < 64) && p (a + 64 * y + t))) :
+    (List.range m).flatMap (fun y ↦ ((List.range 64).filter ((f y).toBitVec.getLsbD ·)).map
+      fun t : Nat ↦ a + 64 * y + t) = ((List.range (64 * m)).map fun k : Nat ↦ a + k).filter p := by
+  induction m with
+  | zero => simp
+  | succ m ih =>
+    rw [List.range_succ (n := m), List.flatMap_append, ih fun y hy ↦ hf y (by lia), Nat.mul_succ,
+      List.range_add, List.map_append, List.map_map, List.filter_append, List.flatMap_singleton]
+    congr 1
+    rw [List.filter_map]
+    congr 1
+    · exact funext fun t ↦ by simp [Int.add_assoc]
+    · exact List.filter_congr fun t ht ↦ by
+        rw [hf m (Nat.lt_succ_self m) t, decide_eq_true (List.mem_range.mp ht), Bool.true_and]
+        simp [Int.add_assoc]
 
 end UInt64
 

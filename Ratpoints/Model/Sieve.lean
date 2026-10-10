@@ -47,6 +47,8 @@ generates are computed here: the squares and the inverses by `Ratpoints.Sieve.sq
 * `Ratpoints.Sieve.checkNum`, `Ratpoints.Sieve.walkWord`: the test for common factors and the exact
   check of one numerator, and the walk through the set bits of a word, lowest first, each giving the
   check of its numerator.
+* `Ratpoints.Sieve.scanPiece`: the scan over the bit arrays of a piece up to a sentinel, stepping
+  over those that are zero, and the walk through the words of the others.
 -/
 
 @[expose] public section
@@ -444,6 +446,50 @@ def walkWord (w : List Int) (f : Int) (b : Nat) (x : UInt64) (a0 : Int)
     x := x &&& (x - 1)
   return out
 
+/-- The scan over a piece, the bit arrays with the word numbers `w0, …, w0 + n - 1`, which are the
+first `n` bit arrays of `surv`, and the extraction of the points of their numerators: a sentinel, a
+bit array of ones, is written into bit array `n`, just past the piece; then from bit array `0` on,
+the bit arrays that are zero (`Ratpoints.Sieve.isZeroAt`) are stepped over, the scan stops at the
+sentinel, and the words of every other bit array `i` are walked through in turn
+(`Ratpoints.Sieve.walkWord`, with the products `w`, the factor `f` and the denominator `b` of the
+check), bit `t` of word `κ` standing for the numerator `rbaLength (w0 + i) + 64 κ + t`. The test of
+the C code that the bit array is still nonzero after the second stage, which the model applies in
+the first (`Ratpoints.Sieve.andRows`), is kept and always passes.
+
+C: `sift.c:1061-1082`, `sift.c:1088-1092`, `rp-private.h:133`, `rp-private.h:135-136`,
+`rp-private.h:177-178`, `rp-private.h:205`, `rp-private.h:236`, `rp-private.h:238-239`,
+`rp-private.h:262`, `rp-private.h:264-266`, `rp-private.h:286`, `rp-private.h:288-289`
+
+Deviation: the plain layout, bit `t` of the bit array with the word number `w` for the numerator
+`rbaLength w + t`, where bit `t` stands for the numerator `a₀ + 2^k (rbaLength w + t)` of the
+packing of the 2-adic class of `b` (stages E and F); indices for the pointers into the survivors,
+and a scan that holds its position as an index and reads the words of the bit array that it finds
+in place, where ratpoints recovers the word number from a pointer difference and copies the bit
+array; the sentinel `~zero` of every build as `Ratpoints.rbaPack` words `~~~0`, written one at a
+time, and the reads `EXT0` and `EXT` as words of the array, for the vector type of the build, with
+one loop over the words of a bit array for the read of the first word and the loop over the others;
+no count of the bit arrays that survive the first stage (`n_arrays`), which ratpoints reads to
+correct the moduli during the run (stage F). -/
+def scanPiece (w : List Int) (f : Int) (b : Nat) (w0 : Int) (n : Nat)
+    (surv : Vector UInt64 ((n + 1) * rbaPack)) : Id (Array (Int × Int × Int)) := do
+  let mut surv := surv
+  for κ in [0:rbaPack] do
+    surv := surv.set! (rbaPack * n + κ) (~~~0)
+  let mut pos := 0
+  let mut out := #[]
+  repeat
+    while isZeroAt surv pos do
+      pos := pos + 1
+    if n ≤ pos then break
+    let i := w0 + pos
+    if !isZeroAt surv pos then
+      let mut a0 := i * rbaLength
+      for κ in [0:rbaPack] do
+        out ← walkWord w f b surv[rbaPack * pos + κ]! a0 out
+        a0 := a0 + 64
+    pos := pos + 1
+  return out
+
 /-! ### The run and the points at infinity -/
 
 /-- The points with the denominators `b = 1, …, H`, in increasing order: each denominator is
@@ -627,6 +673,33 @@ def pointsAtInfinity (c : List Int) (d : Nat) : List (Int × Int × Int) :=
       (BruteForce.numerators 130).flatMap
           (checkNum (BruteForce.scaledCoeffs c d b) (if d % 2 = 1 then b else 1) b) ==
         BruteForce.pointsOfDen c d b (BruteForce.numerators 130)
+
+-- The scan of pieces made by hand, with `F(a, 1) = a ^ 2`: the points of the numerators of the set
+-- bits of the words in increasing order, for pieces from below and above zero, with a zero bit
+-- array between, before and after bit arrays whose words have bits at both ends, of one bit array,
+-- and of zero bit arrays only; the place of the sentinel holds other words at first.
+#guard
+  let bit (x : UInt64) (t : Nat) : Bool := (x >>> t.toUInt64) &&& 1 == 1
+  ([(3, -2, [1]), (2, 1, [0]), (2, -1, [1]), (1, 5, []), (2, 0, [0, 1])] :
+      List (Nat × Int × List Nat)).all fun (n, w0, zeros) ↦
+    let v : Vector UInt64 ((n + 1) * rbaPack) := .ofFn fun ⟨y, _⟩ ↦
+      if zeros.contains (y / rbaPack) then 0
+      else if y % 2 = 0 then 0x8000000000000001 else 1 <<< (y * 7 % 64).toUInt64
+    (Id.run (scanPiece [0, 0, 1] 1 1 w0 n v)).toList ==
+      ((List.range (n * rbaPack)).flatMap fun y : Nat ↦ ((List.range 64).filter (bit v[y]!)).map
+        fun t : Nat ↦ rbaLength * w0 + 64 * y + t).flatMap (checkNum [0, 0, 1] 1 1)
+
+-- The scan of pieces whose bits are a test of their numerators: the points of the numerators of the
+-- piece that pass the test, in increasing order.
+#guard
+  let keep (a : Int) : Bool := a % 5 == 2 || a % 64 == 63
+  ([(2, -1), (1, 3)] : List (Nat × Int)).all fun (n, w0) ↦
+    let v : Vector UInt64 ((n + 1) * rbaPack) := .ofFn fun ⟨y, _⟩ ↦
+      (List.range 64).foldl (fun x (t : Nat) ↦
+        if keep (rbaLength * w0 + 64 * (y : Int) + t) then x ||| 1 <<< t.toUInt64 else x) 0
+    (Id.run (scanPiece [0, 0, 1] 1 1 w0 n v)).toList ==
+      (((List.range (n * rbaLength)).map fun k : Nat ↦ rbaLength * w0 + k).filter keep).flatMap
+        (checkNum [0, 0, 1] 1 1)
 
 -- The denominators `1, …, 130`: the affine points of `ratpoints '-2 0 0 1' 130 -q`.
 #guard (Id.run (sieveRun [-2, 0, 0, 1] 3 130

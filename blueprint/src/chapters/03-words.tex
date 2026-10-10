@@ -266,12 +266,12 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
 
 \begin{definition}[The scan and the extraction]\label{def:scanPiece}
   \uses{def:walkWord, def:bitArrayOps}
-  Proposed names: \lname{Ratpoints.Sieve.scanPiece}, \lname{Ratpoints.Sieve.scanPiece\_spec}.
+  \lean{Ratpoints.Sieve.scanPiece, Ratpoints.Sieve.scanPiece_spec}
+  \leanok
   A sentinel, a bit array of ones, just past the piece; then from the first bit array on: step
   over the zero bit arrays, stop at the sentinel, and walk the words of each other bit array, the
   bit $0$ of word $\kappa$ of bit array $i$ standing for the numerator $R (w_0 + i) + 64 \kappa$
-  (\csource{sift.c}{1061}{1082}, \csource{sift.c}{1088}{1092}, \csource{sift.c}{1213}{1226},
-  \csource{sift.c}{1257}{1264}, \csource{sift.c}{1293}{1299}; with \verb|zero|,
+  (\csource{sift.c}{1061}{1082}, \csource{sift.c}{1088}{1092}; with \verb|zero|,
   \csource{rp-private.h}{133}{133}, \csource{rp-private.h}{205}{205},
   \csource{rp-private.h}{236}{236}, \csource{rp-private.h}{262}{262},
   \csource{rp-private.h}{286}{286}, and \verb|EXT0|, \verb|EXT|, \csource{rp-private.h}{135}{136},
