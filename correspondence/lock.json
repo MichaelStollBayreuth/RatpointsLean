@@ -1,6 +1,24 @@
 {
   "commit": "1a998538dfa835bb1bce6047e75302cc01517443",
   "ranges": {
+    "find_points.c:1703-1749": {
+      "hash": "3958dde199dd7ca8445f39de80ac7b5db61bcab7a1a72f91514f2b321827fe25",
+      "owners": [
+        "Ratpoints.Sieve.examinePrime"
+      ]
+    },
+    "find_points.c:1761-1765": {
+      "hash": "b4c7b525fe1ec06dbf6120f00e2a1444ecf3823465b8664ac8e9c88bd2672657",
+      "owners": [
+        "Ratpoints.Sieve.examinePrime"
+      ]
+    },
+    "find_points.c:1795-1824": {
+      "hash": "f7c2d05a118ed964d38981068b31b6da469516bf31944b02f2438d3272fa56b1",
+      "owners": [
+        "Ratpoints.Sieve.examinePrime"
+      ]
+    },
     "find_points.c:4643-4649": {
       "hash": "b4bb06cf2f616ae03b4998ab7a032b9f58f17b42d62ca01b1291ee578422b77a",
       "owners": [
@@ -17,6 +35,72 @@
       "hash": "a74f99ac80627b71b334ae3319539017033f34df7876d248dbf050d9f776db2c",
       "owners": [
         "Ratpoints.sieveParams"
+      ]
+    },
+    "gen_find_points_h.c:102-134": {
+      "hash": "3f663de590a75381a367c9aa80c762fd4467443c6675de60cb488cddb61f2e60",
+      "owners": [
+        "Ratpoints.Sieve.Entry.admits"
+      ]
+    },
+    "gen_find_points_h.c:33-44": {
+      "hash": "2887d33133f3e03891c02428d877853b1b1bf22f0f663dcfae1e9f3d38dcb37d",
+      "owners": [
+        "Ratpoints.Sieve.inversesMod"
+      ]
+    },
+    "gen_find_points_h.c:69-88": {
+      "hash": "1f69f1f9427d239c40989ca2febd40851e895d786753e345952b638a306fca46",
+      "owners": [
+        "Ratpoints.Sieve.squaresMod"
+      ]
+    },
+    "gen_find_points_h.c:90-100": {
+      "hash": "9734a2adee82aabc9e8896c7347a1c7714728bf62479e805dd1f2e30ab25a2ad",
+      "owners": [
+        "Ratpoints.Sieve.inversesMod"
+      ]
+    },
+    "gen_init_sieve_h.c:48-62": {
+      "hash": "f4f11f12c647da1f0363cd7f62a6a71315050bb840ddde15b7965110d5736feb",
+      "owners": [
+        "Ratpoints.Sieve.Entry.admits"
+      ]
+    },
+    "init.c:118-246": {
+      "hash": "218047ac32ead2f14f63287e47ec479125d382c35f9195c7b91fd9eb20d1a77a",
+      "owners": [
+        "Ratpoints.Sieve.Entry.admits"
+      ]
+    },
+    "init.c:42-46": {
+      "hash": "457dfd9e5c185e560428c32275595fc3b996ad4cf452057a4daad4239c908f04",
+      "owners": [
+        "Ratpoints.Sieve.Entry.admits"
+      ]
+    },
+    "init.c:62-83": {
+      "hash": "e6b5169634ff8a69f4ace2294488e25c17f4c0e06bc9dfa967c04ebeeb94b09f",
+      "owners": [
+        "Ratpoints.Sieve.Entry.admits"
+      ]
+    },
+    "init.c:88-93": {
+      "hash": "befe317ca8b4a32e4333714ec7a2b2f98fb75572c603e7b846682351c6844853",
+      "owners": [
+        "excluded (instrumentation)"
+      ]
+    },
+    "init.c:97-98": {
+      "hash": "7167b1179e244f274d3d6c6c99c2e14b1b6e2dc722c87cb180fd2d95ec1aadae",
+      "owners": [
+        "excluded (instrumentation)"
+      ]
+    },
+    "init.c:99-111": {
+      "hash": "28cac77499403ab7417e4587d061c13f772e4f0d715a9019de3e74a87029560b",
+      "owners": [
+        "Ratpoints.Sieve.Entry.admits"
       ]
     },
     "main.c:1036-1043": {
@@ -156,10 +240,18 @@
       "owners": [
         "Ratpoints.numPrimes"
       ]
+    },
+    "rp-private.h:542-555": {
+      "hash": "35545fa2f80164462a2e92e543f56f9ceace7fcfccb179d0f60ba51292630ae1",
+      "owners": [
+        "Ratpoints.Sieve.Entry"
+      ]
     }
   },
   "citations": {
     "find_points.c:1703-1747": "795980b345dfc345a51b8cb20f3009c001f80a34a5436dca6cb3a6469cb1442c",
+    "find_points.c:1703-1749": "3958dde199dd7ca8445f39de80ac7b5db61bcab7a1a72f91514f2b321827fe25",
+    "find_points.c:1761-1765": "b4c7b525fe1ec06dbf6120f00e2a1444ecf3823465b8664ac8e9c88bd2672657",
     "find_points.c:1795-1824": "f7c2d05a118ed964d38981068b31b6da469516bf31944b02f2438d3272fa56b1",
     "find_points.c:4059-4075": "f6165f9a3593808c0c59560314fe28156c867a0e14c8410c9c0e1c52baf7a7d9",
     "find_points.c:4557-4558": "9f923fbce4432b066ae057ca5317d37d1f00cb9d18df83d876251a6a91a8f0d2",
@@ -184,6 +276,10 @@
     "gen_find_points_h.c:69-88": "1f69f1f9427d239c40989ca2febd40851e895d786753e345952b638a306fca46",
     "gen_find_points_h.c:90-100": "9734a2adee82aabc9e8896c7347a1c7714728bf62479e805dd1f2e30ab25a2ad",
     "gen_find_points_h.c:102-134": "3f663de590a75381a367c9aa80c762fd4467443c6675de60cb488cddb61f2e60",
+    "gen_init_sieve_h.c:48-62": "f4f11f12c647da1f0363cd7f62a6a71315050bb840ddde15b7965110d5736feb",
+    "init.c:42-46": "457dfd9e5c185e560428c32275595fc3b996ad4cf452057a4daad4239c908f04",
+    "init.c:62-83": "e6b5169634ff8a69f4ace2294488e25c17f4c0e06bc9dfa967c04ebeeb94b09f",
+    "init.c:99-111": "28cac77499403ab7417e4587d061c13f772e4f0d715a9019de3e74a87029560b",
     "init.c:118-246": "218047ac32ead2f14f63287e47ec479125d382c35f9195c7b91fd9eb20d1a77a",
     "main.c:43-48": "68f1467346b3eea05826977ba83410cf52afdbede12c93405bc715e8e626b94f",
     "main.c:77-88": "bc57ca5e839614cecaf19dbe5e4ca2b621abd9ae7a07da1c269da5abfa934fd6",

@@ -9,24 +9,33 @@ The model is checked against ratpoints v3.1.1 (commit \texttt{1a998538dfa8}). Th
 \begin{tabular}{lrrrr}
 file & lines of code & modelled & excluded & not yet recorded \\
 \hline
-\texttt{find\_points.c} & 3244 & 10 & 0 & 3234 \\
+\texttt{find\_points.c} & 3244 & 61 & 0 & 3183 \\
 \texttt{sift.c} & 820 & 0 & 0 & 820 \\
-\texttt{init.c} & 302 & 0 & 0 & 302 \\
+\texttt{init.c} & 302 & 155 & 8 & 139 \\
 \texttt{sturm.c} & 215 & 0 & 0 & 215 \\
-\texttt{rp-private.h} & 282 & 33 & 0 & 249 \\
+\texttt{rp-private.h} & 282 & 43 & 0 & 239 \\
 \texttt{ratpoints.h} & 128 & 7 & 0 & 121 \\
 \texttt{primes.h} & 11 & 11 & 0 & 0 \\
-\texttt{gen\_find\_points\_h.c} & 76 & 0 & 0 & 76 \\
-\texttt{gen\_init\_sieve\_h.c} & 26 & 0 & 0 & 26 \\
+\texttt{gen\_find\_points\_h.c} & 76 & 60 & 0 & 16 \\
+\texttt{gen\_init\_sieve\_h.c} & 26 & 13 & 0 & 13 \\
 \texttt{main.c} & 779 & 195 & 0 & 584 \\
 \hline
-total & 5883 & 256 & 0 & 5627 \\
+total & 5883 & 545 & 8 & 5330 \\
 \end{tabular}
 \end{center}
 
 \section*{\texttt{find\_points.c}}
 \begin{itemize}
-\item \csource{find_points.c}{30}{4641}: not yet recorded (2724 lines of code)
+\item \csource{find_points.c}{30}{1701}: not yet recorded (923 lines of code)
+\item \csource{find_points.c}{1703}{1749}: modelled by \lname{Ratpoints.Sieve.examinePrime}
+  (deviation of \lname{Ratpoints.Sieve.examinePrime}: the coefficients are integers, reduced by the Euclidean \texttt{\%}, for the two paths of ratpoints through \texttt{long}s and GMP integers (stage D), and they are not handed back, where \texttt{examine\_prime} leaves them in its caller's array for the test on the forbidden divisors of the denominators (stage E); Horner's rule reduces at every step, for the reduction on a fixed schedule (stage F), and also gives \texttt{f(0)}, which ratpoints reads off the constant term; the table has no last entry, whether there are points at infinity modulo \texttt{p}, which ratpoints reads only for its exits, the density, the prime powers and the forbidden divisors, never in a row or in the third stage; the entry is made for every prime it is given, where \texttt{examine\_prime} makes none when there is no point at infinity modulo \texttt{p} and \texttt{f(x)} is a square for no residue (it returns \texttt{-{}1}, and the search ends with no points: stage D) or for every residue (it returns \texttt{0}, and \texttt{p} is never a modulus: the choice of the moduli, an input of the model), so that the residues with a square value are not counted either; the entry keeps only \texttt{p}, the table and the inverses (\texttt{Ratpoints.Sieve.Entry}), and no rows.)
+\item \csource{find_points.c}{1751}{1759}: not yet recorded (8 lines of code)
+\item \csource{find_points.c}{1761}{1765}: modelled by \lname{Ratpoints.Sieve.examinePrime}
+  (deviation of \lname{Ratpoints.Sieve.examinePrime}: the coefficients are integers, reduced by the Euclidean \texttt{\%}, for the two paths of ratpoints through \texttt{long}s and GMP integers (stage D), and they are not handed back, where \texttt{examine\_prime} leaves them in its caller's array for the test on the forbidden divisors of the denominators (stage E); Horner's rule reduces at every step, for the reduction on a fixed schedule (stage F), and also gives \texttt{f(0)}, which ratpoints reads off the constant term; the table has no last entry, whether there are points at infinity modulo \texttt{p}, which ratpoints reads only for its exits, the density, the prime powers and the forbidden divisors, never in a row or in the third stage; the entry is made for every prime it is given, where \texttt{examine\_prime} makes none when there is no point at infinity modulo \texttt{p} and \texttt{f(x)} is a square for no residue (it returns \texttt{-{}1}, and the search ends with no points: stage D) or for every residue (it returns \texttt{0}, and \texttt{p} is never a modulus: the choice of the moduli, an input of the model), so that the residues with a square value are not counted either; the entry keeps only \texttt{p}, the table and the inverses (\texttt{Ratpoints.Sieve.Entry}), and no rows.)
+\item \csource{find_points.c}{1767}{1785}: not yet recorded (8 lines of code)
+\item \csource{find_points.c}{1795}{1824}: modelled by \lname{Ratpoints.Sieve.examinePrime}
+  (deviation of \lname{Ratpoints.Sieve.examinePrime}: the coefficients are integers, reduced by the Euclidean \texttt{\%}, for the two paths of ratpoints through \texttt{long}s and GMP integers (stage D), and they are not handed back, where \texttt{examine\_prime} leaves them in its caller's array for the test on the forbidden divisors of the denominators (stage E); Horner's rule reduces at every step, for the reduction on a fixed schedule (stage F), and also gives \texttt{f(0)}, which ratpoints reads off the constant term; the table has no last entry, whether there are points at infinity modulo \texttt{p}, which ratpoints reads only for its exits, the density, the prime powers and the forbidden divisors, never in a row or in the third stage; the entry is made for every prime it is given, where \texttt{examine\_prime} makes none when there is no point at infinity modulo \texttt{p} and \texttt{f(x)} is a square for no residue (it returns \texttt{-{}1}, and the search ends with no points: stage D) or for every residue (it returns \texttt{0}, and \texttt{p} is never a modulus: the choice of the moduli, an input of the model), so that the residues with a square value are not counted either; the entry keeps only \texttt{p}, the table and the inverses (\texttt{Ratpoints.Sieve.Entry}), and no rows.)
+\item \csource{find_points.c}{1825}{4641}: not yet recorded (1734 lines of code)
 \item \csource{find_points.c}{4643}{4649}: modelled by \lname{Ratpoints.sieveParams}
   (deviation of \lname{Ratpoints.sieveParams}: the moduli are the first primes of the table, in increasing order, where ratpoints ranks the primes by what they say about the curve (\texttt{sieving\_info}), looks past the first \texttt{q} when \texttt{-{}p} is absent and the curve needs it, chooses the cut points from the curve when \texttt{-{}n} or \texttt{-{}N} is absent or negative, and corrects the choice during the run (\texttt{adapt\_primes}); the third stage is the rest of the list after \texttt{s₂}, where ratpoints takes \texttt{P} primes after \texttt{s₂}, or primes up to all \texttt{Ratpoints.numPrimes} when \texttt{-{}P} is absent or negative.)
 \item \csource{find_points.c}{4654}{4654}: not yet recorded (1 lines of code)
@@ -45,7 +54,18 @@ total & 5883 & 256 & 0 & 5627 \\
 
 \section*{\texttt{init.c}}
 \begin{itemize}
-\item \csource{init.c}{30}{445}: not yet recorded (302 lines of code)
+\item \csource{init.c}{30}{30}: not yet recorded (1 lines of code)
+\item \csource{init.c}{42}{46}: modelled by \lname{Ratpoints.Sieve.Entry.admits}
+  (deviation of \lname{Ratpoints.Sieve.Entry.admits}: the bit of \texttt{a} in the row of \texttt{r}, computed from the tables for each numerator, where ratpoints builds the row of a residue \texttt{r ≠ 0} once, when a denominator first needs it, as a bit pattern of \texttt{p} bits repeated through words, by a function for each prime that the build generates, and takes the row of \texttt{0} from the pattern \texttt{sieves0} that the build generates, whose bit \texttt{N} is clear exactly when \texttt{p} divides \texttt{N}.)
+\item \csource{init.c}{62}{83}: modelled by \lname{Ratpoints.Sieve.Entry.admits}
+  (deviation of \lname{Ratpoints.Sieve.Entry.admits}: the bit of \texttt{a} in the row of \texttt{r}, computed from the tables for each numerator, where ratpoints builds the row of a residue \texttt{r ≠ 0} once, when a denominator first needs it, as a bit pattern of \texttt{p} bits repeated through words, by a function for each prime that the build generates, and takes the row of \texttt{0} from the pattern \texttt{sieves0} that the build generates, whose bit \texttt{N} is clear exactly when \texttt{p} divides \texttt{N}.)
+\item \csource{init.c}{88}{93}: excluded (instrumentation): RP\_INIT\_NOACC, a probe for bench\_init that leaves out computing the pattern of a row; the tables it produces are wrong
+\item \csource{init.c}{97}{98}: excluded (instrumentation): RP\_INIT\_NOREP, a probe for bench\_init that leaves out replicating a row over the words of a bit array; the tables it produces are wrong
+\item \csource{init.c}{99}{111}: modelled by \lname{Ratpoints.Sieve.Entry.admits}
+  (deviation of \lname{Ratpoints.Sieve.Entry.admits}: the bit of \texttt{a} in the row of \texttt{r}, computed from the tables for each numerator, where ratpoints builds the row of a residue \texttt{r ≠ 0} once, when a denominator first needs it, as a bit pattern of \texttt{p} bits repeated through words, by a function for each prime that the build generates, and takes the row of \texttt{0} from the pattern \texttt{sieves0} that the build generates, whose bit \texttt{N} is clear exactly when \texttt{p} divides \texttt{N}.)
+\item \csource{init.c}{118}{246}: modelled by \lname{Ratpoints.Sieve.Entry.admits}
+  (deviation of \lname{Ratpoints.Sieve.Entry.admits}: the bit of \texttt{a} in the row of \texttt{r}, computed from the tables for each numerator, where ratpoints builds the row of a residue \texttt{r ≠ 0} once, when a denominator first needs it, as a bit pattern of \texttt{p} bits repeated through words, by a function for each prime that the build generates, and takes the row of \texttt{0} from the pattern \texttt{sieves0} that the build generates, whose bit \texttt{N} is clear exactly when \texttt{p} divides \texttt{N}.)
+\item \csource{init.c}{259}{445}: not yet recorded (138 lines of code)
 \end{itemize}
 
 \section*{\texttt{sturm.c}}
@@ -60,7 +80,10 @@ total & 5883 & 256 & 0 & 5627 \\
   (deviation of \lname{Ratpoints.maxBitsInPrime}: 8, the value of the default build, which the Makefile of ratpoints passes to the compiler (its variable \texttt{PRIME\_SIZE}), for the value 7 that the header takes when it is given none.)
 \item \csource{rp-private.h}{325}{361}: modelled by \lname{Ratpoints.numPrimes}
   (deviation of \lname{Ratpoints.numPrimes}: computed from \texttt{Ratpoints.maxBitsInPrime}, where the header lists the values for 5 to 10 bits, the numbers that the computation gives, and takes 7 bits for any other value; the largest such prime and the power of 2 above it, which size the tables of the C code, have no counterpart.)
-\item \csource{rp-private.h}{378}{617}: not yet recorded (80 lines of code)
+\item \csource{rp-private.h}{378}{534}: not yet recorded (48 lines of code)
+\item \csource{rp-private.h}{542}{555}: modelled by \lname{Ratpoints.Sieve.Entry}
+  (deviation of \lname{Ratpoints.Sieve.Entry}: only the fields that the rows of a prime read, and no rows: ratpoints keeps the row of each residue in \texttt{sieve}, that of \texttt{0} from the build and the others made by \texttt{init} when a denominator first needs one, where \texttt{Ratpoints.Sieve.Entry.admits} computes each bit from the tables; the other fields serve the composite moduli, the packing and the reduction of the sieve (stage F), and the choice of the moduli.)
+\item \csource{rp-private.h}{574}{617}: not yet recorded (22 lines of code)
 \end{itemize}
 
 \section*{\texttt{ratpoints.h}}
@@ -81,12 +104,25 @@ total & 5883 & 256 & 0 & 5627 \\
 
 \section*{\texttt{gen\_find\_points\_h.c}}
 \begin{itemize}
-\item \csource{gen_find_points_h.c}{30}{137}: not yet recorded (76 lines of code)
+\item \csource{gen_find_points_h.c}{30}{31}: not yet recorded (2 lines of code)
+\item \csource{gen_find_points_h.c}{33}{44}: modelled by \lname{Ratpoints.Sieve.inversesMod}
+  (deviation of \lname{Ratpoints.Sieve.inversesMod}: a function of \texttt{p}, computed when it is called, for the row of \texttt{p} in the table \texttt{inverses} that the build generates; the trial stops before \texttt{p} and gives \texttt{0} when it finds nothing, where \texttt{inv\_mod\_p} would not stop, which never happens for a prime \texttt{p} and a residue other than \texttt{0}.)
+\item \csource{gen_find_points_h.c}{46}{67}: not yet recorded (12 lines of code)
+\item \csource{gen_find_points_h.c}{69}{88}: modelled by \lname{Ratpoints.Sieve.squaresMod}
+  (deviation of \lname{Ratpoints.Sieve.squaresMod}: a function of \texttt{p}, computed when it is called, for the row of \texttt{p} in the table \texttt{squares} that the build generates.)
+\item \csource{gen_find_points_h.c}{90}{100}: modelled by \lname{Ratpoints.Sieve.inversesMod}
+  (deviation of \lname{Ratpoints.Sieve.inversesMod}: a function of \texttt{p}, computed when it is called, for the row of \texttt{p} in the table \texttt{inverses} that the build generates; the trial stops before \texttt{p} and gives \texttt{0} when it finds nothing, where \texttt{inv\_mod\_p} would not stop, which never happens for a prime \texttt{p} and a residue other than \texttt{0}.)
+\item \csource{gen_find_points_h.c}{102}{134}: modelled by \lname{Ratpoints.Sieve.Entry.admits}
+  (deviation of \lname{Ratpoints.Sieve.Entry.admits}: the bit of \texttt{a} in the row of \texttt{r}, computed from the tables for each numerator, where ratpoints builds the row of a residue \texttt{r ≠ 0} once, when a denominator first needs it, as a bit pattern of \texttt{p} bits repeated through words, by a function for each prime that the build generates, and takes the row of \texttt{0} from the pattern \texttt{sieves0} that the build generates, whose bit \texttt{N} is clear exactly when \texttt{p} divides \texttt{N}.)
+\item \csource{gen_find_points_h.c}{136}{137}: not yet recorded (2 lines of code)
 \end{itemize}
 
 \section*{\texttt{gen\_init\_sieve\_h.c}}
 \begin{itemize}
-\item \csource{gen_init_sieve_h.c}{29}{65}: not yet recorded (26 lines of code)
+\item \csource{gen_init_sieve_h.c}{29}{46}: not yet recorded (11 lines of code)
+\item \csource{gen_init_sieve_h.c}{48}{62}: modelled by \lname{Ratpoints.Sieve.Entry.admits}
+  (deviation of \lname{Ratpoints.Sieve.Entry.admits}: the bit of \texttt{a} in the row of \texttt{r}, computed from the tables for each numerator, where ratpoints builds the row of a residue \texttt{r ≠ 0} once, when a denominator first needs it, as a bit pattern of \texttt{p} bits repeated through words, by a function for each prime that the build generates, and takes the row of \texttt{0} from the pattern \texttt{sieves0} that the build generates, whose bit \texttt{N} is clear exactly when \texttt{p} divides \texttt{N}.)
+\item \csource{gen_init_sieve_h.c}{64}{65}: not yet recorded (2 lines of code)
 \end{itemize}
 
 \section*{\texttt{main.c}}

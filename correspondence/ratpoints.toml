@@ -29,3 +29,15 @@ paths = ["find_points.c", "sift.c", "init.c", "sturm.c", "rp-private.h", "ratpoi
 # with `kind` one of parameters (the choice of the sieving parameters, which the theorems
 # quantify over), threads, memory, instrumentation (counters, verbose output), interface (the
 # library's calling conventions) and other.
+
+[[excluded]]
+file = "init.c"
+lines = "88-93"
+kind = "instrumentation"
+reason = "RP_INIT_NOACC, a probe for bench_init that leaves out computing the pattern of a row; the tables it produces are wrong"
+
+[[excluded]]
+file = "init.c"
+lines = "97-98"
+kind = "instrumentation"
+reason = "RP_INIT_NOREP, a probe for bench_init that leaves out replicating a row over the words of a bit array; the tables it produces are wrong"

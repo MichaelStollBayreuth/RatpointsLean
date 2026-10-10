@@ -9,6 +9,7 @@ public import Ratpoints.Model.BruteForce
 public import Ratpoints.Model.Cli
 public import Ratpoints.Model.Constants
 public import Ratpoints.Model.Params
+public import Ratpoints.Model.Sieve
 
 /-!
 # The executable model of ratpoints
