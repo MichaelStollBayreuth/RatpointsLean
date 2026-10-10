@@ -10,10 +10,12 @@ public import Ratpoints.Model.FindPoints
 public import Ratpoints.Model.Params
 public import Ratpoints.Model.Sieve
 public import Ratpoints.Proof
+public import Ratpoints.Proof.Bits
 public import Ratpoints.Proof.BruteForce
 public import Ratpoints.Proof.FindPoints
 public import Ratpoints.Proof.Params
 public import Ratpoints.Proof.Sieve
 public import Ratpoints.Proof.Tables
+public import Ratpoints.Proof.Words
 public import Ratpoints.Spec
 public import Ratpoints.Spec.Basic

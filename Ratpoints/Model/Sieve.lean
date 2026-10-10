@@ -6,9 +6,11 @@ Authors: Michael Stoll
 module
 
 public import Ratpoints.Model.BruteForce
+public import Ratpoints.Model.Constants
 
 -- The `#guard` examples run code of the imported modules at compile time.
 meta import Ratpoints.Model.BruteForce
+meta import Ratpoints.Model.Constants
 
 /-!
 # The plain sieve
@@ -34,6 +36,9 @@ generates are computed here: the squares and the inverses by `Ratpoints.Sieve.sq
 * `Ratpoints.Sieve.sieveDen`, `Ratpoints.Sieve.checkDen`, `Ratpoints.Sieve.sieveRun`: the sieve
   of one denominator, the points of its survivors, and the points of all denominators.
 * `Ratpoints.Sieve.pointsAtInfinity`: the points at infinity.
+* `Ratpoints.Sieve.andBitArray`, `Ratpoints.Sieve.clearLowBits`, `Ratpoints.Sieve.clearHighBits`,
+  `Ratpoints.Sieve.isZeroAt`, `Ratpoints.Sieve.ctz`: the operations on the bit arrays of 64-bit
+  words of the C code, and the lowest set bit of a word.
 -/
 
 @[expose] public section
@@ -200,6 +205,85 @@ def checkDen (c : List Int) (d H b : Nat) (surv : Vector Bool (2 * H + 1)) :
         out := out ++ (BruteForce.pointsAbove a b (BruteForce.horner w a * f)).toArray
   return out
 
+/-! ### Words and bit arrays -/
+
+/-- Bit array `j` of the words `v` and-ed with bit array `x` of the row `row`, one word at a time:
+for `κ < rbaPack` (`Ratpoints.rbaPack`, the number of words of a bit array), word
+`rbaPack * j + κ` of `v` with word `rbaPack * x + κ` of `row`.
+
+C: `rp-private.h:134`, `rp-private.h:176`, `rp-private.h:237`, `rp-private.h:263`,
+`rp-private.h:287`
+
+Deviation: one definition for every build, on bit arrays given by their indices in arrays of
+words, each bit array `rbaPack` consecutive words, for the `&` on the vector type of the build. -/
+def andBitArray {m : Nat} (v : Vector UInt64 m) (j : Nat) (row : Array UInt64) (x : Nat) :
+    Vector UInt64 m :=
+  Nat.fold rbaPack (fun κ _ v ↦
+    v.set! (rbaPack * j + κ) (v[rbaPack * j + κ]! &&& row[rbaPack * x + κ]!)) v
+
+/-- The lowest `s` bits of bit array `0` of the words `v` cleared, for `s < Ratpoints.rbaLength`:
+the words below `s / 64` are set to `0`, and word `s / 64` is and-ed with `~~~0 <<< (s % 64)`.
+
+C: `rp-private.h:153-155`, `rp-private.h:206-213`, `rp-private.h:242-244`,
+`rp-private.h:268-270`, `rp-private.h:291`
+
+Deviation: one definition for every build, the loop of the build with 512-bit bit arrays, of which
+the macros of the builds with 256-bit and 128-bit bit arrays are unrolled cases and that of the
+build with 64-bit bit arrays the case of one word; the bit array is the first `Ratpoints.rbaPack`
+words of an array, for the vector type of the build. -/
+def clearLowBits {m : Nat} (v : Vector UInt64 m) (s : Nat) : Vector UInt64 m :=
+  let q := s / 64
+  let v := Nat.fold q (fun l _ v ↦ v.set! l 0) v
+  v.set! q (v[q]! &&& ~~~0 <<< (s % 64).toUInt64)
+
+/-- The highest `s` bits of bit array `j` of the words `v` cleared, for `s < Ratpoints.rbaLength`:
+for the number `rbaPack` of words of a bit array (`Ratpoints.rbaPack`), word
+`q = rbaPack - 1 - s / 64` of the bit array is and-ed with `~~~0 >>> (s % 64)`, and its words
+above `q` are set to `0`.
+
+C: `rp-private.h:156-159`, `rp-private.h:214-221`, `rp-private.h:245-247`,
+`rp-private.h:271-273`, `rp-private.h:292`
+
+Deviation: one definition for every build, the loop of the build with 512-bit bit arrays, of which
+the macros of the builds with 256-bit and 128-bit bit arrays are unrolled cases and that of the
+build with 64-bit bit arrays the case of one word; the bit array is given by its index in an array
+of words, `rbaPack` consecutive words, for a pointer to a value of the vector type of the
+build. -/
+def clearHighBits {m : Nat} (v : Vector UInt64 m) (j s : Nat) : Vector UInt64 m :=
+  let q := rbaPack - 1 - s / 64
+  let v := v.set! (rbaPack * j + q) (v[rbaPack * j + q]! &&& ~~~0 >>> (s % 64).toUInt64)
+  Nat.fold (rbaPack - 1 - q) (fun l _ v ↦ v.set! (rbaPack * j + q + 1 + l) 0) v
+
+/-- Whether bit array `pos` of the words `v` is zero: for the number `rbaPack` of words of a bit
+array (`Ratpoints.rbaPack`), its words `rbaPack * pos + κ`, `κ < rbaPack`, are all `0`.
+
+C: `rp-private.h:137-152`, `rp-private.h:179-202`, `rp-private.h:241`, `rp-private.h:267`,
+`rp-private.h:290`, `rp-private.h:306-308`
+
+Deviation: one definition for every build, on a bit array given by its index in an array of words,
+`rbaPack` consecutive words that it compares with `0` one at a time, for the tests of the builds on
+the vector type, with vector instructions or by or-ing its words; the test for zero `TESTZ` also
+stands for its negation `TEST`. -/
+def isZeroAt {m : Nat} (v : Vector UInt64 m) (pos : Nat) : Bool :=
+  Nat.all rbaPack fun κ _ ↦ v[rbaPack * pos + κ]! == 0
+
+/-- The position of the lowest set bit of a word `w ≠ 0`: `w` is shifted right while its lowest
+bit is clear, and the steps are counted. On `0` the loop does not end, as in the C code.
+
+C: `rp-private.h:429-444`
+
+Deviation: the loop for a compiler without the builtin, where gcc and clang take
+`__builtin_ctzl`. -/
+def ctz (w : UInt64) : Id Nat := do
+  let mut w := w
+  let mut t := 0
+  while w &&& 1 == 0 do
+    w := w >>> 1
+    t := t + 1
+  return t
+
+/-! ### The run and the points at infinity -/
+
 /-- The points with the denominators `b = 1, …, H`, in increasing order: each denominator is
 sieved with the tables `entries` (`Ratpoints.Sieve.sieveDen`), its survivors are checked
 (`Ratpoints.Sieve.checkDen`), and the points are appended in turn.
@@ -276,6 +360,37 @@ def pointsAtInfinity (c : List Int) (d : Nat) : List (Int × Int × Int) :=
     [(129, 3830, 100), (129, -3830, 100)] &&
   (Id.run (checkDen [-2, 0, 0, 1] 3 130 100 (Vector.replicate _ true))).toList ==
     [(129, 3830, 100), (129, -3830, 100)]
+
+-- `andBitArray` on two bit arrays: bit array 1 is and-ed with bit array 2 of a row, word by word,
+-- and bit array 0 stays as it is.
+#guard
+  let v : Vector UInt64 (2 * rbaPack) := .ofFn fun i ↦ 0x0123456789abcdef * (i.val.toUInt64 + 1)
+  let row : Array UInt64 := .ofFn (n := 3 * rbaPack) fun i ↦ ~~~(1 <<< i.val.toUInt64)
+  (List.range (2 * rbaPack)).all fun y ↦ (andBitArray v 1 row 2)[y]! ==
+    if y / rbaPack = 1 then v[y]! &&& row[rbaPack * 2 + y % rbaPack]! else v[y]!
+
+-- The masks on two bit arrays: the low mask keeps bit `t` of word `y` exactly when
+-- `s ≤ 64 y + t`, and the high mask on bit array 1 exactly when `64 y + t + s < 2 rbaLength`.
+#guard
+  let v : Vector UInt64 (2 * rbaPack) := .ofFn fun i ↦ 0x0123456789abcdef * (i.val.toUInt64 + 1)
+  let bit (w : UInt64) (t : Nat) : Bool := (w >>> t.toUInt64) &&& 1 == 1
+  ([0, 1, 63, 64, 65, 130, rbaLength - 1].filter (· < rbaLength)).all fun s ↦
+    (List.range (2 * rbaPack)).all fun y ↦ (List.range 64).all fun t ↦
+      bit (clearLowBits v s)[y]! t == (bit v[y]! t && decide (s ≤ 64 * y + t)) &&
+      bit (clearHighBits v 1 s)[y]! t == (bit v[y]! t && decide (64 * y + t + s < rbaLength * 2))
+
+-- `isZeroAt` on three bit arrays: the first has a set bit in its last word, the second none, the
+-- third one in its first word.
+#guard
+  let v : Vector UInt64 (3 * rbaPack) :=
+    ((Vector.replicate _ 0).set! (rbaPack - 1) 0x8000000000000000).set! (2 * rbaPack) 1
+  [isZeroAt v 0, isZeroAt v 1, isZeroAt v 2] == [false, true, false]
+
+-- The lowest set bit: `k` for `2 ^ k + 2 ^ 63`, `k < 64`, and the trailing zeros of a few other
+-- words.
+#guard (List.range 64).all fun k ↦ Id.run (ctz ((1 <<< k.toUInt64) ||| 0x8000000000000000)) == k
+#guard [1, 2, 40, 0xfff0, 0x8000000000000000].all fun w : UInt64 ↦
+  Id.run (ctz w) == w.toBitVec.ctz.toNat
 
 -- The denominators `1, …, 130`: the affine points of `ratpoints '-2 0 0 1' 130 -q`.
 #guard (Id.run (sieveRun [-2, 0, 0, 1] 3 130

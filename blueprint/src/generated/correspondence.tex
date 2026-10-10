@@ -13,14 +13,14 @@ file & lines of code & modelled & excluded & not yet recorded \\
 \texttt{sift.c} & 820 & 234 & 0 & 586 \\
 \texttt{init.c} & 302 & 155 & 8 & 139 \\
 \texttt{sturm.c} & 215 & 0 & 0 & 215 \\
-\texttt{rp-private.h} & 282 & 77 & 1 & 204 \\
+\texttt{rp-private.h} & 282 & 151 & 11 & 120 \\
 \texttt{ratpoints.h} & 128 & 10 & 0 & 118 \\
 \texttt{primes.h} & 11 & 11 & 0 & 0 \\
 \texttt{gen\_find\_points\_h.c} & 76 & 60 & 0 & 16 \\
 \texttt{gen\_init\_sieve\_h.c} & 26 & 13 & 0 & 13 \\
 \texttt{main.c} & 779 & 196 & 0 & 583 \\
 \hline
-total & 5883 & 970 & 9 & 4904 \\
+total & 5883 & 1044 & 19 & 4820 \\
 \end{tabular}
 \end{center}
 
@@ -149,41 +149,96 @@ total & 5883 & 970 & 9 & 4904 \\
   (deviation of \lname{Ratpoints.Params.arraySizeAt}: a \texttt{Nat} for the \texttt{long} field, so that only \texttt{0} stands for the default, which the library takes for every value \texttt{≤ 0}; no rounding up to a multiple of the chunk, which is one bit array in the build of the model (\texttt{RATPOINTS\_CHUNK}, stage F).)
 \item \csource{rp-private.h}{113}{113}: modelled by \lname{Ratpoints.rbaPack}
   (deviation of \lname{Ratpoints.rbaPack}: the value of the default build, set here, where the C code chooses the build by the macros that the compiler is given; the vector type of a bit array becomes \texttt{rbaPack} consecutive words of an array of \texttt{UInt64}, and the shifts by \texttt{RBA\_SHIFT} are divisions by \texttt{Ratpoints.rbaLength}.)
-\item \csource{rp-private.h}{123}{123}: not yet recorded (1 lines of code)
+\item \csource{rp-private.h}{123}{123}: excluded (other): the include of the vector intrinsics in the build USE\_AVX512, with 512-bit bit arrays; the word operations of the model need none
 \item \csource{rp-private.h}{125}{128}: modelled by \lname{Ratpoints.rbaPack}
   (deviation of \lname{Ratpoints.rbaPack}: the value of the default build, set here, where the C code chooses the build by the macros that the compiler is given; the vector type of a bit array becomes \texttt{rbaPack} consecutive words of an array of \texttt{UInt64}, and the shifts by \texttt{RBA\_SHIFT} are divisions by \texttt{Ratpoints.rbaLength}.)
-\item \csource{rp-private.h}{129}{165}: not yet recorded (25 lines of code)
+\item \csource{rp-private.h}{129}{133}: not yet recorded (5 lines of code)
+\item \csource{rp-private.h}{134}{134}: modelled by \lname{Ratpoints.Sieve.andBitArray}
+  (deviation of \lname{Ratpoints.Sieve.andBitArray}: one definition for every build, on bit arrays given by their indices in arrays of words, each bit array \texttt{rbaPack} consecutive words, for the \texttt{\&} on the vector type of the build.)
+\item \csource{rp-private.h}{135}{136}: not yet recorded (2 lines of code)
+\item \csource{rp-private.h}{137}{152}: modelled by \lname{Ratpoints.Sieve.isZeroAt}
+  (deviation of \lname{Ratpoints.Sieve.isZeroAt}: one definition for every build, on a bit array given by its index in an array of words, \texttt{rbaPack} consecutive words that it compares with \texttt{0} one at a time, for the tests of the builds on the vector type, with vector instructions or by or-ing its words; the test for zero \texttt{TESTZ} also stands for its negation \texttt{TEST}.)
+\item \csource{rp-private.h}{153}{155}: modelled by \lname{Ratpoints.Sieve.clearLowBits}
+  (deviation of \lname{Ratpoints.Sieve.clearLowBits}: one definition for every build, the loop of the build with 512-bit bit arrays, of which the macros of the builds with 256-bit and 128-bit bit arrays are unrolled cases and that of the build with 64-bit bit arrays the case of one word; the bit array is the first \texttt{Ratpoints.rbaPack} words of an array, for the vector type of the build.)
+\item \csource{rp-private.h}{156}{159}: modelled by \lname{Ratpoints.Sieve.clearHighBits}
+  (deviation of \lname{Ratpoints.Sieve.clearHighBits}: one definition for every build, the loop of the build with 512-bit bit arrays, of which the macros of the builds with 256-bit and 128-bit bit arrays are unrolled cases and that of the build with 64-bit bit arrays the case of one word; the bit array is given by its index in an array of words, \texttt{rbaPack} consecutive words, for a pointer to a value of the vector type of the build.)
+\item \csource{rp-private.h}{160}{165}: not yet recorded (3 lines of code)
 \item \csource{rp-private.h}{167}{167}: modelled by \lname{Ratpoints.rbaPack}
   (deviation of \lname{Ratpoints.rbaPack}: the value of the default build, set here, where the C code chooses the build by the macros that the compiler is given; the vector type of a bit array becomes \texttt{rbaPack} consecutive words of an array of \texttt{UInt64}, and the shifts by \texttt{RBA\_SHIFT} are divisions by \texttt{Ratpoints.rbaLength}.)
-\item \csource{rp-private.h}{170}{170}: not yet recorded (1 lines of code)
+\item \csource{rp-private.h}{170}{170}: excluded (other): the include of the vector intrinsics in the build USE\_AVX, with 256-bit bit arrays; the word operations of the model need none
 \item \csource{rp-private.h}{172}{175}: modelled by \lname{Ratpoints.rbaPack}
   (deviation of \lname{Ratpoints.rbaPack}: the value of the default build, set here, where the C code chooses the build by the macros that the compiler is given; the vector type of a bit array becomes \texttt{rbaPack} consecutive words of an array of \texttt{UInt64}, and the shifts by \texttt{RBA\_SHIFT} are divisions by \texttt{Ratpoints.rbaLength}.)
-\item \csource{rp-private.h}{176}{224}: not yet recorded (35 lines of code)
+\item \csource{rp-private.h}{176}{176}: modelled by \lname{Ratpoints.Sieve.andBitArray}
+  (deviation of \lname{Ratpoints.Sieve.andBitArray}: one definition for every build, on bit arrays given by their indices in arrays of words, each bit array \texttt{rbaPack} consecutive words, for the \texttt{\&} on the vector type of the build.)
+\item \csource{rp-private.h}{177}{178}: not yet recorded (2 lines of code)
+\item \csource{rp-private.h}{179}{202}: modelled by \lname{Ratpoints.Sieve.isZeroAt}
+  (deviation of \lname{Ratpoints.Sieve.isZeroAt}: one definition for every build, on a bit array given by its index in an array of words, \texttt{rbaPack} consecutive words that it compares with \texttt{0} one at a time, for the tests of the builds on the vector type, with vector instructions or by or-ing its words; the test for zero \texttt{TESTZ} also stands for its negation \texttt{TEST}.)
+\item \csource{rp-private.h}{203}{205}: not yet recorded (3 lines of code)
+\item \csource{rp-private.h}{206}{213}: modelled by \lname{Ratpoints.Sieve.clearLowBits}
+  (deviation of \lname{Ratpoints.Sieve.clearLowBits}: one definition for every build, the loop of the build with 512-bit bit arrays, of which the macros of the builds with 256-bit and 128-bit bit arrays are unrolled cases and that of the build with 64-bit bit arrays the case of one word; the bit array is the first \texttt{Ratpoints.rbaPack} words of an array, for the vector type of the build.)
+\item \csource{rp-private.h}{214}{221}: modelled by \lname{Ratpoints.Sieve.clearHighBits}
+  (deviation of \lname{Ratpoints.Sieve.clearHighBits}: one definition for every build, the loop of the build with 512-bit bit arrays, of which the macros of the builds with 256-bit and 128-bit bit arrays are unrolled cases and that of the build with 64-bit bit arrays the case of one word; the bit array is given by its index in an array of words, \texttt{rbaPack} consecutive words, for a pointer to a value of the vector type of the build.)
+\item \csource{rp-private.h}{222}{224}: not yet recorded (3 lines of code)
 \item \csource{rp-private.h}{226}{226}: modelled by \lname{Ratpoints.rbaPack}
   (deviation of \lname{Ratpoints.rbaPack}: the value of the default build, set here, where the C code chooses the build by the macros that the compiler is given; the vector type of a bit array becomes \texttt{rbaPack} consecutive words of an array of \texttt{UInt64}, and the shifts by \texttt{RBA\_SHIFT} are divisions by \texttt{Ratpoints.rbaLength}.)
-\item \csource{rp-private.h}{229}{229}: not yet recorded (1 lines of code)
+\item \csource{rp-private.h}{229}{229}: excluded (other): the include of the vector intrinsics in the build USE\_AVX128, with 128-bit bit arrays; the word operations of the model need none
 \item \csource{rp-private.h}{231}{234}: modelled by \lname{Ratpoints.rbaPack}
   (deviation of \lname{Ratpoints.rbaPack}: the value of the default build, set here, where the C code chooses the build by the macros that the compiler is given; the vector type of a bit array becomes \texttt{rbaPack} consecutive words of an array of \texttt{UInt64}, and the shifts by \texttt{RBA\_SHIFT} are divisions by \texttt{Ratpoints.rbaLength}.)
-\item \csource{rp-private.h}{235}{250}: not yet recorded (15 lines of code)
+\item \csource{rp-private.h}{235}{236}: not yet recorded (2 lines of code)
+\item \csource{rp-private.h}{237}{237}: modelled by \lname{Ratpoints.Sieve.andBitArray}
+  (deviation of \lname{Ratpoints.Sieve.andBitArray}: one definition for every build, on bit arrays given by their indices in arrays of words, each bit array \texttt{rbaPack} consecutive words, for the \texttt{\&} on the vector type of the build.)
+\item \csource{rp-private.h}{238}{239}: not yet recorded (2 lines of code)
+\item \csource{rp-private.h}{241}{241}: modelled by \lname{Ratpoints.Sieve.isZeroAt}
+  (deviation of \lname{Ratpoints.Sieve.isZeroAt}: one definition for every build, on a bit array given by its index in an array of words, \texttt{rbaPack} consecutive words that it compares with \texttt{0} one at a time, for the tests of the builds on the vector type, with vector instructions or by or-ing its words; the test for zero \texttt{TESTZ} also stands for its negation \texttt{TEST}.)
+\item \csource{rp-private.h}{242}{244}: modelled by \lname{Ratpoints.Sieve.clearLowBits}
+  (deviation of \lname{Ratpoints.Sieve.clearLowBits}: one definition for every build, the loop of the build with 512-bit bit arrays, of which the macros of the builds with 256-bit and 128-bit bit arrays are unrolled cases and that of the build with 64-bit bit arrays the case of one word; the bit array is the first \texttt{Ratpoints.rbaPack} words of an array, for the vector type of the build.)
+\item \csource{rp-private.h}{245}{247}: modelled by \lname{Ratpoints.Sieve.clearHighBits}
+  (deviation of \lname{Ratpoints.Sieve.clearHighBits}: one definition for every build, the loop of the build with 512-bit bit arrays, of which the macros of the builds with 256-bit and 128-bit bit arrays are unrolled cases and that of the build with 64-bit bit arrays the case of one word; the bit array is given by its index in an array of words, \texttt{rbaPack} consecutive words, for a pointer to a value of the vector type of the build.)
+\item \csource{rp-private.h}{248}{250}: not yet recorded (3 lines of code)
 \item \csource{rp-private.h}{252}{252}: modelled by \lname{Ratpoints.rbaPack}
   (deviation of \lname{Ratpoints.rbaPack}: the value of the default build, set here, where the C code chooses the build by the macros that the compiler is given; the vector type of a bit array becomes \texttt{rbaPack} consecutive words of an array of \texttt{UInt64}, and the shifts by \texttt{RBA\_SHIFT} are divisions by \texttt{Ratpoints.rbaLength}.)
-\item \csource{rp-private.h}{255}{255}: not yet recorded (1 lines of code)
+\item \csource{rp-private.h}{255}{255}: excluded (other): the include of the SSE2 intrinsics in the build USE\_SSE, with 128-bit bit arrays; the word operations of the model need none
 \item \csource{rp-private.h}{257}{260}: modelled by \lname{Ratpoints.rbaPack}
   (deviation of \lname{Ratpoints.rbaPack}: the value of the default build, set here, where the C code chooses the build by the macros that the compiler is given; the vector type of a bit array becomes \texttt{rbaPack} consecutive words of an array of \texttt{UInt64}, and the shifts by \texttt{RBA\_SHIFT} are divisions by \texttt{Ratpoints.rbaLength}.)
-\item \csource{rp-private.h}{261}{276}: not yet recorded (15 lines of code)
+\item \csource{rp-private.h}{261}{262}: not yet recorded (2 lines of code)
+\item \csource{rp-private.h}{263}{263}: modelled by \lname{Ratpoints.Sieve.andBitArray}
+  (deviation of \lname{Ratpoints.Sieve.andBitArray}: one definition for every build, on bit arrays given by their indices in arrays of words, each bit array \texttt{rbaPack} consecutive words, for the \texttt{\&} on the vector type of the build.)
+\item \csource{rp-private.h}{264}{266}: not yet recorded (2 lines of code)
+\item \csource{rp-private.h}{267}{267}: modelled by \lname{Ratpoints.Sieve.isZeroAt}
+  (deviation of \lname{Ratpoints.Sieve.isZeroAt}: one definition for every build, on a bit array given by its index in an array of words, \texttt{rbaPack} consecutive words that it compares with \texttt{0} one at a time, for the tests of the builds on the vector type, with vector instructions or by or-ing its words; the test for zero \texttt{TESTZ} also stands for its negation \texttt{TEST}.)
+\item \csource{rp-private.h}{268}{270}: modelled by \lname{Ratpoints.Sieve.clearLowBits}
+  (deviation of \lname{Ratpoints.Sieve.clearLowBits}: one definition for every build, the loop of the build with 512-bit bit arrays, of which the macros of the builds with 256-bit and 128-bit bit arrays are unrolled cases and that of the build with 64-bit bit arrays the case of one word; the bit array is the first \texttt{Ratpoints.rbaPack} words of an array, for the vector type of the build.)
+\item \csource{rp-private.h}{271}{273}: modelled by \lname{Ratpoints.Sieve.clearHighBits}
+  (deviation of \lname{Ratpoints.Sieve.clearHighBits}: one definition for every build, the loop of the build with 512-bit bit arrays, of which the macros of the builds with 256-bit and 128-bit bit arrays are unrolled cases and that of the build with 64-bit bit arrays the case of one word; the bit array is given by its index in an array of words, \texttt{rbaPack} consecutive words, for a pointer to a value of the vector type of the build.)
+\item \csource{rp-private.h}{274}{276}: not yet recorded (3 lines of code)
 \item \csource{rp-private.h}{278}{278}: modelled by \lname{Ratpoints.rbaPack}
   (deviation of \lname{Ratpoints.rbaPack}: the value of the default build, set here, where the C code chooses the build by the macros that the compiler is given; the vector type of a bit array becomes \texttt{rbaPack} consecutive words of an array of \texttt{UInt64}, and the shifts by \texttt{RBA\_SHIFT} are divisions by \texttt{Ratpoints.rbaLength}.)
 \item \csource{rp-private.h}{281}{284}: modelled by \lname{Ratpoints.rbaPack}
   (deviation of \lname{Ratpoints.rbaPack}: the value of the default build, set here, where the C code chooses the build by the macros that the compiler is given; the vector type of a bit array becomes \texttt{rbaPack} consecutive words of an array of \texttt{UInt64}, and the shifts by \texttt{RBA\_SHIFT} are divisions by \texttt{Ratpoints.rbaLength}.)
-\item \csource{rp-private.h}{285}{295}: not yet recorded (11 lines of code)
+\item \csource{rp-private.h}{285}{286}: not yet recorded (2 lines of code)
+\item \csource{rp-private.h}{287}{287}: modelled by \lname{Ratpoints.Sieve.andBitArray}
+  (deviation of \lname{Ratpoints.Sieve.andBitArray}: one definition for every build, on bit arrays given by their indices in arrays of words, each bit array \texttt{rbaPack} consecutive words, for the \texttt{\&} on the vector type of the build.)
+\item \csource{rp-private.h}{288}{289}: not yet recorded (2 lines of code)
+\item \csource{rp-private.h}{290}{290}: modelled by \lname{Ratpoints.Sieve.isZeroAt}
+  (deviation of \lname{Ratpoints.Sieve.isZeroAt}: one definition for every build, on a bit array given by its index in an array of words, \texttt{rbaPack} consecutive words that it compares with \texttt{0} one at a time, for the tests of the builds on the vector type, with vector instructions or by or-ing its words; the test for zero \texttt{TESTZ} also stands for its negation \texttt{TEST}.)
+\item \csource{rp-private.h}{291}{291}: modelled by \lname{Ratpoints.Sieve.clearLowBits}
+  (deviation of \lname{Ratpoints.Sieve.clearLowBits}: one definition for every build, the loop of the build with 512-bit bit arrays, of which the macros of the builds with 256-bit and 128-bit bit arrays are unrolled cases and that of the build with 64-bit bit arrays the case of one word; the bit array is the first \texttt{Ratpoints.rbaPack} words of an array, for the vector type of the build.)
+\item \csource{rp-private.h}{292}{292}: modelled by \lname{Ratpoints.Sieve.clearHighBits}
+  (deviation of \lname{Ratpoints.Sieve.clearHighBits}: one definition for every build, the loop of the build with 512-bit bit arrays, of which the macros of the builds with 256-bit and 128-bit bit arrays are unrolled cases and that of the build with 64-bit bit arrays the case of one word; the bit array is given by its index in an array of words, \texttt{rbaPack} consecutive words, for a pointer to a value of the vector type of the build.)
+\item \csource{rp-private.h}{293}{295}: not yet recorded (3 lines of code)
 \item \csource{rp-private.h}{300}{300}: modelled by \lname{Ratpoints.rbaPack}
   (deviation of \lname{Ratpoints.rbaPack}: the value of the default build, set here, where the C code chooses the build by the macros that the compiler is given; the vector type of a bit array becomes \texttt{rbaPack} consecutive words of an array of \texttt{UInt64}, and the shifts by \texttt{RBA\_SHIFT} are divisions by \texttt{Ratpoints.rbaLength}.)
-\item \csource{rp-private.h}{306}{318}: not yet recorded (9 lines of code)
+\item \csource{rp-private.h}{306}{308}: modelled by \lname{Ratpoints.Sieve.isZeroAt}
+  (deviation of \lname{Ratpoints.Sieve.isZeroAt}: one definition for every build, on a bit array given by its index in an array of words, \texttt{rbaPack} consecutive words that it compares with \texttt{0} one at a time, for the tests of the builds on the vector type, with vector instructions or by or-ing its words; the test for zero \texttt{TESTZ} also stands for its negation \texttt{TEST}.)
+\item \csource{rp-private.h}{311}{318}: excluded (instrumentation): WIDTH and PRINT\_RBA, which print words and bit arrays in hexadecimal in the output for debugging (under DEBUG)
 \item \csource{rp-private.h}{321}{323}: modelled by \lname{Ratpoints.maxBitsInPrime}
   (deviation of \lname{Ratpoints.maxBitsInPrime}: 8, the value of the default build, which the Makefile of ratpoints passes to the compiler (its variable \texttt{PRIME\_SIZE}), for the value 7 that the header takes when it is given none.)
 \item \csource{rp-private.h}{325}{361}: modelled by \lname{Ratpoints.numPrimes}
   (deviation of \lname{Ratpoints.numPrimes}: computed from \texttt{Ratpoints.maxBitsInPrime}, where the header lists the values for 5 to 10 bits, the numbers that the computation gives, and takes 7 bits for any other value; the largest such prime and the power of 2 above it, which size the tables of the C code, have no counterpart.)
-\item \csource{rp-private.h}{378}{534}: not yet recorded (48 lines of code)
+\item \csource{rp-private.h}{378}{427}: not yet recorded (19 lines of code)
+\item \csource{rp-private.h}{429}{444}: modelled by \lname{Ratpoints.Sieve.ctz}
+  (deviation of \lname{Ratpoints.Sieve.ctz}: the loop for a compiler without the builtin, where gcc and clang take \texttt{\_\_builtin\_ctzl}.)
+\item \csource{rp-private.h}{450}{534}: not yet recorded (20 lines of code)
 \item \csource{rp-private.h}{542}{555}: modelled by \lname{Ratpoints.Sieve.Entry}
   (deviation of \lname{Ratpoints.Sieve.Entry}: only the fields that the rows of a prime read, and no rows: ratpoints keeps the row of each residue in \texttt{sieve}, that of \texttt{0} from the build and the others made by \texttt{init} when a denominator first needs one, where \texttt{Ratpoints.Sieve.Entry.admits} computes each bit from the tables; the other fields serve the composite moduli, the packing and the reduction of the sieve (stage F), and the choice of the moduli.)
 \item \csource{rp-private.h}{574}{617}: not yet recorded (22 lines of code)

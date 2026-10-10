@@ -183,10 +183,8 @@ which makes the sentinel nonzero and gives the bit arrays their numerators.
 
 \begin{definition}[Operations on bit arrays]\label{def:bitArrayOps}
   \uses{def:rbaPack}
-  Proposed names: \lname{Ratpoints.Sieve.andBitArray}, \lname{Ratpoints.Sieve.clearLowBits},
-  \lname{Ratpoints.Sieve.clearHighBits}, \lname{Ratpoints.Sieve.isZeroAt}, and lemmas
-  \lname{Ratpoints.Sieve.getElem!\_andBitArray}, \lname{Ratpoints.Sieve.getLsbD\_clearLowBits},
-  \lname{Ratpoints.Sieve.getLsbD\_clearHighBits}, \lname{Ratpoints.Sieve.isZeroAt\_eq\_true\_iff}.
+  \lean{Ratpoints.Sieve.andBitArray, Ratpoints.Sieve.clearLowBits, Ratpoints.Sieve.clearHighBits, Ratpoints.Sieve.isZeroAt, Ratpoints.Sieve.getElem!_andBitArray, Ratpoints.Sieve.getLsbD_clearLowBits, Ratpoints.Sieve.getLsbD_clearHighBits, Ratpoints.Sieve.isZeroAt_eq_true_iff}
+  \leanok
   Bit array $j$ of an array of words and-ed with bit array $x$ of a row, word by word
   (\verb|AND|: \csource{rp-private.h}{176}{176}, and \csource{rp-private.h}{134}{134},
   \csource{rp-private.h}{237}{237}, \csource{rp-private.h}{263}{263},
@@ -212,8 +210,8 @@ which makes the sentinel nonzero and gives the bit arrays their numerators.
 \end{definition}
 
 \begin{definition}[The lowest set bit]\label{def:ctz}
-  Proposed names: \lname{Ratpoints.Sieve.ctz}, \lname{Ratpoints.Sieve.ctz\_spec},
-  \lname{UInt64.getLsbD\_and\_sub\_one}, \lname{UInt64.toNat\_and\_sub\_one\_lt}.
+  \lean{Ratpoints.Sieve.ctz, Ratpoints.Sieve.ctz_spec, UInt64.getLsbD_and_sub_one, UInt64.toNat_and_sub_one_lt}
+  \leanok
   The position of the lowest set bit of a nonzero word, by the loop of \verb|RP_CTZL| for a
   compiler without the builtin: shift the word right while its lowest bit is clear, counting the
   steps (\csource{rp-private.h}{429}{444}). Its contract: for $x \ne 0$ the result is the number

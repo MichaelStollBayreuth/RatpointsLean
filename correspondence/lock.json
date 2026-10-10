@@ -313,10 +313,40 @@
         "Ratpoints.rbaPack"
       ]
     },
+    "rp-private.h:123-123": {
+      "hash": "f8f5ec9deda1ad8d3369e85b908df3fe3e94f326c6b1997be056299b5f4552a2",
+      "owners": [
+        "excluded (other)"
+      ]
+    },
     "rp-private.h:125-128": {
       "hash": "5f000eba4d8e1d109c7c65acf41babe8209d8bafd64044a38a64965cc134152d",
       "owners": [
         "Ratpoints.rbaPack"
+      ]
+    },
+    "rp-private.h:134-134": {
+      "hash": "6023ba9d475b7d7bd30aad46d5b4d00d2ac6330c3fe5d12f3273e325e09c1bb9",
+      "owners": [
+        "Ratpoints.Sieve.andBitArray"
+      ]
+    },
+    "rp-private.h:137-152": {
+      "hash": "1f2b4214bdf3ed58670ec3388b6dc9d55bbf6877222f9e9daf092d6e3e18fcef",
+      "owners": [
+        "Ratpoints.Sieve.isZeroAt"
+      ]
+    },
+    "rp-private.h:153-155": {
+      "hash": "b9a1c5be25336ec781566435f7515daa9c624714e90304141559fbc479c3b093",
+      "owners": [
+        "Ratpoints.Sieve.clearLowBits"
+      ]
+    },
+    "rp-private.h:156-159": {
+      "hash": "77030045df45519cd70000651d5aa86ce810f83870865d43ffc5a76214e1d954",
+      "owners": [
+        "Ratpoints.Sieve.clearHighBits"
       ]
     },
     "rp-private.h:167-167": {
@@ -325,10 +355,40 @@
         "Ratpoints.rbaPack"
       ]
     },
+    "rp-private.h:170-170": {
+      "hash": "f8f5ec9deda1ad8d3369e85b908df3fe3e94f326c6b1997be056299b5f4552a2",
+      "owners": [
+        "excluded (other)"
+      ]
+    },
     "rp-private.h:172-175": {
       "hash": "a88bf9921a1343b940f1080451d47c714efc2db58615b03171c0567e30a9754c",
       "owners": [
         "Ratpoints.rbaPack"
+      ]
+    },
+    "rp-private.h:176-176": {
+      "hash": "6023ba9d475b7d7bd30aad46d5b4d00d2ac6330c3fe5d12f3273e325e09c1bb9",
+      "owners": [
+        "Ratpoints.Sieve.andBitArray"
+      ]
+    },
+    "rp-private.h:179-202": {
+      "hash": "261c36e8187af6725b822f4215308c26a4d005d75aaf207a995b8874eab5ef18",
+      "owners": [
+        "Ratpoints.Sieve.isZeroAt"
+      ]
+    },
+    "rp-private.h:206-213": {
+      "hash": "b6f443220af132c33bdb340fd548f85947a278d14a426ae7f9210f3e5a44da96",
+      "owners": [
+        "Ratpoints.Sieve.clearLowBits"
+      ]
+    },
+    "rp-private.h:214-221": {
+      "hash": "c61a89b0794e00e6a2d3d547ae6d448d38613b3434c1b01bb963f8918c053808",
+      "owners": [
+        "Ratpoints.Sieve.clearHighBits"
       ]
     },
     "rp-private.h:226-226": {
@@ -337,10 +397,40 @@
         "Ratpoints.rbaPack"
       ]
     },
+    "rp-private.h:229-229": {
+      "hash": "f8f5ec9deda1ad8d3369e85b908df3fe3e94f326c6b1997be056299b5f4552a2",
+      "owners": [
+        "excluded (other)"
+      ]
+    },
     "rp-private.h:231-234": {
       "hash": "6cb7d43f08bb9cffc53b1bd2e4d240c3eb8ce6897fd2137be6d8a7880633a655",
       "owners": [
         "Ratpoints.rbaPack"
+      ]
+    },
+    "rp-private.h:237-237": {
+      "hash": "6023ba9d475b7d7bd30aad46d5b4d00d2ac6330c3fe5d12f3273e325e09c1bb9",
+      "owners": [
+        "Ratpoints.Sieve.andBitArray"
+      ]
+    },
+    "rp-private.h:241-241": {
+      "hash": "2e7817bba03112eebd532f09f8ad2492fb855f6b51f0c1937cbd9dab9b6ec431",
+      "owners": [
+        "Ratpoints.Sieve.isZeroAt"
+      ]
+    },
+    "rp-private.h:242-244": {
+      "hash": "37a11c0f2c1ecbb989b6168bf959670893265f1e1d60b6f6e56539414ca3aea0",
+      "owners": [
+        "Ratpoints.Sieve.clearLowBits"
+      ]
+    },
+    "rp-private.h:245-247": {
+      "hash": "14a8f2c576b0169df21a97c3ce1901723c9e1fdc6fe187b41b3c4cb951e19414",
+      "owners": [
+        "Ratpoints.Sieve.clearHighBits"
       ]
     },
     "rp-private.h:252-252": {
@@ -349,10 +439,40 @@
         "Ratpoints.rbaPack"
       ]
     },
+    "rp-private.h:255-255": {
+      "hash": "68facf03cca0bb768dfb6b8fe5de6da7fbc8e674d6c936e6c6bf2e82b36a6404",
+      "owners": [
+        "excluded (other)"
+      ]
+    },
     "rp-private.h:257-260": {
       "hash": "95a52890e31ecf50bb3fd48761afebe02de77fa0c09a4b6e04249216dbc25d99",
       "owners": [
         "Ratpoints.rbaPack"
+      ]
+    },
+    "rp-private.h:263-263": {
+      "hash": "5696c03ce3002db228cf79e6b0bb972d66c3c8a328878e9d178801fe2f70705a",
+      "owners": [
+        "Ratpoints.Sieve.andBitArray"
+      ]
+    },
+    "rp-private.h:267-267": {
+      "hash": "95f3a73a4bcc8237b31871868e54f10781b29c938830cf3d98495012f575a488",
+      "owners": [
+        "Ratpoints.Sieve.isZeroAt"
+      ]
+    },
+    "rp-private.h:268-270": {
+      "hash": "37a11c0f2c1ecbb989b6168bf959670893265f1e1d60b6f6e56539414ca3aea0",
+      "owners": [
+        "Ratpoints.Sieve.clearLowBits"
+      ]
+    },
+    "rp-private.h:271-273": {
+      "hash": "14a8f2c576b0169df21a97c3ce1901723c9e1fdc6fe187b41b3c4cb951e19414",
+      "owners": [
+        "Ratpoints.Sieve.clearHighBits"
       ]
     },
     "rp-private.h:278-278": {
@@ -367,10 +487,46 @@
         "Ratpoints.rbaPack"
       ]
     },
+    "rp-private.h:287-287": {
+      "hash": "ee080f0f8e458fed614af2180eb2c10bf0fca51b842d34597d550c9ab701512d",
+      "owners": [
+        "Ratpoints.Sieve.andBitArray"
+      ]
+    },
+    "rp-private.h:290-290": {
+      "hash": "d09ec4e6ecf27334891452c487b5b2aa2769704d187cee27989b4186c4400cf5",
+      "owners": [
+        "Ratpoints.Sieve.isZeroAt"
+      ]
+    },
+    "rp-private.h:291-291": {
+      "hash": "213f02626089d2d33d82ea3edd2399dd798f4ae90bb5bef635af2a04e8325e31",
+      "owners": [
+        "Ratpoints.Sieve.clearLowBits"
+      ]
+    },
+    "rp-private.h:292-292": {
+      "hash": "201201164edab7e98842578674a35e941cc334734a70e33183229d2a76845b2c",
+      "owners": [
+        "Ratpoints.Sieve.clearHighBits"
+      ]
+    },
     "rp-private.h:300-300": {
       "hash": "bedaab0e6dfcd4e35e3bcf72bf9e5e703a67d4aaf48d1fa5730f63a012f3af47",
       "owners": [
         "Ratpoints.rbaPack"
+      ]
+    },
+    "rp-private.h:306-308": {
+      "hash": "6a14275d64f14de051eb4f956252dc3df095bd549d34e80a8ad00d4b1b123951",
+      "owners": [
+        "Ratpoints.Sieve.isZeroAt"
+      ]
+    },
+    "rp-private.h:311-318": {
+      "hash": "8c0c602b4eb7ee3cd3f231501d79de9a31f2d18f24d4f47aa72f1933d16b6b06",
+      "owners": [
+        "excluded (instrumentation)"
       ]
     },
     "rp-private.h:321-323": {
@@ -383,6 +539,12 @@
       "hash": "ff27dd12c1efab74f34738e15531b3844655220d5210dd2bdcb0734fb2053a31",
       "owners": [
         "Ratpoints.numPrimes"
+      ]
+    },
+    "rp-private.h:429-444": {
+      "hash": "27ab62987e54d21729a7dc7240acadb35d150c6cdfef5f5b09a78619d8b92e9c",
+      "owners": [
+        "Ratpoints.Sieve.ctz"
       ]
     },
     "rp-private.h:49-51": {
