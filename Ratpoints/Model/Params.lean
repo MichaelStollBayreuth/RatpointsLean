@@ -110,10 +110,10 @@ moduli are the first `min(q + P, numPrimes)` primes of `Ratpoints.primeTable` fo
 tested for the value `F ≥ 0` of `-F` or else `Ratpoints.defaultMaxForbidden`, at most as many as
 the table has primes; the Jacobi test runs unless `-j` is the last of `-j` and `-J`; and a piece
 of the numerators has at most `Ratpoints.defaultArraySize` bit arrays, the array size that the
-program passes.
+program sets when it reads the arguments and again before the search.
 
 C: `find_points.c:4643-4649`, `find_points.c:4655-4656`, `find_points.c:4662-4665`,
-`main.c:221-222`
+`main.c:221-222`, `main.c:347`
 
 Deviation: the moduli are the first primes of the table, in increasing order, where ratpoints
 ranks the primes by what they say about the curve (`sieving_info`), looks past the first `q` when

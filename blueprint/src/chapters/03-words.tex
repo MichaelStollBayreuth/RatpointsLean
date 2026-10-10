@@ -76,9 +76,9 @@ denominator $b$, \verb|sift| (\csource{find_points.c}{3442}{3617}):
     (\csource{find_points.c}{5250}{5338}).
 \end{enumerate}
 \verb|array_size| is a parameter of the library; the program always passes 256
-(\csource{main.c}{221}{222}), and \verb|find_points| takes 256 for a value $\le 0$, caps it at
-$2 \lceil H/64 \rceil$ and at $2^{20}$, and rounds it up to a multiple of the chunk
-(\csource{find_points.c}{4666}{4677}).
+(\csource{main.c}{347}{347}, \csource{main.c}{221}{222}), and \verb|find_points| takes 256 for a
+value $\le 0$, caps it at $2 \lceil H/64 \rceil$ and at $2^{20}$, and rounds it up to a multiple of
+the chunk (\csource{find_points.c}{4666}{4677}).
 
 \section{The constants and the parameters}\label{sec:wordsParams}
 
@@ -86,16 +86,20 @@ $2 \lceil H/64 \rceil$ and at $2^{20}$, and rounds it up to a multiple of the ch
   \lean{Ratpoints.rbaPack, Ratpoints.rbaLength, Ratpoints.rbaPack_pos}
   \leanok
   A bit array has $\mathrm{rbaPack} = 4$ words of 64 bits, $\mathrm{rbaLength} = 256$ bits: the
-  values of the default build (\csource{rp-private.h}{172}{175}, with the word length
-  \csource{rp-private.h}{49}{51}); the builds with 512-bit, 128-bit and 64-bit bit arrays have 8,
-  2 and 1 words (\csource{rp-private.h}{125}{128}, \csource{rp-private.h}{231}{234},
-  \csource{rp-private.h}{257}{260}, \csource{rp-private.h}{281}{284}), and the build is chosen by
+  values of the default build (\csource{rp-private.h}{174}{175} and
+  \csource{rp-private.h}{172}{173}, with the word length \csource{rp-private.h}{49}{51}); the
+  builds with 512-bit, 128-bit and 64-bit bit arrays have 8, 2 and 1 words
+  (\csource{rp-private.h}{127}{128}, \csource{rp-private.h}{233}{234},
+  \csource{rp-private.h}{259}{260}, \csource{rp-private.h}{283}{284}; their lengths:
+  \csource{rp-private.h}{125}{126}, \csource{rp-private.h}{231}{232},
+  \csource{rp-private.h}{257}{258}, \csource{rp-private.h}{281}{282}), and the build is chosen by
   the lines \csource{rp-private.h}{113}{113}, \csource{rp-private.h}{167}{167},
   \csource{rp-private.h}{226}{226}, \csource{rp-private.h}{252}{252},
   \csource{rp-private.h}{278}{278}, \csource{rp-private.h}{300}{300} and
   \csource{rp-private.h}{55}{58}. The vector type of a bit array becomes $\mathrm{rbaPack}$
-  consecutive words of one array of \verb|UInt64|, and the shifts by \verb|RBA_SHIFT| and
-  \verb|LONG_SHIFT| and the masks by \verb|LONG_MASK| have no counterpart of their own: the model
+  consecutive words of one array of \verb|UInt64|, the length is computed as
+  $64 \cdot \mathrm{rbaPack}$, and the shifts by \verb|RBA_SHIFT| and \verb|LONG_SHIFT| and the
+  masks by \verb|RBA_LENGTH - 1| and \verb|LONG_MASK| have no counterpart of their own: the model
   divides by $\mathrm{rbaLength}$ and by 64 and takes remainders. The proofs use only
   $\mathrm{rbaPack} > 0$, so they hold for every build.
 \end{definition}
@@ -117,14 +121,14 @@ $2 \lceil H/64 \rceil$ and at $2^{20}$, and rounds it up to a multiple of the ch
 
 The parameters of the executable take the default, as the program does: \verb|sieveParams|
 (Definition~\ref{def:sieveParams}) gives the field the value $\mathrm{defaultArraySize}$ and takes
-over the C lines of the program that set it (\csource{main.c}{221}{222}). The new field is a free
-choice of the library that changes neither the points found nor their order, so the theorems
-quantify over it as over the other parameters, and \verb|Params.WF| does not constrain it: every
-value gives pieces of at least one bit array. Since the comparator challenge imports
-\verb|Params|, its structure changes with this field, while the statements of the challenge and
-\verb|Params.WF| stay as they are. The number of registers of a chunk, \verb|RATPOINTS_CHUNK|,
-becomes a constant in stage~F, together with the chunked first stage and the copies in the rows
-that it decides; for the model it is $1$.
+over the C lines of the program that set it (\csource{main.c}{347}{347},
+\csource{main.c}{221}{222}). The new field is a free choice of the library that changes neither the
+points found nor their order, so the theorems quantify over it as over the other parameters, and
+\verb|Params.WF| does not constrain it: every value gives pieces of at least one bit array. Since
+the comparator challenge imports \verb|Params|, its structure changes with this field, while the
+statements of the challenge and \verb|Params.WF| stay as they are. The number of registers of a
+chunk, \verb|RATPOINTS_CHUNK|, becomes a constant in stage~F, together with the chunked first stage
+and the copies in the rows that it decides; for the model it is $1$.
 
 \section{The rows as words}\label{sec:wordRows}
 
@@ -231,16 +235,15 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
   \uses{def:bitArrayOps, def:rows}
   \lean{Ratpoints.Sieve.andRows, Ratpoints.Sieve.andRows_spec}
   \leanok
-  Every word of the piece set to all ones, where ratpoints writes the 2-adic pattern of the class
-  of $b$ (stage~E); then for each modulus $p$ with its row, for $r = (-w_0) \bmod p$, bit array $j$
-  is and-ed with bit array $(w_0 + j) \bmod p$ of the row, in the three loops of the C code: $n$
-  bit arrays of the row from $p - r$ on when $n < r$, and otherwise $r$ bit arrays from $p - r$
-  on, then whole periods of $p$ from $0$, then the rest from $0$ (\csource{sift.c}{943}{1022}).
-  Every modulus is applied here, those of the second and the third stage too
-  (\csource{sift.c}{291}{312}, \csource{sift.c}{405}{431}, \csource{sift.c}{1083}{1086},
-  \csource{sift.c}{1174}{1202}). Its contract: for every list of tables with $p > 0$ whose rows
-  for $b$ the moduli carry, bit $t$ of word $y < n \cdot \mathrm{rbaPack}$ is $t < 64$ and the
-  survivor test of $R w_0 + 64 y + t$.
+  Every word of the piece set to all ones, where ratpoints writes the 2-adic pattern of the class of
+  $b$ (stage~E); then for each modulus $p$ with its row, for $r = (-w_0) \bmod p$, bit array $j$ is
+  and-ed with bit array $(w_0 + j) \bmod p$ of the row, in the three loops of the C code: $n$ bit
+  arrays of the row from $p - r$ on when $n < r$, and otherwise $r$ bit arrays from $p - r$ on, then
+  whole periods of $p$ from $0$, then the rest from $0$ (\csource{sift.c}{943}{1022}). Every modulus
+  is applied here, those of the second and the third stage too (\csource{sift.c}{291}{312},
+  \csource{sift.c}{1083}{1086}, \csource{sift.c}{1174}{1202}). Its contract: for every list of
+  tables with $p > 0$ whose rows for $b$ the moduli carry, bit $t$ of word $y < n \cdot
+  \mathrm{rbaPack}$ is $t < 64$ and the survivor test of $R w_0 + 64 y + t$.
 \end{definition}
 
 \begin{definition}[The check of a numerator]\label{def:checkNum}
@@ -289,14 +292,16 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
   \uses{def:andRows, def:scanPiece}
   \lean{Ratpoints.Sieve.siftPiece, Ratpoints.Sieve.siftPiece_spec}
   \leanok
-  A fresh array of $n + 1$ bit arrays, as the worker's array of \verb|array_size| bit arrays and
-  two more (\csource{find_points.c}{3119}{3121}); the first stage; the low mask $m_l$ on the first
-  bit array if $m_l \ne 0$ and the high mask $m_h$ on the last if $m_h \ne 0$
-  (\csource{sift.c}{1030}{1041}); and the scan (the head of \verb|_ratpoints_sift0|,
-  \csource{sift.c}{498}{531}, and its end, \csource{sift.c}{1300}{1305}). Its contract, for
-  $m_h < R$ and every list of tables with $p > 0$ whose rows for $b$ the moduli carry: the
-  concatenation of the checks of the numerators from $R w_0 + m_l$ to $R (w_0 + n) - 1 - m_h$ that
-  survive the tables.
+  A fresh array of $n + 1$ bit arrays, as the worker's array of \verb|array_size| bit arrays and two
+  more (\csource{find_points.c}{3119}{3121}); the first stage; the low mask $m_l$ on the first bit
+  array if $m_l \ne 0$ and the high mask $m_h$ on the last if $m_h \ne 0$
+  (\csource{sift.c}{1030}{1041}); and the scan. The piece also has the head of
+  \verb|_ratpoints_sift0| (\csource{sift.c}{498}{531}), the count of its words
+  (\csource{sift.c}{548}{548}), the timer and the test before its second stage
+  (\csource{sift.c}{1056}{1058}) and its end (\csource{sift.c}{1300}{1305}). Its contract, for $m_h
+  < R$ and every list of tables with $p > 0$ whose rows for $b$ the moduli carry: the concatenation
+  of the checks of the numerators from $R w_0 + m_l$ to $R (w_0 + n) - 1 - m_h$ that survive the
+  tables.
 \end{definition}
 
 \section{One denominator and the run}\label{sec:siftDen}
@@ -305,8 +310,9 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
   \uses{def:siftPiece}
   \lean{Ratpoints.Sieve.sift, Ratpoints.Sieve.sift_spec}
   \leanok
-  The row of $b$ for each modulus (\csource{find_points.c}{3149}{3170},
-  \csource{find_points.c}{3490}{3561}); the products $c_k b^{d - k}$ and the factor of the
+  The row of $b$ for each modulus, for the rows of the first two stages
+  (\csource{find_points.c}{3149}{3170}, \csource{find_points.c}{3490}{3561}) and the table of the
+  third (\csource{sift.c}{405}{431}); the products $c_k b^{d - k}$ and the factor of the
   check; the word numbers $w_{\mathrm{low}} = \lfloor -H/R \rfloor$ and
   $w_{\mathrm{high}} = \lfloor H/R \rfloor + 1$; and while $w_0 < w_{\mathrm{high}}$, the piece
   from $w_0$ to $w_1 = \min(w_0 + A, w_{\mathrm{high}})$, with the low mask

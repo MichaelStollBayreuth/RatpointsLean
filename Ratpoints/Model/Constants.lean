@@ -91,23 +91,24 @@ def defaultMaxForbidden : Nat := 64
 whose bit arrays have 256 bits, and 8, 2 and 1 in the builds with 512-bit, 128-bit and 64-bit bit
 arrays. The proofs use only that it is positive (`Ratpoints.rbaPack_pos`).
 
-C: `rp-private.h:55-58`, `rp-private.h:113`, `rp-private.h:125-128`, `rp-private.h:167`,
-`rp-private.h:172-175`, `rp-private.h:226`, `rp-private.h:231-234`, `rp-private.h:252`,
-`rp-private.h:257-260`, `rp-private.h:278`, `rp-private.h:281-284`, `rp-private.h:300`
+C: `rp-private.h:55-58`, `rp-private.h:113`, `rp-private.h:127-128`, `rp-private.h:167`,
+`rp-private.h:174-175`, `rp-private.h:226`, `rp-private.h:233-234`, `rp-private.h:252`,
+`rp-private.h:259-260`, `rp-private.h:278`, `rp-private.h:283-284`, `rp-private.h:300`
 
 Deviation: the value of the default build, set here, where the C code chooses the build by the
 macros that the compiler is given; the vector type of a bit array becomes `rbaPack` consecutive
-words of an array of `UInt64`, and the shifts by `RBA_SHIFT` are divisions by
-`Ratpoints.rbaLength`. -/
+words of an array of `UInt64`. -/
 def rbaPack : Nat := 4
 
 /-- The number of bits of a bit array of the sieve, `RBA_LENGTH`: `Ratpoints.rbaPack` words of
 `LONG_LENGTH = 64` bits.
 
-C: `rp-private.h:49-51`
+C: `rp-private.h:49-51`, `rp-private.h:125-126`, `rp-private.h:172-173`, `rp-private.h:231-232`,
+`rp-private.h:257-258`, `rp-private.h:281-282`
 
-Deviation: the shifts by `LONG_SHIFT` and the masks by `LONG_MASK` are divisions by 64 and
-remainders. -/
+Deviation: computed from `Ratpoints.rbaPack`, where each build sets `RBA_LENGTH` and its logarithm
+`RBA_SHIFT` by literals; the shifts by `RBA_SHIFT` and by `LONG_SHIFT` are divisions by
+`rbaLength` and by 64, and the masks by `RBA_LENGTH - 1` and by `LONG_MASK` remainders. -/
 def rbaLength : Nat := 64 * rbaPack
 
 /-- At most how many bit arrays a piece of the numerators has when the parameters do not say,

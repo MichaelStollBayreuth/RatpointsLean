@@ -98,8 +98,9 @@ are no points modulo $p$ (D) and the options of the output (G) come in their sta
   the first $q$ when it is absent or negative; at most $\min(F, 171)$ forbidden divisors, for
   the value $F \ge 0$ of \verb|-F| or else $F = \mathrm{defaultMaxForbidden} = 64$; the Jacobi
   test unless \verb|-j| is the last of \verb|-j| and \verb|-J|; and pieces of at most
-  $\mathrm{defaultArraySize} = 256$ bit arrays, the array size that the program passes
-  (\csource{main.c}{221}{222}). The default parameters are those of no options: the first 30
+  $\mathrm{defaultArraySize} = 256$ bit arrays, the array size that the program sets when it
+  reads the arguments and again before the search (\csource{main.c}{347}{347},
+  \csource{main.c}{221}{222}). The default parameters are those of no options: the first 30
   primes, all in the first stage. Every parameter set made this way is well-formed.
 \end{definition}
 
