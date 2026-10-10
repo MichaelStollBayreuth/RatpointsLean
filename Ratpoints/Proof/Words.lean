@@ -76,6 +76,8 @@ theorem rbaLength_eq : rbaLength = 64 * rbaPack := rfl
 
 theorem rbaLength_pos : 0 < rbaLength := rbaLength_eq ▸ Nat.mul_pos (by decide) rbaPack_pos
 
+theorem natCast_rbaLength_pos : (0 : Int) < rbaLength := Int.natCast_pos.mpr rbaLength_pos
+
 theorem rbaLength_mul (j : Nat) : rbaLength * j = 64 * (rbaPack * j) := by
   rw [rbaLength_eq, Nat.mul_assoc]
 
@@ -295,7 +297,7 @@ theorem AndRowsFillInvariant.append_set! {n : Nat} {done suff : List Nat} {cur :
   have := Std.Legacy.Range.lt_of_toList_eq_append_cons hl
   intro y hy
   rw [List.length_append, List.length_singleton] at hy
-  rw [Vector.getElem!_set! (by rw [Nat.succ_mul]; lia)]
+  rw [Vector.getElem!_set! (Nat.lt_add_one_mul_of_lt_mul (by lia))]
   split
   · rfl
   · exact h y (by lia)
@@ -335,7 +337,7 @@ theorem AndRowsRowInvariant.add_one_andBitArray {n : Nat} {w0 : Int} {pref : Lis
     (h : AndRowsRowInvariant w0 n pref s c surv) (hx : ((w0 + c) % (s.p : Int)).toNat = x) :
     AndRowsRowInvariant w0 n pref s (c + 1) (andBitArray surv c s.row x) := by
   intro y hy
-  rw [getElem!_andBitArray _ _ _ _ (by rw [Nat.succ_mul]; lia), h y hy]
+  rw [getElem!_andBitArray _ _ _ _ (Nat.lt_add_one_mul_of_lt_mul hy), h y hy]
   by_cases hyc : y / rbaPack = c
   · subst hyc
     simp only [SieveSpec.wordAt, hx, ite_true, Nat.lt_irrefl, ite_false, Nat.lt_succ_self]
@@ -574,7 +576,7 @@ theorem ScanPieceSentinelInvariant.append_set! {n : Nat}
   have := Std.Legacy.Range.lt_of_toList_eq_append_cons hl
   have : rbaPack * n = n * rbaPack := Nat.mul_comm _ _
   refine ⟨fun y hy ↦ ?_, fun κ hκ ↦ ?_⟩
-  · rw [Vector.getElem!_set! (by rw [Nat.succ_mul]; lia), h.1 y hy]
+  · rw [Vector.getElem!_set! (Nat.lt_add_one_mul_of_lt_mul hy), h.1 y hy]
     grind
   · rw [List.length_append, List.length_singleton] at hκ
     rw [Vector.getElem!_set! (by rw [Nat.succ_mul]; lia)]
@@ -732,20 +734,19 @@ theorem isMasked_clearHighBits_clearLowBits {n maskHigh : Nat}
     (v : Vector UInt64 ((n + 1) * rbaPack)) (maskLow : Nat) (hH : maskHigh < rbaLength) :
     IsMasked n maskLow maskHigh v (clearHighBits (clearLowBits v maskLow) (n - 1) maskHigh) :=
   fun y hy t _ ↦ by
-    have := Nat.lt_of_lt_of_le hy (Nat.mul_le_mul_right rbaPack (Nat.le_succ n))
+    have := Nat.lt_add_one_mul_of_lt_mul hy
     rw [getLsbD_clearHighBits_sub_one _ hH this hy, getLsbD_clearLowBits _ _ this]
 
 theorem isMasked_clearLowBits {n maskHigh : Nat} (v : Vector UInt64 ((n + 1) * rbaPack))
     (maskLow : Nat) (hH : maskHigh = 0) : IsMasked n maskLow maskHigh v (clearLowBits v maskLow) :=
   fun y hy t ht ↦ by
-    simp [getLsbD_clearLowBits _ _ (Nat.lt_of_lt_of_le hy (Nat.mul_le_mul_right rbaPack
-      (Nat.le_succ n))), hH, lt_rbaLength_mul_of_lt hy ht]
+    simp [getLsbD_clearLowBits _ _ (Nat.lt_add_one_mul_of_lt_mul hy), hH,
+      lt_rbaLength_mul_of_lt hy ht]
 
 theorem isMasked_clearHighBits {n maskLow maskHigh : Nat} (v : Vector UInt64 ((n + 1) * rbaPack))
     (hL : maskLow = 0) (hH : maskHigh < rbaLength) :
     IsMasked n maskLow maskHigh v (clearHighBits v (n - 1) maskHigh) := fun y hy t _ ↦ by
-  simp [getLsbD_clearHighBits_sub_one _ hH (Nat.lt_of_lt_of_le hy (Nat.mul_le_mul_right rbaPack
-    (Nat.le_succ n))) hy, hL]
+  simp [getLsbD_clearHighBits_sub_one _ hH (Nat.lt_add_one_mul_of_lt_mul hy) hy, hL]
 
 theorem isMasked_self {m maskLow maskHigh : Nat} (n : Nat) (v : Vector UInt64 m)
     (hL : maskLow = 0) (hH : maskHigh = 0) : IsMasked n maskLow maskHigh v v := fun y hy t ht ↦ by
@@ -812,7 +813,7 @@ private theorem ite_eq_toNat_neg_sub {H : Nat} {w0 : Int} (hw0 : -(H : Int) / rb
     (if w0 = -(H : Int) / rbaLength then
       (-(H : Int) - rbaLength * (-(H : Int) / rbaLength)).toNat else 0) =
         (-(H : Int) - rbaLength * w0).toNat := by
-  have hR : (0 : Int) < rbaLength := by have := rbaLength_pos; lia
+  have hR := natCast_rbaLength_pos
   split
   · subst_vars
     rfl
@@ -827,8 +828,8 @@ private theorem sub_toNat_emod_eq_toNat_mul_sub (H : Nat) :
     rbaLength - 1 - ((H : Int) % rbaLength).toNat =
       (rbaLength * ((H : Int) / rbaLength + 1) - 1 - H).toNat := by
   have := Int.emod_def (H : Int) rbaLength
-  have := Int.emod_lt_of_pos (H : Int) (b := rbaLength) (by have := rbaLength_pos; lia)
-  have := Int.emod_nonneg (H : Int) (b := rbaLength) (by have := rbaLength_pos; lia)
+  have := Int.emod_lt_of_pos (H : Int) natCast_rbaLength_pos
+  have := Int.emod_nonneg (H : Int) (Int.ne_of_gt natCast_rbaLength_pos)
   rw [Int.mul_add, Int.mul_one]
   lia
 
@@ -840,7 +841,7 @@ private theorem ite_eq_toNat_mul_sub {H : Nat} {w1 : Int} (hw1 : w1 ≤ (H : Int
   split
   · subst_vars
     exact sub_toNat_emod_eq_toNat_mul_sub H
-  · have hR : (0 : Int) < rbaLength := by have := rbaLength_pos; lia
+  · have hR := natCast_rbaLength_pos
     have := Int.mul_ediv_self_le (x := (H : Int)) (Int.ne_of_gt hR)
     have := Int.mul_le_mul_of_nonneg_left (show w1 ≤ (H : Int) / rbaLength by lia)
       (Int.le_of_lt hR)
@@ -877,7 +878,7 @@ def SiftWhileInvariant (g : Int → List (Int × Int × Int)) (keep : Int → Bo
 theorem siftInvariant_empty (g : Int → List (Int × Int × Int)) (keep : Int → Bool) (H : Nat)
     {A : Nat} (hA : 1 ≤ A) :
     SiftInvariant g keep H false A (-(H : Int) / rbaLength) (-(H : Int) / rbaLength + A) #[] := by
-  have hR : (0 : Int) < rbaLength := by have := rbaLength_pos; lia
+  have hR := natCast_rbaLength_pos
   have := Int.ediv_le_ediv hR (show -(H : Int) ≤ H by lia)
   exact ⟨Int.le_refl _, by lia, nofun, rfl, hA, by simp⟩
 
@@ -943,7 +944,7 @@ theorem SiftInvariant.toList_eq_flatMap_filter_numerators {g : Int → List (Int
     {keep : Int → Bool} {H range : Nat} {w0 w1 : Int} {out : Array (Int × Int × Int)}
     (h : SiftInvariant g keep H true range w0 w1 out) :
     out.toList = ((numerators H).filter keep).flatMap g := by
-  have hR : (0 : Int) < rbaLength := by have := rbaLength_pos; lia
+  have hR := natCast_rbaLength_pos
   have hL := Int.mul_ediv_self_le (x := -(H : Int)) (Int.ne_of_gt hR)
   have := Int.lt_mul_ediv_self_add (x := (H : Int)) hR
   have hM : ((((H : Int) / rbaLength + 1 - -(H : Int) / rbaLength).toNat * rbaLength : Nat) :
@@ -952,6 +953,16 @@ theorem SiftInvariant.toList_eq_flatMap_filter_numerators {g : Int → List (Int
     rw [Int.natCast_mul, Int.toNat_of_nonneg (by have := h.le_w0; have := h.eq_of_exit rfl; lia)]
     grind
   rw [h.toList_eq, h.eq_of_exit rfl, filter_map_range_eq_numerators hL (by lia)]
+
+/-- At the exit, the points that the check of a numerator finds are those of the brute-force
+reference over the numerators `-H, …, H` that pass `keep`
+(`Ratpoints.Sieve.pointsOfDen_eq_flatMap_checkNum`). -/
+theorem SiftInvariant.toList_eq_pointsOfDen {c : List Int} {d b : Nat} {keep : Int → Bool}
+    {H range : Nat} {w0 w1 : Int} {out : Array (Int × Int × Int)}
+    (h : SiftInvariant (checkNum (scaledCoeffs c d b) (if d % 2 = 1 then b else 1) b) keep H true
+      range w0 w1 out) :
+    out.toList = pointsOfDen c d b ((numerators H).filter keep) :=
+  h.toList_eq_flatMap_filter_numerators.trans (pointsOfDen_eq_flatMap_checkNum ..).symm
 
 -- The rows of the run, read at the residue `b mod p` of each modulus, are the rows of `b`.
 private theorem map_rows_eq_map_row {entries : List Entry} (hp : ∀ e ∈ entries, 0 < e.p)
@@ -978,7 +989,7 @@ private theorem sift_spec_map (c : List Int) (d H b : Nat) {A : Nat} {entries : 
     ofProp_prop_eq, ite_true] at *
   all_goals first
     | exact siftInvariant_empty _ _ _ hA
-    | exact ‹SiftInvariant _ _ _ true _ _ _ _›.toList_eq_flatMap_filter_numerators
+    | exact ‹SiftInvariant _ _ _ true _ _ _ _›.toList_eq_pointsOfDen
     | exact ‹_ ∧ SiftInvariant _ _ _ false _ _ _ _›.2.exit_of_not_lt ‹_›
     | (have := rbaLength_pos; (try split) <;> lia)
     | obtain ⟨rfl, h⟩ := ‹_ ∧ SiftInvariant _ _ _ false _ _ _ _›

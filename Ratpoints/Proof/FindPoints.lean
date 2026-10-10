@@ -102,12 +102,11 @@ nothing (`Ratpoints.Sieve.survives_of_mem_pointsOfDen`,
 theorem findPoints_eq_ok_bruteForce {c : List ℤ} {H : ℕ} {P : Params} (hP : P.WF)
     (hc2 : 2 ≤ c.length) (hcmax : c.length ≤ maxDegree + 1) (hH : H ≠ 0) :
     findPoints c H P = .ok (bruteForce c H) := by
-  have hp (e) (he : e ∈ P.moduli.map (examinePrime c (BruteForce.degree c))) : 0 < e.p := by
-    obtain ⟨p, hp, rfl⟩ := List.mem_map.mp he
-    exact (hP.prime_of_mem hp).pos
-  simp only [findPoints, bruteForce, Nat.not_lt.mpr hcmax, Nat.not_lt.mpr hc2, hH,
-    Nat.one_le_iff_ne_zero.mpr hH, ↓reduceIte, pointsAtInfinity_eq_pointsOfDen,
-    toList_run_sieveRun c _ H (P.one_le_arraySizeAt (Nat.one_le_iff_ne_zero.mpr hH)) hp]
+  have hp : ∀ e ∈ P.moduli.map (examinePrime c (BruteForce.degree c)), 0 < e.p :=
+    List.forall_mem_map.mpr fun _ hq ↦ (hP.prime_of_mem hq).pos
+  have hH1 : 1 ≤ H := Nat.one_le_iff_ne_zero.mpr hH
+  simp only [findPoints, bruteForce, Nat.not_lt.mpr hcmax, Nat.not_lt.mpr hc2, hH, hH1, ↓reduceIte,
+    pointsAtInfinity_eq_pointsOfDen, toList_run_sieveRun c _ H (P.one_le_arraySizeAt hH1) hp]
   congr 3
   funext j
   refine pointsOfDen_filter_of_ne fun x _ hx ↦ ?_

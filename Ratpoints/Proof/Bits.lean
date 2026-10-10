@@ -10,17 +10,18 @@ import Std.Internal.ForIn.Lemmas
 /-!
 # Lemmas on words
 
-Lemmas on vectors, arrays, lists, ranges, integers and 64-bit words that the contracts of the bit
-arrays of words need and Lean core lacks, under their names in the namespaces of Lean core: the
-entries of a vector after `Vector.set!` and after a fold of `Vector.set!` over consecutive
-positions, the entries of an array made by a map over a range, the elements of `List.range n` that
-pass a test which fails from some position on, the integers of a range that lie in a smaller one or
-between two bounds, the position of the cursor of a loop over a range, the residues modulo `p` of
-the integers from `a` on, the bits of the word `~~~0` and of the masks `~~~0 <<< n` and
-`~~~0 >>> n`, the lowest bit and the lowest set bit of a word, the word `x &&& (x - 1)`, which is
-`x` with its lowest set bit cleared, the bits of a word set one at a time, the 64 bits of two words
-from a position within the first, the bits of a word and-ed in turn with the words of a list, and
-the numerators of the set bits of a list of words, read in turn.
+Lemmas on vectors, arrays, lists, ranges, natural numbers, integers and 64-bit words that the
+contracts of the bit arrays of words need and Lean core lacks, under their names in the namespaces
+of Lean core: the entries of a vector after `Vector.set!` and after a fold of `Vector.set!` over
+consecutive positions, the entries of an array made by a map over a range, the elements of
+`List.range n` that pass a test which fails from some position on, the integers of a range that lie
+in a smaller one or between two bounds, the position of the cursor of a loop over a range, the bound
+`y < (n + 1) k` for `y < n k`, the residues modulo `p` of the integers from `a` on, the bits of the
+word `~~~0` and of the masks `~~~0 <<< n` and `~~~0 >>> n`, the lowest bit and the lowest set bit of
+a word, the word `x &&& (x - 1)`, which is `x` with its lowest set bit cleared, the bits of a word
+set one at a time, the 64 bits of two words from a position within the first, the bits of a word
+and-ed in turn with the words of a list, and the numerators of the set bits of a list of words, read
+in turn.
 
 ## Main statements
 
@@ -170,6 +171,15 @@ theorem lt_of_toList_eq_append_cons {m cur : Nat} {pref suff : List Nat}
   simpa using this
 
 end Std.Legacy.Range
+
+/-! ### Natural numbers -/
+
+namespace Nat
+
+theorem lt_add_one_mul_of_lt_mul {y n k : Nat} (h : y < n * k) : y < (n + 1) * k :=
+  Nat.lt_of_lt_of_le h (Nat.mul_le_mul_right k (Nat.le_succ n))
+
+end Nat
 
 /-! ### Integers -/
 
