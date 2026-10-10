@@ -50,7 +50,7 @@ calls
     \verb|_ratpoints_sift0|), tests each survivor for common factors with $b$
     (\csource{sift.c}{318}{343}), then with the primes of the third stage one numerator at a time,
     and checks the rest exactly, delivering $(a, y, b)$ and, for $y \ne 0$, $(a, -y, b)$
-    (\csource{find_points.c}{5262}{5326}).
+    (\csource{find_points.c}{5250}{5338}).
 \end{enumerate}
 C1 models what decides which points are found, each in its simplest form. Most of the rest only
 spares work; the refusals, the reversal and the exit when there are no points modulo $p$ (D) and
@@ -233,13 +233,15 @@ lemmas.
 
 \begin{definition}[The survivors of one denominator]\label{def:checkDen}
   \uses{def:bruteForce}
-  Proposed names: \lname{Ratpoints.Sieve.checkDen}, \lname{Ratpoints.Sieve.checkDen\_spec}.
+  \lean{Ratpoints.Sieve.checkDen, Ratpoints.Sieve.checkDen_spec}
+  \leanok
   The numerators whose entry in a given array of Booleans is true, in increasing order
-  (\csource{sift.c}{1213}{1296}), each tested for common factors with $b$
-  (\csource{sift.c}{318}{343}, \csource{sift.c}{438}{446}) and checked exactly: $F_c(a, b)$ by
-  Horner's rule on the products $c_k b^{d-k}$, computed once per denominator, then $(a, y, b)$
-  and, for $y \ne 0$, $(a, -y, b)$ when $F_c(a, b) = y^2$ with $y \ge 0$
-  (\csource{find_points.c}{5262}{5304}, \csource{find_points.c}{5312}{5326}); the exact check is
+  (\csource{sift.c}{1061}{1082}, \csource{sift.c}{1088}{1092}, \csource{sift.c}{1213}{1299},
+  \csource{sift.c}{262}{264}), each tested for common factors with $b$
+  (\csource{sift.c}{318}{343}, \csource{sift.c}{438}{446}) and checked exactly
+  (\csource{sift.c}{203}{204}): $F_c(a, b)$ by Horner's rule on the products $c_k b^{d-k}$,
+  computed once per denominator, then $(a, y, b)$ and, for $y \ne 0$, $(a, -y, b)$ when
+  $F_c(a, b) = y^2$ with $y \ge 0$ (\csource{find_points.c}{5250}{5338}); the exact check is
   that of the brute-force reference. Its contract: if entry $i$ is $k(i - H)$ for every $i$, for a
   test $k$ of the numerators, then the result is what the brute-force reference finds over the
   denominator $b$ and the numerators $-H, \dots, H$ that pass $k$.
@@ -281,16 +283,17 @@ Each component differs from the C code in a stated way, recorded in the \verb|De
 paragraph of the component whose range holds it:
 \begin{itemize}
   \item the Booleans stand for the bit arrays of words, the pieces and the end masks (C2), and the
-    walk upwards for the walk by trailing zeros;
+    walk upwards through all of them for the scan over the bit arrays and the walk by trailing
+    zeros (C2), where the bit of a numerator lies in the packing of its 2-adic class (E, F);
   \item every denominator from $1$ to $H$, one after the other, for the loop shapes, the tests on
     the denominators and the blocks (E), and the threads, which deliver the blocks in the same
     order;
   \item every numerator from $-H$ to $H$ for the search region (H) and the 2-adic classes (E, F);
   \item one table per prime and every modulus applied to every numerator before the test for
     common factors, for the composite moduli, the packing, the three stages and their correction
-    during the run (F), whose third stage runs after the test for common factors and skips the
+    during the run from the counts of the survivors (F), whose third stage runs after the test for common factors and skips the
     primes that divide $b$;
-  \item a plain $\gcd$ for the branch-free binary $\gcd$ of \verb|relprime| (F);
+  \item a plain $\gcd$ for the binary $\gcd$ of \verb|relprime|, whose loop body has no branch (F);
   \item Horner's rule modulo $p$ reduced at every step for the reduction of ratpoints on a fixed
     schedule (F), and the coefficients as integers for its two paths through \verb|long|s and GMP
     integers (D);

@@ -5,14 +5,20 @@ Authors: Michael Stoll
 -/
 module
 
+public import Ratpoints.Model.BruteForce
+
+-- The `#guard` examples run code of the imported modules at compile time.
+meta import Ratpoints.Model.BruteForce
+
 /-!
 # The plain sieve
 
 The components of the plain sieve, each in the simplest form of its place in the C function
 `find_points_work_1`: the table of a prime (`Ratpoints.Sieve.examinePrime`), the rows of a
 denominator (`Ratpoints.Sieve.Entry.admits`), whose test of a numerator (`Ratpoints.Sieve.survives`)
-is the interface between the sieve and the check, and the sieve of one denominator with one Boolean
-per numerator (`Ratpoints.Sieve.sieveDen`). Every row lets every point through. The tables that the
+is the interface between the sieve and the check, the sieve of one denominator with one Boolean per
+numerator (`Ratpoints.Sieve.sieveDen`), and the test for common factors and the exact check of its
+survivors (`Ratpoints.Sieve.checkDen`). Every row lets every point through. The tables that the
 build of ratpoints generates (the squares, the inverses, the row of `0`) are Lean functions here.
 
 ## Main definitions
@@ -21,7 +27,8 @@ build of ratpoints generates (the squares, the inverses, the row of `0`) are Lea
   modulo `p`.
 * `Ratpoints.Sieve.examinePrime`: the table of a prime.
 * `Ratpoints.Sieve.Entry.admits`, `Ratpoints.Sieve.survives`: the rows of a denominator.
-* `Ratpoints.Sieve.sieveDen`: the sieve of one denominator.
+* `Ratpoints.Sieve.sieveDen`, `Ratpoints.Sieve.checkDen`: the sieve of one denominator and its
+  survivors.
 -/
 
 @[expose] public section
@@ -154,6 +161,40 @@ def sieveDen (H b : Nat) (entries : List Entry) : Id (Vector Bool (2 * H + 1)) :
       surv := surv.set i (surv[i] && e.admits b ((i : Int) - H))
   return surv
 
+/-- The survivors of the denominator `b`: the numerators `a = i - H` whose entry in `surv` is true,
+in increasing order, each tested for common factors with `b` and checked exactly, as the
+brute-force reference checks it (`Ratpoints.BruteForce.pointsOfDen`): `F(a, b)` by Horner's rule
+on the products `cₖ b^(d - k)`, computed once, with one more factor `b` for odd `d`, then
+`(a, y, b)` and, for `y ≠ 0`, `(a, -y, b)` when `F(a, b) = y ^ 2` with `y ≥ 0`.
+
+C: `sift.c:203-204`, `sift.c:262-264`, `sift.c:318-343`, `sift.c:438-446`, `sift.c:1061-1082`,
+`sift.c:1088-1092`, `sift.c:1213-1299`, `find_points.c:5250-5338`
+
+Deviation: the walk upwards through every Boolean, for the scan that steps over the bit arrays that
+the first stage left empty, up to a sentinel past the range, and the walk by trailing zeros through
+the words of the others (stage C2); entry `i` for the numerator `i - H`, where bit `t` of the bit
+array stands for the numerator `a₀ + 2^k t` of the packing of the 2-adic class of `b`, which holds
+only the numerators congruent to `a₀` modulo `2^k` (stages E and F); a plain `gcd`, for the binary
+`gcd` of `relprime`, whose loop body has no branch (stage F); the third stage of `accepted` is
+applied with the other moduli in `Ratpoints.Sieve.sieveDen` (stage F); no counts of the bit arrays
+that survive the first stage and of the numerators that reach the test for common factors, pass it
+and pass the third stage (`n_arrays`, `n_bits`, `n_coprime`, `n_checks`), which ratpoints reads to
+correct the moduli during the run (stage F); the products `cₖ b^(d - k)` are computed for every
+denominator, where ratpoints computes them when the first survivor reaches the check; a list of
+points for the callback `process`, with no stop it may request, no reversal (stage D), and no
+`RATPOINTS_NO_Y` and no `RATPOINTS_NO_CHECK` (stage G). -/
+def checkDen (c : List Int) (d H b : Nat) (surv : Vector Bool (2 * H + 1)) :
+    Id (Array (Int × Int × Int)) := do
+  let w := BruteForce.scaledCoeffs c d b
+  let f : Int := if d % 2 = 1 then b else 1
+  let mut out := #[]
+  for h : i in [0:2 * H + 1] do
+    if surv[i] then
+      let a : Int := (i : Int) - H
+      if Int.gcd a b = 1 then
+        out := out ++ (BruteForce.pointsAbove a b (BruteForce.horner w a * f)).toArray
+  return out
+
 /-! ### Examples -/
 
 -- The rows of 3, 5, 7, 11 and 13 in the tables `squares` and `inverses` that the build of
@@ -186,6 +227,15 @@ def sieveDen (H b : Nat) (entries : List Entry) : Id (Vector Bool (2 * H + 1)) :
   let es := [3, 5, 7].map (examinePrime [1, 2, 3, 4, 5, 6, 7] 6)
   (Id.run (sieveDen 20 7 es)).toList ==
     (List.range 41).map fun i : Nat ↦ survives es 7 ((i : Int) - 20)
+
+-- The survivors of the sieve of `y ^ 2 = x ^ 3 - 2` for the denominator 100 give the point
+-- `(129 : 3830 : 100)`, which every numerator gives as well.
+#guard
+  let es := [3, 5, 7, 11, 13].map (examinePrime [-2, 0, 0, 1] 3)
+  (Id.run (checkDen [-2, 0, 0, 1] 3 130 100 (Id.run (sieveDen 130 100 es)))).toList ==
+    [(129, 3830, 100), (129, -3830, 100)] &&
+  (Id.run (checkDen [-2, 0, 0, 1] 3 130 100 (Vector.replicate _ true))).toList ==
+    [(129, 3830, 100), (129, -3830, 100)]
 
 end Sieve
 

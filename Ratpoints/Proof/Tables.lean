@@ -6,7 +6,6 @@ Authors: Michael Stoll
 module
 
 public import Mathlib.Algebra.Field.ZMod
-public import Ratpoints.Model.BruteForce
 public import Ratpoints.Model.Sieve
 public import Ratpoints.Spec.Basic
 
