@@ -26,6 +26,9 @@ certifies the membership, the absence of duplicates and the refusals
 
 ## Main statements
 
+* `Ratpoints.findPoints_eq_ok_bruteForce`: for well-formed parameters, `Ratpoints.findPoints`
+  returns the list of `Ratpoints.bruteForce` on every input that it does not refuse;
+  `Ratpoints.eq_bruteForce_of_findPoints_eq_ok`: every list that it returns is that list.
 * `Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok`: a triple lies in the list that
   `Ratpoints.findPoints` returns exactly when it is a normalized point of height at most `H`.
 * `Ratpoints.nodup_of_findPoints_eq_ok`: the list has no duplicates.
@@ -116,8 +119,7 @@ theorem exists_findPoints_eq_error_iff {c : List ℤ} {H : ℕ} {P : Params} :
 theorem eq_bruteForce_of_findPoints_eq_ok {c : List ℤ} {H : ℕ} {P : Params}
     {L : List (ℤ × ℤ × ℤ)} (hP : P.WF) (h : findPoints c H P = .ok L) : L = bruteForce c H := by
   by_cases hc : 2 ≤ c.length ∧ c.length ≤ maxDegree + 1 ∧ H ≠ 0
-  · rw [findPoints_eq_ok_bruteForce hP hc.1 hc.2.1 hc.2.2] at h
-    exact (Except.ok.inj h).symm
+  · exact Except.ok.inj (h.symm.trans (findPoints_eq_ok_bruteForce hP hc.1 hc.2.1 hc.2.2))
   · obtain ⟨e, he⟩ : ∃ e, findPoints c H P = .error e :=
       exists_findPoints_eq_error_iff.mpr (by lia)
     cases he.symm.trans h
@@ -127,8 +129,8 @@ exactly when it is a normalized point of height at most `H`; comparator certifie
 (`comparator/Challenge.lean`). -/
 theorem mem_iff_isPoint_of_findPoints_eq_ok {c : List ℤ} {H : ℕ} {P : Params}
     {L : List (ℤ × ℤ × ℤ)} (hP : P.WF) (h : findPoints c H P = .ok L) {p : ℤ × ℤ × ℤ} :
-    p ∈ L ↔ IsPoint c H p := by
-  rw [eq_bruteForce_of_findPoints_eq_ok hP h, mem_bruteForce_iff]
+    p ∈ L ↔ IsPoint c H p :=
+  eq_bruteForce_of_findPoints_eq_ok hP h ▸ mem_bruteForce_iff
 
 /-- For well-formed parameters, the list that `Ratpoints.findPoints` returns has no duplicates;
 comparator certifies this (`comparator/Challenge.lean`). -/
@@ -138,8 +140,8 @@ theorem nodup_of_findPoints_eq_ok {c : List ℤ} {H : ℕ} {P : Params} {L : Lis
 
 theorem toFinset_eq_points_of_findPoints_eq_ok {c : List ℤ} {H : ℕ} {P : Params}
     {L : List (ℤ × ℤ × ℤ)} (hP : P.WF) (h : findPoints c H P = .ok L) :
-    L.toFinset = points c H := by
-  rw [eq_bruteForce_of_findPoints_eq_ok hP h, toFinset_bruteForce]
+    L.toFinset = points c H :=
+  eq_bruteForce_of_findPoints_eq_ok hP h ▸ toFinset_bruteForce c H
 
 /-! ### The axioms of the main theorems -/
 

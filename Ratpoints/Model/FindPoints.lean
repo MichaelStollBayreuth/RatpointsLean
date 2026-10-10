@@ -71,8 +71,10 @@ def findPoints (c : List Int) (H : Nat) (P : Params) : Except Refusal (List (Int
 /-! ### Examples
 
 The points that `ratpoints c H -q` prints at the pinned commit, in the same order; the list of the
-brute-force reference for other parameters and for inputs that the program refuses; and the
-refusals. -/
+brute-force reference `Ratpoints.bruteForce` for other parameters and for inputs that the program
+refuses; the tables of inverses and squares (`Ratpoints.Sieve.inversesMod`,
+`Ratpoints.Sieve.squaresMod`) of the `Ratpoints.numPrimes` primes among which the moduli are
+chosen; and the refusals, the coefficients before the height bound. -/
 
 #guard (findPoints [-2, 0, 0, 1] 130 defaultParams).toOption ==
   some [(1, 0, 0), (3, 5, 1), (3, -5, 1), (129, 3830, 100), (129, -3830, 100)]
@@ -110,10 +112,10 @@ refusals. -/
   (List.range' 1 (p - 1)).all (fun r ↦ inv[r]! * r % p == 1) &&
     (Sieve.squaresMod p).count true == (p + 1) / 2
 
-#guard findPoints (List.replicate (maxDegree + 2) 1) 5 defaultParams matches
+#guard findPoints (List.replicate (maxDegree + 2) 1) 0 defaultParams matches
   .error .tooManyCoefficients
 #guard findPoints (List.replicate (maxDegree + 1) 1) 1 ⟨[], 0, 0, 64, true⟩ matches .ok _
-#guard findPoints [1] 5 defaultParams matches .error .tooFewCoefficients
+#guard findPoints [1] 0 defaultParams matches .error .tooFewCoefficients
 #guard findPoints [1, 0, 1] 0 defaultParams matches .error .incorrectHeight
 
 end Ratpoints

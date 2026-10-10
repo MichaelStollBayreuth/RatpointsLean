@@ -17,11 +17,13 @@ import Ratpoints.Proof.BruteForce
 /-!
 # The tables of a prime and the soundness of the rows
 
-The tables of the sieve compute what they claim: the squares, the inverses and Horner's rule
-modulo `p`. With them, the row of a denominator `b` in the table of a prime `p` lets the numerator
-`a` of every point `(a, y, b)` through (`Ratpoints.Sieve.admits_examinePrime_of_sq_eq`): for
-`p ∤ b`, since `F(a, b) ≡ b ^ D f(a / b) (mod p)` with `D` even, so that `f(a / b)` is a square
-modulo `p`; for `p ∣ b`, since `gcd(a, b) = 1`, so that `p ∤ a`. The model computes modulo `p`
+The tables of the sieve compute what they claim: the squares, the inverses and Horner's rule modulo
+`p`. With them, the row of a denominator `b` in the table of a prime `p` lets the numerator `a` of
+every point `(a, y, b)` through (`Ratpoints.Sieve.admits_examinePrime_of_sq_eq`): for `p ∤ b`, since
+`F(a, b) ≡ b ^ D f(a / b) (mod p)` with `D` even, so that `f(a / b)` is a square modulo `p`
+(`Ratpoints.Sieve.isSquare_sum_mul_div_pow_of_sq_eq_binaryForm`), which the table of the prime marks
+(`Ratpoints.Sieve.getElem!_isFSquare_examinePrime_of_isSquare`); for `p ∣ b`, since `gcd(a, b) = 1`,
+so that `p ∤ a` (`Ratpoints.Sieve.toNat_emod_ne_zero_of_gcd_eq_one`). The model computes modulo `p`
 in `ℕ`; the proofs go through `ZMod p`.
 
 ## Main statements

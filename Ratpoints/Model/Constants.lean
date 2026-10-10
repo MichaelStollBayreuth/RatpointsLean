@@ -10,8 +10,10 @@ module
 
 The constants that the C code of ratpoints fixes when it is compiled, each a definition with the
 value of the default build and a docstring that names its macro, and the table of primes from which
-the sieve takes its moduli. Changing a definition changes the model as changing the macro changes
-the C program: no proof depends on the values.
+the sieve takes its moduli. Changing a constant changes the model as changing the macro changes
+the C program: no proof depends on the values of the constants, and of the table the proofs use
+only that its entries are primes (`Ratpoints.prime_of_mem_primeTable`, which checks them one by
+one).
 
 ## Main definitions
 

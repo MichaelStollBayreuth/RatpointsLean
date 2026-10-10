@@ -13,6 +13,9 @@ import Mathlib.Tactic.NormNum.Prime
 /-!
 # The sieving parameters: the primes of the table and well-formedness
 
+Every entry of `Ratpoints.primeTable` is a prime, which `norm_num` checks one entry at a time, and
+every parameter set that the options of the program give is well-formed.
+
 ## Main statements
 
 * `Ratpoints.prime_of_mem_primeTable`: every entry of `Ratpoints.primeTable` is a prime, so that

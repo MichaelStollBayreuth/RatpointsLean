@@ -32,7 +32,11 @@ program logic of Lean core, with loop invariants that are named definitions.
 The file uses Lean core and `Std` only, so that the `grind` calls of the proofs see only the lemmas
 of core, untouched by the updates of Mathlib; the plain equation
 `Ratpoints.Sieve.toList_run_sieveRun` lets the files with Mathlib use the result without the
-program logic.
+program logic. The lemmas on the brute-force reference that the contracts need,
+`Ratpoints.BruteForce.pointsOfDen_nil`, `Ratpoints.BruteForce.pointsOfDen_append`,
+`Ratpoints.BruteForce.pointsOfDen_singleton` and
+`Ratpoints.BruteForce.map_toList_range_eq_numerators`, are stated here, without Mathlib, rather
+than with the other lemmas on the reference in `Ratpoints.Proof.BruteForce`.
 -/
 
 @[expose] public section

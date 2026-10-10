@@ -52,7 +52,7 @@ structure Params where
 /-- The parameters `P` are well-formed: every modulus is a prime of `Ratpoints.primeTable`, and the
 cut points are in order and within the list of moduli. -/
 structure Params.WF (P : Params) : Prop where
-  /-- Every modulus is a prime of the table. -/
+  /-- Every modulus is a prime of `Ratpoints.primeTable`. -/
   mem_primeTable : ∀ m ∈ P.moduli, m ∈ primeTable
   /-- The first stage ends no later than the second. -/
   sp1_le_sp2 : P.sp1 ≤ P.sp2

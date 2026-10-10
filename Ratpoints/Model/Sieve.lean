@@ -20,8 +20,10 @@ numerator (`Ratpoints.Sieve.sieveDen`), the test for common factors and the exac
 survivors (`Ratpoints.Sieve.checkDen`), the denominators `1, …, H` in turn
 (`Ratpoints.Sieve.sieveRun`), and the points at infinity (`Ratpoints.Sieve.pointsAtInfinity`).
 Every row lets every point through, so the sieve finds exactly the points of the brute-force
-reference, in the same order. The tables that the build of ratpoints generates (the squares, the
-inverses, the row of `0`) are Lean functions here.
+reference `Ratpoints.bruteForce`, in the same order. The tables that the build of ratpoints
+generates are computed here: the squares and the inverses by `Ratpoints.Sieve.squaresMod` and
+`Ratpoints.Sieve.inversesMod`, and the row of `0` by `Ratpoints.Sieve.Entry.admits`, in its case
+`r = 0`.
 
 ## Main definitions
 
@@ -30,7 +32,7 @@ inverses, the row of `0`) are Lean functions here.
 * `Ratpoints.Sieve.examinePrime`: the table of a prime.
 * `Ratpoints.Sieve.Entry.admits`, `Ratpoints.Sieve.survives`: the rows of a denominator.
 * `Ratpoints.Sieve.sieveDen`, `Ratpoints.Sieve.checkDen`, `Ratpoints.Sieve.sieveRun`: the sieve
-  of one denominator, its survivors, and all denominators.
+  of one denominator, the points of its survivors, and the points of all denominators.
 * `Ratpoints.Sieve.pointsAtInfinity`: the points at infinity.
 -/
 
@@ -116,9 +118,9 @@ def examinePrime (c : List Int) (d p : Nat) : Entry :=
 
 /-! ### The rows of a denominator -/
 
-/-- Whether the row of the denominator `b` in the table `e` admits the numerator `a`: for the
-residues `r = b mod p` and `x = a mod p`, the entry of the table at `x r⁻¹ mod p` if `r ≠ 0`, and
-whether `x ≠ 0` if `r = 0`.
+/-- Whether the row of the denominator `b` in the table `e` of the prime `p` admits the numerator
+`a`: for the residues `r = b mod p` and `x = a mod p`, the entry of the table at `x r⁻¹ mod p` if
+`r ≠ 0`, and whether `x ≠ 0` if `r = 0`.
 
 C: `init.c:42-46`, `init.c:62-83`, `init.c:99-111`, `init.c:118-246`, `gen_find_points_h.c:102-134`,
 `gen_init_sieve_h.c:48-62`
@@ -141,8 +143,8 @@ def survives (entries : List Entry) (b : Nat) (a : Int) : Bool := entries.all (�
 /-! ### The sieve -/
 
 /-- The sieve of the denominator `b`: an array of `2H + 1` Booleans, one for each numerator
-`a = i - H`, all true at the start; for each table of `entries` in turn, every entry is replaced
-by its conjunction with the row of `b` at `a` (`Ratpoints.Sieve.Entry.admits`).
+`a = i - H`, all true at the start; for each table of `entries` in turn, every Boolean is replaced
+by its conjunction with the row of `b` at its numerator (`Ratpoints.Sieve.Entry.admits`).
 
 C: `sift.c:291-312`, `sift.c:405-431`, `sift.c:943-1022`, `sift.c:1030-1041`, `sift.c:1083-1086`,
 `sift.c:1184-1202`
@@ -164,11 +166,11 @@ def sieveDen (H b : Nat) (entries : List Entry) : Id (Vector Bool (2 * H + 1)) :
       surv := surv.set i (surv[i] && e.admits b ((i : Int) - H))
   return surv
 
-/-- The survivors of the denominator `b`: the numerators `a = i - H` whose entry in `surv` is true,
-in increasing order, each tested for common factors with `b` and checked exactly, as the
-brute-force reference checks it (`Ratpoints.BruteForce.pointsOfDen`): `F(a, b)` by Horner's rule
-on the products `cₖ b^(d - k)`, computed once, with one more factor `b` for odd `d`, then
-`(a, y, b)` and, for `y ≠ 0`, `(a, -y, b)` when `F(a, b) = y ^ 2` with `y ≥ 0`.
+/-- The points `(a, y, b)` with the denominator `b` and a numerator `a = i - H` whose entry in
+`surv` is true, by increasing `a`: each such numerator is tested for common factors with `b` and
+checked exactly, as the brute-force reference checks it (`Ratpoints.BruteForce.pointsOfDen`):
+`F(a, b)` by Horner's rule on the products `cₖ b^(d - k)`, computed once, with one more factor `b`
+for odd `d`, then `(a, y, b)` and, for `y ≠ 0`, `(a, -y, b)` when `F(a, b) = y ^ 2` with `y ≥ 0`.
 
 C: `sift.c:203-204`, `sift.c:262-264`, `sift.c:318-343`, `sift.c:438-446`, `sift.c:1061-1082`,
 `sift.c:1088-1092`, `sift.c:1213-1299`, `find_points.c:5250-5338`
@@ -193,7 +195,7 @@ def checkDen (c : List Int) (d H b : Nat) (surv : Vector Bool (2 * H + 1)) :
   let mut out := #[]
   for h : i in [0:2 * H + 1] do
     if surv[i] then
-      let a : Int := (i : Int) - H
+      let a := (i : Int) - H
       if Int.gcd a b = 1 then
         out := out ++ (BruteForce.pointsAbove a b (BruteForce.horner w a * f)).toArray
   return out
@@ -211,8 +213,7 @@ divided by `2^k` modulo the moduli of the first two stages, which ratpoints comp
 denominator (`fill_bp_list`, `k` the stride of the packing), are the residues `b mod p` that
 `Ratpoints.Sieve.Entry.admits` computes for each numerator (stage F); no stop by the callback
 (stage G), and no correction of the moduli between the blocks (stage F). -/
-def sieveRun (c : List Int) (d H : Nat) (entries : List Entry) :
-    Id (Array (Int × Int × Int)) := do
+def sieveRun (c : List Int) (d H : Nat) (entries : List Entry) : Id (Array (Int × Int × Int)) := do
   let mut out := #[]
   for j in [0:H] do
     let surv ← sieveDen H (j + 1) entries
