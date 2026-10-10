@@ -24,7 +24,8 @@ positive, and of the table the proofs use only that its entries are primes
   table below `2 ^ maxBitsInPrime`, the first `numPrimes` of them.
 * `Ratpoints.defaultNumPrimes`, `Ratpoints.defaultMaxForbidden`: how many primes the sieve takes
   and at most how many forbidden divisors it tests, unless the options say.
-* `Ratpoints.rbaPack`, `Ratpoints.rbaLength`: the words and the bits of a bit array of the sieve.
+* `Ratpoints.rbaPack`, `Ratpoints.rbaLength`: how many words and how many bits a bit array of the
+  sieve has.
 * `Ratpoints.defaultArraySize`, `Ratpoints.maxArraySize`: at most how many bit arrays a piece of
   the numerators has, unless the parameters say, and in any case.
 -/

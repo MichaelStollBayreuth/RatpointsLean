@@ -50,7 +50,8 @@ in turn.
 
 ## Implementation notes
 
-The file uses Lean core only, so that the `grind` calls of the proofs see only the lemmas of core.
+The file uses Lean core and `Std` only, so that the `grind` calls of the proofs see only the lemmas
+of core, untouched by the updates of Mathlib.
 -/
 
 @[expose] public section
@@ -159,12 +160,17 @@ end List
 
 namespace Std.Legacy.Range
 
+/-- The form of `List.eq_of_range'_eq_append_cons` for the list `ForIn.toList [0:m]` of a loop over
+`[0:m]`, in which the verification conditions state the cursor: the cursor is the length of the list
+before it. -/
 theorem length_eq_of_toList_eq_append_cons {m cur : Nat} {pref suff : List Nat}
     (h : ForIn.toList [0:m] = pref ++ cur :: suff) : pref.length = cur := by
   simp only [Std.Internal.ForIn.toList_range, List.range'_eq_append_iff] at h
   obtain ⟨k, -, rfl, h⟩ := h
   simpa using (List.range'_eq_cons_iff.mp h.symm).1
 
+/-- The form of `List.mem_of_range'_eq_append_cons` for the list `ForIn.toList [0:m]` of a loop over
+`[0:m]`: the cursor is below `m`. -/
 theorem lt_of_toList_eq_append_cons {m cur : Nat} {pref suff : List Nat}
     (h : ForIn.toList [0:m] = pref ++ cur :: suff) : cur < m := by
   have : cur ∈ ForIn.toList [0:m] := by simp [h]

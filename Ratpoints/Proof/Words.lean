@@ -355,8 +355,8 @@ theorem AndRowsRowInvariant.add_append_andBitArray {n m : Nat} {w0 : Int}
   have := Std.Legacy.Range.length_eq_of_toList_eq_append_cons hl
   simpa [this, Nat.add_assoc] using (h.of_eq (by rw [this])).add_one_andBitArray hx
 
-/-- The loops before the first whole period: bit array `cur` is and-ed with bit array
-`p - r + cur` of the row, for `r = (-w0) mod p`. -/
+/-- The loops of `Ratpoints.Sieve.andRows` before the first whole period: bit array `cur` is and-ed
+with bit array `p - r + cur` of the row, for `r = (-w0) mod p`. -/
 theorem AndRowsRowInvariant.append_andBitArray_sub {specs pref suff : List SieveSpec}
     {s : SieveSpec} {n m : Nat} {w0 : Int} {done suff' : List Nat} {cur : Nat}
     {surv : Vector UInt64 ((n + 1) * rbaPack)}
@@ -370,8 +370,8 @@ theorem AndRowsRowInvariant.append_andBitArray_sub {specs pref suff : List Sieve
   simpa [hlen] using (h.of_eq hlen).add_one_andBitArray
     (Int.toNat_add_emod_of_lt (hp s (by simp [hs])) (by lia))
 
-/-- The loop over one whole period: bit array `r + k p + i` is and-ed with bit array `i` of the
-row, for `r = (-w0) mod p`. -/
+/-- The loop of `Ratpoints.Sieve.andRows` over one whole period: bit array `r + k p + i` is and-ed
+with bit array `i` of the row, for `r = (-w0) mod p`. -/
 theorem AndRowsRowInvariant.append_andBitArray_period {s : SieveSpec} {pref : List SieveSpec}
     {n mk : Nat} {w0 : Int} {periods suffK done suff : List Nat} {k i : Nat}
     {surv : Vector UInt64 ((n + 1) * rbaPack)}
@@ -385,8 +385,8 @@ theorem AndRowsRowInvariant.append_andBitArray_period {s : SieveSpec} {pref : Li
   exact h.add_append_andBitArray hl
     (Int.toNat_add_add_emod (Std.Legacy.Range.lt_of_toList_eq_append_cons hl))
 
-/-- The loop after the last whole period: bit array `r + ⌊(n - r) / p⌋ p + i` is and-ed with bit
-array `i` of the row, for `r = (-w0) mod p`. -/
+/-- The loop of `Ratpoints.Sieve.andRows` after the last whole period: bit array
+`r + ⌊(n - r) / p⌋ p + i` is and-ed with bit array `i` of the row, for `r = (-w0) mod p`. -/
 theorem AndRowsRowInvariant.append_andBitArray_tail {specs pref suff : List SieveSpec}
     {s : SieveSpec} {n : Nat} {w0 : Int} {done suff' : List Nat} {i : Nat}
     {surv : Vector UInt64 ((n + 1) * rbaPack)}
@@ -653,8 +653,8 @@ theorem ScanPieceExtractInvariant.scanPieceInvariant_add_one {m : Nat} {sv : Vec
     grind
   simpa only [key] using hext.2
 
-/-- At the end of the scan, `out` holds the points of the set bits of the words of the piece, which
-are those of `surv`, since the sentinel was written past them. -/
+/-- At the end of the scan of `Ratpoints.Sieve.scanPiece`, `out` holds the points of the set bits of
+the words of the piece, which are those of `surv`, since the sentinel was written past them. -/
 theorem ScanPieceInvariant.toList_eq {m n : Nat} {surv sv : Vector UInt64 m} {w : List Int}
     {f : Int} {b : Nat} {w0 : Int} {out : Array (Int × Int × Int)}
     (h : ScanPieceInvariant sv w f b w0 n n out)
@@ -923,7 +923,7 @@ theorem SiftInvariant.toNat_sub_lt {g : Int → List (Int × Int × Int)} {keep 
   have := h.one_le_range
   lia
 
-/-- The loop ends at the word number one past that of `H`. -/
+/-- The loop of `Ratpoints.Sieve.sift` ends at the word number one past that of `H`. -/
 theorem SiftInvariant.exit_of_not_lt {g : Int → List (Int × Int × Int)} {keep : Int → Bool}
     {H range : Nat} {w0 w1 : Int} {out : Array (Int × Int × Int)}
     (h : SiftInvariant g keep H false range w0 w1 out) (hw0 : ¬w0 < (H : Int) / rbaLength + 1) :
@@ -939,7 +939,8 @@ theorem _root_.Ratpoints.BruteForce.filter_map_range_eq_numerators {s : Int} {m 
   rw [List.filter_map_range_eq_map_range', numerators, hm]
   exact List.map_congr_left fun k _ ↦ by lia
 
-/-- At the exit, the points found are those of the numerators `-H, …, H` that pass `keep`. -/
+/-- At the exit of the loop of `Ratpoints.Sieve.sift`, the points found are those of the numerators
+`-H, …, H` that pass `keep`. -/
 theorem SiftInvariant.toList_eq_flatMap_filter_numerators {g : Int → List (Int × Int × Int)}
     {keep : Int → Bool} {H range : Nat} {w0 w1 : Int} {out : Array (Int × Int × Int)}
     (h : SiftInvariant g keep H true range w0 w1 out) :
@@ -954,8 +955,8 @@ theorem SiftInvariant.toList_eq_flatMap_filter_numerators {g : Int → List (Int
     grind
   rw [h.toList_eq, h.eq_of_exit rfl, filter_map_range_eq_numerators hL (by lia)]
 
-/-- At the exit, the points that the check of a numerator finds are those of the brute-force
-reference over the numerators `-H, …, H` that pass `keep`
+/-- At the exit of the loop of `Ratpoints.Sieve.sift`, the points that the check of a numerator
+finds are those of the brute-force reference over the numerators `-H, …, H` that pass `keep`
 (`Ratpoints.Sieve.pointsOfDen_eq_flatMap_checkNum`). -/
 theorem SiftInvariant.toList_eq_pointsOfDen {c : List Int} {d b : Nat} {keep : Int → Bool}
     {H range : Nat} {w0 w1 : Int} {out : Array (Int × Int × Int)}

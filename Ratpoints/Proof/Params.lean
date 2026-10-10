@@ -11,7 +11,7 @@ public import Ratpoints.Model.Params
 import Mathlib.Tactic.NormNum.Prime
 
 /-!
-# The sieving parameters: the primes of the table and well-formedness
+# The sieving parameters: the primes of the table, well-formedness and the array size
 
 Every entry of `Ratpoints.primeTable` is a prime, which `norm_num` checks one entry at a time,
 every parameter set that the options of the program give is well-formed, and the pieces of the

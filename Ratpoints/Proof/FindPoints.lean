@@ -43,10 +43,11 @@ certifies the membership, the absence of duplicates and the refusals
 By the contract of the denominators (`Ratpoints.Sieve.toList_run_sieveRun`), the sieve returns the
 part of the reference with `z ≥ 1`, the numerators of each denominator filtered by the survivor
 test, since the pieces have at least one bit array (`Ratpoints.Params.one_le_arraySizeAt`) and the
-moduli of well-formed parameters are primes, hence positive; every numerator over which the exact
-check finds a point survives (`Ratpoints.Sieve.survives_of_mem_pointsOfDen`), so the filter changes
-nothing (`Ratpoints.BruteForce.pointsOfDen_filter_of_ne`); and the points at infinity are those of
-the candidate `(1, 0)` of the reference (`Ratpoints.Sieve.pointsAtInfinity_eq_pointsOfDen`).
+moduli of well-formed parameters are primes (`Ratpoints.Params.WF.prime_of_mem`), hence positive;
+every numerator over which the exact check finds a point survives
+(`Ratpoints.Sieve.survives_of_mem_pointsOfDen`), so the filter changes nothing
+(`Ratpoints.BruteForce.pointsOfDen_filter_of_ne`); and the points at infinity are those of the
+candidate `(1, 0)` of the reference (`Ratpoints.Sieve.pointsAtInfinity_eq_pointsOfDen`).
 -/
 
 @[expose] public section
@@ -95,10 +96,10 @@ end Sieve
 /-! ### The main theorems -/
 
 /-- By `Ratpoints.Sieve.toList_run_sieveRun`, for pieces of at least one bit array
-(`Ratpoints.Params.one_le_arraySizeAt`) and moduli that are primes, hence positive, the sieve gives
-the reference with the numerators of each denominator filtered by the survivor test, which changes
-nothing (`Ratpoints.Sieve.survives_of_mem_pointsOfDen`,
-`Ratpoints.BruteForce.pointsOfDen_filter_of_ne`). -/
+(`Ratpoints.Params.one_le_arraySizeAt`) and moduli that are primes
+(`Ratpoints.Params.WF.prime_of_mem`), hence positive, the sieve gives the reference with the
+numerators of each denominator filtered by the survivor test, which changes nothing
+(`Ratpoints.Sieve.survives_of_mem_pointsOfDen`, `Ratpoints.BruteForce.pointsOfDen_filter_of_ne`). -/
 theorem findPoints_eq_ok_bruteForce {c : List ℤ} {H : ℕ} {P : Params} (hP : P.WF)
     (hc2 : 2 ≤ c.length) (hcmax : c.length ≤ maxDegree + 1) (hH : H ≠ 0) :
     findPoints c H P = .ok (bruteForce c H) := by

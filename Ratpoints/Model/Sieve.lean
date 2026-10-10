@@ -23,12 +23,12 @@ and the rows as words, one piece of bit arrays from the first stage to the point
 the denominators `1, …, H` in turn (`Ratpoints.Sieve.sieveRun`), and the points at infinity
 (`Ratpoints.Sieve.pointsAtInfinity`). The plain sieve of one denominator, one Boolean per numerator
 (`Ratpoints.Sieve.sieveDen`), and the test for common factors and the exact check of its survivors
-(`Ratpoints.Sieve.checkDen`) stay as the reference of the bit arrays of words. Every row lets every
-point through, so the sieve finds exactly the points of the brute-force reference
-`Ratpoints.bruteForce`, in the same order. The tables that the build of ratpoints generates are
-computed here: the squares and the inverses by `Ratpoints.Sieve.squaresMod` and
-`Ratpoints.Sieve.inversesMod`, and the row of `0` by `Ratpoints.Sieve.Entry.admits`, in its case
-`r = 0`, and as words by `Ratpoints.Sieve.Entry.row`.
+(`Ratpoints.Sieve.checkDen`) are not part of the run: they are the reference of the bit arrays of
+words (`Ratpoints.Sieve.toList_run_sift_eq_checkDen`). Every row lets every point through, so the
+sieve finds exactly the points of the brute-force reference `Ratpoints.bruteForce`, in the same
+order. The tables that the build of ratpoints generates are computed here: the squares and the
+inverses by `Ratpoints.Sieve.squaresMod` and `Ratpoints.Sieve.inversesMod`, and the row of `0` by
+`Ratpoints.Sieve.Entry.admits`, in its case `r = 0`, and as words by `Ratpoints.Sieve.Entry.row`.
 
 ## Main definitions
 
@@ -170,8 +170,9 @@ def survives (entries : List Entry) (b : Nat) (a : Int) : Bool := entries.all (�
 /-- The plain sieve of the denominator `b`: an array of `2H + 1` Booleans, one for each numerator
 `a = i - H`, all true at the start; for each table of `entries` in turn, every Boolean is replaced
 by its conjunction with the row of `b` at its numerator (`Ratpoints.Sieve.Entry.admits`). With
-`Ratpoints.Sieve.checkDen` it is the reference of the bit arrays of words: the points that
-`Ratpoints.Sieve.sift` finds are those that `Ratpoints.Sieve.checkDen` finds on it
+`Ratpoints.Sieve.checkDen` it is the reference of the bit arrays of words: for pieces of at least
+one bit array and tables with `p > 0`, the points that `Ratpoints.Sieve.sift` finds with the rows of
+these tables (`Ratpoints.Sieve.Entry.rows`) are those that `Ratpoints.Sieve.checkDen` finds on it
 (`Ratpoints.Sieve.toList_run_sift_eq_checkDen`). -/
 def sieveDen (H b : Nat) (entries : List Entry) : Id (Vector Bool (2 * H + 1)) := do
   let mut surv := Vector.replicate (2 * H + 1) true
@@ -184,10 +185,11 @@ def sieveDen (H b : Nat) (entries : List Entry) : Id (Vector Bool (2 * H + 1)) :
 `surv` is true, by increasing `a`: each such numerator is tested for common factors with `b` and
 checked exactly, as the brute-force reference checks it (`Ratpoints.BruteForce.pointsOfDen`):
 `F(a, b)` by Horner's rule on the products `cₖ b^(d - k)`, computed once, with one more factor `b`
-for odd `d`, then `(a, y, b)` and, for `y ≠ 0`, `(a, -y, b)` when `F(a, b) = y ^ 2` with `y ≥ 0`.
-On the plain sieve `Ratpoints.Sieve.sieveDen` it is the reference of the bit arrays of words: it
-finds the points that `Ratpoints.Sieve.sift` finds (`Ratpoints.Sieve.toList_run_sift_eq_checkDen`).
--/
+for odd `d`, then `(a, y, b)` and, for `y ≠ 0`, `(a, -y, b)` when `F(a, b) = y ^ 2` with `y ≥ 0`. On
+the plain sieve `Ratpoints.Sieve.sieveDen` of tables with `p > 0` it is the reference of the bit
+arrays of words: it finds the points that `Ratpoints.Sieve.sift` finds with the rows of these tables
+(`Ratpoints.Sieve.Entry.rows`) in pieces of at least one bit array
+(`Ratpoints.Sieve.toList_run_sift_eq_checkDen`). -/
 def checkDen (c : List Int) (d H b : Nat) (surv : Vector Bool (2 * H + 1)) :
     Id (Array (Int × Int × Int)) := do
   let w := BruteForce.scaledCoeffs c d b
@@ -446,11 +448,12 @@ def walkWord (w : List Int) (f : Int) (b : Nat) (x : UInt64) (a0 : Int)
 first `n` bit arrays of `surv`, and the extraction of the points of their numerators: a sentinel, a
 bit array of ones, is written into bit array `n`, just past the piece; then from bit array `0` on,
 the bit arrays that are zero (`Ratpoints.Sieve.isZeroAt`) are stepped over, the scan stops at the
-sentinel, and the words of every other bit array `i` are walked through in turn
+sentinel, and the words of each of the other bit arrays `pos` are walked through in turn
 (`Ratpoints.Sieve.walkWord`, with the products `w`, the factor `f` and the denominator `b` of the
-check), bit `t` of word `κ` standing for the numerator `rbaLength (w0 + i) + 64 κ + t`. The test of
-the C code that the bit array is still nonzero after the second stage, which the model applies in
-the first (`Ratpoints.Sieve.andRows`), is kept and always passes.
+check), bit `t` of word `κ` standing for the numerator `rbaLength (w0 + pos) + 64 κ + t`, for the
+number `rbaLength` of bits of a bit array (`Ratpoints.rbaLength`). The test of the C code that the
+bit array is still nonzero after the second stage, which the model applies in the first
+(`Ratpoints.Sieve.andRows`), is kept and always passes.
 
 C: `sift.c:1061-1082`, `sift.c:1088-1092`, `sift.c:1213-1226`, `sift.c:1257-1264`,
 `sift.c:1293-1299`, `rp-private.h:133`, `rp-private.h:135-136`, `rp-private.h:177-178`,
@@ -491,10 +494,10 @@ def scanPiece (w : List Int) (f : Int) (b : Nat) (w0 : Int) (n : Nat)
 numerators: a fresh array of `n + 1` bit arrays, the last one the place of the sentinel; the first
 stage with the moduli and their rows `specs` (`Ratpoints.Sieve.andRows`); the lowest `maskLow` bits
 of the first bit array cleared if `maskLow ≠ 0` (`Ratpoints.Sieve.clearLowBits`), and the highest
-`maskHigh` bits of the last one if `maskHigh ≠ 0` (`Ratpoints.Sieve.clearHighBits`); and the scan
-with the extraction (`Ratpoints.Sieve.scanPiece`, with the products `w`, the factor `f` and the
-denominator `b` of the check). This is `_ratpoints_sift0` of the C code, with the allocation of the
-survivors array that it works in.
+`maskHigh` bits of the last bit array of the piece, `n - 1`, if `maskHigh ≠ 0`
+(`Ratpoints.Sieve.clearHighBits`); and the scan with the extraction (`Ratpoints.Sieve.scanPiece`,
+with the products `w`, the factor `f` and the denominator `b` of the check). This is
+`_ratpoints_sift0` of the C code, with the allocation of the survivors array that it works in.
 
 C: `find_points.c:3119-3121`, `sift.c:498-531`, `sift.c:548`, `sift.c:1030-1041`,
 `sift.c:1056-1058`, `sift.c:1300-1305`
@@ -525,16 +528,17 @@ def siftPiece (w : List Int) (f : Int) (b : Nat) (specs : List SieveSpec) (w0 : 
 /-! ### One denominator -/
 
 /-- The points of the denominator `b`, its numerators `-H, …, H` in pieces of at most `A` bit
-arrays: for each modulus `p` with its rows `rs` in `rows`, the row of `b` is that of the residue
-`b mod p`, which its thunk makes when it is first needed (`Ratpoints.Sieve.Entry.rows`); the
-products `w` of the coefficients `cₖ` with the powers `b^(d - k)`
-(`Ratpoints.BruteForce.scaledCoeffs`) and the factor `f`, `b` for odd `d` and `1` for even `d`, are
-those of the check; the bit arrays have the word numbers from `wLow = ⌊-H / rbaLength⌋` to
-`wHigh - 1`, for `wHigh = ⌊H / rbaLength⌋ + 1`; and while `w0 < wHigh`, the piece from `w0` to
-`w1 = min (w0 + A) wHigh` gives its points (`Ratpoints.Sieve.siftPiece`), with the low mask
-`-H - rbaLength wLow` if it is the first piece and the high mask `rbaLength - 1 - (H mod rbaLength)`
-if it is the last, so that the numerators that the masks leave lie end to end and make up
-`-H, …, H`.
+arrays, for `A ≥ 1` (for `A = 0` the loop does not end): for each modulus `p` with its rows `rs` in
+`rows`, the row of `b` is that of the residue `b mod p`, which its thunk makes when it is first
+needed (`Ratpoints.Sieve.Entry.rows`); the products `w` of the coefficients `cₖ` with the powers
+`b^(d - k)` (`Ratpoints.BruteForce.scaledCoeffs`) and the factor `f`, `b` for odd `d` and `1` for
+even `d`, are those of the check; for the number `rbaLength` of bits of a bit array
+(`Ratpoints.rbaLength`), the bit arrays have the word numbers from `wLow = ⌊-H / rbaLength⌋` to
+`wHigh - 1`, for `wHigh = ⌊H / rbaLength⌋ + 1`; and while `w0 < wHigh`, the piece of the word
+numbers `w0, …, w1 - 1`, for `w1 = min (w0 + A) wHigh`, gives its points
+(`Ratpoints.Sieve.siftPiece`), with the low mask `-H - rbaLength wLow` if it is the first piece and
+the high mask `rbaLength - 1 - (H mod rbaLength)` if it is the last, so that the numerators that the
+masks leave lie end to end and make up `-H, …, H`.
 
 C: `find_points.c:3149-3170`, `find_points.c:3442-3488`, `find_points.c:3490-3561`,
 `find_points.c:3563-3617`, `sift.c:405-431`
@@ -587,7 +591,7 @@ def sift (c : List Int) (d H A b : Nat) (rows : List (Nat × Array (Thunk (Array
 /-- The points with the denominators `b = 1, …, H`, in increasing order: the rows of the tables
 `entries` are made once for the run, each residue's row as a thunk (`Ratpoints.Sieve.Entry.rows`),
 and the points that `Ratpoints.Sieve.sift` finds for each denominator, with pieces of at most `A`
-bit arrays, are appended in turn.
+bit arrays, for `A ≥ 1` (for `A = 0` and `H ≥ 1` the run does not end), are appended in turn.
 
 C: `find_points.c:4059-4075`, `find_points.c:5152-5160`
 

@@ -15,17 +15,19 @@ meta import Ratpoints.Model.Constants
 
 The free choices of the sieve, which the theorems quantify over: which moduli it uses, in which
 order and in which stage, at most how many forbidden divisors of the denominators it tests, whether
-it runs the Jacobi test, and at most how many bit arrays it treats at a time. ratpoints makes these
-choices from the curve and corrects them during the run; none of this changes the points found or
-their order, since a modulus only removes candidates that are not points. So the model takes the
-choice as an input, and the theorems hold for every well-formed choice. The sieve reads only the
-moduli and the array size.
+it runs the Jacobi test, and at most how many bit arrays it treats at a time. ratpoints chooses the
+moduli and their stages from the curve and corrects the choice during the run, and takes the other
+choices from its options or its defaults (the program passes the array size
+`Ratpoints.defaultArraySize`); none of this changes the points found or their order, since a modulus
+only removes candidates that are not points and the pieces of the numerators follow one another in
+increasing order. So the model takes the choice as an input, and the theorems hold for every
+well-formed choice. The sieve reads only the moduli and the array size.
 
 ## Main definitions
 
 * `Ratpoints.Params`: the sieving parameters.
 * `Ratpoints.Params.WF`: the parameters are well-formed.
-* `Ratpoints.Params.arraySizeAt`: the number of bit arrays of a piece of the numerators for a
+* `Ratpoints.Params.arraySizeAt`: at most how many bit arrays a piece of the numerators has, for a
   height bound.
 * `Ratpoints.SieveOptions`: the values of the options of the program that set the parameters.
 * `Ratpoints.sieveParams`: the parameters that these values give, with the defaults and caps of
@@ -69,10 +71,9 @@ instance Params.instDecidableWF (P : Params) : Decidable P.WF :=
   decidable_of_iff ((∀ m ∈ P.moduli, m ∈ primeTable) ∧ P.sp1 ≤ P.sp2 ∧ P.sp2 ≤ P.moduli.length)
     ⟨fun ⟨h1, h2, h3⟩ ↦ ⟨h1, h2, h3⟩, fun ⟨h1, h2, h3⟩ ↦ ⟨h1, h2, h3⟩⟩
 
-/-- The number of bit arrays of a piece of the numerators for the height bound `H`: the field
-`arraySize` of the parameters `P`, or `Ratpoints.defaultArraySize` for `0`, capped at
-`2 ⌈H / 64⌉` and at `Ratpoints.maxArraySize`; at least 1 for `H ≥ 1`
-(`Ratpoints.Params.one_le_arraySizeAt`).
+/-- At most how many bit arrays a piece of the numerators has for the height bound `H`: the field
+`arraySize` of the parameters `P`, or `Ratpoints.defaultArraySize` for `0`, capped at `2 ⌈H / 64⌉`
+and at `Ratpoints.maxArraySize`; at least 1 for `H ≥ 1` (`Ratpoints.Params.one_le_arraySizeAt`).
 
 C: `rp-private.h:87`, `find_points.c:4666-4677`
 
