@@ -11,6 +11,7 @@ public import Ratpoints.Spec.Basic
 
 import Mathlib.Tactic.Field
 import Mathlib.Tactic.Ring
+import Ratpoints.Mathlib.Data.ZMod.Basic
 import Ratpoints.Proof.BruteForce
 
 /-!
@@ -37,15 +38,15 @@ in `ℕ`; the proofs go through `ZMod p`.
 
 namespace Ratpoints
 
-/-- The binary form `∑ fᵢ aⁱ b^(D - i)` of degree `D ≥ d` is `b ^ D` times the value of
-`f = ∑ fᵢ Xⁱ` at `a / b`; `Polynomial.eval_homogenize` is this identity for polynomials. -/
-theorem sum_mul_pow_mul_pow_sub_eq_pow_mul_sum {K : Type*} [Semifield K] {d D : ℕ} (hd : d ≤ D)
+/-- The binary form `∑ fᵢ aⁱ b^(D - i)` of degree `D ≥ d` is the value of `f = ∑ fᵢ Xⁱ` at `a / b`
+times `b ^ D`, as `Polynomial.eval_homogenize` says for polynomials. -/
+theorem sum_mul_pow_mul_pow_sub_eq_sum_mul_pow {K : Type*} [Semifield K] {d D : ℕ} (hd : d ≤ D)
     (f : ℕ → K) (a : K) {b : K} (hb : b ≠ 0) :
     ∑ i ∈ Finset.range (d + 1), f i * a ^ i * b ^ (D - i) =
-      b ^ D * ∑ i ∈ Finset.range (d + 1), f i * (a / b) ^ i := by
-  rw [Finset.mul_sum]
+      (∑ i ∈ Finset.range (d + 1), f i * (a / b) ^ i) * b ^ D := by
+  rw [Finset.sum_mul]
   refine Finset.sum_congr rfl fun i hi ↦ ?_
-  rw [div_pow, ← pow_sub_mul_pow b (by have := Finset.mem_range.mp hi; lia : i ≤ D)]
+  rw [div_pow, ← pow_sub_mul_pow b ((Finset.mem_range_succ_iff.mp hi).trans hd)]
   field
 
 /-- If `y ^ 2` is the value at `(a, b)` of the binary form of even degree `D ≥ d` made from
@@ -54,7 +55,7 @@ theorem isSquare_sum_mul_div_pow_of_sq_eq {K : Type*} [Semifield K] {d D : ℕ} 
     (hD : Even D) {f : ℕ → K} {a b y : K} (hb : b ≠ 0)
     (h : y ^ 2 = ∑ i ∈ Finset.range (d + 1), f i * a ^ i * b ^ (D - i)) :
     IsSquare (∑ i ∈ Finset.range (d + 1), f i * (a / b) ^ i) := by
-  rw [sum_mul_pow_mul_pow_sub_eq_pow_mul_sum hd f a hb, mul_comm] at h
+  rw [sum_mul_pow_mul_pow_sub_eq_sum_mul_pow hd f a hb] at h
   exact eq_div_of_mul_eq (pow_ne_zero D hb) h.symm ▸ (IsSquare.sq y).div (hD.isSquare_pow b)
 
 namespace Sieve
@@ -62,8 +63,8 @@ namespace Sieve
 /-! ### The squares, the inverses and Horner's rule modulo `p` -/
 
 -- The entries that a fold of `setIfInBounds · true` marks.
-private theorem getElem!_foldl_setIfInBounds (l : List ℕ) (f : ℕ → ℕ) (w : Array Bool) {t : ℕ}
-    (ht : t < w.size) :
+private theorem getElem!_foldl_setIfInBounds {α : Type*} (l : List α) (f : α → ℕ) (w : Array Bool)
+    {t : ℕ} (ht : t < w.size) :
     (l.foldl (fun w i ↦ w.setIfInBounds (f i) true) w)[t]! = (w[t]! || l.any (f · == t)) := by
   induction l generalizing w with
   | nil => simp
@@ -73,16 +74,16 @@ private theorem getElem!_foldl_setIfInBounds (l : List ℕ) (f : ℕ → ℕ) (w
       Array.getElem_setIfInBounds ht]
     grind
 
-/-- Modulo a prime `p`, the square of a residue `0 < s < p` is the square of an odd residue, of `s`
-or of `p - s`: the squares that the generator of the tables of ratpoints marks. -/
-theorem exists_odd_mul_self_mod_eq {p s : ℕ} (hp : p.Prime) (hs : s < p) (hs0 : 0 < s) :
-    ∃ i < p, i % 2 = 1 ∧ i * i % p = s * s % p := by
+/-- Modulo a prime `p`, the square of a residue `s ≠ 0` below `p` is the square of an odd residue,
+of `s` or of `p - s`: the squares that the generator of the tables of ratpoints marks. -/
+theorem exists_odd_mul_self_mod_eq {p s : ℕ} (hp : p.Prime) (hs : s < p) (hs0 : s ≠ 0) :
+    ∃ i < p, Odd i ∧ i * i % p = s * s % p := by
   rcases Nat.even_or_odd' s with ⟨k, rfl | rfl⟩
   · have hodd := hp.eq_two_or_odd.resolve_left (by lia)
-    refine ⟨p - 2 * k, by lia, by lia, ?_⟩
+    refine ⟨p - 2 * k, by lia, Nat.odd_iff.mpr (by lia), ?_⟩
     rw [← ZMod.natCast_eq_natCast_iff', Nat.cast_mul, Nat.cast_mul, Nat.cast_sub hs.le,
       ZMod.natCast_self, zero_sub, neg_mul_neg]
-  · exact ⟨2 * k + 1, hs, by lia, rfl⟩
+  · exact ⟨2 * k + 1, hs, odd_two_mul_add_one k, rfl⟩
 
 theorem getElem!_squaresMod_mul_self_mod {p s : ℕ} (hp : p.Prime) (hs : s < p) :
     (squaresMod p)[s * s % p]! = true := by
@@ -90,12 +91,12 @@ theorem getElem!_squaresMod_mul_self_mod {p s : ℕ} (hp : p.Prime) (hs : s < p)
     simpa using Nat.mod_lt _ hp.pos
   simp only [squaresMod, Array.set!_eq_setIfInBounds, getElem!_foldl_setIfInBounds _ _ _ ht,
     Bool.or_eq_true, List.any_eq_true, beq_iff_eq, List.mem_range']
-  obtain rfl | hs0 := Nat.eq_zero_or_pos s
+  obtain rfl | hs0 := eq_or_ne s 0
   · left
     rw [getElem!_pos ((Array.replicate p false).setIfInBounds 0 true) _ ht]
     simp
-  · obtain ⟨i, hi, hodd, heq⟩ := exists_odd_mul_self_mod_eq hp hs hs0
-    exact .inr ⟨i, ⟨i / 2, by lia, by lia⟩, heq⟩
+  · obtain ⟨_, hi, ⟨m, rfl⟩, heq⟩ := exists_odd_mul_self_mod_eq hp hs hs0
+    exact .inr ⟨_, ⟨m, by lia, by lia⟩, heq⟩
 
 /-- Modulo a prime `p`, a residue `0 < r < p` has an inverse among `1, …, p - 1`, so that the trial
 of `Ratpoints.Sieve.inversesMod` finds one. -/
@@ -150,23 +151,13 @@ theorem natCast_evalMod (cs : List ℕ) (p x : ℕ) :
     rw [add_comm]
     exact congr($(Finset.sum_congr rfl fun k _ ↦ by ring) + _)
 
-theorem natCast_toNat_emod {p : ℕ} [NeZero p] (a : ℤ) : ((a % (p : ℤ)).toNat : ZMod p) = a := by
-  rw [ZMod.natCast_toNat _ (Int.emod_nonneg _ (mod_cast NeZero.ne p)), ZMod.intCast_mod]
-
 theorem natCast_evalMod_map_range (c : List ℤ) (d : ℕ) {p : ℕ} [NeZero p] (t : ℕ) :
     (evalMod ((List.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat) p t : ZMod p) =
-      ∑ k ∈ Finset.range (d + 1), (c.getD k 0 : ZMod p) * (t : ZMod p) ^ k := by
+      ∑ k ∈ Finset.range (d + 1), (c.getD k 0 : ZMod p) * t ^ k := by
   rw [natCast_evalMod, List.length_map, List.length_range]
   refine Finset.sum_congr rfl fun k hk ↦ ?_
   rw [List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range (Finset.mem_range.mp hk),
-    Option.map_some, Option.getD_some, natCast_toNat_emod]
-
-theorem exists_eq_mul_self_mod_of_isSquare {p v : ℕ} [NeZero p] (hv : v < p)
-    (h : IsSquare (v : ZMod p)) : ∃ s < p, v = s * s % p := by
-  obtain ⟨z, hz⟩ := h
-  refine ⟨z.val, z.val_lt, ?_⟩
-  rw [← Nat.mod_eq_of_lt hv, ← ZMod.natCast_eq_natCast_iff', hz, Nat.cast_mul,
-    ZMod.natCast_zmod_val]
+    Option.map_some, Option.getD_some, ZMod.natCast_toNat_emod]
 
 /-! ### The table of a prime -/
 
@@ -205,8 +196,8 @@ theorem isSquare_natCast_evalMod_of_sq_eq {c : List ℤ} {p : ℕ} [Fact p.Prime
   have h2 := congr(($hy : ZMod p))
   push_cast [binaryForm] at h2
   rw [natCast_evalMod_map_range,
-    natCast_mul_getElem!_inversesMod_mod _ (Nat.mod_lt _ (NeZero.pos p)) hb, natCast_toNat_emod,
-    ZMod.natCast_mod]
+    natCast_mul_getElem!_inversesMod_mod _ (Nat.mod_lt _ (NeZero.pos p)) hb,
+    ZMod.natCast_toNat_emod, ZMod.natCast_mod]
   exact isSquare_sum_mul_div_pow_of_sq_eq (by lia) (Nat.even_iff.mpr (by lia)) hb' h2
 
 /-- The row of the denominator `b` in the table of the prime `p` admits the numerator `a` of every
@@ -218,7 +209,7 @@ theorem admits_examinePrime_of_sq_eq {c : List ℤ} {p : ℕ} (hp : p.Prime) {a 
   simp only [Entry.admits, p_examinePrime, inverses_examinePrime]
   by_cases hb : b % p = 0 <;> simp only [hb, ↓reduceIte]
   · simpa using toNat_emod_ne_zero_of_gcd_eq_one hp.one_lt hab hb
-  · obtain ⟨s, hs, h⟩ := exists_eq_mul_self_mod_of_isSquare (evalMod_lt _ hp.pos _)
+  · obtain ⟨s, hs, h⟩ := ZMod.exists_eq_mul_self_mod_of_isSquare (evalMod_lt _ hp.pos _)
       (isSquare_natCast_evalMod_of_sq_eq hb hy)
     rw [getElem!_isFSquare_examinePrime _ _ (Nat.mod_lt _ hp.pos), BruteForce.degree_eq, h]
     exact getElem!_squaresMod_mul_self_mod hp hs
