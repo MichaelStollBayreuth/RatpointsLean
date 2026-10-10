@@ -657,13 +657,13 @@ def pointsAtInfinity (c : List Int) (d : Nat) : List (Int × Int × Int) :=
 #guard (List.range 5).map (fun a : Nat ↦ (examinePrime [1, 0, 1] 2 5).admits 3 a) ==
   [true, true, false, false, true]
 
--- The sieve of a denominator is the survivor test of the numerators.
+-- The plain sieve of a denominator is the survivor test of the numerators.
 #guard
   let es := [3, 5, 7].map (examinePrime [1, 2, 3, 4, 5, 6, 7] 6)
   (Id.run (sieveDen 20 7 es)).toList ==
     (List.range 41).map fun i : Nat ↦ survives es 7 ((i : Int) - 20)
 
--- The survivors of the sieve of `y ^ 2 = x ^ 3 - 2` for the denominator 100 give the point
+-- The survivors of the plain sieve of `y ^ 2 = x ^ 3 - 2` for the denominator 100 give the point
 -- `(129 : 3830 : 100)`, which every numerator gives as well.
 #guard
   let es := [3, 5, 7, 11, 13].map (examinePrime [-2, 0, 0, 1] 3)
@@ -684,11 +684,12 @@ def pointsAtInfinity (c : List Int) (d : Nat) : List (Int × Int × Int) :=
 -- `s ≤ 64 y + t`, and the high mask on bit array 1 exactly when `64 y + t + s < 2 rbaLength`.
 #guard
   let v : Vector UInt64 (2 * rbaPack) := .ofFn fun i ↦ 0x0123456789abcdef * (i.val.toUInt64 + 1)
-  let bit (w : UInt64) (t : Nat) : Bool := (w >>> t.toUInt64) &&& 1 == 1
   ([0, 1, 63, 64, 65, 130, rbaLength - 1].filter (· < rbaLength)).all fun s ↦
     (List.range (2 * rbaPack)).all fun y ↦ (List.range 64).all fun t ↦
-      bit (clearLowBits v s)[y]! t == (bit v[y]! t && decide (s ≤ 64 * y + t)) &&
-      bit (clearHighBits v 1 s)[y]! t == (bit v[y]! t && decide (64 * y + t + s < rbaLength * 2))
+      (clearLowBits v s)[y]!.toBitVec.getLsbD t ==
+        (v[y]!.toBitVec.getLsbD t && decide (s ≤ 64 * y + t)) &&
+      (clearHighBits v 1 s)[y]!.toBitVec.getLsbD t ==
+        (v[y]!.toBitVec.getLsbD t && decide (64 * y + t + s < rbaLength * 2))
 
 -- `isZeroAt` on three bit arrays: the first has a set bit in its last word, the second none, the
 -- third one in its first word.
@@ -697,9 +698,9 @@ def pointsAtInfinity (c : List Int) (d : Nat) : List (Int × Int × Int) :=
     ((Vector.replicate _ 0).set! (rbaPack - 1) 0x8000000000000000).set! (2 * rbaPack) 1
   [isZeroAt v 0, isZeroAt v 1, isZeroAt v 2] == [false, true, false]
 
--- The lowest set bit: `k` for `2 ^ k + 2 ^ 63`, `k < 64`, and the trailing zeros of a few other
--- words.
-#guard (List.range 64).all fun k ↦ Id.run (ctz ((1 <<< k.toUInt64) ||| 0x8000000000000000)) == k
+-- The lowest set bit: `k` for the word with the bits `k` and `63` set, `k < 64`, and the trailing
+-- zeros of a few other words.
+#guard (List.range 64).all fun k ↦ Id.run (ctz (1 <<< k.toUInt64 ||| 0x8000000000000000)) == k
 #guard [1, 2, 40, 0xfff0, 0x8000000000000000].all fun w : UInt64 ↦
   Id.run (ctz w) == w.toBitVec.ctz.toNat
 
@@ -707,13 +708,12 @@ def pointsAtInfinity (c : List Int) (d : Nat) : List (Int × Int × Int) :=
 -- row admits `64 j + t`, for denominators of several residues modulo `p`, `0` among them, and for
 -- a prime above 64.
 #guard
-  let bit (w : UInt64) (t : Nat) : Bool := (w >>> t.toUInt64) &&& 1 == 1
   [3, 5, 7, 13, 67].all fun p ↦
     let e := examinePrime [1, 2, 3, 4, 5, 6, 7] 6 p
     [0, 1, 2, 5, p + 3].all fun b ↦
       let row := e.row b
       row.size == p * rbaPack && (List.range (p * rbaPack)).all fun j ↦
-        (List.range 64).all fun t ↦ bit row[j]! t == e.admits b (64 * j + t)
+        (List.range 64).all fun t ↦ row[j]!.toBitVec.getLsbD t == e.admits b (64 * j + t)
 
 -- The row of `0` against the pattern `sieves0` that the build of ratpoints generates, for 3, 5, 7,
 -- 11 and 13: the first `p` of its `RBA_PACK * p` words, which repeat them.
@@ -732,7 +732,8 @@ def pointsAtInfinity (c : List Int) (d : Nat) : List (Int × Int × Int) :=
       0xfff7ffbffdffefff])] : List (Nat × Array UInt64)).all fun (p, ws) ↦
     ((examinePrime [1, 0, 1] 2 p).row 0).extract 0 p == ws
 
--- The rows of the residues, each made when first needed.
+-- The rows of the residues: one thunk for each of the `p` residues, the thunk of `r` giving the
+-- row of `r`.
 #guard
   let e := examinePrime [1, 2, 3, 4, 5, 6, 7] 6 7
   e.rows.size == 7 && (List.range 7).all fun r ↦ e.rows[r]!.get == e.row r
@@ -742,34 +743,32 @@ def pointsAtInfinity (c : List Int) (d : Nat) : List (Int × Int × Int) :=
 -- moduli 3, 5 and 7, and with `n < r`, `r = 0`, and whole periods and a rest after the first `r`
 -- bit arrays.
 #guard
-  let bit (w : UInt64) (t : Nat) : Bool := (w >>> t.toUInt64) &&& 1 == 1
   let es := [3, 5, 7].map (examinePrime [1, 2, 3, 4, 5, 6, 7] 6)
   ([(-9, 1), (-9, 12), (-35, 4), (6, 2), (15, 17)] : List (Int × Nat)).all fun (w0, n) ↦
     [1, 10].all fun b ↦
       let v := Id.run (andRows (es.map fun e ↦ ⟨e.p, e.row b⟩) w0 n (Vector.replicate _ 0))
       (List.range (n * rbaPack)).all fun y ↦ (List.range 64).all fun t ↦
-        bit v[y]! t == survives es b (rbaLength * w0 + 64 * y + t)
+        v[y]!.toBitVec.getLsbD t == survives es b (rbaLength * w0 + 64 * y + t)
 
 -- The set bits of a word, lowest first: with `F(a, 1) = a ^ 2`, every numerator `a0 + t` of a set
 -- bit `t` gives its points, after the points already in the array; the numerators, each once, are
 -- those of the set bits in increasing order.
 #guard
-  let bit (x : UInt64) (t : Nat) : Bool := (x >>> t.toUInt64) &&& 1 == 1
   ([0, 1, 0x8000000000000000, 0xf0f0f0f0f0f0f0f0, 0x123456789abcdef1] : List UInt64).all fun x ↦
     let pts := (Id.run (walkWord [0, 0, 1] 1 1 x (-37) #[(5, 5, 5)])).toList
-    pts == (5, 5, 5) :: ((List.range 64).filter (bit x)).flatMap
+    pts == (5, 5, 5) :: ((List.range 64).filter x.toBitVec.getLsbD).flatMap
       (fun t : Nat ↦ checkNum [0, 0, 1] 1 1 (-37 + t)) &&
     ((pts.drop 1).map (·.1)).eraseDups ==
-      ((List.range 64).filter (bit x)).map fun t : Nat ↦ -37 + (t : Int)
+      ((List.range 64).filter x.toBitVec.getLsbD).map fun t : Nat ↦ -37 + (t : Int)
 
 -- The check of a numerator against the reference: the point `(129 : 3830 : 100)` on
--- `y ^ 2 = x ^ 3 - 2` and none for the numerator 130, which has a common factor with 100; the point
--- `(-1 : 0 : 1)` on `y ^ 2 = x ^ 3 + x ^ 2 + x + 1`, given once; and the numerators of the
--- reference for a few curves and denominators.
+-- `y ^ 2 = x ^ 3 - 2` and none for `(258 : 15320 : 200)`, the same point with the common factor 2;
+-- the point `(-1 : 0 : 1)` on `y ^ 2 = x ^ 3 + x ^ 2 + x + 1`, given once; and the numerators of
+-- the reference for a few curves and denominators.
 #guard
   checkNum (BruteForce.scaledCoeffs [-2, 0, 0, 1] 3 100) 100 100 129 ==
       [(129, 3830, 100), (129, -3830, 100)] &&
-    checkNum (BruteForce.scaledCoeffs [-2, 0, 0, 1] 3 100) 100 100 130 == [] &&
+    checkNum (BruteForce.scaledCoeffs [-2, 0, 0, 1] 3 200) 200 200 258 == [] &&
     checkNum (BruteForce.scaledCoeffs [1, 1, 1, 1] 3 1) 1 1 (-1) == [(-1, 0, 1)] &&
     ([([-2, 0, 0, 1], 3), ([1, 2, 3, 4, 5, 6, 7], 6), ([1, 0, 126, 0, 441], 4)] :
         List (List Int × Nat)).all fun (c, d) ↦ [1, 2, 7, 21, 100].all fun b : Nat ↦
@@ -782,15 +781,15 @@ def pointsAtInfinity (c : List Int) (d : Nat) : List (Int × Int × Int) :=
 -- array between, before and after bit arrays whose words have bits at both ends, of one bit array,
 -- and of zero bit arrays only; the place of the sentinel holds other words at first.
 #guard
-  let bit (x : UInt64) (t : Nat) : Bool := (x >>> t.toUInt64) &&& 1 == 1
   ([(3, -2, [1]), (2, 1, [0]), (2, -1, [1]), (1, 5, []), (2, 0, [0, 1])] :
       List (Nat × Int × List Nat)).all fun (n, w0, zeros) ↦
     let v : Vector UInt64 ((n + 1) * rbaPack) := .ofFn fun ⟨y, _⟩ ↦
       if zeros.contains (y / rbaPack) then 0
       else if y % 2 = 0 then 0x8000000000000001 else 1 <<< (y * 7 % 64).toUInt64
     (Id.run (scanPiece [0, 0, 1] 1 1 w0 n v)).toList ==
-      ((List.range (n * rbaPack)).flatMap fun y : Nat ↦ ((List.range 64).filter (bit v[y]!)).map
-        fun t : Nat ↦ rbaLength * w0 + 64 * y + t).flatMap (checkNum [0, 0, 1] 1 1)
+      ((List.range (n * rbaPack)).flatMap fun y : Nat ↦
+        ((List.range 64).filter v[y]!.toBitVec.getLsbD).map fun t : Nat ↦
+          rbaLength * w0 + 64 * y + t).flatMap (checkNum [0, 0, 1] 1 1)
 
 -- The scan of pieces whose bits are a test of their numerators: the points of the numerators of the
 -- piece that pass the test, in increasing order.
@@ -825,14 +824,14 @@ def pointsAtInfinity (c : List Int) (d : Nat) : List (Int × Int × Int) :=
         (((List.range (n * rbaLength - mL - mH)).map fun k : Nat ↦ rbaLength * w0 + mL + k).filter
           (survives es b))
 
--- One denominator against the plain sieve: the points of the numerators `-130, …, 130` of a few
--- denominators, with pieces of one, two and three bit arrays.
+-- One denominator against the plain sieve: the points of the numerators `-300, …, 300` of a few
+-- denominators, with pieces of one, two and three bit arrays, the last piece cut at `wHigh`.
 #guard
   let c := [-2, 0, 0, 1]
   let es := [3, 5, 7, 11, 13].map (examinePrime c 3)
   [1, 7, 100].all fun b ↦ [1, 2, 3].all fun A ↦
-    (Id.run (sift c 3 130 A b (es.map fun e ↦ (e.p, e.rows)))).toList ==
-      (Id.run (checkDen c 3 130 b (Id.run (sieveDen 130 b es)))).toList
+    (Id.run (sift c 3 300 A b (es.map fun e ↦ (e.p, e.rows)))).toList ==
+      (Id.run (checkDen c 3 300 b (Id.run (sieveDen 300 b es)))).toList
 
 -- The denominators `1, …, 130`, with pieces of one bit array: the affine points of
 -- `ratpoints '-2 0 0 1' 130 -q`.
