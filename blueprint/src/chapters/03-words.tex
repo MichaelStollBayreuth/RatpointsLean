@@ -362,10 +362,11 @@ Each component of this chapter differs from the C code in a stated way, recorded
     $R w + t$, every numerator from $-H$ to $H$ and no 2-adic pattern, for the packing of the
     2-adic classes (E, F) and the search region (H);
   \item every modulus in the first stage, over every bit array, for the second stage, which and-s
-    the rows of its moduli into the nonzero bit arrays until none is left, and the third stage,
-    which tests one numerator at a time after the test for common factors, stops at the first
-    prime that rejects it, skips the primes that divide $b$, and looks up the inverses of $b$ when
-    the first numerator of $b$ reaches it (F);
+    the rows of its moduli, one after the other, into each bit array that the scan finds nonzero,
+    and stops as soon as no bit of it is left, and the third stage, which tests one numerator at a
+    time after the test for common factors, stops at the first prime that rejects it, skips the
+    primes that divide $b$, and looks up the inverses of $b$ when the first numerator of $b$ reaches
+    it (F);
   \item the first stage of the builds with one register per chunk, for the chunks of sixteen
     registers of the default build with the legs over the tail of a piece (F);
   \item the rows from Definition~\ref{def:admits}, one period laid out in words, for the builders
