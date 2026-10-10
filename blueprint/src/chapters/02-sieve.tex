@@ -52,8 +52,8 @@ calls
     (\csource{find_points.c}{5250}{5338}).
 \end{enumerate}
 C1 models what decides which points are found, each in its simplest form. Most of the rest only
-spares work; the refusals, the reversal and the exit when there are no points modulo $p$ (D) and
-the options of the output (G) come in their stages.
+spares work; the refusal of a form that is not squarefree, the reversal and the exit when there
+are no points modulo $p$ (D) and the options of the output (G) come in their stages.
 
 \section{The parameters}\label{sec:params}
 
@@ -104,7 +104,10 @@ the options of the output (G) come in their stages.
 \verb|Params| holds the choices that the theorems quantify over: which moduli the sieve uses, in
 which order and in which stage. ratpoints makes them from the curve (\verb|sieving_info|, which
 ranks the primes and may look past the first $q$ when the curve needs it), and moves the end of the
-third stage during the run (\verb|adapt_primes|; with \verb|-A 2| also $s_2$). None of this
+third stage during the run (\verb|adapt_primes|; with \verb|-A 2| also $s_2$); its third stage
+holds the $P$ primes after $s_2$ for the value $P$ of \verb|-P|, and the primes up to
+$\mathrm{numPrimes}$ when \verb|-P| is absent or negative, where the third stage of the model is
+the rest of its moduli after $s_2$. None of this
 changes the points found or their order, since a modulus only removes candidates that are not
 points (\verb|-q| suppresses the report of the moduli used, which does depend on the choice). So the
 model takes the choice as an input, and the theorems hold for every well-formed choice. They
@@ -167,21 +170,21 @@ $a$. These two facts make sound the rows that the tables below define.
   for $r = 0$, a fixed pattern that does not depend on the curve
   (\csource{gen_find_points_h.c}{102}{134}). A numerator \emph{survives} the moduli for $b$ when the
   row of $b$ in the table of every modulus admits it; this test, a function of the numerator, is the
-  interface between the sieve and the check, and the bit arrays of stage~C2 are specified against
-  it.
+  interface between the sieve and the check, and the bit arrays of stage~C2 will be specified
+  against it.
 \end{definition}
 
 \begin{lemma}[A square value of the form gives a square value of $f$]\label{lem:isSquare_div}
   \lean{Ratpoints.isSquare_sum_mul_div_pow_of_sq_eq}
   \leanok
   In a semifield, if $b \ne 0$, $D$ is even, $d \le D$ and
-  $y^2 = \sum_{i \le d} f_i\, a^i b^{D - i}$, then $\sum_{i \le d} f_i\, (a/b)^i$ is the square of
-  $y / b^{D/2}$.
+  $y^2 = \sum_{i \le d} f_i\, a^i b^{D - i}$, then $\sum_{i \le d} f_i\, (a/b)^i$ is a square.
 \end{lemma}
 
 \begin{proof}
   \leanok
-  The form is $b^D \sum_{i \le d} f_i\, (a/b)^i$, and $b^D$ is the square of $b^{D/2}$.
+  The form is $b^D \sum_{i \le d} f_i\, (a/b)^i$, and $b^D$ is the square of $b^{D/2}$, so the sum
+  is the square of $y / b^{D/2}$.
 \end{proof}
 
 Mathlib has the identity behind this in the form of polynomials, \verb|Polynomial.eval_homogenize|;
@@ -215,7 +218,8 @@ obligation that its value lies in the range of the type comes with the faithful 
 compute in \verb|long|s (D, F). The remainder \verb|mod()| of the C code is Lean's Euclidean
 \verb|%|. The tables that the build of ratpoints generates (the squares, the inverses, the row of
 $0$) are Lean functions with lemmas that they compute what they claim, checked against the
-generated header by \verb|#guard| examples, and as a whole with the faithful rows of stage~F. Each
+generated header by \verb|#guard| examples, and stage~F will check them as a whole against its
+faithful rows. Each
 loop of the sieve is a definition of type \verb|Id α| that its callers bind with \verb|←|, so that
 its contract, an \verb|@[spec]| theorem proved with the program logic of Lean core and with loop
 invariants that are named definitions, applies at the call; only \verb|findPoints| runs a
@@ -245,7 +249,8 @@ lemmas.
   \csource{sift.c}{262}{264}), each tested for common factors with $b$
   (\csource{sift.c}{318}{343}, \csource{sift.c}{438}{446}) and checked exactly
   (\csource{sift.c}{203}{204}): $F_c(a, b)$ by Horner's rule on the products $c_k b^{d-k}$,
-  computed once per denominator, then $(a, y, b)$ and, for $y \ne 0$, $(a, -y, b)$ when
+  computed once per denominator, times $b$ once more when $d$ is odd, then $(a, y, b)$ and, for
+  $y \ne 0$, $(a, -y, b)$ when
   $F_c(a, b) = y^2$ with $y \ge 0$ (\csource{find_points.c}{5250}{5338}); the exact check is
   that of the brute-force reference. Its contract: if entry $i$ is $k(i - H)$ for every $i$, for a
   test $k$ of the numerators, then the result is what the brute-force reference finds over the
@@ -254,7 +259,7 @@ lemmas.
 
 \begin{definition}[The denominators]\label{def:sieveRun}
   \uses{def:sieveDen, def:checkDen}
-  \lean{Ratpoints.Sieve.sieveRun, Ratpoints.Sieve.sieveRun_spec}
+  \lean{Ratpoints.Sieve.sieveRun, Ratpoints.Sieve.sieveRun_spec, Ratpoints.Sieve.toList_run_sieveRun}
   \leanok
   The denominators $b = 1, \dots, H$ in increasing order, each sieved and its survivors checked,
   the points appended in turn (\csource{find_points.c}{4059}{4075},
@@ -351,11 +356,10 @@ the points at infinity need the case $y = 0$, which ratpoints never meets.
 
 \begin{theorem}[The plain sieve returns the reference]\label{thm:findPoints_eq_bruteForce}
   \uses{def:findPoints, def:Params, def:bruteForce}
-  \lean{Ratpoints.findPoints_eq_ok_bruteForce, Ratpoints.eq_bruteForce_of_findPoints_eq_ok}
+  \lean{Ratpoints.findPoints_eq_ok_bruteForce}
   \leanok
   For well-formed parameters, $2$ to $\mathrm{maxDegree} + 1$ coefficients and $H \ge 1$,
-  $\mathrm{findPoints}(c, H, P)$ returns $\mathrm{bruteForce}(c, H)$; so for well-formed
-  parameters, every list that $\mathrm{findPoints}$ returns is that of the brute-force reference.
+  $\mathrm{findPoints}(c, H, P)$ returns $\mathrm{bruteForce}(c, H)$.
 \end{theorem}
 
 \begin{proof}
@@ -371,20 +375,21 @@ the points at infinity need the case $y = 0$, which ratpoints never meets.
 
 \begin{theorem}[The points, each once; the refusals]\label{thm:findPoints}
   \uses{def:findPoints, def:Params, def:IsPoint, def:points}
-  \lean{Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok, Ratpoints.nodup_of_findPoints_eq_ok, Ratpoints.toFinset_eq_points_of_findPoints_eq_ok, Ratpoints.exists_findPoints_eq_error_iff}
+  \lean{Ratpoints.eq_bruteForce_of_findPoints_eq_ok, Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok, Ratpoints.nodup_of_findPoints_eq_ok, Ratpoints.toFinset_eq_points_of_findPoints_eq_ok, Ratpoints.exists_findPoints_eq_error_iff}
   \leanok
-  For well-formed parameters, if $\mathrm{findPoints}(c, H, P)$ returns the list $L$, then a
-  triple lies in $L$ if and only if it is a normalized point of height at most $H$, $L$ has no
-  duplicates, and its set of elements is $\mathrm{points}(c, H)$. $\mathrm{findPoints}(c, H, P)$
-  refuses the input exactly when $c$ has fewer than two or more than $\mathrm{maxDegree} + 1$
-  entries or $H = 0$.
+  For well-formed parameters, if $\mathrm{findPoints}(c, H, P)$ returns the list $L$, then $L$ is
+  $\mathrm{bruteForce}(c, H)$, a triple lies in $L$ if and only if it is a normalized point of
+  height at most $H$, $L$ has no duplicates, and its set of elements is $\mathrm{points}(c, H)$.
+  $\mathrm{findPoints}(c, H, P)$ refuses the input exactly when $c$ has fewer than two or more than
+  $\mathrm{maxDegree} + 1$ entries or $H = 0$.
 \end{theorem}
 
 \begin{proof}
   \uses{thm:findPoints_eq_bruteForce, thm:bruteForce}
   \leanok
-  The first three statements follow from Theorem~\ref{thm:findPoints_eq_bruteForce} and
-  Theorem~\ref{thm:bruteForce}; the refusals are the three tests of $\mathrm{findPoints}$.
+  The refusals are the three tests of $\mathrm{findPoints}$; on every other input
+  Theorem~\ref{thm:findPoints_eq_bruteForce} gives the list of the reference, and
+  Theorem~\ref{thm:bruteForce} the rest.
 \end{proof}
 
 \begin{verbatim}
@@ -399,20 +404,20 @@ theorem wf_sieveParams (o : SieveOptions) : (sieveParams o).WF
 \end{verbatim}
 
 \verb|mem_iff_isPoint_of_findPoints_eq_ok| and \verb|nodup_of_findPoints_eq_ok| are the main
-theorems of the project; later stages add the options of \verb|findPoints| as an argument and,
-from stage~H on, the hypothesis of Sturm's theorem. The refusal theorem has its C1 form: stage~D
-adds the disjunct that $\Phi_c$ is not squarefree. The equation with the brute-force reference
-holds until the reversal of stage~D and the divisor order of stage~E change the order of the
-output; from then on the theorem is that the output is a permutation of the reference. Comparator
-certifies the two main theorems, the refusal theorem, which rules out a \verb|findPoints| that
-refuses every input, and \verb|wf_sieveParams|: the challenge states them with \verb|sorry| over
-\verb|findPoints|, \verb|Params|, \verb|Params.WF|, \verb|SieveOptions| and \verb|sieveParams|,
-imported from the model, never restated, since a definition of the model elaborates without
-Mathlib to other instance terms. Each main theorem gets a guard on its axioms. The contracts need
-only the program logic of Lean core and stay in a file without Mathlib, so that their
-\verb|grind| calls see only the lemmas of core, untouched by Mathlib's updates; that file also
-states the result of \verb|sieveRun| as a plain equation, so that the files with Mathlib need no
-program logic. The soundness of the rows needs Mathlib, through $\ZZ/p\ZZ$.
+theorems of the project; later stages add the options of \verb|findPoints| as an argument and, from
+stage~H on, the hypothesis of Sturm's theorem. The refusal theorem has its C1 form: stage~D adds the
+disjunct that $\Phi_c$ is not squarefree. The equation with the brute-force reference holds until
+the reversal of stage~D and the divisor order of stage~E change the order of the output; from then
+on the theorem is that the output is a permutation of the reference. Comparator certifies the two
+main theorems, the refusal theorem, which rules out a \verb|findPoints| that refuses every input,
+and \verb|wf_sieveParams|: the challenge states them with \verb|sorry| over \verb|findPoints|,
+\verb|Params|, \verb|Params.WF|, \verb|SieveOptions|, \verb|sieveParams| and \verb|maxDegree|,
+imported from the model, never restated, since a definition of the model elaborates without Mathlib
+to other instance terms. Each main theorem gets a guard on its axioms. The contracts need only the
+program logic of Lean core and stay in a file without Mathlib, so that their \verb|grind| calls see
+only the lemmas of core, untouched by Mathlib's updates; that file also states the result of
+\verb|sieveRun| as a plain equation, \verb|toList_run_sieveRun|, so that the files with Mathlib need
+no program logic. The soundness of the rows needs Mathlib, through $\ZZ/p\ZZ$.
 
 \section{The command-line program and the differential tests}\label{sec:sieveCli}
 
@@ -438,11 +443,11 @@ and on random curves.
 The interface (\verb|primeTable|, \verb|Params|, \verb|SieveOptions|, \verb|sieveParams|,
 \verb|Refusal|, \verb|findPoints|) lives in the namespace \verb|Ratpoints|, the components of the
 sieve in \verb|Ratpoints.Sieve|, and the general lemmas on lists and on $\ZZ/n\ZZ$ in
-\verb|Ratpoints/Mathlib| under their names in Mathlib's namespaces. The table of primes and the constants of the build join
-$\mathrm{maxDegree}$ in \verb|Ratpoints/Model/Constants.lean|; the rest of the model goes into
-\verb|Ratpoints/Model/Params.lean|,
-\verb|Ratpoints/Model/Sieve.lean| and \verb|Ratpoints/Model/FindPoints.lean|; the contracts, without
-Mathlib, into \verb|Ratpoints/Proof/Sieve.lean|; the well-formedness and the primes into
+\verb|Ratpoints/Mathlib| under their names in Mathlib's namespaces. The table of primes and the
+constants of the build join $\mathrm{maxDegree}$ in \verb|Ratpoints/Model/Constants.lean|; the rest
+of the model goes into \verb|Ratpoints/Model/Params.lean|, \verb|Ratpoints/Model/Sieve.lean| and
+\verb|Ratpoints/Model/FindPoints.lean|; the contracts, without Mathlib, into
+\verb|Ratpoints/Proof/Sieve.lean|; the well-formedness and the primes into
 \verb|Ratpoints/Proof/Params.lean|, the tables and the soundness of the rows into
 \verb|Ratpoints/Proof/Tables.lean|, and the main theorems into
 \verb|Ratpoints/Proof/FindPoints.lean|. One commit per item, each passing the project's checks:

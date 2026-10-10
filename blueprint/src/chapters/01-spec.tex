@@ -150,8 +150,9 @@ library and the program differ, and the model follows the program: the library c
 zeros before the height, so that \verb|5 0| with $H = 0$ is \verb|NON_SQUAREFREE| for it, while the
 program checks the coefficient list and the height before it calls the library
 (\csource{main.c}{362}{380}) and reports error~4. So \verb|findPoints| refuses more than
-$\mathrm{maxDegree} + 1$ coefficients and fewer than two, then $H = 0$, and then a form that is not
-squarefree, with the program's error numbers 3, 5, 4 and~8.
+$\mathrm{maxDegree} + 1$ coefficients and fewer than two, then $H = 0$, with the program's error
+numbers 3, 5 and~4; from stage~D on it also refuses, after these, a form that is not squarefree
+(error~8).
 
 With the options of stage~D the predicate changes: under \verb|-s| (no Sturm step) the program
 refuses, besides the coefficient count and $H = 0$, exactly the inputs with $N - d \ge 2$ and,
@@ -161,7 +162,8 @@ those with even $d$ and $c_0 = c_1 = 0$; under \verb|-s -k| only those with $N -
 \section{The brute-force reference}\label{sec:bruteForce}
 
 \begin{definition}[Brute-force search]\label{def:bruteForce}
-  \lean{Ratpoints.bruteForce, Ratpoints.BruteForce.pointsOfDen, Ratpoints.BruteForce.pointsAbove, Ratpoints.BruteForce.numerators, Ratpoints.BruteForce.scaledCoeffs, Ratpoints.BruteForce.horner}
+  \uses{def:binaryForm}
+  \lean{Ratpoints.bruteForce, Ratpoints.BruteForce.pointsOfDen, Ratpoints.BruteForce.pointsAbove, Ratpoints.BruteForce.numerators, Ratpoints.BruteForce.scaledCoeffs, Ratpoints.BruteForce.horner, Ratpoints.BruteForce.degree, Ratpoints.BruteForce.degree_eq}
   \leanok
   The list, computed in the model, of the triples found by testing, in this order, the candidate
   $(1, 0)$ if $H \ge 1$, and then the pairs $(x, z)$ with $1 \le z \le H$, $-H \le x \le H$ and
@@ -174,7 +176,9 @@ This is the core of \verb|verify-test4.py| of the C repository (which compares p
 the model (Lean core, no Mathlib). It evaluates $F_c$ as the C code's exact check does (Horner's
 rule in $x$ on the products $c_k z^{d-k}$, computed once per $z$, and one more factor $z$ when $d$
 is odd), so that the candidate $(1, 0)$ needs no case of its own, and it takes the square root with
-\verb|Nat.sqrt|. It takes no hypothesis on $c$ or $H$, and it models no C code, so it cites none.
+\verb|Nat.sqrt|; the degree $d$ is computed by the expression of \verb|degree|
+(Definition~\ref{def:binaryForm}), which the model cannot import. It takes no hypothesis on $c$ or
+$H$, and it models no C code, so it cites none.
 Written as nested \verb|List.flatMap|s rather than loops, its membership proof is direct. Compiled,
 it tests one to two million coprime pairs per second (Lean's \verb|Int| is a GMP number beyond $\pm
 2^{31}$, which $F_c$ exceeds at small heights already), so whole test suites fit at heights up to
@@ -210,16 +214,18 @@ $|c_d| \ne 1$, where the two agree as sets. The order of the program is a theore
 statements of Theorem~\ref{thm:bruteForce} (\verb|challenge_mem_bruteForce_iff| and
 \verb|challenge_nodup_bruteForce|); \verb|comparator/Solution.lean| proves them by
 \verb|Ratpoints.mem_bruteForce_iff| and \verb|Ratpoints.nodup_bruteForce|. \verb|binaryFormPoly|
-joins the challenge with the refusal theorem (stage~D), and \verb|points| stays out of it:
+joins the challenge with the refusal theorem of stage~D, and \verb|points| stays out of it:
 comparator compares the full declarations that a certified statement reaches, the proofs of
 theorems included, so the finiteness proof inside \verb|points| would have to be reproduced
 term for term; and these two theorems say everything the \verb|Finset| statement says. (A
 computable \verb|points|, filtering an explicit box with the bound $\max |F_c|$ for $|y|$,
 would avoid the proof term, but it is not needed.) The specification can be restated because
 it is elaborated with Mathlib, as the challenge is; a definition of the model, elaborated
-without Mathlib, has other instance terms and is always imported, never restated. Membership and
-no duplicates for \verb|findPoints| join in stage~C1, together with the well-formedness of the
-default parameters.
+without Mathlib, has other instance terms and is always imported, never restated. Since stage~C1
+the challenge also states membership and no duplicates for \verb|findPoints| for well-formed
+parameters, the refusal theorem in its C1 form and \verb|wf_sieveParams|, over \verb|findPoints|,
+\verb|Params|, \verb|Params.WF|, \verb|SieveOptions|, \verb|sieveParams| and \verb|maxDegree|,
+imported from the model (Section~\ref{sec:sieveTheorems}).
 
 \section{The command-line program}\label{sec:cli}
 
@@ -343,7 +349,8 @@ that they mirror:
 \section{The differential tests of stage~B}
 
 The script \verb|scripts/difftest.py| compares \verb|ratpoints-lean| with the C program built at
-the pin and with its recorded outputs, in six suites:
+the pin and with its recorded outputs, in six suites in stage~B (stage~C1 adds two,
+Section~\ref{sec:sieveCli}):
 \begin{itemize}
   \item \verb|test4.sh| against \verb|testbase4|, split at the \verb|#| header lines (five of
     which are glued to the end of the preceding output line): 533 of its 582 runs; the others
@@ -351,8 +358,8 @@ the pin and with its recorded outputs, in six suites:
     which wait for stage~D, and 19 with heights from $30000$ to $100000$, which wait for the
     faster sieves of the later stages (Section~\ref{sec:sieveCli});
   \item \verb|test3.sh| invocation by invocation against the C program, since it has no announce
-    lines: 13 of its 21 runs (5 have filtered outputs, one is a refusal, and two have heights too
-    large for the brute force);
+    lines: 13 of its 21 runs (5 have filtered outputs, one is a refusal, and two have heights above
+    the largest height of the tests, $5000$);
   \item the curves of \verb|testdata.h|, \verb|testdata-many.h| and \verb|testdata-degrees.h|,
     read from the pinned checkout, at a reduced height $h$ ($100$ by default): the C program run
     at height $h$ prints exactly the reference lines of \verb|testbase*| restricted to

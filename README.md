@@ -1,10 +1,10 @@
 # RatpointsLean
 
-A Lean 4 model of [ratpoints](https://github.com/MichaelStollBayreuth/ratpoints), the C program
-that finds the rational points of bounded height on the curves `y² = F(x, z)`, where `F` is a
-binary form of even degree with integer coefficients, by sieving; with proofs that the model meets
-a short specification for every choice of the sieving parameters, and a record, checked in CI, of
-which Lean definition models which lines of C.
+A Lean 4 model of [ratpoints](https://github.com/MichaelStollBayreuth/ratpoints), the C program that
+finds the rational points of bounded height on the curves `y² = F(x, z)`, where `F` is a binary form
+of even degree with integer coefficients, by sieving; with proofs that the model meets a short
+specification for every well-formed choice of the sieving parameters, and a record, checked in CI,
+of which Lean definition models which lines of C.
 
 The C code is that of ratpoints 3.1.1; the project moves to each new release of ratpoints, and a
 new optimization of the C code comes, as far as possible, with its soundness proof here.

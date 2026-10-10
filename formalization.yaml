@@ -12,11 +12,11 @@ project:
     the curves y^2 = F(x, z), F a binary form of even degree with integer coefficients, by sieving.
     The model mirrors the hardware-independent structure of the C code function by function (the
     same loops, tables, bit arrays of 64-bit words and index arithmetic); the proofs are to show
-    that, for every choice of the sieving parameters, it returns exactly the normalized points of
-    height at most H, without duplicates, and refuses, for heights below 2^63, exactly the inputs
-    that the C program refuses in a default run (fewer than two or more than maxDegree + 1 = 101
-    coefficients, H = 0, a binary form that is not squarefree); a correspondence record and differential tests
-    link the model to the C code.
+    that, for every well-formed choice of the sieving parameters, it returns exactly the normalized
+    points of height at most H, without duplicates, and refuses, for heights below 2^63, exactly
+    the inputs that the C program refuses in a default run (fewer than two or more than
+    maxDegree + 1 = 101 coefficients, H = 0, a binary form that is not squarefree); a
+    correspondence record and differential tests link the model to the C code.
   authors: ["Michael Stoll"]
   responsible_maintainers: ["Michael Stoll"]
   license: "Apache-2.0"
@@ -159,8 +159,9 @@ review:
   status: "unchecked"
   reviewers: []
   notes: >
-    Nothing formal to review yet. Each stage chapter of the blueprint is reviewed by the author
-    before its Lean code is written.
+    No review by others yet; the main theorems are certified by comparator (status.main_results).
+    Each stage chapter of the blueprint is reviewed by the author before its Lean code is
+    written.
 
 # alignment - how source statements map to formal declarations.
 alignment:

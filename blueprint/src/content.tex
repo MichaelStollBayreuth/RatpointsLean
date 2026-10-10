@@ -11,8 +11,8 @@ This blueprint describes a Lean~4 development that verifies it in four parts:
     structure of the C code function by function: the same loops, tables, bit arrays of 64-bit
     words and index arithmetic; it uses only Lean core and \verb|Std|, not Mathlib, so that the
     executable and the differential tests do not depend on the proofs;
-  \item \emph{proofs} that the model meets the specification, for every choice of the sieving
-    parameters;
+  \item \emph{proofs} that the model meets the specification, for every well-formed choice of the
+    sieving parameters;
   \item the \emph{link to the C code}: a record of which Lean definition models which lines of C,
     and differential tests that run the model and the C program on the same inputs.
 \end{enumerate}
@@ -33,8 +33,9 @@ possible, with its soundness proof here.
 node of the model describes one component (a C function, a loop, or a small group of helpers): it
 names the Lean definition and its contract with \verb|\lean|, says in words what the contract
 promises, and links to the C code it models at the commit of ratpoints that the project pins.
-Each component is one definition with its contract, a separate theorem proved with the program
-logic of Lean core. The appendix records, for every line of code of the C files, the Lean
+Each component with a loop is one definition with its contract, a separate \verb|@[spec]| theorem
+proved with the program logic of Lean core; the other components are specified by ordinary
+lemmas. The appendix records, for every line of code of the C files, the Lean
 declarations that model it or the reason why the model leaves it out.
 
 \emph{Stages.} The work proceeds in stages, each of which begins with a chapter of this blueprint
