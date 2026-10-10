@@ -5,10 +5,11 @@ Authors: Michael Stoll
 -/
 module
 
-public import Ratpoints.Proof.Sieve
+public import Ratpoints.Model.Sieve
 public import Std.WP
 
 import Ratpoints.Proof.Bits
+import Ratpoints.Proof.Sieve
 import Std.Tactic.Do
 
 /-!

@@ -12,6 +12,7 @@ public import Ratpoints.Spec.Basic
 import Ratpoints.Mathlib.Data.List.Basic
 import Ratpoints.Proof.BruteForce
 import Ratpoints.Proof.Params
+import Ratpoints.Proof.Sieve
 import Ratpoints.Proof.Tables
 import Ratpoints.Proof.Words
 
