@@ -31,6 +31,30 @@
         "Ratpoints.Sieve.siftPiece"
       ]
     },
+    "find_points.c:3149-3170": {
+      "hash": "b67a52065a3855a34bb73825b01af82d100dbfe9c90c354f1a375506ff128864",
+      "owners": [
+        "Ratpoints.Sieve.sift"
+      ]
+    },
+    "find_points.c:3442-3488": {
+      "hash": "22b79014fdecd46acf80f8bda5d34ef14fe75d6ca6329da15a2ef8709ffdc222",
+      "owners": [
+        "Ratpoints.Sieve.sift"
+      ]
+    },
+    "find_points.c:3490-3561": {
+      "hash": "6c266d44441a8ea4f6a4d2ec83700be4c61da60f36e3880f92acb75a8cad5f2f",
+      "owners": [
+        "Ratpoints.Sieve.sift"
+      ]
+    },
+    "find_points.c:3563-3617": {
+      "hash": "a9293f8510a12c44adae7d157f9c4a1f5b73b2ce5c6be23c2fee7e101a5ac8ff",
+      "owners": [
+        "Ratpoints.Sieve.sift"
+      ]
+    },
     "find_points.c:4059-4075": {
       "hash": "f6165f9a3593808c0c59560314fe28156c867a0e14c8410c9c0e1c52baf7a7d9",
       "owners": [
@@ -106,7 +130,6 @@
     "find_points.c:5250-5338": {
       "hash": "f99fc9f0d55ade441a774478107270bb3792cd5b30b4879808f54bdfc05ad26c",
       "owners": [
-        "Ratpoints.Sieve.checkDen",
         "Ratpoints.Sieve.checkNum"
       ]
     },
@@ -659,41 +682,61 @@
     "sift.c:1030-1041": {
       "hash": "0dc0be2dcaafb97068f868bd12906bc1890d0f50db01213fc06b00e6907db364",
       "owners": [
-        "Ratpoints.Sieve.sieveDen",
         "Ratpoints.Sieve.siftPiece"
       ]
     },
     "sift.c:1061-1082": {
       "hash": "69f6def492e7db5babf28d1587a91b44178808157fa666582a849c2619b34848",
       "owners": [
-        "Ratpoints.Sieve.checkDen",
         "Ratpoints.Sieve.scanPiece"
       ]
     },
     "sift.c:1083-1086": {
       "hash": "1076c7a6a4d2ebc1eb70a9bdbc4fac4acc08049bf9bc613e459ced0cd990c7c3",
       "owners": [
-        "Ratpoints.Sieve.andRows",
-        "Ratpoints.Sieve.sieveDen"
+        "Ratpoints.Sieve.andRows"
       ]
     },
     "sift.c:1088-1092": {
       "hash": "5f08ea512c18b34a04c1483746777a69fc8651599b350c00f726311df45b574b",
       "owners": [
-        "Ratpoints.Sieve.checkDen",
         "Ratpoints.Sieve.scanPiece"
       ]
     },
-    "sift.c:1184-1202": {
-      "hash": "7646b5a34a2e60eacf9b84fb89ee2f35d31c56ff58dab4996bfa311b5efffde5",
+    "sift.c:1174-1202": {
+      "hash": "f4632b73176bb9b2c046bd609fa5583f101e58c7bc9bdc5b4af18e67657390a8",
       "owners": [
-        "Ratpoints.Sieve.sieveDen"
+        "Ratpoints.Sieve.andRows"
       ]
     },
-    "sift.c:1213-1299": {
-      "hash": "611de9f8c484785fbb580a2cf8a6f1f8ca02a9ce2944414bd732303bace59c69",
+    "sift.c:1213-1226": {
+      "hash": "d4597eb8f82911382c0889e3e29ddb3faf482f426f953a24710230933d4910e6",
       "owners": [
-        "Ratpoints.Sieve.checkDen"
+        "Ratpoints.Sieve.scanPiece"
+      ]
+    },
+    "sift.c:1227-1255": {
+      "hash": "6761fbca1564d006e69af01ca2594730bb032410818fb22d8db1b869a9fcbab8",
+      "owners": [
+        "Ratpoints.Sieve.walkWord"
+      ]
+    },
+    "sift.c:1257-1264": {
+      "hash": "1b30de168b2b0078bbb74083174dc96fdfe343d27ed02faf89af22415b77a9df",
+      "owners": [
+        "Ratpoints.Sieve.scanPiece"
+      ]
+    },
+    "sift.c:1265-1292": {
+      "hash": "d5fc26ec2dbb44cefb7b0df04369978d52653ac1d494fa794a51a3fe9980a65f",
+      "owners": [
+        "Ratpoints.Sieve.walkWord"
+      ]
+    },
+    "sift.c:1293-1299": {
+      "hash": "e84d5875d42290ba4a97f342fdf343d5954ff501679f0108ab61bf940161fe7f",
+      "owners": [
+        "Ratpoints.Sieve.scanPiece"
       ]
     },
     "sift.c:1300-1305": {
@@ -702,44 +745,39 @@
         "Ratpoints.Sieve.siftPiece"
       ]
     },
-    "sift.c:203-204": {
-      "hash": "d83c41142deb34c362a389a9472955d5b4313f003b16bd9b96fc9409abc0267e",
+    "sift.c:202-205": {
+      "hash": "b1565d0bb8bd58cb2c8495a0ae4d91f355a6f1f46575eae5237b182a5c1ba46a",
       "owners": [
-        "Ratpoints.Sieve.checkDen"
+        "Ratpoints.Sieve.checkNum"
       ]
     },
     "sift.c:262-264": {
       "hash": "949d67cfbf85754d63a6ba58a1edb0f014fe0bffbbd47428db0c4247d7597eca",
       "owners": [
-        "Ratpoints.Sieve.checkDen",
         "Ratpoints.Sieve.walkWord"
       ]
     },
     "sift.c:291-312": {
       "hash": "9b658a503b23b59fea65cc895e62582926bc0d764153d6d25eb1f8901ddb4618",
       "owners": [
-        "Ratpoints.Sieve.andRows",
-        "Ratpoints.Sieve.sieveDen"
+        "Ratpoints.Sieve.andRows"
       ]
     },
     "sift.c:318-343": {
       "hash": "eb81df87599d191f3bba67e917a79cd1831cd70ff41b281ebfcb3b70a5acfda3",
       "owners": [
-        "Ratpoints.Sieve.checkDen",
         "Ratpoints.Sieve.checkNum"
       ]
     },
     "sift.c:405-431": {
       "hash": "cc3a901f1e547d66927258d76f73fba6addb5baa74bb78e3ed79e53a138c20b8",
       "owners": [
-        "Ratpoints.Sieve.andRows",
-        "Ratpoints.Sieve.sieveDen"
+        "Ratpoints.Sieve.andRows"
       ]
     },
     "sift.c:438-446": {
       "hash": "d7ab90550e0c8fecc0a652dd8131274e07d4a0966cff52e6f7ab24df41fffe5f",
       "owners": [
-        "Ratpoints.Sieve.checkDen",
         "Ratpoints.Sieve.checkNum"
       ]
     },
@@ -752,8 +790,7 @@
     "sift.c:943-1022": {
       "hash": "2bb3bd2bba07297d8dfa3fc26151897a65911e4ea0808c98c7f5f128ece07545",
       "owners": [
-        "Ratpoints.Sieve.andRows",
-        "Ratpoints.Sieve.sieveDen"
+        "Ratpoints.Sieve.andRows"
       ]
     }
   },
@@ -882,7 +919,7 @@
     "rp-private.h:378-379": "9f8b4e5a7e4cc8ecee649784b39ea1f01db67154d5cbceaf23cbfc23dc572572",
     "rp-private.h:429-444": "27ab62987e54d21729a7dc7240acadb35d150c6cdfef5f5b09a78619d8b92e9c",
     "rp-private.h:542-555": "35545fa2f80164462a2e92e543f56f9ceace7fcfccb179d0f60ba51292630ae1",
-    "sift.c:203-204": "d83c41142deb34c362a389a9472955d5b4313f003b16bd9b96fc9409abc0267e",
+    "sift.c:202-205": "b1565d0bb8bd58cb2c8495a0ae4d91f355a6f1f46575eae5237b182a5c1ba46a",
     "sift.c:262-264": "949d67cfbf85754d63a6ba58a1edb0f014fe0bffbbd47428db0c4247d7597eca",
     "sift.c:291-312": "9b658a503b23b59fea65cc895e62582926bc0d764153d6d25eb1f8901ddb4618",
     "sift.c:318-343": "eb81df87599d191f3bba67e917a79cd1831cd70ff41b281ebfcb3b70a5acfda3",
@@ -901,8 +938,12 @@
     "sift.c:1083-1086": "1076c7a6a4d2ebc1eb70a9bdbc4fac4acc08049bf9bc613e459ced0cd990c7c3",
     "sift.c:1088-1092": "5f08ea512c18b34a04c1483746777a69fc8651599b350c00f726311df45b574b",
     "sift.c:1174-1202": "f4632b73176bb9b2c046bd609fa5583f101e58c7bc9bdc5b4af18e67657390a8",
-    "sift.c:1184-1202": "7646b5a34a2e60eacf9b84fb89ee2f35d31c56ff58dab4996bfa311b5efffde5",
+    "sift.c:1213-1226": "d4597eb8f82911382c0889e3e29ddb3faf482f426f953a24710230933d4910e6",
     "sift.c:1213-1299": "611de9f8c484785fbb580a2cf8a6f1f8ca02a9ce2944414bd732303bace59c69",
+    "sift.c:1227-1255": "6761fbca1564d006e69af01ca2594730bb032410818fb22d8db1b869a9fcbab8",
+    "sift.c:1257-1264": "1b30de168b2b0078bbb74083174dc96fdfe343d27ed02faf89af22415b77a9df",
+    "sift.c:1265-1292": "d5fc26ec2dbb44cefb7b0df04369978d52653ac1d494fa794a51a3fe9980a65f",
+    "sift.c:1293-1299": "e84d5875d42290ba4a97f342fdf343d5954ff501679f0108ab61bf940161fe7f",
     "sift.c:1300-1305": "19388f4fbfbcc24229fc0ebdd7e18c0abbb994a9d618699f865c99e1e3a8ae16",
     "sturm.c:120-143": "725fb9bdc1a277ac79f4b8d2c7fb1b9eed69c8cf066e703bbb4fe3a42f0f4228"
   }

@@ -230,10 +230,11 @@ imported from the model (Section~\ref{sec:sieveTheorems}).
 \section{The command-line program}\label{sec:cli}
 
 The Lean program is a program of its own, the executable \verb|ratpoints-lean|, with the command
-line of ratpoints. Eventually it offers the full functionality of ratpoints except the threads
-and the other hardware-dependent features. It prints the points of the plain sieve of
-Chapter~\ref{chap:sieve} (in stage~B those of the brute-force reference), so that the test scripts
-of the C repository can run it as \verb|RP=ratpoints-lean|:
+line of ratpoints. Eventually it offers the full functionality of ratpoints except the threads and
+the other hardware-dependent features. It prints the points of the sieve of
+Chapters~\ref{chap:sieve} and~\ref{chap:words} (in stage~B those of the brute-force reference, in
+stage~C1 those of the plain sieve), so that the test scripts of the C repository can run it as
+\verb|RP=ratpoints-lean|:
 \begin{itemize}
   \item it behaves as with \verb|-q|, printing exactly one line \verb|(x : y : z)| per point and
     nothing else; it accepts \verb|-q|, and \verb|-v|, which \verb|-q| cancels in \verb|main.c|;

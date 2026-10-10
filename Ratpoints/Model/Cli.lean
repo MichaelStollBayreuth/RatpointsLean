@@ -20,7 +20,7 @@ in its order, and prints the points as ratpoints does with `-q`: one line `(x : 
 and nothing else. It accepts `-q` and `-v`, which it ignores, and the options that tune the sieve
 of ratpoints: it reads `-p -n -N -P -F -j -J` into the sieving parameters and ignores the others;
 it answers every other option of ratpoints, which it does not support yet, with a message and the
-exit status 12, which `main.c` does not use. It takes the points from the plain sieve
+exit status 12, which `main.c` does not use. It takes the points from the sieve
 `Ratpoints.findPoints` with the parameters `Ratpoints.sieveParams` of these options, so that, for
 now and unlike ratpoints, it does not refuse a polynomial that is not squarefree.
 
@@ -369,7 +369,7 @@ def pointLine (p : Int × Int × Int) : String := s!"({p.1} : {p.2.1} : {p.2.2})
 /-- What `ratpoints-lean` does on the command line `args` (the words after the name of the
 program): the text it prints on the standard output and its exit status. On the coefficient list
 `c`, the height bound `H` and the values `o` of the options of `Ratpoints.Cli.input`, it prints,
-as ratpoints does with `-q`, the line `Ratpoints.Cli.pointLine` of each point that the plain sieve
+as ratpoints does with `-q`, the line `Ratpoints.Cli.pointLine` of each point that the sieve
 `Ratpoints.findPoints` finds with the parameters `Ratpoints.sieveParams o`, in its order, and
 exits with status 0; on a failure `f`, it prints `f.message` and exits with `f.status`
 (`Ratpoints.Cli.Failure.message`, `Ratpoints.Cli.Failure.status`). -/

@@ -12,11 +12,11 @@ public import Ratpoints.Spec.Basic
 import Ratpoints.Mathlib.Data.List.Basic
 import Ratpoints.Proof.BruteForce
 import Ratpoints.Proof.Params
-import Ratpoints.Proof.Sieve
 import Ratpoints.Proof.Tables
+import Ratpoints.Proof.Words
 
 /-!
-# The plain sieve finds exactly the points
+# The sieve finds exactly the points
 
 For well-formed parameters, `Ratpoints.findPoints c H P` returns the list of the brute-force
 reference on every input that it does not refuse (`Ratpoints.findPoints_eq_ok_bruteForce`), so
@@ -39,12 +39,13 @@ certifies the membership, the absence of duplicates and the refusals
 
 ## Proof
 
-By the contract of the denominators (`Ratpoints.Sieve.toList_run_sieveRun`), the sieve returns
-the part of the reference with `z ≥ 1`, the numerators of each denominator filtered by the
-survivor test; every numerator over which the exact check finds a point survives
-(`Ratpoints.Sieve.survives_of_mem_pointsOfDen`), so the filter changes nothing
-(`Ratpoints.BruteForce.pointsOfDen_filter_of_ne`); and the points at infinity are those of the
-candidate `(1, 0)` of the reference (`Ratpoints.Sieve.pointsAtInfinity_eq_pointsOfDen`).
+By the contract of the denominators (`Ratpoints.Sieve.toList_run_sieveRun`), the sieve returns the
+part of the reference with `z ≥ 1`, the numerators of each denominator filtered by the survivor
+test, since the pieces have at least one bit array (`Ratpoints.Params.one_le_arraySizeAt`) and the
+moduli of well-formed parameters are primes, hence positive; every numerator over which the exact
+check finds a point survives (`Ratpoints.Sieve.survives_of_mem_pointsOfDen`), so the filter changes
+nothing (`Ratpoints.BruteForce.pointsOfDen_filter_of_ne`); and the points at infinity are those of
+the candidate `(1, 0)` of the reference (`Ratpoints.Sieve.pointsAtInfinity_eq_pointsOfDen`).
 -/
 
 @[expose] public section
@@ -92,15 +93,20 @@ end Sieve
 
 /-! ### The main theorems -/
 
-/-- By `Ratpoints.Sieve.toList_run_sieveRun`, the sieve gives the reference with the numerators of
-each denominator filtered by the survivor test, which changes nothing
-(`Ratpoints.Sieve.survives_of_mem_pointsOfDen`, `Ratpoints.BruteForce.pointsOfDen_filter_of_ne`).
--/
+/-- By `Ratpoints.Sieve.toList_run_sieveRun`, for pieces of at least one bit array
+(`Ratpoints.Params.one_le_arraySizeAt`) and moduli that are primes, hence positive, the sieve gives
+the reference with the numerators of each denominator filtered by the survivor test, which changes
+nothing (`Ratpoints.Sieve.survives_of_mem_pointsOfDen`,
+`Ratpoints.BruteForce.pointsOfDen_filter_of_ne`). -/
 theorem findPoints_eq_ok_bruteForce {c : List ℤ} {H : ℕ} {P : Params} (hP : P.WF)
     (hc2 : 2 ≤ c.length) (hcmax : c.length ≤ maxDegree + 1) (hH : H ≠ 0) :
     findPoints c H P = .ok (bruteForce c H) := by
+  have hp (e) (he : e ∈ P.moduli.map (examinePrime c (BruteForce.degree c))) : 0 < e.p := by
+    obtain ⟨p, hp, rfl⟩ := List.mem_map.mp he
+    exact (hP.prime_of_mem hp).pos
   simp only [findPoints, bruteForce, Nat.not_lt.mpr hcmax, Nat.not_lt.mpr hc2, hH,
-    Nat.one_le_iff_ne_zero.mpr hH, ↓reduceIte, pointsAtInfinity_eq_pointsOfDen, toList_run_sieveRun]
+    Nat.one_le_iff_ne_zero.mpr hH, ↓reduceIte, pointsAtInfinity_eq_pointsOfDen,
+    toList_run_sieveRun c _ H (P.one_le_arraySizeAt (Nat.one_le_iff_ne_zero.mpr hH)) hp]
   congr 3
   funext j
   refine pointsOfDen_filter_of_ne fun x _ hx ↦ ?_

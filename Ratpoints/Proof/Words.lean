@@ -15,9 +15,9 @@ import Std.Tactic.Do
 # The contracts of the bit arrays of words
 
 The lemmas on the operations on the bit arrays of 64-bit words of the model, on its rows as words
-and on the check of a numerator, and the contracts of its components on words, as `@[spec]` theorems
-proved with `vcgen`, the program logic of Lean core, with loop invariants that are named
-definitions.
+and on the check of a numerator, and the contracts of its components on words, up to the sieve of
+one denominator and the run over the denominators, as `@[spec]` theorems proved with `vcgen`, the
+program logic of Lean core, with loop invariants that are named definitions.
 
 ## Main statements
 
@@ -44,12 +44,21 @@ definitions.
   the scan of the piece gives the points of its numerators that pass `keep`, in increasing order.
 * `Ratpoints.Sieve.siftPiece_spec`: one piece with the rows of a denominator `b` gives the points of
   the survivors among its numerators that the masks at its two ends leave, in increasing order.
+* `Ratpoints.Sieve.sift_spec`: the pieces of a denominator `b` give what the brute-force reference
+  finds over `b` and the numerators `-H, …, H` that survive the tables;
+  `Ratpoints.Sieve.toList_run_sift_eq_checkDen`: these are the points that the plain sieve of `b`
+  gives.
+* `Ratpoints.Sieve.sieveRun_spec`: the denominators `1, …, H` give the part of the brute-force
+  reference with `z ≥ 1`, its numerators filtered by the survivor test;
+  `Ratpoints.Sieve.toList_run_sieveRun` states this as an equation.
 
 ## Implementation notes
 
 The file uses Lean core and `Std` only, as `Ratpoints.Proof.Sieve` does; the lemmas on words that
 are not about the model are in `Ratpoints.Proof.Bits`. The proofs use only that
-`Ratpoints.rbaPack` is positive, never its value.
+`Ratpoints.rbaPack` is positive, never its value. The plain equation
+`Ratpoints.Sieve.toList_run_sieveRun` lets the files with Mathlib use the result of the run without
+the program logic.
 -/
 
 @[expose] public section
@@ -63,6 +72,8 @@ namespace Ratpoints
 /-! ### The width of the bit arrays -/
 
 theorem rbaLength_eq : rbaLength = 64 * rbaPack := rfl
+
+theorem rbaLength_pos : 0 < rbaLength := rbaLength_eq ▸ Nat.mul_pos (by decide) rbaPack_pos
 
 theorem rbaLength_mul (j : Nat) : rbaLength * j = 64 * (rbaPack * j) := by
   rw [rbaLength_eq, Nat.mul_assoc]
@@ -789,6 +800,249 @@ theorem siftPiece_spec (w : List Int) (f : Int) (b : Nat) (specs : List SieveSpe
         ‹_› ‹_›
     | exact IsMasked.toList_eq ‹_› (isMasked_self _ _ (Decidable.of_not_not ‹_›)
         (Decidable.of_not_not ‹_›)) ‹_› ‹_› ‹_›
+
+/-! ### One denominator -/
+
+open BruteForce
+
+-- The low mask of `Ratpoints.Sieve.sift` on the piece from the word number `w0` on: the number of
+-- its bits below `-H`, `0` from the second piece on.
+private theorem ite_eq_toNat_neg_sub {H : Nat} {w0 : Int} (hw0 : -(H : Int) / rbaLength ≤ w0) :
+    (if w0 = -(H : Int) / rbaLength then
+      (-(H : Int) - rbaLength * (-(H : Int) / rbaLength)).toNat else 0) =
+        (-(H : Int) - rbaLength * w0).toNat := by
+  have hR : (0 : Int) < rbaLength := by have := rbaLength_pos; lia
+  split
+  · subst_vars
+    rfl
+  · have := Int.lt_mul_ediv_self_add (x := -(H : Int)) hR
+    have := Int.mul_le_mul_of_nonneg_left (show -(H : Int) / rbaLength + 1 ≤ w0 by lia)
+      (Int.le_of_lt hR)
+    rw [Int.mul_add, Int.mul_one] at this
+    lia
+
+-- The high mask of `Ratpoints.Sieve.sift` on the last piece: the number of its bits above `H`.
+private theorem sub_toNat_emod_eq_toNat_mul_sub (H : Nat) :
+    rbaLength - 1 - ((H : Int) % rbaLength).toNat =
+      (rbaLength * ((H : Int) / rbaLength + 1) - 1 - H).toNat := by
+  have := Int.emod_def (H : Int) rbaLength
+  have := Int.emod_lt_of_pos (H : Int) (b := rbaLength) (by have := rbaLength_pos; lia)
+  have := Int.emod_nonneg (H : Int) (b := rbaLength) (by have := rbaLength_pos; lia)
+  rw [Int.mul_add, Int.mul_one]
+  lia
+
+-- The high mask of `Ratpoints.Sieve.sift` on the piece that ends at the word number `w1`: the
+-- number of its bits above `H`, `0` for every piece but the last.
+private theorem ite_eq_toNat_mul_sub {H : Nat} {w1 : Int} (hw1 : w1 ≤ (H : Int) / rbaLength + 1) :
+    (if w1 = (H : Int) / rbaLength + 1 then rbaLength - 1 - ((H : Int) % rbaLength).toNat
+      else 0) = (rbaLength * w1 - 1 - H).toNat := by
+  split
+  · subst_vars
+    exact sub_toNat_emod_eq_toNat_mul_sub H
+  · have hR : (0 : Int) < rbaLength := by have := rbaLength_pos; lia
+    have := Int.mul_ediv_self_le (x := (H : Int)) (Int.ne_of_gt hR)
+    have := Int.mul_le_mul_of_nonneg_left (show w1 ≤ (H : Int) / rbaLength by lia)
+      (Int.le_of_lt hR)
+    lia
+
+/-- The invariant of the loop of `Ratpoints.Sieve.sift` over the pieces, for the height bound `H`,
+a test `keep` of the numerators and their points `g`, at the exit of the loop or not: the bit arrays
+from that of `-H` up to the word number `w0` are done, and their numerators that lie in `-H, …, H`
+and pass `keep` have given their points. -/
+structure SiftInvariant (g : Int → List (Int × Int × Int)) (keep : Int → Bool) (H : Nat)
+    (exit : Bool) (range : Nat) (w0 w1 : Int) (out : Array (Int × Int × Int)) : Prop where
+  /-- The next piece starts at the word number `w0`, not below that of `-H`. -/
+  le_w0 : -(H : Int) / rbaLength ≤ w0
+  /-- The word number `w0` is at most one past that of `H`. -/
+  w0_le : w0 ≤ (H : Int) / rbaLength + 1
+  /-- At the exit, `w0` is one past the word number of `H`. -/
+  eq_of_exit : exit = true → w0 = (H : Int) / rbaLength + 1
+  /-- The next piece ends at the word number `w1`, `range` bit arrays after `w0`. -/
+  w1_eq : w1 = w0 + range
+  /-- A piece has at least one bit array. -/
+  one_le_range : 1 ≤ range
+  /-- The points found are those of the numerators of the bit arrays from that of `-H` up to `w0`
+  that lie in `-H, …, H` and pass `keep`, in increasing order. -/
+  toList_eq : out.toList = ((((List.range ((w0 - -(H : Int) / rbaLength).toNat * rbaLength)).map
+    fun k : Nat ↦ rbaLength * (-(H : Int) / rbaLength) + k).filter
+      fun a ↦ decide (-(H : Int) ≤ a ∧ a ≤ H)).filter keep).flatMap g
+
+/-- `Ratpoints.Sieve.SiftInvariant` as the invariant of the `while` loop of
+`Ratpoints.Sieve.sift`. -/
+def SiftWhileInvariant (g : Int → List (Int × Int × Int)) (keep : Int → Bool) (H : Nat) :
+    Std.WP.WhileInvariant (Nat × Int × Int × Array (Int × Int × Int)) Prop :=
+  .mk fun exit s ↦ SiftInvariant g keep H exit s.1 s.2.1 s.2.2.1 s.2.2.2
+
+theorem siftInvariant_empty (g : Int → List (Int × Int × Int)) (keep : Int → Bool) (H : Nat)
+    {A : Nat} (hA : 1 ≤ A) :
+    SiftInvariant g keep H false A (-(H : Int) / rbaLength) (-(H : Int) / rbaLength + A) #[] := by
+  have hR : (0 : Int) < rbaLength := by have := rbaLength_pos; lia
+  have := Int.ediv_le_ediv hR (show -(H : Int) ≤ H by lia)
+  exact ⟨Int.le_refl _, by lia, nofun, rfl, hA, by simp⟩
+
+/-- A piece of `r ≥ 1` bit arrays from the word number `w0` on, which ends at
+`w1' ≤ H / rbaLength + 1`, with the low mask of `Ratpoints.Sieve.sift` and a high mask `mH`, the
+number of its bits above `H`. -/
+theorem SiftInvariant.append {g : Int → List (Int × Int × Int)} {keep : Int → Bool}
+    {H range r mH : Nat} {w0 w1 w1' : Int} {out pts : Array (Int × Int × Int)}
+    (h : SiftInvariant g keep H false range w0 w1 out) (hr : w1' = w0 + r) (hr1 : 1 ≤ r)
+    (hw1' : w1' ≤ (H : Int) / rbaLength + 1) (hmH : mH = (rbaLength * w1' - 1 - H).toNat)
+    (hpts : pts.toList = (((List.range (r * rbaLength - (if w0 = -(H : Int) / rbaLength then
+      (-(H : Int) - rbaLength * (-(H : Int) / rbaLength)).toNat else 0) - mH)).map fun k : Nat ↦
+        rbaLength * w0 + ((if w0 = -(H : Int) / rbaLength then
+          (-(H : Int) - rbaLength * (-(H : Int) / rbaLength)).toNat else 0 : Nat) : Int) +
+            k).filter keep).flatMap g) :
+    SiftInvariant g keep H false r w1' (w1' + r) (out ++ pts) := by
+  refine ⟨by have := h.le_w0; lia, hw1', nofun, rfl, hr1, ?_⟩
+  have hm : (rbaLength : Int) * w1' - 1 - H =
+      rbaLength * w0 + ((r * rbaLength : Nat) : Int) - 1 - H := by
+    rw [hr, Int.mul_add, Int.natCast_mul, Int.mul_comm (r : Int)]
+  rw [ite_eq_toNat_neg_sub h.le_w0, hmH, hm, ← List.filter_map_range_eq_map_range'] at hpts
+  have hw : (((w0 - -(H : Int) / rbaLength).toNat : Nat) : Int) = w0 - -(H : Int) / rbaLength :=
+    Int.toNat_of_nonneg (by have := h.le_w0; lia)
+  have hl : (w1' - -(H : Int) / rbaLength).toNat = (w0 - -(H : Int) / rbaLength).toNat + r := by
+    have := h.le_w0
+    lia
+  have hmap : (List.range (r * rbaLength)).map ((fun k : Nat ↦
+      rbaLength * (-(H : Int) / rbaLength) + k) ∘
+        fun x ↦ (w0 - -(H : Int) / rbaLength).toNat * rbaLength + x) =
+      (List.range (r * rbaLength)).map fun k : Nat ↦ rbaLength * w0 + k :=
+    List.map_congr_left fun k _ ↦ by grind
+  rw [Array.toList_append, h.toList_eq, hpts, ← List.flatMap_append, ← List.filter_append,
+    ← List.filter_append, hl, Nat.add_mul, List.range_add, List.map_append, List.map_map, hmap]
+
+/-- The pieces advance: the measure `H / rbaLength + 1 - w0` of the loop of `Ratpoints.Sieve.sift`
+decreases from one piece to the next. -/
+theorem SiftInvariant.toNat_sub_lt {g : Int → List (Int × Int × Int)} {keep : Int → Bool}
+    {H range : Nat} {w0 w1 : Int} {out : Array (Int × Int × Int)}
+    (h : SiftInvariant g keep H false range w0 w1 out) (hw0 : w0 < (H : Int) / rbaLength + 1) :
+    ((H : Int) / rbaLength + 1 - w1).toNat < ((H : Int) / rbaLength + 1 - w0).toNat := by
+  have := h.w1_eq
+  have := h.one_le_range
+  lia
+
+/-- The loop ends at the word number one past that of `H`. -/
+theorem SiftInvariant.exit_of_not_lt {g : Int → List (Int × Int × Int)} {keep : Int → Bool}
+    {H range : Nat} {w0 w1 : Int} {out : Array (Int × Int × Int)}
+    (h : SiftInvariant g keep H false range w0 w1 out) (hw0 : ¬w0 < (H : Int) / rbaLength + 1) :
+    SiftInvariant g keep H true range w0 w1 out :=
+  ⟨h.le_w0, h.w0_le, fun _ ↦ Int.le_antisymm h.w0_le (Int.not_lt.mp hw0), h.w1_eq,
+    h.one_le_range, h.toList_eq⟩
+
+theorem _root_.Ratpoints.BruteForce.filter_map_range_eq_numerators {s : Int} {m H : Nat}
+    (h1 : s ≤ -(H : Int)) (h2 : (H : Int) < s + m) :
+    ((List.range m).map fun k : Nat ↦ s + k).filter (fun a ↦ decide (-(H : Int) ≤ a ∧ a ≤ H)) =
+      numerators H := by
+  have hm : m - (-(H : Int) - s).toNat - (s + m - 1 - H).toNat = 2 * H + 1 := by lia
+  rw [List.filter_map_range_eq_map_range', numerators, hm]
+  exact List.map_congr_left fun k _ ↦ by lia
+
+/-- At the exit, the points found are those of the numerators `-H, …, H` that pass `keep`. -/
+theorem SiftInvariant.toList_eq_flatMap_filter_numerators {g : Int → List (Int × Int × Int)}
+    {keep : Int → Bool} {H range : Nat} {w0 w1 : Int} {out : Array (Int × Int × Int)}
+    (h : SiftInvariant g keep H true range w0 w1 out) :
+    out.toList = ((numerators H).filter keep).flatMap g := by
+  have hR : (0 : Int) < rbaLength := by have := rbaLength_pos; lia
+  have hL := Int.mul_ediv_self_le (x := -(H : Int)) (Int.ne_of_gt hR)
+  have := Int.lt_mul_ediv_self_add (x := (H : Int)) hR
+  have hM : ((((H : Int) / rbaLength + 1 - -(H : Int) / rbaLength).toNat * rbaLength : Nat) :
+      Int) = rbaLength * ((H : Int) / rbaLength) + rbaLength -
+        rbaLength * (-(H : Int) / rbaLength) := by
+    rw [Int.natCast_mul, Int.toNat_of_nonneg (by have := h.le_w0; have := h.eq_of_exit rfl; lia)]
+    grind
+  rw [h.toList_eq, h.eq_of_exit rfl, filter_map_range_eq_numerators hL (by lia)]
+
+-- The rows of the run, read at the residue `b mod p` of each modulus, are the rows of `b`.
+private theorem map_rows_eq_map_row {entries : List Entry} (hp : ∀ e ∈ entries, 0 < e.p)
+    (b : Nat) :
+    (entries.map fun e ↦ (e.p, e.rows)).map
+        (fun x ↦ ({ p := x.1, row := (x.2[b % x.1]!).get } : SieveSpec)) =
+      entries.map fun e ↦ ⟨e.p, e.row b⟩ := by
+  rw [List.map_map]
+  exact List.map_congr_left fun e he ↦ by
+    simp only [Function.comp_apply, Entry.get_rows e (Nat.mod_lt b (hp e he)), Entry.row_mod]
+
+-- The contract of `Ratpoints.Sieve.sift` for the rows of the tables `entries`.
+open Std.WP Lean.Order in
+private theorem sift_spec_map (c : List Int) (d H A b : Nat) (entries : List Entry) (hA : 1 ≤ A)
+    (hp : ∀ e ∈ entries, 0 < e.p) :
+    ⦃ True ⦄ sift c d H A b (entries.map fun e ↦ (e.p, e.rows))
+    ⦃ fun out ↦ out.toList = pointsOfDen c d b ((numerators H).filter (survives entries b)) ⦄ := by
+  vcgen [sift] invariants
+  · SiftWhileInvariant (checkNum (scaledCoeffs c d b) (if d % 2 = 1 then b else 1) b)
+      (survives entries b) H
+  · .ofMeasure fun s ↦ ((H : Int) / rbaLength + 1 - s.2.1).toNat
+  all_goals simp only [SiftWhileInvariant, WhileInvariant.mk_apply, Variant.evalsTo_ofMeasure,
+    Variant.evalsBelow_ofMeasure_nat, Assertion.NondetFun.evalsTo_pure, meet_prop_eq_and,
+    ofProp_prop_eq, ite_true] at *
+  all_goals first
+    | exact siftInvariant_empty _ _ _ hA
+    | exact ‹SiftInvariant _ _ _ true _ _ _ _›.toList_eq_flatMap_filter_numerators
+    | exact ‹_ ∧ SiftInvariant _ _ _ false _ _ _ _›.2.exit_of_not_lt ‹_›
+    | (have := rbaLength_pos; (try split) <;> lia)
+    | obtain ⟨rfl, h⟩ := ‹_ ∧ SiftInvariant _ _ _ false _ _ _ _›
+      have hpts := ‹∀ x : List Entry, _›
+      specialize hpts entries hp (map_rows_eq_map_row hp b)
+      first
+        | exact ⟨h.toNat_sub_lt ‹_›,
+            h.append h.w1_eq h.one_le_range (by lia) (ite_eq_toNat_mul_sub (by lia)) hpts⟩
+        | exact ⟨by lia,
+            h.append (by lia) (by lia) (Int.le_refl _) (sub_toNat_emod_eq_toNat_mul_sub H) hpts⟩
+
+/-- The tables are quantified in the postcondition, since the program does not mention them; the
+loop over the pieces ends by the measure `H / rbaLength + 1 - w0`, since every piece has at least
+one bit array. -/
+@[spec]
+theorem sift_spec (c : List Int) (d H A b : Nat)
+    (rows : List (Nat × Array (Thunk (Array UInt64)))) :
+    ⦃ 1 ≤ A ⦄ sift c d H A b rows
+    ⦃ fun out ↦ ∀ entries : List Entry, (∀ e ∈ entries, 0 < e.p) →
+        rows = entries.map (fun e ↦ (e.p, e.rows)) →
+        out.toList = pointsOfDen c d b ((numerators H).filter (survives entries b)) ⦄ :=
+  ⟨fun hA entries hp hrows ↦ by
+    subst hrows
+    exact (sift_spec_map c d H A b entries hA hp).le_wp trivial⟩
+
+/-- Both sides are what the brute-force reference finds over `b` and the numerators `-H, …, H`
+that survive the tables (`Ratpoints.Sieve.sift_spec`, `Ratpoints.Sieve.sieveDen_spec`,
+`Ratpoints.Sieve.checkDen_spec`). -/
+theorem toList_run_sift_eq_checkDen (c : List Int) (d H b : Nat) {A : Nat} (hA : 1 ≤ A)
+    {entries : List Entry} (hp : ∀ e ∈ entries, 0 < e.p) :
+    (Id.run (sift c d H A b (entries.map fun e ↦ (e.p, e.rows)))).toList =
+      (Id.run (checkDen c d H b (Id.run (sieveDen H b entries)))).toList :=
+  ((sift_spec_map c d H A b entries hA hp).le_wp trivial).trans
+    ((checkDen_spec c d H b _).le_wp trivial _ ((sieveDen_spec H b entries).le_wp trivial)).symm
+
+/-! ### The run -/
+
+/-- The invariant of the loop of `Ratpoints.Sieve.sieveRun` over the denominators: after the
+denominators `j + 1`, `j ∈ pref`, the points found are those of the brute-force reference over
+these denominators and the numerators that survive the tables `entries`. -/
+def SieveRunInvariant (c : List Int) (d H : Nat) (entries : List Entry) (pref : List Nat)
+    (out : Array (Int × Int × Int)) : Prop :=
+  out.toList = pref.flatMap fun j ↦
+    pointsOfDen c d (j + 1 : Nat) ((numerators H).filter (survives entries (j + 1)))
+
+/-- The points of the denominators are the part of the brute-force reference `Ratpoints.bruteForce`
+with `z ≥ 1`, its numerators filtered by the survivor test `Ratpoints.Sieve.survives`; the array
+size `A ≥ 1` makes the loops over the pieces end, and the moduli are positive, as the first stage
+over the rows as words needs (`Ratpoints.Sieve.andRows_spec`). -/
+@[spec]
+theorem sieveRun_spec (c : List Int) (d H A : Nat) (entries : List Entry) :
+    ⦃ 1 ≤ A ∧ ∀ e ∈ entries, 0 < e.p ⦄ sieveRun c d H A entries
+    ⦃ fun out ↦ out.toList = (List.range H).flatMap fun j ↦
+        pointsOfDen c d (j + 1 : Nat) ((numerators H).filter (survives entries (j + 1))) ⦄ := by
+  vcgen [sieveRun] invariants
+  · fun pref _ out ↦ SieveRunInvariant c d H entries pref out
+  all_goals grind [SieveRunInvariant, List.range_eq_range']
+
+/-- `Ratpoints.Sieve.sieveRun_spec` as an equation, which the files with Mathlib use without the
+program logic. -/
+theorem toList_run_sieveRun (c : List Int) (d H : Nat) {A : Nat} (hA : 1 ≤ A)
+    {entries : List Entry} (hp : ∀ e ∈ entries, 0 < e.p) :
+    (Id.run (sieveRun c d H A entries)).toList = (List.range H).flatMap fun j ↦
+      pointsOfDen c d (j + 1 : Nat) ((numerators H).filter (survives entries (j + 1))) :=
+  Std.WP.Id.of_run_eq_wp rfl _ ((sieveRun_spec c d H A entries).le_wp ⟨hA, hp⟩)
 
 end Sieve
 

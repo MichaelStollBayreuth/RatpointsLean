@@ -18,8 +18,8 @@ order and in which stage, at most how many forbidden divisors of the denominator
 it runs the Jacobi test, and at most how many bit arrays it treats at a time. ratpoints makes these
 choices from the curve and corrects them during the run; none of this changes the points found or
 their order, since a modulus only removes candidates that are not points. So the model takes the
-choice as an input, and the theorems hold for every well-formed choice. The plain sieve reads only
-the moduli.
+choice as an input, and the theorems hold for every well-formed choice. The sieve reads only the
+moduli and the array size.
 
 ## Main definitions
 

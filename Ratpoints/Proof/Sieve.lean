@@ -11,10 +11,11 @@ public import Std.WP
 import Std.Tactic.Do
 
 /-!
-# The contracts of the sieve
+# The contracts of the plain sieve
 
-The contracts of the loops of the plain sieve, as `@[spec]` theorems proved with `vcgen`, the
-program logic of Lean core, with loop invariants that are named definitions.
+The contracts of the loops of the plain sieve of one denominator, the reference of the bit arrays of
+words, as `@[spec]` theorems proved with `vcgen`, the program logic of Lean core, with loop
+invariants that are named definitions.
 
 ## Main statements
 
@@ -23,20 +24,15 @@ program logic of Lean core, with loop invariants that are named definitions.
 * `Ratpoints.Sieve.checkDen_spec`: if entry `i` of the array is `keep (i - H)` for every `i`, the
   survivors of the array give the points of the brute-force reference over `b` and the numerators
   that pass `keep`.
-* `Ratpoints.Sieve.sieveRun_spec`: the denominators `1, …, H` give the part of the brute-force
-  reference with `z ≥ 1`, its numerators filtered by the survivor test;
-  `Ratpoints.Sieve.toList_run_sieveRun` states this as an equation.
 
 ## Implementation notes
 
 The file uses Lean core and `Std` only, so that the `grind` calls of the proofs see only the lemmas
-of core, untouched by the updates of Mathlib; the plain equation
-`Ratpoints.Sieve.toList_run_sieveRun` lets the files with Mathlib use the result without the
-program logic. The lemmas on the brute-force reference that the contracts need,
-`Ratpoints.BruteForce.pointsOfDen_nil`, `Ratpoints.BruteForce.pointsOfDen_append`,
+of core, untouched by the updates of Mathlib. The lemmas on the brute-force reference that the
+contracts need, `Ratpoints.BruteForce.pointsOfDen_nil`, `Ratpoints.BruteForce.pointsOfDen_append`,
 `Ratpoints.BruteForce.pointsOfDen_singleton` and
-`Ratpoints.BruteForce.map_toList_range_eq_numerators`, are stated here, without Mathlib, rather
-than with the other lemmas on the reference in `Ratpoints.Proof.BruteForce`.
+`Ratpoints.BruteForce.map_toList_range_eq_numerators`, are stated here, without Mathlib, rather than
+with the other lemmas on the reference in `Ratpoints.Proof.BruteForce`.
 -/
 
 @[expose] public section
@@ -127,34 +123,6 @@ theorem checkDen_spec (c : List Int) (d H b : Nat) (surv : Vector Bool (2 * H + 
     ⦃ fun out ↦ ∀ keep : Int → Bool, (∀ i (hi : i < 2 * H + 1), surv[i] = keep ((i : Int) - H)) →
         out.toList = pointsOfDen c d b ((numerators H).filter keep) ⦄ :=
   ⟨fun _ keep hkeep ↦ (checkDen_spec_of_eq c d H b surv keep).le_wp hkeep⟩
-
-/-! ### The denominators -/
-
-/-- The invariant of the loop of `Ratpoints.Sieve.sieveRun` over the denominators: after the
-denominators `j + 1`, `j ∈ pref`, the points found are those of the brute-force reference over
-these denominators and the numerators that survive the tables `entries`. -/
-def SieveRunInvariant (c : List Int) (d H : Nat) (entries : List Entry) (pref : List Nat)
-    (out : Array (Int × Int × Int)) : Prop :=
-  out.toList = pref.flatMap fun j ↦
-    pointsOfDen c d (j + 1 : Nat) ((numerators H).filter (survives entries (j + 1)))
-
-/-- The points of the denominators are the part of the brute-force reference `Ratpoints.bruteForce`
-with `z ≥ 1`, its numerators filtered by the survivor test `Ratpoints.Sieve.survives`. -/
-@[spec]
-theorem sieveRun_spec (c : List Int) (d H : Nat) (entries : List Entry) :
-    ⦃ True ⦄ sieveRun c d H entries
-    ⦃ fun out ↦ out.toList = (List.range H).flatMap fun j ↦
-        pointsOfDen c d (j + 1 : Nat) ((numerators H).filter (survives entries (j + 1))) ⦄ := by
-  vcgen [sieveRun] invariants
-  · fun pref _ out ↦ SieveRunInvariant c d H entries pref out
-  all_goals grind [SieveRunInvariant, List.range_eq_range']
-
-/-- `Ratpoints.Sieve.sieveRun_spec` as an equation, which the files with Mathlib use without the
-program logic. -/
-theorem toList_run_sieveRun (c : List Int) (d H : Nat) (entries : List Entry) :
-    (Id.run (sieveRun c d H entries)).toList = (List.range H).flatMap fun j ↦
-      pointsOfDen c d (j + 1 : Nat) ((numerators H).filter (survives entries (j + 1))) :=
-  Std.WP.Id.of_run_eq_wp rfl _ ((sieveRun_spec c d H entries).le_wp trivial)
 
 end Sieve
 

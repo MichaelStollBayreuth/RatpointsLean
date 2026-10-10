@@ -18,8 +18,8 @@ meta import Ratpoints.Model.Sieve
 `Ratpoints.findPoints c H P` is the model of the library function `find_points` of ratpoints: it
 refuses, as the program does, more than `Ratpoints.maxDegree + 1` coefficients, fewer than two and
 the height bound `0`, and otherwise returns the points of height at most `H` on `y ^ 2 = F(x, z)`,
-the points at infinity first and then those of the denominators `1, …, H`, found by the plain sieve
-with the moduli of the parameters `P`.
+the points at infinity first and then those of the denominators `1, …, H`, found by the sieve on the
+bit arrays of words with the moduli and the array size of the parameters `P`.
 
 ## Main definitions
 
@@ -44,10 +44,12 @@ inductive Refusal where
 
 open Sieve in
 /-- The points of height at most `H` on `y ^ 2 = F(x, z)` for the coefficient list `c`, found by the
-plain sieve with the moduli of the parameters `P`: more than `Ratpoints.maxDegree + 1` coefficients,
-fewer than two, and `H = 0` are refused, in the order of the program; otherwise the points at
-infinity (`Ratpoints.Sieve.pointsAtInfinity`) come first, then those of the denominators `1, …, H`
-(`Ratpoints.Sieve.sieveRun`) with the tables of the moduli (`Ratpoints.Sieve.examinePrime`).
+sieve with the moduli and the array size of the parameters `P`: more than `Ratpoints.maxDegree + 1`
+coefficients, fewer than two, and `H = 0` are refused, in the order of the program; otherwise the
+points at infinity (`Ratpoints.Sieve.pointsAtInfinity`) come first, then those of the denominators
+`1, …, H` (`Ratpoints.Sieve.sieveRun`) with the tables of the moduli
+(`Ratpoints.Sieve.examinePrime`) and pieces of at most `Ratpoints.Params.arraySizeAt P H` bit
+arrays.
 
 C: `find_points.c:4557-4558`, `find_points.c:4624-4633`, `find_points.c:4658`
 
@@ -66,15 +68,15 @@ def findPoints (c : List Int) (H : Nat) (P : Params) : Except Refusal (List (Int
   else
     let d := BruteForce.degree c
     let entries := P.moduli.map (examinePrime c d)
-    .ok (pointsAtInfinity c d ++ (Id.run (sieveRun c d H entries)).toList)
+    .ok (pointsAtInfinity c d ++ (Id.run (sieveRun c d H (P.arraySizeAt H) entries)).toList)
 
 /-! ### Examples
 
 The points that `ratpoints c H -q` prints at the pinned commit, in the same order; the list of the
-brute-force reference `Ratpoints.bruteForce` for other parameters and for inputs that the program
-refuses; the tables of inverses and squares (`Ratpoints.Sieve.inversesMod`,
-`Ratpoints.Sieve.squaresMod`) of the `Ratpoints.numPrimes` primes among which the moduli are
-chosen; and the refusals, the coefficients before the height bound. -/
+brute-force reference `Ratpoints.bruteForce` for other parameters, among them pieces of a few bit
+arrays, and for inputs that the program refuses; the tables of inverses and squares
+(`Ratpoints.Sieve.inversesMod`, `Ratpoints.Sieve.squaresMod`) of the `Ratpoints.numPrimes` primes
+among which the moduli are chosen; and the refusals, the coefficients before the height bound. -/
 
 #guard (findPoints [-2, 0, 0, 1] 130 defaultParams).toOption ==
   some [(1, 0, 0), (3, 5, 1), (3, -5, 1), (129, 3830, 100), (129, -3830, 100)]
@@ -100,6 +102,16 @@ chosen; and the refusals, the coefficients before the height bound. -/
     ⟨[7, 3, 251, 5], 1, 2, 0, false, 0⟩].all fun P ↦
   [([1, 1, 1, 1, 0], 25), ([-1, 0, 9], 20), ([1, 0, 1], 12), ([0, 0, 1], 15)].all fun (c, H) ↦
     (findPoints c H P).toOption == some (bruteForce c H)
+
+-- Pieces of one, two and three bit arrays, at heights around the multiples of 64 and of
+-- `rbaLength`: several pieces, the masks on the same piece and on different ones, and no low mask
+-- when `H` is a multiple of `rbaLength`.
+#guard [([-2, 0, 0, 1], [63, 64, 65, 255, 256, 257]), ([1, 1, 1, 1, 0], [128, 129])].all
+  fun (c, Hs) ↦ Hs.all fun H ↦
+    let bf := bruteForce c H
+    [1, 2, 3].all fun A ↦
+      let P := { defaultParams with moduli := primeTable.toList.take 5, arraySize := A }
+      (findPoints c H P).toOption == some bf
 
 -- The zero polynomial and polynomials of degree 0 with two or more coefficients, which the
 -- program refuses as not squarefree.

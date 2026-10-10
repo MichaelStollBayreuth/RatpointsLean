@@ -237,9 +237,10 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
   bit arrays of the row from $p - r$ on when $n < r$, and otherwise $r$ bit arrays from $p - r$
   on, then whole periods of $p$ from $0$, then the rest from $0$ (\csource{sift.c}{943}{1022}).
   Every modulus is applied here, those of the second and the third stage too
-  (\csource{sift.c}{291}{312}, \csource{sift.c}{405}{431}, \csource{sift.c}{1083}{1086}). Its
-  contract: for every list of tables with $p > 0$ whose rows for $b$ the moduli carry, bit $t$ of
-  word $y < n \cdot \mathrm{rbaPack}$ is $t < 64$ and the survivor test of $R w_0 + 64 y + t$.
+  (\csource{sift.c}{291}{312}, \csource{sift.c}{405}{431}, \csource{sift.c}{1083}{1086},
+  \csource{sift.c}{1174}{1202}). Its contract: for every list of tables with $p > 0$ whose rows
+  for $b$ the moduli carry, bit $t$ of word $y < n \cdot \mathrm{rbaPack}$ is $t < 64$ and the
+  survivor test of $R w_0 + 64 y + t$.
 \end{definition}
 
 \begin{definition}[The check of a numerator]\label{def:checkNum}
@@ -248,10 +249,10 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
   \leanok
   The test for common factors of $a$ and $b$ and the exact check, from the products
   $c_k b^{d - k}$ and the factor $b$ for odd $d$, which come in as arguments: the points
-  $(a, y, b)$ and, for $y \ne 0$, $(a, -y, b)$ (\csource{sift.c}{318}{343},
-  \csource{sift.c}{438}{446}, \csource{find_points.c}{5250}{5338}). What the brute-force reference
-  finds over $b$ and a list of numerators is the concatenation of these over the list, with the
-  products and the factor of $c$, $d$ and $b$.
+  $(a, y, b)$ and, for $y \ne 0$, $(a, -y, b)$ (\csource{sift.c}{202}{205},
+  \csource{sift.c}{318}{343}, \csource{sift.c}{438}{446}, \csource{find_points.c}{5250}{5338}).
+  What the brute-force reference finds over $b$ and a list of numerators is the concatenation of
+  these over the list, with the products and the factor of $c$, $d$ and $b$.
 \end{definition}
 
 \begin{definition}[The set bits of a word]\label{def:walkWord}
@@ -260,8 +261,9 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
   \leanok
   For a word $x$ whose bit $t$ stands for the numerator $a_0 + t$: while $x \ne 0$, the check of
   $a_0 + \mathrm{ctz}(x)$, and $x \mathbin{\&} (x - 1)$ for $x$: the loop of the C code with its
-  body at both places of the extraction (\csource{sift.c}{262}{264}). Its contract: the checks of
-  the numerators $a_0 + t$ for the set bits $t$ of $x$, in increasing order, are appended.
+  body at both places of the extraction (\csource{sift.c}{262}{264},
+  \csource{sift.c}{1227}{1255}, \csource{sift.c}{1265}{1292}). Its contract: the checks of the
+  numerators $a_0 + t$ for the set bits $t$ of $x$, in increasing order, are appended.
 \end{definition}
 
 \begin{definition}[The scan and the extraction]\label{def:scanPiece}
@@ -271,7 +273,8 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
   A sentinel, a bit array of ones, just past the piece; then from the first bit array on: step
   over the zero bit arrays, stop at the sentinel, and walk the words of each other bit array, the
   bit $0$ of word $\kappa$ of bit array $i$ standing for the numerator $R (w_0 + i) + 64 \kappa$
-  (\csource{sift.c}{1061}{1082}, \csource{sift.c}{1088}{1092}; with \verb|zero|,
+  (\csource{sift.c}{1061}{1082}, \csource{sift.c}{1088}{1092}, \csource{sift.c}{1213}{1226},
+  \csource{sift.c}{1257}{1264}, \csource{sift.c}{1293}{1299}; with \verb|zero|,
   \csource{rp-private.h}{133}{133}, \csource{rp-private.h}{205}{205},
   \csource{rp-private.h}{236}{236}, \csource{rp-private.h}{262}{262},
   \csource{rp-private.h}{286}{286}, and \verb|EXT0|, \verb|EXT|, \csource{rp-private.h}{135}{136},
@@ -300,7 +303,8 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
 
 \begin{definition}[One denominator]\label{def:sift}
   \uses{def:siftPiece}
-  Proposed names: \lname{Ratpoints.Sieve.sift}, \lname{Ratpoints.Sieve.sift\_spec}.
+  \lean{Ratpoints.Sieve.sift, Ratpoints.Sieve.sift_spec}
+  \leanok
   The row of $b$ for each modulus (\csource{find_points.c}{3149}{3170},
   \csource{find_points.c}{3490}{3561}); the products $c_k b^{d - k}$ and the factor of the
   check; the word numbers $w_{\mathrm{low}} = \lfloor -H/R \rfloor$ and
@@ -318,12 +322,14 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
 
 \begin{lemma}[The words compute the Booleans]\label{lem:sift_eq_checkDen}
   \uses{def:sift, def:sieveDen, def:checkDen}
-  Proposed name: \lname{Ratpoints.Sieve.toList\_run\_sift\_eq\_checkDen}.
+  \lean{Ratpoints.Sieve.toList_run_sift_eq_checkDen}
+  \leanok
   For $A \ge 1$ and tables with $p > 0$, the points of the denominator $b$ that \verb|sift|
   returns are those that the check of stage~C1 returns on the sieve of stage~C1.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   Both are what the brute-force reference finds over $b$ and the numerators $-H, \dots, H$ that
   survive the tables, by the contract of Definition~\ref{def:sift} and those of
   Definitions~\ref{def:sieveDen} and~\ref{def:checkDen}.

@@ -57,7 +57,7 @@ classification:
 # project status
 status:
   scope: >
-    Stages A, B and C1. Stage A set up the Lake project with the libraries of the model (Lean core
+    Stages A, B and C1, and stage C2 up to its differential tests. Stage A set up the Lake project with the libraries of the model (Lean core
     and Std only), the specification and the proofs, the CI, the blueprint, the correspondence
     record with its checking script, and the comparator harness, and settled the specification in
     the blueprint. Stage B: the specification in Lean (the binary form, the normalized points of
@@ -75,9 +75,18 @@ status:
     no-duplicates theorems for findPoints, its refusals in the form of stage C1, and the
     well-formedness of the parameters that the options of the program give) are certified by
     comparator; ratpoints-lean runs the sieve with the parameters of its options, and the
-    differential tests have a suite of parameters. Next: stage C2, the bit arrays of words; the
-    introduction of the blueprint lists the later stages (words, the set-up, the denominator and
-    numerator sides, the order and protocol, the search region and the Sturm step).
+    differential tests have a suite of parameters. Stage C2: the sieve on the bit arrays of 64-bit
+    words of the C code (the width of the bit arrays as a constant of the build and the array size
+    of the pieces as a parameter, the operations on bit arrays and the lowest set bit as in the C
+    code, the rows of a denominator as words, each made when first needed, the first stage over a
+    piece, the check of a numerator, the walk through the set bits of a word, the scan up to a
+    sentinel, one piece with the masks at its ends, one denominator in pieces, and the run), with
+    the contracts of its loops proved with the program logic of Lean core for every width of the
+    bit arrays, and the plain sieve of stage C1 kept as its reference; findPoints and
+    ratpoints-lean run it, and the main theorems keep their statements. Next: the differential
+    tests at the heights that the bit arrays allow; the introduction of the blueprint lists the
+    later stages (the set-up, the denominator and numerator sides, the order and protocol, the
+    search region and the Sturm step).
   sorry_count: 0
   sorry_in_definitions: 0
   axioms: ["propext", "Classical.choice", "Quot.sound"]
@@ -180,7 +189,8 @@ alignment:
       module: "Ratpoints.Proof.FindPoints"
       status: "partially-formalized"
       note: >
-        for the plain sieve of stage C1 and every well-formed choice of the sieving parameters
+        for the sieve on the bit arrays of words of stage C2 and every well-formed choice of the
+        sieving parameters, the array size of the pieces included
         (Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok, Ratpoints.nodup_of_findPoints_eq_ok),
         certified by comparator; the later stages bring Ratpoints.findPoints closer to the C code,
         and the theorems move with it

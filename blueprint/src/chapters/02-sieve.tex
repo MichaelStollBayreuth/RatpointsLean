@@ -106,26 +106,25 @@ are no points modulo $p$ (D) and the options of the output (G) come in their sta
 \verb|Params| holds the choices that the theorems quantify over: which moduli the sieve uses, in
 which order and in which stage. ratpoints makes them from the curve (\verb|sieving_info|, which
 ranks the primes and may look past the first $q$ when the curve needs it), and moves the end of the
-third stage during the run (\verb|adapt_primes|; with \verb|-A 2| also $s_2$); its third stage
-holds the $P$ primes after $s_2$ for the value $P$ of \verb|-P|, and the primes up to
-$\mathrm{numPrimes}$ when \verb|-P| is absent or negative, where the third stage of the model is
-the rest of its moduli after $s_2$. None of this
-changes the points found or their order, since a modulus only removes candidates that are not
-points (\verb|-q| suppresses the report of the moduli used, which does depend on the choice). So the
-model takes the choice as an input, and the theorems hold for every well-formed choice. They
-quantify over the parameters that \verb|Params.WF| admits, a definition of a few lines in the
-model, which has no Mathlib, so the comparator challenge imports it; the runs of the executable
-need no such reading, since \verb|wf_sieveParams|, certified with the main theorems, shows that
-every parameter set the command line produces is well-formed, which also rules out a
-well-formedness that nothing satisfies. C1 reads only the moduli and treats all stages alike; the
-cut points, the forbidden divisors and the Jacobi switch are read from stages~E and~F on, and
-further choices (the block length, the length of the pieces) join \verb|Params| with the
-components that use them. Well-formedness constrains a field only as far as its component needs
-it to be meaningful. The constants of the build that these definitions read, the size in bits of
-the moduli and the defaults of \verb|-p| and \verb|-F|, are definitions of the model like
-$\mathrm{maxDegree}$ (Definition~\ref{def:maxDegree}), and no proof depends on their values:
-\verb|wf_sieveParams| needs only that $\mathrm{numPrimes}$, a number of primes of the table, is
-at most its size.
+third stage during the run (\verb|adapt_primes|; with \verb|-A 2| also $s_2$); its third stage holds
+the $P$ primes after $s_2$ for the value $P$ of \verb|-P|, and the primes up to $\mathrm{numPrimes}$
+when \verb|-P| is absent or negative, where the third stage of the model is the rest of its moduli
+after $s_2$. None of this changes the points found or their order, since a modulus only removes
+candidates that are not points (\verb|-q| suppresses the report of the moduli used, which does
+depend on the choice). So the model takes the choice as an input, and the theorems hold for every
+well-formed choice. They quantify over the parameters that \verb|Params.WF| admits, a definition of
+a few lines in the model, which has no Mathlib, so the comparator challenge imports it; the runs of
+the executable need no such reading, since \verb|wf_sieveParams|, certified with the main theorems,
+shows that every parameter set the command line produces is well-formed, which also rules out a
+well-formedness that nothing satisfies. C1 reads only the moduli and treats all stages alike, and C2
+reads the array size too (Definition~\ref{def:arraySize}); the cut points, the forbidden divisors
+and the Jacobi switch are read from stages~E and~F on, and further choices (the block length) join
+\verb|Params| with the components that use them. Well-formedness constrains a field only as far as
+its component needs it to be meaningful. The constants of the build that these definitions read, the
+size in bits of the moduli and the defaults of \verb|-p| and \verb|-F|, are definitions of the model
+like $\mathrm{maxDegree}$ (Definition~\ref{def:maxDegree}), and no proof depends on their values:
+\verb|wf_sieveParams| needs only that $\mathrm{numPrimes}$, a number of primes of the table, is at
+most its size.
 
 \section{The table of a prime}\label{sec:primeTables}
 
@@ -172,8 +171,8 @@ $a$. These two facts make sound the rows that the tables below define.
   for $r = 0$, a fixed pattern that does not depend on the curve
   (\csource{gen_find_points_h.c}{102}{134}). A numerator \emph{survives} the moduli for $b$ when the
   row of $b$ in the table of every modulus admits it; this test, a function of the numerator, is the
-  interface between the sieve and the check, and the bit arrays of stage~C2 will be specified
-  against it.
+  interface between the sieve and the check, and the bit arrays of stage~C2 are specified against
+  it (Chapter~\ref{chap:words}).
 \end{definition}
 
 \begin{lemma}[A square value of the form gives a square value of $f$]\label{lem:isSquare_div}
@@ -235,40 +234,40 @@ lemmas.
   An array of $2H + 1$ Booleans, one per numerator $a = i - H$, all true at the start; for each
   modulus in turn, every entry is replaced by its conjunction with the row of $b$ at $a$. Its
   contract: entry $i$ is the survivor test of the numerator $i - H$. These are the ANDs of the
-  first stage of ratpoints in the build with 64-bit bit arrays (\csource{sift.c}{943}{1022}) and
-  of its second stage (\csource{sift.c}{1083}{1086}, \csource{sift.c}{1184}{1202}), with the
-  masks at the ends of the range (\csource{sift.c}{1030}{1041}), and the test of its third stage
-  (\csource{sift.c}{291}{312}, \csource{sift.c}{405}{431}); the default build does the first
-  stage in chunks of registers.
+  first and the second stage of ratpoints, with the masks at the ends of the range, and the test of
+  its third stage, in their simplest form; with the check of Definition~\ref{def:checkDen} the
+  sieve stays in the model as the reference of the bit arrays of words of
+  Chapter~\ref{chap:words}, which model that code (Lemma~\ref{lem:sift_eq_checkDen}).
 \end{definition}
 
 \begin{definition}[The survivors of one denominator]\label{def:checkDen}
   \uses{def:bruteForce}
   \lean{Ratpoints.Sieve.checkDen, Ratpoints.Sieve.checkDen_spec}
   \leanok
-  The numerators whose entry in a given array of Booleans is true, in increasing order
-  (\csource{sift.c}{1061}{1082}, \csource{sift.c}{1088}{1092}, \csource{sift.c}{1213}{1299},
-  \csource{sift.c}{262}{264}), each tested for common factors with $b$
-  (\csource{sift.c}{318}{343}, \csource{sift.c}{438}{446}) and checked exactly
-  (\csource{sift.c}{203}{204}): $F_c(a, b)$ by Horner's rule on the products $c_k b^{d-k}$,
-  computed once per denominator, times $b$ once more when $d$ is odd, then $(a, y, b)$ and, for
-  $y \ne 0$, $(a, -y, b)$ when
-  $F_c(a, b) = y^2$ with $y \ge 0$ (\csource{find_points.c}{5250}{5338}); the exact check is
-  that of the brute-force reference. Its contract: if entry $i$ is $k(i - H)$ for every $i$, for a
-  test $k$ of the numerators, then the result is what the brute-force reference finds over the
-  denominator $b$ and the numerators $-H, \dots, H$ that pass $k$.
+  The numerators whose entry in a given array of Booleans is true, in increasing order, each tested
+  for common factors with $b$ and checked exactly: $F_c(a, b)$ by Horner's rule on the products
+  $c_k b^{d-k}$, computed once per denominator, times $b$ once more when $d$ is odd, then
+  $(a, y, b)$ and, for $y \ne 0$, $(a, -y, b)$ when $F_c(a, b) = y^2$ with $y \ge 0$; the exact
+  check is that of the brute-force reference. Its contract: if entry $i$ is $k(i - H)$ for every
+  $i$, for a test $k$ of the numerators, then the result is what the brute-force reference finds
+  over the denominator $b$ and the numerators $-H, \dots, H$ that pass $k$. These are the scan and
+  the extraction of ratpoints with the test for common factors and the exact check, in their
+  simplest form; on the sieve of Definition~\ref{def:sieveDen} the check stays in the model as the
+  reference of the bit arrays of words of Chapter~\ref{chap:words}, which model that code
+  (Lemma~\ref{lem:sift_eq_checkDen}).
 \end{definition}
 
 \begin{definition}[The denominators]\label{def:sieveRun}
-  \uses{def:sieveDen, def:checkDen}
+  \uses{def:sift}
   \lean{Ratpoints.Sieve.sieveRun, Ratpoints.Sieve.sieveRun_spec, Ratpoints.Sieve.toList_run_sieveRun}
   \leanok
-  The denominators $b = 1, \dots, H$ in increasing order, each sieved and its survivors checked,
-  the points appended in turn (\csource{find_points.c}{4059}{4075},
-  \csource{find_points.c}{5152}{5160}). Its contract: the result is the concatenation over
-  $b = 1, \dots, H$ of what the brute-force reference finds over $b$ and the numerators that
-  survive the moduli for $b$, that is, the part of the reference with $z \ge 1$, its numerators
-  filtered by the moduli.
+  The rows of the moduli made once, and the denominators $b = 1, \dots, H$ in increasing order,
+  the points that \verb|sift| (Definition~\ref{def:sift}) finds for each, with pieces of at most
+  $A$ bit arrays, appended in turn (\csource{find_points.c}{4059}{4075},
+  \csource{find_points.c}{5152}{5160}). Its contract, for an array size $A \ge 1$ and moduli
+  $p > 0$: the result is the concatenation over $b = 1, \dots, H$ of what the brute-force
+  reference finds over $b$ and the numerators that survive the moduli for $b$, that is, the part of
+  the reference with $z \ge 1$, its numerators filtered by the moduli.
 \end{definition}
 
 \begin{definition}[The points at infinity]\label{def:pointsAtInfinity}
@@ -282,8 +281,8 @@ lemmas.
   points of the candidate $(1, 0)$ of the brute-force reference.
 \end{definition}
 
-\begin{definition}[The plain sieve]\label{def:findPoints}
-  \uses{def:Params, def:sieveRun, def:pointsAtInfinity, def:maxDegree}
+\begin{definition}[The search for the points]\label{def:findPoints}
+  \uses{def:Params, def:arraySize, def:sieveRun, def:pointsAtInfinity, def:maxDegree}
   \lean{Ratpoints.Refusal, Ratpoints.findPoints}
   \leanok
   Refuse more than $\mathrm{maxDegree} + 1$ coefficients, fewer than two, and $H = 0$, in the order
@@ -292,20 +291,21 @@ lemmas.
   \csource{find_points.c}{4658}{4658}), after it has dropped the leading zeros and refused as not
   squarefree a form that loses $\lceil n/2 \rceil$ with them, which C1 does not refuse
   (stage~D). Otherwise drop the leading zeros, make the table of each modulus and return the
-  points at infinity followed by the points of the denominators.
+  points at infinity followed by the points of the denominators, found with pieces of at most
+  $\mathrm{arraySizeAt}(H)$ bit arrays, the array size of the parameters
+  (Definition~\ref{def:arraySize}).
 \end{definition}
 
 Each component differs from the C code in a stated way, recorded in the \verb|Deviation:|
 paragraph of the component whose range holds it:
 \begin{itemize}
-  \item the Booleans stand for the bit arrays of words, the pieces and the end masks (C2), and the
-    walk upwards through all of them for the scan over the bit arrays and the walk by trailing
-    zeros (C2), where the bit of a numerator lies in the packing of its 2-adic class (E, F);
   \item every denominator from $1$ to $H$, one after the other, for the denominator range (H), the
     loop shapes, the tests on the denominators and the blocks (E), and the threads, which deliver
     the blocks in the same order;
-  \item the residue of $b$ modulo each modulus computed for each numerator, where ratpoints
-    computes the residues of $b / 2^k$ that choose the rows once per denominator (F);
+  \item the residue of $b$ modulo each modulus, which the reference of
+    Definitions~\ref{def:sieveDen} and~\ref{def:checkDen} computes for each numerator and
+    \verb|sift| (Definition~\ref{def:sift}) once per denominator, for the residues of $b / 2^k$ that
+    choose the rows, which ratpoints computes once per denominator before it calls \verb|sift| (F);
   \item every numerator from $-H$ to $H$ for the search region (H) and the 2-adic classes (E, F);
   \item one table per prime and every modulus applied to every numerator before the test for common
     factors, for the composite moduli, the packing, the three stages and their correction during the
@@ -356,7 +356,7 @@ the points at infinity need the case $y = 0$, which ratpoints never meets.
   Apply Lemma~\ref{lem:admits_examinePrime} to each prime.
 \end{proof}
 
-\begin{theorem}[The plain sieve returns the reference]\label{thm:findPoints_eq_bruteForce}
+\begin{theorem}[The sieve returns the reference]\label{thm:findPoints_eq_bruteForce}
   \uses{def:findPoints, def:Params, def:bruteForce}
   \lean{Ratpoints.findPoints_eq_ok_bruteForce}
   \leanok
@@ -365,13 +365,14 @@ the points at infinity need the case $y = 0$, which ratpoints never meets.
 \end{theorem}
 
 \begin{proof}
-  \uses{def:sieveRun, def:pointsAtInfinity, lem:survives, lem:flatMap_sound}
+  \uses{def:sieveRun, def:arraySize, def:pointsAtInfinity, lem:survives, lem:flatMap_sound}
   \leanok
-  By the contract of the denominators, the sieve returns the part of the reference with
-  $z \ge 1$, the numerators of each denominator filtered by the survivor test; the moduli of
-  well-formed parameters are primes, so by Lemma~\ref{lem:survives} every numerator over which
-  the exact check finds a point survives, and by Lemma~\ref{lem:flatMap_sound} the filter changes
-  nothing. The points at infinity are those of
+  The array size of the parameters is at least $1$ for $H \ge 1$ (Definition~\ref{def:arraySize}),
+  and the moduli of well-formed parameters are primes, hence positive; so by the contract of the
+  denominators the sieve returns the part of the reference with $z \ge 1$, the numerators of each
+  denominator filtered by the survivor test. Since the moduli are primes, by
+  Lemma~\ref{lem:survives} every numerator over which the exact check finds a point survives, and
+  by Lemma~\ref{lem:flatMap_sound} the filter changes nothing. The points at infinity are those of
   the candidate $(1, 0)$ of the reference.
 \end{proof}
 
@@ -406,11 +407,12 @@ states them with \verb|sorry| over \verb|findPoints|, \verb|Params|, \verb|Param
 \verb|SieveOptions|, \verb|sieveParams| and \verb|maxDegree|, imported from the model, never
 restated, since a definition of the model elaborates without Mathlib to other instance terms;
 Comparator accepted the solution on 2026-10-10. Each main theorem has a guard on its axioms, which
-are the standard ones. The contracts need only the program logic of Lean core and stay in a file
+are the standard ones. The contracts need only the program logic of Lean core and stay in files
 without Mathlib, so that their \verb|grind| calls see only the lemmas of core, untouched by
-Mathlib's updates; that file also states the result of \verb|sieveRun| as a plain equation,
-\verb|toList_run_sieveRun|, so that the files with Mathlib need no program logic. The soundness of
-the rows needs Mathlib, through $\ZZ/p\ZZ$.
+Mathlib's updates; the file of the contracts of the bit arrays of words (Chapter~\ref{chap:words})
+also states the result of \verb|sieveRun| as a plain equation, \verb|toList_run_sieveRun|, so that
+the files with Mathlib need no program logic. The soundness of the rows needs Mathlib, through
+$\ZZ/p\ZZ$.
 
 \section{The command-line program and the differential tests}\label{sec:sieveCli}
 
@@ -440,7 +442,8 @@ sieve in \verb|Ratpoints.Sieve|, and the general lemmas on lists and on $\ZZ/n\Z
 constants of the build are in \verb|Ratpoints/Model/Constants.lean| with $\mathrm{maxDegree}$; the
 rest of the model is in \verb|Ratpoints/Model/Params.lean|, \verb|Ratpoints/Model/Sieve.lean| and
 \verb|Ratpoints/Model/FindPoints.lean|, each with \verb|#guard| examples taken from the tables and
-the output of ratpoints; the contracts, without Mathlib, are in \verb|Ratpoints/Proof/Sieve.lean|;
+the output of ratpoints; the contracts, without Mathlib, are in \verb|Ratpoints/Proof/Sieve.lean|,
+and that of the run with those of Chapter~\ref{chap:words} in \verb|Ratpoints/Proof/Words.lean|;
 the primes of the table and the well-formedness in \verb|Ratpoints/Proof/Params.lean|, the tables
 and the soundness of the rows in \verb|Ratpoints/Proof/Tables.lean|, and the main theorems in
 \verb|Ratpoints/Proof/FindPoints.lean|, with the guards on their axioms.
