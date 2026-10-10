@@ -236,7 +236,7 @@ theorem SieveSpec.getLsbD_wordAt_mk (e : Entry) (b : Nat) (hp : 0 < e.p) (w0 : I
 def andWords (specs : List SieveSpec) (w0 : Int) (y : Nat) : UInt64 :=
   specs.foldl (fun acc s ↦ acc &&& s.wordAt w0 y) (~~~0)
 
-theorem getLsbD_andWords_map (entries : List Entry) (b : Nat) (hp : ∀ e ∈ entries, 0 < e.p)
+theorem getLsbD_andWords_map {entries : List Entry} (b : Nat) (hp : ∀ e ∈ entries, 0 < e.p)
     (w0 : Int) (y t : Nat) :
     (andWords (entries.map fun e ↦ ⟨e.p, e.row b⟩) w0 y).toBitVec.getLsbD t =
       (decide (t < 64) && survives entries b (rbaLength * w0 + 64 * y + t)) := by
@@ -381,7 +381,7 @@ theorem AndRowsRowInvariant.append_andBitArray_period {s : SieveSpec} {pref : Li
   have hk := Std.Legacy.Range.length_eq_of_toList_eq_append_cons hlk
   rw [AndRowsPacketInvariant, hk] at h ⊢
   exact h.add_append_andBitArray hl
-    (Int.toNat_add_add_emod _ (Std.Legacy.Range.lt_of_toList_eq_append_cons hl))
+    (Int.toNat_add_add_emod (Std.Legacy.Range.lt_of_toList_eq_append_cons hl))
 
 /-- The loop after the last whole period: bit array `r + ⌊(n - r) / p⌋ p + i` is and-ed with bit
 array `i` of the row, for `r = (-w0) mod p`. -/
@@ -393,7 +393,7 @@ theorem AndRowsRowInvariant.append_andBitArray_tail {specs pref suff : List Siev
     (hp : ∀ s ∈ specs, 0 < s.p) (hs : specs = pref ++ s :: suff) :
     AndRowsTailInvariant w0 n pref s (done ++ [i]) (andBitArray surv (((-w0) % (s.p : Int)).toNat +
       (n - ((-w0) % (s.p : Int)).toNat) / s.p * s.p + i) s.row i) :=
-  h.add_append_andBitArray hl (Int.toNat_add_add_emod _
+  h.add_append_andBitArray hl (Int.toNat_add_add_emod
     (Nat.lt_of_lt_of_le (Std.Legacy.Range.lt_of_toList_eq_append_cons hl)
       (Nat.le_of_lt (Nat.mod_lt _ (hp s (by simp [hs]))))))
 
@@ -442,7 +442,7 @@ theorem andRows_spec (specs : List SieveSpec) (w0 : Int) (n : Nat)
   ⟨fun _ entries b hp hspecs y hy t ↦ by
     subst hspecs
     rw [((andRows_spec_of_pos _ w0 n surv).le_wp (List.forall_mem_map.mpr hp)).getElem!_eq hy,
-      getLsbD_andWords_map entries b hp]⟩
+      getLsbD_andWords_map b hp]⟩
 
 /-! ### The check of a numerator and the set bits of a word -/
 
@@ -965,8 +965,8 @@ private theorem map_rows_eq_map_row {entries : List Entry} (hp : ∀ e ∈ entri
 
 -- The contract of `Ratpoints.Sieve.sift` for the rows of the tables `entries`.
 open Std.WP Lean.Order in
-private theorem sift_spec_map (c : List Int) (d H A b : Nat) (entries : List Entry) (hA : 1 ≤ A)
-    (hp : ∀ e ∈ entries, 0 < e.p) :
+private theorem sift_spec_map (c : List Int) (d H b : Nat) {A : Nat} {entries : List Entry}
+    (hA : 1 ≤ A) (hp : ∀ e ∈ entries, 0 < e.p) :
     ⦃ True ⦄ sift c d H A b (entries.map fun e ↦ (e.p, e.rows))
     ⦃ fun out ↦ out.toList = pointsOfDen c d b ((numerators H).filter (survives entries b)) ⦄ := by
   vcgen [sift] invariants
@@ -1002,7 +1002,7 @@ theorem sift_spec (c : List Int) (d H A b : Nat)
         out.toList = pointsOfDen c d b ((numerators H).filter (survives entries b)) ⦄ :=
   ⟨fun hA entries hp hrows ↦ by
     subst hrows
-    exact (sift_spec_map c d H A b entries hA hp).le_wp trivial⟩
+    exact (sift_spec_map c d H b hA hp).le_wp trivial⟩
 
 /-- Both sides are what the brute-force reference finds over `b` and the numerators `-H, …, H`
 that survive the tables (`Ratpoints.Sieve.sift_spec`, `Ratpoints.Sieve.sieveDen_spec`,
@@ -1011,7 +1011,7 @@ theorem toList_run_sift_eq_checkDen (c : List Int) (d H b : Nat) {A : Nat} (hA :
     {entries : List Entry} (hp : ∀ e ∈ entries, 0 < e.p) :
     (Id.run (sift c d H A b (entries.map fun e ↦ (e.p, e.rows)))).toList =
       (Id.run (checkDen c d H b (Id.run (sieveDen H b entries)))).toList :=
-  ((sift_spec_map c d H A b entries hA hp).le_wp trivial).trans
+  ((sift_spec_map c d H b hA hp).le_wp trivial).trans
     ((checkDen_spec c d H b _).le_wp trivial _ ((sieveDen_spec H b entries).le_wp trivial)).symm
 
 /-! ### The run -/

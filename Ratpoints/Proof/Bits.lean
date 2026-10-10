@@ -16,7 +16,7 @@ entries of a vector after `Vector.set!` and after a fold of `Vector.set!` over c
 positions, the entries of an array made by a map over a range, the elements of `List.range n` that
 pass a test which fails from some position on, the integers of a range that lie in a smaller one or
 between two bounds, the position of the cursor of a loop over a range, the residues modulo `p` of
-the integers from `w0` on, the bits of the word `~~~0` and of the masks `~~~0 <<< n` and
+the integers from `a` on, the bits of the word `~~~0` and of the masks `~~~0 <<< n` and
 `~~~0 >>> n`, the lowest bit and the lowest set bit of a word, the word `x &&& (x - 1)`, which is
 `x` with its lowest set bit cleared, the bits of a word set one at a time, the 64 bits of two words
 from a position within the first, the bits of a word and-ed in turn with the words of a list, and
@@ -35,16 +35,16 @@ the numerators of the set bits of a list of words, read in turn.
 * `List.filter_range_eq_of_le`, `List.filter_range_succ_eq_append`: the elements of `List.range n`
   that pass a test which fails from `k` on are those of `List.range k`, followed by the next one
   that passes it.
-* `List.filter_map_range_eq_map_range`: of the integers `s, …, s + m - 1`, those from `s + l` to
-  `s + m - 1 - h`; `List.filter_map_range_eq_map_range'`: those from `lo` to `hi`.
+* `List.filter_map_range_eq_map_range`: of the integers `s, …, s + m - 1`, those from `s + k₁` to
+  `s + m - 1 - k₂`; `List.filter_map_range_eq_map_range'`: those from `lo` to `hi`.
 * `List.flatMap_range_map_filter`: the integers `a + 64 y + t` of the positions `t` of the blocks
   `y < m` that pass a test, in increasing order, are those of `a, …, a + 64 m - 1` that pass a test
   `p`, when the first test is `p` on these integers: the numerators of the set bits of words.
 * `Std.Legacy.Range.length_eq_of_toList_eq_append_cons`,
   `Std.Legacy.Range.lt_of_toList_eq_append_cons`: the position of the cursor of a loop over
   `[0:m]`.
-* `Int.toNat_add_emod_of_lt`, `Int.toNat_add_add_emod`: the residues modulo `p` of `w0 + j` before
-  and from the first multiple of `p` from `w0` on.
+* `Int.toNat_add_emod_of_lt`, `Int.toNat_add_add_emod`: the residues modulo `p` of `a + j` before
+  and from the first multiple of `p` from `a` on.
 * `UInt64.getLsbD_foldl_and`: the bits of a word and-ed in turn with the words of a list.
 
 ## Implementation notes
@@ -103,17 +103,17 @@ theorem filter_range_succ_eq_append {p : Nat → Bool} {k c : Nat} (hk : k ≤ c
   rw [range_succ, filter_append, filter_range_eq_of_le hk hz]
   simp [hc]
 
-/-- Of the integers `s, …, s + m - 1`, those from `s + l` to `s + m - 1 - h`: the `m - l - h`
-integers from `s + l` on; for `m ≤ l + h` there are none, and the truncated subtraction gives
+/-- Of the integers `s, …, s + m - 1`, those from `s + k₁` to `s + m - 1 - k₂`: the `m - k₁ - k₂`
+integers from `s + k₁` on; for `m ≤ k₁ + k₂` there are none, and the truncated subtraction gives
 `0`. -/
-theorem filter_map_range_eq_map_range (s : Int) (l h m : Nat) :
-    ((range m).map fun k : Nat ↦ s + k).filter (fun a ↦ decide (s + l ≤ a ∧ a + h < s + m)) =
-      (range (m - l - h)).map fun k : Nat ↦ s + l + k := by
-  by_cases hm : l + h ≤ m
-  · obtain ⟨j, rfl⟩ : ∃ j, m = l + j + h := ⟨m - l - h, by lia⟩
+theorem filter_map_range_eq_map_range (s : Int) (k₁ k₂ m : Nat) :
+    ((range m).map fun k : Nat ↦ s + k).filter (fun a ↦ decide (s + k₁ ≤ a ∧ a + k₂ < s + m)) =
+      (range (m - k₁ - k₂)).map fun k : Nat ↦ s + k₁ + k := by
+  by_cases hm : k₁ + k₂ ≤ m
+  · obtain ⟨j, rfl⟩ : ∃ j, m = k₁ + j + k₂ := ⟨m - k₁ - k₂, by lia⟩
     rw [range_add, range_add, map_append, map_append, filter_append, filter_append,
       filter_eq_nil_iff.mpr, filter_eq_self.mpr, filter_eq_nil_iff.mpr]
-    · simp [Function.comp_def, Int.add_assoc, show l + j + h - l - h = j by lia]
+    · simp [Function.comp_def, Int.add_assoc, show k₁ + j + k₂ - k₁ - k₂ = j by lia]
     all_goals grind
   · rw [Nat.sub_sub, Nat.sub_eq_zero_of_le (by lia), range_zero, map_nil, filter_eq_nil_iff]
     grind
@@ -175,29 +175,29 @@ end Std.Legacy.Range
 
 namespace Int
 
-/-- Before the first multiple of `p` from `w0` on: for `r = (-w0) mod p` and `j < r`, the residue of
-`w0 + j` modulo `p` is `p - r + j`. -/
-theorem toNat_add_emod_of_lt {w0 : Int} {p j : Nat} (hp : 0 < p)
-    (hj : j < ((-w0) % (p : Int)).toNat) :
-    ((w0 + j) % (p : Int)).toNat = p - ((-w0) % (p : Int)).toNat + j := by
-  have := emod_nonneg (-w0) (b := p) (by lia)
-  have := emod_lt_of_pos (-w0) (b := p) (by lia)
-  have := mul_ediv_add_emod (-w0) p
-  have key : w0 + j = (p - (-w0) % p + j) + p * (-((-w0) / p) - 1) := by
+/-- Before the first multiple of `p` from `a` on: for `r = (-a) mod p` and `j < r`, the residue of
+`a + j` modulo `p` is `p - r + j`. -/
+theorem toNat_add_emod_of_lt {a : Int} {p j : Nat} (hp : 0 < p)
+    (hj : j < ((-a) % (p : Int)).toNat) :
+    ((a + j) % (p : Int)).toNat = p - ((-a) % (p : Int)).toNat + j := by
+  have := emod_nonneg (-a) (b := p) (by lia)
+  have := emod_lt_of_pos (-a) (b := p) (by lia)
+  have := mul_ediv_add_emod (-a) p
+  have key : a + j = (p - (-a) % p + j) + p * (-((-a) / p) - 1) := by
     rw [Int.mul_sub, Int.mul_neg, Int.mul_one]
     lia
   rw [key, add_mul_emod_self_left, emod_eq_of_lt (by lia) (by lia)]
   lia
 
-/-- From the first multiple of `p` from `w0` on: for `r = (-w0) mod p` and `i < p`, the residue of
-`w0 + r + k p + i` modulo `p` is `i`. -/
-theorem toNat_add_add_emod {w0 : Int} {p i : Nat} (k : Nat) (hi : i < p) :
-    ((w0 + ((((-w0) % (p : Int)).toNat + k * p + i : Nat) : Int)) % (p : Int)).toNat = i := by
-  have := mul_ediv_add_emod (-w0) p
-  have hR : (((-w0) % (p : Int)).toNat : Int) = (-w0) % p :=
+/-- From the first multiple of `p` from `a` on: for `r = (-a) mod p` and `i < p`, the residue of
+`a + r + k p + i` modulo `p` is `i`. -/
+theorem toNat_add_add_emod {a : Int} {p i k : Nat} (hi : i < p) :
+    ((a + ((((-a) % (p : Int)).toNat + k * p + i : Nat) : Int)) % (p : Int)).toNat = i := by
+  have := mul_ediv_add_emod (-a) p
+  have hR : (((-a) % (p : Int)).toNat : Int) = (-a) % p :=
     toNat_of_nonneg (emod_nonneg _ (by lia))
-  have key : w0 + ((((-w0) % (p : Int)).toNat + k * p + i : Nat) : Int) =
-      i + p * (k - (-w0) / p) := by
+  have key : a + ((((-a) % (p : Int)).toNat + k * p + i : Nat) : Int) =
+      i + p * (k - (-a) / p) := by
     push_cast
     rw [hR, Int.mul_sub, Int.mul_comm (p : Int) k]
     lia
