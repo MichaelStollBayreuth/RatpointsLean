@@ -83,8 +83,8 @@ $2 \lceil H/64 \rceil$ and at $2^{20}$, and rounds it up to a multiple of the ch
 \section{The constants and the parameters}\label{sec:wordsParams}
 
 \begin{definition}[The width of the bit arrays]\label{def:rbaPack}
-  Proposed names: \lname{Ratpoints.rbaPack}, \lname{Ratpoints.rbaLength},
-  \lname{Ratpoints.rbaPack\_pos}.
+  \lean{Ratpoints.rbaPack, Ratpoints.rbaLength, Ratpoints.rbaPack_pos}
+  \leanok
   A bit array has $\mathrm{rbaPack} = 4$ words of 64 bits, $\mathrm{rbaLength} = 256$ bits: the
   values of the default build (\csource{rp-private.h}{172}{175}, with the word length
   \csource{rp-private.h}{49}{51}); the builds with 512-bit, 128-bit and 64-bit bit arrays have 8,
@@ -102,10 +102,8 @@ $2 \lceil H/64 \rceil$ and at $2^{20}$, and rounds it up to a multiple of the ch
 
 \begin{definition}[The pieces]\label{def:arraySize}
   \uses{def:Params}
-  Proposed names: \lname{Ratpoints.defaultArraySize}, \lname{Ratpoints.maxArraySize},
-  \lname{Ratpoints.Params.arraySize}, \lname{Ratpoints.Params.arraySizeAt},
-  \lname{Ratpoints.defaultArraySize\_pos}, \lname{Ratpoints.maxArraySize\_pos},
-  \lname{Ratpoints.Params.one\_le\_arraySizeAt}.
+  \lean{Ratpoints.defaultArraySize, Ratpoints.maxArraySize, Ratpoints.Params.arraySize, Ratpoints.Params.arraySizeAt, Ratpoints.defaultArraySize_pos, Ratpoints.maxArraySize_pos, Ratpoints.Params.one_le_arraySizeAt}
+  \leanok
   The parameters gain the field $\mathrm{arraySize}$, at most how many bit arrays a piece has,
   with $0$ for the default $\mathrm{defaultArraySize} = 256$ (\csource{ratpoints.h}{354}{356}).
   For the height bound $H$ the sieve takes $\mathrm{arraySizeAt}(H)$: the field, or the default

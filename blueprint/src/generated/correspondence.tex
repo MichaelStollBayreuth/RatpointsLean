@@ -9,24 +9,27 @@ The model is checked against ratpoints v3.1.1 (commit \texttt{1a998538dfa8}). Th
 \begin{tabular}{lrrrr}
 file & lines of code & modelled & excluded & not yet recorded \\
 \hline
-\texttt{find\_points.c} & 3244 & 206 & 0 & 3038 \\
+\texttt{find\_points.c} & 3244 & 214 & 0 & 3030 \\
 \texttt{sift.c} & 820 & 234 & 0 & 586 \\
 \texttt{init.c} & 302 & 155 & 8 & 139 \\
 \texttt{sturm.c} & 215 & 0 & 0 & 215 \\
-\texttt{rp-private.h} & 282 & 43 & 0 & 239 \\
-\texttt{ratpoints.h} & 128 & 7 & 0 & 121 \\
+\texttt{rp-private.h} & 282 & 77 & 1 & 204 \\
+\texttt{ratpoints.h} & 128 & 10 & 0 & 118 \\
 \texttt{primes.h} & 11 & 11 & 0 & 0 \\
 \texttt{gen\_find\_points\_h.c} & 76 & 60 & 0 & 16 \\
 \texttt{gen\_init\_sieve\_h.c} & 26 & 13 & 0 & 13 \\
-\texttt{main.c} & 779 & 195 & 0 & 584 \\
+\texttt{main.c} & 779 & 196 & 0 & 583 \\
 \hline
-total & 5883 & 924 & 8 & 4951 \\
+total & 5883 & 970 & 9 & 4904 \\
 \end{tabular}
 \end{center}
 
 \section*{\texttt{find\_points.c}}
 \begin{itemize}
-\item \csource{find_points.c}{30}{1701}: not yet recorded (923 lines of code)
+\item \csource{find_points.c}{30}{121}: not yet recorded (48 lines of code)
+\item \csource{find_points.c}{124}{124}: modelled by \lname{Ratpoints.maxArraySize}
+  (deviation of \lname{Ratpoints.maxArraySize}: \texttt{2 \textasciicircum{} 20}, the value for a chunk of one bit array, where the C code takes the largest multiple of the chunk \texttt{RATPOINTS\_CHUNK} up to \texttt{2 \textasciicircum{} 20} (stage F).)
+\item \csource{find_points.c}{133}{1701}: not yet recorded (874 lines of code)
 \item \csource{find_points.c}{1703}{1749}: modelled by \lname{Ratpoints.Sieve.examinePrime}
   (deviation of \lname{Ratpoints.Sieve.examinePrime}: the coefficients are integers, reduced by the Euclidean \texttt{\%}, for the two paths of ratpoints through \texttt{long}s and GMP integers (stage D), and they are not handed back, where \texttt{examine\_prime} leaves them in its caller's array for the test on the forbidden divisors of the denominators (stage E); Horner's rule reduces at every step, for the reduction on a fixed schedule (stage F), and also gives \texttt{f(0)}, which ratpoints reads off the constant term; the table has no last entry, whether there are points at infinity modulo \texttt{p}, which ratpoints reads only for its exits, the density, the prime powers and the forbidden divisors, never in a row or in the third stage; the entry is made for every prime it is given, where \texttt{examine\_prime} makes none when there is no point at infinity modulo \texttt{p} and \texttt{f(x)} is a square for no residue (it returns \texttt{-{}1}, and the search ends with no points: stage D) or for every residue (it returns \texttt{0}, and \texttt{p} is never a modulus: the choice of the moduli, an input of the model), so that the residues with a square value are not counted either; the entry keeps only \texttt{p}, the table and the inverses (\texttt{Ratpoints.Sieve.Entry}), and no rows.)
 \item \csource{find_points.c}{1751}{1759}: not yet recorded (8 lines of code)
@@ -57,7 +60,9 @@ total & 5883 & 924 & 8 & 4951 \\
 \item \csource{find_points.c}{4659}{4661}: not yet recorded (3 lines of code)
 \item \csource{find_points.c}{4662}{4665}: modelled by \lname{Ratpoints.sieveParams}
   (deviation of \lname{Ratpoints.sieveParams}: the moduli are the first primes of the table, in increasing order, where ratpoints ranks the primes by what they say about the curve (\texttt{sieving\_info}), looks past the first \texttt{q} when \texttt{-{}p} is absent and the curve needs it, chooses the cut points from the curve when \texttt{-{}n} or \texttt{-{}N} is absent or negative, and corrects the choice during the run (\texttt{adapt\_primes}); the third stage is the rest of the list after \texttt{s₂}, where ratpoints takes \texttt{P} primes after \texttt{s₂}, or primes up to all \texttt{Ratpoints.numPrimes} when \texttt{-{}P} is absent or negative.)
-\item \csource{find_points.c}{4666}{4892}: not yet recorded (172 lines of code)
+\item \csource{find_points.c}{4666}{4677}: modelled by \lname{Ratpoints.Params.arraySizeAt}
+  (deviation of \lname{Ratpoints.Params.arraySizeAt}: a \texttt{Nat} for the \texttt{long} field, so that only \texttt{0} stands for the default, which the library takes for every value \texttt{≤ 0}; no rounding up to a multiple of the chunk, which is one bit array in the build of the model (\texttt{RATPOINTS\_CHUNK}, stage F).)
+\item \csource{find_points.c}{4682}{4892}: not yet recorded (165 lines of code)
 \item \csource{find_points.c}{4894}{4899}: modelled by \lname{Ratpoints.Sieve.pointsAtInfinity}
   (deviation of \lname{Ratpoints.Sieve.pointsAtInfinity}: a list of points for the callback \texttt{process}, with no stop it may request, no reversal (stage D), no \texttt{RATPOINTS\_NO\_Y} and no \texttt{RATPOINTS\_NO\_CHECK} (stage G), and no output under \texttt{RATPOINTS\_VERBOSE}; the case \texttt{c\_d = 0}, that of the zero polynomial, which ratpoints refuses before it gets here, gives the one point \texttt{(1, 0, 0)}, which the cited lines, delivering \texttt{-{}y} without a test \texttt{y ≠ 0}, would deliver twice.)
 \item \csource{find_points.c}{4905}{5066}: not yet recorded (129 lines of code)
@@ -133,7 +138,47 @@ total & 5883 & 924 & 8 & 4951 \\
 
 \section*{\texttt{rp-private.h}}
 \begin{itemize}
-\item \csource{rp-private.h}{30}{318}: not yet recorded (169 lines of code)
+\item \csource{rp-private.h}{30}{47}: not yet recorded (10 lines of code)
+\item \csource{rp-private.h}{49}{51}: modelled by \lname{Ratpoints.rbaLength}
+  (deviation of \lname{Ratpoints.rbaLength}: the shifts by \texttt{LONG\_SHIFT} and the masks by \texttt{LONG\_MASK} are divisions by 64 and remainders.)
+\item \csource{rp-private.h}{55}{58}: modelled by \lname{Ratpoints.rbaPack}
+  (deviation of \lname{Ratpoints.rbaPack}: the value of the default build, set here, where the C code chooses the build by the macros that the compiler is given; the vector type of a bit array becomes \texttt{rbaPack} consecutive words of an array of \texttt{UInt64}, and the shifts by \texttt{RBA\_SHIFT} are divisions by \texttt{Ratpoints.rbaLength}.)
+\item \csource{rp-private.h}{60}{84}: not yet recorded (10 lines of code)
+\item \csource{rp-private.h}{86}{86}: excluded (other): FLOOR, which the C code uses nowhere: find\_points.c names it only in a comment
+\item \csource{rp-private.h}{87}{87}: modelled by \lname{Ratpoints.Params.arraySizeAt}
+  (deviation of \lname{Ratpoints.Params.arraySizeAt}: a \texttt{Nat} for the \texttt{long} field, so that only \texttt{0} stands for the default, which the library takes for every value \texttt{≤ 0}; no rounding up to a multiple of the chunk, which is one bit array in the build of the model (\texttt{RATPOINTS\_CHUNK}, stage F).)
+\item \csource{rp-private.h}{113}{113}: modelled by \lname{Ratpoints.rbaPack}
+  (deviation of \lname{Ratpoints.rbaPack}: the value of the default build, set here, where the C code chooses the build by the macros that the compiler is given; the vector type of a bit array becomes \texttt{rbaPack} consecutive words of an array of \texttt{UInt64}, and the shifts by \texttt{RBA\_SHIFT} are divisions by \texttt{Ratpoints.rbaLength}.)
+\item \csource{rp-private.h}{123}{123}: not yet recorded (1 lines of code)
+\item \csource{rp-private.h}{125}{128}: modelled by \lname{Ratpoints.rbaPack}
+  (deviation of \lname{Ratpoints.rbaPack}: the value of the default build, set here, where the C code chooses the build by the macros that the compiler is given; the vector type of a bit array becomes \texttt{rbaPack} consecutive words of an array of \texttt{UInt64}, and the shifts by \texttt{RBA\_SHIFT} are divisions by \texttt{Ratpoints.rbaLength}.)
+\item \csource{rp-private.h}{129}{165}: not yet recorded (25 lines of code)
+\item \csource{rp-private.h}{167}{167}: modelled by \lname{Ratpoints.rbaPack}
+  (deviation of \lname{Ratpoints.rbaPack}: the value of the default build, set here, where the C code chooses the build by the macros that the compiler is given; the vector type of a bit array becomes \texttt{rbaPack} consecutive words of an array of \texttt{UInt64}, and the shifts by \texttt{RBA\_SHIFT} are divisions by \texttt{Ratpoints.rbaLength}.)
+\item \csource{rp-private.h}{170}{170}: not yet recorded (1 lines of code)
+\item \csource{rp-private.h}{172}{175}: modelled by \lname{Ratpoints.rbaPack}
+  (deviation of \lname{Ratpoints.rbaPack}: the value of the default build, set here, where the C code chooses the build by the macros that the compiler is given; the vector type of a bit array becomes \texttt{rbaPack} consecutive words of an array of \texttt{UInt64}, and the shifts by \texttt{RBA\_SHIFT} are divisions by \texttt{Ratpoints.rbaLength}.)
+\item \csource{rp-private.h}{176}{224}: not yet recorded (35 lines of code)
+\item \csource{rp-private.h}{226}{226}: modelled by \lname{Ratpoints.rbaPack}
+  (deviation of \lname{Ratpoints.rbaPack}: the value of the default build, set here, where the C code chooses the build by the macros that the compiler is given; the vector type of a bit array becomes \texttt{rbaPack} consecutive words of an array of \texttt{UInt64}, and the shifts by \texttt{RBA\_SHIFT} are divisions by \texttt{Ratpoints.rbaLength}.)
+\item \csource{rp-private.h}{229}{229}: not yet recorded (1 lines of code)
+\item \csource{rp-private.h}{231}{234}: modelled by \lname{Ratpoints.rbaPack}
+  (deviation of \lname{Ratpoints.rbaPack}: the value of the default build, set here, where the C code chooses the build by the macros that the compiler is given; the vector type of a bit array becomes \texttt{rbaPack} consecutive words of an array of \texttt{UInt64}, and the shifts by \texttt{RBA\_SHIFT} are divisions by \texttt{Ratpoints.rbaLength}.)
+\item \csource{rp-private.h}{235}{250}: not yet recorded (15 lines of code)
+\item \csource{rp-private.h}{252}{252}: modelled by \lname{Ratpoints.rbaPack}
+  (deviation of \lname{Ratpoints.rbaPack}: the value of the default build, set here, where the C code chooses the build by the macros that the compiler is given; the vector type of a bit array becomes \texttt{rbaPack} consecutive words of an array of \texttt{UInt64}, and the shifts by \texttt{RBA\_SHIFT} are divisions by \texttt{Ratpoints.rbaLength}.)
+\item \csource{rp-private.h}{255}{255}: not yet recorded (1 lines of code)
+\item \csource{rp-private.h}{257}{260}: modelled by \lname{Ratpoints.rbaPack}
+  (deviation of \lname{Ratpoints.rbaPack}: the value of the default build, set here, where the C code chooses the build by the macros that the compiler is given; the vector type of a bit array becomes \texttt{rbaPack} consecutive words of an array of \texttt{UInt64}, and the shifts by \texttt{RBA\_SHIFT} are divisions by \texttt{Ratpoints.rbaLength}.)
+\item \csource{rp-private.h}{261}{276}: not yet recorded (15 lines of code)
+\item \csource{rp-private.h}{278}{278}: modelled by \lname{Ratpoints.rbaPack}
+  (deviation of \lname{Ratpoints.rbaPack}: the value of the default build, set here, where the C code chooses the build by the macros that the compiler is given; the vector type of a bit array becomes \texttt{rbaPack} consecutive words of an array of \texttt{UInt64}, and the shifts by \texttt{RBA\_SHIFT} are divisions by \texttt{Ratpoints.rbaLength}.)
+\item \csource{rp-private.h}{281}{284}: modelled by \lname{Ratpoints.rbaPack}
+  (deviation of \lname{Ratpoints.rbaPack}: the value of the default build, set here, where the C code chooses the build by the macros that the compiler is given; the vector type of a bit array becomes \texttt{rbaPack} consecutive words of an array of \texttt{UInt64}, and the shifts by \texttt{RBA\_SHIFT} are divisions by \texttt{Ratpoints.rbaLength}.)
+\item \csource{rp-private.h}{285}{295}: not yet recorded (11 lines of code)
+\item \csource{rp-private.h}{300}{300}: modelled by \lname{Ratpoints.rbaPack}
+  (deviation of \lname{Ratpoints.rbaPack}: the value of the default build, set here, where the C code chooses the build by the macros that the compiler is given; the vector type of a bit array becomes \texttt{rbaPack} consecutive words of an array of \texttt{UInt64}, and the shifts by \texttt{RBA\_SHIFT} are divisions by \texttt{Ratpoints.rbaLength}.)
+\item \csource{rp-private.h}{306}{318}: not yet recorded (9 lines of code)
 \item \csource{rp-private.h}{321}{323}: modelled by \lname{Ratpoints.maxBitsInPrime}
   (deviation of \lname{Ratpoints.maxBitsInPrime}: 8, the value of the default build, which the Makefile of ratpoints passes to the compiler (its variable \texttt{PRIME\_SIZE}), for the value 7 that the header takes when it is given none.)
 \item \csource{rp-private.h}{325}{361}: modelled by \lname{Ratpoints.numPrimes}
@@ -152,7 +197,8 @@ total & 5883 & 924 & 8 & 4951 \\
 \item \csource{ratpoints.h}{333}{340}: modelled by \lname{Ratpoints.defaultNumPrimes}
 \item \csource{ratpoints.h}{341}{343}: not yet recorded (3 lines of code)
 \item \csource{ratpoints.h}{345}{352}: modelled by \lname{Ratpoints.defaultMaxForbidden}
-\item \csource{ratpoints.h}{354}{444}: not yet recorded (55 lines of code)
+\item \csource{ratpoints.h}{354}{356}: modelled by \lname{Ratpoints.defaultArraySize}
+\item \csource{ratpoints.h}{359}{444}: not yet recorded (52 lines of code)
 \end{itemize}
 
 \section*{\texttt{primes.h}}
@@ -194,7 +240,10 @@ total & 5883 & 924 & 8 & 4951 \\
 \item \csource{main.c}{94}{207}: not yet recorded (83 lines of code)
 \item \csource{main.c}{210}{214}: modelled by \lname{Ratpoints.Cli.input}
   (deviation of \lname{Ratpoints.Cli.input}: \texttt{read\_input} never returns a value other than 0, so the usage that \texttt{main.c} prints then (lines 212 and 213) has no counterpart.)
-\item \csource{main.c}{215}{357}: not yet recorded (89 lines of code)
+\item \csource{main.c}{215}{220}: not yet recorded (6 lines of code)
+\item \csource{main.c}{221}{222}: modelled by \lname{Ratpoints.sieveParams}
+  (deviation of \lname{Ratpoints.sieveParams}: the moduli are the first primes of the table, in increasing order, where ratpoints ranks the primes by what they say about the curve (\texttt{sieving\_info}), looks past the first \texttt{q} when \texttt{-{}p} is absent and the curve needs it, chooses the cut points from the curve when \texttt{-{}n} or \texttt{-{}N} is absent or negative, and corrects the choice during the run (\texttt{adapt\_primes}); the third stage is the rest of the list after \texttt{s₂}, where ratpoints takes \texttt{P} primes after \texttt{s₂}, or primes up to all \texttt{Ratpoints.numPrimes} when \texttt{-{}P} is absent or negative.)
+\item \csource{main.c}{224}{357}: not yet recorded (82 lines of code)
 \item \csource{main.c}{362}{375}: modelled by \lname{Ratpoints.Cli.coefficients}
   (deviation of \lname{Ratpoints.Cli.coefficients}: a list of \texttt{Int}s for the array of \texttt{RATPOINTS\_MAX\_DEGREE + 1} GMP integers; the integers beyond these, which \texttt{main.c} reads into the variable \texttt{fff} only to check them, are read like the others.)
 \item \csource{main.c}{378}{379}: modelled by \lname{Ratpoints.Cli.heightBound}

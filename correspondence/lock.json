@@ -1,6 +1,12 @@
 {
   "commit": "1a998538dfa835bb1bce6047e75302cc01517443",
   "ranges": {
+    "find_points.c:124-124": {
+      "hash": "2cfb7d517efd2f7c9c7c3aadc3572e6bcc36674767cdf0b78200bc51ce0873d3",
+      "owners": [
+        "Ratpoints.maxArraySize"
+      ]
+    },
     "find_points.c:1703-1749": {
       "hash": "3958dde199dd7ca8445f39de80ac7b5db61bcab7a1a72f91514f2b321827fe25",
       "owners": [
@@ -65,6 +71,12 @@
       "hash": "a74f99ac80627b71b334ae3319539017033f34df7876d248dbf050d9f776db2c",
       "owners": [
         "Ratpoints.sieveParams"
+      ]
+    },
+    "find_points.c:4666-4677": {
+      "hash": "caa3dddd2d01ab0f540ae6d64c9edbf02d0b2c923306cf5e2cb785d37eff2863",
+      "owners": [
+        "Ratpoints.Params.arraySizeAt"
       ]
     },
     "find_points.c:4894-4899": {
@@ -181,6 +193,12 @@
         "Ratpoints.Cli.input"
       ]
     },
+    "main.c:221-222": {
+      "hash": "543fba410935ea42b0558d25f3e1fdffb3ea838ff3525b056a67365493956710",
+      "owners": [
+        "Ratpoints.sieveParams"
+      ]
+    },
     "main.c:362-375": {
       "hash": "88815e6b89ef4a589fbda0b2d2650b0d12641b030959246c46463bd5ec164f73",
       "owners": [
@@ -283,6 +301,78 @@
         "Ratpoints.defaultMaxForbidden"
       ]
     },
+    "ratpoints.h:354-356": {
+      "hash": "201cc1076a414bb5c5a31af9865e049dcd519630f3a30188217cd65429885a04",
+      "owners": [
+        "Ratpoints.defaultArraySize"
+      ]
+    },
+    "rp-private.h:113-113": {
+      "hash": "cd5b2d5a731073323a87117dacb20ea8d30c09d90fee6220eec53d3685ac8901",
+      "owners": [
+        "Ratpoints.rbaPack"
+      ]
+    },
+    "rp-private.h:125-128": {
+      "hash": "5f000eba4d8e1d109c7c65acf41babe8209d8bafd64044a38a64965cc134152d",
+      "owners": [
+        "Ratpoints.rbaPack"
+      ]
+    },
+    "rp-private.h:167-167": {
+      "hash": "674ee6ce10ecadf5f5c8c6d9bd6160b901f52f840ec94300eee265115cb2fe60",
+      "owners": [
+        "Ratpoints.rbaPack"
+      ]
+    },
+    "rp-private.h:172-175": {
+      "hash": "a88bf9921a1343b940f1080451d47c714efc2db58615b03171c0567e30a9754c",
+      "owners": [
+        "Ratpoints.rbaPack"
+      ]
+    },
+    "rp-private.h:226-226": {
+      "hash": "76a83b4445ababe255dbb1bb6f06dfb2476ab3e42057e347f32e8e1d192c6d38",
+      "owners": [
+        "Ratpoints.rbaPack"
+      ]
+    },
+    "rp-private.h:231-234": {
+      "hash": "6cb7d43f08bb9cffc53b1bd2e4d240c3eb8ce6897fd2137be6d8a7880633a655",
+      "owners": [
+        "Ratpoints.rbaPack"
+      ]
+    },
+    "rp-private.h:252-252": {
+      "hash": "0abe0f56802fd6524860ca781e8a264bf4b7ba5a8eba2d1825684b12c75cefa6",
+      "owners": [
+        "Ratpoints.rbaPack"
+      ]
+    },
+    "rp-private.h:257-260": {
+      "hash": "95a52890e31ecf50bb3fd48761afebe02de77fa0c09a4b6e04249216dbc25d99",
+      "owners": [
+        "Ratpoints.rbaPack"
+      ]
+    },
+    "rp-private.h:278-278": {
+      "hash": "cd31727502550a74af67e8e5a448d73e73abfa5e17f280b881a2d2394e8afc40",
+      "owners": [
+        "Ratpoints.rbaPack"
+      ]
+    },
+    "rp-private.h:281-284": {
+      "hash": "7235d3f4beca1837453c27c84aa1e04234561a300ec3a63d57e57febe423ee7e",
+      "owners": [
+        "Ratpoints.rbaPack"
+      ]
+    },
+    "rp-private.h:300-300": {
+      "hash": "bedaab0e6dfcd4e35e3bcf72bf9e5e703a67d4aaf48d1fa5730f63a012f3af47",
+      "owners": [
+        "Ratpoints.rbaPack"
+      ]
+    },
     "rp-private.h:321-323": {
       "hash": "cd9db85dc97c2ac45dfa03d7b547b886840b5151af0bbecabab8dfbe1402c54c",
       "owners": [
@@ -295,10 +385,34 @@
         "Ratpoints.numPrimes"
       ]
     },
+    "rp-private.h:49-51": {
+      "hash": "a88a56965e41b54a986468e7422ef3a6cd276006aea64c20c81eba170eebeb74",
+      "owners": [
+        "Ratpoints.rbaLength"
+      ]
+    },
     "rp-private.h:542-555": {
       "hash": "35545fa2f80164462a2e92e543f56f9ceace7fcfccb179d0f60ba51292630ae1",
       "owners": [
         "Ratpoints.Sieve.Entry"
+      ]
+    },
+    "rp-private.h:55-58": {
+      "hash": "ca9742d2bdb39d2cbd31579dd05ced0c8dab6d0a9d1569cbed53a1a58d19aa6c",
+      "owners": [
+        "Ratpoints.rbaPack"
+      ]
+    },
+    "rp-private.h:86-86": {
+      "hash": "c42ac35b8c6c2f8460ef05d0e074751df7e24fc7db5acbef623df731ad868ce3",
+      "owners": [
+        "excluded (other)"
+      ]
+    },
+    "rp-private.h:87-87": {
+      "hash": "ccdc39e8935c8ae699acde06641d9400619820ef353d1bfdfd687dae8909ad1c",
+      "owners": [
+        "Ratpoints.Params.arraySizeAt"
       ]
     },
     "sift.c:1030-1041": {

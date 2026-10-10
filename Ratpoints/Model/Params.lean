@@ -14,16 +14,19 @@ meta import Ratpoints.Model.Constants
 # The sieving parameters
 
 The free choices of the sieve, which the theorems quantify over: which moduli it uses, in which
-order and in which stage, at most how many forbidden divisors of the denominators it tests, and
-whether it runs the Jacobi test. ratpoints makes these choices from the curve and corrects them
-during the run; none of this changes the points found or their order, since a modulus only removes
-candidates that are not points. So the model takes the choice as an input, and the theorems hold
-for every well-formed choice. The plain sieve reads only the moduli.
+order and in which stage, at most how many forbidden divisors of the denominators it tests, whether
+it runs the Jacobi test, and at most how many bit arrays it treats at a time. ratpoints makes these
+choices from the curve and corrects them during the run; none of this changes the points found or
+their order, since a modulus only removes candidates that are not points. So the model takes the
+choice as an input, and the theorems hold for every well-formed choice. The plain sieve reads only
+the moduli.
 
 ## Main definitions
 
 * `Ratpoints.Params`: the sieving parameters.
 * `Ratpoints.Params.WF`: the parameters are well-formed.
+* `Ratpoints.Params.arraySizeAt`: the number of bit arrays of a piece of the numerators for a
+  height bound.
 * `Ratpoints.SieveOptions`: the values of the options of the program that set the parameters.
 * `Ratpoints.sieveParams`: the parameters that these values give, with the defaults and caps of
   ratpoints; `Ratpoints.defaultParams`, those of a run without options.
@@ -48,6 +51,9 @@ structure Params where
   maxForbidden : Nat
   /-- Whether the Jacobi test on the denominators runs. -/
   jacobi : Bool
+  /-- At most how many bit arrays a piece of the numerators has, the field `array_size` of the
+  arguments of the library; `0` for `Ratpoints.defaultArraySize`. -/
+  arraySize : Nat := 0
 
 /-- The parameters `P` are well-formed: every modulus is a prime of `Ratpoints.primeTable`, and the
 cut points are in order and within the list of moduli. -/
@@ -62,6 +68,20 @@ structure Params.WF (P : Params) : Prop where
 instance Params.instDecidableWF (P : Params) : Decidable P.WF :=
   decidable_of_iff ((∀ m ∈ P.moduli, m ∈ primeTable) ∧ P.sp1 ≤ P.sp2 ∧ P.sp2 ≤ P.moduli.length)
     ⟨fun ⟨h1, h2, h3⟩ ↦ ⟨h1, h2, h3⟩, fun ⟨h1, h2, h3⟩ ↦ ⟨h1, h2, h3⟩⟩
+
+/-- The number of bit arrays of a piece of the numerators for the height bound `H`: the field
+`arraySize` of the parameters `P`, or `Ratpoints.defaultArraySize` for `0`, capped at
+`2 ⌈H / 64⌉` and at `Ratpoints.maxArraySize`; at least 1 for `H ≥ 1`
+(`Ratpoints.Params.one_le_arraySizeAt`).
+
+C: `rp-private.h:87`, `find_points.c:4666-4677`
+
+Deviation: a `Nat` for the `long` field, so that only `0` stands for the default, which the library
+takes for every value `≤ 0`; no rounding up to a multiple of the chunk, which is one bit array in
+the build of the model (`RATPOINTS_CHUNK`, stage F). -/
+def Params.arraySizeAt (P : Params) (H : Nat) : Nat :=
+  min (min (if P.arraySize = 0 then defaultArraySize else P.arraySize) (2 * ((H + 63) / 64)))
+    maxArraySize
 
 /-- The values of the options of ratpoints that set the sieving parameters, as the program reads
 them into the fields of its `ratpoints_args`: `-p`, `-n`, `-N`, `-P` and `-F` give C `long`s,
@@ -88,9 +108,12 @@ the values `N` of `-N` and `n` of `-n`, at `q` and at `s₂` when these are abse
 moduli are the first `min(q + P, numPrimes)` primes of `Ratpoints.primeTable` for the value
 `P ≥ 0` of `-P`, the first `q` when it is absent or negative; at most `F` forbidden divisors are
 tested for the value `F ≥ 0` of `-F` or else `Ratpoints.defaultMaxForbidden`, at most as many as
-the table has primes; and the Jacobi test runs unless `-j` is the last of `-j` and `-J`.
+the table has primes; the Jacobi test runs unless `-j` is the last of `-j` and `-J`; and a piece
+of the numerators has at most `Ratpoints.defaultArraySize` bit arrays, the array size that the
+program passes.
 
-C: `find_points.c:4643-4649`, `find_points.c:4655-4656`, `find_points.c:4662-4665`
+C: `find_points.c:4643-4649`, `find_points.c:4655-4656`, `find_points.c:4662-4665`,
+`main.c:221-222`
 
 Deviation: the moduli are the first primes of the table, in increasing order, where ratpoints
 ranks the primes by what they say about the curve (`sieving_info`), looks past the first `q` when
@@ -107,18 +130,20 @@ def sieveParams (o : SieveOptions) : Params :=
     sp2
     maxForbidden :=
       min (if o.maxForbidden < 0 then defaultMaxForbidden else o.maxForbidden.toNat) primeTable.size
-    jacobi := o.jacobi }
+    jacobi := o.jacobi
+    arraySize := defaultArraySize }
 
 /-- The sieving parameters of a run without options (`Ratpoints.sieveParams` of the defaults): the
 first `Ratpoints.defaultNumPrimes` primes of `Ratpoints.primeTable` (at most
 `Ratpoints.numPrimes`), all in the first stage, at most `Ratpoints.defaultMaxForbidden` forbidden
-divisors, and the Jacobi test. -/
+divisors, the Jacobi test, and pieces of at most `Ratpoints.defaultArraySize` bit arrays. -/
 def defaultParams : Params := sieveParams {}
 
 /-! ### Examples -/
 
 #guard defaultParams.moduli == primeTable.toList.take 30 && defaultParams.sp1 == 30 &&
-  defaultParams.sp2 == 30 && defaultParams.maxForbidden == 64 && defaultParams.jacobi
+  defaultParams.sp2 == 30 && defaultParams.maxForbidden == 64 && defaultParams.jacobi &&
+  defaultParams.arraySize == 256
 
 #guard defaultParams.WF
 
@@ -134,7 +159,16 @@ def defaultParams : Params := sieveParams {}
   P.moduli == primeTable.toList.take 13 && P.sp1 == 4 && P.sp2 == 10 && decide P.WF
 
 -- A well-formedness that fails: a modulus that is not a prime of the table.
-#guard !decide (Params.WF ⟨[3, 9], 0, 0, 64, true⟩)
+#guard !decide (Params.WF ⟨[3, 9], 0, 0, 64, true, 0⟩)
+
+-- The array size: `2 ⌈H / 64⌉` up to the default 256, which it reaches at `H = 8129`; the default
+-- for the field `0`; a field of 10; and the cap `2 ^ 20` from `H = 2 ^ 25 + 1` on.
+#guard [1, 64, 65, 1000, 8128, 8129, 100000].map defaultParams.arraySizeAt ==
+  [2, 2, 4, 32, 254, 256, 256]
+#guard (⟨[], 0, 0, 64, true, 0⟩ : Params).arraySizeAt 100000 == 256
+#guard { defaultParams with arraySize := 10 }.arraySizeAt 100000 == 10
+#guard [2 ^ 25, 2 ^ 25 + 1].map { defaultParams with arraySize := 3000000 }.arraySizeAt ==
+  [2 ^ 20, 2 ^ 20]
 
 end Ratpoints
 

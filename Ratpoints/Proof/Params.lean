@@ -13,8 +13,9 @@ import Mathlib.Tactic.NormNum.Prime
 /-!
 # The sieving parameters: the primes of the table and well-formedness
 
-Every entry of `Ratpoints.primeTable` is a prime, which `norm_num` checks one entry at a time, and
-every parameter set that the options of the program give is well-formed.
+Every entry of `Ratpoints.primeTable` is a prime, which `norm_num` checks one entry at a time,
+every parameter set that the options of the program give is well-formed, and the pieces of the
+numerators have at least one bit array.
 
 ## Main statements
 
@@ -24,6 +25,8 @@ every parameter set that the options of the program give is well-formed.
   well-formed; comparator certifies this (`comparator/Challenge.lean`), which also rules out a
   well-formedness that nothing satisfies.
 * `Ratpoints.wf_defaultParams`: the parameters of a run without options are well-formed.
+* `Ratpoints.Params.one_le_arraySizeAt`: for a height bound `H ≥ 1` a piece of the numerators has
+  at least one bit array.
 -/
 
 @[expose] public section
@@ -54,6 +57,15 @@ theorem wf_sieveParams (o : SieveOptions) : (sieveParams o).WF where
     split_ifs <;> lia
 
 theorem wf_defaultParams : defaultParams.WF := wf_sieveParams {}
+
+/-- The pieces of the numerators are not empty, so that the loop over the pieces of a denominator
+advances; this reads off only that `Ratpoints.defaultArraySize` and `Ratpoints.maxArraySize` are
+positive. -/
+theorem Params.one_le_arraySizeAt (P : Params) {H : ℕ} (hH : 1 ≤ H) : 1 ≤ P.arraySizeAt H := by
+  have := defaultArraySize_pos
+  have := maxArraySize_pos
+  rw [arraySizeAt]
+  split <;> lia
 
 /-! ### The axioms of the certified theorem -/
 

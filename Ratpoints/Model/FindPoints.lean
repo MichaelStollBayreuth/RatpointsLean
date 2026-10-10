@@ -95,8 +95,9 @@ chosen; and the refusals, the coefficients before the height bound. -/
   [(-1, 0, 3), (1, 3, 0), (1, -3, 0), (1, 0, 3)]
 
 -- No moduli, all 53 primes, the 53 primes in three stages, and moduli in another order.
-#guard [⟨[], 0, 0, 64, true⟩, sieveParams { numPrimes := 53 },
-    ⟨primeTable.toList.take 53, 10, 40, 64, true⟩, ⟨[7, 3, 251, 5], 1, 2, 0, false⟩].all fun P ↦
+#guard [⟨[], 0, 0, 64, true, 0⟩, sieveParams { numPrimes := 53 },
+    ⟨primeTable.toList.take 53, 10, 40, 64, true, 0⟩,
+    ⟨[7, 3, 251, 5], 1, 2, 0, false, 0⟩].all fun P ↦
   [([1, 1, 1, 1, 0], 25), ([-1, 0, 9], 20), ([1, 0, 1], 12), ([0, 0, 1], 15)].all fun (c, H) ↦
     (findPoints c H P).toOption == some (bruteForce c H)
 
@@ -114,7 +115,7 @@ chosen; and the refusals, the coefficients before the height bound. -/
 
 #guard findPoints (List.replicate (maxDegree + 2) 1) 0 defaultParams matches
   .error .tooManyCoefficients
-#guard findPoints (List.replicate (maxDegree + 1) 1) 1 ⟨[], 0, 0, 64, true⟩ matches .ok _
+#guard findPoints (List.replicate (maxDegree + 1) 1) 1 ⟨[], 0, 0, 64, true, 0⟩ matches .ok _
 #guard findPoints [1] 0 defaultParams matches .error .tooFewCoefficients
 #guard findPoints [1, 0, 1] 0 defaultParams matches .error .incorrectHeight
 

@@ -75,14 +75,15 @@ are no points modulo $p$ (D) and the options of the output (G) come in their sta
   \leanok
   The free choices of the sieve: the moduli, a list of primes in the order of the stages; the cut
   points $s_1 \le s_2$, positions in that list, which end the first and the second stage (the
-  third stage is the rest of the list); at most how many forbidden divisors are tested; and
-  whether the Jacobi test runs. The parameters are \emph{well-formed} when every modulus is a
+  third stage is the rest of the list); at most how many forbidden divisors are tested; whether
+  the Jacobi test runs; and at most how many bit arrays a piece of the numerators has
+  (Definition~\ref{def:arraySize}). The parameters are \emph{well-formed} when every modulus is a
   prime of the table and $s_1 \le s_2 \le$ the number of moduli; so the moduli of well-formed
   parameters are primes.
 \end{definition}
 
 \begin{definition}[The parameters of the executable]\label{def:sieveParams}
-  \uses{def:Params, def:primeTable}
+  \uses{def:Params, def:primeTable, def:arraySize}
   \lean{Ratpoints.SieveOptions, Ratpoints.sieveParams, Ratpoints.defaultParams, Ratpoints.defaultNumPrimes, Ratpoints.defaultMaxForbidden, Ratpoints.wf_sieveParams, Ratpoints.wf_defaultParams}
   \leanok
   The parameters made from the values of the options \verb|-p|, \verb|-n|, \verb|-N|, \verb|-P|,
@@ -96,9 +97,10 @@ are no points modulo $p$ (D) and the options of the output (G) come in their sta
   $\min(q + P, \mathrm{numPrimes})$ primes of the table for the value $P \ge 0$ of \verb|-P|,
   the first $q$ when it is absent or negative; at most $\min(F, 171)$ forbidden divisors, for
   the value $F \ge 0$ of \verb|-F| or else $F = \mathrm{defaultMaxForbidden} = 64$; the Jacobi
-  test unless \verb|-j| is the last of \verb|-j| and \verb|-J|. The default parameters are those
-  of no options: the first 30 primes, all in the first stage. Every parameter set made this way
-  is well-formed.
+  test unless \verb|-j| is the last of \verb|-j| and \verb|-J|; and pieces of at most
+  $\mathrm{defaultArraySize} = 256$ bit arrays, the array size that the program passes
+  (\csource{main.c}{221}{222}). The default parameters are those of no options: the first 30
+  primes, all in the first stage. Every parameter set made this way is well-formed.
 \end{definition}
 
 \verb|Params| holds the choices that the theorems quantify over: which moduli the sieve uses, in

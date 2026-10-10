@@ -41,3 +41,9 @@ file = "init.c"
 lines = "97-98"
 kind = "instrumentation"
 reason = "RP_INIT_NOREP, a probe for bench_init that leaves out replicating a row over the words of a bit array; the tables it produces are wrong"
+
+[[excluded]]
+file = "rp-private.h"
+lines = "86"
+kind = "other"
+reason = "FLOOR, which the C code uses nowhere: find_points.c names it only in a comment"

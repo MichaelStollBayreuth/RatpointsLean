@@ -11,9 +11,10 @@ module
 The constants that the C code of ratpoints fixes when it is compiled, each a definition with the
 value of the default build and a docstring that names its macro, and the table of primes from which
 the sieve takes its moduli. Changing a constant changes the model as changing the macro changes
-the C program: no proof depends on the values of the constants, and of the table the proofs use
-only that its entries are primes (`Ratpoints.prime_of_mem_primeTable`, which checks them one by
-one).
+the C program: no proof depends on the values of the constants beyond the facts checked here by
+`decide`, that `Ratpoints.rbaPack`, `Ratpoints.defaultArraySize` and `Ratpoints.maxArraySize` are
+positive, and of the table the proofs use only that its entries are primes
+(`Ratpoints.prime_of_mem_primeTable`, which checks them one by one).
 
 ## Main definitions
 
@@ -23,6 +24,9 @@ one).
   table below `2 ^ maxBitsInPrime`, the first `numPrimes` of them.
 * `Ratpoints.defaultNumPrimes`, `Ratpoints.defaultMaxForbidden`: how many primes the sieve takes
   and at most how many forbidden divisors it tests, unless the options say.
+* `Ratpoints.rbaPack`, `Ratpoints.rbaLength`: the words and the bits of a bit array of the sieve.
+* `Ratpoints.defaultArraySize`, `Ratpoints.maxArraySize`: at most how many bit arrays a piece of
+  the numerators has, unless the parameters say, and in any case.
 -/
 
 @[expose] public section
@@ -83,9 +87,52 @@ not say, `RATPOINTS_DEFAULT_MAX_FORBIDDEN`.
 C: `ratpoints.h:345-352` -/
 def defaultMaxForbidden : Nat := 64
 
+/-- The number of 64-bit words of a bit array of the sieve, `RBA_PACK`: 4 in the default build,
+whose bit arrays have 256 bits, and 8, 2 and 1 in the builds with 512-bit, 128-bit and 64-bit bit
+arrays. The proofs use only that it is positive (`Ratpoints.rbaPack_pos`).
+
+C: `rp-private.h:55-58`, `rp-private.h:113`, `rp-private.h:125-128`, `rp-private.h:167`,
+`rp-private.h:172-175`, `rp-private.h:226`, `rp-private.h:231-234`, `rp-private.h:252`,
+`rp-private.h:257-260`, `rp-private.h:278`, `rp-private.h:281-284`, `rp-private.h:300`
+
+Deviation: the value of the default build, set here, where the C code chooses the build by the
+macros that the compiler is given; the vector type of a bit array becomes `rbaPack` consecutive
+words of an array of `UInt64`, and the shifts by `RBA_SHIFT` are divisions by
+`Ratpoints.rbaLength`. -/
+def rbaPack : Nat := 4
+
+/-- The number of bits of a bit array of the sieve, `RBA_LENGTH`: `Ratpoints.rbaPack` words of
+`LONG_LENGTH = 64` bits.
+
+C: `rp-private.h:49-51`
+
+Deviation: the shifts by `LONG_SHIFT` and the masks by `LONG_MASK` are divisions by 64 and
+remainders. -/
+def rbaLength : Nat := 64 * rbaPack
+
+/-- At most how many bit arrays a piece of the numerators has when the parameters do not say,
+`RATPOINTS_ARRAY_SIZE`.
+
+C: `ratpoints.h:354-356` -/
+def defaultArraySize : Nat := 256
+
+/-- The largest number of bit arrays of a piece of the numerators, `RP_ARRAY_SIZE_MAX`.
+
+C: `find_points.c:124`
+
+Deviation: `2 ^ 20`, the value for a chunk of one bit array, where the C code takes the largest
+multiple of the chunk `RATPOINTS_CHUNK` up to `2 ^ 20` (stage F). -/
+def maxArraySize : Nat := 2 ^ 20
+
+theorem rbaPack_pos : 0 < rbaPack := by decide
+theorem defaultArraySize_pos : 0 < defaultArraySize := by decide
+theorem maxArraySize_pos : 0 < maxArraySize := by decide
+
 /-! ### Examples -/
 
 #guard primeTable.size == 171 && numPrimes == 53 && primeTable[numPrimes - 1]! == 251
+
+#guard rbaLength == 256 && defaultArraySize == 256 && maxArraySize == 1048576
 
 -- The numbers of primes that the header lists for the builds with moduli of 5 to 10 bits.
 #guard [5, 6, 7, 8, 9, 10].map (fun b ↦ (primeTable.toList.filter (· < 2 ^ b)).length) ==
