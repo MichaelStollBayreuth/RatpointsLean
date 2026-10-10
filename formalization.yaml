@@ -14,8 +14,8 @@ project:
     same loops, tables, bit arrays of 64-bit words and index arithmetic); the proofs are to show
     that, for every choice of the sieving parameters, it returns exactly the normalized points of
     height at most H, without duplicates, and refuses, for heights below 2^63, exactly the inputs
-    that the C program refuses in a default run (fewer than two or more than 101 coefficients,
-    H = 0, a binary form that is not squarefree); a correspondence record and differential tests
+    that the C program refuses in a default run (fewer than two or more than maxDegree + 1 = 101
+    coefficients, H = 0, a binary form that is not squarefree); a correspondence record and differential tests
     link the model to the C code.
   authors: ["Michael Stoll"]
   responsible_maintainers: ["Michael Stoll"]
@@ -151,7 +151,7 @@ alignment:
       module: ""
       status: "not-formalized"
       note: "the membership and no-duplicates theorems, from stage C1 on"
-    - source: "the refusals: fewer than two or more than 101 coefficients, H = 0, a binary form that is not squarefree"
+    - source: "the refusals: fewer than two or more than maxDegree + 1 = 101 coefficients, H = 0, a binary form that is not squarefree"
       lean: ""
       module: ""
       status: "not-formalized"

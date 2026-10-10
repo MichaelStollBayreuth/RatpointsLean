@@ -26,7 +26,8 @@ stage~G proves the order of the program.
 \section{What a default run of the C code does}\label{sec:skeleton}
 
 \verb|find_points| (\csource{find_points.c}{5226}{5242}) calls \verb|find_points_work|, which
-refuses a degree outside $0, \dots, 100$ (\csource{find_points.c}{4557}{4558}) and calls
+refuses a degree outside $0, \dots, \mathrm{maxDegree}$ (\csource{find_points.c}{4557}{4558}) and
+calls
 \verb|find_points_work_1|. In a run without options, that function:
 \begin{enumerate}
   \item drops the leading zero coefficients, refusing the form as not squarefree when that lowers
@@ -246,9 +247,10 @@ lemmas.
 \end{definition}
 
 \begin{definition}[The plain sieve]\label{def:findPoints}
-  \uses{def:Params, def:sieveRun, def:pointsAtInfinity}
+  \uses{def:Params, def:sieveRun, def:pointsAtInfinity, def:maxDegree}
   Proposed names: \lname{Ratpoints.Refusal}, \lname{Ratpoints.findPoints}.
-  Refuse more than 101 coefficients, fewer than two, and $H = 0$, in the order of the program,
+  Refuse more than $\mathrm{maxDegree} + 1$ coefficients, fewer than two, and $H = 0$, in the order
+  of the program,
   with its errors 3, 5 and~4 (Section~\ref{sec:refusals}); the library refuses the same inputs
   as bad arguments (\csource{find_points.c}{4557}{4558}, \csource{find_points.c}{4633}{4633},
   \csource{find_points.c}{4658}{4658}). Otherwise make the table of each modulus and return the
@@ -310,7 +312,7 @@ the points at infinity need the case $y = 0$, which ratpoints never meets.
   \uses{def:findPoints, def:Params, def:bruteForce}
   Proposed names: \lname{Ratpoints.findPoints\_eq\_ok\_bruteForce},
   \lname{Ratpoints.eq\_bruteForce\_of\_findPoints\_eq\_ok}.
-  For well-formed parameters, $2$ to $101$ coefficients and $H \ge 1$,
+  For well-formed parameters, $2$ to $\mathrm{maxDegree} + 1$ coefficients and $H \ge 1$,
   $\mathrm{findPoints}(c, H, P)$ returns $\mathrm{bruteForce}(c, H)$; so for well-formed
   parameters, every list that $\mathrm{findPoints}$ returns is that of the brute-force reference.
 \end{theorem}
@@ -333,7 +335,8 @@ the points at infinity need the case $y = 0$, which ratpoints never meets.
   For well-formed parameters, if $\mathrm{findPoints}(c, H, P)$ returns the list $L$, then a
   triple lies in $L$ if and only if it is a normalized point of height at most $H$, $L$ has no
   duplicates, and its set of elements is $\mathrm{points}(c, H)$. $\mathrm{findPoints}(c, H, P)$
-  refuses the input exactly when $c$ has fewer than two or more than 101 entries or $H = 0$.
+  refuses the input exactly when $c$ has fewer than two or more than $\mathrm{maxDegree} + 1$
+  entries or $H = 0$.
 \end{theorem}
 
 \begin{proof}
@@ -348,7 +351,8 @@ theorem mem_iff_isPoint_of_findPoints_eq_ok (hP : P.WF)
 theorem nodup_of_findPoints_eq_ok (hP : P.WF) (h : findPoints c H P = .ok L) :
     L.Nodup
 theorem exists_findPoints_eq_error_iff :
-    (∃ e, findPoints c H P = .error e) ↔ c.length < 2 ∨ 101 < c.length ∨ H = 0
+    (∃ e, findPoints c H P = .error e) ↔
+      c.length < 2 ∨ maxDegree + 1 < c.length ∨ H = 0
 theorem wf_sieveParams (o : SieveOptions) : (sieveParams o).WF
 \end{verbatim}
 

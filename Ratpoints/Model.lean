@@ -7,6 +7,7 @@ module
 
 public import Ratpoints.Model.BruteForce
 public import Ratpoints.Model.Cli
+public import Ratpoints.Model.Constants
 
 /-!
 # The executable model of ratpoints

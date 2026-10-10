@@ -3,6 +3,7 @@ module  -- shake: keep-all --deprecated_module: ignore
 public import Ratpoints.Model
 public import Ratpoints.Model.BruteForce
 public import Ratpoints.Model.Cli
+public import Ratpoints.Model.Constants
 public import Ratpoints.Proof
 public import Ratpoints.Proof.BruteForce
 public import Ratpoints.Spec

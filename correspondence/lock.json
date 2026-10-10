@@ -102,6 +102,12 @@
       "owners": [
         "Ratpoints.Cli.usage"
       ]
+    },
+    "ratpoints.h:33-33": {
+      "hash": "7c0c1056fd978c2cc5cfac98013738ee70840ac04b212650bf64af69cc6239a5",
+      "owners": [
+        "Ratpoints.maxDegree"
+      ]
     }
   },
   "citations": {
@@ -152,6 +158,7 @@
     "main.c:1050-1053": "792aa99d9060a1f3dad924913520dac6cfa8d2370e5f5e68723234d5799ed498",
     "main.c:1054-1056": "20b031059b8270d26bb6093f478bb04dca3324d5c7ada50be9393ad75b92c269",
     "primes.h:29-40": "577b3ea9e1ffc6653f50557fd28fab32d29448c24976910d41479cf9e384c218",
+    "ratpoints.h:33-33": "7c0c1056fd978c2cc5cfac98013738ee70840ac04b212650bf64af69cc6239a5",
     "ratpoints.h:333-340": "9c1fa75f353cb4601f1e72dc892732bf76321d40ad2f060b03ab926299c943b1",
     "ratpoints.h:345-352": "b239276d48af72097442345ba7e5639ead541b1b19f642578ff99078083b5bd7",
     "rp-private.h:335-338": "17adf59b6e9e282fd27a29f2ab95b00e8e5eb169acc62e403d227bebe736f53c",

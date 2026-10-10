@@ -6,6 +6,10 @@ Authors: Michael Stoll
 module
 
 public import Ratpoints.Model.BruteForce
+public import Ratpoints.Model.Constants
+
+-- The `#guard` examples use the constants at compile time.
+meta import Ratpoints.Model.Constants
 
 /-!
 # The command-line program `ratpoints-lean`
@@ -173,7 +177,7 @@ can meet there, and one of its own, for an option of ratpoints that it does not 
 inductive Failure where
   /-- Error 2 of `main.c`: fewer than two arguments. -/
   | tooFewArguments
-  /-- Error 3 of `main.c`: more than 101 coefficients. -/
+  /-- Error 3 of `main.c`: more than `Ratpoints.maxDegree + 1` coefficients. -/
   | tooManyCoefficients
   /-- Error 4 of `main.c`: a height bound that is not a C `long` of at least 1. -/
   | incorrectHeight
@@ -224,16 +228,17 @@ def Failure.status : Failure → UInt32
 /-- The coefficient list that the first argument `s` of the command line gives, constant term
 first, as `main.c` reads it: integers as `Ratpoints.Cli.intOfWord?` reads them, separated by C
 white space, which may also stand before the first and after the last. A word that is not an
-integer fails with error 11, wherever it stands; then more than 101 integers fail with error 3,
-and fewer than two with error 5.
+integer fails with error 11, wherever it stands; then more than `Ratpoints.maxDegree + 1`
+integers fail with error 3, and fewer than two with error 5.
 
 C: `main.c:362-375`
 
-Deviation: a list of `Int`s for the array of 101 GMP integers; the integers beyond the 101st,
-which `main.c` reads into the variable `fff` only to check them, are read like the others. -/
+Deviation: a list of `Int`s for the array of `RATPOINTS_MAX_DEGREE + 1` GMP integers; the
+integers beyond these, which `main.c` reads into the variable `fff` only to check them, are read
+like the others. -/
 def coefficients (s : String) : Except Failure (List Int) := do
   let some c := (words s.toList).mapM intOfWord? | throw .incorrectCoefficients
-  if 101 < c.length then throw .tooManyCoefficients
+  if maxDegree + 1 < c.length then throw .tooManyCoefficients
   if c.length ≤ 1 then throw .tooFewCoefficients
   return c
 
@@ -381,6 +386,11 @@ an option that ratpoints has and `ratpoints-lean` does not support yet. -/
 #guard !(["nan", "1e", "0x", ".", "1e+", "0x1p", "1,5", "1 2", "infinit", ""].any isDouble)
 
 #guard (coefficients " +1\t0  -1 ").toOption == some [1, 0, -1]
+
+-- `maxDegree + 1` coefficients are read, one more fail with error 3.
+#guard (coefficients (" ".intercalate (List.replicate (maxDegree + 1) "1"))).toOption.isSome &&
+  run [" ".intercalate (List.replicate (maxDegree + 2) "1"), "5"] ==
+    ("\nToo many coefficients.\n\n", 3)
 
 #guard run ["1 2 x", "10"] ==
   ("\nIncorrect coefficients (not integers separated by blanks).\n\n", 11)

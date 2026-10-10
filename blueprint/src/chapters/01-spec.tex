@@ -123,8 +123,9 @@ coefficient $2$ is not a square.
 
 The refusal theorem belongs to stage~D, but its predicate is part of the specification: for
 well-formed sieving parameters, \verb|findPoints| refuses $(c, H)$ if and only if $c$ has fewer than
-two or more than 101 entries, $H = 0$, or $\Phi_c$ is not squarefree. In a default run with $2$ to
-$101$ coefficients and $1 \le H \le 2^{63} - 1$, the program refuses exactly the inputs for which
+two or more than $\mathrm{maxDegree} + 1$ entries (Definition~\ref{def:maxDegree}), $H = 0$, or
+$\Phi_c$ is not squarefree. In a default run with $2$ to $\mathrm{maxDegree} + 1$ coefficients and
+$1 \le H \le 2^{63} - 1$, the program refuses exactly the inputs for which
 $\Phi_c$ is not squarefree. The reason: $\Phi_c = Z^{N - d}\, \Phi^0$, where $\Phi^0$ is the
 homogenization of $f = \sum c_i x^i$ in degree $d$, which is prime to $Z$; so $\Phi_c$ is squarefree
 if and only if $N - d \le 1$ and $f$ is squarefree. The library tests the first condition when it
@@ -133,14 +134,23 @@ sequence of $f$ and $f'$ in the Sturm step (\csource{sturm.c}{120}{143}); its te
 0$ in the reversal (\csource{find_points.c}{4744}{4749}) catches $X^2 \mid \Phi_c$, which the
 remainder sequence would also catch.
 
-The model keeps the bound of 101 coefficients (\verb|RATPOINTS_MAX_DEGREE| $= 100$), which 3.1.1
-imposes in the library (\csource{find_points.c}{4557}{4558}) as well as in the program. In the
-order of the checks the library and the program differ, and the model follows the program: the
+\begin{definition}[The bound on the degree]\label{def:maxDegree}
+  \lean{Ratpoints.maxDegree}
+  \leanok
+  $\mathrm{maxDegree} = 100$, the largest degree of a polynomial that ratpoints accepts, the value
+  of \verb|RATPOINTS_MAX_DEGREE| (\csource{ratpoints.h}{33}{33}): a list of coefficients has at
+  most $\mathrm{maxDegree} + 1 = 101$ entries.
+\end{definition}
+
+Like the other constants that the C code fixes when it is compiled, the bound is a definition of
+the model with the value of the default build, in \verb|Ratpoints/Model/Constants.lean|, and no
+proof depends on its value. The model keeps the bound, which 3.1.1 imposes in the library
+(\csource{find_points.c}{4557}{4558}) as well as in the program. In the order of the checks the library and the program differ, and the model follows the program: the
 library checks the leading zeros before the height, so that \verb|5 0| with $H = 0$ is
 \verb|NON_SQUAREFREE| for it, while
 the program checks the coefficient list and the height before it calls the library
-(\csource{main.c}{362}{380}) and reports error~4. So \verb|findPoints| refuses more than 101
-coefficients and fewer than two, then $H = 0$, and then a form that is not squarefree, with the
+(\csource{main.c}{362}{380}) and reports error~4. So \verb|findPoints| refuses more than
+$\mathrm{maxDegree} + 1$ coefficients and fewer than two, then $H = 0$, and then a form that is not squarefree, with the
 program's error numbers 3, 5, 4 and~8.
 
 With the options of stage~D the predicate changes: under \verb|-s| (no Sturm step) the program
@@ -223,7 +233,7 @@ reference, so that the test scripts of the C repository can run it as \verb|RP=r
   \item it reads the first two arguments as \verb|main.c| does: the coefficient list as one
     argument and the height, with its checks, messages and exit codes, in its order: fewer than
     two arguments (2, with the banner and the usage), a malformed coefficient (11), more than
-    101 coefficients (3), fewer than two (5), a height outside $1, \dots, 2^{63} - 1$ (4)
+    $\mathrm{maxDegree} + 1$ coefficients (3), fewer than two (5), a height outside $1, \dots, 2^{63} - 1$ (4)
     (\csource{main.c}{362}{380}, \csource{main.c}{700}{740}, \csource{main.c}{1036}{1056});
     every message goes to standard output as a blank line, the message and a blank line;
   \item it reads the tuning options \verb|-n -N -P -p -F -j -J -r -R -U -A -C -Q -W -t| with the
@@ -275,7 +285,8 @@ that they mirror:
   \leanok
   The ways in which \verb|ratpoints-lean| refuses its command line, with the message and the
   exit status of each. These are the errors of \verb|main.c| that the command line can cause, 2
-  (fewer than two arguments), 3 (more than 101 coefficients), 4 (a height bound that is not a
+  (fewer than two arguments), 3 (more than $\mathrm{maxDegree} + 1$ coefficients), 4 (a height
+  bound that is not a
   C \verb|long| of at least $1$), 5 (fewer than two coefficients), 6 (a malformed option) and
   11 (a coefficient that is not an integer), on which \verb|main.c| prints a blank line, the
   message and a blank line, and exits with the number of the error
@@ -288,14 +299,14 @@ that they mirror:
 \end{definition}
 
 \begin{definition}[The command line]\label{def:cliInput}
-  \uses{def:cliNumbers, def:cliFailure}
+  \uses{def:cliNumbers, def:cliFailure, def:maxDegree}
   \lean{Ratpoints.Cli.coefficients, Ratpoints.Cli.heightBound, Ratpoints.Cli.checkOptions, Ratpoints.Cli.input}
   \leanok
   The coefficient list and the height bound of a command line, or its first failure, in the
   order of \verb|main.c|: fewer than two arguments fail (\csource{main.c}{210}{214}); the first
   argument gives the coefficients, constant term first, integers separated by white space, and
-  fails on a word that is not an integer, wherever it stands, then on more than 101 integers,
-  then on fewer than two (\csource{main.c}{362}{375}); the second gives the height bound, a C
+  fails on a word that is not an integer, wherever it stands, then on more than
+  $\mathrm{maxDegree} + 1$ integers, then on fewer than two (\csource{main.c}{362}{375}); the second gives the height bound, a C
   \verb|long| of at least $1$ (\csource{main.c}{378}{379}); and the options are read from left
   to right, each told by the character after its \verb|-| and, for \verb|-f| and \verb|-d|, by
   the one after that (\csource{main.c}{393}{397}, \csource{main.c}{667}{668}). The tuning
@@ -371,7 +382,7 @@ script.
 All declarations live in the namespace \verb|Ratpoints|. The module says which part a
 declaration belongs to, and \verb|scripts/check_layout.py| keeps the parts' imports apart: the
 specification is \verb|Ratpoints/Spec/Basic.lean|, with examples by \verb|decide| taken from the
-output of the program; the brute-force reference is \verb|Ratpoints/Model/BruteForce.lean|, with
+output of the program; the constants of the C code are in \verb|Ratpoints/Model/Constants.lean|; the brute-force reference is \verb|Ratpoints/Model/BruteForce.lean|, with
 \verb|#guard| examples taken from the C program, and its theorems are in
 \verb|Ratpoints/Proof/BruteForce.lean|, each with a guard on its axioms (\verb|#print axioms|
 under \verb|#guard_msgs|); the program is \verb|Ratpoints/Model/Cli.lean| with \verb|Main.lean|;
