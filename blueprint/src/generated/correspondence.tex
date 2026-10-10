@@ -9,24 +9,33 @@ The model is checked against ratpoints v3.1.1 (commit \texttt{1a998538dfa8}). Th
 \begin{tabular}{lrrrr}
 file & lines of code & modelled & excluded & not yet recorded \\
 \hline
-\texttt{find\_points.c} & 3244 & 0 & 0 & 3244 \\
+\texttt{find\_points.c} & 3244 & 10 & 0 & 3234 \\
 \texttt{sift.c} & 820 & 0 & 0 & 820 \\
 \texttt{init.c} & 302 & 0 & 0 & 302 \\
 \texttt{sturm.c} & 215 & 0 & 0 & 215 \\
-\texttt{rp-private.h} & 282 & 0 & 0 & 282 \\
-\texttt{ratpoints.h} & 128 & 1 & 0 & 127 \\
-\texttt{primes.h} & 11 & 0 & 0 & 11 \\
+\texttt{rp-private.h} & 282 & 33 & 0 & 249 \\
+\texttt{ratpoints.h} & 128 & 7 & 0 & 121 \\
+\texttt{primes.h} & 11 & 11 & 0 & 0 \\
 \texttt{gen\_find\_points\_h.c} & 76 & 0 & 0 & 76 \\
 \texttt{gen\_init\_sieve\_h.c} & 26 & 0 & 0 & 26 \\
 \texttt{main.c} & 779 & 195 & 0 & 584 \\
 \hline
-total & 5883 & 196 & 0 & 5687 \\
+total & 5883 & 256 & 0 & 5627 \\
 \end{tabular}
 \end{center}
 
 \section*{\texttt{find\_points.c}}
 \begin{itemize}
-\item \csource{find_points.c}{30}{5338}: not yet recorded (3244 lines of code)
+\item \csource{find_points.c}{30}{4641}: not yet recorded (2724 lines of code)
+\item \csource{find_points.c}{4643}{4649}: modelled by \lname{Ratpoints.sieveParams}
+  (deviation of \lname{Ratpoints.sieveParams}: the moduli are the first primes of the table, in increasing order, where ratpoints ranks the primes by what they say about the curve (\texttt{sieving\_info}), looks past the first \texttt{q} when \texttt{-{}p} is absent and the curve needs it, chooses the cut points from the curve when \texttt{-{}n} or \texttt{-{}N} is absent or negative, and corrects the choice during the run (\texttt{adapt\_primes}); the third stage is the rest of the list after \texttt{s₂}, where ratpoints takes \texttt{P} primes after \texttt{s₂}, or primes up to all \texttt{Ratpoints.numPrimes} when \texttt{-{}P} is absent or negative.)
+\item \csource{find_points.c}{4654}{4654}: not yet recorded (1 lines of code)
+\item \csource{find_points.c}{4655}{4656}: modelled by \lname{Ratpoints.sieveParams}
+  (deviation of \lname{Ratpoints.sieveParams}: the moduli are the first primes of the table, in increasing order, where ratpoints ranks the primes by what they say about the curve (\texttt{sieving\_info}), looks past the first \texttt{q} when \texttt{-{}p} is absent and the curve needs it, chooses the cut points from the curve when \texttt{-{}n} or \texttt{-{}N} is absent or negative, and corrects the choice during the run (\texttt{adapt\_primes}); the third stage is the rest of the list after \texttt{s₂}, where ratpoints takes \texttt{P} primes after \texttt{s₂}, or primes up to all \texttt{Ratpoints.numPrimes} when \texttt{-{}P} is absent or negative.)
+\item \csource{find_points.c}{4658}{4661}: not yet recorded (4 lines of code)
+\item \csource{find_points.c}{4662}{4665}: modelled by \lname{Ratpoints.sieveParams}
+  (deviation of \lname{Ratpoints.sieveParams}: the moduli are the first primes of the table, in increasing order, where ratpoints ranks the primes by what they say about the curve (\texttt{sieving\_info}), looks past the first \texttt{q} when \texttt{-{}p} is absent and the curve needs it, chooses the cut points from the curve when \texttt{-{}n} or \texttt{-{}N} is absent or negative, and corrects the choice during the run (\texttt{adapt\_primes}); the third stage is the rest of the list after \texttt{s₂}, where ratpoints takes \texttt{P} primes after \texttt{s₂}, or primes up to all \texttt{Ratpoints.numPrimes} when \texttt{-{}P} is absent or negative.)
+\item \csource{find_points.c}{4666}{5338}: not yet recorded (505 lines of code)
 \end{itemize}
 
 \section*{\texttt{sift.c}}
@@ -46,19 +55,28 @@ total & 5883 & 196 & 0 & 5687 \\
 
 \section*{\texttt{rp-private.h}}
 \begin{itemize}
-\item \csource{rp-private.h}{30}{617}: not yet recorded (282 lines of code)
+\item \csource{rp-private.h}{30}{318}: not yet recorded (169 lines of code)
+\item \csource{rp-private.h}{321}{323}: modelled by \lname{Ratpoints.maxBitsInPrime}
+  (deviation of \lname{Ratpoints.maxBitsInPrime}: 8, the value of the default build, which the Makefile of ratpoints passes to the compiler (its variable \texttt{PRIME\_SIZE}), for the value 7 that the header takes when it is given none.)
+\item \csource{rp-private.h}{325}{361}: modelled by \lname{Ratpoints.numPrimes}
+  (deviation of \lname{Ratpoints.numPrimes}: computed from \texttt{Ratpoints.maxBitsInPrime}, where the header lists the values for 5 to 10 bits, the numbers that the computation gives, and takes 7 bits for any other value; the largest such prime and the power of 2 above it, which size the tables of the C code, have no counterpart.)
+\item \csource{rp-private.h}{378}{617}: not yet recorded (80 lines of code)
 \end{itemize}
 
 \section*{\texttt{ratpoints.h}}
 \begin{itemize}
 \item \csource{ratpoints.h}{31}{31}: not yet recorded (1 lines of code)
 \item \csource{ratpoints.h}{33}{33}: modelled by \lname{Ratpoints.maxDegree}
-\item \csource{ratpoints.h}{42}{444}: not yet recorded (126 lines of code)
+\item \csource{ratpoints.h}{42}{331}: not yet recorded (62 lines of code)
+\item \csource{ratpoints.h}{333}{340}: modelled by \lname{Ratpoints.defaultNumPrimes}
+\item \csource{ratpoints.h}{341}{343}: not yet recorded (3 lines of code)
+\item \csource{ratpoints.h}{345}{352}: modelled by \lname{Ratpoints.defaultMaxForbidden}
+\item \csource{ratpoints.h}{354}{444}: not yet recorded (55 lines of code)
 \end{itemize}
 
 \section*{\texttt{primes.h}}
 \begin{itemize}
-\item \csource{primes.h}{29}{40}: not yet recorded (11 lines of code)
+\item \csource{primes.h}{29}{40}: modelled by \lname{Ratpoints.primeTable}
 \end{itemize}
 
 \section*{\texttt{gen\_find\_points\_h.c}}

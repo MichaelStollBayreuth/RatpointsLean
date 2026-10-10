@@ -59,16 +59,21 @@ the options of the output (G) come in their stages.
 \section{The parameters}\label{sec:params}
 
 \begin{definition}[The primes of the sieve]\label{def:primeTable}
-  Proposed names: \lname{Ratpoints.primeTable}, \lname{Ratpoints.numPrimes},
-  \lname{Ratpoints.prime\_of\_mem\_primeTable}.
+  \lean{Ratpoints.primeTable, Ratpoints.maxBitsInPrime, Ratpoints.numPrimes, Ratpoints.prime_of_mem_primeTable}
+  \leanok
   The 171 odd primes below $1024$, in increasing order, the table of \verb|primes.h|
-  (\csource{primes.h}{29}{40}); every entry is a prime. The default build of ratpoints uses the
-  first $53$ of them, those below $256$ (\csource{rp-private.h}{335}{338}).
+  (\csource{primes.h}{29}{40}); every entry is a prime. The moduli are chosen among those below
+  $2^b$, for the size in bits $b = \mathrm{maxBitsInPrime}$ that the build of ratpoints fixes
+  (\csource{rp-private.h}{321}{323}): $8$ in the default build, whose Makefile sets it, where
+  the header takes $7$ when it is given none. There are $\mathrm{numPrimes}$ of them, $53$ for
+  $b = 8$ (\csource{rp-private.h}{325}{361}, where the header lists the numbers for
+  $b = 5, \dots, 10$).
 \end{definition}
 
 \begin{definition}[Sieving parameters]\label{def:Params}
   \uses{def:primeTable}
-  Proposed names: \lname{Ratpoints.Params}, \lname{Ratpoints.Params.WF}.
+  \lean{Ratpoints.Params, Ratpoints.Params.WF}
+  \leanok
   The free choices of the sieve: the moduli, a list of primes in the order of the stages; the cut
   points $s_1 \le s_2$, positions in that list, which end the first and the second stage (the
   third stage is the rest of the list); at most how many forbidden divisors are tested; and
@@ -77,28 +82,28 @@ the options of the output (G) come in their stages.
 \end{definition}
 
 \begin{definition}[The parameters of the executable]\label{def:sieveParams}
-  \uses{def:Params}
-  Proposed names: \lname{Ratpoints.SieveOptions}, \lname{Ratpoints.sieveParams},
-  \lname{Ratpoints.defaultParams}, \lname{Ratpoints.wf\_sieveParams},
-  \lname{Ratpoints.wf\_defaultParams}.
+  \uses{def:Params, def:primeTable}
+  \lean{Ratpoints.SieveOptions, Ratpoints.sieveParams, Ratpoints.defaultParams, Ratpoints.defaultNumPrimes, Ratpoints.defaultMaxForbidden, Ratpoints.wf_sieveParams, Ratpoints.wf_defaultParams}
+  \leanok
   The parameters made from the values of the options \verb|-p|, \verb|-n|, \verb|-N|, \verb|-P|,
   \verb|-F| and \verb|-j|/\verb|-J|, with the defaults and caps of ratpoints
   (\csource{ratpoints.h}{333}{340}, \csource{ratpoints.h}{345}{352},
   \csource{find_points.c}{4643}{4649}, \csource{find_points.c}{4655}{4656},
-  \csource{find_points.c}{4662}{4665}): $q$ primes are taken, $q = 30$ unless \verb|-p| gives a
-  value $k \ge 0$, then $q = \min(k, 53)$; $s_2 = \min(N, q)$ and $s_1 = \min(n, s_2)$ for the
-  values of \verb|-N| and \verb|-n|, $s_2 = q$ and $s_1 = s_2$ when they are absent or negative;
-  the moduli are the first $\min(q + P, 53)$ primes of the table for the value $P \ge 0$ of
-  \verb|-P|, the first $q$ when it is absent or negative; at most $\min(F, 171)$ forbidden
-  divisors for the value $F \ge 0$ of \verb|-F|, $64$ otherwise; the Jacobi test unless
-  \verb|-j| is the last of \verb|-j| and \verb|-J|. The default parameters are those of no
-  options: the first 30 primes, all in the first stage. Every parameter set made this way is
-  well-formed.
+  \csource{find_points.c}{4662}{4665}): $q = \min(k, \mathrm{numPrimes})$ primes are taken, for
+  the value $k \ge 0$ of \verb|-p| or else $k = \mathrm{defaultNumPrimes} = 30$;
+  $s_2 = \min(N, q)$ and $s_1 = \min(n, s_2)$ for the values of \verb|-N| and \verb|-n|,
+  $s_2 = q$ and $s_1 = s_2$ when they are absent or negative; the moduli are the first
+  $\min(q + P, \mathrm{numPrimes})$ primes of the table for the value $P \ge 0$ of \verb|-P|,
+  the first $q$ when it is absent or negative; at most $\min(F, 171)$ forbidden divisors, for
+  the value $F \ge 0$ of \verb|-F| or else $F = \mathrm{defaultMaxForbidden} = 64$; the Jacobi
+  test unless \verb|-j| is the last of \verb|-j| and \verb|-J|. The default parameters are those
+  of no options: the first 30 primes, all in the first stage. Every parameter set made this way
+  is well-formed.
 \end{definition}
 
 \verb|Params| holds the choices that the theorems quantify over: which moduli the sieve uses, in
 which order and in which stage. ratpoints makes them from the curve (\verb|sieving_info|, which
-ranks the primes and may look past the 30th when the curve needs it), and moves the end of the
+ranks the primes and may look past the first $q$ when the curve needs it), and moves the end of the
 third stage during the run (\verb|adapt_primes|; with \verb|-A 2| also $s_2$). None of this
 changes the points found or their order, since a modulus only removes candidates that are not
 points (\verb|-q| suppresses the report of the moduli used, which does depend on the choice). So the
@@ -111,7 +116,11 @@ well-formedness that nothing satisfies. C1 reads only the moduli and treats all 
 cut points, the forbidden divisors and the Jacobi switch are read from stages~E and~F on, and
 further choices (the block length, the length of the pieces) join \verb|Params| with the
 components that use them. Well-formedness constrains a field only as far as its component needs
-it to be meaningful.
+it to be meaningful. The constants of the build that these definitions read, the size in bits of
+the moduli and the defaults of \verb|-p| and \verb|-F|, are definitions of the model like
+$\mathrm{maxDegree}$ (Definition~\ref{def:maxDegree}), and no proof depends on their values:
+\verb|wf_sieveParams| needs only that $\mathrm{numPrimes}$, a number of primes of the table, is
+at most its size.
 
 \section{The table of a prime}\label{sec:primeTables}
 
@@ -393,15 +402,17 @@ the cut points in several positions, a third stage) on the same inputs.
 The interface (\verb|primeTable|, \verb|Params|, \verb|SieveOptions|, \verb|sieveParams|,
 \verb|Refusal|, \verb|findPoints|) lives in the namespace \verb|Ratpoints|, the components of the
 sieve in \verb|Ratpoints.Sieve|, and the general list lemma in \verb|Ratpoints/Mathlib| under its
-name in Mathlib's namespace. The model goes into \verb|Ratpoints/Model/Params.lean|,
+name in Mathlib's namespace. The table of primes and the constants of the build join
+$\mathrm{maxDegree}$ in \verb|Ratpoints/Model/Constants.lean|; the rest of the model goes into
+\verb|Ratpoints/Model/Params.lean|,
 \verb|Ratpoints/Model/Sieve.lean| and \verb|Ratpoints/Model/FindPoints.lean|; the contracts, without
 Mathlib, into \verb|Ratpoints/Proof/Sieve.lean|; the well-formedness and the primes into
 \verb|Ratpoints/Proof/Params.lean|, the tables and the soundness of the rows into
 \verb|Ratpoints/Proof/Tables.lean|, and the main theorems into
 \verb|Ratpoints/Proof/FindPoints.lean|. One commit per item, each passing the project's checks:
 \begin{enumerate}
-  \item[C1.1] The parameters (Definitions~\ref{def:primeTable} to~\ref{def:sieveParams}) with
-    their lemmas.
+  \item[C1.1] The table of primes, the constants of the choice of the moduli, and the parameters
+    (Definitions~\ref{def:primeTable} to~\ref{def:sieveParams}), with their lemmas.
   \item[C1.2] The tables of a prime and the rows (Definitions~\ref{def:squaresMod}
     to~\ref{def:admits}) with \verb|#guard| examples against the tables of ratpoints, and
     Lemmas~\ref{lem:isSquare_div} and~\ref{lem:admits_examinePrime}.

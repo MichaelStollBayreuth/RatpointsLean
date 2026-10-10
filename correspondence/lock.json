@@ -1,6 +1,24 @@
 {
   "commit": "1a998538dfa835bb1bce6047e75302cc01517443",
   "ranges": {
+    "find_points.c:4643-4649": {
+      "hash": "b4bb06cf2f616ae03b4998ab7a032b9f58f17b42d62ca01b1291ee578422b77a",
+      "owners": [
+        "Ratpoints.sieveParams"
+      ]
+    },
+    "find_points.c:4655-4656": {
+      "hash": "b3f735b298e09e85cde93e1943c3bb3d812c49b554d0457cb0a2a2d97d09ea06",
+      "owners": [
+        "Ratpoints.sieveParams"
+      ]
+    },
+    "find_points.c:4662-4665": {
+      "hash": "a74f99ac80627b71b334ae3319539017033f34df7876d248dbf050d9f776db2c",
+      "owners": [
+        "Ratpoints.sieveParams"
+      ]
+    },
     "main.c:1036-1043": {
       "hash": "f31091ab852d45657454a9dcae84f9f83bc6980b7ccbc787f38098c89d611761",
       "owners": [
@@ -103,10 +121,40 @@
         "Ratpoints.Cli.usage"
       ]
     },
+    "primes.h:29-40": {
+      "hash": "577b3ea9e1ffc6653f50557fd28fab32d29448c24976910d41479cf9e384c218",
+      "owners": [
+        "Ratpoints.primeTable"
+      ]
+    },
     "ratpoints.h:33-33": {
       "hash": "7c0c1056fd978c2cc5cfac98013738ee70840ac04b212650bf64af69cc6239a5",
       "owners": [
         "Ratpoints.maxDegree"
+      ]
+    },
+    "ratpoints.h:333-340": {
+      "hash": "9c1fa75f353cb4601f1e72dc892732bf76321d40ad2f060b03ab926299c943b1",
+      "owners": [
+        "Ratpoints.defaultNumPrimes"
+      ]
+    },
+    "ratpoints.h:345-352": {
+      "hash": "b239276d48af72097442345ba7e5639ead541b1b19f642578ff99078083b5bd7",
+      "owners": [
+        "Ratpoints.defaultMaxForbidden"
+      ]
+    },
+    "rp-private.h:321-323": {
+      "hash": "cd9db85dc97c2ac45dfa03d7b547b886840b5151af0bbecabab8dfbe1402c54c",
+      "owners": [
+        "Ratpoints.maxBitsInPrime"
+      ]
+    },
+    "rp-private.h:325-361": {
+      "hash": "ff27dd12c1efab74f34738e15531b3844655220d5210dd2bdcb0734fb2053a31",
+      "owners": [
+        "Ratpoints.numPrimes"
       ]
     }
   },
@@ -161,7 +209,8 @@
     "ratpoints.h:33-33": "7c0c1056fd978c2cc5cfac98013738ee70840ac04b212650bf64af69cc6239a5",
     "ratpoints.h:333-340": "9c1fa75f353cb4601f1e72dc892732bf76321d40ad2f060b03ab926299c943b1",
     "ratpoints.h:345-352": "b239276d48af72097442345ba7e5639ead541b1b19f642578ff99078083b5bd7",
-    "rp-private.h:335-338": "17adf59b6e9e282fd27a29f2ab95b00e8e5eb169acc62e403d227bebe736f53c",
+    "rp-private.h:321-323": "cd9db85dc97c2ac45dfa03d7b547b886840b5151af0bbecabab8dfbe1402c54c",
+    "rp-private.h:325-361": "ff27dd12c1efab74f34738e15531b3844655220d5210dd2bdcb0734fb2053a31",
     "rp-private.h:542-555": "35545fa2f80164462a2e92e543f56f9ceace7fcfccb179d0f60ba51292630ae1",
     "sift.c:318-343": "eb81df87599d191f3bba67e917a79cd1831cd70ff41b281ebfcb3b70a5acfda3",
     "sift.c:438-446": "d7ab90550e0c8fecc0a652dd8131274e07d4a0966cff52e6f7ab24df41fffe5f",

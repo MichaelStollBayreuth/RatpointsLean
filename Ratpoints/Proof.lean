@@ -6,6 +6,7 @@ Authors: Michael Stoll
 module
 
 public import Ratpoints.Proof.BruteForce
+public import Ratpoints.Proof.Params
 
 /-!
 # The proofs

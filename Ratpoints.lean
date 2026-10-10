@@ -4,7 +4,9 @@ public import Ratpoints.Model
 public import Ratpoints.Model.BruteForce
 public import Ratpoints.Model.Cli
 public import Ratpoints.Model.Constants
+public import Ratpoints.Model.Params
 public import Ratpoints.Proof
 public import Ratpoints.Proof.BruteForce
+public import Ratpoints.Proof.Params
 public import Ratpoints.Spec
 public import Ratpoints.Spec.Basic
