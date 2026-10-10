@@ -103,8 +103,8 @@ theorem getElem!_andBitArray {m : Nat} (v : Vector UInt64 m) (j : Nat) (row : Ar
 
 theorem getLsbD_clearLowBits {m : Nat} (v : Vector UInt64 m) (s : Nat) {y : Nat} (hy : y < m)
     (t : Nat) :
-    ((clearLowBits v s)[y]!).toBitVec.getLsbD t =
-      ((v[y]!).toBitVec.getLsbD t && decide (s ≤ 64 * y + t)) := by
+    (clearLowBits v s)[y]!.toBitVec.getLsbD t =
+      (v[y]!.toBitVec.getLsbD t && decide (s ≤ 64 * y + t)) := by
   have h := Vector.getElem!_fold_set! (xs := v) (base := 0) (k := s / 64) (fun _ _ ↦ 0) hy
   simp only [Nat.zero_add, Nat.zero_le, true_and] at h
   simp only [clearLowBits, Vector.getElem!_set! hy, h]
@@ -113,8 +113,8 @@ theorem getLsbD_clearLowBits {m : Nat} (v : Vector UInt64 m) (s : Nat) {y : Nat}
 
 theorem getLsbD_clearHighBits {m : Nat} (v : Vector UInt64 m) (j : Nat) {s : Nat}
     (hs : s < rbaLength) {y : Nat} (hy : y < m) (hyj : y < rbaPack * (j + 1)) (t : Nat) :
-    ((clearHighBits v j s)[y]!).toBitVec.getLsbD t =
-      ((v[y]!).toBitVec.getLsbD t && decide (64 * y + t + s < rbaLength * (j + 1))) := by
+    (clearHighBits v j s)[y]!.toBitVec.getLsbD t =
+      (v[y]!.toBitVec.getLsbD t && decide (64 * y + t + s < rbaLength * (j + 1))) := by
   simp only [clearHighBits, Vector.getElem!_fold_set! (fun _ _ ↦ (0 : UInt64)) hy,
     Vector.getElem!_set! hy]
   grind [UInt64.toBitVec_zero, UInt64.toBitVec_and, UInt64.getLsbD_allOnes_shiftRight,
@@ -159,14 +159,14 @@ theorem Entry.admits_mod (e : Entry) (b : Nat) : e.admits (b % e.p) = e.admits b
 
 theorem getLsbD_packedPattern (pat : Array Bool) (p : Nat) {i : Nat}
     (hi : i < 64 * (p / 64 + 2)) :
-    ((packedPattern pat p)[i / 64]!).toBitVec.getLsbD (i % 64) = pat[i % p]! := by
+    (packedPattern pat p)[i / 64]!.toBitVec.getLsbD (i % 64) = pat[i % p]! := by
   rw [packedPattern, Array.getElem!_map_range _ (by lia),
     UInt64.getLsbD_fold_or_one_shiftLeft _ (Nat.le_refl 64), Nat.div_add_mod]
   simp [Nat.mod_lt]
 
 theorem getLsbD_window (E : Array UInt64) (s t : Nat) :
     (window E s).toBitVec.getLsbD t =
-      (decide (t < 64) && (E[(s + t) / 64]!).toBitVec.getLsbD ((s + t) % 64)) := by
+      (decide (t < 64) && E[(s + t) / 64]!.toBitVec.getLsbD ((s + t) % 64)) := by
   rw [window]
   split
   · grind
@@ -180,13 +180,13 @@ theorem getLsbD_window_packedPattern (pat : Array Bool) {p s : Nat} (hs : s < p)
   grind [getLsbD_window, getLsbD_packedPattern]
 
 theorem Entry.getLsbD_row (e : Entry) (b : Nat) {j : Nat} (hj : j < e.p * rbaPack) (t : Nat) :
-    ((e.row b)[j]!).toBitVec.getLsbD t = (decide (t < 64) && e.admits b (64 * j + t)) := by
+    (e.row b)[j]!.toBitVec.getLsbD t = (decide (t < 64) && e.admits b (64 * j + t)) := by
   have hp : 0 < e.p := Nat.pos_of_ne_zero fun h ↦ by simp [h] at hj
   simp only [Entry.row, Array.getElem!_map_range _ hj, Array.getElem!_map_range _ (Nat.mod_lt _ hp),
     getLsbD_window_packedPattern _ (Nat.mod_lt _ hp)]
   exact congrArg (decide (t < 64) && ·) (e.admits_congr b (by simp))
 
-theorem Entry.get_rows (e : Entry) {r : Nat} (hr : r < e.p) : (e.rows[r]!).get = e.row r :=
+theorem Entry.get_rows (e : Entry) {r : Nat} (hr : r < e.p) : e.rows[r]!.get = e.row r :=
   congrArg Thunk.get (Array.getElem!_map_range _ hr)
 
 theorem Entry.row_mod (e : Entry) (b : Nat) : e.row (b % e.p) = e.row b := by
@@ -439,7 +439,7 @@ theorem andRows_spec (specs : List SieveSpec) (w0 : Int) (n : Nat)
     ⦃ True ⦄ andRows specs w0 n surv
     ⦃ fun surv' ↦ ∀ (entries : List Entry) (b : Nat), (∀ e ∈ entries, 0 < e.p) →
         specs = entries.map (fun e ↦ ⟨e.p, e.row b⟩) → ∀ y < n * rbaPack, ∀ t : Nat,
-          (surv'[y]!).toBitVec.getLsbD t =
+          surv'[y]!.toBitVec.getLsbD t =
             (decide (t < 64) && survives entries b (rbaLength * w0 + 64 * y + t)) ⦄ :=
   ⟨fun _ entries b hp hspecs y hy t ↦ by
     subst hspecs
@@ -532,7 +532,7 @@ words `y < rbaPack pos`, in increasing order. -/
 def ScanPieceInvariant {m : Nat} (sv : Vector UInt64 m) (w : List Int) (f : Int) (b : Nat)
     (w0 : Int) (n pos : Nat) (out : Array (Int × Int × Int)) : Prop :=
   pos ≤ n ∧ out.toList = ((List.range (rbaPack * pos)).flatMap fun y : Nat ↦
-    ((List.range 64).filter ((sv[y]!).toBitVec.getLsbD ·)).map fun t : Nat ↦
+    ((List.range 64).filter (sv[y]!.toBitVec.getLsbD ·)).map fun t : Nat ↦
       rbaLength * w0 + 64 * y + t).flatMap (checkNum w f b)
 
 /-- `Ratpoints.Sieve.ScanPieceInvariant` as the invariant of the scan of
@@ -559,7 +559,7 @@ def ScanPieceExtractInvariant {m : Nat} (sv : Vector UInt64 m) (w : List Int) (f
     (s : Array (Int × Int × Int) × Int) : Prop :=
   s.2 = (w0 + pos) * rbaLength + 64 * k ∧ s.1.toList = out0.toList ++
     ((List.range k).flatMap fun κ ↦
-      ((List.range 64).filter ((sv[rbaPack * pos + κ]!).toBitVec.getLsbD ·)).map fun t : Nat ↦
+      ((List.range 64).filter (sv[rbaPack * pos + κ]!.toBitVec.getLsbD ·)).map fun t : Nat ↦
         (w0 + pos) * rbaLength + 64 * κ + t).flatMap (checkNum w f b)
 
 theorem scanPieceSentinelInvariant_zero {m : Nat} (n : Nat) (surv : Vector UInt64 m) :
@@ -605,7 +605,7 @@ theorem ScanPieceInvariant.add_one {m : Nat} {sv : Vector UInt64 m} {w : List In
     {b : Nat} {w0 : Int} {n pos : Nat} {out out' : Array (Int × Int × Int)}
     (h : ScanPieceInvariant sv w f b w0 n pos out) (hlt : pos < n)
     (hout : out'.toList = out.toList ++ ((List.range rbaPack).flatMap fun κ ↦
-      ((List.range 64).filter ((sv[rbaPack * pos + κ]!).toBitVec.getLsbD ·)).map fun t : Nat ↦
+      ((List.range 64).filter (sv[rbaPack * pos + κ]!.toBitVec.getLsbD ·)).map fun t : Nat ↦
         rbaLength * w0 + 64 * (rbaPack * pos + κ : Nat) + t).flatMap (checkNum w f b)) :
     ScanPieceInvariant sv w f b w0 n (pos + 1) out' := by
   refine ⟨hlt, ?_⟩
@@ -632,7 +632,7 @@ theorem ScanPieceExtractInvariant.append_singleton {m : Nat} {sv : Vector UInt64
     (h : ScanPieceExtractInvariant sv w f b w0 pos out0 done.length s)
     (hl : ForIn.toList [0:rbaPack] = done ++ cur :: suff)
     (hr : r.toList = s.1.toList ++ (((List.range 64).filter
-      ((sv[rbaPack * pos + cur]!).toBitVec.getLsbD ·)).map fun t : Nat ↦ s.2 + t).flatMap
+      (sv[rbaPack * pos + cur]!.toBitVec.getLsbD ·)).map fun t : Nat ↦ s.2 + t).flatMap
         (checkNum w f b)) :
     ScanPieceExtractInvariant sv w f b w0 pos out0 (done ++ [cur]).length (r, s.2 + 64) := by
   have hκ := Std.Legacy.Range.length_eq_of_toList_eq_append_cons hl
@@ -660,7 +660,7 @@ theorem ScanPieceInvariant.toList_eq {m n : Nat} {surv sv : Vector UInt64 m} {w 
     (h : ScanPieceInvariant sv w f b w0 n n out)
     (hs : ScanPieceSentinelInvariant n surv rbaPack sv) :
     out.toList = ((List.range (n * rbaPack)).flatMap fun y : Nat ↦
-      ((List.range 64).filter ((surv[y]!).toBitVec.getLsbD ·)).map fun t : Nat ↦
+      ((List.range 64).filter (surv[y]!.toBitVec.getLsbD ·)).map fun t : Nat ↦
         rbaLength * w0 + 64 * y + t).flatMap (checkNum w f b) := by
   rw [h.2, Nat.mul_comm rbaPack n]
   exact congrArg (List.flatMap _) <| congrArg List.flatten <| List.map_congr_left fun y hy ↦ by
@@ -676,7 +676,7 @@ private theorem scanPiece_spec_getLsbD (w : List Int) (f : Int) (b : Nat) (w0 : 
     (surv : Vector UInt64 ((n + 1) * rbaPack)) :
     ⦃ True ⦄ scanPiece w f b w0 n surv
     ⦃ fun out ↦ out.toList = ((List.range (n * rbaPack)).flatMap fun y : Nat ↦
-        ((List.range 64).filter ((surv[y]!).toBitVec.getLsbD ·)).map fun t : Nat ↦
+        ((List.range 64).filter (surv[y]!.toBitVec.getLsbD ·)).map fun t : Nat ↦
           rbaLength * w0 + 64 * y + t).flatMap (checkNum w f b) ⦄ := by
   vcgen [scanPiece] invariants
   | inv1 => fun done _ ↦ ScanPieceSentinelInvariant n surv done.length
@@ -705,7 +705,7 @@ theorem scanPiece_spec (w : List Int) (f : Int) (b : Nat) (w0 : Int) (n : Nat)
     (surv : Vector UInt64 ((n + 1) * rbaPack)) :
     ⦃ True ⦄ scanPiece w f b w0 n surv
     ⦃ fun out ↦ ∀ keep : Int → Bool, (∀ y < n * rbaPack, ∀ t : Nat,
-        (surv[y]!).toBitVec.getLsbD t = (decide (t < 64) && keep (rbaLength * w0 + 64 * y + t))) →
+        surv[y]!.toBitVec.getLsbD t = (decide (t < 64) && keep (rbaLength * w0 + 64 * y + t))) →
       out.toList = (((List.range (n * rbaLength)).map fun k : Nat ↦
         rbaLength * w0 + k).filter keep).flatMap (checkNum w f b) ⦄ :=
   ⟨fun _ keep hkeep ↦ by
@@ -716,8 +716,8 @@ theorem scanPiece_spec (w : List Int) (f : Int) (b : Nat) (w0 : Int) (n : Nat)
 
 theorem getLsbD_clearHighBits_sub_one {m n s : Nat} (v : Vector UInt64 m) (hs : s < rbaLength)
     {y : Nat} (hy : y < m) (hyn : y < n * rbaPack) (t : Nat) :
-    ((clearHighBits v (n - 1) s)[y]!).toBitVec.getLsbD t =
-      ((v[y]!).toBitVec.getLsbD t && decide (64 * y + t + s < rbaLength * n)) := by
+    (clearHighBits v (n - 1) s)[y]!.toBitVec.getLsbD t =
+      (v[y]!.toBitVec.getLsbD t && decide (64 * y + t + s < rbaLength * n)) := by
   have hn : n - 1 + 1 = n := Nat.sub_add_cancel (Nat.pos_of_ne_zero fun h ↦ by simp [h] at hyn)
   rw [getLsbD_clearHighBits v (n - 1) hs hy (by rw [hn, Nat.mul_comm]; exact hyn), hn]
 
@@ -726,8 +726,8 @@ applied, as far as the bits `t < 64` of the words `y < n rbaPack` go: bit `t` of
 `v` exactly when it is set in `surv`, `maskLow ≤ 64 y + t` and `64 y + t + maskHigh < rbaLength n`,
 for the number `rbaPack` of words of a bit array (`Ratpoints.rbaPack`). -/
 def IsMasked {m : Nat} (n maskLow maskHigh : Nat) (surv v : Vector UInt64 m) : Prop :=
-  ∀ y < n * rbaPack, ∀ t < 64, (v[y]!).toBitVec.getLsbD t =
-    ((surv[y]!).toBitVec.getLsbD t && decide (maskLow ≤ 64 * y + t) &&
+  ∀ y < n * rbaPack, ∀ t < 64, v[y]!.toBitVec.getLsbD t =
+    (surv[y]!.toBitVec.getLsbD t && decide (maskLow ≤ 64 * y + t) &&
       decide (64 * y + t + maskHigh < rbaLength * n))
 
 theorem isMasked_clearHighBits_clearLowBits {n maskHigh : Nat}
@@ -762,10 +762,10 @@ theorem IsMasked.toList_eq {n : Nat} {w : List Int} {f : Int} {b : Nat} {specs :
     {out : Array (Int × Int × Int)}
     (hand : ∀ (entries : List Entry) (b : Nat), (∀ e ∈ entries, 0 < e.p) →
       specs = entries.map (fun e ↦ ⟨e.p, e.row b⟩) → ∀ y < n * rbaPack, ∀ t : Nat,
-        (surv[y]!).toBitVec.getLsbD t =
+        surv[y]!.toBitVec.getLsbD t =
           (decide (t < 64) && survives entries b (rbaLength * w0 + 64 * y + t)))
     (h : IsMasked n maskLow maskHigh surv v)
-    (hout : ∀ keep : Int → Bool, (∀ y < n * rbaPack, ∀ t : Nat, (v[y]!).toBitVec.getLsbD t =
+    (hout : ∀ keep : Int → Bool, (∀ y < n * rbaPack, ∀ t : Nat, v[y]!.toBitVec.getLsbD t =
         (decide (t < 64) && keep (rbaLength * w0 + 64 * y + t))) →
       out.toList = (((List.range (n * rbaLength)).map fun k : Nat ↦
         rbaLength * w0 + k).filter keep).flatMap (checkNum w f b))
@@ -968,8 +968,7 @@ theorem SiftInvariant.toList_eq_pointsOfDen {c : List Int} {d b : Nat} {keep : I
 -- The rows of the run, read at the residue `b mod p` of each modulus, are the rows of `b`.
 private theorem map_rows_eq_map_row {entries : List Entry} (hp : ∀ e ∈ entries, 0 < e.p)
     (b : Nat) :
-    (entries.map fun e ↦ (e.p, e.rows)).map
-        (fun x ↦ ({ p := x.1, row := (x.2[b % x.1]!).get } : SieveSpec)) =
+    (entries.map fun e ↦ (e.p, e.rows)).map (fun x ↦ (⟨x.1, x.2[b % x.1]!.get⟩ : SieveSpec)) =
       entries.map fun e ↦ ⟨e.p, e.row b⟩ := by
   rw [List.map_map]
   exact List.map_congr_left fun e he ↦ by

@@ -293,7 +293,7 @@ theorem getLsbD_fold_or_one_shiftLeft (c : Nat → Bool) {k : Nat} (hk : k ≤ 6
 above them: the 64 bits from position `r` on of the 128 bits of `x` followed by `y`. -/
 theorem getLsbD_shiftRight_or_shiftLeft {r : Nat} (hr0 : r ≠ 0) (hr : r < 64) (x y : UInt64)
     (t : Nat) :
-    ((x >>> r.toUInt64) ||| (y <<< (64 - r).toUInt64)).toBitVec.getLsbD t =
+    (x >>> r.toUInt64 ||| y <<< (64 - r).toUInt64).toBitVec.getLsbD t =
       (decide (t < 64) && if r + t < 64 then x.toBitVec.getLsbD (r + t)
         else y.toBitVec.getLsbD (r + t - 64)) := by
   simp [BitVec.ushiftRight_eq', BitVec.shiftLeft_eq']

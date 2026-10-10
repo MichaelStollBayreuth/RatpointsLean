@@ -287,8 +287,7 @@ def ctz (w : UInt64) : Id Nat := do
 consecutive words (`Ratpoints.Sieve.window`). -/
 def packedPattern (pat : Array Bool) (p : Nat) : Array UInt64 :=
   (Array.range (p / 64 + 2)).map fun q ↦
-    Nat.fold 64 (fun t _ w ↦ if pat[(64 * q + t) % p]! then w ||| (1 : UInt64) <<< t.toUInt64
-      else w) 0
+    Nat.fold 64 (fun t _ w ↦ if pat[(64 * q + t) % p]! then w ||| 1 <<< t.toUInt64 else w) 0
 
 /-- The 64 bits of the packed words `E` from position `s` on, where bit `t` of word `q` is at
 position `64 q + t`: word `s / 64` shifted right by `r = s % 64`, and for `r ≠ 0` the lowest `r`
@@ -296,7 +295,7 @@ bits of the next word above them. -/
 def window (E : Array UInt64) (s : Nat) : UInt64 :=
   let q := s / 64
   let r := s % 64
-  if r = 0 then E[q]! else (E[q]! >>> r.toUInt64) ||| (E[q + 1]! <<< (64 - r).toUInt64)
+  if r = 0 then E[q]! else E[q]! >>> r.toUInt64 ||| E[q + 1]! <<< (64 - r).toUInt64
 
 /-- The row of the denominator `b` in the table `e`, as `e.p` bit arrays of `Ratpoints.rbaPack`
 words: the pattern of one period, whether the row admits the numerator `N` for `N < e.p`
@@ -373,7 +372,8 @@ into the rows and into the survivors, and the number of whole periods and the re
 their loops; natural numbers and integers for the `long`s (stages D and F); no count of the ands of
 the second stage under `RP_PHASE_COUNTS`, and no output under `DEBUG`. -/
 def andRows (specs : List SieveSpec) (w0 : Int) (n : Nat)
-    (surv : Vector UInt64 ((n + 1) * rbaPack)) : Id (Vector UInt64 ((n + 1) * rbaPack)) := do
+    (surv : Vector UInt64 ((n + 1) * rbaPack)) :
+    Id (Vector UInt64 ((n + 1) * rbaPack)) := do
   let mut surv := surv
   for i in [0:n * rbaPack] do
     surv := surv.set! i (~~~0)
@@ -435,7 +435,8 @@ factors (`n_bits`), which ratpoints reads to correct the moduli during the run (
 counts under `RP_PHASE_COUNTS`; no stop that the callback `process` may request (`quit`, stage G),
 and no output under `DEBUG`. -/
 def walkWord (w : List Int) (f : Int) (b : Nat) (x : UInt64) (a0 : Int)
-    (out : Array (Int × Int × Int)) : Id (Array (Int × Int × Int)) := do
+    (out : Array (Int × Int × Int)) :
+    Id (Array (Int × Int × Int)) := do
   let mut x := x
   let mut out := out
   while x != 0 do
@@ -471,7 +472,8 @@ over the words of a bit array for the read of the first word and the loop over t
 numbers and integers for the `long`s (stages D and F); no count of the bit arrays that survive the
 first stage (`n_arrays`), which ratpoints reads to correct the moduli during the run (stage F). -/
 def scanPiece (w : List Int) (f : Int) (b : Nat) (w0 : Int) (n : Nat)
-    (surv : Vector UInt64 ((n + 1) * rbaPack)) : Id (Array (Int × Int × Int)) := do
+    (surv : Vector UInt64 ((n + 1) * rbaPack)) :
+    Id (Array (Int × Int × Int)) := do
   let mut surv := surv
   for κ in [0:rbaPack] do
     surv := surv.set! (rbaPack * n + κ) (~~~0)
@@ -519,7 +521,8 @@ points that `_ratpoints_sift0` returns, with no flag `quit` for a stop that `pro
 (stage G); natural numbers and integers for the `long`s (stages D and F); no measurements of the
 phases (`RP_TIC`, `RP_TOC`, `RP_PHASE_TIMING`) and no stop after one of them (`RP_STOP_AFTER`). -/
 def siftPiece (w : List Int) (f : Int) (b : Nat) (specs : List SieveSpec) (w0 : Int)
-    (n maskLow maskHigh : Nat) : Id (Array (Int × Int × Int)) := do
+    (n maskLow maskHigh : Nat) :
+    Id (Array (Int × Int × Int)) := do
   let mut surv ← andRows specs w0 n (Vector.replicate ((n + 1) * rbaPack) 0)
   if maskLow ≠ 0 then surv := clearLowBits surv maskLow
   if maskHigh ≠ 0 then surv := clearHighBits surv (n - 1) maskHigh
@@ -566,7 +569,7 @@ natural numbers and integers for the `long`s (stages D and F); no measurements o
 (`RP_SIFT_TIC`, `RP_SETUP_TIC`, `RP_INIT_TIC` and their `TOC`) and no output under `DEBUG`. -/
 def sift (c : List Int) (d H A b : Nat) (rows : List (Nat × Array (Thunk (Array UInt64)))) :
     Id (Array (Int × Int × Int)) := do
-  let specs := rows.map fun (p, rs) ↦ ({ p, row := (rs[b % p]!).get } : SieveSpec)
+  let specs : List SieveSpec := rows.map fun (p, rs) ↦ ⟨p, rs[b % p]!.get⟩
   let w := BruteForce.scaledCoeffs c d b
   let f : Int := if d % 2 = 1 then b else 1
   let wLow := -(H : Int) / rbaLength
@@ -732,7 +735,7 @@ def pointsAtInfinity (c : List Int) (d : Nat) : List (Int × Int × Int) :=
 -- The rows of the residues, each made when first needed.
 #guard
   let e := examinePrime [1, 2, 3, 4, 5, 6, 7] 6 7
-  e.rows.size == 7 && (List.range 7).all fun r ↦ (e.rows[r]!).get == e.row r
+  e.rows.size == 7 && (List.range 7).all fun r ↦ e.rows[r]!.get == e.row r
 
 -- The first stage against the survivor test: bit `t` of word `y` of a piece is the survivor test
 -- of the numerator `rbaLength w0 + 64 y + t`, for pieces from below and above zero with the
