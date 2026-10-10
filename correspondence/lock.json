@@ -106,7 +106,8 @@
     "gen_find_points_h.c:102-134": {
       "hash": "3f663de590a75381a367c9aa80c762fd4467443c6675de60cb488cddb61f2e60",
       "owners": [
-        "Ratpoints.Sieve.Entry.admits"
+        "Ratpoints.Sieve.Entry.admits",
+        "Ratpoints.Sieve.Entry.row"
       ]
     },
     "gen_find_points_h.c:33-44": {
@@ -130,25 +131,29 @@
     "gen_init_sieve_h.c:48-62": {
       "hash": "f4f11f12c647da1f0363cd7f62a6a71315050bb840ddde15b7965110d5736feb",
       "owners": [
-        "Ratpoints.Sieve.Entry.admits"
+        "Ratpoints.Sieve.Entry.admits",
+        "Ratpoints.Sieve.Entry.row"
       ]
     },
     "init.c:118-246": {
       "hash": "218047ac32ead2f14f63287e47ec479125d382c35f9195c7b91fd9eb20d1a77a",
       "owners": [
-        "Ratpoints.Sieve.Entry.admits"
+        "Ratpoints.Sieve.Entry.admits",
+        "Ratpoints.Sieve.Entry.row"
       ]
     },
     "init.c:42-46": {
       "hash": "457dfd9e5c185e560428c32275595fc3b996ad4cf452057a4daad4239c908f04",
       "owners": [
-        "Ratpoints.Sieve.Entry.admits"
+        "Ratpoints.Sieve.Entry.admits",
+        "Ratpoints.Sieve.Entry.row"
       ]
     },
     "init.c:62-83": {
       "hash": "e6b5169634ff8a69f4ace2294488e25c17f4c0e06bc9dfa967c04ebeeb94b09f",
       "owners": [
-        "Ratpoints.Sieve.Entry.admits"
+        "Ratpoints.Sieve.Entry.admits",
+        "Ratpoints.Sieve.Entry.row"
       ]
     },
     "init.c:88-93": {
@@ -166,7 +171,8 @@
     "init.c:99-111": {
       "hash": "28cac77499403ab7417e4587d061c13f772e4f0d715a9019de3e74a87029560b",
       "owners": [
-        "Ratpoints.Sieve.Entry.admits"
+        "Ratpoints.Sieve.Entry.admits",
+        "Ratpoints.Sieve.Entry.row"
       ]
     },
     "main.c:1036-1043": {
@@ -539,6 +545,12 @@
       "hash": "ff27dd12c1efab74f34738e15531b3844655220d5210dd2bdcb0734fb2053a31",
       "owners": [
         "Ratpoints.numPrimes"
+      ]
+    },
+    "rp-private.h:378-379": {
+      "hash": "9f8b4e5a7e4cc8ecee649784b39ea1f01db67154d5cbceaf23cbfc23dc572572",
+      "owners": [
+        "Ratpoints.Sieve.SieveSpec"
       ]
     },
     "rp-private.h:429-444": {

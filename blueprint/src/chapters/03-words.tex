@@ -130,10 +130,8 @@ that it decides; for the model it is $1$.
 
 \begin{definition}[The row of a denominator in words]\label{def:row}
   \uses{def:admits, def:rbaPack}
-  Proposed names: \lname{Ratpoints.Sieve.packedPattern}, \lname{Ratpoints.Sieve.window},
-  \lname{Ratpoints.Sieve.Entry.row}, \lname{Ratpoints.Sieve.Entry.admits\_congr},
-  \lname{Ratpoints.Sieve.Entry.admits\_add\_mul}, \lname{Ratpoints.Sieve.getLsbD\_window},
-  \lname{Ratpoints.Sieve.Entry.getLsbD\_row}.
+  \lean{Ratpoints.Sieve.packedPattern, Ratpoints.Sieve.window, Ratpoints.Sieve.Entry.row, Ratpoints.Sieve.Entry.admits_congr, Ratpoints.Sieve.Entry.admits_add_mul, Ratpoints.Sieve.getLsbD_window, Ratpoints.Sieve.Entry.getLsbD_row}
+  \leanok
   For the table of a prime $p$ and a denominator $b$: the pattern of one period, whether the row of
   $b$ admits $N$ for $N = 0, \dots, p - 1$ (Definition~\ref{def:admits}); the pattern over the
   positions $0, \dots, p + 63$, packed into words; for $j < p$, word $j$ of the row, the 64 bits of
@@ -153,8 +151,8 @@ that it decides; for the model it is $1$.
 
 \begin{definition}[The rows of a modulus]\label{def:rows}
   \uses{def:row}
-  Proposed names: \lname{Ratpoints.Sieve.Entry.rows}, \lname{Ratpoints.Sieve.Entry.get\_rows},
-  \lname{Ratpoints.Sieve.Entry.row\_mod}, \lname{Ratpoints.Sieve.SieveSpec}.
+  \lean{Ratpoints.Sieve.Entry.rows, Ratpoints.Sieve.Entry.get_rows, Ratpoints.Sieve.Entry.row_mod, Ratpoints.Sieve.SieveSpec}
+  \leanok
   The rows of the residues $r = 0, \dots, p - 1$, each made when a denominator first needs it,
   as a suspended computation that runs once: the field \verb|sieve| of the sieve entry, whose row
   of $0$ the examination of the prime installs (Definition~\ref{def:examinePrime}) and whose other

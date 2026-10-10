@@ -8,11 +8,13 @@ module
 /-!
 # Lemmas on words
 
-Lemmas on vectors and on 64-bit words that the contracts of the bit arrays of words need and Lean
-core lacks, under their names in the namespaces of Lean core: the entries of a vector after
-`Vector.set!` and after a fold of `Vector.set!` over consecutive positions, the bits of the masks
-`~~~0 <<< n` and `~~~0 >>> n`, the lowest bit and the lowest set bit of a word, and the word
-`x &&& (x - 1)`, which is `x` with its lowest set bit cleared.
+Lemmas on vectors, arrays and 64-bit words that the contracts of the bit arrays of words need and
+Lean core lacks, under their names in the namespaces of Lean core: the entries of a vector after
+`Vector.set!` and after a fold of `Vector.set!` over consecutive positions, the entries of an array
+made by a map over a range, the bits of the masks `~~~0 <<< n` and `~~~0 >>> n`, the lowest bit
+and the lowest set bit of a word, the word `x &&& (x - 1)`, which is `x` with its lowest set bit
+cleared, the bits of a word set one at a time, and the 64 bits of two words from a position within
+the first.
 
 ## Main statements
 
@@ -21,6 +23,9 @@ core lacks, under their names in the namespaces of Lean core: the entries of a v
 * `UInt64.getLsbD_allOnes_shiftLeft`, `UInt64.getLsbD_allOnes_shiftRight`: the bits of the masks.
 * `UInt64.getLsbD_and_sub_one`, `UInt64.toNat_and_sub_one_lt`: for `x ≠ 0`, `x &&& (x - 1)` is `x`
   with its lowest set bit cleared, and smaller than `x`.
+* `UInt64.getLsbD_fold_or_one_shiftLeft`: the bits of a word set one at a time.
+* `UInt64.getLsbD_shiftRight_or_shiftLeft`: the 64 bits from position `r` on of the 128 bits of two
+  words, for `0 < r < 64`.
 
 ## Implementation notes
 
@@ -50,6 +55,16 @@ theorem getElem!_fold_set! {α : Type u} [Inhabited α] {n : Nat} {xs : Vector �
   | succ k ih => grind [Nat.fold_succ, getElem!_set!]
 
 end Vector
+
+/-! ### Arrays -/
+
+namespace Array
+
+theorem getElem!_map_range {α : Type u} [Inhabited α] (f : Nat → α) {n j : Nat} (hj : j < n) :
+    ((Array.range n).map f)[j]! = f j := by
+  simp [hj]
+
+end Array
 
 /-! ### Words -/
 
@@ -100,6 +115,30 @@ theorem getLsbD_and_sub_one {x : UInt64} (hx : x ≠ 0) (t : Nat) :
 
 theorem toNat_and_sub_one_lt {x : UInt64} (hx : x ≠ 0) : (x &&& (x - 1)).toNat < x.toNat := by
   grind [Nat.and_le_right, UInt64.toNat_sub_of_le, UInt64.pos_iff_ne_zero]
+
+theorem getLsbD_one_shiftLeft {t : Nat} (ht : t < 64) (s : Nat) :
+    ((1 : UInt64) <<< t.toUInt64).toBitVec.getLsbD s = decide (s = t) := by
+  grind [UInt64.toBitVec_shiftLeft, UInt64.toBitVec_one]
+
+/-- The bits `i < k` for which `c i` holds, set one after the other in the word `0`. -/
+theorem getLsbD_fold_or_one_shiftLeft (c : Nat → Bool) {k : Nat} (hk : k ≤ 64) (t : Nat) :
+    (Nat.fold k (fun i _ w ↦ if c i then w ||| (1 : UInt64) <<< i.toUInt64 else w)
+      0).toBitVec.getLsbD t = (decide (t < k) && c t) := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [Nat.fold_succ]
+    grind [UInt64.toBitVec_or, getLsbD_one_shiftLeft]
+
+/-- For `0 < r < 64`, the word made of the bits of `x` from `r` on and the lowest `r` bits of `y`
+above them: the 64 bits from position `r` on of the 128 bits of `x` followed by `y`. -/
+theorem getLsbD_shiftRight_or_shiftLeft {r : Nat} (hr0 : r ≠ 0) (hr : r < 64) (x y : UInt64)
+    (t : Nat) :
+    ((x >>> r.toUInt64) ||| (y <<< (64 - r).toUInt64)).toBitVec.getLsbD t =
+      (decide (t < 64) && if r + t < 64 then x.toBitVec.getLsbD (r + t)
+        else y.toBitVec.getLsbD (r + t - 64)) := by
+  simp [BitVec.ushiftRight_eq', BitVec.shiftLeft_eq']
+  grind
 
 end UInt64
 

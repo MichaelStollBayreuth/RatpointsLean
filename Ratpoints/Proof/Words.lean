@@ -14,9 +14,9 @@ import Std.Tactic.Do
 /-!
 # The contracts of the bit arrays of words
 
-The lemmas on the operations on the bit arrays of 64-bit words of the model, and the contracts of
-its components on words, as `@[spec]` theorems proved with `vcgen`, the program logic of Lean core,
-with loop invariants that are named definitions.
+The lemmas on the operations on the bit arrays of 64-bit words of the model and on its rows as
+words, and the contracts of its components on words, as `@[spec]` theorems proved with `vcgen`, the
+program logic of Lean core, with loop invariants that are named definitions.
 
 ## Main statements
 
@@ -27,6 +27,10 @@ with loop invariants that are named definitions.
 * `Ratpoints.Sieve.isZeroAt_eq_true_iff`: a bit array is zero when all its words are.
 * `Ratpoints.Sieve.ctz_spec`: for a word other than `0`, the loop of `Ratpoints.Sieve.ctz` ends with
   the number of its trailing zeros.
+* `Ratpoints.Sieve.Entry.getLsbD_row`: bit `t` of word `j` of the row of a denominator in words says
+  whether the row admits the numerator `64 j + t`.
+* `Ratpoints.Sieve.Entry.get_rows`, `Ratpoints.Sieve.Entry.row_mod`: the thunk of a residue gives
+  its row, and the row of `b` is the row of `b mod p`.
 
 ## Implementation notes
 
@@ -107,6 +111,54 @@ theorem ctz_spec (w : UInt64) : ⦃ w ≠ 0 ⦄ ctz w ⦃ fun t ↦ t = w.toBitV
   all_goals simp [CtzInvariant] at *
   all_goals grind [UInt64.ne_ctz_of_and_one_eq_zero, UInt64.eq_ctz_of_and_one_ne_zero,
     UInt64.toNat_ctz_lt, BitVec.shiftRight_add]
+
+/-! ### The rows as words -/
+
+theorem Entry.admits_congr (e : Entry) (b : Nat) {a a' : Int} (h : a % e.p = a' % e.p) :
+    e.admits b a = e.admits b a' := by
+  simp [Entry.admits, h]
+
+theorem Entry.admits_add_mul (e : Entry) (b : Nat) (a k : Int) :
+    e.admits b (a + e.p * k) = e.admits b a :=
+  e.admits_congr b (Int.add_mul_emod_self_left a e.p k)
+
+theorem Entry.admits_mod (e : Entry) (b : Nat) : e.admits (b % e.p) = e.admits b :=
+  funext fun _ ↦ by simp [Entry.admits]
+
+theorem getLsbD_packedPattern (pat : Array Bool) (p : Nat) {i : Nat}
+    (hi : i < 64 * (p / 64 + 2)) :
+    ((packedPattern pat p)[i / 64]!).toBitVec.getLsbD (i % 64) = pat[i % p]! := by
+  rw [packedPattern, Array.getElem!_map_range _ (by lia),
+    UInt64.getLsbD_fold_or_one_shiftLeft _ (Nat.le_refl 64), Nat.div_add_mod]
+  simp [Nat.mod_lt]
+
+theorem getLsbD_window (E : Array UInt64) (s t : Nat) :
+    (window E s).toBitVec.getLsbD t =
+      (decide (t < 64) && (E[(s + t) / 64]!).toBitVec.getLsbD ((s + t) % 64)) := by
+  rw [window]
+  split
+  · grind
+  · rw [UInt64.getLsbD_shiftRight_or_shiftLeft ‹s % 64 ≠ 0› (Nat.mod_lt s (by decide))]
+    grind
+
+/-- The hypothesis `s < p` keeps the 64 positions read within the packed words. -/
+theorem getLsbD_window_packedPattern (pat : Array Bool) {p s : Nat} (hs : s < p) (t : Nat) :
+    (window (packedPattern pat p) s).toBitVec.getLsbD t =
+      (decide (t < 64) && pat[(s + t) % p]!) := by
+  grind [getLsbD_window, getLsbD_packedPattern]
+
+theorem Entry.getLsbD_row (e : Entry) (b : Nat) {j : Nat} (hj : j < e.p * rbaPack) (t : Nat) :
+    ((e.row b)[j]!).toBitVec.getLsbD t = (decide (t < 64) && e.admits b (64 * j + t)) := by
+  have hp : 0 < e.p := Nat.pos_of_ne_zero fun h ↦ by simp [h] at hj
+  simp only [Entry.row, Array.getElem!_map_range _ hj, Array.getElem!_map_range _ (Nat.mod_lt _ hp),
+    getLsbD_window_packedPattern _ (Nat.mod_lt _ hp)]
+  exact congrArg (decide (t < 64) && ·) (e.admits_congr b (by simp))
+
+theorem Entry.get_rows (e : Entry) {r : Nat} (hr : r < e.p) : (e.rows[r]!).get = e.row r :=
+  congrArg Thunk.get (Array.getElem!_map_range _ hr)
+
+theorem Entry.row_mod (e : Entry) (b : Nat) : e.row (b % e.p) = e.row b := by
+  simp [Entry.row, Entry.admits_mod]
 
 end Sieve
 
