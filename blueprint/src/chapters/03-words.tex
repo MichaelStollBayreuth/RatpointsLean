@@ -244,24 +244,24 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
 
 \begin{definition}[The check of a numerator]\label{def:checkNum}
   \uses{def:bruteForce}
-  Proposed names: \lname{Ratpoints.Sieve.checkNum},
-  \lname{Ratpoints.Sieve.pointsOfDen\_eq\_flatMap\_checkNum}.
+  \lean{Ratpoints.Sieve.checkNum, Ratpoints.Sieve.pointsOfDen_eq_flatMap_checkNum}
+  \leanok
   The test for common factors of $a$ and $b$ and the exact check, from the products
   $c_k b^{d - k}$ and the factor $b$ for odd $d$, which come in as arguments: the points
-  $(a, y, b)$ and, for $y \ne 0$, $(a, -y, b)$ (\csource{sift.c}{202}{205},
-  \csource{sift.c}{318}{343}, \csource{sift.c}{438}{446}, \csource{find_points.c}{5250}{5338}).
-  What the brute-force reference finds over $b$ and a list of numerators is the concatenation of
-  these over the list, with the products and the factor of $c$, $d$ and $b$.
+  $(a, y, b)$ and, for $y \ne 0$, $(a, -y, b)$ (\csource{sift.c}{318}{343},
+  \csource{sift.c}{438}{446}, \csource{find_points.c}{5250}{5338}). What the brute-force reference
+  finds over $b$ and a list of numerators is the concatenation of these over the list, with the
+  products and the factor of $c$, $d$ and $b$.
 \end{definition}
 
 \begin{definition}[The set bits of a word]\label{def:walkWord}
   \uses{def:ctz, def:checkNum}
-  Proposed names: \lname{Ratpoints.Sieve.walkWord}, \lname{Ratpoints.Sieve.walkWord\_spec}.
+  \lean{Ratpoints.Sieve.walkWord, Ratpoints.Sieve.walkWord_spec}
+  \leanok
   For a word $x$ whose bit $t$ stands for the numerator $a_0 + t$: while $x \ne 0$, the check of
   $a_0 + \mathrm{ctz}(x)$, and $x \mathbin{\&} (x - 1)$ for $x$: the loop of the C code with its
-  body at both places of the extraction (\csource{sift.c}{262}{264},
-  \csource{sift.c}{1227}{1255}, \csource{sift.c}{1265}{1292}). Its contract: the checks of the
-  numerators $a_0 + t$ for the set bits $t$ of $x$, in increasing order, are appended.
+  body at both places of the extraction (\csource{sift.c}{262}{264}). Its contract: the checks of
+  the numerators $a_0 + t$ for the set bits $t$ of $x$, in increasing order, are appended.
 \end{definition}
 
 \begin{definition}[The scan and the extraction]\label{def:scanPiece}

@@ -44,6 +44,9 @@ generates are computed here: the squares and the inverses by `Ratpoints.Sieve.sq
   with its row for the denominator at hand.
 * `Ratpoints.Sieve.andRows`: the first stage over a piece of bit arrays, the rows of the moduli
   and-ed into its words.
+* `Ratpoints.Sieve.checkNum`, `Ratpoints.Sieve.walkWord`: the test for common factors and the exact
+  check of one numerator, and the walk through the set bits of a word, lowest first, each giving the
+  check of its numerator.
 -/
 
 @[expose] public section
@@ -399,6 +402,48 @@ def andRows (specs : List SieveSpec) (w0 : Int) (n : Nat)
         surv := andBitArray surv (r + left / p * p + i) s.row i
   return surv
 
+/-- The points of the numerator `a` over the denominator `b`, as the brute-force reference checks
+it (`Ratpoints.BruteForce.pointsOfDen`): none when `a` and `b` have a common factor, and otherwise
+`(a, y, b)` and, for `y ≠ 0`, `(a, -y, b)` when `v = y ^ 2` with `y ≥ 0`, for the value `v` of
+Horner's rule in `a` on `w`, times `f`. For the products `w` of the coefficients `cₖ` with the
+powers `b^(d - k)` (`Ratpoints.BruteForce.scaledCoeffs`), and `f = b` for odd `d` and `f = 1` for
+even `d`, `v` is the value `F(a, b)` of the binary form.
+
+C: `sift.c:318-343`, `sift.c:438-446`, `find_points.c:5250-5338`
+
+Deviation: a plain `gcd`, for the binary `gcd` of `relprime`, whose loop body has no branch (stage
+F); the third stage of `accepted` is applied with the other moduli in the first stage
+(`Ratpoints.Sieve.andRows`, stage F); the products `w` and the factor `f` come in as arguments,
+computed for every denominator, where `_ratpoints_check_point` computes the products when the first
+survivor of `b` reaches it; a list of points, for the callback `process` and for the count of points
+that `_ratpoints_check_point` returns, with no stop that `process` may request, no reversal (stage
+D), and no `RATPOINTS_NO_Y` and no `RATPOINTS_NO_CHECK` (stage G); no counts of the numerators that
+pass the test for common factors and the third stage (`n_coprime`, `n_checks`), which ratpoints
+reads to correct the moduli during the run (stage F). -/
+def checkNum (w : List Int) (f b a : Int) : List (Int × Int × Int) :=
+  if Int.gcd a b = 1 then BruteForce.pointsAbove a b (BruteForce.horner w a * f) else []
+
+/-- The set bits of the word `x`, lowest first, bit `t` standing for the numerator `a0 + t`: while
+`x ≠ 0`, the points of the numerator `a0 + t` for the lowest set bit `t` of `x`
+(`Ratpoints.Sieve.ctz`) over the denominator `b` (`Ratpoints.Sieve.checkNum`, with the products
+`w` and the factor `f`) are appended to `out`, and that bit is cleared by `x &&& (x - 1)`. This is
+the loop `RP_EACH_SET_BIT` of the C code with the body that the extraction runs for each set bit.
+
+C: `sift.c:262-264`
+
+Deviation: bit `t` for the numerator `a0 + t`, where the step from one bit to the next is the
+stride `2^k` of the packing of the 2-adic class of `b` (stages E and F); the lowest set bit by the
+loop of `RP_CTZL` for a compiler without the builtin (`Ratpoints.Sieve.ctz`). -/
+def walkWord (w : List Int) (f : Int) (b : Nat) (x : UInt64) (a0 : Int)
+    (out : Array (Int × Int × Int)) : Id (Array (Int × Int × Int)) := do
+  let mut x := x
+  let mut out := out
+  while x != 0 do
+    let t ← ctz x
+    out := out ++ (checkNum w f b (a0 + t)).toArray
+    x := x &&& (x - 1)
+  return out
+
 /-! ### The run and the points at infinity -/
 
 /-- The points with the denominators `b = 1, …, H`, in increasing order: each denominator is
@@ -555,6 +600,33 @@ def pointsAtInfinity (c : List Int) (d : Nat) : List (Int × Int × Int) :=
       let v := Id.run (andRows (es.map fun e ↦ ⟨e.p, e.row b⟩) w0 n (Vector.replicate _ 0))
       (List.range (n * rbaPack)).all fun y ↦ (List.range 64).all fun t ↦
         bit v[y]! t == survives es b (rbaLength * w0 + 64 * y + t)
+
+-- The set bits of a word, lowest first: with `F(a, 1) = a ^ 2`, every numerator `a0 + t` of a set
+-- bit `t` gives its points, after the points already in the array; the numerators, each once, are
+-- those of the set bits in increasing order.
+#guard
+  let bit (x : UInt64) (t : Nat) : Bool := (x >>> t.toUInt64) &&& 1 == 1
+  ([0, 1, 0x8000000000000000, 0xf0f0f0f0f0f0f0f0, 0x123456789abcdef1] : List UInt64).all fun x ↦
+    let pts := (Id.run (walkWord [0, 0, 1] 1 1 x (-37) #[(5, 5, 5)])).toList
+    pts == (5, 5, 5) :: ((List.range 64).filter (bit x)).flatMap
+      (fun t : Nat ↦ checkNum [0, 0, 1] 1 1 (-37 + t)) &&
+    ((pts.drop 1).map (·.1)).eraseDups ==
+      ((List.range 64).filter (bit x)).map fun t : Nat ↦ -37 + (t : Int)
+
+-- The check of a numerator against the reference: the point `(129 : 3830 : 100)` on
+-- `y ^ 2 = x ^ 3 - 2` and none for the numerator 130, which has a common factor with 100; the point
+-- `(-1 : 0 : 1)` on `y ^ 2 = x ^ 3 + x ^ 2 + x + 1`, given once; and the numerators of the
+-- reference for a few curves and denominators.
+#guard
+  checkNum (BruteForce.scaledCoeffs [-2, 0, 0, 1] 3 100) 100 100 129 ==
+      [(129, 3830, 100), (129, -3830, 100)] &&
+    checkNum (BruteForce.scaledCoeffs [-2, 0, 0, 1] 3 100) 100 100 130 == [] &&
+    checkNum (BruteForce.scaledCoeffs [1, 1, 1, 1] 3 1) 1 1 (-1) == [(-1, 0, 1)] &&
+    ([([-2, 0, 0, 1], 3), ([1, 2, 3, 4, 5, 6, 7], 6), ([1, 0, 126, 0, 441], 4)] :
+        List (List Int × Nat)).all fun (c, d) ↦ [1, 2, 7, 21, 100].all fun b : Nat ↦
+      (BruteForce.numerators 130).flatMap
+          (checkNum (BruteForce.scaledCoeffs c d b) (if d % 2 = 1 then b else 1) b) ==
+        BruteForce.pointsOfDen c d b (BruteForce.numerators 130)
 
 -- The denominators `1, …, 130`: the affine points of `ratpoints '-2 0 0 1' 130 -q`.
 #guard (Id.run (sieveRun [-2, 0, 0, 1] 3 130

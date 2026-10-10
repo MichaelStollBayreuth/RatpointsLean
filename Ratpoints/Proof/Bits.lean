@@ -10,10 +10,11 @@ import Std.Internal.ForIn.Lemmas
 /-!
 # Lemmas on words
 
-Lemmas on vectors, arrays, ranges, integers and 64-bit words that the contracts of the bit arrays
-of words need and Lean core lacks, under their names in the namespaces of Lean core: the entries of
-a vector after `Vector.set!` and after a fold of `Vector.set!` over consecutive positions, the
-entries of an array made by a map over a range, the position of the cursor of a loop over a range,
+Lemmas on vectors, arrays, lists, ranges, integers and 64-bit words that the contracts of the bit
+arrays of words need and Lean core lacks, under their names in the namespaces of Lean core: the
+entries of a vector after `Vector.set!` and after a fold of `Vector.set!` over consecutive
+positions, the entries of an array made by a map over a range, the elements of `List.range n` that
+pass a test which fails from some position on, the position of the cursor of a loop over a range,
 the residues modulo `p` of the integers from `w0` on, the bits of the word `~~~0` and of the masks
 `~~~0 <<< n` and `~~~0 >>> n`, the lowest bit and the lowest set bit of a word, the word
 `x &&& (x - 1)`, which is `x` with its lowest set bit cleared, the bits of a word set one at a time,
@@ -30,6 +31,9 @@ with the words of a list.
 * `UInt64.getLsbD_fold_or_one_shiftLeft`: the bits of a word set one at a time.
 * `UInt64.getLsbD_shiftRight_or_shiftLeft`: the 64 bits from position `r` on of the 128 bits of two
   words, for `0 < r < 64`.
+* `List.filter_range_eq_of_le`, `List.filter_range_succ_eq_append`: the elements of `List.range n`
+  that pass a test which fails from `k` on are those of `List.range k`, followed by the next one
+  that passes it.
 * `Std.Legacy.Range.length_eq_of_toList_eq_append_cons`,
   `Std.Legacy.Range.lt_of_toList_eq_append_cons`: the position of the cursor of a loop over
   `[0:m]`.
@@ -75,6 +79,25 @@ theorem getElem!_map_range {α : Type u} [Inhabited α] (f : Nat → α) {n j : 
   simp [hj]
 
 end Array
+
+/-! ### Lists -/
+
+namespace List
+
+theorem filter_range_eq_of_le {p : Nat → Bool} {k n : Nat} (hk : k ≤ n)
+    (hz : ∀ j ≥ k, j < n → p j = false) :
+    (range n).filter p = (range k).filter p := by
+  obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hk
+  rw [range_add, filter_append, append_right_eq_self, filter_eq_nil_iff]
+  grind
+
+theorem filter_range_succ_eq_append {p : Nat → Bool} {k c : Nat} (hk : k ≤ c) (hc : p c = true)
+    (hz : ∀ j ≥ k, j < c → p j = false) :
+    (range (c + 1)).filter p = (range k).filter p ++ [c] := by
+  rw [range_succ, filter_append, filter_range_eq_of_le hk hz]
+  simp [hc]
+
+end List
 
 /-! ### Ranges -/
 
