@@ -604,6 +604,7 @@
     "sift.c:1083-1086": {
       "hash": "1076c7a6a4d2ebc1eb70a9bdbc4fac4acc08049bf9bc613e459ced0cd990c7c3",
       "owners": [
+        "Ratpoints.Sieve.andRows",
         "Ratpoints.Sieve.sieveDen"
       ]
     },
@@ -640,6 +641,7 @@
     "sift.c:291-312": {
       "hash": "9b658a503b23b59fea65cc895e62582926bc0d764153d6d25eb1f8901ddb4618",
       "owners": [
+        "Ratpoints.Sieve.andRows",
         "Ratpoints.Sieve.sieveDen"
       ]
     },
@@ -652,6 +654,7 @@
     "sift.c:405-431": {
       "hash": "cc3a901f1e547d66927258d76f73fba6addb5baa74bb78e3ed79e53a138c20b8",
       "owners": [
+        "Ratpoints.Sieve.andRows",
         "Ratpoints.Sieve.sieveDen"
       ]
     },
@@ -664,6 +667,7 @@
     "sift.c:943-1022": {
       "hash": "2bb3bd2bba07297d8dfa3fc26151897a65911e4ea0808c98c7f5f128ece07545",
       "owners": [
+        "Ratpoints.Sieve.andRows",
         "Ratpoints.Sieve.sieveDen"
       ]
     }

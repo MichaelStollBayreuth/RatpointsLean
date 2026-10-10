@@ -229,17 +229,17 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
 
 \begin{definition}[The first stage]\label{def:andRows}
   \uses{def:bitArrayOps, def:rows}
-  Proposed names: \lname{Ratpoints.Sieve.andRows}, \lname{Ratpoints.Sieve.andRows\_spec}.
+  \lean{Ratpoints.Sieve.andRows, Ratpoints.Sieve.andRows_spec}
+  \leanok
   Every word of the piece set to all ones, where ratpoints writes the 2-adic pattern of the class
   of $b$ (stage~E); then for each modulus $p$ with its row, for $r = (-w_0) \bmod p$, bit array $j$
   is and-ed with bit array $(w_0 + j) \bmod p$ of the row, in the three loops of the C code: $n$
   bit arrays of the row from $p - r$ on when $n < r$, and otherwise $r$ bit arrays from $p - r$
   on, then whole periods of $p$ from $0$, then the rest from $0$ (\csource{sift.c}{943}{1022}).
   Every modulus is applied here, those of the second and the third stage too
-  (\csource{sift.c}{291}{312}, \csource{sift.c}{405}{431}, \csource{sift.c}{1083}{1086},
-  \csource{sift.c}{1174}{1202}). Its contract: for every list of tables with $p > 0$ whose rows
-  for $b$ the moduli carry, bit $t$ of word $y < n \cdot \mathrm{rbaPack}$ is $t < 64$ and the
-  survivor test of $R w_0 + 64 y + t$.
+  (\csource{sift.c}{291}{312}, \csource{sift.c}{405}{431}, \csource{sift.c}{1083}{1086}). Its
+  contract: for every list of tables with $p > 0$ whose rows for $b$ the moduli carry, bit $t$ of
+  word $y < n \cdot \mathrm{rbaPack}$ is $t < 64$ and the survivor test of $R w_0 + 64 y + t$.
 \end{definition}
 
 \begin{definition}[The check of a numerator]\label{def:checkNum}

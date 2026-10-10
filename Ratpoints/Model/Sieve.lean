@@ -42,6 +42,8 @@ generates are computed here: the squares and the inverses by `Ratpoints.Sieve.sq
 * `Ratpoints.Sieve.Entry.row`, `Ratpoints.Sieve.Entry.rows`, `Ratpoints.Sieve.SieveSpec`: the row
   of a denominator as words, the rows of the residues, each made when first needed, and a modulus
   with its row for the denominator at hand.
+* `Ratpoints.Sieve.andRows`: the first stage over a piece of bit arrays, the rows of the moduli
+  and-ed into its words.
 -/
 
 @[expose] public section
@@ -351,6 +353,52 @@ structure SieveSpec where
   /-- The row: `p` bit arrays of `Ratpoints.rbaPack` words. -/
   row : Array UInt64
 
+/-! ### One piece -/
+
+/-- The first stage over a piece, the bit arrays with the word numbers `w0, …, w0 + n - 1`, which
+are the first `n` bit arrays of `surv`: their words are set to all ones; then for each modulus `p`
+of `specs` with its row and for `r = (-w0) mod p`, bit array `j` is and-ed with bit array
+`(w0 + j) mod p` of the row (`Ratpoints.Sieve.andBitArray`), in three loops: if `n < r`, with the
+`n` bit arrays of the row from `p - r` on, and otherwise with the `r` bit arrays from `p - r` on,
+then with whole periods of `p` bit arrays from `0`, then with the rest from `0`. The last bit
+array of `surv`, the place of the sentinel, is left as it is.
+
+C: `sift.c:291-312`, `sift.c:405-431`, `sift.c:943-1022`, `sift.c:1083-1086`
+
+Deviation: every modulus in the first stage, over every bit array, for the second stage, which
+and-s the rows of its moduli into the nonzero bit arrays until none is left, and the third stage,
+which tests one numerator at a time after the test for common factors, stops at the first prime
+that rejects it, skips the primes that divide `b`, and looks up the inverses of `b` when the first
+numerator of `b` reaches it (stage F); the first stage of the builds with one register per chunk,
+for the chunks of sixteen registers of the default build with the legs over the tail of a piece
+(stage F); all ones, written one word at a time from the first, where ratpoints writes the 2-adic
+pattern of the class of `b` into the bit arrays from the last (stage E); the row of the word
+number `w` at index `w mod p`, where ratpoints adds the offset of the packing and a multiple of
+`p` that keeps the index non-negative, and reduces by a multiplication when that is exact
+(stage F); indices for the pointers into the rows and into the survivors, and the number of whole
+periods and the rest computed before their loops. -/
+def andRows (specs : List SieveSpec) (w0 : Int) (n : Nat)
+    (surv : Vector UInt64 ((n + 1) * rbaPack)) : Id (Vector UInt64 ((n + 1) * rbaPack)) := do
+  let mut surv := surv
+  for i in [0:n * rbaPack] do
+    surv := surv.set! i (~~~0)
+  for s in specs do
+    let p := s.p
+    let r := ((-w0) % (p : Int)).toNat
+    if n < r then
+      for j in [0:n] do
+        surv := andBitArray surv j s.row (p - r + j)
+    else
+      for j in [0:r] do
+        surv := andBitArray surv j s.row (p - r + j)
+      let left := n - r
+      for k in [0:left / p] do
+        for i in [0:p] do
+          surv := andBitArray surv (r + k * p + i) s.row i
+      for i in [0:left % p] do
+        surv := andBitArray surv (r + left / p * p + i) s.row i
+  return surv
+
 /-! ### The run and the points at infinity -/
 
 /-- The points with the denominators `b = 1, …, H`, in increasing order: each denominator is
@@ -494,6 +542,19 @@ def pointsAtInfinity (c : List Int) (d : Nat) : List (Int × Int × Int) :=
 #guard
   let e := examinePrime [1, 2, 3, 4, 5, 6, 7] 6 7
   e.rows.size == 7 && (List.range 7).all fun r ↦ (e.rows[r]!).get == e.row r
+
+-- The first stage against the survivor test: bit `t` of word `y` of a piece is the survivor test
+-- of the numerator `rbaLength w0 + 64 y + t`, for pieces from below and above zero with the
+-- moduli 3, 5 and 7, and with `n < r`, `r = 0`, and whole periods and a rest after the first `r`
+-- bit arrays.
+#guard
+  let bit (w : UInt64) (t : Nat) : Bool := (w >>> t.toUInt64) &&& 1 == 1
+  let es := [3, 5, 7].map (examinePrime [1, 2, 3, 4, 5, 6, 7] 6)
+  ([(-9, 1), (-9, 12), (-35, 4), (6, 2), (15, 17)] : List (Int × Nat)).all fun (w0, n) ↦
+    [1, 10].all fun b ↦
+      let v := Id.run (andRows (es.map fun e ↦ ⟨e.p, e.row b⟩) w0 n (Vector.replicate _ 0))
+      (List.range (n * rbaPack)).all fun y ↦ (List.range 64).all fun t ↦
+        bit v[y]! t == survives es b (rbaLength * w0 + 64 * y + t)
 
 -- The denominators `1, …, 130`: the affine points of `ratpoints '-2 0 0 1' 130 -q`.
 #guard (Id.run (sieveRun [-2, 0, 0, 1] 3 130

@@ -5,16 +5,20 @@ Authors: Michael Stoll
 -/
 module
 
+import Std.Internal.ForIn.Lemmas
+
 /-!
 # Lemmas on words
 
-Lemmas on vectors, arrays and 64-bit words that the contracts of the bit arrays of words need and
-Lean core lacks, under their names in the namespaces of Lean core: the entries of a vector after
-`Vector.set!` and after a fold of `Vector.set!` over consecutive positions, the entries of an array
-made by a map over a range, the bits of the masks `~~~0 <<< n` and `~~~0 >>> n`, the lowest bit
-and the lowest set bit of a word, the word `x &&& (x - 1)`, which is `x` with its lowest set bit
-cleared, the bits of a word set one at a time, and the 64 bits of two words from a position within
-the first.
+Lemmas on vectors, arrays, ranges, integers and 64-bit words that the contracts of the bit arrays
+of words need and Lean core lacks, under their names in the namespaces of Lean core: the entries of
+a vector after `Vector.set!` and after a fold of `Vector.set!` over consecutive positions, the
+entries of an array made by a map over a range, the position of the cursor of a loop over a range,
+the residues modulo `p` of the integers from `w0` on, the bits of the word `~~~0` and of the masks
+`~~~0 <<< n` and `~~~0 >>> n`, the lowest bit and the lowest set bit of a word, the word
+`x &&& (x - 1)`, which is `x` with its lowest set bit cleared, the bits of a word set one at a time,
+the 64 bits of two words from a position within the first, and the bits of a word and-ed in turn
+with the words of a list.
 
 ## Main statements
 
@@ -26,6 +30,12 @@ the first.
 * `UInt64.getLsbD_fold_or_one_shiftLeft`: the bits of a word set one at a time.
 * `UInt64.getLsbD_shiftRight_or_shiftLeft`: the 64 bits from position `r` on of the 128 bits of two
   words, for `0 < r < 64`.
+* `Std.Legacy.Range.length_eq_of_toList_eq_append_cons`,
+  `Std.Legacy.Range.lt_of_toList_eq_append_cons`: the position of the cursor of a loop over
+  `[0:m]`.
+* `Int.toNat_add_emod_of_lt`, `Int.toNat_add_add_emod`: the residues modulo `p` of `w0 + j` before
+  and from the first multiple of `p` from `w0` on.
+* `UInt64.getLsbD_foldl_and`: the bits of a word and-ed in turn with the words of a list.
 
 ## Implementation notes
 
@@ -66,9 +76,64 @@ theorem getElem!_map_range {α : Type u} [Inhabited α] (f : Nat → α) {n j : 
 
 end Array
 
+/-! ### Ranges -/
+
+namespace Std.Legacy.Range
+
+theorem length_eq_of_toList_eq_append_cons {m cur : Nat} {pref suff : List Nat}
+    (h : ForIn.toList [0:m] = pref ++ cur :: suff) : pref.length = cur := by
+  simp only [Std.Internal.ForIn.toList_range, List.range'_eq_append_iff] at h
+  obtain ⟨k, -, rfl, h⟩ := h
+  simpa using (List.range'_eq_cons_iff.mp h.symm).1
+
+theorem lt_of_toList_eq_append_cons {m cur : Nat} {pref suff : List Nat}
+    (h : ForIn.toList [0:m] = pref ++ cur :: suff) : cur < m := by
+  have : cur ∈ ForIn.toList [0:m] := by simp [h]
+  simpa using this
+
+end Std.Legacy.Range
+
+/-! ### Integers -/
+
+namespace Int
+
+/-- Before the first multiple of `p` from `w0` on: for `r = (-w0) mod p` and `j < r`, the residue of
+`w0 + j` modulo `p` is `p - r + j`. -/
+theorem toNat_add_emod_of_lt {w0 : Int} {p j : Nat} (hp : 0 < p)
+    (hj : j < ((-w0) % (p : Int)).toNat) :
+    ((w0 + j) % (p : Int)).toNat = p - ((-w0) % (p : Int)).toNat + j := by
+  have := emod_nonneg (-w0) (b := p) (by lia)
+  have := emod_lt_of_pos (-w0) (b := p) (by lia)
+  have := mul_ediv_add_emod (-w0) p
+  have key : w0 + j = (p - (-w0) % p + j) + p * (-((-w0) / p) - 1) := by
+    rw [Int.mul_sub, Int.mul_neg, Int.mul_one]
+    lia
+  rw [key, add_mul_emod_self_left, emod_eq_of_lt (by lia) (by lia)]
+  lia
+
+/-- From the first multiple of `p` from `w0` on: for `r = (-w0) mod p` and `i < p`, the residue of
+`w0 + r + k p + i` modulo `p` is `i`. -/
+theorem toNat_add_add_emod {w0 : Int} {p i : Nat} (k : Nat) (hi : i < p) :
+    ((w0 + ((((-w0) % (p : Int)).toNat + k * p + i : Nat) : Int)) % (p : Int)).toNat = i := by
+  have := mul_ediv_add_emod (-w0) p
+  have hR : (((-w0) % (p : Int)).toNat : Int) = (-w0) % p :=
+    toNat_of_nonneg (emod_nonneg _ (by lia))
+  have key : w0 + ((((-w0) % (p : Int)).toNat + k * p + i : Nat) : Int) =
+      i + p * (k - (-w0) / p) := by
+    push_cast
+    rw [hR, Int.mul_sub, Int.mul_comm (p : Int) k]
+    lia
+  rw [key, add_mul_emod_self_left, emod_eq_of_lt (by lia) (by lia)]
+  simp
+
+end Int
+
 /-! ### Words -/
 
 namespace UInt64
+
+theorem getLsbD_allOnes (t : Nat) : (~~~0 : UInt64).toBitVec.getLsbD t = decide (t < 64) := by
+  simp only [UInt64.toBitVec_not, UInt64.toBitVec_zero, BitVec.not_zero, BitVec.getLsbD_allOnes]
 
 theorem getLsbD_allOnes_shiftLeft (n : UInt64) (t : Nat) :
     ((~~~0 : UInt64) <<< n).toBitVec.getLsbD t =
@@ -139,6 +204,14 @@ theorem getLsbD_shiftRight_or_shiftLeft {r : Nat} (hr0 : r ≠ 0) (hr : r < 64) 
         else y.toBitVec.getLsbD (r + t - 64)) := by
   simp [BitVec.ushiftRight_eq', BitVec.shiftLeft_eq']
   grind
+
+/-- The bits of a word and-ed in turn with the words `f a` of the entries `a` of a list. -/
+theorem getLsbD_foldl_and {α : Type u} (f : α → UInt64) (l : List α) (init : UInt64) (t : Nat) :
+    (l.foldl (fun acc a ↦ acc &&& f a) init).toBitVec.getLsbD t =
+      (init.toBitVec.getLsbD t && l.all fun a ↦ (f a).toBitVec.getLsbD t) := by
+  induction l generalizing init with
+  | nil => simp
+  | cons a l ih => simp [ih, Bool.and_assoc]
 
 end UInt64
 
