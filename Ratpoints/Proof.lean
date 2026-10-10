@@ -7,6 +7,7 @@ module
 
 public import Ratpoints.Proof.BruteForce
 public import Ratpoints.Proof.Params
+public import Ratpoints.Proof.Sieve
 public import Ratpoints.Proof.Tables
 
 /-!

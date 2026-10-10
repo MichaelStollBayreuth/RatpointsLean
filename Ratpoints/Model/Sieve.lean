@@ -9,11 +9,11 @@ module
 # The plain sieve
 
 The components of the plain sieve, each in the simplest form of its place in the C function
-`find_points_work_1`: the table of a prime (`Ratpoints.Sieve.examinePrime`) and the rows of a
-denominator (`Ratpoints.Sieve.Entry.admits`), whose test of a numerator
-(`Ratpoints.Sieve.survives`) is the interface between the sieve and the check. Every row lets every
-point through. The tables that the build of ratpoints generates (the squares, the inverses, the row
-of `0`) are Lean functions here.
+`find_points_work_1`: the table of a prime (`Ratpoints.Sieve.examinePrime`), the rows of a
+denominator (`Ratpoints.Sieve.Entry.admits`), whose test of a numerator (`Ratpoints.Sieve.survives`)
+is the interface between the sieve and the check, and the sieve of one denominator with one Boolean
+per numerator (`Ratpoints.Sieve.sieveDen`). Every row lets every point through. The tables that the
+build of ratpoints generates (the squares, the inverses, the row of `0`) are Lean functions here.
 
 ## Main definitions
 
@@ -21,6 +21,7 @@ of `0`) are Lean functions here.
   modulo `p`.
 * `Ratpoints.Sieve.examinePrime`: the table of a prime.
 * `Ratpoints.Sieve.Entry.admits`, `Ratpoints.Sieve.survives`: the rows of a denominator.
+* `Ratpoints.Sieve.sieveDen`: the sieve of one denominator.
 -/
 
 @[expose] public section
@@ -127,6 +128,32 @@ def Entry.admits (e : Entry) (b : Nat) (a : Int) : Bool :=
 numerator, is the interface between the sieve and the check. -/
 def survives (entries : List Entry) (b : Nat) (a : Int) : Bool := entries.all (·.admits b a)
 
+/-! ### The sieve -/
+
+/-- The sieve of the denominator `b`: an array of `2H + 1` Booleans, one for each numerator
+`a = i - H`, all true at the start; for each table of `entries` in turn, every entry is replaced
+by its conjunction with the row of `b` at `a` (`Ratpoints.Sieve.Entry.admits`).
+
+C: `sift.c:291-312`, `sift.c:405-431`, `sift.c:943-1022`, `sift.c:1030-1041`, `sift.c:1083-1086`,
+`sift.c:1184-1202`
+
+Deviation: one Boolean per numerator, for the bit arrays of words, the pieces of the numerator range
+and the masks at their ends (stage C2); every numerator from `-H` to `H`, for the search region
+(stage H) and the 2-adic classes (stages E and F); every table applied to every numerator, one after
+the other, for the stages of ratpoints with their composite moduli, their packing and their
+correction during the run (stage F): the second stage stops when no bit is left, and the third
+tests one numerator at a time, only those that pass the test for common factors, stops at the first
+prime that rejects it and skips the primes that divide `b`, with the inverses of `b` that
+`fill_checks` looks up when the first such numerator of `b` reaches the stage; the cited lines are
+the first stage of the build with 64-bit bit arrays, which the default build does in chunks of
+registers, its second stage with the masks at the ends of the range, and its third stage. -/
+def sieveDen (H b : Nat) (entries : List Entry) : Id (Vector Bool (2 * H + 1)) := do
+  let mut surv := Vector.replicate (2 * H + 1) true
+  for e in entries do
+    for h : i in [0:2 * H + 1] do
+      surv := surv.set i (surv[i] && e.admits b ((i : Int) - H))
+  return surv
+
 /-! ### Examples -/
 
 -- The rows of 3, 5, 7, 11 and 13 in the tables `squares` and `inverses` that the build of
@@ -153,6 +180,12 @@ def survives (entries : List Entry) (b : Nat) (a : Int) : Bool := entries.all (�
 -- The row of `b = 3` modulo 5 admits `a` when `f(a / 3)` is a square modulo 5.
 #guard (List.range 5).map (fun a : Nat ↦ (examinePrime [1, 0, 1] 2 5).admits 3 a) ==
   [true, true, false, false, true]
+
+-- The sieve of a denominator is the survivor test of the numerators.
+#guard
+  let es := [3, 5, 7].map (examinePrime [1, 2, 3, 4, 5, 6, 7] 6)
+  (Id.run (sieveDen 20 7 es)).toList ==
+    (List.range 41).map fun i : Nat ↦ survives es 7 ((i : Int) - 20)
 
 end Sieve
 

@@ -246,6 +246,42 @@
       "owners": [
         "Ratpoints.Sieve.Entry"
       ]
+    },
+    "sift.c:1030-1041": {
+      "hash": "0dc0be2dcaafb97068f868bd12906bc1890d0f50db01213fc06b00e6907db364",
+      "owners": [
+        "Ratpoints.Sieve.sieveDen"
+      ]
+    },
+    "sift.c:1083-1086": {
+      "hash": "1076c7a6a4d2ebc1eb70a9bdbc4fac4acc08049bf9bc613e459ced0cd990c7c3",
+      "owners": [
+        "Ratpoints.Sieve.sieveDen"
+      ]
+    },
+    "sift.c:1184-1202": {
+      "hash": "7646b5a34a2e60eacf9b84fb89ee2f35d31c56ff58dab4996bfa311b5efffde5",
+      "owners": [
+        "Ratpoints.Sieve.sieveDen"
+      ]
+    },
+    "sift.c:291-312": {
+      "hash": "9b658a503b23b59fea65cc895e62582926bc0d764153d6d25eb1f8901ddb4618",
+      "owners": [
+        "Ratpoints.Sieve.sieveDen"
+      ]
+    },
+    "sift.c:405-431": {
+      "hash": "cc3a901f1e547d66927258d76f73fba6addb5baa74bb78e3ed79e53a138c20b8",
+      "owners": [
+        "Ratpoints.Sieve.sieveDen"
+      ]
+    },
+    "sift.c:943-1022": {
+      "hash": "2bb3bd2bba07297d8dfa3fc26151897a65911e4ea0808c98c7f5f128ece07545",
+      "owners": [
+        "Ratpoints.Sieve.sieveDen"
+      ]
     }
   },
   "citations": {
@@ -308,9 +344,13 @@
     "rp-private.h:321-323": "cd9db85dc97c2ac45dfa03d7b547b886840b5151af0bbecabab8dfbe1402c54c",
     "rp-private.h:325-361": "ff27dd12c1efab74f34738e15531b3844655220d5210dd2bdcb0734fb2053a31",
     "rp-private.h:542-555": "35545fa2f80164462a2e92e543f56f9ceace7fcfccb179d0f60ba51292630ae1",
+    "sift.c:291-312": "9b658a503b23b59fea65cc895e62582926bc0d764153d6d25eb1f8901ddb4618",
     "sift.c:318-343": "eb81df87599d191f3bba67e917a79cd1831cd70ff41b281ebfcb3b70a5acfda3",
+    "sift.c:405-431": "cc3a901f1e547d66927258d76f73fba6addb5baa74bb78e3ed79e53a138c20b8",
     "sift.c:438-446": "d7ab90550e0c8fecc0a652dd8131274e07d4a0966cff52e6f7ab24df41fffe5f",
     "sift.c:943-1022": "2bb3bd2bba07297d8dfa3fc26151897a65911e4ea0808c98c7f5f128ece07545",
+    "sift.c:1030-1041": "0dc0be2dcaafb97068f868bd12906bc1890d0f50db01213fc06b00e6907db364",
+    "sift.c:1083-1086": "1076c7a6a4d2ebc1eb70a9bdbc4fac4acc08049bf9bc613e459ced0cd990c7c3",
     "sift.c:1184-1202": "7646b5a34a2e60eacf9b84fb89ee2f35d31c56ff58dab4996bfa311b5efffde5",
     "sift.c:1213-1296": "8f7b91e4e9a36faeba14120dd623298fa57cd2f19ff1ff1bdf0ee74f60113c3e",
     "sturm.c:120-143": "725fb9bdc1a277ac79f4b8d2c7fb1b9eed69c8cf066e703bbb4fe3a42f0f4228"

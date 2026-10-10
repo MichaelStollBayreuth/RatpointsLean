@@ -219,13 +219,16 @@ lemmas.
 
 \begin{definition}[The sieve of one denominator]\label{def:sieveDen}
   \uses{def:admits}
-  Proposed names: \lname{Ratpoints.Sieve.sieveDen}, \lname{Ratpoints.Sieve.sieveDen\_spec}.
+  \lean{Ratpoints.Sieve.sieveDen, Ratpoints.Sieve.sieveDen_spec}
+  \leanok
   An array of $2H + 1$ Booleans, one per numerator $a = i - H$, all true at the start; for each
   modulus in turn, every entry is replaced by its conjunction with the row of $b$ at $a$. Its
   contract: entry $i$ is the survivor test of the numerator $i - H$. These are the ANDs of the
   first stage of ratpoints in the build with 64-bit bit arrays (\csource{sift.c}{943}{1022}) and
-  of its second stage (\csource{sift.c}{1184}{1202}); the default build does the first in chunks
-  of registers.
+  of its second stage (\csource{sift.c}{1083}{1086}, \csource{sift.c}{1184}{1202}), with the
+  masks at the ends of the range (\csource{sift.c}{1030}{1041}), and the test of its third stage
+  (\csource{sift.c}{291}{312}, \csource{sift.c}{405}{431}); the default build does the first
+  stage in chunks of registers.
 \end{definition}
 
 \begin{definition}[The survivors of one denominator]\label{def:checkDen}
@@ -449,7 +452,7 @@ Three checks, made while this chapter was written:
   \item a prototype in Lean of the model of this chapter and of all its proofs: the model agrees
     with the brute-force reference on examples, among them the zero polynomial, a polynomial of
     degree $0$, no moduli and all 53 primes; the three contracts go through with \verb|vcgen| in
-    at most 12 lines each and under half a second each (a rewrite of the entries of the array
+    at most 12 lines each and in under a second each (a rewrite of the entries of the array
     before \verb|grind|, which otherwise times out on the bound proofs that \verb|vcgen| builds for
     \verb|Vector.set|); the soundness of the rows, the equation with the reference and its
     corollaries take the standard axioms only, with no proof longer than 12 lines;

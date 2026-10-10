@@ -9,6 +9,7 @@ public import Ratpoints.Model.Sieve
 public import Ratpoints.Proof
 public import Ratpoints.Proof.BruteForce
 public import Ratpoints.Proof.Params
+public import Ratpoints.Proof.Sieve
 public import Ratpoints.Proof.Tables
 public import Ratpoints.Spec
 public import Ratpoints.Spec.Basic

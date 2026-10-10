@@ -10,7 +10,7 @@ The model is checked against ratpoints v3.1.1 (commit \texttt{1a998538dfa8}). Th
 file & lines of code & modelled & excluded & not yet recorded \\
 \hline
 \texttt{find\_points.c} & 3244 & 61 & 0 & 3183 \\
-\texttt{sift.c} & 820 & 0 & 0 & 820 \\
+\texttt{sift.c} & 820 & 123 & 0 & 697 \\
 \texttt{init.c} & 302 & 155 & 8 & 139 \\
 \texttt{sturm.c} & 215 & 0 & 0 & 215 \\
 \texttt{rp-private.h} & 282 & 43 & 0 & 239 \\
@@ -20,7 +20,7 @@ file & lines of code & modelled & excluded & not yet recorded \\
 \texttt{gen\_init\_sieve\_h.c} & 26 & 13 & 0 & 13 \\
 \texttt{main.c} & 779 & 195 & 0 & 584 \\
 \hline
-total & 5883 & 545 & 8 & 5330 \\
+total & 5883 & 668 & 8 & 5207 \\
 \end{tabular}
 \end{center}
 
@@ -49,7 +49,25 @@ total & 5883 & 545 & 8 & 5330 \\
 
 \section*{\texttt{sift.c}}
 \begin{itemize}
-\item \csource{sift.c}{30}{1305}: not yet recorded (820 lines of code)
+\item \csource{sift.c}{30}{264}: not yet recorded (113 lines of code)
+\item \csource{sift.c}{291}{312}: modelled by \lname{Ratpoints.Sieve.sieveDen}
+  (deviation of \lname{Ratpoints.Sieve.sieveDen}: one Boolean per numerator, for the bit arrays of words, the pieces of the numerator range and the masks at their ends (stage C2); every numerator from \texttt{-{}H} to \texttt{H}, for the search region (stage H) and the 2-adic classes (stages E and F); every table applied to every numerator, one after the other, for the stages of ratpoints with their composite moduli, their packing and their correction during the run (stage F): the second stage stops when no bit is left, and the third tests one numerator at a time, only those that pass the test for common factors, stops at the first prime that rejects it and skips the primes that divide \texttt{b}, with the inverses of \texttt{b} that \texttt{fill\_checks} looks up when the first such numerator of \texttt{b} reaches the stage; the cited lines are the first stage of the build with 64-bit bit arrays, which the default build does in chunks of registers, its second stage with the masks at the ends of the range, and its third stage.)
+\item \csource{sift.c}{318}{389}: not yet recorded (51 lines of code)
+\item \csource{sift.c}{405}{431}: modelled by \lname{Ratpoints.Sieve.sieveDen}
+  (deviation of \lname{Ratpoints.Sieve.sieveDen}: one Boolean per numerator, for the bit arrays of words, the pieces of the numerator range and the masks at their ends (stage C2); every numerator from \texttt{-{}H} to \texttt{H}, for the search region (stage H) and the 2-adic classes (stages E and F); every table applied to every numerator, one after the other, for the stages of ratpoints with their composite moduli, their packing and their correction during the run (stage F): the second stage stops when no bit is left, and the third tests one numerator at a time, only those that pass the test for common factors, stops at the first prime that rejects it and skips the primes that divide \texttt{b}, with the inverses of \texttt{b} that \texttt{fill\_checks} looks up when the first such numerator of \texttt{b} reaches the stage; the cited lines are the first stage of the build with 64-bit bit arrays, which the default build does in chunks of registers, its second stage with the masks at the ends of the range, and its third stage.)
+\item \csource{sift.c}{438}{941}: not yet recorded (374 lines of code)
+\item \csource{sift.c}{943}{1022}: modelled by \lname{Ratpoints.Sieve.sieveDen}
+  (deviation of \lname{Ratpoints.Sieve.sieveDen}: one Boolean per numerator, for the bit arrays of words, the pieces of the numerator range and the masks at their ends (stage C2); every numerator from \texttt{-{}H} to \texttt{H}, for the search region (stage H) and the 2-adic classes (stages E and F); every table applied to every numerator, one after the other, for the stages of ratpoints with their composite moduli, their packing and their correction during the run (stage F): the second stage stops when no bit is left, and the third tests one numerator at a time, only those that pass the test for common factors, stops at the first prime that rejects it and skips the primes that divide \texttt{b}, with the inverses of \texttt{b} that \texttt{fill\_checks} looks up when the first such numerator of \texttt{b} reaches the stage; the cited lines are the first stage of the build with 64-bit bit arrays, which the default build does in chunks of registers, its second stage with the masks at the ends of the range, and its third stage.)
+\item \csource{sift.c}{1024}{1024}: not yet recorded (1 lines of code)
+\item \csource{sift.c}{1030}{1041}: modelled by \lname{Ratpoints.Sieve.sieveDen}
+  (deviation of \lname{Ratpoints.Sieve.sieveDen}: one Boolean per numerator, for the bit arrays of words, the pieces of the numerator range and the masks at their ends (stage C2); every numerator from \texttt{-{}H} to \texttt{H}, for the search region (stage H) and the 2-adic classes (stages E and F); every table applied to every numerator, one after the other, for the stages of ratpoints with their composite moduli, their packing and their correction during the run (stage F): the second stage stops when no bit is left, and the third tests one numerator at a time, only those that pass the test for common factors, stops at the first prime that rejects it and skips the primes that divide \texttt{b}, with the inverses of \texttt{b} that \texttt{fill\_checks} looks up when the first such numerator of \texttt{b} reaches the stage; the cited lines are the first stage of the build with 64-bit bit arrays, which the default build does in chunks of registers, its second stage with the masks at the ends of the range, and its third stage.)
+\item \csource{sift.c}{1043}{1082}: not yet recorded (19 lines of code)
+\item \csource{sift.c}{1083}{1086}: modelled by \lname{Ratpoints.Sieve.sieveDen}
+  (deviation of \lname{Ratpoints.Sieve.sieveDen}: one Boolean per numerator, for the bit arrays of words, the pieces of the numerator range and the masks at their ends (stage C2); every numerator from \texttt{-{}H} to \texttt{H}, for the search region (stage H) and the 2-adic classes (stages E and F); every table applied to every numerator, one after the other, for the stages of ratpoints with their composite moduli, their packing and their correction during the run (stage F): the second stage stops when no bit is left, and the third tests one numerator at a time, only those that pass the test for common factors, stops at the first prime that rejects it and skips the primes that divide \texttt{b}, with the inverses of \texttt{b} that \texttt{fill\_checks} looks up when the first such numerator of \texttt{b} reaches the stage; the cited lines are the first stage of the build with 64-bit bit arrays, which the default build does in chunks of registers, its second stage with the masks at the ends of the range, and its third stage.)
+\item \csource{sift.c}{1088}{1174}: not yet recorded (61 lines of code)
+\item \csource{sift.c}{1184}{1202}: modelled by \lname{Ratpoints.Sieve.sieveDen}
+  (deviation of \lname{Ratpoints.Sieve.sieveDen}: one Boolean per numerator, for the bit arrays of words, the pieces of the numerator range and the masks at their ends (stage C2); every numerator from \texttt{-{}H} to \texttt{H}, for the search region (stage H) and the 2-adic classes (stages E and F); every table applied to every numerator, one after the other, for the stages of ratpoints with their composite moduli, their packing and their correction during the run (stage F): the second stage stops when no bit is left, and the third tests one numerator at a time, only those that pass the test for common factors, stops at the first prime that rejects it and skips the primes that divide \texttt{b}, with the inverses of \texttt{b} that \texttt{fill\_checks} looks up when the first such numerator of \texttt{b} reaches the stage; the cited lines are the first stage of the build with 64-bit bit arrays, which the default build does in chunks of registers, its second stage with the masks at the ends of the range, and its third stage.)
+\item \csource{sift.c}{1204}{1305}: not yet recorded (78 lines of code)
 \end{itemize}
 
 \section*{\texttt{init.c}}
