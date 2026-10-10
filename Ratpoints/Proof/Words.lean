@@ -708,7 +708,7 @@ theorem scanPiece_spec (w : List Int) (f : Int) (b : Nat) (w0 : Int) (n : Nat)
         rbaLength * w0 + k).filter keep).flatMap (checkNum w f b) ⦄ :=
   ⟨fun _ keep hkeep ↦ by
     rw [(scanPiece_spec_getLsbD w f b w0 n surv).le_wp trivial,
-      UInt64.flatMap_range_map_filter_getLsbD hkeep, rbaLength_eq, Nat.mul_left_comm]⟩
+      List.flatMap_range_map_filter hkeep, rbaLength_eq, Nat.mul_left_comm]⟩
 
 /-! ### The masks and one piece -/
 
