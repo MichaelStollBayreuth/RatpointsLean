@@ -84,10 +84,10 @@ status:
     the contracts of its loops proved with the program logic of Lean core for every width of the
     bit arrays, and the plain sieve of stage C1 kept as its reference; findPoints and
     ratpoints-lean run it, and the main theorems keep their statements; the differential tests
-    search up to height 30000, and the runs of test4.sh up to height 100000 form a suite run
-    locally. Next: stage D, the set-up of the search; the introduction of the blueprint lists the
-    later stages (the set-up, the denominator and numerator sides, the order and protocol, the
-    search region and the Sturm step).
+    search up to height 30000, and the runs of test4.sh above that height, up to 100000, form a
+    suite run locally. Next: stage D, the set-up of the search; the introduction of the blueprint
+    lists the later stages (the set-up, the denominator and numerator sides, the order and
+    protocol, the search region and the Sturm step).
   sorry_count: 0
   sorry_in_definitions: 0
   axioms: ["propext", "Classical.choice", "Quot.sound"]
@@ -136,7 +136,11 @@ automation:
         style lint, a layout check of the imports and of the restrictions on the model, the
         correspondence check against the C code at the pinned commit, the blueprint's
         declaration check, and a diff of the types of all declarations), with sub-agents for
-        research and review.
+        research, for drafts of the Lean code of each item of a stage (written in a separate copy
+        and transplanted into the repository after review, through the verification chain), and
+        for the review of the C ranges and of the code; at the end of each stage the project is
+        also built with other values of the compile-time constants of the C code, to check that no
+        proof depends on them.
       cost:
         wall_time: ""
         spend_usd: "subscription-based usage"
@@ -155,11 +159,11 @@ automation:
 # fidelity
 fidelity:
   divergences: >
-    By design: a C long is an Int, with the obligation that its value lies in the range of the C
-    type; a pointer is an index; the SIMD operations are the word operations they implement; the
-    threads are replaced by the sequential order of the blocks; the heuristics that choose the
-    sieving parameters are not modelled, since the theorems quantify over every well-formed
-    choice; the search intervals have exact rational ends. Where the library function
+    By design: a C long is an Int or a Nat, with the obligation that its value lies in the range
+    of the C type; a pointer is an index; the SIMD operations are the word operations they
+    implement; the threads are replaced by the sequential order of the blocks; the heuristics that
+    choose the sieving parameters are not modelled, since the theorems quantify over every
+    well-formed choice; the search intervals have exact rational ends. Where the library function
     find_points and the command-line program differ (the order of the checks on the input), the
     model follows the program. Each deviation is recorded with its component in the
     correspondence record.

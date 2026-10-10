@@ -47,7 +47,7 @@ lake exe ratpoints-lean '-2 0 0 1' 130       # the points of height at most 130 
 python3 scripts/check_layout.py              # imports, the restrictions on the model, axioms
 python3 scripts/correspondence.py check      # the correspondence with the C code at the pin
 python3 scripts/difftest.py                  # ratpoints-lean against the C program
-python3 scripts/difftest.py --suites test4high   # the runs of test4.sh up to height 100000
+python3 scripts/difftest.py --suites test4high   # the runs of test4.sh above height 30000
 ```
 
 `scripts/correspondence.py` and `scripts/difftest.py` read the C code and the test suites from a
@@ -64,8 +64,7 @@ coefficients (constant term first), the height bound and the options as ratpoint
 checks, messages and exit statuses, and prints the points of height at most `H` on
 `y² = a_n xⁿ + ⋯ + a_0` as ratpoints does with `-q`: one line `(x : y : z)` per point. It finds
 the points by the sieve on bit arrays of words, whose parameters the options `-p -n -N -P -F -j -J`
-set; it
-accepts `-q`, `-v` and the other options that tune the sieve of ratpoints, checking their
+set; it accepts `-q`, `-v` and the other options that tune the sieve of ratpoints, checking their
 arguments, but ignores them; it answers the other options of ratpoints with the exit status 12;
 and for now it does not refuse a polynomial that is not squarefree.
 

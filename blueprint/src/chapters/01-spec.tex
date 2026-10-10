@@ -349,18 +349,19 @@ that they mirror:
 
 \section{The differential tests of stage~B}
 
-The script \verb|scripts/difftest.py| compares \verb|ratpoints-lean| with the C program built at
-the pin and with its recorded outputs, in six suites in stage~B (stage~C1 adds two,
-Section~\ref{sec:sieveCli}, and stage~C2 raises the heights, Section~\ref{sec:wordsCli}):
+The script \verb|scripts/difftest.py| compares \verb|ratpoints-lean| with the C program built at the
+pin and with its recorded outputs, in six suites in stage~B (stage~C1 adds two,
+Section~\ref{sec:sieveCli}, and stage~C2 raises the largest height to $30000$ and adds the suite
+\verb|test4high|, run locally, Section~\ref{sec:wordsCli}):
 \begin{itemize}
-  \item \verb|test4.sh| against \verb|testbase4|, split at the \verb|#| header lines (five of
-    which are glued to the end of the preceding output line): 533 of its 582 runs; the others
-    are 21 whose output the script filters, 9 that the C program refuses as not squarefree,
-    which wait for stage~D, and 19 with heights from $30000$ to $100000$, which the bit arrays of
-    stage~C2 run (Section~\ref{sec:wordsCli});
+  \item \verb|test4.sh| against \verb|testbase4|, split at the \verb|#| header lines (five of which
+    are glued to the end of the preceding output line): 539 of its 582 runs; the others are 21 whose
+    output the script filters, 9 that the C program refuses as not squarefree, which wait for
+    stage~D, and 13 with heights from $40000$ to $100000$, which the suite \verb|test4high| compares
+    (Section~\ref{sec:wordsCli});
   \item \verb|test3.sh| invocation by invocation against the C program, since it has no announce
-    lines: 13 of its 21 runs (5 have filtered outputs, one is a refusal, and two have heights above
-    the largest height of the tests, $5000$);
+    lines: 14 of its 21 runs (5 have filtered outputs, one is a refusal, and one has a height above
+    the largest height of the tests, $30000$);
   \item the curves of \verb|testdata.h|, \verb|testdata-many.h| and \verb|testdata-degrees.h|,
     read from the pinned checkout, at a reduced height $h$ ($100$ by default): the C program run
     at height $h$ prints exactly the reference lines of \verb|testbase*| restricted to

@@ -193,7 +193,7 @@ Mathlib has the identity behind this in the form of polynomials, \verb|Polynomia
 the sum form, with its few lines of proof, suits the definition of $F_c$.
 
 \begin{lemma}[The rows let every point through]\label{lem:admits_examinePrime}
-  \uses{def:admits, def:binaryForm}
+  \uses{def:admits, def:binaryForm, def:bruteForce}
   \lean{Ratpoints.Sieve.admits_examinePrime_of_sq_eq}
   \leanok
   Let $p$ be a prime, $b$ a natural number, $\gcd(a, b) = 1$ and $y^2 = F_c(a, b)$. Then the row
@@ -215,17 +215,16 @@ sieve's denominators and the primes of the table need no side conditions.
 
 \section{The sieve}\label{sec:sieve}
 
-The model follows the rules of the translation throughout. A C \verb|long| is an \verb|Int|; the
-obligation that its value lies in the range of the type comes with the faithful components that
-compute in \verb|long|s (D, F). The remainder \verb|mod()| of the C code is Lean's Euclidean
-\verb|%|. The tables that the build of ratpoints generates (the squares, the inverses, the row of
-$0$) are Lean functions with lemmas that they compute what they claim, checked against the
+The model follows the rules of the translation throughout. A C \verb|long| is an \verb|Int| or a
+\verb|Nat|; the obligation that its value lies in the range of the type comes with the faithful
+components that compute in \verb|long|s (D, F). The remainder \verb|mod()| of the C code is Lean's
+Euclidean \verb|%|. The tables that the build of ratpoints generates (the squares, the inverses, the
+row of $0$) are Lean functions with lemmas that they compute what they claim, checked against the
 generated header by \verb|#guard| examples, and stage~F will check them as a whole against its
-faithful rows. Each
-loop of the sieve is a definition of type \verb|Id α| that its callers bind with \verb|←|, so that
-its contract, an \verb|@[spec]| theorem proved with the program logic of Lean core and with loop
-invariants that are named definitions, applies at the call; only \verb|findPoints| runs a
-component with \verb|Id.run|. The tables of a prime are folds and maps, specified by ordinary
+faithful rows. Each loop of the sieve is a definition of type \verb|Id α| that its callers bind with
+\verb|←|, so that its contract, an \verb|@[spec]| theorem proved with the program logic of Lean core
+and with loop invariants that are named definitions, applies at the call; only \verb|findPoints|
+runs a component with \verb|Id.run|. The tables of a prime are folds and maps, specified by ordinary
 lemmas.
 
 \begin{definition}[The sieve of one denominator]\label{def:sieveDen}
@@ -417,21 +416,21 @@ $\ZZ/p\ZZ$.
 
 \section{The command-line program and the differential tests}\label{sec:sieveCli}
 
-\verb|ratpoints-lean| reads the values of \verb|-p|, \verb|-n|, \verb|-N|, \verb|-P|, \verb|-F|
-and \verb|-j|/\verb|-J| into \verb|SieveOptions|, with the checks of \verb|main.c| unchanged, and
-runs \verb|findPoints| with \verb|sieveParams| of them; the other options stay as in stage~B. So
-the reading of the options (Definition~\ref{def:cliInput}) returns these values from now on, and
-the program (Definition~\ref{def:cliRun}) prints the points of the sieve. Since these are those of
-the brute-force reference, every differential test of stage~B applies unchanged, and the brute
-force needs no test of its own: Theorem~\ref{thm:findPoints_eq_bruteForce} says that the sieve
-returns its list. Compiled, the plain sieve takes $0.16$~seconds at $H = 1000$, $1.3$ at $H = 3000$
-and $3.6$ at $H = 5000$ on a curve of degree~$6$ with the 30 default moduli, against $0.3$ to
-$0.9$~seconds for the reference at $H = 1000$; so the differential tests of stage~C1 searched up
-to height $5000$, with a suite of point-rich curves at the heights $2000$ and $5000$, and the bit
-arrays of stage~C2 raise these heights (Section~\ref{sec:wordsCli}). A further suite runs both programs with other parameters (no moduli,
-all 53 primes and a cap above them, the cut points in several positions, a third stage, no Jacobi
-test, no forbidden divisors and many, and negative values, which mean the defaults) on point-rich
-and on random curves.
+\verb|ratpoints-lean| reads the values of \verb|-p|, \verb|-n|, \verb|-N|, \verb|-P|, \verb|-F| and
+\verb|-j|/\verb|-J| into \verb|SieveOptions|, with the checks of \verb|main.c| unchanged, and runs
+\verb|findPoints| with \verb|sieveParams| of them; the other options stay as in stage~B. So the
+reading of the options (Definition~\ref{def:cliInput}) returns these values from now on, and the
+program (Definition~\ref{def:cliRun}) prints the points of the sieve. Since these are those of the
+brute-force reference, every differential test of stage~B applies unchanged, and the brute force
+needs no test of its own: Theorem~\ref{thm:findPoints_eq_bruteForce} says that the sieve returns its
+list. Compiled, the plain sieve takes $0.16$~seconds at $H = 1000$, $1.3$ at $H = 3000$ and $3.6$ at
+$H = 5000$ on a curve of degree~$6$ with the 30 default moduli, against $0.3$ to $0.9$~seconds for
+the reference at $H = 1000$; so the differential tests of stage~C1 searched up to height $5000$,
+with a suite of point-rich curves at the heights $2000$ and $5000$, and the bit arrays of stage~C2
+raise these heights (Section~\ref{sec:wordsCli}). A further suite runs both programs with other
+parameters (no moduli, all 53 primes and a cap above them, the cut points in several positions, a
+third stage, no Jacobi test, no forbidden divisors and many, and negative values, which mean the
+defaults) on point-rich and on random curves.
 
 \section{Files and names}
 
@@ -468,6 +467,7 @@ Besides the proofs:
     and on inputs that ratpoints refuses (the zero polynomial, polynomials of degree $0$);
   \item the differential tests of Section~\ref{sec:sieveCli}: \verb|ratpoints-lean| on the sieve
     and the C program agree on all 3144 comparisons of the eight suites;
-  \item the contracts take at most 8 lines each, and their file compiles in under two seconds; no
-    proof of the stage is longer than 10 lines.
+  \item the contracts take at most 8 lines each, and their file compiles in under two seconds; the
+    proofs of the stage take at most 10 lines, but for that of
+    Theorem~\ref{thm:findPoints_eq_bruteForce}, which has 11 since stage~C2 added its two facts.
 \end{itemize}
