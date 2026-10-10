@@ -1,6 +1,5 @@
 % Stage C2: the bit arrays of 64-bit words, the pieces, the masks, the sentinel scan and the walk by
-% trailing zeros, as a data refinement of the plain sieve. Proposed names are set with \lname and
-% become \lean once the declarations exist.
+% trailing zeros, as a data refinement of the plain sieve.
 \chapter{The bit arrays of words}\label{chap:words}
 
 Stage~C2 replaces the Booleans of the plain sieve by the bit arrays of 64-bit words of the C code:
@@ -108,27 +107,27 @@ the chunk (\csource{find_points.c}{4666}{4677}).
   \uses{def:Params}
   \lean{Ratpoints.defaultArraySize, Ratpoints.maxArraySize, Ratpoints.Params.arraySize, Ratpoints.Params.arraySizeAt, Ratpoints.defaultArraySize_pos, Ratpoints.maxArraySize_pos, Ratpoints.Params.one_le_arraySizeAt}
   \leanok
-  The parameters gain the field $\mathrm{arraySize}$, at most how many bit arrays a piece has,
-  with $0$ for the default $\mathrm{defaultArraySize} = 256$ (\csource{ratpoints.h}{354}{356}).
-  For the height bound $H$ the sieve takes $\mathrm{arraySizeAt}(H)$: the field, or the default
-  for $0$, capped at $2 \lceil H/64 \rceil$ (with the macro \verb|CEIL|,
-  \csource{rp-private.h}{87}{87}) and at $\mathrm{maxArraySize} = 2^{20}$
-  (\csource{find_points.c}{124}{124}), with no rounding to a multiple of the chunk, which is one
-  bit array in the build of the model (\csource{find_points.c}{4666}{4677}). It is at least $1$
-  for $H \ge 1$, which the proofs read off $0 < \mathrm{defaultArraySize}$ and
-  $0 < \mathrm{maxArraySize}$, two facts about the constants checked once.
+  The parameters have the field $\mathrm{arraySize}$, at most how many bit arrays a piece has, with
+  $0$ for the default $\mathrm{defaultArraySize} = 256$ (\csource{ratpoints.h}{354}{356}). For the
+  height bound $H$ the sieve takes $\mathrm{arraySizeAt}(H)$: the field, or the default for $0$,
+  capped at $2 \lceil H/64 \rceil$ (with the macro \verb|CEIL|, \csource{rp-private.h}{87}{87}) and
+  at $\mathrm{maxArraySize} = 2^{20}$ (\csource{find_points.c}{124}{124}), with no rounding to a
+  multiple of the chunk, which is one bit array in the build of the model
+  (\csource{find_points.c}{4666}{4677}). It is at least $1$ for $H \ge 1$, which the proofs read off
+  $0 < \mathrm{defaultArraySize}$ and $0 < \mathrm{maxArraySize}$, two facts about the constants
+  checked once.
 \end{definition}
 
 The parameters of the executable take the default, as the program does: \verb|sieveParams|
-(Definition~\ref{def:sieveParams}) gives the field the value $\mathrm{defaultArraySize}$ and takes
-over the C lines of the program that set it (\csource{main.c}{347}{347},
-\csource{main.c}{221}{222}). The new field is a free choice of the library that changes neither the
-points found nor their order, so the theorems quantify over it as over the other parameters, and
-\verb|Params.WF| does not constrain it: every value gives pieces of at least one bit array. Since
-the comparator challenge imports \verb|Params|, its structure changes with this field, while the
-statements of the challenge and \verb|Params.WF| stay as they are. The number of registers of a
-chunk, \verb|RATPOINTS_CHUNK|, becomes a constant in stage~F, together with the chunked first stage
-and the copies in the rows that it decides; for the model it is $1$.
+(Definition~\ref{def:sieveParams}) gives the field the value $\mathrm{defaultArraySize}$, as the C
+lines of the program that set it (\csource{main.c}{347}{347}, \csource{main.c}{221}{222}). The field
+is a free choice of the library that changes neither the points found nor their order, so the
+theorems quantify over it as over the other parameters, and \verb|Params.WF| does not constrain it:
+every value gives pieces of at least one bit array. The comparator challenge imports \verb|Params|,
+so its structure has this field, while the statements of the challenge and \verb|Params.WF| are
+those of stage~C1. The number of registers of a chunk, \verb|RATPOINTS_CHUNK|, becomes a constant in
+stage~F, together with the chunked first stage and the copies in the rows that it decides; for the
+model it is $1$.
 
 \section{The rows as words}\label{sec:wordRows}
 
@@ -157,10 +156,12 @@ and the copies in the rows that it decides; for the model it is $1$.
   \uses{def:row}
   \lean{Ratpoints.Sieve.Entry.rows, Ratpoints.Sieve.Entry.get_rows, Ratpoints.Sieve.Entry.row_mod, Ratpoints.Sieve.SieveSpec}
   \leanok
-  The rows of the residues $r = 0, \dots, p - 1$, each made when a denominator first needs it,
-  as a suspended computation that runs once: the field \verb|sieve| of the sieve entry, whose row
-  of $0$ the examination of the prime installs (Definition~\ref{def:examinePrime}) and whose other
-  rows \verb|sift| builds when first needed. The row of $b$ is that of $b \bmod p$. For the
+  The rows of the residues $r = 0, \dots, p - 1$, each made when a denominator first needs it, as a
+  suspended computation that runs once, and kept for the run, which makes these computations once
+  (Definition~\ref{def:sieveRun}). They stand for the field \verb|sieve| of the sieve entry of
+  ratpoints, whose row of $0$ \verb|examine_prime| installs from the build
+  (Definition~\ref{def:examinePrime}) and whose other rows \verb|sift| builds when first needed; the
+  model makes the row of $0$ when first needed too. The row of $b$ is that of $b \bmod p$. For the
   denominator at hand, each modulus comes with its row, as in the \verb|sieve_spec| of the C code
   (\csource{rp-private.h}{378}{379}), without the offset and the pointers into the row.
 \end{definition}
@@ -174,37 +175,38 @@ array $j$ in the words $\mathrm{rbaPack} \cdot j, \dots, \mathrm{rbaPack} \cdot 
 macros of the C code are the word operations they implement, each one definition for every
 build.
 
-The loops of the C code that end on the data are Lean's \verb|while| and \verb|repeat|, as in the
-C code: the lowest set bit, the walk through the set bits, the scan up to the sentinel and the loop
-over the pieces. Their logical meaning is a fixed point of the loop body, so their contracts
-state total correctness and prove that each loop ends, by a measure: the trailing zeros of a
-nonzero word, the word itself for the walk (clearing its lowest set bit makes it smaller), the
-distance to the sentinel for the scan, and the distance to $w_{\mathrm{high}}$ for the pieces.
-Hence the hypotheses: $A \ge 1$ only for the loop over the pieces, and $\mathrm{rbaPack} > 0$,
-which makes the sentinel nonzero and gives the bit arrays their numerators.
+The loops of the C code that end on the data are Lean's \verb|while| and \verb|repeat|, as in the C
+code: the lowest set bit, the walk through the set bits, the scan up to the sentinel and the loop
+over the pieces. Their logical meaning is a fixed point of the loop body, so their contracts state
+total correctness and prove that each loop ends, by a measure: $64$ less the count for the lowest
+set bit (the count stays at most the trailing zeros of the nonzero word), the word itself for the
+walk (clearing its lowest set bit makes it smaller), the distance to the sentinel for the scan, and
+the distance to $w_{\mathrm{high}}$ for the pieces. Hence the hypothesis $A \ge 1$, only for the
+loop over the pieces, and the fact $\mathrm{rbaPack} > 0$, checked once, which makes the sentinel
+nonzero and gives the bit arrays their numerators.
 
 \begin{definition}[Operations on bit arrays]\label{def:bitArrayOps}
   \uses{def:rbaPack}
   \lean{Ratpoints.Sieve.andBitArray, Ratpoints.Sieve.clearLowBits, Ratpoints.Sieve.clearHighBits, Ratpoints.Sieve.isZeroAt, Ratpoints.Sieve.getElem!_andBitArray, Ratpoints.Sieve.getLsbD_clearLowBits, Ratpoints.Sieve.getLsbD_clearHighBits, Ratpoints.Sieve.isZeroAt_eq_true_iff}
   \leanok
-  Bit array $j$ of an array of words and-ed with bit array $x$ of a row, word by word
-  (\verb|AND|: \csource{rp-private.h}{176}{176}, and \csource{rp-private.h}{134}{134},
+  Bit array $j$ of an array of words and-ed with bit array $x$ of a row, word by word (\verb|AND|:
+  \csource{rp-private.h}{176}{176}, and \csource{rp-private.h}{134}{134},
   \csource{rp-private.h}{237}{237}, \csource{rp-private.h}{263}{263},
   \csource{rp-private.h}{287}{287}); the lowest $s$ bits of bit array $0$ cleared, by zeroing the
   words below $\lfloor s/64 \rfloor$ and masking the next one (\verb|MASKL|:
   \csource{rp-private.h}{206}{213}, and \csource{rp-private.h}{153}{155},
   \csource{rp-private.h}{242}{244}, \csource{rp-private.h}{268}{270},
-  \csource{rp-private.h}{291}{291}); the highest $s$ bits of bit array $j$ cleared, in the same
-  way from the top (\verb|MASKU|: \csource{rp-private.h}{214}{221}, and
+  \csource{rp-private.h}{291}{291}); the highest $s$ bits of bit array $j$ cleared, in the same way
+  from the top (\verb|MASKU|: \csource{rp-private.h}{214}{221}, and
   \csource{rp-private.h}{156}{159}, \csource{rp-private.h}{245}{247},
-  \csource{rp-private.h}{271}{273}, \csource{rp-private.h}{292}{292}); and whether bit array $j$
-  is zero (\verb|TEST|, \verb|TESTZ|: \csource{rp-private.h}{179}{202}, and
+  \csource{rp-private.h}{271}{273}, \csource{rp-private.h}{292}{292}); and whether bit array $j$ is
+  zero (\verb|TEST|, \verb|TESTZ|: \csource{rp-private.h}{179}{202}, and
   \csource{rp-private.h}{137}{152}, \csource{rp-private.h}{241}{241},
   \csource{rp-private.h}{267}{267}, \csource{rp-private.h}{290}{290},
-  \csource{rp-private.h}{306}{308}). For $s < R$, the low mask keeps bit $t$ of word $y$ exactly
-  when $s \le 64 y + t$, and the high mask on bit array $j$ keeps bit $t$ of word
-  $y < \mathrm{rbaPack} \cdot (j + 1)$ exactly when $64 y + t + s < R (j + 1)$. The masks follow
-  the form of the 512-bit build, of which the macros of the other builds are unrolled cases. Of the
+  \csource{rp-private.h}{306}{308}). The low mask keeps bit $t$ of word $y$ exactly when
+  $s \le 64 y + t$, and for $s < R$ the high mask on bit array $j$ keeps bit $t$ of word
+  $y < \mathrm{rbaPack} \cdot (j + 1)$ exactly when $64 y + t + s < R (j + 1)$. The masks follow the
+  form of the 512-bit build, of which the macros of the other builds are unrolled cases. Of the
   other lines of the blocks of the builds, the constant \verb|zero| and the reads \verb|EXT0| and
   \verb|EXT| go with the scan (Definition~\ref{def:scanPiece}); the constructor \verb|RBA|, used
   only for the 2-adic pattern of a class, waits for stage~E; the includes of the vector intrinsics
@@ -242,8 +244,8 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
   whole periods of $p$ from $0$, then the rest from $0$ (\csource{sift.c}{943}{1022}). Every modulus
   is applied here, those of the second and the third stage too (\csource{sift.c}{291}{312},
   \csource{sift.c}{1083}{1086}, \csource{sift.c}{1174}{1202}). Its contract: for every list of
-  tables with $p > 0$ whose rows for $b$ the moduli carry, bit $t$ of word $y < n \cdot
-  \mathrm{rbaPack}$ is $t < 64$ and the survivor test of $R w_0 + 64 y + t$.
+  tables with $p > 0$ whose rows for $b$ the moduli carry, bit $t$ of word
+  $y < n \cdot \mathrm{rbaPack}$ is $t < 64$ and the survivor test of $R w_0 + 64 y + t$.
 \end{definition}
 
 \begin{definition}[The check of a numerator]\label{def:checkNum}
@@ -298,10 +300,10 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
   (\csource{sift.c}{1030}{1041}); and the scan. The piece also has the head of
   \verb|_ratpoints_sift0| (\csource{sift.c}{498}{531}), the count of its words
   (\csource{sift.c}{548}{548}), the timer and the test before its second stage
-  (\csource{sift.c}{1056}{1058}) and its end (\csource{sift.c}{1300}{1305}). Its contract, for $m_h
-  < R$ and every list of tables with $p > 0$ whose rows for $b$ the moduli carry: the concatenation
-  of the checks of the numerators from $R w_0 + m_l$ to $R (w_0 + n) - 1 - m_h$ that survive the
-  tables.
+  (\csource{sift.c}{1056}{1058}) and its end (\csource{sift.c}{1300}{1305}). Its contract, for
+  $m_h < R$ and every list of tables with $p > 0$ whose rows for $b$ the moduli carry: the
+  concatenation of the checks of the numerators from $R w_0 + m_l$ to $R (w_0 + n) - 1 - m_h$ that
+  survive the tables.
 \end{definition}
 
 \section{One denominator and the run}\label{sec:siftDen}
@@ -341,19 +343,17 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
   Definitions~\ref{def:sieveDen} and~\ref{def:checkDen}.
 \end{proof}
 
-The sieve of one denominator and the check of stage~C1 stay in the model as the reference of the
-words, with this lemma; when the run switches to the words, they give their C ranges to the
-components of this chapter, which take them over with the cuts above. The run over the
-denominators (Definition~\ref{def:sieveRun}) changes in one place: it makes the rows of the moduli
-once and returns, for each denominator, the points that \verb|sift| finds; its contract is the
-same, now for $A \ge 1$ and tables with $p > 0$, and the residues of $b / 2^k$ that ratpoints
-computes before each call of \verb|sift| (\verb|fill_bp_list|) are now the residues $b \bmod p$
-that \verb|sift| computes once per denominator. \verb|findPoints|
-(Definition~\ref{def:findPoints}) runs it with $A = \mathrm{arraySizeAt}(H)$ of its parameters and
-the tables of its moduli, which are primes; so the proof of
-Theorem~\ref{thm:findPoints_eq_bruteForce} needs two more facts, the lower bound of the array size
-and the positivity of the moduli, and the statements of the theorems and of the comparator
-challenge do not change.
+The sieve of one denominator and the check of stage~C1 are the reference of the words, with this
+lemma, and hold no C ranges: the components of this chapter model those lines, with the cuts above.
+The run over the denominators (Definition~\ref{def:sieveRun}) makes the rows of the moduli once and
+returns, for each denominator, the points that \verb|sift| finds; its contract holds for $A \ge 1$
+and tables with $p > 0$, and \verb|sift| computes the residues $b \bmod p$ once per denominator,
+where ratpoints computes the residues of $b / 2^k$ before each call of \verb|sift|
+(\verb|fill_bp_list|). \verb|findPoints| (Definition~\ref{def:findPoints}) runs it with
+$A = \mathrm{arraySizeAt}(H)$ of its parameters and the tables of its moduli, which are primes; so
+the proof of Theorem~\ref{thm:findPoints_eq_bruteForce} needs two more facts, the lower bound of the
+array size and the positivity of the moduli, and the statements of the theorems and of the
+comparator challenge are those of stage~C1.
 
 Each component of this chapter differs from the C code in a stated way, recorded in its
 \verb|Deviation:| paragraph:
@@ -371,17 +371,21 @@ Each component of this chapter differs from the C code in a stated way, recorded
     registers of the default build with the legs over the tail of a piece (F);
   \item the rows from Definition~\ref{def:admits}, one period laid out in words, for the builders
     of the C code with their bit arithmetic (F);
+  \item the rows of all residues, that of $0$ among them, made when a denominator first needs them
+    and kept for the run, where ratpoints installs the row of $0$ from the build when it examines
+    the prime and keeps the rows in its sieve entry (F);
   \item the row of $b \bmod p$, computed in \verb|sift|, for the row of $b\,2^{-k} \bmod p$ that
     \verb|set_rows| reads from the residues that \verb|fill_bp_list| computes before the call, and
     the row of the word number $w$ at index $w \bmod p$, where ratpoints adds the offset of the
     packing and a multiple of $p$ that keeps the index non-negative, and reduces by a
     multiplication when that is exact (F);
   \item indices for the pointers of the C code, into the rows and into the survivors, and a scan
-    that holds its position as an index, where ratpoints recovers the word number from a pointer
-    difference;
+    that holds its position as an index and reads the words of a bit array in place, where ratpoints
+    recovers the word number from a pointer difference and copies the bit array;
   \item the lowest set bit by the loop of the C code for a compiler without the builtin;
-  \item a fresh array for each piece, for the survivors array of the worker that every piece
-    reuses, with one bit array more for the alignment;
+  \item a fresh array for each piece, for the survivors array of the worker that every piece reuses,
+    with one bit array more for the alignment, and for each row, for the space that the builders
+    take from the buffer of the tables;
   \item a plain $\gcd$ for the binary $\gcd$ of \verb|relprime|, whose loop body has no branch (F);
   \item the products $c_k b^{d - k}$ computed in \verb|sift| for every denominator and passed to
     the check, where ratpoints computes them in the check when the first survivor of $b$ reaches
@@ -389,8 +393,10 @@ Each component of this chapter differs from the C code in a stated way, recorded
   \item a list of points for the callback \verb|process| and for the counts of points that the C
     functions return, with no stop it may request, no reversal (D), no \verb|NO_Y| and no
     \verb|NO_CHECK| (G);
-  \item no counts of the denominators sieved and of the bit arrays, bits and numerators that reach
-    each stage (F), no threads, and an \verb|Int| for a \verb|long| (the range obligations: D, F).
+  \item no counts of the denominators sieved, of the words swept and of the bit arrays, bits and
+    numerators that reach each stage (F), no threads, and natural numbers and integers for the
+    \verb|long|s, with a \verb|Nat| for \verb|array_size| so that only $0$ stands for the default
+    (the range obligations: D, F).
 \end{itemize}
 
 \section{The command-line program and the differential tests}\label{sec:wordsCli}
@@ -398,83 +404,64 @@ Each component of this chapter differs from the C code in a stated way, recorded
 \verb|ratpoints-lean| runs \verb|findPoints| as before, now with the array size 256 of the
 program, capped at $2 \lceil H/64 \rceil$ (Definition~\ref{def:arraySize}). At four words per bit
 array every denominator up to $H = 32767$ is then a single piece; a denominator with several
-pieces, and masks on different pieces, occur in the runs of \verb|test4.sh| with heights from
-$32768$ on, in the \verb|#guard| examples with small array sizes, and in the comparisons of the
-evidence below. Compiled, with the 30 default moduli on a curve of degree~$6$, the word sieve takes
-$0.03$~seconds at $H = 1000$, $0.2$ at $H = 5000$ and $7$ at $H = 30000$, against $0.15$, $3.7$ and
-about $130$ (extrapolated) for the plain sieve; at $H = 100$ it takes $0.013$~seconds against
-$0.007$, since every row that a denominator needs is made whole, $p$ words, while a small height
-reads only a few of them. So the differential tests raise their largest height to $30000$ for the
-suite of point-rich curves, and the runs of \verb|test4.sh| with heights from $30000$ to $100000$
-become a suite of their own, run locally.
+pieces, and masks on different pieces, occur in the runs of \verb|test4.sh| from height $40000$ on
+and in the \verb|#guard| examples with small array sizes. Compiled, with the 30 default moduli on a
+curve of degree~$6$, \verb|ratpoints-lean| takes $0.027$~seconds at $H = 1000$, $0.21$ at
+$H = 5000$ and $6.6$ at $H = 30000$, against $0.16$ and $3.6$ for the plain sieve of stage~C1
+(Section~\ref{sec:sieveCli}), which would take about $130$ at $H = 30000$; at $H = 100$ it takes
+$0.015$~seconds against $0.007$, since every row that a denominator needs is made whole, $p$ bit
+arrays, while a small height reads only a few of them. The C program stays below $0.01$~seconds at
+these heights. So the differential tests search up to height $30000$ in every suite: the six runs of
+\verb|test4.sh| at height $30000$ join the suite \verb|test4|, and the suite of point-rich curves
+adds the height $30000$. The 13 runs of \verb|test4.sh| with heights from $40000$ to $100000$ form
+the suite \verb|test4high|, which runs locally, not in CI, in about four minutes.
 
-\section{Files, names and order of work}
+\section{Files and names}
 
-The constants go into \verb|Ratpoints/Model/Constants.lean|, the new field and the cap into
-\verb|Ratpoints/Model/Params.lean|, the components into \verb|Ratpoints/Model/Sieve.lean| in the
-namespace \verb|Ratpoints.Sieve|, after the components of stage~C1, with the run moving below
-them. Their contracts, without Mathlib, go into a new file \verb|Ratpoints/Proof/Words.lean|, which
-imports \verb|Ratpoints/Proof/Sieve.lean| and takes over the contract of the run and its equation,
-so that \verb|Ratpoints/Proof/FindPoints.lean| imports it; the lemmas on words that are not about
-the model go into \verb|Ratpoints/Proof/Bits.lean| under their names in the namespaces of Lean
-core. One commit per item, each passing the project's checks:
-\begin{enumerate}
-  \item[C2.1] The constants and the pieces (Definitions~\ref{def:rbaPack} and~\ref{def:arraySize}):
-    the field with its default $0$ and the sixth component of the parameters in the examples, the
-    cap and its lemma, \verb|sieveParams| with the C lines of the program, and \verb|#guard|
-    examples of the cap.
-  \item[C2.2] The operations on bit arrays and the lowest set bit
-    (Definitions~\ref{def:bitArrayOps} and~\ref{def:ctz}), with their lemmas, the contract of
-    $\mathrm{ctz}$, \verb|#guard| examples of the masks and of $\mathrm{ctz}$ against the trailing
-    zeros, the exclusions of the includes and the printing of bit arrays, and the new file of the
-    lemmas on words in the description of the layout.
-  \item[C2.3] The rows as words (Definitions~\ref{def:row} and~\ref{def:rows}), with
-    \verb|#guard| examples against the row test and the generated pattern \verb|sieves0|, and the
-    \verb|Deviation:| of the sieve entry, which now has its rows.
-  \item[C2.4] The first stage and its contract (Definition~\ref{def:andRows}), with \verb|#guard|
-    examples against the survivor test.
-  \item[C2.5] The check of a numerator and the set bits of a word (Definitions~\ref{def:checkNum}
-    and~\ref{def:walkWord}), with the contract of the walk and \verb|#guard| examples against the
-    set bits of words.
-  \item[C2.6] The scan and its contract (Definition~\ref{def:scanPiece}), with \verb|#guard|
-    examples on pieces made by hand.
-  \item[C2.7] One piece and its contract (Definition~\ref{def:siftPiece}), with \verb|#guard|
-    examples against the reference over the survivors.
-  \item[C2.8] One denominator, its contract and Lemma~\ref{lem:sift_eq_checkDen}; the run and
-    \verb|findPoints| on the words; the C ranges of the sieve and the check of stage~C1 move to the
-    components of this chapter, with the cuts of the first stage, the check, the walk and the scan;
-    the nodes of chapter~\ref{chap:sieve} follow (the sieve and the check as the reference of the
-    words, the run on Definition~\ref{def:sift}, \verb|findPoints| with the array size, the proof
-    of Theorem~\ref{thm:findPoints_eq_bruteForce}); the comparator run and
-    \verb|formalization.yaml|.
-  \item[C2.9] The differential tests with their new heights and the suite of \verb|test4.sh|, and
-    the description of the repository.
-\end{enumerate}
-Until C2.8 the components of this chapter share with the sieve and the check of stage~C1 exactly
-the ranges that they take over unchanged, so that the record stays consistent at every commit.
+The constants $\mathrm{rbaPack}$, $\mathrm{rbaLength}$, $\mathrm{defaultArraySize}$ and
+$\mathrm{maxArraySize}$ are in \verb|Ratpoints/Model/Constants.lean|, with the facts, checked by
+\verb|decide|, that $\mathrm{rbaPack}$, $\mathrm{defaultArraySize}$ and $\mathrm{maxArraySize}$ are
+positive; the field and the cap are in \verb|Ratpoints/Model/Params.lean|, and the components in
+\verb|Ratpoints/Model/Sieve.lean|, in the namespace \verb|Ratpoints.Sieve| after those of stage~C1,
+with the run below them, each with \verb|#guard| examples. The lower bound of the array size is in
+\verb|Ratpoints/Proof/Params.lean|. The contracts, without Mathlib, are in
+\verb|Ratpoints/Proof/Words.lean|, with that of the run and its equation, which
+\verb|Ratpoints/Proof/FindPoints.lean| uses; the lemmas on vectors, arrays, lists, ranges, natural
+numbers, integers and words that are not about the model are in \verb|Ratpoints/Proof/Bits.lean|,
+under their names in the namespaces of Lean core.
 
 \section{The evidence}\label{sec:words-evidence}
 
-Checks made while this chapter was written:
+Besides the proofs:
 \begin{itemize}
   \item a reading of the C code of the word sieve at the pin, with simulations of the pieces and
     their masks for four widths, both arms of the first stage, the row builders and the whole path
     of \verb|sift| and \verb|_ratpoints_sift0| against the list of survivors, one numerator at a
-    time, on 10400 cases;
-  \item a sketch of the model of this chapter in Lean, which returns the list of the plain sieve
-    on the \verb|#guard| examples and on 576 compiled comparisons: one, four and eight words per
-    bit array, six curves, eight heights around the multiples of $64$ and $256$, and pieces of
-    1, 2 and 5 bit arrays as well as the default;
-  \item a prototype in Lean of all the proofs of this chapter for that sketch: every contract with
-    \verb|vcgen| and named invariants, the three loops of the first stage, the scan up to the
-    sentinel and the loop of the lowest set bit as in the C code, the equations with the plain
-    sieve of one denominator and of the run, and the windowed builder of the rows; the standard
-    axioms only, no proof longer than 19 lines, about five seconds for all files, and the same
-    proofs compiled against the model with 1, 2, 4, 8 and 16 words per bit array;
-  \item an independent review of the chapter and of its C ranges against the C code, each finding
-    checked by a second reader, which fixed the owners of the lines of the builds, the cuts of the
-    extraction between the scan and the walk, the description of the intervals and the packing in
-    Section~\ref{sec:wordsC}, the deviations the components take over from stage~C1, and the order
-    of work;
-  \item the timings of Section~\ref{sec:wordsCli}.
+    time, on 10400 cases, which fixed Section~\ref{sec:wordsC}; and two independent reviews of the
+    C ranges and the deviations of the components against the C code, one before the stage and one
+    after it, each finding checked by a second reader, which fixed the owners of the lines of the
+    builds (those of \verb|RBA_LENGTH| with $\mathrm{rbaLength}$, those of \verb|RBA_PACK| with
+    $\mathrm{rbaPack}$), the cuts of the extraction between the scan and the walk, the set-up of
+    the third stage in \verb|sift| and the count of the words of a piece in \verb|siftPiece|, and
+    completed the deviations (the allocation and the keeping of the rows, the second stage, the
+    factor $b$ for odd degree, the \verb|long|s);
+  \item the \verb|#guard| examples of the model: the masks, the lowest set bit, the rows against
+    the row test and against \verb|sieves0|, the first stage against the survivor test, the walk
+    and the scan against the set bits of their words, the check of a numerator against the
+    reference, one piece with its masks around the numerator of a point, \verb|sift| against the
+    plain sieve with pieces of one, two and three bit arrays, and \verb|findPoints| against the
+    brute-force reference with pieces of one, two and three bit arrays at heights around the
+    multiples of 64 and of $\mathrm{rbaLength}$;
+  \item the differential tests of Section~\ref{sec:wordsCli}: \verb|ratpoints-lean| and the C
+    program agree on all 3155 comparisons of the eight default suites and on the 13 of
+    \verb|test4high|;
+  \item Comparator accepts the solution of the challenge, whose statements are those of
+    stage~C1;
+  \item the project builds, with all its proofs, for other values of the constants of the build: 1
+    and 8 words per bit array, a default array size of 3 and of 1000, and a largest array size of 5
+    and of $2^{21}$, with the constants of stage~C1 changed too; so no proof depends on their
+    values;
+  \item every proof of the stage takes at most 20 lines, with named loop invariants and lemmas in
+    the shape of the verification conditions, and \verb|Ratpoints/Proof/Words.lean| compiles in a
+    few seconds.
 \end{itemize}
