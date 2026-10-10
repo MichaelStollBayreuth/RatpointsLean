@@ -25,6 +25,12 @@
         "Ratpoints.Sieve.examinePrime"
       ]
     },
+    "find_points.c:3119-3121": {
+      "hash": "714b094fd49bb053645cbf028f652d6f055797675063a362f2fc87d2928a4302",
+      "owners": [
+        "Ratpoints.Sieve.siftPiece"
+      ]
+    },
     "find_points.c:4059-4075": {
       "hash": "f6165f9a3593808c0c59560314fe28156c867a0e14c8410c9c0e1c52baf7a7d9",
       "owners": [
@@ -653,7 +659,8 @@
     "sift.c:1030-1041": {
       "hash": "0dc0be2dcaafb97068f868bd12906bc1890d0f50db01213fc06b00e6907db364",
       "owners": [
-        "Ratpoints.Sieve.sieveDen"
+        "Ratpoints.Sieve.sieveDen",
+        "Ratpoints.Sieve.siftPiece"
       ]
     },
     "sift.c:1061-1082": {
@@ -687,6 +694,12 @@
       "hash": "611de9f8c484785fbb580a2cf8a6f1f8ca02a9ce2944414bd732303bace59c69",
       "owners": [
         "Ratpoints.Sieve.checkDen"
+      ]
+    },
+    "sift.c:1300-1305": {
+      "hash": "19388f4fbfbcc24229fc0ebdd7e18c0abbb994a9d618699f865c99e1e3a8ae16",
+      "owners": [
+        "Ratpoints.Sieve.siftPiece"
       ]
     },
     "sift.c:203-204": {
@@ -728,6 +741,12 @@
       "owners": [
         "Ratpoints.Sieve.checkDen",
         "Ratpoints.Sieve.checkNum"
+      ]
+    },
+    "sift.c:498-531": {
+      "hash": "73c338d2ccc6c766419c292a1393e33fa2e2a8bb00b31521eae2143fbaef95b3",
+      "owners": [
+        "Ratpoints.Sieve.siftPiece"
       ]
     },
     "sift.c:943-1022": {

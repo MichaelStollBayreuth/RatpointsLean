@@ -14,12 +14,13 @@ Lemmas on vectors, arrays, lists, ranges, integers and 64-bit words that the con
 arrays of words need and Lean core lacks, under their names in the namespaces of Lean core: the
 entries of a vector after `Vector.set!` and after a fold of `Vector.set!` over consecutive
 positions, the entries of an array made by a map over a range, the elements of `List.range n` that
-pass a test which fails from some position on, the position of the cursor of a loop over a range,
-the residues modulo `p` of the integers from `w0` on, the bits of the word `~~~0` and of the masks
-`~~~0 <<< n` and `~~~0 >>> n`, the lowest bit and the lowest set bit of a word, the word
-`x &&& (x - 1)`, which is `x` with its lowest set bit cleared, the bits of a word set one at a time,
-the 64 bits of two words from a position within the first, the bits of a word and-ed in turn with
-the words of a list, and the numerators of the set bits of a list of words, read in turn.
+pass a test which fails from some position on, the integers of a range that lie in a smaller one,
+the position of the cursor of a loop over a range, the residues modulo `p` of the integers from `w0`
+on, the bits of the word `~~~0` and of the masks `~~~0 <<< n` and `~~~0 >>> n`, the lowest bit and
+the lowest set bit of a word, the word `x &&& (x - 1)`, which is `x` with its lowest set bit
+cleared, the bits of a word set one at a time, the 64 bits of two words from a position within the
+first, the bits of a word and-ed in turn with the words of a list, and the numerators of the set
+bits of a list of words, read in turn.
 
 ## Main statements
 
@@ -34,6 +35,8 @@ the words of a list, and the numerators of the set bits of a list of words, read
 * `List.filter_range_eq_of_le`, `List.filter_range_succ_eq_append`: the elements of `List.range n`
   that pass a test which fails from `k` on are those of `List.range k`, followed by the next one
   that passes it.
+* `List.filter_map_range_eq_map_range`: of the integers `s, …, s + m - 1`, those from `s + l` to
+  `s + m - 1 - h`.
 * `Std.Legacy.Range.length_eq_of_toList_eq_append_cons`,
   `Std.Legacy.Range.lt_of_toList_eq_append_cons`: the position of the cursor of a loop over
   `[0:m]`.
@@ -99,6 +102,21 @@ theorem filter_range_succ_eq_append {p : Nat → Bool} {k c : Nat} (hk : k ≤ c
     (range (c + 1)).filter p = (range k).filter p ++ [c] := by
   rw [range_succ, filter_append, filter_range_eq_of_le hk hz]
   simp [hc]
+
+/-- Of the integers `s, …, s + m - 1`, those from `s + l` to `s + m - 1 - h`: the `m - l - h`
+integers from `s + l` on; for `m ≤ l + h` there are none, and the truncated subtraction gives
+`0`. -/
+theorem filter_map_range_eq_map_range (s : Int) (l h m : Nat) :
+    ((range m).map fun k : Nat ↦ s + k).filter (fun a ↦ decide (s + l ≤ a ∧ a + h < s + m)) =
+      (range (m - l - h)).map fun k : Nat ↦ s + l + k := by
+  by_cases hm : l + h ≤ m
+  · obtain ⟨j, rfl⟩ : ∃ j, m = l + j + h := ⟨m - l - h, by lia⟩
+    rw [range_add, range_add, map_append, map_append, filter_append, filter_append,
+      filter_eq_nil_iff.mpr, filter_eq_self.mpr, filter_eq_nil_iff.mpr]
+    · simp [Function.comp_def, Int.add_assoc, show l + j + h - l - h = j by lia]
+    all_goals grind
+  · rw [Nat.sub_sub, Nat.sub_eq_zero_of_le (by lia), range_zero, map_nil, filter_eq_nil_iff]
+    grind
 
 end List
 

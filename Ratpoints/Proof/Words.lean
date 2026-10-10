@@ -42,6 +42,8 @@ definitions.
   numerators of its set bits, in increasing order.
 * `Ratpoints.Sieve.scanPiece_spec`: if the bits of a piece are a test `keep` of their numerators,
   the scan of the piece gives the points of its numerators that pass `keep`, in increasing order.
+* `Ratpoints.Sieve.siftPiece_spec`: one piece with the rows of a denominator `b` gives the points of
+  the survivors among its numerators that the masks at its two ends leave, in increasing order.
 
 ## Implementation notes
 
@@ -64,6 +66,11 @@ theorem rbaLength_eq : rbaLength = 64 * rbaPack := rfl
 
 theorem rbaLength_mul (j : Nat) : rbaLength * j = 64 * (rbaPack * j) := by
   rw [rbaLength_eq, Nat.mul_assoc]
+
+theorem lt_rbaLength_mul_of_lt {n y t : Nat} (hy : y < n * rbaPack) (ht : t < 64) :
+    64 * y + t < rbaLength * n := by
+  rw [rbaLength_eq, Nat.mul_assoc, Nat.mul_comm rbaPack n]
+  lia
 
 namespace Sieve
 
@@ -690,6 +697,98 @@ theorem scanPiece_spec (w : List Int) (f : Int) (b : Nat) (w0 : Int) (n : Nat)
   ⟨fun _ keep hkeep ↦ by
     rw [(scanPiece_spec_getLsbD w f b w0 n surv).le_wp trivial,
       UInt64.flatMap_range_map_filter_getLsbD hkeep, rbaLength_eq, Nat.mul_left_comm]⟩
+
+/-! ### The masks and one piece -/
+
+theorem getLsbD_clearHighBits_sub_one {m n s : Nat} (v : Vector UInt64 m) (hs : s < rbaLength)
+    {y : Nat} (hy : y < m) (hyn : y < n * rbaPack) (t : Nat) :
+    ((clearHighBits v (n - 1) s)[y]!).toBitVec.getLsbD t =
+      ((v[y]!).toBitVec.getLsbD t && decide (64 * y + t + s < rbaLength * n)) := by
+  have hn : n - 1 + 1 = n := Nat.sub_add_cancel (Nat.pos_of_ne_zero fun h ↦ by simp [h] at hyn)
+  rw [getLsbD_clearHighBits v (n - 1) hs hy (by rw [hn, Nat.mul_comm]; exact hyn), hn]
+
+/-- The words `v` of a piece of `n` bit arrays are the words `surv` with the masks at its two ends
+applied, as far as the bits `t < 64` of the words `y < n rbaPack` go: bit `t` of word `y` is set in
+`v` exactly when it is set in `surv`, `maskLow ≤ 64 y + t` and `64 y + t + maskHigh < rbaLength n`,
+for the number `rbaPack` of words of a bit array (`Ratpoints.rbaPack`). -/
+def IsMasked {m : Nat} (n maskLow maskHigh : Nat) (surv v : Vector UInt64 m) : Prop :=
+  ∀ y < n * rbaPack, ∀ t < 64, (v[y]!).toBitVec.getLsbD t =
+    ((surv[y]!).toBitVec.getLsbD t && decide (maskLow ≤ 64 * y + t) &&
+      decide (64 * y + t + maskHigh < rbaLength * n))
+
+theorem isMasked_clearHighBits_clearLowBits {n maskHigh : Nat}
+    (v : Vector UInt64 ((n + 1) * rbaPack)) (maskLow : Nat) (hH : maskHigh < rbaLength) :
+    IsMasked n maskLow maskHigh v (clearHighBits (clearLowBits v maskLow) (n - 1) maskHigh) :=
+  fun y hy t _ ↦ by
+    have := Nat.lt_of_lt_of_le hy (Nat.mul_le_mul_right rbaPack (Nat.le_succ n))
+    rw [getLsbD_clearHighBits_sub_one _ hH this hy, getLsbD_clearLowBits _ _ this]
+
+theorem isMasked_clearLowBits {n maskHigh : Nat} (v : Vector UInt64 ((n + 1) * rbaPack))
+    (maskLow : Nat) (hH : maskHigh = 0) : IsMasked n maskLow maskHigh v (clearLowBits v maskLow) :=
+  fun y hy t ht ↦ by
+    simp [getLsbD_clearLowBits _ _ (Nat.lt_of_lt_of_le hy (Nat.mul_le_mul_right rbaPack
+      (Nat.le_succ n))), hH, lt_rbaLength_mul_of_lt hy ht]
+
+theorem isMasked_clearHighBits {n maskLow maskHigh : Nat} (v : Vector UInt64 ((n + 1) * rbaPack))
+    (hL : maskLow = 0) (hH : maskHigh < rbaLength) :
+    IsMasked n maskLow maskHigh v (clearHighBits v (n - 1) maskHigh) := fun y hy t _ ↦ by
+  simp [getLsbD_clearHighBits_sub_one _ hH (Nat.lt_of_lt_of_le hy (Nat.mul_le_mul_right rbaPack
+    (Nat.le_succ n))) hy, hL]
+
+theorem isMasked_self {m maskLow maskHigh : Nat} (n : Nat) (v : Vector UInt64 m)
+    (hL : maskLow = 0) (hH : maskHigh = 0) : IsMasked n maskLow maskHigh v v := fun y hy t ht ↦ by
+  simp [hL, hH, lt_rbaLength_mul_of_lt hy ht]
+
+/-- The points of a piece of `n` bit arrays from the word number `w0` on, given the contracts of its
+first stage on the words `surv` (`hand`, as `Ratpoints.Sieve.andRows_spec` states it) and of its
+scan on the words `v` (`hout`, as `Ratpoints.Sieve.scanPiece_spec` states it), when `v` is `surv`
+with the masks applied: the points of the survivors among the numerators from
+`rbaLength w0 + maskLow` to `rbaLength (w0 + n) - 1 - maskHigh`. -/
+theorem IsMasked.toList_eq {n : Nat} {w : List Int} {f : Int} {b : Nat} {specs : List SieveSpec}
+    {w0 : Int} {maskLow maskHigh : Nat} {surv v : Vector UInt64 ((n + 1) * rbaPack)}
+    {out : Array (Int × Int × Int)}
+    (hand : ∀ (entries : List Entry) (b : Nat), (∀ e ∈ entries, 0 < e.p) →
+      specs = entries.map (fun e ↦ ⟨e.p, e.row b⟩) → ∀ y < n * rbaPack, ∀ t : Nat,
+        (surv[y]!).toBitVec.getLsbD t =
+          (decide (t < 64) && survives entries b (rbaLength * w0 + 64 * y + t)))
+    (h : IsMasked n maskLow maskHigh surv v)
+    (hout : ∀ keep : Int → Bool, (∀ y < n * rbaPack, ∀ t : Nat, (v[y]!).toBitVec.getLsbD t =
+        (decide (t < 64) && keep (rbaLength * w0 + 64 * y + t))) →
+      out.toList = (((List.range (n * rbaLength)).map fun k : Nat ↦
+        rbaLength * w0 + k).filter keep).flatMap (checkNum w f b))
+    {entries : List Entry} (hp : ∀ e ∈ entries, 0 < e.p)
+    (hspecs : specs = entries.map (fun e ↦ ⟨e.p, e.row b⟩)) :
+    out.toList = (((List.range (n * rbaLength - maskLow - maskHigh)).map fun k : Nat ↦
+      rbaLength * w0 + maskLow + k).filter (survives entries b)).flatMap (checkNum w f b) := by
+  rw [hout (fun a ↦ survives entries b a && decide (rbaLength * w0 + maskLow ≤ a ∧
+    a + maskHigh < rbaLength * w0 + (n * rbaLength : Nat))) fun y hy t ↦ ?_, ← List.filter_filter,
+    List.filter_map_range_eq_map_range]
+  by_cases ht : t < 64
+  · rw [h y hy t ht, hand entries b hp hspecs y hy t]
+    grind
+  · simp [ht, BitVec.getLsbD_of_ge _ t (Nat.le_of_not_lt ht)]
+
+/-- The tables are quantified in the postcondition, since the program does not mention them; the
+bound on `maskHigh` is that of the high mask (`Ratpoints.Sieve.getLsbD_clearHighBits`), and the
+low mask needs none. -/
+@[spec]
+theorem siftPiece_spec (w : List Int) (f : Int) (b : Nat) (specs : List SieveSpec) (w0 : Int)
+    (n maskLow maskHigh : Nat) :
+    ⦃ maskHigh < rbaLength ⦄ siftPiece w f b specs w0 n maskLow maskHigh
+    ⦃ fun out ↦ ∀ entries : List Entry, (∀ e ∈ entries, 0 < e.p) →
+        specs = entries.map (fun e ↦ ⟨e.p, e.row b⟩) →
+        out.toList = (((List.range (n * rbaLength - maskLow - maskHigh)).map fun k : Nat ↦
+          rbaLength * w0 + maskLow + k).filter (survives entries b)).flatMap
+            (checkNum w f b) ⦄ := by
+  vcgen [siftPiece]
+  all_goals first
+    | exact IsMasked.toList_eq ‹_› (isMasked_clearHighBits_clearLowBits _ _ ‹_›) ‹_› ‹_› ‹_›
+    | exact IsMasked.toList_eq ‹_› (isMasked_clearLowBits _ _ (Decidable.of_not_not ‹_›)) ‹_› ‹_›
+        ‹_›
+    | exact IsMasked.toList_eq ‹_› (isMasked_clearHighBits _ (Decidable.of_not_not ‹_›) ‹_›) ‹_›
+        ‹_› ‹_›
+    | exact IsMasked.toList_eq ‹_› (isMasked_self _ _ (Decidable.of_not_not ‹_›)
+        (Decidable.of_not_not ‹_›)) ‹_› ‹_› ‹_›
 
 end Sieve
 

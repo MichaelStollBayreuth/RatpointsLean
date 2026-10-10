@@ -49,6 +49,8 @@ generates are computed here: the squares and the inverses by `Ratpoints.Sieve.sq
   check of its numerator.
 * `Ratpoints.Sieve.scanPiece`: the scan over the bit arrays of a piece up to a sentinel, stepping
   over those that are zero, and the walk through the words of the others.
+* `Ratpoints.Sieve.siftPiece`: one piece of bit arrays, from the first stage and the masks at its
+  two ends to the points of its numerators.
 -/
 
 @[expose] public section
@@ -490,6 +492,39 @@ def scanPiece (w : List Int) (f : Int) (b : Nat) (w0 : Int) (n : Nat)
     pos := pos + 1
   return out
 
+/-- One piece, the bit arrays with the word numbers `w0, …, w0 + n - 1`, and the points of its
+numerators: a fresh array of `n + 1` bit arrays, the last one the place of the sentinel; the first
+stage with the moduli and their rows `specs` (`Ratpoints.Sieve.andRows`); the lowest `maskLow` bits
+of the first bit array cleared if `maskLow ≠ 0` (`Ratpoints.Sieve.clearLowBits`), and the highest
+`maskHigh` bits of the last one if `maskHigh ≠ 0` (`Ratpoints.Sieve.clearHighBits`); and the scan
+with the extraction (`Ratpoints.Sieve.scanPiece`, with the products `w`, the factor `f` and the
+denominator `b` of the check). This is `_ratpoints_sift0` of the C code, with the allocation of the
+survivors array that it works in.
+
+C: `find_points.c:3119-3121`, `sift.c:498-531`, `sift.c:1030-1041`, `sift.c:1300-1305`
+
+Deviation: a fresh array of zeros for each piece, for the survivors array of the sieving thread,
+which every piece reuses, with one bit array more for the alignment, and whose words `malloc` leaves
+uninitialized; the piece by its first word number `w0` and its number `n` of bit arrays, for `w_low`
+and `w_high`, and an index for the pointer to its last bit array; the moduli of all three stages
+with their rows in `specs`, for the moduli of the first two stages with their rows in `sieves`, the
+numbers `sp1`, `sp2` and `nchecks` of the moduli of the stages, which the sieving thread `wk` keeps,
+and the table `checks` of the third stage (stage F); no class `cls`, whose 2-adic pattern the first
+stage writes into the bit arrays (stages E and F), and no `magics` and no test `small` of whether
+the reductions modulo the moduli can multiply by a reciprocal (stage F); the products `w` and the
+factor `f` of the check as arguments, which `_ratpoints_check_point` computes when the first
+survivor of `b` reaches it; a list of points, for the callback `process` with its argument `info`
+and for the count `total` of points that `_ratpoints_sift0` returns, with no flag `quit` for a stop
+that `process` may request (stage G); natural numbers and integers for the `long`s (stages D and
+F); no measurements of the phases (`RP_TIC`, `RP_TOC`, `RP_PHASE_TIMING`) and no stop after one of
+them (`RP_STOP_AFTER`). -/
+def siftPiece (w : List Int) (f : Int) (b : Nat) (specs : List SieveSpec) (w0 : Int)
+    (n maskLow maskHigh : Nat) : Id (Array (Int × Int × Int)) := do
+  let mut surv ← andRows specs w0 n (Vector.replicate ((n + 1) * rbaPack) 0)
+  if maskLow ≠ 0 then surv := clearLowBits surv maskLow
+  if maskHigh ≠ 0 then surv := clearHighBits surv (n - 1) maskHigh
+  scanPiece w f b w0 n surv
+
 /-! ### The run and the points at infinity -/
 
 /-- The points with the denominators `b = 1, …, H`, in increasing order: each denominator is
@@ -700,6 +735,27 @@ def pointsAtInfinity (c : List Int) (d : Nat) : List (Int × Int × Int) :=
     (Id.run (scanPiece [0, 0, 1] 1 1 w0 n v)).toList ==
       (((List.range (n * rbaLength)).map fun k : Nat ↦ rbaLength * w0 + k).filter keep).flatMap
         (checkNum [0, 0, 1] 1 1)
+
+-- One piece against the reference over its survivors: the points of the numerators from
+-- `rbaLength w0 + maskLow` to `rbaLength (w0 + n) - 1 - maskHigh` that survive the moduli, for
+-- pieces from below and above zero with no mask, with one of them and with both, among them the
+-- piece of the numerators `-130, …, 130`; the masks around the numerator 129 of the point
+-- `(129 : 3830 : 100)` of `y ^ 2 = x ^ 3 - 2` keep it or drop it.
+#guard
+  let c := [-2, 0, 0, 1]
+  let es := [3, 5, 7, 11, 13].map (examinePrime c 3)
+  let piece (b : Nat) (w0 : Int) (n mL mH : Nat) : List (Int × Int × Int) :=
+    (Id.run (siftPiece (BruteForce.scaledCoeffs c 3 b) b b (es.map fun e ↦ ⟨e.p, e.row b⟩) w0 n
+      mL mH)).toList
+  piece 100 0 1 129 0 == [(129, 3830, 100), (129, -3830, 100)] && piece 100 0 1 130 0 == [] &&
+    piece 100 0 1 0 (rbaLength - 130) == [(129, 3830, 100), (129, -3830, 100)] &&
+    piece 100 0 1 0 (rbaLength - 129) == [] &&
+    ([(-1, 2, 0, 0), (-1, 2, rbaLength - 130, rbaLength - 131), (0, 1, 129, 0), (0, 1, 130, 0),
+        (0, 1, 0, rbaLength - 130), (0, 1, 0, rbaLength - 129), (-3, 2, 5, 7), (1, 3, 0, 0)] :
+        List (Int × Nat × Nat × Nat)).all fun (w0, n, mL, mH) ↦ [1, 7, 100].all fun b ↦
+      piece b w0 n mL mH == BruteForce.pointsOfDen c 3 b
+        (((List.range (n * rbaLength - mL - mH)).map fun k : Nat ↦ rbaLength * w0 + mL + k).filter
+          (survives es b))
 
 -- The denominators `1, …, 130`: the affine points of `ratpoints '-2 0 0 1' 130 -q`.
 #guard (Id.run (sieveRun [-2, 0, 0, 1] 3 130

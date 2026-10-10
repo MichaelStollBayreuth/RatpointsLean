@@ -284,7 +284,8 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
 
 \begin{definition}[One piece]\label{def:siftPiece}
   \uses{def:andRows, def:scanPiece}
-  Proposed names: \lname{Ratpoints.Sieve.siftPiece}, \lname{Ratpoints.Sieve.siftPiece\_spec}.
+  \lean{Ratpoints.Sieve.siftPiece, Ratpoints.Sieve.siftPiece_spec}
+  \leanok
   A fresh array of $n + 1$ bit arrays, as the worker's array of \verb|array_size| bit arrays and
   two more (\csource{find_points.c}{3119}{3121}); the first stage; the low mask $m_l$ on the first
   bit array if $m_l \ne 0$ and the high mask $m_h$ on the last if $m_h \ne 0$
