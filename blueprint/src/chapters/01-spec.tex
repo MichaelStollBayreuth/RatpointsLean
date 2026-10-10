@@ -142,16 +142,16 @@ remainder sequence would also catch.
   most $\mathrm{maxDegree} + 1 = 101$ entries.
 \end{definition}
 
-Like the other constants that the C code fixes when it is compiled, the bound is a definition of
-the model with the value of the default build, in \verb|Ratpoints/Model/Constants.lean|, and no
-proof depends on its value. The model keeps the bound, which 3.1.1 imposes in the library
-(\csource{find_points.c}{4557}{4558}) as well as in the program. In the order of the checks the library and the program differ, and the model follows the program: the
-library checks the leading zeros before the height, so that \verb|5 0| with $H = 0$ is
-\verb|NON_SQUAREFREE| for it, while
-the program checks the coefficient list and the height before it calls the library
+Like the other constants that the C code fixes when it is compiled, the bound is a definition of the
+model with the value of the default build, in \verb|Ratpoints/Model/Constants.lean|, and no proof
+depends on its value. The model keeps the bound, which 3.1.1 imposes in the library
+(\csource{find_points.c}{4557}{4558}) as well as in the program. In the order of the checks the
+library and the program differ, and the model follows the program: the library checks the leading
+zeros before the height, so that \verb|5 0| with $H = 0$ is \verb|NON_SQUAREFREE| for it, while the
+program checks the coefficient list and the height before it calls the library
 (\csource{main.c}{362}{380}) and reports error~4. So \verb|findPoints| refuses more than
-$\mathrm{maxDegree} + 1$ coefficients and fewer than two, then $H = 0$, and then a form that is not squarefree, with the
-program's error numbers 3, 5, 4 and~8.
+$\mathrm{maxDegree} + 1$ coefficients and fewer than two, then $H = 0$, and then a form that is not
+squarefree, with the program's error numbers 3, 5, 4 and~8.
 
 With the options of stage~D the predicate changes: under \verb|-s| (no Sturm step) the program
 refuses, besides the coefficient count and $H = 0$, exactly the inputs with $N - d \ge 2$ and,
@@ -225,24 +225,24 @@ default parameters.
 
 The Lean program is a program of its own, the executable \verb|ratpoints-lean|, with the command
 line of ratpoints. Eventually it offers the full functionality of ratpoints except the threads
-and the other hardware-dependent features. For now it prints the points of the brute-force
-reference, so that the test scripts of the C repository can run it as \verb|RP=ratpoints-lean|:
+and the other hardware-dependent features. It prints the points of the plain sieve of
+Chapter~\ref{chap:sieve} (in stage~B those of the brute-force reference), so that the test scripts
+of the C repository can run it as \verb|RP=ratpoints-lean|:
 \begin{itemize}
   \item it behaves as with \verb|-q|, printing exactly one line \verb|(x : y : z)| per point and
     nothing else; it accepts \verb|-q|, and \verb|-v|, which \verb|-q| cancels in \verb|main.c|;
-  \item it reads the first two arguments as \verb|main.c| does: the coefficient list as one
-    argument and the height, with its checks, messages and exit codes, in its order: fewer than
-    two arguments (2, with the banner and the usage), a malformed coefficient (11), more than
-    $\mathrm{maxDegree} + 1$ coefficients (3), fewer than two (5), a height outside $1, \dots, 2^{63} - 1$ (4)
-    (\csource{main.c}{362}{380}, \csource{main.c}{700}{740}, \csource{main.c}{1036}{1056});
-    every message goes to standard output as a blank line, the message and a blank line;
+  \item it reads the first two arguments as \verb|main.c| does: the coefficient list as one argument
+    and the height, with its checks, messages and exit codes, in its order: fewer than two arguments
+    (2, with the banner and the usage), a malformed coefficient (11), more than $\mathrm{maxDegree}
+    + 1$ coefficients (3), fewer than two (5), a height outside $1, \dots, 2^{63} - 1$ (4)
+    (\csource{main.c}{362}{380}, \csource{main.c}{700}{740}, \csource{main.c}{1036}{1056}); every
+    message goes to standard output as a blank line, the message and a blank line;
   \item it reads the tuning options \verb|-n -N -P -p -F -j -J -r -R -U -A -C -Q -W -t| with the
     validation of \verb|main.c| (error~6 and the usage for a missing or malformed argument of the
-    thirteen that take one, \csource{main.c}{437}{532}; \verb|-j| and \verb|-J| take none) and
-    ignores them for now (\verb|main.c| itself never reads them again under \verb|-q|; in 373 runs
-    of the C program they did not change the \verb|-q| output); from stage~C1 on,
-    \verb|-n -N -P -p -F -j -J| go into the sieving parameters \verb|P|, while the others, which
-    tune only the C program's heuristics and its threads, stay ignored;
+    thirteen that take one, \csource{main.c}{437}{532}; \verb|-j| and \verb|-J| take none):
+    \verb|-n -N -P -p -F -j -J| go into the sieving parameters (Definition~\ref{def:sieveParams}),
+    and the others, which tune only the heuristics of the C program and its threads, are ignored
+    (in 373 runs of the C program they did not change the \verb|-q| output);
   \item it answers every other option of ratpoints, which it does not support yet, with the
     message \verb|Option <opt> is not supported by ratpoints-lean yet.| and the exit status 12,
     which \verb|main.c| does not use (an ignored search interval or denominator range, \verb|-l|,
@@ -281,7 +281,8 @@ that they mirror:
 \end{definition}
 
 \begin{definition}[The failures]\label{def:cliFailure}
-  \lean{Ratpoints.Cli.Failure, Ratpoints.Cli.Failure.message, Ratpoints.Cli.Failure.status, Ratpoints.Cli.banner, Ratpoints.Cli.usage}
+  \uses{def:findPoints}
+  \lean{Ratpoints.Cli.Failure, Ratpoints.Cli.Failure.message, Ratpoints.Cli.Failure.status, Ratpoints.Cli.Failure.ofRefusal, Ratpoints.Cli.banner, Ratpoints.Cli.usage}
   \leanok
   The ways in which \verb|ratpoints-lean| refuses its command line, with the message and the
   exit status of each. These are the errors of \verb|main.c| that the command line can cause, 2
@@ -295,44 +296,48 @@ that they mirror:
   (\csource{main.c}{77}{88}) instead of a message, and on error~6 both. The banner is that of
   \verb|ratpoints-lean| and the usage that of ratpoints, with the name of the program changed.
   The last failure is an option of ratpoints that \verb|ratpoints-lean| does not support yet,
-  with the exit status 12.
+  with the exit status 12. A refusal of $\mathrm{findPoints}$ is the failure with the same
+  number, which the reading of the command line meets first.
 \end{definition}
 
 \begin{definition}[The command line]\label{def:cliInput}
-  \uses{def:cliNumbers, def:cliFailure, def:maxDegree}
+  \uses{def:cliNumbers, def:cliFailure, def:maxDegree, def:sieveParams}
   \lean{Ratpoints.Cli.coefficients, Ratpoints.Cli.heightBound, Ratpoints.Cli.checkOptions, Ratpoints.Cli.input}
   \leanok
-  The coefficient list and the height bound of a command line, or its first failure, in the
-  order of \verb|main.c|: fewer than two arguments fail (\csource{main.c}{210}{214}); the first
-  argument gives the coefficients, constant term first, integers separated by white space, and
-  fails on a word that is not an integer, wherever it stands, then on more than
-  $\mathrm{maxDegree} + 1$ integers, then on fewer than two (\csource{main.c}{362}{375}); the second gives the height bound, a C
-  \verb|long| of at least $1$ (\csource{main.c}{378}{379}); and the options are read from left
-  to right, each told by the character after its \verb|-| and, for \verb|-f| and \verb|-d|, by
-  the one after that (\csource{main.c}{393}{397}, \csource{main.c}{667}{668}). The tuning
-  options, of which \verb|-p -F -t -n -N -R -A -P| take a C \verb|long| and
-  \verb|-r -U -C -Q -W| a real number, have their arguments checked and are ignored
-  (\csource{main.c}{437}{532}), as are \verb|-q|, \verb|-v|, \verb|-j| and \verb|-J|
-  (\csource{main.c}{578}{593}); an option of ratpoints that is not supported yet ends the
-  reading, its arguments unchecked, and any other word fails with error~6.
+  The coefficient list, the height bound and the values of the options that set the sieving
+  parameters of a command line, or its first failure, in the order of \verb|main.c|: fewer than two
+  arguments fail (\csource{main.c}{210}{214}); the first argument gives the coefficients, constant
+  term first, integers separated by white space, and fails on a word that is not an integer,
+  wherever it stands, then on more than $\mathrm{maxDegree} + 1$ integers, then on fewer than two
+  (\csource{main.c}{362}{375}); the second gives the height bound, a C \verb|long| of at least $1$
+  (\csource{main.c}{378}{379}); and the options are read from left to right, each told by the
+  character after its \verb|-| and, for \verb|-f| and \verb|-d|, by the one after that
+  (\csource{main.c}{393}{397}, \csource{main.c}{667}{668}). The tuning options, of which
+  \verb|-p -F -t -n -N -R -A -P| take a C \verb|long| and \verb|-r -U -C -Q -W| a real number, have
+  their arguments checked (\csource{main.c}{437}{532}); the values of \verb|-p -n -N -P -F| and the
+  switches \verb|-j| and \verb|-J| (\csource{main.c}{578}{593}) go into the values of the options of
+  Definition~\ref{def:sieveParams}, the last one winning, and the other tuning options, \verb|-q|
+  and \verb|-v| are ignored; an option of ratpoints that is not supported yet ends the reading, its
+  arguments unchecked, and any other word fails with error~6.
 \end{definition}
 
 \begin{definition}[The program]\label{def:cliRun}
-  \uses{def:cliInput, def:cliFailure, def:bruteForce}
+  \uses{def:cliInput, def:cliFailure, def:findPoints, def:sieveParams}
   \lean{Ratpoints.Cli.pointLine, Ratpoints.Cli.run, Ratpoints.Cli.main}
   \leanok
   \verb|ratpoints-lean| reads its command line. On a failure it prints the failure's message and
   exits with its status; otherwise it prints, as ratpoints does with \verb|-q|, the line
-  \verb|(x : y : z)| of the default format of \verb|main.c| (\csource{main.c}{681}{685}) for
-  each triple of $\mathrm{bruteForce}(c, H)$, in the order of that list, and exits with
-  status~0. It writes its output once it is computed and, like ratpoints, ignores a failed write,
-  but for one case: when the reader of the output is gone, the signal \verb|SIGPIPE| ends
-  ratpoints, and the shell reports the status $141 = 128 + 13$; the Lean runtime ignores that
-  signal, so that the write of \verb|ratpoints-lean| fails instead, and it exits quietly with
-  status~141. Since ratpoints flushes its output after every point (line 187 of \verb|main.c|), a
-  reader that leaves early, like \verb|head|, ends it at the next point, while
-  \verb|ratpoints-lean| notices only a reader that is gone when it writes: an output that fits
-  into the pipe ends with status~0.
+  \verb|(x : y : z)| of the default format of \verb|main.c| (\csource{main.c}{681}{685}) for each
+  triple of $\mathrm{findPoints}(c, H, \mathrm{sieveParams}(o))$, for the values $o$ of the options,
+  in the order of that list, which is that of $\mathrm{bruteForce}(c, H)$
+  (Theorem~\ref{thm:findPoints_eq_bruteForce}), and exits with status~0. It writes its output once
+  it is computed and, like ratpoints, ignores a failed write, but for one case: when the reader of
+  the output is gone, the signal \verb|SIGPIPE| ends ratpoints, and the shell reports the status
+  $141 = 128 + 13$; the Lean runtime ignores that signal, so that the write of \verb|ratpoints-lean|
+  fails instead, and it exits quietly with status~141. Since ratpoints flushes its output after
+  every point (line 187 of \verb|main.c|), a reader that leaves early, like \verb|head|, ends it at
+  the next point, while \verb|ratpoints-lean| notices only a reader that is gone when it writes: an
+  output that fits into the pipe ends with status~0.
 \end{definition}
 
 \section{The differential tests of stage~B}
@@ -379,15 +384,15 @@ script.
 
 \section{Files and names}
 
-All declarations live in the namespace \verb|Ratpoints|. The module says which part a
-declaration belongs to, and \verb|scripts/check_layout.py| keeps the parts' imports apart: the
-specification is \verb|Ratpoints/Spec/Basic.lean|, with examples by \verb|decide| taken from the
-output of the program; the constants of the C code are in \verb|Ratpoints/Model/Constants.lean|; the brute-force reference is \verb|Ratpoints/Model/BruteForce.lean|, with
-\verb|#guard| examples taken from the C program, and its theorems are in
-\verb|Ratpoints/Proof/BruteForce.lean|, each with a guard on its axioms (\verb|#print axioms|
-under \verb|#guard_msgs|); the program is \verb|Ratpoints/Model/Cli.lean| with \verb|Main.lean|;
-the statements for comparator are in \verb|comparator/|, and the differential tests in
-\verb|scripts/difftest.py|.
+All declarations live in the namespace \verb|Ratpoints|. The module says which part a declaration
+belongs to, and \verb|scripts/check_layout.py| keeps the parts' imports apart: the specification is
+\verb|Ratpoints/Spec/Basic.lean|, with examples by \verb|decide| taken from the output of the
+program; the constants of the C code are in \verb|Ratpoints/Model/Constants.lean|; the brute-force
+reference is \verb|Ratpoints/Model/BruteForce.lean|, with \verb|#guard| examples taken from the C
+program, and its theorems are in \verb|Ratpoints/Proof/BruteForce.lean|, each with a guard on its
+axioms (\verb|#print axioms| under \verb|#guard_msgs|); the program is
+\verb|Ratpoints/Model/Cli.lean| with \verb|Main.lean|; the statements for comparator are in
+\verb|comparator/|, and the differential tests in \verb|scripts/difftest.py|.
 
 \section{The evidence}\label{sec:spec-evidence}
 

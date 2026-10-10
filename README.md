@@ -13,8 +13,11 @@ new optimization of the C code comes, as far as possible, with its soundness pro
 correspondence record and its checks, the comparator harness, and the blueprint chapter that settles
 the specification. Stage B is done: the specification is in Lean, the brute-force reference lists
 exactly its points, each once (certified by Comparator), and the command-line program
-`ratpoints-lean` prints them; differential tests in CI compare it with the C program. Stage C1, the
-plain sieve, comes next. The blueprint and the API documentation will be at
+`ratpoints-lean` prints them; differential tests in CI compare it with the C program. Stage C1 is
+done: the plain sieve returns, for every well-formed choice of the sieving parameters, the list of
+the brute-force reference (the membership, no-duplicates and refusal theorems certified by
+Comparator), and `ratpoints-lean` runs it. Stage C2, the bit arrays of words, comes next. The
+blueprint and the API documentation will be at
 <https://michaelstollbayreuth.github.io/RatpointsLean/> once the repository is public.
 
 ## Layout
@@ -55,10 +58,11 @@ that `--c PATH` or `RATPOINTS_BIN` names). CI runs these checks and more
 `ratpoints-lean 'a_0 a_1 ... a_n' H [options]` has the command line of ratpoints. It reads the
 coefficients (constant term first), the height bound and the options as ratpoints does, with its
 checks, messages and exit statuses, and prints the points of height at most `H` on
-`y² = a_n xⁿ + ⋯ + a_0` as ratpoints does with `-q`: one line `(x : y : z)` per point. For now
-it finds the points by brute force; it accepts `-q`, `-v` and the options that tune the sieve,
-checking their arguments, but ignores them; it answers the other options of ratpoints with the
-exit status 12; and it does not refuse a polynomial that is not squarefree.
+`y² = a_n xⁿ + ⋯ + a_0` as ratpoints does with `-q`: one line `(x : y : z)` per point. It finds
+the points by the plain sieve, whose parameters the options `-p -n -N -P -F -j -J` set; it
+accepts `-q`, `-v` and the other options that tune the sieve of ratpoints, checking their
+arguments, but ignores them; it answers the other options of ratpoints with the exit status 12;
+and for now it does not refuse a polynomial that is not squarefree.
 
 ## Licence
 

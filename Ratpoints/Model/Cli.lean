@@ -5,11 +5,10 @@ Authors: Michael Stoll
 -/
 module
 
-public import Ratpoints.Model.BruteForce
-public import Ratpoints.Model.Constants
+public import Ratpoints.Model.FindPoints
 
--- The `#guard` examples use the constants at compile time.
-meta import Ratpoints.Model.Constants
+-- The `#guard` examples run the sieve at compile time.
+meta import Ratpoints.Model.FindPoints
 
 /-!
 # The command-line program `ratpoints-lean`
@@ -18,11 +17,12 @@ meta import Ratpoints.Model.Constants
 `y ^ 2 = a_n x ^ n + ⋯ + a_0` as one argument (constant term first), the height bound and the
 options. It reads them as `main.c` of ratpoints does, with its checks, messages and exit statuses,
 in its order, and prints the points as ratpoints does with `-q`: one line `(x : y : z)` per point
-and nothing else. It accepts `-q` and `-v` and the options that tune the sieve of ratpoints, and
-ignores them; it answers every other option of ratpoints, which it does not support yet, with a
-message and the exit status 12, which `main.c` does not use. For now it takes the points from the
-brute-force reference `Ratpoints.bruteForce`, so that, unlike ratpoints, it does not refuse a
-polynomial that is not squarefree.
+and nothing else. It accepts `-q` and `-v`, which it ignores, and the options that tune the sieve
+of ratpoints: it reads `-p -n -N -P -F -j -J` into the sieving parameters and ignores the others;
+it answers every other option of ratpoints, which it does not support yet, with a message and the
+exit status 12, which `main.c` does not use. It takes the points from the plain sieve
+`Ratpoints.findPoints` with the parameters `Ratpoints.sieveParams` of these options, so that, for
+now and unlike ratpoints, it does not refuse a polynomial that is not squarefree.
 
 ## Main definitions
 
@@ -223,6 +223,14 @@ def Failure.status : Failure → UInt32
   | .incorrectCoefficients => 11
   | .unsupportedOption _ => 12
 
+/-- The failure of `ratpoints-lean` for a refusal of `Ratpoints.findPoints`: the error of `main.c`
+with the number that `Ratpoints.Refusal` names. The reading of the command line meets these inputs
+first, so that `Ratpoints.Cli.run` never needs it. -/
+def Failure.ofRefusal : Refusal → Failure
+  | .tooManyCoefficients => .tooManyCoefficients
+  | .tooFewCoefficients => .tooFewCoefficients
+  | .incorrectHeight => .incorrectHeight
+
 /-! ### The command line -/
 
 /-- The coefficient list that the first argument `s` of the command line gives, constant term
@@ -284,45 +292,62 @@ def optionArg (o : String) : Except Failure (Option OptionArg) :=
     else throw .optionSyntax
   | _ => throw .optionSyntax
 
-/-- The first failure among the options, the words that follow the coefficients and the height
-bound on the command line, read from left to right as `main.c` reads them: an option that fails by
-`Ratpoints.Cli.optionArg`, or one whose argument is missing or malformed (error 6). Since
-`ratpoints-lean` always runs as ratpoints does with `-q`, it ignores `-q` and `-v`, which `-q`
-cancels in `main.c`; and it ignores the tuning options, which do not change what ratpoints prints
-under `-q`.
+/-- The values of the options that set the sieving parameters, starting from `s`, or the first
+failure among the options, the words that follow the coefficients and the height bound on the
+command line, read from left to right as `main.c` reads them: an option that fails by
+`Ratpoints.Cli.optionArg`, or one whose argument is missing or malformed (error 6), fails; `-p`,
+`-n`, `-N`, `-P` and `-F` set the fields of `Ratpoints.SieveOptions` to the C `long` that follows
+them, the last one winning, and `-j` switches the Jacobi test off and `-J` on again, as `main.c`
+sets the fields and the flags of its `ratpoints_args`. Since `ratpoints-lean` always runs as
+ratpoints does with `-q`, it ignores `-q` and `-v`, which `-q` cancels in `main.c`; and it ignores
+the other tuning options, which tune only the heuristics of the C program and its threads.
 
 C: `main.c:393-397`, `main.c:437-532`, `main.c:578-593`, `main.c:667-668`
 
-Deviation: the arguments of the options are checked and then ignored. An option of ratpoints that
-`ratpoints-lean` does not support yet, whose cases are lines 398-436, 533-577 and 594-666 of
-`main.c`, ends the reading with the exit status 12; of these lines, only the error 6 on a word
-`-f…` or `-d…` that names no option (lines 575 and 664) is kept. -/
-def checkOptions : List String → Except Failure Unit
-  | [] => return
-  | o :: os =>
+Deviation: the arguments of the tuning options other than `-p -n -N -P -F` are checked and then
+ignored. An option of ratpoints that `ratpoints-lean` does not support yet, whose cases are lines
+398-436, 533-577 and 594-666 of `main.c`, ends the reading with the exit status 12; of these lines,
+only the error 6 on a word `-f…` or `-d…` that names no option (lines 575 and 664) is kept. -/
+def checkOptions : SieveOptions → List String → Except Failure SieveOptions
+  | s, [] => return s
+  | s, o :: os =>
     match optionArg o with
     | .error f => throw f
-    | .ok none => checkOptions os
+    | .ok none => checkOptions (store s o none) os
     | .ok (some arg) =>
       match os with
-      | a :: os => if arg.accepts a then checkOptions os else throw .optionSyntax
+      | a :: os =>
+        if arg.accepts a then checkOptions (store s o (longOfString? a)) os else throw .optionSyntax
       | [] => throw .optionSyntax
+where
+  /-- `s` with the value `v` of the option `o`, if `o` sets one. -/
+  store (s : SieveOptions) (o : String) (v : Option Int) : SieveOptions :=
+    match o.toList, v with
+    | '-' :: 'p' :: _, some v => { s with numPrimes := v }
+    | '-' :: 'n' :: _, some v => { s with sp1 := v }
+    | '-' :: 'N' :: _, some v => { s with sp2 := v }
+    | '-' :: 'P' :: _, some v => { s with sp3Extra := v }
+    | '-' :: 'F' :: _, some v => { s with maxForbidden := v }
+    | '-' :: 'j' :: _, _ => { s with jacobi := false }
+    | '-' :: 'J' :: _, _ => { s with jacobi := true }
+    | _, _ => s
 
-/-- The coefficient list and the height bound that a command line (the words after the name of
-the program) gives, or the first failure, in the order of `main.c`: fewer than two words
-fail with error 2; then come the coefficients (`Ratpoints.Cli.coefficients`), the height bound
-(`Ratpoints.Cli.heightBound`) and the options (`Ratpoints.Cli.checkOptions`).
+/-- The coefficient list, the height bound and the values of the options that set the sieving
+parameters that a command line (the words after the name of the program) gives, or the first
+failure, in the order of `main.c`: fewer than two words fail with error 2; then come the
+coefficients (`Ratpoints.Cli.coefficients`), the height bound (`Ratpoints.Cli.heightBound`) and
+the options (`Ratpoints.Cli.checkOptions`), whose values start from those of no options.
 
 C: `main.c:210-214`
 
 Deviation: `read_input` never returns a value other than 0, so the usage that `main.c` prints
 then (lines 212 and 213) has no counterpart. -/
-def input : List String → Except Failure (List Int × Nat)
+def input : List String → Except Failure (List Int × Nat × SieveOptions)
   | s :: h :: os => do
     let c ← coefficients s
     let H ← heightBound h
-    checkOptions os
-    return (c, H)
+    let o ← checkOptions {} os
+    return (c, H, o)
   | _ => throw .tooFewArguments
 
 /-! ### The program -/
@@ -339,13 +364,14 @@ def pointLine (p : Int × Int × Int) : String := s!"({p.1} : {p.2.1} : {p.2.2})
 
 /-- What `ratpoints-lean` does on the command line `args` (the words after the name of the
 program): the text it prints on the standard output and its exit status. On the coefficient list
-`c` and the height bound `H` of `Ratpoints.Cli.input`, it prints, as ratpoints does with `-q`, the
-line `Ratpoints.Cli.pointLine` of each point of `Ratpoints.bruteForce c H`, in the order of that
-list, and exits with status 0; on a failure `f`, it prints `f.message` and exits with
-`f.status` (`Ratpoints.Cli.Failure.message`, `Ratpoints.Cli.Failure.status`). -/
+`c`, the height bound `H` and the values `o` of the options of `Ratpoints.Cli.input`, it prints,
+as ratpoints does with `-q`, the line `Ratpoints.Cli.pointLine` of each point that the plain sieve
+`Ratpoints.findPoints` finds with the parameters `Ratpoints.sieveParams o`, in its order, and
+exits with status 0; on a failure `f`, it prints `f.message` and exits with `f.status`
+(`Ratpoints.Cli.Failure.message`, `Ratpoints.Cli.Failure.status`). -/
 def run (args : List String) : String × UInt32 :=
-  match input args with
-  | .ok (c, H) => (String.join ((bruteForce c H).map pointLine), 0)
+  match input args >>= fun (c, H, o) ↦ (findPoints c H (sieveParams o)).mapError .ofRefusal with
+  | .ok pts => (String.join (pts.map pointLine), 0)
   | .error f => (f.message, f.status)
 
 /-- The program `ratpoints-lean`: it prints the text of `Ratpoints.Cli.run` on the standard
@@ -403,6 +429,16 @@ an option that ratpoints has and `ratpoints-lean` does not support yet. -/
   ("\nOption -kfoo is not supported by ratpoints-lean yet.\n\n", 12)
 
 #guard (run ["1 0 1", "5", "-q", "-r", "nan"]).2 == 6 && (run ["1 0 1", "5", "-d", "1"]).2 == 6
+
+-- `-p 10 -n 4 -N 7 -P 3 -j -F 200 -t 2 -p 12`: the last `-p` wins, and `-t` is ignored.
+#guard (checkOptions {} ["-p", "10", "-n", "4", "-N", "7", "-P", "3", "-j", "-F", "200", "-t", "2",
+    "-p", "12"]).toOption.map (fun o ↦ (o.numPrimes, o.sp1, o.sp2, o.sp3Extra, o.maxForbidden,
+    o.jacobi)) == some (12, 4, 7, 3, 200, false)
+
+-- The points of `ratpoints '-2 0 0 1' 130 -q`, with the default parameters and with others.
+#guard [[], ["-p", "0"], ["-p", "53", "-n", "5", "-N", "20", "-j"]].all fun os ↦
+  run (["-2 0 0 1", "130", "-q"] ++ os) ==
+    ("(1 : 0 : 0)\n(3 : 5 : 1)\n(3 : -5 : 1)\n(129 : 3830 : 100)\n(129 : -3830 : 100)\n", 0)
 
 end Cli
 

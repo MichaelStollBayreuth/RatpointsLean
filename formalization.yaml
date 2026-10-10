@@ -57,19 +57,27 @@ classification:
 # project status
 status:
   scope: >
-    Stages A and B. Stage A set up the Lake project with the libraries of the model (Lean core and
-    Std only), the specification and the proofs, the CI, the blueprint, the correspondence record
-    with its checking script, and the comparator harness, and settled the specification in the
-    blueprint. Stage B: the specification in Lean (the binary form, the normalized points of height
-    at most H, the finite set of them, and the binary form over Q that the refusals speak about),
-    the brute-force reference in the model with the theorems that it lists exactly these points,
-    each once, certified by comparator, the command-line program ratpoints-lean, which reads its
-    command line as the C program does, with its checks, messages and exit statuses, and prints the
-    points of the brute-force reference, and the differential tests that compare it with the C
-    program (the test suites of ratpoints, hand-written and random command lines). Next: stage C1;
-    the introduction of the blueprint lists the later stages (the plain sieve, words, the set-up,
-    the denominator and numerator sides, the order and protocol, the search region and the Sturm
-    step).
+    Stages A, B and C1. Stage A set up the Lake project with the libraries of the model (Lean core
+    and Std only), the specification and the proofs, the CI, the blueprint, the correspondence
+    record with its checking script, and the comparator harness, and settled the specification in
+    the blueprint. Stage B: the specification in Lean (the binary form, the normalized points of
+    height at most H, the finite set of them, and the binary form over Q that the refusals speak
+    about), the brute-force reference in the model with the theorems that it lists exactly these
+    points, each once, certified by comparator, the command-line program ratpoints-lean, which reads
+    its command line as the C program does, with its checks, messages and exit statuses, and the
+    differential tests that compare it with the C program (the test suites of ratpoints,
+    hand-written and random command lines). Stage C1: the plain sieve in the skeleton of the C code
+    (the compile-time constants of the C code as definitions, the sieving parameters with their
+    well-formedness, the tables of a prime and their rows, the sieve of one denominator, its
+    survivors, the denominators, the points at infinity), the contracts of its loops proved with the
+    program logic of Lean core, and the theorem that for every well-formed choice of the parameters
+    it returns the list of the brute-force reference; the main theorems (the membership and
+    no-duplicates theorems for findPoints, its refusals in the form of stage C1, and the
+    well-formedness of the parameters that the options of the program give) are certified by
+    comparator; ratpoints-lean runs the sieve with the parameters of its options, and the
+    differential tests have a suite of parameters. Next: stage C2, the bit arrays of words; the
+    introduction of the blueprint lists the later stages (words, the set-up, the denominator and
+    numerator sides, the order and protocol, the search region and the Sturm step).
   sorry_count: 0
   sorry_in_definitions: 0
   axioms: ["propext", "Classical.choice", "Quot.sound"]

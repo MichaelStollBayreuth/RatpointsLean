@@ -18,7 +18,12 @@ and compares it with the recorded outputs and with the C program:
           SIGPIPE, where ratpoints-lean (the Lean runtime ignores SIGPIPE) is to exit quietly
           with the status 141 that the shell reports for that, and a full device, whose failed
           writes both programs ignore;
-  fuzz    random command lines (scripts/difftest_cases.py) against the C program.
+  fuzz    random command lines (scripts/difftest_cases.py) against the C program;
+  params  the options that set the sieving parameters (-p -n -N -P -F -j), with values that
+          give no moduli, all the primes of the default build, the cut points in several
+          positions, a third stage and the defaults, on point-rich and on random curves
+          against the C program, whose points do not depend on them;
+  high    point-rich curves at the heights 2000 and 5000 against the C program.
 
 ratpoints-lean prints the points as ratpoints does with -q. They are compared as sets, until the
 model visits the points in the order of the C program, and without -q with the point lines of the
@@ -38,8 +43,9 @@ options:
                      RATPOINTS_BIN, else the program ratpoints in the clone of --repo)
   --repo PATH        a clone of ratpoints that contains the pinned commit (default: the
                      environment variable RATPOINTS_REPO); the test files are read at the pin
-  --suites LIST      comma-separated suites (default: test4,test3,rptest,random,errors,fuzz)
-  --max-height H     the largest height of a search (default: 1000)
+  --suites LIST      comma-separated suites (default: test4,test3,rptest,random,errors,fuzz,
+                     params,high)
+  --max-height H     the largest height of a search (default: 5000)
   --rptest-height h  the reduced height of the rptest suites (default: 100)
   --random N         the number of random polynomials (default: 300)
   --fuzz N           the number of rounds of random command lines, seven each (default: 100)
@@ -70,6 +76,18 @@ ARG_OPTS = set('pFtnNRAPrUCQW')
 FLAGS = set('qvjJ')
 UNSUPPORTED = set('lukKxXyYzZ1iIsS')
 POINT = re.compile(r'^\((-?\d+) : (-?\d+) : (\d+)\)$')
+# The params suite: the options that set the sieving parameters, with values that give no
+# moduli, all the primes of the default build and a cap above them, the cut points in several
+# positions, a third stage, no Jacobi test, no forbidden divisors and many of them, and
+# negative values, which mean the defaults; and the point-rich curves it runs them on, with
+# their height bounds.
+PARAM_OPTIONS = [['-p', '0'], ['-p', '53'], ['-p', '200'], ['-n', '0'], ['-n', '5', '-N', '10'],
+                 ['-N', '3', '-P', '20'], ['-p', '10', '-P', '43'], ['-j'], ['-F', '0'],
+                 ['-F', '500'], ['-p', '-5', '-n', '-1', '-N', '-2', '-P', '-3', '-F', '-4']]
+PARAM_CURVES = [('1 0 126 0 441', 200), ('-2 0 0 1', 130), ('1 1 1 1 0', 60),
+                ('1 2 3 4 5 6 7', 60), ('-1 0 9', 100), ('0 0 1', 40)]
+# The high suite: the first four of these curves at larger heights.
+HIGH_HEIGHTS = [2000, 5000]
 TIMEOUT = 600
 
 
@@ -374,6 +392,23 @@ def suite_errors(cfg, tally):
         against_c(cfg, tally, f'{note}: {args}', args)
 
 
+def suite_params(cfg, tally):
+    rng = random.Random(cfg.seed)
+    curves = PARAM_CURVES + [(' '.join(str(rng.randint(-10, 10)) for _ in range(rng.randint(2, 9))),
+                              rng.randint(1, 60)) for _ in range(10)]
+    for opts in PARAM_OPTIONS:
+        for c, h in curves:
+            args = [c, str(h), '-q', *opts]
+            against_c(cfg, tally, f'params {args}', args)
+
+
+def suite_high(cfg, tally):
+    for c, _ in PARAM_CURVES[:4]:
+        for h in HIGH_HEIGHTS:
+            args = [c, str(h), '-q']
+            against_c(cfg, tally, f'high {args}', args)
+
+
 def suite_fuzz(cfg, tally):
     rng = random.Random(cfg.seed)
     for i in range(cfg.fuzz):
@@ -382,7 +417,8 @@ def suite_fuzz(cfg, tally):
 
 
 SUITES = {'test4': suite_test4, 'test3': suite_test3, 'rptest': suite_rptest,
-          'random': suite_random, 'errors': suite_errors, 'fuzz': suite_fuzz}
+          'random': suite_random, 'errors': suite_errors, 'fuzz': suite_fuzz,
+          'params': suite_params, 'high': suite_high}
 
 
 def main(argv=None):
@@ -392,7 +428,7 @@ def main(argv=None):
     ap.add_argument('--c', type=Path)
     ap.add_argument('--repo', type=Path)
     ap.add_argument('--suites', default=','.join(SUITES))
-    ap.add_argument('--max-height', type=int, default=1000)
+    ap.add_argument('--max-height', type=int, default=5000)
     ap.add_argument('--rptest-height', type=int, default=100)
     ap.add_argument('--random', type=int, default=300)
     ap.add_argument('--fuzz', type=int, default=100)
