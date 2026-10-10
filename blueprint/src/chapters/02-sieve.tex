@@ -392,17 +392,6 @@ the points at infinity need the case $y = 0$, which ratpoints never meets.
   Theorem~\ref{thm:bruteForce} the rest.
 \end{proof}
 
-\begin{verbatim}
-theorem mem_iff_isPoint_of_findPoints_eq_ok (hP : P.WF)
-    (h : findPoints c H P = .ok L) : p ∈ L ↔ IsPoint c H p
-theorem nodup_of_findPoints_eq_ok (hP : P.WF) (h : findPoints c H P = .ok L) :
-    L.Nodup
-theorem exists_findPoints_eq_error_iff :
-    (∃ e, findPoints c H P = .error e) ↔
-      c.length < 2 ∨ maxDegree + 1 < c.length ∨ H = 0
-theorem wf_sieveParams (o : SieveOptions) : (sieveParams o).WF
-\end{verbatim}
-
 \verb|mem_iff_isPoint_of_findPoints_eq_ok| and \verb|nodup_of_findPoints_eq_ok| are the main
 theorems of the project; later stages add the options of \verb|findPoints| as an argument and, from
 stage~H on, the hypothesis of Sturm's theorem. The refusal theorem has its C1 form: stage~D adds the
@@ -410,14 +399,16 @@ disjunct that $\Phi_c$ is not squarefree. The equation with the brute-force refe
 the reversal of stage~D and the divisor order of stage~E change the order of the output; from then
 on the theorem is that the output is a permutation of the reference. Comparator certifies the two
 main theorems, the refusal theorem, which rules out a \verb|findPoints| that refuses every input,
-and \verb|wf_sieveParams|: the challenge states them with \verb|sorry| over \verb|findPoints|,
-\verb|Params|, \verb|Params.WF|, \verb|SieveOptions|, \verb|sieveParams| and \verb|maxDegree|,
-imported from the model, never restated, since a definition of the model elaborates without Mathlib
-to other instance terms. Each main theorem gets a guard on its axioms. The contracts need only the
-program logic of Lean core and stay in a file without Mathlib, so that their \verb|grind| calls see
-only the lemmas of core, untouched by Mathlib's updates; that file also states the result of
-\verb|sieveRun| as a plain equation, \verb|toList_run_sieveRun|, so that the files with Mathlib need
-no program logic. The soundness of the rows needs Mathlib, through $\ZZ/p\ZZ$.
+and \verb|wf_sieveParams|, which rules out a well-formedness that nothing satisfies: the challenge
+states them with \verb|sorry| over \verb|findPoints|, \verb|Params|, \verb|Params.WF|,
+\verb|SieveOptions|, \verb|sieveParams| and \verb|maxDegree|, imported from the model, never
+restated, since a definition of the model elaborates without Mathlib to other instance terms;
+Comparator accepted the solution on 2026-10-10. Each main theorem has a guard on its axioms, which
+are the standard ones. The contracts need only the program logic of Lean core and stay in a file
+without Mathlib, so that their \verb|grind| calls see only the lemmas of core, untouched by
+Mathlib's updates; that file also states the result of \verb|sieveRun| as a plain equation,
+\verb|toList_run_sieveRun|, so that the files with Mathlib need no program logic. The soundness of
+the rows needs Mathlib, through $\ZZ/p\ZZ$.
 
 \section{The command-line program and the differential tests}\label{sec:sieveCli}
 
@@ -438,54 +429,40 @@ all 53 primes and a cap above them, the cut points in several positions, a third
 test, no forbidden divisors and many, and negative values, which mean the defaults) on point-rich
 and on random curves.
 
-\section{Files, names and order of work}
+\section{Files and names}
 
 The interface (\verb|primeTable|, \verb|Params|, \verb|SieveOptions|, \verb|sieveParams|,
 \verb|Refusal|, \verb|findPoints|) lives in the namespace \verb|Ratpoints|, the components of the
 sieve in \verb|Ratpoints.Sieve|, and the general lemmas on lists and on $\ZZ/n\ZZ$ in
 \verb|Ratpoints/Mathlib| under their names in Mathlib's namespaces. The table of primes and the
-constants of the build join $\mathrm{maxDegree}$ in \verb|Ratpoints/Model/Constants.lean|; the rest
-of the model goes into \verb|Ratpoints/Model/Params.lean|, \verb|Ratpoints/Model/Sieve.lean| and
-\verb|Ratpoints/Model/FindPoints.lean|; the contracts, without Mathlib, into
-\verb|Ratpoints/Proof/Sieve.lean|; the well-formedness and the primes into
-\verb|Ratpoints/Proof/Params.lean|, the tables and the soundness of the rows into
-\verb|Ratpoints/Proof/Tables.lean|, and the main theorems into
-\verb|Ratpoints/Proof/FindPoints.lean|. One commit per item, each passing the project's checks:
-\begin{enumerate}
-  \item[C1.1] The table of primes, the constants of the choice of the moduli, and the parameters
-    (Definitions~\ref{def:primeTable} to~\ref{def:sieveParams}), with their lemmas.
-  \item[C1.2] The tables of a prime and the rows (Definitions~\ref{def:squaresMod}
-    to~\ref{def:admits}) with \verb|#guard| examples against the tables of ratpoints, and
-    Lemmas~\ref{lem:isSquare_div} and~\ref{lem:admits_examinePrime}.
-  \item[C1.3] The sieve of one denominator and its contract, with \verb|#guard| examples.
-  \item[C1.4] The survivors of one denominator and its contract, with \verb|#guard| examples.
-  \item[C1.5] The denominators and their contract.
-  \item[C1.6] The points at infinity, \verb|findPoints| with \verb|#guard| examples against the
-    C program, Lemmas~\ref{lem:flatMap_sound} and~\ref{lem:survives},
-    Theorems~\ref{thm:findPoints_eq_bruteForce} and~\ref{thm:findPoints} with their axiom guards,
-    the comparator challenge with its solution and description, and the main results of
-    \verb|formalization.yaml|.
-  \item[C1.7] \verb|ratpoints-lean| on the sieve, with the options of \verb|SieveOptions|, the
-    nodes of the program and the description of the repository brought up to date, and the
-    differential tests with their new heights and the suite of parameters.
-\end{enumerate}
+constants of the build are in \verb|Ratpoints/Model/Constants.lean| with $\mathrm{maxDegree}$; the
+rest of the model is in \verb|Ratpoints/Model/Params.lean|, \verb|Ratpoints/Model/Sieve.lean| and
+\verb|Ratpoints/Model/FindPoints.lean|, each with \verb|#guard| examples taken from the tables and
+the output of ratpoints; the contracts, without Mathlib, are in \verb|Ratpoints/Proof/Sieve.lean|;
+the primes of the table and the well-formedness in \verb|Ratpoints/Proof/Params.lean|, the tables
+and the soundness of the rows in \verb|Ratpoints/Proof/Tables.lean|, and the main theorems in
+\verb|Ratpoints/Proof/FindPoints.lean|, with the guards on their axioms.
 
 \section{The evidence}\label{sec:sieve-evidence}
 
-Three checks, made while this chapter was written:
+Besides the proofs:
 \begin{itemize}
   \item a reading of the C code of a default run at the pin, which fixed the steps of
     Section~\ref{sec:skeleton}, the meaning of a row (the entry of \verb|is_f_square| at
     $a b^{-1}$ for $p \nmid b$, ``$p \nmid a$'' for $p \mid b$, where the curve plays no part),
     and the fact that the points found and their order do not depend on the moduli, their order or
-    the cut points;
-  \item a prototype in Lean of the model of this chapter and of all its proofs: the model agrees
-    with the brute-force reference on examples, among them the zero polynomial, a polynomial of
-    degree $0$, no moduli and all 53 primes; the three contracts go through with \verb|vcgen| in
-    at most 12 lines each and in under a second each (a rewrite of the entries of the array
-    before \verb|grind|, which otherwise times out on the bound proofs that \verb|vcgen| builds for
-    \verb|Vector.set|); the soundness of the rows, the equation with the reference and its
-    corollaries take the standard axioms only, with no proof longer than 12 lines;
-  \item the prototype compiled as a program and timed against the brute-force reference on four
-    curves at heights 100, 300 and 1000.
+    the cut points; and an independent review of the C ranges of the components, each finding
+    checked by a second reader, which completed the ranges and the deviations (the macros and the
+    generator behind the rows, the exits of \verb|examine_prime|, the third stage, the scan and
+    the extraction of the survivors, the whole exact check, the square test of $c_d$, the leading
+    zeros);
+  \item the \verb|#guard| examples of the model: the tables of squares and inverses against the
+    tables that the build of ratpoints generates, the rows against \verb|sieves0|, the points of
+    four curves against \verb|ratpoints -q|, and \verb|findPoints| against the brute-force
+    reference for other parameters (no moduli, all 53 primes, three stages, moduli out of order)
+    and on inputs that ratpoints refuses (the zero polynomial, polynomials of degree $0$);
+  \item the differential tests of Section~\ref{sec:sieveCli}: \verb|ratpoints-lean| on the sieve
+    and the C program agree on all 3144 comparisons of the eight suites;
+  \item the contracts take at most 8 lines each, and their file compiles in under two seconds; no
+    proof of the stage is longer than 10 lines.
 \end{itemize}
