@@ -44,7 +44,7 @@ calls
     (\csource{find_points.c}{1703}{1747}), with an exit when there are no points modulo $p$
     (stage~D);
   \item delivers the points at infinity (\csource{find_points.c}{5068}{5105});
-  \item runs over the denominators in blocks (\csource{find_points.c}{5152}{5159}); for each
+  \item runs over the denominators in blocks (\csource{find_points.c}{5152}{5160}); for each
     denominator $b$ that passes its tests, it sieves the numerators of the search region in pieces
     of bit arrays with the rows of the moduli of the first two stages (\verb|sift| and
     \verb|_ratpoints_sift0|), tests each survivor for common factors with $b$
@@ -249,10 +249,11 @@ lemmas.
 
 \begin{definition}[The denominators]\label{def:sieveRun}
   \uses{def:sieveDen, def:checkDen}
-  Proposed names: \lname{Ratpoints.Sieve.sieveRun}, \lname{Ratpoints.Sieve.sieveRun\_spec}.
+  \lean{Ratpoints.Sieve.sieveRun, Ratpoints.Sieve.sieveRun_spec}
+  \leanok
   The denominators $b = 1, \dots, H$ in increasing order, each sieved and its survivors checked,
   the points appended in turn (\csource{find_points.c}{4059}{4075},
-  \csource{find_points.c}{5152}{5159}). Its contract: the result is the concatenation over
+  \csource{find_points.c}{5152}{5160}). Its contract: the result is the concatenation over
   $b = 1, \dots, H$ of what the brute-force reference finds over $b$ and the numerators that
   survive the moduli for $b$, that is, the part of the reference with $z \ge 1$, its numerators
   filtered by the moduli.
@@ -285,9 +286,11 @@ paragraph of the component whose range holds it:
   \item the Booleans stand for the bit arrays of words, the pieces and the end masks (C2), and the
     walk upwards through all of them for the scan over the bit arrays and the walk by trailing
     zeros (C2), where the bit of a numerator lies in the packing of its 2-adic class (E, F);
-  \item every denominator from $1$ to $H$, one after the other, for the loop shapes, the tests on
-    the denominators and the blocks (E), and the threads, which deliver the blocks in the same
-    order;
+  \item every denominator from $1$ to $H$, one after the other, for the denominator range (H), the
+    loop shapes, the tests on the denominators and the blocks (E), and the threads, which deliver
+    the blocks in the same order;
+  \item the residue of $b$ modulo each modulus computed for each numerator, where ratpoints
+    computes the residues of $b / 2^k$ that choose the rows once per denominator (F);
   \item every numerator from $-H$ to $H$ for the search region (H) and the 2-adic classes (E, F);
   \item one table per prime and every modulus applied to every numerator before the test for
     common factors, for the composite moduli, the packing, the three stages and their correction

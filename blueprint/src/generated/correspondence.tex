@@ -9,7 +9,7 @@ The model is checked against ratpoints v3.1.1 (commit \texttt{1a998538dfa8}). Th
 \begin{tabular}{lrrrr}
 file & lines of code & modelled & excluded & not yet recorded \\
 \hline
-\texttt{find\_points.c} & 3244 & 133 & 0 & 3111 \\
+\texttt{find\_points.c} & 3244 & 156 & 0 & 3088 \\
 \texttt{sift.c} & 820 & 234 & 0 & 586 \\
 \texttt{init.c} & 302 & 155 & 8 & 139 \\
 \texttt{sturm.c} & 215 & 0 & 0 & 215 \\
@@ -20,7 +20,7 @@ file & lines of code & modelled & excluded & not yet recorded \\
 \texttt{gen\_init\_sieve\_h.c} & 26 & 13 & 0 & 13 \\
 \texttt{main.c} & 779 & 195 & 0 & 584 \\
 \hline
-total & 5883 & 851 & 8 & 5024 \\
+total & 5883 & 874 & 8 & 5001 \\
 \end{tabular}
 \end{center}
 
@@ -35,7 +35,10 @@ total & 5883 & 851 & 8 & 5024 \\
 \item \csource{find_points.c}{1767}{1785}: not yet recorded (8 lines of code)
 \item \csource{find_points.c}{1795}{1824}: modelled by \lname{Ratpoints.Sieve.examinePrime}
   (deviation of \lname{Ratpoints.Sieve.examinePrime}: the coefficients are integers, reduced by the Euclidean \texttt{\%}, for the two paths of ratpoints through \texttt{long}s and GMP integers (stage D), and they are not handed back, where \texttt{examine\_prime} leaves them in its caller's array for the test on the forbidden divisors of the denominators (stage E); Horner's rule reduces at every step, for the reduction on a fixed schedule (stage F), and also gives \texttt{f(0)}, which ratpoints reads off the constant term; the table has no last entry, whether there are points at infinity modulo \texttt{p}, which ratpoints reads only for its exits, the density, the prime powers and the forbidden divisors, never in a row or in the third stage; the entry is made for every prime it is given, where \texttt{examine\_prime} makes none when there is no point at infinity modulo \texttt{p} and \texttt{f(x)} is a square for no residue (it returns \texttt{-{}1}, and the search ends with no points: stage D) or for every residue (it returns \texttt{0}, and \texttt{p} is never a modulus: the choice of the moduli, an input of the model), so that the residues with a square value are not counted either; the entry keeps only \texttt{p}, the table and the inverses (\texttt{Ratpoints.Sieve.Entry}), and no rows.)
-\item \csource{find_points.c}{1825}{4641}: not yet recorded (1734 lines of code)
+\item \csource{find_points.c}{1825}{4058}: not yet recorded (1339 lines of code)
+\item \csource{find_points.c}{4059}{4075}: modelled by \lname{Ratpoints.Sieve.sieveRun}
+  (deviation of \lname{Ratpoints.Sieve.sieveRun}: every denominator from \texttt{1} to \texttt{H}, one after the other, for the denominator range \texttt{b\_low, …, b\_high} (stage H), the loop shapes, the tests on the denominators and the blocks (stage E), and for the threads, which deliver the blocks in the same order; the residues of \texttt{b} divided by \texttt{2\textasciicircum{}k} modulo the moduli of the first two stages, which ratpoints computes once per denominator (\texttt{fill\_bp\_list}, \texttt{k} the stride of the packing), are the residues \texttt{b mod p} that \texttt{Ratpoints.Sieve.Entry.admits} computes for each numerator (stage F); no stop by the callback (stage G), and no correction of the moduli between the blocks (stage F).)
+\item \csource{find_points.c}{4076}{4641}: not yet recorded (380 lines of code)
 \item \csource{find_points.c}{4643}{4649}: modelled by \lname{Ratpoints.sieveParams}
   (deviation of \lname{Ratpoints.sieveParams}: the moduli are the first primes of the table, in increasing order, where ratpoints ranks the primes by what they say about the curve (\texttt{sieving\_info}), looks past the first \texttt{q} when \texttt{-{}p} is absent and the curve needs it, chooses the cut points from the curve when \texttt{-{}n} or \texttt{-{}N} is absent or negative, and corrects the choice during the run (\texttt{adapt\_primes}); the third stage is the rest of the list after \texttt{s₂}, where ratpoints takes \texttt{P} primes after \texttt{s₂}, or primes up to all \texttt{Ratpoints.numPrimes} when \texttt{-{}P} is absent or negative.)
 \item \csource{find_points.c}{4654}{4654}: not yet recorded (1 lines of code)
@@ -44,7 +47,10 @@ total & 5883 & 851 & 8 & 5024 \\
 \item \csource{find_points.c}{4658}{4661}: not yet recorded (4 lines of code)
 \item \csource{find_points.c}{4662}{4665}: modelled by \lname{Ratpoints.sieveParams}
   (deviation of \lname{Ratpoints.sieveParams}: the moduli are the first primes of the table, in increasing order, where ratpoints ranks the primes by what they say about the curve (\texttt{sieving\_info}), looks past the first \texttt{q} when \texttt{-{}p} is absent and the curve needs it, chooses the cut points from the curve when \texttt{-{}n} or \texttt{-{}N} is absent or negative, and corrects the choice during the run (\texttt{adapt\_primes}); the third stage is the rest of the list after \texttt{s₂}, where ratpoints takes \texttt{P} primes after \texttt{s₂}, or primes up to all \texttt{Ratpoints.numPrimes} when \texttt{-{}P} is absent or negative.)
-\item \csource{find_points.c}{4666}{5242}: not yet recorded (433 lines of code)
+\item \csource{find_points.c}{4666}{5151}: not yet recorded (372 lines of code)
+\item \csource{find_points.c}{5152}{5160}: modelled by \lname{Ratpoints.Sieve.sieveRun}
+  (deviation of \lname{Ratpoints.Sieve.sieveRun}: every denominator from \texttt{1} to \texttt{H}, one after the other, for the denominator range \texttt{b\_low, …, b\_high} (stage H), the loop shapes, the tests on the denominators and the blocks (stage E), and for the threads, which deliver the blocks in the same order; the residues of \texttt{b} divided by \texttt{2\textasciicircum{}k} modulo the moduli of the first two stages, which ratpoints computes once per denominator (\texttt{fill\_bp\_list}, \texttt{k} the stride of the packing), are the residues \texttt{b mod p} that \texttt{Ratpoints.Sieve.Entry.admits} computes for each numerator (stage F); no stop by the callback (stage G), and no correction of the moduli between the blocks (stage F).)
+\item \csource{find_points.c}{5161}{5242}: not yet recorded (53 lines of code)
 \item \csource{find_points.c}{5250}{5338}: modelled by \lname{Ratpoints.Sieve.checkDen}
   (deviation of \lname{Ratpoints.Sieve.checkDen}: the walk upwards through every Boolean, for the scan that steps over the bit arrays that the first stage left empty, up to a sentinel past the range, and the walk by trailing zeros through the words of the others (stage C2); entry \texttt{i} for the numerator \texttt{i -{} H}, where bit \texttt{t} of the bit array stands for the numerator \texttt{a₀ + 2\textasciicircum{}k t} of the packing of the 2-adic class of \texttt{b}, which holds only the numerators congruent to \texttt{a₀} modulo \texttt{2\textasciicircum{}k} (stages E and F); a plain \texttt{gcd}, for the binary \texttt{gcd} of \texttt{relprime}, whose loop body has no branch (stage F); the third stage of \texttt{accepted} is applied with the other moduli in \texttt{Ratpoints.Sieve.sieveDen} (stage F); no counts of the bit arrays that survive the first stage and of the numerators that reach the test for common factors, pass it and pass the third stage (\texttt{n\_arrays}, \texttt{n\_bits}, \texttt{n\_coprime}, \texttt{n\_checks}), which ratpoints reads to correct the moduli during the run (stage F); the products \texttt{cₖ b\textasciicircum{}(d -{} k)} are computed for every denominator, where ratpoints computes them when the first survivor reaches the check; a list of points for the callback \texttt{process}, with no stop it may request, no reversal (stage D), and no \texttt{RATPOINTS\_NO\_Y} and no \texttt{RATPOINTS\_NO\_CHECK} (stage G).)
 \end{itemize}
