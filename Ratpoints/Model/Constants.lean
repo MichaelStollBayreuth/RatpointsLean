@@ -84,9 +84,10 @@ C: `ratpoints.h:333-340` -/
 def defaultNumPrimes : Nat := 30
 
 /-- The depth of the Sturm step when the options do not say, `RATPOINTS_DEFAULT_STURM`: the default
-of `Ratpoints.Options.sturm`, for which the option `-s` of the program sets `-1` and `-S` a depth of
-its own. Of the depth, the model reads only whether it is negative; the rest of the Sturm step,
-which reads the depth itself, is stage H.
+of `Ratpoints.Options.sturm` and the depth that the option `-S` of the program sets without an
+argument; `-s` sets `-1`, and `-S` with an argument the depth that it gives. Of the depth, the model
+reads only whether it is negative; the rest of the Sturm step, which reads the depth itself, is
+stage H.
 
 C: `ratpoints.h:341-343` -/
 def defaultSturm : Nat := 10

@@ -129,16 +129,18 @@ as a negative degree and one coefficient as the degree 0 (a longer list of degre
 of the leading zeros first); and the height bound, which the program checks before it calls the
 library, comes before the test of the leading zeros, which the library makes first, so that `5 0`
 with `H = 0` is error 4, as the program gives it. The degree with the leading zeros dropped is
-`Ratpoints.BruteForce.degree c`. A list for the array of GMP integers and its scratch integers
-`work`, with nothing written back to the caller (the reversed coefficients, the degree, the flags),
-so that there is no state between calls and the reset of the flags clears nothing; the points are
-returned as a list, for the count `total` and the flag `quit` of the callback (stage G); the points
-at infinity and the square test of the leading coefficient are decided where they are used
-(`Ratpoints.Sieve.pointsAtInfinity`, `Ratpoints.Setup.reversal`). Of the Sturm step only its test
-for a repeated factor: the rest, which restricts the search region and its exit when the polynomial
-is negative on the whole of it, is stage H, so that `sturm_empty` is never set. No search region
-(stage H); no failure for lack of memory, which the model cannot meet; no output under
-`RATPOINTS_VERBOSE`. -/
+`Ratpoints.BruteForce.degree c`. A natural number `H` for the `long` `height`, so that `H = 0`
+stands for the heights below 1 that line 4658 refuses, and with no bound `2 ^ 63 - 1`, which only
+the program's reading of the height imposes (`Ratpoints.Cli.heightBound`). A list for the array of
+GMP integers and its scratch integers `work`, with nothing written back to the caller (the reversed
+coefficients, the degree, the flags), so that there is no state between calls and the reset of the
+flags clears nothing; the points are returned as a list, for the count `total` and the flag `quit`
+of the callback (stage G); the points at infinity and the square test of the leading coefficient are
+decided where they are used (`Ratpoints.Sieve.pointsAtInfinity`, `Ratpoints.Setup.reversal`). Of the
+Sturm step only its test for a repeated factor: the rest, which restricts the search region and its
+exit when the polynomial is negative on the whole of it, is stage H, so that `sturm_empty` is never
+set. No search region (stage H); no failure for lack of memory, which the model cannot meet; no
+output under `RATPOINTS_VERBOSE`. -/
 def findPoints (c : List Int) (H : Nat) (P : Params) (o : Options := {}) :
     Except Refusal (List (Int × Int × Int)) :=
   if maxDegree + 1 < c.length then .error .tooManyCoefficients

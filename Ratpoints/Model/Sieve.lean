@@ -200,10 +200,12 @@ since ratpoints reads it otherwise only for the density, the prime powers and th
 divisors, never in a row or in the third stage; the entry is made also when `f(x)` is a square for
 every residue and there is no point at infinity modulo `p`, where `examine_prime` returns `0` and
 `p` is never a modulus, the moduli being an input of the model, and for both of its codes `1` and
-`2`, which only the choice of the moduli tells apart (stage I); the entry keeps only `p`, the table
-and the inverses (`Ratpoints.Sieve.Entry`), and no rows: `Ratpoints.Sieve.Entry.rows` makes them
-from it when they are first needed, also the row of `0`, which `examine_prime` installs from the
-build. -/
+`2`, which only the choice of the moduli tells apart (stage I); the entry is a fresh value, for the
+space that `examine_prime` takes from the buffer of the sieve entries (`se_next`), and returned,
+where `examine_prime` stores it in the field `ssp` of its caller's entry `prec_entry` for the choice
+of the moduli (stage I); it keeps only `p`, the table and the inverses (`Ratpoints.Sieve.Entry`),
+and no rows: `Ratpoints.Sieve.Entry.rows` makes them from it when they are first needed, also the
+row of `0`, which `examine_prime` installs from the build. -/
 def examinePrime? (c : List Int) (d p : Nat) (useCLong : Bool) : Option Entry :=
   let cs := (List.range (d + 1)).map fun n ↦
     (if useCLong then modLong (c.getD n 0) p else c.getD n 0 % (p : Int)).toNat
@@ -422,9 +424,10 @@ structure SieveSpec where
 
 /-- The point of the caller's curve for the point `(a, y, b)` of the reversed curve: `(b, y, a)` for
 `a ≥ 0` and `(-b, y, -a)` for `a < 0`. After the reversal check has reversed the polynomial
-(`Ratpoints.Setup.reversal`), the C code applies this map to every point that it delivers, in the
-lines of the check of a numerator and of the points at infinity, which deliver the mapped points
-when their flag of the reversal is set (`Ratpoints.Sieve.checkNum`,
+(`Ratpoints.Setup.reversal`), the C code delivers the mapped points: the check of a numerator maps
+each point that it finds by this map, and the points at infinity take the candidate `(0, 1)` in
+place of `(1, 0)`, which gives the image of `(1, y, 0)`; the two components deliver the mapped
+points when their flag of the reversal is set (`Ratpoints.Sieve.checkNum`,
 `Ratpoints.Sieve.pointsAtInfinity`). It maps the normalized points of height at most `H` of the
 reversed curve one to one onto those of the caller's curve
 (`Ratpoints.Sieve.perm_map_swapPoint_bruteForce`). Its negations `-b` and `-a` stay in the range of
@@ -726,11 +729,15 @@ points `(0, y, 1)` of the caller's curve.
 C: `find_points.c:4634`, `find_points.c:4894-4899`, `find_points.c:5068-5105`
 
 Deviation: the flag `rev` as an argument, for the bit `RATPOINTS_REVERSED` of the flags of the
-search (`args->flags`); a list of points for the callback `process`, with no stop it may request,
-no `RATPOINTS_NO_Y` and no `RATPOINTS_NO_CHECK` (stage G), and no output under
-`RATPOINTS_VERBOSE`; the case `c_d = 0`, that of the zero polynomial, which ratpoints refuses before
-it gets here, gives the one point `(a, 0, b)`, which the cited lines, delivering `-y` without a
-test `y ≠ 0`, would deliver twice. -/
+search (`args->flags`); a list of points for the callback `process`, with no stop it may request, no
+`RATPOINTS_NO_Y` and no `RATPOINTS_NO_CHECK` (stage G), and no output under `RATPOINTS_VERBOSE` or
+`DEBUG`; the square test of `c_d` and the decision whether there are points at infinity are made on
+the list that it is given, after the reversal check, when the points are delivered, where the C code
+computes `lcfsq` before the check (line 4634), which clears it when it reverses a polynomial of even
+degree and leaves it, unread, with the odd degree of the other reversals, and sets `point_at_infty`
+before the exits of the search (lines 4894-4899); the case `c_d = 0`, that of the zero polynomial,
+which ratpoints refuses before it gets here, gives the one point `(a, 0, b)`, which the cited lines,
+delivering `-y` without a test `y ≠ 0`, would deliver twice. -/
 def pointsAtInfinity (c : List Int) (d : Nat) (rev : Bool) : List (Int × Int × Int) :=
   let a : Int := if rev then 0 else 1
   let b : Int := if rev then 1 else 0

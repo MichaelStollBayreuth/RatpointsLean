@@ -326,11 +326,12 @@ whose argument is missing or malformed (error 6), fails; `-p`, `-n`, `-N`, `-P` 
 fields of `Ratpoints.SieveOptions` to the C `long` that follows them, the last one winning, and `-j`
 switches the Jacobi test off and `-J` on again, as `main.c` sets the fields and the flags of its
 `ratpoints_args`; `-k` forbids the reversal of the polynomial and `-K` allows it again, and `-s`
-switches the Sturm step off, with the depth `-1`, and `-S` on again, with the depth that the next
-word gives if there is one and it does not start with `-`, and else with `Ratpoints.defaultSturm`,
-the last of `-k` and `-K` and the last of `-s` and `-S` winning. Since `ratpoints-lean` always runs
-as ratpoints does with `-q`, it ignores `-q` and `-v`, which `-q` cancels in `main.c`; and it
-ignores the other tuning options, which tune only the heuristics of the C program and its threads.
+sets the depth of the Sturm step to `-1`, which switches the step off, and `-S` to the C `long` that
+the next word gives if there is one and it does not start with `-`, and else to
+`Ratpoints.defaultSturm`, so that the step is on unless that depth is negative; the last of `-k` and
+`-K` and the last of `-s` and `-S` winning. Since `ratpoints-lean` always runs as ratpoints does
+with `-q`, it ignores `-q` and `-v`, which `-q` cancels in `main.c`; and it ignores the other tuning
+options, which tune only the heuristics of the C program and its threads.
 
 C: `main.c:393-397`, `main.c:437-532`, `main.c:578-593`, `main.c:594-601`, `main.c:638-649`,
 `main.c:667-668`
