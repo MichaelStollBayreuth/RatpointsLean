@@ -351,11 +351,10 @@ private theorem exists_isFSquare_or_of_sq_eq_binaryForm {c : List ℤ} {p : ℕ}
 
 /-- When the table of the prime `p` is none, where `examine_prime` returns `-1` and the search ends,
 the curve has no points of any height. -/
-theorem not_isPoint_of_examinePrime?_eq_none {c : List ℤ} {d p : ℕ} {u : Bool}
-    (h : examinePrime? c d p u = none) (hp : p.Prime) (hd : d = degree c) (H : ℕ)
-    (q : ℤ × ℤ × ℤ) : ¬ IsPoint c H q := by
+theorem not_isPoint_of_examinePrime?_eq_none {c : List ℤ} {p : ℕ} {u : Bool}
+    (h : examinePrime? c (degree c) p u = none) (hp : p.Prime) (H : ℕ) (q : ℤ × ℤ × ℤ) :
+    ¬ IsPoint c H q := by
   obtain ⟨hany, h2, hsq⟩ := examinePrime?_eq_none_iff.mp h
-  subst hd
   intro ⟨hy, hg, hn, _, _⟩
   obtain ⟨b, hb⟩ : ∃ b : ℕ, q.2.2 = b := ⟨q.2.2.toNat, by lia⟩
   rw [hb] at hy hg

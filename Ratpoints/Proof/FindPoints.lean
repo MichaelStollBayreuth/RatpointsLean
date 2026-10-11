@@ -165,11 +165,10 @@ end Sieve
 /-! ### The search -/
 
 -- A curve without points modulo a prime has an empty reference.
-private theorem bruteForce_eq_nil_of_examinePrime?_eq_none {c : List ℤ} {d p : ℕ} {u : Bool}
-    (h : examinePrime? c d p u = none) (hp : p.Prime) (hd : d = degree c) (H : ℕ) :
-    bruteForce c H = [] :=
+private theorem bruteForce_eq_nil_of_examinePrime?_eq_none {c : List ℤ} {p : ℕ} {u : Bool}
+    (h : examinePrime? c (degree c) p u = none) (hp : p.Prime) (H : ℕ) : bruteForce c H = [] :=
   List.eq_nil_iff_forall_not_mem.mpr fun q hq ↦
-    not_isPoint_of_examinePrime?_eq_none h hp hd H q (mem_bruteForce_iff.mp hq)
+    not_isPoint_of_examinePrime?_eq_none h hp H q (mem_bruteForce_iff.mp hq)
 
 /-- The tables that the search makes are those of the reference
 (`Ratpoints.Sieve.eq_examinePrime_of_examinePrime?_eq_some`), on which the points at infinity and
@@ -183,7 +182,7 @@ theorem run_searchPoints {c : List ℤ} {d H : ℕ} {P : Params} (hP : P.WF) (hH
   simp only [searchPoints]
   split <;> rename_i hm
   · obtain ⟨_, hp, he⟩ := List.exists_mem_of_mapM_eq_none hm
-    simp [bruteForce_eq_nil_of_examinePrime?_eq_none he (hP.prime_of_mem hp) rfl H]
+    simp [bruteForce_eq_nil_of_examinePrime?_eq_none he (hP.prime_of_mem hp) H]
   · rw [List.eq_map_of_mapM_eq_some (fun _ _ _ ↦ eq_examinePrime_of_examinePrime?_eq_some) hm]
     exact pointsAtInfinity_append_toList_run_sieveRun c (fun _ ↦ hP.prime_of_mem)
       (P.one_le_arraySizeAt hH) hH rev
