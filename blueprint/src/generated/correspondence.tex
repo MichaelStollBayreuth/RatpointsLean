@@ -12,7 +12,7 @@ file & lines of code & modelled & excluded & not yet recorded \\
 \texttt{find\_points.c} & 3244 & 347 & 0 & 2897 \\
 \texttt{sift.c} & 820 & 261 & 0 & 559 \\
 \texttt{init.c} & 302 & 155 & 8 & 139 \\
-\texttt{sturm.c} & 215 & 0 & 0 & 215 \\
+\texttt{sturm.c} & 215 & 50 & 0 & 165 \\
 \texttt{rp-private.h} & 282 & 168 & 11 & 103 \\
 \texttt{ratpoints.h} & 128 & 10 & 0 & 118 \\
 \texttt{primes.h} & 11 & 11 & 0 & 0 \\
@@ -20,7 +20,7 @@ file & lines of code & modelled & excluded & not yet recorded \\
 \texttt{gen\_init\_sieve\_h.c} & 26 & 13 & 0 & 13 \\
 \texttt{main.c} & 779 & 197 & 0 & 582 \\
 \hline
-total & 5883 & 1222 & 19 & 4642 \\
+total & 5883 & 1272 & 19 & 4592 \\
 \end{tabular}
 \end{center}
 
@@ -167,7 +167,10 @@ total & 5883 & 1222 & 19 & 4642 \\
 
 \section*{\texttt{sturm.c}}
 \begin{itemize}
-\item \csource{sturm.c}{29}{332}: not yet recorded (215 lines of code)
+\item \csource{sturm.c}{29}{97}: not yet recorded (29 lines of code)
+\item \csource{sturm.c}{99}{163}: modelled by \lname{Ratpoints.Sturm.chain}
+  (deviation of \lname{Ratpoints.Sturm.chain}: the rows as arrays of their coefficients up to their degree, for the table of \texttt{(d + 1)\textasciicircum{}2} GMP integers and the array of degrees, with no \texttt{mpz\_init} and \texttt{mpz\_clear}: an array has one entry more than the degree of its row, and a remainder that becomes zero is the empty array, where the degree in the C code reaches \texttt{-{}1}; a reduction step drops the leading coefficient, which it makes \texttt{0}, where the C code lowers the degree; the rows are handed back, and \texttt{none} for the return of \texttt{-{}1}, where \texttt{\_ratpoints\_compute\_sturm} keeps them in its table for the rest of the Sturm step (stage H), and the index of the last row, which the C code leaves in \texttt{k} and sets to \texttt{d} after the loop for \texttt{d = 1}, is the size of the array less one; a list of integers for the array of GMP integers of the coefficients, local values for the scratch integers \texttt{work[0]}, \texttt{work[1]} and \texttt{work[2]}, and Lean's \texttt{/} for \texttt{mpz\_fdiv\_q}, which agree on the divisions of the chain, all exact.)
+\item \csource{sturm.c}{166}{332}: not yet recorded (136 lines of code)
 \end{itemize}
 
 \section*{\texttt{rp-private.h}}

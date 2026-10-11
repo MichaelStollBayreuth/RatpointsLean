@@ -11,6 +11,7 @@ public import Ratpoints.Model.Constants
 public import Ratpoints.Model.FindPoints
 public import Ratpoints.Model.Params
 public import Ratpoints.Model.Sieve
+public import Ratpoints.Model.Sturm
 
 /-!
 # The executable model of ratpoints

@@ -174,10 +174,8 @@ that is not refused.
 \section{The remainder chain}\label{sec:chain}
 
 \begin{definition}[The remainder chain]\label{def:sturmChain}
-  Proposed names: \lname{Ratpoints.Sturm.reduce}, \lname{Ratpoints.Sturm.chain},
-  \lname{Ratpoints.Sturm.fullReduce}, \lname{Ratpoints.Sturm.normalize},
-  \lname{Ratpoints.Sturm.IsChain}, \lname{Ratpoints.Sturm.IsChainResult},
-  \lname{Ratpoints.Sturm.chain\_spec}.
+  \lean{Ratpoints.Sturm.reduce, Ratpoints.Sturm.chain, Ratpoints.Sturm.fullReduce, Ratpoints.Sturm.normalize, Ratpoints.Sturm.IsChain, Ratpoints.Sturm.IsChainResult, Ratpoints.Sturm.chain_spec}
+  \leanok
   For the coefficients $c_0, \dots, c_d$ of $f$, $d \ge 1$ and $c_d \ne 0$: $s_0 = f$, $s_1 = f'$ (the
   coefficients $(i + 1) c_{i+1}$), and for $k = 2, \dots, d$ the remainder $t$ of $s_{k-2}$ by
   $s_{k-1}$ as \verb|sturm.c| computes it in integers: starting from $t = s_{k-2}$, while
@@ -208,14 +206,14 @@ that is not refused.
 
 \begin{lemma}[The chain detects a repeated factor]\label{lem:sturmChain_squarefree}
   \uses{def:sturmChain, lem:squarefree_binaryFormPoly}
-  Proposed names: \lname{Ratpoints.Sturm.IsChain.exists\_mul\_eq},
-  \lname{Ratpoints.Sturm.IsChain.natDegree\_lt}, \lname{Ratpoints.Sturm.run\_chain\_eq\_none\_iff},
-  \lname{isCoprime\_iff\_of\_mul\_eq\_mul\_sub\_mul}.
+  \lean{Ratpoints.Sturm.IsChain.exists_mul_eq, Ratpoints.Sturm.IsChain.natDegree_lt, Ratpoints.Sturm.run_chain_eq_none_iff, isCoprime_iff_of_mul_eq_mul_sub_mul}
+  \leanok
   For $d \ge 1$ and $c_d \ne 0$, the chain is $\mathrm{none}$ if and only if $f$ is not squarefree
   over $\QQ$.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   The polynomial of an array of coefficients is $\mathrm{poly}$ of its list
   (Lemma~\ref{lem:squarefree_binaryFormPoly}). Each $s_k$, $k \ge 2$, satisfies
   $A s_{k-2} = Q s_{k-1} - g s_k$ with integers $A \ge 1$ and $g \ge 1$ and some $Q \in \QQ[X]$, read

@@ -11,17 +11,18 @@ import Std.Internal.ForIn.Lemmas
 # Lemmas on words
 
 Lemmas on vectors, arrays, lists, ranges, natural numbers, integers and 64-bit words that the
-contracts of the bit arrays of words need and Lean core lacks, under their names in the namespaces
-of Lean core: the entries of a vector after `Vector.set!` and after a fold of `Vector.set!` over
-consecutive positions, the entries of an array made by a map over a range, the elements of
-`List.range n` that pass a test which fails from some position on, the integers of a range that lie
-in a smaller one or between two bounds, the position of the cursor of a loop over a range, the bound
-`y < (n + 1) k` for `y < n k`, the residues modulo `p` of the integers from `a` on, the bits of the
-word `~~~0` and of the masks `~~~0 <<< n` and `~~~0 >>> n`, the lowest bit and the lowest set bit of
-a word, the word `x &&& (x - 1)`, which is `x` with its lowest set bit cleared, the bits of a word
-set one at a time, the 64 bits of two words from a position within the first, the bits of a word
-and-ed in turn with the words of a list, and the numerators of the set bits of a list of words, read
-in turn.
+contracts of the model need and Lean core lacks, under their names in the namespaces of Lean core:
+the entries of a vector after `Vector.set!` and after a fold of `Vector.set!` over consecutive
+positions, the entries of an array made by a map over a range, the last entry and the entries of an
+array after `Array.push`, `Array.pop` and `Array.map`, the elements of `List.range n` that pass a
+test which fails from some position on, the integers of a range that lie in a smaller one or between
+two bounds, the gcd of the absolute values of a list of integers as a left fold, the position of the
+cursor of a loop over a range, the bound `y < (n + 1) k` for `y < n k`, the residues modulo `p` of
+the integers from `a` on, exact quotients of integers, the bits of the word `~~~0` and of the masks
+`~~~0 <<< n` and `~~~0 >>> n`, the lowest bit and the lowest set bit of a word, the word
+`x &&& (x - 1)`, which is `x` with its lowest set bit cleared, the bits of a word set one at a time,
+the 64 bits of two words from a position within the first, the bits of a word and-ed in turn with
+the words of a list, and the numerators of the set bits of a list of words, read in turn.
 
 ## Main statements
 
@@ -43,7 +44,13 @@ in turn.
   `p`, when the first test is `p` on these integers: the numerators of the set bits of words.
 * `Std.Legacy.Range.length_eq_of_toList_eq_append_cons`,
   `Std.Legacy.Range.lt_of_toList_eq_append_cons`: the position of the cursor of a loop over
-  `[0:m]`.
+  `[0:m]`; `Std.Legacy.Range.add_length_eq_of_toList_eq_append_cons`,
+  `Std.Legacy.Range.length_add_length_add_one_of_toList_eq_append_cons`: that of a loop over
+  `[a:m]`, and the lengths of the lists before and after it.
+* `Array.getElem!_pop`, `Array.getElem!_pop_of_back!_eq`: the entries of an array without its last
+  entry, the same as before when that entry is the default value.
+* `List.foldl_gcd_natAbs_dvd_natAbs`: the gcd of the absolute values of the entries of a list, as a
+  left fold, divides each of them.
 * `Int.toNat_add_emod_of_lt`, `Int.toNat_add_add_emod`: the residues modulo `p` of `a + j` before
   and from the first multiple of `p` from `a` on.
 * `UInt64.getLsbD_foldl_and`: the bits of a word and-ed in turn with the words of a list.
@@ -56,7 +63,7 @@ of core, untouched by the updates of Mathlib.
 
 @[expose] public section
 
-universe u
+universe u v
 
 /-! ### Vectors -/
 
@@ -85,6 +92,50 @@ namespace Array
 theorem getElem!_map_range {α : Type u} [Inhabited α] (f : Nat → α) {n j : Nat} (hj : j < n) :
     ((Array.range n).map f)[j]! = f j := by
   simp [hj]
+
+theorem size_pop_lt_of_back?_eq_some {α : Type u} {xs : Array α} {x : α}
+    (h : xs.back? = some x) : xs.pop.size < xs.size := by
+  grind
+
+theorem back!_eq_getElem! {α : Type u} [Inhabited α] {xs : Array α} :
+    xs.back! = xs[xs.size - 1]! :=
+  rfl
+
+theorem back!_ne_of_back?_ne {α : Type u} [Inhabited α] {xs : Array α} {a : α}
+    (hs : xs.size ≠ 0) (h : xs.back? ≠ some a) : xs.back! ≠ a := by
+  grind [back!_eq_back?]
+
+theorem size_ne_zero_of_back!_ne {α : Type u} [Inhabited α] {xs : Array α}
+    (h : xs.back! ≠ default) : xs.size ≠ 0 := by
+  grind [back!_eq_getElem!]
+
+theorem back!_map {α : Type u} {β : Type v} [Inhabited α] [Inhabited β] {f : α → β}
+    (hf : f default = default) (xs : Array α) : (xs.map f).back! = f xs.back! := by
+  grind [back!_eq_getElem!]
+
+theorem back!_map_range {α : Type u} [Inhabited α] (f : Nat → α) {n : Nat} (hn : n ≠ 0) :
+    ((Array.range n).map f).back! = f (n - 1) := by
+  grind [back!_eq_getElem!, getElem!_map_range]
+
+theorem getElem!_push_lt {α : Type u} [Inhabited α] {xs : Array α} {x : α} {i : Nat}
+    (h : i < xs.size) : (xs.push x)[i]! = xs[i]! := by
+  grind
+
+theorem getElem!_push_eq {α : Type u} [Inhabited α] {xs : Array α} {x : α} :
+    (xs.push x)[xs.size]! = x := by
+  simp
+
+theorem getElem!_map {α : Type u} {β : Type v} [Inhabited α] [Inhabited β] {f : α → β}
+    (hf : f default = default) (xs : Array α) (i : Nat) : (xs.map f)[i]! = f xs[i]! := by
+  grind
+
+theorem getElem!_pop {α : Type u} [Inhabited α] {xs : Array α} {i : Nat} :
+    xs.pop[i]! = if i < xs.size - 1 then xs[i]! else default := by
+  grind
+
+theorem getElem!_pop_of_back!_eq {α : Type u} [Inhabited α] {xs : Array α} (h : xs.back! = default)
+    (i : Nat) : xs.pop[i]! = xs[i]! := by
+  grind [getElem!_pop, back!_eq_getElem!]
 
 end Array
 
@@ -154,6 +205,26 @@ theorem flatMap_range_map_filter {g : Nat → Nat → Bool} {a : Int} {p : Int �
         rw [hg m (Nat.lt_succ_self m) t, decide_eq_true (mem_range.mp ht), Bool.true_and]
         simp [Int.add_assoc]
 
+theorem foldl_gcd_natAbs_one (l : List Int) : l.foldl (fun g a ↦ g.gcd a.natAbs) 1 = 1 := by
+  induction l with
+  | nil => rfl
+  | cons a l ih => simpa using ih
+
+theorem foldl_gcd_natAbs_dvd (l : List Int) (g : Nat) :
+    l.foldl (fun g a ↦ g.gcd a.natAbs) g ∣ g := by
+  induction l generalizing g with
+  | nil => exact Nat.dvd_refl g
+  | cons a l ih => exact Nat.dvd_trans (ih _) (Nat.gcd_dvd_left ..)
+
+theorem foldl_gcd_natAbs_dvd_natAbs {l : List Int} (g : Nat) {x : Int} (hx : x ∈ l) :
+    l.foldl (fun g a ↦ g.gcd a.natAbs) g ∣ x.natAbs := by
+  induction l generalizing g with
+  | nil => cases hx
+  | cons a l ih =>
+    rcases mem_cons.mp hx with rfl | hx
+    · exact Nat.dvd_trans (foldl_gcd_natAbs_dvd l _) (Nat.gcd_dvd_right ..)
+    · exact ih _ hx
+
 end List
 
 /-! ### Ranges -/
@@ -175,6 +246,18 @@ theorem lt_of_toList_eq_append_cons {m cur : Nat} {pref suff : List Nat}
     (h : ForIn.toList [0:m] = pref ++ cur :: suff) : cur < m := by
   have : cur ∈ ForIn.toList [0:m] := by simp [h]
   simpa using this
+
+theorem add_length_eq_of_toList_eq_append_cons {a m cur : Nat} {pref suff : List Nat}
+    (h : ForIn.toList [a:m] = pref ++ cur :: suff) : a + pref.length = cur := by
+  simp only [Std.Internal.ForIn.toList_range, List.range'_eq_append_iff] at h
+  obtain ⟨k, -, rfl, h⟩ := h
+  simpa using (List.range'_eq_cons_iff.mp h.symm).1
+
+theorem length_add_length_add_one_of_toList_eq_append_cons {a m cur : Nat} {pref suff : List Nat}
+    (h : ForIn.toList [a:m] = pref ++ cur :: suff) : pref.length + suff.length + 1 = m - a := by
+  have := congrArg List.length h
+  simp [Std.Legacy.Range.size] at this
+  lia
 
 end Std.Legacy.Range
 
@@ -219,6 +302,13 @@ theorem toNat_add_add_emod {a : Int} {p i k : Nat} (hi : i < p) :
     lia
   rw [key, add_mul_emod_self_left, emod_eq_of_lt (by lia) (by lia)]
   simp
+
+theorem ediv_mul_eq_ediv_mul_of_dvd {a b g : Int} (ha : g ∣ a) (hb : g ∣ b) :
+    a / g * b = b / g * a := by
+  rw [← Int.mul_ediv_assoc' _ ha, ← Int.mul_ediv_assoc' _ hb, Int.mul_comm]
+
+theorem ediv_ne_zero_of_dvd {a b : Int} (hb : b ∣ a) (ha : a ≠ 0) : a / b ≠ 0 := fun h ↦
+  ha (Int.eq_zero_of_ediv_eq_zero hb h)
 
 end Int
 

@@ -840,6 +840,12 @@
       "owners": [
         "Ratpoints.Sieve.andRows"
       ]
+    },
+    "sturm.c:99-163": {
+      "hash": "416d0d047eb865d7138f565a6584ec2a89b4a6b2640b52861e710759a6790bde",
+      "owners": [
+        "Ratpoints.Sturm.chain"
+      ]
     }
   },
   "citations": {
