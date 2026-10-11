@@ -472,33 +472,32 @@ theorem flatMap_checkNum (w : List Int) (f b : Int) (rev : Bool) (xs : List Int)
   · exact List.map_flatMap ▸ congrArg (List.flatMap · xs) (funext (checkNum_eq_map w f b true))
 
 /-- The invariant of the loop of `Ratpoints.Sieve.walkWord` on the word `x0` after the points
-`out0`: the word `x` is `x0` with its bits below some `k ≤ 64` cleared, and the points of the
-numerators `a0 + t` of the set bits `t < k` of `x0` have been appended to `out0`. -/
-def WalkWordInvariant (w : List Int) (f : Int) (b : Nat) (rev : Bool) (x0 : UInt64) (a0 : Int)
+`out0`, for the points `g a` of a numerator `a` (in the walk, the check `Ratpoints.Sieve.checkNum`):
+the word `x` is `x0` with its bits below some `k ≤ 64` cleared, and the points of the numerators
+`a0 + t` of the set bits `t < k` of `x0` have been appended to `out0`. -/
+def WalkWordInvariant (g : Int → List (Int × Int × Int)) (x0 : UInt64) (a0 : Int)
     (out0 : Array (Int × Int × Int)) (x : UInt64) (out : Array (Int × Int × Int)) : Prop :=
   ∃ k ≤ 64, (∀ t, x.toBitVec.getLsbD t = (x0.toBitVec.getLsbD t && decide (k ≤ t))) ∧
     out.toList = out0.toList ++
-      (((List.range k).filter (x0.toBitVec.getLsbD ·)).map fun t : Nat ↦ a0 + t).flatMap
-        (checkNum w f b rev)
+      (((List.range k).filter (x0.toBitVec.getLsbD ·)).map fun t : Nat ↦ a0 + t).flatMap g
 
 /-- `Ratpoints.Sieve.WalkWordInvariant` as the invariant of the `while` loop of
 `Ratpoints.Sieve.walkWord`, with the word `0` at the exit. -/
-def WalkWordWhileInvariant (w : List Int) (f : Int) (b : Nat) (rev : Bool) (x0 : UInt64) (a0 : Int)
+def WalkWordWhileInvariant (g : Int → List (Int × Int × Int)) (x0 : UInt64) (a0 : Int)
     (out0 : Array (Int × Int × Int)) :
     Std.WP.WhileInvariant (UInt64 × Array (Int × Int × Int)) Prop :=
-  .mk fun exit s ↦ WalkWordInvariant w f b rev x0 a0 out0 s.1 s.2 ∧ (exit = true → s.1 = 0)
+  .mk fun exit s ↦ WalkWordInvariant g x0 a0 out0 s.1 s.2 ∧ (exit = true → s.1 = 0)
 
-theorem walkWordInvariant_self (w : List Int) (f : Int) (b : Nat) (rev : Bool) (x0 : UInt64)
-    (a0 : Int) (out0 : Array (Int × Int × Int)) : WalkWordInvariant w f b rev x0 a0 out0 x0 out0 :=
+theorem walkWordInvariant_self (g : Int → List (Int × Int × Int)) (x0 : UInt64) (a0 : Int)
+    (out0 : Array (Int × Int × Int)) :
+    WalkWordInvariant g x0 a0 out0 x0 out0 :=
   ⟨0, Nat.zero_le _, fun _ ↦ by simp, by simp⟩
 
 /-- The invariant of `Ratpoints.Sieve.walkWord` after one step: the points of the numerator of the
 lowest set bit of `x` appended, and that bit cleared. -/
-theorem WalkWordInvariant.and_sub_one {w : List Int} {f : Int} {b : Nat} {rev : Bool}
-    {x0 x : UInt64} {a0 : Int} {out0 out : Array (Int × Int × Int)}
-    (h : WalkWordInvariant w f b rev x0 a0 out0 x out) (hx : x ≠ 0) :
-    WalkWordInvariant w f b rev x0 a0 out0 (x &&& (x - 1))
-      (out ++ ⟨checkNum w f b rev (a0 + x.toBitVec.ctz.toNat)⟩) := by
+theorem WalkWordInvariant.and_sub_one {g : Int → List (Int × Int × Int)} {x0 x : UInt64} {a0 : Int}
+    {out0 out : Array (Int × Int × Int)} (h : WalkWordInvariant g x0 a0 out0 x out) (hx : x ≠ 0) :
+    WalkWordInvariant g x0 a0 out0 (x &&& (x - 1)) (out ++ ⟨g (a0 + x.toBitVec.ctz.toNat)⟩) := by
   obtain ⟨k, hk, hbits, hout⟩ := h
   have hc := UInt64.getLsbD_ctz hx
   rw [hbits, Bool.and_eq_true, decide_eq_true_iff] at hc
@@ -507,12 +506,10 @@ theorem WalkWordInvariant.and_sub_one {w : List Int} {f : Int} {b : Nat} {rev : 
   · simp [hout, List.filter_range_succ_eq_append hc.2 hc.1 fun _ _ _ ↦ by
       grind [BitVec.getLsbD_false_of_lt_ctz]]
 
-theorem WalkWordInvariant.toList_eq {w : List Int} {f : Int} {b : Nat} {rev : Bool} {x0 : UInt64}
-    {a0 : Int} {out0 out : Array (Int × Int × Int)}
-    (h : WalkWordInvariant w f b rev x0 a0 out0 0 out) :
+theorem WalkWordInvariant.toList_eq {g : Int → List (Int × Int × Int)} {x0 : UInt64} {a0 : Int}
+    {out0 out : Array (Int × Int × Int)} (h : WalkWordInvariant g x0 a0 out0 0 out) :
     out.toList = out0.toList ++
-      (((List.range 64).filter (x0.toBitVec.getLsbD ·)).map fun t : Nat ↦ a0 + t).flatMap
-        (checkNum w f b rev) := by
+      (((List.range 64).filter (x0.toBitVec.getLsbD ·)).map fun t : Nat ↦ a0 + t).flatMap g := by
   obtain ⟨k, hk, hbits, hout⟩ := h
   rw [hout, List.filter_range_eq_of_le hk fun j hkj _ ↦ by simpa [hkj] using (hbits j).symm]
 
@@ -529,7 +526,7 @@ theorem walkWord_spec (w : List Int) (f : Int) (b : Nat) (rev : Bool) (x : UInt6
         (((List.range 64).filter (x.toBitVec.getLsbD ·)).map fun t : Nat ↦ a0 + t).flatMap
           (checkNum w f b rev) ⦄ := by
   vcgen [walkWord] invariants
-  · WalkWordWhileInvariant w f b rev x a0 out
+  · WalkWordWhileInvariant (checkNum w f b rev) x a0 out
   · Std.WP.Variant.ofMeasure fun s : UInt64 × Array (Int × Int × Int) ↦ s.1.toNat
   all_goals simp [WalkWordWhileInvariant] at *
   all_goals grind [walkWordInvariant_self, WalkWordInvariant.and_sub_one,
@@ -545,43 +542,45 @@ def ScanPieceSentinelInvariant {m : Nat} (n : Nat) (surv : Vector UInt64 m) (k :
   (∀ y < n * rbaPack, sv[y]! = surv[y]!) ∧ ∀ κ < k, sv[rbaPack * n + κ]! = ~~~0
 
 /-- The invariant of the scan of `Ratpoints.Sieve.scanPiece` at bit array `pos` of the words `sv`,
-for a piece of `n` bit arrays from the word number `w0` on: `pos ≤ n`, and `out` holds the points
-(`Ratpoints.Sieve.checkNum`) of the numerators `rbaLength w0 + 64 y + t` of the set bits `t` of the
-words `y < rbaPack pos`, in increasing order. -/
-def ScanPieceInvariant {m : Nat} (sv : Vector UInt64 m) (w : List Int) (f : Int) (b : Nat)
-    (rev : Bool) (w0 : Int) (n pos : Nat) (out : Array (Int × Int × Int)) : Prop :=
+for a piece of `n` bit arrays from the word number `w0` on and the points `g a` of a numerator `a`
+(in the scan, the check `Ratpoints.Sieve.checkNum`): `pos ≤ n`, and `out` holds the points of the
+numerators `rbaLength w0 + 64 y + t` of the set bits `t` of the words `y < rbaPack pos`, in
+increasing order. -/
+def ScanPieceInvariant {m : Nat} (sv : Vector UInt64 m) (g : Int → List (Int × Int × Int))
+    (w0 : Int) (n pos : Nat) (out : Array (Int × Int × Int)) : Prop :=
   pos ≤ n ∧ out.toList = ((List.range (rbaPack * pos)).flatMap fun y : Nat ↦
     ((List.range 64).filter (sv[y]!.toBitVec.getLsbD ·)).map fun t : Nat ↦
-      rbaLength * w0 + 64 * y + t).flatMap (checkNum w f b rev)
+      rbaLength * w0 + 64 * y + t).flatMap g
 
 /-- `Ratpoints.Sieve.ScanPieceInvariant` as the invariant of the scan of
 `Ratpoints.Sieve.scanPiece`, with all `n` bit arrays done at the exit. -/
-def ScanPieceWhileInvariant {m : Nat} (sv : Vector UInt64 m) (w : List Int) (f : Int) (b : Nat)
-    (rev : Bool) (w0 : Int) (n : Nat) :
+def ScanPieceWhileInvariant {m : Nat} (sv : Vector UInt64 m) (g : Int → List (Int × Int × Int))
+    (w0 : Int) (n : Nat) :
     Std.WP.WhileInvariant (Nat × Array (Int × Int × Int)) Prop :=
-  .mk fun exit s ↦ ScanPieceInvariant sv w f b rev w0 n s.1 s.2 ∧ (exit = true → s.1 = n)
+  .mk fun exit s ↦ ScanPieceInvariant sv g w0 n s.1 s.2 ∧ (exit = true → s.1 = n)
 
 /-- The invariant of the loop of `Ratpoints.Sieve.scanPiece` that steps over the bit arrays that are
 zero, from bit array `pos0` on, with the points `out` of the bit arrays before `pos0`: the position
 is at least `pos0`, and `Ratpoints.Sieve.ScanPieceInvariant` holds there with `out`, since a bit
 array that is zero has no set bits. -/
-def ScanPieceZeroInvariant {m : Nat} (sv : Vector UInt64 m) (w : List Int) (f : Int) (b : Nat)
-    (rev : Bool) (w0 : Int) (n pos0 : Nat) (out : Array (Int × Int × Int)) :
+def ScanPieceZeroInvariant {m : Nat} (sv : Vector UInt64 m) (g : Int → List (Int × Int × Int))
+    (w0 : Int) (n pos0 : Nat) (out : Array (Int × Int × Int)) :
     Std.WP.WhileInvariant Nat Prop :=
-  .mk fun _ pos ↦ pos0 ≤ pos ∧ ScanPieceInvariant sv w f b rev w0 n pos out
+  .mk fun _ pos ↦ pos0 ≤ pos ∧ ScanPieceInvariant sv g w0 n pos out
 
 /-- The invariant of the loop of `Ratpoints.Sieve.scanPiece` over the words of bit array `pos` of
-`sv`, after its first `k` words, with the points `out0` of the bit arrays before it: the numerator
+`sv`, after its first `k` words, with the points `out0` of the bit arrays before it and the points
+`g a` of a numerator `a` (in the scan, the check `Ratpoints.Sieve.checkNum`): the numerator
 `(w0 + pos) rbaLength + 64 k` of bit `0` of the next word, and the points of the numerators
 `(w0 + pos) rbaLength + 64 κ + t` of the set bits `t` of the words `κ < k`, in increasing order,
 after `out0`. -/
-def ScanPieceExtractInvariant {m : Nat} (sv : Vector UInt64 m) (w : List Int) (f : Int) (b : Nat)
-    (rev : Bool) (w0 : Int) (pos : Nat) (out0 : Array (Int × Int × Int)) (k : Nat)
+def ScanPieceExtractInvariant {m : Nat} (sv : Vector UInt64 m) (g : Int → List (Int × Int × Int))
+    (w0 : Int) (pos : Nat) (out0 : Array (Int × Int × Int)) (k : Nat)
     (s : Array (Int × Int × Int) × Int) : Prop :=
   s.2 = (w0 + pos) * rbaLength + 64 * k ∧ s.1.toList = out0.toList ++
     ((List.range k).flatMap fun κ ↦
       ((List.range 64).filter (sv[rbaPack * pos + κ]!.toBitVec.getLsbD ·)).map fun t : Nat ↦
-        (w0 + pos) * rbaLength + 64 * κ + t).flatMap (checkNum w f b rev)
+        (w0 + pos) * rbaLength + 64 * κ + t).flatMap g
 
 theorem scanPieceSentinelInvariant_zero {m : Nat} (n : Nat) (surv : Vector UInt64 m) :
     ScanPieceSentinelInvariant n surv 0 surv :=
@@ -612,51 +611,51 @@ theorem ScanPieceSentinelInvariant.ne_of_isZeroAt {m n : Nat} {surv sv : Vector 
   rw [h.2 0 rbaPack_pos] at h0
   exact absurd h0 (by decide)
 
-theorem scanPieceInvariant_zero {m : Nat} (sv : Vector UInt64 m) (w : List Int) (f : Int)
-    (b : Nat) (rev : Bool) (w0 : Int) (n : Nat) : ScanPieceInvariant sv w f b rev w0 n 0 #[] := by
+theorem scanPieceInvariant_zero {m : Nat} (sv : Vector UInt64 m) (g : Int → List (Int × Int × Int))
+    (w0 : Int) (n : Nat) :
+    ScanPieceInvariant sv g w0 n 0 #[] := by
   simp [ScanPieceInvariant]
 
-theorem ScanPieceInvariant.le {m : Nat} {sv : Vector UInt64 m} {w : List Int} {f : Int} {b : Nat}
-    {rev : Bool} {w0 : Int} {n pos : Nat} {out : Array (Int × Int × Int)}
-    (h : ScanPieceInvariant sv w f b rev w0 n pos out) : pos ≤ n :=
+theorem ScanPieceInvariant.le {m : Nat} {sv : Vector UInt64 m} {g : Int → List (Int × Int × Int)}
+    {w0 : Int} {n pos : Nat} {out : Array (Int × Int × Int)}
+    (h : ScanPieceInvariant sv g w0 n pos out) :
+    pos ≤ n :=
   h.1
 
 /-- Bit array `pos` adds the points of the numerators of the set bits of its words. -/
-theorem ScanPieceInvariant.add_one {m : Nat} {sv : Vector UInt64 m} {w : List Int} {f : Int}
-    {b : Nat} {rev : Bool} {w0 : Int} {n pos : Nat} {out out' : Array (Int × Int × Int)}
-    (h : ScanPieceInvariant sv w f b rev w0 n pos out) (hlt : pos < n)
+theorem ScanPieceInvariant.add_one {m : Nat} {sv : Vector UInt64 m}
+    {g : Int → List (Int × Int × Int)} {w0 : Int} {n pos : Nat} {out out' : Array (Int × Int × Int)}
+    (h : ScanPieceInvariant sv g w0 n pos out) (hlt : pos < n)
     (hout : out'.toList = out.toList ++ ((List.range rbaPack).flatMap fun κ ↦
       ((List.range 64).filter (sv[rbaPack * pos + κ]!.toBitVec.getLsbD ·)).map fun t : Nat ↦
-        rbaLength * w0 + 64 * (rbaPack * pos + κ : Nat) + t).flatMap (checkNum w f b rev)) :
-    ScanPieceInvariant sv w f b rev w0 n (pos + 1) out' := by
+        rbaLength * w0 + 64 * (rbaPack * pos + κ : Nat) + t).flatMap g) :
+    ScanPieceInvariant sv g w0 n (pos + 1) out' := by
   refine ⟨hlt, ?_⟩
   rw [hout, h.2, Nat.mul_succ, List.range_add, List.flatMap_append, List.flatMap_map,
     List.flatMap_append]
 
-theorem ScanPieceInvariant.add_one_of_isZeroAt {m : Nat} {sv : Vector UInt64 m} {w : List Int}
-    {f : Int} {b : Nat} {rev : Bool} {w0 : Int} {n pos : Nat} {out : Array (Int × Int × Int)}
-    (h : ScanPieceInvariant sv w f b rev w0 n pos out) (hlt : pos < n)
-    (hz : isZeroAt sv pos = true) : ScanPieceInvariant sv w f b rev w0 n (pos + 1) out := by
+theorem ScanPieceInvariant.add_one_of_isZeroAt {m : Nat} {sv : Vector UInt64 m}
+    {g : Int → List (Int × Int × Int)} {w0 : Int} {n pos : Nat} {out : Array (Int × Int × Int)}
+    (h : ScanPieceInvariant sv g w0 n pos out) (hlt : pos < n) (hz : isZeroAt sv pos = true) :
+    ScanPieceInvariant sv g w0 n (pos + 1) out := by
   refine h.add_one hlt ?_
   rw [(List.flatMap_eq_nil_iff (l := List.range rbaPack)).mpr fun κ hκ ↦ ?_]
   · simp
   simp [(isZeroAt_eq_true_iff sv pos).mp hz κ (List.mem_range.mp hκ)]
 
-theorem scanPieceExtractInvariant_zero {m : Nat} (sv : Vector UInt64 m) (w : List Int) (f : Int)
-    (b : Nat) (rev : Bool) (w0 : Int) (pos : Nat) (out : Array (Int × Int × Int)) :
-    ScanPieceExtractInvariant sv w f b rev w0 pos out 0 (out, (w0 + pos) * rbaLength) := by
+theorem scanPieceExtractInvariant_zero {m : Nat} (sv : Vector UInt64 m)
+    (g : Int → List (Int × Int × Int)) (w0 : Int) (pos : Nat) (out : Array (Int × Int × Int)) :
+    ScanPieceExtractInvariant sv g w0 pos out 0 (out, (w0 + pos) * rbaLength) := by
   simp [ScanPieceExtractInvariant]
 
 theorem ScanPieceExtractInvariant.append_singleton {m : Nat} {sv : Vector UInt64 m}
-    {w : List Int} {f : Int} {b : Nat} {rev : Bool} {w0 : Int} {pos : Nat}
-    {out0 r : Array (Int × Int × Int)} {done suff : List Nat} {cur : Nat}
-    {s : Array (Int × Int × Int) × Int}
-    (h : ScanPieceExtractInvariant sv w f b rev w0 pos out0 done.length s)
+    {g : Int → List (Int × Int × Int)} {w0 : Int} {pos : Nat} {out0 r : Array (Int × Int × Int)}
+    {done suff : List Nat} {cur : Nat} {s : Array (Int × Int × Int) × Int}
+    (h : ScanPieceExtractInvariant sv g w0 pos out0 done.length s)
     (hl : ForIn.toList [0:rbaPack] = done ++ cur :: suff)
     (hr : r.toList = s.1.toList ++ (((List.range 64).filter
-      (sv[rbaPack * pos + cur]!.toBitVec.getLsbD ·)).map fun t : Nat ↦ s.2 + t).flatMap
-        (checkNum w f b rev)) :
-    ScanPieceExtractInvariant sv w f b rev w0 pos out0 (done ++ [cur]).length (r, s.2 + 64) := by
+      (sv[rbaPack * pos + cur]!.toBitVec.getLsbD ·)).map fun t : Nat ↦ s.2 + t).flatMap g) :
+    ScanPieceExtractInvariant sv g w0 pos out0 (done ++ [cur]).length (r, s.2 + 64) := by
   have hκ := Std.Legacy.Range.length_eq_of_toList_eq_append_cons hl
   refine ⟨by simp only [h.1, List.length_append, List.length_singleton]; push_cast; lia, ?_⟩
   rw [hr, h.2, h.1, List.length_append, List.length_singleton, hκ, List.range_succ (n := cur),
@@ -664,11 +663,10 @@ theorem ScanPieceExtractInvariant.append_singleton {m : Nat} {sv : Vector UInt64
 
 /-- The words of bit array `pos`, all of them walked through, add the points of their numerators. -/
 theorem ScanPieceExtractInvariant.scanPieceInvariant_add_one {m : Nat} {sv : Vector UInt64 m}
-    {w : List Int} {f : Int} {b : Nat} {rev : Bool} {w0 : Int} {n pos : Nat}
-    {out a : Array (Int × Int × Int)} {a0 : Int}
-    (hext : ScanPieceExtractInvariant sv w f b rev w0 pos out rbaPack (a, a0))
-    (h : ScanPieceInvariant sv w f b rev w0 n pos out) (hlt : pos < n) :
-    ScanPieceInvariant sv w f b rev w0 n (pos + 1) a := by
+    {g : Int → List (Int × Int × Int)} {w0 : Int} {n pos : Nat} {out a : Array (Int × Int × Int)}
+    {a0 : Int} (hext : ScanPieceExtractInvariant sv g w0 pos out rbaPack (a, a0))
+    (h : ScanPieceInvariant sv g w0 n pos out) (hlt : pos < n) :
+    ScanPieceInvariant sv g w0 n (pos + 1) a := by
   refine h.add_one hlt ?_
   have key (κ t : Nat) : (w0 + pos) * (rbaLength : Int) + 64 * κ + t =
       rbaLength * w0 + 64 * ((rbaPack * pos + κ : Nat) : Int) + t := by
@@ -678,13 +676,12 @@ theorem ScanPieceExtractInvariant.scanPieceInvariant_add_one {m : Nat} {sv : Vec
 
 /-- At the end of the scan of `Ratpoints.Sieve.scanPiece`, `out` holds the points of the set bits of
 the words of the piece, which are those of `surv`, since the sentinel was written past them. -/
-theorem ScanPieceInvariant.toList_eq {m n : Nat} {surv sv : Vector UInt64 m} {w : List Int}
-    {f : Int} {b : Nat} {rev : Bool} {w0 : Int} {out : Array (Int × Int × Int)}
-    (h : ScanPieceInvariant sv w f b rev w0 n n out)
-    (hs : ScanPieceSentinelInvariant n surv rbaPack sv) :
+theorem ScanPieceInvariant.toList_eq {m n : Nat} {surv sv : Vector UInt64 m}
+    {g : Int → List (Int × Int × Int)} {w0 : Int} {out : Array (Int × Int × Int)}
+    (h : ScanPieceInvariant sv g w0 n n out) (hs : ScanPieceSentinelInvariant n surv rbaPack sv) :
     out.toList = ((List.range (n * rbaPack)).flatMap fun y : Nat ↦
       ((List.range 64).filter (surv[y]!.toBitVec.getLsbD ·)).map fun t : Nat ↦
-        rbaLength * w0 + 64 * y + t).flatMap (checkNum w f b rev) := by
+        rbaLength * w0 + 64 * y + t).flatMap g := by
   rw [h.2, Nat.mul_comm rbaPack n]
   exact congrArg (List.flatMap _) <| congrArg List.flatten <| List.map_congr_left fun y hy ↦ by
     rw [hs.1 y (List.mem_range.mp hy)]
@@ -703,12 +700,12 @@ private theorem scanPiece_spec_getLsbD (w : List Int) (f : Int) (b : Nat) (rev :
           rbaLength * w0 + 64 * y + t).flatMap (checkNum w f b rev) ⦄ := by
   vcgen [scanPiece] invariants
   | inv1 => fun done _ ↦ ScanPieceSentinelInvariant n surv done.length
-  | inv2 sv _ => ScanPieceWhileInvariant sv w f b rev w0 n
+  | inv2 sv _ => ScanPieceWhileInvariant sv (checkNum w f b rev) w0 n
   | inv3 => Std.WP.Variant.ofMeasure fun s : Nat × Array (Int × Int × Int) ↦ n - s.1
-  | inv4 sv _ pos0 out _ _ => ScanPieceZeroInvariant sv w f b rev w0 n pos0 out
+  | inv4 sv _ pos0 out _ _ => ScanPieceZeroInvariant sv (checkNum w f b rev) w0 n pos0 out
   | inv5 => Std.WP.Variant.ofMeasure fun s : Nat ↦ n - s
   | inv6 sv _ _ out _ _ pos _ _ _ => fun done _ ↦
-      ScanPieceExtractInvariant sv w f b rev w0 pos out done.length
+      ScanPieceExtractInvariant sv (checkNum w f b rev) w0 pos out done.length
   -- the two loops over the words of a bit array first: `simp` would rewrite their ranges
   all_goals first
     | exact scanPieceSentinelInvariant_zero n surv
@@ -777,10 +774,11 @@ theorem isMasked_self {m maskLow maskHigh : Nat} (n : Nat) (v : Vector UInt64 m)
 
 /-- The points of a piece of `n` bit arrays from the word number `w0` on, given the contracts of its
 first stage on the words `surv` (`hand`, as `Ratpoints.Sieve.andRows_spec` states it) and of its
-scan on the words `v` (`hout`, as `Ratpoints.Sieve.scanPiece_spec` states it), when `v` is `surv`
-with the masks applied: the points of the survivors among the numerators from
-`rbaLength w0 + maskLow` to `rbaLength (w0 + n) - 1 - maskHigh`. -/
-theorem IsMasked.toList_eq {n : Nat} {w : List Int} {f : Int} {b : Nat} {rev : Bool}
+scan on the words `v` (`hout`, as `Ratpoints.Sieve.scanPiece_spec` states it, with the points `g a`
+of a numerator `a` for those of the check `Ratpoints.Sieve.checkNum`), when `v` is `surv` with the
+masks applied: the points of the survivors among the numerators from `rbaLength w0 + maskLow` to
+`rbaLength (w0 + n) - 1 - maskHigh`. -/
+theorem IsMasked.toList_eq {n : Nat} {g : Int → List (Int × Int × Int)} {b : Nat}
     {specs : List SieveSpec} {w0 : Int} {maskLow maskHigh : Nat}
     {surv v : Vector UInt64 ((n + 1) * rbaPack)} {out : Array (Int × Int × Int)}
     (hand : ∀ (entries : List Entry) (b : Nat), (∀ e ∈ entries, 0 < e.p) →
@@ -791,11 +789,11 @@ theorem IsMasked.toList_eq {n : Nat} {w : List Int} {f : Int} {b : Nat} {rev : B
     (hout : ∀ keep : Int → Bool, (∀ y < n * rbaPack, ∀ t : Nat, v[y]!.toBitVec.getLsbD t =
         (decide (t < 64) && keep (rbaLength * w0 + 64 * y + t))) →
       out.toList = (((List.range (n * rbaLength)).map fun k : Nat ↦
-        rbaLength * w0 + k).filter keep).flatMap (checkNum w f b rev))
+        rbaLength * w0 + k).filter keep).flatMap g)
     {entries : List Entry} (hp : ∀ e ∈ entries, 0 < e.p)
     (hspecs : specs = entries.map (fun e ↦ ⟨e.p, e.row b⟩)) :
     out.toList = (((List.range (n * rbaLength - maskLow - maskHigh)).map fun k : Nat ↦
-      rbaLength * w0 + maskLow + k).filter (survives entries b)).flatMap (checkNum w f b rev) := by
+      rbaLength * w0 + maskLow + k).filter (survives entries b)).flatMap g := by
   rw [hout (fun a ↦ survives entries b a && decide (rbaLength * w0 + maskLow ≤ a ∧
     a + maskHigh < rbaLength * w0 + (n * rbaLength : Nat))) fun y hy t ↦ ?_, ← List.filter_filter,
     List.filter_map_range_eq_map_range]
