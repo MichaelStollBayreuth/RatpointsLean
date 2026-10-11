@@ -57,7 +57,8 @@ classification:
 # project status
 status:
   scope: >
-    Stages A, B, C1 and C2. Stage A set up the Lake project with the libraries of the model (Lean
+    Stages A, B, C1 and C2, and of stage D all but the options of the program and the differential
+    tests. Stage A set up the Lake project with the libraries of the model (Lean
     core and Std only), the specification and the proofs, the CI, the blueprint, the correspondence
     record with its checking script, and the comparator harness, and settled the specification in
     the blueprint. Stage B: the specification in Lean (the binary form, the normalized points of
@@ -85,9 +86,30 @@ status:
     bit arrays, and the plain sieve of stage C1 kept as its reference; findPoints and
     ratpoints-lean run it, and the main theorems keep their statements; the differential tests
     search up to height 30000, and the runs of test4.sh above that height, up to 100000, form a
-    suite run locally. Next: stage D, the set-up of the search; the introduction of the blueprint
-    lists the later stages (the set-up, the denominator and numerator sides, the order and
-    protocol, the search region and the Sturm step).
+    suite run locally. Stage D: the set-up of the search as the C code does it before the sieve,
+    with the options of the library that change the refusals and the order of the output (whether
+    the polynomial may be reversed, and the depth of the Sturm step, of which the set-up reads only
+    the sign): the refusal of a binary form that is not squarefree when the leading zeros lower the
+    even degree, in the reversal check and by the remainder chain of the Sturm step, computed row by
+    row as the C code computes it, with its contract and the proof that it detects exactly a
+    repeated factor; the reversal check in its three cases, the reflection of the polynomial that
+    exchanges x and z in the binary form, and the map of the points of a reversed search, a
+    bijection of the points of bounded height that the check of a survivor and the points at
+    infinity apply; the coefficients as C longs with the helper mod of the C code and its range
+    obligations; the table of a prime with the exit when the curve has no points modulo that prime;
+    and the search of the polynomial handed on. The output of findPoints is the brute-force
+    reference of the polynomial searched, mapped back after a reversal, a permutation of the
+    reference, so that the membership and no-duplicates theorems hold for every option; the
+    refusal theorems say that with the Sturm step on findPoints refuses exactly the inputs with
+    fewer than two or more than maxDegree + 1 coefficients, H = 0 and a binary form that is not
+    squarefree, and with it off exactly what the C program refuses under -s; both refusal
+    theorems and the main theorems with the options argument are stated for comparator, with the
+    binary form over Q restated in the challenge; the lemmas on homogenizations and their
+    squarefreeness are candidates for Mathlib; and ratpoints-lean refuses a form that is not
+    squarefree with error 8 and prints the points of a reversed polynomial in the order of the C
+    program. Next: the options -k, -K, -s and -S of ratpoints-lean and the differential tests of
+    stage D; the introduction of the blueprint lists the later stages (the denominator and
+    numerator sides, the order and protocol, the search region and the Sturm step).
   sorry_count: 0
   sorry_in_definitions: 0
   axioms: ["propext", "Classical.choice", "Quot.sound"]
@@ -112,7 +134,12 @@ status:
       sorry_count: 0
       axioms: ["propext", "Classical.choice", "Quot.sound"]
       comparator_config: "comparator/challenges.json"
-    - declaration: "Ratpoints.exists_findPoints_eq_error_iff"
+    - declaration: "Ratpoints.exists_findPoints_eq_error_iff_of_sturm_nonneg"
+      file: "Ratpoints/Proof/FindPoints.lean"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: "comparator/challenges.json"
+    - declaration: "Ratpoints.exists_findPoints_eq_error_iff_of_sturm_neg"
       file: "Ratpoints/Proof/FindPoints.lean"
       sorry_count: 0
       axioms: ["propext", "Classical.choice", "Quot.sound"]
@@ -194,24 +221,31 @@ alignment:
       module: "Ratpoints.Proof.FindPoints"
       status: "partially-formalized"
       note: >
-        for the sieve on the bit arrays of words of stage C2 and every well-formed choice of the
-        sieving parameters, the array size of the pieces included
+        for the sieve on the bit arrays of words of stage C2 with the set-up of stage D (the
+        refusals, the reversal, the exit), every well-formed choice of the sieving parameters, the
+        array size of the pieces included, and every value of the options
         (Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok, Ratpoints.nodup_of_findPoints_eq_ok),
-        certified by comparator; the later stages bring Ratpoints.findPoints closer to the C code,
-        and the theorems move with it
+        certified by comparator, through the permutation of the brute-force reference
+        (Ratpoints.perm_bruteForce_of_findPoints_eq_ok); the later stages bring
+        Ratpoints.findPoints closer to the C code, and the theorems move with it
     - source: "the refusals: fewer than two or more than maxDegree + 1 = 101 coefficients, H = 0, a binary form that is not squarefree"
-      lean: "Ratpoints.exists_findPoints_eq_error_iff"
+      lean: "Ratpoints.exists_findPoints_eq_error_iff_of_sturm_nonneg"
+      module: "Ratpoints.Proof.FindPoints"
+      status: "formalized"
+      note: >
+        for every choice of the sieving parameters, with the Sturm step on, as in a run without
+        options (Ratpoints.exists_findPoints_eq_error_iff_of_sturm_nonneg), and without it, the
+        refusals of the C program under -s
+        (Ratpoints.exists_findPoints_eq_error_iff_of_sturm_neg), both certified by comparator
+    - source: "the order of the output"
+      lean: "Ratpoints.exists_eq_of_findPoints_eq_ok"
       module: "Ratpoints.Proof.FindPoints"
       status: "partially-formalized"
       note: >
-        the refusal theorem in its form of stage C1 (fewer than two or more than maxDegree + 1
-        coefficients, H = 0), certified by comparator; stage D adds the binary form that is not
-        squarefree
-    - source: "the order of the output"
-      lean: ""
-      module: ""
-      status: "not-formalized"
-      note: "stage G"
+        the list of Ratpoints.findPoints is the brute-force reference of the polynomial searched,
+        mapped back after a reversal, which is the order of the C program wherever it visits the
+        denominators in ascending order; the divisor order (stage E) and the protocol of the
+        output (stage G) come later
     - source: "the Sturm step covers every real point where F >= 0"
       lean: ""
       module: ""

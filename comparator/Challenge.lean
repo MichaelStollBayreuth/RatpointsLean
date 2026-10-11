@@ -6,6 +6,7 @@ Authors: Michael Stoll
 module
 
 public import Mathlib.Algebra.MvPolynomial.Eval
+public import Mathlib.Algebra.Squarefree.Basic
 public import Mathlib.Data.Fin.VecNotation
 public import Ratpoints.Model
 
@@ -20,15 +21,18 @@ sense that it is the code the executable runs, while the specification is reprod
 that a solution that changed it would be rejected.
 
 The statements come in stage by stage, as `comparator/README.md` lists them: the two theorems of
-stage B (the brute-force reference finds exactly the points, without duplicates); then, from stage
-C1 on, the membership and no-duplicates theorems for `findPoints` for well-formed parameters, the
-refusal theorem, which rules out a `findPoints` that refuses every input (in its form of stage C1;
-stage D adds the refusal of a form that is not squarefree), and the well-formedness of every
-parameter set that the options of the program give, which rules out a well-formedness that nothing
-satisfies. `findPoints`, `Params`, `Params.WF`, `SieveOptions`, `sieveParams` and `maxDegree` come
-from the model, never restated, since a definition of the model elaborates without Mathlib to other
-instance terms. The file imports exactly the public imports of `Ratpoints/Spec/Basic.lean`, so that
-the restated definitions elaborate to the same terms as there.
+stage B (the brute-force reference finds exactly the points, without duplicates); from stage C1 on,
+the membership and no-duplicates theorems for `findPoints` for well-formed parameters, since stage D
+for every option, and the well-formedness of every parameter set that the options of the program
+give, which rules out a well-formedness that nothing satisfies; and the refusal theorems of stage D,
+with the Sturm step on (`findPoints` refuses exactly the inputs with fewer than two or more than
+`maxDegree + 1` coefficients, the height bound `0` and the binary forms `binaryFormPoly c` that are
+not squarefree) and off (it refuses exactly what the program refuses under `-s`), which rule out a
+`findPoints` that refuses every input, with or without the Sturm step. `findPoints`, `Options`,
+`Params`, `Params.WF`, `SieveOptions`, `sieveParams` and `maxDegree` come from the model, never
+restated, since a definition of the model elaborates without Mathlib to other instance terms. The
+file imports exactly the public imports of `Ratpoints/Spec/Basic.lean`, so that the restated
+definitions elaborate to the same terms as there.
 -/
 
 @[expose] public section
@@ -43,6 +47,15 @@ def degree (c : List ℤ) : ℕ := (c.reverse.dropWhile (· == 0)).length - 1
 polynomial of degree `d` with coefficient list `c`. -/
 def binaryForm (c : List ℤ) (x z : ℤ) : ℤ :=
   ∑ i ∈ Finset.range (degree c + 1), c.getD i 0 * x ^ i * z ^ (degree c + degree c % 2 - i)
+
+/-- The binary form `Φ = ∑ cᵢ Xⁱ Z^(N - i)` over `ℚ` of degree `N = 2 ⌈n / 2⌉`, where `n + 1` is
+the length of `c`: the polynomial made homogeneous of the even degree that the length of its
+coefficient list allows. The refusals of the program speak about this form; on every input that
+is not refused, it agrees with `Ratpoints.binaryForm` (`Ratpoints.eval_binaryFormPoly`). -/
+noncomputable def binaryFormPoly (c : List ℤ) : MvPolynomial (Fin 2) ℚ :=
+  ∑ i ∈ Finset.range c.length,
+    MvPolynomial.C (c.getD i 0 : ℚ) * MvPolynomial.X 0 ^ i *
+      MvPolynomial.X 1 ^ (2 * (c.length / 2) - i)
 
 /-- `(x, y, z)` is a point of height at most `H` on `y ^ 2 = F(x, z)`, `F = Ratpoints.binaryForm c`,
 normalized as the program prints it: `gcd(x, z) = 1`, and `0 < z`, or `z = 0` and `x = 1`. -/
@@ -60,17 +73,28 @@ theorem challenge_nodup_bruteForce (c : List ℤ) (H : ℕ) : (Ratpoints.bruteFo
   sorry
 
 theorem challenge_mem_iff_isPoint_of_findPoints_eq_ok (c : List ℤ) (H : ℕ) (P : Ratpoints.Params)
-    (L : List (ℤ × ℤ × ℤ)) (hP : P.WF) (h : Ratpoints.findPoints c H P = .ok L)
-    (p : ℤ × ℤ × ℤ) : p ∈ L ↔ Ratpoints.IsPoint c H p :=
+    (o : Ratpoints.Options) (L : List (ℤ × ℤ × ℤ)) (hP : P.WF)
+    (h : Ratpoints.findPoints c H P o = .ok L) (p : ℤ × ℤ × ℤ) : p ∈ L ↔ Ratpoints.IsPoint c H p :=
   sorry
 
 theorem challenge_nodup_of_findPoints_eq_ok (c : List ℤ) (H : ℕ) (P : Ratpoints.Params)
-    (L : List (ℤ × ℤ × ℤ)) (hP : P.WF) (h : Ratpoints.findPoints c H P = .ok L) : L.Nodup :=
+    (o : Ratpoints.Options) (L : List (ℤ × ℤ × ℤ)) (hP : P.WF)
+    (h : Ratpoints.findPoints c H P o = .ok L) : L.Nodup :=
   sorry
 
-theorem challenge_exists_findPoints_eq_error_iff (c : List ℤ) (H : ℕ) (P : Ratpoints.Params) :
-    (∃ e, Ratpoints.findPoints c H P = .error e) ↔
-      c.length < 2 ∨ Ratpoints.maxDegree + 1 < c.length ∨ H = 0 :=
+theorem challenge_exists_findPoints_eq_error_iff_of_sturm_nonneg (c : List ℤ) (H : ℕ)
+    (P : Ratpoints.Params) (o : Ratpoints.Options) (hs : 0 ≤ o.sturm) :
+    (∃ e, Ratpoints.findPoints c H P o = .error e) ↔
+      c.length < 2 ∨ Ratpoints.maxDegree + 1 < c.length ∨ H = 0 ∨
+        ¬ Squarefree (Ratpoints.binaryFormPoly c) :=
+  sorry
+
+theorem challenge_exists_findPoints_eq_error_iff_of_sturm_neg (c : List ℤ) (H : ℕ)
+    (P : Ratpoints.Params) (o : Ratpoints.Options) (hs : o.sturm < 0) :
+    (∃ e, Ratpoints.findPoints c H P o = .error e) ↔
+      c.length < 2 ∨ Ratpoints.maxDegree + 1 < c.length ∨ H = 0 ∨
+        Ratpoints.degree c + 2 ≤ 2 * (c.length / 2) ∨
+        (o.reverse = true ∧ Ratpoints.degree c % 2 = 0 ∧ c.getD 0 0 = 0 ∧ c.getD 1 0 = 0) :=
   sorry
 
 theorem challenge_wf_sieveParams (o : Ratpoints.SieveOptions) : (Ratpoints.sieveParams o).WF :=

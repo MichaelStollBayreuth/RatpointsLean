@@ -11,8 +11,8 @@ module
 The test of the Sturm step of ratpoints for a repeated factor of the polynomial `f`: the remainder
 chain of `f` and its derivative `f'`, computed in integers as `sturm.c` computes it, row by row and
 with its loops (`Ratpoints.Sturm.chain`). A remainder is zero exactly when `f` has a repeated
-factor; the chain is `none` then, and ratpoints refuses the form as not squarefree, which the
-set-up of the model does not do yet (stage D). The rest of the Sturm step, which restricts the
+factor; the chain is `none` then, and ratpoints refuses the form as not squarefree, as
+`Ratpoints.findPoints` does with the Sturm step on. The rest of the Sturm step, which restricts the
 numerators to the intervals where `f ≥ 0`, is not modelled yet (stage H).
 
 ## Main definitions

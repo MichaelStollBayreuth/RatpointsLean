@@ -66,7 +66,8 @@ checks, messages and exit statuses, and prints the points of height at most `H` 
 the points by the sieve on bit arrays of words, whose parameters the options `-p -n -N -P -F -j -J`
 set; it accepts `-q`, `-v` and the other options that tune the sieve of ratpoints, checking their
 arguments, but ignores them; it answers the other options of ratpoints with the exit status 12;
-and for now it does not refuse a polynomial that is not squarefree.
+and it refuses a binary form that is not squarefree with error 8, as ratpoints does without
+options.
 
 ## Licence
 

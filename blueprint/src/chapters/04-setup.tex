@@ -98,7 +98,8 @@ output.
 \section{The options}\label{sec:options}
 
 \begin{definition}[The options of a search]\label{def:Options}
-  Proposed names: \lname{Ratpoints.Options}, \lname{Ratpoints.defaultSturm}.
+  \lean{Ratpoints.Options, Ratpoints.defaultSturm}
+  \leanok
   The options of the library that change the refusals or the order of the output, an argument of
   $\mathrm{findPoints}$ whose defaults are those of a run of the program without options: whether
   the set-up may reverse the polynomial (the bit \verb|RATPOINTS_NO_REVERSE| of the flags clear),
@@ -416,9 +417,8 @@ restriction of the search region stage~H takes over.
 
 \begin{theorem}[The output of the search]\label{thm:findPoints_perm}
   \uses{def:findPoints, def:searchPoints, lem:reversal_swap, lem:swapPoint_bijection}
-  Proposed names: \lname{Ratpoints.exists\_eq\_of\_findPoints\_eq\_ok},
-  \lname{Ratpoints.eq\_bruteForce\_of\_findPoints\_eq\_ok\_of\_reverse\_eq\_false},
-  \lname{Ratpoints.perm\_bruteForce\_of\_findPoints\_eq\_ok}.
+  \lean{Ratpoints.exists_eq_of_findPoints_eq_ok, Ratpoints.eq_bruteForce_of_findPoints_eq_ok_of_reverse_eq_false, Ratpoints.perm_bruteForce_of_findPoints_eq_ok}
+  \leanok
   For well-formed parameters and any options, if $\mathrm{findPoints}(c, H, P, o)$ returns the list
   $L$, then $L$ is $\mathrm{bruteForce}(c', H)$, mapped by $\mathrm{swapPoint}$ when the reversal check
   reverses $c$ to $c'$, and $\mathrm{bruteForce}(c, H)$ when it does not, in particular when the
@@ -426,6 +426,7 @@ restriction of the search region stage~H takes over.
 \end{theorem}
 
 \begin{proof}
+  \leanok
   $\mathrm{findPoints}$ returns the result of $\mathrm{searchPoints}$ on the polynomial searched
   and its degree (Lemma~\ref{lem:reversal_swap}), which is the reference for it, mapped after a
   reversal (Definition~\ref{def:searchPoints}); Lemma~\ref{lem:swapPoint_bijection} gives the
@@ -435,10 +436,8 @@ restriction of the search region stage~H takes over.
 \begin{theorem}[The refusals]\label{thm:refusals}
   \uses{def:findPoints, def:Options, def:reversal, lem:sturmChain_squarefree,
     lem:reversal_squarefree, lem:squarefree_binaryFormPoly}
-  Proposed names: \lname{Ratpoints.exists\_findPoints\_eq\_error\_iff\_of\_sturm\_nonneg},
-  \lname{Ratpoints.exists\_findPoints\_eq\_error\_iff\_of\_sturm\_neg},
-  \lname{Ratpoints.run\_chain\_eq\_none\_iff\_of\_reversal\_eq\_ok},
-  \lname{Ratpoints.Setup.one\_le\_of\_reversal\_eq\_ok}.
+  \lean{Ratpoints.exists_findPoints_eq_error_iff_of_sturm_nonneg, Ratpoints.exists_findPoints_eq_error_iff_of_sturm_neg, Ratpoints.run_chain_eq_none_iff_of_reversal_eq_ok, Ratpoints.Setup.one_le_of_reversal_eq_ok, Ratpoints.Setup.exists_reversal_eq_error_iff, Ratpoints.Setup.not_squarefree_binaryFormPoly_of_reversal_eq_error}
+  \leanok
   For any parameters and options: with the Sturm step on ($\mathrm{sturm} \ge 0$),
   $\mathrm{findPoints}(c, H, P, o)$ refuses the input exactly when $c$ has fewer than two or more than
   $\mathrm{maxDegree} + 1$ entries, $H = 0$, or $\Phi_c$ is not squarefree. With the Sturm step off,
@@ -447,6 +446,7 @@ restriction of the search region stage~H takes over.
 \end{theorem}
 
 \begin{proof}
+  \leanok
   The refusals of the leading zeros and of the reversal check stand for $Z^2 \mid \Phi_c$ and
   $X^2 \mid \Phi_c$, each of which makes $\Phi_c$ not squarefree
   (Lemma~\ref{lem:squarefree_binaryFormPoly}). When neither happens, $N \le d + 1$; since $c$ has at

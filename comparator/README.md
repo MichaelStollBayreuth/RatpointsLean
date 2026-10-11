@@ -7,14 +7,17 @@ build, using only the permitted axioms (`propext`, `Quot.sound`, `Classical.choi
 ## What is checked
 
 - [`Challenge.lean`](Challenge.lean) may import only Mathlib and the model (`Ratpoints.Model`). It
-  restates the specification verbatim (`degree`, `binaryForm` and `IsPoint`; `binaryFormPoly` joins
-  with the refusal theorem in stage D, and `points` stays out, as the blueprint explains) and states
-  the main theorems with `sorry`. The main theorems speak about the model's `findPoints` (and, in
-  stage B, the brute-force reference), which the challenge imports with `Params`, `Params.WF`,
-  `SieveOptions`, `sieveParams` and `maxDegree`: the model is trusted in the sense that it is the
-  code the executable runs, and nothing else, and a definition of the model, which elaborates
-  without Mathlib, is never restated. The specification, by contrast, is reproduced in the
-  challenge, so a solution whose library changed it is rejected.
+  restates the specification verbatim (`degree`, `binaryForm`, `IsPoint`, and `binaryFormPoly`,
+  which the refusal theorems of stage D speak about; `points` stays out, as the blueprint explains)
+  and states the main theorems with `sorry`. The main theorems speak about the model's `findPoints`
+  (and, in stage B, the brute-force reference), which the challenge imports with `Options`,
+  `Params`, `Params.WF`, `SieveOptions`, `sieveParams` and `maxDegree`: the model is trusted in the
+  sense that it is the code the executable runs, and nothing else, and a definition of the model,
+  which elaborates without Mathlib, is never restated. The specification, by contrast, is
+  reproduced in the challenge, so a solution whose library changed it is rejected. The challenge
+  imports exactly the public imports of the specification (`Ratpoints/Spec/Basic.lean`), among them
+  `Mathlib.Algebra.Squarefree.Basic` for `Squarefree`, so that the restated definitions elaborate to
+  the same terms as there.
 - [`Solution.lean`](Solution.lean) imports the library and proves the same statements by its
   theorems.
 
@@ -31,15 +34,20 @@ checks that each challenge theorem in the solution
 
 The statements come in stage by stage, as the blueprint describes them: the theorems of stage B
 (the brute-force reference finds exactly the points, without duplicates); from stage C1 on, the
-membership and no-duplicates theorems for `findPoints` for well-formed parameters, the refusal
-theorem in its form of stage C1, which rules out a `findPoints` that refuses every input, and the
-well-formedness of every parameter set that the options of the program give, which rules out a
-`P.WF` that nothing satisfies; stage D adds the refusal of a form that is not squarefree to the
-refusal theorem. `challenges.json` lists `challenge_mem_bruteForce_iff` and
-`challenge_nodup_bruteForce`, which Comparator accepted on 2026-10-09, and
-`challenge_mem_iff_isPoint_of_findPoints_eq_ok`, `challenge_nodup_of_findPoints_eq_ok`,
-`challenge_exists_findPoints_eq_error_iff` and `challenge_wf_sieveParams`, which Comparator
-accepted on 2026-10-10.
+membership and no-duplicates theorems for `findPoints` for well-formed parameters, since stage D
+for every value of the options of `findPoints`, and the well-formedness of every parameter set that
+the options of the program give, which rules out a `P.WF` that nothing satisfies; and, since stage
+D, the two refusal theorems: with the Sturm step on, `findPoints` refuses exactly the inputs with
+fewer than two or more than `maxDegree + 1` coefficients, the height bound `0` and the binary forms
+that are not squarefree, and with it off exactly what the program refuses under `-s`, so that a
+`findPoints` that refuses every input, with or without the Sturm step, is ruled out. They replace
+the refusal theorem of stage C1, which had only the first three disjuncts. `challenges.json` lists
+`challenge_mem_bruteForce_iff` and `challenge_nodup_bruteForce`, which Comparator accepted on
+2026-10-09; `challenge_mem_iff_isPoint_of_findPoints_eq_ok` and
+`challenge_nodup_of_findPoints_eq_ok`, which Comparator accepted on 2026-10-10 in their form of
+stage C1, without the options, and `challenge_wf_sieveParams`, which it accepted on the same day;
+and `challenge_exists_findPoints_eq_error_iff_of_sturm_nonneg` and
+`challenge_exists_findPoints_eq_error_iff_of_sturm_neg`, the refusal theorems of stage D.
 
 ## Running
 

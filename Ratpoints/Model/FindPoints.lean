@@ -8,25 +8,33 @@ module
 public import Ratpoints.Model.Params
 public import Ratpoints.Model.Setup
 public import Ratpoints.Model.Sieve
+public import Ratpoints.Model.Sturm
 
 -- The `#guard` examples run code of the imported modules at compile time.
 meta import Ratpoints.Model.Params
 meta import Ratpoints.Model.Setup
 meta import Ratpoints.Model.Sieve
+meta import Ratpoints.Model.Sturm
 
 /-!
 # The search for the points
 
-`Ratpoints.findPoints c H P` is the model of the library function `find_points` of ratpoints: it
-refuses, as the program does (`Ratpoints.Refusal`), more than `Ratpoints.maxDegree + 1`
-coefficients, fewer than two and the height bound `0`, and otherwise runs the search of the
-polynomial (`Ratpoints.searchPoints`), which returns no points when the curve has none modulo one
-of the moduli of the parameters `P`, and otherwise the points of height at most `H` on
-`y ^ 2 = F(x, z)`, the points at infinity first and then those of the denominators `1, …, H`, found
-by the sieve on the bit arrays of words with the moduli and the array size of `P`.
+`Ratpoints.findPoints c H P o` is the model of the library function `find_points` of ratpoints,
+with the options `o` of the library that change the refusals or the order of the output
+(`Ratpoints.Options`): it refuses, as the program does (`Ratpoints.Refusal`), more than
+`Ratpoints.maxDegree + 1` coefficients, fewer than two and the height bound `0`, and then the binary
+forms that are not squarefree as the set-up of the library finds them: when the leading zeros lower
+`⌈n / 2⌉`, in the reversal check (`Ratpoints.Setup.reversal`), which may also reverse the
+polynomial, and with the Sturm step on, by the remainder chain (`Ratpoints.Sturm.chain`). Otherwise
+it runs the search of the polynomial that the set-up hands on (`Ratpoints.searchPoints`), which
+returns no points when the curve has none modulo one of the moduli of the parameters `P`, and
+otherwise the points of height at most `H` on `y ^ 2 = F(x, z)`, the points at infinity first and
+then those of the denominators `1, …, H`, found by the sieve on the bit arrays of words with the
+moduli and the array size of `P`, each mapped back to the caller's curve after a reversal.
 
 ## Main definitions
 
+* `Ratpoints.Options`: the options of a search.
 * `Ratpoints.searchPoints`: the search of the polynomial that the set-up hands on.
 * `Ratpoints.findPoints`: the points.
 -/
@@ -34,6 +42,28 @@ by the sieve on the bit arrays of words with the moduli and the array size of `P
 @[expose] public section
 
 namespace Ratpoints
+
+/-- The options of a search that change the refusals or the order of the output, with the defaults
+of a run of the program without options: whether the set-up may reverse the polynomial
+(`Ratpoints.Setup.reversal`), and the depth of the Sturm step, negative for none. Unlike the
+sieving parameters (`Ratpoints.Params`), which change neither the points nor their order, these
+change the order of the output (the reversal) and the refusals (the Sturm step, and without it the
+reversal check); the options of the output and of the search region come with stages G and H.
+
+C: `main.c:348`, `main.c:352`
+
+Deviation: a structure for the fields of `ratpoints_args` that hold these options: a Boolean for
+the bit `RATPOINTS_NO_REVERSE` of the flags, which `main.c` clears with the others, whose Jacobi
+switch is that of the sieving parameters (`Ratpoints.Params.jacobi`) and whose bits of the output
+are stage G's; and an integer for `args->sturm`, of which the model reads only whether it is
+negative, as the switch of the test for a repeated factor (the depth itself is stage H's). -/
+structure Options where
+  /-- Whether the set-up may reverse the polynomial: the bit `RATPOINTS_NO_REVERSE` of the flags
+  clear, which the option `-k` of the program sets and `-K` clears. -/
+  reverse : Bool := true
+  /-- `args->sturm`, the depth of the Sturm step, negative for none: `Ratpoints.defaultSturm`
+  unless the option `-s` of the program sets `-1` or `-S` a depth. -/
+  sturm : Int := defaultSturm
 
 open Sieve in
 /-- The search of the polynomial with the coefficient list `c` of degree `d` that the set-up hands
@@ -71,38 +101,64 @@ def searchPoints (c : List Int) (d H : Nat) (P : Params) (rev : Bool) :
     return pointsAtInfinity c d rev ++ pts.toList
 
 /-- The points of height at most `H` on `y ^ 2 = F(x, z)` for the coefficient list `c`, found by the
-sieve with the moduli and the array size of the parameters `P`: more than `Ratpoints.maxDegree + 1`
-coefficients, fewer than two, and `H = 0` are refused, in the order of the program; otherwise the
-points of the search of the polynomial of degree `Ratpoints.BruteForce.degree c`
-(`Ratpoints.searchPoints`) with the flag of the reversal clear: none when the curve has no points
-modulo one of the moduli, and else the points at infinity first, then those of the denominators
-`1, …, H`, with the tables of the moduli and pieces of at most `Ratpoints.Params.arraySizeAt P H`
-bit arrays.
+sieve with the moduli and the array size of the parameters `P` and the options `o`, by default those
+of a run of the program without options. More than `Ratpoints.maxDegree + 1` coefficients, fewer
+than two and `H = 0` are refused, in the order of the program (errors 3, 5 and 4); then, as not
+squarefree (error 8), a list whose leading zeros lower `⌈n / 2⌉`, where `n + 1` is its length, that
+is `⌈d / 2⌉ < ⌈n / 2⌉` for the degree `d = Ratpoints.BruteForce.degree c`. Then comes the reversal
+check with the switch `o.reverse` (`Ratpoints.Setup.reversal`), which may refuse the form too or
+reverse the polynomial; with the Sturm step on, `0 ≤ o.sturm`, the form is refused when the
+remainder chain of the polynomial searched is none (`Ratpoints.Sturm.chain`), that is when that
+polynomial has a repeated factor. Otherwise the points are those of the search of the polynomial
+that the reversal check hands on, with its flag of the reversal (`Ratpoints.searchPoints`): none
+when the curve has no points modulo one of the moduli, and else the points at infinity first, then
+those of the denominators `1, …, H`, each mapped back to the caller's curve after a reversal.
 
-C: `find_points.c:4557-4558`, `find_points.c:4624-4633`, `find_points.c:4658`
+C: `find_points.c:4557-4558`, `find_points.c:4567-4571`, `find_points.c:4578-4585`,
+`find_points.c:4606`, `find_points.c:4624-4633`, `find_points.c:4658`, `find_points.c:4857-4892`,
+`find_points.c:5219-5220`
 
-Deviation: the refusals of the program, with its errors (`Ratpoints.Refusal`), for the library's
-`RATPOINTS_BAD_ARGS`: fewer than two coefficients are refused on the length of `c`, as the program
-refuses them, where the library refuses an empty list as a negative degree and one coefficient as
-the degree 0; the degree with the leading zeros dropped is `Ratpoints.BruteForce.degree c`; no
-refusal of a form that is not squarefree (stage D), so that the zero polynomial and the forms that
-ratpoints refuses get the points of the specification; no reversal (stage D), no search region
-(stage H); no failure for lack of memory, which the model cannot meet. -/
-def findPoints (c : List Int) (H : Nat) (P : Params) : Except Refusal (List (Int × Int × Int)) :=
+Deviation: the refusals of the program, in its order and with its errors (`Ratpoints.Refusal`), for
+the codes and the order of the library: fewer than two coefficients are refused on the length of
+`c`, as the program refuses them, where the library refuses an empty list as a negative degree and
+one coefficient as the degree 0 (a longer list of degree 0 fails the test of the leading zeros
+first); and the height bound, which the program checks before it calls the library, comes before
+the test of the leading zeros, which the library makes first, so that `5 0` with `H = 0` is error 4,
+as the program gives it. The degree with the leading zeros dropped is
+`Ratpoints.BruteForce.degree c`. A list for the array of GMP integers and its scratch integers
+`work`, with nothing written back to the caller (the reversed coefficients, the degree, the flags),
+so that there is no state between calls and the reset of the flags clears nothing; the points are
+returned as a list, for the count `total` and the flag `quit` of the callback (stage G); the points
+at infinity and the square test of the leading coefficient are decided where they are used
+(`Ratpoints.Sieve.pointsAtInfinity`, `Ratpoints.Setup.reversal`). Of the Sturm step only its test
+for a repeated factor: the rest, which restricts the search region and its exit when the
+polynomial is negative on the whole of it, is stage H, so that `sturm_empty` is never set. No search
+region (stage H); no failure for lack of memory, which the model cannot meet; no output under
+`RATPOINTS_VERBOSE`. -/
+def findPoints (c : List Int) (H : Nat) (P : Params) (o : Options := {}) :
+    Except Refusal (List (Int × Int × Int)) :=
   if maxDegree + 1 < c.length then .error .tooManyCoefficients
   else if c.length < 2 then .error .tooFewCoefficients
   else if H = 0 then .error .incorrectHeight
-  else .ok (Id.run (searchPoints c (BruteForce.degree c) H P false))
+  else if (BruteForce.degree c + 1) / 2 < c.length / 2 then .error .notSquarefree
+  else match Setup.reversal o.reverse c (BruteForce.degree c) with
+    | .error e => .error e
+    | .ok (c', d', rev) =>
+      if 0 ≤ o.sturm ∧ Id.run (Sturm.chain c' d') = none then .error .notSquarefree
+      else .ok (Id.run (searchPoints c' d' H P rev))
 
 /-! ### Examples
 
-The points that `ratpoints c H -q` prints at the pinned commit, in the same order; the list of the
-brute-force reference `Ratpoints.bruteForce` for other parameters, among them pieces of a few bit
-arrays, and for inputs that the program refuses; the search with the flag of the reversal, for
-polynomials to which ratpoints reverses others, and on curves without points modulo `3`, `5` and
-`7`, where it takes the exit; the tables of inverses and squares (`Ratpoints.Sieve.inversesMod`,
-`Ratpoints.Sieve.squaresMod`) of the `Ratpoints.numPrimes` primes among which the moduli are chosen;
-and the refusals, the coefficients before the height bound. -/
+The points that `ratpoints c H -q` prints at the pinned commit, in the same order, also after a
+reversal, and with `-k` (`{ reverse := false }`); the list of the brute-force reference
+`Ratpoints.bruteForce` for other parameters, among them pieces of a few bit arrays; the refusals of
+forms that are not squarefree as the program makes them, with and without `-s`
+(`{ sturm := -1 }`) and `-k`, and the points of such forms that it searches; the search with the
+flag of the reversal, for polynomials to which ratpoints reverses others, and on curves without
+points modulo `3`, `5` and `7`, where it takes the exit; the tables of inverses and squares
+(`Ratpoints.Sieve.inversesMod`, `Ratpoints.Sieve.squaresMod`) of the `Ratpoints.numPrimes` primes
+among which the moduli are chosen; and the refusals in the order of the program, the coefficients
+before the height bound and the height bound before the leading zeros. -/
 
 #guard (findPoints [-2, 0, 0, 1] 130 defaultParams).toOption ==
   some [(1, 0, 0), (3, 5, 1), (3, -5, 1), (129, 3830, 100), (129, -3830, 100)]
@@ -118,16 +174,24 @@ and the refusals, the coefficients before the height bound. -/
   some [(1, 21, 0), (1, -21, 0), (0, 1, 1), (0, -1, 1), (-1, 31, 2), (-1, -31, 2), (1, 31, 2),
     (1, -31, 2), (-2, 651, 21), (-2, -651, 21), (2, 651, 21), (2, -651, 21)]
 
--- The program reverses this polynomial and prints the points in another order.
-#guard ((findPoints [-1, 0, 9] 4 defaultParams).toOption.getD []).isPerm
-  [(-1, 0, 3), (1, 3, 0), (1, -3, 0), (1, 0, 3)]
+-- Polynomials that the program reverses, in the cases 2, 1 and 3 of the reversal check: the points
+-- of `ratpoints c 4 -q` in its order, and those of `ratpoints c 4 -q -k`, which are those of the
+-- brute-force reference.
+#guard ([([-1, 0, 9], [(-1, 0, 3), (1, 3, 0), (1, -3, 0), (1, 0, 3)]),
+    ([0, 1, 0, 0, 4], [(0, 0, 1), (1, 2, 0), (1, -2, 0)]), ([0, 1, 0, 2], [(0, 0, 1), (1, 0, 0)])] :
+      List (List Int × List (Int × Int × Int))).all fun (c, pts) ↦
+  (findPoints c 4 defaultParams).toOption == some pts &&
+    (findPoints c 4 defaultParams { reverse := false }).toOption == some (bruteForce c 4)
 
--- No moduli, all 53 primes, the 53 primes in three stages, and moduli in another order.
+-- No moduli, all 53 primes, the 53 primes in three stages, and moduli in another order: without the
+-- reversal and the Sturm step the list of the reference, also for `0 0 1`, which the program
+-- refuses, and with them the reference of the reversed polynomial mapped back, for `-1 0 9`.
 #guard [⟨[], 0, 0, 64, true, 0⟩, sieveParams { numPrimes := 53 },
     ⟨primeTable.toList.take 53, 10, 40, 64, true, 0⟩,
     ⟨[7, 3, 251, 5], 1, 2, 0, false, 0⟩].all fun P ↦
-  [([1, 1, 1, 1, 0], 25), ([-1, 0, 9], 20), ([1, 0, 1], 12), ([0, 0, 1], 15)].all fun (c, H) ↦
-    (findPoints c H P).toOption == some (bruteForce c H)
+  ([([1, 1, 1, 1, 0], 25), ([-1, 0, 9], 20), ([1, 0, 1], 12), ([0, 0, 1], 15)].all fun (c, H) ↦
+    (findPoints c H P { reverse := false, sturm := -1 }).toOption == some (bruteForce c H)) &&
+  (findPoints [-1, 0, 9] 20 P).toOption == some ((bruteForce [9, 0, -1] 20).map Sieve.swapPoint)
 
 -- Pieces of one, two and three bit arrays, at heights around the multiples of 64 and of
 -- `rbaLength`: several pieces, the masks on the same piece and on different ones, and no low mask
@@ -139,10 +203,25 @@ and the refusals, the coefficients before the height bound. -/
       let P := { defaultParams with moduli := primeTable.toList.take 5, arraySize := A }
       (findPoints c H P).toOption == some bf
 
--- The zero polynomial and polynomials of degree 0 with two or more coefficients, which the
--- program refuses as not squarefree.
+-- The zero polynomial and polynomials of degree 0 with two or more coefficients, whose leading
+-- zeros lower `⌈n / 2⌉`: refused as not squarefree whatever the options, as `ratpoints c H -q`
+-- does, also with `-s` and `-s -k`.
 #guard [([0, 0], 7), ([5, 0, 0, 0], 9), ([4, 0], 6)].all fun (c, H) ↦
-  (findPoints c H defaultParams).toOption == some (bruteForce c H)
+  [{}, { sturm := -1 }, { reverse := false, sturm := -1 }].all fun o ↦
+    findPoints c H defaultParams o matches .error .notSquarefree
+
+-- `1 2 1`, with a repeated factor: refused by the remainder chain, and searched without the Sturm
+-- step, as `ratpoints '1 2 1' 3 -q -s` does, which prints the 31 points of the reference.
+#guard findPoints [1, 2, 1] 3 defaultParams matches .error .notSquarefree
+#guard (findPoints [1, 2, 1] 3 defaultParams { sturm := -1 }).toOption.map List.length == some 31 &&
+  (findPoints [1, 2, 1] 3 defaultParams { sturm := -1 }).toOption == some (bruteForce [1, 2, 1] 3)
+
+-- `0 0 1 1 1`, of even degree with `c₀ = c₁ = 0`: refused by the reversal check, also without the
+-- Sturm step, and searched under `-s -k`, as the program does.
+#guard [{}, { sturm := -1 }].all fun o ↦
+  findPoints [0, 0, 1, 1, 1] 3 defaultParams o matches .error .notSquarefree
+#guard (findPoints [0, 0, 1, 1, 1] 3 defaultParams { reverse := false, sturm := -1 }).toOption ==
+  some [(1, 1, 0), (1, -1, 0), (-1, 1, 1), (-1, -1, 1), (0, 0, 1)]
 
 -- The search of the polynomials `9 0 -1`, `4 0 0 1 0` and `0 2 0 1`, to which ratpoints reverses
 -- `-1 0 9`, `0 1 0 0 4` and `0 1 0 2`, with the flag of the reversal: the points that
@@ -174,6 +253,7 @@ and the refusals, the coefficients before the height bound. -/
 #guard findPoints (List.replicate (maxDegree + 1) 1) 1 ⟨[], 0, 0, 64, true, 0⟩ matches .ok _
 #guard findPoints [1] 0 defaultParams matches .error .tooFewCoefficients
 #guard findPoints [1, 0, 1] 0 defaultParams matches .error .incorrectHeight
+#guard findPoints [5, 0] 0 defaultParams matches .error .incorrectHeight
 
 end Ratpoints
 

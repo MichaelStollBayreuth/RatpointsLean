@@ -34,9 +34,11 @@ remainder chain of its Sturm step. The rows of the chain, as polynomials over `�
 generalized Sturm sequence, along which the coprimality of `f` and `f'` passes down to the last two
 rows, so that the chain detects a repeated factor of `f`. In each of its three cases the reversal
 check replaces `c` by its reflection in the even degree `D = d + d % 2` of the binary form, which
-exchanges `x` and `z` in the binary form and so does not change whether it is squarefree; and the
-map of the points of the reversed curve to those of the caller's curve
-(`Ratpoints.Sieve.swapPoint`) is a bijection between the points of height at most `H`.
+exchanges `x` and `z` in the binary form and so does not change whether it is squarefree, and its
+refusal, of `c₀ = c₁ = 0` for even `d`, stands for `X ^ 2 ∣ Φ_c`; so once the test of the leading
+zeros has passed, the remainder chain of the polynomial that the check hands on detects exactly the
+forms that are not squarefree. The map of the points of the reversed curve to those of the caller's
+curve (`Ratpoints.Sieve.swapPoint`) is a bijection between the points of height at most `H`.
 
 ## Main definitions
 
@@ -64,8 +66,16 @@ map of the points of the reversed curve to those of the caller's curve
 * `Ratpoints.Setup.degree_eq_of_reversal_eq_ok`, `Ratpoints.Setup.eq_of_reversal_eq_ok_false`: the
   degree that the check returns is that of the list it returns, and without a reversal these are
   `c` and its degree.
+* `Ratpoints.Setup.one_le_of_reversal_eq_ok`: the check keeps the degree at least `1`.
 * `Ratpoints.Setup.squarefree_binaryFormPoly_iff_of_reversal_eq_ok`: once the test of the leading
   zeros has passed, `Φ_c` is squarefree exactly when the polynomial that the check hands on is.
+* `Ratpoints.Setup.exists_reversal_eq_error_iff`,
+  `Ratpoints.Setup.not_squarefree_binaryFormPoly_of_reversal_eq_error`: the check refuses exactly
+  the even degrees with `c₀ = c₁ = 0` when its switch lets it run, and only forms that are not
+  squarefree.
+* `Ratpoints.run_chain_eq_none_iff_of_reversal_eq_ok`: once the test of the leading zeros has
+  passed, the remainder chain of the polynomial that the check hands on is none exactly when `Φ_c`
+  is not squarefree.
 * `Ratpoints.Sieve.isPoint_swapPoint`, `Ratpoints.Sieve.perm_map_swapPoint_bruteForce`: the map of
   a reversed search sends the points of the reversed curve to points of the caller's curve, and the
   brute-force reference of the one, mapped, is a permutation of that of the other.
@@ -390,6 +400,9 @@ private theorem poly_eq_reflect_of_getD {c c' : List ℤ} {N : ℕ} (hc : degree
 
 namespace Setup
 
+@[simp]
+theorem reversal_false (c : List ℤ) (d : ℕ) : reversal false c d = .ok (c, d, false) := rfl
+
 /-- In each of the three cases of the reversal check, the reversed list is the reflection of `c` in
 the even degree `d + d % 2` of the binary form (with `c_(d+1) = 0` in case 3). -/
 theorem getD_eq_of_reversal_eq_ok {allow : Bool} {c c' : List ℤ} {d d' : ℕ} (hd : d = degree c)
@@ -416,6 +429,14 @@ theorem eq_of_reversal_eq_ok_false {allow : Bool} {c c' : List ℤ} {d d' : ℕ}
   simp only [reversal] at h
   split_ifs at h <;> simp_all
 
+theorem exists_reversal_eq_error_iff {allow : Bool} {c : List ℤ} {d : ℕ} :
+    (∃ e, reversal allow c d = .error e) ↔
+      allow = true ∧ d % 2 = 0 ∧ c.getD 0 0 = 0 ∧ c.getD 1 0 = 0 := by
+  cases allow
+  · simp
+  · simp only [reversal]
+    split_ifs <;> simp_all
+
 -- The cases that reverse: `c₀ = 0`, `c₁ ≠ 0` and the degree `D - 1` (cases 1 and 3), or `c₀ ≠ 0`,
 -- even `d` and the degree `d` (case 2).
 private theorem reversal_eq_ok_cases {allow : Bool} {c c' : List ℤ} {d d' : ℕ} (hd : d = degree c)
@@ -441,6 +462,14 @@ theorem degree_eq_of_reversal_eq_ok {allow rev : Bool} {c c' : List ℤ} {d d' :
   have hc' := getD_eq_of_reversal_eq_ok hd h
   rcases reversal_eq_ok_cases hd h with ⟨h0, h1, hN⟩ | ⟨h0, rfl, h2⟩ <;>
     refine degree_eq_of_getD_ne_zero ?_ fun i hi ↦ ?_ <;> rw [hc'] <;> grind
+
+/-- The check keeps the degree at least `1`: case 1 lowers an even degree `d ≥ 2` to `d - 1`, and
+the other cases keep it. -/
+theorem one_le_of_reversal_eq_ok {allow rev : Bool} {c c' : List ℤ} {d d' : ℕ}
+    (hd : d = degree c) (h : reversal allow c d = .ok (c', d', rev)) (h1 : 1 ≤ d) : 1 ≤ d' := by
+  cases rev
+  · exact (eq_of_reversal_eq_ok_false h).2 ▸ h1
+  · rcases reversal_eq_ok_cases hd h with ⟨-, -, hN⟩ | ⟨-, rfl, -⟩ <;> lia
 
 -- The reversed list has the even degree of the binary form of `c`.
 private theorem add_mod_two_eq_of_reversal_eq_ok {allow : Bool} {c c' : List ℤ} {d d' : ℕ}
@@ -477,7 +506,29 @@ theorem squarefree_binaryFormPoly_iff_of_reversal_eq_ok {allow rev : Bool} {c c'
   have := add_mod_two_eq_of_reversal_eq_ok hd h
   lia
 
+/-- The refusal of the reversal check is sound: it stands for `X ^ 2 ∣ Φ_c`. -/
+theorem not_squarefree_binaryFormPoly_of_reversal_eq_error {allow : Bool} {c : List ℤ} {d : ℕ}
+    {e : Refusal} (h : reversal allow c d = .error e) : ¬ Squarefree (binaryFormPoly c) :=
+  have ⟨_, _, h0, h1⟩ := exists_reversal_eq_error_iff.mp ⟨e, h⟩
+  not_squarefree_binaryFormPoly_of_getD_zero h0 h1
+
 end Setup
+
+/-- Once the test of the leading zeros has passed, the remainder chain of the polynomial that the
+reversal check hands on is none exactly when `Φ_c` is not squarefree, whether the check reverses or
+not: the polynomial has the degree `d' ≥ 1` that the check returns
+(`Ratpoints.Setup.one_le_of_reversal_eq_ok`), so that the chain detects its repeated factors
+(`Ratpoints.Sturm.run_chain_eq_none_iff`), and it is squarefree exactly when `Φ_c` is
+(`Ratpoints.Setup.squarefree_binaryFormPoly_iff_of_reversal_eq_ok`). -/
+theorem run_chain_eq_none_iff_of_reversal_eq_ok {allow rev : Bool} {c c' : List ℤ} {d' : ℕ}
+    (h2 : 2 ≤ c.length) (hc : c.length / 2 ≤ (degree c + 1) / 2)
+    (h : Setup.reversal allow c (degree c) = .ok (c', d', rev)) :
+    Id.run (Sturm.chain c' d') = none ↔ ¬ Squarefree (binaryFormPoly c) := by
+  obtain rfl := Setup.degree_eq_of_reversal_eq_ok rfl h
+  have h1 := Setup.one_le_of_reversal_eq_ok rfl h (by lia)
+  rw [Sturm.run_chain_eq_none_iff h1 (getD_degree_ne_zero_of_pos h1),
+    poly_take_of_degree_lt (Nat.lt_succ_self _),
+    Setup.squarefree_binaryFormPoly_iff_of_reversal_eq_ok rfl hc h]
 
 /-! ### The map of a reversed search -/
 

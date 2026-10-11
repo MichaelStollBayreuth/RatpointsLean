@@ -6,6 +6,7 @@ Authors: Michael Stoll
 module
 
 public import Mathlib.Algebra.MvPolynomial.Eval
+public import Mathlib.Algebra.Squarefree.Basic
 public import Mathlib.Data.Fin.VecNotation
 
 import Mathlib.Algebra.Order.Group.Abs
@@ -21,8 +22,8 @@ The points that ratpoints finds, for a coefficient list `c` (constant term first
 bound `H`: the binary form `F` of `c` and the normalized points `(x, y, z)` of height at most `H`
 on `y ^ 2 = F(x, z)`; and the binary form over `ℚ` that the refusals of the program speak about.
 The specification uses Mathlib and nothing of the model, so that it can be read on its own; the
-comparator challenge restates `Ratpoints.degree`, `Ratpoints.binaryForm` and `Ratpoints.IsPoint`
-verbatim.
+comparator challenge restates `Ratpoints.degree`, `Ratpoints.binaryForm`, `Ratpoints.IsPoint` and
+`Ratpoints.binaryFormPoly` verbatim.
 
 ## Main definitions
 
@@ -43,6 +44,11 @@ verbatim.
 
 The coefficients are written `c.getD i 0`: Mathlib's notation `c[...]` for cycles makes `c[i]`
 fail for a list named `c` wherever all of Mathlib is imported.
+
+The file imports `Mathlib.Algebra.Squarefree.Basic`, which its definitions do not need, for the
+refusal theorems, which say that `Ratpoints.binaryFormPoly c` is not `Squarefree`: the comparator
+challenge imports exactly the public imports of this file, so that the definitions that it restates
+elaborate to the same terms as here.
 -/
 
 @[expose] public section

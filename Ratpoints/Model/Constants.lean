@@ -24,6 +24,7 @@ positive, and of the table the proofs use only that its entries are primes
   table below `2 ^ maxBitsInPrime`, the first `numPrimes` of them.
 * `Ratpoints.defaultNumPrimes`, `Ratpoints.defaultMaxForbidden`: how many primes the sieve takes
   and at most how many forbidden divisors it tests, unless the options say.
+* `Ratpoints.defaultSturm`: the depth of the Sturm step, unless the options say.
 * `Ratpoints.rbaPack`, `Ratpoints.rbaLength`: how many words and how many bits a bit array of the
   sieve has.
 * `Ratpoints.defaultArraySize`, `Ratpoints.maxArraySize`: at most how many bit arrays a piece of
@@ -81,6 +82,14 @@ def numPrimes : Nat := (primeTable.toList.filter (· < 2 ^ maxBitsInPrime)).leng
 
 C: `ratpoints.h:333-340` -/
 def defaultNumPrimes : Nat := 30
+
+/-- The depth of the Sturm step when the options do not say, `RATPOINTS_DEFAULT_STURM`: the default
+of `Ratpoints.Options.sturm`, for which the option `-s` of the program sets `-1` and `-S` a depth of
+its own. Of the depth, the model reads only whether it is negative; the rest of the Sturm step,
+which reads the depth itself, is stage H.
+
+C: `ratpoints.h:341-343` -/
+def defaultSturm : Nat := 10
 
 /-- At most how many forbidden divisors of the denominators are tested when the option `-F` does
 not say, `RATPOINTS_DEFAULT_MAX_FORBIDDEN`.

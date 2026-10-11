@@ -77,3 +77,123 @@ file = "rp-private.h"
 lines = "311-318"
 kind = "instrumentation"
 reason = "WIDTH and PRINT_RBA, which print words and bit arrays in hexadecimal in the output for debugging (under DEBUG)"
+
+[[excluded]]
+file = "find_points.c"
+lines = "4572"
+kind = "threads"
+reason = "the worker of the calling thread, the state with which a thread sieves its blocks (its survivors, its third stage); the model sieves the blocks in turn, without threads, and passes what the sieve needs as arguments"
+
+[[excluded]]
+file = "find_points.c"
+lines = "4610-4612"
+kind = "memory"
+reason = "the reset of the bump allocators of the buffers that find_points_init allocates, from which the set-up and the sieve take their memory; the model allocates nothing itself"
+
+[[excluded]]
+file = "find_points.c"
+lines = "4614-4616"
+kind = "instrumentation"
+reason = "the message under DEBUG at the start of find_points_work_1"
+
+[[excluded]]
+file = "find_points.c"
+lines = "4618-4623"
+kind = "interface"
+reason = "the checks of the coefficient array and of the work array that find_points_init sets up, which only a caller of the library can fail (the work array is missing for a degree that find_points_init refused, which the program never passes, or for lack of memory, which the model cannot meet)"
+
+[[excluded]]
+file = "find_points.c"
+lines = "4636-4638"
+kind = "instrumentation"
+reason = "the message under DEBUG before the checks of the parameters"
+
+[[excluded]]
+file = "find_points.c"
+lines = "4654"
+kind = "memory"
+reason = "the enlargement of ba_buffer for more primes than find_points_init sized it for, which fails only for lack of memory"
+
+[[excluded]]
+file = "find_points.c"
+lines = "4691-4730"
+kind = "instrumentation"
+reason = "the report of the arguments under RATPOINTS_VERBOSE and the message under DEBUG before the reversal check"
+
+[[excluded]]
+file = "find_points.c"
+lines = "4804-4812"
+kind = "instrumentation"
+reason = "the messages after the reversal check, under RATPOINTS_VERBOSE when it does not reverse and under DEBUG when it does"
+
+[[excluded]]
+file = "find_points.c"
+lines = "4825-4827"
+kind = "instrumentation"
+reason = "the message under DEBUG before the search region and the Sturm step"
+
+[[excluded]]
+file = "find_points.c"
+lines = "4830"
+kind = "interface"
+reason = "the check of the array of search intervals, which only a caller of the library can fail"
+
+[[excluded]]
+file = "find_points.c"
+lines = "4946-4947"
+kind = "instrumentation"
+reason = "the message under RATPOINTS_VERBOSE before the 2-adic information"
+
+[[excluded]]
+file = "find_points.c"
+lines = "4965-4991"
+kind = "instrumentation"
+reason = "the report of the 2-adic information (the denominators under DEBUG, the packing of the numerators under RATPOINTS_VERBOSE) and the message under RATPOINTS_VERBOSE before the primes are examined"
+
+[[excluded]]
+file = "find_points.c"
+lines = "5014-5066"
+kind = "instrumentation"
+reason = "the report of the moduli of the three stages, of the estimated cost of a check and of the forbidden divisors, under DEBUG and RATPOINTS_VERBOSE"
+
+[[excluded]]
+file = "find_points.c"
+lines = "5108-5113"
+kind = "instrumentation"
+reason = "the message before the sieve, under DEBUG and RATPOINTS_VERBOSE"
+
+[[excluded]]
+file = "main.c"
+lines = "232-234"
+kind = "memory"
+reason = "the allocation of the data that the program passes to the callback process, and error 10 when it fails"
+
+[[excluded]]
+file = "main.c"
+lines = "254-255"
+kind = "memory"
+reason = "the release of the data that the program passed to the callback process, at the end of its block"
+
+[[excluded]]
+file = "main.c"
+lines = "351"
+kind = "threads"
+reason = "the default of the number of threads, one: the calling thread sieves; the model has no threads"
+
+[[excluded]]
+file = "main.c"
+lines = "357"
+kind = "memory"
+reason = "the initialization of the GMP integer fff, into which the program reads the coefficients beyond the bound to check them"
+
+[[excluded]]
+file = "main.c"
+lines = "1048"
+kind = "interface"
+reason = "the message of error 9, which the program gives for a code of the library that only inputs it never passes can cause"
+
+[[excluded]]
+file = "main.c"
+lines = "1049"
+kind = "memory"
+reason = "the message of error 10, for lack of memory, which the model cannot meet"

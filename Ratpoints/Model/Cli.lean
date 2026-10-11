@@ -21,8 +21,10 @@ and nothing else. It accepts `-q` and `-v`, which it ignores, and the options th
 of ratpoints: it reads `-p -n -N -P -F -j -J` into the sieving parameters and ignores the others;
 it answers every other option of ratpoints, which it does not support yet, with a message and the
 exit status 12, which `main.c` does not use. It takes the points from the sieve
-`Ratpoints.findPoints` with the parameters `Ratpoints.sieveParams` of these options, so that, for
-now and unlike ratpoints, it does not refuse a polynomial that is not squarefree.
+`Ratpoints.findPoints` with the parameters `Ratpoints.sieveParams` of these options and the options
+of a run without options (`Ratpoints.Options`), so that it refuses a binary form that is not
+squarefree with error 8 and, after a reversal, prints the points of the reversed polynomial mapped
+back to the caller's curve, as ratpoints does.
 
 ## Main definitions
 
@@ -386,8 +388,9 @@ def pointLine (p : Int × Int × Int) : String := s!"({p.1} : {p.2.1} : {p.2.2})
 program): the text it prints on the standard output and its exit status. On the coefficient list
 `c`, the height bound `H` and the values `o` of the options of `Ratpoints.Cli.input`, it prints,
 as ratpoints does with `-q`, the line `Ratpoints.Cli.pointLine` of each point that the sieve
-`Ratpoints.findPoints` finds with the parameters `Ratpoints.sieveParams o`, in its order, and
-exits with status 0; on a failure `f`, it prints `f.message` and exits with `f.status`
+`Ratpoints.findPoints` finds with the parameters `Ratpoints.sieveParams o` and the options of a run
+without options (`Ratpoints.Options`), in its order, and exits with status 0; on a failure `f`,
+among them a refusal of `Ratpoints.findPoints`, it prints `f.message` and exits with `f.status`
 (`Ratpoints.Cli.Failure.message`, `Ratpoints.Cli.Failure.status`). -/
 def run (args : List String) : String × UInt32 :=
   match input args >>= fun (c, H, o) ↦ (findPoints c H (sieveParams o)).mapError .ofRefusal with
@@ -445,9 +448,12 @@ an option that ratpoints has and `ratpoints-lean` does not support yet. -/
 
 #guard run ["1 0 1", "1_0"] == ("\nIncorrect height argument.\n\n", 4)
 
--- Error 8, for the refusal of a binary form that is not squarefree.
+-- Error 8, for the refusal of a binary form that is not squarefree: `0 0 1`, which the reversal
+-- check refuses, and `1 2 1`, which the remainder chain refuses.
 #guard (Failure.ofRefusal .notSquarefree).message == "\nPolynomial is not square-free.\n\n" &&
   (Failure.ofRefusal .notSquarefree).status == 8
+#guard ["0 0 1", "1 2 1"].all fun c ↦
+  run [c, "5", "-q"] == ("\nPolynomial is not square-free.\n\n", 8)
 
 #guard run ["1 0 1", "5", "-quiet", "-p", " 30 ", "-kfoo"] ==
   ("\nOption -kfoo is not supported by ratpoints-lean yet.\n\n", 12)
