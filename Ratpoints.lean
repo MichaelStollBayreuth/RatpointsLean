@@ -3,6 +3,7 @@ module  -- shake: keep-all --deprecated_module: ignore
 public import Ratpoints.Mathlib.Algebra.Polynomial.Homogenize
 public import Ratpoints.Mathlib.Algebra.Squarefree.Basic
 public import Ratpoints.Mathlib.Data.List.Basic
+public import Ratpoints.Mathlib.Data.List.Nodup
 public import Ratpoints.Mathlib.Data.ZMod.Basic
 public import Ratpoints.Mathlib.RingTheory.Coprime.Basic
 public import Ratpoints.Mathlib.RingTheory.MvPolynomial.Homogeneous

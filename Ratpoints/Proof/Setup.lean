@@ -17,7 +17,7 @@ import Mathlib.Data.List.DropRight
 import Mathlib.Data.List.GetD
 import Mathlib.FieldTheory.Perfect
 import Ratpoints.Mathlib.Algebra.Polynomial.Homogenize
-import Ratpoints.Mathlib.Data.List.Basic
+import Ratpoints.Mathlib.Data.List.Nodup
 import Ratpoints.Mathlib.RingTheory.Coprime.Basic
 import Ratpoints.Proof.Bits
 import Ratpoints.Proof.BruteForce

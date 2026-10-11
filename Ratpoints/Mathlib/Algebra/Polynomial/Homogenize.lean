@@ -20,6 +20,10 @@ squarefree, and the homogenization of its reflection.
 
 ## Main statements
 
+* `Polynomial.homogenize_eq_homogenize_natDegree_mul`: the homogenizations of `p` of degree
+  `n ≥ p.natDegree` are that of degree `p.natDegree` times powers of the second variable.
+* `Polynomial.squarefree_of_squarefree_homogenize`: over a commutative semiring without zero
+  divisors, a polynomial with a squarefree homogenization is squarefree.
 * `Polynomial.squarefree_homogenize_iff`: for a polynomial `p` over a domain and
   `n ≥ p.natDegree`, the homogenization of degree `n` is squarefree if and only if `p` is
   squarefree and `n ≤ p.natDegree + 1`.
@@ -33,14 +37,16 @@ squarefree, and the homogenization of its reflection.
 
 ## Proof
 
-For `n ≥ p.natDegree + 2`, `X 1 ^ 2` divides the homogenization, and if `a * a` divides `p`, the
-square of the homogenization of `a` divides it. Conversely, let `A * A` divide the homogenization
-for `n ≤ p.natDegree + 1`: then `A` is homogeneous (`MvPolynomial.IsHomogeneous.of_mul_left`),
-`X 1` does not divide it, since `X 1 ^ (n - p.natDegree)` is the largest power of `X 1` that divides
-the homogenization, and the square of its value at `(X, 1)` divides `p`, so that this value is a
-unit; hence `A` is a unit. The reflection compares the coefficients of the two homogenizations, and
-the exchange of the variables is a ring automorphism, which preserves squarefreeness
-(`MulEquiv.squarefree_iff`). Mathlib's file does not import squarefreeness.
+For `n ≥ p.natDegree + 2`, `X 1 ^ 2` divides the homogenization
+(`Polynomial.homogenize_eq_homogenize_natDegree_mul`), and if `a * a` divides `p`, the square of the
+homogenization of `a` divides it (`Polynomial.squarefree_of_squarefree_homogenize`). Conversely, let
+`A * A` divide the homogenization for `n ≤ p.natDegree + 1`: then `A` is homogeneous
+(`MvPolynomial.IsHomogeneous.of_mul_left`), `X 1` does not divide it, since
+`X 1 ^ (n - p.natDegree)` is the largest power of `X 1` that divides the homogenization
+(`Polynomial.not_X_one_dvd_homogenize_natDegree`), and the square of its value at `(X, 1)` divides
+`p`, so that this value is a unit; hence `A` is a unit. The reflection compares the coefficients of
+the two homogenizations, and the exchange of the variables is a ring automorphism, which preserves
+squarefreeness (`MulEquiv.squarefree_iff`). Mathlib's file does not import squarefreeness.
 -/
 
 @[expose] public section
@@ -51,24 +57,27 @@ section CommSemiring
 
 variable {R : Type*} [CommSemiring R] {p : R[X]} {n : ℕ}
 
--- `p.homogenize n` is `p.homogenize p.natDegree` times a power of `X 1`.
-private theorem homogenize_eq_mul_X_pow (hn : p.natDegree ≤ n) :
+/-- For `n ≥ p.natDegree`, the homogenization of degree `n` of `p` is that of degree `p.natDegree`
+times the power `n - p.natDegree` of the second variable. -/
+theorem homogenize_eq_homogenize_natDegree_mul (hn : p.natDegree ≤ n) :
     p.homogenize n = p.homogenize p.natDegree * MvPolynomial.X 1 ^ (n - p.natDegree) := by
   simpa [Nat.add_sub_cancel' hn] using
     homogenize_mul p 1 le_rfl (natDegree_one.trans_le (n - p.natDegree).zero_le)
 
--- The coefficient of `X 0 ^ p.natDegree` in the homogenization of degree `p.natDegree` is the
--- leading coefficient of `p`, while every multiple of `X 1` has the coefficient `0` there.
-private theorem not_X_one_dvd_homogenize_natDegree (hp : p ≠ 0) :
+/-- The second variable does not divide the homogenization of degree `p.natDegree` of a polynomial
+`p ≠ 0`: the coefficient of `X 0 ^ p.natDegree` there is the leading coefficient of `p`, while every
+multiple of `X 1` has the coefficient `0` there. -/
+theorem not_X_one_dvd_homogenize_natDegree (hp : p ≠ 0) :
     ¬ MvPolynomial.X 1 ∣ p.homogenize p.natDegree := fun ⟨q, hq⟩ ↦ by
   have := congr(($hq).coeff (Finsupp.single 0 p.natDegree))
   simp [coeff_homogenize, MvPolynomial.coeff_X_mul', hp] at this
 
--- A polynomial with a squarefree homogenization is squarefree.
-private theorem squarefree_of_squarefree_homogenize [NoZeroDivisors R] (hn : p.natDegree ≤ n)
+/-- A polynomial over a commutative semiring without zero divisors is squarefree if some
+homogenization of it is, of degree `n ≥ p.natDegree`. -/
+theorem squarefree_of_squarefree_homogenize [NoZeroDivisors R] (hn : p.natDegree ≤ n)
     (h : Squarefree (p.homogenize n)) : Squarefree p := fun a ha ↦ by
   have hd : (a * a).natDegree = a.natDegree + a.natDegree := by rw [← sq, natDegree_pow, two_mul]
-  have := (homogenize_dvd ha).trans ⟨_, homogenize_eq_mul_X_pow hn⟩
+  have := (homogenize_dvd ha).trans ⟨_, homogenize_eq_homogenize_natDegree_mul hn⟩
   rw [hd, homogenize_mul _ _ le_rfl le_rfl] at this
   simpa using (h _ this).map (MvPolynomial.aeval ![(X : R[X]), 1])
 
@@ -79,8 +88,7 @@ the two variables exchanged, for every `p` and `n`: both see only the coefficien
 theorem homogenize_reflect :
     (p.reflect n).homogenize n = MvPolynomial.rename (Equiv.swap 0 1) (p.homogenize n) := by
   ext m
-  obtain ⟨m, rfl⟩ : ∃ m', m = m'.mapDomain (Equiv.swap 0 1) :=
-    ⟨m.mapDomain (Equiv.swap 0 1), by rw [← Finsupp.mapDomain_comp]; simp⟩
+  obtain ⟨m, rfl⟩ := Finsupp.mapDomain_surjective (Equiv.swap (0 : Fin 2) 1).surjective m
   rw [MvPolynomial.coeff_rename_mapDomain _ (Equiv.injective _), coeff_homogenize,
     coeff_homogenize, coeff_reflect]
   simp [Finsupp.mapDomain_equiv_apply]
@@ -103,14 +111,14 @@ private theorem le_natDegree_add_one_of_squarefree_homogenize (hn : p.natDegree 
     (h : Squarefree (p.homogenize n)) : n ≤ p.natDegree + 1 := by
   by_contra! hlt
   refine MvPolynomial.X_prime.not_isUnit (h (MvPolynomial.X 1) ?_)
-  rw [homogenize_eq_mul_X_pow hn, ← sq]
+  rw [homogenize_eq_homogenize_natDegree_mul hn, ← sq]
   exact (pow_dvd_pow _ (by lia)).mul_left _
 
 -- For `n ≤ p.natDegree + 1`, `X 1` divides no `A` with `A * A ∣ p.homogenize n`.
 private theorem not_X_one_dvd_of_mul_self_dvd_homogenize (hp : p ≠ 0) (hn : p.natDegree ≤ n)
     (h : n ≤ p.natDegree + 1) {A : MvPolynomial (Fin 2) R} (hA : A * A ∣ p.homogenize n) :
     ¬ MvPolynomial.X 1 ∣ A := fun hX ↦ by
-  rw [homogenize_eq_mul_X_pow hn, ← sq] at hA
+  rw [homogenize_eq_homogenize_natDegree_mul hn, ← sq] at hA
   have := MvPolynomial.X_prime.pow_dvd_of_dvd_mul_left 2 (not_X_one_dvd_homogenize_natDegree hp)
     ((pow_dvd_pow_of_dvd hX 2).trans hA)
   rw [pow_dvd_pow_iff (MvPolynomial.X_ne_zero 1) MvPolynomial.X_prime.not_isUnit] at this
