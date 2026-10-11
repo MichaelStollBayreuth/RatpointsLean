@@ -84,7 +84,7 @@ test of the leading zeros and that of the reversal check stand for `Z ^ 2 ∣ Φ
 (`Ratpoints.not_squarefree_binaryFormPoly_of_lt`,
 `Ratpoints.Setup.not_squarefree_binaryFormPoly_of_reversal_eq_error`), and after them the remainder
 chain of the polynomial searched is none exactly when `Φ_c` is not squarefree
-(`Ratpoints.run_chain_eq_none_iff_of_reversal_eq_ok`).
+(`Ratpoints.Sturm.run_chain_eq_none_iff_of_reversal_eq_ok`).
 -/
 
 @[expose] public section
@@ -276,7 +276,7 @@ theorem exists_findPoints_eq_error_iff_of_sturm_nonneg {c : List ℤ} {H : ℕ} 
   simp only [h1, h2, h3, false_or]
   split <;> rename_i hr
   · exact iff_of_true ⟨_, rfl⟩ (Setup.not_squarefree_binaryFormPoly_of_reversal_eq_error hr)
-  · rw [← run_chain_eq_none_iff_of_reversal_eq_ok (by lia) (by lia) hr]
+  · rw [← Sturm.run_chain_eq_none_iff_of_reversal_eq_ok (by lia) (by lia) hr]
     split_ifs <;> simp_all
 
 /-- Without the Sturm step (`o.sturm < 0`, the option `-s` of the program), `Ratpoints.findPoints`

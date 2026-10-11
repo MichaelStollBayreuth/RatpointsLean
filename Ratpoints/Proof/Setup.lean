@@ -73,7 +73,7 @@ curve (`Ratpoints.Sieve.swapPoint`) is a bijection between the points of height 
   `Ratpoints.Setup.not_squarefree_binaryFormPoly_of_reversal_eq_error`: the check refuses exactly
   the even degrees with `c₀ = c₁ = 0` when its switch lets it run, and only forms that are not
   squarefree.
-* `Ratpoints.run_chain_eq_none_iff_of_reversal_eq_ok`: once the test of the leading zeros has
+* `Ratpoints.Sturm.run_chain_eq_none_iff_of_reversal_eq_ok`: once the test of the leading zeros has
   passed, the remainder chain of the polynomial that the check hands on is none exactly when `Φ_c`
   is not squarefree.
 * `Ratpoints.Sieve.isPoint_swapPoint`, `Ratpoints.Sieve.perm_map_swapPoint_bruteForce`: the map of
@@ -247,7 +247,7 @@ private theorem not_isCoprime_of_fullReduce_eq_empty {s t : Array ℤ} (hs : s.b
 
 /-! ### Remainder chains -/
 
-theorem IsChain.poly_getElem!_zero {c : List ℤ} {d : ℕ} {ch : Array (Array ℤ)}
+theorem IsChain.poly_toList_getElem!_zero {c : List ℤ} {d : ℕ} {ch : Array (Array ℤ)}
     (h : IsChain c d ch) : poly ch[0]!.toList = poly (c.take (d + 1)) :=
   Polynomial.ext fun i ↦ by
     rw [coeff_poly_toList, h.getElem!_zero, coeff_poly, List.getD_eq_getElem?_getD,
@@ -257,7 +257,7 @@ theorem IsChain.poly_getElem!_zero {c : List ℤ} {d : ℕ} {ch : Array (Array �
     · rw [getElem!_neg _ i (by simpa using hi)]
       simp
 
-theorem IsChain.poly_getElem!_one {c : List ℤ} {d : ℕ} {ch : Array (Array ℤ)}
+theorem IsChain.poly_toList_getElem!_one {c : List ℤ} {d : ℕ} {ch : Array (Array ℤ)}
     (h : IsChain c d ch) : poly ch[1]!.toList = derivative (poly ch[0]!.toList) :=
   Polynomial.ext fun n ↦ by
     rw [coeff_derivative, coeff_poly_toList, coeff_poly_toList, h.getElem!_zero, h.getElem!_one]
@@ -314,7 +314,7 @@ private theorem IsChain.isCoprime_back!_iff {c : List ℤ} {d : ℕ} {ch : Array
 private theorem IsChain.squarefree_iff {c : List ℤ} {d : ℕ} {ch : Array (Array ℤ)}
     (h : IsChain c d ch) :
     Squarefree (poly ch[0]!.toList) ↔ IsCoprime (poly ch[0]!.toList) (poly ch[1]!.toList) := by
-  rw [h.poly_getElem!_one]
+  rw [h.poly_toList_getElem!_one]
   exact PerfectField.separable_iff_squarefree.symm
 
 /-- For the coefficients `c₀, …, c_d` of a polynomial `f` of degree `d ≥ 1`, the remainder chain is
@@ -327,12 +327,12 @@ theorem run_chain_eq_none_iff {c : List ℤ} {d : ℕ} (hd : 1 ≤ d) (hc : c.ge
   cases res with
   | none =>
     obtain ⟨ch, h, h2, h0⟩ := hres
-    rw [← h.poly_getElem!_zero, h.squarefree_iff, ← h.isCoprime_back!_iff]
+    rw [← h.poly_toList_getElem!_zero, h.squarefree_iff, ← h.isCoprime_back!_iff]
     exact iff_of_true rfl (not_isCoprime_of_fullReduce_eq_empty
       (h.back!_ne_zero _ (by have := h.two_le_size; lia)) h2 h0)
   | some ch =>
     obtain ⟨h, h1⟩ := hres
-    rw [← h.poly_getElem!_zero, h.squarefree_iff, ← h.isCoprime_back!_iff]
+    rw [← h.poly_toList_getElem!_zero, h.squarefree_iff, ← h.isCoprime_back!_iff]
     exact iff_of_false (Option.some_ne_none ch) (not_not.mpr (isCoprime_poly_toList_of_size_eq_one
       h1 (h.back!_ne_zero _ (by have := h.two_le_size; lia)) _))
 
@@ -520,13 +520,13 @@ not: the polynomial has the degree `d' ≥ 1` that the check returns
 (`Ratpoints.Setup.one_le_of_reversal_eq_ok`), so that the chain detects its repeated factors
 (`Ratpoints.Sturm.run_chain_eq_none_iff`), and it is squarefree exactly when `Φ_c` is
 (`Ratpoints.Setup.squarefree_binaryFormPoly_iff_of_reversal_eq_ok`). -/
-theorem run_chain_eq_none_iff_of_reversal_eq_ok {allow rev : Bool} {c c' : List ℤ} {d' : ℕ}
+theorem Sturm.run_chain_eq_none_iff_of_reversal_eq_ok {allow rev : Bool} {c c' : List ℤ} {d' : ℕ}
     (h2 : 2 ≤ c.length) (hc : c.length / 2 ≤ (degree c + 1) / 2)
     (h : Setup.reversal allow c (degree c) = .ok (c', d', rev)) :
-    Id.run (Sturm.chain c' d') = none ↔ ¬ Squarefree (binaryFormPoly c) := by
+    Id.run (chain c' d') = none ↔ ¬ Squarefree (binaryFormPoly c) := by
   obtain rfl := Setup.degree_eq_of_reversal_eq_ok rfl h
   have h1 := Setup.one_le_of_reversal_eq_ok rfl h (by lia)
-  rw [Sturm.run_chain_eq_none_iff h1 (getD_degree_ne_zero_of_pos h1),
+  rw [run_chain_eq_none_iff h1 (getD_degree_ne_zero_of_pos h1),
     poly_take_of_degree_lt (Nat.lt_succ_self _),
     Setup.squarefree_binaryFormPoly_iff_of_reversal_eq_ok rfl hc h]
 

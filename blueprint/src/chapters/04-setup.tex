@@ -437,7 +437,7 @@ restriction of the search region stage~H takes over.
 \begin{theorem}[The refusals]\label{thm:refusals}
   \uses{def:findPoints, def:Options, def:reversal, lem:sturmChain_squarefree,
     lem:reversal_squarefree, lem:squarefree_binaryFormPoly}
-  \lean{Ratpoints.exists_findPoints_eq_error_iff_of_sturm_nonneg, Ratpoints.exists_findPoints_eq_error_iff_of_sturm_neg, Ratpoints.run_chain_eq_none_iff_of_reversal_eq_ok, Ratpoints.Setup.one_le_of_reversal_eq_ok, Ratpoints.Setup.exists_reversal_eq_error_iff, Ratpoints.Setup.not_squarefree_binaryFormPoly_of_reversal_eq_error}
+  \lean{Ratpoints.exists_findPoints_eq_error_iff_of_sturm_nonneg, Ratpoints.exists_findPoints_eq_error_iff_of_sturm_neg, Ratpoints.Sturm.run_chain_eq_none_iff_of_reversal_eq_ok, Ratpoints.Setup.one_le_of_reversal_eq_ok, Ratpoints.Setup.exists_reversal_eq_error_iff, Ratpoints.Setup.not_squarefree_binaryFormPoly_of_reversal_eq_error}
   \leanok
   For any parameters and options: with the Sturm step on ($\mathrm{sturm} \ge 0$),
   $\mathrm{findPoints}(c, H, P, o)$ refuses the input exactly when $c$ has fewer than two or more than

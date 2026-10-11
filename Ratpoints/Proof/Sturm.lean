@@ -218,7 +218,7 @@ def IsChainResult (c : List Int) (d : Nat) : Option (Array (Array Int)) → Prop
   | none => ∃ ch, IsChain c d ch ∧ 2 ≤ ch.back!.size ∧ fullReduce ch.back! ch[ch.size - 2]! = #[]
   | some ch => IsChain c d ch ∧ ch.back!.size = 1
 
-theorem isChain_init {c : List Int} {d : Nat} (hd : 1 ≤ d) (hc : c.getD d 0 ≠ 0) :
+theorem isChain_pair {c : List Int} {d : Nat} (hd : 1 ≤ d) (hc : c.getD d 0 ≠ 0) :
     IsChain c d #[(Array.range (d + 1)).map fun x ↦ c.getD x 0,
       (Array.range d).map fun n ↦ ((n + 1 : Nat) : Int) * c.getD (n + 1) 0] := by
   refine ⟨by simp, by simp, by simp, fun k hk ↦ absurd hk (by simp), fun k hk ↦ ?_,
@@ -308,12 +308,12 @@ def ContentInvariant (pref : List Int) (g : Nat) : Prop :=
 
 /-! ### The verification conditions, one lemma each in the shape `vcgen` states it -/
 
-theorem chainInvariant_init {c : List Int} {d : Nat} (h : 1 ≤ d ∧ c.getD d 0 ≠ 0) :
+theorem chainInvariant_nil {c : List Int} {d : Nat} (h : 1 ≤ d ∧ c.getD d 0 ≠ 0) :
     ChainInvariant c d [] (ForIn.toList [2:d + 1])
       (none, #[(Array.range (d + 1)).map fun x ↦ c.getD x 0,
         (Array.range d).map fun n ↦ ((n + 1 : Nat) : Int) * c.getD (n + 1) 0]) := by
   have hl : ForIn.toList [2:d + 1] = List.range' 2 (d - 1) := by simp [Std.Legacy.Range.size]
-  refine .inl ⟨rfl, isChain_init h.1 h.2, fun h0 ↦ ?_, fun h0 ↦ ?_⟩
+  refine .inl ⟨rfl, isChain_pair h.1 h.2, fun h0 ↦ ?_, fun h0 ↦ ?_⟩
   · rw [hl, List.range'_eq_nil_iff] at h0
     simp [Array.back!_eq_getElem!]
     lia
@@ -526,7 +526,7 @@ theorem chain_spec (c : List Int) (d : Nat) :
   all_goals try simp only [Std.WP.WhileInvariant.mk_apply, Std.WP.Variant.evalsTo_ofMeasure,
     Std.WP.Variant.evalsBelow_ofMeasure_nat, Std.WP.Assertion.NondetFun.evalsTo_pure,
     Lean.Order.meet_prop_eq_and, Lean.Order.ofProp_prop_eq] at *
-  all_goals solve_by_elim (maxDepth := 10) [chainInvariant_init, ChainInvariant.isChainResult,
+  all_goals solve_by_elim (maxDepth := 10) [chainInvariant_nil, ChainInvariant.isChainResult,
     ChainInvariant.isChainResult_some, ChainInvariant.reduceInvariant,
     ChainInvariant.of_reduceInvariant_some, ChainInvariant.push_of_size_eq_one,
     ChainInvariant.push_of_size_ne_one, ContentInvariant.normalize_eq,
