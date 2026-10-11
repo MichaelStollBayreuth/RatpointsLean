@@ -47,7 +47,8 @@ the refusal theorem of stage C1, which had only the first three disjuncts. `chal
 `challenge_nodup_of_findPoints_eq_ok`, which Comparator accepted on 2026-10-10 in their form of
 stage C1, without the options, and `challenge_wf_sieveParams`, which it accepted on the same day;
 and `challenge_exists_findPoints_eq_error_iff_of_sturm_nonneg` and
-`challenge_exists_findPoints_eq_error_iff_of_sturm_neg`, the refusal theorems of stage D.
+`challenge_exists_findPoints_eq_error_iff_of_sturm_neg`, the refusal theorems of stage D. Comparator
+accepted all seven, the two main theorems with the options among them, on 2026-10-11.
 
 ## Running
 

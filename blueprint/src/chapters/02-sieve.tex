@@ -218,17 +218,19 @@ sieve's denominators and the primes of the table need no side conditions.
 \section{The sieve}\label{sec:sieve}
 
 The model follows the rules of the translation throughout. A C \verb|long| is an \verb|Int| or a
-\verb|Nat|; the obligation that its value lies in the range of the type comes with the faithful
-components that compute in \verb|long|s (D, F). The remainder \verb|mod()| of the C code is Lean's
-Euclidean \verb|%|, but in the table of a prime with the exit, which models it as it is and proves
-it equal to \verb|%| (Definition~\ref{def:useCLong}). The tables that the build of ratpoints
-generates (the squares, the inverses, the row of $0$) are Lean functions with lemmas that they
-compute what they claim, checked against the generated header by \verb|#guard| examples, and stage~F
-will check them as a whole against its faithful rows. Each loop of the sieve is a definition of type
-\verb|Id α| that its callers bind with \verb|←|, so that its contract, an \verb|@[spec]| theorem
-proved with the program logic of Lean core and with loop invariants that are named definitions,
-applies at the call; only \verb|findPoints| runs a component with \verb|Id.run|. The tables of a
-prime are folds and maps, specified by ordinary lemmas.
+\verb|Nat|; the obligation that its value lies in the range of the type is a lemma of the faithful
+component that computes in \verb|long|s: since stage~D for the helper \verb|mod| and the negations
+of the map of a reversed search (Definition~\ref{def:useCLong}), and from stage~F on for the
+faithful components of the sieve. The remainder \verb|mod()| of the C code is Lean's Euclidean
+\verb|%|, but in the table of a prime with the exit, which models it as it is and proves it equal to
+\verb|%| (Definition~\ref{def:useCLong}). The tables that the build of ratpoints generates (the
+squares, the inverses, the row of $0$) are Lean functions with lemmas that they compute what they
+claim, checked against the generated header by \verb|#guard| examples, and stage~F will check them
+as a whole against its faithful rows. Each loop of the sieve is a definition of type \verb|Id α|
+that its callers bind with \verb|←|, so that its contract, an \verb|@[spec]| theorem proved with the
+program logic of Lean core and with loop invariants that are named definitions, applies at the call;
+only \verb|findPoints| runs a component with \verb|Id.run|. The tables of a prime are folds and
+maps, specified by ordinary lemmas.
 
 \begin{definition}[The sieve of one denominator]\label{def:sieveDen}
   \uses{def:admits}
@@ -421,22 +423,23 @@ permutation of the reference (Theorem~\ref{thm:findPoints_perm}), and the refusa
 Theorem~\ref{thm:refusals}; the divisor order of stage~E changes the order again. Comparator
 certifies the two main theorems, the refusal theorems of stage~D, which rule out a \verb|findPoints|
 that refuses every input, with or without the Sturm step, and \verb|wf_sieveParams|, which rules out
-a well-formedness that nothing satisfies: the challenge states them with \verb|sorry| over
-\verb|findPoints|, \verb|Options|, \verb|Params|, \verb|Params.WF|, \verb|SieveOptions|,
-\verb|sieveParams| and \verb|maxDegree|, imported from the model, never restated, since a definition
-of the model elaborates without Mathlib to other instance terms. Each main theorem has a guard on
-its axioms, which are the standard ones. The contracts need only the program logic of Lean core and
-stay in files without Mathlib, so that their \verb|grind| calls see only the lemmas of core,
-untouched by Mathlib's updates; the file of the contracts of the bit arrays of words
-(Chapter~\ref{chap:words}) also states the result of \verb|sieveRun| as a plain equation,
-\verb|toList_run_sieveRun|, so that the files with Mathlib need no program logic. The soundness of
-the rows needs Mathlib, through $\ZZ/p\ZZ$.
+a well-formedness that nothing satisfies (it accepted these statements on 2026-10-11): the challenge
+states them with \verb|sorry| over \verb|findPoints|, \verb|Options|, \verb|Params|,
+\verb|Params.WF|, \verb|SieveOptions|, \verb|sieveParams| and \verb|maxDegree|, imported from the
+model, never restated, since a definition of the model elaborates without Mathlib to other instance
+terms. Each main theorem has a guard on its axioms, which are the standard ones. The contracts need
+only the program logic of Lean core and stay in files without Mathlib, so that their \verb|grind|
+calls see only the lemmas of core, untouched by Mathlib's updates; the file of the contracts of the
+bit arrays of words (Chapter~\ref{chap:words}) also states the result of \verb|sieveRun| as a plain
+equation, \verb|toList_run_sieveRun|, so that the files with Mathlib need no program logic. The
+soundness of the rows needs Mathlib, through $\ZZ/p\ZZ$.
 
 \section{The command-line program and the differential tests}\label{sec:sieveCli}
 
 \verb|ratpoints-lean| reads the values of \verb|-p|, \verb|-n|, \verb|-N|, \verb|-P|, \verb|-F| and
 \verb|-j|/\verb|-J| into \verb|SieveOptions|, with the checks of \verb|main.c| unchanged, and runs
-\verb|findPoints| with \verb|sieveParams| of them; the other options stay as in stage~B. So the
+\verb|findPoints| with \verb|sieveParams| of them; the other options stay as in stage~B, until
+stage~D reads \verb|-k|, \verb|-K|, \verb|-s| and \verb|-S| (Section~\ref{sec:setupCli}). So the
 reading of the options (Definition~\ref{def:cliInput}) returns these values from now on, and the
 program (Definition~\ref{def:cliRun}) prints the points of the sieve. Since these are those of the
 brute-force reference, every differential test of stage~B applies unchanged, and the brute force

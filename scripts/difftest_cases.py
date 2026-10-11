@@ -1,10 +1,11 @@
 """The command lines of the suites errors and fuzz of scripts/difftest.py.
 
 CASES holds hand-written command lines for the checks that main.c makes on the coefficients, the
-height and the options, each with a note; random_command_lines gives random ones, with words that
-the readers of numbers of main.c accept or refuse in many ways. An argument is a str or, for a
-byte string that is not UTF-8, bytes. A height that a search could not finish (such as
-2^63 - 1) is always followed by an option that fails, so that neither program searches.
+height and the options, for the options of the search and for the refusals of a form that is not
+squarefree, each with a note; random_command_lines gives random ones, with words that the readers
+of numbers of main.c accept or refuse in many ways. An argument is a str or, for a byte string that
+is not UTF-8, bytes. A height that a search could not finish (such as 2^63 - 1) is always followed
+by an option that fails, so that neither program searches.
 """
 
 C102 = ' '.join(['1'] + ['0'] * 100 + ['1'])          # 102 coefficients
@@ -110,17 +111,50 @@ CASES = [
     (['1 0 1', '5', '-q', '-rfoo', '0.5'], '-rfoo 0.5 is -r 0.5'),
     (['1 0 1', '5'], 'no -q: ratpoints prints its report, ratpoints-lean only the points'),
     (['1 0 1', '5', '-v'], '-v alone: ratpoints prints the report of the library'),
+    # the options of the search: -k and -K (the reversal), -s and -S (the Sturm step)
+    (['-1 0 9', '5', '-q', '-k'], '-k: no reversal, the points in the order of the reference'),
+    (['-1 0 9', '5', '-q', '-K'], '-K: the reversal allowed, as by default'),
+    (['-1 0 9', '5', '-q', '-k', '-K'], '-k -K: the last one wins, the reversal'),
+    (['-1 0 9', '5', '-q', '-K', '-k'], '-K -k: the last one wins, no reversal'),
+    (['-1 0 9', '5', '-q', '-kfoo'], '-kfoo is -k'),
+    (['0 1 0 0 4', '5', '-q', '-k'], '-k on a polynomial that ratpoints reverses in case 1'),
+    (['0 1 0 2', '5', '-q', '-k'], '-k on a polynomial that ratpoints reverses in case 3'),
+    (['1 0 1', '5', '-q', '-s'], '-s: no Sturm step'),
+    (['1 0 1', '5', '-q', '-S'], '-S: the Sturm step at the default depth'),
+    (['1 0 1', '5', '-q', '-S', '5'], '-S 5: the Sturm step at depth 5'),
+    (['1 0 1', '5', '-q', '-S', '0'], '-S 0: the Sturm step at depth 0'),
+    (['1 0 1', '5', '-q', '-S', ' 3 '], '-S with blanks around its argument'),
+    (['1 0 1', '5', '-q', '-S', '+3'], '-S +3'),
+    (['1 0 1', '5', '-q', '-Sfoo', '3'], '-Sfoo 3 is -S 3'),
+    (['1 0 1', '5', '-S', '-q'], '-S -q: -q is not the argument of -S'),
+    (['1 0 1', '5', '-q', '-S', 'x'], '-S x: error 6'),
+    (['1 0 1', '5', '-q', '-S', ''], '-S with an empty argument: error 6'),
+    (['1 0 1', '5', '-q', '-S', '5x'], '-S 5x: error 6'),
+    (['1 0 1', '5', '-q', '-S', '9223372036854775808'], '-S 2^63: error 6'),
+    (['1 0 1', '5', '-q', '-S', '-5'], '-S -5: -5 is no argument but an unknown option, error 6'),
+    (['1 0 1', '5', '-q', '-S', '5', '6'], '-S 5 6: the 6 is a word without -, error 6'),
+    # the refusals of a form that is not squarefree (error 8), and -s on such forms
+    (['1 2 1', '5', '-q'], 'a repeated factor: error 8, by the remainder chain'),
+    (['0 0 1 1 1', '5', '-q'], 'even degree and c0 = c1 = 0: error 8, by the reversal check'),
+    (['5 0', '5', '-q'], 'a leading zero that lowers the degree of the form: error 8'),
+    (['1 2 0 0', '5', '-q', '-s', '-k'], 'two leading zeros that lower the degree: error 8'),
+    (['1 2 1', '5'], 'error 8 without -q: the message after the report of ratpoints'),
+    (['0 0 1', '5', '-v'], 'error 8 under -v: the message after the report of the library'),
+    (['1 2 1', '3', '-q', '-s'], '-s: a repeated factor is searched'),
+    (['1 0 -2 0 1', '3', '-q', '-s'], '-s: a repeated factor of degree 2 is searched'),
+    (['0 0 1 1 1', '3', '-q', '-s'], '-s: even degree and c0 = c1 = 0 still refused'),
+    (['0 0 1 1 1', '3', '-q', '-s', '-k'], '-s -k: even degree and c0 = c1 = 0 searched'),
+    (['0 0 1 0 1', '3', '-q', '-k', '-s'], '-k -s: even degree and c0 = c1 = 0 searched'),
+    (['1 2 1', '3', '-q', '-s', '-S'], '-s -S: the last one wins, the Sturm step, error 8'),
+    (['1 2 1', '3', '-q', '-S', '-s'], '-S -s: the last one wins, no Sturm step'),
+    (['1 2 1', '3', '-q', '-s', '-S', '3'], '-s -S 3: error 8'),
+    (['1 2 1', '3', '-q', '-S', ' -1'], '-S with the argument -1 after a blank: no Sturm step'),
     # the options that ratpoints-lean does not support yet
     (['1 0 1', '5', '-q', '-l', '0', '-u', '1'], '-l -u: unsupported'),
     (['1 0 1', '5', '-q', '-u', '1'], '-u: unsupported'),
     (['1 0 1', '5', '-q', '-dl', '2'], '-dl: unsupported'),
     (['1 0 1', '5', '-q', '-du', '2'], '-du: unsupported'),
     (['1 0 1', '5', '-q', '-dlx', '2'], '-dlx is -dl: unsupported'),
-    (['1 0 1', '5', '-q', '-k'], '-k: unsupported'),
-    (['1 0 1', '5', '-q', '-K'], '-K: unsupported'),
-    (['1 0 1', '5', '-q', '-s'], '-s: unsupported'),
-    (['1 0 1', '5', '-q', '-S'], '-S: unsupported'),
-    (['1 0 1', '5', '-q', '-S', '5'], '-S 5: unsupported'),
     (['1 0 1', '5', '-q', '-x'], '-x: unsupported'),
     (['1 0 1', '5', '-q', '-X'], '-X: unsupported'),
     (['1 0 1', '5', '-q', '-y'], '-y: unsupported'),
@@ -134,17 +168,20 @@ CASES = [
     (['1 0 1', '5', '-q', '-fe', 'a'], '-fe: unsupported'),
     (['1 0 1', '5', '-q', '-z'], '-z: unsupported'),
     (['1 0 1', '5', '-q', '-Z'], '-Z: unsupported'),
-    (['1 0 1', '5', '-q', '-kfoo'], '-kfoo is -k: unsupported, named as written'),
+    (['1 0 1', '5', '-q', '-xfoo'], '-xfoo is -x: unsupported, named as written'),
     (['1 0 1', '5', '-q', '-l'], '-l without its argument: C error 7, unsupported here'),
     (['1 0 1', '5', '-q', '-l', 'x'], '-l x: C error 7, unsupported here'),
     (['1 0 1', '5', '-q', '-f'], '-f without its argument: C error 6, unsupported here'),
     (['1 0 1', '5', '-q', '-dl'], '-dl without its argument: C error 6, unsupported here'),
-    (['1 0 1', '5', '-q', '-k', '-p', 'x'], '-k before a malformed -p: unsupported first'),
-    (['1 0 1', '5', '-q', '-p', 'x', '-k'], 'a malformed -p before -k: error 6 first'),
-    (['1 0 1', '5', '-q', '-g', '-k'], 'an unknown option before -k: error 6 first'),
-    (['1 0 1', '5', '-q', '-k', '-g'], '-k before an unknown option: unsupported first'),
-    (['x', '5', '-k'], 'bad coefficients before -k: error 11 first'),
-    (['1 0 1', '0', '-k'], 'bad height before -k: error 4 first'),
+    (['1 0 1', '5', '-q', '-x', '-p', 'x'], '-x before a malformed -p: unsupported first'),
+    (['1 0 1', '5', '-q', '-p', 'x', '-x'], 'a malformed -p before -x: error 6 first'),
+    (['1 0 1', '5', '-q', '-g', '-x'], 'an unknown option before -x: error 6 first'),
+    (['1 0 1', '5', '-q', '-x', '-g'], '-x before an unknown option: unsupported first'),
+    (['x', '5', '-x'], 'bad coefficients before -x: error 11 first'),
+    (['1 0 1', '0', '-x'], 'bad height before -x: error 4 first'),
+    (['1 0 1', '5', '-q', '-S', 'x', '-x'], 'a malformed -S before -x: error 6 first'),
+    (['1 0 1', '5', '-q', '-S', '-x'], '-S followed by -x: -x is not its argument, unsupported'),
+    (['1 2 1', '5', '-q', '-x'], 'a form that is not squarefree and -x: unsupported first'),
     # unknown options and other words
     (['1 0 1', '5', '-q', '-g'], '-g: error 6'),
     (['1 0 1', '5', '-q', '-w'], '-w: error 6'),

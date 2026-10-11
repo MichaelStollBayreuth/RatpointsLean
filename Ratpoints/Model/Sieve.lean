@@ -450,8 +450,8 @@ class of `b` into the bit arrays from the last (stage E); the row of the word nu
 `w mod p`, where ratpoints adds the offset of the packing and a multiple of `p` that keeps the index
 non-negative, and reduces by a multiplication when that is exact (stage F); indices for the pointers
 into the rows and into the survivors, and the number of whole periods and the rest computed before
-their loops; natural numbers and integers for the `long`s (stages D and F); no count of the ands of
-the second stage under `RP_PHASE_COUNTS`, and no output under `DEBUG`. -/
+their loops; natural numbers and integers for the `long`s (stage F); no count of the ands of the
+second stage under `RP_PHASE_COUNTS`, and no output under `DEBUG`. -/
 def andRows (specs : List SieveSpec) (w0 : Int) (n : Nat)
     (surv : Vector UInt64 ((n + 1) * rbaPack)) :
     Id (Vector UInt64 ((n + 1) * rbaPack)) := do
@@ -499,8 +499,9 @@ that `_ratpoints_check_point` returns, with no stop that `process` may request, 
 `RATPOINTS_NO_Y` and no `RATPOINTS_NO_CHECK` (stage G); no counts of the numerators that pass the
 test for common factors and the third stage (`n_coprime`, `n_checks`), which ratpoints reads to
 correct the moduli during the run (stage F); integers for the `long`s `a` and `b` and the operands
-of `relprime` (stages D and F); no measurements of the time of the check and of its products
-(`RP_CHECK`, `RP_BC_TIC`, `RP_BC_TOC` under `RP_PHASE_TIMING`), and no output under `DEBUG`. -/
+of `relprime` (stage F; the negations of `Ratpoints.Sieve.swapPoint` stay `long`s by
+`Ratpoints.fitsLong_neg`); no measurements of the time of the check and of its products (`RP_CHECK`,
+`RP_BC_TIC`, `RP_BC_TOC` under `RP_PHASE_TIMING`), and no output under `DEBUG`. -/
 def checkNum (w : List Int) (f b : Int) (rev : Bool) (a : Int) : List (Int × Int × Int) :=
   if Int.gcd a b = 1 then
     let pts := BruteForce.pointsAbove a b (BruteForce.horner w a * f)
@@ -520,7 +521,7 @@ Deviation: bit `t` for the numerator `a0 + t`, where the step from one bit to th
 `2^k` of the packing of the 2-adic class of `b` (stages E and F); the lowest set bit by the loop of
 `RP_CTZL` for a compiler without the builtin (`Ratpoints.Sieve.ctz`); one definition for the body at
 both places of the extraction, the first word of a bit array and the others; natural numbers and
-integers for the `long`s (stages D and F); no count of the numerators that reach the test for common
+integers for the `long`s (stage F); no count of the numerators that reach the test for common
 factors (`n_bits`), which ratpoints reads to correct the moduli during the run (stage F), and no
 counts under `RP_PHASE_COUNTS`; no stop that the callback `process` may request (`quit`, stage G),
 and no output under `DEBUG`. -/
@@ -559,8 +560,8 @@ place, where ratpoints recovers the word number from a pointer difference and co
 the sentinel `~zero` of every build as `Ratpoints.rbaPack` words `~~~0`, written one at a time, and
 the reads `EXT0` and `EXT` as words of the array, for the vector type of the build, with one loop
 over the words of a bit array for the read of the first word and the loop over the others; natural
-numbers and integers for the `long`s (stages D and F); no count of the bit arrays that survive the
-first stage (`n_arrays`), which ratpoints reads to correct the moduli during the run (stage F). -/
+numbers and integers for the `long`s (stage F); no count of the bit arrays that survive the first
+stage (`n_arrays`), which ratpoints reads to correct the moduli during the run (stage F). -/
 def scanPiece (w : List Int) (f : Int) (b : Nat) (rev : Bool) (w0 : Int) (n : Nat)
     (surv : Vector UInt64 ((n + 1) * rbaPack)) :
     Id (Array (Int × Int × Int)) := do
@@ -608,8 +609,8 @@ products `w` and the factor `f` of the check as arguments, where `_ratpoints_che
 the products when the first survivor of `b` reaches it and multiplies each value by `b` for odd `d`;
 a list of points, for the callback `process` with its argument `info` and for the count `total` of
 points that `_ratpoints_sift0` returns, with no flag `quit` for a stop that `process` may request
-(stage G); natural numbers and integers for the `long`s (stages D and F); no measurements of the
-phases (`RP_TIC`, `RP_TOC`, `RP_PHASE_TIMING`) and no stop after one of them (`RP_STOP_AFTER`). -/
+(stage G); natural numbers and integers for the `long`s (stage F); no measurements of the phases
+(`RP_TIC`, `RP_TOC`, `RP_PHASE_TIMING`) and no stop after one of them (`RP_STOP_AFTER`). -/
 def siftPiece (w : List Int) (f : Int) (b : Nat) (rev : Bool) (specs : List SieveSpec) (w0 : Int)
     (n maskLow maskHigh : Nat) :
     Id (Array (Int × Int × Int)) := do
@@ -655,7 +656,7 @@ reaches it (`compute_bc`) and multiplies each value by `b` for odd `d`; no count
 sieved (`n_sifts`) and no flag `stage3_filled` (stage F); a list of points, for the callback
 `process` with its argument `info` and for the count `total` of points that `sift` returns, with no
 stop that `process` may request (`quit`, stage G) or that the pool of threads sends (`stop`);
-natural numbers and integers for the `long`s (stages D and F); no measurements of the phases
+natural numbers and integers for the `long`s (stage F); no measurements of the phases
 (`RP_SIFT_TIC`, `RP_SETUP_TIC`, `RP_INIT_TIC` and their `TOC`) and no output under `DEBUG`. -/
 def sift (c : List Int) (d H A b : Nat) (rev : Bool)
     (rows : List (Nat × Array (Thunk (Array UInt64)))) :
@@ -697,7 +698,7 @@ choose the rows are computed once per denominator by `Ratpoints.Sieve.sift`, for
 divided by `2^k` modulo the moduli of the first two stages that ratpoints computes before each call
 of `sift` (`fill_bp_list`, `k` the stride of the packing; stage F); a list of points, for the counts
 `total` of points that `sift` and `run_block` return, with no stop by the callback (stage G);
-natural numbers for the `long`s (stages D and F); and no correction of the moduli between the blocks
+natural numbers for the `long`s (stage F); and no correction of the moduli between the blocks
 (stage F). -/
 def sieveRun (c : List Int) (d H A : Nat) (rev : Bool) (entries : List Entry) :
     Id (Array (Int × Int × Int)) := do

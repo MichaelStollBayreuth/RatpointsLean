@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tests of the parsers of scripts/difftest.py.
+"""Tests of the parsers and of the classification of scripts/difftest.py.
 
 usage: python3 -m unittest discover -s scripts -p 'test_*.py'
 """
@@ -40,6 +40,8 @@ class SplitTest4(unittest.TestCase):
 class Outputs(unittest.TestCase):
     def test_points(self):
         self.assertEqual(dt.points('(0 : 1 : 1)\n(-2 : 0 : 3)\n'), [(-2, 0, 3), (0, 1, 1)])
+        self.assertEqual(dt.points('(0 : 1 : 1)\n(-2 : 0 : 3)\n', ordered=True),
+                         [(0, 1, 1), (-2, 0, 3)])
         self.assertIsNone(dt.points('\nToo many coefficients.\n\n'))
         self.assertEqual(dt.points(''), [])
         self.assertEqual(dt.points('This is it.\n(1 : 1 : 0)\n2 points.\n', report=True),
@@ -62,21 +64,82 @@ class Outputs(unittest.TestCase):
                                    'exact'))
         self.assertTrue(dt.agrees(cfg, ('(0 : 1 : 1)\n(0 : -1 : 1)\n', 0),
                                   ('(0 : -1 : 1)\n(0 : 1 : 1)\n', 0), 'points'))
+        self.assertFalse(dt.agrees(cfg, ('(0 : 1 : 1)\n(0 : -1 : 1)\n', 0),
+                                   ('(0 : -1 : 1)\n(0 : 1 : 1)\n', 0), 'points', ordered=True))
+        self.assertTrue(dt.agrees(cfg, ('(0 : 1 : 1)\n(0 : -1 : 1)\n', 0),
+                                  ('(0 : 1 : 1)\n(0 : -1 : 1)\n', 0), 'points', ordered=True))
         self.assertFalse(dt.agrees(cfg, ('(0 : 1 : 1)\n', 0), ('(0 : -1 : 1)\n', 0), 'points'))
         self.assertTrue(dt.agrees(cfg, ('', 0), ('\nfound 0 points.\n', 0), 'report'))
+        self.assertTrue(dt.agrees(cfg, ('(1 : 1 : 0)\n(0 : 1 : 1)\n', 0),
+                                  ('Curve\n(1 : 1 : 0)\n(0 : 1 : 1)\n2 points.\n', 0), 'report',
+                                  ordered=True))
         self.assertTrue(dt.agrees(cfg, ('\nToo many coefficients.\n\n', 3),
                                   ('\nToo many coefficients.\n', 3), 'e'))
+        refusal = '\nPolynomial is not square-free.\n\n'
+        report = 'This is ratpoints-3.1.1\n\nCurve equation is  y^2 = x^2\n\n' + refusal
+        self.assertTrue(dt.agrees(cfg, (refusal, 8), (report, 8), 'message'))
+        self.assertTrue(dt.agrees(cfg, (refusal, 8), (report.rstrip('\n') + '\n', 8), 'message'))
+        self.assertFalse(dt.agrees(cfg, (refusal, 0), (report, 8), 'message'))
+        self.assertFalse(dt.agrees(cfg, ('', 8), (report, 8), 'message'))
+        self.assertFalse(dt.agrees(cfg, (refusal, 8), ('\nToo many coefficients.\n\n', 8),
+                                   'message'))
 
     def test_read_options(self):
-        self.assertEqual(dt.read_options(['-q', '-n', '5', '-j']), (None, True))
-        self.assertEqual(dt.read_options(['-n', '5']), (None, False))
-        self.assertEqual(dt.read_options(['-q', '-l', '0', '-u', '1']), (1, True))
-        self.assertEqual(dt.read_options(['-p', '-k', '-k']), (2, False))
-        self.assertEqual(dt.read_options(['-quiet', '-fs', 'x']), (1, True))
-        self.assertEqual(dt.read_options(['-fx', '-k']), (None, False))
-        self.assertEqual(dt.read_options(['-d', '1', '-dl', '1']), (None, False))
-        self.assertEqual(dt.read_options(['-q', 'q', '-k']), (None, True))
-        self.assertEqual(dt.read_options([b'-\xff', '-k']), (None, False))
+        self.assertEqual(dt.read_options(['-q', '-n', '5', '-j']), (None, True, True))
+        self.assertEqual(dt.read_options(['-n', '5']), (None, False, True))
+        self.assertEqual(dt.read_options(['-q', '-l', '0', '-u', '1']), (1, True, True))
+        self.assertEqual(dt.read_options(['-p', '-x', '-x']), (2, False, True))
+        self.assertEqual(dt.read_options(['-quiet', '-fs', 'x']), (1, True, True))
+        self.assertEqual(dt.read_options(['-fx', '-x']), (None, False, True))
+        self.assertEqual(dt.read_options(['-d', '1', '-dl', '1']), (None, False, True))
+        self.assertEqual(dt.read_options(['-q', 'q', '-x']), (None, True, True))
+        self.assertEqual(dt.read_options([b'-\xff', '-x']), (None, False, True))
+
+    def test_read_options_of_the_search(self):
+        self.assertEqual(dt.read_options(['-k', '-s', '-q']), (None, True, False))
+        self.assertEqual(dt.read_options(['-k', '-K']), (None, False, True))
+        self.assertEqual(dt.read_options(['-K', '-kfoo', '-x']), (2, False, False))
+        self.assertEqual(dt.read_options(['-S', '5', '-x']), (2, False, True))
+        self.assertEqual(dt.read_options(['-S', '-q', '-x']), (2, True, True))
+        self.assertEqual(dt.read_options(['-S', '', '-x']), (2, False, True))
+        self.assertEqual(dt.read_options(['-S', ' -1', '-k']), (None, False, False))
+        self.assertEqual(dt.read_options(['-q', '-S']), (None, True, True))
+
+
+class Order(unittest.TestCase):
+    def test_coefficient_list(self):
+        self.assertEqual(dt.coefficient_list(' +3\t-4\x0b0\r'), [3, -4, 0])
+        self.assertEqual(dt.coefficient_list(''), [])
+        self.assertIsNone(dt.coefficient_list('1 2 x'))
+        self.assertIsNone(dt.coefficient_list('1_000 2'))
+        self.assertIsNone(dt.coefficient_list(b'\xff 1'))
+
+    def test_searched(self):
+        # the cases 1, 2 and 3 of the reversal check, with a leading zero dropped in case 3
+        self.assertEqual(dt.searched([0, 1, 0, 0, 4], True), [4, 0, 0, 1])
+        self.assertEqual(dt.searched([0, -3, -5], True), [-5, -3])
+        self.assertEqual(dt.searched([-1, 0, 9], True), [9, 0, -1])
+        self.assertEqual(dt.searched([0, 1, 0, 2], True), [0, 2, 0, 1])
+        self.assertEqual(dt.searched([0, 1, 0, 2, 0], True), [0, 2, 0, 1])
+        # the refusal of c0 = c1 = 0 for even degree, and the reversal forbidden
+        self.assertIsNone(dt.searched([0, 0, 1, 1, 1], True))
+        self.assertEqual(dt.searched([0, 0, 1, 1, 1], False), [0, 0, 1, 1, 1])
+        self.assertEqual(dt.searched([-1, 0, 9, 0], False), [-1, 0, 9])
+        # lists that meet no case
+        for c in ([4, 0, 9], [-1, 0, -9], [0, 2, 0, 3], [0, 1, 0, -1], [-2, 0, 0, 1],
+                  [1, 2, 3, 4, 5, 6, 7]):
+            self.assertEqual(dt.searched(c, True), c)
+
+    def test_in_order(self):
+        self.assertTrue(dt.in_order(['-2 0 0 1', '130', '-q']))       # odd degree, c_d = 1
+        self.assertTrue(dt.in_order(['1 2 3 4 5', '10', '-q']))        # even degree
+        self.assertFalse(dt.in_order(['1 0 0 2', '10', '-q']))         # odd degree, c_d = 2
+        self.assertTrue(dt.in_order(['0 1 0 2', '10', '-q']))          # case 3: c_1 = 1 leads
+        self.assertFalse(dt.in_order(['0 1 0 2', '10', '-q', '-k']))   # no reversal: c_d = 2
+        self.assertFalse(dt.in_order(['0 3 1', '10', '-q']))           # case 1: c_1 = 3 leads
+        self.assertTrue(dt.in_order(['0 3 1', '10', '-q', '-K', '-k']))
+        self.assertTrue(dt.in_order(['-1 0 9', '10', '-q', '-S', '3']))
+        self.assertFalse(dt.in_order(['1 2 x', '10', '-q']))
 
 
 class Curves(unittest.TestCase):

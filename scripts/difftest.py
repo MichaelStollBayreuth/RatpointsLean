@@ -10,14 +10,15 @@ and compares it with the recorded outputs and with the C program:
   test3   the invocations of test3.sh, run one by one against the C program;
   rptest  the curves of testdata.h, testdata-many.h and testdata-degrees.h at a reduced height h,
           against the lines of testbase, testbase-many and testbase-degrees restricted to
-          |a| <= h and b <= h, which is what the C program prints at height h;
+          |a| <= h and b <= h, which is what the C program prints at height h, in its order;
   random  random polynomials at small heights against the C program;
   errors  the command lines of scripts/difftest_cases.py, for the checks that main.c makes on
-          the coefficients, the height and the options, against the C program; the usage; and
-          failed writes: a standard output whose reader is gone, which ends the C program by
-          SIGPIPE, where ratpoints-lean (the Lean runtime ignores SIGPIPE) is to exit quietly
-          with the status 141 that the shell reports for that, and a full device, whose failed
-          writes both programs ignore;
+          the coefficients, the height and the options, for the options of the search, -k -K
+          -s -S, and for the refusals of forms that are not squarefree, against the C program;
+          the usage; and failed writes: a standard output whose reader is gone, which ends the C
+          program by SIGPIPE, where ratpoints-lean (the Lean runtime ignores SIGPIPE) is to exit
+          quietly with the status 141 that the shell reports for that, and a full device, whose
+          failed writes both programs ignore;
   fuzz    random command lines (scripts/difftest_cases.py) against the C program;
   params  the options that set the sieving parameters (-p -n -N -P -F -j), with values that
           give no moduli, all the primes of the default build, the cut points in several
@@ -27,17 +28,21 @@ and compares it with the recorded outputs and with the C program:
   test4high  the invocations of test4.sh that search with a height bound above --max-height and
           at most --test4-max-height, a few minutes in all: run locally, not by default.
 
-ratpoints-lean prints the points as ratpoints does with -q. They are compared as sets, until the
-model visits the points in the order of the C program, and without -q with the point lines of the
-report that the C program prints then. Messages and exit codes are compared exactly, but for the
-banner and the usage, which differ by design: in the outputs of errors 2 and 6 they are exchanged
-for those of the C program (the outputs of the two programs on an empty command line), and the
-errors suite checks the usage of ratpoints-lean against that of ratpoints. On a command line with
-an option that ratpoints-lean does not support yet, it must fail as the C program does if that
-fails before the option, and else exit with status 12 and a message that names the option.
-Skipped: the inputs that the C program refuses as not squarefree (exit 8), which ratpoints-lean
-refuses from stage D on, the outputs that the test scripts filter, and searches above
---max-height.
+ratpoints-lean prints the points as ratpoints does with -q; without -q they are compared with the
+point lines of the report that the C program prints then. They are compared in their order wherever
+ratpoints visits the denominators in ascending order, that is unless the polynomial searched (the
+coefficients with the leading zeros dropped and, unless -k forbids it, the reversal check applied,
+as the model computes them) has odd degree and a leading coefficient other than +-1, where ratpoints
+may take them in the order of the divisors of the leading coefficient; those are compared as sets.
+Messages and exit codes are compared exactly, but for the banner and the usage, which differ by
+design: in the outputs of errors 2 and 6 they are exchanged for those of the C program (the outputs
+of the two programs on an empty command line), and the errors suite checks the usage of
+ratpoints-lean against that of ratpoints; a refusal of a form that is not squarefree (error 8) on a
+command line without -q, where the C program prints its report before the message, is compared by
+the message at the end of that report. On a command line with an option that ratpoints-lean does
+not support yet, it must fail as the C program does if that fails before the option, and else exit
+with status 12 and a message that names the option. Skipped: the outputs that the test scripts
+filter, and searches above --max-height.
 
 options:
   --lean PATH        the ratpoints-lean executable (default: .lake/build/bin/ratpoints-lean)
@@ -56,6 +61,7 @@ options:
   -v                 print every comparison
 """
 import argparse
+import math
 import os
 import random
 import re
@@ -73,11 +79,14 @@ ROOT = Path(__file__).resolve().parent.parent
 RECORD = ROOT / 'correspondence' / 'ratpoints.toml'
 
 # main.c tells its options apart by their second character, and -f and -d by the third too.
-# ratpoints-lean reads -q, -v, -j, -J and the tuning options that take an argument, and ignores
-# them; the other options of ratpoints it does not support yet; any other word is error 6.
+# ratpoints-lean reads -q, -v, -j, -J, -k, -K, -s, the tuning options that take an argument, and
+# -S, whose argument is optional: the next word, if there is one and it does not start with -; the
+# other options of ratpoints it does not support yet; any other word is error 6.
 ARG_OPTS = set('pFtnNRAPrUCQW')
-FLAGS = set('qvjJ')
-UNSUPPORTED = set('lukKxXyYzZ1iIsS')
+FLAGS = set('qvjJkKs')
+UNSUPPORTED = set('luxXyYzZ1iI')
+# C white space: the space and the characters from tab to carriage return.
+SPACE = ' \t\n\x0b\x0c\r'
 POINT = re.compile(r'^\((-?\d+) : (-?\d+) : (\d+)\)$')
 # The params suite: the options that set the sieving parameters, with values that give no
 # moduli, all the primes of the default build and a cap above them, the cut points in several
@@ -88,7 +97,7 @@ PARAM_OPTIONS = [['-p', '0'], ['-p', '53'], ['-p', '200'], ['-n', '0'], ['-n', '
                  ['-N', '3', '-P', '20'], ['-p', '10', '-P', '43'], ['-j'], ['-F', '0'],
                  ['-F', '500'], ['-p', '-5', '-n', '-1', '-N', '-2', '-P', '-3', '-F', '-4']]
 PARAM_CURVES = [('1 0 126 0 441', 200), ('-2 0 0 1', 130), ('1 1 1 1 0', 60),
-                ('1 2 3 4 5 6 7', 60), ('-1 0 9', 100), ('0 0 1', 40)]
+                ('1 2 3 4 5 6 7', 60), ('-1 0 9', 100), ('0 1 1', 40)]
 # The high suite: the first four of these curves at larger heights.
 HIGH_HEIGHTS = [2000, 5000, 30000]
 TIMEOUT = 600
@@ -106,8 +115,11 @@ class Run:
 
 @dataclass
 class Tally:
-    """What a suite compared, skipped and found."""
+    """What a suite compared, skipped and found, with the point lists compared in their order and
+    as sets."""
     compared: int = 0
+    in_order: int = 0
+    as_sets: int = 0
     skipped: dict = field(default_factory=dict)
     failures: list = field(default_factory=list)
 
@@ -165,22 +177,67 @@ def special(cfg, tally, label, ok, detail):
 def read_options(opts):
     """How ratpoints-lean reads the options `opts`, the words after the height: the index of the
     first that it does not support yet (None if it reaches the end or a word that is no option of
-    ratpoints first), and whether -q comes before it."""
-    quiet, i = False, 0
+    ratpoints first), whether -q comes before it, and whether the reversal is allowed there (-k
+    forbids it and -K allows it, the last of them winning)."""
+    quiet, reverse, i = False, True, 0
     while i < len(opts):
         o = as_bytes(opts[i]).decode('latin-1')
         if len(o) < 2 or o[0] != '-':
-            return None, quiet
+            return None, quiet, reverse
         if o[1] in ARG_OPTS:
             i += 2
+        elif o[1] == 'S':
+            i += 2 if i + 1 < len(opts) and not as_bytes(opts[i + 1]).startswith(b'-') else 1
         elif o[1] in FLAGS:
-            quiet, i = quiet or o[1] == 'q', i + 1
+            quiet, reverse = quiet or o[1] == 'q', {'k': False, 'K': True}.get(o[1], reverse)
+            i += 1
         elif (o[1] in UNSUPPORTED or o[1] == 'f' and o[2:3] in ('', 's', 'm', 'e') or
               o[1] == 'd' and o[2:3] in ('l', 'u')):
-            return i, quiet
+            return i, quiet, reverse
         else:
-            return None, quiet
-    return None, quiet
+            return None, quiet, reverse
+    return None, quiet, reverse
+
+
+def coefficient_list(arg):
+    """The integers of the coefficient list `arg`, separated by C white space, as main.c reads
+    them, or None if a word is not an integer."""
+    words = as_bytes(arg).decode('latin-1').translate({ord(ch): ' ' for ch in SPACE}).split()
+    if not all(re.fullmatch(r'[+-]?[0-9]+', w) for w in words):
+        return None
+    return [int(w) for w in words]
+
+
+def is_square(a):
+    """Whether the integer `a` is a square, as mpz_perfect_square_p decides it."""
+    return a >= 0 and math.isqrt(a) ** 2 == a
+
+
+def searched(c, reverse):
+    """The coefficients c_0, ..., c_d of the polynomial that ratpoints searches for the list `c`,
+    as the model computes them (Ratpoints.Setup.reversal): the leading zeros dropped and, when
+    `reverse` allows it, the reversal check applied: for even d and c_0 = 0, c_d, ..., c_1, and
+    None, a refusal, if also c_1 = 0; for even d, c_d a square and c_0 not, c_d, ..., c_0; for odd
+    d, |c_d| != 1, c_0 = 0 and |c_1| = 1, c_0, c_d, ..., c_1; otherwise c_0, ..., c_d."""
+    d = max((i for i, a in enumerate(c) if a), default=0)
+    c = c[:d + 1]
+    if reverse and d % 2 == 0 and c[0] == 0:
+        return c[:0:-1] if d > 0 and c[1] else None
+    if reverse and d % 2 == 0 and is_square(c[d]) and not is_square(c[0]):
+        return c[::-1]
+    if reverse and d % 2 == 1 and abs(c[d]) != 1 and c[0] == 0 and abs(c[1]) == 1:
+        return c[:1] + c[:0:-1]
+    return c
+
+
+def in_order(args):
+    """Whether ratpoints visits the denominators of the search of the command line `args` in
+    ascending order, so that ratpoints-lean is to print its points in the same order: unless the
+    polynomial searched has odd degree and a leading coefficient other than +-1, where ratpoints may
+    take them in the order of the divisors of the leading coefficient."""
+    c = coefficient_list(args[0]) if args else None
+    c = searched(c, read_options(args[2:])[2]) if c else None
+    return bool(c) and (len(c) % 2 == 1 or abs(c[-1]) == 1)
 
 
 def expected_unsupported(cfg, args, k):
@@ -212,37 +269,47 @@ def height(arg):
         return None
 
 
-def points(text, report=False):
+def points(text, report=False, ordered=False):
     """The points of an output that consists of point lines only (else None), or with `report`
-    the points among the lines of a report, as a sorted list."""
+    the points among the lines of a report, as a list: in their order with `ordered`, sorted
+    otherwise."""
     lines = text.split('\n')
     if lines and lines[-1] == '':
         lines.pop()
     if not report and not all(POINT.match(l) for l in lines):
         return None
-    return sorted(tuple(int(g) for g in m.groups()) for m in map(POINT.match, lines) if m)
+    pts = [tuple(int(g) for g in m.groups()) for m in map(POINT.match, lines) if m]
+    return pts if ordered else sorted(pts)
 
 
-def agrees(cfg, lean, expected, mode):
+def agrees(cfg, lean, expected, mode, ordered=False):
     """Whether the output and exit code `lean` of ratpoints-lean agree with `expected`: in the
-    mode 'points' as sets of points (exit 0), in 'report' with the point lines of a report of the
-    C program, in 'exact' exactly and in 'e' as test4.sh's e() records them, the banner and the
-    usage exchanged for those of the C program."""
+    mode 'points' as lists of points (exit 0), in their order with `ordered` and as sets otherwise,
+    in 'report' in the same way with the point lines of a report of the C program, in 'message' as
+    the message that ends a report of the C program, in 'exact' exactly and in 'e' as test4.sh's
+    e() records them, the banner and the usage exchanged for those of the C program."""
     (out, code), (exp, exp_code) = lean, expected
     if mode in ('points', 'report'):
-        got = points(out)
-        return code == 0 and got is not None and got == points(exp, report=mode == 'report')
+        got = points(out, ordered=ordered)
+        return (code == 0 and got is not None and
+                got == points(exp, report=mode == 'report', ordered=ordered))
+    if mode == 'message':
+        return (code == exp_code and out.strip() != '' and
+                exp.rstrip('\n').endswith(out.rstrip('\n')))
     out = out.replace(cfg.lean_usage, cfg.c_usage)
     if mode == 'e':
         out = as_recorded_by_e(out)
     return out == exp and code == exp_code
 
 
-def check(cfg, tally, label, args, expected, mode):
+def check(cfg, tally, label, args, expected, mode, ordered=False):
     """Run ratpoints-lean on `args` and compare it with `expected` (see agrees)."""
     lean = run(cfg.lean, args)
-    ok = agrees(cfg, lean, expected, mode)
+    ok = agrees(cfg, lean, expected, mode, ordered)
     tally.compared += 1
+    if mode in ('points', 'report'):
+        tally.in_order += ordered
+        tally.as_sets += not ordered
     if not ok:
         tally.failures.append(f'{label}: expected exit {expected[1]} and {expected[0][:500]!r}, '
                               f'got exit {lean[1]} and {lean[0][:500]!r}')
@@ -252,18 +319,18 @@ def check(cfg, tally, label, args, expected, mode):
 
 def against_c(cfg, tally, label, args):
     """Compare ratpoints-lean with the C program on the command line `args`."""
-    k, quiet = read_options(args[2:])
+    k, quiet, _ = read_options(args[2:])
     if len(args) >= 2 and k is not None:
         check(cfg, tally, label, args, expected_unsupported(cfg, args, k), 'exact')
         return
     out, code = run(cfg.c, args)
-    if code == 8:
-        tally.skip('not squarefree (stage D)')
-    elif code == 0 and (height(as_bytes(args[1]).decode('latin-1')) or 0) > cfg.max_height:
+    if code == 0 and (height(as_bytes(args[1]).decode('latin-1')) or 0) > cfg.max_height:
         tally.skip(f'height above {cfg.max_height}')
-    else:
-        mode = 'exact' if code else 'points' if quiet else 'report'
-        check(cfg, tally, label, args, (out, code), mode)
+    elif code == 0:
+        check(cfg, tally, label, args, (out, 0), 'points' if quiet else 'report', in_order(args))
+    else:  # without -q the C program prints its report before the message of error 8
+        check(cfg, tally, label, args, (out, code),
+              'message' if code == 8 and not quiet else 'exact')
 
 
 def split_test4(text):
@@ -301,25 +368,28 @@ def suite_test4(cfg, tally, window=None):
         text = '\n'.join(out) + ('' if r.nonl else '\n') if out else ''
         if code == 0:  # e() keeps one newline at the end, also of an empty output
             text = text.rstrip('\n') + '\n' if text.strip('\n') else ''
-        k, quiet = read_options(r.args[2:])
+        k, quiet, _ = read_options(r.args[2:])
+        mode = 'points' if quiet else 'report'
         if window is not None:
             searches = (r.filt is None and not (len(r.args) >= 2 and k is not None) and
                         not code and 'Polynomial is not square-free.' not in text)
             if searches and window[0] < (height(r.args[1]) or 0) <= window[1]:
-                check(cfg, tally, label, r.args, (text, 0), 'points' if quiet else 'report')
+                check(cfg, tally, label, r.args, (text, 0), mode, in_order(r.args))
             continue
         if r.filt is not None:
             tally.skip('output filtered')
         elif len(r.args) >= 2 and k is not None:
             check(cfg, tally, label, r.args, expected_unsupported(cfg, r.args, k), 'exact')
         elif code == 8 or 'Polynomial is not square-free.' in text:
-            tally.skip('not squarefree (stage D)')
+            # error 8, recorded by e() with -q, and without -q at the end of a report
+            check(cfg, tally, label, r.args, (text, 8),
+                  'message' if not quiet else 'e' if code else 'exact')
         elif code:
             check(cfg, tally, label, r.args, (text, code), 'e')
         elif (height(r.args[1]) or 0) > cfg.max_height:
             tally.skip(f'height above {cfg.max_height}')
         else:
-            check(cfg, tally, label, r.args, (text, 0), 'points' if quiet else 'report')
+            check(cfg, tally, label, r.args, (text, 0), mode, in_order(r.args))
 
 
 def suite_test3(cfg, tally):
@@ -364,10 +434,10 @@ def suite_rptest(cfg, tally):
             tally.failures.append(f'{data}: {len(cs)} curves, but {len(refs)} lines in {base}')
             continue
         for i, (c, ref) in enumerate(zip(cs, refs), 1):
-            pts = sorted(p for p in reference_points(ref) if abs(p[0]) <= h and p[2] <= h)
+            pts = [p for p in reference_points(ref) if abs(p[0]) <= h and p[2] <= h]
             expected = ''.join(f'({a} : {y} : {b})\n' for a, y, b in pts)
             args = [' '.join(map(str, c)), str(h), '-q']
-            check(cfg, tally, f'{base}:{i} {args}', args, (expected, 0), 'points')
+            check(cfg, tally, f'{base}:{i} {args}', args, (expected, 0), 'points', in_order(args))
 
 
 def suite_random(cfg, tally):
@@ -471,7 +541,9 @@ def main(argv=None):
         tally = Tally()
         SUITES[name](cfg, tally)
         skipped = ', '.join(f'{k} {v}' for k, v in sorted(tally.skipped.items()))
-        print(f'{name}: {tally.compared} compared, {len(tally.failures)} failed'
+        lists = (f' (point lists: {tally.in_order} in order, {tally.as_sets} as sets)'
+                 if tally.in_order + tally.as_sets else '')
+        print(f'{name}: {tally.compared} compared{lists}, {len(tally.failures)} failed'
               + (f'; skipped: {skipped}' if skipped else ''))
         for f in tally.failures:
             print(f'  FAIL {f}')

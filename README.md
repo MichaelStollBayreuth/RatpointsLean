@@ -19,8 +19,19 @@ the brute-force reference (the membership, no-duplicates and refusal theorems ce
 Comparator), and `ratpoints-lean` runs it. Stage C2 is done: the sieve works on the bit arrays of
 64-bit words of the C code, as its build `chunk1` does (256-bit bit arrays, one at a time in the
 first stage), with the same theorems, and the differential tests search up to height 30000 (up to
-100000 in a suite run locally). Stage D, the set-up of the search, comes next. The blueprint and
-the API documentation will be at
+100000 in a suite run locally). Stage D is done: the set-up of the search as the C code does it
+before the sieve, with the options of the library that change the refusals and the order of the
+output: the refusal of a binary form that is not squarefree (when the leading zeros lower its even
+degree, in the reversal check, and by the remainder chain of the Sturm step, computed row by row as
+the C code computes it), the reversal of the polynomial in its three cases with the map of the
+points, the coefficients as C `long`s, and the exit when the curve has no points modulo a prime.
+The output of `findPoints` is the brute-force reference of the polynomial searched, mapped back
+after a reversal, a permutation of the reference, so that the main theorems hold for every option,
+and two refusal theorems, with the Sturm step on and off, say exactly which inputs it refuses; the
+challenge of Comparator states them. `ratpoints-lean` reads `-k -K -s -S`, and the differential
+tests compare the refusals and the points in their order wherever ratpoints visits the denominators
+in ascending order: 3218 comparisons in the default suites, and 13 in the suite run locally. The
+blueprint and the API documentation will be at
 <https://michaelstollbayreuth.github.io/RatpointsLean/> once the repository is public.
 
 ## Layout
@@ -64,10 +75,14 @@ coefficients (constant term first), the height bound and the options as ratpoint
 checks, messages and exit statuses, and prints the points of height at most `H` on
 `y² = a_n xⁿ + ⋯ + a_0` as ratpoints does with `-q`: one line `(x : y : z)` per point. It finds
 the points by the sieve on bit arrays of words, whose parameters the options `-p -n -N -P -F -j -J`
-set; it accepts `-q`, `-v` and the other options that tune the sieve of ratpoints, checking their
-arguments, but ignores them; it answers the other options of ratpoints with the exit status 12;
-and it refuses a binary form that is not squarefree with error 8, as ratpoints does without
-options.
+set; `-k` and `-K` forbid and allow the reversal of the polynomial, and `-s` and `-S [depth]` switch
+the Sturm step off and on, of which the model has the test for a repeated factor so far; it accepts
+`-q`, `-v` and the other options that tune the sieve of ratpoints, checking their arguments, but
+ignores them. It refuses a binary form that is not squarefree with error 8 as ratpoints does with
+the same options, and prints the points in the order of ratpoints wherever ratpoints visits the
+denominators in ascending order. It answers the options of ratpoints that it does not support yet,
+those of the search region and the denominator range (`-l -u -dl -du`) and those of the output
+(`-x -X -y -Y -z -Z -1 -i -I -f -fs -fm -fe`), with the exit status 12.
 
 ## Licence
 

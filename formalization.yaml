@@ -57,8 +57,7 @@ classification:
 # project status
 status:
   scope: >
-    Stages A, B, C1 and C2, and of stage D all but the options of the program and the differential
-    tests. Stage A set up the Lake project with the libraries of the model (Lean
+    Stages A, B, C1, C2 and D. Stage A set up the Lake project with the libraries of the model (Lean
     core and Std only), the specification and the proofs, the CI, the blueprint, the correspondence
     record with its checking script, and the comparator harness, and settled the specification in
     the blueprint. Stage B: the specification in Lean (the binary form, the normalized points of
@@ -105,10 +104,12 @@ status:
     squarefree, and with it off exactly what the C program refuses under -s; both refusal
     theorems and the main theorems with the options argument are stated for comparator, with the
     binary form over Q restated in the challenge; the lemmas on homogenizations and their
-    squarefreeness are candidates for Mathlib; and ratpoints-lean refuses a form that is not
-    squarefree with error 8 and prints the points of a reversed polynomial in the order of the C
-    program. Next: the options -k, -K, -s and -S of ratpoints-lean and the differential tests of
-    stage D; the introduction of the blueprint lists the later stages (the denominator and
+    squarefreeness are candidates for Mathlib; ratpoints-lean reads the options -k, -K, -s and -S,
+    refuses a form that is not squarefree with error 8 as the C program does with the same options,
+    and prints the points of a reversed polynomial in the order of the C program; and the
+    differential tests compare the refusals and the points in their order wherever the C program
+    visits the denominators in ascending order (3218 comparisons in the default suites). Next:
+    stage E; the introduction of the blueprint lists the later stages (the denominator and
     numerator sides, the order and protocol, the search region and the Sturm step).
   sorry_count: 0
   sorry_in_definitions: 0
@@ -244,8 +245,8 @@ alignment:
       note: >
         the list of Ratpoints.findPoints is the brute-force reference of the polynomial searched,
         mapped back after a reversal, which is the order of the C program wherever it visits the
-        denominators in ascending order; the divisor order (stage E) and the protocol of the
-        output (stage G) come later
+        denominators in ascending order, where the differential tests compare the order; the
+        divisor order (stage E) and the protocol of the output (stage G) come later
     - source: "the Sturm step covers every real point where F >= 0"
       lean: ""
       module: ""

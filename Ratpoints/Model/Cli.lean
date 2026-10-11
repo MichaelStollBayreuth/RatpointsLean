@@ -18,13 +18,14 @@ meta import Ratpoints.Model.FindPoints
 options. It reads them as `main.c` of ratpoints does, with its checks, messages and exit statuses,
 in its order, and prints the points as ratpoints does with `-q`: one line `(x : y : z)` per point
 and nothing else. It accepts `-q` and `-v`, which it ignores, and the options that tune the sieve
-of ratpoints: it reads `-p -n -N -P -F -j -J` into the sieving parameters and ignores the others;
-it answers every other option of ratpoints, which it does not support yet, with a message and the
-exit status 12, which `main.c` does not use. It takes the points from the sieve
-`Ratpoints.findPoints` with the parameters `Ratpoints.sieveParams` of these options and the options
-of a run without options (`Ratpoints.Options`), so that it refuses a binary form that is not
+of ratpoints: it reads `-p -n -N -P -F -j -J` into the sieving parameters and ignores the others.
+It reads `-k -K -s -S` into the options of the search (`Ratpoints.Options`): whether the polynomial
+may be reversed, and the depth of the Sturm step. It answers every other option of ratpoints, which
+it does not support yet, with a message and the exit status 12, which `main.c` does not use. It
+takes the points from the sieve `Ratpoints.findPoints` with the parameters `Ratpoints.sieveParams`
+of these options and these options of the search, so that it refuses a binary form that is not
 squarefree with error 8 and, after a reversal, prints the points of the reversed polynomial mapped
-back to the caller's curve, as ratpoints does.
+back to the caller's curve, as ratpoints does with the same options.
 
 ## Main definitions
 
@@ -285,90 +286,114 @@ inductive OptionArg where
   | long
   /-- A C `double`, as `Ratpoints.Cli.isDouble` reads it. -/
   | double
+  /-- An optional C `long`: the next word, if there is one and it does not start with `-`, which is
+  then a C `long` as `Ratpoints.Cli.longOfString?` reads it. -/
+  | optionalLong
 
 /-- Whether `a` is an argument of the kind `arg`. -/
 def OptionArg.accepts (arg : OptionArg) (a : String) : Bool :=
   match arg with
-  | .long => (longOfString? a).isSome
+  | .long | .optionalLong => (longOfString? a).isSome
   | .double => isDouble a
 
 /-- The kind of argument that the option `o` takes, or `none` if it takes none, for an option that
 `ratpoints-lean` reads. `main.c` tells an option by the character after its `-`, and for `-f` and
 `-d` by the one after that, ignoring the rest of the word, so that `-quiet` is `-q`. The tuning
-options `-p -F -t -n -N -R -A -P` take a C `long`, `-r -U -C -Q -W` a C `double`, and `-j -J`,
-like `-q` and `-v`, nothing. An option of ratpoints that `ratpoints-lean` does not support yet,
-one of `-l -u -k -K -x -X -y -Y -z -Z -1 -i -I -s -S -f -fs -fm -fe -dl -du`, fails with the
-exit status 12, and every other word, among them a word without a leading `-`, with error 6. -/
+options `-p -F -t -n -N -R -A -P` take a C `long`, `-r -U -C -Q -W` a C `double`, `-S` an optional
+C `long`, and `-j -J -k -K -s`, like `-q` and `-v`, nothing. An option of ratpoints that
+`ratpoints-lean` does not support yet fails with the exit status 12: those of the search region
+and the range of the denominators, `-l -u -dl -du`, and those of the output, `-x -X -y -Y -z -Z`,
+`-1 -i -I` and `-f -fs -fm -fe`. Every other word, among them a word without a leading `-`, fails
+with error 6. -/
 def optionArg (o : String) : Except Failure (Option OptionArg) :=
   match o.toList with
   | '-' :: ch :: rest =>
     if "pFtnNRAP".contains ch then return some .long
     else if "rUCQW".contains ch then return some .double
-    else if "qvjJ".contains ch then return none
-    else if "lukKxXyYzZ1iIsS".contains ch || ch == 'f' && rest.head?.all ("sme".contains ·) ||
+    else if ch == 'S' then return some .optionalLong
+    else if "qvjJkKs".contains ch then return none
+    else if "luxXyYzZ1iI".contains ch || ch == 'f' && rest.head?.all ("sme".contains ·) ||
         ch == 'd' && rest.head?.any ("lu".contains ·) then
       throw (.unsupportedOption o)
     else throw .optionSyntax
   | _ => throw .optionSyntax
 
-/-- The values of the options that set the sieving parameters, starting from `s`, or the first
-failure among the options, the words that follow the coefficients and the height bound on the
-command line, read from left to right as `main.c` reads them: an option that fails by
-`Ratpoints.Cli.optionArg`, or one whose argument is missing or malformed (error 6), fails; `-p`,
-`-n`, `-N`, `-P` and `-F` set the fields of `Ratpoints.SieveOptions` to the C `long` that follows
-them, the last one winning, and `-j` switches the Jacobi test off and `-J` on again, as `main.c`
-sets the fields and the flags of its `ratpoints_args`. Since `ratpoints-lean` always runs as
-ratpoints does with `-q`, it ignores `-q` and `-v`, which `-q` cancels in `main.c`; and it ignores
-the other tuning options, which tune only the heuristics of the C program and its threads.
+/-- The values of the options of the command line, those that set the sieving parameters and the
+options of the search (`Ratpoints.Options`), starting from `s`, or the first failure among the
+options, the words that follow the coefficients and the height bound on the command line, read from
+left to right as `main.c` reads them: an option that fails by `Ratpoints.Cli.optionArg`, or one
+whose argument is missing or malformed (error 6), fails; `-p`, `-n`, `-N`, `-P` and `-F` set the
+fields of `Ratpoints.SieveOptions` to the C `long` that follows them, the last one winning, and `-j`
+switches the Jacobi test off and `-J` on again, as `main.c` sets the fields and the flags of its
+`ratpoints_args`; `-k` forbids the reversal of the polynomial and `-K` allows it again, and `-s`
+switches the Sturm step off, with the depth `-1`, and `-S` on again, with the depth that the next
+word gives if there is one and it does not start with `-`, and else with `Ratpoints.defaultSturm`,
+the last of `-k` and `-K` and the last of `-s` and `-S` winning. Since `ratpoints-lean` always runs
+as ratpoints does with `-q`, it ignores `-q` and `-v`, which `-q` cancels in `main.c`; and it
+ignores the other tuning options, which tune only the heuristics of the C program and its threads.
 
-C: `main.c:393-397`, `main.c:437-532`, `main.c:578-593`, `main.c:667-668`
+C: `main.c:393-397`, `main.c:437-532`, `main.c:578-593`, `main.c:594-601`, `main.c:638-649`,
+`main.c:667-668`
 
 Deviation: the arguments of the tuning options other than `-p -n -N -P -F` are checked and then
 ignored. An option of ratpoints that `ratpoints-lean` does not support yet, whose cases are lines
-398-436, 533-577 and 594-666 of `main.c`, ends the reading with the exit status 12; of these lines,
-only the error 6 on a word `-f…` or `-d…` that names no option (lines 575 and 664) is kept. -/
-def checkOptions (s : SieveOptions) : List String → Except Failure SieveOptions
+398-436, 533-577, 602-637 and 650-666 of `main.c`, ends the reading with the exit status 12; of
+these lines, only the error 6 on a word `-f…` or `-d…` that names no option (lines 575 and 664) is
+kept. -/
+def checkOptions (s : SieveOptions × Options) :
+    List String → Except Failure (SieveOptions × Options)
   | [] => return s
   | o :: os =>
     match optionArg o with
     | .error f => throw f
     | .ok none => checkOptions (store s o none) os
     | .ok (some arg) =>
-      match os with
-      | a :: os =>
-        if arg.accepts a then checkOptions (store s o (longOfString? a)) os else throw .optionSyntax
-      | [] => throw .optionSyntax
+      if arg matches .optionalLong && os.head?.all (·.startsWith "-") then
+        checkOptions (store s o none) os
+      else
+        match os with
+        | a :: os =>
+          if arg.accepts a then checkOptions (store s o (longOfString? a)) os
+          else throw .optionSyntax
+        | [] => throw .optionSyntax
 where
   /-- `s` with the field that the option `o` sets: the value `v`, if there is one, for
-  `-p -n -N -P -F`; the Jacobi test off for `-j` and on for `-J`, whatever `v` is; and `s` itself
-  for every other option. -/
-  store (s : SieveOptions) (o : String) (v : Option Int) : SieveOptions :=
+  `-p -n -N -P -F`; the Jacobi test off for `-j` and on for `-J`, whatever `v` is; the reversal
+  forbidden for `-k` and allowed for `-K`; the depth `-1` of the Sturm step for `-s`, and for `-S`
+  the value `v`, or `Ratpoints.defaultSturm` if there is none; and `s` itself for every other
+  option. -/
+  store (s : SieveOptions × Options) (o : String) (v : Option Int) : SieveOptions × Options :=
+    let (s, t) := s
     match o.toList, v with
-    | '-' :: 'p' :: _, some v => { s with numPrimes := v }
-    | '-' :: 'n' :: _, some v => { s with sp1 := v }
-    | '-' :: 'N' :: _, some v => { s with sp2 := v }
-    | '-' :: 'P' :: _, some v => { s with sp3Extra := v }
-    | '-' :: 'F' :: _, some v => { s with maxForbidden := v }
-    | '-' :: 'j' :: _, _ => { s with jacobi := false }
-    | '-' :: 'J' :: _, _ => { s with jacobi := true }
-    | _, _ => s
+    | '-' :: 'p' :: _, some v => ({ s with numPrimes := v }, t)
+    | '-' :: 'n' :: _, some v => ({ s with sp1 := v }, t)
+    | '-' :: 'N' :: _, some v => ({ s with sp2 := v }, t)
+    | '-' :: 'P' :: _, some v => ({ s with sp3Extra := v }, t)
+    | '-' :: 'F' :: _, some v => ({ s with maxForbidden := v }, t)
+    | '-' :: 'j' :: _, _ => ({ s with jacobi := false }, t)
+    | '-' :: 'J' :: _, _ => ({ s with jacobi := true }, t)
+    | '-' :: 'k' :: _, _ => (s, { t with reverse := false })
+    | '-' :: 'K' :: _, _ => (s, { t with reverse := true })
+    | '-' :: 's' :: _, _ => (s, { t with sturm := -1 })
+    | '-' :: 'S' :: _, v => (s, { t with sturm := v.getD defaultSturm })
+    | _, _ => (s, t)
 
 /-- What a command line (the words after the name of the program) gives: the coefficient list, the
-height bound and the values of the options that set the sieving parameters, or the first failure,
-in the order of `main.c`: fewer than two words fail with error 2; then come the coefficients
-(`Ratpoints.Cli.coefficients`), the height bound (`Ratpoints.Cli.heightBound`) and the options
-(`Ratpoints.Cli.checkOptions`), read from the defaults of `Ratpoints.SieveOptions`, the values of
-a command line without options.
+height bound and the values of the options, those that set the sieving parameters and the options of
+the search, or the first failure, in the order of `main.c`: fewer than two words fail with error 2;
+then come the coefficients (`Ratpoints.Cli.coefficients`), the height bound
+(`Ratpoints.Cli.heightBound`) and the options (`Ratpoints.Cli.checkOptions`), read from the defaults
+of `Ratpoints.SieveOptions` and `Ratpoints.Options`, the values of a command line without options.
 
 C: `main.c:210-214`
 
 Deviation: `read_input` never returns a value other than 0, so the usage that `main.c` prints
 then (lines 212 and 213) has no counterpart. -/
-def input : List String → Except Failure (List Int × Nat × SieveOptions)
+def input : List String → Except Failure (List Int × Nat × SieveOptions × Options)
   | s :: h :: os => do
     let c ← coefficients s
     let H ← heightBound h
-    let o ← checkOptions {} os
+    let o ← checkOptions ({}, {}) os
     return (c, H, o)
   | _ => throw .tooFewArguments
 
@@ -386,14 +411,15 @@ def pointLine (p : Int × Int × Int) : String := s!"({p.1} : {p.2.1} : {p.2.2})
 
 /-- What `ratpoints-lean` does on the command line `args` (the words after the name of the
 program): the text it prints on the standard output and its exit status. On the coefficient list
-`c`, the height bound `H` and the values `o` of the options of `Ratpoints.Cli.input`, it prints,
-as ratpoints does with `-q`, the line `Ratpoints.Cli.pointLine` of each point that the sieve
-`Ratpoints.findPoints` finds with the parameters `Ratpoints.sieveParams o` and the options of a run
-without options (`Ratpoints.Options`), in its order, and exits with status 0; on a failure `f`,
-among them a refusal of `Ratpoints.findPoints`, it prints `f.message` and exits with `f.status`
-(`Ratpoints.Cli.Failure.message`, `Ratpoints.Cli.Failure.status`). -/
+`c`, the height bound `H`, the values `s` of the options that set the sieving parameters and the
+options `o` of the search, as `Ratpoints.Cli.input` reads them, it prints, as ratpoints does with
+`-q`, the line `Ratpoints.Cli.pointLine` of each point that the sieve `Ratpoints.findPoints` finds
+with the parameters `Ratpoints.sieveParams s` and the options `o`, in its order, and exits with
+status 0; on a failure `f`, among them a refusal of `Ratpoints.findPoints`, it prints `f.message`
+and exits with `f.status` (`Ratpoints.Cli.Failure.message`, `Ratpoints.Cli.Failure.status`). -/
 def run (args : List String) : String × UInt32 :=
-  match input args >>= fun (c, H, o) ↦ (findPoints c H (sieveParams o)).mapError .ofRefusal with
+  match input args >>= fun (c, H, s, o) ↦
+      (findPoints c H (sieveParams s) o).mapError .ofRefusal with
   | .ok pts => (String.join (pts.map pointLine), 0)
   | .error f => (f.message, f.status)
 
@@ -418,7 +444,7 @@ def main (args : List String) : IO UInt32 := do
 
 /-! ### Examples
 
-Each of them is what ratpoints 3.1.1 does, but for the exit status 12 on `-kfoo` (that is, `-k`),
+Each of them is what ratpoints 3.1.1 does, but for the exit status 12 on `-xfoo` (that is, `-x`),
 an option that ratpoints has and `ratpoints-lean` does not support yet. -/
 
 #guard words " 1\t-2\x0b+3\r".toList == ["1".toList, "-2".toList, "+3".toList]
@@ -455,19 +481,46 @@ an option that ratpoints has and `ratpoints-lean` does not support yet. -/
 #guard ["0 0 1", "1 2 1"].all fun c ↦
   run [c, "5", "-q"] == ("\nPolynomial is not square-free.\n\n", 8)
 
-#guard run ["1 0 1", "5", "-quiet", "-p", " 30 ", "-kfoo"] ==
-  ("\nOption -kfoo is not supported by ratpoints-lean yet.\n\n", 12)
+#guard run ["1 0 1", "5", "-quiet", "-p", " 30 ", "-xfoo"] ==
+  ("\nOption -xfoo is not supported by ratpoints-lean yet.\n\n", 12)
 
 #guard (run ["1 0 1", "5", "-q", "-r", "nan"]).2 == 6 && (run ["1 0 1", "5", "-d", "1"]).2 == 6
 
 -- `-p 10 -n 4 -N 7 -P 3 -j -F 200 -t 2 -p 12`: the last `-p` wins, and `-t` is ignored.
-#guard (checkOptions {} ["-p", "10", "-n", "4", "-N", "7", "-P", "3", "-j", "-F", "200", "-t", "2",
-    "-p", "12"]).toOption.map (fun o ↦ (o.numPrimes, o.sp1, o.sp2, o.sp3Extra, o.maxForbidden,
-    o.jacobi)) == some (12, 4, 7, 3, 200, false)
+#guard (checkOptions ({}, {}) ["-p", "10", "-n", "4", "-N", "7", "-P", "3", "-j", "-F", "200",
+    "-t", "2", "-p", "12"]).toOption.map (fun (o, _) ↦ (o.numPrimes, o.sp1, o.sp2, o.sp3Extra,
+    o.maxForbidden, o.jacobi)) == some (12, 4, 7, 3, 200, false)
 
 -- `-j` and `-J`: the last one wins.
 #guard [(["-j", "-J"], true), (["-J", "-j"], false)].all fun (os, b) ↦
-  (checkOptions {} os).toOption.map (·.jacobi) == some b
+  (checkOptions ({}, {}) os).toOption.map (·.1.jacobi) == some b
+
+-- `-k` and `-K`, `-s` and `-S`: the last of each pair wins, and `-S` takes the next word as its
+-- depth unless it starts with `-`.
+#guard [(["-k", "-S", "5", "-K", "-s"], true, -1), (["-s", "-S"], true, (defaultSturm : Int)),
+    (["-k", "-S", "-q"], false, (defaultSturm : Int)), (["-s", "-S", " 0 "], true, 0)].all
+  fun (os, rev, st) ↦
+    (checkOptions ({}, {}) os).toOption.map (fun (_, o) ↦ (o.reverse, o.sturm)) == some (rev, st)
+
+-- `-1 0 9`, which ratpoints reverses: its points in the order of the reversed polynomial, mapped
+-- back, also after `-k -K`, and with `-k`, which forbids the reversal, in the order of the
+-- reference, also after `-K -kfoo`.
+#guard [[], ["-k", "-K"]].all fun os ↦ run (["-1 0 9", "4", "-q"] ++ os) ==
+  ("(-1 : 0 : 3)\n(1 : 3 : 0)\n(1 : -3 : 0)\n(1 : 0 : 3)\n", 0)
+#guard [["-k"], ["-K", "-kfoo"]].all fun os ↦ run (["-1 0 9", "4", "-q"] ++ os) ==
+  ("(1 : 3 : 0)\n(1 : -3 : 0)\n(-1 : 0 : 3)\n(1 : 0 : 3)\n", 0)
+
+-- `1 2 1`, which is not squarefree: searched without the Sturm step, the last of `-s` and `-S`
+-- winning, also for `-S` with the argument ` -3`, a depth below 0; and refused when `-S` comes
+-- last, with or without its argument, also when an option follows it.
+#guard [["-s"], ["-S", "-s"], ["-S", " -3"]].all fun os ↦ run (["1 2 1", "1", "-q"] ++ os) ==
+  ("(1 : 1 : 0)\n(1 : -1 : 0)\n(-1 : 0 : 1)\n(0 : 1 : 1)\n(0 : -1 : 1)\n(1 : 2 : 1)\n" ++
+    "(1 : -2 : 1)\n", 0)
+#guard [["-q", "-s", "-S"], ["-q", "-s", "-S", "3"], ["-s", "-S", "-q"]].all fun os ↦
+  run (["1 2 1", "1"] ++ os) == ("\nPolynomial is not square-free.\n\n", 8)
+
+-- A malformed argument of `-S`, and `-S` followed by `-3`, which is no option: error 6.
+#guard ["x", "", "5x", "-3"].all fun a ↦ (run ["1 0 1", "5", "-q", "-S", a]).2 == 6
 
 -- The points of `ratpoints '-2 0 0 1' 130 -q`, with the default parameters and with others.
 #guard [[], ["-p", "0"], ["-p", "53", "-n", "5", "-N", "20", "-j"]].all fun os ↦

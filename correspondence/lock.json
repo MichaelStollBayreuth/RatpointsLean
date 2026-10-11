@@ -499,6 +499,18 @@
         "Ratpoints.Cli.checkOptions"
       ]
     },
+    "main.c:594-601": {
+      "hash": "a5c1ae7e3446120afd1d2cb3b15ac9d316cb2fc8492bdbb28b4ce5083308124e",
+      "owners": [
+        "Ratpoints.Cli.checkOptions"
+      ]
+    },
+    "main.c:638-649": {
+      "hash": "ec48795ca67f628cfb0c8b91cc674ccffdfd791d9822e4f8a8678402bf71cf0b",
+      "owners": [
+        "Ratpoints.Cli.checkOptions"
+      ]
+    },
     "main.c:667-668": {
       "hash": "c5d6e99bb193cd4f3a6d044a42a7b645f58102c74a0ab416f91a77d65b40eb53",
       "owners": [
@@ -1260,7 +1272,6 @@
     "sift.c:1265-1292": "d5fc26ec2dbb44cefb7b0df04369978d52653ac1d494fa794a51a3fe9980a65f",
     "sift.c:1293-1299": "e84d5875d42290ba4a97f342fdf343d5954ff501679f0108ab61bf940161fe7f",
     "sift.c:1300-1305": "19388f4fbfbcc24229fc0ebdd7e18c0abbb994a9d618699f865c99e1e3a8ae16",
-    "sturm.c:99-163": "416d0d047eb865d7138f565a6584ec2a89b4a6b2640b52861e710759a6790bde",
-    "sturm.c:120-143": "725fb9bdc1a277ac79f4b8d2c7fb1b9eed69c8cf066e703bbb4fe3a42f0f4228"
+    "sturm.c:99-163": "416d0d047eb865d7138f565a6584ec2a89b4a6b2640b52861e710759a6790bde"
   }
 }
