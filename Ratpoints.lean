@@ -1,7 +1,10 @@
 module  -- shake: keep-all --deprecated_module: ignore
 
+public import Ratpoints.Mathlib.Algebra.Polynomial.Homogenize
+public import Ratpoints.Mathlib.Algebra.Squarefree.Basic
 public import Ratpoints.Mathlib.Data.List.Basic
 public import Ratpoints.Mathlib.Data.ZMod.Basic
+public import Ratpoints.Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import Ratpoints.Model
 public import Ratpoints.Model.BruteForce
 public import Ratpoints.Model.Cli
@@ -14,6 +17,7 @@ public import Ratpoints.Proof.Bits
 public import Ratpoints.Proof.BruteForce
 public import Ratpoints.Proof.FindPoints
 public import Ratpoints.Proof.Params
+public import Ratpoints.Proof.Setup
 public import Ratpoints.Proof.Sieve
 public import Ratpoints.Proof.Tables
 public import Ratpoints.Proof.Words

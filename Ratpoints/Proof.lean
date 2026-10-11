@@ -9,6 +9,7 @@ public import Ratpoints.Proof.Bits
 public import Ratpoints.Proof.BruteForce
 public import Ratpoints.Proof.FindPoints
 public import Ratpoints.Proof.Params
+public import Ratpoints.Proof.Setup
 public import Ratpoints.Proof.Sieve
 public import Ratpoints.Proof.Tables
 public import Ratpoints.Proof.Words

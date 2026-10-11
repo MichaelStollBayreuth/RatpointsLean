@@ -124,46 +124,46 @@ reversal. Chapter~\ref{chap:spec} names the facts that connect them; Mathlib has
 they are proved here at Mathlib's generality, as candidates for \verb|Ratpoints/Mathlib|.
 
 \begin{lemma}[Homogenizations and squarefreeness]\label{lem:homogenize}
-  Proposed names: \lname{MvPolynomial.IsHomogeneous.of\_mul\_left},
-  \lname{Polynomial.squarefree\_homogenize\_iff}, \lname{Polynomial.homogenize\_reflect},
-  \lname{MulEquiv.squarefree\_iff}, \lname{Polynomial.squarefree\_homogenize\_reflect\_iff}.
-  A factor of a nonzero homogeneous polynomial over a domain is homogeneous. For a polynomial $p$
-  over a field and $m \ge \deg p$, the homogenization of $p$ of degree $m$ is squarefree if and only
-  if $p$ is squarefree and $m \le \deg p + 1$. Over a commutative semiring, the homogenization of
-  degree $m$ of the reflection of $p$ in degree $m$ is that of $p$ with the two variables exchanged;
-  squarefreeness is preserved by multiplicative equivalences; so the reflection does not change
-  whether the homogenization is squarefree.
+  \lean{MvPolynomial.IsHomogeneous.of_mul_left, Polynomial.squarefree_homogenize_iff, Polynomial.homogenize_reflect, MulEquiv.squarefree_iff, Polynomial.squarefree_homogenize_reflect_iff}
+  \leanok
+  Over a commutative semiring without zero divisors, a factor of a nonzero homogeneous polynomial
+  is homogeneous. For a polynomial $p$ over a domain and $m \ge \deg p$, the homogenization of $p$
+  of degree $m$ is squarefree if and only if $p$ is squarefree and $m \le \deg p + 1$. Over a
+  commutative semiring, the homogenization of degree $m$ of the reflection of $p$ in degree $m$ is
+  that of $p$ with the two variables exchanged, for every $p$ and $m$; squarefreeness is preserved
+  by multiplicative equivalences; so the reflection does not change whether the homogenization is
+  squarefree.
 \end{lemma}
 
 \begin{proof}
-  In a product over a domain the lowest degrees add up (the order of the power series) and so do
-  the highest (the total degree), so a factor of a homogeneous polynomial has the two equal. If
-  $m \ge \deg p + 2$, the square of $Z$ divides the homogenization, and if $p = a^2 q$, the
-  homogenizations of $a$ and $q$ give a square factor. Conversely, a factor $A$ of the
-  homogenization with $A^2$ dividing it is homogeneous; $Z$ does not divide it, since
+  \leanok
+  In a product over a semiring without zero divisors the lowest degrees add up (the order of the
+  power series) and so do the highest (the total degree), so a factor of a homogeneous polynomial
+  has the two equal. If $m \ge \deg p + 2$, the square of $Z$ divides the homogenization, and if
+  $p = a^2 q$, the homogenizations of $a$ and $q$ give a square factor. Conversely, a factor $A$ of
+  the homogenization with $A^2$ dividing it is homogeneous; $Z$ does not divide it, since
   $m \le \deg p + 1$ and the homogenization of degree $\deg p$ takes the leading coefficient of $p$
-  at $(1, 0)$; and $A$ with $Z = 1$, squared, divides $p$, so it is a constant, and so is $A$. The
-  reflection compares the coefficients of the two homogenizations, which agree for every $p$ and
-  $m$, and exchanging the variables is a ring automorphism.
+  at $(1, 0)$; and $A$ with $Z = 1$, squared, divides $p$, so it is a unit, a constant, and so is
+  $A$. The reflection compares the coefficients of the two homogenizations, which agree for every
+  $p$ and $m$, and exchanging the variables is a ring automorphism.
 \end{proof}
 
 \begin{lemma}[The refusal predicate in the terms of the C code]\label{lem:squarefree_binaryFormPoly}
   \uses{def:binaryFormPoly, lem:homogenize}
-  Proposed names: \lname{Ratpoints.poly}, \lname{Ratpoints.natDegree\_poly},
-  \lname{Ratpoints.binaryFormPoly\_eq\_homogenize}, \lname{Ratpoints.squarefree\_binaryFormPoly\_iff},
-  \lname{Ratpoints.not\_squarefree\_binaryFormPoly\_of\_lt},
-  \lname{Ratpoints.not\_squarefree\_binaryFormPoly\_of\_getD\_zero}.
-  The polynomial $f = \sum_i c_i X^i \in \QQ[X]$ has the degree $d$ of $c$, and $\Phi_c$ is its
-  homogenization of degree $N$; so $\Phi_c$ is squarefree if and only if $N \le d + 1$ and $f$ is
-  squarefree. In particular $d + 2 \le N$ gives a form that is not squarefree, and so does
-  $c_0 = c_1 = 0$, for every degree.
+  \lean{Ratpoints.poly, Ratpoints.getD_degree_ne_zero_of_pos, Ratpoints.natDegree_poly, Ratpoints.binaryFormPoly_eq_homogenize, Ratpoints.squarefree_binaryFormPoly_iff, Ratpoints.not_squarefree_binaryFormPoly_of_lt, Ratpoints.not_squarefree_binaryFormPoly_of_getD_zero}
+  \leanok
+  For $d \ge 1$ the entry $c_d$ is not zero; the polynomial $f = \sum_i c_i X^i \in \QQ[X]$ has the
+  degree $d$ of $c$, and $\Phi_c$ is its homogenization of degree $N$; so $\Phi_c$ is squarefree if
+  and only if $N \le d + 1$ and $f$ is squarefree. In particular $d + 2 \le N$ gives a form that is
+  not squarefree, and so does $c_0 = c_1 = 0$, for every degree.
 \end{lemma}
 
 \begin{proof}
-  The entries above $d$ are $0$, so $f$ has degree $d$, and $\Phi_c$ is the homogenization of $f$
-  of degree $N \ge n \ge d$, so Lemma~\ref{lem:homogenize} gives the equivalence; $d + 2 \le N$
-  violates $N \le d + 1$; and $c_0 = c_1 = 0$ gives $X^2 \mid f$, where $X$ is not a unit, so that
-  $f$ is not squarefree, $f = 0$ included.
+  \leanok
+  The entries above $d$ are $0$, and $c_d \ne 0$ for $d \ge 1$, so $f$ has degree $d$, and $\Phi_c$
+  is the homogenization of $f$ of degree $N \ge n \ge d$, so Lemma~\ref{lem:homogenize} gives the
+  equivalence; $d + 2 \le N$ violates $N \le d + 1$; and $c_0 = c_1 = 0$ gives $X^2 \mid f$, where
+  $X$ is not a unit, so that $f$ is not squarefree, $f = 0$ included.
 \end{proof}
 
 On every input with $N \le d + 1$, $D = N$, and $\Phi_c$ evaluates to $F_c$
@@ -437,7 +437,7 @@ restriction of the search region stage~H takes over.
   Proposed names: \lname{Ratpoints.exists\_findPoints\_eq\_error\_iff\_of\_sturm\_nonneg},
   \lname{Ratpoints.exists\_findPoints\_eq\_error\_iff\_of\_sturm\_neg},
   \lname{Ratpoints.run\_chain\_eq\_none\_iff\_of\_reversal\_eq\_ok},
-  \lname{Ratpoints.Setup.one\_le\_of\_reversal\_eq\_ok}, \lname{Ratpoints.getD\_degree\_ne\_zero\_of\_pos}.
+  \lname{Ratpoints.Setup.one\_le\_of\_reversal\_eq\_ok}.
   For any parameters and options: with the Sturm step on ($\mathrm{sturm} \ge 0$),
   $\mathrm{findPoints}(c, H, P, o)$ refuses the input exactly when $c$ has fewer than two or more than
   $\mathrm{maxDegree} + 1$ entries, $H = 0$, or $\Phi_c$ is not squarefree. With the Sturm step off,

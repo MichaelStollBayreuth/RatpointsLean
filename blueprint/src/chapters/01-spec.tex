@@ -60,14 +60,15 @@ notation \verb|c[...]| for cycles makes \verb|c[i]| fail for a list named \verb|
 Mathlib is imported.
 
 $\Phi_c$ is also Mathlib's homogenization \verb|Polynomial.homogenize f N| of
-$f = \sum c_i X^i \in \QQ[X]$, which stage~D will use. Mathlib says nothing yet about the
-squarefreeness of a homogenization. Stage~D will prove: for a polynomial $p$ over a field and
-$m \ge \deg p$, the homogenization of $p$ of degree $m$ is squarefree if and only if $p$ is
-squarefree and $m \le \deg p + 1$; together with the facts this needs that Mathlib lacks: a factor
-of a nonzero homogeneous polynomial over a domain is homogeneous, \verb|Squarefree| is preserved
-by multiplicative equivalences, and the reversal of $f$ swaps $X$ and $Z$ in its homogenization.
-These are candidates for \verb|Ratpoints/Mathlib|. With them, ``$\Phi_c$ squarefree'' is
-``$N \le d + 1$ and $f$ squarefree'', the two conditions the C code tests.
+$f = \sum c_i X^i \in \QQ[X]$ (Lemma~\ref{lem:squarefree_binaryFormPoly}). Mathlib says nothing yet
+about the squarefreeness of a homogenization, and stage~D proves (Lemma~\ref{lem:homogenize}): for a
+polynomial $p$ over a domain and $m \ge \deg p$, the homogenization of $p$ of degree $m$ is
+squarefree if and only if $p$ is squarefree and $m \le \deg p + 1$; together with the facts this
+needs that Mathlib lacks: a factor of a nonzero homogeneous polynomial over a domain is homogeneous,
+\verb|Squarefree| is preserved by multiplicative equivalences, and the reversal of $f$ swaps $X$ and
+$Z$ in its homogenization. These are candidates for Mathlib, in \verb|Ratpoints/Mathlib|. With them,
+``$\Phi_c$ squarefree'' is ``$N \le d + 1$ and $f$ squarefree'', the two conditions the C code
+tests.
 
 \section{The points}
 
