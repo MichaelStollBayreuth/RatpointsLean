@@ -69,9 +69,9 @@ reversed. If the switch is off, `c` itself. Otherwise, for even `d` with `c₀ =
 `Ratpoints.Refusal.notSquarefree` if also `c₁ = 0`, since `X ^ 2` then divides the binary form, and
 else the list `c_d, …, c₁, c₀` with the degree `d - 1` (case 1); for even `d` with `c_d` a square
 and `c₀` not (`Ratpoints.Setup.isSquare`), the list `c_d, …, c₀` (case 2); for odd `d` with
-`|c_d| ≠ 1`, `c₀ = 0` and `|c₁| = 1`, the list `c₀, c_d, …, c₁` (case 3); and otherwise `c`
-itself. In each case the reversed list is the reflection of `c` in the even degree `d + d % 2` of
-the binary form, so that its binary form is that of `c` with `x` and `z` exchanged
+`|c_d| ≠ 1`, `c₀ = 0` and `|c₁| = 1`, the list `c₀, c_d, …, c₁` (case 3); and otherwise `c` itself.
+In each case the reversed list is the reflection of `c` in the even degree `d + d % 2` of the binary
+form, so that its binary form is that of `c` with `x` and `z` exchanged
 (`Ratpoints.Setup.binaryForm_eq_of_reversal_eq_ok`).
 
 C: `find_points.c:4732-4803`
@@ -134,8 +134,8 @@ error 8, which `-s -k` does not. The test of the `long`s is checked at the ends 
 #guard reversal true [0, 0, 1, 1, 1] 4 matches .error .notSquarefree
 #guard (reversal false [0, 0, 1, 1, 1] 4).toOption == some ([0, 0, 1, 1, 1], 4, false)
 
--- The switch off, and lists that meet no case: `c₀` a square, `c_d` not, `|c₁| ≠ 1`,
--- `|c_d| = 1`, `c₀ ≠ 0`.
+-- The switch off, and lists that meet no case: `c₀` a square, `c_d` not, `|c₁| ≠ 1`, `|c_d| = 1`,
+-- `c₀ ≠ 0`.
 #guard (reversal false [-1, 0, 9] 2).toOption == some ([-1, 0, 9], 2, false)
 #guard ([([4, 0, 9], 2), ([-1, 0, -9], 2), ([0, 2, 0, 3], 3), ([0, 1, 0, -1], 3),
     ([-2, 0, 0, 1], 3), ([1, 2, 3, 4, 5, 6, 7], 6)] : List (List Int × Nat)).all fun (c, d) ↦

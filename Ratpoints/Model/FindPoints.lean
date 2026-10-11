@@ -159,13 +159,13 @@ def findPoints (c : List Int) (H : Nat) (P : Params) (o : Options := {}) :
 The points that `ratpoints c H -q` prints at the pinned commit, in the same order, also after a
 reversal, and with `-k` (`{ reverse := false }`); the list of the brute-force reference
 `Ratpoints.bruteForce` for other parameters, among them pieces of a few bit arrays; the refusals of
-forms that are not squarefree as the program makes them, with and without `-s`
-(`{ sturm := -1 }`) and `-k`, and the points of such forms that it searches; the search with the
-flag of the reversal, for polynomials to which ratpoints reverses others, and on curves without
-points modulo `3`, `5` and `7`, where it takes the exit; the tables of inverses and squares
-(`Ratpoints.Sieve.inversesMod`, `Ratpoints.Sieve.squaresMod`) of the `Ratpoints.numPrimes` primes
-among which the moduli are chosen; and the refusals in the order of the program, the coefficients
-before the height bound and the height bound before the leading zeros. -/
+forms that are not squarefree as the program makes them, with and without `-s` (`{ sturm := -1 }`)
+and `-k`, and the points of such forms that it searches; the search with the flag of the reversal,
+for polynomials to which ratpoints reverses others, and on curves without points modulo `3`, `5` and
+`7`, where it takes the exit; the tables of inverses and squares (`Ratpoints.Sieve.inversesMod`,
+`Ratpoints.Sieve.squaresMod`) of the `Ratpoints.numPrimes` primes among which the moduli are chosen;
+and the refusals in the order of the program, the coefficients before the height bound and the
+height bound before the leading zeros. -/
 
 #guard (findPoints [-2, 0, 0, 1] 130 defaultParams).toOption ==
   some [(1, 0, 0), (3, 5, 1), (3, -5, 1), (129, 3830, 100), (129, -3830, 100)]
@@ -243,8 +243,8 @@ before the height bound and the height bound before the leading zeros. -/
       List (List Int × Nat × List (Int × Int × Int))).all fun (c, d, pts) ↦
     Id.run (searchPoints c d 10 defaultParams true) == pts
 
--- Curves without points modulo 3, 5 and 7, for which `ratpoints c 30 -q` prints nothing: the
--- table of one of the default moduli is none, and the search returns no points, with either flag.
+-- Curves without points modulo 3, 5 and 7, for which `ratpoints c 30 -q` prints nothing: the table
+-- of one of the default moduli is none, and the search returns no points, with either flag.
 #guard [[20, 6, -14, 12, -10], [-2, -20, 7, 15, 2], [20, 7, -18, 0, 3]].all fun c ↦
   (defaultParams.moduli.mapM (Sieve.examinePrime? c 4 · (Setup.useCLong c 4))).isNone &&
     [false, true].all fun rev ↦ Id.run (searchPoints c 4 30 defaultParams rev) == []

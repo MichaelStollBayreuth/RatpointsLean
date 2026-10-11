@@ -103,7 +103,7 @@ theorem exists_getElem!_reduce {s t : Array Int} (hle : s.size ≤ t.size) (hs :
   -- `hs1` halves the time of the `grind` at the end
   have hs1 := Array.size_ne_zero_of_back!_ne hs
   simp only [reduce]
-  generalize hg : ((Int.gcd s.back! t.back! : Nat) : Int) = g
+  generalize hg : (Int.gcd s.back! t.back! : Int) = g
   have hds : g ∣ s.back! := hg ▸ Int.gcd_dvd_left ..
   have key := Int.ediv_mul_eq_ediv_mul_of_dvd hds (hg ▸ Int.gcd_dvd_right ..)
   have hu := Int.ediv_ne_zero_of_dvd hds hs
@@ -201,7 +201,7 @@ structure IsChain (c : List Int) (d : Nat) (ch : Array (Array Int)) : Prop where
   /-- The first row is `f`, the coefficients `c₀, …, c_d`. -/
   getElem!_zero : ch[0]! = (Array.range (d + 1)).map fun x ↦ c.getD x 0
   /-- The second row is `f'`, the coefficients `(n + 1) c_(n+1)` for `n < d`. -/
-  getElem!_one : ch[1]! = (Array.range d).map fun n ↦ ((n + 1 : Nat) : Int) * c.getD (n + 1) 0
+  getElem!_one : ch[1]! = (Array.range d).map fun (n : Nat) ↦ (n + 1 : Int) * c.getD (n + 1) 0
   /-- Each further row is the full reduction of the row two before by the row before, negated and
   divided by the gcd of its entries. -/
   getElem!_add_two (k : Nat) (hk : k + 2 < ch.size) :
@@ -220,7 +220,7 @@ def IsChainResult (c : List Int) (d : Nat) : Option (Array (Array Int)) → Prop
 
 theorem isChain_pair {c : List Int} {d : Nat} (hd : 1 ≤ d) (hc : c.getD d 0 ≠ 0) :
     IsChain c d #[(Array.range (d + 1)).map fun x ↦ c.getD x 0,
-      (Array.range d).map fun n ↦ ((n + 1 : Nat) : Int) * c.getD (n + 1) 0] := by
+      (Array.range d).map fun (n : Nat) ↦ (n + 1 : Int) * c.getD (n + 1) 0] := by
   refine ⟨by simp, by simp, by simp, fun k hk ↦ absurd hk (by simp), fun k hk ↦ ?_,
     fun k hk ↦ absurd hk (by simp)⟩
   obtain rfl | rfl : k = 0 ∨ k = 1 := by simp at hk; lia
@@ -311,7 +311,7 @@ def ContentInvariant (pref : List Int) (g : Nat) : Prop :=
 theorem chainInvariant_nil {c : List Int} {d : Nat} (h : 1 ≤ d ∧ c.getD d 0 ≠ 0) :
     ChainInvariant c d [] (ForIn.toList [2:d + 1])
       (none, #[(Array.range (d + 1)).map fun x ↦ c.getD x 0,
-        (Array.range d).map fun n ↦ ((n + 1 : Nat) : Int) * c.getD (n + 1) 0]) := by
+        (Array.range d).map fun (n : Nat) ↦ (n + 1 : Int) * c.getD (n + 1) 0]) := by
   have hl : ForIn.toList [2:d + 1] = List.range' 2 (d - 1) := by simp [Std.Legacy.Range.size]
   refine .inl ⟨rfl, isChain_pair h.1 h.2, fun h0 ↦ ?_, fun h0 ↦ ?_⟩
   · rw [hl, List.range'_eq_nil_iff] at h0
@@ -426,8 +426,7 @@ theorem ContentInvariant.append {pref : List Int} {g : Nat} (h : ContentInvarian
 theorem ContentInvariant.of_gcd_eq_one {xs pref suff : List Int} {cur : Int} {g : Nat}
     (hl : xs = pref ++ cur :: suff) (h : ContentInvariant pref g) (hg : g.gcd cur.natAbs = 1) :
     ContentInvariant xs (g.gcd cur.natAbs) := by
-  rw [ContentInvariant, hl, List.foldl_append, List.foldl_cons, ← h, hg,
-    List.foldl_gcd_natAbs_one]
+  rw [ContentInvariant, hl, List.foldl_append, List.foldl_cons, ← h, hg, List.foldl_gcd_natAbs_one]
 
 theorem ContentInvariant.normalize_eq {t : Array Int} {g : Nat}
     (h : ContentInvariant (ForIn.toList (t.map Neg.neg)) g) :

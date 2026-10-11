@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Polynomial.Derivative
 public import Mathlib.Algebra.Polynomial.Homogenize
-public import Mathlib.Algebra.Squarefree.Basic
 public import Ratpoints.Model.Setup
 public import Ratpoints.Model.Sieve
 public import Ratpoints.Proof.Sturm

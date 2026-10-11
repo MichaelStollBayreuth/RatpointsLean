@@ -35,7 +35,7 @@ coefficient of the result is `0`. -/
 def reduce (s t : Array Int) : Array Int :=
   let d1 := s.size - 1
   let d2 := t.size - 1
-  let g : Int := (Int.gcd s.back! t.back! : Nat)
+  let g : Int := Int.gcd s.back! t.back!
   let u0 := s.back! / g
   let v0 := t.back! / g
   let u := if u0 < 0 then -u0 else u0
@@ -70,7 +70,7 @@ coefficients, local values for the scratch integers `work[0]`, `work[1]` and `wo
 `/` for `mpz_fdiv_q`, which agree on the divisions of the chain, all exact. -/
 def chain (c : List Int) (d : Nat) : Id (Option (Array (Array Int))) := do
   let f : Array Int := (Array.range (d + 1)).map (c.getD · 0)
-  let df : Array Int := (Array.range d).map fun n ↦ ((n + 1 : Nat) : Int) * c.getD (n + 1) 0
+  let df : Array Int := (Array.range d).map fun (n : Nat) ↦ (n + 1 : Int) * c.getD (n + 1) 0
   let mut rows := #[f, df]
   for k in [2:d + 1] do
     let s := rows[k - 1]!

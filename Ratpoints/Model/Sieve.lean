@@ -29,15 +29,15 @@ whenever it gives one (`Ratpoints.Sieve.eq_examinePrime_of_examinePrime?_eq_some
 of one denominator, one Boolean per numerator (`Ratpoints.Sieve.sieveDen`), and the test for common
 factors and the exact check of its survivors (`Ratpoints.Sieve.checkDen`) are not part of the run:
 they are the reference of the bit arrays of words (`Ratpoints.Sieve.toList_run_sift_eq_checkDen`).
-Every row lets every point through, so the
-sieve finds exactly the points of the brute-force reference `Ratpoints.bruteForce`, in the same
-order, each mapped by `Ratpoints.Sieve.swapPoint` when the flag of the reversal is set: the map
-gives the point of the caller's curve for a point of a polynomial that the reversal check has
-reversed (`Ratpoints.Setup.reversal`), the check of a numerator and the points at infinity deliver
-the mapped points when their flag is set, and the components from the run down to the check hand the
-flag on. The tables that the build of ratpoints generates are computed here: the squares and the
-inverses by `Ratpoints.Sieve.squaresMod` and `Ratpoints.Sieve.inversesMod`, and the row of `0` by
-`Ratpoints.Sieve.Entry.admits`, in its case `r = 0`, and as words by `Ratpoints.Sieve.Entry.row`.
+Every row lets every point through, so the sieve finds exactly the points of the brute-force
+reference `Ratpoints.bruteForce`, in the same order, each mapped by `Ratpoints.Sieve.swapPoint` when
+the flag of the reversal is set: the map gives the point of the caller's curve for a point of a
+polynomial that the reversal check has reversed (`Ratpoints.Setup.reversal`), the check of a
+numerator and the points at infinity deliver the mapped points when their flag is set, and the
+components from the run down to the check hand the flag on. The tables that the build of ratpoints
+generates are computed here: the squares and the inverses by `Ratpoints.Sieve.squaresMod` and
+`Ratpoints.Sieve.inversesMod`, and the row of `0` by `Ratpoints.Sieve.Entry.admits`, in its case
+`r = 0`, and as words by `Ratpoints.Sieve.Entry.row`.
 
 ## Main definitions
 
@@ -171,10 +171,10 @@ def modLong (a b : Int) : Int :=
     if b ≤ a then a - b else a
 
 /-- The table of the prime `p` for the polynomial `f` of degree `d` with the coefficient list `c`,
-as `examine_prime` makes it, with the flag `useCLong` of the `long`s
-(`Ratpoints.Setup.useCLong`): the coefficients reduced modulo `p` on the path that the flag chooses,
-by the helper `mod` of the C code (`Ratpoints.Sieve.modLong`) for `long`s and by the Euclidean `%`
-for GMP integers (`mpz_fdiv_r_ui`), two paths with the same result
+as `examine_prime` makes it, with the flag `useCLong` of the `long`s (`Ratpoints.Setup.useCLong`):
+the coefficients reduced modulo `p` on the path that the flag chooses, by the helper `mod` of the C
+code (`Ratpoints.Sieve.modLong`) for `long`s and by the Euclidean `%` for GMP integers
+(`mpz_fdiv_r_ui`), two paths with the same result
 (`Ratpoints.Sieve.examinePrime?_eq_examinePrime?_false`); for each residue `x` modulo `p`, whether
 `f(x)` is a square modulo `p`, by Horner's rule modulo `p` (`Ratpoints.Sieve.evalMod`) and the
 squares of `Ratpoints.Sieve.squaresMod`; the last entry, whether there are points at infinity modulo
@@ -774,8 +774,8 @@ def pointsAtInfinity (c : List Int) (d : Nat) (rev : Bool) : List (Int × Int ×
   [-2 ^ 63, -2 ^ 63 + 1, -16 * b - 1, -16 * b, -16 * b + 1, -b, -1, 0, 1, b, 16 * b - 1, 16 * b,
     16 * b + 1, 2 ^ 63 - 2, 2 ^ 63 - 1].all fun a ↦ modLong a b == a % b
 
--- The table with the exit on both paths against the reference, for curves with points modulo
--- every prime, one of them with coefficients that are not `long`s.
+-- The table with the exit on both paths against the reference, for curves with points modulo every
+-- prime, one of them with coefficients that are not `long`s.
 #guard ([([1, 2, 3, 4, 5, 6, 7], 6), ([-2, 0, 0, 1], 3), ([3, 0, 0, 0, 5], 4),
     ([2 ^ 70 + 1, -2 ^ 64, 7], 2)] : List (List Int × Nat)).all fun (c, d) ↦
   [3, 5, 7, 11, 13, 251].all fun p ↦ [true, false].all fun u ↦
@@ -930,9 +930,9 @@ def pointsAtInfinity (c : List Int) (d : Nat) (rev : Bool) : List (Int × Int ×
         BruteForce.pointsOfDen c d b (BruteForce.numerators 130)
 
 -- The check with the flag of the reversal: the points `(-9 : 12 : 5)` and `(9 : 12 : 5)` of the
--- polynomial `9 0 -1`, to which ratpoints reverses `-1 0 9`, mapped to the points
--- `(-5 : 12 : 9)` and `(5 : 12 : 9)` that `ratpoints '-1 0 9' 10 -q` prints; and the check with
--- the flag against the check without it, mapped, for a few curves, denominators and numerators.
+-- polynomial `9 0 -1`, to which ratpoints reverses `-1 0 9`, mapped to the points `(-5 : 12 : 9)`
+-- and `(5 : 12 : 9)` that `ratpoints '-1 0 9' 10 -q` prints; and the check with the flag against
+-- the check without it, mapped, for a few curves, denominators and numerators.
 #guard
   checkNum (BruteForce.scaledCoeffs [9, 0, -1] 2 5) 1 5 true (-9) ==
       [(-5, 12, 9), (-5, -12, 9)] &&

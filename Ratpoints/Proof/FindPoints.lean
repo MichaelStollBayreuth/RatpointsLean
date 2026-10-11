@@ -290,7 +290,7 @@ theorem exists_findPoints_eq_error_iff_of_sturm_neg {c : List ℤ} {H : ℕ} {P 
     {o : Options} (hs : o.sturm < 0) :
     (∃ e, findPoints c H P o = .error e) ↔
       c.length < 2 ∨ maxDegree + 1 < c.length ∨ H = 0 ∨ degree c + 2 ≤ 2 * (c.length / 2) ∨
-        (o.reverse = true ∧ degree c % 2 = 0 ∧ c.getD 0 0 = 0 ∧ c.getD 1 0 = 0) := by
+        o.reverse = true ∧ degree c % 2 = 0 ∧ c.getD 0 0 = 0 ∧ c.getD 1 0 = 0 := by
   rw [findPoints, BruteForce.degree_eq]
   split_ifs with h1 h2 h3 h4
   · simp [h1]

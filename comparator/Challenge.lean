@@ -96,7 +96,7 @@ theorem challenge_exists_findPoints_eq_error_iff_of_sturm_neg (c : List ℤ) (H 
     (∃ e, Ratpoints.findPoints c H P o = .error e) ↔
       c.length < 2 ∨ Ratpoints.maxDegree + 1 < c.length ∨ H = 0 ∨
         Ratpoints.degree c + 2 ≤ 2 * (c.length / 2) ∨
-        (o.reverse = true ∧ Ratpoints.degree c % 2 = 0 ∧ c.getD 0 0 = 0 ∧ c.getD 1 0 = 0) :=
+        o.reverse = true ∧ Ratpoints.degree c % 2 = 0 ∧ c.getD 0 0 = 0 ∧ c.getD 1 0 = 0 :=
   sorry
 
 theorem challenge_wf_sieveParams (o : Ratpoints.SieveOptions) : (Ratpoints.sieveParams o).WF :=
