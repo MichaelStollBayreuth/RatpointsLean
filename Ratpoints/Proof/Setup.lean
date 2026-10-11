@@ -101,7 +101,7 @@ theorem coeff_poly (c : List ℤ) (i : ℕ) : (poly c).coeff i = c.getD i 0 := b
   · rw [List.getD_eq_default _ _ (not_lt.mp h), Int.cast_zero]
 
 theorem getD_degree_ne_zero_of_pos {c : List ℤ} (h : 0 < degree c) : c.getD (degree c) 0 ≠ 0 := by
-  have hd : degree c = (c.rdropWhile (· == 0)).length - 1 := by simp [degree, List.rdropWhile]
+  have hd : degree c = (c.rdropWhile (· == 0)).length - 1 := by simp [degree_def, List.rdropWhile]
   have hne : c.rdropWhile (· == 0) ≠ [] := fun h0 ↦ by simp [hd, h0] at h
   have hlt : degree c < (c.rdropWhile (· == 0)).length := by lia
   have hp := List.rdropWhile_prefix (· == 0) c
@@ -188,14 +188,17 @@ private theorem poly_toList_eq_C_mul_sub_C_mul_X_pow_mul {t a b : Array ℤ} {w 
       coeff_poly_toList, coeff_poly_toList]
     split_ifs <;> simp
 
+-- The constant polynomial of an integer other than `0` is a unit over `ℚ`.
+private theorem isUnit_C_intCast {A : ℤ} (h : A ≠ 0) : IsUnit (C (A : ℚ)) :=
+  isUnit_C.mpr (Int.cast_ne_zero.mpr h).isUnit
+
 -- A constant other than `0` is coprime to every polynomial.
 private theorem isCoprime_poly_toList_of_size_eq_one {a : Array ℤ} (h1 : a.size = 1)
     (h : a.back! ≠ 0) (p : ℚ[X]) : IsCoprime p (poly a.toList) := by
   rw [eq_C_of_natDegree_eq_zero (p := poly a.toList) (by rw [natDegree_poly_toList h, h1]),
     coeff_poly_toList]
   rw [Array.back!_eq_getElem!, h1] at h
-  exact isCoprime_one_right.of_isCoprime_of_dvd_right
-    (isUnit_C.mpr (Int.cast_ne_zero.mpr h).isUnit).dvd
+  exact isCoprime_one_right.of_isCoprime_of_dvd_right (isUnit_C_intCast h).dvd
 
 namespace Sturm
 
@@ -239,7 +242,7 @@ private theorem not_isCoprime_of_fullReduce_eq_empty {s t : Array ℤ} (hs : s.b
     ¬ IsCoprime (poly t.toList) (poly s.toList) := fun hc ↦ by
   obtain ⟨A, hA, Q, hQ⟩ := exists_poly_fullReduce hs t
   rw [h, poly_toList_eq_zero_of_size_eq_zero rfl, eq_comm, sub_eq_zero] at hQ
-  have hu := hc.isUnit_of_dvd' ((isUnit_C.mpr (Int.cast_ne_zero.mpr hA.ne').isUnit).dvd_mul_left.mp
+  have hu := hc.isUnit_of_dvd' ((isUnit_C_intCast hA.ne').dvd_mul_left.mp
     ⟨Q, by rw [hQ, mul_comm]⟩) dvd_rfl
   have := natDegree_eq_zero_of_isUnit hu
   rw [natDegree_poly_toList hs] at this
@@ -300,22 +303,23 @@ private theorem IsChain.isCoprime_iff {c : List ℤ} {d : ℕ} {ch : Array (Arra
   | zero => rfl
   | succ k ih =>
     obtain ⟨A, g, hA, hg, Q, hQ⟩ := h.exists_mul_eq (k := k) hk
-    rw [isCoprime_iff_of_mul_eq_mul_sub_mul (isUnit_C.mpr (Int.cast_ne_zero.mpr hA.ne').isUnit)
-      (isUnit_C.mpr (Int.cast_ne_zero.mpr hg.ne').isUnit) hQ]
+    rw [isCoprime_iff_of_mul_eq_mul_sub_mul (isUnit_C_intCast hA.ne') (isUnit_C_intCast hg.ne') hQ]
     exact ih (by lia)
 
-private theorem IsChain.isCoprime_back!_iff {c : List ℤ} {d : ℕ} {ch : Array (Array ℤ)}
-    (h : IsChain c d ch) : IsCoprime (poly ch[ch.size - 2]!.toList) (poly ch.back!.toList) ↔
-      IsCoprime (poly ch[0]!.toList) (poly ch[1]!.toList) := by
+-- `f` is squarefree exactly when the last two rows of a chain of `f` are coprime.
+private theorem IsChain.squarefree_iff_isCoprime_back! {c : List ℤ} {d : ℕ}
+    {ch : Array (Array ℤ)} (h : IsChain c d ch) :
+    Squarefree (poly (c.take (d + 1))) ↔
+      IsCoprime (poly ch[ch.size - 2]!.toList) (poly ch.back!.toList) := by
   have := h.two_le_size
-  rw [Array.back!_eq_getElem!, show ch.size - 1 = ch.size - 2 + 1 by lia]
-  exact h.isCoprime_iff (by lia)
+  rw [← h.poly_toList_getElem!_zero, ← PerfectField.separable_iff_squarefree, separable_def,
+    ← h.poly_toList_getElem!_one, Array.back!_eq_getElem!,
+    show ch.size - 1 = ch.size - 2 + 1 by lia, h.isCoprime_iff (k := ch.size - 2) (by lia)]
 
-private theorem IsChain.squarefree_iff {c : List ℤ} {d : ℕ} {ch : Array (Array ℤ)}
-    (h : IsChain c d ch) :
-    Squarefree (poly ch[0]!.toList) ↔ IsCoprime (poly ch[0]!.toList) (poly ch[1]!.toList) := by
-  rw [h.poly_toList_getElem!_one]
-  exact PerfectField.separable_iff_squarefree.symm
+-- The last row of a chain has a nonzero leading coefficient.
+private theorem IsChain.back!_back!_ne_zero {c : List ℤ} {d : ℕ} {ch : Array (Array ℤ)}
+    (h : IsChain c d ch) : ch.back!.back! ≠ 0 :=
+  h.back!_ne_zero _ (by have := h.two_le_size; lia)
 
 /-- For the coefficients `c₀, …, c_d` of a polynomial `f` of degree `d ≥ 1`, the remainder chain is
 `none`, where `sturm.c` returns `-1`, exactly when `f` is not squarefree over `ℚ`; for the degree
@@ -327,14 +331,13 @@ theorem run_chain_eq_none_iff {c : List ℤ} {d : ℕ} (hd : 1 ≤ d) (hc : c.ge
   cases res with
   | none =>
     obtain ⟨ch, h, h2, h0⟩ := hres
-    rw [← h.poly_toList_getElem!_zero, h.squarefree_iff, ← h.isCoprime_back!_iff]
-    exact iff_of_true rfl (not_isCoprime_of_fullReduce_eq_empty
-      (h.back!_ne_zero _ (by have := h.two_le_size; lia)) h2 h0)
+    rw [h.squarefree_iff_isCoprime_back!]
+    exact iff_of_true rfl (not_isCoprime_of_fullReduce_eq_empty h.back!_back!_ne_zero h2 h0)
   | some ch =>
     obtain ⟨h, h1⟩ := hres
-    rw [← h.poly_toList_getElem!_zero, h.squarefree_iff, ← h.isCoprime_back!_iff]
-    exact iff_of_false (Option.some_ne_none ch) (not_not.mpr (isCoprime_poly_toList_of_size_eq_one
-      h1 (h.back!_ne_zero _ (by have := h.two_le_size; lia)) _))
+    rw [h.squarefree_iff_isCoprime_back!]
+    exact iff_of_false (Option.some_ne_none ch)
+      (not_not.mpr (isCoprime_poly_toList_of_size_eq_one h1 h.back!_back!_ne_zero _))
 
 end Sturm
 
@@ -409,7 +412,7 @@ theorem getD_eq_of_reversal_eq_ok {allow : Bool} {c c' : List ℤ} {d d' : ℕ} 
     (h : reversal allow c d = .ok (c', d', true)) (i : ℕ) :
     c'.getD i 0 = if i ≤ d + d % 2 then c.getD (d + d % 2 - i) 0 else 0 := by
   obtain rfl | hc := eq_or_ne c []
-  · cases allow <;> simp [reversal, hd, degree] at h
+  · cases allow <;> simp [reversal, hd] at h
   have hlt : d < c.length := by
     have := degree_le_length_sub_one c
     have := List.length_pos_iff.mpr hc

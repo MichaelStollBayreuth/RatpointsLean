@@ -205,16 +205,14 @@ theorem flatMap_range_map_filter {g : Nat → Nat → Bool} {a : Int} {p : Int �
         rw [hg m (Nat.lt_succ_self m) t, decide_eq_true (mem_range.mp ht), Bool.true_and]
         simp [Int.add_assoc]
 
-theorem foldl_gcd_natAbs_one (l : List Int) : l.foldl (fun g a ↦ g.gcd a.natAbs) 1 = 1 := by
-  induction l with
-  | nil => rfl
-  | cons a l ih => simpa using ih
-
 theorem foldl_gcd_natAbs_dvd (l : List Int) (g : Nat) :
     l.foldl (fun g a ↦ g.gcd a.natAbs) g ∣ g := by
   induction l generalizing g with
   | nil => exact Nat.dvd_refl g
   | cons a l ih => exact Nat.dvd_trans (ih _) (Nat.gcd_dvd_left ..)
+
+theorem foldl_gcd_natAbs_one (l : List Int) : l.foldl (fun g a ↦ g.gcd a.natAbs) 1 = 1 :=
+  Nat.dvd_one.mp (foldl_gcd_natAbs_dvd l 1)
 
 theorem foldl_gcd_natAbs_dvd_natAbs {l : List Int} (g : Nat) {x : Int} (hx : x ∈ l) :
     l.foldl (fun g a ↦ g.gcd a.natAbs) g ∣ x.natAbs := by
@@ -231,14 +229,21 @@ end List
 
 namespace Std.Legacy.Range
 
+/-- The form of `List.eq_of_range'_eq_append_cons` for the list `ForIn.toList [a:m]` of a loop over
+`[a:m]`, in which the verification conditions state the cursor: the cursor is `a` plus the length of
+the list before it. -/
+theorem add_length_eq_of_toList_eq_append_cons {a m cur : Nat} {pref suff : List Nat}
+    (h : ForIn.toList [a:m] = pref ++ cur :: suff) : a + pref.length = cur := by
+  simp only [Std.Internal.ForIn.toList_range, List.range'_eq_append_iff] at h
+  obtain ⟨k, -, rfl, h⟩ := h
+  simpa using (List.range'_eq_cons_iff.mp h.symm).1
+
 /-- The form of `List.eq_of_range'_eq_append_cons` for the list `ForIn.toList [0:m]` of a loop over
 `[0:m]`, in which the verification conditions state the cursor: the cursor is the length of the list
 before it. -/
 theorem length_eq_of_toList_eq_append_cons {m cur : Nat} {pref suff : List Nat}
-    (h : ForIn.toList [0:m] = pref ++ cur :: suff) : pref.length = cur := by
-  simp only [Std.Internal.ForIn.toList_range, List.range'_eq_append_iff] at h
-  obtain ⟨k, -, rfl, h⟩ := h
-  simpa using (List.range'_eq_cons_iff.mp h.symm).1
+    (h : ForIn.toList [0:m] = pref ++ cur :: suff) : pref.length = cur :=
+  (Nat.zero_add _).symm.trans (add_length_eq_of_toList_eq_append_cons h)
 
 /-- The form of `List.mem_of_range'_eq_append_cons` for the list `ForIn.toList [0:m]` of a loop over
 `[0:m]`: the cursor is below `m`. -/
@@ -247,12 +252,8 @@ theorem lt_of_toList_eq_append_cons {m cur : Nat} {pref suff : List Nat}
   have : cur ∈ ForIn.toList [0:m] := by simp [h]
   simpa using this
 
-theorem add_length_eq_of_toList_eq_append_cons {a m cur : Nat} {pref suff : List Nat}
-    (h : ForIn.toList [a:m] = pref ++ cur :: suff) : a + pref.length = cur := by
-  simp only [Std.Internal.ForIn.toList_range, List.range'_eq_append_iff] at h
-  obtain ⟨k, -, rfl, h⟩ := h
-  simpa using (List.range'_eq_cons_iff.mp h.symm).1
-
+/-- The form of `List.length_of_range'_eq_append_cons` for the list `ForIn.toList [a:m]` of a loop
+over `[a:m]`: the lists before and after the cursor have `m - a - 1` entries together. -/
 theorem length_add_length_add_one_of_toList_eq_append_cons {a m cur : Nat} {pref suff : List Nat}
     (h : ForIn.toList [a:m] = pref ++ cur :: suff) : pref.length + suff.length + 1 = m - a := by
   have := congrArg List.length h

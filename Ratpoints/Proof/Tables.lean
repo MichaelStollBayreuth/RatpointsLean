@@ -321,9 +321,8 @@ theorem isSquare_getD_degree_of_sq_eq_binaryForm {c : List ℤ} {p : ℕ} [Fact 
     {a y : ℤ} {b : ℕ} (hab : Int.gcd a b = 1) (hb : b % p = 0) (hd : degree c % 2 = 0)
     (hy : y ^ 2 = binaryForm c a b) : IsSquare (c.getD (degree c) 0 : ZMod p) := by
   have hb' : (b : ZMod p) = 0 := (ZMod.natCast_eq_zero_iff _ _).mpr (Nat.dvd_of_mod_eq_zero hb)
-  have ha : (a : ZMod p) ≠ 0 := fun h ↦ (Fact.out : p.Prime).one_lt.ne' <| by
-    simpa [hab] using Int.dvd_gcd ((ZMod.intCast_zmod_eq_zero_iff_dvd a p).mp h)
-      (Int.natCast_dvd_natCast.mpr (Nat.dvd_of_mod_eq_zero hb))
+  have ha : (a : ZMod p) ≠ 0 := fun h ↦ toNat_emod_ne_zero_of_gcd_eq_one (Fact.out : p.Prime).one_lt
+    hab hb (by simp [Int.emod_eq_zero_of_dvd ((ZMod.intCast_zmod_eq_zero_iff_dvd a p).mp h)])
   have h2 := congr(($hy : ZMod p))
   push_cast [binaryForm, hb', hd, Nat.add_zero] at h2
   rw [Finset.sum_range_succ, Finset.sum_eq_zero fun i hi ↦ by
@@ -339,7 +338,6 @@ private theorem exists_isFSquare_or_of_sq_eq_binaryForm {c : List ℤ} {p : ℕ}
     (∃ t < p, (examinePrime c (degree c) p).isFSquare[t]! = true) ∨
       degree c % 2 = 1 ∨ (squaresMod p)[(c.getD (degree c) 0 % (p : ℤ)).toNat]! = true := by
   have : Fact p.Prime := ⟨hp⟩
-  have : NeZero p := ⟨hp.ne_zero⟩
   by_cases hb : b % p = 0
   · rcases Nat.mod_two_eq_zero_or_one (degree c) with hd | hd
     · refine .inr (.inr (getElem!_squaresMod_of_isSquare hp ?_ ?_))

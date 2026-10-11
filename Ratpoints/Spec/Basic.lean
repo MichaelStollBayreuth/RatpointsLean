@@ -73,13 +73,18 @@ noncomputable def binaryFormPoly (c : List ℤ) : MvPolynomial (Fin 2) ℚ :=
     MvPolynomial.C (c.getD i 0 : ℚ) * MvPolynomial.X 0 ^ i *
       MvPolynomial.X 1 ^ (2 * (c.length / 2) - i)
 
+theorem degree_def (c : List ℤ) : degree c = (c.reverse.dropWhile (· == 0)).length - 1 := rfl
+
+@[simp]
+theorem degree_nil : degree [] = 0 := rfl
+
 theorem degree_le_length_sub_one (c : List ℤ) : degree c ≤ c.length - 1 :=
   Nat.sub_le_sub_right (by simpa using (c.reverse.dropWhile_sublist (· == 0)).length_le) 1
 
 theorem getD_eq_zero_of_degree_lt {c : List ℤ} {i : ℕ} (hi : degree c < i) : c.getD i 0 = 0 := by
   have hc := List.rdropWhile_append_rtakeWhile (p := (· == (0 : ℤ))) (l := c)
   have hlen : (c.rdropWhile (· == 0)).length ≤ i := by
-    rw [degree] at hi
+    rw [degree_def] at hi
     simp only [List.rdropWhile, List.length_reverse]
     lia
   rw [← hc, List.getD_append_right _ _ _ _ hlen]
