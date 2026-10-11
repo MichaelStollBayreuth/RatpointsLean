@@ -30,10 +30,11 @@ and compares it with the recorded outputs and with the C program:
 
 ratpoints-lean prints the points as ratpoints does with -q; without -q they are compared with the
 point lines of the report that the C program prints then. They are compared in their order wherever
-ratpoints visits the denominators in ascending order, that is unless the polynomial searched (the
-coefficients with the leading zeros dropped and, unless -k forbids it, the reversal check applied,
-as the model computes them) has odd degree and a leading coefficient other than +-1, where ratpoints
-may take them in the order of the divisors of the leading coefficient; those are compared as sets.
+ratpoints visits the denominators in ascending order, and as sets otherwise: ratpoints takes them in
+another order only when the polynomial searched (the coefficients with the leading zeros dropped
+and, unless -k forbids it, the reversal check applied, as the model computes them) has odd degree
+and a leading coefficient other than +-1, whose factorization gives the squarefree divisors d of the
+denominators d k^2 that it visits, divisor by divisor; the harness computes them as ratpoints does.
 Messages and exit codes are compared exactly, but for the banner and the usage, which differ by
 design: in the outputs of errors 2 and 6 they are exchanged for those of the C program (the outputs
 of the two programs on an empty command line), and the errors suite checks the usage of
@@ -85,8 +86,12 @@ RECORD = ROOT / 'correspondence' / 'ratpoints.toml'
 ARG_OPTS = set('pFtnNRAPrUCQW')
 FLAGS = set('qvjJkKs')
 UNSUPPORTED = set('luxXyYzZ1iI')
-# C white space: the space and the characters from tab to carriage return.
-SPACE = ' \t\n\x0b\x0c\r'
+# The odd primes of the table of ratpoints (primes.h), over which setup_us1 factors the leading
+# coefficient of a polynomial of odd degree.
+ODD_PRIMES = [p for p in range(3, 1022, 2) if all(p % q for q in range(3, math.isqrt(p) + 1, 2))]
+assert len(ODD_PRIMES) == 171
+# At most so many squarefree divisors of the leading coefficient (MAX_DIVISORS of find_points.c).
+MAX_DIVISORS = 512
 POINT = re.compile(r'^\((-?\d+) : (-?\d+) : (\d+)\)$')
 # The params suite: the options that set the sieving parameters, with values that give no
 # moduli, all the primes of the default build and a cap above them, the cut points in several
@@ -202,7 +207,8 @@ def read_options(opts):
 def coefficient_list(arg):
     """The integers of the coefficient list `arg`, separated by C white space, as main.c reads
     them, or None if a word is not an integer."""
-    words = as_bytes(arg).decode('latin-1').translate({ord(ch): ' ' for ch in SPACE}).split()
+    words = [w for w in re.split(f'[{re.escape(difftest_cases.SPACE)}]+',
+                                 as_bytes(arg).decode('latin-1')) if w]
     if not all(re.fullmatch(r'[+-]?[0-9]+', w) for w in words):
         return None
     return [int(w) for w in words]
@@ -230,14 +236,52 @@ def searched(c, reverse):
     return c
 
 
+def ascending_denominators(lc, H):
+    """Whether ratpoints visits the denominators 1, ..., H in ascending order for a polynomial of
+    odd degree with the leading coefficient `lc`, |lc| != 1: when setup_us1 (find_points.c:766-903)
+    does not factor |lc| completely over 2 and the odd primes of the table, a cofactor below p^2
+    being prime, or finds MAX_DIVISORS squarefree divisors at most H, every denominator in turn;
+    otherwise, divisor by divisor in the order in which it makes them, the denominators
+    d k^2 <= H."""
+    w, ps = abs(lc), []
+    v = (w & -w).bit_length() - 1
+    if v:
+        ps.append(2)
+        w >>= v
+    for p in ODD_PRIMES:
+        if w == 1:
+            break
+        if w < p * p:
+            ps.append(w)
+            w = 1
+            break
+        if w % p == 0:
+            ps.append(p)
+            while w % p == 0:
+                w //= p
+    if w != 1:
+        return True
+    divs = [1]
+    for p in ps:
+        for d in divs[:]:
+            if d <= H // p:
+                divs.append(d * p)
+            if len(divs) >= MAX_DIVISORS:
+                return True
+    bs = [d * k * k for d in divs for k in range(1, math.isqrt(H // d) + 1)]
+    return bs == sorted(bs)
+
+
 def in_order(args):
     """Whether ratpoints visits the denominators of the search of the command line `args` in
-    ascending order, so that ratpoints-lean is to print its points in the same order: unless the
-    polynomial searched has odd degree and a leading coefficient other than +-1, where ratpoints may
-    take them in the order of the divisors of the leading coefficient."""
+    ascending order, so that ratpoints-lean is to print its points in the same order: always, unless
+    the polynomial searched has odd degree and a leading coefficient other than +-1, and then when
+    its denominators ascend (ascending_denominators)."""
     c = coefficient_list(args[0]) if args else None
     c = searched(c, read_options(args[2:])[2]) if c else None
-    return bool(c) and (len(c) % 2 == 1 or abs(c[-1]) == 1)
+    H = height(as_bytes(args[1]).decode('latin-1')) if c and len(args) > 1 else None
+    return bool(c) and (len(c) % 2 == 1 or abs(c[-1]) == 1 or
+                        (H is not None and ascending_denominators(c[-1], H)))
 
 
 def expected_unsupported(cfg, args, k):

@@ -300,16 +300,20 @@ def random_options(rng):
             opts.append(random_long(rng))
         elif o[1] in DOUBLE_OPTS and rng.random() < 0.9:
             opts.append(random_double(rng))
+        elif o[1] == 'S' and rng.random() < 0.5:
+            opts.append(random_long(rng))
     return opts
 
 
 def random_command_lines(rng):
     """Seven random command lines: two coefficient lists, three arguments of tuning options, a
-    height and an option list; the height bound is 1 or 2, or an option that fails follows."""
+    height and an option list; the height bound is 1 or 2, or an option that fails follows. The
+    option list searches a squarefree form or one that is not, so that the switch of the Sturm step
+    and the depth that -S reads decide between error 8 and the points."""
     return [[random_coefficients(rng), '1', '-g'],
             ['1 0 1', '1', '-q', '-r', random_double(rng)],
             ['1 0 1', '1', '-q', '-W', random_double(rng)],
             ['1 0 1', '1', '-q', '-p', random_long(rng)],
             ['1 0 1', random_long(rng), '-g'],
             [random_coefficients(rng), '1', '-g'],
-            ['1 0 1', '2', '-q', *random_options(rng)]]
+            [rng.choice(['1 0 1', '1 2 1']), '2', '-q', *random_options(rng)]]

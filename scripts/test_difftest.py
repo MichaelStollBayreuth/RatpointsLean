@@ -113,6 +113,7 @@ class Order(unittest.TestCase):
         self.assertIsNone(dt.coefficient_list('1 2 x'))
         self.assertIsNone(dt.coefficient_list('1_000 2'))
         self.assertIsNone(dt.coefficient_list(b'\xff 1'))
+        self.assertIsNone(dt.coefficient_list(b'1\x1c2'))         # not C white space
 
     def test_searched(self):
         # the cases 1, 2 and 3 of the reversal check, with a leading zero dropped in case 3
@@ -139,6 +140,10 @@ class Order(unittest.TestCase):
         self.assertFalse(dt.in_order(['0 3 1', '10', '-q']))           # case 1: c_1 = 3 leads
         self.assertTrue(dt.in_order(['0 3 1', '10', '-q', '-K', '-k']))
         self.assertTrue(dt.in_order(['-1 0 9', '10', '-q', '-S', '3']))
+        self.assertTrue(dt.in_order(['1 2', '1', '-q']))               # divisors [1] at H = 1
+        self.assertTrue(dt.in_order(['5 0 0 1065023', '100', '-q']))   # 1031 * 1033: no factors
+        self.assertTrue(dt.in_order(['3 2 -1 12', '2', '-q']))         # b = 1, 2 ascend
+        self.assertFalse(dt.in_order(['1 2', '20', '-q']))             # b = 1, 4, 9, 16, 2, ...
         self.assertFalse(dt.in_order(['1 2 x', '10', '-q']))
 
 
