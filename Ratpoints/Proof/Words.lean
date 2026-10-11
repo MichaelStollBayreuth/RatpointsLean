@@ -460,16 +460,13 @@ theorem pointsOfDen_eq_flatMap_checkNum (c : List Int) (d : Nat) (b : Int) (xs :
   rfl
 
 theorem checkNum_eq_map (w : List Int) (f b : Int) (rev : Bool) (a : Int) :
-    checkNum w f b rev a =
-      if rev then (checkNum w f b false a).map swapPoint else checkNum w f b false a := by
+    checkNum w f b rev a = (checkNum w f b false a).map (if rev then swapPoint else id) := by
   cases rev <;> simp [checkNum, apply_ite (List.map swapPoint)]
 
 theorem flatMap_checkNum (w : List Int) (f b : Int) (rev : Bool) (xs : List Int) :
-    xs.flatMap (checkNum w f b rev) = if rev then (xs.flatMap (checkNum w f b false)).map swapPoint
-      else xs.flatMap (checkNum w f b false) := by
-  cases rev
-  · rfl
-  · exact List.map_flatMap ▸ congrArg (List.flatMap · xs) (funext (checkNum_eq_map w f b true))
+    xs.flatMap (checkNum w f b rev) =
+      (xs.flatMap (checkNum w f b false)).map (if rev then swapPoint else id) :=
+  List.map_flatMap ▸ congrArg (List.flatMap · xs) (funext (checkNum_eq_map w f b rev))
 
 /-- The invariant of the loop of `Ratpoints.Sieve.walkWord` on the word `x0` after the points
 `out0`, for the points `g a` of a numerator `a` (in the walk, the check `Ratpoints.Sieve.checkNum`):
@@ -984,9 +981,9 @@ theorem SiftInvariant.toList_eq_pointsOfDen {c : List Int} {d b : Nat} {rev : Bo
     {keep : Int → Bool} {H range : Nat} {w0 w1 : Int} {out : Array (Int × Int × Int)}
     (h : SiftInvariant (checkNum (scaledCoeffs c d b) (if d % 2 = 1 then b else 1) b rev) keep H
       true range w0 w1 out) :
-    out.toList = if rev then (pointsOfDen c d b ((numerators H).filter keep)).map swapPoint
-      else pointsOfDen c d b ((numerators H).filter keep) :=
-  h.toList_eq_flatMap_filter_numerators.trans (flatMap_checkNum ..)
+    out.toList =
+      (pointsOfDen c d b ((numerators H).filter keep)).map (if rev then swapPoint else id) := by
+  rw [h.toList_eq_flatMap_filter_numerators, flatMap_checkNum, pointsOfDen_eq_flatMap_checkNum]
 
 -- The rows of the run, read at the residue `b mod p` of each modulus, are the rows of `b`.
 private theorem map_rows_eq_map_row {entries : List Entry} (hp : ∀ e ∈ entries, 0 < e.p)
@@ -1002,9 +999,8 @@ open Std.WP Lean.Order in
 private theorem sift_spec_map (c : List Int) (d H b : Nat) (rev : Bool) {A : Nat}
     {entries : List Entry} (hA : 1 ≤ A) (hp : ∀ e ∈ entries, 0 < e.p) :
     ⦃ True ⦄ sift c d H A b rev (entries.map fun e ↦ (e.p, e.rows))
-    ⦃ fun out ↦ out.toList = if rev then
-        (pointsOfDen c d b ((numerators H).filter (survives entries b))).map swapPoint
-      else pointsOfDen c d b ((numerators H).filter (survives entries b)) ⦄ := by
+    ⦃ fun out ↦ out.toList = (pointsOfDen c d b ((numerators H).filter (survives entries b))).map
+        (if rev then swapPoint else id) ⦄ := by
   vcgen [sift] invariants
   · SiftWhileInvariant (checkNum (scaledCoeffs c d b) (if d % 2 = 1 then b else 1) b rev)
       (survives entries b) H
@@ -1035,26 +1031,25 @@ theorem sift_spec (c : List Int) (d H A b : Nat) (rev : Bool)
     ⦃ 1 ≤ A ⦄ sift c d H A b rev rows
     ⦃ fun out ↦ ∀ entries : List Entry, (∀ e ∈ entries, 0 < e.p) →
         rows = entries.map (fun e ↦ (e.p, e.rows)) →
-        out.toList = if rev then
-          (pointsOfDen c d b ((numerators H).filter (survives entries b))).map swapPoint
-        else pointsOfDen c d b ((numerators H).filter (survives entries b)) ⦄ :=
+        out.toList = (pointsOfDen c d b ((numerators H).filter (survives entries b))).map
+          (if rev then swapPoint else id) ⦄ :=
   ⟨fun hA entries hp hrows ↦ by
     subst hrows
     exact (sift_spec_map c d H b rev hA hp).le_wp trivial⟩
 
-/-- The plain sieve and its check, the reference of the words, give the same points as
-`Ratpoints.Sieve.sift`, mapped by `Ratpoints.Sieve.swapPoint` when the flag `rev` of the reversal is
-set: what the brute-force reference finds over `b` and the numerators `-H, …, H` that survive the
-tables (`Ratpoints.Sieve.sift_spec`, `Ratpoints.Sieve.sieveDen_spec`,
-`Ratpoints.Sieve.checkDen_spec`). -/
+/-- `Ratpoints.Sieve.sift` with the flag `rev` of the reversal gives the points of the plain sieve
+and its check, the reference of the words, mapped by `Ratpoints.Sieve.swapPoint` when `rev` is set:
+the plain sieve and its check give what the brute-force reference finds over `b` and the numerators
+`-H, …, H` that survive the tables (`Ratpoints.Sieve.sieveDen_spec`,
+`Ratpoints.Sieve.checkDen_spec`), and `Ratpoints.Sieve.sift` gives these points, mapped
+(`Ratpoints.Sieve.sift_spec`). -/
 theorem toList_run_sift_eq_checkDen (c : List Int) (d H b : Nat) (rev : Bool) {A : Nat}
     (hA : 1 ≤ A) {entries : List Entry} (hp : ∀ e ∈ entries, 0 < e.p) :
     (Id.run (sift c d H A b rev (entries.map fun e ↦ (e.p, e.rows)))).toList =
-      if rev then (Id.run (checkDen c d H b (Id.run (sieveDen H b entries)))).toList.map swapPoint
-      else (Id.run (checkDen c d H b (Id.run (sieveDen H b entries)))).toList :=
-  ((sift_spec_map c d H b rev hA hp).le_wp trivial).trans <|
-    congrArg (fun L ↦ if rev then L.map swapPoint else L)
-      ((checkDen_spec c d H b _).le_wp trivial _ ((sieveDen_spec H b entries).le_wp trivial)).symm
+      (Id.run (checkDen c d H b (Id.run (sieveDen H b entries)))).toList.map
+        (if rev then swapPoint else id) :=
+  ((sift_spec_map c d H b rev hA hp).le_wp trivial).trans <| congrArg (List.map _)
+    ((checkDen_spec c d H b _).le_wp trivial _ ((sieveDen_spec H b entries).le_wp trivial)).symm
 
 /-! ### The run -/
 
@@ -1064,11 +1059,9 @@ these denominators and the numerators that survive the tables `entries`, mapped 
 `Ratpoints.Sieve.swapPoint` when the flag `rev` of the reversal is set. -/
 def SieveRunInvariant (c : List Int) (d H : Nat) (rev : Bool) (entries : List Entry)
     (pref : List Nat) (out : Array (Int × Int × Int)) : Prop :=
-  out.toList = if rev then (pref.flatMap fun j ↦
-      pointsOfDen c d (j + 1 : Nat) ((numerators H).filter (survives entries (j + 1)))).map
-        swapPoint
-    else pref.flatMap fun j ↦
-      pointsOfDen c d (j + 1 : Nat) ((numerators H).filter (survives entries (j + 1)))
+  out.toList = (pref.flatMap fun j ↦
+    pointsOfDen c d (j + 1 : Nat) ((numerators H).filter (survives entries (j + 1)))).map
+      (if rev then swapPoint else id)
 
 /-- The points of the denominators are the part of the brute-force reference `Ratpoints.bruteForce`
 with `z ≥ 1`, its numerators filtered by the survivor test `Ratpoints.Sieve.survives`, mapped by
@@ -1078,11 +1071,9 @@ words needs (`Ratpoints.Sieve.andRows_spec`). -/
 @[spec]
 theorem sieveRun_spec (c : List Int) (d H A : Nat) (rev : Bool) (entries : List Entry) :
     ⦃ 1 ≤ A ∧ ∀ e ∈ entries, 0 < e.p ⦄ sieveRun c d H A rev entries
-    ⦃ fun out ↦ out.toList = if rev then ((List.range H).flatMap fun j ↦
-          pointsOfDen c d (j + 1 : Nat) ((numerators H).filter (survives entries (j + 1)))).map
-            swapPoint
-        else (List.range H).flatMap fun j ↦
-          pointsOfDen c d (j + 1 : Nat) ((numerators H).filter (survives entries (j + 1))) ⦄ := by
+    ⦃ fun out ↦ out.toList = ((List.range H).flatMap fun j ↦
+        pointsOfDen c d (j + 1 : Nat) ((numerators H).filter (survives entries (j + 1)))).map
+          (if rev then swapPoint else id) ⦄ := by
   vcgen [sieveRun] invariants
   · fun pref _ out ↦ SieveRunInvariant c d H rev entries pref out
   all_goals grind [SieveRunInvariant, List.range_eq_range']
@@ -1091,11 +1082,9 @@ theorem sieveRun_spec (c : List Int) (d H A : Nat) (rev : Bool) (entries : List 
 program logic. -/
 theorem toList_run_sieveRun (c : List Int) (d H : Nat) (rev : Bool) {A : Nat} (hA : 1 ≤ A)
     {entries : List Entry} (hp : ∀ e ∈ entries, 0 < e.p) :
-    (Id.run (sieveRun c d H A rev entries)).toList = if rev then ((List.range H).flatMap fun j ↦
-        pointsOfDen c d (j + 1 : Nat) ((numerators H).filter (survives entries (j + 1)))).map
-          swapPoint
-      else (List.range H).flatMap fun j ↦
-        pointsOfDen c d (j + 1 : Nat) ((numerators H).filter (survives entries (j + 1))) :=
+    (Id.run (sieveRun c d H A rev entries)).toList = ((List.range H).flatMap fun j ↦
+      pointsOfDen c d (j + 1 : Nat) ((numerators H).filter (survives entries (j + 1)))).map
+        (if rev then swapPoint else id) :=
   Std.WP.Id.of_run_eq_wp rfl _ ((sieveRun_spec c d H A rev entries).le_wp ⟨hA, hp⟩)
 
 end Sieve

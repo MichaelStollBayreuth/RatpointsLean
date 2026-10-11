@@ -130,7 +130,7 @@ theorem pointsAtInfinity_eq_pointsOfDen (c : List ℤ) (d : ℕ) :
 
 theorem pointsAtInfinity_eq_map (c : List ℤ) (d : ℕ) (rev : Bool) :
     pointsAtInfinity c d rev =
-      if rev then (pointsAtInfinity c d false).map swapPoint else pointsAtInfinity c d false := by
+      (pointsAtInfinity c d false).map (if rev then swapPoint else id) := by
   cases rev <;> simp [pointsAtInfinity, pointsAbove, apply_ite (List.map swapPoint), swapPoint]
 
 -- The survivor test of the tables of primes keeps every numerator over which the exact check finds
@@ -154,11 +154,11 @@ theorem pointsAtInfinity_append_toList_run_sieveRun (c : List ℤ) {H A : ℕ} {
     (hms : ∀ p ∈ ms, p.Prime) (hA : 1 ≤ A) (hH : 1 ≤ H) (rev : Bool) :
     pointsAtInfinity c (degree c) rev ++
         (Id.run (sieveRun c (degree c) H A rev (ms.map (examinePrime c (degree c))))).toList =
-      if rev then (bruteForce c H).map swapPoint else bruteForce c H := by
+      (bruteForce c H).map (if rev then swapPoint else id) := by
   rw [toList_run_sieveRun c _ H rev hA (List.forall_mem_map.mpr fun _ hq ↦ (hms _ hq).pos),
     pointsAtInfinity_eq_map, pointsAtInfinity_eq_pointsOfDen]
   simp only [pointsOfDen_filter_survives c hms]
-  cases rev <;> simp [bruteForce, hH, BruteForce.degree_eq]
+  simp [bruteForce, hH, BruteForce.degree_eq]
 
 end Sieve
 
@@ -178,8 +178,7 @@ search takes the exit, the curve has no points
 (`Ratpoints.Sieve.not_isPoint_of_examinePrime?_eq_none`), so that the reference is empty. -/
 theorem run_searchPoints {c : List ℤ} {d H : ℕ} {P : Params} (hP : P.WF) (hH : 1 ≤ H)
     (hd : d = degree c) (rev : Bool) :
-    Id.run (searchPoints c d H P rev) =
-      if rev then (bruteForce c H).map swapPoint else bruteForce c H := by
+    Id.run (searchPoints c d H P rev) = (bruteForce c H).map (if rev then swapPoint else id) := by
   subst hd
   simp only [searchPoints]
   split <;> rename_i hm
