@@ -265,7 +265,9 @@ theorem exists_findPoints_eq_error_iff_of_sturm_nonneg {c : List ℤ} {H : ℕ} 
     {o : Options} (hs : 0 ≤ o.sturm) :
     (∃ e, findPoints c H P o = .error e) ↔
       c.length < 2 ∨ maxDegree + 1 < c.length ∨ H = 0 ∨ ¬ Squarefree (binaryFormPoly c) := by
-  rw [findPoints, BruteForce.degree_eq]
+  rw [findPoints]
+  dsimp only
+  rw [BruteForce.degree_eq]
   split_ifs with h1 h2 h3 h4
   · simp [h1]
   · simp [h2]
@@ -289,7 +291,9 @@ theorem exists_findPoints_eq_error_iff_of_sturm_neg {c : List ℤ} {H : ℕ} {P 
     (∃ e, findPoints c H P o = .error e) ↔
       c.length < 2 ∨ maxDegree + 1 < c.length ∨ H = 0 ∨ degree c + 2 ≤ 2 * (c.length / 2) ∨
         o.reverse = true ∧ degree c % 2 = 0 ∧ c.getD 0 0 = 0 ∧ c.getD 1 0 = 0 := by
-  rw [findPoints, BruteForce.degree_eq]
+  rw [findPoints]
+  dsimp only
+  rw [BruteForce.degree_eq]
   split_ifs with h1 h2 h3 h4
   · simp [h1]
   · simp [h2]

@@ -90,7 +90,7 @@ reads only whether it is negative; the rest of the Sturm step, which reads the d
 stage H.
 
 C: `ratpoints.h:341-343` -/
-def defaultSturm : Nat := 10
+def defaultSturm : Int := 10
 
 /-- At most how many forbidden divisors of the denominators are tested when the option `-F` does
 not say, `RATPOINTS_DEFAULT_MAX_FORBIDDEN`.

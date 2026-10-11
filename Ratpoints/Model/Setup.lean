@@ -138,7 +138,7 @@ error 8, which `-s -k` does not. The test of the `long`s is checked at the ends 
 -- `c₀ ≠ 0`.
 #guard (reversal false [-1, 0, 9] 2).toOption == some ([-1, 0, 9], 2, false)
 #guard ([([4, 0, 9], 2), ([-1, 0, -9], 2), ([0, 2, 0, 3], 3), ([0, 1, 0, -1], 3),
-    ([-2, 0, 0, 1], 3), ([1, 2, 3, 4, 5, 6, 7], 6)] : List (List Int × Nat)).all fun (c, d) ↦
+    ([-2, 1, 0, 2], 3), ([1, 2, 3, 4, 5, 6, 7], 6)] : List (List Int × Nat)).all fun (c, d) ↦
   (reversal true c d).toOption == some (c, d, false)
 
 -- The `long`s: `-2 ^ 63` and `2 ^ 63 - 1` are, `-2 ^ 63 - 1` and `2 ^ 63` are not; and of the

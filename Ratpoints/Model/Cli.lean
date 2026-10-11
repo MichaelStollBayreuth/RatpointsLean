@@ -506,8 +506,8 @@ an option that ratpoints has and `ratpoints-lean` does not support yet. -/
 
 -- `-k` and `-K`, `-s` and `-S`: the last of each pair wins, and `-S` takes the next word as its
 -- depth unless it starts with `-`.
-#guard [(["-k", "-S", "5", "-K", "-s"], true, -1), (["-s", "-S"], true, (defaultSturm : Int)),
-    (["-k", "-S", "-q"], false, (defaultSturm : Int)), (["-s", "-S", " 0 "], true, 0)].all
+#guard [(["-k", "-S", "5", "-K", "-s"], true, -1), (["-s", "-S"], true, defaultSturm),
+    (["-k", "-S", "-q"], false, defaultSturm), (["-s", "-S", " 0 "], true, 0)].all
   fun (os, rev, st) ↦
     (checkOptions ({}, {}) os).toOption.map (fun (_, o) ↦ (o.reverse, o.sturm)) == some (rev, st)
 

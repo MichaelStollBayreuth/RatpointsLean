@@ -147,12 +147,14 @@ def findPoints (c : List Int) (H : Nat) (P : Params) (o : Options := {}) :
   if maxDegree + 1 < c.length then .error .tooManyCoefficients
   else if c.length < 2 then .error .tooFewCoefficients
   else if H = 0 then .error .incorrectHeight
-  else if (BruteForce.degree c + 1) / 2 < c.length / 2 then .error .notSquarefree
-  else match Setup.reversal o.reverse c (BruteForce.degree c) with
-    | .error e => .error e
-    | .ok (c', d', rev) =>
-      if 0 ≤ o.sturm ∧ Id.run (Sturm.chain c' d') = none then .error .notSquarefree
-      else .ok (Id.run (searchPoints c' d' H P rev))
+  else
+    let d := BruteForce.degree c
+    if (d + 1) / 2 < c.length / 2 then .error .notSquarefree
+    else match Setup.reversal o.reverse c d with
+      | .error e => .error e
+      | .ok (c', d', rev) =>
+        if 0 ≤ o.sturm ∧ Id.run (Sturm.chain c' d') = none then .error .notSquarefree
+        else .ok (Id.run (searchPoints c' d' H P rev))
 
 /-! ### Examples
 
