@@ -336,7 +336,7 @@ that they mirror:
   \verb|main.c|: fewer than two arguments fail (\csource{main.c}{210}{214}); the first argument
   gives the coefficients, constant term first, integers separated by white space, and fails on a
   word that is not an integer, wherever it stands, then on more than $\mathrm{maxDegree} + 1$
-  integers, then on fewer than two (\csource{main.c}{362}{375}); the second gives the height bound,
+  integers, then on fewer than two (\csource{main.c}{318}{318}, \csource{main.c}{362}{375}); the second gives the height bound,
   a C \verb|long| of at least $1$ (\csource{main.c}{378}{379}); and the options are read from left
   to right, each told by the character after its \verb|-| and, for \verb|-f| and \verb|-d|, by the
   one after that (\csource{main.c}{393}{397}, \csource{main.c}{667}{668}). The tuning options, of
@@ -358,13 +358,14 @@ that they mirror:
   \lean{Ratpoints.Cli.pointLine, Ratpoints.Cli.run, Ratpoints.Cli.main}
   \leanok
   \verb|ratpoints-lean| reads its command line. On a failure it prints the failure's message and
-  exits with its status; otherwise it prints, as ratpoints does with \verb|-q|, the line
+  exits with its status; otherwise it runs the search where ratpoints calls \verb|find_points|
+  (\csource{main.c}{251}{251}) and prints, as ratpoints does with \verb|-q|, the line
   \verb|(x : y : z)| of the default format of \verb|main.c| (\csource{main.c}{681}{685}) for each
   triple of $\mathrm{findPoints}(c, H, \mathrm{sieveParams}(s), o)$, for the values $s$ of the
   options that set the sieving parameters and the options $o$ of the search
   (Definition~\ref{def:Options}), in the order of that list, which is that of
   Theorem~\ref{thm:findPoints_perm}: the brute-force reference of the polynomial searched, mapped
-  back after a reversal; and exits with status~0. It writes its output once it is computed and, like
+  back after a reversal; and exits with status~0 (\csource{main.c}{284}{284}). It writes its output once it is computed and, like
   ratpoints, ignores a failed write, but for one case: when the reader of the output is gone, the
   signal \verb|SIGPIPE| ends ratpoints, and the shell reports the status $141 = 128 + 13$; the Lean
   runtime ignores that signal, so that the write of \verb|ratpoints-lean| fails instead, and it

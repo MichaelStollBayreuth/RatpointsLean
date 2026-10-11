@@ -77,18 +77,19 @@ at most `Ratpoints.Params.arraySizeAt P H` bit arrays, each point mapped by
 degree of `c`, these are the points of the brute-force reference, mapped when `rev` is set, also
 when the exit is taken (`Ratpoints.run_searchPoints`).
 
-C: `find_points.c:2608-2614`, `find_points.c:2994-2998`, `find_points.c:4992-5012`,
-`find_points.c:5106`
+C: `find_points.c:2605-2614`, `find_points.c:2976-2978`, `find_points.c:2994-2998`,
+`find_points.c:4992-5012`, `find_points.c:5106`
 
 Deviation: the primes examined are the moduli of the parameters, where `sieving_info` examines the
 first `num_primes` primes of the table, and more when their number was left to the library: the
 choice of the moduli is an input of the model, and when the exit is taken there are no points, so
 that the output does not depend on the primes examined; the arguments of `sieving_info` that serve
 the choice of the moduli (the list of the moduli, the mean number of bits per word, whether the
-number of primes was left to the library) and the 2-adic classes (stage E) are not modelled; the
-exit gives the empty list, where `sieving_info` returns the prime and `find_points_work_1` the
-number `0` of points found; no 2-adic exit (stage E), which ends only searches without points; the
-Sturm step does not restrict the search region before stage H, so that the return when it leaves
+number of primes was left to the library) and the 2-adic classes (stage E) are not modelled, nor the
+array of the coefficients modulo `p` that `examine_prime` fills for the forbidden divisors (stage
+E); the exit gives the empty list, where `sieving_info` returns the prime and `find_points_work_1`
+the number `0` of points found; no 2-adic exit (stage E), which ends only searches without points;
+the Sturm step does not restrict the search region before stage H, so that the return when it leaves
 nothing to search is never taken, and the run always follows the points at infinity; no failure for
 lack of memory, which the model cannot meet; no output under `RATPOINTS_VERBOSE` or `DEBUG`. -/
 def searchPoints (c : List Int) (d H : Nat) (P : Params) (rev : Bool) :
@@ -114,26 +115,29 @@ that the reversal check hands on, with its flag of the reversal (`Ratpoints.sear
 when the curve has no points modulo one of the moduli, and else the points at infinity first, then
 those of the denominators `1, …, H`, each mapped back to the caller's curve after a reversal.
 
-C: `find_points.c:4557-4558`, `find_points.c:4567-4571`, `find_points.c:4578-4585`,
+C: `find_points.c:4523-4528`, `find_points.c:4546`, `find_points.c:4557-4559`,
+`find_points.c:4564-4565`, `find_points.c:4567-4571`, `find_points.c:4578-4585`,
 `find_points.c:4606`, `find_points.c:4624-4633`, `find_points.c:4658`, `find_points.c:4857-4892`,
-`find_points.c:5219-5220`
+`find_points.c:5219-5220`, `find_points.c:5226-5229`, `find_points.c:5235`,
+`find_points.c:5241-5242`
 
-Deviation: the refusals of the program, in its order and with its errors (`Ratpoints.Refusal`), for
-the codes and the order of the library: fewer than two coefficients are refused on the length of
-`c`, as the program refuses them, where the library refuses an empty list as a negative degree and
-one coefficient as the degree 0 (a longer list of degree 0 fails the test of the leading zeros
-first); and the height bound, which the program checks before it calls the library, comes before
-the test of the leading zeros, which the library makes first, so that `5 0` with `H = 0` is error 4,
-as the program gives it. The degree with the leading zeros dropped is
+Deviation: one function for `find_points`, `find_points_work` and `find_points_work_1`, which the
+library calls in turn. The refusals of the program, in its order and with its errors
+(`Ratpoints.Refusal`), for the codes and the order of the library: fewer than two coefficients are
+refused on the length of `c`, as the program refuses them, where the library refuses an empty list
+as a negative degree and one coefficient as the degree 0 (a longer list of degree 0 fails the test
+of the leading zeros first); and the height bound, which the program checks before it calls the
+library, comes before the test of the leading zeros, which the library makes first, so that `5 0`
+with `H = 0` is error 4, as the program gives it. The degree with the leading zeros dropped is
 `Ratpoints.BruteForce.degree c`. A list for the array of GMP integers and its scratch integers
 `work`, with nothing written back to the caller (the reversed coefficients, the degree, the flags),
 so that there is no state between calls and the reset of the flags clears nothing; the points are
 returned as a list, for the count `total` and the flag `quit` of the callback (stage G); the points
 at infinity and the square test of the leading coefficient are decided where they are used
 (`Ratpoints.Sieve.pointsAtInfinity`, `Ratpoints.Setup.reversal`). Of the Sturm step only its test
-for a repeated factor: the rest, which restricts the search region and its exit when the
-polynomial is negative on the whole of it, is stage H, so that `sturm_empty` is never set. No search
-region (stage H); no failure for lack of memory, which the model cannot meet; no output under
+for a repeated factor: the rest, which restricts the search region and its exit when the polynomial
+is negative on the whole of it, is stage H, so that `sturm_empty` is never set. No search region
+(stage H); no failure for lack of memory, which the model cannot meet; no output under
 `RATPOINTS_VERBOSE`. -/
 def findPoints (c : List Int) (H : Nat) (P : Params) (o : Options := {}) :
     Except Refusal (List (Int × Int × Int)) :=

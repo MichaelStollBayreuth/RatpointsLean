@@ -80,6 +80,30 @@ reason = "WIDTH and PRINT_RBA, which print words and bit arrays in hexadecimal i
 
 [[excluded]]
 file = "find_points.c"
+lines = "1698-1701"
+kind = "instrumentation"
+reason = "the message under DEBUG at the start of examine_prime"
+
+[[excluded]]
+file = "find_points.c"
+lines = "1751-1759"
+kind = "instrumentation"
+reason = "the table of examine_prime with its last entry, printed under DEBUG"
+
+[[excluded]]
+file = "find_points.c"
+lines = "4542-4545"
+kind = "interface"
+reason = "the input fields of the arguments that find_points_work saves, so that a caller who reuses the arguments for the next curve does not find the normalizations and choices of the search in them; the model writes nothing back"
+
+[[excluded]]
+file = "find_points.c"
+lines = "4560-4563"
+kind = "interface"
+reason = "the input fields of the arguments that find_points_work puts back"
+
+[[excluded]]
+file = "find_points.c"
 lines = "4572"
 kind = "threads"
 reason = "the worker of the calling thread, the state with which a thread sieves its blocks (its survivors, its third stage); the model sieves the blocks in turn, without threads, and passes what the sieve needs as arguments"
@@ -163,6 +187,30 @@ kind = "instrumentation"
 reason = "the message before the sieve, under DEBUG and RATPOINTS_VERBOSE"
 
 [[excluded]]
+file = "find_points.c"
+lines = "5169-5208"
+kind = "instrumentation"
+reason = "the report on the shape of the run under RP_PRIME_STATS and RP_PHASE_TIMING, which prints on stderr what run_shape predicted against what the run did"
+
+[[excluded]]
+file = "find_points.c"
+lines = "5215-5217"
+kind = "instrumentation"
+reason = "the message under DEBUG at the end of find_points_work_1"
+
+[[excluded]]
+file = "find_points.c"
+lines = "5232"
+kind = "memory"
+reason = "find_points_init, which allocates the work array and the buffers of the search; its refusal of a degree outside 0, ..., RATPOINTS_MAX_DEGREE never takes effect, since find_points_work refuses the same degrees first"
+
+[[excluded]]
+file = "find_points.c"
+lines = "5238"
+kind = "memory"
+reason = "find_points_clear, which releases them"
+
+[[excluded]]
 file = "main.c"
 lines = "232-234"
 kind = "memory"
@@ -185,6 +233,12 @@ file = "main.c"
 lines = "357"
 kind = "memory"
 reason = "the initialization of the GMP integer fff, into which the program reads the coefficients beyond the bound to check them"
+
+[[excluded]]
+file = "main.c"
+lines = "690"
+kind = "memory"
+reason = "the release of the GMP integer fff at the end of read_input"
 
 [[excluded]]
 file = "main.c"

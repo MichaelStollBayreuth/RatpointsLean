@@ -259,7 +259,7 @@ white space, which may also stand before the first and after the last. A word th
 integer fails with error 11, wherever it stands; then more than `Ratpoints.maxDegree + 1`
 integers fail with error 3, and fewer than two with error 5.
 
-C: `main.c:362-375`
+C: `main.c:318`, `main.c:362-375`
 
 Deviation: a list of `Int`s for the array of `RATPOINTS_MAX_DEGREE + 1` GMP integers; the
 integers beyond these, which `main.c` reads into the variable `fff` only to check them, are read
@@ -416,7 +416,15 @@ options `o` of the search, as `Ratpoints.Cli.input` reads them, it prints, as ra
 `-q`, the line `Ratpoints.Cli.pointLine` of each point that the sieve `Ratpoints.findPoints` finds
 with the parameters `Ratpoints.sieveParams s` and the options `o`, in its order, and exits with
 status 0; on a failure `f`, among them a refusal of `Ratpoints.findPoints`, it prints `f.message`
-and exits with `f.status` (`Ratpoints.Cli.Failure.message`, `Ratpoints.Cli.Failure.status`). -/
+and exits with `f.status` (`Ratpoints.Cli.Failure.message`, `Ratpoints.Cli.Failure.status`).
+
+C: `main.c:251`, `main.c:284`
+
+Deviation: the callback `process` and its data `info` give way to the list that
+`Ratpoints.findPoints` returns, whose points `Ratpoints.Cli.pointLine` prints once the list is
+computed, and there is no count `total`; the output data of `info` and `before_printed` are stage G,
+and the intervals with `join_intervals` stage H; the report without `-q` is not printed, since
+`ratpoints-lean` runs as with `-q`. -/
 def run (args : List String) : String × UInt32 :=
   match input args >>= fun (c, H, s, o) ↦
       (findPoints c H (sieveParams s) o).mapError .ofRefusal with

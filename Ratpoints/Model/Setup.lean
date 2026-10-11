@@ -49,7 +49,12 @@ inductive Refusal where
   deriving DecidableEq, Repr
 
 /-- Whether the integer `a` is a C `long`, `-2 ^ 63 ≤ a < 2 ^ 63`, as `mpz_fits_slong_p` of GMP
-decides it: ratpoints needs a `long` of 64 bits since version 3.0.0. -/
+decides it: ratpoints needs a `long` of 64 bits since version 3.0.0.
+
+C: `rp-private.h:41-43`, `rp-private.h:47`
+
+Deviation: the bounds of a `long` of 64 bits, fixed, where the C code does not compile unless an
+`unsigned long` has exactly 64 bits. -/
 def fitsLong (a : Int) : Bool := -2 ^ 63 ≤ a && a < 2 ^ 63
 
 namespace Setup

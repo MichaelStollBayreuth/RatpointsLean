@@ -336,7 +336,8 @@ Lemma~\ref{lem:sift_eq_checkDen} maps their side.
 \begin{definition}[The coefficients as longs]\label{def:useCLong}
   \lean{Ratpoints.fitsLong, Ratpoints.Setup.useCLong, Ratpoints.Sieve.modLong, Ratpoints.Sieve.modLong_eq_emod, Ratpoints.fitsLong_sixteen_mul, Ratpoints.fitsLong_add_sixteen_mul, Ratpoints.fitsLong_neg, Ratpoints.Setup.fitsLong_getD_of_useCLong}
   \leanok
-  Whether every coefficient $c_0, \dots, c_d$ is a C \verb|long|, $-2^{63} \le c_i < 2^{63}$
+  Whether every coefficient $c_0, \dots, c_d$ is a C \verb|long|, which has 64 bits in every build
+  (\csource{rp-private.h}{41}{43}, \csource{rp-private.h}{47}{47}), $-2^{63} \le c_i < 2^{63}$
   (\csource{find_points.c}{4599}{4600}, \csource{find_points.c}{4814}{4823}); and the helper
   \verb|mod| of the C code, which reduces a \verb|long| $a$ modulo $b > 0$ by subtracting $8b$, $4b$,
   $2b$ and $b$ where it can, after adding $16b$ to a negative $a \ge -16b$, and by C's division, which
@@ -358,8 +359,8 @@ Lemma~\ref{lem:sift_eq_checkDen} maps their side.
   \verb|long|s and with the Euclidean remainder for GMP integers, two paths with the same result; the
   table of the residues $x$ with $f(x)$ a square modulo $p$; its last entry, whether there is a point
   at infinity modulo $p$; and no table when the curve has no points modulo $p$, the exit
-  (\csource{find_points.c}{1703}{1749}, \csource{find_points.c}{1761}{1765},
-  \csource{find_points.c}{1795}{1824}). Otherwise its table is that of
+  (\csource{find_points.c}{1683}{1697}, \csource{find_points.c}{1703}{1749},
+  \csource{find_points.c}{1761}{1765}, \csource{find_points.c}{1795}{1826}). Otherwise its table is that of
   Definition~\ref{def:examinePrime}, which is the reference of this one and has given it its C
   ranges, as the sieve and the check of stage~C1 became the reference of the words; so the lemmas on
   the table and the rows hold as they are.
@@ -391,8 +392,8 @@ Lemma~\ref{lem:sift_eq_checkDen} maps their side.
   \leanok
   For the coefficients $c$ of degree $d$ that the set-up hands on, the flag of the reversal, the
   height $H$ and the parameters $P$: the table of each modulus, with the flag of the \verb|long|s,
-  and no points when one of them is none (\csource{find_points.c}{2608}{2614},
-  \csource{find_points.c}{2994}{2998}, \csource{find_points.c}{4992}{5012}); otherwise the points at
+  and no points when one of them is none (\csource{find_points.c}{2605}{2614},
+  \csource{find_points.c}{2976}{2978}, \csource{find_points.c}{2994}{2998}, \csource{find_points.c}{4992}{5012}); otherwise the points at
   infinity and the points of the denominators, with pieces of at most $\mathrm{arraySizeAt}(H)$ bit
   arrays, each mapped by $\mathrm{swapPoint}$ when the flag is set (\csource{find_points.c}{5106}{5106},
   the return when the Sturm step leaves nothing to search, is not met before stage~H). A definition

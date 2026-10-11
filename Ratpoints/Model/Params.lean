@@ -87,7 +87,13 @@ def Params.arraySizeAt (P : Params) (H : Nat) : Nat :=
 /-- The values of the options of ratpoints that set the sieving parameters, as the program reads
 them into the fields of its `ratpoints_args`: `-p`, `-n`, `-N`, `-P` and `-F` give C `long`s,
 which are `-1`, as in `main.c`, when the option is absent; `-j` switches the Jacobi test off and
-`-J` on again. -/
+`-J` on again.
+
+C: `main.c:337-338`, `main.c:344`, `main.c:349-350`, `main.c:352`
+
+Deviation: integers for the `long`s of the fields, and a Boolean for the bit `RATPOINTS_NO_JACOBI`
+of the flags, which `main.c` clears with the others; the bit of the reversal is in
+`Ratpoints.Options`. -/
 structure SieveOptions where
   /-- The value of `-p`: how many primes are taken. -/
   numPrimes : Int := -1

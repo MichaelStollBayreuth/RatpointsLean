@@ -87,7 +87,9 @@ are no points modulo $p$ (D) and the options of the output (G) come in their sta
   \lean{Ratpoints.SieveOptions, Ratpoints.sieveParams, Ratpoints.defaultParams, Ratpoints.defaultNumPrimes, Ratpoints.defaultMaxForbidden, Ratpoints.wf_sieveParams, Ratpoints.wf_defaultParams}
   \leanok
   The parameters made from the values of the options \verb|-p|, \verb|-n|, \verb|-N|, \verb|-P|,
-  \verb|-F| and \verb|-j|/\verb|-J|, with the defaults and caps of ratpoints
+  \verb|-F| and \verb|-j|/\verb|-J|, which are $-1$ and the Jacobi test on when the options are
+  absent (\csource{main.c}{337}{338}, \csource{main.c}{344}{344}, \csource{main.c}{349}{350},
+  \csource{main.c}{352}{352}), with the defaults and caps of ratpoints
   (\csource{ratpoints.h}{333}{340}, \csource{ratpoints.h}{345}{352},
   \csource{find_points.c}{4643}{4649}, \csource{find_points.c}{4655}{4656},
   \csource{find_points.c}{4662}{4665}): $q = \min(k, \mathrm{numPrimes})$ primes are taken, for
@@ -294,13 +296,17 @@ maps, specified by ordinary lemmas.
   \lean{Ratpoints.findPoints}
   \leanok
   For the parameters $P$ and the options $o$ (Definition~\ref{def:Options}), by default those of a
-  run of the program without options: refuse more than $\mathrm{maxDegree} + 1$ coefficients, fewer
+  run of the program without options, as the library function \verb|find_points| does with its
+  parts \verb|find_points_work| and \verb|find_points_work_1| (\csource{find_points.c}{4523}{4528},
+  \csource{find_points.c}{4546}{4546}, \csource{find_points.c}{4557}{4559},
+  \csource{find_points.c}{4564}{4565}, \csource{find_points.c}{5226}{5229},
+  \csource{find_points.c}{5235}{5235}, \csource{find_points.c}{5241}{5242}): refuse more than $\mathrm{maxDegree} + 1$ coefficients, fewer
   than two, and $H = 0$, in the order of the program, with its errors 3, 5 and~4
   (Section~\ref{sec:refusals}; the refusals of Definition~\ref{def:reversal}), where the library
   refuses them as bad arguments, after it has dropped the leading zeros; then, as not squarefree
   (error~8), a form that loses $\lceil n/2 \rceil$ with the leading zeros
-  (\csource{find_points.c}{4557}{4558}, \csource{find_points.c}{4567}{4571},
-  \csource{find_points.c}{4578}{4585}, \csource{find_points.c}{4606}{4606},
+  (\csource{find_points.c}{4567}{4571}, \csource{find_points.c}{4578}{4585},
+  \csource{find_points.c}{4606}{4606},
   \csource{find_points.c}{4624}{4633}, \csource{find_points.c}{4658}{4658}). Then run the reversal
   check with the switch of the options (Definition~\ref{def:reversal}), which may refuse the form as
   not squarefree too or reverse the polynomial; with the Sturm step on, refuse the form when the
