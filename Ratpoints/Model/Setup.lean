@@ -9,17 +9,21 @@ module
 # The set-up of a search
 
 What ratpoints does with its input before the sieve, as far as the model has it: the refusals of a
-search, each with the error of the program (`Ratpoints.Refusal`), and the reversal check of
+search, each with the error of the program (`Ratpoints.Refusal`); the reversal check of
 `find_points_work_1`, which refuses the binary form when its degree `d` is even and `X ^ 2` divides
 it, and otherwise may reverse the polynomial, in three cases, exchanging `x` and `z` in the binary
-form (`Ratpoints.Setup.reversal`). `Ratpoints.findPoints` does not run the reversal check yet
-(stage D).
+form (`Ratpoints.Setup.reversal`); and the test whether the coefficients are C `long`s
+(`Ratpoints.fitsLong`, `Ratpoints.Setup.useCLong`), which chooses the path of the table of a prime
+(`Ratpoints.Sieve.examinePrime?`). `Ratpoints.findPoints` runs neither the reversal check nor this
+test yet (stage D).
 
 ## Main definitions
 
 * `Ratpoints.Refusal`: the refusals of a search.
+* `Ratpoints.fitsLong`: the C `long`s.
 * `Ratpoints.Setup.isSquare`: the squares as GMP decides them.
 * `Ratpoints.Setup.reversal`: the reversal check.
+* `Ratpoints.Setup.useCLong`: whether the coefficients are `long`s.
 -/
 
 @[expose] public section
@@ -42,6 +46,10 @@ inductive Refusal where
   /-- A binary form that is not squarefree: error 8. -/
   | notSquarefree
   deriving DecidableEq, Repr
+
+/-- Whether the integer `a` is a C `long`, `-2 ^ 63 ≤ a < 2 ^ 63`, as `mpz_fits_slong_p` of GMP
+decides it: ratpoints needs a `long` of 64 bits since version 3.0.0. -/
+def fitsLong (a : Int) : Bool := -2 ^ 63 ≤ a && a < 2 ^ 63
 
 namespace Setup
 
@@ -84,12 +92,27 @@ def reversal (allow : Bool) (c : List Int) (d : Nat) : Except Refusal (List Int 
     .ok (c.getD 0 0 :: ((c.take (d + 1)).drop 1).reverse, d, true)
   else .ok (c, d, false)
 
+/-- Whether the coefficients `c₀, …, c_d` are all C `long`s (`Ratpoints.fitsLong`): the flag
+`use_c_long`, with which the table of a prime reduces the coefficients on the path through `long`s,
+by the helper `mod` of the C code (`Ratpoints.Sieve.modLong`), and otherwise on the path through
+GMP integers (`Ratpoints.Sieve.examinePrime?`); on the first path the inputs of `mod` are `long`s
+(`Ratpoints.Setup.fitsLong_getD_of_useCLong`).
+
+C: `find_points.c:4599-4600`, `find_points.c:4814-4823`
+
+Deviation: no array `c_long`: the coefficients stay integers, which `Ratpoints.Sieve.modLong` reads
+as `long`s, as `mpz_get_si` gives them exactly when they fit; the flag is returned, for the `int`
+that the loop sets, and the loop, which stops at the first coefficient that is not a `long`, is
+`List.all`. -/
+def useCLong (c : List Int) (d : Nat) : Bool :=
+  (List.range (d + 1)).all fun i ↦ fitsLong (c.getD i 0)
+
 /-! ### Examples
 
 What ratpoints 3.1.1 does at the pinned commit: with `-v` it says whether it reverses and in which
 case, and prints the coefficients of case 3; `-k` switches the reversal off; and
 `ratpoints '0 0 1 1 1' 5 -q -s`, without the Sturm step, which would refuse the form too, ends with
-error 8, which `-s -k` does not. -/
+error 8, which `-s -k` does not. The test of the `long`s is checked at the ends of their range. -/
 
 #guard [0, 1, 4, 9, 2 ^ 126].all isSquare && !([2, 3, -1, -4, 2 ^ 127].any isSquare)
 
@@ -111,6 +134,12 @@ error 8, which `-s -k` does not. -/
 #guard ([([4, 0, 9], 2), ([-1, 0, -9], 2), ([0, 2, 0, 3], 3), ([0, 1, 0, -1], 3),
     ([-2, 0, 0, 1], 3), ([1, 2, 3, 4, 5, 6, 7], 6)] : List (List Int × Nat)).all fun (c, d) ↦
   (reversal true c d).toOption == some (c, d, false)
+
+-- The `long`s: `-2 ^ 63` and `2 ^ 63 - 1` are, `-2 ^ 63 - 1` and `2 ^ 63` are not; and of the
+-- coefficients, only `c₀, …, c_d` count, an entry beyond the list counting as `0`.
+#guard fitsLong (-2 ^ 63) && fitsLong (2 ^ 63 - 1) && !fitsLong (-2 ^ 63 - 1) && !fitsLong (2 ^ 63)
+#guard useCLong [2 ^ 63 - 1, 0, -2 ^ 63] 2 && !useCLong [1, 2 ^ 63, 1] 2 &&
+  !useCLong [1, 1, -2 ^ 63 - 1] 2 && useCLong [1, 1, 2 ^ 70] 1 && useCLong [1, -1] 3
 
 end Setup
 

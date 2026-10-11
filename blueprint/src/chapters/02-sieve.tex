@@ -150,13 +150,15 @@ $a$. These two facts make sound the rows that the tables below define.
   \lean{Ratpoints.Sieve.evalMod, Ratpoints.Sieve.Entry, Ratpoints.Sieve.examinePrime, Ratpoints.Sieve.natCast_evalMod, Ratpoints.Sieve.getElem!_isFSquare_examinePrime_of_isSquare}
   \leanok
   For a prime $p$: for each residue $x$ modulo $p$ whether $f(x)$ is a square modulo $p$, with
-  $f(x)$ computed by Horner's rule modulo $p$ from the coefficients reduced modulo $p$
-  (\csource{find_points.c}{1703}{1749}); kept, as the sieve entry of ratpoints keeps it
-  (\csource{rp-private.h}{542}{555}), together with $p$ and the inverses modulo $p$
-  (\csource{find_points.c}{1795}{1824}). The table is made for every prime it is given, where
-  ratpoints makes none for a prime at which $f(x)$ is a square for no residue or for every residue
-  and there is no point at infinity modulo $p$ (\csource{find_points.c}{1761}{1765}): the first
-  ends the search (stage~D), and the second leaves the prime out of the moduli.
+  $f(x)$ computed by Horner's rule modulo $p$ from the coefficients reduced modulo $p$ by the
+  Euclidean remainder; kept, as the sieve entry of ratpoints keeps it
+  (\csource{rp-private.h}{542}{555}), together with $p$ and the inverses modulo $p$. The table is
+  made for every prime it is given. It is the reference of the table with the exit
+  (Definition~\ref{def:examinePrimeExit}), which models \verb|examine_prime| with its two paths
+  through \verb|long|s and GMP integers: that gives no table at a prime modulo which the curve has
+  no points, and this one at every other prime. Ratpoints also makes no table for a prime at which
+  $f(x)$ is a square for every residue and there is no point at infinity modulo $p$, which it leaves
+  out of the moduli.
 \end{definition}
 
 \begin{definition}[The rows of a denominator]\label{def:admits}
@@ -218,14 +220,15 @@ sieve's denominators and the primes of the table need no side conditions.
 The model follows the rules of the translation throughout. A C \verb|long| is an \verb|Int| or a
 \verb|Nat|; the obligation that its value lies in the range of the type comes with the faithful
 components that compute in \verb|long|s (D, F). The remainder \verb|mod()| of the C code is Lean's
-Euclidean \verb|%|. The tables that the build of ratpoints generates (the squares, the inverses, the
-row of $0$) are Lean functions with lemmas that they compute what they claim, checked against the
-generated header by \verb|#guard| examples, and stage~F will check them as a whole against its
-faithful rows. Each loop of the sieve is a definition of type \verb|Id α| that its callers bind with
-\verb|←|, so that its contract, an \verb|@[spec]| theorem proved with the program logic of Lean core
-and with loop invariants that are named definitions, applies at the call; only \verb|findPoints|
-runs a component with \verb|Id.run|. The tables of a prime are folds and maps, specified by ordinary
-lemmas.
+Euclidean \verb|%|, but in the table of a prime with the exit, which models it as it is and proves
+it equal to \verb|%| (Definition~\ref{def:useCLong}). The tables that the build of ratpoints
+generates (the squares, the inverses, the row of $0$) are Lean functions with lemmas that they
+compute what they claim, checked against the generated header by \verb|#guard| examples, and stage~F
+will check them as a whole against its faithful rows. Each loop of the sieve is a definition of type
+\verb|Id α| that its callers bind with \verb|←|, so that its contract, an \verb|@[spec]| theorem
+proved with the program logic of Lean core and with loop invariants that are named definitions,
+applies at the call; only \verb|findPoints| runs a component with \verb|Id.run|. The tables of a
+prime are folds and maps, specified by ordinary lemmas.
 
 \begin{definition}[The sieve of one denominator]\label{def:sieveDen}
   \uses{def:admits}
@@ -317,8 +320,8 @@ paragraph of the component whose range holds it:
     factors and skips the primes that divide $b$;
   \item a plain $\gcd$ for the binary $\gcd$ of \verb|relprime|, whose loop body has no branch (F);
   \item Horner's rule modulo $p$ reduced at every step for the reduction of ratpoints on a fixed
-    schedule (F), and the coefficients as integers for its two paths through \verb|long|s and GMP
-    integers (D);
+    schedule (F), in the table of a prime, whose two paths through \verb|long|s and GMP integers and
+    whose exit stage~D models (Definition~\ref{def:examinePrimeExit});
   \item the products $c_k b^{d-k}$ computed for every denominator, where ratpoints computes them
     when the first survivor reaches the check;
   \item the flag of the reversal as an argument of the points at infinity, for the bit

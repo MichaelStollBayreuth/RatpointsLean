@@ -10,19 +10,19 @@
     "find_points.c:1703-1749": {
       "hash": "3958dde199dd7ca8445f39de80ac7b5db61bcab7a1a72f91514f2b321827fe25",
       "owners": [
-        "Ratpoints.Sieve.examinePrime"
+        "Ratpoints.Sieve.examinePrime?"
       ]
     },
     "find_points.c:1761-1765": {
       "hash": "b4c7b525fe1ec06dbf6120f00e2a1444ecf3823465b8664ac8e9c88bd2672657",
       "owners": [
-        "Ratpoints.Sieve.examinePrime"
+        "Ratpoints.Sieve.examinePrime?"
       ]
     },
     "find_points.c:1795-1824": {
       "hash": "f7c2d05a118ed964d38981068b31b6da469516bf31944b02f2438d3272fa56b1",
       "owners": [
-        "Ratpoints.Sieve.examinePrime"
+        "Ratpoints.Sieve.examinePrime?"
       ]
     },
     "find_points.c:3119-3121": {
@@ -65,6 +65,12 @@
       "hash": "9f923fbce4432b066ae057ca5317d37d1f00cb9d18df83d876251a6a91a8f0d2",
       "owners": [
         "Ratpoints.findPoints"
+      ]
+    },
+    "find_points.c:4599-4600": {
+      "hash": "75f50bcf0447cc6b8ff7fc26bf900489271c0862204bf3225d1f3776051453b3",
+      "owners": [
+        "Ratpoints.Setup.useCLong"
       ]
     },
     "find_points.c:4624-4633": {
@@ -113,6 +119,18 @@
       "hash": "4b4e14a3fd1f69846400021c7b8009421e06a9b7349863866271cc414d07841f",
       "owners": [
         "Ratpoints.Setup.reversal"
+      ]
+    },
+    "find_points.c:477-492": {
+      "hash": "6499d56b7562b58f0a3652827bbbd852a4647fa1858f55654980825acc59b0f1",
+      "owners": [
+        "Ratpoints.Sieve.modLong"
+      ]
+    },
+    "find_points.c:4814-4823": {
+      "hash": "787e81df5d949855ecc3f0be1f897f715a553045c544919617bf3b806e7bc052",
+      "owners": [
+        "Ratpoints.Setup.useCLong"
       ]
     },
     "find_points.c:4894-4899": {
