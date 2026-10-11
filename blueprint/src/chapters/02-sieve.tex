@@ -288,7 +288,7 @@ prime are folds and maps, specified by ordinary lemmas.
 \end{definition}
 
 \begin{definition}[The search for the points]\label{def:findPoints}
-  \uses{def:Params, def:arraySize, def:sieveRun, def:pointsAtInfinity, def:maxDegree, def:reversal}
+  \uses{def:Params, def:searchPoints, def:maxDegree, def:reversal}
   \lean{Ratpoints.findPoints}
   \leanok
   Refuse more than $\mathrm{maxDegree} + 1$ coefficients, fewer than two, and $H = 0$, in the order
@@ -297,10 +297,11 @@ prime are folds and maps, specified by ordinary lemmas.
   (\csource{find_points.c}{4557}{4558}, \csource{find_points.c}{4624}{4633},
   \csource{find_points.c}{4658}{4658}), after it has dropped the leading zeros and refused as not
   squarefree a form that loses $\lceil n/2 \rceil$ with them, which C1 does not refuse (stage~D).
-  Otherwise drop the leading zeros, make the table of each modulus and return the points at infinity
+  Otherwise drop the leading zeros and run the search of the polynomial
+  (Definition~\ref{def:searchPoints}) with the flag of the reversal clear: the table of each
+  modulus, no points when the curve has none modulo one of them, and else the points at infinity
   followed by the points of the denominators, found with pieces of at most $\mathrm{arraySizeAt}(H)$
-  bit arrays, the array size of the parameters (Definition~\ref{def:arraySize}), both with the flag
-  of the reversal clear.
+  bit arrays, the array size of the parameters.
 \end{definition}
 
 Each component differs from the C code in a stated way, recorded in the \verb|Deviation:|
@@ -325,9 +326,10 @@ paragraph of the component whose range holds it:
   \item the products $c_k b^{d-k}$ computed for every denominator, where ratpoints computes them
     when the first survivor reaches the check;
   \item the flag of the reversal as an argument of the points at infinity, for the bit
-    \verb|RATPOINTS_REVERSED| of the flags, which $\mathrm{findPoints}$ passes clear, since it does
-    not reverse yet (D); and a list of points for the callback \verb|process|, with no stop it may
-    request, no \verb|NO_Y| and no \verb|NO_CHECK| (G), and no output under \verb|VERBOSE|;
+    \verb|RATPOINTS_REVERSED| of the flags, which the search hands on and $\mathrm{findPoints}$
+    passes clear, since it does not reverse yet (D); and a list of points for the callback
+    \verb|process|, with no stop it may request, no \verb|NO_Y| and no \verb|NO_CHECK| (G), and no
+    output under \verb|VERBOSE|;
   \item no failure for lack of memory, which the model cannot meet.
 \end{itemize}
 C1 runs on every input it does not refuse, including the zero polynomial and the inputs that
@@ -366,42 +368,46 @@ the points at infinity need the case $y = 0$, which ratpoints never meets.
 \end{proof}
 
 \begin{theorem}[The sieve returns the reference]\label{thm:findPoints_eq_bruteForce}
-  \uses{def:findPoints, def:Params, def:bruteForce}
-  \lean{Ratpoints.findPoints_eq_ok_bruteForce}
+  \uses{def:pointsAtInfinity, def:sieveRun, def:bruteForce}
+  \lean{Ratpoints.Sieve.pointsAtInfinity_append_toList_run_sieveRun}
   \leanok
-  For well-formed parameters, $2$ to $\mathrm{maxDegree} + 1$ coefficients and $H \ge 1$,
-  $\mathrm{findPoints}(c, H, P)$ returns $\mathrm{bruteForce}(c, H)$.
+  For moduli that are primes, an array size $A \ge 1$ and $H \ge 1$, the points at infinity of $c$
+  and its degree followed by the points of the denominators that the run finds with the tables of
+  the moduli and pieces of at most $A$ bit arrays are $\mathrm{bruteForce}(c, H)$ with the flag of
+  the reversal clear, and $\mathrm{bruteForce}(c, H)$ mapped by $\mathrm{swapPoint}$ when it is set.
 \end{theorem}
 
 \begin{proof}
-  \uses{def:sieveRun, def:arraySize, def:pointsAtInfinity, lem:survives, lem:flatMap_sound}
+  \uses{lem:survives, lem:flatMap_sound}
   \leanok
-  The array size of the parameters is at least $1$ for $H \ge 1$ (Definition~\ref{def:arraySize}),
-  and the moduli of well-formed parameters are primes, hence positive; so by the contract of the
-  denominators, with the flag of the reversal clear, the sieve returns the part of the reference
-  with $z \ge 1$, the numerators of each denominator filtered by the survivor test. Since the moduli
-  are primes, by Lemma~\ref{lem:survives} every numerator over which the exact check finds a point
-  survives, and by Lemma~\ref{lem:flatMap_sound} the filter changes nothing. The points at infinity
-  are those of the candidate $(1, 0)$ of the reference.
+  The moduli are primes, hence positive, and $A \ge 1$; so by the contract of the denominators
+  (Definition~\ref{def:sieveRun}) the run returns the part of the reference with $z \ge 1$, the
+  numerators of each denominator filtered by the survivor test, mapped by $\mathrm{swapPoint}$ when
+  the flag is set. Since the moduli are primes, by Lemma~\ref{lem:survives} every numerator over
+  which the exact check finds a point survives, and by Lemma~\ref{lem:flatMap_sound} the filter
+  changes nothing. The points at infinity are those of the candidate $(1, 0)$ of the reference,
+  mapped when the flag is set (Definition~\ref{def:pointsAtInfinity}).
 \end{proof}
 
 \begin{theorem}[The points, each once; the refusals]\label{thm:findPoints}
   \uses{def:findPoints, def:Params, def:IsPoint, def:points}
-  \lean{Ratpoints.eq_bruteForce_of_findPoints_eq_ok, Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok, Ratpoints.nodup_of_findPoints_eq_ok, Ratpoints.toFinset_eq_points_of_findPoints_eq_ok, Ratpoints.exists_findPoints_eq_error_iff}
+  \lean{Ratpoints.findPoints_eq_ok_bruteForce, Ratpoints.eq_bruteForce_of_findPoints_eq_ok, Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok, Ratpoints.nodup_of_findPoints_eq_ok, Ratpoints.toFinset_eq_points_of_findPoints_eq_ok, Ratpoints.exists_findPoints_eq_error_iff}
   \leanok
-  For well-formed parameters, if $\mathrm{findPoints}(c, H, P)$ returns the list $L$, then $L$ is
-  $\mathrm{bruteForce}(c, H)$, a triple lies in $L$ if and only if it is a normalized point of
-  height at most $H$, $L$ has no duplicates, and its set of elements is $\mathrm{points}(c, H)$.
+  For well-formed parameters: with $2$ to $\mathrm{maxDegree} + 1$ coefficients and $H \ge 1$,
+  $\mathrm{findPoints}(c, H, P)$ returns $\mathrm{bruteForce}(c, H)$; if it returns the list $L$,
+  then $L$ is $\mathrm{bruteForce}(c, H)$, a triple lies in $L$ if and only if it is a normalized
+  point of height at most $H$, $L$ has no duplicates, and its set of elements is
+  $\mathrm{points}(c, H)$.
   $\mathrm{findPoints}(c, H, P)$ refuses the input exactly when $c$ has fewer than two or more than
   $\mathrm{maxDegree} + 1$ entries or $H = 0$.
 \end{theorem}
 
 \begin{proof}
-  \uses{thm:findPoints_eq_bruteForce, thm:bruteForce}
+  \uses{def:searchPoints, thm:bruteForce}
   \leanok
-  The refusals are the three tests of $\mathrm{findPoints}$; on every other input
-  Theorem~\ref{thm:findPoints_eq_bruteForce} gives the list of the reference, and
-  Theorem~\ref{thm:bruteForce} the rest.
+  The refusals are the three tests of $\mathrm{findPoints}$; on every other input it runs the search
+  with the flag of the reversal clear, which gives the list of the reference
+  (Definition~\ref{def:searchPoints}), and Theorem~\ref{thm:bruteForce} gives the rest.
 \end{proof}
 
 \verb|mem_iff_isPoint_of_findPoints_eq_ok| and \verb|nodup_of_findPoints_eq_ok| are the main
@@ -431,7 +437,7 @@ $\ZZ/p\ZZ$.
 reading of the options (Definition~\ref{def:cliInput}) returns these values from now on, and the
 program (Definition~\ref{def:cliRun}) prints the points of the sieve. Since these are those of the
 brute-force reference, every differential test of stage~B applies unchanged, and the brute force
-needs no test of its own: Theorem~\ref{thm:findPoints_eq_bruteForce} says that the sieve returns its
+needs no test of its own: Theorem~\ref{thm:findPoints} says that \verb|findPoints| returns its
 list. Compiled, the plain sieve takes $0.16$~seconds at $H = 1000$, $1.3$ at $H = 3000$ and $3.6$ at
 $H = 5000$ on a curve of degree~$6$ with the 30 default moduli, against $0.3$ to $0.9$~seconds for
 the reference at $H = 1000$; so the differential tests of stage~C1 searched up to height $5000$,
@@ -478,6 +484,5 @@ Besides the proofs:
   \item the differential tests of Section~\ref{sec:sieveCli}: \verb|ratpoints-lean| on the sieve
     and the C program agree on all 3144 comparisons of the eight suites;
   \item the contracts take at most 8 lines each, and their file compiles in under two seconds; the
-    proofs of the stage take at most 10 lines, but for that of
-    Theorem~\ref{thm:findPoints_eq_bruteForce}, which has 11 since stage~C2 added its two facts.
+    proofs of the stage take at most 10 lines.
 \end{itemize}

@@ -384,10 +384,10 @@ Lemma~\ref{lem:sift_eq_checkDen} maps their side.
 \section{The search and the theorems}\label{sec:setupSearch}
 
 \begin{definition}[The search of the polynomial handed on]\label{def:searchPoints}
-  \uses{def:examinePrimeExit, def:useCLong, def:pointsAtInfinity, def:sieveRun, def:swapPoint,
-    lem:examinePrime_none, thm:findPoints_eq_bruteForce}
-  Proposed names: \lname{Ratpoints.searchPoints}, \lname{Ratpoints.run\_searchPoints},
-  \lname{List.eq\_map\_of\_mapM\_eq\_some}, \lname{List.exists\_mem\_of\_mapM\_eq\_none}.
+  \uses{def:Params, def:arraySize, def:examinePrimeExit, def:useCLong, def:pointsAtInfinity,
+    def:sieveRun, def:swapPoint, lem:examinePrime_none, thm:bruteForce, thm:findPoints_eq_bruteForce}
+  \lean{Ratpoints.searchPoints, Ratpoints.run_searchPoints, List.eq_map_of_mapM_eq_some, List.exists_mem_of_mapM_eq_none}
+  \leanok
   For the coefficients $c$ of degree $d$ that the set-up hands on, the flag of the reversal, the
   height $H$ and the parameters $P$: the table of each modulus, with the flag of the \verb|long|s,
   and no points when one of them is none (\csource{find_points.c}{2608}{2614},
@@ -458,26 +458,28 @@ restriction of the search region stage~H takes over.
   polynomial searched is $f$). Without the Sturm step only the first two remain.
 \end{proof}
 
-Theorem~\ref{thm:findPoints_eq_bruteForce} becomes the equation of the points at infinity and the run
-of any polynomial with its degree: for moduli that are primes, an array size at least $1$ and
+Theorem~\ref{thm:findPoints_eq_bruteForce} becomes the equation of the points at infinity and the
+run of any polynomial with its degree: for moduli that are primes, an array size at least $1$ and
 $H \ge 1$, they give $\mathrm{bruteForce}(c, H)$ with the flag of the reversal clear, mapped by
 $\mathrm{swapPoint}$ when it is set (proposed name
 \lname{Ratpoints.Sieve.pointsAtInfinity\_append\_toList\_run\_sieveRun}), on which
-Definition~\ref{def:searchPoints} rests; its old statement about $\mathrm{findPoints}$ goes, with its
-guard on the axioms, and its node uses Definitions~\ref{def:pointsAtInfinity}, \ref{def:sieveRun},
-\ref{def:Params} and~\ref{def:bruteForce} in place of Definition~\ref{def:findPoints}, while the node
-of $\mathrm{findPoints}$ uses Definition~\ref{def:searchPoints} in place of the run, the points at
-infinity and the array size. Theorem~\ref{thm:findPoints} keeps membership, no duplicates and the set of
-elements, for every option, from Theorem~\ref{thm:findPoints_perm}; its equation with the reference
-gives way to that theorem and its refusals to Theorem~\ref{thm:refusals}, and the guards on the
-axioms move to the new theorems. Comparator certifies the two main theorems with the options
-argument, both refusal theorems and \verb|wf_sieveParams|; the challenge restates $\Phi_c$ verbatim,
-as it restates $F_c$, takes the options from the model, and has the refusal theorem with the Sturm
-step off too, so that a $\mathrm{findPoints}$ that refused every input under \verb|-s| would not pass.
-Since the challenge needs \verb|Squarefree|, which the imports of the specification do not reach,
-the specification and the challenge gain the import of \verb|Mathlib.Algebra.Squarefree.Basic|, so
-that the challenge still imports exactly the public imports of the specification. The structure
-\verb|Params| and its well-formedness do not change.
+Definition~\ref{def:searchPoints} rests; its old statement about $\mathrm{findPoints}$ goes, with
+its guard on the axioms, and its node uses Definitions~\ref{def:pointsAtInfinity},
+\ref{def:sieveRun} and~\ref{def:bruteForce} in place of Definitions~\ref{def:findPoints}
+and~\ref{def:Params}, since it speaks of moduli and an array size rather than of the parameters,
+which come in with the search, while the node of $\mathrm{findPoints}$ uses
+Definition~\ref{def:searchPoints} in place of the run, the points at infinity and the array size.
+Theorem~\ref{thm:findPoints} keeps membership, no duplicates and the set of elements, for every
+option, from Theorem~\ref{thm:findPoints_perm}; its equation with the reference gives way to that
+theorem and its refusals to Theorem~\ref{thm:refusals}, and the guards on the axioms move to the new
+theorems. Comparator certifies the two main theorems with the options argument, both refusal
+theorems and \verb|wf_sieveParams|; the challenge restates $\Phi_c$ verbatim, as it restates $F_c$,
+takes the options from the model, and has the refusal theorem with the Sturm step off too, so that a
+$\mathrm{findPoints}$ that refused every input under \verb|-s| would not pass. Since the challenge
+needs \verb|Squarefree|, which the imports of the specification do not reach, the specification and
+the challenge gain the import of \verb|Mathlib.Algebra.Squarefree.Basic|, so that the challenge
+still imports exactly the public imports of the specification. The structure \verb|Params| and its
+well-formedness do not change.
 
 \section{The command-line program and the differential tests}\label{sec:setupCli}
 

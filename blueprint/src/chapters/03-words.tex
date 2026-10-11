@@ -8,9 +8,9 @@ rows of the moduli are and-ed into the words of a piece, masks clear the bits be
 of the numerator range, a scan steps over the empty bit arrays up to a sentinel, and the set bits
 of the others are visited through their trailing zeros. This is a data refinement in the sense of
 Chapter~\ref{chap:sieve}: the sieve of a denominator returns what the brute-force reference finds
-over the numerators that survive the moduli, now computed with words, so the equation of
-Theorem~\ref{thm:findPoints_eq_bruteForce} and the main theorems hold with their statements
-unchanged.
+over the numerators that survive the moduli, now computed with words, so
+Theorems~\ref{thm:findPoints_eq_bruteForce} and~\ref{thm:findPoints}, the main theorems among them,
+hold with their statements unchanged.
 
 The C code has one bit-array type per build. The model takes the width of the default build, four
 words per bit array, as a constant that no proof depends on, so that the proofs hold for every
@@ -355,11 +355,13 @@ The run over the denominators (Definition~\ref{def:sieveRun}) makes the rows of 
 returns, for each denominator, the points that \verb|sift| finds; its contract holds for $A \ge 1$
 and tables with $p > 0$, and \verb|sift| computes the residues $b \bmod p$ once per denominator,
 where ratpoints computes the residues of $b / 2^k$ before each call of \verb|sift|
-(\verb|fill_bp_list|). \verb|findPoints| (Definition~\ref{def:findPoints}) runs it with
-$A = \mathrm{arraySizeAt}(H)$ of its parameters, the tables of its moduli, which are primes, and the
-flag of the reversal clear; so the proof of Theorem~\ref{thm:findPoints_eq_bruteForce} needs two
-more facts, the lower bound of the array size and the positivity of the moduli, and the statements
-of the theorems and of the comparator challenge are those of stage~C1.
+(\verb|fill_bp_list|). The search of the polynomial (Definition~\ref{def:searchPoints}), which
+\verb|findPoints| (Definition~\ref{def:findPoints}) runs with the flag of the reversal clear, runs
+it with $A = \mathrm{arraySizeAt}(H)$ of its parameters and the tables of its moduli, which are
+primes. So the proof of Theorem~\ref{thm:findPoints_eq_bruteForce} needs the positivity of the
+moduli, and the equation of the search the lower bound of the array size, two facts that stage~C1
+did not need; the statements of the main theorems and of the comparator challenge are those of
+stage~C1.
 
 Each component of this chapter differs from the C code in a stated way, recorded in its
 \verb|Deviation:| paragraph:

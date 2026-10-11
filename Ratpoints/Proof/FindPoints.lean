@@ -19,14 +19,23 @@ import Ratpoints.Proof.Words
 /-!
 # The sieve finds exactly the points
 
-For well-formed parameters, `Ratpoints.findPoints c H P` returns the list of the brute-force
-reference on every input that it does not refuse (`Ratpoints.findPoints_eq_ok_bruteForce`), so
-that the list it returns holds exactly the points of the specification, each once; comparator
-certifies the membership, the absence of duplicates and the refusals
-(`comparator/Challenge.lean`).
+The points at infinity and the run of the denominators give the list of the brute-force reference
+of any polynomial with its degree, mapped by `Ratpoints.Sieve.swapPoint` when the flag of the
+reversal is set (`Ratpoints.Sieve.pointsAtInfinity_append_toList_run_sieveRun`); so does the search
+of the polynomial that the set-up hands on, for well-formed parameters, also when it takes the exit
+(`Ratpoints.run_searchPoints`). So `Ratpoints.findPoints c H P` returns the list of the reference
+on every input that it does not refuse (`Ratpoints.findPoints_eq_ok_bruteForce`), and the list it
+returns holds exactly the points of the specification, each once; comparator certifies the
+membership, the absence of duplicates and the refusals (`comparator/Challenge.lean`).
 
 ## Main statements
 
+* `Ratpoints.Sieve.pointsAtInfinity_append_toList_run_sieveRun`: for moduli that are primes, the
+  points at infinity and the run of the denominators give the list of `Ratpoints.bruteForce`, with
+  the flag of the reversal clear, and that list mapped by `Ratpoints.Sieve.swapPoint` when it is
+  set.
+* `Ratpoints.run_searchPoints`: for well-formed parameters, `H ≥ 1` and the degree of the
+  polynomial, the search gives the same list, also when it takes the exit.
 * `Ratpoints.findPoints_eq_ok_bruteForce`: for well-formed parameters, `Ratpoints.findPoints`
   returns the list of `Ratpoints.bruteForce` on every input that it does not refuse;
   `Ratpoints.eq_bruteForce_of_findPoints_eq_ok`: every list that it returns is that list.
@@ -40,15 +49,19 @@ certifies the membership, the absence of duplicates and the refusals
 
 ## Proof
 
-By the contract of the denominators (`Ratpoints.Sieve.toList_run_sieveRun`), with the flag of the
-reversal clear, as `Ratpoints.findPoints` passes it, the sieve returns the part of the reference
-with `z ≥ 1`, the numerators of each denominator filtered by the survivor test, since the pieces
-have at least one bit array (`Ratpoints.Params.one_le_arraySizeAt`) and the moduli of well-formed
-parameters are primes (`Ratpoints.Params.WF.prime_of_mem`), hence positive; every numerator over
-which the exact check finds a point survives (`Ratpoints.Sieve.survives_of_mem_pointsOfDen`), so the
-filter changes nothing (`Ratpoints.BruteForce.pointsOfDen_filter_of_ne`); and the points at infinity
-are those of the candidate `(1, 0)` of the reference
-(`Ratpoints.Sieve.pointsAtInfinity_eq_pointsOfDen`).
+By the contract of the denominators (`Ratpoints.Sieve.toList_run_sieveRun`), for pieces of at least
+one bit array and moduli that are primes, hence positive, the run returns the part of the reference
+with `z ≥ 1`, the numerators of each denominator filtered by the survivor test, mapped when the flag
+of the reversal is set; every numerator over which the exact check finds a point survives
+(`Ratpoints.Sieve.survives_of_mem_pointsOfDen`), so the filter changes nothing
+(`Ratpoints.BruteForce.pointsOfDen_filter_of_ne`); and the points at infinity are those of the
+candidate `(1, 0)` of the reference (`Ratpoints.Sieve.pointsAtInfinity_eq_pointsOfDen`), mapped when
+the flag is set (`Ratpoints.Sieve.pointsAtInfinity_eq_map`). In the search, the pieces have at least
+one bit array (`Ratpoints.Params.one_le_arraySizeAt`) and the moduli of well-formed parameters are
+primes (`Ratpoints.Params.WF.prime_of_mem`); a table that the search makes is that of the reference
+(`Ratpoints.Sieve.eq_examinePrime_of_examinePrime?_eq_some`), and when the search takes the exit,
+the curve has no points (`Ratpoints.Sieve.not_isPoint_of_examinePrime?_eq_none`), so the reference
+is empty. `Ratpoints.findPoints` runs the search with the flag clear.
 -/
 
 @[expose] public section
@@ -57,7 +70,7 @@ namespace Ratpoints
 
 open BruteForce Sieve
 
-/-! ### Sound filters and the points at infinity -/
+/-! ### Sound filters, the points at infinity and the run -/
 
 namespace BruteForce
 
@@ -97,29 +110,71 @@ theorem pointsAtInfinity_eq_map (c : List ℤ) (d : ℕ) (rev : Bool) :
       if rev then (pointsAtInfinity c d false).map swapPoint else pointsAtInfinity c d false := by
   cases rev <;> simp [pointsAtInfinity, pointsAbove, apply_ite (List.map swapPoint), swapPoint]
 
+-- The survivor test of the tables of primes keeps every numerator over which the exact check finds
+-- a point, so that filtering by it changes nothing.
+private theorem pointsOfDen_filter_survives (c : List ℤ) {ms : List ℕ} (hms : ∀ p ∈ ms, p.Prime)
+    (b : ℕ) (xs : List ℤ) :
+    pointsOfDen c (degree c) b (xs.filter (survives (ms.map (examinePrime c (degree c))) b)) =
+      pointsOfDen c (degree c) b xs :=
+  pointsOfDen_filter_of_ne fun _ _ hx ↦
+    have ⟨_, hq⟩ := List.exists_mem_of_ne_nil _ hx
+    (List.mem_singleton.mp (mem_pointsOfDen_iff.mp hq).1) ▸ survives_of_mem_pointsOfDen hms hq
+
+/-- By the contract of the run (`Ratpoints.Sieve.toList_run_sieveRun`), for pieces of at least one
+bit array and moduli that are primes, hence positive, the run gives the reference with the
+numerators of each denominator filtered by the survivor test, which changes nothing
+(`Ratpoints.Sieve.survives_of_mem_pointsOfDen`, `Ratpoints.BruteForce.pointsOfDen_filter_of_ne`);
+the points at infinity are those of the candidate `(1, 0)` of the reference
+(`Ratpoints.Sieve.pointsAtInfinity_eq_pointsOfDen`); both are mapped by `Ratpoints.Sieve.swapPoint`
+when the flag of the reversal is set (`Ratpoints.Sieve.pointsAtInfinity_eq_map`). -/
+theorem pointsAtInfinity_append_toList_run_sieveRun (c : List ℤ) {H A : ℕ} {ms : List ℕ}
+    (hms : ∀ p ∈ ms, p.Prime) (hA : 1 ≤ A) (hH : 1 ≤ H) (rev : Bool) :
+    pointsAtInfinity c (degree c) rev ++
+        (Id.run (sieveRun c (degree c) H A rev (ms.map (examinePrime c (degree c))))).toList =
+      if rev then (bruteForce c H).map swapPoint else bruteForce c H := by
+  rw [toList_run_sieveRun c _ H rev hA (List.forall_mem_map.mpr fun _ hq ↦ (hms _ hq).pos),
+    pointsAtInfinity_eq_map, pointsAtInfinity_eq_pointsOfDen]
+  simp only [pointsOfDen_filter_survives c hms]
+  cases rev <;> simp [bruteForce, hH, BruteForce.degree_eq]
+
 end Sieve
+
+/-! ### The search -/
+
+-- A curve without points modulo a prime has an empty reference.
+private theorem bruteForce_eq_nil_of_examinePrime?_eq_none {c : List ℤ} {d p : ℕ} {u : Bool}
+    (h : examinePrime? c d p u = none) (hp : p.Prime) (hd : d = degree c) (H : ℕ) :
+    bruteForce c H = [] :=
+  List.eq_nil_iff_forall_not_mem.mpr fun q hq ↦
+    not_isPoint_of_examinePrime?_eq_none h hp hd H q (mem_bruteForce_iff.mp hq)
+
+/-- The tables that the search makes are those of the reference
+(`Ratpoints.Sieve.eq_examinePrime_of_examinePrime?_eq_some`), on which the points at infinity and
+the run give the reference (`Ratpoints.Sieve.pointsAtInfinity_append_toList_run_sieveRun`); when the
+search takes the exit, the curve has no points
+(`Ratpoints.Sieve.not_isPoint_of_examinePrime?_eq_none`), so that the reference is empty. -/
+theorem run_searchPoints {c : List ℤ} {d H : ℕ} {P : Params} (hP : P.WF) (hH : 1 ≤ H)
+    (hd : d = degree c) (rev : Bool) :
+    Id.run (searchPoints c d H P rev) =
+      if rev then (bruteForce c H).map swapPoint else bruteForce c H := by
+  subst hd
+  simp only [searchPoints]
+  split <;> rename_i hm
+  · obtain ⟨_, hp, he⟩ := List.exists_mem_of_mapM_eq_none hm
+    simp [bruteForce_eq_nil_of_examinePrime?_eq_none he (hP.prime_of_mem hp) rfl H]
+  · rw [List.eq_map_of_mapM_eq_some (fun _ _ _ ↦ eq_examinePrime_of_examinePrime?_eq_some) hm]
+    exact pointsAtInfinity_append_toList_run_sieveRun c (fun _ ↦ hP.prime_of_mem)
+      (P.one_le_arraySizeAt hH) hH rev
 
 /-! ### The main theorems -/
 
-/-- By `Ratpoints.Sieve.toList_run_sieveRun`, for pieces of at least one bit array
-(`Ratpoints.Params.one_le_arraySizeAt`) and moduli that are primes
-(`Ratpoints.Params.WF.prime_of_mem`), hence positive, the sieve gives the reference with the
-numerators of each denominator filtered by the survivor test, which changes nothing
-(`Ratpoints.Sieve.survives_of_mem_pointsOfDen`, `Ratpoints.BruteForce.pointsOfDen_filter_of_ne`). -/
+/-- `Ratpoints.findPoints` runs the search with the flag of the reversal clear, which gives the
+reference (`Ratpoints.run_searchPoints`). -/
 theorem findPoints_eq_ok_bruteForce {c : List ℤ} {H : ℕ} {P : Params} (hP : P.WF)
     (hc2 : 2 ≤ c.length) (hcmax : c.length ≤ maxDegree + 1) (hH : H ≠ 0) :
     findPoints c H P = .ok (bruteForce c H) := by
-  have hp : ∀ e ∈ P.moduli.map (examinePrime c (BruteForce.degree c)), 0 < e.p :=
-    List.forall_mem_map.mpr fun _ hq ↦ (hP.prime_of_mem hq).pos
-  have hH1 : 1 ≤ H := Nat.one_le_iff_ne_zero.mpr hH
-  simp only [findPoints, bruteForce, hcmax.not_gt, hc2.not_gt, hH, hH1, reduceCtorEq, ↓reduceIte,
-    pointsAtInfinity_eq_pointsOfDen, toList_run_sieveRun c _ H false (P.one_le_arraySizeAt hH1) hp]
-  congr 3
-  funext j
-  refine pointsOfDen_filter_of_ne fun x _ hx ↦ ?_
-  obtain ⟨q, hq⟩ := List.exists_mem_of_ne_nil _ hx
-  obtain rfl : q.1 = x := List.mem_singleton.mp (mem_pointsOfDen_iff.mp hq).1
-  exact survives_of_mem_pointsOfDen (fun _ ↦ hP.prime_of_mem) hq
+  simp only [findPoints, hcmax.not_gt, hc2.not_gt, hH, ↓reduceIte, Bool.false_eq_true,
+    run_searchPoints hP (Nat.one_le_iff_ne_zero.mpr hH) (BruteForce.degree_eq c) false]
 
 /-- `Ratpoints.findPoints` refuses exactly the inputs with fewer than two or more than
 `Ratpoints.maxDegree + 1` coefficients and the height bound `0`; comparator certifies this

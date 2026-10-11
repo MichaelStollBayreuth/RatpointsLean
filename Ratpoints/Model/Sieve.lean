@@ -195,13 +195,10 @@ counted, and the exit asks only whether there is one; the last entry of the tabl
 and is not kept, since ratpoints reads it otherwise only for the density, the prime powers and the
 forbidden divisors, never in a row or in the third stage; the entry is made also when `f(x)` is a
 square for every residue and there is no point at infinity modulo `p`, where `examine_prime` returns
-`0` and `p` is never a modulus; the primes examined are the moduli of the parameters, where
-ratpoints examines the first `num_primes` primes of the table, and more when their number was left
-to it: the choice of the moduli is an input of the model, and when the exit fires there are no
-points, so that the output does not depend on the primes examined; the entry keeps only `p`, the
-table and the inverses (`Ratpoints.Sieve.Entry`), and no rows: `Ratpoints.Sieve.Entry.rows` makes
-them from it when they are first needed, also the row of `0`, which `examine_prime` installs from
-the build. -/
+`0` and `p` is never a modulus, the moduli being an input of the model; the entry keeps only `p`,
+the table and the inverses (`Ratpoints.Sieve.Entry`), and no rows: `Ratpoints.Sieve.Entry.rows`
+makes them from it when they are first needed, also the row of `0`, which `examine_prime` installs
+from the build. -/
 def examinePrime? (c : List Int) (d p : Nat) (useCLong : Bool) : Option Entry :=
   let cs := (List.range (d + 1)).map fun n ↦
     (if useCLong then modLong (c.getD n 0) p else c.getD n 0 % (p : Int)).toNat
