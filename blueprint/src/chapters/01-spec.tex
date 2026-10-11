@@ -336,21 +336,22 @@ that they mirror:
   \verb|main.c|: fewer than two arguments fail (\csource{main.c}{210}{214}); the first argument
   gives the coefficients, constant term first, integers separated by white space, and fails on a
   word that is not an integer, wherever it stands, then on more than $\mathrm{maxDegree} + 1$
-  integers, then on fewer than two (\csource{main.c}{318}{318}, \csource{main.c}{362}{375}); the second gives the height bound,
-  a C \verb|long| of at least $1$ (\csource{main.c}{378}{379}); and the options are read from left
-  to right, each told by the character after its \verb|-| and, for \verb|-f| and \verb|-d|, by the
-  one after that (\csource{main.c}{393}{397}, \csource{main.c}{667}{668}). The tuning options, of
-  which \verb|-p -F -t -n -N -R -A -P| take a C \verb|long| and \verb|-r -U -C -Q -W| a real number,
-  have their arguments checked (\csource{main.c}{437}{532}); the values of \verb|-p -n -N -P -F| and
-  the switches \verb|-j| and \verb|-J| (\csource{main.c}{578}{593}) go into the values of the
-  options of Definition~\ref{def:sieveParams}, the last one winning, and the other tuning options,
-  \verb|-q| and \verb|-v| are ignored; \verb|-k| and \verb|-K| (\csource{main.c}{594}{601}) and
-  \verb|-s| and \verb|-S| (\csource{main.c}{638}{649}) go into the options of
-  Definition~\ref{def:Options}, the last of each pair winning: the reversal forbidden or allowed,
-  and the depth of the Sturm step, $-1$ for \verb|-s|, and for \verb|-S| the C \verb|long| that the
-  next word gives when there is one and it does not start with \verb|-| (error~6 if it is
-  malformed), and else $\mathrm{defaultSturm}$; an option of ratpoints that is not supported yet
-  ends the reading, its arguments unchecked, and any other word fails with error~6.
+  integers, then on fewer than two (\csource{main.c}{318}{318}, \csource{main.c}{362}{375}); the
+  second gives the height bound, a C \verb|long| of at least $1$ (\csource{main.c}{378}{379}); and
+  the options are read from left to right, each told by the character after its \verb|-| and, for
+  \verb|-f| and \verb|-d|, by the one after that (\csource{main.c}{393}{397},
+  \csource{main.c}{667}{668}). The tuning options, of which \verb|-p -F -t -n -N -R -A -P| take a C
+  \verb|long| and \verb|-r -U -C -Q -W| a real number, have their arguments checked
+  (\csource{main.c}{437}{532}); the values of \verb|-p -n -N -P -F| and the switches \verb|-j| and
+  \verb|-J| (\csource{main.c}{578}{593}) go into the values of the options of
+  Definition~\ref{def:sieveParams}, the last one winning, and the other tuning options, \verb|-q|
+  and \verb|-v| are ignored; \verb|-k| and \verb|-K| (\csource{main.c}{594}{601}) and \verb|-s| and
+  \verb|-S| (\csource{main.c}{638}{649}) go into the options of Definition~\ref{def:Options}, the
+  last of each pair winning: the reversal forbidden or allowed, and the depth of the Sturm step,
+  $-1$ for \verb|-s|, and for \verb|-S| the C \verb|long| that the next word gives when there is one
+  and it does not start with \verb|-| (error~6 if it is malformed), and else
+  $\mathrm{defaultSturm}$; an option of ratpoints that is not supported yet ends the reading, its
+  arguments unchecked, and any other word fails with error~6.
 \end{definition}
 
 \begin{definition}[The program]\label{def:cliRun}
@@ -365,14 +366,14 @@ that they mirror:
   options that set the sieving parameters and the options $o$ of the search
   (Definition~\ref{def:Options}), in the order of that list, which is that of
   Theorem~\ref{thm:findPoints_perm}: the brute-force reference of the polynomial searched, mapped
-  back after a reversal; and exits with status~0 (\csource{main.c}{284}{284}). It writes its output once it is computed and, like
-  ratpoints, ignores a failed write, but for one case: when the reader of the output is gone, the
-  signal \verb|SIGPIPE| ends ratpoints, and the shell reports the status $141 = 128 + 13$; the Lean
-  runtime ignores that signal, so that the write of \verb|ratpoints-lean| fails instead, and it
-  exits quietly with status~141. Since ratpoints flushes its output after every point (line 187 of
-  \verb|main.c|), a reader that leaves early, like \verb|head|, ends it at the next point, while
-  \verb|ratpoints-lean| notices only a reader that is gone when it writes: an output that fits into
-  the pipe ends with status~0.
+  back after a reversal; and exits with status~0 (\csource{main.c}{284}{284}). It writes its output
+  once it is computed and, like ratpoints, ignores a failed write, but for one case: when the reader
+  of the output is gone, the signal \verb|SIGPIPE| ends ratpoints, and the shell reports the status
+  $141 = 128 + 13$; the Lean runtime ignores that signal, so that the write of \verb|ratpoints-lean|
+  fails instead, and it exits quietly with status~141. Since ratpoints flushes its output after
+  every point (line 187 of \verb|main.c|), a reader that leaves early, like \verb|head|, ends it at
+  the next point, while \verb|ratpoints-lean| notices only a reader that is gone when it writes: an
+  output that fits into the pipe ends with status~0.
 \end{definition}
 
 \section{The differential tests of stage~B}
@@ -423,13 +424,16 @@ fails before the option, and else exit with status~12. CI builds the C program a
 
 \section{Files and names}
 
-All declarations live in the namespace \verb|Ratpoints|. The module says which part a declaration
-belongs to, and \verb|scripts/check_layout.py| keeps the parts' imports apart: the specification is
-\verb|Ratpoints/Spec/Basic.lean|, with examples by \verb|decide| taken from the output of the
-program; the constants of the C code are in \verb|Ratpoints/Model/Constants.lean|; the brute-force
-reference is \verb|Ratpoints/Model/BruteForce.lean|, with \verb|#guard| examples taken from the C
-program, and its theorems are in \verb|Ratpoints/Proof/BruteForce.lean|, each with a guard on its
-axioms (\verb|#print axioms| under \verb|#guard_msgs|); the program is
+The declarations live in the namespace \verb|Ratpoints|, but for the lemmas that Lean core lacks
+(\verb|Ratpoints/Proof/Bits.lean|) and the candidates for Mathlib (\verb|Ratpoints/Mathlib|), which
+carry their names in the namespaces of core and of Mathlib, and for \verb|main| (\verb|Main.lean|)
+and the statements of \verb|comparator/|, which are at the root. The module says which part a
+declaration belongs to, and \verb|scripts/check_layout.py| keeps the parts' imports apart: the
+specification is \verb|Ratpoints/Spec/Basic.lean|, with examples by \verb|decide| taken from the
+output of the program; the constants of the C code are in \verb|Ratpoints/Model/Constants.lean|; the
+brute-force reference is \verb|Ratpoints/Model/BruteForce.lean|, with \verb|#guard| examples taken
+from the C program, and its theorems are in \verb|Ratpoints/Proof/BruteForce.lean|, each with a
+guard on its axioms (\verb|#print axioms| under \verb|#guard_msgs|); the program is
 \verb|Ratpoints/Model/Cli.lean| with \verb|Main.lean|; the statements for comparator are in
 \verb|comparator/|, and the differential tests in \verb|scripts/difftest.py|.
 

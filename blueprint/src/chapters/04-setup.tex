@@ -19,7 +19,7 @@ The reversal is the transformation of Chapter~\ref{chap:sieve}: it exchanges $x$
 binary form, and the map that the C code applies to every point it finds of the reversed polynomial
 is a bijection onto the points of the caller's curve that preserves the box. So after a reversal the
 output is the list of the brute-force reference for the reversed polynomial with each point mapped
-back, a permutation of the reference; the equation of Theorem~\ref{thm:findPoints_eq_bruteForce}
+back, a permutation of the reference; the equation of Theorem~\ref{thm:pointsAtInfinity_append_run}
 becomes the equation of the points at infinity and the run, for any polynomial and its degree, and
 membership and no duplicates hold for every option. The set-up has been the most error-prone part
 of ratpoints: the fixes of 2.2.2 include a reversal that marked a cubic reversed and left it as it
@@ -387,7 +387,7 @@ Lemma~\ref{lem:sift_eq_checkDen} maps their side.
 
 \begin{definition}[The search of the polynomial handed on]\label{def:searchPoints}
   \uses{def:Params, def:arraySize, def:examinePrimeExit, def:useCLong, def:pointsAtInfinity,
-    def:sieveRun, def:swapPoint, lem:examinePrime_none, thm:bruteForce, thm:findPoints_eq_bruteForce}
+    def:sieveRun, def:swapPoint, lem:examinePrime_none, thm:bruteForce, thm:pointsAtInfinity_append_run}
   \lean{Ratpoints.searchPoints, Ratpoints.run_searchPoints, List.eq_map_of_mapM_eq_some, List.exists_mem_of_mapM_eq_none}
   \leanok
   For the coefficients $c$ of degree $d$ that the set-up hands on, the flag of the reversal, the
@@ -459,7 +459,7 @@ restriction of the search region stage~H takes over.
   polynomial searched is $f$). Without the Sturm step only the first two remain.
 \end{proof}
 
-Theorem~\ref{thm:findPoints_eq_bruteForce} becomes the equation of the points at infinity and the
+Theorem~\ref{thm:pointsAtInfinity_append_run} becomes the equation of the points at infinity and the
 run of any polynomial with its degree: for moduli that are primes, an array size at least $1$ and
 $H \ge 1$, they give $\mathrm{bruteForce}(c, H)$ with the flag of the reversal clear, mapped by
 $\mathrm{swapPoint}$ when it is set (proposed name
@@ -606,7 +606,7 @@ core's namespaces in \verb|Data/List/Basic|). Every new module joins its part ro
     its C ranges, with \verb|#guard| examples of \verb|mod| at the ends of the range of a \verb|long|
     and of curves without points modulo $3$, $5$ and $7$.
   \item[D.6] The search of the polynomial handed on and its equation (Definition~\ref{def:searchPoints}),
-    with the new form of Theorem~\ref{thm:findPoints_eq_bruteForce}; $\mathrm{findPoints}$ runs it,
+    with the new form of Theorem~\ref{thm:pointsAtInfinity_append_run}; $\mathrm{findPoints}$ runs it,
     without a reversal so far.
   \item[D.7] The options and $\mathrm{defaultSturm}$; $\mathrm{findPoints}$ with the options, whose
     argument defaults to those of a run without options, so that the program keeps compiling, the

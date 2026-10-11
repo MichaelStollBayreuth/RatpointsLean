@@ -31,10 +31,13 @@ calls
 \begin{enumerate}
   \item drops the leading zero coefficients, refusing the form as not squarefree when that lowers
     $\lceil n/2 \rceil$, refuses degree $0$ and a height below $1$, and caps the parameters
-    (\csource{find_points.c}{4624}{4658}); it reverses the polynomial in some cases
-    (\csource{find_points.c}{4732}{4803}; stage~D);
-  \item computes the search region by the Sturm step (stage~H) and decides whether there are
-    points at infinity (\csource{find_points.c}{4894}{4899});
+    (\csource{find_points.c}{4624}{4658}); it reverses the polynomial in some cases, refusing the
+    form as not squarefree for even $d$ with $c_0 = c_1 = 0$ (\csource{find_points.c}{4732}{4803};
+    stage~D);
+  \item computes the remainder chain of $f$ and $f'$ of the Sturm step, refusing the form as not
+    squarefree when a remainder is zero (\csource{sturm.c}{99}{163},
+    \csource{find_points.c}{4857}{4892}; stage~D), and from it the search region (stage~H), and
+    decides whether there are points at infinity (\csource{find_points.c}{4894}{4899});
   \item sets up the tests on the denominators (squares or divisors times squares, Jacobi symbols)
     and the 2-adic information, with an exit when no class of denominators modulo $64$ admits a
     numerator (stage~E);
@@ -296,17 +299,18 @@ maps, specified by ordinary lemmas.
   \lean{Ratpoints.findPoints}
   \leanok
   For the parameters $P$ and the options $o$ (Definition~\ref{def:Options}), by default those of a
-  run of the program without options, as the library function \verb|find_points| does with its
-  parts \verb|find_points_work| and \verb|find_points_work_1| (\csource{find_points.c}{4523}{4528},
+  run of the program without options, as the library function \verb|find_points| does with its parts
+  \verb|find_points_work| and \verb|find_points_work_1| (\csource{find_points.c}{4523}{4528},
   \csource{find_points.c}{4546}{4546}, \csource{find_points.c}{4557}{4559},
   \csource{find_points.c}{4564}{4565}, \csource{find_points.c}{5226}{5229},
-  \csource{find_points.c}{5235}{5235}, \csource{find_points.c}{5241}{5242}): refuse more than $\mathrm{maxDegree} + 1$ coefficients, fewer
-  than two, and $H = 0$, in the order of the program, with its errors 3, 5 and~4
-  (Section~\ref{sec:refusals}; the refusals of Definition~\ref{def:reversal}), where the library
-  refuses them as bad arguments, after it has dropped the leading zeros; then, as not squarefree
-  (error~8), a form that loses $\lceil n/2 \rceil$ with the leading zeros
-  (\csource{find_points.c}{4567}{4571}, \csource{find_points.c}{4578}{4585},
-  \csource{find_points.c}{4606}{4606},
+  \csource{find_points.c}{5235}{5235}, \csource{find_points.c}{5241}{5242}): refuse more than
+  $\mathrm{maxDegree} + 1$ coefficients, fewer than two, and $H = 0$, in the order of the program,
+  with its errors 3, 5 and~4 (Section~\ref{sec:refusals}; the refusals of
+  Definition~\ref{def:reversal}), where the library refuses them as bad arguments: a degree above
+  $\mathrm{maxDegree}$, and the empty list as the degree $-1$, before it drops the leading zeros,
+  and the degree $0$ and a height below $1$ after it; then, as not squarefree (error~8), a form that
+  loses $\lceil n/2 \rceil$ with the leading zeros (\csource{find_points.c}{4567}{4571},
+  \csource{find_points.c}{4578}{4585}, \csource{find_points.c}{4606}{4606},
   \csource{find_points.c}{4624}{4633}, \csource{find_points.c}{4658}{4658}). Then run the reversal
   check with the switch of the options (Definition~\ref{def:reversal}), which may refuse the form as
   not squarefree too or reverse the polynomial; with the Sturm step on, refuse the form when the
@@ -383,7 +387,7 @@ meets; ratpoints refuses it before it gets there, and so does $\mathrm{findPoint
   Apply Lemma~\ref{lem:admits_examinePrime} to each prime.
 \end{proof}
 
-\begin{theorem}[The sieve returns the reference]\label{thm:findPoints_eq_bruteForce}
+\begin{theorem}[The sieve returns the reference]\label{thm:pointsAtInfinity_append_run}
   \uses{def:pointsAtInfinity, def:sieveRun, def:bruteForce}
   \lean{Ratpoints.Sieve.pointsAtInfinity_append_toList_run_sieveRun}
   \leanok

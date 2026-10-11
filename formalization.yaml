@@ -106,9 +106,11 @@ status:
     binary form over Q restated in the challenge; the lemmas on homogenizations and their
     squarefreeness are candidates for Mathlib; ratpoints-lean reads the options -k, -K, -s and -S,
     refuses a form that is not squarefree with error 8 as the C program does with the same options,
-    and prints the points of a reversed polynomial in the order of the C program; and the
-    differential tests compare the refusals and the points in their order wherever the C program
-    visits the denominators in ascending order (3218 comparisons in the default suites). Next:
+    and prints the points in the order of the C program wherever the C program visits the
+    denominators in ascending order (after a reversal, those of the reversed polynomial mapped
+    back); and the differential tests compare the refusals and the points in their order wherever
+    the C program visits the denominators in ascending order (3218 comparisons in the default
+    suites). Next:
     stage E; the introduction of the blueprint lists the later stages (the denominator and
     numerator sides, the order and protocol, the search region and the Sturm step).
   sorry_count: 0
