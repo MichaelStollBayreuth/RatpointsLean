@@ -52,17 +52,21 @@ that lists the components of the stage with their contracts and proposed names:
     theorems keep their statements (Chapter~\ref{chap:words});
   \item[D] the set-up: the degree, the squarefree test and the refusals, the reversal, the exit when
     there are no points modulo a prime, and the points at infinity (Chapter~\ref{chap:setup});
-  \item[E] the 2-adic information and the denominator side;
+  \item[E] the 2-adic information and the side of the denominators: the classes modulo $64$, the
+    divisors of the leading coefficient, the forbidden divisors and the Jacobi test, and the loop
+    over the denominators in the order of the C program (Chapter~\ref{chap:denominators});
   \item[F] the numerator side: the faithful tables and the three stages of the sieve;
   \item[G] the order of the output and the callback protocol;
   \item[H] the search region and the Sturm step, with Sturm's theorem as a hypothesis;
-  \item[I] optionally, the C program's choice of the sieving parameters.
+  \item[I] the blocks of the loop over the denominators, with the threads and the correction of the
+    moduli between them, and optionally the C program's choice of the sieving parameters.
 \end{itemize}
 
 \input{chapters/01-spec}
 \input{chapters/02-sieve}
 \input{chapters/03-words}
 \input{chapters/04-setup}
+\input{chapters/05-denominators}
 
 \appendix
 \input{generated/correspondence}

@@ -1,0 +1,933 @@
+% Stage E: the side of the denominators: the 2-adic information with its classes modulo 64, the
+% class word as the starting value of the first stage and the 2-adic exit; for odd degree the
+% squares and the divisors of the leading coefficient times squares (setup_us1) with the valuation
+% test of the slopes; for even degree the forbidden divisors, tested with words of 64 denominators
+% and by their valuations, and the Jacobi test, by the binary algorithm and by tables; and the loop
+% over the denominators in the four shapes of run_setup and run_block. Proposed names are set with
+% \lname and become \lean once the declarations exist.
+\chapter{The denominators}\label{chap:denominators}
+
+Stage~E models what ratpoints does on the side of the denominators. Before the sieve it computes,
+for each class of the denominators modulo $64$, which numerators modulo $64$ the class admits, and
+which classes admit one at all; for a polynomial of odd degree it restricts the denominators to
+squares, or to squares times squarefree divisors of the leading coefficient with a test on their
+valuations; for even degree it finds primes that divide no denominator of a point, or only to
+certain powers, and tests the denominators by a Jacobi symbol; and it runs the loop over the
+denominators in one of four shapes that combine these tests. Each test only removes candidates that
+are not points, so the points found do not change. What changes is their order: for a polynomial
+searched of odd degree whose leading coefficient is not $\pm 1$, ratpoints visits the denominators
+divisor by divisor when the factorization of the leading coefficient over its table of primes is
+complete and gives fewer than $512$ squarefree divisors up to the largest denominator, so that
+\verb|ratpoints '1 2' 20 -q| prints the points of the denominator~$9$ before those of the
+denominator~$2$: the divisors of the leading coefficient $2$ are $1$ and $2$, and the loop takes $1,
+4, 9, 16$ and then $2, 8, 18$.
+
+So the output becomes the points at infinity followed by the points of the brute-force reference
+over the denominators that the loop of the search visits, in its order, each mapped back after a
+reversal. It is a permutation of the reference, as in stage~D, so that the main theorems, the
+refusal theorems and the statements that comparator certifies do not change; and it is the reference
+itself, without a reversal, wherever the loop visits the denominators in increasing order, in
+particular for every shape but the divisors times squares. Besides the deviations of
+Section~\ref{sec:denDeviations}, which name their stages, the model of this chapter keeps two
+simplifications of the loop, each the subject of a later stage: every class of the denominators
+packs its numerators with the stride~$1$, so that the class word is a pattern of the plain layout of
+the model, where ratpoints packs the numerators of a class that are all congruent modulo $2^e$ into
+the bits of every $2^e$-th numerator (stage~F); and the loop visits the denominators of each segment
+in order, where ratpoints cuts the segments into blocks for its threads and for the correction of
+the moduli between blocks (stage~I). Neither changes the points or their order.
+
+\section{What the C code does on the side of the denominators}\label{sec:denC}
+
+For the polynomial searched, of degree $d$ with the coefficients $c_0, \dots, c_d$ that the
+set-up of stage~D hands on, the form $F(x, z) = \sum_k c_k x^k z^{D - k}$ of even degree
+$D = d + (d \bmod 2)$, and the largest denominator $b_{\mathrm{high}}$, which is $H$ until stage~H,
+\verb|find_points_work_1|:
+\begin{enumerate}
+  \item sets the flag of the checked loop over the denominators, \verb|RATPOINTS_CHECK_DENOM|, for
+    every degree (\csource{find_points.c}{4606}{4607}); clears it for odd $d$; and for even $d$ with
+    $c_d$ not a square sets \verb|RATPOINTS_USE_JACOBI|, unless the caller has switched the Jacobi
+    test off (\verb|RATPOINTS_NO_JACOBI|, the program's \verb|-j|)
+    (\csource{find_points.c}{4900}{4907});
+  \item for odd $d$ and $|c_d| = 1$, sets \verb|RATPOINTS_USE_SQUARES|: the denominator of every
+    point is then a square; for odd $d$ and $|c_d| \ne 1$, calls \verb|setup_us1|
+    (\csource{find_points.c}{766}{935}), which factors $|c_d|$ over $2$ and the $171$ odd primes of
+    \verb|primes.h|, taking a cofactor below $p^2$, which has no prime factor below $p$, as a prime;
+    when the factorization is complete, lists the squarefree divisors of $c_d$ up to
+    $b_{\mathrm{high}}$ in the order of binary counting over its primes in increasing order, the
+    first prime the lowest bit; and when there are fewer than $\mathrm{maxDivisors} = 512$ of them,
+    computes for each prime $p$ of $c_d$ the slope of a valuation test and sets
+    \verb|RATPOINTS_USE_SQUARES1| (\csource{find_points.c}{4909}{4943});
+  \item computes the 2-adic information (\verb|get_2adic_info|, \csource{find_points.c}{981}{1115}):
+    the coefficients modulo $64$; the residues $k$ modulo $64$ at which $f(k)$ is a square modulo
+    $64$, and the even residues $t$ at which the reversed polynomial
+    $\tilde f(t) = t^D f(1/t)$ is one, both by Horner's rule in the arithmetic of
+    \verb|unsigned long|; from them, by scattering, for each class $b$ modulo $64$ the word
+    $\mathrm{nb}[b]$ of the admissible numerators modulo $64$, bit $a$ set exactly when $a$ or $b$
+    is odd and $F(a, b)$ is a square modulo $64$; the packing of each class, the largest
+    $e \le 6$ for which its admissible numerators lie in one class $a_0$ modulo $2^e$, and its
+    pattern in that packing; and the word $\mathrm{den\_bits}$ of the classes that admit a
+    numerator;
+  \item ends the search with no points when no class admits a numerator and there is no point at
+    infinity (\csource{find_points.c}{4954}{4963}), which happens only for even $d$, $c_0$ and
+    $c_d$ non-squares modulo $64$, and never after a reversal;
+  \item in \verb|sieving_info|, for each prime $p$ that it examines and while the checked loop is on
+    and fewer than \verb|max_forbidden| forbidden divisors have been found: for $p \mid c_d$, the
+    mask of the valuations $m \ge 1$ with $p^m \le b_{\mathrm{high}}$ that no denominator of a point
+    has, by the terms of $F$ of least valuation at $p$ (\verb|forbidden_valuations|,
+    \csource{find_points.c}{2192}{2234}), recorded, when it is not zero, as a prime tested with
+    words of $64$ denominators when it holds every such valuation, and as a valuation entry
+    otherwise; for $p \nmid c_d$ with $c_d$ not a square modulo $p$, a prime tested with words
+    (\csource{find_points.c}{2624}{2677}); then, unless $c_d$ is a square, the further primes of the
+    table with $p^2 \le b_{\mathrm{high}}$ and the Kronecker symbol $(c_d / p) = -1$, tested with
+    words, whose words it makes for the primes beyond the table of the build
+    (\csource{find_points.c}{2709}{2789}); and it clears the flag of the checked loop when there is
+    no forbidden divisor and no Jacobi test (\csource{find_points.c}{2793}{2795});
+  \item chooses the shape of the loop (\verb|run_setup|, \csource{find_points.c}{3778}{3877}): the
+    squares $k^2$ under \verb|RATPOINTS_USE_SQUARES|; the divisors times squares $s k^2$ under
+    \verb|RATPOINTS_USE_SQUARES1|, one segment per divisor, in the order of the divisors; the words
+    of $64$ denominators under \verb|RATPOINTS_CHECK_DENOM|, with the tables of the Jacobi test
+    when the Jacobi test is on (\verb|RATPOINTS_USE_JACOBI|), $b_{\mathrm{high}} < 2^{32}$ and the
+    odd part of $c_d$ factors over the table into at most $16$ primes whose tables of the
+    non-squares, for the odd exponents, take at most $8192$ entries (\verb|jacobi_setup|,
+    \csource{find_points.c}{683}{731}); and
+    every denominator otherwise; and cuts the segments into blocks, which the calling thread or the
+    threads sieve;
+  \item in each block (\verb|run_block|, \csource{find_points.c}{3889}{4078}) visits the
+    denominators of its shape in order and tests each: for the squares, the divisors and every
+    denominator, that the pattern of the class of $b \bmod 64$ is not empty, and for the divisors
+    then the valuation test of the slopes; for the words, it and-s the word of
+    $\mathrm{den\_bits}$ with the words of the primes tested with words and takes the set bits in
+    increasing order, each then tested by the Jacobi test by tables, the valuation entries, and,
+    with the Jacobi test on and no tables, the Jacobi test by the binary algorithm, on \verb|long|s
+    (\verb|jacobi1|) or
+    on GMP integers (\verb|jacobi|); a denominator that passes is sifted, and the first stage of the
+    sieve starts from the pattern of its class rather than from all ones
+    (\csource{sift.c}{948}{955}).
+\end{enumerate}
+So the program prints the points at infinity, then the points of each denominator in the order of
+the loop of its shape, the numerators of each denominator in increasing order: in increasing order
+of the denominators for the squares, the words and every denominator, and divisor by divisor for the
+divisors times squares. The tests and the 2-adic information only remove denominators and
+numerators that carry no point; the blocks, the threads and the correction of the moduli between
+the blocks change neither the points nor their order; and the packing of the classes changes only
+which bit of a bit array stands for which numerator.
+
+\section{The 2-adic information}\label{sec:twoAdic}
+
+\begin{definition}[The 2-adic information]\label{def:twoAdic}
+  \uses{def:ctz}
+  Proposed names: \lname{Ratpoints.Sieve.squares64}, \lname{Ratpoints.Sieve.coeffsMod64},
+  \lname{Ratpoints.Sieve.fsq}, \lname{Ratpoints.Sieve.gsq}, \lname{Ratpoints.Sieve.twoAdic},
+  \lname{Ratpoints.Sieve.denBits}.
+  The squares modulo $64$ as a word, bit $s$ set for the twelve squares
+  $0, 1, 4, 9, 16, 17, 25, 33, 36, 41, 49, 57$ (\csource{find_points.c}{981}{981}); the
+  coefficients modulo $64$ as the form of degree $D$ reads them, with $c_D = 0$ for odd $d$
+  (\csource{find_points.c}{1002}{1004}); the word $\mathrm{fsq}$ of the residues $k$ with
+  $f(k)$ a square modulo $64$ (\csource{find_points.c}{1006}{1014}) and the word $\mathrm{gsq}$ of
+  the even residues $t$ with $\tilde f(t)$ one (\csource{find_points.c}{1015}{1021}), by Horner's
+  rule in the arithmetic of $64$-bit words, which is exact modulo $64$; the words
+  $\mathrm{nb}[b]$, $b < 64$: from zero, for each set bit $k$ of $\mathrm{fsq}$, lowest first, bit
+  $k b \bmod 64$ of the word of every odd $b$, and for each set bit $t$ of $\mathrm{gsq}$, bit $a$
+  of the word of $t a \bmod 64$ for every odd $a$ (\csource{find_points.c}{983}{994},
+  \csource{find_points.c}{996}{1000}, \csource{find_points.c}{1023}{1050},
+  \csource{find_points.c}{1106}{1115}); and $\mathrm{den\_bits}$, bit $b$ set exactly when
+  $\mathrm{nb}[b] \ne 0$ (\csource{find_points.c}{995}{995}, \csource{find_points.c}{1064}{1065},
+  \csource{find_points.c}{1070}{1070}, \csource{find_points.c}{1096}{1097},
+  \csource{find_points.c}{1102}{1104}). The model keeps the stride~$1$ for every class, the
+  stride exponent $0$ and the offset $a_0 = 0$, so that the pattern of a class is its word
+  $\mathrm{nb}[b]$ itself, and computes $\mathrm{den\_bits}$ from the words. Bit $a$ of
+  $\mathrm{nb}[b]$ is set exactly when $a$ or $b$ is odd and $F(a, b)$ is a square modulo $64$.
+\end{definition}
+
+\begin{lemma}[The class of a point]\label{lem:twoAdic_point}
+  \uses{def:twoAdic, def:IsPoint, def:bruteForce, def:andRows}
+  Proposed names: \lname{Ratpoints.Sieve.squares64\_test\_iff},
+  \lname{Ratpoints.Sieve.getLsbD\_fsq\_coeffsMod64},
+  \lname{Ratpoints.Sieve.getLsbD\_gsq\_coeffsMod64}, \lname{Ratpoints.Sieve.TwoAdicBits},
+  \lname{Ratpoints.Sieve.twoAdic\_spec}, \lname{Ratpoints.Sieve.getLsbD\_run\_twoAdic},
+  \lname{IsUnit.isSquare\_of\_sq\_eq\_mul\_pow},
+  \lname{Ratpoints.sum\_mul\_pow\_mul\_pow\_sub\_of\_eq\_mul},
+  \lname{Ratpoints.isSquare\_sum\_mul\_pow\_of\_sq\_eq\_binaryForm},
+  \lname{Ratpoints.isSquare\_sum\_mul\_pow\_sub\_of\_sq\_eq\_binaryForm},
+  \lname{Ratpoints.Sieve.classBit\_twoAdic\_of\_sq\_eq}, \lname{Ratpoints.Sieve.getLsbD\_denBits},
+  \lname{Ratpoints.Sieve.getElem!\_twoAdic\_ne\_zero}. For a normalized point $(a, y, b)$ with $b
+  \ge 1$, bit $a \bmod 64$ of $\mathrm{nb}[b \bmod 64]$ is set, and so is bit $b \bmod 64$ of
+  $\mathrm{den\_bits}$. The contract of the words is exact: bit $a$ of $\mathrm{nb}[b]$ is set if
+  and only if $b$ is odd and $a = k b \bmod 64$ for a set bit $k$ of $\mathrm{fsq}$, or $a < 64$ is
+  odd and $b = t a \bmod 64$ for a set bit $t$ of $\mathrm{gsq}$; and bit $k$ of $\mathrm{fsq}$ is
+  set exactly when $f(k)$ is a square in $\mathbb{Z}/64$, bit $t$ of $\mathrm{gsq}$ exactly when $t$
+  is even and $\tilde f(t)$ is one.
+\end{lemma}
+
+\begin{proof}
+  Since $\gcd(a, b) = 1$, $a$ or $b$ is odd. For odd $b$, $F(a, b) = b^D f(a b^{-1})$ modulo $64$,
+  where $b^D$ is the square of a unit since $D$ is even; so $f(k)$ is a square modulo $64$ for $k =
+  a b^{-1} \bmod 64$, bit $k$ of $\mathrm{fsq}$ is set, and the scatter sets bit $k b \equiv a$ of
+  $\mathrm{nb}[b \bmod 64]$. For even $b$, $a$ is odd and $F(a, b) = a^D \tilde f(b a^{-1})$ modulo
+  $64$; so bit $t = b a^{-1} \bmod 64$ of $\mathrm{gsq}$ is set, $t$ is even, and the scatter sets
+  bit $a \bmod 64$ of $\mathrm{nb}[t a \bmod 64]$, the word of $b \bmod 64$. Horner's rule on
+  $64$-bit words, read in $\mathbb{Z}/64$, is Horner's rule there; the twelve squares of the word
+  $\mathrm{squares64}$ are checked by \verb|decide|.
+\end{proof}
+
+The packing by the stride, from the masks of the classes to the stride and the offset of each class
+(\csource{find_points.c}{1058}{1062}, \csource{find_points.c}{1066}{1067},
+\csource{find_points.c}{1069}{1069}, \csource{find_points.c}{1071}{1095},
+\csource{find_points.c}{1099}{1101}), is stage~F. The first stage of the sieve starts from the word
+of the class of the denominator: the components of Chapter~\ref{chap:words} that make a piece and
+the numerators of one denominator gain the class word $\omega$ as an argument, the first stage
+(Definition~\ref{def:andRows}) writes $\omega$ into every word of the piece in place of all ones, as
+ratpoints writes the pattern of the class, which \verb|get_2adic_info| makes once per class, one
+word repeated over a bit array by the macro \verb|RBA| of the build, and copies into each bit array;
+so the node of the first stage gains the line that makes the pattern and the macro of every build
+(\csource{find_points.c}{1098}{1098}, \csource{rp-private.h}{129}{132},
+\csource{rp-private.h}{203}{204}, \csource{rp-private.h}{235}{235},
+\csource{rp-private.h}{261}{261}, \csource{rp-private.h}{285}{285}); and their contracts gain the
+class bit: bit $t$ of word $y$ of a piece is bit $t$ of $\omega$ and the survivor test of the
+numerator $R w_0 + 64 y + t$, which is congruent to $t$ modulo $64$ since $64 \mid R$
+(\lname{Ratpoints.Sieve.classBit}, the bit $a \bmod 64$ of a word, and
+\lname{Ratpoints.Sieve.classBit\_rbaLength\_mul\_add}, which the node of the first stage names). So
+\verb|sift| with the class word $\omega$ gives what the brute-force reference finds over $b$ and the
+numerators that pass bit $a \bmod 64$ of $\omega$ and the tables (Definitions~\ref{def:siftPiece}
+and~\ref{def:sift}): the equation of Lemma~\ref{lem:sift_eq_checkDen} filters the points of the
+plain sieve by the class bit of their numerators (\lname{Ratpoints.BruteForce.pointsOfDen\_filter},
+which its node names); with the word of the class of $b$, by Lemma~\ref{lem:twoAdic_point}, that is
+what the reference finds over $b$ and the numerators that survive the tables.
+
+\begin{lemma}[The 2-adic exit]\label{lem:twoAdic_exit}
+  \uses{lem:twoAdic_point, def:pointsAtInfinity, def:IsPoint, def:reversal}
+  Proposed names: \lname{Ratpoints.Sieve.not\_isPoint\_of\_denBits\_eq\_zero},
+  \lname{Ratpoints.Sieve.pointsAtInfinity\_eq\_nil}.
+  If $d$ is even, $c_d$ is not a square and $\mathrm{den\_bits} = 0$, then the curve has no
+  normalized point of any height; in particular it has no point at infinity.
+\end{lemma}
+
+\begin{proof}
+  A point with $b \ge 1$ would set bit $b \bmod 64$ of $\mathrm{den\_bits}$
+  (Lemma~\ref{lem:twoAdic_point}), and a point with $b = 0$ is a point at infinity.
+\end{proof}
+
+\section{Odd degree: squares and divisors}\label{sec:oddDegree}
+
+For odd $d$, $F(a, b) = b \, G(a, b)$ with
+$G(a, b) = c_d a^d + b \sum_{k < d} c_k a^k b^{d - 1 - k}$, and for coprime $a$ and $b$,
+$\gcd(b, G(a, b)) = \gcd(b, c_d)$. This restricts the denominators of the points.
+
+\begin{definition}[The valuation]\label{def:valuation}
+  Proposed names: \lname{Ratpoints.veryBig}, \lname{Ratpoints.Setup.valuation},
+  \lname{Ratpoints.Setup.valuation\_spec}, \lname{Ratpoints.Setup.fst\_run\_valuation},
+  \lname{Ratpoints.Setup.snd\_run\_valuation}.
+  The valuation $v$ of an integer $n \ne 0$ at $p$ and the unit part $|n| / p^v$ modulo $p$, by
+  repeated division with remainder, and $(\mathrm{veryBig}, 0)$ for $n = 0$, with
+  $\mathrm{veryBig} = 1000$ (\verb|VERY_BIG|, \csource{find_points.c}{422}{422}): one function for
+  \verb|valuation| on GMP integers, which also returns the unit part, and \verb|valuation1| on
+  \verb|long|s (\csource{find_points.c}{424}{454}). For a prime $p$ and $n \ne 0$, $v$ is the
+  $p$-adic valuation of $n$.
+\end{definition}
+
+\begin{definition}[The divisors of the leading coefficient]\label{def:setupUs1}
+  \uses{def:valuation, def:primeTable, def:useCLong}
+  Proposed names: \lname{Ratpoints.maxDivisors}, \lname{Ratpoints.Setup.DenInfo},
+  \lname{Ratpoints.Setup.factorLcf}, \lname{Ratpoints.Setup.squarefreeDivisors},
+  \lname{Ratpoints.Setup.slope}, \lname{Ratpoints.Setup.setupUs1},
+  \lname{Ratpoints.Setup.IsFactorization}, \lname{Ratpoints.Setup.factorLcf\_spec},
+  \lname{Ratpoints.Setup.extendDivisors}, \lname{Ratpoints.Setup.squarefreeDivisors\_spec},
+  \lname{Ratpoints.Setup.slope\_spec}, \lname{Ratpoints.Setup.setupUs1\_spec},
+  \lname{Ratpoints.Setup.isFactorization\_of\_run\_factorLcf\_eq},
+  \lname{Ratpoints.Setup.exists\_of\_setupUs1\_eq\_some},
+  \lname{Ratpoints.Setup.eq\_foldl\_of\_setupUs1\_eq\_some},
+  \lname{Ratpoints.pairwise\_lt\_toList\_primeTable}, \lname{Ratpoints.mem\_primeTable\_of\_prime},
+  \lname{Ratpoints.mem\_of\_toList\_primeTable\_eq}, \lname{Ratpoints.lt\_of\_mem\_primeTable},
+  \lname{Nat.prime\_of\_lt\_mul\_self}, \lname{Ratpoints.Setup.fitsLong\_mul\_of\_le\_div},
+  \lname{Ratpoints.Setup.mul\_self\_lt\_of\_mem\_primeTable},
+  \lname{Ratpoints.Setup.fitsLong\_of\_lt\_mul\_self}. For odd $d$ and $|c_d| \ne 1$, as
+  \verb|setup_us1| computes it: the factorization of $|c_d|$, the power of $2$ divided off, then for
+  the odd primes $p$ of the table in turn, while the cofactor is not $1$, a cofactor below $p^2$
+  taken as a prime with the valuation $1$, and otherwise the power of $p$ divided off
+  (\csource{find_points.c}{777}{860}); complete exactly when the cofactor ends at $1$, that is when
+  the part of $|c_d|$ prime to $2 \cdot 3 \cdots 1019$ is below $1021^2$ or a power of $1021$; the
+  squarefree divisors at most $b_{\mathrm{high}}$, from $1$, each prime in turn appending $x p$ for
+  every divisor $x \le \lfloor b_{\mathrm{high}} / p \rfloor$ found so far, in their order, and
+  stopping at $\mathrm{maxDivisors} = 512$ entries (\verb|MAX_DIVISORS|,
+  \csource{find_points.c}{121}{121}; \csource{find_points.c}{864}{880}); and for each prime $p$ of
+  $c_d$ a record of $p$, its valuation $v_p(c_d)$ and the slope (\verb|use_squares1_info|,
+  \csource{find_points.c}{155}{155}), the least $n \ge 1$ with $(d - k) n > v_p(c_d) - v_p(c_k)$ for
+  every $k < d$, with $v_p(0) = \mathrm{veryBig}$ (Definition~\ref{def:valuation}), so that a zero
+  coefficient imposes nothing while $v_p(c_d) \le \mathrm{veryBig}$, by the macro \verb|CEIL|
+  (\csource{find_points.c}{894}{912}, \csource{rp-private.h}{87}{87}); none when the factorization
+  is not complete or there are $512$ divisors (\csource{find_points.c}{766}{776},
+  \csource{find_points.c}{863}{863}, \csource{find_points.c}{881}{893},
+  \csource{find_points.c}{914}{935}). The primes come in increasing order, so the divisors are the
+  products of the subsets of the primes that are at most $b_{\mathrm{high}}$, in the order of their
+  bit masks, each once. The contracts: a factorization with the cofactor $1$ lists the distinct
+  primes of $|c_d|$ with their valuations, since the table holds every odd prime below $1022$ in
+  increasing order, which \verb|decide| checks, so that a cofactor below $p^2$, every smaller prime
+  divided out, is a prime; a list of fewer than $\mathrm{maxDivisors}$ divisors is the fold of the
+  step that appends $x p$ for the divisors $x \le \lfloor b_{\mathrm{high}} / p \rfloor$; the slope
+  $n$ is at least $1$ with $(d - k) n \ge 1 + v_p(c_d) - v_p(c_k)$ for every $k < d$, with the
+  valuation of Definition~\ref{def:valuation}, since \verb|CEIL| rounds up; and the products $x p$
+  are \verb|long|s, and the square $p^2$ of a prime of the table and a cofactor below it are
+  \verb|int|s, so that the test of the C code whether the cofactor is a \verb|long| always passes
+  and the record holds it.
+\end{definition}
+
+\begin{lemma}[The denominators of odd degree]\label{lem:odd_denominators}
+  \uses{def:setupUs1, def:IsPoint, lem:squarefree_binaryFormPoly}
+  Proposed names: \lname{Ratpoints.even\_of\_sq\_eq\_binaryForm\_of\_odd},
+  \lname{Ratpoints.isSquare\_of\_sq\_eq\_binaryForm\_of\_odd},
+  \lname{Ratpoints.exists\_eq\_mul\_mul\_of\_sq\_eq\_binaryForm\_of\_odd},
+  \lname{Ratpoints.Setup.mem\_foldl\_extendDivisors\_one\_iff},
+  \lname{Ratpoints.Setup.nodup\_foldl\_extendDivisors},
+  \lname{Ratpoints.Setup.mem\_iff\_of\_setupUs1\_eq\_some},
+  \lname{Ratpoints.Setup.nodup\_of\_setupUs1\_eq\_some},
+  \lname{Ratpoints.even\_add\_of\_sq\_eq\_binaryForm\_of\_odd},
+  \lname{Ratpoints.Setup.DenInfo.excludes},
+  \lname{Ratpoints.Setup.DenInfo.excludes\_eq\_false\_of\_sq\_eq}. Let $d$ be odd and $(a, y, b)$ a
+  normalized point with $b \ge 1$.
+  \begin{enumerate}
+    \item If $|c_d| = 1$, then $b$ is a square.
+    \item $b = s k^2$ with $s$ squarefree and every prime of $s$ dividing $c_d$; when the divisors
+      of Definition~\ref{def:setupUs1} exist and $b \le b_{\mathrm{high}}$, $s$ is one of them.
+    \item For every prime $p$ of $c_d$ with its slope $n$: if $v_p(b) \ge n$, then
+      $v_p(b) + v_p(c_d)$ is even; so no record of the divisors excludes $b$.
+  \end{enumerate}
+\end{lemma}
+
+\begin{proof}
+  Let $p \nmid c_d$ be a prime with $b = p^m b'$, $m \ge 1$ and $p \nmid b'$. Then $p \nmid a$, and
+  the term $c_d a^d b$ of $F(a, b)$ alone has the least valuation $m$, every other term
+  $c_k a^k b^{d + 1 - k}$ having at least $2m$; so $y^2 = F(a, b) \ne 0$ has the valuation $m$, and
+  $m$ is even. Hence every prime of odd valuation in $b$ divides $c_d$: for $|c_d| = 1$, $b$ is a
+  square, and in general $b = s k^2$ with $s$ squarefree and its primes among those of $c_d$. The
+  factorization is that of $|c_d|$, since a cofactor below $p^2$ without prime factors below $p$ is
+  a prime (the table holds every odd prime below $1022$ in increasing order); with fewer than $512$
+  divisors, the list holds every product of distinct primes of $c_d$ at most $b_{\mathrm{high}}$,
+  each once, and $s \le b$ is one. For (3): $p \nmid a$; the term
+  $c_d a^d$ of $G$ has the valuation $v_p(c_d)$, and a term $c_k a^k b^{d - k}$ with $k < d$ has a
+  larger one, $v_p(c_k) + (d - k) v_p(b) \ge v_p(c_k) + (d - k) n > v_p(c_d)$; so
+  $v_p(G(a, b)) = v_p(c_d)$, and $v_p(b) + v_p(c_d) = v_p(y^2)$ is even.
+\end{proof}
+
+\section{Even degree: the forbidden divisors}\label{sec:forbidden}
+
+For even $d$ and a prime $p$, write $F(a, b) = \sum_{j \le d} c_{d - j} a^{d - j} b^j$; for a
+point with $v_p(b) = m \ge 1$, $p \nmid a$, and the term $j$ has the valuation $w_j + j m$, where
+$w_j = v_p(c_{d - j})$.
+
+\begin{definition}[The forbidden valuations]\label{def:forbiddenValuations}
+  \uses{def:valuation, def:squaresMod}
+  Proposed names: \lname{Ratpoints.Sieve.unitParts}, \lname{Ratpoints.Sieve.forbiddenAt},
+  \lname{Ratpoints.Sieve.forbiddenValuations}, \lname{Ratpoints.Sieve.allValuations},
+  \lname{Ratpoints.Sieve.IsUnitPart}, \lname{Ratpoints.Sieve.unitParts\_spec},
+  \lname{Ratpoints.Sieve.forbiddenAt\_spec}, \lname{Ratpoints.Sieve.forbiddenValuations\_spec},
+  \lname{Ratpoints.Sieve.allValuations\_spec}, \lname{Ratpoints.Sieve.lt\_forty\_of\_pow\_le},
+  \lname{Ratpoints.Sieve.run\_forbiddenValuations\_lt},
+  \lname{Ratpoints.Sieve.run\_allValuations\_lt}. For a prime $p \mid c_d$: the valuation $w_j$ and
+  the unit part $r_j$ modulo $p$, its sign included, of each nonzero $c_{d - j}$
+  (\csource{find_points.c}{2198}{2200}, \csource{find_points.c}{2204}{2215}); for $m = 1, 2, \dots$
+  while $p^m \le b_{\mathrm{high}}$, bit $m$ of the mask, a natural number, set when the least $w_j
+  + j m$ is taken at one $j_0$ only and is odd, or $j_0$ is even and $r_{j_0}$ is not a square
+  modulo $p$ (\csource{find_points.c}{2218}{2228}; \csource{find_points.c}{2192}{2197},
+  \csource{find_points.c}{2201}{2203}, \csource{find_points.c}{2216}{2217},
+  \csource{find_points.c}{2229}{2234}); and the mask of every $m \ge 1$ with $p^m \le
+  b_{\mathrm{high}}$ (\csource{find_points.c}{2632}{2641}). The contracts: the entries $(w_j, r_j)$
+  describe the coefficients at $p$; bit $m$ of the mask is set exactly when $m \ge 1$, $p^m \le
+  b_{\mathrm{high}}$ and the test at $m$ excludes it, which it does only in the two cases above; for
+  an odd prime and a \verb|long| $b_{\mathrm{high}}$ every such $m$ is below $40$, so that the bound
+  $m < 63$ of the C code never binds and both masks are below $2^{40}$.
+\end{definition}
+
+\begin{lemma}[The forbidden valuations are sound]\label{lem:forbiddenValuations}
+  \uses{def:forbiddenValuations, def:IsPoint}
+  Proposed names: \lname{Ratpoints.binaryForm\_eq\_sum\_of\_even},
+  \lname{Ratpoints.even\_and\_isSquare\_of\_sq\_eq\_binaryForm\_of\_even},
+  \lname{Ratpoints.Sieve.run\_forbiddenAt\_eq\_false\_of\_sq\_eq},
+  \lname{Ratpoints.Sieve.testBit\_run\_forbiddenValuations\_eq\_false\_of\_sq\_eq},
+  \lname{Int.even\_and\_exists\_isSquare\_add\_of\_sq\_eq\_sum},
+  \lname{ZMod.isSquare\_intCast\_of\_isSquare\_mul\_sq\_add}.
+  For even $d$, a prime $p$ and a normalized point $(a, y, b)$ with $b \ge 1$: bit $v_p(b)$ of the
+  mask of forbidden valuations at $p$ is clear.
+\end{lemma}
+
+\begin{proof}
+  Let $m = v_p(b)$; bit $0$ is never set. If the least valuation $\mu$ of the terms is taken at
+  $j_0$ only, then $v_p(F(a, b)) = \mu$ and $F(a, b) / p^{\mu}$ is congruent to
+  $r_{j_0} a^{d - j_0} (b / p^m)^{j_0}$ modulo $p$; since $F(a, b) = y^2$, $\mu$ is even and this
+  unit is a square, and for even $j_0$, $a^{d - j_0} (b / p^m)^{j_0}$ is the square of a unit, so
+  $r_{j_0}$ is a square modulo $p$. The argument is that of the Newton polygon at $p$; it does not
+  need $p \mid c_d$, the case in which the C code computes the mask.
+\end{proof}
+
+\begin{definition}[The forbidden divisors]\label{def:forbidden}
+  \uses{def:forbiddenValuations, def:squaresMod, def:primeTable, def:reversal}
+  Proposed names: \lname{Ratpoints.Sieve.ForbiddenEntry}, \lname{Ratpoints.Sieve.ForbiddenVal},
+  \lname{Ratpoints.Sieve.forbiddenRow}, \lname{Ratpoints.Sieve.forbiddenOfPrime},
+  \lname{Ratpoints.Sieve.forbidden}, \lname{Ratpoints.Sieve.getLsbD\_getElem!\_forbiddenRow},
+  \lname{Ratpoints.Sieve.IsForbiddenEntry}, \lname{Ratpoints.Sieve.IsForbiddenVal},
+  \lname{Ratpoints.Sieve.forbidden\_spec}. A prime tested with words, with its $p$ words, bit $j$ of
+  word $r$ clear exactly when $p \mid 64 r + j$ (\csource{find_points.c}{157}{161}; the words as the
+  build generates them for the primes of its table and as \verb|sieving_info| makes them beyond it,
+  \csource{gen_find_points_h.c}{102}{134}, \csource{find_points.c}{2773}{2777}), and a prime with
+  the mask of its excluded valuations (\csource{find_points.c}{166}{166}); for even $d$, the
+  examined primes $p$ in turn, while fewer than $\mathrm{maxForbidden}$ have been found: for $p \mid
+  c_d$ with a nonzero mask, $p$ with its words when the mask holds every valuation that a
+  denominator can have, and $p$ with its mask otherwise; for $p \nmid c_d$, $p$ with its words when
+  $c_d$ is not a square modulo $p$ (\csource{find_points.c}{2627}{2631},
+  \csource{find_points.c}{2642}{2676}); then, unless $c_d$ is a square, the primes of the table from
+  the position that is the number of the examined primes on, while fewer than
+  $\mathrm{maxForbidden}$ have been found and $p^2 \le b_{\mathrm{high}}$, each with its words when
+  $(c_d / p) = -1$ (\csource{find_points.c}{2533}{2536}, \csource{find_points.c}{2561}{2562},
+  \csource{find_points.c}{2624}{2626}, \csource{find_points.c}{2677}{2677},
+  \csource{find_points.c}{2709}{2772}, \csource{find_points.c}{2778}{2789}). The examined primes are
+  the moduli of the parameters, as for the exit of Definition~\ref{def:examinePrimeExit}; the
+  coefficients modulo $p$ and whether $c_d$ is a square modulo $p$, which \verb|examine_prime| hands
+  back to \verb|sieving_info|, are computed again, until stage~F makes the table of a prime hand
+  them back and the forbidden divisors take them from it, prime by prime in the loop of the tables.
+  The contract: each entry tested with words is an examined prime with the result of its test, or a
+  prime of the table at which $c_d$ is not a square, with its words; each valuation entry is an
+  examined prime with its mask. It holds whatever the cap, the order of the entries and the primes
+  examined.
+\end{definition}
+
+\begin{lemma}[The forbidden divisors are sound]\label{lem:forbidden}
+  \uses{def:forbidden, lem:forbiddenValuations, def:IsPoint, lem:examinePrime_none}
+  Proposed names: \lname{Ratpoints.Sieve.ForbiddenVal.excludes},
+  \lname{Ratpoints.Sieve.prime\_of\_mem\_forbidden\_fst},
+  \lname{Ratpoints.Sieve.words\_eq\_of\_mem\_forbidden\_fst},
+  \lname{Ratpoints.Sieve.not\_dvd\_of\_mem\_forbidden\_fst},
+  \lname{Ratpoints.Sieve.excludes\_eq\_false\_of\_mem\_forbidden\_snd}.
+  For even $d$, moduli that are primes and a normalized point $(a, y, b)$ with $b \ge 1$: each
+  entry tested with words is a prime $p$ with the words of $p$, and $p \nmid b$ when
+  $b \le b_{\mathrm{high}}$; and for no valuation entry is bit $v_p(b)$ of its mask set.
+\end{lemma}
+
+\begin{proof}
+  For a prime $p \mid c_d$ this is Lemma~\ref{lem:forbiddenValuations}: a prime tested with words
+  has every valuation $m \ge 1$ with $p^m \le b_{\mathrm{high}}$ in its mask, which covers every $b$
+  with $p \mid b$. For $p \nmid c_d$ with $c_d$ not a square modulo $p$: if $p \mid b$, then
+  $p \nmid a$ and $F(a, b) \equiv c_d a^d$ modulo $p$, a unit that is not a square, which $y^2$ is
+  not; that $c_d$ is a square modulo every prime of $b$ that does not divide it is the argument of
+  Lemma~\ref{lem:examinePrime_none}.
+\end{proof}
+
+\section{The Jacobi test}\label{sec:jacobi}
+
+For even $d$, an odd prime $q \mid b$ with $q \nmid c_d$ makes $c_d$ a square modulo $q$, by the
+argument of Lemma~\ref{lem:forbidden}; so for $b^*$, the largest divisor of $b$ prime to $2 c_d$,
+the Jacobi symbol $J(c_d \mid b^*)$, the product of the Legendre symbols of its prime factors, is
+$1$. The forbidden divisors test the examined primes and, beyond them, the primes of the table up
+to $\sqrt{b_{\mathrm{high}}}$, at most $\mathrm{maxForbidden}$ of them in all; the Jacobi test also
+rejects a denominator with an odd number of prime factors $q$, prime to $2 c_d$, with
+$(c_d / q) = -1$, which these do not reach.
+
+\begin{definition}[The Jacobi symbol by the binary algorithm]\label{def:jacobi}
+  \uses{def:useCLong}
+  Proposed names: \lname{Ratpoints.Sieve.twoSign}, \lname{Ratpoints.Sieve.jacobiReduce},
+  \lname{Ratpoints.Sieve.jacobiRound}, \lname{Ratpoints.Sieve.jacobi},
+  \lname{Ratpoints.Sieve.twoSign\_eq}, \lname{Ratpoints.Sieve.jacobiReduce\_spec},
+  \lname{Ratpoints.Sieve.jacobiRound\_spec}, \lname{Ratpoints.Sieve.jacobi\_spec},
+  \lname{Ratpoints.fitsLong\_neg\_ite\_div\_four}.
+  For $b \ge 1$ and an integer $\ell$: the factors $2$ taken out of $b$, and $u = \ell \bmod b$;
+  while $u \ne 0$, a round of the binary algorithm on $n = u$ and $m = b$, which takes the factors
+  $2$ out of $n$ with the sign of $(2 / m)$, and then exchanges the two, with the sign of the
+  reciprocity when both are $3$ modulo $4$, and reduces the larger by the smaller, halving it until
+  it is odd, in turn, until they are equal; the common value is $\gcd(u, b)$, and when it is $1$ the
+  sign is the symbol, and otherwise it is divided out of $b$ and $u$ reduced modulo the new $b$ when
+  it is not smaller; when $u$ is $0$ the symbol is $1$ (\csource{find_points.c}{498}{566},
+  \csource{find_points.c}{568}{641}). One function for \verb|jacobi| on GMP integers and
+  \verb|jacobi1| on \verb|long|s, which takes the sign of $\ell$ out first, writes
+  $\ell = $ \verb|LONG_MIN| as a quarter of it, reduces $|\ell|$ modulo $b$ only for $b < 2^{59}$
+  and does not reduce it after a division of $b$: other steps, the same symbol; the negation of a
+  negative \verb|long| $\ell$, with \verb|LONG_MIN| replaced by its quarter, is a \verb|long|.
+\end{definition}
+
+\begin{lemma}[The binary algorithm computes the Jacobi symbol]\label{lem:jacobi}
+  \uses{def:jacobi}
+  Proposed names: \lname{Ratpoints.Sieve.run\_jacobi},
+  \lname{Nat.prod\_filter\_primeFactorsList\_dvd},
+  \lname{Nat.coprime\_prod\_filter\_primeFactorsList},
+  \lname{Nat.dvd\_prod\_filter\_primeFactorsList\_of\_dvd}. For $b \ge 1$ and every integer $\ell$,
+  the result is $J(\ell \mid b^*)$ for the largest divisor $b^*$ of $b$ prime to $2 \ell$, the
+  product of the prime factors of $b$, with multiplicity, that do not divide $2 \ell$.
+\end{lemma}
+
+\begin{proof}
+  The steps keep $s \cdot J(n \mid m)$: taking out a factor $2$ of $n$ multiplies the symbol by
+  $(2 / m)$; the exchange by the reciprocity of two odd numbers; the subtraction changes nothing,
+  $J(m - n \mid n) = J(m \mid n)$. A round ends at $m = n = \gcd(u, b)$, and the symbol is
+  $J(u \mid b)$ when that is $1$; dividing $b$ by the gcd and reducing $u$ keeps $J(\ell \mid b^*)$,
+  since $b^*$ does not change. Mathlib has the symbol with its reciprocity and its value at $2$
+  (\verb|jacobiSym|). The loops end by the measures $x$ for the subtraction, $n + m$ for a round
+  and $b$ for the divisions; the early return of the main loop is part of its invariant.
+\end{proof}
+
+\begin{definition}[The Jacobi test by tables]\label{def:jacobiTables}
+  \uses{def:valuation, def:primeTable, def:ctz}
+  Proposed names: \lname{Ratpoints.jacobiPrimes}, \lname{Ratpoints.jacobiTable},
+  \lname{Ratpoints.mulModLimit}, \lname{Ratpoints.Sieve.JacobiInfo},
+  \lname{Ratpoints.Sieve.nonSquares}, \lname{Ratpoints.Sieve.jacobiSigns},
+  \lname{Ratpoints.Sieve.jacobiSetup}, \lname{Ratpoints.Sieve.jacobiTest},
+  \lname{Ratpoints.Sieve.nonSquares\_spec},
+  \lname{Ratpoints.Sieve.legendreSym\_eq\_ite\_getElem!\_nonSquares},
+  \lname{Ratpoints.Sieve.ite\_getElem!\_jacobiSigns}, \lname{Ratpoints.Sieve.IsJacobiInfo},
+  \lname{Ratpoints.Sieve.jacobiSetup\_spec}, \lname{Ratpoints.Sieve.jacobiTest\_spec},
+  \lname{ZMod.isSquare\_natCast\_iff\_exists\_mul\_self\_mod\_eq},
+  \lname{Ratpoints.mulModLimit\_lt\_size},
+  \lname{Ratpoints.Sieve.le\_mulModLimit\_of\_jacobiSetup\_eq\_some}. For $\ell = \pm 2^v \prod
+  q_i^{e_i}$ and $b_{\mathrm{high}} \le \mathrm{mulModLimit} = 2^{32} - 1$ (\verb|RP_MULMOD_LIMIT|,
+  \csource{rp-private.h}{421}{421}): a record (\csource{find_points.c}{672}{681}) of the odd primes
+  $q_i$ of the table, found by trial division, at most $\mathrm{jacobiPrimes} = 16$ of them, each
+  with the table of the non-squares modulo $q_i$ when $e_i$ is odd
+  (\csource{find_points.c}{709}{713}), at most $\mathrm{jacobiTable} = 8192$ entries in all
+  (\verb|RP_JACOBI_PRIMES|, \verb|RP_JACOBI_TABLE|, \csource{find_points.c}{669}{669},
+  \csource{find_points.c}{670}{670}), and of eight signs, the sign for $b^* \bmod 8$ the product of
+  $(-1 / b^*)$ for negative $\ell$, $(2 / b^*)^v$ and the signs of the reciprocity of the $q_i
+  \equiv 3 \pmod 4$ with odd $e_i$ (\csource{find_points.c}{721}{729}); none when a prime of $\ell$
+  is beyond the table, or a bound is passed (\csource{find_points.c}{683}{708},
+  \csource{find_points.c}{714}{720}, \csource{find_points.c}{730}{731}). The test of $b$: its odd
+  part with every $q_i$ divided out, the sign of the result modulo $8$ combined with the table entry
+  of the result modulo each $q_i$ with odd $e_i$, passing when the product is $1$
+  (\csource{find_points.c}{734}{759}). The contracts describe the loops: the table of $q$ marks the
+  residues $x^2 \bmod q$, $1 \le x \le q / 2$, made by the steps $2x + 1$ with one subtraction, so
+  that it gives the Legendre symbol of a residue other than $0$; the tables exist only for
+  $b_{\mathrm{high}} \le \mathrm{mulModLimit}$ and $\ell \ne 0$, and then describe $\ell$ as above;
+  and the test negates the exclusive or of the sign and the entries over the part of $b$ free of $2$
+  and of the primes of the tables, the odd part taken by the lowest set bit. A denominator of the
+  test is at most $\mathrm{mulModLimit}$, below $2^{32}$, where \verb|RP_MULDIV| is exact, and below
+  $2^{64}$, so that it is a word.
+\end{definition}
+
+\begin{lemma}[The Jacobi test]\label{lem:jacobiTest}
+  \uses{def:jacobiTables, def:jacobi, lem:jacobi, def:IsPoint, lem:examinePrime_none}
+  Proposed names: \lname{Ratpoints.Sieve.jacobiSym\_eq\_ite\_foldl},
+  \lname{Ratpoints.Sieve.IsJacobiInfo.prod\_filter\_primeFactorsList\_eq},
+  \lname{Ratpoints.Sieve.run\_jacobiTest},
+  \lname{Ratpoints.Sieve.jacobiSym\_eq\_one\_of\_sq\_eq\_binaryForm},
+  \lname{Ratpoints.Sieve.jacobiSym\_prod\_filter\_primeFactorsList\_eq\_one\_of\_sq\_eq},
+  \lname{Ratpoints.Sieve.run\_jacobi\_eq\_one\_of\_sq\_eq},
+  \lname{Ratpoints.Sieve.run\_jacobiTest\_of\_sq\_eq},
+  \lname{jacobiSym.natCast\_eq\_ite\_mul\_legendreSym}. When the tables exist and $1 \le b \le
+  b_{\mathrm{high}}$, the test of $b$ passes exactly when $J(\ell \mid b^*) = 1$. For even $d$ and a
+  normalized point $(a, y, b)$: $J(c_d \mid b') = 1$ for every divisor $b'$ of $b$ prime to $c_d$;
+  so for $b \ge 1$, $J(c_d \mid b^*) = 1$, and both the binary algorithm and the test by tables let
+  $b$ through.
+\end{lemma}
+
+\begin{proof}
+  The result of the divisions is $b^*$; $J(\ell \mid b^*)$ is the product of $J(-1 \mid b^*)$ for
+  negative $\ell$, $J(2 \mid b^*)^v$ and the $J(q_i \mid b^*)^{e_i}$, of which those with even
+  $e_i$ are $1$ and the others, by reciprocity, the Legendre symbol of $b^* \bmod q_i$ times a sign
+  that depends on $b^* \bmod 4$. The second statement is the argument before
+  Definition~\ref{def:jacobi}: $c_d$ is a square modulo every prime of $b$ that does not divide it
+  (Lemma~\ref{lem:examinePrime_none}); the binary algorithm computes $J(c_d \mid b^*)$
+  (Lemma~\ref{lem:jacobi}).
+\end{proof}
+
+\section{The loop over the denominators}\label{sec:shapes}
+
+\begin{definition}[The shapes of the loop]\label{def:Shape}
+  \uses{def:twoAdic, def:setupUs1, def:forbidden, def:jacobi, def:jacobiTables, def:valuation,
+    def:useCLong} Proposed names: \lname{Ratpoints.Sieve.Shape}, \lname{Ratpoints.Sieve.runSetup},
+    \lname{Ratpoints.Sieve.ceilSqrt}, \lname{Ratpoints.Sieve.floorSqrt},
+    \lname{Ratpoints.Sieve.squaresDens}, \lname{Ratpoints.Sieve.squares1Dens},
+    \lname{Ratpoints.Sieve.denInfoTest}, \lname{Ratpoints.Sieve.wordBits},
+    \lname{Ratpoints.Sieve.wordsDens}, \lname{Ratpoints.Sieve.wordsTest},
+    \lname{Ratpoints.Sieve.Shape.dens}, \lname{Ratpoints.Sieve.Shape.keep},
+    \lname{Ratpoints.Sieve.ceilSqrt\_le\_iff}, \lname{Ratpoints.Sieve.le\_floorSqrt\_iff},
+    \lname{Ratpoints.Sieve.getLsbD\_wordBits}, \lname{Ratpoints.Sieve.wordsDens\_spec},
+    \lname{Ratpoints.Sieve.run\_denInfoTest\_eq\_true},
+    \lname{Ratpoints.Sieve.run\_wordsTest\_eq\_true},
+    \lname{Ratpoints.Sieve.fitsLong\_of\_mem\_squaresDens},
+    \lname{Ratpoints.Sieve.fitsLong\_of\_mem\_squares1Dens},
+    \lname{Ratpoints.Sieve.fitsLong\_of\_mem\_wordsDens}. The four shapes, with their data
+    (\csource{find_points.c}{3725}{3728}, \csource{find_points.c}{3736}{3763}), as \verb|run_setup|
+    chooses them from the flags of the search (\csource{find_points.c}{3778}{3806},
+    \csource{find_points.c}{3876}{3877}), each with the list of its denominators from
+    $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$ in the order of its loop and its test of a single
+    denominator:
+  \begin{itemize}
+    \item the squares: $k^2$ for $k$ from $\lceil \sqrt{b_{\mathrm{low}}} \rceil$ to
+      $\lfloor \sqrt{b_{\mathrm{high}}} \rfloor$ (\csource{find_points.c}{464}{471},
+      \csource{find_points.c}{3766}{3774}, \csource{find_points.c}{3816}{3818},
+      \csource{find_points.c}{3919}{3922}), with the class test;
+    \item the divisors times squares: for each divisor $s$ in turn, $s k^2$ for the $k$ with
+      $b_{\mathrm{low}} \le s k^2 \le b_{\mathrm{high}}$ (\csource{find_points.c}{3819}{3825},
+      \csource{find_points.c}{3937}{3940}), with the class test and then the valuation test: $b$
+      fails when for some prime $p$ of $c_d$ with its slope $n$, $v_p(b) \ge n$ and
+      $v_p(b) + v_p(c_d)$ is odd (\csource{find_points.c}{3944}{3953});
+    \item the words: for each word $w$ from $\lfloor b_{\mathrm{low}} / 64 \rfloor$ to
+      $\lfloor b_{\mathrm{high}} / 64 \rfloor$, $\mathrm{den\_bits}$ and-ed with word $w \bmod p$ of
+      each prime tested with words, the bits below $b_{\mathrm{low}}$ and above $b_{\mathrm{high}}$
+      cleared in the first and the last word (\csource{find_points.c}{3981}{3988},
+      \csource{find_points.c}{3990}{3990}, \csource{find_points.c}{3993}{4006}), and its set bits
+      $j$, lowest first, giving $64 w + j$ (\csource{find_points.c}{3826}{3828},
+      \csource{find_points.c}{3967}{3980}, \csource{find_points.c}{3989}{3989},
+      \csource{find_points.c}{3991}{3991}, \csource{find_points.c}{4007}{4008},
+      \csource{find_points.c}{4012}{4012}, \csource{find_points.c}{4053}{4058}), each tested by the
+      Jacobi test by tables, the valuation entries, and, with the Jacobi switch on and no tables,
+      the binary algorithm (\csource{find_points.c}{4010}{4011},
+      \csource{find_points.c}{4013}{4041});
+    \item every denominator from $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$, with the class test
+      (\csource{find_points.c}{3812}{3815}, \csource{find_points.c}{3829}{3837},
+      \csource{find_points.c}{4060}{4062}, \csource{find_points.c}{4073}{4074}).
+  \end{itemize}
+  The class test is that the word $\mathrm{nb}[b \bmod 64]$ is not zero
+  (\csource{find_points.c}{3923}{3925}, \csource{find_points.c}{3941}{3943},
+  \csource{find_points.c}{4063}{4065}); for the words it is made by $\mathrm{den\_bits}$. The model
+  lists the denominators of a shape and then tests and sifts them one after the other, where
+  \verb|run_block| tests and sifts each as its loop reaches it, and has no blocks. The words of a
+  forbidden divisor, the word of $64$ denominators and the walk over its set bits are exact, so
+  that the list of the words is the range filtered by the class bit and the primes tested with
+  words; the tests of a denominator pass it when no entry of the valuation test excludes it, the
+  Jacobi tests pass it and no valuation entry excludes it. The bounds of the square shapes are the
+  exact integer square roots, and the denominators of the shapes are at most $b_{\mathrm{high}}$, so
+  \verb|long|s for a \verb|long| $b_{\mathrm{high}}$.
+\end{definition}
+
+\begin{lemma}[The lists of the shapes]\label{lem:shape_dens}
+  \uses{def:Shape, lem:twoAdic_point, lem:odd_denominators, lem:forbidden, lem:jacobiTest}
+  Proposed names: \lname{Ratpoints.Sieve.squaresDens\_eq\_filter},
+  \lname{Ratpoints.Sieve.mem\_squaresDens\_iff}, \lname{Ratpoints.Sieve.mem\_range'\_ceilSqrt\_iff},
+  \lname{Ratpoints.Sieve.mem\_squares1Dens\_iff}, \lname{Ratpoints.Sieve.nodup\_squares1Dens},
+  \lname{Nat.eq\_of\_mul\_sq\_eq\_mul\_sq}, \lname{Ratpoints.Sieve.toList\_run\_wordsDens},
+  \lname{Ratpoints.Sieve.run\_denInfoTest\_of\_sq\_eq},
+  \lname{Ratpoints.Sieve.getLsbD\_denBits\_and\_all\_of\_ne\_nil},
+  \lname{Ratpoints.Sieve.run\_wordsTest\_of\_ne\_nil}.
+  Let $1 \le b_{\mathrm{low}}$. The list of the squares is that of the squares from
+  $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$, in increasing order. The list of the divisors times
+  squares, for squarefree divisors without duplicates, has no duplicates and holds exactly the
+  $s k^2$ from $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$ with $s$ a divisor. The list of the words,
+  for primes tested with words with their words, is that of the denominators from
+  $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$ whose bit in $\mathrm{den\_bits}$ is set and which no
+  such prime divides, in increasing order. For moduli that are primes, the denominator
+  $1 \le b \le H$ of a normalized point of height at most $H$ passes the tests of the shapes: the
+  class test, the valuation test with the records of the divisors of
+  Definition~\ref{def:setupUs1}, and for the forbidden divisors of the moduli with
+  $b_{\mathrm{high}} = H$ the bit of its class in $\mathrm{den\_bits}$, the primes tested with words
+  and the tests of the words.
+\end{lemma}
+
+\begin{proof}
+  The square shape and the words are the denominators of the range that pass a test, in increasing
+  order, by the bounds of the square roots and by the walk over the set bits of the words; the
+  divisors times squares have no duplicates since $s k^2$ determines the squarefree $s$ and $k$.
+  The class bit and the primes tested with words miss no denominator of a point
+  (Lemmas~\ref{lem:twoAdic_point} and~\ref{lem:forbidden}), and the tests pass it
+  (Lemmas~\ref{lem:odd_denominators}, \ref{lem:forbidden} and~\ref{lem:jacobiTest}).
+\end{proof}
+
+The run (Definition~\ref{def:sieveRun}) takes the shape, the words of the 2-adic information and
+the range $b_{\mathrm{low}}, \dots, b_{\mathrm{high}}$, and moves into the new file of this
+chapter: for each denominator of the list of the shape that passes its test, the points that
+\verb|sift| finds from the word of its class, appended in turn (\csource{find_points.c}{3889}{3904},
+\csource{find_points.c}{3917}{3918}, \csource{find_points.c}{3926}{3936},
+\csource{find_points.c}{3954}{3966}, \csource{find_points.c}{4009}{4009},
+\csource{find_points.c}{4042}{4052}, \csource{find_points.c}{4059}{4059},
+\csource{find_points.c}{4066}{4072}, \csource{find_points.c}{4075}{4078},
+\csource{find_points.c}{5120}{5120}, \csource{find_points.c}{5152}{5160}). Its contract, for an
+array size $A \ge 1$ and moduli $p > 0$: the concatenation, over the denominators of the list that
+pass the test, of what the brute-force reference finds over the numerators that pass the class word
+and the tables, mapped by $\mathrm{swapPoint}$ when the flag of the reversal is set; for moduli that
+are primes and the shape of Lemma~\ref{lem:shape_dens}, the filters change nothing, and the result
+is the concatenation of what the reference finds over each denominator of the list: given a list
+$l$ such that the list of the shape is $l$ filtered by a test, every denominator of $l$ that
+carries a point passes that test and the test of the shape, and every numerator that gives a point
+passes the class word and the tables, the run gives the reference over $l$. The node of the run
+keeps its contract and its equation (\lname{Ratpoints.Sieve.sieveRun\_spec},
+\lname{Ratpoints.Sieve.toList\_run\_sieveRun}); the node of the equation of the sieve,
+Theorem~\ref{thm:pointsAtInfinity_append_run}, whose declaration goes, becomes this reduction,
+\lname{Ratpoints.Sieve.toList\_run\_sieveRun\_eq\_flatMap}, under the title ``The run and the
+reference'' and the label \verb|thm:run_reference|, the points at infinity going to the search; the
+references to it in Chapters~\ref{chap:words} and~\ref{chap:setup} follow.
+
+\section{The search and the theorems}\label{sec:denSearch}
+
+The search of the polynomial handed on (Definition~\ref{def:searchPoints}) does what
+Section~\ref{sec:denC} describes, in its order: the flags of the tests on the denominators, the
+divisors of the leading coefficient for odd degree, the 2-adic information and its exit, the tables
+of the moduli with their exit, the forbidden divisors for even degree with the switch of the checked
+loop, the shape, and the points at infinity followed by the run over the denominators from $1$ to
+$H$. For well-formed parameters, $H \ge 1$ and $d$ the degree of $c$, its result becomes the list of
+the points at infinity followed by the points of the reference over the denominators of the search
+(Definition~\ref{def:searchDens}), in their order, each mapped by $\mathrm{swapPoint}$ when the flag
+of the reversal is set, also at both exits; its node keeps \lname{Ratpoints.run\_searchPoints} with
+this statement and gains the uses of Definitions~\ref{def:Shape} and~\ref{def:searchDens},
+Lemmas~\ref{lem:twoAdic_exit} and~\ref{lem:shape_dens} and the reduction of the run, in place of the
+equation of the sieve, and the C ranges of the flags and of the exits, with the frame of the loop of
+the tables and of the block that sets up the run (\csource{find_points.c}{2537}{2537},
+\csource{find_points.c}{2707}{2707}, \csource{find_points.c}{2793}{2795},
+\csource{find_points.c}{4573}{4573}, \csource{find_points.c}{4588}{4589},
+\csource{find_points.c}{4595}{4596}, \csource{find_points.c}{4603}{4604},
+\csource{find_points.c}{4607}{4607}, \csource{find_points.c}{4900}{4943},
+\csource{find_points.c}{4948}{4948}, \csource{find_points.c}{4954}{4963},
+\csource{find_points.c}{5116}{5116}, \csource{find_points.c}{5137}{5139},
+\csource{find_points.c}{5167}{5167}).
+
+\begin{definition}[The denominators of the search]\label{def:searchDens}
+  \uses{def:setupUs1, def:Shape}
+  Proposed names: \lname{Ratpoints.searchDens}, \lname{Ratpoints.searchDens\_eq\_range'}.
+  The denominators from $1$ to $H$ in the order in which the search visits those that can carry a
+  point: for odd $d$ with $|c_d| \ne 1$ and divisors of the leading coefficient
+  (Definition~\ref{def:setupUs1}), the divisors times squares, divisor by divisor; and otherwise
+  $1, \dots, H$, since the other shapes visit increasing lists of these that contain every
+  denominator of a point.
+\end{definition}
+
+\begin{theorem}[The output of the search]\label{thm:findPoints_order}
+  \uses{def:findPoints, def:searchPoints, def:searchDens, lem:shape_dens, lem:twoAdic_exit,
+    lem:examinePrime_none, lem:reversal_swap, lem:swapPoint_bijection}
+  Proposed names: \lname{Ratpoints.exists\_eq\_of\_findPoints\_eq\_ok},
+  \lname{Ratpoints.perm\_flatMap\_squares1Dens},
+  \lname{Ratpoints.perm\_bruteForce\_append\_flatMap\_searchDens},
+  \lname{Ratpoints.append\_flatMap\_searchDens\_eq\_bruteForce},
+  \lname{Ratpoints.eq\_bruteForce\_of\_findPoints\_eq\_ok\_of\_reverse\_eq\_false},
+  \lname{List.perm\_flatMap\_of\_nodup}.
+  For well-formed parameters and any options, if $\mathrm{findPoints}(c, H, P, o)$ returns the list
+  $L$, and the reversal check hands on the polynomial $c'$ of degree $d'$ with the flag of the
+  reversal: $L$ is the list of the points at infinity of $c'$ followed by the points that the
+  brute-force reference of $c'$ finds over the denominators of the search of $c'$
+  (Definition~\ref{def:searchDens}), in their order, each mapped by $\mathrm{swapPoint}$ when the
+  flag is set. So $L$ is a permutation of $\mathrm{bruteForce}(c, H)$, and it is
+  $\mathrm{bruteForce}(c, H)$ when the options forbid the reversal and the search of $c$ does not
+  take the divisors times squares.
+\end{theorem}
+
+\begin{proof}
+  The search takes an exit only when the curve has no points (Lemmas~\ref{lem:twoAdic_exit}
+  and~\ref{lem:examinePrime_none}); otherwise its run gives the points of the reference over the
+  list of its shape (Lemma~\ref{lem:shape_dens}), which are those over the denominators of the
+  search, since a denominator that the one list has and the other lacks carries no point. The
+  denominators of the search have no duplicates, lie in $1, \dots, H$ and hold every denominator of
+  a point (Lemma~\ref{lem:shape_dens}; for the shapes other than the divisors they are
+  $1, \dots, H$), so the points over them are a permutation of those over $1, \dots, H$, the list
+  is a permutation of the reference of $c'$, mapped after a reversal, and of that of $c$
+  (Lemmas~\ref{lem:reversal_swap} and~\ref{lem:swapPoint_bijection}).
+\end{proof}
+
+Theorem~\ref{thm:findPoints_perm} keeps its permutation, and its equation with the reference of the
+polynomial handed on gives way to Theorem~\ref{thm:findPoints_order}; Theorem~\ref{thm:findPoints}
+keeps membership, no duplicates and the set of elements, for every option, and the node of the
+equation of the sieve becomes the reduction of the run (Section~\ref{sec:shapes}). The refusals do
+not change, nor do the structure \verb|Params|, its well-formedness and the statements that
+comparator certifies.
+
+\section{The command-line program and the differential tests}\label{sec:denCli}
+
+The program does not change: the options that stage~E reads were read before, \verb|-j| into the
+Jacobi switch of the parameters and \verb|-F| into $\mathrm{maxForbidden}$, and the order of the
+printed points becomes that of Theorem~\ref{thm:findPoints_order}. In the differential tests, every
+point list is compared in its order, the divisors of the leading coefficient included, and the
+harness no longer computes them; in the suites that run the C program, a run on which it prints
+nothing (with \verb|-q|, as at the 2-adic exit) is compared even above the largest height, which
+the harness skips only when the C program prints something, so that \verb|test3.sh| compares 16 of
+its 21 runs.
+
+\section{Deviations}\label{sec:denDeviations}
+
+Each component of this chapter differs from the C code in a stated way, recorded in its
+\verb|Deviation:| paragraph:
+\begin{itemize}
+  \item the stride~$1$ for every class of the denominators, the pattern of a class being its word
+    repeated, for the packing of the numerators of a class by the stride $2^e$ with its offsets
+    (stage~F); the word $\mathrm{den\_bits}$ computed from the words of the classes;
+  \item one function for the valuations on GMP integers and on \verb|long|s, and one for the
+    binary algorithm of \verb|jacobi| and \verb|jacobi1|, which take other steps to the same
+    symbol; the valuations of the factorization and of the tables of the Jacobi test by this
+    function, for the loops of divisions of the C code; the bounds of the square shapes by the exact
+    integer square root, for the square root in \verb|double| corrected by a step either way, with
+    the same values for the arguments $n \ge 1$ that the C code passes;
+  \item the examined primes of the forbidden divisors are the moduli of the parameters, in their
+    order, and the further primes start at the position in the table that is their number, where
+    \verb|sieving_info| examines the first \verb|num_primes| primes of the table, or more, in the
+    order of the table: the lists are those of the C code when the moduli are its examined primes in
+    increasing order, as in the program with \verb|-p| and without \verb|-P|, and otherwise the cap
+    may record other primes, and a prime may be recorded twice or not examined, which changes no
+    output, since every forbidden divisor is sound; the
+    coefficients modulo $p$ and the entry at infinity computed again, for those that
+    \verb|examine_prime| hands back, and the forbidden divisors computed after the tables of all the
+    moduli, for prime by prime in the loop of the tables, which an exit leaves (both until
+    stage~F);
+  \item the Kronecker symbol $(c_d / p) = -1$ by the table of the squares modulo $p$, which marks
+    $0$ as a square; the square tests of the leading coefficient, for the Jacobi switch and for the
+    point at infinity of the 2-adic exit, made on the polynomial searched, where the C code reads
+    the flag that it computes before the reversal check and clears in its second case: the same
+    value wherever it is read;
+  \item the masks of the forbidden valuations as natural numbers, without the bound $m < 63$ of the
+    C code, which never binds for a \verb|long| $b_{\mathrm{high}}$ and an odd prime ($3^{40} >
+    2^{63}$), so that the model stays sound for every height;
+  \item lists for the arrays with their terminating zeros, natural numbers for the \verb|long|s and
+    \verb|int|s, divisions for the multiplications by reciprocals (\verb|RP_MULDIV|,
+    \verb|RP_MULMOD|), fresh arrays for the buffers of the run and of the arguments; the values
+    that could leave their C types are proved to stay in them for a \verb|long| $b_{\mathrm{high}}$,
+    by lemmas that the nodes of their components name: the denominators $k^2$, $s k^2$ and
+    $64 w + j$ of the shapes, the products $x p$ of the divisors and $p^m$ of the masks, the square
+    $p^2$ of a prime of the table and the cofactor of the factorization below it, \verb|int|s, the
+    masks, below $2^{40}$, and the negation of the quarter of \verb|LONG_MIN| in \verb|jacobi1|;
+    and a denominator of the Jacobi test by tables is at most $\mathrm{mulModLimit} = 2^{32} - 1$,
+    where \verb|RP_MULDIV| is exact; the valuations and the slopes of the records of the divisors,
+    \verb|int|s in the C code, as natural numbers, which they fit for leading coefficients below
+    $2^{2^{31}}$;
+  \item the denominators of a shape listed, then tested and sifted one after the other; no blocks,
+    and no threads, which deliver the blocks in their order; no correction of the moduli between
+    the blocks (stage~I); no search intervals and no range of the denominators other than $1$ to $H$
+    (stage~H);
+  \item no failure for lack of memory, where \verb|sieving_info| drops the primes beyond the table
+    whose words it cannot store; no output under \verb|DEBUG| or \verb|RATPOINTS_VERBOSE|.
+\end{itemize}
+The lines of this part of the C code that are neither modelled nor left to a later stage are
+excluded in \verb|correspondence/ratpoints.toml|: the output under \verb|DEBUG| that stands between
+statements that are not modelled, the management of memory (the arrays of the run and the worker
+with the failures of their allocation, the release of the run and of the worker, the enlargement of
+the buffer of the tables when \verb|sieving_info| has looked at more primes), and the pool of
+threads with the threaded run; the output under \verb|RATPOINTS_VERBOSE| and \verb|DEBUG| inside a
+modelled block goes with the block, whose deviation says so. Left to later stages are the packing
+of the classes with their row offsets (stage~F), the search intervals of the run (stage~H), and the
+blocks with the correction of the moduli between them and the choice of the number of primes
+examined (stage~I).
+
+\section{Files, names and order of work}
+
+The constants of the stage go into \verb|Ratpoints/Model/Constants.lean|, each citing its macro, and
+no proof depends on their values: $\mathrm{maxDivisors}$, $\mathrm{veryBig}$,
+$\mathrm{jacobiPrimes}$, $\mathrm{jacobiTable}$ and $\mathrm{mulModLimit}$, of which the proofs use
+only $\mathrm{mulModLimit} < 2^{64}$ (\lname{Ratpoints.mulModLimit\_lt\_size}, next to the
+constant), so that a denominator of the Jacobi test by tables is a word. The valuation and the
+divisors of the leading coefficient go into \verb|Ratpoints/Model/Setup.lean|, in the namespace
+\verb|Ratpoints.Setup|; the 2-adic information, the forbidden divisors, the Jacobi test, the shapes
+and the run into a new file \verb|Ratpoints/Model/Denominators.lean|, in the namespace
+\verb|Ratpoints.Sieve|, which imports the sieve and the set-up; the class word into the components
+of \verb|Ratpoints/Model/Sieve.lean| that make a piece and the numerators of one denominator, from
+which the run moves out; and the steps of the search into \verb|Ratpoints/Model/FindPoints.lean|.
+The contracts and the lemmas go into new files of \verb|Ratpoints/Proof|: the valuation into
+\verb|Valuation.lean|; the 2-adic information into \verb|TwoAdic.lean|; the denominators of odd
+degree, the factorization and the divisors with their slopes into \verb|Divisors.lean|; the
+forbidden valuations and divisors into \verb|Forbidden.lean|; the Jacobi test by the binary
+algorithm into \verb|Jacobi.lean| and by tables into \verb|JacobiTables.lean|; the lists and the
+tests of the shapes into \verb|Shapes.lean|; and the run over a shape into \verb|Denominators.lean|.
+Unlike those of stages C1 to D, the contracts of this stage are proved in the files with Mathlib,
+next to the lemmas they serve, since several of them speak of notions of Mathlib (the primes and
+their valuations, the squares modulo a prime, the Jacobi symbol); the contracts of the earlier
+stages stay where they are. The class word enters the contracts of
+\verb|Ratpoints/Proof/Words.lean|; the filter of the reference by a test on the numerators goes into
+\verb|Ratpoints/Proof/Sieve.lean|, the facts about the table of primes that the factorization uses,
+checked by \verb|decide|, into \verb|Ratpoints/Proof/Params.lean|, the lemmas on words and lists in
+core's namespaces into \verb|Ratpoints/Proof/Bits.lean|, and the denominators of the search with the
+theorems into \verb|Ratpoints/Proof/FindPoints.lean|; the lemmas of Mathlib's generality go into
+\verb|Ratpoints/Mathlib|, in the files that mirror their homes in Mathlib:
+\verb|Algebra/BigOperators/Group/List/Basic|, \verb|Algebra/BigOperators/Ring/Finset|,
+\verb|Algebra/Field/ZMod|, \verb|Algebra/Prime/Defs|, \verb|Data/List/Basic|,
+\verb|Data/Nat/Factors|, \verb|Data/Nat/Prime/Defs|, \verb|Data/Nat/Squarefree|,
+\verb|Data/ZMod/Basic|, \verb|NumberTheory/LegendreSymbol/JacobiSymbol| and
+\verb|NumberTheory/Padics/PadicVal/Basic|. Every new module joins its part root and the listing
+\verb|Ratpoints.lean|. One commit per item, each passing the project's checks:
+\begin{enumerate}
+  \item[E.1] The valuation with the constant $\mathrm{veryBig}$ (Definition~\ref{def:valuation}),
+    with its contract in \verb|Valuation.lean|, the $p$-adic valuation and the unit part, and
+    \verb|#guard| examples.
+  \item[E.2] The 2-adic information and Lemma~\ref{lem:twoAdic_point}
+    (Definition~\ref{def:twoAdic}), in \verb|TwoAdic.lean|, with \verb|#guard| examples against the
+    words that an instrumented build of the C code prints; the class word in the first stage, the
+    piece and the numerators of one denominator, with their contracts and nodes
+    (Definitions~\ref{def:andRows}, \ref{def:siftPiece} and~\ref{def:sift},
+    Lemma~\ref{lem:sift_eq_checkDen}), the run over $1, \dots, H$ passing the word of all ones until
+    E.6, so that the output does not change.
+  \item[E.3] The divisors of the leading coefficient and Lemma~\ref{lem:odd_denominators}
+    (Definition~\ref{def:setupUs1}), with the constant $\mathrm{maxDivisors}$, in
+    \verb|Divisors.lean|, with the facts about the table of primes, the bounds of \verb|setup_us1|
+    and the mirrors they use, and \verb|#guard| examples against the divisors that
+    \verb|ratpoints -v| prints and the slopes of the build with \verb|DEBUG|; nothing calls them
+    until E.7.
+  \item[E.4] The forbidden valuations and the forbidden divisors
+    (Definitions~\ref{def:forbiddenValuations} and~\ref{def:forbidden},
+    Lemmas~\ref{lem:forbiddenValuations} and~\ref{lem:forbidden}), in \verb|Forbidden.lean|, with
+    the bounds of the masks, the mirrors of the Newton polygon and \verb|#guard| examples against
+    the forbidden divisors that the instrumented build prints.
+  \item[E.5] The Jacobi test by the binary algorithm and by tables (Definitions~\ref{def:jacobi}
+    and~\ref{def:jacobiTables}, Lemmas~\ref{lem:jacobi} and~\ref{lem:jacobiTest}), with the
+    constants $\mathrm{jacobiPrimes}$, $\mathrm{jacobiTable}$ and $\mathrm{mulModLimit}$, in
+    \verb|Jacobi.lean| and \verb|JacobiTables.lean|, with their bounds, the mirrors on the Jacobi
+    symbol and on the largest divisor prime to a number, and \verb|#guard| examples against the
+    tables that the instrumented build prints.
+  \item[E.6] The shapes with their lists, their tests and their choice (Definition~\ref{def:Shape},
+    Lemma~\ref{lem:shape_dens}), in \verb|Shapes.lean|, with their bounds; the run over a shape
+    (Definition~\ref{def:sieveRun}) in the new files, with its reduction to the reference in the
+    node of the equation of the sieve; the search runs the shape of every denominator with the
+    class words and the class test, and takes the 2-adic exit (Lemma~\ref{lem:twoAdic_exit}); the
+    choice of the shape is not called yet, and the output is still the reference.
+  \item[E.7] The steps of the search for both degrees, with the divisors of the leading
+    coefficient, the forbidden divisors with the switch of the checked loop, and the choice of the
+    shape; the denominators of the search (Definition~\ref{def:searchDens}) and
+    Theorem~\ref{thm:findPoints_order}, with the corollaries, the guards on the axioms and the nodes
+    of the search and of the theorems; the differential tests compare every point list in its order,
+    and a run on which the C program prints nothing even above the largest height.
+  \item[E.8] The exclusions of the lines of this part of the C code that the model leaves out; the
+    build with other values of the constants, with the new constants among them; the differential
+    tests of Section~\ref{sec:denCli} and their unit tests; and the description of the repository
+    and \verb|formalization.yaml|, with the passages of Chapters~\ref{chap:spec}
+    to~\ref{chap:setup} that stage~E makes untrue: the run over $1, \dots, H$ and the files of its
+    contract, the comparison as sets where the denominators do not ascend and the count of the runs
+    of \verb|test3.sh|, the order of the program as that of Theorem~\ref{thm:findPoints_perm}, the
+    correction of the moduli during the run, which is stage~I, the list of \verb|findPoints| as the
+    reference, the passages that name stage~E, and what stage~G still owes once
+    Theorem~\ref{thm:findPoints_order} holds.
+\end{enumerate}
+
+\section{The evidence}\label{sec:den-evidence}
+
+Checks made while this chapter was written:
+\begin{itemize}
+  \item a reading of the C code of this chapter at the pin by three readers, with a reader of the
+    API of Mathlib and one of the model, each but the last with a second reader who checked the
+    reading: the rule of the 2-adic words, proved and checked on 6367 curves over all 4096 pairs of
+    residues, with the classes packed by strides of at most $8$; a build with the stride~$1$ for
+    every class, which prints what the release prints on 2500 runs; the order of the output
+    predicted byte for byte on 10088 runs (4836 curves; 70 refusals, 2085 runs whose denominators do
+    not ascend), with 180 runs at heights up to 100000, 397 with a range of the denominators and 660
+    with blocks of one step and three or four threads, all agreeing; the tests on the denominators
+    of a transcription against the C code, test by test, on 956100 denominators of 3000 curves and
+    2.64 million more at heights up to 150000; their soundness against the brute force on 2863
+    curves of even degree with 25329 points and on 2993 curves with points of the valuations $1$ to
+    $7$; and the three implementations of the Jacobi test agreeing on 31.6 million evaluations; no
+    defect of the C code was found;
+  \item the mathematics of every test proved in Lean against Mathlib in scratch files, with the
+    standard axioms only: the classes modulo $64$, the squares and the divisors of odd degree with
+    the slopes, the Newton polygon of the forbidden valuations, the soundness of the Jacobi test in
+    every form of the C code, and the lists of the divisors and of the square shapes;
+  \item a sketch of the model of this chapter in Lean, whose \verb|#guard| examples give the words,
+    the divisors, the slopes, the forbidden divisors, the tables of the Jacobi test and the
+    denominators that an instrumented build of the C code prints; it agrees with \verb|ratpoints -q|
+    on the 3219 runs of the differential tests, every point list in its order, on the 13 runs at
+    heights up to 100000, and byte for byte on 2540 runs of its own, 2500 at heights up to 3000
+    (among them 844 of the divisor shape, 690 of them with denominators that do not ascend; 101
+    where \verb|setup_us1| fails, the boundary of $512$ divisors included; 231 of the squares, 1050
+    of the words, 154 of every denominator, 92 of the 2-adic exit, 14 without points modulo a prime)
+    and 40 at heights from $10^4$ to $5 \cdot 10^4$; and on 6260 runs it computes what the
+    instrumented build computes, line by line: the divisors and the slopes or their failure, the 64
+    words of the classes, both exits, the forbidden divisors in their order, the switch of the
+    checked loop, the shape, the tables of the Jacobi test and every denominator sifted, about
+    873000 of them; on 1000 runs with any options the same, but for 8 in which the Sturm step of the
+    C code leaves nothing to sieve, so that it sets up no run, where the model sieves (stage~H),
+    with the same output;
+  \item a review of the C ranges and the deviations of the sketch by three readers, each finding
+    checked by a second reader: 34 findings, all confirmed, on the ranges, the deviations, the
+    exclusions and the docstrings, none on what the model computes; the ranges of this chapter are
+    the corrected ones;
+  \item a prototype of the proofs on the sketch, in a copy of the repository, in four parts in
+    sequence and one in parallel for the Jacobi test: every contract and lemma of this chapter
+    proved, with the standard axioms only, every proof of at most $20$ lines, the statements that
+    comparator certifies unchanged, and the build with other values of the constants, the new
+    constants among them; it found that the sketch kept the bound $m < 63$ of the C code and a
+    $64$-bit word for the masks of the forbidden valuations, which is not sound beyond the
+    \verb|long|s of the C code: for $c = (3, 0, 3^{128})$ and $H \ge 3^{64}$, the prime $3$ became
+    a prime tested with words, although $(1, 2 \cdot 3^{64}, 3^{64})$ is a point; the masks became
+    natural numbers, and the differential tests of the corrected sketch give 3219 comparisons, none
+    failed;
+  \item a review of this chapter by four readers, each finding checked by a second reader: 53
+    findings, 39 confirmed and 12 in part, all applied: the C links of three nodes (the packing of
+    the classes, the record of the divisors, the tables of the Jacobi test), the conditions of the
+    divisor order and of the tables of the Jacobi test, the zero mask, the primes that the forbidden
+    divisors reach, the slopes with $v_p(0) = \mathrm{veryBig}$, the 2-adic exit and the tests of
+    the shapes as public lemmas, the hypotheses of the lists of the shapes, the statement of the
+    search and the fate of the equation of the sieve, the uses, the notation, the order of work and
+    the passages of the earlier chapters that the stage changes.
+\end{itemize}
