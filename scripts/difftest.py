@@ -238,7 +238,7 @@ def searched(c, reverse):
 
 def ascending_denominators(lc, H):
     """Whether ratpoints visits the denominators 1, ..., H in ascending order for a polynomial of
-    odd degree with the leading coefficient `lc`, |lc| != 1: when setup_us1 (find_points.c:766-903)
+    odd degree with the leading coefficient `lc`, |lc| != 1: when setup_us1 (find_points.c:766-935)
     does not factor |lc| completely over 2 and the odd primes of the table, a cofactor below p^2
     being prime, or finds MAX_DIVISORS squarefree divisors at most H, every denominator in turn;
     otherwise, divisor by divisor in the order in which it makes them, the denominators
