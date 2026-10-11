@@ -23,8 +23,8 @@ squarefree, and the homogenization of its reflection.
 * `Polynomial.squarefree_homogenize_iff`: for a polynomial `p` over a domain and
   `n ≥ p.natDegree`, the homogenization of degree `n` is squarefree if and only if `p` is
   squarefree and `n ≤ p.natDegree + 1`.
-* `Polynomial.homogenize_reflect`: the homogenization of degree `N` of the reflection of `p` in
-  degree `N` is that of `p` with the two variables exchanged, for every `p` and `N`.
+* `Polynomial.homogenize_reflect`: the homogenization of degree `n` of the reflection of `p` in
+  degree `n` is that of `p` with the two variables exchanged, for every `p` and `n`.
 * `Polynomial.squarefree_homogenize_reflect_iff`: so the reflection does not change whether the
   homogenization is squarefree.
 * `Polynomial.squarefree_homogenize_iff_squarefree_reflect`: for `n ≥ p.natDegree`, the
@@ -72,11 +72,12 @@ private theorem squarefree_of_squarefree_homogenize [NoZeroDivisors R] (hn : p.n
   rw [hd, homogenize_mul _ _ le_rfl le_rfl] at this
   simpa using (h _ this).map (MvPolynomial.aeval ![(X : R[X]), 1])
 
-/-- The homogenization of degree `N` of the reflection of `p` in degree `N` is that of `p` with
-the two variables exchanged, for every `p` and `N`: both see only the coefficients of `p` up to
-`N`. -/
-theorem homogenize_reflect (p : R[X]) (N : ℕ) :
-    (p.reflect N).homogenize N = MvPolynomial.rename (Equiv.swap 0 1) (p.homogenize N) := by
+variable (p n) in
+/-- The homogenization of degree `n` of the reflection of `p` in degree `n` is that of `p` with
+the two variables exchanged, for every `p` and `n`: both see only the coefficients of `p` up to
+`n`. -/
+theorem homogenize_reflect :
+    (p.reflect n).homogenize n = MvPolynomial.rename (Equiv.swap 0 1) (p.homogenize n) := by
   ext m
   obtain ⟨m, rfl⟩ : ∃ m', m = m'.mapDomain (Equiv.swap 0 1) :=
     ⟨m.mapDomain (Equiv.swap 0 1), by rw [← Finsupp.mapDomain_comp]; simp⟩
@@ -85,8 +86,9 @@ theorem homogenize_reflect (p : R[X]) (N : ℕ) :
   simp [Finsupp.mapDomain_equiv_apply]
   grind [revAt_le]
 
-theorem squarefree_homogenize_reflect_iff (p : R[X]) (N : ℕ) :
-    Squarefree ((p.reflect N).homogenize N) ↔ Squarefree (p.homogenize N) := by
+variable (p n) in
+theorem squarefree_homogenize_reflect_iff :
+    Squarefree ((p.reflect n).homogenize n) ↔ Squarefree (p.homogenize n) := by
   rw [homogenize_reflect, ← MvPolynomial.renameEquiv_apply R]
   exact MulEquiv.squarefree_iff _
 

@@ -218,13 +218,13 @@ private theorem exists_poly_fullReduce {s : Array ℤ} (hs : s.back! ≠ 0) (t :
     rw [poly_toList_eq_zero_of_size_eq_zero h0] at h
     exact ⟨u, hu, C (v : ℚ) * X ^ (t.size - s.size), by
       rw [poly_toList_eq_zero_of_size_eq_zero rfl, h]⟩
-  | case2 t hle h0 ih =>
+  | case2 t hle _ ih =>
     obtain ⟨A, hA, Q, hQ⟩ := ih
     obtain ⟨u, v, hu, h⟩ := exists_poly_reduceOnce hle hs
     refine ⟨A * u, Int.mul_pos hA hu, C (A : ℚ) * C (v : ℚ) * X ^ (t.size - s.size) + Q, ?_⟩
     rw [hQ, h, Int.cast_mul, C_mul]
     ring
-  | case3 t => exact ⟨1, Int.one_pos, 0, by simp⟩
+  | case3 => exact ⟨1, Int.one_pos, 0, by simp⟩
 
 -- `g` times the normalized remainder is `-t`, for the gcd `g` of the entries of `-t`.
 private theorem mul_poly_normalize (t : Array ℤ) :
@@ -350,7 +350,7 @@ private theorem _root_.List.getD_cons_reverse_drop_take_of_lt {α : Type*} {l : 
 
 -- The degree of `c` from its entries: nonzero at `d` and zero above.
 private theorem degree_eq_of_getD_ne_zero {c : List ℤ} {d : ℕ} (hd : c.getD d 0 ≠ 0)
-    (h : ∀ i, d < i → c.getD i 0 = 0) : degree c = d := by
+    (h : ∀ i > d, c.getD i 0 = 0) : degree c = d := by
   rw [← natDegree_poly]
   refine natDegree_eq_of_le_of_coeff_ne_zero
     (natDegree_le_iff_coeff_eq_zero.mpr fun i hi ↦ by rw [coeff_poly, h i hi, Int.cast_zero])
@@ -466,10 +466,9 @@ theorem degree_eq_of_reversal_eq_ok {allow rev : Bool} {c c' : List ℤ} {d d' :
 /-- The check keeps the degree at least `1`: case 1 lowers an even degree `d ≥ 2` to `d - 1`, and
 the other cases keep it. -/
 theorem one_le_of_reversal_eq_ok {allow rev : Bool} {c c' : List ℤ} {d d' : ℕ}
-    (hd : d = degree c) (h : reversal allow c d = .ok (c', d', rev)) (h1 : 1 ≤ d) : 1 ≤ d' := by
-  cases rev
-  · exact (eq_of_reversal_eq_ok_false h).2 ▸ h1
-  · rcases reversal_eq_ok_cases hd h with ⟨-, -, hN⟩ | ⟨-, rfl, -⟩ <;> lia
+    (h : reversal allow c d = .ok (c', d', rev)) (h1 : 1 ≤ d) : 1 ≤ d' := by
+  simp only [reversal] at h
+  split_ifs at h <;> simp only [Except.ok.injEq, Prod.mk.injEq] at h <;> lia
 
 -- The reversed list has the even degree of the binary form of `c`.
 private theorem add_mod_two_eq_of_reversal_eq_ok {allow : Bool} {c c' : List ℤ} {d d' : ℕ}
@@ -525,7 +524,7 @@ theorem Sturm.run_chain_eq_none_iff_of_reversal_eq_ok {allow rev : Bool} {c c' :
     (h : Setup.reversal allow c (degree c) = .ok (c', d', rev)) :
     Id.run (chain c' d') = none ↔ ¬ Squarefree (binaryFormPoly c) := by
   obtain rfl := Setup.degree_eq_of_reversal_eq_ok rfl h
-  have h1 := Setup.one_le_of_reversal_eq_ok rfl h (by lia)
+  have h1 := Setup.one_le_of_reversal_eq_ok h (by lia)
   rw [run_chain_eq_none_iff h1 (getD_degree_ne_zero_of_pos h1),
     poly_take_of_degree_lt (Nat.lt_succ_self _),
     Setup.squarefree_binaryFormPoly_iff_of_reversal_eq_ok rfl hc h]

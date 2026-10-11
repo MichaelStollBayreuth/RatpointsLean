@@ -262,7 +262,7 @@ private theorem ite_le_sub_eq_emod {a m : ℤ} (h0 : 0 ≤ a) (h1 : a < 2 * m) :
   · rw [Int.emod_eq_of_lt h0 (by lia)]
 
 -- The rung on a residue modulo `n = 2 m`.
-private theorem ite_le_emod_sub_eq_emod (a : ℤ) {m n : ℤ} (hm : 0 < m) (hn : n = 2 * m) :
+private theorem ite_le_emod_sub_eq_emod (a m : ℤ) {n : ℤ} (hm : 0 < m) (hn : n = 2 * m) :
     (if m ≤ a % n then a % n - m else a % n) = a % m := by
   rw [ite_le_sub_eq_emod (Int.emod_nonneg _ (by lia)) (hn ▸ Int.emod_lt_of_pos _ (by lia)),
     Int.emod_emod_of_dvd _ (hn ▸ dvd_mul_left m 2)]
@@ -276,8 +276,8 @@ private theorem modLong_eq_emod_of_le_of_lt {a b : ℤ} (hb : 0 < b) (h0 : -(16 
   have h2 : 0 ≤ (if a < 0 then a + 16 * b else a) := by split <;> lia
   have h3 : (if a < 0 then a + 16 * b else a) < 2 * (8 * b) := by split <;> lia
   generalize (if a < 0 then a + 16 * b else a) = y at hy h2 h3 ⊢
-  rw [← hy, ite_le_sub_eq_emod h2 h3, ite_le_emod_sub_eq_emod y (m := 4 * b) (by lia) (by lia),
-    ite_le_emod_sub_eq_emod y (m := 2 * b) (by lia) (by lia), ite_le_emod_sub_eq_emod y hb rfl]
+  rw [← hy, ite_le_sub_eq_emod h2 h3, ite_le_emod_sub_eq_emod y (4 * b) (by lia) (by lia),
+    ite_le_emod_sub_eq_emod y (2 * b) (by lia) (by lia), ite_le_emod_sub_eq_emod y b hb rfl]
 
 /-- The helper `mod` of the C code is the Euclidean `%`, for every integer `a` and every `b ≥ 0`:
 the model computes with integers, and the obligations that the values of the C code stay in the
