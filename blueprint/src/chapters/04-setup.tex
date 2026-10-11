@@ -275,8 +275,8 @@ by row, and not only its verdict.
   \leanok
   The point of the caller's curve for the point $(a, y, b)$ of the reversed curve: $(b, y, a)$ for
   $a \ge 0$ and $(-b, y, -a)$ for $a < 0$, the map that the check of a survivor and the points at
-  infinity apply after a reversal (in the C lines of Definitions~\ref{def:checkNum}
-  and~\ref{def:pointsAtInfinity}). Its negations stay in the range of a \verb|long|, since
+  infinity apply after a reversal (Definitions~\ref{def:checkNum} and~\ref{def:pointsAtInfinity},
+  when their flag of the reversal is set). Its negations stay in the range of a \verb|long|, since
   $|a| \le H$, $1 \le b \le H$ and $H < 2^{63}$ (the lemma on negations of
   Definition~\ref{def:useCLong}).
 \end{definition}

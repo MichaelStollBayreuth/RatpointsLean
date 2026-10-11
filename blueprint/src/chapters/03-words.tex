@@ -249,15 +249,18 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
 \end{definition}
 
 \begin{definition}[The check of a numerator]\label{def:checkNum}
-  \uses{def:bruteForce}
-  \lean{Ratpoints.Sieve.checkNum, Ratpoints.Sieve.pointsOfDen_eq_flatMap_checkNum}
+  \uses{def:bruteForce, def:swapPoint}
+  \lean{Ratpoints.Sieve.checkNum, Ratpoints.Sieve.pointsOfDen_eq_flatMap_checkNum, Ratpoints.Sieve.checkNum_eq_map, Ratpoints.Sieve.flatMap_checkNum}
   \leanok
-  The test for common factors of $a$ and $b$ and the exact check, from the products
-  $c_k b^{d - k}$ and the factor $b$ for odd $d$, which come in as arguments: the points
-  $(a, y, b)$ and, for $y \ne 0$, $(a, -y, b)$ (\csource{sift.c}{202}{205},
-  \csource{sift.c}{318}{343}, \csource{sift.c}{438}{446}, \csource{find_points.c}{5250}{5338}).
-  What the brute-force reference finds over $b$ and a list of numerators is the concatenation of
-  these over the list, with the products and the factor of $c$, $d$ and $b$.
+  The test for common factors of $a$ and $b$ and the exact check, from the products $c_k b^{d - k}$
+  and the factor $b$ for odd $d$, which come in as arguments: the points $(a, y, b)$ and, for
+  $y \ne 0$, $(a, -y, b)$, each mapped by $\mathrm{swapPoint}$ (Definition~\ref{def:swapPoint}) when
+  the flag of the reversal, an argument before the numerator, is set (\csource{sift.c}{202}{205},
+  \csource{sift.c}{318}{343}, \csource{sift.c}{438}{446}, \csource{find_points.c}{5250}{5338}). So
+  the check with the flag set gives the points of the check with the flag clear, mapped, and so do
+  the checks of a list of numerators, one after the other. What the brute-force reference finds over
+  $b$ and a list of numerators is the concatenation of the checks with the flag clear over the list,
+  with the products and the factor of $c$, $d$ and $b$.
 \end{definition}
 
 \begin{definition}[The set bits of a word]\label{def:walkWord}
@@ -265,22 +268,23 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
   \lean{Ratpoints.Sieve.walkWord, Ratpoints.Sieve.walkWord_spec}
   \leanok
   For a word $x$ whose bit $t$ stands for the numerator $a_0 + t$: while $x \ne 0$, the check of
-  $a_0 + \mathrm{ctz}(x)$, and $x \mathbin{\&} (x - 1)$ for $x$: the loop of the C code with its
-  body at both places of the extraction (\csource{sift.c}{262}{264},
-  \csource{sift.c}{1227}{1255}, \csource{sift.c}{1265}{1292}). Its contract: the checks of the
-  numerators $a_0 + t$ for the set bits $t$ of $x$, in increasing order, are appended.
+  $a_0 + \mathrm{ctz}(x)$, with the flag of the reversal that the walk hands on, and
+  $x \mathbin{\&} (x - 1)$ for $x$: the loop of the C code with its body at both places of the
+  extraction (\csource{sift.c}{262}{264}, \csource{sift.c}{1227}{1255},
+  \csource{sift.c}{1265}{1292}). Its contract: the checks of the numerators $a_0 + t$ for the set
+  bits $t$ of $x$, in increasing order, are appended.
 \end{definition}
 
 \begin{definition}[The scan and the extraction]\label{def:scanPiece}
   \uses{def:walkWord, def:bitArrayOps}
   \lean{Ratpoints.Sieve.scanPiece, Ratpoints.Sieve.scanPiece_spec}
   \leanok
-  A sentinel, a bit array of ones, just past the piece; then from the first bit array on: step
-  over the zero bit arrays, stop at the sentinel, and walk the words of each other bit array, the
-  bit $0$ of word $\kappa$ of bit array $i$ standing for the numerator $R (w_0 + i) + 64 \kappa$
-  (\csource{sift.c}{1061}{1082}, \csource{sift.c}{1088}{1092}, \csource{sift.c}{1213}{1226},
-  \csource{sift.c}{1257}{1264}, \csource{sift.c}{1293}{1299}; with \verb|zero|,
-  \csource{rp-private.h}{133}{133}, \csource{rp-private.h}{205}{205},
+  A sentinel, a bit array of ones, just past the piece; then from the first bit array on: step over
+  the zero bit arrays, stop at the sentinel, and walk the words of each other bit array, with the
+  flag of the reversal, the bit $0$ of word $\kappa$ of bit array $i$ standing for the numerator
+  $R (w_0 + i) + 64 \kappa$ (\csource{sift.c}{1061}{1082}, \csource{sift.c}{1088}{1092},
+  \csource{sift.c}{1213}{1226}, \csource{sift.c}{1257}{1264}, \csource{sift.c}{1293}{1299}; with
+  \verb|zero|, \csource{rp-private.h}{133}{133}, \csource{rp-private.h}{205}{205},
   \csource{rp-private.h}{236}{236}, \csource{rp-private.h}{262}{262},
   \csource{rp-private.h}{286}{286}, and \verb|EXT0|, \verb|EXT|, \csource{rp-private.h}{135}{136},
   \csource{rp-private.h}{177}{178}, \csource{rp-private.h}{238}{239},
@@ -297,8 +301,8 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
   A fresh array of $n + 1$ bit arrays, as the worker's array of \verb|array_size| bit arrays and two
   more (\csource{find_points.c}{3119}{3121}); the first stage; the low mask $m_l$ on the first bit
   array if $m_l \ne 0$ and the high mask $m_h$ on the last if $m_h \ne 0$
-  (\csource{sift.c}{1030}{1041}); and the scan. The piece also has the head of
-  \verb|_ratpoints_sift0| (\csource{sift.c}{498}{531}), the count of its words
+  (\csource{sift.c}{1030}{1041}); and the scan, with the flag of the reversal. The piece also has
+  the head of \verb|_ratpoints_sift0| (\csource{sift.c}{498}{531}), the count of its words
   (\csource{sift.c}{548}{548}), the timer and the test before its second stage
   (\csource{sift.c}{1056}{1058}) and its end (\csource{sift.c}{1300}{1305}). Its contract, for
   $m_h < R$ and every list of tables with $p > 0$ whose rows for $b$ the moduli carry: the
@@ -314,33 +318,35 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
   \leanok
   The row of $b$ for each modulus, for the rows of the first two stages
   (\csource{find_points.c}{3149}{3170}, \csource{find_points.c}{3490}{3561}) and the table of the
-  third (\csource{sift.c}{405}{431}); the products $c_k b^{d - k}$ and the factor of the
-  check; the word numbers $w_{\mathrm{low}} = \lfloor -H/R \rfloor$ and
-  $w_{\mathrm{high}} = \lfloor H/R \rfloor + 1$; and while $w_0 < w_{\mathrm{high}}$, the piece
-  from $w_0$ to $w_1 = \min(w_0 + A, w_{\mathrm{high}})$, with the low mask
-  $-H - R w_{\mathrm{low}}$ if it is the first and the high mask $R - 1 - (H \bmod R)$ if it is
-  the last (\csource{find_points.c}{3442}{3488}, \csource{find_points.c}{3563}{3617}). Its
-  contract, for $A \ge 1$ and the rows of tables with $p > 0$: what the brute-force reference
-  finds over $b$ and the numerators $-H, \dots, H$ that survive the tables, the result of the
-  sieve of $b$ followed by its check in stage~C1. The masked ranges of the pieces lie end to end
-  and make up $[-H, H]$: the low mask moves the start of the first piece from
-  $R w_{\mathrm{low}}$ to $-H$, the high mask the end of the last one from
-  $R w_{\mathrm{high}} - 1$ to $H$, and a piece between them has no numerator outside $[-H, H]$.
+  third (\csource{sift.c}{405}{431}); the products $c_k b^{d - k}$ and the factor of the check,
+  which also gets the flag of the reversal; the word numbers
+  $w_{\mathrm{low}} = \lfloor -H/R \rfloor$ and $w_{\mathrm{high}} = \lfloor H/R \rfloor + 1$; and
+  while $w_0 < w_{\mathrm{high}}$, the piece from $w_0$ to $w_1 = \min(w_0 + A, w_{\mathrm{high}})$,
+  with the low mask $-H - R w_{\mathrm{low}}$ if it is the first and the high mask
+  $R - 1 - (H \bmod R)$ if it is the last (\csource{find_points.c}{3442}{3488},
+  \csource{find_points.c}{3563}{3617}). Its contract, for $A \ge 1$ and the rows of tables with
+  $p > 0$: what the brute-force reference finds over $b$ and the numerators $-H, \dots, H$ that
+  survive the tables, the result of the sieve of $b$ followed by its check in stage~C1, mapped by
+  $\mathrm{swapPoint}$ when the flag is set. The masked ranges of the pieces lie end to end and make
+  up $[-H, H]$: the low mask moves the start of the first piece from $R w_{\mathrm{low}}$ to $-H$,
+  the high mask the end of the last one from $R w_{\mathrm{high}} - 1$ to $H$, and a piece between
+  them has no numerator outside $[-H, H]$.
 \end{definition}
 
 \begin{lemma}[The words compute the Booleans]\label{lem:sift_eq_checkDen}
   \uses{def:sift, def:sieveDen, def:checkDen}
   \lean{Ratpoints.Sieve.toList_run_sift_eq_checkDen}
   \leanok
-  For $A \ge 1$ and tables with $p > 0$, the points of the denominator $b$ that \verb|sift|
-  returns are those that the check of stage~C1 returns on the sieve of stage~C1.
+  For $A \ge 1$ and tables with $p > 0$, the points of the denominator $b$ that \verb|sift| returns
+  are those that the check of stage~C1 returns on the sieve of stage~C1, mapped by
+  $\mathrm{swapPoint}$ when the flag of the reversal is set.
 \end{lemma}
 
 \begin{proof}
   \leanok
   Both are what the brute-force reference finds over $b$ and the numerators $-H, \dots, H$ that
-  survive the tables, by the contract of Definition~\ref{def:sift} and those of
-  Definitions~\ref{def:sieveDen} and~\ref{def:checkDen}.
+  survive the tables, the points of \verb|sift| mapped when the flag is set, by the contract of
+  Definition~\ref{def:sift} and those of Definitions~\ref{def:sieveDen} and~\ref{def:checkDen}.
 \end{proof}
 
 The sieve of one denominator and the check of stage~C1 are the reference of the words, with this
@@ -350,10 +356,10 @@ returns, for each denominator, the points that \verb|sift| finds; its contract h
 and tables with $p > 0$, and \verb|sift| computes the residues $b \bmod p$ once per denominator,
 where ratpoints computes the residues of $b / 2^k$ before each call of \verb|sift|
 (\verb|fill_bp_list|). \verb|findPoints| (Definition~\ref{def:findPoints}) runs it with
-$A = \mathrm{arraySizeAt}(H)$ of its parameters and the tables of its moduli, which are primes; so
-the proof of Theorem~\ref{thm:findPoints_eq_bruteForce} needs two more facts, the lower bound of the
-array size and the positivity of the moduli, and the statements of the theorems and of the
-comparator challenge are those of stage~C1.
+$A = \mathrm{arraySizeAt}(H)$ of its parameters, the tables of its moduli, which are primes, and the
+flag of the reversal clear; so the proof of Theorem~\ref{thm:findPoints_eq_bruteForce} needs two
+more facts, the lower bound of the array size and the positivity of the moduli, and the statements
+of the theorems and of the comparator challenge are those of stage~C1.
 
 Each component of this chapter differs from the C code in a stated way, recorded in its
 \verb|Deviation:| paragraph:
@@ -391,8 +397,9 @@ Each component of this chapter differs from the C code in a stated way, recorded
     the check, where ratpoints computes them in the check when the first survivor of $b$ reaches
     it;
   \item a list of points for the callback \verb|process| and for the counts of points that the C
-    functions return, with no stop it may request, no reversal (D), no \verb|NO_Y| and no
-    \verb|NO_CHECK| (G);
+    functions return, with no stop it may request, no \verb|NO_Y| and no \verb|NO_CHECK| (G), and
+    the flag of the reversal as an argument of the check, which the components from the run down to
+    it hand on, for the bit \verb|RATPOINTS_REVERSED| of the flags that the check reads;
   \item no counts of the denominators sieved, of the words swept and of the bit arrays, bits and
     numerators that reach each stage (F), no threads, and natural numbers and integers for the
     \verb|long|s, with a \verb|Nat| for \verb|array_size| so that only $0$ stands for the default

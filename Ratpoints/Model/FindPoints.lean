@@ -39,7 +39,7 @@ coefficients, fewer than two, and `H = 0` are refused, in the order of the progr
 points at infinity (`Ratpoints.Sieve.pointsAtInfinity`) come first, then those of the denominators
 `1, …, H` (`Ratpoints.Sieve.sieveRun`) with the tables of the moduli
 (`Ratpoints.Sieve.examinePrime`) and pieces of at most `Ratpoints.Params.arraySizeAt P H` bit
-arrays.
+arrays, both with the flag of the reversal clear.
 
 C: `find_points.c:4557-4558`, `find_points.c:4624-4633`, `find_points.c:4658`
 
@@ -58,7 +58,8 @@ def findPoints (c : List Int) (H : Nat) (P : Params) : Except Refusal (List (Int
   else
     let d := BruteForce.degree c
     let entries := P.moduli.map (examinePrime c d)
-    .ok (pointsAtInfinity c d ++ (Id.run (sieveRun c d H (P.arraySizeAt H) entries)).toList)
+    .ok (pointsAtInfinity c d false ++
+      (Id.run (sieveRun c d H (P.arraySizeAt H) false entries)).toList)
 
 /-! ### Examples
 

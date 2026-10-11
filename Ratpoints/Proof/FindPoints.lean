@@ -40,14 +40,15 @@ certifies the membership, the absence of duplicates and the refusals
 
 ## Proof
 
-By the contract of the denominators (`Ratpoints.Sieve.toList_run_sieveRun`), the sieve returns the
-part of the reference with `z ≥ 1`, the numerators of each denominator filtered by the survivor
-test, since the pieces have at least one bit array (`Ratpoints.Params.one_le_arraySizeAt`) and the
-moduli of well-formed parameters are primes (`Ratpoints.Params.WF.prime_of_mem`), hence positive;
-every numerator over which the exact check finds a point survives
-(`Ratpoints.Sieve.survives_of_mem_pointsOfDen`), so the filter changes nothing
-(`Ratpoints.BruteForce.pointsOfDen_filter_of_ne`); and the points at infinity are those of the
-candidate `(1, 0)` of the reference (`Ratpoints.Sieve.pointsAtInfinity_eq_pointsOfDen`).
+By the contract of the denominators (`Ratpoints.Sieve.toList_run_sieveRun`), with the flag of the
+reversal clear, as `Ratpoints.findPoints` passes it, the sieve returns the part of the reference
+with `z ≥ 1`, the numerators of each denominator filtered by the survivor test, since the pieces
+have at least one bit array (`Ratpoints.Params.one_le_arraySizeAt`) and the moduli of well-formed
+parameters are primes (`Ratpoints.Params.WF.prime_of_mem`), hence positive; every numerator over
+which the exact check finds a point survives (`Ratpoints.Sieve.survives_of_mem_pointsOfDen`), so the
+filter changes nothing (`Ratpoints.BruteForce.pointsOfDen_filter_of_ne`); and the points at infinity
+are those of the candidate `(1, 0)` of the reference
+(`Ratpoints.Sieve.pointsAtInfinity_eq_pointsOfDen`).
 -/
 
 @[expose] public section
@@ -86,10 +87,15 @@ theorem survives_of_mem_pointsOfDen {c : List ℤ} {ms : List ℕ} (hms : ∀ p 
   exact fun p hp ↦ admits_examinePrime_of_sq_eq (hms p hp) hg hy
 
 theorem pointsAtInfinity_eq_pointsOfDen (c : List ℤ) (d : ℕ) :
-    pointsAtInfinity c d = pointsOfDen c d 0 [1] := by
-  simp only [pointsAtInfinity, pointsOfDen_singleton, Int.gcd_one_left, ↓reduceIte,
+    pointsAtInfinity c d false = pointsOfDen c d 0 [1] := by
+  simp only [pointsAtInfinity, pointsOfDen_singleton, Int.gcd_one_left, reduceCtorEq, ↓reduceIte,
     horner_scaledCoeffs_one_zero]
   split_ifs <;> simp [pointsAbove]
+
+theorem pointsAtInfinity_eq_map (c : List ℤ) (d : ℕ) (rev : Bool) :
+    pointsAtInfinity c d rev =
+      if rev then (pointsAtInfinity c d false).map swapPoint else pointsAtInfinity c d false := by
+  cases rev <;> simp [pointsAtInfinity, pointsAbove, apply_ite (List.map swapPoint), swapPoint]
 
 end Sieve
 
@@ -106,8 +112,8 @@ theorem findPoints_eq_ok_bruteForce {c : List ℤ} {H : ℕ} {P : Params} (hP : 
   have hp : ∀ e ∈ P.moduli.map (examinePrime c (BruteForce.degree c)), 0 < e.p :=
     List.forall_mem_map.mpr fun _ hq ↦ (hP.prime_of_mem hq).pos
   have hH1 : 1 ≤ H := Nat.one_le_iff_ne_zero.mpr hH
-  simp only [findPoints, bruteForce, Nat.not_lt.mpr hcmax, Nat.not_lt.mpr hc2, hH, hH1, ↓reduceIte,
-    pointsAtInfinity_eq_pointsOfDen, toList_run_sieveRun c _ H (P.one_le_arraySizeAt hH1) hp]
+  simp only [findPoints, bruteForce, hcmax.not_gt, hc2.not_gt, hH, hH1, reduceCtorEq, ↓reduceIte,
+    pointsAtInfinity_eq_pointsOfDen, toList_run_sieveRun c _ H false (P.one_le_arraySizeAt hH1) hp]
   congr 3
   funext j
   refine pointsOfDen_filter_of_ne fun x _ hx ↦ ?_

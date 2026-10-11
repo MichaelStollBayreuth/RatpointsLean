@@ -261,24 +261,27 @@ lemmas.
   \uses{def:sift}
   \lean{Ratpoints.Sieve.sieveRun, Ratpoints.Sieve.sieveRun_spec, Ratpoints.Sieve.toList_run_sieveRun}
   \leanok
-  The rows of the moduli made once, and the denominators $b = 1, \dots, H$ in increasing order,
-  the points that \verb|sift| (Definition~\ref{def:sift}) finds for each, with pieces of at most
-  $A$ bit arrays, appended in turn (\csource{find_points.c}{4059}{4075},
+  The rows of the moduli made once, and the denominators $b = 1, \dots, H$ in increasing order, the
+  points that \verb|sift| (Definition~\ref{def:sift}) finds for each, with pieces of at most $A$ bit
+  arrays and the flag of the reversal, appended in turn (\csource{find_points.c}{4059}{4075},
   \csource{find_points.c}{5152}{5160}). Its contract, for an array size $A \ge 1$ and moduli
-  $p > 0$: the result is the concatenation over $b = 1, \dots, H$ of what the brute-force
-  reference finds over $b$ and the numerators that survive the moduli for $b$, that is, the part of
-  the reference with $z \ge 1$, its numerators filtered by the moduli.
+  $p > 0$: the result is the concatenation over $b = 1, \dots, H$ of what the brute-force reference
+  finds over $b$ and the numerators that survive the moduli for $b$, that is, the part of the
+  reference with $z \ge 1$, its numerators filtered by the moduli, mapped by $\mathrm{swapPoint}$
+  (Definition~\ref{def:swapPoint}) when the flag is set.
 \end{definition}
 
 \begin{definition}[The points at infinity]\label{def:pointsAtInfinity}
-  \uses{def:bruteForce}
-  \lean{Ratpoints.Sieve.pointsAtInfinity, Ratpoints.Sieve.pointsAtInfinity_eq_pointsOfDen}
+  \uses{def:bruteForce, def:swapPoint}
+  \lean{Ratpoints.Sieve.pointsAtInfinity, Ratpoints.Sieve.pointsAtInfinity_eq_pointsOfDen, Ratpoints.Sieve.pointsAtInfinity_eq_map}
   \leanok
   $(1, 0, 0)$ for odd $d$; for even $d$, $(1, s, 0)$ and $(1, -s, 0)$ when $c_d = s^2$ with
-  $s > 0$, $(1, 0, 0)$ when $c_d = 0$, and nothing when $c_d$ is not a square
-  (\csource{find_points.c}{4634}{4634}, \csource{find_points.c}{4894}{4899},
-  \csource{find_points.c}{5068}{5105}). These are the
-  points of the candidate $(1, 0)$ of the brute-force reference.
+  $s > 0$, $(1, 0, 0)$ when $c_d = 0$, and nothing when $c_d$ is not a square; with the flag of the
+  reversal set, the candidate $(0, 1)$ in place of $(1, 0)$, as in the C code after a reversal, so
+  that the points are $(0, 0, 1)$, $(0, s, 1)$ and $(0, -s, 1)$, those of the flag clear mapped by
+  $\mathrm{swapPoint}$ (Definition~\ref{def:swapPoint}) (\csource{find_points.c}{4634}{4634},
+  \csource{find_points.c}{4894}{4899}, \csource{find_points.c}{5068}{5105}). With the flag clear
+  these are the points of the candidate $(1, 0)$ of the brute-force reference.
 \end{definition}
 
 \begin{definition}[The search for the points]\label{def:findPoints}
@@ -293,7 +296,8 @@ lemmas.
   squarefree a form that loses $\lceil n/2 \rceil$ with them, which C1 does not refuse (stage~D).
   Otherwise drop the leading zeros, make the table of each modulus and return the points at infinity
   followed by the points of the denominators, found with pieces of at most $\mathrm{arraySizeAt}(H)$
-  bit arrays, the array size of the parameters (Definition~\ref{def:arraySize}).
+  bit arrays, the array size of the parameters (Definition~\ref{def:arraySize}), both with the flag
+  of the reversal clear.
 \end{definition}
 
 Each component differs from the C code in a stated way, recorded in the \verb|Deviation:|
@@ -317,7 +321,9 @@ paragraph of the component whose range holds it:
     integers (D);
   \item the products $c_k b^{d-k}$ computed for every denominator, where ratpoints computes them
     when the first survivor reaches the check;
-  \item no reversal (D), and a list of points for the callback \verb|process|, with no stop it may
+  \item the flag of the reversal as an argument of the points at infinity, for the bit
+    \verb|RATPOINTS_REVERSED| of the flags, which $\mathrm{findPoints}$ passes clear, since it does
+    not reverse yet (D); and a list of points for the callback \verb|process|, with no stop it may
     request, no \verb|NO_Y| and no \verb|NO_CHECK| (G), and no output under \verb|VERBOSE|;
   \item no failure for lack of memory, which the model cannot meet.
 \end{itemize}
@@ -369,11 +375,11 @@ the points at infinity need the case $y = 0$, which ratpoints never meets.
   \leanok
   The array size of the parameters is at least $1$ for $H \ge 1$ (Definition~\ref{def:arraySize}),
   and the moduli of well-formed parameters are primes, hence positive; so by the contract of the
-  denominators the sieve returns the part of the reference with $z \ge 1$, the numerators of each
-  denominator filtered by the survivor test. Since the moduli are primes, by
-  Lemma~\ref{lem:survives} every numerator over which the exact check finds a point survives, and
-  by Lemma~\ref{lem:flatMap_sound} the filter changes nothing. The points at infinity are those of
-  the candidate $(1, 0)$ of the reference.
+  denominators, with the flag of the reversal clear, the sieve returns the part of the reference
+  with $z \ge 1$, the numerators of each denominator filtered by the survivor test. Since the moduli
+  are primes, by Lemma~\ref{lem:survives} every numerator over which the exact check finds a point
+  survives, and by Lemma~\ref{lem:flatMap_sound} the filter changes nothing. The points at infinity
+  are those of the candidate $(1, 0)$ of the reference.
 \end{proof}
 
 \begin{theorem}[The points, each once; the refusals]\label{thm:findPoints}
