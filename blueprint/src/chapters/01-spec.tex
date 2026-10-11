@@ -289,23 +289,25 @@ that they mirror:
 \end{definition}
 
 \begin{definition}[The failures]\label{def:cliFailure}
-  \uses{def:findPoints}
+  \uses{def:reversal}
   \lean{Ratpoints.Cli.Failure, Ratpoints.Cli.Failure.message, Ratpoints.Cli.Failure.status, Ratpoints.Cli.Failure.ofRefusal, Ratpoints.Cli.banner, Ratpoints.Cli.usage}
   \leanok
-  The ways in which \verb|ratpoints-lean| refuses its command line, with the message and the
-  exit status of each. These are the errors of \verb|main.c| that the command line can cause, 2
-  (fewer than two arguments), 3 (more than $\mathrm{maxDegree} + 1$ coefficients), 4 (a height
-  bound that is not a
-  C \verb|long| of at least $1$), 5 (fewer than two coefficients), 6 (a malformed option) and
-  11 (a coefficient that is not an integer), on which \verb|main.c| prints a blank line, the
-  message and a blank line, and exits with the number of the error
-  (\csource{main.c}{1036}{1043}, \csource{main.c}{1050}{1053}, \csource{main.c}{1054}{1056});
-  on error~2 it prints the banner (\csource{main.c}{43}{48}) and the usage
-  (\csource{main.c}{77}{88}) instead of a message, and on error~6 both. The banner is that of
-  \verb|ratpoints-lean| and the usage that of ratpoints, with the name of the program changed.
-  The last failure is an option of ratpoints that \verb|ratpoints-lean| does not support yet,
-  with the exit status 12. A refusal of $\mathrm{findPoints}$ is the failure with the same
-  number, which the reading of the command line meets first.
+  The ways in which \verb|ratpoints-lean| refuses its command line, with the message and the exit
+  status of each. These are the errors of \verb|main.c| that the command line can cause, 2 (fewer
+  than two arguments), 3 (more than $\mathrm{maxDegree} + 1$ coefficients), 4 (a height bound that
+  is not a C \verb|long| of at least $1$), 5 (fewer than two coefficients), 6 (a malformed option),
+  8 (a binary form that is not squarefree) and 11 (a coefficient that is not an integer), on which
+  \verb|main.c| prints a blank line, the message and a blank line, and exits with the number of the
+  error (\csource{main.c}{1036}{1043}, \csource{main.c}{1047}{1047}, \csource{main.c}{1050}{1053},
+  \csource{main.c}{1054}{1056}); on error~2 it prints the banner (\csource{main.c}{43}{48}) and the
+  usage (\csource{main.c}{77}{88}) instead of a message, and on error~6 both. The banner is that of
+  \verb|ratpoints-lean| and the usage that of ratpoints, with the name of the program changed. The
+  last failure is an option of ratpoints that \verb|ratpoints-lean| does not support yet, with the
+  exit status 12. A refusal of $\mathrm{findPoints}$ (Definition~\ref{def:reversal}) is the failure
+  with the same number, as \verb|main.c| turns the code that the library returns for a form that is
+  not squarefree into error~8 (\csource{main.c}{256}{261}); the reading of the command line meets
+  the other refusals first, so that only error~8 can come from $\mathrm{findPoints}$, which does not
+  refuse such a form yet (stage~D).
 \end{definition}
 
 \begin{definition}[The command line]\label{def:cliInput}

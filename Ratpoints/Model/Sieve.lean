@@ -29,6 +29,8 @@ sieve finds exactly the points of the brute-force reference `Ratpoints.bruteForc
 order. The tables that the build of ratpoints generates are computed here: the squares and the
 inverses by `Ratpoints.Sieve.squaresMod` and `Ratpoints.Sieve.inversesMod`, and the row of `0` by
 `Ratpoints.Sieve.Entry.admits`, in its case `r = 0`, and as words by `Ratpoints.Sieve.Entry.row`.
+The map `Ratpoints.Sieve.swapPoint` gives the point of the caller's curve for a point of a
+polynomial that the reversal check has reversed (`Ratpoints.Setup.reversal`).
 
 ## Main definitions
 
@@ -44,6 +46,7 @@ inverses by `Ratpoints.Sieve.squaresMod` and `Ratpoints.Sieve.inversesMod`, and 
 * `Ratpoints.Sieve.Entry.row`, `Ratpoints.Sieve.Entry.rows`, `Ratpoints.Sieve.SieveSpec`: the row
   of a denominator as words, the rows of the residues, each made when first needed, and a modulus
   with its row for the denominator at hand.
+* `Ratpoints.Sieve.swapPoint`: the point of the caller's curve for a point of the reversed curve.
 * `Ratpoints.Sieve.andRows`: the first stage over a piece of bit arrays, the rows of the moduli
   and-ed into its words.
 * `Ratpoints.Sieve.checkNum`, `Ratpoints.Sieve.walkWord`: the test for common factors and the exact
@@ -345,6 +348,18 @@ structure SieveSpec where
   p : Nat
   /-- The row: `p` bit arrays of `Ratpoints.rbaPack` words. -/
   row : Array UInt64
+
+/-! ### The points of a reversed search -/
+
+/-- The point of the caller's curve for the point `(a, y, b)` of the reversed curve: `(b, y, a)` for
+`a ≥ 0` and `(-b, y, -a)` for `a < 0`. After the reversal check has reversed the polynomial
+(`Ratpoints.Setup.reversal`), the C code applies this map to every point that it delivers, in the
+lines of the check of a numerator and of the points at infinity (`Ratpoints.Sieve.checkNum`,
+`Ratpoints.Sieve.pointsAtInfinity`). It maps the normalized points of height at most `H` of the
+reversed curve one to one onto those of the caller's curve
+(`Ratpoints.Sieve.perm_map_swapPoint_bruteForce`). -/
+def swapPoint (q : Int × Int × Int) : Int × Int × Int :=
+  if 0 ≤ q.1 then (q.2.2, q.2.1, q.1) else (-q.2.2, q.2.1, -q.1)
 
 /-! ### One piece -/
 
@@ -737,6 +752,18 @@ def pointsAtInfinity (c : List Int) (d : Nat) : List (Int × Int × Int) :=
 #guard
   let e := examinePrime [1, 2, 3, 4, 5, 6, 7] 6 7
   e.rows.size == 7 && (List.range 7).all fun r ↦ e.rows[r]!.get == e.row r
+
+-- The points of a reversed search: `ratpoints '-1 0 9' 10 -q` reverses the polynomial to `9 0 -1`
+-- and prints the points of the brute-force reference of `y ^ 2 = 9 z ^ 2 - x ^ 2`, in its order,
+-- each mapped, `(1 : 3 : 0)` for `(0 : 3 : 1)` among them; so do `ratpoints '0 1 0 0 4' 10 -q` and
+-- `ratpoints '0 1 0 2' 10 -q`, which reverse the polynomials to `4 0 0 1 0` and `0 2 0 1`.
+#guard swapPoint (2, 5, 3) == (3, 5, 2) && swapPoint (-2, 5, 3) == (-3, 5, 2) &&
+  swapPoint (0, 3, 1) == (1, 3, 0) && swapPoint (1, 3, 0) == (0, 3, 1)
+#guard (bruteForce [9, 0, -1] 10).map swapPoint ==
+    [(-1, 0, 3), (1, 3, 0), (1, -3, 0), (1, 0, 3), (-5, 12, 9), (-5, -12, 9), (5, 12, 9),
+      (5, -12, 9)] &&
+  (bruteForce [4, 0, 0, 1, 0] 10).map swapPoint == [(0, 0, 1), (1, 2, 0), (1, -2, 0)] &&
+  (bruteForce [0, 2, 0, 1] 10).map swapPoint == [(0, 0, 1), (1, 0, 0)]
 
 -- The first stage against the survivor test: bit `t` of word `y` of a piece is the survivor test
 -- of the numerator `rbaLength w0 + 64 y + t`, for pieces from below and above zero with the

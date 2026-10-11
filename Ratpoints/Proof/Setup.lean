@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Polynomial.Derivative
 public import Mathlib.Algebra.Polynomial.Homogenize
 public import Mathlib.Algebra.Squarefree.Basic
+public import Ratpoints.Model.Setup
+public import Ratpoints.Model.Sieve
 public import Ratpoints.Proof.Sturm
 public import Ratpoints.Spec.Basic
 
@@ -15,11 +17,13 @@ import Mathlib.Data.List.DropRight
 import Mathlib.Data.List.GetD
 import Mathlib.FieldTheory.Perfect
 import Ratpoints.Mathlib.Algebra.Polynomial.Homogenize
+import Ratpoints.Mathlib.Data.List.Basic
 import Ratpoints.Mathlib.RingTheory.Coprime.Basic
 import Ratpoints.Proof.Bits
+import Ratpoints.Proof.BruteForce
 
 /-!
-# The set-up of a search: the polynomial of a coefficient list and the remainder chain
+# The set-up of a search: the polynomial of a coefficient list, the remainder chain, the reversal
 
 The C code works with the polynomial `f = ∑ cᵢ Xⁱ` of the coefficient list `c` and its degree
 `d`, the refusals speak about the binary form `Φ_c` of degree `N = 2 ⌈n / 2⌉`
@@ -28,7 +32,11 @@ The C code works with the polynomial `f = ∑ cᵢ Xⁱ` of the coefficient list
 conditions that the C code tests, the second when it drops the leading zeros, the first with the
 remainder chain of its Sturm step. The rows of the chain, as polynomials over `ℚ`, form a
 generalized Sturm sequence, along which the coprimality of `f` and `f'` passes down to the last two
-rows, so that the chain detects a repeated factor of `f`.
+rows, so that the chain detects a repeated factor of `f`. In each of its three cases the reversal
+check replaces `c` by its reflection in the even degree `D = d + d % 2` of the binary form, which
+exchanges `x` and `z` in the binary form and so does not change whether it is squarefree; and the
+map of the points of the reversed curve to those of the caller's curve
+(`Ratpoints.Sieve.swapPoint`) is a bijection between the points of height at most `H`.
 
 ## Main definitions
 
@@ -50,6 +58,17 @@ rows, so that the chain detects a repeated factor of `f`.
   `A s_k = Q s_(k+1) - g s_(k+2)` with integers `A, g > 0`, and the degrees decrease from `f'` on.
 * `Ratpoints.Sturm.run_chain_eq_none_iff`: for `d ≥ 1` and `c_d ≠ 0`, the remainder chain of the
   model is `none` exactly when the polynomial of `c₀, …, c_d` is not squarefree.
+* `Ratpoints.Setup.getD_eq_of_reversal_eq_ok`, `Ratpoints.Setup.binaryForm_eq_of_reversal_eq_ok`:
+  the list that the reversal check reverses `c` to is the reflection of `c` in the degree `D`, and
+  its binary form is that of `c` with `x` and `z` exchanged.
+* `Ratpoints.Setup.degree_eq_of_reversal_eq_ok`, `Ratpoints.Setup.eq_of_reversal_eq_ok_false`: the
+  degree that the check returns is that of the list it returns, and without a reversal these are
+  `c` and its degree.
+* `Ratpoints.Setup.squarefree_binaryFormPoly_iff_of_reversal_eq_ok`: once the test of the leading
+  zeros has passed, `Φ_c` is squarefree exactly when the polynomial that the check hands on is.
+* `Ratpoints.Sieve.isPoint_swapPoint`, `Ratpoints.Sieve.perm_map_swapPoint_bruteForce`: the map of
+  a reversed search sends the points of the reversed curve to points of the caller's curve, and the
+  brute-force reference of the one, mapped, is a permutation of that of the other.
 -/
 
 @[expose] public section
@@ -308,6 +327,214 @@ theorem run_chain_eq_none_iff {c : List ℤ} {d : ℕ} (hd : 1 ≤ d) (hc : c.ge
       h1 (h.back!_ne_zero _ (by have := h.two_le_size; lia)) _))
 
 end Sturm
+
+/-! ### The reversal -/
+
+-- The entries of `a` followed by the reversal of the entries `1, …, n` of `l`, for
+-- `n < l.length`.
+private theorem _root_.List.getD_cons_reverse_drop_take_of_lt {α : Type*} {l : List α} {n : ℕ}
+    (h : n < l.length) (a : α) (i : ℕ) (x : α) :
+    (a :: ((l.take (n + 1)).drop 1).reverse).getD i x =
+      if i = 0 then a else if i ≤ n then l.getD (n + 1 - i) x else x := by
+  cases i <;> grind
+
+-- The degree of `c` from its entries: nonzero at `d` and zero above.
+private theorem degree_eq_of_getD_ne_zero {c : List ℤ} {d : ℕ} (hd : c.getD d 0 ≠ 0)
+    (h : ∀ i, d < i → c.getD i 0 = 0) : degree c = d := by
+  rw [← natDegree_poly]
+  refine natDegree_eq_of_le_of_coeff_ne_zero
+    (natDegree_le_iff_coeff_eq_zero.mpr fun i hi ↦ by rw [coeff_poly, h i hi, Int.cast_zero])
+    (by rwa [coeff_poly, Int.cast_ne_zero])
+
+-- The binary form as a sum over the range up to any bound `M ≥ degree c`.
+private theorem binaryForm_eq_sum_range {c : List ℤ} {M : ℕ} (hM : degree c ≤ M) (x z : ℤ) :
+    binaryForm c x z =
+      ∑ i ∈ Finset.range (M + 1), c.getD i 0 * x ^ i * z ^ (degree c + degree c % 2 - i) := by
+  rw [binaryForm]
+  refine Finset.sum_subset (Finset.range_subset_range.mpr (by lia)) fun i _ hi ↦ ?_
+  rw [getD_eq_zero_of_degree_lt (by simp at hi; lia)]
+  simp
+
+/-- Two lists whose degrees round up to the same even number `N` and whose entries are reflected at
+`N` have binary forms with `x` and `z` exchanged. -/
+theorem binaryForm_eq_of_getD_eq_getD_sub {c c' : List ℤ} {N : ℕ}
+    (hN : degree c + degree c % 2 = N) (hN' : degree c' + degree c' % 2 = N)
+    (h : ∀ i ≤ N, c'.getD i 0 = c.getD (N - i) 0) (x z : ℤ) :
+    binaryForm c' x z = binaryForm c z x := by
+  rw [binaryForm_eq_sum_range (M := N) (by lia), hN', binaryForm_eq_sum_range (M := N) (by lia),
+    hN, ← Finset.sum_range_reflect]
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  have hi := Finset.mem_range.mp hi
+  rw [h _ (by lia), Nat.add_sub_cancel, Nat.sub_sub_self (by lia)]
+  ring
+
+-- The binary form has the even degree `degree c + degree c % 2`, so `F(-x, -z) = F(x, z)`.
+private theorem binaryForm_neg_neg (c : List ℤ) (x z : ℤ) :
+    binaryForm c (-x) (-z) = binaryForm c x z := by
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  have h1 : (-1 : ℤ) ^ i * (-1) ^ (degree c + degree c % 2 - i) = 1 := by
+    rw [← pow_add, Nat.add_sub_cancel' (by have := Finset.mem_range.mp hi; lia),
+      Even.neg_one_pow (by rw [Nat.even_iff]; lia)]
+  rw [neg_pow x, neg_pow z]
+  linear_combination c.getD i 0 * x ^ i * z ^ (degree c + degree c % 2 - i) * h1
+
+-- The polynomial of a list reflected at `N ≥ degree c` is the reflection of `Ratpoints.poly c`.
+private theorem poly_eq_reflect_of_getD {c c' : List ℤ} {N : ℕ} (hc : degree c ≤ N)
+    (h : ∀ i, c'.getD i 0 = if i ≤ N then c.getD (N - i) 0 else 0) :
+    poly c' = (poly c).reflect N :=
+  Polynomial.ext fun i ↦ by
+    rw [coeff_reflect, coeff_poly, coeff_poly, h]
+    split_ifs with hi
+    · rw [revAt_le hi]
+    · rw [revAt_eq_self_of_lt (by lia), getD_eq_zero_of_degree_lt (by lia), Int.cast_zero]
+
+namespace Setup
+
+/-- In each of the three cases of the reversal check, the reversed list is the reflection of `c` in
+the even degree `d + d % 2` of the binary form (with `c_(d+1) = 0` in case 3). -/
+theorem getD_eq_of_reversal_eq_ok {allow : Bool} {c c' : List ℤ} {d d' : ℕ} (hd : d = degree c)
+    (h : reversal allow c d = .ok (c', d', true)) (i : ℕ) :
+    c'.getD i 0 = if i ≤ d + d % 2 then c.getD (d + d % 2 - i) 0 else 0 := by
+  obtain rfl | hc := eq_or_ne c []
+  · cases allow <;> simp [reversal, hd, degree] at h
+  have hlt : d < c.length := by
+    have := degree_le_length_sub_one c
+    have := List.length_pos_iff.mpr hc
+    lia
+  simp only [reversal] at h
+  split_ifs at h with hs h2 h0 h1 hsq hodd <;>
+    simp only [Except.ok.injEq, Prod.mk.injEq, Bool.false_eq_true, and_false] at h <;>
+    obtain ⟨rfl, rfl, -⟩ := h
+  · grind
+  · grind
+  · have : c.getD (d + 1) 0 = 0 := getD_eq_zero_of_degree_lt (by lia)
+    rw [List.getD_cons_reverse_drop_take_of_lt hlt]
+    grind
+
+theorem eq_of_reversal_eq_ok_false {allow : Bool} {c c' : List ℤ} {d d' : ℕ}
+    (h : reversal allow c d = .ok (c', d', false)) : c' = c ∧ d' = d := by
+  simp only [reversal] at h
+  split_ifs at h <;> simp_all
+
+-- The cases that reverse: `c₀ = 0`, `c₁ ≠ 0` and the degree `D - 1` (cases 1 and 3), or `c₀ ≠ 0`,
+-- even `d` and the degree `d` (case 2).
+private theorem reversal_eq_ok_cases {allow : Bool} {c c' : List ℤ} {d d' : ℕ} (hd : d = degree c)
+    (h : reversal allow c d = .ok (c', d', true)) :
+    c.getD 0 0 = 0 ∧ c.getD 1 0 ≠ 0 ∧ d' + 1 = d + d % 2 ∨
+      c.getD 0 0 ≠ 0 ∧ d' = d ∧ d % 2 = 0 := by
+  simp only [reversal] at h
+  split_ifs at h with hs h2 h0 h1 hsq hodd <;>
+    simp only [Except.ok.injEq, Prod.mk.injEq, Bool.false_eq_true, and_false] at h <;>
+    obtain ⟨rfl, rfl, -⟩ := h
+  · have : 1 ≤ d := Nat.pos_of_ne_zero fun h0 ↦ h1 (getD_eq_zero_of_degree_lt (by lia))
+    exact .inl ⟨h0, h1, by lia⟩
+  · exact .inr ⟨h0, rfl, h2⟩
+  · exact .inl ⟨hodd.2.1, fun h ↦ absurd (h ▸ hodd.2.2) (by decide), by lia⟩
+
+/-- The new leading coefficient of a reversal, `c₁` in cases 1 and 3 and `c₀` in case 2, is not
+zero, so the degree that the check returns is that of its list, also without a reversal. -/
+theorem degree_eq_of_reversal_eq_ok {allow rev : Bool} {c c' : List ℤ} {d d' : ℕ}
+    (hd : d = degree c) (h : reversal allow c d = .ok (c', d', rev)) : degree c' = d' := by
+  cases rev
+  · obtain ⟨rfl, rfl⟩ := eq_of_reversal_eq_ok_false h
+    exact hd.symm
+  have hc' := getD_eq_of_reversal_eq_ok hd h
+  rcases reversal_eq_ok_cases hd h with ⟨h0, h1, hN⟩ | ⟨h0, rfl, h2⟩ <;>
+    refine degree_eq_of_getD_ne_zero ?_ fun i hi ↦ ?_ <;> rw [hc'] <;> grind
+
+-- The reversed list has the even degree of the binary form of `c`.
+private theorem add_mod_two_eq_of_reversal_eq_ok {allow : Bool} {c c' : List ℤ} {d d' : ℕ}
+    (hd : d = degree c) (h : reversal allow c d = .ok (c', d', true)) :
+    d' + d' % 2 = d + d % 2 := by
+  rcases reversal_eq_ok_cases hd h with ⟨-, -, hN⟩ | ⟨-, rfl, -⟩ <;> lia
+
+/-- The binary form of the reversed list is that of `c` with `x` and `z` exchanged, since the list
+is the reflection of `c` in the even degree `d + d % 2` of the binary form. -/
+theorem binaryForm_eq_of_reversal_eq_ok {allow : Bool} {c c' : List ℤ} {d d' : ℕ}
+    (hd : d = degree c) (h : reversal allow c d = .ok (c', d', true)) (x z : ℤ) :
+    binaryForm c' x z = binaryForm c z x := by
+  refine binaryForm_eq_of_getD_eq_getD_sub (N := d + d % 2) (by rw [hd])
+    (by rw [degree_eq_of_reversal_eq_ok hd h, add_mod_two_eq_of_reversal_eq_ok hd h])
+    (fun i hi ↦ ?_) x z
+  rw [getD_eq_of_reversal_eq_ok hd h, ite_eq_left hi]
+
+/-- Once the test of the leading zeros has passed, the binary form `Ratpoints.binaryFormPoly c` is
+squarefree exactly when the polynomial of the list that the reversal check hands on is, whether it
+reverses or not: the reflection does not change whether the homogenization of degree `d + d % 2` is
+squarefree (`Polynomial.squarefree_homogenize_iff_squarefree_reflect`). -/
+theorem squarefree_binaryFormPoly_iff_of_reversal_eq_ok {allow rev : Bool} {c c' : List ℤ}
+    {d d' : ℕ} (hd : d = degree c) (hc : c.length / 2 ≤ (d + 1) / 2)
+    (h : reversal allow c d = .ok (c', d', rev)) :
+    Squarefree (binaryFormPoly c) ↔ Squarefree (poly c') := by
+  have hl := degree_le_length_sub_one c
+  cases rev
+  · obtain ⟨rfl, rfl⟩ := eq_of_reversal_eq_ok_false h
+    rw [squarefree_binaryFormPoly_iff, and_iff_left (by lia)]
+  have hr := poly_eq_reflect_of_getD (N := d + d % 2) (by lia) (getD_eq_of_reversal_eq_ok hd h)
+  rw [binaryFormPoly_eq_homogenize, show 2 * (c.length / 2) = d + d % 2 by lia, hr,
+    squarefree_homogenize_iff_squarefree_reflect (by rw [natDegree_poly]; lia)]
+  rw [← hr, natDegree_poly, degree_eq_of_reversal_eq_ok hd h]
+  have := add_mod_two_eq_of_reversal_eq_ok hd h
+  lia
+
+end Setup
+
+/-! ### The map of a reversed search -/
+
+namespace Sieve
+
+theorem swapPoint_swapPoint_of_isPoint {c : List ℤ} {H : ℕ} {q : ℤ × ℤ × ℤ}
+    (hq : IsPoint c H q) : swapPoint (swapPoint q) = q := by
+  obtain ⟨a, y, b⟩ := q
+  obtain ⟨-, -, hn, -, -⟩ := hq
+  dsimp only at hn
+  simp only [swapPoint]
+  split_ifs <;> simp_all <;> lia
+
+/-- A point of a curve whose binary form is that of `c` with `x` and `z` exchanged gives a point of
+the curve of `c`: since the degree of `Ratpoints.binaryForm` is even, `F(-x, -z) = F(x, z)`. -/
+theorem isPoint_swapPoint {c c' : List ℤ} (hsw : ∀ x z, binaryForm c' x z = binaryForm c z x)
+    {H : ℕ} {q : ℤ × ℤ × ℤ} (hq : IsPoint c' H q) : IsPoint c H (swapPoint q) := by
+  obtain ⟨a, y, b⟩ := q
+  obtain ⟨hy, hg, hn, ha, hb⟩ := hq
+  dsimp only at hy hg hn ha hb
+  rw [hsw] at hy
+  simp only [swapPoint]
+  split_ifs with h0
+  · refine ⟨hy, by rwa [Int.gcd_comm], ?_, by grind, by grind⟩
+    rcases h0.lt_or_eq with h0 | rfl
+    · exact .inl h0
+    · rw [Int.gcd_zero_left] at hg
+      exact .inr ⟨rfl, by lia⟩
+  · exact ⟨by rwa [binaryForm_neg_neg], by simpa [Int.gcd_comm] using hg, .inl (by lia), by grind,
+      by grind⟩
+
+-- A list of the points of a curve whose binary form is that of `c` with `x` and `z` exchanged,
+-- mapped by `Ratpoints.Sieve.swapPoint`, is a list of the points of `c`.
+private theorem mem_map_swapPoint_iff {c c' : List ℤ}
+    (hsw : ∀ x z, binaryForm c' x z = binaryForm c z x) {H : ℕ} {L : List (ℤ × ℤ × ℤ)}
+    (hL : ∀ q, q ∈ L ↔ IsPoint c' H q) {p : ℤ × ℤ × ℤ} :
+    p ∈ L.map swapPoint ↔ IsPoint c H p := by
+  refine ⟨fun h ↦ ?_, fun h ↦ List.mem_map.mpr ⟨_, (hL _).mpr ?_, swapPoint_swapPoint_of_isPoint h⟩⟩
+  · obtain ⟨q, hq, rfl⟩ := List.mem_map.mp h
+    exact isPoint_swapPoint hsw ((hL q).mp hq)
+  · exact isPoint_swapPoint (fun x z ↦ (hsw z x).symm) h
+
+/-- The brute-force reference of a curve whose binary form is that of `c` with `x` and `z`
+exchanged, mapped by `Ratpoints.Sieve.swapPoint`, is a permutation of the reference of `c`: the map
+sends the points of the one curve one to one onto those of the other, and neither list has
+duplicates. -/
+theorem perm_map_swapPoint_bruteForce {c c' : List ℤ}
+    (hsw : ∀ x z, binaryForm c' x z = binaryForm c z x) (H : ℕ) :
+    ((bruteForce c' H).map swapPoint).Perm (bruteForce c H) :=
+  List.perm_map_of_nodup (nodup_bruteForce c' H) (nodup_bruteForce c H)
+    (fun x hx y hy hxy ↦ by
+      rw [← swapPoint_swapPoint_of_isPoint (mem_bruteForce_iff.mp hx),
+        ← swapPoint_swapPoint_of_isPoint (mem_bruteForce_iff.mp hy), hxy])
+    fun q ↦ by rw [mem_bruteForce_iff, ← List.mem_map, mem_map_swapPoint_iff hsw fun _ ↦
+      mem_bruteForce_iff]
+
+end Sieve
 
 end Ratpoints
 

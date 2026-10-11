@@ -6,6 +6,7 @@ Authors: Michael Stoll
 module
 
 public import Ratpoints.Model.Params
+public import Ratpoints.Model.Setup
 public import Ratpoints.Model.Sieve
 
 -- The `#guard` examples run code of the imported modules at compile time.
@@ -16,31 +17,20 @@ meta import Ratpoints.Model.Sieve
 # The search for the points
 
 `Ratpoints.findPoints c H P` is the model of the library function `find_points` of ratpoints: it
-refuses, as the program does, more than `Ratpoints.maxDegree + 1` coefficients, fewer than two and
-the height bound `0`, and otherwise returns the points of height at most `H` on `y ^ 2 = F(x, z)`,
-the points at infinity first and then those of the denominators `1, …, H`, found by the sieve on the
-bit arrays of words with the moduli and the array size of the parameters `P`.
+refuses, as the program does (`Ratpoints.Refusal`), more than `Ratpoints.maxDegree + 1`
+coefficients, fewer than two and the height bound `0`, and otherwise returns the points of height
+at most `H` on `y ^ 2 = F(x, z)`, the points at infinity first and then those of the denominators
+`1, …, H`, found by the sieve on the bit arrays of words with the moduli and the array size of the
+parameters `P`.
 
 ## Main definitions
 
-* `Ratpoints.Refusal`: the ways in which `Ratpoints.findPoints` refuses its input.
 * `Ratpoints.findPoints`: the points.
 -/
 
 @[expose] public section
 
 namespace Ratpoints
-
-/-- The ways in which `Ratpoints.findPoints` refuses its input, each with the number of the error
-with which the program `ratpoints` refuses it. -/
-inductive Refusal where
-  /-- More than `Ratpoints.maxDegree + 1` coefficients: error 3. -/
-  | tooManyCoefficients
-  /-- Fewer than two coefficients: error 5. -/
-  | tooFewCoefficients
-  /-- The height bound `0`: error 4. -/
-  | incorrectHeight
-  deriving DecidableEq, Repr
 
 open Sieve in
 /-- The points of height at most `H` on `y ^ 2 = F(x, z)` for the coefficient list `c`, found by the

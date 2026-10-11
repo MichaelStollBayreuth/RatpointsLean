@@ -10,6 +10,7 @@ public import Ratpoints.Model.Cli
 public import Ratpoints.Model.Constants
 public import Ratpoints.Model.FindPoints
 public import Ratpoints.Model.Params
+public import Ratpoints.Model.Setup
 public import Ratpoints.Model.Sieve
 public import Ratpoints.Model.Sturm
 

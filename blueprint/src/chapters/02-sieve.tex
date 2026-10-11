@@ -282,18 +282,18 @@ lemmas.
 \end{definition}
 
 \begin{definition}[The search for the points]\label{def:findPoints}
-  \uses{def:Params, def:arraySize, def:sieveRun, def:pointsAtInfinity, def:maxDegree}
-  \lean{Ratpoints.Refusal, Ratpoints.findPoints}
+  \uses{def:Params, def:arraySize, def:sieveRun, def:pointsAtInfinity, def:maxDegree, def:reversal}
+  \lean{Ratpoints.findPoints}
   \leanok
   Refuse more than $\mathrm{maxDegree} + 1$ coefficients, fewer than two, and $H = 0$, in the order
-  of the program, with its errors 3, 5 and~4 (Section~\ref{sec:refusals}); the library refuses
-  them as bad arguments (\csource{find_points.c}{4557}{4558}, \csource{find_points.c}{4624}{4633},
+  of the program, with its errors 3, 5 and~4 (Section~\ref{sec:refusals}; the refusals of
+  Definition~\ref{def:reversal}); the library refuses them as bad arguments
+  (\csource{find_points.c}{4557}{4558}, \csource{find_points.c}{4624}{4633},
   \csource{find_points.c}{4658}{4658}), after it has dropped the leading zeros and refused as not
-  squarefree a form that loses $\lceil n/2 \rceil$ with them, which C1 does not refuse
-  (stage~D). Otherwise drop the leading zeros, make the table of each modulus and return the
-  points at infinity followed by the points of the denominators, found with pieces of at most
-  $\mathrm{arraySizeAt}(H)$ bit arrays, the array size of the parameters
-  (Definition~\ref{def:arraySize}).
+  squarefree a form that loses $\lceil n/2 \rceil$ with them, which C1 does not refuse (stage~D).
+  Otherwise drop the leading zeros, make the table of each modulus and return the points at infinity
+  followed by the points of the denominators, found with pieces of at most $\mathrm{arraySizeAt}(H)$
+  bit arrays, the array size of the parameters (Definition~\ref{def:arraySize}).
 \end{definition}
 
 Each component differs from the C code in a stated way, recorded in the \verb|Deviation:|
@@ -440,11 +440,12 @@ sieve in \verb|Ratpoints.Sieve|, and the general lemmas on lists and on $\ZZ/n\Z
 \verb|Ratpoints/Mathlib| under their names in Mathlib's namespaces. The table of primes and the
 constants of the build are in \verb|Ratpoints/Model/Constants.lean| with $\mathrm{maxDegree}$; the
 rest of the model is in \verb|Ratpoints/Model/Params.lean|, \verb|Ratpoints/Model/Sieve.lean| and
-\verb|Ratpoints/Model/FindPoints.lean|, each with \verb|#guard| examples taken from the tables and
-the output of ratpoints; the contracts, without Mathlib, are in \verb|Ratpoints/Proof/Sieve.lean|,
-and that of the run with those of Chapter~\ref{chap:words} in \verb|Ratpoints/Proof/Words.lean|;
-the primes of the table and the well-formedness in \verb|Ratpoints/Proof/Params.lean|, the tables
-and the soundness of the rows in \verb|Ratpoints/Proof/Tables.lean|, and the main theorems in
+\verb|Ratpoints/Model/FindPoints.lean| (the refusals, since stage~D, in
+\verb|Ratpoints/Model/Setup.lean|), each with \verb|#guard| examples taken from the tables and the
+output of ratpoints; the contracts, without Mathlib, are in \verb|Ratpoints/Proof/Sieve.lean|, and
+that of the run with those of Chapter~\ref{chap:words} in \verb|Ratpoints/Proof/Words.lean|; the
+primes of the table and the well-formedness in \verb|Ratpoints/Proof/Params.lean|, the tables and
+the soundness of the rows in \verb|Ratpoints/Proof/Tables.lean|, and the main theorems in
 \verb|Ratpoints/Proof/FindPoints.lean|, with the guards on their axioms.
 
 \section{The evidence}\label{sec:sieve-evidence}

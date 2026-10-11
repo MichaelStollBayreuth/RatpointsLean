@@ -172,8 +172,10 @@ def usage : String :=
   "                      [-q] [-v] [-z] [-Z] [-1] [-i] [-I]\n" ++
   "                      [-k] [-K] [-j] [-J] [-x] [-X]\n\n"
 
-/-- The ways in which `ratpoints-lean` refuses its command line: the errors of `main.c` that it
-can meet there, and one of its own, for an option of ratpoints that it does not support yet. -/
+/-- The ways in which `ratpoints-lean` refuses its command line: the errors of `main.c` that a
+command line can cause, those of the reading of the command line and error 8, which `main.c` gives
+for a binary form that the library refuses as not squarefree, and one of its own, for an option of
+ratpoints that `ratpoints-lean` does not support yet. -/
 inductive Failure where
   /-- Error 2 of `main.c`: fewer than two arguments. -/
   | tooFewArguments
@@ -186,6 +188,9 @@ inductive Failure where
   /-- Error 6 of `main.c`: an option that ratpoints does not have, a word without a leading `-`
   among the options, or an option whose argument is missing or malformed. -/
   | optionSyntax
+  /-- Error 8 of `main.c`: a binary form that is not squarefree
+  (`Ratpoints.Refusal.notSquarefree`). -/
+  | notSquarefree
   /-- Error 11 of `main.c`: a coefficient that is not an integer. -/
   | incorrectCoefficients
   /-- The option `opt`, which ratpoints has and `ratpoints-lean` does not support yet. -/
@@ -196,7 +201,7 @@ for the same error, a blank line, the message and a blank line; for error 2 the 
 usage instead, which error 6 prints after its message, as its case falls through to that of
 error 2.
 
-C: `main.c:1036-1043`, `main.c:1050-1053`
+C: `main.c:1036-1043`, `main.c:1047`, `main.c:1050-1053`
 
 Deviation: the banner and the usage are those of `ratpoints-lean`, and the message on an option
 that `ratpoints-lean` does not support yet is new. -/
@@ -206,6 +211,7 @@ def Failure.message : Failure → String
   | .incorrectHeight => "\nIncorrect height argument.\n\n"
   | .tooFewCoefficients => "\nThe polynomial must have degree at least 1.\n\n"
   | .optionSyntax => s!"\nWrong syntax for optional arguments:\n\n\n{banner}\n{usage}"
+  | .notSquarefree => "\nPolynomial is not square-free.\n\n"
   | .incorrectCoefficients => "\nIncorrect coefficients (not integers separated by blanks).\n\n"
   | .unsupportedOption opt => s!"\nOption {opt} is not supported by ratpoints-lean yet.\n\n"
 
@@ -220,17 +226,27 @@ def Failure.status : Failure → UInt32
   | .incorrectHeight => 4
   | .tooFewCoefficients => 5
   | .optionSyntax => 6
+  | .notSquarefree => 8
   | .incorrectCoefficients => 11
   | .unsupportedOption _ => 12
 
 /-- The failure of `ratpoints-lean` for a refusal of `Ratpoints.findPoints`: the error of `main.c`
-with the number that `Ratpoints.Refusal` names. The reading of the command line
-(`Ratpoints.Cli.input`) refuses these inputs first, so that `Ratpoints.Cli.run`, which maps the
-refusals of `Ratpoints.findPoints` by it, never meets one. -/
+with the number that `Ratpoints.Refusal` names, as `main.c` turns the code
+`RATPOINTS_NON_SQUAREFREE` that the library returns into error 8. The reading of the command line
+(`Ratpoints.Cli.input`) refuses the inputs of the other refusals first, so that of the refusals of
+`Ratpoints.findPoints`, which `Ratpoints.Cli.run` maps by it, only
+`Ratpoints.Refusal.notSquarefree` can reach it.
+
+C: `main.c:256-261`
+
+Deviation: no error 10, since the model has no failure for lack of memory, and no error 9, which
+the program meets only for codes that the library returns on inputs that the program never passes;
+no `mpz_clear`. -/
 def Failure.ofRefusal : Refusal → Failure
   | .tooManyCoefficients => .tooManyCoefficients
   | .tooFewCoefficients => .tooFewCoefficients
   | .incorrectHeight => .incorrectHeight
+  | .notSquarefree => .notSquarefree
 
 /-! ### The command line -/
 
@@ -428,6 +444,10 @@ an option that ratpoints has and `ratpoints-lean` does not support yet. -/
 #guard run ["", "abc"] == ("\nThe polynomial must have degree at least 1.\n\n", 5)
 
 #guard run ["1 0 1", "1_0"] == ("\nIncorrect height argument.\n\n", 4)
+
+-- Error 8, for the refusal of a binary form that is not squarefree.
+#guard (Failure.ofRefusal .notSquarefree).message == "\nPolynomial is not square-free.\n\n" &&
+  (Failure.ofRefusal .notSquarefree).status == 8
 
 #guard run ["1 0 1", "5", "-quiet", "-p", " 30 ", "-kfoo"] ==
   ("\nOption -kfoo is not supported by ratpoints-lean yet.\n\n", 12)

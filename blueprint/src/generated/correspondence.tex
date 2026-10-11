@@ -9,7 +9,7 @@ The model is checked against ratpoints v3.1.1 (commit \texttt{1a998538dfa8}). Th
 \begin{tabular}{lrrrr}
 file & lines of code & modelled & excluded & not yet recorded \\
 \hline
-\texttt{find\_points.c} & 3244 & 347 & 0 & 2897 \\
+\texttt{find\_points.c} & 3244 & 408 & 0 & 2836 \\
 \texttt{sift.c} & 820 & 261 & 0 & 559 \\
 \texttt{init.c} & 302 & 155 & 8 & 139 \\
 \texttt{sturm.c} & 215 & 50 & 0 & 165 \\
@@ -18,9 +18,9 @@ file & lines of code & modelled & excluded & not yet recorded \\
 \texttt{primes.h} & 11 & 11 & 0 & 0 \\
 \texttt{gen\_find\_points\_h.c} & 76 & 60 & 0 & 16 \\
 \texttt{gen\_init\_sieve\_h.c} & 26 & 13 & 0 & 13 \\
-\texttt{main.c} & 779 & 197 & 0 & 582 \\
+\texttt{main.c} & 779 & 204 & 0 & 575 \\
 \hline
-total & 5883 & 1272 & 19 & 4592 \\
+total & 5883 & 1340 & 19 & 4524 \\
 \end{tabular}
 \end{center}
 
@@ -75,7 +75,10 @@ total & 5883 & 1272 & 19 & 4592 \\
   (deviation of \lname{Ratpoints.sieveParams}: the moduli are the first primes of the table, in increasing order, where ratpoints ranks the primes by what they say about the curve (\texttt{sieving\_info}), looks past the first \texttt{q} when \texttt{-{}p} is absent and the curve needs it, chooses the cut points from the curve when \texttt{-{}n} or \texttt{-{}N} is absent or negative, and corrects the choice during the run (\texttt{adapt\_primes}); the third stage is the rest of the list after \texttt{s₂}, where ratpoints takes \texttt{P} primes after \texttt{s₂}, or primes up to all \texttt{Ratpoints.numPrimes} when \texttt{-{}P} is absent or negative.)
 \item \csource{find_points.c}{4666}{4677}: modelled by \lname{Ratpoints.Params.arraySizeAt}
   (deviation of \lname{Ratpoints.Params.arraySizeAt}: a \texttt{Nat} for the \texttt{long} field, so that only \texttt{0} stands for the default, which the library takes for every value \texttt{≤ 0}; no rounding up to a multiple of the chunk, which is one bit array in the build of the model (\texttt{RATPOINTS\_CHUNK}, stage F).)
-\item \csource{find_points.c}{4682}{4892}: not yet recorded (165 lines of code)
+\item \csource{find_points.c}{4682}{4730}: not yet recorded (41 lines of code)
+\item \csource{find_points.c}{4732}{4803}: modelled by \lname{Ratpoints.Setup.reversal}
+  (deviation of \lname{Ratpoints.Setup.reversal}: a new list for the reversal in place, and nothing written back to the caller: the reversed coefficients, the degree and the flag \texttt{RATPOINTS\_REVERSED} are returned instead; the switch for the test of the flags \texttt{RATPOINTS\_NO\_REVERSE} and \texttt{RATPOINTS\_NO\_REVERSE\_AUTO}, so that the check runs whenever the switch allows it, without \texttt{RATPOINTS\_NO\_REVERSE\_AUTO}, which a search region or a denominator range sets (stage H); the square test of \texttt{c\_d} made here, where the C code reads the flag \texttt{lcfsq} that the set-up computes before (line 4634), and no flag \texttt{lcfsq} for the reversed list, which case 2 clears, since \texttt{Ratpoints.Sieve.pointsAtInfinity} tests the leading coefficient of the list it is given; integers and their absolute values for the GMP integers, with no scratch integers \texttt{work[0]} and \texttt{work[1]}; no output under \texttt{RATPOINTS\_VERBOSE}.)
+\item \csource{find_points.c}{4804}{4892}: not yet recorded (63 lines of code)
 \item \csource{find_points.c}{4894}{4899}: modelled by \lname{Ratpoints.Sieve.pointsAtInfinity}
   (deviation of \lname{Ratpoints.Sieve.pointsAtInfinity}: a list of points for the callback \texttt{process}, with no stop it may request, no reversal (stage D), no \texttt{RATPOINTS\_NO\_Y} and no \texttt{RATPOINTS\_NO\_CHECK} (stage G), and no output under \texttt{RATPOINTS\_VERBOSE}; the case \texttt{c\_d = 0}, that of the zero polynomial, which ratpoints refuses before it gets here, gives the one point \texttt{(1, 0, 0)}, which the cited lines, delivering \texttt{-{}y} without a test \texttt{y ≠ 0}, would deliver twice.)
 \item \csource{find_points.c}{4905}{5066}: not yet recorded (129 lines of code)
@@ -364,7 +367,10 @@ total & 5883 & 1272 & 19 & 4592 \\
 \item \csource{main.c}{215}{220}: not yet recorded (6 lines of code)
 \item \csource{main.c}{221}{222}: modelled by \lname{Ratpoints.sieveParams}
   (deviation of \lname{Ratpoints.sieveParams}: the moduli are the first primes of the table, in increasing order, where ratpoints ranks the primes by what they say about the curve (\texttt{sieving\_info}), looks past the first \texttt{q} when \texttt{-{}p} is absent and the curve needs it, chooses the cut points from the curve when \texttt{-{}n} or \texttt{-{}N} is absent or negative, and corrects the choice during the run (\texttt{adapt\_primes}); the third stage is the rest of the list after \texttt{s₂}, where ratpoints takes \texttt{P} primes after \texttt{s₂}, or primes up to all \texttt{Ratpoints.numPrimes} when \texttt{-{}P} is absent or negative.)
-\item \csource{main.c}{224}{346}: not yet recorded (75 lines of code)
+\item \csource{main.c}{224}{255}: not yet recorded (18 lines of code)
+\item \csource{main.c}{256}{261}: modelled by \lname{Ratpoints.Cli.Failure.ofRefusal}
+  (deviation of \lname{Ratpoints.Cli.Failure.ofRefusal}: no error 10, since the model has no failure for lack of memory, and no error 9, which the program meets only for codes that the library returns on inputs that the program never passes; no \texttt{mpz\_clear}.)
+\item \csource{main.c}{265}{346}: not yet recorded (51 lines of code)
 \item \csource{main.c}{347}{347}: modelled by \lname{Ratpoints.sieveParams}
   (deviation of \lname{Ratpoints.sieveParams}: the moduli are the first primes of the table, in increasing order, where ratpoints ranks the primes by what they say about the curve (\texttt{sieving\_info}), looks past the first \texttt{q} when \texttt{-{}p} is absent and the curve needs it, chooses the cut points from the curve when \texttt{-{}n} or \texttt{-{}N} is absent or negative, and corrects the choice during the run (\texttt{adapt\_primes}); the third stage is the rest of the list after \texttt{s₂}, where ratpoints takes \texttt{P} primes after \texttt{s₂}, or primes up to all \texttt{Ratpoints.numPrimes} when \texttt{-{}P} is absent or negative.)
 \item \csource{main.c}{348}{357}: not yet recorded (6 lines of code)
@@ -396,7 +402,10 @@ total & 5883 & 1272 & 19 & 4592 \\
 \item \csource{main.c}{761}{1033}: not yet recorded (213 lines of code)
 \item \csource{main.c}{1036}{1043}: modelled by \lname{Ratpoints.Cli.Failure.message}
   (deviation of \lname{Ratpoints.Cli.Failure.message}: the banner and the usage are those of \texttt{ratpoints-{}lean}, and the message on an option that \texttt{ratpoints-{}lean} does not support yet is new.)
-\item \csource{main.c}{1044}{1049}: not yet recorded (6 lines of code)
+\item \csource{main.c}{1044}{1046}: not yet recorded (3 lines of code)
+\item \csource{main.c}{1047}{1047}: modelled by \lname{Ratpoints.Cli.Failure.message}
+  (deviation of \lname{Ratpoints.Cli.Failure.message}: the banner and the usage are those of \texttt{ratpoints-{}lean}, and the message on an option that \texttt{ratpoints-{}lean} does not support yet is new.)
+\item \csource{main.c}{1048}{1049}: not yet recorded (2 lines of code)
 \item \csource{main.c}{1050}{1053}: modelled by \lname{Ratpoints.Cli.Failure.message}
   (deviation of \lname{Ratpoints.Cli.Failure.message}: the banner and the usage are those of \texttt{ratpoints-{}lean}, and the message on an option that \texttt{ratpoints-{}lean} does not support yet is new.)
 \item \csource{main.c}{1054}{1056}: modelled by \lname{Ratpoints.Cli.Failure.status}

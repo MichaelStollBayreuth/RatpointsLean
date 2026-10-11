@@ -234,8 +234,8 @@ by row, and not only its verdict.
 \section{The reversal}\label{sec:reversal}
 
 \begin{definition}[The reversal check]\label{def:reversal}
-  Proposed names: \lname{Ratpoints.Setup.isSquare}, \lname{Ratpoints.Setup.reversal},
-  \lname{Ratpoints.Refusal}, \lname{Ratpoints.Refusal.notSquarefree}.
+  \lean{Ratpoints.Setup.isSquare, Ratpoints.Setup.reversal, Ratpoints.Refusal, Ratpoints.Refusal.notSquarefree}
+  \leanok
   For the switch of the reversal and the coefficients $c$ of degree $d$, the leading zeros dropped:
   if the reversal is forbidden, $c$ itself; otherwise, for even $d$ with $c_0 = 0$, the refusal if
   $c_1 = 0$, and otherwise the list $c_d, \dots, c_1, c_0$ with the degree $d - 1$ (case~1); for
@@ -250,25 +250,29 @@ by row, and not only its verdict.
 
 \begin{lemma}[The reversal exchanges $x$ and $z$]\label{lem:reversal_swap}
   \uses{def:reversal, def:binaryForm}
-  Proposed names: \lname{Ratpoints.Setup.getD\_eq\_of\_reversal\_eq\_ok},
-  \lname{Ratpoints.Setup.degree\_eq\_of\_reversal\_eq\_ok},
-  \lname{Ratpoints.Setup.binaryForm\_eq\_of\_reversal\_eq\_ok},
-  \lname{Ratpoints.binaryForm\_eq\_of\_getD\_eq\_getD\_sub}.
-  For $d$ the degree of $c$: if the check returns the list $c'$ with the degree $d'$ as reversed,
+  \lean{Ratpoints.Setup.getD_eq_of_reversal_eq_ok, Ratpoints.Setup.degree_eq_of_reversal_eq_ok, Ratpoints.Setup.eq_of_reversal_eq_ok_false, Ratpoints.Setup.binaryForm_eq_of_reversal_eq_ok, Ratpoints.binaryForm_eq_of_getD_eq_getD_sub}
+  \leanok
+  For $d$ the degree of $c$: if the check returns the list $c'$ with the degree $d'$, then $d'$ is
+  the degree of $c'$, and without a reversal $c' = c$ and $d' = d$; if it returns them as reversed,
   then $c'$ is the reflection of $c$ in degree $D$, $c'_i = c_{D-i}$ for $i \le D$ and $c'_i = 0$
-  beyond, in each of the three cases; $d'$ is the degree of $c'$; and $F_{c'}(x, z) = F_c(z, x)$ for
-  all integers $x$ and $z$, as for any two lists whose degrees round up to the same even number $D$
-  and whose coefficients are reflected at $D$.
+  beyond, in each of the three cases, and $F_{c'}(x, z) = F_c(z, x)$ for all integers $x$ and $z$,
+  as for any two lists whose degrees round up to the same even number $D$ and whose coefficients
+  are reflected at $D$.
 \end{lemma}
 
 \begin{proof}
-  In each case the list that the C code builds by its swaps is the reflection (with $c_{d+1} = 0$
-  in case~3); the new leading coefficient is $c_1$, $c_0$ or $c_1$, which is not zero, so $D' = D$,
-  and $F_{c'}(x, z) = \sum_i c_{D-i}\, x^i z^{D-i} = F_c(z, x)$.
+  \uses{lem:squarefree_binaryFormPoly}
+  \leanok
+  Without a reversal the check returns $c$ and $d$. In each case of a reversal the list that the C
+  code builds by its swaps is the reflection (with $c_{d+1} = 0$ in case~3); the new leading
+  coefficient is $c_1$, $c_0$ or $c_1$, which is not zero, so that $c'$ has the degree $d'$, read off
+  the degree of its polynomial (Lemma~\ref{lem:squarefree_binaryFormPoly}), and $D' = D$; and
+  $F_{c'}(x, z) = \sum_i c_{D-i}\, x^i z^{D-i} = F_c(z, x)$.
 \end{proof}
 
 \begin{definition}[The points of a reversed search]\label{def:swapPoint}
-  Proposed name: \lname{Ratpoints.Sieve.swapPoint}.
+  \lean{Ratpoints.Sieve.swapPoint}
+  \leanok
   The point of the caller's curve for the point $(a, y, b)$ of the reversed curve: $(b, y, a)$ for
   $a \ge 0$ and $(-b, y, -a)$ for $a < 0$, the map that the check of a survivor and the points at
   infinity apply after a reversal (in the C lines of Definitions~\ref{def:checkNum}
@@ -279,9 +283,8 @@ by row, and not only its verdict.
 
 \begin{lemma}[The reversal is a bijection of the points]\label{lem:swapPoint_bijection}
   \uses{def:swapPoint, def:IsPoint, def:bruteForce, thm:bruteForce}
-  Proposed names: \lname{Ratpoints.Sieve.isPoint\_swapPoint},
-  \lname{Ratpoints.Sieve.swapPoint\_swapPoint\_of\_isPoint},
-  \lname{Ratpoints.Sieve.perm\_map\_swapPoint\_bruteForce}, \lname{List.perm\_map\_of\_nodup}.
+  \lean{Ratpoints.Sieve.isPoint_swapPoint, Ratpoints.Sieve.swapPoint_swapPoint_of_isPoint, Ratpoints.Sieve.perm_map_swapPoint_bruteForce, List.perm_map_of_nodup}
+  \leanok
   For lists $c$ and $c'$ with $F_{c'}(x, z) = F_c(z, x)$ for all $x$ and $z$, the map sends a
   normalized point of height at most $H$ of $c'$ to one of $c$, and back, the two maps being inverse
   on these points; so $\mathrm{bruteForce}(c', H)$, mapped, is a permutation of
@@ -289,6 +292,7 @@ by row, and not only its verdict.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   $F_c(-b, -a) = F_c(b, a)$, since $D$ is even, so the equation holds. For $a > 0$ the image has
   $z = a > 0$; for $a < 0$, $z = -a > 0$; for $a = 0$ the normalization of $(0, y, b)$ forces
   $b = 1$, whose image $(1, y, 0)$ is the caller's point at infinity; $|x| = b$ and $z = |a|$, so
@@ -298,13 +302,14 @@ by row, and not only its verdict.
 
 \begin{lemma}[The reversal and squarefreeness]\label{lem:reversal_squarefree}
   \uses{lem:reversal_swap, lem:squarefree_binaryFormPoly}
-  Proposed names: \lname{Ratpoints.Setup.squarefree\_binaryFormPoly\_iff\_of\_reversal\_eq\_ok},
-  \lname{Polynomial.squarefree\_homogenize\_iff\_squarefree\_reflect}.
+  \lean{Ratpoints.Setup.squarefree_binaryFormPoly_iff_of_reversal_eq_ok, Polynomial.squarefree_homogenize_iff_squarefree_reflect}
+  \leanok
   For $d$ the degree of $c$: if $N \le d + 1$ and the check returns the list $c'$, reversed or not,
   then $\Phi_c$ is squarefree if and only if the polynomial of $c'$ is.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   Without a reversal $c' = c$, and Lemma~\ref{lem:squarefree_binaryFormPoly} gives the claim. After a
   reversal the polynomial of $c'$ is the reflection of $f$ in degree $D = N$ and has the degree
   $d' \in \{D - 1, D\}$; by Lemma~\ref{lem:homogenize} the reflection does not change whether the

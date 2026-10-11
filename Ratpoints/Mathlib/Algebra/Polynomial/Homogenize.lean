@@ -27,6 +27,9 @@ squarefree, and the homogenization of its reflection.
   degree `N` is that of `p` with the two variables exchanged, for every `p` and `N`.
 * `Polynomial.squarefree_homogenize_reflect_iff`: so the reflection does not change whether the
   homogenization is squarefree.
+* `Polynomial.squarefree_homogenize_iff_squarefree_reflect`: for `n ≥ p.natDegree`, the
+  homogenization of degree `n` of a polynomial over a domain is squarefree exactly when the
+  reflection of `p` in degree `n` is, if `n` exceeds the degree of the reflection by at most one.
 
 ## Proof
 
@@ -140,6 +143,16 @@ theorem squarefree_homogenize_iff (hn : p.natDegree ≤ n) :
     Squarefree (p.homogenize n) ↔ Squarefree p ∧ n ≤ p.natDegree + 1 :=
   ⟨fun h ↦ ⟨squarefree_of_squarefree_homogenize hn h,
     le_natDegree_add_one_of_squarefree_homogenize hn h⟩, fun h ↦ squarefree_homogenize h.1 hn h.2⟩
+
+/-- For `n ≥ p.natDegree`, the homogenization of degree `n` of a polynomial `p` over a domain is
+squarefree exactly when the reflection of `p` in degree `n` is, if `n` exceeds the degree of the
+reflection by at most one: the homogenization of degree `n` of the reflection is that of `p` with
+the variables exchanged (`Polynomial.homogenize_reflect`). -/
+theorem squarefree_homogenize_iff_squarefree_reflect (hn : p.natDegree ≤ n)
+    (h : n ≤ (p.reflect n).natDegree + 1) :
+    Squarefree (p.homogenize n) ↔ Squarefree (p.reflect n) := by
+  rw [← squarefree_homogenize_reflect_iff,
+    squarefree_homogenize_iff (natDegree_reflect_le.trans (by lia)), and_iff_left h]
 
 end IsDomain
 

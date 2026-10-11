@@ -109,6 +109,12 @@
         "Ratpoints.Params.arraySizeAt"
       ]
     },
+    "find_points.c:4732-4803": {
+      "hash": "4b4e14a3fd1f69846400021c7b8009421e06a9b7349863866271cc414d07841f",
+      "owners": [
+        "Ratpoints.Setup.reversal"
+      ]
+    },
     "find_points.c:4894-4899": {
       "hash": "5511af9b9afaf5a7d828e3c3c86beb13ad7cace23064c420f0da7930b53cc95b",
       "owners": [
@@ -211,6 +217,12 @@
         "Ratpoints.Cli.Failure.message"
       ]
     },
+    "main.c:1047-1047": {
+      "hash": "72d4547ba2106490cad2aa52e8d103971fe9064ba1aee3fc6ee7949a02703654",
+      "owners": [
+        "Ratpoints.Cli.Failure.message"
+      ]
+    },
     "main.c:1050-1053": {
       "hash": "792aa99d9060a1f3dad924913520dac6cfa8d2370e5f5e68723234d5799ed498",
       "owners": [
@@ -233,6 +245,12 @@
       "hash": "543fba410935ea42b0558d25f3e1fdffb3ea838ff3525b056a67365493956710",
       "owners": [
         "Ratpoints.sieveParams"
+      ]
+    },
+    "main.c:256-261": {
+      "hash": "fbaa9013a7a4685afd3073566e9530f6ba2f1e778399ff3021f7466a864a0cc5",
+      "owners": [
+        "Ratpoints.Cli.Failure.ofRefusal"
       ]
     },
     "main.c:347-347": {
