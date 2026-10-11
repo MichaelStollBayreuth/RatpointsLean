@@ -246,7 +246,8 @@ def survives (entries : List Entry) (b : Nat) (a : Int) : Bool := entries.all (�
 by its conjunction with the row of `b` at its numerator (`Ratpoints.Sieve.Entry.admits`). With
 `Ratpoints.Sieve.checkDen` it is the reference of the bit arrays of words: for pieces of at least
 one bit array and tables with `p > 0`, the points that `Ratpoints.Sieve.sift` finds with the rows of
-these tables (`Ratpoints.Sieve.Entry.rows`) are those that `Ratpoints.Sieve.checkDen` finds on it
+these tables (`Ratpoints.Sieve.Entry.rows`) are those that `Ratpoints.Sieve.checkDen` finds on it,
+each mapped by `Ratpoints.Sieve.swapPoint` when the flag of the reversal is set
 (`Ratpoints.Sieve.toList_run_sift_eq_checkDen`). -/
 def sieveDen (H b : Nat) (entries : List Entry) : Id (Vector Bool (2 * H + 1)) := do
   let mut surv := Vector.replicate (2 * H + 1) true
@@ -261,8 +262,9 @@ checked exactly, as the brute-force reference checks it (`Ratpoints.BruteForce.p
 `F(a, b)` by Horner's rule on the products `cₖ b^(d - k)`, computed once, with one more factor `b`
 for odd `d`, then `(a, y, b)` and, for `y ≠ 0`, `(a, -y, b)` when `F(a, b) = y ^ 2` with `y ≥ 0`. On
 the plain sieve `Ratpoints.Sieve.sieveDen` of tables with `p > 0` it is the reference of the bit
-arrays of words: it finds the points that `Ratpoints.Sieve.sift` finds with the rows of these tables
-(`Ratpoints.Sieve.Entry.rows`) in pieces of at least one bit array
+arrays of words: `Ratpoints.Sieve.sift` with the rows of these tables
+(`Ratpoints.Sieve.Entry.rows`), in pieces of at least one bit array, finds the points that it finds,
+each mapped by `Ratpoints.Sieve.swapPoint` when the flag of the reversal is set
 (`Ratpoints.Sieve.toList_run_sift_eq_checkDen`). -/
 def checkDen (c : List Int) (d H b : Nat) (surv : Vector Bool (2 * H + 1)) :
     Id (Array (Int × Int × Int)) := do

@@ -46,8 +46,8 @@ refusal theorems (`comparator/Challenge.lean`).
 * `Ratpoints.exists_eq_of_findPoints_eq_ok`: for well-formed parameters, every list that
   `Ratpoints.findPoints` returns is the list of the reference of the polynomial that the reversal
   check hands on, mapped back after a reversal, and that of `c` without a reversal;
-  `Ratpoints.eq_bruteForce_of_findPoints_eq_ok_of_reverse_eq_false`: in particular when the
-  options forbid the reversal.
+  `Ratpoints.eq_bruteForce_of_findPoints_eq_ok_of_reverse_eq_false`: in particular when the options
+  forbid the reversal.
 * `Ratpoints.perm_bruteForce_of_findPoints_eq_ok`: the list is a permutation of the reference.
 * `Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok`: a triple lies in the list that
   `Ratpoints.findPoints` returns exactly when it is a normalized point of height at most `H`.

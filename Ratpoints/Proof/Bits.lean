@@ -8,7 +8,7 @@ module
 import Std.Internal.ForIn.Lemmas
 
 /-!
-# Lemmas on words
+# Lemmas on core types for the contracts
 
 Lemmas on vectors, arrays, lists, ranges, natural numbers, integers and 64-bit words that the
 contracts of the model need and Lean core lacks, under their names in the namespaces of Lean core:

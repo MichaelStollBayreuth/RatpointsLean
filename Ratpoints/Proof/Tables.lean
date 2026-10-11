@@ -53,8 +53,8 @@ a reversed search.
   `Ratpoints.Sieve.eq_examinePrime_of_examinePrime?_eq_some`,
   `Ratpoints.Sieve.examinePrime?_eq_none_iff`: the two paths of the table with the exit give the
   same result, its table is that of the reference, and when it gives none.
-* `Ratpoints.Sieve.not_isPoint_of_examinePrime?_eq_none`: a curve without points modulo a prime
-  has no points.
+* `Ratpoints.Sieve.not_isPoint_of_examinePrime?_eq_none`: a curve without points modulo a prime has
+  no points.
 * `Ratpoints.fitsLong_sixteen_mul`, `Ratpoints.fitsLong_add_sixteen_mul`, `Ratpoints.fitsLong_neg`:
   the values of the C code that could leave the range of a `long` stay in it.
 * `Ratpoints.Setup.fitsLong_getD_of_useCLong`: the inputs of `mod` are `long`s.

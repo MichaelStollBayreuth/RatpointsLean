@@ -10,13 +10,13 @@ module
 
 What ratpoints does with its input before the sieve, as far as the model has it: the refusals of a
 search, each with the error of the program (`Ratpoints.Refusal`); the reversal check of
-`find_points_work_1`, which refuses the binary form when its degree `d` is even and `X ^ 2` divides
-it, and otherwise may reverse the polynomial, in three cases, exchanging `x` and `z` in the binary
-form (`Ratpoints.Setup.reversal`); and the test whether the coefficients are C `long`s
-(`Ratpoints.fitsLong`, `Ratpoints.Setup.useCLong`), which chooses the path of the table of a prime
-(`Ratpoints.Sieve.examinePrime?`). `Ratpoints.findPoints` runs the reversal check after the test of
-the leading zeros, with the switch of its options, and the search that it runs on the polynomial
-handed on (`Ratpoints.searchPoints`) makes the test of the `long`s.
+`find_points_work_1`, which refuses the binary form when the degree `d` of the polynomial is even
+and `X ^ 2` divides the form (`c₀ = c₁ = 0`), and otherwise may reverse the polynomial, in three
+cases, exchanging `x` and `z` in the binary form (`Ratpoints.Setup.reversal`); and the test whether
+the coefficients are C `long`s (`Ratpoints.fitsLong`, `Ratpoints.Setup.useCLong`), which chooses the
+path of the table of a prime (`Ratpoints.Sieve.examinePrime?`). `Ratpoints.findPoints` runs the
+reversal check after the test of the leading zeros, with the switch of its options, and the search
+that it runs on the polynomial handed on (`Ratpoints.searchPoints`) makes the test of the `long`s.
 
 ## Main definitions
 

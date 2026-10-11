@@ -56,17 +56,18 @@ over `k` does not run, and the chain is `f, f'`.
 
 C: `sturm.c:99-163`
 
-Deviation: the rows as arrays of their coefficients up to their degree, for the table of
-`(d + 1)^2` GMP integers and the array of degrees, with no `mpz_init` and `mpz_clear`: an array has
-one entry more than the degree of its row, and a remainder that becomes zero is the empty array,
-where the degree in the C code reaches `-1`; a reduction step drops the leading coefficient, which
-it makes `0`, where the C code lowers the degree; the rows are handed back, and `none` for the
-return of `-1`, where `_ratpoints_compute_sturm` keeps them in its table for the rest of the Sturm
-step (stage H), and the index of the last row, which the C code leaves in `k` and sets to `d` after
-the loop for `d = 1`, is the size of the array less one; a list of integers for the array of GMP
-integers of the coefficients, local values for the scratch integers `work[0]`, `work[1]` and
-`work[2]`, and Lean's `/` for `mpz_fdiv_q`, which agree on the divisions of the chain, all
-exact. -/
+Deviation: the rows as arrays of their coefficients up to their degree, for the table of `(d + 1)^2`
+GMP integers and the array of degrees, with no `mpz_init` and `mpz_clear` (a chain has at most
+`d + 1` rows, `Ratpoints.Sturm.IsChain.size_le`, and its row `k + 1` at most `d - k` entries,
+`Ratpoints.Sturm.IsChain.size_getElem!_add_one_add_le`): an array has one entry more than the degree
+of its row, and a remainder that becomes zero is the empty array, where the degree in the C code
+reaches `-1`; a reduction step drops the leading coefficient, which it makes `0`, where the C code
+lowers the degree; the rows are handed back, and `none` for the return of `-1`, where
+`_ratpoints_compute_sturm` keeps them in its table for the rest of the Sturm step (stage H), and the
+index of the last row, which the C code leaves in `k` and sets to `d` after the loop for `d = 1`, is
+the size of the array less one; a list of integers for the array of GMP integers of the
+coefficients, local values for the scratch integers `work[0]`, `work[1]` and `work[2]`, and Lean's
+`/` for `mpz_fdiv_q`, which agree on the divisions of the chain, all exact. -/
 def chain (c : List Int) (d : Nat) : Id (Option (Array (Array Int))) := do
   let f : Array Int := (Array.range (d + 1)).map (c.getD · 0)
   let df : Array Int := (Array.range d).map fun n ↦ ((n + 1 : Nat) : Int) * c.getD (n + 1) 0

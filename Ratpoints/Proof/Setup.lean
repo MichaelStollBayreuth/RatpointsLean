@@ -25,15 +25,16 @@ import Ratpoints.Proof.BruteForce
 /-!
 # The set-up of a search: the polynomial of a coefficient list, the remainder chain, the reversal
 
-The C code works with the polynomial `f = ∑ cᵢ Xⁱ` of the coefficient list `c` and its degree
-`d`, the refusals speak about the binary form `Φ_c` of degree `N = 2 ⌈n / 2⌉`
-(`Ratpoints.binaryFormPoly`), where `n + 1` is the length of `c`. `Φ_c` is the homogenization of
-`f` of degree `N`, so it is squarefree exactly when `f` is squarefree and `N ≤ d + 1`: the two
+The C code works with the polynomial `f = ∑ cᵢ Xⁱ` of the coefficient list `c` and its degree `d`,
+the refusals speak about the binary form `Φ_c` of degree `N = 2 ⌈n / 2⌉`
+(`Ratpoints.binaryFormPoly`), where `n + 1` is the length of `c`. `Φ_c` is the homogenization of `f`
+of degree `N`, so it is squarefree exactly when `f` is squarefree and `N ≤ d + 1`: the two
 conditions that the C code tests, the second when it drops the leading zeros, the first with the
 remainder chain of its Sturm step. The rows of the chain, as polynomials over `ℚ`, form a
-generalized Sturm sequence, along which the coprimality of `f` and `f'` passes down to the last two
-rows, so that the chain detects a repeated factor of `f`. In each of its three cases the reversal
-check replaces `c` by its reflection in the even degree `D = d + d % 2` of the binary form, which
+generalized Sturm sequence, positive rational multiples of the entries of Mathlib's
+`Polynomial.sturmSeq`, along which the coprimality of `f` and `f'` passes down to the last two rows,
+so that the chain detects a repeated factor of `f`. In each of its three cases the reversal check
+replaces `c` by its reflection in the even degree `D = d + d % 2` of the binary form, which
 exchanges `x` and `z` in the binary form and so does not change whether it is squarefree, and its
 refusal, of `c₀ = c₁ = 0` for even `d`, stands for `X ^ 2 ∣ Φ_c`; so once the test of the leading
 zeros has passed, the remainder chain of the polynomial that the check hands on detects exactly the
@@ -88,8 +89,11 @@ namespace Ratpoints
 open Polynomial
 
 /-- The polynomial `f = ∑ cᵢ Xⁱ` over `ℚ` with the coefficient list `c`, constant term first, which
-the C code works with; `Ratpoints.binaryFormPoly c` is its homogenization of degree `2 ⌈n / 2⌉`
-(`Ratpoints.binaryFormPoly_eq_homogenize`). -/
+the C code works with; `Ratpoints.binaryFormPoly c` is its homogenization of degree `2 ⌈n / 2⌉`,
+where `n + 1` is the length of `c` (`Ratpoints.binaryFormPoly_eq_homogenize`). Mathlib's
+`Polynomial.ofFn` builds the same polynomial from a vector `Fin n → R`; the sum here has the shape
+of `Ratpoints.binaryFormPoly`, so that `Ratpoints.binaryFormPoly_eq_homogenize` holds term by
+term. -/
 noncomputable def poly (c : List ℤ) : ℚ[X] :=
   ∑ i ∈ Finset.range c.length, C (c.getD i 0 : ℚ) * X ^ i
 
@@ -273,7 +277,9 @@ theorem IsChain.poly_toList_getElem!_one {c : List ℤ} {d : ℕ} {ch : Array (A
 
 /-- Three consecutive rows `s_k`, `s_(k+1)`, `s_(k+2)` of a remainder chain satisfy
 `A s_k = Q s_(k+1) - g s_(k+2)` with integers `A, g > 0`, the relation of a generalized Sturm
-sequence. -/
+sequence; compare Mathlib's `Polynomial.sturmSeq`, which has `A = g = 1` and `Q` the quotient
+(`Polynomial.sturmSeq_cons`): the integer factors keep the rows integral, and the rows are positive
+rational multiples of its entries. -/
 theorem IsChain.exists_mul_eq {c : List ℤ} {d : ℕ} {ch : Array (Array ℤ)} (h : IsChain c d ch)
     {k : ℕ} (hk : k + 2 < ch.size) :
     ∃ A g : ℤ, 0 < A ∧ 0 < g ∧ ∃ Q : ℚ[X], C (A : ℚ) * poly ch[k]!.toList =
@@ -343,7 +349,7 @@ end Sturm
 
 /-! ### The reversal -/
 
--- The entries of `a` followed by the reversal of the entries `1, …, n` of `l`, for
+-- `a` followed by the reversal of the entries `1, …, n` of `l`, for
 -- `n < l.length`.
 private theorem _root_.List.getD_cons_reverse_drop_take_of_lt {α : Type*} {l : List α} {n : ℕ}
     (h : n < l.length) (a : α) (i : ℕ) (x : α) :
@@ -406,8 +412,9 @@ namespace Setup
 @[simp]
 theorem reversal_false (c : List ℤ) (d : ℕ) : reversal false c d = .ok (c, d, false) := rfl
 
-/-- In each of the three cases of the reversal check, the reversed list is the reflection of `c` in
-the even degree `d + d % 2` of the binary form (with `c_(d+1) = 0` in case 3). -/
+/-- In each of the three cases of the reversal check `Ratpoints.Setup.reversal`, the reversed list
+is the reflection of `c` in the even degree `d + d % 2` of the binary form (with `c_(d+1) = 0` in
+its third case, of odd `d`). -/
 theorem getD_eq_of_reversal_eq_ok {allow : Bool} {c c' : List ℤ} {d d' : ℕ} (hd : d = degree c)
     (h : reversal allow c d = .ok (c', d', true)) (i : ℕ) :
     c'.getD i 0 = if i ≤ d + d % 2 then c.getD (d + d % 2 - i) 0 else 0 := by
@@ -455,8 +462,9 @@ private theorem reversal_eq_ok_cases {allow : Bool} {c c' : List ℤ} {d d' : �
   · exact .inr ⟨h0, rfl, h2⟩
   · exact .inl ⟨hodd.2.1, fun h ↦ absurd (h ▸ hodd.2.2) (by decide), by lia⟩
 
-/-- The new leading coefficient of a reversal, `c₁` in cases 1 and 3 and `c₀` in case 2, is not
-zero, so the degree that the check returns is that of its list, also without a reversal. -/
+/-- The new leading coefficient of a reversal by `Ratpoints.Setup.reversal`, `c₁` when `c₀ = 0` and
+`c₀` otherwise, is not zero, so the degree that the check returns is that of its list, also without
+a reversal. -/
 theorem degree_eq_of_reversal_eq_ok {allow rev : Bool} {c c' : List ℤ} {d d' : ℕ}
     (hd : d = degree c) (h : reversal allow c d = .ok (c', d', rev)) : degree c' = d' := by
   cases rev
@@ -466,14 +474,14 @@ theorem degree_eq_of_reversal_eq_ok {allow rev : Bool} {c c' : List ℤ} {d d' :
   rcases reversal_eq_ok_cases hd h with ⟨h0, h1, hN⟩ | ⟨h0, rfl, h2⟩ <;>
     refine degree_eq_of_getD_ne_zero ?_ fun i hi ↦ ?_ <;> rw [hc'] <;> grind
 
-/-- The check keeps the degree at least `1`: case 1 lowers an even degree `d ≥ 2` to `d - 1`, and
-the other cases keep it. -/
+/-- The reversal check `Ratpoints.Setup.reversal` keeps the degree at least `1`: it lowers only an
+even degree `d ≥ 2`, to `d - 1`, when `c₀ = 0`, and keeps it otherwise. -/
 theorem one_le_of_reversal_eq_ok {allow rev : Bool} {c c' : List ℤ} {d d' : ℕ}
     (h : reversal allow c d = .ok (c', d', rev)) (h1 : 1 ≤ d) : 1 ≤ d' := by
   simp only [reversal] at h
   split_ifs at h <;> simp only [Except.ok.injEq, Prod.mk.injEq] at h <;> lia
 
--- The reversed list has the even degree of the binary form of `c`.
+-- The binary form of the reversed list has the even degree `d + d % 2` of that of `c`.
 private theorem add_mod_two_eq_of_reversal_eq_ok {allow : Bool} {c c' : List ℤ} {d d' : ℕ}
     (hd : d = degree c) (h : reversal allow c d = .ok (c', d', true)) :
     d' + d' % 2 = d + d % 2 := by
@@ -508,7 +516,9 @@ theorem squarefree_binaryFormPoly_iff_of_reversal_eq_ok {allow rev : Bool} {c c'
   have := add_mod_two_eq_of_reversal_eq_ok hd h
   lia
 
-/-- The refusal of the reversal check is sound: it stands for `X ^ 2 ∣ Φ_c`. -/
+/-- The refusal of the reversal check is sound: it refuses only when the square of the first
+variable divides `Ratpoints.binaryFormPoly c`
+(`Ratpoints.not_squarefree_binaryFormPoly_of_getD_zero`). -/
 theorem not_squarefree_binaryFormPoly_of_reversal_eq_error {allow : Bool} {c : List ℤ} {d : ℕ}
     {e : Refusal} (h : reversal allow c d = .error e) : ¬ Squarefree (binaryFormPoly c) :=
   have ⟨_, _, h0, h1⟩ := exists_reversal_eq_error_iff.mp ⟨e, h⟩
@@ -517,10 +527,11 @@ theorem not_squarefree_binaryFormPoly_of_reversal_eq_error {allow : Bool} {c : L
 end Setup
 
 /-- Once the test of the leading zeros has passed, the remainder chain of the polynomial that the
-reversal check hands on is none exactly when `Φ_c` is not squarefree, whether the check reverses or
-not: the polynomial has the degree `d' ≥ 1` that the check returns
+reversal check hands on is none exactly when `Ratpoints.binaryFormPoly c` is not squarefree, whether
+the check reverses or not: the polynomial has the degree `d' ≥ 1` that the check returns
 (`Ratpoints.Setup.one_le_of_reversal_eq_ok`), so that the chain detects its repeated factors
-(`Ratpoints.Sturm.run_chain_eq_none_iff`), and it is squarefree exactly when `Φ_c` is
+(`Ratpoints.Sturm.run_chain_eq_none_iff`), and it is squarefree exactly when
+`Ratpoints.binaryFormPoly c` is
 (`Ratpoints.Setup.squarefree_binaryFormPoly_iff_of_reversal_eq_ok`). -/
 theorem Sturm.run_chain_eq_none_iff_of_reversal_eq_ok {allow rev : Bool} {c c' : List ℤ} {d' : ℕ}
     (h2 : 2 ≤ c.length) (hc : c.length / 2 ≤ (degree c + 1) / 2)

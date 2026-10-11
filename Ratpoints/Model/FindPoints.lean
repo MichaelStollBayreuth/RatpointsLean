@@ -19,18 +19,19 @@ meta import Ratpoints.Model.Sturm
 /-!
 # The search for the points
 
-`Ratpoints.findPoints c H P o` is the model of the library function `find_points` of ratpoints,
-with the options `o` of the library that change the refusals or the order of the output
+`Ratpoints.findPoints c H P o` is the model of the library function `find_points` of ratpoints, with
+the options `o` of the library that change the refusals or the order of the output
 (`Ratpoints.Options`): it refuses, as the program does (`Ratpoints.Refusal`), more than
 `Ratpoints.maxDegree + 1` coefficients, fewer than two and the height bound `0`, and then the binary
-forms that are not squarefree as the set-up of the library finds them: when the leading zeros lower
-`⌈n / 2⌉`, in the reversal check (`Ratpoints.Setup.reversal`), which may also reverse the
-polynomial, and with the Sturm step on, by the remainder chain (`Ratpoints.Sturm.chain`). Otherwise
-it runs the search of the polynomial that the set-up hands on (`Ratpoints.searchPoints`), which
-returns no points when the curve has none modulo one of the moduli of the parameters `P`, and
-otherwise the points of height at most `H` on `y ^ 2 = F(x, z)`, the points at infinity first and
-then those of the denominators `1, …, H`, found by the sieve on the bit arrays of words with the
-moduli and the array size of `P`, each mapped back to the caller's curve after a reversal.
+forms that are not squarefree as the set-up of the library finds them: when the leading zeros of the
+`n + 1` coefficients lower `⌈n / 2⌉`, in the reversal check (`Ratpoints.Setup.reversal`), which may
+also reverse the polynomial, and with the Sturm step on, by the remainder chain
+(`Ratpoints.Sturm.chain`). Otherwise it runs the search of the polynomial that the set-up hands on
+(`Ratpoints.searchPoints`), which returns no points when the curve has none modulo one of the moduli
+of the parameters `P`, and otherwise the points of height at most `H` on `y ^ 2 = F(x, z)`, the
+points at infinity first and then those of the denominators `1, …, H`, found by the sieve on the bit
+arrays of words with the moduli and the array size of `P`, each mapped back to the caller's curve
+after a reversal.
 
 ## Main definitions
 
@@ -191,7 +192,8 @@ before the height bound and the height bound before the leading zeros. -/
 
 -- No moduli, all 53 primes, the 53 primes in three stages, and moduli in another order: without the
 -- reversal and the Sturm step the list of the reference, also for `0 0 1`, which the program
--- refuses, and with them the reference of the reversed polynomial mapped back, for `-1 0 9`.
+-- refuses unless run with `-k -s`, and with them the reference of the reversed polynomial mapped
+-- back, for `-1 0 9`.
 #guard [⟨[], 0, 0, 64, true, 0⟩, sieveParams { numPrimes := 53 },
     ⟨primeTable.toList.take 53, 10, 40, 64, true, 0⟩,
     ⟨[7, 3, 251, 5], 1, 2, 0, false, 0⟩].all fun P ↦

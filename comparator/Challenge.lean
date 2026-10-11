@@ -22,17 +22,19 @@ that a solution that changed it would be rejected.
 
 The statements come in stage by stage, as `comparator/README.md` lists them: the two theorems of
 stage B (the brute-force reference finds exactly the points, without duplicates); from stage C1 on,
-the membership and no-duplicates theorems for `findPoints` for well-formed parameters, since stage D
-for every option, and the well-formedness of every parameter set that the options of the program
-give, which rules out a well-formedness that nothing satisfies; and the refusal theorems of stage D,
-with the Sturm step on (`findPoints` refuses exactly the inputs with fewer than two or more than
-`maxDegree + 1` coefficients, the height bound `0` and the binary forms `binaryFormPoly c` that are
-not squarefree) and off (it refuses exactly what the program refuses under `-s`), which rule out a
-`findPoints` that refuses every input, with or without the Sturm step. `findPoints`, `Options`,
-`Params`, `Params.WF`, `SieveOptions`, `sieveParams` and `maxDegree` come from the model, never
-restated, since a definition of the model elaborates without Mathlib to other instance terms. The
-file imports exactly the public imports of `Ratpoints/Spec/Basic.lean`, so that the restated
-definitions elaborate to the same terms as there.
+the membership and no-duplicates theorems for `Ratpoints.findPoints` for well-formed parameters,
+since stage D for every option, and the well-formedness of every parameter set that the options of
+the program give, which rules out a well-formedness that nothing satisfies; and the refusal theorems
+of stage D, with the Sturm step on (`Ratpoints.findPoints` refuses exactly the inputs with fewer
+than two or more than `Ratpoints.maxDegree + 1` coefficients, the height bound `0` and the binary
+forms `Ratpoints.binaryFormPoly c` that are not squarefree) and off (it refuses exactly what the
+program refuses under `-s`, and under `-s -k` when the reversal is off), which rule out a
+`Ratpoints.findPoints` that refuses every input, with or without the Sturm step.
+`Ratpoints.bruteForce`, `Ratpoints.findPoints`, `Ratpoints.Options`, `Ratpoints.Params`,
+`Ratpoints.Params.WF`, `Ratpoints.SieveOptions`, `Ratpoints.sieveParams` and `Ratpoints.maxDegree`
+come from the model, never restated, since a definition of the model elaborates without Mathlib to
+other instance terms. Of Mathlib, the file imports exactly the public imports of
+`Ratpoints/Spec/Basic.lean`, so that the restated definitions elaborate to the same terms as there.
 -/
 
 @[expose] public section
