@@ -112,11 +112,10 @@ class Run:
 
 @dataclass
 class Tally:
-    """What a suite compared, skipped and found, with the point lists compared in their order and
-    as sets."""
+    """What a suite compared, skipped and found, with the number of point lists, each compared in
+    its order."""
     compared: int = 0
     in_order: int = 0
-    as_sets: int = 0
     skipped: dict = field(default_factory=dict)
     failures: list = field(default_factory=list)
 
@@ -174,33 +173,25 @@ def special(cfg, tally, label, ok, detail):
 def read_options(opts):
     """How ratpoints-lean reads the options `opts`, the words after the height: the index of the
     first that it does not support yet (None if it reaches the end or a word that is no option of
-    ratpoints first), whether -q comes before it, and whether the reversal is allowed there (-k
-    forbids it and -K allows it, the last of them winning)."""
-    quiet, reverse, i = False, True, 0
+    ratpoints first), and whether -q comes before it."""
+    quiet, i = False, 0
     while i < len(opts):
         o = as_bytes(opts[i]).decode('latin-1')
         if len(o) < 2 or o[0] != '-':
-            return None, quiet, reverse
+            return None, quiet
         if o[1] in ARG_OPTS:
             i += 2
         elif o[1] == 'S':
             i += 2 if i + 1 < len(opts) and not as_bytes(opts[i + 1]).startswith(b'-') else 1
         elif o[1] in FLAGS:
-            quiet, reverse = quiet or o[1] == 'q', {'k': False, 'K': True}.get(o[1], reverse)
+            quiet = quiet or o[1] == 'q'
             i += 1
         elif (o[1] in UNSUPPORTED or o[1] == 'f' and o[2:3] in ('', 's', 'm', 'e') or
               o[1] == 'd' and o[2:3] in ('l', 'u')):
-            return i, quiet, reverse
+            return i, quiet
         else:
-            return None, quiet, reverse
-    return None, quiet, reverse
-
-
-def in_order(args):
-    """Whether ratpoints-lean is to print the points of the search of the command line `args` in
-    the order of ratpoints: always, since the model visits the denominators in the order of the C
-    program, divisor by divisor where it does."""
-    return True
+            return None, quiet
+    return None, quiet
 
 
 def expected_unsupported(cfg, args, k):
@@ -232,30 +223,29 @@ def height(arg):
         return None
 
 
-def points(text, report=False, ordered=False):
+def points(text, report=False):
     """The points of an output that consists of point lines only (else None), or with `report`
-    the points among the lines of a report, as a list: in their order with `ordered`, sorted
-    otherwise."""
+    the points among the lines of a report, as a list in their order."""
     lines = text.split('\n')
     if lines and lines[-1] == '':
         lines.pop()
     if not report and not all(POINT.match(l) for l in lines):
         return None
     pts = [tuple(int(g) for g in m.groups()) for m in map(POINT.match, lines) if m]
-    return pts if ordered else sorted(pts)
+    return pts
 
 
-def agrees(cfg, lean, expected, mode, ordered=False):
-    """Whether the output and exit code `lean` of ratpoints-lean agree with `expected`: in the
-    mode 'points' as lists of points (exit 0), in their order with `ordered` and as sets otherwise,
-    in 'report' in the same way with the point lines of a report of the C program, in 'message' as
-    the message that ends a report of the C program, in 'exact' exactly and in 'e' as test4.sh's
-    e() records them, the banner and the usage exchanged for those of the C program."""
+def agrees(cfg, lean, expected, mode):
+    """Whether the output and exit code `lean` of ratpoints-lean agree with `expected`: in the mode
+    'points' as lists of points in their order (exit 0), in 'report' in the same way with the point
+    lines of a report of the C program, in 'message' as the message that ends a report of the C
+    program, in 'exact' exactly and in 'e' as test4.sh's e() records them, the banner and the usage
+    exchanged for those of the C program."""
     (out, code), (exp, exp_code) = lean, expected
     if mode in ('points', 'report'):
-        got = points(out, ordered=ordered)
+        got = points(out)
         return (code == 0 and got is not None and
-                got == points(exp, report=mode == 'report', ordered=ordered))
+                got == points(exp, report=mode == 'report'))
     if mode == 'message':
         return (code == exp_code and out.strip() != '' and
                 exp.rstrip('\n').endswith(out.rstrip('\n')))
@@ -265,14 +255,12 @@ def agrees(cfg, lean, expected, mode, ordered=False):
     return out == exp and code == exp_code
 
 
-def check(cfg, tally, label, args, expected, mode, ordered=False):
+def check(cfg, tally, label, args, expected, mode):
     """Run ratpoints-lean on `args` and compare it with `expected` (see agrees)."""
     lean = run(cfg.lean, args)
-    ok = agrees(cfg, lean, expected, mode, ordered)
+    ok = agrees(cfg, lean, expected, mode)
     tally.compared += 1
-    if mode in ('points', 'report'):
-        tally.in_order += ordered
-        tally.as_sets += not ordered
+    tally.in_order += mode in ('points', 'report')
     if not ok:
         tally.failures.append(f'{label}: expected exit {expected[1]} and {expected[0][:500]!r}, '
                               f'got exit {lean[1]} and {lean[0][:500]!r}')
@@ -280,17 +268,25 @@ def check(cfg, tally, label, args, expected, mode, ordered=False):
         print(('ok   ' if ok else 'FAIL ') + label)
 
 
+def skips_height(cfg, args, out, code):
+    """Whether the comparison with the C program, which ended with the output `out` and the exit
+    code `code` on the command line `args`, is skipped: a search above --max-height on which the C
+    program prints something (one that prints nothing is quick for both and is compared)."""
+    return (code == 0 and bool(out) and
+            (height(as_bytes(args[1]).decode('latin-1')) or 0) > cfg.max_height)
+
+
 def against_c(cfg, tally, label, args):
     """Compare ratpoints-lean with the C program on the command line `args`."""
-    k, quiet, _ = read_options(args[2:])
+    k, quiet = read_options(args[2:])
     if len(args) >= 2 and k is not None:
         check(cfg, tally, label, args, expected_unsupported(cfg, args, k), 'exact')
         return
     out, code = run(cfg.c, args)
-    if code == 0 and out and (height(as_bytes(args[1]).decode('latin-1')) or 0) > cfg.max_height:
+    if skips_height(cfg, args, out, code):
         tally.skip(f'height above {cfg.max_height}')
     elif code == 0:
-        check(cfg, tally, label, args, (out, 0), 'points' if quiet else 'report', in_order(args))
+        check(cfg, tally, label, args, (out, 0), 'points' if quiet else 'report')
     else:  # without -q the C program prints its report before the message of error 8
         check(cfg, tally, label, args, (out, code),
               'message' if code == 8 and not quiet else 'exact')
@@ -331,13 +327,13 @@ def suite_test4(cfg, tally, window=None):
         text = '\n'.join(out) + ('' if r.nonl else '\n') if out else ''
         if code == 0:  # e() keeps one newline at the end, also of an empty output
             text = text.rstrip('\n') + '\n' if text.strip('\n') else ''
-        k, quiet, _ = read_options(r.args[2:])
+        k, quiet = read_options(r.args[2:])
         mode = 'points' if quiet else 'report'
         if window is not None:
             searches = (r.filt is None and not (len(r.args) >= 2 and k is not None) and
                         not code and 'Polynomial is not square-free.' not in text)
             if searches and window[0] < (height(r.args[1]) or 0) <= window[1]:
-                check(cfg, tally, label, r.args, (text, 0), mode, in_order(r.args))
+                check(cfg, tally, label, r.args, (text, 0), mode)
             continue
         if r.filt is not None:
             tally.skip('output filtered')
@@ -352,7 +348,7 @@ def suite_test4(cfg, tally, window=None):
         elif (height(r.args[1]) or 0) > cfg.max_height:
             tally.skip(f'height above {cfg.max_height}')
         else:
-            check(cfg, tally, label, r.args, (text, 0), mode, in_order(r.args))
+            check(cfg, tally, label, r.args, (text, 0), mode)
 
 
 def suite_test3(cfg, tally):
@@ -400,7 +396,7 @@ def suite_rptest(cfg, tally):
             pts = [p for p in reference_points(ref) if abs(p[0]) <= h and p[2] <= h]
             expected = ''.join(f'({a} : {y} : {b})\n' for a, y, b in pts)
             args = [' '.join(map(str, c)), str(h), '-q']
-            check(cfg, tally, f'{base}:{i} {args}', args, (expected, 0), 'points', in_order(args))
+            check(cfg, tally, f'{base}:{i} {args}', args, (expected, 0), 'points')
 
 
 def suite_random(cfg, tally):
@@ -504,8 +500,7 @@ def main(argv=None):
         tally = Tally()
         SUITES[name](cfg, tally)
         skipped = ', '.join(f'{k} {v}' for k, v in sorted(tally.skipped.items()))
-        lists = (f' (point lists: {tally.in_order} in order, {tally.as_sets} as sets)'
-                 if tally.in_order + tally.as_sets else '')
+        lists = f' (point lists: {tally.in_order} in order)' if tally.in_order else ''
         print(f'{name}: {tally.compared} compared{lists}, {len(tally.failures)} failed'
               + (f'; skipped: {skipped}' if skipped else ''))
         for f in tally.failures:

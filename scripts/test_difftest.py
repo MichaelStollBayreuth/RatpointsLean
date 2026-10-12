@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tests of the parsers and of the classification of scripts/difftest.py.
+"""Tests of the parsers, the comparisons and the skips of scripts/difftest.py.
 
 usage: python3 -m unittest discover -s scripts -p 'test_*.py'
 """
@@ -39,9 +39,7 @@ class SplitTest4(unittest.TestCase):
 
 class Outputs(unittest.TestCase):
     def test_points(self):
-        self.assertEqual(dt.points('(0 : 1 : 1)\n(-2 : 0 : 3)\n'), [(-2, 0, 3), (0, 1, 1)])
-        self.assertEqual(dt.points('(0 : 1 : 1)\n(-2 : 0 : 3)\n', ordered=True),
-                         [(0, 1, 1), (-2, 0, 3)])
+        self.assertEqual(dt.points('(0 : 1 : 1)\n(-2 : 0 : 3)\n'), [(0, 1, 1), (-2, 0, 3)])
         self.assertIsNone(dt.points('\nToo many coefficients.\n\n'))
         self.assertEqual(dt.points(''), [])
         self.assertEqual(dt.points('This is it.\n(1 : 1 : 0)\n2 points.\n', report=True),
@@ -62,17 +60,14 @@ class Outputs(unittest.TestCase):
                                   'exact'))
         self.assertFalse(dt.agrees(cfg, (error6 + cfg.lean_usage, 2), (error6 + cfg.c_usage, 6),
                                    'exact'))
-        self.assertTrue(dt.agrees(cfg, ('(0 : 1 : 1)\n(0 : -1 : 1)\n', 0),
-                                  ('(0 : -1 : 1)\n(0 : 1 : 1)\n', 0), 'points'))
         self.assertFalse(dt.agrees(cfg, ('(0 : 1 : 1)\n(0 : -1 : 1)\n', 0),
-                                   ('(0 : -1 : 1)\n(0 : 1 : 1)\n', 0), 'points', ordered=True))
+                                   ('(0 : -1 : 1)\n(0 : 1 : 1)\n', 0), 'points'))
         self.assertTrue(dt.agrees(cfg, ('(0 : 1 : 1)\n(0 : -1 : 1)\n', 0),
-                                  ('(0 : 1 : 1)\n(0 : -1 : 1)\n', 0), 'points', ordered=True))
+                                  ('(0 : 1 : 1)\n(0 : -1 : 1)\n', 0), 'points'))
         self.assertFalse(dt.agrees(cfg, ('(0 : 1 : 1)\n', 0), ('(0 : -1 : 1)\n', 0), 'points'))
         self.assertTrue(dt.agrees(cfg, ('', 0), ('\nfound 0 points.\n', 0), 'report'))
         self.assertTrue(dt.agrees(cfg, ('(1 : 1 : 0)\n(0 : 1 : 1)\n', 0),
-                                  ('Curve\n(1 : 1 : 0)\n(0 : 1 : 1)\n2 points.\n', 0), 'report',
-                                  ordered=True))
+                                  ('Curve\n(1 : 1 : 0)\n(0 : 1 : 1)\n2 points.\n', 0), 'report'))
         self.assertTrue(dt.agrees(cfg, ('\nToo many coefficients.\n\n', 3),
                                   ('\nToo many coefficients.\n', 3), 'e'))
         refusal = '\nPolynomial is not square-free.\n\n'
@@ -85,32 +80,34 @@ class Outputs(unittest.TestCase):
                                    'message'))
 
     def test_read_options(self):
-        self.assertEqual(dt.read_options(['-q', '-n', '5', '-j']), (None, True, True))
-        self.assertEqual(dt.read_options(['-n', '5']), (None, False, True))
-        self.assertEqual(dt.read_options(['-q', '-l', '0', '-u', '1']), (1, True, True))
-        self.assertEqual(dt.read_options(['-p', '-x', '-x']), (2, False, True))
-        self.assertEqual(dt.read_options(['-quiet', '-fs', 'x']), (1, True, True))
-        self.assertEqual(dt.read_options(['-fx', '-x']), (None, False, True))
-        self.assertEqual(dt.read_options(['-d', '1', '-dl', '1']), (None, False, True))
-        self.assertEqual(dt.read_options(['-q', 'q', '-x']), (None, True, True))
-        self.assertEqual(dt.read_options([b'-\xff', '-x']), (None, False, True))
+        self.assertEqual(dt.read_options(['-q', '-n', '5', '-j']), (None, True))
+        self.assertEqual(dt.read_options(['-n', '5']), (None, False))
+        self.assertEqual(dt.read_options(['-q', '-l', '0', '-u', '1']), (1, True))
+        self.assertEqual(dt.read_options(['-p', '-x', '-x']), (2, False))
+        self.assertEqual(dt.read_options(['-quiet', '-fs', 'x']), (1, True))
+        self.assertEqual(dt.read_options(['-fx', '-x']), (None, False))
+        self.assertEqual(dt.read_options(['-d', '1', '-dl', '1']), (None, False))
+        self.assertEqual(dt.read_options(['-q', 'q', '-x']), (None, True))
+        self.assertEqual(dt.read_options([b'-\xff', '-x']), (None, False))
 
     def test_read_options_of_the_search(self):
-        self.assertEqual(dt.read_options(['-k', '-s', '-q']), (None, True, False))
-        self.assertEqual(dt.read_options(['-k', '-K']), (None, False, True))
-        self.assertEqual(dt.read_options(['-K', '-kfoo', '-x']), (2, False, False))
-        self.assertEqual(dt.read_options(['-S', '5', '-x']), (2, False, True))
-        self.assertEqual(dt.read_options(['-S', '-q', '-x']), (2, True, True))
-        self.assertEqual(dt.read_options(['-S', '', '-x']), (2, False, True))
-        self.assertEqual(dt.read_options(['-S', ' -1', '-k']), (None, False, False))
-        self.assertEqual(dt.read_options(['-q', '-S']), (None, True, True))
+        self.assertEqual(dt.read_options(['-k', '-s', '-q']), (None, True))
+        self.assertEqual(dt.read_options(['-k', '-K']), (None, False))
+        self.assertEqual(dt.read_options(['-K', '-kfoo', '-x']), (2, False))
+        self.assertEqual(dt.read_options(['-S', '5', '-x']), (2, False))
+        self.assertEqual(dt.read_options(['-S', '-q', '-x']), (2, True))
+        self.assertEqual(dt.read_options(['-S', '', '-x']), (2, False))
+        self.assertEqual(dt.read_options(['-S', ' -1', '-k']), (None, False))
+        self.assertEqual(dt.read_options(['-q', '-S']), (None, True))
 
 
-class Order(unittest.TestCase):
-    def test_in_order(self):
-        for args in (['-2 0 0 1', '130', '-q'], ['1 0 0 2', '10', '-q'], ['1 2', '20', '-q'],
-                     ['0 1 0 2', '10', '-q', '-k'], ['0 3 1', '10', '-q']):
-            self.assertTrue(dt.in_order(args))
+class Skips(unittest.TestCase):
+    def test_skips_height(self):
+        cfg = SimpleNamespace(max_height=30000)
+        self.assertFalse(dt.skips_height(cfg, ['2 0 3', '40000', '-q'], '', 0))
+        self.assertTrue(dt.skips_height(cfg, ['1 0 1', '40000', '-q'], '(0 : 1 : 1)\n', 0))
+        self.assertFalse(dt.skips_height(cfg, ['1 0 1', '30000', '-q'], '(0 : 1 : 1)\n', 0))
+        self.assertFalse(dt.skips_height(cfg, ['0 0 1', '40000'], '\nerror\n', 1))
 
 
 class Curves(unittest.TestCase):
