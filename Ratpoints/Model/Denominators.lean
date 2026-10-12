@@ -159,7 +159,7 @@ def twoAdic (c : List Int) (d : Nat) : Id (Vector UInt64 64) := do
 2-adic information (`Ratpoints.Sieve.twoAdic`): bit `b` is set exactly when `nb[b] ≠ 0`. A
 denominator whose class has its bit clear carries no point; when no bit is set and there is no
 point at infinity, the curve has no point at all, and ratpoints ends the search with none (the
-2-adic exit, stage E).
+2-adic exit of `Ratpoints.searchPoints`).
 
 C: `find_points.c:995`, `find_points.c:1064-1065`, `find_points.c:1070`,
 `find_points.c:1096-1097`, `find_points.c:1102-1104`
@@ -364,12 +364,12 @@ second loop, and a prime below that position that is no modulus is examined by n
 lists are those of `sieving_info` when the moduli are its first `pn_lim` primes in increasing order,
 as in the program with `-p` and without `-P`; the Kronecker symbol by the table of the squares
 modulo `p`, which marks `0` as a square, for `mpz_kronecker_si`; the flag `RATPOINTS_CHECK_DENOM`
-not tested in either loop, since the search computes the forbidden divisors only for even degree,
-where the flag is set (stage E); lists, for the two arrays of the arguments with their terminating
-zeros; the words of a prime made with its entry, for the pointers into `sieves0` and the buffer
-`forb_words`, with no failure for lack of memory, where `sieving_info` drops the primes beyond the
-table whose words it cannot store; no reciprocals `magic`; natural numbers for the `long`s; no
-output under `DEBUG`. -/
+not tested in either loop, since the search computes the forbidden divisors only when the flag is
+set, for even degree (`Ratpoints.searchPoints`); lists, for the two arrays of the arguments with
+their terminating zeros; the words of a prime made with its entry, for the pointers into `sieves0`
+and the buffer `forb_words`, with no failure for lack of memory, where `sieving_info` drops the
+primes beyond the table whose words it cannot store; no reciprocals `magic`; natural numbers for the
+`long`s; no output under `DEBUG`. -/
 def forbidden (c : List Int) (d : Nat) (moduli : List Nat) (maxForbidden bHigh : Nat) :
     Id (List ForbiddenEntry × List ForbiddenVal) := do
   let lcf := c.getD d 0

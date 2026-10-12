@@ -148,7 +148,8 @@ def maxArraySize : Nat := 2 ^ 20
 /-- The bound on the number of squarefree divisors of the leading coefficient that the loop over
 the denominators takes for a polynomial of odd degree, `MAX_DIVISORS`: `setup_us1` gives the
 divisors only when it finds fewer than this many at most the largest denominator
-(`Ratpoints.Setup.setupUs1`), and otherwise the loop visits every denominator (stage E).
+(`Ratpoints.Setup.setupUs1`), and otherwise the loop visits every denominator
+(`Ratpoints.Sieve.runSetup`).
 
 C: `find_points.c:121` -/
 def maxDivisors : Nat := 512

@@ -17,13 +17,12 @@ it refuses exactly what the program refuses under \verb|-s|.
 The reversal is the transformation of Chapter~\ref{chap:sieve}: it exchanges $x$ and $z$ in the
 binary form, and the map that the C code applies to every point it finds of the reversed polynomial
 is a bijection onto the points of the caller's curve that preserves the box. So after a reversal the
-output is the list of the brute-force reference for the reversed polynomial with each point mapped
-back, a permutation of the reference; the reduction of the run to the reference
-(Theorem~\ref{thm:run_reference}) holds for any polynomial and its degree, and membership and no
-duplicates hold for every option. The set-up has been the most error-prone part of ratpoints: the
-fixes of 2.2.2 include a reversal that marked a cubic reversed and left it as it was, and those of
-2.2.4 a search that returned before the points at infinity when the Sturm step found no real point
-in the search region.
+output is that of the search of the reversed polynomial with each point mapped back, a permutation
+of the reference; the reduction of the run to the reference (Theorem~\ref{thm:run_reference}) holds
+for any polynomial and its degree, and membership and no duplicates hold for every option. The
+set-up has been the most error-prone part of ratpoints: the fixes of 2.2.2 include a reversal that
+marked a cubic reversed and left it as it was, and those of 2.2.4 a search that returned before the
+points at infinity when the Sturm step found no real point in the search region.
 
 $\mathrm{findPoints}$ takes an argument for the options of the library that change the refusals or
 the order of the output, and the program reads the options that set them: \verb|-k| and \verb|-K|,
@@ -396,30 +395,43 @@ Lemma~\ref{lem:sift_eq_checkDen} maps their side.
 \begin{definition}[The search of the polynomial handed on]\label{def:searchPoints}
   \uses{def:Params, def:arraySize, def:examinePrimeExit, def:useCLong, def:pointsAtInfinity,
     def:sieveRun, def:swapPoint, lem:examinePrime_none, thm:bruteForce, def:twoAdic, def:Shape,
-    lem:twoAdic_point, lem:twoAdic_exit, lem:survives, thm:run_reference}
+    lem:twoAdic_point, lem:twoAdic_exit, lem:survives, thm:run_reference, def:setupUs1,
+    def:forbidden, def:searchDens, lem:shape_dens}
   \lean{Ratpoints.searchPoints, Ratpoints.run_searchPoints, List.eq_map_of_mapM_eq_some, List.exists_mem_of_mapM_eq_none}
   \leanok
   For the coefficients $c$ of degree $d$ that the set-up hands on, the flag of the reversal, the
-  height $H$ and the parameters $P$: the 2-adic information (Definition~\ref{def:twoAdic}), and no
-  points when no class of the denominators admits a numerator and there is no point at infinity
-  (\csource{find_points.c}{4603}{4604}, \csource{find_points.c}{4948}{4948},
-  \csource{find_points.c}{4954}{4963}); then the table of each modulus, with the flag of the
-  \verb|long|s, and no points when one of them is none (\csource{find_points.c}{2605}{2614},
-  \csource{find_points.c}{2976}{2978}, \csource{find_points.c}{2994}{2998},
-  \csource{find_points.c}{4992}{5012}); otherwise the points at infinity and the points of the
-  denominators $1, \dots, H$ in the shape of every denominator (Definition~\ref{def:Shape}), with
-  the class test and the class words, with pieces of at most $\mathrm{arraySizeAt}(H)$ bit arrays,
-  each mapped by $\mathrm{swapPoint}$ when the flag is set (\csource{find_points.c}{5116}{5116},
-  \csource{find_points.c}{5167}{5167}, the block that runs the denominators;
+  height $H$ and the parameters $P$, over the denominators $b_{\mathrm{low}} = 1, \dots,
+  b_{\mathrm{high}} = H$: the flags of the tests on the denominators, the checked loop for even
+  $d$, the Jacobi test for even $d$, $c_d$ not a square and the Jacobi switch of the parameters, the
+  squares for odd $d$ and $|c_d| = 1$, and for odd $d$ otherwise the divisors of the leading
+  coefficient (Definition~\ref{def:setupUs1}; \csource{find_points.c}{4573}{4573},
+  \csource{find_points.c}{4588}{4589}, \csource{find_points.c}{4595}{4596},
+  \csource{find_points.c}{4607}{4607}, \csource{find_points.c}{4900}{4943}); the 2-adic information
+  (Definition~\ref{def:twoAdic}), and no points when no class of the denominators admits a numerator
+  and there is no point at infinity (\csource{find_points.c}{4603}{4604},
+  \csource{find_points.c}{4948}{4948}, \csource{find_points.c}{4954}{4963}); then the table of each
+  modulus, with the flag of the \verb|long|s, and no points when one of them is none
+  (\csource{find_points.c}{2537}{2537}, \csource{find_points.c}{2605}{2614},
+  \csource{find_points.c}{2707}{2707}, \csource{find_points.c}{2976}{2978},
+  \csource{find_points.c}{2994}{2998}, \csource{find_points.c}{4992}{5012}); for even $d$ the
+  forbidden divisors of the moduli (Definition~\ref{def:forbidden}), and the checked loop off when
+  there are none and no Jacobi test (\csource{find_points.c}{2793}{2795}); the shape that
+  \verb|run_setup| chooses (Definition~\ref{def:Shape}); and the points at infinity followed by the
+  points of the denominators of the shape, with its tests, the class words and pieces of at most
+  $\mathrm{arraySizeAt}(H)$ bit arrays, each mapped by $\mathrm{swapPoint}$ when the flag is set
+  (\csource{find_points.c}{5116}{5116}, \csource{find_points.c}{5137}{5139},
+  \csource{find_points.c}{5167}{5167}, the block that sets up the run and runs the denominators;
   \csource{find_points.c}{5106}{5106}, the return when the Sturm step leaves nothing to search, is
-  not met before stage~H). The shape that the tests on the denominators choose, with the divisors of
-  the leading coefficient, the forbidden divisors and the Jacobi test, comes later in stage~E
-  (Chapter~\ref{chap:denominators}). A definition of type \verb|Id|, which $\mathrm{findPoints}$
-  runs. For well-formed parameters, $H \ge 1$ and $d$ the degree of $c$, its result is
-  $\mathrm{bruteForce}(c, H)$, mapped by $\mathrm{swapPoint}$ when the flag is set, also when an
-  exit fires, since the reference is empty then (Lemmas~\ref{lem:examinePrime_none}
-  and~\ref{lem:twoAdic_exit}); otherwise the filters of the run let every point through
-  (Lemmas~\ref{lem:twoAdic_point} and~\ref{lem:survives}, Theorem~\ref{thm:run_reference}).
+  not met before stage~H). A definition of type \verb|Id|, which $\mathrm{findPoints}$ runs. For
+  well-formed parameters, $H \ge 1$ and $d$ the degree of $c$, its result is the list of the points
+  at infinity followed by the points of the reference over the denominators of the search
+  (Definition~\ref{def:searchDens}), in their order, each mapped by $\mathrm{swapPoint}$ when the
+  flag is set, also when an exit fires, since the curve has no points then
+  (Lemmas~\ref{lem:examinePrime_none} and~\ref{lem:twoAdic_exit}) and the denominators of the search
+  lie in $1, \dots, H$; otherwise the run of the shape gives the reference over its denominators,
+  since its tests, the class words and the tables let every point through
+  (Lemmas~\ref{lem:shape_dens}, \ref{lem:twoAdic_point} and~\ref{lem:survives},
+  Theorem~\ref{thm:run_reference}).
 \end{definition}
 
 $\mathrm{findPoints}(c, H, P, o)$ (Definition~\ref{def:findPoints}) refuses, in the order of the
@@ -433,22 +445,20 @@ functions of the library one, the head and the locals of \verb|find_points_work_
 uses, its reset of the flags and its end, the test of the leading zeros and of the height, and the
 Sturm step, whose restriction of the search region is stage~H's.
 
-\begin{theorem}[The output of the search]\label{thm:findPoints_perm}
-  \uses{def:findPoints, def:searchPoints, lem:reversal_swap, lem:swapPoint_bijection}
-  \lean{Ratpoints.exists_eq_of_findPoints_eq_ok, Ratpoints.eq_bruteForce_of_findPoints_eq_ok_of_reverse_eq_false, Ratpoints.perm_bruteForce_of_findPoints_eq_ok}
+\begin{theorem}[A permutation of the reference]\label{thm:findPoints_perm}
+  \uses{def:findPoints, thm:findPoints_order, lem:swapPoint_bijection}
+  \lean{Ratpoints.perm_bruteForce_of_findPoints_eq_ok}
   \leanok
   For well-formed parameters and any options, if $\mathrm{findPoints}(c, H, P, o)$ returns the list
-  $L$, then $L$ is $\mathrm{bruteForce}(c', H)$, mapped by $\mathrm{swapPoint}$ when the reversal
-  check reverses $c$ to $c'$, and $\mathrm{bruteForce}(c, H)$ when it does not, in particular when
-  the reversal is forbidden; in every case $L$ is a permutation of $\mathrm{bruteForce}(c, H)$.
+  $L$, then $L$ is a permutation of $\mathrm{bruteForce}(c, H)$.
 \end{theorem}
 
 \begin{proof}
   \leanok
-  $\mathrm{findPoints}$ returns the result of $\mathrm{searchPoints}$ on the polynomial searched
-  and its degree (Lemma~\ref{lem:reversal_swap}), which is the reference for it, mapped after a
-  reversal (Definition~\ref{def:searchPoints}); Lemma~\ref{lem:swapPoint_bijection} gives the
-  permutation.
+  $L$ is the list of the search of the polynomial $c'$ that the reversal check hands on, mapped back
+  after a reversal (Theorem~\ref{thm:findPoints_order}), and that list is a permutation of
+  $\mathrm{bruteForce}(c', H)$; without a reversal $c' = c$, and after one
+  Lemma~\ref{lem:swapPoint_bijection} gives the permutation of $\mathrm{bruteForce}(c, H)$.
 \end{proof}
 
 \begin{theorem}[The refusals]\label{thm:refusals}
@@ -476,20 +486,21 @@ Sturm step, whose restriction of the search region is stage~H's.
   polynomial searched is $f$). Without the Sturm step only the first two remain.
 \end{proof}
 
-Theorem~\ref{thm:run_reference} reduces the run of any polynomial with its degree to the
-reference: for an array size at least $1$, moduli $p > 0$ and filters that let every point through,
-it gives the points of the reference over its denominators, mapped by $\mathrm{swapPoint}$ when the
-flag of the reversal is set; Definition~\ref{def:searchPoints} rests on it, with the 2-adic exit
-(Lemma~\ref{lem:twoAdic_exit}) and the exit of the tables. Theorem~\ref{thm:findPoints} has
-membership, no duplicates and the set of elements, for every option, from
-Theorem~\ref{thm:findPoints_perm}, and Theorem~\ref{thm:refusals} the refusals, with guards on their
-axioms. Comparator certifies the two main theorems with the options argument, both refusal theorems
-and \verb|wf_sieveParams|; the challenge restates $\Phi_c$ verbatim, as it restates $F_c$, takes the
-options from the model, and has the refusal theorem with the Sturm step off too, so that a
-$\mathrm{findPoints}$ that refused every input under \verb|-s| would not pass. Since the challenge
-needs \verb|Squarefree|, the specification imports \verb|Mathlib.Algebra.Squarefree.Basic|, so that
-the challenge still imports, besides the model, exactly the public imports of the specification.
-The structure \verb|Params| and its well-formedness are those of stage~C2.
+Theorem~\ref{thm:run_reference} reduces the run of any polynomial with its degree to the reference:
+for an array size at least $1$, moduli $p > 0$ and filters that let every point through, it gives
+the points of the reference over its denominators, mapped by $\mathrm{swapPoint}$ when the flag of
+the reversal is set; Definition~\ref{def:searchPoints} rests on it, with the lists and the tests of
+the shapes (Lemma~\ref{lem:shape_dens}), the 2-adic exit (Lemma~\ref{lem:twoAdic_exit}) and the exit
+of the tables. Theorem~\ref{thm:findPoints} has membership, no duplicates and the set of elements,
+for every option, from Theorem~\ref{thm:findPoints_perm}, and Theorem~\ref{thm:refusals} the
+refusals, with guards on their axioms. Comparator certifies the two main theorems with the options
+argument, both refusal theorems and \verb|wf_sieveParams|; the challenge restates $\Phi_c$ verbatim,
+as it restates $F_c$, takes the options from the model, and has the refusal theorem with the Sturm
+step off too, so that a $\mathrm{findPoints}$ that refused every input under \verb|-s| would not
+pass. Since the challenge needs \verb|Squarefree|, the specification imports
+\verb|Mathlib.Algebra.Squarefree.Basic|, so that the challenge still imports, besides the model,
+exactly the public imports of the specification. The structure \verb|Params| and its well-formedness
+are those of stage~C2.
 
 \section{The command-line program and the differential tests}\label{sec:setupCli}
 
@@ -502,32 +513,28 @@ reading of the command line does not meet. The nodes of the failures and of the 
 Chapter~\ref{chap:spec} (Definitions~\ref{def:cliFailure} and~\ref{def:cliInput}) hold these
 ranges, the node of the program (Definition~\ref{def:cliRun}) the call of \verb|find_points| and
 the exit status~$0$ (\csource{main.c}{251}{251}, \csource{main.c}{284}{284}), and the order of the
-printed points is that of Theorem~\ref{thm:findPoints_perm}. The options that it does not support
+printed points is that of Theorem~\ref{thm:findPoints_order}. The options that it does not support
 yet are those of the search region and the denominator range (\verb|-l -u -dl -du|) and those of the
 output (\verb|-x -X -y -Y -z -Z -1 -i -I -f -fs -fm -fe|). The differential tests:
 \begin{itemize}
-  \item compare in the suite \verb|test4| 548 of the 582 runs of \verb|test4.sh|, 261 of them
-    by their points, 230 in their order: the runs whose only options of the search are \verb|-k|,
+  \item compare in the suite \verb|test4| 548 of the 582 runs of \verb|test4.sh|, 261 of them by
+    their points, each in its order: the runs whose only options of the search are \verb|-k|,
     \verb|-K|, \verb|-s| and \verb|-S| by their points (nine with \verb|-S|, among them the
     regression tests of the depth of the Sturm step), the 11 refusals with error~8 (three of them
     runs without \verb|-q|, compared by the message at the end of the report), and the two runs with
     a malformed argument of \verb|-S|, which fail with error~6 as the C program does; 21 runs stay
     skipped for their filtered output and 13 for their height, which the suite \verb|test4high|
     compares;
-  \item compare 15 of the 21 runs of \verb|test3.sh|, the refusal among them, and the run with
-    \verb|-k| by its points;
+  \item compare 16 of the 21 runs of \verb|test3.sh|, the refusal among them, the run with
+    \verb|-k| by its points, and the run at the height $300000$, above the largest height of the
+    tests, on which both programs print nothing;
   \item compare in the random suite the inputs that the C program refuses; search in the suite of
     parameters \verb|0 1 1| in place of \verb|0 0 1|, which both programs refuse; compare in the
     errors suite (253 cases) \verb|-k|, \verb|-K|, \verb|-s|, \verb|-S| and \verb|-S 5|, error~8,
     \verb|-s| on a form that is not squarefree and the order of \verb|-s| and \verb|-S|; and give in
     the fuzz \verb|-S| random arguments, on forms that are squarefree and on forms that are not;
-  \item compare point lists in their order wherever ratpoints visits the denominators in ascending
-    order, and as sets otherwise: it takes them in another order only when the polynomial searched
-    has odd degree and a leading coefficient other than $\pm 1$, whose factorization gives the
-    squarefree divisors $d$ of the denominators $d k^2$ that it visits, divisor by divisor
-    (stage~E); the harness computes them as \verb|setup_us1| does
-    (\csource{find_points.c}{766}{935}), and compares in order where the factorization is
-    incomplete, there are too many divisors or the denominators $d k^2$ ascend.
+  \item compare every point list in its order, also where ratpoints visits the denominators
+    divisor by divisor (Section~\ref{sec:denCli}).
 \end{itemize}
 
 \section{Deviations}\label{sec:setupDeviations}

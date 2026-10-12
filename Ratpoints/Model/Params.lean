@@ -19,9 +19,13 @@ it runs the Jacobi test, and at most how many bit arrays it treats at a time. ra
 moduli and their stages from the curve and corrects the choice during the run, and takes the other
 choices from its options or its defaults (the program passes the array size
 `Ratpoints.defaultArraySize`); none of this changes the points found or their order, since a modulus
-only removes candidates that are not points and the pieces of the numerators follow one another in
-increasing order. So the model takes the choice as an input, and the theorems hold for every
-well-formed choice. The sieve reads only the moduli and the array size.
+only removes candidates that are not points, the pieces of the numerators follow one another in
+increasing order, a test on the denominators removes only denominators without points, and the two
+shapes of the loop over the denominators between which these choices decide, the words of 64
+denominators and every denominator, both run in increasing order. So the model takes the choice as
+an input, and the theorems hold for every well-formed choice. The sieve reads the moduli and the
+array size, and the tests on the denominators read the moduli (the primes examined for forbidden
+divisors), the bound on the forbidden divisors and the switch of the Jacobi test.
 
 ## Main definitions
 
@@ -51,7 +55,9 @@ structure Params where
   sp2 : Nat
   /-- At most how many forbidden divisors of the denominators are tested. -/
   maxForbidden : Nat
-  /-- Whether the Jacobi test on the denominators runs. -/
+  /-- Whether the Jacobi test on the denominators may run: it runs when also the polynomial
+  searched, after the reversal check, has even degree and a leading coefficient that is not a
+  square. -/
   jacobi : Bool
   /-- At most how many bit arrays a piece of the numerators has, the field `array_size` of the
   arguments of the library; `0` for `Ratpoints.defaultArraySize`. -/

@@ -191,11 +191,11 @@ the inputs that the program neither reverses nor searches in divisor order: on t
 runs of height at most $1000$ that print points with \verb|-q|, the \verb|ratpoints-lean| of
 stage~B, which printed the reference, reproduced the output of the C program byte for byte, except
 for reversed polynomials and for odd degree with $|c_d| \ne 1$, where the two agreed as sets. Since
-stage~D the output of \verb|findPoints| is the reference of the polynomial searched, mapped back
-after a reversal (Theorem~\ref{thm:findPoints_perm}), which is the order of the program wherever it
-visits the denominators in ascending order, and the differential tests compare the order there; the
-divisor order comes with stage~E, and the order of the program is a theorem of stage~G about
-\verb|findPoints|.
+stage~D the output of \verb|findPoints| is mapped back after a reversal, and since stage~E it is
+that of the reference of the polynomial searched over the denominators in the order of its search
+(Theorem~\ref{thm:findPoints_order}), which is the order of the program on every point list of the
+differential tests, all compared in their order; that it is the order of the program in general is
+a theorem of stage~G about \verb|findPoints|.
 
 \begin{theorem}[The brute-force reference finds exactly the points]\label{thm:bruteForce}
   \uses{def:bruteForce, def:IsPoint, def:points}
@@ -278,8 +278,8 @@ scripts of the C repository can run it as \verb|RP=ratpoints-lean|:
     the banners and the usages of the two programs;
   \item it refuses a binary form that is not squarefree with error~8 as ratpoints does with the
     same options, since \verb|findPoints| refuses what the program refuses
-    (Theorem~\ref{thm:refusals}), and it prints the points in the order of ratpoints wherever
-    ratpoints visits the denominators in ascending order (Theorem~\ref{thm:findPoints_perm}).
+    (Theorem~\ref{thm:refusals}), and it prints the points in the order of ratpoints
+    (Theorem~\ref{thm:findPoints_order}).
 \end{itemize}
 The numbers need a reader of their own that mirrors \verb|scan_mpz| and \verb|scan_long|
 (\csource{main.c}{700}{740}): \verb|main.c| accepts a leading \verb|+| and any C white space
@@ -365,15 +365,16 @@ that they mirror:
   triple of $\mathrm{findPoints}(c, H, \mathrm{sieveParams}(s), o)$, for the values $s$ of the
   options that set the sieving parameters and the options $o$ of the search
   (Definition~\ref{def:Options}), in the order of that list, which is that of
-  Theorem~\ref{thm:findPoints_perm}: the brute-force reference of the polynomial searched, mapped
-  back after a reversal; and exits with status~0 (\csource{main.c}{284}{284}). It writes its output
-  once it is computed and, like ratpoints, ignores a failed write, but for one case: when the reader
-  of the output is gone, the signal \verb|SIGPIPE| ends ratpoints, and the shell reports the status
-  $141 = 128 + 13$; the Lean runtime ignores that signal, so that the write of \verb|ratpoints-lean|
-  fails instead, and it exits quietly with status~141. Since ratpoints flushes its output after
-  every point (line 187 of \verb|main.c|), a reader that leaves early, like \verb|head|, ends it at
-  the next point, while \verb|ratpoints-lean| notices only a reader that is gone when it writes: an
-  output that fits into the pipe ends with status~0.
+  Theorem~\ref{thm:findPoints_order}: the points at infinity followed by the points of the
+  brute-force reference of the polynomial searched over the denominators of its search, in their
+  order, mapped back after a reversal; and exits with status~0 (\csource{main.c}{284}{284}). It
+  writes its output once it is computed and, like ratpoints, ignores a failed write, but for one
+  case: when the reader of the output is gone, the signal \verb|SIGPIPE| ends ratpoints, and the
+  shell reports the status $141 = 128 + 13$; the Lean runtime ignores that signal, so that the write
+  of \verb|ratpoints-lean| fails instead, and it exits quietly with status~141. Since ratpoints
+  flushes its output after every point (line 187 of \verb|main.c|), a reader that leaves early, like
+  \verb|head|, ends it at the next point, while \verb|ratpoints-lean| notices only a reader that is
+  gone when it writes: an output that fits into the pipe ends with status~0.
 \end{definition}
 
 \section{The differential tests of stage~B}
@@ -381,16 +382,17 @@ that they mirror:
 The script \verb|scripts/difftest.py| compares \verb|ratpoints-lean| with the C program built at the
 pin and with its recorded outputs, in six suites in stage~B (stage~C1 adds two,
 Section~\ref{sec:sieveCli}, stage~C2 raises the largest height to $30000$ and adds the suite
-\verb|test4high|, run locally, Section~\ref{sec:wordsCli}, and stage~D compares the refusals, the
-options of the search and the order, Section~\ref{sec:setupCli}):
+\verb|test4high|, run locally, Section~\ref{sec:wordsCli}, stage~D compares the refusals, the
+options of the search and the order, Section~\ref{sec:setupCli}, and stage~E every point list in
+its order, Section~\ref{sec:denCli}):
 \begin{itemize}
   \item \verb|test4.sh| against \verb|testbase4|, split at the \verb|#| header lines (five of which
     are glued to the end of the preceding output line): 548 of its 582 runs; the others are 21
     whose output the script filters and 13 with heights from $40000$ to $100000$, which the suite
     \verb|test4high| compares (Section~\ref{sec:wordsCli});
   \item \verb|test3.sh| invocation by invocation against the C program, since it has no announce
-    lines: 15 of its 21 runs (5 have filtered outputs, and one has a height above the largest
-    height of the tests, $30000$);
+    lines: 16 of its 21 runs (5 have filtered outputs; one, at a height above the largest height
+    of the tests, $30000$, on which the C program prints nothing, is compared since stage~E);
   \item the curves of \verb|testdata.h|, \verb|testdata-many.h| and \verb|testdata-degrees.h|,
     read from the pinned checkout, at a reduced height $h$ ($100$ by default): the C program run
     at height $h$ prints exactly the reference lines of \verb|testbase*| restricted to
@@ -412,11 +414,10 @@ options of the search and the order, Section~\ref{sec:setupCli}):
   \item 700 random command lines, with words that the readers of numbers of \verb|main.c| accept
     or refuse in many ways, against the C program.
 \end{itemize}
-Point lists are compared in their order wherever ratpoints visits the denominators in ascending
-order (Section~\ref{sec:setupCli}), as sets otherwise, and for a run without \verb|-q| with the
-point lines of the report of the C program; messages and exit codes are compared exactly (but for a
-pipe without a reader, where the two programs end differently by design), with the banner and the
-usage of the two programs exchanged, and a refusal of a form that is not squarefree without
+Point lists are compared in their order (Section~\ref{sec:denCli}), and for a run without \verb|-q|
+with the point lines of the report of the C program; messages and exit codes are compared exactly
+(but for a pipe without a reader, where the two programs end differently by design), with the banner
+and the usage of the two programs exchanged, and a refusal of a form that is not squarefree without
 \verb|-q| with the message at the end of the report of the C program. On a command line with an
 option that \verb|ratpoints-lean| does not support yet, it must fail as the C program does if that
 fails before the option, and else exit with status~12. CI builds the C program at the pin

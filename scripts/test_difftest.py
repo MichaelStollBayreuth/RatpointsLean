@@ -107,44 +107,10 @@ class Outputs(unittest.TestCase):
 
 
 class Order(unittest.TestCase):
-    def test_coefficient_list(self):
-        self.assertEqual(dt.coefficient_list(' +3\t-4\x0b0\r'), [3, -4, 0])
-        self.assertEqual(dt.coefficient_list(''), [])
-        self.assertIsNone(dt.coefficient_list('1 2 x'))
-        self.assertIsNone(dt.coefficient_list('1_000 2'))
-        self.assertIsNone(dt.coefficient_list(b'\xff 1'))
-        self.assertIsNone(dt.coefficient_list(b'1\x1c2'))         # not C white space
-
-    def test_searched(self):
-        # the cases 1, 2 and 3 of the reversal check, with a leading zero dropped in case 3
-        self.assertEqual(dt.searched([0, 1, 0, 0, 4], True), [4, 0, 0, 1])
-        self.assertEqual(dt.searched([0, -3, -5], True), [-5, -3])
-        self.assertEqual(dt.searched([-1, 0, 9], True), [9, 0, -1])
-        self.assertEqual(dt.searched([0, 1, 0, 2], True), [0, 2, 0, 1])
-        self.assertEqual(dt.searched([0, 1, 0, 2, 0], True), [0, 2, 0, 1])
-        # the refusal of c0 = c1 = 0 for even degree, and the reversal forbidden
-        self.assertIsNone(dt.searched([0, 0, 1, 1, 1], True))
-        self.assertEqual(dt.searched([0, 0, 1, 1, 1], False), [0, 0, 1, 1, 1])
-        self.assertEqual(dt.searched([-1, 0, 9, 0], False), [-1, 0, 9])
-        # lists that meet no case
-        for c in ([4, 0, 9], [-1, 0, -9], [0, 2, 0, 3], [0, 1, 0, -1], [-2, 0, 0, 1],
-                  [1, 2, 3, 4, 5, 6, 7]):
-            self.assertEqual(dt.searched(c, True), c)
-
     def test_in_order(self):
-        self.assertTrue(dt.in_order(['-2 0 0 1', '130', '-q']))       # odd degree, c_d = 1
-        self.assertTrue(dt.in_order(['1 2 3 4 5', '10', '-q']))        # even degree
-        self.assertFalse(dt.in_order(['1 0 0 2', '10', '-q']))         # odd degree, c_d = 2
-        self.assertTrue(dt.in_order(['0 1 0 2', '10', '-q']))          # case 3: c_1 = 1 leads
-        self.assertFalse(dt.in_order(['0 1 0 2', '10', '-q', '-k']))   # no reversal: c_d = 2
-        self.assertFalse(dt.in_order(['0 3 1', '10', '-q']))           # case 1: c_1 = 3 leads
-        self.assertTrue(dt.in_order(['0 3 1', '10', '-q', '-K', '-k']))
-        self.assertTrue(dt.in_order(['-1 0 9', '10', '-q', '-S', '3']))
-        self.assertTrue(dt.in_order(['1 2', '1', '-q']))               # divisors [1] at H = 1
-        self.assertTrue(dt.in_order(['5 0 0 1065023', '100', '-q']))   # 1031 * 1033: no factors
-        self.assertTrue(dt.in_order(['3 2 -1 12', '2', '-q']))         # b = 1, 2 ascend
-        self.assertFalse(dt.in_order(['1 2', '20', '-q']))             # b = 1, 4, 9, 16, 2, ...
-        self.assertFalse(dt.in_order(['1 2 x', '10', '-q']))
+        for args in (['-2 0 0 1', '130', '-q'], ['1 0 0 2', '10', '-q'], ['1 2', '20', '-q'],
+                     ['0 1 0 2', '10', '-q', '-k'], ['0 3 1', '10', '-q']):
+            self.assertTrue(dt.in_order(args))
 
 
 class Curves(unittest.TestCase):

@@ -603,7 +603,8 @@ the tables and of the block that sets up the run (\csource{find_points.c}{2537}{
 
 \begin{definition}[The denominators of the search]\label{def:searchDens}
   \uses{def:setupUs1, def:Shape}
-  Proposed names: \lname{Ratpoints.searchDens}, \lname{Ratpoints.searchDens\_eq\_range'}.
+  \lean{Ratpoints.searchDens, Ratpoints.searchDens_eq_range'}
+  \leanok
   The denominators from $1$ to $H$ in the order in which the search visits those that can carry a
   point: for odd $d$ with $|c_d| \ne 1$ and divisors of the leading coefficient
   (Definition~\ref{def:setupUs1}), the divisors times squares, divisor by divisor; and otherwise
@@ -613,33 +614,32 @@ the tables and of the block that sets up the run (\csource{find_points.c}{2537}{
 
 \begin{theorem}[The output of the search]\label{thm:findPoints_order}
   \uses{def:findPoints, def:searchPoints, def:searchDens, lem:shape_dens, lem:twoAdic_exit,
-    lem:examinePrime_none, lem:reversal_swap, lem:swapPoint_bijection}
-  Proposed names: \lname{Ratpoints.exists\_eq\_of\_findPoints\_eq\_ok},
-  \lname{Ratpoints.perm\_flatMap\_squares1Dens},
-  \lname{Ratpoints.perm\_bruteForce\_append\_flatMap\_searchDens},
-  \lname{Ratpoints.append\_flatMap\_searchDens\_eq\_bruteForce},
-  \lname{Ratpoints.eq\_bruteForce\_of\_findPoints\_eq\_ok\_of\_reverse\_eq\_false},
-  \lname{List.perm\_flatMap\_of\_nodup}.
+    lem:examinePrime_none, lem:reversal_swap}
+  \lean{Ratpoints.exists_eq_of_findPoints_eq_ok, Ratpoints.perm_flatMap_squares1Dens, Ratpoints.perm_bruteForce_append_flatMap_searchDens, Ratpoints.append_flatMap_searchDens_eq_bruteForce, Ratpoints.eq_bruteForce_of_findPoints_eq_ok_of_reverse_eq_false, List.perm_flatMap_of_nodup}
+  \leanok
   For well-formed parameters and any options, if $\mathrm{findPoints}(c, H, P, o)$ returns the list
   $L$, and the reversal check hands on the polynomial $c'$ of degree $d'$ with the flag of the
   reversal: $L$ is the list of the points at infinity of $c'$ followed by the points that the
   brute-force reference of $c'$ finds over the denominators of the search of $c'$
   (Definition~\ref{def:searchDens}), in their order, each mapped by $\mathrm{swapPoint}$ when the
-  flag is set. So $L$ is a permutation of $\mathrm{bruteForce}(c, H)$, and it is
+  flag is set. The points at infinity of $c'$ and the points of its reference over the
+  denominators of its search are a permutation of $\mathrm{bruteForce}(c', H)$, so that $L$ is a
+  permutation of $\mathrm{bruteForce}(c, H)$ (Theorem~\ref{thm:findPoints_perm}), and $L$ is
   $\mathrm{bruteForce}(c, H)$ when the options forbid the reversal and the search of $c$ does not
   take the divisors times squares.
 \end{theorem}
 
 \begin{proof}
-  The search takes an exit only when the curve has no points (Lemmas~\ref{lem:twoAdic_exit}
-  and~\ref{lem:examinePrime_none}); otherwise its run gives the points of the reference over the
-  list of its shape (Lemma~\ref{lem:shape_dens}), which are those over the denominators of the
-  search, since a denominator that the one list has and the other lacks carries no point. The
-  denominators of the search have no duplicates, lie in $1, \dots, H$ and hold every denominator of
-  a point (Lemma~\ref{lem:shape_dens}; for the shapes other than the divisors they are
-  $1, \dots, H$), so the points over them are a permutation of those over $1, \dots, H$, the list
-  is a permutation of the reference of $c'$, mapped after a reversal, and of that of $c$
-  (Lemmas~\ref{lem:reversal_swap} and~\ref{lem:swapPoint_bijection}).
+  \leanok
+  $L$ is the list of the search of $c'$ (Definition~\ref{def:searchPoints}), which takes an exit
+  only when the curve has no points (Lemmas~\ref{lem:twoAdic_exit}
+  and~\ref{lem:examinePrime_none}), and otherwise gives the points of the reference over the list of
+  its shape (Lemma~\ref{lem:shape_dens}), which are those over the denominators of the search,
+  since a denominator that the one list has and the other lacks carries no point. The denominators
+  of the search have no duplicates, lie in $1, \dots, H$ and hold every denominator of a point
+  (Lemma~\ref{lem:shape_dens}; for the shapes other than the divisors they are $1, \dots, H$), so
+  the points over them are a permutation of those over $1, \dots, H$. The degree that the reversal
+  check hands on is that of $c'$, and without a reversal $c' = c$ (Lemma~\ref{lem:reversal_swap}).
 \end{proof}
 
 Theorem~\ref{thm:findPoints_perm} keeps its permutation, and its equation with the reference of the
