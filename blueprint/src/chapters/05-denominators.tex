@@ -255,7 +255,7 @@ $\gcd(b, G(a, b)) = \gcd(b, c_d)$. This restricts the denominators of the points
 
 \begin{lemma}[The denominators of odd degree]\label{lem:odd_denominators}
   \uses{def:setupUs1, def:binaryForm, lem:squarefree_binaryFormPoly}
-  \lean{Ratpoints.even_of_sq_eq_binaryForm_of_odd, Ratpoints.isSquare_of_sq_eq_binaryForm_of_odd, Ratpoints.exists_eq_mul_mul_of_sq_eq_binaryForm_of_odd, Ratpoints.Setup.mem_foldl_extendDivisors_one_iff, Ratpoints.Setup.nodup_foldl_extendDivisors, Ratpoints.Setup.mem_iff_of_setupUs1_eq_some, Ratpoints.Setup.nodup_of_setupUs1_eq_some, Ratpoints.even_add_of_sq_eq_binaryForm_of_odd, Ratpoints.Setup.DenInfo.excludes, Ratpoints.Setup.DenInfo.excludes_eq_false_of_sq_eq}
+  \lean{Ratpoints.even_of_sq_eq_binaryForm_of_odd, Ratpoints.isSquare_of_sq_eq_binaryForm_of_odd, Ratpoints.exists_eq_mul_mul_of_sq_eq_binaryForm_of_odd, Ratpoints.Setup.mem_foldl_extendDivisors_one_iff, Ratpoints.Setup.nodup_foldl_extendDivisors, Ratpoints.Setup.mem_iff_of_setupUs1_eq_some, Ratpoints.Setup.nodup_of_setupUs1_eq_some, Ratpoints.even_add_of_sq_eq_binaryForm_of_odd, Ratpoints.Setup.DenInfo.excludes, Ratpoints.Setup.DenInfo.excludes_eq_false_of_sq_eq, Int.even_and_exists_isSquare_add_of_sq_eq_sum}
   \leanok
   Let $d$ be odd, $a$ and $y$ integers and $b \ge 1$ a natural number with $\gcd(a, b) = 1$ and
   $y^2 = F(a, b)$, as for a normalized point $(a, y, b)$.
@@ -311,7 +311,7 @@ $w_j = v_p(c_{d - j})$.
 
 \begin{lemma}[The forbidden valuations are sound]\label{lem:forbiddenValuations}
   \uses{def:forbiddenValuations, def:binaryForm}
-  \lean{Ratpoints.binaryForm_eq_sum_of_even, Ratpoints.even_and_isSquare_of_sq_eq_binaryForm_of_even, Ratpoints.Sieve.run_forbiddenAt_eq_false_of_sq_eq, Ratpoints.Sieve.testBit_run_forbiddenValuations_eq_false_of_sq_eq, Int.even_and_exists_isSquare_add_of_sq_eq_sum, ZMod.isSquare_intCast_of_isSquare_mul_sq_add}
+  \lean{Ratpoints.binaryForm_eq_sum_of_even, Ratpoints.even_and_isSquare_of_sq_eq_binaryForm_of_even, Ratpoints.Sieve.run_forbiddenAt_eq_false_of_sq_eq, Ratpoints.Sieve.testBit_run_forbiddenValuations_eq_false_of_sq_eq, ZMod.isSquare_intCast_of_isSquare_mul_sq_add}
   \leanok
   For even $d$, a prime $p$, integers $a$ and $y$ and a natural number $b$ with $\gcd(a, b) = 1$ and
   $y^2 = F(a, b)$, as for a normalized point $(a, y, b)$: bit $v_p(b)$ of the mask of forbidden
@@ -319,6 +319,7 @@ $w_j = v_p(c_{d - j})$.
 \end{lemma}
 
 \begin{proof}
+  \uses{lem:odd_denominators}
   \leanok
   Let $m = v_p(b)$; bit $0$ is never set. If the least valuation $\mu$ of the terms is taken at
   $j_0$ only, then $v_p(F(a, b)) = \mu$ and $F(a, b) / p^{\mu}$ is congruent to
@@ -754,11 +755,10 @@ checked by \verb|decide|, into \verb|Ratpoints/Proof/Params.lean|, the lemmas on
 core's namespaces into \verb|Ratpoints/Proof/Bits.lean|, and the denominators of the search with the
 theorems into \verb|Ratpoints/Proof/FindPoints.lean|; the lemmas of Mathlib's generality go into
 \verb|Ratpoints/Mathlib|, in the files that mirror their homes in Mathlib:
-\verb|Algebra/BigOperators/Group/List/Basic|, \verb|Algebra/BigOperators/Ring/Finset|,
-\verb|Algebra/Field/ZMod|, \verb|Algebra/Prime/Defs|, \verb|Data/Int/GCD|, \verb|Data/List/Basic|,
-\verb|Data/Nat/Factors|, \verb|Data/Nat/Prime/Defs|, \verb|Data/Nat/Squarefree|,
-\verb|Data/ZMod/Basic|, \verb|NumberTheory/LegendreSymbol/JacobiSymbol| and
-\verb|NumberTheory/Padics/PadicVal/Basic|. Every new module joins its part root and the listing
+\verb|Algebra/BigOperators/Group/List/Basic|, \verb|Algebra/Field/ZMod|, \verb|Algebra/Prime/Defs|,
+\verb|Data/Int/GCD|, \verb|Data/List/Basic|, \verb|Data/Nat/Factors|, \verb|Data/Nat/Prime/Defs|,
+\verb|Data/Nat/Squarefree|, \verb|Data/ZMod/Basic|, \verb|NumberTheory/LegendreSymbol/JacobiSymbol|
+and \verb|NumberTheory/Padics/PadicVal/Basic|. Every new module joins its part root and the listing
 \verb|Ratpoints.lean|. One commit per item, each passing the project's checks:
 \begin{enumerate}
   \item[E.1] The valuation with the constant $\mathrm{veryBig}$ (Definition~\ref{def:valuation}),

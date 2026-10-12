@@ -25,8 +25,8 @@ import Std.Tactic.Do
 /-!
 # The forbidden divisors
 
-For a polynomial of even degree `d`, a point `(a, y, b)` with `b = p ^ m b'`, `p ∤ b'`, `m ≥ 1`, has
-the terms `c_{d-j} a ^ (d - j) b ^ j` of `F(a, b)` of the valuations `w_j + j m` at `p`, where
+For a polynomial of even degree `d`, a point `(a, y, b)` with `m = v_p(b) ≥ 1` has the terms
+`c_{d-j} a ^ (d - j) b ^ j` of `F(a, b)` of the valuations `w_j + j m` at `p`, where
 `w_j = v_p(c_{d-j})`; when one of them alone has the least valuation, that valuation is even, and
 for even `j` the unit part of `c_{d-j}` is a square modulo `p`
 (`Ratpoints.even_and_isSquare_of_sq_eq_binaryForm_of_even`), the Newton polygon of the comment of
@@ -100,29 +100,29 @@ theorem binaryForm_eq_sum_of_even {c : List ℤ} (hd : degree c % 2 = 0) (a b : 
   rw [Nat.add_sub_cancel, Nat.add_zero, Nat.sub_sub_self (Finset.mem_range_succ_iff.mp hj)]
 
 /-- **The Newton polygon at a prime `p`** (even degree): for a point `(a, y, b)` with
-`b = p ^ m b'`, `p ∤ b'` and `m ≥ 1`, whose term `c_{d-j} a ^ (d - j) b ^ j` of `F(a, b)` alone has
-the least valuation `w + j m`, where `c_{d-j} = p ^ w u` with `p ∤ u` and `p ^ (w + j m + 1)`
-divides `c_{d-i} p ^ (i m)` for every other `i ≤ d`, the valuation `w + j m` is even, and for even
-`j` the unit part `u` is a square modulo `p`, since `a ^ (d - j)` and `b' ^ j` then are. -/
+`m = v_p(b) ≥ 1`, whose term `c_{d-j} a ^ (d - j) b ^ j` of `F(a, b)` alone has the least
+valuation `w + j m`, where `c_{d-j} = p ^ w u` with `p ∤ u` and `p ^ (w + j m + 1)` divides
+`c_{d-i} p ^ (i m)` for every other `i ≤ d`, the valuation `w + j m` is even, and for even `j` the
+unit part `u` is a square modulo `p`, since `a ^ (d - j)` and `(b / p ^ m) ^ j` then are. -/
 theorem even_and_isSquare_of_sq_eq_binaryForm_of_even {c : List ℤ} {p : ℕ} [hp : Fact p.Prime]
-    (hd : degree c % 2 = 0) {a y : ℤ} {b b' m : ℕ} (hab : Int.gcd a b = 1)
-    (hy : y ^ 2 = binaryForm c a b) (hb : b = p ^ m * b') (hb' : ¬p ∣ b') (hm : 0 < m)
-    {j w : ℕ} {u : ℤ} (hj : j ≤ degree c) (hu : c.getD (degree c - j) 0 = (p : ℤ) ^ w * u)
-    (hpu : ¬(p : ℤ) ∣ u)
-    (hmin : ∀ i ≤ degree c, i ≠ j →
-      (p : ℤ) ^ (w + j * m + 1) ∣ c.getD (degree c - i) 0 * (p : ℤ) ^ (i * m)) :
-    Even (w + j * m) ∧ (Even j → IsSquare (u : ZMod p)) := by
+    (hd : degree c % 2 = 0) {a y : ℤ} {b : ℕ} (hab : Int.gcd a b = 1)
+    (hy : y ^ 2 = binaryForm c a b) (hm : padicValNat p b ≠ 0) {j w : ℕ} {u : ℤ}
+    (hj : j ≤ degree c) (hu : c.getD (degree c - j) 0 = (p : ℤ) ^ w * u) (hpu : ¬(p : ℤ) ∣ u)
+    (hmin : ∀ i ≤ degree c, i ≠ j → (p : ℤ) ^ (w + j * padicValNat p b + 1) ∣
+      c.getD (degree c - i) 0 * (p : ℤ) ^ (i * padicValNat p b)) :
+    Even (w + j * padicValNat p b) ∧ (Even j → IsSquare (u : ZMod p)) := by
   have hpp : Prime (p : ℤ) := Nat.prime_iff_prime_int.mp hp.out
   have hpa := Int.not_natCast_dvd_of_gcd_eq_one hp.out.ne_one hab
-    (hb ▸ Dvd.dvd.mul_right (dvd_pow_self p hm.ne') b')
-  have hpb' : ¬(p : ℤ) ∣ b' := mod_cast hb'
+    (dvd_of_one_le_padicValNat (Nat.one_le_iff_ne_zero.mpr hm))
+  obtain ⟨b', hb', hpb'⟩ := Int.exists_eq_pow_padicValNat_mul (p := p) (n := b) fun h ↦ by simp_all
+  rw [Int.natAbs_natCast] at hb'
   have hterm (i : ℕ) : c.getD (degree c - i) 0 * a ^ (degree c - i) * (b : ℤ) ^ i =
-      c.getD (degree c - i) 0 * (p : ℤ) ^ (i * m) * (a ^ (degree c - i) * (b' : ℤ) ^ i) := by
-    rw [hb]; push_cast; ring
+      c.getD (degree c - i) 0 * (p : ℤ) ^ (i * padicValNat p b) *
+        (a ^ (degree c - i) * b' ^ i) := by rw [hb']; ring
   rw [binaryForm_eq_sum_of_even hd] at hy
-  obtain ⟨hev, t, ht⟩ := Int.even_and_exists_isSquare_add_of_sq_eq_sum (v := w + j * m)
-    (u := u * a ^ (degree c - j) * b' ^ j) hy (Finset.mem_range.mpr (Nat.lt_succ_of_le hj))
-    (by rw [hterm, hu, pow_add]; ring)
+  obtain ⟨hev, t, ht⟩ := Int.even_and_exists_isSquare_add_of_sq_eq_sum
+    (v := w + j * padicValNat p b) (u := u * a ^ (degree c - j) * b' ^ j) hy
+    (Finset.mem_range.mpr (Nat.lt_succ_of_le hj)) (by rw [hterm, hu, pow_add]; ring)
     (hpp.not_dvd_mul_pow_mul hpu hpa (mt hpp.dvd_of_dvd_pow hpb') _)
     fun i hi hij ↦ hterm i ▸ (hmin i (Nat.le_of_lt_succ (Finset.mem_range.mp hi)) hij).mul_right _
   refine ⟨hev, fun ⟨k, hk⟩ ↦ ?_⟩
@@ -392,13 +392,10 @@ theorem even_and_getElem!_squaresMod_of_sq_eq {c : List ℤ} (hd : degree c % 2 
         ((Id.run (unitParts c (degree c) p))[j]!.getD (0, 0)).1 + j * padicValNat p b) :
     Even (w + j₀ * padicValNat p b) ∧ (Even j₀ → (squaresMod p)[r]! = true) := by
   have : Fact p.Prime := ⟨hp⟩
-  have hb : b ≠ 0 := by rintro rfl; simp at hm
-  obtain ⟨m, b', hb', hbm⟩ := Nat.exists_eq_pow_mul_and_not_dvd hb p hp.ne_one
-  rw [padicValNat_eq_of_eq_pow_mul_of_not_dvd hp.one_lt hbm hb'] at hmin hm ⊢
   have hj₀ := le_of_getElem!_run_unitParts_eq_some hp.one_lt hus
   obtain ⟨hr, u, hu, hpu, hru⟩ := hus ▸ isUnitPart_run_unitParts c (degree c) hp.one_lt hj₀
-  obtain ⟨hev, hsq⟩ := even_and_isSquare_of_sq_eq_binaryForm_of_even hd hab hy hbm hb'
-    (Nat.pos_of_ne_zero hm) hj₀ hu hpu fun i hi hne ↦
+  obtain ⟨hev, hsq⟩ := even_and_isSquare_of_sq_eq_binaryForm_of_even hd hab hy hm hj₀ hu hpu
+    fun i hi hne ↦
       pow_dvd_mul_pow_of_isUnitPart (isUnitPart_run_unitParts c (degree c) hp.one_lt hi)
         fun w' r' h' ↦ by simpa [h'] using hmin i (by simp [h']) hne
   exact ⟨hev, fun hj ↦ getElem!_squaresMod_of_isSquare hp hr (hru ▸ hsq hj)⟩

@@ -12,7 +12,6 @@ public import Ratpoints.Spec.Basic
 public import Std.WP
 
 import Mathlib.Data.Nat.Squarefree
-import Ratpoints.Mathlib.Algebra.BigOperators.Ring.Finset
 import Ratpoints.Mathlib.Algebra.Prime.Defs
 import Ratpoints.Mathlib.Data.Int.GCD
 import Ratpoints.Mathlib.Data.Nat.Prime.Defs
@@ -97,94 +96,22 @@ namespace Ratpoints
 
 /-! ### The denominators of the points -/
 
-/-- For odd degree, a point `(a, y, b)` whose term `c_d a ^ d b` of `F(a, b)` is divisible by
-`p ^ V` but not by `p ^ (V + 1)`, while every other term is, has an even `V`: `F(a, b)` is `p ^ V`
-times an integer prime to `p`, and it is a square. -/
+/-- For odd degree, a point `(a, y, b)` whose term `c_d a ^ d b` of `F(a, b)` is `p ^ V u` with
+`p ∤ u`, while `p ^ (V + 1)` divides every other term, has an even `V`
+(`Int.even_and_exists_isSquare_add_of_sq_eq_sum`). -/
 theorem even_of_sq_eq_binaryForm_of_odd_of_dvd {c : List ℤ} {a y : ℤ} {b : ℕ} {p V : ℕ}
-    [Fact p.Prime] (hd : degree c % 2 = 1) (hy : y ^ 2 = binaryForm c a b)
-    (h₁ : (p : ℤ) ^ V ∣ c.getD (degree c) 0 * a ^ degree c * b)
-    (h₂ : ¬(p : ℤ) ^ (V + 1) ∣ c.getD (degree c) 0 * a ^ degree c * b)
-    (h₃ : ∀ i < degree c, (p : ℤ) ^ (V + 1) ∣ c.getD i 0 * a ^ i * (b : ℤ) ^ (degree c + 1 - i)) :
+    [Fact p.Prime] (hd : degree c % 2 = 1) (hy : y ^ 2 = binaryForm c a b) {u : ℤ}
+    (hu : c.getD (degree c) 0 * a ^ degree c * b = (p : ℤ) ^ V * u) (hpu : ¬(p : ℤ) ∣ u)
+    (h : ∀ i < degree c, (p : ℤ) ^ (V + 1) ∣ c.getD i 0 * a ^ i * (b : ℤ) ^ (degree c + 1 - i)) :
     Even V := by
   rw [binaryForm, hd] at hy
-  have hj : degree c ∈ Finset.range (degree c + 1) := Finset.self_mem_range_succ _
-  have hother (i : ℕ) (hi : i ∈ Finset.range (degree c + 1)) (hne : i ≠ degree c) :=
-    h₃ i (by have := Finset.mem_range.mp hi; lia)
-  have hterm : c.getD (degree c) 0 * a ^ degree c * (b : ℤ) ^ (degree c + 1 - degree c) =
-      c.getD (degree c) 0 * a ^ degree c * b := by rw [Nat.add_sub_cancel_left, pow_one]
-  obtain ⟨u, hu⟩ : (p : ℤ) ^ V ∣ ∑ i ∈ Finset.range (degree c + 1),
-      c.getD i 0 * a ^ i * (b : ℤ) ^ (degree c + 1 - i) :=
-    (Finset.dvd_sum_iff_of_dvd hj fun i hi hne ↦
-      (pow_dvd_pow _ (Nat.le_succ V)).trans (hother i hi hne)).mpr (hterm ▸ h₁)
-  refine (Int.even_and_isSquare_of_sq_eq_pow_mul (hy.trans hu) fun ⟨w, hw⟩ ↦ h₂ ?_).1
-  rw [← hterm, ← Finset.dvd_sum_iff_of_dvd hj hother, hu, hw, pow_succ, ← mul_assoc]
-  exact dvd_mul_right _ _
-
-/-- For odd degree, a prime `p ∤ c_d` divides the denominator `b` of every point an even number of
-times: for `b = p ^ m b'` with `p ∤ b'`, the term `c_d a ^ d b` of `F(a, b)` alone has the
-valuation `m`, the others `cᵢ aⁱ b^(d + 1 - i)` at least `2 m`. -/
-theorem even_of_sq_eq_binaryForm_of_odd {c : List ℤ} {a y : ℤ} {b b' p m : ℕ}
-    [hp : Fact p.Prime] (hd : degree c % 2 = 1) (hc : ¬(p : ℤ) ∣ c.getD (degree c) 0)
-    (hab : Int.gcd a b = 1) (hb : b = p ^ m * b') (hb' : ¬p ∣ b')
-    (hy : y ^ 2 = binaryForm c a b) : Even m := by
-  rcases Nat.eq_zero_or_pos m with rfl | hm
-  · exact Even.zero
-  have hpp : Prime (p : ℤ) := Nat.prime_iff_prime_int.mp hp.out
-  have hpa := Int.not_natCast_dvd_of_gcd_eq_one hp.out.ne_one hab
-    (hb ▸ Dvd.dvd.mul_right (dvd_pow_self p hm.ne') b')
-  have hb'' : (b : ℤ) = (p : ℤ) ^ m * b' := mod_cast hb
-  refine even_of_sq_eq_binaryForm_of_odd_of_dvd (p := p) hd hy ?_ ?_ fun i hi ↦ ?_
-  · rw [hb'']
-    exact Dvd.intro (c.getD (degree c) 0 * a ^ degree c * b') (by ring)
-  · rw [hb'', pow_succ, mul_left_comm, mul_dvd_mul_iff_left (pow_ne_zero _ hpp.ne_zero)]
-    exact hpp.not_dvd_mul_pow_mul hc hpa (fun h ↦ hb' (Int.natCast_dvd_natCast.mp h)) _
-  · obtain ⟨k, hk⟩ : ∃ k, degree c + 1 - i = k + 2 := ⟨degree c - 1 - i, by lia⟩
-    rw [hk, hb'', mul_pow, ← pow_mul]
-    exact Dvd.dvd.mul_left (Dvd.dvd.mul_right
-      (pow_dvd_pow _ ((by lia : m + 1 ≤ m * 2).trans (Nat.mul_le_mul_left m (by lia)))) _) _
-
-/-- For odd degree and a leading coefficient `±1`, the denominator of every point is a square: for
-`b = p ^ m b'` with `p ∤ b'`, the term `c_d a ^ d b` of `F(a, b)` alone has the least valuation
-`m`, which is then even (`Ratpoints.even_of_sq_eq_binaryForm_of_odd`). -/
-theorem isSquare_of_sq_eq_binaryForm_of_odd {c : List ℤ} (hd : degree c % 2 = 1)
-    (hc : IsUnit (c.getD (degree c) 0)) {a y : ℤ} {b : ℕ} (hb : b ≠ 0) (hab : Int.gcd a b = 1)
-    (hy : y ^ 2 = binaryForm c a b) : IsSquare b := by
-  refine Nat.isSquare_iff_even_factorization.mpr fun p hp ↦ ?_
-  have : Fact p.Prime := ⟨hp⟩
-  obtain ⟨m, b', hb', hbm⟩ := Nat.exists_eq_pow_mul_and_not_dvd hb p hp.ne_one
-  rw [Nat.factorization_def _ hp, padicValNat_eq_of_eq_pow_mul_of_not_dvd hp.one_lt hbm hb']
-  exact even_of_sq_eq_binaryForm_of_odd hd
-    (fun h ↦ (Nat.prime_iff_prime_int.mp hp).not_isUnit (isUnit_of_dvd_unit h hc)) hab hbm hb' hy
-
-/-- For odd degree, the denominator of every point is `s k ^ 2` with `s` squarefree and dividing the
-leading coefficient: a prime that divides `b` an odd number of times divides `c_d`
-(`Ratpoints.even_of_sq_eq_binaryForm_of_odd`). -/
-theorem exists_eq_mul_mul_of_sq_eq_binaryForm_of_odd {c : List ℤ} (hd : degree c % 2 = 1)
-    {a y : ℤ} {b : ℕ} (hb : b ≠ 0) (hab : Int.gcd a b = 1) (hy : y ^ 2 = binaryForm c a b) :
-    ∃ s k : ℕ, Squarefree s ∧ s ∣ (c.getD (degree c) 0).natAbs ∧ b = s * k * k := by
-  obtain ⟨k, s, hks, hs⟩ := exists_sq_mul_squarefree b
-  refine ⟨s, k, hs, ?_, by rw [← hks]; ring⟩
-  rcases eq_or_ne (c.getD (degree c) 0) 0 with h0 | h0
-  · rw [h0, Int.natAbs_zero]
-    exact dvd_zero s
-  rw [← Nat.prod_primeFactors_of_squarefree hs, Nat.prod_primeFactors_dvd_iff (by simpa using h0)]
-  intro p hp
-  obtain ⟨hpp, hps, -⟩ := Nat.mem_primeFactors.mp hp
-  refine Nat.mem_primeFactors.mpr ⟨hpp, Int.natCast_dvd.mp (by_contra fun hc ↦ ?_),
-    by simpa using h0⟩
-  have : Fact p.Prime := ⟨hpp⟩
-  have hk : k ≠ 0 := by rintro rfl; simp [← hks] at hb
-  obtain ⟨m, b', hb', hbm⟩ := Nat.exists_eq_pow_mul_and_not_dvd hb p hpp.ne_one
-  have hev := even_of_sq_eq_binaryForm_of_odd hd hc hab hbm hb' hy
-  rw [← padicValNat_eq_of_eq_pow_mul_of_not_dvd hpp.one_lt hbm hb', ← Nat.factorization_def _ hpp,
-    ← hks, Nat.factorization_mul (by positivity) hs.ne_zero, Finsupp.add_apply,
-    Nat.factorization_pow, Finsupp.smul_apply, smul_eq_mul,
-    Nat.factorization_eq_one_of_squarefree hs hpp hps] at hev
-  exact Nat.not_even_iff_odd.mpr ⟨_, rfl⟩ hev
+  exact (Int.even_and_exists_isSquare_add_of_sq_eq_sum hy (Finset.self_mem_range_succ _)
+    (by rw [Nat.add_sub_cancel_left, pow_one, hu]) hpu
+    fun i hi hne ↦ h i (by have := Finset.mem_range.mp hi; lia)).1
 
 -- The terms of `F(a, b)` other than `c_d a ^ d b`, for `b = p ^ m b'` and `k < d`, when
 -- `(d - k) m ≥ 1 + val - v_p(c_k)` for `c_k ≠ 0`, are divisible by `p ^ (val + m + 1)`.
-private theorem pow_dvd_of_add_one_le {c : List ℤ} {a : ℤ} {b' p m val k : ℕ} (hk : k < degree c)
+private theorem pow_dvd_of_add_one_le {c : List ℤ} {a b' : ℤ} {p m val k : ℕ} (hk : k < degree c)
     (hmin : c.getD k 0 ≠ 0 → val + 1 ≤ padicValNat p (c.getD k 0).natAbs + (degree c - k) * m) :
     (p : ℤ) ^ (val + m + 1) ∣ c.getD k 0 * a ^ k * ((p : ℤ) ^ m * b') ^ (degree c + 1 - k) := by
   rcases eq_or_ne (c.getD k 0) 0 with h0 | h0
@@ -203,29 +130,78 @@ private theorem pow_dvd_of_add_one_le {c : List ℤ} {a : ℤ} {b' p m val k : �
   exact mul_dvd_mul (hc.mul_right _) (dvd_mul_right _ _)
 
 /-- **The valuation test of the slopes** (odd degree): for a prime `p` with `v_p(c_d) = val` and a
-denominator `b = p ^ m b'` of a point, `p ∤ b'`, `m ≥ 1`, with `(d - k) m ≥ 1 + val - v_p(c_k)` for
-every `k < d` with `c_k ≠ 0`, the term `c_d a ^ d b` of `F(a, b)` alone has the least valuation
+denominator `b` of a point with `m = v_p(b) ≥ 1` and `(d - k) m ≥ 1 + val - v_p(c_k)` for every
+`k < d` with `c_k ≠ 0`, the term `c_d a ^ d b` of `F(a, b)` alone has the least valuation
 `val + m`, which is then even. -/
-theorem even_add_of_sq_eq_binaryForm_of_odd {c : List ℤ} {a y : ℤ} {b b' p m val : ℕ}
-    [hp : Fact p.Prime] (hd : degree c % 2 = 1) (hc : c.getD (degree c) 0 ≠ 0)
+theorem even_add_of_sq_eq_binaryForm_of_odd {c : List ℤ} {a y : ℤ} {b p val : ℕ}
+    [hp : Fact p.Prime] (hd : degree c % 2 = 1)
     (hval : padicValNat p (c.getD (degree c) 0).natAbs = val)
     (hmin : ∀ k < degree c, c.getD k 0 ≠ 0 →
-      val + 1 ≤ padicValNat p (c.getD k 0).natAbs + (degree c - k) * m)
-    (hab : Int.gcd a b = 1) (hb : b = p ^ m * b') (hb' : ¬p ∣ b') (hm : 0 < m)
-    (hy : y ^ 2 = binaryForm c a b) : Even (val + m) := by
+      val + 1 ≤ padicValNat p (c.getD k 0).natAbs + (degree c - k) * padicValNat p b)
+    (hab : Int.gcd a b = 1) (hm : padicValNat p b ≠ 0) (hy : y ^ 2 = binaryForm c a b) :
+    Even (val + padicValNat p b) := by
   have hpp : Prime (p : ℤ) := Nat.prime_iff_prime_int.mp hp.out
   have hpa := Int.not_natCast_dvd_of_gcd_eq_one hp.out.ne_one hab
-    (hb ▸ Dvd.dvd.mul_right (dvd_pow_self p hm.ne') b')
-  have hb'' : (b : ℤ) = (p : ℤ) ^ m * b' := mod_cast hb
-  obtain ⟨r, hr, hpr⟩ := Int.exists_eq_pow_padicValNat_mul (p := p) hc
+    (dvd_of_one_le_padicValNat (Nat.one_le_iff_ne_zero.mpr hm))
+  obtain ⟨b', hb', hpb'⟩ := Int.exists_eq_pow_padicValNat_mul (p := p) (n := b) fun h ↦ by simp_all
+  rw [Int.natAbs_natCast] at hb'
+  obtain ⟨r, hr, hpr⟩ := Int.exists_eq_pow_padicValNat_mul (p := p)
+    (getD_degree_ne_zero_of_pos (c := c) (by lia))
   rw [hval] at hr
-  have hterm : c.getD (degree c) 0 * a ^ degree c * b =
-      (p : ℤ) ^ (val + m) * (r * a ^ degree c * b') := by rw [hr, hb'', pow_add]; ring
-  refine even_of_sq_eq_binaryForm_of_odd_of_dvd (p := p) hd hy ⟨_, hterm⟩ ?_ fun i hi ↦ ?_
-  · rw [hterm, pow_succ, mul_dvd_mul_iff_left (pow_ne_zero _ hpp.ne_zero)]
-    exact hpp.not_dvd_mul_pow_mul hpr hpa (fun h ↦ hb' (Int.natCast_dvd_natCast.mp h)) _
-  · rw [hb'']
-    exact pow_dvd_of_add_one_le hi (hmin i hi)
+  refine even_of_sq_eq_binaryForm_of_odd_of_dvd hd hy (u := r * a ^ degree c * b')
+    (by rw [hr, hb', pow_add]; ring) (hpp.not_dvd_mul_pow_mul hpr hpa hpb' _) fun i hi ↦ ?_
+  rw [hb']
+  exact pow_dvd_of_add_one_le hi (hmin i hi)
+
+/-- For odd degree, a prime `p ∤ c_d` divides the denominator `b` of every point an even number of
+times: for `v_p(b) ≥ 1` the term `c_d a ^ d b` of `F(a, b)` alone has the least valuation `v_p(b)`
+(`Ratpoints.even_add_of_sq_eq_binaryForm_of_odd` with `v_p(c_d) = 0`). -/
+theorem even_of_sq_eq_binaryForm_of_odd {c : List ℤ} {a y : ℤ} {b p : ℕ} [Fact p.Prime]
+    (hd : degree c % 2 = 1) (hc : ¬(p : ℤ) ∣ c.getD (degree c) 0) (hab : Int.gcd a b = 1)
+    (hy : y ^ 2 = binaryForm c a b) : Even (padicValNat p b) := by
+  rcases eq_or_ne (padicValNat p b) 0 with h0 | hm
+  · simp [h0]
+  simpa using even_add_of_sq_eq_binaryForm_of_odd hd
+    (padicValNat.eq_zero_of_not_dvd (mt Int.natCast_dvd.mpr hc))
+    (fun k hk _ ↦ le_add_left (Nat.mul_pos (Nat.sub_pos_of_lt hk) (Nat.pos_of_ne_zero hm)))
+    hab hm hy
+
+/-- For odd degree and a leading coefficient `±1`, the denominator of every point is a square: for
+`b = p ^ m b'` with `p ∤ b'`, the term `c_d a ^ d b` of `F(a, b)` alone has the least valuation
+`m`, which is then even (`Ratpoints.even_of_sq_eq_binaryForm_of_odd`). -/
+theorem isSquare_of_sq_eq_binaryForm_of_odd {c : List ℤ} (hd : degree c % 2 = 1)
+    (hc : IsUnit (c.getD (degree c) 0)) {a y : ℤ} {b : ℕ} (hab : Int.gcd a b = 1)
+    (hy : y ^ 2 = binaryForm c a b) : IsSquare b := by
+  refine Nat.isSquare_iff_even_factorization.mpr fun p hp ↦ ?_
+  have : Fact p.Prime := ⟨hp⟩
+  rw [Nat.factorization_def _ hp]
+  exact even_of_sq_eq_binaryForm_of_odd hd
+    (fun h ↦ (Nat.prime_iff_prime_int.mp hp).not_isUnit (isUnit_of_dvd_unit h hc)) hab hy
+
+/-- For odd degree, the denominator of every point is `s k ^ 2` with `s` squarefree and dividing the
+leading coefficient: a prime that divides `b` an odd number of times divides `c_d`
+(`Ratpoints.even_of_sq_eq_binaryForm_of_odd`). -/
+theorem exists_eq_mul_mul_of_sq_eq_binaryForm_of_odd {c : List ℤ} (hd : degree c % 2 = 1)
+    {a y : ℤ} {b : ℕ} (hab : Int.gcd a b = 1) (hy : y ^ 2 = binaryForm c a b) :
+    ∃ s k : ℕ, Squarefree s ∧ s ∣ (c.getD (degree c) 0).natAbs ∧ b = s * k * k := by
+  rcases eq_or_ne b 0 with rfl | hb
+  · exact ⟨1, 0, squarefree_one, one_dvd _, by simp⟩
+  obtain ⟨k, s, hks, hs⟩ := exists_sq_mul_squarefree b
+  refine ⟨s, k, hs, ?_, by rw [← hks]; ring⟩
+  rcases eq_or_ne (c.getD (degree c) 0) 0 with h0 | h0
+  · rw [h0, Int.natAbs_zero]
+    exact dvd_zero s
+  rw [← Nat.prod_primeFactors_of_squarefree hs, Nat.prod_primeFactors_dvd_iff (by simpa using h0)]
+  intro p hp
+  obtain ⟨hpp, hps, -⟩ := Nat.mem_primeFactors.mp hp
+  refine Nat.mem_primeFactors.mpr ⟨hpp, Int.natCast_dvd.mp (by_contra fun hc ↦ ?_),
+    by simpa using h0⟩
+  have : Fact p.Prime := ⟨hpp⟩
+  have hev := even_of_sq_eq_binaryForm_of_odd hd hc hab hy
+  rw [← Nat.factorization_def _ hpp, ← hks, Nat.factorization_mul (left_ne_zero_of_mul (hks ▸ hb))
+    hs.ne_zero, Finsupp.add_apply, Nat.factorization_pow, Finsupp.smul_apply, smul_eq_mul,
+    Nat.factorization_eq_one_of_squarefree hs hpp hps] at hev
+  exact Nat.not_even_iff_odd.mpr ⟨_, rfl⟩ hev
 
 namespace Setup
 
@@ -829,16 +805,12 @@ theorem DenInfo.excludes_eq_false_of_sq_eq {c : List ℤ} (hd : degree c % 2 = 1
     (hb : b ≠ 0) (hab : Int.gcd a b = 1) (hy : y ^ 2 = binaryForm c a b) :
     (⟨p, val, Id.run (Setup.slope c (degree c) p val)⟩ : DenInfo).excludes b = false := by
   have : Fact p.Prime := ⟨hp⟩
-  have hc : c.getD (degree c) 0 ≠ 0 := getD_degree_ne_zero_of_pos (by lia)
   have hsl := Std.WP.Id.of_run_eq_wp rfl _ ((slope_spec c (degree c) p val).le_wp trivial)
-  obtain ⟨m, b', hb', hbm⟩ := Nat.exists_eq_pow_mul_and_not_dvd hb p hp.ne_one
-  have hv : (Id.run (valuation b p)).1 = m := by
-    rw [fst_run_valuation (Int.natCast_ne_zero.mpr hb) hp, Int.natAbs_natCast,
-      padicValNat_eq_of_eq_pow_mul_of_not_dvd hp.one_lt hbm hb']
+  have hv : (Id.run (valuation b p)).1 = padicValNat p b := by
+    rw [fst_run_valuation (Int.natCast_ne_zero.mpr hb) hp, Int.natAbs_natCast]
   simp only [DenInfo.excludes_eq_false_iff, hv, Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq]
   refine fun ⟨hle, hodd⟩ ↦ Nat.not_even_iff_odd.mpr (Nat.odd_iff.mpr (by lia))
-    (even_add_of_sq_eq_binaryForm_of_odd hd hc hval.symm (fun k hk hck ↦ ?_) hab hbm hb'
-      (by lia) hy)
+    (even_add_of_sq_eq_binaryForm_of_odd hd hval.symm (fun k hk hck ↦ ?_) hab (by lia) hy)
   have := hsl.2 k hk
   rw [fst_run_valuation hck hp] at this
   have := Nat.mul_le_mul_left (degree c - k) hle

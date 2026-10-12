@@ -1,7 +1,6 @@
 module  -- shake: keep-all --deprecated_module: ignore
 
 public import Ratpoints.Mathlib.Algebra.BigOperators.Group.List.Basic
-public import Ratpoints.Mathlib.Algebra.BigOperators.Ring.Finset
 public import Ratpoints.Mathlib.Algebra.Field.ZMod
 public import Ratpoints.Mathlib.Algebra.Polynomial.Homogenize
 public import Ratpoints.Mathlib.Algebra.Prime.Defs

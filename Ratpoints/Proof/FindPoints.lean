@@ -262,7 +262,7 @@ theorem perm_flatMap_squares1Dens {c : List ℤ} {H : ℕ} (hH : 1 ≤ H) (hd : 
     (fun _ ↦ mem_range'_of_mem_squares1Dens hH hd hs) fun b hb hne ↦ ?_
   have hb' := List.mem_range'_1.mp hb
   obtain ⟨a, -, y, hg, hy⟩ := exists_sq_eq_of_pointsOfDen_ne_nil hne
-  obtain ⟨s, k, hsq, hdvd, hbsk⟩ := exists_eq_mul_mul_of_sq_eq_binaryForm_of_odd hd (by lia) hg hy
+  obtain ⟨s, k, hsq, hdvd, hbsk⟩ := exists_eq_mul_mul_of_sq_eq_binaryForm_of_odd hd hg hy
   have hk : 0 < k := Nat.pos_of_ne_zero fun h0 ↦ by simp [h0] at hbsk; lia
   have hsb : s ≤ s * k * k := by
     rw [Nat.mul_assoc]
@@ -327,11 +327,10 @@ private theorem toList_run_sieveRun_squares {c : List ℤ} {H A : ℕ} {ms : Lis
       ((List.range' 1 H).flatMap fun b : ℕ ↦ pointsOfDen c (degree c) b (numerators H)).map
         (if rev then swapPoint else id) := by
   refine toList_run_sieveRun_of_sound hms hA rev (p := fun b ↦ Nat.sqrt b * Nat.sqrt b == b)
-    (by simp [Shape.dens, squaresDens_eq_filter (le_refl 1)]) fun b hb h ↦
+    (by simp [Shape.dens, squaresDens_eq_filter (le_refl 1)]) fun b _ h ↦
       ⟨?_, by simpa [Shape.keep] using getElem!_twoAdic_ne_zero h⟩
   obtain ⟨a, -, y, hg, hy⟩ := exists_sq_eq_of_pointsOfDen_ne_nil h
-  obtain ⟨r, rfl⟩ := isSquare_of_sq_eq_binaryForm_of_odd hd (Int.isUnit_iff_natAbs_eq.mpr hc)
-    (by have := List.mem_range'_1.mp hb; lia) hg hy
+  obtain ⟨r, rfl⟩ := isSquare_of_sq_eq_binaryForm_of_odd hd (Int.isUnit_iff_natAbs_eq.mpr hc) hg hy
   simp [Nat.sqrt_eq]
 
 -- The divisor shape, for odd degree when the divisor set-up succeeds.
