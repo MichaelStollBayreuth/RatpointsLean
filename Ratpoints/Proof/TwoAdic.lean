@@ -81,8 +81,7 @@ namespace Sieve
 
 theorem squares64_test_iff_of_lt {x : ℕ} (hx : x < 64) :
     ((squares64 >>> UInt64.ofNat x) &&& 1 != 0) = true ↔ IsSquare (x : ZMod 64) := by
-  revert x
-  decide
+  decide +revert
 
 /-- The test of the mask of the squares modulo 64 (`Ratpoints.Sieve.squares64`) on the residue
 `s mod 64` of a word, as `Ratpoints.Sieve.fsq` and `Ratpoints.Sieve.gsq` make it, is the test of
@@ -150,7 +149,7 @@ theorem sum_range_coeffsMod64 (c : List ℤ) (d : ℕ) (g : ℕ → ZMod 64) :
     ∑ i ∈ Finset.range (d + d % 2 + 1),
         (((coeffsMod64 c d).toList.getD i 0).toNat : ZMod 64) * g i =
       ∑ i ∈ Finset.range (d + 1), (c.getD i 0 : ZMod 64) * g i := by
-  rw [show d + d % 2 + 1 = d + 1 + d % 2 by lia, Finset.sum_range_add,
+  rw [Nat.add_right_comm d (d % 2) 1, Finset.sum_range_add,
     Finset.sum_eq_zero (s := Finset.range (d % 2)) fun i _ ↦ by
       rw [natCast_toNat_getD_coeffsMod64]
       simp only [show ¬d + 1 + i ≤ d by lia, ↓reduceIte, zero_mul], add_zero]

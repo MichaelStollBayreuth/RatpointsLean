@@ -95,14 +95,14 @@ theorem mem_squaresDens_iff {bLow bHigh b : ℕ} (hbLow : 1 ≤ bLow) :
     exact ⟨k, ⟨(ceilSqrt_le_iff hbLow).mpr h1, by have := le_floorSqrt_iff.mpr h2; lia⟩, rfl⟩
 
 theorem pairwise_lt_squaresDens (bLow bHigh : ℕ) : (squaresDens bLow bHigh).Pairwise (· < ·) :=
-  List.pairwise_map.mpr ((List.pairwise_lt_range').imp fun h ↦ Nat.mul_self_lt_mul_self h)
+  List.pairwise_map.mpr ((List.pairwise_lt_range').imp Nat.mul_self_lt_mul_self)
 
 /-- The square shape lists the squares from `bLow ≥ 1` to `bHigh`, in increasing order. -/
 theorem squaresDens_eq_filter {bLow : ℕ} (hbLow : 1 ≤ bLow) (bHigh : ℕ) :
     squaresDens bLow bHigh =
       (List.range' bLow (bHigh + 1 - bLow)).filter fun b ↦ Nat.sqrt b * Nat.sqrt b == b := by
-  refine List.Pairwise.eq_of_mem_iff (r := (· < ·)) (pairwise_lt_squaresDens _ _)
-    ((List.pairwise_lt_range').filter _) fun b ↦ ?_
+  refine (pairwise_lt_squaresDens _ _).eq_of_mem_iff ((List.pairwise_lt_range').filter _)
+    fun b ↦ ?_
   simp only [mem_squaresDens_iff hbLow, List.mem_filter, List.mem_range'_1, beq_iff_eq,
     ← Nat.exists_mul_self]
   constructor
@@ -383,7 +383,7 @@ theorem getLsbD_denBits_and_all_of_sq_eq {c : List ℤ} {H : ℕ} {ms : List ℕ
   · simp only [Nat.mod_lt _ (by decide : 0 < 64), decide_true, Bool.true_and, bne_iff_ne]
     exact fun h0 ↦ by simpa [h0] using classBit_twoAdic_of_sq_eq hab hy
   simpa [Nat.dvd_iff_mod_eq_zero] using
-    not_dvd_of_mem_forbidden_fst hms (by rw [hf]; exact he) hd hb hbH hab hy
+    not_dvd_of_mem_forbidden_fst hms (by rwa [hf]) hd hb hbH hab hy
 
 /-- For moduli that are primes and even degree, the tests of the word shape, with the valuation
 entries of the forbidden divisors of the moduli for the largest denominator `H` and the tables of
@@ -399,8 +399,7 @@ theorem run_wordsTest_of_sq_eq {c : List ℤ} {H : ℕ} {ms : List ℕ}
       (if useJacobi then Id.run (jacobiSetup (c.getD (degree c) 0) H) else none)
       (c.getD (degree c) 0) b) = true := by
   refine run_wordsTest_eq_true (fun ji hji ↦ ?_)
-    (fun e he ↦ ForbiddenVal.excludes_eq_false_of_mem_forbidden_snd hms (by rw [hf]; exact he)
-      hd hb hab hy)
+    (fun e he ↦ ForbiddenVal.excludes_eq_false_of_mem_forbidden_snd hms (by rwa [hf]) hd hb hab hy)
     fun _ _ ↦ run_jacobi_eq_one_of_sq_eq hd hb hab hy
   cases useJacobi
   · exact absurd hji (by simp)

@@ -56,12 +56,12 @@ namespace Sieve
 open BruteForce
 
 -- The list of the denominators of a shape, as a value for the contract of the run.
-private theorem dens_value (s : Shape) (db : UInt64) (bLow bHigh : Nat) :
+private theorem dens_value (s : Shape) (db : UInt64) (bLow bHigh : ℕ) :
     ⦃ True ⦄ s.dens db bLow bHigh ⦃ fun r ↦ r = Id.run (s.dens db bLow bHigh) ⦄ :=
   ⟨fun _ ↦ rfl⟩
 
 -- The tests of a shape on a denominator, as a value for the contract of the run.
-private theorem keep_value (s : Shape) (nb : Vector UInt64 64) (b : Nat) :
+private theorem keep_value (s : Shape) (nb : Vector UInt64 64) (b : ℕ) :
     ⦃ True ⦄ s.keep nb b ⦃ fun r ↦ r = Id.run (s.keep nb b) ⦄ :=
   ⟨fun _ ↦ rfl⟩
 
@@ -70,21 +70,21 @@ the denominators `pref`, the points found are those of the brute-force reference
 denominators `b` of `pref` that pass the test `keep` and the numerators `-H, …, H` that pass the
 class word `nb[b mod 64]` (`Ratpoints.Sieve.classBit`) and survive the tables `entries`, mapped by
 `Ratpoints.Sieve.swapPoint` when the flag `rev` of the reversal is set. -/
-def SieveRunInvariant (c : List Int) (d H : Nat) (rev : Bool) (entries : List Entry)
-    (nb : Vector UInt64 64) (keep : Nat → Bool) (pref : List Nat)
-    (out : Array (Int × Int × Int)) : Prop :=
-  out.toList = ((pref.filter keep).flatMap fun b : Nat ↦ pointsOfDen c d b
+def SieveRunInvariant (c : List ℤ) (d H : ℕ) (rev : Bool) (entries : List Entry)
+    (nb : Vector UInt64 64) (keep : ℕ → Bool) (pref : List ℕ)
+    (out : Array (ℤ × ℤ × ℤ)) : Prop :=
+  out.toList = ((pref.filter keep).flatMap fun b : ℕ ↦ pointsOfDen c d b
     ((numerators H).filter fun a ↦ classBit nb[b % 64]! a && survives entries b a)).map
       (if rev then swapPoint else id)
 
 /-- The array size `A ≥ 1` makes the loops over the pieces end, and the moduli are positive, as the
 first stage over the rows as words needs (`Ratpoints.Sieve.sift_spec`). -/
 @[spec]
-theorem sieveRun_spec (c : List Int) (d H A : Nat) (rev : Bool) (entries : List Entry)
-    (nb : Vector UInt64 64) (db : UInt64) (shape : Shape) (bLow bHigh : Nat) :
+theorem sieveRun_spec (c : List ℤ) (d H A : ℕ) (rev : Bool) (entries : List Entry)
+    (nb : Vector UInt64 64) (db : UInt64) (shape : Shape) (bLow bHigh : ℕ) :
     ⦃ 1 ≤ A ∧ ∀ e ∈ entries, 0 < e.p ⦄ sieveRun c d H A rev entries nb db shape bLow bHigh
     ⦃ fun out ↦ out.toList = (((Id.run (shape.dens db bLow bHigh)).filter
-        fun b ↦ Id.run (shape.keep nb b)).flatMap fun b : Nat ↦ pointsOfDen c d b
+        fun b ↦ Id.run (shape.keep nb b)).flatMap fun b : ℕ ↦ pointsOfDen c d b
           ((numerators H).filter fun a ↦ classBit nb[b % 64]! a && survives entries b a)).map
             (if rev then swapPoint else id) ⦄ := by
   vcgen [sieveRun, dens_value, keep_value] invariants
@@ -94,12 +94,12 @@ theorem sieveRun_spec (c : List Int) (d H A : Nat) (rev : Bool) (entries : List 
 
 /-- `Ratpoints.Sieve.sieveRun_spec` as an equation, which the proofs use without the program
 logic. -/
-theorem toList_run_sieveRun (c : List Int) (d H : Nat) (rev : Bool) {A : Nat} (hA : 1 ≤ A)
+theorem toList_run_sieveRun (c : List ℤ) (d H : ℕ) (rev : Bool) {A : ℕ} (hA : 1 ≤ A)
     {entries : List Entry} (hp : ∀ e ∈ entries, 0 < e.p) (nb : Vector UInt64 64) (db : UInt64)
-    (shape : Shape) (bLow bHigh : Nat) :
+    (shape : Shape) (bLow bHigh : ℕ) :
     (Id.run (sieveRun c d H A rev entries nb db shape bLow bHigh)).toList =
       (((Id.run (shape.dens db bLow bHigh)).filter fun b ↦ Id.run (shape.keep nb b)).flatMap
-        fun b : Nat ↦ pointsOfDen c d b ((numerators H).filter fun a ↦
+        fun b : ℕ ↦ pointsOfDen c d b ((numerators H).filter fun a ↦
           classBit nb[b % 64]! a && survives entries b a)).map (if rev then swapPoint else id) :=
   Std.WP.Id.of_run_eq_wp rfl _
     ((sieveRun_spec c d H A rev entries nb db shape bLow bHigh).le_wp ⟨hA, hp⟩)
@@ -110,16 +110,16 @@ the list of the shape is `l` filtered by a test `p`, every denominator of `l` ov
 reference finds a point passes `p` and the tests of the shape, and every numerator of such a
 point passes the word of its class and the tables (`Ratpoints.Sieve.toList_run_sieveRun`,
 `Ratpoints.BruteForce.pointsOfDen_filter_of_ne`, `List.flatMap_filter_of_ne`). -/
-theorem toList_run_sieveRun_eq_flatMap {c : List Int} {d H A : Nat} {rev : Bool}
-    {entries : List Entry} {nb : Vector UInt64 64} {db : UInt64} {shape : Shape} {bLow bHigh : Nat}
-    {l : List Nat} {p : Nat → Bool} (hA : 1 ≤ A) (hp : ∀ e ∈ entries, 0 < e.p)
+theorem toList_run_sieveRun_eq_flatMap {c : List ℤ} {d H A : ℕ} {rev : Bool}
+    {entries : List Entry} {nb : Vector UInt64 64} {db : UInt64} {shape : Shape} {bLow bHigh : ℕ}
+    {l : List ℕ} {p : ℕ → Bool} (hA : 1 ≤ A) (hp : ∀ e ∈ entries, 0 < e.p)
     (hdens : Id.run (shape.dens db bLow bHigh) = l.filter p)
     (hkeep : ∀ b ∈ l, pointsOfDen c d b (numerators H) ≠ [] →
       p b = true ∧ Id.run (shape.keep nb b) = true)
     (hnum : ∀ b ∈ l, ∀ a, pointsOfDen c d b [a] ≠ [] →
       classBit nb[b % 64]! a = true ∧ survives entries b a = true) :
     (Id.run (sieveRun c d H A rev entries nb db shape bLow bHigh)).toList =
-      (l.flatMap fun b : Nat ↦ pointsOfDen c d b (numerators H)).map
+      (l.flatMap fun b : ℕ ↦ pointsOfDen c d b (numerators H)).map
         (if rev then swapPoint else id) := by
   rw [toList_run_sieveRun c d H rev hA hp, hdens, List.filter_filter]
   congr 1

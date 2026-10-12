@@ -97,8 +97,8 @@ theorem dvd_coprimePart_of_dvd {n m d : ℕ} (hn : n ≠ 0) (hd : d ∣ n) (hdm 
     fun q ↦ !decide (q.Coprime m)).prod) (coprime_list_prod_right_iff.mpr fun q hq ↦ ?_) ?_
   · have hq' := List.of_mem_filter hq
     simp only [Bool.not_eq_true', decide_eq_false_iff_not] at hq'
-    exact hdm.coprime_dvd_right (not_not.mp ((Nat.Prime.coprime_iff_not_dvd
-      (prime_of_mem_primeFactorsList (List.mem_of_mem_filter hq))).not.mp hq'))
+    exact hdm.coprime_dvd_right (not_not.mp ((prime_of_mem_primeFactorsList
+      (List.mem_of_mem_filter hq)).coprime_iff_not_dvd.not.mp hq'))
   · rwa [coprimePart_eq, ← List.prod_append, (List.filter_append_perm _ _).prod_eq,
       prod_primeFactorsList hn]
 

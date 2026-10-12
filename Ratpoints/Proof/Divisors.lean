@@ -120,7 +120,7 @@ private theorem pow_dvd_of_add_one_le {c : List ℤ} {a b' : ℤ} {p m val k : �
   have hle : val + m + 1 ≤ padicValNat p (c.getD k 0).natAbs + m * (degree c + 1 - k) := by
     have := hmin h0
     have : m * (degree c + 1 - k) = (degree c - k) * m + m := by
-      rw [show degree c + 1 - k = degree c - k + 1 by lia]
+      rw [Nat.sub_add_comm hk.le]
       ring
     lia
   refine (pow_dvd_pow _ hle).trans ?_
@@ -211,7 +211,7 @@ namespace Setup
 product of the powers. -/
 theorem not_dvd_prod_pow {p : ℕ} (hp : p.Prime) {l : List (ℕ × ℕ)}
     (hl : ∀ x ∈ l, x.1.Prime ∧ x.1 ≠ p) : ¬p ∣ (l.map fun x ↦ x.1 ^ x.2).prod := by
-  rw [(Nat.prime_iff.mp hp).dvd_prod_iff]
+  rw [hp.prime.dvd_prod_iff]
   intro ⟨a, ha, hpa⟩
   obtain ⟨x, hx, rfl⟩ := List.mem_map.mp ha
   exact (hl x hx).2 ((Nat.prime_dvd_prime_iff_eq hp (hl x hx).1).mp (hp.dvd_of_dvd_pow hpa)).symm
@@ -245,7 +245,7 @@ theorem FactorLcfInvariant.push {w0 w m p v : ℕ} {pref suff pref' suff' : List
     (h4 : suff' ≠ [] → ∀ q, q.Prime → q ∣ m → q ≠ 2 ∧ q ∉ pref') :
     FactorLcfInvariant w0 pref' suff' m (fac.push (p, v)) := by
   obtain ⟨h1, h2, h3, -⟩ := h
-  have hpw : p ∣ w := hm ▸ Dvd.dvd.mul_right (dvd_pow_self p hv.ne') m
+  have hpw : p ∣ w := hm ▸ (dvd_pow_self p hv.ne').mul_right m
   have hP := not_dvd_prod_pow hp (l := fac.toList) fun x hx ↦
     ⟨(h3 x hx).1, fun he ↦ (h3 x hx).2.2.2 (he ▸ hpw)⟩
   have : Fact p.Prime := ⟨hp⟩
@@ -308,7 +308,7 @@ theorem FactorLcfInvariant.push_cur {w0 w cur v r : ℕ} {pref suff : List ℕ}
   obtain ⟨m, hm, hpm⟩ := exists_eq_of_eq_run_valuation (h.ne_zero hw0) hcur.one_lt hv
   rw [Nat.div_eq_of_eq_mul_right (Nat.pow_pos hcur.pos) hm]
   refine h.push hw0 hcur hpos hm hpm fun _ q hq hqm ↦ ?_
-  have := h.2.2.2 (List.cons_ne_nil _ _) q hq (hm ▸ Dvd.dvd.mul_left hqm _)
+  have := h.2.2.2 (List.cons_ne_nil _ _) q hq (hm ▸ hqm.mul_left _)
   exact ⟨this.1, fun hmem ↦ (List.mem_append.mp hmem).elim this.2 fun he ↦
     hpm (List.mem_singleton.mp he ▸ hqm)⟩
 
@@ -332,8 +332,8 @@ theorem FactorLcfInvariant.post {w0 w : ℕ} {xs : List ℕ} {fac : Array (ℕ �
   refine ⟨h2, fun x hx ↦ ⟨(h3 x hx).1, (h3 x hx).2.2.1, (h3 x hx).2.1⟩,
     fun q hq hqw ↦ by_contra fun hn ↦ ?_⟩
   rw [h1, hw, Nat.one_mul] at hqw
-  refine not_dvd_prod_pow hq (fun x hx ↦ ⟨(h3 x hx).1, fun he ↦ hn ?_⟩) hqw
-  exact List.mem_map.mpr ⟨x, hx, he⟩
+  exact not_dvd_prod_pow hq
+    (fun x hx ↦ ⟨(h3 x hx).1, fun he ↦ hn (List.mem_map.mpr ⟨x, hx, he⟩)⟩) hqw
 
 -- The valuation, as a value for the contracts of the factorization and of the slopes.
 private theorem valuation_value (n : ℤ) (p : ℕ) :
@@ -438,7 +438,7 @@ theorem ExtendDivisorsInvariant.divisorsInvariant {bHigh p : ℕ} {divs0 divs : 
     lia
   refine .inr ?_
   rw [hd, List.foldl_append, List.foldl_cons, List.foldl_nil, ← h0.resolve_left (by lia),
-    List.take_of_length_le (by simp [Std.Legacy.Range.size])]
+    List.take_of_length_le (by simp)]
   rfl
 
 -- The entry at the position `cur` of a pass is that of `divs0`, which the pass has not changed.
@@ -448,7 +448,7 @@ private theorem ExtendDivisorsInvariant.getElem?_eq {bHigh p cur : ℕ} {divs0 d
     pref.length = cur ∧ divs0.toList[cur]? = some divs[cur]! := by
   have hcs := Std.Legacy.Range.lt_of_toList_eq_append_cons hl
   have hd := h.resolve_left hlt
-  have hcs' : cur < divs0.toList.length := by rw [Array.length_toList]; exact hcs
+  have hcs' : cur < divs0.toList.length := by rwa [Array.length_toList]
   refine ⟨Std.Legacy.Range.length_eq_of_toList_eq_append_cons hl, ?_⟩
   rw [getElem!_pos divs cur (by rw [← Array.length_toList, hd]; simp; lia), ← Array.getElem_toList,
     List.getElem?_eq_getElem hcs']
@@ -513,8 +513,8 @@ private theorem squarefree_mul_and_primeFactors_subset {p t : ℕ} (hp : p.Prime
     (hpq : p ∉ qs) (ht : Squarefree t) (htq : t.primeFactors ⊆ qs) :
     Squarefree (t * p) ∧ (t * p).primeFactors ⊆ insert p qs := by
   have hpt : ¬p ∣ t := fun h ↦ hpq (htq (Nat.mem_primeFactors.mpr ⟨hp, h, ht.ne_zero⟩))
-  refine ⟨Nat.squarefree_mul_iff.mpr ⟨Nat.coprime_comm.mp ((Nat.Prime.coprime_iff_not_dvd hp).mpr
-    hpt), ht, hp.squarefree⟩, ?_⟩
+  refine ⟨Nat.squarefree_mul_iff.mpr ⟨Nat.coprime_comm.mp (hp.coprime_iff_not_dvd.mpr hpt), ht,
+    hp.squarefree⟩, ?_⟩
   rw [Nat.primeFactors_mul ht.ne_zero hp.ne_zero, hp.primeFactors, Finset.union_comm]
   exact Finset.union_subset_union (fun _ h ↦ h) htq
 
@@ -534,7 +534,7 @@ private theorem mem_extendDivisors_of_squarefree {bHigh p : ℕ} (hp : p.Prime) 
       · exact absurd (Nat.dvd_of_mem_primeFactors hx) hpt
       · exact h
     · exact (Nat.le_mul_of_pos_left t hp.pos).trans hb
-    · exact (Nat.le_div_iff_mul_le hp.pos).mpr (by rw [Nat.mul_comm]; exact hb)
+    · exact (Nat.le_div_iff_mul_le hp.pos).mpr (by rwa [Nat.mul_comm])
   · refine .inl ⟨hs, fun x hx ↦ ?_, hb⟩
     rcases Finset.mem_insert.mp (hsub hx) with rfl | h
     · exact absurd (Nat.dvd_of_mem_primeFactors hx) hps
@@ -633,7 +633,7 @@ theorem SlopeInvariant.append_of_lt {c : List ℤ} {d p val cur vk r : ℕ} {pre
   have := h.1
   refine ⟨by lia, fun j hj ↦ ?_⟩
   rcases List.mem_append.mp hj with hj | hj
-  · exact Int.le_trans (h.2 j hj) (Int.mul_le_mul_of_nonneg_left (Int.le_of_lt hlt) (by lia))
+  · exact (h.2 j hj).trans (Int.mul_le_mul_of_nonneg_left hlt.le (by lia))
   · obtain rfl := List.mem_singleton.mp hj
     rwa [← hv, ht]
 
@@ -651,14 +651,14 @@ theorem SlopeInvariant.append_of_not_lt {c : List ℤ} {d p val cur vk r : ℕ}
   · exact h.2 j hj
   · obtain rfl := List.mem_singleton.mp hj
     rw [← hv, ht]
-    exact Int.le_trans hm (Int.mul_le_mul_of_nonneg_left (by lia) (by lia))
+    exact hm.trans (Int.mul_le_mul_of_nonneg_left (by lia) (by lia))
 
 theorem SlopeInvariant.post {c : List ℤ} {d p val : ℕ} {n : ℤ}
     (h : SlopeInvariant c d p val (ForIn.toList [:d]) n) :
     1 ≤ n.toNat ∧ ∀ k < d, 1 + (val : ℤ) - (Id.run (valuation (c.getD k 0) p)).1 ≤
       ((d - k : ℕ) : ℤ) * n.toNat := by
   refine ⟨by have := h.1; lia, fun k hk ↦ ?_⟩
-  have := h.2 (d - 1 - k) (by simp [Std.Legacy.Range.size]; lia)
+  have := h.2 (d - 1 - k) (by simp; lia)
   rw [Nat.sub_sub_self (by lia : k ≤ d - 1)] at this
   rwa [Int.toNat_of_nonneg (by have := h.1; lia)]
 
@@ -726,9 +726,8 @@ theorem exists_of_setupUs1_eq_some {c : List ℤ} {d bHigh : ℕ} {info : List D
     ∃ fac, Id.run (factorLcf (c.getD d 0).natAbs) = (fac, 1) ∧
       divisors = Id.run (squarefreeDivisors (fac.map Prod.fst) bHigh) ∧
       divisors.length < maxDivisors ∧
-      info = fac.map fun x ↦ ⟨x.1, x.2, Id.run (slope c d x.1 x.2)⟩ := by
-  have := Std.WP.Id.of_run_eq_wp rfl _ ((setupUs1_spec c d bHigh).le_wp trivial)
-  exact this info divisors h
+      info = fac.map fun x ↦ ⟨x.1, x.2, Id.run (slope c d x.1 x.2)⟩ :=
+  Std.WP.Id.of_run_eq_wp rfl _ ((setupUs1_spec c d bHigh).le_wp trivial) info divisors h
 
 /-- When the divisor set-up succeeds, its divisors are those of the doubling loop over the distinct
 primes of `|c_d|`, each with its valuation. -/
@@ -779,10 +778,7 @@ theorem nodup_of_setupUs1_eq_some {c : List ℤ} {d bHigh : ℕ} {info : List De
 (`find_points.c:876`), are at most `bHigh`, and so `long`s for a `long` `bHigh`. -/
 theorem fitsLong_mul_of_le_div {x p bHigh : ℕ} (h : x ≤ bHigh / p) (hH : bHigh < 2 ^ 63) :
     fitsLong ((x * p : ℕ) : ℤ) = true := by
-  have : x * p ≤ bHigh := by
-    rcases Nat.eq_zero_or_pos p with rfl | hp
-    · simp
-    · exact (Nat.le_div_iff_mul_le hp).mp h
+  have : x * p ≤ bHigh := (Nat.mul_le_mul_right p h).trans (Nat.div_mul_le_self bHigh p)
   simp [fitsLong]
   lia
 

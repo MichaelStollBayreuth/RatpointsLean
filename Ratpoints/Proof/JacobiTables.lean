@@ -98,10 +98,8 @@ theorem nonSquaresInvariant_nil {q : ℕ} (hq : q % 2 = 1 ∧ 1 < q) :
 
 theorem NonSquaresInvariant.size_eq_and_getElem!_eq_false_iff {q s : ℕ} {ns : Array Bool}
     (h : NonSquaresInvariant q (ForIn.toList [1:q / 2 + 1]) (ns, s)) :
-    ns.size = q ∧ ∀ r < q, (ns[r]! = false ↔ ∃ x, 1 ≤ x ∧ x ≤ q / 2 ∧ x * x % q = r) := by
-  have : (ForIn.toList [1:q / 2 + 1]).length = q / 2 := by
-    simp [Std.Internal.ForIn.toList_range, Std.Legacy.Range.size]
-  exact ⟨h.1, by simpa only [this] using h.2.2⟩
+    ns.size = q ∧ ∀ r < q, (ns[r]! = false ↔ ∃ x, 1 ≤ x ∧ x ≤ q / 2 ∧ x * x % q = r) :=
+  ⟨h.1, by simpa only [Std.Legacy.Range.length_toList, Nat.add_sub_cancel] using h.2.2⟩
 
 /-- The step `x` of `Ratpoints.Sieve.nonSquares` clears the entry of `s = x ^ 2 mod q` and moves on
 to `(x + 1) ^ 2 mod q = s + 2 x + 1`, less `q` at most once, since `2 x + 1 ≤ q` for odd `q`. -/
@@ -221,10 +219,8 @@ theorem jacobiSetupInvariant_empty {lcf : ℤ} {v r : ℕ}
     rw [← Setup.fst_run_valuation h Nat.one_lt_two, ← hv]
   have hd : 2 ^ padicValNat 2 lcf.natAbs ∣ lcf.natAbs := pow_padicValNat_dvd
   refine ⟨by simp [Nat.mul_div_cancel' hd], ?_, by simp⟩
-  have := pow_succ_padicValNat_not_dvd (p := 2) (n := lcf.natAbs) (by simpa using h)
-  rw [pow_succ] at this
-  by_contra h2
-  exact this (Nat.mul_dvd_of_dvd_div hd (Nat.dvd_of_mod_eq_zero (by lia)))
+  rw [← Nat.factorization_def _ Nat.prime_two]
+  exact Nat.two_dvd_ne_zero.mp (Nat.not_dvd_ordCompl Nat.prime_two (by simpa using h))
 
 /-- The invariant of the loop of `Ratpoints.Sieve.jacobiSetup` over the primes of the table, with
 the primes `suff` still to come, on the result of an early return, the cofactor and the entries:
@@ -257,7 +253,7 @@ theorem JacobiSetupInvariant.dvd_natAbs {lcf : ℤ} {v w : ℕ}
     w ∣ lcf.natAbs := by
   obtain ⟨h1, -, -⟩ := h.2 h0
   refine ⟨2 ^ v * (qs.toList.map fun x ↦ x.1 ^ padicValNat x.1 lcf.natAbs).prod, ?_⟩
-  conv_lhs => rw [h1]
+  nth_rw 1 [h1]
   ring
 
 /-- The exponent `e` of a prime `q` of the cofactor `w = q ^ e m`, `q ∤ m`, is `v_q(lcf)`, since `q`
@@ -277,7 +273,7 @@ theorem JacobiSetupInvariant.padicValNat_eq {lcf : ℤ} {v w q e m : ℕ}
         (hq.dvd_of_dvd_pow hd) ▸ hqw)
   refine padicValNat_eq_of_eq_pow_mul_of_not_dvd hq.ne_zero ?_ (hq.prime.not_dvd_mul
     (hq.prime.not_dvd_mul hqm (mt (hq.prime.dvd_of_dvd_pow (n := v)) h2q)) hP)
-  conv_lhs => rw [h1, hm]
+  nth_rw 1 [h1, hm]
   ring
 
 /-- An entry `(q, ns)` for a prime `q` of the cofactor `w = q ^ e m`, `q ∤ m`, with its exponent
@@ -300,7 +296,7 @@ theorem JacobiSetupInvariant.push {lcf : ℤ} {v w cur e r : ℕ} {pref suff : L
   refine ⟨?_, Nat.odd_iff.mp ((Nat.odd_iff.mpr h2).of_dvd_nat hmw), fun x hx ↦ ?_⟩
   · simp only [Array.toList_push, List.map_append, List.map_cons, List.map_nil, List.prod_append,
       List.prod_cons, List.prod_nil, Nat.mul_one, hv]
-    conv_lhs => rw [h1, hm]
+    nth_rw 1 [h1, hm]
     ring
   rcases List.mem_append.mp (Array.toList_push ▸ hx) with hx | hx
   · exact ⟨(h3 x hx).1, (h3 x hx).2.1, (h3 x hx).2.2.1, fun hd ↦ (h3 x hx).2.2.2.1 (hd.trans hmw),
@@ -330,7 +326,7 @@ theorem JacobiSetupLoopInvariant.false_of_some {lcf : ℤ} {v w u : ℕ}
     {ji : JacobiInfo} (h : JacobiSetupLoopInvariant lcf v [] (o, w, qs, u)) (ho : o = some a)
     (ha : a = some ji) : False := by
   subst ho ha
-  exact absurd h.2 (Option.some_ne_none ji)
+  exact Option.some_ne_none ji h.2
 
 /-- At the end of the loop of `Ratpoints.Sieve.jacobiSetup` with the cofactor `1`, `lcf ≠ 0` and the
 tables are those of `lcf`. -/
@@ -343,7 +339,7 @@ theorem JacobiSetupLoopInvariant.isJacobiInfo {lcf : ℤ} {bHigh v r w u : ℕ}
     bHigh ≤ mulModLimit ∧ lcf ≠ 0 ∧ IsJacobiInfo lcf ji := by
   subst ho
   obtain rfl : w = 1 := by simpa using hw
-  have h0 : lcf ≠ 0 := fun h0 ↦ absurd (h.1 h0) one_ne_zero
+  have h0 : lcf ≠ 0 := fun h0 ↦ one_ne_zero (h.1 h0)
   obtain ⟨h1, -, h3⟩ := h.2 h0
   obtain rfl : v = padicValNat 2 lcf.natAbs := by
     rw [← Setup.fst_run_valuation h0 Nat.one_lt_two, ← hv]
@@ -417,7 +413,7 @@ theorem jacobiTestInvariant_nil {ji : JacobiInfo} {b t : ℕ}
   refine ⟨by lia, h2, ?_, by simp⟩
   conv_rhs => rw [← h1]
   rw [Nat.prod_filter_primeFactorsList_mul_of_forall (by simp) fun q hq ↦ ?_]
-  rw [Nat.Prime.primeFactorsList_pow Nat.prime_two] at hq
+  rw [Nat.prime_two.primeFactorsList_pow] at hq
   simp [List.eq_of_mem_replicate hq]
 
 /-- At the end of the first loop of `Ratpoints.Sieve.jacobiTest`, `b'` is the part of `b` free of
@@ -577,7 +573,7 @@ theorem jacobiSym_pow_eq_mul {q b e : ℕ} {o : Option (Array Bool)} [hq : Fact 
       o.elim 1 fun ns ↦ if ns[b % q]! = true then -1 else 1 := by
   have hqo : q % 2 = 1 := hq.out.eq_two_or_odd.resolve_left hq2
   have hJ := jacobiSym.eq_one_or_neg_one (a := q) (b := b)
-    (by simpa using (Nat.Prime.coprime_iff_not_dvd hq.out).mpr hqb)
+    (by simpa using hq.out.coprime_iff_not_dvd.mpr hqb)
   rcases Nat.mod_two_eq_zero_or_one e with he | he
   · simp only [he, zero_ne_one, ↓reduceIte] at ho
     subst ho
@@ -644,16 +640,16 @@ the tables, which are all the odd primes of `lcf`. -/
 theorem IsJacobiInfo.coprime_two_mul_natAbs_iff {lcf : ℤ} {ji : JacobiInfo}
     (hji : IsJacobiInfo lcf ji) {p : ℕ} (hp : p.Prime) :
     p.Coprime (2 * lcf.natAbs) ↔ p ≠ 2 ∧ p ∉ ji.primes.map Prod.fst := by
-  rw [Nat.Prime.coprime_iff_not_dvd hp]
+  rw [hp.coprime_iff_not_dvd]
   refine ⟨fun h ↦ ⟨fun h2 ↦ h (by subst h2; exact dvd_mul_right 2 _), fun hm ↦ ?_⟩,
     fun ⟨h2, hm⟩ hd ↦ ?_⟩
   · obtain ⟨x, hx, rfl⟩ := List.mem_map.mp hm
-    exact h (Dvd.dvd.mul_left (hji.1 x hx).2.2.1 2)
+    exact h ((hji.1 x hx).2.2.1.mul_left 2)
   have h2' : ¬p ∣ 2 := fun h ↦ h2 ((Nat.prime_dvd_prime_iff_eq hp Nat.prime_two).mp h)
   rw [hji.2.1, ← mul_assoc, ← pow_succ'] at hd
-  rcases (Nat.Prime.dvd_mul hp).mp hd with hd | hd
+  rcases hp.dvd_mul.mp hd with hd | hd
   · exact h2' (hp.dvd_of_dvd_pow hd)
-  obtain ⟨a, ha, hpa⟩ := (Nat.prime_iff.mp hp).dvd_prod_iff.mp hd
+  obtain ⟨a, ha, hpa⟩ := hp.prime.dvd_prod_iff.mp hd
   obtain ⟨x, hx, rfl⟩ := List.mem_map.mp ha
   exact hm (List.mem_map.mpr ⟨x, hx,
     ((Nat.prime_dvd_prime_iff_eq hp (hji.1 x hx).1).mp (hp.dvd_of_dvd_pow hpa)).symm⟩)
@@ -678,7 +674,7 @@ theorem run_jacobiTest {lcf : ℤ} {bHigh : ℕ} {ji : JacobiInfo}
   have hc := Nat.coprime_coprimePart b (2 * lcf.natAbs)
   rw [jacobiSym_eq_ite_foldl hI (Nat.odd_iff.mp (Nat.coprime_two_right.mp
     (hc.coprime_dvd_right (dvd_mul_right 2 _)))) fun x hx hd ↦ (hI.1 x hx).1.one_lt.ne'
-      ((hc.coprime_dvd_left hd).eq_one_of_dvd (Dvd.dvd.mul_left (hI.1 x hx).2.2.1 2))]
+      ((hc.coprime_dvd_left hd).eq_one_of_dvd ((hI.1 x hx).2.2.1.mul_left 2))]
   cases List.foldl _ _ _ <;> simp
 
 /-- The Jacobi test by the tables of the leading coefficient, when they apply, passes the

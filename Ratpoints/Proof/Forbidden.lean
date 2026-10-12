@@ -172,10 +172,10 @@ theorem isUnitPart_of_eq_run_valuation {p : ℕ} (hp : 1 < p) {x : ℤ} (hx : x 
   have hrp : r < p := hmr ▸ Nat.mod_lt _ (by lia)
   have hpm : ¬(p : ℤ) ∣ m := fun h ↦
     hr (hmr ▸ Nat.mod_eq_zero_of_dvd (Int.natCast_dvd_natCast.mp h))
-  have hmr' : ((m : ℕ) : ZMod p) = r := by rw [← hmr, ZMod.natCast_mod]
+  have hmr' : (m : ZMod p) = r := by rw [← hmr, ZMod.natCast_mod]
   split_ifs with hneg
   · refine ⟨by lia, -m, ?_, by rwa [Int.dvd_neg], ?_⟩
-    · rw [Int.eq_neg_natAbs_of_nonpos (Int.le_of_lt hneg), hm]
+    · rw [Int.eq_neg_natAbs_of_nonpos hneg.le, hm]
       push_cast
       ring
     · rw [Nat.cast_sub hrp.le, ZMod.natCast_self, zero_sub, Int.cast_neg, Int.cast_natCast, hmr']
@@ -914,7 +914,7 @@ theorem lt_forty_of_pow_le {p m bHigh : ℕ} (hp : 3 ≤ p) (hH : bHigh < 2 ^ 63
     m < 40 := by
   by_contra hm
   have h1 := Nat.pow_le_pow_left hp m
-  have h2 := Nat.pow_le_pow_right (by decide : 0 < 3) (Nat.le_of_not_lt hm)
+  have h2 := Nat.pow_le_pow_right three_pos (Nat.le_of_not_lt hm)
   have h3 : 2 ^ 63 < 3 ^ 40 := by decide
   lia
 

@@ -243,7 +243,7 @@ theorem flatMap_range'_map_filter {g : Nat → Nat → Bool} {p : Nat → Bool} 
   | zero => simp
   | succ n ih =>
     rw [range'_succ, flatMap_cons, ih fun w hw hw' ↦ hg w (by lia) (by lia),
-      show 64 * (w0 + 1) = 64 * w0 + 64 by lia, show 64 * (n + 1) = 64 + 64 * n by lia,
+      Nat.mul_add_one 64 w0, show 64 * (n + 1) = 64 + 64 * n by lia,
       ← range'_append_1, filter_append, range'_eq_map_range (s := 64 * w0), filter_map]
     exact congrArg (· ++ _) (congrArg (map _) (filter_congr fun t ht ↦
       hg w0 (Nat.le_refl w0) (by lia) t (mem_range.mp ht)))

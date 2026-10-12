@@ -152,7 +152,7 @@ theorem JacobiReduceHalveInvariant.div_two {x y x₀ x' mb : ℕ} {s s' : ℤ}
     (hb : ¬(x' / 2 % 2 == 1) = true) :
     x' / 2 < mb ∧ JacobiReduceHalveInvariant x y x₀ s false (x' / 2, twoSign y s') :=
   ⟨by have := h.2.1; lia,
-    JacobiReduceHalveInvariant.div_two_of_mod_two_eq hy h (by simp at hb; simpa using hb)⟩
+    JacobiReduceHalveInvariant.div_two_of_mod_two_eq hy h (by simpa using hb)⟩
 
 theorem JacobiReduceHalveInvariant.jacobiReduceInvariant {x y x₀ x' mb : ℕ} {s s' s₀ : ℤ}
     (h : JacobiReduceHalveInvariant x y x₀ s true (x', s'))
@@ -326,7 +326,7 @@ end
 -- A prime factor of `m` is not prime to `m`.
 private theorem decide_coprime_eq_false {q m : ℕ} (hq : q.Prime) (h : q ∣ m) :
     decide (q.Coprime m) = false :=
-  decide_eq_false fun hc ↦ (Nat.Prime.coprime_iff_not_dvd hq).mp hc h
+  decide_eq_false fun hc ↦ hq.coprime_iff_not_dvd.mp hc h
 
 /-- The invariant of the loop of `Ratpoints.Sieve.jacobi` that takes the factors `2` out of `b`:
 the current `b'` is positive with the part of `b` prime to `2 lcf`, and odd at the exit. -/
@@ -391,9 +391,9 @@ theorem JacobiInvariant.one_eq_jacobiSym_of_eq_none {b b' f : ℕ} {lcf : ℤ} {
     rw [h6 rfl] at h4
     exact Int.dvd_of_emod_eq_zero (by simpa using h4.symm)
   rw [← h5, Nat.coprimePart_eq, Nat.prod_filter_primeFactorsList_eq_one fun q hq ↦
-    decide_coprime_eq_false (Nat.prime_of_mem_primeFactorsList hq) (Dvd.dvd.mul_left
-      (Int.natCast_dvd.mp ((Int.natCast_dvd_natCast.mpr
-        (Nat.dvd_of_mem_primeFactorsList hq)).trans hd)) 2), jacobiSym.one_right]
+    decide_coprime_eq_false (Nat.prime_of_mem_primeFactorsList hq) ((Int.natCast_dvd.mp
+      ((Int.natCast_dvd_natCast.mpr (Nat.dvd_of_mem_primeFactorsList hq)).trans hd)).mul_left 2),
+    jacobiSym.one_right]
 
 theorem JacobiInvariant.eq_none {b b' f : ℕ} {lcf : ℤ} {o : Option ℤ}
     (hi : JacobiInvariant b lcf false (o, b', f)) : o = none := by
@@ -424,8 +424,8 @@ theorem JacobiInvariant.exit_some {b b' f g mb : ℕ} {lcf s : ℤ} {o : Option 
   have hg : g = 1 := by simpa using hg
   have hl := Int.gcd_emod f b'
   rw [h4, Int.gcd_emod, Int.gcd_natCast_natCast, ← hr.1, hg] at hl
-  have hc : Nat.Coprime b' (2 * lcf.natAbs) := Nat.Coprime.mul_right
-    (Nat.coprime_two_right.mpr (Nat.odd_iff.mpr h2)) (Nat.Coprime.symm hl)
+  have hc : Nat.Coprime b' (2 * lcf.natAbs) :=
+    (Nat.coprime_two_right.mpr (Nat.odd_iff.mpr h2)).mul_right (Nat.Coprime.symm hl)
   refine ⟨rfl, ?_⟩
   rw [hr.2 hg, ← h5, Nat.coprimePart_eq, Nat.prod_filter_primeFactorsList_eq_self (by lia)
     fun q hq ↦ decide_eq_true (hc.coprime_dvd_left (Nat.dvd_of_mem_primeFactorsList hq))]
@@ -455,8 +455,7 @@ theorem JacobiInvariant.div_gcd {b b' f g f' mb : ℕ} {lcf s : ℤ} {o : Option
   · rw [← h5, ← Nat.mul_div_cancel' hgb, Nat.mul_div_cancel_left _ (by lia), Nat.coprimePart_eq,
       Nat.coprimePart_eq, Nat.prod_filter_primeFactorsList_mul_of_forall (by lia)
         fun q hq' ↦ decide_coprime_eq_false (Nat.prime_of_mem_primeFactorsList hq')
-          (Dvd.dvd.mul_left (Int.dvd_natAbs_of_dvd_gcd h4
-            (hr.1 ▸ Nat.dvd_of_mem_primeFactorsList hq')) 2)]
+          ((Int.dvd_natAbs_of_dvd_gcd h4 (hr.1 ▸ Nat.dvd_of_mem_primeFactorsList hq')).mul_left 2)]
 
 section
 

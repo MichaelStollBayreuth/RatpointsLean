@@ -322,8 +322,8 @@ private theorem toList_run_sieveRun_squares {c : List ℤ} {H A : ℕ} {ms : Lis
     (hms : ∀ p ∈ ms, p.Prime) (hA : 1 ≤ A) (rev : Bool) (hd : degree c % 2 = 1)
     (hc : (c.getD (degree c) 0).natAbs = 1) :
     (Id.run (sieveRun c (degree c) H A rev (ms.map (examinePrime c (degree c)))
-      (Id.run (twoAdic c (degree c))) (denBits (Id.run (twoAdic c (degree c)))) .squares 1
-        H)).toList =
+      (Id.run (twoAdic c (degree c))) (denBits (Id.run (twoAdic c (degree c))))
+        .squares 1 H)).toList =
       ((List.range' 1 H).flatMap fun b : ℕ ↦ pointsOfDen c (degree c) b (numerators H)).map
         (if rev then swapPoint else id) := by
   refine toList_run_sieveRun_of_sound hms hA rev (p := fun b ↦ Nat.sqrt b * Nat.sqrt b == b)
@@ -363,7 +363,7 @@ private theorem toList_run_sieveRun_words {c : List ℤ} {H A : ℕ} {ms : List 
       ((List.range' 1 H).flatMap fun b : ℕ ↦ pointsOfDen c (degree c) b (numerators H)).map
         (if rev then swapPoint else id) := by
   have hforb (e : ForbiddenEntry) (he : e ∈ forb) :
-      e ∈ (Id.run (forbidden c (degree c) ms maxF H)).1 := by rw [hf]; exact he
+      e ∈ (Id.run (forbidden c (degree c) ms maxF H)).1 := hf ▸ he
   refine toList_run_sieveRun_of_sound hms hA rev ?_ fun b hb h ↦
     have hb' := List.mem_range'_1.mp hb
     (exists_sq_eq_of_pointsOfDen_ne_nil h).elim fun _ ⟨_, _, hg, hy⟩ ↦
