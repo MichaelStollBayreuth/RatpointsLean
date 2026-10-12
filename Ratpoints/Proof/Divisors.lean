@@ -816,6 +816,11 @@ excludes the denominator `b`: `v_p(b) ≥ e.slope` with `v_p(b) + e.val` odd, fo
 def DenInfo.excludes (e : DenInfo) (b : ℕ) : Bool :=
   decide (e.slope ≤ (Id.run (valuation b e.p)).1) && ((Id.run (valuation b e.p)).1 + e.val) % 2 == 1
 
+theorem DenInfo.excludes_eq_false_iff {e : DenInfo} {b : ℕ} :
+    e.excludes b = false ↔ ¬(decide (e.slope ≤ (Id.run (valuation b e.p)).1) &&
+      ((Id.run (valuation b e.p)).1 + e.val) % 2 == 1) = true :=
+  Bool.eq_false_iff
+
 /-- An entry of the valuation test, a prime `p` of `|c_d|` with its valuation `val` and its slope
 (`Ratpoints.Setup.slope_spec`), does not exclude the denominator `b = p ^ m b'` of a point:
 for `m ≥ slope`, `m + val` is even (`Ratpoints.even_add_of_sq_eq_binaryForm_of_odd`). -/
@@ -830,8 +835,7 @@ theorem DenInfo.excludes_eq_false_of_sq_eq {c : List ℤ} (hd : degree c % 2 = 1
   have hv : (Id.run (valuation b p)).1 = m := by
     rw [fst_run_valuation (Int.natCast_ne_zero.mpr hb) hp, Int.natAbs_natCast,
       padicValNat_eq_of_eq_pow_mul_of_not_dvd hp.one_lt hbm hb']
-  rw [DenInfo.excludes, Bool.eq_false_iff]
-  simp only [hv, ne_eq, Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq]
+  simp only [DenInfo.excludes_eq_false_iff, hv, Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq]
   refine fun ⟨hle, hodd⟩ ↦ Nat.not_even_iff_odd.mpr (Nat.odd_iff.mpr (by lia))
     (even_add_of_sq_eq_binaryForm_of_odd hd hc hval.symm (fun k hk hck ↦ ?_) hab hbm hb'
       (by lia) hy)

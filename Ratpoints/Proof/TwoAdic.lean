@@ -481,7 +481,7 @@ modulo 64; neither `b ≥ 1` nor a degree of a given parity is needed. -/
 theorem classBit_twoAdic_of_sq_eq {c : List ℤ} {a y : ℤ} {b : ℕ} (hab : Int.gcd a b = 1)
     (hy : y ^ 2 = binaryForm c a b) :
     classBit (Id.run (twoAdic c (degree c)))[b % 64]! a = true := by
-  rw [classBit, getLsbD_run_twoAdic _ _ (Nat.mod_lt _ (by decide))]
+  rw [classBit_eq, getLsbD_run_twoAdic _ _ (Nat.mod_lt _ (by decide))]
   rcases Nat.mod_two_eq_zero_or_one b with hb | hb
   · exact .inr (exists_getLsbD_gsq_of_sq_eq hb hab hy)
   · exact .inl ⟨by lia, exists_getLsbD_fsq_of_sq_eq hb hy⟩

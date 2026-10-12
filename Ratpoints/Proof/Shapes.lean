@@ -189,7 +189,7 @@ private theorem not_slope_le_and_odd_of_mem {info pref suff : List Setup.DenInfo
     (h : info = pref ++ cur :: suff) (hv : (v, r) = Id.run (Setup.valuation b cur.p)) :
     ¬(decide (cur.slope ≤ v) && (v + cur.val) % 2 == 1) = true := by
   have := hinfo cur (by simp [h])
-  rwa [Setup.DenInfo.excludes, ← hv, Bool.eq_false_iff] at this
+  rwa [Setup.DenInfo.excludes_eq_false_iff, ← hv] at this
 
 private theorem denInfoTest_spec {info : List Setup.DenInfo} {b : ℕ}
     (hinfo : ∀ e ∈ info, e.excludes b = false) :
@@ -338,7 +338,7 @@ private theorem not_testBit_of_mem {forbVal pref suff : List ForbiddenVal} {cur 
     (h : forbVal = pref ++ cur :: suff) (hv : (v, r) = Id.run (Setup.valuation b cur.p)) :
     ¬ cur.mask.testBit v = true := by
   have := hval cur (by simp [h])
-  rwa [ForbiddenVal.excludes, ← hv, Bool.eq_false_iff] at this
+  rwa [ForbiddenVal.excludes_eq_false_iff, ← hv] at this
 
 private theorem wordsTest_spec {forbVal : List ForbiddenVal} {useJacobi : Bool}
     {fast : Option JacobiInfo} {lcf : ℤ} {b : ℕ}

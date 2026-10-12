@@ -833,6 +833,10 @@ tests of the word shape make with `e` (`Ratpoints.Sieve.wordsTest`). -/
 def ForbiddenVal.excludes (e : ForbiddenVal) (b : ℕ) : Bool :=
   e.mask.testBit (Id.run (Setup.valuation b e.p)).1
 
+theorem ForbiddenVal.excludes_eq_false_iff {e : ForbiddenVal} {b : ℕ} :
+    e.excludes b = false ↔ ¬e.mask.testBit (Id.run (Setup.valuation b e.p)).1 = true :=
+  Bool.eq_false_iff
+
 /-- A forbidden divisor tested by its valuation excludes no denominator of a point of a curve of
 even degree: the valuations of its mask are excluded by the terms of `F(a, b)`
 (`Ratpoints.Sieve.forbiddenValuations`). -/
@@ -843,8 +847,8 @@ theorem excludes_eq_false_of_mem_forbidden_snd {c : List ℤ} {moduli : List ℕ
     (hy : y ^ 2 = binaryForm c a b) : e.excludes b = false := by
   obtain ⟨p, hp, h⟩ := isForbiddenVal_of_mem_forbidden_snd he
   obtain rfl := eq_of_run_forbiddenOfPrime_eq_inr h
-  rw [ForbiddenVal.excludes, Setup.fst_run_valuation (Int.natCast_ne_zero.mpr hb) (hm p hp),
-    Int.natAbs_natCast]
+  rw [ForbiddenVal.excludes_eq_false_iff, Setup.fst_run_valuation (Int.natCast_ne_zero.mpr hb)
+    (hm p hp), Int.natAbs_natCast, Bool.not_eq_true]
   exact testBit_run_forbiddenValuations_eq_false_of_sq_eq hd (hm p hp) bHigh hab hy
 
 /-! ### The words of a forbidden divisor -/

@@ -246,16 +246,19 @@ stands for `a` in every word of a piece of `Ratpoints.Sieve.andRows`, since `64`
 `Ratpoints.rbaLength`. -/
 def classBit (cw : UInt64) (a : Int) : Bool := cw.toBitVec.getLsbD (a % 64).toNat
 
+theorem classBit_eq (cw : UInt64) (a : Int) : classBit cw a = cw.toBitVec.getLsbD (a % 64).toNat :=
+  rfl
+
 @[simp]
 theorem classBit_zero (a : Int) : classBit 0 a = false := by
-  simp [classBit]
+  simp [classBit_eq]
 
 theorem classBit_rbaLength_mul_add (cw : UInt64) (w0 : Int) (y : Nat) {t : Nat} (ht : t < 64) :
     classBit cw (rbaLength * w0 + 64 * y + t) = cw.toBitVec.getLsbD t := by
   have h : (rbaLength : Int) * w0 + 64 * y + t = t + 64 * (rbaPack * w0 + y) := by
     rw [rbaLength_eq, Int.natCast_mul, Int.mul_assoc]
     lia
-  rw [classBit, h, Int.add_mul_emod_self_left, Int.emod_eq_of_lt (by lia) (by lia)]
+  rw [classBit_eq, h, Int.add_mul_emod_self_left, Int.emod_eq_of_lt (by lia) (by lia)]
   rfl
 
 /-- The word `y` of a piece from the word number `w0` on after the first stage with the rows
