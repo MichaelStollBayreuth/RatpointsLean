@@ -3,8 +3,7 @@
 % squares and the divisors of the leading coefficient times squares (setup_us1) with the valuation
 % test of the slopes; for even degree the forbidden divisors, tested with words of 64 denominators
 % and by their valuations, and the Jacobi test, by the binary algorithm and by tables; and the loop
-% over the denominators in the four shapes of run_setup and run_block. Proposed names are set with
-% \lname and become \lean once the declarations exist.
+% over the denominators in the four shapes of run_setup and run_block.
 \chapter{The denominators}\label{chap:denominators}
 
 Stage~E models what ratpoints does on the side of the denominators. Before the sieve it computes,
@@ -22,7 +21,7 @@ complete and gives fewer than $512$ squarefree divisors up to the largest denomi
 denominator~$2$: the divisors of the leading coefficient $2$ are $1$ and $2$, and the loop takes $1,
 4, 9, 16$ and then $2, 8, 18$.
 
-So the output becomes the points at infinity followed by the points of the brute-force reference
+So the output is the points at infinity followed by the points of the brute-force reference
 over the denominators that the loop of the search visits, in its order, each mapped back after a
 reversal. It is a permutation of the reference, as in stage~D, so that the main theorems, the
 refusal theorems and the statements that comparator certifies do not change; and it is the reference
@@ -169,22 +168,22 @@ The packing by the stride, from the masks of the classes to the stride and the o
 \csource{find_points.c}{1069}{1069}, \csource{find_points.c}{1071}{1095},
 \csource{find_points.c}{1099}{1101}), is stage~F. The first stage of the sieve starts from the word
 of the class of the denominator: the components of Chapter~\ref{chap:words} that make a piece and
-the numerators of one denominator gain the class word $\omega$ as an argument, the first stage
+the numerators of one denominator take the class word $\omega$ as an argument, and the first stage
 (Definition~\ref{def:andRows}) writes $\omega$ into every word of the piece in place of all ones, as
 ratpoints writes the pattern of the class, which \verb|get_2adic_info| makes once per class, one
 word repeated over a bit array by the macro \verb|RBA| of the build, and copies into each bit array;
-so the node of the first stage gains the line that makes the pattern and the macro of every build
+so the node of the first stage holds the line that makes the pattern and the macro of every build
 (\csource{find_points.c}{1098}{1098}, \csource{rp-private.h}{129}{132},
 \csource{rp-private.h}{203}{204}, \csource{rp-private.h}{235}{235},
-\csource{rp-private.h}{261}{261}, \csource{rp-private.h}{285}{285}); and their contracts gain the
+\csource{rp-private.h}{261}{261}, \csource{rp-private.h}{285}{285}); and their contracts state the
 class bit: bit $t$ of word $y$ of a piece is bit $t$ of $\omega$ and the survivor test of the
 numerator $R w_0 + 64 y + t$, which is congruent to $t$ modulo $64$ since $64 \mid R$
-(\lname{Ratpoints.Sieve.classBit}, the bit $a \bmod 64$ of a word, and
-\lname{Ratpoints.Sieve.classBit\_rbaLength\_mul\_add}, which the node of the first stage names). So
+(\verb|Ratpoints.Sieve.classBit|, the bit $a \bmod 64$ of a word, and
+\verb|Ratpoints.Sieve.classBit_rbaLength_mul_add|, which the node of the first stage names). So
 \verb|sift| with the class word $\omega$ gives what the brute-force reference finds over $b$ and the
 numerators that pass bit $a \bmod 64$ of $\omega$ and the tables (Definitions~\ref{def:siftPiece}
 and~\ref{def:sift}): the equation of Lemma~\ref{lem:sift_eq_checkDen} filters the points of the
-plain sieve by the class bit of their numerators (\lname{Ratpoints.BruteForce.pointsOfDen\_filter},
+plain sieve by the class bit of their numerators (\verb|Ratpoints.BruteForce.pointsOfDen_filter|,
 which its node names); with the word of the class of $b$, by Lemma~\ref{lem:twoAdic_point}, that is
 what the reference finds over $b$ and the numerators that survive the tables.
 
@@ -254,9 +253,23 @@ $\gcd(b, G(a, b)) = \gcd(b, c_d)$. This restricts the denominators of the points
   and the record holds it.
 \end{definition}
 
+\begin{lemma}[A square sum with one term of least valuation]\label{lem:least_valuation}
+  \lean{Int.even_and_exists_isSquare_add_of_sq_eq_sum}
+  \leanok
+  Let $p$ be a prime and $y^2 = \sum_{i \in s} f_i$ a sum of integers in which one term
+  $f_j = p^v u$, $p \nmid u$, has the least valuation: $p^{v + 1}$ divides every other term. Then
+  $v$ is even and $u + p t$ is a square for some integer $t$, so that $u$ is a square modulo $p$.
+\end{lemma}
+
+\begin{proof}
+  \leanok
+  The sum is $p^v (u + p t)$ for an integer $t$, and $p \nmid u + p t$; since $y^2$ has an even
+  valuation, $v$ is even, and $y / p^{v / 2}$ is an integer whose square is $u + p t$.
+\end{proof}
+
 \begin{lemma}[The denominators of odd degree]\label{lem:odd_denominators}
   \uses{def:setupUs1, def:binaryForm, lem:squarefree_binaryFormPoly}
-  \lean{Ratpoints.even_of_sq_eq_binaryForm_of_odd, Ratpoints.isSquare_of_sq_eq_binaryForm_of_odd, Ratpoints.exists_eq_mul_mul_of_sq_eq_binaryForm_of_odd, Ratpoints.Setup.mem_foldl_extendDivisors_one_iff, Ratpoints.Setup.nodup_foldl_extendDivisors, Ratpoints.Setup.mem_iff_of_setupUs1_eq_some, Ratpoints.Setup.nodup_of_setupUs1_eq_some, Ratpoints.even_add_of_sq_eq_binaryForm_of_odd, Ratpoints.Setup.DenInfo.excludes, Ratpoints.Setup.DenInfo.excludes_eq_false_of_sq_eq, Int.even_and_exists_isSquare_add_of_sq_eq_sum}
+  \lean{Ratpoints.even_of_sq_eq_binaryForm_of_odd, Ratpoints.isSquare_of_sq_eq_binaryForm_of_odd, Ratpoints.exists_eq_mul_mul_of_sq_eq_binaryForm_of_odd, Ratpoints.Setup.mem_foldl_extendDivisors_one_iff, Ratpoints.Setup.nodup_foldl_extendDivisors, Ratpoints.Setup.mem_iff_of_setupUs1_eq_some, Ratpoints.Setup.nodup_of_setupUs1_eq_some, Ratpoints.even_add_of_sq_eq_binaryForm_of_odd, Ratpoints.Setup.DenInfo.excludes, Ratpoints.Setup.DenInfo.excludes_eq_false_of_sq_eq}
   \leanok
   Let $d$ be odd, $a$ and $y$ integers and $b \ge 1$ a natural number with $\gcd(a, b) = 1$ and
   $y^2 = F(a, b)$, as for a normalized point $(a, y, b)$.
@@ -270,19 +283,20 @@ $\gcd(b, G(a, b)) = \gcd(b, c_d)$. This restricts the denominators of the points
 \end{lemma}
 
 \begin{proof}
+  \uses{lem:least_valuation}
   \leanok
   Let $p \nmid c_d$ be a prime with $b = p^m b'$, $m \ge 1$ and $p \nmid b'$. Then $p \nmid a$, and
   the term $c_d a^d b$ of $F(a, b)$ alone has the least valuation $m$, every other term
-  $c_k a^k b^{d + 1 - k}$ having at least $2m$; so $y^2 = F(a, b) \ne 0$ has the valuation $m$, and
-  $m$ is even. Hence every prime of odd valuation in $b$ divides $c_d$: for $|c_d| = 1$, $b$ is a
-  square, and in general $b = s k^2$ with $s$ squarefree and its primes among those of $c_d$. The
-  factorization is that of $|c_d|$, since a cofactor below $p^2$ without prime factors below $p$ is
-  a prime (the table holds every odd prime below $1022$ in increasing order); with fewer than $512$
-  divisors, the list holds every product of distinct primes of $c_d$ at most $b_{\mathrm{high}}$,
-  each once, and $s \le b$ is one. For (3): $p \nmid a$; the term
-  $c_d a^d$ of $G$ has the valuation $v_p(c_d)$, and a term $c_k a^k b^{d - k}$ with $k < d$ has a
-  larger one, $v_p(c_k) + (d - k) v_p(b) \ge v_p(c_k) + (d - k) n > v_p(c_d)$; so
-  $v_p(G(a, b)) = v_p(c_d)$, and $v_p(b) + v_p(c_d) = v_p(y^2)$ is even.
+  $c_k a^k b^{d + 1 - k}$ having at least $2m$; so $m$ is even (Lemma~\ref{lem:least_valuation}).
+  Hence every prime of odd valuation in $b$ divides $c_d$: for $|c_d| = 1$, $b$ is a square, and in
+  general $b = s k^2$ with $s$ squarefree and its primes among those of $c_d$. The factorization is
+  that of $|c_d|$, since a cofactor below $p^2$ without prime factors below $p$ is a prime (the
+  table holds every odd prime below $1022$ in increasing order); with fewer than $512$ divisors, the
+  list holds every product of distinct primes of $c_d$ at most $b_{\mathrm{high}}$, each once, and
+  $s \le b$ is one. For (3): $p \nmid a$; the term $c_d a^d$ of $G$ has the valuation $v_p(c_d)$,
+  and a term $c_k a^k b^{d - k}$ with $k < d$ has a larger one,
+  $v_p(c_k) + (d - k) v_p(b) \ge v_p(c_k) + (d - k) n > v_p(c_d)$; so $v_p(G(a, b)) = v_p(c_d)$, and
+  $v_p(b) + v_p(c_d) = v_p(y^2)$ is even.
 \end{proof}
 
 \section{Even degree: the forbidden divisors}\label{sec:forbidden}
@@ -320,14 +334,15 @@ $w_j = v_p(c_{d - j})$.
 \end{lemma}
 
 \begin{proof}
-  \uses{lem:odd_denominators}
+  \uses{lem:least_valuation}
   \leanok
   Let $m = v_p(b)$; bit $0$ is never set. If the least valuation $\mu$ of the terms is taken at
   $j_0$ only, then $v_p(F(a, b)) = \mu$ and $F(a, b) / p^{\mu}$ is congruent to
   $r_{j_0} a^{d - j_0} (b / p^m)^{j_0}$ modulo $p$; since $F(a, b) = y^2$, $\mu$ is even and this
-  unit is a square, and for even $j_0$, $a^{d - j_0} (b / p^m)^{j_0}$ is the square of a unit, so
-  $r_{j_0}$ is a square modulo $p$. The argument is that of the Newton polygon at $p$; it does not
-  need $p \mid c_d$, the case in which the C code computes the mask.
+  unit is a square (Lemma~\ref{lem:least_valuation}), and for even $j_0$,
+  $a^{d - j_0} (b / p^m)^{j_0}$ is the square of a unit, so $r_{j_0}$ is a square modulo $p$. The
+  argument is that of the Newton polygon at $p$; it does not need $p \mid c_d$, the case in which
+  the C code computes the mask.
 \end{proof}
 
 \begin{definition}[The forbidden divisors]\label{def:forbidden}
@@ -558,7 +573,7 @@ $(c_d / q) = -1$, which these do not reach.
 \end{proof}
 
 The run (Definition~\ref{def:sieveRun}) takes the shape, the words of the 2-adic information and the
-range $b_{\mathrm{low}}, \dots, b_{\mathrm{high}}$, and moves into the new file of this chapter: for
+range $b_{\mathrm{low}}, \dots, b_{\mathrm{high}}$, and lives in the model file of this chapter: for
 each denominator of the list of the shape that passes its test, the points that \verb|sift| finds
 from the word of its class, appended in turn (\csource{find_points.c}{3889}{3904},
 \csource{find_points.c}{3917}{3918}, \csource{find_points.c}{3926}{3936},
@@ -566,21 +581,17 @@ from the word of its class, appended in turn (\csource{find_points.c}{3889}{3904
 \csource{find_points.c}{4042}{4052}, \csource{find_points.c}{4059}{4059},
 \csource{find_points.c}{4066}{4072}, \csource{find_points.c}{4075}{4078},
 \csource{find_points.c}{5120}{5120}, \csource{find_points.c}{5152}{5160}). Its contract, for an
-array size $A \ge 1$ and moduli $p > 0$: the concatenation, over the denominators of the list that
-pass the test, of what the brute-force reference finds over the numerators that pass the class word
-and the tables, mapped by $\mathrm{swapPoint}$ when the flag of the reversal is set; for moduli that
-are primes and the shape of Lemma~\ref{lem:shape_dens}, the filters change nothing, and the result
+array size $A \ge 1$ and moduli $p > 0$, is the concatenation, over the denominators of the list
+that pass the test, of what the brute-force reference finds over the numerators that pass the class
+word and the tables, mapped by $\mathrm{swapPoint}$ when the flag of the reversal is set
+(\verb|Ratpoints.Sieve.sieveRun_spec|, \verb|Ratpoints.Sieve.toList_run_sieveRun|). For moduli that
+are primes and the shapes of Lemma~\ref{lem:shape_dens}, the filters change nothing, and the result
 is the concatenation of what the reference finds over each denominator of the list: given a list $l$
 such that the list of the shape is $l$ filtered by a test, every denominator of $l$ that carries a
 point passes that test and the test of the shape, and every numerator that gives a point passes the
-class word and the tables, the run gives the reference over $l$. The node of the run keeps its
-contract and its equation (\lname{Ratpoints.Sieve.sieveRun\_spec},
-\lname{Ratpoints.Sieve.toList\_run\_sieveRun}); the node of the equation of the sieve, whose
-declaration goes, becomes this reduction,
-\lname{Ratpoints.Sieve.toList\_run\_sieveRun\_eq\_flatMap}, under the title ``The run and the
-reference'' and the label \verb|thm:run_reference| (Theorem~\ref{thm:run_reference}), the points at
-infinity going to the search; the references to it in Chapters~\ref{chap:words} and~\ref{chap:setup}
-follow.
+class word and the tables, the run gives the reference over $l$ (Theorem~\ref{thm:run_reference},
+\verb|Ratpoints.Sieve.toList_run_sieveRun_eq_flatMap|); the points at infinity come from the
+search.
 
 \section{The search and the theorems}\label{sec:denSearch}
 
@@ -589,14 +600,14 @@ Section~\ref{sec:denC} describes, in its order: the flags of the tests on the de
 divisors of the leading coefficient for odd degree, the 2-adic information and its exit, the tables
 of the moduli with their exit, the forbidden divisors for even degree with the switch of the checked
 loop, the shape, and the points at infinity followed by the run over the denominators from $1$ to
-$H$. For well-formed parameters, $H \ge 1$ and $d$ the degree of $c$, its result becomes the list of
+$H$. For well-formed parameters, $H \ge 1$ and $d$ the degree of $c$, its result is the list of
 the points at infinity followed by the points of the reference over the denominators of the search
 (Definition~\ref{def:searchDens}), in their order, each mapped by $\mathrm{swapPoint}$ when the flag
-of the reversal is set, also at both exits; its node keeps \lname{Ratpoints.run\_searchPoints} with
-this statement and gains the uses of Definitions~\ref{def:Shape} and~\ref{def:searchDens},
-Lemmas~\ref{lem:twoAdic_exit} and~\ref{lem:shape_dens} and the reduction of the run, in place of the
-equation of the sieve, and the C ranges of the flags and of the exits, with the frame of the loop of
-the tables and of the block that sets up the run (\csource{find_points.c}{2537}{2537},
+of the reversal is set, also at both exits; its node names \verb|Ratpoints.run_searchPoints| with
+this statement, uses Definitions~\ref{def:Shape} and~\ref{def:searchDens},
+Lemmas~\ref{lem:twoAdic_exit} and~\ref{lem:shape_dens} and the reduction of the run, and holds the C
+ranges of the flags and of the exits, with the frame of the loop of the tables and of the block that
+sets up the run (\csource{find_points.c}{2537}{2537},
 \csource{find_points.c}{2707}{2707}, \csource{find_points.c}{2793}{2795},
 \csource{find_points.c}{4573}{4573}, \csource{find_points.c}{4588}{4589},
 \csource{find_points.c}{4595}{4596}, \csource{find_points.c}{4603}{4604},
@@ -646,23 +657,22 @@ the tables and of the block that sets up the run (\csource{find_points.c}{2537}{
   check hands on is that of $c'$, and without a reversal $c' = c$ (Lemma~\ref{lem:reversal_swap}).
 \end{proof}
 
-Theorem~\ref{thm:findPoints_perm} keeps its permutation, and its equation with the reference of the
-polynomial handed on gives way to Theorem~\ref{thm:findPoints_order}; Theorem~\ref{thm:findPoints}
-keeps membership, no duplicates and the set of elements, for every option, and the node of the
-equation of the sieve becomes the reduction of the run (Section~\ref{sec:shapes}). The refusals do
-not change, nor do the structure \verb|Params|, its well-formedness and the statements that
-comparator certifies.
+Theorem~\ref{thm:findPoints_perm} states the permutation, and Theorem~\ref{thm:findPoints}
+membership, no duplicates and the set of elements, for every option. The refusals, the structure
+\verb|Params|, its well-formedness and the statements that comparator certifies are those of
+stage~D.
 
 \section{The command-line program and the differential tests}\label{sec:denCli}
 
-The program does not change: the options that stage~E reads were read before, \verb|-j| into the
-Jacobi switch of the parameters and \verb|-F| into $\mathrm{maxForbidden}$, and the order of the
-printed points becomes that of Theorem~\ref{thm:findPoints_order}. In the differential tests, every
-point list is compared in its order, the divisors of the leading coefficient included, and the
-harness no longer computes them; in the suites that run the C program, a run on which it prints
-nothing (with \verb|-q|, as at the 2-adic exit) is compared even above the largest height, which
-the harness skips only when the C program prints something, so that \verb|test3.sh| compares 16 of
-its 21 runs.
+The program is that of stage~D: the options that stage~E reads were read before, \verb|-j| into
+the Jacobi switch of the parameters and \verb|-F| into $\mathrm{maxForbidden}$, and the order of the
+printed points is that of Theorem~\ref{thm:findPoints_order}. The differential tests compare every
+point list in its order, the divisors of the leading coefficient included; in the suites that run
+the C program, a run on which it prints nothing (with \verb|-q|, as at the 2-adic exit) is compared
+even above the largest height, which the harness skips only when the C program prints something,
+so that \verb|test3.sh| compares 16 of its 21 runs. \verb|ratpoints-lean| and the C program agree
+on all 3219 comparisons of the eight default suites, 261 of the runs of \verb|test4.sh| by their
+points, and on the 13 of \verb|test4high|.
 
 \section{Deviations}\label{sec:denDeviations}
 
@@ -704,7 +714,9 @@ Each component of this chapter differs from the C code in a stated way, recorded
     by lemmas that the nodes of their components name: the denominators $k^2$, $s k^2$ and
     $64 w + j$ of the shapes, the products $x p$ of the divisors and $p^m$ of the masks, the square
     $p^2$ of a prime of the table and the cofactor of the factorization below it, \verb|int|s, the
-    masks, below $2^{40}$, and the negation of the quarter of \verb|LONG_MIN| in \verb|jacobi1|;
+    masks, below $2^{40}$, and the negation of the quarter of \verb|LONG_MIN| in \verb|jacobi1|, the
+    bounds of $p^m$ and $p^2$ in the loops of the forbidden divisors being those of the node of the
+    divisors (Definition~\ref{def:setupUs1});
     and a denominator of the Jacobi test by tables is at most $\mathrm{mulModLimit} = 2^{32} - 1$,
     where \verb|RP_MULDIV| is exact; the valuations and the slopes of the records of the divisors,
     \verb|int|s in the C code, as natural numbers, which they fit for coefficients below
@@ -727,100 +739,52 @@ of the classes with their row offsets (stage~F), the search intervals of the run
 blocks with the correction of the moduli between them and the choice of the number of primes
 examined (stage~I).
 
-\section{Files, names and order of work}
+\section{Files and names}
 
-The constants of the stage go into \verb|Ratpoints/Model/Constants.lean|, each citing its macro, and
+The constants of the stage are in \verb|Ratpoints/Model/Constants.lean|, each citing its macro, and
 no proof depends on their values: $\mathrm{maxDivisors}$, $\mathrm{veryBig}$,
 $\mathrm{jacobiPrimes}$, $\mathrm{jacobiTable}$ and $\mathrm{mulModLimit}$, of which the proofs use
-only $\mathrm{mulModLimit} < 2^{64}$ (\lname{Ratpoints.mulModLimit\_lt\_size}, next to the
-constant), so that a denominator of the Jacobi test by tables is a word. The valuation and the
-divisors of the leading coefficient go into \verb|Ratpoints/Model/Setup.lean|, in the namespace
+only $\mathrm{mulModLimit} < 2^{64}$ (\verb|Ratpoints.mulModLimit_lt_size|, next to the constant),
+so that a denominator of the Jacobi test by tables is a word. The valuation and the divisors of the
+leading coefficient are in \verb|Ratpoints/Model/Setup.lean|, in the namespace
 \verb|Ratpoints.Setup|; the 2-adic information, the forbidden divisors, the Jacobi test, the shapes
-and the run into a new file \verb|Ratpoints/Model/Denominators.lean|, in the namespace
-\verb|Ratpoints.Sieve|, which imports the sieve and the set-up; the class word into the components
-of \verb|Ratpoints/Model/Sieve.lean| that make a piece and the numerators of one denominator, from
-which the run moves out; and the steps of the search into \verb|Ratpoints/Model/FindPoints.lean|.
-The contracts and the lemmas go into new files of \verb|Ratpoints/Proof|: the valuation into
-\verb|Valuation.lean|; the 2-adic information into \verb|TwoAdic.lean|; the denominators of odd
-degree, the factorization and the divisors with their slopes into \verb|Divisors.lean|; the
-forbidden valuations and divisors into \verb|Forbidden.lean|; the Jacobi test by the binary
-algorithm into \verb|Jacobi.lean| and by tables into \verb|JacobiTables.lean|; the lists and the
-tests of the shapes into \verb|Shapes.lean|; and the run over a shape into \verb|Denominators.lean|.
-Unlike those of stages C1 to D, the contracts of this stage are proved in the files with Mathlib,
-next to the lemmas they serve, since several of them speak of notions of Mathlib (the primes and
-their valuations, the squares modulo a prime, the Jacobi symbol); the contracts of the earlier
-stages stay where they are. The class word enters the contracts of
-\verb|Ratpoints/Proof/Words.lean|; the filter of the reference by a test on the numerators goes into
-\verb|Ratpoints/Proof/Sieve.lean|, the facts about the table of primes that the factorization uses,
-checked by \verb|decide|, into \verb|Ratpoints/Proof/Params.lean|, the lemmas on words and lists in
-core's namespaces into \verb|Ratpoints/Proof/Bits.lean|, and the denominators of the search with the
-theorems into \verb|Ratpoints/Proof/FindPoints.lean|; the lemmas of Mathlib's generality go into
-\verb|Ratpoints/Mathlib|, in the files that mirror their homes in Mathlib:
-\verb|Algebra/BigOperators/Group/List/Basic|, \verb|Algebra/Group/Even|, \verb|Data/Int/GCD|,
-\verb|Data/List/Basic|, \verb|Data/List/Pairwise|, \verb|Data/Nat/Factors|,
+and the run in \verb|Ratpoints/Model/Denominators.lean|, in the namespace \verb|Ratpoints.Sieve|;
+the class word in the components of \verb|Ratpoints/Model/Sieve.lean| that make a piece and the
+numerators of one denominator; and the steps of the search in
+\verb|Ratpoints/Model/FindPoints.lean|. The contracts and the lemmas are in the files of
+\verb|Ratpoints/Proof| that the stage adds: the valuation in \verb|Valuation.lean|; the 2-adic
+information in \verb|TwoAdic.lean|; the denominators of odd degree, the factorization and the
+divisors with their slopes in \verb|Divisors.lean|; the forbidden valuations and divisors in
+\verb|Forbidden.lean|; the Jacobi test by the binary algorithm in \verb|Jacobi.lean| and by tables
+in \verb|JacobiTables.lean|; the lists and the tests of the shapes in \verb|Shapes.lean|; and the
+run over a shape in \verb|Denominators.lean|. Unlike those of stages C1 to D, the contracts of this
+stage are proved in files with Mathlib, next to the lemmas they serve, since several of them speak
+of notions of Mathlib (the primes and their valuations, the squares modulo a prime, the Jacobi
+symbol). The class word is in the contracts of \verb|Ratpoints/Proof/Words.lean|, which also holds
+the invariant of a loop over the set bits of a word that the walk of the check, the 2-adic
+information and the words of the shapes share; the filter of the reference by a test on the
+numerators is in \verb|Ratpoints/Proof/Sieve.lean|, the denominators of a point and the filter of
+the reference by the denominators in \verb|Ratpoints/Proof/BruteForce.lean|, the facts about the
+table of primes that the factorization uses, checked by \verb|decide|, in
+\verb|Ratpoints/Proof/Params.lean|, the lemmas on words, lists and ranges in core's namespaces in
+\verb|Ratpoints/Proof/Bits.lean|, the binary form at $a = k b$, the squares modulo $p$ and the
+negation of the quarter of \verb|LONG_MIN| in \verb|Ratpoints/Proof/Tables.lean|, and the
+denominators of the search with the theorems in \verb|Ratpoints/Proof/FindPoints.lean|. The lemmas
+of Mathlib's generality are in \verb|Ratpoints/Mathlib|, in the files that mirror their homes in
+Mathlib: \verb|Algebra/BigOperators/Group/List/Basic|, \verb|Algebra/Group/Even|,
+\verb|Data/Int/GCD|, \verb|Data/List/Basic|, \verb|Data/List/Pairwise|, \verb|Data/Nat/Factors|
+(with the part of a number prime to another, \verb|Nat.coprimePart|, which is $b^*$),
 \verb|Data/Nat/PadicValNat|, \verb|Data/Nat/Prime/Defs|, \verb|Data/Nat/Squarefree|,
 \verb|Data/ZMod/Basic|, \verb|NumberTheory/LegendreSymbol/JacobiSymbol| and
-\verb|NumberTheory/Padics/PadicVal/Basic|. Every new module joins its part root and the listing
-\verb|Ratpoints.lean|. One commit per item, each passing the project's checks:
-\begin{enumerate}
-  \item[E.1] The valuation with the constant $\mathrm{veryBig}$ (Definition~\ref{def:valuation}),
-    with its contract in \verb|Valuation.lean|, the $p$-adic valuation and the unit part, and
-    \verb|#guard| examples.
-  \item[E.2] The 2-adic information and Lemma~\ref{lem:twoAdic_point}
-    (Definition~\ref{def:twoAdic}), in \verb|TwoAdic.lean|, with \verb|#guard| examples against the
-    words that an instrumented build of the C code prints; the class word in the first stage, the
-    piece and the numerators of one denominator, with their contracts and nodes
-    (Definitions~\ref{def:andRows}, \ref{def:siftPiece} and~\ref{def:sift},
-    Lemma~\ref{lem:sift_eq_checkDen}), the run over $1, \dots, H$ passing the word of all ones until
-    E.6, so that the output does not change.
-  \item[E.3] The divisors of the leading coefficient and Lemma~\ref{lem:odd_denominators}
-    (Definition~\ref{def:setupUs1}), with the constant $\mathrm{maxDivisors}$, in
-    \verb|Divisors.lean|, with the facts about the table of primes, the bounds of \verb|setup_us1|
-    and the mirrors they use, and \verb|#guard| examples against the divisors that
-    \verb|ratpoints -v| prints and the slopes of the build with \verb|DEBUG|; nothing calls them
-    until E.7.
-  \item[E.4] The forbidden valuations and the forbidden divisors
-    (Definitions~\ref{def:forbiddenValuations} and~\ref{def:forbidden},
-    Lemmas~\ref{lem:forbiddenValuations} and~\ref{lem:forbidden}), in \verb|Forbidden.lean|, with
-    the bounds of the masks, the mirrors of the Newton polygon and \verb|#guard| examples against
-    the forbidden divisors that the instrumented build prints.
-  \item[E.5] The Jacobi test by the binary algorithm and by tables (Definitions~\ref{def:jacobi}
-    and~\ref{def:jacobiTables}, Lemmas~\ref{lem:jacobi} and~\ref{lem:jacobiTest}), with the
-    constants $\mathrm{jacobiPrimes}$, $\mathrm{jacobiTable}$ and $\mathrm{mulModLimit}$, in
-    \verb|Jacobi.lean| and \verb|JacobiTables.lean|, with their bounds, the mirrors on the Jacobi
-    symbol and on the largest divisor prime to a number, and \verb|#guard| examples against the
-    tables that the instrumented build prints.
-  \item[E.6] The shapes with their lists, their tests and their choice (Definition~\ref{def:Shape},
-    Lemma~\ref{lem:shape_dens}), in \verb|Shapes.lean|, with their bounds; the run over a shape
-    (Definition~\ref{def:sieveRun}) in the new files, with its reduction to the reference in the
-    node of the equation of the sieve; the search runs the shape of every denominator with the
-    class words and the class test, and takes the 2-adic exit (Lemma~\ref{lem:twoAdic_exit}); the
-    choice of the shape is not called yet, and the output is still the reference.
-  \item[E.7] The steps of the search for both degrees, with the divisors of the leading
-    coefficient, the forbidden divisors with the switch of the checked loop, and the choice of the
-    shape; the denominators of the search (Definition~\ref{def:searchDens}) and
-    Theorem~\ref{thm:findPoints_order}, with the corollaries, the guards on the axioms and the nodes
-    of the search and of the theorems; the differential tests compare every point list in its order,
-    and a run on which the C program prints nothing even above the largest height.
-  \item[E.8] The exclusions of the lines of this part of the C code that the model leaves out; the
-    build with other values of the constants, with the new constants among them; the differential
-    tests of Section~\ref{sec:denCli} and their unit tests; and the description of the repository
-    and \verb|formalization.yaml|, with the passages of Chapters~\ref{chap:spec}
-    to~\ref{chap:setup} that stage~E makes untrue: the run over $1, \dots, H$ and the files of its
-    contract, the comparison as sets where the denominators do not ascend and the count of the runs
-    of \verb|test3.sh|, the order of the program as that of Theorem~\ref{thm:findPoints_perm}, the
-    correction of the moduli during the run, which is stage~I, the list of \verb|findPoints| as the
-    reference, the passages that name stage~E, and what stage~G still owes once
-    Theorem~\ref{thm:findPoints_order} holds.
-\end{enumerate}
+\verb|NumberTheory/Padics/PadicVal/Basic|; that the macro \verb|CEIL| rounds up, a fact about the C
+code, is a private lemma next to its use.
 
 \section{The evidence}\label{sec:den-evidence}
 
-Checks made while this chapter was written:
+Besides the proofs:
 \begin{itemize}
-  \item a reading of the C code of this chapter at the pin by three readers, with a reader of the
-    API of Mathlib and one of the model, each but the last with a second reader who checked the
-    reading: the rule of the 2-adic words, proved and checked on 6367 curves over all 4096 pairs of
+  \item a reading of the C code of this chapter at the pin, each part with a second reader who
+    checked the reading: the rule of the 2-adic words, checked on 6367 curves over all 4096 pairs of
     residues, with the classes packed by strides of at most $8$; a build with the stride~$1$ for
     every class, which prints what the release prints on 2500 runs; the order of the output
     predicted byte for byte on 10088 runs (4836 curves; 70 refusals, 2085 runs whose denominators do
@@ -831,45 +795,35 @@ Checks made while this chapter was written:
     curves of even degree with 25329 points and on 2993 curves with points of the valuations $1$ to
     $7$; and the three implementations of the Jacobi test agreeing on 31.6 million evaluations; no
     defect of the C code was found;
-  \item the mathematics of every test proved in Lean against Mathlib in scratch files, with the
-    standard axioms only: the classes modulo $64$, the squares and the divisors of odd degree with
-    the slopes, the Newton polygon of the forbidden valuations, the soundness of the Jacobi test in
-    every form of the C code, and the lists of the divisors and of the square shapes;
-  \item a sketch of the model of this chapter in Lean, whose \verb|#guard| examples give the words,
-    the divisors, the slopes, the forbidden divisors, the tables of the Jacobi test and the
-    denominators that an instrumented build of the C code prints; it agrees with \verb|ratpoints -q|
-    on the 3219 runs of the differential tests, every point list in its order, on the 13 runs at
-    heights up to 100000, and byte for byte on 2540 runs of its own, 2500 at heights up to 3000
-    (among them 844 of the divisor shape, 690 of them with denominators that do not ascend; 101
-    where \verb|setup_us1| fails, the boundary of $512$ divisors included; 231 of the squares, 1050
-    of the words, 154 of every denominator, 92 of the 2-adic exit, 14 without points modulo a prime)
-    and 40 at heights from $10^4$ to $5 \cdot 10^4$; and on 6260 runs it computes what the
-    instrumented build computes, line by line: the divisors and the slopes or their failure, the 64
-    words of the classes, both exits, the forbidden divisors in their order, the switch of the
-    checked loop, the shape, the tables of the Jacobi test and every denominator sifted, about
-    873000 of them; on 1000 runs with any options the same, but for 8 in which the Sturm step of the
-    C code leaves nothing to sieve, so that it sets up no run, where the model sieves (stage~H),
-    with the same output;
-  \item a review of the C ranges and the deviations of the sketch by three readers, each finding
-    checked by a second reader: 34 findings, all confirmed, on the ranges, the deviations, the
-    exclusions and the docstrings, none on what the model computes; the ranges of this chapter are
-    the corrected ones;
-  \item a prototype of the proofs on the sketch, in a copy of the repository, in four parts in
-    sequence and one in parallel for the Jacobi test: every contract and lemma of this chapter
-    proved, with the standard axioms only, every proof of at most $20$ lines, the statements that
-    comparator certifies unchanged, and the build with other values of the constants, the new
-    constants among them; it found that the sketch kept the bound $m < 63$ of the C code and a
-    $64$-bit word for the masks of the forbidden valuations, which is not sound beyond the
-    \verb|long|s of the C code: for $c = (3, 0, 3^{128})$ and $H \ge 3^{64}$, the prime $3$ became
-    a prime tested with words, although $(1, 2 \cdot 3^{64}, 3^{64})$ is a point; the masks became
-    natural numbers, and the differential tests of the corrected sketch give 3219 comparisons, none
-    failed;
-  \item a review of this chapter by four readers, each finding checked by a second reader: 53
-    findings, 39 confirmed and 12 in part, all applied: the C links of three nodes (the packing of
-    the classes, the record of the divisors, the tables of the Jacobi test), the conditions of the
-    divisor order and of the tables of the Jacobi test, the zero mask, the primes that the forbidden
-    divisors reach, the slopes with $v_p(0) = \mathrm{veryBig}$, the 2-adic exit and the tests of
-    the shapes as public lemmas, the hypotheses of the lists of the shapes, the statement of the
-    search and the fate of the equation of the sieve, the uses, the notation, the order of work and
-    the passages of the earlier chapters that the stage changes.
+  \item before the stage, a sketch of the model in Lean, checked against an instrumented build of
+    the C code, line by line, on 6260 runs and against the C program on 2540 runs of its own, and a
+    prototype of the proofs for it, which found that the bound $m < 63$ of the C code on the masks
+    of the forbidden valuations is not sound beyond the \verb|long|s (for $c = (3, 0, 3^{128})$ and
+    $H \ge 3^{64}$ the prime $3$ would be tested with words, although $(1, 2 \cdot 3^{64}, 3^{64})$
+    is a point), so that the masks are natural numbers; a review of the C ranges of the sketch (34
+    findings, all confirmed) and of the plan of this chapter by four readers (53 findings, 39
+    confirmed and 12 in part, all applied), each finding checked by a second reader; after the
+    stage, two independent reviews, each finding checked by a second reader: of the C ranges, the
+    deviations and the exclusions against the C code (9 findings, all confirmed: the definitions of
+    \verb|RP_MULDIV| go to the Jacobi test by tables, and eight deviations name the types and
+    arguments they left out), and of the code against the conventions of the project (85 findings,
+    82 confirmed), applied in eighteen rounds, among them one invariant for the loops over the set
+    bits of a word, a predicate for the result of the subtraction loop of the Jacobi symbol, the
+    part of a number prime to another as a definition, unfolding lemmas for the tests, the lemmas of
+    Mathlib's generality in their homes and at their generality, the weakest hypotheses, and names
+    from the statements;
+  \item the \verb|#guard| examples of the model: the valuation, the factorizations with their
+    cofactors, the divisors and the slopes against what \verb|ratpoints -v| and the build with
+    \verb|DEBUG| print, the boundary of $512$ divisors, the words of the 2-adic information, the
+    forbidden divisors, the tables of the Jacobi test and the denominators sifted against the
+    instrumented build, the binary algorithm against Euler's criterion and the test by tables
+    against the binary algorithm, and the search with the divisor shape and at the 2-adic exit
+    against ratpoints;
+  \item the differential tests of Section~\ref{sec:denCli}: 3219 comparisons in the default suites
+    and 13 in \verb|test4high|, none failed, every point list compared in its order;
+  \item Comparator accepted the solution of the challenge, with the model of this stage, on
+    2026-10-12;
+  \item the project builds, with all its proofs, for other values of the constants of the build, the
+    five new ones among them; so no proof depends on their values;
+  \item every proof of the stage takes at most 20 lines.
 \end{itemize}
