@@ -283,7 +283,11 @@ def setupUs1 (c : List Int) (d bHigh : Nat) : Id (Option (List DenInfo × List N
 What ratpoints 3.1.1 does at the pinned commit: with `-v` it says whether it reverses and in which
 case, and prints the coefficients of case 3; `-k` switches the reversal off; and
 `ratpoints '0 0 1 1 1' 5 -q -s`, without the Sturm step, which would refuse the form too, ends with
-error 8, which `-s -k` does not. The test of the `long`s is checked at the ends of their range. -/
+error 8, which `-s -k` does not. The test of the `long`s is checked at the ends of their range. The
+valuation is checked at 2, 3 and 5 and at 0; the factorizations over the table with their cofactors,
+the squarefree divisors and the slopes against what the build of ratpoints with `DEBUG` prints with
+`-v`, a factorization that is not complete among them; and the boundary of `Ratpoints.maxDivisors`
+divisors (511 at the height 2066, 512 at 2067). -/
 
 #guard [0, 1, 4, 9, 2 ^ 126].all isSquare && !([2, 3, -1, -4, 2 ^ 127].any isSquare)
 

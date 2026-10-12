@@ -78,19 +78,20 @@ even degree; the Jacobi test for even degree, `c_d` not a square (`Ratpoints.Set
 the switch `P.jacobi`; the squares for odd degree and `|c_d| = 1`; and for odd degree otherwise the
 divisors of `c_d` (`Ratpoints.Setup.setupUs1`). Then the 2-adic information
 (`Ratpoints.Sieve.twoAdic`, `Ratpoints.Sieve.denBits`), and no points when no class of the
-denominators admits a numerator and there is no point at infinity (odd degree or `c_d` a square).
-Then the table of each modulus of `P` with the exit (`Ratpoints.Sieve.examinePrime?`), with the flag
-of the `long`s (`Ratpoints.Setup.useCLong`), and no points when one of them is none, since the curve
-has no points modulo that prime; for even degree the forbidden divisors, at most `P.maxForbidden` of
-them (`Ratpoints.Sieve.forbidden`), and the checked loop off when there are none and no Jacobi test;
-the shape of the run (`Ratpoints.Sieve.runSetup`); and the points at infinity
-(`Ratpoints.Sieve.pointsAtInfinity`), followed by those of the denominators of the shape
-(`Ratpoints.Sieve.sieveRun`) with these tables and pieces of at most
-`Ratpoints.Params.arraySizeAt P H` bit arrays, each point mapped by `Ratpoints.Sieve.swapPoint` when
-`rev` is set. For well-formed parameters, `H ≥ 1` and `d` the degree of `c`, these are the points at
-infinity followed by the points of the brute-force reference over the denominators of the search
-(`Ratpoints.searchDens`), in the order of its loop, increasing unless the shape is that of the
-divisors, each mapped when `rev` is set, also when an exit is taken (`Ratpoints.run_searchPoints`).
+denominators admits a numerator and there is no point at infinity, as there is for odd degree or
+`c_d` a square. Then the table of each modulus of `P` with the exit
+(`Ratpoints.Sieve.examinePrime?`), with the flag of the `long`s (`Ratpoints.Setup.useCLong`), and no
+points when one of them is none, since the curve has no points modulo that prime; for even degree
+the forbidden divisors, at most `P.maxForbidden` of them (`Ratpoints.Sieve.forbidden`), and the
+checked loop off when there are none and no Jacobi test; the shape of the run
+(`Ratpoints.Sieve.runSetup`); and the points at infinity (`Ratpoints.Sieve.pointsAtInfinity`),
+followed by those of the denominators of the shape (`Ratpoints.Sieve.sieveRun`) with these tables
+and pieces of at most `Ratpoints.Params.arraySizeAt P H` bit arrays, each point mapped by
+`Ratpoints.Sieve.swapPoint` when `rev` is set. For well-formed parameters, `H ≥ 1` and `d` the
+degree of `c`, these are the points at infinity followed by the points of the brute-force reference
+over the denominators of the search (`Ratpoints.searchDens`), in the order of its loop, increasing
+unless the shape is that of the divisors, each mapped when `rev` is set, also when an exit is taken
+(`Ratpoints.run_searchPoints`).
 
 C: `find_points.c:2537`, `find_points.c:2605-2614`, `find_points.c:2707`, `find_points.c:2793-2795`,
 `find_points.c:2976-2978`, `find_points.c:2994-2998`, `find_points.c:4573`,

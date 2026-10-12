@@ -157,8 +157,9 @@ def twoAdic (c : List Int) (d : Nat) : Id (Vector UInt64 64) := do
 
 /-- The classes of the denominators modulo 64 that admit a numerator, for the words `nb` of the
 2-adic information (`Ratpoints.Sieve.twoAdic`): bit `b` is set exactly when `nb[b] ≠ 0`. A
-denominator whose class has its bit clear carries no point; when no bit is set and there is no
-point at infinity, the curve has no point at all, and ratpoints ends the search with none (the
+denominator whose class has its bit clear carries no point; when no bit is set, the curve has no
+point at all, not even at infinity (`Ratpoints.Sieve.not_isPoint_of_denBits_eq_zero`), and ratpoints
+ends the search with none, after a test of the points at infinity that then always passes (the
 2-adic exit of `Ratpoints.searchPoints`).
 
 C: `find_points.c:995`, `find_points.c:1064-1065`, `find_points.c:1070`,
@@ -559,12 +560,13 @@ def jacobiSetup (lcf : Int) (bHigh : Nat) : Id (Option JacobiInfo) := do
   let n3 := (qs.filter fun (q, ns) ↦ ns.isSome && q &&& 2 != 0).size
   return some ⟨qs.toList, jacobiSigns n3 (lcf < 0) v⟩
 
-/-- Whether `(lcf / b*) = 1` for the denominator `b > 0`, by the tables `ji` of the leading
-coefficient `lcf` (`Ratpoints.Sieve.jacobiSetup`): the odd part of `b` (`Ratpoints.Sieve.ctz`),
-out of which every prime `q` of `lcf` is divided as often as it divides, is `b*`; the sign of
-`b* mod 8` is combined by exclusive or with the entry of `b* mod q` in the table of each prime with
-an odd exponent, and the test passes when the result is false. For `b = 0` the loop of
-`Ratpoints.Sieve.ctz` does not end.
+/-- Whether `(lcf / b*) = 1` for the denominator `0 < b < 2 ^ 64`, by the tables `ji` of the leading
+coefficient `lcf` (`Ratpoints.Sieve.jacobiSetup`): the odd part of `b` (`Ratpoints.Sieve.ctz`), out
+of which every prime `q` of `lcf` is divided as often as it divides, is `b*`; the sign of `b* mod 8`
+is combined by exclusive or with the entry of `b* mod q` in the table of each prime with an odd
+exponent, and the test passes when the result is false. For `b = 0` and every multiple of `2 ^ 64`,
+whose word `b.toUInt64` is `0`, the loop of `Ratpoints.Sieve.ctz` does not end; the tables apply
+only for `b ≤ Ratpoints.mulModLimit < 2 ^ 64` (`Ratpoints.mulModLimit_lt_size`).
 
 C: `find_points.c:734-759`, `rp-private.h:409-410`, `rp-private.h:415-416`
 
@@ -1041,10 +1043,11 @@ rule; and the run of the divisor shape against the points that ratpoints prints.
     (Id.run (wordsDens db forb lo hi)).toList == (List.range' lo (hi + 1 - lo)).filter fun b ↦
       db.toBitVec.getLsbD (b % 64) && forb.all fun e ↦ b % e.p != 0
 
--- The run as ratpoints chooses and runs it: the denominators that the dump says the run sifts, for
--- `1 2` at 20 (the divisors), `1 2 3 4 5 6 7` at 100 (the words with the tables of the Jacobi
--- test), `1 0 0 0 -1031` at 100 (the words with the binary algorithm), `1 1 1 1 1 1 1` at 100 with
--- no forbidden divisors (`-F 0`, every denominator) and `-2 0 0 1` at 130 (the squares).
+-- The run as ratpoints chooses and runs it: the shape and the denominators that the dump says the
+-- run sifts, for `1 2` at 20 (the divisors), `1 2 3 4 5 6 7` at 100 (the words with the tables of
+-- the Jacobi test), `1 0 0 0 -1031` at 100 (the words with the binary algorithm; the first twelve
+-- denominators), `1 1 1 1 1 1 1` at 100 with no forbidden divisors (`-F 0`, every denominator) and
+-- `-2 0 0 1` at 130 (the squares).
 #guard
   let sifted (c : List Int) (d H F : Nat) : Nat × List Nat :=
     let lcf := c.getD d 0
@@ -1061,6 +1064,7 @@ rule; and the run of the divisor shape against the points that ratpoints prints.
   sifted [1, 2] 1 20 64 == (1, [1, 9, 2, 8, 18]) &&
     sifted [1, 2, 3, 4, 5, 6, 7] 6 100 64 ==
       (2, [1, 3, 7, 9, 19, 21, 27, 29, 31, 37, 47, 53, 57, 59, 63, 81, 83, 87, 93]) &&
+    (sifted [1, 0, 0, 0, -1031] 4 100 64).1 == 2 &&
     (sifted [1, 0, 0, 0, -1031] 4 100 64).2.take 12 == [1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13] &&
     sifted [1, 1, 1, 1, 1, 1, 1] 6 100 0 == (3, (List.range' 1 100).filter fun b ↦
       b % 2 = 1 || b % 8 = 0) &&
