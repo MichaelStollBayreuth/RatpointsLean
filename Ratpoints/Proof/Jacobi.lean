@@ -267,11 +267,11 @@ theorem JacobiRoundInvariant.second_half {f b n m m' n' mb : ℕ} {s s' s'' t t'
     (hr : IsJacobiReduction m n t (m', s'))
     (hr' : IsJacobiReduction n m' t' (n', s''))
     (ht : t = if (n &&& m &&& 2 != 0) = true then -s else s)
-    (ht' : t' = if (m' &&& n &&& 2 != 0) = true then -s' else s') :
+    (ht' : t' = if (n &&& m' &&& 2 != 0) = true then -s' else s') :
     s'' * J(n' | m') = J(f | b) ∧ Nat.gcd n' m' = Nat.gcd f b := by
   obtain ⟨h1, h2⟩ := JacobiRoundInvariant.first_half h hr ht
-  refine ⟨mul_jacobiSym_eq_of_eq_ite_neg hr.1 h.2.1 h1 hr'.2.2.2.1 ?_, by rw [hr'.2.2.2.2, h2]⟩
-  rw [ht', Nat.and_comm m' n]
+  exact ⟨mul_jacobiSym_eq_of_eq_ite_neg hr.1 h.2.1 h1 hr'.2.2.2.1 (by rwa [Nat.and_comm m' n]),
+    by rw [hr'.2.2.2.2, h2]⟩
 
 theorem JacobiRoundInvariant.first_break {f b n m m' mb : ℕ} {s s' t : ℤ}
     (h : n + m = mb ∧ JacobiRoundInvariant f b false (s, n, m))
@@ -289,7 +289,7 @@ theorem JacobiRoundInvariant.second_break {f b n m m' n' mb : ℕ} {s s' s'' t t
     (heq : (m' == n') = true) (ht : t = if (n &&& m &&& 2 != 0) = true then -s else s)
     (ht' : t' = if (n &&& m' &&& 2 != 0) = true then -s' else s') :
     JacobiRoundInvariant f b true (s'', n', m') := by
-  obtain ⟨h1, h2⟩ := JacobiRoundInvariant.second_half h hr hr' ht (by rwa [Nat.and_comm m' n])
+  obtain ⟨h1, h2⟩ := JacobiRoundInvariant.second_half h hr hr' ht ht'
   exact ⟨hr'.1, hr.1, h1, h2, fun _ ↦ (by simpa using heq : m' = n').symm⟩
 
 theorem JacobiRoundInvariant.next {f b n m m' n' mb : ℕ} {s s' s'' t t' : ℤ}
@@ -300,7 +300,7 @@ theorem JacobiRoundInvariant.next {f b n m m' n' mb : ℕ} {s s' s'' t t' : ℤ}
     (ht : t = if (n &&& m &&& 2 != 0) = true then -s else s)
     (ht' : t' = if (n &&& m' &&& 2 != 0) = true then -s' else s') :
     n' + m' < mb ∧ JacobiRoundInvariant f b false (s'', n', m') := by
-  obtain ⟨h1, h2⟩ := JacobiRoundInvariant.second_half h hr hr' ht (by rwa [Nat.and_comm m' n])
+  obtain ⟨h1, h2⟩ := JacobiRoundInvariant.second_half h hr hr' ht ht'
   have : m' ≠ n := by simpa using hne
   exact ⟨by have := h.1; have := hr.2; have := hr'.2; lia, hr'.1, hr.1, h1, h2, nofun⟩
 
@@ -373,7 +373,7 @@ theorem JacobiOddInvariant.div_two {b b' mb : ℕ} {lcf : ℤ} (h : (b' % 2 == 0
   refine ⟨by lia, by lia, ?_, nofun⟩
   rw [← h2, ← Nat.mul_div_cancel' (Nat.dvd_of_mod_eq_zero h), Nat.mul_div_cancel_left _ two_pos,
     Nat.coprimePart_eq, Nat.coprimePart_eq,
-    Nat.prod_filter_primeFactorsList_mul_of_forall two_ne_zero (by lia)]
+    Nat.prod_filter_primeFactorsList_mul_of_forall two_ne_zero]
   simp [Nat.primeFactorsList_two]
 
 theorem JacobiOddInvariant.exit {b b' mb : ℕ} {lcf : ℤ} (h : ¬(b' % 2 == 0) = true)
@@ -468,7 +468,7 @@ theorem JacobiInvariant.div_gcd {b b' f g f' mb : ℕ} {lcf s : ℤ} {o : Option
   · rw [← Int.emod_emod_of_dvd lcf hd, ← h4, Int.emod_emod_of_dvd _ hd]
     split_ifs at hf' <;> subst hf' <;> simp
   · rw [← h5, ← Nat.mul_div_cancel' hgb, Nat.mul_div_cancel_left _ (by lia), Nat.coprimePart_eq,
-      Nat.coprimePart_eq, Nat.prod_filter_primeFactorsList_mul_of_forall (by lia) (by lia)
+      Nat.coprimePart_eq, Nat.prod_filter_primeFactorsList_mul_of_forall (by lia)
         fun q hq' ↦ decide_coprime_eq_false (Nat.prime_of_mem_primeFactorsList hq')
           (Dvd.dvd.mul_left (Int.dvd_natAbs_of_dvd_gcd h4
             (hr.1 ▸ Nat.dvd_of_mem_primeFactorsList hq')) 2)]

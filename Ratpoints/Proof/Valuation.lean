@@ -16,8 +16,8 @@ import Std.Tactic.Do
 # The valuation of an integer at a prime
 
 The loop of `Ratpoints.Setup.valuation`, repeated division with remainder, gives for `n ≠ 0` and
-`p > 1` an exponent `v` and the remainder `r ≠ 0` with `|n| = p ^ v m` and `m mod p = r`; for a
-prime `p` these are the `p`-adic valuation of `|n|` and the unit part of `|n|` modulo `p`.
+`p > 1` an exponent `v` and the remainder `r ≠ 0` with `|n| = p ^ v m` and `m mod p = r`: the
+`p`-adic valuation of `|n|` and the unit part of `|n|` modulo `p`.
 
 ## Main statements
 
@@ -26,9 +26,9 @@ prime `p` these are the `p`-adic valuation of `|n|` and the unit part of `|n|` m
   `Ratpoints.Setup.exists_eq_run_valuation` states this for `n ≠ 0` without the program logic, and
   `Ratpoints.Setup.exists_eq_of_eq_run_valuation` for a natural number `w ≠ 0`, as `w = p ^ v m`
   with `p ∤ m`.
-* `Ratpoints.Setup.fst_run_valuation`, `Ratpoints.Setup.snd_run_valuation`: for a prime `p` and
-  `n ≠ 0`, the valuation is `padicValNat p |n|` and the remainder the unit part of `|n|` modulo
-  `p`.
+* `Ratpoints.Setup.fst_run_valuation`, `Ratpoints.Setup.snd_run_valuation`: for `p > 1` and
+  `n ≠ 0`, the valuation is `padicValNat p |n|` and the remainder the unit part
+  `Nat.divMaxPow |n| p` modulo `p`.
 
 ## Implementation notes
 
@@ -108,16 +108,17 @@ theorem exists_eq_run_valuation {n : ℤ} (hn : n ≠ 0) {p : ℕ} (hp : 1 < p) 
       (Id.run (valuation n p)).2 ≠ 0 :=
   ((Std.WP.Id.of_run_eq_wp rfl _ ((valuation_spec n p).le_wp hp)).resolve_left fun h ↦ hn h.1).2
 
-theorem fst_run_valuation {n : ℤ} (hn : n ≠ 0) {p : ℕ} (hp : p.Prime) :
+theorem fst_run_valuation {n : ℤ} (hn : n ≠ 0) {p : ℕ} (hp : 1 < p) :
     (Id.run (valuation n p)).1 = padicValNat p n.natAbs := by
-  obtain ⟨m, hm, hmr, hr⟩ := exists_eq_run_valuation hn hp.one_lt
-  exact (padicValNat_eq_of_eq_pow_mul_of_not_dvd hp.ne_zero hm
+  obtain ⟨m, hm, hmr, hr⟩ := exists_eq_run_valuation hn hp
+  exact (padicValNat_eq_of_eq_pow_mul_of_not_dvd (Nat.ne_zero_of_lt hp) hm
     fun h ↦ hr (hmr ▸ Nat.mod_eq_zero_of_dvd h)).symm
 
-theorem snd_run_valuation {n : ℤ} (hn : n ≠ 0) {p : ℕ} (hp : p.Prime) :
-    (Id.run (valuation n p)).2 = n.natAbs / p ^ padicValNat p n.natAbs % p := by
-  obtain ⟨m, hm, hmr, -⟩ := exists_eq_run_valuation hn hp.one_lt
-  rw [← fst_run_valuation hn hp, hm, Nat.mul_div_cancel_left _ (Nat.pow_pos hp.pos), hmr]
+theorem snd_run_valuation {n : ℤ} (hn : n ≠ 0) {p : ℕ} (hp : 1 < p) :
+    (Id.run (valuation n p)).2 = n.natAbs.divMaxPow p % p := by
+  obtain ⟨m, hm, hmr, hr⟩ := exists_eq_run_valuation hn hp
+  rw [← Nat.snd_maxPowDvdDiv, Nat.maxPowDvdDiv_of_pow_mul_eq (Int.natAbs_ne_zero.mpr hn) hm.symm
+    fun h ↦ hr (hmr ▸ Nat.mod_eq_zero_of_dvd h), hmr]
 
 /-- The valuation of a natural number `w ≠ 0` at `p > 1` by `Ratpoints.Setup.valuation`, in the form
 in which a loop that binds its result reads it: `w = p ^ v m` with `p ∤ m`. -/

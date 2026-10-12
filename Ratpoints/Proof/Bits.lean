@@ -67,8 +67,9 @@ divisors of the gcd of `b` and a residue `f ≡ a (mod b)`.
 * `Int.toNat_add_emod_of_lt`, `Int.toNat_add_add_emod`: the residues modulo `p` of `a + j` before
   and from the first multiple of `p` from `a` on.
 * `UInt64.getLsbD_foldl_and`: the bits of a word and-ed in turn with the words of a list.
-* `UInt64.two_pow_ctz_mul_shiftRight_ofNat`: a number `0 < b < 2 ^ 64` is `2 ^ t` times the odd
-  number `b >>> t`, for the position `t` of the lowest set bit of the word `b`.
+* `UInt64.two_pow_ctz_mul_shiftRight_ofNat`, `UInt64.shiftRight_ctz_ofNat_mod_two`: a number
+  `0 < b < 2 ^ 64` is `2 ^ t` times the odd number `b >>> t`, for the position `t` of the lowest
+  set bit of the word `b`.
 * `Nat.and_two_ne_zero_iff`, `Nat.and_and_two_ne_zero_iff`: bit 1 of odd numbers says whether they
   are `3 (mod 4)`; `Nat.gcd_div_two_of_mod_two`: halving an even number keeps its gcd with an odd
   one; `Nat.mod_eq_ite_of_lt_two_mul`: a residue below `2 q` modulo `q` by one subtraction.
@@ -522,25 +523,28 @@ theorem ofNat_ne_zero_of_lt {b : Nat} (hb0 : 0 < b) (hb : b < UInt64.size) :
     UInt64.ofNat b ≠ 0 :=
   fun h ↦ Nat.ne_of_gt hb0 (by simpa [UInt64.toNat_ofNat_of_lt' hb] using congrArg UInt64.toNat h)
 
-/-- For `0 < b < 2 ^ 64`, the lowest set bit of the word `b` is at the exponent of `2` in `b`: `b`
-is `2 ^ t` times the odd number `b >>> t`, `t` the position of that bit. -/
+/-- For `0 < b < 2 ^ 64`, `b` is `2 ^ t` times `b >>> t`, for the position `t` of the lowest set
+bit of the word `b`, since the bits of `b` below it are clear. -/
 theorem two_pow_ctz_mul_shiftRight_ofNat {b : Nat} (hb0 : 0 < b) (hb : b < UInt64.size) :
-    2 ^ (UInt64.ofNat b).toBitVec.ctz.toNat * (b >>> (UInt64.ofNat b).toBitVec.ctz.toNat) = b ∧
-      (b >>> (UInt64.ofNat b).toBitVec.ctz.toNat) % 2 = 1 := by
-  have hne := UInt64.toBitVec_ne_of_ne (ofNat_ne_zero_of_lt hb0 hb)
-  generalize hx : (UInt64.ofNat b).toBitVec = x at hne ⊢
-  rw [UInt64.toBitVec_ofNat'] at hx
-  subst hx
-  have hlt := BitVec.lt_def.mp (BitVec.ctz_lt_iff_ne_zero.mpr hne)
-  have ht := BitVec.getLsbD_true_ctz_of_ne_zero hne
-  rw [BitVec.getLsbD_ofNat, Bool.and_eq_true] at ht
+    2 ^ (UInt64.ofNat b).toBitVec.ctz.toNat * (b >>> (UInt64.ofNat b).toBitVec.ctz.toNat) = b := by
+  have hlt := BitVec.lt_def.mp (BitVec.ctz_lt_iff_ne_zero.mpr
+    (UInt64.toBitVec_ne_of_ne (ofNat_ne_zero_of_lt hb0 hb)))
+  rw [UInt64.toBitVec_ofNat'] at hlt ⊢
   have hmod : b % 2 ^ (BitVec.ofNat 64 b).ctz.toNat = 0 := Nat.eq_of_testBit_eq fun i ↦ by
     have := BitVec.getLsbD_false_of_lt_ctz (x := BitVec.ofNat 64 b) (i := i)
     rw [BitVec.getLsbD_ofNat] at this
     simp only [Nat.testBit_mod_two_pow, Nat.zero_testBit]
     grind
-  rw [Nat.shiftRight_eq_div_pow]
-  refine ⟨Nat.mul_div_cancel' (Nat.dvd_of_mod_eq_zero hmod), ?_⟩
+  rw [Nat.shiftRight_eq_div_pow, Nat.mul_div_cancel' (Nat.dvd_of_mod_eq_zero hmod)]
+
+/-- For `0 < b < 2 ^ 64`, `b >>> t` is odd, for the position `t` of the lowest set bit of the word
+`b`. -/
+theorem shiftRight_ctz_ofNat_mod_two {b : Nat} (hb0 : 0 < b) (hb : b < UInt64.size) :
+    (b >>> (UInt64.ofNat b).toBitVec.ctz.toNat) % 2 = 1 := by
+  have ht := BitVec.getLsbD_true_ctz_of_ne_zero
+    (UInt64.toBitVec_ne_of_ne (ofNat_ne_zero_of_lt hb0 hb))
+  rw [UInt64.toBitVec_ofNat', BitVec.getLsbD_ofNat, Bool.and_eq_true] at ht
+  rw [UInt64.toBitVec_ofNat', Nat.shiftRight_eq_div_pow]
   simpa [Nat.testBit_eq_decide_div_mod_eq] using ht.2
 
 end UInt64

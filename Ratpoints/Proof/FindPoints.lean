@@ -82,8 +82,8 @@ tests of the shape that `Ratpoints.Sieve.runSetup` chooses: the squares for odd 
 `|c_d| = 1` (`Ratpoints.isSquare_of_sq_eq_binaryForm_of_odd`,
 `Ratpoints.Sieve.squaresDens_eq_filter`), the divisors with their valuation test
 (`Ratpoints.Sieve.run_denInfoTest_of_sq_eq`), the words with the forbidden divisors and the Jacobi
-test (`Ratpoints.Sieve.toList_run_wordsDens`, `Ratpoints.Sieve.getLsbD_denBits_and_all_of_ne_nil`,
-`Ratpoints.Sieve.run_wordsTest_of_ne_nil`), and every denominator, by the class test
+test (`Ratpoints.Sieve.toList_run_wordsDens`, `Ratpoints.Sieve.getLsbD_denBits_and_all_of_sq_eq`,
+`Ratpoints.Sieve.run_wordsTest_of_sq_eq`), and every denominator, by the class test
 (`Ratpoints.Sieve.getElem!_twoAdic_ne_zero`). The divisor shape visits each denominator of a point
 once (`Ratpoints.exists_eq_mul_mul_of_sq_eq_binaryForm_of_odd`,
 `Ratpoints.Setup.mem_iff_of_setupUs1_eq_some`, `Ratpoints.Sieve.mem_squares1Dens_iff`,
@@ -282,7 +282,7 @@ theorem perm_bruteForce_append_flatMap_searchDens (c : List ℤ) {H : ℕ} (hH :
   · rw [h]
     exact perm_flatMap_squares1Dens hH hd hs
 
-theorem append_flatMap_searchDens_eq_bruteForce (c : List ℤ) {H : ℕ} (hH : 1 ≤ H)
+theorem append_flatMap_searchDens_eq_bruteForce {c : List ℤ} {H : ℕ} (hH : 1 ≤ H)
     (hs : searchDens c (degree c) H = List.range' 1 H) :
     pointsAtInfinity c (degree c) false ++ (searchDens c (degree c) H).flatMap
       (fun b : ℕ ↦ pointsOfDen c (degree c) b (numerators H)) = bruteForce c H := by
@@ -365,10 +365,13 @@ private theorem toList_run_sieveRun_words {c : List ℤ} {H A : ℕ} {ms : List 
   have hforb (e : ForbiddenEntry) (he : e ∈ forb) :
       e ∈ (Id.run (forbidden c (degree c) ms maxF H)).1 := by rw [hf]; exact he
   refine toList_run_sieveRun_of_sound hms hA rev ?_ fun b hb h ↦
-    ⟨getLsbD_denBits_and_all_of_ne_nil hms hd hf hb h, run_wordsTest_of_ne_nil hms hd hf _ hb h⟩
-  simpa [Shape.dens] using toList_run_wordsDens (fun e he ↦
-    ⟨(prime_of_mem_forbidden_fst hms (hforb e he)).pos, words_eq_of_mem_forbidden_fst (hforb e he)⟩)
-    1 H
+    have hb' := List.mem_range'_1.mp hb
+    (exists_sq_eq_of_pointsOfDen_ne_nil h).elim fun _ ⟨_, _, hg, hy⟩ ↦
+      ⟨getLsbD_denBits_and_all_of_sq_eq hms hd hf (by lia) (by lia) hg hy,
+        run_wordsTest_of_sq_eq hms hd hf _ (by lia) (by lia) hg hy⟩
+  simpa [Shape.dens] using toList_run_wordsDens
+    (fun e he ↦ (prime_of_mem_forbidden_fst hms (hforb e he)).pos)
+    (fun e he ↦ words_eq_of_mem_forbidden_fst (hforb e he)) 1 H
 
 end Sieve
 
@@ -566,7 +569,7 @@ theorem eq_bruteForce_of_findPoints_eq_ok_of_reverse_eq_false {c : List ℤ} {H 
   obtain ⟨c', d', rev, hr, rfl, hH, rfl⟩ := exists_eq_of_findPoints_eq_ok hP h
   rw [ho, Setup.reversal_false] at hr
   cases hr
-  simpa using append_flatMap_searchDens_eq_bruteForce c hH hs
+  simpa using append_flatMap_searchDens_eq_bruteForce hH hs
 
 /-- For well-formed parameters, the list that `Ratpoints.findPoints` returns is a permutation of
 the brute-force reference: the search gives the reference of the polynomial searched in the order

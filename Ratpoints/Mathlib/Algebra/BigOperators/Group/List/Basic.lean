@@ -12,7 +12,7 @@ public import Mathlib.Algebra.BigOperators.Group.List.Basic
 
 A candidate for `Mathlib.Algebra.BigOperators.Group.List.Basic`, next to `List.prod_map_ite`: the
 product over a list of `u` for the entries that pass a test and `1` for the others is `u` to the
-number of the entries that pass.
+number of the entries that pass, in any monoid.
 
 ## Main statements
 
@@ -23,11 +23,12 @@ number of the entries that pass.
 
 namespace List
 
-theorem prod_map_ite_eq_pow {α M : Type*} [CommMonoid M] (p : α → Bool) (u : M) (l : List α) :
+@[to_additive]
+theorem prod_map_ite_eq_pow {α M : Type*} [Monoid M] (p : α → Bool) (u : M) (l : List α) :
     (l.map fun x ↦ if p x = true then u else 1).prod = u ^ (l.filter p).length := by
   induction l with
   | nil => simp
-  | cons x l ih => cases h : p x <;> simp [h, ih, pow_succ, mul_comm]
+  | cons x l ih => cases h : p x <;> simp [h, ih, pow_succ']
 
 end List
 

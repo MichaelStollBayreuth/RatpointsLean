@@ -10,7 +10,6 @@ public import Ratpoints.Proof.Forbidden
 
 import Ratpoints.Mathlib.Data.Nat.Squarefree
 import Ratpoints.Proof.Bits
-import Ratpoints.Proof.BruteForce
 import Ratpoints.Proof.Jacobi
 import Ratpoints.Proof.JacobiTables
 import Ratpoints.Proof.Setup
@@ -53,7 +52,7 @@ denominators that the C code computes as `long`s are at most the largest denomin
   order.
 * `Ratpoints.Sieve.run_wordsTest_eq_true`: the tests of the word shape pass when the Jacobi tests
   and the valuation entries do.
-* `Ratpoints.Sieve.getLsbD_denBits_and_all_of_ne_nil`, `Ratpoints.Sieve.run_wordsTest_of_ne_nil`:
+* `Ratpoints.Sieve.getLsbD_denBits_and_all_of_sq_eq`, `Ratpoints.Sieve.run_wordsTest_of_sq_eq`:
   the class bit, the forbidden divisors tested with words and the tests of the word shape let the
   denominator of every point through.
 * `Ratpoints.Sieve.fitsLong_of_mem_squaresDens`, `Ratpoints.Sieve.fitsLong_of_mem_squares1Dens`,
@@ -276,14 +275,14 @@ theorem wordsDens_spec (db : UInt64) (forb : List ForbiddenEntry) (bLow bHigh : 
 
 -- The words of the entries of the word shape: bit `t < 64` of word `w mod p` says whether
 -- `p ∤ 64 w + t`.
-private theorem all_getLsbD_words {forb : List ForbiddenEntry}
-    (hforb : ∀ e ∈ forb, 0 < e.p ∧ e.words = forbiddenRow e.p) (w : ℕ) {t : ℕ} (ht : t < 64) :
+private theorem all_getLsbD_words {forb : List ForbiddenEntry} (hpos : ∀ e ∈ forb, 0 < e.p)
+    (hwords : ∀ e ∈ forb, e.words = forbiddenRow e.p) (w : ℕ) {t : ℕ} (ht : t < 64) :
     (forb.all fun e ↦ e.words[w % e.p]!.toBitVec.getLsbD t) =
       forb.all fun e ↦ (64 * w + t) % e.p != 0 := by
   rw [Bool.eq_iff_iff, List.all_eq_true, List.all_eq_true]
   refine forall₂_congr fun e he ↦ ?_
-  rw [(hforb e he).2, getLsbD_getElem!_forbiddenRow (Nat.mod_lt _ (hforb e he).1),
-    decide_eq_true ht, Bool.true_and]
+  rw [hwords e he, getLsbD_getElem!_forbiddenRow (Nat.mod_lt _ (hpos e he)), decide_eq_true ht,
+    Bool.true_and]
   simp [Nat.add_mod, Nat.mul_mod]
 
 /-- The word shape lists the denominators `b` from `bLow` to `bHigh`, in increasing order, whose
@@ -291,7 +290,8 @@ class `b mod 64` has its bit in `db` and which no forbidden divisor tested with 
 entries with the words of `Ratpoints.Sieve.forbiddenRow`: bit `j` of word `w mod p` of the entry `p`
 is clear exactly when `p ∣ 64 w + j`. -/
 theorem toList_run_wordsDens {db : UInt64} {forb : List ForbiddenEntry}
-    (hforb : ∀ e ∈ forb, 0 < e.p ∧ e.words = forbiddenRow e.p) (bLow bHigh : ℕ) :
+    (hpos : ∀ e ∈ forb, 0 < e.p) (hwords : ∀ e ∈ forb, e.words = forbiddenRow e.p)
+    (bLow bHigh : ℕ) :
     (Id.run (wordsDens db forb bLow bHigh)).toList =
       (List.range' bLow (bHigh + 1 - bLow)).filter fun b ↦
         db.toBitVec.getLsbD (b % 64) && forb.all fun e ↦ b % e.p != 0 := by
@@ -300,7 +300,7 @@ theorem toList_run_wordsDens {db : UInt64} {forb : List ForbiddenEntry}
       forb.all fun e ↦ b % e.p != 0) && (decide (bLow ≤ b) && decide (b ≤ bHigh))),
     ← List.filter_filter, List.filter_range'_le_and_le (by lia) (by lia)]
   intro w hw hw' t ht
-  rw [getLsbD_wordBits db forb hw (by lia), all_getLsbD_words hforb w ht,
+  rw [getLsbD_wordBits db forb hw (by lia), all_getLsbD_words hpos hwords w ht,
     Nat.mul_add_mod_self_left, Nat.mod_eq_of_lt ht, Bool.and_assoc _ (decide _)]
 
 /-- The denominators `64 w + t` of the word shape, which the C code computes as `long`s
@@ -368,45 +368,42 @@ theorem run_wordsTest_eq_true {forbVal : List ForbiddenVal} {useJacobi : Bool}
 
 /-- For moduli that are primes and even degree, the class bit in `Ratpoints.Sieve.denBits` and the
 forbidden divisors tested with words of the moduli, for the largest denominator `H`, let the
-denominator `1 ≤ b ≤ H` of every point through (`Ratpoints.Sieve.getElem!_twoAdic_ne_zero`,
+denominator `1 ≤ b ≤ H` of a point `(a, y, b)` through (`Ratpoints.Sieve.classBit_twoAdic_of_sq_eq`,
 `Ratpoints.Sieve.not_dvd_of_mem_forbidden_fst`): the filter of the list of the word shape
 (`Ratpoints.Sieve.toList_run_wordsDens`) keeps it. -/
-theorem getLsbD_denBits_and_all_of_ne_nil {c : List ℤ} {H : ℕ} {ms : List ℕ}
+theorem getLsbD_denBits_and_all_of_sq_eq {c : List ℤ} {H : ℕ} {ms : List ℕ}
     (hms : ∀ p ∈ ms, p.Prime) (hd : degree c % 2 = 0) {maxF : ℕ} {forb : List ForbiddenEntry}
     {forbVal : List ForbiddenVal} (hf : Id.run (forbidden c (degree c) ms maxF H) = (forb, forbVal))
-    {b : ℕ} (hb : b ∈ List.range' 1 H)
-    (h : BruteForce.pointsOfDen c (degree c) b (BruteForce.numerators H) ≠ []) :
+    {a y : ℤ} {b : ℕ} (hb : b ≠ 0) (hbH : b ≤ H) (hab : Int.gcd a b = 1)
+    (hy : y ^ 2 = binaryForm c a b) :
     ((denBits (Id.run (twoAdic c (degree c)))).toBitVec.getLsbD (b % 64) &&
       forb.all fun e ↦ b % e.p != 0) = true := by
-  have hb' := List.mem_range'_1.mp hb
-  obtain ⟨a, -, y, hg, hy⟩ := BruteForce.exists_sq_eq_of_pointsOfDen_ne_nil h
   rw [Bool.and_eq_true, getLsbD_denBits]
-  refine ⟨by simpa [Nat.mod_lt] using getElem!_twoAdic_ne_zero h,
-    List.all_eq_true.mpr fun e he ↦ ?_⟩
+  refine ⟨?_, List.all_eq_true.mpr fun e he ↦ ?_⟩
+  · simp only [Nat.mod_lt _ (by decide : 0 < 64), decide_true, Bool.true_and, bne_iff_ne]
+    exact fun h0 ↦ by simpa [h0] using classBit_twoAdic_of_sq_eq hab hy
   simpa [Nat.dvd_iff_mod_eq_zero] using
-    not_dvd_of_mem_forbidden_fst hms (by rw [hf]; exact he) hd (by lia) (by lia) hg hy
+    not_dvd_of_mem_forbidden_fst hms (by rw [hf]; exact he) hd hb hbH hab hy
 
 /-- For moduli that are primes and even degree, the tests of the word shape, with the valuation
 entries of the forbidden divisors of the moduli for the largest denominator `H` and the tables of
-the Jacobi test when it is on, let the denominator `1 ≤ b ≤ H` of every point through
+the Jacobi test when it is on, let the denominator `1 ≤ b ≤ H` of a point `(a, y, b)` through
 (`Ratpoints.Sieve.excludes_eq_false_of_mem_forbidden_snd`,
 `Ratpoints.Sieve.run_jacobiTest_of_sq_eq`, `Ratpoints.Sieve.run_jacobi_eq_one_of_sq_eq`). -/
-theorem run_wordsTest_of_ne_nil {c : List ℤ} {H : ℕ} {ms : List ℕ}
+theorem run_wordsTest_of_sq_eq {c : List ℤ} {H : ℕ} {ms : List ℕ}
     (hms : ∀ p ∈ ms, p.Prime) (hd : degree c % 2 = 0) {maxF : ℕ} {forb : List ForbiddenEntry}
     {forbVal : List ForbiddenVal} (hf : Id.run (forbidden c (degree c) ms maxF H) = (forb, forbVal))
-    (useJacobi : Bool) {b : ℕ} (hb : b ∈ List.range' 1 H)
-    (h : BruteForce.pointsOfDen c (degree c) b (BruteForce.numerators H) ≠ []) :
+    (useJacobi : Bool) {a y : ℤ} {b : ℕ} (hb : b ≠ 0) (hbH : b ≤ H) (hab : Int.gcd a b = 1)
+    (hy : y ^ 2 = binaryForm c a b) :
     Id.run (wordsTest forbVal useJacobi
       (if useJacobi then Id.run (jacobiSetup (c.getD (degree c) 0) H) else none)
       (c.getD (degree c) 0) b) = true := by
-  have hb' := List.mem_range'_1.mp hb
-  obtain ⟨a, -, y, hg, hy⟩ := BruteForce.exists_sq_eq_of_pointsOfDen_ne_nil h
   refine run_wordsTest_eq_true (fun ji hji ↦ ?_)
-    (fun e he ↦ excludes_eq_false_of_mem_forbidden_snd hms (by rw [hf]; exact he) hd (by lia) hg
-      hy) fun _ _ ↦ run_jacobi_eq_one_of_sq_eq hd (by lia) hg hy
+    (fun e he ↦ excludes_eq_false_of_mem_forbidden_snd hms (by rw [hf]; exact he) hd hb hab hy)
+    fun _ _ ↦ run_jacobi_eq_one_of_sq_eq hd hb hab hy
   cases useJacobi
   · exact absurd hji (by simp)
-  · exact run_jacobiTest_of_sq_eq hd hji (by lia) (by lia) hg hy
+  · exact run_jacobiTest_of_sq_eq hd hji hb hbH hab hy
 
 end Sieve
 

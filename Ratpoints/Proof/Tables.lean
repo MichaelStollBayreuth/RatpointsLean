@@ -448,7 +448,7 @@ replaces `LONG_MIN` by `LONG_MIN / 4` (`find_points.c:579-584`), is a `long`. Th
 `long` (`Ratpoints.fitsLong_sixteen_mul`, `Ratpoints.fitsLong_neg`,
 `Ratpoints.fitsLong_add_sixteen_mul`), and the other values of `jacobi1` and `jacobi` lie between
 `0` and the larger of `b` and `|f|`. -/
-theorem fitsLong_neg_ite_div_four {f : ℤ} (hf : fitsLong f = true) (h0 : f < 0) :
+theorem fitsLong_neg_ite_div_four {f : ℤ} (hf : fitsLong f = true) :
     fitsLong (-(if f = -2 ^ 63 then f / 4 else f)) = true := by
   grind [fitsLong]
 

@@ -216,8 +216,8 @@ $\gcd(b, G(a, b)) = \gcd(b, c_d)$. This restricts the denominators of the points
   repeated division with remainder, and $(\mathrm{veryBig}, 0)$ for $n = 0$, with
   $\mathrm{veryBig} = 1000$ (\verb|VERY_BIG|, \csource{find_points.c}{422}{422}): one function for
   \verb|valuation| on GMP integers, which also returns the unit part, and \verb|valuation1| on
-  \verb|long|s (\csource{find_points.c}{424}{454}). For a prime $p$ and $n \ne 0$, $v$ is the
-  $p$-adic valuation of $n$.
+  \verb|long|s (\csource{find_points.c}{424}{454}). For $p > 1$ and $n \ne 0$, $v$ is the $p$-adic
+  valuation of $n$.
 \end{definition}
 
 \begin{definition}[The divisors of the leading coefficient]\label{def:setupUs1}
@@ -404,7 +404,7 @@ $(c_d / q) = -1$, which these do not reach.
   \verb|jacobi1| on \verb|long|s, which takes the sign of $\ell$ out first, writes
   $\ell = $ \verb|LONG_MIN| as a quarter of it, reduces $|\ell|$ modulo $b$ only for $b < 2^{59}$
   and does not reduce it after a division of $b$: other steps, the same symbol; the negation of a
-  negative \verb|long| $\ell$, with \verb|LONG_MIN| replaced by its quarter, is a \verb|long|.
+  \verb|long| $\ell$, with \verb|LONG_MIN| replaced by its quarter, is a \verb|long|.
 \end{definition}
 
 \begin{lemma}[The binary algorithm computes the Jacobi symbol]\label{lem:jacobi}
@@ -531,20 +531,20 @@ $(c_d / q) = -1$, which these do not reach.
 
 \begin{lemma}[The lists of the shapes]\label{lem:shape_dens}
   \uses{def:Shape, lem:twoAdic_point, lem:odd_denominators, lem:forbidden, lem:jacobiTest}
-  \lean{Ratpoints.Sieve.squaresDens_eq_filter, Ratpoints.Sieve.mem_squaresDens_iff, Ratpoints.Sieve.mem_range'_ceilSqrt_iff, Ratpoints.Sieve.mem_squares1Dens_iff, Ratpoints.Sieve.nodup_squares1Dens, Nat.eq_of_mul_sq_eq_mul_sq, Ratpoints.Sieve.toList_run_wordsDens, Ratpoints.Sieve.run_denInfoTest_of_sq_eq, Ratpoints.Sieve.getLsbD_denBits_and_all_of_ne_nil, Ratpoints.Sieve.run_wordsTest_of_ne_nil}
+  \lean{Ratpoints.Sieve.squaresDens_eq_filter, Ratpoints.Sieve.mem_squaresDens_iff, Ratpoints.Sieve.mem_range'_ceilSqrt_iff, Ratpoints.Sieve.mem_squares1Dens_iff, Ratpoints.Sieve.nodup_squares1Dens, Nat.eq_of_mul_sq_eq_mul_sq, Ratpoints.Sieve.toList_run_wordsDens, Ratpoints.Sieve.run_denInfoTest_of_sq_eq, Ratpoints.Sieve.getLsbD_denBits_and_all_of_sq_eq, Ratpoints.Sieve.run_wordsTest_of_sq_eq}
   \leanok
   Let $1 \le b_{\mathrm{low}}$. The list of the squares is that of the squares from
   $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$, in increasing order. The list of the divisors times
   squares, for squarefree divisors without duplicates, has no duplicates and holds exactly the
   $s k^2$ from $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$ with $s$ a divisor. The list of the words,
-  for primes tested with words with their words, is that of the denominators from
-  $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$ whose bit in $\mathrm{den\_bits}$ is set and which no
-  such prime divides, in increasing order. For moduli that are primes, the denominator
-  $1 \le b \le H$ of a normalized point of height at most $H$ passes the tests of the shapes: the
-  class test, the valuation test with the records of the divisors of
-  Definition~\ref{def:setupUs1}, and for the forbidden divisors of the moduli with
-  $b_{\mathrm{high}} = H$ the bit of its class in $\mathrm{den\_bits}$, the primes tested with words
-  and the tests of the words.
+  for primes tested with words with their words, is that of the denominators from $b_{\mathrm{low}}$
+  to $b_{\mathrm{high}}$ whose bit in $\mathrm{den\_bits}$ is set and which no such prime divides,
+  in increasing order. For moduli that are primes, integers $a$ and $y$ and a natural number
+  $1 \le b \le H$ with $\gcd(a, b) = 1$ and $y^2 = F(a, b)$, as for a normalized point $(a, y, b)$
+  of height at most $H$, $b$ passes the tests of the shapes: the class test, the valuation test with
+  the records of the divisors of Definition~\ref{def:setupUs1}, and for the forbidden divisors of
+  the moduli with $b_{\mathrm{high}} = H$ the bit of its class in $\mathrm{den\_bits}$, the primes
+  tested with words and the tests of the words.
 \end{lemma}
 
 \begin{proof}

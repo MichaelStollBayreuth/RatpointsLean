@@ -842,7 +842,7 @@ theorem excludes_eq_false_of_mem_forbidden_snd {c : List ℤ} {moduli : List ℕ
   obtain ⟨p, hp, h⟩ := isForbiddenVal_of_mem_forbidden_snd he
   obtain rfl := eq_of_run_forbiddenOfPrime_eq_inr h
   rw [ForbiddenVal.excludes_eq_false_iff, Setup.fst_run_valuation (Int.natCast_ne_zero.mpr hb)
-    (hm p hp), Int.natAbs_natCast, Bool.not_eq_true]
+    (hm p hp).one_lt, Int.natAbs_natCast, Bool.not_eq_true]
   exact testBit_run_forbiddenValuations_eq_false_of_sq_eq hd (hm p hp) bHigh hab hy
 
 /-! ### The words of a forbidden divisor -/

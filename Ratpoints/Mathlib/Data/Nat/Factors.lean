@@ -62,8 +62,10 @@ theorem prod_filter_primeFactorsList_eq_self {p : ℕ → Bool} {n : ℕ} (hn : 
 /-- Multiplying by a number without a prime factor that passes the test keeps the part of a number
 with its prime factors passing it. -/
 theorem prod_filter_primeFactorsList_mul_of_forall {p : ℕ → Bool} {a b : ℕ} (ha : a ≠ 0)
-    (hb : b ≠ 0) (h : ∀ q ∈ a.primeFactorsList, p q = false) :
+    (h : ∀ q ∈ a.primeFactorsList, p q = false) :
     ((a * b).primeFactorsList.filter p).prod = (b.primeFactorsList.filter p).prod := by
+  rcases eq_or_ne b 0 with rfl | hb
+  · simp
   rw [prod_filter_primeFactorsList_mul p ha hb, prod_filter_primeFactorsList_eq_one h, one_mul]
 
 theorem prod_filter_primeFactorsList_dvd (p : ℕ → Bool) (n : ℕ) :

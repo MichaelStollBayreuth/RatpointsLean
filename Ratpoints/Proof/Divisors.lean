@@ -807,12 +807,12 @@ theorem DenInfo.excludes_eq_false_of_sq_eq {c : List ℤ} (hd : degree c % 2 = 1
   have : Fact p.Prime := ⟨hp⟩
   have hsl := Std.WP.Id.of_run_eq_wp rfl _ ((slope_spec c (degree c) p val).le_wp trivial)
   have hv : (Id.run (valuation b p)).1 = padicValNat p b := by
-    rw [fst_run_valuation (Int.natCast_ne_zero.mpr hb) hp, Int.natAbs_natCast]
+    rw [fst_run_valuation (Int.natCast_ne_zero.mpr hb) hp.one_lt, Int.natAbs_natCast]
   simp only [DenInfo.excludes_eq_false_iff, hv, Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq]
   refine fun ⟨hle, hodd⟩ ↦ Nat.not_even_iff_odd.mpr (Nat.odd_iff.mpr (by lia))
     (even_add_of_sq_eq_binaryForm_of_odd hd hval.symm (fun k hk hck ↦ ?_) hab (by lia) hy)
   have := hsl.2 k hk
-  rw [fst_run_valuation hck hp] at this
+  rw [fst_run_valuation hck hp.one_lt] at this
   have := Nat.mul_le_mul_left (degree c - k) hle
   lia
 

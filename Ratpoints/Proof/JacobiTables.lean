@@ -218,7 +218,7 @@ theorem jacobiSetupInvariant_empty {lcf : ℤ} {v r : ℕ}
     JacobiSetupInvariant lcf v (lcf.natAbs / 2 ^ v) #[] := by
   refine ⟨fun h ↦ by simp [h], fun h ↦ ?_⟩
   obtain rfl : v = padicValNat 2 lcf.natAbs := by
-    rw [← Setup.fst_run_valuation h Nat.prime_two, ← hv]
+    rw [← Setup.fst_run_valuation h Nat.one_lt_two, ← hv]
   have hd : 2 ^ padicValNat 2 lcf.natAbs ∣ lcf.natAbs := pow_padicValNat_dvd
   refine ⟨by simp [Nat.mul_div_cancel' hd], ?_, by simp⟩
   have := pow_succ_padicValNat_not_dvd (p := 2) (n := lcf.natAbs) (by simpa using h)
@@ -352,7 +352,7 @@ theorem JacobiSetupLoopInvariant.post {lcf : ℤ} {bHigh v r w u : ℕ}
   have h0 : lcf ≠ 0 := fun h0 ↦ absurd (h.1 h0) one_ne_zero
   obtain ⟨h1, -, h3⟩ := h.2 h0
   obtain rfl : v = padicValNat 2 lcf.natAbs := by
-    rw [← Setup.fst_run_valuation h0 Nat.prime_two, ← hv]
+    rw [← Setup.fst_run_valuation h0 Nat.one_lt_two, ← hv]
   obtain rfl := Option.some.inj hji
   refine ⟨Nat.le_of_not_lt hb, h0, fun x hx ↦ ?_, by simpa using h1, ?_⟩
   · exact ⟨(h3 x hx).1, (h3 x hx).2.1, (h3 x hx).2.2.1, (h3 x hx).2.2.2.2⟩
@@ -417,11 +417,12 @@ def JacobiDivideInvariant (ji : JacobiInfo) (b : ℕ) (pref : List (ℕ × Optio
 theorem jacobiTestInvariant_nil {ji : JacobiInfo} {b t : ℕ}
     (h : 0 < b ∧ b < UInt64.size ∧ ∀ x ∈ ji.primes, x.1.Prime)
     (ht : t = (UInt64.ofNat b).toBitVec.ctz.toNat) : JacobiTestInvariant ji b [] (b >>> t) := by
-  obtain ⟨h1, h2⟩ := UInt64.two_pow_ctz_mul_shiftRight_ofNat h.1 h.2.1
+  have h1 := UInt64.two_pow_ctz_mul_shiftRight_ofNat h.1 h.2.1
+  have h2 := UInt64.shiftRight_ctz_ofNat_mod_two h.1 h.2.1
   rw [← ht] at h1 h2
   refine ⟨by lia, h2, ?_, by simp⟩
   conv_rhs => rw [← h1]
-  rw [Nat.prod_filter_primeFactorsList_mul_of_forall (by simp) (by lia) fun q hq ↦ ?_]
+  rw [Nat.prod_filter_primeFactorsList_mul_of_forall (by simp) fun q hq ↦ ?_]
   rw [Nat.Prime.primeFactorsList_pow Nat.prime_two] at hq
   simp [List.eq_of_mem_replicate hq]
 
@@ -513,7 +514,7 @@ theorem JacobiDivideInvariant.div {ji : JacobiInfo} {b b' q mb : ℕ} {o : Optio
     Nat.odd_iff.mp ((Nat.odd_iff.mpr h2).of_dvd_nat (Nat.div_dvd_of_dvd hqb)), ?_,
     fun x hx hd ↦ h4 x hx (hd.trans (Nat.div_dvd_of_dvd hqb))⟩, nofun⟩
   rw [← h3, ← Nat.mul_div_cancel' hqb, Nat.mul_div_cancel_left _ hqp.pos,
-    Nat.prod_filter_primeFactorsList_mul_of_forall hqp.ne_zero (by lia) fun r hr ↦ ?_]
+    Nat.prod_filter_primeFactorsList_mul_of_forall hqp.ne_zero fun r hr ↦ ?_]
   rw [Nat.primeFactorsList_prime hqp, List.mem_singleton] at hr
   subst hr
   exact decide_eq_false fun hc ↦ hc.2 (List.mem_map.mpr ⟨_, hmem, rfl⟩)
