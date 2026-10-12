@@ -689,11 +689,12 @@ numerator of `b` reaches that stage, with the inverse of `b` modulo each of its 
 F); the products `w` and the factor `f` computed for every denominator, where
 `_ratpoints_check_point` computes the products when the first survivor of `b` reaches it
 (`compute_bc`) and multiplies each value by `b` for odd `d`; no count of the denominators sieved
-(`n_sifts`) and no flag `stage3_filled` (stage F); a list of points, for the callback `process` with
-its argument `info` and for the count `total` of points that `sift` returns, with no stop that
-`process` may request (`quit`, stage G) or that the pool of threads sends (`stop`); natural numbers
-and integers for the `long`s (stage F); no measurements of the phases (`RP_SIFT_TIC`,
-`RP_SETUP_TIC`, `RP_INIT_TIC` and their `TOC`) and no output under `DEBUG`. -/
+(`n_sifts`), which ratpoints reads to correct the moduli between the blocks of the run (stage I),
+and no flag `stage3_filled` (stage F); a list of points, for the callback `process` with its
+argument `info` and for the count `total` of points that `sift` returns, with no stop that `process`
+may request (`quit`, stage G) or that the pool of threads sends (`stop`); natural numbers and
+integers for the `long`s (stage F); no measurements of the phases (`RP_SIFT_TIC`, `RP_SETUP_TIC`,
+`RP_INIT_TIC` and their `TOC`) and no output under `DEBUG`. -/
 def sift (c : List Int) (d H A b : Nat) (rev : Bool)
     (rows : List (Nat × Array (Thunk (Array UInt64)))) (cw : UInt64) :
     Id (Array (Int × Int × Int)) := do

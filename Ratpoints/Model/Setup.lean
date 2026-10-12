@@ -184,9 +184,12 @@ C: `find_points.c:777-860`
 
 Deviation: the valuations by `Ratpoints.Setup.valuation`, for `mpz_scan1` at `2` and for the loop of
 divisions with remainder at the odd primes, the power then divided off at once; natural numbers for
-the GMP integers `work[0]` and `work[1]` and the `long`s; a list of pairs and the cofactor returned,
-for the entries of `den_info` and their count, the terminating zero and the integer `work[0]`; no
-output under `DEBUG`. -/
+the GMP integers `work[0]` and `work[1]`, the `long`s, and the `int` `p` with its square `p * p`
+(line 800), which is below `2 ^ 31` (`Ratpoints.Setup.mul_self_lt_of_mem_primeTable`); a list of
+pairs of natural numbers and the cofactor returned, for the `int` fields `p` and `val` of the
+entries of `den_info` (they hold the primes, the cofactor below `p ^ 2` and, for coefficients below
+`2 ^ (2 ^ 31 - 1)`, the valuations: `Ratpoints.Setup.DenInfo`), for their count, the terminating
+zero and the integer `work[0]`; no output under `DEBUG`. -/
 def factorLcf (w : Nat) : Id (List (Nat × Nat) × Nat) := do
   let mut w := w
   let mut fac : Array (Nat × Nat) := #[]
@@ -215,7 +218,9 @@ primes in the order of binary counting, the first prime the lowest bit, unless i
 
 C: `find_points.c:864-880`
 
-Deviation: a list, for the array `divisors` and its pointers `div`, `div0` and `div1`. -/
+Deviation: a list, for the array `divisors` and its pointers `div`, `div0` and `div1`; natural
+numbers for the `long`s, the products `x p` being formed only for `x ≤ ⌊bHigh / p⌋`, so that they
+are at most `bHigh` and `long`s for a `long` `bHigh` (`Ratpoints.Setup.fitsLong_mul_of_le_div`). -/
 def squarefreeDivisors (ps : List Nat) (bHigh : Nat) : Id (List Nat) := do
   let mut divs : Array Nat := #[1]
   for p in ps do

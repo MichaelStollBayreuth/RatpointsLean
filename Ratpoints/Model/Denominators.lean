@@ -232,8 +232,12 @@ with the least valuation then makes `F(a, b)` a non-square.
 
 C: `find_points.c:2218-2228`
 
-Deviation: the test returned, for the bit that the caller sets; remainders by 2 for the masks `& 1`;
-natural numbers for the `long`s. -/
+Deviation: the valuations and unit parts of the coefficients as the array of options `us`
+(`Ratpoints.Sieve.unitParts`), for the arrays `present`, `w` and `r`, its size `d + 1` for the bound
+`degree` of the loop, and the squares modulo `p` as the argument `sq`
+(`Ratpoints.Sieve.squaresMod`), for the row `squares[pn]` of the table of the build; the test
+returned, for the bit that the caller sets; remainders by 2 for the masks `& 1`; natural numbers for
+the `long`s. -/
 def forbiddenAt (us : Array (Option (Nat × Nat))) (sq : Array Bool) (m : Nat) : Id Bool := do
   let mut jmin := 0
   let mut vmin := (us[0]!.getD (0, 0)).1
@@ -357,9 +361,11 @@ C: `find_points.c:2533-2536`, `find_points.c:2561-2562`, `find_points.c:2624-262
 Deviation: the examined primes are the moduli of the parameters, and the further primes start at the
 position in the table that is their number, where `sieving_info` examines the first `pn_lim` primes
 of the table, `num_primes` of them or more when their number was left to the library (stage I), and
-goes on from `prime[pn_lim]`; the moduli are taken in their order, where `sieving_info` takes the
-primes in the order of the table, so that under the cap `maxForbidden` other primes may be recorded,
-a modulus at a position of the table at least the number of the moduli may be recorded again by the
+goes on from `prime[pn_lim]`; the moduli are taken in their order and once for each occurrence,
+where `sieving_info` takes each prime of the table once, in the order of the table, so that under
+the cap `maxForbidden` other primes may be recorded, a modulus that occurs more than once in the
+list may be recorded once for each occurrence, each record counting against `maxForbidden`, a
+modulus at a position of the table at least the number of the moduli may be recorded again by the
 second loop, and a prime below that position that is no modulus is examined by neither loop; the
 lists are those of `sieving_info` when the moduli are its first `pn_lim` primes in increasing order,
 as in the program with `-p` and without `-P`; the Kronecker symbol by the table of the squares
@@ -449,10 +455,11 @@ the run calls when all coefficients are `long`s (`use_c_long`), with the steps o
 reduces `|lcf|` modulo `b` only for `b < 2^59`, and does not reduce it after dividing `b` by the
 gcd, which changes the steps but not the symbol; the round of the algorithm and its two subtraction
 loops, which the C code writes out twice each, as helpers (`Ratpoints.Sieve.jacobiRound`,
-`Ratpoints.Sieve.jacobiReduce`, `Ratpoints.Sieve.twoSign`); natural numbers for the `long`s, and `f`
-the Euclidean `lcf % b`, for `mpz_fdiv_r_ui` with its scratch integer `tmp`; the tests `f = 0` of
-the C code, at the start and after each division of `b`, as the condition of the outer loop; the
-masks of the signs by `&&&` on natural numbers; the symbol as an integer, for the `int`. -/
+`Ratpoints.Sieve.jacobiReduce`, `Ratpoints.Sieve.twoSign`); natural numbers for the `long`s `b`,
+`f`, `n` and `m`, and integers for the `long` sign `s` and the `long` `lcf` of `jacobi1`; `f` the
+Euclidean `lcf % b`, for `mpz_fdiv_r_ui` with its scratch integer `tmp`; the tests `f = 0` of the C
+code, at the start and after each division of `b`, as the condition of the outer loop; the masks of
+the signs by `&&&` on natural numbers; the symbol as an integer, for the `int`. -/
 def jacobi (b : Nat) (lcf : Int) : Id Int := do
   let mut b := b
   while b % 2 == 0 do
@@ -566,7 +573,8 @@ integer type (`rp-private.h:415-416`) and otherwise multiplies by the reciprocal
 (`rp-private.h:409-410`), exact below `2^32`, the bound `Ratpoints.mulModLimit` on the denominators
 for which the tables are made; the odd part as the shift by the lowest set bit of the word `b`
 (`Ratpoints.Sieve.ctz`, the loop of `RP_CTZL`); `b mod 8` for `b & 7`; natural numbers for the
-`long`s. -/
+`long`s; a Boolean for the `unsigned char` `s`, with exclusive or for `^=` and negation for the test
+`s == 0`, and the test returned as a Boolean, for the `int`. -/
 def jacobiTest (ji : JacobiInfo) (b : Nat) : Id Bool := do
   let t ← ctz b.toUInt64
   let mut b := b >>> t
@@ -719,7 +727,13 @@ every denominator.
 C: `find_points.c:3725-3728`, `find_points.c:3736-3763`
 
 Deviation: an inductive type with the data of each shape, for the constant `shape` and the fields of
-`rp_run` that the shapes read; no blocks and segments (stage I), no search intervals (stage H), no
+`rp_run` that the shapes read, with these exceptions: the forbidden divisors as lists, for `forb_ba`
+and `forbidden` with no count `nfb`, a list having its length; the tables of the Jacobi test as an
+option, for `ji`, `jtab` and `fast_jacobi`; with the words, the bit `RATPOINTS_USE_JACOBI` of the
+flags and the leading coefficient `args->cof[args->degree]`, which `run_block` reads through the
+field `args`, the run taking the rest of what it reads of the arguments as its own arguments
+(`Ratpoints.Sieve.sieveRun`); no copies of `use_c_long` and `lcf_long`, which only `jacobi1` reads
+(`Ratpoints.Sieve.jacobi`); no blocks and segments (stage I), no search intervals (stage H), no
 counters and decisions of the correction of the moduli (stage I); the words of the classes and
 `den_bits` passed to the run apart (`Ratpoints.Sieve.sieveRun`). -/
 inductive Shape where

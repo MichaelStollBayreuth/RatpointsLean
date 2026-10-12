@@ -107,19 +107,20 @@ tables of all the moduli (`Ratpoints.Sieve.forbidden`), where `sieving_info` rec
 prime in the loop of the tables, which an exit leaves, and with the coefficients modulo `p` and the
 entry at infinity that `examine_prime` hands back computed again (both until stage F); the arguments
 of `sieving_info` that serve the choice of the moduli (the list of the moduli, the mean number of
-bits per word, whether the number of primes was left to the library, the 2-adic classes) are not
-modelled; the denominators from `1` to `H`, for the range `b_low, …, b_high` (stage H); the flags of
-the denominators as Booleans, for the bits of `args->flags`; the forbidden divisors and the divisors
-of the leading coefficient with their records as lists, for the arrays `args->forb_ba`,
-`args->forbidden`, `args->den_info` and `args->divisors` of the arguments; the square test `lcfsq`
-of line 4906 made on the polynomial searched (`Ratpoints.Setup.isSquare`), where the C code computes
-it before the reversal check (line 4634) and clears it in case 2 (line 4770): the same value for an
-even degree, the only one that reads it; the test on `point_at_infty` of the 2-adic exit recomputed,
-as `Ratpoints.Sieve.pointsAtInfinity` decides it; the exits give the empty list, where
-`sieving_info` returns the prime and `find_points_work_1` the number `0` of points found; the Sturm
-step does not restrict the search region before stage H, so that the return when it leaves nothing
-to search is never taken, and the run always follows the points at infinity; no failure for lack of
-memory, which the model cannot meet; no output under `RATPOINTS_VERBOSE` or `DEBUG`. -/
+bits per word, whether the number of primes was left to the library, the 2-adic classes and the word
+`den_bits`) are not modelled; the denominators from `1` to `H`, for the range `b_low, …, b_high`
+(stage H); the flags of the denominators as Booleans, for the bits of `args->flags`; the forbidden
+divisors and the divisors of the leading coefficient with their records as lists, for the arrays
+`args->forb_ba`, `args->forbidden`, `args->den_info` and `args->divisors` of the arguments; the
+square test `lcfsq` of line 4906 made on the polynomial searched (`Ratpoints.Setup.isSquare`), where
+the C code computes it before the reversal check (line 4634) and clears it in case 2 (line 4770):
+the same value for an even degree, the only one that reads it; the test on `point_at_infty` of the
+2-adic exit recomputed, as `Ratpoints.Sieve.pointsAtInfinity` decides it; the exits give the empty
+list, where `sieving_info` returns the prime and `find_points_work_1` the number `0` of points
+found; the Sturm step does not restrict the search region before stage H, so that the return when it
+leaves nothing to search is never taken, and the run always follows the points at infinity; no
+failure for lack of memory, which the model cannot meet; no output under `RATPOINTS_VERBOSE` or
+`DEBUG`. -/
 def searchPoints (c : List Int) (d H : Nat) (P : Params) (rev : Bool) :
     Id (List (Int × Int × Int)) := do
   let bHigh := H
