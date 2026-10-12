@@ -133,7 +133,7 @@ theorem JacobiReduceInvariant.jacobiReduceHalveInvariant {x y x₀ mb : ℕ} {s 
     JacobiReduceHalveInvariant x y x₀ s false (x₀ - y, s₀) := by
   obtain ⟨-, h1, -, h3, h4, -⟩ := h
   refine ⟨by lia, by lia, ?_, ?_, by simp; lia⟩
-  · rwa [jacobiSym.natCast_sub_self hlt.le]
+  · rwa [Nat.cast_sub hlt.le, jacobiSym.sub_natCast_left_self]
   · rwa [Nat.gcd_sub_self_left hlt.le]
 
 theorem JacobiReduceHalveInvariant.div_two {x y x₀ x' mb : ℕ} {s s' : ℤ} {e : Bool}

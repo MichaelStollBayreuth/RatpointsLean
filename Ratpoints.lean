@@ -1,15 +1,15 @@
 module  -- shake: keep-all --deprecated_module: ignore
 
 public import Ratpoints.Mathlib.Algebra.BigOperators.Group.List.Basic
-public import Ratpoints.Mathlib.Algebra.Field.ZMod
 public import Ratpoints.Mathlib.Algebra.Group.Even
 public import Ratpoints.Mathlib.Algebra.Polynomial.Homogenize
-public import Ratpoints.Mathlib.Algebra.Prime.Defs
 public import Ratpoints.Mathlib.Algebra.Squarefree.Basic
 public import Ratpoints.Mathlib.Data.Int.GCD
 public import Ratpoints.Mathlib.Data.List.Basic
 public import Ratpoints.Mathlib.Data.List.Nodup
+public import Ratpoints.Mathlib.Data.List.Pairwise
 public import Ratpoints.Mathlib.Data.Nat.Factors
+public import Ratpoints.Mathlib.Data.Nat.PadicValNat
 public import Ratpoints.Mathlib.Data.Nat.Prime.Defs
 public import Ratpoints.Mathlib.Data.Nat.Squarefree
 public import Ratpoints.Mathlib.Data.ZMod.Basic

@@ -14,6 +14,7 @@ public import Std.WP
 import Mathlib.Data.Fintype.Parity
 import Mathlib.Data.ZMod.Basic
 import Mathlib.Tactic.Ring
+import Ratpoints.Mathlib.Data.Int.GCD
 import Ratpoints.Mathlib.Data.ZMod.Basic
 import Ratpoints.Proof.Bits
 import Ratpoints.Proof.BruteForce
@@ -56,8 +57,7 @@ no class admits a numerator, the curve has no points at all, not even at infinit
 
 ## Implementation notes
 
-A general fact is stated here, next to its only use: `Int.emod_two_eq_one_of_gcd_eq_one`, the parity
-of an integer prime to an even one. The square values that a point gives in a commutative ring
+The square values that a point gives in a commutative ring
 (`Ratpoints.isSquare_sum_mul_pow_of_sq_eq_binaryForm`,
 `Ratpoints.isSquare_sum_mul_pow_sub_of_sq_eq_binaryForm`) are stated in `Ratpoints.Proof.Tables`,
 where the square value modulo a prime follows from the first.
@@ -68,12 +68,6 @@ where the square value modulo a prime follows from the first.
 set_option experimental.vcgen true
 
 open scoped Std.WP
-
-/-- An integer prime to an even one is odd: `2` would divide their gcd. -/
-theorem Int.emod_two_eq_one_of_gcd_eq_one {a b : ℤ} (hb : b % 2 = 0) (hab : Int.gcd a b = 1) :
-    a % 2 = 1 :=
-  (Int.emod_two_eq_zero_or_one a).resolve_left fun h ↦
-    absurd (hab ▸ Int.dvd_gcd (Int.dvd_of_emod_eq_zero h) (Int.dvd_of_emod_eq_zero hb)) (by decide)
 
 namespace Ratpoints
 
@@ -98,12 +92,6 @@ theorem squares64_test_iff (s : UInt64) :
     lia
   rw [h, squares64_test_iff_of_lt (Nat.mod_lt _ (by decide)), ZMod.natCast_mod]
 
-theorem natCast_toNat_mul_add (s x a : UInt64) :
-    ((s * x + a).toNat : ZMod 64) = s.toNat * x.toNat + a.toNat := by
-  have h (n : ℕ) : ((n % 2 ^ 64 : ℕ) : ZMod 64) = n := by
-    rw [ZMod.natCast_eq_natCast_iff', Nat.mod_mod_of_dvd _ (by decide)]
-  rw [UInt64.toNat_add, UInt64.toNat_mul, h, Nat.cast_add, h, Nat.cast_mul]
-
 /-- Horner's rule on words from the last entry of `l` down, as `Ratpoints.Sieve.fsq` evaluates `f`,
 read modulo 64. -/
 theorem natCast_toNat_foldr (l : List UInt64) (x : UInt64) :
@@ -112,7 +100,8 @@ theorem natCast_toNat_foldr (l : List UInt64) (x : UInt64) :
   induction l with
   | nil => simp
   | cons a l ih =>
-    rw [List.foldr_cons, natCast_toNat_mul_add, ih, List.length_cons, Finset.sum_range_succ']
+    rw [List.foldr_cons, UInt64.natCast_toNat_mul_add (by decide), ih, List.length_cons,
+      Finset.sum_range_succ']
     simp only [List.getD_cons_succ, List.getD_cons_zero, pow_succ, pow_zero, mul_one,
       Finset.sum_mul, mul_assoc]
 
@@ -125,7 +114,8 @@ theorem natCast_toNat_foldl (l : List UInt64) (x s : UInt64) :
   induction l generalizing s with
   | nil => simp
   | cons a l ih =>
-    rw [List.foldl_cons, ih, natCast_toNat_mul_add, List.length_cons, Finset.sum_range_succ']
+    rw [List.foldl_cons, ih, UInt64.natCast_toNat_mul_add (by decide), List.length_cons,
+      Finset.sum_range_succ']
     simp only [List.getD_cons_succ, List.getD_cons_zero, Nat.add_sub_cancel, Nat.sub_zero,
       Nat.sub_sub, Nat.add_comm 1]
     ring
@@ -361,14 +351,6 @@ theorem getLsbD_run_twoAdic (c : List ℤ) (d : ℕ) {b : ℕ} (hb : b < 64) (a 
 
 /-! ### The classes of a point -/
 
-theorem isUnit_natCast_of_mod_two_eq_one {b : ℕ} (hb : b % 2 = 1) : IsUnit (b : ZMod 64) :=
-  (ZMod.isUnit_iff_coprime b 64).mpr
-    (Nat.Coprime.pow_right 6 (Nat.coprime_two_right.mpr (Nat.odd_iff.mpr hb)))
-
--- Two residues below 64 that agree modulo 64.
-theorem mod_eq_of_natCast_eq {x y : ℕ} (hy : y < 64) (h : (x : ZMod 64) = y) : x % 64 = y := by
-  rw [← Nat.mod_eq_of_lt hy, ← ZMod.natCast_eq_natCast_iff', h]
-
 /-- A point `(a, y, b)` with odd `b` has `a ≡ k b (mod 64)` for a set bit `k` of the word of `f`
 (`Ratpoints.Sieve.fsq`), since `f(k)` is a square modulo 64
 (`Ratpoints.isSquare_sum_mul_pow_of_sq_eq_binaryForm`). -/
@@ -376,11 +358,13 @@ theorem exists_getLsbD_fsq_of_sq_eq {c : List ℤ} {a y : ℤ} {b : ℕ} (hb : b
     (hy : y ^ 2 = binaryForm c a b) :
     ∃ k < 64, (fsq (coeffsMod64 c (degree c))).toBitVec.getLsbD k = true ∧
       k * (b % 64) % 64 = (a % 64).toNat := by
-  obtain ⟨u, hu⟩ := isUnit_natCast_of_mod_two_eq_one hb
+  obtain ⟨u, hu⟩ : IsUnit (b : ZMod 64) :=
+    (ZMod.isUnit_natCast_iff_not_dvd_pow (d := 6) Nat.prime_two (by decide)).mpr (by lia)
   have hk : (a : ZMod 64) = (a * ↑u⁻¹ : ZMod 64) * b := by
     rw [← hu, mul_assoc, Units.inv_mul, mul_one]
-  refine ⟨(a * ↑u⁻¹ : ZMod 64).val, ZMod.val_lt _,
-    (getLsbD_fsq_coeffsMod64 _ _ _).mpr ⟨ZMod.val_lt _, ?_⟩, mod_eq_of_natCast_eq (by lia) ?_⟩
+  refine ⟨(a * ↑u⁻¹ : ZMod 64).val, ZMod.val_lt _, (getLsbD_fsq_coeffsMod64 _ _ _).mpr
+    ⟨ZMod.val_lt _, ?_⟩,
+    ((ZMod.natCast_eq_natCast_iff' _ _ _).mp ?_).trans (Nat.mod_eq_of_lt (by lia))⟩
   · rw [ZMod.natCast_zmod_val]
     exact isSquare_sum_mul_pow_of_sq_eq_binaryForm ⟨u, hu⟩ hk hy
   · rw [Nat.cast_mul, ZMod.natCast_zmod_val, ZMod.natCast_mod, ← hk]
@@ -396,12 +380,12 @@ theorem exists_getLsbD_gsq_of_sq_eq {c : List ℤ} {a y : ℤ} {b : ℕ} (hb : b
         t * (a % 64).toNat % 64 = b % 64 := by
   have ha2 := Int.emod_two_eq_one_of_gcd_eq_one (by lia) hab
   have key : ((a % 64).toNat : ZMod 64) = a := by simpa using ZMod.natCast_toNat_emod (n := 64) a
-  obtain ⟨u, hu⟩ := isUnit_natCast_of_mod_two_eq_one (b := (a % 64).toNat) (by lia)
+  obtain ⟨u, hu⟩ : IsUnit ((a % 64).toNat : ZMod 64) :=
+    (ZMod.isUnit_natCast_iff_not_dvd_pow (d := 6) Nat.prime_two (by decide)).mpr (by lia)
   have ht : (b : ZMod 64) = (b * ↑u⁻¹ : ZMod 64) * a := by
     rw [← key, ← hu, mul_assoc, Units.inv_mul, mul_one]
   have htb : (b * ↑u⁻¹ : ZMod 64).val * (a % 64).toNat % 64 = b % 64 :=
-    (mod_eq_of_natCast_eq (Nat.mod_lt _ (by decide)) (by
-      rw [Nat.cast_mul, ZMod.natCast_zmod_val, key, ZMod.natCast_mod, ← ht])).trans rfl
+    (ZMod.natCast_eq_natCast_iff' _ _ _).mp (by rw [Nat.cast_mul, ZMod.natCast_zmod_val, key, ← ht])
   have h2 : (b * ↑u⁻¹ : ZMod 64).val * (a % 64).toNat % 2 = b % 2 := by
     rw [← Nat.mod_mod_of_dvd _ (by decide : 2 ∣ 64), htb, Nat.mod_mod_of_dvd _ (by decide)]
   rw [Nat.mul_mod, show (a % 64).toNat % 2 = 1 by lia, hb] at h2

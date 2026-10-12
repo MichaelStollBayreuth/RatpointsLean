@@ -11,8 +11,6 @@ public import Ratpoints.Model.Denominators
 public import Ratpoints.Spec.Basic
 public import Std.WP
 
-import Ratpoints.Mathlib.Algebra.Field.ZMod
-import Ratpoints.Mathlib.Algebra.Prime.Defs
 import Ratpoints.Mathlib.Data.Int.GCD
 import Ratpoints.Mathlib.Data.ZMod.Basic
 import Ratpoints.Mathlib.NumberTheory.Padics.PadicVal.Basic
@@ -99,6 +97,19 @@ theorem binaryForm_eq_sum_of_even {c : List ℤ} (hd : degree c % 2 = 0) (a b : 
   refine Finset.sum_congr rfl fun j hj ↦ ?_
   rw [Nat.add_sub_cancel, Nat.add_zero, Nat.sub_sub_self (Finset.mem_range_succ_iff.mp hj)]
 
+-- An integer `u` such that `u x ^ 2 + p t` is a square, for an `x` prime to the prime `p`, is a
+-- square modulo `p`, since `x` is a unit there.
+private theorem isSquare_intCast_of_isSquare_mul_sq_add {p : ℕ} [Fact p.Prime] {u x t : ℤ}
+    (hx : ¬(p : ℤ) ∣ x) (h : IsSquare (u * x ^ 2 + p * t)) : IsSquare (u : ZMod p) := by
+  obtain ⟨z, hz⟩ := h
+  have hz' := congr(($hz : ZMod p))
+  push_cast at hz'
+  rw [ZMod.natCast_self, zero_mul, add_zero] at hz'
+  have hx0 : (x : ZMod p) ^ 2 ≠ 0 :=
+    pow_ne_zero _ (by rwa [Ne, ZMod.intCast_zmod_eq_zero_iff_dvd])
+  rw [eq_div_of_mul_eq hx0 hz']
+  exact (IsSquare.mul_self _).div (IsSquare.sq _)
+
 /-- **The Newton polygon at a prime `p`** (even degree): for a point `(a, y, b)` with
 `m = v_p(b) ≥ 1`, whose term `c_{d-j} a ^ (d - j) b ^ j` of `F(a, b)` alone has the least
 valuation `w + j m`, where `c_{d-j} = p ^ w u` with `p ∤ u` and `p ^ (w + j m + 1)` divides
@@ -114,8 +125,9 @@ theorem even_and_isSquare_of_sq_eq_binaryForm_of_even {c : List ℤ} {p : ℕ} [
   have hpp : Prime (p : ℤ) := Nat.prime_iff_prime_int.mp hp.out
   have hpa := Int.not_natCast_dvd_of_gcd_eq_one hp.out.ne_one hab
     (dvd_of_one_le_padicValNat (Nat.one_le_iff_ne_zero.mpr hm))
-  obtain ⟨b', hb', hpb'⟩ := Int.exists_eq_pow_padicValNat_mul (p := p) (n := b) fun h ↦ by simp_all
-  rw [Int.natAbs_natCast] at hb'
+  obtain ⟨b', hb', hpb'⟩ := Int.exists_eq_pow_padicValInt_mul hp.out.ne_one (n := b)
+    fun h ↦ by simp_all
+  rw [padicValInt.of_nat] at hb'
   have hterm (i : ℕ) : c.getD (degree c - i) 0 * a ^ (degree c - i) * (b : ℤ) ^ i =
       c.getD (degree c - i) 0 * (p : ℤ) ^ (i * padicValNat p b) *
         (a ^ (degree c - i) * b' ^ i) := by rw [hb']; ring
@@ -123,11 +135,11 @@ theorem even_and_isSquare_of_sq_eq_binaryForm_of_even {c : List ℤ} {p : ℕ} [
   obtain ⟨hev, t, ht⟩ := Int.even_and_exists_isSquare_add_of_sq_eq_sum
     (v := w + j * padicValNat p b) (u := u * a ^ (degree c - j) * b' ^ j) hy
     (Finset.mem_range.mpr (Nat.lt_succ_of_le hj)) (by rw [hterm, hu, pow_add]; ring)
-    (hpp.not_dvd_mul_pow_mul hpu hpa (mt hpp.dvd_of_dvd_pow hpb') _)
+    (hpp.not_dvd_mul (hpp.not_dvd_mul hpu (mt hpp.dvd_of_dvd_pow hpa)) (mt hpp.dvd_of_dvd_pow hpb'))
     fun i hi hij ↦ hterm i ▸ (hmin i (Nat.le_of_lt_succ (Finset.mem_range.mp hi)) hij).mul_right _
   refine ⟨hev, fun ⟨k, hk⟩ ↦ ?_⟩
   obtain ⟨l, hl⟩ : Even (degree c - j) := (Nat.even_sub hj).mpr (by simp [Nat.even_iff, hd, hk])
-  exact ZMod.isSquare_intCast_of_isSquare_mul_sq_add (x := a ^ l * b' ^ k) (t := t)
+  exact isSquare_intCast_of_isSquare_mul_sq_add (x := a ^ l * b' ^ k) (t := t)
     (hpp.not_dvd_mul (mt hpp.dvd_of_dvd_pow hpa) (mt hpp.dvd_of_dvd_pow hpb'))
     (by convert ht using 2; rw [hl, hk]; ring)
 

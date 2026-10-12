@@ -12,7 +12,6 @@ public import Ratpoints.Spec.Basic
 public import Std.WP
 
 import Mathlib.Data.Nat.Squarefree
-import Ratpoints.Mathlib.Algebra.Prime.Defs
 import Ratpoints.Mathlib.Data.Int.GCD
 import Ratpoints.Mathlib.Data.Nat.Prime.Defs
 import Ratpoints.Mathlib.NumberTheory.Padics.PadicVal.Basic
@@ -70,10 +69,9 @@ prime of the table, an `int`, below `2 ^ 31`.
 ## Implementation notes
 
 The contracts are proved with `vcgen`, the program logic of Lean core, with loop invariants that are
-named definitions, in a file with Mathlib, since they speak of primes and their valuations.
-`Int.le_mul_ite_neg_ediv`, that the macro `CEIL` of the C code rounds up, is stated here, next to
-its only use: its `if` is that of the macro, and Mathlib has no ceiling division of integers to
-state it with.
+named definitions, in a file with Mathlib, since they speak of primes and their valuations. That
+the macro `CEIL` of the C code rounds up is a private lemma of this file, which only the slopes use:
+its `if` is that of the macro, and Mathlib has no ceiling division of integers to state it with.
 -/
 
 @[expose] public section
@@ -82,9 +80,9 @@ set_option experimental.vcgen true
 
 open scoped Std.WP
 
-/-- The macro `CEIL` of the C code rounds up: `q ⌈t / q⌉ ≥ t` for `q > 0`, with `⌈t / q⌉` as
-`-⌊-t / q⌋` for `t ≤ 0` and `1 + ⌊(t - 1) / q⌋` for `t > 0`. -/
-theorem Int.le_mul_ite_neg_ediv (t : ℤ) {q : ℤ} (hq : 0 < q) :
+-- The macro `CEIL` of the C code rounds up: `q ⌈t / q⌉ ≥ t` for `q > 0`, with `⌈t / q⌉` as
+-- `-⌊-t / q⌋` for `t ≤ 0` and `1 + ⌊(t - 1) / q⌋` for `t > 0`.
+private theorem Int.le_mul_ite_neg_ediv (t : ℤ) {q : ℤ} (hq : 0 < q) :
     t ≤ q * if t ≤ 0 then -((-t) / q) else 1 + (t - 1) / q := by
   have h1 := Int.emod_add_mul_ediv (-t) q
   have h2 := Int.emod_add_mul_ediv (t - 1) q
@@ -143,13 +141,15 @@ theorem even_add_of_sq_eq_binaryForm_of_odd {c : List ℤ} {a y : ℤ} {b p val 
   have hpp : Prime (p : ℤ) := Nat.prime_iff_prime_int.mp hp.out
   have hpa := Int.not_natCast_dvd_of_gcd_eq_one hp.out.ne_one hab
     (dvd_of_one_le_padicValNat (Nat.one_le_iff_ne_zero.mpr hm))
-  obtain ⟨b', hb', hpb'⟩ := Int.exists_eq_pow_padicValNat_mul (p := p) (n := b) fun h ↦ by simp_all
-  rw [Int.natAbs_natCast] at hb'
-  obtain ⟨r, hr, hpr⟩ := Int.exists_eq_pow_padicValNat_mul (p := p)
+  obtain ⟨b', hb', hpb'⟩ := Int.exists_eq_pow_padicValInt_mul hp.out.ne_one (n := b)
+    fun h ↦ by simp_all
+  rw [padicValInt.of_nat] at hb'
+  obtain ⟨r, hr, hpr⟩ := Int.exists_eq_pow_padicValInt_mul hp.out.ne_one
     (getD_degree_ne_zero_of_pos (c := c) (by lia))
-  rw [hval] at hr
+  rw [padicValInt, hval] at hr
   refine even_of_sq_eq_binaryForm_of_odd_of_dvd hd hy (u := r * a ^ degree c * b')
-    (by rw [hr, hb', pow_add]; ring) (hpp.not_dvd_mul_pow_mul hpr hpa hpb' _) fun i hi ↦ ?_
+    (by rw [hr, hb', pow_add]; ring)
+    (hpp.not_dvd_mul (hpp.not_dvd_mul hpr (mt hpp.dvd_of_dvd_pow hpa)) hpb') fun i hi ↦ ?_
   rw [hb']
   exact pow_dvd_of_add_one_le hi (hmin i hi)
 

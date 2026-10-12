@@ -8,14 +8,15 @@ module
 public import Mathlib.Data.ZMod.Basic
 
 /-!
-# Residues of integers and squares in `ZMod n`
+# Residues of integers and words, and squares in `ZMod n`
 
 Candidates for `Mathlib.Data.ZMod.Basic`: the cast to `ZMod n` of the least non-negative residue
 of an integer (`ZMod.natCast_toNat_emod`, which is `ZMod.natCast_toNat` without its hypothesis
-`0 ≤ z`), and a residue that is a square in `ZMod n` as the residue of the square of a natural
-number below `n` (`ZMod.exists_eq_mul_self_mod_of_isSquare`), and for odd `n` and a residue other
-than `0` as that of the square of a number from `1` to `n / 2`
-(`ZMod.isSquare_natCast_iff_exists_mul_self_mod_eq`).
+`0 ≤ z`), the cast to `ZMod n` of the word `s x + a` for `n ∣ 2 ^ 64`, as the arithmetic of words
+is that modulo `2 ^ 64` (`UInt64.natCast_toNat_mul_add`), and a residue that is a square in
+`ZMod n` as the residue of the square of a natural number below `n`
+(`ZMod.exists_eq_mul_self_mod_of_isSquare`), and for odd `n` and a residue other than `0` as that
+of the square of a number from `1` to `n / 2` (`ZMod.isSquare_natCast_iff_exists_mul_self_mod_eq`).
 -/
 
 @[expose] public section
@@ -50,5 +51,13 @@ theorem isSquare_natCast_iff_exists_mul_self_mod_eq {n v : ℕ} [NeZero n] (hn :
   · exact ⟨s, by lia, h2, rfl⟩
 
 end ZMod
+
+/-- The cast to `ZMod n` of the word `s x + a` is `s x + a` computed in `ZMod n`, for `n ∣ 2 ^ 64`,
+since the arithmetic of words is that modulo `2 ^ 64`. -/
+theorem UInt64.natCast_toNat_mul_add {n : ℕ} (hn : n ∣ 2 ^ 64) (s x a : UInt64) :
+    ((s * x + a).toNat : ZMod n) = s.toNat * x.toNat + a.toNat := by
+  have h (m : ℕ) : ((m % 2 ^ 64 : ℕ) : ZMod n) = m := by
+    rw [ZMod.natCast_eq_natCast_iff', Nat.mod_mod_of_dvd _ hn]
+  rw [UInt64.toNat_add, UInt64.toNat_mul, h, Nat.cast_add, h, Nat.cast_mul]
 
 end

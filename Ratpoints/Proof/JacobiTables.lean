@@ -12,10 +12,9 @@ public import Ratpoints.Spec.Basic
 public import Std.WP
 
 import Ratpoints.Mathlib.Algebra.BigOperators.Group.List.Basic
-import Ratpoints.Mathlib.Algebra.Prime.Defs
+import Ratpoints.Mathlib.Data.Nat.PadicValNat
 import Ratpoints.Mathlib.Data.ZMod.Basic
 import Ratpoints.Mathlib.NumberTheory.LegendreSymbol.JacobiSymbol
-import Ratpoints.Mathlib.NumberTheory.Padics.PadicVal.Basic
 import Ratpoints.Proof.Bits
 import Ratpoints.Proof.Jacobi
 import Ratpoints.Proof.Params
@@ -282,8 +281,8 @@ theorem JacobiSetupInvariant.padicValNat_eq {lcf : ℤ} {v w q e m : ℕ}
       obtain ⟨x, hx, rfl⟩ := List.mem_map.mp ha
       exact (h3 x hx).2.2.2.1 ((Nat.prime_dvd_prime_iff_eq hq (h3 x hx).1).mp
         (hq.dvd_of_dvd_pow hd) ▸ hqw)
-  refine padicValNat_eq_of_eq_pow_mul_of_not_dvd hq.one_lt ?_
-    (hq.prime.not_dvd_mul_pow_mul hqm h2q hP v)
+  refine padicValNat_eq_of_eq_pow_mul_of_not_dvd hq.ne_zero ?_ (hq.prime.not_dvd_mul
+    (hq.prime.not_dvd_mul hqm (mt (hq.prime.dvd_of_dvd_pow (n := v)) h2q)) hP)
   conv_lhs => rw [h1, hm]
   ring
 
@@ -593,19 +592,30 @@ theorem jacobiSym_pow_eq_mul {q b e : ℕ} {o : Option (Array Bool)} [hq : Fact 
   have hr : b % q ≠ 0 := fun h ↦ hqb (Nat.dvd_of_mod_eq_zero h)
   have hJe : J(q | b) ^ e = J(q | b) := by
     rcases hJ with h | h <;> simp [h, (Nat.odd_iff.mpr he).neg_one_pow]
-  rw [hJe, jacobiSym.natCast_eq_ite_mul_legendreSym hq2 hb, legendreSym_eq_ite_getElem!_nonSquares
-    hq2 hr (Nat.mod_lt _ hq.out.pos), ZMod.χ₄_nat_eq_if_mod_four]
+  rw [hJe, jacobiSym.natCast_eq_ite_mul_legendreSym hq2 hb, legendreSym.mod, ← Int.natCast_mod,
+    legendreSym_eq_ite_getElem!_nonSquares hq2 hr (Nat.mod_lt _ hq.out.pos),
+    ZMod.χ₄_nat_eq_if_mod_four]
   simp only [Option.isSome_some, Bool.true_and, Nat.and_two_ne_zero_iff hqo, Option.elim_some]
   split_ifs <;> first | rfl | lia
+
+-- For odd `b`, the sign of `a` comes out of `J(a | b)` as a power of `χ₄(b)`.
+private theorem jacobiSym_eq_χ₄_pow_mul_natAbs (a : ℤ) {b : ℕ} (hb : b % 2 = 1) :
+    J(a | b) = ZMod.χ₄ b ^ (if a < 0 then 1 else 0) * J(a.natAbs | b) := by
+  rcases lt_or_ge a 0 with h | h
+  · nth_rw 1 [Int.eq_neg_natAbs_of_nonpos h.le]
+    simp [jacobiSym.neg _ (Nat.odd_iff.mpr hb), h]
+  · simp [h.not_gt, Int.natAbs_of_nonneg h]
 
 theorem jacobiSym_natAbs_eq_mul_prod {lcf : ℤ} {v b : ℕ} {L : List (ℕ × Option (Array Bool))}
     (h : lcf.natAbs = 2 ^ v * (L.map fun x ↦ x.1 ^ padicValNat x.1 lcf.natAbs).prod)
     (hb : b % 2 = 1) :
     J(lcf.natAbs | b) =
       ZMod.χ₈ b ^ v * (L.map fun x ↦ J(x.1 | b) ^ padicValNat x.1 lcf.natAbs).prod := by
-  have := jacobiSym.natCast_two_pow_mul_prod hb v L Prod.fst fun x ↦ padicValNat x.1 lcf.natAbs
-  beta_reduce at this
-  rwa [← h] at this
+  nth_rw 1 [h]
+  push_cast
+  rw [jacobiSym.mul_left, jacobiSym.pow_left, jacobiSym.at_two (Nat.odd_iff.mpr hb),
+    jacobiSym.list_prod_left]
+  simp [List.map_map, Function.comp_def, jacobiSym.pow_left]
 
 theorem prod_map_jacobiSym_pow_eq {lcf : ℤ} {L : List (ℕ × Option (Array Bool))}
     (h : ∀ x ∈ L, x.1.Prime ∧ x.1 ≠ 2 ∧ x.1 ∣ lcf.natAbs ∧
@@ -629,7 +639,7 @@ theorem jacobiSym_eq_ite_foldl {lcf : ℤ} {ji : JacobiInfo} (hji : IsJacobiInfo
       ji.sign[b % 8]! = true then -1 else 1 := by
   obtain ⟨h1, h2, h3⟩ := hji
   rw [ite_foldl_xor_eq_mul_prod, h3, ite_getElem!_jacobiSigns hb,
-    jacobiSym.eq_χ₄_pow_mul_natAbs lcf hb, jacobiSym_natAbs_eq_mul_prod h2 hb,
+    jacobiSym_eq_χ₄_pow_mul_natAbs lcf hb, jacobiSym_natAbs_eq_mul_prod h2 hb,
     prod_map_jacobiSym_pow_eq h1 hb hq]
   simp only [decide_eq_true_eq]
   ring

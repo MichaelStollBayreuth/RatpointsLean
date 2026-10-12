@@ -9,7 +9,7 @@ public import Mathlib.NumberTheory.Padics.PadicVal.Defs
 public import Ratpoints.Model.Setup
 public import Std.WP
 
-import Ratpoints.Mathlib.NumberTheory.Padics.PadicVal.Basic
+import Ratpoints.Mathlib.Data.Nat.PadicValNat
 import Std.Tactic.Do
 
 /-!
@@ -111,7 +111,7 @@ theorem exists_eq_run_valuation {n : ℤ} (hn : n ≠ 0) {p : ℕ} (hp : 1 < p) 
 theorem fst_run_valuation {n : ℤ} (hn : n ≠ 0) {p : ℕ} (hp : p.Prime) :
     (Id.run (valuation n p)).1 = padicValNat p n.natAbs := by
   obtain ⟨m, hm, hmr, hr⟩ := exists_eq_run_valuation hn hp.one_lt
-  exact (padicValNat_eq_of_eq_pow_mul_of_not_dvd hp.one_lt hm
+  exact (padicValNat_eq_of_eq_pow_mul_of_not_dvd hp.ne_zero hm
     fun h ↦ hr (hmr ▸ Nat.mod_eq_zero_of_dvd h)).symm
 
 theorem snd_run_valuation {n : ℤ} (hn : n ≠ 0) {p : ℕ} (hp : p.Prime) :

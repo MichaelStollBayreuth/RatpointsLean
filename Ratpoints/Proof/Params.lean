@@ -9,6 +9,7 @@ public import Mathlib.Data.Nat.Prime.Defs
 public import Ratpoints.Model.Params
 
 import Mathlib.Tactic.NormNum.Prime
+import Ratpoints.Mathlib.Data.List.Pairwise
 
 /-!
 # The sieving parameters: the primes of the table, well-formedness and the array size
@@ -82,16 +83,9 @@ theorem mem_of_toList_primeTable_eq {pref suff : List ℕ} {cur q : ℕ}
     (hl : primeTable.toList = pref ++ cur :: suff) (hq : q.Prime) (h2 : q ≠ 2) (hlt : q < cur) :
     q ∈ pref := by
   have hcur : cur ∈ primeTable := Array.mem_toList_iff.mp (by simp [hl])
-  have hmem := Array.mem_toList_iff.mpr
-    (mem_primeTable_of_prime hq h2 ((lt_of_mem_primeTable hcur).trans' hlt))
-  have hp := pairwise_lt_toList_primeTable
-  rw [hl] at hmem hp
-  rcases List.mem_append.mp hmem with h | h
-  · exact h
-  · rcases List.mem_cons.mp h with rfl | h
-    · lia
-    · have := (List.pairwise_cons.mp (List.pairwise_append.mp hp).2.1).1 q h
-      lia
+  exact List.mem_of_mem_append_cons_of_rel (hl ▸ pairwise_lt_toList_primeTable)
+    (hl ▸ Array.mem_toList_iff.mpr
+      (mem_primeTable_of_prime hq h2 ((lt_of_mem_primeTable hcur).trans' hlt))) hlt
 
 theorem numPrimes_le_size_primeTable : numPrimes ≤ primeTable.size :=
   (List.length_filter_le _ _).trans_eq primeTable.length_toList

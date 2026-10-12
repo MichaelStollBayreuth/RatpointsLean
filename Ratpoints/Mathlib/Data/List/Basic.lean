@@ -5,7 +5,7 @@ Authors: Michael Stoll
 -/
 module
 
-import Mathlib.Data.List.Basic
+public import Mathlib.Data.List.Basic
 
 /-!
 # Lemmas on lists
@@ -21,7 +21,8 @@ agrees with `f` wherever `f` gives a value, and when it gives none, `f` gives no
 ## Main statements
 
 * `List.flatMap_filter_of_ne`: a filter before `List.flatMap` that changes nothing.
-* `List.perm_flatMap_of_nodup`: the `List.flatMap` of a sublist in another order.
+* `List.perm_flatMap_of_nodup`: the `List.flatMap` of a list without duplicates of members of `l`,
+  in any order, that holds every member with a nonempty image.
 * `List.eq_map_of_mapM_eq_some`, `List.exists_mem_of_mapM_eq_none`: the two results of
   `List.mapM` in the monad `Option`.
 -/
@@ -50,11 +51,11 @@ holds every member `x` of `l` with `f x ≠ []`, gives a permutation of `l.flatM
 order of `l'`: `l'` is a permutation of the members of `l` that it holds
 (`List.perm_ext_iff_of_nodup`), and the others give nothing (`List.flatMap_filter_of_ne`). -/
 theorem perm_flatMap_of_nodup {l l' : List α} {f : α → List β} (hl : l.Nodup)
-    (hl' : l'.Nodup) (hsub : ∀ x ∈ l', x ∈ l) (h : ∀ x ∈ l, f x ≠ [] → x ∈ l') :
+    (hl' : l'.Nodup) (hsub : l' ⊆ l) (h : ∀ x ∈ l, f x ≠ [] → x ∈ l') :
     (l'.flatMap f).Perm (l.flatMap f) := by
   classical
   have hp : l'.Perm (l.filter (· ∈ l')) :=
-    (perm_ext_iff_of_nodup hl' (hl.filter _)).mpr fun x ↦ by simpa using fun hx ↦ hsub x hx
+    (perm_ext_iff_of_nodup hl' (hl.filter _)).mpr fun x ↦ by simpa using fun hx ↦ hsub hx
   rw [← flatMap_filter_of_ne (p := (· ∈ l')) fun x hx hf ↦ decide_eq_true (h x hx hf)]
   exact hp.flatMap_right f
 
