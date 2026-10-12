@@ -810,9 +810,9 @@ theorem fitsLong_mul_of_le_div {x p bHigh : ℕ} (h : x ≤ bHigh / p) (hH : bHi
   simp [fitsLong]
   lia
 
-/-- Whether the entry `e` of the valuation test of the divisor shape (stage E) excludes the
-denominator `b`: `v_p(b) ≥ e.slope` with `v_p(b) + e.val` odd, for the valuation `v_p(b)` of
-`Ratpoints.Setup.valuation`. -/
+/-- Whether the entry `e` of the valuation test of the divisor shape (`Ratpoints.Sieve.denInfoTest`)
+excludes the denominator `b`: `v_p(b) ≥ e.slope` with `v_p(b) + e.val` odd, for the valuation
+`v_p(b)` of `Ratpoints.Setup.valuation`. -/
 def DenInfo.excludes (e : DenInfo) (b : ℕ) : Bool :=
   decide (e.slope ≤ (Id.run (valuation b e.p)).1) && ((Id.run (valuation b e.p)).1 + e.val) % 2 == 1
 

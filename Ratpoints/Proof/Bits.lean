@@ -23,10 +23,11 @@ of integers, the bits of the word `~~~0` and of the masks `~~~0 <<< n` and `~~~0
 bit and the lowest set bit of a word, the word `x &&& (x - 1)`, which is `x` with its lowest set bit
 cleared, the bits of a word set one at a time, at their own positions or at others, the 64 bits of
 two words from a position within the first, the bits of a word and-ed in turn with the words of a
-list, the numerators of the set bits of a list of words, read in turn, the odd part of a number
-below `2 ^ 64` by the lowest set bit of its word, bit 1 of odd numbers, the gcd of half an even
-number with an odd one, a residue below `2 q` modulo `q` by one subtraction, and the divisors of the
-gcd of `b` and a residue `f ≡ a (mod b)`.
+list, the numerators and the denominators of the set bits of a list of words, read in turn, the
+numbers of a range between two bounds, the odd part of a number below `2 ^ 64` by the lowest set bit
+of its word, bit 1 of odd numbers, the gcd of half an even number with an odd one, a residue below
+`2 q` modulo `q` by one subtraction, and the divisors of the gcd of `b` and a residue
+`f ≡ a (mod b)`.
 
 ## Main statements
 
@@ -47,6 +48,10 @@ gcd of `b` and a residue `f ≡ a (mod b)`.
 * `List.flatMap_range_map_filter`: the integers `a + 64 y + t` of the positions `t` of the blocks
   `y < m` that pass a test, in increasing order, are those of `a, …, a + 64 m - 1` that pass a test
   `p`, when the first test is `p` on these integers: the numerators of the set bits of words.
+* `List.flatMap_range'_map_filter`: the same for the natural numbers `64 w + t` of the blocks
+  `w = w0, …, w0 + n - 1`: the denominators of the set bits of words.
+* `List.filter_range'_le_and_le`: of a range that covers `lo, …, hi`, the numbers from `lo` to
+  `hi`.
 * `Std.Legacy.Range.length_eq_of_toList_eq_append_cons`,
   `Std.Legacy.Range.lt_of_toList_eq_append_cons`: the position of the cursor of a loop over
   `[0:m]`; `Std.Legacy.Range.add_length_eq_of_toList_eq_append_cons`,
@@ -223,6 +228,40 @@ theorem flatMap_range_map_filter {g : Nat → Nat → Bool} {a : Int} {p : Int �
     · exact filter_congr fun t ht ↦ by
         rw [hg m (Nat.lt_succ_self m) t, decide_eq_true (mem_range.mp ht), Bool.true_and]
         simp [Int.add_assoc]
+
+/-- The positions `t < 64` of the blocks `w = w0, …, w0 + n - 1` that pass the test `g w`, read as
+the numbers `64 w + t`, in increasing order, are the numbers `64 w0, …, 64 (w0 + n) - 1` that pass
+`p`, when `g w t` is `p (64 w + t)`: for `g w` the bits of a word `w`, the numbers of the set bits
+of `n` words; `List.flatMap_range_map_filter` for natural numbers and blocks from `w0` on. -/
+theorem flatMap_range'_map_filter {g : Nat → Nat → Bool} {p : Nat → Bool} {w0 n : Nat}
+    (hg : ∀ w, w0 ≤ w → w < w0 + n → ∀ t < 64, g w t = p (64 * w + t)) :
+    (range' w0 n).flatMap (fun w ↦ ((range 64).filter (g w)).map (64 * w + ·)) =
+      (range' (64 * w0) (64 * n)).filter p := by
+  induction n generalizing w0 with
+  | zero => simp
+  | succ n ih =>
+    rw [range'_succ, flatMap_cons, ih fun w hw hw' ↦ hg w (by lia) (by lia),
+      show 64 * (w0 + 1) = 64 * w0 + 64 by lia, show 64 * (n + 1) = 64 + 64 * n by lia,
+      ← range'_append_1, filter_append, range'_eq_map_range (s := 64 * w0), filter_map]
+    exact congrArg (· ++ _) (congrArg (map _) (filter_congr fun t ht ↦
+      hg w0 (Nat.le_refl w0) (by lia) t (mem_range.mp ht)))
+
+/-- Of the numbers `a, …, a + n - 1`, which cover `lo, …, hi`, those from `lo` to `hi` are the
+numbers `lo, …, hi`. -/
+theorem filter_range'_le_and_le {a n lo hi : Nat} (ha : a ≤ lo) (hn : hi < a + n) :
+    (range' a n).filter (fun b ↦ decide (lo ≤ b) && decide (b ≤ hi)) = range' lo (hi + 1 - lo) := by
+  rcases Nat.lt_or_ge (hi + 1) lo with h | h
+  · rw [Nat.sub_eq_zero_of_le (Nat.le_of_lt h), range'_zero, filter_eq_nil_iff]
+    intro b _
+    simp only [Bool.and_eq_true, decide_eq_true_eq, not_and]
+    lia
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le ha
+  obtain ⟨k, rfl⟩ : ∃ k, n = m + (hi + 1 - (a + m)) + k := ⟨n - m - (hi + 1 - (a + m)), by lia⟩
+  rw [← range'_append_1, ← range'_append_1, filter_append, filter_append,
+    (filter_eq_nil_iff (l := range' a m)).mpr fun b hb ↦ by simp at hb ⊢; lia,
+    (filter_eq_nil_iff (l := range' (a + (m + (hi + 1 - (a + m)))) k)).mpr fun b hb ↦ by
+      simp at hb ⊢; lia,
+    filter_eq_self.mpr fun b hb ↦ by simp at hb ⊢; lia, nil_append, append_nil]
 
 theorem foldl_gcd_natAbs_dvd (l : List Int) (g : Nat) :
     l.foldl (fun g a ↦ g.gcd a.natAbs) g ∣ g := by

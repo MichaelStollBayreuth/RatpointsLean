@@ -17,9 +17,9 @@ import Std.Tactic.Do
 
 The lemmas on the operations on the bit arrays of 64-bit words of the model, on its rows as words
 and on the check of a numerator, and the contracts of its components on words, up to the sieve of
-one denominator from a class word, the numerators modulo 64 from which the first stage starts, and
-the run over the denominators, as `@[spec]` theorems proved with `vcgen`, the program logic of Lean
-core, with loop invariants that are named definitions.
+one denominator from a class word, the numerators modulo 64 from which the first stage starts, as
+`@[spec]` theorems proved with `vcgen`, the program logic of Lean core, with loop invariants that
+are named definitions.
 
 ## Main statements
 
@@ -57,19 +57,14 @@ core, with loop invariants that are named definitions.
   mapped by `Ratpoints.Sieve.swapPoint` when the flag of the reversal is set;
   `Ratpoints.Sieve.toList_run_sift_eq_checkDen`: these are the points that the plain sieve of `b`
   gives whose numerators pass the class word, mapped in the same way.
-* `Ratpoints.Sieve.sieveRun_spec`: the denominators `1, …, H`, each from the class word of all ones,
-  which every numerator passes (`Ratpoints.Sieve.classBit_allOnes`), give the part of the
-  brute-force reference with `z ≥ 1`, its numerators filtered by the survivor test, mapped by
-  `Ratpoints.Sieve.swapPoint` when the flag of the reversal is set;
-  `Ratpoints.Sieve.toList_run_sieveRun` states this as an equation.
 
 ## Implementation notes
 
 The file uses Lean core and `Std` only, as `Ratpoints.Proof.Sieve` does; the lemmas on words that
 are not about the model are in `Ratpoints.Proof.Bits`. The proofs use only that
-`Ratpoints.rbaPack` is positive, never its value. The plain equation
-`Ratpoints.Sieve.toList_run_sieveRun` lets the files with Mathlib use the result of the run without
-the program logic.
+`Ratpoints.rbaPack` is positive, never its value. The contract of the run over the denominators,
+which calls `Ratpoints.Sieve.sift` with the class word of each denominator, is in
+`Ratpoints.Proof.Denominators`.
 -/
 
 @[expose] public section
@@ -250,14 +245,6 @@ def classBit (cw : UInt64) (a : Int) : Bool := cw.toBitVec.getLsbD (a % 64).toNa
 @[simp]
 theorem classBit_zero (a : Int) : classBit 0 a = false := by
   simp [classBit]
-
-theorem classBit_allOnes (a : Int) : classBit (~~~0) a = true := by
-  simp only [classBit, UInt64.getLsbD_allOnes, decide_eq_true_eq]
-  lia
-
-theorem filter_classBit_allOnes_and (l : List Int) (p : Int → Bool) :
-    l.filter (fun a ↦ classBit (~~~0) a && p a) = l.filter p := by
-  simp only [classBit_allOnes, Bool.true_and]
 
 theorem classBit_rbaLength_mul_add (cw : UInt64) (w0 : Int) (y : Nat) {t : Nat} (ht : t < 64) :
     classBit cw (rbaLength * w0 + 64 * y + t) = cw.toBitVec.getLsbD t := by
@@ -1090,44 +1077,6 @@ theorem toList_run_sift_eq_checkDen (c : List Int) (d H b : Nat) (rev : Bool) (c
     rw [← List.filter_filter, pointsOfDen_filter,
       ← (checkDen_spec c d H b _).le_wp trivial _ ((sieveDen_spec H b entries).le_wp trivial)]
     rfl
-
-/-! ### The run -/
-
-/-- The invariant of the loop of `Ratpoints.Sieve.sieveRun` over the denominators: after the
-denominators `j + 1`, `j ∈ pref`, the points found are those of the brute-force reference over
-these denominators and the numerators that survive the tables `entries`, mapped by
-`Ratpoints.Sieve.swapPoint` when the flag `rev` of the reversal is set. -/
-def SieveRunInvariant (c : List Int) (d H : Nat) (rev : Bool) (entries : List Entry)
-    (pref : List Nat) (out : Array (Int × Int × Int)) : Prop :=
-  out.toList = (pref.flatMap fun j ↦
-    pointsOfDen c d (j + 1 : Nat) ((numerators H).filter (survives entries (j + 1)))).map
-      (if rev then swapPoint else id)
-
-/-- The points of the denominators are the part of the brute-force reference `Ratpoints.bruteForce`
-with `z ≥ 1`, its numerators filtered by the survivor test `Ratpoints.Sieve.survives`, mapped by
-`Ratpoints.Sieve.swapPoint` when the flag `rev` of the reversal is set, since the class word of all
-ones lets every numerator through (`Ratpoints.Sieve.classBit_allOnes`); the array size `A ≥ 1` makes
-the loops over the pieces end, and the moduli are positive, as the first stage over the rows as
-words needs (`Ratpoints.Sieve.andRows_spec`). -/
-@[spec]
-theorem sieveRun_spec (c : List Int) (d H A : Nat) (rev : Bool) (entries : List Entry) :
-    ⦃ 1 ≤ A ∧ ∀ e ∈ entries, 0 < e.p ⦄ sieveRun c d H A rev entries
-    ⦃ fun out ↦ out.toList = ((List.range H).flatMap fun j ↦
-        pointsOfDen c d (j + 1 : Nat) ((numerators H).filter (survives entries (j + 1)))).map
-          (if rev then swapPoint else id) ⦄ := by
-  vcgen [sieveRun] invariants
-  · fun pref _ out ↦ SieveRunInvariant c d H rev entries pref out
-  all_goals try simp only [filter_classBit_allOnes_and] at *
-  all_goals grind [SieveRunInvariant, List.range_eq_range']
-
-/-- `Ratpoints.Sieve.sieveRun_spec` as an equation, which the files with Mathlib use without the
-program logic. -/
-theorem toList_run_sieveRun (c : List Int) (d H : Nat) (rev : Bool) {A : Nat} (hA : 1 ≤ A)
-    {entries : List Entry} (hp : ∀ e ∈ entries, 0 < e.p) :
-    (Id.run (sieveRun c d H A rev entries)).toList = ((List.range H).flatMap fun j ↦
-      pointsOfDen c d (j + 1 : Nat) ((numerators H).filter (survives entries (j + 1)))).map
-        (if rev then swapPoint else id) :=
-  Std.WP.Id.of_run_eq_wp rfl _ ((sieveRun_spec c d H A rev entries).le_wp ⟨hA, hp⟩)
 
 end Sieve
 

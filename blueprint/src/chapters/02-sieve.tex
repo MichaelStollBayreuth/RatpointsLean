@@ -268,18 +268,24 @@ maps, specified by ordinary lemmas.
 \end{definition}
 
 \begin{definition}[The denominators]\label{def:sieveRun}
-  \uses{def:sift}
-  \lean{Ratpoints.Sieve.sieveRun, Ratpoints.Sieve.sieveRun_spec, Ratpoints.Sieve.toList_run_sieveRun, Ratpoints.Sieve.classBit_allOnes, Ratpoints.Sieve.filter_classBit_allOnes_and}
+  \uses{def:sift, def:Shape}
+  \lean{Ratpoints.Sieve.sieveRun, Ratpoints.Sieve.sieveRun_spec, Ratpoints.Sieve.toList_run_sieveRun}
   \leanok
-  The rows of the moduli made once, and the denominators $b = 1, \dots, H$ in increasing order, the
-  points that \verb|sift| (Definition~\ref{def:sift}) finds for each, from the class word of all
-  ones, with pieces of at most $A$ bit arrays and the flag of the reversal, appended in turn
-  (\csource{find_points.c}{4059}{4075}, \csource{find_points.c}{5152}{5160}). Its contract, for an
-  array size $A \ge 1$ and moduli $p > 0$: the result is the concatenation over $b = 1, \dots, H$ of
-  what the brute-force reference finds over $b$ and the numerators that survive the moduli for $b$,
-  since every numerator passes the class bit of the word of all ones, that is, the part of the
-  reference with $z \ge 1$, its numerators filtered by the moduli, mapped by $\mathrm{swapPoint}$
-  (Definition~\ref{def:swapPoint}) when the flag is set.
+  The rows of the moduli made once, and the denominators of a shape of the loop
+  (Definition~\ref{def:Shape}) from $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$, in the order of its
+  loop: for each that passes the test of the shape, the points that \verb|sift|
+  (Definition~\ref{def:sift}) finds from the word $\mathrm{nb}[b \bmod 64]$ of its class in the
+  2-adic information, with pieces of at most $A$ bit arrays and the flag of the reversal, appended
+  in turn (\csource{find_points.c}{3889}{3904}, \csource{find_points.c}{3917}{3918},
+  \csource{find_points.c}{3926}{3936}, \csource{find_points.c}{3954}{3966},
+  \csource{find_points.c}{4009}{4009}, \csource{find_points.c}{4042}{4052},
+  \csource{find_points.c}{4059}{4059}, \csource{find_points.c}{4066}{4072},
+  \csource{find_points.c}{4075}{4078}, \csource{find_points.c}{5120}{5120},
+  \csource{find_points.c}{5152}{5160}). Its contract, for an array size $A \ge 1$ and moduli
+  $p > 0$: the result is the concatenation, over the denominators $b$ of the list of the shape that
+  pass its test, of what the brute-force reference finds over $b$ and the numerators that pass the
+  class bit of $\mathrm{nb}[b \bmod 64]$ and survive the moduli for $b$, mapped by
+  $\mathrm{swapPoint}$ (Definition~\ref{def:swapPoint}) when the flag is set.
 \end{definition}
 
 \begin{definition}[The points at infinity]\label{def:pointsAtInfinity}
@@ -318,19 +324,22 @@ maps, specified by ordinary lemmas.
   remainder chain of the polynomial searched is $\mathrm{none}$ (Definition~\ref{def:sturmChain};
   \csource{find_points.c}{4857}{4892}, whose restriction of the search region is stage~H); and run
   the search of the polynomial that the check hands on (Definition~\ref{def:searchPoints}), with its
-  flag of the reversal: the table of each modulus, no points when the curve has none modulo one of
-  them, and else the points at infinity followed by the points of the denominators, found with
-  pieces of at most $\mathrm{arraySizeAt}(H)$ bit arrays, the array size of the parameters, each
-  mapped back to the caller's curve after a reversal (\csource{find_points.c}{5219}{5220}).
+  flag of the reversal: the 2-adic information, no points when no class of the denominators modulo
+  $64$ admits a numerator and there is no point at infinity, the table of each modulus, no points
+  when the curve has none modulo one of them, and else the points at infinity followed by the points
+  of the denominators, found with pieces of at most $\mathrm{arraySizeAt}(H)$ bit arrays, the array
+  size of the parameters, each mapped back to the caller's curve after a reversal
+  (\csource{find_points.c}{5219}{5220}).
 \end{definition}
 
 Each component differs from the C code in a stated way, recorded in the \verb|Deviation:|
 paragraph of the component whose range holds it:
 \begin{itemize}
-  \item every denominator from $1$ to $H$, one after the other, each from the class word of all
-    ones, for the denominator range (H), the loop shapes, the tests on the denominators and the
-    words of the classes modulo $64$ (E), the blocks (I), and the threads, which deliver the blocks
-    in the same order;
+  \item the denominators of a shape listed, then tested and sifted one after the other, each from
+    the word of its class modulo $64$, and in the search the shape of every denominator from $1$ to
+    $H$, for the denominator range (H), the shape that \verb|run_setup| chooses with its tests on
+    the denominators (E), the blocks (I), and the threads, which deliver the blocks in the same
+    order;
   \item the residue of $b$ modulo each modulus, which the reference of
     Definitions~\ref{def:sieveDen} and~\ref{def:checkDen} computes for each numerator and
     \verb|sift| (Definition~\ref{def:sift}) once per denominator, for the residues of $b / 2^k$ that
@@ -389,26 +398,27 @@ meets; ratpoints refuses it before it gets there, and so does $\mathrm{findPoint
   Apply Lemma~\ref{lem:admits_examinePrime} to each prime.
 \end{proof}
 
-\begin{theorem}[The sieve returns the reference]\label{thm:pointsAtInfinity_append_run}
-  \uses{def:pointsAtInfinity, def:sieveRun, def:bruteForce}
-  \lean{Ratpoints.Sieve.pointsAtInfinity_append_toList_run_sieveRun}
+\begin{theorem}[The run and the reference]\label{thm:run_reference}
+  \uses{def:sieveRun, def:bruteForce}
+  \lean{Ratpoints.Sieve.toList_run_sieveRun_eq_flatMap}
   \leanok
-  For moduli that are primes, an array size $A \ge 1$ and $H \ge 1$, the points at infinity of $c$
-  and its degree followed by the points of the denominators that the run finds with the tables of
-  the moduli and pieces of at most $A$ bit arrays are $\mathrm{bruteForce}(c, H)$ with the flag of
-  the reversal clear, and $\mathrm{bruteForce}(c, H)$ mapped by $\mathrm{swapPoint}$ when it is set.
+  For an array size $A \ge 1$, moduli $p > 0$ and a list $l$ of denominators such that the list of
+  the shape is $l$ filtered by a test, every denominator of $l$ over which the brute-force reference
+  finds a point passes that test and the test of the shape, and every numerator of such a point
+  passes the class word of its denominator and the tables: the run gives the concatenation of what
+  the reference finds over the denominators of $l$, in the order of $l$, mapped by
+  $\mathrm{swapPoint}$ when the flag of the reversal is set.
 \end{theorem}
 
 \begin{proof}
-  \uses{lem:survives, lem:flatMap_sound}
+  \uses{lem:flatMap_sound}
   \leanok
-  The moduli are primes, hence positive, and $A \ge 1$; so by the contract of the denominators
-  (Definition~\ref{def:sieveRun}) the run returns the part of the reference with $z \ge 1$, the
-  numerators of each denominator filtered by the survivor test, mapped by $\mathrm{swapPoint}$ when
-  the flag is set. Since the moduli are primes, by Lemma~\ref{lem:survives} every numerator over
-  which the exact check finds a point survives, and by Lemma~\ref{lem:flatMap_sound} the filter
-  changes nothing. The points at infinity are those of the candidate $(1, 0)$ of the reference,
-  mapped when the flag is set (Definition~\ref{def:pointsAtInfinity}).
+  By the contract of the denominators (Definition~\ref{def:sieveRun}) the run gives the
+  concatenation, over the denominators of the list of the shape that pass its test, of what the
+  reference finds over the numerators that pass the class word and survive the tables, mapped when
+  the flag is set. Since every numerator of a point passes these filters, and every denominator of
+  a point of $l$ passes the test of the list and that of the shape, the filters change nothing
+  (Lemma~\ref{lem:flatMap_sound}).
 \end{proof}
 
 \begin{theorem}[The points, each once]\label{thm:findPoints}
@@ -439,11 +449,11 @@ a well-formedness that nothing satisfies (it accepted these statements on 2026-1
 states them with \verb|sorry| over \verb|findPoints|, \verb|Options|, \verb|Params|,
 \verb|Params.WF|, \verb|SieveOptions|, \verb|sieveParams| and \verb|maxDegree|, imported from the
 model, never restated, since a definition of the model elaborates without Mathlib to other instance
-terms. Each main theorem has a guard on its axioms, which are the standard ones. The contracts need
-only the program logic of Lean core and stay in files without Mathlib, so that their \verb|grind|
-calls see only the lemmas of core, untouched by Mathlib's updates; the file of the contracts of the
-bit arrays of words (Chapter~\ref{chap:words}) also states the result of \verb|sieveRun| as a plain
-equation, \verb|toList_run_sieveRun|, so that the files with Mathlib need no program logic. The
+terms. Each main theorem has a guard on its axioms, which are the standard ones. The contracts of
+the sieve need only the program logic of Lean core and stay in files without Mathlib, so that their
+\verb|grind| calls see only the lemmas of core, untouched by Mathlib's updates; the contract of the
+run over the denominators of a shape, with its plain equation \verb|toList_run_sieveRun|, is in the
+file of the run (Chapter~\ref{chap:denominators}). The
 soundness of the rows needs Mathlib, through $\ZZ/p\ZZ$.
 
 \section{The command-line program and the differential tests}\label{sec:sieveCli}

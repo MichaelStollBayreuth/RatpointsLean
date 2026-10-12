@@ -188,16 +188,18 @@ which its node names); with the word of the class of $b$, by Lemma~\ref{lem:twoA
 what the reference finds over $b$ and the numerators that survive the tables.
 
 \begin{lemma}[The 2-adic exit]\label{lem:twoAdic_exit}
-  \uses{lem:twoAdic_point, def:pointsAtInfinity, def:IsPoint, def:reversal}
-  Proposed names: \lname{Ratpoints.Sieve.not\_isPoint\_of\_denBits\_eq\_zero},
-  \lname{Ratpoints.Sieve.pointsAtInfinity\_eq\_nil}.
-  If $d$ is even, $c_d$ is not a square and $\mathrm{den\_bits} = 0$, then the curve has no
-  normalized point of any height; in particular it has no point at infinity.
+  \uses{lem:twoAdic_point, def:IsPoint}
+  \lean{Ratpoints.Sieve.not_isPoint_of_denBits_eq_zero}
+  \leanok
+  If $\mathrm{den\_bits} = 0$, then the curve has no normalized point of any height, a point at
+  infinity included. So the test of the points at infinity at the exit of the C code changes
+  nothing: $\mathrm{den\_bits} = 0$ happens only for even $d$ with $c_d$ not a square modulo $64$.
 \end{lemma}
 
 \begin{proof}
-  A point with $b \ge 1$ would set bit $b \bmod 64$ of $\mathrm{den\_bits}$
-  (Lemma~\ref{lem:twoAdic_point}), and a point with $b = 0$ is a point at infinity.
+  \leanok
+  A point $(a, y, b)$, $b = 0$ included, has bit $a \bmod 64$ of $\mathrm{nb}[b \bmod 64]$ set, and
+  so bit $b \bmod 64$ of $\mathrm{den\_bits}$ (Lemma~\ref{lem:twoAdic_point}).
 \end{proof}
 
 \section{Odd degree: squares and divisors}\label{sec:oddDegree}
@@ -475,25 +477,15 @@ $(c_d / q) = -1$, which these do not reach.
 \section{The loop over the denominators}\label{sec:shapes}
 
 \begin{definition}[The shapes of the loop]\label{def:Shape}
-  \uses{def:twoAdic, def:setupUs1, def:forbidden, def:jacobi, def:jacobiTables, def:valuation,
-    def:useCLong} Proposed names: \lname{Ratpoints.Sieve.Shape}, \lname{Ratpoints.Sieve.runSetup},
-    \lname{Ratpoints.Sieve.ceilSqrt}, \lname{Ratpoints.Sieve.floorSqrt},
-    \lname{Ratpoints.Sieve.squaresDens}, \lname{Ratpoints.Sieve.squares1Dens},
-    \lname{Ratpoints.Sieve.denInfoTest}, \lname{Ratpoints.Sieve.wordBits},
-    \lname{Ratpoints.Sieve.wordsDens}, \lname{Ratpoints.Sieve.wordsTest},
-    \lname{Ratpoints.Sieve.Shape.dens}, \lname{Ratpoints.Sieve.Shape.keep},
-    \lname{Ratpoints.Sieve.ceilSqrt\_le\_iff}, \lname{Ratpoints.Sieve.le\_floorSqrt\_iff},
-    \lname{Ratpoints.Sieve.getLsbD\_wordBits}, \lname{Ratpoints.Sieve.wordsDens\_spec},
-    \lname{Ratpoints.Sieve.run\_denInfoTest\_eq\_true},
-    \lname{Ratpoints.Sieve.run\_wordsTest\_eq\_true},
-    \lname{Ratpoints.Sieve.fitsLong\_of\_mem\_squaresDens},
-    \lname{Ratpoints.Sieve.fitsLong\_of\_mem\_squares1Dens},
-    \lname{Ratpoints.Sieve.fitsLong\_of\_mem\_wordsDens}. The four shapes, with their data
-    (\csource{find_points.c}{3725}{3728}, \csource{find_points.c}{3736}{3763}), as \verb|run_setup|
-    chooses them from the flags of the search (\csource{find_points.c}{3778}{3806},
-    \csource{find_points.c}{3876}{3877}), each with the list of its denominators from
-    $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$ in the order of its loop and its test of a single
-    denominator:
+  \uses{def:setupUs1, def:forbidden, def:jacobi, def:jacobiTables, def:valuation, def:useCLong,
+    lem:odd_denominators, lem:forbidden}
+  \lean{Ratpoints.Sieve.Shape, Ratpoints.Sieve.runSetup, Ratpoints.Sieve.ceilSqrt, Ratpoints.Sieve.floorSqrt, Ratpoints.Sieve.squaresDens, Ratpoints.Sieve.squares1Dens, Ratpoints.Sieve.denInfoTest, Ratpoints.Sieve.wordBits, Ratpoints.Sieve.wordsDens, Ratpoints.Sieve.wordsTest, Ratpoints.Sieve.Shape.dens, Ratpoints.Sieve.Shape.keep, Ratpoints.Sieve.ceilSqrt_le_iff, Ratpoints.Sieve.le_floorSqrt_iff, Ratpoints.Sieve.getLsbD_wordBits, Ratpoints.Sieve.wordsDens_spec, Ratpoints.Sieve.run_denInfoTest_eq_true, Ratpoints.Sieve.run_wordsTest_eq_true, Ratpoints.Sieve.fitsLong_of_mem_squaresDens, Ratpoints.Sieve.fitsLong_of_mem_squares1Dens, Ratpoints.Sieve.fitsLong_of_mem_wordsDens}
+  \leanok
+  The four shapes, with their data (\csource{find_points.c}{3725}{3728},
+  \csource{find_points.c}{3736}{3763}), as \verb|run_setup| chooses them from the flags of the
+  search (\csource{find_points.c}{3778}{3806}, \csource{find_points.c}{3876}{3877}), each with the
+  list of its denominators from $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$ in the order of its loop
+  and its test of a single denominator:
   \begin{itemize}
     \item the squares: $k^2$ for $k$ from $\lceil \sqrt{b_{\mathrm{low}}} \rceil$ to
       $\lfloor \sqrt{b_{\mathrm{high}}} \rfloor$ (\csource{find_points.c}{464}{471},
@@ -535,13 +527,8 @@ $(c_d / q) = -1$, which these do not reach.
 
 \begin{lemma}[The lists of the shapes]\label{lem:shape_dens}
   \uses{def:Shape, lem:twoAdic_point, lem:odd_denominators, lem:forbidden, lem:jacobiTest}
-  Proposed names: \lname{Ratpoints.Sieve.squaresDens\_eq\_filter},
-  \lname{Ratpoints.Sieve.mem\_squaresDens\_iff}, \lname{Ratpoints.Sieve.mem\_range'\_ceilSqrt\_iff},
-  \lname{Ratpoints.Sieve.mem\_squares1Dens\_iff}, \lname{Ratpoints.Sieve.nodup\_squares1Dens},
-  \lname{Nat.eq\_of\_mul\_sq\_eq\_mul\_sq}, \lname{Ratpoints.Sieve.toList\_run\_wordsDens},
-  \lname{Ratpoints.Sieve.run\_denInfoTest\_of\_sq\_eq},
-  \lname{Ratpoints.Sieve.getLsbD\_denBits\_and\_all\_of\_ne\_nil},
-  \lname{Ratpoints.Sieve.run\_wordsTest\_of\_ne\_nil}.
+  \lean{Ratpoints.Sieve.squaresDens_eq_filter, Ratpoints.Sieve.mem_squaresDens_iff, Ratpoints.Sieve.mem_range'_ceilSqrt_iff, Ratpoints.Sieve.mem_squares1Dens_iff, Ratpoints.Sieve.nodup_squares1Dens, Nat.eq_of_mul_sq_eq_mul_sq, Ratpoints.Sieve.toList_run_wordsDens, Ratpoints.Sieve.run_denInfoTest_of_sq_eq, Ratpoints.Sieve.getLsbD_denBits_and_all_of_ne_nil, Ratpoints.Sieve.run_wordsTest_of_ne_nil}
+  \leanok
   Let $1 \le b_{\mathrm{low}}$. The list of the squares is that of the squares from
   $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$, in increasing order. The list of the divisors times
   squares, for squarefree divisors without duplicates, has no duplicates and holds exactly the
@@ -557,6 +544,7 @@ $(c_d / q) = -1$, which these do not reach.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   The square shape and the words are the denominators of the range that pass a test, in increasing
   order, by the bounds of the square roots and by the walk over the set bits of the words; the
   divisors times squares have no duplicates since $s k^2$ determines the squarefree $s$ and $k$.
@@ -565,10 +553,10 @@ $(c_d / q) = -1$, which these do not reach.
   (Lemmas~\ref{lem:odd_denominators}, \ref{lem:forbidden} and~\ref{lem:jacobiTest}).
 \end{proof}
 
-The run (Definition~\ref{def:sieveRun}) takes the shape, the words of the 2-adic information and
-the range $b_{\mathrm{low}}, \dots, b_{\mathrm{high}}$, and moves into the new file of this
-chapter: for each denominator of the list of the shape that passes its test, the points that
-\verb|sift| finds from the word of its class, appended in turn (\csource{find_points.c}{3889}{3904},
+The run (Definition~\ref{def:sieveRun}) takes the shape, the words of the 2-adic information and the
+range $b_{\mathrm{low}}, \dots, b_{\mathrm{high}}$, and moves into the new file of this chapter: for
+each denominator of the list of the shape that passes its test, the points that \verb|sift| finds
+from the word of its class, appended in turn (\csource{find_points.c}{3889}{3904},
 \csource{find_points.c}{3917}{3918}, \csource{find_points.c}{3926}{3936},
 \csource{find_points.c}{3954}{3966}, \csource{find_points.c}{4009}{4009},
 \csource{find_points.c}{4042}{4052}, \csource{find_points.c}{4059}{4059},
@@ -578,16 +566,17 @@ array size $A \ge 1$ and moduli $p > 0$: the concatenation, over the denominator
 pass the test, of what the brute-force reference finds over the numerators that pass the class word
 and the tables, mapped by $\mathrm{swapPoint}$ when the flag of the reversal is set; for moduli that
 are primes and the shape of Lemma~\ref{lem:shape_dens}, the filters change nothing, and the result
-is the concatenation of what the reference finds over each denominator of the list: given a list
-$l$ such that the list of the shape is $l$ filtered by a test, every denominator of $l$ that
-carries a point passes that test and the test of the shape, and every numerator that gives a point
-passes the class word and the tables, the run gives the reference over $l$. The node of the run
-keeps its contract and its equation (\lname{Ratpoints.Sieve.sieveRun\_spec},
-\lname{Ratpoints.Sieve.toList\_run\_sieveRun}); the node of the equation of the sieve,
-Theorem~\ref{thm:pointsAtInfinity_append_run}, whose declaration goes, becomes this reduction,
+is the concatenation of what the reference finds over each denominator of the list: given a list $l$
+such that the list of the shape is $l$ filtered by a test, every denominator of $l$ that carries a
+point passes that test and the test of the shape, and every numerator that gives a point passes the
+class word and the tables, the run gives the reference over $l$. The node of the run keeps its
+contract and its equation (\lname{Ratpoints.Sieve.sieveRun\_spec},
+\lname{Ratpoints.Sieve.toList\_run\_sieveRun}); the node of the equation of the sieve, whose
+declaration goes, becomes this reduction,
 \lname{Ratpoints.Sieve.toList\_run\_sieveRun\_eq\_flatMap}, under the title ``The run and the
-reference'' and the label \verb|thm:run_reference|, the points at infinity going to the search; the
-references to it in Chapters~\ref{chap:words} and~\ref{chap:setup} follow.
+reference'' and the label \verb|thm:run_reference| (Theorem~\ref{thm:run_reference}), the points at
+infinity going to the search; the references to it in Chapters~\ref{chap:words} and~\ref{chap:setup}
+follow.
 
 \section{The search and the theorems}\label{sec:denSearch}
 

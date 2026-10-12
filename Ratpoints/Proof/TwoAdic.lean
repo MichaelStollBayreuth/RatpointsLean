@@ -31,7 +31,9 @@ square modulo 64, and the word of the reversed polynomial (`Ratpoints.Sieve.gsq`
 even `t` at which it takes a square value; the loops of `Ratpoints.Sieve.twoAdic` scatter these bits
 into the words of the classes. A point `(a, y, b)` with odd `b` has `a ≡ k b (mod 64)` for a `k`
 with `f(k)` a square, since `F(a, b) = b ^ D f(k)` modulo 64, and one with even `b` an odd `a` and
-`b ≡ t a (mod 64)` for an even `t` at which the reversed polynomial takes a square value.
+`b ≡ t a (mod 64)` for an even `t` at which the reversed polynomial takes a square value; so when
+no class admits a numerator, the curve has no points at all, not even at infinity
+(`Ratpoints.Sieve.not_isPoint_of_denBits_eq_zero`).
 
 ## Main statements
 
@@ -53,6 +55,8 @@ with `f(k)` a square, since `F(a, b) = b ^ D f(k)` modulo 64, and one with even 
   class of the denominator of a point is not `0`.
 * `Ratpoints.Sieve.getLsbD_denBits`: bit `j` of `Ratpoints.Sieve.denBits nb` says whether `nb[j]`
   is not `0`.
+* `Ratpoints.Sieve.not_isPoint_of_denBits_eq_zero`: when no class of the denominators admits a
+  numerator, the curve has no points, so that the 2-adic exit of the search is sound.
 
 ## Implementation notes
 
@@ -566,6 +570,26 @@ theorem getLsbD_denBits (nb : Vector UInt64 64) (j : ℕ) :
     funext i hi w
     rw [getElem!_pos nb i hi]
   rw [h, UInt64.getLsbD_fold_or_one_shiftLeft _ (Nat.le_refl 64)]
+
+/-! ### The 2-adic exit -/
+
+/-- When no class of the denominators modulo 64 admits a numerator (`Ratpoints.Sieve.denBits`), the
+curve has no normalized point of any height, a point at infinity included: the word of the class of
+the denominator `b` of a point `(a, y, b)`, `b = 0` included, has bit `a mod 64` set
+(`Ratpoints.Sieve.classBit_twoAdic_of_sq_eq`), so the class has its bit in
+`Ratpoints.Sieve.denBits` (`Ratpoints.Sieve.getLsbD_denBits`). So the 2-adic exit of the search
+needs no test of the points at infinity: no class admits a numerator only for even degree and `c_d`
+not a square modulo 64. -/
+theorem not_isPoint_of_denBits_eq_zero {c : List ℤ}
+    (h : denBits (Id.run (twoAdic c (degree c))) = 0) (H : ℕ) (q : ℤ × ℤ × ℤ) :
+    ¬ IsPoint c H q := by
+  intro ⟨hy, hg, hz, _⟩
+  obtain ⟨b, hb⟩ : ∃ b : ℕ, q.2.2 = b := ⟨q.2.2.toNat, by lia⟩
+  rw [hb] at hy hg
+  have hbit := getLsbD_denBits (Id.run (twoAdic c (degree c))) (b % 64)
+  rw [h] at hbit
+  have h0 : (Id.run (twoAdic c (degree c)))[b % 64]! = 0 := by simpa [Nat.mod_lt] using hbit.symm
+  simpa [h0] using classBit_twoAdic_of_sq_eq hg hy
 
 end Sieve
 

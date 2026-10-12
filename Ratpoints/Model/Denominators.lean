@@ -21,11 +21,18 @@ The side of the denominators of the sieve, each component in its place in `find_
 starts the first stage (the class word of `Ratpoints.Sieve.andRows`), and which classes admit a
 numerator at all (`Ratpoints.Sieve.denBits`); the forbidden divisors of the denominators of a
 polynomial of even degree, primes tested with words of 64 denominators or by their valuations
-(`Ratpoints.Sieve.forbidden`); and the Jacobi test, by the binary algorithm
-(`Ratpoints.Sieve.jacobi`) or by tables (`Ratpoints.Sieve.jacobiSetup`,
-`Ratpoints.Sieve.jacobiTest`). Every class word lets every numerator of a point through; when the
+(`Ratpoints.Sieve.forbidden`); the Jacobi test, by the binary algorithm (`Ratpoints.Sieve.jacobi`)
+or by tables (`Ratpoints.Sieve.jacobiSetup`, `Ratpoints.Sieve.jacobiTest`); and the loop over the
+denominators in its four shapes, as `run_setup` chooses them (`Ratpoints.Sieve.Shape`,
+`Ratpoints.Sieve.runSetup`): the squares, the divisors of the leading coefficient times squares
+(`Ratpoints.Setup.setupUs1`), the words of 64 denominators, and every denominator, each with the
+list of its denominators in the order of its loop and its tests on a single denominator
+(`Ratpoints.Sieve.Shape.dens`, `Ratpoints.Sieve.Shape.keep`), and the run itself
+(`Ratpoints.Sieve.sieveRun`). Every class word lets every numerator of a point through; when the
 moduli that the forbidden divisors examine are primes, no forbidden divisor excludes the denominator
-of a point; and both Jacobi tests let it through.
+of a point; both Jacobi tests let it through, and so does every test of a shape, so that the run
+finds the points of the denominators of its shape, in the order of its loop: increasing, except for
+the divisors.
 
 ## Main definitions
 
@@ -46,6 +53,14 @@ of a point; and both Jacobi tests let it through.
   `Ratpoints.Sieve.twoSign`, `Ratpoints.Sieve.jacobiReduce` and `Ratpoints.Sieve.jacobiRound`.
 * `Ratpoints.Sieve.JacobiInfo`, `Ratpoints.Sieve.nonSquares`, `Ratpoints.Sieve.jacobiSigns`,
   `Ratpoints.Sieve.jacobiSetup`, `Ratpoints.Sieve.jacobiTest`: the Jacobi test by tables.
+* `Ratpoints.Sieve.ceilSqrt`, `Ratpoints.Sieve.floorSqrt`: the bounds of the square shapes.
+* `Ratpoints.Sieve.denInfoTest`, `Ratpoints.Sieve.wordsTest`: the tests of the divisor shape and the
+  word shape on a single denominator.
+* `Ratpoints.Sieve.wordBits`, `Ratpoints.Sieve.wordsDens`, `Ratpoints.Sieve.squaresDens`,
+  `Ratpoints.Sieve.squares1Dens`: the denominators of the shapes.
+* `Ratpoints.Sieve.Shape`, `Ratpoints.Sieve.Shape.dens`, `Ratpoints.Sieve.Shape.keep`,
+  `Ratpoints.Sieve.runSetup`: the shapes, their denominators and tests, and the choice of the shape.
+* `Ratpoints.Sieve.sieveRun`: the points of the denominators of a shape.
 -/
 
 @[expose] public section
@@ -562,13 +577,270 @@ def jacobiTest (ji : JacobiInfo) (b : Nat) : Id Bool := do
     if let some ns := ns then s := s ^^ ns[b % q]!
   return !s
 
+/-! ### The shapes of the run -/
+
+/-- The least `k ≥ 1` with `k ^ 2 ≥ n`, for `n ≥ 1`: `⌊√(n - 1)⌋ + 1`.
+
+C: `find_points.c:464-471`
+
+Deviation: the exact square root of the natural numbers (`Nat.sqrt`), for the square root in
+`double` corrected by a step either way; `1` for `n = 0`, where the C code divides by `0`; natural
+numbers for the `long`s, so that a negative argument, whose square root in `double` is not a
+number, cannot occur. -/
+def ceilSqrt (n : Nat) : Nat := Nat.sqrt (n - 1) + 1
+
+/-- The largest `k` with `k ^ 2 ≤ n`, `⌊√n⌋`.
+
+C: `find_points.c:3766-3774`
+
+Deviation: the exact square root of the natural numbers (`Nat.sqrt`), for the square root in
+`double` corrected by a step either way; natural numbers for the `long`s, so that `0` is the only
+case `n < 1`. -/
+def floorSqrt (n : Nat) : Nat := Nat.sqrt n
+
+/-- The valuation test of the divisor shape on the denominator `b`: false when for some prime `p` of
+the leading coefficient, with its valuation `val` and its slope (`Ratpoints.Setup.DenInfo`, made by
+`Ratpoints.Setup.setupUs1`), the valuation `v = v_p(b)` (`Ratpoints.Setup.valuation`) has
+`v ≥ slope` and `v + val` odd, and true otherwise.
+
+C: `find_points.c:3944-3953`
+
+Deviation: the test returned, for the flag `flag`; natural numbers for the `int`s and `long`s. -/
+def denInfoTest (info : List Setup.DenInfo) (b : Nat) : Id Bool := do
+  for e in info do
+    let (v, _) ← Setup.valuation b e.p
+    if e.slope ≤ v && (v + e.val) % 2 == 1 then return false
+  return true
+
+/-- The tests of the word shape on a denominator `b` that its word leaves
+(`Ratpoints.Sieve.wordsDens`): with the tables `fast` of the Jacobi test, their test
+(`Ratpoints.Sieve.jacobiTest`); then that no forbidden divisor tested by its valuation excludes
+`v_p(b)` (`Ratpoints.Setup.valuation`); then, with the Jacobi test on (`useJacobi`) and no tables,
+that the binary algorithm (`Ratpoints.Sieve.jacobi`) gives `(lcf / b*) = 1`.
+
+C: `find_points.c:4010-4011`, `find_points.c:4013-4041`
+
+Deviation: the binary algorithm of `jacobi` also where the run calls `jacobi1` on the `long`
+`lcf_long` (`Ratpoints.Sieve.jacobi`); bit `v_p(b)` of the mask of a natural number, false beyond
+its bits (`Nat.testBit`), for the shift and the mask of the `unsigned long`; the test returned,
+where the loop goes on to the sieve or to the next denominator; natural numbers for the `long`s; no
+output under `DEBUG`. -/
+def wordsTest (forbVal : List ForbiddenVal) (useJacobi : Bool) (fast : Option JacobiInfo)
+    (lcf : Int) (b : Nat) : Id Bool := do
+  if let some ji := fast then
+    if !(← jacobiTest ji b) then return false
+  for e in forbVal do
+    let (v, _) ← Setup.valuation b e.p
+    if e.mask.testBit v then return false
+  if fast.isSome || !useJacobi then return true
+  return (← jacobi b lcf) == 1
+
+/-- The word of the 64 denominators `64 w + j` that pass the class test and the forbidden divisors
+tested with words: the word `db` of the classes that admit a numerator (`Ratpoints.Sieve.denBits`),
+and-ed with word `w mod p` of each entry of `forb` (`Ratpoints.Sieve.ForbiddenEntry`); in the word
+of `bLow` the bits below `bLow mod 64` are cleared, and in the word of `bHigh` those above
+`bHigh mod 64`.
+
+C: `find_points.c:3981-3988`, `find_points.c:3990`, `find_points.c:3993-4006`
+
+Deviation: word `w mod p` read at its index, for the pointers `cur` that the C code sets to the
+words of the first word of a block, by `RP_MULMOD` or the helper `mod`, and steps on with every
+word, wrapping at the end; divisions and remainders for the shifts and masks by `LONG_SHIFT` and
+`LONG_MASK`; no output under `DEBUG`. -/
+def wordBits (db : UInt64) (forb : List ForbiddenEntry) (bLow bHigh w : Nat) : UInt64 :=
+  let x := forb.foldl (fun x e ↦ x &&& e.words[w % e.p]!) db
+  let x := if w = bLow / 64 then x &&& ~~~0 <<< (bLow % 64).toUInt64 else x
+  if w = bHigh / 64 then x &&& ~~~0 >>> (63 - bHigh % 64).toUInt64 else x
+
+/-- The denominators of the word shape that their words leave, in increasing order: for each word
+`w` from `⌊bLow / 64⌋` to `⌊bHigh / 64⌋`, the set bits `j` of its word (`Ratpoints.Sieve.wordBits`),
+lowest first (`Ratpoints.Sieve.ctz`), each giving the denominator `64 w + j`.
+
+C: `find_points.c:3826-3828`, `find_points.c:3967-3980`, `find_points.c:3989`,
+`find_points.c:3991`, `find_points.c:4007-4008`, `find_points.c:4012`, `find_points.c:4053-4058`
+
+Deviation: the denominators listed, to be tested and sifted one after the other
+(`Ratpoints.Sieve.sieveRun`), where the C code tests and sifts each as the loop reaches it; the
+words of the whole run, one segment with no blocks, for the words `a, …, e` of a block (stage I);
+the lowest set bit by the loop of `RP_CTZL` (`Ratpoints.Sieve.ctz`); products and quotients by 64
+for the shifts by `LONG_SHIFT`; natural numbers for the `long`s. -/
+def wordsDens (db : UInt64) (forb : List ForbiddenEntry) (bLow bHigh : Nat) :
+    Id (Array Nat) := do
+  let mut out := #[]
+  for w in [bLow / 64:bHigh / 64 + 1] do
+    let mut x := wordBits db forb bLow bHigh w
+    while x != 0 do
+      let t ← ctz x
+      out := out.push (64 * w + t)
+      x := x &&& (x - 1)
+  return out
+
+/-- The denominators of the square shape, `k ^ 2` for `k` from `⌈√bLow⌉` to `⌊√bHigh⌋`
+(`Ratpoints.Sieve.ceilSqrt`, `Ratpoints.Sieve.floorSqrt`), in increasing order; for odd degree
+and `|c_d| = 1` the denominator of every point is a square.
+
+C: `find_points.c:3816-3818`, `find_points.c:3919-3922`
+
+Deviation: the denominators listed, to be tested and sifted one after the other
+(`Ratpoints.Sieve.sieveRun`), where the C code tests and sifts each as the loop reaches it; one
+segment with no blocks (stage I); natural numbers for the `long`s. -/
+def squaresDens (bLow bHigh : Nat) : List Nat :=
+  let lo := ceilSqrt bLow
+  let hi := floorSqrt bHigh
+  (List.range' lo (hi + 1 - lo)).map fun k ↦ k * k
+
+/-- The denominators of the divisor shape: for each divisor `s` in turn
+(`Ratpoints.Setup.setupUs1`), `s k ^ 2` for `k` from `⌈√(⌊(bLow - 1) / s⌋ + 1)⌉` to `⌊√⌊bHigh / s⌋⌋`
+(`Ratpoints.Sieve.ceilSqrt`, `Ratpoints.Sieve.floorSqrt`), that is for the `k` with
+`bLow ≤ s k ^ 2 ≤ bHigh`, in increasing order of `k`; in increasing order for each divisor, not as a
+whole.
+
+C: `find_points.c:3819-3825`, `find_points.c:3937-3940`
+
+Deviation: the denominators listed, to be tested and sifted one after the other
+(`Ratpoints.Sieve.sieveRun`), where the C code tests and sifts each as the loop reaches it; one
+segment per divisor, with no blocks (stage I); natural numbers for the `long`s. -/
+def squares1Dens (divisors : List Nat) (bLow bHigh : Nat) : List Nat :=
+  divisors.flatMap fun s ↦
+    let lo := ceilSqrt ((bLow - 1) / s + 1)
+    let hi := floorSqrt (bHigh / s)
+    (List.range' lo (hi + 1 - lo)).map fun k ↦ s * k * k
+
+/-- The shape of the loop over the denominators, as `run_setup` chooses it
+(`Ratpoints.Sieve.runSetup`), with its data: the squares (odd degree, `|c_d| = 1`); the divisors of
+the leading coefficient times squares, with the primes of the valuation test and the divisors (odd
+degree otherwise, when `Ratpoints.Setup.setupUs1` succeeds); the words of 64 denominators, with
+the forbidden divisors tested with words and by their valuations, the switch of the Jacobi test,
+its tables when they apply and the leading coefficient (even degree, when there is a test); and
+every denominator.
+
+C: `find_points.c:3725-3728`, `find_points.c:3736-3763`
+
+Deviation: an inductive type with the data of each shape, for the constant `shape` and the fields of
+`rp_run` that the shapes read; no blocks and segments (stage I), no search intervals (stage H), no
+counters and decisions of the correction of the moduli (stage I); the words of the classes and
+`den_bits` passed to the run apart (`Ratpoints.Sieve.sieveRun`). -/
+inductive Shape where
+  /-- `RP_SHAPE_SQUARES`: the squares. -/
+  | squares
+  /-- `RP_SHAPE_SQUARES1`: the divisors of the leading coefficient times squares. -/
+  | squares1 (info : List Setup.DenInfo) (divisors : List Nat)
+  /-- `RP_SHAPE_WORDS`: the words of 64 denominators. -/
+  | words (forb : List ForbiddenEntry) (forbVal : List ForbiddenVal) (useJacobi : Bool)
+      (fast : Option JacobiInfo) (lcf : Int)
+  /-- `RP_SHAPE_ALL`: every denominator. -/
+  | all
+
+/-- The denominators of the shape `s` from `bLow` to `bHigh`, in the order of its loop, before its
+tests on a single denominator: for the squares and the divisors those of
+`Ratpoints.Sieve.squaresDens` and `Ratpoints.Sieve.squares1Dens`, for the words those that their
+words leave (`Ratpoints.Sieve.wordsDens`, with the class test and the forbidden divisors tested with
+words, for the word `db` of the classes that admit a numerator), and otherwise `bLow, …, bHigh`.
+
+C: `find_points.c:3812-3815`, `find_points.c:3829-3837`, `find_points.c:4060-4062`,
+`find_points.c:4073-4074`
+
+Deviation: the denominators listed, to be tested and sifted one after the other
+(`Ratpoints.Sieve.sieveRun`), where the C code tests and sifts each as the loop reaches it; the
+bounds of each segment computed where the denominators are listed (`Ratpoints.Sieve.sieveRun`), for
+the arrays `seg_lo` and `seg_hi` that `run_setup` fills and `run_block` reads; one segment per
+divisor, else one, with no blocks and no count of the steps (stage I); natural numbers for the
+`long`s. -/
+def Shape.dens (s : Shape) (db : UInt64) (bLow bHigh : Nat) : Id (List Nat) := do
+  match s with
+  | .squares => return squaresDens bLow bHigh
+  | .squares1 _ divisors => return squares1Dens divisors bLow bHigh
+  | .words forb .. => return (← wordsDens db forb bLow bHigh).toList
+  | .all => return List.range' bLow (bHigh + 1 - bLow)
+
+/-- The tests of the shape `s` on a single denominator `b`: the class test, that the word
+`nb[b mod 64]` of the class of `b` in the 2-adic information (`Ratpoints.Sieve.twoAdic`) is not `0`,
+and for the divisors then the valuation test (`Ratpoints.Sieve.denInfoTest`); for the words the
+tests of `Ratpoints.Sieve.wordsTest`, the class test being made by the words.
+
+C: `find_points.c:3923-3925`, `find_points.c:3941-3943`, `find_points.c:4063-4065`
+
+Deviation: the word of the class read from the words `nb`, for the first word of the pattern of the
+class `cls` (`EXT0(cl->bits)`), which is nonzero exactly when the word is, at every stride
+(`find_points.c:1070-1098`). -/
+def Shape.keep (s : Shape) (nb : Vector UInt64 64) (b : Nat) : Id Bool := do
+  match s with
+  | .squares => return nb[b % 64]! != 0
+  | .squares1 info _ => if nb[b % 64]! != 0 then denInfoTest info b else return false
+  | .words _ forbVal useJacobi fast lcf => wordsTest forbVal useJacobi fast lcf b
+  | .all => return nb[b % 64]! != 0
+
+/-- The shape of the run (`Ratpoints.Sieve.Shape`), as `run_setup` chooses it from the flags of the
+search: the squares when `useSquares`; the divisors with their data when the divisor set-up has
+succeeded (`us1`, `Ratpoints.Setup.setupUs1`); the words when `checkDenom`, with the forbidden
+divisors `forb` and `forbVal`, the switch `useJacobi` of the Jacobi test, its tables when the test
+is on and they apply to the leading coefficient `lcf` and the largest denominator `bHigh`
+(`Ratpoints.Sieve.jacobiSetup`), and `lcf`; and every denominator otherwise.
+
+C: `find_points.c:3778-3806`, `find_points.c:3876-3877`
+
+Deviation: the shape returned with its data, for the fields of the run that `run_setup` fills, and
+Booleans and an option for the bits `RATPOINTS_USE_SQUARES`, `RATPOINTS_USE_SQUARES1`,
+`RATPOINTS_CHECK_DENOM` and `RATPOINTS_USE_JACOBI` of the flags; no count `nfb`, a list having its
+length; no copies of `use_c_long` and `lcf_long`, which only `jacobi1` reads
+(`Ratpoints.Sieve.jacobi`); no segments and blocks (stage I), no counters and decisions of the
+correction of the moduli (stage I), no search intervals (stage H), no failure for lack of memory. -/
+def runSetup (useSquares : Bool) (us1 : Option (List Setup.DenInfo × List Nat))
+    (checkDenom useJacobi : Bool) (forb : List ForbiddenEntry) (forbVal : List ForbiddenVal)
+    (lcf : Int) (bHigh : Nat) : Id Shape := do
+  if useSquares then return .squares
+  match us1 with
+  | some (info, divisors) => return .squares1 info divisors
+  | none =>
+    if checkDenom then
+      let fast ← if useJacobi then jacobiSetup lcf bHigh else pure none
+      return .words forb forbVal useJacobi fast lcf
+    else return .all
+
+/-- The points of the denominators from `bLow` to `bHigh` of the shape `shape`, for the polynomial
+of degree `d` with the coefficient list `c`: the rows of the tables `entries` are made once for the
+run, each residue's row as a thunk (`Ratpoints.Sieve.Entry.rows`); for each denominator `b` of the
+shape, in the order of its loop (`Ratpoints.Sieve.Shape.dens`, with the word `db` of the classes
+that admit a numerator), that passes its tests (`Ratpoints.Sieve.Shape.keep`, with the words `nb` of
+the 2-adic information), the points that `Ratpoints.Sieve.sift` finds from the word `nb[b mod 64]`
+of its class, with pieces of at most `A` bit arrays, for `A ≥ 1`, and the flag `rev` of the
+reversal, are appended in turn.
+
+C: `find_points.c:3889-3904`, `find_points.c:3917-3918`, `find_points.c:3926-3936`,
+`find_points.c:3954-3966`, `find_points.c:4009`, `find_points.c:4042-4052`, `find_points.c:4059`,
+`find_points.c:4066-4072`, `find_points.c:4075-4078`, `find_points.c:5120`,
+`find_points.c:5152-5160`
+
+Deviation: the denominators of the shape listed first, then tested and sifted one after the other,
+where `run_block` tests and sifts each as its loop reaches it; no blocks (stage I): the steps of
+each segment in order, for the blocks of `len` consecutive steps, which the threads share and which
+deliver their points in the same order; the word `nb[b mod 64]` of the 2-adic information, for the
+class `cls[b & 0x3f]` that `sift` receives, whose pattern it is at the stride 1 (its `k`, `a0` and
+row offsets come with the packing, stage F); the residues `b mod p` that choose the rows computed by
+`Ratpoints.Sieve.sift`, for the residues of `b` divided by `2^k` that `fill_bp_list` computes before
+each call (`k` the stride of the packing; stage F); a list of points, for the counts `total` of
+points that `sift` and `run_block` return, with no stop by the callback (stage G); natural numbers
+for the `long`s (stage F); no correction of the moduli between the blocks (stage I); no output under
+`DEBUG`. -/
+def sieveRun (c : List Int) (d H A : Nat) (rev : Bool) (entries : List Entry)
+    (nb : Vector UInt64 64) (db : UInt64) (shape : Shape) (bLow bHigh : Nat) :
+    Id (Array (Int × Int × Int)) := do
+  let rows := entries.map fun e ↦ (e.p, e.rows)
+  let dens ← shape.dens db bLow bHigh
+  let mut out := #[]
+  for b in dens do
+    if ← shape.keep nb b then
+      out := out ++ (← sift c d H A b rev rows nb[b % 64]!)
+  return out
+
 /-! ### Examples
 
-The words of the 2-adic information, the forbidden divisors and the tables of the Jacobi test
-against those that a build of ratpoints at the pinned commit prints with a dump of the side of the
-denominators on the standard error (the words `fsq`, `gsq` and `nb` of `get_2adic_info`,
-`den_bits`, the forbidden divisors, with the moduli of the model, `-p 30`, and the tables of the
-Jacobi test), and against their rule. -/
+The words of the 2-adic information, the forbidden divisors, the tables of the Jacobi test and the
+denominators that the run sifts against those that a build of ratpoints at the pinned commit prints
+with a dump of the side of the denominators on the standard error (the words `fsq`, `gsq` and `nb`
+of `get_2adic_info`, `den_bits`, the forbidden divisors, with the moduli of the model, `-p 30`, the
+shape, the tables of the Jacobi test and the denominators that the run sifts), and against their
+rule; and the run of the divisor shape against the points that ratpoints prints. -/
 
 -- The squares modulo 64.
 #guard (List.range 64).all fun s ↦
@@ -717,6 +989,79 @@ Jacobi test), and against their rule. -/
     | some ji => (List.range' 1 600).all fun b ↦
         Id.run (jacobiTest ji b) == (Id.run (jacobi b lcf) == 1)
     | none => false
+
+-- The bounds of the square shapes.
+#guard (List.range 200).all fun n ↦
+  floorSqrt n * floorSqrt n ≤ n && n < (floorSqrt n + 1) * (floorSqrt n + 1) &&
+    (n = 0 || (ceilSqrt n - 1) * (ceilSqrt n - 1) < n && n ≤ ceilSqrt n * ceilSqrt n)
+
+-- The denominators of the square shapes: the squares up to 20 and from 5 to 100; for the divisors
+-- `1 2` of `1 2` at 20, `1, 4, 9, 16`, then `2, 8, 18`; and for `1 2 1031` at 1300, the squares,
+-- twice the squares, then `1031`.
+#guard squaresDens 1 20 == [1, 4, 9, 16] && squaresDens 5 100 == [9, 16, 25, 36, 49, 64, 81, 100] &&
+  squares1Dens [1, 2] 1 20 == [1, 4, 9, 16, 2, 8, 18] &&
+  squares1Dens [1, 2, 1031] 1 1300 ==
+    (List.range' 1 36).map (fun k ↦ k * k) ++ (List.range' 1 25).map (fun k ↦ 2 * k * k) ++ [1031]
+
+-- The tests of the word shape: with no valuation entries and no tables, the binary algorithm; with
+-- the valuation entry `7 : 0x4` of `1 2 3 4 5 6 7`, the denominators `49 k` with `7 ∤ k` fail.
+#guard (List.range' 1 200).all (fun b ↦ Id.run (wordsTest [] true none 7 b) ==
+    (Id.run (jacobi b 7) == 1)) &&
+  (List.range' 1 200).all fun b ↦ Id.run (wordsTest [⟨7, 4⟩] false none 7 b) ==
+    !(b % 49 == 0 && b % 343 != 0)
+
+-- The valuation test of `1 2` (`2 : 1 : 2`): `4` and `16` fail it.
+#guard [1, 4, 9, 16, 2, 8, 18].map (fun b ↦ Id.run (denInfoTest [⟨2, 1, 2⟩] b)) ==
+  [true, false, true, false, true, true, true]
+
+-- The denominators that the words leave against their rule: `b` from `bLow` to `bHigh`, in
+-- increasing order, whose class admits a numerator and which no forbidden divisor tested with words
+-- divides, for `1 2 3 4 5 6 7` and ranges within one word and over several.
+#guard
+  let c : List Int := [1, 2, 3, 4, 5, 6, 7]
+  let db := denBits (Id.run (twoAdic c 6))
+  let forb := (Id.run (forbidden c 6 (primeTable.toList.take 30) 64 1000)).1
+  ([(1, 1000), (1, 63), (64, 64), (5, 70), (130, 520)] : List (Nat × Nat)).all fun (lo, hi) ↦
+    (Id.run (wordsDens db forb lo hi)).toList == (List.range' lo (hi + 1 - lo)).filter fun b ↦
+      db.toBitVec.getLsbD (b % 64) && forb.all fun e ↦ b % e.p != 0
+
+-- The run as ratpoints chooses and runs it: the denominators that the dump says the run sifts, for
+-- `1 2` at 20 (the divisors), `1 2 3 4 5 6 7` at 100 (the words with the tables of the Jacobi
+-- test), `1 0 0 0 -1031` at 100 (the words with the binary algorithm), `1 1 1 1 1 1 1` at 100 with
+-- no forbidden divisors (`-F 0`, every denominator) and `-2 0 0 1` at 130 (the squares).
+#guard
+  let sifted (c : List Int) (d H F : Nat) : Nat × List Nat :=
+    let lcf := c.getD d 0
+    let useJacobi := d % 2 == 0 && !Setup.isSquare lcf
+    let us1 := if d % 2 == 1 && lcf.natAbs != 1 then Id.run (Setup.setupUs1 c d H) else none
+    let nb := Id.run (twoAdic c d)
+    let (forb, forbVal) := if d % 2 == 0 then
+      Id.run (forbidden c d (primeTable.toList.take 30) F H) else ([], [])
+    let checkDenom := d % 2 == 0 && (!forb.isEmpty || !forbVal.isEmpty || useJacobi)
+    let shape := Id.run (runSetup (d % 2 == 1 && lcf.natAbs == 1) us1 checkDenom useJacobi forb
+      forbVal lcf H)
+    let code := match shape with | .squares => 0 | .squares1 .. => 1 | .words .. => 2 | .all => 3
+    (code, (Id.run (shape.dens (denBits nb) 1 H)).filter fun b ↦ Id.run (shape.keep nb b))
+  sifted [1, 2] 1 20 64 == (1, [1, 9, 2, 8, 18]) &&
+    sifted [1, 2, 3, 4, 5, 6, 7] 6 100 64 ==
+      (2, [1, 3, 7, 9, 19, 21, 27, 29, 31, 37, 47, 53, 57, 59, 63, 81, 83, 87, 93]) &&
+    (sifted [1, 0, 0, 0, -1031] 4 100 64).2.take 12 == [1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13] &&
+    sifted [1, 1, 1, 1, 1, 1, 1] 6 100 0 == (3, (List.range' 1 100).filter fun b ↦
+      b % 2 = 1 || b % 8 = 0) &&
+    sifted [-2, 0, 0, 1] 3 130 64 == (0, (List.range' 1 11).map fun k ↦ k * k)
+
+-- The run of `1 2` at 20 in the divisor shape: the affine points that `ratpoints '1 2' 20 -q`
+-- prints, by the divisors `1` and `2`, so with the denominator 9 before 2.
+#guard
+  let c : List Int := [1, 2]
+  let nb := Id.run (twoAdic c 1)
+  let entries := (primeTable.toList.take 30).filterMap (examinePrime? c 1 · true)
+  (Id.run (sieveRun c 1 20 1 false entries nb (denBits nb) (.squares1 [⟨2, 1, 2⟩] [1, 2]) 1
+      20)).toList ==
+    [(0, 1, 1), (0, -1, 1), (4, 3, 1), (4, -3, 1), (12, 5, 1), (12, -5, 1), (-4, 3, 9), (-4, -3, 9),
+      (8, 15, 9), (8, -15, 9), (20, 21, 9), (20, -21, 9), (-1, 0, 2), (3, 4, 2), (3, -4, 2),
+      (15, 8, 2), (15, -8, 2), (-3, 4, 8), (-3, -4, 8), (5, 12, 8), (5, -12, 8), (-5, 12, 18),
+      (-5, -12, 18), (7, 24, 18), (7, -24, 18)]
 
 end Sieve
 

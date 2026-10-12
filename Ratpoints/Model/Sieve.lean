@@ -22,17 +22,17 @@ helper `mod` of the C code for `long`s or by the Euclidean `%` for GMP integers
 (`Ratpoints.Sieve.Entry.admits`), the bit arrays of 64-bit words of the C code with their operations
 and the rows as words, one piece of bit arrays from the first stage to the points of its numerators
 (`Ratpoints.Sieve.siftPiece`), the numerators of one denominator in pieces, from a class word, the
-numerators modulo 64 from which the first stage starts (`Ratpoints.Sieve.sift`), the denominators
-`1, …, H` in turn, each from the class word of all ones (`Ratpoints.Sieve.sieveRun`), and the points
-at infinity (`Ratpoints.Sieve.pointsAtInfinity`); the 2-adic information, which gives the words of
-the classes of the denominators modulo 64, is in `Ratpoints.Model.Denominators`. The table of a
-prime without the exit (`Ratpoints.Sieve.examinePrime`) is the reference of the table with it, which
-gives the same table whenever it gives one
-(`Ratpoints.Sieve.eq_examinePrime_of_examinePrime?_eq_some`). The plain sieve of one denominator,
-one Boolean per numerator (`Ratpoints.Sieve.sieveDen`), and the test for common factors and the
-exact check of its survivors (`Ratpoints.Sieve.checkDen`) are not part of the run: they are the
-reference of the bit arrays of words (`Ratpoints.Sieve.toList_run_sift_eq_checkDen`). Every row lets
-every point through, so the sieve finds exactly the points of the brute-force reference
+numerators modulo 64 from which the first stage starts (`Ratpoints.Sieve.sift`), and the points at
+infinity (`Ratpoints.Sieve.pointsAtInfinity`); the loop over the denominators
+(`Ratpoints.Sieve.sieveRun`), with the 2-adic information that gives the words of the classes of the
+denominators modulo 64, is in `Ratpoints.Model.Denominators`. The table of a prime without the exit
+(`Ratpoints.Sieve.examinePrime`) is the reference of the table with it, which gives the same table
+whenever it gives one (`Ratpoints.Sieve.eq_examinePrime_of_examinePrime?_eq_some`). The plain sieve
+of one denominator, one Boolean per numerator (`Ratpoints.Sieve.sieveDen`), and the test for common
+factors and the exact check of its survivors (`Ratpoints.Sieve.checkDen`) are not part of the run:
+they are the reference of the bit arrays of words (`Ratpoints.Sieve.toList_run_sift_eq_checkDen`).
+Every row, and the word of the class of a denominator in the 2-adic information, let every point
+through, so the sieve of a denominator finds exactly its points in the brute-force reference
 `Ratpoints.bruteForce`, in the same order, each mapped by `Ratpoints.Sieve.swapPoint` when the flag
 of the reversal is set: the map gives the point of the caller's curve for a point of a polynomial
 that the reversal check has reversed (`Ratpoints.Setup.reversal`), the check of a numerator and the
@@ -73,8 +73,6 @@ here: the squares and the inverses by `Ratpoints.Sieve.squaresMod` and
   two ends to the points of its numerators.
 * `Ratpoints.Sieve.sift`: the points of one denominator, its numerators `-H, …, H` in pieces of bit
   arrays, from a class word.
-* `Ratpoints.Sieve.sieveRun`: the points of the denominators `1, …, H`, from the class word of all
-  ones.
 * `Ratpoints.Sieve.pointsAtInfinity`: the points at infinity, mapped by `Ratpoints.Sieve.swapPoint`
   when the flag of the reversal is set.
 -/
@@ -717,34 +715,7 @@ def sift (c : List Int) (d H A b : Nat) (rev : Bool)
     w1 := w1 + range
   return out
 
-/-! ### The run and the points at infinity -/
-
-/-- The points with the denominators `b = 1, …, H`, in increasing order: the rows of the tables
-`entries` are made once for the run, each residue's row as a thunk (`Ratpoints.Sieve.Entry.rows`),
-and the points that `Ratpoints.Sieve.sift` finds for each denominator from the class word of all
-ones, with pieces of at most `A` bit arrays, for `A ≥ 1` (for `A = 0` and `H ≥ 1` the run does not
-end), and the flag `rev` of the reversal, are appended in turn.
-
-C: `find_points.c:4059-4075`, `find_points.c:5152-5160`
-
-Deviation: every denominator from `1` to `H`, one after the other, for the denominator range
-`b_low, …, b_high` (stage H), the loop shapes and the tests on the denominators (stage E), the
-blocks (stage I), and for the threads, which deliver the blocks in the same order; the class word of
-all ones for every denominator, for the pattern of its class modulo 64, the word `nb[b mod 64]` of
-the 2-adic information (`Ratpoints.Sieve.twoAdic`, stage E); the residues `b mod p` that choose the
-rows are computed once per denominator by `Ratpoints.Sieve.sift`, for the residues of `b` divided by
-`2^k` modulo the moduli of the first two stages that ratpoints computes before each call of `sift`
-(`fill_bp_list`, `k` the stride of the packing; stage F); a list of points, for the counts `total`
-of points that `sift` and `run_block` return, with no stop by the callback (stage G); natural
-numbers for the `long`s (stage F); and no correction of the moduli between the blocks (stage I). -/
-def sieveRun (c : List Int) (d H A : Nat) (rev : Bool) (entries : List Entry) :
-    Id (Array (Int × Int × Int)) := do
-  let rows := entries.map fun e ↦ (e.p, e.rows)
-  let mut out := #[]
-  for j in [0:H] do
-    let pts ← sift c d H A (j + 1) rev rows (~~~0)
-    out := out ++ pts
-  return out
+/-! ### The points at infinity -/
 
 /-- The points at infinity of the polynomial of degree `d` with the coefficient list `c`, for the
 flag `rev` of the reversal: for the candidate `(a, b) = (1, 0)`, or `(0, 1)` when `rev` is set, the
@@ -1034,12 +1005,6 @@ def pointsAtInfinity (c : List Int) (d : Nat) (rev : Bool) : List (Int × Int ×
     (Id.run (sift c 3 300 A b rev (es.map fun e ↦ (e.p, e.rows)) (~~~0))).toList ==
       if rev then ref.map swapPoint else ref
 
--- The denominators `1, …, 130`, with pieces of one bit array: the affine points of
--- `ratpoints '-2 0 0 1' 130 -q`.
-#guard (Id.run (sieveRun [-2, 0, 0, 1] 3 130 1 false
-    ([3, 5, 7, 11, 13].map (examinePrime [-2, 0, 0, 1] 3)))).toList ==
-  [(3, 5, 1), (3, -5, 1), (129, 3830, 100), (129, -3830, 100)]
-
 #guard pointsAtInfinity [1, 0, 0, 0, 9] 4 false == [(1, 3, 0), (1, -3, 0)] &&
   pointsAtInfinity [1, 0, 0, 0, 2] 4 false == [] &&
   pointsAtInfinity [1, 2, 3, 4] 3 false == [(1, 0, 0)]
@@ -1050,19 +1015,6 @@ def pointsAtInfinity (c : List Int) (d : Nat) (rev : Bool) : List (Int × Int ×
   pointsAtInfinity [1, 2, 3, 4] 3 true == [(0, 0, 1)] &&
   [[1, 0, 0, 0, 9], [0, 0, 0, 0, 0], [-3, 1, 4]].all fun c ↦ [2, 3, 4].all fun d ↦
     pointsAtInfinity c d true == (pointsAtInfinity c d false).map swapPoint
-
--- The points at infinity and the denominators `1, …, 10` with the flag of the reversal, for the
--- polynomials `9 0 -1`, `4 0 0 1 0` and `0 2 0 1`, to which ratpoints reverses `-1 0 9`,
--- `0 1 0 0 4` and `0 1 0 2`: the points that `ratpoints '-1 0 9' 10 -q`,
--- `ratpoints '0 1 0 0 4' 10 -q` and `ratpoints '0 1 0 2' 10 -q` print, in their order.
-#guard
-  ([([9, 0, -1], 2, [(-1, 0, 3), (1, 3, 0), (1, -3, 0), (1, 0, 3), (-5, 12, 9), (-5, -12, 9),
-      (5, 12, 9), (5, -12, 9)]),
-    ([4, 0, 0, 1, 0], 3, [(0, 0, 1), (1, 2, 0), (1, -2, 0)]),
-    ([0, 2, 0, 1], 3, [(0, 0, 1), (1, 0, 0)])] :
-      List (List Int × Nat × List (Int × Int × Int))).all fun (c, d, pts) ↦
-    pointsAtInfinity c d true ++
-      (Id.run (sieveRun c d 10 1 true ([3, 5, 7].map (examinePrime c d)))).toList == pts
 
 end Sieve
 

@@ -829,7 +829,7 @@ theorem not_dvd_of_mem_forbidden_fst {c : List ℤ} {moduli : List ℕ} (hm : �
 
 /-- Whether the forbidden divisor `e` tested by its valuation excludes the denominator `b`: bit
 `v_p(b)` of its mask, for the valuation `v_p(b)` of `Ratpoints.Setup.valuation`, the test that the
-loop over the denominators makes with `e` (stage E). -/
+tests of the word shape make with `e` (`Ratpoints.Sieve.wordsTest`). -/
 def ForbiddenVal.excludes (e : ForbiddenVal) (b : ℕ) : Bool :=
   e.mask.testBit (Id.run (Setup.valuation b e.p)).1
 

@@ -22,12 +22,12 @@ the coefficients are C `long`s (`Ratpoints.fitsLong`, `Ratpoints.Setup.useCLong`
 path of the table of a prime (`Ratpoints.Sieve.examinePrime?`). `Ratpoints.findPoints` runs the
 reversal check after the test of the leading zeros, with the switch of its options, and the search
 that it runs on the polynomial handed on (`Ratpoints.searchPoints`) makes the test of the `long`s.
-For the tests on the denominators (stage E), the C code computes the valuation of an integer at a
-prime, with its unit part, by repeated division (`Ratpoints.Setup.valuation`), and for a polynomial
-of odd degree whose leading coefficient is not `±1` it factors that coefficient over `2` and the
-odd primes of the table and lists its squarefree divisors up to the largest denominator, with the
-slopes of a valuation test (`Ratpoints.Setup.setupUs1`): the denominators of the points are such
-divisors times squares.
+For the tests on the denominators (`Ratpoints.Sieve.denInfoTest`, `Ratpoints.Sieve.wordsTest`), the
+C code computes the valuation of an integer at a prime, with its unit part, by repeated division
+(`Ratpoints.Setup.valuation`), and for a polynomial of odd degree whose leading coefficient is not
+`±1` it factors that coefficient over `2` and the odd primes of the table and lists its squarefree
+divisors up to the largest denominator, with the slopes of a valuation test
+(`Ratpoints.Setup.setupUs1`): the denominators of the points are such divisors times squares.
 
 ## Main definitions
 
@@ -152,11 +152,11 @@ def valuation (n : Int) (p : Nat) : Id (Nat × Nat) := do
     q := q / p
   return (v, rem)
 
-/-- What the valuation test of the divisor shape (stage E) knows of a prime `p` of the leading
-coefficient `c_d` of a polynomial of odd degree `d`: `p`, its valuation `val` in `c_d`, and the
-slope, the least `n ≥ 1` with `(d - k) n > val - v_p(c_k)` for every `k < d`, with
-`v_p(0) = Ratpoints.veryBig`. A denominator `b` with `v_p(b) ≥ slope` and `v_p(b) + val` odd
-carries no point (`Ratpoints.Setup.DenInfo.excludes_eq_false_of_sq_eq`).
+/-- What the valuation test of the divisor shape (`Ratpoints.Sieve.denInfoTest`) knows of a prime
+`p` of the leading coefficient `c_d` of a polynomial of odd degree `d`: `p`, its valuation `val` in
+`c_d`, and the slope, the least `n ≥ 1` with `(d - k) n > val - v_p(c_k)` for every `k < d`, with
+`v_p(0) = Ratpoints.veryBig`. A denominator `b` with `v_p(b) ≥ slope` and `v_p(b) + val` odd carries
+no point (`Ratpoints.Setup.DenInfo.excludes_eq_false_of_sq_eq`).
 
 C: `find_points.c:155`
 
@@ -226,9 +226,9 @@ def squarefreeDivisors (ps : List Nat) (bHigh : Nat) : Id (List Nat) := do
     if maxDivisors ≤ divs.size then break
   return divs.toList
 
-/-- The slope of the valuation test of the divisor shape (stage E) at the prime `p` with the
-valuation `val` in the leading coefficient `c_d` of the polynomial of odd degree `d` with the
-coefficient list `c`: the largest of `1` and the `⌈(1 + val - v_p(c_k)) / (d - k)⌉` for
+/-- The slope of the valuation test of the divisor shape (`Ratpoints.Sieve.denInfoTest`) at the
+prime `p` with the valuation `val` in the leading coefficient `c_d` of the polynomial of odd degree
+`d` with the coefficient list `c`: the largest of `1` and the `⌈(1 + val - v_p(c_k)) / (d - k)⌉` for
 `k = d - 1, …, 0`, with the valuations of `Ratpoints.Setup.valuation`, by the macro `CEIL`, which
 rounds up for every sign: the least `n ≥ 1` with `(d - k) n > val - v_p(c_k)` for every `k < d`,
 with `v_p(0) = Ratpoints.veryBig`, so that a zero coefficient imposes nothing when
@@ -253,7 +253,8 @@ largest denominator `bHigh`: the primes of `|c_d|` with their valuations and slo
 `bHigh` (`Ratpoints.Setup.squarefreeDivisors`), or `none` when the factorization over `2` and the
 odd primes of the table is not complete (`Ratpoints.Setup.factorLcf`) or there are
 `Ratpoints.maxDivisors` divisors or more. The denominators of the points are then these divisors
-times squares, which the loop over the denominators visits divisor by divisor (stage E).
+times squares, which the divisor shape of the loop over the denominators visits divisor by divisor
+(`Ratpoints.Sieve.squares1Dens`).
 
 C: `find_points.c:766-776`, `find_points.c:863`, `find_points.c:881-893`, `find_points.c:914-935`
 

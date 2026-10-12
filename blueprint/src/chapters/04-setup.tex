@@ -18,12 +18,12 @@ The reversal is the transformation of Chapter~\ref{chap:sieve}: it exchanges $x$
 binary form, and the map that the C code applies to every point it finds of the reversed polynomial
 is a bijection onto the points of the caller's curve that preserves the box. So after a reversal the
 output is the list of the brute-force reference for the reversed polynomial with each point mapped
-back, a permutation of the reference; the equation of Theorem~\ref{thm:pointsAtInfinity_append_run}
-is the equation of the points at infinity and the run, for any polynomial and its degree, and
-membership and no duplicates hold for every option. The set-up has been the most error-prone part
-of ratpoints: the fixes of 2.2.2 include a reversal that marked a cubic reversed and left it as it
-was, and those of 2.2.4 a search that returned before the points at infinity when the Sturm step
-found no real point in the search region.
+back, a permutation of the reference; the reduction of the run to the reference
+(Theorem~\ref{thm:run_reference}) holds for any polynomial and its degree, and membership and no
+duplicates hold for every option. The set-up has been the most error-prone part of ratpoints: the
+fixes of 2.2.2 include a reversal that marked a cubic reversed and left it as it was, and those of
+2.2.4 a search that returned before the points at infinity when the Sturm step found no real point
+in the search region.
 
 $\mathrm{findPoints}$ takes an argument for the options of the library that change the refusals or
 the order of the output, and the program reads the options that set them: \verb|-k| and \verb|-K|,
@@ -395,21 +395,31 @@ Lemma~\ref{lem:sift_eq_checkDen} maps their side.
 
 \begin{definition}[The search of the polynomial handed on]\label{def:searchPoints}
   \uses{def:Params, def:arraySize, def:examinePrimeExit, def:useCLong, def:pointsAtInfinity,
-    def:sieveRun, def:swapPoint, lem:examinePrime_none, thm:bruteForce,
-    thm:pointsAtInfinity_append_run}
+    def:sieveRun, def:swapPoint, lem:examinePrime_none, thm:bruteForce, def:twoAdic, def:Shape,
+    lem:twoAdic_point, lem:twoAdic_exit, lem:survives, thm:run_reference}
   \lean{Ratpoints.searchPoints, Ratpoints.run_searchPoints, List.eq_map_of_mapM_eq_some, List.exists_mem_of_mapM_eq_none}
   \leanok
   For the coefficients $c$ of degree $d$ that the set-up hands on, the flag of the reversal, the
-  height $H$ and the parameters $P$: the table of each modulus, with the flag of the \verb|long|s,
-  and no points when one of them is none (\csource{find_points.c}{2605}{2614},
+  height $H$ and the parameters $P$: the 2-adic information (Definition~\ref{def:twoAdic}), and no
+  points when no class of the denominators admits a numerator and there is no point at infinity
+  (\csource{find_points.c}{4603}{4604}, \csource{find_points.c}{4948}{4948},
+  \csource{find_points.c}{4954}{4963}); then the table of each modulus, with the flag of the
+  \verb|long|s, and no points when one of them is none (\csource{find_points.c}{2605}{2614},
   \csource{find_points.c}{2976}{2978}, \csource{find_points.c}{2994}{2998},
   \csource{find_points.c}{4992}{5012}); otherwise the points at infinity and the points of the
-  denominators, with pieces of at most $\mathrm{arraySizeAt}(H)$ bit arrays, each mapped by
-  $\mathrm{swapPoint}$ when the flag is set (\csource{find_points.c}{5106}{5106}, the return when
-  the Sturm step leaves nothing to search, is not met before stage~H). A definition of type
-  \verb|Id|, which $\mathrm{findPoints}$ runs. For well-formed parameters, $H \ge 1$ and $d$ the
-  degree of $c$, its result is $\mathrm{bruteForce}(c, H)$, mapped by $\mathrm{swapPoint}$ when the
-  flag is set, also when the exit fires, since the reference is empty then.
+  denominators $1, \dots, H$ in the shape of every denominator (Definition~\ref{def:Shape}), with
+  the class test and the class words, with pieces of at most $\mathrm{arraySizeAt}(H)$ bit arrays,
+  each mapped by $\mathrm{swapPoint}$ when the flag is set (\csource{find_points.c}{5116}{5116},
+  \csource{find_points.c}{5167}{5167}, the block that runs the denominators;
+  \csource{find_points.c}{5106}{5106}, the return when the Sturm step leaves nothing to search, is
+  not met before stage~H). The shape that the tests on the denominators choose, with the divisors of
+  the leading coefficient, the forbidden divisors and the Jacobi test, comes later in stage~E
+  (Chapter~\ref{chap:denominators}). A definition of type \verb|Id|, which $\mathrm{findPoints}$
+  runs. For well-formed parameters, $H \ge 1$ and $d$ the degree of $c$, its result is
+  $\mathrm{bruteForce}(c, H)$, mapped by $\mathrm{swapPoint}$ when the flag is set, also when an
+  exit fires, since the reference is empty then (Lemmas~\ref{lem:examinePrime_none}
+  and~\ref{lem:twoAdic_exit}); otherwise the filters of the run let every point through
+  (Lemmas~\ref{lem:twoAdic_point} and~\ref{lem:survives}, Theorem~\ref{thm:run_reference}).
 \end{definition}
 
 $\mathrm{findPoints}(c, H, P, o)$ (Definition~\ref{def:findPoints}) refuses, in the order of the
@@ -466,10 +476,11 @@ Sturm step, whose restriction of the search region is stage~H's.
   polynomial searched is $f$). Without the Sturm step only the first two remain.
 \end{proof}
 
-Theorem~\ref{thm:pointsAtInfinity_append_run} is the equation of the points at infinity and the run
-of any polynomial with its degree: for moduli that are primes, an array size at least $1$ and
-$H \ge 1$, they give $\mathrm{bruteForce}(c, H)$, mapped by $\mathrm{swapPoint}$ when the flag of
-the reversal is set; Definition~\ref{def:searchPoints} rests on it. Theorem~\ref{thm:findPoints} has
+Theorem~\ref{thm:run_reference} reduces the run of any polynomial with its degree to the
+reference: for an array size at least $1$, moduli $p > 0$ and filters that let every point through,
+it gives the points of the reference over its denominators, mapped by $\mathrm{swapPoint}$ when the
+flag of the reversal is set; Definition~\ref{def:searchPoints} rests on it, with the 2-adic exit
+(Lemma~\ref{lem:twoAdic_exit}) and the exit of the tables. Theorem~\ref{thm:findPoints} has
 membership, no duplicates and the set of elements, for every option, from
 Theorem~\ref{thm:findPoints_perm}, and Theorem~\ref{thm:refusals} the refusals, with guards on their
 axioms. Comparator certifies the two main theorems with the options argument, both refusal theorems
@@ -539,8 +550,9 @@ Each component of the set-up differs from the C code in a stated way, recorded i
     reversal in place, and nothing written back to the caller (the reversed coefficients, the
     degree, the flags), so that there is no state between calls for the reset of the flags to clear;
     the square test of $c_d$ made where it is used (\verb|Setup.reversal|,
-    \verb|Sieve.pointsAtInfinity|), for the flag \verb|lcfsq|, which the C code computes before the
-    reversal check;
+    \verb|Sieve.pointsAtInfinity|, \verb|searchPoints|), for the flag \verb|lcfsq|, which the C code
+    computes before the reversal check, and the test on \verb|point_at_infty| of the 2-adic exit
+    computed again;
   \item the rows of the chain as arrays of their coefficients up to their degree, for the table of
     $(d + 1)^2$ GMP integers and the array of degrees, with no \verb|mpz_init| and \verb|mpz_clear|;
     the rows handed back, and $\mathrm{none}$ for the return of $-1$, where
@@ -561,10 +573,9 @@ Each component of the set-up differs from the C code in a stated way, recorded i
     \verb|num_primes| primes of the table and more when the number was left to it; when the exit
     fires there are no points, so the output is the same; the arguments of \verb|sieving_info| that
     serve the choice of the moduli (the list of the moduli, the mean number of bits per word,
-    whether the number of primes was left to the library) and the 2-adic classes (stage~E) are not
-    modelled; the exit gives the empty list, where \verb|sieving_info| returns the prime and
+    whether the number of primes was left to the library, the 2-adic classes) are not modelled; the
+    exits give the empty list, where \verb|sieving_info| returns the prime and
     \verb|find_points_work_1| the count $0$;
-  \item no 2-adic exit (stage~E), which ends only searches without points;
   \item integers for the \verb|long|s, with the range obligations of the helper \verb|mod| and of
     the negations of the map stated as lemmas; no failure for lack of memory; no output under
     \verb|RATPOINTS_VERBOSE| or \verb|DEBUG|;

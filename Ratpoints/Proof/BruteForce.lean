@@ -120,6 +120,13 @@ theorem mem_pointsOfDen_iff {c : List ℤ} {d : ℕ} {z : ℤ} {xs : List ℤ} {
     simp only [hg, ↓reduceIte]
     exact mem_pointsAbove_iff.mpr ⟨rfl, rfl, hy⟩
 
+theorem exists_sq_eq_of_pointsOfDen_ne_nil {c : List ℤ} {b : ℕ} {xs : List ℤ}
+    (h : pointsOfDen c (degree c) b xs ≠ []) :
+    ∃ a ∈ xs, ∃ y : ℤ, Int.gcd a b = 1 ∧ y ^ 2 = binaryForm c a b := by
+  obtain ⟨q, hq⟩ := List.exists_mem_of_ne_nil _ h
+  obtain ⟨hx, -, hg, hy⟩ := mem_pointsOfDen_iff.mp hq
+  exact ⟨q.1, hx, q.2.1, hg, hy.trans (horner_scaledCoeffs_mul c _ _)⟩
+
 theorem mem_numerators_iff {x : ℤ} {H : ℕ} : x ∈ numerators H ↔ |x| ≤ H := by
   simp only [numerators, List.mem_map, List.mem_range, abs_le]
   exact ⟨fun ⟨i, hi, h⟩ ↦ by lia, fun h ↦ ⟨(x + H).toNat, by lia, by lia⟩⟩
