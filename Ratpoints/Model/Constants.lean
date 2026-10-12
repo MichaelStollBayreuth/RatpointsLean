@@ -10,11 +10,12 @@ module
 
 The constants that the C code of ratpoints fixes when it is compiled, each a definition with the
 value of the default build and a docstring that names its macro, and the table of primes from which
-the sieve takes its moduli. Changing a constant changes the model as changing the macro changes
-the C program: no proof depends on the values of the constants beyond the facts checked here by
+the sieve takes its moduli. Changing a constant changes the model as changing the macro changes the
+C program: no proof depends on the values of the constants beyond the facts checked here by
 `decide`, that `Ratpoints.rbaPack`, `Ratpoints.defaultArraySize` and `Ratpoints.maxArraySize` are
-positive, and of the table the proofs use only that its entries are the odd primes below 1022, in
-increasing order (`Ratpoints.prime_of_mem_primeTable`, which checks them one by one, and
+positive and that `Ratpoints.mulModLimit` is below `2 ^ 64` (`Ratpoints.mulModLimit_lt_size`), and
+of the table the proofs use only that its entries are the odd primes below 1022, in increasing order
+(`Ratpoints.prime_of_mem_primeTable`, which checks them one by one, and
 `Ratpoints.lt_of_mem_primeTable`, `Ratpoints.mem_primeTable_of_prime` and
 `Ratpoints.pairwise_lt_toList_primeTable`, which `decide` checks).
 
@@ -35,6 +36,8 @@ increasing order (`Ratpoints.prime_of_mem_primeTable`, which checks them one by 
   leading coefficient that `Ratpoints.Setup.setupUs1` gives for the loop over the denominators of a
   polynomial of odd degree.
 * `Ratpoints.veryBig`: the valuation of `0` in the C code.
+* `Ratpoints.jacobiPrimes`, `Ratpoints.jacobiTable`, `Ratpoints.mulModLimit`: the bounds of the
+  Jacobi test by tables.
 -/
 
 @[expose] public section
@@ -158,9 +161,32 @@ slope larger.
 C: `find_points.c:422` -/
 def veryBig : Nat := 1000
 
+/-- At most how many odd prime factors the leading coefficient may have for the Jacobi test by
+tables, `RP_JACOBI_PRIMES` (`Ratpoints.Sieve.jacobiSetup`).
+
+C: `find_points.c:669` -/
+def jacobiPrimes : Nat := 16
+
+/-- At most how many entries the tables of the non-squares of the Jacobi test by tables have in
+all, `RP_JACOBI_TABLE` (`Ratpoints.Sieve.jacobiSetup`).
+
+C: `find_points.c:670` -/
+def jacobiTable : Nat := 8192
+
+/-- The largest value that the C code reduces by a multiplication with a reciprocal,
+`RP_MULMOD_LIMIT`: the set-up of the Jacobi test by tables gives tables only when the denominators
+stay at most this (`Ratpoints.Sieve.jacobiSetup`).
+
+C: `rp-private.h:421` -/
+def mulModLimit : Nat := 2 ^ 32 - 1
+
 theorem rbaPack_pos : 0 < rbaPack := by decide
 theorem defaultArraySize_pos : 0 < defaultArraySize := by decide
 theorem maxArraySize_pos : 0 < maxArraySize := by decide
+
+/-- The bound `Ratpoints.mulModLimit` on the denominators of the Jacobi test by tables is below
+`2 ^ 64`, so that `Ratpoints.Sieve.jacobiTest` reads them as words. -/
+theorem mulModLimit_lt_size : mulModLimit < UInt64.size := by decide
 
 /-! ### Examples -/
 
@@ -168,7 +194,8 @@ theorem maxArraySize_pos : 0 < maxArraySize := by decide
 
 #guard rbaLength == 256 && defaultArraySize == 256 && maxArraySize == 1048576
 
-#guard maxDivisors == 512 && veryBig == 1000
+#guard maxDivisors == 512 && veryBig == 1000 && jacobiPrimes == 16 && jacobiTable == 8192 &&
+  mulModLimit == 4294967295
 
 -- The numbers of primes that the header lists for the builds with moduli of 5 to 10 bits.
 #guard [5, 6, 7, 8, 9, 10].map (fun b ↦ (primeTable.toList.filter (· < 2 ^ b)).length) ==

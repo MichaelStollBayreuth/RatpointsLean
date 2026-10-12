@@ -23,7 +23,10 @@ of integers, the bits of the word `~~~0` and of the masks `~~~0 <<< n` and `~~~0
 bit and the lowest set bit of a word, the word `x &&& (x - 1)`, which is `x` with its lowest set bit
 cleared, the bits of a word set one at a time, at their own positions or at others, the 64 bits of
 two words from a position within the first, the bits of a word and-ed in turn with the words of a
-list, and the numerators of the set bits of a list of words, read in turn.
+list, the numerators of the set bits of a list of words, read in turn, the odd part of a number
+below `2 ^ 64` by the lowest set bit of its word, bit 1 of odd numbers, the gcd of half an even
+number with an odd one, a residue below `2 q` modulo `q` by one subtraction, and the divisors of the
+gcd of `b` and a residue `f ≡ a (mod b)`.
 
 ## Main statements
 
@@ -58,6 +61,12 @@ list, and the numerators of the set bits of a list of words, read in turn.
 * `Int.toNat_add_emod_of_lt`, `Int.toNat_add_add_emod`: the residues modulo `p` of `a + j` before
   and from the first multiple of `p` from `a` on.
 * `UInt64.getLsbD_foldl_and`: the bits of a word and-ed in turn with the words of a list.
+* `UInt64.two_pow_ctz_mul_shiftRight_ofNat`: a number `0 < b < 2 ^ 64` is `2 ^ t` times the odd
+  number `b >>> t`, for the position `t` of the lowest set bit of the word `b`.
+* `Nat.and_two_ne_zero_iff`, `Nat.and_and_two_ne_zero_iff`: bit 1 of odd numbers says whether they
+  are `3 (mod 4)`; `Nat.gcd_div_two_of_mod_two`: halving an even number keeps its gcd with an odd
+  one; `Nat.mod_eq_ite_of_lt_two_mul`: a residue below `2 q` modulo `q` by one subtraction.
+* `Int.dvd_natAbs_of_dvd_gcd`: a divisor of the gcd of `f ≡ a (mod b)` and `b` divides `a`.
 
 ## Implementation notes
 
@@ -279,6 +288,39 @@ namespace Nat
 theorem lt_add_one_mul_of_lt_mul {y n k : Nat} (h : y < n * k) : y < (n + 1) * k :=
   Nat.lt_of_lt_of_le h (Nat.mul_le_mul_right k (Nat.le_succ n))
 
+/-- A residue `a < 2 q` modulo `q` by one conditional subtraction. -/
+theorem mod_eq_ite_of_lt_two_mul {a q : Nat} (h : a < 2 * q) :
+    a % q = if q ≤ a then a - q else a := by
+  split
+  · rw [Nat.mod_eq_sub_mod ‹_›, Nat.mod_eq_of_lt (by lia)]
+  · exact Nat.mod_eq_of_lt (by lia)
+
+/-- The bits of `x &&& k` for `k < 2 ^ n` are those of the residue of `x` modulo `2 ^ n`. -/
+theorem and_eq_mod_two_pow_and {x k n : Nat} (hk : k < 2 ^ n) : x &&& k = x % 2 ^ n &&& k := by
+  rw [← Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt Nat.and_le_right hk), Nat.and_mod_two_pow,
+    Nat.mod_eq_of_lt hk]
+
+/-- Bit 1 of an odd number is set exactly when it is `3 (mod 4)`. -/
+theorem and_two_ne_zero_iff {q : Nat} (hq : q % 2 = 1) : (q &&& 2 != 0) = true ↔ q % 4 = 3 := by
+  rw [and_eq_mod_two_pow_and (n := 2) (by decide : 2 < 2 ^ 2)]
+  obtain h | h : q % 4 = 1 ∨ q % 4 = 3 := by lia
+  all_goals simp [h]
+
+/-- Bit 1 of two odd numbers is set in both exactly when both are `3 (mod 4)`. -/
+theorem and_and_two_ne_zero_iff {n m : Nat} (hn : n % 2 = 1) (hm : m % 2 = 1) :
+    (n &&& m &&& 2 != 0) = true ↔ n % 4 = 3 ∧ m % 4 = 3 := by
+  rw [and_eq_mod_two_pow_and (n := 2) (by decide : 2 < 2 ^ 2), Nat.and_mod_two_pow]
+  obtain h | h : n % 4 = 1 ∨ n % 4 = 3 := by lia
+  all_goals obtain h' | h' : m % 4 = 1 ∨ m % 4 = 3 := by lia
+  all_goals simp [h, h']
+
+/-- Halving an even `x` keeps its gcd with an odd `y`. -/
+theorem gcd_div_two_of_mod_two {x y : Nat} (hx : x % 2 = 0) (hy : y % 2 = 1) :
+    gcd (x / 2) y = gcd x y := by
+  have h2 : Coprime 2 y := by rw [Coprime, Nat.gcd_rec, hy]; rfl
+  conv => rhs; rw [← Nat.mul_div_cancel' (Nat.dvd_of_mod_eq_zero hx)]
+  exact (Coprime.gcd_mul_left_cancel _ h2).symm
+
 end Nat
 
 /-! ### Integers -/
@@ -320,6 +362,15 @@ theorem ediv_mul_eq_ediv_mul_of_dvd {a b g : Int} (ha : g ∣ a) (hb : g ∣ b) 
 
 theorem ediv_ne_zero_of_dvd {a b : Int} (hb : b ∣ a) (ha : a ≠ 0) : a / b ≠ 0 := fun h ↦
   ha (Int.eq_zero_of_ediv_eq_zero hb h)
+
+/-- A divisor of the gcd of `f ≡ a (mod b)` and `b` divides `a`. -/
+theorem dvd_natAbs_of_dvd_gcd {a : Int} {b f q : Nat} (h : (f : Int) % b = a % b)
+    (hq : q ∣ Nat.gcd f b) : q ∣ a.natAbs := by
+  have h1 : (q : Int) ∣ a - f := Int.dvd_trans
+    (Int.natCast_dvd_natCast.mpr (Nat.dvd_trans hq (Nat.gcd_dvd_right f b)))
+    (Int.dvd_of_emod_eq_zero (Int.emod_eq_emod_iff_emod_sub_eq_zero.mp h.symm))
+  have h2 : (q : Int) ∣ f := Int.natCast_dvd_natCast.mpr (Nat.dvd_trans hq (Nat.gcd_dvd_left f b))
+  exact Int.ofNat_dvd_left.mp (by simpa using Int.dvd_add h1 h2)
 
 end Int
 
@@ -425,6 +476,31 @@ theorem getLsbD_foldl_and {α : Type u} (f : α → UInt64) (l : List α) (init 
   induction l generalizing init with
   | nil => simp
   | cons a l ih => simp [ih, Bool.and_assoc]
+
+theorem ofNat_ne_zero_of_lt {b : Nat} (hb0 : 0 < b) (hb : b < UInt64.size) :
+    UInt64.ofNat b ≠ 0 :=
+  fun h ↦ Nat.ne_of_gt hb0 (by simpa [UInt64.toNat_ofNat_of_lt' hb] using congrArg UInt64.toNat h)
+
+/-- For `0 < b < 2 ^ 64`, the lowest set bit of the word `b` is at the exponent of `2` in `b`: `b`
+is `2 ^ t` times the odd number `b >>> t`, `t` the position of that bit. -/
+theorem two_pow_ctz_mul_shiftRight_ofNat {b : Nat} (hb0 : 0 < b) (hb : b < UInt64.size) :
+    2 ^ (UInt64.ofNat b).toBitVec.ctz.toNat * (b >>> (UInt64.ofNat b).toBitVec.ctz.toNat) = b ∧
+      (b >>> (UInt64.ofNat b).toBitVec.ctz.toNat) % 2 = 1 := by
+  have hne := UInt64.toBitVec_ne_of_ne (ofNat_ne_zero_of_lt hb0 hb)
+  generalize hx : (UInt64.ofNat b).toBitVec = x at hne ⊢
+  rw [UInt64.toBitVec_ofNat'] at hx
+  subst hx
+  have hlt := BitVec.lt_def.mp (BitVec.ctz_lt_iff_ne_zero.mpr hne)
+  have ht := BitVec.getLsbD_true_ctz_of_ne_zero hne
+  rw [BitVec.getLsbD_ofNat, Bool.and_eq_true] at ht
+  have hmod : b % 2 ^ (BitVec.ofNat 64 b).ctz.toNat = 0 := Nat.eq_of_testBit_eq fun i ↦ by
+    have := BitVec.getLsbD_false_of_lt_ctz (x := BitVec.ofNat 64 b) (i := i)
+    rw [BitVec.getLsbD_ofNat] at this
+    simp only [Nat.testBit_mod_two_pow, Nat.zero_testBit]
+    grind
+  rw [Nat.shiftRight_eq_div_pow]
+  refine ⟨Nat.mul_div_cancel' (Nat.dvd_of_mod_eq_zero hmod), ?_⟩
+  simpa [Nat.testBit_eq_decide_div_mod_eq] using ht.2
 
 end UInt64
 

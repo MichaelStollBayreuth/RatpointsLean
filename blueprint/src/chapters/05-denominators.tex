@@ -387,11 +387,8 @@ $(c_d / q) = -1$, which these do not reach.
 
 \begin{definition}[The Jacobi symbol by the binary algorithm]\label{def:jacobi}
   \uses{def:useCLong}
-  Proposed names: \lname{Ratpoints.Sieve.twoSign}, \lname{Ratpoints.Sieve.jacobiReduce},
-  \lname{Ratpoints.Sieve.jacobiRound}, \lname{Ratpoints.Sieve.jacobi},
-  \lname{Ratpoints.Sieve.twoSign\_eq}, \lname{Ratpoints.Sieve.jacobiReduce\_spec},
-  \lname{Ratpoints.Sieve.jacobiRound\_spec}, \lname{Ratpoints.Sieve.jacobi\_spec},
-  \lname{Ratpoints.fitsLong\_neg\_ite\_div\_four}.
+  \lean{Ratpoints.Sieve.twoSign, Ratpoints.Sieve.jacobiReduce, Ratpoints.Sieve.jacobiRound, Ratpoints.Sieve.jacobi, Ratpoints.Sieve.twoSign_eq, Ratpoints.Sieve.jacobiReduce_spec, Ratpoints.Sieve.jacobiRound_spec, Ratpoints.Sieve.jacobi_spec, Ratpoints.fitsLong_neg_ite_div_four}
+  \leanok
   For $b \ge 1$ and an integer $\ell$: the factors $2$ taken out of $b$, and $u = \ell \bmod b$;
   while $u \ne 0$, a round of the binary algorithm on $n = u$ and $m = b$, which takes the factors
   $2$ out of $n$ with the sign of $(2 / m)$, and then exchanges the two, with the sign of the
@@ -408,15 +405,15 @@ $(c_d / q) = -1$, which these do not reach.
 
 \begin{lemma}[The binary algorithm computes the Jacobi symbol]\label{lem:jacobi}
   \uses{def:jacobi}
-  Proposed names: \lname{Ratpoints.Sieve.run\_jacobi},
-  \lname{Nat.prod\_filter\_primeFactorsList\_dvd},
-  \lname{Nat.coprime\_prod\_filter\_primeFactorsList},
-  \lname{Nat.dvd\_prod\_filter\_primeFactorsList\_of\_dvd}. For $b \ge 1$ and every integer $\ell$,
-  the result is $J(\ell \mid b^*)$ for the largest divisor $b^*$ of $b$ prime to $2 \ell$, the
-  product of the prime factors of $b$, with multiplicity, that do not divide $2 \ell$.
+  \lean{Ratpoints.Sieve.run_jacobi, Nat.prod_filter_primeFactorsList_dvd, Nat.coprime_prod_filter_primeFactorsList, Nat.dvd_prod_filter_primeFactorsList_of_dvd}
+  \leanok
+  For $b \ge 1$ and every integer $\ell$, the result is $J(\ell \mid b^*)$ for the largest divisor
+  $b^*$ of $b$ prime to $2 \ell$, the product of the prime factors of $b$, with multiplicity, that
+  do not divide $2 \ell$.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   The steps keep $s \cdot J(n \mid m)$: taking out a factor $2$ of $n$ multiplies the symbol by
   $(2 / m)$; the exchange by the reciprocity of two odd numbers; the subtraction changes nothing,
   $J(m - n \mid n) = J(m \mid n)$. A round ends at $m = n = \gcd(u, b)$, and the symbol is
@@ -428,57 +425,44 @@ $(c_d / q) = -1$, which these do not reach.
 
 \begin{definition}[The Jacobi test by tables]\label{def:jacobiTables}
   \uses{def:valuation, def:primeTable, def:ctz}
-  Proposed names: \lname{Ratpoints.jacobiPrimes}, \lname{Ratpoints.jacobiTable},
-  \lname{Ratpoints.mulModLimit}, \lname{Ratpoints.Sieve.JacobiInfo},
-  \lname{Ratpoints.Sieve.nonSquares}, \lname{Ratpoints.Sieve.jacobiSigns},
-  \lname{Ratpoints.Sieve.jacobiSetup}, \lname{Ratpoints.Sieve.jacobiTest},
-  \lname{Ratpoints.Sieve.nonSquares\_spec},
-  \lname{Ratpoints.Sieve.legendreSym\_eq\_ite\_getElem!\_nonSquares},
-  \lname{Ratpoints.Sieve.ite\_getElem!\_jacobiSigns}, \lname{Ratpoints.Sieve.IsJacobiInfo},
-  \lname{Ratpoints.Sieve.jacobiSetup\_spec}, \lname{Ratpoints.Sieve.jacobiTest\_spec},
-  \lname{ZMod.isSquare\_natCast\_iff\_exists\_mul\_self\_mod\_eq},
-  \lname{Ratpoints.mulModLimit\_lt\_size},
-  \lname{Ratpoints.Sieve.le\_mulModLimit\_of\_jacobiSetup\_eq\_some}. For $\ell = \pm 2^v \prod
-  q_i^{e_i}$ and $b_{\mathrm{high}} \le \mathrm{mulModLimit} = 2^{32} - 1$ (\verb|RP_MULMOD_LIMIT|,
-  \csource{rp-private.h}{421}{421}): a record (\csource{find_points.c}{672}{681}) of the odd primes
-  $q_i$ of the table, found by trial division, at most $\mathrm{jacobiPrimes} = 16$ of them, each
-  with the table of the non-squares modulo $q_i$ when $e_i$ is odd
-  (\csource{find_points.c}{709}{713}), at most $\mathrm{jacobiTable} = 8192$ entries in all
-  (\verb|RP_JACOBI_PRIMES|, \verb|RP_JACOBI_TABLE|, \csource{find_points.c}{669}{669},
-  \csource{find_points.c}{670}{670}), and of eight signs, the sign for $b^* \bmod 8$ the product of
-  $(-1 / b^*)$ for negative $\ell$, $(2 / b^*)^v$ and the signs of the reciprocity of the $q_i
-  \equiv 3 \pmod 4$ with odd $e_i$ (\csource{find_points.c}{721}{729}); none when a prime of $\ell$
-  is beyond the table, or a bound is passed (\csource{find_points.c}{683}{708},
-  \csource{find_points.c}{714}{720}, \csource{find_points.c}{730}{731}). The test of $b$: its odd
-  part with every $q_i$ divided out, the sign of the result modulo $8$ combined with the table entry
-  of the result modulo each $q_i$ with odd $e_i$, passing when the product is $1$
-  (\csource{find_points.c}{734}{759}). The contracts describe the loops: the table of $q$ marks the
-  residues $x^2 \bmod q$, $1 \le x \le q / 2$, made by the steps $2x + 1$ with one subtraction, so
-  that it gives the Legendre symbol of a residue other than $0$; the tables exist only for
-  $b_{\mathrm{high}} \le \mathrm{mulModLimit}$ and $\ell \ne 0$, and then describe $\ell$ as above;
-  and the test negates the exclusive or of the sign and the entries over the part of $b$ free of $2$
-  and of the primes of the tables, the odd part taken by the lowest set bit. A denominator of the
-  test is at most $\mathrm{mulModLimit}$, below $2^{32}$, where \verb|RP_MULDIV| is exact, and below
-  $2^{64}$, so that it is a word.
+  \lean{Ratpoints.jacobiPrimes, Ratpoints.jacobiTable, Ratpoints.mulModLimit, Ratpoints.Sieve.JacobiInfo, Ratpoints.Sieve.nonSquares, Ratpoints.Sieve.jacobiSigns, Ratpoints.Sieve.jacobiSetup, Ratpoints.Sieve.jacobiTest, Ratpoints.Sieve.nonSquares_spec, Ratpoints.Sieve.legendreSym_eq_ite_getElem!_nonSquares, Ratpoints.Sieve.ite_getElem!_jacobiSigns, Ratpoints.Sieve.IsJacobiInfo, Ratpoints.Sieve.jacobiSetup_spec, Ratpoints.Sieve.jacobiTest_spec, ZMod.isSquare_natCast_iff_exists_mul_self_mod_eq, Ratpoints.mulModLimit_lt_size, Ratpoints.Sieve.le_mulModLimit_of_jacobiSetup_eq_some}
+  \leanok
+  For $\ell = \pm 2^v \prod q_i^{e_i}$ and $b_{\mathrm{high}} \le \mathrm{mulModLimit} = 2^{32} - 1$
+  (\verb|RP_MULMOD_LIMIT|, \csource{rp-private.h}{421}{421}): a record
+  (\csource{find_points.c}{672}{681}) of the odd primes $q_i$ of the table, found by trial division,
+  at most $\mathrm{jacobiPrimes} = 16$ of them, each with the table of the non-squares modulo $q_i$
+  when $e_i$ is odd (\csource{find_points.c}{709}{713}), at most $\mathrm{jacobiTable} = 8192$
+  entries in all (\verb|RP_JACOBI_PRIMES|, \verb|RP_JACOBI_TABLE|,
+  \csource{find_points.c}{669}{669}, \csource{find_points.c}{670}{670}), and of eight signs, the
+  sign for $b^* \bmod 8$ the product of $(-1 / b^*)$ for negative $\ell$, $(2 / b^*)^v$ and the
+  signs of the reciprocity of the $q_i \equiv 3 \pmod 4$ with odd $e_i$
+  (\csource{find_points.c}{721}{729}); none when a prime of $\ell$ is beyond the table, or a bound
+  is passed (\csource{find_points.c}{683}{708}, \csource{find_points.c}{714}{720},
+  \csource{find_points.c}{730}{731}). The test of $b$: its odd part with every $q_i$ divided out,
+  the sign of the result modulo $8$ combined with the table entry of the result modulo each $q_i$
+  with odd $e_i$, passing when the product is $1$ (\csource{find_points.c}{734}{759}). The contracts
+  describe the loops: the table of $q$ marks the residues $x^2 \bmod q$, $1 \le x \le q / 2$, made
+  by the steps $2x + 1$ with one subtraction, so that it gives the Legendre symbol of a residue
+  other than $0$; the tables exist only for $b_{\mathrm{high}} \le \mathrm{mulModLimit}$ and
+  $\ell \ne 0$, and then describe $\ell$ as above; and the test negates the exclusive or of the sign
+  and the entries over the part of $b$ free of $2$ and of the primes of the tables, the odd part
+  taken by the lowest set bit. A denominator of the test is at most $\mathrm{mulModLimit}$, below
+  $2^{32}$, where \verb|RP_MULDIV| is exact, and below $2^{64}$, so that it is a word.
 \end{definition}
 
 \begin{lemma}[The Jacobi test]\label{lem:jacobiTest}
-  \uses{def:jacobiTables, def:jacobi, lem:jacobi, def:IsPoint, lem:examinePrime_none}
-  Proposed names: \lname{Ratpoints.Sieve.jacobiSym\_eq\_ite\_foldl},
-  \lname{Ratpoints.Sieve.IsJacobiInfo.prod\_filter\_primeFactorsList\_eq},
-  \lname{Ratpoints.Sieve.run\_jacobiTest},
-  \lname{Ratpoints.Sieve.jacobiSym\_eq\_one\_of\_sq\_eq\_binaryForm},
-  \lname{Ratpoints.Sieve.jacobiSym\_prod\_filter\_primeFactorsList\_eq\_one\_of\_sq\_eq},
-  \lname{Ratpoints.Sieve.run\_jacobi\_eq\_one\_of\_sq\_eq},
-  \lname{Ratpoints.Sieve.run\_jacobiTest\_of\_sq\_eq},
-  \lname{jacobiSym.natCast\_eq\_ite\_mul\_legendreSym}. When the tables exist and $1 \le b \le
-  b_{\mathrm{high}}$, the test of $b$ passes exactly when $J(\ell \mid b^*) = 1$. For even $d$ and a
-  normalized point $(a, y, b)$: $J(c_d \mid b') = 1$ for every divisor $b'$ of $b$ prime to $c_d$;
-  so for $b \ge 1$, $J(c_d \mid b^*) = 1$, and both the binary algorithm and the test by tables let
-  $b$ through.
+  \uses{def:jacobiTables, def:jacobi, lem:jacobi, def:binaryForm, lem:examinePrime_none}
+  \lean{Ratpoints.Sieve.jacobiSym_eq_ite_foldl, Ratpoints.Sieve.IsJacobiInfo.prod_filter_primeFactorsList_eq, Ratpoints.Sieve.run_jacobiTest, Ratpoints.Sieve.jacobiSym_eq_one_of_sq_eq_binaryForm, Ratpoints.Sieve.jacobiSym_prod_filter_primeFactorsList_eq_one_of_sq_eq, Ratpoints.Sieve.run_jacobi_eq_one_of_sq_eq, Ratpoints.Sieve.run_jacobiTest_of_sq_eq, jacobiSym.natCast_eq_ite_mul_legendreSym}
+  \leanok
+  When the tables exist and $1 \le b \le b_{\mathrm{high}}$, the test of $b$ passes exactly when
+  $J(\ell \mid b^*) = 1$. For even $d$, integers $a$ and $y$ and a natural number $b$ with
+  $\gcd(a, b) = 1$ and $y^2 = F(a, b)$, as for a normalized point $(a, y, b)$: $J(c_d \mid b') = 1$
+  for every divisor $b'$ of $b$ prime to $c_d$; so for $b \ge 1$, $J(c_d \mid b^*) = 1$, and both
+  the binary algorithm and, for $b \le b_{\mathrm{high}}$, the test by tables let $b$ through.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   The result of the divisions is $b^*$; $J(\ell \mid b^*)$ is the product of $J(-1 \mid b^*)$ for
   negative $\ell$, $J(2 \mid b^*)^v$ and the $J(q_i \mid b^*)^{e_i}$, of which those with even
   $e_i$ are $1$ and the others, by reciprocity, the Legendre symbol of $b^* \bmod q_i$ times a sign

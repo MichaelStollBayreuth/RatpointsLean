@@ -35,8 +35,9 @@ paths with the same result, since the helper `mod` of the C code is the Euclidea
 the table marks for `p ∤ b`, and for `p ∣ b` a point at infinity modulo `p`, since `c_d` is then a
 square modulo `p` for even `d` (`Ratpoints.Sieve.isSquare_getD_degree_of_sq_eq_binaryForm`). The
 values of the C code that could leave the range of a `long` stay in it: those of `mod` for moduli
-below `2 ^ 59`, whose inputs are `long`s by the flag of the `long`s, and the negations of the map of
-a reversed search.
+below `2 ^ 59`, whose inputs are `long`s by the flag of the `long`s, the negations of the map of a
+reversed search, and the negation of a negative leading coefficient in `jacobi1`, with `LONG_MIN`
+replaced by its quarter.
 
 ## Main statements
 
@@ -55,8 +56,9 @@ a reversed search.
   same result, its table is that of the reference, and when it gives none.
 * `Ratpoints.Sieve.not_isPoint_of_examinePrime?_eq_none`: a curve without points modulo a prime has
   no points.
-* `Ratpoints.fitsLong_sixteen_mul`, `Ratpoints.fitsLong_add_sixteen_mul`, `Ratpoints.fitsLong_neg`:
-  the values of the C code that could leave the range of a `long` stay in it.
+* `Ratpoints.fitsLong_sixteen_mul`, `Ratpoints.fitsLong_add_sixteen_mul`, `Ratpoints.fitsLong_neg`,
+  `Ratpoints.fitsLong_neg_ite_div_four`: the values of the C code that could leave the range of a
+  `long` stay in it.
 * `Ratpoints.Setup.fitsLong_getD_of_useCLong`: the inputs of `mod` are `long`s.
 -/
 
@@ -390,6 +392,16 @@ theorem fitsLong_add_sixteen_mul {a b : ℤ} (hb : b < 2 ^ 59) (ha0 : -(16 * b) 
 height bound `H` is a `long`. -/
 theorem fitsLong_neg {a : ℤ} (ha : |a| < 2 ^ 63) : fitsLong (-a) = true := by
   grind [fitsLong, abs_lt.mp ha]
+
+/-- The value `-f` that `jacobi1` forms from a negative `long` leading coefficient `f`, after it
+replaces `LONG_MIN` by `LONG_MIN / 4` (`find_points.c:579-584`), is a `long`. The helper `mod` that
+`jacobi1` then calls for `b < 2 ^ 59` (`find_points.c:585`) keeps its values in the range of a
+`long` (`Ratpoints.fitsLong_sixteen_mul`, `Ratpoints.fitsLong_neg`,
+`Ratpoints.fitsLong_add_sixteen_mul`), and the other values of `jacobi1` and `jacobi` lie between
+`0` and the larger of `b` and `|f|`. -/
+theorem fitsLong_neg_ite_div_four {f : ℤ} (hf : fitsLong f = true) (h0 : f < 0) :
+    fitsLong (-(if f = -2 ^ 63 then f / 4 else f)) = true := by
+  grind [fitsLong]
 
 /-- The inputs of the helper `mod` of the C code on the path through `long`s of the table of a
 prime, the coefficients `c₀, …, c_d`, are `long`s: `use_c_long` holds only when each of them is. -/

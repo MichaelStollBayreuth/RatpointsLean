@@ -499,6 +499,12 @@
         "excluded (instrumentation)"
       ]
     },
+    "find_points.c:498-566": {
+      "hash": "c99f4786b33e2688708a3aa1088ecd6680bcd0d9aa04dd3d3ac8ca2d939bf805",
+      "owners": [
+        "Ratpoints.Sieve.jacobi"
+      ]
+    },
     "find_points.c:4992-5012": {
       "hash": "b404578a107501573dc4281eea9c01d4b1948ab9810395fcf7a8ab0a79349b95",
       "owners": [
@@ -587,6 +593,66 @@
       "hash": "f99fc9f0d55ade441a774478107270bb3792cd5b30b4879808f54bdfc05ad26c",
       "owners": [
         "Ratpoints.Sieve.checkNum"
+      ]
+    },
+    "find_points.c:568-641": {
+      "hash": "b43661296b24816bb3ad117885acf5dd08de84274d45cfce478c093d07e1df0c",
+      "owners": [
+        "Ratpoints.Sieve.jacobi"
+      ]
+    },
+    "find_points.c:669-669": {
+      "hash": "d526a28db24f527780e3e4256ac7569fbf0e54a910a0784b512f22e3254722d7",
+      "owners": [
+        "Ratpoints.jacobiPrimes"
+      ]
+    },
+    "find_points.c:670-670": {
+      "hash": "9141a36ffa6d1d857e471ebd60ab67f19765c6cf4e09ea876f3586e12b964285",
+      "owners": [
+        "Ratpoints.jacobiTable"
+      ]
+    },
+    "find_points.c:672-681": {
+      "hash": "e88662e5e9ab6f00d54cd2477d3ba9ef9a4c96c578706fc67ba721b100bd3b1c",
+      "owners": [
+        "Ratpoints.Sieve.JacobiInfo"
+      ]
+    },
+    "find_points.c:683-708": {
+      "hash": "51fe0593996cee11ff72d7d740fd8ff78650dca3ad7e407190b13b60358aaabb",
+      "owners": [
+        "Ratpoints.Sieve.jacobiSetup"
+      ]
+    },
+    "find_points.c:709-713": {
+      "hash": "be8582422276c7221646886e129f05de1cebab0d3dad85a95a778202ec6fc699",
+      "owners": [
+        "Ratpoints.Sieve.nonSquares"
+      ]
+    },
+    "find_points.c:714-720": {
+      "hash": "cfb1740ef00c588763723727d6af7cbff142b5498f35c069d7c390ab92c73ba8",
+      "owners": [
+        "Ratpoints.Sieve.jacobiSetup"
+      ]
+    },
+    "find_points.c:721-729": {
+      "hash": "1a50be886a2732e05d2bafa0729b9c9cb8ab43ccd3bbbfbcf89ee5d3a4e2d37e",
+      "owners": [
+        "Ratpoints.Sieve.jacobiSigns"
+      ]
+    },
+    "find_points.c:730-731": {
+      "hash": "cf59e19191baf9570ccc08f61a843962cef3446f9e6f1934cf2469a2fdd1447c",
+      "owners": [
+        "Ratpoints.Sieve.jacobiSetup"
+      ]
+    },
+    "find_points.c:734-759": {
+      "hash": "613adcd0a62090a7a469d899767332a7bbd1f82a56e0a2a0a0f712ff30c0dfb6",
+      "owners": [
+        "Ratpoints.Sieve.jacobiTest"
       ]
     },
     "find_points.c:766-776": {
@@ -1357,6 +1423,12 @@
       "hash": "b1cdf6bfb6993a5469f282a00642df6f98c08f2df577f36110709941ed7e7f3d",
       "owners": [
         "Ratpoints.fitsLong"
+      ]
+    },
+    "rp-private.h:421-421": {
+      "hash": "2178269edcc9dc470ac72bd8ff67a437303d19e7969d7c2da1b605f77b58c308",
+      "owners": [
+        "Ratpoints.mulModLimit"
       ]
     },
     "rp-private.h:429-444": {

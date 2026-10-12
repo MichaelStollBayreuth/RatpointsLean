@@ -9,18 +9,18 @@ The model is checked against ratpoints v3.1.1 (commit \texttt{1a998538dfa8}). Th
 \begin{tabular}{lrrrr}
 file & lines of code & modelled & excluded & not yet recorded \\
 \hline
-\texttt{find\_points.c} & 3244 & 904 & 198 & 2142 \\
+\texttt{find\_points.c} & 3244 & 1086 & 198 & 1960 \\
 \texttt{sift.c} & 820 & 261 & 0 & 559 \\
 \texttt{init.c} & 302 & 155 & 8 & 139 \\
 \texttt{sturm.c} & 215 & 50 & 0 & 165 \\
-\texttt{rp-private.h} & 282 & 181 & 11 & 90 \\
+\texttt{rp-private.h} & 282 & 182 & 11 & 89 \\
 \texttt{ratpoints.h} & 128 & 13 & 0 & 115 \\
 \texttt{primes.h} & 11 & 11 & 0 & 0 \\
 \texttt{gen\_find\_points\_h.c} & 76 & 60 & 0 & 16 \\
 \texttt{gen\_init\_sieve\_h.c} & 26 & 13 & 0 & 13 \\
 \texttt{main.c} & 779 & 234 & 9 & 536 \\
 \hline
-total & 5883 & 1882 & 226 & 3775 \\
+total & 5883 & 2065 & 226 & 3592 \\
 \end{tabular}
 \end{center}
 
@@ -44,7 +44,26 @@ total & 5883 & 1882 & 226 & 3775 \\
 \item \csource{find_points.c}{464}{471}: not yet recorded (7 lines of code)
 \item \csource{find_points.c}{477}{492}: modelled by \lname{Ratpoints.Sieve.modLong}
   (deviation of \lname{Ratpoints.Sieve.modLong}: integers for the \texttt{long}s, with the obligations that the values it computes stay in the range of a \texttt{long} stated as lemmas: for \texttt{0 ≤ b < 2 \textasciicircum{} 59}, \texttt{16 b} (\texttt{Ratpoints.fitsLong\_sixteen\_mul}), its negation (\texttt{Ratpoints.fitsLong\_neg}), and \texttt{a + 16 b} for \texttt{-{}16 b ≤ a < 0} (\texttt{Ratpoints.fitsLong\_add\_sixteen\_mul}), its other values lying between \texttt{-{}b} and \texttt{16 b}; \texttt{Int.tmod} for C's division of \texttt{long}s, which truncates; the multiples \texttt{16 b}, \texttt{8 b}, \texttt{4 b} and \texttt{2 b} as products, for the shifts of \texttt{b1}.)
-\item \csource{find_points.c}{498}{759}: not yet recorded (182 lines of code)
+\item \csource{find_points.c}{498}{566}: modelled by \lname{Ratpoints.Sieve.jacobi}
+  (deviation of \lname{Ratpoints.Sieve.jacobi}: one function for \texttt{jacobi}, on the GMP integer \texttt{lcf}, and \texttt{jacobi1}, on a \texttt{long}, which the run calls when all coefficients are \texttt{long}s (\texttt{use\_c\_long}), with the steps of \texttt{jacobi}: \texttt{jacobi1} takes the sign of \texttt{lcf} out as \texttt{(-{}1 / b)\textasciicircum{}neg} and its value \texttt{LONG\_MIN} as \texttt{LONG\_MIN / 4}, reduces \texttt{|lcf|} modulo \texttt{b} only for \texttt{b < 2\textasciicircum{}59}, and does not reduce it after dividing \texttt{b} by the gcd, which changes the steps but not the symbol; the round of the algorithm and its two subtraction loops, which the C code writes out twice each, as helpers (\texttt{Ratpoints.Sieve.jacobiRound}, \texttt{Ratpoints.Sieve.jacobiReduce}, \texttt{Ratpoints.Sieve.twoSign}); natural numbers for the \texttt{long}s, and \texttt{f} the Euclidean \texttt{lcf \% b}, for \texttt{mpz\_fdiv\_r\_ui} with its scratch integer \texttt{tmp}; the tests \texttt{f = 0} of the C code, at the start and after each division of \texttt{b}, as the condition of the outer loop; the masks of the signs by \texttt{\&\&\&} on natural numbers; the symbol as an integer, for the \texttt{int}.)
+\item \csource{find_points.c}{568}{641}: modelled by \lname{Ratpoints.Sieve.jacobi}
+  (deviation of \lname{Ratpoints.Sieve.jacobi}: one function for \texttt{jacobi}, on the GMP integer \texttt{lcf}, and \texttt{jacobi1}, on a \texttt{long}, which the run calls when all coefficients are \texttt{long}s (\texttt{use\_c\_long}), with the steps of \texttt{jacobi}: \texttt{jacobi1} takes the sign of \texttt{lcf} out as \texttt{(-{}1 / b)\textasciicircum{}neg} and its value \texttt{LONG\_MIN} as \texttt{LONG\_MIN / 4}, reduces \texttt{|lcf|} modulo \texttt{b} only for \texttt{b < 2\textasciicircum{}59}, and does not reduce it after dividing \texttt{b} by the gcd, which changes the steps but not the symbol; the round of the algorithm and its two subtraction loops, which the C code writes out twice each, as helpers (\texttt{Ratpoints.Sieve.jacobiRound}, \texttt{Ratpoints.Sieve.jacobiReduce}, \texttt{Ratpoints.Sieve.twoSign}); natural numbers for the \texttt{long}s, and \texttt{f} the Euclidean \texttt{lcf \% b}, for \texttt{mpz\_fdiv\_r\_ui} with its scratch integer \texttt{tmp}; the tests \texttt{f = 0} of the C code, at the start and after each division of \texttt{b}, as the condition of the outer loop; the masks of the signs by \texttt{\&\&\&} on natural numbers; the symbol as an integer, for the \texttt{int}.)
+\item \csource{find_points.c}{669}{669}: modelled by \lname{Ratpoints.jacobiPrimes}
+\item \csource{find_points.c}{670}{670}: modelled by \lname{Ratpoints.jacobiTable}
+\item \csource{find_points.c}{672}{681}: modelled by \lname{Ratpoints.Sieve.JacobiInfo}
+  (deviation of \lname{Ratpoints.Sieve.JacobiInfo}: a list of pairs for the arrays \texttt{q} and \texttt{nonsq} and their count \texttt{nq}, with no reciprocals \texttt{magic}, the model dividing; the tables as arrays of their own, for the space that they take from the table \texttt{jtab} of the run; natural numbers for the \texttt{long}s \texttt{q}, and Booleans for the \texttt{unsigned char}s of the tables and of the signs.)
+\item \csource{find_points.c}{683}{708}: modelled by \lname{Ratpoints.Sieve.jacobiSetup}
+  (deviation of \lname{Ratpoints.Sieve.jacobiSetup}: the tables as fresh arrays, for the table \texttt{jtab} of the run that \texttt{tab} and \texttt{tab\_len} give, whose bound \texttt{Ratpoints.jacobiTable} on their total size is kept; the valuations by \texttt{Ratpoints.Setup.valuation}, for \texttt{mpz\_scan1} at \texttt{2} and the loop of exact divisions at the odd primes, the power then divided off at once; the number \texttt{n3} of the primes \texttt{≡ 3 (mod 4)} with an odd exponent counted in the list at the end, where the C code counts them in its loop; natural numbers for the GMP integer \texttt{tmp} and the \texttt{long}s; no reciprocals \texttt{magic}; \texttt{none} and the tables returned, for the return values \texttt{0} and \texttt{1} and the structure that \texttt{ji} points to.)
+\item \csource{find_points.c}{709}{713}: modelled by \lname{Ratpoints.Sieve.nonSquares}
+  (deviation of \lname{Ratpoints.Sieve.nonSquares}: a fresh array, for the space in the table \texttt{jtab} of the run; Booleans for the \texttt{unsigned char}s, natural numbers for the \texttt{long}s \texttt{x} and \texttt{s}.)
+\item \csource{find_points.c}{714}{720}: modelled by \lname{Ratpoints.Sieve.jacobiSetup}
+  (deviation of \lname{Ratpoints.Sieve.jacobiSetup}: the tables as fresh arrays, for the table \texttt{jtab} of the run that \texttt{tab} and \texttt{tab\_len} give, whose bound \texttt{Ratpoints.jacobiTable} on their total size is kept; the valuations by \texttt{Ratpoints.Setup.valuation}, for \texttt{mpz\_scan1} at \texttt{2} and the loop of exact divisions at the odd primes, the power then divided off at once; the number \texttt{n3} of the primes \texttt{≡ 3 (mod 4)} with an odd exponent counted in the list at the end, where the C code counts them in its loop; natural numbers for the GMP integer \texttt{tmp} and the \texttt{long}s; no reciprocals \texttt{magic}; \texttt{none} and the tables returned, for the return values \texttt{0} and \texttt{1} and the structure that \texttt{ji} points to.)
+\item \csource{find_points.c}{721}{729}: modelled by \lname{Ratpoints.Sieve.jacobiSigns}
+  (deviation of \lname{Ratpoints.Sieve.jacobiSigns}: Booleans for the bits.)
+\item \csource{find_points.c}{730}{731}: modelled by \lname{Ratpoints.Sieve.jacobiSetup}
+  (deviation of \lname{Ratpoints.Sieve.jacobiSetup}: the tables as fresh arrays, for the table \texttt{jtab} of the run that \texttt{tab} and \texttt{tab\_len} give, whose bound \texttt{Ratpoints.jacobiTable} on their total size is kept; the valuations by \texttt{Ratpoints.Setup.valuation}, for \texttt{mpz\_scan1} at \texttt{2} and the loop of exact divisions at the odd primes, the power then divided off at once; the number \texttt{n3} of the primes \texttt{≡ 3 (mod 4)} with an odd exponent counted in the list at the end, where the C code counts them in its loop; natural numbers for the GMP integer \texttt{tmp} and the \texttt{long}s; no reciprocals \texttt{magic}; \texttt{none} and the tables returned, for the return values \texttt{0} and \texttt{1} and the structure that \texttt{ji} points to.)
+\item \csource{find_points.c}{734}{759}: modelled by \lname{Ratpoints.Sieve.jacobiTest}
+  (deviation of \lname{Ratpoints.Sieve.jacobiTest}: divisions and remainders for \texttt{RP\_MULDIV}, which multiplies by the reciprocal and is exact below \texttt{2\textasciicircum{}32}, the bound \texttt{Ratpoints.mulModLimit} on the denominators for which the tables are made; the odd part as the shift by the lowest set bit of the word \texttt{b} (\texttt{Ratpoints.Sieve.ctz}, the loop of \texttt{RP\_CTZL}); \texttt{b mod 8} for \texttt{b \& 7}; natural numbers for the \texttt{long}s.)
 \item \csource{find_points.c}{766}{776}: modelled by \lname{Ratpoints.Setup.setupUs1}
   (deviation of \lname{Ratpoints.Setup.setupUs1}: the leading coefficient read from the list, for the integer \texttt{work[0]} that the caller sets to \texttt{|c\_d|} (lines 4911-4912); lists, for the arrays \texttt{den\_info} and \texttt{divisors} of the arguments with their terminating zeros; \texttt{none} for a factorization that is not complete or too many divisors, where \texttt{setup\_us1} leaves the flag \texttt{RATPOINTS\_USE\_SQUARES1} clear, and the lists returned, where it sets the flag; no output under \texttt{DEBUG}.)
 \item \csource{find_points.c}{777}{860}: modelled by \lname{Ratpoints.Setup.factorLcf}
@@ -479,7 +498,9 @@ total & 5883 & 1882 & 226 & 3775 \\
   (deviation of \lname{Ratpoints.numPrimes}: computed from \texttt{Ratpoints.maxBitsInPrime}, where the header lists the values for 5 to 10 bits, the numbers that the computation gives, and takes 7 bits for any other value; the largest such prime and the power of 2 above it, which size the tables of the C code, have no counterpart.)
 \item \csource{rp-private.h}{378}{379}: modelled by \lname{Ratpoints.Sieve.SieveSpec}
   (deviation of \lname{Ratpoints.Sieve.SieveSpec}: the row for the pointer \texttt{ptr} to it, with no \texttt{offset}, which carries the shift of the packing of the 2-adic classes and a multiple of \texttt{p} that keeps the index non-negative (stage F), and no pointers \texttt{start} and \texttt{end} into the row, which only the chunked first stage reads (stage F): the components index the row by the word number modulo \texttt{p}.)
-\item \csource{rp-private.h}{387}{427}: not yet recorded (17 lines of code)
+\item \csource{rp-private.h}{387}{417}: not yet recorded (14 lines of code)
+\item \csource{rp-private.h}{421}{421}: modelled by \lname{Ratpoints.mulModLimit}
+\item \csource{rp-private.h}{426}{427}: not yet recorded (2 lines of code)
 \item \csource{rp-private.h}{429}{444}: modelled by \lname{Ratpoints.Sieve.ctz}
   (deviation of \lname{Ratpoints.Sieve.ctz}: the loop for a compiler without the builtin, where gcc and clang take \texttt{\_\_builtin\_ctzl}.)
 \item \csource{rp-private.h}{450}{534}: not yet recorded (20 lines of code)

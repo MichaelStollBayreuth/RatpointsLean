@@ -1,5 +1,6 @@
 module  -- shake: keep-all --deprecated_module: ignore
 
+public import Ratpoints.Mathlib.Algebra.BigOperators.Group.List.Basic
 public import Ratpoints.Mathlib.Algebra.BigOperators.Ring.Finset
 public import Ratpoints.Mathlib.Algebra.Field.ZMod
 public import Ratpoints.Mathlib.Algebra.Polynomial.Homogenize
@@ -8,9 +9,11 @@ public import Ratpoints.Mathlib.Algebra.Squarefree.Basic
 public import Ratpoints.Mathlib.Data.Int.GCD
 public import Ratpoints.Mathlib.Data.List.Basic
 public import Ratpoints.Mathlib.Data.List.Nodup
+public import Ratpoints.Mathlib.Data.Nat.Factors
 public import Ratpoints.Mathlib.Data.Nat.Prime.Defs
 public import Ratpoints.Mathlib.Data.Nat.Squarefree
 public import Ratpoints.Mathlib.Data.ZMod.Basic
+public import Ratpoints.Mathlib.NumberTheory.LegendreSymbol.JacobiSymbol
 public import Ratpoints.Mathlib.NumberTheory.Padics.PadicVal.Basic
 public import Ratpoints.Mathlib.RingTheory.Coprime.Basic
 public import Ratpoints.Mathlib.RingTheory.MvPolynomial.Homogeneous
@@ -30,6 +33,8 @@ public import Ratpoints.Proof.BruteForce
 public import Ratpoints.Proof.Divisors
 public import Ratpoints.Proof.FindPoints
 public import Ratpoints.Proof.Forbidden
+public import Ratpoints.Proof.Jacobi
+public import Ratpoints.Proof.JacobiTables
 public import Ratpoints.Proof.Params
 public import Ratpoints.Proof.Setup
 public import Ratpoints.Proof.Sieve
