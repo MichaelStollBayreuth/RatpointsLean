@@ -280,7 +280,7 @@ theorem factorLcfInvariant_nil {w0 v2 r : ℕ} (hw0 : 0 < w0)
   rw [Nat.pow_zero, Nat.one_mul] at hm
   exact ⟨by simp, by simp, by simp, fun _ q _ hq ↦ ⟨fun h2 ↦ hm2 (hm ▸ h2 ▸ hq), by simp⟩⟩
 
-theorem FactorLcfInvariant.done {w0 w : ℕ} {pref suff : List ℕ} {fac : Array (ℕ × ℕ)}
+theorem FactorLcfInvariant.suff_nil {w0 w : ℕ} {pref suff : List ℕ} {fac : Array (ℕ × ℕ)}
     (h : FactorLcfInvariant w0 pref suff w fac) (xs : List ℕ) :
     FactorLcfInvariant w0 xs [] w fac :=
   ⟨h.1, h.2.1, h.2.2.1, fun h ↦ absurd rfl h⟩
@@ -326,7 +326,7 @@ theorem FactorLcfInvariant.skip {w0 w cur v r : ℕ} {pref suff : List ℕ}
   exact ⟨this.1, fun hmem ↦ (List.mem_append.mp hmem).elim this.2 fun he ↦
     hpm (hm ▸ List.mem_singleton.mp he ▸ hqw)⟩
 
-theorem FactorLcfInvariant.post {w0 w : ℕ} {xs : List ℕ} {fac : Array (ℕ × ℕ)}
+theorem FactorLcfInvariant.isFactorization {w0 w : ℕ} {xs : List ℕ} {fac : Array (ℕ × ℕ)}
     (h : FactorLcfInvariant w0 xs [] w fac) (hw : w = 1) : IsFactorization w0 fac.toList := by
   obtain ⟨h1, h2, h3, -⟩ := h
   refine ⟨h2, fun x hx ↦ ⟨(h3 x hx).1, (h3 x hx).2.2.1, (h3 x hx).2.1⟩,
@@ -361,8 +361,8 @@ theorem factorLcf_spec (w : ℕ) :
     | exact FactorLcfInvariant.push_self ‹_› ‹_› ‹_› ‹_› ‹_›
     | exact FactorLcfInvariant.push_cur ‹_› ‹_› ‹_› ‹_› ‹_›
     | exact FactorLcfInvariant.skip ‹_› ‹_› ‹_› ‹_› ‹_›
-    | exact ‹FactorLcfInvariant _ _ _ _ _›.done _
-    | exact ‹FactorLcfInvariant _ _ _ _ _›.post ‹_›
+    | exact ‹FactorLcfInvariant _ _ _ _ _›.suff_nil _
+    | exact ‹FactorLcfInvariant _ _ _ _ _›.isFactorization ‹_›
 
 end
 
@@ -653,7 +653,7 @@ theorem SlopeInvariant.append_of_not_lt {c : List ℤ} {d p val cur vk r : ℕ}
     rw [← hv, ht]
     exact hm.trans (Int.mul_le_mul_of_nonneg_left (by lia) (by lia))
 
-theorem SlopeInvariant.post {c : List ℤ} {d p val : ℕ} {n : ℤ}
+theorem SlopeInvariant.one_le_toNat_and_le_mul {c : List ℤ} {d p val : ℕ} {n : ℤ}
     (h : SlopeInvariant c d p val (ForIn.toList [:d]) n) :
     1 ≤ n.toNat ∧ ∀ k < d, 1 + (val : ℤ) - (Id.run (valuation (c.getD k 0) p)).1 ≤
       ((d - k : ℕ) : ℤ) * n.toNat := by
@@ -681,7 +681,7 @@ theorem slope_spec (c : List ℤ) (d p val : ℕ) :
     | exact slopeInvariant_nil _ _ _ _
     | exact ‹SlopeInvariant _ _ _ _ _ _›.append_of_lt ‹_› ‹_› rfl ‹_›
     | exact ‹SlopeInvariant _ _ _ _ _ _›.append_of_not_lt ‹_› ‹_› rfl ‹_›
-    | exact ‹SlopeInvariant _ _ _ _ _ _›.post
+    | exact ‹SlopeInvariant _ _ _ _ _ _›.one_le_toNat_and_le_mul
 
 end
 

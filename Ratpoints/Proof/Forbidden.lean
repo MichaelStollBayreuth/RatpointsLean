@@ -211,7 +211,8 @@ theorem UnitPartsInvariant.push {c : List ℤ} {d p : ℕ} {pref suff : List ℕ
   · obtain rfl : j = us.size := by rw [h.1]; lia
     rwa [Array.getElem!_push_eq, h.1, hcur]
 
-theorem UnitPartsInvariant.post {c : List ℤ} {d p : ℕ} {us : Array (Option (ℕ × ℕ))}
+theorem UnitPartsInvariant.size_eq_and_isUnitPart {c : List ℤ} {d p : ℕ}
+    {us : Array (Option (ℕ × ℕ))}
     (h : UnitPartsInvariant c d p (ForIn.toList [:d + 1]).length us) :
     us.size = d + 1 ∧ ∀ j ≤ d, IsUnitPart p (c.getD (d - j) 0) us[j]! := by
   rw [Std.Legacy.Range.length_toList, Nat.sub_zero] at h
@@ -228,7 +229,7 @@ theorem unitParts_spec (c : List ℤ) (d p : ℕ) :
   · fun pref _ us ↦ UnitPartsInvariant c d p pref.length us
   all_goals first
     | exact unitPartsInvariant_zero c d p
-    | exact UnitPartsInvariant.post ‹_›
+    | exact UnitPartsInvariant.size_eq_and_isUnitPart ‹_›
     | exact UnitPartsInvariant.push ‹_› ‹_› ‹_›
     | exact UnitPartsInvariant.push ‹_› ‹_› (isUnitPart_of_eq_run_valuation ‹_› ‹_› ‹_›)
     | exact UnitPartsInvariant.push ‹_› ‹_› (isUnitPart_of_emod_ne_zero (by lia) ‹_›)
@@ -324,7 +325,7 @@ theorem ForbiddenAtInvariant.keep {us : Array (Option (ℕ × ℕ))} {m jmin vmi
   · exact (key j hj' hcj).elim (hle j · hcj) Nat.le_of_lt
   · exact (key j hj' hcj).elim (hlt ht j · hcj hne) id
 
-theorem ForbiddenAtInvariant.post {us : Array (Option (ℕ × ℕ))} {sq : Array Bool}
+theorem ForbiddenAtInvariant.exists_of_eq_true {us : Array (Option (ℕ × ℕ))} {sq : Array Bool}
     {m jmin vmin : ℕ} {tie : Bool}
     (h : ForbiddenAtInvariant us m (ForIn.toList [1:us.size]).length jmin vmin tie)
     (hr : (!tie && (vmin % 2 == 1 || jmin % 2 == 0 && !sq[(us[jmin]!.getD (0, 0)).2]!)) = true) :
@@ -361,7 +362,7 @@ theorem forbiddenAt_spec (us : Array (Option (ℕ × ℕ))) (sq : Array Bool) (m
   all_goals dsimp only at *
   all_goals first
     | exact forbiddenAtInvariant_zero us m
-    | exact ForbiddenAtInvariant.post ‹_› ‹_›
+    | exact ForbiddenAtInvariant.exists_of_eq_true ‹_› ‹_›
     | exact ForbiddenAtInvariant.update ‹_› ‹_› ‹_› ‹_›
     | exact ForbiddenAtInvariant.tie ‹_› ‹_› ‹_› ‹_›
     | exact ForbiddenAtInvariant.keep ‹_› ‹_› fun _ _ h ↦ by grind
@@ -459,7 +460,7 @@ private theorem testBit_eq_of_testBit_or {f : ℕ → Bool} {m : ℕ} {mask mask
 /-- The step of the valuation `m` of the loops of `Ratpoints.Sieve.forbiddenValuations` and
 `Ratpoints.Sieve.allValuations` that ends them, `p ^ (m + 1) > bHigh`, with the bit of `m` set when
 `m` passes `f`. -/
-theorem ValuationsInvariant.break {f : ℕ → Bool} {p bHigh mask m pm mask' : ℕ} (hp : 0 < p)
+theorem ValuationsInvariant.exit_of_div_lt {f : ℕ → Bool} {p bHigh mask m pm mask' : ℕ} (hp : 0 < p)
     (h : ValuationsInvariant f p bHigh false (mask, m, pm)) (hpm : pm ≤ bHigh)
     (hb : bHigh / p < pm)
     (h' : ∀ t, mask'.testBit t = (mask.testBit t || (decide (t = m) && f m))) :
@@ -480,7 +481,7 @@ theorem ValuationsInvariant.break {f : ℕ → Bool} {p bHigh mask m pm mask' : 
 
 /-- The step of the valuation `m` of the loops of `Ratpoints.Sieve.forbiddenValuations` and
 `Ratpoints.Sieve.allValuations` that goes on, with the bit of `m` set when `m` passes `f`. -/
-theorem ValuationsInvariant.next {f : ℕ → Bool} {p bHigh mask m pm mask' : ℕ}
+theorem ValuationsInvariant.add_one {f : ℕ → Bool} {p bHigh mask m pm mask' : ℕ}
     (h : ValuationsInvariant f p bHigh false (mask, m, pm)) (hpm : pm ≤ bHigh)
     (hb : ¬bHigh / p < pm)
     (h' : ∀ t, mask'.testBit t = (mask.testBit t || (decide (t = m) && f m))) :
@@ -528,13 +529,13 @@ theorem ValuationsInvariant.sub_mul_lt {f : ℕ → Bool} {p bHigh mask m pm : �
 
 /-- The step of the loops of `Ratpoints.Sieve.forbiddenValuations` and
 `Ratpoints.Sieve.allValuations` that goes on, with the measure. -/
-theorem ValuationsInvariant.next_measure {f : ℕ → Bool} {p bHigh mask m pm mask' : ℕ}
+theorem ValuationsInvariant.sub_lt_and_add_one {f : ℕ → Bool} {p bHigh mask m pm mask' : ℕ}
     (hp : 1 < p) (h : ValuationsInvariant f p bHigh false (mask, m, pm)) (hpm : pm ≤ bHigh)
     (hb : ¬bHigh / p < pm)
     (h' : ∀ t, mask'.testBit t = (mask.testBit t || (decide (t = m) && f m))) :
     bHigh + 1 - pm * p < bHigh + 1 - pm ∧
       ValuationsInvariant f p bHigh false (mask', m + 1, pm * p) :=
-  ⟨h.sub_mul_lt hp hb, h.next hpm hb h'⟩
+  ⟨h.sub_mul_lt hp hb, h.add_one hpm hb h'⟩
 
 -- The mask with the bit of `m` set when the test `x` of `m` holds.
 private theorem testBit_or_one_shiftLeft {x y : Bool} (hx : x = y) (hy : x = true)
@@ -576,11 +577,12 @@ theorem forbiddenValuations_spec (c : List ℤ) (d p bHigh : ℕ) :
   all_goals first
     | exact valuationsInvariant_zero_one _ _ _
     | exact ‹ValuationsInvariant _ _ _ true _›.testBit _
-    | exact ValuationsInvariant.break (by lia) ‹_› ‹_› ‹_› (testBit_or_one_shiftLeft ‹_› ‹_› _ _)
-    | exact ValuationsInvariant.break (by lia) ‹_› ‹_› ‹_› (testBit_eq_or ‹_› ‹_› _ _)
-    | exact ValuationsInvariant.next_measure ‹_› ‹_› ‹_› ‹_›
+    | exact ValuationsInvariant.exit_of_div_lt (by lia) ‹_› ‹_› ‹_›
         (testBit_or_one_shiftLeft ‹_› ‹_› _ _)
-    | exact ValuationsInvariant.next_measure ‹_› ‹_› ‹_› ‹_› (testBit_eq_or ‹_› ‹_› _ _)
+    | exact ValuationsInvariant.exit_of_div_lt (by lia) ‹_› ‹_› ‹_› (testBit_eq_or ‹_› ‹_› _ _)
+    | exact ValuationsInvariant.sub_lt_and_add_one ‹_› ‹_› ‹_› ‹_›
+        (testBit_or_one_shiftLeft ‹_› ‹_› _ _)
+    | exact ValuationsInvariant.sub_lt_and_add_one ‹_› ‹_› ‹_› ‹_› (testBit_eq_or ‹_› ‹_› _ _)
     | exact ValuationsInvariant.exit (by lia) ‹_› ‹_›
 
 attribute [local irreducible] ValuationsInvariant in
@@ -600,8 +602,9 @@ theorem allValuations_spec (p bHigh : ℕ) :
   all_goals first
     | exact valuationsInvariant_zero_one _ _ _
     | exact (ValuationsInvariant.testBit ‹_› _).trans (Bool.and_true _)
-    | exact ValuationsInvariant.break (by lia) ‹_› ‹_› ‹_› (testBit_or_one_shiftLeft rfl rfl _ _)
-    | exact ValuationsInvariant.next_measure ‹_› ‹_› ‹_› ‹_›
+    | exact ValuationsInvariant.exit_of_div_lt (by lia) ‹_› ‹_› ‹_›
+        (testBit_or_one_shiftLeft rfl rfl _ _)
+    | exact ValuationsInvariant.sub_lt_and_add_one ‹_› ‹_› ‹_› ‹_›
         (testBit_or_one_shiftLeft rfl rfl _ _)
     | exact ValuationsInvariant.exit (by lia) ‹_› ‹_›
 
@@ -734,8 +737,8 @@ theorem forall_isForbiddenEntry_push {c : List ℤ} {d : ℕ} {moduli pref suff 
   rw [getElem!_pos primeTable cur hcur]
   exact Array.getElem_mem hcur
 
-theorem ForbiddenInvariant.post {c : List ℤ} {d : ℕ} {moduli : List ℕ} {bHigh : ℕ}
-    {ba ba' : Array ForbiddenEntry} {val : Array ForbiddenVal}
+theorem ForbiddenInvariant.isForbiddenEntry_and_isForbiddenVal {c : List ℤ} {d : ℕ}
+    {moduli : List ℕ} {bHigh : ℕ} {ba ba' : Array ForbiddenEntry} {val : Array ForbiddenVal}
     (h : ForbiddenInvariant c d moduli bHigh (ba, val))
     (h' : ∀ e ∈ ba', IsForbiddenEntry c d moduli bHigh e) :
     (∀ e ∈ ba'.toList, IsForbiddenEntry c d moduli bHigh e) ∧
@@ -764,8 +767,9 @@ theorem forbidden_spec (c : List ℤ) (d : ℕ) (moduli : List ℕ) (maxForbidde
   all_goals first
     | exact forbiddenInvariant_empty c d moduli bHigh
     | exact ForbiddenInvariant.fst ‹_› _ ‹_›
-    | exact ForbiddenInvariant.post ‹_› ‹∀ e ∈ _, IsForbiddenEntry _ _ _ _ e›
-    | exact ForbiddenInvariant.post ‹_› (ForbiddenInvariant.fst ‹_›)
+    | exact ForbiddenInvariant.isForbiddenEntry_and_isForbiddenVal ‹_›
+        ‹∀ e ∈ _, IsForbiddenEntry _ _ _ _ e›
+    | exact ForbiddenInvariant.isForbiddenEntry_and_isForbiddenVal ‹_› (ForbiddenInvariant.fst ‹_›)
     | exact ForbiddenInvariant.push_inl ‹_› ‹_› ‹_› ‹_›
     | exact ForbiddenInvariant.push_inr ‹_› ‹_› ‹_› ‹_›
     | exact forall_isForbiddenEntry_push ‹_› ‹_› ‹_›
