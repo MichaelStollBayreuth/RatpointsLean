@@ -62,8 +62,8 @@ prime of the table that its loop over the further primes compares with `b_high` 
   the forbidden divisors tested with words are primes with the words of
   `Ratpoints.Sieve.forbiddenRow`.
 * `Ratpoints.Sieve.not_dvd_of_mem_forbidden_fst`,
-  `Ratpoints.Sieve.excludes_eq_false_of_mem_forbidden_snd`: the forbidden divisors let the
-  denominator of every point through.
+  `Ratpoints.Sieve.ForbiddenVal.excludes_eq_false_of_mem_forbidden_snd`: the forbidden divisors let
+  the denominator of every point through.
 * `Ratpoints.Sieve.getLsbD_getElem!_forbiddenRow`: the bits of the words of a forbidden divisor.
 * `Ratpoints.Sieve.lt_forty_of_pow_le`, `Ratpoints.Sieve.run_forbiddenValuations_lt`,
   `Ratpoints.Sieve.run_allValuations_lt`: the cap of the loops of the valuations never binds, and
@@ -834,14 +834,14 @@ theorem ForbiddenVal.excludes_eq_false_iff {e : ForbiddenVal} {b : ℕ} :
 /-- A forbidden divisor tested by its valuation excludes no denominator of a point of a curve of
 even degree: the valuations of its mask are excluded by the terms of `F(a, b)`
 (`Ratpoints.Sieve.forbiddenValuations`). -/
-theorem excludes_eq_false_of_mem_forbidden_snd {c : List ℤ} {moduli : List ℕ}
+theorem ForbiddenVal.excludes_eq_false_of_mem_forbidden_snd {c : List ℤ} {moduli : List ℕ}
     (hm : ∀ p ∈ moduli, p.Prime) {maxForbidden bHigh : ℕ} {e : ForbiddenVal}
     (he : e ∈ (Id.run (forbidden c (degree c) moduli maxForbidden bHigh)).2)
     (hd : degree c % 2 = 0) {a y : ℤ} {b : ℕ} (hb : b ≠ 0) (hab : Int.gcd a b = 1)
     (hy : y ^ 2 = binaryForm c a b) : e.excludes b = false := by
   obtain ⟨p, hp, h⟩ := isForbiddenVal_of_mem_forbidden_snd he
   obtain rfl := eq_of_run_forbiddenOfPrime_eq_inr h
-  rw [ForbiddenVal.excludes_eq_false_iff, Setup.fst_run_valuation (Int.natCast_ne_zero.mpr hb)
+  rw [excludes_eq_false_iff, Setup.fst_run_valuation (Int.natCast_ne_zero.mpr hb)
     (hm p hp).one_lt, Int.natAbs_natCast, Bool.not_eq_true]
   exact testBit_run_forbiddenValuations_eq_false_of_sq_eq hd (hm p hp) bHigh hab hy
 

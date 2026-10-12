@@ -33,7 +33,7 @@ denominators, lowest first. The tests let the denominator of every point through
 slopes of the divisor set-up (`Ratpoints.Setup.DenInfo.excludes_eq_false_of_sq_eq`), and the tests
 of the word shape, the forbidden divisors and both Jacobi tests
 (`Ratpoints.Sieve.not_dvd_of_mem_forbidden_fst`,
-`Ratpoints.Sieve.excludes_eq_false_of_mem_forbidden_snd`,
+`Ratpoints.Sieve.ForbiddenVal.excludes_eq_false_of_mem_forbidden_snd`,
 `Ratpoints.Sieve.run_jacobi_eq_one_of_sq_eq`, `Ratpoints.Sieve.run_jacobiTest_of_sq_eq`). The
 denominators that the C code computes as `long`s are at most the largest denominator.
 
@@ -388,7 +388,7 @@ theorem getLsbD_denBits_and_all_of_sq_eq {c : List ℤ} {H : ℕ} {ms : List ℕ
 /-- For moduli that are primes and even degree, the tests of the word shape, with the valuation
 entries of the forbidden divisors of the moduli for the largest denominator `H` and the tables of
 the Jacobi test when it is on, let the denominator `1 ≤ b ≤ H` of a point `(a, y, b)` through
-(`Ratpoints.Sieve.excludes_eq_false_of_mem_forbidden_snd`,
+(`Ratpoints.Sieve.ForbiddenVal.excludes_eq_false_of_mem_forbidden_snd`,
 `Ratpoints.Sieve.run_jacobiTest_of_sq_eq`, `Ratpoints.Sieve.run_jacobi_eq_one_of_sq_eq`). -/
 theorem run_wordsTest_of_sq_eq {c : List ℤ} {H : ℕ} {ms : List ℕ}
     (hms : ∀ p ∈ ms, p.Prime) (hd : degree c % 2 = 0) {maxF : ℕ} {forb : List ForbiddenEntry}
@@ -399,7 +399,8 @@ theorem run_wordsTest_of_sq_eq {c : List ℤ} {H : ℕ} {ms : List ℕ}
       (if useJacobi then Id.run (jacobiSetup (c.getD (degree c) 0) H) else none)
       (c.getD (degree c) 0) b) = true := by
   refine run_wordsTest_eq_true (fun ji hji ↦ ?_)
-    (fun e he ↦ excludes_eq_false_of_mem_forbidden_snd hms (by rw [hf]; exact he) hd hb hab hy)
+    (fun e he ↦ ForbiddenVal.excludes_eq_false_of_mem_forbidden_snd hms (by rw [hf]; exact he)
+      hd hb hab hy)
     fun _ _ ↦ run_jacobi_eq_one_of_sq_eq hd hb hab hy
   cases useJacobi
   · exact absurd hji (by simp)

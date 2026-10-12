@@ -96,7 +96,7 @@ theorem nonSquaresInvariant_nil {q : ℕ} (hq : q % 2 = 1 ∧ 1 < q) :
   intro x hx h0
   lia
 
-theorem NonSquaresInvariant.post {q s : ℕ} {ns : Array Bool}
+theorem NonSquaresInvariant.size_eq_and_getElem!_eq_false_iff {q s : ℕ} {ns : Array Bool}
     (h : NonSquaresInvariant q (ForIn.toList [1:q / 2 + 1]) (ns, s)) :
     ns.size = q ∧ ∀ r < q, (ns[r]! = false ↔ ∃ x, 1 ≤ x ∧ x ≤ q / 2 ∧ x * x % q = r) := by
   have : (ForIn.toList [1:q / 2 + 1]).length = q / 2 := by
@@ -141,7 +141,7 @@ theorem nonSquares_spec (q : ℕ) :
   | inv1 => fun pref _ st ↦ NonSquaresInvariant q pref st
   all_goals first
     | exact nonSquaresInvariant_nil ‹_›
-    | exact NonSquaresInvariant.post ‹_›
+    | exact NonSquaresInvariant.size_eq_and_getElem!_eq_false_iff ‹_›
     | exact NonSquaresInvariant.set! ‹_› ‹_› ‹_›
         (by first | exact (ite_eq_left ‹_›).symm | exact (ite_eq_right ‹_›).symm)
 
@@ -252,12 +252,6 @@ theorem JacobiSetupLoopInvariant.jacobiSetupInvariant {lcf : ℤ} {v w u cur : �
   | none => exact h
   | some r => exact absurd h.1 (List.cons_ne_nil _ _)
 
-theorem JacobiSetupLoopInvariant.next {lcf : ℤ} {v w u u' cur : ℕ}
-    {qs : Array (ℕ × Option (Array Bool))} {suff suff' : List ℕ} {o : Option (Option JacobiInfo)}
-    (h : JacobiSetupLoopInvariant lcf v (cur :: suff) (o, w, qs, u)) :
-    JacobiSetupLoopInvariant lcf v suff' (none, w, qs, u') :=
-  h.jacobiSetupInvariant
-
 theorem JacobiSetupInvariant.dvd_natAbs {lcf : ℤ} {v w : ℕ}
     {qs : Array (ℕ × Option (Array Bool))} (h : JacobiSetupInvariant lcf v w qs) (h0 : lcf ≠ 0) :
     w ∣ lcf.natAbs := by
@@ -340,7 +334,7 @@ theorem JacobiSetupLoopInvariant.false_of_some {lcf : ℤ} {v w u : ℕ}
 
 /-- At the end of the loop of `Ratpoints.Sieve.jacobiSetup` with the cofactor `1`, `lcf ≠ 0` and the
 tables are those of `lcf`. -/
-theorem JacobiSetupLoopInvariant.post {lcf : ℤ} {bHigh v r w u : ℕ}
+theorem JacobiSetupLoopInvariant.isJacobiInfo {lcf : ℤ} {bHigh v r w u : ℕ}
     {qs : Array (ℕ × Option (Array Bool))} {o : Option (Option JacobiInfo)} {ji : JacobiInfo}
     (hb : ¬mulModLimit < bHigh) (hv : (v, r) = Id.run (Setup.valuation lcf 2))
     (h : JacobiSetupLoopInvariant lcf v [] (o, w, qs, u)) (ho : o = none) (hw : ¬(w != 1) = true)
@@ -386,11 +380,11 @@ theorem jacobiSetup_spec (lcf : ℤ) (bHigh : ℕ) :
   all_goals try dsimp only at *
   all_goals first
     | exact (jacobiSetupInvariant_empty ‹_›).jacobiSetupLoopInvariant
-    | exact JacobiSetupLoopInvariant.next ‹_›
+    | exact (JacobiSetupLoopInvariant.jacobiSetupInvariant ‹_›).jacobiSetupLoopInvariant
     | exact jacobiSetupLoopInvariant_some_none _ _ _ _ _
     | exact (nomatch ‹none = some _›)
     | exact (JacobiSetupLoopInvariant.false_of_some ‹_› ‹_› ‹_›).elim
-    | exact JacobiSetupLoopInvariant.post ‹_› ‹_› ‹_› ‹_› ‹_› ‹_›
+    | exact JacobiSetupLoopInvariant.isJacobiInfo ‹_› ‹_› ‹_› ‹_› ‹_› ‹_›
     | exact JacobiSetupLoopInvariant.push_some ‹_› ‹_› ‹_› ‹_› ‹_› ‹_›
     | exact JacobiSetupLoopInvariant.push_none ‹_› ‹_› ‹_› ‹_› ‹_›
 
@@ -449,7 +443,7 @@ theorem jacobiTestSignInvariant_nil (ji : JacobiInfo) (b' : ℕ) :
     JacobiTestSignInvariant ji b' [] ji.sign[b' % 8]! :=
   rfl
 
-theorem JacobiTestSignInvariant.post {ji : JacobiInfo} {b b' : ℕ} {s : Bool}
+theorem JacobiTestSignInvariant.not_eq_not_foldl {ji : JacobiInfo} {b b' : ℕ} {s : Bool}
     (h : JacobiTestInvariant ji b ji.primes b') (hs : JacobiTestSignInvariant ji b' ji.primes s) :
     (!s) = !(ji.primes.foldl (fun s x ↦ x.2.elim s fun ns ↦ s ^^ ns[(b.primeFactorsList.filter
       fun p ↦ decide (p ≠ 2 ∧ p ∉ ji.primes.map Prod.fst)).prod % x.1]!)
@@ -548,7 +542,7 @@ theorem jacobiTest_spec (ji : JacobiInfo) (b : ℕ) :
     | exact UInt64.ofNat_ne_zero_of_lt (And.left ‹_›) (And.left (And.right ‹_›))
     | exact jacobiTestInvariant_nil ‹_› ‹_›
     | exact jacobiTestSignInvariant_nil _ _
-    | exact JacobiTestSignInvariant.post ‹_› ‹_›
+    | exact JacobiTestSignInvariant.not_eq_not_foldl ‹_› ‹_›
     | exact JacobiTestSignInvariant.append_some ‹_› ‹_›
     | exact JacobiTestSignInvariant.append_none ‹_› ‹_› ‹_›
     | exact JacobiTestInvariant.jacobiDivideInvariant ‹_›

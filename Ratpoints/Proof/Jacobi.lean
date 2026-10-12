@@ -89,11 +89,6 @@ theorem ite_neg_mul_jacobiSym {n m : ℕ} (hn : n % 2 = 1) (hm : m % 2 = 1) (s :
   simp only [Nat.and_and_two_ne_zero_iff hn hm]
   split_ifs <;> ring
 
-theorem mul_jacobiSym_eq_of_eq_ite_neg {n m m' : ℕ} {s s' t c : ℤ} (hn : n % 2 = 1)
-    (hm : m % 2 = 1) (hc : s * J(n | m) = c) (hr : s' * J(m' | n) = t * J(m | n))
-    (ht : t = if (n &&& m &&& 2 != 0) = true then -s else s) : s' * J(m' | n) = c := by
-  rw [hr, ht, ite_neg_mul_jacobiSym hn hm, hc]
-
 /-- What the subtraction loop `Ratpoints.Sieve.jacobiReduce` returns on the odd `x` and `y` with the
 sign `s`: an odd `x' ≤ x, y` and a sign `s'` with `s' J(x' | y) = s J(x | y)` and
 `gcd(x', y) = gcd(x, y)`. -/
@@ -136,7 +131,7 @@ theorem JacobiReduceInvariant.jacobiReduceHalveInvariant {x y x₀ mb : ℕ} {s 
   · rwa [Nat.cast_sub hlt.le, jacobiSym.sub_natCast_left_self]
   · rwa [Nat.gcd_sub_self_left hlt.le]
 
-theorem JacobiReduceHalveInvariant.div_two {x y x₀ x' mb : ℕ} {s s' : ℤ} {e : Bool}
+theorem JacobiReduceHalveInvariant.div_two_of_mod_two_eq {x y x₀ x' mb : ℕ} {s s' : ℤ} {e : Bool}
     (hy : x % 2 = 1 ∧ y % 2 = 1) (h : x' = mb ∧ JacobiReduceHalveInvariant x y x₀ s false (x', s'))
     (he : x' / 2 % 2 = if e then 1 else 0) :
     JacobiReduceHalveInvariant x y x₀ s e (x' / 2, twoSign y s') := by
@@ -145,20 +140,20 @@ theorem JacobiReduceHalveInvariant.div_two {x y x₀ x' mb : ℕ} {s s' : ℤ} {
   exact ⟨by lia, by lia, by rwa [twoSign_mul_jacobiSym_div_two h5 hy.2],
     by rwa [Nat.gcd_div_two_of_mod_two h5 hy.2], he⟩
 
-theorem JacobiReduceHalveInvariant.done {x y x₀ x' mb : ℕ} {s s' : ℤ}
+theorem JacobiReduceHalveInvariant.exit {x y x₀ x' mb : ℕ} {s s' : ℤ}
     (hy : x % 2 = 1 ∧ y % 2 = 1) (h : x' = mb ∧ JacobiReduceHalveInvariant x y x₀ s false (x', s'))
     (hb : (x' / 2 % 2 == 1) = true) :
     JacobiReduceHalveInvariant x y x₀ s true (x' / 2, twoSign y s') :=
-  JacobiReduceHalveInvariant.div_two hy h (by simpa using hb)
+  JacobiReduceHalveInvariant.div_two_of_mod_two_eq hy h (by simpa using hb)
 
-theorem JacobiReduceHalveInvariant.next {x y x₀ x' mb : ℕ} {s s' : ℤ}
+theorem JacobiReduceHalveInvariant.div_two {x y x₀ x' mb : ℕ} {s s' : ℤ}
     (hy : x % 2 = 1 ∧ y % 2 = 1) (h : x' = mb ∧ JacobiReduceHalveInvariant x y x₀ s false (x', s'))
     (hb : ¬(x' / 2 % 2 == 1) = true) :
     x' / 2 < mb ∧ JacobiReduceHalveInvariant x y x₀ s false (x' / 2, twoSign y s') :=
   ⟨by have := h.2.1; lia,
-    JacobiReduceHalveInvariant.div_two hy h (by simp at hb; simpa using hb)⟩
+    JacobiReduceHalveInvariant.div_two_of_mod_two_eq hy h (by simp at hb; simpa using hb)⟩
 
-theorem JacobiReduceHalveInvariant.exit {x y x₀ x' mb : ℕ} {s s' s₀ : ℤ}
+theorem JacobiReduceHalveInvariant.jacobiReduceInvariant {x y x₀ x' mb : ℕ} {s s' s₀ : ℤ}
     (h : JacobiReduceHalveInvariant x y x₀ s true (x', s'))
     (h₀ : x₀ = mb ∧ JacobiReduceInvariant x y s false (x₀, s₀)) :
     x' < mb ∧ JacobiReduceInvariant x y s false (x', s') := by
@@ -189,9 +184,9 @@ theorem jacobiReduce_spec (x y : ℕ) (s : ℤ) :
     | exact jacobiReduceInvariant_self s ‹_›
     | exact JacobiReduceInvariant.isJacobiReduction ‹_›
     | exact JacobiReduceInvariant.jacobiReduceHalveInvariant ‹_› ‹_› ‹_›
-    | exact JacobiReduceHalveInvariant.exit ‹_› ‹_›
-    | exact JacobiReduceHalveInvariant.done ‹_› ‹_› ‹_›
-    | exact JacobiReduceHalveInvariant.next ‹_› ‹_› ‹_›
+    | exact JacobiReduceHalveInvariant.jacobiReduceInvariant ‹_› ‹_›
+    | exact JacobiReduceHalveInvariant.exit ‹_› ‹_› ‹_›
+    | exact JacobiReduceHalveInvariant.div_two ‹_› ‹_› ‹_›
     | exact JacobiReduceInvariant.exit ‹_› ‹_›
 
 end
@@ -232,7 +227,7 @@ theorem JacobiRoundHalveInvariant.jacobiRoundInvariant {f b n : ℕ} {s : ℤ}
     JacobiRoundInvariant f b false (s, n, b) :=
   ⟨hi.2.2.2 rfl, h.2, hi.2.1, hi.2.2.1, nofun⟩
 
-theorem JacobiRoundInvariant.post {f b n m : ℕ} {s : ℤ}
+theorem JacobiRoundInvariant.eq_gcd {f b n m : ℕ} {s : ℤ}
     (h : JacobiRoundInvariant f b true (s, n, m)) : m = Nat.gcd f b ∧ (m = 1 → s = J(f | b)) := by
   obtain ⟨-, -, h3, h4, h5⟩ := h
   obtain rfl : n = m := h5 rfl
@@ -248,61 +243,49 @@ theorem JacobiRoundInvariant.odd_of_mod_two_eq_one {f b n m m' mb : ℕ} {s : �
     n % 2 = 1 ∧ m' % 2 = 1 :=
   ⟨h.2.1, hm'⟩
 
-/-- The first half of a pass of `Ratpoints.Sieve.jacobiRound`: after the exchange and the reduction
-of `m` by `n`, the symbol of the reduced `m'` over `n` with the new sign is that of `f` and `b`. -/
-theorem JacobiRoundInvariant.first_half {f b n m m' mb : ℕ} {s s' t : ℤ}
-    (h : n + m = mb ∧ JacobiRoundInvariant f b false (s, n, m))
-    (hr : IsJacobiReduction m n t (m', s'))
-    (ht : t = if (n &&& m &&& 2 != 0) = true then -s else s) :
-    s' * J(m' | n) = J(f | b) ∧ Nat.gcd n m' = Nat.gcd f b := by
-  obtain ⟨-, h1, h2, h3, h4, -⟩ := h
-  exact ⟨mul_jacobiSym_eq_of_eq_ite_neg h1 h2 h3 hr.2.2.2.1 ht,
-    by rw [Nat.gcd_comm, hr.2.2.2.2, Nat.gcd_comm, h4]⟩
+/-- The exchange of the odd `a` and `c` with the sign of the reciprocity, followed by the
+subtraction loop `Ratpoints.Sieve.jacobiReduce` of `c` by `a`, keeps the symbol with its sign and
+the gcd; a pass of the main loop of `Ratpoints.Sieve.jacobiRound` takes two such steps. -/
+theorem IsJacobiReduction.mul_jacobiSym_eq_and_gcd_eq {a c c' g : ℕ} {s s' t j : ℤ}
+    (hr : IsJacobiReduction c a t (c', s')) (ha : a % 2 = 1) (hc : c % 2 = 1)
+    (hj : s * J(a | c) = j) (hg : Nat.gcd a c = g)
+    (ht : t = if (a &&& c &&& 2 != 0) = true then -s else s) :
+    s' * J(c' | a) = j ∧ Nat.gcd c' a = g :=
+  ⟨by rw [hr.2.2.2.1, ht, ite_neg_mul_jacobiSym ha hc, hj], by rw [hr.2.2.2.2, Nat.gcd_comm, hg]⟩
 
-/-- The second half of a pass of `Ratpoints.Sieve.jacobiRound`: after the second exchange and the
-reduction of `n` by `m'`, the symbol of the reduced `n'` over `m'` with the new sign is that of `f`
-and `b`. -/
-theorem JacobiRoundInvariant.second_half {f b n m m' n' mb : ℕ} {s s' s'' t t' : ℤ}
-    (h : n + m = mb ∧ JacobiRoundInvariant f b false (s, n, m))
-    (hr : IsJacobiReduction m n t (m', s'))
-    (hr' : IsJacobiReduction n m' t' (n', s''))
-    (ht : t = if (n &&& m &&& 2 != 0) = true then -s else s)
-    (ht' : t' = if (n &&& m' &&& 2 != 0) = true then -s' else s') :
-    s'' * J(n' | m') = J(f | b) ∧ Nat.gcd n' m' = Nat.gcd f b := by
-  obtain ⟨h1, h2⟩ := JacobiRoundInvariant.first_half h hr ht
-  exact ⟨mul_jacobiSym_eq_of_eq_ite_neg hr.1 h.2.1 h1 hr'.2.2.2.1 (by rwa [Nat.and_comm m' n]),
-    by rw [hr'.2.2.2.2, h2]⟩
-
-theorem JacobiRoundInvariant.first_break {f b n m m' mb : ℕ} {s s' t : ℤ}
+theorem JacobiRoundInvariant.jacobiReduce_of_beq {f b n m m' mb : ℕ} {s s' t : ℤ}
     (h : n + m = mb ∧ JacobiRoundInvariant f b false (s, n, m))
     (hr : IsJacobiReduction m n t (m', s'))
     (heq : (m' == n) = true) (ht : t = if (n &&& m &&& 2 != 0) = true then -s else s) :
     JacobiRoundInvariant f b true (s', n, m') := by
-  obtain ⟨h1, h2⟩ := JacobiRoundInvariant.first_half h hr ht
+  obtain ⟨-, h1, h2, h3, h4, -⟩ := h
+  obtain ⟨h5, h6⟩ := hr.mul_jacobiSym_eq_and_gcd_eq h1 h2 h3 h4 ht
   obtain rfl : m' = n := by simpa using heq
-  exact ⟨hr.1, hr.1, h1, h2, fun _ ↦ rfl⟩
+  exact ⟨hr.1, hr.1, h5, h6, fun _ ↦ rfl⟩
 
-theorem JacobiRoundInvariant.second_break {f b n m m' n' mb : ℕ} {s s' s'' t t' : ℤ}
-    (h : n + m = mb ∧ JacobiRoundInvariant f b false (s, n, m))
-    (hr : IsJacobiReduction m n t (m', s'))
-    (hr' : IsJacobiReduction n m' t' (n', s''))
+theorem JacobiRoundInvariant.jacobiReduce_jacobiReduce_of_beq {f b n m m' n' mb : ℕ}
+    {s s' s'' t t' : ℤ} (h : n + m = mb ∧ JacobiRoundInvariant f b false (s, n, m))
+    (hr : IsJacobiReduction m n t (m', s')) (hr' : IsJacobiReduction n m' t' (n', s''))
     (heq : (m' == n') = true) (ht : t = if (n &&& m &&& 2 != 0) = true then -s else s)
     (ht' : t' = if (n &&& m' &&& 2 != 0) = true then -s' else s') :
     JacobiRoundInvariant f b true (s'', n', m') := by
-  obtain ⟨h1, h2⟩ := JacobiRoundInvariant.second_half h hr hr' ht ht'
-  exact ⟨hr'.1, hr.1, h1, h2, fun _ ↦ (by simpa using heq : m' = n').symm⟩
+  obtain ⟨-, h1, h2, h3, h4, -⟩ := h
+  obtain ⟨h5, h6⟩ := hr.mul_jacobiSym_eq_and_gcd_eq h1 h2 h3 h4 ht
+  obtain ⟨h7, h8⟩ := hr'.mul_jacobiSym_eq_and_gcd_eq hr.1 h1 h5 h6 (by rwa [Nat.and_comm m' n])
+  exact ⟨hr'.1, hr.1, h7, h8, fun _ ↦ (by simpa using heq : m' = n').symm⟩
 
-theorem JacobiRoundInvariant.next {f b n m m' n' mb : ℕ} {s s' s'' t t' : ℤ}
+theorem JacobiRoundInvariant.jacobiReduce_jacobiReduce {f b n m m' n' mb : ℕ} {s s' s'' t t' : ℤ}
     (h : n + m = mb ∧ JacobiRoundInvariant f b false (s, n, m))
-    (hr : IsJacobiReduction m n t (m', s'))
-    (hne : ¬(m' == n) = true)
+    (hr : IsJacobiReduction m n t (m', s')) (hne : ¬(m' == n) = true)
     (hr' : IsJacobiReduction n m' t' (n', s''))
     (ht : t = if (n &&& m &&& 2 != 0) = true then -s else s)
     (ht' : t' = if (n &&& m' &&& 2 != 0) = true then -s' else s') :
     n' + m' < mb ∧ JacobiRoundInvariant f b false (s'', n', m') := by
-  obtain ⟨h1, h2⟩ := JacobiRoundInvariant.second_half h hr hr' ht ht'
+  obtain ⟨rfl, h1, h2, h3, h4, -⟩ := h
+  obtain ⟨h5, h6⟩ := hr.mul_jacobiSym_eq_and_gcd_eq h1 h2 h3 h4 ht
+  obtain ⟨h7, h8⟩ := hr'.mul_jacobiSym_eq_and_gcd_eq hr.1 h1 h5 h6 (by rwa [Nat.and_comm m' n])
   have : m' ≠ n := by simpa using hne
-  exact ⟨by have := h.1; have := hr.2; have := hr'.2; lia, hr'.1, hr.1, h1, h2, nofun⟩
+  exact ⟨by have := hr.2; have := hr'.2; lia, hr'.1, hr.1, h7, h8, nofun⟩
 
 section
 
@@ -310,6 +293,7 @@ section
 `Ratpoints.Sieve.jacobiRound` are closed by their lemmas, never by unfolding them. -/
 attribute [local irreducible] JacobiRoundHalveInvariant JacobiRoundInvariant
 
+open JacobiRoundInvariant in
 /-- A round of the binary algorithm on `f > 0` and the odd `b` gives their gcd, with the symbol
 `J(f | b)` when it is `1`; its main loop ends, since `n + m` drops with every pass. -/
 @[spec]
@@ -329,12 +313,12 @@ theorem jacobiRound_spec (f b : ℕ) :
     | exact JacobiRoundHalveInvariant.div_two ‹_› ‹_› ‹_›
     | exact JacobiRoundHalveInvariant.exit ‹_› ‹_›
     | exact JacobiRoundHalveInvariant.jacobiRoundInvariant ‹_› ‹_›
-    | exact JacobiRoundInvariant.post ‹_›
-    | exact JacobiRoundInvariant.odd ‹_›
-    | exact JacobiRoundInvariant.odd_of_mod_two_eq_one ‹_› (And.left ‹_›)
-    | exact JacobiRoundInvariant.first_break ‹_› ‹_› ‹_› (by simp [*])
-    | exact JacobiRoundInvariant.second_break ‹_› ‹_› ‹_› ‹_› (by simp [*]) (by simp [*])
-    | exact JacobiRoundInvariant.next ‹_› ‹_› ‹_› ‹_› (by simp [*]) (by simp [*])
+    | exact eq_gcd ‹_›
+    | exact odd ‹_›
+    | exact odd_of_mod_two_eq_one ‹_› (And.left ‹_›)
+    | exact jacobiReduce_of_beq ‹_› ‹_› ‹_› (by simp [*])
+    | exact jacobiReduce_jacobiReduce_of_beq ‹_› ‹_› ‹_› ‹_› (by simp [*]) (by simp [*])
+    | exact jacobiReduce_jacobiReduce ‹_› ‹_› ‹_› ‹_› (by simp [*]) (by simp [*])
 
 end
 
@@ -389,7 +373,7 @@ theorem JacobiOddInvariant.jacobiInvariant {b b' : ℕ} {lcf : ℤ}
   refine ⟨h1, h3 rfl, by lia, ?_, h2, nofun⟩
   rw [Int.toNat_of_nonneg h0, Int.emod_emod]
 
-theorem JacobiInvariant.post_some {b b' f : ℕ} {lcf r : ℤ} {o : Option ℤ}
+theorem JacobiInvariant.eq_jacobiSym_of_eq_some {b b' f : ℕ} {lcf r : ℤ} {o : Option ℤ}
     (hi : JacobiInvariant b lcf true (o, b', f)) (h : o = some r) :
     r = J(lcf | b.coprimePart (2 * lcf.natAbs)) := by
   subst h
@@ -397,7 +381,7 @@ theorem JacobiInvariant.post_some {b b' f : ℕ} {lcf r : ℤ} {o : Option ℤ}
 
 /-- At the exit of `Ratpoints.Sieve.jacobi` without a result, `b' ∣ lcf`, so that the part of `b`
 prime to `2 lcf`, that of `b'`, is `1`. -/
-theorem JacobiInvariant.post_none {b b' f : ℕ} {lcf : ℤ} {o : Option ℤ}
+theorem JacobiInvariant.one_eq_jacobiSym_of_eq_none {b b' f : ℕ} {lcf : ℤ} {o : Option ℤ}
     (hi : JacobiInvariant b lcf true (o, b', f)) (h : o = none) :
     1 = J(lcf | b.coprimePart (2 * lcf.natAbs)) := by
   subst h
@@ -416,7 +400,7 @@ theorem JacobiInvariant.eq_none {b b' f : ℕ} {lcf : ℤ} {o : Option ℤ}
   · rfl
   · exact absurd hi.1 Bool.false_ne_true
 
-theorem JacobiInvariant.pre {b b' f mb : ℕ} {lcf : ℤ} {o : Option ℤ} (hf : (f != 0) = true)
+theorem JacobiInvariant.pos_and_odd {b b' f mb : ℕ} {lcf : ℤ} {o : Option ℤ} (hf : (f != 0) = true)
     (hi : b' = mb ∧ JacobiInvariant b lcf false (o, b', f)) : 0 < f ∧ b' % 2 = 1 := by
   obtain rfl := hi.2.eq_none
   exact ⟨by simpa [Nat.pos_iff_ne_zero] using hf, hi.2.2.1⟩
@@ -498,9 +482,9 @@ theorem jacobi_spec (b : ℕ) (lcf : ℤ) :
     | exact JacobiOddInvariant.div_two ‹_› ‹_›
     | exact JacobiOddInvariant.exit ‹_› ‹_›
     | exact JacobiOddInvariant.jacobiInvariant ‹_›
-    | exact JacobiInvariant.post_some ‹_› ‹_›
-    | exact JacobiInvariant.post_none ‹_› ‹_›
-    | exact JacobiInvariant.pre ‹_› ‹_›
+    | exact JacobiInvariant.eq_jacobiSym_of_eq_some ‹_› ‹_›
+    | exact JacobiInvariant.one_eq_jacobiSym_of_eq_none ‹_› ‹_›
+    | exact JacobiInvariant.pos_and_odd ‹_› ‹_›
     | exact JacobiInvariant.exit_some ‹_› ‹_› ‹_›
     | exact JacobiInvariant.exit ‹_› ‹_›
     | exact JacobiInvariant.div_gcd ‹_› ‹_› ‹_› ‹_›
