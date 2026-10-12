@@ -5,6 +5,11 @@ Authors: Michael Stoll
 -/
 module
 
+public import Ratpoints.Model.Constants
+
+-- The `#guard` examples use the constants at compile time.
+meta import Ratpoints.Model.Constants
+
 /-!
 # The set-up of a search
 
@@ -17,6 +22,8 @@ the coefficients are C `long`s (`Ratpoints.fitsLong`, `Ratpoints.Setup.useCLong`
 path of the table of a prime (`Ratpoints.Sieve.examinePrime?`). `Ratpoints.findPoints` runs the
 reversal check after the test of the leading zeros, with the switch of its options, and the search
 that it runs on the polynomial handed on (`Ratpoints.searchPoints`) makes the test of the `long`s.
+For the tests on the denominators (stage E), the C code computes the valuation of an integer at a
+prime, with its unit part, by repeated division (`Ratpoints.Setup.valuation`).
 
 ## Main definitions
 
@@ -25,6 +32,7 @@ that it runs on the polynomial handed on (`Ratpoints.searchPoints`) makes the te
 * `Ratpoints.Setup.isSquare`: the squares as GMP decides them.
 * `Ratpoints.Setup.reversal`: the reversal check.
 * `Ratpoints.Setup.useCLong`: whether the coefficients are `long`s.
+* `Ratpoints.Setup.valuation`: the valuation of an integer at a prime, with its unit part.
 -/
 
 @[expose] public section
@@ -113,6 +121,28 @@ that the loop sets, and the loop, which stops at the first coefficient that is n
 def useCLong (c : List Int) (d : Nat) : Bool :=
   (List.range (d + 1)).all fun i ↦ fitsLong (c.getD i 0)
 
+/-- The valuation of the integer `n` at `p` and the unit part of `n` modulo `p`: for `n ≠ 0`, the
+pair `(v, r)` with `p ^ v ∣ |n|`, `p ∤ |n| / p ^ v` and `r = (|n| / p ^ v) mod p`, by repeated
+division with remainder; for `n = 0`, `(Ratpoints.veryBig, 0)`. For `p = 1` and `n ≠ 0` the loop
+does not end, as in the C code.
+
+C: `find_points.c:424-454`
+
+Deviation: one function for `valuation` on GMP integers, with its scratch integer `vvv`, and
+`valuation1` on `long`s, which gives `v` alone and is the first component; natural numbers for
+`|n|`, the quotients and the remainders; the pair returned, for the remainder that `valuation`
+stores through its pointer `r`. -/
+def valuation (n : Int) (p : Nat) : Id (Nat × Nat) := do
+  if n = 0 then return (veryBig, 0)
+  let mut q := n.natAbs / p
+  let mut rem := n.natAbs % p
+  let mut v := 0
+  while rem == 0 do
+    v := v + 1
+    rem := q % p
+    q := q / p
+  return (v, rem)
+
 /-! ### Examples
 
 What ratpoints 3.1.1 does at the pinned commit: with `-v` it says whether it reverses and in which
@@ -146,6 +176,11 @@ error 8, which `-s -k` does not. The test of the `long`s is checked at the ends 
 #guard fitsLong (-2 ^ 63) && fitsLong (2 ^ 63 - 1) && !fitsLong (-2 ^ 63 - 1) && !fitsLong (2 ^ 63)
 #guard useCLong [2 ^ 63 - 1, 0, -2 ^ 63] 2 && !useCLong [1, 2 ^ 63, 1] 2 &&
   !useCLong [1, 1, -2 ^ 63 - 1] 2 && useCLong [1, 1, 2 ^ 70] 1 && useCLong [1, -1] 3
+
+-- The valuation and the unit part: `v_3(-162) = 4` with `162 / 81 = 2`, `v_5(7) = 0` with
+-- `7 mod 5`, `v_2(2 ^ 70) = 70`, and `0`, whose valuation is `veryBig`.
+#guard [Id.run (valuation (-162) 3), Id.run (valuation 7 5), Id.run (valuation (2 ^ 70) 2),
+    Id.run (valuation 0 7)] == [(4, 2), (0, 2), (70, 1), (veryBig, 0)]
 
 end Setup
 

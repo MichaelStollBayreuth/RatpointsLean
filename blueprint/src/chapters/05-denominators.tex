@@ -214,9 +214,8 @@ $G(a, b) = c_d a^d + b \sum_{k < d} c_k a^k b^{d - 1 - k}$, and for coprime $a$ 
 $\gcd(b, G(a, b)) = \gcd(b, c_d)$. This restricts the denominators of the points.
 
 \begin{definition}[The valuation]\label{def:valuation}
-  Proposed names: \lname{Ratpoints.veryBig}, \lname{Ratpoints.Setup.valuation},
-  \lname{Ratpoints.Setup.valuation\_spec}, \lname{Ratpoints.Setup.fst\_run\_valuation},
-  \lname{Ratpoints.Setup.snd\_run\_valuation}.
+  \lean{Ratpoints.veryBig, Ratpoints.Setup.valuation, Ratpoints.Setup.valuation_spec, Ratpoints.Setup.fst_run_valuation, Ratpoints.Setup.snd_run_valuation}
+  \leanok
   The valuation $v$ of an integer $n \ne 0$ at $p$ and the unit part $|n| / p^v$ modulo $p$, by
   repeated division with remainder, and $(\mathrm{veryBig}, 0)$ for $n = 0$, with
   $\mathrm{veryBig} = 1000$ (\verb|VERY_BIG|, \csource{find_points.c}{422}{422}): one function for

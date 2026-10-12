@@ -25,6 +25,7 @@ public import Ratpoints.Proof.Setup
 public import Ratpoints.Proof.Sieve
 public import Ratpoints.Proof.Sturm
 public import Ratpoints.Proof.Tables
+public import Ratpoints.Proof.Valuation
 public import Ratpoints.Proof.Words
 public import Ratpoints.Spec
 public import Ratpoints.Spec.Basic

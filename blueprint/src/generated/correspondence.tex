@@ -9,7 +9,7 @@ The model is checked against ratpoints v3.1.1 (commit \texttt{1a998538dfa8}). Th
 \begin{tabular}{lrrrr}
 file & lines of code & modelled & excluded & not yet recorded \\
 \hline
-\texttt{find\_points.c} & 3244 & 539 & 198 & 2507 \\
+\texttt{find\_points.c} & 3244 & 568 & 198 & 2478 \\
 \texttt{sift.c} & 820 & 261 & 0 & 559 \\
 \texttt{init.c} & 302 & 155 & 8 & 139 \\
 \texttt{sturm.c} & 215 & 50 & 0 & 165 \\
@@ -20,7 +20,7 @@ file & lines of code & modelled & excluded & not yet recorded \\
 \texttt{gen\_init\_sieve\_h.c} & 26 & 13 & 0 & 13 \\
 \texttt{main.c} & 779 & 234 & 9 & 536 \\
 \hline
-total & 5883 & 1508 & 226 & 4149 \\
+total & 5883 & 1537 & 226 & 4120 \\
 \end{tabular}
 \end{center}
 
@@ -29,7 +29,11 @@ total & 5883 & 1508 & 226 & 4149 \\
 \item \csource{find_points.c}{30}{121}: not yet recorded (48 lines of code)
 \item \csource{find_points.c}{124}{124}: modelled by \lname{Ratpoints.maxArraySize}
   (deviation of \lname{Ratpoints.maxArraySize}: \texttt{2 \textasciicircum{} 20}, the value for a chunk of one bit array, where the C code takes the largest multiple of the chunk \texttt{RATPOINTS\_CHUNK} up to \texttt{2 \textasciicircum{} 20} (stage F).)
-\item \csource{find_points.c}{133}{471}: not yet recorded (183 lines of code)
+\item \csource{find_points.c}{133}{416}: not yet recorded (147 lines of code)
+\item \csource{find_points.c}{422}{422}: modelled by \lname{Ratpoints.veryBig}
+\item \csource{find_points.c}{424}{454}: modelled by \lname{Ratpoints.Setup.valuation}
+  (deviation of \lname{Ratpoints.Setup.valuation}: one function for \texttt{valuation} on GMP integers, with its scratch integer \texttt{vvv}, and \texttt{valuation1} on \texttt{long}s, which gives \texttt{v} alone and is the first component; natural numbers for \texttt{|n|}, the quotients and the remainders; the pair returned, for the remainder that \texttt{valuation} stores through its pointer \texttt{r}.)
+\item \csource{find_points.c}{464}{471}: not yet recorded (7 lines of code)
 \item \csource{find_points.c}{477}{492}: modelled by \lname{Ratpoints.Sieve.modLong}
   (deviation of \lname{Ratpoints.Sieve.modLong}: integers for the \texttt{long}s, with the obligations that the values it computes stay in the range of a \texttt{long} stated as lemmas: for \texttt{0 ≤ b < 2 \textasciicircum{} 59}, \texttt{16 b} (\texttt{Ratpoints.fitsLong\_sixteen\_mul}), its negation (\texttt{Ratpoints.fitsLong\_neg}), and \texttt{a + 16 b} for \texttt{-{}16 b ≤ a < 0} (\texttt{Ratpoints.fitsLong\_add\_sixteen\_mul}), its other values lying between \texttt{-{}b} and \texttt{16 b}; \texttt{Int.tmod} for C's division of \texttt{long}s, which truncates; the multiples \texttt{16 b}, \texttt{8 b}, \texttt{4 b} and \texttt{2 b} as products, for the shifts of \texttt{b1}.)
 \item \csource{find_points.c}{498}{1655}: not yet recorded (659 lines of code)

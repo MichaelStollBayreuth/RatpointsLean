@@ -97,6 +97,18 @@
         "Ratpoints.Sieve.sieveRun"
       ]
     },
+    "find_points.c:422-422": {
+      "hash": "ec9cab7ff5f09e444ddd0f17834b0abdd94bc256372567eb6051062ff9da4b61",
+      "owners": [
+        "Ratpoints.veryBig"
+      ]
+    },
+    "find_points.c:424-454": {
+      "hash": "c918d91128f238b69dc23ce29f4427e1320cb9bb6ccd0b69acf542c68a76dd67",
+      "owners": [
+        "Ratpoints.Setup.valuation"
+      ]
+    },
     "find_points.c:4523-4528": {
       "hash": "6af0fc7839683f96ded7674162f41405f5675bb250bf155cd84c71ac2f3c9821",
       "owners": [
