@@ -269,14 +269,15 @@ maps, specified by ordinary lemmas.
 
 \begin{definition}[The denominators]\label{def:sieveRun}
   \uses{def:sift}
-  \lean{Ratpoints.Sieve.sieveRun, Ratpoints.Sieve.sieveRun_spec, Ratpoints.Sieve.toList_run_sieveRun}
+  \lean{Ratpoints.Sieve.sieveRun, Ratpoints.Sieve.sieveRun_spec, Ratpoints.Sieve.toList_run_sieveRun, Ratpoints.Sieve.classBit_allOnes, Ratpoints.Sieve.filter_classBit_allOnes_and}
   \leanok
   The rows of the moduli made once, and the denominators $b = 1, \dots, H$ in increasing order, the
-  points that \verb|sift| (Definition~\ref{def:sift}) finds for each, with pieces of at most $A$ bit
-  arrays and the flag of the reversal, appended in turn (\csource{find_points.c}{4059}{4075},
-  \csource{find_points.c}{5152}{5160}). Its contract, for an array size $A \ge 1$ and moduli
-  $p > 0$: the result is the concatenation over $b = 1, \dots, H$ of what the brute-force reference
-  finds over $b$ and the numerators that survive the moduli for $b$, that is, the part of the
+  points that \verb|sift| (Definition~\ref{def:sift}) finds for each, from the class word of all
+  ones, with pieces of at most $A$ bit arrays and the flag of the reversal, appended in turn
+  (\csource{find_points.c}{4059}{4075}, \csource{find_points.c}{5152}{5160}). Its contract, for an
+  array size $A \ge 1$ and moduli $p > 0$: the result is the concatenation over $b = 1, \dots, H$ of
+  what the brute-force reference finds over $b$ and the numerators that survive the moduli for $b$,
+  since every numerator passes the class bit of the word of all ones, that is, the part of the
   reference with $z \ge 1$, its numerators filtered by the moduli, mapped by $\mathrm{swapPoint}$
   (Definition~\ref{def:swapPoint}) when the flag is set.
 \end{definition}
@@ -326,9 +327,10 @@ maps, specified by ordinary lemmas.
 Each component differs from the C code in a stated way, recorded in the \verb|Deviation:|
 paragraph of the component whose range holds it:
 \begin{itemize}
-  \item every denominator from $1$ to $H$, one after the other, for the denominator range (H), the
-    loop shapes, the tests on the denominators and the blocks (E), and the threads, which deliver
-    the blocks in the same order;
+  \item every denominator from $1$ to $H$, one after the other, each from the class word of all
+    ones, for the denominator range (H), the loop shapes, the tests on the denominators and the
+    words of the classes modulo $64$ (E), the blocks (I), and the threads, which deliver the blocks
+    in the same order;
   \item the residue of $b$ modulo each modulus, which the reference of
     Definitions~\ref{def:sieveDen} and~\ref{def:checkDen} computes for each numerator and
     \verb|sift| (Definition~\ref{def:sift}) once per denominator, for the residues of $b / 2^k$ that

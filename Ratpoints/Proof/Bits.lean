@@ -17,12 +17,13 @@ positions, the entries of an array made by a map over a range, the last entry an
 array after `Array.push`, `Array.pop` and `Array.map`, the elements of `List.range n` that pass a
 test which fails from some position on, the integers of a range that lie in a smaller one or between
 two bounds, the gcd of the absolute values of a list of integers as a left fold, the position of the
-cursor of a loop over a range, the bound `y < (n + 1) k` for `y < n k`, the residues modulo `p` of
-the integers from `a` on, exact quotients of integers, the bits of the word `~~~0` and of the masks
-`~~~0 <<< n` and `~~~0 >>> n`, the lowest bit and the lowest set bit of a word, the word
-`x &&& (x - 1)`, which is `x` with its lowest set bit cleared, the bits of a word set one at a time,
-the 64 bits of two words from a position within the first, the bits of a word and-ed in turn with
-the words of a list, and the numerators of the set bits of a list of words, read in turn.
+cursor of a loop over a range, the cursor of a loop over an array as one of its entries, the bound
+`y < (n + 1) k` for `y < n k`, the residues modulo `p` of the integers from `a` on, exact quotients
+of integers, the bits of the word `~~~0` and of the masks `~~~0 <<< n` and `~~~0 >>> n`, the lowest
+bit and the lowest set bit of a word, the word `x &&& (x - 1)`, which is `x` with its lowest set bit
+cleared, the bits of a word set one at a time, at their own positions or at others, the 64 bits of
+two words from a position within the first, the bits of a word and-ed in turn with the words of a
+list, and the numerators of the set bits of a list of words, read in turn.
 
 ## Main statements
 
@@ -31,7 +32,8 @@ the words of a list, and the numerators of the set bits of a list of words, read
 * `UInt64.getLsbD_allOnes_shiftLeft`, `UInt64.getLsbD_allOnes_shiftRight`: the bits of the masks.
 * `UInt64.getLsbD_and_sub_one`, `UInt64.toNat_and_sub_one_lt`: for `x ≠ 0`, `x &&& (x - 1)` is `x`
   with its lowest set bit cleared, and smaller than `x`.
-* `UInt64.getLsbD_fold_or_one_shiftLeft`: the bits of a word set one at a time.
+* `UInt64.getLsbD_fold_or_one_shiftLeft`, `UInt64.getLsbD_fold_or_one_shiftLeft_comp`: the bits of
+  a word set one at a time, at their own positions or at the positions that a function gives.
 * `UInt64.getLsbD_shiftRight_or_shiftLeft`: the 64 bits from position `r` on of the 128 bits of two
   words, for `0 < r < 64`.
 * `List.filter_range_eq_of_le`, `List.filter_range_succ_eq_append`: the elements of `List.range n`
@@ -49,6 +51,8 @@ the words of a list, and the numerators of the set bits of a list of words, read
   `[a:m]`, and the lengths of the lists before and after it.
 * `Array.getElem!_pop`, `Array.getElem!_pop_of_back!_eq`: the entries of an array without its last
   entry, the same as before when that entry is the default value.
+* `Array.mem_of_forIn_toList_eq_append_cons`: the cursor of a loop over an array is one of its
+  entries.
 * `List.foldl_gcd_natAbs_dvd_natAbs`: the gcd of the absolute values of the entries of a list, as a
   left fold, divides each of them.
 * `Int.toNat_add_emod_of_lt`, `Int.toNat_add_add_emod`: the residues modulo `p` of `a + j` before
@@ -136,6 +140,12 @@ theorem getElem!_pop {α : Type u} [Inhabited α] {xs : Array α} {i : Nat} :
 theorem getElem!_pop_of_back!_eq {α : Type u} [Inhabited α] {xs : Array α} (h : xs.back! = default)
     (i : Nat) : xs.pop[i]! = xs[i]! := by
   grind [getElem!_pop, back!_eq_getElem!]
+
+/-- The cursor of a loop over the array `xs` is an entry of `xs`. -/
+theorem mem_of_forIn_toList_eq_append_cons {α : Type u} {xs : Array α} {pref suff : List α}
+    {cur : α} (hl : ForIn.toList xs = pref ++ cur :: suff) : cur ∈ xs := by
+  rw [Std.Internal.ForIn.toList_array] at hl
+  exact Array.mem_toList_iff.mp (hl ▸ by simp)
 
 end Array
 
@@ -379,6 +389,24 @@ theorem getLsbD_fold_or_one_shiftLeft (c : Nat → Bool) {k : Nat} (hk : k ≤ 6
   | succ k ih =>
     rw [Nat.fold_succ]
     grind [UInt64.toBitVec_or, getLsbD_one_shiftLeft]
+
+/-- The bits `f i` for the `i < k` for which `c i` holds, set one after the other in the word `0`,
+for `f i < 64`: `UInt64.getLsbD_fold_or_one_shiftLeft` with the bit `f i` at step `i`. -/
+theorem getLsbD_fold_or_one_shiftLeft_comp (c : Nat → Bool) (f : Nat → Nat) {k : Nat}
+    (hf : ∀ i < k, f i < 64) (t : Nat) :
+    (Nat.fold k (fun i _ w ↦ if c i then w ||| (1 : UInt64) <<< (f i).toUInt64 else w)
+      0).toBitVec.getLsbD t = decide (∃ i < k, c i = true ∧ f i = t) := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [Nat.fold_succ]
+    have := getLsbD_one_shiftLeft (hf k (Nat.lt_succ_self k)) t
+    have := ih fun i hi ↦ hf i (Nat.lt_succ_of_lt hi)
+    split <;> grind [UInt64.toBitVec_or]
+
+theorem getLsbD_or_one_shiftLeft (x : UInt64) {n : Nat} (hn : n < 64) (t : Nat) :
+    (x ||| 1 <<< UInt64.ofNat n).toBitVec.getLsbD t = (x.toBitVec.getLsbD t || decide (t = n)) := by
+  rw [UInt64.toBitVec_or, BitVec.getLsbD_or, ← Nat.toUInt64_eq, getLsbD_one_shiftLeft hn]
 
 /-- For `0 < r < 64`, the word made of the bits of `x` from `r` on and the lowest `r` bits of `y`
 above them: the 64 bits from position `r` on of the 128 bits of `x` followed by `y`. -/

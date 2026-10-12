@@ -208,8 +208,8 @@ nonzero and gives the bit arrays their numerators.
   form of the 512-bit build, of which the macros of the other builds are unrolled cases. Of the
   other lines of the blocks of the builds, the constant \verb|zero| and the reads \verb|EXT0| and
   \verb|EXT| go with the scan (Definition~\ref{def:scanPiece}); the constructor \verb|RBA|, used
-  only for the 2-adic pattern of a class, waits for stage~E; the includes of the vector intrinsics
-  and the printing of bit arrays are excluded from the model.
+  only for the 2-adic pattern of a class, goes with the first stage (Definition~\ref{def:andRows});
+  the includes of the vector intrinsics and the printing of bit arrays are excluded from the model.
 \end{definition}
 
 \begin{definition}[The lowest set bit]\label{def:ctz}
@@ -234,17 +234,24 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
 
 \begin{definition}[The first stage]\label{def:andRows}
   \uses{def:bitArrayOps, def:rows}
-  \lean{Ratpoints.Sieve.andRows, Ratpoints.Sieve.andRows_spec}
+  \lean{Ratpoints.Sieve.andRows, Ratpoints.Sieve.andRows_spec, Ratpoints.Sieve.classBit, Ratpoints.Sieve.classBit_rbaLength_mul_add}
   \leanok
-  Every word of the piece set to all ones, where ratpoints writes the 2-adic pattern of the class of
-  $b$ (stage~E); then for each modulus $p$ with its row, for $r = (-w_0) \bmod p$, bit array $j$ is
-  and-ed with bit array $(w_0 + j) \bmod p$ of the row, in the three loops of the C code: $n$ bit
-  arrays of the row from $p - r$ on when $n < r$, and otherwise $r$ bit arrays from $p - r$ on, then
-  whole periods of $p$ from $0$, then the rest from $0$ (\csource{sift.c}{943}{1022}). Every modulus
-  is applied here, those of the second and the third stage too (\csource{sift.c}{291}{312},
+  Every word of the piece set to the class word $\omega$, the numerators modulo $64$ that the 2-adic
+  information admits for $b$, as ratpoints writes the 2-adic pattern of the class of $b$, which
+  \verb|get_2adic_info| makes once per class, one word repeated over a bit array by the macro
+  \verb|RBA| of the build (\csource{find_points.c}{1098}{1098}; \csource{rp-private.h}{129}{132},
+  \csource{rp-private.h}{203}{204}, \csource{rp-private.h}{235}{235},
+  \csource{rp-private.h}{261}{261}, \csource{rp-private.h}{285}{285}), and copies into each bit
+  array; then for each modulus $p$ with its row, for $r = (-w_0) \bmod p$, bit array $j$ is and-ed
+  with bit array $(w_0 + j) \bmod p$ of the row, in the three loops of the C code: $n$ bit arrays of
+  the row from $p - r$ on when $n < r$, and otherwise $r$ bit arrays from $p - r$ on, then whole
+  periods of $p$ from $0$, then the rest from $0$ (\csource{sift.c}{943}{1022}). Every modulus is
+  applied here, those of the second and the third stage too (\csource{sift.c}{291}{312},
   \csource{sift.c}{1083}{1086}, \csource{sift.c}{1174}{1202}). Its contract: for every list of
   tables with $p > 0$ whose rows for $b$ the moduli carry, bit $t$ of word
-  $y < n \cdot \mathrm{rbaPack}$ is $t < 64$ and the survivor test of $R w_0 + 64 y + t$.
+  $y < n \cdot \mathrm{rbaPack}$ is bit $t$ of $\omega$ and the survivor test of $R w_0 + 64 y + t$.
+  The class bit of a numerator $a$ is bit $a \bmod 64$ of $\omega$; that of $R w_0 + 64 y + t$, for
+  $t < 64$, is bit $t$, since $64 \mid R$.
 \end{definition}
 
 \begin{definition}[The check of a numerator]\label{def:checkNum}
@@ -300,13 +307,14 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
   A fresh array of $n + 1$ bit arrays, as the worker's array of \verb|array_size| bit arrays and two
   more (\csource{find_points.c}{3119}{3121}); the first stage; the low mask $m_l$ on the first bit
   array if $m_l \ne 0$ and the high mask $m_h$ on the last if $m_h \ne 0$
-  (\csource{sift.c}{1030}{1041}); and the scan, with the flag of the reversal. The piece also has
-  the head of \verb|_ratpoints_sift0| (\csource{sift.c}{498}{531}), the count of its words
+  (\csource{sift.c}{1030}{1041}); and the scan, with the flag of the reversal; the first stage
+  starts from a class word $\omega$, an argument of the piece. The piece also has the head of
+  \verb|_ratpoints_sift0| (\csource{sift.c}{498}{531}), the count of its words
   (\csource{sift.c}{548}{548}), the timer and the test before its second stage
   (\csource{sift.c}{1056}{1058}) and its end (\csource{sift.c}{1300}{1305}). Its contract, for
   $m_h < R$ and every list of tables with $p > 0$ whose rows for $b$ the moduli carry: the
   concatenation of the checks of the numerators from $R w_0 + m_l$ to $R (w_0 + n) - 1 - m_h$ that
-  survive the tables.
+  pass the class bit of $\omega$ and survive the tables.
 \end{definition}
 
 \section{One denominator and the run}\label{sec:siftDen}
@@ -323,9 +331,11 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
   while $w_0 < w_{\mathrm{high}}$, the piece from $w_0$ to $w_1 = \min(w_0 + A, w_{\mathrm{high}})$,
   with the low mask $-H - R w_{\mathrm{low}}$ if it is the first and the high mask
   $R - 1 - (H \bmod R)$ if it is the last (\csource{find_points.c}{3442}{3488},
-  \csource{find_points.c}{3563}{3617}). Its contract, for $A \ge 1$ and the rows of tables with
-  $p > 0$: what the brute-force reference finds over $b$ and the numerators $-H, \dots, H$ that
-  survive the tables, the result of the sieve of $b$ followed by its check in stage~C1, mapped by
+  \csource{find_points.c}{3563}{3617}), each from the class word $\omega$ of $b$, an argument of
+  \verb|sift|, for the class of $b$ that ratpoints passes. Its contract, for $A \ge 1$ and the rows
+  of tables with $p > 0$: what the brute-force reference finds over $b$ and the numerators
+  $-H, \dots, H$ that pass the class bit of $\omega$ and survive the tables, the points of the sieve
+  of $b$ followed by its check in stage~C1 whose numerators pass the class bit, mapped by
   $\mathrm{swapPoint}$ when the flag is set. The masked ranges of the pieces lie end to end and make
   up $[-H, H]$: the low mask moves the start of the first piece from $R w_{\mathrm{low}}$ to $-H$,
   the high mask the end of the last one from $R w_{\mathrm{high}} - 1$ to $H$, and a piece between
@@ -334,20 +344,22 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
 
 \begin{lemma}[The words compute the Booleans]\label{lem:sift_eq_checkDen}
   \uses{def:sift, def:sieveDen, def:checkDen}
-  \lean{Ratpoints.Sieve.toList_run_sift_eq_checkDen}
+  \lean{Ratpoints.Sieve.toList_run_sift_eq_checkDen, Ratpoints.BruteForce.pointsOfDen_filter}
   \leanok
-  For $A \ge 1$ and tables with $p > 0$, the points of the denominator $b$ that \verb|sift| returns
-  are those that the check of stage~C1 returns on the sieve of stage~C1, mapped by
-  $\mathrm{swapPoint}$ when the flag of the reversal is set.
+  For $A \ge 1$, a class word $\omega$ and tables with $p > 0$, the points of the denominator $b$
+  that \verb|sift| returns from $\omega$ are those that the check of stage~C1 returns on the sieve
+  of stage~C1 whose numerators pass the class bit of $\omega$, mapped by $\mathrm{swapPoint}$ when
+  the flag of the reversal is set.
 \end{lemma}
 
 \begin{proof}
   \leanok
-  The check of stage~C1 on the sieve of stage~C1 gives what the brute-force reference finds over
-  $b$ and the numerators $-H, \dots, H$ that survive the tables, by the contracts of
-  Definitions~\ref{def:sieveDen} and~\ref{def:checkDen}, and \verb|sift| gives these points,
-  mapped by $\mathrm{swapPoint}$ when the flag is set, by the contract of
-  Definition~\ref{def:sift}.
+  The check of stage~C1 on the sieve of stage~C1 gives what the brute-force reference finds over $b$
+  and the numerators $-H, \dots, H$ that survive the tables, by the contracts of
+  Definitions~\ref{def:sieveDen} and~\ref{def:checkDen}, and \verb|sift| gives those of these points
+  whose numerators pass the class bit, mapped by $\mathrm{swapPoint}$ when the flag is set, by the
+  contract of Definition~\ref{def:sift}: filtering the numerators by a test filters the points of
+  the reference by the test of their numerators.
 \end{proof}
 
 The sieve of one denominator and the check of stage~C1 are the reference of the words, with this
@@ -367,9 +379,10 @@ comparator challenge.
 Each component of this chapter differs from the C code in a stated way, recorded in its
 \verb|Deviation:| paragraph:
 \begin{itemize}
-  \item the plain layout, bit $t$ of the bit array with word number $w$ for the numerator
-    $R w + t$, every numerator from $-H$ to $H$ and no 2-adic pattern, for the packing of the
-    2-adic classes (E, F) and the search region (H);
+  \item the plain layout, bit $t$ of the bit array with word number $w$ for the numerator $R w + t$,
+    every numerator from $-H$ to $H$, and the class word of the first stage written into every word,
+    the 2-adic pattern of the class at the stride $1$, for the packing of the 2-adic classes (F) and
+    the search region (H);
   \item every modulus in the first stage, over every bit array, for the second stage, which and-s
     the rows of its moduli, one after the other, into each bit array that the scan finds nonzero,
     and stops as soon as no bit of it is left, and the third stage, which tests one numerator at a

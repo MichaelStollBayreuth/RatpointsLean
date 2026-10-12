@@ -30,7 +30,7 @@ invariants that are named definitions.
 The file uses Lean core and `Std` only, so that the `grind` calls of the proofs see only the lemmas
 of core, untouched by the updates of Mathlib. The lemmas on the brute-force reference that the
 contracts need, `Ratpoints.BruteForce.pointsOfDen_nil`, `Ratpoints.BruteForce.pointsOfDen_append`,
-`Ratpoints.BruteForce.pointsOfDen_singleton` and
+`Ratpoints.BruteForce.pointsOfDen_singleton`, `Ratpoints.BruteForce.pointsOfDen_filter` and
 `Ratpoints.BruteForce.map_toList_range_eq_numerators`, are stated here, without Mathlib, rather than
 with the other lemmas on the reference in `Ratpoints.Proof.BruteForce`.
 -/
@@ -56,6 +56,16 @@ theorem pointsOfDen_singleton (c : List Int) (d : Nat) (z x : Int) :
     pointsOfDen c d z [x] = if Int.gcd x z = 1 then
       pointsAbove x z (horner (scaledCoeffs c d z) x * if d % 2 = 1 then z else 1) else [] := by
   simp [pointsOfDen]
+
+/-- Filtering the numerators by `p` filters the points by `p` of their first components, since the
+points of a numerator `x` are triples `(x, y, z)`. -/
+theorem pointsOfDen_filter (c : List Int) (d : Nat) (z : Int) (xs : List Int) (p : Int → Bool) :
+    pointsOfDen c d z (xs.filter p) = (pointsOfDen c d z xs).filter fun q ↦ p q.1 := by
+  induction xs with
+  | nil => rfl
+  | cons x xs ih =>
+    by_cases hx : p x <;> by_cases hg : Int.gcd x z = 1 <;>
+      simp_all [pointsOfDen, pointsAbove, apply_ite (List.filter _)]
 
 theorem map_toList_range_eq_numerators (H : Nat) :
     (ForIn.toList [0:2 * H + 1]).map (fun i : Nat ↦ (i : Int) - H) = numerators H := by

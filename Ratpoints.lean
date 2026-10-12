@@ -11,6 +11,7 @@ public import Ratpoints.Model
 public import Ratpoints.Model.BruteForce
 public import Ratpoints.Model.Cli
 public import Ratpoints.Model.Constants
+public import Ratpoints.Model.Denominators
 public import Ratpoints.Model.FindPoints
 public import Ratpoints.Model.Params
 public import Ratpoints.Model.Setup
@@ -25,6 +26,7 @@ public import Ratpoints.Proof.Setup
 public import Ratpoints.Proof.Sieve
 public import Ratpoints.Proof.Sturm
 public import Ratpoints.Proof.Tables
+public import Ratpoints.Proof.TwoAdic
 public import Ratpoints.Proof.Valuation
 public import Ratpoints.Proof.Words
 public import Ratpoints.Spec

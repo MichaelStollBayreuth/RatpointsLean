@@ -116,9 +116,8 @@ which bit of a bit array stands for which numerator.
 
 \begin{definition}[The 2-adic information]\label{def:twoAdic}
   \uses{def:ctz}
-  Proposed names: \lname{Ratpoints.Sieve.squares64}, \lname{Ratpoints.Sieve.coeffsMod64},
-  \lname{Ratpoints.Sieve.fsq}, \lname{Ratpoints.Sieve.gsq}, \lname{Ratpoints.Sieve.twoAdic},
-  \lname{Ratpoints.Sieve.denBits}.
+  \lean{Ratpoints.Sieve.squares64, Ratpoints.Sieve.coeffsMod64, Ratpoints.Sieve.fsq, Ratpoints.Sieve.gsq, Ratpoints.Sieve.twoAdic, Ratpoints.Sieve.denBits}
+  \leanok
   The squares modulo $64$ as a word, bit $s$ set for the twelve squares
   $0, 1, 4, 9, 16, 17, 25, 33, 36, 41, 49, 57$ (\csource{find_points.c}{981}{981}); the
   coefficients modulo $64$ as the form of degree $D$ reads them, with $c_D = 0$ for odd $d$
@@ -140,26 +139,20 @@ which bit of a bit array stands for which numerator.
 \end{definition}
 
 \begin{lemma}[The class of a point]\label{lem:twoAdic_point}
-  \uses{def:twoAdic, def:IsPoint, def:bruteForce, def:andRows}
-  Proposed names: \lname{Ratpoints.Sieve.squares64\_test\_iff},
-  \lname{Ratpoints.Sieve.getLsbD\_fsq\_coeffsMod64},
-  \lname{Ratpoints.Sieve.getLsbD\_gsq\_coeffsMod64}, \lname{Ratpoints.Sieve.TwoAdicBits},
-  \lname{Ratpoints.Sieve.twoAdic\_spec}, \lname{Ratpoints.Sieve.getLsbD\_run\_twoAdic},
-  \lname{IsUnit.isSquare\_of\_sq\_eq\_mul\_pow},
-  \lname{Ratpoints.sum\_mul\_pow\_mul\_pow\_sub\_of\_eq\_mul},
-  \lname{Ratpoints.isSquare\_sum\_mul\_pow\_of\_sq\_eq\_binaryForm},
-  \lname{Ratpoints.isSquare\_sum\_mul\_pow\_sub\_of\_sq\_eq\_binaryForm},
-  \lname{Ratpoints.Sieve.classBit\_twoAdic\_of\_sq\_eq}, \lname{Ratpoints.Sieve.getLsbD\_denBits},
-  \lname{Ratpoints.Sieve.getElem!\_twoAdic\_ne\_zero}. For a normalized point $(a, y, b)$ with $b
-  \ge 1$, bit $a \bmod 64$ of $\mathrm{nb}[b \bmod 64]$ is set, and so is bit $b \bmod 64$ of
-  $\mathrm{den\_bits}$. The contract of the words is exact: bit $a$ of $\mathrm{nb}[b]$ is set if
-  and only if $b$ is odd and $a = k b \bmod 64$ for a set bit $k$ of $\mathrm{fsq}$, or $a < 64$ is
-  odd and $b = t a \bmod 64$ for a set bit $t$ of $\mathrm{gsq}$; and bit $k$ of $\mathrm{fsq}$ is
-  set exactly when $f(k)$ is a square in $\mathbb{Z}/64$, bit $t$ of $\mathrm{gsq}$ exactly when $t$
-  is even and $\tilde f(t)$ is one.
+  \uses{def:twoAdic, def:binaryForm, def:bruteForce, def:andRows}
+  \lean{Ratpoints.Sieve.squares64_test_iff, Ratpoints.Sieve.getLsbD_fsq_coeffsMod64, Ratpoints.Sieve.getLsbD_gsq_coeffsMod64, Ratpoints.Sieve.TwoAdicBits, Ratpoints.Sieve.twoAdic_spec, Ratpoints.Sieve.getLsbD_run_twoAdic, IsUnit.isSquare_of_sq_eq_mul_pow, Ratpoints.sum_mul_pow_mul_pow_sub_of_eq_mul, Ratpoints.isSquare_sum_mul_pow_of_sq_eq_binaryForm, Ratpoints.isSquare_sum_mul_pow_sub_of_sq_eq_binaryForm, Ratpoints.Sieve.classBit_twoAdic_of_sq_eq, Ratpoints.Sieve.getLsbD_denBits, Ratpoints.Sieve.getElem!_twoAdic_ne_zero}
+  \leanok
+  Let $a$ and $y$ be integers and $b$ a natural number with $\gcd(a, b) = 1$ and $y^2 = F(a, b)$, as
+  for a normalized point $(a, y, b)$. Then bit $a \bmod 64$ of $\mathrm{nb}[b \bmod 64]$ is set, and
+  so is bit $b \bmod 64$ of $\mathrm{den\_bits}$. The contract of the words is exact: bit $a$ of
+  $\mathrm{nb}[b]$ is set if and only if $b$ is odd and $a = k b \bmod 64$ for a set bit $k$ of
+  $\mathrm{fsq}$, or $a < 64$ is odd and $b = t a \bmod 64$ for a set bit $t$ of $\mathrm{gsq}$; and
+  bit $k$ of $\mathrm{fsq}$ is set exactly when $f(k)$ is a square in $\mathbb{Z}/64$, bit $t$ of
+  $\mathrm{gsq}$ exactly when $t$ is even and $\tilde f(t)$ is one.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   Since $\gcd(a, b) = 1$, $a$ or $b$ is odd. For odd $b$, $F(a, b) = b^D f(a b^{-1})$ modulo $64$,
   where $b^D$ is the square of a unit since $D$ is even; so $f(k)$ is a square modulo $64$ for $k =
   a b^{-1} \bmod 64$, bit $k$ of $\mathrm{fsq}$ is set, and the scatter sets bit $k b \equiv a$ of
