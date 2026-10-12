@@ -64,7 +64,9 @@ The file uses Lean core and `Std` only, as `Ratpoints.Proof.Sieve` does; the lem
 are not about the model are in `Ratpoints.Proof.Bits`. The proofs use only that
 `Ratpoints.rbaPack` is positive, never its value. The contract of the run over the denominators,
 which calls `Ratpoints.Sieve.sift` with the class word of each denominator, is in
-`Ratpoints.Proof.Denominators`.
+`Ratpoints.Proof.Denominators`. The invariant of a `while` loop over the set bits of a word,
+`Ratpoints.Sieve.WalkWhileInvariant`, serves the loops of the 2-adic information in
+`Ratpoints.Proof.TwoAdic` and of the word shape in `Ratpoints.Proof.Shapes` as well.
 -/
 
 @[expose] public section
@@ -92,6 +94,8 @@ theorem lt_rbaLength_mul_of_lt {n y t : Nat} (hy : y < n * rbaPack) (ht : t < 64
   lia
 
 namespace Sieve
+
+universe u
 
 /-! ### Operations on bit arrays -/
 
@@ -490,51 +494,128 @@ theorem flatMap_checkNum (w : List Int) (f b : Int) (rev : Bool) (xs : List Int)
       (xs.flatMap (checkNum w f b false)).map (if rev then swapPoint else id) :=
   List.map_flatMap ▸ congrArg (List.flatMap · xs) (funext (checkNum_eq_map w f b rev))
 
-/-- The invariant of the loop of `Ratpoints.Sieve.walkWord` on the word `x0` after the points
-`out0`, for the points `g a` of a numerator `a` (in the walk, the check `Ratpoints.Sieve.checkNum`):
-the word `x` is `x0` with its bits below some `k ≤ 64` cleared, and the points of the numerators
-`a0 + t` of the set bits `t < k` of `x0` have been appended to `out0`. -/
-def WalkWordInvariant (g : Int → List (Int × Int × Int)) (x0 : UInt64) (a0 : Int)
-    (out0 : Array (Int × Int × Int)) (x : UInt64) (out : Array (Int × Int × Int)) : Prop :=
-  ∃ k ≤ 64, (∀ t, x.toBitVec.getLsbD t = (x0.toBitVec.getLsbD t && decide (k ≤ t))) ∧
-    out.toList = out0.toList ++
-      (((List.range k).filter (x0.toBitVec.getLsbD ·)).map fun t : Nat ↦ a0 + t).flatMap g
+/-- The word `x` is the word `x0` with its bits below `k ≤ 64` cleared. -/
+def ClearedBelow (x0 : UInt64) (k : Nat) (x : UInt64) : Prop :=
+  k ≤ 64 ∧ ∀ t, x.toBitVec.getLsbD t = (x0.toBitVec.getLsbD t && decide (k ≤ t))
 
-/-- `Ratpoints.Sieve.WalkWordInvariant` as the invariant of the `while` loop of
-`Ratpoints.Sieve.walkWord`, with the word `0` at the exit. -/
-def WalkWordWhileInvariant (g : Int → List (Int × Int × Int)) (x0 : UInt64) (a0 : Int)
-    (out0 : Array (Int × Int × Int)) :
-    Std.WP.WhileInvariant (UInt64 × Array (Int × Int × Int)) Prop :=
-  .mk fun exit s ↦ WalkWordInvariant g x0 a0 out0 s.1 s.2 ∧ (exit = true → s.1 = 0)
+theorem clearedBelow_zero (x0 : UInt64) : ClearedBelow x0 0 x0 :=
+  ⟨Nat.zero_le _, fun _ ↦ by simp⟩
 
-theorem walkWordInvariant_self (g : Int → List (Int × Int × Int)) (x0 : UInt64) (a0 : Int)
-    (out0 : Array (Int × Int × Int)) :
-    WalkWordInvariant g x0 a0 out0 x0 out0 :=
-  ⟨0, Nat.zero_le _, fun _ ↦ by simp, by simp⟩
+/-- The lowest set bit of `x` is a set bit of `x0`, at `k` or above. -/
+theorem ClearedBelow.getLsbD_ctz_and_le_ctz {x0 x : UInt64} {k : Nat} (h : ClearedBelow x0 k x)
+    (hx : x ≠ 0) :
+    x0.toBitVec.getLsbD x.toBitVec.ctz.toNat = true ∧ k ≤ x.toBitVec.ctz.toNat := by
+  simpa [h.2] using UInt64.getLsbD_ctz hx
 
-/-- The invariant of `Ratpoints.Sieve.walkWord` after one step: the points of the numerator of the
-lowest set bit of `x` appended, and that bit cleared. -/
-theorem WalkWordInvariant.and_sub_one {g : Int → List (Int × Int × Int)} {x0 x : UInt64} {a0 : Int}
-    {out0 out : Array (Int × Int × Int)} (h : WalkWordInvariant g x0 a0 out0 x out) (hx : x ≠ 0) :
-    WalkWordInvariant g x0 a0 out0 (x &&& (x - 1)) (out ++ ⟨g (a0 + x.toBitVec.ctz.toNat)⟩) := by
-  obtain ⟨k, hk, hbits, hout⟩ := h
-  have hc := UInt64.getLsbD_ctz hx
-  rw [hbits, Bool.and_eq_true, decide_eq_true_iff] at hc
-  refine ⟨x.toBitVec.ctz.toNat + 1, UInt64.toNat_ctz_lt hx, fun t ↦ ?_, ?_⟩
-  · grind [UInt64.getLsbD_and_sub_one, BitVec.getLsbD_false_of_lt_ctz]
-  · simp [hout, List.filter_range_succ_eq_append hc.2 hc.1 fun _ _ _ ↦ by
-      grind [BitVec.getLsbD_false_of_lt_ctz]]
+/-- Clearing the lowest set bit of `x` clears the bits of `x0` up to that bit. -/
+theorem ClearedBelow.and_sub_one {x0 x : UInt64} {k : Nat} (h : ClearedBelow x0 k x) (hx : x ≠ 0) :
+    ClearedBelow x0 (x.toBitVec.ctz.toNat + 1) (x &&& (x - 1)) :=
+  ⟨UInt64.toNat_ctz_lt hx, fun t ↦ by grind [h.2 t, h.getLsbD_ctz_and_le_ctz hx,
+    UInt64.getLsbD_and_sub_one, BitVec.getLsbD_false_of_lt_ctz]⟩
 
-theorem WalkWordInvariant.toList_eq {g : Int → List (Int × Int × Int)} {x0 : UInt64} {a0 : Int}
-    {out0 out : Array (Int × Int × Int)} (h : WalkWordInvariant g x0 a0 out0 0 out) :
-    out.toList = out0.toList ++
-      (((List.range 64).filter (x0.toBitVec.getLsbD ·)).map fun t : Nat ↦ a0 + t).flatMap g := by
-  obtain ⟨k, hk, hbits, hout⟩ := h
-  rw [hout, List.filter_range_eq_of_le hk fun j hkj _ ↦ by simpa [hkj] using (hbits j).symm]
+/-- The set bits of `x0` up to the lowest set bit of `x` are those below `k`, then that bit, since
+`x` has the bits of `x0` from `k` on. -/
+theorem ClearedBelow.filter_range_succ_ctz {x0 x : UInt64} {k : Nat} (h : ClearedBelow x0 k x)
+    (hx : x ≠ 0) :
+    (List.range (x.toBitVec.ctz.toNat + 1)).filter (x0.toBitVec.getLsbD ·) =
+      (List.range k).filter (x0.toBitVec.getLsbD ·) ++ [x.toBitVec.ctz.toNat] := by
+  obtain ⟨hc, hk⟩ := h.getLsbD_ctz_and_le_ctz hx
+  exact List.filter_range_succ_eq_append hk hc fun j _ _ ↦ by
+    grind [h.2 j, BitVec.getLsbD_false_of_lt_ctz]
 
-/- The invariant of the walk is irreducible from here on: the verification conditions of
-`Ratpoints.Sieve.walkWord` are closed by its lemmas, never by unfolding it. -/
-attribute [local irreducible] WalkWordInvariant
+theorem ClearedBelow.filter_range_of_eq_zero {x0 : UInt64} {k : Nat} (h : ClearedBelow x0 k 0) :
+    (List.range k).filter (x0.toBitVec.getLsbD ·) =
+      (List.range 64).filter (x0.toBitVec.getLsbD ·) :=
+  (List.filter_range_eq_of_le h.1 fun j hkj _ ↦ by simpa [hkj] using (h.2 j).symm).symm
+
+/-- `Ratpoints.Sieve.ClearedBelow.filter_range_succ_ctz` for a set bit with a property `P`. -/
+theorem ClearedBelow.exists_lt_succ_iff {x0 x : UInt64} {k : Nat} (h : ClearedBelow x0 k x)
+    (hx : x ≠ 0) (P : Nat → Prop) :
+    (∃ j < x.toBitVec.ctz.toNat + 1, x0.toBitVec.getLsbD j = true ∧ P j) ↔
+      (∃ j < k, x0.toBitVec.getLsbD j = true ∧ P j) ∨ P x.toBitVec.ctz.toNat := by
+  simpa [and_assoc, or_and_right, exists_or] using
+    congrArg (∃ j ∈ ·, P j) (h.filter_range_succ_ctz hx)
+
+theorem ClearedBelow.exists_lt_iff_of_eq_zero {x0 : UInt64} {k : Nat} (h : ClearedBelow x0 k 0)
+    (P : Nat → Prop) :
+    (∃ j < k, x0.toBitVec.getLsbD j = true ∧ P j) ↔
+      ∃ j < 64, x0.toBitVec.getLsbD j = true ∧ P j := by
+  simpa [and_assoc] using congrArg (∃ j ∈ ·, P j) h.filter_range_of_eq_zero
+
+/-- The invariant of a `while` loop over the set bits of the word `x0`, lowest first, whose state is
+a value of `σ` and the word, for a property `P k` of the value after the set bits below `k`: the
+word is `x0` with its bits below some `k` cleared (`Ratpoints.Sieve.ClearedBelow`), the value has
+the property `P k`, and the word is `0` at the exit. -/
+def WalkWhileInvariant {σ : Type u} (x0 : UInt64) (P : Nat → σ → Prop) :
+    Std.WP.WhileInvariant (σ × UInt64) Prop :=
+  .mk fun exit s ↦ ∃ k, ClearedBelow x0 k s.2 ∧ P k s.1 ∧ (exit = true → s.2 = 0)
+
+theorem walkWhileInvariant_self {σ : Type u} {x0 : UInt64} {P : Nat → σ → Prop} {s : σ}
+    (h : P 0 s) :
+    WalkWhileInvariant x0 P false (s, x0) :=
+  ⟨0, clearedBelow_zero x0, h, nofun⟩
+
+/-- The invariant after one step, with the lowest set bit of `w` cleared and the value `s'` with
+the property `P` up to that bit, in the shape of the verification condition: the measure `w.toNat`
+decreases. -/
+theorem WalkWhileInvariant.and_sub_one {σ : Type u} {x0 w : UInt64} {P : Nat → σ → Prop}
+    {s s' : σ} {mb : Nat} (h : w.toNat = mb ∧ WalkWhileInvariant x0 P false (s, w))
+    (hw : (w != 0) = true)
+    (hP : ∀ k, ClearedBelow x0 k w → P k s → P (w.toBitVec.ctz.toNat + 1) s') :
+    (w &&& w - 1).toNat < mb ∧ WalkWhileInvariant x0 P false (s', w &&& w - 1) := by
+  have hw' : w ≠ 0 := by simpa using hw
+  obtain ⟨rfl, k, hcl, hs, -⟩ := h
+  exact ⟨UInt64.toNat_and_sub_one_lt hw', _, hcl.and_sub_one hw', hP k hcl hs, nofun⟩
+
+theorem WalkWhileInvariant.exit {σ : Type u} {x0 w : UInt64} {P : Nat → σ → Prop} {s : σ}
+    {mb : Nat} (hw : ¬(w != 0) = true) (h : w.toNat = mb ∧ WalkWhileInvariant x0 P false (s, w)) :
+    WalkWhileInvariant x0 P true (s, w) := by
+  obtain ⟨-, k, hcl, hs, -⟩ := h
+  exact ⟨k, hcl, hs, fun _ ↦ by simpa using hw⟩
+
+theorem WalkWhileInvariant.exists_clearedBelow_zero {σ : Type u} {x0 w : UInt64}
+    {P : Nat → σ → Prop} {s : σ} (h : WalkWhileInvariant x0 P true (s, w)) :
+    ∃ k, ClearedBelow x0 k 0 ∧ P k s := by
+  obtain ⟨k, hcl, hs, h0⟩ := h
+  exact ⟨k, h0 rfl ▸ hcl, hs⟩
+
+/-- The property of the array `out` of a walk through the set bits of the word `x0`, lowest first,
+that appends the list `g t` of each set bit `t` to the array `out0`, after the set bits below `k`:
+`out` is `out0` followed by the lists of the set bits `t < k` of `x0`, in increasing order. In
+`Ratpoints.Sieve.walkWord`, `g t` is the list of the points of the check `Ratpoints.Sieve.checkNum`
+of the numerator of bit `t`; in `Ratpoints.Sieve.wordsDens`, the list of the denominator of bit
+`t` alone. -/
+def WalkWordInvariant {β : Type u} (g : Nat → List β) (x0 : UInt64) (out0 : Array β) (k : Nat)
+    (out : Array β) : Prop :=
+  out.toList = out0.toList ++ ((List.range k).filter (x0.toBitVec.getLsbD ·)).flatMap g
+
+/-- `Ratpoints.Sieve.WalkWhileInvariant` for `Ratpoints.Sieve.WalkWordInvariant` as the invariant of
+the `while` loop of `Ratpoints.Sieve.walkWord`, whose state has the word first. -/
+def WalkWordWhileInvariant {β : Type u} (g : Nat → List β) (x0 : UInt64) (out0 : Array β) :
+    Std.WP.WhileInvariant (UInt64 × Array β) Prop :=
+  .mk fun exit s ↦ WalkWhileInvariant x0 (WalkWordInvariant g x0 out0) exit (s.2, s.1)
+
+theorem walkWordInvariant_zero {β : Type u} (g : Nat → List β) (x0 : UInt64) (out0 : Array β) :
+    WalkWordInvariant g x0 out0 0 out0 := by
+  simp [WalkWordInvariant]
+
+theorem WalkWordInvariant.append_ctz {β : Type u} {g : Nat → List β} {x0 x : UInt64}
+    {out0 out : Array β} {k : Nat} (h : WalkWordInvariant g x0 out0 k out)
+    (hx : ClearedBelow x0 k x) (hx0 : x ≠ 0) :
+    WalkWordInvariant g x0 out0 (x.toBitVec.ctz.toNat + 1)
+      (out ++ (g x.toBitVec.ctz.toNat).toArray) := by
+  simp only [WalkWordInvariant] at h ⊢
+  simp [h, hx.filter_range_succ_ctz hx0]
+
+theorem WalkWordInvariant.toList_eq {β : Type u} {g : Nat → List β} {x0 x : UInt64}
+    {out0 out : Array β} (h : WalkWhileInvariant x0 (WalkWordInvariant g x0 out0) true (out, x)) :
+    out.toList = out0.toList ++ ((List.range 64).filter (x0.toBitVec.getLsbD ·)).flatMap g := by
+  obtain ⟨k, hcl, hout⟩ := h.exists_clearedBelow_zero
+  rw [hout, hcl.filter_range_of_eq_zero]
+
+/- The invariants of the walk are irreducible from here on: the verification conditions of
+`Ratpoints.Sieve.walkWord` are closed by their lemmas, never by unfolding them. -/
+attribute [local irreducible] WalkWhileInvariant WalkWordInvariant
 
 /-- The loop ends, since clearing the lowest set bit makes a word other than `0` smaller. -/
 @[spec]
@@ -545,11 +626,19 @@ theorem walkWord_spec (w : List Int) (f : Int) (b : Nat) (rev : Bool) (x : UInt6
         (((List.range 64).filter (x.toBitVec.getLsbD ·)).map fun t : Nat ↦ a0 + t).flatMap
           (checkNum w f b rev) ⦄ := by
   vcgen [walkWord] invariants
-  · WalkWordWhileInvariant (checkNum w f b rev) x a0 out
+  · WalkWordWhileInvariant (fun t : Nat ↦ checkNum w f b rev (a0 + t)) x out
   · Std.WP.Variant.ofMeasure fun s : UInt64 × Array (Int × Int × Int) ↦ s.1.toNat
-  all_goals simp [WalkWordWhileInvariant] at *
-  all_goals grind [walkWordInvariant_self, WalkWordInvariant.and_sub_one,
-    WalkWordInvariant.toList_eq, UInt64.toNat_and_sub_one_lt]
+  all_goals simp only [WalkWordWhileInvariant, Std.WP.Variant.evalsTo_ofMeasure,
+    Std.WP.Variant.evalsBelow_ofMeasure_nat, Std.WP.Assertion.NondetFun.evalsTo_pure,
+    Lean.Order.meet_prop_eq_and, Lean.Order.ofProp_prop_eq] at *
+  all_goals subst_vars
+  all_goals first
+    | exact walkWhileInvariant_self (walkWordInvariant_zero ..)
+    | exact bne_iff_ne.mp ‹_›
+    | exact WalkWhileInvariant.exit ‹_› ‹_›
+    | exact WalkWhileInvariant.and_sub_one ‹_› ‹_› fun _ hcl hk ↦
+        hk.append_ctz hcl (bne_iff_ne.mp ‹_›)
+    | grind [WalkWordInvariant.toList_eq, List.flatMap_map]
 
 /-! ### The scan and the extraction -/
 

@@ -38,11 +38,6 @@ of the word shape, the forbidden divisors and both Jacobi tests
 `Ratpoints.Sieve.run_jacobi_eq_one_of_sq_eq`, `Ratpoints.Sieve.run_jacobiTest_of_sq_eq`). The
 denominators that the C code computes as `long`s are at most the largest denominator.
 
-## Main definitions
-
-* `Ratpoints.Sieve.WalkPushInvariant`: the invariant of a walk over the set bits of a word that
-  pushes one value per bit.
-
 ## Main statements
 
 * `Ratpoints.Sieve.squaresDens_eq_filter`, `Ratpoints.Sieve.mem_squaresDens_iff`: the square shape
@@ -251,45 +246,7 @@ theorem getLsbD_wordBits (db : UInt64) (forb : List ForbiddenEntry) {bLow bHigh 
       toNat_toUInt64_mod_sixtyFour, toNat_toUInt64_sub_mod_sixtyFour] <;> grind
   · simp [BitVec.getLsbD_of_ge _ _ ht]
 
-/-- The invariant of a loop over the set bits of the word `x0`, lowest first, that pushes the value
-`f t` of each set bit `t` onto `out0`: the word `x` is `x0` with its bits below some `k ≤ 64`
-cleared, and the values of the set bits `t < k` of `x0` have been pushed; the form of
-`Ratpoints.Sieve.WalkWordInvariant` for a loop that pushes one value per bit. -/
-def WalkPushInvariant {α : Type} (f : ℕ → α) (x0 : UInt64) (out0 : Array α) (x : UInt64)
-    (out : Array α) : Prop :=
-  ∃ k ≤ 64, (∀ t, x.toBitVec.getLsbD t = (x0.toBitVec.getLsbD t && decide (k ≤ t))) ∧
-    out.toList = out0.toList ++ ((List.range k).filter (x0.toBitVec.getLsbD ·)).map f
-
-/-- `Ratpoints.Sieve.WalkPushInvariant` as the invariant of a `while` loop on the array and the
-word, with the word `0` at the exit. -/
-def WalkPushWhileInvariant {α : Type} (f : ℕ → α) (x0 : UInt64) (out0 : Array α) :
-    Std.WP.WhileInvariant (Array α × UInt64) Prop :=
-  .mk fun exit s ↦ WalkPushInvariant f x0 out0 s.2 s.1 ∧ (exit = true → s.2 = 0)
-
-theorem walkPushInvariant_self {α : Type} (f : ℕ → α) (x0 : UInt64) (out0 : Array α) :
-    WalkPushInvariant f x0 out0 x0 out0 :=
-  ⟨0, Nat.zero_le _, fun _ ↦ by simp, by simp⟩
-
-/-- The invariant of the walk after one step: the value of the lowest set bit of `x` pushed, and
-that bit cleared. -/
-theorem WalkPushInvariant.and_sub_one {α : Type} {f : ℕ → α} {x0 x : UInt64} {out0 out : Array α}
-    (h : WalkPushInvariant f x0 out0 x out) (hx : x ≠ 0) :
-    WalkPushInvariant f x0 out0 (x &&& (x - 1)) (out.push (f x.toBitVec.ctz.toNat)) := by
-  obtain ⟨k, hk, hbits, hout⟩ := h
-  have hc := UInt64.getLsbD_ctz hx
-  rw [hbits, Bool.and_eq_true, decide_eq_true_iff] at hc
-  refine ⟨x.toBitVec.ctz.toNat + 1, UInt64.toNat_ctz_lt hx, fun t ↦ ?_, ?_⟩
-  · grind [UInt64.getLsbD_and_sub_one, BitVec.getLsbD_false_of_lt_ctz]
-  · simp [hout, List.filter_range_succ_eq_append hc.2 hc.1 fun _ _ _ ↦ by
-      grind [BitVec.getLsbD_false_of_lt_ctz]]
-
-theorem WalkPushInvariant.toList_eq {α : Type} {f : ℕ → α} {x0 : UInt64} {out0 out : Array α}
-    (h : WalkPushInvariant f x0 out0 0 out) :
-    out.toList = out0.toList ++ ((List.range 64).filter (x0.toBitVec.getLsbD ·)).map f := by
-  obtain ⟨k, hk, hbits, hout⟩ := h
-  rw [hout, List.filter_range_eq_of_le hk fun j hkj _ ↦ by simpa [hkj] using (hbits j).symm]
-
-attribute [local irreducible] WalkPushInvariant in
+attribute [local irreducible] WalkWhileInvariant WalkWordInvariant in
 /-- The contract of `Ratpoints.Sieve.wordsDens`: for each word `w` of the range, the denominators
 `64 w + t` of the set bits `t` of its word (`Ratpoints.Sieve.wordBits`), lowest first. The loops
 over the set bits end, since clearing the lowest set bit makes a word other than `0` smaller. -/
@@ -302,12 +259,20 @@ theorem wordsDens_spec (db : UInt64) (forb : List ForbiddenEntry) (bLow bHigh : 
   vcgen [wordsDens] invariants
   | inv1 => fun pref _ out ↦ out.toList = pref.flatMap fun w ↦
         ((List.range 64).filter (wordBits db forb bLow bHigh w).toBitVec.getLsbD).map (64 * w + ·)
-  | inv2 _ cur _ _ out0 _ =>
-      WalkPushWhileInvariant (64 * cur + ·) (wordBits db forb bLow bHigh cur) out0
+  | inv2 _ cur _ _ out0 _ => WalkWhileInvariant (wordBits db forb bLow bHigh cur)
+      (WalkWordInvariant (fun t ↦ [64 * cur + t]) (wordBits db forb bLow bHigh cur) out0)
   | inv3 => .ofMeasure fun s : Array ℕ × UInt64 ↦ s.2.toNat
-  all_goals simp [WalkPushWhileInvariant] at *
-  all_goals grind [walkPushInvariant_self, WalkPushInvariant.and_sub_one,
-    WalkPushInvariant.toList_eq, UInt64.toNat_and_sub_one_lt]
+  all_goals try simp only [Std.WP.Variant.evalsTo_ofMeasure,
+    Std.WP.Variant.evalsBelow_ofMeasure_nat, Std.WP.Assertion.NondetFun.evalsTo_pure,
+    Lean.Order.meet_prop_eq_and, Lean.Order.ofProp_prop_eq] at *
+  all_goals subst_vars
+  all_goals first
+    | exact walkWhileInvariant_self (walkWordInvariant_zero ..)
+    | exact bne_iff_ne.mp ‹_›
+    | exact WalkWhileInvariant.exit ‹_› ‹_›
+    | exact WalkWhileInvariant.and_sub_one ‹_› ‹_› fun _ hcl hk ↦
+        hk.append_ctz hcl (bne_iff_ne.mp ‹_›)
+    | grind [WalkWordInvariant.toList_eq, List.map_eq_flatMap]
 
 -- The words of the entries of the word shape: bit `t < 64` of word `w mod p` says whether
 -- `p ∤ 64 w + t`.

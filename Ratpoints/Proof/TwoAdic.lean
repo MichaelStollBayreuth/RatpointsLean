@@ -274,23 +274,6 @@ def TwoAdicBits (f g : UInt64) (k0 t0 : ℕ) (nb : Vector UInt64 64) : Prop :=
     (b % 2 = 1 ∧ ∃ k < k0, f.toBitVec.getLsbD k = true ∧ k * b % 64 = a) ∨
       (a % 2 = 1 ∧ a < 64 ∧ ∃ t < t0, g.toBitVec.getLsbD t = true ∧ t * a % 64 = b)
 
-/-- The word `w` is the word `f` with its bits below `k0 ≤ 64` cleared. -/
-def ClearedBelow (f : UInt64) (k0 : ℕ) (w : UInt64) : Prop :=
-  k0 ≤ 64 ∧ ∀ t, w.toBitVec.getLsbD t = (f.toBitVec.getLsbD t && decide (k0 ≤ t))
-
-/-- The invariant of the loop of `Ratpoints.Sieve.twoAdic` over the set bits of the word `f` of the
-polynomial: the word `w` is `f` with its bits below some `k0` cleared, and those bits are scattered
-into the odd classes; the word `0` at the exit. -/
-def TwoAdicFsqInvariant (f g : UInt64) : Std.WP.WhileInvariant (Vector UInt64 64 × UInt64) Prop :=
-  .mk fun exit s ↦ ∃ k0, ClearedBelow f k0 s.2 ∧ TwoAdicBits f g k0 0 s.1 ∧ (exit = true → s.2 = 0)
-
-/-- The invariant of the loop of `Ratpoints.Sieve.twoAdic` over the set bits of the word `g` of the
-reversed polynomial: the word `w` is `g` with its bits below some `t0` cleared, and those bits are
-scattered into the even classes after all bits of `f` into the odd ones; the word `0` at the
-exit. -/
-def TwoAdicGsqInvariant (f g : UInt64) : Std.WP.WhileInvariant (Vector UInt64 64 × UInt64) Prop :=
-  .mk fun exit s ↦ ∃ t0, ClearedBelow g t0 s.2 ∧ TwoAdicBits f g 64 t0 s.1 ∧ (exit = true → s.2 = 0)
-
 /-- The invariant of the loop of `Ratpoints.Sieve.twoAdic` that scatters the bit `k` of `f` into the
 odd classes, from the words `nb0`: after the classes `1, 3, …` of the positions `pref`, the words
 are those of `nb0` with bit `k b mod 64` set in the word of each of these classes `b`. -/
@@ -307,61 +290,24 @@ def ScatterEvenInvariant (nb0 : Vector UInt64 64) (t : ℕ) (pref : List ℕ)
   ∀ b < 64, ∀ a, nb[b]!.toBitVec.getLsbD a = true ↔
     nb0[b]!.toBitVec.getLsbD a = true ∨ (a % 2 = 1 ∧ a < 2 * pref.length ∧ t * a % 64 = b)
 
-theorem clearedBelow_zero (f : UInt64) : ClearedBelow f 0 f :=
-  ⟨Nat.zero_le _, fun _ ↦ by simp⟩
+theorem twoAdicBits_replicate_zero (f g : UInt64) : TwoAdicBits f g 0 0 (Vector.replicate 64 0) :=
+  fun b hb a ↦ by simp [hb]
 
-theorem ClearedBelow.and_sub_one {f w : UInt64} {k0 : ℕ} (h : ClearedBelow f k0 w) (hw : w ≠ 0) :
-    ClearedBelow f (w.toBitVec.ctz.toNat + 1) (w &&& (w - 1)) := by
-  obtain ⟨hk, hbits⟩ := h
-  have hc := UInt64.getLsbD_ctz hw
-  rw [hbits, Bool.and_eq_true, decide_eq_true_iff] at hc
-  refine ⟨UInt64.toNat_ctz_lt hw, fun t ↦ ?_⟩
-  grind [UInt64.getLsbD_and_sub_one, BitVec.getLsbD_false_of_lt_ctz]
-
-/-- The set bits of `f` below the lowest set bit of `w` and above, which `w` has cleared, are those
-below `k0`, and the lowest set bit of `w` is one. -/
-theorem ClearedBelow.exists_lt_succ_iff {f w : UInt64} {k0 : ℕ} (h : ClearedBelow f k0 w)
-    (hw : w ≠ 0) (P : ℕ → Prop) :
-    (∃ k < w.toBitVec.ctz.toNat + 1, f.toBitVec.getLsbD k = true ∧ P k) ↔
-      (∃ k < k0, f.toBitVec.getLsbD k = true ∧ P k) ∨ P w.toBitVec.ctz.toNat := by
-  obtain ⟨hk, hbits⟩ := h
-  have hc := UInt64.getLsbD_ctz hw
-  rw [hbits, Bool.and_eq_true, decide_eq_true_iff] at hc
-  refine ⟨fun ⟨k, hk1, hf, hP⟩ ↦ ?_, fun h ↦ ?_⟩
-  · rcases Nat.lt_or_ge k k0 with h1 | h1
-    · exact .inl ⟨k, h1, hf, hP⟩
-    · rcases Nat.lt_or_ge k w.toBitVec.ctz.toNat with h2 | h2
-      · have := BitVec.getLsbD_false_of_lt_ctz h2
-        simp [hbits, hf, h1] at this
-      · exact .inr (by rwa [show k = w.toBitVec.ctz.toNat by lia] at hP)
-  · rcases h with ⟨k, hk1, hf, hP⟩ | hP
-    · exact ⟨k, by lia, hf, hP⟩
-    · exact ⟨_, Nat.lt_succ_self _, hc.1, hP⟩
-
-theorem ClearedBelow.exists_lt_iff_of_eq_zero {f : UInt64} {k0 : ℕ} (h : ClearedBelow f k0 0)
-    (P : ℕ → Prop) :
-    (∃ k < k0, f.toBitVec.getLsbD k = true ∧ P k) ↔
-      ∃ k < 64, f.toBitVec.getLsbD k = true ∧ P k := by
-  obtain ⟨hk, hbits⟩ := h
-  refine ⟨fun ⟨k, hk1, hf, hP⟩ ↦ ⟨k, by lia, hf, hP⟩, fun ⟨k, hk1, hf, hP⟩ ↦ ?_⟩
-  refine ⟨k, Nat.lt_of_not_le fun hle ↦ ?_, hf, hP⟩
-  simpa [hf, hle] using hbits k
-
-theorem twoAdicFsqInvariant_init (f g : UInt64) :
-    TwoAdicFsqInvariant f g false (Vector.replicate 64 0, f) :=
-  ⟨0, clearedBelow_zero f, fun b hb a ↦ by simp [hb], nofun⟩
-
-theorem TwoAdicFsqInvariant.twoAdicGsqInvariant {f g w : UInt64} {nb : Vector UInt64 64}
-    (h : TwoAdicFsqInvariant f g true (nb, w)) : TwoAdicGsqInvariant f g false (nb, g) := by
-  obtain ⟨k0, hk, hbits, h0⟩ := h
-  obtain rfl : w = 0 := h0 rfl
-  refine ⟨0, clearedBelow_zero g, fun b hb a ↦ ?_, nofun⟩
+/-- At the exit of the loop over the set bits of `f`, all of them are scattered into the odd
+classes. -/
+theorem twoAdicBits_of_walkWhileInvariant_left {f g w : UInt64} {nb : Vector UInt64 64}
+    (h : WalkWhileInvariant f (fun k0 ↦ TwoAdicBits f g k0 0) true (nb, w)) :
+    TwoAdicBits f g 64 0 nb := by
+  obtain ⟨k0, hk, hbits⟩ := h.exists_clearedBelow_zero
+  intro b hb a
   rw [hbits b hb a, hk.exists_lt_iff_of_eq_zero]
 
-theorem TwoAdicGsqInvariant.twoAdicBits {f g w : UInt64} {nb : Vector UInt64 64}
-    (h : TwoAdicGsqInvariant f g true (nb, w)) : TwoAdicBits f g 64 64 nb := by
-  obtain ⟨t0, ht, hbits, h0⟩ := h
-  obtain rfl : w = 0 := h0 rfl
+/-- At the exit of the loop over the set bits of `g`, all of them are scattered into the even
+classes. -/
+theorem twoAdicBits_of_walkWhileInvariant_right {f g w : UInt64} {nb : Vector UInt64 64}
+    (h : WalkWhileInvariant g (TwoAdicBits f g 64) true (nb, w)) :
+    TwoAdicBits f g 64 64 nb := by
+  obtain ⟨t0, ht, hbits⟩ := h.exists_clearedBelow_zero
   intro b hb a
   rw [hbits b hb a, ht.exists_lt_iff_of_eq_zero]
 
@@ -409,48 +355,38 @@ theorem ScatterEvenInvariant.set! {nb0 nb : Vector UInt64 64} {t : ℕ} {pref su
 theorem length_toList_range_32 : (ForIn.toList [:32]).length = 32 := by
   simp [Std.Legacy.Range.size]
 
-theorem TwoAdicFsqInvariant.and_sub_one {f g w : UInt64} {nb0 nb : Vector UInt64 64} {k mb : ℕ}
-    (hw : (w != 0) = true) (hk : k = w.toBitVec.ctz.toNat)
-    (hs : ScatterOddInvariant nb0 k (ForIn.toList [:32]) nb)
-    (h : w.toNat = mb ∧ TwoAdicFsqInvariant f g false (nb0, w)) :
-    (w &&& w - 1).toNat < mb ∧ TwoAdicFsqInvariant f g false (nb, w &&& w - 1) := by
-  have hw' : w ≠ 0 := by simpa using hw
-  obtain ⟨rfl, k0, hcl, hbits, -⟩ := h
-  refine ⟨UInt64.toNat_and_sub_one_lt hw', k + 1, hk ▸ hcl.and_sub_one hw', fun b hb a ↦ ?_, nofun⟩
-  rw [hs b hb a, hbits b hb a, length_toList_range_32, hk,
-    hcl.exists_lt_succ_iff hw' fun k' ↦ k' * b % 64 = a]
+/-- The scatter of the lowest set bit `k` of `w` into the odd classes, for a word `w` with the bits
+of `f` from `k0` on: the bits of the set bits of `f` below `k0` become those of its set bits up to
+`k`. -/
+theorem TwoAdicBits.of_scatterOddInvariant {f g w : UInt64} {nb0 nb : Vector UInt64 64}
+    {k k0 : ℕ} (hw : (w != 0) = true) (hk : k = w.toBitVec.ctz.toNat)
+    (hs : ScatterOddInvariant nb0 k (ForIn.toList [:32]) nb) (hcl : ClearedBelow f k0 w)
+    (h : TwoAdicBits f g k0 0 nb0) :
+    TwoAdicBits f g (w.toBitVec.ctz.toNat + 1) 0 nb := by
+  intro b hb a
+  rw [hs b hb a, h b hb a, length_toList_range_32, hk,
+    hcl.exists_lt_succ_iff (by simpa using hw) fun k' ↦ k' * b % 64 = a]
   grind
 
-theorem TwoAdicGsqInvariant.and_sub_one {f g w : UInt64} {nb0 nb : Vector UInt64 64} {t mb : ℕ}
-    (hw : (w != 0) = true) (ht : t = w.toBitVec.ctz.toNat)
-    (hs : ScatterEvenInvariant nb0 t (ForIn.toList [:32]) nb)
-    (h : w.toNat = mb ∧ TwoAdicGsqInvariant f g false (nb0, w)) :
-    (w &&& w - 1).toNat < mb ∧ TwoAdicGsqInvariant f g false (nb, w &&& w - 1) := by
-  have hw' : w ≠ 0 := by simpa using hw
-  obtain ⟨rfl, t0, hcl, hbits, -⟩ := h
-  refine ⟨UInt64.toNat_and_sub_one_lt hw', t + 1, ht ▸ hcl.and_sub_one hw', fun b hb a ↦ ?_, nofun⟩
-  rw [hs b hb a, hbits b hb a, length_toList_range_32, ht,
-    hcl.exists_lt_succ_iff hw' fun t' ↦ t' * a % 64 = b]
+/-- The scatter of the lowest set bit `t` of `w` into the even classes, for a word `w` with the bits
+of `g` from `t0` on: the bits of the set bits of `g` below `t0` become those of its set bits up to
+`t`. -/
+theorem TwoAdicBits.of_scatterEvenInvariant {f g w : UInt64} {nb0 nb : Vector UInt64 64}
+    {t t0 : ℕ} (hw : (w != 0) = true) (ht : t = w.toBitVec.ctz.toNat)
+    (hs : ScatterEvenInvariant nb0 t (ForIn.toList [:32]) nb) (hcl : ClearedBelow g t0 w)
+    (h : TwoAdicBits f g 64 t0 nb0) :
+    TwoAdicBits f g 64 (w.toBitVec.ctz.toNat + 1) nb := by
+  intro b hb a
+  rw [hs b hb a, h b hb a, length_toList_range_32, ht,
+    hcl.exists_lt_succ_iff (by simpa using hw) fun t' ↦ t' * a % 64 = b]
   grind
-
-theorem TwoAdicFsqInvariant.exit {f g w : UInt64} {nb : Vector UInt64 64} {mb : ℕ}
-    (hw : ¬(w != 0) = true) (h : w.toNat = mb ∧ TwoAdicFsqInvariant f g false (nb, w)) :
-    TwoAdicFsqInvariant f g true (nb, w) := by
-  obtain ⟨-, k0, hcl, hbits, -⟩ := h
-  exact ⟨k0, hcl, hbits, fun _ ↦ by simpa using hw⟩
-
-theorem TwoAdicGsqInvariant.exit {f g w : UInt64} {nb : Vector UInt64 64} {mb : ℕ}
-    (hw : ¬(w != 0) = true) (h : w.toNat = mb ∧ TwoAdicGsqInvariant f g false (nb, w)) :
-    TwoAdicGsqInvariant f g true (nb, w) := by
-  obtain ⟨-, t0, hcl, hbits, -⟩ := h
-  exact ⟨t0, hcl, hbits, fun _ ↦ by simpa using hw⟩
 
 section
 
 /- The invariants are irreducible here: the verification conditions of `Ratpoints.Sieve.twoAdic`
 are closed by their lemmas, never by unfolding them. -/
-attribute [local irreducible] TwoAdicBits ClearedBelow TwoAdicFsqInvariant TwoAdicGsqInvariant
-  ScatterOddInvariant ScatterEvenInvariant
+attribute [local irreducible] TwoAdicBits ClearedBelow WalkWhileInvariant ScatterOddInvariant
+  ScatterEvenInvariant
 
 /-- The loops over the set bits end, since clearing the lowest set bit makes a word other than `0`
 smaller. -/
@@ -459,20 +395,22 @@ theorem twoAdic_spec (c : List ℤ) (d : ℕ) :
     ⦃ True ⦄ twoAdic c d
     ⦃ fun nb ↦ TwoAdicBits (fsq (coeffsMod64 c d)) (gsq (coeffsMod64 c d)) 64 64 nb ⦄ := by
   vcgen [twoAdic] invariants
-  | inv1 => TwoAdicFsqInvariant (fsq (coeffsMod64 c d)) (gsq (coeffsMod64 c d))
+  | inv1 => WalkWhileInvariant (fsq (coeffsMod64 c d))
+      fun k0 ↦ TwoAdicBits (fsq (coeffsMod64 c d)) (gsq (coeffsMod64 c d)) k0 0
   | inv2 => .ofMeasure fun s : Vector UInt64 64 × UInt64 ↦ s.2.toNat
-  | inv3 => TwoAdicGsqInvariant (fsq (coeffsMod64 c d)) (gsq (coeffsMod64 c d))
+  | inv3 => WalkWhileInvariant (gsq (coeffsMod64 c d))
+      (TwoAdicBits (fsq (coeffsMod64 c d)) (gsq (coeffsMod64 c d)) 64)
   | inv4 => .ofMeasure fun s : Vector UInt64 64 × UInt64 ↦ s.2.toNat
   | inv5 nb _ _ _ _ _ => fun pref _ nb' ↦ ScatterEvenInvariant nb t pref nb'
   | inv6 nb _ _ _ _ _ => fun pref _ nb' ↦ ScatterOddInvariant nb k pref nb'
   all_goals try simp only [Std.WP.Variant.evalsTo_ofMeasure,
     Std.WP.Variant.evalsBelow_ofMeasure_nat, Std.WP.Assertion.NondetFun.evalsTo_pure,
     Lean.Order.meet_prop_eq_and, Lean.Order.ofProp_prop_eq] at *
-  all_goals solve_by_elim (maxDepth := 6) [twoAdicFsqInvariant_init, bne_iff_ne.mp,
-    TwoAdicFsqInvariant.twoAdicGsqInvariant, TwoAdicGsqInvariant.twoAdicBits,
-    scatterOddInvariant_nil, scatterEvenInvariant_nil, TwoAdicFsqInvariant.and_sub_one,
-    TwoAdicGsqInvariant.and_sub_one, ScatterOddInvariant.set!, ScatterEvenInvariant.set!,
-    TwoAdicFsqInvariant.exit, TwoAdicGsqInvariant.exit]
+  all_goals solve_by_elim (maxDepth := 10) [walkWhileInvariant_self, twoAdicBits_replicate_zero,
+    twoAdicBits_of_walkWhileInvariant_left, twoAdicBits_of_walkWhileInvariant_right,
+    scatterOddInvariant_nil, scatterEvenInvariant_nil, WalkWhileInvariant.and_sub_one,
+    TwoAdicBits.of_scatterOddInvariant, TwoAdicBits.of_scatterEvenInvariant,
+    ScatterOddInvariant.set!, ScatterEvenInvariant.set!, WalkWhileInvariant.exit, bne_iff_ne.mp]
 
 end
 
