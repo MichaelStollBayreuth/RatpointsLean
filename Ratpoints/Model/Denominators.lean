@@ -99,7 +99,7 @@ Deviation: Horner's rule from `0`, where the C code starts from `cm[D]`, with th
 def fsq (cm : Array UInt64) : UInt64 :=
   Nat.fold 64 (fun k _ w ↦
     let s := cm.foldr (fun a s ↦ s * k.toUInt64 + a) 0
-    if (squares64 >>> (s &&& 0x3f)) &&& 1 != 0 then w ||| 1 <<< k.toUInt64 else w) 0
+    if squares64 >>> (s &&& 0x3f) &&& 1 != 0 then w ||| 1 <<< k.toUInt64 else w) 0
 
 /-- The even residues `t` modulo 64 at which the reversed polynomial
 `frev(t) = c₀ t^D + c₁ t^(D - 1) + ⋯ + c_D` with the coefficients `cm` modulo 64
@@ -114,7 +114,7 @@ def gsq (cm : Array UInt64) : UInt64 :=
   Nat.fold 32 (fun i _ w ↦
     let t := 2 * i
     let s := cm.foldl (fun s a ↦ s * t.toUInt64 + a) 0
-    if (squares64 >>> (s &&& 0x3f)) &&& 1 != 0 then w ||| 1 <<< t.toUInt64 else w) 0
+    if squares64 >>> (s &&& 0x3f) &&& 1 != 0 then w ||| 1 <<< t.toUInt64 else w) 0
 
 /-- The 2-adic information of the polynomial of degree `d` with the coefficient list `c`: for each
 residue `b` modulo 64 the word `nb[b]` of the numerators modulo 64 that the denominators `≡ b`
@@ -676,8 +676,7 @@ Deviation: the denominators listed, to be tested and sifted one after the other
 words of the whole run, one segment with no blocks, for the words `a, …, e` of a block (stage I);
 the lowest set bit by the loop of `RP_CTZL` (`Ratpoints.Sieve.ctz`); products and quotients by 64
 for the shifts by `LONG_SHIFT`; natural numbers for the `long`s. -/
-def wordsDens (db : UInt64) (forb : List ForbiddenEntry) (bLow bHigh : Nat) :
-    Id (Array Nat) := do
+def wordsDens (db : UInt64) (forb : List ForbiddenEntry) (bLow bHigh : Nat) : Id (Array Nat) := do
   let mut out := #[]
   for w in [bLow / 64:bHigh / 64 + 1] do
     let mut x := wordBits db forb bLow bHigh w

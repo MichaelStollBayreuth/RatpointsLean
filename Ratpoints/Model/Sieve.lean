@@ -903,10 +903,10 @@ def pointsAtInfinity (c : List Int) (d : Nat) (rev : Bool) : List (Int × Int ×
   ([(-9, 1), (-9, 12), (-35, 4), (6, 2), (15, 17)] : List (Int × Nat)).all fun (w0, n) ↦
     [1, 10].all fun b ↦
       [~~~0, 0xdddddddddddddddd, 0x0202020202020202].all fun cw ↦
-      let v := Id.run (andRows (es.map fun e ↦ ⟨e.p, e.row b⟩) cw w0 n (Vector.replicate _ 0))
-      (List.range (n * rbaPack)).all fun y ↦ (List.range 64).all fun t ↦
-        v[y]!.toBitVec.getLsbD t ==
-          (cw.toBitVec.getLsbD t && survives es b (rbaLength * w0 + 64 * y + t))
+        let v := Id.run (andRows (es.map fun e ↦ ⟨e.p, e.row b⟩) cw w0 n (Vector.replicate _ 0))
+        (List.range (n * rbaPack)).all fun y ↦ (List.range 64).all fun t ↦
+          v[y]!.toBitVec.getLsbD t ==
+            (cw.toBitVec.getLsbD t && survives es b (rbaLength * w0 + 64 * y + t))
 
 -- The set bits of a word, lowest first: with `F(a, 1) = a ^ 2`, every numerator `a0 + t` of a set
 -- bit `t` gives its points, after the points already in the array; the numerators, each once, are
