@@ -559,12 +559,14 @@ out of which every prime `q` of `lcf` is divided as often as it divides, is `b*`
 an odd exponent, and the test passes when the result is false. For `b = 0` the loop of
 `Ratpoints.Sieve.ctz` does not end.
 
-C: `find_points.c:734-759`
+C: `find_points.c:734-759`, `rp-private.h:409-410`, `rp-private.h:415-416`
 
-Deviation: divisions and remainders for `RP_MULDIV`, which multiplies by the reciprocal and is
-exact below `2^32`, the bound `Ratpoints.mulModLimit` on the denominators for which the tables are
-made; the odd part as the shift by the lowest set bit of the word `b` (`Ratpoints.Sieve.ctz`, the
-loop of `RP_CTZL`); `b mod 8` for `b & 7`; natural numbers for the `long`s. -/
+Deviation: divisions and remainders for `RP_MULDIV`, which divides in a build without a 128-bit
+integer type (`rp-private.h:415-416`) and otherwise multiplies by the reciprocal
+(`rp-private.h:409-410`), exact below `2^32`, the bound `Ratpoints.mulModLimit` on the denominators
+for which the tables are made; the odd part as the shift by the lowest set bit of the word `b`
+(`Ratpoints.Sieve.ctz`, the loop of `RP_CTZL`); `b mod 8` for `b & 7`; natural numbers for the
+`long`s. -/
 def jacobiTest (ji : JacobiInfo) (b : Nat) : Id Bool := do
   let t ← ctz b.toUInt64
   let mut b := b >>> t

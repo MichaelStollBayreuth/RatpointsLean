@@ -1821,10 +1821,22 @@
         "Ratpoints.Sieve.SieveSpec"
       ]
     },
+    "rp-private.h:409-410": {
+      "hash": "3fadd98ca0e6075c12ad4816aa9acfa0385e86f6f45bf58bfe23dd8951366776",
+      "owners": [
+        "Ratpoints.Sieve.jacobiTest"
+      ]
+    },
     "rp-private.h:41-43": {
       "hash": "b1cdf6bfb6993a5469f282a00642df6f98c08f2df577f36110709941ed7e7f3d",
       "owners": [
         "Ratpoints.fitsLong"
+      ]
+    },
+    "rp-private.h:415-416": {
+      "hash": "045d14c76f16560085b389c2fdcf89fbff8872160f51e96997eb8607bbd62771",
+      "owners": [
+        "Ratpoints.Sieve.jacobiTest"
       ]
     },
     "rp-private.h:421-421": {
@@ -2308,6 +2320,8 @@
     "rp-private.h:321-323": "cd9db85dc97c2ac45dfa03d7b547b886840b5151af0bbecabab8dfbe1402c54c",
     "rp-private.h:325-361": "ff27dd12c1efab74f34738e15531b3844655220d5210dd2bdcb0734fb2053a31",
     "rp-private.h:378-379": "9f8b4e5a7e4cc8ecee649784b39ea1f01db67154d5cbceaf23cbfc23dc572572",
+    "rp-private.h:409-410": "3fadd98ca0e6075c12ad4816aa9acfa0385e86f6f45bf58bfe23dd8951366776",
+    "rp-private.h:415-416": "045d14c76f16560085b389c2fdcf89fbff8872160f51e96997eb8607bbd62771",
     "rp-private.h:421-421": "2178269edcc9dc470ac72bd8ff67a437303d19e7969d7c2da1b605f77b58c308",
     "rp-private.h:429-444": "27ab62987e54d21729a7dc7240acadb35d150c6cdfef5f5b09a78619d8b92e9c",
     "rp-private.h:542-555": "35545fa2f80164462a2e92e543f56f9ceace7fcfccb179d0f60ba51292630ae1",

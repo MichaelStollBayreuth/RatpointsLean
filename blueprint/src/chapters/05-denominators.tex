@@ -442,7 +442,9 @@ $(c_d / q) = -1$, which these do not reach.
   is passed (\csource{find_points.c}{683}{708}, \csource{find_points.c}{714}{720},
   \csource{find_points.c}{730}{731}). The test of $b$: its odd part with every $q_i$ divided out,
   the sign of the result modulo $8$ combined with the table entry of the result modulo each $q_i$
-  with odd $e_i$, passing when the product is $1$ (\csource{find_points.c}{734}{759}). The contracts
+  with odd $e_i$, passing when the product is $1$ (\csource{find_points.c}{734}{759}, with the
+  reductions by \verb|RP_MULDIV|, \csource{rp-private.h}{409}{410} and
+  \csource{rp-private.h}{415}{416}). The contracts
   describe the loops: the table of $q$ marks the residues $x^2 \bmod q$, $1 \le x \le q / 2$, made
   by the steps $2x + 1$ with one subtraction, so that it gives the Legendre symbol of a residue
   other than $0$; the tables exist only for $b_{\mathrm{high}} \le \mathrm{mulModLimit}$ and
