@@ -15,7 +15,9 @@ Candidates for `Mathlib.NumberTheory.Padics.PadicVal.Basic`: the valuation of `p
 power of `p` of its valuation times an integer prime to `p` (`Int.exists_eq_pow_padicValNat_mul`),
 the `p`-adic valuation of the integer `p ^ n` (`padicValInt_prime_pow`, the integer form of
 `padicValNat.prime_pow`), and a square that is a power of `p` times a unit at `p`, whose exponent is
-even and whose unit part is a square (`Int.even_and_isSquare_of_sq_eq_pow_mul`).
+even and whose unit part is a square (`Int.even_and_isSquare_of_sq_eq_pow_mul`), also for a square
+that is a sum whose terms but one are divisible by a higher power of `p`
+(`Int.even_and_exists_isSquare_add_of_sq_eq_sum`).
 
 ## Main statements
 
@@ -25,6 +27,8 @@ even and whose unit part is a square (`Int.even_and_isSquare_of_sq_eq_pow_mul`).
 * `padicValInt_prime_pow`: `v_p(p ^ n) = n` for the integer `p ^ n`.
 * `Int.even_and_isSquare_of_sq_eq_pow_mul`: `y ^ 2 = p ^ v u` with `p ∤ u` makes `v` even and `u` a
   square.
+* `Int.even_and_exists_isSquare_add_of_sq_eq_sum`: a square sum with one term `p ^ v u` of least
+  valuation, `p ∤ u`, makes `v` even and `u + p t` a square for some `t`.
 -/
 
 @[expose] public section
@@ -72,5 +76,22 @@ theorem Int.even_and_isSquare_of_sq_eq_pow_mul {p : ℕ} [hp : Fact p.Prime] {y 
   refine ⟨z, (mul_left_cancel₀ (pow_ne_zero (k + k) hp0) ?_).symm⟩
   rw [← h, pow_add]
   ring
+
+/-- **A square sum with one term of least valuation.** If `y ^ 2 = ∑ i ∈ s, f i`, where
+`f j = p ^ v u` with `p ∤ u` and `p ^ (v + 1)` divides every other term, then `v` is even and
+`u + p t` is a square for some `t`, so that `u` is a square modulo `p`. -/
+theorem Int.even_and_exists_isSquare_add_of_sq_eq_sum {ι : Type*} {s : Finset ι} {f : ι → ℤ}
+    {p : ℕ} [Fact p.Prime] {y u : ℤ} {v : ℕ} {j : ι} (hy : y ^ 2 = ∑ i ∈ s, f i) (hj : j ∈ s)
+    (hfj : f j = (p : ℤ) ^ v * u) (hu : ¬(p : ℤ) ∣ u)
+    (h : ∀ i ∈ s, i ≠ j → (p : ℤ) ^ (v + 1) ∣ f i) : Even v ∧ ∃ t, IsSquare (u + p * t) := by
+  classical
+  obtain ⟨t, ht⟩ : (p : ℤ) ^ (v + 1) ∣ ∑ i ∈ s.erase j, f i :=
+    Finset.dvd_sum fun i hi ↦ h i (Finset.mem_of_mem_erase hi) (Finset.ne_of_mem_erase hi)
+  have hsum : y ^ 2 = (p : ℤ) ^ v * (u + p * t) := by
+    rw [hy, ← Finset.add_sum_erase s f hj, hfj, ht, pow_succ]
+    ring
+  obtain ⟨hv, hsq⟩ := Int.even_and_isSquare_of_sq_eq_pow_mul hsum
+    (by rwa [dvd_add_left (dvd_mul_right _ _)])
+  exact ⟨hv, t, hsq⟩
 
 end

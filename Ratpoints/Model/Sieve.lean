@@ -196,20 +196,22 @@ Deviation: the prime `p` itself, for its index `pn` in the table `prime`; the ta
 `p` entries, for the `p + 1` integers that `examine_prime` takes from the buffer `int_next` and
 hands back through `is_f_square_p`; no reciprocal `recip`, which only `barrett` reads (stage F). The
 coefficients reduced modulo `p` are not handed back, where `examine_prime` leaves them in its
-caller's array for the test on the forbidden divisors of the denominators (stage E); Horner's rule
+caller's array for the test on the forbidden divisors of the denominators, which computes them again
+until stage F (`Ratpoints.Sieve.unitParts`, `Ratpoints.Sieve.forbiddenOfPrime`); Horner's rule
 reduces at every step, for the reduction on a fixed schedule (stage F), and also gives `f(0)`, which
 ratpoints reads off the constant term; the residues with a square value are not counted, and the
 exit asks only whether there is one; the last entry of the table decides the exit and is not kept,
 since ratpoints reads it otherwise only for the density, the prime powers and the forbidden
-divisors, never in a row or in the third stage; the entry is made also when `f(x)` is a square for
-every residue and there is no point at infinity modulo `p`, where `examine_prime` returns `0` and
-`p` is never a modulus, the moduli being an input of the model, and for both of its codes `1` and
-`2`, which only the choice of the moduli tells apart (stage I); the entry is a fresh value, for the
-space that `examine_prime` takes from the buffer of the sieve entries (`se_next`), and returned,
-where `examine_prime` stores it in the field `ssp` of its caller's entry `prec_entry` for the choice
-of the moduli (stage I); it keeps only `p`, the table and the inverses (`Ratpoints.Sieve.Entry`),
-and no rows: `Ratpoints.Sieve.Entry.rows` makes them from it when they are first needed, also the
-row of `0`, which `examine_prime` installs from the build. -/
+divisors, which compute it again until stage F (`Ratpoints.Sieve.forbiddenOfPrime`), never in a row
+or in the third stage; the entry is made also when `f(x)` is a square for every residue and there is
+no point at infinity modulo `p`, where `examine_prime` returns `0` and `p` is never a modulus, the
+moduli being an input of the model, and for both of its codes `1` and `2`, which only the choice of
+the moduli tells apart (stage I); the entry is a fresh value, for the space that `examine_prime`
+takes from the buffer of the sieve entries (`se_next`), and returned, where `examine_prime` stores
+it in the field `ssp` of its caller's entry `prec_entry` for the choice of the moduli (stage I); it
+keeps only `p`, the table and the inverses (`Ratpoints.Sieve.Entry`), and no rows:
+`Ratpoints.Sieve.Entry.rows` makes them from it when they are first needed, also the row of `0`,
+which `examine_prime` installs from the build. -/
 def examinePrime? (c : List Int) (d p : Nat) (useCLong : Bool) : Option Entry :=
   let cs := (List.range (d + 1)).map fun n ↦
     (if useCLong then modLong (c.getD n 0) p else c.getD n 0 % (p : Int)).toNat

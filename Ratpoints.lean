@@ -1,6 +1,7 @@
 module  -- shake: keep-all --deprecated_module: ignore
 
 public import Ratpoints.Mathlib.Algebra.BigOperators.Ring.Finset
+public import Ratpoints.Mathlib.Algebra.Field.ZMod
 public import Ratpoints.Mathlib.Algebra.Polynomial.Homogenize
 public import Ratpoints.Mathlib.Algebra.Prime.Defs
 public import Ratpoints.Mathlib.Algebra.Squarefree.Basic
@@ -28,6 +29,7 @@ public import Ratpoints.Proof.Bits
 public import Ratpoints.Proof.BruteForce
 public import Ratpoints.Proof.Divisors
 public import Ratpoints.Proof.FindPoints
+public import Ratpoints.Proof.Forbidden
 public import Ratpoints.Proof.Params
 public import Ratpoints.Proof.Setup
 public import Ratpoints.Proof.Sieve

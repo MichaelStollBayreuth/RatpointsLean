@@ -290,40 +290,34 @@ $w_j = v_p(c_{d - j})$.
 
 \begin{definition}[The forbidden valuations]\label{def:forbiddenValuations}
   \uses{def:valuation, def:squaresMod}
-  Proposed names: \lname{Ratpoints.Sieve.unitParts}, \lname{Ratpoints.Sieve.forbiddenAt},
-  \lname{Ratpoints.Sieve.forbiddenValuations}, \lname{Ratpoints.Sieve.allValuations},
-  \lname{Ratpoints.Sieve.IsUnitPart}, \lname{Ratpoints.Sieve.unitParts\_spec},
-  \lname{Ratpoints.Sieve.forbiddenAt\_spec}, \lname{Ratpoints.Sieve.forbiddenValuations\_spec},
-  \lname{Ratpoints.Sieve.allValuations\_spec}, \lname{Ratpoints.Sieve.lt\_forty\_of\_pow\_le},
-  \lname{Ratpoints.Sieve.run\_forbiddenValuations\_lt},
-  \lname{Ratpoints.Sieve.run\_allValuations\_lt}. For a prime $p \mid c_d$: the valuation $w_j$ and
-  the unit part $r_j$ modulo $p$, its sign included, of each nonzero $c_{d - j}$
-  (\csource{find_points.c}{2198}{2200}, \csource{find_points.c}{2204}{2215}); for $m = 1, 2, \dots$
-  while $p^m \le b_{\mathrm{high}}$, bit $m$ of the mask, a natural number, set when the least $w_j
-  + j m$ is taken at one $j_0$ only and is odd, or $j_0$ is even and $r_{j_0}$ is not a square
-  modulo $p$ (\csource{find_points.c}{2218}{2228}; \csource{find_points.c}{2192}{2197},
+  \lean{Ratpoints.Sieve.unitParts, Ratpoints.Sieve.forbiddenAt, Ratpoints.Sieve.forbiddenValuations, Ratpoints.Sieve.allValuations, Ratpoints.Sieve.IsUnitPart, Ratpoints.Sieve.unitParts_spec, Ratpoints.Sieve.forbiddenAt_spec, Ratpoints.Sieve.forbiddenValuations_spec, Ratpoints.Sieve.allValuations_spec, Ratpoints.Sieve.lt_forty_of_pow_le, Ratpoints.Sieve.run_forbiddenValuations_lt, Ratpoints.Sieve.run_allValuations_lt}
+  \leanok
+  For a prime $p \mid c_d$: the valuation $w_j$ and the unit part $r_j$ modulo $p$, its sign
+  included, of each nonzero $c_{d - j}$ (\csource{find_points.c}{2198}{2200},
+  \csource{find_points.c}{2204}{2215}); for $m = 1, 2, \dots$ while $p^m \le b_{\mathrm{high}}$, bit
+  $m$ of the mask, a natural number, set when the least $w_j + j m$ is taken at one $j_0$ only and
+  is odd, or $j_0$ is even and $r_{j_0}$ is not a square modulo $p$
+  (\csource{find_points.c}{2218}{2228}; \csource{find_points.c}{2192}{2197},
   \csource{find_points.c}{2201}{2203}, \csource{find_points.c}{2216}{2217},
-  \csource{find_points.c}{2229}{2234}); and the mask of every $m \ge 1$ with $p^m \le
-  b_{\mathrm{high}}$ (\csource{find_points.c}{2632}{2641}). The contracts: the entries $(w_j, r_j)$
-  describe the coefficients at $p$; bit $m$ of the mask is set exactly when $m \ge 1$, $p^m \le
-  b_{\mathrm{high}}$ and the test at $m$ excludes it, which it does only in the two cases above; for
-  an odd prime and a \verb|long| $b_{\mathrm{high}}$ every such $m$ is below $40$, so that the bound
-  $m < 63$ of the C code never binds and both masks are below $2^{40}$.
+  \csource{find_points.c}{2229}{2234}); and the mask of every $m \ge 1$ with
+  $p^m \le b_{\mathrm{high}}$ (\csource{find_points.c}{2632}{2641}). The contracts: the entries
+  $(w_j, r_j)$ describe the coefficients at $p$; bit $m$ of the mask is set exactly when $m \ge 1$,
+  $p^m \le b_{\mathrm{high}}$ and the test at $m$ excludes it, which it does only in the two cases
+  above; for an odd prime and a \verb|long| $b_{\mathrm{high}}$ every such $m$ is below $40$, so
+  that the bound $m < 63$ of the C code never binds and both masks are below $2^{40}$.
 \end{definition}
 
 \begin{lemma}[The forbidden valuations are sound]\label{lem:forbiddenValuations}
-  \uses{def:forbiddenValuations, def:IsPoint}
-  Proposed names: \lname{Ratpoints.binaryForm\_eq\_sum\_of\_even},
-  \lname{Ratpoints.even\_and\_isSquare\_of\_sq\_eq\_binaryForm\_of\_even},
-  \lname{Ratpoints.Sieve.run\_forbiddenAt\_eq\_false\_of\_sq\_eq},
-  \lname{Ratpoints.Sieve.testBit\_run\_forbiddenValuations\_eq\_false\_of\_sq\_eq},
-  \lname{Int.even\_and\_exists\_isSquare\_add\_of\_sq\_eq\_sum},
-  \lname{ZMod.isSquare\_intCast\_of\_isSquare\_mul\_sq\_add}.
-  For even $d$, a prime $p$ and a normalized point $(a, y, b)$ with $b \ge 1$: bit $v_p(b)$ of the
-  mask of forbidden valuations at $p$ is clear.
+  \uses{def:forbiddenValuations, def:binaryForm}
+  \lean{Ratpoints.binaryForm_eq_sum_of_even, Ratpoints.even_and_isSquare_of_sq_eq_binaryForm_of_even, Ratpoints.Sieve.run_forbiddenAt_eq_false_of_sq_eq, Ratpoints.Sieve.testBit_run_forbiddenValuations_eq_false_of_sq_eq, Int.even_and_exists_isSquare_add_of_sq_eq_sum, ZMod.isSquare_intCast_of_isSquare_mul_sq_add}
+  \leanok
+  For even $d$, a prime $p$, integers $a$ and $y$ and a natural number $b$ with $\gcd(a, b) = 1$ and
+  $y^2 = F(a, b)$, as for a normalized point $(a, y, b)$: bit $v_p(b)$ of the mask of forbidden
+  valuations at $p$ is clear.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   Let $m = v_p(b)$; bit $0$ is never set. If the least valuation $\mu$ of the terms is taken at
   $j_0$ only, then $v_p(F(a, b)) = \mu$ and $F(a, b) / p^{\mu}$ is congruent to
   $r_{j_0} a^{d - j_0} (b / p^m)^{j_0}$ modulo $p$; since $F(a, b) = y^2$, $\mu$ is even and this
@@ -334,17 +328,15 @@ $w_j = v_p(c_{d - j})$.
 
 \begin{definition}[The forbidden divisors]\label{def:forbidden}
   \uses{def:forbiddenValuations, def:squaresMod, def:primeTable, def:reversal}
-  Proposed names: \lname{Ratpoints.Sieve.ForbiddenEntry}, \lname{Ratpoints.Sieve.ForbiddenVal},
-  \lname{Ratpoints.Sieve.forbiddenRow}, \lname{Ratpoints.Sieve.forbiddenOfPrime},
-  \lname{Ratpoints.Sieve.forbidden}, \lname{Ratpoints.Sieve.getLsbD\_getElem!\_forbiddenRow},
-  \lname{Ratpoints.Sieve.IsForbiddenEntry}, \lname{Ratpoints.Sieve.IsForbiddenVal},
-  \lname{Ratpoints.Sieve.forbidden\_spec}. A prime tested with words, with its $p$ words, bit $j$ of
-  word $r$ clear exactly when $p \mid 64 r + j$ (\csource{find_points.c}{157}{161}; the words as the
-  build generates them for the primes of its table and as \verb|sieving_info| makes them beyond it,
+  \lean{Ratpoints.Sieve.ForbiddenEntry, Ratpoints.Sieve.ForbiddenVal, Ratpoints.Sieve.forbiddenRow, Ratpoints.Sieve.forbiddenOfPrime, Ratpoints.Sieve.forbidden, Ratpoints.Sieve.getLsbD_getElem!_forbiddenRow, Ratpoints.Sieve.IsForbiddenEntry, Ratpoints.Sieve.IsForbiddenVal, Ratpoints.Sieve.forbidden_spec}
+  \leanok
+  A prime tested with words, with its $p$ words, bit $j$ of word $r$ clear exactly when
+  $p \mid 64 r + j$ (\csource{find_points.c}{157}{161}; the words as the build generates them for
+  the primes of its table and as \verb|sieving_info| makes them beyond it,
   \csource{gen_find_points_h.c}{102}{134}, \csource{find_points.c}{2773}{2777}), and a prime with
   the mask of its excluded valuations (\csource{find_points.c}{166}{166}); for even $d$, the
-  examined primes $p$ in turn, while fewer than $\mathrm{maxForbidden}$ have been found: for $p \mid
-  c_d$ with a nonzero mask, $p$ with its words when the mask holds every valuation that a
+  examined primes $p$ in turn, while fewer than $\mathrm{maxForbidden}$ have been found: for
+  $p \mid c_d$ with a nonzero mask, $p$ with its words when the mask holds every valuation that a
   denominator can have, and $p$ with its mask otherwise; for $p \nmid c_d$, $p$ with its words when
   $c_d$ is not a square modulo $p$ (\csource{find_points.c}{2627}{2631},
   \csource{find_points.c}{2642}{2676}); then, unless $c_d$ is a square, the primes of the table from
@@ -364,18 +356,17 @@ $w_j = v_p(c_{d - j})$.
 \end{definition}
 
 \begin{lemma}[The forbidden divisors are sound]\label{lem:forbidden}
-  \uses{def:forbidden, lem:forbiddenValuations, def:IsPoint, lem:examinePrime_none}
-  Proposed names: \lname{Ratpoints.Sieve.ForbiddenVal.excludes},
-  \lname{Ratpoints.Sieve.prime\_of\_mem\_forbidden\_fst},
-  \lname{Ratpoints.Sieve.words\_eq\_of\_mem\_forbidden\_fst},
-  \lname{Ratpoints.Sieve.not\_dvd\_of\_mem\_forbidden\_fst},
-  \lname{Ratpoints.Sieve.excludes\_eq\_false\_of\_mem\_forbidden\_snd}.
-  For even $d$, moduli that are primes and a normalized point $(a, y, b)$ with $b \ge 1$: each
-  entry tested with words is a prime $p$ with the words of $p$, and $p \nmid b$ when
-  $b \le b_{\mathrm{high}}$; and for no valuation entry is bit $v_p(b)$ of its mask set.
+  \uses{def:forbidden, lem:forbiddenValuations, def:binaryForm, lem:examinePrime_none}
+  \lean{Ratpoints.Sieve.ForbiddenVal.excludes, Ratpoints.Sieve.prime_of_mem_forbidden_fst, Ratpoints.Sieve.words_eq_of_mem_forbidden_fst, Ratpoints.Sieve.not_dvd_of_mem_forbidden_fst, Ratpoints.Sieve.excludes_eq_false_of_mem_forbidden_snd}
+  \leanok
+  For even $d$, moduli that are primes, integers $a$ and $y$ and a natural number $b \ge 1$ with
+  $\gcd(a, b) = 1$ and $y^2 = F(a, b)$, as for a normalized point $(a, y, b)$: each entry tested
+  with words is a prime $p$ with the words of $p$, and $p \nmid b$ when $b \le b_{\mathrm{high}}$;
+  and for no valuation entry is bit $v_p(b)$ of its mask set.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   For a prime $p \mid c_d$ this is Lemma~\ref{lem:forbiddenValuations}: a prime tested with words
   has every valuation $m \ge 1$ with $p^m \le b_{\mathrm{high}}$ in its mask, which covers every $b$
   with $p \mid b$. For $p \nmid c_d$ with $c_d$ not a square modulo $p$: if $p \mid b$, then

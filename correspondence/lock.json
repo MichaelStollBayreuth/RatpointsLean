@@ -79,6 +79,18 @@
         "Ratpoints.Setup.DenInfo"
       ]
     },
+    "find_points.c:157-161": {
+      "hash": "336631573d8d8292c4ebacfbaa7f4cb8ff416a8d5fc9f1fdface6730c97e0af7",
+      "owners": [
+        "Ratpoints.Sieve.ForbiddenEntry"
+      ]
+    },
+    "find_points.c:166-166": {
+      "hash": "8eb348f9c03638758dead2b52a0dc49e5d8b5214fa9ef5e583e47bf8d76a7f64",
+      "owners": [
+        "Ratpoints.Sieve.ForbiddenVal"
+      ]
+    },
     "find_points.c:1683-1697": {
       "hash": "8ac78641ccd933483bd2c4237daa50638ca947f94a1fd2be7e0c543f6a68d6e6",
       "owners": [
@@ -115,10 +127,112 @@
         "Ratpoints.Sieve.examinePrime?"
       ]
     },
+    "find_points.c:2192-2197": {
+      "hash": "e18d7fb796a96b38329f7187106b0f6547c04064163bba78f0480a8922e5329e",
+      "owners": [
+        "Ratpoints.Sieve.forbiddenValuations"
+      ]
+    },
+    "find_points.c:2198-2200": {
+      "hash": "9a3a8d819021287afd2283a46b60ed5c3e856e7e42dca5e63786edd81cd32708",
+      "owners": [
+        "Ratpoints.Sieve.unitParts"
+      ]
+    },
+    "find_points.c:2201-2203": {
+      "hash": "93a74b14007fdefc5efb57751321a1368592db5b1d427ac4b5aeaddd59e76928",
+      "owners": [
+        "Ratpoints.Sieve.forbiddenValuations"
+      ]
+    },
+    "find_points.c:2204-2215": {
+      "hash": "9282d22591f8db186d4b2e2f5f3c7ed945ede4e7a46fa0b62429f0ba9b3f5232",
+      "owners": [
+        "Ratpoints.Sieve.unitParts"
+      ]
+    },
+    "find_points.c:2216-2217": {
+      "hash": "b6adcc0008f2dd907bd22349e4276cc17b439351ed03ca1bc5ba830c9832d8ba",
+      "owners": [
+        "Ratpoints.Sieve.forbiddenValuations"
+      ]
+    },
+    "find_points.c:2218-2228": {
+      "hash": "fe500b3dbbaa46939df0767fbe9949771723e7b3a055384dd3c22dd0a8891db0",
+      "owners": [
+        "Ratpoints.Sieve.forbiddenAt"
+      ]
+    },
+    "find_points.c:2229-2234": {
+      "hash": "2d9017d0aa9a81842d2364890535dff5df5c03165b9a0e5858ffc7f1984c5f7b",
+      "owners": [
+        "Ratpoints.Sieve.forbiddenValuations"
+      ]
+    },
+    "find_points.c:2533-2536": {
+      "hash": "f0253392e801d72d465ab3916720c4d8899adcf9f45d852502cf85eaaa54bdc3",
+      "owners": [
+        "Ratpoints.Sieve.forbidden"
+      ]
+    },
+    "find_points.c:2561-2562": {
+      "hash": "44fc620b4b928265dc1e9f035e942b12404ac5533386333fc93b4be67bc8baae",
+      "owners": [
+        "Ratpoints.Sieve.forbidden"
+      ]
+    },
     "find_points.c:2605-2614": {
       "hash": "1fa65ad66323af955468eadaa84714e30cdf94324875868c185ced0a93da1c71",
       "owners": [
         "Ratpoints.searchPoints"
+      ]
+    },
+    "find_points.c:2624-2626": {
+      "hash": "d50d1ac6f3023196a18839976edb3dc537d7fc2c05b89fb7bddf6e506fd1b4c5",
+      "owners": [
+        "Ratpoints.Sieve.forbidden"
+      ]
+    },
+    "find_points.c:2627-2631": {
+      "hash": "784600df22e3d2204dc09d2fbf98677cdeae337f1946ce5764f9a17ecbe7fb0f",
+      "owners": [
+        "Ratpoints.Sieve.forbiddenOfPrime"
+      ]
+    },
+    "find_points.c:2632-2641": {
+      "hash": "0cc6eef14461f07a0a195183c767fdf70fb7fea81f88cf96b26651601d155a6a",
+      "owners": [
+        "Ratpoints.Sieve.allValuations"
+      ]
+    },
+    "find_points.c:2642-2676": {
+      "hash": "eaec5b5de5decc030921f02094a7443bff8e69b36f8568124fca4ac100667559",
+      "owners": [
+        "Ratpoints.Sieve.forbiddenOfPrime"
+      ]
+    },
+    "find_points.c:2677-2677": {
+      "hash": "28d86778615f6af47bb1bc4f40face756749768e5111f114cfa234a5060c25af",
+      "owners": [
+        "Ratpoints.Sieve.forbidden"
+      ]
+    },
+    "find_points.c:2709-2772": {
+      "hash": "5106763f5e0c5a61fa5cf3f1af31b2c1a731918531a496c19b0942d7a29fd1f2",
+      "owners": [
+        "Ratpoints.Sieve.forbidden"
+      ]
+    },
+    "find_points.c:2773-2777": {
+      "hash": "712d90e84e4db75f303869d00c213d9f0f4abbf008edf013001cfe83218d1129",
+      "owners": [
+        "Ratpoints.Sieve.forbiddenRow"
+      ]
+    },
+    "find_points.c:2778-2789": {
+      "hash": "3757d209ba905841a18c572510b765c1aa685c2c47c47c00f4a476d6f819bf79",
+      "owners": [
+        "Ratpoints.Sieve.forbidden"
       ]
     },
     "find_points.c:2976-2978": {
@@ -545,7 +659,8 @@
       "hash": "3f663de590a75381a367c9aa80c762fd4467443c6675de60cb488cddb61f2e60",
       "owners": [
         "Ratpoints.Sieve.Entry.admits",
-        "Ratpoints.Sieve.Entry.row"
+        "Ratpoints.Sieve.Entry.row",
+        "Ratpoints.Sieve.forbiddenRow"
       ]
     },
     "gen_find_points_h.c:33-44": {
