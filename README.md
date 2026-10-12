@@ -25,13 +25,23 @@ output: the refusal of a binary form that is not squarefree (when the leading ze
 degree, in the reversal check, and by the remainder chain of the Sturm step, computed row by row as
 the C code computes it), the reversal of the polynomial in its three cases with the map of the
 points, the coefficients as C `long`s, and the exit when the curve has no points modulo a prime.
-The output of `findPoints` is the brute-force reference of the polynomial searched, mapped back
-after a reversal, a permutation of the reference, so that the main theorems hold for every option,
-and two refusal theorems, with the Sturm step on and off, say exactly which inputs it refuses; the
-challenge of Comparator states them. `ratpoints-lean` reads `-k -K -s -S`, and the differential
-tests compare the refusals and the points in their order wherever ratpoints visits the denominators
-in ascending order: 3218 comparisons in the default suites, and 13 in the suite run locally. The
-blueprint and the API documentation will be at
+The output of `findPoints` is a permutation of the brute-force reference, so that the main theorems
+hold for every option, and two refusal theorems, with the Sturm step on and off, say exactly which
+inputs it refuses; the challenge of Comparator states them. `ratpoints-lean` reads `-k -K -s -S`,
+and the differential tests compare the refusals and these options. Stage E is done: the side of the
+denominators as the C code has it: the 2-adic information with the classes of the denominators
+modulo 64 (the first stage of the sieve starts from the word of the class, and the search ends when
+no class admits a numerator); for odd degree the squares and the divisors of the leading
+coefficient times squares, with the valuation test of their slopes; for even degree the forbidden
+divisors, tested with words of 64 denominators and by their valuations, and the Jacobi test, by the
+binary algorithm and by tables, both proved to compute the Jacobi symbol of Mathlib; and the loop
+over the denominators in the four shapes of the C code, in its order. The output of `findPoints` is
+the list of the points at infinity followed by the points of the brute-force reference of the
+polynomial searched over the denominators in the order of the loop of its search, mapped back after
+a reversal, so that `ratpoints-lean` prints the points in the order of ratpoints; the main
+theorems, the refusal theorems and the challenge of Comparator keep their statements. The
+differential tests compare every point list in its order: 3219 comparisons in the default suites,
+and 13 in the suite run locally. The blueprint and the API documentation will be at
 <https://michaelstollbayreuth.github.io/RatpointsLean/> once the repository is public.
 
 ## Layout
@@ -79,10 +89,10 @@ set; `-k` and `-K` forbid and allow the reversal of the polynomial, and `-s` and
 the Sturm step off and on, of which the model has the test for a repeated factor so far; it accepts
 `-q`, `-v` and the other options that tune the sieve of ratpoints, checking their arguments, but
 ignores them. It refuses a binary form that is not squarefree with error 8 as ratpoints does with
-the same options, and prints the points in the order of ratpoints wherever ratpoints visits the
-denominators in ascending order. It answers the options of ratpoints that it does not support yet,
-those of the search region and the denominator range (`-l -u -dl -du`) and those of the output
-(`-x -X -y -Y -z -Z -1 -i -I -f -fs -fm -fe`), with the exit status 12.
+the same options, and prints the points in the order of ratpoints. It answers the options of
+ratpoints that it does not support yet, those of the search region and the denominator range
+(`-l -u -dl -du`) and those of the output (`-x -X -y -Y -z -Z -1 -i -I -f -fs -fm -fe`), with the
+exit status 12.
 
 ## Licence
 

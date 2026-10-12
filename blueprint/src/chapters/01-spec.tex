@@ -194,8 +194,9 @@ for reversed polynomials and for odd degree with $|c_d| \ne 1$, where the two ag
 stage~D the output of \verb|findPoints| is mapped back after a reversal, and since stage~E it is
 that of the reference of the polynomial searched over the denominators in the order of its search
 (Theorem~\ref{thm:findPoints_order}), which is the order of the program on every point list of the
-differential tests, all compared in their order; that it is the order of the program in general is
-a theorem of stage~G about \verb|findPoints|.
+differential tests, all compared in their order; stage~G spells this order out in terms of the
+polynomial, with the divisors of the leading coefficient in the order of binary counting over its
+primes, and adds the protocol of the callback of the library and the options of the output.
 
 \begin{theorem}[The brute-force reference finds exactly the points]\label{thm:bruteForce}
   \uses{def:bruteForce, def:IsPoint, def:points}
@@ -400,8 +401,8 @@ its order, Section~\ref{sec:denCli}):
     runs need no run of the C program;
   \item 300 random polynomials of degree 1 to 8 with coefficients from $-10$ to $10$ at heights
     up to 30, against the C program (from stage~C1 on, when \verb|ratpoints-lean| runs the sieve,
-    a theorem says that the sieve returns the list of the brute force, which then needs no test
-    of its own);
+    a theorem relates the list of the sieve to that of the brute force, since stage~E
+    Theorem~\ref{thm:findPoints_order}, so that the brute force needs no test of its own);
   \item 253 hand-written command lines (\verb|scripts/difftest_cases.py|) for the checks that
     \verb|main.c| makes on the coefficients, the height and the options: white space and signs, the
     bounds of a \verb|long|, the grammar of \verb|strtod|, every option with a missing or malformed

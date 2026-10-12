@@ -572,10 +572,11 @@ Each component of the set-up differs from the C code in a stated way, recorded i
     (\verb|Setup.useCLong|); Lean's truncating division for C's, and products for the shifts in the
     helper \verb|mod| (\verb|Sieve.modLong|);
   \item of \verb|examine_prime| what the table, its last entry and the exit need: the coefficients
-    modulo $p$ that it hands back serve the forbidden divisors (stage~E), its entry of the prime and
-    its codes $0$, $1$ and $2$ the choice of the moduli, and its reciprocal only the Barrett
-    reduction (stage~F); the table a fresh array and the entry a fresh value, returned, for the
-    buffers that the C code takes them from and the entry of its caller where it stores them;
+    modulo $p$ that it hands back serve the forbidden divisors, which compute them and the last
+    entry again until stage~F, its entry of the prime and its codes $0$, $1$ and $2$ the choice of
+    the moduli, and its reciprocal only the Barrett reduction (stage~F); the table a fresh array and
+    the entry a fresh value, returned, for the buffers that the C code takes them from and the entry
+    of its caller where it stores them;
   \item the primes of the exit are the moduli of the parameters, where ratpoints examines the first
     \verb|num_primes| primes of the table and more when the number was left to it; when the exit
     fires there are no points, so the output is the same; the arguments of \verb|sieving_info| that
@@ -595,7 +596,8 @@ The lines of the set-up that are neither modelled nor left to a later stage are 
 the instrumentation of the development, the management of memory and its failures, the input fields
 that \verb|find_points_work| saves and puts back, the checks of arguments that only a caller of the
 library can fail, and the threads; so the record of \verb|find_points_work_1| up to the run lacks
-only what belongs to stages~E, F, H and~I. The macros of the flags and of the return codes in
+only what belongs to stages~F, H and~I, now that stage~E has recorded its lines
+(Chapter~\ref{chap:denominators}). The macros of the flags and of the return codes in
 \verb|ratpoints.h| are recorded later, for all stages together.
 
 \section{Files and names}
@@ -614,17 +616,17 @@ without Mathlib, is in \verb|Ratpoints/Proof/Sturm.lean|, and the lemmas on arra
 the absolute values of a list as a left fold, on the cursor of a loop over a range and on exact
 quotients of integers that it needs and Lean core lacks are in \verb|Ratpoints/Proof/Bits.lean|,
 under their names in the namespaces of core. The flagged contracts are in
-\verb|Ratpoints/Proof/Words.lean|; the lemmas on \verb|mod|, the \verb|long|s and the table with the
-exit in \verb|Ratpoints/Proof/Tables.lean|; the polynomial of a coefficient list, the squarefreeness
-of the chain and of the reversal, the reflection and the bijection in
-\verb|Ratpoints/Proof/Setup.lean|; the equation of the points at infinity and the run, that of
-$\mathrm{searchPoints}$ and the theorems in \verb|Ratpoints/Proof/FindPoints.lean|; and the lemmas
-of Mathlib's generality in \verb|Ratpoints/Mathlib|, in the files that mirror their homes in
-Mathlib: those on homogenizations in \verb|Algebra/Polynomial/Homogenize| and
-\verb|RingTheory/MvPolynomial/Homogeneous|, squarefreeness under multiplicative equivalences in
-\verb|Algebra/Squarefree/Basic|, the coprimality lemma in \verb|RingTheory/Coprime/Basic|, and the
-lemmas on lists in \verb|Data/List/Basic| and \verb|Data/List/Nodup|, under their names in the
-namespaces of core.
+\verb|Ratpoints/Proof/Words.lean|, that of the run since stage~E in
+\verb|Ratpoints/Proof/Denominators.lean|; the lemmas on \verb|mod|, the \verb|long|s and the table
+with the exit in \verb|Ratpoints/Proof/Tables.lean|; the polynomial of a coefficient list, the
+squarefreeness of the chain and of the reversal, the reflection and the bijection in
+\verb|Ratpoints/Proof/Setup.lean|; the equation of $\mathrm{searchPoints}$ and the theorems in
+\verb|Ratpoints/Proof/FindPoints.lean|; and the lemmas of Mathlib's generality in
+\verb|Ratpoints/Mathlib|, in the files that mirror their homes in Mathlib: those on homogenizations
+in \verb|Algebra/Polynomial/Homogenize| and \verb|RingTheory/MvPolynomial/Homogeneous|,
+squarefreeness under multiplicative equivalences in \verb|Algebra/Squarefree/Basic|, the coprimality
+lemma in \verb|RingTheory/Coprime/Basic|, and the lemmas on lists in \verb|Data/List/Basic| and
+\verb|Data/List/Nodup|, under their names in the namespaces of core.
 
 \section{The evidence}\label{sec:setup-evidence}
 

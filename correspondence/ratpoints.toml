@@ -92,6 +92,42 @@ reason = "the table of examine_prime with its last entry, printed under DEBUG"
 
 [[excluded]]
 file = "find_points.c"
+lines = "2801"
+kind = "memory"
+reason = "the enlargement of ba_buffer for the primes that the loop of the tables of sieving_info looked at beyond num_primes, which fails only for lack of memory"
+
+[[excluded]]
+file = "find_points.c"
+lines = "3807-3811"
+kind = "memory"
+reason = "the arrays of the segments of the run (their bounds and first blocks) in one allocation, which fails only for lack of memory, and before it the pointers to the other two arrays that run_clear frees set to NULL"
+
+[[excluded]]
+file = "find_points.c"
+lines = "3857-3860"
+kind = "memory"
+reason = "the arrays of the decisions of the correction of the moduli between the blocks in one allocation, which fails only for lack of memory"
+
+[[excluded]]
+file = "find_points.c"
+lines = "3866-3868"
+kind = "memory"
+reason = "the array of the search intervals of the run on the heap, whose allocation fails only for lack of memory"
+
+[[excluded]]
+file = "find_points.c"
+lines = "3871-3875"
+kind = "instrumentation"
+reason = "the report of the loop over the denominators under DEBUG at the end of run_setup: its shape, its segments and its blocks"
+
+[[excluded]]
+file = "find_points.c"
+lines = "3879-3883"
+kind = "memory"
+reason = "run_clear, which releases the arrays of the run"
+
+[[excluded]]
+file = "find_points.c"
 lines = "4542-4545"
 kind = "interface"
 reason = "the input fields of the arguments that find_points_work saves, so that a caller who reuses the arguments for the next curve does not find the normalizations and choices of the search in them; the model writes nothing back"
@@ -185,6 +221,54 @@ file = "find_points.c"
 lines = "5108-5113"
 kind = "instrumentation"
 reason = "the message before the sieve, under DEBUG and RATPOINTS_VERBOSE"
+
+[[excluded]]
+file = "find_points.c"
+lines = "5122-5125"
+kind = "instrumentation"
+reason = "the message under DEBUG before the allocation of the survivors"
+
+[[excluded]]
+file = "find_points.c"
+lines = "5127-5128"
+kind = "memory"
+reason = "worker_init, which allocates the survivors array of the worker of the calling thread and sets up its state, and fails only for lack of memory; the model passes what the sieve needs as arguments"
+
+[[excluded]]
+file = "find_points.c"
+lines = "5129"
+kind = "threads"
+reason = "the worker of the calling thread without a pool: the calling thread sieves; the model has no threads"
+
+[[excluded]]
+file = "find_points.c"
+lines = "5133-5136"
+kind = "instrumentation"
+reason = "the end of the message under DEBUG about the allocation of the survivors"
+
+[[excluded]]
+file = "find_points.c"
+lines = "5140-5151"
+kind = "threads"
+reason = "the pool of threads, when asked for, with a survivors array for each thread, and the threaded run with its failure; the model has no threads, which deliver the blocks in their order"
+
+[[excluded]]
+file = "find_points.c"
+lines = "5161"
+kind = "threads"
+reason = "the end of the block of the pool of threads"
+
+[[excluded]]
+file = "find_points.c"
+lines = "5164"
+kind = "memory"
+reason = "the release of the run (run_clear)"
+
+[[excluded]]
+file = "find_points.c"
+lines = "5166"
+kind = "memory"
+reason = "the release of the worker of the calling thread (worker_clear)"
 
 [[excluded]]
 file = "find_points.c"

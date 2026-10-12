@@ -20,7 +20,9 @@ the denominators of stage~E, the composite moduli and the third stage of stage~F
 \emph{enumeration refinement} visits the denominators that carry points in another order: the loop
 shapes of stage~E. From the reversal on, and with the divisor order of stage~E, the statement is
 that the output is a permutation of the reference, which still gives membership and no duplicates;
-stage~G proves the order of the program.
+since stage~E a theorem also gives its order, that of the reference over the denominators in the
+order of the loop of the search (Theorem~\ref{thm:findPoints_order}), which stage~G spells out in
+terms of the polynomial.
 
 \section{What a default run of the C code does}\label{sec:skeleton}
 
@@ -79,7 +81,7 @@ are no points modulo $p$ (D) and the options of the output (G) come in their sta
   The free choices of the sieve: the moduli, a list of primes in the order of the stages; the cut
   points $s_1 \le s_2$, positions in that list, which end the first and the second stage (the
   third stage is the rest of the list); at most how many forbidden divisors are tested; whether
-  the Jacobi test runs; and at most how many bit arrays a piece of the numerators has
+  the Jacobi test may run; and at most how many bit arrays a piece of the numerators has
   (Definition~\ref{def:arraySize}). The parameters are \emph{well-formed} when every modulus is a
   prime of the table and $s_1 \le s_2 \le$ the number of moduli; so the moduli of well-formed
   parameters are primes.
@@ -123,14 +125,14 @@ a few lines in the model, which has no Mathlib, so the comparator challenge impo
 the executable need no such reading, since \verb|wf_sieveParams|, certified with the main theorems,
 shows that every parameter set the command line produces is well-formed, which also rules out a
 well-formedness that nothing satisfies. C1 reads only the moduli and treats all stages alike, and C2
-reads the array size too (Definition~\ref{def:arraySize}); the cut points, the forbidden divisors
-and the Jacobi switch are read from stages~E and~F on, and further choices (the block length) join
-\verb|Params| with the components that use them. Well-formedness constrains a field only as far as
-its component needs it to be meaningful. The constants of the build that these definitions read, the
-size in bits of the moduli and the defaults of \verb|-p| and \verb|-F|, are definitions of the model
-like $\mathrm{maxDegree}$ (Definition~\ref{def:maxDegree}), and no proof depends on their values:
-\verb|wf_sieveParams| needs only that $\mathrm{numPrimes}$, a number of primes of the table, is at
-most its size.
+reads the array size too (Definition~\ref{def:arraySize}); the bound on the forbidden divisors and
+the Jacobi switch are read since stage~E and the cut points from stage~F on, and further choices
+(the block length) join \verb|Params| with the components that use them. Well-formedness constrains
+a field only as far as its component needs it to be meaningful. The constants of the build that
+these definitions read, the size in bits of the moduli and the defaults of \verb|-p| and \verb|-F|,
+are definitions of the model like $\mathrm{maxDegree}$ (Definition~\ref{def:maxDegree}), and no
+proof depends on their values: \verb|wf_sieveParams| needs only that $\mathrm{numPrimes}$, a number
+of primes of the table, is at most its size.
 
 \section{The table of a prime}\label{sec:primeTables}
 
@@ -343,11 +345,12 @@ paragraph of the component whose range holds it:
     Definitions~\ref{def:sieveDen} and~\ref{def:checkDen} computes for each numerator and
     \verb|sift| (Definition~\ref{def:sift}) once per denominator, for the residues of $b / 2^k$ that
     choose the rows, which ratpoints computes once per denominator before it calls \verb|sift| (F);
-  \item every numerator from $-H$ to $H$ for the search region (H) and the 2-adic classes (E, F);
+  \item every numerator from $-H$ to $H$ for the search region (H) and the packing of the 2-adic
+    classes (F);
   \item one table per prime and every modulus applied to every numerator before the test for common
-    factors, for the composite moduli, the packing, the three stages and their correction during the
-    run from the counts of the survivors (F), whose third stage runs after the test for common
-    factors and skips the primes that divide $b$;
+    factors, for the composite moduli, the packing and the three stages (F), whose third stage runs
+    after the test for common factors and skips the primes that divide $b$, and for their
+    correction between the blocks of the run from the counts of the survivors (I);
   \item a plain $\gcd$ for the binary $\gcd$ of \verb|relprime|, whose loop body has no branch (F);
   \item Horner's rule modulo $p$ reduced at every step for the reduction of ratpoints on a fixed
     schedule (F), in the table of a prime, whose two paths through \verb|long|s and GMP integers and
@@ -453,8 +456,9 @@ elaborates without Mathlib to other instance terms. Each main theorem has a guar
 which are the standard ones. The contracts of the sieve need only the program logic of Lean core and
 stay in files without Mathlib, so that their \verb|grind| calls see only the lemmas of core,
 untouched by Mathlib's updates; the contract of the run over the denominators of a shape, with its
-plain equation \verb|toList_run_sieveRun|, is in the file of the run
-(Chapter~\ref{chap:denominators}). The soundness of the rows needs Mathlib, through $\ZZ/p\ZZ$.
+plain equation \verb|toList_run_sieveRun|, is in the file of the run, with Mathlib, like the other
+contracts of stage~E (Chapter~\ref{chap:denominators}). The soundness of the rows needs Mathlib,
+through $\ZZ/p\ZZ$.
 
 \section{The command-line program and the differential tests}\label{sec:sieveCli}
 
@@ -485,12 +489,14 @@ sieve in \verb|Ratpoints.Sieve|, and the general lemmas on lists and on $\ZZ/n\Z
 constants of the build are in \verb|Ratpoints/Model/Constants.lean| with $\mathrm{maxDegree}$; the
 rest of the model is in \verb|Ratpoints/Model/Params.lean|, \verb|Ratpoints/Model/Sieve.lean| and
 \verb|Ratpoints/Model/FindPoints.lean| (the refusals, since stage~D, in
-\verb|Ratpoints/Model/Setup.lean|), each with \verb|#guard| examples taken from the tables and the
-output of ratpoints; the contracts, without Mathlib, are in \verb|Ratpoints/Proof/Sieve.lean|, and
-that of the run with those of Chapter~\ref{chap:words} in \verb|Ratpoints/Proof/Words.lean|; the
-primes of the table and the well-formedness in \verb|Ratpoints/Proof/Params.lean|, the tables and
-the soundness of the rows in \verb|Ratpoints/Proof/Tables.lean|, and the main theorems in
-\verb|Ratpoints/Proof/FindPoints.lean|, with the guards on their axioms.
+\verb|Ratpoints/Model/Setup.lean|, and the run, since stage~E, in
+\verb|Ratpoints/Model/Denominators.lean|), each with \verb|#guard| examples taken from the tables
+and the output of ratpoints; the contracts, without Mathlib, are in
+\verb|Ratpoints/Proof/Sieve.lean|, and that of the run, since stage~E, in
+\verb|Ratpoints/Proof/Denominators.lean|, with Mathlib; the primes of the table and the
+well-formedness in \verb|Ratpoints/Proof/Params.lean|, the tables and the soundness of the rows in
+\verb|Ratpoints/Proof/Tables.lean|, and the main theorems in \verb|Ratpoints/Proof/FindPoints.lean|,
+with the guards on their axioms.
 
 \section{The evidence}\label{sec:sieve-evidence}
 

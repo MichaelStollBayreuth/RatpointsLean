@@ -57,23 +57,23 @@ classification:
 # project status
 status:
   scope: >
-    Stages A, B, C1, C2 and D. Stage A set up the Lake project with the libraries of the model (Lean
-    core and Std only), the specification and the proofs, the CI, the blueprint, the correspondence
-    record with its checking script, and the comparator harness, and settled the specification in
-    the blueprint. Stage B: the specification in Lean (the binary form, the normalized points of
-    height at most H, the finite set of them, and the binary form over Q that the refusals speak
-    about), the brute-force reference in the model with the theorems that it lists exactly these
-    points, each once, certified by comparator, the command-line program ratpoints-lean, which reads
-    its command line as the C program does, with its checks, messages and exit statuses, and the
-    differential tests that compare it with the C program (the test suites of ratpoints,
-    hand-written and random command lines). Stage C1: the plain sieve in the skeleton of the C code
-    (the compile-time constants of the C code as definitions, the sieving parameters with their
-    well-formedness, the tables of a prime and their rows, the sieve of one denominator, its
-    survivors, the denominators, the points at infinity), the contracts of its loops proved with the
-    program logic of Lean core, and the theorem that for every well-formed choice of the parameters
-    it returns the list of the brute-force reference; the main theorems (the membership and
-    no-duplicates theorems for findPoints, its refusals in the form of stage C1, and the
-    well-formedness of the parameters that the options of the program give) are certified by
+    Stages A, B, C1, C2, D and E. Stage A set up the Lake project with the libraries of the model
+    (Lean core and Std only), the specification and the proofs, the CI, the blueprint, the
+    correspondence record with its checking script, and the comparator harness, and settled the
+    specification in the blueprint. Stage B: the specification in Lean (the binary form, the
+    normalized points of height at most H, the finite set of them, and the binary form over Q that
+    the refusals speak about), the brute-force reference in the model with the theorems that it
+    lists exactly these points, each once, certified by comparator, the command-line program
+    ratpoints-lean, which reads its command line as the C program does, with its checks, messages
+    and exit statuses, and the differential tests that compare it with the C program (the test
+    suites of ratpoints, hand-written and random command lines). Stage C1: the plain sieve in the
+    skeleton of the C code (the compile-time constants of the C code as definitions, the sieving
+    parameters with their well-formedness, the tables of a prime and their rows, the sieve of one
+    denominator, its survivors, the denominators, the points at infinity), the contracts of its
+    loops proved with the program logic of Lean core, and the theorem that for every well-formed
+    choice of the parameters it returns the list of the brute-force reference; the main theorems
+    (the membership and no-duplicates theorems for findPoints, its refusals in the form of stage C1,
+    and the well-formedness of the parameters that the options of the program give) are certified by
     comparator; ratpoints-lean runs the sieve with the parameters of its options, and the
     differential tests have a suite of parameters. Stage C2: the sieve on the bit arrays of 64-bit
     words of the C code (the width of the bit arrays as a constant of the build and the array size
@@ -96,23 +96,38 @@ status:
     bijection of the points of bounded height that the check of a survivor and the points at
     infinity apply; the coefficients as C longs with the helper mod of the C code and its range
     obligations; the table of a prime with the exit when the curve has no points modulo that prime;
-    and the search of the polynomial handed on. The output of findPoints is the brute-force
-    reference of the polynomial searched, mapped back after a reversal, a permutation of the
-    reference, so that the membership and no-duplicates theorems hold for every option; the
-    refusal theorems say that with the Sturm step on findPoints refuses exactly the inputs with
-    fewer than two or more than maxDegree + 1 coefficients, H = 0 and a binary form that is not
-    squarefree, and with it off exactly what the C program refuses under -s; both refusal
-    theorems and the main theorems with the options argument are stated for comparator, with the
-    binary form over Q restated in the challenge; the lemmas on homogenizations and their
-    squarefreeness are candidates for Mathlib; ratpoints-lean reads the options -k, -K, -s and -S,
-    refuses a form that is not squarefree with error 8 as the C program does with the same options,
-    and prints the points in the order of the C program wherever the C program visits the
-    denominators in ascending order (after a reversal, those of the reversed polynomial mapped
-    back); and the differential tests compare the refusals and the points in their order wherever
-    the C program visits the denominators in ascending order (3218 comparisons in the default
-    suites). Next:
-    stage E; the introduction of the blueprint lists the later stages (the denominator and
-    numerator sides, the order and protocol, the search region and the Sturm step).
+    and the search of the polynomial handed on. The output of findPoints is a permutation of the
+    brute-force reference, mapped back after a reversal, so that the membership and no-duplicates
+    theorems hold for every option; the refusal theorems say that with the Sturm step on findPoints
+    refuses exactly the inputs with fewer than two or more than maxDegree + 1 coefficients, H = 0
+    and a binary form that is not squarefree, and with it off exactly what the C program refuses
+    under -s; both refusal theorems and the main theorems with the options argument are stated for
+    comparator, with the binary form over Q restated in the challenge; the lemmas on
+    homogenizations and their squarefreeness are candidates for Mathlib; ratpoints-lean reads the
+    options -k, -K, -s and -S and refuses a form that is not squarefree with error 8 as the C
+    program does with the same options; and the differential tests compare the refusals and these
+    options. Stage E: the side of the denominators as the C code has it, with the compile-time
+    constants of this part of the C code as definitions: the valuation; the 2-adic information with
+    the classes of the denominators modulo 64, the word of the class as the starting value of the
+    first stage of the sieve, and the exit when no class admits a numerator; for odd degree the
+    squares and the divisors of the leading coefficient times squares (the factorization over the
+    table of primes, the squarefree divisors and the slopes of the valuation test); for even degree
+    the forbidden divisors, tested with words of 64 denominators and by their valuations (the
+    Newton polygon at a prime), and the Jacobi test, by the binary algorithm and by tables, both
+    proved to compute the Jacobi symbol of Mathlib; and the four shapes of the loop over the
+    denominators with their lists and tests, the run over a shape and its reduction to the
+    reference; the contracts of the stage are proved with the program logic of Lean core in files
+    with Mathlib, and the lemmas of Mathlib's generality are candidates for Mathlib. The output of
+    findPoints is the list of the points at infinity followed by the points of the brute-force
+    reference of the polynomial searched over the denominators in the order of the loop of its
+    search, each mapped back after a reversal: a permutation of the reference, and the reference
+    itself when the options forbid the reversal and the search does not take the divisors times
+    squares; the main theorems, the refusal theorems and the statements for comparator keep their
+    statements; ratpoints-lean prints the points in the order of the C program, and the
+    differential tests compare every point list in its order (3219 comparisons in the default
+    suites). Next: stage F; the introduction of the blueprint lists the later stages (the numerator
+    side, the order and protocol, the search region and the Sturm step, the blocks of the loop over
+    the denominators).
   sorry_count: 0
   sorry_in_definitions: 0
   axioms: ["propext", "Classical.choice", "Quot.sound"]
@@ -225,8 +240,10 @@ alignment:
       status: "partially-formalized"
       note: >
         for the sieve on the bit arrays of words of stage C2 with the set-up of stage D (the
-        refusals, the reversal, the exit), every well-formed choice of the sieving parameters, the
-        array size of the pieces included, and every value of the options
+        refusals, the reversal, the exit) and the side of the denominators of stage E (the 2-adic
+        information, the tests on the denominators, the loop over them in its four shapes), every
+        well-formed choice of the sieving parameters, the array size of the pieces included, and
+        every value of the options
         (Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok, Ratpoints.nodup_of_findPoints_eq_ok),
         certified by comparator, through the permutation of the brute-force reference
         (Ratpoints.perm_bruteForce_of_findPoints_eq_ok); the later stages bring
@@ -245,10 +262,12 @@ alignment:
       module: "Ratpoints.Proof.FindPoints"
       status: "partially-formalized"
       note: >
-        the list of Ratpoints.findPoints is the brute-force reference of the polynomial searched,
-        mapped back after a reversal, which is the order of the C program wherever it visits the
-        denominators in ascending order, where the differential tests compare the order; the
-        divisor order (stage E) and the protocol of the output (stage G) come later
+        the list of Ratpoints.findPoints is the list of the points at infinity followed by the
+        points of the brute-force reference of the polynomial searched over the denominators in
+        the order of the loop of its search (Ratpoints.searchDens), mapped back after a reversal,
+        which the differential tests compare with the order of the C program on every point list;
+        the order spelled out in terms of the polynomial and the protocol of the output come with
+        stage G
     - source: "the Sturm step covers every real point where F >= 0"
       lean: ""
       module: ""

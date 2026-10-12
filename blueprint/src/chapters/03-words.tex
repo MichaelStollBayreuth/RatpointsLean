@@ -17,8 +17,9 @@ width; and it takes the first stage of the builds that and the rows into one bit
 which the default build does in chunks of sixteen registers. So the model is the build that
 ratpoints tests as \verb|chunk1| (256-bit bit arrays and \verb|-DRATPOINTS_CHUNK=1|, one of the
 configurations of \verb|make test4configs|). The numerators keep the plain layout of stage~C1, one
-bit per numerator from $-H$ to $H$; the packing by the 2-adic classes comes with stages~E and~F, the
-chunks and the second and third stages of the sieve with stage~F.
+bit per numerator from $-H$ to $H$; the 2-adic classes come with stage~E, as the word of the class
+from which the first stage starts (Chapter~\ref{chap:denominators}), and their packing, the chunks
+and the second and third stages of the sieve with stage~F.
 
 \section{What the C code does with words}\label{sec:wordsC}
 
@@ -447,12 +448,13 @@ $\mathrm{maxArraySize}$ are in \verb|Ratpoints/Model/Constants.lean|, with the f
 \verb|decide|, that $\mathrm{rbaPack}$, $\mathrm{defaultArraySize}$ and $\mathrm{maxArraySize}$ are
 positive; the field and the cap are in \verb|Ratpoints/Model/Params.lean|, and the components in
 \verb|Ratpoints/Model/Sieve.lean|, in the namespace \verb|Ratpoints.Sieve| after those of stage~C1,
-with the run below them, each with \verb|#guard| examples. The lower bound of the array size is in
+each with \verb|#guard| examples; the run, which stage~C2 put below them, is in
+\verb|Ratpoints/Model/Denominators.lean| since stage~E. The lower bound of the array size is in
 \verb|Ratpoints/Proof/Params.lean|. The contracts, without Mathlib, are in
-\verb|Ratpoints/Proof/Words.lean|, with that of the run and its equation, which
-\verb|Ratpoints/Proof/FindPoints.lean| uses; the lemmas on vectors, arrays, lists, ranges, natural
-numbers, integers and words that are not about the model are in \verb|Ratpoints/Proof/Bits.lean|,
-under their names in the namespaces of Lean core.
+\verb|Ratpoints/Proof/Words.lean|, on which the contract of the run rests (since stage~E in
+\verb|Ratpoints/Proof/Denominators.lean|, with Mathlib); the lemmas on vectors, arrays, lists,
+ranges, natural numbers, integers and words that are not about the model are in
+\verb|Ratpoints/Proof/Bits.lean|, under their names in the namespaces of Lean core.
 
 \section{The evidence}\label{sec:words-evidence}
 
