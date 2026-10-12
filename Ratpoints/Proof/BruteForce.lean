@@ -10,6 +10,7 @@ public import Ratpoints.Spec.Basic
 
 import Mathlib.Algebra.Order.Ring.Abs
 import Mathlib.Tactic.Ring
+import Ratpoints.Mathlib.Data.List.Basic
 
 /-!
 # The brute-force reference finds exactly the points
@@ -126,6 +127,11 @@ theorem exists_sq_eq_of_pointsOfDen_ne_nil {c : List ℤ} {b : ℕ} {xs : List �
   obtain ⟨q, hq⟩ := List.exists_mem_of_ne_nil _ h
   obtain ⟨hx, -, hg, hy⟩ := mem_pointsOfDen_iff.mp hq
   exact ⟨q.1, hx, q.2.1, hg, hy.trans (horner_scaledCoeffs_mul c _ _)⟩
+
+theorem pointsOfDen_filter_of_ne {c : List ℤ} {d : ℕ} {z : ℤ} {xs : List ℤ} {keep : ℤ → Bool}
+    (h : ∀ x ∈ xs, pointsOfDen c d z [x] ≠ [] → keep x) :
+    pointsOfDen c d z (xs.filter keep) = pointsOfDen c d z xs :=
+  List.flatMap_filter_of_ne (by simpa [pointsOfDen] using h)
 
 theorem mem_numerators_iff {x : ℤ} {H : ℕ} : x ∈ numerators H ↔ |x| ≤ H := by
   simp only [numerators, List.mem_map, List.mem_range, abs_le]

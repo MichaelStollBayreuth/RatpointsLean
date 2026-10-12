@@ -17,6 +17,7 @@ import Mathlib.Tactic.Ring
 import Ratpoints.Mathlib.Data.ZMod.Basic
 import Ratpoints.Proof.Bits
 import Ratpoints.Proof.BruteForce
+import Ratpoints.Proof.Tables
 import Std.Tactic.Do
 
 /-!
@@ -37,11 +38,6 @@ no class admits a numerator, the curve has no points at all, not even at infinit
 
 ## Main statements
 
-* `IsUnit.isSquare_of_sq_eq_mul_pow`: `y ^ 2 = v u ^ D` with `u` a unit and `D` even makes `v` a
-  square.
-* `Ratpoints.isSquare_sum_mul_pow_of_sq_eq_binaryForm`,
-  `Ratpoints.isSquare_sum_mul_pow_sub_of_sq_eq_binaryForm`: a point whose denominator, or numerator,
-  is a unit of a commutative ring makes `f`, or the reversed polynomial, take a square value there.
 * `Ratpoints.Sieve.squares64_test_iff`: the test of the mask `Ratpoints.Sieve.squares64` is the test
   of the squares modulo 64.
 * `Ratpoints.Sieve.getLsbD_fsq_coeffsMod64`, `Ratpoints.Sieve.getLsbD_gsq_coeffsMod64`: the bits of
@@ -60,10 +56,11 @@ no class admits a numerator, the curve has no points at all, not even at infinit
 
 ## Implementation notes
 
-Two general facts are stated here, next to their only use: `IsUnit.isSquare_of_sq_eq_mul_pow`,
-which has no home in Mathlib yet, since `Mathlib.Algebra.Group.Even`, where `IsSquare` lives, does
-not know units, and `Int.emod_two_eq_one_of_gcd_eq_one`, the parity of an integer prime to an even
-one.
+A general fact is stated here, next to its only use: `Int.emod_two_eq_one_of_gcd_eq_one`, the parity
+of an integer prime to an even one. The square values that a point gives in a commutative ring
+(`Ratpoints.isSquare_sum_mul_pow_of_sq_eq_binaryForm`,
+`Ratpoints.isSquare_sum_mul_pow_sub_of_sq_eq_binaryForm`) are stated in `Ratpoints.Proof.Tables`,
+where the square value modulo a prime follows from the first.
 -/
 
 @[expose] public section
@@ -72,17 +69,6 @@ set_option experimental.vcgen true
 
 open scoped Std.WP
 
-/-- `y ^ 2 = v u ^ D` with `u` a unit and `D` even makes `v` a square: `v = (y u⁻¹ ^ (D / 2)) ^ 2`.
-Mathlib has `IsSquare.mul` and, in a group, `IsSquare.div`. -/
-theorem IsUnit.isSquare_of_sq_eq_mul_pow {M : Type*} [CommMonoid M] {y v u : M} (hu : IsUnit u)
-    {D : ℕ} (hD : Even D) (h : y ^ 2 = v * u ^ D) : IsSquare v := by
-  obtain ⟨u, rfl⟩ := hu
-  obtain ⟨k, rfl⟩ := hD
-  refine ⟨y * ↑u⁻¹ ^ k, ?_⟩
-  calc v = v * (↑u * ↑u⁻¹) ^ (k + k) := by rw [Units.mul_inv, one_pow, mul_one]
-    _ = v * ↑u ^ (k + k) * ↑u⁻¹ ^ (k + k) := by rw [mul_pow, mul_assoc]
-    _ = y * ↑u⁻¹ ^ k * (y * ↑u⁻¹ ^ k) := by rw [← h, mul_mul_mul_comm, ← pow_add, sq]
-
 /-- An integer prime to an even one is odd: `2` would divide their gcd. -/
 theorem Int.emod_two_eq_one_of_gcd_eq_one {a b : ℤ} (hb : b % 2 = 0) (hab : Int.gcd a b = 1) :
     a % 2 = 1 :=
@@ -90,54 +76,6 @@ theorem Int.emod_two_eq_one_of_gcd_eq_one {a b : ℤ} (hb : b % 2 = 0) (hab : In
     absurd (hab ▸ Int.dvd_gcd (Int.dvd_of_emod_eq_zero h) (Int.dvd_of_emod_eq_zero hb)) (by decide)
 
 namespace Ratpoints
-
-/-! ### The classes of a point -/
-
-/-- The binary form `∑ fᵢ aⁱ b^(D - i)` of degree `D ≥ d` at `a = k b` is `f(k) b ^ D`, in any
-commutative semiring: `Ratpoints.sum_mul_pow_mul_pow_sub_eq_sum_mul_pow` without division. -/
-theorem sum_mul_pow_mul_pow_sub_of_eq_mul {R : Type*} [CommSemiring R] {d D : ℕ} (hd : d ≤ D)
-    (f : ℕ → R) {a b k : R} (h : a = k * b) :
-    ∑ i ∈ Finset.range (d + 1), f i * a ^ i * b ^ (D - i) =
-      (∑ i ∈ Finset.range (d + 1), f i * k ^ i) * b ^ D := by
-  rw [Finset.sum_mul]
-  refine Finset.sum_congr rfl fun i hi ↦ ?_
-  rw [h, mul_pow, ← pow_mul_pow_sub b ((Finset.mem_range_succ_iff.mp hi).trans hd)]
-  ring
-
-/-- The binary form `∑ fᵢ aⁱ b^(D - i)` of degree `D ≥ d` at `b = t a` is the value
-`∑ fᵢ t^(D - i)` of the reversed polynomial times `a ^ D`, in any commutative semiring. -/
-theorem sum_mul_pow_mul_pow_sub_of_eq_mul' {R : Type*} [CommSemiring R] {d D : ℕ} (hd : d ≤ D)
-    (f : ℕ → R) {a b t : R} (h : b = t * a) :
-    ∑ i ∈ Finset.range (d + 1), f i * a ^ i * b ^ (D - i) =
-      (∑ i ∈ Finset.range (d + 1), f i * t ^ (D - i)) * a ^ D := by
-  rw [Finset.sum_mul]
-  refine Finset.sum_congr rfl fun i hi ↦ ?_
-  rw [h, mul_pow, ← pow_mul_pow_sub a ((Finset.mem_range_succ_iff.mp hi).trans hd)]
-  ring
-
-/-- A point `(a, y, b)` whose denominator `b` is a unit of the commutative ring `R` makes `f` take a
-square value at the `k` with `a = k b` in `R`: `F(a, b) = f(k) b ^ D` with `D` even. -/
-theorem isSquare_sum_mul_pow_of_sq_eq_binaryForm {R : Type*} [CommRing R] {c : List ℤ}
-    {a y : ℤ} {b : ℕ} {k : R} (hb : IsUnit (b : R)) (hk : (a : R) = k * b)
-    (hy : y ^ 2 = binaryForm c a b) :
-    IsSquare (∑ i ∈ Finset.range (degree c + 1), (c.getD i 0 : R) * k ^ i) := by
-  have h2 := congr(($hy : R))
-  push_cast [binaryForm] at h2
-  rw [sum_mul_pow_mul_pow_sub_of_eq_mul (by lia) _ hk] at h2
-  exact hb.isSquare_of_sq_eq_mul_pow (Nat.even_iff.mpr (by lia)) h2
-
-/-- A point `(a, y, b)` whose numerator `a` is a unit of the commutative ring `R` makes the reversed
-polynomial take a square value `∑ cᵢ t^(D - i)` at the `t` with `b = t a` in `R`:
-`F(a, b) = a ^ D ∑ cᵢ t^(D - i)` with `D` even. -/
-theorem isSquare_sum_mul_pow_sub_of_sq_eq_binaryForm {R : Type*} [CommRing R] {c : List ℤ}
-    {a y : ℤ} {b : ℕ} {t : R} (ha : IsUnit (a : R)) (ht : (b : R) = t * a)
-    (hy : y ^ 2 = binaryForm c a b) :
-    IsSquare (∑ i ∈ Finset.range (degree c + 1),
-      (c.getD i 0 : R) * t ^ (degree c + degree c % 2 - i)) := by
-  have h2 := congr(($hy : R))
-  push_cast [binaryForm] at h2
-  rw [sum_mul_pow_mul_pow_sub_of_eq_mul' (by lia) _ ht] at h2
-  exact ha.isSquare_of_sq_eq_mul_pow (Nat.even_iff.mpr (by lia)) h2
 
 namespace Sieve
 
@@ -352,9 +290,6 @@ theorem ScatterEvenInvariant.set! {nb0 nb : Vector UInt64 64} {t : ℕ} {pref su
   · rw [h b hb a]
     grind
 
-theorem length_toList_range_32 : (ForIn.toList [:32]).length = 32 := by
-  simp [Std.Legacy.Range.size]
-
 /-- The scatter of the lowest set bit `k` of `w` into the odd classes, for a word `w` with the bits
 of `f` from `k0` on: the bits of the set bits of `f` below `k0` become those of its set bits up to
 `k`. -/
@@ -364,7 +299,7 @@ theorem TwoAdicBits.of_scatterOddInvariant {f g w : UInt64} {nb0 nb : Vector UIn
     (h : TwoAdicBits f g k0 0 nb0) :
     TwoAdicBits f g (w.toBitVec.ctz.toNat + 1) 0 nb := by
   intro b hb a
-  rw [hs b hb a, h b hb a, length_toList_range_32, hk,
+  rw [hs b hb a, h b hb a, Std.Legacy.Range.length_toList, Nat.sub_zero, hk,
     hcl.exists_lt_succ_iff (by simpa using hw) fun k' ↦ k' * b % 64 = a]
   grind
 
@@ -377,7 +312,7 @@ theorem TwoAdicBits.of_scatterEvenInvariant {f g w : UInt64} {nb0 nb : Vector UI
     (h : TwoAdicBits f g 64 t0 nb0) :
     TwoAdicBits f g 64 (w.toBitVec.ctz.toNat + 1) nb := by
   intro b hb a
-  rw [hs b hb a, h b hb a, length_toList_range_32, ht,
+  rw [hs b hb a, h b hb a, Std.Legacy.Range.length_toList, Nat.sub_zero, ht,
     hcl.exists_lt_succ_iff (by simpa using hw) fun t' ↦ t' * a % 64 = b]
   grind
 
@@ -491,11 +426,9 @@ theorem classBit_twoAdic_of_sq_eq {c : List ℤ} {a y : ℤ} {b : ℕ} (hab : In
 theorem getElem!_twoAdic_ne_zero {c : List ℤ} {b : ℕ} {xs : List ℤ}
     (h : BruteForce.pointsOfDen c (degree c) b xs ≠ []) :
     (Id.run (twoAdic c (degree c)))[b % 64]! ≠ 0 := by
-  obtain ⟨q, hq⟩ := List.exists_mem_of_ne_nil _ h
-  obtain ⟨-, -, hg, hy⟩ := BruteForce.mem_pointsOfDen_iff.mp hq
+  obtain ⟨a, -, y, hg, hy⟩ := BruteForce.exists_sq_eq_of_pointsOfDen_ne_nil h
   intro h0
-  simpa [h0] using
-    classBit_twoAdic_of_sq_eq hg (hy.trans (BruteForce.horner_scaledCoeffs_mul c _ _))
+  simpa [h0] using classBit_twoAdic_of_sq_eq hg hy
 
 /-! ### The classes that admit a numerator -/
 

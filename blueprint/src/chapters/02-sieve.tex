@@ -186,16 +186,22 @@ $a$. These two facts make sound the rows that the tables below define.
 \end{definition}
 
 \begin{lemma}[A square value of the form gives a square value of $f$]\label{lem:isSquare_div}
-  \lean{Ratpoints.isSquare_sum_mul_div_pow_of_sq_eq}
+  \uses{def:binaryForm}
+  \lean{IsUnit.isSquare_of_sq_eq_mul_pow, Ratpoints.sum_mul_pow_mul_pow_sub_of_eq_mul, Ratpoints.isSquare_sum_mul_pow_of_sq_eq_binaryForm, Ratpoints.isSquare_sum_mul_div_pow_of_sq_eq}
   \leanok
-  In a semifield, if $b \ne 0$, $D$ is even, $d \le D$ and
-  $y^2 = \sum_{i \le d} f_i\, a^i b^{D - i}$, then $\sum_{i \le d} f_i\, (a/b)^i$ is a square.
+  In a commutative monoid, if $y^2 = v u^D$ with $u$ a unit and $D$ even, then $v$ is a square. In a
+  commutative semiring, if $d \le D$ and $a = k b$, then
+  $\sum_{i \le d} f_i\, a^i b^{D - i} = b^D \sum_{i \le d} f_i\, k^i$. So if $y^2 = F_c(a, b)$ for
+  integers $a$, $y$ and a natural number $b$ whose image in a commutative ring $R$ is a unit, then
+  $f(k)$ is a square in $R$ for the $k$ with $a = k b$ in $R$; and in a semifield, if $b \ne 0$, $D$
+  is even, $d \le D$ and $y^2 = \sum_{i \le d} f_i\, a^i b^{D - i}$, then
+  $\sum_{i \le d} f_i\, (a/b)^i$ is a square.
 \end{lemma}
 
 \begin{proof}
   \leanok
-  The form is $b^D \sum_{i \le d} f_i\, (a/b)^i$, and $b^D$ is the square of $b^{D/2}$, so the sum
-  is the square of $y / b^{D/2}$.
+  The form is $b^D \sum_{i \le d} f_i\, k^i$, and $b^D$ is the square of the unit $b^{D/2}$, so the
+  sum is the square of $y b^{-D/2}$.
 \end{proof}
 
 Mathlib has the identity behind this in the form of polynomials, \verb|Polynomial.eval_homogenize|;

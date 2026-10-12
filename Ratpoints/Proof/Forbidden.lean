@@ -202,8 +202,7 @@ theorem UnitPartsInvariant.push {c : List ℤ} {d p : ℕ} {pref suff : List ℕ
 theorem UnitPartsInvariant.post {c : List ℤ} {d p : ℕ} {us : Array (Option (ℕ × ℕ))}
     (h : UnitPartsInvariant c d p (ForIn.toList [:d + 1]).length us) :
     us.size = d + 1 ∧ ∀ j ≤ d, IsUnitPart p (c.getD (d - j) 0) us[j]! := by
-  simp only [Std.Internal.ForIn.toList_range, List.length_range', Std.Legacy.Range.size,
-    Nat.sub_zero, Nat.add_sub_cancel, Nat.div_one] at h
+  rw [Std.Legacy.Range.length_toList, Nat.sub_zero] at h
   exact ⟨h.1, fun j hj ↦ h.2 j (by lia)⟩
 
 attribute [local irreducible] UnitPartsInvariant in
@@ -329,7 +328,7 @@ theorem ForbiddenAtInvariant.post {us : Array (Option (ℕ × ℕ))} {sq : Array
     by_contra hlt'
     rw [getElem!_neg us j (by lia)] at h
     exact Bool.false_ne_true h
-  simp only [Std.Internal.ForIn.toList_range, List.length_range', Std.Legacy.Range.size]
+  rw [Std.Legacy.Range.length_toList]
   lia
 
 attribute [local irreducible] ForbiddenAtInvariant in
@@ -375,9 +374,6 @@ theorem pow_dvd_mul_pow_of_isUnitPart {p : ℕ} {x : ℤ} {o : Option (ℕ × �
     simp
   · obtain ⟨-, u, rfl, -⟩ := h
     exact (pow_dvd_pow _ (hV w r rfl)).trans ⟨u, by rw [pow_add]; ring⟩
-
-theorem getElem!_squaresMod_zero {p : ℕ} (hp : p.Prime) : (squaresMod p)[0]! = true := by
-  simpa using getElem!_squaresMod_mul_self_mod hp hp.pos
 
 /-- For a point `(a, y, b)` of a curve of even degree with `v_p(b) = m ≥ 1`, a coefficient
 `c_{d-j₀}`, with the entry `(w, r)` at `p`, whose term has a valuation `w + j₀ m` less than those of
@@ -621,17 +617,6 @@ theorem testBit_run_forbiddenValuations_eq_false_of_sq_eq {c : List ℤ} (hd : d
   · simp [run_forbiddenAt_eq_false_of_sq_eq hd hp hab hy h0]
 
 /-! ### The forbidden divisors -/
-
-/-- For a point `(a, y, b)` of a curve of even degree and a prime `p ∣ b`, the residue of `c_d`
-modulo `p` is marked as a square (`Ratpoints.Sieve.isSquare_getD_degree_of_sq_eq_binaryForm`). -/
-theorem getElem!_squaresMod_of_sq_eq {c : List ℤ} (hd : degree c % 2 = 0) {p : ℕ} (hp : p.Prime)
-    {a y : ℤ} {b : ℕ} (hab : Int.gcd a b = 1) (hy : y ^ 2 = binaryForm c a b) (hpb : p ∣ b) :
-    (squaresMod p)[(c.getD (degree c) 0 % (p : ℤ)).toNat]! = true := by
-  have : Fact p.Prime := ⟨hp⟩
-  refine getElem!_squaresMod_of_isSquare hp
-    ((Int.toNat_lt' hp.pos).mpr (Int.emod_lt_of_pos _ (mod_cast hp.pos))) ?_
-  rw [ZMod.natCast_toNat_emod]
-  exact isSquare_getD_degree_of_sq_eq_binaryForm hab (Nat.mod_eq_zero_of_dvd hpb) hd hy
 
 /-- A forbidden divisor tested with words that the examined prime `p` gives is `p` with its words,
 for a mask of the forbidden valuations at `p ∣ c_d` that holds every valuation a denominator can

@@ -140,7 +140,7 @@ which bit of a bit array stands for which numerator.
 
 \begin{lemma}[The class of a point]\label{lem:twoAdic_point}
   \uses{def:twoAdic, def:binaryForm, def:bruteForce, def:andRows}
-  \lean{Ratpoints.Sieve.squares64_test_iff, Ratpoints.Sieve.getLsbD_fsq_coeffsMod64, Ratpoints.Sieve.getLsbD_gsq_coeffsMod64, Ratpoints.Sieve.TwoAdicBits, Ratpoints.Sieve.twoAdic_spec, Ratpoints.Sieve.getLsbD_run_twoAdic, IsUnit.isSquare_of_sq_eq_mul_pow, Ratpoints.sum_mul_pow_mul_pow_sub_of_eq_mul, Ratpoints.isSquare_sum_mul_pow_of_sq_eq_binaryForm, Ratpoints.isSquare_sum_mul_pow_sub_of_sq_eq_binaryForm, Ratpoints.Sieve.classBit_twoAdic_of_sq_eq, Ratpoints.Sieve.getLsbD_denBits, Ratpoints.Sieve.getElem!_twoAdic_ne_zero}
+  \lean{Ratpoints.Sieve.squares64_test_iff, Ratpoints.Sieve.getLsbD_fsq_coeffsMod64, Ratpoints.Sieve.getLsbD_gsq_coeffsMod64, Ratpoints.Sieve.TwoAdicBits, Ratpoints.Sieve.twoAdic_spec, Ratpoints.Sieve.getLsbD_run_twoAdic, Ratpoints.isSquare_sum_mul_pow_sub_of_sq_eq_binaryForm, Ratpoints.Sieve.classBit_twoAdic_of_sq_eq, Ratpoints.Sieve.getLsbD_denBits, Ratpoints.Sieve.getElem!_twoAdic_ne_zero}
   \leanok
   Let $a$ and $y$ be integers and $b$ a natural number with $\gcd(a, b) = 1$ and $y^2 = F(a, b)$, as
   for a normalized point $(a, y, b)$. Then bit $a \bmod 64$ of $\mathrm{nb}[b \bmod 64]$ is set, and
@@ -152,6 +152,7 @@ which bit of a bit array stands for which numerator.
 \end{lemma}
 
 \begin{proof}
+  \uses{lem:isSquare_div}
   \leanok
   Since $\gcd(a, b) = 1$, $a$ or $b$ is odd. For odd $b$, $F(a, b) = b^D f(a b^{-1})$ modulo $64$,
   where $b^D$ is the square of a unit since $D$ is even; so $f(k)$ is a square modulo $64$ for $k =
@@ -755,11 +756,12 @@ checked by \verb|decide|, into \verb|Ratpoints/Proof/Params.lean|, the lemmas on
 core's namespaces into \verb|Ratpoints/Proof/Bits.lean|, and the denominators of the search with the
 theorems into \verb|Ratpoints/Proof/FindPoints.lean|; the lemmas of Mathlib's generality go into
 \verb|Ratpoints/Mathlib|, in the files that mirror their homes in Mathlib:
-\verb|Algebra/BigOperators/Group/List/Basic|, \verb|Algebra/Field/ZMod|, \verb|Algebra/Prime/Defs|,
-\verb|Data/Int/GCD|, \verb|Data/List/Basic|, \verb|Data/Nat/Factors|, \verb|Data/Nat/Prime/Defs|,
-\verb|Data/Nat/Squarefree|, \verb|Data/ZMod/Basic|, \verb|NumberTheory/LegendreSymbol/JacobiSymbol|
-and \verb|NumberTheory/Padics/PadicVal/Basic|. Every new module joins its part root and the listing
-\verb|Ratpoints.lean|. One commit per item, each passing the project's checks:
+\verb|Algebra/BigOperators/Group/List/Basic|, \verb|Algebra/Field/ZMod|, \verb|Algebra/Group/Even|,
+\verb|Algebra/Prime/Defs|, \verb|Data/Int/GCD|, \verb|Data/List/Basic|, \verb|Data/Nat/Factors|,
+\verb|Data/Nat/Prime/Defs|, \verb|Data/Nat/Squarefree|, \verb|Data/ZMod/Basic|,
+\verb|NumberTheory/LegendreSymbol/JacobiSymbol| and \verb|NumberTheory/Padics/PadicVal/Basic|. Every
+new module joins its part root and the listing \verb|Ratpoints.lean|. One commit per item, each
+passing the project's checks:
 \begin{enumerate}
   \item[E.1] The valuation with the constant $\mathrm{veryBig}$ (Definition~\ref{def:valuation}),
     with its contract in \verb|Valuation.lean|, the $p$-adic valuation and the unit part, and

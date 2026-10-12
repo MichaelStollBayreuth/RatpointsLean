@@ -10,8 +10,8 @@ public import Ratpoints.Model.Setup
 public import Ratpoints.Model.Sieve
 public import Ratpoints.Spec.Basic
 
-import Mathlib.Tactic.Field
 import Mathlib.Tactic.Ring
+import Ratpoints.Mathlib.Algebra.Group.Even
 import Ratpoints.Mathlib.Data.ZMod.Basic
 import Ratpoints.Proof.BruteForce
 
@@ -41,8 +41,13 @@ replaced by its quarter.
 
 ## Main statements
 
-* `Ratpoints.isSquare_sum_mul_div_pow_of_sq_eq`: a square value of the form gives a square value
-  of `f`.
+* `Ratpoints.sum_mul_pow_mul_pow_sub_of_eq_mul`: the binary form of degree `D` at `a = k b` is
+  `f(k) b ^ D`, in any commutative semiring.
+* `Ratpoints.isSquare_sum_mul_pow_of_sq_eq_binaryForm`,
+  `Ratpoints.isSquare_sum_mul_pow_sub_of_sq_eq_binaryForm`: a point whose denominator, or numerator,
+  is a unit of a commutative ring makes `f`, or the reversed polynomial, take a square value there;
+  `Ratpoints.isSquare_sum_mul_div_pow_of_sq_eq`: in a semifield, a square value of the form gives a
+  square value of `f`.
 * `Ratpoints.Sieve.getElem!_squaresMod_mul_self_mod`,
   `Ratpoints.Sieve.getElem!_squaresMod_of_isSquare`, `Ratpoints.Sieve.getElem!_inversesMod_mul_mod`,
   `Ratpoints.Sieve.natCast_evalMod`: the tables compute their definitions.
@@ -66,16 +71,28 @@ replaced by its quarter.
 
 namespace Ratpoints
 
-/-- The binary form `∑ fᵢ aⁱ b^(D - i)` of degree `D ≥ d` is the value of `f = ∑ fᵢ Xⁱ` at `a / b`
-times `b ^ D`, as `Polynomial.eval_homogenize` says for polynomials. -/
-theorem sum_mul_pow_mul_pow_sub_eq_sum_mul_pow {K : Type*} [Semifield K] {d D : ℕ} (hd : d ≤ D)
-    (f : ℕ → K) (a : K) {b : K} (hb : b ≠ 0) :
+/-- The binary form `∑ fᵢ aⁱ b^(D - i)` of degree `D ≥ d` at `a = k b` is `f(k) b ^ D`, in any
+commutative semiring; over a field, `k = a / b` for `b ≠ 0`, as `Polynomial.eval_homogenize` says
+for polynomials. -/
+theorem sum_mul_pow_mul_pow_sub_of_eq_mul {R : Type*} [CommSemiring R] {d D : ℕ} (hd : d ≤ D)
+    (f : ℕ → R) {a b k : R} (h : a = k * b) :
     ∑ i ∈ Finset.range (d + 1), f i * a ^ i * b ^ (D - i) =
-      (∑ i ∈ Finset.range (d + 1), f i * (a / b) ^ i) * b ^ D := by
+      (∑ i ∈ Finset.range (d + 1), f i * k ^ i) * b ^ D := by
   rw [Finset.sum_mul]
   refine Finset.sum_congr rfl fun i hi ↦ ?_
-  rw [div_pow, ← pow_sub_mul_pow b ((Finset.mem_range_succ_iff.mp hi).trans hd)]
-  field
+  rw [h, mul_pow, ← pow_mul_pow_sub b ((Finset.mem_range_succ_iff.mp hi).trans hd)]
+  ring
+
+/-- The binary form `∑ fᵢ aⁱ b^(D - i)` of degree `D ≥ d` at `b = t a` is the value
+`∑ fᵢ t^(D - i)` of the reversed polynomial times `a ^ D`, in any commutative semiring. -/
+theorem sum_mul_pow_mul_pow_sub_of_eq_mul' {R : Type*} [CommSemiring R] {d D : ℕ} (hd : d ≤ D)
+    (f : ℕ → R) {a b t : R} (h : b = t * a) :
+    ∑ i ∈ Finset.range (d + 1), f i * a ^ i * b ^ (D - i) =
+      (∑ i ∈ Finset.range (d + 1), f i * t ^ (D - i)) * a ^ D := by
+  rw [Finset.sum_mul]
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  rw [h, mul_pow, ← pow_mul_pow_sub a ((Finset.mem_range_succ_iff.mp hi).trans hd)]
+  ring
 
 /-- If `y ^ 2` is the value at `(a, b)` of the binary form of even degree `D ≥ d` made from
 `f = ∑ fᵢ Xⁱ`, then `f(a / b)` is the square of `y / b ^ (D / 2)`. -/
@@ -83,8 +100,32 @@ theorem isSquare_sum_mul_div_pow_of_sq_eq {K : Type*} [Semifield K] {d D : ℕ} 
     (hD : Even D) {f : ℕ → K} {a b y : K} (hb : b ≠ 0)
     (h : y ^ 2 = ∑ i ∈ Finset.range (d + 1), f i * a ^ i * b ^ (D - i)) :
     IsSquare (∑ i ∈ Finset.range (d + 1), f i * (a / b) ^ i) := by
-  rw [sum_mul_pow_mul_pow_sub_eq_sum_mul_pow hd f a hb] at h
-  exact eq_div_of_mul_eq (pow_ne_zero D hb) h.symm ▸ (IsSquare.sq y).div (hD.isSquare_pow b)
+  rw [sum_mul_pow_mul_pow_sub_of_eq_mul hd f (div_mul_cancel₀ a hb).symm] at h
+  exact hb.isUnit.isSquare_of_sq_eq_mul_pow hD h
+
+/-- A point `(a, y, b)` whose denominator `b` is a unit of the commutative ring `R` makes `f` take a
+square value at the `k` with `a = k b` in `R`: `F(a, b) = f(k) b ^ D` with `D` even. -/
+theorem isSquare_sum_mul_pow_of_sq_eq_binaryForm {R : Type*} [CommRing R] {c : List ℤ}
+    {a y : ℤ} {b : ℕ} {k : R} (hb : IsUnit (b : R)) (hk : (a : R) = k * b)
+    (hy : y ^ 2 = binaryForm c a b) :
+    IsSquare (∑ i ∈ Finset.range (degree c + 1), (c.getD i 0 : R) * k ^ i) := by
+  have h2 := congr(($hy : R))
+  push_cast [binaryForm] at h2
+  rw [sum_mul_pow_mul_pow_sub_of_eq_mul (by lia) _ hk] at h2
+  exact hb.isSquare_of_sq_eq_mul_pow (Nat.even_iff.mpr (by lia)) h2
+
+/-- A point `(a, y, b)` whose numerator `a` is a unit of the commutative ring `R` makes the reversed
+polynomial take a square value `∑ cᵢ t^(D - i)` at the `t` with `b = t a` in `R`:
+`F(a, b) = a ^ D ∑ cᵢ t^(D - i)` with `D` even. -/
+theorem isSquare_sum_mul_pow_sub_of_sq_eq_binaryForm {R : Type*} [CommRing R] {c : List ℤ}
+    {a y : ℤ} {b : ℕ} {t : R} (ha : IsUnit (a : R)) (ht : (b : R) = t * a)
+    (hy : y ^ 2 = binaryForm c a b) :
+    IsSquare (∑ i ∈ Finset.range (degree c + 1),
+      (c.getD i 0 : R) * t ^ (degree c + degree c % 2 - i)) := by
+  have h2 := congr(($hy : R))
+  push_cast [binaryForm] at h2
+  rw [sum_mul_pow_mul_pow_sub_of_eq_mul' (by lia) _ ht] at h2
+  exact ha.isSquare_of_sq_eq_mul_pow (Nat.even_iff.mpr (by lia)) h2
 
 namespace Sieve
 
@@ -125,6 +166,9 @@ theorem getElem!_squaresMod_mul_self_mod {p s : ℕ} (hp : p.Prime) (hs : s < p)
     simp
   · obtain ⟨_, hi, ⟨m, rfl⟩, heq⟩ := exists_odd_mul_self_mod_eq hp hs hs0
     exact .inr ⟨_, ⟨m, by lia, by lia⟩, heq⟩
+
+theorem getElem!_squaresMod_zero {p : ℕ} (hp : p.Prime) : (squaresMod p)[0]! = true := by
+  simpa using getElem!_squaresMod_mul_self_mod hp hp.pos
 
 theorem getElem!_squaresMod_of_isSquare {p t : ℕ} (hp : p.Prime) (ht : t < p)
     (h : IsSquare (t : ZMod p)) : (squaresMod p)[t]! = true := by
@@ -236,9 +280,7 @@ theorem isSquare_sum_mul_div_pow_of_sq_eq_binaryForm {c : List ℤ} {p : ℕ} [F
     IsSquare (∑ k ∈ Finset.range (degree c + 1), (c.getD k 0 : ZMod p) * (a / b : ZMod p) ^ k) := by
   have hb' : (b : ZMod p) ≠ 0 :=
     fun h ↦ hb (Nat.mod_eq_zero_of_dvd ((ZMod.natCast_eq_zero_iff _ _).mp h))
-  have h2 := congr(($hy : ZMod p))
-  push_cast [binaryForm] at h2
-  exact isSquare_sum_mul_div_pow_of_sq_eq (by lia) (Nat.even_iff.mpr (by lia)) hb' h2
+  exact isSquare_sum_mul_pow_of_sq_eq_binaryForm hb'.isUnit (div_mul_cancel₀ _ hb').symm hy
 
 /-- The row of the denominator `b` in the table of the prime `p` admits the numerator `a` of every
 point `(a, y, b)` with `gcd(a, b) = 1`; neither `b ≥ 1` nor an odd `p` is needed. -/
@@ -333,19 +375,26 @@ theorem isSquare_getD_degree_of_sq_eq_binaryForm {c : List ℤ} {p : ℕ} [Fact 
   rw [eq_div_of_mul_eq (pow_ne_zero _ ha) h2.symm]
   exact (IsSquare.sq (y : ZMod p)).div ((Nat.even_iff.mpr hd).isSquare_pow _)
 
+/-- For a point `(a, y, b)` of a curve of even degree and a prime `p ∣ b`, the residue of `c_d`
+modulo `p` is marked as a square (`Ratpoints.Sieve.isSquare_getD_degree_of_sq_eq_binaryForm`). -/
+theorem getElem!_squaresMod_of_sq_eq {c : List ℤ} (hd : degree c % 2 = 0) {p : ℕ} (hp : p.Prime)
+    {a y : ℤ} {b : ℕ} (hab : Int.gcd a b = 1) (hy : y ^ 2 = binaryForm c a b) (hpb : p ∣ b) :
+    (squaresMod p)[(c.getD (degree c) 0 % (p : ℤ)).toNat]! = true := by
+  have : Fact p.Prime := ⟨hp⟩
+  refine getElem!_squaresMod_of_isSquare hp
+    ((Int.toNat_lt' hp.pos).mpr (Int.emod_lt_of_pos _ (mod_cast hp.pos))) ?_
+  rw [ZMod.natCast_toNat_emod]
+  exact isSquare_getD_degree_of_sq_eq_binaryForm hab (Nat.mod_eq_zero_of_dvd hpb) hd hy
+
 -- A point gives a residue `t < p` that the table of `p` marks, or a point at infinity modulo `p`:
 -- odd degree, or `c_d` marked as a square.
 private theorem exists_isFSquare_or_of_sq_eq_binaryForm {c : List ℤ} {p : ℕ} (hp : p.Prime)
     {a y : ℤ} {b : ℕ} (hab : Int.gcd a b = 1) (hy : y ^ 2 = binaryForm c a b) :
     (∃ t < p, (examinePrime c (degree c) p).isFSquare[t]! = true) ∨
       degree c % 2 = 1 ∨ (squaresMod p)[(c.getD (degree c) 0 % (p : ℤ)).toNat]! = true := by
-  have : Fact p.Prime := ⟨hp⟩
   by_cases hb : b % p = 0
   · rcases Nat.mod_two_eq_zero_or_one (degree c) with hd | hd
-    · refine .inr (.inr (getElem!_squaresMod_of_isSquare hp ?_ ?_))
-      · exact (Int.toNat_lt' hp.pos).mpr (Int.emod_lt_of_pos _ (mod_cast hp.pos))
-      · rw [ZMod.natCast_toNat_emod]
-        exact isSquare_getD_degree_of_sq_eq_binaryForm hab hb hd hy
+    · exact .inr (.inr (getElem!_squaresMod_of_sq_eq hd hp hab hy (Nat.dvd_of_mod_eq_zero hb)))
     · exact .inr (.inl hd)
   · have h := admits_examinePrime_of_sq_eq hp hab hy
     simp only [Entry.admits, p_examinePrime, inverses_examinePrime, hb, ↓reduceIte] at h

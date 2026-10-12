@@ -16,18 +16,18 @@ the entries of a vector after `Vector.set!` and after a fold of `Vector.set!` ov
 positions, the entries of an array made by a map over a range, the last entry and the entries of an
 array after `Array.push`, `Array.pop` and `Array.map`, the elements of `List.range n` that pass a
 test which fails from some position on, the integers of a range that lie in a smaller one or between
-two bounds, the gcd of the absolute values of a list of integers as a left fold, the position of the
-cursor of a loop over a range, the cursor of a loop over an array as one of its entries, the bound
-`y < (n + 1) k` for `y < n k`, the residues modulo `p` of the integers from `a` on, exact quotients
-of integers, the bits of the word `~~~0` and of the masks `~~~0 <<< n` and `~~~0 >>> n`, the lowest
-bit and the lowest set bit of a word, the word `x &&& (x - 1)`, which is `x` with its lowest set bit
-cleared, the bits of a word set one at a time, at their own positions or at others, the 64 bits of
-two words from a position within the first, the bits of a word and-ed in turn with the words of a
-list, the numerators and the denominators of the set bits of a list of words, read in turn, the
-numbers of a range between two bounds, the odd part of a number below `2 ^ 64` by the lowest set bit
-of its word, bit 1 of odd numbers, the gcd of half an even number with an odd one, a residue below
-`2 q` modulo `q` by one subtraction, and the divisors of the gcd of `b` and a residue
-`f ≡ a (mod b)`.
+two bounds, the gcd of the absolute values of a list of integers as a left fold, the length of the
+list of a range and the position of the cursor of a loop over it, the cursor of a loop over an array
+as one of its entries, the bound `y < (n + 1) k` for `y < n k`, the residues modulo `p` of the
+integers from `a` on, exact quotients of integers, the bits of the word `~~~0` and of the masks
+`~~~0 <<< n` and `~~~0 >>> n`, the lowest bit and the lowest set bit of a word, the word
+`x &&& (x - 1)`, which is `x` with its lowest set bit cleared, the bits of a word set one at a time,
+at their own positions or at others, the 64 bits of two words from a position within the first, the
+bits of a word and-ed in turn with the words of a list, the numerators and the denominators of the
+set bits of a list of words, read in turn, the numbers of a range between two bounds, the odd part
+of a number below `2 ^ 64` by the lowest set bit of its word, bit 1 of odd numbers, the gcd of half
+an even number with an odd one, a residue below `2 q` modulo `q` by one subtraction, and the
+divisors of the gcd of `b` and a residue `f ≡ a (mod b)`.
 
 ## Main statements
 
@@ -52,6 +52,7 @@ of its word, bit 1 of odd numbers, the gcd of half an even number with an odd on
   `w = w0, …, w0 + n - 1`: the denominators of the set bits of words.
 * `List.filter_range'_le_and_le`: of a range that covers `lo, …, hi`, the numbers from `lo` to
   `hi`.
+* `Std.Legacy.Range.length_toList`: the list of `[a:b]` has `b - a` entries.
 * `Std.Legacy.Range.length_eq_of_toList_eq_append_cons`,
   `Std.Legacy.Range.lt_of_toList_eq_append_cons`: the position of the cursor of a loop over
   `[0:m]`; `Std.Legacy.Range.add_length_eq_of_toList_eq_append_cons`,
@@ -287,6 +288,9 @@ end List
 
 namespace Std.Legacy.Range
 
+theorem length_toList (a b : Nat) : (ForIn.toList [a:b]).length = b - a := by
+  simp [size]
+
 /-- The form of `List.eq_of_range'_eq_append_cons` for the list `ForIn.toList [a:m]` of a loop over
 `[a:m]`, in which the verification conditions state the cursor: the cursor is `a` plus the length of
 the list before it. -/
@@ -314,9 +318,7 @@ theorem lt_of_toList_eq_append_cons {m cur : Nat} {pref suff : List Nat}
 over `[a:m]`: the lists before and after the cursor have `m - a - 1` entries together. -/
 theorem length_add_length_add_one_of_toList_eq_append_cons {a m cur : Nat} {pref suff : List Nat}
     (h : ForIn.toList [a:m] = pref ++ cur :: suff) : pref.length + suff.length + 1 = m - a := by
-  have := congrArg List.length h
-  simp [Std.Legacy.Range.size] at this
-  lia
+  rw [← length_toList, h, List.length_append, List.length_cons, Nat.add_assoc]
 
 end Std.Legacy.Range
 

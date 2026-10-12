@@ -10,7 +10,7 @@ public import Ratpoints.Proof.Words
 
 import Mathlib.Data.List.Basic
 import Ratpoints.Mathlib.Data.List.Basic
-import Ratpoints.Proof.Sieve
+import Ratpoints.Proof.BruteForce
 import Std.Tactic.Do
 
 /-!
@@ -24,8 +24,6 @@ finds a point, this is the reference over the shape's list, in its order.
 
 ## Main statements
 
-* `Ratpoints.BruteForce.pointsOfDen_filter_of_ne`: a filter of the numerators that every point
-  passes does not change what the brute-force reference finds over a denominator.
 * `Ratpoints.Sieve.sieveRun_spec`: the run gives, for each denominator `b` of the list of the shape
   that passes its tests (`Ratpoints.Sieve.Shape.dens`, `Ratpoints.Sieve.Shape.keep`), what the
   brute-force reference finds over `b` and the numerators `-H, …, H` that pass the class word
@@ -53,16 +51,6 @@ set_option experimental.vcgen true
 open scoped Std.WP
 
 namespace Ratpoints
-
-namespace BruteForce
-
-theorem pointsOfDen_filter_of_ne {c : List Int} {d : Nat} {z : Int} {xs : List Int}
-    {keep : Int → Bool} (h : ∀ x ∈ xs, pointsOfDen c d z [x] ≠ [] → keep x) :
-    pointsOfDen c d z (xs.filter keep) = pointsOfDen c d z xs := by
-  simp only [pointsOfDen_singleton] at h
-  exact List.flatMap_filter_of_ne h
-
-end BruteForce
 
 namespace Sieve
 
