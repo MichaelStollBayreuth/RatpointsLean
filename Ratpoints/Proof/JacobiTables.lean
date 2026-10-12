@@ -6,13 +6,13 @@ Authors: Michael Stoll
 module
 
 public import Mathlib.NumberTheory.LegendreSymbol.JacobiSymbol
+public import Ratpoints.Mathlib.Data.Nat.Factors
 public import Ratpoints.Model.Denominators
 public import Ratpoints.Spec.Basic
 public import Std.WP
 
 import Ratpoints.Mathlib.Algebra.BigOperators.Group.List.Basic
 import Ratpoints.Mathlib.Algebra.Prime.Defs
-import Ratpoints.Mathlib.Data.Nat.Factors
 import Ratpoints.Mathlib.Data.ZMod.Basic
 import Ratpoints.Mathlib.NumberTheory.LegendreSymbol.JacobiSymbol
 import Ratpoints.Mathlib.NumberTheory.Padics.PadicVal.Basic
@@ -656,7 +656,7 @@ theorem IsJacobiInfo.coprime_two_mul_natAbs_iff {lcf : ℤ} {ji : JacobiInfo}
 theorem IsJacobiInfo.prod_filter_primeFactorsList_eq {lcf : ℤ} {ji : JacobiInfo}
     (hji : IsJacobiInfo lcf ji) (b : ℕ) :
     (b.primeFactorsList.filter fun p ↦ decide (p ≠ 2 ∧ p ∉ ji.primes.map Prod.fst)).prod =
-      (b.primeFactorsList.filter (·.Coprime (2 * lcf.natAbs))).prod :=
+      b.coprimePart (2 * lcf.natAbs) :=
   congr(List.prod $(List.filter_congr fun _ hp ↦ decide_eq_decide.mpr
     (hji.coprime_two_mul_natAbs_iff (Nat.prime_of_mem_primeFactorsList hp)).symm))
 
@@ -664,14 +664,13 @@ theorem IsJacobiInfo.prod_filter_primeFactorsList_eq {lcf : ℤ} {ji : JacobiInf
 prime to `2 lcf`, for `1 ≤ b ≤ bHigh` when the set-up gives tables. -/
 theorem run_jacobiTest {lcf : ℤ} {bHigh : ℕ} {ji : JacobiInfo}
     (hji : Id.run (jacobiSetup lcf bHigh) = some ji) {b : ℕ} (hb : b ≠ 0) (hbH : b ≤ bHigh) :
-    Id.run (jacobiTest ji b) =
-      decide (J(lcf | (b.primeFactorsList.filter (·.Coprime (2 * lcf.natAbs))).prod) = 1) := by
+    Id.run (jacobiTest ji b) = decide (J(lcf | b.coprimePart (2 * lcf.natAbs)) = 1) := by
   obtain ⟨hH, -, hI⟩ :=
     (Std.WP.Id.of_run_eq_wp rfl _ ((jacobiSetup_spec lcf bHigh).le_wp trivial)) ji hji
   have hbs : b < UInt64.size := by have := mulModLimit_lt_size; lia
   rw [Std.WP.Id.of_run_eq_wp rfl _ ((jacobiTest_spec ji b).le_wp
     ⟨Nat.pos_of_ne_zero hb, hbs, fun x hx ↦ (hI.1 x hx).1⟩), hI.prod_filter_primeFactorsList_eq]
-  have hc := Nat.coprime_prod_filter_primeFactorsList b (2 * lcf.natAbs)
+  have hc := Nat.coprime_coprimePart b (2 * lcf.natAbs)
   rw [jacobiSym_eq_ite_foldl hI (Nat.odd_iff.mp (Nat.coprime_two_right.mp
     (hc.coprime_dvd_right (dvd_mul_right 2 _)))) fun x hx hd ↦ (hI.1 x hx).1.one_lt.ne'
       ((hc.coprime_dvd_left hd).eq_one_of_dvd (Dvd.dvd.mul_left (hI.1 x hx).2.2.1 2))]
@@ -685,7 +684,7 @@ theorem run_jacobiTest_of_sq_eq {c : List ℤ} (hd : degree c % 2 = 0) {bHigh : 
     (hb : b ≠ 0) (hbH : b ≤ bHigh) (hab : Int.gcd a b = 1) (hy : y ^ 2 = binaryForm c a b) :
     Id.run (jacobiTest ji b) = true :=
   (run_jacobiTest hji hb hbH).trans
-    (decide_eq_true (jacobiSym_prod_filter_primeFactorsList_eq_one_of_sq_eq hd hab hy))
+    (decide_eq_true (jacobiSym_coprimePart_eq_one_of_sq_eq hd hab hy))
 
 /-! ### The values of the C code -/
 

@@ -389,7 +389,7 @@ $(c_d / q) = -1$, which these do not reach.
 
 \begin{definition}[The Jacobi symbol by the binary algorithm]\label{def:jacobi}
   \uses{def:useCLong}
-  \lean{Ratpoints.Sieve.twoSign, Ratpoints.Sieve.jacobiReduce, Ratpoints.Sieve.jacobiRound, Ratpoints.Sieve.jacobi, Ratpoints.Sieve.twoSign_eq, Ratpoints.Sieve.jacobiReduce_spec, Ratpoints.Sieve.jacobiRound_spec, Ratpoints.Sieve.jacobi_spec, Ratpoints.fitsLong_neg_ite_div_four}
+  \lean{Ratpoints.Sieve.twoSign, Ratpoints.Sieve.jacobiReduce, Ratpoints.Sieve.jacobiRound, Ratpoints.Sieve.jacobi, Ratpoints.Sieve.twoSign_eq, Ratpoints.Sieve.IsJacobiReduction, Ratpoints.Sieve.jacobiReduce_spec, Ratpoints.Sieve.jacobiRound_spec, Nat.coprimePart, Ratpoints.Sieve.jacobi_spec, Ratpoints.fitsLong_neg_ite_div_four}
   \leanok
   For $b \ge 1$ and an integer $\ell$: the factors $2$ taken out of $b$, and $u = \ell \bmod b$;
   while $u \ne 0$, a round of the binary algorithm on $n = u$ and $m = b$, which takes the factors
@@ -407,7 +407,7 @@ $(c_d / q) = -1$, which these do not reach.
 
 \begin{lemma}[The binary algorithm computes the Jacobi symbol]\label{lem:jacobi}
   \uses{def:jacobi}
-  \lean{Ratpoints.Sieve.run_jacobi, Nat.prod_filter_primeFactorsList_dvd, Nat.coprime_prod_filter_primeFactorsList, Nat.dvd_prod_filter_primeFactorsList_of_dvd}
+  \lean{Ratpoints.Sieve.run_jacobi, Nat.coprimePart_dvd, Nat.coprime_coprimePart, Nat.dvd_coprimePart_of_dvd}
   \leanok
   For $b \ge 1$ and every integer $\ell$, the result is $J(\ell \mid b^*)$ for the largest divisor
   $b^*$ of $b$ prime to $2 \ell$, the product of the prime factors of $b$, with multiplicity, that
@@ -456,7 +456,7 @@ $(c_d / q) = -1$, which these do not reach.
 
 \begin{lemma}[The Jacobi test]\label{lem:jacobiTest}
   \uses{def:jacobiTables, def:jacobi, lem:jacobi, def:binaryForm, lem:examinePrime_none}
-  \lean{Ratpoints.Sieve.jacobiSym_eq_ite_foldl, Ratpoints.Sieve.IsJacobiInfo.prod_filter_primeFactorsList_eq, Ratpoints.Sieve.run_jacobiTest, Ratpoints.Sieve.jacobiSym_eq_one_of_sq_eq_binaryForm, Ratpoints.Sieve.jacobiSym_prod_filter_primeFactorsList_eq_one_of_sq_eq, Ratpoints.Sieve.run_jacobi_eq_one_of_sq_eq, Ratpoints.Sieve.run_jacobiTest_of_sq_eq, jacobiSym.natCast_eq_ite_mul_legendreSym}
+  \lean{Ratpoints.Sieve.jacobiSym_eq_ite_foldl, Ratpoints.Sieve.IsJacobiInfo.prod_filter_primeFactorsList_eq, Ratpoints.Sieve.run_jacobiTest, Ratpoints.Sieve.jacobiSym_eq_one_of_sq_eq_binaryForm, Ratpoints.Sieve.jacobiSym_coprimePart_eq_one_of_sq_eq, Ratpoints.Sieve.run_jacobi_eq_one_of_sq_eq, Ratpoints.Sieve.run_jacobiTest_of_sq_eq, jacobiSym.natCast_eq_ite_mul_legendreSym}
   \leanok
   When the tables exist and $1 \le b \le b_{\mathrm{high}}$, the test of $b$ passes exactly when
   $J(\ell \mid b^*) = 1$. For even $d$, integers $a$ and $y$ and a natural number $b$ with

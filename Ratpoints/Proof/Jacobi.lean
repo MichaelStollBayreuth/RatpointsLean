@@ -6,11 +6,11 @@ Authors: Michael Stoll
 module
 
 public import Mathlib.NumberTheory.LegendreSymbol.JacobiSymbol
+public import Ratpoints.Mathlib.Data.Nat.Factors
 public import Ratpoints.Model.Denominators
 public import Ratpoints.Spec.Basic
 public import Std.WP
 
-import Ratpoints.Mathlib.Data.Nat.Factors
 import Ratpoints.Mathlib.NumberTheory.LegendreSymbol.JacobiSymbol
 import Ratpoints.Proof.Bits
 import Ratpoints.Proof.Tables
@@ -20,19 +20,20 @@ import Std.Tactic.Do
 # The Jacobi test by the binary algorithm
 
 The binary algorithm of the C code (`Ratpoints.Sieve.jacobi`) computes the Jacobi symbol
-`(lcf / b*)` for `b ≥ 1`, where `b*` is the largest divisor of `b` prime to `2 lcf`, the product of
-the prime factors of `b` prime to `2 lcf`
-(`(b.primeFactorsList.filter (·.Coprime (2 * lcf.natAbs))).prod`, which
-`Nat.prod_filter_primeFactorsList_dvd`, `Nat.coprime_prod_filter_primeFactorsList` and
-`Nat.dvd_prod_filter_primeFactorsList_of_dvd` characterize as that divisor): each round
-(`Ratpoints.Sieve.jacobiRound`) keeps the symbol with its sign, taking out the factors `2` with the
-sign of `(2 / m)` (`Ratpoints.Sieve.twoSign`) and exchanging the two numbers with the sign of the
-reciprocity, and gives the symbol of `f` and `b` or their gcd, which the algorithm divides out of
-`b`. For a polynomial of even degree the symbol is `1` on the denominator `b` of every point, since
-`c_d` is a square modulo every prime factor of `b` prime to `c_d`
+`(lcf / b*)` for `b ≥ 1`, where `b*` is the largest divisor of `b` prime to `2 lcf`,
+`b.coprimePart (2 * lcf.natAbs)` (`Nat.coprimePart`): each round (`Ratpoints.Sieve.jacobiRound`)
+keeps the symbol with its sign, taking out the factors `2` with the sign of `(2 / m)`
+(`Ratpoints.Sieve.twoSign`) and exchanging the two numbers with the sign of the reciprocity, and
+gives the symbol of `f` and `b` or their gcd, which the algorithm divides out of `b`. For a
+polynomial of even degree the symbol is `1` on the denominator `b` of every point, since `c_d` is a
+square modulo every prime factor of `b` prime to `c_d`
 (`Ratpoints.Sieve.isSquare_getD_degree_of_sq_eq_binaryForm`); so the binary algorithm lets the
 denominator of every point through, and so does the test by tables, which computes the same symbol
 (`Ratpoints.Sieve.run_jacobiTest`).
+
+## Main definitions
+
+* `Ratpoints.Sieve.IsJacobiReduction`: what the subtraction loop of the binary algorithm returns.
 
 ## Main statements
 
@@ -43,7 +44,7 @@ denominator of every point through, and so does the test by tables, which comput
   `(lcf / b*)`.
 * `Ratpoints.Sieve.jacobiSym_eq_one_of_sq_eq_binaryForm`: the symbol of `c_d` over a divisor of the
   denominator of a point prime to `c_d` is `1`, and so is `(c_d / b*)`
-  (`Ratpoints.Sieve.jacobiSym_prod_filter_primeFactorsList_eq_one_of_sq_eq`).
+  (`Ratpoints.Sieve.jacobiSym_coprimePart_eq_one_of_sq_eq`).
 * `Ratpoints.Sieve.run_jacobi_eq_one_of_sq_eq`: the binary algorithm gives `1` on the denominator of
   every point.
 
@@ -93,6 +94,12 @@ theorem mul_jacobiSym_eq_of_eq_ite_neg {n m m' : ℕ} {s s' t c : ℤ} (hn : n %
     (ht : t = if (n &&& m &&& 2 != 0) = true then -s else s) : s' * J(m' | n) = c := by
   rw [hr, ht, ite_neg_mul_jacobiSym hn hm, hc]
 
+/-- What the subtraction loop `Ratpoints.Sieve.jacobiReduce` returns on the odd `x` and `y` with the
+sign `s`: an odd `x' ≤ x, y` and a sign `s'` with `s' J(x' | y) = s J(x | y)` and
+`gcd(x', y) = gcd(x, y)`. -/
+def IsJacobiReduction (x y : ℕ) (s : ℤ) (r : ℕ × ℤ) : Prop :=
+  r.1 % 2 = 1 ∧ r.1 ≤ x ∧ r.1 ≤ y ∧ r.2 * J(r.1 | y) = s * J(x | y) ∧ Nat.gcd r.1 y = Nat.gcd x y
+
 /-- The invariant of the outer loop of `Ratpoints.Sieve.jacobiReduce` on the odd `x` and `y` with
 the sign `s`: the current `x'` is odd, at most `x`, has the gcd of `x` with `y`, and
 `s' J(x' | y) = s J(x | y)`; at the exit `x' ≤ y`. -/
@@ -111,9 +118,8 @@ theorem jacobiReduceInvariant_self {x y : ℕ} (s : ℤ) (h : x % 2 = 1 ∧ y % 
     JacobiReduceInvariant x y s false (x, s) :=
   ⟨h.1, le_rfl, rfl, rfl, nofun⟩
 
-theorem JacobiReduceInvariant.post {x y x' : ℕ} {s s' : ℤ}
-    (h : JacobiReduceInvariant x y s true (x', s')) :
-    x' % 2 = 1 ∧ x' ≤ x ∧ x' ≤ y ∧ s' * J(x' | y) = s * J(x | y) ∧ Nat.gcd x' y = Nat.gcd x y :=
+theorem JacobiReduceInvariant.isJacobiReduction {x y x' : ℕ} {s s' : ℤ}
+    (h : JacobiReduceInvariant x y s true (x', s')) : IsJacobiReduction x y s (x', s') :=
   ⟨h.1, h.2.1, h.2.2.2.2 rfl, h.2.2.1, h.2.2.2.1⟩
 
 theorem JacobiReduceInvariant.exit {x y x' mb : ℕ} {s s' : ℤ} (hle : ¬y < x')
@@ -170,9 +176,7 @@ attribute [local irreducible] JacobiReduceInvariant JacobiReduceHalveInvariant
 ends with an odd `x' ≤ y`; its loops end, since `x'` drops with every pass. -/
 @[spec]
 theorem jacobiReduce_spec (x y : ℕ) (s : ℤ) :
-    ⦃ x % 2 = 1 ∧ y % 2 = 1 ⦄ jacobiReduce x y s
-    ⦃ fun r ↦ r.1 % 2 = 1 ∧ r.1 ≤ x ∧ r.1 ≤ y ∧ r.2 * J(r.1 | y) = s * J(x | y) ∧
-      Nat.gcd r.1 y = Nat.gcd x y ⦄ := by
+    ⦃ x % 2 = 1 ∧ y % 2 = 1 ⦄ jacobiReduce x y s ⦃ IsJacobiReduction x y s ⦄ := by
   vcgen [jacobiReduce] invariants
   | inv1 => JacobiReduceInvariant x y s
   | inv2 => .ofMeasure fun st : ℕ × ℤ ↦ st.1
@@ -183,7 +187,7 @@ theorem jacobiReduce_spec (x y : ℕ) (s : ℤ) :
     Lean.Order.meet_prop_eq_and, Lean.Order.ofProp_prop_eq] at *
   all_goals first
     | exact jacobiReduceInvariant_self s ‹_›
-    | exact JacobiReduceInvariant.post ‹_›
+    | exact JacobiReduceInvariant.isJacobiReduction ‹_›
     | exact JacobiReduceInvariant.jacobiReduceHalveInvariant ‹_› ‹_› ‹_›
     | exact JacobiReduceHalveInvariant.exit ‹_› ‹_›
     | exact JacobiReduceHalveInvariant.done ‹_› ‹_› ‹_›
@@ -248,8 +252,7 @@ theorem JacobiRoundInvariant.odd_of_mod_two_eq_one {f b n m m' mb : ℕ} {s : �
 of `m` by `n`, the symbol of the reduced `m'` over `n` with the new sign is that of `f` and `b`. -/
 theorem JacobiRoundInvariant.first_half {f b n m m' mb : ℕ} {s s' t : ℤ}
     (h : n + m = mb ∧ JacobiRoundInvariant f b false (s, n, m))
-    (hr : m' % 2 = 1 ∧ m' ≤ m ∧ m' ≤ n ∧ s' * J(m' | n) = t * J(m | n) ∧
-      Nat.gcd m' n = Nat.gcd m n)
+    (hr : IsJacobiReduction m n t (m', s'))
     (ht : t = if (n &&& m &&& 2 != 0) = true then -s else s) :
     s' * J(m' | n) = J(f | b) ∧ Nat.gcd n m' = Nat.gcd f b := by
   obtain ⟨-, h1, h2, h3, h4, -⟩ := h
@@ -261,10 +264,8 @@ reduction of `n` by `m'`, the symbol of the reduced `n'` over `m'` with the new 
 and `b`. -/
 theorem JacobiRoundInvariant.second_half {f b n m m' n' mb : ℕ} {s s' s'' t t' : ℤ}
     (h : n + m = mb ∧ JacobiRoundInvariant f b false (s, n, m))
-    (hr : m' % 2 = 1 ∧ m' ≤ m ∧ m' ≤ n ∧ s' * J(m' | n) = t * J(m | n) ∧
-      Nat.gcd m' n = Nat.gcd m n)
-    (hr' : n' % 2 = 1 ∧ n' ≤ n ∧ n' ≤ m' ∧ s'' * J(n' | m') = t' * J(n | m') ∧
-      Nat.gcd n' m' = Nat.gcd n m')
+    (hr : IsJacobiReduction m n t (m', s'))
+    (hr' : IsJacobiReduction n m' t' (n', s''))
     (ht : t = if (n &&& m &&& 2 != 0) = true then -s else s)
     (ht' : t' = if (m' &&& n &&& 2 != 0) = true then -s' else s') :
     s'' * J(n' | m') = J(f | b) ∧ Nat.gcd n' m' = Nat.gcd f b := by
@@ -274,8 +275,7 @@ theorem JacobiRoundInvariant.second_half {f b n m m' n' mb : ℕ} {s s' s'' t t'
 
 theorem JacobiRoundInvariant.first_break {f b n m m' mb : ℕ} {s s' t : ℤ}
     (h : n + m = mb ∧ JacobiRoundInvariant f b false (s, n, m))
-    (hr : m' % 2 = 1 ∧ m' ≤ m ∧ m' ≤ n ∧ s' * J(m' | n) = t * J(m | n) ∧
-      Nat.gcd m' n = Nat.gcd m n)
+    (hr : IsJacobiReduction m n t (m', s'))
     (heq : (m' == n) = true) (ht : t = if (n &&& m &&& 2 != 0) = true then -s else s) :
     JacobiRoundInvariant f b true (s', n, m') := by
   obtain ⟨h1, h2⟩ := JacobiRoundInvariant.first_half h hr ht
@@ -284,10 +284,8 @@ theorem JacobiRoundInvariant.first_break {f b n m m' mb : ℕ} {s s' t : ℤ}
 
 theorem JacobiRoundInvariant.second_break {f b n m m' n' mb : ℕ} {s s' s'' t t' : ℤ}
     (h : n + m = mb ∧ JacobiRoundInvariant f b false (s, n, m))
-    (hr : m' % 2 = 1 ∧ m' ≤ m ∧ m' ≤ n ∧ s' * J(m' | n) = t * J(m | n) ∧
-      Nat.gcd m' n = Nat.gcd m n)
-    (hr' : n' % 2 = 1 ∧ n' ≤ n ∧ n' ≤ m' ∧ s'' * J(n' | m') = t' * J(n | m') ∧
-      Nat.gcd n' m' = Nat.gcd n m')
+    (hr : IsJacobiReduction m n t (m', s'))
+    (hr' : IsJacobiReduction n m' t' (n', s''))
     (heq : (m' == n') = true) (ht : t = if (n &&& m &&& 2 != 0) = true then -s else s)
     (ht' : t' = if (n &&& m' &&& 2 != 0) = true then -s' else s') :
     JacobiRoundInvariant f b true (s'', n', m') := by
@@ -296,17 +294,15 @@ theorem JacobiRoundInvariant.second_break {f b n m m' n' mb : ℕ} {s s' s'' t t
 
 theorem JacobiRoundInvariant.next {f b n m m' n' mb : ℕ} {s s' s'' t t' : ℤ}
     (h : n + m = mb ∧ JacobiRoundInvariant f b false (s, n, m))
-    (hr : m' % 2 = 1 ∧ m' ≤ m ∧ m' ≤ n ∧ s' * J(m' | n) = t * J(m | n) ∧
-      Nat.gcd m' n = Nat.gcd m n)
+    (hr : IsJacobiReduction m n t (m', s'))
     (hne : ¬(m' == n) = true)
-    (hr' : n' % 2 = 1 ∧ n' ≤ n ∧ n' ≤ m' ∧ s'' * J(n' | m') = t' * J(n | m') ∧
-      Nat.gcd n' m' = Nat.gcd n m')
+    (hr' : IsJacobiReduction n m' t' (n', s''))
     (ht : t = if (n &&& m &&& 2 != 0) = true then -s else s)
     (ht' : t' = if (n &&& m' &&& 2 != 0) = true then -s' else s') :
     n' + m' < mb ∧ JacobiRoundInvariant f b false (s'', n', m') := by
   obtain ⟨h1, h2⟩ := JacobiRoundInvariant.second_half h hr hr' ht (by rwa [Nat.and_comm m' n])
   have : m' ≠ n := by simpa using hne
-  exact ⟨by have := h.1; lia, hr'.1, hr.1, h1, h2, nofun⟩
+  exact ⟨by have := h.1; have := hr.2; have := hr'.2; lia, hr'.1, hr.1, h1, h2, nofun⟩
 
 section
 
@@ -351,8 +347,7 @@ private theorem decide_coprime_eq_false {q m : ℕ} (hq : q.Prime) (h : q ∣ m)
 the current `b'` is positive with the part of `b` prime to `2 lcf`, and odd at the exit. -/
 def JacobiOddInvariant (b : ℕ) (lcf : ℤ) : Std.WP.WhileInvariant ℕ Prop :=
   .mk fun exit b' ↦ 0 < b' ∧
-    (b'.primeFactorsList.filter (·.Coprime (2 * lcf.natAbs))).prod =
-      (b.primeFactorsList.filter (·.Coprime (2 * lcf.natAbs))).prod ∧ (exit = true → b' % 2 = 1)
+    b'.coprimePart (2 * lcf.natAbs) = b.coprimePart (2 * lcf.natAbs) ∧ (exit = true → b' % 2 = 1)
 
 /-- The invariant of the main loop of `Ratpoints.Sieve.jacobi` on `b` and `lcf`, on the result of an
 early return, the current `b'` and `f`: without a result, `b'` is odd and positive, `f < b'`,
@@ -362,10 +357,9 @@ result comes only at the exit and is the symbol `(lcf / b*)` of the part `b*` of
 def JacobiInvariant (b : ℕ) (lcf : ℤ) : Std.WP.WhileInvariant (Option ℤ × ℕ × ℕ) Prop :=
   .mk fun exit st ↦ st.1.elim (0 < st.2.1 ∧ st.2.1 % 2 = 1 ∧ st.2.2 < st.2.1 ∧
       (st.2.2 : ℤ) % st.2.1 = lcf % st.2.1 ∧
-      (st.2.1.primeFactorsList.filter (·.Coprime (2 * lcf.natAbs))).prod =
-        (b.primeFactorsList.filter (·.Coprime (2 * lcf.natAbs))).prod ∧
+      st.2.1.coprimePart (2 * lcf.natAbs) = b.coprimePart (2 * lcf.natAbs) ∧
       (exit = true → st.2.2 = 0))
-    fun r ↦ exit = true ∧ r = J(lcf | (b.primeFactorsList.filter (·.Coprime (2 * lcf.natAbs))).prod)
+    fun r ↦ exit = true ∧ r = J(lcf | b.coprimePart (2 * lcf.natAbs))
 
 theorem jacobiOddInvariant_self {b : ℕ} (lcf : ℤ) (hb : 0 < b) :
     JacobiOddInvariant b lcf false b :=
@@ -378,6 +372,7 @@ theorem JacobiOddInvariant.div_two {b b' mb : ℕ} {lcf : ℤ} (h : (b' % 2 == 0
   have h : b' % 2 = 0 := by simpa using h
   refine ⟨by lia, by lia, ?_, nofun⟩
   rw [← h2, ← Nat.mul_div_cancel' (Nat.dvd_of_mod_eq_zero h), Nat.mul_div_cancel_left _ two_pos,
+    Nat.coprimePart_eq, Nat.coprimePart_eq,
     Nat.prod_filter_primeFactorsList_mul_of_forall two_ne_zero (by lia)]
   simp [Nat.primeFactorsList_two]
 
@@ -396,7 +391,7 @@ theorem JacobiOddInvariant.jacobiInvariant {b b' : ℕ} {lcf : ℤ}
 
 theorem JacobiInvariant.post_some {b b' f : ℕ} {lcf r : ℤ} {o : Option ℤ}
     (hi : JacobiInvariant b lcf true (o, b', f)) (h : o = some r) :
-    r = J(lcf | (b.primeFactorsList.filter (·.Coprime (2 * lcf.natAbs))).prod) := by
+    r = J(lcf | b.coprimePart (2 * lcf.natAbs)) := by
   subst h
   exact hi.2
 
@@ -404,16 +399,16 @@ theorem JacobiInvariant.post_some {b b' f : ℕ} {lcf r : ℤ} {o : Option ℤ}
 prime to `2 lcf`, that of `b'`, is `1`. -/
 theorem JacobiInvariant.post_none {b b' f : ℕ} {lcf : ℤ} {o : Option ℤ}
     (hi : JacobiInvariant b lcf true (o, b', f)) (h : o = none) :
-    1 = J(lcf | (b.primeFactorsList.filter (·.Coprime (2 * lcf.natAbs))).prod) := by
+    1 = J(lcf | b.coprimePart (2 * lcf.natAbs)) := by
   subst h
   obtain ⟨h1, -, -, h4, h5, h6⟩ := hi
   have hd : (b' : ℤ) ∣ lcf := by
     rw [h6 rfl] at h4
     exact Int.dvd_of_emod_eq_zero (by simpa using h4.symm)
-  rw [← h5, Nat.prod_filter_primeFactorsList_eq_one fun q hq ↦ decide_coprime_eq_false
-    (Nat.prime_of_mem_primeFactorsList hq) (Dvd.dvd.mul_left (Int.natCast_dvd.mp
-      ((Int.natCast_dvd_natCast.mpr (Nat.dvd_of_mem_primeFactorsList hq)).trans hd)) 2),
-    jacobiSym.one_right]
+  rw [← h5, Nat.coprimePart_eq, Nat.prod_filter_primeFactorsList_eq_one fun q hq ↦
+    decide_coprime_eq_false (Nat.prime_of_mem_primeFactorsList hq) (Dvd.dvd.mul_left
+      (Int.natCast_dvd.mp ((Int.natCast_dvd_natCast.mpr
+        (Nat.dvd_of_mem_primeFactorsList hq)).trans hd)) 2), jacobiSym.one_right]
 
 theorem JacobiInvariant.eq_none {b b' f : ℕ} {lcf : ℤ} {o : Option ℤ}
     (hi : JacobiInvariant b lcf false (o, b', f)) : o = none := by
@@ -447,8 +442,8 @@ theorem JacobiInvariant.exit_some {b b' f g mb : ℕ} {lcf s : ℤ} {o : Option 
   have hc : Nat.Coprime b' (2 * lcf.natAbs) := Nat.Coprime.mul_right
     (Nat.coprime_two_right.mpr (Nat.odd_iff.mpr h2)) (Nat.Coprime.symm hl)
   refine ⟨rfl, ?_⟩
-  rw [hr.2 hg, ← h5, Nat.prod_filter_primeFactorsList_eq_self (by lia) fun q hq ↦
-    decide_eq_true (hc.coprime_dvd_left (Nat.dvd_of_mem_primeFactorsList hq))]
+  rw [hr.2 hg, ← h5, Nat.coprimePart_eq, Nat.prod_filter_primeFactorsList_eq_self (by lia)
+    fun q hq ↦ decide_eq_true (hc.coprime_dvd_left (Nat.dvd_of_mem_primeFactorsList hq))]
   exact jacobiSym.mod_left' h4
 
 /-- Dividing `b'` by `g = gcd(f, b') > 1` keeps the part of `b'` prime to `2 lcf`, since the primes
@@ -472,9 +467,9 @@ theorem JacobiInvariant.div_gcd {b b' f g f' mb : ℕ} {lcf s : ℤ} {o : Option
   · split_ifs at hf' <;> subst hf' <;> [exact Nat.mod_lt _ hq; lia]
   · rw [← Int.emod_emod_of_dvd lcf hd, ← h4, Int.emod_emod_of_dvd _ hd]
     split_ifs at hf' <;> subst hf' <;> simp
-  · rw [← h5, ← Nat.mul_div_cancel' hgb, Nat.mul_div_cancel_left _ (by lia),
-      Nat.prod_filter_primeFactorsList_mul_of_forall (by lia) (by lia) fun q hq' ↦
-        decide_coprime_eq_false (Nat.prime_of_mem_primeFactorsList hq')
+  · rw [← h5, ← Nat.mul_div_cancel' hgb, Nat.mul_div_cancel_left _ (by lia), Nat.coprimePart_eq,
+      Nat.coprimePart_eq, Nat.prod_filter_primeFactorsList_mul_of_forall (by lia) (by lia)
+        fun q hq' ↦ decide_coprime_eq_false (Nat.prime_of_mem_primeFactorsList hq')
           (Dvd.dvd.mul_left (Int.dvd_natAbs_of_dvd_gcd h4
             (hr.1 ▸ Nat.dvd_of_mem_primeFactorsList hq')) 2)]
 
@@ -489,8 +484,7 @@ largest divisor of `b` prime to `2 lcf`; its main loop ends, since every round t
 divides `b` by a gcd above `1`. -/
 @[spec]
 theorem jacobi_spec (b : ℕ) (lcf : ℤ) :
-    ⦃ 0 < b ⦄ jacobi b lcf
-    ⦃ fun r ↦ r = J(lcf | (b.primeFactorsList.filter (·.Coprime (2 * lcf.natAbs))).prod) ⦄ := by
+    ⦃ 0 < b ⦄ jacobi b lcf ⦃ fun r ↦ r = J(lcf | b.coprimePart (2 * lcf.natAbs)) ⦄ := by
   vcgen [jacobi] invariants
   | inv1 => JacobiOddInvariant b lcf
   | inv2 => .ofMeasure fun st : ℕ ↦ st
@@ -515,8 +509,7 @@ theorem jacobi_spec (b : ℕ) (lcf : ℤ) :
 end
 
 theorem run_jacobi {b : ℕ} (hb : b ≠ 0) (lcf : ℤ) :
-    Id.run (jacobi b lcf) =
-      J(lcf | (b.primeFactorsList.filter (·.Coprime (2 * lcf.natAbs))).prod) :=
+    Id.run (jacobi b lcf) = J(lcf | b.coprimePart (2 * lcf.natAbs)) :=
   Std.WP.Id.of_run_eq_wp rfl _ ((jacobi_spec b lcf).le_wp (Nat.pos_of_ne_zero hb))
 
 /-! ### The denominators of the points -/
@@ -538,13 +531,11 @@ theorem jacobiSym_eq_one_of_sq_eq_binaryForm {c : List ℤ} {a y : ℤ} {b b' : 
 
 /-- The symbol `(c_d / b*)` of the largest divisor `b*` of the denominator `b` of a point prime to
 `2 c_d` is `1`, for even degree. -/
-theorem jacobiSym_prod_filter_primeFactorsList_eq_one_of_sq_eq {c : List ℤ}
-    (hd : degree c % 2 = 0) {a y : ℤ} {b : ℕ} (hab : Int.gcd a b = 1)
-    (hy : y ^ 2 = binaryForm c a b) :
-    J(c.getD (degree c) 0 | (b.primeFactorsList.filter
-      (·.Coprime (2 * (c.getD (degree c) 0).natAbs))).prod) = 1 :=
-  jacobiSym_eq_one_of_sq_eq_binaryForm hab hd hy (Nat.prod_filter_primeFactorsList_dvd _ _)
-    ((Nat.coprime_prod_filter_primeFactorsList b _).coprime_dvd_right (dvd_mul_left _ 2)).symm
+theorem jacobiSym_coprimePart_eq_one_of_sq_eq {c : List ℤ} (hd : degree c % 2 = 0) {a y : ℤ}
+    {b : ℕ} (hab : Int.gcd a b = 1) (hy : y ^ 2 = binaryForm c a b) :
+    J(c.getD (degree c) 0 | b.coprimePart (2 * (c.getD (degree c) 0).natAbs)) = 1 :=
+  jacobiSym_eq_one_of_sq_eq_binaryForm hab hd hy (Nat.coprimePart_dvd _ _)
+    ((Nat.coprime_coprimePart b _).coprime_dvd_right (dvd_mul_left _ 2)).symm
 
 /-- The binary algorithm gives the symbol `1` on the denominator `b` of every point of a curve of
 even degree: it computes the Jacobi symbol `(c_d / b*)`, and modulo a prime `q ∣ b` with `q ∤ c_d`,
@@ -552,7 +543,7 @@ even degree: it computes the Jacobi symbol `(c_d / b*)`, and modulo a prime `q �
 theorem run_jacobi_eq_one_of_sq_eq {c : List ℤ} (hd : degree c % 2 = 0) {a y : ℤ} {b : ℕ}
     (hb : b ≠ 0) (hab : Int.gcd a b = 1) (hy : y ^ 2 = binaryForm c a b) :
     Id.run (jacobi b (c.getD (degree c) 0)) = 1 :=
-  (run_jacobi hb _).trans (jacobiSym_prod_filter_primeFactorsList_eq_one_of_sq_eq hd hab hy)
+  (run_jacobi hb _).trans (jacobiSym_coprimePart_eq_one_of_sq_eq hd hab hy)
 
 end Sieve
 

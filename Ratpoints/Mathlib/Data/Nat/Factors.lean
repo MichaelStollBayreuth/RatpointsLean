@@ -15,8 +15,13 @@ import Mathlib.Data.Nat.GCD.BigOperators
 Candidates for `Mathlib.Data.Nat.Factors`: the product of the prime factors of `n` that pass a test
 `p`, `(n.primeFactorsList.filter p).prod`, the part of `n` with its prime factors in a set (as
 `Nat.prod_mem_factoredNumbers` has it), is multiplicative, a divisor of `n`, `1` when no prime
-factor passes and `n` when all do; for the test `(·.Coprime m)` it is the largest divisor of `n`
-prime to `m`.
+factor passes and `n` when all do; for the test `(·.Coprime m)` it is `Nat.coprimePart n m`, the
+largest divisor of `n ≠ 0` prime to `m`.
+
+## Main definitions
+
+* `Nat.coprimePart`: the product of the prime factors of `n`, with multiplicity, that are prime to
+  `m`.
 
 ## Main statements
 
@@ -26,14 +31,15 @@ prime to `m`.
 * `Nat.prod_filter_primeFactorsList_eq_one`, `Nat.prod_filter_primeFactorsList_eq_self`: the part is
   `1` when no prime factor passes, and `n` when all do.
 * `Nat.prod_filter_primeFactorsList_dvd`: the part divides `n`.
-* `Nat.coprime_prod_filter_primeFactorsList`, `Nat.dvd_prod_filter_primeFactorsList_of_dvd`: the
-  part for the test `(·.Coprime m)` is prime to `m`, and every divisor of `n ≠ 0` prime to `m`
-  divides it, so that it is the largest divisor of `n` prime to `m`.
+* `Nat.coprimePart_dvd`, `Nat.coprime_coprimePart`, `Nat.dvd_coprimePart_of_dvd`: the part of `n`
+  prime to `m` divides `n`, is prime to `m`, and every divisor of `n ≠ 0` prime to `m` divides it,
+  so that it is the largest divisor of `n` prime to `m`.
 
 ## Implementation notes
 
-The last two use `Nat.coprime_list_prod_left_iff` and `Nat.coprime_list_prod_right_iff` of
-`Mathlib.Data.Nat.GCD.BigOperators`, which `Mathlib.Data.Nat.Factors` does not import.
+`Nat.coprime_coprimePart` and `Nat.dvd_coprimePart_of_dvd` use `Nat.coprime_list_prod_left_iff` and
+`Nat.coprime_list_prod_right_iff` of `Mathlib.Data.Nat.GCD.BigOperators`, which
+`Mathlib.Data.Nat.Factors` does not import.
 -/
 
 @[expose] public section
@@ -66,22 +72,33 @@ theorem prod_filter_primeFactorsList_dvd (p : ℕ → Bool) (n : ℕ) :
   · exact dvd_zero _
   · exact List.filter_sublist.prod_dvd_prod.trans (prod_primeFactorsList hn).dvd
 
-theorem coprime_prod_filter_primeFactorsList (n m : ℕ) :
-    Coprime (n.primeFactorsList.filter (·.Coprime m)).prod m :=
+/-- The product of the prime factors of `n`, with multiplicity, that are prime to `m`: for `n ≠ 0`
+the largest divisor of `n` prime to `m` (`Nat.dvd_coprimePart_of_dvd`). -/
+def coprimePart (n m : ℕ) : ℕ :=
+  (n.primeFactorsList.filter (·.Coprime m)).prod
+
+theorem coprimePart_eq (n m : ℕ) :
+    n.coprimePart m = (n.primeFactorsList.filter (·.Coprime m)).prod :=
+  rfl
+
+theorem coprimePart_dvd (n m : ℕ) : n.coprimePart m ∣ n :=
+  prod_filter_primeFactorsList_dvd _ n
+
+theorem coprime_coprimePart (n m : ℕ) : Coprime (n.coprimePart m) m :=
   coprime_list_prod_left_iff.mpr fun q hq ↦ by simpa using List.of_mem_filter hq
 
-/-- **The largest divisor prime to `m`.** Every divisor of `n ≠ 0` prime to `m` divides the product
-of the prime factors of `n` prime to `m`, since it is prime to the other prime factors, which
-divide `m`. -/
-theorem dvd_prod_filter_primeFactorsList_of_dvd {n m d : ℕ} (hn : n ≠ 0) (hd : d ∣ n)
-    (hdm : Coprime d m) : d ∣ (n.primeFactorsList.filter (·.Coprime m)).prod := by
+/-- **The largest divisor prime to `m`.** Every divisor of `n ≠ 0` prime to `m` divides
+`Nat.coprimePart n m`, since it is prime to the other prime factors of `n`, which divide `m`. -/
+theorem dvd_coprimePart_of_dvd {n m d : ℕ} (hn : n ≠ 0) (hd : d ∣ n) (hdm : Coprime d m) :
+    d ∣ n.coprimePart m := by
   refine Coprime.dvd_of_dvd_mul_right (n := (n.primeFactorsList.filter
     fun q ↦ !decide (q.Coprime m)).prod) (coprime_list_prod_right_iff.mpr fun q hq ↦ ?_) ?_
   · have hq' := List.of_mem_filter hq
     simp only [Bool.not_eq_true', decide_eq_false_iff_not] at hq'
     exact hdm.coprime_dvd_right (not_not.mp ((Nat.Prime.coprime_iff_not_dvd
       (prime_of_mem_primeFactorsList (List.mem_of_mem_filter hq))).not.mp hq'))
-  · rwa [← List.prod_append, (List.filter_append_perm _ _).prod_eq, prod_primeFactorsList hn]
+  · rwa [coprimePart_eq, ← List.prod_append, (List.filter_append_perm _ _).prod_eq,
+      prod_primeFactorsList hn]
 
 end Nat
 
