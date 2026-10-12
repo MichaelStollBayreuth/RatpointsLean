@@ -9,7 +9,7 @@ The model is checked against ratpoints v3.1.1 (commit \texttt{1a998538dfa8}). Th
 \begin{tabular}{lrrrr}
 file & lines of code & modelled & excluded & not yet recorded \\
 \hline
-\texttt{find\_points.c} & 3244 & 631 & 198 & 2415 \\
+\texttt{find\_points.c} & 3244 & 762 & 198 & 2284 \\
 \texttt{sift.c} & 820 & 261 & 0 & 559 \\
 \texttt{init.c} & 302 & 155 & 8 & 139 \\
 \texttt{sturm.c} & 215 & 50 & 0 & 165 \\
@@ -20,23 +20,41 @@ file & lines of code & modelled & excluded & not yet recorded \\
 \texttt{gen\_init\_sieve\_h.c} & 26 & 13 & 0 & 13 \\
 \texttt{main.c} & 779 & 234 & 9 & 536 \\
 \hline
-total & 5883 & 1609 & 226 & 4048 \\
+total & 5883 & 1740 & 226 & 3917 \\
 \end{tabular}
 \end{center}
 
 \section*{\texttt{find\_points.c}}
 \begin{itemize}
-\item \csource{find_points.c}{30}{121}: not yet recorded (48 lines of code)
+\item \csource{find_points.c}{30}{118}: not yet recorded (47 lines of code)
+\item \csource{find_points.c}{121}{121}: modelled by \lname{Ratpoints.maxDivisors}
 \item \csource{find_points.c}{124}{124}: modelled by \lname{Ratpoints.maxArraySize}
   (deviation of \lname{Ratpoints.maxArraySize}: \texttt{2 \textasciicircum{} 20}, the value for a chunk of one bit array, where the C code takes the largest multiple of the chunk \texttt{RATPOINTS\_CHUNK} up to \texttt{2 \textasciicircum{} 20} (stage F).)
-\item \csource{find_points.c}{133}{416}: not yet recorded (147 lines of code)
+\item \csource{find_points.c}{133}{153}: not yet recorded (5 lines of code)
+\item \csource{find_points.c}{155}{155}: modelled by \lname{Ratpoints.Setup.DenInfo}
+  (deviation of \lname{Ratpoints.Setup.DenInfo}: natural numbers for the \texttt{int} fields, which the primes fit, a cofactor below the square of a prime of the table among them (\texttt{Ratpoints.Setup.mul\_self\_lt\_of\_mem\_primeTable}), and the valuations and the slopes for coefficients below \texttt{2 \textasciicircum{} (2 \textasciicircum{} 31 -{} 1)}.)
+\item \csource{find_points.c}{157}{416}: not yet recorded (141 lines of code)
 \item \csource{find_points.c}{422}{422}: modelled by \lname{Ratpoints.veryBig}
 \item \csource{find_points.c}{424}{454}: modelled by \lname{Ratpoints.Setup.valuation}
   (deviation of \lname{Ratpoints.Setup.valuation}: one function for \texttt{valuation} on GMP integers, with its scratch integer \texttt{vvv}, and \texttt{valuation1} on \texttt{long}s, which gives \texttt{v} alone and is the first component; natural numbers for \texttt{|n|}, the quotients and the remainders; the pair returned, for the remainder that \texttt{valuation} stores through its pointer \texttt{r}.)
 \item \csource{find_points.c}{464}{471}: not yet recorded (7 lines of code)
 \item \csource{find_points.c}{477}{492}: modelled by \lname{Ratpoints.Sieve.modLong}
   (deviation of \lname{Ratpoints.Sieve.modLong}: integers for the \texttt{long}s, with the obligations that the values it computes stay in the range of a \texttt{long} stated as lemmas: for \texttt{0 ≤ b < 2 \textasciicircum{} 59}, \texttt{16 b} (\texttt{Ratpoints.fitsLong\_sixteen\_mul}), its negation (\texttt{Ratpoints.fitsLong\_neg}), and \texttt{a + 16 b} for \texttt{-{}16 b ≤ a < 0} (\texttt{Ratpoints.fitsLong\_add\_sixteen\_mul}), its other values lying between \texttt{-{}b} and \texttt{16 b}; \texttt{Int.tmod} for C's division of \texttt{long}s, which truncates; the multiples \texttt{16 b}, \texttt{8 b}, \texttt{4 b} and \texttt{2 b} as products, for the shifts of \texttt{b1}.)
-\item \csource{find_points.c}{498}{935}: not yet recorded (311 lines of code)
+\item \csource{find_points.c}{498}{759}: not yet recorded (182 lines of code)
+\item \csource{find_points.c}{766}{776}: modelled by \lname{Ratpoints.Setup.setupUs1}
+  (deviation of \lname{Ratpoints.Setup.setupUs1}: the leading coefficient read from the list, for the integer \texttt{work[0]} that the caller sets to \texttt{|c\_d|} (lines 4911-4912); lists, for the arrays \texttt{den\_info} and \texttt{divisors} of the arguments with their terminating zeros; \texttt{none} for a factorization that is not complete or too many divisors, where \texttt{setup\_us1} leaves the flag \texttt{RATPOINTS\_USE\_SQUARES1} clear, and the lists returned, where it sets the flag; no output under \texttt{DEBUG}.)
+\item \csource{find_points.c}{777}{860}: modelled by \lname{Ratpoints.Setup.factorLcf}
+  (deviation of \lname{Ratpoints.Setup.factorLcf}: the valuations by \texttt{Ratpoints.Setup.valuation}, for \texttt{mpz\_scan1} at \texttt{2} and for the loop of divisions with remainder at the odd primes, the power then divided off at once; natural numbers for the GMP integers \texttt{work[0]} and \texttt{work[1]} and the \texttt{long}s; a list of pairs and the cofactor returned, for the entries of \texttt{den\_info} and their count, the terminating zero and the integer \texttt{work[0]}; no output under \texttt{DEBUG}.)
+\item \csource{find_points.c}{863}{863}: modelled by \lname{Ratpoints.Setup.setupUs1}
+  (deviation of \lname{Ratpoints.Setup.setupUs1}: the leading coefficient read from the list, for the integer \texttt{work[0]} that the caller sets to \texttt{|c\_d|} (lines 4911-4912); lists, for the arrays \texttt{den\_info} and \texttt{divisors} of the arguments with their terminating zeros; \texttt{none} for a factorization that is not complete or too many divisors, where \texttt{setup\_us1} leaves the flag \texttt{RATPOINTS\_USE\_SQUARES1} clear, and the lists returned, where it sets the flag; no output under \texttt{DEBUG}.)
+\item \csource{find_points.c}{864}{880}: modelled by \lname{Ratpoints.Setup.squarefreeDivisors}
+  (deviation of \lname{Ratpoints.Setup.squarefreeDivisors}: a list, for the array \texttt{divisors} and its pointers \texttt{div}, \texttt{div0} and \texttt{div1}.)
+\item \csource{find_points.c}{881}{893}: modelled by \lname{Ratpoints.Setup.setupUs1}
+  (deviation of \lname{Ratpoints.Setup.setupUs1}: the leading coefficient read from the list, for the integer \texttt{work[0]} that the caller sets to \texttt{|c\_d|} (lines 4911-4912); lists, for the arrays \texttt{den\_info} and \texttt{divisors} of the arguments with their terminating zeros; \texttt{none} for a factorization that is not complete or too many divisors, where \texttt{setup\_us1} leaves the flag \texttt{RATPOINTS\_USE\_SQUARES1} clear, and the lists returned, where it sets the flag; no output under \texttt{DEBUG}.)
+\item \csource{find_points.c}{894}{912}: modelled by \lname{Ratpoints.Setup.slope}
+  (deviation of \lname{Ratpoints.Setup.slope}: integers for the \texttt{int}s, and the slope as a natural number; no output under \texttt{DEBUG}.)
+\item \csource{find_points.c}{914}{935}: modelled by \lname{Ratpoints.Setup.setupUs1}
+  (deviation of \lname{Ratpoints.Setup.setupUs1}: the leading coefficient read from the list, for the integer \texttt{work[0]} that the caller sets to \texttt{|c\_d|} (lines 4911-4912); lists, for the arrays \texttt{den\_info} and \texttt{divisors} of the arguments with their terminating zeros; \texttt{none} for a factorization that is not complete or too many divisors, where \texttt{setup\_us1} leaves the flag \texttt{RATPOINTS\_USE\_SQUARES1} clear, and the lists returned, where it sets the flag; no output under \texttt{DEBUG}.)
 \item \csource{find_points.c}{981}{981}: modelled by \lname{Ratpoints.Sieve.squares64}
 \item \csource{find_points.c}{983}{994}: modelled by \lname{Ratpoints.Sieve.twoAdic}
   (deviation of \lname{Ratpoints.Sieve.twoAdic}: the words returned, for the classes \texttt{cls} and the word \texttt{den\_bits} that \texttt{get\_2adic\_info} fills, \texttt{den\_bits} computed from the words (\texttt{Ratpoints.Sieve.denBits}); the stride 1 for every class, \texttt{k = 0} and \texttt{a₀ = 0}, so that the pattern of a class is its word itself, for the packing of the numerators of a class into the residues \texttt{a₀ mod 2\textasciicircum{}k} that hold all of its admissible numerators, with its row offsets and its packed pattern (stage F); the lowest set bit by the loop of \texttt{RP\_CTZL} (\texttt{Ratpoints.Sieve.ctz}); remainders for the masks by \texttt{0x3f}; natural numbers for the \texttt{long}s \texttt{k}, \texttt{b}, \texttt{t} and \texttt{a}; no output under \texttt{DEBUG}.)
@@ -295,8 +313,9 @@ total & 5883 & 1609 & 226 & 4048 \\
   (deviation of \lname{Ratpoints.rbaPack}: the value of the default build, set here, where the C code chooses the build by the macros that the compiler is given; the vector type of a bit array becomes \texttt{rbaPack} consecutive words of an array of \texttt{UInt64}.)
 \item \csource{rp-private.h}{60}{84}: not yet recorded (10 lines of code)
 \item \csource{rp-private.h}{86}{86}: excluded (other): FLOOR, which the C code uses nowhere: find\_points.c names it only in a comment
-\item \csource{rp-private.h}{87}{87}: modelled by \lname{Ratpoints.Params.arraySizeAt}
+\item \csource{rp-private.h}{87}{87}: modelled by \lname{Ratpoints.Params.arraySizeAt}, \lname{Ratpoints.Setup.slope}
   (deviation of \lname{Ratpoints.Params.arraySizeAt}: a \texttt{Nat} for the \texttt{long} field, so that only \texttt{0} stands for the default, which the library takes for every value \texttt{≤ 0}; no rounding up to a multiple of the chunk, which is one bit array in the build of the model (\texttt{RATPOINTS\_CHUNK}, stage F).)
+  (deviation of \lname{Ratpoints.Setup.slope}: integers for the \texttt{int}s, and the slope as a natural number; no output under \texttt{DEBUG}.)
 \item \csource{rp-private.h}{113}{113}: modelled by \lname{Ratpoints.rbaPack}
   (deviation of \lname{Ratpoints.rbaPack}: the value of the default build, set here, where the C code chooses the build by the macros that the compiler is given; the vector type of a bit array becomes \texttt{rbaPack} consecutive words of an array of \texttt{UInt64}.)
 \item \csource{rp-private.h}{123}{123}: excluded (other): the include of the vector intrinsics in the build USE\_AVX512, with 512-bit bit arrays; the word operations of the model need none

@@ -13,8 +13,10 @@ value of the default build and a docstring that names its macro, and the table o
 the sieve takes its moduli. Changing a constant changes the model as changing the macro changes
 the C program: no proof depends on the values of the constants beyond the facts checked here by
 `decide`, that `Ratpoints.rbaPack`, `Ratpoints.defaultArraySize` and `Ratpoints.maxArraySize` are
-positive, and of the table the proofs use only that its entries are primes
-(`Ratpoints.prime_of_mem_primeTable`, which checks them one by one).
+positive, and of the table the proofs use only that its entries are the odd primes below 1022, in
+increasing order (`Ratpoints.prime_of_mem_primeTable`, which checks them one by one, and
+`Ratpoints.lt_of_mem_primeTable`, `Ratpoints.mem_primeTable_of_prime` and
+`Ratpoints.pairwise_lt_toList_primeTable`, which `decide` checks).
 
 ## Main definitions
 
@@ -29,6 +31,9 @@ positive, and of the table the proofs use only that its entries are primes
   sieve has.
 * `Ratpoints.defaultArraySize`, `Ratpoints.maxArraySize`: at most how many bit arrays a piece of
   the numerators has, unless the parameters say, and in any case.
+* `Ratpoints.maxDivisors`: the bound, never reached, on the number of squarefree divisors of the
+  leading coefficient that `Ratpoints.Setup.setupUs1` gives for the loop over the denominators of a
+  polynomial of odd degree.
 * `Ratpoints.veryBig`: the valuation of `0` in the C code.
 -/
 
@@ -137,9 +142,18 @@ Deviation: `2 ^ 20`, the value for a chunk of one bit array, where the C code ta
 multiple of the chunk `RATPOINTS_CHUNK` up to `2 ^ 20` (stage F). -/
 def maxArraySize : Nat := 2 ^ 20
 
+/-- The bound on the number of squarefree divisors of the leading coefficient that the loop over
+the denominators takes for a polynomial of odd degree, `MAX_DIVISORS`: `setup_us1` gives the
+divisors only when it finds fewer than this many at most the largest denominator
+(`Ratpoints.Setup.setupUs1`), and otherwise the loop visits every denominator (stage E).
+
+C: `find_points.c:121` -/
+def maxDivisors : Nat := 512
+
 /-- The valuation that `valuation` and `valuation1` of the C code give for `0`, `VERY_BIG`
 (`Ratpoints.Setup.valuation`). For a zero coefficient it enters the slopes of the valuation test of
-the divisors of the leading coefficient (stage E), where any value can only make a slope larger.
+the divisors of the leading coefficient (`Ratpoints.Setup.slope`), where any value can only make a
+slope larger.
 
 C: `find_points.c:422` -/
 def veryBig : Nat := 1000
@@ -154,7 +168,7 @@ theorem maxArraySize_pos : 0 < maxArraySize := by decide
 
 #guard rbaLength == 256 && defaultArraySize == 256 && maxArraySize == 1048576
 
-#guard veryBig == 1000
+#guard maxDivisors == 512 && veryBig == 1000
 
 -- The numbers of primes that the header lists for the builds with moduli of 5 to 10 bits.
 #guard [5, 6, 7, 8, 9, 10].map (fun b ↦ (primeTable.toList.filter (· < 2 ^ b)).length) ==

@@ -23,7 +23,11 @@ path of the table of a prime (`Ratpoints.Sieve.examinePrime?`). `Ratpoints.findP
 reversal check after the test of the leading zeros, with the switch of its options, and the search
 that it runs on the polynomial handed on (`Ratpoints.searchPoints`) makes the test of the `long`s.
 For the tests on the denominators (stage E), the C code computes the valuation of an integer at a
-prime, with its unit part, by repeated division (`Ratpoints.Setup.valuation`).
+prime, with its unit part, by repeated division (`Ratpoints.Setup.valuation`), and for a polynomial
+of odd degree whose leading coefficient is not `±1` it factors that coefficient over `2` and the
+odd primes of the table and lists its squarefree divisors up to the largest denominator, with the
+slopes of a valuation test (`Ratpoints.Setup.setupUs1`): the denominators of the points are such
+divisors times squares.
 
 ## Main definitions
 
@@ -33,6 +37,11 @@ prime, with its unit part, by repeated division (`Ratpoints.Setup.valuation`).
 * `Ratpoints.Setup.reversal`: the reversal check.
 * `Ratpoints.Setup.useCLong`: whether the coefficients are `long`s.
 * `Ratpoints.Setup.valuation`: the valuation of an integer at a prime, with its unit part.
+* `Ratpoints.Setup.factorLcf`, `Ratpoints.Setup.squarefreeDivisors`, `Ratpoints.Setup.slope`: the
+  factorization of the leading coefficient over the table, its squarefree divisors, and the slopes
+  of the valuation test.
+* `Ratpoints.Setup.DenInfo`, `Ratpoints.Setup.setupUs1`: for odd degree, the factorization of the
+  leading coefficient and its squarefree divisors, which restrict the denominators.
 -/
 
 @[expose] public section
@@ -143,6 +152,126 @@ def valuation (n : Int) (p : Nat) : Id (Nat × Nat) := do
     q := q / p
   return (v, rem)
 
+/-- What the valuation test of the divisor shape (stage E) knows of a prime `p` of the leading
+coefficient `c_d` of a polynomial of odd degree `d`: `p`, its valuation `val` in `c_d`, and the
+slope, the least `n ≥ 1` with `(d - k) n > val - v_p(c_k)` for every `k < d`, with
+`v_p(0) = Ratpoints.veryBig`. A denominator `b` with `v_p(b) ≥ slope` and `v_p(b) + val` odd
+carries no point (`Ratpoints.Setup.DenInfo.excludes_eq_false_of_sq_eq`).
+
+C: `find_points.c:155`
+
+Deviation: natural numbers for the `int` fields, which the primes fit, a cofactor below the square
+of a prime of the table among them (`Ratpoints.Setup.mul_self_lt_of_mem_primeTable`), and the
+valuations and the slopes for coefficients below `2 ^ (2 ^ 31 - 1)`. -/
+structure DenInfo where
+  /-- The prime. -/
+  p : Nat
+  /-- Its valuation in the leading coefficient. -/
+  val : Nat
+  /-- The slope. -/
+  slope : Nat
+  deriving DecidableEq, Repr
+
+/-- The factorization of `w ≥ 1` over `2` and the odd primes of `Ratpoints.primeTable`, as
+`setup_us1` makes it, with the cofactor that it leaves: the power of `2` is divided off; then for
+the odd primes `p` of the table in turn, while the cofactor is not `1`, a cofactor below `p ^ 2`,
+which has no prime factor below `p` and so is a prime, is taken with the valuation `1` (when it is
+a `long`, which it always is) and leaves the cofactor `1`, and otherwise `p` is divided off with its
+valuation when it divides. The factorization is complete exactly when the cofactor is `1`: when the
+part of `w` prime to `2 · 3 ⋯ 1019` is below `1021 ^ 2` or a power of `1021`.
+
+C: `find_points.c:777-860`
+
+Deviation: the valuations by `Ratpoints.Setup.valuation`, for `mpz_scan1` at `2` and for the loop of
+divisions with remainder at the odd primes, the power then divided off at once; natural numbers for
+the GMP integers `work[0]` and `work[1]` and the `long`s; a list of pairs and the cofactor returned,
+for the entries of `den_info` and their count, the terminating zero and the integer `work[0]`; no
+output under `DEBUG`. -/
+def factorLcf (w : Nat) : Id (List (Nat × Nat) × Nat) := do
+  let mut w := w
+  let mut fac : Array (Nat × Nat) := #[]
+  let (v2, _) ← valuation w 2
+  if 0 < v2 then
+    fac := fac.push (2, v2)
+    w := w / 2 ^ v2
+  for p in primeTable do
+    if w == 1 then break
+    if w < p * p then
+      if fitsLong w then
+        fac := fac.push (w, 1)
+        w := 1
+      break
+    let (v, _) ← valuation w p
+    if 0 < v then
+      fac := fac.push (p, v)
+      w := w / p ^ v
+  return (fac.toList, w)
+
+/-- The squarefree divisors at most `bHigh` of a product of the distinct primes `ps`, as `setup_us1`
+lists them: from `[1]`, for each prime `p` in turn, each divisor `x` found so far with
+`x ≤ ⌊bHigh / p⌋` gives `x p`, appended in the order of the `x`; the list stops as soon as it has
+`Ratpoints.maxDivisors` entries. So it lists the products at most `bHigh` of the subsets of the
+primes in the order of binary counting, the first prime the lowest bit, unless it stops.
+
+C: `find_points.c:864-880`
+
+Deviation: a list, for the array `divisors` and its pointers `div`, `div0` and `div1`. -/
+def squarefreeDivisors (ps : List Nat) (bHigh : Nat) : Id (List Nat) := do
+  let mut divs : Array Nat := #[1]
+  for p in ps do
+    let n := divs.size
+    for i in [0:n] do
+      if divs[i]! ≤ bHigh / p then divs := divs.push (divs[i]! * p)
+      if maxDivisors ≤ divs.size then break
+    if maxDivisors ≤ divs.size then break
+  return divs.toList
+
+/-- The slope of the valuation test of the divisor shape (stage E) at the prime `p` with the
+valuation `val` in the leading coefficient `c_d` of the polynomial of odd degree `d` with the
+coefficient list `c`: the largest of `1` and the `⌈(1 + val - v_p(c_k)) / (d - k)⌉` for
+`k = d - 1, …, 0`, with the valuations of `Ratpoints.Setup.valuation`, by the macro `CEIL`, which
+rounds up for every sign: the least `n ≥ 1` with `(d - k) n > val - v_p(c_k)` for every `k < d`,
+with `v_p(0) = Ratpoints.veryBig`, so that a zero coefficient imposes nothing when
+`val ≤ Ratpoints.veryBig`.
+
+C: `find_points.c:894-912`, `rp-private.h:87`
+
+Deviation: integers for the `int`s, and the slope as a natural number; no output under `DEBUG`. -/
+def slope (c : List Int) (d p val : Nat) : Id Nat := do
+  let mut n : Int := 1
+  for j in [0:d] do
+    let k := d - 1 - j
+    let (vk, _) ← valuation (c.getD k 0) p
+    let t : Int := 1 + (val : Int) - vk
+    let m : Int := if t ≤ 0 then -((-t) / ((d - k : Nat) : Int)) else 1 + (t - 1) / (d - k : Nat)
+    if n < m then n := m
+  return n.toNat
+
+/-- For a polynomial of odd degree `d` with the coefficient list `c` and `|c_d| ≠ 1`, and the
+largest denominator `bHigh`: the primes of `|c_d|` with their valuations and slopes
+(`Ratpoints.Setup.DenInfo`, `Ratpoints.Setup.slope`) and the squarefree divisors of `c_d` at most
+`bHigh` (`Ratpoints.Setup.squarefreeDivisors`), or `none` when the factorization over `2` and the
+odd primes of the table is not complete (`Ratpoints.Setup.factorLcf`) or there are
+`Ratpoints.maxDivisors` divisors or more. The denominators of the points are then these divisors
+times squares, which the loop over the denominators visits divisor by divisor (stage E).
+
+C: `find_points.c:766-776`, `find_points.c:863`, `find_points.c:881-893`, `find_points.c:914-935`
+
+Deviation: the leading coefficient read from the list, for the integer `work[0]` that the caller
+sets to `|c_d|` (lines 4911-4912); lists, for the arrays `den_info` and `divisors` of the arguments
+with their terminating zeros; `none` for a factorization that is not complete or too many divisors,
+where `setup_us1` leaves the flag `RATPOINTS_USE_SQUARES1` clear, and the lists returned, where it
+sets the flag; no output under `DEBUG`. -/
+def setupUs1 (c : List Int) (d bHigh : Nat) : Id (Option (List DenInfo × List Nat)) := do
+  let (fac, w) ← factorLcf (c.getD d 0).natAbs
+  if w != 1 then return none
+  let divs ← squarefreeDivisors (fac.map (·.1)) bHigh
+  if maxDivisors ≤ divs.length then return none
+  let mut info : Array DenInfo := #[]
+  for (p, val) in fac do
+    info := info.push ⟨p, val, ← slope c d p val⟩
+  return some (info.toList, divs)
+
 /-! ### Examples
 
 What ratpoints 3.1.1 does at the pinned commit: with `-v` it says whether it reverses and in which
@@ -181,6 +310,39 @@ error 8, which `-s -k` does not. The test of the `long`s is checked at the ends 
 -- `7 mod 5`, `v_2(2 ^ 70) = 70`, and `0`, whose valuation is `veryBig`.
 #guard [Id.run (valuation (-162) 3), Id.run (valuation 7 5), Id.run (valuation (2 ^ 70) 2),
     Id.run (valuation 0 7)] == [(4, 2), (0, 2), (70, 1), (veryBig, 0)]
+
+-- The factorizations over the table with their cofactors: `30`; `1021 · 1031`, which leaves the
+-- cofactor 1031; `2 · 1031`, whose cofactor 1031 is taken as a prime at 37, since `1031 < 37 ^ 2`;
+-- the divisors at most 100 and 12 of `2 · 3 · 5`; and the slopes of `1 0 0 32` at 2 and of
+-- `3 5 0 96` at 2 and 3.
+#guard Id.run (factorLcf 30) == ([(2, 1), (3, 1), (5, 1)], 1) &&
+  Id.run (factorLcf 1052651) == ([(1021, 1)], 1031) &&
+  Id.run (factorLcf 2062) == ([(2, 1), (1031, 1)], 1) &&
+  Id.run (squarefreeDivisors [2, 3, 5] 100) == [1, 2, 3, 6, 5, 10, 15, 30] &&
+  Id.run (squarefreeDivisors [2, 3, 5] 12) == [1, 2, 3, 6, 5, 10] &&
+  [Id.run (slope [1, 0, 0, 32] 3 2 5), Id.run (slope [3, 5, 0, 96] 3 2 5),
+    Id.run (slope [3, 5, 0, 96] 3 3 1)] == [2, 3, 1]
+
+-- The factorizations, slopes and divisors that the build of ratpoints with `DEBUG` and `-v` print
+-- (with `-k`): `1 0 0 30` at the height 100, `1 0 0 32` at 100 (slope 2), `3 5 0 96` at 50 (slope
+-- 3), `7 0 18 0 0 250` at 200, `0 3 -2991 -2062` at 1300, whose cofactor 1031 is a prime beyond the
+-- table, and `1 0 0 1052651`, the product `1021 · 1031`, which it does not factor completely.
+#guard Id.run (setupUs1 [1, 0, 0, 30] 3 100) ==
+    some ([⟨2, 1, 1⟩, ⟨3, 1, 1⟩, ⟨5, 1, 1⟩], [1, 2, 3, 6, 5, 10, 15, 30]) &&
+  Id.run (setupUs1 [1, 0, 0, 32] 3 100) == some ([⟨2, 5, 2⟩], [1, 2]) &&
+  Id.run (setupUs1 [3, 5, 0, 96] 3 50) == some ([⟨2, 5, 3⟩, ⟨3, 1, 1⟩], [1, 2, 3, 6]) &&
+  Id.run (setupUs1 [7, 0, 18, 0, 0, 250] 5 200) ==
+    some ([⟨2, 1, 1⟩, ⟨5, 3, 2⟩], [1, 2, 5, 10]) &&
+  Id.run (setupUs1 [0, 3, -2991, -2062] 3 1300) == some ([⟨2, 1, 2⟩, ⟨1031, 1, 2⟩], [1, 2, 1031]) &&
+  Id.run (setupUs1 [1, 0, 0, 1052651] 3 100) == none
+
+-- The leading coefficient `2 · 3 ⋯ 97`, the product of the 25 primes below 100: 511 squarefree
+-- divisors at most 2066 and 512 at most 2067, so that ratpoints visits the divisor shape at the
+-- height 2066 and every denominator at 2067; and the divisors at most 30 of `30 = 2 · 3 · 5`.
+#guard (Id.run (setupUs1 [1, 0, 0, 2305567963945518424753102147331756070] 3 2066)).map
+    (·.2.length) == some 511 &&
+  (Id.run (setupUs1 [1, 0, 0, 2305567963945518424753102147331756070] 3 2067)).isNone &&
+  (Id.run (setupUs1 [1, 0, 0, 30] 3 12)).map (·.2) == some [1, 2, 3, 6, 5, 10]
 
 end Setup
 

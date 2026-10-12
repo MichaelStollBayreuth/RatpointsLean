@@ -61,10 +61,22 @@
         "Ratpoints.Sieve.twoAdic"
       ]
     },
+    "find_points.c:121-121": {
+      "hash": "0ccbbb679fd4ba9d65221eda1db3d23321c1c8374220a10aa0fc146a724db015",
+      "owners": [
+        "Ratpoints.maxDivisors"
+      ]
+    },
     "find_points.c:124-124": {
       "hash": "2cfb7d517efd2f7c9c7c3aadc3572e6bcc36674767cdf0b78200bc51ce0873d3",
       "owners": [
         "Ratpoints.maxArraySize"
+      ]
+    },
+    "find_points.c:155-155": {
+      "hash": "2a1158aaa4ef87b8404cdde3037b0063851b8d15abcba091d5db22311404ae60",
+      "owners": [
+        "Ratpoints.Setup.DenInfo"
       ]
     },
     "find_points.c:1683-1697": {
@@ -461,6 +473,48 @@
       "hash": "f99fc9f0d55ade441a774478107270bb3792cd5b30b4879808f54bdfc05ad26c",
       "owners": [
         "Ratpoints.Sieve.checkNum"
+      ]
+    },
+    "find_points.c:766-776": {
+      "hash": "2875ae70f17ec45a3f4c3ca77d6eeb0c0ea45332f11f8562c8b246439e630f26",
+      "owners": [
+        "Ratpoints.Setup.setupUs1"
+      ]
+    },
+    "find_points.c:777-860": {
+      "hash": "63007ac7a0ebe1b6a6c7590b829f0eefaa90018783c2645825e8db661e979d01",
+      "owners": [
+        "Ratpoints.Setup.factorLcf"
+      ]
+    },
+    "find_points.c:863-863": {
+      "hash": "6410d5e741d142ff823426e8c2701caded55fd24bd482b8aa1b2776a1f14dddb",
+      "owners": [
+        "Ratpoints.Setup.setupUs1"
+      ]
+    },
+    "find_points.c:864-880": {
+      "hash": "912ba50688ad33e224ad294bcbe8a975e2262776962605e58b8a212b293e8213",
+      "owners": [
+        "Ratpoints.Setup.squarefreeDivisors"
+      ]
+    },
+    "find_points.c:881-893": {
+      "hash": "aa23724c3fc671de3c1954ac74c52b29c8ee3663b35e0a3b65ffce9517adcccc",
+      "owners": [
+        "Ratpoints.Setup.setupUs1"
+      ]
+    },
+    "find_points.c:894-912": {
+      "hash": "43d956702a7cca604aee6e0f55bab54101ba713b84b1cfb30a9b93360fe4cbf9",
+      "owners": [
+        "Ratpoints.Setup.slope"
+      ]
+    },
+    "find_points.c:914-935": {
+      "hash": "c61ce7b83495b5a8feb56f4ffc96b7f44bdf0be70c3c7f4b640124dde9208067",
+      "owners": [
+        "Ratpoints.Setup.setupUs1"
       ]
     },
     "find_points.c:981-981": {
@@ -1229,7 +1283,8 @@
     "rp-private.h:87-87": {
       "hash": "ccdc39e8935c8ae699acde06641d9400619820ef353d1bfdfd687dae8909ad1c",
       "owners": [
-        "Ratpoints.Params.arraySizeAt"
+        "Ratpoints.Params.arraySizeAt",
+        "Ratpoints.Setup.slope"
       ]
     },
     "sift.c:1030-1041": {

@@ -219,28 +219,16 @@ $\gcd(b, G(a, b)) = \gcd(b, c_d)$. This restricts the denominators of the points
 
 \begin{definition}[The divisors of the leading coefficient]\label{def:setupUs1}
   \uses{def:valuation, def:primeTable, def:useCLong}
-  Proposed names: \lname{Ratpoints.maxDivisors}, \lname{Ratpoints.Setup.DenInfo},
-  \lname{Ratpoints.Setup.factorLcf}, \lname{Ratpoints.Setup.squarefreeDivisors},
-  \lname{Ratpoints.Setup.slope}, \lname{Ratpoints.Setup.setupUs1},
-  \lname{Ratpoints.Setup.IsFactorization}, \lname{Ratpoints.Setup.factorLcf\_spec},
-  \lname{Ratpoints.Setup.extendDivisors}, \lname{Ratpoints.Setup.squarefreeDivisors\_spec},
-  \lname{Ratpoints.Setup.slope\_spec}, \lname{Ratpoints.Setup.setupUs1\_spec},
-  \lname{Ratpoints.Setup.isFactorization\_of\_run\_factorLcf\_eq},
-  \lname{Ratpoints.Setup.exists\_of\_setupUs1\_eq\_some},
-  \lname{Ratpoints.Setup.eq\_foldl\_of\_setupUs1\_eq\_some},
-  \lname{Ratpoints.pairwise\_lt\_toList\_primeTable}, \lname{Ratpoints.mem\_primeTable\_of\_prime},
-  \lname{Ratpoints.mem\_of\_toList\_primeTable\_eq}, \lname{Ratpoints.lt\_of\_mem\_primeTable},
-  \lname{Nat.prime\_of\_lt\_mul\_self}, \lname{Ratpoints.Setup.fitsLong\_mul\_of\_le\_div},
-  \lname{Ratpoints.Setup.mul\_self\_lt\_of\_mem\_primeTable},
-  \lname{Ratpoints.Setup.fitsLong\_of\_lt\_mul\_self}. For odd $d$ and $|c_d| \ne 1$, as
-  \verb|setup_us1| computes it: the factorization of $|c_d|$, the power of $2$ divided off, then for
-  the odd primes $p$ of the table in turn, while the cofactor is not $1$, a cofactor below $p^2$
-  taken as a prime with the valuation $1$, and otherwise the power of $p$ divided off
-  (\csource{find_points.c}{777}{860}); complete exactly when the cofactor ends at $1$, that is when
-  the part of $|c_d|$ prime to $2 \cdot 3 \cdots 1019$ is below $1021^2$ or a power of $1021$; the
-  squarefree divisors at most $b_{\mathrm{high}}$, from $1$, each prime in turn appending $x p$ for
-  every divisor $x \le \lfloor b_{\mathrm{high}} / p \rfloor$ found so far, in their order, and
-  stopping at $\mathrm{maxDivisors} = 512$ entries (\verb|MAX_DIVISORS|,
+  \lean{Ratpoints.maxDivisors, Ratpoints.Setup.DenInfo, Ratpoints.Setup.factorLcf, Ratpoints.Setup.squarefreeDivisors, Ratpoints.Setup.slope, Ratpoints.Setup.setupUs1, Ratpoints.Setup.IsFactorization, Ratpoints.Setup.factorLcf_spec, Ratpoints.Setup.extendDivisors, Ratpoints.Setup.squarefreeDivisors_spec, Ratpoints.Setup.slope_spec, Ratpoints.Setup.setupUs1_spec, Ratpoints.Setup.isFactorization_of_run_factorLcf_eq, Ratpoints.Setup.exists_of_setupUs1_eq_some, Ratpoints.Setup.eq_foldl_of_setupUs1_eq_some, Ratpoints.pairwise_lt_toList_primeTable, Ratpoints.mem_primeTable_of_prime, Ratpoints.mem_of_toList_primeTable_eq, Ratpoints.lt_of_mem_primeTable, Nat.prime_of_lt_mul_self, Ratpoints.Setup.fitsLong_mul_of_le_div, Ratpoints.Setup.mul_self_lt_of_mem_primeTable, Ratpoints.Setup.fitsLong_of_lt_mul_self}
+  \leanok
+  For odd $d$ and $|c_d| \ne 1$, as \verb|setup_us1| computes it: the factorization of $|c_d|$, the
+  power of $2$ divided off, then for the odd primes $p$ of the table in turn, while the cofactor is
+  not $1$, a cofactor below $p^2$ taken as a prime with the valuation $1$, and otherwise the power
+  of $p$ divided off (\csource{find_points.c}{777}{860}); complete exactly when the cofactor ends at
+  $1$, that is when the part of $|c_d|$ prime to $2 \cdot 3 \cdots 1019$ is below $1021^2$ or a
+  power of $1021$; the squarefree divisors at most $b_{\mathrm{high}}$, from $1$, each prime in turn
+  appending $x p$ for every divisor $x \le \lfloor b_{\mathrm{high}} / p \rfloor$ found so far, in
+  their order, and stopping at $\mathrm{maxDivisors} = 512$ entries (\verb|MAX_DIVISORS|,
   \csource{find_points.c}{121}{121}; \csource{find_points.c}{864}{880}); and for each prime $p$ of
   $c_d$ a record of $p$, its valuation $v_p(c_d)$ and the slope (\verb|use_squares1_info|,
   \csource{find_points.c}{155}{155}), the least $n \ge 1$ with $(d - k) n > v_p(c_d) - v_p(c_k)$ for
@@ -264,18 +252,11 @@ $\gcd(b, G(a, b)) = \gcd(b, c_d)$. This restricts the denominators of the points
 \end{definition}
 
 \begin{lemma}[The denominators of odd degree]\label{lem:odd_denominators}
-  \uses{def:setupUs1, def:IsPoint, lem:squarefree_binaryFormPoly}
-  Proposed names: \lname{Ratpoints.even\_of\_sq\_eq\_binaryForm\_of\_odd},
-  \lname{Ratpoints.isSquare\_of\_sq\_eq\_binaryForm\_of\_odd},
-  \lname{Ratpoints.exists\_eq\_mul\_mul\_of\_sq\_eq\_binaryForm\_of\_odd},
-  \lname{Ratpoints.Setup.mem\_foldl\_extendDivisors\_one\_iff},
-  \lname{Ratpoints.Setup.nodup\_foldl\_extendDivisors},
-  \lname{Ratpoints.Setup.mem\_iff\_of\_setupUs1\_eq\_some},
-  \lname{Ratpoints.Setup.nodup\_of\_setupUs1\_eq\_some},
-  \lname{Ratpoints.even\_add\_of\_sq\_eq\_binaryForm\_of\_odd},
-  \lname{Ratpoints.Setup.DenInfo.excludes},
-  \lname{Ratpoints.Setup.DenInfo.excludes\_eq\_false\_of\_sq\_eq}. Let $d$ be odd and $(a, y, b)$ a
-  normalized point with $b \ge 1$.
+  \uses{def:setupUs1, def:binaryForm, lem:squarefree_binaryFormPoly}
+  \lean{Ratpoints.even_of_sq_eq_binaryForm_of_odd, Ratpoints.isSquare_of_sq_eq_binaryForm_of_odd, Ratpoints.exists_eq_mul_mul_of_sq_eq_binaryForm_of_odd, Ratpoints.Setup.mem_foldl_extendDivisors_one_iff, Ratpoints.Setup.nodup_foldl_extendDivisors, Ratpoints.Setup.mem_iff_of_setupUs1_eq_some, Ratpoints.Setup.nodup_of_setupUs1_eq_some, Ratpoints.even_add_of_sq_eq_binaryForm_of_odd, Ratpoints.Setup.DenInfo.excludes, Ratpoints.Setup.DenInfo.excludes_eq_false_of_sq_eq}
+  \leanok
+  Let $d$ be odd, $a$ and $y$ integers and $b \ge 1$ a natural number with $\gcd(a, b) = 1$ and
+  $y^2 = F(a, b)$, as for a normalized point $(a, y, b)$.
   \begin{enumerate}
     \item If $|c_d| = 1$, then $b$ is a square.
     \item $b = s k^2$ with $s$ squarefree and every prime of $s$ dividing $c_d$; when the divisors
@@ -286,6 +267,7 @@ $\gcd(b, G(a, b)) = \gcd(b, c_d)$. This restricts the denominators of the points
 \end{lemma}
 
 \begin{proof}
+  \leanok
   Let $p \nmid c_d$ be a prime with $b = p^m b'$, $m \ge 1$ and $p \nmid b'$. Then $p \nmid a$, and
   the term $c_d a^d b$ of $F(a, b)$ alone has the least valuation $m$, every other term
   $c_k a^k b^{d + 1 - k}$ having at least $2m$; so $y^2 = F(a, b) \ne 0$ has the valuation $m$, and
@@ -757,8 +739,8 @@ Each component of this chapter differs from the C code in a stated way, recorded
     masks, below $2^{40}$, and the negation of the quarter of \verb|LONG_MIN| in \verb|jacobi1|;
     and a denominator of the Jacobi test by tables is at most $\mathrm{mulModLimit} = 2^{32} - 1$,
     where \verb|RP_MULDIV| is exact; the valuations and the slopes of the records of the divisors,
-    \verb|int|s in the C code, as natural numbers, which they fit for leading coefficients below
-    $2^{2^{31}}$;
+    \verb|int|s in the C code, as natural numbers, which they fit for coefficients below
+    $2^{2^{31} - 1}$;
   \item the denominators of a shape listed, then tested and sifted one after the other; no blocks,
     and no threads, which deliver the blocks in their order; no correction of the moduli between
     the blocks (stage~I); no search intervals and no range of the denominators other than $1$ to $H$
@@ -807,7 +789,7 @@ core's namespaces into \verb|Ratpoints/Proof/Bits.lean|, and the denominators of
 theorems into \verb|Ratpoints/Proof/FindPoints.lean|; the lemmas of Mathlib's generality go into
 \verb|Ratpoints/Mathlib|, in the files that mirror their homes in Mathlib:
 \verb|Algebra/BigOperators/Group/List/Basic|, \verb|Algebra/BigOperators/Ring/Finset|,
-\verb|Algebra/Field/ZMod|, \verb|Algebra/Prime/Defs|, \verb|Data/List/Basic|,
+\verb|Algebra/Field/ZMod|, \verb|Algebra/Prime/Defs|, \verb|Data/Int/GCD|, \verb|Data/List/Basic|,
 \verb|Data/Nat/Factors|, \verb|Data/Nat/Prime/Defs|, \verb|Data/Nat/Squarefree|,
 \verb|Data/ZMod/Basic|, \verb|NumberTheory/LegendreSymbol/JacobiSymbol| and
 \verb|NumberTheory/Padics/PadicVal/Basic|. Every new module joins its part root and the listing

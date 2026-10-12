@@ -13,14 +13,19 @@ import Mathlib.Tactic.NormNum.Prime
 /-!
 # The sieving parameters: the primes of the table, well-formedness and the array size
 
-Every entry of `Ratpoints.primeTable` is a prime, which `norm_num` checks one entry at a time,
-every parameter set that the options of the program give is well-formed, and the pieces of the
-numerators have at least one bit array.
+Every entry of `Ratpoints.primeTable` is a prime, which `norm_num` checks one entry at a time, the
+table lists every odd prime below 1022 in increasing order, which `decide` checks, every parameter
+set that the options of the program give is well-formed, and the pieces of the numerators have at
+least one bit array.
 
 ## Main statements
 
 * `Ratpoints.prime_of_mem_primeTable`: every entry of `Ratpoints.primeTable` is a prime, so that
   the moduli of well-formed parameters are primes (`Ratpoints.Params.WF.prime_of_mem`).
+* `Ratpoints.pairwise_lt_toList_primeTable`, `Ratpoints.lt_of_mem_primeTable`,
+  `Ratpoints.mem_primeTable_of_prime`: the table lists every odd prime below 1022, and nothing
+  larger, in increasing order, which `decide` checks; `Ratpoints.mem_of_toList_primeTable_eq`: so it
+  lists every odd prime below an entry before it.
 * `Ratpoints.wf_sieveParams`: every parameter set that the options of the program give is
   well-formed; comparator certifies this (`comparator/Challenge.lean`), which also rules out a
   well-formedness that nothing satisfies.
@@ -40,6 +45,53 @@ theorem prime_of_mem_primeTable {p : ℕ} (h : p ∈ primeTable) : p.Prime := by
 
 theorem Params.WF.prime_of_mem {P : Params} (hP : P.WF) {p : ℕ} (hp : p ∈ P.moduli) : p.Prime :=
   prime_of_mem_primeTable (hP.mem_primeTable p hp)
+
+theorem pairwise_lt_toList_primeTable : primeTable.toList.Pairwise (· < ·) := by
+  decide +kernel
+
+-- Every odd number below 1022 that the table does not hold has a divisor `1 < d < 32`.
+private theorem all_toList_primeTable_or : ((List.range 1022).all fun q ↦ q < 3 || q % 2 == 0 ||
+    (List.range' 2 30).any (fun d ↦ d < q && q % d == 0) || primeTable.toList.contains q) =
+      true := by
+  decide +kernel
+
+private theorem all_toList_primeTable_lt : (primeTable.toList.all fun p ↦ p < 1022) = true := by
+  decide +kernel
+
+theorem lt_of_mem_primeTable {p : ℕ} (hp : p ∈ primeTable) : p < 1022 := by
+  simpa using List.all_eq_true.mp all_toList_primeTable_lt p (Array.mem_toList_iff.mpr hp)
+
+/-- The table holds every odd prime below 1022, which `decide` checks: every odd number below 1022
+that it does not hold has a divisor `1 < d < 32`. -/
+theorem mem_primeTable_of_prime {q : ℕ} (hq : q.Prime) (h2 : q ≠ 2) (h : q < 1022) :
+    q ∈ primeTable := by
+  have := List.all_eq_true.mp all_toList_primeTable_or q (List.mem_range.mpr h)
+  simp only [Bool.or_eq_true, beq_iff_eq, List.any_eq_true, List.mem_range'_1, Bool.and_eq_true,
+    List.elem_eq_mem, decide_eq_true_eq] at this
+  rcases this with ((h3 | h4) | ⟨d, hdm, hdq, hd⟩) | hmem
+  · exact absurd hq.two_le (by lia)
+  · exact absurd (hq.eq_one_or_self_of_dvd 2 (Nat.dvd_of_mod_eq_zero h4)) (by lia)
+  · have := hq.eq_one_or_self_of_dvd d (Nat.dvd_of_mod_eq_zero hd)
+    lia
+  · exact Array.mem_toList_iff.mp hmem
+
+/-- The table lists every odd prime below its entry `cur` before it, since it holds every odd prime
+below 1022 in increasing order: the cofactor that `Ratpoints.Setup.factorLcf` has left when it
+reaches `cur` has no prime factor below `cur`. -/
+theorem mem_of_toList_primeTable_eq {pref suff : List ℕ} {cur q : ℕ}
+    (hl : primeTable.toList = pref ++ cur :: suff) (hq : q.Prime) (h2 : q ≠ 2) (hlt : q < cur) :
+    q ∈ pref := by
+  have hcur : cur ∈ primeTable := Array.mem_toList_iff.mp (by simp [hl])
+  have hmem := Array.mem_toList_iff.mpr
+    (mem_primeTable_of_prime hq h2 ((lt_of_mem_primeTable hcur).trans' hlt))
+  have hp := pairwise_lt_toList_primeTable
+  rw [hl] at hmem hp
+  rcases List.mem_append.mp hmem with h | h
+  · exact h
+  · rcases List.mem_cons.mp h with rfl | h
+    · lia
+    · have := (List.pairwise_cons.mp (List.pairwise_append.mp hp).2.1).1 q h
+      lia
 
 theorem numPrimes_le_size_primeTable : numPrimes ≤ primeTable.size :=
   (List.length_filter_le _ _).trans_eq primeTable.length_toList
