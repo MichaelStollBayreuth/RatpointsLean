@@ -34,9 +34,9 @@ tables of the non-squares giving the Legendre symbol, the set-up the tables of `
 (`Ratpoints.Sieve.IsJacobiInfo`) and the test the exclusive or of the sign and the entries over the
 part of `b` free of `2` and of the primes of the tables; and
 `Ratpoints.Sieve.jacobiSym_eq_ite_foldl` reads the Jacobi symbol off the tables. So the test lets
-the denominator of every point through. The set-up gives tables only for
-`bHigh ≤ Ratpoints.mulModLimit`, so that the denominators of the test are words, on which
-`RP_MULDIV` is exact.
+the denominator of every point of a curve of even degree through. The set-up gives tables only for
+`bHigh ≤ Ratpoints.mulModLimit`, so that the denominators of the test stay below `2 ^ 32`, where
+`RP_MULDIV` is exact (`Ratpoints.Sieve.le_mulModLimit_of_jacobiSetup_eq_some`).
 
 ## Main definitions
 
@@ -53,7 +53,7 @@ the denominator of every point through. The set-up gives tables only for
 * `Ratpoints.Sieve.jacobiSym_eq_ite_foldl`: the Jacobi symbol read off the tables.
 * `Ratpoints.Sieve.run_jacobiTest`: the test by tables decides whether `(lcf / b*) = 1`.
 * `Ratpoints.Sieve.run_jacobiTest_of_sq_eq`: the test by tables passes the denominator of every
-  point.
+  point of a curve of even degree.
 * `Ratpoints.Sieve.le_mulModLimit_of_jacobiSetup_eq_some`: the denominators of the test are at most
   `Ratpoints.mulModLimit`.
 

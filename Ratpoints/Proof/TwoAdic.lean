@@ -34,6 +34,13 @@ with `f(k)` a square, since `F(a, b) = b ^ D f(k)` modulo 64, and one with even 
 no class admits a numerator, the curve has no points at all, not even at infinity
 (`Ratpoints.Sieve.not_isPoint_of_denBits_eq_zero`).
 
+## Main definitions
+
+* `Ratpoints.Sieve.TwoAdicBits`: the bits of the words of the classes after the scatter of the set
+  bits `k < k0` of the word of `f` into the odd classes and of the set bits `t < t0` of the word of
+  the reversed polynomial into the even ones, the postcondition of `Ratpoints.Sieve.twoAdic_spec`
+  for `k0 = t0 = 64`.
+
 ## Main statements
 
 * `Ratpoints.Sieve.squares64_test_iff`: the test of the mask `Ratpoints.Sieve.squares64` is the test
@@ -43,7 +50,7 @@ no class admits a numerator, the curve has no points at all, not even at infinit
 * `Ratpoints.Sieve.twoAdic_spec`: bit `a` of the word of the class `b < 64` is set exactly when `b`
   is odd and `a ≡ k b` for a set bit `k` of the word of `f`, or `a < 64` is odd and `b ≡ t a` for a
   set bit `t` of the word of the reversed polynomial; `Ratpoints.Sieve.getLsbD_run_twoAdic` states
-  this as an equation.
+  this as a plain statement.
 * `Ratpoints.Sieve.classBit_twoAdic_of_sq_eq`: for a point `(a, y, b)`, bit `a mod 64` of the word
   of the class `b mod 64` is set; `Ratpoints.Sieve.getElem!_twoAdic_ne_zero`: so the word of the
   class of the denominator of a point is not `0`.
@@ -336,8 +343,8 @@ theorem twoAdic_spec (c : List ℤ) (d : ℕ) :
 
 end
 
-/-- `Ratpoints.Sieve.twoAdic_spec` as an equation, which the soundness of the classes uses without
-the program logic. -/
+/-- `Ratpoints.Sieve.twoAdic_spec` as a plain statement, which the soundness of the classes uses
+without the program logic. -/
 theorem getLsbD_run_twoAdic (c : List ℤ) (d : ℕ) {b : ℕ} (hb : b < 64) (a : ℕ) :
     (Id.run (twoAdic c d))[b]!.toBitVec.getLsbD a = true ↔
       (b % 2 = 1 ∧ ∃ k < 64, (fsq (coeffsMod64 c d)).toBitVec.getLsbD k = true ∧ k * b % 64 = a) ∨

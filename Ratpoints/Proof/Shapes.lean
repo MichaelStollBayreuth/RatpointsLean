@@ -231,8 +231,8 @@ private theorem toNat_toUInt64_sub_mod_sixtyFour (n : ℕ) :
   lia
 
 /-- The bits of the word of `Ratpoints.Sieve.wordBits` for a word `w` of the range from
-`⌊bLow / 64⌋` to `⌊bHigh / 64⌋`: bit `t` is set when bit `t` of `db` and of word `w mod p` of every
-entry `p` are set and `bLow ≤ 64 w + t ≤ bHigh`. -/
+`⌊bLow / 64⌋` to `⌊bHigh / 64⌋`: bit `t` is set exactly when bit `t` of `db` and of word `w mod p`
+of every entry `p` are set and `bLow ≤ 64 w + t ≤ bHigh`. -/
 theorem getLsbD_wordBits (db : UInt64) (forb : List ForbiddenEntry) {bLow bHigh w : ℕ}
     (hlo : bLow / 64 ≤ w) (hhi : w ≤ bHigh / 64) (t : ℕ) :
     (wordBits db forb bLow bHigh w).toBitVec.getLsbD t =

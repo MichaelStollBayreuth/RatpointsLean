@@ -21,6 +21,11 @@ one denominator from a class word, the numerators modulo 64 from which the first
 `@[spec]` theorems proved with `vcgen`, the program logic of Lean core, with loop invariants that
 are named definitions.
 
+## Main definitions
+
+* `Ratpoints.Sieve.classBit`: whether the class word lets a numerator `a` through, bit `a mod 64` of
+  the word.
+
 ## Main statements
 
 * `Ratpoints.Sieve.getElem!_andBitArray`: `Ratpoints.Sieve.andBitArray` ands the words of one bit
@@ -531,7 +536,9 @@ theorem ClearedBelow.filter_range_of_eq_zero {x0 : UInt64} {k : Nat} (h : Cleare
       (List.range 64).filter (x0.toBitVec.getLsbD ·) :=
   (List.filter_range_eq_of_le h.1 fun j hkj _ ↦ by simpa [hkj] using (h.2 j).symm).symm
 
-/-- `Ratpoints.Sieve.ClearedBelow.filter_range_succ_ctz` for a set bit with a property `P`. -/
+/-- The set bits `j` of `x0` up to the lowest set bit of `x` that have the property `P` are those
+below `k`, which `x` has cleared, and the lowest set bit of `x` if it has the property, a set bit of
+`x0` too. -/
 theorem ClearedBelow.exists_lt_succ_iff {x0 x : UInt64} {k : Nat} (h : ClearedBelow x0 k x)
     (hx : x ≠ 0) (P : Nat → Prop) :
     (∃ j < x.toBitVec.ctz.toNat + 1, x0.toBitVec.getLsbD j = true ∧ P j) ↔

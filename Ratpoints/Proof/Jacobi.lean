@@ -21,10 +21,11 @@ import Std.Tactic.Do
 
 The binary algorithm of the C code (`Ratpoints.Sieve.jacobi`) computes the Jacobi symbol
 `(lcf / b*)` for `b ≥ 1`, where `b*` is the largest divisor of `b` prime to `2 lcf`,
-`b.coprimePart (2 * lcf.natAbs)` (`Nat.coprimePart`): each round (`Ratpoints.Sieve.jacobiRound`)
-keeps the symbol with its sign, taking out the factors `2` with the sign of `(2 / m)`
-(`Ratpoints.Sieve.twoSign`) and exchanging the two numbers with the sign of the reciprocity, and
-gives the symbol of `f` and `b` or their gcd, which the algorithm divides out of `b`. For a
+`b.coprimePart (2 * lcf.natAbs)` (`Nat.coprimePart`): each round on two numbers `f` and `b`
+(`Ratpoints.Sieve.jacobiRound`) keeps the symbol with its sign, taking out the factors `2` of one
+number with the sign of `(2 / m)` for the other, odd, number `m` (`Ratpoints.Sieve.twoSign`) and
+exchanging the two numbers with the sign of the reciprocity, and gives the symbol `(f / b)` when
+`f` and `b` are coprime and otherwise their gcd, which the algorithm divides out of `b`. For a
 polynomial of even degree the symbol is `1` on the denominator `b` of every point, since `c_d` is a
 square modulo every prime factor of `b` prime to `c_d`
 (`Ratpoints.Sieve.isSquare_getD_degree_of_sq_eq_binaryForm`); so the binary algorithm lets the
@@ -43,10 +44,10 @@ denominator of every point through, and so does the test by tables, which comput
 * `Ratpoints.Sieve.jacobi_spec`, `Ratpoints.Sieve.run_jacobi`: the binary algorithm computes
   `(lcf / b*)`.
 * `Ratpoints.Sieve.jacobiSym_eq_one_of_sq_eq_binaryForm`: the symbol of `c_d` over a divisor of the
-  denominator of a point prime to `c_d` is `1`, and so is `(c_d / b*)`
+  denominator of a point of a curve of even degree prime to `c_d` is `1`, and so is `(c_d / b*)`
   (`Ratpoints.Sieve.jacobiSym_coprimePart_eq_one_of_sq_eq`).
 * `Ratpoints.Sieve.run_jacobi_eq_one_of_sq_eq`: the binary algorithm gives `1` on the denominator of
-  every point.
+  every point of a curve of even degree.
 
 ## Implementation notes
 
@@ -463,9 +464,9 @@ section
 are closed by their lemmas, never by unfolding them. -/
 attribute [local irreducible] JacobiOddInvariant JacobiInvariant
 
-/-- **The binary algorithm.** `jacobi b lcf` is the Jacobi symbol `(lcf / b*)` for `b ≥ 1`, `b*` the
-largest divisor of `b` prime to `2 lcf`; its main loop ends, since every round that does not return
-divides `b` by a gcd above `1`. -/
+/-- **The binary algorithm.** `Ratpoints.Sieve.jacobi b lcf` is the Jacobi symbol `(lcf / b*)` for
+`b ≥ 1`, `b*` the largest divisor of `b` prime to `2 lcf`; its main loop ends, since every round
+that does not return divides `b` by a gcd above `1`. -/
 @[spec]
 theorem jacobi_spec (b : ℕ) (lcf : ℤ) :
     ⦃ 0 < b ⦄ jacobi b lcf ⦃ fun r ↦ r = J(lcf | b.coprimePart (2 * lcf.natAbs)) ⦄ := by

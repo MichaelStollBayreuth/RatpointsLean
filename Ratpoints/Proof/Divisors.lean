@@ -166,9 +166,9 @@ theorem even_of_sq_eq_binaryForm_of_odd {c : List ℤ} {a y : ℤ} {b p : ℕ} [
     (fun k hk _ ↦ le_add_left (Nat.mul_pos (Nat.sub_pos_of_lt hk) (Nat.pos_of_ne_zero hm)))
     hab hm hy
 
-/-- For odd degree and a leading coefficient `±1`, the denominator of every point is a square: for
-`b = p ^ m b'` with `p ∤ b'`, the term `c_d a ^ d b` of `F(a, b)` alone has the least valuation
-`m`, which is then even (`Ratpoints.even_of_sq_eq_binaryForm_of_odd`). -/
+/-- For odd degree and a leading coefficient `±1`, the denominator `b` of every point is a square:
+its valuation `v_p(b)` at every prime `p` is even (`Ratpoints.even_of_sq_eq_binaryForm_of_odd`),
+since for `v_p(b) ≥ 1` the term `c_d a ^ d b` of `F(a, b)` alone has the least valuation. -/
 theorem isSquare_of_sq_eq_binaryForm_of_odd {c : List ℤ} (hd : degree c % 2 = 1)
     (hc : IsUnit (c.getD (degree c) 0)) {a y : ℤ} {b : ℕ} (hab : Int.gcd a b = 1)
     (hy : y ^ 2 = binaryForm c a b) : IsSquare b := by
@@ -285,9 +285,9 @@ theorem FactorLcfInvariant.done {w0 w : ℕ} {pref suff : List ℕ} {fac : Array
     FactorLcfInvariant w0 xs [] w fac :=
   ⟨h.1, h.2.1, h.2.2.1, fun h ↦ absurd rfl h⟩
 
-/-- A cofactor `w ≠ 1` below `p ^ 2` for the entry `p` of the table, with no prime factor among the
-earlier ones and `2`, is a prime (`Ratpoints.mem_of_toList_primeTable_eq`), taken with the valuation
-`1`. -/
+/-- A cofactor `w ≠ 1` below `cur * cur` for the entry `cur` of the table, with no prime factor
+among the earlier ones and `2`, is a prime (`Ratpoints.mem_of_toList_primeTable_eq`), taken with
+the valuation `1`. -/
 theorem FactorLcfInvariant.push_self {w0 w cur : ℕ} {pref suff : List ℕ} {fac : Array (ℕ × ℕ)}
     (hl : ForIn.toList primeTable = pref ++ cur :: suff)
     (h : FactorLcfInvariant w0 pref (cur :: suff) w fac) (hw0 : 0 < w0) (h1 : ¬(w == 1) = true)
@@ -797,9 +797,9 @@ theorem DenInfo.excludes_eq_false_iff {e : DenInfo} {b : ℕ} :
       ((Id.run (valuation b e.p)).1 + e.val) % 2 == 1) = true :=
   Bool.eq_false_iff
 
-/-- An entry of the valuation test, a prime `p` of `|c_d|` with its valuation `val` and its slope
-(`Ratpoints.Setup.slope_spec`), does not exclude the denominator `b = p ^ m b'` of a point:
-for `m ≥ slope`, `m + val` is even (`Ratpoints.even_add_of_sq_eq_binaryForm_of_odd`). -/
+/-- An entry of the valuation test, a prime `p` with the valuation `val = v_p(c_d)` and its slope
+(`Ratpoints.Setup.slope_spec`), does not exclude the denominator `b ≥ 1` of a point: for
+`v_p(b) ≥ slope`, `v_p(b) + val` is even (`Ratpoints.even_add_of_sq_eq_binaryForm_of_odd`). -/
 theorem DenInfo.excludes_eq_false_of_sq_eq {c : List ℤ} (hd : degree c % 2 = 1) {p val : ℕ}
     (hp : p.Prime) (hval : val = padicValNat p (c.getD (degree c) 0).natAbs) {a y : ℤ} {b : ℕ}
     (hb : b ≠ 0) (hab : Int.gcd a b = 1) (hy : y ^ 2 = binaryForm c a b) :
