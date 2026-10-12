@@ -419,9 +419,10 @@ Each component of this chapter differs from the C code in a stated way, recorded
     the flag of the reversal as an argument of the check, which the components from the run down to
     it hand on, for the bit \verb|RATPOINTS_REVERSED| of the flags that the check reads;
   \item no counts of the denominators sieved, of the words swept and of the bit arrays, bits and
-    numerators that reach each stage (F), no threads, and natural numbers and integers for the
-    \verb|long|s, with a \verb|Nat| for \verb|array_size| so that only $0$ stands for the default
-    (the range obligations: F).
+    numerators that reach each stage, which ratpoints reads to correct the moduli between the blocks
+    of the run (I), no threads, and natural numbers and integers for the \verb|long|s, with a
+    \verb|Nat| for \verb|array_size| so that only $0$ stands for the default (the range obligations:
+    F).
 \end{itemize}
 
 \section{The command-line program and the differential tests}\label{sec:wordsCli}

@@ -32,14 +32,14 @@ checks that each challenge theorem in the solution
    project;
 3. is accepted by the Lean kernel.
 
-The statements come in stage by stage, as the blueprint describes them: the theorems of stage B
-(the brute-force reference finds exactly the points, without duplicates); from stage C1 on, the
-membership and no-duplicates theorems for `findPoints` for well-formed parameters, since stage D
-for every value of the options of `findPoints`, and the well-formedness of every parameter set that
-the options of the program give, which rules out a `P.WF` that nothing satisfies; and, since stage
-D, the two refusal theorems: with the Sturm step on, `findPoints` refuses exactly the inputs with
-fewer than two or more than `maxDegree + 1` coefficients, the height bound `0` and the binary forms
-that are not squarefree, and with it off exactly what the program refuses under `-s`, so that a
+The statements come in stage by stage, as the blueprint describes them: the theorems of stage B (the
+brute-force reference finds exactly the points, without duplicates); from stage C1 on, the
+membership and no-duplicates theorems for `findPoints` for well-formed parameters, since stage D for
+every value of the options of `findPoints`, and the well-formedness of every parameter set that the
+options of the program give, which rules out a `P.WF` that nothing satisfies; and, since stage D,
+the two refusal theorems: with the Sturm step on, `findPoints` refuses exactly the inputs with fewer
+than two or more than `maxDegree + 1` coefficients, the height bound `0` and the binary forms that
+are not squarefree, and with it off exactly what the program refuses under `-s`, so that a
 `findPoints` that refuses every input, with or without the Sturm step, is ruled out. They replace
 the refusal theorem of stage C1, which had only the first three disjuncts. `challenges.json` lists
 `challenge_mem_bruteForce_iff` and `challenge_nodup_bruteForce`, which Comparator accepted on
@@ -48,7 +48,8 @@ the refusal theorem of stage C1, which had only the first three disjuncts. `chal
 stage C1, without the options, and `challenge_wf_sieveParams`, which it accepted on the same day;
 and `challenge_exists_findPoints_eq_error_iff_of_sturm_nonneg` and
 `challenge_exists_findPoints_eq_error_iff_of_sturm_neg`, the refusal theorems of stage D. Comparator
-accepted all seven, the two main theorems with the options among them, on 2026-10-11.
+accepted all seven, the two main theorems with the options among them, on 2026-10-11, and again on
+the model of stage E on 2026-10-12.
 
 ## Running
 

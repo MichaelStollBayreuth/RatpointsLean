@@ -97,37 +97,36 @@ status:
     infinity apply; the coefficients as C longs with the helper mod of the C code and its range
     obligations; the table of a prime with the exit when the curve has no points modulo that prime;
     and the search of the polynomial handed on. The output of findPoints is a permutation of the
-    brute-force reference, mapped back after a reversal, so that the membership and no-duplicates
-    theorems hold for every option; the refusal theorems say that with the Sturm step on findPoints
-    refuses exactly the inputs with fewer than two or more than maxDegree + 1 coefficients, H = 0
-    and a binary form that is not squarefree, and with it off exactly what the C program refuses
-    under -s; both refusal theorems and the main theorems with the options argument are stated for
-    comparator, with the binary form over Q restated in the challenge; the lemmas on
-    homogenizations and their squarefreeness are candidates for Mathlib; ratpoints-lean reads the
-    options -k, -K, -s and -S and refuses a form that is not squarefree with error 8 as the C
-    program does with the same options; and the differential tests compare the refusals and these
-    options. Stage E: the side of the denominators as the C code has it, with the compile-time
-    constants of this part of the C code as definitions: the valuation; the 2-adic information with
-    the classes of the denominators modulo 64, the word of the class as the starting value of the
-    first stage of the sieve, and the exit when no class admits a numerator; for odd degree the
-    squares and the divisors of the leading coefficient times squares (the factorization over the
-    table of primes, the squarefree divisors and the slopes of the valuation test); for even degree
-    the forbidden divisors, tested with words of 64 denominators and by their valuations (the
-    Newton polygon at a prime), and the Jacobi test, by the binary algorithm and by tables, both
-    proved to compute the Jacobi symbol of Mathlib; and the four shapes of the loop over the
-    denominators with their lists and tests, the run over a shape and its reduction to the
-    reference; the contracts of the stage are proved with the program logic of Lean core in files
-    with Mathlib, and the lemmas of Mathlib's generality are candidates for Mathlib. The output of
-    findPoints is the list of the points at infinity followed by the points of the brute-force
-    reference of the polynomial searched over the denominators in the order of the loop of its
-    search, each mapped back after a reversal: a permutation of the reference, and the reference
-    itself when the options forbid the reversal and the search does not take the divisors times
-    squares; the main theorems, the refusal theorems and the statements for comparator keep their
-    statements; ratpoints-lean prints the points in the order of the C program, and the
-    differential tests compare every point list in its order (3219 comparisons in the default
-    suites). Next: stage F; the introduction of the blueprint lists the later stages (the numerator
-    side, the order and protocol, the search region and the Sturm step, the blocks of the loop over
-    the denominators).
+    brute-force reference, so that the membership and no-duplicates theorems hold for every option;
+    the refusal theorems say that with the Sturm step on findPoints refuses exactly the inputs with
+    fewer than two or more than maxDegree + 1 coefficients, H = 0 and a binary form that is not
+    squarefree, and with it off exactly what the C program refuses under -s; both refusal theorems
+    and the main theorems with the options argument are stated for comparator, with the binary form
+    over Q restated in the challenge; the lemmas on homogenizations and their squarefreeness are
+    candidates for Mathlib; ratpoints-lean reads the options -k, -K, -s and -S and refuses a form
+    that is not squarefree with error 8 as the C program does with the same options; and the
+    differential tests compare the refusals and these options. Stage E: the side of the denominators
+    as the C code has it, with the compile-time constants of this part of the C code as definitions:
+    the valuation; the 2-adic information with the classes of the denominators modulo 64, the word
+    of the class as the starting value of the first stage of the sieve, and the exit when no class
+    admits a numerator; for odd degree the squares and the divisors of the leading coefficient times
+    squares (the factorization over the table of primes, the squarefree divisors and the slopes of
+    the valuation test); for even degree the forbidden divisors, tested with words of 64
+    denominators and by their valuations (the Newton polygon at a prime), and the Jacobi test, by
+    the binary algorithm and by tables, both proved to compute the Jacobi symbol of Mathlib; and the
+    four shapes of the loop over the denominators with their lists and tests, the run over a shape
+    and its reduction to the reference; the contracts of the stage are proved with the program logic
+    of Lean core in files with Mathlib, and the lemmas of Mathlib's generality are candidates for
+    Mathlib. The output of findPoints is the list of the points at infinity followed by the points
+    of the brute-force reference of the polynomial searched over the denominators in the order of
+    the loop of its search, each mapped back after a reversal: a permutation of the reference, and
+    the reference itself when the options forbid the reversal and the search does not take the
+    divisors times squares; the main theorems, the refusal theorems and the statements for
+    comparator keep their statements; ratpoints-lean prints the points in the order of the C
+    program, and the differential tests compare every point list in its order (3219 comparisons in
+    the default suites). Next: stage F; the introduction of the blueprint lists the later stages
+    (the numerator side, the order and protocol, the search region and the Sturm step, the blocks of
+    the loop over the denominators).
   sorry_count: 0
   sorry_in_definitions: 0
   axioms: ["propext", "Classical.choice", "Quot.sound"]

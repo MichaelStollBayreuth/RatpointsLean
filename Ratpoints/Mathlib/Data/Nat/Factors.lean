@@ -14,9 +14,9 @@ import Mathlib.Data.Nat.GCD.BigOperators
 
 Candidates for `Mathlib.Data.Nat.Factors`: the product of the prime factors of `n` that pass a test
 `p`, `(n.primeFactorsList.filter p).prod`, the part of `n` with its prime factors in a set (as
-`Nat.prod_mem_factoredNumbers` has it), is multiplicative, a divisor of `n`, `1` when no prime
-factor passes and `n` when all do; for the test `(·.Coprime m)` it is `Nat.coprimePart n m`, the
-largest divisor of `n ≠ 0` prime to `m`.
+`Nat.prod_mem_factoredNumbers` of `Mathlib.NumberTheory.SmoothNumbers` has it), is multiplicative, a
+divisor of `n`, `1` when no prime factor passes and `n` when all do; for the test `(·.Coprime m)` it
+is `Nat.coprimePart n m`, the largest divisor of `n ≠ 0` prime to `m`.
 
 ## Main definitions
 

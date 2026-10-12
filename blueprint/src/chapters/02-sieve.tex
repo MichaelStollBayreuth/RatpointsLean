@@ -118,21 +118,25 @@ third stage during the run (\verb|adapt_primes|; with \verb|-A 2| also $s_2$); i
 the $P$ primes after $s_2$ for the value $P$ of \verb|-P|, and the primes up to $\mathrm{numPrimes}$
 when \verb|-P| is absent or negative, where the third stage of the model is the rest of its moduli
 after $s_2$. None of this changes the points found or their order, since a modulus only removes
-candidates that are not points (\verb|-q| suppresses the report of the moduli used, which does
-depend on the choice). So the model takes the choice as an input, and the theorems hold for every
-well-formed choice. They quantify over the parameters that \verb|Params.WF| admits, a definition of
-a few lines in the model, which has no Mathlib, so the comparator challenge imports it; the runs of
-the executable need no such reading, since \verb|wf_sieveParams|, certified with the main theorems,
-shows that every parameter set the command line produces is well-formed, which also rules out a
-well-formedness that nothing satisfies. C1 reads only the moduli and treats all stages alike, and C2
-reads the array size too (Definition~\ref{def:arraySize}); the bound on the forbidden divisors and
-the Jacobi switch are read since stage~E and the cut points from stage~F on, and further choices
-(the block length) join \verb|Params| with the components that use them. Well-formedness constrains
-a field only as far as its component needs it to be meaningful. The constants of the build that
-these definitions read, the size in bits of the moduli and the defaults of \verb|-p| and \verb|-F|,
-are definitions of the model like $\mathrm{maxDegree}$ (Definition~\ref{def:maxDegree}), and no
-proof depends on their values: \verb|wf_sieveParams| needs only that $\mathrm{numPrimes}$, a number
-of primes of the table, is at most its size.
+candidates that are not points, a test on the denominators (the forbidden divisors among the moduli,
+at most the bound of them, and the Jacobi test that the switch lets run) removes only denominators
+without points, and the two shapes of the loop between which these choices decide, the words of 64
+denominators and every denominator, both run in increasing order (\verb|-q| suppresses the report of
+the moduli used, which does depend on the choice). So the model takes the choice as an input, and
+the theorems hold for every well-formed choice. They quantify over the parameters that
+\verb|Params.WF| admits, a definition of a few lines in the model, which has no Mathlib, so the
+comparator challenge imports it; the runs of the executable need no such reading, since
+\verb|wf_sieveParams|, certified with the main theorems, shows that every parameter set the command
+line produces is well-formed, which also rules out a well-formedness that nothing satisfies. C1
+reads only the moduli and treats all stages alike, and C2 reads the array size too
+(Definition~\ref{def:arraySize}); the bound on the forbidden divisors and the Jacobi switch are read
+since stage~E and the cut points from stage~F on, and further choices (the block length) join
+\verb|Params| with the components that use them. Well-formedness constrains a field only as far as
+its component needs it to be meaningful. The constants of the build that these definitions read, the
+size in bits of the moduli and the defaults of \verb|-p| and \verb|-F|, are definitions of the model
+like $\mathrm{maxDegree}$ (Definition~\ref{def:maxDegree}), and no proof depends on their values:
+\verb|wf_sieveParams| needs only that $\mathrm{numPrimes}$, a number of primes of the table, is at
+most its size.
 
 \section{The table of a prime}\label{sec:primeTables}
 
@@ -193,8 +197,8 @@ $a$. These two facts make sound the rows that the tables below define.
   commutative semiring, if $d \le D$ and $a = k b$, then
   $\sum_{i \le d} f_i\, a^i b^{D - i} = b^D \sum_{i \le d} f_i\, k^i$. So if $y^2 = F_c(a, b)$ for
   integers $a$, $y$ and a natural number $b$ whose image in a commutative ring $R$ is a unit, then
-  $f(k)$ is a square in $R$ for the $k$ with $a = k b$ in $R$; and in a semifield, if $b \ne 0$, $D$
-  is even, $d \le D$ and $y^2 = \sum_{i \le d} f_i\, a^i b^{D - i}$, then
+  $f(k)$ is a square in $R$ for the $k$ with $a = k b$ in $R$. In a semifield likewise, if
+  $b \ne 0$, $D$ is even, $d \le D$ and $y^2 = \sum_{i \le d} f_i\, a^i b^{D - i}$, then
   $\sum_{i \le d} f_i\, (a/b)^i$ is a square.
 \end{lemma}
 
@@ -454,16 +458,16 @@ of the polynomial searched over the denominators of its search, in their order, 
 Comparator certifies the two main theorems, the refusal theorems of stage~D, which rule out a
 \verb|findPoints| that refuses every input, with or without the Sturm step, and
 \verb|wf_sieveParams|, which rules out a well-formedness that nothing satisfies (it accepted these
-statements on 2026-10-11): the challenge states them with \verb|sorry| over \verb|findPoints|,
-\verb|Options|, \verb|Params|, \verb|Params.WF|, \verb|SieveOptions|, \verb|sieveParams| and
-\verb|maxDegree|, imported from the model, never restated, since a definition of the model
-elaborates without Mathlib to other instance terms. Each main theorem has a guard on its axioms,
-which are the standard ones. The contracts of the sieve need only the program logic of Lean core and
-stay in files without Mathlib, so that their \verb|grind| calls see only the lemmas of core,
-untouched by Mathlib's updates; the contract of the run over the denominators of a shape, with its
-plain equation \verb|toList_run_sieveRun|, is in the file of the run, with Mathlib, like the other
-contracts of stage~E (Chapter~\ref{chap:denominators}). The soundness of the rows needs Mathlib,
-through $\ZZ/p\ZZ$.
+statements on 2026-10-11, and again on the model of stage E on 2026-10-12): the challenge states
+them with \verb|sorry| over \verb|findPoints|, \verb|Options|, \verb|Params|, \verb|Params.WF|,
+\verb|SieveOptions|, \verb|sieveParams| and \verb|maxDegree|, imported from the model, never
+restated, since a definition of the model elaborates without Mathlib to other instance terms. Each
+main theorem has a guard on its axioms, which are the standard ones. The contracts of the sieve need
+only the program logic of Lean core and stay in files without Mathlib, so that their \verb|grind|
+calls see only the lemmas of core, untouched by Mathlib's updates; the contract of the run over the
+denominators of a shape, with its plain equation \verb|toList_run_sieveRun|, is in the file of the
+run, with Mathlib, like the other contracts of stage~E (Chapter~\ref{chap:denominators}). The
+soundness of the rows needs Mathlib, through $\ZZ/p\ZZ$.
 
 \section{The command-line program and the differential tests}\label{sec:sieveCli}
 
@@ -489,12 +493,12 @@ point-rich and on random curves.
 
 The interface (\verb|primeTable|, \verb|Params|, \verb|SieveOptions|, \verb|sieveParams|,
 \verb|Refusal|, \verb|findPoints|) lives in the namespace \verb|Ratpoints|, the components of the
-sieve in \verb|Ratpoints.Sieve|, and the general lemmas on lists and on $\ZZ/n\ZZ$ in
-\verb|Ratpoints/Mathlib| under their names in Mathlib's namespaces. The table of primes and the
-constants of the build are in \verb|Ratpoints/Model/Constants.lean| with $\mathrm{maxDegree}$; the
-rest of the model is in \verb|Ratpoints/Model/Params.lean|, \verb|Ratpoints/Model/Sieve.lean| and
-\verb|Ratpoints/Model/FindPoints.lean| (the refusals, since stage~D, in
-\verb|Ratpoints/Model/Setup.lean|, and the run, since stage~E, in
+sieve in \verb|Ratpoints.Sieve|, and the general lemmas on lists, on $\ZZ/n\ZZ$ and on squares in
+monoids in \verb|Ratpoints/Mathlib| under their names in Mathlib's namespaces. The table of primes
+and the constants of the build are in \verb|Ratpoints/Model/Constants.lean| with
+$\mathrm{maxDegree}$; the rest of the model is in \verb|Ratpoints/Model/Params.lean|,
+\verb|Ratpoints/Model/Sieve.lean| and \verb|Ratpoints/Model/FindPoints.lean| (the refusals, since
+stage~D, in \verb|Ratpoints/Model/Setup.lean|, and the run, since stage~E, in
 \verb|Ratpoints/Model/Denominators.lean|), each with \verb|#guard| examples taken from the tables
 and the output of ratpoints; the contracts, without Mathlib, are in
 \verb|Ratpoints/Proof/Sieve.lean|, and that of the run, since stage~E, in
