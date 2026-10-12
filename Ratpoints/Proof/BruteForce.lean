@@ -9,7 +9,6 @@ public import Ratpoints.Model.BruteForce
 public import Ratpoints.Spec.Basic
 
 import Mathlib.Algebra.Order.Ring.Abs
-import Mathlib.Tactic.Ring
 import Ratpoints.Mathlib.Data.List.Basic
 
 /-!

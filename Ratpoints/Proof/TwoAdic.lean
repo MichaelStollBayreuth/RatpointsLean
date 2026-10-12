@@ -9,11 +9,8 @@ public import Mathlib.Data.ZMod.Defs
 public import Ratpoints.Model.Denominators
 public import Ratpoints.Proof.Words
 public import Ratpoints.Spec.Basic
-public import Std.WP
 
 import Mathlib.Data.Fintype.Parity
-import Mathlib.Data.ZMod.Basic
-import Mathlib.Tactic.Ring
 import Ratpoints.Mathlib.Data.Int.GCD
 import Ratpoints.Mathlib.Data.ZMod.Basic
 import Ratpoints.Proof.Bits

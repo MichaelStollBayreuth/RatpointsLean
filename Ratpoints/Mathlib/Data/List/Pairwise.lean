@@ -5,7 +5,7 @@ Authors: Michael Stoll
 -/
 module
 
-public import Mathlib.Data.List.Pairwise
+import Mathlib.Data.List.Pairwise
 
 /-!
 # A member of a list that is pairwise related, related to one of its entries

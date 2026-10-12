@@ -5,7 +5,7 @@ Authors: Michael Stoll
 -/
 module
 
-public import Mathlib.Data.Int.GCD
+import Mathlib.Data.Int.GCD
 
 /-!
 # A divisor of `b` and an integer prime to `b`

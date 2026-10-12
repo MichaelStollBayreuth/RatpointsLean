@@ -10,7 +10,6 @@ public import Ratpoints.Model.Setup
 public import Ratpoints.Model.Sieve
 public import Ratpoints.Spec.Basic
 
-import Mathlib.Tactic.Ring
 import Ratpoints.Mathlib.Algebra.Group.Even
 import Ratpoints.Mathlib.Data.ZMod.Basic
 import Ratpoints.Proof.BruteForce

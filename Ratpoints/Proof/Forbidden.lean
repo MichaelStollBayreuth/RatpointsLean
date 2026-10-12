@@ -5,7 +5,7 @@ Authors: Michael Stoll
 -/
 module
 
-public import Mathlib.Algebra.Field.ZMod
+public import Mathlib.Data.ZMod.Defs
 public import Mathlib.NumberTheory.Padics.PadicVal.Defs
 public import Ratpoints.Model.Denominators
 public import Ratpoints.Spec.Basic

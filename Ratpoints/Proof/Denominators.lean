@@ -8,7 +8,6 @@ module
 public import Ratpoints.Model.Denominators
 public import Ratpoints.Proof.Words
 
-import Mathlib.Data.List.Basic
 import Ratpoints.Mathlib.Data.List.Basic
 import Ratpoints.Proof.BruteForce
 import Std.Tactic.Do
