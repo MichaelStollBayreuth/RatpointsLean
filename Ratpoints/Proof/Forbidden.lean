@@ -50,9 +50,10 @@ compares with `b_high` are `long`s (`Ratpoints.Setup.fitsLong_mul_of_le_div`,
 ## Main definitions
 
 * `Ratpoints.Sieve.IsUnitPart`: what an entry of `Ratpoints.Sieve.unitParts` says of a coefficient.
-* `Ratpoints.Sieve.IsForbiddenEntry`, `Ratpoints.Sieve.IsForbiddenVal`: the forbidden divisors that
-  `Ratpoints.Sieve.examinePrimes` and `Ratpoints.Sieve.forbidden` may record, those of the primes of
-  `Ratpoints.primeTable`.
+* `Ratpoints.Sieve.IsForbiddenEntry`, `Ratpoints.Sieve.IsForbiddenVal`: the forbidden divisors of
+  the primes of `Ratpoints.primeTable` that `Ratpoints.Sieve.examinePrimes` may record, tested with
+  words or by their valuations, and those tested with words that `Ratpoints.Sieve.forbidden` may
+  add.
 * `Ratpoints.Sieve.ForbiddenVal.excludes`: whether a forbidden divisor tested by its valuation
   excludes a denominator.
 
@@ -666,10 +667,11 @@ theorem testBit_run_forbiddenValuations_eq_false_of_sq_eq {c : List ℤ} (hd : d
 
 /-! ### The forbidden divisors -/
 
-/-- A forbidden divisor tested with words that the examined prime `p` gives, from the coefficients
-`cm` reduced modulo `p` and the entry `atInf` at infinity of the table of `p`, is `p` with its
-words, for a mask of the forbidden valuations at `p ∣ c_d` that holds every valuation a denominator
-can have, or for no points at infinity modulo `p`. -/
+/-- A forbidden divisor tested with words that `Ratpoints.Sieve.forbiddenOfPrime` gives for `p`
+from the coefficients `cm` and the entry `atInf` at infinity is `p` with its words, for `cm[d] = 0`
+and a mask of the forbidden valuations that holds every valuation a denominator can have, or for
+`atInf = false`: for the coefficients reduced modulo `p` and the entry at infinity of the table of
+`p`, when `p ∣ c_d`, or when there are no points at infinity modulo `p`. -/
 theorem eq_of_run_forbiddenOfPrime_eq_inl {c : List ℤ} {d p bHigh : ℕ} {cm : Array ℕ}
     {atInf : Bool} {e : ForbiddenEntry}
     (h : Id.run (forbiddenOfPrime c d p bHigh cm atInf) = some (.inl e)) :
@@ -679,8 +681,9 @@ theorem eq_of_run_forbiddenOfPrime_eq_inl {c : List ℤ} {d p bHigh : ℕ} {cm :
   simp only [forbiddenOfPrime, apply_ite Id.run, Id.run_bind] at h
   split_ifs at h <;> simp_all
 
-/-- A forbidden divisor tested by its valuation that the examined prime `p` gives, from the
-coefficients `cm` reduced modulo `p`, is `p` with the mask of the forbidden valuations. -/
+/-- A forbidden divisor tested by its valuation that `Ratpoints.Sieve.forbiddenOfPrime` gives for
+`p` from the coefficients `cm` is `p` with the mask of the forbidden valuations of `cm`
+(`Ratpoints.Sieve.forbiddenValuations`). -/
 theorem eq_of_run_forbiddenOfPrime_eq_inr {c : List ℤ} {d p bHigh : ℕ} {cm : Array ℕ}
     {atInf : Bool} {e : ForbiddenVal}
     (h : Id.run (forbiddenOfPrime c d p bHigh cm atInf) = some (.inr e)) :
@@ -740,10 +743,12 @@ theorem ForbiddenVal.excludes_eq_false_of_run_forbiddenOfPrime_eq_inr {c : List 
   exact testBit_run_forbiddenValuations_eq_false_of_sq_eq hd hp bHigh hcm hab hy
 
 /-- A forbidden divisor tested with words that `Ratpoints.Sieve.examinePrimes` and
-`Ratpoints.Sieve.forbidden` may record: the one of a prime `p` of `Ratpoints.primeTable` from what
-its table hands back, the coefficients reduced modulo `p` and the entry at infinity of the table
-(`Ratpoints.Sieve.forbiddenOfPrime`), or a prime of the table with its words
-(`Ratpoints.Sieve.forbiddenRow`) at which `c_d` is not a square. -/
+`Ratpoints.Sieve.forbidden` may record: the one that `Ratpoints.Sieve.forbiddenOfPrime` gives for a
+prime `p` of `Ratpoints.primeTable` from the coefficients reduced modulo `p` and the entry at
+infinity of the table of the reference (`Ratpoints.Sieve.examinePrime`), what
+`Ratpoints.Sieve.examinePrime?` hands back for the primes the loop of the tables examines, or a
+prime of the table with its words (`Ratpoints.Sieve.forbiddenRow`) at which `c_d` is not a square
+modulo it. -/
 def IsForbiddenEntry (c : List ℤ) (d bHigh : ℕ) (e : ForbiddenEntry) : Prop :=
   (∃ p ∈ primeTable, Id.run (forbiddenOfPrime c d p bHigh
       ((Array.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat)
@@ -751,9 +756,10 @@ def IsForbiddenEntry (c : List ℤ) (d bHigh : ℕ) (e : ForbiddenEntry) : Prop 
     (e.p ∈ primeTable ∧ e.words = forbiddenRow e.p ∧
       (squaresMod e.p)[(c.getD d 0 % (e.p : ℤ)).toNat]! = false)
 
-/-- A forbidden divisor tested by its valuation that `Ratpoints.Sieve.examinePrimes` and
-`Ratpoints.Sieve.forbidden` may record: the one of a prime `p` of `Ratpoints.primeTable` from what
-its table hands back (`Ratpoints.Sieve.forbiddenOfPrime`). -/
+/-- A forbidden divisor tested by its valuation that `Ratpoints.Sieve.examinePrimes` may record:
+the one that `Ratpoints.Sieve.forbiddenOfPrime` gives for a prime `p` of `Ratpoints.primeTable` from
+the coefficients reduced modulo `p` and the entry at infinity of the table of the reference
+(`Ratpoints.Sieve.examinePrime`). -/
 def IsForbiddenVal (c : List ℤ) (d bHigh : ℕ) (e : ForbiddenVal) : Prop :=
   ∃ p ∈ primeTable, Id.run (forbiddenOfPrime c d p bHigh
     ((Array.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat)
@@ -820,9 +826,9 @@ theorem run_forbiddenOfPrime_eq_of_run_examinePrime?_eq_some {c : List ℤ} {d k
 
 /-- The invariant of the loop of `Ratpoints.Sieve.examinePrimes` over the positions of the first
 primes of the table, after `k` of them, on the tables and the forbidden divisors found: the tables
-are those of the reference of the primes `primeTable[i]`, `i < k`, and the forbidden divisors are
-at most `maxForbidden` of those that the loop may record (`Ratpoints.Sieve.IsForbiddenEntry`,
-`Ratpoints.Sieve.IsForbiddenVal`). -/
+are those of the reference of the primes `Ratpoints.primeTable[i]`, `i < k`, and the forbidden
+divisors are at most `maxForbidden` of those that the loop may record
+(`Ratpoints.Sieve.IsForbiddenEntry`, `Ratpoints.Sieve.IsForbiddenVal`). -/
 def ExaminePrimesInvariant (c : List ℤ) (d maxForbidden bHigh k : ℕ) (tables : Array Entry)
     (ba : Array ForbiddenEntry) (val : Array ForbiddenVal) : Prop :=
   tables.size = k ∧
@@ -833,8 +839,8 @@ def ExaminePrimesInvariant (c : List ℤ) (d maxForbidden bHigh k : ℕ) (tables
 /-- The invariant of the loop of `Ratpoints.Sieve.examinePrimes` with the positions `suff` still to
 come, on the result of an early return, the tables and the forbidden divisors:
 `Ratpoints.Sieve.ExaminePrimesInvariant` after the positions `pref` without a result, and a result,
-which is `none` and comes from a position `pn < n` where the curve has no points modulo
-`primeTable[pn]`, only at the end. -/
+which is `none` and comes from a position `pn < n` whose prime has no table
+(`Ratpoints.Sieve.examinePrime?`), only at the end. -/
 def ExaminePrimesLoopInvariant (c : List ℤ) (d : ℕ) (u : Bool) (n maxForbidden bHigh : ℕ)
     (pref suff : List ℕ)
     (st : Option (Option (Array Entry × Array ForbiddenEntry × Array ForbiddenVal)) ×
@@ -870,9 +876,9 @@ theorem ExaminePrimesInvariant.examinePrimesLoopInvariant {c : List ℤ} {d : �
   change ExaminePrimesInvariant c d maxForbidden bHigh (pref ++ [cur]).length tables ba val
   rwa [List.length_append, List.length_singleton]
 
-/-- The step of the loop of `Ratpoints.Sieve.examinePrimes` at the position `k < numPrimes`, whose
-prime has a table (`Ratpoints.Sieve.examinePrime?`), the table of the reference: the table is kept,
-and the forbidden divisors become `ba'` and `val'`. -/
+/-- The step of the loop of `Ratpoints.Sieve.examinePrimes` at the position
+`k < Ratpoints.numPrimes`, whose prime has a table (`Ratpoints.Sieve.examinePrime?`), the table of
+the reference: the table is kept, and the forbidden divisors become `ba'` and `val'`. -/
 theorem ExaminePrimesInvariant.push {c : List ℤ} {d maxForbidden bHigh k : ℕ} {u : Bool}
     {tables : Array Entry} {ba ba' : Array ForbiddenEntry} {val val' : Array ForbiddenVal}
     {e : Entry} {cm : Array ℕ} (h : ExaminePrimesInvariant c d maxForbidden bHigh k tables ba val)
@@ -896,8 +902,8 @@ private theorem eq_length_and_lt_of_toList_eq {n cur : ℕ} {pref suff : List �
   ⟨Std.Legacy.Range.length_eq_of_toList_eq_append_cons hl,
     (Std.Legacy.Range.lt_of_toList_eq_append_cons hl).trans_le hn⟩
 
-/-- A forbidden divisor that the prime at the position `k < numPrimes` gives from what its table
-hands back is one that the loop of the tables may record. -/
+/-- A forbidden divisor tested with words that the prime at the position `k < Ratpoints.numPrimes`
+gives from what its table hands back is one that the loop of the tables may record. -/
 theorem isForbiddenEntry_of_run_examinePrime?_eq_some {c : List ℤ} {d bHigh k : ℕ} {u : Bool}
     {e : Entry} {cm : Array ℕ} {f : ForbiddenEntry} (hk : k < numPrimes)
     (he : Id.run (examinePrime? c d primeTable[k]! u) = some (e, cm))
@@ -907,8 +913,9 @@ theorem isForbiddenEntry_of_run_examinePrime?_eq_some {c : List ℤ} {d bHigh k 
   .inl ⟨_, Array.getElem!_mem (hk.trans_le numPrimes_le_size_primeTable),
     (run_forbiddenOfPrime_eq_of_run_examinePrime?_eq_some hk he bHigh) ▸ hf⟩
 
-/-- A forbidden divisor tested by its valuation that the prime at the position `k < numPrimes` gives
-from what its table hands back is one that the loop of the tables may record. -/
+/-- A forbidden divisor tested by its valuation that the prime at the position
+`k < Ratpoints.numPrimes` gives from what its table hands back is one that the loop of the tables
+may record. -/
 theorem isForbiddenVal_of_run_examinePrime?_eq_some {c : List ℤ} {d bHigh k : ℕ} {u : Bool}
     {e : Entry} {cm : Array ℕ} {f : ForbiddenVal} (hk : k < numPrimes)
     (he : Id.run (examinePrime? c d primeTable[k]! u) = some (e, cm))
@@ -985,8 +992,8 @@ theorem ExaminePrimesLoopInvariant.push {c : List ℤ} {d : ℕ} {u : Bool}
   have h' := h.examinePrimesInvariant
   exact (h'.push hk he h'.2.2.1 h'.2.2.2.1 h'.2.2.2.2).examinePrimesLoopInvariant _ _
 
-/-- The early return of the loop of `Ratpoints.Sieve.examinePrimes` at a prime of the table whose
-table is none: the curve has no points modulo it. -/
+/-- The early return of the loop of `Ratpoints.Sieve.examinePrimes` at a position whose prime has no
+table (`Ratpoints.Sieve.examinePrime?`). -/
 theorem examinePrimesLoopInvariant_some_none {c : List ℤ} {d : ℕ} {u : Bool}
     {n maxForbidden bHigh cur : ℕ} {pref suff pref' : List ℕ} {tables : Array Entry}
     {ba : Array ForbiddenEntry} {val : Array ForbiddenVal} {x : Option (Entry × Array ℕ)}
@@ -1125,8 +1132,9 @@ theorem not_isPoint_of_run_examinePrimes_eq_none {c : List ℤ} {u checkDenom : 
 
 /-! ### The further primes -/
 
-/-- A prime of the table at which `c_d` is not a square, recorded with its words by the loop of
-`Ratpoints.Sieve.forbidden` over the further primes. -/
+/-- The step of the loop of `Ratpoints.Sieve.forbidden` over the further primes that records a
+prime of the table at which `c_d` is not a square modulo it, with its words: the forbidden divisors
+stay of the kind that `Ratpoints.Sieve.IsForbiddenEntry` describes. -/
 theorem forall_isForbiddenEntry_push {c : List ℤ} {d examined bHigh : ℕ} {pref suff : List ℕ}
     {cur : ℕ} {ba : Array ForbiddenEntry} (h : ∀ e ∈ ba, IsForbiddenEntry c d bHigh e)
     (hl : ForIn.toList [examined:primeTable.size] = pref ++ cur :: suff)
@@ -1149,10 +1157,11 @@ theorem forall_isForbiddenEntry_and_forall_isForbiddenVal {c : List ℤ} {d bHig
   ⟨fun e he ↦ h' e (Array.mem_toList_iff.mp he), fun e he ↦ h e (Array.mem_toList_iff.mp he)⟩
 
 attribute [local irreducible] IsForbiddenEntry IsForbiddenVal in
-/-- The contract of `Ratpoints.Sieve.forbidden`: from forbidden divisors `ba` and `val` that the
-loop of the tables may record (`Ratpoints.Sieve.IsForbiddenEntry`,
-`Ratpoints.Sieve.IsForbiddenVal`), the further primes add only primes of the table with their words
-at which `c_d` is not a square. -/
+/-- The contract of `Ratpoints.Sieve.forbidden`: from forbidden divisors `ba` and `val` of the
+kinds that `Ratpoints.Sieve.IsForbiddenEntry` and `Ratpoints.Sieve.IsForbiddenVal` describe, such
+as the loop of the tables records, it returns forbidden divisors of the same kinds, since the
+further primes add only primes of the table with their words at which `c_d` is not a square modulo
+the prime, and `val` passes through. -/
 @[spec]
 theorem forbidden_spec (c : List ℤ) (d examined maxForbidden bHigh : ℕ) (ba : Array ForbiddenEntry)
     (val : Array ForbiddenVal) :
@@ -1232,9 +1241,9 @@ theorem getLsbD_getElem!_forbiddenRow {p r : ℕ} (hr : r < p) (t : ℕ) :
 
 /-! ### The `long`s of the C code -/
 
-/-- The valuations `m` with `p ^ m ≤ bHigh` of an odd prime `p` and a `long` `bHigh` are below
-`40`, since `3 ^ 40 > 2 ^ 63`: the cap `m < LONG_LENGTH - 1` of the loops of `forbidden_valuations`
-and of the valuations that a denominator can have (`find_points.c:2217`,
+/-- The valuations `m` with `p ^ m ≤ bHigh` for `p ≥ 3`, as for an odd prime, and a `long` `bHigh`
+are below `40`, since `3 ^ 40 > 2 ^ 63`: the cap `m < LONG_LENGTH - 1` of the loops of
+`forbidden_valuations` and of the valuations that a denominator can have (`find_points.c:2217`,
 `find_points.c:2636-2637`), which the model drops, never binds, and the bits `1UL << m` that they
 set are defined. The values `pm * p` of these loops, computed only for `pm ≤ ⌊b_high / p⌋`, are
 `long`s too (`Ratpoints.Setup.fitsLong_mul_of_le_div`). -/
@@ -1246,8 +1255,8 @@ theorem lt_forty_of_pow_le {p m bHigh : ℕ} (hp : 3 ≤ p) (hH : bHigh < 2 ^ 63
   have h3 : 2 ^ 63 < 3 ^ 40 := by decide
   lia
 
-/-- For an odd prime `p` and a `long` `bHigh`, the mask of the forbidden valuations is below
-`2 ^ 40`, so that the `unsigned long` `mask` of `forbidden_valuations` holds it
+/-- For `p ≥ 3`, as for an odd prime, and a `long` `bHigh`, the mask of the forbidden valuations is
+below `2 ^ 40`, so that the `unsigned long` `mask` of `forbidden_valuations` holds it
 (`find_points.c:2229`). -/
 theorem run_forbiddenValuations_lt (c : List ℤ) (d : ℕ) {p bHigh : ℕ} (cm : Array ℕ) (hp : 3 ≤ p)
     (hH : bHigh < 2 ^ 63) : Id.run (forbiddenValuations c d p bHigh cm) < 2 ^ 40 :=
@@ -1255,8 +1264,8 @@ theorem run_forbiddenValuations_lt (c : List ℤ) (d : ℕ) {p bHigh : ℕ} (cm 
     have : ¬p ^ m ≤ bHigh := mt (lt_forty_of_pow_le hp hH) (by lia)
     simp [testBit_run_forbiddenValuations c d (by lia : 1 < p), this]
 
-/-- For an odd prime `p` and a `long` `bHigh`, the mask of the valuations that a denominator can
-have is below `2 ^ 40`, so that the `unsigned long` `all` of `sieving_info` holds it
+/-- For `p ≥ 3`, as for an odd prime, and a `long` `bHigh`, the mask of the valuations that a
+denominator can have is below `2 ^ 40`, so that the `unsigned long` `all` of `sieving_info` holds it
 (`find_points.c:2638`). -/
 theorem run_allValuations_lt {p bHigh : ℕ} (hp : 3 ≤ p) (hH : bHigh < 2 ^ 63) :
     Id.run (allValuations p bHigh) < 2 ^ 40 :=

@@ -57,11 +57,11 @@ algorithm, and the divisors of the gcd of `b` and a residue `f ≡ a (mod b)`.
 * `List.filter_range'_le_and_le`: of a range that covers `lo, …, hi`, the numbers from `lo` to
   `hi`.
 * `Std.Legacy.Range.length_toList`: the list of `[a:b]` has `b - a` entries.
-* `Std.Legacy.Range.length_eq_of_toList_eq_append_cons`,
-  `Std.Legacy.Range.lt_of_toList_eq_append_cons`: the position of the cursor of a loop over
+* `Std.Legacy.Range.length_eq_of_toList_eq_append_cons`: the position of the cursor of a loop over
   `[0:m]`; `Std.Legacy.Range.add_length_eq_of_toList_eq_append_cons`,
+  `Std.Legacy.Range.lt_of_toList_eq_append_cons`,
   `Std.Legacy.Range.length_add_length_add_one_of_toList_eq_append_cons`: that of a loop over
-  `[a:m]`, and the lengths of the lists before and after it.
+  `[a:m]`, below `m`, and the lengths of the lists before and after it.
 * `Array.getElem!_pop`, `Array.getElem!_pop_of_back!_eq`: the entries of an array without its last
   entry, the same as before when that entry is the default value.
 * `Array.getElem!_mem`: an entry in range of an array is a member of it.
@@ -86,7 +86,7 @@ algorithm, and the divisors of the gcd of `b` and a residue `f ≡ a (mod b)`.
 * `Nat.mul_sub_one_div_div_mul_le`, `Nat.lt_mul_sub_one_div_div_add_two_mul`: Barrett's estimate
   `⌊u ⌊(N - 1) / p⌋ / N⌋` of `⌊u / p⌋` for `u < N` is the quotient or one less.
 * `Nat.mul_add_lt_mul_of_lt`, `Nat.pow_lt_two_pow_of_lt`: a step of Horner's rule multiplies a bound
-  by `p`, and `p ^ n < 2 ^ N` for `p < 2 ^ b` and `b n ≤ N`.
+  by `p`, and `p ^ n < 2 ^ N` for `p < 2 ^ b`, `n ≠ 0` and `b n ≤ N`.
 * `Int.natAbs_sub_mul_of_mul_nonpos`: `|a - q b| = |a| + q |b|` for `a b ≤ 0` and `q ≥ 0`.
 * `Int.dvd_natAbs_of_dvd_gcd`: a divisor of the gcd of `f ≡ a (mod b)` and `b` divides `a`.
 

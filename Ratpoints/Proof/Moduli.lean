@@ -21,8 +21,8 @@ import Std.Tactic.Do
 # Prime powers and products as moduli
 
 The sieve entry of a modulus `m` (`Ratpoints.makeModulus?`) is made in a loop over the factors of
-`m` over the table (`Ratpoints.modulusFactors`): a prime with its table, from the loop of the tables
-or examined now, and a prime power `p ^ e` with the tables of `examine_power`
+`m` over the table (`Ratpoints.modulusFactors`): a prime with its table, kept by the loop of the
+tables or examined for `m`, and a prime power `p ^ e` with the tables of `examine_power`
 (`Ratpoints.Sieve.examinePower`), whose inverses come from the extended Euclidean algorithm
 (`Ratpoints.Sieve.modinv`) in a loop over the residues (`Ratpoints.Sieve.examinePower_spec`). The
 tables of a prime power compute what they claim, and its rows let every point through
@@ -229,8 +229,8 @@ theorem m_run_examinePower (c : List ℤ) (d p e : ℕ) (u : Bool) :
     (Id.run (examinePower c d p e u)).m = p ^ e :=
   rfl
 
-/-- Entry `x` of the table `fsq` of the prime power `m = p ^ e` is set when `f(x)` is a square
-modulo `m`. -/
+/-- Entry `x` of the table `Ratpoints.Sieve.Power.fsq` of `m = p ^ e`
+(`Ratpoints.Sieve.examinePower`) is set when `f(x)` is a square modulo `m`. -/
 theorem getElem!_fsq_run_examinePower_of_isSquare {c : List ℤ} {d p e : ℕ} (u : Bool) {x : ℕ}
     (hx : x < p ^ e)
     (h : IsSquare (∑ k ∈ Finset.range (d + 1), (c.getD k 0 : ZMod (p ^ e)) * x ^ k)) :
@@ -262,9 +262,9 @@ private theorem natCast_evalMod_reverse_ite (c : List ℤ) (d : ℕ) {m : ℕ} [
     rw [natCast_getD_map_range_toNat_emod c d (Finset.mem_range.mp hk),
       show d + d % 2 = d + 1 - 1 by lia]
 
-/-- Entry `t` of the table `gsq` of the prime power `m = p ^ e`, for `p ∣ t`, is set when the
-reversed polynomial `∑ cₖ t ^ (D - k)` of the even degree `D = d + d % 2` takes a square value
-modulo `m` at `t`. -/
+/-- Entry `t` of the table `Ratpoints.Sieve.Power.gsq` of `m = p ^ e`
+(`Ratpoints.Sieve.examinePower`), for `p ∣ t`, is set when the reversed polynomial
+`∑ cₖ t ^ (D - k)` of the even degree `D = d + d % 2` takes a square value modulo `m` at `t`. -/
 theorem getElem!_gsq_run_examinePower_of_isSquare {c : List ℤ} {d p e : ℕ} (u : Bool) {t : ℕ}
     (ht : t < p ^ e) (htp : t % p = 0)
     (h : IsSquare (∑ k ∈ Finset.range (d + 1),
@@ -278,8 +278,8 @@ theorem getElem!_gsq_run_examinePower_of_isSquare {c : List ℤ} {d p e : ℕ} (
   exact getElem!_foldl_set!_mul_self_mod_of_isSquare (evalMod_lt _ (by lia) _) h
 
 /-- The invariant of the loop of `Ratpoints.Sieve.examinePower` over the residues `1, …, k` modulo
-`m`, on the inverses `inv`: `k + 1` entries, each below `m`, that of a residue prime to `p` its
-inverse modulo `m`. -/
+`m`, on the inverses `inv`: `k + 1` entries, each below `m`, that of a residue not divisible by `p`
+its inverse modulo `m`. -/
 def ExaminePowerInvariant (p m k : ℕ) (inv : Array ℕ) : Prop :=
   inv.size = k + 1 ∧ ∀ x < inv.size, inv[x]! < m ∧ (x % p ≠ 0 → x * inv[x]! % m = 1)
 
@@ -315,8 +315,8 @@ theorem ExaminePowerInvariant.push_zero {p m cur : ℕ} {pref suff : List ℕ} {
   rw [List.length_append, List.length_singleton]
   exact h.push_of_lt hm fun h' ↦ absurd (by rwa [Nat.add_comm, this]) h'
 
-/-- The step of the loop of `Ratpoints.Sieve.examinePower` at a residue prime to `p`, whose entry
-is its inverse modulo `m`, by `Ratpoints.Sieve.modinv`. -/
+/-- The step of the loop of `Ratpoints.Sieve.examinePower` at a residue whose entry `r` is its
+inverse modulo `m`, as `Ratpoints.Sieve.modinv` gives it for a residue not divisible by `p`. -/
 theorem ExaminePowerInvariant.push {p m cur r : ℕ} {pref suff : List ℕ} {inv : Array ℕ}
     (hl : ForIn.toList [1:m] = pref ++ cur :: suff) (h : ExaminePowerInvariant p m pref.length inv)
     (hr : r < m ∧ cur * r % m = 1) :
@@ -326,7 +326,7 @@ theorem ExaminePowerInvariant.push {p m cur r : ℕ} {pref suff : List ℕ} {inv
   exact h.push_of_lt hr.1 fun _ ↦ by rw [Nat.add_comm, this]; exact hr.2
 
 /-- At the end of the loop of `Ratpoints.Sieve.examinePower`, for `m > 0`: every entry of the
-inverses is below `m`, and that of a residue prime to `p` is its inverse modulo `m`. -/
+inverses is below `m`, and that of a residue not divisible by `p` is its inverse modulo `m`. -/
 theorem ExaminePowerInvariant.post {p m : ℕ} {inv : Array ℕ}
     (h : ExaminePowerInvariant p m (ForIn.toList [1:m]).length inv) (hm : 0 < m) (x : ℕ) :
     inv[x]! < m ∧ (x < m → x % p ≠ 0 → x * inv[x]! % m = 1) := by
@@ -340,8 +340,8 @@ theorem ExaminePowerInvariant.post {p m : ℕ} {inv : Array ℕ}
 attribute [local irreducible] ExaminePowerInvariant in
 /-- The contract of `Ratpoints.Sieve.examinePower` for a prime `p` and `e ≥ 1`: the inverses of the
 prime power `p ^ e` are below `p ^ e`, and that of a unit is its inverse modulo `p ^ e`, by the
-extended Euclidean algorithm (`Ratpoints.Sieve.modinv_spec`); the tables `fsq` and `gsq` are folds
-and maps that the lemmas on them unfold. -/
+extended Euclidean algorithm (`Ratpoints.Sieve.modinv_spec`); the tables `Ratpoints.Sieve.Power.fsq`
+and `Ratpoints.Sieve.Power.gsq` are folds and maps that the lemmas on them unfold. -/
 @[spec]
 theorem examinePower_spec (c : List ℤ) (d p e : ℕ) (u : Bool) :
     ⦃ p.Prime ∧ 1 ≤ e ⦄ examinePower c d p e u
@@ -533,8 +533,8 @@ theorem MakeModulusInvariant.push_getElem? {c : List ℤ} {tables : Array Entry}
   exact h.push fun _ _ _ hab hy ↦ htab pn hi ▸
     admits_prime_examinePrime_mod (mem_run_modulusFactors_of_eq hfac hl) hab hy
 
-/-- The step of the loop of `Ratpoints.makeModulus?` at a prime factor beyond those of the loop of
-the tables, whose examination gives a table, that of the reference. -/
+/-- The step of the loop of `Ratpoints.makeModulus?` at a prime factor whose examination
+(`Ratpoints.Sieve.examinePrime?`) gives a table, that of the reference. -/
 theorem MakeModulusInvariant.push_run_examinePrime? {c : List ℤ} {u : Bool} {m r pn e : ℕ}
     {fac pref suff : List (ℕ × ℕ)} {o : Option (Option SieveEntry)} {factors : Array Factor}
     {t : Entry} {cm : Array ℕ}
@@ -558,8 +558,9 @@ theorem MakeModulusInvariant.push_run_examinePower {c : List ℤ} {u : Bool} {m 
   h.push fun _ _ _ hab hy ↦
     admits_power_run_examinePower_mod u (mem_run_modulusFactors_of_eq hfac hl) hab hy
 
-/-- The early return of the loop of `Ratpoints.makeModulus?` at a prime factor beyond those of the
-loop of the tables whose examination gives none: the curve has no points modulo it. -/
+/-- The early return of the loop of `Ratpoints.makeModulus?` at a prime factor whose examination
+(`Ratpoints.Sieve.examinePrime?`) gives none: the curve has no points modulo the prime, so none at
+all. -/
 theorem makeModulusInvariant_some_none {c : List ℤ} {u : Bool} {m r pn e : ℕ}
     {fac pref suff : List (ℕ × ℕ)} {factors : Array Factor} {x : Option (Entry × Array ℕ)}
     (hfac : (fac, r) = Id.run (modulusFactors m)) (hl : fac = pref ++ (pn, e) :: suff)

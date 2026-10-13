@@ -19,8 +19,9 @@ permutation of its `List.flatMap f`.
 ## Main statements
 
 * `List.flatMap_filter_of_ne`: a filter before `List.flatMap` that changes nothing.
-* `List.perm_flatMap_of_nodup`: the `List.flatMap` of a list without duplicates of members of `l`,
-  in any order, that holds every member with a nonempty image.
+* `List.perm_flatMap_of_nodup`: the `List.flatMap` of a list without duplicates of members of a
+  list `l` without duplicates, in any order, that holds every member with a nonempty image, is a
+  permutation of that of `l`.
 -/
 
 @[expose] public section

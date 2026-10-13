@@ -165,16 +165,16 @@ theorem getElem!_primeTable_le_of_le {i j : ℕ} (hij : i ≤ j) (hj : j < prime
 
 /-! ### The moduli in the range of the C types -/
 
-/-- The moduli below `maxPrimeEven` are below `2 ^ 10`, since `maxBitsInPrime ≤ 10`
+/-- The moduli below `Ratpoints.maxPrimeEven` are below `2 ^ 10`, since `maxBitsInPrime ≤ 10`
 (`Ratpoints.maxBitsInPrime_le_ten`), as the comment on Horner's rule in `examine_power` assumes
 (`find_points.c:2286-2287`). -/
 theorem maxPrimeEven_le_two_pow_10 : maxPrimeEven ≤ 2 ^ 10 :=
   Nat.pow_le_pow_right (by decide) maxBitsInPrime_le_ten
 
-/-- The moduli below `maxPrimeEven` are below `2 ^ 32` (`Ratpoints.maxPrimeEven_le_two_pow_10`):
-so the helper `mod` of the C code keeps its values in the range of a `long` for them
-(`Ratpoints.fitsLong_sixteen_mul`, `Ratpoints.fitsLong_add_sixteen_mul`, for `b < 2 ^ 59`), where
-`examine_power` calls it (`find_points.c:2278`). -/
+/-- The moduli below `Ratpoints.maxPrimeEven` are below `2 ^ 32`
+(`Ratpoints.maxPrimeEven_le_two_pow_10`): so the helper `mod` of the C code keeps its values in the
+range of a `long` for them (`Ratpoints.fitsLong_sixteen_mul`, `Ratpoints.fitsLong_add_sixteen_mul`,
+for `b < 2 ^ 59`), where `examine_power` calls it (`find_points.c:2278`). -/
 theorem maxPrimeEven_le_two_pow_32 : maxPrimeEven ≤ 2 ^ 32 :=
   maxPrimeEven_le_two_pow_10.trans (by norm_num)
 
@@ -205,8 +205,8 @@ theorem hornerSteps_add_one : hornerSteps + 1 = 64 / maxBitsInPrime := by
   rw [hornerSteps] at this ⊢
   lia
 
-/-- The bound of the schedule of Horner's rule in the table of a prime `p < maxPrimeEven` in
-`examine_prime`: `p ^ (hornerSteps + 1) < 2 ^ 64`, since `hornerSteps + 1 = 64 / maxBitsInPrime`
+/-- The bound of the schedule of Horner's rule in `examine_prime`: `p ^ (hornerSteps + 1) < 2 ^ 64`
+for `p < maxPrimeEven`, since `hornerSteps + 1 = 64 / maxBitsInPrime`
 (`Ratpoints.hornerSteps_add_one`) and `maxBitsInPrime (64 / maxBitsInPrime) ≤ 64`. -/
 theorem pow_hornerSteps_add_one_lt {p : ℕ} (hp : p < maxPrimeEven) :
     p ^ (hornerSteps + 1) < 2 ^ 64 := by
@@ -227,9 +227,9 @@ def ModulusFactorsInvariant (m k : ℕ) (s : ℕ × Array (ℕ × ℕ)) : Prop :
     ∀ j < k, primeTable[j]! ≠ s.1 ∧ (k < numPrimes → ¬primeTable[j]! ∣ s.1) ∧
       (primeTable[j]! ∣ s.1 → s.1 < primeTable[j]! * primeTable[j]!)
 
-/-- The invariant of the loop of `Ratpoints.modulusFactors` that divides the prime `p` off the
-cofactor `r`, on the cofactor `s.1` and the exponent `s.2`: `s.1 p ^ s.2 = r` with `s.1 ≥ 1`,
-`p ∣ s.1` before the first division, and `p ∤ s.1` at the exit. -/
+/-- The invariant of the loop of `Ratpoints.modulusFactors` that divides `p` off the cofactor `r`,
+on the cofactor `s.1` and the exponent `s.2`: `s.1 p ^ s.2 = r` with `s.1 ≥ 1`, `p ∣ s.1` before the
+first division, and `p ∤ s.1` at the exit. -/
 def ModulusFactorsPowInvariant (r p : ℕ) : Std.WP.WhileInvariant (ℕ × ℕ) Prop :=
   .mk fun exit s ↦ s.1 * p ^ s.2 = r ∧ 0 < s.1 ∧ (s.2 = 0 → s.1 % p = 0) ∧
     (exit = true → s.1 % p ≠ 0)
@@ -381,8 +381,8 @@ theorem modulusFactorsPowInvariant_zero {r p : ℕ} (hr : ¬r ≤ 1) (hp : r % p
     ModulusFactorsPowInvariant r p false (r, 0) :=
   ⟨by simp, by lia, fun _ ↦ hp, nofun⟩
 
-/-- The step of the loop of `Ratpoints.modulusFactors` that divides the prime `p > 1` off the
-cofactor, with the measure. -/
+/-- The step of the loop of `Ratpoints.modulusFactors` that divides `p > 1` off the cofactor, with
+the measure. -/
 theorem ModulusFactorsPowInvariant.div {r p x e : ℕ}
     (h : ModulusFactorsPowInvariant r p false (x, e)) (hp : 1 < p) (hx : x % p = 0) :
     x / p < x ∧ ModulusFactorsPowInvariant r p false (x / p, e + 1) := by
@@ -452,7 +452,7 @@ theorem getElem!_primeTable_ne_snd_run_modulusFactors (m : ℕ) {j : ℕ} (hj : 
   ((Std.WP.Id.of_run_eq_wp rfl _ ((modulusFactors_spec m).le_wp trivial)).2.2.2 j hj).1
 
 /-- A prime among the first `Ratpoints.numPrimes` of the table that divides the cofactor of `m` is
-above its square root. -/
+above the square root of the cofactor. -/
 theorem snd_run_modulusFactors_lt_mul_self_of_dvd (m : ℕ) {j : ℕ} (hj : j < numPrimes)
     (h : primeTable[j]! ∣ (Id.run (modulusFactors m)).2) :
     (Id.run (modulusFactors m)).2 < primeTable[j]! * primeTable[j]! :=
@@ -491,8 +491,8 @@ theorem snd_run_modulusFactors_eq_one {m : ℕ} (hm : 0 < m)
 theorem Params.WF.one_lt_of_mem {P : Params} (hP : P.WF) {m : ℕ} (hm : m ∈ P.moduli) : 1 < m :=
   (hP.modulus m hm).1
 
-/-- The moduli of the third stage of well-formed parameters, from the position `sp2` on, are
-primes. -/
+/-- The moduli of the third stage of well-formed parameters, from the position
+`Ratpoints.Params.sp2` on, are primes. -/
 theorem Params.WF.prime_of_mem_drop {P : Params} (hP : P.WF) {m : ℕ}
     (hm : m ∈ P.moduli.drop P.sp2) : m.Prime :=
   prime_of_mem_primeTable (hP.mem_primeTable_of_mem_drop m hm)

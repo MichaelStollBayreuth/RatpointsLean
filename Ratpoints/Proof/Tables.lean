@@ -35,14 +35,14 @@ The table of a prime with the exit (`Ratpoints.Sieve.examinePrime?`) reduces the
 paths with the same result, since the helper `mod` of the C code is the Euclidean `%`
 (`Ratpoints.Sieve.modLong_eq_emod`), and computes the values of `f` by Horner's rule with Barrett's
 reduction on a fixed schedule (`Ratpoints.Sieve.hornerBarrett`): Barrett's reduction gives the
-remainder of every `u < 2 ^ 64` (`Ratpoints.Sieve.barrett_eq`), and for a prime `p < maxPrimeEven`
-the accumulator stays below `p ^ (hornerSteps + 1) < 2 ^ 64` between two reductions
-(`Ratpoints.Sieve.HornerInvariant.lt_two_pow_64`). So for such a prime the table that its loop over
-the residues gives is that of the reference `Ratpoints.Sieve.examinePrime`, handed back with the
-coefficients reduced modulo `p`, and when it gives none, the curve has no points
-(`Ratpoints.Sieve.not_isPoint_of_run_examinePrime?_eq_none`): a point `(a, y, b)` gives a residue
-that the table marks for `p ∤ b`, and for `p ∣ b` a point at infinity modulo `p`, the last entry of
-the table, since `c_d` is then a square modulo `p` for even `d`
+remainder of every `u < 2 ^ 64` (`Ratpoints.Sieve.barrett_eq`), and for `p < maxPrimeEven` the
+accumulator stays below `p ^ (hornerSteps + 1) < 2 ^ 64` between two reductions
+(`Ratpoints.Sieve.HornerInvariant.lt_two_pow_64`). So for `0 < p < maxPrimeEven` the table that its
+loop over the residues gives is that of the reference `Ratpoints.Sieve.examinePrime`, handed back
+with the coefficients reduced modulo `p`, and when it gives none for a prime `p`, the curve has no
+points (`Ratpoints.Sieve.not_isPoint_of_run_examinePrime?_eq_none`): a point `(a, y, b)` gives a
+residue that the table marks for `p ∤ b`, and for `p ∣ b` a point at infinity modulo `p`, the last
+entry of the table, since `c_d` is then a square modulo `p` for even `d`
 (`Ratpoints.Sieve.isSquare_getD_degree_of_sq_eq_binaryForm`). The values of the C code that could
 leave the range of a `long` stay in it: those of `mod` for moduli below `2 ^ 59`, whose inputs are
 `long`s by the flag of the `long`s, the negations of the map of a reversed search, and the negation
@@ -75,7 +75,7 @@ of a negative leading coefficient in `jacobi1`, with `LONG_MIN` replaced by its 
 * `Ratpoints.Sieve.modLong_eq_emod`: the helper `mod` of the C code is the Euclidean `%`.
 * `Ratpoints.Sieve.barrett_eq`: Barrett's reduction computes the remainder of every `u < 2 ^ 64`.
 * `Ratpoints.Sieve.HornerInvariant.lt_two_pow_64`: the accumulator of Horner's rule in the table of
-  a prime `p < maxPrimeEven` stays below `2 ^ 64` (`Ratpoints.pow_hornerSteps_add_one_lt`).
+  `p < maxPrimeEven` stays below `2 ^ 64` (`Ratpoints.pow_hornerSteps_add_one_lt`).
 * `Ratpoints.Sieve.hornerBarrett_spec`: Horner's rule with Barrett's reduction on its schedule
   computes the value modulo `p` (`Ratpoints.Sieve.evalMod`).
 * `Ratpoints.Sieve.examinePrime?_eq_examinePrime?_false`, `Ratpoints.Sieve.examinePrime?_spec`,
@@ -317,7 +317,7 @@ theorem HornerInvariant.pos {cm : Array ℕ} {d p a i k s : ℕ} (h : HornerInva
     0 < p :=
   Nat.pos_of_ne_zero fun hp ↦ by simpa [hp] using h.2
 
-/-- The range obligation of the accumulator of Horner's rule in `examine_prime`: for a prime
+/-- The range obligation of the accumulator of Horner's rule in `examine_prime`: for
 `p < maxPrimeEven`, the values `s a + c` of the steps (`find_points.c:1729`, `find_points.c:1741`)
 and the values that Barrett's reduction takes (`find_points.c:1731`, `find_points.c:1742`,
 `find_points.c:1744`) are below `p ^ (k + 1)` with `k ≤ hornerSteps`, so below `2 ^ 64`: the
@@ -408,7 +408,7 @@ theorem HornerInvariant.barrett_eq_evalMod_of_lt {cm : Array ℕ} {d p a k s : �
   exact h.1.barrett_eq_evalMod hp h.2.le
 
 attribute [local irreducible] HornerInvariant in
-/-- The contract of `Ratpoints.Sieve.hornerBarrett`: for a prime `p < maxPrimeEven`, a residue
+/-- The contract of `Ratpoints.Sieve.hornerBarrett`: for a modulus `p < maxPrimeEven`, a residue
 `a < p` and `d + 1` coefficients below `p`, Horner's rule with Barrett's reduction on its schedule
 computes the value modulo `p` at `a` (`Ratpoints.Sieve.evalMod`); the accumulator stays below
 `2 ^ 64` (`Ratpoints.Sieve.HornerInvariant.lt_two_pow_64`). -/
@@ -565,8 +565,8 @@ private theorem getElem!_map_range_emod_lt (c : List ℤ) (d : ℕ) {p : ℕ} (h
 
 /-- The invariant of the loop of `Ratpoints.Sieve.examinePrime?` over the residues `1, …, k`, on the
 table `t`: entry `0` and the entries of these residues, each whether the value modulo `p` of
-Horner's rule (`Ratpoints.Sieve.evalMod`) on the coefficients reduced modulo `p` is a square
-there. -/
+Horner's rule (`Ratpoints.Sieve.evalMod`) on the coefficients reduced modulo `p` is a square modulo
+`p`. -/
 def ExaminePrimeInvariant (c : List ℤ) (d p k : ℕ) (t : Array Bool) : Prop :=
   t = (Array.range (k + 1)).map fun x ↦ (squaresMod p)[evalMod
     ((List.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat) p x]!
