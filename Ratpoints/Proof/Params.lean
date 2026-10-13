@@ -151,16 +151,14 @@ the table increases. -/
 theorem getElem!_primeTable_lt_maxPrimeEven {pn : ℕ} (h : pn < numPrimes) :
     primeTable[pn]! < maxPrimeEven := by
   rw [getElem!_pos primeTable pn (h.trans_le numPrimes_le_size_primeTable), ← Array.getElem_toList]
-  exact List.getElem_lt_of_lt_length_filter (pairwise_lt_toList_primeTable.imp le_of_lt) h
+  exact pairwise_lt_toList_primeTable.sortedLT.sortedLE.getElem_lt_of_lt_length_filter h
 
 /-- The table increases: an entry is at most each entry after it. -/
 theorem getElem!_primeTable_le_of_le {i j : ℕ} (hij : i ≤ j) (hj : j < primeTable.size) :
     primeTable[i]! ≤ primeTable[j]! := by
-  rcases hij.eq_or_lt with rfl | hij
-  · exact le_rfl
-  rw [getElem!_pos primeTable i (hij.trans hj), getElem!_pos primeTable j hj,
+  rw [getElem!_pos primeTable i (hij.trans_lt hj), getElem!_pos primeTable j hj,
     ← Array.getElem_toList, ← Array.getElem_toList]
-  exact (List.pairwise_iff_getElem.mp pairwise_lt_toList_primeTable i j _ _ hij).le
+  exact pairwise_lt_toList_primeTable.sortedLT.sortedLE.getElem_le_getElem_of_le hij
 
 /-! ### The moduli in the range of the C types -/
 

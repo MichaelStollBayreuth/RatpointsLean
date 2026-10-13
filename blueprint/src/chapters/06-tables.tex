@@ -94,7 +94,7 @@ chosen, of which kinds and in which stages, changes neither the points nor their
 
 \begin{definition}[The Barrett reduction on the schedule of Horner's rule]\label{def:barrett}
   \uses{def:primeTable}
-  \lean{Ratpoints.maxPrimeEven, Ratpoints.hornerSteps, Ratpoints.one_le_hornerSteps, Ratpoints.maxBitsInPrime_le_ten, Ratpoints.maxPrimeEven_le_two_pow_10, Ratpoints.maxPrimeEven_le_two_pow_32, Ratpoints.getElem!_primeTable_lt_maxPrimeEven, List.getElem_lt_of_lt_length_filter, Ratpoints.Sieve.barrett, Ratpoints.Sieve.hornerBarrett}
+  \lean{Ratpoints.maxPrimeEven, Ratpoints.hornerSteps, Ratpoints.one_le_hornerSteps, Ratpoints.maxBitsInPrime_le_ten, Ratpoints.maxPrimeEven_le_two_pow_10, Ratpoints.maxPrimeEven_le_two_pow_32, Ratpoints.getElem!_primeTable_lt_maxPrimeEven, List.SortedLE.getElem_lt_of_lt_length_filter, Ratpoints.Sieve.barrett, Ratpoints.Sieve.hornerBarrett}
   \leanok
   The power of two above the moduli, $\mathrm{maxPrimeEven} = 2^{\mathrm{maxBitsInPrime}}$
   (\csource{rp-private.h}{325}{361}), and the number of Horner steps between two reductions,
