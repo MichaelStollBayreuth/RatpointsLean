@@ -199,7 +199,8 @@ C: `find_points.c:1639-1650`
 Deviation: natural numbers for the `unsigned long`s, the product `u m` exact as the 128-bit
 product of the C code, and the difference exact, which does not wrap since the quotient times `p`
 is at most `u` for `m ≤ (2 ^ 64 - 1) / p`; the obligation that `u` is below `2 ^ 64`, which the C
-type gives, a hypothesis of the lemma that the result is `u % p`; the form with the 128-bit
+type gives, a hypothesis of the lemma that the result is `u % p` (`Ratpoints.Sieve.barrett_eq`); the
+form with the 128-bit
 product, which the builds of the model compile (the compiler defines `__SIZEOF_INT128__`, and
 `RP_NO_INT128` is not set), for the division `u % p` of the other builds, which gives the same
 remainder. -/
@@ -221,7 +222,8 @@ C: `find_points.c:1724`, `find_points.c:1726-1731`, `find_points.c:1735`,
 
 Deviation: the choice between the two branches made for each residue, where `examine_prime` makes it
 once, around its loop over the residues; natural numbers for the `unsigned long` accumulator, with
-the obligation that it stays below `2 ^ 64` stated as a lemma; the steps counted up from `0` to
+the obligation that it stays below `2 ^ 64` stated as a lemma
+(`Ratpoints.Sieve.HornerInvariant.lt_two_pow_64`); the steps counted up from `0` to
 `d - 1`, for the index `n` that counts down. -/
 def hornerBarrett (cm : Array Nat) (d p recip a : Nat) : Id Nat := do
   let mut s := cm[d]!
@@ -279,7 +281,8 @@ field `ssp` of `prec_entry`; it keeps only `p`, the table and the inverses
 `examine_prime` sets (lines 1800 and 1817) are those of the sieve entry of the prime
 (`Ratpoints.Sieve.SieveEntry`), of which the prime is the single factor, made by
 `Ratpoints.makeModulus?`; no reciprocal `magic`, bias `bias` and inverse `rbainv`, which serve the
-reduction of the sieve and the packing (stage F). -/
+reduction of the sieve and the packing (stage F), and no density `r` (line 1811), which serves the
+choice of the moduli (stage I). -/
 def examinePrime? (c : List Int) (d p : Nat) (useCLong : Bool) :
     Id (Option (Entry × Array Nat)) := do
   let cm := (Array.range (d + 1)).map fun n ↦

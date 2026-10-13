@@ -90,12 +90,15 @@ C: `find_points.c:2350-2354`, `find_points.c:2358-2359`, `find_points.c:2387-239
 `find_points.c:2414-2429`, `find_points.c:2434-2475`, `find_points.c:2546`, `find_points.c:2548`,
 `find_points.c:2976-2978`, `find_points.c:2994-2998`
 
-Deviation: the entry of every modulus made here, by its factors, where `sieving_info` takes the
-entry of a prime from the loop of the tables (`prec[n].ssp`) and makes those of the prime powers and
-the products by `make_modulus`; the primes and prime powers as factors of the entry, for the fields
-`nf`, `pw` and `factor` and the entries of the prime powers that `make_power` makes; the tables of a
-prime power (`Ratpoints.Sieve.Factor.power`) computed for each modulus that needs them, where
-`add_moduli` examines a prime power once, when the first modulus offered needs it, and keeps its
+Deviation: the entry of every modulus made here, by its factors computed again from `m`
+(`Ratpoints.modulusFactors`), where `make_modulus` reads the codes `fac` of the factors and their
+number `nf` that `add_moduli` stores with the candidate (lines 2405-2406), and where `sieving_info`
+takes the entry of a prime from the loop of the tables (`prec[n].ssp`) and makes those of the prime
+powers and the products by `make_modulus`; the primes and prime powers as factors of the entry, for
+the fields `nf`, `pw` and `factor` and the entries of the prime powers that `make_power` makes; the
+tables of a prime power (`Ratpoints.Sieve.Factor.power`) computed for each modulus that needs them,
+where `add_moduli` examines a prime power once, when the factorization of the first candidate that
+reaches it needs it (the power itself), whether or not that candidate is then offered, and keeps its
 tables in its buffer `pws` by its index (`pw_idx`, lines 2350-2354, 2358-2359 and 2387-2394, with
 the count `npw` of line 2548), and `make_modulus` makes the entry of a prime power once and keeps it
 by its index (`power_se`); the tables of a prime power computed also when they say nothing, where
@@ -110,14 +113,15 @@ prime powers and products alike, of the primes of the loop of the tables only (l
 output does not depend on the primes examined, since the exit is taken only when the curve has no
 points; every modulus of the parameters taken, any product of powers of primes of the table below
 `Ratpoints.maxPrimeEven` (`Ratpoints.Params.WF`), where `add_moduli` offers a composite only for an
-odd `9 ≤ m ≤ RATPOINTS_COMPOSITE_MAX` (line 2361; `ratpoints.h:210-211`, 64 by default), with room
-in the buffer of the prime powers for its new prime powers (lines 2351 and 2390), a density `r < 1`
-(line 2402) and at most `RP_MAX_MODULI` candidates (line 2403), restrictions that the model lifts as
-choices of the moduli (stage I); no reciprocal `magic`, bias `bias` and inverse `rbainv`, which
-serve the reduction of the sieve and the packing (stage F), no density `r` (stage I), and no field
-`init`, the rows of every kind being made by one function (`Ratpoints.Sieve.SieveEntry.row`); the
-entry a fresh value, for the space that `make_power` and `make_modulus` take from the buffer of the
-sieve entries (`se_next`), and the exit as `none`, for the prime that `sieving_info` returns. -/
+odd `9 ≤ m ≤ RATPOINTS_COMPOSITE_MAX` (line 2361; `ratpoints.h:210-211`, 64 by default) whose table
+is not too dear for the run (line 2368), with room in the buffer of the prime powers for its new
+prime powers (lines 2351 and 2390), a density `r < 1` (line 2402) and at most `RP_MAX_MODULI`
+candidates (line 2403), restrictions that the model lifts as choices of the moduli (stage I); no
+reciprocal `magic`, bias `bias` and inverse `rbainv`, which serve the reduction of the sieve and the
+packing (stage F), no density `r` (stage I), and no field `init`, the rows of every kind being made
+by one function (`Ratpoints.Sieve.SieveEntry.row`); the entry a fresh value, for the space that
+`make_power` and `make_modulus` take from the buffer of the sieve entries (`se_next`), and the exit
+as `none`, for the prime that `sieving_info` returns. -/
 def makeModulus? (c : List Int) (d : Nat) (useCLong : Bool) (tables : Array Entry) (m : Nat) :
     Id (Option SieveEntry) := do
   let (fac, _) ← modulusFactors m
@@ -153,7 +157,8 @@ not modelled, nor that choice (stage I): the moduli and their stages are those o
 and the primes examined in the loop of the tables their first `P.examined`, beyond which
 `Ratpoints.makeModulus?` examines a prime when a modulus needs it; the sieve entries of every
 modulus made here, those of the third stage included, which `sieving_info` puts into `sieve_list`
-later, in the choice of the third stage; the flag `RATPOINTS_CHECK_DENOM` as the switch
+in the choice of the third stage (line 3014), and again, sorted by density with the reserve of
+`adapt_primes`, after it (lines 3026-3030; stage I); the flag `RATPOINTS_CHECK_DENOM` as the switch
 `checkDenom`, which the search clears, with the flag, when there is no forbidden divisor and no
 Jacobi test (`Ratpoints.searchPoints`); the sieve entries and the forbidden divisors returned as
 lists, for the array `sieve_list` and the arrays of the arguments, and the exit as `none`, for the
