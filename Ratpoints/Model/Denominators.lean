@@ -21,8 +21,9 @@ The side of the denominators of the sieve, each component in its place in `find_
 starts the first stage (the class word of `Ratpoints.Sieve.andRows`), and which classes admit a
 numerator at all (`Ratpoints.Sieve.denBits`); the forbidden divisors of the denominators of a
 polynomial of even degree, primes tested with words of 64 denominators or by their valuations, that
-an examined prime gives from what its table hands back (`Ratpoints.Sieve.forbiddenOfPrime`) and that
-the further primes give (`Ratpoints.Sieve.forbidden`); the Jacobi test, by the binary algorithm
+an examined prime gives from what its table hands back in the loop of the tables of `sieving_info`,
+which also takes the exit (`Ratpoints.Sieve.examinePrimes`, `Ratpoints.Sieve.forbiddenOfPrime`), and
+that the further primes give (`Ratpoints.Sieve.forbidden`); the Jacobi test, by the binary algorithm
 (`Ratpoints.Sieve.jacobi`) or by tables (`Ratpoints.Sieve.jacobiSetup`,
 `Ratpoints.Sieve.jacobiTest`); and the loop over the denominators in its four shapes, as `run_setup`
 chooses them (`Ratpoints.Sieve.Shape`, `Ratpoints.Sieve.runSetup`): the squares, the divisors of the
@@ -47,9 +48,10 @@ the divisors.
 * `Ratpoints.Sieve.unitParts`, `Ratpoints.Sieve.forbiddenAt`, `Ratpoints.Sieve.forbiddenValuations`,
   `Ratpoints.Sieve.allValuations`: the valuations at a prime of the leading coefficient that no
   denominator of a point has, and those that a denominator can have at all.
-* `Ratpoints.Sieve.forbiddenRow`, `Ratpoints.Sieve.forbiddenOfPrime`, `Ratpoints.Sieve.forbidden`:
-  the words of a forbidden divisor, the forbidden divisor of an examined prime, and the forbidden
-  divisors among the further primes.
+* `Ratpoints.Sieve.forbiddenRow`, `Ratpoints.Sieve.forbiddenOfPrime`,
+  `Ratpoints.Sieve.examinePrimes`, `Ratpoints.Sieve.forbidden`: the words of a forbidden divisor,
+  the forbidden divisor of an examined prime, the loop of the tables with the exit and the forbidden
+  divisors of the examined primes, and the forbidden divisors among the further primes.
 * `Ratpoints.Sieve.jacobi`: the Jacobi test by the binary algorithm, with its helpers
   `Ratpoints.Sieve.twoSign`, `Ratpoints.Sieve.jacobiReduce` and `Ratpoints.Sieve.jacobiRound`.
 * `Ratpoints.Sieve.JacobiInfo`, `Ratpoints.Sieve.nonSquares`, `Ratpoints.Sieve.jacobiSigns`,
@@ -409,7 +411,8 @@ entry, for the pointers into `sieves0` and the buffer `forb_words`, with no fail
 memory, where `sieving_info` drops the primes beyond the table whose words it cannot store; no
 reciprocals `magic`; natural numbers for the `long`s; no output under `DEBUG`. -/
 def forbidden (c : List Int) (d examined maxForbidden bHigh : Nat) (ba : Array ForbiddenEntry)
-    (val : Array ForbiddenVal) : Id (List ForbiddenEntry × List ForbiddenVal) := do
+    (val : Array ForbiddenVal) :
+    Id (List ForbiddenEntry × List ForbiddenVal) := do
   let lcf := c.getD d 0
   let mut ba := ba
   if !Setup.isSquare lcf then
@@ -662,7 +665,8 @@ its bits (`Nat.testBit`), for the shift and the mask of the `unsigned long`; the
 where the loop goes on to the sieve or to the next denominator; natural numbers for the `long`s; no
 output under `DEBUG`. -/
 def wordsTest (forbVal : List ForbiddenVal) (useJacobi : Bool) (fast : Option JacobiInfo)
-    (lcf : Int) (b : Nat) : Id Bool := do
+        (lcf : Int) (b : Nat) :
+    Id Bool := do
   if let some ji := fast then
     if !(← jacobiTest ji b) then return false
   for e in forbVal do
@@ -828,7 +832,8 @@ length; no copies of `use_c_long` and `lcf_long`, which only `jacobi1` reads
 correction of the moduli (stage I), no search intervals (stage H), no failure for lack of memory. -/
 def runSetup (useSquares : Bool) (us1 : Option (List Setup.DenInfo × List Nat))
     (checkDenom useJacobi : Bool) (forb : List ForbiddenEntry) (forbVal : List ForbiddenVal)
-    (lcf : Int) (bHigh : Nat) : Id Shape := do
+        (lcf : Int) (bHigh : Nat) :
+    Id Shape := do
   if useSquares then return .squares
   match us1 with
   | some (info, divisors) => return .squares1 info divisors
@@ -879,9 +884,10 @@ def sieveRun (c : List Int) (d H A : Nat) (rev : Bool) (entries : List SieveEntr
 The words of the 2-adic information, the forbidden divisors, the tables of the Jacobi test and the
 denominators that the run sifts against those that a build of ratpoints at the pinned commit prints
 with a dump of the side of the denominators on the standard error (the words `fsq`, `gsq` and `nb`
-of `get_2adic_info`, `den_bits`, the forbidden divisors, with the moduli of the model, `-p 30`, the
-shape, the tables of the Jacobi test and the denominators that the run sifts), and against their
-rule; and the run of the divisor shape against the points that ratpoints prints. -/
+of `get_2adic_info`, `den_bits`, the forbidden divisors, with the first 30 primes of the table
+examined, `-p 30`, the shape, the tables of the Jacobi test and the denominators that the run
+sifts), and against their rule; and the run of the divisor shape against the points that ratpoints
+prints. -/
 
 -- The squares modulo 64.
 #guard (List.range 64).all fun s ↦
@@ -968,9 +974,9 @@ rule; and the run of the divisor shape against the points that ratpoints prints.
   forbiddenRow p == ((⟨p, [.prime (examinePrime [1, 0, 1] 2 p)]⟩ : SieveEntry).row 0).extract 0 p
 
 -- The forbidden divisors of the dump, for the first 30 primes of the table as the examined primes
--- (the loop of the tables, then the further primes):
--- `1 2 3 4 5 6 7` at the height 100, `6 -3 5 2 75` at 1000 and at 50 with at most 3 of them
--- (`-F 3`), and `1 0 1 0 2` at 200, where 3 is forbidden though it says nothing as a modulus.
+-- (the loop of the tables, then the further primes): `1 2 3 4 5 6 7` at the height 100,
+-- `6 -3 5 2 75` at 1000 and at 50 with at most 3 of them (`-F 3`), and `1 0 1 0 2` at 200, where 3
+-- is forbidden though it says nothing as a modulus.
 #guard
   let fb (c : List Int) (d F bHigh : Nat) : List Nat × List (Nat × Nat) :=
     let (ba, val) := match Id.run (examinePrimes c d true true 30 F bHigh) with

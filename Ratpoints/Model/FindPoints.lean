@@ -303,10 +303,11 @@ arrays; the refusals of forms that are not squarefree as the program makes them,
 `-s` (`{ sturm := -1 }`) and `-k`, and the points of such forms that it searches; the search with
 the flag of the reversal, for polynomials to which ratpoints reverses others, and on curves without
 points modulo `3`, `5` and `7`, where it takes an exit, and without points modulo 64, where it takes
-the 2-adic exit; the tables of inverses and squares (`Ratpoints.Sieve.inversesMod`,
-`Ratpoints.Sieve.squaresMod`) of the `Ratpoints.numPrimes` primes among which the moduli are chosen;
-and the refusals in the order of the program, the coefficients before the height bound and the
-height bound before the leading zeros. -/
+the 2-adic exit; composite moduli, prime powers and products of them, in any order and with primes
+beyond those examined; the sieve entries of each kind, and the exits of `Ratpoints.sievingInfo`; the
+tables of inverses and squares (`Ratpoints.Sieve.inversesMod`, `Ratpoints.Sieve.squaresMod`) of the
+`Ratpoints.numPrimes` primes among which the moduli are chosen; and the refusals in the order of the
+program, the coefficients before the height bound and the height bound before the leading zeros. -/
 
 #guard (findPoints [-2, 0, 0, 1] 130 defaultParams).toOption ==
   some [(1, 0, 0), (3, 5, 1), (3, -5, 1), (129, 3830, 100), (129, -3830, 100)]
@@ -370,10 +371,12 @@ height bound before the leading zeros. -/
   (findPoints [-1, 0, 9] 20 P).toOption == some ((bruteForce [9, 0, -1] 20).map Sieve.swapPoint)
 
 -- The sieve entries of moduli of each kind for `1 2 3 4 5 6 7` with the tables of the first two
--- primes: the prime 3 and the prime 67 examined anew, the prime powers 9 and 243, the product 15
--- of two primes, 45 = 9 · 5 of a prime power and a prime, and 231 = 3 · 7 · 11 of three primes;
--- and the exit of the curve `20 6 -14 12 -10`, which has no points modulo 3, at the modulus 15
--- when 3 is not examined in the loop of the tables, and none at the prime power 9.
+-- primes: the prime 3 from the loop of the tables and the prime 67 examined anew, the prime powers
+-- 9 and 243, the product 15 of two primes, 45 = 9 · 5 of a prime power and a prime, and
+-- 231 = 3 · 7 · 11 of three primes; and the exit of the curve `20 6 -14 12 -10`, which has no
+-- points modulo 3, at the modulus 15 when 3 is not examined in the loop of the tables, none at the
+-- prime power 9, the exit in the loop of the tables when 3 is examined there, and no points from
+-- the search.
 #guard
   let c : List Int := [1, 2, 3, 4, 5, 6, 7]
   let fs (f : Sieve.Factor) : Nat := match f with | .prime e => e.p | .power pw => pw.m

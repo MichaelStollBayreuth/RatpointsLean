@@ -234,9 +234,8 @@ def defaultParams : Params := sieveParams {}
 /-! ### Examples -/
 
 #guard defaultParams.moduli == primeTable.toList.take 30 && defaultParams.examined == 30 &&
-  defaultParams.sp1 == 30 &&
-  defaultParams.sp2 == 30 && defaultParams.maxForbidden == 64 && defaultParams.jacobi &&
-  defaultParams.arraySize == 256
+  defaultParams.sp1 == 30 && defaultParams.sp2 == 30 && defaultParams.maxForbidden == 64 &&
+  defaultParams.jacobi && defaultParams.arraySize == 256
 
 #guard defaultParams.WF
 
