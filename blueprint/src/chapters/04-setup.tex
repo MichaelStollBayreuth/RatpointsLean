@@ -364,30 +364,32 @@ Lemma~\ref{lem:sift_eq_checkDen} maps their side.
   The function \verb|examine_prime| as the C code has it, for the flag of the \verb|long|s: the
   coefficients reduced modulo $p$ on the path that the flag chooses, with \verb|mod| for
   \verb|long|s and with the Euclidean remainder for GMP integers, two paths with the same result;
-  the table of the residues $x$ with $f(x)$ a square modulo $p$; its last entry, whether there is a
-  point at infinity modulo $p$; and no table when the curve has no points modulo $p$, the exit
+  the table of the residues $x$ with $f(x)$ a square modulo $p$ and its last entry, the entry $p$,
+  whether there is a point at infinity modulo $p$, $p + 1$ entries as \verb|examine_prime| keeps
+  them; and no table when no entry is true, so that the curve has no points modulo $p$, the exit
   (\csource{find_points.c}{1683}{1697}, \csource{find_points.c}{1703}{1749},
   \csource{find_points.c}{1761}{1765}, \csource{find_points.c}{1795}{1826}). Otherwise its table is
-  that of Definition~\ref{def:examinePrime}, which is the reference of this one and has given it its
-  C ranges, as the sieve and the check of stage~C1 became the reference of the words; so the lemmas
-  on the table and the rows hold as they are.
+  that of Definition~\ref{def:examinePrime}, at every $p$, which is the reference of this one and has
+  given it its C ranges, as the sieve and the check of stage~C1 became the reference of the words;
+  so the lemmas on the table and the rows hold as they are.
 \end{definition}
 
 \begin{lemma}[A curve without points modulo $p$ has none]\label{lem:examinePrime_none}
   \uses{def:examinePrimeExit, def:IsPoint, lem:admits_examinePrime}
-  \lean{Ratpoints.Sieve.not_isPoint_of_examinePrime?_eq_none, Ratpoints.Sieve.isSquare_getD_degree_of_sq_eq_binaryForm}
+  \lean{Ratpoints.Sieve.not_isPoint_of_examinePrime?_eq_none, Ratpoints.Sieve.isSquare_getD_degree_of_sq_eq_binaryForm, Ratpoints.Sieve.getElem!_squaresMod_of_sq_eq, Ratpoints.Sieve.any_isFSquare_examinePrime_of_sq_eq}
   \leanok
-  For a prime $p$ and the degree $d$ of $c$: if the table of $p$ is none, then $c$ has no normalized
-  point of any height.
+  For a prime $p$ and the degree $d$ of $c$: integers $x$ and $y$ and a natural number $z$ with
+  $\gcd(x, z) = 1$ and $y^2 = F(x, z)$ make some entry of the table of $p$
+  (Definition~\ref{def:examinePrime}) true; so if the table of $p$ with the exit is none, then $c$
+  has no normalized point of any height.
 \end{lemma}
 
 \begin{proof}
   \leanok
-  For a point $(x, y, z)$ with $p \nmid z$, the row of $z$ admits $x$
-  (Lemma~\ref{lem:admits_examinePrime}), so that the table marks the residue $x z^{-1}$, at which
-  $f$ takes a square value modulo $p$. For $p \mid z$, $z = 0$ included, $p \nmid x$, and
-  $y^2 \equiv c_D x^D$ modulo $p$, so that $c_D$ is a square modulo $p$; for odd $d$, $c_D = 0$, and
-  the entry at infinity is always set.
+  For $p \nmid z$, the row of $z$ admits $x$ (Lemma~\ref{lem:admits_examinePrime}), so that the
+  table marks the residue $x z^{-1}$, at which $f$ takes a square value modulo $p$. For $p \mid z$,
+  $z = 0$ included, $p \nmid x$, and $y^2 \equiv c_D x^D$ modulo $p$, so that $c_D$ is a square
+  modulo $p$, and the entry at infinity is set; for odd $d$ it is always set.
 \end{proof}
 
 \section{The search and the theorems}\label{sec:setupSearch}

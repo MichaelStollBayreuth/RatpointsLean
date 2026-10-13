@@ -30,22 +30,25 @@ for even `j` the unit part of `c_{d-j}` is a square modulo `p`
 (`Ratpoints.even_and_isSquare_of_sq_eq_binaryForm_of_even`), the Newton polygon of the comment of
 `forbidden_valuations`. So the valuations that `Ratpoints.Sieve.forbiddenAt` excludes, with the unit
 parts of the coefficients (`Ratpoints.Sieve.unitParts`), are those of no denominator of a point, and
-so are the bits of the mask of `Ratpoints.Sieve.forbiddenValuations`. The forbidden divisors
-(`Ratpoints.Sieve.forbidden`) are therefore sound: a prime tested with words divides no denominator
-`b ≤ bHigh` of a point, since the mask holds every valuation that such a denominator can have
-(`Ratpoints.Sieve.allValuations`) or `c_d` is not a square modulo `p`, and its words are those of
-`Ratpoints.Sieve.forbiddenRow`, bit `j` of word `r` clear exactly when `p ∣ 64 r + j`; a prime
-tested by its valuation excludes no denominator of a point. The masks, which the C code keeps in an
-`unsigned long`, stay below `2 ^ 40` for an odd prime and a `long` `b_high`, so that its cap on the
-valuations never binds; the products `pm p` of its loops of the valuations and the square `p p` of a
-prime of the table that its loop over the further primes compares with `b_high` are `long`s
-(`Ratpoints.Setup.fitsLong_mul_of_le_div`, `Ratpoints.Setup.mul_self_lt_of_mem_primeTable`).
+so are the bits of the mask of `Ratpoints.Sieve.forbiddenValuations`, the unit parts read from the
+coefficients reduced modulo `p`. The forbidden divisors (`Ratpoints.Sieve.forbidden`) are therefore
+sound, those of the examined primes that are primes of the table, from their coefficients modulo `p`
+and the entry at infinity of their tables (`Ratpoints.Sieve.forbiddenOfPrime`), and those of the
+further primes: a prime tested with words divides no denominator `b ≤ bHigh` of a point, since the
+mask holds every valuation that such a denominator can have (`Ratpoints.Sieve.allValuations`) or
+there are no points at infinity modulo `p`, that is `c_d` is not a square modulo `p`, and its words
+are those of `Ratpoints.Sieve.forbiddenRow`, bit `j` of word `r` clear exactly when `p ∣ 64 r + j`;
+a prime tested by its valuation excludes no denominator of a point. The masks, which the C code
+keeps in an `unsigned long`, stay below `2 ^ 40` for an odd prime and a `long` `b_high`, so that its
+cap on the valuations never binds; the products `pm p` of its loops of the valuations and the square
+`p p` of a prime of the table that its loop over the further primes compares with `b_high` are
+`long`s (`Ratpoints.Setup.fitsLong_mul_of_le_div`, `Ratpoints.Setup.mul_self_lt_of_mem_primeTable`).
 
 ## Main definitions
 
 * `Ratpoints.Sieve.IsUnitPart`: what an entry of `Ratpoints.Sieve.unitParts` says of a coefficient.
 * `Ratpoints.Sieve.IsForbiddenEntry`, `Ratpoints.Sieve.IsForbiddenVal`: the forbidden divisors that
-  `Ratpoints.Sieve.forbidden` may record.
+  `Ratpoints.Sieve.forbidden` may record, those of the primes of `Ratpoints.primeTable`.
 * `Ratpoints.Sieve.ForbiddenVal.excludes`: whether a forbidden divisor tested by its valuation
   excludes a denominator.
 
@@ -58,12 +61,10 @@ prime of the table that its loop over the further primes compares with `b_high` 
 * `Ratpoints.Sieve.run_forbiddenAt_eq_false_of_sq_eq`,
   `Ratpoints.Sieve.testBit_run_forbiddenValuations_eq_false_of_sq_eq`: no denominator of a point has
   a forbidden valuation.
-* `Ratpoints.Sieve.prime_of_mem_forbidden_fst`, `Ratpoints.Sieve.words_eq_of_mem_forbidden_fst`:
-  the forbidden divisors tested with words are primes with the words of
-  `Ratpoints.Sieve.forbiddenRow`.
-* `Ratpoints.Sieve.not_dvd_of_mem_forbidden_fst`,
-  `Ratpoints.Sieve.ForbiddenVal.excludes_eq_false_of_mem_forbidden_snd`: the forbidden divisors let
-  the denominator of every point through.
+* `Ratpoints.Sieve.IsForbiddenEntry.prime`, `Ratpoints.Sieve.IsForbiddenEntry.words_eq`: the
+  forbidden divisors tested with words are primes with the words of `Ratpoints.Sieve.forbiddenRow`.
+* `Ratpoints.Sieve.IsForbiddenEntry.not_dvd`, `Ratpoints.Sieve.IsForbiddenVal.excludes_eq_false`:
+  the forbidden divisors let the denominator of every point through.
 * `Ratpoints.Sieve.getLsbD_getElem!_forbiddenRow`: the bits of the words of a forbidden divisor.
 * `Ratpoints.Sieve.lt_forty_of_pow_le`, `Ratpoints.Sieve.run_forbiddenValuations_lt`,
   `Ratpoints.Sieve.run_allValuations_lt`: the cap of the loops of the valuations never binds, and
@@ -160,6 +161,12 @@ theorem isUnitPart_of_emod_ne_zero {p : ℕ} (hp : 0 < p) {x : ℤ} (hx : x % (p
   refine ⟨(Int.toNat_lt' hp).mpr (Int.emod_lt_of_pos _ (mod_cast hp)), x, by simp,
     fun h ↦ hx (Int.emod_eq_zero_of_dvd h), ZMod.natCast_toNat_emod x⟩
 
+/-- The residue `r ≠ 0` of the coefficient `x` modulo `p`, as `examine_prime` hands it back,
+describes `x` at `p` with the valuation `0`. -/
+theorem isUnitPart_of_eq_toNat_emod {p : ℕ} (hp : 0 < p) {x : ℤ} {r : ℕ}
+    (hr : r = (x % (p : ℤ)).toNat) (h : r ≠ 0) : IsUnitPart p x (some (0, r)) :=
+  hr ▸ isUnitPart_of_emod_ne_zero hp fun h' ↦ h (by simp [hr, h'])
+
 /-- The valuation of a nonzero coefficient `x` with the residue `r` of `|x| / p ^ w` modulo `p`
 (`Ratpoints.Setup.valuation`), and `p - r` for `x < 0`, describes `x` at `p`: the unit part of `x`
 carries its sign. -/
@@ -218,12 +225,19 @@ theorem UnitPartsInvariant.size_eq_and_isUnitPart {c : List ℤ} {d p : ℕ}
   rw [Std.Legacy.Range.length_toList, Nat.sub_zero] at h
   exact ⟨h.1, fun j hj ↦ h.2 j (by lia)⟩
 
+-- The residue of the coefficient at the cursor of the loop of `Ratpoints.Sieve.unitParts`.
+private theorem getElem!_sub_eq {c : List ℤ} {d p : ℕ} {cm : Array ℕ}
+    (h : 1 < p ∧ ∀ j ≤ d, cm[j]! = (c.getD j 0 % (p : ℤ)).toNat) (k : ℕ) :
+    cm[d - k]! = (c.getD (d - k) 0 % (p : ℤ)).toNat :=
+  h.2 _ (Nat.sub_le d k)
+
 attribute [local irreducible] UnitPartsInvariant in
-/-- The contract of `Ratpoints.Sieve.unitParts`: for `p > 1`, its entries describe the coefficients
-`c_d, …, c_0` at `p` (`Ratpoints.Sieve.IsUnitPart`). -/
+/-- The contract of `Ratpoints.Sieve.unitParts`: for `p > 1` and the coefficients `cm` reduced
+modulo `p`, as `examine_prime` hands them back, its entries describe the coefficients `c_d, …, c_0`
+at `p` (`Ratpoints.Sieve.IsUnitPart`). -/
 @[spec]
-theorem unitParts_spec (c : List ℤ) (d p : ℕ) :
-    ⦃ 1 < p ⦄ unitParts c d p
+theorem unitParts_spec (c : List ℤ) (d p : ℕ) (cm : Array ℕ) :
+    ⦃ 1 < p ∧ ∀ j ≤ d, cm[j]! = (c.getD j 0 % (p : ℤ)).toNat ⦄ unitParts c d p cm
     ⦃ fun us ↦ us.size = d + 1 ∧ ∀ j ≤ d, IsUnitPart p (c.getD (d - j) 0) us[j]! ⦄ := by
   vcgen [unitParts, valuation_value] invariants
   · fun pref _ us ↦ UnitPartsInvariant c d p pref.length us
@@ -231,19 +245,23 @@ theorem unitParts_spec (c : List ℤ) (d p : ℕ) :
     | exact unitPartsInvariant_zero c d p
     | exact UnitPartsInvariant.size_eq_and_isUnitPart ‹_›
     | exact UnitPartsInvariant.push ‹_› ‹_› ‹_›
-    | exact UnitPartsInvariant.push ‹_› ‹_› (isUnitPart_of_eq_run_valuation ‹_› ‹_› ‹_›)
-    | exact UnitPartsInvariant.push ‹_› ‹_› (isUnitPart_of_emod_ne_zero (by lia) ‹_›)
+    | exact UnitPartsInvariant.push ‹_› ‹_›
+        (isUnitPart_of_eq_run_valuation ‹1 < p ∧ _›.1 ‹_› ‹_›)
+    | exact UnitPartsInvariant.push ‹_› ‹_›
+        (isUnitPart_of_eq_toNat_emod (by have := ‹1 < p ∧ _›.1; lia) (getElem!_sub_eq ‹_› _) ‹_›)
 
 /-- `Ratpoints.Sieve.unitParts_spec` as a plain statement. -/
-theorem isUnitPart_run_unitParts (c : List ℤ) (d : ℕ) {p : ℕ} (hp : 1 < p) {j : ℕ} (hj : j ≤ d) :
-    IsUnitPart p (c.getD (d - j) 0) (Id.run (unitParts c d p))[j]! :=
-  (Std.WP.Id.of_run_eq_wp rfl _ ((unitParts_spec c d p).le_wp hp)).2 j hj
+theorem isUnitPart_run_unitParts (c : List ℤ) (d : ℕ) {p : ℕ} (hp : 1 < p) {cm : Array ℕ}
+    (hcm : ∀ j ≤ d, cm[j]! = (c.getD j 0 % (p : ℤ)).toNat) {j : ℕ} (hj : j ≤ d) :
+    IsUnitPart p (c.getD (d - j) 0) (Id.run (unitParts c d p cm))[j]! :=
+  (Std.WP.Id.of_run_eq_wp rfl _ ((unitParts_spec c d p cm).le_wp ⟨hp, hcm⟩)).2 j hj
 
-theorem le_of_getElem!_run_unitParts_eq_some {c : List ℤ} {d p j : ℕ} (hp : 1 < p)
-    {x : ℕ × ℕ} (h : (Id.run (unitParts c d p))[j]! = some x) : j ≤ d := by
+theorem le_of_getElem!_run_unitParts_eq_some {c : List ℤ} {d p j : ℕ} (hp : 1 < p) {cm : Array ℕ}
+    (hcm : ∀ j ≤ d, cm[j]! = (c.getD j 0 % (p : ℤ)).toNat) {x : ℕ × ℕ}
+    (h : (Id.run (unitParts c d p cm))[j]! = some x) : j ≤ d := by
   by_contra hlt
   rw [getElem!_neg _ j (by
-    rw [(Std.WP.Id.of_run_eq_wp rfl _ ((unitParts_spec c d p).le_wp hp)).1]; lia)] at h
+    rw [(Std.WP.Id.of_run_eq_wp rfl _ ((unitParts_spec c d p cm).le_wp ⟨hp, hcm⟩)).1]; lia)] at h
   exact Option.some_ne_none _ h.symm
 
 /-! ### The valuations that the terms exclude -/
@@ -391,21 +409,23 @@ theorem pow_dvd_mul_pow_of_isUnitPart {p : ℕ} {x : ℤ} {o : Option (ℕ × �
 /-- For a point `(a, y, b)` of a curve of even degree with `v_p(b) = m ≥ 1`, a coefficient
 `c_{d-j₀}`, with the entry `(w, r)` at `p`, whose term has a valuation `w + j₀ m` less than those of
 the other terms present has an even `w + j₀ m`, and for even `j₀` a unit part whose residue `r` is
-marked as a square modulo `p` (`Ratpoints.even_and_isSquare_of_sq_eq_binaryForm_of_even`). -/
+marked as a square modulo `p` (`Ratpoints.even_and_isSquare_of_sq_eq_binaryForm_of_even`); `cm` are
+the coefficients reduced modulo `p`. -/
 theorem even_and_getElem!_squaresMod_of_sq_eq {c : List ℤ} (hd : degree c % 2 = 0) {p : ℕ}
-    (hp : p.Prime) {a y : ℤ} {b : ℕ} (hab : Int.gcd a b = 1) (hy : y ^ 2 = binaryForm c a b)
+    (hp : p.Prime) {cm : Array ℕ} (hcm : ∀ j ≤ degree c, cm[j]! = (c.getD j 0 % (p : ℤ)).toNat)
+    {a y : ℤ} {b : ℕ} (hab : Int.gcd a b = 1) (hy : y ^ 2 = binaryForm c a b)
     (hm : padicValNat p b ≠ 0) {j₀ w r : ℕ}
-    (hus : (Id.run (unitParts c (degree c) p))[j₀]! = some (w, r))
-    (hmin : ∀ j, (Id.run (unitParts c (degree c) p))[j]!.isSome → j ≠ j₀ →
+    (hus : (Id.run (unitParts c (degree c) p cm))[j₀]! = some (w, r))
+    (hmin : ∀ j, (Id.run (unitParts c (degree c) p cm))[j]!.isSome → j ≠ j₀ →
       w + j₀ * padicValNat p b <
-        ((Id.run (unitParts c (degree c) p))[j]!.getD (0, 0)).1 + j * padicValNat p b) :
+        ((Id.run (unitParts c (degree c) p cm))[j]!.getD (0, 0)).1 + j * padicValNat p b) :
     Even (w + j₀ * padicValNat p b) ∧ (Even j₀ → (squaresMod p)[r]! = true) := by
   have : Fact p.Prime := ⟨hp⟩
-  have hj₀ := le_of_getElem!_run_unitParts_eq_some hp.one_lt hus
-  obtain ⟨hr, u, hu, hpu, hru⟩ := hus ▸ isUnitPart_run_unitParts c (degree c) hp.one_lt hj₀
+  have hj₀ := le_of_getElem!_run_unitParts_eq_some hp.one_lt hcm hus
+  obtain ⟨hr, u, hu, hpu, hru⟩ := hus ▸ isUnitPart_run_unitParts c (degree c) hp.one_lt hcm hj₀
   obtain ⟨hev, hsq⟩ := even_and_isSquare_of_sq_eq_binaryForm_of_even hd hab hy hm hj₀ hu hpu
     fun i hi hne ↦
-      pow_dvd_mul_pow_of_isUnitPart (isUnitPart_run_unitParts c (degree c) hp.one_lt hi)
+      pow_dvd_mul_pow_of_isUnitPart (isUnitPart_run_unitParts c (degree c) hp.one_lt hcm hi)
         fun w' r' h' ↦ by simpa [h'] using hmin i (by simp [h']) hne
   exact ⟨hev, fun hj ↦ getElem!_squaresMod_of_isSquare hp hr (hru ▸ hsq hj)⟩
 
@@ -414,19 +434,21 @@ has a valuation `v_p(b) ≥ 1` at a prime `p` that `Ratpoints.Sieve.forbiddenAt`
 unit parts of the coefficients at `p` (`Ratpoints.Sieve.unitParts`) and the squares modulo `p`: the
 term of the least valuation would make `F(a, b)` a non-square
 (`Ratpoints.Sieve.even_and_getElem!_squaresMod_of_sq_eq`), and for `c_d = 0` the term of `j = 0`,
-of the valuation `0` and the unit part `0`, a square, is the least one. -/
+of the valuation `0` and the unit part `0`, a square, is the least one; `cm` are the coefficients
+reduced modulo `p`. -/
 theorem run_forbiddenAt_eq_false_of_sq_eq {c : List ℤ} (hd : degree c % 2 = 0) {p : ℕ}
-    (hp : p.Prime) {a y : ℤ} {b : ℕ} (hab : Int.gcd a b = 1) (hy : y ^ 2 = binaryForm c a b)
+    (hp : p.Prime) {cm : Array ℕ} (hcm : ∀ j ≤ degree c, cm[j]! = (c.getD j 0 % (p : ℤ)).toNat)
+    {a y : ℤ} {b : ℕ} (hab : Int.gcd a b = 1) (hy : y ^ 2 = binaryForm c a b)
     (hm : padicValNat p b ≠ 0) :
-    Id.run (forbiddenAt (Id.run (unitParts c (degree c) p)) (squaresMod p) (padicValNat p b)) =
-      false := by
+    Id.run (forbiddenAt (Id.run (unitParts c (degree c) p cm)) (squaresMod p)
+      (padicValNat p b)) = false := by
   refine Bool.eq_false_iff.mpr fun h ↦ ?_
   obtain ⟨j₀, hc, hmin, hcrit⟩ := exists_of_run_forbiddenAt_eq_true h
-  rcases hus : (Id.run (unitParts c (degree c) p))[j₀]! with _ | ⟨w, r⟩
+  rcases hus : (Id.run (unitParts c (degree c) p cm))[j₀]! with _ | ⟨w, r⟩
   · obtain rfl : j₀ = 0 := hc.resolve_right (by simp [hus])
     simp [hus, getElem!_squaresMod_zero hp] at hcrit
   simp only [hus, Option.getD_some] at hmin hcrit
-  obtain ⟨hev, hsq⟩ := even_and_getElem!_squaresMod_of_sq_eq hd hp hab hy hm hus
+  obtain ⟨hev, hsq⟩ := even_and_getElem!_squaresMod_of_sq_eq hd hp hcm hab hy hm hus
     fun j hj hne ↦ hmin j (.inr hj) hne
   rcases hcrit with hodd | ⟨hj, hs⟩
   · exact Nat.not_even_iff_odd.mpr (Nat.odd_iff.mpr hodd) hev
@@ -548,8 +570,8 @@ private theorem testBit_eq_or {x y : Bool} (hx : x = y) (hy : ¬x = true) (mask 
   simp [← hx, Bool.eq_false_iff.mpr hy]
 
 -- The unit parts and the test of a valuation, as values for the contract of the mask.
-private theorem unitParts_value (c : List ℤ) (d p : ℕ) :
-    ⦃ True ⦄ unitParts c d p ⦃ fun r ↦ r = Id.run (unitParts c d p) ⦄ :=
+private theorem unitParts_value (c : List ℤ) (d p : ℕ) (cm : Array ℕ) :
+    ⦃ True ⦄ unitParts c d p cm ⦃ fun r ↦ r = Id.run (unitParts c d p cm) ⦄ :=
   ⟨fun _ ↦ rfl⟩
 
 private theorem forbiddenAt_value (us : Array (Option (ℕ × ℕ))) (sq : Array Bool) (m : ℕ) :
@@ -561,19 +583,19 @@ attribute [local irreducible] ValuationsInvariant in
 the `m ≥ 1` with `p ^ m ≤ bHigh` that `Ratpoints.Sieve.forbiddenAt` excludes. The loop ends for
 `p > 1`, since `pm = p ^ m` grows and stays at most `bHigh` while it goes on. -/
 @[spec]
-theorem forbiddenValuations_spec (c : List ℤ) (d p bHigh : ℕ) :
-    ⦃ 1 < p ⦄ forbiddenValuations c d p bHigh
+theorem forbiddenValuations_spec (c : List ℤ) (d p bHigh : ℕ) (cm : Array ℕ) :
+    ⦃ 1 < p ⦄ forbiddenValuations c d p bHigh cm
     ⦃ fun mask ↦ ∀ m, mask.testBit m = (decide (1 ≤ m) && decide (p ^ m ≤ bHigh) &&
-        Id.run (forbiddenAt (Id.run (unitParts c d p)) (squaresMod p) m)) ⦄ := by
+        Id.run (forbiddenAt (Id.run (unitParts c d p cm)) (squaresMod p) m)) ⦄ := by
   vcgen [forbiddenValuations, unitParts_value, forbiddenAt_value] invariants
-  · ValuationsInvariant (fun m ↦ Id.run (forbiddenAt (Id.run (unitParts c d p)) (squaresMod p) m))
-      p bHigh
+  · ValuationsInvariant
+      (fun m ↦ Id.run (forbiddenAt (Id.run (unitParts c d p cm)) (squaresMod p) m)) p bHigh
   · .ofMeasure fun s : ℕ × ℕ × ℕ ↦ bHigh + 1 - s.2.2
   all_goals try simp only [Std.WP.Variant.evalsTo_ofMeasure,
     Std.WP.Variant.evalsBelow_ofMeasure_nat, Std.WP.Assertion.NondetFun.evalsTo_pure,
     Lean.Order.meet_prop_eq_and, Lean.Order.ofProp_prop_eq] at *
   all_goals try obtain ⟨rfl, _⟩ := ‹_ = _ ∧ ValuationsInvariant _ _ _ false _›
-  all_goals subst ‹_ = Id.run (unitParts _ _ _)›
+  all_goals subst ‹_ = Id.run (unitParts _ _ _ _)›
   all_goals first
     | exact valuationsInvariant_zero_one _ _ _
     | exact ‹ValuationsInvariant _ _ _ true _›.testBit _
@@ -609,221 +631,80 @@ theorem allValuations_spec (p bHigh : ℕ) :
     | exact ValuationsInvariant.exit (by lia) ‹_› ‹_›
 
 /-- `Ratpoints.Sieve.forbiddenValuations_spec` as a plain statement. -/
-theorem testBit_run_forbiddenValuations (c : List ℤ) (d : ℕ) {p : ℕ} (hp : 1 < p) (bHigh m : ℕ) :
-    (Id.run (forbiddenValuations c d p bHigh)).testBit m = (decide (1 ≤ m) &&
-      decide (p ^ m ≤ bHigh) && Id.run (forbiddenAt (Id.run (unitParts c d p)) (squaresMod p) m)) :=
-  Std.WP.Id.of_run_eq_wp rfl _ ((forbiddenValuations_spec c d p bHigh).le_wp hp) m
+theorem testBit_run_forbiddenValuations (c : List ℤ) (d : ℕ) {p : ℕ} (hp : 1 < p) (bHigh : ℕ)
+    (cm : Array ℕ) (m : ℕ) :
+    (Id.run (forbiddenValuations c d p bHigh cm)).testBit m = (decide (1 ≤ m) &&
+      decide (p ^ m ≤ bHigh) &&
+        Id.run (forbiddenAt (Id.run (unitParts c d p cm)) (squaresMod p) m)) :=
+  Std.WP.Id.of_run_eq_wp rfl _ ((forbiddenValuations_spec c d p bHigh cm).le_wp hp) m
 
 /-- `Ratpoints.Sieve.allValuations_spec` as a plain statement. -/
 theorem testBit_run_allValuations {p : ℕ} (hp : 1 < p) (bHigh m : ℕ) :
     (Id.run (allValuations p bHigh)).testBit m = (decide (1 ≤ m) && decide (p ^ m ≤ bHigh)) :=
   Std.WP.Id.of_run_eq_wp rfl _ ((allValuations_spec p bHigh).le_wp hp) m
 
-/-- The mask of the forbidden valuations at a prime `p` has no bit `v_p(b)` for the denominator `b`
-of a point of a curve of even degree (`Ratpoints.Sieve.run_forbiddenAt_eq_false_of_sq_eq`); its bit
-`0` is never set. -/
+/-- The mask of the forbidden valuations at a prime `p`, with the coefficients `cm` reduced modulo
+`p`, has no bit `v_p(b)` for the denominator `b` of a point of a curve of even degree
+(`Ratpoints.Sieve.run_forbiddenAt_eq_false_of_sq_eq`); its bit `0` is never set. -/
 theorem testBit_run_forbiddenValuations_eq_false_of_sq_eq {c : List ℤ} (hd : degree c % 2 = 0)
-    {p : ℕ} (hp : p.Prime) (bHigh : ℕ) {a y : ℤ} {b : ℕ} (hab : Int.gcd a b = 1)
-    (hy : y ^ 2 = binaryForm c a b) :
-    (Id.run (forbiddenValuations c (degree c) p bHigh)).testBit (padicValNat p b) = false := by
+    {p : ℕ} (hp : p.Prime) (bHigh : ℕ) {cm : Array ℕ}
+    (hcm : ∀ j ≤ degree c, cm[j]! = (c.getD j 0 % (p : ℤ)).toNat) {a y : ℤ} {b : ℕ}
+    (hab : Int.gcd a b = 1) (hy : y ^ 2 = binaryForm c a b) :
+    (Id.run (forbiddenValuations c (degree c) p bHigh cm)).testBit (padicValNat p b) = false := by
   rw [testBit_run_forbiddenValuations c _ hp.one_lt]
   rcases eq_or_ne (padicValNat p b) 0 with h0 | h0
   · simp [h0]
-  · simp [run_forbiddenAt_eq_false_of_sq_eq hd hp hab hy h0]
+  · simp [run_forbiddenAt_eq_false_of_sq_eq hd hp hcm hab hy h0]
 
 /-! ### The forbidden divisors -/
 
-/-- A forbidden divisor tested with words that the examined prime `p` gives is `p` with its words,
-for a mask of the forbidden valuations at `p ∣ c_d` that holds every valuation a denominator can
-have, or for `c_d` not a square modulo `p`. -/
-theorem eq_of_run_forbiddenOfPrime_eq_inl {c : List ℤ} {d p bHigh : ℕ} {e : ForbiddenEntry}
-    (h : Id.run (forbiddenOfPrime c d p bHigh) = some (.inl e)) :
-    e = ⟨p, forbiddenRow p⟩ ∧ ((c.getD d 0 % (p : ℤ) = 0 ∧
-      Id.run (forbiddenValuations c d p bHigh) &&& Id.run (allValuations p bHigh) =
-        Id.run (allValuations p bHigh)) ∨
-      (squaresMod p)[(c.getD d 0 % (p : ℤ)).toNat]! = false) := by
+/-- A forbidden divisor tested with words that the examined prime `p` gives, from the coefficients
+`cm` reduced modulo `p` and the entry `atInf` at infinity of the table of `p`, is `p` with its
+words, for a mask of the forbidden valuations at `p ∣ c_d` that holds every valuation a denominator
+can have, or for no points at infinity modulo `p`. -/
+theorem eq_of_run_forbiddenOfPrime_eq_inl {c : List ℤ} {d p bHigh : ℕ} {cm : Array ℕ}
+    {atInf : Bool} {e : ForbiddenEntry}
+    (h : Id.run (forbiddenOfPrime c d p bHigh cm atInf) = some (.inl e)) :
+    e = ⟨p, forbiddenRow p⟩ ∧ ((cm[d]! = 0 ∧
+      Id.run (forbiddenValuations c d p bHigh cm) &&& Id.run (allValuations p bHigh) =
+        Id.run (allValuations p bHigh)) ∨ atInf = false) := by
   simp only [forbiddenOfPrime, apply_ite Id.run, Id.run_bind] at h
   split_ifs at h <;> simp_all
 
-/-- A forbidden divisor tested by its valuation that the examined prime `p` gives is `p` with the
-mask of the forbidden valuations. -/
-theorem eq_of_run_forbiddenOfPrime_eq_inr {c : List ℤ} {d p bHigh : ℕ} {e : ForbiddenVal}
-    (h : Id.run (forbiddenOfPrime c d p bHigh) = some (.inr e)) :
-    e = ⟨p, Id.run (forbiddenValuations c d p bHigh)⟩ := by
+/-- A forbidden divisor tested by its valuation that the examined prime `p` gives, from the
+coefficients `cm` reduced modulo `p`, is `p` with the mask of the forbidden valuations. -/
+theorem eq_of_run_forbiddenOfPrime_eq_inr {c : List ℤ} {d p bHigh : ℕ} {cm : Array ℕ}
+    {atInf : Bool} {e : ForbiddenVal}
+    (h : Id.run (forbiddenOfPrime c d p bHigh cm atInf) = some (.inr e)) :
+    e = ⟨p, Id.run (forbiddenValuations c d p bHigh cm)⟩ := by
   simp only [forbiddenOfPrime, apply_ite Id.run, Id.run_bind] at h
   split_ifs at h <;> simp_all
 
-/-- **A forbidden divisor tested with words that an examined prime gives is sound**: for a point
-`(a, y, b)` of a curve of even degree with `b ≤ bHigh`, the prime would divide `b` with a valuation
-that the mask holds, if it holds every valuation a denominator can have, or `c_d` would be a square
+/-- **A forbidden divisor tested with words that an examined prime gives is sound**, from the
+coefficients `cm` reduced modulo `p` and the entry `atInf` at infinity of the table of `p`, as
+`examine_prime` hands them back: for a point `(a, y, b)` of a curve of even degree with `b ≤ bHigh`,
+the prime would divide `b` with a valuation that the mask holds, if it holds every valuation a
+denominator can have, or `c_d` would be a square modulo `p`, so that there are points at infinity
 modulo `p`. -/
 theorem not_dvd_of_run_forbiddenOfPrime_eq_inl {c : List ℤ} (hd : degree c % 2 = 0) {p bHigh : ℕ}
-    (hp : p.Prime) {e : ForbiddenEntry}
-    (he : Id.run (forbiddenOfPrime c (degree c) p bHigh) = some (.inl e)) {a y : ℤ} {b : ℕ}
-    (hb : b ≠ 0) (hbH : b ≤ bHigh) (hab : Int.gcd a b = 1) (hy : y ^ 2 = binaryForm c a b) :
-    ¬p ∣ b := by
+    (hp : p.Prime) {cm : Array ℕ} (hcm : ∀ j ≤ degree c, cm[j]! = (c.getD j 0 % (p : ℤ)).toNat)
+    {atInf : Bool} (hinf : atInf = (examinePrime c (degree c) p).isFSquare[p]!)
+    {e : ForbiddenEntry}
+    (he : Id.run (forbiddenOfPrime c (degree c) p bHigh cm atInf) = some (.inl e)) {a y : ℤ}
+    {b : ℕ} (hb : b ≠ 0) (hbH : b ≤ bHigh) (hab : Int.gcd a b = 1)
+    (hy : y ^ 2 = binaryForm c a b) : ¬p ∣ b := by
   intro hpb
-  rcases (eq_of_run_forbiddenOfPrime_eq_inl he).2 with ⟨-, hall⟩ | hsq
+  rcases (eq_of_run_forbiddenOfPrime_eq_inl he).2 with ⟨-, hall⟩ | rfl
   · have : Fact p.Prime := ⟨hp⟩
     have hv : padicValNat p b ≠ 0 := Nat.pos_iff_ne_zero.mp (one_le_padicValNat_of_dvd hb hpb)
     have hle : p ^ padicValNat p b ≤ bHigh := (Nat.le_of_dvd (by lia) pow_padicValNat_dvd).trans hbH
     have := congr(Nat.testBit $hall (padicValNat p b))
     simp only [Nat.testBit_and, testBit_run_allValuations hp.one_lt,
-      testBit_run_forbiddenValuations_eq_false_of_sq_eq hd hp bHigh hab hy] at this
+      testBit_run_forbiddenValuations_eq_false_of_sq_eq hd hp bHigh hcm hab hy] at this
     simp [hv, hle] at this
-  · exact Bool.false_ne_true (hsq.symm.trans (getElem!_squaresMod_of_sq_eq hd hp hab hy hpb))
-
-/-- A forbidden divisor tested with words that `Ratpoints.Sieve.forbidden` may record for the
-examined primes `moduli`: the one of an examined prime (`Ratpoints.Sieve.forbiddenOfPrime`), or a
-prime of `Ratpoints.primeTable` with its words (`Ratpoints.Sieve.forbiddenRow`) at which `c_d` is
-not a square. -/
-def IsForbiddenEntry (c : List ℤ) (d : ℕ) (moduli : List ℕ) (bHigh : ℕ) (e : ForbiddenEntry) :
-    Prop :=
-  (∃ p ∈ moduli, Id.run (forbiddenOfPrime c d p bHigh) = some (.inl e)) ∨
-    (e.p ∈ primeTable ∧ e.words = forbiddenRow e.p ∧
-      (squaresMod e.p)[(c.getD d 0 % (e.p : ℤ)).toNat]! = false)
-
-/-- A forbidden divisor tested by its valuation that `Ratpoints.Sieve.forbidden` may record for the
-examined primes `moduli`: the one of an examined prime (`Ratpoints.Sieve.forbiddenOfPrime`). -/
-def IsForbiddenVal (c : List ℤ) (d : ℕ) (moduli : List ℕ) (bHigh : ℕ) (e : ForbiddenVal) : Prop :=
-  ∃ p ∈ moduli, Id.run (forbiddenOfPrime c d p bHigh) = some (.inr e)
-
-/-- The invariant of the loop of `Ratpoints.Sieve.forbidden` over the examined primes, on the
-forbidden divisors found so far. -/
-def ForbiddenInvariant (c : List ℤ) (d : ℕ) (moduli : List ℕ) (bHigh : ℕ)
-    (s : Array ForbiddenEntry × Array ForbiddenVal) : Prop :=
-  (∀ e ∈ s.1, IsForbiddenEntry c d moduli bHigh e) ∧ ∀ e ∈ s.2, IsForbiddenVal c d moduli bHigh e
-
-theorem forbiddenInvariant_empty (c : List ℤ) (d : ℕ) (moduli : List ℕ) (bHigh : ℕ) :
-    ForbiddenInvariant c d moduli bHigh (#[], #[]) :=
-  ⟨nofun, nofun⟩
-
-theorem ForbiddenInvariant.fst {c : List ℤ} {d : ℕ} {moduli : List ℕ} {bHigh : ℕ}
-    {ba : Array ForbiddenEntry} {val : Array ForbiddenVal}
-    (h : ForbiddenInvariant c d moduli bHigh (ba, val)) :
-    ∀ e ∈ ba, IsForbiddenEntry c d moduli bHigh e :=
-  h.1
-
-theorem ForbiddenInvariant.push_inl {c : List ℤ} {d : ℕ} {moduli pref suff : List ℕ} {cur : ℕ}
-    {bHigh : ℕ} {ba : Array ForbiddenEntry} {val : Array ForbiddenVal}
-    {o : Option (ForbiddenEntry ⊕ ForbiddenVal)} {e : ForbiddenEntry}
-    (h : ForbiddenInvariant c d moduli bHigh (ba, val)) (hl : moduli = pref ++ cur :: suff)
-    (ho : o = Id.run (forbiddenOfPrime c d cur bHigh)) (he : o = some (.inl e)) :
-    ForbiddenInvariant c d moduli bHigh (ba.push e, val) :=
-  ⟨Array.forall_mem_push.mpr ⟨.inl ⟨cur, by simp [hl], ho ▸ he⟩, h.1⟩, h.2⟩
-
-theorem ForbiddenInvariant.push_inr {c : List ℤ} {d : ℕ} {moduli pref suff : List ℕ} {cur : ℕ}
-    {bHigh : ℕ} {ba : Array ForbiddenEntry} {val : Array ForbiddenVal}
-    {o : Option (ForbiddenEntry ⊕ ForbiddenVal)} {e : ForbiddenVal}
-    (h : ForbiddenInvariant c d moduli bHigh (ba, val)) (hl : moduli = pref ++ cur :: suff)
-    (ho : o = Id.run (forbiddenOfPrime c d cur bHigh)) (he : o = some (.inr e)) :
-    ForbiddenInvariant c d moduli bHigh (ba, val.push e) :=
-  ⟨h.1, Array.forall_mem_push.mpr ⟨⟨cur, by simp [hl], ho ▸ he⟩, h.2⟩⟩
-
-/-- A prime of the table at which `c_d` is not a square, recorded with its words by the loop of
-`Ratpoints.Sieve.forbidden` over the further primes. -/
-theorem forall_isForbiddenEntry_push {c : List ℤ} {d : ℕ} {moduli pref suff : List ℕ} {cur : ℕ}
-    {bHigh : ℕ} {ba : Array ForbiddenEntry} (h : ∀ e ∈ ba, IsForbiddenEntry c d moduli bHigh e)
-    (hl : ForIn.toList [moduli.length:primeTable.size] = pref ++ cur :: suff)
-    (hs : (!(squaresMod primeTable[cur]!)[(c.getD d 0 % (primeTable[cur]! : ℤ)).toNat]!) = true) :
-    ∀ e ∈ ba.push ⟨primeTable[cur]!, forbiddenRow primeTable[cur]!⟩,
-      IsForbiddenEntry c d moduli bHigh e := by
-  have hcur : cur < primeTable.size := by
-    have := Std.Legacy.Range.add_length_eq_of_toList_eq_append_cons hl
-    have := Std.Legacy.Range.length_add_length_add_one_of_toList_eq_append_cons hl
-    lia
-  -- `rfl` for the words would unfold `Ratpoints.Sieve.forbiddenRow` until the recursion limit
-  refine Array.forall_mem_push.mpr ⟨.inr ⟨?_, by dsimp only, Bool.not_eq_true' _ ▸ hs⟩, h⟩
-  rw [getElem!_pos primeTable cur hcur]
-  exact Array.getElem_mem hcur
-
-theorem ForbiddenInvariant.isForbiddenEntry_and_isForbiddenVal {c : List ℤ} {d : ℕ}
-    {moduli : List ℕ} {bHigh : ℕ} {ba ba' : Array ForbiddenEntry} {val : Array ForbiddenVal}
-    (h : ForbiddenInvariant c d moduli bHigh (ba, val))
-    (h' : ∀ e ∈ ba', IsForbiddenEntry c d moduli bHigh e) :
-    (∀ e ∈ ba'.toList, IsForbiddenEntry c d moduli bHigh e) ∧
-      ∀ e ∈ val.toList, IsForbiddenVal c d moduli bHigh e :=
-  ⟨fun e he ↦ h' e (Array.mem_toList_iff.mp he), fun e he ↦ h.2 e (Array.mem_toList_iff.mp he)⟩
-
--- The entry that an examined prime gives, as a value for the contract of the forbidden divisors.
-private theorem forbiddenOfPrime_value (c : List ℤ) (d p bHigh : ℕ) :
-    ⦃ True ⦄ forbiddenOfPrime c d p bHigh ⦃ fun r ↦ r = Id.run (forbiddenOfPrime c d p bHigh) ⦄ :=
-  ⟨fun _ ↦ rfl⟩
-
-attribute [local irreducible] IsForbiddenEntry IsForbiddenVal ForbiddenInvariant in
-/-- The contract of `Ratpoints.Sieve.forbidden`: each forbidden divisor tested with words is that of
-an examined prime or a prime of the table with its words at which `c_d` is not a square
-(`Ratpoints.Sieve.IsForbiddenEntry`), and each one tested by its valuation is that of an examined
-prime (`Ratpoints.Sieve.IsForbiddenVal`). -/
-@[spec]
-theorem forbidden_spec (c : List ℤ) (d : ℕ) (moduli : List ℕ) (maxForbidden bHigh : ℕ) :
-    ⦃ True ⦄ forbidden c d moduli maxForbidden bHigh
-    ⦃ fun r ↦ (∀ e ∈ r.1, IsForbiddenEntry c d moduli bHigh e) ∧
-        ∀ e ∈ r.2, IsForbiddenVal c d moduli bHigh e ⦄ := by
-  vcgen [forbidden, forbiddenOfPrime_value] invariants
-  · fun _ _ s ↦ ForbiddenInvariant c d moduli bHigh s
-  · fun _ _ ba ↦ ∀ e ∈ ba, IsForbiddenEntry c d moduli bHigh e
-  all_goals try dsimp only at *
-  all_goals first
-    | exact forbiddenInvariant_empty c d moduli bHigh
-    | exact ForbiddenInvariant.fst ‹_› _ ‹_›
-    | exact ForbiddenInvariant.isForbiddenEntry_and_isForbiddenVal ‹_›
-        ‹∀ e ∈ _, IsForbiddenEntry _ _ _ _ e›
-    | exact ForbiddenInvariant.isForbiddenEntry_and_isForbiddenVal ‹_› (ForbiddenInvariant.fst ‹_›)
-    | exact ForbiddenInvariant.push_inl ‹_› ‹_› ‹_› ‹_›
-    | exact ForbiddenInvariant.push_inr ‹_› ‹_› ‹_› ‹_›
-    | exact forall_isForbiddenEntry_push ‹_› ‹_› ‹_›
-    | assumption
-
-/-- `Ratpoints.Sieve.forbidden_spec` as a plain statement for the forbidden divisors tested with
-words. -/
-theorem isForbiddenEntry_of_mem_forbidden_fst {c : List ℤ} {d : ℕ} {moduli : List ℕ}
-    {maxForbidden bHigh : ℕ} {e : ForbiddenEntry}
-    (he : e ∈ (Id.run (forbidden c d moduli maxForbidden bHigh)).1) :
-    IsForbiddenEntry c d moduli bHigh e :=
-  (Std.WP.Id.of_run_eq_wp rfl _ ((forbidden_spec c d moduli maxForbidden bHigh).le_wp trivial)).1
-    e he
-
-/-- `Ratpoints.Sieve.forbidden_spec` as a plain statement for the forbidden divisors tested by
-their valuations. -/
-theorem isForbiddenVal_of_mem_forbidden_snd {c : List ℤ} {d : ℕ} {moduli : List ℕ}
-    {maxForbidden bHigh : ℕ} {e : ForbiddenVal}
-    (he : e ∈ (Id.run (forbidden c d moduli maxForbidden bHigh)).2) :
-    IsForbiddenVal c d moduli bHigh e :=
-  (Std.WP.Id.of_run_eq_wp rfl _ ((forbidden_spec c d moduli maxForbidden bHigh).le_wp trivial)).2
-    e he
-
-theorem prime_of_mem_forbidden_fst {c : List ℤ} {d : ℕ} {moduli : List ℕ}
-    (hm : ∀ p ∈ moduli, p.Prime) {maxForbidden bHigh : ℕ} {e : ForbiddenEntry}
-    (he : e ∈ (Id.run (forbidden c d moduli maxForbidden bHigh)).1) : e.p.Prime := by
-  rcases isForbiddenEntry_of_mem_forbidden_fst he with ⟨p, hp, h⟩ | ⟨h, -⟩
-  · obtain ⟨rfl, -⟩ := eq_of_run_forbiddenOfPrime_eq_inl h
-    exact hm p hp
-  · exact prime_of_mem_primeTable h
-
-theorem words_eq_of_mem_forbidden_fst {c : List ℤ} {d : ℕ} {moduli : List ℕ}
-    {maxForbidden bHigh : ℕ} {e : ForbiddenEntry}
-    (he : e ∈ (Id.run (forbidden c d moduli maxForbidden bHigh)).1) :
-    e.words = forbiddenRow e.p := by
-  rcases isForbiddenEntry_of_mem_forbidden_fst he with ⟨p, -, h⟩ | ⟨-, h, -⟩
-  · obtain ⟨rfl, -⟩ := eq_of_run_forbiddenOfPrime_eq_inl h
-    dsimp only
-  · exact h
-
-/-- A forbidden divisor tested with words divides no denominator `b ≤ bHigh` of a point of a curve
-of even degree: either every valuation that such a denominator can have at `p` is excluded by the
-terms of `F(a, b)` (`Ratpoints.Sieve.forbiddenValuations`), or `c_d` is not a square modulo `p`
-while `F(a, b) ≡ c_d a ^ d (mod p)` for `p ∣ b`. -/
-theorem not_dvd_of_mem_forbidden_fst {c : List ℤ} {moduli : List ℕ} (hm : ∀ p ∈ moduli, p.Prime)
-    {maxForbidden bHigh : ℕ} {e : ForbiddenEntry}
-    (he : e ∈ (Id.run (forbidden c (degree c) moduli maxForbidden bHigh)).1)
-    (hd : degree c % 2 = 0) {a y : ℤ} {b : ℕ} (hb : b ≠ 0) (hbH : b ≤ bHigh)
-    (hab : Int.gcd a b = 1) (hy : y ^ 2 = binaryForm c a b) : ¬e.p ∣ b := by
-  rcases isForbiddenEntry_of_mem_forbidden_fst he with ⟨p, hp, h⟩ | ⟨h, -, hsq⟩
-  · obtain ⟨rfl, -⟩ := eq_of_run_forbiddenOfPrime_eq_inl h
-    exact not_dvd_of_run_forbiddenOfPrime_eq_inl hd (hm p hp) h hb hbH hab hy
-  · exact fun hpb ↦ Bool.false_ne_true (hsq.symm.trans
-      (getElem!_squaresMod_of_sq_eq hd (prime_of_mem_primeTable h) hab hy hpb))
+  · rw [getElem!_isFSquare_examinePrime_self, getElem!_squaresMod_of_sq_eq hd hp hab hy hpb,
+      Bool.or_true] at hinf
+    cases hinf
 
 /-- Whether the forbidden divisor `e` tested by its valuation excludes the denominator `b`: bit
 `v_p(b)` of its mask, for the valuation `v_p(b)` of `Ratpoints.Setup.valuation`, the test that the
@@ -835,19 +716,194 @@ theorem ForbiddenVal.excludes_eq_false_iff {e : ForbiddenVal} {b : ℕ} :
     e.excludes b = false ↔ ¬e.mask.testBit (Id.run (Setup.valuation b e.p)).1 = true :=
   Bool.eq_false_iff
 
-/-- A forbidden divisor tested by its valuation excludes no denominator of a point of a curve of
-even degree: the valuations of its mask are excluded by the terms of `F(a, b)`
+/-- A forbidden divisor tested by its valuation that an examined prime `p` gives, from the
+coefficients `cm` reduced modulo `p`, excludes no denominator of a point of a curve of even degree:
+the valuations of its mask are excluded by the terms of `F(a, b)`
 (`Ratpoints.Sieve.forbiddenValuations`). -/
-theorem ForbiddenVal.excludes_eq_false_of_mem_forbidden_snd {c : List ℤ} {moduli : List ℕ}
-    (hm : ∀ p ∈ moduli, p.Prime) {maxForbidden bHigh : ℕ} {e : ForbiddenVal}
-    (he : e ∈ (Id.run (forbidden c (degree c) moduli maxForbidden bHigh)).2)
-    (hd : degree c % 2 = 0) {a y : ℤ} {b : ℕ} (hb : b ≠ 0) (hab : Int.gcd a b = 1)
-    (hy : y ^ 2 = binaryForm c a b) : e.excludes b = false := by
-  obtain ⟨p, hp, h⟩ := isForbiddenVal_of_mem_forbidden_snd he
-  obtain rfl := eq_of_run_forbiddenOfPrime_eq_inr h
-  rw [excludes_eq_false_iff, Setup.fst_run_valuation (Int.natCast_ne_zero.mpr hb)
-    (hm p hp).one_lt, Int.natAbs_natCast, Bool.not_eq_true]
-  exact testBit_run_forbiddenValuations_eq_false_of_sq_eq hd (hm p hp) bHigh hab hy
+theorem ForbiddenVal.excludes_eq_false_of_run_forbiddenOfPrime_eq_inr {c : List ℤ}
+    (hd : degree c % 2 = 0) {p bHigh : ℕ} (hp : p.Prime) {cm : Array ℕ}
+    (hcm : ∀ j ≤ degree c, cm[j]! = (c.getD j 0 % (p : ℤ)).toNat) {atInf : Bool}
+    {e : ForbiddenVal}
+    (he : Id.run (forbiddenOfPrime c (degree c) p bHigh cm atInf) = some (.inr e))
+    {a y : ℤ} {b : ℕ} (hb : b ≠ 0) (hab : Int.gcd a b = 1) (hy : y ^ 2 = binaryForm c a b) :
+    e.excludes b = false := by
+  obtain rfl := eq_of_run_forbiddenOfPrime_eq_inr he
+  rw [excludes_eq_false_iff, Setup.fst_run_valuation (Int.natCast_ne_zero.mpr hb) hp.one_lt,
+    Int.natAbs_natCast, Bool.not_eq_true]
+  exact testBit_run_forbiddenValuations_eq_false_of_sq_eq hd hp bHigh hcm hab hy
+
+/-- A forbidden divisor tested with words that `Ratpoints.Sieve.forbidden` may record: the one of a
+prime `p` of `Ratpoints.primeTable` from the coefficients reduced modulo `p` and the entry at
+infinity of the table of `p` (`Ratpoints.Sieve.forbiddenOfPrime`), or a prime of the table with its
+words (`Ratpoints.Sieve.forbiddenRow`) at which `c_d` is not a square. -/
+def IsForbiddenEntry (c : List ℤ) (d bHigh : ℕ) (e : ForbiddenEntry) : Prop :=
+  (∃ p ∈ primeTable, Id.run (forbiddenOfPrime c d p bHigh
+      ((Array.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat)
+      (examinePrime c d p).isFSquare[p]!) = some (.inl e)) ∨
+    (e.p ∈ primeTable ∧ e.words = forbiddenRow e.p ∧
+      (squaresMod e.p)[(c.getD d 0 % (e.p : ℤ)).toNat]! = false)
+
+/-- A forbidden divisor tested by its valuation that `Ratpoints.Sieve.forbidden` may record: the one
+of a prime `p` of `Ratpoints.primeTable` from the coefficients reduced modulo `p` and the entry at
+infinity of the table of `p` (`Ratpoints.Sieve.forbiddenOfPrime`). -/
+def IsForbiddenVal (c : List ℤ) (d bHigh : ℕ) (e : ForbiddenVal) : Prop :=
+  ∃ p ∈ primeTable, Id.run (forbiddenOfPrime c d p bHigh
+    ((Array.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat)
+    (examinePrime c d p).isFSquare[p]!) = some (.inr e)
+
+theorem getElem!_map_range_toNat_emod (c : List ℤ) (d p : ℕ) {j : ℕ} (hj : j ≤ d) :
+    ((Array.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat)[j]! =
+      (c.getD j 0 % (p : ℤ)).toNat :=
+  Array.getElem!_map_range _ (Nat.lt_succ_of_le hj)
+
+theorem IsForbiddenEntry.prime {c : List ℤ} {d bHigh : ℕ} {e : ForbiddenEntry}
+    (h : IsForbiddenEntry c d bHigh e) : e.p.Prime := by
+  rcases h with ⟨p, hp, h⟩ | ⟨h, -⟩
+  · obtain ⟨rfl, -⟩ := eq_of_run_forbiddenOfPrime_eq_inl h
+    exact prime_of_mem_primeTable hp
+  · exact prime_of_mem_primeTable h
+
+theorem IsForbiddenEntry.words_eq {c : List ℤ} {d bHigh : ℕ} {e : ForbiddenEntry}
+    (h : IsForbiddenEntry c d bHigh e) : e.words = forbiddenRow e.p := by
+  rcases h with ⟨p, -, h⟩ | ⟨-, h, -⟩
+  · obtain ⟨rfl, -⟩ := eq_of_run_forbiddenOfPrime_eq_inl h
+    dsimp only
+  · exact h
+
+/-- A forbidden divisor tested with words divides no denominator `b ≤ bHigh` of a point of a curve
+of even degree: either every valuation that such a denominator can have at `p` is excluded by the
+terms of `F(a, b)` (`Ratpoints.Sieve.forbiddenValuations`), or `c_d` is not a square modulo `p`
+while `F(a, b) ≡ c_d a ^ d (mod p)` for `p ∣ b`. -/
+theorem IsForbiddenEntry.not_dvd {c : List ℤ} {bHigh : ℕ} {e : ForbiddenEntry}
+    (h : IsForbiddenEntry c (degree c) bHigh e) (hd : degree c % 2 = 0) {a y : ℤ} {b : ℕ}
+    (hb : b ≠ 0) (hbH : b ≤ bHigh) (hab : Int.gcd a b = 1) (hy : y ^ 2 = binaryForm c a b) :
+    ¬e.p ∣ b := by
+  rcases h with ⟨p, hp, h⟩ | ⟨h, -, hsq⟩
+  · obtain ⟨rfl, -⟩ := eq_of_run_forbiddenOfPrime_eq_inl h
+    exact not_dvd_of_run_forbiddenOfPrime_eq_inl hd (prime_of_mem_primeTable hp)
+      (fun _ hj ↦ getElem!_map_range_toNat_emod c _ p hj) rfl h hb hbH hab hy
+  · exact fun hpb ↦ Bool.false_ne_true (hsq.symm.trans
+      (getElem!_squaresMod_of_sq_eq hd (prime_of_mem_primeTable h) hab hy hpb))
+
+/-- A forbidden divisor tested by its valuation excludes no denominator of a point of a curve of
+even degree (`Ratpoints.Sieve.ForbiddenVal.excludes_eq_false_of_run_forbiddenOfPrime_eq_inr`). -/
+theorem IsForbiddenVal.excludes_eq_false {c : List ℤ} {bHigh : ℕ} {e : ForbiddenVal}
+    (h : IsForbiddenVal c (degree c) bHigh e) (hd : degree c % 2 = 0) {a y : ℤ} {b : ℕ}
+    (hb : b ≠ 0) (hab : Int.gcd a b = 1) (hy : y ^ 2 = binaryForm c a b) :
+    e.excludes b = false :=
+  let ⟨p, hp, h⟩ := h
+  ForbiddenVal.excludes_eq_false_of_run_forbiddenOfPrime_eq_inr hd (prime_of_mem_primeTable hp)
+    (fun _ hj ↦ getElem!_map_range_toNat_emod c _ p hj) h hb hab hy
+
+/-! ### The loops of the forbidden divisors -/
+
+/-- The invariant of the loop of `Ratpoints.Sieve.forbidden` over the examined primes, on the
+forbidden divisors found so far. -/
+def ForbiddenInvariant (c : List ℤ) (d bHigh : ℕ) (s : Array ForbiddenEntry × Array ForbiddenVal) :
+    Prop :=
+  (∀ e ∈ s.1, IsForbiddenEntry c d bHigh e) ∧ ∀ e ∈ s.2, IsForbiddenVal c d bHigh e
+
+theorem forbiddenInvariant_empty (c : List ℤ) (d bHigh : ℕ) :
+    ForbiddenInvariant c d bHigh (#[], #[]) :=
+  ⟨nofun, nofun⟩
+
+theorem ForbiddenInvariant.fst {c : List ℤ} {d bHigh : ℕ} {ba : Array ForbiddenEntry}
+    {val : Array ForbiddenVal} (h : ForbiddenInvariant c d bHigh (ba, val)) :
+    ∀ e ∈ ba, IsForbiddenEntry c d bHigh e :=
+  h.1
+
+theorem ForbiddenInvariant.push_inl {c : List ℤ} {d : ℕ} {moduli pref suff : List ℕ} {cur : ℕ}
+    {bHigh : ℕ} {ba : Array ForbiddenEntry} {val : Array ForbiddenVal}
+    {o : Option (ForbiddenEntry ⊕ ForbiddenVal)} {e : ForbiddenEntry}
+    (h : ForbiddenInvariant c d bHigh (ba, val)) (hm : ∀ p ∈ moduli, p ∈ primeTable)
+    (hl : moduli = pref ++ cur :: suff)
+    (ho : o = Id.run (forbiddenOfPrime c d cur bHigh
+      ((Array.range (d + 1)).map fun n ↦ (c.getD n 0 % (cur : ℤ)).toNat)
+      (examinePrime c d cur).isFSquare[cur]!)) (he : o = some (.inl e)) :
+    ForbiddenInvariant c d bHigh (ba.push e, val) :=
+  ⟨Array.forall_mem_push.mpr ⟨.inl ⟨cur, hm cur (by simp [hl]), ho ▸ he⟩, h.1⟩, h.2⟩
+
+theorem ForbiddenInvariant.push_inr {c : List ℤ} {d : ℕ} {moduli pref suff : List ℕ} {cur : ℕ}
+    {bHigh : ℕ} {ba : Array ForbiddenEntry} {val : Array ForbiddenVal}
+    {o : Option (ForbiddenEntry ⊕ ForbiddenVal)} {e : ForbiddenVal}
+    (h : ForbiddenInvariant c d bHigh (ba, val)) (hm : ∀ p ∈ moduli, p ∈ primeTable)
+    (hl : moduli = pref ++ cur :: suff)
+    (ho : o = Id.run (forbiddenOfPrime c d cur bHigh
+      ((Array.range (d + 1)).map fun n ↦ (c.getD n 0 % (cur : ℤ)).toNat)
+      (examinePrime c d cur).isFSquare[cur]!)) (he : o = some (.inr e)) :
+    ForbiddenInvariant c d bHigh (ba, val.push e) :=
+  ⟨h.1, Array.forall_mem_push.mpr ⟨⟨cur, hm cur (by simp [hl]), ho ▸ he⟩, h.2⟩⟩
+
+/-- A prime of the table at which `c_d` is not a square, recorded with its words by the loop of
+`Ratpoints.Sieve.forbidden` over the further primes. -/
+theorem forall_isForbiddenEntry_push {c : List ℤ} {d examined bHigh : ℕ} {pref suff : List ℕ}
+    {cur : ℕ} {ba : Array ForbiddenEntry} (h : ∀ e ∈ ba, IsForbiddenEntry c d bHigh e)
+    (hl : ForIn.toList [examined:primeTable.size] = pref ++ cur :: suff)
+    (hs : (!(squaresMod primeTable[cur]!)[(c.getD d 0 % (primeTable[cur]! : ℤ)).toNat]!) = true) :
+    ∀ e ∈ ba.push ⟨primeTable[cur]!, forbiddenRow primeTable[cur]!⟩,
+      IsForbiddenEntry c d bHigh e := by
+  have hcur : cur < primeTable.size := by
+    have := Std.Legacy.Range.add_length_eq_of_toList_eq_append_cons hl
+    have := Std.Legacy.Range.length_add_length_add_one_of_toList_eq_append_cons hl
+    lia
+  -- `rfl` for the words would unfold `Ratpoints.Sieve.forbiddenRow` until the recursion limit
+  exact Array.forall_mem_push.mpr ⟨.inr ⟨Array.getElem!_mem hcur, by dsimp only,
+    Bool.not_eq_true' _ ▸ hs⟩, h⟩
+
+theorem ForbiddenInvariant.isForbiddenEntry_and_isForbiddenVal {c : List ℤ} {d bHigh : ℕ}
+    {ba ba' : Array ForbiddenEntry} {val : Array ForbiddenVal}
+    (h : ForbiddenInvariant c d bHigh (ba, val)) (h' : ∀ e ∈ ba', IsForbiddenEntry c d bHigh e) :
+    (∀ e ∈ ba'.toList, IsForbiddenEntry c d bHigh e) ∧
+      ∀ e ∈ val.toList, IsForbiddenVal c d bHigh e :=
+  ⟨fun e he ↦ h' e (Array.mem_toList_iff.mp he), fun e he ↦ h.2 e (Array.mem_toList_iff.mp he)⟩
+
+-- The entry that an examined prime gives, as a value for the contract of the forbidden divisors.
+private theorem forbiddenOfPrime_value (c : List ℤ) (d p bHigh : ℕ) (cm : Array ℕ) (atInf : Bool) :
+    ⦃ True ⦄ forbiddenOfPrime c d p bHigh cm atInf
+    ⦃ fun r ↦ r = Id.run (forbiddenOfPrime c d p bHigh cm atInf) ⦄ :=
+  ⟨fun _ ↦ rfl⟩
+
+attribute [local irreducible] IsForbiddenEntry IsForbiddenVal ForbiddenInvariant in
+/-- The contract of `Ratpoints.Sieve.forbidden`, for examined primes that are primes of the table:
+each forbidden divisor tested with words is that of a prime of the table, from its coefficients
+modulo the prime and the entry at infinity of its table, or a prime of the table with its words at
+which `c_d` is not a square (`Ratpoints.Sieve.IsForbiddenEntry`), and each one tested by its
+valuation is that of a prime of the table (`Ratpoints.Sieve.IsForbiddenVal`). -/
+@[spec]
+theorem forbidden_spec (c : List ℤ) (d : ℕ) (moduli : List ℕ) (maxForbidden bHigh : ℕ) :
+    ⦃ ∀ p ∈ moduli, p ∈ primeTable ⦄ forbidden c d moduli maxForbidden bHigh
+    ⦃ fun r ↦ (∀ e ∈ r.1, IsForbiddenEntry c d bHigh e) ∧
+        ∀ e ∈ r.2, IsForbiddenVal c d bHigh e ⦄ := by
+  vcgen [forbidden, forbiddenOfPrime_value] invariants
+  · fun _ _ s ↦ ForbiddenInvariant c d bHigh s
+  · fun _ _ ba ↦ ∀ e ∈ ba, IsForbiddenEntry c d bHigh e
+  all_goals try dsimp only at *
+  all_goals first
+    | exact forbiddenInvariant_empty c d bHigh
+    | exact ForbiddenInvariant.fst ‹_› _ ‹_›
+    | exact ForbiddenInvariant.isForbiddenEntry_and_isForbiddenVal ‹_›
+        ‹∀ e ∈ _, IsForbiddenEntry _ _ _ e›
+    | exact ForbiddenInvariant.isForbiddenEntry_and_isForbiddenVal ‹_› (ForbiddenInvariant.fst ‹_›)
+    | exact ForbiddenInvariant.push_inl ‹_› ‹_› ‹_› ‹_› ‹_›
+    | exact ForbiddenInvariant.push_inr ‹_› ‹_› ‹_› ‹_› ‹_›
+    | exact forall_isForbiddenEntry_push ‹_› ‹_› ‹_›
+    | assumption
+
+/-- `Ratpoints.Sieve.forbidden_spec` as a plain statement for the forbidden divisors tested with
+words. -/
+theorem isForbiddenEntry_of_mem_forbidden_fst {c : List ℤ} {d : ℕ} {moduli : List ℕ}
+    (hm : ∀ p ∈ moduli, p ∈ primeTable) {maxForbidden bHigh : ℕ} {e : ForbiddenEntry}
+    (he : e ∈ (Id.run (forbidden c d moduli maxForbidden bHigh)).1) :
+    IsForbiddenEntry c d bHigh e :=
+  (Std.WP.Id.of_run_eq_wp rfl _ ((forbidden_spec c d moduli maxForbidden bHigh).le_wp hm)).1 e he
+
+/-- `Ratpoints.Sieve.forbidden_spec` as a plain statement for the forbidden divisors tested by
+their valuations. -/
+theorem isForbiddenVal_of_mem_forbidden_snd {c : List ℤ} {d : ℕ} {moduli : List ℕ}
+    (hm : ∀ p ∈ moduli, p ∈ primeTable) {maxForbidden bHigh : ℕ} {e : ForbiddenVal}
+    (he : e ∈ (Id.run (forbidden c d moduli maxForbidden bHigh)).2) :
+    IsForbiddenVal c d bHigh e :=
+  (Std.WP.Id.of_run_eq_wp rfl _ ((forbidden_spec c d moduli maxForbidden bHigh).le_wp hm)).2 e he
 
 /-! ### The words of a forbidden divisor -/
 
@@ -925,8 +981,8 @@ theorem lt_forty_of_pow_le {p m bHigh : ℕ} (hp : 3 ≤ p) (hH : bHigh < 2 ^ 63
 /-- For an odd prime `p` and a `long` `bHigh`, the mask of the forbidden valuations is below
 `2 ^ 40`, so that the `unsigned long` `mask` of `forbidden_valuations` holds it
 (`find_points.c:2229`). -/
-theorem run_forbiddenValuations_lt (c : List ℤ) (d : ℕ) {p bHigh : ℕ} (hp : 3 ≤ p)
-    (hH : bHigh < 2 ^ 63) : Id.run (forbiddenValuations c d p bHigh) < 2 ^ 40 :=
+theorem run_forbiddenValuations_lt (c : List ℤ) (d : ℕ) {p bHigh : ℕ} (cm : Array ℕ) (hp : 3 ≤ p)
+    (hH : bHigh < 2 ^ 63) : Id.run (forbiddenValuations c d p bHigh cm) < 2 ^ 40 :=
   Nat.lt_pow_two_of_testBit _ fun m hm ↦ by
     have : ¬p ^ m ≤ bHigh := mt (lt_forty_of_pow_le hp hH) (by lia)
     simp [testBit_run_forbiddenValuations c d (by lia : 1 < p), this]

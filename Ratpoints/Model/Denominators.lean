@@ -29,10 +29,10 @@ denominators in its four shapes, as `run_setup` chooses them (`Ratpoints.Sieve.S
 list of its denominators in the order of its loop and its tests on a single denominator
 (`Ratpoints.Sieve.Shape.dens`, `Ratpoints.Sieve.Shape.keep`), and the run itself
 (`Ratpoints.Sieve.sieveRun`). Every class word lets every numerator of a point through; when the
-moduli that the forbidden divisors examine are primes, no forbidden divisor excludes the denominator
-of a point; both Jacobi tests let it through, and so does every test of a shape, so that the run
-finds the points of the denominators of its shape, in the order of its loop: increasing, except for
-the divisors.
+moduli that the forbidden divisors examine are primes of the table, no forbidden divisor excludes
+the denominator of a point; both Jacobi tests let it through, and so does every test of a shape, so
+that the run finds the points of the denominators of its shape, in the order of its loop:
+increasing, except for the divisors.
 
 ## Main definitions
 
@@ -204,25 +204,25 @@ structure ForbiddenVal where
   mask : Nat
 
 /-- The coefficients of the polynomial of degree `d` with the coefficient list `c` at the prime `p`,
-from the leading one down: for each `j ≤ d`, none when `c_{d-j} = 0`, and otherwise the valuation
-`w_j` of `c_{d-j}` at `p` with its unit part `r_j` modulo `p`, the sign included
-(`Ratpoints.Setup.valuation`), or `w_j = 0` and `r_j = c_{d-j} mod p` when `p ∤ c_{d-j}`.
+from the leading one down, with the coefficients `cm` reduced modulo `p`, as `examine_prime` hands
+them back to its caller: for each `j ≤ d`, none when `c_{d-j} = 0`, and otherwise, when
+`cm[d - j] = 0`, the valuation `w_j` of `c_{d-j}` at `p` with its unit part `r_j` modulo `p`, the
+sign included (`Ratpoints.Setup.valuation`), and when `cm[d - j] ≠ 0`, `w_j = 0` and
+`r_j = cm[d - j]`.
 
 C: `find_points.c:2198-2200`, `find_points.c:2204-2215`
 
-Deviation: an array of options of pairs, for the arrays `present`, `w` and `r` on the stack; the
-coefficients reduced modulo `p` by the Euclidean `%`, computed here, for the array `coeffs_mod_p`
-that `examine_prime` fills (`Ratpoints.Sieve.examinePrime?`), the same residues, until stage F;
+Deviation: an array of options of pairs, for the arrays `present`, `w` and `r` on the stack;
 natural numbers for the `long`s. -/
-def unitParts (c : List Int) (d p : Nat) : Id (Array (Option (Nat × Nat))) := do
+def unitParts (c : List Int) (d p : Nat) (cm : Array Nat) : Id (Array (Option (Nat × Nat))) := do
   let mut us := #[]
   for j in [0:d + 1] do
     let ck := c.getD (d - j) 0
     if ck = 0 then us := us.push none
-    else if ck % (p : Int) = 0 then
+    else if cm[d - j]! = 0 then
       let (w, r) ← Setup.valuation ck p
       us := us.push (some (w, if ck < 0 then p - r else r))
-    else us := us.push (some (0, (ck % (p : Int)).toNat))
+    else us := us.push (some (0, cm[d - j]!))
   return us
 
 /-- Whether no denominator `b` with `v_p(b) = m` carries a point, by the terms of `F(a, b)` at the
@@ -254,23 +254,23 @@ def forbiddenAt (us : Array (Option (Nat × Nat))) (sq : Array Bool) (m : Nat) :
   return !tie && (vmin % 2 == 1 || (jmin % 2 == 0 && !sq[(us[jmin]!.getD (0, 0)).2]!))
 
 /-- The valuations at the prime `p ∣ c_d` that no denominator `b ≤ bHigh` of a point has, for the
-polynomial of even degree `d` with the coefficient list `c`, as a mask: bit `m` is set, for
-`m = 1, 2, …` while `p ^ m ≤ bHigh`, when the terms of `F(a, b)` exclude the valuation `m`
-(`Ratpoints.Sieve.forbiddenAt`, with the valuations and unit parts of the coefficients,
-`Ratpoints.Sieve.unitParts`, and the squares modulo `p`, `Ratpoints.Sieve.squaresMod`).
+polynomial of even degree `d` with the coefficient list `c` and its coefficients `cm` reduced
+modulo `p`, as a mask: bit `m` is set, for `m = 1, 2, …` while `p ^ m ≤ bHigh`, when the terms of
+`F(a, b)` exclude the valuation `m` (`Ratpoints.Sieve.forbiddenAt`, with the valuations and unit
+parts of the coefficients, `Ratpoints.Sieve.unitParts`, and the squares modulo `p`,
+`Ratpoints.Sieve.squaresMod`).
 
 C: `find_points.c:2192-2197`, `find_points.c:2201-2203`, `find_points.c:2216-2217`,
 `find_points.c:2229-2234`
 
 Deviation: the prime `p` itself, for its index `pn` in the table `prime`, and the squares modulo `p`
-by `Ratpoints.Sieve.squaresMod`, for the row of `p` in the table `squares` of the build; no argument
-`coeffs_mod_p`, whose residues `Ratpoints.Sieve.unitParts` computes again until stage F; a natural
-number for the `unsigned long` mask, without the cap `m < LONG_LENGTH - 1` of the loop, which never
-binds for a `long` `b_high` and an odd prime, the loop ending before `m = 40`, and for `p ≤ 1`,
-which the C code never examines, the loop, once entered, does not end; natural numbers for the
-`long`s. -/
-def forbiddenValuations (c : List Int) (d p bHigh : Nat) : Id Nat := do
-  let us ← unitParts c d p
+by `Ratpoints.Sieve.squaresMod`, for the row of `p` in the table `squares` of the build; an array
+for the pointer `coeffs_mod_p`; a natural number for the `unsigned long` mask, without the cap
+`m < LONG_LENGTH - 1` of the loop, which never binds for a `long` `b_high` and an odd prime, the
+loop ending before `m = 40`, and for `p ≤ 1`, which the C code never examines, the loop, once
+entered, does not end; natural numbers for the `long`s. -/
+def forbiddenValuations (c : List Int) (d p bHigh : Nat) (cm : Array Nat) : Id Nat := do
+  let us ← unitParts c d p cm
   let sq := squaresMod p
   let mut mask : Nat := 0
   let mut m := 1
@@ -320,41 +320,43 @@ def forbiddenRow (p : Nat) : Array UInt64 :=
     (Array.replicate p (~~~0))
 
 /-- The forbidden divisor that the examined prime `p` gives for the polynomial of even degree `d`
-with the coefficient list `c` and the largest denominator `bHigh`, if any: for `p ∣ c_d`, the mask
-of the forbidden valuations (`Ratpoints.Sieve.forbiddenValuations`), when it is not `0`, gives `p`
-with its words (`Ratpoints.Sieve.forbiddenRow`) if it holds every valuation that a denominator can
-have (`Ratpoints.Sieve.allValuations`), and `p` with the mask otherwise; for `p ∤ c_d`, `p` with its
-words when `c_d` is not a square modulo `p` (`Ratpoints.Sieve.squaresMod`).
+with the coefficient list `c` and the largest denominator `bHigh`, if any, from what `examine_prime`
+hands back to its caller, the coefficients `cm` reduced modulo `p` and the entry `atInf` of the
+table of `p` at `p`, whether there are points at infinity modulo `p`: for `cm[d] = 0`, that is
+`p ∣ c_d`, the mask of the forbidden valuations (`Ratpoints.Sieve.forbiddenValuations`), when it is
+not `0`, gives `p` with its words (`Ratpoints.Sieve.forbiddenRow`) if it holds every valuation that
+a denominator can have (`Ratpoints.Sieve.allValuations`), and `p` with the mask otherwise; for
+`p ∤ c_d`, `p` with its words when there are no points at infinity modulo `p`, which for even `d`
+says that `c_d` is not a square modulo `p`.
 
 C: `find_points.c:2627-2631`, `find_points.c:2642-2676`
 
 Deviation: the entry returned, for the entries that the C code writes into the arrays
-`args->forb_ba` and `args->forbidden` and counts; the coefficients modulo `p` and whether `c_d` is a
-square modulo `p` computed here, for the array `coeffs_mod_p` and the last entry of the table
-`is_f_square` that `examine_prime` hands back, until stage F; the words of the prime made with its
-entry, for the pointers into the pattern `sieves0` of the build, and no reciprocal `magic`; natural
-numbers for the `long`s; no output under `DEBUG`. -/
-def forbiddenOfPrime (c : List Int) (d p bHigh : Nat) :
+`args->forb_ba` and `args->forbidden` and counts; the words of the prime made with its entry, for
+the pointers into the pattern `sieves0` of the build, and no reciprocal `magic`; natural numbers
+for the `long`s; no output under `DEBUG`. -/
+def forbiddenOfPrime (c : List Int) (d p bHigh : Nat) (cm : Array Nat) (atInf : Bool) :
     Id (Option (ForbiddenEntry ⊕ ForbiddenVal)) := do
-  let lcf := c.getD d 0
-  if lcf % (p : Int) = 0 then
-    let mask ← forbiddenValuations c d p bHigh
+  if cm[d]! = 0 then
+    let mask ← forbiddenValuations c d p bHigh cm
     if mask == 0 then return none
     let all ← allValuations p bHigh
     if mask &&& all == all then return some (.inl ⟨p, forbiddenRow p⟩)
     return some (.inr ⟨p, mask⟩)
-  if !(squaresMod p)[(lcf % (p : Int)).toNat]! then return some (.inl ⟨p, forbiddenRow p⟩)
+  if !atInf then return some (.inl ⟨p, forbiddenRow p⟩)
   return none
 
 /-- The forbidden divisors of the denominators of the polynomial of even degree `d` with the
 coefficient list `c`, for the examined primes `moduli`, at most `maxForbidden` of them, and the
 largest denominator `bHigh`: those tested with words (`Ratpoints.Sieve.ForbiddenEntry`) and those
 tested by their valuations (`Ratpoints.Sieve.ForbiddenVal`), each in the order found. For each
-examined prime in turn, while fewer than `maxForbidden` are found, its forbidden divisor
-(`Ratpoints.Sieve.forbiddenOfPrime`); then, unless `c_d` is a square (`Ratpoints.Setup.isSquare`),
-the primes `p` of `Ratpoints.primeTable` from the position `moduli.length` on, while fewer than
-`maxForbidden` are found and `p ^ 2 ≤ bHigh`, each with its words (`Ratpoints.Sieve.forbiddenRow`)
-when `c_d` is not a square modulo `p`, that is when the Kronecker symbol `(c_d / p)` is `-1`.
+examined prime `p` in turn, while fewer than `maxForbidden` are found, its forbidden divisor
+(`Ratpoints.Sieve.forbiddenOfPrime`), from the coefficients reduced modulo `p` and the entry at
+infinity of the table of `p` (`Ratpoints.Sieve.examinePrime`); then, unless `c_d` is a square
+(`Ratpoints.Setup.isSquare`), the primes `p` of `Ratpoints.primeTable` from the position
+`moduli.length` on, while fewer than `maxForbidden` are found and `p ^ 2 ≤ bHigh`, each with its
+words (`Ratpoints.Sieve.forbiddenRow`) when `c_d` is not a square modulo `p`, that is when the
+Kronecker symbol `(c_d / p)` is `-1`.
 
 C: `find_points.c:2533-2536`, `find_points.c:2561-2562`, `find_points.c:2624-2626`,
 `find_points.c:2677`, `find_points.c:2709-2772`, `find_points.c:2778-2789`
@@ -368,15 +370,18 @@ the cap `maxForbidden` other primes may be recorded, a modulus that occurs more 
 list may be recorded once for each occurrence, each record counting against `maxForbidden`, a
 modulus at a position of the table at least the number of the moduli may be recorded again by the
 second loop, and a prime below that position that is no modulus is examined by neither loop; the
-lists are those of `sieving_info` when the moduli are its first `pn_lim` primes in increasing order,
-as in the program with `-p` and without `-P`; the Kronecker symbol by the table of the squares
-modulo `p`, which marks `0` as a square, for `mpz_kronecker_si`; the flag `RATPOINTS_CHECK_DENOM`
-not tested in either loop, since the search computes the forbidden divisors only when the flag is
-set, for even degree (`Ratpoints.searchPoints`); lists, for the two arrays of the arguments with
-their terminating zeros; the words of a prime made with its entry, for the pointers into `sieves0`
-and the buffer `forb_words`, with no failure for lack of memory, where `sieving_info` drops the
-primes beyond the table whose words it cannot store; no reciprocals `magic`; natural numbers for the
-`long`s; no output under `DEBUG`. -/
+coefficients modulo `p` and the entry at infinity computed again for each examined prime, by the
+Euclidean `%` and the reference `Ratpoints.Sieve.examinePrime`, for those that `examine_prime` hands
+back, prime by prime in the loop of the tables (stage F); the lists are those of `sieving_info` when
+the moduli are its first `pn_lim` primes in increasing order, as in the program with `-p` and
+without `-P`; the Kronecker symbol by the table of the squares modulo `p`, which marks `0` as a
+square, for `mpz_kronecker_si`; the flag `RATPOINTS_CHECK_DENOM` not tested in either loop, since
+the search computes the forbidden divisors only when the flag is set, for even degree
+(`Ratpoints.searchPoints`); lists, for the two arrays of the arguments with their terminating zeros;
+the words of a prime made with its entry, for the pointers into `sieves0` and the buffer
+`forb_words`, with no failure for lack of memory, where `sieving_info` drops the primes beyond the
+table whose words it cannot store; no reciprocals `magic`; natural numbers for the `long`s; no
+output under `DEBUG`. -/
 def forbidden (c : List Int) (d : Nat) (moduli : List Nat) (maxForbidden bHigh : Nat) :
     Id (List ForbiddenEntry × List ForbiddenVal) := do
   let lcf := c.getD d 0
@@ -384,7 +389,8 @@ def forbidden (c : List Int) (d : Nat) (moduli : List Nat) (maxForbidden bHigh :
   let mut val : Array ForbiddenVal := #[]
   for p in moduli do
     if ba.size + val.size < maxForbidden then
-      match ← forbiddenOfPrime c d p bHigh with
+      let cm := (Array.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : Int)).toNat
+      match ← forbiddenOfPrime c d p bHigh cm (examinePrime c d p).isFSquare[p]! with
       | some (.inl e) => ba := ba.push e
       | some (.inr e) => val := val.push e
       | none => pure ()
@@ -899,21 +905,24 @@ rule; and the run of the divisor shape against the points that ratpoints prints.
 -- terms of `j = 0` and `j = 1` tie), the valuation 2 is (the term of `j = 0`, of the odd valuation
 -- 1); and the forbidden divisor that 3, 7 (`75 ≡ 5`, not a square modulo 7) and 11 (`75 ≡ 9`) give.
 #guard
-  let us := Id.run (unitParts [6, -3, 5, 2, 75] 4 3)
+  let c : List Int := [6, -3, 5, 2, 75]
+  let cm (p : Nat) : Array Nat := (Array.range 5).map fun n ↦ (c.getD n 0 % (p : Int)).toNat
+  let atInf (p : Nat) : Bool := (examinePrime c 4 p).isFSquare[p]!
+  let us := Id.run (unitParts c 4 3 (cm 3))
   us == #[some (1, 1), some (0, 2), some (0, 2), some (1, 2), some (1, 2)] &&
     !Id.run (forbiddenAt us (squaresMod 3) 1) && Id.run (forbiddenAt us (squaresMod 3) 2) &&
-    (match Id.run (forbiddenOfPrime [6, -3, 5, 2, 75] 4 3 1000) with
+    (match Id.run (forbiddenOfPrime c 4 3 1000 (cm 3) (atInf 3)) with
       | some (.inr e) => e.p == 3 && e.mask == 0x7c | _ => false) &&
-    (match Id.run (forbiddenOfPrime [6, -3, 5, 2, 75] 4 7 1000) with
+    (match Id.run (forbiddenOfPrime c 4 7 1000 (cm 7) (atInf 7)) with
       | some (.inl e) => e.p == 7 && e.words == forbiddenRow 7 | _ => false) &&
-    (Id.run (forbiddenOfPrime [6, -3, 5, 2, 75] 4 11 1000)).isNone
+    (Id.run (forbiddenOfPrime c 4 11 1000 (cm 11) (atInf 11))).isNone
 
 -- The forbidden valuations of `6 -3 5 2 75` (`c_4 = 75 = 3 · 5 ^ 2`) at 3 and 5, for the largest
 -- denominators 1000 and 50, and the valuations a denominator can have at all.
-#guard [Id.run (forbiddenValuations [6, -3, 5, 2, 75] 4 3 1000),
-    Id.run (forbiddenValuations [6, -3, 5, 2, 75] 4 5 1000),
-    Id.run (forbiddenValuations [6, -3, 5, 2, 75] 4 3 50),
-    Id.run (forbiddenValuations [6, -3, 5, 2, 75] 4 5 50)] == [0x7c, 0x1a, 0xc, 0x2] &&
+#guard
+  let fv (p bHigh : Nat) : Nat := Id.run (forbiddenValuations [6, -3, 5, 2, 75] 4 p bHigh
+    ((Array.range 5).map fun n ↦ ([6, -3, 5, 2, 75].getD n 0 % (p : Int)).toNat))
+  [fv 3 1000, fv 5 1000, fv 3 50, fv 5 50] == [0x7c, 0x1a, 0xc, 0x2] &&
   [Id.run (allValuations 3 1000), Id.run (allValuations 5 1000), Id.run (allValuations 7 6)] ==
     [0x7e, 0x1e, 0]
 
@@ -923,8 +932,8 @@ rule; and the run of the divisor shape against the points that ratpoints prints.
 -- whose mask lets the denominator `3^64` through.
 #guard
   let c : List Int := [3, 0, 3 ^ 128]
-  Id.run (forbiddenValuations c 2 3 (3 ^ 64)) == 2 ^ 64 - 2 &&
-    match Id.run (forbiddenOfPrime c 2 3 (3 ^ 64)) with
+  Id.run (forbiddenValuations c 2 3 (3 ^ 64) #[0, 0, 0]) == 2 ^ 64 - 2 &&
+    match Id.run (forbiddenOfPrime c 2 3 (3 ^ 64) #[0, 0, 0] true) with
     | some (.inr e) => e.p == 3 && !e.mask.testBit (Id.run (Setup.valuation (3 ^ 64) 3)).1
     | _ => false
 

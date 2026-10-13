@@ -63,8 +63,9 @@ algorithm, and the divisors of the gcd of `b` and a residue `f ≡ a (mod b)`.
   `[a:m]`, and the lengths of the lists before and after it.
 * `Array.getElem!_pop`, `Array.getElem!_pop_of_back!_eq`: the entries of an array without its last
   entry, the same as before when that entry is the default value.
-* `Array.getElem!_foldl_setIfInBounds`: the entries of an array of Booleans that a fold of
-  `setIfInBounds · true` marks.
+* `Array.getElem!_mem`: an entry in range of an array is a member of it.
+* `Array.getElem!_foldl_setIfInBounds`, `Array.any_id_eq_true_of_getElem!_eq_true`: the entries of
+  an array of Booleans that a fold of `setIfInBounds · true` marks, and an array with a true entry.
 * `Array.forall_mem_toList_push`: a property of the members of the list of an array after a push.
 * `Array.mem_of_forIn_toList_eq_append_cons`: the cursor of a loop over an array is one of its
   entries.
@@ -123,6 +124,11 @@ namespace Array
 theorem getElem!_map_range {α : Type u} [Inhabited α] (f : Nat → α) {n j : Nat} (hj : j < n) :
     ((Array.range n).map f)[j]! = f j := by
   simp [hj]
+
+theorem getElem!_mem {α : Type u} [Inhabited α] {xs : Array α} {i : Nat} (h : i < xs.size) :
+    xs[i]! ∈ xs := by
+  rw [getElem!_pos xs i h]
+  exact Array.getElem_mem h
 
 theorem size_pop_lt_of_back?_eq_some {α : Type u} {xs : Array α} {x : α}
     (h : xs.back? = some x) : xs.pop.size < xs.size := by
@@ -187,6 +193,13 @@ theorem forall_mem_toList_push {α : Type u} {xs : Array α} {x : α} {P : α �
     (h : ∀ y ∈ xs.toList, P y) (hx : P x) : ∀ y ∈ (xs.push x).toList, P y := by
   rw [Array.toList_push]
   exact List.forall_mem_append.mpr ⟨h, List.forall_mem_singleton.mpr hx⟩
+
+/-- `xs[i]! = true` gives a true entry of `xs`, since `xs[i]!` is `false` out of range. -/
+theorem any_id_eq_true_of_getElem!_eq_true {xs : Array Bool} {i : Nat} (h : xs[i]! = true) :
+    xs.any id = true := by
+  by_cases hi : i < xs.size
+  · exact Array.any_eq_true.mpr ⟨i, hi, by simpa [getElem!_pos xs i hi] using h⟩
+  · simp [getElem!_neg xs i hi] at h
 
 /-- The cursor of a loop over the array `xs` is an entry of `xs`. -/
 theorem mem_of_forIn_toList_eq_append_cons {α : Type u} {xs : Array α} {pref suff : List α}

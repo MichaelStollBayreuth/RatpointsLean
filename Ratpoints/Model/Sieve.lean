@@ -125,8 +125,9 @@ def inversesMod (p : Nat) : Array Nat :=
 list `cs`, constant term first, reduced at every step. -/
 def evalMod (cs : List Nat) (p x : Nat) : Nat := cs.foldr (fun a v ↦ (a + x * v) % p) 0
 
-/-- What the sieve keeps of a prime `p`: `p`, the table of the residues `x` modulo `p` for which
-`f(x)` is a square modulo `p`, and the inverses modulo `p`.
+/-- What the sieve keeps of a prime `p`: `p`, the table of `p + 1` entries, entry `x < p` whether
+`f(x)` is a square modulo `p` and entry `p` whether there are points at infinity modulo `p`, and
+the inverses modulo `p`.
 
 C: `rp-private.h:542-555`
 
@@ -141,23 +142,26 @@ kept for the run; the fields `init`, `nf`, `factor` and `pw` are those of the si
 structure Entry where
   /-- The prime. -/
   p : Nat
-  /-- For each residue `x` modulo `p`, whether `f(x)` is a square modulo `p`. -/
+  /-- For each residue `x` modulo `p`, whether `f(x)` is a square modulo `p`; and at `p`, whether
+  there are points at infinity modulo `p`. -/
   isFSquare : Array Bool
   /-- The inverses modulo `p` of the residues. -/
   inverses : Array Nat
 
 /-- The table of the prime `p` for the polynomial `f` of degree `d` with the coefficient list `c`:
-for each residue `x` modulo `p`, whether `f(x)` is a square modulo `p`, with `f(x)` by Horner's
-rule modulo `p` (`Ratpoints.Sieve.evalMod`) on the coefficients reduced modulo `p` by the
-Euclidean `%`, and the squares of `Ratpoints.Sieve.squaresMod`; kept with `p` and the inverses
-modulo `p` (`Ratpoints.Sieve.inversesMod`). It is the reference of the table of a prime with the
-exit, `Ratpoints.Sieve.examinePrime?`, which models `examine_prime` and gives this table, on both of
-its paths, whenever it gives one (`Ratpoints.Sieve.eq_examinePrime_of_examinePrime?_eq_some`); the
+for each residue `x` modulo `p`, whether `f(x)` is a square modulo `p`, with `f(x)` by Horner's rule
+modulo `p` (`Ratpoints.Sieve.evalMod`) on the coefficients reduced modulo `p` by the Euclidean `%`,
+and the squares of `Ratpoints.Sieve.squaresMod`, and as entry `p` whether there are points at
+infinity modulo `p`, for odd `d` or `c_d` a square modulo `p`; kept with `p` and the inverses modulo
+`p` (`Ratpoints.Sieve.inversesMod`). It is the reference of the table of a prime with the exit,
+`Ratpoints.Sieve.examinePrime?`, which models `examine_prime` and gives this table, on both of its
+paths, whenever it gives one (`Ratpoints.Sieve.eq_examinePrime_of_examinePrime?_eq_some`); the
 lemmas on the table and its rows are stated for it. -/
 def examinePrime (c : List Int) (d p : Nat) : Entry :=
   let cs := (List.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : Int)).toNat
   let sq := squaresMod p
-  { p, isFSquare := (Array.range p).map fun x ↦ sq[evalMod cs p x]!, inverses := inversesMod p }
+  { p, isFSquare := ((Array.range p).map fun x ↦ sq[evalMod cs p x]!).push
+      (d % 2 == 1 || sq[cs.getD d 0]!), inverses := inversesMod p }
 
 /-- The helper `mod` of the C code, the remainder of the `long` `a` modulo the `long` `b > 0`: for
 `a < -16 b`, by C's division, which truncates (`Int.tmod`), with `b` added to a negative remainder;
@@ -242,11 +246,11 @@ code (`Ratpoints.Sieve.modLong`) for `long`s and by the Euclidean `%` for GMP in
 (`mpz_fdiv_r_ui`), two paths with the same result
 (`Ratpoints.Sieve.examinePrime?_eq_examinePrime?_false`); for each residue `x` modulo `p`, whether
 `f(x)` is a square modulo `p`, by Horner's rule modulo `p` (`Ratpoints.Sieve.evalMod`) and the
-squares of `Ratpoints.Sieve.squaresMod`; the last entry, whether there are points at infinity modulo
+squares of `Ratpoints.Sieve.squaresMod`; as entry `p`, whether there are points at infinity modulo
 `p`, for odd `d` or `c_d` a square modulo `p`; and `none` when the curve has no points modulo `p`,
-neither a residue with a square value of `f` nor a point at infinity, where `examine_prime` returns
-`-1` and the search ends with no points. Otherwise the entry with `p`, the table and the inverses
-modulo `p` (`Ratpoints.Sieve.inversesMod`), that of the reference `Ratpoints.Sieve.examinePrime`
+no entry of the table being true, where `examine_prime` returns `-1` and the search ends with no
+points. Otherwise the entry with `p`, the table and the inverses modulo `p`
+(`Ratpoints.Sieve.inversesMod`), that of the reference `Ratpoints.Sieve.examinePrime`
 (`Ratpoints.Sieve.eq_examinePrime_of_examinePrime?_eq_some`). A curve without points modulo a prime
 has no points (`Ratpoints.Sieve.not_isPoint_of_examinePrime?_eq_none`).
 
@@ -254,35 +258,33 @@ C: `find_points.c:1683-1697`, `find_points.c:1703-1749`, `find_points.c:1761-176
 `find_points.c:1795-1826`
 
 Deviation: the prime `p` itself, for its index `pn` in the table `prime`; the table a fresh array of
-`p` entries, for the `p + 1` integers that `examine_prime` takes from the buffer `int_next` and
-hands back through `is_f_square_p`; no reciprocal `recip`, which only `barrett` reads (stage F). The
+`p + 1` entries, for the integers that `examine_prime` takes from the buffer `int_next` and hands
+back through `is_f_square_p`; no reciprocal `recip`, which only `barrett` reads (stage F). The
 coefficients reduced modulo `p` are not handed back, where `examine_prime` leaves them in its
-caller's array for the test on the forbidden divisors of the denominators, which computes them again
-until stage F (`Ratpoints.Sieve.unitParts`, `Ratpoints.Sieve.forbiddenOfPrime`); Horner's rule
-reduces at every step, for the reduction on a fixed schedule (stage F), and also gives `f(0)`, which
+caller's array for the test on the forbidden divisors of the denominators, which computes them and
+the entry `p` of the table again until stage F (`Ratpoints.Sieve.forbidden`); Horner's rule reduces
+at every step, for the reduction on a fixed schedule (stage F), and also gives `f(0)`, which
 ratpoints reads off the constant term; the residues with a square value are not counted, and the
-exit asks only whether there is one; the last entry of the table decides the exit and is not kept,
-since ratpoints reads it otherwise only for the density, the prime powers and the forbidden
-divisors, which compute it again until stage F (`Ratpoints.Sieve.forbiddenOfPrime`), never in a row
-or in the third stage; the entry is made also when `f(x)` is a square for every residue and there is
-no point at infinity modulo `p`, where `examine_prime` returns `0` and `p` is never a modulus, the
-moduli being an input of the model, and for both of its codes `1` and `2`, which only the choice of
-the moduli tells apart (stage I); the entry is a fresh value, for the space that `examine_prime`
-takes from the buffer of the sieve entries (`se_next`), and returned, where `examine_prime` stores
-it in the field `ssp` of its caller's entry `prec_entry` for the choice of the moduli (stage I); it
-keeps only `p`, the table and the inverses (`Ratpoints.Sieve.Entry`), and no rows: those of the
-sieve entry of the prime (`Ratpoints.Sieve.SieveEntry.rows`) are made from it when they are first
-needed, also the row of `0`, which `examine_prime` installs from the build; the fields `init`, `nf`
-and `pw` that `examine_prime` sets (lines 1800 and 1817) are those of the sieve entry of the prime
+exit asks only whether one entry of the table is true, which is the test on the count `np` and the
+entry `p`; the entry is made also when `f(x)` is a square for every residue and there is no point at
+infinity modulo `p`, where `examine_prime` returns `0` and `p` is never a modulus, the moduli being
+an input of the model, and for both of its codes `1` and `2`, which only the choice of the moduli
+tells apart (stage I); the entry is a fresh value, for the space that `examine_prime` takes from the
+buffer of the sieve entries (`se_next`), and returned, where `examine_prime` stores it in the field
+`ssp` of its caller's entry `prec_entry` for the choice of the moduli (stage I); it keeps only `p`,
+the table and the inverses (`Ratpoints.Sieve.Entry`), and no rows: those of the sieve entry of the
+prime (`Ratpoints.Sieve.SieveEntry.rows`) are made from it when they are first needed, also the row
+of `0`, which `examine_prime` installs from the build; the fields `init`, `nf` and `pw` that
+`examine_prime` sets (lines 1800 and 1817) are those of the sieve entry of the prime
 (`Ratpoints.Sieve.SieveEntry`), of which the prime is the single factor, made by the search
 (`Ratpoints.searchPoints`). -/
 def examinePrime? (c : List Int) (d p : Nat) (useCLong : Bool) : Option Entry :=
   let cs := (List.range (d + 1)).map fun n ↦
     (if useCLong then modLong (c.getD n 0) p else c.getD n 0 % (p : Int)).toNat
   let sq := squaresMod p
-  let isFSquare := (Array.range p).map fun x ↦ sq[evalMod cs p x]!
-  let atInfinity := d % 2 == 1 || sq[cs.getD d 0]!
-  if !isFSquare.any id && !atInfinity then none
+  let isFSquare := ((Array.range p).map fun x ↦ sq[evalMod cs p x]!).push
+    (d % 2 == 1 || sq[cs.getD d 0]!)
+  if !isFSquare.any id then none
   else some { p, isFSquare, inverses := inversesMod p }
 
 /-! ### Prime powers and products as moduli -/
@@ -1005,8 +1007,9 @@ def pointsAtInfinity (c : List Int) (d : Nat) (rev : Bool) : List (Int × Int ×
 #guard (List.range 41).all fun i ↦
   (examinePrime [1, 2, 3] 2 7).admits 14 ((i : Int) - 20) == (((i : Int) - 20) % 7 != 0)
 
--- `y ^ 2 = x ^ 2 + 1` modulo 5: `f(x)` is a square for `x = 0, 2, 3` (`f = 1, 0, 0`).
-#guard (examinePrime [1, 0, 1] 2 5).isFSquare == #[true, false, true, true, false]
+-- `y ^ 2 = x ^ 2 + 1` modulo 5: `f(x)` is a square for `x = 0, 2, 3` (`f = 1, 0, 0`), and there
+-- are points at infinity (`c_2 = 1`).
+#guard (examinePrime [1, 0, 1] 2 5).isFSquare == #[true, false, true, true, false, true]
 
 -- The helper `mod` of the C code is the Euclidean `%` at the ends of the range of a `long` and
 -- around `-16 b`, `0` and `16 b`, for small moduli and for moduli near `2 ^ 59`.
@@ -1042,6 +1045,22 @@ def pointsAtInfinity (c : List Int) (d : Nat) (rev : Bool) : List (Int × Int ×
     | some e => e.p == p && e.isFSquare == (examinePrime c d p).isFSquare &&
       e.inverses == inversesMod p
     | none => false
+
+-- The coefficients modulo `p` and the tables of `p + 1` entries, the last for the points at
+-- infinity, that `examine_prime` makes for `1 2 3 4 5 6 7`, `6 -3 5 2 75` and `1 0 126 0 441` at
+-- 3, 5 and 7, read from a build of ratpoints at the pinned commit.
+#guard ([([1, 2, 3, 4, 5, 6, 7], 6, 3, [1, 2, 0, 1, 2, 0, 1], "1111"),
+    ([1, 2, 3, 4, 5, 6, 7], 6, 5, [1, 2, 3, 4, 0, 1, 2], "101010"),
+    ([1, 2, 3, 4, 5, 6, 7], 6, 7, [1, 2, 3, 4, 5, 6, 0], "11001011"),
+    ([6, -3, 5, 2, 75], 4, 3, [0, 0, 2, 2, 0], "1111"),
+    ([6, -3, 5, 2, 75], 4, 5, [1, 2, 0, 2, 0], "111101"),
+    ([6, -3, 5, 2, 75], 4, 7, [6, 4, 5, 2, 5], "01110000"),
+    ([1, 0, 126, 0, 441], 4, 7, [1, 0, 0, 0, 0], "11111111")] :
+      List (List Int × Nat × Nat × List Nat × String)).all fun (c, d, p, cm, t) ↦
+  (List.range (d + 1)).map (fun n ↦ (c.getD n 0 % (p : Int)).toNat) == cm &&
+    [true, false].all fun u ↦ match examinePrime? c d p u with
+      | some e => e.isFSquare.toList == t.toList.map (· == '1')
+      | none => false
 
 -- Curves without points modulo 3, 5 and 7, on which ratpoints takes the exit at that prime
 -- (`ratpoints '20 6 -14 12 -10' 30 -v` says `no points mod p = 3`, and so do

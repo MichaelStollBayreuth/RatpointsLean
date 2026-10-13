@@ -94,11 +94,14 @@ once (`Ratpoints.exists_eq_mul_mul_of_sq_eq_binaryForm_of_odd`,
 (`List.perm_flatMap_of_nodup`). The points at infinity are those of the candidate `(1, 0)` of the
 reference (`Ratpoints.Sieve.pointsAtInfinity_eq_pointsOfDen`), mapped when the flag is set
 (`Ratpoints.Sieve.pointsAtInfinity_eq_map`). In the search, the pieces have at least one bit array
-(`Ratpoints.Params.one_le_arraySizeAt`) and the moduli of well-formed parameters are primes
-(`Ratpoints.Params.WF.prime_of_mem`); a table that the search makes is that of the reference
-(`Ratpoints.Sieve.eq_examinePrime_of_examinePrime?_eq_some`), whose sieve entry, with the table as
-its one factor, is sound (`Ratpoints.Sieve.isSound_mk_prime_examinePrime`); when the search takes
-the exit of a table, the curve has no points
+(`Ratpoints.Params.one_le_arraySizeAt`) and the moduli of well-formed parameters are primes of the
+table (`Ratpoints.Params.WF.mem_primeTable`, `Ratpoints.Params.WF.prime_of_mem`), so that the
+forbidden divisors of the search are among those that the loops may record
+(`Ratpoints.Sieve.isForbiddenEntry_of_mem_forbidden_fst`,
+`Ratpoints.Sieve.isForbiddenVal_of_mem_forbidden_snd`); a table that the search makes is that of the
+reference (`Ratpoints.Sieve.eq_examinePrime_of_examinePrime?_eq_some`), whose sieve entry, with the
+table as its one factor, is sound (`Ratpoints.Sieve.isSound_mk_prime_examinePrime`); when the search
+takes the exit of a table, the curve has no points
 (`Ratpoints.Sieve.not_isPoint_of_examinePrime?_eq_none`), and when it takes the 2-adic exit, no
 class of the denominators admits a numerator, so that the curve has no points either
 (`Ratpoints.Sieve.not_isPoint_of_denBits_eq_zero`): the reference is empty, and so are the points at
@@ -375,56 +378,53 @@ private theorem toList_run_sieveRun_squares1 {c : List ℤ} {H A : ℕ} {entries
     Nat.one_le_iff_ne_zero.mp (List.mem_range'_1.mp (mem_range'_of_mem_squares1Dens hH hd hs hb)).1
   simp [Shape.keep, getElem!_twoAdic_ne_zero h, run_denInfoTest_of_sq_eq hd hs hb0 hg hy]
 
--- The word shape, for even degree, with the forbidden divisors of the primes `ms`.
+-- The word shape, for even degree, with forbidden divisors that the loops may record.
 private theorem toList_run_sieveRun_words {c : List ℤ} {H A : ℕ} {entries : List SieveEntry}
-    (hent : ∀ e ∈ entries, e.IsSound c) {ms : List ℕ} (hms : ∀ p ∈ ms, p.Prime) (hA : 1 ≤ A)
-    (rev : Bool) (hd : degree c % 2 = 0) {maxF : ℕ} {forb : List ForbiddenEntry}
-    {forbVal : List ForbiddenVal}
-    (hf : Id.run (forbidden c (degree c) ms maxF H) = (forb, forbVal)) (useJacobi : Bool) :
+    (hent : ∀ e ∈ entries, e.IsSound c) (hA : 1 ≤ A) (rev : Bool) (hd : degree c % 2 = 0)
+    {forb : List ForbiddenEntry} {forbVal : List ForbiddenVal}
+    (hforb : ∀ e ∈ forb, IsForbiddenEntry c (degree c) H e)
+    (hval : ∀ e ∈ forbVal, IsForbiddenVal c (degree c) H e) (useJacobi : Bool) :
     (Id.run (sieveRun c (degree c) H A rev entries (Id.run (twoAdic c (degree c)))
       (denBits (Id.run (twoAdic c (degree c)))) (.words forb forbVal useJacobi
         (if useJacobi then Id.run (jacobiSetup (c.getD (degree c) 0) H) else none)
         (c.getD (degree c) 0)) 1 H)).toList =
       ((List.range' 1 H).flatMap fun b : ℕ ↦ pointsOfDen c (degree c) b (numerators H)).map
         (if rev then swapPoint else id) := by
-  have hforb (e : ForbiddenEntry) (he : e ∈ forb) :
-      e ∈ (Id.run (forbidden c (degree c) ms maxF H)).1 := hf ▸ he
   refine toList_run_sieveRun_of_sound hent hA rev ?_ fun b hb h ↦
     have hb' := List.mem_range'_1.mp hb
     (exists_sq_eq_of_pointsOfDen_ne_nil h).elim fun _ ⟨_, _, hg, hy⟩ ↦
-      ⟨getLsbD_denBits_and_all_of_sq_eq hms hd hf (by lia) (by lia) hg hy,
-        run_wordsTest_of_sq_eq hms hd hf _ (by lia) (by lia) hg hy⟩
-  simpa [Shape.dens] using toList_run_wordsDens
-    (fun e he ↦ (prime_of_mem_forbidden_fst hms (hforb e he)).pos)
-    (fun e he ↦ words_eq_of_mem_forbidden_fst (hforb e he)) 1 H
+      ⟨getLsbD_denBits_and_all_of_sq_eq hd hforb (by lia) (by lia) hg hy,
+        run_wordsTest_of_sq_eq hd hval _ (by lia) (by lia) hg hy⟩
+  simpa [Shape.dens] using toList_run_wordsDens (fun e he ↦ (hforb e he).prime.pos)
+    (fun e he ↦ (hforb e he).words_eq) 1 H
 
 end Sieve
 
 /-! ### The search -/
 
 -- The shape that `Ratpoints.Sieve.runSetup` chooses from the flags of the search.
-private theorem toList_run_sieveRun_runSetup {c : List ℤ} {H A : ℕ} {P : Params} (hP : P.WF)
-    {entries : List SieveEntry} (hent : ∀ e ∈ entries, e.IsSound c) (hH : 1 ≤ H) (hA : 1 ≤ A)
-    (rev : Bool) {us1 : Option (List Setup.DenInfo × List ℕ)}
+private theorem toList_run_sieveRun_runSetup {c : List ℤ} {H A : ℕ} {entries : List SieveEntry}
+    (hent : ∀ e ∈ entries, e.IsSound c) (hH : 1 ≤ H) (hA : 1 ≤ A) (rev : Bool)
+    {us1 : Option (List Setup.DenInfo × List ℕ)}
     (hus1 : (if degree c % 2 == 1 && (c.getD (degree c) 0).natAbs != 1 then
       Id.run (Setup.setupUs1 c (degree c) H) else none) = us1)
     {checkDenom useJacobi : Bool} {forb : List ForbiddenEntry} {forbVal : List ForbiddenVal}
-    (hcd : checkDenom = true → degree c % 2 = 0 ∧
-      Id.run (forbidden c (degree c) P.moduli P.maxForbidden H) = (forb, forbVal)) :
+    (hcd : checkDenom = true → degree c % 2 = 0 ∧ (∀ e ∈ forb, IsForbiddenEntry c (degree c) H e) ∧
+      ∀ e ∈ forbVal, IsForbiddenVal c (degree c) H e) :
     (Id.run (sieveRun c (degree c) H A rev entries (Id.run (twoAdic c (degree c)))
       (denBits (Id.run (twoAdic c (degree c))))
       (Id.run (runSetup (degree c % 2 == 1 && (c.getD (degree c) 0).natAbs == 1) us1 checkDenom
         useJacobi forb forbVal (c.getD (degree c) 0) H)) 1 H)).toList =
       ((searchDens c (degree c) H).flatMap fun b : ℕ ↦
         pointsOfDen c (degree c) b (numerators H)).map (if rev then swapPoint else id) := by
-  have hms (p : ℕ) (hp : p ∈ P.moduli) : p.Prime := hP.prime_of_mem hp
   rw [searchDens, hus1]
   rcases Nat.mod_two_eq_zero_or_one (degree c) with hd | hd
   · obtain rfl : us1 = none := by rw [← hus1, hd]; rfl
     rw [hd]
     cases checkDenom
     · exact toList_run_sieveRun_all hent hA rev
-    · cases useJacobi <;> exact toList_run_sieveRun_words hent hms hA rev hd (hcd rfl).2 _
+    · obtain ⟨-, hforb, hval⟩ := hcd rfl
+      cases useJacobi <;> exact toList_run_sieveRun_words hent hA rev hd hforb hval _
   by_cases hc : (c.getD (degree c) 0).natAbs = 1
   · obtain rfl : us1 = none := by rw [← hus1, hd, hc]; rfl
     rw [hd, hc]
@@ -517,8 +517,11 @@ private theorem append_eq_of_mapM_eq_some {c : List ℤ} {H : ℕ} {P : Params} 
           (if rev then swapPoint else id) := by
   rw [eq_map_examinePrime_of_mapM_eq_some hm] at hpts
   subst hnb hshape hpts
-  rw [toList_run_sieveRun_runSetup hP (List.forall_mem_map.mpr fun p hp ↦
-      isSound_mk_prime_examinePrime (hP.prime_of_mem hp)) hH (P.one_le_arraySizeAt hH) rev hus1 hcd,
+  rw [toList_run_sieveRun_runSetup (List.forall_mem_map.mpr fun p hp ↦
+      isSound_mk_prime_examinePrime (hP.prime_of_mem hp)) hH (P.one_le_arraySizeAt hH) rev hus1
+      fun h ↦ ⟨(hcd h).1, fun _ he ↦ isForbiddenEntry_of_mem_forbidden_fst hP.mem_primeTable
+        (by rwa [(hcd h).2]), fun _ he ↦ isForbiddenVal_of_mem_forbidden_snd hP.mem_primeTable
+        (by rwa [(hcd h).2])⟩,
     pointsAtInfinity_eq_map, List.map_append]
 
 -- The components of the search, as values for its contract.

@@ -158,12 +158,14 @@ $a$. These two facts make sound the rows that the tables below define.
 
 \begin{definition}[The table of a prime]\label{def:examinePrime}
   \uses{def:squaresMod}
-  \lean{Ratpoints.Sieve.evalMod, Ratpoints.Sieve.Entry, Ratpoints.Sieve.examinePrime, Ratpoints.Sieve.natCast_evalMod, Ratpoints.Sieve.getElem!_isFSquare_examinePrime_of_isSquare}
+  \lean{Ratpoints.Sieve.evalMod, Ratpoints.Sieve.Entry, Ratpoints.Sieve.examinePrime, Ratpoints.Sieve.natCast_evalMod, Ratpoints.Sieve.getElem!_isFSquare_examinePrime_of_isSquare, Ratpoints.Sieve.getElem!_isFSquare_examinePrime_self}
   \leanok
   For a prime $p$: for each residue $x$ modulo $p$ whether $f(x)$ is a square modulo $p$, with
   $f(x)$ computed by Horner's rule modulo $p$ from the coefficients reduced modulo $p$ by the
-  Euclidean remainder; kept, as the sieve entry of ratpoints keeps it
-  (\csource{rp-private.h}{542}{555}), together with $p$ and the inverses modulo $p$. The table is
+  Euclidean remainder, and as the entry $p$ whether there is a point at infinity modulo $p$, for odd
+  $d$ or $c_d$ a square modulo $p$: $p + 1$ entries, as \verb|examine_prime| keeps them; kept, as
+  the sieve entry of ratpoints keeps it (\csource{rp-private.h}{542}{555}), together with $p$ and
+  the inverses modulo $p$. The table is
   made for every prime it is given. It is the reference of the table with the exit
   (Definition~\ref{def:examinePrimeExit}), which models \verb|examine_prime| with its two paths
   through \verb|long|s and GMP integers: that gives no table at a prime modulo which the curve has

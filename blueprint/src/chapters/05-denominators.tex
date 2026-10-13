@@ -309,16 +309,18 @@ $w_j = v_p(c_{d - j})$.
   \uses{def:valuation, def:squaresMod}
   \lean{Ratpoints.Sieve.unitParts, Ratpoints.Sieve.forbiddenAt, Ratpoints.Sieve.forbiddenValuations, Ratpoints.Sieve.allValuations, Ratpoints.Sieve.IsUnitPart, Ratpoints.Sieve.unitParts_spec, Ratpoints.Sieve.forbiddenAt_spec, Ratpoints.Sieve.forbiddenValuations_spec, Ratpoints.Sieve.allValuations_spec, Ratpoints.Sieve.lt_forty_of_pow_le, Ratpoints.Sieve.run_forbiddenValuations_lt, Ratpoints.Sieve.run_allValuations_lt}
   \leanok
-  For a prime $p \mid c_d$: the valuation $w_j$ and the unit part $r_j$ modulo $p$, its sign
-  included, of each nonzero $c_{d - j}$ (\csource{find_points.c}{2198}{2200},
-  \csource{find_points.c}{2204}{2215}); for $m = 1, 2, \dots$ while $p^m \le b_{\mathrm{high}}$, bit
+  For a prime $p \mid c_d$ and the coefficients modulo $p$, which \verb|examine_prime| hands back to
+  its caller: the valuation $w_j$ and the unit part $r_j$ modulo $p$, its sign included, of each
+  nonzero $c_{d - j}$, the valuation $0$ and the residue of $c_{d - j}$ when that is not $0$
+  (\csource{find_points.c}{2198}{2200}, \csource{find_points.c}{2204}{2215}); for $m = 1, 2, \dots$ while $p^m \le b_{\mathrm{high}}$, bit
   $m$ of the mask, a natural number, set when the least $w_j + j m$ is taken at one $j_0$ only and
   is odd, or $j_0$ is even and $r_{j_0}$ is not a square modulo $p$
   (\csource{find_points.c}{2218}{2228}; \csource{find_points.c}{2192}{2197},
   \csource{find_points.c}{2201}{2203}, \csource{find_points.c}{2216}{2217},
   \csource{find_points.c}{2229}{2234}); and the mask of every $m \ge 1$ with
   $p^m \le b_{\mathrm{high}}$ (\csource{find_points.c}{2632}{2641}). The contracts: the entries
-  $(w_j, r_j)$ describe the coefficients at $p$; bit $m$ of the mask is set exactly when $m \ge 1$,
+  $(w_j, r_j)$ describe the coefficients at $p$ when the coefficients modulo $p$ are the residues
+  of $c_0, \dots, c_d$; bit $m$ of the mask is set exactly when $m \ge 1$,
   $p^m \le b_{\mathrm{high}}$ and the test at $m$ excludes it, which it does only in the two cases
   above; for an odd prime and a \verb|long| $b_{\mathrm{high}}$ every such $m$ is below $40$, so
   that the bound $m < 63$ of the C code never binds and both masks are below $2^{40}$.
@@ -330,7 +332,7 @@ $w_j = v_p(c_{d - j})$.
   \leanok
   For even $d$, a prime $p$, integers $a$ and $y$ and a natural number $b$ with $\gcd(a, b) = 1$ and
   $y^2 = F(a, b)$, as for a normalized point $(a, y, b)$: bit $v_p(b)$ of the mask of forbidden
-  valuations at $p$ is clear.
+  valuations at $p$, from the residues of the coefficients modulo $p$, is clear.
 \end{lemma}
 
 \begin{proof}
@@ -346,7 +348,7 @@ $w_j = v_p(c_{d - j})$.
 \end{proof}
 
 \begin{definition}[The forbidden divisors]\label{def:forbidden}
-  \uses{def:forbiddenValuations, def:squaresMod, def:primeTable, def:reversal}
+  \uses{def:forbiddenValuations, def:squaresMod, def:primeTable, def:reversal, def:examinePrime}
   \lean{Ratpoints.Sieve.ForbiddenEntry, Ratpoints.Sieve.ForbiddenVal, Ratpoints.Sieve.forbiddenRow, Ratpoints.Sieve.forbiddenOfPrime, Ratpoints.Sieve.forbidden, Ratpoints.Sieve.getLsbD_getElem!_forbiddenRow, Ratpoints.Sieve.IsForbiddenEntry, Ratpoints.Sieve.IsForbiddenVal, Ratpoints.Sieve.forbidden_spec}
   \leanok
   A prime tested with words, with its $p$ words, bit $j$ of word $r$ clear exactly when
@@ -354,10 +356,12 @@ $w_j = v_p(c_{d - j})$.
   the primes of its table and as \verb|sieving_info| makes them beyond it,
   \csource{gen_find_points_h.c}{102}{134}, \csource{find_points.c}{2773}{2777}), and a prime with
   the mask of its excluded valuations (\csource{find_points.c}{166}{166}); for even $d$, the
-  examined primes $p$ in turn, while fewer than $\mathrm{maxForbidden}$ have been found: for
-  $p \mid c_d$ with a nonzero mask, $p$ with its words when the mask holds every valuation that a
-  denominator can have, and $p$ with its mask otherwise; for $p \nmid c_d$, $p$ with its words when
-  $c_d$ is not a square modulo $p$ (\csource{find_points.c}{2627}{2631},
+  examined primes $p$ in turn, while fewer than $\mathrm{maxForbidden}$ have been found, the
+  forbidden divisor of $p$ from the coefficients modulo $p$ and the entry at infinity of its table:
+  for $p \mid c_d$, the coefficient $c_d$ being $0$ modulo $p$, with a nonzero mask, $p$ with its
+  words when the mask holds every valuation that a denominator can have, and $p$ with its mask
+  otherwise; for $p \nmid c_d$, $p$ with its words when there is no point at infinity modulo $p$,
+  that is when $c_d$ is not a square modulo $p$ (\csource{find_points.c}{2627}{2631},
   \csource{find_points.c}{2642}{2676}); then, unless $c_d$ is a square, the primes of the table from
   the position that is the number of the examined primes on, while fewer than
   $\mathrm{maxForbidden}$ have been found and $p^2 \le b_{\mathrm{high}}$, each with its words when
@@ -365,30 +369,34 @@ $w_j = v_p(c_{d - j})$.
   \csource{find_points.c}{2624}{2626}, \csource{find_points.c}{2677}{2677},
   \csource{find_points.c}{2709}{2772}, \csource{find_points.c}{2778}{2789}). The examined primes are
   the moduli of the parameters, as for the exit of Definition~\ref{def:examinePrimeExit}; the
-  coefficients modulo $p$ and whether $c_d$ is a square modulo $p$, which \verb|examine_prime| hands
-  back to \verb|sieving_info|, are computed again, until stage~F makes the table of a prime hand
+  coefficients modulo $p$ and the entry at infinity, which \verb|examine_prime| hands back to
+  \verb|sieving_info|, are computed again for each of them, by the Euclidean remainder and the
+  reference table (Definition~\ref{def:examinePrime}), until stage~F makes the table of a prime hand
   them back and the forbidden divisors take them from it, prime by prime in the loop of the tables.
-  The contract: each entry tested with words is an examined prime with the result of its test, or a
-  prime of the table at which $c_d$ is not a square, with its words; each valuation entry is an
-  examined prime with its mask. It holds whatever the cap, the order of the entries and the primes
-  examined.
+  The contract, for examined primes that are primes of the table: each entry tested with words is
+  the forbidden divisor of a prime of the table, from the residues of the coefficients and the
+  entry at infinity of its reference table, or a prime of the table at which $c_d$ is not a square,
+  with its words; each valuation entry is the forbidden divisor of a prime of the table. It holds
+  whatever the cap, the order of the entries and the primes of the table examined.
 \end{definition}
 
 \begin{lemma}[The forbidden divisors are sound]\label{lem:forbidden}
   \uses{def:forbidden, lem:forbiddenValuations, def:binaryForm, lem:examinePrime_none}
-  \lean{Ratpoints.Sieve.ForbiddenVal.excludes, Ratpoints.Sieve.prime_of_mem_forbidden_fst, Ratpoints.Sieve.words_eq_of_mem_forbidden_fst, Ratpoints.Sieve.not_dvd_of_mem_forbidden_fst, Ratpoints.Sieve.ForbiddenVal.excludes_eq_false_of_mem_forbidden_snd}
+  \lean{Ratpoints.Sieve.ForbiddenVal.excludes, Ratpoints.Sieve.IsForbiddenEntry.prime, Ratpoints.Sieve.IsForbiddenEntry.words_eq, Ratpoints.Sieve.IsForbiddenEntry.not_dvd, Ratpoints.Sieve.IsForbiddenVal.excludes_eq_false}
   \leanok
-  For even $d$, moduli that are primes, integers $a$ and $y$ and a natural number $b \ge 1$ with
-  $\gcd(a, b) = 1$ and $y^2 = F(a, b)$, as for a normalized point $(a, y, b)$: each entry tested
-  with words is a prime $p$ with the words of $p$, and $p \nmid b$ when $b \le b_{\mathrm{high}}$;
-  and for no valuation entry is bit $v_p(b)$ of its mask set.
+  For even $d$, integers $a$ and $y$ and a natural number $b \ge 1$ with $\gcd(a, b) = 1$ and
+  $y^2 = F(a, b)$, as for a normalized point $(a, y, b)$: each entry tested with words that the
+  contract of Definition~\ref{def:forbidden} admits is a prime $p$ with the words of $p$, and
+  $p \nmid b$ when $b \le b_{\mathrm{high}}$; and for no valuation entry that it admits is bit
+  $v_p(b)$ of its mask set.
 \end{lemma}
 
 \begin{proof}
   \leanok
   For a prime $p \mid c_d$ this is Lemma~\ref{lem:forbiddenValuations}: a prime tested with words
   has every valuation $m \ge 1$ with $p^m \le b_{\mathrm{high}}$ in its mask, which covers every $b$
-  with $p \mid b$. For $p \nmid c_d$ with $c_d$ not a square modulo $p$: if $p \mid b$, then
+  with $p \mid b$. For $p \nmid c_d$ with no point at infinity modulo $p$, that is with $c_d$ not a
+  square modulo $p$: if $p \mid b$, then
   $p \nmid a$ and $F(a, b) \equiv c_d a^d$ modulo $p$, a unit that is not a square, which $y^2$ is
   not; that $c_d$ is a square modulo every prime of $b$ that does not divide it is the argument of
   Lemma~\ref{lem:examinePrime_none}.
@@ -554,12 +562,12 @@ $(c_d / q) = -1$, which these do not reach.
   $s k^2$ from $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$ with $s$ a divisor. The list of the words,
   for primes tested with words with their words, is that of the denominators from $b_{\mathrm{low}}$
   to $b_{\mathrm{high}}$ whose bit in $\mathrm{den\_bits}$ is set and which no such prime divides,
-  in increasing order. For moduli that are primes, integers $a$ and $y$ and a natural number
-  $1 \le b \le H$ with $\gcd(a, b) = 1$ and $y^2 = F(a, b)$, as for a normalized point $(a, y, b)$
-  of height at most $H$, $b$ passes the tests of the shapes: the class test, the valuation test with
-  the records of the divisors of Definition~\ref{def:setupUs1}, and for the forbidden divisors of
-  the moduli with $b_{\mathrm{high}} = H$ the bit of its class in $\mathrm{den\_bits}$, the primes
-  tested with words and the tests of the words.
+  in increasing order. For integers $a$ and $y$ and a natural number $1 \le b \le H$ with
+  $\gcd(a, b) = 1$ and $y^2 = F(a, b)$, as for a normalized point $(a, y, b)$ of height at most $H$,
+  $b$ passes the tests of the shapes: the class test, the valuation test with the records of the
+  divisors of Definition~\ref{def:setupUs1}, and for forbidden divisors that the contract of
+  Definition~\ref{def:forbidden} admits with $b_{\mathrm{high}} = H$ the bit of its class in
+  $\mathrm{den\_bits}$, the primes tested with words and the tests of the words.
 \end{lemma}
 
 \begin{proof}

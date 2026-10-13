@@ -32,8 +32,7 @@ denominators, lowest first. The tests let the denominator of every point through
 (`Ratpoints.Sieve.getElem!_twoAdic_ne_zero`), the valuation test of the divisor shape with the
 slopes of the divisor set-up (`Ratpoints.Setup.DenInfo.excludes_eq_false_of_sq_eq`), and the tests
 of the word shape, the forbidden divisors and both Jacobi tests
-(`Ratpoints.Sieve.not_dvd_of_mem_forbidden_fst`,
-`Ratpoints.Sieve.ForbiddenVal.excludes_eq_false_of_mem_forbidden_snd`,
+(`Ratpoints.Sieve.IsForbiddenEntry.not_dvd`, `Ratpoints.Sieve.IsForbiddenVal.excludes_eq_false`,
 `Ratpoints.Sieve.run_jacobi_eq_one_of_sq_eq`, `Ratpoints.Sieve.run_jacobiTest_of_sq_eq`). The
 denominators that the C code computes as `long`s are at most the largest denominator.
 
@@ -366,14 +365,13 @@ theorem run_wordsTest_eq_true {forbVal : List ForbiddenVal} {useJacobi : Bool}
 
 /-! ### The tests let the denominators of the points through -/
 
-/-- For moduli that are primes and even degree, the class bit in `Ratpoints.Sieve.denBits` and the
-forbidden divisors tested with words of the moduli, for the largest denominator `H`, let the
-denominator `1 ≤ b ≤ H` of a point `(a, y, b)` through (`Ratpoints.Sieve.classBit_twoAdic_of_sq_eq`,
-`Ratpoints.Sieve.not_dvd_of_mem_forbidden_fst`): the filter of the list of the word shape
-(`Ratpoints.Sieve.toList_run_wordsDens`) keeps it. -/
-theorem getLsbD_denBits_and_all_of_sq_eq {c : List ℤ} {H : ℕ} {ms : List ℕ}
-    (hms : ∀ p ∈ ms, p.Prime) (hd : degree c % 2 = 0) {maxF : ℕ} {forb : List ForbiddenEntry}
-    {forbVal : List ForbiddenVal} (hf : Id.run (forbidden c (degree c) ms maxF H) = (forb, forbVal))
+/-- For even degree, the class bit in `Ratpoints.Sieve.denBits` and forbidden divisors tested with
+words that the loop of the tables and the further primes may record for the largest denominator `H`
+(`Ratpoints.Sieve.IsForbiddenEntry`) let the denominator `1 ≤ b ≤ H` of a point `(a, y, b)` through
+(`Ratpoints.Sieve.classBit_twoAdic_of_sq_eq`, `Ratpoints.Sieve.IsForbiddenEntry.not_dvd`): the
+filter of the list of the word shape (`Ratpoints.Sieve.toList_run_wordsDens`) keeps it. -/
+theorem getLsbD_denBits_and_all_of_sq_eq {c : List ℤ} {H : ℕ} (hd : degree c % 2 = 0)
+    {forb : List ForbiddenEntry} (hforb : ∀ e ∈ forb, IsForbiddenEntry c (degree c) H e)
     {a y : ℤ} {b : ℕ} (hb : b ≠ 0) (hbH : b ≤ H) (hab : Int.gcd a b = 1)
     (hy : y ^ 2 = binaryForm c a b) :
     ((denBits (Id.run (twoAdic c (degree c)))).toBitVec.getLsbD (b % 64) &&
@@ -382,24 +380,23 @@ theorem getLsbD_denBits_and_all_of_sq_eq {c : List ℤ} {H : ℕ} {ms : List ℕ
   refine ⟨?_, List.all_eq_true.mpr fun e he ↦ ?_⟩
   · simp only [Nat.mod_lt _ (by decide : 0 < 64), decide_true, Bool.true_and, bne_iff_ne]
     exact fun h0 ↦ by simpa [h0] using classBit_twoAdic_of_sq_eq hab hy
-  simpa [Nat.dvd_iff_mod_eq_zero] using
-    not_dvd_of_mem_forbidden_fst hms (by rwa [hf]) hd hb hbH hab hy
+  simpa [Nat.dvd_iff_mod_eq_zero] using (hforb e he).not_dvd hd hb hbH hab hy
 
-/-- For moduli that are primes and even degree, the tests of the word shape, with the valuation
-entries of the forbidden divisors of the moduli for the largest denominator `H` and the tables of
-the Jacobi test when it is on, let the denominator `1 ≤ b ≤ H` of a point `(a, y, b)` through
-(`Ratpoints.Sieve.ForbiddenVal.excludes_eq_false_of_mem_forbidden_snd`,
-`Ratpoints.Sieve.run_jacobiTest_of_sq_eq`, `Ratpoints.Sieve.run_jacobi_eq_one_of_sq_eq`). -/
-theorem run_wordsTest_of_sq_eq {c : List ℤ} {H : ℕ} {ms : List ℕ}
-    (hms : ∀ p ∈ ms, p.Prime) (hd : degree c % 2 = 0) {maxF : ℕ} {forb : List ForbiddenEntry}
-    {forbVal : List ForbiddenVal} (hf : Id.run (forbidden c (degree c) ms maxF H) = (forb, forbVal))
+/-- For even degree, the tests of the word shape, with forbidden divisors tested by their valuations
+that the loop of the tables may record for the largest denominator `H`
+(`Ratpoints.Sieve.IsForbiddenVal`) and the tables of the Jacobi test when it is on, let the
+denominator `1 ≤ b ≤ H` of a point `(a, y, b)` through
+(`Ratpoints.Sieve.IsForbiddenVal.excludes_eq_false`, `Ratpoints.Sieve.run_jacobiTest_of_sq_eq`,
+`Ratpoints.Sieve.run_jacobi_eq_one_of_sq_eq`). -/
+theorem run_wordsTest_of_sq_eq {c : List ℤ} {H : ℕ} (hd : degree c % 2 = 0)
+    {forbVal : List ForbiddenVal} (hval : ∀ e ∈ forbVal, IsForbiddenVal c (degree c) H e)
     (useJacobi : Bool) {a y : ℤ} {b : ℕ} (hb : b ≠ 0) (hbH : b ≤ H) (hab : Int.gcd a b = 1)
     (hy : y ^ 2 = binaryForm c a b) :
     Id.run (wordsTest forbVal useJacobi
       (if useJacobi then Id.run (jacobiSetup (c.getD (degree c) 0) H) else none)
       (c.getD (degree c) 0) b) = true := by
   refine run_wordsTest_eq_true (fun ji hji ↦ ?_)
-    (fun e he ↦ ForbiddenVal.excludes_eq_false_of_mem_forbidden_snd hms (by rwa [hf]) hd hb hab hy)
+    (fun e he ↦ (hval e he).excludes_eq_false hd hb hab hy)
     fun _ _ ↦ run_jacobi_eq_one_of_sq_eq hd hb hab hy
   cases useJacobi
   · exact absurd hji (by simp)

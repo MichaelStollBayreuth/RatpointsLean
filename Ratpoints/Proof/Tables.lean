@@ -33,12 +33,14 @@ in `ℕ`; the proofs go through `ZMod p`.
 The table of a prime with the exit (`Ratpoints.Sieve.examinePrime?`) reduces the coefficients on two
 paths with the same result, since the helper `mod` of the C code is the Euclidean `%`
 (`Ratpoints.Sieve.modLong_eq_emod`); a table that it gives is that of the reference
-`Ratpoints.Sieve.examinePrime`, and when it gives none, the curve has no points
-(`Ratpoints.Sieve.not_isPoint_of_examinePrime?_eq_none`): a point `(a, y, b)` gives a residue that
-the table marks for `p ∤ b`, and for `p ∣ b` a point at infinity modulo `p`, since `c_d` is then a
-square modulo `p` for even `d` (`Ratpoints.Sieve.isSquare_getD_degree_of_sq_eq_binaryForm`). The
-values of the C code that could leave the range of a `long` stay in it: those of `mod` for moduli
-below `2 ^ 59`, whose inputs are `long`s by the flag of the `long`s, the negations of the map of a
+`Ratpoints.Sieve.examinePrime`, and it gives none exactly when no entry of the reference is true,
+and then the curve has no points (`Ratpoints.Sieve.not_isPoint_of_examinePrime?_eq_none`): a point
+`(a, y, b)` makes an entry of the reference true
+(`Ratpoints.Sieve.any_isFSquare_examinePrime_of_sq_eq`), the residue `a / b` for `p ∤ b`, and for
+`p ∣ b` the entry `p`, whether there are points at infinity modulo `p`, since `c_d` is then a square
+modulo `p` for even `d` (`Ratpoints.Sieve.isSquare_getD_degree_of_sq_eq_binaryForm`). The values of
+the C code that could leave the range of a `long` stay in it: those of `mod` for moduli below
+`2 ^ 59`, whose inputs are `long`s by the flag of the `long`s, the negations of the map of a
 reversed search, and the negation of a negative leading coefficient in `jacobi1`, with `LONG_MIN`
 replaced by its quarter.
 
@@ -67,6 +69,8 @@ modulo `p` (`Ratpoints.Sieve.hornerBarrett_spec`); the table of a prime takes it
   `Ratpoints.Sieve.natCast_evalMod`: the tables compute their definitions.
 * `Ratpoints.Sieve.getElem!_isFSquare_examinePrime_of_isSquare`: the table of a prime marks every
   residue at which `f` takes a square value.
+* `Ratpoints.Sieve.getElem!_isFSquare_examinePrime_self`: the entry of the table of a prime at `p`
+  says whether there are points at infinity modulo `p`.
 * `Ratpoints.Sieve.admits_examinePrime_of_sq_eq`: the rows let every point through.
 * `Ratpoints.Sieve.modLong_eq_emod`: the helper `mod` of the C code is the Euclidean `%`.
 * `Ratpoints.Sieve.barrett_eq`: Barrett's reduction computes the remainder of every `u < 2 ^ 64`.
@@ -77,7 +81,10 @@ modulo `p` (`Ratpoints.Sieve.hornerBarrett_spec`); the table of a prime takes it
 * `Ratpoints.Sieve.examinePrime?_eq_examinePrime?_false`,
   `Ratpoints.Sieve.eq_examinePrime_of_examinePrime?_eq_some`,
   `Ratpoints.Sieve.examinePrime?_eq_none_iff`: the two paths of the table with the exit give the
-  same result, its table is that of the reference, and when it gives none.
+  same result, its table is that of the reference, and it gives none when no entry of the
+  reference is true.
+* `Ratpoints.Sieve.any_isFSquare_examinePrime_of_sq_eq`: a point makes an entry of the table of
+  every prime true.
 * `Ratpoints.Sieve.not_isPoint_of_examinePrime?_eq_none`: a curve without points modulo a prime has
   no points.
 * `Ratpoints.fitsLong_sixteen_mul`, `Ratpoints.fitsLong_add_sixteen_mul`, `Ratpoints.fitsLong_neg`,
@@ -411,8 +418,17 @@ theorem getElem!_isFSquare_examinePrime (c : List ℤ) (d : ℕ) {p t : ℕ} (ht
     (examinePrime c d p).isFSquare[t]! = (squaresMod p)[evalMod
       ((List.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat) p t]! := by
   simp only [examinePrime]
-  rw [getElem!_pos _ t (by simpa using ht)]
+  rw [getElem!_pos _ t (by simp; lia), Array.getElem_push_lt (by simpa using ht)]
   simp
+
+@[simp]
+theorem getElem!_isFSquare_examinePrime_self (c : List ℤ) (d p : ℕ) :
+    (examinePrime c d p).isFSquare[p]! =
+      (d % 2 == 1 || (squaresMod p)[(c.getD d 0 % (p : ℤ)).toNat]!) := by
+  simpa [examinePrime, List.getD_eq_getElem?_getD] using Array.getElem!_push_eq
+    (xs := (Array.range p).map fun x ↦ (squaresMod p)[evalMod
+      ((List.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat) p x]!)
+    (x := d % 2 == 1 || (squaresMod p)[(c.getD d 0 % (p : ℤ)).toNat]!)
 
 /-! ### The rows let every point through -/
 
@@ -509,13 +525,12 @@ theorem eq_examinePrime_of_examinePrime?_eq_some {c : List ℤ} {d p : ℕ} {u :
     (h : examinePrime? c d p u = some e) : e = examinePrime c d p := by
   grind [examinePrime?_eq_examinePrime?_false, examinePrime?, examinePrime]
 
-/-- The exit of `examine_prime`, in the terms of the table of the reference: no residue at which
-`f` takes a square value modulo `p`, even degree, and `c_d` not a square modulo `p`. -/
+/-- The exit of `examine_prime`, in the terms of the table of the reference: no entry is true,
+neither a residue at which `f` takes a square value modulo `p` nor the entry `p` at infinity. -/
 theorem examinePrime?_eq_none_iff {c : List ℤ} {d p : ℕ} {u : Bool} :
-    examinePrime? c d p u = none ↔ (examinePrime c d p).isFSquare.any id = false ∧
-      d % 2 = 0 ∧ (squaresMod p)[(c.getD d 0 % (p : ℤ)).toNat]! = false := by
+    examinePrime? c d p u = none ↔ (examinePrime c d p).isFSquare.any id = false := by
   rw [examinePrime?_eq_examinePrime?_false]
-  simp [examinePrime?, examinePrime, List.getD_eq_getElem?_getD]
+  simp [examinePrime?, examinePrime]
 
 /-! ### The exit -/
 
@@ -547,34 +562,32 @@ theorem getElem!_squaresMod_of_sq_eq {c : List ℤ} (hd : degree c % 2 = 0) {p :
   rw [ZMod.natCast_toNat_emod]
   exact isSquare_getD_degree_of_sq_eq_binaryForm hab (Nat.mod_eq_zero_of_dvd hpb) hd hy
 
--- A point gives a residue `t < p` that the table of `p` marks, or a point at infinity modulo `p`:
--- odd degree, or `c_d` marked as a square.
-private theorem exists_isFSquare_or_of_sq_eq_binaryForm {c : List ℤ} {p : ℕ} (hp : p.Prime)
-    {a y : ℤ} {b : ℕ} (hab : Int.gcd a b = 1) (hy : y ^ 2 = binaryForm c a b) :
-    (∃ t < p, (examinePrime c (degree c) p).isFSquare[t]! = true) ∨
-      degree c % 2 = 1 ∨ (squaresMod p)[(c.getD (degree c) 0 % (p : ℤ)).toNat]! = true := by
+/-- A point `(a, y, b)` makes an entry of the table of the prime `p` true: the residue `a / b` for
+`p ∤ b`, and the entry `p` at infinity for `p ∣ b`, since the degree is odd or `c_d` is a square
+modulo `p` (`Ratpoints.Sieve.getElem!_squaresMod_of_sq_eq`). -/
+theorem any_isFSquare_examinePrime_of_sq_eq {c : List ℤ} {p : ℕ} (hp : p.Prime) {a y : ℤ} {b : ℕ}
+    (hab : Int.gcd a b = 1) (hy : y ^ 2 = binaryForm c a b) :
+    (examinePrime c (degree c) p).isFSquare.any id = true := by
   by_cases hb : b % p = 0
-  · rcases Nat.mod_two_eq_zero_or_one (degree c) with hd | hd
-    · exact .inr (.inr (getElem!_squaresMod_of_sq_eq hd hp hab hy (Nat.dvd_of_mod_eq_zero hb)))
-    · exact .inr (.inl hd)
+  · refine Array.any_id_eq_true_of_getElem!_eq_true (i := p) ?_
+    rcases Nat.mod_two_eq_zero_or_one (degree c) with hd | hd
+    · rw [getElem!_isFSquare_examinePrime_self,
+        getElem!_squaresMod_of_sq_eq hd hp hab hy (Nat.dvd_of_mod_eq_zero hb), Bool.or_true]
+    · simp [hd]
   · have h := admits_examinePrime_of_sq_eq hp hab hy
     simp only [Entry.admits, p_examinePrime, inverses_examinePrime, hb, ↓reduceIte] at h
-    exact .inl ⟨_, Nat.mod_lt _ hp.pos, h⟩
+    exact Array.any_id_eq_true_of_getElem!_eq_true h
 
 /-- When the table of the prime `p` is none, where `examine_prime` returns `-1` and the search ends,
 the curve has no points of any height. -/
 theorem not_isPoint_of_examinePrime?_eq_none {c : List ℤ} {p : ℕ} {u : Bool}
     (h : examinePrime? c (degree c) p u = none) (hp : p.Prime) (H : ℕ) (q : ℤ × ℤ × ℤ) :
     ¬ IsPoint c H q := by
-  obtain ⟨hany, h2, hsq⟩ := examinePrime?_eq_none_iff.mp h
-  intro ⟨hy, hg, hn, _, _⟩
+  intro ⟨hy, hg, _, _, _⟩
   obtain ⟨b, hb⟩ : ∃ b : ℕ, q.2.2 = b := ⟨q.2.2.toNat, by lia⟩
   rw [hb] at hy hg
-  rcases exists_isFSquare_or_of_sq_eq_binaryForm hp hg hy with ⟨t, ht, hf⟩ | hd | hc
-  · rw [getElem!_pos _ t (by simpa [examinePrime] using ht)] at hf
-    exact Array.any_eq_false.mp hany t _ hf
-  · lia
-  · exact Bool.false_ne_true (hsq.symm.trans hc)
+  rw [examinePrime?_eq_none_iff, any_isFSquare_examinePrime_of_sq_eq hp hg hy] at h
+  cases h
 
 end Sieve
 
