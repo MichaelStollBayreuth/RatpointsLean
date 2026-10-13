@@ -1142,12 +1142,11 @@ theorem forall_isForbiddenEntry_push {c : List ℤ} {d examined bHigh : ℕ} {pr
     Bool.not_eq_true' _ ▸ hs⟩, h⟩
 
 theorem forall_isForbiddenEntry_and_forall_isForbiddenVal {c : List ℤ} {d bHigh : ℕ}
-    {ba ba' : Array ForbiddenEntry} {val : Array ForbiddenVal}
-    (h : (∀ e ∈ ba, IsForbiddenEntry c d bHigh e) ∧ ∀ e ∈ val, IsForbiddenVal c d bHigh e)
-    (h' : ∀ e ∈ ba', IsForbiddenEntry c d bHigh e) :
-    (∀ e ∈ ba'.toList, IsForbiddenEntry c d bHigh e) ∧
+    {ba : Array ForbiddenEntry} {val : Array ForbiddenVal}
+    (h : ∀ e ∈ val, IsForbiddenVal c d bHigh e) (h' : ∀ e ∈ ba, IsForbiddenEntry c d bHigh e) :
+    (∀ e ∈ ba.toList, IsForbiddenEntry c d bHigh e) ∧
       ∀ e ∈ val.toList, IsForbiddenVal c d bHigh e :=
-  ⟨fun e he ↦ h' e (Array.mem_toList_iff.mp he), fun e he ↦ h.2 e (Array.mem_toList_iff.mp he)⟩
+  ⟨fun e he ↦ h' e (Array.mem_toList_iff.mp he), fun e he ↦ h e (Array.mem_toList_iff.mp he)⟩
 
 attribute [local irreducible] IsForbiddenEntry IsForbiddenVal in
 /-- The contract of `Ratpoints.Sieve.forbidden`: from forbidden divisors `ba` and `val` that the
@@ -1168,8 +1167,9 @@ theorem forbidden_spec (c : List ℤ) (d examined maxForbidden bHigh : ℕ) (ba 
     ‹(∀ e ∈ ba, IsForbiddenEntry c d bHigh e) ∧ ∀ e ∈ val, IsForbiddenVal c d bHigh e›
   all_goals first
     | exact h.1 _ ‹_›
-    | exact forall_isForbiddenEntry_and_forall_isForbiddenVal h ‹∀ e ∈ _, IsForbiddenEntry _ _ _ e›
-    | exact forall_isForbiddenEntry_and_forall_isForbiddenVal h h.1
+    | exact forall_isForbiddenEntry_and_forall_isForbiddenVal h.2
+        ‹∀ e ∈ _, IsForbiddenEntry _ _ _ e›
+    | exact forall_isForbiddenEntry_and_forall_isForbiddenVal h.2 h.1
     | exact forall_isForbiddenEntry_push ‹_› ‹_› ‹_›
     | assumption
 

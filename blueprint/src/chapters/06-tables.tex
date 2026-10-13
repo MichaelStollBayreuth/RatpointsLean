@@ -298,7 +298,7 @@ which $\mathrm{maxPrimeEven} \le 2^{32}$ gives.
 
 \begin{lemma}[The factors of a modulus]\label{lem:modulusFactors}
   \uses{def:modulusFactors}
-  \lean{Ratpoints.ModulusFactorsInvariant, Ratpoints.ModulusFactorsPowInvariant, Ratpoints.modulusFactors_spec, Ratpoints.eq_mul_prod_run_modulusFactors, Ratpoints.pairwise_lt_map_fst_run_modulusFactors, Ratpoints.lt_numPrimes_and_one_le_of_mem_run_modulusFactors, Ratpoints.prod_run_modulusFactors_of_snd_eq_one, Ratpoints.pow_dvd_of_mem_run_modulusFactors, Ratpoints.getElem!_primeTable_le_of_le, Ratpoints.snd_run_modulusFactors_lt_mul_self_of_dvd, Ratpoints.snd_run_modulusFactors_eq_one}
+  \lean{Ratpoints.ModulusFactorsInvariant, Ratpoints.ModulusFactorsPowInvariant, Ratpoints.modulusFactors_spec, Ratpoints.eq_mul_prod_run_modulusFactors, Ratpoints.lt_numPrimes_of_mem_run_modulusFactors, Ratpoints.one_le_of_mem_run_modulusFactors, Ratpoints.pow_dvd_of_mem_run_modulusFactors, Ratpoints.getElem!_primeTable_le_of_le, Ratpoints.snd_run_modulusFactors_lt_mul_self_of_dvd, Ratpoints.snd_run_modulusFactors_eq_one}
   \leanok
   $m$ is the cofactor times the product of the powers of the primes at the positions; the positions
   increase and are below $\mathrm{numPrimes}$, the exponents are at least $1$, and a prime of the

@@ -461,7 +461,7 @@ private theorem admits_prime_examinePrime_mod {c : List ℤ} {m pn : ℕ}
     (hpe : (pn, 1) ∈ (Id.run (modulusFactors m)).1) {a y : ℤ} {b : ℕ} (hab : Int.gcd a b = 1)
     (hy : y ^ 2 = binaryForm c a b) :
     (Factor.prime (examinePrime c (degree c) primeTable[pn]!)).admits (b % m) (a % m) = true := by
-  have hpn := (lt_numPrimes_and_one_le_of_mem_run_modulusFactors hpe).1
+  have hpn := lt_numPrimes_of_mem_run_modulusFactors hpe
   have hd := pow_dvd_of_mem_run_modulusFactors hpe
   rw [pow_one] at hd
   rw [Factor.admits, Entry.admits_mod_of_dvd (examinePrime c (degree c) primeTable[pn]!) hd]
@@ -475,10 +475,10 @@ private theorem admits_power_run_examinePower_mod {c : List ℤ} {m pn e : ℕ} 
     (hy : y ^ 2 = binaryForm c a b) :
     (Factor.power (Id.run (examinePower c (degree c) primeTable[pn]! e u))).admits (b % m)
       (a % m) = true := by
-  obtain ⟨hpn, he⟩ := lt_numPrimes_and_one_le_of_mem_run_modulusFactors hpe
+  have hpn := lt_numPrimes_of_mem_run_modulusFactors hpe
   rw [Factor.admits, Power.admits_mod_of_dvd _ (pow_dvd_of_mem_run_modulusFactors hpe)]
   exact admits_run_examinePower_of_sq_eq u (prime_getElem!_primeTable
-    (hpn.trans_le numPrimes_le_size_primeTable)) he hab hy
+    (hpn.trans_le numPrimes_le_size_primeTable)) (one_le_of_mem_run_modulusFactors hpe) hab hy
 
 end Sieve
 
@@ -544,7 +544,7 @@ theorem MakeModulusInvariant.push_run_examinePrime? {c : List ℤ} {u : Bool} {m
     MakeModulusInvariant c m suff (none, factors.push (.prime t)) := by
   subst he
   have hpe := mem_run_modulusFactors_of_eq hfac hl
-  have hpn := (lt_numPrimes_and_one_le_of_mem_run_modulusFactors hpe).1
+  have hpn := lt_numPrimes_of_mem_run_modulusFactors hpe
   rw [eq_examinePrime_of_lt_numPrimes_of_run_examinePrime?_eq_some hpn ht]
   exact h.push fun _ _ _ hab hy ↦ admits_prime_examinePrime_mod hpe hab hy
 
@@ -566,8 +566,7 @@ theorem makeModulusInvariant_some_none {c : List ℤ} {u : Bool} {m r pn e : ℕ
     (hx : ∀ t cm, x = some (t, cm) → False)
     (he : Id.run (examinePrime? c (degree c) primeTable[pn]! u) = x) :
     MakeModulusInvariant c m [] (some none, factors) := by
-  have hpn := (lt_numPrimes_and_one_le_of_mem_run_modulusFactors
-    (mem_run_modulusFactors_of_eq hfac hl)).1
+  have hpn := lt_numPrimes_of_mem_run_modulusFactors (mem_run_modulusFactors_of_eq hfac hl)
   refine ⟨rfl, rfl, not_isPoint_of_lt_numPrimes_of_run_examinePrime?_eq_none hpn
     (he.trans (Option.eq_none_iff_forall_ne_some.mpr fun ⟨t, cm⟩ h ↦ hx t cm h))⟩
 

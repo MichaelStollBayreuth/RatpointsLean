@@ -55,10 +55,12 @@ least one bit array.
   `hornerSteps + 1 = 64 / maxBitsInPrime` (`Ratpoints.hornerSteps_add_one`).
 * `Ratpoints.modulusFactors_spec`: the contract of the factors of a modulus over the table, with its
   plain forms `Ratpoints.eq_mul_prod_run_modulusFactors`,
-  `Ratpoints.lt_numPrimes_and_one_le_of_mem_run_modulusFactors`,
-  `Ratpoints.prod_run_modulusFactors_of_snd_eq_one`, `Ratpoints.pow_dvd_of_mem_run_modulusFactors`,
-  each factor dividing the modulus, and `Ratpoints.snd_run_modulusFactors_lt_mul_self_of_dvd`, a
-  prime of the table that divides the cofactor being above its square root.
+  `Ratpoints.lt_numPrimes_of_mem_run_modulusFactors`, `Ratpoints.one_le_of_mem_run_modulusFactors`,
+  `Ratpoints.pow_dvd_of_mem_run_modulusFactors`, each factor dividing the modulus,
+  `Ratpoints.getElem!_primeTable_ne_snd_run_modulusFactors`, the cofactor being none of the first
+  `Ratpoints.numPrimes` primes of the table, and
+  `Ratpoints.snd_run_modulusFactors_lt_mul_self_of_dvd`, a prime of the table that divides the
+  cofactor being above its square root.
 * `Ratpoints.snd_run_modulusFactors_eq_one`: a modulus each of whose divisors above `1` is
   divisible by one of the first `Ratpoints.numPrimes` primes of the table, as the moduli of
   well-formed parameters are, factors completely over the table.
@@ -437,13 +439,13 @@ theorem eq_mul_prod_run_modulusFactors (m : ℕ) :
       ((Id.run (modulusFactors m)).1.map fun f ↦ primeTable[f.1]! ^ f.2).prod :=
   (Std.WP.Id.of_run_eq_wp rfl _ ((modulusFactors_spec m).le_wp trivial)).1
 
-theorem pairwise_lt_map_fst_run_modulusFactors (m : ℕ) :
-    ((Id.run (modulusFactors m)).1.map Prod.fst).Pairwise (· < ·) :=
-  (Std.WP.Id.of_run_eq_wp rfl _ ((modulusFactors_spec m).le_wp trivial)).2.1
+theorem lt_numPrimes_of_mem_run_modulusFactors {m : ℕ} {f : ℕ × ℕ}
+    (hf : f ∈ (Id.run (modulusFactors m)).1) : f.1 < numPrimes :=
+  ((Std.WP.Id.of_run_eq_wp rfl _ ((modulusFactors_spec m).le_wp trivial)).2.2.1 f hf).1
 
-theorem lt_numPrimes_and_one_le_of_mem_run_modulusFactors {m : ℕ} {f : ℕ × ℕ}
-    (hf : f ∈ (Id.run (modulusFactors m)).1) : f.1 < numPrimes ∧ 1 ≤ f.2 :=
-  (Std.WP.Id.of_run_eq_wp rfl _ ((modulusFactors_spec m).le_wp trivial)).2.2.1 f hf
+theorem one_le_of_mem_run_modulusFactors {m : ℕ} {f : ℕ × ℕ}
+    (hf : f ∈ (Id.run (modulusFactors m)).1) : 1 ≤ f.2 :=
+  ((Std.WP.Id.of_run_eq_wp rfl _ ((modulusFactors_spec m).le_wp trivial)).2.2.1 f hf).2
 
 theorem getElem!_primeTable_ne_snd_run_modulusFactors (m : ℕ) {j : ℕ} (hj : j < numPrimes) :
     primeTable[j]! ≠ (Id.run (modulusFactors m)).2 :=
@@ -455,13 +457,6 @@ theorem snd_run_modulusFactors_lt_mul_self_of_dvd (m : ℕ) {j : ℕ} (hj : j < 
     (h : primeTable[j]! ∣ (Id.run (modulusFactors m)).2) :
     (Id.run (modulusFactors m)).2 < primeTable[j]! * primeTable[j]! :=
   ((Std.WP.Id.of_run_eq_wp rfl _ ((modulusFactors_spec m).le_wp trivial)).2.2.2 j hj).2 h
-
-/-- When the factorization over the table is complete, the factors multiply to `m`. -/
-theorem prod_run_modulusFactors_of_snd_eq_one {m : ℕ} (h : (Id.run (modulusFactors m)).2 = 1) :
-    ((Id.run (modulusFactors m)).1.map fun f ↦ primeTable[f.1]! ^ f.2).prod = m := by
-  have hm := eq_mul_prod_run_modulusFactors m
-  rw [h, Nat.one_mul] at hm
-  exact hm.symm
 
 /-- Each factor `primeTable[pn] ^ e` of `m` over the table divides `m`. -/
 theorem pow_dvd_of_mem_run_modulusFactors {m : ℕ} {f : ℕ × ℕ}
