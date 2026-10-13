@@ -18,7 +18,7 @@ import Ratpoints.Proof.Tables
 import Std.Tactic.Do
 
 /-!
-# Prime powers as moduli
+# Prime powers and products as moduli
 
 The tables of a prime power `p ^ e` are those of `examine_power` (`Ratpoints.Sieve.examinePower`),
 whose inverses come from the extended Euclidean algorithm (`Ratpoints.Sieve.modinv`) in a loop over
@@ -32,7 +32,11 @@ the reversed polynomial takes a square value at `b / a`, both from the lemmas of
 (`Ratpoints.Sieve.ModinvInvariant.natAbs_add_mul_le`), the steps of Horner's rule and the squares
 (`Ratpoints.mul_add_lt_two_pow_64_of_lt_maxPrimeEven`,
 `Ratpoints.mul_self_lt_two_pow_63_of_lt_maxPrimeEven`), and the inverses
-(`Ratpoints.Sieve.getElem!_inv_run_examinePower_lt_two_pow_16`).
+(`Ratpoints.Sieve.getElem!_inv_run_examinePower_lt_two_pow_16`). The row of a factor of a modulus,
+a prime or a prime power whose modulus divides `m`, reads the residues modulo `m` as those of the
+numbers (`Ratpoints.Sieve.Entry.admits_mod_of_dvd`, `Ratpoints.Sieve.Power.admits_mod_of_dvd`), so
+that the sieve entry of `m` (`Ratpoints.Sieve.SieveEntry`) lets every point through when each of its
+factors does, without the Chinese remainder theorem.
 
 ## Main definitions
 
@@ -56,6 +60,9 @@ the reversed polynomial takes a square value at `b / a`, both from the lemmas of
   `Ratpoints.maxPrimeEven` are below `2 ^ 16`, the range of their C type.
 * `Ratpoints.Sieve.admits_run_examinePower_of_sq_eq`: the rows of a prime power let every point
   through.
+* `Ratpoints.Sieve.Entry.admits_mod_of_dvd`, `Ratpoints.Sieve.Power.admits_mod_of_dvd`: the row of
+  a prime or a prime power reads the residues modulo a multiple of its modulus as those of the
+  numbers.
 
 ## Implementation notes
 
@@ -447,6 +454,18 @@ theorem admits_run_examinePower_of_sq_eq {c : List ℤ} {p e : ℕ} (u : Bool) (
   split
   · exact getElem!_fsq_run_examinePower_of_sq_eq u hp he hy ‹_›
   · exact getElem!_gsq_run_examinePower_of_sq_eq u hp he hab hy (not_not.mp ‹_›)
+
+/-! ### The factors of a modulus -/
+
+theorem Entry.admits_mod_of_dvd (e : Entry) {m : ℕ} (h : e.p ∣ m) (b : ℕ) (a : ℤ) :
+    e.admits (b % m) (a % m) = e.admits b a := by
+  simp only [Entry.admits, Nat.mod_mod_of_dvd b h,
+    Int.emod_emod_of_dvd a (Int.natCast_dvd_natCast.mpr h)]
+
+theorem Power.admits_mod_of_dvd (pw : Power) {m : ℕ} (h : pw.m ∣ m) (b : ℕ) (a : ℤ) :
+    pw.admits (b % m) (a % m) = pw.admits b a := by
+  simp only [Power.admits, Nat.mod_mod_of_dvd b h,
+    Int.emod_emod_of_dvd a (Int.natCast_dvd_natCast.mpr h)]
 
 end Sieve
 

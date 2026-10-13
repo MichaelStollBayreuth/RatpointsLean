@@ -311,10 +311,10 @@ def allValuations (p bHigh : Nat) : Id Nat := do
 C: `find_points.c:2773-2777`, `gen_find_points_h.c:102-134`
 
 Deviation: one function for the primes of the table of the build, whose words are the first `p`
-words of the pattern `sieves0` that the build generates (the row of `0` of the sieve,
-`Ratpoints.Sieve.Entry.row`), those between `start` and `end`, and the primes beyond it, whose words
-`sieving_info` makes in the buffer `forb_words` of the arguments; a fresh array for each prime;
-divisions and remainders for the shifts and masks by `LONG_SHIFT` and `LONG_MASK`. -/
+words of the pattern `sieves0` that the build generates (the row of `0` of a prime,
+`Ratpoints.Sieve.SieveEntry.row`), those between `start` and `end`, and the primes beyond it, whose
+words `sieving_info` makes in the buffer `forb_words` of the arguments; a fresh array for each
+prime; divisions and remainders for the shifts and masks by `LONG_SHIFT` and `LONG_MASK`. -/
 def forbiddenRow (p : Nat) : Array UInt64 :=
   Nat.fold 64 (fun i _ row ↦ row.modify (p * i / 64) (· &&& ~~~(1 <<< (p * i % 64).toUInt64)))
     (Array.replicate p (~~~0))
@@ -815,13 +815,13 @@ def runSetup (useSquares : Bool) (us1 : Option (List Setup.DenInfo × List Nat))
     else return .all
 
 /-- The points of the denominators from `bLow` to `bHigh` of the shape `shape`, for the polynomial
-of degree `d` with the coefficient list `c`: the rows of the tables `entries` are made once for the
-run, each residue's row as a thunk (`Ratpoints.Sieve.Entry.rows`); for each denominator `b` of the
-shape, in the order of its loop (`Ratpoints.Sieve.Shape.dens`, with the word `db` of the classes
-that admit a numerator), that passes its tests (`Ratpoints.Sieve.Shape.keep`, with the words `nb` of
-the 2-adic information), the points that `Ratpoints.Sieve.sift` finds from the word `nb[b mod 64]`
-of its class, with pieces of at most `A` bit arrays, for `A ≥ 1`, and the flag `rev` of the
-reversal, are appended in turn.
+of degree `d` with the coefficient list `c`: the rows of the sieve entries `entries` of the moduli
+are made once for the run, each residue's row as a thunk (`Ratpoints.Sieve.SieveEntry.rows`); for
+each denominator `b` of the shape, in the order of its loop (`Ratpoints.Sieve.Shape.dens`, with the
+word `db` of the classes that admit a numerator), that passes its tests
+(`Ratpoints.Sieve.Shape.keep`, with the words `nb` of the 2-adic information), the points that
+`Ratpoints.Sieve.sift` finds from the word `nb[b mod 64]` of its class, with pieces of at most `A`
+bit arrays, for `A ≥ 1`, and the flag `rev` of the reversal, are appended in turn.
 
 C: `find_points.c:3889-3904`, `find_points.c:3917-3918`, `find_points.c:3926-3936`,
 `find_points.c:3954-3966`, `find_points.c:4009`, `find_points.c:4042-4052`, `find_points.c:4059`,
@@ -839,7 +839,7 @@ each call (`k` the stride of the packing; stage F); a list of points, for the co
 points that `sift` and `run_block` return, with no stop by the callback (stage G); natural numbers
 for the `long`s (stage F); no correction of the moduli between the blocks (stage I); no output under
 `DEBUG`. -/
-def sieveRun (c : List Int) (d H A : Nat) (rev : Bool) (entries : List Entry)
+def sieveRun (c : List Int) (d H A : Nat) (rev : Bool) (entries : List SieveEntry)
     (nb : Vector UInt64 64) (db : UInt64) (shape : Shape) (bLow bHigh : Nat) :
     Id (Array (Int × Int × Int)) := do
   let rows := entries.map fun e ↦ (e.p, e.rows)
@@ -936,7 +936,7 @@ rule; and the run of the divisor shape against the points that ratpoints prints.
   row.size == p && (List.range p).all fun r ↦ (List.range 64).all fun j ↦
     row[r]!.toBitVec.getLsbD j == ((64 * r + j) % p != 0)
 #guard [3, 5, 7, 13, 251].all fun p ↦
-  forbiddenRow p == ((examinePrime [1, 0, 1] 2 p).row 0).extract 0 p
+  forbiddenRow p == ((⟨p, [.prime (examinePrime [1, 0, 1] 2 p)]⟩ : SieveEntry).row 0).extract 0 p
 
 -- The forbidden divisors of the dump, for the first 30 primes of the table as the examined primes:
 -- `1 2 3 4 5 6 7` at the height 100, `6 -3 5 2 75` at 1000 and at 50 with at most 3 of them
@@ -1074,7 +1074,8 @@ rule; and the run of the divisor shape against the points that ratpoints prints.
 #guard
   let c : List Int := [1, 2]
   let nb := Id.run (twoAdic c 1)
-  let entries := (primeTable.toList.take 30).filterMap (examinePrime? c 1 · true)
+  let entries := (primeTable.toList.take 30).filterMap fun p ↦
+    (examinePrime? c 1 p true).map fun e ↦ (⟨p, [.prime e]⟩ : SieveEntry)
   (Id.run (sieveRun c 1 20 1 false entries nb (denBits nb) (.squares1 [⟨2, 1, 2⟩] [1, 2]) 1
       20)).toList ==
     [(0, 1, 1), (0, -1, 1), (4, 3, 1), (4, -3, 1), (12, 5, 1), (12, -5, 1), (-4, 3, 9), (-4, -3, 9),

@@ -1175,7 +1175,7 @@
       "hash": "3f663de590a75381a367c9aa80c762fd4467443c6675de60cb488cddb61f2e60",
       "owners": [
         "Ratpoints.Sieve.Entry.admits",
-        "Ratpoints.Sieve.Entry.row",
+        "Ratpoints.Sieve.SieveEntry.row",
         "Ratpoints.Sieve.forbiddenRow"
       ]
     },
@@ -1201,14 +1201,20 @@
       "hash": "f4f11f12c647da1f0363cd7f62a6a71315050bb840ddde15b7965110d5736feb",
       "owners": [
         "Ratpoints.Sieve.Entry.admits",
-        "Ratpoints.Sieve.Entry.row"
+        "Ratpoints.Sieve.SieveEntry.row"
       ]
     },
     "init.c:118-246": {
       "hash": "218047ac32ead2f14f63287e47ec479125d382c35f9195c7b91fd9eb20d1a77a",
       "owners": [
         "Ratpoints.Sieve.Entry.admits",
-        "Ratpoints.Sieve.Entry.row"
+        "Ratpoints.Sieve.SieveEntry.row"
+      ]
+    },
+    "init.c:259-297": {
+      "hash": "4db1fe15bedb3445b4cee37d69fc1cfe5d1ae4bb0305d9ff7975229e190b86fc",
+      "owners": [
+        "Ratpoints.Sieve.SieveEntry.row"
       ]
     },
     "init.c:359-386": {
@@ -1217,18 +1223,60 @@
         "Ratpoints.Sieve.Power.admits"
       ]
     },
+    "init.c:387-387": {
+      "hash": "d0781bcdcc7a9187fffbaa0232622bdef27c7ecd977c6d8c5a187b30f409820b",
+      "owners": [
+        "Ratpoints.Sieve.SieveEntry.row"
+      ]
+    },
+    "init.c:391-393": {
+      "hash": "573a984ae62b780fc5e1ce7791b377599ebba39c03c4f5208d778427a6c9dd91",
+      "owners": [
+        "Ratpoints.Sieve.SieveEntry.row"
+      ]
+    },
+    "init.c:399-414": {
+      "hash": "97b51c70d1af4d32b22076a2bfdb6d752d6ce1a8d03b4498dd02902614849497",
+      "owners": [
+        "Ratpoints.Sieve.SieveEntry.admits"
+      ]
+    },
+    "init.c:415-418": {
+      "hash": "31b07b060bda922d90ae542da70d9f7e4a1af8dbfd4335f48205a5efe3a22fee",
+      "owners": [
+        "Ratpoints.Sieve.SieveEntry.row"
+      ]
+    },
+    "init.c:419-429": {
+      "hash": "b2c73f309f9a0f5d6ed6919c2f9d69725d9d2eec908d731710e002c96c33030d",
+      "owners": [
+        "Ratpoints.Sieve.SieveEntry.admits"
+      ]
+    },
     "init.c:42-46": {
       "hash": "457dfd9e5c185e560428c32275595fc3b996ad4cf452057a4daad4239c908f04",
       "owners": [
         "Ratpoints.Sieve.Entry.admits",
-        "Ratpoints.Sieve.Entry.row"
+        "Ratpoints.Sieve.SieveEntry.row"
+      ]
+    },
+    "init.c:430-430": {
+      "hash": "525f48f361ea9b086f3da5fe443b28cf9d8362ffcc4a8b83298f57726be433a4",
+      "owners": [
+        "Ratpoints.Sieve.SieveEntry.row"
+      ]
+    },
+    "init.c:443-445": {
+      "hash": "573a984ae62b780fc5e1ce7791b377599ebba39c03c4f5208d778427a6c9dd91",
+      "owners": [
+        "Ratpoints.Sieve.SieveEntry.row"
       ]
     },
     "init.c:62-83": {
       "hash": "e6b5169634ff8a69f4ace2294488e25c17f4c0e06bc9dfa967c04ebeeb94b09f",
       "owners": [
         "Ratpoints.Sieve.Entry.admits",
-        "Ratpoints.Sieve.Entry.row"
+        "Ratpoints.Sieve.SieveEntry.row"
       ]
     },
     "init.c:88-93": {
@@ -1247,7 +1295,7 @@
       "hash": "28cac77499403ab7417e4587d061c13f772e4f0d715a9019de3e74a87029560b",
       "owners": [
         "Ratpoints.Sieve.Entry.admits",
-        "Ratpoints.Sieve.Entry.row"
+        "Ratpoints.Sieve.SieveEntry.row"
       ]
     },
     "main.c:1036-1043": {
@@ -1918,6 +1966,18 @@
         "Ratpoints.rbaLength"
       ]
     },
+    "rp-private.h:497-498": {
+      "hash": "96ab4090071c8eff7a76966a8a9e17fcadf5d660ceea208ad3222273849431c8",
+      "owners": [
+        "Ratpoints.Sieve.SieveEntry"
+      ]
+    },
+    "rp-private.h:520-520": {
+      "hash": "f252e27e10c49b3f212013e88f70984d83acc9b63a8ad67182d056ef663ed941",
+      "owners": [
+        "Ratpoints.Sieve.SieveEntry"
+      ]
+    },
     "rp-private.h:523-523": {
       "hash": "6f7a19fe597d903490a7e0a892d700c02f4a5e297a6b8e6648b011121872b6ea",
       "owners": [
@@ -1933,7 +1993,8 @@
     "rp-private.h:542-555": {
       "hash": "35545fa2f80164462a2e92e543f56f9ceace7fcfccb179d0f60ba51292630ae1",
       "owners": [
-        "Ratpoints.Sieve.Entry"
+        "Ratpoints.Sieve.Entry",
+        "Ratpoints.Sieve.SieveEntry"
       ]
     },
     "rp-private.h:55-58": {

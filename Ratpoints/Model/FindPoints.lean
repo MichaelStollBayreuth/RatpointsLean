@@ -79,14 +79,15 @@ the switch `P.jacobi`; the squares for odd degree and `|c_d| = 1`; and for odd d
 divisors of `c_d` (`Ratpoints.Setup.setupUs1`). Then the 2-adic information
 (`Ratpoints.Sieve.twoAdic`, `Ratpoints.Sieve.denBits`), and no points when no class of the
 denominators admits a numerator and there is no point at infinity, as there is for odd degree or
-`c_d` a square. Then the table of each modulus of `P` with the exit
-(`Ratpoints.Sieve.examinePrime?`), with the flag of the `long`s (`Ratpoints.Setup.useCLong`), and no
+`c_d` a square. Then the table of each modulus `p` of `P` with the exit
+(`Ratpoints.Sieve.examinePrime?`), with the flag of the `long`s (`Ratpoints.Setup.useCLong`), made
+the sieve entry of `p` with the table as its one factor (`Ratpoints.Sieve.SieveEntry`), and no
 points when one of them is none, since the curve has no points modulo that prime; for even degree
 the forbidden divisors, at most `P.maxForbidden` of them (`Ratpoints.Sieve.forbidden`), and the
 checked loop off when there are none and no Jacobi test; the shape of the run
 (`Ratpoints.Sieve.runSetup`); and the points at infinity (`Ratpoints.Sieve.pointsAtInfinity`),
-followed by those of the denominators of the shape (`Ratpoints.Sieve.sieveRun`) with these tables
-and pieces of at most `Ratpoints.Params.arraySizeAt P H` bit arrays, each point mapped by
+followed by those of the denominators of the shape (`Ratpoints.Sieve.sieveRun`) with these sieve
+entries and pieces of at most `Ratpoints.Params.arraySizeAt P H` bit arrays, each point mapped by
 `Ratpoints.Sieve.swapPoint` when `rev` is set. For well-formed parameters, `H ≥ 1` and `d` the
 degree of `c`, these are the points at infinity followed by the points of the brute-force reference
 over the denominators of the search (`Ratpoints.searchDens`), in the order of its loop, increasing
@@ -106,22 +107,24 @@ choice of the moduli is an input of the model, and when the exit is taken there 
 that the output does not depend on the primes examined; the forbidden divisors computed after the
 tables of all the moduli (`Ratpoints.Sieve.forbidden`), where `sieving_info` records them prime by
 prime in the loop of the tables, which an exit leaves, and with the coefficients modulo `p` and the
-entry at infinity that `examine_prime` hands back computed again (both until stage F); the arguments
-of `sieving_info` that serve the choice of the moduli (the list of the moduli, the mean number of
-bits per word, whether the number of primes was left to the library, the 2-adic classes and the word
-`den_bits`) are not modelled; the denominators from `1` to `H`, for the range `b_low, …, b_high`
-(stage H); the flags of the denominators as Booleans, for the bits of `args->flags`; the forbidden
-divisors and the divisors of the leading coefficient with their records as lists, for the arrays
-`args->forb_ba`, `args->forbidden`, `args->den_info` and `args->divisors` of the arguments; the
-square test `lcfsq` of line 4906 made on the polynomial searched (`Ratpoints.Setup.isSquare`), where
-the C code computes it before the reversal check (line 4634) and clears it in case 2 (line 4770):
-the same value for an even degree, the only one that reads it; the test on `point_at_infty` of the
-2-adic exit recomputed, as `Ratpoints.Sieve.pointsAtInfinity` decides it; the exits give the empty
-list, where `sieving_info` returns the prime and `find_points_work_1` the number `0` of points
-found; the Sturm step does not restrict the search region before stage H, so that the return when it
-leaves nothing to search is never taken, and the run always follows the points at infinity; no
-failure for lack of memory, which the model cannot meet; no output under `RATPOINTS_VERBOSE` or
-`DEBUG`. -/
+entry at infinity that `examine_prime` hands back computed again (both until stage F); the sieve
+entry of each modulus made here from its table, with the table as its one factor, as `examine_prime`
+makes the entry of a prime with `nf = 0`, where `sieving_info` also makes the entries of prime
+powers and products of them (stage F); the arguments of `sieving_info` that serve the choice of the
+moduli (the list of the moduli, the mean number of bits per word, whether the number of primes was
+left to the library, the 2-adic classes and the word `den_bits`) are not modelled; the denominators
+from `1` to `H`, for the range `b_low, …, b_high` (stage H); the flags of the denominators as
+Booleans, for the bits of `args->flags`; the forbidden divisors and the divisors of the leading
+coefficient with their records as lists, for the arrays `args->forb_ba`, `args->forbidden`,
+`args->den_info` and `args->divisors` of the arguments; the square test `lcfsq` of line 4906 made on
+the polynomial searched (`Ratpoints.Setup.isSquare`), where the C code computes it before the
+reversal check (line 4634) and clears it in case 2 (line 4770): the same value for an even degree,
+the only one that reads it; the test on `point_at_infty` of the 2-adic exit recomputed, as
+`Ratpoints.Sieve.pointsAtInfinity` decides it; the exits give the empty list, where `sieving_info`
+returns the prime and `find_points_work_1` the number `0` of points found; the Sturm step does not
+restrict the search region before stage H, so that the return when it leaves nothing to search is
+never taken, and the run always follows the points at infinity; no failure for lack of memory, which
+the model cannot meet; no output under `RATPOINTS_VERBOSE` or `DEBUG`. -/
 def searchPoints (c : List Int) (d H : Nat) (P : Params) (rev : Bool) :
     Id (List (Int × Int × Int)) := do
   let bHigh := H
@@ -134,7 +137,7 @@ def searchPoints (c : List Int) (d H : Nat) (P : Params) (rev : Bool) :
   let nb ← twoAdic c d
   let db := denBits nb
   if db == 0 && !(d % 2 == 1 || Setup.isSquare lcf) then return []
-  match P.moduli.mapM (examinePrime? c d · useCLong) with
+  match P.moduli.mapM (fun p ↦ (examinePrime? c d p useCLong).map fun t ↦ ⟨p, [.prime t]⟩) with
   | none => return []
   | some entries =>
     let (forb, forbVal) ← if checkDenom then forbidden c d P.moduli P.maxForbidden bHigh

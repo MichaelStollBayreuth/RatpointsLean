@@ -79,22 +79,23 @@ open BruteForce
 
 /-! ### The sieve of one denominator -/
 
-/-- The invariant of the loop of `Ratpoints.Sieve.sieveDen` over the tables: after the tables
-`pref`, the entry of each numerator `i - H` is its survivor test for them. -/
-def SieveDenInvariant (H b : Nat) (pref : List Entry) (surv : Vector Bool (2 * H + 1)) : Prop :=
+/-- The invariant of the loop of `Ratpoints.Sieve.sieveDen` over the sieve entries: after the
+entries `pref`, the entry of each numerator `i - H` is its survivor test for them. -/
+def SieveDenInvariant (H b : Nat) (pref : List SieveEntry)
+    (surv : Vector Bool (2 * H + 1)) : Prop :=
   ∀ i (hi : i < 2 * H + 1), surv[i] = survives pref b ((i : Int) - H)
 
-/-- The invariant of the loop of `Ratpoints.Sieve.sieveDen` over the numerators for the table `e`,
-after the tables `pref`: after the positions `done`, the entry of each numerator `i - H` is its
-survivor test for `pref` followed by `e` if `i` is among them, and for `pref` otherwise. -/
-def SieveDenRowInvariant (H b : Nat) (pref : List Entry) (e : Entry) (done : List Nat)
+/-- The invariant of the loop of `Ratpoints.Sieve.sieveDen` over the numerators for the sieve entry
+`e`, after the entries `pref`: after the positions `done`, the entry of each numerator `i - H` is
+its survivor test for `pref` followed by `e` if `i` is among them, and for `pref` otherwise. -/
+def SieveDenRowInvariant (H b : Nat) (pref : List SieveEntry) (e : SieveEntry) (done : List Nat)
     (surv : Vector Bool (2 * H + 1)) : Prop :=
   ∀ i (hi : i < 2 * H + 1),
     surv[i] = if i ∈ done then survives (pref ++ [e]) b ((i : Int) - H)
       else survives pref b ((i : Int) - H)
 
 @[spec]
-theorem sieveDen_spec (H b : Nat) (entries : List Entry) :
+theorem sieveDen_spec (H b : Nat) (entries : List SieveEntry) :
     ⦃ True ⦄ sieveDen H b entries
     ⦃ fun surv ↦ ∀ i (hi : i < 2 * H + 1), surv[i] = survives entries b ((i : Int) - H) ⦄ := by
   vcgen [sieveDen] invariants

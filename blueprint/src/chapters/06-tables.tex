@@ -323,9 +323,8 @@ which $\mathrm{maxPrimeEven} \le 2^{32}$ gives.
 
 \begin{definition}[The sieve entries]\label{def:SieveEntry}
   \uses{def:admits, def:examinePower, def:binaryForm}
-  Proposed names: \lname{Ratpoints.Sieve.Factor}, \lname{Ratpoints.Sieve.Factor.admits},
-  \lname{Ratpoints.Sieve.SieveEntry}, \lname{Ratpoints.Sieve.SieveEntry.admits},
-  \lname{Ratpoints.Sieve.SieveEntry.IsSound}.
+  \lean{Ratpoints.Sieve.Factor, Ratpoints.Sieve.Factor.admits, Ratpoints.Sieve.SieveEntry, Ratpoints.Sieve.SieveEntry.admits, Ratpoints.Sieve.survives, Ratpoints.Sieve.SieveEntry.IsSound}
+  \leanok
   A factor of a modulus is a prime with its table or a prime power with its tables; the sieve entry
   of a modulus $m$ is $m$ with its factors, one for a prime or a prime power, two or more for a
   product (\csource{rp-private.h}{497}{498}, \csource{rp-private.h}{520}{520},

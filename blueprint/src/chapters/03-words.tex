@@ -132,29 +132,33 @@ model it is $1$.
 \section{The rows as words}\label{sec:wordRows}
 
 \begin{definition}[The row of a denominator in words]\label{def:row}
-  \uses{def:admits, def:rbaPack}
-  \lean{Ratpoints.Sieve.packedPattern, Ratpoints.Sieve.window, Ratpoints.Sieve.Entry.row, Ratpoints.Sieve.Entry.admits_congr, Ratpoints.Sieve.Entry.admits_add_mul, Ratpoints.Sieve.getLsbD_window, Ratpoints.Sieve.Entry.getLsbD_row}
+  \uses{def:SieveEntry, def:rbaPack}
+  \lean{Ratpoints.Sieve.packedPattern, Ratpoints.Sieve.window, Ratpoints.Sieve.SieveEntry.row, Ratpoints.Sieve.SieveEntry.admits_congr, Ratpoints.Sieve.SieveEntry.admits_add_mul, Ratpoints.Sieve.SieveEntry.admits_mod, Ratpoints.Sieve.getLsbD_window, Ratpoints.Sieve.SieveEntry.getLsbD_row}
   \leanok
-  For the table of a prime $p$ and a denominator $b$: the pattern of one period, whether the row of
-  $b$ admits $N$ for $N = 0, \dots, p - 1$ (Definition~\ref{def:admits}); the pattern over the
-  positions $0, \dots, p + 63$, packed into words; for $j < p$, word $j$ of the row, the 64 bits of
-  the packed pattern from position $64 j \bmod p$ on, cut out with two shifts; and these words
-  repeated $\mathrm{rbaPack}$ times, which makes $p$ bit arrays. Since the row admits $a$ exactly
-  when it admits $a + p k$, bit $t$ of word $j$ says whether the row admits $64 j + t$, for every
-  $j < p \cdot \mathrm{rbaPack}$. ratpoints builds the same table from the table of the prime and
-  the inverses, the pattern of one period bit by bit and then the words by shifting it through
-  them, by a function for each prime that its build generates (\csource{init.c}{42}{46},
-  \csource{init.c}{62}{83}, \csource{init.c}{118}{246}, \csource{gen_init_sieve_h.c}{48}{62}), with
-  the copies \csource{init.c}{99}{111}, and takes the row of $0$ from the generated pattern
-  \verb|sieves0| (\csource{gen_find_points_h.c}{102}{134}); these ranges are shared with
-  Definition~\ref{def:admits} until the faithful builders of stage~F. The copies of the first bit
-  arrays at the end of a row, which only the chunked first stage reads, are none in the build of
-  the model.
+  For the sieve entry of a modulus $p$ (Definition~\ref{def:SieveEntry}) and a denominator $b$: the
+  pattern of one period, whether the row of $b$ admits $N$ for $N = 0, \dots, p - 1$; the pattern
+  over the positions $0, \dots, p + 63$, packed into words; for $j < p$, word $j$ of the row, the 64
+  bits of the packed pattern from position $64 j \bmod p$ on, cut out with two shifts; and these
+  words repeated $\mathrm{rbaPack}$ times, which makes $p$ bit arrays. Since the row admits $a$
+  exactly when it admits $a + p k$, and the row of $b$ is that of $b \bmod p$, bit $t$ of word $j$
+  says whether the row admits $64 j + t$, for every $j < p \cdot \mathrm{rbaPack}$. For a prime,
+  ratpoints builds the same table from the table of the prime and the inverses, the pattern of one
+  period bit by bit and then the words by shifting it through them, by a function for each prime
+  that its build generates (\csource{init.c}{42}{46}, \csource{init.c}{62}{83},
+  \csource{init.c}{118}{246}, \csource{gen_init_sieve_h.c}{48}{62}), with the copies
+  \csource{init.c}{99}{111}, and takes the row of $0$ from the generated pattern \verb|sieves0|
+  (\csource{gen_find_points_h.c}{102}{134}); these ranges are shared with
+  Definition~\ref{def:admits} until the faithful builders of stage~F. For a prime power it lays the
+  pattern out by \verb|lay_out_pattern| (\csource{init.c}{259}{297}, \csource{init.c}{387}{387}),
+  and for a product it lays down the rows of the factors in blocks (\csource{init.c}{415}{418},
+  \csource{init.c}{430}{430}); both publish the row (\csource{init.c}{391}{393},
+  \csource{init.c}{443}{445}). The copies of the first bit arrays at the end of a row, which only
+  the chunked first stage reads, are none in the build of the model.
 \end{definition}
 
 \begin{definition}[The rows of a modulus]\label{def:rows}
   \uses{def:row}
-  \lean{Ratpoints.Sieve.Entry.rows, Ratpoints.Sieve.Entry.get_rows, Ratpoints.Sieve.Entry.row_mod, Ratpoints.Sieve.SieveSpec}
+  \lean{Ratpoints.Sieve.SieveEntry.rows, Ratpoints.Sieve.SieveEntry.get_rows, Ratpoints.Sieve.SieveEntry.row_mod, Ratpoints.Sieve.SieveSpec}
   \leanok
   The rows of the residues $r = 0, \dots, p - 1$, each made when a denominator first needs it, as a
   suspended computation that runs once, and kept for the run, which makes these computations once
@@ -226,11 +230,11 @@ nonzero and gives the bit arrays their numerators.
 \section{One piece}\label{sec:piece}
 
 Fix a piece: the bit arrays with the word numbers $w_0, \dots, w_0 + n - 1$, in an array of
-$(n + 1) \cdot \mathrm{rbaPack}$ words, the last bit array for the sentinel. Word $y$ of the
-piece, for $y < n \cdot \mathrm{rbaPack}$, holds the numerators $R w_0 + 64 y + t$ for
-$t < 64$; this is what makes the width disappear from the statements. The components of a piece
-receive the moduli with their rows for $b$ and the products of the check rather than the tables
-and the coefficients, so their contracts quantify over the tables whose rows they are, as the
+$(n + 1) \cdot \mathrm{rbaPack}$ words, the last bit array for the sentinel. Word $y$ of the piece,
+for $y < n \cdot \mathrm{rbaPack}$, holds the numerators $R w_0 + 64 y + t$ for $t < 64$; this is
+what makes the width disappear from the statements. The components of a piece receive the moduli
+with their rows for $b$ and the products of the check rather than the sieve entries and the
+coefficients, so their contracts quantify over the sieve entries whose rows they are, as the
 contract of the check of stage~C1 quantifies over the test of the numerators.
 
 \begin{definition}[The first stage]\label{def:andRows}
@@ -248,8 +252,8 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
   the row from $p - r$ on when $n < r$, and otherwise $r$ bit arrays from $p - r$ on, then whole
   periods of $p$ from $0$, then the rest from $0$ (\csource{sift.c}{943}{1022}). Every modulus is
   applied here, those of the second and the third stage too (\csource{sift.c}{291}{312},
-  \csource{sift.c}{1083}{1086}, \csource{sift.c}{1174}{1202}). Its contract: for every list of
-  tables with $p > 0$ whose rows for $b$ the moduli carry, bit $t$ of word
+  \csource{sift.c}{1083}{1086}, \csource{sift.c}{1174}{1202}). Its contract: for every list of sieve
+  entries with $p > 0$ whose rows for $b$ the moduli carry, bit $t$ of word
   $y < n \cdot \mathrm{rbaPack}$ is bit $t$ of $\omega$ and the survivor test of $R w_0 + 64 y + t$.
   The class bit of a numerator $a$ is bit $a \bmod 64$ of $\omega$; that of $R w_0 + 64 y + t$, for
   $t < 64$, is bit $t$, since $64 \mid R$.
@@ -313,9 +317,9 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
   \verb|_ratpoints_sift0| (\csource{sift.c}{498}{531}), the count of its words
   (\csource{sift.c}{548}{548}), the timer and the test before its second stage
   (\csource{sift.c}{1056}{1058}) and its end (\csource{sift.c}{1300}{1305}). Its contract, for
-  $m_h < R$ and every list of tables with $p > 0$ whose rows for $b$ the moduli carry: the
+  $m_h < R$ and every list of sieve entries with $p > 0$ whose rows for $b$ the moduli carry: the
   concatenation of the checks of the numerators from $R w_0 + m_l$ to $R (w_0 + n) - 1 - m_h$ that
-  pass the class bit of $\omega$ and survive the tables.
+  pass the class bit of $\omega$ and survive the sieve entries.
 \end{definition}
 
 \section{One denominator and the run}\label{sec:siftDen}
@@ -334,9 +338,9 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
   $R - 1 - (H \bmod R)$ if it is the last (\csource{find_points.c}{3442}{3488},
   \csource{find_points.c}{3563}{3617}), each from the class word $\omega$ of $b$, an argument of
   \verb|sift|, for the class of $b$ that ratpoints passes. Its contract, for $A \ge 1$ and the rows
-  of tables with $p > 0$: what the brute-force reference finds over $b$ and the numerators
-  $-H, \dots, H$ that pass the class bit of $\omega$ and survive the tables, the points of the sieve
-  of $b$ followed by its check in stage~C1 whose numerators pass the class bit, mapped by
+  of sieve entries with $p > 0$: what the brute-force reference finds over $b$ and the numerators
+  $-H, \dots, H$ that pass the class bit of $\omega$ and survive the sieve entries, the points of
+  the sieve of $b$ followed by its check in stage~C1 whose numerators pass the class bit, mapped by
   $\mathrm{swapPoint}$ when the flag is set. The masked ranges of the pieces lie end to end and make
   up $[-H, H]$: the low mask moves the start of the first piece from $R w_{\mathrm{low}}$ to $-H$,
   the high mask the end of the last one from $R w_{\mathrm{high}} - 1$ to $H$, and a piece between
@@ -347,16 +351,16 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
   \uses{def:sift, def:sieveDen, def:checkDen}
   \lean{Ratpoints.Sieve.toList_run_sift_eq_checkDen, Ratpoints.BruteForce.pointsOfDen_filter}
   \leanok
-  For $A \ge 1$, a class word $\omega$ and tables with $p > 0$, the points of the denominator $b$
-  that \verb|sift| returns from $\omega$ are those that the check of stage~C1 returns on the sieve
-  of stage~C1 whose numerators pass the class bit of $\omega$, mapped by $\mathrm{swapPoint}$ when
-  the flag of the reversal is set.
+  For $A \ge 1$, a class word $\omega$ and sieve entries with $p > 0$, the points of the denominator
+  $b$ that \verb|sift| returns from $\omega$ are those that the check of stage~C1 returns on the
+  sieve of stage~C1 whose numerators pass the class bit of $\omega$, mapped by $\mathrm{swapPoint}$
+  when the flag of the reversal is set.
 \end{lemma}
 
 \begin{proof}
   \leanok
   The check of stage~C1 on the sieve of stage~C1 gives what the brute-force reference finds over $b$
-  and the numerators $-H, \dots, H$ that survive the tables, by the contracts of
+  and the numerators $-H, \dots, H$ that survive the sieve entries, by the contracts of
   Definitions~\ref{def:sieveDen} and~\ref{def:checkDen}, and \verb|sift| gives those of these points
   whose numerators pass the class bit, mapped by $\mathrm{swapPoint}$ when the flag is set, by the
   contract of Definition~\ref{def:sift}: filtering the numerators by a test filters the points of
@@ -367,16 +371,16 @@ The sieve of one denominator and the check of stage~C1 are the reference of the 
 lemma, and hold no C ranges: the components of this chapter model those lines, with the cuts above.
 The run over the denominators (Definition~\ref{def:sieveRun}) makes the rows of the moduli once and
 returns, for each denominator of its shape that passes the test of the shape, the points that
-\verb|sift| finds from the word of its class; its contract holds for $A \ge 1$ and tables with
-$p > 0$, and \verb|sift| computes the residues $b \bmod p$ once per denominator, where ratpoints
-computes the residues of $b / 2^k$ before each call of \verb|sift| (\verb|fill_bp_list|). The search
-of the polynomial (Definition~\ref{def:searchPoints}), which \verb|findPoints|
+\verb|sift| finds from the word of its class; its contract holds for $A \ge 1$ and sieve entries
+with $p > 0$, and \verb|sift| computes the residues $b \bmod p$ once per denominator, where
+ratpoints computes the residues of $b / 2^k$ before each call of \verb|sift| (\verb|fill_bp_list|).
+The search of the polynomial (Definition~\ref{def:searchPoints}), which \verb|findPoints|
 (Definition~\ref{def:findPoints}) runs on the polynomial that the reversal check hands on, runs it
-with $A = \mathrm{arraySizeAt}(H)$ of its parameters and the tables of its moduli, which are primes.
-So the reduction of the run to the reference (Theorem~\ref{thm:run_reference}) needs the positivity
-of the moduli, and the equation of the search the lower bound of the array size, two facts that
-stage~C1 did not need; stage~C2 changed neither the statements of the main theorems nor the
-comparator challenge.
+with $A = \mathrm{arraySizeAt}(H)$ of its parameters and the sieve entries of its moduli, which are
+primes, each with its table as its one factor. So the reduction of the run to the reference
+(Theorem~\ref{thm:run_reference}) needs the positivity of the moduli, and the equation of the search
+the lower bound of the array size, two facts that stage~C1 did not need; stage~C2 changed neither
+the statements of the main theorems nor the comparator challenge.
 
 Each component of this chapter differs from the C code in a stated way, recorded in its
 \verb|Deviation:| paragraph:

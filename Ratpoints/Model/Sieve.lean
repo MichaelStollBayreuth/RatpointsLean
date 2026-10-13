@@ -18,19 +18,20 @@ meta import Ratpoints.Model.Constants
 The components of the sieve, each in its place in the C function `find_points_work_1`: the table of
 a prime with the exit when the curve has no points modulo it, on the coefficients reduced by the
 helper `mod` of the C code for `long`s or by the Euclidean `%` for GMP integers
-(`Ratpoints.Sieve.examinePrime?`, `Ratpoints.Sieve.modLong`), the rows of a denominator
-(`Ratpoints.Sieve.Entry.admits`), the bit arrays of 64-bit words of the C code with their operations
-and the rows as words, one piece of bit arrays from the first stage to the points of its numerators
-(`Ratpoints.Sieve.siftPiece`), the numerators of one denominator in pieces, from a class word, the
-numerators modulo 64 from which the first stage starts (`Ratpoints.Sieve.sift`), and the points at
-infinity (`Ratpoints.Sieve.pointsAtInfinity`); Barrett's reduction and Horner's rule with it on the
-fixed schedule of `examine_prime` (`Ratpoints.Sieve.barrett`, `Ratpoints.Sieve.hornerBarrett`),
-which the table of a prime takes with stage F, and the tables of a prime power, with the inverses by
-the extended Euclidean algorithm, and their rows (`Ratpoints.Sieve.examinePower`,
-`Ratpoints.Sieve.modinv`, `Ratpoints.Sieve.Power.admits`), which the moduli take with stage F, are
-here too; the loop over the denominators (`Ratpoints.Sieve.sieveRun`), with the 2-adic information
-that gives the words of the classes of the denominators modulo 64, is in
-`Ratpoints.Model.Denominators`. The table of a prime without the exit
+(`Ratpoints.Sieve.examinePrime?`, `Ratpoints.Sieve.modLong`), the sieve entry of a modulus, a prime,
+a prime power or a product of them, by its factors (`Ratpoints.Sieve.SieveEntry`), the rows of a
+denominator (`Ratpoints.Sieve.SieveEntry.admits`), the bit arrays of 64-bit words of the C code with
+their operations and the rows as words, one piece of bit arrays from the first stage to the points
+of its numerators (`Ratpoints.Sieve.siftPiece`), the numerators of one denominator in pieces, from a
+class word, the numerators modulo 64 from which the first stage starts (`Ratpoints.Sieve.sift`), and
+the points at infinity (`Ratpoints.Sieve.pointsAtInfinity`); Barrett's reduction and Horner's rule
+with it on the fixed schedule of `examine_prime` (`Ratpoints.Sieve.barrett`,
+`Ratpoints.Sieve.hornerBarrett`), which the table of a prime takes with stage F, and the tables of a
+prime power, with the inverses by the extended Euclidean algorithm, and their rows
+(`Ratpoints.Sieve.examinePower`, `Ratpoints.Sieve.modinv`, `Ratpoints.Sieve.Power.admits`), which
+the sieve entries of the moduli take with stage F, are here too; the loop over the denominators
+(`Ratpoints.Sieve.sieveRun`), with the 2-adic information that gives the words of the classes of the
+denominators modulo 64, is in `Ratpoints.Model.Denominators`. The table of a prime without the exit
 (`Ratpoints.Sieve.examinePrime`) is the reference of the table with it, which gives the same table
 whenever it gives one (`Ratpoints.Sieve.eq_examinePrime_of_examinePrime?_eq_some`). The plain sieve
 of one denominator, one Boolean per numerator (`Ratpoints.Sieve.sieveDen`), and the test for common
@@ -44,8 +45,8 @@ that the reversal check has reversed (`Ratpoints.Setup.reversal`), the check of 
 points at infinity deliver the mapped points when their flag is set, and the components from the run
 down to the check hand the flag on. The tables that the build of ratpoints generates are computed
 here: the squares and the inverses by `Ratpoints.Sieve.squaresMod` and
-`Ratpoints.Sieve.inversesMod`, and the row of `0` by `Ratpoints.Sieve.Entry.admits`, in its case
-`r = 0`, and as words by `Ratpoints.Sieve.Entry.row`.
+`Ratpoints.Sieve.inversesMod`, and the row of `0` of a prime by `Ratpoints.Sieve.Entry.admits`, in
+its case `r = 0`, and as words by `Ratpoints.Sieve.SieveEntry.row`.
 
 ## Main definitions
 
@@ -60,17 +61,17 @@ here: the squares and the inverses by `Ratpoints.Sieve.squaresMod` and
   integers, or none when the curve has no points modulo the prime.
 * `Ratpoints.Sieve.modinv`, `Ratpoints.Sieve.Power`, `Ratpoints.Sieve.examinePower`: the inverse
   modulo `m` by the extended Euclidean algorithm, and the tables of a prime power.
-* `Ratpoints.Sieve.Entry.admits`, `Ratpoints.Sieve.Power.admits`, `Ratpoints.Sieve.survives`: the
-  rows of a denominator for a prime and for a prime power, and the test of a numerator against the
-  tables of primes.
+* `Ratpoints.Sieve.Entry.admits`, `Ratpoints.Sieve.Power.admits`, `Ratpoints.Sieve.Factor`,
+  `Ratpoints.Sieve.SieveEntry`, `Ratpoints.Sieve.SieveEntry.admits`, `Ratpoints.Sieve.survives`:
+  the rows of a denominator for a prime, for a prime power, and for a modulus by its factors.
 * `Ratpoints.Sieve.sieveDen`, `Ratpoints.Sieve.checkDen`: the plain sieve of one denominator and the
   points of its survivors, the reference of the bit arrays of words.
 * `Ratpoints.Sieve.andBitArray`, `Ratpoints.Sieve.clearLowBits`, `Ratpoints.Sieve.clearHighBits`,
   `Ratpoints.Sieve.isZeroAt`, `Ratpoints.Sieve.ctz`: the operations on the bit arrays of 64-bit
   words of the C code, and the lowest set bit of a word.
-* `Ratpoints.Sieve.Entry.row`, `Ratpoints.Sieve.Entry.rows`, `Ratpoints.Sieve.SieveSpec`: the row
-  of a denominator as words, the rows of the residues, each made when first needed, and a modulus
-  with its row for the denominator at hand.
+* `Ratpoints.Sieve.SieveEntry.row`, `Ratpoints.Sieve.SieveEntry.rows`,
+  `Ratpoints.Sieve.SieveSpec`: the row of a denominator as words, the rows of the residues, each
+  made when first needed, and a modulus with its row for the denominator at hand.
 * `Ratpoints.Sieve.swapPoint`: the point of the caller's curve for a point of the reversed curve.
 * `Ratpoints.Sieve.andRows`: the first stage over a piece of bit arrays, from a class word, the rows
   of the moduli and-ed into its words.
@@ -131,10 +132,12 @@ C: `rp-private.h:542-555`
 
 Deviation: only the fields that the rows of a prime read; the rows of the residues, which ratpoints
 keeps in the field `sieve`, that of `0` from the build and the others made by `init` when a
-denominator first needs them, are `Ratpoints.Sieve.Entry.rows`, made from
-`Ratpoints.Sieve.Entry.admits` when first needed and kept for the run; the other fields serve the
-composite moduli, the packing and the reduction of the sieve (stage F), and the choice of the
-moduli. -/
+denominator first needs them, are those of the sieve entry of the prime
+(`Ratpoints.Sieve.SieveEntry.rows`), made from `Ratpoints.Sieve.Entry.admits` when first needed and
+kept for the run; the fields `init`, `nf`, `factor` and `pw` are those of the sieve entry
+`Ratpoints.Sieve.SieveEntry`, of which the prime is the single factor; `magic`, `bias`, `rbainv` and
+`dinv` serve the reductions of the sieve and the packing (stage F), `r` the choice of the moduli
+(stage I). -/
 structure Entry where
   /-- The prime. -/
   p : Nat
@@ -267,9 +270,12 @@ moduli being an input of the model, and for both of its codes `1` and `2`, which
 the moduli tells apart (stage I); the entry is a fresh value, for the space that `examine_prime`
 takes from the buffer of the sieve entries (`se_next`), and returned, where `examine_prime` stores
 it in the field `ssp` of its caller's entry `prec_entry` for the choice of the moduli (stage I); it
-keeps only `p`, the table and the inverses (`Ratpoints.Sieve.Entry`), and no rows:
-`Ratpoints.Sieve.Entry.rows` makes them from it when they are first needed, also the row of `0`,
-which `examine_prime` installs from the build. -/
+keeps only `p`, the table and the inverses (`Ratpoints.Sieve.Entry`), and no rows: those of the
+sieve entry of the prime (`Ratpoints.Sieve.SieveEntry.rows`) are made from it when they are first
+needed, also the row of `0`, which `examine_prime` installs from the build; the fields `init`, `nf`
+and `pw` that `examine_prime` sets (lines 1800 and 1817) are those of the sieve entry of the prime
+(`Ratpoints.Sieve.SieveEntry`), of which the prime is the single factor, made by the search
+(`Ratpoints.searchPoints`). -/
 def examinePrime? (c : List Int) (d p : Nat) (useCLong : Bool) : Option Entry :=
   let cs := (List.range (d + 1)).map fun n ↦
     (if useCLong then modLong (c.getD n 0) p else c.getD n 0 % (p : Int)).toNat
@@ -279,7 +285,7 @@ def examinePrime? (c : List Int) (d p : Nat) (useCLong : Bool) : Option Entry :=
   if !isFSquare.any id && !atInfinity then none
   else some { p, isFSquare, inverses := inversesMod p }
 
-/-! ### Prime powers -/
+/-! ### Prime powers and products as moduli -/
 
 /-- The inverse of `x` modulo `m` for `x` prime to `m`, by the extended Euclidean algorithm: from
 `r₀ = m`, `r₁ = x mod m` and the cofactors `s₀ = 0`, `s₁ = 1`, which keep `rᵢ ≡ sᵢ x (mod m)`,
@@ -399,33 +405,90 @@ C: `init.c:359-386`
 Deviation: the bit of `a` in the row of `r`, computed from the tables for each numerator, where
 `_ratpoints_sieve_init_power` builds the pattern of the row of a residue once, when a denominator
 first needs it, stepping through the residues `x r⁻¹` by additions of `r⁻¹` for a unit `r`, and lays
-it out in words, which the rows as words of the moduli do with stage F; natural numbers for the
-`long`s and `unsigned long`s, the products of two residues, as `b inv[x]` (line 382), below
-`m ^ 2`. -/
+it out in words (`Ratpoints.Sieve.SieveEntry.row`); natural numbers for the `long`s and
+`unsigned long`s, the products of two residues, as `b inv[x]` (line 382), below `m ^ 2`. -/
 def Power.admits (pw : Power) (b : Nat) (a : Int) : Bool :=
   let r := b % pw.m
   let x := (a % (pw.m : Int)).toNat
   if r % pw.p ≠ 0 then pw.fsq[x * pw.inv[r]! % pw.m]!
   else x % pw.p != 0 && pw.gsq[r * pw.inv[x]! % pw.m]!
 
-/-- Whether the numerator `a` survives the tables `entries` for the denominator `b`: the row of
-`b` in every table admits `a` (`Ratpoints.Sieve.Entry.admits`). This test, a function of the
-numerator, is the interface between the sieve and the check. -/
-def survives (entries : List Entry) (b : Nat) (a : Int) : Bool := entries.all (·.admits b a)
+/-- A factor of a modulus of the sieve: a prime with its table (`Ratpoints.Sieve.Entry`) or a prime
+power with its tables (`Ratpoints.Sieve.Power`), as the sieve entry of a product points to the
+entries of its factors, which are those of primes and prime powers
+(`Ratpoints.Sieve.SieveEntry`). -/
+inductive Factor where
+  /-- A prime with its table. -/
+  | prime (e : Entry)
+  /-- A prime power with its tables. -/
+  | power (pw : Power)
+
+/-- Whether the row of the denominator `b` for the factor `f` admits the numerator `a`: the row of
+the prime (`Ratpoints.Sieve.Entry.admits`) or of the prime power
+(`Ratpoints.Sieve.Power.admits`). -/
+def Factor.admits : Factor → Nat → Int → Bool
+  | .prime e, b, a => e.admits b a
+  | .power pw, b, a => pw.admits b a
+
+/-- The sieve entry of a modulus `p` of the sieve, a prime, a prime power or a product of primes and
+prime powers, given by its factors (`Ratpoints.Sieve.Factor`): one for a prime or a prime power, two
+or more for a product. Its row for a denominator is the and of the rows of its factors
+(`Ratpoints.Sieve.SieveEntry.admits`).
+
+C: `rp-private.h:497-498`, `rp-private.h:520`, `rp-private.h:542-555`
+
+Deviation: the kinds of modulus as the list of the factors: one prime factor for a prime, whose
+entry has `nf = 0` and the tables `is_f_square` and `inverses` of its own; one prime-power factor
+for a prime power, whose entry has `nf = 1` and its tables `pw`; and two or more for a product,
+whose entry has `nf ≥ 2` and points to the entries `factor` of its factors; no bound
+`RP_MAX_FACTORS` on the number of factors; the rows of the residues, which ratpoints keeps in the
+field `sieve`, are `Ratpoints.Sieve.SieveEntry.rows`, made when first needed and kept for the run,
+by one function for every kind (`Ratpoints.Sieve.SieveEntry.row`), for the function `init` of the
+kind, of the type `ratpoints_init_fun`; no reciprocal `magic`, bias `bias`, inverse `rbainv` and
+inverses `dinv`, which serve the reduction of the sieve and the packing (stage F), and no density
+`r`, which serves the choice of the moduli (stage I). -/
+structure SieveEntry where
+  /-- The modulus. -/
+  p : Nat
+  /-- The factors: one for a prime or a prime power, two or more for a product. -/
+  factors : List Factor
+
+/-- Whether the row of the denominator `b` in the sieve entry `e` of the modulus `p` admits the
+numerator `a`: for the residues `r = b mod p` and `x = a mod p`, the row of `r` of every factor
+admits `x` (`Ratpoints.Sieve.Factor.admits`), each factor reading `r` and `x` modulo its own
+modulus, which divides `p`.
+
+C: `init.c:399-414`, `init.c:419-429`
+
+Deviation: the bit of `a` in the row of `r`, computed from the tables of the factors for each
+numerator, where `_ratpoints_sieve_init_product` builds the row of a product once, when a
+denominator first needs it, as the and of the rows of its factors for `r` modulo the modulus of the
+factor, laid down in blocks of the length of the factor, building first a row of a factor that is
+missing and reading the row of a factor from its own entry with an acquire load (`RP_ACQUIRE`),
+which serves the threads; and for a prime or a prime power the row of its one factor, where the
+entry of the prime or the prime power is the factor's own. -/
+def SieveEntry.admits (e : SieveEntry) (b : Nat) (a : Int) : Bool :=
+  e.factors.all (·.admits (b % e.p) (a % (e.p : Int)))
+
+/-- Whether the numerator `a` survives the sieve entries `entries` for the denominator `b`: the row
+of `b` in every entry admits `a` (`Ratpoints.Sieve.SieveEntry.admits`). This test, a function of
+the numerator, is the interface between the sieve and the check. -/
+def survives (entries : List SieveEntry) (b : Nat) (a : Int) : Bool := entries.all (·.admits b a)
 
 /-! ### The plain sieve -/
 
 /-- The plain sieve of the denominator `b`: an array of `2H + 1` Booleans, one for each numerator
-`a = i - H`, all true at the start; for each table of `entries` in turn, every Boolean is replaced
-by its conjunction with the row of `b` at its numerator (`Ratpoints.Sieve.Entry.admits`). With
-`Ratpoints.Sieve.checkDen` it is the reference of the bit arrays of words: for pieces of at least
-one bit array and tables with `p > 0`, the points that `Ratpoints.Sieve.sift` finds with the rows of
-these tables (`Ratpoints.Sieve.Entry.rows`) from a class word are those that
+`a = i - H`, all true at the start; for each sieve entry of `entries` in turn, every Boolean is
+replaced by its conjunction with the row of `b` at its numerator
+(`Ratpoints.Sieve.SieveEntry.admits`). With `Ratpoints.Sieve.checkDen` it is the reference of the
+bit arrays of words: for pieces of at least one bit array and moduli `p > 0`, the points that
+`Ratpoints.Sieve.sift` finds with the rows of these entries (`Ratpoints.Sieve.SieveEntry.rows`)
+from a class word are those that
 `Ratpoints.Sieve.checkDen` finds on it whose numerators pass the class word, all of them for the
 word `~~~0` or any class word that admits the numerators of the points (such as the word
 `nb[b mod 64]` of `Ratpoints.Sieve.twoAdic`), each mapped by `Ratpoints.Sieve.swapPoint` when the
 flag of the reversal is set (`Ratpoints.Sieve.toList_run_sift_eq_checkDen`). -/
-def sieveDen (H b : Nat) (entries : List Entry) : Id (Vector Bool (2 * H + 1)) := do
+def sieveDen (H b : Nat) (entries : List SieveEntry) : Id (Vector Bool (2 * H + 1)) := do
   let mut surv := Vector.replicate (2 * H + 1) true
   for e in entries do
     for h : i in [0:2 * H + 1] do
@@ -437,11 +500,11 @@ def sieveDen (H b : Nat) (entries : List Entry) : Id (Vector Bool (2 * H + 1)) :
 checked exactly, as the brute-force reference checks it (`Ratpoints.BruteForce.pointsOfDen`):
 `F(a, b)` by Horner's rule on the products `cₖ b^(d - k)`, computed once, with one more factor `b`
 for odd `d`, then `(a, y, b)` and, for `y ≠ 0`, `(a, -y, b)` when `F(a, b) = y ^ 2` with `y ≥ 0`. On
-the plain sieve `Ratpoints.Sieve.sieveDen` of tables with `p > 0` it is the reference of the bit
-arrays of words: `Ratpoints.Sieve.sift` with the rows of these tables
-(`Ratpoints.Sieve.Entry.rows`), in pieces of at least one bit array, finds the points that it finds
-whose numerators pass the class word, all of them from the class word `~~~0` or from any class word
-that admits the numerators of the points (such as the word `nb[b mod 64]` of
+the plain sieve `Ratpoints.Sieve.sieveDen` of sieve entries with `p > 0` it is the reference of the
+bit arrays of words: `Ratpoints.Sieve.sift` with the rows of these entries
+(`Ratpoints.Sieve.SieveEntry.rows`), in pieces of at least one bit array, finds the points that it
+finds whose numerators pass the class word, all of them from the class word `~~~0` or from any class
+word that admits the numerators of the points (such as the word `nb[b mod 64]` of
 `Ratpoints.Sieve.twoAdic`), each mapped by `Ratpoints.Sieve.swapPoint` when the flag of the reversal
 is set (`Ratpoints.Sieve.toList_run_sift_eq_checkDen`). -/
 def checkDen (c : List Int) (d H b : Nat) (surv : Vector Bool (2 * H + 1)) :
@@ -551,37 +614,43 @@ def window (E : Array UInt64) (s : Nat) : UInt64 :=
   let r := s % 64
   if r = 0 then E[q]! else E[q]! >>> r.toUInt64 ||| E[q + 1]! <<< (64 - r).toUInt64
 
-/-- The row of the denominator `b` in the table `e`, as `e.p` bit arrays of `Ratpoints.rbaPack`
-words: the pattern of one period, whether the row admits the numerator `N` for `N < e.p`
-(`Ratpoints.Sieve.Entry.admits`), packed into words (`Ratpoints.Sieve.packedPattern`); for
-`j < e.p`, word `j` the 64 bits of the packed pattern from position `64 j mod e.p` on
-(`Ratpoints.Sieve.window`); and these `e.p` words repeated `rbaPack` times. Bit `t` of word `j`
-says whether the row admits `64 j + t`, since `Ratpoints.Sieve.Entry.admits` depends only on the
-residue modulo `e.p`.
+/-- The row of the denominator `b` in the sieve entry `e` of the modulus `p = e.p`, as `p` bit
+arrays of `Ratpoints.rbaPack` words: the pattern of one period, whether the row admits the
+numerator `N` for `N < p` (`Ratpoints.Sieve.SieveEntry.admits`), packed into words
+(`Ratpoints.Sieve.packedPattern`); for `j < p`, word `j` the 64 bits of the packed pattern from
+position `64 j mod p` on (`Ratpoints.Sieve.window`); and these `p` words repeated `rbaPack` times.
+Bit `t` of word `j` says whether the row admits `64 j + t`, since
+`Ratpoints.Sieve.SieveEntry.admits` depends only on the residue modulo `p`.
 
-C: `init.c:42-46`, `init.c:62-83`, `init.c:99-111`, `init.c:118-246`, `gen_find_points_h.c:102-134`,
-`gen_init_sieve_h.c:48-62`
+C: `init.c:42-46`, `init.c:62-83`, `init.c:99-111`, `init.c:118-246`, `init.c:259-297`,
+`init.c:387`, `init.c:391-393`, `init.c:415-418`, `init.c:430`, `init.c:443-445`,
+`gen_find_points_h.c:102-134`, `gen_init_sieve_h.c:48-62`
 
-Deviation: the pattern of one period from `Ratpoints.Sieve.Entry.admits`, laid out in words by
-windows into its packed form, for the builders of `init.c`, which step through the residues
-`a b⁻¹ mod p` four at a time and rotate the pattern through the words, one function for each prime
-that the build generates, and for the pattern `sieves0` that the build generates for the row of `0`
-(stage F); a fresh array, for the space that the builders take from the buffer of the tables
-(`ba_next`), and the row returned, where the builders also store it in the field `sieve` of the
-entry, with a release store for the threads (`RP_PUBLISH`), which the thunks of
-`Ratpoints.Sieve.Entry.rows` do; the copies of the first bit arrays that the builders append at the
-end of a row, which only the chunked first stage reads, are none in the build of the model
-(`RATPOINTS_CHUNK` = 1; stage F). -/
-def Entry.row (e : Entry) (b : Nat) : Array UInt64 :=
+Deviation: one function for every kind of modulus, the pattern of one period from
+`Ratpoints.Sieve.SieveEntry.admits` laid out in words by windows into its packed form, as
+`lay_out_pattern` lays out the pattern of a prime power, for the builders of the rows of a prime in
+`init.c`, which step through the residues `a b⁻¹ mod p` four at a time and rotate the pattern
+through the words, one function for each prime that the build generates, for the pattern `sieves0`
+that the build generates for the row of `0` of a prime, and for the row of a product, which
+`_ratpoints_sieve_init_product` lays down from the rows of its factors (stage F); in
+`lay_out_pattern`, the packed pattern made bit by bit, where it is or-ed together from shifted
+copies of the pattern, the position of each window computed, where it is stepped by `64 mod p`, and
+the first `p` words repeated, where all `p rbaPack` are computed; a fresh array, for the space that
+the builders take from the buffer of the tables (`ba_next`), and the row returned, where the
+builders also store it in the field `sieve` of the entry, with a release store for the threads
+(`RP_PUBLISH`), which the thunks of `Ratpoints.Sieve.SieveEntry.rows` do; the copies of the first
+bit arrays that the builders append at the end of a row, which only the chunked first stage reads,
+are none in the build of the model (`RATPOINTS_CHUNK` = 1; stage F). -/
+def SieveEntry.row (e : SieveEntry) (b : Nat) : Array UInt64 :=
   let pat := (Array.range e.p).map fun N : Nat ↦ e.admits b N
   let E := packedPattern pat e.p
   let base := (Array.range e.p).map fun j ↦ window E (64 * j % e.p)
   (Array.range (e.p * rbaPack)).map fun j ↦ base[j % e.p]!
 
-/-- The rows of the residues `r = 0, …, e.p - 1` in the table `e` (`Ratpoints.Sieve.Entry.row`),
-each a thunk: it is made when a denominator first needs it and kept from then on, as long as the
-array is. -/
-def Entry.rows (e : Entry) : Array (Thunk (Array UInt64)) :=
+/-- The rows of the residues `r = 0, …, e.p - 1` in the sieve entry `e`
+(`Ratpoints.Sieve.SieveEntry.row`), each a thunk: it is made when a denominator first needs it and
+kept from then on, as long as the array is. -/
+def SieveEntry.rows (e : SieveEntry) : Array (Thunk (Array UInt64)) :=
   (Array.range e.p).map fun r ↦ Thunk.mk fun _ ↦ e.row r
 
 /-- A modulus with its row for the denominator at hand, `p` bit arrays of `Ratpoints.rbaPack`
@@ -826,7 +895,7 @@ def siftPiece (w : List Int) (f : Int) (b : Nat) (rev : Bool) (specs : List Siev
 arrays, for `A ≥ 1` (for `A = 0` the loop does not end), from the class word `cw` of `b`, the
 numerators modulo 64 that the 2-adic information admits (`Ratpoints.Sieve.twoAdic`): for each
 modulus `p` with its rows `rs` in `rows`, the row of `b` is that of the residue `b mod p`, which its
-thunk makes when it is first needed (`Ratpoints.Sieve.Entry.rows`); the products `w` of the
+thunk makes when it is first needed (`Ratpoints.Sieve.SieveEntry.rows`); the products `w` of the
 coefficients `cₖ` with the powers `b^(d - k)` (`Ratpoints.BruteForce.scaledCoeffs`) and the factor
 `f`, `b` for odd `d` and `1` for even `d`, are those of the check, which gets the flag `rev` of the
 reversal too; for the number `rbaLength` of bits of a bit array (`Ratpoints.rbaLength`), the bit
@@ -1009,12 +1078,26 @@ def pointsAtInfinity (c : List Int) (d : Nat) (rev : Bool) : List (Int × Int ×
 
 -- The rows of the prime power 25 let the point `(129 : 3830 : 100)` of `y ^ 2 = x ^ 3 - 2` through,
 -- for its denominator `100 ≡ 0 (mod 5)`, while the numerators `a ≡ 0 (mod 5)` and those with
--- `F(a, 100)` not a square modulo 25 do not pass.
+-- `F(a, 100)` not a square modulo 25 do not pass; and the row of a product is the and of the rows
+-- of its factors: for `45 = 9 · 5` and `6 -3 5 2 75`, the sieve entry admits `a` for `b` exactly
+-- when both factors do, and the sieve entry of a prime with its table as its one factor admits what
+-- the table admits.
 #guard
   let pw := Id.run (examinePower [-2, 0, 0, 1] 3 5 2 true)
   pw.admits 100 129 && !pw.admits 100 130 && (List.range 25).all fun a ↦
     pw.admits 100 a == (a % 5 != 0 && (List.range 25).any fun y ↦
       (y * y - (a ^ 3 - 2 * 100 ^ 3) * 100 : Int) % 25 == 0)
+#guard
+  let c := [6, -3, 5, 2, 75]
+  let pw := Id.run (examinePower c 4 3 2 true)
+  let e5 := examinePrime c 4 5
+  let se : SieveEntry := ⟨45, [.power pw, .prime e5]⟩
+  (List.range 45).all fun b ↦ (List.range 90).all fun a : Nat ↦
+    se.admits b a == (pw.admits b a && e5.admits b a)
+#guard [3, 5, 7, 13].all fun p ↦
+  let e := examinePrime [6, -3, 5, 2, 75] 4 p
+  (List.range (2 * p)).all fun b ↦ (List.range (3 * p)).all fun a : Nat ↦
+    (⟨p, [.prime e]⟩ : SieveEntry).admits b a == e.admits b a
 
 -- The row of `b = 3` modulo 5 admits `a` when `f(a / 3)` is a square modulo 5.
 #guard (List.range 5).map (fun a : Nat ↦ (examinePrime [1, 0, 1] 2 5).admits 3 a) ==
@@ -1022,14 +1105,16 @@ def pointsAtInfinity (c : List Int) (d : Nat) (rev : Bool) : List (Int × Int ×
 
 -- The plain sieve of a denominator is the survivor test of the numerators.
 #guard
-  let es := [3, 5, 7].map (examinePrime [1, 2, 3, 4, 5, 6, 7] 6)
+  let es := [3, 5, 7].map fun p ↦
+    (⟨p, [.prime (examinePrime [1, 2, 3, 4, 5, 6, 7] 6 p)]⟩ : SieveEntry)
   (Id.run (sieveDen 20 7 es)).toList ==
     (List.range 41).map fun i : Nat ↦ survives es 7 ((i : Int) - 20)
 
 -- The survivors of the plain sieve of `y ^ 2 = x ^ 3 - 2` for the denominator 100 give the point
 -- `(129 : 3830 : 100)`, which every numerator gives as well.
 #guard
-  let es := [3, 5, 7, 11, 13].map (examinePrime [-2, 0, 0, 1] 3)
+  let es := [3, 5, 7, 11, 13].map fun p ↦
+    (⟨p, [.prime (examinePrime [-2, 0, 0, 1] 3 p)]⟩ : SieveEntry)
   (Id.run (checkDen [-2, 0, 0, 1] 3 130 100 (Id.run (sieveDen 130 100 es)))).toList ==
     [(129, 3830, 100), (129, -3830, 100)] &&
   (Id.run (checkDen [-2, 0, 0, 1] 3 130 100 (Vector.replicate _ true))).toList ==
@@ -1072,10 +1157,23 @@ def pointsAtInfinity (c : List Int) (d : Nat) (rev : Bool) : List (Int × Int ×
 -- a prime above 64.
 #guard
   [3, 5, 7, 13, 67].all fun p ↦
-    let e := examinePrime [1, 2, 3, 4, 5, 6, 7] 6 p
+    let e : SieveEntry := ⟨p, [.prime (examinePrime [1, 2, 3, 4, 5, 6, 7] 6 p)]⟩
     [0, 1, 2, 5, p + 3].all fun b ↦
       let row := e.row b
       row.size == p * rbaPack && (List.range (p * rbaPack)).all fun j ↦
+        (List.range 64).all fun t ↦ row[j]!.toBitVec.getLsbD t == e.admits b (64 * j + t)
+
+-- The rows as words of composite moduli against the row test: the prime power 9, and the products
+-- 15 = 3 · 5 and 45 = 9 · 5, for denominators prime to them and not.
+#guard
+  let c := [1, 2, 3, 4, 5, 6, 7]
+  let p9 : Factor := .power (Id.run (examinePower c 6 3 2 true))
+  let e3 : Factor := .prime (examinePrime c 6 3)
+  let e5 : Factor := .prime (examinePrime c 6 5)
+  ([⟨9, [p9]⟩, ⟨15, [e3, e5]⟩, ⟨45, [p9, e5]⟩] : List SieveEntry).all fun e ↦
+    [0, 1, 3, 5, 6, 10, 18].all fun b ↦
+      let row := e.row b
+      row.size == e.p * rbaPack && (List.range (e.p * rbaPack)).all fun j ↦
         (List.range 64).all fun t ↦ row[j]!.toBitVec.getLsbD t == e.admits b (64 * j + t)
 
 -- The row of `0` against the pattern `sieves0` that the build of ratpoints generates, for 3, 5, 7,
@@ -1093,12 +1191,12 @@ def pointsAtInfinity (c : List Int) (d : Nat) (rev : Bool) : List (Int × Int ×
       0xfefff7ffbffdffef, 0xfdffefff7ffbffdf, 0xfbffdffefff7ffbf, 0xf7ffbffdffefff7f,
       0xefff7ffbffdffeff, 0xdffefff7ffbffdff, 0xbffdffefff7ffbff, 0x7ffbffdffefff7ff,
       0xfff7ffbffdffefff])] : List (Nat × Array UInt64)).all fun (p, ws) ↦
-    ((examinePrime [1, 0, 1] 2 p).row 0).extract 0 p == ws
+    ((⟨p, [.prime (examinePrime [1, 0, 1] 2 p)]⟩ : SieveEntry).row 0).extract 0 p == ws
 
 -- The rows of the residues: one thunk for each of the `p` residues, the thunk of `r` giving the
 -- row of `r`.
 #guard
-  let e := examinePrime [1, 2, 3, 4, 5, 6, 7] 6 7
+  let e : SieveEntry := ⟨7, [.prime (examinePrime [1, 2, 3, 4, 5, 6, 7] 6 7)]⟩
   e.rows.size == 7 && (List.range 7).all fun r ↦ e.rows[r]!.get == e.row r
 
 -- The points of a reversed search: `ratpoints '-1 0 9' 10 -q` reverses the polynomial to `9 0 -1`
@@ -1120,7 +1218,8 @@ def pointsAtInfinity (c : List Int) (d : Nat) (rev : Bool) : List (Int × Int ×
 -- `≡ 1 (mod 4)` of `1 2 3 4 5 6 7` (the numerators `≢ 1 (mod 4)`), and the numerators
 -- `≡ 1 (mod 8)`.
 #guard
-  let es := [3, 5, 7].map (examinePrime [1, 2, 3, 4, 5, 6, 7] 6)
+  let es := [3, 5, 7].map fun p ↦
+    (⟨p, [.prime (examinePrime [1, 2, 3, 4, 5, 6, 7] 6 p)]⟩ : SieveEntry)
   ([(-9, 1), (-9, 12), (-35, 4), (6, 2), (15, 17)] : List (Int × Nat)).all fun (w0, n) ↦
     [1, 10].all fun b ↦
       [~~~0, 0xdddddddddddddddd, 0x0202020202020202].all fun cw ↦
@@ -1204,7 +1303,7 @@ def pointsAtInfinity (c : List Int) (d : Nat) (rev : Bool) : List (Int × Int ×
 -- `(129 : 3830 : 100)` of `y ^ 2 = x ^ 3 - 2` keep it or drop it.
 #guard
   let c := [-2, 0, 0, 1]
-  let es := [3, 5, 7, 11, 13].map (examinePrime c 3)
+  let es := [3, 5, 7, 11, 13].map fun p ↦ (⟨p, [.prime (examinePrime c 3 p)]⟩ : SieveEntry)
   let piece (b : Nat) (w0 : Int) (n mL mH : Nat) : List (Int × Int × Int) :=
     (Id.run (siftPiece (BruteForce.scaledCoeffs c 3 b) b b false (es.map fun e ↦ ⟨e.p, e.row b⟩)
       (~~~0) w0 n mL mH)).toList
@@ -1223,7 +1322,7 @@ def pointsAtInfinity (c : List Int) (d : Nat) (rev : Bool) : List (Int × Int ×
 -- with the flag of the reversal the same points, mapped.
 #guard
   let c := [-2, 0, 0, 1]
-  let es := [3, 5, 7, 11, 13].map (examinePrime c 3)
+  let es := [3, 5, 7, 11, 13].map fun p ↦ (⟨p, [.prime (examinePrime c 3 p)]⟩ : SieveEntry)
   [1, 7, 100].all fun b ↦ [1, 2, 3].all fun A ↦ [false, true].all fun rev ↦
     let ref := (Id.run (checkDen c 3 300 b (Id.run (sieveDen 300 b es)))).toList
     (Id.run (sift c 3 300 A b rev (es.map fun e ↦ (e.p, e.rows)) (~~~0))).toList ==

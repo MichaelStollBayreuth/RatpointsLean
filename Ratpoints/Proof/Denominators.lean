@@ -17,22 +17,22 @@ import Std.Tactic.Do
 
 The run of the sieve over the denominators of a shape (`Ratpoints.Sieve.sieveRun`) gives, for each
 denominator of the shape's list that passes the tests of the shape, the points of its numerators
-that pass the word of its class modulo 64 and survive the tables; when these filters are sound, that
-is when they let through every denominator and every numerator over which the brute-force reference
-finds a point, this is the reference over the shape's list, in its order.
+that pass the word of its class modulo 64 and survive the sieve entries; when these filters are
+sound, that is when they let through every denominator and every numerator over which the
+brute-force reference finds a point, this is the reference over the shape's list, in its order.
 
 ## Main statements
 
 * `Ratpoints.Sieve.sieveRun_spec`: the run gives, for each denominator `b` of the list of the shape
   that passes its tests (`Ratpoints.Sieve.Shape.dens`, `Ratpoints.Sieve.Shape.keep`), what the
   brute-force reference finds over `b` and the numerators `-H, …, H` that pass the class word
-  `nb[b mod 64]` (`Ratpoints.Sieve.classBit`) and survive the tables, mapped by
+  `nb[b mod 64]` (`Ratpoints.Sieve.classBit`) and survive the sieve entries, mapped by
   `Ratpoints.Sieve.swapPoint` when the flag of the reversal is set;
   `Ratpoints.Sieve.toList_run_sieveRun` states this as an equation.
 * `Ratpoints.Sieve.toList_run_sieveRun_eq_flatMap`: when the list of the shape is a list `l`
   filtered by a test that every denominator of a point passes, and the tests of the shape, the
-  class words and the tables let through every denominator and numerator of a point, the run gives
-  the reference over `l`, mapped when the flag of the reversal is set.
+  class words and the sieve entries let through every denominator and numerator of a point, the
+  run gives the reference over `l`, mapped when the flag of the reversal is set.
 
 ## Implementation notes
 
@@ -68,9 +68,9 @@ private theorem keep_value (s : Shape) (nb : Vector UInt64 64) (b : ℕ) :
 /-- The invariant of the loop of `Ratpoints.Sieve.sieveRun` over the denominators of a shape: after
 the denominators `pref`, the points found are those of the brute-force reference over the
 denominators `b` of `pref` that pass the test `keep` and the numerators `-H, …, H` that pass the
-class word `nb[b mod 64]` (`Ratpoints.Sieve.classBit`) and survive the tables `entries`, mapped by
-`Ratpoints.Sieve.swapPoint` when the flag `rev` of the reversal is set. -/
-def SieveRunInvariant (c : List ℤ) (d H : ℕ) (rev : Bool) (entries : List Entry)
+class word `nb[b mod 64]` (`Ratpoints.Sieve.classBit`) and survive the sieve entries `entries`,
+mapped by `Ratpoints.Sieve.swapPoint` when the flag `rev` of the reversal is set. -/
+def SieveRunInvariant (c : List ℤ) (d H : ℕ) (rev : Bool) (entries : List SieveEntry)
     (nb : Vector UInt64 64) (keep : ℕ → Bool) (pref : List ℕ)
     (out : Array (ℤ × ℤ × ℤ)) : Prop :=
   out.toList = ((pref.filter keep).flatMap fun b : ℕ ↦ pointsOfDen c d b
@@ -80,7 +80,7 @@ def SieveRunInvariant (c : List ℤ) (d H : ℕ) (rev : Bool) (entries : List En
 /-- The array size `A ≥ 1` makes the loops over the pieces end, and the moduli are positive, as the
 first stage over the rows as words needs (`Ratpoints.Sieve.sift_spec`). -/
 @[spec]
-theorem sieveRun_spec (c : List ℤ) (d H A : ℕ) (rev : Bool) (entries : List Entry)
+theorem sieveRun_spec (c : List ℤ) (d H A : ℕ) (rev : Bool) (entries : List SieveEntry)
     (nb : Vector UInt64 64) (db : UInt64) (shape : Shape) (bLow bHigh : ℕ) :
     ⦃ 1 ≤ A ∧ ∀ e ∈ entries, 0 < e.p ⦄ sieveRun c d H A rev entries nb db shape bLow bHigh
     ⦃ fun out ↦ out.toList = (((Id.run (shape.dens db bLow bHigh)).filter
@@ -95,7 +95,7 @@ theorem sieveRun_spec (c : List ℤ) (d H A : ℕ) (rev : Bool) (entries : List 
 /-- `Ratpoints.Sieve.sieveRun_spec` as an equation, which the proofs use without the program
 logic. -/
 theorem toList_run_sieveRun (c : List ℤ) (d H : ℕ) (rev : Bool) {A : ℕ} (hA : 1 ≤ A)
-    {entries : List Entry} (hp : ∀ e ∈ entries, 0 < e.p) (nb : Vector UInt64 64) (db : UInt64)
+    {entries : List SieveEntry} (hp : ∀ e ∈ entries, 0 < e.p) (nb : Vector UInt64 64) (db : UInt64)
     (shape : Shape) (bLow bHigh : ℕ) :
     (Id.run (sieveRun c d H A rev entries nb db shape bLow bHigh)).toList =
       (((Id.run (shape.dens db bLow bHigh)).filter fun b ↦ Id.run (shape.keep nb b)).flatMap
@@ -107,12 +107,12 @@ theorem toList_run_sieveRun (c : List ℤ) (d H : ℕ) (rev : Bool) {A : ℕ} (h
 /-- The run gives the brute-force reference over the denominators of `l`, in its order, mapped by
 `Ratpoints.Sieve.swapPoint` when the flag `rev` of the reversal is set, when its filters are sound:
 the list of the shape is `l` filtered by a test `p`, every denominator of `l` over which the
-reference finds a point passes `p` and the tests of the shape, and every numerator of such a
-point passes the word of its class and the tables (`Ratpoints.Sieve.toList_run_sieveRun`,
+reference finds a point passes `p` and the tests of the shape, and every numerator of such a point
+passes the word of its class and the sieve entries (`Ratpoints.Sieve.toList_run_sieveRun`,
 `Ratpoints.BruteForce.pointsOfDen_filter_of_ne`, `List.flatMap_filter_of_ne`). -/
 theorem toList_run_sieveRun_eq_flatMap {c : List ℤ} {d H A : ℕ} {rev : Bool}
-    {entries : List Entry} {nb : Vector UInt64 64} {db : UInt64} {shape : Shape} {bLow bHigh : ℕ}
-    {l : List ℕ} {p : ℕ → Bool} (hA : 1 ≤ A) (hp : ∀ e ∈ entries, 0 < e.p)
+    {entries : List SieveEntry} {nb : Vector UInt64 64} {db : UInt64} {shape : Shape}
+    {bLow bHigh : ℕ} {l : List ℕ} {p : ℕ → Bool} (hA : 1 ≤ A) (hp : ∀ e ∈ entries, 0 < e.p)
     (hdens : Id.run (shape.dens db bLow bHigh) = l.filter p)
     (hkeep : ∀ b ∈ l, pointsOfDen c d b (numerators H) ≠ [] →
       p b = true ∧ Id.run (shape.keep nb b) = true)

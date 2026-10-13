@@ -35,10 +35,10 @@ are named definitions.
 * `Ratpoints.Sieve.isZeroAt_eq_true_iff`: a bit array is zero when all its words are.
 * `Ratpoints.Sieve.ctz_spec`: for a word other than `0`, the loop of `Ratpoints.Sieve.ctz` ends with
   the number of its trailing zeros.
-* `Ratpoints.Sieve.Entry.getLsbD_row`: bit `t` of word `j` of the row of a denominator in words says
-  whether the row admits the numerator `64 j + t`.
-* `Ratpoints.Sieve.Entry.get_rows`, `Ratpoints.Sieve.Entry.row_mod`: the thunk of a residue gives
-  its row, and the row of `b` is the row of `b mod p`.
+* `Ratpoints.Sieve.SieveEntry.getLsbD_row`: bit `t` of word `j` of the row of a denominator in words
+  says whether the row admits the numerator `64 j + t`.
+* `Ratpoints.Sieve.SieveEntry.get_rows`, `Ratpoints.Sieve.SieveEntry.row_mod`: the thunk of a
+  residue gives its row, and the row of `b` is the row of `b mod p`.
 * `Ratpoints.Sieve.andRows_spec`: after the first stage over a piece with the rows of a denominator
   `b` from the class word `cw`, bit `t` of word `y` of the piece is bit `t` of `cw` and the survivor
   test of the numerator `rbaLength w0 + 64 y + t`, whose bit in `cw` is bit `t`
@@ -58,8 +58,8 @@ are named definitions.
   gives the points of the numerators that the masks at its two ends leave and that pass the class
   word (`Ratpoints.Sieve.classBit`) and survive, in increasing order.
 * `Ratpoints.Sieve.sift_spec`: the pieces of a denominator `b` give what the brute-force reference
-  finds over `b` and the numerators `-H, …, H` that pass the class word and survive the tables,
-  mapped by `Ratpoints.Sieve.swapPoint` when the flag of the reversal is set;
+  finds over `b` and the numerators `-H, …, H` that pass the class word and survive the sieve
+  entries, mapped by `Ratpoints.Sieve.swapPoint` when the flag of the reversal is set;
   `Ratpoints.Sieve.toList_run_sift_eq_checkDen`: these are the points that the plain sieve of `b`
   gives whose numerators pass the class word, mapped in the same way.
 
@@ -160,16 +160,16 @@ theorem ctz_spec (w : UInt64) : ⦃ w ≠ 0 ⦄ ctz w ⦃ fun t ↦ t = w.toBitV
 
 /-! ### The rows as words -/
 
-theorem Entry.admits_congr (e : Entry) (b : Nat) {a a' : Int} (h : a % e.p = a' % e.p) :
+theorem SieveEntry.admits_congr (e : SieveEntry) (b : Nat) {a a' : Int} (h : a % e.p = a' % e.p) :
     e.admits b a = e.admits b a' := by
-  simp [Entry.admits, h]
+  simp [SieveEntry.admits, h]
 
-theorem Entry.admits_add_mul (e : Entry) (b : Nat) (a k : Int) :
+theorem SieveEntry.admits_add_mul (e : SieveEntry) (b : Nat) (a k : Int) :
     e.admits b (a + e.p * k) = e.admits b a :=
   e.admits_congr b (Int.add_mul_emod_self_left a e.p k)
 
-theorem Entry.admits_mod (e : Entry) (b : Nat) : e.admits (b % e.p) = e.admits b :=
-  funext fun _ ↦ by simp [Entry.admits]
+theorem SieveEntry.admits_mod (e : SieveEntry) (b : Nat) : e.admits (b % e.p) = e.admits b :=
+  funext fun _ ↦ by simp [SieveEntry.admits]
 
 theorem getLsbD_packedPattern (pat : Array Bool) (p : Nat) {i : Nat}
     (hi : i < 64 * (p / 64 + 2)) :
@@ -193,18 +193,19 @@ theorem getLsbD_window_packedPattern (pat : Array Bool) {p s : Nat} (hs : s < p)
       (decide (t < 64) && pat[(s + t) % p]!) := by
   grind [getLsbD_window, getLsbD_packedPattern]
 
-theorem Entry.getLsbD_row (e : Entry) (b : Nat) {j : Nat} (hj : j < e.p * rbaPack) (t : Nat) :
+theorem SieveEntry.getLsbD_row (e : SieveEntry) (b : Nat) {j : Nat} (hj : j < e.p * rbaPack)
+    (t : Nat) :
     (e.row b)[j]!.toBitVec.getLsbD t = (decide (t < 64) && e.admits b (64 * j + t)) := by
   have hp : 0 < e.p := Nat.pos_of_ne_zero fun h ↦ by simp [h] at hj
-  simp only [Entry.row, Array.getElem!_map_range _ hj, Array.getElem!_map_range _ (Nat.mod_lt _ hp),
-    getLsbD_window_packedPattern _ (Nat.mod_lt _ hp)]
+  simp only [SieveEntry.row, Array.getElem!_map_range _ hj,
+    Array.getElem!_map_range _ (Nat.mod_lt _ hp), getLsbD_window_packedPattern _ (Nat.mod_lt _ hp)]
   exact congrArg (decide (t < 64) && ·) (e.admits_congr b (by simp))
 
-theorem Entry.get_rows (e : Entry) {r : Nat} (hr : r < e.p) : e.rows[r]!.get = e.row r :=
+theorem SieveEntry.get_rows (e : SieveEntry) {r : Nat} (hr : r < e.p) : e.rows[r]!.get = e.row r :=
   congrArg Thunk.get (Array.getElem!_map_range _ hr)
 
-theorem Entry.row_mod (e : Entry) (b : Nat) : e.row (b % e.p) = e.row b := by
-  simp [Entry.row, Entry.admits_mod]
+theorem SieveEntry.row_mod (e : SieveEntry) (b : Nat) : e.row (b % e.p) = e.row b := by
+  simp [SieveEntry.row, SieveEntry.admits_mod]
 
 /-! ### One piece -/
 
@@ -234,7 +235,8 @@ private theorem emod_wordIndex (p : Nat) (hp : 0 < p) (w0 : Int) (y t : Nat) :
     grind
   rw [key, Int.add_mul_emod_self_left]
 
-theorem SieveSpec.getLsbD_wordAt_mk (e : Entry) (b : Nat) (hp : 0 < e.p) (w0 : Int) (y t : Nat) :
+theorem SieveSpec.getLsbD_wordAt_mk (e : SieveEntry) (b : Nat) (hp : 0 < e.p) (w0 : Int)
+    (y t : Nat) :
     (wordAt ⟨e.p, e.row b⟩ w0 y).toBitVec.getLsbD t =
       (decide (t < 64) && e.admits b (rbaLength * w0 + 64 * y + t)) := by
   have hu : ((w0 + (y / rbaPack : Nat)) % (e.p : Int)).toNat < e.p := by
@@ -244,7 +246,7 @@ theorem SieveSpec.getLsbD_wordAt_mk (e : Entry) (b : Nat) (hp : 0 < e.p) (w0 : I
       e.p * rbaPack :=
     Nat.lt_of_lt_of_le (Nat.add_lt_add_left (Nat.mod_lt y rbaPack_pos) _)
       (by rw [← Nat.mul_succ, Nat.mul_comm]; exact Nat.mul_le_mul_right _ hu)
-  rw [wordAt, Entry.getLsbD_row e b hj, e.admits_congr b (emod_wordIndex e.p hp w0 y t)]
+  rw [wordAt, SieveEntry.getLsbD_row e b hj, e.admits_congr b (emod_wordIndex e.p hp w0 y t)]
 
 /-- Whether the class word `cw` lets the numerator `a` through: bit `a mod 64` of `cw`, the bit that
 stands for `a` in every word of a piece of `Ratpoints.Sieve.andRows`, since `64` divides
@@ -272,7 +274,7 @@ theorem classBit_rbaLength_mul_add (cw : UInt64) (w0 : Int) (y : Nat) {t : Nat} 
 def andWords (specs : List SieveSpec) (cw : UInt64) (w0 : Int) (y : Nat) : UInt64 :=
   specs.foldl (fun acc s ↦ acc &&& s.wordAt w0 y) cw
 
-theorem getLsbD_andWords_map {entries : List Entry} (b : Nat) (hp : ∀ e ∈ entries, 0 < e.p)
+theorem getLsbD_andWords_map {entries : List SieveEntry} (b : Nat) (hp : ∀ e ∈ entries, 0 < e.p)
     (cw : UInt64) (w0 : Int) (y t : Nat) :
     (andWords (entries.map fun e ↦ ⟨e.p, e.row b⟩) cw w0 y).toBitVec.getLsbD t =
       (cw.toBitVec.getLsbD t && survives entries b (rbaLength * w0 + 64 * y + t)) := by
@@ -471,13 +473,13 @@ private theorem andRows_spec_of_pos (specs : List SieveSpec) (cw : UInt64) (w0 :
     | exact andRowsInvariant_nil ‹_›
     | exact andRowsFillInvariant_zero _ _
 
-/-- The tables and the denominator are quantified in the postcondition, since the program does not
-mention them. -/
+/-- The sieve entries and the denominator are quantified in the postcondition, since the program
+does not mention them. -/
 @[spec]
 theorem andRows_spec (specs : List SieveSpec) (cw : UInt64) (w0 : Int) (n : Nat)
     (surv : Vector UInt64 ((n + 1) * rbaPack)) :
     ⦃ True ⦄ andRows specs cw w0 n surv
-    ⦃ fun surv' ↦ ∀ (entries : List Entry) (b : Nat), (∀ e ∈ entries, 0 < e.p) →
+    ⦃ fun surv' ↦ ∀ (entries : List SieveEntry) (b : Nat), (∀ e ∈ entries, 0 < e.p) →
         specs = entries.map (fun e ↦ ⟨e.p, e.row b⟩) → ∀ y < n * rbaPack, ∀ t : Nat,
           surv'[y]!.toBitVec.getLsbD t =
             (cw.toBitVec.getLsbD t && survives entries b (rbaLength * w0 + 64 * y + t)) ⦄ :=
@@ -900,7 +902,7 @@ survive. -/
 theorem IsMasked.toList_eq {n : Nat} {g : Int → List (Int × Int × Int)} {b : Nat}
     {specs : List SieveSpec} {cw : UInt64} {w0 : Int} {maskLow maskHigh : Nat}
     {surv v : Vector UInt64 ((n + 1) * rbaPack)} {out : Array (Int × Int × Int)}
-    (hand : ∀ (entries : List Entry) (b : Nat), (∀ e ∈ entries, 0 < e.p) →
+    (hand : ∀ (entries : List SieveEntry) (b : Nat), (∀ e ∈ entries, 0 < e.p) →
       specs = entries.map (fun e ↦ ⟨e.p, e.row b⟩) → ∀ y < n * rbaPack, ∀ t : Nat,
         surv[y]!.toBitVec.getLsbD t =
           (cw.toBitVec.getLsbD t && survives entries b (rbaLength * w0 + 64 * y + t)))
@@ -909,7 +911,7 @@ theorem IsMasked.toList_eq {n : Nat} {g : Int → List (Int × Int × Int)} {b :
         (decide (t < 64) && keep (rbaLength * w0 + 64 * y + t))) →
       out.toList = (((List.range (n * rbaLength)).map fun k : Nat ↦
         rbaLength * w0 + k).filter keep).flatMap g)
-    {entries : List Entry} (hp : ∀ e ∈ entries, 0 < e.p)
+    {entries : List SieveEntry} (hp : ∀ e ∈ entries, 0 < e.p)
     (hspecs : specs = entries.map (fun e ↦ ⟨e.p, e.row b⟩)) :
     out.toList = (((List.range (n * rbaLength - maskLow - maskHigh)).map fun k : Nat ↦
       rbaLength * w0 + maskLow + k).filter fun a ↦ classBit cw a && survives entries b a).flatMap
@@ -922,14 +924,14 @@ theorem IsMasked.toList_eq {n : Nat} {g : Int → List (Int × Int × Int)} {b :
     grind
   · simp [ht, BitVec.getLsbD_of_ge _ t (Nat.le_of_not_lt ht)]
 
-/-- The tables are quantified in the postcondition, since the program does not mention them; the
-bound on `maskHigh` is that of the high mask (`Ratpoints.Sieve.getLsbD_clearHighBits`), and the
+/-- The sieve entries are quantified in the postcondition, since the program does not mention them;
+the bound on `maskHigh` is that of the high mask (`Ratpoints.Sieve.getLsbD_clearHighBits`), and the
 low mask needs none. -/
 @[spec]
 theorem siftPiece_spec (w : List Int) (f : Int) (b : Nat) (rev : Bool) (specs : List SieveSpec)
     (cw : UInt64) (w0 : Int) (n maskLow maskHigh : Nat) :
     ⦃ maskHigh < rbaLength ⦄ siftPiece w f b rev specs cw w0 n maskLow maskHigh
-    ⦃ fun out ↦ ∀ entries : List Entry, (∀ e ∈ entries, 0 < e.p) →
+    ⦃ fun out ↦ ∀ entries : List SieveEntry, (∀ e ∈ entries, 0 < e.p) →
         specs = entries.map (fun e ↦ ⟨e.p, e.row b⟩) →
         out.toList = (((List.range (n * rbaLength - maskLow - maskHigh)).map fun k : Nat ↦
           rbaLength * w0 + maskLow + k).filter fun a ↦
@@ -1109,18 +1111,19 @@ theorem SiftInvariant.toList_eq_pointsOfDen {c : List Int} {d b : Nat} {rev : Bo
   rw [h.toList_eq_flatMap_filter_numerators, flatMap_checkNum, pointsOfDen_eq_flatMap_checkNum]
 
 -- The rows of the run, read at the residue `b mod p` of each modulus, are the rows of `b`.
-private theorem map_rows_eq_map_row {entries : List Entry} (hp : ∀ e ∈ entries, 0 < e.p)
+private theorem map_rows_eq_map_row {entries : List SieveEntry} (hp : ∀ e ∈ entries, 0 < e.p)
     (b : Nat) :
     (entries.map fun e ↦ (e.p, e.rows)).map (fun x ↦ (⟨x.1, x.2[b % x.1]!.get⟩ : SieveSpec)) =
       entries.map fun e ↦ ⟨e.p, e.row b⟩ := by
   rw [List.map_map]
   exact List.map_congr_left fun e he ↦ by
-    simp only [Function.comp_apply, Entry.get_rows e (Nat.mod_lt b (hp e he)), Entry.row_mod]
+    simp only [Function.comp_apply, SieveEntry.get_rows e (Nat.mod_lt b (hp e he)),
+      SieveEntry.row_mod]
 
--- The contract of `Ratpoints.Sieve.sift` for the rows of the tables `entries`.
+-- The contract of `Ratpoints.Sieve.sift` for the rows of the sieve entries `entries`.
 open Std.WP Lean.Order in
 private theorem sift_spec_map (c : List Int) (d H b : Nat) (rev : Bool) (cw : UInt64) {A : Nat}
-    {entries : List Entry} (hA : 1 ≤ A) (hp : ∀ e ∈ entries, 0 < e.p) :
+    {entries : List SieveEntry} (hA : 1 ≤ A) (hp : ∀ e ∈ entries, 0 < e.p) :
     ⦃ True ⦄ sift c d H A b rev (entries.map fun e ↦ (e.p, e.rows)) cw
     ⦃ fun out ↦ out.toList = (pointsOfDen c d b ((numerators H).filter fun a ↦
         classBit cw a && survives entries b a)).map (if rev then swapPoint else id) ⦄ := by
@@ -1137,7 +1140,7 @@ private theorem sift_spec_map (c : List Int) (d H b : Nat) (rev : Bool) (cw : UI
     | exact ‹_ ∧ SiftInvariant _ _ _ false _ _ _ _›.2.exit_of_not_lt ‹_›
     | (have := rbaLength_pos; (try split) <;> lia)
     | obtain ⟨rfl, h⟩ := ‹_ ∧ SiftInvariant _ _ _ false _ _ _ _›
-      have hpts := ‹∀ x : List Entry, _›
+      have hpts := ‹∀ x : List SieveEntry, _›
       specialize hpts entries hp (map_rows_eq_map_row hp b)
       first
         | exact ⟨h.toNat_sub_lt ‹_›,
@@ -1145,14 +1148,14 @@ private theorem sift_spec_map (c : List Int) (d H b : Nat) (rev : Bool) (cw : UI
         | exact ⟨by lia,
             h.append (by lia) (by lia) (Int.le_refl _) (sub_toNat_emod_eq_toNat_mul_sub H) hpts⟩
 
-/-- The tables are quantified in the postcondition, since the program does not mention them; the
-loop over the pieces ends by the measure `H / rbaLength + 1 - w0`, since every piece has at least
-one bit array. -/
+/-- The sieve entries are quantified in the postcondition, since the program does not mention them;
+the loop over the pieces ends by the measure `H / rbaLength + 1 - w0`, since every piece has at
+least one bit array. -/
 @[spec]
 theorem sift_spec (c : List Int) (d H A b : Nat) (rev : Bool)
     (rows : List (Nat × Array (Thunk (Array UInt64)))) (cw : UInt64) :
     ⦃ 1 ≤ A ⦄ sift c d H A b rev rows cw
-    ⦃ fun out ↦ ∀ entries : List Entry, (∀ e ∈ entries, 0 < e.p) →
+    ⦃ fun out ↦ ∀ entries : List SieveEntry, (∀ e ∈ entries, 0 < e.p) →
         rows = entries.map (fun e ↦ (e.p, e.rows)) →
         out.toList = (pointsOfDen c d b ((numerators H).filter fun a ↦
           classBit cw a && survives entries b a)).map (if rev then swapPoint else id) ⦄ :=
@@ -1164,11 +1167,11 @@ theorem sift_spec (c : List Int) (d H A b : Nat) (rev : Bool)
 points of the plain sieve and its check, the reference of the words, whose numerators pass `cw`
 (`Ratpoints.Sieve.classBit`), mapped by `Ratpoints.Sieve.swapPoint` when `rev` is set: the plain
 sieve and its check give what the brute-force reference finds over `b` and the numerators `-H, …, H`
-that survive the tables (`Ratpoints.Sieve.sieveDen_spec`, `Ratpoints.Sieve.checkDen_spec`), and
-`Ratpoints.Sieve.sift` gives those of these points whose numerators pass `cw`, mapped
+that survive the sieve entries (`Ratpoints.Sieve.sieveDen_spec`, `Ratpoints.Sieve.checkDen_spec`),
+and `Ratpoints.Sieve.sift` gives those of these points whose numerators pass `cw`, mapped
 (`Ratpoints.Sieve.sift_spec`, `Ratpoints.BruteForce.pointsOfDen_filter`). -/
 theorem toList_run_sift_eq_checkDen (c : List Int) (d H b : Nat) (rev : Bool) (cw : UInt64)
-    {A : Nat} (hA : 1 ≤ A) {entries : List Entry} (hp : ∀ e ∈ entries, 0 < e.p) :
+    {A : Nat} (hA : 1 ≤ A) {entries : List SieveEntry} (hp : ∀ e ∈ entries, 0 < e.p) :
     (Id.run (sift c d H A b rev (entries.map fun e ↦ (e.p, e.rows)) cw)).toList =
       ((Id.run (checkDen c d H b (Id.run (sieveDen H b entries)))).toList.filter
         fun q ↦ classBit cw q.1).map (if rev then swapPoint else id) :=
