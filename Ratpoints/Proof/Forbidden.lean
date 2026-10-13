@@ -166,7 +166,7 @@ def IsUnitPart (p : ℕ) (x : ℤ) : Option (ℕ × ℕ) → Prop
 theorem isUnitPart_of_emod_ne_zero {p : ℕ} (hp : 0 < p) {x : ℤ} (hx : x % (p : ℤ) ≠ 0) :
     IsUnitPart p x (some (0, (x % (p : ℤ)).toNat)) := by
   have : NeZero p := ⟨hp.ne'⟩
-  refine ⟨(Int.toNat_lt' hp).mpr (Int.emod_lt_of_pos _ (mod_cast hp)), x, by simp,
+  refine ⟨Int.toNat_emod_lt x hp, x, by simp,
     fun h ↦ hx (Int.emod_eq_zero_of_dvd h), ZMod.natCast_toNat_emod x⟩
 
 /-- The residue `r ≠ 0` of the coefficient `x` modulo `p`, as the table of `p` hands it back
@@ -805,18 +805,18 @@ theorem IsForbiddenVal.excludes_eq_false {c : List ℤ} {bHigh : ℕ} {e : Forbi
 
 /-! ### The loop of the tables -/
 
-/-- The forbidden divisor that the prime `p` with `0 < p < Ratpoints.maxPrimeEven` gives from what
-its table hands back (`Ratpoints.Sieve.examinePrime?`) is that of the coefficients reduced modulo
-`p` and the entry at infinity of the table of the reference. -/
-theorem run_forbiddenOfPrime_eq_of_run_examinePrime?_eq_some {c : List ℤ} {d p : ℕ} {u : Bool}
-    {e : Entry} {cm : Array ℕ} (he : Id.run (examinePrime? c d p u) = some (e, cm)) (hp0 : 0 < p)
-    (hp : p < maxPrimeEven) (bHigh : ℕ) :
-    Id.run (forbiddenOfPrime c d p bHigh cm e.isFSquare[p]!) =
-      Id.run (forbiddenOfPrime c d p bHigh
-        ((Array.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat)
-        (examinePrime c d p).isFSquare[p]!) := by
+/-- The forbidden divisor that the prime at the position `k < Ratpoints.numPrimes` of the table
+gives from what its table hands back (`Ratpoints.Sieve.examinePrime?`) is that of the coefficients
+reduced modulo the prime and the entry at infinity of the table of the reference. -/
+theorem run_forbiddenOfPrime_eq_of_run_examinePrime?_eq_some {c : List ℤ} {d k : ℕ} {u : Bool}
+    {e : Entry} {cm : Array ℕ} (hk : k < numPrimes)
+    (he : Id.run (examinePrime? c d primeTable[k]! u) = some (e, cm)) (bHigh : ℕ) :
+    Id.run (forbiddenOfPrime c d primeTable[k]! bHigh cm e.isFSquare[primeTable[k]!]!) =
+      Id.run (forbiddenOfPrime c d primeTable[k]! bHigh
+        ((Array.range (d + 1)).map fun n ↦ (c.getD n 0 % (primeTable[k]! : ℤ)).toNat)
+        (examinePrime c d primeTable[k]!).isFSquare[primeTable[k]!]!) := by
   rw [eq_map_range_of_run_examinePrime?_eq_some he,
-    eq_examinePrime_of_run_examinePrime?_eq_some he hp0 hp]
+    eq_examinePrime_of_lt_numPrimes_of_run_examinePrime?_eq_some hk he]
 
 /-- The invariant of the loop of `Ratpoints.Sieve.examinePrimes` over the positions of the first
 primes of the table, after `k` of them, on the tables and the forbidden divisors found: the tables
@@ -886,8 +886,7 @@ theorem ExaminePrimesInvariant.push {c : List ℤ} {d maxForbidden bHigh k : ℕ
   split
   · exact ht i _
   · obtain rfl : i = k := by simp at hi; lia
-    exact eq_examinePrime_of_run_examinePrime?_eq_some he
-      (Nat.zero_lt_of_lt (one_lt_getElem!_primeTable hk)) (getElem!_primeTable_lt_maxPrimeEven hk)
+    exact eq_examinePrime_of_lt_numPrimes_of_run_examinePrime?_eq_some hk he
 
 -- The position at the cursor of the loop of `Ratpoints.Sieve.examinePrimes` is that of a prime of
 -- the table, the number of positions done.
@@ -906,9 +905,7 @@ theorem isForbiddenEntry_of_run_examinePrime?_eq_some {c : List ℤ} {d bHigh k 
       some (.inl f)) :
     IsForbiddenEntry c d bHigh f :=
   .inl ⟨_, Array.getElem!_mem (hk.trans_le numPrimes_le_size_primeTable),
-    (run_forbiddenOfPrime_eq_of_run_examinePrime?_eq_some he
-      (Nat.zero_lt_of_lt (one_lt_getElem!_primeTable hk)) (getElem!_primeTable_lt_maxPrimeEven hk)
-      bHigh) ▸ hf⟩
+    (run_forbiddenOfPrime_eq_of_run_examinePrime?_eq_some hk he bHigh) ▸ hf⟩
 
 /-- A forbidden divisor tested by its valuation that the prime at the position `k < numPrimes` gives
 from what its table hands back is one that the loop of the tables may record. -/
@@ -919,9 +916,7 @@ theorem isForbiddenVal_of_run_examinePrime?_eq_some {c : List ℤ} {d bHigh k : 
       some (.inr f)) :
     IsForbiddenVal c d bHigh f :=
   ⟨_, Array.getElem!_mem (hk.trans_le numPrimes_le_size_primeTable),
-    (run_forbiddenOfPrime_eq_of_run_examinePrime?_eq_some he
-      (Nat.zero_lt_of_lt (one_lt_getElem!_primeTable hk)) (getElem!_primeTable_lt_maxPrimeEven hk)
-      bHigh) ▸ hf⟩
+    (run_forbiddenOfPrime_eq_of_run_examinePrime?_eq_some hk he bHigh) ▸ hf⟩
 
 /-- The step of the loop of `Ratpoints.Sieve.examinePrimes` that records a forbidden divisor tested
 with words. -/
@@ -1126,9 +1121,7 @@ theorem not_isPoint_of_run_examinePrimes_eq_none {c : List ℤ} {u checkDenom : 
     (h : Id.run (examinePrimes c (degree c) u checkDenom n maxForbidden bHigh) = none)
     (hn : n ≤ numPrimes) (H : ℕ) (q : ℤ × ℤ × ℤ) : ¬IsPoint c H q := by
   obtain ⟨pn, hpn, he⟩ := (run_examinePrimes_spec hn).2 h
-  exact not_isPoint_of_run_examinePrime?_eq_none he (prime_getElem!_primeTable
-    ((hpn.trans_le hn).trans_le numPrimes_le_size_primeTable))
-    (getElem!_primeTable_lt_maxPrimeEven (hpn.trans_le hn)) H q
+  exact not_isPoint_of_lt_numPrimes_of_run_examinePrime?_eq_none (hpn.trans_le hn) he H q
 
 /-! ### The further primes -/
 

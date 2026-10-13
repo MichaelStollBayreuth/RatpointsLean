@@ -19,7 +19,8 @@ test which fails from some position on, the integers of a range that lie in a sm
 two bounds, the gcd of the absolute values of a list of integers as a left fold, the length of the
 list of a range and the position of the cursor of a loop over it, the cursor of a loop over an array
 as one of its entries, the bound `y < (n + 1) k` for `y < n k`, the residues modulo `p` of the
-integers from `a` on, exact quotients of integers, the bits of the word `~~~0` and of the masks
+integers from `a` on, the residue of an integer modulo `p`, below `p` and read off its residue
+modulo a multiple of `p`, exact quotients of integers, the bits of the word `~~~0` and of the masks
 `~~~0 <<< n` and `~~~0 >>> n`, the lowest bit and the lowest set bit of a word, the word
 `x &&& (x - 1)`, which is `x` with its lowest set bit cleared, the bits of a word set one at a time,
 at their own positions or at others, the 64 bits of two words from a position within the first, the
@@ -73,6 +74,8 @@ algorithm, and the divisors of the gcd of `b` and a residue `f ≡ a (mod b)`.
   left fold, divides each of them.
 * `Int.toNat_add_emod_of_lt`, `Int.toNat_add_add_emod`: the residues modulo `p` of `a + j` before
   and from the first multiple of `p` from `a` on.
+* `Int.toNat_emod_lt`, `Int.toNat_emod_mod_of_dvd`: the residue of `a` modulo `p > 0` is below `p`,
+  and for `p ∣ m` it is the residue modulo `p` of the residue of `a` modulo `m`.
 * `UInt64.getLsbD_foldl_and`: the bits of a word and-ed in turn with the words of a list.
 * `UInt64.two_pow_ctz_mul_shiftRight_ofNat`, `UInt64.shiftRight_ctz_ofNat_mod_two`: a number
   `0 < b < 2 ^ 64` is `2 ^ t` times the odd number `b >>> t`, for the position `t` of the lowest
@@ -487,6 +490,15 @@ theorem toNat_add_add_emod {a : Int} {p i k : Nat} (hi : i < p) :
     lia
   rw [key, add_mul_emod_self_left, emod_eq_of_lt (by lia) (by lia)]
   simp
+
+theorem toNat_emod_lt (a : Int) {p : Nat} (hp : 0 < p) : (a % (p : Int)).toNat < p :=
+  (toNat_lt' hp).mpr (emod_lt_of_pos a (by lia))
+
+theorem toNat_emod_mod_of_dvd (a : Int) {m p : Nat} (hm : 0 < m) (hpm : p ∣ m) :
+    (a % (m : Int)).toNat % p = (a % (p : Int)).toNat := by
+  have hp : 0 < p := Nat.pos_of_dvd_of_pos hpm hm
+  rw [← natCast_inj, natCast_emod, toNat_of_nonneg (emod_nonneg _ (by lia)),
+    toNat_of_nonneg (emod_nonneg _ (by lia)), emod_emod_of_dvd _ (natCast_dvd_natCast.mpr hpm)]
 
 theorem ediv_mul_eq_ediv_mul_of_dvd {a b g : Int} (ha : g ∣ a) (hb : g ∣ b) :
     a / g * b = b / g * a := by

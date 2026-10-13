@@ -11,6 +11,7 @@ public import Ratpoints.Model.Sieve
 public import Ratpoints.Spec.Basic
 public import Std.WP
 
+import Mathlib.Data.List.GetD
 import Ratpoints.Mathlib.Algebra.Group.Even
 import Ratpoints.Mathlib.Data.ZMod.Basic
 import Ratpoints.Proof.Bits
@@ -64,7 +65,8 @@ of a negative leading coefficient in `jacobi1`, with `LONG_MIN` replaced by its 
   square value of `f`.
 * `Ratpoints.Sieve.getElem!_squaresMod_mul_self_mod`,
   `Ratpoints.Sieve.getElem!_squaresMod_of_isSquare`, `Ratpoints.Sieve.getElem!_inversesMod_mul_mod`,
-  `Ratpoints.Sieve.natCast_evalMod`: the tables compute their definitions.
+  `Ratpoints.Sieve.natCast_evalMod`, `Ratpoints.Sieve.natCast_evalMod_reverse`: the tables compute
+  their definitions.
 * `Ratpoints.Sieve.getElem!_isFSquare_examinePrime_of_isSquare`: the table of a prime marks every
   residue at which `f` takes a square value.
 * `Ratpoints.Sieve.getElem!_isFSquare_examinePrime_self`: the entry of the table of a prime at `p`
@@ -82,10 +84,13 @@ of a negative leading coefficient in `jacobi1`, with `LONG_MIN` replaced by its 
   `Ratpoints.Sieve.eq_map_range_of_run_examinePrime?_eq_some` and
   `Ratpoints.Sieve.run_examinePrime?_eq_none_iff`: the two paths of the table with the exit give
   the same result, which is the table of the reference with the coefficients reduced modulo `p` for
-  `0 < p < maxPrimeEven`, and when it gives none.
+  `0 < p < maxPrimeEven`, and when it gives none;
+  `Ratpoints.Sieve.eq_examinePrime_of_lt_numPrimes_of_run_examinePrime?_eq_some`: so for the prime
+  at a position below `Ratpoints.numPrimes` of the table.
 * `Ratpoints.Sieve.any_isFSquare_examinePrime_of_sq_eq`,
-  `Ratpoints.Sieve.not_isPoint_of_run_examinePrime?_eq_none`: a point makes an entry of the table
-  of a prime true, so a curve without points modulo a prime has no points.
+  `Ratpoints.Sieve.not_isPoint_of_run_examinePrime?_eq_none`,
+  `Ratpoints.Sieve.not_isPoint_of_lt_numPrimes_of_run_examinePrime?_eq_none`: a point makes an
+  entry of the table of a prime true, so a curve without points modulo a prime has no points.
 * `Ratpoints.fitsLong_sixteen_mul`, `Ratpoints.fitsLong_add_sixteen_mul`, `Ratpoints.fitsLong_neg`,
   `Ratpoints.fitsLong_neg_ite_div_four`: the values of the C code that could leave the range of a
   `long` stay in it.
@@ -246,13 +251,30 @@ theorem natCast_evalMod (cs : List ℕ) (p x : ℕ) :
     rw [add_comm]
     exact congr($(Finset.sum_congr rfl fun k _ ↦ by ring) + _)
 
+/-- Entry `k ≤ d` of the coefficients `c₀, …, c_d` reduced modulo `m` is `c_k` in `ZMod m`. -/
+theorem natCast_getD_map_range_toNat_emod (c : List ℤ) (d : ℕ) {m : ℕ} [NeZero m] {k : ℕ}
+    (hk : k < d + 1) :
+    ((((List.range (d + 1)).map fun n ↦ (c.getD n 0 % (m : ℤ)).toNat).getD k 0 : ℕ) : ZMod m) =
+      c.getD k 0 := by
+  rw [List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range hk, Option.map_some,
+    Option.getD_some, ZMod.natCast_toNat_emod]
+
 theorem natCast_evalMod_map_range (c : List ℤ) (d : ℕ) {p : ℕ} [NeZero p] (t : ℕ) :
     (evalMod ((List.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat) p t : ZMod p) =
       ∑ k ∈ Finset.range (d + 1), (c.getD k 0 : ZMod p) * t ^ k := by
   rw [natCast_evalMod, List.length_map, List.length_range]
+  exact Finset.sum_congr rfl fun k hk ↦
+    congr($(natCast_getD_map_range_toNat_emod c d (Finset.mem_range.mp hk)) * _)
+
+/-- Horner's rule modulo `m` on the reversed list of coefficients: the value at `x` of the
+polynomial whose coefficient of `x ^ (n - 1 - k)` is entry `k` of the list of length `n`. -/
+theorem natCast_evalMod_reverse (cs : List ℕ) (m x : ℕ) :
+    (evalMod cs.reverse m x : ZMod m) =
+      ∑ k ∈ Finset.range cs.length, (cs.getD k 0 : ZMod m) * x ^ (cs.length - 1 - k) := by
+  rw [natCast_evalMod, List.length_reverse, ← Finset.sum_range_reflect]
   refine Finset.sum_congr rfl fun k hk ↦ ?_
-  rw [List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range (Finset.mem_range.mp hk),
-    Option.map_some, Option.getD_some, ZMod.natCast_toNat_emod]
+  have hk := Finset.mem_range.mp hk
+  rw [List.getD_reverse _ (by lia), Nat.sub_sub_self (by lia)]
 
 @[simp]
 theorem evalMod_cons_zero (a : ℕ) (cs : List ℕ) (p : ℕ) : evalMod (a :: cs) p 0 = a % p := by
@@ -537,7 +559,7 @@ private theorem getElem!_map_range_emod_lt (c : List ℤ) (d : ℕ) {p : ℕ} (h
     ((Array.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat)[i]! < p := by
   by_cases hi : i < d + 1
   · rw [Array.getElem!_map_range _ hi]
-    exact (Int.toNat_lt' (by lia)).mpr (Int.emod_lt_of_pos _ (by lia))
+    exact Int.toNat_emod_lt _ hp
   · rw [getElem!_neg _ i (by simpa using hi)]
     exact hp
 
@@ -645,6 +667,13 @@ theorem eq_examinePrime_of_run_examinePrime?_eq_some {c : List ℤ} {d p : ℕ} 
   rw [run_examinePrime? u hp0 hp] at h
   split at h <;> grind
 
+theorem eq_examinePrime_of_lt_numPrimes_of_run_examinePrime?_eq_some {c : List ℤ} {d k : ℕ}
+    {u : Bool} {e : Entry} {cm : Array ℕ} (hk : k < numPrimes)
+    (h : Id.run (examinePrime? c d primeTable[k]! u) = some (e, cm)) :
+    e = examinePrime c d primeTable[k]! :=
+  eq_examinePrime_of_run_examinePrime?_eq_some h (Nat.zero_lt_of_lt (one_lt_getElem!_primeTable hk))
+    (getElem!_primeTable_lt_maxPrimeEven hk)
+
 /-- The coefficients that the table hands back are those of `f` reduced modulo `p`. -/
 theorem eq_map_range_of_run_examinePrime?_eq_some {c : List ℤ} {d p : ℕ} {u : Bool} {e : Entry}
     {cm : Array ℕ} (h : Id.run (examinePrime? c d p u) = some (e, cm)) :
@@ -689,8 +718,7 @@ theorem getElem!_squaresMod_of_sq_eq {c : List ℤ} (hd : degree c % 2 = 0) {p :
     {a y : ℤ} {b : ℕ} (hab : Int.gcd a b = 1) (hy : y ^ 2 = binaryForm c a b) (hpb : p ∣ b) :
     (squaresMod p)[(c.getD (degree c) 0 % (p : ℤ)).toNat]! = true := by
   have : Fact p.Prime := ⟨hp⟩
-  refine getElem!_squaresMod_of_isSquare hp
-    ((Int.toNat_lt' hp.pos).mpr (Int.emod_lt_of_pos _ (mod_cast hp.pos))) ?_
+  refine getElem!_squaresMod_of_isSquare hp (Int.toNat_emod_lt _ hp.pos) ?_
   rw [ZMod.natCast_toNat_emod]
   exact isSquare_getD_degree_of_sq_eq_binaryForm hab (Nat.mod_eq_zero_of_dvd hpb) hd hy
 
@@ -720,6 +748,13 @@ theorem not_isPoint_of_run_examinePrime?_eq_none {c : List ℤ} {p : ℕ} {u : B
   rw [hb] at hy hg
   rw [run_examinePrime?_eq_none_iff hp.pos hpp, any_isFSquare_examinePrime_of_sq_eq hp hg hy] at h
   cases h
+
+theorem not_isPoint_of_lt_numPrimes_of_run_examinePrime?_eq_none {c : List ℤ} {k : ℕ} {u : Bool}
+    (hk : k < numPrimes) (h : Id.run (examinePrime? c (degree c) primeTable[k]! u) = none)
+    (H : ℕ) (q : ℤ × ℤ × ℤ) : ¬IsPoint c H q :=
+  not_isPoint_of_run_examinePrime?_eq_none h
+    (prime_getElem!_primeTable (hk.trans_le numPrimes_le_size_primeTable))
+    (getElem!_primeTable_lt_maxPrimeEven hk) H q
 
 end Sieve
 

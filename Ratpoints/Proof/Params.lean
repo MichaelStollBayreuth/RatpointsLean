@@ -51,7 +51,8 @@ least one bit array.
   `Ratpoints.mul_add_lt_two_pow_64_of_lt_maxPrimeEven`,
   `Ratpoints.mul_self_lt_two_pow_63_of_lt_maxPrimeEven`: the values of `examine_power` stay in the
   range of their C types; `Ratpoints.pow_hornerSteps_add_one_lt`: so does the accumulator of
-  Horner's rule in `examine_prime` between two reductions.
+  Horner's rule in `examine_prime` between two reductions, since
+  `hornerSteps + 1 = 64 / maxBitsInPrime` (`Ratpoints.hornerSteps_add_one`).
 * `Ratpoints.modulusFactors_spec`: the contract of the factors of a modulus over the table, with its
   plain forms `Ratpoints.eq_mul_prod_run_modulusFactors`,
   `Ratpoints.lt_numPrimes_and_one_le_of_mem_run_modulusFactors`,
@@ -195,15 +196,20 @@ theorem mul_self_lt_two_pow_63_of_lt_maxPrimeEven {x : ℕ} (hx : x < maxPrimeEv
     x * x < 2 ^ 63 :=
   (Nat.mul_self_lt_mul_self (hx.trans_le maxPrimeEven_le_two_pow_10)).trans (by norm_num)
 
-/-- The bound of the schedule of Horner's rule in the table of a prime `p < maxPrimeEven` in
-`examine_prime`: `p ^ (hornerSteps + 1) < 2 ^ 64`, since `hornerSteps + 1 = 64 / maxBitsInPrime`,
-which `Ratpoints.one_le_hornerSteps` gives, and `maxBitsInPrime (64 / maxBitsInPrime) ≤ 64`. -/
-theorem pow_hornerSteps_add_one_lt {p : ℕ} (hp : p < maxPrimeEven) :
-    p ^ (hornerSteps + 1) < 2 ^ 64 := by
+/-- The defining formula `hornerSteps = 64 / maxBitsInPrime - 1` without the truncated
+subtraction, since `1 ≤ hornerSteps` (`Ratpoints.one_le_hornerSteps`). -/
+theorem hornerSteps_add_one : hornerSteps + 1 = 64 / maxBitsInPrime := by
   have := one_le_hornerSteps
   rw [hornerSteps] at this ⊢
-  rw [Nat.sub_add_cancel (by lia : 1 ≤ 64 / maxBitsInPrime)]
-  exact Nat.pow_lt_two_pow_of_lt hp (Nat.mul_div_le 64 _) (by lia)
+  lia
+
+/-- The bound of the schedule of Horner's rule in the table of a prime `p < maxPrimeEven` in
+`examine_prime`: `p ^ (hornerSteps + 1) < 2 ^ 64`, since `hornerSteps + 1 = 64 / maxBitsInPrime`
+(`Ratpoints.hornerSteps_add_one`) and `maxBitsInPrime (64 / maxBitsInPrime) ≤ 64`. -/
+theorem pow_hornerSteps_add_one_lt {p : ℕ} (hp : p < maxPrimeEven) :
+    p ^ (hornerSteps + 1) < 2 ^ 64 := by
+  rw [hornerSteps_add_one]
+  exact Nat.pow_lt_two_pow_of_lt hp (Nat.mul_div_le 64 _) (hornerSteps_add_one ▸ Nat.succ_ne_zero _)
 
 /-! ### The factors of a modulus over the table -/
 

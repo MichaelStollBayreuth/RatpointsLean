@@ -242,16 +242,6 @@ theorem getElem!_fsq_run_examinePower_of_isSquare {c : List ℤ} {d p e : ℕ} (
   rw [← natCast_evalMod_map_range c d x] at h
   exact getElem!_foldl_set!_mul_self_mod_of_isSquare (evalMod_lt _ (by lia) _) h
 
-/-- Horner's rule modulo `m` on the reversed list of coefficients: the value at `x` of the
-polynomial whose coefficient of `x ^ (n - 1 - k)` is entry `k` of the list of length `n`. -/
-theorem natCast_evalMod_reverse (cs : List ℕ) (m x : ℕ) :
-    (evalMod cs.reverse m x : ZMod m) =
-      ∑ k ∈ Finset.range cs.length, (cs.getD k 0 : ZMod m) * x ^ (cs.length - 1 - k) := by
-  rw [natCast_evalMod, List.length_reverse, ← Finset.sum_range_reflect]
-  refine Finset.sum_congr rfl fun k hk ↦ ?_
-  have hk := Finset.mem_range.mp hk
-  rw [List.getD_reverse _ (by lia), Nat.sub_sub_self (by lia)]
-
 -- The coefficients of `examinePower`, with `c_D = 0` for odd `d`, reversed: Horner's rule gives the
 -- value `∑ cₖ x ^ (D - k)` of the reversed polynomial modulo `m`.
 private theorem natCast_evalMod_reverse_ite (c : List ℤ) (d : ℕ) {m : ℕ} [NeZero m] (x : ℕ) :
@@ -259,22 +249,18 @@ private theorem natCast_evalMod_reverse_ite (c : List ℤ) (d : ℕ) {m : ℕ} [
         (List.range (d + 1)).map (fun k ↦ (c.getD k 0 % (m : ℤ)).toNat) ++ [0] else
         (List.range (d + 1)).map fun k ↦ (c.getD k 0 % (m : ℤ)).toNat).reverse m x : ZMod m) =
       ∑ k ∈ Finset.range (d + 1), (c.getD k 0 : ZMod m) * x ^ (d + d % 2 - k) := by
-  have hc (k : ℕ) (hk : k < d + 1) :
-      ((((List.range (d + 1)).map fun k ↦ (c.getD k 0 % (m : ℤ)).toNat).getD k 0 : ℕ) : ZMod m) =
-        c.getD k 0 := by
-    rw [List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range hk, Option.map_some,
-      Option.getD_some, ZMod.natCast_toNat_emod]
   split_ifs with hd
   · rw [natCast_evalMod_reverse, List.length_append, List.length_map, List.length_range,
       List.length_singleton, Finset.sum_range_succ, List.getD_append_right _ _ _ _ (by simp)]
     simp only [List.length_map, List.length_range, Nat.sub_self, List.getD_cons_zero, Nat.cast_zero,
       zero_mul, add_zero]
     refine Finset.sum_congr rfl fun k hk ↦ ?_
-    rw [List.getD_append _ _ _ _ (by simpa using hk), hc k (Finset.mem_range.mp hk), hd,
-      Nat.add_sub_cancel]
+    rw [List.getD_append _ _ _ _ (by simpa using hk),
+      natCast_getD_map_range_toNat_emod c d (Finset.mem_range.mp hk), hd, Nat.add_sub_cancel]
   · rw [natCast_evalMod_reverse, List.length_map, List.length_range]
     refine Finset.sum_congr rfl fun k hk ↦ ?_
-    rw [hc k (Finset.mem_range.mp hk), show d + d % 2 = d + 1 - 1 by lia]
+    rw [natCast_getD_map_range_toNat_emod c d (Finset.mem_range.mp hk),
+      show d + d % 2 = d + 1 - 1 by lia]
 
 /-- Entry `t` of the table `gsq` of the prime power `m = p ^ e`, for `p ∣ t`, is set when the
 reversed polynomial `∑ cₖ t ^ (D - k)` of the even degree `D = d + d % 2` takes a square value
@@ -396,14 +382,6 @@ theorem getElem!_inv_run_examinePower_lt_two_pow_16 {c : List ℤ} {d p e : ℕ}
 
 /-! ### The rows of a prime power let every point through -/
 
--- The residue modulo `p` of the residue of `a` modulo `m`, for `p ∣ m`.
-private theorem toNat_emod_mod_of_dvd (a : ℤ) {m p : ℕ} (hm : 0 < m) (hpm : p ∣ m) :
-    (a % (m : ℤ)).toNat % p = (a % (p : ℤ)).toNat := by
-  have hp : 0 < p := Nat.pos_of_dvd_of_pos hpm hm
-  rw [← Int.natCast_inj, Int.natCast_mod, Int.toNat_of_nonneg (Int.emod_nonneg _ (by lia)),
-    Int.toNat_of_nonneg (Int.emod_nonneg _ (by lia)),
-    Int.emod_emod_of_dvd _ (Int.natCast_dvd_natCast.mpr hpm)]
-
 -- The cast of the product of a residue and its inverse in the table of a prime power.
 private theorem natCast_mul_getElem!_inv_run_examinePower {c : List ℤ} {d p e : ℕ} (u : Bool)
     (hp : p.Prime) (he : 1 ≤ e) {x : ℕ} (hx : x < p ^ e) (hpx : x % p ≠ 0) :
@@ -441,9 +419,9 @@ private theorem getElem!_gsq_run_examinePower_of_sq_eq {c : List ℤ} {p e : ℕ
   have : NeZero (p ^ e) := ⟨hm.ne'⟩
   have hpm : p ∣ p ^ e := dvd_pow_self p (by lia)
   have hx := toNat_emod_ne_zero_of_gcd_eq_one hp.one_lt hab hb
-  rw [← toNat_emod_mod_of_dvd a hm hpm] at hx
+  rw [← Int.toNat_emod_mod_of_dvd a hm hpm] at hx
   have hw := natCast_mul_getElem!_inv_run_examinePower (c := c) (d := degree c) u hp he
-    ((Int.toNat_lt' hm).mpr (Int.emod_lt_of_pos _ (by lia))) hx
+    (Int.toNat_emod_lt a hm) hx
   rw [ZMod.natCast_toNat_emod] at hw
   refine Bool.and_eq_true_iff.mpr ⟨by simpa using hx, getElem!_gsq_run_examinePower_of_isSquare u
     (Nat.mod_lt _ hm) (Nat.mod_eq_zero_of_dvd ((Nat.dvd_mod_iff hpm).mpr
@@ -567,8 +545,7 @@ theorem MakeModulusInvariant.push_run_examinePrime? {c : List ℤ} {u : Bool} {m
   subst he
   have hpe := mem_run_modulusFactors_of_eq hfac hl
   have hpn := (lt_numPrimes_and_one_le_of_mem_run_modulusFactors hpe).1
-  rw [eq_examinePrime_of_run_examinePrime?_eq_some ht
-    (Nat.zero_lt_of_lt (one_lt_getElem!_primeTable hpn)) (getElem!_primeTable_lt_maxPrimeEven hpn)]
+  rw [eq_examinePrime_of_lt_numPrimes_of_run_examinePrime?_eq_some hpn ht]
   exact h.push fun _ _ _ hab hy ↦ admits_prime_examinePrime_mod hpe hab hy
 
 /-- The step of the loop of `Ratpoints.makeModulus?` at a factor that is a prime power. -/
@@ -591,10 +568,8 @@ theorem makeModulusInvariant_some_none {c : List ℤ} {u : Bool} {m r pn e : ℕ
     MakeModulusInvariant c m [] (some none, factors) := by
   have hpn := (lt_numPrimes_and_one_le_of_mem_run_modulusFactors
     (mem_run_modulusFactors_of_eq hfac hl)).1
-  refine ⟨rfl, rfl, not_isPoint_of_run_examinePrime?_eq_none
-    (he.trans (Option.eq_none_iff_forall_ne_some.mpr fun ⟨t, cm⟩ h ↦ hx t cm h))
-    (prime_getElem!_primeTable (hpn.trans_le numPrimes_le_size_primeTable))
-    (getElem!_primeTable_lt_maxPrimeEven hpn)⟩
+  refine ⟨rfl, rfl, not_isPoint_of_lt_numPrimes_of_run_examinePrime?_eq_none hpn
+    (he.trans (Option.eq_none_iff_forall_ne_some.mpr fun ⟨t, cm⟩ h ↦ hx t cm h))⟩
 
 /-- The end of the loop of `Ratpoints.makeModulus?` after an early return. -/
 theorem MakeModulusInvariant.post_some {c : List ℤ} {m : ℕ} {o : Option (Option SieveEntry)}
