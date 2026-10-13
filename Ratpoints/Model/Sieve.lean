@@ -23,7 +23,9 @@ helper `mod` of the C code for `long`s or by the Euclidean `%` for GMP integers
 and the rows as words, one piece of bit arrays from the first stage to the points of its numerators
 (`Ratpoints.Sieve.siftPiece`), the numerators of one denominator in pieces, from a class word, the
 numerators modulo 64 from which the first stage starts (`Ratpoints.Sieve.sift`), and the points at
-infinity (`Ratpoints.Sieve.pointsAtInfinity`); the loop over the denominators
+infinity (`Ratpoints.Sieve.pointsAtInfinity`); Barrett's reduction and Horner's rule with it on the
+fixed schedule of `examine_prime` (`Ratpoints.Sieve.barrett`, `Ratpoints.Sieve.hornerBarrett`),
+which the table of a prime takes with stage F, are here too; the loop over the denominators
 (`Ratpoints.Sieve.sieveRun`), with the 2-adic information that gives the words of the classes of the
 denominators modulo 64, is in `Ratpoints.Model.Denominators`. The table of a prime without the exit
 (`Ratpoints.Sieve.examinePrime`) is the reference of the table with it, which gives the same table
@@ -49,6 +51,8 @@ here: the squares and the inverses by `Ratpoints.Sieve.squaresMod` and
 * `Ratpoints.Sieve.examinePrime`: the table of a prime, the reference of the table with the exit.
 * `Ratpoints.Sieve.modLong`: the helper `mod` of the C code, the remainder of a `long` modulo a
   positive `long`.
+* `Ratpoints.Sieve.barrett`, `Ratpoints.Sieve.hornerBarrett`: Barrett's reduction, and Horner's
+  rule modulo a prime with it on a fixed schedule.
 * `Ratpoints.Sieve.examinePrime?`: the table of a prime on the path through `long`s or GMP
   integers, or none when the curve has no points modulo the prime.
 * `Ratpoints.Sieve.Entry.admits`, `Ratpoints.Sieve.survives`: the rows of a denominator.
@@ -171,6 +175,55 @@ def modLong (a b : Int) : Int :=
     let a := if 4 * b ≤ a then a - 4 * b else a
     let a := if 2 * b ≤ a then a - 2 * b else a
     if b ≤ a then a - b else a
+
+/-- The remainder of `u` modulo `p ≥ 1` by Barrett's reduction with the reciprocal `m`: the
+quotient `⌊u m / 2 ^ 64⌋` times `p` subtracted from `u`, and `p` once more when the difference is
+still at least `p`. For `m = ⌊(2 ^ 64 - 1) / p⌋` and `u < 2 ^ 64` the quotient is `⌊u / p⌋` or one
+less, so that the result is `u % p`.
+
+C: `find_points.c:1639-1650`
+
+Deviation: natural numbers for the `unsigned long`s, the product `u m` exact as the 128-bit
+product of the C code, and the difference exact, which does not wrap since the quotient times `p`
+is at most `u` for `m ≤ (2 ^ 64 - 1) / p`; the obligation that `u` is below `2 ^ 64`, which the C
+type gives, a hypothesis of the lemma that the result is `u % p`; the form with the 128-bit
+product, which the builds of the model compile (the compiler defines `__SIZEOF_INT128__`, and
+`RP_NO_INT128` is not set), for the division `u % p` of the other builds, which gives the same
+remainder. -/
+def barrett (u p m : Nat) : Nat :=
+  let r := u - u * m / 2 ^ 64 * p
+  if p ≤ r then r - p else r
+
+/-- The value modulo the prime `p` at the residue `a` of the polynomial of degree `d` whose
+coefficients reduced modulo `p` are `cm`, constant term first, as `examine_prime` computes it by
+Horner's rule: from `cm[d]`, the steps `s ↦ s a + cm[n]` for `n = d - 1, …, 0`, and Barrett's
+reduction with the reciprocal `recip` (`Ratpoints.Sieve.barrett`) at the end, for
+`d ≤ Ratpoints.hornerSteps`; for larger `d` also after every `Ratpoints.hornerSteps` steps. For
+`p < 2 ^ maxBitsInPrime`, `a < p`, the entries of `cm` below `p` and `recip = ⌊(2 ^ 64 - 1) / p⌋`,
+the accumulator stays below `2 ^ 64`, and the value is that of Horner's rule reduced at every step
+(`Ratpoints.Sieve.evalMod`).
+
+It models the lines of Horner's rule in `examine_prime` (`find_points.c:1724`,
+`find_points.c:1726-1731`, `find_points.c:1735`, `find_points.c:1737-1744`), which pass to it from
+`Ratpoints.Sieve.examinePrime?` when the table of a prime calls it (stage F); until then the table
+reduces at every step. It departs from them in the choice between the two branches, made for each
+residue, where `examine_prime` makes it once, around its loop over the residues; in natural numbers
+for the `unsigned long` accumulator, with the obligation that it stays below `2 ^ 64` stated as a
+lemma; and in the steps counted up from `0` to `d - 1`, for the index `n` that counts down. -/
+def hornerBarrett (cm : Array Nat) (d p recip a : Nat) : Id Nat := do
+  let mut s := cm[d]!
+  if d ≤ hornerSteps then
+    for i in [0:d] do
+      s := s * a + cm[d - 1 - i]!
+  else
+    let mut k := 0
+    for i in [0:d] do
+      s := s * a + cm[d - 1 - i]!
+      k := k + 1
+      if k = hornerSteps then
+        s := barrett s p recip
+        k := 0
+  return barrett s p recip
 
 /-- The table of the prime `p` for the polynomial `f` of degree `d` with the coefficient list `c`,
 as `examine_prime` makes it, with the flag `useCLong` of the `long`s (`Ratpoints.Setup.useCLong`):
@@ -774,6 +827,25 @@ def pointsAtInfinity (c : List Int) (d : Nat) (rev : Bool) : List (Int × Int ×
 #guard [1, 3, 7, 251, 1021, 2 ^ 58 + 3, 2 ^ 59 - 1].all fun b : Int ↦
   [-2 ^ 63, -2 ^ 63 + 1, -16 * b - 1, -16 * b, -16 * b + 1, -b, -1, 0, 1, b, 16 * b - 1, 16 * b,
     16 * b + 1, 2 ^ 63 - 2, 2 ^ 63 - 1].all fun a ↦ modLong a b == a % b
+
+-- Barrett's reduction with the reciprocal `⌊(2 ^ 64 - 1) / p⌋` is the remainder for `u < 2 ^ 64`:
+-- at the ends of the range, at the multiples of `p` and next to them, and at the powers of 2, for
+-- the primes of the table, `1`, `2` and moduli near `2 ^ 32`, `2 ^ 63` and `2 ^ 64`.
+#guard ([1, 2, 2 ^ 32 - 5, 2 ^ 32 + 15, 2 ^ 63 - 25, 2 ^ 64 - 59] ++ primeTable.toList).all
+  fun p ↦
+    let m := (2 ^ 64 - 1) / p
+    ([0, 1, p - 1, p, p + 1, 2 * p - 1, 2 * p, 2 ^ 64 - 1, 2 ^ 64 - p, m * p, m * p - 1] ++
+        (List.range 64).map (2 ^ ·)).all fun u ↦
+      2 ^ 64 ≤ u || barrett u p m == u % p
+
+-- Horner's rule with Barrett's reduction on its schedule against Horner's rule reduced at every
+-- step, for the primes below `2 ^ maxBitsInPrime` with the largest coefficients and residues, where
+-- the accumulator comes nearest to `2 ^ 64`, at degrees around the schedule and at `maxDegree`.
+#guard (primeTable.toList.take numPrimes).all fun p ↦
+  [0, 1, 6, 7, 8, 13, 14, 15, 100].all fun d ↦
+    let cm := Array.replicate (d + 1) (p - 1)
+    [1, 2, p - 2, p - 1].all fun a ↦
+      Id.run (hornerBarrett cm d p ((2 ^ 64 - 1) / p) a) == evalMod cm.toList p a
 
 -- The table with the exit on both paths against the reference, for curves with points modulo every
 -- prime, one of them with coefficients that are not `long`s.

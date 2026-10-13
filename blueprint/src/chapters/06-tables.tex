@@ -94,12 +94,8 @@ chosen, of which kinds and in which stages, changes neither the points nor their
 
 \begin{definition}[The Barrett reduction on the schedule of Horner's rule]\label{def:barrett}
   \uses{def:primeTable}
-  Proposed names: \lname{Ratpoints.maxPrimeEven}, \lname{Ratpoints.hornerSteps},
-  \lname{Ratpoints.one\_le\_hornerSteps}, \lname{Ratpoints.maxBitsInPrime\_le\_ten},
-  \lname{Ratpoints.maxPrimeEven\_le\_two\_pow\_10}, \lname{Ratpoints.maxPrimeEven\_le\_two\_pow\_32},
-  \lname{Ratpoints.getElem!\_primeTable\_lt\_maxPrimeEven},
-  \lname{List.getElem\_lt\_of\_lt\_length\_filter}, \lname{Ratpoints.Sieve.barrett},
-  \lname{Ratpoints.Sieve.hornerBarrett}.
+  \lean{Ratpoints.maxPrimeEven, Ratpoints.hornerSteps, Ratpoints.one_le_hornerSteps, Ratpoints.maxBitsInPrime_le_ten, Ratpoints.maxPrimeEven_le_two_pow_10, Ratpoints.maxPrimeEven_le_two_pow_32, Ratpoints.getElem!_primeTable_lt_maxPrimeEven, List.getElem_lt_of_lt_length_filter, Ratpoints.Sieve.barrett, Ratpoints.Sieve.hornerBarrett}
+  \leanok
   The power of two above the moduli, $\mathrm{maxPrimeEven} = 2^{\mathrm{maxBitsInPrime}}$
   (\csource{rp-private.h}{325}{361}), and the number of Horner steps between two reductions,
   $\mathrm{hornerSteps} = 64 / \mathrm{maxBitsInPrime} - 1$ (\csource{find_points.c}{1652}{1655}),
@@ -114,17 +110,16 @@ chosen, of which kinds and in which stages, changes neither the points nor their
   (\csource{find_points.c}{1639}{1650}, the form with a 128-bit product, which the default build and
   the build of the model compile). The value of $f$ at $a$ modulo $p$ from the coefficients modulo
   $p$ by Horner's rule from $c_d$, without a reduction for $d \le \mathrm{hornerSteps}$, and with a
-  reduction after every $\mathrm{hornerSteps}$ steps otherwise, and one at the end
-  (\csource{find_points.c}{1724}{1724}, \csource{find_points.c}{1726}{1731},
-  \csource{find_points.c}{1735}{1735}, \csource{find_points.c}{1737}{1744}).
+  reduction after every $\mathrm{hornerSteps}$ steps otherwise, and one at the end: lines 1724,
+  1726--1731, 1735 and 1737--1744 of \verb|find_points.c|, which the table with the exit
+  (Definition~\ref{def:examinePrimeExit}) cites until it calls Horner's rule on this schedule
+  (F1.6), when they pass to it.
 \end{definition}
 
 \begin{lemma}[The Barrett reduction and the schedule of Horner's rule]\label{lem:barrett}
   \uses{def:barrett, def:examinePrime}
-  Proposed names: \lname{Ratpoints.Sieve.barrett\_eq}, \lname{Ratpoints.pow\_hornerSteps\_add\_one\_lt},
-  \lname{Ratpoints.Sieve.HornerInvariant}, \lname{Ratpoints.Sieve.HornerInvariant.lt\_two\_pow\_64},
-  \lname{Ratpoints.Sieve.hornerBarrett\_spec},
-  \lname{Nat.mul\_sub\_one\_div\_div\_mul\_le}, \lname{Nat.lt\_mul\_sub\_one\_div\_div\_add\_two\_mul}.
+  \lean{Ratpoints.Sieve.barrett_eq, Ratpoints.pow_hornerSteps_add_one_lt, Ratpoints.Sieve.HornerInvariant, Ratpoints.Sieve.HornerInvariant.lt_two_pow_64, Ratpoints.Sieve.hornerBarrett_spec, Nat.mul_sub_one_div_div_mul_le, Nat.lt_mul_sub_one_div_div_add_two_mul}
+  \leanok
   For $0 < p$ and $u < 2^{64}$ the Barrett reduction gives $u \bmod p$. For
   $p < \mathrm{maxPrimeEven}$, coefficients below $p$ and $a < p$, the accumulator of Horner's rule
   stays below $p^{\mathrm{hornerSteps} + 1} < 2^{64}$, so that the schedule gives $f(a) \bmod p$,
@@ -132,6 +127,7 @@ chosen, of which kinds and in which stages, changes neither the points nor their
 \end{lemma}
 
 \begin{proof}
+  \leanok
   Write $2^{64} - 1 = m p + t$ with $t < p$. Then $u/p - u m/2^{64} = u (1 + t)/(p\, 2^{64})$ lies
   in $[0, 1)$, so the quotient $\lfloor u m / 2^{64} \rfloor$ is $\lfloor u / p \rfloor$ or one
   less, and one subtraction of $p$ ends in $[0, p)$. After a reduction the accumulator is below
@@ -526,6 +522,9 @@ Each item of the order of work changes the nodes of Chapters~\ref{chap:sieve}
 to~\ref{chap:denominators} that its declarations belong to, in the same commit, so that the names
 of the nodes exist and their C links are the ranges of their declarations:
 \begin{itemize}
+  \item the primes of the sieve (Definition~\ref{def:primeTable}) hold the lemma that the entries of
+    the table increase, which the divisors of the leading coefficient
+    (Definition~\ref{def:setupUs1}) held, since Definition~\ref{def:barrett} reads it too;
   \item the parameters (Definition~\ref{def:Params}): the moduli may be prime powers and products,
     with the number of primes examined, and the well-formedness of Section~\ref{sec:tablesSearch}
     (\verb|prime_of_mem| replaced by \verb|one_lt_of_mem| and \verb|prime_of_mem_drop|; it uses

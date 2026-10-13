@@ -9,7 +9,7 @@ The model is checked against ratpoints v3.1.1 (commit \texttt{1a998538dfa8}). Th
 \begin{tabular}{lrrrr}
 file & lines of code & modelled & excluded & not yet recorded \\
 \hline
-\texttt{find\_points.c} & 3244 & 1368 & 243 & 1633 \\
+\texttt{find\_points.c} & 3244 & 1380 & 243 & 1621 \\
 \texttt{sift.c} & 820 & 261 & 0 & 559 \\
 \texttt{init.c} & 302 & 155 & 8 & 139 \\
 \texttt{sturm.c} & 215 & 50 & 0 & 165 \\
@@ -20,7 +20,7 @@ file & lines of code & modelled & excluded & not yet recorded \\
 \texttt{gen\_init\_sieve\_h.c} & 26 & 13 & 0 & 13 \\
 \texttt{main.c} & 779 & 234 & 9 & 536 \\
 \hline
-total & 5883 & 2351 & 271 & 3261 \\
+total & 5883 & 2363 & 271 & 3249 \\
 \end{tabular}
 \end{center}
 
@@ -110,7 +110,11 @@ total & 5883 & 2351 & 271 & 3261 \\
   (deviation of \lname{Ratpoints.Sieve.denBits}: computed from the words apart, where \texttt{get\_2adic\_info} sets the bit in the loop that makes the classes.)
 \item \csource{find_points.c}{1106}{1115}: modelled by \lname{Ratpoints.Sieve.twoAdic}
   (deviation of \lname{Ratpoints.Sieve.twoAdic}: the words returned, for the classes \texttt{cls} and the word \texttt{den\_bits} that \texttt{get\_2adic\_info} fills, \texttt{den\_bits} computed from the words (\texttt{Ratpoints.Sieve.denBits}); the stride 1 for every class, \texttt{k = 0} and \texttt{a₀ = 0}, so that the pattern of a class is its word itself, for the packing of the numerators of a class into the residues \texttt{a₀ mod 2\textasciicircum{}k} that hold all of its admissible numerators, with its row offsets and its packed pattern (stage F); the lowest set bit by the loop of \texttt{RP\_CTZL} (\texttt{Ratpoints.Sieve.ctz}); remainders for the masks by \texttt{0x3f}; natural numbers for the \texttt{long}s \texttt{k}, \texttt{b}, \texttt{t} and \texttt{a}; no output under \texttt{DEBUG}.)
-\item \csource{find_points.c}{1119}{1655}: not yet recorded (257 lines of code)
+\item \csource{find_points.c}{1119}{1626}: not yet recorded (245 lines of code)
+\item \csource{find_points.c}{1639}{1650}: modelled by \lname{Ratpoints.Sieve.barrett}
+  (deviation of \lname{Ratpoints.Sieve.barrett}: natural numbers for the \texttt{unsigned long}s, the product \texttt{u m} exact as the 128-bit product of the C code, and the difference exact, which does not wrap since the quotient times \texttt{p} is at most \texttt{u} for \texttt{m ≤ (2 \textasciicircum{} 64 -{} 1) / p}; the obligation that \texttt{u} is below \texttt{2 \textasciicircum{} 64}, which the C type gives, a hypothesis of the lemma that the result is \texttt{u \% p}; the form with the 128-bit product, which the builds of the model compile (the compiler defines \texttt{\_\_SIZEOF\_INT128\_\_}, and \texttt{RP\_NO\_INT128} is not set), for the division \texttt{u \% p} of the other builds, which gives the same remainder.)
+\item \csource{find_points.c}{1652}{1655}: modelled by \lname{Ratpoints.hornerSteps}
+  (deviation of \lname{Ratpoints.hornerSteps}: computed from \texttt{Ratpoints.maxBitsInPrime} as the macro computes it from \texttt{RATPOINTS\_MAX\_BITS\_IN\_PRIME}, with \texttt{64} for \texttt{LONG\_LENGTH}.)
 \item \csource{find_points.c}{1683}{1697}: modelled by \lname{Ratpoints.Sieve.examinePrime?}
   (deviation of \lname{Ratpoints.Sieve.examinePrime?}: the prime \texttt{p} itself, for its index \texttt{pn} in the table \texttt{prime}; the table a fresh array of \texttt{p} entries, for the \texttt{p + 1} integers that \texttt{examine\_prime} takes from the buffer \texttt{int\_next} and hands back through \texttt{is\_f\_square\_p}; no reciprocal \texttt{recip}, which only \texttt{barrett} reads (stage F). The coefficients reduced modulo \texttt{p} are not handed back, where \texttt{examine\_prime} leaves them in its caller's array for the test on the forbidden divisors of the denominators, which computes them again until stage F (\texttt{Ratpoints.Sieve.unitParts}, \texttt{Ratpoints.Sieve.forbiddenOfPrime}); Horner's rule reduces at every step, for the reduction on a fixed schedule (stage F), and also gives \texttt{f(0)}, which ratpoints reads off the constant term; the residues with a square value are not counted, and the exit asks only whether there is one; the last entry of the table decides the exit and is not kept, since ratpoints reads it otherwise only for the density, the prime powers and the forbidden divisors, which compute it again until stage F (\texttt{Ratpoints.Sieve.forbiddenOfPrime}), never in a row or in the third stage; the entry is made also when \texttt{f(x)} is a square for every residue and there is no point at infinity modulo \texttt{p}, where \texttt{examine\_prime} returns \texttt{0} and \texttt{p} is never a modulus, the moduli being an input of the model, and for both of its codes \texttt{1} and \texttt{2}, which only the choice of the moduli tells apart (stage I); the entry is a fresh value, for the space that \texttt{examine\_prime} takes from the buffer of the sieve entries (\texttt{se\_next}), and returned, where \texttt{examine\_prime} stores it in the field \texttt{ssp} of its caller's entry \texttt{prec\_entry} for the choice of the moduli (stage I); it keeps only \texttt{p}, the table and the inverses (\texttt{Ratpoints.Sieve.Entry}), and no rows: \texttt{Ratpoints.Sieve.Entry.rows} makes them from it when they are first needed, also the row of \texttt{0}, which \texttt{examine\_prime} installs from the build.)
 \item \csource{find_points.c}{1698}{1701}: excluded (instrumentation): the message under DEBUG at the start of examine\_prime
@@ -615,8 +619,9 @@ total & 5883 & 2351 & 271 & 3261 \\
 \item \csource{rp-private.h}{311}{318}: excluded (instrumentation): WIDTH and PRINT\_RBA, which print words and bit arrays in hexadecimal in the output for debugging (under DEBUG)
 \item \csource{rp-private.h}{321}{323}: modelled by \lname{Ratpoints.maxBitsInPrime}
   (deviation of \lname{Ratpoints.maxBitsInPrime}: 8, the value of the default build, which the Makefile of ratpoints passes to the compiler (its variable \texttt{PRIME\_SIZE}), for the value 7 that the header takes when it is given none.)
-\item \csource{rp-private.h}{325}{361}: modelled by \lname{Ratpoints.numPrimes}
-  (deviation of \lname{Ratpoints.numPrimes}: computed from \texttt{Ratpoints.maxBitsInPrime}, where the header lists the values for 5 to 10 bits, the numbers that the computation gives, and takes 7 bits for any other value; the largest such prime and the power of 2 above it, which size the tables of the C code, have no counterpart.)
+\item \csource{rp-private.h}{325}{361}: modelled by \lname{Ratpoints.maxPrimeEven}, \lname{Ratpoints.numPrimes}
+  (deviation of \lname{Ratpoints.maxPrimeEven}: computed from \texttt{Ratpoints.maxBitsInPrime}, where the header lists the values for 5 to 10 bits, the powers of 2 that the computation gives, and takes 7 bits for any other value.)
+  (deviation of \lname{Ratpoints.numPrimes}: computed from \texttt{Ratpoints.maxBitsInPrime}, where the header lists the values for 5 to 10 bits, the numbers that the computation gives, and takes 7 bits for any other value; the largest such prime, \texttt{RATPOINTS\_MAX\_PRIME}, has no counterpart; the power of 2 above it is \texttt{Ratpoints.maxPrimeEven}.)
 \item \csource{rp-private.h}{378}{379}: modelled by \lname{Ratpoints.Sieve.SieveSpec}
   (deviation of \lname{Ratpoints.Sieve.SieveSpec}: the row for the pointer \texttt{ptr} to it, with no \texttt{offset}, which carries the shift of the packing of the 2-adic classes and a multiple of \texttt{p} that keeps the index non-negative (stage F), and no pointers \texttt{start} and \texttt{end} into the row, which only the chunked first stage reads (stage F): the components index the row by the word number modulo \texttt{p}.)
 \item \csource{rp-private.h}{387}{408}: not yet recorded (6 lines of code)

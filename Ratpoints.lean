@@ -8,6 +8,7 @@ public import Ratpoints.Mathlib.Data.Int.GCD
 public import Ratpoints.Mathlib.Data.List.Basic
 public import Ratpoints.Mathlib.Data.List.Nodup
 public import Ratpoints.Mathlib.Data.List.Pairwise
+public import Ratpoints.Mathlib.Data.List.Sort
 public import Ratpoints.Mathlib.Data.Nat.Factors
 public import Ratpoints.Mathlib.Data.Nat.PadicValNat
 public import Ratpoints.Mathlib.Data.Nat.Prime.Defs

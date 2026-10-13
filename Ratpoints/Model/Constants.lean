@@ -13,8 +13,10 @@ value of the default build and a docstring that names its macro, and the table o
 the sieve takes its moduli. Changing a constant changes the model as changing the macro changes the
 C program: no proof depends on the values of the constants beyond the facts checked here by
 `decide`, that `Ratpoints.rbaPack`, `Ratpoints.defaultArraySize` and `Ratpoints.maxArraySize` are
-positive and that `Ratpoints.mulModLimit` is below `2 ^ 64` (`Ratpoints.mulModLimit_lt_size`), and
-of the table the proofs use only that its entries are the odd primes below 1022, in increasing order
+positive, that `Ratpoints.mulModLimit` is below `2 ^ 64` (`Ratpoints.mulModLimit_lt_size`), that
+`Ratpoints.hornerSteps` is at least 1 (`Ratpoints.one_le_hornerSteps`) and that
+`Ratpoints.maxBitsInPrime` is at most 10 (`Ratpoints.maxBitsInPrime_le_ten`), and of the table the
+proofs use only that its entries are the odd primes below 1022, in increasing order
 (`Ratpoints.prime_of_mem_primeTable`, which checks them one by one, and
 `Ratpoints.lt_of_mem_primeTable`, `Ratpoints.mem_primeTable_of_prime` and
 `Ratpoints.pairwise_lt_toList_primeTable`, which `decide` checks).
@@ -23,8 +25,11 @@ of the table the proofs use only that its entries are the odd primes below 1022,
 
 * `Ratpoints.maxDegree`: the largest degree that ratpoints accepts.
 * `Ratpoints.primeTable`: the odd primes below 1024, among which the moduli are chosen.
-* `Ratpoints.maxBitsInPrime`, `Ratpoints.numPrimes`: the moduli are chosen among the primes of the
-  table below `2 ^ maxBitsInPrime`, the first `numPrimes` of them.
+* `Ratpoints.maxBitsInPrime`, `Ratpoints.numPrimes`, `Ratpoints.maxPrimeEven`: the moduli are
+  chosen among the primes of the table below `maxPrimeEven = 2 ^ maxBitsInPrime`, the first
+  `numPrimes` of them, and the prime powers and products of them below `maxPrimeEven`.
+* `Ratpoints.hornerSteps`: after how many steps Horner's rule reduces its accumulator in the table
+  of a prime.
 * `Ratpoints.defaultNumPrimes`, `Ratpoints.defaultMaxForbidden`: how many primes the sieve takes
   and at most how many forbidden divisors it tests, unless the options say.
 * `Ratpoints.defaultSturm`: the depth of the Sturm step, unless the options say.
@@ -80,11 +85,34 @@ which the sieve chooses its moduli, `RATPOINTS_NUM_PRIMES`: 53 in the default bu
 
 C: `rp-private.h:325-361`
 
-Deviation: computed from `Ratpoints.maxBitsInPrime`, where the header lists the values for 5 to
-10 bits, the numbers that the computation gives, and takes 7 bits for any other value; the largest
-such prime and the power of 2 above it, which size the tables of the C code, have no
-counterpart. -/
+Deviation: computed from `Ratpoints.maxBitsInPrime`, where the header lists the values for 5 to 10
+bits, the numbers that the computation gives, and takes 7 bits for any other value; the largest such
+prime, `RATPOINTS_MAX_PRIME`, has no counterpart; the power of 2 above it is
+`Ratpoints.maxPrimeEven`. -/
 def numPrimes : Nat := (primeTable.toList.filter (· < 2 ^ maxBitsInPrime)).length
+
+/-- The power of 2 above the moduli, `RATPOINTS_MAX_PRIME_EVEN`: the moduli that ratpoints chooses,
+primes, prime powers and products of them, are below it, as are the primes of `Ratpoints.primeTable`
+among which it chooses them; the well-formed parameters of the model take this bound with stage F.
+
+C: `rp-private.h:325-361`
+
+Deviation: computed from `Ratpoints.maxBitsInPrime`, where the header lists the values for 5 to
+10 bits, the powers of 2 that the computation gives, and takes 7 bits for any other value. -/
+def maxPrimeEven : Nat := 2 ^ maxBitsInPrime
+
+/-- After how many steps Horner's rule modulo a prime reduces its accumulator in `examine_prime`
+(`Ratpoints.Sieve.hornerBarrett`), `RP_HORNER_STEPS`: `64 / maxBitsInPrime - 1`. After `k` steps
+from a value below `p` with coefficients and argument below `p`, the accumulator is below
+`p ^ (k + 1)`, so that for `p < 2 ^ maxBitsInPrime` it stays below `2 ^ 64` up to `hornerSteps`
+steps. The schedule reduces at all only for `1 ≤ hornerSteps`, that is for `maxBitsInPrime ≤ 32`
+(`Ratpoints.one_le_hornerSteps`).
+
+C: `find_points.c:1652-1655`
+
+Deviation: computed from `Ratpoints.maxBitsInPrime` as the macro computes it from
+`RATPOINTS_MAX_BITS_IN_PRIME`, with `64` for `LONG_LENGTH`. -/
+def hornerSteps : Nat := 64 / maxBitsInPrime - 1
 
 /-- How many primes the sieve takes when the option `-p` does not say,
 `RATPOINTS_DEFAULT_NUM_PRIMES`; like the value of `-p`, it is capped at `Ratpoints.numPrimes`.
@@ -189,9 +217,21 @@ theorem maxArraySize_pos : 0 < maxArraySize := by decide
 `2 ^ 64`, so that `Ratpoints.Sieve.jacobiTest` reads them as words. -/
 theorem mulModLimit_lt_size : mulModLimit < UInt64.size := by decide
 
+/-- The Horner steps of the table of a prime reduce their accumulator at all
+(`Ratpoints.hornerSteps`), as the C code would check at compile time: `maxBitsInPrime ≤ 32`. -/
+theorem one_le_hornerSteps : 1 ≤ hornerSteps := by decide
+
+/-- The moduli have at most 10 bits (`Ratpoints.maxBitsInPrime`), as the C code assumes: the
+header knows only the sizes 5 to 10 and takes 7 for any other (`rp-private.h:321-361`), and the
+comment on Horner's rule in `examine_power` relies on `m < 2 ^ 10` (`find_points.c:2286-2287`). -/
+theorem maxBitsInPrime_le_ten : maxBitsInPrime ≤ 10 := by decide
+
 /-! ### Examples -/
 
 #guard primeTable.size == 171 && numPrimes == 53 && primeTable[numPrimes - 1]! == 251
+
+#guard maxPrimeEven == 256 && hornerSteps == 7 &&
+  (primeTable.toList.take numPrimes).all (· < maxPrimeEven) && maxPrimeEven ≤ primeTable[numPrimes]!
 
 #guard rbaLength == 256 && defaultArraySize == 256 && maxArraySize == 1048576
 

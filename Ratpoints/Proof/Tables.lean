@@ -9,10 +9,14 @@ public import Mathlib.Algebra.Field.ZMod
 public import Ratpoints.Model.Setup
 public import Ratpoints.Model.Sieve
 public import Ratpoints.Spec.Basic
+public import Std.WP
 
 import Ratpoints.Mathlib.Algebra.Group.Even
 import Ratpoints.Mathlib.Data.ZMod.Basic
+import Ratpoints.Proof.Bits
 import Ratpoints.Proof.BruteForce
+import Ratpoints.Proof.Params
+import Std.Tactic.Do
 
 /-!
 # The tables of a prime, the soundness of the rows and the exit
@@ -38,6 +42,17 @@ below `2 ^ 59`, whose inputs are `long`s by the flag of the `long`s, the negatio
 reversed search, and the negation of a negative leading coefficient in `jacobi1`, with `LONG_MIN`
 replaced by its quarter.
 
+Barrett's reduction gives the remainder of every `u < 2 ^ 64` (`Ratpoints.Sieve.barrett_eq`), and
+for a prime `p < maxPrimeEven` the accumulator of Horner's rule on the schedule of `examine_prime`
+stays below `p ^ (hornerSteps + 1) < 2 ^ 64` between two reductions
+(`Ratpoints.Sieve.HornerInvariant.lt_two_pow_64`), so that the schedule computes the value of `f`
+modulo `p` (`Ratpoints.Sieve.hornerBarrett_spec`); the table of a prime takes it with stage F.
+
+## Main definitions
+
+* `Ratpoints.Sieve.HornerInvariant`: the invariant of the loop of Horner's rule in
+  `Ratpoints.Sieve.hornerBarrett`.
+
 ## Main statements
 
 * `Ratpoints.sum_mul_pow_mul_pow_sub_of_eq_mul`: the binary form of degree `D` at `a = k b` is
@@ -54,6 +69,11 @@ replaced by its quarter.
   residue at which `f` takes a square value.
 * `Ratpoints.Sieve.admits_examinePrime_of_sq_eq`: the rows let every point through.
 * `Ratpoints.Sieve.modLong_eq_emod`: the helper `mod` of the C code is the Euclidean `%`.
+* `Ratpoints.Sieve.barrett_eq`: Barrett's reduction computes the remainder of every `u < 2 ^ 64`.
+* `Ratpoints.Sieve.HornerInvariant.lt_two_pow_64`: the accumulator of Horner's rule in the table of
+  a prime `p < maxPrimeEven` stays below `2 ^ 64` (`Ratpoints.pow_hornerSteps_add_one_lt`).
+* `Ratpoints.Sieve.hornerBarrett_spec`: Horner's rule with Barrett's reduction on its schedule
+  computes the value modulo `p` (`Ratpoints.Sieve.evalMod`).
 * `Ratpoints.Sieve.examinePrime?_eq_examinePrime?_false`,
   `Ratpoints.Sieve.eq_examinePrime_of_examinePrime?_eq_some`,
   `Ratpoints.Sieve.examinePrime?_eq_none_iff`: the two paths of the table with the exit give the
@@ -67,6 +87,10 @@ replaced by its quarter.
 -/
 
 @[expose] public section
+
+set_option experimental.vcgen true
+
+open scoped Std.WP
 
 namespace Ratpoints
 
@@ -235,6 +259,156 @@ theorem natCast_evalMod_map_range (c : List ℤ) (d : ℕ) {p : ℕ} [NeZero p] 
   refine Finset.sum_congr rfl fun k hk ↦ ?_
   rw [List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range (Finset.mem_range.mp hk),
     Option.map_some, Option.getD_some, ZMod.natCast_toNat_emod]
+
+-- One step of Horner's rule modulo `p` on the coefficients of `l` from position `i` on.
+private theorem evalMod_drop {l : List ℕ} {i : ℕ} (hi : i < l.length) (p x : ℕ) :
+    evalMod (l.drop i) p x = (l[i] + x * evalMod (l.drop (i + 1)) p x) % p := by
+  rw [List.drop_eq_getElem_cons hi, evalMod_cons]
+
+/-! ### Barrett's reduction and the schedule of Horner's rule -/
+
+/-- Barrett's reduction with the reciprocal `⌊(2 ^ 64 - 1) / p⌋` computes `u mod p` for every
+`u < 2 ^ 64`: the estimate of the quotient is `⌊u / p⌋` or one less
+(`Nat.mul_sub_one_div_div_mul_le`, `Nat.lt_mul_sub_one_div_div_add_two_mul`), so that one
+conditional subtraction finishes. -/
+theorem barrett_eq {u p : ℕ} (hp : 0 < p) (hu : u < 2 ^ 64) :
+    barrett u p ((2 ^ 64 - 1) / p) = u % p := by
+  have h1 := Nat.mul_sub_one_div_div_mul_le u (2 ^ 64) p
+  have h2 := Nat.lt_mul_sub_one_div_div_add_two_mul hp hu
+  simp only [barrett]
+  generalize u * ((2 ^ 64 - 1) / p) / 2 ^ 64 = q at h1 h2
+  rw [← Nat.sub_mul_mod (Nat.mul_comm q p ▸ h1),
+    Nat.mod_eq_ite_of_lt_two_mul (by rw [Nat.add_mul] at h2; lia), Nat.mul_comm p q]
+
+/-- The invariant of the loops of Horner's rule of `Ratpoints.Sieve.hornerBarrett` after `i`
+steps, the last reduction `k` steps back: the accumulator `s` is congruent modulo `p` to the value
+at `a` of the polynomial with the coefficients `cm[d - i], …, cm[d]`, and below `p ^ (k + 1)`. -/
+def HornerInvariant (cm : Array ℕ) (d p a i k s : ℕ) : Prop :=
+  s % p = evalMod (cm.toList.drop (d - i)) p a ∧ s < p ^ (k + 1)
+
+theorem hornerInvariant_zero {cm : Array ℕ} {d p : ℕ} (hsize : cm.size = d + 1) (a : ℕ)
+    (hd : cm[d]! < p) : HornerInvariant cm d p a 0 0 cm[d]! := by
+  refine ⟨?_, by simpa using hd⟩
+  rw [Nat.sub_zero, List.drop_eq_getElem_cons (by simp [hsize]), List.drop_eq_nil_of_le
+    (by simp [hsize]), evalMod_cons, evalMod_nil, Nat.mul_zero, Nat.add_zero, Array.getElem_toList,
+    getElem!_pos cm d (by lia)]
+
+theorem HornerInvariant.pos {cm : Array ℕ} {d p a i k s : ℕ} (h : HornerInvariant cm d p a i k s) :
+    0 < p :=
+  Nat.pos_of_ne_zero fun hp ↦ by simpa [hp] using h.2
+
+/-- The range obligation of the accumulator of Horner's rule in `examine_prime`: for a prime
+`p < maxPrimeEven`, the values `s a + c` of the steps (`find_points.c:1729`, `find_points.c:1741`)
+and the values that Barrett's reduction takes (`find_points.c:1731`, `find_points.c:1742`,
+`find_points.c:1744`) are below `p ^ (k + 1)` with `k ≤ hornerSteps`, so below `2 ^ 64`: the
+`unsigned long` does not wrap. -/
+theorem HornerInvariant.lt_two_pow_64 {cm : Array ℕ} {d p a i k s : ℕ}
+    (h : HornerInvariant cm d p a i k s) (hp : p < maxPrimeEven) (hk : k ≤ hornerSteps) :
+    s < 2 ^ 64 :=
+  calc s < p ^ (k + 1) := h.2
+    _ ≤ p ^ (hornerSteps + 1) := Nat.pow_le_pow_right h.pos (by lia)
+    _ < 2 ^ 64 := pow_hornerSteps_add_one_lt hp
+
+theorem HornerInvariant.add_one {cm : Array ℕ} {d p a i k s : ℕ}
+    (h : HornerInvariant cm d p a i k s) (hsize : cm.size = d + 1) (hi : i < d) (ha : a < p)
+    (hc : cm[d - 1 - i]! < p) :
+    HornerInvariant cm d p a (i + 1) (k + 1) (s * a + cm[d - 1 - i]!) := by
+  refine ⟨?_, Nat.pow_succ p (k + 1) ▸ Nat.mul_add_lt_mul_of_lt h.2 ha hc⟩
+  rw [show d - (i + 1) = d - 1 - i by lia, evalMod_drop (by simp; lia),
+    show d - 1 - i + 1 = d - i by lia, ← h.1, Array.getElem_toList, getElem!_pos cm (d - 1 - i)
+    (by lia)]
+  simp [Nat.add_mod, Nat.mul_mod, Nat.mul_comm, Nat.add_comm]
+
+/-- The reduction by Barrett's method in the loop of Horner's rule keeps the invariant and restarts
+the bound. -/
+theorem HornerInvariant.barrett_zero {cm : Array ℕ} {d p a i k s : ℕ}
+    (h : HornerInvariant cm d p a i k s) (hp : p < maxPrimeEven) (hk : k ≤ hornerSteps) :
+    HornerInvariant cm d p a i 0 (barrett s p ((2 ^ 64 - 1) / p)) := by
+  rw [barrett_eq h.pos (h.lt_two_pow_64 hp hk)]
+  exact ⟨by rw [Nat.mod_mod, h.1], by simpa using Nat.mod_lt s h.pos⟩
+
+theorem HornerInvariant.barrett_eq_evalMod {cm : Array ℕ} {d p a k s : ℕ}
+    (h : HornerInvariant cm d p a d k s) (hp : p < maxPrimeEven) (hk : k ≤ hornerSteps) :
+    barrett s p ((2 ^ 64 - 1) / p) = evalMod cm.toList p a := by
+  rw [barrett_eq h.pos (h.lt_two_pow_64 hp hk), h.1, Nat.sub_self, List.drop_zero]
+
+theorem HornerInvariant.push {cm : Array ℕ} {d p a k s : ℕ} {pref suff : List ℕ} {cur : ℕ}
+    (h : HornerInvariant cm d p a pref.length k s) (hl : ForIn.toList [:d] = pref ++ cur :: suff)
+    (hsize : cm.size = d + 1) (ha : a < p) (hcm : ∀ i : ℕ, cm[i]! < p) :
+    HornerInvariant cm d p a (pref ++ [cur]).length (k + 1) (s * a + cm[d - 1 - cur]!) := by
+  obtain rfl := Std.Legacy.Range.length_eq_of_toList_eq_append_cons hl
+  rw [List.length_append, List.length_singleton]
+  exact h.add_one hsize (Std.Legacy.Range.lt_of_toList_eq_append_cons hl) ha (hcm _)
+
+/-- The step of the loop of Horner's rule of `Ratpoints.Sieve.hornerBarrett` without reductions,
+for `d ≤ hornerSteps`. -/
+theorem HornerInvariant.push_self {cm : Array ℕ} {d p a s : ℕ} {pref suff : List ℕ} {cur : ℕ}
+    (h : HornerInvariant cm d p a pref.length pref.length s)
+    (hl : ForIn.toList [:d] = pref ++ cur :: suff) (hsize : cm.size = d + 1) (ha : a < p)
+    (hcm : ∀ i : ℕ, cm[i]! < p) :
+    HornerInvariant cm d p a (pref ++ [cur]).length (pref ++ [cur]).length
+      (s * a + cm[d - 1 - cur]!) := by
+  simpa only [List.length_append, List.length_singleton] using h.push hl hsize ha hcm
+
+/-- The step of the loop of Horner's rule of `Ratpoints.Sieve.hornerBarrett` with reductions, for
+`d > hornerSteps`, that reduces. -/
+theorem HornerInvariant.push_barrett {cm : Array ℕ} {d p a k s : ℕ} {pref suff : List ℕ}
+    {cur : ℕ} (h : HornerInvariant cm d p a pref.length k s ∧ k < hornerSteps)
+    (hl : ForIn.toList [:d] = pref ++ cur :: suff) (hk : k + 1 = hornerSteps)
+    (hsize : cm.size = d + 1) (hp : p < maxPrimeEven) (ha : a < p) (hcm : ∀ i : ℕ, cm[i]! < p) :
+    HornerInvariant cm d p a (pref ++ [cur]).length 0
+        (barrett (s * a + cm[d - 1 - cur]!) p ((2 ^ 64 - 1) / p)) ∧ 0 < hornerSteps :=
+  ⟨(h.1.push hl hsize ha hcm).barrett_zero hp hk.le, one_le_hornerSteps⟩
+
+/-- The step of the loop of Horner's rule of `Ratpoints.Sieve.hornerBarrett` with reductions, for
+`d > hornerSteps`, that does not reduce. -/
+theorem HornerInvariant.push_lt {cm : Array ℕ} {d p a k s : ℕ} {pref suff : List ℕ} {cur : ℕ}
+    (h : HornerInvariant cm d p a pref.length k s ∧ k < hornerSteps)
+    (hl : ForIn.toList [:d] = pref ++ cur :: suff) (hk : ¬k + 1 = hornerSteps)
+    (hsize : cm.size = d + 1) (ha : a < p) (hcm : ∀ i : ℕ, cm[i]! < p) :
+    HornerInvariant cm d p a (pref ++ [cur]).length (k + 1) (s * a + cm[d - 1 - cur]!) ∧
+      k + 1 < hornerSteps :=
+  ⟨h.1.push hl hsize ha hcm, by lia⟩
+
+/-- The exit of the loop of Horner's rule of `Ratpoints.Sieve.hornerBarrett` without reductions,
+for `d ≤ hornerSteps`, with the reduction at the end. -/
+theorem HornerInvariant.barrett_eq_evalMod_of_le {cm : Array ℕ} {d p a s : ℕ}
+    (h : HornerInvariant cm d p a (ForIn.toList [:d]).length (ForIn.toList [:d]).length s)
+    (hp : p < maxPrimeEven) (hd : d ≤ hornerSteps) :
+    barrett s p ((2 ^ 64 - 1) / p) = evalMod cm.toList p a := by
+  rw [Std.Legacy.Range.length_toList, Nat.sub_zero] at h
+  exact h.barrett_eq_evalMod hp hd
+
+/-- The exit of the loop of Horner's rule of `Ratpoints.Sieve.hornerBarrett` with reductions, for
+`d > hornerSteps`, with the reduction at the end. -/
+theorem HornerInvariant.barrett_eq_evalMod_of_lt {cm : Array ℕ} {d p a k s : ℕ}
+    (h : HornerInvariant cm d p a (ForIn.toList [:d]).length k s ∧ k < hornerSteps)
+    (hp : p < maxPrimeEven) : barrett s p ((2 ^ 64 - 1) / p) = evalMod cm.toList p a := by
+  rw [Std.Legacy.Range.length_toList, Nat.sub_zero] at h
+  exact h.1.barrett_eq_evalMod hp h.2.le
+
+attribute [local irreducible] HornerInvariant in
+/-- The contract of `Ratpoints.Sieve.hornerBarrett`: for a prime `p < maxPrimeEven`, a residue
+`a < p` and `d + 1` coefficients below `p`, Horner's rule with Barrett's reduction on its schedule
+computes the value modulo `p` at `a` (`Ratpoints.Sieve.evalMod`); the accumulator stays below
+`2 ^ 64` (`Ratpoints.Sieve.HornerInvariant.lt_two_pow_64`). -/
+@[spec]
+theorem hornerBarrett_spec (cm : Array ℕ) (d p a : ℕ) :
+    ⦃ cm.size = d + 1 ∧ p < maxPrimeEven ∧ a < p ∧ ∀ i : ℕ, cm[i]! < p ⦄
+    hornerBarrett cm d p ((2 ^ 64 - 1) / p) a
+    ⦃ fun r ↦ r = evalMod cm.toList p a ⦄ := by
+  vcgen [hornerBarrett] invariants
+  · fun pref _ s ↦ HornerInvariant cm d p a pref.length pref.length s
+  · fun pref _ s ↦ HornerInvariant cm d p a pref.length s.2 s.1 ∧ s.2 < hornerSteps
+  all_goals obtain ⟨hsize, hp, ha, hcm⟩ := ‹cm.size = d + 1 ∧ _›
+  all_goals first
+    | exact hornerInvariant_zero hsize a (hcm d)
+    | exact ⟨hornerInvariant_zero hsize a (hcm d), one_le_hornerSteps⟩
+    | exact ‹HornerInvariant _ _ _ _ _ _ _›.barrett_eq_evalMod_of_le hp ‹_›
+    | exact HornerInvariant.barrett_eq_evalMod_of_lt ‹_› hp
+    | exact ‹HornerInvariant _ _ _ _ _ _ _›.push_self ‹_› hsize ha hcm
+    | exact HornerInvariant.push_barrett ‹_› ‹_› ‹_› hsize hp ha hcm
+    | exact HornerInvariant.push_lt ‹_› ‹_› ‹_› hsize ha hcm
 
 /-! ### The table of a prime -/
 

@@ -63,12 +63,12 @@ are no points modulo $p$ (D) and the options of the output (G) come in their sta
 \section{The parameters}\label{sec:params}
 
 \begin{definition}[The primes of the sieve]\label{def:primeTable}
-  \lean{Ratpoints.primeTable, Ratpoints.maxBitsInPrime, Ratpoints.numPrimes, Ratpoints.prime_of_mem_primeTable}
+  \lean{Ratpoints.primeTable, Ratpoints.maxBitsInPrime, Ratpoints.numPrimes, Ratpoints.prime_of_mem_primeTable, Ratpoints.pairwise_lt_toList_primeTable}
   \leanok
-  The 171 odd primes below $1024$, in increasing order, the table of \verb|primes.h|
-  (\csource{primes.h}{29}{40}); every entry is a prime. The moduli are chosen among those below
-  $2^b$, for the size in bits $b = \mathrm{maxBitsInPrime}$ that the build of ratpoints fixes
-  (\csource{rp-private.h}{321}{323}): $8$ in the default build, whose Makefile sets it, where
+  The 171 odd primes below $1024$, in increasing order, which \verb|decide| checks, the table of
+  \verb|primes.h| (\csource{primes.h}{29}{40}); every entry is a prime. The moduli are chosen among
+  those below $2^b$, for the size in bits $b = \mathrm{maxBitsInPrime}$ that the build of ratpoints
+  fixes (\csource{rp-private.h}{321}{323}): $8$ in the default build, whose Makefile sets it, where
   the header takes $7$ when it is given none. There are $\mathrm{numPrimes}$ of them, $53$ for
   $b = 8$ (\csource{rp-private.h}{325}{361}, where the header lists the numbers for
   $b = 5, \dots, 10$).

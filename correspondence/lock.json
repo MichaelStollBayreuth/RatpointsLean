@@ -85,6 +85,18 @@
         "Ratpoints.Sieve.ForbiddenEntry"
       ]
     },
+    "find_points.c:1639-1650": {
+      "hash": "975f54dce6b9b531cd0d71c64b428183957ba6c5c409646a325c1af5c1726194",
+      "owners": [
+        "Ratpoints.Sieve.barrett"
+      ]
+    },
+    "find_points.c:1652-1655": {
+      "hash": "f6f0e2d91442c681ec3cd7b46587005075cf8508bd61937c48e5683a692b0a23",
+      "owners": [
+        "Ratpoints.hornerSteps"
+      ]
+    },
     "find_points.c:166-166": {
       "hash": "8eb348f9c03638758dead2b52a0dc49e5d8b5214fa9ef5e583e47bf8d76a7f64",
       "owners": [
@@ -1812,6 +1824,7 @@
     "rp-private.h:325-361": {
       "hash": "ff27dd12c1efab74f34738e15531b3844655220d5210dd2bdcb0734fb2053a31",
       "owners": [
+        "Ratpoints.maxPrimeEven",
         "Ratpoints.numPrimes"
       ]
     },
@@ -2080,10 +2093,6 @@
     "find_points.c:1703-1747": "795980b345dfc345a51b8cb20f3009c001f80a34a5436dca6cb3a6469cb1442c",
     "find_points.c:1703-1749": "3958dde199dd7ca8445f39de80ac7b5db61bcab7a1a72f91514f2b321827fe25",
     "find_points.c:1716-1747": "2613a1e7b3ae39c38762460b7acdc7601d2d5150291579523cd14965583861bc",
-    "find_points.c:1724-1724": "dd06607a296bf5da448c0e6fb31c921ef13459d2d53d7b9353d47766d0c81832",
-    "find_points.c:1726-1731": "cb5a16a0ffb5840cb5b9bf4967de94d4569c82b6fa0270af18209eba314fe62e",
-    "find_points.c:1735-1735": "421185ca32f0cea532153b1b8c67d3fcf21af4997933f12d79a580b0ccfcceca",
-    "find_points.c:1737-1744": "21a8f3b3bd8b9141df6142eb939feeeb76f0d8a083f1f4b54dbc4cbbd3f7ce66",
     "find_points.c:1761-1762": "59d789b36d3ecb125e439ac5cdb732141c2bffd16600c9486c80144b0156373a",
     "find_points.c:1761-1765": "b4c7b525fe1ec06dbf6120f00e2a1444ecf3823465b8664ac8e9c88bd2672657",
     "find_points.c:1795-1826": "69247376b354dca06f8466ba6af480cb2f42438f7f5cddf0db366f72624ce77f",

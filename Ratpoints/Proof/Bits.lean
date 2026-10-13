@@ -26,8 +26,9 @@ at their own positions or at others, the 64 bits of two words from a position wi
 bits of a word and-ed in turn with the words of a list, the numerators and the denominators of the
 set bits of a list of words, read in turn, the numbers of a range between two bounds, the odd part
 of a number below `2 ^ 64` by the lowest set bit of its word, bit 1 of odd numbers, the gcd of half
-an even number with an odd one, a residue below `2 q` modulo `q` by one subtraction, and the
-divisors of the gcd of `b` and a residue `f ≡ a (mod b)`.
+an even number with an odd one, a residue below `2 q` modulo `q` by one subtraction, the estimate
+of a quotient by Barrett's reduction, the bounds of a step of Horner's rule and of a power of a
+number below a power of 2, and the divisors of the gcd of `b` and a residue `f ≡ a (mod b)`.
 
 ## Main statements
 
@@ -73,6 +74,10 @@ divisors of the gcd of `b` and a residue `f ≡ a (mod b)`.
 * `Nat.and_two_ne_zero_iff`, `Nat.and_and_two_ne_zero_iff`: bit 1 of odd numbers says whether they
   are `3 (mod 4)`; `Nat.gcd_div_two_of_mod_two`: halving an even number keeps its gcd with an odd
   one; `Nat.mod_eq_ite_of_lt_two_mul`: a residue below `2 q` modulo `q` by one subtraction.
+* `Nat.mul_sub_one_div_div_mul_le`, `Nat.lt_mul_sub_one_div_div_add_two_mul`: Barrett's estimate
+  `⌊u ⌊(N - 1) / p⌋ / N⌋` of `⌊u / p⌋` for `u < N` is the quotient or one less.
+* `Nat.mul_add_lt_mul_of_lt`, `Nat.pow_lt_two_pow_of_lt`: a step of Horner's rule multiplies a bound
+  by `p`, and `p ^ n < 2 ^ N` for `p < 2 ^ b` and `b n ≤ N`.
 * `Int.dvd_natAbs_of_dvd_gcd`: a divisor of the gcd of `f ≡ a (mod b)` and `b` divides `a`.
 
 ## Implementation notes
@@ -326,6 +331,51 @@ end Std.Legacy.Range
 /-! ### Natural numbers -/
 
 namespace Nat
+
+/-- Barrett's estimate `⌊u ⌊(N - 1) / p⌋ / N⌋` of the quotient `⌊u / p⌋` is at most it: its
+product with `p` is at most `u`. -/
+theorem mul_sub_one_div_div_mul_le (u N p : Nat) : u * ((N - 1) / p) / N * p ≤ u := by
+  rcases Nat.eq_zero_or_pos N with rfl | hN
+  · simp
+  have h1 := Nat.mul_le_mul_right p (Nat.div_mul_le_self (u * ((N - 1) / p)) N)
+  have h2 := Nat.mul_le_mul_left u (Nat.div_mul_le_self (N - 1) p)
+  have h3 : u * (N - 1) ≤ u * N := Nat.mul_le_mul_left u (Nat.sub_le N 1)
+  refine Nat.le_of_mul_le_mul_right (c := N) ?_ hN
+  grind
+
+/-- Barrett's estimate `q = ⌊u ⌊(N - 1) / p⌋ / N⌋` of the quotient `⌊u / p⌋` for `u < N` is at
+least it less one: `u < (q + 2) p`. -/
+theorem lt_mul_sub_one_div_div_add_two_mul {u N p : Nat} (hp : 0 < p) (hu : u < N) :
+    u < (u * ((N - 1) / p) / N + 2) * p := by
+  generalize hm : (N - 1) / p = m
+  generalize hq : u * m / N = q
+  have h2 : u * m < (q + 1) * N := by
+    have := Nat.lt_div_mul_add (a := u * m) (b := N) (by lia)
+    rw [hq] at this
+    lia
+  have h4 : N ≤ (m + 1) * p := by
+    have := Nat.lt_div_mul_add (a := N - 1) (b := p) hp
+    rw [hm] at this
+    lia
+  have h2p := Nat.mul_lt_mul_of_pos_right h2 hp
+  have h4u := Nat.mul_le_mul_left u h4
+  have hup := Nat.mul_lt_mul_of_pos_right hu hp
+  exact Nat.lt_of_mul_lt_mul_right (a := N) (by grind)
+
+/-- One step of Horner's rule with an argument and a coefficient below `p` multiplies a bound on
+the accumulator by `p`. -/
+theorem mul_add_lt_mul_of_lt {s a c P p : Nat} (hs : s < P) (ha : a < p) (hc : c < p) :
+    s * a + c < P * p :=
+  calc s * a + c < s * p + p :=
+        Nat.add_lt_add_of_le_of_lt (Nat.mul_le_mul_left s (Nat.le_of_lt ha)) hc
+    _ = (s + 1) * p := (Nat.succ_mul s p).symm
+    _ ≤ P * p := Nat.mul_le_mul_right p hs
+
+theorem pow_lt_two_pow_of_lt {p b n N : Nat} (hp : p < 2 ^ b) (hn : b * n ≤ N) (hn0 : n ≠ 0) :
+    p ^ n < 2 ^ N :=
+  calc p ^ n < (2 ^ b) ^ n := Nat.pow_lt_pow_left hp hn0
+    _ = 2 ^ (b * n) := (Nat.pow_mul 2 b n).symm
+    _ ≤ 2 ^ N := Nat.pow_le_pow_right (by decide) hn
 
 theorem lt_add_one_mul_of_lt_mul {y n k : Nat} (h : y < n * k) : y < (n + 1) * k :=
   Nat.lt_of_lt_of_le h (Nat.mul_le_mul_right k (Nat.le_succ n))
