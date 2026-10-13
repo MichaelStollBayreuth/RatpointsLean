@@ -567,14 +567,16 @@ of the nodes exist and their C links are the ranges of their declarations:
 \section{Files, names and order of work}\label{sec:tablesFiles}
 
 The constants and their facts go into \verb|Ratpoints/Model/Constants.lean|, each citing its
-macro: $\mathrm{maxPrimeEven}$ and $\mathrm{hornerSteps}$, computed from
-$\mathrm{maxBitsInPrime}$, so that the build with other values of the constants does not vary them
-itself. The Barrett reduction, Horner's rule on its schedule, \verb|modinv|, the tables of a prime
-power, the factors and the sieve entries go into \verb|Ratpoints/Model/Sieve.lean|; the factors of a
-modulus into \verb|Ratpoints/Model/Params.lean|; the loop of the tables and the second loop of the
-forbidden divisors into \verb|Ratpoints/Model/Denominators.lean|; and the sieve entry of a modulus
-and \verb|sieving_info| into \verb|Ratpoints/Model/FindPoints.lean|. The contracts go next to the
-lemmas they serve: the Barrett reduction, Horner's rule and the table with the exit into
+macro: $\mathrm{maxPrimeEven}$ and $\mathrm{hornerSteps}$, computed from $\mathrm{maxBitsInPrime}$,
+so that the build with other values of the constants does not vary them itself. The Barrett
+reduction, Horner's rule on its schedule, \verb|modinv|, the tables of a prime power, the factors
+and the sieve entries go into \verb|Ratpoints/Model/Tables.lean|, which the tables, the helper
+\verb|mod| and the rows of a denominator of the earlier stages join from
+\verb|Ratpoints/Model/Sieve.lean|; the factors of a modulus into \verb|Ratpoints/Model/Params.lean|;
+the loop of the tables and the second loop of the forbidden divisors into
+\verb|Ratpoints/Model/Denominators.lean|; and the sieve entry of a modulus and \verb|sieving_info|
+into \verb|Ratpoints/Model/FindPoints.lean|. The contracts go next to the lemmas they serve: the
+Barrett reduction, Horner's rule and the table with the exit into
 \verb|Ratpoints/Proof/Tables.lean|; \verb|modinv|, the prime powers with the bounds of their
 inverses, and the sieve entry of a modulus into a new file \verb|Ratpoints/Proof/Moduli.lean|; the
 facts on the constants and on the table of primes, the other range lemmas of \verb|examine_power|,
@@ -582,9 +584,9 @@ the factors of a modulus and the well-formedness into \verb|Ratpoints/Proof/Para
 of the tables and the forbidden divisors into \verb|Ratpoints/Proof/Forbidden.lean|, whose users in
 \verb|Ratpoints/Proof/Shapes.lean| follow; the sieve entries into the contracts of
 \verb|Ratpoints/Proof/Sieve.lean|, \verb|Words.lean| and \verb|Denominators.lean|; and the soundness
-of the sieve entries, \verb|sieving_info| and the search into \verb|Ratpoints/Proof/FindPoints.lean|.
-The lemmas on words, arrays and integers in core's namespaces go into
-\verb|Ratpoints/Proof/Bits.lean|, and the lemma on sorted lists into a new mirror
+of the sieve entries, \verb|sieving_info| and the search into
+\verb|Ratpoints/Proof/FindPoints.lean|. The lemmas on words, arrays and integers in core's
+namespaces go into \verb|Ratpoints/Proof/Bits.lean|, and the lemma on sorted lists into a new mirror
 \verb|Ratpoints/Mathlib/Data/List/Sort.lean|. Every new module joins its part root and the listing
 \verb|Ratpoints.lean|. One commit per item, each passing the project's checks, with the nodes of the
 earlier chapters that it changes (Section~\ref{sec:tablesEarlier}):

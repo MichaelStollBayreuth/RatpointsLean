@@ -14,6 +14,7 @@ public import Ratpoints.Model.Params
 public import Ratpoints.Model.Setup
 public import Ratpoints.Model.Sieve
 public import Ratpoints.Model.Sturm
+public import Ratpoints.Model.Tables
 
 /-!
 # The executable model of ratpoints

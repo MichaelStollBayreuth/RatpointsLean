@@ -617,9 +617,10 @@ reversal check and the coefficients as \verb|long|s are in \verb|Ratpoints/Model
 refusals and $\mathrm{fitsLong}$ in the namespace \verb|Ratpoints| and the rest in
 \verb|Ratpoints.Setup|, so that $\mathrm{findPoints}$ and the search can use them; the table of a
 prime takes the flag of the \verb|long|s as an argument, which the search computes with
-\verb|Setup.useCLong|. The helper \verb|mod|, $\mathrm{swapPoint}$ and the table with the exit are
-in \verb|Ratpoints/Model/Sieve.lean|, before the components that use them; $\mathrm{defaultSturm}$
-is in \verb|Ratpoints/Model/Constants.lean|; and the options, $\mathrm{searchPoints}$ and
+\verb|Setup.useCLong|. The helper \verb|mod| and the table with the exit are in
+\verb|Ratpoints/Model/Tables.lean|, and $\mathrm{swapPoint}$ in \verb|Ratpoints/Model/Sieve.lean|,
+before the components that use them; $\mathrm{defaultSturm}$ is in
+\verb|Ratpoints/Model/Constants.lean|; and the options, $\mathrm{searchPoints}$ and
 $\mathrm{findPoints}$ are in \verb|Ratpoints/Model/FindPoints.lean|. The contract of the chain,
 without Mathlib, is in \verb|Ratpoints/Proof/Sturm.lean|, and the lemmas on arrays, on the gcd of
 the absolute values of a list as a left fold, on the cursor of a loop over a range and on exact
