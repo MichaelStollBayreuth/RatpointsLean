@@ -167,7 +167,7 @@ def IsUnitPart (p : ℕ) (x : ℤ) : Option (ℕ × ℕ) → Prop
 theorem isUnitPart_of_emod_ne_zero {p : ℕ} (hp : 0 < p) {x : ℤ} (hx : x % (p : ℤ) ≠ 0) :
     IsUnitPart p x (some (0, (x % (p : ℤ)).toNat)) := by
   have : NeZero p := ⟨hp.ne'⟩
-  refine ⟨Int.toNat_emod_lt x hp, x, by simp,
+  exact ⟨Int.toNat_emod_lt x hp, x, by simp,
     fun h ↦ hx (Int.emod_eq_zero_of_dvd h), ZMod.natCast_toNat_emod x⟩
 
 /-- The residue `r ≠ 0` of the coefficient `x` modulo `p`, as the table of `p` hands it back
@@ -257,7 +257,7 @@ theorem unitParts_spec (c : List ℤ) (d p : ℕ) (cm : Array ℕ) :
     | exact UnitPartsInvariant.push ‹_› ‹_›
         (isUnitPart_of_eq_run_valuation ‹1 < p ∧ _›.1 ‹_› ‹_›)
     | exact UnitPartsInvariant.push ‹_› ‹_›
-        (isUnitPart_of_eq_toNat_emod (by have := ‹1 < p ∧ _›.1; lia) (getElem!_sub_eq ‹_› _) ‹_›)
+        (isUnitPart_of_eq_toNat_emod (Nat.zero_lt_of_lt ‹1 < p ∧ _›.1) (getElem!_sub_eq ‹_› _) ‹_›)
 
 /-- `Ratpoints.Sieve.unitParts_spec` as a plain statement. -/
 theorem isUnitPart_run_unitParts (c : List ℤ) (d : ℕ) {p : ℕ} (hp : 1 < p) {cm : Array ℕ}
@@ -851,7 +851,7 @@ def ExaminePrimesLoopInvariant (c : List ℤ) (d : ℕ) (u : Bool) (n maxForbidd
 theorem examinePrimesLoopInvariant_empty (c : List ℤ) (d : ℕ) (u : Bool)
     (n maxForbidden bHigh : ℕ) (suff : List ℕ) :
     ExaminePrimesLoopInvariant c d u n maxForbidden bHigh [] suff (none, #[], #[], #[]) :=
-  ⟨rfl, fun _ hi ↦ absurd hi (Nat.not_lt_zero _), nofun, nofun, Nat.zero_le _⟩
+  ⟨rfl, nofun, nofun, nofun, Nat.zero_le _⟩
 
 /-- Before the last position, the loop of `Ratpoints.Sieve.examinePrimes` has not returned. -/
 theorem ExaminePrimesLoopInvariant.examinePrimesInvariant {c : List ℤ} {d : ℕ} {u : Bool}
@@ -863,7 +863,7 @@ theorem ExaminePrimesLoopInvariant.examinePrimesInvariant {c : List ℤ} {d : �
     ExaminePrimesInvariant c d maxForbidden bHigh pref.length tables ba val := by
   cases o with
   | none => exact h
-  | some r => exact absurd h.1 (List.cons_ne_nil _ _)
+  | some _ => exact absurd h.1 (List.cons_ne_nil _ _)
 
 /-- After a step of the loop of `Ratpoints.Sieve.examinePrimes` without a return. -/
 theorem ExaminePrimesInvariant.examinePrimesLoopInvariant {c : List ℤ} {d : ℕ} {u : Bool}
@@ -911,7 +911,7 @@ theorem isForbiddenEntry_of_run_examinePrime?_eq_some {c : List ℤ} {d bHigh k 
       some (.inl f)) :
     IsForbiddenEntry c d bHigh f :=
   .inl ⟨_, Array.getElem!_mem (hk.trans_le numPrimes_le_size_primeTable),
-    (run_forbiddenOfPrime_eq_of_run_examinePrime?_eq_some hk he bHigh) ▸ hf⟩
+    run_forbiddenOfPrime_eq_of_run_examinePrime?_eq_some hk he bHigh ▸ hf⟩
 
 /-- A forbidden divisor tested by its valuation that the prime at the position
 `k < Ratpoints.numPrimes` gives from what its table hands back is one that the loop of the tables
@@ -923,7 +923,7 @@ theorem isForbiddenVal_of_run_examinePrime?_eq_some {c : List ℤ} {d bHigh k : 
       some (.inr f)) :
     IsForbiddenVal c d bHigh f :=
   ⟨_, Array.getElem!_mem (hk.trans_le numPrimes_le_size_primeTable),
-    (run_forbiddenOfPrime_eq_of_run_examinePrime?_eq_some hk he bHigh) ▸ hf⟩
+    run_forbiddenOfPrime_eq_of_run_examinePrime?_eq_some hk he bHigh ▸ hf⟩
 
 /-- The step of the loop of `Ratpoints.Sieve.examinePrimes` that records a forbidden divisor tested
 with words. -/
@@ -946,8 +946,7 @@ theorem ExaminePrimesLoopInvariant.push_inl {c : List ℤ} {d : ℕ} {u checkDen
   have h' := h.examinePrimesInvariant
   refine (h'.push hk he (Array.forall_mem_push.mpr ⟨isForbiddenEntry_of_run_examinePrime?_eq_some
     hk he (hr ▸ hf), h'.2.2.1⟩) h'.2.2.2.1 ?_).examinePrimesLoopInvariant _ _
-  simp only [Bool.and_eq_true, decide_eq_true_eq] at hlt
-  simp only [Array.size_push]
+  simp only [Bool.and_eq_true, decide_eq_true_eq, Array.size_push] at hlt ⊢
   lia
 
 /-- The step of the loop of `Ratpoints.Sieve.examinePrimes` that records a forbidden divisor tested
@@ -972,8 +971,7 @@ theorem ExaminePrimesLoopInvariant.push_inr {c : List ℤ} {d : ℕ} {u checkDen
   refine (h'.push hk he h'.2.2.1 (Array.forall_mem_push.mpr
     ⟨isForbiddenVal_of_run_examinePrime?_eq_some hk he (hr ▸ hf), h'.2.2.2.1⟩)
     ?_).examinePrimesLoopInvariant _ _
-  simp only [Bool.and_eq_true, decide_eq_true_eq] at hlt
-  simp only [Array.size_push]
+  simp only [Bool.and_eq_true, decide_eq_true_eq, Array.size_push] at hlt ⊢
   lia
 
 /-- The step of the loop of `Ratpoints.Sieve.examinePrimes` that keeps the table and records no
@@ -1018,7 +1016,7 @@ theorem ExaminePrimesLoopInvariant.post_some {c : List ℤ} {d : ℕ} {u : Bool}
       (r = none → ∃ pn < n, Id.run (examinePrime? c d primeTable[pn]! u) = none) := by
   subst ho
   obtain ⟨-, rfl, h⟩ := h
-  exact ⟨fun _ _ _ h' ↦ (nomatch h'), fun _ ↦ h⟩
+  exact ⟨nofun, fun _ ↦ h⟩
 
 /-- The end of the loop of `Ratpoints.Sieve.examinePrimes` over all the positions `pn < n`. -/
 theorem ExaminePrimesLoopInvariant.post_none {c : List ℤ} {d : ℕ} {u : Bool}
@@ -1140,14 +1138,10 @@ theorem forall_isForbiddenEntry_push {c : List ℤ} {d examined bHigh : ℕ} {pr
     (hl : ForIn.toList [examined:primeTable.size] = pref ++ cur :: suff)
     (hs : (!(squaresMod primeTable[cur]!)[(c.getD d 0 % (primeTable[cur]! : ℤ)).toNat]!) = true) :
     ∀ e ∈ ba.push ⟨primeTable[cur]!, forbiddenRow primeTable[cur]!⟩,
-      IsForbiddenEntry c d bHigh e := by
-  have hcur : cur < primeTable.size := by
-    have := Std.Legacy.Range.add_length_eq_of_toList_eq_append_cons hl
-    have := Std.Legacy.Range.length_add_length_add_one_of_toList_eq_append_cons hl
-    lia
+      IsForbiddenEntry c d bHigh e :=
   -- `rfl` for the words would unfold `Ratpoints.Sieve.forbiddenRow` until the recursion limit
-  exact Array.forall_mem_push.mpr ⟨.inr ⟨Array.getElem!_mem hcur, by dsimp only,
-    Bool.not_eq_true' _ ▸ hs⟩, h⟩
+  Array.forall_mem_push.mpr ⟨.inr ⟨Array.getElem!_mem
+    (Std.Legacy.Range.lt_of_toList_eq_append_cons hl), by dsimp only, Bool.not_eq_true' _ ▸ hs⟩, h⟩
 
 theorem forall_isForbiddenEntry_and_forall_isForbiddenVal {c : List ℤ} {d bHigh : ℕ}
     {ba : Array ForbiddenEntry} {val : Array ForbiddenVal}

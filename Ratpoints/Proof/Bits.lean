@@ -129,9 +129,8 @@ theorem getElem!_map_range {α : Type u} [Inhabited α] (f : Nat → α) {n j : 
   simp [hj]
 
 theorem getElem!_mem {α : Type u} [Inhabited α] {xs : Array α} {i : Nat} (h : i < xs.size) :
-    xs[i]! ∈ xs := by
-  rw [getElem!_pos xs i h]
-  exact Array.getElem_mem h
+    xs[i]! ∈ xs :=
+  (getElem!_pos xs i h).symm ▸ getElem_mem h
 
 theorem size_pop_lt_of_back?_eq_some {α : Type u} {xs : Array α} {x : α}
     (h : xs.back? = some x) : xs.pop.size < xs.size := by
@@ -193,9 +192,8 @@ theorem getElem!_foldl_setIfInBounds {α : Type u} (l : List α) (f : α → Nat
 /-- A property of the members of the list of an array holds after a push of a member that has it:
 `Array.forall_mem_push` for the members of the list, as invariants of loops state them. -/
 theorem forall_mem_toList_push {α : Type u} {xs : Array α} {x : α} {P : α → Prop}
-    (h : ∀ y ∈ xs.toList, P y) (hx : P x) : ∀ y ∈ (xs.push x).toList, P y := by
-  rw [Array.toList_push]
-  exact List.forall_mem_append.mpr ⟨h, List.forall_mem_singleton.mpr hx⟩
+    (h : ∀ y ∈ xs.toList, P y) (hx : P x) : ∀ y ∈ (xs.push x).toList, P y :=
+  toList_push ▸ List.forall_mem_append.mpr ⟨h, List.forall_mem_singleton.mpr hx⟩
 
 /-- `xs[i]! = true` gives a true entry of `xs`, since `xs[i]!` is `false` out of range. -/
 theorem any_id_eq_true_of_getElem!_eq_true {xs : Array Bool} {i : Nat} (h : xs[i]! = true) :
@@ -418,7 +416,7 @@ theorem pow_lt_two_pow_of_lt {p b n N : Nat} (hp : p < 2 ^ b) (hn : b * n ≤ N)
     p ^ n < 2 ^ N :=
   calc p ^ n < (2 ^ b) ^ n := Nat.pow_lt_pow_left hp hn0
     _ = 2 ^ (b * n) := (Nat.pow_mul 2 b n).symm
-    _ ≤ 2 ^ N := Nat.pow_le_pow_right (by decide) hn
+    _ ≤ 2 ^ N := Nat.pow_le_pow_right Nat.two_pos hn
 
 theorem lt_add_one_mul_of_lt_mul {y n k : Nat} (h : y < n * k) : y < (n + 1) * k :=
   Nat.lt_of_lt_of_le h (Nat.mul_le_mul_right k (Nat.le_succ n))

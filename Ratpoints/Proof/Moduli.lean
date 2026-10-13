@@ -11,6 +11,7 @@ public import Ratpoints.Spec.Basic
 public import Std.WP
 
 import Mathlib.Data.List.GetD
+import Mathlib.Tactic.LinearCombination
 import Ratpoints.Mathlib.Data.ZMod.Basic
 import Ratpoints.Proof.Bits
 import Ratpoints.Proof.Params
@@ -114,7 +115,7 @@ theorem ModinvInvariant.sub_lt_and_sub_mul {x m r₀ r₁ : ℕ} {s₀ s₁ : �
   obtain ⟨⟨h0, h1⟩, hg, hr0, hs, hid, hle, -⟩ := h
   dsimp only at h0 h1 hg hr0 hs hid hle
   have hq : r₀ / r₁ * r₁ ≤ r₀ := Nat.div_mul_le_self r₀ r₁
-  have hmod : r₀ - r₀ / r₁ * r₁ = r₀ % r₁ := by rw [Nat.mod_eq_sub_mul_div, Nat.mul_comm]
+  have hmod : r₀ - r₀ / r₁ * r₁ = r₀ % r₁ := Nat.mod_eq_sub_div_mul.symm
   refine ⟨hmod ▸ Nat.mod_lt _ (by lia), ⟨h1, ?_⟩, ?_, Nat.pos_of_ne_zero hr, ?_, ?_, ?_, nofun⟩
   · dsimp only
     rw [Nat.cast_sub hq, Nat.cast_mul, Int.cast_sub, Int.cast_mul, Int.cast_natCast, h0, h1]
@@ -122,11 +123,11 @@ theorem ModinvInvariant.sub_lt_and_sub_mul {x m r₀ r₁ : ℕ} {s₀ s₁ : �
   · dsimp only
     rw [hmod, ← hg, Nat.gcd_comm r₀ r₁, Nat.gcd_rec r₁ r₀, Nat.gcd_comm]
   · dsimp only
-    nlinarith [mul_self_nonneg s₁]
+    linear_combination hs + ((r₀ / r₁ : ℕ) : ℤ) * mul_self_nonneg s₁
   · dsimp only
     rw [Int.natAbs_sub_mul_of_mul_nonpos hs]
     zify [hq] at hid ⊢
-    nlinarith
+    linear_combination hid
   · have : s₁.natAbs * 1 ≤ s₁.natAbs * r₀ := Nat.mul_le_mul_left _ hr0
     dsimp only
     lia
@@ -254,13 +255,13 @@ private theorem natCast_evalMod_reverse_ite (c : List ℤ) (d : ℕ) {m : ℕ} [
       List.length_singleton, Finset.sum_range_succ, List.getD_append_right _ _ _ _ (by simp)]
     simp only [List.length_map, List.length_range, Nat.sub_self, List.getD_cons_zero, Nat.cast_zero,
       zero_mul, add_zero]
-    refine Finset.sum_congr rfl fun k hk ↦ ?_
+    refine Finset.sum_congr rfl fun _ hk ↦ ?_
     rw [List.getD_append _ _ _ _ (by simpa using hk),
       natCast_getD_map_range_toNat_emod c d (Finset.mem_range.mp hk), hd, Nat.add_sub_cancel]
   · rw [natCast_evalMod_reverse, List.length_map, List.length_range]
-    refine Finset.sum_congr rfl fun k hk ↦ ?_
-    rw [natCast_getD_map_range_toNat_emod c d (Finset.mem_range.mp hk),
-      show d + d % 2 = d + 1 - 1 by lia]
+    refine Finset.sum_congr rfl fun _ hk ↦ ?_
+    rw [natCast_getD_map_range_toNat_emod c d (Finset.mem_range.mp hk), Nat.add_one_sub_one,
+      Nat.mod_two_ne_one.mp hd, Nat.add_zero]
 
 /-- Entry `t` of the table `Ratpoints.Sieve.Power.gsq` of `m = p ^ e`
 (`Ratpoints.Sieve.examinePower`), for `p ∣ t`, is set when the reversed polynomial
@@ -287,7 +288,7 @@ theorem examinePowerInvariant_zero (p : ℕ) {m : ℕ} (hm : 0 < m) :
     ExaminePowerInvariant p m 0 #[0] :=
   ⟨rfl, fun x hx ↦ by
     obtain rfl : x = 0 := by simpa using hx
-    exact ⟨hm, fun h ↦ absurd (Nat.zero_mod p) h⟩⟩
+    exact ⟨hm, absurd (Nat.zero_mod p)⟩⟩
 
 -- The step of the loop of `Ratpoints.Sieve.examinePower` at the residue `k + 1`, with an entry
 -- below `m` that is the inverse of the residue when it is prime to `p`.
@@ -313,7 +314,7 @@ theorem ExaminePowerInvariant.push_zero {p m cur : ℕ} {pref suff : List ℕ} {
     ExaminePowerInvariant p m (pref ++ [cur]).length (inv.push 0) := by
   have := Std.Legacy.Range.add_length_eq_of_toList_eq_append_cons hl
   rw [List.length_append, List.length_singleton]
-  exact h.push_of_lt hm fun h' ↦ absurd (by rwa [Nat.add_comm, this]) h'
+  exact h.push_of_lt hm (absurd (by rwa [Nat.add_comm, this]))
 
 /-- The step of the loop of `Ratpoints.Sieve.examinePower` at a residue whose entry `r` is its
 inverse modulo `m`, as `Ratpoints.Sieve.modinv` gives it for a residue not divisible by `p`. -/
@@ -508,7 +509,7 @@ private theorem MakeModulusInvariant.push {c : List ℤ} {m : ℕ} {x : ℕ × �
     MakeModulusInvariant c m suff (none, factors.push f) := by
   cases o with
   | none => exact Array.forall_mem_push.mpr ⟨hf, h⟩
-  | some r => exact absurd h.1 (List.cons_ne_nil _ _)
+  | some _ => exact absurd h.1 (List.cons_ne_nil _ _)
 
 -- The factor at the cursor of the loop of `Ratpoints.makeModulus?` is one of the factors of `m`
 -- over the table.
@@ -568,7 +569,7 @@ theorem makeModulusInvariant_some_none {c : List ℤ} {u : Bool} {m r pn e : ℕ
     (he : Id.run (examinePrime? c (degree c) primeTable[pn]! u) = x) :
     MakeModulusInvariant c m [] (some none, factors) := by
   have hpn := lt_numPrimes_of_mem_run_modulusFactors (mem_run_modulusFactors_of_eq hfac hl)
-  refine ⟨rfl, rfl, not_isPoint_of_lt_numPrimes_of_run_examinePrime?_eq_none hpn
+  exact ⟨rfl, rfl, not_isPoint_of_lt_numPrimes_of_run_examinePrime?_eq_none hpn
     (he.trans (Option.eq_none_iff_forall_ne_some.mpr fun ⟨t, cm⟩ h ↦ hx t cm h))⟩
 
 /-- The end of the loop of `Ratpoints.makeModulus?` after an early return. -/
@@ -580,7 +581,7 @@ theorem MakeModulusInvariant.post_some {c : List ℤ} {m : ℕ} {o : Option (Opt
       (r = none → ∀ H q, ¬IsPoint c H q) := by
   subst ho
   obtain ⟨-, rfl, h⟩ := h
-  exact ⟨fun _ h' ↦ (nomatch h'), fun _ ↦ h⟩
+  exact ⟨nofun, fun _ ↦ h⟩
 
 /-- The end of the loop of `Ratpoints.makeModulus?` over all the factors: the sieve entry of `m`
 with the factors made admits every point. -/
@@ -590,7 +591,7 @@ theorem MakeModulusInvariant.post_none {c : List ℤ} {m : ℕ} {o : Option (Opt
         Int.gcd a b = 1 → y ^ 2 = binaryForm c a b → s.admits b a = true) ∧
       (some (⟨m, factors.toList⟩ : SieveEntry) = none → ∀ H q, ¬IsPoint c H q) := by
   subst ho
-  refine ⟨fun s hs ↦ ?_, nofun⟩
+  refine ⟨fun _ hs ↦ ?_, nofun⟩
   obtain rfl := Option.some.inj hs
   exact ⟨rfl, fun _ _ _ hab hy ↦
     List.all_eq_true.mpr fun f hf ↦ h f (Array.mem_toList_iff.mp hf) hab hy⟩

@@ -264,7 +264,7 @@ theorem natCast_evalMod_map_range (c : List ℤ) (d : ℕ) {p : ℕ} [NeZero p] 
     (evalMod ((List.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat) p t : ZMod p) =
       ∑ k ∈ Finset.range (d + 1), (c.getD k 0 : ZMod p) * t ^ k := by
   rw [natCast_evalMod, List.length_map, List.length_range]
-  exact Finset.sum_congr rfl fun k hk ↦
+  exact Finset.sum_congr rfl fun _ hk ↦
     congr($(natCast_getD_map_range_toNat_emod c d (Finset.mem_range.mp hk)) * _)
 
 /-- Horner's rule modulo `m` on the reversed list of coefficients: the value at `x` of the
@@ -273,11 +273,10 @@ theorem natCast_evalMod_reverse (cs : List ℕ) (m x : ℕ) :
     (evalMod cs.reverse m x : ZMod m) =
       ∑ k ∈ Finset.range cs.length, (cs.getD k 0 : ZMod m) * x ^ (cs.length - 1 - k) := by
   rw [natCast_evalMod, List.length_reverse, ← Finset.sum_range_reflect]
-  refine Finset.sum_congr rfl fun k hk ↦ ?_
+  refine Finset.sum_congr rfl fun _ hk ↦ ?_
   have hk := Finset.mem_range.mp hk
   rw [List.getD_reverse _ (by lia), Nat.sub_sub_self (by lia)]
 
-@[simp]
 theorem evalMod_cons_zero (a : ℕ) (cs : List ℕ) (p : ℕ) : evalMod (a :: cs) p 0 = a % p := by
   simp
 
@@ -335,18 +334,18 @@ theorem HornerInvariant.add_one {cm : Array ℕ} {d p a i k s : ℕ}
     (hc : cm[d - 1 - i]! < p) :
     HornerInvariant cm d p a (i + 1) (k + 1) (s * a + cm[d - 1 - i]!) := by
   refine ⟨?_, Nat.pow_succ p (k + 1) ▸ Nat.mul_add_lt_mul_of_lt h.2 ha hc⟩
-  rw [show d - (i + 1) = d - 1 - i by lia, evalMod_drop (by simp; lia),
-    show d - 1 - i + 1 = d - i by lia, ← h.1, Array.getElem_toList, getElem!_pos cm (d - 1 - i)
-    (by lia)]
+  rw [Nat.sub_right_comm d 1 i, Nat.sub_add_eq d i 1, evalMod_drop (by simp; lia),
+    Nat.sub_one_add_one_eq_of_pos (Nat.sub_pos_of_lt hi), ← h.1, Array.getElem_toList,
+    getElem!_pos cm (d - i - 1) (by lia)]
   simp [Nat.add_mod, Nat.mul_mod, Nat.mul_comm, Nat.add_comm]
 
 /-- The reduction by Barrett's method in the loop of Horner's rule keeps the invariant and restarts
 the bound. -/
 theorem HornerInvariant.barrett_zero {cm : Array ℕ} {d p a i k s : ℕ}
     (h : HornerInvariant cm d p a i k s) (hp : p < maxPrimeEven) (hk : k ≤ hornerSteps) :
-    HornerInvariant cm d p a i 0 (barrett s p ((2 ^ 64 - 1) / p)) := by
-  rw [barrett_eq h.pos (h.lt_two_pow_64 hp hk)]
-  exact ⟨by rw [Nat.mod_mod, h.1], by simpa using Nat.mod_lt s h.pos⟩
+    HornerInvariant cm d p a i 0 (barrett s p ((2 ^ 64 - 1) / p)) :=
+  barrett_eq h.pos (h.lt_two_pow_64 hp hk) ▸
+    ⟨by rw [Nat.mod_mod, h.1], by simpa using Nat.mod_lt s h.pos⟩
 
 theorem HornerInvariant.barrett_eq_evalMod {cm : Array ℕ} {d p a k s : ℕ}
     (h : HornerInvariant cm d p a d k s) (hp : p < maxPrimeEven) (hk : k ≤ hornerSteps) :
@@ -561,8 +560,7 @@ private theorem getElem!_map_range_emod_lt (c : List ℤ) (d : ℕ) {p : ℕ} (h
   by_cases hi : i < d + 1
   · rw [Array.getElem!_map_range _ hi]
     exact Int.toNat_emod_lt _ hp
-  · rw [getElem!_neg _ i (by simpa using hi)]
-    exact hp
+  · rwa [getElem!_neg _ i (by simpa using hi)]
 
 /-- The invariant of the loop of `Ratpoints.Sieve.examinePrime?` over the residues `1, …, k`, on the
 table `t`: entry `0` and the entries of these residues, each whether the value modulo `p` of

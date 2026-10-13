@@ -387,7 +387,7 @@ private theorem toList_run_sieveRun_words {c : List ℤ} {H A : ℕ} {entries : 
         (c.getD (degree c) 0)) 1 H)).toList =
       ((List.range' 1 H).flatMap fun b : ℕ ↦ pointsOfDen c (degree c) b (numerators H)).map
         (if rev then swapPoint else id) := by
-  refine toList_run_sieveRun_of_sound hent hA rev ?_ fun b hb h ↦
+  refine toList_run_sieveRun_of_sound hent hA rev ?_ fun _ hb h ↦
     have hb' := List.mem_range'_1.mp hb
     (exists_sq_eq_of_pointsOfDen_ne_nil h).elim fun _ ⟨_, _, hg, hy⟩ ↦
       ⟨getLsbD_denBits_and_all_of_sq_eq hd hforb (by lia) (by lia) hg hy,
@@ -441,7 +441,7 @@ theorem sievingInfoInvariant_some_none {c : List ℤ} {H m : ℕ} {entries : Arr
       (r = none → ∀ H q, ¬IsPoint c H q))
     (hx : ∀ e, x = some e → False) (he : r = x) :
     SievingInfoInvariant c H [] (some none, entries) :=
-  ⟨rfl, rfl, hr.2 (he.trans (Option.eq_none_iff_forall_ne_some.mpr fun e h ↦ hx e h)) H⟩
+  ⟨rfl, rfl, hr.2 (he.trans (Option.eq_none_iff_forall_ne_some.mpr hx)) H⟩
 
 /-- The end of the loop of `Ratpoints.sievingInfo` after an early return. -/
 theorem SievingInfoInvariant.post_some {c : List ℤ} {H : ℕ}
@@ -455,7 +455,7 @@ theorem SievingInfoInvariant.post_some {c : List ℤ} {H : ℕ}
       (r = none → ∀ q, ¬IsPoint c H q) := by
   subst ho
   obtain ⟨-, rfl, h⟩ := h
-  exact ⟨fun _ _ _ h' ↦ (nomatch h'), fun _ ↦ h⟩
+  exact ⟨nofun, fun _ ↦ h⟩
 
 /-- The end of the loop of `Ratpoints.sievingInfo` over all the moduli, with forbidden divisors
 that the loops of the tables and of the further primes may record. -/
@@ -488,7 +488,7 @@ private theorem post_of_run_examinePrimes_eq {c : List ℤ} {u checkDenom : Bool
           ∀ e ∈ forbVal, IsForbiddenVal c (degree c) H e) ∧
       ((none : Option (List SieveEntry × List ForbiddenEntry × List ForbiddenVal)) = none →
         ∀ q, ¬IsPoint c H q) :=
-  ⟨fun _ _ _ h ↦ (nomatch h), fun _ ↦ not_isPoint_of_run_examinePrimes_eq_none
+  ⟨nofun, fun _ ↦ not_isPoint_of_run_examinePrimes_eq_none
     (he.trans (Option.eq_none_iff_forall_ne_some.mpr fun ⟨t, b, v⟩ h ↦ hx t b v h)) hn H⟩
 
 -- The forbidden divisors that the loop of the tables records, as lists.

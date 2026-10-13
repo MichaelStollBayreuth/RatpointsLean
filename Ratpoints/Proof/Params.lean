@@ -138,7 +138,7 @@ theorem numPrimes_le_size_primeTable : numPrimes ≤ primeTable.size :=
 /-! ### The primes of the table by their positions -/
 
 theorem prime_getElem!_primeTable {pn : ℕ} (h : pn < primeTable.size) : primeTable[pn]!.Prime :=
-  (getElem!_pos primeTable pn h).symm ▸ prime_of_mem_primeTable (Array.getElem_mem h)
+  prime_of_mem_primeTable (Array.getElem!_mem h)
 
 theorem one_lt_getElem!_primeTable {pn : ℕ} (h : pn < numPrimes) : 1 < primeTable[pn]! :=
   (prime_getElem!_primeTable (h.trans_le numPrimes_le_size_primeTable)).one_lt
@@ -169,7 +169,7 @@ theorem getElem!_primeTable_le_of_le {i j : ℕ} (hij : i ≤ j) (hj : j < prime
 (`Ratpoints.maxBitsInPrime_le_ten`), as the comment on Horner's rule in `examine_power` assumes
 (`find_points.c:2286-2287`). -/
 theorem maxPrimeEven_le_two_pow_10 : maxPrimeEven ≤ 2 ^ 10 :=
-  Nat.pow_le_pow_right (by decide) maxBitsInPrime_le_ten
+  Nat.pow_le_pow_right Nat.two_pos maxBitsInPrime_le_ten
 
 /-- The moduli below `Ratpoints.maxPrimeEven` are below `2 ^ 32`
 (`Ratpoints.maxPrimeEven_le_two_pow_10`): so the helper `mod` of the C code keeps its values in the
@@ -209,9 +209,9 @@ theorem hornerSteps_add_one : hornerSteps + 1 = 64 / maxBitsInPrime := by
 for `p < maxPrimeEven`, since `hornerSteps + 1 = 64 / maxBitsInPrime`
 (`Ratpoints.hornerSteps_add_one`) and `maxBitsInPrime (64 / maxBitsInPrime) ≤ 64`. -/
 theorem pow_hornerSteps_add_one_lt {p : ℕ} (hp : p < maxPrimeEven) :
-    p ^ (hornerSteps + 1) < 2 ^ 64 := by
-  rw [hornerSteps_add_one]
-  exact Nat.pow_lt_two_pow_of_lt hp (Nat.mul_div_le 64 _) (hornerSteps_add_one ▸ Nat.succ_ne_zero _)
+    p ^ (hornerSteps + 1) < 2 ^ 64 :=
+  hornerSteps_add_one ▸ Nat.pow_lt_two_pow_of_lt hp (Nat.mul_div_le 64 _)
+    (hornerSteps_add_one ▸ Nat.succ_ne_zero _)
 
 /-! ### The factors of a modulus over the table -/
 
@@ -239,7 +239,7 @@ private theorem pairwise_map_fst_toList_push {fac : Array (ℕ × ℕ)} {g : ℕ
     (h : (fac.toList.map Prod.fst).Pairwise (· < ·)) (hg : ∀ f ∈ fac.toList, f.1 < g.1) :
     ((fac.push g).toList.map Prod.fst).Pairwise (· < ·) := by
   rw [Array.toList_push, List.map_append, List.pairwise_append]
-  refine ⟨h, List.pairwise_singleton _ _, fun a ha b hb ↦ ?_⟩
+  refine ⟨h, List.pairwise_singleton _ _, fun _ ha _ hb ↦ ?_⟩
   obtain ⟨f, hf, rfl⟩ := List.mem_map.mp ha
   rw [List.map_cons, List.map_nil, List.mem_singleton] at hb
   exact hb ▸ hg f hf
@@ -272,8 +272,8 @@ theorem ModulusFactorsInvariant.of_le_one {m rest : ℕ} {fac : Array (ℕ × �
     ModulusFactorsInvariant m (ForIn.toList [:numPrimes]).length (rest, fac) :=
   h.toList_of_ne (Std.Legacy.Range.length_eq_of_toList_eq_append_cons hl ▸
     (Std.Legacy.Range.lt_of_toList_eq_append_cons hl).le)
-    (fun j hj ↦ by have := one_lt_getElem!_primeTable hj; lia)
-    fun j hj _ ↦ lt_mul_self_getElem!_primeTable_of_le_one hr hj
+    (fun _ hj ↦ (hr.trans_lt (one_lt_getElem!_primeTable hj)).ne')
+    fun _ hj _ ↦ lt_mul_self_getElem!_primeTable_of_le_one hr hj
 
 /-- The exit of the loop of `Ratpoints.modulusFactors` when the cofactor, below the square of the
 prime at the cursor, is a prime of the table from the cursor on: it becomes a factor with the
@@ -288,13 +288,13 @@ theorem ModulusFactorsInvariant.push_find {m rest pn : ℕ} {fac : Array (ℕ ×
   have hr : primeTable[pn]! = rest := by simpa using List.find?_some hf
   obtain ⟨hm, hpw, hfac, -⟩ := h
   refine ModulusFactorsInvariant.toList_of_ne (k := numPrimes) ⟨?_, ?_, ?_, ?_⟩ le_rfl
-    (fun j hj ↦ by have := one_lt_getElem!_primeTable hj; lia)
-    fun j hj _ ↦ lt_mul_self_getElem!_primeTable_of_le_one le_rfl hj
+    (fun _ hj ↦ (one_lt_getElem!_primeTable hj).ne')
+    fun _ hj _ ↦ lt_mul_self_getElem!_primeTable_of_le_one le_rfl hj
   · simp [hm, hr, Nat.mul_comm]
   · exact pairwise_map_fst_toList_push hpw fun f hf' ↦ (hfac f hf').1.trans_le hpn.1
   · exact Array.forall_mem_toList_push (fun f hf' ↦ ⟨(hfac f hf').1.trans (by lia), (hfac f hf').2⟩)
       ⟨by lia, le_rfl⟩
-  · exact fun j hj ↦ ⟨by have := one_lt_getElem!_primeTable hj; lia, by lia,
+  · exact fun _ hj ↦ ⟨(one_lt_getElem!_primeTable hj).ne', by lia,
       fun _ ↦ lt_mul_self_getElem!_primeTable_of_le_one le_rfl hj⟩
 
 /-- The exit of the loop of `Ratpoints.modulusFactors` when the cofactor, below the square of the
@@ -309,8 +309,7 @@ theorem ModulusFactorsInvariant.of_find?_eq {m rest : ℕ} {fac : Array (ℕ × 
     ModulusFactorsInvariant m (ForIn.toList [:numPrimes]).length (rest, fac) := by
   obtain rfl := Std.Legacy.Range.length_eq_of_toList_eq_append_cons hl
   have hcur := Std.Legacy.Range.lt_of_toList_eq_append_cons hl
-  have hnone := List.find?_eq_none.mp (hf.trans (Option.eq_none_iff_forall_ne_some.mpr
-    fun pn hpn ↦ ho pn hpn))
+  have hnone := List.find?_eq_none.mp (hf.trans (Option.eq_none_iff_forall_ne_some.mpr ho))
   refine h.toList_of_ne hcur.le (fun j hj ↦ ?_) fun j hj hd ↦ ?_
   all_goals rcases Nat.lt_or_ge j pref.length with hj' | hj'
   · exact (h.2.2.2 j hj').1
@@ -360,8 +359,8 @@ theorem ModulusFactorsInvariant.push_pow {m rest x e : ℕ} {fac : Array (ℕ ×
   rw [List.length_append, List.length_singleton]
   refine ⟨?_, ?_, ?_, forall_ne_and_not_dvd_of_dvd hne hcur (Dvd.intro _ hxe)
     fun hd ↦ hx (Nat.mod_eq_zero_of_dvd hd)⟩
-  · simp only [Array.toList_push, List.map_append, List.prod_append, hm, ← hxe]
-    simp only [List.map_cons, List.map_nil, List.prod_singleton]
+  · simp only [Array.toList_push, List.map_append, List.prod_append, hm, ← hxe, List.map_cons,
+      List.map_nil, List.prod_singleton]
     ac_rfl
   · exact pairwise_map_fst_toList_push hpw fun f hf' ↦ (hfac f hf').1
   · exact Array.forall_mem_toList_push (fun f hf' ↦ ⟨(hfac f hf').1.trans (by lia), (hfac f hf').2⟩)
@@ -460,9 +459,8 @@ theorem snd_run_modulusFactors_lt_mul_self_of_dvd (m : ℕ) {j : ℕ} (hj : j < 
 
 /-- Each factor `primeTable[pn] ^ e` of `m` over the table divides `m`. -/
 theorem pow_dvd_of_mem_run_modulusFactors {m : ℕ} {f : ℕ × ℕ}
-    (hf : f ∈ (Id.run (modulusFactors m)).1) : primeTable[f.1]! ^ f.2 ∣ m := by
-  rw [eq_mul_prod_run_modulusFactors m]
-  exact (List.dvd_prod (List.mem_map_of_mem hf)).mul_left _
+    (hf : f ∈ (Id.run (modulusFactors m)).1) : primeTable[f.1]! ^ f.2 ∣ m :=
+  eq_mul_prod_run_modulusFactors m ▸ (List.dvd_prod (List.mem_map_of_mem hf)).mul_left _
 
 /-- A modulus `m > 0` each of whose divisors above `1` is divisible by one of the first
 `Ratpoints.numPrimes` primes of the table factors completely over the table, as the moduli of
