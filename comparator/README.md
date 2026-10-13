@@ -48,8 +48,9 @@ the refusal theorem of stage C1, which had only the first three disjuncts. `chal
 stage C1, without the options, and `challenge_wf_sieveParams`, which it accepted on the same day;
 and `challenge_exists_findPoints_eq_error_iff_of_sturm_nonneg` and
 `challenge_exists_findPoints_eq_error_iff_of_sturm_neg`, the refusal theorems of stage D. Comparator
-accepted all seven, the two main theorems with the options among them, on 2026-10-11, and again on
-the model of stage E on 2026-10-12.
+accepted all seven, the two main theorems with the options among them, on 2026-10-11, again on the
+model of stage E on 2026-10-12, and with the parameters of sub-stage F1, whose well-formedness
+admits composite moduli, on 2026-10-13.
 
 ## Running
 
