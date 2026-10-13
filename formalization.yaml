@@ -136,15 +136,13 @@ status:
     sound without the Chinese remainder theorem, and the range obligations of the longs of these
     computations; the parameters gain the number of primes examined, and their well-formedness,
     which the statements for comparator import from the model, admits the composite moduli below
-        2^maxBitsInPrime that factor over the first numPrimes primes of the table, and no longer the
+    2^maxBitsInPrime that factor over the first numPrimes primes of the table, and no longer the
     primes of the table from 2^maxBitsInPrime on; the output, the main theorems, the refusal
-    theorems and the statements for comparator keep their text, and the
-
-    differential tests agree as before (3219 comparisons in the default suites). Next: the
-    sub-stages F2 to F4 of stage F (the stages of the sieve and the check, the packing of the
-    numerators, the chunked first stage and the faithful rows); the introduction of the blueprint
-    lists the later stages (the order and protocol, the search region and the Sturm step, the blocks
-    of the loop over the denominators).
+    theorems and the statements for comparator keep their text, and the differential tests agree as
+    before (3219 comparisons in the default suites). Next: the sub-stages F2 to F4 of stage F (the
+    stages of the sieve and the check, the packing of the numerators, the chunked first stage and
+    the faithful rows); the introduction of the blueprint lists the later stages (the order and
+    protocol, the search region and the Sturm step, the blocks of the loop over the denominators).
   sorry_count: 0
   sorry_in_definitions: 0
   axioms: ["propext", "Classical.choice", "Quot.sound"]

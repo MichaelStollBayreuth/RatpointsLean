@@ -24,38 +24,39 @@ before the sieve, with the options of the library that change the refusals and t
 output: the refusal of a binary form that is not squarefree (when the leading zeros lower its even
 degree, in the reversal check, and by the remainder chain of the Sturm step, computed row by row as
 the C code computes it), the reversal of the polynomial in its three cases with the map of the
-points, the coefficients as C `long`s, and the exit when the curve has no points modulo a prime.
-The output of `findPoints` is a permutation of the brute-force reference, so that the main theorems
-hold for every option, and two refusal theorems, with the Sturm step on and off, say exactly which
-inputs it refuses; the challenge of Comparator states them. `ratpoints-lean` reads `-k -K -s -S`,
-and the differential tests compare the refusals and these options. Stage E is done: the side of the
+points, the coefficients as C `long`s, and the exit when the curve has no points modulo a prime. The
+output of `findPoints` is a permutation of the brute-force reference, so that the main theorems hold
+for every option, and two refusal theorems, with the Sturm step on and off, say exactly which inputs
+it refuses; the challenge of Comparator states them. `ratpoints-lean` reads `-k -K -s -S`, and the
+differential tests compare the refusals and these options. Stage E is done: the side of the
 denominators as the C code has it: the 2-adic information with the classes of the denominators
 modulo 64 (the first stage of the sieve starts from the word of the class, and the search ends when
-no class admits a numerator); for odd degree the squares and the divisors of the leading
-coefficient times squares, with the valuation test of their slopes; for even degree the forbidden
-divisors, tested with words of 64 denominators and by their valuations, and the Jacobi test, by the
-binary algorithm and by tables, both proved to compute the Jacobi symbol of Mathlib; and the loop
-over the denominators in the four shapes of the C code, in its order. The output of `findPoints` is
-the list of the points at infinity followed by the points of the brute-force reference of the
-polynomial searched over the denominators in the order of the loop of its search, mapped back after
-a reversal, so that `ratpoints-lean` prints the points in the order of ratpoints; the main
-theorems, the refusal theorems and the challenge of Comparator keep their statements. Stage F, the
-side of the numerators, runs in four sub-stages, of which F1 is done: the tables and the moduli as
-the C code has them. The table of a prime is computed as `examine_prime` computes it, by Horner's
-rule with the Barrett reduction on its fixed schedule, and hands back the coefficients modulo the
-prime and its entry at infinity to the forbidden divisors, prime by prime in the loop of the tables
-of `sieving_info`, which ends the search at a prime modulo which the curve has no points; the moduli
-may be prime powers, with the tables of `examine_power` and the inverses by the extended Euclidean
-algorithm, and products of prime powers, whose rows are those of their factors, combined, so that
-the rows of every modulus let every point through without the Chinese remainder theorem; the range
-obligations of the C `long`s of these computations are lemmas. The parameters gain the number of
-primes examined, and their well-formedness, which the challenge of Comparator imports from the
-model, now admits the moduli below `2^maxBitsInPrime` that factor over the first `numPrimes` primes
-of the table, composite ones included, and no longer the primes of the table from
-`2^maxBitsInPrime` on; the main theorems, the refusal theorems and the challenge keep their text, and
-change only through the parameters they quantify over. The differential tests compare every point list in its order: 3219 comparisons in
-the default suites, and 13 in the suite run locally. The blueprint and the API documentation will be
-at <https://michaelstollbayreuth.github.io/RatpointsLean/> once the repository is public.
+no class admits a numerator); for odd degree the squares and the divisors of the leading coefficient
+times squares, with the valuation test of their slopes; for even degree the forbidden divisors,
+tested with words of 64 denominators and by their valuations, and the Jacobi test, by the binary
+algorithm and by tables, both proved to compute the Jacobi symbol of Mathlib; and the loop over the
+denominators in the four shapes of the C code, in its order. The output of `findPoints` is the list
+of the points at infinity followed by the points of the brute-force reference of the polynomial
+searched over the denominators in the order of the loop of its search, mapped back after a reversal,
+so that `ratpoints-lean` prints the points in the order of ratpoints; the main theorems, the refusal
+theorems and the challenge of Comparator keep their statements. Stage F, the side of the numerators,
+runs in four sub-stages, of which F1 is done: the tables and the moduli as the C code has them. The
+table of a prime is computed as `examine_prime` computes it, by Horner's rule with the Barrett
+reduction on its fixed schedule, and hands back the coefficients modulo the prime and its entry at
+infinity to the forbidden divisors, prime by prime in the loop of the tables of `sieving_info`,
+which ends the search at a prime modulo which the curve has no points; the moduli may be prime
+powers, with the tables of `examine_power` and the inverses by the extended Euclidean algorithm, and
+products of prime powers, whose rows are those of their factors, combined, so that the rows of every
+modulus let every point through without the Chinese remainder theorem; the range obligations of the
+C `long`s of these computations are lemmas. The parameters gain the number of primes examined, and
+their well-formedness, which the challenge of Comparator imports from the model, now admits the
+moduli below `2^maxBitsInPrime` that factor over the first `numPrimes` primes of the table,
+composite ones included, and no longer the primes of the table from `2^maxBitsInPrime` on; the main
+theorems, the refusal theorems and the challenge keep their text, and change only through the
+parameters they quantify over. The differential tests compare every point list in its order: 3219
+comparisons in the default suites, and 13 in the suite run locally. The blueprint and the API
+documentation will be at <https://michaelstollbayreuth.github.io/RatpointsLean/> once the repository
+is public.
 
 ## Layout
 
