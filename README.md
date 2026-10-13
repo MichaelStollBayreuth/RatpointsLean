@@ -39,10 +39,21 @@ over the denominators in the four shapes of the C code, in its order. The output
 the list of the points at infinity followed by the points of the brute-force reference of the
 polynomial searched over the denominators in the order of the loop of its search, mapped back after
 a reversal, so that `ratpoints-lean` prints the points in the order of ratpoints; the main
-theorems, the refusal theorems and the challenge of Comparator keep their statements. The
-differential tests compare every point list in its order: 3219 comparisons in the default suites,
-and 13 in the suite run locally. The blueprint and the API documentation will be at
-<https://michaelstollbayreuth.github.io/RatpointsLean/> once the repository is public.
+theorems, the refusal theorems and the challenge of Comparator keep their statements. Stage F, the
+side of the numerators, runs in four sub-stages, of which F1 is done: the tables and the moduli as
+the C code has them. The table of a prime is computed as `examine_prime` computes it, by Horner's
+rule with the Barrett reduction on its fixed schedule, and hands back the coefficients modulo the
+prime and its entry at infinity to the forbidden divisors, prime by prime in the loop of the tables
+of `sieving_info`, which ends the search at a prime modulo which the curve has no points; the moduli
+may be prime powers, with the tables of `examine_power` and the inverses by the extended Euclidean
+algorithm, and products of prime powers, whose rows are those of their factors, combined, so that
+the rows of every modulus let every point through without the Chinese remainder theorem; the range
+obligations of the C `long`s of these computations are lemmas. The parameters gain the number of
+primes examined, and their well-formedness admits the composite moduli below `2^maxBitsInPrime` that
+factor over the table; the main theorems, the refusal theorems and the challenge of Comparator keep
+their statements. The differential tests compare every point list in its order: 3219 comparisons in
+the default suites, and 13 in the suite run locally. The blueprint and the API documentation will be
+at <https://michaelstollbayreuth.github.io/RatpointsLean/> once the repository is public.
 
 ## Layout
 

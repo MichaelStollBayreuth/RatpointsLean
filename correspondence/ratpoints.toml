@@ -43,6 +43,24 @@ kind = "instrumentation"
 reason = "RP_INIT_NOREP, a probe for bench_init that leaves out replicating a row over the words of a bit array; the tables it produces are wrong"
 
 [[excluded]]
+file = "init.c"
+lines = "299-353"
+kind = "instrumentation"
+reason = "RP_VERIFY_MODULI, a debugging check, compiled only with -DRP_VERIFY_MODULI: verify_row, which compares a row of a prime power or a product with F(N, b), factor by factor, and aborts on a mismatch"
+
+[[excluded]]
+file = "init.c"
+lines = "388-390"
+kind = "instrumentation"
+reason = "RP_VERIFY_MODULI, a debugging check, compiled only with -DRP_VERIFY_MODULI, that compares every row of a prime power with F(N, b) (verify_row) and aborts on a mismatch"
+
+[[excluded]]
+file = "init.c"
+lines = "431-442"
+kind = "instrumentation"
+reason = "RP_VERIFY_MODULI, a debugging check, compiled only with -DRP_VERIFY_MODULI, that compares every row of a product with F(N, b), factor by factor (verify_row), and aborts on a mismatch"
+
+[[excluded]]
 file = "rp-private.h"
 lines = "86"
 kind = "other"
@@ -95,6 +113,30 @@ file = "find_points.c"
 lines = "2801"
 kind = "memory"
 reason = "the enlargement of ba_buffer for the primes that the loop of the tables of sieving_info looked at beyond num_primes, which fails only for lack of memory"
+
+[[excluded]]
+file = "find_points.c"
+lines = "3036-3062"
+kind = "memory"
+reason = "the enlargement of ba_buffer for the tables of every prime looked at, those that the third stage looked at among them, and of the composite moduli of the first two stages and their prime-power factors, which fails only for lack of memory"
+
+[[excluded]]
+file = "find_points.c"
+lines = "3073-3087"
+kind = "instrumentation"
+reason = "RP_PRIME_STATS, development instrumentation that prints on stderr one line per curve: the primes looked at and those that carry information, the ends of the three stages, the estimates of the run and the density of each candidate"
+
+[[excluded]]
+file = "find_points.c"
+lines = "3089-3095"
+kind = "instrumentation"
+reason = "the report under RATPOINTS_VERBOSE at the end of sieving_info: the mean number of bits per word, the number of primes looked at and the numbers of moduli of the three stages"
+
+[[excluded]]
+file = "find_points.c"
+lines = "3098-3100"
+kind = "instrumentation"
+reason = "the message under DEBUG at the end of sieving_info"
 
 [[excluded]]
 file = "find_points.c"

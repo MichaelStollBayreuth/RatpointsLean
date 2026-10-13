@@ -181,11 +181,12 @@ numerator $R w_0 + 64 y + t$, which is congruent to $t$ modulo $64$ since $64 \m
 (\verb|Ratpoints.Sieve.classBit|, the bit $a \bmod 64$ of a word, and
 \verb|Ratpoints.Sieve.classBit_rbaLength_mul_add|, which the node of the first stage names). So
 \verb|sift| with the class word $\omega$ gives what the brute-force reference finds over $b$ and the
-numerators that pass bit $a \bmod 64$ of $\omega$ and the tables (Definitions~\ref{def:siftPiece}
-and~\ref{def:sift}): the equation of Lemma~\ref{lem:sift_eq_checkDen} filters the points of the
-plain sieve by the class bit of their numerators (\verb|Ratpoints.BruteForce.pointsOfDen_filter|,
-which its node names); with the word of the class of $b$, by Lemma~\ref{lem:twoAdic_point}, that is
-what the reference finds over $b$ and the numerators that survive the tables.
+numerators that pass bit $a \bmod 64$ of $\omega$ and survive the sieve entries
+(Definitions~\ref{def:siftPiece} and~\ref{def:sift}): the equation of
+Lemma~\ref{lem:sift_eq_checkDen} filters the points of the plain sieve by the class bit of their
+numerators (\verb|Ratpoints.BruteForce.pointsOfDen_filter|, which its node names); with the word of
+the class of $b$, by Lemma~\ref{lem:twoAdic_point}, that is what the reference finds over $b$ and
+the numerators that survive the sieve entries.
 
 \begin{lemma}[The 2-adic exit]\label{lem:twoAdic_exit}
   \uses{lem:twoAdic_point, def:IsPoint}
@@ -585,17 +586,18 @@ from the word of its class, appended in turn (\csource{find_points.c}{3889}{3904
 \csource{find_points.c}{4042}{4052}, \csource{find_points.c}{4059}{4059},
 \csource{find_points.c}{4066}{4072}, \csource{find_points.c}{4075}{4078},
 \csource{find_points.c}{5120}{5120}, \csource{find_points.c}{5152}{5160}). Its contract, for an
-array size $A \ge 1$ and moduli $p > 0$, is the concatenation, over the denominators of the list
-that pass the test, of what the brute-force reference finds over the numerators that pass the class
-word and the tables, mapped by $\mathrm{swapPoint}$ when the flag of the reversal is set
-(\verb|Ratpoints.Sieve.sieveRun_spec|, \verb|Ratpoints.Sieve.toList_run_sieveRun|). For moduli that
-are primes and the shapes of Lemma~\ref{lem:shape_dens}, the filters change nothing, and the result
-is the concatenation of what the reference finds over each denominator of the list: given a list $l$
-such that the list of the shape is $l$ filtered by a test, every denominator of $l$ that carries a
-point passes that test and the test of the shape, and every numerator that gives a point passes the
-class word and the tables, the run gives the reference over $l$ (Theorem~\ref{thm:run_reference},
-\verb|Ratpoints.Sieve.toList_run_sieveRun_eq_flatMap|); the points at infinity come from the
-search.
+array size $A \ge 1$ and sieve entries of moduli $p > 0$, is the concatenation, over the
+denominators of the list that pass the test, of what the brute-force reference finds over the
+numerators that pass the class word and survive the sieve entries, mapped by $\mathrm{swapPoint}$
+when the flag of the reversal is set (\verb|Ratpoints.Sieve.sieveRun_spec|,
+\verb|Ratpoints.Sieve.toList_run_sieveRun|). For sound sieve entries
+(Definition~\ref{def:SieveEntry}) and the shapes of Lemma~\ref{lem:shape_dens}, the filters change
+nothing, and the result is the concatenation of what the reference finds over each denominator of
+the list: given a list $l$ such that the list of the shape is $l$ filtered by a test, every
+denominator of $l$ that carries a point passes that test and the test of the shape, and every
+numerator that gives a point passes the class word and survives the sieve entries, the run gives the
+reference over $l$ (Theorem~\ref{thm:run_reference},
+\verb|Ratpoints.Sieve.toList_run_sieveRun_eq_flatMap|); the points at infinity come from the search.
 
 \section{The search and the theorems}\label{sec:denSearch}
 
@@ -662,9 +664,10 @@ among them, with the frame of the block that sets up the run (\csource{find_poin
 \end{proof}
 
 Theorem~\ref{thm:findPoints_perm} states the permutation, and Theorem~\ref{thm:findPoints}
-membership, no duplicates and the set of elements, for every option. The refusals, the structure
-\verb|Params|, its well-formedness and the statements that comparator certifies are those of
-stage~D.
+membership, no duplicates and the set of elements, for every option. The refusals and the statements
+that comparator certifies are those of stage~D; the structure \verb|Params| and its well-formedness,
+which stage~E left as they were, gain the number of primes examined and the composite moduli with
+stage~F (Chapter~\ref{chap:tables}).
 
 \section{The command-line program and the differential tests}\label{sec:denCli}
 

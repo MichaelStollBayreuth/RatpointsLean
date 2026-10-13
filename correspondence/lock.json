@@ -439,6 +439,30 @@
         "Ratpoints.makeModulus?"
       ]
     },
+    "find_points.c:3036-3062": {
+      "hash": "69c29f6fa8a200280092463cbd149fa2b9611df61619ab7aede1f807c0cfd14d",
+      "owners": [
+        "excluded (memory)"
+      ]
+    },
+    "find_points.c:3073-3087": {
+      "hash": "d42f48b46e8f7866e7ceaaa2573eea9e9111193a1868459e49595bfa08113c16",
+      "owners": [
+        "excluded (instrumentation)"
+      ]
+    },
+    "find_points.c:3089-3095": {
+      "hash": "200a50fe67f211cfb4091ded3c807e293b6f8095b4d7ed4b7a888df1506bc3af",
+      "owners": [
+        "excluded (instrumentation)"
+      ]
+    },
+    "find_points.c:3098-3100": {
+      "hash": "a3b5f7884505a0ab0e7e1197e8066398faf91d7694be219b3d18daef763ac505",
+      "owners": [
+        "excluded (instrumentation)"
+      ]
+    },
     "find_points.c:3102-3103": {
       "hash": "29b16fda1eed481e57796aeaa61e2c9f43d7dfecc0653d48d74f3517db4f6186",
       "owners": [
@@ -1343,6 +1367,12 @@
         "Ratpoints.Sieve.SieveEntry.row"
       ]
     },
+    "init.c:299-353": {
+      "hash": "3cea9e3513b4c48d46d55bfba611ced2a95c6909de191d05a6a83840568d388b",
+      "owners": [
+        "excluded (instrumentation)"
+      ]
+    },
     "init.c:359-386": {
       "hash": "ac02b08c884451446e48a37f67e1ad03ac0d1a9fa7237a98b92a7fb156d92bc4",
       "owners": [
@@ -1353,6 +1383,12 @@
       "hash": "d0781bcdcc7a9187fffbaa0232622bdef27c7ecd977c6d8c5a187b30f409820b",
       "owners": [
         "Ratpoints.Sieve.SieveEntry.row"
+      ]
+    },
+    "init.c:388-390": {
+      "hash": "267265a1f92564b257110bb944ec8f6938028302179177cbe0df77bd8caeda1d",
+      "owners": [
+        "excluded (instrumentation)"
       ]
     },
     "init.c:391-393": {
@@ -1390,6 +1426,12 @@
       "hash": "525f48f361ea9b086f3da5fe443b28cf9d8362ffcc4a8b83298f57726be433a4",
       "owners": [
         "Ratpoints.Sieve.SieveEntry.row"
+      ]
+    },
+    "init.c:431-442": {
+      "hash": "991def154852044ab5d78559fc7de1618d39ee7c1a5932c8e54fdb245b450a8a",
+      "owners": [
+        "excluded (instrumentation)"
       ]
     },
     "init.c:443-445": {

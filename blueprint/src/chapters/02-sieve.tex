@@ -140,16 +140,16 @@ it; the runs of the executable need no such reading, since \verb|wf_sieveParams|
 main theorems, shows that every parameter set the command line produces is well-formed, which also
 rules out a well-formedness that nothing satisfies. C1 reads only the moduli and treats all stages
 alike, and C2 reads the array size too (Definition~\ref{def:arraySize}); the bound on the forbidden
-divisors and the Jacobi switch are read since stage~E, and the cut points and the number of primes
-examined from stage~F on, and further choices (the block length) join \verb|Params| with the
-components that use them. Well-formedness constrains a field only as far as its component needs it
-to be meaningful. The constants of the build that these definitions read, the size in bits of the
-moduli and the defaults of \verb|-p| and \verb|-F|, are definitions of the model like
-$\mathrm{maxDegree}$ (Definition~\ref{def:maxDegree}), and no proof depends on their values:
-\verb|wf_sieveParams| needs only that $\mathrm{numPrimes}$, the number of primes of the table below
-$\mathrm{maxPrimeEven}$, is at most its size, and that these primes come first in the table, which
-is sorted (Definition~\ref{def:barrett}): the moduli that the options give are among them, each a
-prime whose only divisor above $1$ is itself.
+divisors and the Jacobi switch are read since stage~E, the number of primes examined since stage~F1
+(Chapter~\ref{chap:tables}), and the cut points from stage~F2 on, and further choices (the block
+length) join \verb|Params| with the components that use them. Well-formedness constrains a field
+only as far as its component needs it to be meaningful. The constants of the build that these
+definitions read, the size in bits of the moduli and the defaults of \verb|-p| and \verb|-F|, are
+definitions of the model like $\mathrm{maxDegree}$ (Definition~\ref{def:maxDegree}), and no proof
+depends on their values: \verb|wf_sieveParams| needs only that $\mathrm{numPrimes}$, the number of
+primes of the table below $\mathrm{maxPrimeEven}$, is at most its size, and that these primes come
+first in the table, which is sorted (Definition~\ref{def:barrett}): the moduli that the options give
+are among them, each a prime whose only divisor above $1$ is itself.
 
 \section{The table of a prime}\label{sec:primeTables}
 
@@ -254,15 +254,18 @@ The model follows the rules of the translation throughout. A C \verb|long| is an
 component that computes in \verb|long|s: since stage~D for the helper \verb|mod| and the negations
 of the map of a reversed search (Definition~\ref{def:useCLong}), and from stage~F on for the
 faithful components of the sieve. The remainder \verb|mod()| of the C code is Lean's Euclidean
-\verb|%|, but in the table of a prime with the exit, which models it as it is and proves it equal to
-\verb|%| (Definition~\ref{def:useCLong}). The tables that the build of ratpoints generates (the
-squares, the inverses, the row of $0$) are Lean functions with lemmas that they compute what they
-claim, checked against the generated header by \verb|#guard| examples, and stage~F will check them
-as a whole against its faithful rows. Each loop of the sieve is a definition of type \verb|Id α|
-that its callers bind with \verb|←|, so that its contract, an \verb|@[spec]| theorem proved with the
-program logic of Lean core and with loop invariants that are named definitions, applies at the call;
-only \verb|findPoints| runs a component with \verb|Id.run|. The tables of a prime are folds and
-maps, specified by ordinary lemmas.
+\verb|%|, but in the table of a prime with the exit and the tables of a prime power, which model it
+as it is and prove it equal to \verb|%| (Definitions~\ref{def:useCLong} and~\ref{def:examinePower}).
+The tables that the build of ratpoints generates (the squares, the inverses, the row of $0$) are
+Lean functions with lemmas that they compute what they claim, checked against the generated header
+by \verb|#guard| examples, and stage~F will check them as a whole against its faithful rows. Each
+loop of the sieve is a definition of type \verb|Id α| that its callers bind with \verb|←|, so that
+its contract, an \verb|@[spec]| theorem proved with the program logic of Lean core and with loop
+invariants that are named definitions, applies at the call; only \verb|findPoints| runs a component
+with \verb|Id.run|. The reference table of a prime (Definition~\ref{def:examinePrime}) is made of
+folds and maps, specified by ordinary lemmas; the table with the exit and the tables of a prime
+power, which loop over the residues, are components of type \verb|Id| with their contracts
+(Lemmas~\ref{lem:examinePrime_eq} and~\ref{lem:power_admits}).
 
 \begin{definition}[The sieve of one denominator]\label{def:sieveDen}
   \uses{def:SieveEntry}
@@ -352,9 +355,10 @@ maps, specified by ordinary lemmas.
   \csource{find_points.c}{4857}{4892}, whose restriction of the search region is stage~H); and run
   the search of the polynomial that the check hands on (Definition~\ref{def:searchPoints}), with its
   flag of the reversal: the 2-adic information, no points when no class of the denominators modulo
-  $64$ admits a numerator and there is no point at infinity, the table of each modulus, no points
-  when the curve has none modulo one of them, and else the points at infinity followed by the points
-  of the denominators in the order of the loop of the search, found with pieces of at most
+  $64$ admits a numerator and there is no point at infinity, the tables of the examined primes and
+  the sieve entry of each modulus (Definition~\ref{def:sievingInfo}), no points when the curve has
+  none modulo a prime examined on the way, and else the points at infinity followed by the points of
+  the denominators in the order of the loop of the search, found with pieces of at most
   $\mathrm{arraySizeAt}(H)$ bit arrays, the array size of the parameters, each mapped back to the
   caller's curve after a reversal (\csource{find_points.c}{5219}{5220}).
 \end{definition}
@@ -371,14 +375,11 @@ paragraph of the component whose range holds it:
     choose the rows, which ratpoints computes once per denominator before it calls \verb|sift| (F);
   \item every numerator from $-H$ to $H$ for the search region (H) and the packing of the 2-adic
     classes (F);
-  \item one table per prime and every modulus applied to every numerator before the test for common
-    factors, for the composite moduli, the packing and the three stages (F), whose third stage runs
-    after the test for common factors and skips the primes that divide $b$, and for their
-    correction between the blocks of the run from the counts of the survivors (I);
+  \item every modulus applied to every numerator before the test for common factors, for the packing
+    and the three stages (F), whose third stage runs after the test for common factors and skips the
+    primes that divide $b$, and for their correction between the blocks of the run from the counts
+    of the survivors (I);
   \item a plain $\gcd$ for the binary $\gcd$ of \verb|relprime|, whose loop body has no branch (F);
-  \item Horner's rule modulo $p$ reduced at every step for the reduction of ratpoints on a fixed
-    schedule (F), in the table of a prime, whose two paths through \verb|long|s and GMP integers and
-    whose exit stage~D models (Definition~\ref{def:examinePrimeExit});
   \item the products $c_k b^{d-k}$ computed for every denominator, where ratpoints computes them
     when the first survivor reaches the check;
   \item the flag of the reversal as an argument of the points at infinity, for the bit
@@ -440,9 +441,9 @@ meets; ratpoints refuses it before it gets there, and so does $\mathrm{findPoint
   \leanok
   By the contract of the denominators (Definition~\ref{def:sieveRun}) the run gives the
   concatenation, over the denominators of the list of the shape that pass its test, of what the
-  reference finds over the numerators that pass the class word and survive the tables, mapped when
-  the flag is set. Since every numerator of a point passes these filters, and every denominator of
-  a point of $l$ passes the test of the list and that of the shape, the filters change nothing
+  reference finds over the numerators that pass the class word and survive the sieve entries, mapped
+  when the flag is set. Since every numerator of a point passes these filters, and every denominator
+  of a point of $l$ passes the test of the list and that of the shape, the filters change nothing
   (Lemma~\ref{lem:flatMap_sound}).
 \end{proof}
 
@@ -518,8 +519,9 @@ and the output of ratpoints; the contracts, without Mathlib, are in
 \verb|Ratpoints/Proof/Sieve.lean|, and that of the run, since stage~E, in
 \verb|Ratpoints/Proof/Denominators.lean|, with Mathlib; the primes of the table and the
 well-formedness in \verb|Ratpoints/Proof/Params.lean|, the tables and the soundness of the rows in
-\verb|Ratpoints/Proof/Tables.lean|, and the main theorems in \verb|Ratpoints/Proof/FindPoints.lean|,
-with the guards on their axioms.
+\verb|Ratpoints/Proof/Tables.lean| (since stage~F1 those of the prime powers and the sieve entry of
+a modulus in \verb|Ratpoints/Proof/Moduli.lean|), and the main theorems in
+\verb|Ratpoints/Proof/FindPoints.lean|, with the guards on their axioms.
 
 \section{The evidence}\label{sec:sieve-evidence}
 

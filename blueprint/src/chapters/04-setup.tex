@@ -497,20 +497,21 @@ Sturm step, whose restriction of the search region is stage~H's.
 \end{proof}
 
 Theorem~\ref{thm:run_reference} reduces the run of any polynomial with its degree to the reference:
-for an array size at least $1$, moduli $p > 0$ and filters that let every point through, it gives
-the points of the reference over its denominators, mapped by $\mathrm{swapPoint}$ when the flag of
-the reversal is set; Definition~\ref{def:searchPoints} rests on it, with the lists and the tests of
-the shapes (Lemma~\ref{lem:shape_dens}), the 2-adic exit (Lemma~\ref{lem:twoAdic_exit}) and the exit
-of the tables. Theorem~\ref{thm:findPoints} has membership, no duplicates and the set of elements,
-for every option, from Theorem~\ref{thm:findPoints_perm}, and Theorem~\ref{thm:refusals} the
-refusals, with guards on their axioms. Comparator certifies the two main theorems with the options
-argument, both refusal theorems and \verb|wf_sieveParams|; the challenge restates $\Phi_c$ verbatim,
-as it restates $F_c$, takes the options from the model, and has the refusal theorem with the Sturm
-step off too, so that a $\mathrm{findPoints}$ that refused every input under \verb|-s| would not
-pass. Since the challenge needs \verb|Squarefree|, the specification imports
-\verb|Mathlib.Algebra.Squarefree.Basic|, so that the challenge still imports, besides the model,
-exactly the public imports of the specification. The structure \verb|Params| and its well-formedness
-are those of stage~C2.
+for an array size at least $1$, sieve entries of moduli $p > 0$ and filters that let every point
+through, it gives the points of the reference over its denominators, mapped by $\mathrm{swapPoint}$
+when the flag of the reversal is set; Definition~\ref{def:searchPoints} rests on it, with the lists
+and the tests of the shapes (Lemma~\ref{lem:shape_dens}), the 2-adic exit
+(Lemma~\ref{lem:twoAdic_exit}) and the exit of the tables. Theorem~\ref{thm:findPoints} has
+membership, no duplicates and the set of elements, for every option, from
+Theorem~\ref{thm:findPoints_perm}, and Theorem~\ref{thm:refusals} the refusals, with guards on their
+axioms. Comparator certifies the two main theorems with the options argument, both refusal theorems
+and \verb|wf_sieveParams|; the challenge restates $\Phi_c$ verbatim, as it restates $F_c$, takes the
+options from the model, and has the refusal theorem with the Sturm step off too, so that a
+$\mathrm{findPoints}$ that refused every input under \verb|-s| would not pass. Since the challenge
+needs \verb|Squarefree|, the specification imports \verb|Mathlib.Algebra.Squarefree.Basic|, so that
+the challenge still imports, besides the model, exactly the public imports of the specification.
+Stage~D left the structure \verb|Params| and its well-formedness as stage~C2 had them; stage~F adds
+the number of primes examined and the composite moduli (Chapter~\ref{chap:tables}).
 
 \section{The command-line program and the differential tests}\label{sec:setupCli}
 
