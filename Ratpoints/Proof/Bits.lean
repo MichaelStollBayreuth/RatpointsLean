@@ -65,6 +65,7 @@ algorithm, and the divisors of the gcd of `b` and a residue `f ≡ a (mod b)`.
   entry, the same as before when that entry is the default value.
 * `Array.getElem!_foldl_setIfInBounds`: the entries of an array of Booleans that a fold of
   `setIfInBounds · true` marks.
+* `Array.forall_mem_toList_push`: a property of the members of the list of an array after a push.
 * `Array.mem_of_forIn_toList_eq_append_cons`: the cursor of a loop over an array is one of its
   entries.
 * `List.foldl_gcd_natAbs_dvd_natAbs`: the gcd of the absolute values of the entries of a list, as a
@@ -179,6 +180,13 @@ theorem getElem!_foldl_setIfInBounds {α : Type u} (l : List α) (f : α → Nat
       getElem!_pos (w.setIfInBounds (f j) true) t (by simpa using ht),
       Array.getElem_setIfInBounds ht]
     grind
+
+/-- A property of the members of the list of an array holds after a push of a member that has it:
+`Array.forall_mem_push` for the members of the list, as invariants of loops state them. -/
+theorem forall_mem_toList_push {α : Type u} {xs : Array α} {x : α} {P : α → Prop}
+    (h : ∀ y ∈ xs.toList, P y) (hx : P x) : ∀ y ∈ (xs.push x).toList, P y := by
+  rw [Array.toList_push]
+  exact List.forall_mem_append.mpr ⟨h, List.forall_mem_singleton.mpr hx⟩
 
 /-- The cursor of a loop over the array `xs` is an entry of `xs`. -/
 theorem mem_of_forIn_toList_eq_append_cons {α : Type u} {xs : Array α} {pref suff : List α}

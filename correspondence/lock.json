@@ -193,6 +193,30 @@
         "Ratpoints.Sieve.examinePower"
       ]
     },
+    "find_points.c:2362-2362": {
+      "hash": "7024eb87abc50e4e1b2f5e5f264f8f159d1c59702d3a28387ddb7cab7c863261",
+      "owners": [
+        "Ratpoints.modulusFactors"
+      ]
+    },
+    "find_points.c:2365-2365": {
+      "hash": "949fb38d8b31e0ab08e2a3aa61eef17a9a97b44f471da410d2229a0091631632",
+      "owners": [
+        "Ratpoints.modulusFactors"
+      ]
+    },
+    "find_points.c:2369-2386": {
+      "hash": "e69c4b67b08e1010f59644657cf46bf71656e5a737ce04b79f5f6269f9938971",
+      "owners": [
+        "Ratpoints.modulusFactors"
+      ]
+    },
+    "find_points.c:2396-2400": {
+      "hash": "09cbeb4fa6a29d22be112c4b51039a546394a5571d687768995256c9ae2dc365",
+      "owners": [
+        "Ratpoints.modulusFactors"
+      ]
+    },
     "find_points.c:2533-2536": {
       "hash": "f0253392e801d72d465ab3916720c4d8899adcf9f45d852502cf85eaaa54bdc3",
       "owners": [

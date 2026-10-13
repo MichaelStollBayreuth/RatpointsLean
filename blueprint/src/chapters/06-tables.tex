@@ -288,7 +288,8 @@ which $\mathrm{maxPrimeEven} \le 2^{32}$ gives.
 
 \begin{definition}[The factors of a modulus]\label{def:modulusFactors}
   \uses{def:primeTable}
-  Proposed names: \lname{Ratpoints.modulusFactors}.
+  \lean{Ratpoints.modulusFactors}
+  \leanok
   The factors of $m$ over the first $\mathrm{numPrimes}$ primes of the table, as \verb|add_moduli|
   finds them: for the primes $p$ in turn while the cofactor is above $1$, a cofactor below $p^2$,
   which has no odd prime factor below $p$ and so, for odd $m$, is a prime, is looked up among the
@@ -302,17 +303,9 @@ which $\mathrm{maxPrimeEven} \le 2^{32}$ gives.
 \end{definition}
 
 \begin{lemma}[The factors of a modulus]\label{lem:modulusFactors}
-  \uses{def:modulusFactors, def:barrett}
-  Proposed names: \lname{Ratpoints.ModulusFactorsInvariant},
-  \lname{Ratpoints.ModulusFactorsPowInvariant}, \lname{Ratpoints.modulusFactors\_spec},
-  \lname{Ratpoints.eq\_mul\_prod\_run\_modulusFactors},
-  \lname{Ratpoints.pairwise\_lt\_map\_fst\_run\_modulusFactors},
-  \lname{Ratpoints.lt\_numPrimes\_and\_one\_le\_of\_mem\_run\_modulusFactors},
-  \lname{Ratpoints.prod\_run\_modulusFactors\_of\_snd\_eq\_one},
-  \lname{Ratpoints.pow\_dvd\_of\_mem\_run\_modulusFactors},
-  \lname{Ratpoints.getElem!\_primeTable\_le\_of\_le},
-  \lname{Ratpoints.snd\_run\_modulusFactors\_lt\_mul\_self\_of\_dvd},
-  \lname{Ratpoints.snd\_run\_modulusFactors\_eq\_one}.
+  \uses{def:modulusFactors}
+  \lean{Ratpoints.ModulusFactorsInvariant, Ratpoints.ModulusFactorsPowInvariant, Ratpoints.modulusFactors_spec, Ratpoints.eq_mul_prod_run_modulusFactors, Ratpoints.pairwise_lt_map_fst_run_modulusFactors, Ratpoints.lt_numPrimes_and_one_le_of_mem_run_modulusFactors, Ratpoints.prod_run_modulusFactors_of_snd_eq_one, Ratpoints.pow_dvd_of_mem_run_modulusFactors, Ratpoints.getElem!_primeTable_le_of_le, Ratpoints.snd_run_modulusFactors_lt_mul_self_of_dvd, Ratpoints.snd_run_modulusFactors_eq_one}
+  \leanok
   $m$ is the cofactor times the product of the powers of the primes at the positions; the positions
   increase and are below $\mathrm{numPrimes}$, the exponents are at least $1$, and a prime of the
   table that divides the cofactor is above its square root. So each factor divides $m$, and if every divisor $q > 1$ of $m$ is divisible
@@ -321,6 +314,7 @@ which $\mathrm{maxPrimeEven} \le 2^{32}$ gives.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   An invariant of the loop over the primes and one of the inner loop that divides a prime off,
   which ends since the cofactor decreases. No prime passed divides the cofactor; at a stop below
   $p^2$ the lookup shows that the cofactor is none of the primes from $p$ on, so a cofactor above

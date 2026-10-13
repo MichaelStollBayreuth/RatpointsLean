@@ -29,6 +29,7 @@ divisors), the bound on the forbidden divisors and the switch of the Jacobi test
 
 ## Main definitions
 
+* `Ratpoints.modulusFactors`: the factors of a modulus over the primes of the table.
 * `Ratpoints.Params`: the sieving parameters.
 * `Ratpoints.Params.WF`: the parameters are well-formed.
 * `Ratpoints.Params.arraySizeAt`: at most how many bit arrays a piece of the numerators has, for a
@@ -41,6 +42,53 @@ divisors), the bound on the forbidden divisors and the switch of the Jacobi test
 @[expose] public section
 
 namespace Ratpoints
+
+/-- The factors of `m` over the first `Ratpoints.numPrimes` primes of `Ratpoints.primeTable`, as
+`add_moduli` finds them, and the cofactor that is left: for the primes `p` of the table in turn,
+while the cofactor is above `1`, a cofactor below `p ^ 2`, which has no odd prime factor below `p`
+and so, for odd `m`, is a prime, is looked up among the primes from `p` on and, when it is one of
+them, taken as a factor with the exponent `1`, which leaves the cofactor `1`, and otherwise left as
+it is; else `p` is divided off as often as it divides, giving the factor `(pn, e)` with the position
+`pn` of `p` in the table and the exponent `e ≥ 1`. The factorization is complete exactly when the
+cofactor is `1`; the factors are in the order of the table. The table holds no `2`, so an even
+modulus never factors completely, as `add_moduli` offers odd `m` only.
+
+C: `find_points.c:2362`, `find_points.c:2365`, `find_points.c:2369-2386`,
+`find_points.c:2396-2400`
+
+Deviation: the positions in the table and the exponents as a list of pairs, for the codes `fac` of
+the factors and their count `nf`, with no bound `RP_MAX_FACTORS` on their number and no bound 64 on
+the positions (no mask of the primes involved, which serves the choice of the moduli), and with the
+position of the prime for a prime power, where the code of a prime power is that of its entry
+`pws[idx]`, which `add_moduli` examines when it first needs it (lines 2387-2395, which the sieve
+entry of a modulus models with stage F); no densities `r` of the factors (lines 2384 and 2396) and
+no refusal of a prime factor whose prime says nothing (line 2383), which serve the choice of the
+moduli (stage I), the sieve entry of a modulus taking the table of such a factor from the loop of
+the tables (stage F); the cofactor returned, for the flag `ok` and the test that the factorization
+is complete (line 2400), which it is for a modulus `m > 0` each of whose divisors above `1` is
+divisible by one of the first `Ratpoints.numPrimes` primes of the table
+(`Ratpoints.snd_run_modulusFactors_eq_one`), as the moduli of well-formed parameters are with
+stage F; the prime below `p ^ 2` looked up by `List.find?`, for the loop that steps over the primes
+below it; the first `Ratpoints.numPrimes` primes of the table, for the primes looked at, `prime[0]`
+to `prime[pn_lim - 1]`; natural numbers for the `long`s. -/
+def modulusFactors (m : Nat) : Id (List (Nat × Nat) × Nat) := do
+  let mut rest := m
+  let mut fac : Array (Nat × Nat) := #[]
+  for pn in [0:numPrimes] do
+    if rest ≤ 1 then break
+    let p := primeTable[pn]!
+    if rest < p * p then
+      if let some pn' := (List.range' pn (numPrimes - pn)).find? (primeTable[·]! == rest) then
+        fac := fac.push (pn', 1)
+        rest := 1
+      break
+    if rest % p = 0 then
+      let mut e := 0
+      while rest % p = 0 do
+        rest := rest / p
+        e := e + 1
+      fac := fac.push (pn, e)
+  return (fac.toList, rest)
 
 /-- The sieving parameters: the free choices of the sieve, which the theorems quantify over. The
 moduli are cut into three stages: the first `sp1` of them, then those up to `sp2`, then the
@@ -173,6 +221,14 @@ def defaultParams : Params := sieveParams {}
 
 -- A well-formedness that fails: a modulus that is not a prime of the table.
 #guard !decide (Params.WF ⟨[3, 9], 0, 0, 64, true, 0⟩)
+
+-- The factors of moduli over the table: positions and exponents, and the cofactor; for 6, 771 and
+-- 1024 the cofactor below the square of the next prime, 6, 257 and 1024, is no prime among the
+-- first `numPrimes`.
+#guard [9, 15, 245, 231, 255, 251, 1, 0, 6, 3 * 257, 2 ^ 10].map (Id.run <| modulusFactors ·) ==
+  [([(0, 2)], 1), ([(0, 1), (1, 1)], 1), ([(1, 1), (2, 2)], 1), ([(0, 1), (2, 1), (3, 1)], 1),
+    ([(0, 1), (1, 1), (5, 1)], 1), ([(52, 1)], 1), ([], 1), ([], 0), ([], 6),
+    ([(0, 1)], 257), ([], 1024)]
 
 -- The array size: `2 ⌈H / 64⌉` up to the default 256, which it reaches at `H = 8129`; the default
 -- for the field `0`; a field of 10; and the cap `2 ^ 20` from `H = 2 ^ 25 + 1` on.
