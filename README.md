@@ -49,9 +49,11 @@ may be prime powers, with the tables of `examine_power` and the inverses by the 
 algorithm, and products of prime powers, whose rows are those of their factors, combined, so that
 the rows of every modulus let every point through without the Chinese remainder theorem; the range
 obligations of the C `long`s of these computations are lemmas. The parameters gain the number of
-primes examined, and their well-formedness admits the composite moduli below `2^maxBitsInPrime` that
-factor over the table; the main theorems, the refusal theorems and the challenge of Comparator keep
-their statements. The differential tests compare every point list in its order: 3219 comparisons in
+primes examined, and their well-formedness, which the challenge of Comparator imports from the
+model, now admits the moduli below `2^maxBitsInPrime` that factor over the first `numPrimes` primes
+of the table, composite ones included, and no longer the primes of the table from
+`2^maxBitsInPrime` on; the main theorems, the refusal theorems and the challenge keep their text, and
+change only through the parameters they quantify over. The differential tests compare every point list in its order: 3219 comparisons in
 the default suites, and 13 in the suite run locally. The blueprint and the API documentation will be
 at <https://michaelstollbayreuth.github.io/RatpointsLean/> once the repository is public.
 

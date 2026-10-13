@@ -105,20 +105,19 @@ are no points modulo $p$ (D) and the options of the output (G) come in their sta
   \csource{main.c}{352}{352}), with the defaults and caps of ratpoints
   (\csource{ratpoints.h}{333}{340}, \csource{ratpoints.h}{345}{352},
   \csource{find_points.c}{4643}{4649}, \csource{find_points.c}{4655}{4656},
-  \csource{find_points.c}{4662}{4665}): $q = \min(k, \mathrm{numPrimes})$ primes are taken, for
-  the value $k \ge 0$ of \verb|-p| or else $k = \mathrm{defaultNumPrimes} = 30$, and the first $q$
+  \csource{find_points.c}{4662}{4665}): $q = \min(k, \mathrm{numPrimes})$ primes are taken, for the
+  value $k \ge 0$ of \verb|-p| or else $k = \mathrm{defaultNumPrimes} = 30$, and the first $q$
   primes of the table are examined, the number \verb|pn_lim| with which \verb|sieving_info| starts
-  (\csource{find_points.c}{2566}{2566});
-  $s_2 = \min(N, q)$ and $s_1 = \min(n, s_2)$ for the values of \verb|-N| and \verb|-n|,
-  $s_2 = q$ and $s_1 = s_2$ when they are absent or negative; the moduli are the first
-  $\min(q + P, \mathrm{numPrimes})$ primes of the table for the value $P \ge 0$ of \verb|-P|,
-  the first $q$ when it is absent or negative; at most $\min(F, 171)$ forbidden divisors, for
-  the value $F \ge 0$ of \verb|-F| or else $F = \mathrm{defaultMaxForbidden} = 64$; the Jacobi
+  (\csource{find_points.c}{2566}{2566}); $s_2 = \min(N, q)$ and $s_1 = \min(n, s_2)$ for the values
+  of \verb|-N| and \verb|-n|, $s_2 = q$ and $s_1 = s_2$ when they are absent or negative; the moduli
+  are the first $\min(q + P, \mathrm{numPrimes})$ primes of the table for the value $P \ge 0$ of
+  \verb|-P|, the first $q$ when it is absent or negative; at most $\min(F, 171)$ forbidden divisors,
+  for the value $F \ge 0$ of \verb|-F| or else $F = \mathrm{defaultMaxForbidden} = 64$; the Jacobi
   test unless \verb|-j| is the last of \verb|-j| and \verb|-J|; and pieces of at most
-  $\mathrm{defaultArraySize} = 256$ bit arrays, the array size that the program sets when it
-  reads the arguments and again before the search (\csource{main.c}{347}{347},
-  \csource{main.c}{221}{222}). The default parameters are those of no options: the first 30
-  primes, all in the first stage. Every parameter set made this way is well-formed.
+  $\mathrm{defaultArraySize} = 256$ bit arrays, the array size that the program sets when it reads
+  the arguments and again before the search (\csource{main.c}{347}{347},
+  \csource{main.c}{221}{222}). The default parameters are those of no options: the first 30 primes,
+  all in the first stage. Every parameter set made this way is well-formed.
 \end{definition}
 
 \verb|Params| holds the choices that the theorems quantify over: which moduli the sieve uses, in
@@ -477,12 +476,14 @@ statements on 2026-10-11, and again on the model of stage E on 2026-10-12): the 
 them with \verb|sorry| over \verb|findPoints|, \verb|Options|, \verb|Params|, \verb|Params.WF|,
 \verb|SieveOptions|, \verb|sieveParams| and \verb|maxDegree|, imported from the model, never
 restated, since a definition of the model elaborates without Mathlib to other instance terms. Each
-main theorem has a guard on its axioms, which are the standard ones. The contracts of the sieve need
-only the program logic of Lean core and stay in files without Mathlib, so that their \verb|grind|
-calls see only the lemmas of core, untouched by Mathlib's updates; the contract of the run over the
-denominators of a shape, with its plain equation \verb|toList_run_sieveRun|, is in the file of the
-run, with Mathlib, like the other contracts of stage~E (Chapter~\ref{chap:denominators}). The
-soundness of the rows needs Mathlib, through $\ZZ/p\ZZ$.
+main theorem has a guard on its axioms, which are the standard ones. The contracts of the sieve of
+stages C1 to D need only the program logic of Lean core and stay in files without Mathlib, so that
+their \verb|grind| calls see only the lemmas of core, untouched by Mathlib's updates; the contract
+of the run over the denominators of a shape, with its plain equation \verb|toList_run_sieveRun|, is
+in the file of the run, with Mathlib, like the other contracts of stage~E
+(Chapter~\ref{chap:denominators}) and those of the tables and the moduli of stage~F1, which sit next
+to the lemmas they serve (Chapter~\ref{chap:tables}). The soundness of the rows needs Mathlib,
+through $\ZZ/p\ZZ$.
 
 \section{The command-line program and the differential tests}\label{sec:sieveCli}
 

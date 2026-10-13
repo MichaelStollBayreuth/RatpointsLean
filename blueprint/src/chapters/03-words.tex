@@ -163,11 +163,12 @@ model it is $1$.
   The rows of the residues $r = 0, \dots, p - 1$, each made when a denominator first needs it, as a
   suspended computation that runs once, and kept for the run, which makes these computations once
   (Definition~\ref{def:sieveRun}). They stand for the field \verb|sieve| of the sieve entry of
-  ratpoints, whose row of $0$ \verb|examine_prime| installs from the build
-  (Definition~\ref{def:examinePrimeExit}) and whose other rows \verb|sift| builds when first needed;
-  the model makes the row of $0$ when first needed too. The row of $b$ is that of $b \bmod p$. For
-  the denominator at hand, each modulus comes with its row, as in the \verb|sieve_spec| of the C
-  code (\csource{rp-private.h}{378}{379}), without the offset and the pointers into the row.
+  ratpoints, whose row of $0$, for a prime, \verb|examine_prime| installs from the build
+  (Definition~\ref{def:examinePrimeExit}), and whose other rows, and every row of a prime power or a
+  product, \verb|sift| builds when first needed; the model makes the row of $0$ when first needed
+  too. The row of $b$ is that of $b \bmod p$. For the denominator at hand, each modulus comes with
+  its row, as in the \verb|sieve_spec| of the C code (\csource{rp-private.h}{378}{379}), without the
+  offset and the pointers into the row.
 \end{definition}
 
 \section{Words and bit arrays}\label{sec:wordOps}

@@ -313,18 +313,18 @@ $w_j = v_p(c_{d - j})$.
   For a prime $p \mid c_d$ and the coefficients modulo $p$, which \verb|examine_prime| hands back to
   its caller: the valuation $w_j$ and the unit part $r_j$ modulo $p$, its sign included, of each
   nonzero $c_{d - j}$, the valuation $0$ and the residue of $c_{d - j}$ when that is not $0$
-  (\csource{find_points.c}{2198}{2200}, \csource{find_points.c}{2204}{2215}); for $m = 1, 2, \dots$ while $p^m \le b_{\mathrm{high}}$, bit
-  $m$ of the mask, a natural number, set when the least $w_j + j m$ is taken at one $j_0$ only and
-  is odd, or $j_0$ is even and $r_{j_0}$ is not a square modulo $p$
-  (\csource{find_points.c}{2218}{2228}; \csource{find_points.c}{2192}{2197},
+  (\csource{find_points.c}{2198}{2200}, \csource{find_points.c}{2204}{2215}); for $m = 1, 2, \dots$
+  while $p^m \le b_{\mathrm{high}}$, bit $m$ of the mask, a natural number, set when the least
+  $w_j + j m$ is taken at one $j_0$ only and is odd, or $j_0$ is even and $r_{j_0}$ is not a square
+  modulo $p$ (\csource{find_points.c}{2218}{2228}; \csource{find_points.c}{2192}{2197},
   \csource{find_points.c}{2201}{2203}, \csource{find_points.c}{2216}{2217},
   \csource{find_points.c}{2229}{2234}); and the mask of every $m \ge 1$ with
   $p^m \le b_{\mathrm{high}}$ (\csource{find_points.c}{2632}{2641}). The contracts: the entries
-  $(w_j, r_j)$ describe the coefficients at $p$ when the coefficients modulo $p$ are the residues
-  of $c_0, \dots, c_d$; bit $m$ of the mask is set exactly when $m \ge 1$,
-  $p^m \le b_{\mathrm{high}}$ and the test at $m$ excludes it, which it does only in the two cases
-  above; for an odd prime and a \verb|long| $b_{\mathrm{high}}$ every such $m$ is below $40$, so
-  that the bound $m < 63$ of the C code never binds and both masks are below $2^{40}$.
+  $(w_j, r_j)$ describe the coefficients at $p$ when the coefficients modulo $p$ are the residues of
+  $c_0, \dots, c_d$; bit $m$ of the mask is set exactly when $m \ge 1$, $p^m \le b_{\mathrm{high}}$
+  and the test at $m$ excludes it, which it does only in the two cases above; for an odd prime and a
+  \verb|long| $b_{\mathrm{high}}$ every such $m$ is below $40$, so that the bound $m < 63$ of the C
+  code never binds and both masks are below $2^{40}$.
 \end{definition}
 
 \begin{lemma}[The forbidden valuations are sound]\label{lem:forbiddenValuations}
@@ -393,10 +393,9 @@ $w_j = v_p(c_{d - j})$.
   For a prime $p \mid c_d$ this is Lemma~\ref{lem:forbiddenValuations}: a prime tested with words
   has every valuation $m \ge 1$ with $p^m \le b_{\mathrm{high}}$ in its mask, which covers every $b$
   with $p \mid b$. For $p \nmid c_d$ with no point at infinity modulo $p$, that is with $c_d$ not a
-  square modulo $p$: if $p \mid b$, then
-  $p \nmid a$ and $F(a, b) \equiv c_d a^d$ modulo $p$, a unit that is not a square, which $y^2$ is
-  not; that $c_d$ is a square modulo every prime of $b$ that does not divide it is the argument of
-  Lemma~\ref{lem:examinePrime_none}.
+  square modulo $p$: if $p \mid b$, then $p \nmid a$ and $F(a, b) \equiv c_d a^d$ modulo $p$, a unit
+  that is not a square, which $y^2$ is not; that $c_d$ is a square modulo every prime of $b$ that
+  does not divide it is the argument of Lemma~\ref{lem:examinePrime_none}.
 \end{proof}
 
 \section{The Jacobi test}\label{sec:jacobi}
