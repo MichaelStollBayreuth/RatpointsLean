@@ -356,27 +356,23 @@ $w_j = v_p(c_{d - j})$.
   the primes of its table and as \verb|sieving_info| makes them beyond it,
   \csource{gen_find_points_h.c}{102}{134}, \csource{find_points.c}{2773}{2777}), and a prime with
   the mask of its excluded valuations (\csource{find_points.c}{166}{166}); for even $d$, the
-  examined primes $p$ in turn, while fewer than $\mathrm{maxForbidden}$ have been found, the
-  forbidden divisor of $p$ from the coefficients modulo $p$ and the entry at infinity of its table:
-  for $p \mid c_d$, the coefficient $c_d$ being $0$ modulo $p$, with a nonzero mask, $p$ with its
-  words when the mask holds every valuation that a denominator can have, and $p$ with its mask
-  otherwise; for $p \nmid c_d$, $p$ with its words when there is no point at infinity modulo $p$,
-  that is when $c_d$ is not a square modulo $p$ (\csource{find_points.c}{2627}{2631},
-  \csource{find_points.c}{2642}{2676}); then, unless $c_d$ is a square, the primes of the table from
-  the position that is the number of the examined primes on, while fewer than
-  $\mathrm{maxForbidden}$ have been found and $p^2 \le b_{\mathrm{high}}$, each with its words when
-  $(c_d / p) = -1$ (\csource{find_points.c}{2533}{2536}, \csource{find_points.c}{2561}{2562},
-  \csource{find_points.c}{2624}{2626}, \csource{find_points.c}{2677}{2677},
-  \csource{find_points.c}{2709}{2772}, \csource{find_points.c}{2778}{2789}). The examined primes are
-  the moduli of the parameters, as for the exit of Definition~\ref{def:examinePrimeExit}; the
-  coefficients modulo $p$ and the entry at infinity, which \verb|examine_prime| hands back to
-  \verb|sieving_info|, are computed again for each of them, by the Euclidean remainder and the
-  reference table (Definition~\ref{def:examinePrime}), until stage~F makes the table of a prime hand
-  them back and the forbidden divisors take them from it, prime by prime in the loop of the tables.
-  The contract, for examined primes that are primes of the table: each entry tested with words is
-  the forbidden divisor of a prime of the table, from the residues of the coefficients and the
-  entry at infinity of its reference table, or a prime of the table at which $c_d$ is not a square,
-  with its words; each valuation entry is the forbidden divisor of a prime of the table. It holds
+  forbidden divisor of a prime $p$ from the coefficients modulo $p$ and the entry at infinity that
+  its table hands back: for $p \mid c_d$, the coefficient $c_d$ being $0$ modulo $p$, with a nonzero
+  mask, $p$ with its words when the mask holds every valuation that a denominator can have, and $p$
+  with its mask otherwise; for $p \nmid c_d$, $p$ with its words when there is no point at infinity
+  modulo $p$, that is when $c_d$ is not a square modulo $p$ (\csource{find_points.c}{2627}{2631},
+  \csource{find_points.c}{2642}{2676}), which the loop of the tables records for each examined
+  prime while fewer than $\mathrm{maxForbidden}$ have been found
+  (Definition~\ref{def:examinePrimes}); then, from the lists of that loop and unless $c_d$ is a
+  square, the primes of the table from the position that is the number of the examined primes on,
+  while fewer than $\mathrm{maxForbidden}$ have been found and $p^2 \le b_{\mathrm{high}}$, each
+  with its words when $(c_d / p) = -1$ (\csource{find_points.c}{2533}{2536},
+  \csource{find_points.c}{2561}{2562}, \csource{find_points.c}{2709}{2772},
+  \csource{find_points.c}{2778}{2789}). The contract: each entry tested with words that the two
+  loops may record is the forbidden divisor of a prime of the table, from the residues of the
+  coefficients and the entry at infinity of its reference table, or a prime of the table at which
+  $c_d$ is not a square, with its words; each valuation entry is the forbidden divisor of a prime
+  of the table; from lists of such entries, the further primes add only such entries. It holds
   whatever the cap, the order of the entries and the primes of the table examined.
 \end{definition}
 
@@ -605,24 +601,24 @@ search.
 
 The search of the polynomial handed on (Definition~\ref{def:searchPoints}) does what
 Section~\ref{sec:denC} describes, in its order: the flags of the tests on the denominators, the
-divisors of the leading coefficient for odd degree, the 2-adic information and its exit, the tables
-of the moduli with their exit, the forbidden divisors for even degree with the switch of the checked
-loop, the shape, and the points at infinity followed by the run over the denominators from $1$ to
-$H$. For well-formed parameters, $H \ge 1$ and $d$ the degree of $c$, its result is the list of
-the points at infinity followed by the points of the reference over the denominators of the search
-(Definition~\ref{def:searchDens}), in their order, each mapped by $\mathrm{swapPoint}$ when the flag
-of the reversal is set, also at both exits; its node names \verb|Ratpoints.run_searchPoints| with
-this statement, uses Definitions~\ref{def:Shape} and~\ref{def:searchDens},
-Lemmas~\ref{lem:twoAdic_exit} and~\ref{lem:shape_dens} and the reduction of the run, and holds the C
-ranges of the flags and of the exits, with the frame of the loop of the tables and of the block that
-sets up the run (\csource{find_points.c}{2537}{2537},
-\csource{find_points.c}{2707}{2707}, \csource{find_points.c}{2793}{2795},
+divisors of the leading coefficient for odd degree, the 2-adic information and its exit, what
+\verb|sieving_info| computes (Definition~\ref{def:sievingInfo}), the tables of the examined primes
+with their exit, the forbidden divisors for even degree and the sieve entries of the moduli, the
+switch of the checked loop, the shape, and the points at infinity followed by the run over the
+denominators from $1$ to $H$. For well-formed parameters, $H \ge 1$ and $d$ the degree of $c$, its
+result is the list of the points at infinity followed by the points of the reference over the
+denominators of the search (Definition~\ref{def:searchDens}), in their order, each mapped by
+$\mathrm{swapPoint}$ when the flag of the reversal is set, also at both exits; its node names
+\verb|Ratpoints.run_searchPoints| with this statement, uses Definitions~\ref{def:Shape}
+and~\ref{def:searchDens}, Lemmas~\ref{lem:twoAdic_exit} and~\ref{lem:shape_dens} and the reduction
+of the run, and holds the C ranges of the flags and of the exits, the call of \verb|sieving_info|
+among them, with the frame of the block that sets up the run (\csource{find_points.c}{2793}{2795},
 \csource{find_points.c}{4573}{4573}, \csource{find_points.c}{4588}{4589},
 \csource{find_points.c}{4595}{4596}, \csource{find_points.c}{4603}{4604},
 \csource{find_points.c}{4607}{4607}, \csource{find_points.c}{4900}{4943},
 \csource{find_points.c}{4948}{4948}, \csource{find_points.c}{4954}{4963},
-\csource{find_points.c}{5116}{5116}, \csource{find_points.c}{5137}{5139},
-\csource{find_points.c}{5167}{5167}).
+\csource{find_points.c}{4992}{5012}, \csource{find_points.c}{5116}{5116},
+\csource{find_points.c}{5137}{5139}, \csource{find_points.c}{5167}{5167}).
 
 \begin{definition}[The denominators of the search]\label{def:searchDens}
   \uses{def:setupUs1, def:Shape}
@@ -696,17 +692,10 @@ Each component of this chapter differs from the C code in a stated way, recorded
     function, for the loops of divisions of the C code; the bounds of the square shapes by the exact
     integer square root, for the square root in \verb|double| corrected by a step either way, with
     the same values for the arguments $n \ge 1$ that the C code passes;
-  \item the examined primes of the forbidden divisors are the moduli of the parameters, in their
-    order, and the further primes start at the position in the table that is their number, where
-    \verb|sieving_info| examines the first \verb|num_primes| primes of the table, or more, in the
-    order of the table: the lists are those of the C code when the moduli are its examined primes in
-    increasing order, as in the program with \verb|-p| and without \verb|-P|, and otherwise the cap
-    may record other primes, and a prime may be recorded twice or not examined, which changes no
-    output, since every forbidden divisor is sound; the
-    coefficients modulo $p$ and the entry at infinity computed again, for those that
-    \verb|examine_prime| hands back, and the forbidden divisors computed after the tables of all the
-    moduli, for prime by prime in the loop of the tables, which an exit leaves (both until
-    stage~F);
+  \item the examined primes of the forbidden divisors are the first primes of the table up to the
+    number that the parameters examine, and the further primes start at that position, for the final
+    \verb|pn_lim| of \verb|sieving_info|, which it raises when the number of primes was left to the
+    library and the choice of the moduli needs more (stage~I);
   \item the Kronecker symbol $(c_d / p) = -1$ by the table of the squares modulo $p$, which marks
     $0$ as a square; the square tests of the leading coefficient, for the Jacobi switch and for the
     point at infinity of the 2-adic exit, made on the polynomial searched, where the C code reads

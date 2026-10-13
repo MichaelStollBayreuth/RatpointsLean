@@ -25,8 +25,9 @@ table lists every odd prime below 1022 in increasing order, which `decide` check
 of Horner's rule in `examine_prime` and the values of `examine_power` in the range of their C types;
 the factors of a modulus over the table multiply to it with the cofactor, and the factorization of
 a modulus each of whose divisors above `1` is divisible by one of the first `Ratpoints.numPrimes`
-primes of the table is complete; every parameter set that the options of the program give is
-well-formed; and the pieces of the numerators have at least one bit array.
+primes of the table, which the moduli of well-formed parameters are, is complete; every parameter
+set that the options of the program give is well-formed; and the pieces of the numerators have at
+least one bit array.
 
 ## Main definitions
 
@@ -36,8 +37,8 @@ well-formed; and the pieces of the numerators have at least one bit array.
 ## Main statements
 
 * `Ratpoints.prime_of_mem_primeTable`, `Ratpoints.prime_getElem!_primeTable`: every entry of
-  `Ratpoints.primeTable` is a prime, so that the moduli of well-formed parameters are primes
-  (`Ratpoints.Params.WF.prime_of_mem`).
+  `Ratpoints.primeTable` is a prime, so that the moduli of the third stage of well-formed parameters
+  are primes (`Ratpoints.Params.WF.prime_of_mem_drop`).
 * `Ratpoints.pairwise_lt_toList_primeTable`, `Ratpoints.lt_of_mem_primeTable`,
   `Ratpoints.mem_primeTable_of_prime`: the table lists every odd prime below 1022, and nothing
   larger, in increasing order, which `decide` checks; `Ratpoints.mem_of_toList_primeTable_eq`: so it
@@ -58,8 +59,10 @@ well-formed; and the pieces of the numerators have at least one bit array.
   each factor dividing the modulus, and `Ratpoints.snd_run_modulusFactors_lt_mul_self_of_dvd`, a
   prime of the table that divides the cofactor being above its square root.
 * `Ratpoints.snd_run_modulusFactors_eq_one`: a modulus each of whose divisors above `1` is
-  divisible by one of the first `Ratpoints.numPrimes` primes of the table factors completely over
-  the table.
+  divisible by one of the first `Ratpoints.numPrimes` primes of the table, as the moduli of
+  well-formed parameters are, factors completely over the table.
+* `Ratpoints.Params.WF.one_lt_of_mem`, `Ratpoints.Params.WF.prime_of_mem_drop`: what the search
+  reads off well-formed parameters, beyond their fields.
 * `Ratpoints.wf_sieveParams`: every parameter set that the options of the program give is
   well-formed; comparator certifies this (`comparator/Challenge.lean`), which also rules out a
   well-formedness that nothing satisfies.
@@ -85,9 +88,6 @@ theorem prime_of_mem_primeTable {p : ℕ} (h : p ∈ primeTable) : p.Prime := by
   rw [primeTable, List.mem_toArray] at h
   repeat' obtain rfl | h := List.mem_cons.mp h
   all_goals first | exact absurd h List.not_mem_nil | norm_num
-
-theorem Params.WF.prime_of_mem {P : Params} (hP : P.WF) {p : ℕ} (hp : p ∈ P.moduli) : p.Prime :=
-  prime_of_mem_primeTable (hP.mem_primeTable p hp)
 
 theorem pairwise_lt_toList_primeTable : primeTable.toList.Pairwise (· < ·) := by
   decide +kernel
@@ -466,10 +466,11 @@ theorem pow_dvd_of_mem_run_modulusFactors {m : ℕ} {f : ℕ × ℕ}
   exact (List.dvd_prod (List.mem_map_of_mem hf)).mul_left _
 
 /-- A modulus `m > 0` each of whose divisors above `1` is divisible by one of the first
-`Ratpoints.numPrimes` primes of the table factors completely over the table: a cofactor `r > 1`
-would have its least prime factor among these primes, other than `r`, so that `r` would not be a
-prime and its least prime factor would be at most its square root, which no prime of the table that
-divides the cofactor is (`Ratpoints.snd_run_modulusFactors_lt_mul_self_of_dvd`). -/
+`Ratpoints.numPrimes` primes of the table factors completely over the table, as the moduli of
+well-formed parameters do (`Ratpoints.Params.WF`): a cofactor `r > 1` would have its least prime
+factor among these primes, other than `r`, so that `r` would not be a prime and its least prime
+factor would be at most its square root, which no prime of the table that divides the cofactor is
+(`Ratpoints.snd_run_modulusFactors_lt_mul_self_of_dvd`). -/
 theorem snd_run_modulusFactors_eq_one {m : ℕ} (hm : 0 < m)
     (h : ∀ q > 1, q ∣ m → ∃ pn < numPrimes, primeTable[pn]! ∣ q) :
     (Id.run (modulusFactors m)).2 = 1 := by
@@ -485,10 +486,42 @@ theorem snd_run_modulusFactors_eq_one {m : ℕ} (hm : 0 < m)
   rw [← heq, sq] at hsq
   lia
 
+/-! ### Well-formed parameters -/
+
+/-- A modulus of well-formed parameters is above `1`. -/
+theorem Params.WF.one_lt_of_mem {P : Params} (hP : P.WF) {m : ℕ} (hm : m ∈ P.moduli) : 1 < m :=
+  (hP.modulus m hm).1
+
+/-- The moduli of the third stage of well-formed parameters, from the position `sp2` on, are
+primes. -/
+theorem Params.WF.prime_of_mem_drop {P : Params} (hP : P.WF) {m : ℕ}
+    (hm : m ∈ P.moduli.drop P.sp2) : m.Prime :=
+  prime_of_mem_primeTable (hP.mem_primeTable_of_mem_drop m hm)
+
+-- The moduli of the parameters that the options give are among the first `numPrimes` primes of
+-- the table.
+private theorem exists_lt_numPrimes_of_mem_moduli_sieveParams {o : SieveOptions} {m : ℕ}
+    (hm : m ∈ (sieveParams o).moduli) : ∃ pn < numPrimes, primeTable[pn]! = m := by
+  simp only [sieveParams] at hm
+  obtain ⟨i, hi, rfl⟩ := List.mem_take_iff_getElem.mp hm
+  refine ⟨i, ?_, by rw [Array.getElem_toList, getElem!_pos]⟩
+  rw [lt_min_iff] at hi
+  split_ifs at hi <;> lia
+
 /-- Every parameter set that the options of the program give is well-formed; comparator certifies
-this (`comparator/Challenge.lean`). -/
+this (`comparator/Challenge.lean`): its moduli are the first primes of the table, which are below
+`Ratpoints.maxPrimeEven` (`Ratpoints.getElem!_primeTable_lt_maxPrimeEven`), and the only divisor
+above `1` of such a prime is the prime itself. -/
 theorem wf_sieveParams (o : SieveOptions) : (sieveParams o).WF where
-  mem_primeTable _ hm := Array.mem_toList_iff.mp (List.mem_of_mem_take hm)
+  modulus m hm := by
+    obtain ⟨pn, hpn, rfl⟩ := exists_lt_numPrimes_of_mem_moduli_sieveParams hm
+    refine ⟨one_lt_getElem!_primeTable hpn, getElem!_primeTable_lt_maxPrimeEven hpn,
+      fun q hq hd ↦ ⟨pn, hpn, ?_⟩⟩
+    have hp := prime_getElem!_primeTable (hpn.trans_le numPrimes_le_size_primeTable)
+    rw [(hp.eq_one_or_self_of_dvd q hd).resolve_left hq.ne']
+  mem_primeTable_of_mem_drop _ hm :=
+    Array.mem_toList_iff.mp (List.mem_of_mem_take (List.mem_of_mem_drop hm))
+  examined_le := Nat.min_le_right _ _
   sp1_le_sp2 := by
     simp only [sieveParams]
     split_ifs <;> lia

@@ -14,17 +14,13 @@ Candidates for Mathlib's lemmas on lists, about the notions of core: filtering a
 `List.flatMap f` changes nothing when every element `x` with `f x ≠ []` passes the filter, the
 counterpart of `Finset.prod_filter_of_ne`, next to `List.flatMap_congr`, and so a list without
 duplicates within another one without duplicates that holds every `x` with `f x ≠ []` gives a
-permutation of its `List.flatMap f`; and `List.mapM f` in the monad `Option`, for which core has
-only the lemmas of every monad: when it gives a list, that list is the map of every function that
-agrees with `f` wherever `f` gives a value, and when it gives none, `f` gives none at a member.
+permutation of its `List.flatMap f`.
 
 ## Main statements
 
 * `List.flatMap_filter_of_ne`: a filter before `List.flatMap` that changes nothing.
 * `List.perm_flatMap_of_nodup`: the `List.flatMap` of a list without duplicates of members of `l`,
   in any order, that holds every member with a nonempty image.
-* `List.eq_map_of_mapM_eq_some`, `List.exists_mem_of_mapM_eq_none`: the two results of
-  `List.mapM` in the monad `Option`.
 -/
 
 @[expose] public section
@@ -58,18 +54,6 @@ theorem perm_flatMap_of_nodup {l l' : List α} {f : α → List β} (hl : l.Nodu
     (perm_ext_iff_of_nodup hl' (hl.filter _)).mpr fun x ↦ by simpa using fun hx ↦ hsub hx
   rw [← flatMap_filter_of_ne (p := (· ∈ l')) fun x hx hf ↦ decide_eq_true (h x hx hf)]
   exact hp.flatMap_right f
-
-theorem eq_map_of_mapM_eq_some {f : α → Option β} {g : α → β} {l : List α} {l' : List β}
-    (hfg : ∀ a ∈ l, ∀ b, f a = some b → b = g a) (h : l.mapM f = some l') : l' = l.map g := by
-  induction l generalizing l' with
-  | nil => simpa [eq_comm] using h
-  | cons a l ih => cases ha : f a <;> cases hl : l.mapM f <;> grind
-
-theorem exists_mem_of_mapM_eq_none {f : α → Option β} {l : List α} (h : l.mapM f = none) :
-    ∃ a ∈ l, f a = none := by
-  induction l with
-  | nil => nomatch h
-  | cons a l ih => cases ha : f a <;> cases hl : l.mapM f <;> simp_all
 
 end List
 

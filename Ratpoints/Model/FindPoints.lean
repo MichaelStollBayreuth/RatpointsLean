@@ -31,15 +31,20 @@ also reverse the polynomial, and with the Sturm step on, by the remainder chain
 (`Ratpoints.Sturm.chain`). Otherwise it runs the search of the polynomial that the set-up hands on
 (`Ratpoints.searchPoints`), which returns no points when no class of the denominators modulo 64
 admits a numerator and there is no point at infinity, or when the curve has none modulo one of the
-moduli of the parameters `P`, and otherwise the points of height at most `H` on `y ^ 2 = F(x, z)`,
-the points at infinity first and then those of the denominators in the order of the loop of the
-search (`Ratpoints.Sieve.Shape`), increasing unless it runs over the divisors of the leading
-coefficient, found by the sieve on the bit arrays of words with the moduli and the array size of
-`P`, each mapped back to the caller's curve after a reversal.
+primes examined for the parameters `P`, and otherwise the points of height at most `H` on
+`y ^ 2 = F(x, z)`, the points at infinity first and then those of the denominators in the order of
+the loop of the search (`Ratpoints.Sieve.Shape`), increasing unless it runs over the divisors of the
+leading coefficient, found by the sieve on the bit arrays of words with the moduli, primes, prime
+powers and products of them, and the array size of `P`, each mapped back to the caller's curve after
+a reversal. What `sieving_info` computes for the search, the loop of the tables of the primes
+examined with the exit and the forbidden divisors, the further forbidden divisors and the sieve
+entries of the moduli, is `Ratpoints.sievingInfo`.
 
 ## Main definitions
 
 * `Ratpoints.Options`: the options of a search.
+* `Ratpoints.makeModulus?`, `Ratpoints.sievingInfo`: the sieve entry of a modulus, and the tables,
+  the forbidden divisors and the sieve entries of the moduli of a search.
 * `Ratpoints.searchPoints`: the search of the polynomial that the set-up hands on.
 * `Ratpoints.findPoints`: the points.
 -/
@@ -71,6 +76,101 @@ structure Options where
   sturm : Int := defaultSturm
 
 open Sieve in
+/-- The sieve entry of the modulus `m` for the polynomial of degree `d` with the coefficient list
+`c` and the flag `useCLong` of the `long`s, from its factors over the table
+(`Ratpoints.modulusFactors`) and the tables `tables` of the primes examined in the loop of the
+tables, by their positions (`Ratpoints.Sieve.examinePrimes`): in a loop over the factors, for a
+factor `p ^ e` with `e = 1`, the table of `p` from the loop of the tables when `p` is among the
+primes examined there, and otherwise the table that its examination gives now
+(`Ratpoints.Sieve.examinePrime?`), with none at once when the curve has no points modulo `p`; and
+for `e ≥ 2` the tables of the prime power (`Ratpoints.Sieve.examinePower`). A prime or a prime
+power has one factor, a product two or more.
+
+C: `find_points.c:2387-2395`, `find_points.c:2414-2429`, `find_points.c:2434-2475`,
+`find_points.c:2546`, `find_points.c:2976-2978`, `find_points.c:2994-2998`
+
+Deviation: the entry of every modulus made here, by its factors, where `sieving_info` takes the
+entry of a prime from the loop of the tables (`prec[n].ssp`) and makes those of the prime powers and
+the products by `make_modulus`; the primes and prime powers as factors of the entry, for the fields
+`nf`, `pw` and `factor` and the entries of the prime powers that `make_power` makes; the tables of a
+prime power (`Ratpoints.Sieve.Factor.power`) computed for each modulus that needs them, where
+`add_moduli` examines a prime power once, when the first modulus offered needs it, and keeps its
+tables by its index (`pw_idx`, lines 2387-2394), and `make_modulus` makes the entry of a prime power
+once and keeps it by its index (`power_se`); the tables of a prime power computed also when they say
+nothing, where `add_moduli` refuses a modulus with such a factor (line 2395), and a prime factor
+whose prime says nothing (`examine_prime` returns `0`, and `prime_se[pn]` stays `NULL`) taken with
+its table from the loop of the tables, where `add_moduli` offers no composite with such a factor
+(line 2383); a prime beyond those of the loop of the tables examined, with the exit, when the entry
+of a modulus needs it, where `sieving_info` examines the primes from `prime[pn_lim]` on, in the
+order of the table, with the exit, for the third stage only (lines 2976-3016) and only when the
+number of primes was left to the library (line 2980), also those that it then skips, and
+`add_moduli` makes composites, prime powers and products alike, of the primes of the loop of the
+tables only (line 2370): the output does not depend on the primes examined, since the exit is taken
+only when the curve has no points; every modulus of the parameters taken, any product of powers of
+primes of the table below `Ratpoints.maxPrimeEven` (`Ratpoints.Params.WF`), where `add_moduli`
+offers a composite only for an odd `9 ≤ m ≤ RATPOINTS_COMPOSITE_MAX` (line 2361;
+`ratpoints.h:210-211`, 64 by default), with room in the buffer of the prime powers for its new prime
+powers (line 2390), a density `r < 1` (line 2402) and at most `RP_MAX_MODULI` candidates (line
+2403), restrictions that the model lifts as choices of the moduli (stage I); no reciprocal `magic`,
+bias `bias` and inverse `rbainv`, which serve the reduction of the sieve and the packing (stage F),
+no density `r` (stage I), and no field `init`, the rows of every kind being made by one function
+(`Ratpoints.Sieve.SieveEntry.row`); the entry a fresh value, for the space that `make_power` and
+`make_modulus` take from the buffer of the sieve entries (`se_next`), and the exit as `none`, for
+the prime that `sieving_info` returns. -/
+def makeModulus? (c : List Int) (d : Nat) (useCLong : Bool) (tables : Array Entry) (m : Nat) :
+    Id (Option SieveEntry) := do
+  let (fac, _) ← modulusFactors m
+  let mut factors : Array Factor := #[]
+  for (pn, e) in fac do
+    if e = 1 then
+      match tables[pn]? with
+      | some t => factors := factors.push (.prime t)
+      | none =>
+        let some (t, _) ← examinePrime? c d primeTable[pn]! useCLong | return none
+        factors := factors.push (.prime t)
+    else
+      let pw ← examinePower c d primeTable[pn]! e useCLong
+      factors := factors.push (.power pw)
+  return some { p := m, factors := factors.toList }
+
+open Sieve in
+/-- What `sieving_info` computes for the search of the polynomial with the coefficient list `c` of
+degree `d`, the flag `useCLong` of the `long`s, the switch `checkDenom` of the forbidden divisors,
+the parameters `P` and the largest denominator `bHigh`: the loop of the tables over the first
+`P.examined` primes of the table, with at most `P.maxForbidden` forbidden divisors
+(`Ratpoints.Sieve.examinePrimes`), and none when the curve has no points modulo one of them; for the
+switch on, the forbidden divisors among the further primes (`Ratpoints.Sieve.forbidden`); and, in a
+loop over the moduli of `P` in their order, the sieve entry of each (`Ratpoints.makeModulus?`), and
+none at once when the curve has no points modulo a prime examined for it. Then the sieve entries of
+the moduli and the forbidden divisors tested with words and by their valuations.
+
+C: `find_points.c:2522-2532`, `find_points.c:2892-2900`, `find_points.c:3102-3103`
+
+Deviation: the arguments that serve the choice of the moduli (the mean number of bits per word,
+whether the number of primes was left to the library, the word `den_bits` and the classes `cls`) are
+not modelled, nor that choice (stage I): the moduli and their stages are those of the parameters,
+and the primes examined in the loop of the tables their first `P.examined`, beyond which
+`Ratpoints.makeModulus?` examines a prime when a modulus needs it; the sieve entries of every
+modulus made here, those of the third stage included, which `sieving_info` puts into `sieve_list`
+later, in the choice of the third stage; the flag `RATPOINTS_CHECK_DENOM` as the switch
+`checkDenom`, which the search clears, with the flag, when there is no forbidden divisor and no
+Jacobi test (`Ratpoints.searchPoints`); the sieve entries and the forbidden divisors returned as
+lists, for the array `sieve_list` and the arrays of the arguments, and the exit as `none`, for the
+prime returned; no failure for lack of memory, which the model cannot meet; no output under
+`RATPOINTS_VERBOSE`, `RP_PRIME_STATS` or `DEBUG`. -/
+def sievingInfo (c : List Int) (d : Nat) (useCLong checkDenom : Bool) (P : Params) (bHigh : Nat) :
+    Id (Option (List SieveEntry × List ForbiddenEntry × List ForbiddenVal)) := do
+  let some (tables, ba, val) ←
+      examinePrimes c d useCLong checkDenom P.examined P.maxForbidden bHigh | return none
+  let (forb, forbVal) ← if checkDenom then forbidden c d P.examined P.maxForbidden bHigh ba val
+    else pure (ba.toList, val.toList)
+  let mut entries : Array SieveEntry := #[]
+  for m in P.moduli do
+    let some e ← makeModulus? c d useCLong tables m | return none
+    entries := entries.push e
+  return some (entries.toList, forb, forbVal)
+
+open Sieve in
 /-- The search of the polynomial with the coefficient list `c` of degree `d` that the set-up hands
 on, for the height `H`, the parameters `P` and the flag `rev` of the reversal, over the denominators
 `bLow = 1, …, bHigh = H`. First the flags of the tests on the denominators: the checked loop for
@@ -79,52 +179,41 @@ the switch `P.jacobi`; the squares for odd degree and `|c_d| = 1`; and for odd d
 divisors of `c_d` (`Ratpoints.Setup.setupUs1`). Then the 2-adic information
 (`Ratpoints.Sieve.twoAdic`, `Ratpoints.Sieve.denBits`), and no points when no class of the
 denominators admits a numerator and there is no point at infinity, as there is for odd degree or
-`c_d` a square. Then the table of each modulus `p` of `P` with the exit
-(`Ratpoints.Sieve.examinePrime?`), with the flag of the `long`s (`Ratpoints.Setup.useCLong`), made
-the sieve entry of `p` with the table as its one factor (`Ratpoints.Sieve.SieveEntry`), and no
-points when one of them is none, since the curve has no points modulo that prime; for even degree
-the forbidden divisors, at most `P.maxForbidden` of them (`Ratpoints.Sieve.forbidden`), and the
-checked loop off when there are none and no Jacobi test; the shape of the run
-(`Ratpoints.Sieve.runSetup`); and the points at infinity (`Ratpoints.Sieve.pointsAtInfinity`),
-followed by those of the denominators of the shape (`Ratpoints.Sieve.sieveRun`) with these sieve
-entries and pieces of at most `Ratpoints.Params.arraySizeAt P H` bit arrays, each point mapped by
-`Ratpoints.Sieve.swapPoint` when `rev` is set. For well-formed parameters, `H ≥ 1` and `d` the
-degree of `c`, these are the points at infinity followed by the points of the brute-force reference
-over the denominators of the search (`Ratpoints.searchDens`), in the order of its loop, increasing
-unless the shape is that of the divisors, each mapped when `rev` is set, also when an exit is taken
+`c_d` a square. Then the tables of the primes examined, the forbidden divisors for even degree and
+the sieve entries of the moduli of `P` (`Ratpoints.sievingInfo`), with the flag of the `long`s
+(`Ratpoints.Setup.useCLong`), and no points when the curve has no points modulo one of the primes
+examined; the checked loop off when there are no forbidden divisors and no Jacobi test; the shape of
+the run (`Ratpoints.Sieve.runSetup`); and the points at infinity
+(`Ratpoints.Sieve.pointsAtInfinity`), followed by those of the denominators of the shape
+(`Ratpoints.Sieve.sieveRun`) with the sieve entries of the moduli and pieces of at most
+`Ratpoints.Params.arraySizeAt P H` bit arrays, each point mapped by `Ratpoints.Sieve.swapPoint`
+when `rev` is set. For well-formed parameters, `H ≥ 1` and `d` the degree of `c`, these are the
+points at infinity followed by the points of the brute-force reference over the denominators of the
+search (`Ratpoints.searchDens`), in the order of its loop, increasing unless the shape is that of
+the divisors, each mapped when `rev` is set, also when an exit is taken
 (`Ratpoints.run_searchPoints`).
 
-C: `find_points.c:2537`, `find_points.c:2605-2614`, `find_points.c:2707`, `find_points.c:2793-2795`,
-`find_points.c:2976-2978`, `find_points.c:2994-2998`, `find_points.c:4573`,
-`find_points.c:4588-4589`, `find_points.c:4595-4596`, `find_points.c:4603-4604`,
-`find_points.c:4607`, `find_points.c:4900-4943`, `find_points.c:4948`, `find_points.c:4954-4963`,
+C: `find_points.c:2793-2795`, `find_points.c:4573`, `find_points.c:4588-4589`,
+`find_points.c:4595-4596`, `find_points.c:4603-4604`, `find_points.c:4607`,
+`find_points.c:4900-4943`, `find_points.c:4948`, `find_points.c:4954-4963`,
 `find_points.c:4992-5012`, `find_points.c:5106`, `find_points.c:5116`, `find_points.c:5137-5139`,
 `find_points.c:5167`
 
-Deviation: the primes examined are the moduli of the parameters, where `sieving_info` examines the
-first `num_primes` primes of the table, and more when their number was left to the library: the
-choice of the moduli is an input of the model, and when the exit is taken there are no points, so
-that the output does not depend on the primes examined; the forbidden divisors computed after the
-tables of all the moduli (`Ratpoints.Sieve.forbidden`), where `sieving_info` records them prime by
-prime in the loop of the tables, which an exit leaves, and with the coefficients modulo `p` and the
-entry at infinity that `examine_prime` hands back computed again (both until stage F); the sieve
-entry of each modulus made here from its table, with the table as its one factor, as `examine_prime`
-makes the entry of a prime with `nf = 0`, where `sieving_info` also makes the entries of prime
-powers and products of them (stage F); the arguments of `sieving_info` that serve the choice of the
-moduli (the list of the moduli, the mean number of bits per word, whether the number of primes was
-left to the library, the 2-adic classes and the word `den_bits`) are not modelled; the denominators
-from `1` to `H`, for the range `b_low, …, b_high` (stage H); the flags of the denominators as
-Booleans, for the bits of `args->flags`; the forbidden divisors and the divisors of the leading
-coefficient with their records as lists, for the arrays `args->forb_ba`, `args->forbidden`,
-`args->den_info` and `args->divisors` of the arguments; the square test `lcfsq` of line 4906 made on
-the polynomial searched (`Ratpoints.Setup.isSquare`), where the C code computes it before the
-reversal check (line 4634) and clears it in case 2 (line 4770): the same value for an even degree,
-the only one that reads it; the test on `point_at_infty` of the 2-adic exit recomputed, as
-`Ratpoints.Sieve.pointsAtInfinity` decides it; the exits give the empty list, where `sieving_info`
-returns the prime and `find_points_work_1` the number `0` of points found; the Sturm step does not
-restrict the search region before stage H, so that the return when it leaves nothing to search is
-never taken, and the run always follows the points at infinity; no failure for lack of memory, which
-the model cannot meet; no output under `RATPOINTS_VERBOSE` or `DEBUG`. -/
+Deviation: the arguments of `sieving_info` that serve the choice of the moduli (the mean number of
+bits per word, whether the number of primes was left to the library, the 2-adic classes and the word
+`den_bits`) are not modelled; the denominators from `1` to `H`, for the range `b_low, …, b_high`
+(stage H); the flags of the denominators as Booleans, for the bits of `args->flags`; the forbidden
+divisors and the divisors of the leading coefficient with their records as lists, for the arrays
+`args->forb_ba`, `args->forbidden`, `args->den_info` and `args->divisors` of the arguments; the
+square test `lcfsq` of line 4906 made on the polynomial searched (`Ratpoints.Setup.isSquare`), where
+the C code computes it before the reversal check (line 4634) and clears it in case 2 (line 4770):
+the same value for an even degree, the only one that reads it; the test on `point_at_infty` of the
+2-adic exit recomputed, as `Ratpoints.Sieve.pointsAtInfinity` decides it; the exits give the empty
+list, where `sieving_info` returns the prime and `find_points_work_1` the number `0` of points
+found; the Sturm step does not restrict the search region before stage H, so that the return when it
+leaves nothing to search is never taken, and the run always follows the points at infinity; no
+failure for lack of memory, which the model cannot meet; no output under `RATPOINTS_VERBOSE` or
+`DEBUG`. -/
 def searchPoints (c : List Int) (d H : Nat) (P : Params) (rev : Bool) :
     Id (List (Int × Int × Int)) := do
   let bHigh := H
@@ -137,15 +226,11 @@ def searchPoints (c : List Int) (d H : Nat) (P : Params) (rev : Bool) :
   let nb ← twoAdic c d
   let db := denBits nb
   if db == 0 && !(d % 2 == 1 || Setup.isSquare lcf) then return []
-  match P.moduli.mapM (fun p ↦ (examinePrime? c d p useCLong).map fun t ↦ ⟨p, [.prime t]⟩) with
-  | none => return []
-  | some entries =>
-    let (forb, forbVal) ← if checkDenom then forbidden c d P.moduli P.maxForbidden bHigh
-      else pure ([], [])
-    if forb.isEmpty && forbVal.isEmpty && !useJacobi then checkDenom := false
-    let shape ← runSetup useSquares us1 checkDenom useJacobi forb forbVal lcf bHigh
-    let pts ← sieveRun c d H (P.arraySizeAt H) rev entries nb db shape 1 bHigh
-    return pointsAtInfinity c d rev ++ pts.toList
+  let some (entries, forb, forbVal) ← sievingInfo c d useCLong checkDenom P bHigh | return []
+  if forb.isEmpty && forbVal.isEmpty && !useJacobi then checkDenom := false
+  let shape ← runSetup useSquares us1 checkDenom useJacobi forb forbVal lcf bHigh
+  let pts ← sieveRun c d H (P.arraySizeAt H) rev entries nb db shape 1 bHigh
+  return pointsAtInfinity c d rev ++ pts.toList
 
 /-- The points of height at most `H` on `y ^ 2 = F(x, z)` for the coefficient list `c`, found by the
 sieve with the moduli and the array size of the parameters `P` and the options `o`, by default those
@@ -159,9 +244,9 @@ remainder chain of the polynomial searched is none (`Ratpoints.Sturm.chain`), th
 polynomial has a repeated factor. Otherwise the points are those of the search of the polynomial
 that the reversal check hands on, with its flag of the reversal (`Ratpoints.searchPoints`): none
 when no class of the denominators modulo 64 admits a numerator and there is no point at infinity, or
-when the curve has no points modulo one of the moduli, and else the points at infinity first, then
-those of the denominators in the order of the loop of the search (`Ratpoints.Sieve.sieveRun`), each
-mapped back to the caller's curve after a reversal.
+when the curve has no points modulo one of the primes examined, and else the points at infinity
+first, then those of the denominators in the order of the loop of the search
+(`Ratpoints.Sieve.sieveRun`), each mapped back to the caller's curve after a reversal.
 
 C: `find_points.c:4523-4528`, `find_points.c:4546`, `find_points.c:4557-4559`,
 `find_points.c:4564-4565`, `find_points.c:4567-4571`, `find_points.c:4578-4585`,
@@ -260,12 +345,45 @@ height bound before the leading zeros. -/
 -- reversal and the Sturm step the list of the reference, also for `0 0 1`, which the program
 -- refuses unless run with `-k -s`, and with them the reference of the reversed polynomial mapped
 -- back, for `-1 0 9`.
-#guard [⟨[], 0, 0, 64, true, 0⟩, sieveParams { numPrimes := 53 },
-    ⟨primeTable.toList.take 53, 10, 40, 64, true, 0⟩,
-    ⟨[7, 3, 251, 5], 1, 2, 0, false, 0⟩].all fun P ↦
+#guard [⟨[], 0, 0, 0, 64, true, 0⟩, sieveParams { numPrimes := 53 },
+    ⟨primeTable.toList.take 53, 53, 10, 40, 64, true, 0⟩,
+    ⟨[7, 3, 251, 5], 0, 1, 2, 0, false, 0⟩].all fun P ↦
   ([([1, 1, 1, 1, 0], 25), ([-1, 0, 9], 20), ([1, 0, 1], 12), ([0, 0, 1], 15)].all fun (c, H) ↦
     (findPoints c H P { reverse := false, sturm := -1 }).toOption == some (bruteForce c H)) &&
   (findPoints [-1, 0, 9] 20 P).toOption == some ((bruteForce [9, 0, -1] 20).map Sieve.swapPoint)
+
+-- Composite moduli, prime powers and products of them in any order, and primes beyond those
+-- examined, which are examined when their modulus is made: without the reversal and the Sturm step
+-- the list of the reference, and with them the reference of the reversed polynomial mapped back.
+#guard [⟨[45, 9, 77, 25, 3, 231, 49, 11], 2, 3, 7, 64, true, 0⟩,
+    ⟨[243, 125, 169, 121, 7, 13], 0, 0, 4, 64, true, 0⟩, ⟨[255, 195, 61, 3], 53, 2, 2, 0, false, 0⟩,
+    ⟨[147], 1, 1, 1, 64, true, 0⟩].all fun P : Params ↦ decide P.WF &&
+  ([([1, 1, 1, 1, 0], 25), ([-2, 0, 0, 1], 130), ([1, 0, 126, 0, 441], 30),
+      ([1, 2, 3, 4, 5, 6, 7], 20), ([0, 0, 1], 15)].all fun (c, H) ↦
+    (findPoints c H P { reverse := false, sturm := -1 }).toOption == some (bruteForce c H)) &&
+  (findPoints [-1, 0, 9] 20 P).toOption == some ((bruteForce [9, 0, -1] 20).map Sieve.swapPoint)
+
+-- The sieve entries of moduli of each kind for `1 2 3 4 5 6 7` with the tables of the first two
+-- primes: the prime 3 and the prime 67 examined anew, the prime powers 9 and 243, the product 15
+-- of two primes, 45 = 9 · 5 of a prime power and a prime, and 231 = 3 · 7 · 11 of three primes;
+-- and the exit of the curve `20 6 -14 12 -10`, which has no points modulo 3, at the modulus 15
+-- when 3 is not examined in the loop of the tables, and none at the prime power 9.
+#guard
+  let c : List Int := [1, 2, 3, 4, 5, 6, 7]
+  let fs (f : Sieve.Factor) : Nat := match f with | .prime e => e.p | .power pw => pw.m
+  match Id.run (Sieve.examinePrimes c 6 true false 2 0 0) with
+  | some (tables, _, _) =>
+    tables.size == 2 && [3, 67, 9, 243, 15, 45, 231].map (fun m ↦
+        (Id.run (makeModulus? c 6 true tables m)).map fun se ↦ (se.p, se.factors.map fs)) ==
+      [some (3, [3]), some (67, [67]), some (9, [9]), some (243, [243]), some (15, [3, 5]),
+        some (45, [9, 5]), some (231, [3, 7, 11])]
+  | none => false
+#guard
+  let c : List Int := [20, 6, -14, 12, -10]
+  (Id.run (sievingInfo c 4 true true ⟨[15], 0, 1, 1, 64, true, 0⟩ 30)).isNone &&
+    (Id.run (sievingInfo c 4 true true ⟨[9], 0, 1, 1, 64, true, 0⟩ 30)).isSome &&
+    (Id.run (sievingInfo c 4 true true ⟨[9], 1, 1, 1, 64, true, 0⟩ 30)).isNone &&
+    Id.run (searchPoints c 4 30 ⟨[9], 0, 1, 1, 64, true, 0⟩ false) == []
 
 -- Pieces of one, two and three bit arrays, at heights around the multiples of 64 and of
 -- `rbaLength`: several pieces, the masks on the same piece and on different ones, and no low mask
@@ -312,7 +430,7 @@ height bound before the leading zeros. -/
 -- Curves without points modulo 3, 5 and 7, for which `ratpoints c 30 -q` prints nothing: the table
 -- of one of the default moduli is none, and the search returns no points, with either flag.
 #guard [[20, 6, -14, 12, -10], [-2, -20, 7, 15, 2], [20, 7, -18, 0, 3]].all fun c ↦
-  (defaultParams.moduli.mapM (Sieve.examinePrime? c 4 · (Setup.useCLong c 4))).isNone &&
+  (defaultParams.moduli.mapM (Id.run <| Sieve.examinePrime? c 4 · (Setup.useCLong c 4))).isNone &&
     [false, true].all fun rev ↦ Id.run (searchPoints c 4 30 defaultParams rev) == []
 
 -- The 2-adic exit: no class of the denominators of `2 0 3` admits a numerator modulo 64, and there
@@ -328,7 +446,7 @@ height bound before the leading zeros. -/
 
 #guard findPoints (List.replicate (maxDegree + 2) 1) 0 defaultParams matches
   .error .tooManyCoefficients
-#guard findPoints (List.replicate (maxDegree + 1) 1) 1 ⟨[], 0, 0, 64, true, 0⟩ matches .ok _
+#guard findPoints (List.replicate (maxDegree + 1) 1) 1 ⟨[], 0, 0, 0, 64, true, 0⟩ matches .ok _
 #guard findPoints [1] 0 defaultParams matches .error .tooFewCoefficients
 #guard findPoints [1, 0, 1] 0 defaultParams matches .error .incorrectHeight
 #guard findPoints [5, 0] 0 defaultParams matches .error .incorrectHeight

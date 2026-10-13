@@ -110,10 +110,9 @@ chosen, of which kinds and in which stages, changes neither the points nor their
   (\csource{find_points.c}{1639}{1650}, the form with a 128-bit product, which the default build and
   the build of the model compile). The value of $f$ at $a$ modulo $p$ from the coefficients modulo
   $p$ by Horner's rule from $c_d$, without a reduction for $d \le \mathrm{hornerSteps}$, and with a
-  reduction after every $\mathrm{hornerSteps}$ steps otherwise, and one at the end: lines 1724,
-  1726--1731, 1735 and 1737--1744 of \verb|find_points.c|, which the table with the exit
-  (Definition~\ref{def:examinePrimeExit}) cites until it calls Horner's rule on this schedule
-  (F1.6), when they pass to it.
+  reduction after every $\mathrm{hornerSteps}$ steps otherwise, and one at the end
+  (\csource{find_points.c}{1724}{1724}, \csource{find_points.c}{1726}{1731},
+  \csource{find_points.c}{1735}{1735}, \csource{find_points.c}{1737}{1744}).
 \end{definition}
 
 \begin{lemma}[The Barrett reduction and the schedule of Horner's rule]\label{lem:barrett}
@@ -141,11 +140,8 @@ chosen, of which kinds and in which stages, changes neither the points nor their
 
 \begin{lemma}[The table with the exit is the table]\label{lem:examinePrime_eq}
   \uses{lem:barrett, def:examinePrimeExit, def:examinePrime}
-  Proposed names: \lname{Ratpoints.Sieve.ExaminePrimeInvariant},
-  \lname{Ratpoints.Sieve.examinePrime?\_spec}, \lname{Ratpoints.Sieve.run\_examinePrime?},
-  \lname{Ratpoints.Sieve.eq\_examinePrime\_of\_run\_examinePrime?\_eq\_some},
-  \lname{Ratpoints.Sieve.eq\_map\_range\_of\_run\_examinePrime?\_eq\_some},
-  \lname{Ratpoints.Sieve.run\_examinePrime?\_eq\_none\_iff}.
+  \lean{Ratpoints.Sieve.ExaminePrimeInvariant, Ratpoints.Sieve.examinePrime?_spec, Ratpoints.Sieve.run_examinePrime?, Ratpoints.Sieve.eq_examinePrime_of_run_examinePrime?_eq_some, Ratpoints.Sieve.eq_map_range_of_run_examinePrime?_eq_some, Ratpoints.Sieve.run_examinePrime?_eq_none_iff}
+  \leanok
   The table of a prime with the exit (Definition~\ref{def:examinePrimeExit}) becomes a component of
   type \verb|Id| with the loop of \verb|examine_prime| over the residues: the entry $0$ from the
   squares modulo $p$ at $c_0$, the entries $1, \dots, p - 1$ by the schedule of
@@ -158,6 +154,7 @@ chosen, of which kinds and in which stages, changes neither the points nor their
 \end{lemma}
 
 \begin{proof}
+  \leanok
   Lemma~\ref{lem:barrett} for each entry $1, \dots, p - 1$, in an invariant of the loop over the
   residues; the entry $0$ and the entry at infinity read the same squares in both.
 \end{proof}
@@ -171,7 +168,8 @@ makes some entry of the reference true, the step of the exit, becomes a lemma of
 
 \begin{definition}[The loop of the tables]\label{def:examinePrimes}
   \uses{def:examinePrimeExit, def:forbidden}
-  Proposed names: \lname{Ratpoints.Sieve.examinePrimes}.
+  \lean{Ratpoints.Sieve.examinePrimes}
+  \leanok
   For the first $n$ primes of the table in turn: the table of the prime with the exit, and none
   when the curve has no points modulo it (\csource{find_points.c}{2605}{2614}); the table of every
   examined prime kept by its position, where \verb|sieving_info| keeps by its index the sieve entry
@@ -191,13 +189,8 @@ makes some entry of the reference true, the step of the exit, becomes a lemma of
 
 \begin{lemma}[The loop of the tables]\label{lem:examinePrimes}
   \uses{def:examinePrimes, lem:examinePrime_eq, lem:examinePrime_none, def:forbidden, def:barrett}
-  Proposed names: \lname{Ratpoints.Sieve.ExaminePrimesInvariant},
-  \lname{Ratpoints.Sieve.ExaminePrimesLoopInvariant}, \lname{Ratpoints.Sieve.examinePrimes\_spec},
-  \lname{Ratpoints.Sieve.size\_eq\_of\_run\_examinePrimes\_eq\_some},
-  \lname{Ratpoints.Sieve.getElem\_eq\_examinePrime\_of\_run\_examinePrimes\_eq\_some},
-  \lname{Ratpoints.Sieve.isForbiddenEntry\_of\_run\_examinePrimes\_eq\_some},
-  \lname{Ratpoints.Sieve.isForbiddenVal\_of\_run\_examinePrimes\_eq\_some},
-  \lname{Ratpoints.Sieve.not\_isPoint\_of\_run\_examinePrimes\_eq\_none}.
+  \lean{Ratpoints.Sieve.ExaminePrimesInvariant, Ratpoints.Sieve.ExaminePrimesLoopInvariant, Ratpoints.Sieve.examinePrimes_spec, Ratpoints.Sieve.size_eq_of_run_examinePrimes_eq_some, Ratpoints.Sieve.getElem_eq_examinePrime_of_run_examinePrimes_eq_some, Ratpoints.Sieve.isForbiddenEntry_of_run_examinePrimes_eq_some, Ratpoints.Sieve.isForbiddenVal_of_run_examinePrimes_eq_some, Ratpoints.Sieve.not_isPoint_of_run_examinePrimes_eq_none}
+  \leanok
   For $n \le \mathrm{numPrimes}$: if the loop gives tables, there are $n$ of them, the table at the
   position $i$ is the reference table of the $i$-th prime of the table, and the forbidden divisors
   found are among those that the loop may record (the predicates of
@@ -206,6 +199,7 @@ makes some entry of the reference true, the step of the exit, becomes a lemma of
 \end{lemma}
 
 \begin{proof}
+  \leanok
   An invariant of the loop over the primes seen so far, and one of the loop with its early return,
   which holds the result only at the end, as for the set-up of the Jacobi test. The primes of the
   table at positions below $\mathrm{numPrimes}$ are below $\mathrm{maxPrimeEven}$
@@ -338,7 +332,8 @@ which $\mathrm{maxPrimeEven} \le 2^{32}$ gives.
 
 \begin{definition}[The sieve entry of a modulus]\label{def:makeModulus}
   \uses{def:SieveEntry, def:modulusFactors, def:examinePrimeExit, def:examinePower}
-  Proposed names: \lname{Ratpoints.makeModulus?}.
+  \lean{Ratpoints.makeModulus?}
+  \leanok
   A component of type \verb|Id|: by the factors of $m$, a factor with the exponent $1$ takes the
   table of its prime from the loop of the tables when its position is below the number examined,
   and is examined now, with the exit, otherwise; a factor with the exponent $e \ge 2$ gets the
@@ -352,15 +347,15 @@ which $\mathrm{maxPrimeEven} \le 2^{32}$ gives.
 \begin{lemma}[The rows of a modulus let every point through]\label{lem:sieveEntry_admits}
   \uses{def:makeModulus, lem:modulusFactors, lem:admits_examinePrime, lem:power_admits,
     lem:examinePrime_eq, lem:examinePrime_none}
-  Proposed names: \lname{Ratpoints.Sieve.Entry.admits\_mod\_of\_dvd},
-  \lname{Ratpoints.Sieve.Power.admits\_mod\_of\_dvd}, \lname{Ratpoints.MakeModulusInvariant},
-  \lname{Ratpoints.makeModulus?\_spec}.
+  \lean{Ratpoints.Sieve.Entry.admits_mod_of_dvd, Ratpoints.Sieve.Power.admits_mod_of_dvd, Ratpoints.MakeModulusInvariant, Ratpoints.makeModulus?_spec}
+  \leanok
   For tables of the loop that are those of the reference: if the entry of $m$ is made, it is an
   entry of $m$, and its row of $b$ admits $a$ for every $\gcd(a, b) = 1$ with $y^2 = F(a, b)$; if it
   is not made, the curve has no points. Neither needs more of $m$ than the factorization computes.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   Each factor's modulus divides $m$, so $b \bmod m$ and $a \bmod m$ reduce to the residues of the
   factor; each factor admits the point by Lemma~\ref{lem:admits_examinePrime} or
   Lemma~\ref{lem:power_admits}. A prime factor beyond the loop has its position below
@@ -401,7 +396,8 @@ primes, the moduli as before (Definition~\ref{def:sieveParams}).
 
 \begin{definition}[What \texttt{sieving\_info} computes]\label{def:sievingInfo}
   \uses{def:examinePrimes, def:forbidden, def:makeModulus, def:Params}
-  Proposed names: \lname{Ratpoints.sievingInfo}.
+  \lean{Ratpoints.sievingInfo}
+  \leanok
   The loop of the tables over the examined primes (Definition~\ref{def:examinePrimes}); for the
   checked loop on, the forbidden divisors of the further primes; and the sieve entries of the
   moduli, in a loop over them in their order (Definition~\ref{def:makeModulus}); none when the curve
@@ -411,13 +407,15 @@ primes, the moduli as before (Definition~\ref{def:sieveParams}).
 
 \begin{lemma}[What \texttt{sieving\_info} computes is sound]\label{lem:sievingInfo}
   \uses{def:sievingInfo, lem:examinePrimes, lem:sieveEntry_admits, def:forbidden}
-  Proposed names: \lname{Ratpoints.SievingInfoInvariant}, \lname{Ratpoints.sievingInfo\_spec}.
+  \lean{Ratpoints.SievingInfoInvariant, Ratpoints.sievingInfo_spec}
+  \leanok
   For well-formed parameters and either value of the switch of the checked loop: if
   \verb|sieving_info| gives a result, every sieve entry is sound and the forbidden divisors are
   among those that the two loops may record; if it gives none, the curve has no points.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   Lemma~\ref{lem:examinePrimes} gives tables equal to the reference, which
   Lemma~\ref{lem:sieveEntry_admits} needs, in an invariant of the loop over the moduli, and $1 < m$
   comes from the well-formedness; the forbidden
@@ -513,7 +511,8 @@ of the nodes exist and their C links are the ranges of their declarations:
   \item the parameters (Definition~\ref{def:Params}): the moduli may be prime powers and products,
     with the number of primes examined, and the well-formedness of Section~\ref{sec:tablesSearch}
     (\verb|prime_of_mem| replaced by \verb|one_lt_of_mem| and \verb|prime_of_mem_drop|; it uses
-    Definitions~\ref{def:barrett} and~\ref{def:modulusFactors}); the parameters of the executable
+    Definition~\ref{def:barrett}, and only refers to Definition~\ref{def:modulusFactors}, whose
+    loop the divisor form leaves out); the parameters of the executable
     (Definition~\ref{def:sieveParams}) examine the first $q$ primes, for \verb|pn_lim|
     (\csource{find_points.c}{2566}{2566}), and their well-formedness covers the new conditions; the
     paragraph after them says what \verb|wf_sieveParams| now uses;

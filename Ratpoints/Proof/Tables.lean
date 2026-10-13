@@ -32,28 +32,26 @@ in `ℕ`; the proofs go through `ZMod p`.
 
 The table of a prime with the exit (`Ratpoints.Sieve.examinePrime?`) reduces the coefficients on two
 paths with the same result, since the helper `mod` of the C code is the Euclidean `%`
-(`Ratpoints.Sieve.modLong_eq_emod`); a table that it gives is that of the reference
-`Ratpoints.Sieve.examinePrime`, and it gives none exactly when no entry of the reference is true,
-and then the curve has no points (`Ratpoints.Sieve.not_isPoint_of_examinePrime?_eq_none`): a point
-`(a, y, b)` makes an entry of the reference true
-(`Ratpoints.Sieve.any_isFSquare_examinePrime_of_sq_eq`), the residue `a / b` for `p ∤ b`, and for
-`p ∣ b` the entry `p`, whether there are points at infinity modulo `p`, since `c_d` is then a square
-modulo `p` for even `d` (`Ratpoints.Sieve.isSquare_getD_degree_of_sq_eq_binaryForm`). The values of
-the C code that could leave the range of a `long` stay in it: those of `mod` for moduli below
-`2 ^ 59`, whose inputs are `long`s by the flag of the `long`s, the negations of the map of a
-reversed search, and the negation of a negative leading coefficient in `jacobi1`, with `LONG_MIN`
-replaced by its quarter.
-
-Barrett's reduction gives the remainder of every `u < 2 ^ 64` (`Ratpoints.Sieve.barrett_eq`), and
-for a prime `p < maxPrimeEven` the accumulator of Horner's rule on the schedule of `examine_prime`
-stays below `p ^ (hornerSteps + 1) < 2 ^ 64` between two reductions
-(`Ratpoints.Sieve.HornerInvariant.lt_two_pow_64`), so that the schedule computes the value of `f`
-modulo `p` (`Ratpoints.Sieve.hornerBarrett_spec`); the table of a prime takes it with stage F.
+(`Ratpoints.Sieve.modLong_eq_emod`), and computes the values of `f` by Horner's rule with Barrett's
+reduction on a fixed schedule (`Ratpoints.Sieve.hornerBarrett`): Barrett's reduction gives the
+remainder of every `u < 2 ^ 64` (`Ratpoints.Sieve.barrett_eq`), and for a prime `p < maxPrimeEven`
+the accumulator stays below `p ^ (hornerSteps + 1) < 2 ^ 64` between two reductions
+(`Ratpoints.Sieve.HornerInvariant.lt_two_pow_64`). So for such a prime the table that its loop over
+the residues gives is that of the reference `Ratpoints.Sieve.examinePrime`, handed back with the
+coefficients reduced modulo `p`, and when it gives none, the curve has no points
+(`Ratpoints.Sieve.not_isPoint_of_run_examinePrime?_eq_none`): a point `(a, y, b)` gives a residue
+that the table marks for `p ∤ b`, and for `p ∣ b` a point at infinity modulo `p`, the last entry of
+the table, since `c_d` is then a square modulo `p` for even `d`
+(`Ratpoints.Sieve.isSquare_getD_degree_of_sq_eq_binaryForm`). The values of the C code that could
+leave the range of a `long` stay in it: those of `mod` for moduli below `2 ^ 59`, whose inputs are
+`long`s by the flag of the `long`s, the negations of the map of a reversed search, and the negation
+of a negative leading coefficient in `jacobi1`, with `LONG_MIN` replaced by its quarter.
 
 ## Main definitions
 
-* `Ratpoints.Sieve.HornerInvariant`: the invariant of the loop of Horner's rule in
-  `Ratpoints.Sieve.hornerBarrett`.
+* `Ratpoints.Sieve.HornerInvariant`, `Ratpoints.Sieve.ExaminePrimeInvariant`: the invariants of the
+  loop of Horner's rule in `Ratpoints.Sieve.hornerBarrett` and of the loop over the residues in
+  `Ratpoints.Sieve.examinePrime?`.
 
 ## Main statements
 
@@ -78,15 +76,16 @@ modulo `p` (`Ratpoints.Sieve.hornerBarrett_spec`); the table of a prime takes it
   a prime `p < maxPrimeEven` stays below `2 ^ 64` (`Ratpoints.pow_hornerSteps_add_one_lt`).
 * `Ratpoints.Sieve.hornerBarrett_spec`: Horner's rule with Barrett's reduction on its schedule
   computes the value modulo `p` (`Ratpoints.Sieve.evalMod`).
-* `Ratpoints.Sieve.examinePrime?_eq_examinePrime?_false`,
-  `Ratpoints.Sieve.eq_examinePrime_of_examinePrime?_eq_some`,
-  `Ratpoints.Sieve.examinePrime?_eq_none_iff`: the two paths of the table with the exit give the
-  same result, its table is that of the reference, and it gives none when no entry of the
-  reference is true.
-* `Ratpoints.Sieve.any_isFSquare_examinePrime_of_sq_eq`: a point makes an entry of the table of
-  every prime true.
-* `Ratpoints.Sieve.not_isPoint_of_examinePrime?_eq_none`: a curve without points modulo a prime has
-  no points.
+* `Ratpoints.Sieve.examinePrime?_eq_examinePrime?_false`, `Ratpoints.Sieve.examinePrime?_spec`,
+  with its plain forms `Ratpoints.Sieve.run_examinePrime?`,
+  `Ratpoints.Sieve.eq_examinePrime_of_run_examinePrime?_eq_some`,
+  `Ratpoints.Sieve.eq_map_range_of_run_examinePrime?_eq_some` and
+  `Ratpoints.Sieve.run_examinePrime?_eq_none_iff`: the two paths of the table with the exit give
+  the same result, which is the table of the reference with the coefficients reduced modulo `p` for
+  `0 < p < maxPrimeEven`, and when it gives none.
+* `Ratpoints.Sieve.any_isFSquare_examinePrime_of_sq_eq`,
+  `Ratpoints.Sieve.not_isPoint_of_run_examinePrime?_eq_none`: a point makes an entry of the table
+  of a prime true, so a curve without points modulo a prime has no points.
 * `Ratpoints.fitsLong_sixteen_mul`, `Ratpoints.fitsLong_add_sixteen_mul`, `Ratpoints.fitsLong_neg`,
   `Ratpoints.fitsLong_neg_ite_div_four`: the values of the C code that could leave the range of a
   `long` stay in it.
@@ -254,6 +253,10 @@ theorem natCast_evalMod_map_range (c : List ℤ) (d : ℕ) {p : ℕ} [NeZero p] 
   refine Finset.sum_congr rfl fun k hk ↦ ?_
   rw [List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range (Finset.mem_range.mp hk),
     Option.map_some, Option.getD_some, ZMod.natCast_toNat_emod]
+
+@[simp]
+theorem evalMod_cons_zero (a : ℕ) (cs : List ℕ) (p : ℕ) : evalMod (a :: cs) p 0 = a % p := by
+  simp
 
 -- One step of Horner's rule modulo `p` on the coefficients of `l` from position `i` on.
 private theorem evalMod_drop {l : List ℕ} {i : ℕ} (hi : i < l.length) (p x : ℕ) :
@@ -521,16 +524,145 @@ theorem examinePrime?_eq_examinePrime?_false (c : List ℤ) (d p : ℕ) (u : Boo
     examinePrime? c d p u = examinePrime? c d p false := by
   simp [examinePrime?, modLong_eq_emod]
 
-theorem eq_examinePrime_of_examinePrime?_eq_some {c : List ℤ} {d p : ℕ} {u : Bool} {e : Entry}
-    (h : examinePrime? c d p u = some e) : e = examinePrime c d p := by
-  grind [examinePrime?_eq_examinePrime?_false, examinePrime?, examinePrime]
+-- The coefficients of the table, reduced on the path that the flag of the `long`s chooses, are
+-- those reduced by the Euclidean `%`.
+private theorem map_range_toNat_ite_modLong (c : List ℤ) (d p : ℕ) (u : Bool) :
+    ((Array.range (d + 1)).map fun n ↦
+      (if u = true then modLong (c.getD n 0) p else c.getD n 0 % (p : ℤ)).toNat) =
+      (Array.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat := by
+  simp [modLong_eq_emod]
 
-/-- The exit of `examine_prime`, in the terms of the table of the reference: no entry is true,
-neither a residue at which `f` takes a square value modulo `p` nor the entry `p` at infinity. -/
-theorem examinePrime?_eq_none_iff {c : List ℤ} {d p : ℕ} {u : Bool} :
-    examinePrime? c d p u = none ↔ (examinePrime c d p).isFSquare.any id = false := by
-  rw [examinePrime?_eq_examinePrime?_false]
-  simp [examinePrime?, examinePrime]
+-- The coefficients of the table, reduced modulo `p > 0`, are below `p`.
+private theorem getElem!_map_range_emod_lt (c : List ℤ) (d : ℕ) {p : ℕ} (hp : 0 < p) (i : ℕ) :
+    ((Array.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat)[i]! < p := by
+  by_cases hi : i < d + 1
+  · rw [Array.getElem!_map_range _ hi]
+    exact (Int.toNat_lt' (by lia)).mpr (Int.emod_lt_of_pos _ (by lia))
+  · rw [getElem!_neg _ i (by simpa using hi)]
+    exact hp
+
+/-- The invariant of the loop of `Ratpoints.Sieve.examinePrime?` over the residues `1, …, k`, on the
+table `t`: entry `0` and the entries of these residues, each whether the value modulo `p` of
+Horner's rule (`Ratpoints.Sieve.evalMod`) on the coefficients reduced modulo `p` is a square
+there. -/
+def ExaminePrimeInvariant (c : List ℤ) (d p k : ℕ) (t : Array Bool) : Prop :=
+  t = (Array.range (k + 1)).map fun x ↦ (squaresMod p)[evalMod
+    ((List.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat) p x]!
+
+theorem examinePrimeInvariant_zero (c : List ℤ) (d : ℕ) {p : ℕ} (hp : 0 < p) :
+    ExaminePrimeInvariant c d p 0
+      #[(squaresMod p)[((Array.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat)[0]!]!] := by
+  have h0 := getElem!_map_range_emod_lt c d hp 0
+  rw [Array.getElem!_map_range _ (Nat.succ_pos d)] at h0 ⊢
+  rw [ExaminePrimeInvariant, ← Array.toList_inj, Array.toList_map, Array.toList_range,
+    Nat.zero_add, List.range_one, List.map_singleton, List.range_succ_eq_map, List.map_cons,
+    evalMod_cons_zero, Nat.mod_eq_of_lt h0]
+
+/-- The step of the loop of `Ratpoints.Sieve.examinePrime?` at the residue `cur`, the value `s` of
+Horner's rule with Barrett's reduction being that of Horner's rule reduced at every step. -/
+theorem ExaminePrimeInvariant.push {c : List ℤ} {d p cur s : ℕ} {pref suff : List ℕ}
+    {t : Array Bool} (hl : ForIn.toList [1:p] = pref ++ cur :: suff)
+    (h : ExaminePrimeInvariant c d p pref.length t)
+    (hs : s = evalMod ((Array.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat).toList p
+      cur) :
+    ExaminePrimeInvariant c d p (pref ++ [cur]).length (t.push (squaresMod p)[s]!) := by
+  rw [ExaminePrimeInvariant] at h ⊢
+  rw [h, hs, Array.toList_map, Array.toList_range,
+    ← Std.Legacy.Range.add_length_eq_of_toList_eq_append_cons hl]
+  simp [Array.range_succ, Nat.add_comm 1]
+
+/-- At the end of the loop of `Ratpoints.Sieve.examinePrime?` over the residues, for `p > 0`, the
+table with the entry at infinity is that of the reference. -/
+theorem ExaminePrimeInvariant.push_eq {c : List ℤ} {d p : ℕ} {t : Array Bool}
+    (h : ExaminePrimeInvariant c d p (ForIn.toList [1:p]).length t) (hp : 0 < p) :
+    t.push (d % 2 == 1 ||
+      (squaresMod p)[((Array.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat)[d]!]!) =
+      (examinePrime c d p).isFSquare := by
+  rw [ExaminePrimeInvariant, Std.Legacy.Range.length_toList, Nat.sub_add_cancel hp] at h
+  rw [h, examinePrime, Array.getElem!_map_range _ (Nat.lt_succ_self d)]
+  simp [List.getD_eq_getElem?_getD]
+
+/-- The exit of `Ratpoints.Sieve.examinePrime?`: no entry of the table is true. -/
+theorem ExaminePrimeInvariant.none_eq {c : List ℤ} {d p : ℕ} {t : Array Bool}
+    (h : ExaminePrimeInvariant c d p (ForIn.toList [1:p]).length t) (hp : 0 < p)
+    (hn : (!(t.push (d % 2 == 1 || (squaresMod p)[((Array.range (d + 1)).map fun n ↦
+      (c.getD n 0 % (p : ℤ)).toNat)[d]!]!)).any id) = true) :
+    none = if (examinePrime c d p).isFSquare.any id then
+      some (examinePrime c d p, (Array.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat)
+    else none := by
+  rw [h.push_eq hp] at hn
+  exact (ite_eq_right (by simpa using hn)).symm
+
+/-- The entry that `Ratpoints.Sieve.examinePrime?` returns when an entry of the table is true. -/
+theorem ExaminePrimeInvariant.some_eq {c : List ℤ} {d p : ℕ} {t : Array Bool}
+    (h : ExaminePrimeInvariant c d p (ForIn.toList [1:p]).length t) (hp : 0 < p)
+    (hn : ¬(!(t.push (d % 2 == 1 || (squaresMod p)[((Array.range (d + 1)).map fun n ↦
+      (c.getD n 0 % (p : ℤ)).toNat)[d]!]!)).any id) = true) :
+    some ({ p, isFSquare := t.push (d % 2 == 1 || (squaresMod p)[((Array.range (d + 1)).map
+      fun n ↦ (c.getD n 0 % (p : ℤ)).toNat)[d]!]!), inverses := inversesMod p },
+      (Array.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat) =
+      if (examinePrime c d p).isFSquare.any id then
+        some (examinePrime c d p, (Array.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat)
+      else none := by
+  rw [h.push_eq hp] at hn ⊢
+  exact (ite_eq_left (by simpa using hn)).symm
+
+attribute [local irreducible] ExaminePrimeInvariant in
+/-- The contract of `Ratpoints.Sieve.examinePrime?`: for `0 < p < maxPrimeEven`, on both paths of
+the reduction of the coefficients, the table with the exit is that of the reference
+`Ratpoints.Sieve.examinePrime`, handed back with the `d + 1` coefficients reduced modulo `p`, when
+one of its entries is true, and none otherwise. Horner's rule with Barrett's reduction on its
+schedule gives the values of Horner's rule reduced at every step
+(`Ratpoints.Sieve.hornerBarrett_spec`). -/
+@[spec]
+theorem examinePrime?_spec (c : List ℤ) (d p : ℕ) (u : Bool) :
+    ⦃ 0 < p ∧ p < maxPrimeEven ⦄ examinePrime? c d p u
+    ⦃ fun r ↦ r = if (examinePrime c d p).isFSquare.any id then
+        some (examinePrime c d p, (Array.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat)
+      else none ⦄ := by
+  vcgen [examinePrime?] invariants
+  · fun pref _ t ↦ ExaminePrimeInvariant c d p pref.length t
+  all_goals try rw [map_range_toNat_ite_modLong] at *
+  all_goals obtain ⟨hp0, hp⟩ := ‹0 < p ∧ p < maxPrimeEven›
+  all_goals first
+    | exact examinePrimeInvariant_zero c d hp0
+    | exact ‹ExaminePrimeInvariant _ _ _ _ _›.push ‹_› ‹_›
+    | exact ⟨by simp, hp, Std.Legacy.Range.lt_of_toList_eq_append_cons ‹_›,
+        getElem!_map_range_emod_lt c d hp0⟩
+    | exact ‹ExaminePrimeInvariant _ _ _ _ _›.none_eq hp0 ‹_›
+    | exact ‹ExaminePrimeInvariant _ _ _ _ _›.some_eq hp0 ‹_›
+
+theorem run_examinePrime? {c : List ℤ} {d p : ℕ} (u : Bool) (hp0 : 0 < p)
+    (hp : p < maxPrimeEven) :
+    Id.run (examinePrime? c d p u) = if (examinePrime c d p).isFSquare.any id then
+      some (examinePrime c d p, (Array.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat)
+    else none :=
+  Std.WP.Id.of_run_eq_wp rfl _ ((examinePrime?_spec c d p u).le_wp ⟨hp0, hp⟩)
+
+theorem eq_examinePrime_of_run_examinePrime?_eq_some {c : List ℤ} {d p : ℕ} {u : Bool}
+    {e : Entry} {cm : Array ℕ} (h : Id.run (examinePrime? c d p u) = some (e, cm)) (hp0 : 0 < p)
+    (hp : p < maxPrimeEven) : e = examinePrime c d p := by
+  rw [run_examinePrime? u hp0 hp] at h
+  split at h <;> grind
+
+/-- The coefficients that the table hands back are those of `f` reduced modulo `p`. -/
+theorem eq_map_range_of_run_examinePrime?_eq_some {c : List ℤ} {d p : ℕ} {u : Bool} {e : Entry}
+    {cm : Array ℕ} (h : Id.run (examinePrime? c d p u) = some (e, cm)) :
+    cm = (Array.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat := by
+  rw [examinePrime?_eq_examinePrime?_false] at h
+  simp only [examinePrime?, Bool.false_eq_true, ↓reduceIte, Id.run_bind] at h
+  split at h
+  · simp at h
+  · simp only [Id.run_pure, Option.some.injEq, Prod.mk.injEq] at h
+    exact h.2.symm
+
+/-- The exit of `examine_prime`, for `0 < p < maxPrimeEven`: no entry of the table of the reference
+is true. -/
+theorem run_examinePrime?_eq_none_iff {c : List ℤ} {d p : ℕ} {u : Bool} (hp0 : 0 < p)
+    (hp : p < maxPrimeEven) :
+    Id.run (examinePrime? c d p u) = none ↔ (examinePrime c d p).isFSquare.any id = false := by
+  rw [run_examinePrime? u hp0 hp]
+  split <;> simp_all
 
 /-! ### The exit -/
 
@@ -578,15 +710,15 @@ theorem any_isFSquare_examinePrime_of_sq_eq {c : List ℤ} {p : ℕ} (hp : p.Pri
     simp only [Entry.admits, p_examinePrime, inverses_examinePrime, hb, ↓reduceIte] at h
     exact Array.any_id_eq_true_of_getElem!_eq_true h
 
-/-- When the table of the prime `p` is none, where `examine_prime` returns `-1` and the search ends,
-the curve has no points of any height. -/
-theorem not_isPoint_of_examinePrime?_eq_none {c : List ℤ} {p : ℕ} {u : Bool}
-    (h : examinePrime? c (degree c) p u = none) (hp : p.Prime) (H : ℕ) (q : ℤ × ℤ × ℤ) :
-    ¬ IsPoint c H q := by
+/-- When the table of the prime `p < maxPrimeEven` is none, where `examine_prime` returns `-1` and
+the search ends, the curve has no points of any height. -/
+theorem not_isPoint_of_run_examinePrime?_eq_none {c : List ℤ} {p : ℕ} {u : Bool}
+    (h : Id.run (examinePrime? c (degree c) p u) = none) (hp : p.Prime) (hpp : p < maxPrimeEven)
+    (H : ℕ) (q : ℤ × ℤ × ℤ) : ¬ IsPoint c H q := by
   intro ⟨hy, hg, _, _, _⟩
   obtain ⟨b, hb⟩ : ∃ b : ℕ, q.2.2 = b := ⟨q.2.2.toNat, by lia⟩
   rw [hb] at hy hg
-  rw [examinePrime?_eq_none_iff, any_isFSquare_examinePrime_of_sq_eq hp hg hy] at h
+  rw [run_examinePrime?_eq_none_iff hp.pos hpp, any_isFSquare_examinePrime_of_sq_eq hp hg hy] at h
   cases h
 
 end Sieve

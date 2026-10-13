@@ -352,12 +352,13 @@ theorem length_eq_of_toList_eq_append_cons {m cur : Nat} {pref suff : List Nat}
     (h : ForIn.toList [0:m] = pref ++ cur :: suff) : pref.length = cur :=
   (Nat.zero_add _).symm.trans (add_length_eq_of_toList_eq_append_cons h)
 
-/-- The form of `List.mem_of_range'_eq_append_cons` for the list `ForIn.toList [0:m]` of a loop over
-`[0:m]`: the cursor is below `m`. -/
-theorem lt_of_toList_eq_append_cons {m cur : Nat} {pref suff : List Nat}
-    (h : ForIn.toList [0:m] = pref ++ cur :: suff) : cur < m := by
-  have : cur ∈ ForIn.toList [0:m] := by simp [h]
-  simpa using this
+/-- The form of `List.mem_of_range'_eq_append_cons` for the list `ForIn.toList [a:m]` of a loop over
+`[a:m]`: the cursor is below `m`. -/
+theorem lt_of_toList_eq_append_cons {a m cur : Nat} {pref suff : List Nat}
+    (h : ForIn.toList [a:m] = pref ++ cur :: suff) : cur < m := by
+  have : cur ∈ ForIn.toList [a:m] := by simp [h]
+  simp only [Std.Internal.ForIn.toList_range, List.mem_range'_1, size] at this
+  lia
 
 /-- The form of `List.length_of_range'_eq_append_cons` for the list `ForIn.toList [a:m]` of a loop
 over `[a:m]`: the lists before and after the cursor have `m - a - 1` entries together. -/

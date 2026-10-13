@@ -91,9 +91,9 @@ prime, `RATPOINTS_MAX_PRIME`, has no counterpart; the power of 2 above it is
 `Ratpoints.maxPrimeEven`. -/
 def numPrimes : Nat := (primeTable.toList.filter (· < 2 ^ maxBitsInPrime)).length
 
-/-- The power of 2 above the moduli, `RATPOINTS_MAX_PRIME_EVEN`: the moduli that ratpoints chooses,
-primes, prime powers and products of them, are below it, as are the primes of `Ratpoints.primeTable`
-among which it chooses them; the well-formed parameters of the model take this bound with stage F.
+/-- The power of 2 above the moduli, `RATPOINTS_MAX_PRIME_EVEN`: the moduli of the sieve, primes,
+prime powers and products of them, are below it, as are the primes of `Ratpoints.primeTable` among
+which the sieve chooses its moduli.
 
 C: `rp-private.h:325-361`
 
