@@ -1,0 +1,696 @@
+% Sub-stage F1: the tables and the moduli: the table of a prime as examine_prime builds it, with
+% the Barrett reduction on the fixed schedule of Horner's rule, handing back its coefficients modulo
+% p and its entry at infinity; the loop of the tables of sieving_info, with the exit and the
+% forbidden divisors prime by prime; prime powers and products of them as moduli, with the sieve
+% entry of a modulus of any kind; and the parameters that admit them. Proposed names are set with
+% \lname and become \lean once the declarations exist.
+\chapter{The tables and the moduli}\label{chap:tables}
+
+Stage~F models the side of the numerators: the tables of the moduli, the three stages of the sieve,
+the packing of the numerators of a class by its stride, and the first stage in chunks of bit arrays
+with the rows as the builders of ratpoints lay them out. It runs in four sub-stages with a chapter
+each: F1, the tables and the moduli (this chapter); F2, the stages of the sieve and the check; F3,
+the packing; F4, the chunked first stage and the faithful rows. Each of them only computes what the
+model computes already in another way, or removes candidates that are not points, so the points
+found and their order do not change, and the theorems of Chapter~\ref{chap:denominators} keep their
+statements.
+
+F1 models what ratpoints does with its tables before the sieve. The table of a prime is computed as
+\verb|examine_prime| computes it, by Horner's rule in the arithmetic of 64-bit words with the Barrett
+reduction on a fixed schedule, and it hands back to its caller the coefficients modulo the prime and
+its entry at infinity; the forbidden divisors of Chapter~\ref{chap:denominators} take them from it,
+prime by prime in the loop over the primes that \verb|sieving_info| examines, which ends the search
+at a prime modulo which the curve has no points. And the moduli may be prime powers and products of
+prime powers, as those of ratpoints are: their tables are those of \verb|examine_power|, and their
+rows are the rows of their factors, combined.
+
+The statements that comparator certifies change in one respect, through the parameters that they
+quantify over (Definition~\ref{def:Params}): the parameters gain the number of primes that the loop
+of the tables examines, and their well-formedness admits composite moduli, below
+$2^{\mathrm{maxBitsInPrime}}$ as in the C code, where it admitted the $171$ primes of the table; it
+no longer admits the primes of the table from $2^{\mathrm{maxBitsInPrime}}$ on. The bound is the C
+code's own: ratpoints examines only the primes below $2^{\mathrm{maxBitsInPrime}}$, and its schedule
+of the Barrett reduction is exact for them (and, at the $8$ bits of the build, for no larger prime
+from degree $7$ on).
+The parameters of the command line (Definition~\ref{def:sieveParams}) are well-formed as before, and
+the output is the same for every well-formed choice.
+
+\section{What the C code does with its tables}\label{sec:tablesC}
+
+For the polynomial searched, of degree $d$ with the coefficients $c_0, \dots, c_d$ and the form
+$F(x, z) = \sum_k c_k x^k z^{D - k}$ of even degree $D = d + (d \bmod 2)$, \verb|sieving_info|:
+\begin{enumerate}
+  \item examines the first \verb|pn_lim| primes of the table in turn, \verb|pn_lim| being at first
+    the number of primes asked for, \verb|num_primes|, at most $\mathrm{numPrimes}$, the primes below
+    $2^{\mathrm{maxBitsInPrime}}$, and raised when the number was left to the library and the choice
+    of the moduli needs more primes (\csource{find_points.c}{2605}{2707}). \verb|examine_prime|
+    (\csource{find_points.c}{1683}{1826}) reduces the coefficients modulo $p$, by \verb|mod| for
+    \verb|long|s and by the Euclidean remainder for GMP integers, into an array of its caller; sets
+    the entry $0$ of the table from the squares modulo $p$ at $c_0$, and the entry $a$ for
+    $0 < a < p$ from $f(a)$, computed by Horner's rule in \verb|unsigned long|s with the Barrett
+    reduction, once at the end for $d$ at most $\mathrm{RP\_HORNER\_STEPS}
+    = 64 / \mathrm{maxBitsInPrime} - 1$, and also after every $\mathrm{RP\_HORNER\_STEPS}$ steps
+    otherwise (\csource{find_points.c}{1628}{1655}, \csource{find_points.c}{1716}{1747}); sets the
+    entry $p$, whether there is a point at infinity modulo $p$; and returns $-1$, the exit, when no
+    entry is set, $0$ when every residue gives a square and there is no point at infinity, and
+    otherwise makes the sieve entry of the prime. It hands back the table and the coefficients;
+  \item for each examined prime, in the same loop and whatever \verb|examine_prime| returned short
+    of the exit, at which \verb|sieving_info| returns at once, while the checked loop over the
+    denominators is on and fewer than \verb|max_forbidden| forbidden divisors have been found,
+    records the forbidden divisor of $p$ from the coefficients modulo $p$ and the entry at infinity
+    that it handed back (\csource{find_points.c}{2624}{2677}); after the loop, the further primes of
+    the table from the final position \verb|pn_lim| on (\csource{find_points.c}{2709}{2789});
+  \item offers as moduli the odd composites $m$ with $9 \le m < 2^{\mathrm{maxBitsInPrime}}$ and
+    $m \le \mathrm{RATPOINTS\_COMPOSITE\_MAX}$, $64$ by default, that factor over the examined
+    primes into at most three prime powers, each of which says something about the curve, and whose
+    table is not too dear for the run, while there is room for its prime powers and for more
+    candidates (\verb|add_moduli|, \csource{find_points.c}{2339}{2411}); for a factor $p^e$ with $e \ge 2$,
+    \verb|examine_power| (\csource{find_points.c}{2254}{2331}) computes the coefficients modulo
+    $q = p^e$, the squares modulo $q$, for each residue $x$ whether $f(x)$ is a square modulo $q$,
+    for each multiple $t$ of $p$ whether the reversed polynomial
+    $\tilde f(t) = \sum_k c_k t^{D - k}$ is one, and the inverses modulo $q$ of the units, by the
+    extended Euclidean algorithm (\verb|modinv|, \csource{find_points.c}{2241}{2252});
+  \item ranks the primes and the composites by what they say per cost and takes the moduli of the
+    first stage in that order, then ranks the rest again with a key for the second stage and takes
+    its moduli, pairwise coprime throughout, and makes the sieve entry of each composite
+    (\verb|make_power| and \verb|make_modulus|, \csource{find_points.c}{2414}{2475}); the third
+    stage takes primes only, and examines further primes of the table when it needs them and the
+    number of primes was left to the library, with the same exit
+    (\csource{find_points.c}{2976}{3000}).
+\end{enumerate}
+The row of a denominator $b$ in the table of a modulus is then, for each kind, a pattern of the
+numerators modulo the modulus: for a prime $p$ and $r = b \bmod p \ne 0$, the residues $x$ with
+$f(x r^{-1})$ a square modulo $p$, and for $r = 0$ those not divisible by $p$; for a prime power
+$q = p^e$ and $r = b \bmod q$, the residues $x$ with $f(x r^{-1})$ a square modulo $q$ when
+$p \nmid r$, and with $p \nmid x$ and $\tilde f(r x^{-1})$ a square modulo $q$ when $p \mid r$
+(\verb|_ratpoints_sieve_init_power|, \csource{init.c}{359}{393}); for a product, the residues that
+the row of every factor admits at its own residue (\verb|_ratpoints_sieve_init_product|,
+\csource{init.c}{399}{445}). Every point $(a, y, b)$ with $\gcd(a, b) = 1$ passes every row: for
+$p \nmid b$, $F(a, b) \equiv b^D f(a b^{-1})$ modulo $q$ with $b^D$ the square of a unit; for
+$p \mid b$, $p \nmid a$ and $F(a, b) \equiv a^D \tilde f(b a^{-1})$ modulo $q$. Which moduli are
+chosen, of which kinds and in which stages, changes neither the points nor their order.
+
+\section{The table of a prime as built}\label{sec:tableBuilt}
+
+\begin{definition}[The Barrett reduction on the schedule of Horner's rule]\label{def:barrett}
+  \uses{def:primeTable}
+  Proposed names: \lname{Ratpoints.maxPrimeEven}, \lname{Ratpoints.hornerSteps},
+  \lname{Ratpoints.one\_le\_hornerSteps}, \lname{Ratpoints.maxBitsInPrime\_le\_ten},
+  \lname{Ratpoints.maxPrimeEven\_le\_two\_pow\_10}, \lname{Ratpoints.maxPrimeEven\_le\_two\_pow\_32},
+  \lname{Ratpoints.getElem!\_primeTable\_lt\_maxPrimeEven},
+  \lname{List.getElem\_lt\_of\_lt\_length\_filter}, \lname{Ratpoints.Sieve.barrett},
+  \lname{Ratpoints.Sieve.hornerBarrett}.
+  The power of two above the moduli, $\mathrm{maxPrimeEven} = 2^{\mathrm{maxBitsInPrime}}$
+  (\csource{rp-private.h}{325}{361}), and the number of Horner steps between two reductions,
+  $\mathrm{hornerSteps} = 64 / \mathrm{maxBitsInPrime} - 1$ (\csource{find_points.c}{1652}{1655}),
+  both computed from the constant $\mathrm{maxBitsInPrime}$; two facts about the constant, checked
+  by evaluation as the C code fixes them at compile time: $1 \le \mathrm{hornerSteps}$, which the
+  schedule needs, and $\mathrm{maxBitsInPrime} \le 10$, since the header knows only the sizes from
+  $5$ to $10$ bits and takes $7$ for any other, so that the moduli are below $2^{10}$, as the
+  comments of \verb|examine_power| say, and below $2^{32}$; and the first $\mathrm{numPrimes}$ primes
+  of the table are below $\mathrm{maxPrimeEven}$, since the table is sorted. The Barrett reduction of
+  $u$ modulo $p$ with the reciprocal $m = \lfloor (2^{64} - 1) / p \rfloor$:
+  $r = u - \lfloor u m / 2^{64} \rfloor p$, and $r - p$ if $r \ge p$
+  (\csource{find_points.c}{1639}{1650}, the form with a 128-bit product, which the default build and
+  the build of the model compile). The value of $f$ at $a$ modulo $p$ from the coefficients modulo
+  $p$ by Horner's rule from $c_d$, without a reduction for $d \le \mathrm{hornerSteps}$, and with a
+  reduction after every $\mathrm{hornerSteps}$ steps otherwise, and one at the end
+  (\csource{find_points.c}{1724}{1724}, \csource{find_points.c}{1726}{1731},
+  \csource{find_points.c}{1735}{1735}, \csource{find_points.c}{1737}{1744}).
+\end{definition}
+
+\begin{lemma}[The Barrett reduction and the schedule of Horner's rule]\label{lem:barrett}
+  \uses{def:barrett, def:examinePrime}
+  Proposed names: \lname{Ratpoints.Sieve.barrett\_eq}, \lname{Ratpoints.pow\_hornerSteps\_add\_one\_lt},
+  \lname{Ratpoints.Sieve.HornerInvariant}, \lname{Ratpoints.Sieve.HornerInvariant.lt\_two\_pow\_64},
+  \lname{Ratpoints.Sieve.hornerBarrett\_spec},
+  \lname{Nat.mul\_sub\_one\_div\_div\_mul\_le}, \lname{Nat.lt\_mul\_sub\_one\_div\_div\_add\_two\_mul}.
+  For $0 < p$ and $u < 2^{64}$ the Barrett reduction gives $u \bmod p$. For
+  $p < \mathrm{maxPrimeEven}$, coefficients below $p$ and $a < p$, the accumulator of Horner's rule
+  stays below $p^{\mathrm{hornerSteps} + 1} < 2^{64}$, so that the schedule gives $f(a) \bmod p$,
+  in both of its branches.
+\end{lemma}
+
+\begin{proof}
+  Write $2^{64} - 1 = m p + t$ with $t < p$. Then $u/p - u m/2^{64} = u (1 + t)/(p\, 2^{64})$ lies
+  in $[0, 1)$, so the quotient $\lfloor u m / 2^{64} \rfloor$ is $\lfloor u / p \rfloor$ or one
+  less, and one subtraction of $p$ ends in $[0, p)$. After a reduction the accumulator is below
+  $p$, and each step $s \mapsto s a + c$ with $a, c < p$ takes a bound $p^j$ to $p^{j + 1}$; a
+  reduction follows at the latest after $\mathrm{hornerSteps}$ steps, so the accumulator stays below
+  $p^{64 / \mathrm{maxBitsInPrime}} < 2^{\mathrm{maxBitsInPrime} \cdot (64 / \mathrm{maxBitsInPrime})}
+  \le 2^{64}$, whatever the degree. This is the range obligation of the accumulator, which in the C
+  code is an \verb|unsigned long|; the invariant of the loop holds the residue of the accumulator
+  and this bound.
+\end{proof}
+
+\begin{lemma}[The table with the exit is the table]\label{lem:examinePrime_eq}
+  \uses{lem:barrett, def:examinePrimeExit, def:examinePrime}
+  Proposed names: \lname{Ratpoints.Sieve.ExaminePrimeInvariant},
+  \lname{Ratpoints.Sieve.examinePrime?\_spec}, \lname{Ratpoints.Sieve.run\_examinePrime?},
+  \lname{Ratpoints.Sieve.eq\_examinePrime\_of\_run\_examinePrime?\_eq\_some},
+  \lname{Ratpoints.Sieve.eq\_map\_range\_of\_run\_examinePrime?\_eq\_some},
+  \lname{Ratpoints.Sieve.run\_examinePrime?\_eq\_none\_iff}.
+  The table of a prime with the exit (Definition~\ref{def:examinePrimeExit}) becomes a component of
+  type \verb|Id| with the loop of \verb|examine_prime| over the residues: the entry $0$ from the
+  squares modulo $p$ at $c_0$, the entries $1, \dots, p - 1$ by the schedule of
+  Definition~\ref{def:barrett}, and the entry $p$, whether there is a point at infinity modulo $p$;
+  it keeps $p + 1$ entries, as \verb|examine_prime| does, and hands back the coefficients modulo $p$
+  with the table. The reference (Definition~\ref{def:examinePrime}) gains the entry at infinity
+  too: for even $d$ whether $c_d$ is a square modulo $p$, and true for odd $d$. For
+  $0 < p < \mathrm{maxPrimeEven}$: the table with the exit is none exactly when no entry of the
+  reference is true, and otherwise it is the reference, with the coefficients reduced modulo $p$.
+\end{lemma}
+
+\begin{proof}
+  Lemma~\ref{lem:barrett} for each entry $1, \dots, p - 1$, in an invariant of the loop over the
+  residues; the entry $0$ and the entry at infinity read the same squares in both.
+\end{proof}
+
+The lemmas on the rows and the exit (Lemmas~\ref{lem:admits_examinePrime}
+and~\ref{lem:examinePrime_none}) hold as they are, the exit with the hypothesis
+$p < \mathrm{maxPrimeEven}$, which every prime that the model examines satisfies; that a point
+makes some entry of the reference true, the step of the exit, becomes a lemma of its own there.
+
+\section{The loop of the tables}\label{sec:examinePrimes}
+
+\begin{definition}[The loop of the tables]\label{def:examinePrimes}
+  \uses{def:examinePrimeExit, def:forbidden}
+  Proposed names: \lname{Ratpoints.Sieve.examinePrimes}.
+  For the first $n$ primes of the table in turn: the table of the prime with the exit, and none
+  when the curve has no points modulo it (\csource{find_points.c}{2605}{2614}); the table of every
+  examined prime kept by its position, where \verb|sieving_info| keeps by its index the sieve entry
+  of each prime that says something, with the codes $1$ and $2$ (\csource{find_points.c}{2537}{2537},
+  \csource{find_points.c}{2545}{2545}, \csource{find_points.c}{2601}{2602},
+  \csource{find_points.c}{2616}{2616}, \csource{find_points.c}{2619}{2619},
+  \csource{find_points.c}{2622}{2622}, \csource{find_points.c}{2707}{2707}); and, while the checked
+  loop is on and fewer than $\mathrm{maxForbidden}$ forbidden divisors have been found, the
+  forbidden divisor of the prime from the coefficients modulo $p$ and the entry at infinity that its
+  table hands back (\csource{find_points.c}{2624}{2626}, \csource{find_points.c}{2677}{2677}). The
+  unit parts, the forbidden valuations and the forbidden divisor of a prime
+  (Definitions~\ref{def:forbiddenValuations} and~\ref{def:forbidden}) take these as arguments, where
+  they computed them again; the forbidden divisors of the further primes, the second loop of
+  Definition~\ref{def:forbidden}, start from the lists of this loop at the position $n$, which stands
+  for the final value of \verb|pn_lim|.
+\end{definition}
+
+\begin{lemma}[The loop of the tables]\label{lem:examinePrimes}
+  \uses{def:examinePrimes, lem:examinePrime_eq, lem:examinePrime_none, def:forbidden, def:barrett}
+  Proposed names: \lname{Ratpoints.Sieve.ExaminePrimesInvariant},
+  \lname{Ratpoints.Sieve.ExaminePrimesLoopInvariant}, \lname{Ratpoints.Sieve.examinePrimes\_spec},
+  \lname{Ratpoints.Sieve.size\_eq\_of\_run\_examinePrimes\_eq\_some},
+  \lname{Ratpoints.Sieve.getElem\_eq\_examinePrime\_of\_run\_examinePrimes\_eq\_some},
+  \lname{Ratpoints.Sieve.isForbiddenEntry\_of\_run\_examinePrimes\_eq\_some},
+  \lname{Ratpoints.Sieve.isForbiddenVal\_of\_run\_examinePrimes\_eq\_some},
+  \lname{Ratpoints.Sieve.not\_isPoint\_of\_run\_examinePrimes\_eq\_none}.
+  For $n \le \mathrm{numPrimes}$: if the loop gives tables, there are $n$ of them, the table at the
+  position $i$ is the reference table of the $i$-th prime of the table, and the forbidden divisors
+  found are among those that the loop may record (the predicates of
+  Definition~\ref{def:forbidden}), at most $\mathrm{maxForbidden}$ of them; if it gives none, some
+  prime among the first $n$ has no table with the exit, and the curve has no points.
+\end{lemma}
+
+\begin{proof}
+  An invariant of the loop over the primes seen so far, and one of the loop with its early return,
+  which holds the result only at the end, as for the set-up of the Jacobi test. The primes of the
+  table at positions below $\mathrm{numPrimes}$ are below $\mathrm{maxPrimeEven}$
+  (Definition~\ref{def:barrett}), so Lemma~\ref{lem:examinePrime_eq} applies to each.
+\end{proof}
+
+\section{Prime powers}\label{sec:powers}
+
+\begin{definition}[The inverse modulo $m$ by the extended Euclidean algorithm]\label{def:modinv}
+  Proposed names: \lname{Ratpoints.Sieve.modinv}.
+  From $r_0 = m$, $r_1 = x \bmod m$ and the cofactors $s_0 = 0$, $s_1 = 1$, which keep
+  $r_i \equiv s_i x \pmod m$: while $r_1 \ne 0$, with $q = \lfloor r_0 / r_1 \rfloor$, the pair
+  $(r_0, r_1)$ becomes $(r_1, r_0 - q r_1)$ and $(s_0, s_1)$ becomes $(s_1, s_0 - q s_1)$; then
+  $s_0$, plus $m$ if it is negative (\csource{find_points.c}{2241}{2252}).
+\end{definition}
+
+\begin{lemma}[The inverse modulo $m$]\label{lem:modinv}
+  \uses{def:modinv}
+  Proposed names: \lname{Ratpoints.Sieve.ModinvInvariant}, \lname{Ratpoints.Sieve.modinv\_spec},
+  \lname{Ratpoints.Sieve.ModinvInvariant.natAbs\_add\_mul\_le},
+  \lname{Int.natAbs\_sub\_mul\_of\_mul\_nonpos}.
+  For $1 < m$ and $x$ prime to $m$, the result is the inverse of $x$ modulo $m$ in $[0, m)$; the
+  cofactors and the products
+  $q s_1$ stay in $[-m, m]$, which is their range obligation.
+\end{lemma}
+
+\begin{proof}
+  The invariant: the two congruences, $\gcd(r_0, r_1) = \gcd(m, x)$, $r_0 > 0$, cofactors of
+  opposite signs with $|s_0| r_1 + |s_1| r_0 = m$, and $|s_0| \le m$; the loop ends since $r_1$
+  decreases. At the end $r_0 = \gcd(m, x) = 1$, so $s_0 x \equiv 1$.
+\end{proof}
+
+\begin{definition}[The tables of a prime power]\label{def:examinePower}
+  \uses{def:modinv, def:useCLong, def:examinePrime}
+  Proposed names: \lname{Ratpoints.Sieve.Power}, \lname{Ratpoints.Sieve.examinePower},
+  \lname{Ratpoints.Sieve.Power.admits}.
+  For a prime $p$ and $e \ge 2$, $q = p^e$, a component of type \verb|Id|: the coefficients reduced
+  modulo $q$ on the path of the flag of the \verb|long|s, with $c_D = 0$ for odd $d$; the squares
+  modulo $q$; for each residue $x$ whether $f(x)$ is a square modulo $q$, by Horner's rule reduced
+  at every step; for each residue $t$ whether $p \mid t$ and $\tilde f(t)$ is a square modulo $q$;
+  and, in a loop over the residues, the inverses of the units modulo $q$ by
+  Definition~\ref{def:modinv} (\csource{find_points.c}{2267}{2303};
+  \csource{rp-private.h}{523}{523}, \csource{rp-private.h}{531}{534}). The row of $b$ admits $a$
+  when, for $r = b \bmod q$ and $x = a \bmod q$, $f(x r^{-1})$ is a square modulo $q$ if $p \nmid r$,
+  and $p \nmid x$ and $\tilde f(r x^{-1})$ is a square modulo $q$ if $p \mid r$
+  (\csource{init.c}{359}{386}).
+\end{definition}
+
+\begin{lemma}[The rows of a prime power let every point through]\label{lem:power_admits}
+  \uses{def:examinePower, lem:modinv, lem:isSquare_div, lem:twoAdic_point, def:examinePrime,
+    def:barrett, def:binaryForm}
+  Proposed names: \lname{Ratpoints.Sieve.ExaminePowerInvariant},
+  \lname{Ratpoints.Sieve.examinePower\_spec},
+  \lname{Ratpoints.Sieve.examinePower\_eq\_examinePower\_false},
+  \lname{Ratpoints.Sieve.getElem!\_fsq\_run\_examinePower\_of\_isSquare},
+  \lname{Ratpoints.Sieve.getElem!\_gsq\_run\_examinePower\_of\_isSquare},
+  \lname{Ratpoints.Sieve.mul\_getElem!\_inv\_run\_examinePower\_mod},
+  \lname{Ratpoints.Sieve.natCast\_evalMod\_reverse},
+  \lname{Ratpoints.Sieve.admits\_run\_examinePower\_of\_sq\_eq},
+  \lname{Ratpoints.mul\_add\_lt\_two\_pow\_64\_of\_lt\_maxPrimeEven},
+  \lname{Ratpoints.mul\_self\_lt\_two\_pow\_63\_of\_lt\_maxPrimeEven},
+  \lname{Ratpoints.Sieve.getElem!\_inv\_run\_examinePower\_lt},
+  \lname{Ratpoints.Sieve.getElem!\_inv\_run\_examinePower\_lt\_two\_pow\_16}.
+  The two paths of the coefficients give the same tables; the tables mark what they claim: $f(x)$
+  a square modulo $q$, $\tilde f(t)$ a square modulo $q$ for $p \mid t$, and, by the contract of
+  the loop of the inverses, the inverses of the units. For a prime $p$, $e \ge 1$, $\gcd(a, b) = 1$ and $y^2 = F(a, b)$, the row of $b$ in the
+  tables of $p^e$ admits $a$. The values of \verb|examine_power| and of the row stay in their C
+  types, the moduli being below $\mathrm{maxPrimeEven} \le 2^{10}$: the accumulator $v x + c$ of
+  Horner's rule with $v, x, c < q$, an \verb|unsigned long|, and likewise the product of a residue
+  and an inverse in the row; the square $x \cdot x$, a signed \verb|long|; and the inverses, below
+  $q$, \verb|unsigned short|s.
+\end{lemma}
+
+\begin{proof}
+  \uses{lem:modinv}
+  For $p \nmid b$, $b$ is a unit modulo $q$ and $F(a, b) = b^D f(a b^{-1})$ there, with $b^D$ the
+  square of a unit (Lemma~\ref{lem:isSquare_div}). For $p \mid b$, $p \nmid a$, so $a$ is a unit,
+  and $F(a, b) = a^D \tilde f(b a^{-1})$ modulo $q$, by the form of that lemma with the roles of $a$
+  and $b$ exchanged (Lemma~\ref{lem:twoAdic_point}); Horner's rule on the reversed coefficients
+  computes $\tilde f$. Zero counts as a square, so a high power of $p$ dividing $F(a, b)$ needs no
+  case of its own.
+\end{proof}
+
+The coefficients reduced by \verb|mod| need moduli below $2^{59}$ (Definition~\ref{def:useCLong}),
+which $\mathrm{maxPrimeEven} \le 2^{32}$ gives.
+
+\section{The sieve entry of a modulus}\label{sec:sieveEntry}
+
+\begin{definition}[The factors of a modulus]\label{def:modulusFactors}
+  \uses{def:primeTable}
+  Proposed names: \lname{Ratpoints.modulusFactors}.
+  The factors of $m$ over the first $\mathrm{numPrimes}$ primes of the table, as \verb|add_moduli|
+  finds them: for the primes $p$ in turn while the cofactor is above $1$, a cofactor below $p^2$,
+  which has no odd prime factor below $p$ and so, for odd $m$, is a prime, is looked up among the
+  primes from $p$ on and taken with the exponent $1$ when it is one of them; else $p$ is divided off
+  as often as it divides. The result is the list of the positions and exponents, in the order of
+  the table, and the cofactor that is left (\csource{find_points.c}{2362}{2362},
+  \csource{find_points.c}{2365}{2365}, \csource{find_points.c}{2369}{2386},
+  \csource{find_points.c}{2396}{2400}). The factorization is complete exactly when the cofactor is
+  $1$; an even modulus never factors completely, as the table holds no $2$, and \verb|add_moduli|
+  offers odd moduli only.
+\end{definition}
+
+\begin{lemma}[The factors of a modulus]\label{lem:modulusFactors}
+  \uses{def:modulusFactors, def:barrett}
+  Proposed names: \lname{Ratpoints.ModulusFactorsInvariant},
+  \lname{Ratpoints.ModulusFactorsPowInvariant}, \lname{Ratpoints.modulusFactors\_spec},
+  \lname{Ratpoints.eq\_mul\_prod\_run\_modulusFactors},
+  \lname{Ratpoints.pairwise\_lt\_map\_fst\_run\_modulusFactors},
+  \lname{Ratpoints.lt\_numPrimes\_and\_one\_le\_of\_mem\_run\_modulusFactors},
+  \lname{Ratpoints.prod\_run\_modulusFactors\_of\_snd\_eq\_one},
+  \lname{Ratpoints.pow\_dvd\_of\_mem\_run\_modulusFactors},
+  \lname{Ratpoints.getElem!\_primeTable\_le\_of\_le},
+  \lname{Ratpoints.snd\_run\_modulusFactors\_lt\_mul\_self\_of\_dvd},
+  \lname{Ratpoints.snd\_run\_modulusFactors\_eq\_one}.
+  $m$ is the cofactor times the product of the powers of the primes at the positions; the positions
+  increase and are below $\mathrm{numPrimes}$, the exponents are at least $1$, and a prime of the
+  table that divides the cofactor is above its square root. So each factor divides $m$, and if every divisor $q > 1$ of $m$ is divisible
+  by one of the first $\mathrm{numPrimes}$ primes of the table, as for those primes themselves, the
+  cofactor is $1$ and the product of the factors is $m$.
+\end{lemma}
+
+\begin{proof}
+  An invariant of the loop over the primes and one of the inner loop that divides a prime off,
+  which ends since the cofactor decreases. No prime passed divides the cofactor; at a stop below
+  $p^2$ the lookup shows that the cofactor is none of the primes from $p$ on, so a cofactor above
+  $1$ would have a divisor (itself, or $2$ when it is even) that no prime of the table divides.
+\end{proof}
+
+\begin{definition}[The sieve entries]\label{def:SieveEntry}
+  \uses{def:admits, def:examinePower, def:binaryForm}
+  Proposed names: \lname{Ratpoints.Sieve.Factor}, \lname{Ratpoints.Sieve.Factor.admits},
+  \lname{Ratpoints.Sieve.SieveEntry}, \lname{Ratpoints.Sieve.SieveEntry.admits},
+  \lname{Ratpoints.Sieve.SieveEntry.IsSound}.
+  A factor of a modulus is a prime with its table or a prime power with its tables; the sieve entry
+  of a modulus $m$ is $m$ with its factors, one for a prime or a prime power, two or more for a
+  product (\csource{rp-private.h}{497}{498}, \csource{rp-private.h}{520}{520},
+  \csource{rp-private.h}{542}{555}). Its row of $b$ admits $a$ when the row of every factor admits
+  $a$, each factor reading $b$ and $a$ modulo its own modulus, which divides $m$
+  (\csource{init.c}{399}{414}, \csource{init.c}{419}{429}); a numerator \emph{survives} a list of
+  sieve entries for $b$ when the row of $b$ of every entry admits it, the test that
+  Definition~\ref{def:admits} gave for the tables of primes. A sieve entry is \emph{sound} when its
+  modulus is positive and its row of $b$ admits $a$ for every $\gcd(a, b) = 1$ and $y^2 = F(a, b)$.
+\end{definition}
+
+\begin{definition}[The sieve entry of a modulus]\label{def:makeModulus}
+  \uses{def:SieveEntry, def:modulusFactors, def:examinePrimeExit, def:examinePower}
+  Proposed names: \lname{Ratpoints.makeModulus?}.
+  A component of type \verb|Id|: by the factors of $m$, a factor with the exponent $1$ takes the
+  table of its prime from the loop of the tables when its position is below the number examined,
+  and is examined now, with the exit, otherwise; a factor with the exponent $e \ge 2$ gets the
+  tables of its prime power (\verb|make_power| and \verb|make_modulus|,
+  \csource{find_points.c}{2414}{2429}, \csource{find_points.c}{2434}{2475},
+  \csource{find_points.c}{2546}{2546}; the tables of a prime power that \verb|add_moduli| examines
+  when a modulus first needs it, \csource{find_points.c}{2387}{2395}; the primes examined for the
+  third stage, \csource{find_points.c}{2976}{2978}, \csource{find_points.c}{2994}{2998}).
+\end{definition}
+
+\begin{lemma}[The rows of a modulus let every point through]\label{lem:sieveEntry_admits}
+  \uses{def:makeModulus, lem:modulusFactors, lem:admits_examinePrime, lem:power_admits,
+    lem:examinePrime_eq, lem:examinePrime_none}
+  Proposed names: \lname{Ratpoints.Sieve.Entry.admits\_mod\_of\_dvd},
+  \lname{Ratpoints.Sieve.Power.admits\_mod\_of\_dvd}, \lname{Ratpoints.MakeModulusInvariant},
+  \lname{Ratpoints.makeModulus?\_spec}.
+  For tables of the loop that are those of the reference: if the entry of $m$ is made, it is an
+  entry of $m$, and its row of $b$ admits $a$ for every $\gcd(a, b) = 1$ with $y^2 = F(a, b)$; if it
+  is not made, the curve has no points. Neither needs more of $m$ than the factorization computes.
+\end{lemma}
+
+\begin{proof}
+  Each factor's modulus divides $m$, so $b \bmod m$ and $a \bmod m$ reduce to the residues of the
+  factor; each factor admits the point by Lemma~\ref{lem:admits_examinePrime} or
+  Lemma~\ref{lem:power_admits}. A prime factor beyond the loop has its position below
+  $\mathrm{numPrimes}$ (Lemma~\ref{lem:modulusFactors}), so it is below $\mathrm{maxPrimeEven}$ and
+  the table that its examination gives is the reference (Lemma~\ref{lem:examinePrime_eq}). No sieve
+  entry is made only when a prime examined for it has no table with the exit, and then the curve has
+  no points (Lemma~\ref{lem:examinePrime_none}). No Chinese remainder theorem is needed: the entry
+  only intersects the conditions of its factors.
+\end{proof}
+
+The rows of a sieve entry are made from its admission test by the plain builder of
+Definition~\ref{def:row}, for every kind; the bits of a row depend on the entry only through the
+test, which reduces $b$ and $a$ modulo $m$ first, so the words of Chapter~\ref{chap:words} and their
+contracts hold for the sieve entries of every kind with the proofs that they had for the tables of
+primes. The builders of ratpoints, the functions of \verb|init.c| for each prime,
+\verb|lay_out_pattern| for the prime powers and the blocks of \verb|_ratpoints_sieve_init_product|,
+come with stage~F4.
+
+\section{The parameters and the search}\label{sec:tablesSearch}
+
+The parameters (Definition~\ref{def:Params}) gain the number of primes that the loop of the tables
+examines, from which the forbidden divisors of the further primes start; their moduli may be primes
+of the table, powers of them and products of such powers. They are well-formed when every modulus
+$m$ has $1 < m < \mathrm{maxPrimeEven}$ and factors over the first $\mathrm{numPrimes}$ primes of
+the table, stated as: every divisor $q > 1$ of $m$ is divisible by one of them; when the moduli of
+the third stage, from the position $s_2$ on, are primes of the table; when at most
+$\mathrm{numPrimes}$ primes are examined; and when $s_1 \le s_2 \le$ the number of moduli
+(\lname{Ratpoints.Params.WF.one\_lt\_of\_mem}, \lname{Ratpoints.Params.WF.prime\_of\_mem\_drop}, which
+replace \verb|Ratpoints.Params.WF.prime_of_mem|). The divisor form says what the factorization of
+Definition~\ref{def:modulusFactors} finds (Lemma~\ref{lem:modulusFactors}) without its loop, so that
+the statements that comparator certifies can be read without it. For the values of the constants of
+the build these are the odd moduli from $3$ to $255$, the first $\mathrm{numPrimes}$ primes being the
+odd primes below $256$. Pairwise coprimality, the bound of three factors, the bound
+$\mathrm{RATPOINTS\_COMPOSITE\_MAX}$, the cost of the table, the room for the tables of the prime
+powers, what a modulus says about the curve and the number of candidates are rules of the choice of
+the moduli, which soundness does not need. The parameters of the command line examine the first $q$
+primes, the moduli as before (Definition~\ref{def:sieveParams}).
+
+\begin{definition}[What \texttt{sieving\_info} computes]\label{def:sievingInfo}
+  \uses{def:examinePrimes, def:forbidden, def:makeModulus, def:Params}
+  Proposed names: \lname{Ratpoints.sievingInfo}.
+  The loop of the tables over the examined primes (Definition~\ref{def:examinePrimes}); for the
+  checked loop on, the forbidden divisors of the further primes; and the sieve entries of the
+  moduli, in a loop over them in their order (Definition~\ref{def:makeModulus}); none when the curve
+  has no points modulo a prime examined on the way (\csource{find_points.c}{2522}{2532},
+  \csource{find_points.c}{2892}{2900}, \csource{find_points.c}{3102}{3103}).
+\end{definition}
+
+\begin{lemma}[What \texttt{sieving\_info} computes is sound]\label{lem:sievingInfo}
+  \uses{def:sievingInfo, lem:examinePrimes, lem:sieveEntry_admits, def:forbidden}
+  Proposed names: \lname{Ratpoints.SievingInfoInvariant}, \lname{Ratpoints.sievingInfo\_spec}.
+  For well-formed parameters and either value of the switch of the checked loop: if
+  \verb|sieving_info| gives a result, every sieve entry is sound and the forbidden divisors are
+  among those that the two loops may record; if it gives none, the curve has no points.
+\end{lemma}
+
+\begin{proof}
+  Lemma~\ref{lem:examinePrimes} gives tables equal to the reference, which
+  Lemma~\ref{lem:sieveEntry_admits} needs, in an invariant of the loop over the moduli, and $1 < m$
+  comes from the well-formedness; the forbidden
+  divisors of the second loop are those of the contract of Definition~\ref{def:forbidden}. The exit
+  is that of the loop of the tables or of a modulus.
+\end{proof}
+
+The search (Definition~\ref{def:searchPoints}) takes its sieve entries and its forbidden divisors
+from \verb|sieving_info|, and otherwise runs as in Chapter~\ref{chap:denominators}; the soundness of
+the run over a shape takes sound sieve entries where it took the tables of primes. Its theorem
+(Theorem~\ref{thm:findPoints_order}), the main theorems and the refusal theorems keep their
+statements: the output is the list of the points at infinity followed by the points of the
+brute-force reference over the denominators of the shape in its order, each mapped back after a
+reversal, for every well-formed choice of the parameters, also when an exit is taken.
+
+\section{The command-line program and the differential tests}\label{sec:tablesCli}
+
+The program is unchanged: its parameters examine the first $q$ primes and take primes as moduli.
+No invocation of the test scripts becomes comparable, since the options that F1 concerns have been
+read since stage~C1 and the output does not change; the differential tests stay as they are, every
+point list compared in its order. Composite moduli, which ratpoints chooses from the curve, reach
+the model through the parameters of the theorems; \verb|#guard| examples run the search with
+composite moduli in the stages, with the number of primes examined below and above the primes of
+the moduli, and compare the output with the brute-force reference, and with the reference of the
+reversed polynomial mapped back when the search reverses.
+
+\section{Deviations}\label{sec:tablesDeviations}
+
+Each component of this chapter differs from the C code in a stated way, recorded in its
+\verb|Deviation:| paragraph:
+\begin{itemize}
+  \item the arithmetic of \verb|unsigned long|s in the Barrett reduction and in Horner's rule is
+    that of natural numbers, with the bound $2^{64}$ of the accumulator a lemma
+    (Lemma~\ref{lem:barrett}); the branch of the schedule is chosen for each residue, where
+    \verb|examine_prime| chooses it once; natural numbers for the remainders of \verb|modinv|, whose
+    correction of a negative $x \bmod m$ then has no counterpart, and for the \verb|long|s of
+    \verb|examine_power| and of the rows of prime powers, integers for the cofactors of
+    \verb|modinv|, with their bounds lemmas (Lemmas~\ref{lem:modinv} and~\ref{lem:power_admits});
+  \item \verb|examine_prime| counts the residues with a square value; the model asks whether an
+    entry of the table is set, which is the same test. Its code $0$, every residue a square and no
+    point at infinity, makes no sieve entry in ratpoints and an entry in the model, which the
+    parameters may use as a modulus: its rows let every numerator through for a unit $b$. The
+    fields of the sieve entry of a prime that serve the reductions and the packing come with
+    stages~F2 and~F3; the others are those of a sieve entry with the prime as its single factor;
+  \item the coefficients and the tables are fresh arrays, where the C code fills arrays of its
+    caller and buffers; the tables of a prime power are computed for each modulus that needs them,
+    where \verb|add_moduli| examines each prime power once and keeps it, and \verb|make_modulus|
+    keeps the sieve entry of each prime power;
+  \item the factors of a modulus are a list, for the codes of the factors and their number, without
+    the bound of three factors or of the position $64$, which serve the choice of the moduli, and
+    over the first $\mathrm{numPrimes}$ primes, where \verb|add_moduli| factors over the examined
+    ones; a prime factor beyond the examined primes is examined when its modulus is made, which
+    ratpoints does only for the primes of the third stage, and only when the number of primes was
+    left to the library; a factor whose prime says nothing takes its table from the loop, where
+    \verb|add_moduli| offers no composite with such a factor, and a prime-power factor whose tables
+    say nothing is used with them, where \verb|add_moduli| refuses such a modulus;
+  \item the rows of a prime power and of a product are made by the plain builder from the admission
+    test, where \verb|_ratpoints_sieve_init_power| steps through the residues and lays the pattern
+    out with \verb|lay_out_pattern|, and \verb|_ratpoints_sieve_init_product| lays down the rows of
+    its factors in blocks, read with an acquire load and published with a release store
+    (stage~F4);
+  \item the density, the ranking, the choice of the moduli and their stages are not modelled
+    (stage~I): the moduli, their stages and the number of primes examined are those of the
+    parameters, and the parameters may hold moduli that ratpoints never offers (composites above
+    $\mathrm{RATPOINTS\_COMPOSITE\_MAX}$, with a factor beyond the examined primes, or with a factor
+    that says nothing), all sound; the parameters of the command line with \verb|-P| take
+    third-stage primes after the first $q$, which ratpoints with \verb|-p| never examines, and the
+    model makes their entries with the others;
+  \item the reciprocal, the bias, the inverse of $\mathrm{rbaLength}$ and the inverses
+    \verb|dinv| of a sieve entry serve the reductions of the sieve and the packing, and come with
+    stages~F2 and~F3.
+\end{itemize}
+The lines of this part of the C code that are neither modelled nor left to a later stage are
+excluded in \verb|correspondence/ratpoints.toml|: the check \verb|RP_VERIFY_MODULI| of the rows of
+the moduli against the form, compiled only on request (\verb|init.c|); the output of
+\verb|sieving_info| under \verb|RP_PRIME_STATS|, \verb|RATPOINTS_VERBOSE| and \verb|DEBUG| between
+statements that are not modelled, where the output inside a modelled block goes with the block,
+whose deviation says so; and the enlargement of the buffer of the tables for the composite moduli
+of the first two stages, which fails only for lack of memory. Left to stage~F2 are the reciprocals
+of the moduli of the first two stages that \verb|sieving_info| collects at its end; left to stage~I
+are the density of a prime and of a power, \verb|add_moduli| beyond the factorization, the ranking
+and the choice of the moduli with the rule for looking at further primes.
+
+\section{What changes in the earlier chapters}\label{sec:tablesEarlier}
+
+Each item of the order of work changes the nodes of Chapters~\ref{chap:sieve}
+to~\ref{chap:denominators} that its declarations belong to, in the same commit, so that the names
+of the nodes exist and their C links are the ranges of their declarations:
+\begin{itemize}
+  \item the parameters (Definition~\ref{def:Params}): the moduli may be prime powers and products,
+    with the number of primes examined, and the well-formedness of Section~\ref{sec:tablesSearch}
+    (\verb|prime_of_mem| replaced by \verb|one_lt_of_mem| and \verb|prime_of_mem_drop|; it uses
+    Definitions~\ref{def:barrett} and~\ref{def:modulusFactors}); the parameters of the executable
+    (Definition~\ref{def:sieveParams}) examine the first $q$ primes, for \verb|pn_lim|
+    (\csource{find_points.c}{2566}{2566}), and their well-formedness covers the new conditions; the
+    paragraph after them says what \verb|wf_sieveParams| now uses;
+  \item the table of a prime (Definition~\ref{def:examinePrime}) has the entry at infinity, with the
+    lemma on it (\lname{Ratpoints.Sieve.getElem!\_isFSquare\_examinePrime\_self}); the table with
+    the exit (Definition~\ref{def:examinePrimeExit}) is a component of type \verb|Id| computed by the
+    schedule of Definition~\ref{def:barrett}, hands back the coefficients modulo $p$, keeps the lemma
+    on its two paths and gives its equation with the reference and its projections, now stated for
+    its result under \verb|Id.run|, to Lemma~\ref{lem:examinePrime_eq}, and its C ranges give the lines of Horner's rule to
+    Definition~\ref{def:barrett}; the exit (Lemma~\ref{lem:examinePrime_none}) takes the bound
+    $p < \mathrm{maxPrimeEven}$, uses Lemma~\ref{lem:examinePrime_eq}, and gains the lemma that a
+    point makes some entry of the reference true
+    (\lname{Ratpoints.Sieve.any\_isFSquare\_examinePrime\_of\_sq\_eq},
+    \lname{Ratpoints.Sieve.getElem!\_squaresMod\_of\_sq\_eq});
+  \item the rows of a denominator (Definition~\ref{def:admits}) keep the row of a prime, and the
+    survival of a numerator moves to Definition~\ref{def:SieveEntry}; the plain sieve, the lemma that
+    every point survives (Lemma~\ref{lem:survives}, now for sound sieve entries), the rows in words
+    and their contracts are over sieve entries (Definitions~\ref{def:sieveDen}, \ref{def:row}
+    and~\ref{def:rows}, with \verb|SieveEntry.row|, \verb|SieveEntry.rows| and the lemmas
+    \verb|SieveEntry.admits_congr|, \verb|admits_add_mul|, \verb|admits_mod|, \verb|getLsbD_row|,
+    \verb|get_rows| and \verb|row_mod| for those on \verb|Entry|), and use
+    Definition~\ref{def:SieveEntry}; the row of a sieve entry also cites the lines of
+    \verb|lay_out_pattern| and of the builders of the prime powers and the products that it stands
+    for (\csource{init.c}{259}{297}, \csource{init.c}{387}{387}, \csource{init.c}{391}{393},
+    \csource{init.c}{415}{418}, \csource{init.c}{430}{430}, \csource{init.c}{443}{445}), until
+    stage~F4 models them; the list of deviations of Chapter~\ref{chap:sieve} no longer names the
+    composite moduli and the schedule of Horner's rule as later work;
+  \item the forbidden valuations and divisors (Definitions~\ref{def:forbiddenValuations}
+    and~\ref{def:forbidden}, Lemmas~\ref{lem:forbiddenValuations} and~\ref{lem:forbidden}) take the
+    coefficients modulo $p$ and the entry at infinity as arguments; the first loop is that of the
+    tables (Definition~\ref{def:examinePrimes}), which takes over its C lines, and the second starts
+    at the number examined; the predicates of the contract speak of the primes of the table with the
+    data of their tables, so that Definition~\ref{def:forbidden} uses
+    Definition~\ref{def:examinePrime}, and Lemma~\ref{lem:forbidden} names
+    \lname{Ratpoints.Sieve.IsForbiddenEntry.prime}, \lname{Ratpoints.Sieve.IsForbiddenEntry.words\_eq},
+    \lname{Ratpoints.Sieve.IsForbiddenEntry.not\_dvd} and
+    \lname{Ratpoints.Sieve.IsForbiddenVal.excludes\_eq\_false}, which replace the lemmas on the
+    members of the lists of the forbidden divisors;
+  \item the search (Definition~\ref{def:searchPoints}) takes what \verb|sieving_info| computes
+    (Definition~\ref{def:sievingInfo}), its C ranges and those in the prose of
+    Chapter~\ref{chap:denominators} move to the components, and its list mirrors on \verb|mapM|,
+    unused, are deleted; the deviation of the exit in
+    Chapter~\ref{chap:setup} (the primes of the exit are the moduli of the parameters) goes;
+  \item the passages that say that the moduli are primes, that the forbidden divisors examine the
+    moduli of the parameters and compute their data again, and the stage list of the introduction,
+    which names the four sub-stages of stage~F.
+\end{itemize}
+
+\section{Files, names and order of work}\label{sec:tablesFiles}
+
+The constants and their facts go into \verb|Ratpoints/Model/Constants.lean|, each citing its
+macro: $\mathrm{maxPrimeEven}$ and $\mathrm{hornerSteps}$, computed from
+$\mathrm{maxBitsInPrime}$, so that the build with other values of the constants does not vary them
+itself. The Barrett reduction, Horner's rule on its schedule, \verb|modinv|, the tables of a prime
+power, the factors and the sieve entries go into \verb|Ratpoints/Model/Sieve.lean|; the factors of a
+modulus into \verb|Ratpoints/Model/Params.lean|; the loop of the tables and the second loop of the
+forbidden divisors into \verb|Ratpoints/Model/Denominators.lean|; and the sieve entry of a modulus
+and \verb|sieving_info| into \verb|Ratpoints/Model/FindPoints.lean|. The contracts go next to the
+lemmas they serve: the Barrett reduction, Horner's rule and the table with the exit into
+\verb|Ratpoints/Proof/Tables.lean|; \verb|modinv|, the prime powers with the bounds of their
+inverses, and the sieve entry of a modulus into a new file \verb|Ratpoints/Proof/Moduli.lean|; the
+facts on the constants and on the table of primes, the other range lemmas of \verb|examine_power|,
+the factors of a modulus and the well-formedness into \verb|Ratpoints/Proof/Params.lean|; the loop
+of the tables and the forbidden divisors into \verb|Ratpoints/Proof/Forbidden.lean|, whose users in
+\verb|Ratpoints/Proof/Shapes.lean| follow; the sieve entries into the contracts of
+\verb|Ratpoints/Proof/Sieve.lean|, \verb|Words.lean| and \verb|Denominators.lean|; and the soundness
+of the sieve entries, \verb|sieving_info| and the search into \verb|Ratpoints/Proof/FindPoints.lean|.
+The lemmas on words, arrays and integers in core's namespaces go into
+\verb|Ratpoints/Proof/Bits.lean|, and the lemma on sorted lists into a new mirror
+\verb|Ratpoints/Mathlib/Data/List/Sort.lean|. Every new module joins its part root and the listing
+\verb|Ratpoints.lean|. One commit per item, each passing the project's checks, with the nodes of the
+earlier chapters that it changes (Section~\ref{sec:tablesEarlier}):
+\begin{enumerate}
+  \item[F1.1] The constants $\mathrm{maxPrimeEven}$ and $\mathrm{hornerSteps}$ with their facts and
+    the facts on the table of primes, the Barrett reduction and Horner's rule on its schedule
+    (Definition~\ref{def:barrett}), with Lemma~\ref{lem:barrett} and \verb|#guard| examples against
+    values of the C program; nothing calls them yet, and the lines of Horner's rule pass from the
+    table with the exit to them in F1.6, when it calls them.
+  \item[F1.2] \verb|modinv| and the tables of a prime power with their rows
+    (Definitions~\ref{def:modinv} and~\ref{def:examinePower}, Lemmas~\ref{lem:modinv}
+    and~\ref{lem:power_admits}), with the range lemmas and \verb|#guard| examples against the
+    tables that the C code computes; nothing calls them yet.
+  \item[F1.3] The factors of a modulus (Definition~\ref{def:modulusFactors},
+    Lemma~\ref{lem:modulusFactors}), with the mirror on sorted lists and \verb|#guard| examples;
+    nothing calls them yet.
+  \item[F1.4] The factors and the sieve entries with their soundness and their rows
+    (Definition~\ref{def:SieveEntry}); the plain sieve, the rows in words, the run and their
+    contracts over sieve entries, the lemma that every point survives for sound entries, and the
+    reduction of a factor's row modulo a multiple of its modulus; the search makes the table of each
+    prime modulus an entry with one factor, which is sound, so that the output does not change; the
+    nodes of the rows and of the survival in Chapters~\ref{chap:sieve} and~\ref{chap:words}.
+  \item[F1.5] The reference table with its entry at infinity, and the table with the exit keeping
+    it too, with the exit when no entry is true, still by Horner's rule reduced at every step, so
+    that the two agree for every prime; the unit parts, the forbidden valuations and the forbidden
+    divisor of a prime with the coefficients modulo $p$ and the entry at infinity as arguments, and
+    the predicates of the contract over the primes of the table, the forbidden divisors of the search
+    computing those arguments as before; the nodes of the table, of the exit and of the forbidden
+    divisors in Chapters~\ref{chap:sieve} to~\ref{chap:denominators}.
+  \item[F1.6] \verb|sieving_info|: the table of a prime as built, a component of type \verb|Id|
+    (Lemma~\ref{lem:examinePrime_eq}), the loop of the tables (Definition~\ref{def:examinePrimes},
+    Lemma~\ref{lem:examinePrimes}), the second loop of the forbidden divisors from the number
+    examined, the sieve entry of a modulus (Definition~\ref{def:makeModulus},
+    Lemma~\ref{lem:sieveEntry_admits}), the parameters with the number examined and the new
+    well-formedness, with the parameters of the executable, and \verb|sieving_info| with its
+    contract (Definition~\ref{def:sievingInfo}, Lemma~\ref{lem:sievingInfo}); the search on it, the
+    theorems with their statements unchanged, the guards on the axioms, and \verb|#guard| examples
+    with composite moduli; comparator; the nodes of the parameters, of the table with the exit, of
+    the exit, of the forbidden divisors and of the search. The schedule of the Barrett reduction
+    comes no earlier, since it is exact only below $\mathrm{maxPrimeEven}$, which the new
+    well-formedness gives.
+  \item[F1.7] The exclusions of the lines that the model leaves out; the build with other values of
+    the constants; the differential tests; the passages of Chapters~\ref{chap:sieve}
+    to~\ref{chap:denominators} that F1 makes untrue and the stage list; and the description of the
+    repository and \verb|formalization.yaml|.
+\end{enumerate}
+
+\section{The evidence}\label{sec:tables-evidence}
+
+Checks made while this chapter was written:
+\begin{itemize}
+  \item a reading of the C code of the numerator side at the pin by four readers, with a reader of
+    the API of Mathlib and one of the model, each but the last with a second reader who checked the
+    reading: every part of the numerator side is a data refinement of the model or a sound filter,
+    so that the points and their order do not change; the rows of the composite moduli as the
+    debugging check of the C code specifies them; the Barrett reduction exact for every
+    $u < 2^{64}$, and the schedule of Horner's rule keeping its accumulator below $2^{64}$ for the
+    primes below $2^{\mathrm{maxBitsInPrime}}$, at every degree; and two defects of the C code
+    without effect on the points, now recorded with ratpoints: \verb|-N| without \verb|-n| is not a
+    hard limit, and the check of \verb|RATPOINTS_CHUNK| above $16$ never fires;
+  \item a sketch of the model of this chapter in Lean, whose \verb|#guard| examples give values of
+    the C program; it agrees with \verb|ratpoints -q| on the 3219 runs of the differential tests,
+    every point list in its order, and on the 13 runs at heights up to 100000; its tables and
+    coefficients modulo $p$ are those of \verb|examine_prime| for all 53 primes on both paths, 33072
+    tables of 352 curves of every degree up to 100, 65 exits among them, and those of the reference;
+    the Barrett reduction is the remainder on a million arguments; its forbidden divisors, both
+    kinds in their order, are those of an instrumented build on 785 runs; its tables of prime powers
+    are those of \verb|examine_power| (3168), its rows those of the builders of ratpoints for every
+    odd modulus from $3$ to $255$ and every residue (5.2 million rows), and they let every point
+    through on 660 curves with 8687 points; and the search with random composite moduli, cut points
+    and numbers of primes examined gives the output of the default parameters on 420 runs; at
+    $\mathrm{maxBitsInPrime} = 10$ against a build of ratpoints with that value, 37962 tables over
+    all 171 primes, 2074 tables of prime powers and 524286 rows agree as well;
+  \item a review of the C ranges and the deviations of the sketch by a reader, each finding checked
+    by a second reader: 13 findings, all confirmed (four with corrections by the second reader) and
+    all applied, with four further items that the second reader found missing, on the ranges of the
+    factors and the entry of a modulus, the exclusions, the deviations and the docstrings, none on
+    what the model computes; the ranges of this chapter are the corrected ones;
+  \item a prototype of the proofs on the sketch, in a copy of the repository, in three parts in
+    sequence: every contract and lemma of this chapter proved, with the standard axioms only,
+    every proof of at most $20$ lines, the statements that comparator certifies unchanged in their
+    text, and the build with other values of the constants; it changed nothing in the model, and
+    showed that soundness needs only each factor of a modulus to divide it, without the Chinese
+    remainder theorem; a further step added the fact $\mathrm{maxBitsInPrime} \le 10$ and with it
+    proved the last two range obligations of \verb|examine_power|, the signed square and the
+    \verb|unsigned short| inverses;
+  \item a review of this chapter by four readers, each finding checked by a second reader: 38
+    findings, 30 confirmed, 7 in part and 1 refuted; the prototype then made the table of a prime,
+    the tables of a prime power and the sieve entry of a modulus components of type \verb|Id|, as
+    the conventions of the model ask of components with loops, and stated the well-formedness by
+    divisors; the rest was applied to this chapter: the start of the second loop of the forbidden
+    divisors, the claims on the schedule and on the moduli that ratpoints offers, the nodes that
+    hold each declaration and their uses, which had cycles, the order of work with the nodes of the
+    earlier chapters in the item that changes them, the exclusions and the deviations.
+\end{itemize}
