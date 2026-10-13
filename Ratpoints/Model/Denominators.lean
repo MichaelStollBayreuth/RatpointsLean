@@ -134,7 +134,7 @@ Deviation: the words returned, for the classes `cls` and the word `den_bits` tha
 fills, `den_bits` computed from the words (`Ratpoints.Sieve.denBits`); the stride 1 for every class,
 `k = 0` and `a₀ = 0`, so that the pattern of a class is its word itself, for the packing of the
 numerators of a class into the residues `a₀ mod 2^k` that hold all of its admissible numerators,
-with its row offsets and its packed pattern (stage F); the lowest set bit by the loop of `RP_CTZL`
+with its row offsets and its packed pattern (stage F3); the lowest set bit by the loop of `RP_CTZL`
 (`Ratpoints.Sieve.ctz`); remainders for the masks by `0x3f`; natural numbers for the `long`s `k`,
 `b`, `t` and `a`; no output under `DEBUG`. -/
 def twoAdic (c : List Int) (d : Nat) : Id (Vector UInt64 64) := do
@@ -857,12 +857,12 @@ where `run_block` tests and sifts each as its loop reaches it; no blocks (stage 
 each segment in order, for the blocks of `len` consecutive steps, which the threads share and which
 deliver their points in the same order; the word `nb[b mod 64]` of the 2-adic information, for the
 class `cls[b & 0x3f]` that `sift` receives, whose pattern it is at the stride 1 (its `k`, `a0` and
-row offsets come with the packing, stage F); the residues `b mod p` that choose the rows computed by
-`Ratpoints.Sieve.sift`, for the residues of `b` divided by `2^k` that `fill_bp_list` computes before
-each call (`k` the stride of the packing; stage F); a list of points, for the counts `total` of
-points that `sift` and `run_block` return, with no stop by the callback (stage G); natural numbers
-for the `long`s (stage F); no correction of the moduli between the blocks (stage I); no output under
-`DEBUG`. -/
+row offsets come with the packing, stage F3); the residues `b mod p` that choose the rows computed
+by `Ratpoints.Sieve.sift`, for the residues of `b` divided by `2^k` that `fill_bp_list` computes
+before each call (`k` the stride of the packing; stage F3); a list of points, for the counts `total`
+of points that `sift` and `run_block` return, with no stop by the callback (stage G); natural
+numbers for the `long`s (stage F); no correction of the moduli between the blocks (stage I); no
+output under `DEBUG`. -/
 def sieveRun (c : List Int) (d H A : Nat) (rev : Bool) (entries : List SieveEntry)
     (nb : Vector UInt64 64) (db : UInt64) (shape : Shape) (bLow bHigh : Nat) :
     Id (Array (Int × Int × Int)) := do

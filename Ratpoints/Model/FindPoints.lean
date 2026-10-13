@@ -118,10 +118,10 @@ is not too dear for the run (line 2368), with room in the buffer of the prime po
 prime powers (lines 2351 and 2390), a density `r < 1` (line 2402) and at most `RP_MAX_MODULI`
 candidates (line 2403), restrictions that the model lifts as choices of the moduli (stage I); no
 reciprocal `magic`, bias `bias` and inverse `rbainv`, which serve the reduction of the sieve and the
-packing (stage F), no density `r` (stage I), and no field `init`, the rows of every kind being made
-by one function (`Ratpoints.Sieve.SieveEntry.row`); the entry a fresh value, for the space that
-`make_power` and `make_modulus` take from the buffer of the sieve entries (`se_next`), and the exit
-as `none`, for the prime that `sieving_info` returns. -/
+packing (stages F2 and F3), no density `r` (stage I), and no field `init`, the rows of every kind
+being made by one function (`Ratpoints.Sieve.SieveEntry.row`); the entry a fresh value, for the
+space that `make_power` and `make_modulus` take from the buffer of the sieve entries (`se_next`),
+and the exit as `none`, for the prime that `sieving_info` returns. -/
 def makeModulus? (c : List Int) (d : Nat) (useCLong : Bool) (tables : Array Entry) (m : Nat) :
     Id (Option SieveEntry) := do
   let (fac, _) ← modulusFactors m

@@ -510,7 +510,7 @@ options from the model, and has the refusal theorem with the Sturm step off too,
 $\mathrm{findPoints}$ that refused every input under \verb|-s| would not pass. Since the challenge
 needs \verb|Squarefree|, the specification imports \verb|Mathlib.Algebra.Squarefree.Basic|, so that
 the challenge still imports, besides the model, exactly the public imports of the specification.
-Stage~D left the structure \verb|Params| and its well-formedness as stage~C2 had them; stage~F adds
+Stage~D left the structure \verb|Params| and its well-formedness as stage~C2 had them; stage~F1 adds
 the number of primes examined and the composite moduli (Chapter~\ref{chap:tables}).
 
 \section{The command-line program and the differential tests}\label{sec:setupCli}
@@ -584,9 +584,9 @@ Each component of the set-up differs from the C code in a stated way, recorded i
     helper \verb|mod| (\verb|Sieve.modLong|);
   \item of \verb|examine_prime| what the table, its last entry, the coefficients modulo $p$ that it
     hands back and the exit need: its entry of the prime and its codes $0$, $1$ and $2$ serve the
-    choice of the moduli (stage~I), and its reciprocal \verb|magic|, bias and inverse
-    \verb|rbainv| the reduction of the sieve and the packing (stage~F); one loop over the residues,
-    where the C code has one for each branch of the schedule of Horner's rule; the table and the
+    choice of the moduli (stage~I), and its reciprocal \verb|magic|, bias and inverse \verb|rbainv|
+    the reduction of the sieve and the packing (stages~F2 and~F3); one loop over the residues, where
+    the C code has one for each branch of the schedule of Horner's rule; the table and the
     coefficients fresh arrays and the entry a fresh value, returned, for the buffers that the C code
     takes them from and the entry and the array of its caller where it stores them;
   \item the arguments of \verb|sieving_info| that serve the choice of the moduli (the mean number of
@@ -605,9 +605,9 @@ The lines of the set-up that are neither modelled nor left to a later stage are 
 the instrumentation of the development, the management of memory and its failures, the input fields
 that \verb|find_points_work| saves and puts back, the checks of arguments that only a caller of the
 library can fail, and the threads; so the record of \verb|find_points_work_1| up to the run lacks
-only what belongs to stages~F, H and~I, now that stage~E has recorded its lines
-(Chapter~\ref{chap:denominators}). The macros of the flags and of the return codes in
-\verb|ratpoints.h| are recorded later, for all stages together.
+only what belongs to stages~F2 to~F4, H and~I, now that stages~E and~F1 have recorded their lines
+(Chapters~\ref{chap:denominators} and~\ref{chap:tables}). The macros of the flags and of the return
+codes in \verb|ratpoints.h| are recorded later, for all stages together.
 
 \section{Files and names}
 

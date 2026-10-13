@@ -136,8 +136,8 @@ denominator first needs them, are those of the sieve entry of the prime
 (`Ratpoints.Sieve.SieveEntry.rows`), made from `Ratpoints.Sieve.Entry.admits` when first needed and
 kept for the run; the fields `init`, `nf`, `factor` and `pw` are those of the sieve entry
 `Ratpoints.Sieve.SieveEntry`, of which the prime is the single factor; `magic`, `bias`, `rbainv` and
-`dinv` serve the reductions of the sieve and the packing (stage F), `r` the choice of the moduli
-(stage I). -/
+`dinv` serve the reductions of the sieve and the packing (stages F2 and F3), `r` the choice of the
+moduli (stage I). -/
 structure Entry where
   /-- The prime. -/
   p : Nat
@@ -281,8 +281,8 @@ field `ssp` of `prec_entry`; it keeps only `p`, the table and the inverses
 `examine_prime` sets (lines 1800 and 1817) are those of the sieve entry of the prime
 (`Ratpoints.Sieve.SieveEntry`), of which the prime is the single factor, made by
 `Ratpoints.makeModulus?`; no reciprocal `magic`, bias `bias` and inverse `rbainv`, which serve the
-reduction of the sieve and the packing (stage F), and no density `r` (line 1811), which serves the
-choice of the moduli (stage I). -/
+reduction of the sieve and the packing (stages F2 and F3), and no density `r` (line 1811), which
+serves the choice of the moduli (stage I). -/
 def examinePrime? (c : List Int) (d p : Nat) (useCLong : Bool) :
     Id (Option (Entry × Array Nat)) := do
   let cm := (Array.range (d + 1)).map fun n ↦
@@ -456,7 +456,8 @@ whose entry has `nf ≥ 2` and points to the entries `factor` of its factors; no
 field `sieve`, are `Ratpoints.Sieve.SieveEntry.rows`, made when first needed and kept for the run,
 by one function for every kind (`Ratpoints.Sieve.SieveEntry.row`), for the function `init` of the
 kind, of the type `ratpoints_init_fun`; no reciprocal `magic`, bias `bias`, inverse `rbainv` and
-inverses `dinv`, which serve the reduction of the sieve and the packing (stage F), and no density
+inverses `dinv`, which serve the reduction of the sieve and the packing (stages F2 and F3), and no
+density
 `r`, which serves the choice of the moduli (stage I). -/
 structure SieveEntry where
   /-- The modulus. -/
@@ -643,7 +644,7 @@ Deviation: one function for every kind of modulus, the pattern of one period fro
 `init.c`, which step through the residues `a b⁻¹ mod p` four at a time and rotate the pattern
 through the words, one function for each prime that the build generates, for the pattern `sieves0`
 that the build generates for the row of `0` of a prime, and for the row of a product, which
-`_ratpoints_sieve_init_product` lays down from the rows of its factors (stage F); in
+`_ratpoints_sieve_init_product` lays down from the rows of its factors (stage F4); in
 `lay_out_pattern`, the packed pattern made bit by bit, where it is or-ed together from shifted
 copies of the pattern, the position of each window computed, where it is stepped by `64 mod p`, and
 the first `p` words repeated, where all `p rbaPack` are computed; a fresh array, for the space that
@@ -651,7 +652,7 @@ the builders take from the buffer of the tables (`ba_next`), and the row returne
 builders also store it in the field `sieve` of the entry, with a release store for the threads
 (`RP_PUBLISH`), which the thunks of `Ratpoints.Sieve.SieveEntry.rows` do; the copies of the first
 bit arrays that the builders append at the end of a row, which only the chunked first stage reads,
-are none in the build of the model (`RATPOINTS_CHUNK` = 1; stage F). -/
+are none in the build of the model (`RATPOINTS_CHUNK` = 1; stage F4). -/
 def SieveEntry.row (e : SieveEntry) (b : Nat) : Array UInt64 :=
   let pat := (Array.range e.p).map fun N : Nat ↦ e.admits b N
   let E := packedPattern pat e.p
@@ -671,9 +672,9 @@ row admits, for every `w ≡ x (mod p)`.
 C: `rp-private.h:378-379`
 
 Deviation: the row for the pointer `ptr` to it, with no `offset`, which carries the shift of the
-packing of the 2-adic classes and a multiple of `p` that keeps the index non-negative (stage F), and
-no pointers `start` and `end` into the row, which only the chunked first stage reads (stage F): the
-components index the row by the word number modulo `p`. -/
+packing of the 2-adic classes and a multiple of `p` that keeps the index non-negative (stage F3),
+and no pointers `start` and `end` into the row, which only the chunked first stage reads (stage F4):
+the components index the row by the word number modulo `p`. -/
 structure SieveSpec where
   /-- The modulus. -/
   p : Nat
@@ -715,19 +716,19 @@ Deviation: every modulus in the first stage, over every bit array, for the secon
 the rows of its moduli, one after the other, into each bit array that the scan finds nonzero, and
 stops as soon as no bit of it is left, and the third stage, which tests one numerator at a time
 after the test for common factors, stops at the first prime that rejects it and skips the primes
-that divide `b` (stage F); the first stage of the builds with one register per chunk, for the chunks
-of sixteen registers of the default build with the legs over the tail of a piece (stage F); the
-class word written one word at a time from the first, where ratpoints writes the 2-adic pattern of
-the class of `b` into the bit arrays from the last, and the pattern of the plain layout, one word
-repeated, for the packed pattern of a stride `2^k` (stage F), the class word written into each word
+that divide `b` (stage F2); the first stage of the builds with one register per chunk, for the
+chunks of sixteen registers of the default build with the legs over the tail of a piece (stage F4);
+the class word written one word at a time from the first, where ratpoints writes the 2-adic pattern
+of the class of `b` into the bit arrays from the last, and the pattern of the plain layout, one word
+repeated, for the packed pattern of a stride `2^k` (stage F3), the class word written into each word
 of a bit array, for the vector `RBA(packed)` that `get_2adic_info` makes once per class
 (`find_points.c:1098`) and `_ratpoints_sift0` copies into each bit array (`bits64`, `sift.c:519`,
 `sift.c:954`); the row of the word number `w` at index `w mod p`, where ratpoints adds the offset of
 the packing and a multiple of `p` that keeps the index non-negative, and reduces by a multiplication
-when that is exact (stage F); indices for the pointers into the rows and into the survivors, and the
-number of whole periods and the rest computed before their loops; natural numbers and integers for
-the `long`s (stage F); no count of the ands of the second stage under `RP_PHASE_COUNTS`, and no
-output under `DEBUG`. -/
+when that is exact (stages F2 and F3); indices for the pointers into the rows and into the
+survivors, and the number of whole periods and the rest computed before their loops; natural numbers
+and integers for the `long`s (stage F); no count of the ands of the second stage under
+`RP_PHASE_COUNTS`, and no output under `DEBUG`. -/
 def andRows (specs : List SieveSpec) (cw : UInt64) (w0 : Int) (n : Nat)
     (surv : Vector UInt64 ((n + 1) * rbaPack)) :
     Id (Vector UInt64 ((n + 1) * rbaPack)) := do
@@ -764,8 +765,8 @@ are points of the caller's curve.
 C: `sift.c:202-205`, `sift.c:318-343`, `sift.c:438-446`, `find_points.c:5250-5338`
 
 Deviation: a plain `gcd`, for the binary `gcd` of `relprime`, whose loop body has no branch (stage
-F); the third stage of `accepted` is applied with the other moduli in the first stage
-(`Ratpoints.Sieve.andRows`, stage F); the products `w` and the factor `f` come in as arguments,
+F2); the third stage of `accepted` is applied with the other moduli in the first stage
+(`Ratpoints.Sieve.andRows`, stage F2); the products `w` and the factor `f` come in as arguments,
 computed for every denominator, where `_ratpoints_check_point` computes the products when the first
 survivor of `b` reaches it; the flag `rev` comes in as an argument too, handed down from
 `Ratpoints.Sieve.sieveRun` through the components that call the check, for the bit
@@ -775,7 +776,7 @@ that `_ratpoints_check_point` returns, with no stop that `process` may request, 
 `RATPOINTS_NO_Y` and no `RATPOINTS_NO_CHECK` (stage G); no counts of the numerators that pass the
 test for common factors and the third stage (`n_coprime`, `n_checks`), which ratpoints reads to
 correct the moduli between the blocks of the run (stage I); integers for the `long`s `a` and `b` and
-the operands of `relprime` (stage F; the negations of `Ratpoints.Sieve.swapPoint` stay `long`s by
+the operands of `relprime` (stage F2; the negations of `Ratpoints.Sieve.swapPoint` stay `long`s by
 `Ratpoints.fitsLong_neg`); no measurements of the time of the check and of its products (`RP_CHECK`,
 `RP_BC_TIC`, `RP_BC_TOC` under `RP_PHASE_TIMING`), and no output under `DEBUG`. -/
 def checkNum (w : List Int) (f b : Int) (rev : Bool) (a : Int) : List (Int × Int × Int) :=
@@ -794,7 +795,7 @@ extraction runs for each set bit.
 C: `sift.c:262-264`, `sift.c:1227-1255`, `sift.c:1265-1292`
 
 Deviation: bit `t` for the numerator `a0 + t`, where the step from one bit to the next is the stride
-`2^k` of the packing of the 2-adic class of `b` (stage F); the lowest set bit by the loop of
+`2^k` of the packing of the 2-adic class of `b` (stage F3); the lowest set bit by the loop of
 `RP_CTZL` for a compiler without the builtin (`Ratpoints.Sieve.ctz`); one definition for the body at
 both places of the extraction, the first word of a bit array and the others; natural numbers and
 integers for the `long`s (stage F); no count of the numerators that reach the test for common
@@ -830,7 +831,7 @@ C: `sift.c:1061-1082`, `sift.c:1088-1092`, `sift.c:1213-1226`, `sift.c:1257-1264
 
 Deviation: the plain layout, bit `t` of the bit array with the word number `w` for the numerator
 `rbaLength w + t`, where bit `t` stands for the numerator `a₀ + 2^k (rbaLength w + t)` of the
-packing of the 2-adic class of `b` (stage F); indices for the pointers into the survivors, and a
+packing of the 2-adic class of `b` (stage F3); indices for the pointers into the survivors, and a
 scan that holds its position as an index and reads the words of the bit array that it finds in
 place, where ratpoints recovers the word number from a pointer difference and copies the bit array;
 the sentinel `~zero` of every build as `Ratpoints.rbaPack` words `~~~0`, written one at a time, and
@@ -879,13 +880,13 @@ uninitialized; the piece by its first word number `w0` and its number `n` of bit
 and `w_high`, and an index for the pointer to its last bit array; the moduli of all three stages
 with their rows in `specs`, for the moduli of the first two stages with their rows in `sieves`, the
 numbers `sp1`, `sp2` and `nchecks` of the moduli of the stages, which the sieving thread `wk` keeps,
-and the table `checks` of the third stage (stage F); the class word `cw`, the pattern `bits` of the
+and the table `checks` of the third stage (stage F2); the class word `cw`, the pattern `bits` of the
 class `cls` (`sift.c:519`) at the stride 1, for the class itself, whose stride `k` and residue `a0`,
 which the extraction reads (`sift.c:1221-1222`, `Ratpoints.Sieve.scanPiece`; `sift.c:1130-1131`
-under `USE_LONG_IN_PHASE_2`), come with the packing (stage F); no `magics` and no test `small` of
-whether the reductions modulo the moduli can multiply by a reciprocal (stage F); no count of the
-words of the piece (`n_words`), which ratpoints reads to correct the moduli between the blocks of
-the run (stage I); the products `w` and the factor `f` of the check as arguments, where
+under `USE_LONG_IN_PHASE_2`), come with the packing (stage F3); no `magics` and no test `small` of
+whether the reductions modulo the moduli can multiply by a reciprocal (stages F2 and F3); no count
+of the words of the piece (`n_words`), which ratpoints reads to correct the moduli between the
+blocks of the run (stage I); the products `w` and the factor `f` of the check as arguments, where
 `_ratpoints_check_point` computes the products when the first survivor of `b` reaches it and
 multiplies each value by `b` for odd `d`; a list of points, for the callback `process` with its
 argument `info` and for the count `total` of points that `_ratpoints_sift0` returns, with no flag
@@ -923,24 +924,24 @@ C: `find_points.c:3149-3170`, `find_points.c:3442-3488`, `find_points.c:3490-356
 Deviation: the plain layout, bit `t` of the bit array with the word number `w` for the numerator
 `rbaLength w + t`, and every numerator from `-H` to `H`, as the bits from `-H` to `H`, for the
 intervals of the search region that the Sturm step keeps (stage H), whose numerators ratpoints takes
-into the packing of the 2-adic class of `b` (`interval_bits`, `numerators_to_bits`; stage F),
+into the packing of the 2-adic class of `b` (`interval_bits`, `numerators_to_bits`; stage F3),
 returning at the first interval beyond `H` and skipping an empty one; the class word `cw` of `b`,
 the pattern of its class at the stride 1, for the class `cls` itself, whose stride `k` and residue
 `a0` (read through `interval_bits` by `numerators_to_bits`) and row offsets (read by `set_rows`)
-come with the packing (stage F); the row of `b mod p`, read in `sift` from the rows of the run and
+come with the packing (stage F3); the row of `b mod p`, read in `sift` from the rows of the run and
 made by its thunk when it is first needed, for the row of `b 2^(-k) mod p` that `set_rows` reads
-from the residues that `fill_bp_list` computes before the call (stage F), with a test for the rows
+from the residues that `fill_bp_list` computes before the call (stage F3), with a test for the rows
 that are missing and their construction by the function `init` of the entry under the lock of the
 tables, which threads share; every modulus with its row, those of the third stage too, for the
 moduli of the first two stages with their rows, the offset of the packing and the end of the row
 (`sieve_spec`), and the table `checks` of the third stage, which `fill_checks` fills when the first
 numerator of `b` reaches that stage, with the inverse of `b` modulo each of its moduli, from
 `b mod p` by a multiplication when `b` is small, and the magic and the bias of the reductions (stage
-F); the products `w` and the factor `f` computed for every denominator, where
+F2); the products `w` and the factor `f` computed for every denominator, where
 `_ratpoints_check_point` computes the products when the first survivor of `b` reaches it
 (`compute_bc`) and multiplies each value by `b` for odd `d`; no count of the denominators sieved
 (`n_sifts`), which ratpoints reads to correct the moduli between the blocks of the run (stage I),
-and no flag `stage3_filled` (stage F); a list of points, for the callback `process` with its
+and no flag `stage3_filled` (stage F2); a list of points, for the callback `process` with its
 argument `info` and for the count `total` of points that `sift` returns, with no stop that `process`
 may request (`quit`, stage G) or that the pool of threads sends (`stop`); natural numbers and
 integers for the `long`s (stage F); no measurements of the phases (`RP_SIFT_TIC`, `RP_SETUP_TIC`,

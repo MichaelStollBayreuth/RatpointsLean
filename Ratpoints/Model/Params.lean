@@ -157,7 +157,7 @@ C: `rp-private.h:87`, `find_points.c:4666-4677`
 
 Deviation: a `Nat` for the `long` field, so that only `0` stands for the default, which the library
 takes for every value `≤ 0`; no rounding up to a multiple of the chunk, which is one bit array in
-the build of the model (`RATPOINTS_CHUNK`, stage F). -/
+the build of the model (`RATPOINTS_CHUNK`, stage F4). -/
 def Params.arraySizeAt (P : Params) (H : Nat) : Nat :=
   min (min (if P.arraySize = 0 then defaultArraySize else P.arraySize) (2 * ((H + 63) / 64)))
     maxArraySize

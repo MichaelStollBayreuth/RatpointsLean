@@ -170,7 +170,7 @@ def defaultArraySize : Nat := 256
 C: `find_points.c:124`
 
 Deviation: `2 ^ 20`, the value for a chunk of one bit array, where the C code takes the largest
-multiple of the chunk `RATPOINTS_CHUNK` up to `2 ^ 20` (stage F). -/
+multiple of the chunk `RATPOINTS_CHUNK` up to `2 ^ 20` (stage F4). -/
 def maxArraySize : Nat := 2 ^ 20
 
 /-- The bound on the number of squarefree divisors of the leading coefficient that the loop over

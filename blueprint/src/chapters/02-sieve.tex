@@ -12,17 +12,17 @@ parameters the sieve returns exactly the list of the brute-force reference, the 
 same order, and membership and no duplicates follow from Theorem~\ref{thm:bruteForce}.
 
 The later stages contribute in four ways. A \emph{data refinement} computes the same predicate in
-another way, with a lemma that it does: the bit arrays of words of stage~C2, the faithful tables
-and the packing of stage~F; the equation with the reference survives it. A \emph{transformation},
-the reversal of stage~D, is a bijection of the point sets that preserves the box. A \emph{sound
-filter} comes with the lemma that every point passes it: the 2-adic information and the tests on
-the denominators of stage~E, the composite moduli and the third stage of stage~F. An
-\emph{enumeration refinement} visits the denominators that carry points in another order: the loop
-shapes of stage~E. From the reversal on, and with the divisor order of stage~E, the statement is
-that the output is a permutation of the reference, which still gives membership and no duplicates;
-since stage~E a theorem also gives its order, that of the reference over the denominators in the
-order of the loop of the search (Theorem~\ref{thm:findPoints_order}), which stage~G spells out in
-terms of the polynomial.
+another way, with a lemma that it does: the bit arrays of words of stage~C2, the faithful tables of
+stage~F1 and the packing of stage~F3; the equation with the reference survives it. A
+\emph{transformation}, the reversal of stage~D, is a bijection of the point sets that preserves the
+box. A \emph{sound filter} comes with the lemma that every point passes it: the 2-adic information
+and the tests on the denominators of stage~E, the composite moduli of stage~F1 and the third stage
+of stage~F2. An \emph{enumeration refinement} visits the denominators that carry points in another
+order: the loop shapes of stage~E. From the reversal on, and with the divisor order of stage~E, the
+statement is that the output is a permutation of the reference, which still gives membership and no
+duplicates; since stage~E a theorem also gives its order, that of the reference over the
+denominators in the order of the loop of the search (Theorem~\ref{thm:findPoints_order}), which
+stage~G spells out in terms of the polynomial.
 
 \section{What a default run of the C code does}\label{sec:skeleton}
 
@@ -258,7 +258,7 @@ faithful components of the sieve. The remainder \verb|mod()| of the C code is Le
 as it is and prove it equal to \verb|%| (Definitions~\ref{def:useCLong} and~\ref{def:examinePower}).
 The tables that the build of ratpoints generates (the squares, the inverses, the row of $0$) are
 Lean functions with lemmas that they compute what they claim, checked against the generated header
-by \verb|#guard| examples, and stage~F will check them as a whole against its faithful rows. Each
+by \verb|#guard| examples, and stage~F4 will check them as a whole against its faithful rows. Each
 loop of the sieve is a definition of type \verb|Id α| that its callers bind with \verb|←|, so that
 its contract, an \verb|@[spec]| theorem proved with the program logic of Lean core and with loop
 invariants that are named definitions, applies at the call; only \verb|findPoints| runs a component
@@ -372,14 +372,14 @@ paragraph of the component whose range holds it:
   \item the residue of $b$ modulo each modulus, which the reference of
     Definitions~\ref{def:sieveDen} and~\ref{def:checkDen} computes for each numerator and
     \verb|sift| (Definition~\ref{def:sift}) once per denominator, for the residues of $b / 2^k$ that
-    choose the rows, which ratpoints computes once per denominator before it calls \verb|sift| (F);
+    choose the rows, which ratpoints computes once per denominator before it calls \verb|sift| (F3);
   \item every numerator from $-H$ to $H$ for the search region (H) and the packing of the 2-adic
-    classes (F);
+        classes (F3);
   \item every modulus applied to every numerator before the test for common factors, for the packing
-    and the three stages (F), whose third stage runs after the test for common factors and skips the
-    primes that divide $b$, and for their correction between the blocks of the run from the counts
-    of the survivors (I);
-  \item a plain $\gcd$ for the binary $\gcd$ of \verb|relprime|, whose loop body has no branch (F);
+    and the three stages (F2, F3), whose third stage runs after the test for common factors and
+    skips the primes that divide $b$, and for their correction between the blocks of the run from
+    the counts of the survivors (I);
+  \item a plain $\gcd$ for the binary $\gcd$ of \verb|relprime|, whose loop body has no branch (F2);
   \item the products $c_k b^{d-k}$ computed for every denominator, where ratpoints computes them
     when the first survivor reaches the check;
   \item the flag of the reversal as an argument of the points at infinity, for the bit

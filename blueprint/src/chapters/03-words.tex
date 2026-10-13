@@ -18,8 +18,8 @@ which the default build does in chunks of sixteen registers. So the model is the
 ratpoints tests as \verb|chunk1| (256-bit bit arrays and \verb|-DRATPOINTS_CHUNK=1|, one of the
 configurations of \verb|make test4configs|). The numerators keep the plain layout of stage~C1, one
 bit per numerator from $-H$ to $H$; the 2-adic classes come with stage~E, as the word of the class
-from which the first stage starts (Chapter~\ref{chap:denominators}), and their packing, the chunks
-and the second and third stages of the sieve with stage~F.
+from which the first stage starts (Chapter~\ref{chap:denominators}), their packing with stage~F3,
+the chunks with stage~F4 and the second and third stages of the sieve with stage~F2.
 
 \section{What the C code does with words}\label{sec:wordsC}
 
@@ -126,7 +126,7 @@ theorems quantify over it as over the other parameters, and \verb|Params.WF| doe
 every value gives pieces of at least one bit array. The comparator challenge imports \verb|Params|,
 so its structure has this field, and stage~C2 changed neither the statements of the challenge nor
 \verb|Params.WF|. The number of registers of a chunk, \verb|RATPOINTS_CHUNK|, becomes a constant in
-stage~F, together with the chunked first stage and the copies in the rows that it decides; for the
+stage~F4, together with the chunked first stage and the copies in the rows that it decides; for the
 model it is $1$.
 
 \section{The rows as words}\label{sec:wordRows}
@@ -148,7 +148,7 @@ model it is $1$.
   \csource{init.c}{118}{246}, \csource{gen_init_sieve_h.c}{48}{62}), with the copies
   \csource{init.c}{99}{111}, and takes the row of $0$ from the generated pattern \verb|sieves0|
   (\csource{gen_find_points_h.c}{102}{134}); these ranges are shared with
-  Definition~\ref{def:admits} until the faithful builders of stage~F. For a prime power it lays the
+  Definition~\ref{def:admits} until the faithful builders of stage~F4. For a prime power it lays the
   pattern out by \verb|lay_out_pattern| (\csource{init.c}{259}{297}, \csource{init.c}{387}{387}),
   and for a product it lays down the rows of the factors in blocks (\csource{init.c}{415}{418},
   \csource{init.c}{430}{430}); both publish the row (\csource{init.c}{391}{393},
@@ -388,28 +388,28 @@ Each component of this chapter differs from the C code in a stated way, recorded
 \begin{itemize}
   \item the plain layout, bit $t$ of the bit array with word number $w$ for the numerator $R w + t$,
     every numerator from $-H$ to $H$, and the class word of the first stage written into every word,
-    the 2-adic pattern of the class at the stride $1$, for the packing of the 2-adic classes (F) and
-    the search region (H);
+    the 2-adic pattern of the class at the stride $1$, for the packing of the 2-adic classes (F3)
+    and the search region (H);
   \item every modulus in the first stage, over every bit array, for the second stage, which and-s
     the rows of its moduli, one after the other, into each bit array that the scan finds nonzero,
     and stops as soon as no bit of it is left, and the third stage, which tests one numerator at a
     time after the test for common factors, stops at the first prime that rejects it, skips the
     primes that divide $b$, and looks up the inverses of $b$ when the first numerator of $b$ reaches
-    it (F);
+    it (F2);
   \item the first stage of the builds with one register per chunk, for the chunks of sixteen
-    registers of the default build with the legs over the tail of a piece (F);
+    registers of the default build with the legs over the tail of a piece (F4);
   \item the rows from the admission test of the sieve entry (Definition~\ref{def:SieveEntry}), one
     period laid out in words, as \verb|lay_out_pattern| lays out the pattern of a prime power, for
     the builders of the rows of a prime with their bit arithmetic and for the blocks of the rows of
-    a product (F);
+        a product (F4);
   \item the rows of all residues, that of $0$ among them, made when a denominator first needs them
     and kept for the run, where ratpoints installs the row of $0$ from the build when it examines
-    the prime and keeps the rows in its sieve entry (F);
+    the prime and keeps the rows in its sieve entry (F4);
   \item the row of $b \bmod p$, computed in \verb|sift|, for the row of $b\,2^{-k} \bmod p$ that
     \verb|set_rows| reads from the residues that \verb|fill_bp_list| computes before the call, and
     the row of the word number $w$ at index $w \bmod p$, where ratpoints adds the offset of the
     packing and a multiple of $p$ that keeps the index non-negative, and reduces by a
-    multiplication when that is exact (F);
+    multiplication when that is exact (F2, F3);
   \item indices for the pointers of the C code, into the rows and into the survivors, and a scan
     that holds its position as an index and reads the words of a bit array in place, where ratpoints
     recovers the word number from a pointer difference and copies the bit array;
@@ -417,7 +417,7 @@ Each component of this chapter differs from the C code in a stated way, recorded
   \item a fresh array for each piece, for the survivors array of the worker that every piece reuses,
     with one bit array more for the alignment, and for each row, for the space that the builders
     take from the buffer of the tables;
-  \item a plain $\gcd$ for the binary $\gcd$ of \verb|relprime|, whose loop body has no branch (F);
+  \item a plain $\gcd$ for the binary $\gcd$ of \verb|relprime|, whose loop body has no branch (F2);
   \item the products $c_k b^{d - k}$ computed in \verb|sift| for every denominator and passed to
     the check, where ratpoints computes them in the check when the first survivor of $b$ reaches
     it;

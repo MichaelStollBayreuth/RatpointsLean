@@ -31,9 +31,9 @@ Section~\ref{sec:denDeviations}, which name their stages, the model of this chap
 simplifications of the loop, each the subject of a later stage: every class of the denominators
 packs its numerators with the stride~$1$, so that the class word is a pattern of the plain layout of
 the model, where ratpoints packs the numerators of a class that are all congruent modulo $2^e$ into
-the bits of every $2^e$-th numerator (stage~F); and the loop visits the denominators of each segment
-in order, where ratpoints cuts the segments into blocks for its threads and for the correction of
-the moduli between blocks (stage~I). Neither changes the points or their order.
+the bits of every $2^e$-th numerator (stage~F3); and the loop visits the denominators of each
+segment in order, where ratpoints cuts the segments into blocks for its threads and for the
+correction of the moduli between blocks (stage~I). Neither changes the points or their order.
 
 \section{What the C code does on the side of the denominators}\label{sec:denC}
 
@@ -166,7 +166,7 @@ which bit of a bit array stands for which numerator.
 The packing by the stride, from the masks of the classes to the stride and the offset of each class
 (\csource{find_points.c}{1058}{1062}, \csource{find_points.c}{1066}{1067},
 \csource{find_points.c}{1069}{1069}, \csource{find_points.c}{1071}{1095},
-\csource{find_points.c}{1099}{1101}), is stage~F. The first stage of the sieve starts from the word
+\csource{find_points.c}{1099}{1101}), is stage~F3. The first stage of the sieve starts from the word
 of the class of the denominator: the components of Chapter~\ref{chap:words} that make a piece and
 the numerators of one denominator take the class word $\omega$ as an argument, and the first stage
 (Definition~\ref{def:andRows}) writes $\omega$ into every word of the piece in place of all ones, as
@@ -665,9 +665,10 @@ among them, with the frame of the block that sets up the run (\csource{find_poin
 
 Theorem~\ref{thm:findPoints_perm} states the permutation, and Theorem~\ref{thm:findPoints}
 membership, no duplicates and the set of elements, for every option. The refusals and the statements
-that comparator certifies are those of stage~D; the structure \verb|Params| and its well-formedness,
-which stage~E left as they were, gain the number of primes examined and the composite moduli with
-stage~F (Chapter~\ref{chap:tables}).
+that comparator certifies are those of stage~D in their text; the structure \verb|Params| and its
+well-formedness, which stage~E left as they were, gain the number of primes examined and the
+composite moduli with stage~F1, which changes what those statements quantify over
+(Chapter~\ref{chap:tables}).
 
 \section{The command-line program and the differential tests}\label{sec:denCli}
 
@@ -688,7 +689,7 @@ Each component of this chapter differs from the C code in a stated way, recorded
 \begin{itemize}
   \item the stride~$1$ for every class of the denominators, the pattern of a class being its word
     repeated, for the packing of the numerators of a class by the stride $2^e$ with its offsets
-    (stage~F); the word $\mathrm{den\_bits}$ computed from the words of the classes;
+        (stage~F3); the word $\mathrm{den\_bits}$ computed from the words of the classes;
   \item one function for the valuations on GMP integers and on \verb|long|s, and one for the
     binary algorithm of \verb|jacobi| and \verb|jacobi1|, which take other steps to the same
     symbol; the valuations of the factorization and of the tables of the Jacobi test by this
@@ -735,7 +736,7 @@ with the failures of their allocation, the release of the run and of the worker,
 the buffer of the tables when \verb|sieving_info| has looked at more primes), and the pool of
 threads with the threaded run; the output under \verb|RATPOINTS_VERBOSE| and \verb|DEBUG| inside a
 modelled block goes with the block, whose deviation says so. Left to later stages are the packing
-of the classes with their row offsets (stage~F), the search intervals of the run (stage~H), and the
+of the classes with their row offsets (stage~F3), the search intervals of the run (stage~H), and the
 blocks with the correction of the moduli between them and the choice of the number of primes
 examined (stage~I).
 
