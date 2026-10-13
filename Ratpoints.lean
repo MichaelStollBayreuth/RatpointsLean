@@ -37,6 +37,7 @@ public import Ratpoints.Proof.FindPoints
 public import Ratpoints.Proof.Forbidden
 public import Ratpoints.Proof.Jacobi
 public import Ratpoints.Proof.JacobiTables
+public import Ratpoints.Proof.Moduli
 public import Ratpoints.Proof.Params
 public import Ratpoints.Proof.Setup
 public import Ratpoints.Proof.Shapes

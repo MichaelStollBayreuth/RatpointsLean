@@ -181,6 +181,18 @@
         "Ratpoints.Sieve.forbiddenValuations"
       ]
     },
+    "find_points.c:2241-2252": {
+      "hash": "e27853ff42884c9fe6cf71546a2b10a27d6ba93c46fd46cd8371211ebba58436",
+      "owners": [
+        "Ratpoints.Sieve.modinv"
+      ]
+    },
+    "find_points.c:2267-2303": {
+      "hash": "f1f85593c5e92f3b223f6976e21a1be2e776c6d7db8dc1e0d71a7daada93ba67",
+      "owners": [
+        "Ratpoints.Sieve.examinePower"
+      ]
+    },
     "find_points.c:2533-2536": {
       "hash": "f0253392e801d72d465ab3916720c4d8899adcf9f45d852502cf85eaaa54bdc3",
       "owners": [
@@ -1175,6 +1187,12 @@
         "Ratpoints.Sieve.Entry.row"
       ]
     },
+    "init.c:359-386": {
+      "hash": "ac02b08c884451446e48a37f67e1ad03ac0d1a9fa7237a98b92a7fb156d92bc4",
+      "owners": [
+        "Ratpoints.Sieve.Power.admits"
+      ]
+    },
     "init.c:42-46": {
       "hash": "457dfd9e5c185e560428c32275595fc3b996ad4cf452057a4daad4239c908f04",
       "owners": [
@@ -1874,6 +1892,18 @@
       "hash": "a88a56965e41b54a986468e7422ef3a6cd276006aea64c20c81eba170eebeb74",
       "owners": [
         "Ratpoints.rbaLength"
+      ]
+    },
+    "rp-private.h:523-523": {
+      "hash": "6f7a19fe597d903490a7e0a892d700c02f4a5e297a6b8e6648b011121872b6ea",
+      "owners": [
+        "Ratpoints.Sieve.Power"
+      ]
+    },
+    "rp-private.h:531-534": {
+      "hash": "e8b16d804ca29725a0429ce2cb726b9bb2dcbe73f987f30bc0a03ddb3eef920b",
+      "owners": [
+        "Ratpoints.Sieve.Power"
       ]
     },
     "rp-private.h:542-555": {

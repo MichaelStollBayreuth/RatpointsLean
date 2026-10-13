@@ -154,18 +154,6 @@ namespace Sieve
 
 /-! ### The squares, the inverses and Horner's rule modulo `p` -/
 
--- The entries that a fold of `setIfInBounds · true` marks.
-private theorem getElem!_foldl_setIfInBounds {α : Type*} (l : List α) (f : α → ℕ) (w : Array Bool)
-    {t : ℕ} (ht : t < w.size) :
-    (l.foldl (fun w i ↦ w.setIfInBounds (f i) true) w)[t]! = (w[t]! || l.any (f · == t)) := by
-  induction l generalizing w with
-  | nil => simp
-  | cons j l ih =>
-    rw [List.foldl_cons, ih _ (by simpa using ht), List.any_cons, getElem!_pos w t ht,
-      getElem!_pos (w.setIfInBounds (f j) true) t (by simpa using ht),
-      Array.getElem_setIfInBounds ht]
-    grind
-
 /-- Modulo a prime `p`, the square of a residue `s ≠ 0` below `p` is the square of an odd residue,
 of `s` or of `p - s`: the squares that the generator of the tables of ratpoints marks. -/
 theorem exists_odd_mul_self_mod_eq {p s : ℕ} (hp : p.Prime) (hs : s < p) (hs0 : s ≠ 0) :
@@ -181,7 +169,7 @@ theorem getElem!_squaresMod_mul_self_mod {p s : ℕ} (hp : p.Prime) (hs : s < p)
     (squaresMod p)[s * s % p]! = true := by
   have ht : s * s % p < ((Array.replicate p false).setIfInBounds 0 true).size := by
     simpa using Nat.mod_lt _ hp.pos
-  simp only [squaresMod, Array.set!_eq_setIfInBounds, getElem!_foldl_setIfInBounds _ _ _ ht,
+  simp only [squaresMod, Array.set!_eq_setIfInBounds, Array.getElem!_foldl_setIfInBounds _ _ _ ht,
     Bool.or_eq_true, List.any_eq_true, beq_iff_eq, List.mem_range']
   obtain rfl | hs0 := eq_or_ne s 0
   · left

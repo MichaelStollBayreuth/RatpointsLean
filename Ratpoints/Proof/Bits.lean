@@ -28,7 +28,9 @@ set bits of a list of words, read in turn, the numbers of a range between two bo
 of a number below `2 ^ 64` by the lowest set bit of its word, bit 1 of odd numbers, the gcd of half
 an even number with an odd one, a residue below `2 q` modulo `q` by one subtraction, the estimate
 of a quotient by Barrett's reduction, the bounds of a step of Horner's rule and of a power of a
-number below a power of 2, and the divisors of the gcd of `b` and a residue `f ≡ a (mod b)`.
+number below a power of 2, the entries of an array of Booleans after a fold of
+`setIfInBounds · true`, the absolute value of the step of the cofactors of the extended Euclidean
+algorithm, and the divisors of the gcd of `b` and a residue `f ≡ a (mod b)`.
 
 ## Main statements
 
@@ -61,6 +63,8 @@ number below a power of 2, and the divisors of the gcd of `b` and a residue `f �
   `[a:m]`, and the lengths of the lists before and after it.
 * `Array.getElem!_pop`, `Array.getElem!_pop_of_back!_eq`: the entries of an array without its last
   entry, the same as before when that entry is the default value.
+* `Array.getElem!_foldl_setIfInBounds`: the entries of an array of Booleans that a fold of
+  `setIfInBounds · true` marks.
 * `Array.mem_of_forIn_toList_eq_append_cons`: the cursor of a loop over an array is one of its
   entries.
 * `List.foldl_gcd_natAbs_dvd_natAbs`: the gcd of the absolute values of the entries of a list, as a
@@ -78,6 +82,7 @@ number below a power of 2, and the divisors of the gcd of `b` and a residue `f �
   `⌊u ⌊(N - 1) / p⌋ / N⌋` of `⌊u / p⌋` for `u < N` is the quotient or one less.
 * `Nat.mul_add_lt_mul_of_lt`, `Nat.pow_lt_two_pow_of_lt`: a step of Horner's rule multiplies a bound
   by `p`, and `p ^ n < 2 ^ N` for `p < 2 ^ b` and `b n ≤ N`.
+* `Int.natAbs_sub_mul_of_mul_nonpos`: `|a - q b| = |a| + q |b|` for `a b ≤ 0` and `q ≥ 0`.
 * `Int.dvd_natAbs_of_dvd_gcd`: a divisor of the gcd of `f ≡ a (mod b)` and `b` divides `a`.
 
 ## Implementation notes
@@ -161,6 +166,19 @@ theorem getElem!_pop {α : Type u} [Inhabited α] {xs : Array α} {i : Nat} :
 theorem getElem!_pop_of_back!_eq {α : Type u} [Inhabited α] {xs : Array α} (h : xs.back! = default)
     (i : Nat) : xs.pop[i]! = xs[i]! := by
   grind [getElem!_pop, back!_eq_getElem!]
+
+/-- The entries of an array of Booleans that a fold of `setIfInBounds · true` over the list `l`
+marks: entry `t` in range is set when it was set before or one of the positions `f i` is `t`. -/
+theorem getElem!_foldl_setIfInBounds {α : Type u} (l : List α) (f : α → Nat) (w : Array Bool)
+    {t : Nat} (ht : t < w.size) :
+    (l.foldl (fun w i ↦ w.setIfInBounds (f i) true) w)[t]! = (w[t]! || l.any (f · == t)) := by
+  induction l generalizing w with
+  | nil => simp
+  | cons j l ih =>
+    rw [List.foldl_cons, ih _ (by simpa using ht), List.any_cons, getElem!_pos w t ht,
+      getElem!_pos (w.setIfInBounds (f j) true) t (by simpa using ht),
+      Array.getElem_setIfInBounds ht]
+    grind
 
 /-- The cursor of a loop over the array `xs` is an entry of `xs`. -/
 theorem mem_of_forIn_toList_eq_append_cons {α : Type u} {xs : Array α} {pref suff : List α}
@@ -454,6 +472,26 @@ theorem ediv_mul_eq_ediv_mul_of_dvd {a b g : Int} (ha : g ∣ a) (hb : g ∣ b) 
 
 theorem ediv_ne_zero_of_dvd {a b : Int} (hb : b ∣ a) (ha : a ≠ 0) : a / b ≠ 0 := fun h ↦
   ha (Int.eq_zero_of_ediv_eq_zero hb h)
+
+/-- For integers `a` and `b` of opposite signs, or one of them `0`, and `q ≥ 0`,
+`|a - q b| = |a| + q |b|`: the step of the cofactors of the extended Euclidean algorithm. -/
+theorem natAbs_sub_mul_of_mul_nonpos {a b : Int} (h : a * b ≤ 0) (q : Nat) :
+    (a - q * b).natAbs = a.natAbs + q * b.natAbs := by
+  rcases Int.lt_trichotomy b 0 with hb | rfl | hb
+  · have ha : 0 ≤ a := Int.not_lt.mp fun ha ↦ Int.not_le.mpr (Int.mul_pos_of_neg_of_neg ha hb) h
+    have hq : (q : Int) * b ≤ 0 :=
+      Int.mul_nonpos_of_nonneg_of_nonpos (Int.natCast_nonneg q) (Int.le_of_lt hb)
+    apply Int.ofNat_inj.mp
+    rw [Int.natCast_add, Int.natCast_mul, Int.natAbs_of_nonneg (by lia), Int.natAbs_of_nonneg ha,
+      Int.ofNat_natAbs_of_nonpos (Int.le_of_lt hb), Int.mul_neg]
+    lia
+  · simp
+  · have ha : a ≤ 0 := Int.not_lt.mp fun ha ↦ Int.not_le.mpr (Int.mul_pos ha hb) h
+    have hq : 0 ≤ (q : Int) * b := Int.mul_nonneg (Int.natCast_nonneg q) (Int.le_of_lt hb)
+    apply Int.ofNat_inj.mp
+    rw [Int.natCast_add, Int.natCast_mul, Int.ofNat_natAbs_of_nonpos (by lia),
+      Int.ofNat_natAbs_of_nonpos ha, Int.natAbs_of_nonneg (Int.le_of_lt hb)]
+    lia
 
 /-- A divisor of the gcd of `f ≡ a (mod b)` and `b` divides `a`. -/
 theorem dvd_natAbs_of_dvd_gcd {a : Int} {b f q : Nat} (h : (f : Int) % b = a % b)

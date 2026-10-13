@@ -19,8 +19,9 @@ import Ratpoints.Proof.Bits
 Every entry of `Ratpoints.primeTable` is a prime, which `norm_num` checks one entry at a time, the
 table lists every odd prime below 1022 in increasing order, which `decide` checks, so that its first
 `Ratpoints.numPrimes` entries are below `Ratpoints.maxPrimeEven`, a bound that keeps the accumulator
-of Horner's rule in `examine_prime` in the range of its C type; every parameter set that the options
-of the program give is well-formed; and the pieces of the numerators have at least one bit array.
+of Horner's rule in `examine_prime` and the values of `examine_power` in the range of their C types;
+every parameter set that the options of the program give is well-formed; and the pieces of the
+numerators have at least one bit array.
 
 ## Main statements
 
@@ -35,8 +36,10 @@ of the program give is well-formed; and the pieces of the numerators have at lea
   table are below `Ratpoints.maxPrimeEven`.
 * `Ratpoints.maxPrimeEven_le_two_pow_10`, `Ratpoints.maxPrimeEven_le_two_pow_32`: the moduli below
   `Ratpoints.maxPrimeEven` are below `2 ^ 10`, so below `2 ^ 32`;
-  `Ratpoints.pow_hornerSteps_add_one_lt`: the accumulator of Horner's rule in `examine_prime` stays
-  in the range of its C type between two reductions.
+  `Ratpoints.mul_add_lt_two_pow_64_of_lt_maxPrimeEven`,
+  `Ratpoints.mul_self_lt_two_pow_63_of_lt_maxPrimeEven`: the values of `examine_power` stay in the
+  range of their C types; `Ratpoints.pow_hornerSteps_add_one_lt`: so does the accumulator of
+  Horner's rule in `examine_prime` between two reductions.
 * `Ratpoints.wf_sieveParams`: every parameter set that the options of the program give is
   well-formed; comparator certifies this (`comparator/Challenge.lean`), which also rules out a
   well-formedness that nothing satisfies.
@@ -129,6 +132,26 @@ so the helper `mod` of the C code keeps its values in the range of a `long` for 
 `examine_power` calls it (`find_points.c:2278`). -/
 theorem maxPrimeEven_le_two_pow_32 : maxPrimeEven ≤ 2 ^ 32 :=
   maxPrimeEven_le_two_pow_10.trans (by norm_num)
+
+/-- The range obligation of the steps of Horner's rule in `examine_power`: for a modulus
+`m < maxPrimeEven`, the steps `v x + c` (`find_points.c:2291`, `find_points.c:2298`), with `v`, `x`
+and `c` below `m`, are below `m ^ 2 ≤ 2 ^ 64` (`Ratpoints.maxPrimeEven_le_two_pow_32`): the
+`unsigned long`s do not wrap. The square of a residue, a product of `long`s, is
+`Ratpoints.mul_self_lt_two_pow_63_of_lt_maxPrimeEven`. -/
+theorem mul_add_lt_two_pow_64_of_lt_maxPrimeEven {m v x c : ℕ} (hm : m < maxPrimeEven)
+    (hv : v < m) (hx : x < m) (hc : c < m) : v * x + c < 2 ^ 64 :=
+  calc v * x + c < m * m := Nat.mul_add_lt_mul_of_lt hv hx hc
+    _ ≤ 2 ^ 32 * 2 ^ 32 := Nat.mul_le_mul (hm.trans_le maxPrimeEven_le_two_pow_32).le
+      (hm.trans_le maxPrimeEven_le_two_pow_32).le
+    _ = 2 ^ 64 := by norm_num
+
+/-- The range obligation of the square `x x` of a residue in `examine_power`
+(`find_points.c:2284`), a product of `long`s: for `x` below a modulus, so below
+`maxPrimeEven ≤ 2 ^ 10` (`Ratpoints.maxPrimeEven_le_two_pow_10`), it is below `2 ^ 20`, so below
+`2 ^ 63`: the signed product does not overflow. -/
+theorem mul_self_lt_two_pow_63_of_lt_maxPrimeEven {x : ℕ} (hx : x < maxPrimeEven) :
+    x * x < 2 ^ 63 :=
+  (Nat.mul_self_lt_mul_self (hx.trans_le maxPrimeEven_le_two_pow_10)).trans (by norm_num)
 
 /-- The bound of the schedule of Horner's rule in the table of a prime `p < maxPrimeEven` in
 `examine_prime`: `p ^ (hornerSteps + 1) < 2 ^ 64`, since `hornerSteps + 1 = 64 / maxBitsInPrime`,

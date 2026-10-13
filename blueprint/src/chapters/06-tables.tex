@@ -215,7 +215,8 @@ makes some entry of the reference true, the step of the exit, becomes a lemma of
 \section{Prime powers}\label{sec:powers}
 
 \begin{definition}[The inverse modulo $m$ by the extended Euclidean algorithm]\label{def:modinv}
-  Proposed names: \lname{Ratpoints.Sieve.modinv}.
+  \lean{Ratpoints.Sieve.modinv}
+  \leanok
   From $r_0 = m$, $r_1 = x \bmod m$ and the cofactors $s_0 = 0$, $s_1 = 1$, which keep
   $r_i \equiv s_i x \pmod m$: while $r_1 \ne 0$, with $q = \lfloor r_0 / r_1 \rfloor$, the pair
   $(r_0, r_1)$ becomes $(r_1, r_0 - q r_1)$ and $(s_0, s_1)$ becomes $(s_1, s_0 - q s_1)$; then
@@ -224,15 +225,15 @@ makes some entry of the reference true, the step of the exit, becomes a lemma of
 
 \begin{lemma}[The inverse modulo $m$]\label{lem:modinv}
   \uses{def:modinv}
-  Proposed names: \lname{Ratpoints.Sieve.ModinvInvariant}, \lname{Ratpoints.Sieve.modinv\_spec},
-  \lname{Ratpoints.Sieve.ModinvInvariant.natAbs\_add\_mul\_le},
-  \lname{Int.natAbs\_sub\_mul\_of\_mul\_nonpos}.
+  \lean{Ratpoints.Sieve.ModinvInvariant, Ratpoints.Sieve.modinv_spec, Ratpoints.Sieve.ModinvInvariant.natAbs_add_mul_le, Int.natAbs_sub_mul_of_mul_nonpos}
+  \leanok
   For $1 < m$ and $x$ prime to $m$, the result is the inverse of $x$ modulo $m$ in $[0, m)$; the
   cofactors and the products
   $q s_1$ stay in $[-m, m]$, which is their range obligation.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   The invariant: the two congruences, $\gcd(r_0, r_1) = \gcd(m, x)$, $r_0 > 0$, cofactors of
   opposite signs with $|s_0| r_1 + |s_1| r_0 = m$, and $|s_0| \le m$; the loop ends since $r_1$
   decreases. At the end $r_0 = \gcd(m, x) = 1$, so $s_0 x \equiv 1$.
@@ -240,8 +241,8 @@ makes some entry of the reference true, the step of the exit, becomes a lemma of
 
 \begin{definition}[The tables of a prime power]\label{def:examinePower}
   \uses{def:modinv, def:useCLong, def:examinePrime}
-  Proposed names: \lname{Ratpoints.Sieve.Power}, \lname{Ratpoints.Sieve.examinePower},
-  \lname{Ratpoints.Sieve.Power.admits}.
+  \lean{Ratpoints.Sieve.Power, Ratpoints.Sieve.examinePower, Ratpoints.Sieve.Power.admits}
+  \leanok
   For a prime $p$ and $e \ge 2$, $q = p^e$, a component of type \verb|Id|: the coefficients reduced
   modulo $q$ on the path of the flag of the \verb|long|s, with $c_D = 0$ for odd $d$; the squares
   modulo $q$; for each residue $x$ whether $f(x)$ is a square modulo $q$, by Horner's rule reduced
@@ -257,18 +258,8 @@ makes some entry of the reference true, the step of the exit, becomes a lemma of
 \begin{lemma}[The rows of a prime power let every point through]\label{lem:power_admits}
   \uses{def:examinePower, lem:modinv, lem:isSquare_div, lem:twoAdic_point, def:examinePrime,
     def:barrett, def:binaryForm}
-  Proposed names: \lname{Ratpoints.Sieve.ExaminePowerInvariant},
-  \lname{Ratpoints.Sieve.examinePower\_spec},
-  \lname{Ratpoints.Sieve.examinePower\_eq\_examinePower\_false},
-  \lname{Ratpoints.Sieve.getElem!\_fsq\_run\_examinePower\_of\_isSquare},
-  \lname{Ratpoints.Sieve.getElem!\_gsq\_run\_examinePower\_of\_isSquare},
-  \lname{Ratpoints.Sieve.mul\_getElem!\_inv\_run\_examinePower\_mod},
-  \lname{Ratpoints.Sieve.natCast\_evalMod\_reverse},
-  \lname{Ratpoints.Sieve.admits\_run\_examinePower\_of\_sq\_eq},
-  \lname{Ratpoints.mul\_add\_lt\_two\_pow\_64\_of\_lt\_maxPrimeEven},
-  \lname{Ratpoints.mul\_self\_lt\_two\_pow\_63\_of\_lt\_maxPrimeEven},
-  \lname{Ratpoints.Sieve.getElem!\_inv\_run\_examinePower\_lt},
-  \lname{Ratpoints.Sieve.getElem!\_inv\_run\_examinePower\_lt\_two\_pow\_16}.
+  \lean{Ratpoints.Sieve.ExaminePowerInvariant, Ratpoints.Sieve.examinePower_spec, Ratpoints.Sieve.examinePower_eq_examinePower_false, Ratpoints.Sieve.getElem!_fsq_run_examinePower_of_isSquare, Ratpoints.Sieve.getElem!_gsq_run_examinePower_of_isSquare, Ratpoints.Sieve.mul_getElem!_inv_run_examinePower_mod, Ratpoints.Sieve.natCast_evalMod_reverse, Ratpoints.Sieve.admits_run_examinePower_of_sq_eq, Ratpoints.mul_add_lt_two_pow_64_of_lt_maxPrimeEven, Ratpoints.mul_self_lt_two_pow_63_of_lt_maxPrimeEven, Ratpoints.Sieve.getElem!_inv_run_examinePower_lt, Ratpoints.Sieve.getElem!_inv_run_examinePower_lt_two_pow_16}
+  \leanok
   The two paths of the coefficients give the same tables; the tables mark what they claim: $f(x)$
   a square modulo $q$, $\tilde f(t)$ a square modulo $q$ for $p \mid t$, and, by the contract of
   the loop of the inverses, the inverses of the units. For a prime $p$, $e \ge 1$, $\gcd(a, b) = 1$ and $y^2 = F(a, b)$, the row of $b$ in the
@@ -281,6 +272,7 @@ makes some entry of the reference true, the step of the exit, becomes a lemma of
 
 \begin{proof}
   \uses{lem:modinv}
+  \leanok
   For $p \nmid b$, $b$ is a unit modulo $q$ and $F(a, b) = b^D f(a b^{-1})$ there, with $b^D$ the
   square of a unit (Lemma~\ref{lem:isSquare_div}). For $p \mid b$, $p \nmid a$, so $a$ is a unit,
   and $F(a, b) = a^D \tilde f(b a^{-1})$ modulo $q$, by the form of that lemma with the roles of $a$

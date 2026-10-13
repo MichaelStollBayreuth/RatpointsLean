@@ -9,18 +9,18 @@ The model is checked against ratpoints v3.1.1 (commit \texttt{1a998538dfa8}). Th
 \begin{tabular}{lrrrr}
 file & lines of code & modelled & excluded & not yet recorded \\
 \hline
-\texttt{find\_points.c} & 3244 & 1380 & 243 & 1621 \\
+\texttt{find\_points.c} & 3244 & 1420 & 243 & 1581 \\
 \texttt{sift.c} & 820 & 261 & 0 & 559 \\
-\texttt{init.c} & 302 & 155 & 8 & 139 \\
+\texttt{init.c} & 302 & 180 & 8 & 114 \\
 \texttt{sturm.c} & 215 & 50 & 0 & 165 \\
-\texttt{rp-private.h} & 282 & 186 & 11 & 85 \\
+\texttt{rp-private.h} & 282 & 191 & 11 & 80 \\
 \texttt{ratpoints.h} & 128 & 13 & 0 & 115 \\
 \texttt{primes.h} & 11 & 11 & 0 & 0 \\
 \texttt{gen\_find\_points\_h.c} & 76 & 60 & 0 & 16 \\
 \texttt{gen\_init\_sieve\_h.c} & 26 & 13 & 0 & 13 \\
 \texttt{main.c} & 779 & 234 & 9 & 536 \\
 \hline
-total & 5883 & 2363 & 271 & 3249 \\
+total & 5883 & 2433 & 271 & 3179 \\
 \end{tabular}
 \end{center}
 
@@ -141,7 +141,11 @@ total & 5883 & 2363 & 271 & 3249 \\
   (deviation of \lname{Ratpoints.Sieve.forbiddenAt}: the valuations and unit parts of the coefficients as the array of options \texttt{us} (\texttt{Ratpoints.Sieve.unitParts}), for the arrays \texttt{present}, \texttt{w} and \texttt{r}, its size \texttt{d + 1} for the bound \texttt{degree} of the loop, and the squares modulo \texttt{p} as the argument \texttt{sq} (\texttt{Ratpoints.Sieve.squaresMod}), for the row \texttt{squares[pn]} of the table of the build; the test returned, for the bit that the caller sets; remainders by 2 for the masks \texttt{\& 1}; natural numbers for the \texttt{long}s.)
 \item \csource{find_points.c}{2229}{2234}: modelled by \lname{Ratpoints.Sieve.forbiddenValuations}
   (deviation of \lname{Ratpoints.Sieve.forbiddenValuations}: the prime \texttt{p} itself, for its index \texttt{pn} in the table \texttt{prime}, and the squares modulo \texttt{p} by \texttt{Ratpoints.Sieve.squaresMod}, for the row of \texttt{p} in the table \texttt{squares} of the build; no argument \texttt{coeffs\_mod\_p}, whose residues \texttt{Ratpoints.Sieve.unitParts} computes again until stage F; a natural number for the \texttt{unsigned long} mask, without the cap \texttt{m < LONG\_LENGTH -{} 1} of the loop, which never binds for a \texttt{long} \texttt{b\_high} and an odd prime, the loop ending before \texttt{m = 40}, and for \texttt{p ≤ 1}, which the C code never examines, the loop, once entered, does not end; natural numbers for the \texttt{long}s.)
-\item \csource{find_points.c}{2241}{2532}: not yet recorded (205 lines of code)
+\item \csource{find_points.c}{2241}{2252}: modelled by \lname{Ratpoints.Sieve.modinv}
+  (deviation of \lname{Ratpoints.Sieve.modinv}: natural numbers for \texttt{x}, \texttt{m} and the remainders, which are never negative for \texttt{x ≥ 0}, so that the correction of a negative \texttt{x \% m} has no counterpart; integers for the \texttt{long} cofactors, which stay between \texttt{-{}m} and \texttt{m}; the result a natural number.)
+\item \csource{find_points.c}{2267}{2303}: modelled by \lname{Ratpoints.Sieve.examinePower}
+  (deviation of \lname{Ratpoints.Sieve.examinePower}: the tables returned as a fresh value, for the entry \texttt{pw} of the buffer of the prime powers that \texttt{examine\_power} fills, where \texttt{add\_moduli} examines each prime power once, when a modulus first needs it, which the model does not model yet (stage F); \texttt{m} as \texttt{p \textasciicircum{} e}, for the product of \texttt{e} factors \texttt{p}; the squares as an array of Booleans, for a bit array of \texttt{RP\_MODWORDS} words; natural numbers for the \texttt{long}s and \texttt{unsigned long}s, the squares \texttt{x x} and the steps \texttt{v x + c} of Horner's rule, with \texttt{v}, \texttt{x} and \texttt{c} below \texttt{m}, staying below \texttt{m \textasciicircum{} 2}, and for the \texttt{unsigned short} inverses, which are below \texttt{m}, with the obligations stated as lemmas (\texttt{Ratpoints.mul\_self\_lt\_two\_pow\_63\_of\_lt\_maxPrimeEven}, \texttt{Ratpoints.mul\_add\_lt\_two\_pow\_64\_of\_lt\_maxPrimeEven}, \texttt{Ratpoints.Sieve.getElem!\_inv\_run\_examinePower\_lt\_two\_pow\_16}); no density \texttt{r}, no count \texttt{np}, no switch \texttt{pinf} and no code returned, which serve the choice of the moduli (stage I).)
+\item \csource{find_points.c}{2304}{2532}: not yet recorded (165 lines of code)
 \item \csource{find_points.c}{2533}{2536}: modelled by \lname{Ratpoints.Sieve.forbidden}
   (deviation of \lname{Ratpoints.Sieve.forbidden}: the examined primes are the moduli of the parameters, and the further primes start at the position in the table that is their number, where \texttt{sieving\_info} examines the first \texttt{pn\_lim} primes of the table, \texttt{num\_primes} of them or more when their number was left to the library (stage I), and goes on from \texttt{prime[pn\_lim]}; the moduli are taken in their order and once for each occurrence, where \texttt{sieving\_info} takes each prime of the table once, in the order of the table, so that under the cap \texttt{maxForbidden} other primes may be recorded, a modulus that occurs more than once in the list may be recorded once for each occurrence, each record counting against \texttt{maxForbidden}, a modulus at a position of the table at least the number of the moduli may be recorded again by the second loop, and a prime below that position that is no modulus is examined by neither loop; the lists are those of \texttt{sieving\_info} when the moduli are its first \texttt{pn\_lim} primes in increasing order, as in the program with \texttt{-{}p} and without \texttt{-{}P}; the Kronecker symbol by the table of the squares modulo \texttt{p}, which marks \texttt{0} as a square, for \texttt{mpz\_kronecker\_si}; the flag \texttt{RATPOINTS\_CHECK\_DENOM} not tested in either loop, since the search computes the forbidden divisors only when the flag is set, for even degree (\texttt{Ratpoints.searchPoints}); lists, for the two arrays of the arguments with their terminating zeros; the words of a prime made with its entry, for the pointers into \texttt{sieves0} and the buffer \texttt{forb\_words}, with no failure for lack of memory, where \texttt{sieving\_info} drops the primes beyond the table whose words it cannot store; no reciprocals \texttt{magic}; natural numbers for the \texttt{long}s; no output under \texttt{DEBUG}.)
 \item \csource{find_points.c}{2537}{2537}: modelled by \lname{Ratpoints.searchPoints}
@@ -476,7 +480,10 @@ total & 5883 & 2363 & 271 & 3249 \\
 \item \csource{init.c}{118}{246}: modelled by \lname{Ratpoints.Sieve.Entry.admits}, \lname{Ratpoints.Sieve.Entry.row}
   (deviation of \lname{Ratpoints.Sieve.Entry.admits}: the bit of \texttt{a} in the row of \texttt{r}, computed from the tables for each numerator, where ratpoints builds the row of a residue \texttt{r ≠ 0} once, when a denominator first needs it, as a bit pattern of \texttt{p} bits repeated through words, by a function for each prime that the build generates, and takes the row of \texttt{0} from the pattern \texttt{sieves0} that the build generates, whose bit \texttt{N} is clear exactly when \texttt{p} divides \texttt{N}.)
   (deviation of \lname{Ratpoints.Sieve.Entry.row}: the pattern of one period from \texttt{Ratpoints.Sieve.Entry.admits}, laid out in words by windows into its packed form, for the builders of \texttt{init.c}, which step through the residues \texttt{a b⁻¹ mod p} four at a time and rotate the pattern through the words, one function for each prime that the build generates, and for the pattern \texttt{sieves0} that the build generates for the row of \texttt{0} (stage F); a fresh array, for the space that the builders take from the buffer of the tables (\texttt{ba\_next}), and the row returned, where the builders also store it in the field \texttt{sieve} of the entry, with a release store for the threads (\texttt{RP\_PUBLISH}), which the thunks of \texttt{Ratpoints.Sieve.Entry.rows} do; the copies of the first bit arrays that the builders append at the end of a row, which only the chunked first stage reads, are none in the build of the model (\texttt{RATPOINTS\_CHUNK} = 1; stage F).)
-\item \csource{init.c}{259}{445}: not yet recorded (138 lines of code)
+\item \csource{init.c}{259}{353}: not yet recorded (68 lines of code)
+\item \csource{init.c}{359}{386}: modelled by \lname{Ratpoints.Sieve.Power.admits}
+  (deviation of \lname{Ratpoints.Sieve.Power.admits}: the bit of \texttt{a} in the row of \texttt{r}, computed from the tables for each numerator, where \texttt{\_ratpoints\_sieve\_init\_power} builds the pattern of the row of a residue once, when a denominator first needs it, stepping through the residues \texttt{x r⁻¹} by additions of \texttt{r⁻¹} for a unit \texttt{r}, and lays it out in words, which the rows as words of the moduli do with stage F; natural numbers for the \texttt{long}s and \texttt{unsigned long}s, the products of two residues, as \texttt{b inv[x]} (line 382), below \texttt{m \textasciicircum{} 2}.)
+\item \csource{init.c}{387}{445}: not yet recorded (45 lines of code)
 \end{itemize}
 
 \section*{\texttt{sturm.c}}
@@ -635,7 +642,11 @@ total & 5883 & 2363 & 271 & 3249 \\
 \item \csource{rp-private.h}{426}{427}: not yet recorded (2 lines of code)
 \item \csource{rp-private.h}{429}{444}: modelled by \lname{Ratpoints.Sieve.ctz}
   (deviation of \lname{Ratpoints.Sieve.ctz}: the loop for a compiler without the builtin, where gcc and clang take \texttt{\_\_builtin\_ctzl}.)
-\item \csource{rp-private.h}{450}{534}: not yet recorded (20 lines of code)
+\item \csource{rp-private.h}{450}{520}: not yet recorded (15 lines of code)
+\item \csource{rp-private.h}{523}{523}: modelled by \lname{Ratpoints.Sieve.Power}
+  (deviation of \lname{Ratpoints.Sieve.Power}: arrays of \texttt{m} Booleans for the bit arrays \texttt{fsq} and \texttt{gsq} of \texttt{RP\_MODWORDS} words, and an array of \texttt{m} natural numbers for the \texttt{unsigned short} inverses, for arrays sized by \texttt{RATPOINTS\_MAX\_PRIME\_EVEN}; no density \texttt{r} and no count \texttt{np}, which serve the choice of the moduli (stage I).)
+\item \csource{rp-private.h}{531}{534}: modelled by \lname{Ratpoints.Sieve.Power}
+  (deviation of \lname{Ratpoints.Sieve.Power}: arrays of \texttt{m} Booleans for the bit arrays \texttt{fsq} and \texttt{gsq} of \texttt{RP\_MODWORDS} words, and an array of \texttt{m} natural numbers for the \texttt{unsigned short} inverses, for arrays sized by \texttt{RATPOINTS\_MAX\_PRIME\_EVEN}; no density \texttt{r} and no count \texttt{np}, which serve the choice of the moduli (stage I).)
 \item \csource{rp-private.h}{542}{555}: modelled by \lname{Ratpoints.Sieve.Entry}
   (deviation of \lname{Ratpoints.Sieve.Entry}: only the fields that the rows of a prime read; the rows of the residues, which ratpoints keeps in the field \texttt{sieve}, that of \texttt{0} from the build and the others made by \texttt{init} when a denominator first needs them, are \texttt{Ratpoints.Sieve.Entry.rows}, made from \texttt{Ratpoints.Sieve.Entry.admits} when first needed and kept for the run; the other fields serve the composite moduli, the packing and the reduction of the sieve (stage F), and the choice of the moduli.)
 \item \csource{rp-private.h}{574}{617}: not yet recorded (22 lines of code)
