@@ -110,6 +110,12 @@ reason = "the table of examine_prime with its last entry, printed under DEBUG"
 
 [[excluded]]
 file = "find_points.c"
+lines = "2304"
+kind = "other"
+reason = "the count np of a prime power stored in its rp_power, which nothing reads"
+
+[[excluded]]
+file = "find_points.c"
 lines = "2801"
 kind = "memory"
 reason = "the enlargement of ba_buffer for the primes that the loop of the tables of sieving_info looked at beyond num_primes, which fails only for lack of memory"
@@ -377,3 +383,33 @@ file = "main.c"
 lines = "1049"
 kind = "memory"
 reason = "the message of error 10, for lack of memory, which the model cannot meet"
+
+[[excluded]]
+file = "gen_find_points_h.c"
+lines = "30-31"
+kind = "other"
+reason = "the includes of the generator of find_points.h"
+
+[[excluded]]
+file = "gen_find_points_h.c"
+lines = "46-67"
+kind = "other"
+reason = "the head of main of the generator of find_points.h and the guard it writes into the header against a header generated for other values of RBA_PACK, RATPOINTS_CHUNK and RATPOINTS_NUM_PRIMES; the model computes its tables from its constants"
+
+[[excluded]]
+file = "gen_find_points_h.c"
+lines = "136-137"
+kind = "other"
+reason = "the end of main of the generator of find_points.h"
+
+[[excluded]]
+file = "gen_init_sieve_h.c"
+lines = "29-46"
+kind = "other"
+reason = "the includes and the head of main of the generator of init_sieve.h, a global array work that it never uses, and the guard it writes into the header against a header generated for another RATPOINTS_NUM_PRIMES; the model makes the rows from its constants"
+
+[[excluded]]
+file = "gen_init_sieve_h.c"
+lines = "64-65"
+kind = "other"
+reason = "the end of main of the generator of init_sieve.h"

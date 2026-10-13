@@ -331,8 +331,8 @@ C: `rp-private.h:523`, `rp-private.h:531-534`
 
 Deviation: arrays of `m` Booleans for the bit arrays `fsq` and `gsq` of `RP_MODWORDS` words, and an
 array of `m` natural numbers for the `unsigned short` inverses, for arrays sized by
-`RATPOINTS_MAX_PRIME_EVEN`; no density `r` and no count `np`, which serve the choice of the moduli
-(stage I). -/
+`RATPOINTS_MAX_PRIME_EVEN`; no density `r`, which serves the choice of the moduli (stage I), and no
+count `np`, which `examine_power` stores (`find_points.c:2304`) and nothing reads. -/
 structure Power where
   /-- The prime. -/
   p : Nat

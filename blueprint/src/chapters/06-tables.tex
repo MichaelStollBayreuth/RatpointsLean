@@ -339,8 +339,11 @@ which $\mathrm{maxPrimeEven} \le 2^{32}$ gives.
   and is examined now, with the exit, otherwise; a factor with the exponent $e \ge 2$ gets the
   tables of its prime power (\verb|make_power| and \verb|make_modulus|,
   \csource{find_points.c}{2414}{2429}, \csource{find_points.c}{2434}{2475},
-  \csource{find_points.c}{2546}{2546}; the tables of a prime power that \verb|add_moduli| examines
-  when a modulus first needs it, \csource{find_points.c}{2387}{2395}; the primes examined for the
+    \csource{find_points.c}{2546}{2546}; the tables of a prime power that \verb|add_moduli| examines
+  when a candidate first needs it and keeps by its index, \csource{find_points.c}{2350}{2354},
+  \csource{find_points.c}{2358}{2359}, \csource{find_points.c}{2387}{2395}, with their count,
+  \csource{find_points.c}{2548}{2548}; the primes examined for the
+
   third stage, \csource{find_points.c}{2976}{2978}, \csource{find_points.c}{2994}{2998}).
 \end{definition}
 

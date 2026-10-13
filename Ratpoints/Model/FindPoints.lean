@@ -86,8 +86,9 @@ primes examined there, and otherwise the table that its examination gives now
 for `e ≥ 2` the tables of the prime power (`Ratpoints.Sieve.examinePower`). A prime or a prime
 power has one factor, a product two or more.
 
-C: `find_points.c:2387-2395`, `find_points.c:2414-2429`, `find_points.c:2434-2475`,
-`find_points.c:2546`, `find_points.c:2976-2978`, `find_points.c:2994-2998`
+C: `find_points.c:2350-2354`, `find_points.c:2358-2359`, `find_points.c:2387-2395`,
+`find_points.c:2414-2429`, `find_points.c:2434-2475`, `find_points.c:2546`, `find_points.c:2548`,
+`find_points.c:2976-2978`, `find_points.c:2994-2998`
 
 Deviation: the entry of every modulus made here, by its factors, where `sieving_info` takes the
 entry of a prime from the loop of the tables (`prec[n].ssp`) and makes those of the prime powers and
@@ -95,28 +96,28 @@ the products by `make_modulus`; the primes and prime powers as factors of the en
 `nf`, `pw` and `factor` and the entries of the prime powers that `make_power` makes; the tables of a
 prime power (`Ratpoints.Sieve.Factor.power`) computed for each modulus that needs them, where
 `add_moduli` examines a prime power once, when the first modulus offered needs it, and keeps its
-tables by its index (`pw_idx`, lines 2387-2394), and `make_modulus` makes the entry of a prime power
-once and keeps it by its index (`power_se`); the tables of a prime power computed also when they say
-nothing, where `add_moduli` refuses a modulus with such a factor (line 2395), and a prime factor
-whose prime says nothing (`examine_prime` returns `0`, and `prime_se[pn]` stays `NULL`) taken with
-its table from the loop of the tables, where `add_moduli` offers no composite with such a factor
-(line 2383); a prime beyond those of the loop of the tables examined, with the exit, when the entry
-of a modulus needs it, where `sieving_info` examines the primes from `prime[pn_lim]` on, in the
-order of the table, with the exit, for the third stage only (lines 2976-3016) and only when the
-number of primes was left to the library (line 2980), also those that it then skips, and
-`add_moduli` makes composites, prime powers and products alike, of the primes of the loop of the
-tables only (line 2370): the output does not depend on the primes examined, since the exit is taken
-only when the curve has no points; every modulus of the parameters taken, any product of powers of
-primes of the table below `Ratpoints.maxPrimeEven` (`Ratpoints.Params.WF`), where `add_moduli`
-offers a composite only for an odd `9 ≤ m ≤ RATPOINTS_COMPOSITE_MAX` (line 2361;
-`ratpoints.h:210-211`, 64 by default), with room in the buffer of the prime powers for its new prime
-powers (line 2390), a density `r < 1` (line 2402) and at most `RP_MAX_MODULI` candidates (line
-2403), restrictions that the model lifts as choices of the moduli (stage I); no reciprocal `magic`,
-bias `bias` and inverse `rbainv`, which serve the reduction of the sieve and the packing (stage F),
-no density `r` (stage I), and no field `init`, the rows of every kind being made by one function
-(`Ratpoints.Sieve.SieveEntry.row`); the entry a fresh value, for the space that `make_power` and
-`make_modulus` take from the buffer of the sieve entries (`se_next`), and the exit as `none`, for
-the prime that `sieving_info` returns. -/
+tables in its buffer `pws` by its index (`pw_idx`, lines 2350-2354, 2358-2359 and 2387-2394, with
+the count `npw` of line 2548), and `make_modulus` makes the entry of a prime power once and keeps it
+by its index (`power_se`); the tables of a prime power computed also when they say nothing, where
+`add_moduli` refuses a modulus with such a factor (line 2395), and a prime factor whose prime says
+nothing (`examine_prime` returns `0`, and `prime_se[pn]` stays `NULL`) taken with its table from the
+loop of the tables, where `add_moduli` offers no composite with such a factor (line 2383); a prime
+beyond those of the loop of the tables examined, with the exit, when the entry of a modulus needs
+it, where `sieving_info` examines the primes from `prime[pn_lim]` on, in the order of the table,
+with the exit, for the third stage only (lines 2976-3016) and only when the number of primes was
+left to the library (line 2980), also those that it then skips, and `add_moduli` makes composites,
+prime powers and products alike, of the primes of the loop of the tables only (line 2370): the
+output does not depend on the primes examined, since the exit is taken only when the curve has no
+points; every modulus of the parameters taken, any product of powers of primes of the table below
+`Ratpoints.maxPrimeEven` (`Ratpoints.Params.WF`), where `add_moduli` offers a composite only for an
+odd `9 ≤ m ≤ RATPOINTS_COMPOSITE_MAX` (line 2361; `ratpoints.h:210-211`, 64 by default), with room
+in the buffer of the prime powers for its new prime powers (lines 2351 and 2390), a density `r < 1`
+(line 2402) and at most `RP_MAX_MODULI` candidates (line 2403), restrictions that the model lifts as
+choices of the moduli (stage I); no reciprocal `magic`, bias `bias` and inverse `rbainv`, which
+serve the reduction of the sieve and the packing (stage F), no density `r` (stage I), and no field
+`init`, the rows of every kind being made by one function (`Ratpoints.Sieve.SieveEntry.row`); the
+entry a fresh value, for the space that `make_power` and `make_modulus` take from the buffer of the
+sieve entries (`se_next`), and the exit as `none`, for the prime that `sieving_info` returns. -/
 def makeModulus? (c : List Int) (d : Nat) (useCLong : Bool) (tables : Array Entry) (m : Nat) :
     Id (Option SieveEntry) := do
   let (fac, _) ← modulusFactors m
