@@ -144,14 +144,18 @@ def RelprimeOddInvariant (g : Nat) : Std.WP.WhileInvariant (Int64 × Int64) Prop
   .mk fun exit s ↦ s.1.toNatClampNeg % 2 = 1 ∧ s.2.toNatClampNeg % 2 = 1 ∧
     Nat.gcd s.1.toNatClampNeg s.2.toNatClampNeg = g ∧ (exit = true → s.1 = s.2)
 
+theorem relprimeOddInvariant_self {m n : Int64}
+    (h : m.toNatClampNeg % 2 = 1 ∧ n.toNatClampNeg % 2 = 1) :
+    RelprimeOddInvariant (Nat.gcd m.toNatClampNeg n.toNatClampNeg) false (m, n) :=
+  ⟨h.1, h.2, rfl, nofun⟩
+
 /-- In the loop of `Ratpoints.Sieve.relprimeOdd`, from `m ≠ n`, the absolute value of the difference
 is a word other than `0`, whose lowest set bit `RP_CTZL` may look for. -/
 theorem RelprimeOddInvariant.toUInt64_ne_zero {g k : Nat} {m n : Int64} (hmn : (n != m) = true)
-    (h : m.toNatClampNeg + n.toNatClampNeg = k ∧ m.toNatClampNeg % 2 = 1 ∧
-      n.toNatClampNeg % 2 = 1 ∧ Nat.gcd m.toNatClampNeg n.toNatClampNeg = g ∧
-      (false = true → m = n)) :
-    ¬((m - n ^^^ (m - n) >>> 63) - (m - n) >>> 63).toUInt64 = 0 :=
-  Int64.toUInt64_ne_zero_of_pos (Int64.xor_shiftRight_63_sub_pos
+    (h : m.toNatClampNeg + n.toNatClampNeg = k ∧ RelprimeOddInvariant g false (m, n)) :
+    ¬((m - n ^^^ (m - n) >>> 63) - (m - n) >>> 63).toUInt64 = 0 := by
+  obtain ⟨-, hm, hn, -⟩ := h
+  exact Int64.toUInt64_ne_zero_of_pos (Int64.xor_shiftRight_63_sub_pos
     (Int64.le_of_lt ((Int64.toNatClampNeg_pos_iff m).mp (by lia)))
     (Int64.le_of_lt ((Int64.toNatClampNeg_pos_iff n).mp (by lia))) (bne_iff_ne.mp hmn).symm)
 
@@ -159,43 +163,38 @@ theorem RelprimeOddInvariant.toUInt64_ne_zero {g k : Nat} {m n : Int64} (hmn : (
 verification condition: `n` becomes the smaller of the two and `m` the odd part of their distance
 `d`, which keep what the loop keeps, and their sum, the measure, decreases. -/
 theorem RelprimeOddInvariant.shiftRight_min {g k t : Nat} {m n d : Int64} (hmn : (n != m) = true)
-    (h : m.toNatClampNeg + n.toNatClampNeg = k ∧ m.toNatClampNeg % 2 = 1 ∧
-      n.toNatClampNeg % 2 = 1 ∧ Nat.gcd m.toNatClampNeg n.toNatClampNeg = g ∧
-      (false = true → m = n)) (hd : d = (m - n ^^^ (m - n) >>> 63) - (m - n) >>> 63)
+    (h : m.toNatClampNeg + n.toNatClampNeg = k ∧ RelprimeOddInvariant g false (m, n))
+    (hd : d = (m - n ^^^ (m - n) >>> 63) - (m - n) >>> 63)
     (ht : t = d.toUInt64.toBitVec.ctz.toNat) :
     (d >>> Int64.ofNat t).toNatClampNeg + (n + (m - n &&& (m - n) >>> 63)).toNatClampNeg < k ∧
-      (d >>> Int64.ofNat t).toNatClampNeg % 2 = 1 ∧
-      (n + (m - n &&& (m - n) >>> 63)).toNatClampNeg % 2 = 1 ∧
-      Nat.gcd (d >>> Int64.ofNat t).toNatClampNeg (n + (m - n &&& (m - n) >>> 63)).toNatClampNeg =
-        g ∧ (false = true → d >>> Int64.ofNat t = n + (m - n &&& (m - n) >>> 63)) := by
+      RelprimeOddInvariant g false (d >>> Int64.ofNat t, n + (m - n &&& (m - n) >>> 63)) := by
   obtain ⟨rfl, hm, hn, rfl, -⟩ := h
   have hm0 := Int64.le_of_lt ((Int64.toNatClampNeg_pos_iff m).mp (by lia))
   have hn0 := Int64.le_of_lt ((Int64.toNatClampNeg_pos_iff n).mp (by lia))
   have hd0 : 0 < d := hd ▸ Int64.xor_shiftRight_63_sub_pos hm0 hn0 (bne_iff_ne.mp hmn).symm
   have h1 := Int64.two_pow_ctz_mul_toNatClampNeg_shiftRight hd0
-  rw [hd, Int64.toNatClampNeg_xor_shiftRight_63_sub hm0 hn0, ← hd, ← ht] at h1
-  rw [Int64.toNatClampNeg_add_and_shiftRight_63 hm0 hn0, ht]
-  exact ⟨Nat.add_min_lt_add_of_two_pow_mul_eq (by lia) (by lia) (ht ▸ h1),
-    Int64.toNatClampNeg_shiftRight_ctz_mod_two hd0, by rw [Nat.min_def]; split <;> assumption,
-    Nat.gcd_min_eq_gcd_of_two_pow_mul_eq hm hn (ht ▸ h1), nofun⟩
+  rw [hd, Int64.toNatClampNeg_xor_shiftRight_63_sub hm0 hn0, ← hd] at h1
+  subst ht
+  refine ⟨?_, Int64.toNatClampNeg_shiftRight_ctz_mod_two hd0, ?_, ?_, nofun⟩ <;>
+    rw [Int64.toNatClampNeg_add_and_shiftRight_63 hm0 hn0]
+  · exact Nat.add_min_lt_add_of_two_pow_mul_eq (by lia) (by lia) h1
+  · rw [Nat.min_def]; split <;> assumption
+  · exact Nat.gcd_min_eq_gcd_of_two_pow_mul_eq hm hn h1
 
 theorem RelprimeOddInvariant.exit {g k : Nat} {m n : Int64} (hmn : ¬(n != m) = true)
-    (h : m.toNatClampNeg + n.toNatClampNeg = k ∧ m.toNatClampNeg % 2 = 1 ∧
-      n.toNatClampNeg % 2 = 1 ∧ Nat.gcd m.toNatClampNeg n.toNatClampNeg = g ∧
-      (false = true → m = n)) :
-    m.toNatClampNeg % 2 = 1 ∧ n.toNatClampNeg % 2 = 1 ∧
-      Nat.gcd m.toNatClampNeg n.toNatClampNeg = g ∧ (True → m = n) :=
+    (h : m.toNatClampNeg + n.toNatClampNeg = k ∧ RelprimeOddInvariant g false (m, n)) :
+    RelprimeOddInvariant g true (m, n) :=
   ⟨h.2.1, h.2.2.1, h.2.2.2.1, fun _ ↦ (bne_eq_false_iff_eq.mp (Bool.eq_false_iff.mpr hmn)).symm⟩
 
 /-- At the exit of the loop of `Ratpoints.Sieve.relprimeOdd`, `m = n` is the gcd `g`. -/
 theorem RelprimeOddInvariant.post {g : Nat} {m n : Int64}
-    (h : m.toNatClampNeg % 2 = 1 ∧ n.toNatClampNeg % 2 = 1 ∧
-      Nat.gcd m.toNatClampNeg n.toNatClampNeg = g ∧ (True → m = n)) :
+    (h : RelprimeOddInvariant g true (m, n)) :
     (m == 1) = decide (g = 1) := by
   obtain ⟨-, -, rfl, h⟩ := h
-  rw [← h trivial, Nat.gcd_self, Bool.beq_eq_decide_eq, decide_eq_decide,
+  rw [← h rfl, Nat.gcd_self, Bool.beq_eq_decide_eq, decide_eq_decide,
     Int64.toNatClampNeg_eq_one_iff]
 
+attribute [local irreducible] RelprimeOddInvariant in
 /-- The loop ends, since the sum of the two values decreases, and it ends at `m = n = gcd(m, n)`;
 no operation leaves the range of a `long`, since the values stay positive. -/
 @[spec]
@@ -205,12 +204,11 @@ theorem relprimeOdd_spec (m n : Int64) :
   vcgen [relprimeOdd] invariants
   · RelprimeOddInvariant (Nat.gcd m.toNatClampNeg n.toNatClampNeg)
   · Std.WP.Variant.ofMeasure fun s : Int64 × Int64 ↦ s.1.toNatClampNeg + s.2.toNatClampNeg
-  all_goals simp only [RelprimeOddInvariant, Std.WP.WhileInvariant.mk_apply,
-    Std.WP.Variant.evalsTo_ofMeasure, Std.WP.Variant.evalsBelow_ofMeasure_nat,
-    Std.WP.Assertion.NondetFun.evalsTo_pure, Lean.Order.meet_prop_eq_and,
-    Lean.Order.ofProp_prop_eq] at *
+  all_goals try simp only [Std.WP.Variant.evalsTo_ofMeasure,
+    Std.WP.Variant.evalsBelow_ofMeasure_nat, Std.WP.Assertion.NondetFun.evalsTo_pure,
+    Lean.Order.meet_prop_eq_and, Lean.Order.ofProp_prop_eq] at *
   all_goals first
-    | exact ⟨‹_ ∧ _›.1, ‹_ ∧ _›.2, trivial, nofun⟩
+    | exact relprimeOddInvariant_self ‹_›
     | exact RelprimeOddInvariant.post ‹_›
     | exact RelprimeOddInvariant.toUInt64_ne_zero ‹_› ‹_›
     | exact RelprimeOddInvariant.shiftRight_min ‹_› ‹_› rfl ‹_›

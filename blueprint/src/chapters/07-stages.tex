@@ -166,7 +166,7 @@ $b_{\mathrm{high}} \le \mathrm{mulModLimit}$ stays as it is
 
 \begin{lemma}[The test for common factors]\label{lem:relprime}
   \uses{def:relprime}
-  \lean{Ratpoints.Sieve.RelprimeOddInvariant, Ratpoints.Sieve.relprimeOdd_spec, Ratpoints.Sieve.relprime_spec, Int64.shiftRight_63, Int64.toNatClampNeg_add_and_shiftRight_63, Int64.toNatClampNeg_xor_shiftRight_63_sub, Int64.two_pow_ctz_mul_toNatClampNeg_shiftRight, Int64.toNatClampNeg_ite_neg, Nat.gcd_min_eq_gcd_of_two_pow_mul_eq}
+  \lean{Ratpoints.Sieve.RelprimeOddInvariant, Ratpoints.Sieve.relprimeOddInvariant_self, Ratpoints.Sieve.relprimeOdd_spec, Ratpoints.Sieve.relprime_spec, Int64.shiftRight_63, Int64.toNatClampNeg_add_and_shiftRight_63, Int64.toNatClampNeg_xor_shiftRight_63_sub, Int64.two_pow_ctz_mul_toNatClampNeg_shiftRight, Int64.toNatClampNeg_ite_neg, Nat.gcd_min_eq_gcd_of_two_pow_mul_eq}
   \leanok
   For odd words $m, n \ge 1$ the loop gives whether $\gcd(m, n) = 1$; for words $m > -2^{63}$ and
   $n \ge 1$ the test gives whether $\gcd(m, n) = 1$. No operation leaves the range of a
