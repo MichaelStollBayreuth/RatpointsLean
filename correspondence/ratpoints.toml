@@ -32,6 +32,12 @@ paths = ["find_points.c", "sift.c", "init.c", "sturm.c", "rp-private.h", "ratpoi
 
 [[excluded]]
 file = "init.c"
+lines = "30"
+kind = "other"
+reason = "the include of the private header; the model has no headers"
+
+[[excluded]]
+file = "init.c"
 lines = "88-93"
 kind = "instrumentation"
 reason = "RP_INIT_NOACC, a probe for bench_init that leaves out computing the pattern of a row; the tables it produces are wrong"
@@ -100,7 +106,7 @@ reason = "WIDTH and PRINT_RBA, which print words and bit arrays in hexadecimal i
 file = "rp-private.h"
 lines = "450-456"
 kind = "other"
-reason = "RP_ALWAYS_INLINE and RP_NOINLINE, the inlining attributes that sift.c relies on for speed, empty on a compiler without them; they carry no meaning"
+reason = "RP_ALWAYS_INLINE and RP_NOINLINE, the inlining attributes that sift.c and find_points.c rely on for speed, empty on a compiler without them; they carry no meaning"
 
 [[excluded]]
 file = "ratpoints.h"
@@ -359,6 +365,12 @@ file = "find_points.c"
 lines = "5238"
 kind = "memory"
 reason = "find_points_clear, which releases them"
+
+[[excluded]]
+file = "sift.c"
+lines = "30"
+kind = "other"
+reason = "the include of the private header; the model has no headers"
 
 [[excluded]]
 file = "sift.c"

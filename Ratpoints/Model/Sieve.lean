@@ -324,7 +324,7 @@ unsigned), its odd part. The two stay odd and positive, their gcd stays the same
 decreases, so that the loop ends at `m = n = gcd(m, n)`, and the numbers are coprime when that is
 `1`; no operation leaves the range of a `long` (`Ratpoints.Sieve.relprimeOdd_spec`).
 
-C: `sift.c:334-342`
+C: `sift.c:328-342`
 
 Deviation: `Int64` for `long`, `toUInt64` for the cast to `unsigned long`, and the `toInt64` of the
 count for the `long` that `RP_CTZL` returns; `63` for `LONG_LENGTH - 1`; `>>>` on `Int64` is the
@@ -353,7 +353,7 @@ It is `gcd(m, n) = 1` for `m > -2 ^ 63` and `n ≥ 1`, and no operation leaves t
 odd `m` the loop of `Ratpoints.Sieve.ctz` on `0` does not end, as the fallback loop of `RP_CTZL`
 does not.
 
-C: `sift.c:318-332`, `sift.c:343`
+C: `sift.c:318-327`, `sift.c:343`
 
 Deviation: `Int64` for `long`, `toUInt64` for the cast to `unsigned long`, and the `toInt64` of the
 count for the `long` that `RP_CTZL` returns; the negation of a negative `m` as a conditional
@@ -849,9 +849,9 @@ numbers `w0, …, w1 - 1`, for `w1 = min (w0 + A) wHigh`, gives its points
 the first piece and the high mask `rbaLength - 1 - (H mod rbaLength)` if it is the last, so that the
 numerators that the masks leave lie end to end and make up `-H, …, H`.
 
-C: `find_points.c:3123-3124`, `find_points.c:3129`, `find_points.c:3149-3170`,
-`find_points.c:3442-3488`, `find_points.c:3490-3561`, `find_points.c:3563-3617`,
-`rp-private.h:577-578`, `rp-private.h:583`
+C: `find_points.c:3112-3114`, `find_points.c:3123-3124`, `find_points.c:3129`,
+`find_points.c:3149-3170`, `find_points.c:3442-3488`, `find_points.c:3490-3561`,
+`find_points.c:3563-3617`, `rp-private.h:577-578`, `rp-private.h:583`
 
 Deviation: the plain layout, bit `t` of the bit array with the word number `w` for the numerator
 `rbaLength w + t`, and every numerator from `-H` to `H`, as the bits from `-H` to `H`, for the
@@ -878,9 +878,14 @@ clears when it computes the products, and the factor `f` computed for every deno
 sieved (`n_sifts`), which ratpoints reads to correct the moduli between the blocks of the run (stage
 I); a list of points, for the callback `process` with its argument `info` and for the count `total`
 of points that `sift` returns, with no stop that `process` may request (`quit`, which `worker_init`
-clears, stage G) or that the pool of threads sends (`stop`); natural numbers and integers for the
-`long`s (stage F); no measurements of the phases (`RP_SIFT_TIC`, `RP_SETUP_TIC`, `RP_INIT_TIC` and
-their `TOC`) and no output under `DEBUG`. -/
+clears, stage G); the arguments of the run passed explicitly, for the pointer `args` of the sieving
+thread (`rp-private.h:574`), which `worker_init` sets and through which `sift` reads them; no search
+intervals `iv` of the sieving thread, which `worker_init` clears (`find_points.c:3130`) and
+`run_block` sets for each block (`rp-private.h:574`; stage H); no pool, slot and stop flag of a
+thread of the pool, the flag by which the pool of threads tells it to abandon its block (`pool`,
+`slot`, `stop`, `rp-private.h:584-585`; stage I); natural numbers and integers for the `long`s
+(stage F); no measurements of the phases (`RP_SIFT_TIC`, `RP_SETUP_TIC`, `RP_INIT_TIC` and their
+`TOC`) and no output under `DEBUG`. -/
 -- lint: allow long-proof: the set-up of `sift` and its loop over the pieces, as in the C code
 def sift (c : List Int) (d H A b : Nat) (rev : Bool) (sp1 : Nat)
     (rows : List (Nat × Array (Thunk (Array UInt64)))) (es3 : List SieveEntry) (mgs3 : List Nat)

@@ -417,7 +417,7 @@ def Entry.admits (e : Entry) (b : Nat) (a : Int) : Bool :=
 admits the numerator `a`: for the residues `r = b mod m` and `x = a mod m`, the entry of `fsq` at
 `x r⁻¹ mod m` if `p ∤ r`, and for `p ∣ r` whether `p ∤ x` and the entry of `gsq` at `r x⁻¹ mod m`.
 
-C: `init.c:359-386`
+C: `init.c:359-386`, `rp-private.h:592`
 
 Deviation: the bit of `a` in the row of `r`, computed from the tables for each numerator, where
 `_ratpoints_sieve_init_power` builds the pattern of the row of a residue once, when a denominator
@@ -479,7 +479,7 @@ numerator `a`: for the residues `r = b mod p` and `x = a mod p`, the row of `r` 
 admits `x` (`Ratpoints.Sieve.Factor.admits`), each factor reading `r` and `x` modulo its own
 modulus, which divides `p`.
 
-C: `init.c:399-414`, `init.c:419-429`
+C: `init.c:399-414`, `init.c:419-429`, `rp-private.h:593`
 
 Deviation: the bit of `a` in the row of `r`, computed from the tables of the factors for each
 numerator, where `_ratpoints_sieve_init_product` builds the row of a product once, when a

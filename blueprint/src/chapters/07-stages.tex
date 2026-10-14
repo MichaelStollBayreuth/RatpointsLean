@@ -157,11 +157,11 @@ $b_{\mathrm{high}} \le \mathrm{mulModLimit}$ stays as it is
   difference $d = m - n$, the mask $d \gg 63$ by the arithmetic shift, $-1$ for $d < 0$ and $0$
   otherwise, $n$ plus the and of $d$ with the mask, and $m$ the word $(d \oplus \mathrm{mask}) -
   \mathrm{mask}$ shifted right by its number of trailing zeros (Definition~\ref{def:ctz}, on the
-  word read as unsigned); the result is whether $m$ ends as $1$ (\csource{sift.c}{334}{342}). For
+  word read as unsigned); the result is whether $m$ ends as $1$ (\csource{sift.c}{328}{342}). For
   words $m$ and $n$: for $m = 0$, whether $n = 1$; otherwise $m$ replaced by $-m$ when it is
   negative, false when $m$ and $n$ are both even, and else the loop on $m$, shifted right by its
   number of trailing zeros when it is even, and $n$ shifted right by its number of trailing zeros
-  (\csource{sift.c}{318}{332}, \csource{sift.c}{343}{343}).
+  (\csource{sift.c}{318}{327}, \csource{sift.c}{343}{343}).
 \end{definition}
 
 \begin{lemma}[The test for common factors]\label{lem:relprime}

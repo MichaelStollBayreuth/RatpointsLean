@@ -340,11 +340,12 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
   \leanok
   The row of $b$ for each modulus of the first two stages (\csource{find_points.c}{3149}{3170},
   \csource{find_points.c}{3490}{3561}), the end $s_1$ of the first stage, and the entries of the
-  third stage with their reciprocals, which the sieving thread takes from the arguments
-  (\csource{find_points.c}{3123}{3124}, \csource{rp-private.h}{577}{578}); what the third stage
-  needs of its entries (Definition~\ref{def:stage3}) and the products $c_k b^{d - k}$ of the check
-  as thunks, made once per denominator and forced when the first numerator of $b$ needs them, for
-  the flags \verb|stage3_filled| and \verb|compute_bc| of the sieving thread
+  third stage with their reciprocals, which the sieving thread takes from the arguments of the run
+  that it is set up with (\csource{find_points.c}{3112}{3114}, \csource{find_points.c}{3123}{3124},
+  \csource{rp-private.h}{577}{578}); what the third stage needs of its entries
+  (Definition~\ref{def:stage3}) and the products $c_k b^{d - k}$ of the check as thunks, made once
+  per denominator and forced when the first numerator of $b$ needs them, for the flags
+  \verb|stage3_filled| and \verb|compute_bc| of the sieving thread
   (\csource{find_points.c}{3129}{3129}, \csource{rp-private.h}{583}{583}); the factor of the check,
   which also gets the flag of the reversal; the word numbers
   $w_{\mathrm{low}} = \lfloor -H/R \rfloor$ and $w_{\mathrm{high}} = \lfloor H/R \rfloor + 1$; and
