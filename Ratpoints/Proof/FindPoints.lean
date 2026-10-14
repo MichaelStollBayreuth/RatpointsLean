@@ -649,8 +649,7 @@ private theorem toList_run_sieveRun_runSetup {c : List ℤ} {H A sp1 sp2 : ℕ}
     {entries : List SieveEntry} (hent : ∀ e ∈ entries, e.IsSound c)
     (hes : ∀ e ∈ entries.drop sp2, e.IsPrimeEntry) {magics : Array ℕ}
     (hmg : magics.toList = entries.map fun e ↦ magic e.p) (hH : 1 ≤ H) (hH63 : H < 2 ^ 63)
-    (hA : 1 ≤ A) (rev : Bool)
-    {us1 : Option (List Setup.DenInfo × List ℕ)}
+    (hA : 1 ≤ A) (rev : Bool) {us1 : Option (List Setup.DenInfo × List ℕ)}
     (hus1 : (if degree c % 2 == 1 && (c.getD (degree c) 0).natAbs != 1 then
       Id.run (Setup.setupUs1 c (degree c) H) else none) = us1)
     {checkDenom useJacobi : Bool} {forb : List ForbiddenEntry} {forbVal : List ForbiddenVal}
@@ -739,8 +738,7 @@ private theorem append_eq_of_run_sievingInfo_eq_some {c : List ℤ} {H : ℕ} {P
       checkDenom useJacobi forb forbVal (c.getD (degree c) 0) H))
     {u cd : Bool} {r : Option (List SieveEntry × Array ℕ × List ForbiddenEntry × List ForbiddenVal)}
     (hr : r = Id.run (sievingInfo c (degree c) u cd P H))
-    (hs : r = some (entries, magics, forb, forbVal))
-    (hnb : nb = Id.run (twoAdic c (degree c)))
+    (hs : r = some (entries, magics, forb, forbVal)) (hnb : nb = Id.run (twoAdic c (degree c)))
     (hus1 : (if degree c % 2 == 1 && (c.getD (degree c) 0).natAbs != 1 then
       Id.run (Setup.setupUs1 c (degree c) H) else none) = us1)
     (hcd : checkDenom = true → degree c % 2 = 0) :

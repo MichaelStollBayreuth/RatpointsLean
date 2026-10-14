@@ -123,8 +123,7 @@ theorem sieveRun_spec (c : List ℤ) (d H A : ℕ) (rev : Bool) (sp1 sp2 : ℕ)
     (entries : List SieveEntry) (magics : Array ℕ) (nb : Vector UInt64 64) (db : UInt64)
     (shape : Shape) (bLow bHigh : ℕ) :
     ⦃ 1 ≤ A ∧ (∀ e ∈ entries, 0 < e.p) ∧ (∀ e ∈ entries.drop sp2, e.IsPrimeEntry) ∧
-        magics.toList = entries.map (fun e ↦ magic e.p) ∧ 1 ≤ bLow ∧ bHigh < 2 ^ 63 ∧
-        H < 2 ^ 63 ⦄
+        magics.toList = entries.map (fun e ↦ magic e.p) ∧ 1 ≤ bLow ∧ bHigh < 2 ^ 63 ∧ H < 2 ^ 63 ⦄
     sieveRun c d H A rev sp1 sp2 entries magics nb db shape bLow bHigh
     ⦃ fun out ↦ out.toList = (((Id.run (shape.dens db bLow bHigh)).filter
         fun b ↦ Id.run (shape.keep nb b)).flatMap fun b : ℕ ↦ pointsOfDen c d b

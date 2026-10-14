@@ -357,8 +357,7 @@ theorem JacobiSetupLoopInvariant.isJacobiInfo {lcf : ℤ} {bHigh v r w u : ℕ}
   obtain rfl := Option.some.inj hji
   refine ⟨Nat.le_of_not_lt hb, h0, ⟨fun x hx ↦ ?_, by simpa using h1, ?_⟩, fun x hx ↦ (h3 x hx).1,
     Array.toList_map ..⟩
-  · exact ⟨prime_of_mem_primeTable (h3 x hx).1, (h3 x hx).2.1, (h3 x hx).2.2.1,
-      (h3 x hx).2.2.2.2⟩
+  · exact ⟨prime_of_mem_primeTable (h3 x hx).1, (h3 x hx).2.1, (h3 x hx).2.2.1, (h3 x hx).2.2.2.2⟩
   · rw [← Array.length_toList, Array.toList_filter]
 
 -- The valuation, as a value for the contract of the set-up.

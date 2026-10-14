@@ -1087,11 +1087,10 @@ def pointsAtInfinity (c : List Int) (d : Nat) (rev : Bool) : List (Int × Int ×
   let e3 : Factor := .prime (examinePrime c 6 3)
   let e5 : Factor := .prime (examinePrime c 6 5)
   ([⟨9, [p9], magic 9⟩, ⟨15, [e3, e5], magic 15⟩, ⟨45, [p9, e5], magic 45⟩] :
-      List SieveEntry).all fun e ↦
-    [0, 1, 3, 5, 6, 10, 18].all fun b ↦
-      let row := e.row b
-      row.size == e.p * rbaPack && (List.range (e.p * rbaPack)).all fun j ↦
-        (List.range 64).all fun t ↦ row[j]!.toBitVec.getLsbD t == e.admits b (64 * j + t)
+      List SieveEntry).all fun e ↦ [0, 1, 3, 5, 6, 10, 18].all fun b ↦
+    let row := e.row b
+    row.size == e.p * rbaPack && (List.range (e.p * rbaPack)).all fun j ↦
+      (List.range 64).all fun t ↦ row[j]!.toBitVec.getLsbD t == e.admits b (64 * j + t)
 
 -- The row of `0` against the pattern `sieves0` that the build of ratpoints generates, for 3, 5, 7,
 -- 11 and 13: the first `p` of its `RBA_PACK * p` words, which repeat them.

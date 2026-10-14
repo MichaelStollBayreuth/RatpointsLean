@@ -157,8 +157,7 @@ verification condition: `n` becomes the smaller of the two and `m` the odd part 
 theorem RelprimeOddInvariant.shiftRight_min {g k t : Nat} {m n d : Int64} (hmn : (n != m) = true)
     (h : m.toNatClampNeg + n.toNatClampNeg = k ∧ m.toNatClampNeg % 2 = 1 ∧
       n.toNatClampNeg % 2 = 1 ∧ Nat.gcd m.toNatClampNeg n.toNatClampNeg = g ∧
-      (false = true → m = n))
-    (hd : d = (m - n ^^^ (m - n) >>> 63) - (m - n) >>> 63)
+      (false = true → m = n)) (hd : d = (m - n ^^^ (m - n) >>> 63) - (m - n) >>> 63)
     (ht : t = d.toUInt64.toBitVec.ctz.toNat) :
     (d >>> Int64.ofNat t).toNatClampNeg + (n + (m - n &&& (m - n) >>> 63)).toNatClampNeg < k ∧
       (d >>> Int64.ofNat t).toNatClampNeg % 2 = 1 ∧
@@ -217,9 +216,8 @@ theorem relprimeOdd_spec (m n : Int64) :
 -- gcd of `m` with the positive word `n`.
 private theorem ite_neg_pos_and_gcd_eq {m n : Int64} (h : Int64.minValue < m ∧ 0 < n)
     (hm : ¬(m == 0) = true) :
-    0 < (if m < 0 then -m else m) ∧ 0 < n ∧
-      Int.gcd m.toInt n.toInt =
-        Nat.gcd (if m < 0 then -m else m).toNatClampNeg n.toNatClampNeg := by
+    0 < (if m < 0 then -m else m) ∧ 0 < n ∧ Int.gcd m.toInt n.toInt =
+      Nat.gcd (if m < 0 then -m else m).toNatClampNeg n.toNatClampNeg := by
   have h1 := Int64.toNatClampNeg_ite_neg h.1
   refine ⟨(Int64.toNatClampNeg_pos_iff _).mp ?_, h.2, ?_⟩
   · rw [h1, Int.natAbs_pos, ← Int64.toInt_zero, Ne, Int64.toInt_inj]
@@ -249,8 +247,9 @@ private theorem false_eq_decide_gcd {m n x : Int64}
 private theorem toNatClampNeg_shiftRight_mod_two {m n x : Int64} {s t : Nat}
     (hx : 0 < x ∧ 0 < n ∧ Int.gcd m.toInt n.toInt = Nat.gcd x.toNatClampNeg n.toNatClampNeg)
     (ht : t = x.toUInt64.toBitVec.ctz.toNat) (hs : s = n.toUInt64.toBitVec.ctz.toNat) :
-    (x >>> Int64.ofNat t).toNatClampNeg % 2 = 1 ∧ (n >>> Int64.ofNat s).toNatClampNeg % 2 = 1 :=
-  by subst ht hs; exact ⟨Int64.toNatClampNeg_shiftRight_ctz_mod_two hx.1,
+    (x >>> Int64.ofNat t).toNatClampNeg % 2 = 1 ∧ (n >>> Int64.ofNat s).toNatClampNeg % 2 = 1 := by
+  subst ht hs
+  exact ⟨Int64.toNatClampNeg_shiftRight_ctz_mod_two hx.1,
     Int64.toNatClampNeg_shiftRight_ctz_mod_two hx.2.1⟩
 
 -- An odd positive word and the odd part of a positive word.
@@ -265,8 +264,7 @@ private theorem toNatClampNeg_mod_two_of_and_one {m n x : Int64} {s : Nat}
 -- The odd parts of a positive word and of an odd positive word have the gcd of the two words.
 private theorem eq_decide_gcd_of_shiftRight {m n x : Int64} {s t : Nat} {r : Bool}
     (hx : 0 < x ∧ 0 < n ∧ Int.gcd m.toInt n.toInt = Nat.gcd x.toNatClampNeg n.toNatClampNeg)
-    (hno : ¬(n &&& 1 == 0) = true)
-    (hr : r = decide
+    (hno : ¬(n &&& 1 == 0) = true) (hr : r = decide
       (Nat.gcd (x >>> Int64.ofNat t).toNatClampNeg (n >>> Int64.ofNat s).toNatClampNeg = 1))
     (ht : t = x.toUInt64.toBitVec.ctz.toNat) (hs : s = n.toUInt64.toBitVec.ctz.toNat) :
     r = decide (Int.gcd m.toInt n.toInt = 1) := by
@@ -591,8 +589,7 @@ with `|a| ≤ H < 2 ^ 63` that survives the sieve entries `es` of the third stag
 theorem ite_run_accepted_checkPoint {es : List SieveEntry} (hes : ∀ e ∈ es, e.IsPrimeEntry)
     {a : Int} {b H : Nat} {checks : Thunk (List CheckSpec)}
     (hc : checks.get = fillChecks b H es (es.map fun e ↦ magic e.p)) (w : Thunk (List Int))
-    (f : Int) (rev : Bool) (hb : 0 < b) (hb63 : b < 2 ^ 63) (ha : a.natAbs ≤ H)
-    (hH : H < 2 ^ 63) :
+    (f : Int) (rev : Bool) (hb : 0 < b) (hb63 : b < 2 ^ 63) (ha : a.natAbs ≤ H) (hH : H < 2 ^ 63) :
     (if Id.run (accepted a b checks) then checkPoint w f b rev a else []) =
       if survives es b a then checkNum w.get f b rev a else [] := by
   rw [run_accepted hes hc hb hb63 ha hH]

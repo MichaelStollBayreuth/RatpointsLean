@@ -97,10 +97,8 @@ test for common factors on the words of the C code. -/
 theorem acceptedPoints_eq_ite {es : List SieveEntry} (hes : ∀ e ∈ es, e.IsPrimeEntry) {a : Int}
     {b H : Nat} {checks : Thunk (List CheckSpec)}
     (hc : checks.get = fillChecks b H es (es.map fun e ↦ magic e.p)) (w : Thunk (List Int))
-    (f : Int) (rev : Bool) (hb : 0 < b) (hb63 : b < 2 ^ 63) (ha : a.natAbs ≤ H)
-    (hH : H < 2 ^ 63) :
-    acceptedPoints w f b rev checks a =
-      if survives es b a then checkNum w.get f b rev a else [] :=
+    (f : Int) (rev : Bool) (hb : 0 < b) (hb63 : b < 2 ^ 63) (ha : a.natAbs ≤ H) (hH : H < 2 ^ 63) :
+    acceptedPoints w f b rev checks a = if survives es b a then checkNum w.get f b rev a else [] :=
   ite_run_accepted_checkPoint hes hc w f rev hb hb63 ha hH
 
 -- The test of a candidate, as a value for the contract of the walk: the walk's contract speaks of
@@ -234,8 +232,7 @@ next word. -/
 theorem SiftBitArrayWalkInvariant.toList_eq {words : Nat → UInt64}
     {g : Int → List (Int × Int × Int)} {specs : List SieveSpec} {i : Int}
     {nums : Vector UInt64 rbaPack} {out0 : Array (Int × Int × Int)}
-    {s : Array (Int × Int × Int) × Int}
-    (hw : ∀ κ < rbaPack, words κ = andWords specs nums[κ]! i κ)
+    {s : Array (Int × Int × Int) × Int} (hw : ∀ κ < rbaPack, words κ = andWords specs nums[κ]! i κ)
     (h : SiftBitArrayWalkInvariant words g i out0 (ForIn.toList [0:rbaPack]).length s) :
     s.1.toList = out0.toList ++ ((List.range rbaPack).flatMap fun κ ↦
       ((List.range 64).filter ((andWords specs nums[κ]! i κ).toBitVec.getLsbD ·)).map
@@ -399,8 +396,7 @@ theorem ScanPieceInvariant.add_one_of_isZeroAt {m : Nat} {sv : Vector UInt64 m}
 theorem ScanPieceInvariant.add_one_of_siftBitArray {m : Nat} {sv : Vector UInt64 m}
     {specs : List SieveSpec} {g : Int → List (Int × Int × Int)} {w0 : Int} {n pos : Nat}
     {out out' : Array (Int × Int × Int)} (h : ScanPieceInvariant sv specs g w0 n pos out)
-    (hlt : pos < n)
-    (hout : out'.toList = out.toList ++ ((List.range rbaPack).flatMap fun κ ↦
+    (hlt : pos < n) (hout : out'.toList = out.toList ++ ((List.range rbaPack).flatMap fun κ ↦
       ((List.range 64).filter ((andWords specs
         (Vector.ofFn fun κ : Fin rbaPack ↦ sv[rbaPack * pos + κ]!)[κ]! (w0 + pos)
           κ).toBitVec.getLsbD ·)).map fun t : Nat ↦

@@ -917,7 +917,6 @@ theorem toNatClampNeg_eq_one_iff (x : Int64) : x.toNatClampNeg = 1 ↔ x = 1 := 
   rw [← toNat_toInt, ← toInt_inj, toInt_one]
   lia
 
-
 theorem minValue_lt_ofInt {a : Int} (ha : a.natAbs < 2 ^ 63) : minValue < ofInt a := by
   rw [lt_iff_toInt_lt, toInt_minValue, toInt_ofInt_of_le (by lia) (by lia)]
   lia
