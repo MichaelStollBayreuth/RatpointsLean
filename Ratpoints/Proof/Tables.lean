@@ -225,12 +225,12 @@ theorem getElem!_inversesMod_mul_mod {p r : ℕ} (hp : p.Prime) (hr : r < p) (hr
   rw [getElem!_pos (inversesMod p) r (by simpa [inversesMod] using hr)]
   simpa [inversesMod, hs] using List.find?_some hs
 
-/-- The entries of the table of the inverses modulo `p > 0` are residues modulo `p`. -/
-theorem getElem!_inversesMod_lt {p r : ℕ} (hp : 0 < p) (hr : r < p) : (inversesMod p)[r]! < p := by
+/-- The entries of the table of the inverses modulo `p` are residues modulo `p`. -/
+theorem getElem!_inversesMod_lt {p r : ℕ} (hr : r < p) : (inversesMod p)[r]! < p := by
   rw [getElem!_pos (inversesMod p) r (by simpa [inversesMod] using hr)]
   simp only [inversesMod, Array.getElem_map, Array.getElem_range]
   cases h : (List.range' 1 (p - 1)).find? (· * r % p == 1) with
-  | none => simpa using hp
+  | none => simpa using Nat.zero_lt_of_lt hr
   | some s => have := List.mem_range'_1.mp (List.mem_of_find?_eq_some h); simp; lia
 
 theorem natCast_mul_getElem!_inversesMod_mod {p : ℕ} [hp : Fact p.Prime] (x : ℕ) {r : ℕ}
@@ -458,7 +458,7 @@ theorem isPrimeEntry_examinePrime (c : List ℤ) (d : ℕ) {p : ℕ} (hp : p.Pri
     SieveEntry.IsPrimeEntry ⟨p, [.prime (examinePrime c d p)], magic p⟩ :=
   ⟨examinePrime c d p, rfl, hp.one_lt, hp32, fun r hr hr0 ↦
     ⟨fun h ↦ absurd (getElem!_inversesMod_mul_mod hp hr hr0) (by simp_all),
-      getElem!_inversesMod_lt hp.pos hr⟩⟩
+      getElem!_inversesMod_lt hr⟩⟩
 
 theorem getElem!_isFSquare_examinePrime (c : List ℤ) (d : ℕ) {p t : ℕ} (ht : t < p) :
     (examinePrime c d p).isFSquare[t]! = (squaresMod p)[evalMod

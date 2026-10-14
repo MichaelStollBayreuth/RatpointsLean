@@ -268,20 +268,17 @@ private theorem pos_of_mem_of_setupUs1_eq_some {c : List ℤ} {H : ℕ} (hH : 1 
     (getD_degree_ne_zero_of_pos (by lia)) hH).mp hs').1.ne_zero
 
 -- The divisor shape over `1, …, H` lists denominators of `1, …, H`.
-private theorem mem_range'_of_mem_squares1Dens {c : List ℤ} {H : ℕ} (hH : 1 ≤ H)
-    (hd : degree c % 2 = 1) {info : List Setup.DenInfo} {divisors : List ℕ}
-    (hs : Id.run (Setup.setupUs1 c (degree c) H) = some (info, divisors)) {b : ℕ}
-    (hb : b ∈ squares1Dens divisors 1 H) : b ∈ List.range' 1 H := by
-  obtain ⟨h1, h2, -⟩ :=
-    (mem_squares1Dens_iff (fun _ ↦ pos_of_mem_of_setupUs1_eq_some hH hd hs) le_rfl).mp hb
-  exact List.mem_range'_1.mpr ⟨h1, by lia⟩
+private theorem mem_range'_of_mem_squares1Dens {divisors : List ℕ} {H b : ℕ}
+    (hb : b ∈ squares1Dens divisors 1 H) : b ∈ List.range' 1 H :=
+  have := le_and_le_of_mem_squares1Dens le_rfl hb
+  List.mem_range'_1.mpr ⟨this.1, by lia⟩
 
 -- The denominators of the search lie in `1, …, H`.
-private theorem mem_range'_of_mem_searchDens {c : List ℤ} {H b : ℕ} (hH : 1 ≤ H)
+private theorem mem_range'_of_mem_searchDens {c : List ℤ} {H b : ℕ}
     (hb : b ∈ searchDens c (degree c) H) : b ∈ List.range' 1 H := by
-  obtain h | ⟨info, divisors, hd, hs, h⟩ := searchDens_eq_range'_or c (degree c) H
+  obtain h | ⟨_, _, -, -, h⟩ := searchDens_eq_range'_or c (degree c) H
   · rwa [h] at hb
-  · exact mem_range'_of_mem_squares1Dens hH hd hs (h ▸ hb)
+  · exact mem_range'_of_mem_squares1Dens (h ▸ hb)
 
 /-- The divisor shape visits each denominator of a point once, so that it gives a permutation of
 the points of the denominators `1, …, H`: the denominator of every point is `s k ^ 2` with `s`
@@ -296,7 +293,7 @@ theorem perm_flatMap_squares1Dens {c : List ℤ} {H : ℕ} (hH : 1 ≤ H) (hd : 
   have hmem (s : ℕ) := Setup.mem_iff_of_setupUs1_eq_some hs hc hH (s := s)
   refine List.perm_flatMap_of_nodup List.nodup_range' (nodup_squares1Dens
     (Setup.nodup_of_setupUs1_eq_some hs hc) (fun s hs' ↦ ((hmem s).mp hs').1) 1 H)
-    (fun _ ↦ mem_range'_of_mem_squares1Dens hH hd hs) fun b hb hne ↦ ?_
+    (fun _ ↦ mem_range'_of_mem_squares1Dens) fun b hb hne ↦ ?_
   have hb' := List.mem_range'_1.mp hb
   obtain ⟨a, -, y, hg, hy⟩ := exists_sq_eq_of_pointsOfDen_ne_nil hne
   obtain ⟨s, k, hsq, hdvd, hbsk⟩ := exists_eq_mul_mul_of_sq_eq_binaryForm_of_odd hd hg hy
@@ -383,8 +380,8 @@ private theorem toList_run_sieveRun_squares1 {c : List ℤ} {H A sp1 sp2 : ℕ}
     {entries : List SieveEntry} (hent : ∀ e ∈ entries, e.IsSound c)
     (hes : ∀ e ∈ entries.drop sp2, e.IsPrimeEntry) {magics : Array ℕ}
     (hmg : magics.toList = entries.map fun e ↦ magic e.p) (hH63 : H < 2 ^ 63) (hA : 1 ≤ A)
-    (rev : Bool) (hH : 1 ≤ H) (hd : degree c % 2 = 1) {info : List Setup.DenInfo}
-    {divisors : List ℕ} (hs : Id.run (Setup.setupUs1 c (degree c) H) = some (info, divisors)) :
+    (rev : Bool) (hd : degree c % 2 = 1) {info : List Setup.DenInfo} {divisors : List ℕ}
+    (hs : Id.run (Setup.setupUs1 c (degree c) H) = some (info, divisors)) :
     (Id.run (sieveRun c (degree c) H A rev sp1 sp2 entries magics (Id.run (twoAdic c (degree c)))
       (denBits (Id.run (twoAdic c (degree c)))) (.squares1 info divisors) 1 H)).toList =
       ((squares1Dens divisors 1 H).flatMap fun b : ℕ ↦
@@ -393,7 +390,7 @@ private theorem toList_run_sieveRun_squares1 {c : List ℤ} {H A sp1 sp2 : ℕ}
     (by simp [Shape.dens]) fun b hb h ↦ ⟨rfl, ?_⟩
   obtain ⟨a, -, y, hg, hy⟩ := exists_sq_eq_of_pointsOfDen_ne_nil h
   have hb0 : b ≠ 0 :=
-    Nat.one_le_iff_ne_zero.mp (List.mem_range'_1.mp (mem_range'_of_mem_squares1Dens hH hd hs hb)).1
+    Nat.one_le_iff_ne_zero.mp (List.mem_range'_1.mp (mem_range'_of_mem_squares1Dens hb)).1
   simp [Shape.keep, getElem!_twoAdic_ne_zero h, run_denInfoTest_of_sq_eq hd hs hb0 hg hy]
 
 -- The word shape, for even degree.
@@ -648,8 +645,8 @@ private theorem run_sievingInfo_spec {c : List ℤ} {u checkDenom : Bool} {P : P
 private theorem toList_run_sieveRun_runSetup {c : List ℤ} {H A sp1 sp2 : ℕ}
     {entries : List SieveEntry} (hent : ∀ e ∈ entries, e.IsSound c)
     (hes : ∀ e ∈ entries.drop sp2, e.IsPrimeEntry) {magics : Array ℕ}
-    (hmg : magics.toList = entries.map fun e ↦ magic e.p) (hH : 1 ≤ H) (hH63 : H < 2 ^ 63)
-    (hA : 1 ≤ A) (rev : Bool) {us1 : Option (List Setup.DenInfo × List ℕ)}
+    (hmg : magics.toList = entries.map fun e ↦ magic e.p) (hH63 : H < 2 ^ 63) (hA : 1 ≤ A)
+    (rev : Bool) {us1 : Option (List Setup.DenInfo × List ℕ)}
     (hus1 : (if degree c % 2 == 1 && (c.getD (degree c) 0).natAbs != 1 then
       Id.run (Setup.setupUs1 c (degree c) H) else none) = us1)
     {checkDenom useJacobi : Bool} {forb : List ForbiddenEntry} {forbVal : List ForbiddenVal}
@@ -679,7 +676,7 @@ private theorem toList_run_sieveRun_runSetup {c : List ℤ} {H A sp1 sp2 : ℕ}
   rcases us1 with _ | ⟨info, divisors⟩
   · obtain rfl : checkDenom = false := by cases checkDenom <;> simp_all
     exact toList_run_sieveRun_all hent hes hmg hH63 hA rev
-  · exact toList_run_sieveRun_squares1 hent hes hmg hH63 hA rev hH hd
+  · exact toList_run_sieveRun_squares1 hent hes hmg hH63 hA rev hd
       (Option.ite_none_right_eq_some.mp hus1).2
 
 -- A curve without points of height at most `H` has an empty reference.
@@ -696,7 +693,7 @@ private theorem nil_eq_of_bruteForce_eq_nil {c : List ℤ} {H : ℕ} (hH : 1 ≤
         (if rev then swapPoint else id) := by
   rw [bruteForce_eq_append c hH, List.append_eq_nil_iff, List.flatMap_eq_nil_iff] at h
   rw [h.1, List.nil_append, List.flatMap_eq_nil_iff.mpr fun b hb ↦
-    h.2 b (mem_range'_of_mem_searchDens hH hb), List.map_nil]
+    h.2 b (mem_range'_of_mem_searchDens hb), List.map_nil]
 
 -- The 2-adic exit of the search: no class of the denominators admits a numerator, so that the
 -- curve has no points.
@@ -749,8 +746,8 @@ private theorem append_eq_of_run_sievingInfo_eq_some {c : List ℤ} {H : ℕ} {P
   obtain ⟨hent, -, hmg, -, hes, hforb, hval⟩ :=
     (run_sievingInfo_spec hP).1 _ _ _ _ (hr.symm.trans hs)
   subst hnb hshape hpts
-  rw [toList_run_sieveRun_runSetup hent hes hmg hH hH63 (P.one_le_arraySizeAt hH) rev hus1 hforb
-    hval hcd, pointsAtInfinity_eq_map, List.map_append]
+  rw [toList_run_sieveRun_runSetup hent hes hmg hH63 (P.one_le_arraySizeAt hH) rev hus1 hforb hval
+    hcd, pointsAtInfinity_eq_map, List.map_append]
 
 -- The components of the search, as values for its contract.
 private theorem setupUs1_value (c : List ℤ) (d bHigh : ℕ) :

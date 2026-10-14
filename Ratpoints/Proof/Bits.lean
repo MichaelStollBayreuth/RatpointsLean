@@ -97,8 +97,8 @@ value, and the words of an integer and of a natural number below `2 ^ 63`.
   by `p`, and `p ^ n < 2 ^ N` for `p < 2 ^ b`, `n ≠ 0` and `b n ≤ N`.
 * `Int.natAbs_sub_mul_of_mul_nonpos`: `|a - q b| = |a| + q |b|` for `a b ≤ 0` and `q ≥ 0`.
 * `Int.dvd_natAbs_of_dvd_gcd`: a divisor of the gcd of `f ≡ a (mod b)` and `b` divides `a`.
-* `Nat.mul_mod_mul_div_eq_mod`, `Nat.mul_div_eq_div_of_mul_eq_add`: the remainder and the quotient
-  by a reciprocal `m` of `p` scaled by `N`, for `m p = N + δ` and `u δ < N`.
+* `Nat.mul_mod_mul_div_eq_mod_of_mul_eq_add`, `Nat.mul_div_eq_div_of_mul_eq_add`: the remainder
+  and the quotient by a reciprocal `m` of `p` scaled by `N`, for `m p = N + δ` and `u δ < N`.
 * `Nat.gcd_eq_of_two_pow_mul_eq`: for `x = 2 ^ t y`, `y` has the gcd of `x` with an odd number;
   `Nat.gcd_min_eq_gcd_of_two_pow_mul_eq`, `Nat.add_min_lt_add_of_two_pow_mul_eq`: the odd part of
   the distance of two odd numbers has with the smaller of the two their gcd and a sum below theirs,
@@ -106,7 +106,9 @@ value, and the words of an integer and of a natural number below `2 ^ 63`.
 * `Int.toNat_emod_ne_zero_of_gcd_eq_one`: a divisor `p > 1` of `b` does not divide a numerator
   prime to `b`.
 * `Int.ite_tmod_lt_zero_eq_emod`, `Int.toNat_emod_mul_emod`: C's remainder, which truncates, made
-  non-negative is the Euclidean one, and the residue of `(a mod p) b` as a natural number.
+  non-negative is the Euclidean one, and the residue of `(a mod p) b` as a natural number;
+  `Int.toNat_mul_add_natCast_mul_mod`: the shift by a multiple `p H` of `p` keeps the residue of
+  `a binv`.
 * `Int.natAbs_mul_add_le_mul`: `|a b| + H ≤ p H` for `|a| ≤ H` and `b < p`.
 * `Int64.toInt_shiftRight_ofNat`, `Int64.shiftRight_63`: the arithmetic shift of a `long` by
   `k < 64`, and the mask `x >>> 63`, `-1` for a negative `x` and `0` otherwise.
@@ -509,7 +511,7 @@ theorem exists_mul_eq_add_mul_div {u p m N δ : Nat} (hp : 0 < p) (hm : m * p = 
 
 /-- The remainder by a reciprocal: for `m p = N + δ` and `u δ < N`, the low part `m u mod N` of the
 product of `u` with `m`, times `p`, has the high part `u mod p`. -/
-theorem mul_mod_mul_div_eq_mod {u p m N δ : Nat} (hp : 0 < p) (hm : m * p = N + δ)
+theorem mul_mod_mul_div_eq_mod_of_mul_eq_add {u p m N δ : Nat} (hp : 0 < p) (hm : m * p = N + δ)
     (hu : u * δ < N) : m * u % N * p / N = u % p := by
   obtain ⟨L, hL, h1, h2⟩ := exists_mul_eq_add_mul_div hp hm hu
   rw [h1, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hL, h2, Nat.add_mul_div_left _ _ (by lia),
@@ -532,7 +534,7 @@ theorem gcd_eq_of_two_pow_mul_eq {x y n t : Nat} (h : 2 ^ t * y = x) (hn : n % 2
 the gcd of `m` and `n`: the step of the binary algorithm for the gcd. -/
 theorem gcd_min_eq_gcd_of_two_pow_mul_eq {m n y t : Nat} (hm : m % 2 = 1) (hn : n % 2 = 1)
     (h : 2 ^ t * y = if m < n then n - m else m - n) : gcd y (min m n) = gcd m n := by
-  rw [gcd_eq_of_two_pow_mul_eq h (by rw [Nat.min_def]; split <;> assumption)]
+  rw [gcd_eq_of_two_pow_mul_eq h (by lia)]
   by_cases hlt : m < n
   · simp only [hlt, ↓reduceIte, Nat.min_eq_left (Nat.le_of_lt hlt),
       Nat.gcd_sub_self_left (Nat.le_of_lt hlt), Nat.gcd_comm]
@@ -650,6 +652,16 @@ theorem toNat_emod_mul_emod (a : Int) {p : Nat} (b : Nat) (hp : 0 < p) :
   rw [toNat_of_nonneg (emod_nonneg _ (by lia))]
   push_cast
   rw [toNat_of_nonneg h]
+
+/-- The shift by the multiple `p H` of `p` keeps the residue modulo `p` of `a binv`. -/
+theorem toNat_mul_add_natCast_mul_mod {a : Int} {p binv H : Nat} (hp : 0 < p)
+    (h : 0 ≤ a * binv + (p * H : Nat)) :
+    (a * binv + (p * H : Nat)).toNat % p = (a % p).toNat * binv % p := by
+  rw [← toNat_emod_mul_emod a binv hp]
+  apply ofNat_inj.mp
+  rw [toNat_of_nonneg (emod_nonneg _ (by lia)), natCast_emod, toNat_of_nonneg h, natCast_mul,
+    add_mul_emod_self_left]
+  conv => rhs; rw [mul_emod, emod_emod, ← mul_emod]
 
 theorem natAbs_mul_add_le_mul {a : Int} {b p H : Nat} (ha : a.natAbs ≤ H) (hb : b < p) :
     (a * b).natAbs + H ≤ p * H := by
@@ -892,8 +904,9 @@ theorem toNatClampNeg_shiftRight_ctz_mod_two {x : Int64} (hx : 0 < x) :
   exact UInt64.shiftRight_ctz_ofNat_mod_two ((toNatClampNeg_pos_iff x).mpr hx)
     (Nat.lt_trans x.toNatClampNeg_lt (by decide))
 
-theorem and_one_eq_zero_iff {x : Int64} (hx : 0 ≤ x) : x &&& 1 = 0 ↔ x.toNatClampNeg % 2 = 0 := by
-  rw [← toNat_toUInt64_of_le hx, ← toNat_toBitVec, ← toBitVec_inj, ← BitVec.toNat_inj]
+theorem and_one_beq_zero_iff {x : Int64} (hx : 0 ≤ x) :
+    (x &&& 1 == 0) = true ↔ x.toNatClampNeg % 2 = 0 := by
+  rw [beq_iff_eq, ← toNat_toUInt64_of_le hx, ← toNat_toBitVec, ← toBitVec_inj, ← BitVec.toNat_inj]
   simp [Nat.and_one_is_mod]
 
 theorem toNatClampNeg_eq_natAbs {x : Int64} (hx : 0 ≤ x) : x.toNatClampNeg = x.toInt.natAbs := by

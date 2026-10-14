@@ -116,7 +116,7 @@ theorem magic_mul_eq {p : Nat} (hp : 0 < p) :
 since `magic p` exceeds `2 ^ 64 / p` by less than `1`. -/
 theorem mulMod_magic {u p : Nat} (hp : 0 < p) (hu : u * p < 2 ^ 64) :
     mulMod u p (magic p) = u % p :=
-  Nat.mul_mod_mul_div_eq_mod hp (magic_mul_eq hp)
+  Nat.mul_mod_mul_div_eq_mod_of_mul_eq_add hp (magic_mul_eq hp)
     (Nat.lt_of_le_of_lt (Nat.mul_le_mul_left u (by lia)) hu)
 
 /-- `RP_MULDIV` with the reciprocal of `p` computes the quotient of every `u` with
@@ -176,7 +176,7 @@ theorem RelprimeOddInvariant.shiftRight_min {g k t : Nat} {m n d : Int64} (hmn :
   refine ⟨?_, Int64.toNatClampNeg_shiftRight_ctz_mod_two hd0, ?_, ?_, nofun⟩ <;>
     rw [Int64.toNatClampNeg_add_and_shiftRight_63 hm0 hn0]
   · exact Nat.add_min_lt_add_of_two_pow_mul_eq (by lia) (by lia) h1
-  · rw [Nat.min_def]; split <;> assumption
+  · lia
   · exact Nat.gcd_min_eq_gcd_of_two_pow_mul_eq hm hn h1
 
 theorem RelprimeOddInvariant.exit {g k : Nat} {m n : Int64} (hmn : ¬(n != m) = true)
@@ -236,8 +236,8 @@ private theorem false_eq_decide_gcd {m n x : Int64}
     (hx : 0 < x ∧ 0 < n ∧ Int.gcd m.toInt n.toInt = Nat.gcd x.toNatClampNeg n.toNatClampNeg)
     (hxe : (x &&& 1 == 0) = true) (hne : (n &&& 1 == 0) = true) :
     false = decide (Int.gcd m.toInt n.toInt = 1) := by
-  have h1 := (Int64.and_one_eq_zero_iff (Int64.le_of_lt hx.1)).mp (beq_iff_eq.mp hxe)
-  have h2 := (Int64.and_one_eq_zero_iff (Int64.le_of_lt hx.2.1)).mp (beq_iff_eq.mp hne)
+  have h1 := (Int64.and_one_beq_zero_iff (Int64.le_of_lt hx.1)).mp hxe
+  have h2 := (Int64.and_one_beq_zero_iff (Int64.le_of_lt hx.2.1)).mp hne
   refine (decide_eq_false fun h ↦ ?_).symm
   have := Nat.dvd_gcd (Nat.dvd_of_mod_eq_zero h1) (Nat.dvd_of_mod_eq_zero h2)
   rw [← hx.2.2, h] at this
@@ -257,8 +257,7 @@ private theorem toNatClampNeg_mod_two_of_and_one {m n x : Int64} {s : Nat}
     (hx : 0 < x ∧ 0 < n ∧ Int.gcd m.toInt n.toInt = Nat.gcd x.toNatClampNeg n.toNatClampNeg)
     (hxo : ¬(x &&& 1 == 0) = true) (hs : s = n.toUInt64.toBitVec.ctz.toNat) :
     x.toNatClampNeg % 2 = 1 ∧ (n >>> Int64.ofNat s).toNatClampNeg % 2 = 1 := by
-  have := (not_congr (Int64.and_one_eq_zero_iff (Int64.le_of_lt hx.1))).mp
-    (fun h ↦ hxo (beq_iff_eq.mpr h))
+  have := mt (Int64.and_one_beq_zero_iff (Int64.le_of_lt hx.1)).mpr hxo
   exact ⟨by lia, hs ▸ Int64.toNatClampNeg_shiftRight_ctz_mod_two hx.2.1⟩
 
 -- The odd parts of a positive word and of an odd positive word have the gcd of the two words.
@@ -269,8 +268,7 @@ private theorem eq_decide_gcd_of_shiftRight {m n x : Int64} {s t : Nat} {r : Boo
     (ht : t = x.toUInt64.toBitVec.ctz.toNat) (hs : s = n.toUInt64.toBitVec.ctz.toNat) :
     r = decide (Int.gcd m.toInt n.toInt = 1) := by
   subst ht hs hr
-  have := (not_congr (Int64.and_one_eq_zero_iff (Int64.le_of_lt hx.2.1))).mp
-    (fun h ↦ hno (beq_iff_eq.mpr h))
+  have := mt (Int64.and_one_beq_zero_iff (Int64.le_of_lt hx.2.1)).mpr hno
   rw [hx.2.2, decide_eq_decide, Nat.gcd_comm, Nat.gcd_eq_of_two_pow_mul_eq
     (Int64.two_pow_ctz_mul_toNatClampNeg_shiftRight hx.2.1)
     (Int64.toNatClampNeg_shiftRight_ctz_mod_two hx.1), Nat.gcd_comm,
@@ -284,8 +282,7 @@ private theorem eq_decide_gcd_of_shiftRight_right {m n x : Int64} {s : Nat} {r :
     (hs : s = n.toUInt64.toBitVec.ctz.toNat) :
     r = decide (Int.gcd m.toInt n.toInt = 1) := by
   subst hs hr
-  have := (not_congr (Int64.and_one_eq_zero_iff (Int64.le_of_lt hx.1))).mp
-    (fun h ↦ hxo (beq_iff_eq.mpr h))
+  have := mt (Int64.and_one_beq_zero_iff (Int64.le_of_lt hx.1)).mpr hxo
   rw [hx.2.2, decide_eq_decide, Nat.gcd_comm, Nat.gcd_eq_of_two_pow_mul_eq
     (Int64.two_pow_ctz_mul_toNatClampNeg_shiftRight hx.2.1) (by lia), Nat.gcd_comm]
 
@@ -431,26 +428,17 @@ theorem mul_add_natCast_mul_le_two_mul_mul_sub {a : Int} {p binv H : Nat} (ha : 
 /-- The product `am binv` that the third stage reduces without the bias, of the residue `am` of the
 numerator modulo `p` and the inverse `binv < p`, is below `p ^ 2` (`sift.c:307`), a `long` for the
 moduli below `2 ^ 31`. -/
-theorem toNat_emod_mul_lt_sq (a : Int) {p binv : Nat} (hp : 0 < p) (hb : binv < p) :
+theorem toNat_emod_mul_lt_sq (a : Int) {p binv : Nat} (hb : binv < p) :
     (a % p).toNat * binv < p ^ 2 :=
-  Nat.pow_two p ▸ Nat.mul_lt_mul_of_lt_of_lt (Int.toNat_emod_lt a hp) hb
-
-/-- The shift by the multiple `p H` of `p` keeps the residue modulo `p` of `a binv`. -/
-theorem toNat_mul_add_mul_mod {a : Int} {p binv H : Nat} (hp : 0 < p)
-    (h : 0 ≤ a * binv + (p * H : Nat)) :
-    (a * binv + (p * H : Nat)).toNat % p = (a % p).toNat * binv % p := by
-  rw [← Int.toNat_emod_mul_emod a binv hp]
-  apply Int.ofNat_inj.mp
-  rw [Int.toNat_of_nonneg (Int.emod_nonneg _ (by lia)), Int.natCast_emod, Int.toNat_of_nonneg h,
-    Int.natCast_mul, Int.add_mul_emod_self_left]
-  conv => rhs; rw [Int.mul_emod, Int.emod_emod, ← Int.mul_emod]
+  Nat.pow_two p ▸ Nat.mul_lt_mul_of_lt_of_lt (Int.toNat_emod_lt a (Nat.zero_lt_of_lt hb)) hb
 
 /-- With the bias `p H`, for `|a| ≤ H`, `binv < p` and `2 p H < 2 ^ 32`, the value `a binv + p H`
 reduced by the reciprocal of `p` is the residue of `(a mod p) binv`: the value is below `2 ^ 32`,
 and so is `p` unless `a = H = 0`. -/
-theorem mulMod_toNat_mul_add_mul_magic {a : Int} {p binv H : Nat} (hp : 0 < p)
-    (ha : a.natAbs ≤ H) (hb : binv < p) (hH : 2 * p * H < 2 ^ 32) :
+theorem mulMod_toNat_mul_add_mul_magic {a : Int} {p binv H : Nat} (ha : a.natAbs ≤ H)
+    (hb : binv < p) (hH : 2 * p * H < 2 ^ 32) :
     mulMod (a * binv + (p * H : Nat)).toNat p (magic p) = (a % p).toNat * binv % p := by
+  have hp := Nat.zero_lt_of_lt hb
   have h1 := le_mul_add_natCast_mul ha hb
   have h2 := mul_add_natCast_mul_le_two_mul_mul_sub ha hb
   have hu : (a * binv + (p * H : Nat)).toNat * p < 2 ^ 64 := by
@@ -460,21 +448,21 @@ theorem mulMod_toNat_mul_add_mul_magic {a : Int} {p binv H : Nat} (hp : 0 < p)
       have hu32 : (a * binv + (p * H : Nat)).toNat < 2 ^ 32 := by push_cast at h2 ⊢; lia
       exact Nat.lt_of_lt_of_le
         (Nat.mul_lt_mul_of_lt_of_le hu32 (Nat.le_of_lt hp32) (Nat.two_pow_pos 32)) (by decide)
-  rw [mulMod_magic hp hu, toNat_mul_add_mul_mod hp (by lia)]
+  rw [mulMod_magic hp hu, Int.toNat_mul_add_natCast_mul_mod hp (by lia)]
 
 /-- The residue at which the third stage reads the table of the prime `p` of `cs` for the
 numerator `a` with `|a| ≤ H` is `(a mod p) binv mod p`, for `binv < p`, in both branches: with the
 bias `p H`, for `2 p H < 2 ^ 32` and the reciprocal of `p`, and without it. -/
-theorem CheckSpec.index_eq {cs : CheckSpec} {a : Int} {H : Nat} (hp : 0 < cs.p)
-    (hb : cs.binv < cs.p) (ha : a.natAbs ≤ H)
-    (hbias : cs.bias ≠ 0 → cs.bias = cs.p * H ∧ 2 * cs.p * H < 2 ^ 32 ∧
+theorem CheckSpec.index_eq {cs : CheckSpec} {a : Int} {H : Nat} (hb : cs.binv < cs.p)
+    (ha : a.natAbs ≤ H) (hbias : cs.bias ≠ 0 → cs.bias = cs.p * H ∧ 2 * cs.p * H < 2 ^ 32 ∧
       cs.magic = Sieve.magic cs.p) :
     cs.index a = (a % cs.p).toNat * cs.binv % cs.p := by
+  have hp := Nat.zero_lt_of_lt hb
   rw [index]
   split
   · obtain ⟨h1, h2, h3⟩ := hbias ‹_›
     rw [h1, h3]
-    exact mulMod_toNat_mul_add_mul_magic hp ha hb h2
+    exact mulMod_toNat_mul_add_mul_magic ha hb h2
   · dsimp only
     rw [Int.ite_tmod_lt_zero_eq_emod a (Int.natCast_pos.mpr hp), Int.tmod_eq_emod_of_nonneg
       (Int.mul_nonneg (Int.emod_nonneg a (by lia)) (Int.natCast_nonneg _)),
@@ -502,7 +490,7 @@ theorem CheckSpec.admits_checkOf {t : Entry} {b H : Nat} {a : Int} (h1 : 1 < t.p
   simp only [hr, ↓reduceIte] at hb
   have hi : (checkOf b H ⟨t.p, [.prime t], Sieve.magic t.p⟩ (Sieve.magic t.p)).index a =
       (a % t.p).toNat * t.inverses[b % t.p]! % t.p := by
-    rw [CheckSpec.index_eq (H := H) (Nat.zero_lt_of_lt h1) (hb ▸ hilt) ha, hb]
+    rw [CheckSpec.index_eq (H := H) (hb ▸ hilt) ha, hb]
     · rfl
     intro h0
     by_cases hc : 2 * t.p * H < stage3Limit

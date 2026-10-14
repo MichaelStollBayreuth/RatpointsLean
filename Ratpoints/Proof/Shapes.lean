@@ -305,13 +305,8 @@ theorem toList_run_wordsDens {db : UInt64} {forb : List ForbiddenEntry}
   rw [getLsbD_wordBits db forb hw (by lia), all_getLsbD_words hpos hwords w ht,
     Nat.mul_add_mod_self_left, Nat.mod_eq_of_lt ht, Bool.and_assoc _ (decide _)]
 
-/-- The denominators `64 w + t` of the word shape, which the C code computes as `long`s
-(`base = w << LONG_SHIFT` and `b = base + RP_CTZL(b_bits)`, `find_points.c:3991`,
-`find_points.c:4008`), are at most `bHigh`, and so `long`s for a `long` `bHigh`; so is `64 w` for
-the words `w ≤ ⌊bHigh / 64⌋` (`Ratpoints.Setup.fitsLong_mul_of_le_div`). -/
-theorem fitsLong_of_mem_wordsDens {db : UInt64} {forb : List ForbiddenEntry} {bLow bHigh b : ℕ}
-    (hb : b ∈ (Id.run (wordsDens db forb bLow bHigh)).toList) (hH : bHigh < 2 ^ 63) :
-    fitsLong (b : ℤ) = true := by
+theorem le_and_le_of_mem_wordsDens {db : UInt64} {forb : List ForbiddenEntry} {bLow bHigh b : ℕ}
+    (hb : b ∈ (Id.run (wordsDens db forb bLow bHigh)).toList) : bLow ≤ b ∧ b ≤ bHigh := by
   rw [Std.WP.Id.of_run_eq_wp rfl _ ((wordsDens_spec db forb bLow bHigh).le_wp trivial)] at hb
   obtain ⟨w, hw, hb⟩ := List.mem_flatMap.mp hb
   obtain ⟨t, ht, rfl⟩ := List.mem_map.mp hb
@@ -319,6 +314,16 @@ theorem fitsLong_of_mem_wordsDens {db : UInt64} {forb : List ForbiddenEntry} {bL
   have := (List.mem_filter.mp ht).2
   rw [getLsbD_wordBits db forb hw'.1 (by lia)] at this
   simp only [Bool.and_eq_true, decide_eq_true_eq] at this
+  exact ⟨this.1.2, this.2⟩
+
+/-- The denominators `64 w + t` of the word shape, which the C code computes as `long`s
+(`base = w << LONG_SHIFT` and `b = base + RP_CTZL(b_bits)`, `find_points.c:3991`,
+`find_points.c:4008`), are at most `bHigh`, and so `long`s for a `long` `bHigh`; so is `64 w` for
+the words `w ≤ ⌊bHigh / 64⌋` (`Ratpoints.Setup.fitsLong_mul_of_le_div`). -/
+theorem fitsLong_of_mem_wordsDens {db : UInt64} {forb : List ForbiddenEntry} {bLow bHigh b : ℕ}
+    (hb : b ∈ (Id.run (wordsDens db forb bLow bHigh)).toList) (hH : bHigh < 2 ^ 63) :
+    fitsLong (b : ℤ) = true := by
+  have := (le_and_le_of_mem_wordsDens hb).2
   simp [fitsLong]
   lia
 
@@ -333,17 +338,6 @@ theorem le_and_le_of_mem_squares1Dens {divisors : List ℕ} {bLow bHigh b : ℕ}
   rcases Nat.eq_zero_or_pos s with rfl | hs
   · simp [ceilSqrt, floorSqrt] at hk
   · exact (mem_range'_ceilSqrt_iff hs hbLow).mp hk
-
-theorem le_and_le_of_mem_wordsDens {db : UInt64} {forb : List ForbiddenEntry} {bLow bHigh b : ℕ}
-    (hb : b ∈ (Id.run (wordsDens db forb bLow bHigh)).toList) : bLow ≤ b ∧ b ≤ bHigh := by
-  rw [Std.WP.Id.of_run_eq_wp rfl _ ((wordsDens_spec db forb bLow bHigh).le_wp trivial)] at hb
-  obtain ⟨w, hw, hb⟩ := List.mem_flatMap.mp hb
-  obtain ⟨t, ht, rfl⟩ := List.mem_map.mp hb
-  have hw' := List.mem_range'_1.mp hw
-  have := (List.mem_filter.mp ht).2
-  rw [getLsbD_wordBits db forb hw'.1 (by lia)] at this
-  simp only [Bool.and_eq_true, decide_eq_true_eq] at this
-  exact ⟨this.1.2, this.2⟩
 
 /-- The denominators of every shape lie between `bLow ≥ 1` and `bHigh`, as the test for common
 factors on the words of the C code needs (`Ratpoints.Sieve.sieveRun_spec`). -/
