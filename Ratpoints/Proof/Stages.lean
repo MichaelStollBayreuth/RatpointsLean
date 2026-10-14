@@ -70,9 +70,7 @@ with loop invariants that are named definitions.
   points of the check of the reference (`Ratpoints.Sieve.checkNum`) when `a` survives the entries
   of the third stage, and none otherwise.
 * `Ratpoints.Sieve.secondStage_spec`, `Ratpoints.Sieve.secondStageWord_spec`: the second stage on a
-  bit array, or on one of its words, gives its words and-ed with the rows of all its moduli;
-  `Ratpoints.Sieve.andWords_append`: and-ing the rows of two lists of moduli one after the other is
-  and-ing those of their concatenation.
+  bit array, or on one of its words, gives its words and-ed with the rows of all its moduli.
 
 ## Implementation notes
 
@@ -609,38 +607,6 @@ theorem acceptedPoints_eq_ite {es : List SieveEntry} (hes : ∀ e ∈ es, e.IsPr
   · simp [hab, checkNum]
 
 /-! ### The second stage -/
-
-theorem andWords_append (l₁ l₂ : List SieveSpec) (cw : UInt64) (w0 : Int) (y : Nat) :
-    andWords (l₁ ++ l₂) cw w0 y = andWords l₂ (andWords l₁ cw w0 y) w0 y :=
-  List.foldl_append ..
-
-@[simp]
-theorem andWords_zero (l : List SieveSpec) (w0 : Int) (y : Nat) : andWords l 0 w0 y = 0 := by
-  induction l with
-  | nil => rfl
-  | cons s l ih => simpa [andWords] using ih
-
-theorem andWords_concat (l : List SieveSpec) (s : SieveSpec) (cw : UInt64) (w0 : Int) (y : Nat) :
-    andWords (l ++ [s]) cw w0 y = andWords l cw w0 y &&& s.wordAt w0 y := by
-  simp [andWords]
-
-/-- Word `κ < Ratpoints.rbaPack` of the row of `s` for the word number `i` is word `κ` of bit array
-`i mod p`. -/
-theorem SieveSpec.wordAt_of_lt (s : SieveSpec) (i : Int) {κ : Nat} (hκ : κ < rbaPack) :
-    s.wordAt i κ = s.row[rbaPack * (i % (s.p : Int)).toNat + κ]! := by
-  simp [SieveSpec.wordAt, Nat.div_eq_of_lt hκ, Nat.mod_eq_of_lt hκ]
-
-/-- The row word of word `κ` of bit array `pos` of a piece from the word number `w0` on is the row
-word of word `κ` of the bit array with the word number `w0 + pos`. -/
-theorem SieveSpec.wordAt_rbaPack_mul_add (s : SieveSpec) (w0 : Int) (pos : Nat) {κ : Nat}
-    (hκ : κ < rbaPack) : s.wordAt w0 (rbaPack * pos + κ) = s.wordAt (w0 + pos) κ := by
-  simp only [SieveSpec.wordAt, Nat.mul_add_div rbaPack_pos, Nat.div_eq_of_lt hκ, Nat.mul_add_mod,
-    Nat.add_zero, Int.natCast_zero, Int.add_zero]
-
-theorem andWords_rbaPack_mul_add (specs : List SieveSpec) (x : UInt64) (w0 : Int) (pos : Nat)
-    {κ : Nat} (hκ : κ < rbaPack) :
-    andWords specs x w0 (rbaPack * pos + κ) = andWords specs x (w0 + pos) κ := by
-  simp only [andWords, SieveSpec.wordAt_rbaPack_mul_add _ _ _ hκ]
 
 /-- The invariant of the loop of `Ratpoints.Sieve.secondStage` on the bit array `nums` with the word
 number `i`, after the moduli `pref`: word `κ` of the bit array is word `κ` of `nums` and-ed with the

@@ -40,6 +40,8 @@ core, with loop invariants that are named definitions.
   says whether the row admits the numerator `64 j + t`.
 * `Ratpoints.Sieve.SieveEntry.get_rows`, `Ratpoints.Sieve.SieveEntry.row_mod`: the thunk of a
   residue gives its row, and the row of `b` is the row of `b mod p`.
+* `Ratpoints.Sieve.andWords_append`: and-ing the rows of two lists of moduli one after the other is
+  and-ing those of their concatenation.
 * `Ratpoints.Sieve.andRows_spec`: after the first stage over a piece with the rows of a denominator
   `b` from the class word `cw`, bit `t` of word `y` of the piece is bit `t` of `cw` and the survivor
   test of the numerator `rbaLength w0 + 64 y + t`, whose bit in `cw` is bit `t`
@@ -204,6 +206,19 @@ number `rbaPack` of words of a bit array (`Ratpoints.rbaPack`). -/
 def SieveSpec.wordAt (s : SieveSpec) (w0 : Int) (y : Nat) : UInt64 :=
   s.row[rbaPack * ((w0 + (y / rbaPack : Nat)) % (s.p : Int)).toNat + y % rbaPack]!
 
+/-- Word `κ < Ratpoints.rbaPack` of the row of `s` for the word number `i` is word `κ` of bit array
+`i mod p`. -/
+theorem SieveSpec.wordAt_of_lt (s : SieveSpec) (i : Int) {κ : Nat} (hκ : κ < rbaPack) :
+    s.wordAt i κ = s.row[rbaPack * (i % (s.p : Int)).toNat + κ]! := by
+  simp [SieveSpec.wordAt, Nat.div_eq_of_lt hκ, Nat.mod_eq_of_lt hκ]
+
+/-- The row word of word `κ` of bit array `pos` of a piece from the word number `w0` on is the row
+word of word `κ` of the bit array with the word number `w0 + pos`. -/
+theorem SieveSpec.wordAt_rbaPack_mul_add (s : SieveSpec) (w0 : Int) (pos : Nat) {κ : Nat}
+    (hκ : κ < rbaPack) : s.wordAt w0 (rbaPack * pos + κ) = s.wordAt (w0 + pos) κ := by
+  simp only [SieveSpec.wordAt, Nat.mul_add_div rbaPack_pos, Nat.div_eq_of_lt hκ, Nat.mul_add_mod,
+    Nat.add_zero, Int.natCast_zero, Int.add_zero]
+
 -- The position in the row of bit `t` of the row word of word `y` is congruent modulo `p` to the
 -- numerator of bit `t` of word `y`.
 private theorem emod_wordIndex (p : Nat) (hp : 0 < p) (w0 : Int) (y t : Nat) :
@@ -263,6 +278,25 @@ stage from the class word `cw`, or, with `w0` the word number of a bit array and
 words, that word after the second stage from its word `cw` in a copy of the bit array. -/
 def andWords (specs : List SieveSpec) (cw : UInt64) (w0 : Int) (y : Nat) : UInt64 :=
   specs.foldl (fun acc s ↦ acc &&& s.wordAt w0 y) cw
+
+theorem andWords_append (l₁ l₂ : List SieveSpec) (cw : UInt64) (w0 : Int) (y : Nat) :
+    andWords (l₁ ++ l₂) cw w0 y = andWords l₂ (andWords l₁ cw w0 y) w0 y :=
+  List.foldl_append ..
+
+@[simp]
+theorem andWords_zero (l : List SieveSpec) (w0 : Int) (y : Nat) : andWords l 0 w0 y = 0 := by
+  induction l with
+  | nil => rfl
+  | cons s l ih => simpa [andWords] using ih
+
+theorem andWords_concat (l : List SieveSpec) (s : SieveSpec) (cw : UInt64) (w0 : Int) (y : Nat) :
+    andWords (l ++ [s]) cw w0 y = andWords l cw w0 y &&& s.wordAt w0 y := by
+  simp [andWords]
+
+theorem andWords_rbaPack_mul_add (specs : List SieveSpec) (x : UInt64) (w0 : Int) (pos : Nat)
+    {κ : Nat} (hκ : κ < rbaPack) :
+    andWords specs x w0 (rbaPack * pos + κ) = andWords specs x (w0 + pos) κ := by
+  simp only [andWords, SieveSpec.wordAt_rbaPack_mul_add _ _ _ hκ]
 
 theorem getLsbD_andWords_map {entries : List SieveEntry} (b : Nat) (hp : ∀ e ∈ entries, 0 < e.p)
     (cw : UInt64) (w0 : Int) (y t : Nat) :
@@ -359,7 +393,7 @@ theorem AndRowsRowInvariant.andRowsInvariant {m n : Nat} {cw : UInt64} {w0 : Int
     AndRowsInvariant cw w0 n (pref ++ [s]) surv := by
   intro y hy
   have : y / rbaPack < c := Nat.lt_of_lt_of_le ((Nat.div_lt_iff_lt_mul rbaPack_pos).mpr hy) hc
-  simp [h y hy, this, andWords, List.foldl_append]
+  simp [h y hy, this, andWords_concat]
 
 /-- One step of the loops of `Ratpoints.Sieve.andRows` for the modulus `s`: bit array `c` and-ed
 with bit array `(w0 + c) mod p` of the row. -/
