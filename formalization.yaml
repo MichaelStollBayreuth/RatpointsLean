@@ -58,32 +58,31 @@ classification:
 status:
   scope: >
     Stages A, B, C1, C2, D and E, and the sub-stages F1 and F2 of stage F. Stage A set up the Lake
-    project with
-    the libraries of the model (Lean core and Std only), the specification and the proofs, the CI,
-    the blueprint, the correspondence record with its checking script, and the comparator harness,
-    and settled the specification in the blueprint. Stage B: the specification in Lean (the binary
-    form, the normalized points of height at most H, the finite set of them, and the binary form
-    over Q that the refusals speak about), the brute-force reference in the model with the theorems
-    that it lists exactly these points, each once, certified by comparator, the command-line program
-    ratpoints-lean, which reads its command line as the C program does, with its checks, messages
-    and exit statuses, and the differential tests that compare it with the C program (the test
-    suites of ratpoints, hand-written and random command lines). Stage C1: the plain sieve in the
-    skeleton of the C code (the compile-time constants of the C code as definitions, the sieving
-    parameters with their well-formedness, the tables of a prime and their rows, the sieve of one
-    denominator, its survivors, the denominators, the points at infinity), the contracts of its
-    loops proved with the program logic of Lean core, and the theorem that for every well-formed
-    choice of the parameters it returns the list of the brute-force reference; the main theorems
-    (the membership and no-duplicates theorems for findPoints, its refusals in the form of stage C1,
-    and the well-formedness of the parameters that the options of the program give) are certified by
-    comparator; ratpoints-lean runs the sieve with the parameters of its options, and the
-    differential tests have a suite of parameters. Stage C2: the sieve on the bit arrays of 64-bit
-    words of the C code (the width of the bit arrays as a constant of the build and the array size
-    of the pieces as a parameter, the operations on bit arrays and the lowest set bit as in the C
-    code, the rows of a denominator as words, each made when first needed, the first stage over a
-    piece, the check of a numerator, the walk through the set bits of a word, the scan up to a
-    sentinel, one piece with the masks at its ends, one denominator in pieces, and the run), with
-    the contracts of its loops proved with the program logic of Lean core for every width of the
-    bit arrays, and the plain sieve of stage C1 kept as its reference; findPoints and
+    project with the libraries of the model (Lean core and Std only), the specification and the
+    proofs, the CI, the blueprint, the correspondence record with its checking script, and the
+    comparator harness, and settled the specification in the blueprint. Stage B: the specification
+    in Lean (the binary form, the normalized points of height at most H, the finite set of them, and
+    the binary form over Q that the refusals speak about), the brute-force reference in the model
+    with the theorems that it lists exactly these points, each once, certified by comparator, the
+    command-line program ratpoints-lean, which reads its command line as the C program does, with
+    its checks, messages and exit statuses, and the differential tests that compare it with the C
+    program (the test suites of ratpoints, hand-written and random command lines). Stage C1: the
+    plain sieve in the skeleton of the C code (the compile-time constants of the C code as
+    definitions, the sieving parameters with their well-formedness, the tables of a prime and their
+    rows, the sieve of one denominator, its survivors, the denominators, the points at infinity),
+    the contracts of its loops proved with the program logic of Lean core, and the theorem that for
+    every well-formed choice of the parameters it returns the list of the brute-force reference; the
+    main theorems (the membership and no-duplicates theorems for findPoints, its refusals in the
+    form of stage C1, and the well-formedness of the parameters that the options of the program
+    give) are certified by comparator; ratpoints-lean runs the sieve with the parameters of its
+    options, and the differential tests have a suite of parameters. Stage C2: the sieve on the bit
+    arrays of 64-bit words of the C code (the width of the bit arrays as a constant of the build and
+    the array size of the pieces as a parameter, the operations on bit arrays and the lowest set bit
+    as in the C code, the rows of a denominator as words, each made when first needed, the first
+    stage over a piece, the check of a numerator, the walk through the set bits of a word, the scan
+    up to a sentinel, one piece with the masks at its ends, one denominator in pieces, and the run),
+    with the contracts of its loops proved with the program logic of Lean core for every width of
+    the bit arrays, and the plain sieve of stage C1 kept as its reference; findPoints and
     ratpoints-lean run it, and the main theorems keep their statements; the differential tests
     search up to height 30000, and the runs of test4.sh above that height, up to 100000, form a
     suite run locally. Stage D: the set-up of the search as the C code does it before the sieve,
@@ -102,70 +101,71 @@ status:
     the refusal theorems say that with the Sturm step on findPoints refuses exactly the inputs with
     fewer than two or more than maxDegree + 1 coefficients, H = 0 (since stage F2 also H >= 2^63)
     and a binary form that is not squarefree, and with it off exactly what the C program refuses
-    under -s; both refusal theorems
-    and the main theorems with the options argument are stated for comparator, with the binary form
-    over Q restated in the challenge; the lemmas on homogenizations and their squarefreeness are
-    candidates for Mathlib; ratpoints-lean reads the options -k, -K, -s and -S and refuses a form
-    that is not squarefree with error 8 as the C program does with the same options; and the
-    differential tests compare the refusals and these options. Stage E: the side of the denominators
-    as the C code has it, with the compile-time constants of this part of the C code as definitions:
-    the valuation; the 2-adic information with the classes of the denominators modulo 64, the word
-    of the class as the starting value of the first stage of the sieve, and the exit when no class
-    admits a numerator; for odd degree the squares and the divisors of the leading coefficient times
-    squares (the factorization over the table of primes, the squarefree divisors and the slopes of
-    the valuation test); for even degree the forbidden divisors, tested with words of 64
-    denominators and by their valuations (the Newton polygon at a prime), and the Jacobi test, by
-    the binary algorithm and by tables, both proved to compute the Jacobi symbol of Mathlib; and the
-    four shapes of the loop over the denominators with their lists and tests, the run over a shape
-    and its reduction to the reference; the contracts of the stage are proved with the program logic
-    of Lean core in files with Mathlib, and the lemmas of Mathlib's generality are candidates for
-    Mathlib. The output of findPoints is the list of the points at infinity followed by the points
-    of the brute-force reference of the polynomial searched over the denominators in the order of
-    the loop of its search, each mapped back after a reversal: a permutation of the reference, and
-    the reference itself when the options forbid the reversal and the search does not take the
-    divisors times squares; the main theorems, the refusal theorems and the statements for
-    comparator keep their statements; ratpoints-lean prints the points in the order of the C
-    program, and the differential tests compare every point list in its order (3219 comparisons in
-    the default suites). Stage F1: the tables and the moduli as the C code has them: the table of a
-    prime as examine_prime computes it, a component with its contract, by Horner's rule with the
-    Barrett reduction on the fixed schedule of the C code, exact for the primes below
-    2^maxBitsInPrime, with the range obligation of its accumulator, handing back the coefficients
-    modulo the prime and its entry at infinity; the loop of the tables of sieving_info with the exit
-    and the forbidden divisors prime by prime, and the second loop of the forbidden divisors from
-    the number of primes examined; prime powers as moduli, with the tables of examine_power and the
-    inverses by the extended Euclidean algorithm, and products of prime powers, with the factors of
-    a modulus over the table as add_moduli finds them and the sieve entry of a modulus of any kind,
-    sound without the Chinese remainder theorem, and the range obligations of the longs of these
-    computations; the parameters gain the number of primes examined, and their well-formedness,
-    which the statements for comparator import from the model, admits the composite moduli below
-    2^maxBitsInPrime that factor over the first numPrimes primes of the table, and no longer the
-    primes of the table from 2^maxBitsInPrime on; the output, the main theorems, the refusal
-    theorems and the statements for comparator keep their text, and the differential tests agree as
-    before (3219 comparisons in the default suites). Stage F2: the stages of the sieve and the check
-    as the C code has them: the first stage with the first moduli of the parameters, the second
-    stage on each bit array that the first leaves nonzero, in both arms of the build (the whole bit
-    array, or one word at a time), and the test of a candidate, the test for common factors by the
-    binary algorithm of relprime on the 64-bit longs of the C code, with the mask of the arithmetic
-    shift and the trailing zeros of a word, followed by the third stage, one numerator at a time
-    against the tables of its primes; the reductions by a multiplication with the reciprocal of a
-    modulus (RP_MULMOD and RP_MULDIV), exact for u p < 2^64, the reciprocal a field of the sieve
-    entries and of the tables of the Jacobi test, which reduces with it too; the table of the third
-    stage and the products of the check made once per denominator, when its first numerator needs
-    them; the contracts of these components proved with the program logic of Lean core, with the
-    range obligations of their longs; the staged sieve gives the numerators of the sieve with all
-    the moduli in the first stage, in the same order, for prime entries in the third stage, which
-    the well-formedness of the parameters gives. findPoints refuses a height bound of 2^63 or more,
-    which is not a C long, with error 4, as the program does when it reads one, so that the refusal
-    theorems refuse H = 0 or H >= 2^63; the membership and no-duplicates theorems keep their
-    statements; the parameters of the command line take the cut points of the stages by the
-    counting rules of ratpoints where these do not depend on the curve, so that a run without
-    options uses all three stages (11, 11 and 8 of the first 30 primes), and the well-formedness
-    theorem of these parameters keeps its text; the differential tests compare every point list in
-    its order (3315 comparisons in the default suites, among them option sets that run the second
-    and the third stage after few moduli in the first, and 13 in the suite run locally). Next: the
-    sub-stages F3 and F4 of stage F (the packing of the numerators, the chunked first stage and the
-    faithful rows); the introduction of the blueprint lists the later stages (the order and
-    protocol, the search region and the Sturm step, the blocks of the loop over the denominators).
+    under -s; both refusal theorems and the main theorems with the options argument are stated for
+    comparator, with the binary form over Q restated in the challenge; the lemmas on homogenizations
+    and their squarefreeness are candidates for Mathlib; ratpoints-lean reads the options -k, -K, -s
+    and -S and refuses a form that is not squarefree with error 8 as the C program does with the
+    same options; and the differential tests compare the refusals and these options. Stage E: the
+    side of the denominators as the C code has it, with the compile-time constants of this part of
+    the C code as definitions: the valuation; the 2-adic information with the classes of the
+    denominators modulo 64, the word of the class as the starting value of the first stage of the
+    sieve, and the exit when no class admits a numerator; for odd degree the squares and the
+    divisors of the leading coefficient times squares (the factorization over the table of primes,
+    the squarefree divisors and the slopes of the valuation test); for even degree the forbidden
+    divisors, tested with words of 64 denominators and by their valuations (the Newton polygon at a
+    prime), and the Jacobi test, by the binary algorithm and by tables, both proved to compute the
+    Jacobi symbol of Mathlib; and the four shapes of the loop over the denominators with their lists
+    and tests, the run over a shape and its reduction to the reference; the contracts of the stage
+    are proved with the program logic of Lean core in files with Mathlib, and the lemmas of
+    Mathlib's generality are candidates for Mathlib. The output of findPoints is the list of the
+    points at infinity followed by the points of the brute-force reference of the polynomial
+    searched over the denominators in the order of the loop of its search, each mapped back after a
+    reversal: a permutation of the reference, and the reference itself when the options forbid the
+    reversal and the search does not take the divisors times squares; the main theorems, the refusal
+    theorems and the statements for comparator keep their statements; ratpoints-lean prints the
+    points in the order of the C program, and the differential tests compare every point list in its
+    order (3219 comparisons in the default suites). Stage F1: the tables and the moduli as the C
+    code has them: the table of a prime as examine_prime computes it, a component with its contract,
+    by Horner's rule with the Barrett reduction on the fixed schedule of the C code, exact for the
+    primes below 2^maxBitsInPrime, with the range obligation of its accumulator, handing back the
+    coefficients modulo the prime and its entry at infinity; the loop of the tables of sieving_info
+    with the exit and the forbidden divisors prime by prime, and the second loop of the forbidden
+    divisors from the number of primes examined; prime powers as moduli, with the tables of
+    examine_power and the inverses by the extended Euclidean algorithm, and products of prime
+    powers, with the factors of a modulus over the table as add_moduli finds them and the sieve
+    entry of a modulus of any kind, sound without the Chinese remainder theorem, and the range
+    obligations of the longs of these computations; the parameters gain the number of primes
+    examined, and their well-formedness, which the statements for comparator import from the model,
+    admits the composite moduli below 2^maxBitsInPrime that factor over the first numPrimes primes
+    of the table, and no longer the primes of the table from 2^maxBitsInPrime on; the output, the
+    main theorems, the refusal theorems and the statements for comparator keep their text, and the
+    differential tests agree as before (3219 comparisons in the default suites). Stage F2: the
+    stages of the sieve and the check as the C code has them: the first stage with the first moduli
+    of the parameters, the second stage on each bit array that the first leaves nonzero, in both
+    arms of the build (the whole bit array, or one word at a time), and the test of a candidate, the
+    test for common factors by the binary algorithm of relprime on the 64-bit longs of the C code,
+    with the mask of the arithmetic shift and the trailing zeros of a word, followed by the third
+    stage, one numerator at a time against the tables of its primes; the reductions by a
+    multiplication with the reciprocal of a modulus (RP_MULMOD and RP_MULDIV), exact for u p < 2^64,
+    the reciprocal a field of the sieve entries and of the tables of the Jacobi test, which reduces
+    with it too; the table of the third stage and the products of the check made once per
+    denominator, when its first numerator needs them; the contracts of these components proved with
+    the program logic of Lean core, with the range obligations of their longs; the staged sieve
+    gives the numerators of the sieve with all the moduli in the first stage, in the same order, for
+    prime entries in the third stage, which the well-formedness of the parameters gives. findPoints
+    refuses a height bound of 2^63 or more, which is not a C long, with error 4, as the program does
+    when it reads one, so that the refusal theorems refuse H = 0 or H >= 2^63; the membership and
+    no-duplicates theorems keep their statements; the parameters of the command line take the cut
+    points of the stages by the counting rules of ratpoints where these do not depend on the curve,
+    so that a run without options uses all three stages (11, 11 and 8 of the first 30 primes), and
+    the well-formedness theorem of these parameters keeps its text; the differential tests compare
+    every point list in its order (3315 comparisons in the default suites, among them option sets
+    that run the second and the third stage after few moduli in the first, and 13 in the suite run
+    locally). Next: the sub-stages F3 and F4 of stage F (the packing of the numerators, the chunked
+    first stage and the faithful rows); the introduction of the blueprint lists the later stages
+    (the order and protocol, the search region and the Sturm step, the blocks of the loop over the
+    denominators with the threads and the correction of the moduli, and the choice of the sieving
+    parameters by the curve).
   sorry_count: 0
   sorry_in_definitions: 0
   axioms: ["propext", "Classical.choice", "Quot.sound"]
@@ -242,15 +242,16 @@ automation:
 # fidelity
 fidelity:
   divergences: >
-    By design: a C long is an Int or a Nat, with the obligation that its value lies in the range
-    of the C type, or, in the test for common factors, a 64-bit word, as in the C code; a pointer
-    is an index; the SIMD operations are the word operations they
-    implement; the threads are replaced by the sequential order of the blocks; the heuristics that
-    choose the sieving parameters are not modelled, since the theorems quantify over every
-    well-formed choice; the search intervals have exact rational ends. Where the library function
+    By design: a C long is an Int or a Nat, with the obligation that its value lies in the range of
+    the C type, or, in the test for common factors, a 64-bit word, as in the C code; a pointer is an
+    index; the SIMD operations are the word operations they implement; the threads are replaced by
+    the sequential order of the blocks; the heuristics that choose the sieving parameters by the
+    curve are not modelled yet (stage I), since the theorems quantify over every well-formed choice;
+    the parameters of the command line follow the counting rules of ratpoints where these do not
+    depend on the curve; the search intervals have exact rational ends. Where the library function
     find_points and the command-line program differ (the order of the checks on the input), the
-    model follows the program. Each deviation is recorded with its component in the
-    correspondence record.
+    model follows the program. Each deviation is recorded with its component in the correspondence
+    record.
 
 # review status
 review:
@@ -285,12 +286,11 @@ alignment:
         the tables, prime powers and products of them as moduli) and the stages of the sieve and the
         check of stage F2 (the second and the third stage, the test for common factors on the longs
         of the C code, the reductions by a reciprocal, the cut points of the stages), every
-        well-formed choice of the
-        sieving parameters, the array size of the pieces included, and every value of the options
-        (Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok, Ratpoints.nodup_of_findPoints_eq_ok),
-        certified by comparator, through the permutation of the brute-force reference
-        (Ratpoints.perm_bruteForce_of_findPoints_eq_ok); the later stages bring Ratpoints.findPoints
-        closer to the C code, and the theorems move with it
+        well-formed choice of the sieving parameters, the array size of the pieces included, and
+        every value of the options (Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok,
+        Ratpoints.nodup_of_findPoints_eq_ok), certified by comparator, through the permutation of
+        the brute-force reference (Ratpoints.perm_bruteForce_of_findPoints_eq_ok); the later stages
+        bring Ratpoints.findPoints closer to the C code, and the theorems move with it
     - source: "the refusals: fewer than two or more than maxDegree + 1 = 101 coefficients, H = 0 or H >= 2^63, a binary form that is not squarefree"
       lean: "Ratpoints.exists_findPoints_eq_error_iff_of_sturm_nonneg"
       module: "Ratpoints.Proof.FindPoints"

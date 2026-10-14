@@ -58,19 +58,21 @@ code has them: the first stage with the first moduli of the parameters, the seco
 that the first leaves nonzero, in both arms of the build (the whole bit array, or one word at a
 time), and for each numerator that survives, the test for common factors by the binary algorithm of
 the C code on its 64-bit `long`s, then the third stage, which tests the numerator against the tables
-of the primes from the second cut point on, before the exact check; the reduction of a value `u` by
-a modulus `p` multiplies by the reciprocal of `p`, a field of the sieve entries and of the tables of
-the Jacobi test, as `RP_MULMOD` and `RP_MULDIV` do, which is exact for `u p < 2^64`; the table of
-the third stage and the products of the check are made once per denominator, when its first
-numerator needs them. The stages give the numerators of the sieve with all the moduli in the first
-stage, in the same order, so that the main theorems keep their statements. `findPoints` refuses a
-height bound of `2^63` or more, which is not a C `long`, with error 4, as the program does when it
-reads one, so that the refusal theorems refuse `H = 0` or `H ≥ 2^63`, and the parameters of the
-command line take the cut points of the stages by the counting rules of ratpoints where these do not
-depend on the curve: a run without options uses all three stages, 11, 11 and 8 of the first 30
-primes. The differential tests compare every point list in its order: 3315 comparisons in the
-default suites, among them option sets that run the second and the third stage after few moduli in
-the first, and 13 in the suite run locally. The blueprint and the API documentation will be at
+of the primes from the second cut point on, before the exact check; the third stage and the Jacobi
+test reduce a value `u` by a modulus `p` with a multiplication by the reciprocal of `p`, a field of
+the sieve entries and of the tables of the Jacobi test, as `RP_MULMOD` and `RP_MULDIV` do, where
+that is exact (`u p < 2^64`), and divide otherwise, as the C code does; the reductions of the row
+indices of the first two stages follow with the packing; the table of the third stage and the
+products of the check are made once per denominator, when its first numerator needs them. The stages
+give the numerators of the sieve with all the moduli in the first stage, in the same order, so that
+the main theorems keep their statements. `findPoints` refuses a height bound of `2^63` or more,
+which is not a C `long`, with error 4, as the program does when it reads one, so that the refusal
+theorems refuse `H = 0` or `H ≥ 2^63`, and the parameters of the command line take the cut points of
+the stages by the counting rules of ratpoints where these do not depend on the curve: a run without
+options uses all three stages, 11, 11 and 8 of the first 30 primes. The differential tests compare
+every point list in its order: 3315 comparisons in the default suites, among them option sets that
+run the second and the third stage after few moduli in the first, and 13 in the suite run locally.
+The blueprint and the API documentation will be at
 <https://michaelstollbayreuth.github.io/RatpointsLean/> once the repository is public.
 
 ## Layout

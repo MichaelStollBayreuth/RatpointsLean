@@ -511,18 +511,18 @@ Comparator certifies the two main theorems, the refusal theorems of stage~D, whi
 \verb|findPoints| that refuses every input, with or without the Sturm step, and
 \verb|wf_sieveParams|, which rules out a well-formedness that nothing satisfies (it accepted these
 statements on 2026-10-11, again on the model of stage E on 2026-10-12, with the parameters of
-sub-stage F1 on 2026-10-13, and with the refusal of the heights that are not \verb|long|s on
-2026-10-14): the challenge states them with \verb|sorry| over \verb|findPoints|,
-\verb|Options|, \verb|Params|, \verb|Params.WF|, \verb|SieveOptions|, \verb|sieveParams| and
-\verb|maxDegree|, imported from the model, never restated, since a definition of the model
-elaborates without Mathlib to other instance terms. Each main theorem has a guard on its axioms,
-which are the standard ones. The contracts of the sieve of stages C1 to D need only the program
-logic of Lean core and stay in files without Mathlib, so that their \verb|grind| calls see only the
-lemmas of core, untouched by Mathlib's updates; the contract of the run over the denominators of a
-shape, with its plain equation \verb|toList_run_sieveRun|, is in the file of the run, with Mathlib,
-like the other contracts of stage~E (Chapter~\ref{chap:denominators}) and those of the tables and
-the moduli of stage~F1, which sit next to the lemmas they serve (Chapter~\ref{chap:tables}). The
-soundness of the rows needs Mathlib, through $\ZZ/p\ZZ$.
+sub-stage F1 on 2026-10-13, and with the refusal of the heights that are not \verb|long|s and the
+cut points of sub-stage F2 on 2026-10-14): the challenge states them with \verb|sorry| over
+\verb|findPoints|, \verb|Options|, \verb|Params|, \verb|Params.WF|, \verb|SieveOptions|,
+\verb|sieveParams| and \verb|maxDegree|, imported from the model, never restated, since a definition
+of the model elaborates without Mathlib to other instance terms. Each main theorem has a guard on
+its axioms, which are the standard ones. The contracts of the sieve of stages C1 to D need only the
+program logic of Lean core and stay in files without Mathlib, so that their \verb|grind| calls see
+only the lemmas of core, untouched by Mathlib's updates; the contract of the run over the
+denominators of a shape, with its plain equation \verb|toList_run_sieveRun|, is in the file of the
+run, with Mathlib, like the other contracts of stage~E (Chapter~\ref{chap:denominators}) and those
+of the tables and the moduli of stage~F1, which sit next to the lemmas they serve
+(Chapter~\ref{chap:tables}). The soundness of the rows needs Mathlib, through $\ZZ/p\ZZ$.
 
 \section{The command-line program and the differential tests}\label{sec:sieveCli}
 
