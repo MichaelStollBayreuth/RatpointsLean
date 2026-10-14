@@ -21,13 +21,24 @@ remainder and the quotient where the C code relies on them: with the reciprocal
 `u p < 2 ^ 64`, and so for the values at most `Ratpoints.mulModLimit` and the moduli up to
 `2 ^ 32`. The test for common factors on the 64-bit words of the C code
 (`Ratpoints.Sieve.relprime`) decides whether a numerator is prime to the denominator, and none of
-its operations leaves the range of a `long`. The contracts of the loops are `@[spec]` theorems
-proved with `vcgen`, the program logic of Lean core, with loop invariants that are named
-definitions.
+its operations leaves the range of a `long`. For a numerator `a` prime to the denominator `b` with
+`|a| ≤ H`, the third stage (`Ratpoints.Sieve.stage3`) with the sieve entries of primes
+`1 < p ≤ 2 ^ 32` with their tables and reciprocals (`Ratpoints.Sieve.SieveEntry.IsPrimeEntry`) is
+the test of the rows of these entries: it reads the table of each prime at `a b⁻¹ mod p`, in both
+branches of the bias, and a prime that divides `b` admits every numerator prime to `b`; the values
+that the C code holds in `long`s stay in range. So the test of a candidate
+(`Ratpoints.Sieve.accepted`), for `|a| < 2 ^ 63` and `0 < b < 2 ^ 63`, followed by the exact check
+(`Ratpoints.Sieve.checkPoint`), gives the points of the check of the reference
+(`Ratpoints.Sieve.checkNum`) for the numerators that survive these entries. The contracts of the
+loops are `@[spec]` theorems proved with `vcgen`, the program logic of Lean core, with loop
+invariants that are named definitions.
 
 ## Main definitions
 
 * `Ratpoints.Sieve.RelprimeOddInvariant`: the invariant of the loop of the binary algorithm.
+* `Ratpoints.Sieve.CheckSpec.admits`, `Ratpoints.Sieve.Stage3Invariant`: whether the third stage
+  lets a numerator through one of its primes, and the invariant of its loop.
+* `Ratpoints.Sieve.SieveEntry.IsPrimeEntry`: the shape of the sieve entries of the third stage.
 
 ## Main statements
 
@@ -40,11 +51,22 @@ definitions.
 * `Ratpoints.Sieve.relprimeOdd_spec`, `Ratpoints.Sieve.relprime_spec`: the binary algorithm
   decides whether `gcd(m, n) = 1` for odd positive words `m` and `n`, and for words
   `m > -2 ^ 63` and `n ≥ 1`.
+* `Ratpoints.Sieve.stage3_spec`: the third stage is whether all its primes admit the numerator.
+* `Ratpoints.Sieve.CheckSpec.index_eq`: the residue at which it reads the table of a prime is
+  `(a mod p) binv mod p`, with the bias and without it.
+* `Ratpoints.Sieve.CheckSpec.admits_checkOf`, `Ratpoints.Sieve.run_stage3_fillChecks`: for a
+  numerator prime to `b` with `|a| ≤ H`, a prime entry admits it in the third stage exactly when
+  its row of `b` does, and the third stage is the survivor test of its entries.
+* `Ratpoints.Sieve.accepted_spec`, `Ratpoints.Sieve.ite_run_accepted_checkPoint`: the test of a
+  candidate is the test of `gcd(a, b) = 1` followed by the third stage, and with the exact check it
+  gives the points of the check of the reference for the numerators that survive the entries of the
+  third stage.
 
 ## Implementation notes
 
-The file uses Lean core and `Std` only. The proofs use only the fact on the constants that `decide`
-checks next to them, that `Ratpoints.mulModLimit < 2 ^ 32`, never their values. The words of the
+The file uses Lean core and `Std` only. The proofs use only the facts on the constants that
+`decide` checks next to them, that `Ratpoints.mulModLimit < 2 ^ 32` and
+`Ratpoints.stage3Limit ≤ 2 ^ 32`, never their values. The words of the
 test for common factors are read as natural numbers by `Int64.toNatClampNeg`, which is faithful on
 the non-negative words that the binary algorithm keeps; the facts on words that are not about the
 model are in `Ratpoints.Proof.Bits`.
@@ -279,6 +301,295 @@ theorem relprime_spec (m n : Int64) :
     | exact eq_decide_gcd_of_shiftRight_right (ite_neg_pos_and_gcd_eq ‹_› ‹_›) ‹_› ‹_› ‹_›
     | exact toNatClampNeg_shiftRight_mod_two (ite_neg_pos_and_gcd_eq ‹_› ‹_›) ‹_› ‹_›
     | exact toNatClampNeg_mod_two_of_and_one (ite_neg_pos_and_gcd_eq ‹_› ‹_›) ‹_› ‹_›
+
+/-! ### The third stage -/
+
+/-- Whether the third stage lets the numerator `a` through the prime of `cs`: when the prime divides
+the denominator (`binv = 0`), or when its table marks the residue at which the stage reads it
+(`Ratpoints.Sieve.CheckSpec.index`). -/
+def CheckSpec.admits (cs : CheckSpec) (a : Int) : Bool := cs.binv == 0 || cs.isFSquare[cs.index a]!
+
+theorem CheckSpec.admits_of_binv_eq_zero {cs : CheckSpec} (a : Int) (h : cs.binv = 0) :
+    cs.admits a = true := by
+  simp [admits, h]
+
+theorem CheckSpec.admits_of_not_not {cs : CheckSpec} {a : Int}
+    (h : ¬(!cs.isFSquare[cs.index a]!) = true) : cs.admits a = true := by
+  simp_all [admits]
+
+theorem CheckSpec.admits_eq_false {cs : CheckSpec} {a : Int} (h0 : ¬cs.binv = 0)
+    (h : (!cs.isFSquare[cs.index a]!) = true) : cs.admits a = false := by
+  simp_all [admits]
+
+/-- The invariant of the loop of `Ratpoints.Sieve.stage3` over `checks`, after the checks `pref`
+with the checks `suff` still to come, on the result of an early return: without one, the checks so
+far let `a` through; with one, at the end, the result is whether all the checks do. -/
+def Stage3Invariant (a : Int) (checks pref suff : List CheckSpec) (st : Option Bool × PUnit) :
+    Prop :=
+  st.1.elim (pref.all (·.admits a) = true) fun r ↦ suff = [] ∧ r = checks.all (·.admits a)
+
+theorem stage3Invariant_nil (a : Int) (checks : List CheckSpec) :
+    Stage3Invariant a checks [] checks (none, PUnit.unit) :=
+  rfl
+
+theorem Stage3Invariant.push {a : Int} {checks pref suff : List CheckSpec} {cur : CheckSpec}
+    {o : Option Bool} {u : PUnit} (h : Stage3Invariant a checks pref (cur :: suff) (o, u))
+    (hc : cur.admits a = true) :
+    Stage3Invariant a checks (pref ++ [cur]) suff (none, PUnit.unit) := by
+  cases o with
+  | none => simpa [Stage3Invariant, hc] using h
+  | some => exact absurd h.1 (List.cons_ne_nil _ _)
+
+theorem stage3Invariant_some_false {a : Int} {checks pref suff : List CheckSpec} {cur : CheckSpec}
+    (hl : checks = pref ++ cur :: suff) (hc : cur.admits a = false) :
+    Stage3Invariant a checks checks [] (some false, PUnit.unit) :=
+  ⟨rfl, by simp [hl, hc]⟩
+
+theorem Stage3Invariant.eq_all_of_some {a : Int} {checks : List CheckSpec} {o : Option Bool}
+    {u : PUnit} {r : Bool} (h : Stage3Invariant a checks checks [] (o, u))
+    (ho : (o, u).fst = some r) : r = checks.all (·.admits a) := by
+  subst ho
+  exact h.2
+
+theorem Stage3Invariant.true_eq_all_of_none {a : Int} {checks : List CheckSpec} {o : Option Bool}
+    {u : PUnit} (h : Stage3Invariant a checks checks [] (o, u)) (ho : (o, u).fst = none) :
+    true = checks.all (·.admits a) := by
+  subst ho
+  exact h.symm
+
+attribute [local irreducible] Stage3Invariant in
+/-- The third stage stops at the first prime that rejects the numerator, which is what all its
+primes say then. -/
+@[spec]
+theorem stage3_spec (a : Int) (checks : List CheckSpec) :
+    ⦃ True ⦄ stage3 a checks ⦃ fun r ↦ r = checks.all (·.admits a) ⦄ := by
+  vcgen [stage3] invariants
+  · Stage3Invariant a checks
+  all_goals first
+    | exact stage3Invariant_nil a checks
+    | exact Stage3Invariant.push ‹_› (CheckSpec.admits_of_binv_eq_zero a ‹_›)
+    | exact Stage3Invariant.push ‹_› (CheckSpec.admits_of_not_not ‹_›)
+    | exact stage3Invariant_some_false ‹_› (CheckSpec.admits_eq_false ‹_› ‹_›)
+    | exact Stage3Invariant.eq_all_of_some ‹_› ‹_›
+    | exact Stage3Invariant.true_eq_all_of_none ‹_› ‹_›
+
+@[simp]
+theorem p_checkOf (b H : Nat) (e : SieveEntry) (mg : Nat) : (checkOf b H e mg).p = e.p := by
+  simp only [checkOf]
+  split <;> rfl
+
+@[simp]
+theorem magic_checkOf (b H : Nat) (e : SieveEntry) (mg : Nat) :
+    (checkOf b H e mg).magic = e.magic := by
+  simp only [checkOf]
+  split <;> rfl
+
+theorem bias_checkOf (b H p : Nat) (t : Entry) (m mg : Nat) :
+    (checkOf b H ⟨p, [.prime t], m⟩ mg).bias = if 2 * p * H < stage3Limit then p * H else 0 :=
+  rfl
+
+theorem isFSquare_checkOf (b H p : Nat) (t : Entry) (m mg : Nat) :
+    (checkOf b H ⟨p, [.prime t], m⟩ mg).isFSquare = t.isFSquare :=
+  rfl
+
+/-- The inverse of the denominator `b` that `Ratpoints.Sieve.checkOf` takes from the table `t` of
+the prime `p ≤ 2 ^ 32` with the reciprocal of `p`: `0` when `p` divides `b`, and otherwise the entry
+of `t` at `b mod p`, which the reduction by the reciprocal gives for `b ≤ Ratpoints.mulModLimit`. -/
+theorem binv_checkOf {b : Nat} (H : Nat) {p : Nat} (t : Entry) (m : Nat) (hp : 0 < p)
+    (hp32 : p ≤ 2 ^ 32) :
+    (checkOf b H ⟨p, [.prime t], m⟩ (magic p)).binv =
+      if b % p = 0 then 0 else t.inverses[b % p]! := by
+  have : (if b ≤ mulModLimit then mulMod b p (magic p) else b % p) = b % p := by
+    split
+    · exact mulMod_magic hp (mul_lt_two_pow_64_of_le_mulModLimit ‹_› hp32)
+    · rfl
+  simp only [checkOf, this]
+
+/-- The value `a binv + p H` that the third stage reduces with the bias `p H`, for `|a| ≤ H` and
+`binv < p`, is at least `H` (`sift.c:303`): a natural number. -/
+theorem le_mul_add_natCast_mul {a : Int} {p binv H : Nat} (ha : a.natAbs ≤ H) (hb : binv < p) :
+    (H : Int) ≤ a * binv + (p * H : Nat) := by
+  have := Int.natAbs_mul_add_le_mul ha hb
+  lia
+
+/-- The value `a binv + p H` that the third stage reduces with the bias `p H`, for `|a| ≤ H` and
+`binv < p`, is at most `2 p H - H` (`sift.c:303`), below the bound `2 p H < Ratpoints.stage3Limit`
+of the bias, and so a `long`. -/
+theorem mul_add_natCast_mul_le_two_mul_mul_sub {a : Int} {p binv H : Nat} (ha : a.natAbs ≤ H)
+    (hb : binv < p) : a * binv + (p * H : Nat) ≤ 2 * p * H - H := by
+  have := Int.natAbs_mul_add_le_mul ha hb
+  push_cast
+  lia
+
+/-- The product `am binv` that the third stage reduces without the bias, of the residue `am` of the
+numerator modulo `p` and the inverse `binv < p`, is below `p ^ 2` (`sift.c:307`), a `long` for the
+moduli below `2 ^ 31`. -/
+theorem toNat_emod_mul_lt_sq (a : Int) {p binv : Nat} (hp : 0 < p) (hb : binv < p) :
+    (a % p).toNat * binv < p ^ 2 :=
+  Nat.pow_two p ▸ Nat.mul_lt_mul_of_lt_of_lt (Int.toNat_emod_lt a hp) hb
+
+/-- The shift by the multiple `p H` of `p` keeps the residue modulo `p` of `a binv`. -/
+theorem toNat_mul_add_mul_mod {a : Int} {p binv H : Nat} (hp : 0 < p)
+    (h : 0 ≤ a * binv + (p * H : Nat)) :
+    (a * binv + (p * H : Nat)).toNat % p = (a % p).toNat * binv % p := by
+  rw [← Int.toNat_emod_mul_emod a binv hp]
+  apply Int.ofNat_inj.mp
+  rw [Int.toNat_of_nonneg (Int.emod_nonneg _ (by lia)), Int.natCast_emod, Int.toNat_of_nonneg h,
+    Int.natCast_mul, Int.add_mul_emod_self_left]
+  conv => rhs; rw [Int.mul_emod, Int.emod_emod, ← Int.mul_emod]
+
+/-- With the bias `p H`, for `|a| ≤ H`, `binv < p` and `2 p H < 2 ^ 32`, the value `a binv + p H`
+reduced by the reciprocal of `p` is the residue of `(a mod p) binv`: the value is below `2 ^ 32`,
+and so is `p` unless `a = H = 0`. -/
+theorem mulMod_toNat_mul_add_mul_magic {a : Int} {p binv H : Nat} (hp : 0 < p)
+    (ha : a.natAbs ≤ H) (hb : binv < p) (hH : 2 * p * H < 2 ^ 32) :
+    mulMod (a * binv + (p * H : Nat)).toNat p (magic p) = (a % p).toNat * binv % p := by
+  have h1 := le_mul_add_natCast_mul ha hb
+  have h2 := mul_add_natCast_mul_le_two_mul_mul_sub ha hb
+  have hu : (a * binv + (p * H : Nat)).toNat * p < 2 ^ 64 := by
+    rcases Nat.eq_zero_or_pos H with rfl | hH0
+    · simp [show a = 0 by lia]
+    · have hp32 : p < 2 ^ 32 := by have := Nat.le_mul_of_pos_right p hH0; lia
+      have hu32 : (a * binv + (p * H : Nat)).toNat < 2 ^ 32 := by push_cast at h2 ⊢; lia
+      exact Nat.lt_of_lt_of_le
+        (Nat.mul_lt_mul_of_lt_of_le hu32 (Nat.le_of_lt hp32) (Nat.two_pow_pos 32)) (by decide)
+  rw [mulMod_magic hp hu, toNat_mul_add_mul_mod hp (by lia)]
+
+/-- The residue at which the third stage reads the table of the prime `p` of `cs` for the
+numerator `a` with `|a| ≤ H` is `(a mod p) binv mod p`, for `binv < p`, in both branches: with the
+bias `p H`, for `2 p H < 2 ^ 32` and the reciprocal of `p`, and without it. -/
+theorem CheckSpec.index_eq {cs : CheckSpec} {a : Int} {H : Nat} (hp : 0 < cs.p)
+    (hb : cs.binv < cs.p) (ha : a.natAbs ≤ H)
+    (hbias : cs.bias ≠ 0 → cs.bias = cs.p * H ∧ 2 * cs.p * H < 2 ^ 32 ∧
+      cs.magic = Sieve.magic cs.p) :
+    cs.index a = (a % cs.p).toNat * cs.binv % cs.p := by
+  rw [index]
+  split
+  · obtain ⟨h1, h2, h3⟩ := hbias ‹_›
+    rw [h1, h3]
+    exact mulMod_toNat_mul_add_mul_magic hp ha hb h2
+  · dsimp only
+    rw [Int.ite_tmod_lt_zero_eq_emod a (Int.natCast_pos.mpr hp), Int.tmod_eq_emod_of_nonneg
+      (Int.mul_nonneg (Int.emod_nonneg a (by lia)) (Int.natCast_nonneg _)),
+      Int.toNat_emod_mul_emod a _ hp]
+
+theorem SieveEntry.admits_prime (t : Entry) (b : Nat) (a : Int) (m : Nat) :
+    SieveEntry.admits ⟨t.p, [.prime t], m⟩ b a = t.admits b a := by
+  simp [SieveEntry.admits, Factor.admits, Entry.admits]
+
+/-- The third stage with the table `t` of a prime `1 < p ≤ 2 ^ 32`, whose inverses of the nonzero
+residues are nonzero residues, and with the reciprocal of `p`, lets a numerator `a` prime to `b`
+with `|a| ≤ H` through exactly when the row of `b` in `t` admits it: when `p` divides `b`, since
+then `p ∤ a`, and otherwise since the stage reads the table at `(a mod p) b⁻¹ mod p`
+(`Ratpoints.Sieve.CheckSpec.index_eq`). -/
+theorem CheckSpec.admits_checkOf {t : Entry} {b H : Nat} {a : Int} (h1 : 1 < t.p)
+    (h32 : t.p ≤ 2 ^ 32) (hinv : ∀ r < t.p, r ≠ 0 → t.inverses[r]! ≠ 0 ∧ t.inverses[r]! < t.p)
+    (hab : Int.gcd a b = 1) (ha : a.natAbs ≤ H) :
+    (checkOf b H ⟨t.p, [.prime t], Sieve.magic t.p⟩ (Sieve.magic t.p)).admits a = t.admits b a := by
+  have hb := binv_checkOf (b := b) H t (Sieve.magic t.p) (by lia) h32
+  by_cases hr : b % t.p = 0
+  · simp only [hr, ↓reduceIte] at hb
+    simp [CheckSpec.admits_of_binv_eq_zero a hb, Entry.admits, hr,
+      Int.toNat_emod_ne_zero_of_gcd_eq_one h1 hab hr]
+  obtain ⟨hi0, hilt⟩ := hinv (b % t.p) (Nat.mod_lt _ (by lia)) hr
+  simp only [hr, ↓reduceIte] at hb
+  have hi : (checkOf b H ⟨t.p, [.prime t], Sieve.magic t.p⟩ (Sieve.magic t.p)).index a =
+      (a % t.p).toNat * t.inverses[b % t.p]! % t.p := by
+    rw [CheckSpec.index_eq (H := H) (Nat.zero_lt_of_lt h1) (hb ▸ hilt) ha, hb]
+    · rfl
+    intro h0
+    by_cases hc : 2 * t.p * H < stage3Limit
+    · simp only [bias_checkOf, p_checkOf, magic_checkOf, hc, ↓reduceIte]
+      exact ⟨trivial, Nat.lt_of_lt_of_le hc stage3Limit_le_two_pow_32, trivial⟩
+    · simp [bias_checkOf, hc] at h0
+  simp [CheckSpec.admits, Entry.admits, hr, hb, hi, hi0, isFSquare_checkOf]
+
+/-- The sieve entry `e` is that of a modulus `1 < p ≤ 2 ^ 32` whose single factor is a table `t` of
+`p` with inverses of the residues `0 < r < p` that are residues `0 < t.inverses[r]! < p`, and whose
+reciprocal is that of `p` (`Ratpoints.Sieve.magic`): the shape that the third stage needs of its
+entries (`Ratpoints.Sieve.checkOf`), whose rows it then tests
+(`Ratpoints.Sieve.run_stage3_fillChecks`). The entry of a prime with the table of the reference has
+it (`Ratpoints.Sieve.isPrimeEntry_examinePrime`). -/
+def SieveEntry.IsPrimeEntry (e : SieveEntry) : Prop :=
+  ∃ t : Entry, e = ⟨t.p, [.prime t], Sieve.magic t.p⟩ ∧ 1 < t.p ∧ t.p ≤ 2 ^ 32 ∧
+    ∀ r < t.p, r ≠ 0 → t.inverses[r]! ≠ 0 ∧ t.inverses[r]! < t.p
+
+theorem SieveEntry.IsPrimeEntry.admits_checkOf {e : SieveEntry} (he : e.IsPrimeEntry) {b H : Nat}
+    {a : Int} (hab : Int.gcd a b = 1) (ha : a.natAbs ≤ H) :
+    (checkOf b H e (Sieve.magic e.p)).admits a = e.admits b a := by
+  obtain ⟨t, rfl, h1, h32, hinv⟩ := he
+  rw [CheckSpec.admits_checkOf h1 h32 hinv hab ha, SieveEntry.admits_prime]
+
+/-- For a numerator `a` prime to `b` with `|a| ≤ H`, what the third stage needs of the sieve entries
+`es` of the shape of `Ratpoints.Sieve.SieveEntry.IsPrimeEntry`, with the reciprocals of their
+moduli, lets `a` through exactly when `a` survives these entries. -/
+theorem all_admits_fillChecks {es : List SieveEntry} (hes : ∀ e ∈ es, e.IsPrimeEntry) {a : Int}
+    {b H : Nat} (hab : Int.gcd a b = 1) (ha : a.natAbs ≤ H) :
+    (fillChecks b H es (es.map fun e ↦ magic e.p)).all (·.admits a) = survives es b a := by
+  refine Bool.eq_iff_iff.mpr ?_
+  simp only [fillChecks, List.zipWith_map_right, List.zipWith_self, List.all_map, survives,
+    List.all_eq_true, Function.comp_apply]
+  exact ⟨fun h e he ↦ (hes e he).admits_checkOf hab ha ▸ h e he,
+    fun h e he ↦ ((hes e he).admits_checkOf hab ha).symm ▸ h e he⟩
+
+/-- **The third stage.** For a numerator `a` prime to `b` with `|a| ≤ H`, the third stage with the
+sieve entries `es` of its primes and the reciprocals of their moduli, for `b` and `H`, is the
+survivor test of these entries. -/
+theorem run_stage3_fillChecks {es : List SieveEntry} (hes : ∀ e ∈ es, e.IsPrimeEntry) {a : Int}
+    {b H : Nat} (hab : Int.gcd a b = 1) (ha : a.natAbs ≤ H) :
+    Id.run (stage3 a (fillChecks b H es (es.map fun e ↦ magic e.p))) = survives es b a := by
+  rw [Std.WP.Id.of_run_eq_wp rfl _ ((stage3_spec a _).le_wp trivial),
+    all_admits_fillChecks hes hab ha]
+
+/-! ### The test of a candidate -/
+
+/-- The test for common factors on the words of the numerator `|a| < 2 ^ 63` and the denominator
+`0 < b < 2 ^ 63` is the test on the integers, and the thunk of the third stage is forced only when
+the numerator is prime to `b`. -/
+@[spec]
+theorem accepted_spec (a : Int) (b : Nat) (checks : Thunk (List CheckSpec)) :
+    ⦃ 0 < b ∧ a.natAbs < 2 ^ 63 ∧ b < 2 ^ 63 ⦄ accepted a b checks
+    ⦃ fun r ↦ r = (decide (Int.gcd a b = 1) && checks.get.all (·.admits a)) ⦄ := by
+  vcgen [accepted]
+  all_goals obtain ⟨hb0, ha, hb⟩ := ‹0 < b ∧ a.natAbs < 2 ^ 63 ∧ b < 2 ^ 63›
+  all_goals first
+    | exact ⟨Int64.minValue_lt_ofInt ha, Int64.ofNat_pos hb0 hb⟩
+    | simp_all [Int64.toInt_ofInt_of_le (n := a) (by lia) (by lia), Int64.toInt_ofNat_of_lt hb]
+
+/-- For `|a| ≤ H < 2 ^ 63`, a denominator `0 < b < 2 ^ 63` and the thunk of what the third stage
+needs of the sieve entries `es` of the shape of `Ratpoints.Sieve.SieveEntry.IsPrimeEntry`, with the
+reciprocals of their moduli, for `b` and `H`, a numerator goes on to the exact check when it is
+prime to `b` and survives these entries. -/
+theorem run_accepted {es : List SieveEntry} (hes : ∀ e ∈ es, e.IsPrimeEntry) {a : Int}
+    {b H : Nat} {checks : Thunk (List CheckSpec)}
+    (hc : checks.get = fillChecks b H es (es.map fun e ↦ magic e.p)) (hb : 0 < b)
+    (hb63 : b < 2 ^ 63) (ha : a.natAbs ≤ H) (hH : H < 2 ^ 63) :
+    Id.run (accepted a b checks) = (decide (Int.gcd a b = 1) && survives es b a) := by
+  rw [Std.WP.Id.of_run_eq_wp rfl _ ((accepted_spec a b checks).le_wp ⟨hb, by lia, hb63⟩), hc]
+  by_cases hab : Int.gcd a b = 1
+  · rw [all_admits_fillChecks hes hab ha]
+  · simp [hab]
+
+theorem checkPoint_eq_checkNum (w : Thunk (List Int)) (f : Int) {b : Int} (rev : Bool) {a : Int}
+    (hab : Int.gcd a b = 1) : checkPoint w f b rev a = checkNum w.get f b rev a := by
+  simp [checkPoint, checkNum, hab]
+
+/-- The test of `Ratpoints.Sieve.accepted` and the exact check of `Ratpoints.Sieve.checkPoint` give
+the points that the check of the reference `Ratpoints.Sieve.checkNum` gives for a numerator `a`
+with `|a| ≤ H < 2 ^ 63` that survives the sieve entries `es` of the third stage, of the shape of
+`Ratpoints.Sieve.SieveEntry.IsPrimeEntry`, and none for the others, for a denominator
+`0 < b < 2 ^ 63`. -/
+theorem ite_run_accepted_checkPoint {es : List SieveEntry} (hes : ∀ e ∈ es, e.IsPrimeEntry)
+    {a : Int} {b H : Nat} {checks : Thunk (List CheckSpec)}
+    (hc : checks.get = fillChecks b H es (es.map fun e ↦ magic e.p)) (w : Thunk (List Int))
+    (f : Int) (rev : Bool) (hb : 0 < b) (hb63 : b < 2 ^ 63) (ha : a.natAbs ≤ H)
+    (hH : H < 2 ^ 63) :
+    (if Id.run (accepted a b checks) then checkPoint w f b rev a else []) =
+      if survives es b a then checkNum w.get f b rev a else [] := by
+  rw [run_accepted hes hc hb hb63 ha hH]
+  by_cases hab : Int.gcd a b = 1
+  · simp [hab, checkPoint_eq_checkNum w f rev hab]
+  · simp [hab, checkNum]
 
 end Sieve
 

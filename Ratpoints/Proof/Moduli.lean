@@ -420,7 +420,7 @@ private theorem getElem!_gsq_run_examinePower_of_sq_eq {c : List ℤ} {p e : ℕ
   have hm : 0 < p ^ e := pow_pos hp.pos e
   have : NeZero (p ^ e) := ⟨hm.ne'⟩
   have hpm : p ∣ p ^ e := dvd_pow_self p (by lia)
-  have hx := toNat_emod_ne_zero_of_gcd_eq_one hp.one_lt hab hb
+  have hx := Int.toNat_emod_ne_zero_of_gcd_eq_one hp.one_lt hab hb
   rw [← Int.toNat_emod_mod_of_dvd a hm hpm] at hx
   have hw := natCast_mul_getElem!_inv_run_examinePower (c := c) (d := degree c) u hp he
     (Int.toNat_emod_lt a hm) hx

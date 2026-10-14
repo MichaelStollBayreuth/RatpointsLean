@@ -252,27 +252,28 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
   with bit array $(w_0 + j) \bmod p$ of the row, in the three loops of the C code: $n$ bit arrays of
   the row from $p - r$ on when $n < r$, and otherwise $r$ bit arrays from $p - r$ on, then whole
   periods of $p$ from $0$, then the rest from $0$ (\csource{sift.c}{943}{1022}). Every modulus is
-  applied here, those of the second and the third stage too (\csource{sift.c}{291}{312},
-  \csource{sift.c}{1083}{1086}, \csource{sift.c}{1174}{1202}). Its contract: for every list of sieve
-  entries with $p > 0$ whose rows for $b$ the moduli carry, bit $t$ of word
-  $y < n \cdot \mathrm{rbaPack}$ is bit $t$ of $\omega$ and the survivor test of $R w_0 + 64 y + t$.
-  The class bit of a numerator $a$ is bit $a \bmod 64$ of $\omega$; that of $R w_0 + 64 y + t$, for
-  $t < 64$, is bit $t$, since $64 \mid R$.
+  applied here, those of the second and the third stage too (\csource{sift.c}{1083}{1086},
+  \csource{sift.c}{1174}{1202}). Its contract: for every list of sieve entries with $p > 0$ whose
+  rows for $b$ the moduli carry, bit $t$ of word $y < n \cdot \mathrm{rbaPack}$ is bit $t$ of
+  $\omega$ and the survivor test of $R w_0 + 64 y + t$. The class bit of a numerator $a$ is bit
+  $a \bmod 64$ of $\omega$; that of $R w_0 + 64 y + t$, for $t < 64$, is bit $t$, since $64 \mid R$.
 \end{definition}
 
 \begin{definition}[The check of a numerator]\label{def:checkNum}
   \uses{def:bruteForce, def:swapPoint}
   \lean{Ratpoints.Sieve.checkNum, Ratpoints.Sieve.pointsOfDen_eq_flatMap_checkNum, Ratpoints.Sieve.checkNum_eq_map, Ratpoints.Sieve.flatMap_checkNum}
   \leanok
-  The test for common factors of $a$ and $b$ and the exact check, from the products $c_k b^{d - k}$
-  and the factor $b$ for odd $d$, which come in as arguments: the points $(a, y, b)$ and, for
-  $y \ne 0$, $(a, -y, b)$, each mapped by $\mathrm{swapPoint}$ (Definition~\ref{def:swapPoint}) when
-  the flag of the reversal, an argument before the numerator, is set (\csource{sift.c}{202}{205},
-  \csource{sift.c}{438}{446}, \csource{find_points.c}{5250}{5338}). So
-  the check with the flag set gives the points of the check with the flag clear, mapped, and so do
-  the checks of a list of numerators, one after the other. What the brute-force reference finds over
-  $b$ and a list of numerators is the concatenation of the checks with the flag clear over the list,
-  with the products and the factor of $c$, $d$ and $b$.
+  The test for common factors of $a$ and $b$ by the $\gcd$ and the exact check, from the products
+  $c_k b^{d - k}$ and the factor $b$ for odd $d$, which come in as arguments: the points $(a, y, b)$
+  and, for $y \ne 0$, $(a, -y, b)$, each mapped by $\mathrm{swapPoint}$
+  (Definition~\ref{def:swapPoint}) when the flag of the reversal, an argument before the numerator,
+  is set. It is the reference of the test of a candidate and the exact check
+  (Definition~\ref{def:accepted}), which give its points for the numerators that the rows of the
+  primes of the third stage admit, and the walk through the set bits of a word calls it in their
+  place. So the check with the flag set gives the points of the check with the flag clear, mapped,
+  and so do the checks of a list of numerators, one after the other. What the brute-force reference
+  finds over $b$ and a list of numerators is the concatenation of the checks with the flag clear
+  over the list, with the products and the factor of $c$, $d$ and $b$.
 \end{definition}
 
 \begin{definition}[The set bits of a word]\label{def:walkWord}
@@ -331,7 +332,7 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
   \leanok
   The row of $b$ for each modulus, for the rows of the first two stages
   (\csource{find_points.c}{3149}{3170}, \csource{find_points.c}{3490}{3561}) and the table of the
-  third (\csource{sift.c}{405}{431}); the products $c_k b^{d - k}$ and the factor of the check,
+  third (Definition~\ref{def:stage3}); the products $c_k b^{d - k}$ and the factor of the check,
   which also gets the flag of the reversal; the word numbers
   $w_{\mathrm{low}} = \lfloor -H/R \rfloor$ and $w_{\mathrm{high}} = \lfloor H/R \rfloor + 1$; and
   while $w_0 < w_{\mathrm{high}}$, the piece from $w_0$ to $w_1 = \min(w_0 + A, w_{\mathrm{high}})$,

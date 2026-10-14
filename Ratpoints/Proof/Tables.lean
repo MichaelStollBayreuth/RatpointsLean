@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Field.ZMod
 public import Ratpoints.Model.BruteForce
 public import Ratpoints.Model.Setup
 public import Ratpoints.Model.Tables
+public import Ratpoints.Proof.Stages
 public import Ratpoints.Spec.Basic
 public import Std.WP
 
@@ -29,8 +30,8 @@ every point `(a, y, b)` through (`Ratpoints.Sieve.admits_examinePrime_of_sq_eq`)
 `F(a, b) ≡ b ^ D f(a / b) (mod p)` with `D` even, so that `f(a / b)` is a square modulo `p`
 (`Ratpoints.Sieve.isSquare_sum_mul_div_pow_of_sq_eq_binaryForm`), which the table of the prime marks
 (`Ratpoints.Sieve.getElem!_isFSquare_examinePrime_of_isSquare`); for `p ∣ b`, since `gcd(a, b) = 1`,
-so that `p ∤ a` (`Ratpoints.Sieve.toNat_emod_ne_zero_of_gcd_eq_one`). The model computes modulo `p`
-in `ℕ`; the proofs go through `ZMod p`.
+so that `p ∤ a` (`Int.toNat_emod_ne_zero_of_gcd_eq_one`). The model computes modulo `p` in `ℕ`; the
+proofs go through `ZMod p`.
 
 The table of a prime with the exit (`Ratpoints.Sieve.examinePrime?`) reduces the coefficients on two
 paths with the same result, since the helper `mod` of the C code is the Euclidean `%`
@@ -73,6 +74,8 @@ of a negative leading coefficient in `jacobi1`, with `LONG_MIN` replaced by its 
 * `Ratpoints.Sieve.getElem!_isFSquare_examinePrime_self`: the entry of the table of a prime at `p`
   says whether there are points at infinity modulo `p`.
 * `Ratpoints.Sieve.admits_examinePrime_of_sq_eq`: the rows let every point through.
+* `Ratpoints.Sieve.isPrimeEntry_examinePrime`: the sieve entry of a prime `p ≤ 2 ^ 32` with its
+  table and its reciprocal has the shape that the third stage needs.
 * `Ratpoints.Sieve.modLong_eq_emod`: the helper `mod` of the C code is the Euclidean `%`.
 * `Ratpoints.Sieve.barrett_eq`: Barrett's reduction computes the remainder of every `u < 2 ^ 64`.
 * `Ratpoints.Sieve.HornerInvariant.lt_two_pow_64`: the accumulator of Horner's rule in the table of
@@ -221,6 +224,14 @@ theorem getElem!_inversesMod_mul_mod {p r : ℕ} (hp : p.Prime) (hr : r < p) (hr
     simpa using exists_mem_range'_mul_mod_eq_one hp hr hr0
   rw [getElem!_pos (inversesMod p) r (by simpa [inversesMod] using hr)]
   simpa [inversesMod, hs] using List.find?_some hs
+
+/-- The entries of the table of the inverses modulo `p > 0` are residues modulo `p`. -/
+theorem getElem!_inversesMod_lt {p r : ℕ} (hp : 0 < p) (hr : r < p) : (inversesMod p)[r]! < p := by
+  rw [getElem!_pos (inversesMod p) r (by simpa [inversesMod] using hr)]
+  simp only [inversesMod, Array.getElem_map, Array.getElem_range]
+  cases h : (List.range' 1 (p - 1)).find? (· * r % p == 1) with
+  | none => simpa using hp
+  | some s => have := List.mem_range'_1.mp (List.mem_of_find?_eq_some h); simp; lia
 
 theorem natCast_mul_getElem!_inversesMod_mod {p : ℕ} [hp : Fact p.Prime] (x : ℕ) {r : ℕ}
     (hr : r < p) (hr0 : r ≠ 0) :
@@ -440,6 +451,15 @@ theorem p_examinePrime (c : List ℤ) (d p : ℕ) : (examinePrime c d p).p = p :
 theorem inverses_examinePrime (c : List ℤ) (d p : ℕ) :
     (examinePrime c d p).inverses = inversesMod p := rfl
 
+/-- The sieve entry of a prime `p ≤ 2 ^ 32` with the table of the reference and the reciprocal of
+`p` has the shape that the third stage needs (`Ratpoints.Sieve.SieveEntry.IsPrimeEntry`): the
+inverses of the nonzero residues are residues, and nonzero, since they are inverses. -/
+theorem isPrimeEntry_examinePrime (c : List ℤ) (d : ℕ) {p : ℕ} (hp : p.Prime) (hp32 : p ≤ 2 ^ 32) :
+    SieveEntry.IsPrimeEntry ⟨p, [.prime (examinePrime c d p)], magic p⟩ :=
+  ⟨examinePrime c d p, rfl, hp.one_lt, hp32, fun r hr hr0 ↦
+    ⟨fun h ↦ absurd (getElem!_inversesMod_mul_mod hp hr hr0) (by simp_all),
+      getElem!_inversesMod_lt hp.pos hr⟩⟩
+
 theorem getElem!_isFSquare_examinePrime (c : List ℤ) (d : ℕ) {p t : ℕ} (ht : t < p) :
     (examinePrime c d p).isFSquare[t]! = (squaresMod p)[evalMod
       ((List.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat) p t]! := by
@@ -457,16 +477,6 @@ theorem getElem!_isFSquare_examinePrime_self (c : List ℤ) (d p : ℕ) :
     (x := d % 2 == 1 || (squaresMod p)[(c.getD d 0 % (p : ℤ)).toNat]!)
 
 /-! ### The rows let every point through -/
-
-theorem toNat_emod_ne_zero_of_gcd_eq_one {p : ℕ} (hp : 1 < p) {a : ℤ} {b : ℕ}
-    (hab : Int.gcd a b = 1) (hb : b % p = 0) : (a % (p : ℤ)).toNat ≠ 0 := by
-  intro ha
-  have hp0 : (p : ℤ) ≠ 0 := by lia
-  have hpa : (p : ℤ) ∣ a := Int.dvd_of_emod_eq_zero (by have := Int.emod_nonneg a hp0; lia)
-  have hpb : (p : ℤ) ∣ b := mod_cast Nat.dvd_of_mod_eq_zero hb
-  have := Int.dvd_gcd hpa hpb
-  rw [hab, Nat.dvd_one] at this
-  lia
 
 /-- The table of the prime `p` marks every residue `t` at which `f = ∑ cₖ Xᵏ` takes a square value
 modulo `p`. -/
@@ -493,7 +503,7 @@ theorem admits_examinePrime_of_sq_eq {c : List ℤ} {p : ℕ} (hp : p.Prime) {a 
   have : Fact p.Prime := ⟨hp⟩
   simp only [Entry.admits, p_examinePrime, inverses_examinePrime]
   by_cases hb : b % p = 0 <;> simp only [hb, ↓reduceIte]
-  · simpa using toNat_emod_ne_zero_of_gcd_eq_one hp.one_lt hab hb
+  · simpa using Int.toNat_emod_ne_zero_of_gcd_eq_one hp.one_lt hab hb
   · refine getElem!_isFSquare_examinePrime_of_isSquare hp (Nat.mod_lt _ hp.pos) ?_
     rw [BruteForce.degree_eq, natCast_mul_getElem!_inversesMod_mod _ (Nat.mod_lt _ hp.pos) hb,
       ZMod.natCast_toNat_emod, ZMod.natCast_mod]
@@ -702,8 +712,9 @@ theorem isSquare_getD_degree_of_sq_eq_binaryForm {c : List ℤ} {p : ℕ} [Fact 
     {a y : ℤ} {b : ℕ} (hab : Int.gcd a b = 1) (hb : b % p = 0) (hd : degree c % 2 = 0)
     (hy : y ^ 2 = binaryForm c a b) : IsSquare (c.getD (degree c) 0 : ZMod p) := by
   have hb' : (b : ZMod p) = 0 := (ZMod.natCast_eq_zero_iff _ _).mpr (Nat.dvd_of_mod_eq_zero hb)
-  have ha : (a : ZMod p) ≠ 0 := fun h ↦ toNat_emod_ne_zero_of_gcd_eq_one (Fact.out : p.Prime).one_lt
-    hab hb (by simp [Int.emod_eq_zero_of_dvd ((ZMod.intCast_zmod_eq_zero_iff_dvd a p).mp h)])
+  have ha : (a : ZMod p) ≠ 0 := fun h ↦
+    Int.toNat_emod_ne_zero_of_gcd_eq_one (Fact.out : p.Prime).one_lt hab hb
+      (by simp [Int.emod_eq_zero_of_dvd ((ZMod.intCast_zmod_eq_zero_iff_dvd a p).mp h)])
   have h2 := congr(($hy : ZMod p))
   push_cast [binaryForm, hb', hd, Nat.add_zero] at h2
   rw [Finset.sum_range_succ, Finset.sum_eq_zero fun i hi ↦ by

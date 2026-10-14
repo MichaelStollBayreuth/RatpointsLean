@@ -31,12 +31,14 @@ an even number with an odd one, a residue below `2 q` modulo `q` by one subtract
 a quotient by Barrett's reduction, the bounds of a step of Horner's rule and of a power of a number
 below a power of 2, the entries of an array of Booleans after a fold of `setIfInBounds · true`, the
 absolute value of the step of the cofactors of the extended Euclidean algorithm, the divisors of the
-gcd of `b` and a residue `f ≡ a (mod b)`, the remainder and the quotient by a multiplication with
-a reciprocal, the gcd of the odd part of a number with an odd one and the step of the binary
-algorithm for the gcd, and, for the signed 64-bit words, the arithmetic shift, the mask `x >>> 63`
-with the smaller and the distance of two non-negative words that it gives without a branch, the
-odd part of a positive word by the lowest set bit of the word read as unsigned, its lowest bit and
-the absolute value.
+gcd of `b` and a residue `f ≡ a (mod b)`, the remainder and the quotient by a multiplication with a
+reciprocal, the gcd of the odd part of a number with an odd one and the step of the binary algorithm
+for the gcd, the residue modulo a divisor of `b` of a numerator prime to `b`, C's remainder, which
+truncates, made non-negative, the residue of `(a mod p) b` and the bound `|a b| + H ≤ p H` for
+`|a| ≤ H` and `b < p`, and, for the signed 64-bit words, the arithmetic shift, the mask `x >>> 63`
+with the smaller and the distance of two non-negative words that it gives without a branch, the odd
+part of a positive word by the lowest set bit of the word read as unsigned, its lowest bit, the
+absolute value, and the words of an integer and of a natural number below `2 ^ 63`.
 
 ## Main statements
 
@@ -100,6 +102,11 @@ the absolute value.
   `Nat.gcd_min_eq_gcd_of_two_pow_mul_eq`, `Nat.add_min_lt_add_of_two_pow_mul_eq`: the odd part of
   the distance of two odd numbers has with the smaller of the two their gcd and a sum below theirs,
   the step of the binary algorithm for the gcd.
+* `Int.toNat_emod_ne_zero_of_gcd_eq_one`: a divisor `p > 1` of `b` does not divide a numerator
+  prime to `b`.
+* `Int.ite_tmod_lt_zero_eq_emod`, `Int.toNat_emod_mul_emod`: C's remainder, which truncates, made
+  non-negative is the Euclidean one, and the residue of `(a mod p) b` as a natural number.
+* `Int.natAbs_mul_add_le_mul`: `|a b| + H ≤ p H` for `|a| ≤ H` and `b < p`.
 * `Int64.toInt_shiftRight_ofNat`, `Int64.shiftRight_63`: the arithmetic shift of a `long` by
   `k < 64`, and the mask `x >>> 63`, `-1` for a negative `x` and `0` otherwise.
 * `Int64.toNatClampNeg_add_and_shiftRight_63`, `Int64.toNatClampNeg_xor_shiftRight_63_sub`: for
@@ -109,6 +116,8 @@ the absolute value.
   positive `long` `x` is `2 ^ t` times the odd number `x >>> t`, for the position `t` of the lowest
   set bit of the word `x` read as unsigned.
 * `Int64.toNatClampNeg_ite_neg`: the absolute value of a `long` other than `-2 ^ 63`.
+* `Int64.minValue_lt_ofInt`, `Int64.ofNat_pos`: the word of an integer `|a| < 2 ^ 63` is not
+  `-2 ^ 63`, and that of a natural number `0 < n < 2 ^ 63` is positive.
 
 ## Implementation notes
 
@@ -606,6 +615,36 @@ theorem dvd_natAbs_of_dvd_gcd {a : Int} {b f q : Nat} (h : (f : Int) % b = a % b
   have h2 : (q : Int) ∣ f := Int.natCast_dvd_natCast.mpr (Nat.dvd_trans hq (Nat.gcd_dvd_left f b))
   exact Int.ofNat_dvd_left.mp (by simpa using Int.dvd_add h1 h2)
 
+/-- A divisor `p > 1` of `b` does not divide a numerator `a` prime to `b`. -/
+theorem toNat_emod_ne_zero_of_gcd_eq_one {p : Nat} (hp : 1 < p) {a : Int} {b : Nat}
+    (hab : gcd a b = 1) (hb : b % p = 0) : (a % (p : Int)).toNat ≠ 0 := by
+  intro ha
+  have hp0 : (p : Int) ≠ 0 := by lia
+  have hpa : (p : Int) ∣ a := dvd_of_emod_eq_zero (by have := emod_nonneg a hp0; lia)
+  have hpb : (p : Int) ∣ b := natCast_dvd_natCast.mpr (Nat.dvd_of_mod_eq_zero hb)
+  have := dvd_gcd hpa hpb
+  rw [hab, Nat.dvd_one] at this
+  lia
+
+/-- C's remainder `a.tmod p`, which truncates, plus `p` if it is negative, is the Euclidean
+remainder `a % p`, for `p > 0`. -/
+theorem ite_tmod_lt_zero_eq_emod (a : Int) {p : Int} (hp : 0 < p) :
+    (if a.tmod p < 0 then a.tmod p + p else a.tmod p) = a % p := by
+  grind [tmod_eq_emod, emod_nonneg a (Int.ne_of_gt hp), emod_lt_of_pos a hp, emod_emod_of_dvd]
+
+theorem toNat_emod_mul_emod (a : Int) {p : Nat} (b : Nat) (hp : 0 < p) :
+    (a % p * b % p).toNat = (a % p).toNat * b % p := by
+  have h := emod_nonneg a (b := p) (by lia)
+  apply ofNat_inj.mp
+  rw [toNat_of_nonneg (emod_nonneg _ (by lia))]
+  push_cast
+  rw [toNat_of_nonneg h]
+
+theorem natAbs_mul_add_le_mul {a : Int} {b p H : Nat} (ha : a.natAbs ≤ H) (hb : b < p) :
+    (a * b).natAbs + H ≤ p * H := by
+  rw [natAbs_mul, natAbs_natCast, Nat.mul_comm p]
+  exact Nat.le_trans (Nat.add_le_add_right (Nat.mul_le_mul_right b ha) H) (Nat.mul_le_mul_left H hb)
+
 end Int
 
 /-! ### Words -/
@@ -865,6 +904,15 @@ theorem toNatClampNeg_ite_neg {x : Int64} (h : minValue < x) :
 
 theorem toNatClampNeg_eq_one_iff (x : Int64) : x.toNatClampNeg = 1 ↔ x = 1 := by
   rw [← toNat_toInt, ← toInt_inj, toInt_one]
+  lia
+
+
+theorem minValue_lt_ofInt {a : Int} (ha : a.natAbs < 2 ^ 63) : minValue < ofInt a := by
+  rw [lt_iff_toInt_lt, toInt_minValue, toInt_ofInt_of_le (by lia) (by lia)]
+  lia
+
+theorem ofNat_pos {n : Nat} (h0 : 0 < n) (h : n < 2 ^ 63) : 0 < ofNat n := by
+  rw [lt_iff_toInt_lt, toInt_zero, toInt_ofNat_of_lt h]
   lia
 
 end Int64

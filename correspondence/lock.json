@@ -505,6 +505,12 @@
         "Ratpoints.Sieve.siftPiece"
       ]
     },
+    "find_points.c:3122-3122": {
+      "hash": "5d91e328ceaa3b14eece19173fd697de9119e2bb442ab4795111ab6c12ed3e26",
+      "owners": [
+        "Ratpoints.Sieve.checkPoint"
+      ]
+    },
     "find_points.c:3149-3170": {
       "hash": "b67a52065a3855a34bb73825b01af82d100dbfe9c90c354f1a375506ff128864",
       "owners": [
@@ -1222,7 +1228,7 @@
     "find_points.c:5250-5338": {
       "hash": "f99fc9f0d55ade441a774478107270bb3792cd5b30b4879808f54bdfc05ad26c",
       "owners": [
-        "Ratpoints.Sieve.checkNum"
+        "Ratpoints.Sieve.checkPoint"
       ]
     },
     "find_points.c:568-641": {
@@ -2212,6 +2218,12 @@
         "Ratpoints.Sieve.ctz"
       ]
     },
+    "rp-private.h:465-466": {
+      "hash": "2caf17b3bed8de3f7484ba9fec8825d1e2825c142ab0860d81e9a8695d8a0197",
+      "owners": [
+        "Ratpoints.Sieve.CheckSpec"
+      ]
+    },
     "rp-private.h:47-47": {
       "hash": "cd3497ee363c6aa475e6545a5633fc060ecf397c2a58a956ddbd584986b94b72",
       "owners": [
@@ -2265,6 +2277,12 @@
       "hash": "ca9742d2bdb39d2cbd31579dd05ced0c8dab6d0a9d1569cbed53a1a58d19aa6c",
       "owners": [
         "Ratpoints.rbaPack"
+      ]
+    },
+    "rp-private.h:596-597": {
+      "hash": "de9a3ae3ebb0fedbe898f7657c8348bdbb28d99822b0342285a93bf6d234913a",
+      "owners": [
+        "Ratpoints.Sieve.checkPoint"
       ]
     },
     "rp-private.h:86-86": {
@@ -2355,7 +2373,7 @@
     "sift.c:202-205": {
       "hash": "b1565d0bb8bd58cb2c8495a0ae4d91f355a6f1f46575eae5237b182a5c1ba46a",
       "owners": [
-        "Ratpoints.Sieve.checkNum"
+        "Ratpoints.Sieve.checkPoint"
       ]
     },
     "sift.c:262-264": {
@@ -2364,10 +2382,22 @@
         "Ratpoints.Sieve.walkWord"
       ]
     },
-    "sift.c:291-312": {
-      "hash": "9b658a503b23b59fea65cc895e62582926bc0d764153d6d25eb1f8901ddb4618",
+    "sift.c:291-301": {
+      "hash": "f984ea1c15b33e25b10e225a6931f5f4a3a9a964a7730bec79ccb1ded06f741d",
       "owners": [
-        "Ratpoints.Sieve.andRows"
+        "Ratpoints.Sieve.stage3"
+      ]
+    },
+    "sift.c:302-308": {
+      "hash": "8ad3848cf47b7eb1c4908284d629d8a41cebc754c61d39a45b6b91d1165239e1",
+      "owners": [
+        "Ratpoints.Sieve.CheckSpec.index"
+      ]
+    },
+    "sift.c:309-312": {
+      "hash": "edeb8f6cae86ac1a3d313d315d4309ae0b44833cf56492ed446645c8758ba5a2",
+      "owners": [
+        "Ratpoints.Sieve.stage3"
       ]
     },
     "sift.c:318-332": {
@@ -2388,16 +2418,28 @@
         "Ratpoints.Sieve.relprime"
       ]
     },
-    "sift.c:405-431": {
-      "hash": "cc3a901f1e547d66927258d76f73fba6addb5baa74bb78e3ed79e53a138c20b8",
+    "sift.c:405-413": {
+      "hash": "d8b928e08189bc801498cb948ba5b9c294196325337666ce52346291ca9a62b7",
       "owners": [
-        "Ratpoints.Sieve.sift"
+        "Ratpoints.Sieve.fillChecks"
+      ]
+    },
+    "sift.c:414-428": {
+      "hash": "67e06688b19c86385c383e4b6843cf53ff7e58fba1284790d2deaa612783f1f6",
+      "owners": [
+        "Ratpoints.Sieve.checkOf"
+      ]
+    },
+    "sift.c:429-431": {
+      "hash": "20d1dacb22a00716a5a30170dd6f9c49ade5746387457bb1e6a09f4a3c0d54e1",
+      "owners": [
+        "Ratpoints.Sieve.fillChecks"
       ]
     },
     "sift.c:438-446": {
       "hash": "d7ab90550e0c8fecc0a652dd8131274e07d4a0966cff52e6f7ab24df41fffe5f",
       "owners": [
-        "Ratpoints.Sieve.checkNum"
+        "Ratpoints.Sieve.accepted"
       ]
     },
     "sift.c:498-531": {
