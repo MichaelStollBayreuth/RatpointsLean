@@ -1,0 +1,781 @@
+% Sub-stage F3: the packing of the numerators by stride: the 2-adic classes with their strides and
+% residues, the rows of offsets that the packings share, the fields bias, rbainv and dinv of the
+% sieve entries, the residues of a denominator for its stride, the bits of the numerators of a
+% denominator, the row indices of the first two stages with the offsets and the test small, and the
+% stride in the extraction; with the reductions on 64-bit words. Proposed names are set with \lname
+% and become \lean once the declarations exist.
+\chapter{The packing of the numerators}\label{chap:packing}
+
+F3 models how ratpoints packs the numerators of a denominator $b$ into its bit arrays. The
+numerators that the 2-adic information admits for $b$ lie, in most classes of $b \bmod 64$, in a
+single residue class $a_0 \bmod 2^k$, and ratpoints sieves only that class: bit $n$ of the sieve of
+$b$ stands for the numerator $a_0 + 2^k n$, not for $n$, so that a bit array covers $2^k$ times as
+many numerators. The stride $2^k$ and the residue $a_0$ are those of the class of $b \bmod 64$,
+which \verb|get_2adic_info| computes once per run with the pattern of the class packed to the
+stride. Each modulus then reads, for the denominator $b$, the row of the residue
+$b\, 2^{-k} \bmod p$ instead of that of $b \bmod p$, at the bit array
+$(i + \mathrm{offset}) \bmod p$ for the word number $i$, with an offset that ratpoints computes once
+per run for each packing and each modulus; the first two stages reduce these row indices by a
+multiplication with the reciprocal of the modulus where that is exact, and the extraction steps
+through the numerators by $2^k$. Until now the model sieved every class with the stride~$1$, the
+simplification of Chapter~\ref{chap:denominators}; F3 makes it faithful.
+
+The rows are unchanged when the residue and the numerator are multiplied by the same unit modulo the
+modulus, so the packed sieve keeps exactly the numerators of the class $a_0 \bmod 2^k$ that the
+unpacked sieve keeps, in the same increasing order, and every numerator outside that class is one
+that the 2-adic information rejects anyway. So the output of \verb|findPoints| does not change, nor
+do the statements that comparator certifies, \verb|Params| or \verb|Params.WF|: the well-formedness
+already makes every modulus odd, above $1$, below $\mathrm{maxPrimeEven}$ and a product of primes of
+the table, which is all the packing needs of the parameters. The contracts of the sieve keep their
+conclusions with the 2-adic words as ghost arguments, and their hypotheses grow: the class packs its
+word, the offsets and the residues are the right ones, and the tables of inverses of the sieve
+entries invert. Comparator checks the statements again, since the proofs change.
+
+F3 also makes the reductions by a reciprocal compute on 64-bit words, as the C code does: the
+product of the reciprocal and the value is the C's 64-bit product, and the high half of the 128-bit
+product, for which Lean core has no type, comes from the 32-bit halves. With the loops over the
+moduli stepping two cursors, as the C code steps \verb|ssp| and \verb|mg|, the model with the
+packing runs the suite \verb|test4high| about a quarter faster than before F3 (1m32s against 2m02s
+on one pinned core).
+
+\section{What the C code does}\label{sec:packingC}
+
+\paragraph{The classes.} For each class $b \bmod 64$ with the word $w$ of the numerators
+$a \bmod 64$ that the 2-adic information admits (Definition~\ref{def:twoAdic}),
+\verb|get_2adic_info| computes (\csource{find_points.c}{1058}{1104}): with the lowest admitted
+numerator $a = \mathrm{ctz}(w)$, the largest $k \le 6$ below $\mathrm{RP\_NUM\_STRIDES} = 7$ such
+that every set bit of $w$ is $\equiv a \pmod{2^k}$, by a loop over $k = 1, 2, \dots$ that tests $w$
+against the mask of the multiples of $2^k$ shifted by $a \bmod 2^k$ and stops at the first failure,
+then decrements; $a_0 = a \bmod 2^k$; and the packed pattern, bit $t$ of which is bit
+$(a_0 + 2^k t) \bmod 64$ of $w$, by scattering each set bit $a$ to
+$((a - a_0) \mathbin{\&} 63) \gg k$ and doubling the pattern up to 64 bits; for $w = 0$ the class is
+empty ($k = 0$, $a_0 = 0$). It sets bit $b$ of the word \verb|den_bits| of the classes that admit a
+numerator. The type \verb|rp_num_class| (\csource{rp-private.h}{494}{495}) holds the pattern, $k$,
+$a_0$ and a pointer to the class's row of offsets. On every curve $k \le 3$ (an exhaustive search:
+all polynomial functions modulo 64 for odd $b$, all truncated reversed coefficients for even $b$);
+the code allows $k \le 6$, and the model with it.
+
+\paragraph{The offsets.} \verb|num_packings| (\csource{find_points.c}{1119}{1130}) counts the
+distinct keys $2^k + a_0$ of the classes that admit a numerator; the array of offsets has
+$\mathrm{num\_packings} \cdot \max(1, \mathrm{sp3\_max})$ entries
+(\csource{find_points.c}{5119}{5119}). \verb|class_offsets| (\csource{find_points.c}{1142}{1183},
+called at \csource{find_points.c}{5132}{5132}) takes the largest stride $k_{\max}$ of these classes
+and for each sieve entry of modulus $p$ two halving chains, $x \mapsto (x + p)/2$ for odd $x$ and
+$x/2$ for even $x$, from $1$ and from $\mathrm{rbainv} = 256^{-1} \bmod p$: they give
+$\mathrm{dinv}[k] = 2^{-k} \bmod p$, which it stores in the sieve entry, and
+$(2^k\, 256)^{-1} \bmod p$ for $k \le k_{\max}$. Then each packing gets one row, shared by the
+classes of the same key, with the offset $\mathrm{RP\_MULMOD}(a_0 (2^k\, 256)^{-1}) + \mathrm{bias}$
+for each sieve entry, where the bias $p \lceil 2^{31} / p \rceil$
+(\csource{find_points.c}{1815}{1815} for a prime, \csource{find_points.c}{2424}{2424} and
+\csource{find_points.c}{2456}{2456} for a power and a product) and $\mathrm{rbainv}$
+(\csource{find_points.c}{1816}{1816}, \csource{find_points.c}{2425}{2425},
+\csource{find_points.c}{2457}{2457}) are fields of the sieve entry, set when it is made, and
+$\mathrm{RP\_ROW\_BIAS} = 2^{31}$ (\csource{rp-private.h}{387}{387}) is the lower bound of the bias,
+with the static assertion $2\,\mathrm{RP\_ROW\_BIAS} - 1 \le \mathrm{RP\_MULMOD\_LIMIT}$
+(\csource{rp-private.h}{426}{427}).
+
+\paragraph{One denominator.} \verb|run_block| takes the class of $b \bmod 64$ and, before each call
+of \verb|sift|, \verb|fill_bp_list| (\csource{find_points.c}{3639}{3679}) computes for the moduli of
+the first two stages the residues $b\, 2^{-k} \bmod p$ from $\mathrm{dinv}[k]$ by
+$\mathrm{RP\_MULMOD}$, in one of three branches chosen by the size of $b$ (the product directly,
+after reducing $b$ by $\mathrm{RP\_MULMOD}$, or after reducing it by a division). In \verb|sift|,
+\verb|numerators_to_bits| (\csource{find_points.c}{3355}{3370}) turns the interval of numerators
+into the bits $\lceil(\mathrm{low} - a_0)/2^k\rceil$ to $\lfloor(\mathrm{high} - a_0)/2^k\rfloor$,
+by arithmetic shifts of longs, in a plain form and in a split form that avoids the overflow of the
+plain one for heights above $\mathrm{LONG\_MAX} - 64$; for the whole line, the model's setting, the
+C code takes the split form exactly for those heights (the test of \verb|exact_bounds| and the path
+through \verb|interval_bits_exact|, lines that belong to the search intervals of stage~H). Then,
+once an interval of numerators is not empty, \verb|set_rows| (\csource{find_points.c}{3149}{3170})
+takes for each modulus the row of that residue and the class's offset, and if the bits are not
+empty, they are sifted in pieces with the masks of the ends (\csource{find_points.c}{3563}{3617}).
+In \verb|_ratpoints_sift0| the test \verb|small| (\csource{sift.c}{530}{531}) decides whether the
+row indices of the piece can be reduced by $\mathrm{RP\_MULMOD}$ with the reciprocals of
+\verb|magics|: the first stage computes for each modulus
+$r = (-w_{\mathrm{low}} - \mathrm{offset}) \bmod p$ by \verb|mod_mul| (\csource{sift.c}{243}{247})
+or by the division \verb|mod| (\csource{sift.c}{370}{389}) and starts at bit array $p - r$ of the
+row, which is $\equiv w_{\mathrm{low}} + \mathrm{offset} \pmod p$, and the second stage reads the
+bit array $(i + \mathrm{offset}) \bmod p$ in both arms. The extraction gives bit $t$ of word
+$\kappa$ of the bit array with the word number $i$ the numerator $a_0 + 2^k (256 i + 64 \kappa + t)$
+(\csource{sift.c}{1221}{1222}, \csource{sift.c}{1264}{1264}, \csource{sift.c}{262}{264}). The third
+stage does not change: \verb|fill_checks| reduces $b$ itself and tests the numerator itself.
+
+\paragraph{Why the packing changes nothing.} Bit $j < 256$ of the bit array with the word number
+$i$, the bit $n = 256 i + j$, stands for $a = a_0 + 2^k n$. Since
+$256\,\mathrm{offset}\, 2^k \equiv a_0$ and $\mathrm{bp}\, 2^k \equiv b \pmod p$, the bit that the
+row of $\mathrm{bp}$ gives at index $256(i + \mathrm{offset}) + j \equiv a\, 2^{-k}$ is its
+admission of $a\, 2^{-k}$, which is the admission of $a$ by the row of $b$: a row is unchanged when
+the residue and the numerator are multiplied by the same unit $u$ (for a prime, it reads the table
+at $a\, b^{-1}$; for a prime power, at $a\, b^{-1}$ or at $b\, a^{-1}$; both are unchanged), given
+that the tables of inverses invert. The packed pattern gives the bit of $w$ at $a \bmod 64$. The
+bits from the low to the high end, mapped to $a_0 + 2^k n$, are the numerators of $[-H, H]$ that are
+$\equiv a_0 \pmod{2^k}$, in increasing order, and the numerators of $[-H, H]$ outside that class are
+rejected by $w$. So the packed sieve gives the numerators that the unpacked sieve keeps, in the same
+order: a data refinement.
+
+\section{The constants and the reductions on 64-bit words}\label{sec:words64}
+
+\begin{definition}[The constants of the packing]\label{def:packingConstants}
+  \uses{def:rbaPack, def:jacobiTables}
+  Proposed names: \lname{Ratpoints.rowBias},
+  \lname{Ratpoints.two\_mul\_rowBias\_sub\_one\_le\_mulModLimit}, \lname{Ratpoints.numStrides},
+  \lname{Ratpoints.one\_le\_numStrides}, \lname{Ratpoints.rbaShift},
+  \lname{Ratpoints.rbaLength\_eq\_two\_pow\_rbaShift}, \lname{Ratpoints.rbaShift\_lt\_thirty\_two}.
+  The lower bound $\mathrm{rowBias} = 2^{31}$ of the multiple of a modulus in the offset of a row
+  (\verb|RP_ROW_BIAS|, \csource{rp-private.h}{387}{387}), with the C's static assertion
+  $2\,\mathrm{rowBias} - 1 \le \mathrm{mulModLimit}$ as a fact checked by evaluation
+  (\csource{rp-private.h}{426}{427}); the number $\mathrm{numStrides} = 7$ of the strides
+  (\verb|RP_NUM_STRIDES|, \csource{rp-private.h}{476}{476}), with the fact
+  $1 \le \mathrm{numStrides}$; and $\mathrm{rbaShift} = 8$ (\verb|RBA_SHIFT|,
+  \csource{rp-private.h}{126}{126}, \csource{rp-private.h}{173}{173},
+  \csource{rp-private.h}{232}{232}, \csource{rp-private.h}{258}{258},
+  \csource{rp-private.h}{282}{282}), with the facts $\mathrm{rbaLength} = 2^{\mathrm{rbaShift}}$ and
+  $\mathrm{rbaShift} < 32$. No proof uses their values.
+\end{definition}
+
+\begin{definition}[The high half of a product]\label{def:mulHi}
+  Proposed name: \lname{Ratpoints.Sieve.mulHi}. The high $64$ bits of the $128$-bit product of two
+  $64$-bit words, from the four products of their $32$-bit halves, for the product of type
+  \verb|__uint128_t| that gcc provides and Lean core does not (\csource{rp-private.h}{404}{408},
+  \csource{rp-private.h}{409}{410}, ranges it shares with Definition~\ref{def:mulMod}). The
+  reduction with the reciprocal $m$ (Definition~\ref{def:mulMod}) becomes
+  $\mathrm{mulHi}(m u \bmod 2^{64}, p)$, with the C's $64$-bit product of $m$ and $u$, and the
+  quotient $\mathrm{mulHi}(u, m)$, the arguments cast to words as the macros cast them to
+  \verb|unsigned long|.
+\end{definition}
+
+\begin{lemma}[The words compute the products]\label{lem:mulHi}
+  \uses{def:mulHi, def:mulMod}
+  Proposed names: \lname{Ratpoints.Sieve.toNat\_mulHi}, \lname{Ratpoints.Sieve.mulMod\_eq},
+  \lname{Ratpoints.Sieve.mulDiv\_eq}. The high half is $\lfloor a b / 2^{64} \rfloor$ for all words
+  $a, b$; so the reduction is $\lfloor (m u \bmod 2^{64}) (p \bmod 2^{64}) / 2^{64} \rfloor$ and the
+  quotient $\lfloor (u \bmod 2^{64}) (m \bmod 2^{64}) / 2^{64} \rfloor$, and Lemma~\ref{lem:mulMod}
+  keeps the statement of the remainder, while the quotient now needs $1 < p$, since the reciprocal
+  $2^{64}$ of $1$ wraps to $0$, as in the C code.
+\end{lemma}
+
+\begin{proof}
+  With $a = 2^{32} a_1 + a_0$ and $b = 2^{32} b_1 + b_0$,
+  $a b = 2^{64} a_1 b_1 + 2^{32}(a_1 b_0 + a_0 b_1) + a_0 b_0$; the middle sum of the low halves of
+  the cross products and the high half of $a_0 b_0$ is below $3 \cdot 2^{32}$, and its high half is
+  the carry.
+\end{proof}
+
+\begin{definition}[The remainder of a long of either sign]\label{def:modMul}
+  \uses{def:mulMod}
+  Proposed name: \lname{Ratpoints.Sieve.modMul}. For an integer $a$, the reduction of $|a|$ with the
+  reciprocal, and $p$ minus it for negative $a$ with a nonzero remainder (\verb|mod_mul|,
+  \csource{sift.c}{243}{247}).
+\end{definition}
+
+\begin{lemma}[The remainder of a long]\label{lem:modMul}
+  \uses{def:modMul, lem:mulMod}
+  Proposed name: \lname{Ratpoints.Sieve.modMul\_magic}. For $0 < p$ and $|a|\, p < 2^{64}$,
+  $\mathrm{modMul}(a, p, \mathrm{magic}(p)) = a \bmod p$, the Euclidean remainder; \verb|modLong| is
+  the Euclidean remainder for a modulus $p \ge 0$ (Definition~\ref{def:useCLong}, whose lemma moves
+  to a file without Mathlib).
+\end{lemma}
+
+\begin{proof}
+  Lemma~\ref{lem:mulMod} for $|a|$; for negative $a$, $p - (|a| \bmod p) = a \bmod p$ when the
+  remainder is not $0$.
+\end{proof}
+
+\section{The classes}\label{sec:classes}
+
+\begin{definition}[The classes of the numerators]\label{def:numClasses}
+  \uses{def:twoAdic, def:ctz, def:packingConstants}
+  Proposed names: \lname{Ratpoints.Sieve.NumClass}, \lname{Ratpoints.Sieve.classMasks},
+  \lname{Ratpoints.Sieve.packPattern}, \lname{Ratpoints.Sieve.numClasses}. A class: its packed
+  pattern, a word; its stride exponent $k$ and residue $a_0$; and the position of its row in the
+  array of offsets, absent until the offsets are computed (\csource{rp-private.h}{494}{495}). The
+  masks of the multiples of $2^k$ for $k \le 6$, the C's literal table of seven words, read as $0$
+  beyond (\csource{find_points.c}{1058}{1062}). The packed pattern of a word for $k$ and $a_0$: each
+  set bit $a$ scattered to $((a - a_0) \bmod 64) / 2^k$, then the pattern doubled up to $64$ bits
+  (\csource{find_points.c}{1082}{1094}). The classes of the $64$ words of the 2-adic information and
+  the word \verb|den_bits| (\csource{find_points.c}{995}{995}, \csource{find_points.c}{1064}{1081},
+  \csource{find_points.c}{1095}{1097}, \csource{find_points.c}{1099}{1104},
+  \csource{find_points.c}{1106}{1114}): for each word, the stride by the loop over the masks with
+  its stop and decrement, the residue, and the packed pattern, or the word itself for $k = 0$.
+\end{definition}
+
+\begin{lemma}[A class packs its word]\label{lem:numClasses}
+  \uses{def:numClasses, def:andRows, lem:twoAdic_point}
+  Proposed names: \lname{Ratpoints.Sieve.NumClass.WF}, \lname{Ratpoints.Sieve.NumClass.Packs},
+  \lname{Ratpoints.Sieve.NumClass.numerator}, \lname{Ratpoints.Sieve.getLsbD\_classMasks},
+  \lname{Ratpoints.Sieve.packPattern\_spec}, \lname{Ratpoints.Sieve.numClasses\_spec},
+  \lname{Ratpoints.Sieve.NumClass.Packs.classBit\_bits},
+  \lname{Ratpoints.Sieve.NumClass.Packs.emod\_eq\_of\_classBit},
+  \lname{Ratpoints.Sieve.NumClass.Packs.bits\_eq\_zero\_iff},
+  \lname{Ratpoints.Sieve.snd\_run\_numClasses}. The class of the word $w$ packs it:
+  $k < \mathrm{numStrides}$, $k \le 6$, $a_0 < 2^k$, every set bit $a$ of $w$ is
+  $\equiv a_0 \pmod{2^k}$, and bit $t$ of the pattern is bit $(a_0 + 2^k t) \bmod 64$ of $w$. So the
+  pattern's bit for the bit number $n$ is the bit of $w$ for the numerator $a_0 + 2^k n$, a
+  numerator of $w$ lies in the class $a_0 \bmod 2^k$, and the pattern is $0$ exactly when $w$ is.
+  Bit $b$ of \verb|den_bits| is set exactly when the word of $b$ is not $0$, so \verb|den_bits| is
+  the word of Definition~\ref{def:twoAdic}.
+\end{lemma}
+
+\begin{proof}
+  The mask of $k$ has the bits $\equiv 0 \pmod{2^k}$ for $k \le 6$ and none beyond, which ends the
+  stride loop by $k = 7$ at the latest, whatever $\mathrm{numStrides}$ is; an invariant of that loop
+  says that the set bits are $\equiv \mathrm{ctz}(w) \pmod{2^{k-1}}$. The scatter puts bit $a$ at
+  $(a - a_0)/2^k$, since every set bit is at least $a_0$, and the doubling repeats the pattern with
+  the period $64/2^k$, which $2^k \mid 64$ makes the bits $(a_0 + 2^k t) \bmod 64$.
+\end{proof}
+
+\section{The offsets of the rows}\label{sec:offsets}
+
+\begin{definition}[The rows of offsets]\label{def:classOffsets}
+  \uses{def:numClasses, def:SieveEntry, def:mulMod, def:packingConstants}
+  Proposed names: \lname{Ratpoints.Sieve.numPackings}, \lname{Ratpoints.Sieve.halve},
+  \lname{Ratpoints.Sieve.classRows}, \lname{Ratpoints.Sieve.classOffsets}. The number of the
+  packings, the distinct keys $2^k + a_0$ of the classes with a nonzero pattern, kept in two words
+  as the C code keeps them, and at least $1$ (\csource{find_points.c}{1119}{1130}); the halving step
+  modulo an odd $p$ (\csource{find_points.c}{1159}{1160}); the rows: for each class with a pattern,
+  the row of its key if it has one, else a new row whose offsets are
+  $\mathrm{mulMod}(a_0 \cdot (2^k\,\mathrm{rbaLength})^{-1}) + \mathrm{bias}$ for each sieve entry,
+  with the class getting the position of its row (\csource{find_points.c}{1164}{1182}); and
+  \verb|class_offsets|: the largest stride of the classes with a pattern, the two halving chains of
+  each sieve entry from $1$ and from $\mathrm{rbainv}$ up to it, the first stored as the field
+  $\mathrm{dinv}$ of the entry, and the rows (\csource{find_points.c}{1142}{1158},
+  \csource{find_points.c}{1161}{1162}, \csource{find_points.c}{1183}{1183}). The sieve entries gain
+  the fields $\mathrm{bias}$, $\mathrm{rbainv}$ and $\mathrm{dinv}$
+  (Definition~\ref{def:SieveEntry}).
+\end{definition}
+
+\begin{lemma}[The offsets]\label{lem:classOffsets}
+  \uses{def:classOffsets, lem:mulMod, lem:numClasses, def:packingConstants, def:barrett}
+  Proposed names: \lname{Ratpoints.Sieve.IsFirstKey}, \lname{Ratpoints.Sieve.firstKeys},
+  \lname{Ratpoints.Sieve.numPackings\_spec}, \lname{Ratpoints.Sieve.classRows\_spec},
+  \lname{Ratpoints.Sieve.SieveEntry.Packable}, \lname{Ratpoints.Sieve.SieveEntry.PackedFor},
+  \lname{Ratpoints.Sieve.OffsetsFor}, \lname{Ratpoints.Sieve.classOffsets\_spec}. The number of the
+  packings is $\max(1, f)$ for the number $f$ of the classes with a pattern whose key no earlier
+  class with a pattern has (the classes being well formed, so that the keys are below
+  $2^{\mathrm{numStrides}}$). For sieve entries of odd moduli $1 < p \le \mathrm{maxPrimeEven}$ with
+  the reciprocal of $p$, $\mathrm{rbainv} < p$ with
+  $\mathrm{rbainv} \cdot \mathrm{rbaLength} \equiv 1 \pmod p$ and the bias a multiple of $p$ in
+  $[\mathrm{rowBias}, \mathrm{rowBias} + p)$ (\emph{packable}), classes with $k \le 6$,
+  $k < \mathrm{numStrides}$ and $a_0 < 2^k$, and an array of at least $f$ times the number of
+  entries: the classes keep their patterns, strides and residues, the entries change only in
+  $\mathrm{dinv}$, and each class with a pattern has a row at a position $\mathrm{pos}$ whose offset
+  $o$ for the entry $n$ satisfies $\mathrm{rowBias} \le o < \mathrm{rowBias} + 2p$ and
+  $o\, 2^k\,\mathrm{rbaLength} \equiv a_0 \pmod p$, with
+  $\mathrm{dinv}[k] \cdot 2^k \equiv 1 \pmod p$ and $\mathrm{dinv}[k] < p$.
+\end{lemma}
+
+\begin{proof}
+  The halving step multiplies by $2^{-1}$ modulo an odd $p$ and stays below $p$. The rows occupy the
+  disjoint ranges $[r\, n_p, (r + 1)\, n_p)$, for the number $n_p$ of the sieve entries, one for
+  each class with a pattern whose key no earlier class with a pattern has, and the keys $2^k + a_0$
+  with $a_0 < 2^k$ determine $(k, a_0)$; an offset depends only on the key. The halvings of
+  $\mathrm{rbainv} < p$ stay below $p$, so $a_0 (2^k\,\mathrm{rbaLength})^{-1} < 64\, p$, which
+  times $p$ is below $2^{64}$: its reduction is exact by Lemma~\ref{lem:mulMod}.
+\end{proof}
+
+\section{The residues of a denominator}\label{sec:bp}
+
+\begin{definition}[The residues of a denominator for its stride]\label{def:fillBpList}
+  \uses{def:SieveEntry, def:mulMod, def:useCLong, def:jacobiTables, def:barrett}
+  Proposed name: \lname{Ratpoints.Sieve.fillBpList}. For the denominator $b$, the stride exponent
+  $k$, the sieve entries of the first two stages and their reciprocals: the residues
+  $b\,\mathrm{dinv}[k] \bmod p$, by $\mathrm{mulMod}$ of the product for
+  $b \le \mathrm{mulModLimit}/\mathrm{maxPrimeEven}$, of the reduced $b$ times $\mathrm{dinv}[k]$
+  for $b \le \mathrm{mulModLimit}$, and of $(b \bmod p) \,\mathrm{dinv}[k]$ by \verb|modLong| above,
+  the branch chosen once for $b$ (\csource{find_points.c}{3639}{3679}).
+\end{definition}
+
+\begin{lemma}[The residues]\label{lem:fillBpList}
+  \uses{def:fillBpList, lem:mulMod}
+  Proposed name: \lname{Ratpoints.Sieve.fillBpList\_eq\_map}. For entries with
+  $0 < p \le \mathrm{maxPrimeEven}$ and $\mathrm{dinv}[k] < p$ and their reciprocals, the residues
+  are $b\, \mathrm{dinv}[k] \bmod p$, in all three branches.
+\end{lemma}
+
+\begin{proof}
+  Each value $u$ that is reduced has $u\, p < 2^{64}$:
+  $b\,\mathrm{dinv}[k] \le \mathrm{mulModLimit}$ in the first branch, $b \le \mathrm{mulModLimit}$
+  for the first reduction of the second, and $(b \bmod p)\,\mathrm{dinv}[k] < p^2$ for the last
+  reduction of the second and of the third, since $\mathrm{mulModLimit} < 2^{32}$ and
+  $p \le 2^{10}$; Lemma~\ref{lem:mulMod}, and \verb|modLong| is the Euclidean remainder
+  (Definition~\ref{def:useCLong}).
+\end{proof}
+
+\section{The rows under a unit}\label{sec:scaling}
+
+\begin{lemma}[A row is unchanged under a unit]\label{lem:admits_mul}
+  \uses{def:SieveEntry, def:examinePower, def:admits}
+  Proposed names: \lname{Ratpoints.Sieve.Factor.HasInverses},
+  \lname{Ratpoints.Sieve.Entry.admits\_mul}, \lname{Ratpoints.Sieve.Power.admits\_mul},
+  \lname{Ratpoints.Sieve.SieveEntry.admits\_mul},
+  \lname{Ratpoints.Sieve.Entry.admits\_mod\_of\_dvd},
+  \lname{Ratpoints.Sieve.Power.admits\_mod\_of\_dvd}. If the modulus of each factor of a sieve entry
+  divides $p$ and its table of inverses inverts its units (the nonzero residues of a prime, the
+  residues prime to $\ell$ of a prime power $\ell^e$), and $v u \equiv 1 \pmod p$, then the row of
+  $u b$ admits $u a$ exactly when the row of $b$ admits $a$; a row of a factor depends only on the
+  residues modulo a multiple of its modulus.
+\end{lemma}
+
+\begin{proof}
+  The table of a prime is read at $a\, \mathrm{inv}(b)$, that of a prime power at $a\,
+  \mathrm{inv}(b)$ or at $b\,\mathrm{inv}(a)$; with $u b$ and $u a$ the index is $u a\,
+  \mathrm{inv}(u b) \equiv u a\, \mathrm{inv}(u b)\, b\, \mathrm{inv}(b) \equiv a\,
+  \mathrm{inv}(b)$, using only that the tables invert and that $u$ has the inverse $v$, so no
+  primality and no field of residues; the tests for $0$ of a prime and for divisibility by the prime
+  $\ell$ of a prime power $\ell^e$ are unchanged, since $u$ is a unit modulo the modulus of the
+  factor, which divides $p$, and so modulo $\ell$.
+\end{proof}
+
+\begin{lemma}[The rows read in the packing]\label{lem:reads_row}
+  \uses{lem:admits_mul, def:rows}
+  Proposed names: \lname{Ratpoints.Sieve.SieveSpec.Reads},
+  \lname{Ratpoints.Sieve.SieveSpec.getLsbD\_wordAt\_mk},
+  \lname{Ratpoints.Sieve.SieveEntry.reads\_row}, \lname{Ratpoints.Sieve.getLsbD\_andWords}. A sieve
+  spec reads a test $f$ of the bit numbers when bit $t$ of word $y$ of the piece from the word
+  number $i$ is $f(\mathrm{rbaLength}\, i + 64 y + t)$ for $t < 64$. For a sieve entry with $0 < p$
+  and tables that invert, $v\, 2^k \equiv 1$, $o\, 2^k\,\mathrm{rbaLength} \equiv a_0$ and
+  $2^k\, \mathrm{bp} \equiv b \pmod p$, the spec of the row of $\mathrm{bp}$ at the offset $o$ reads
+  the admission of $a_0 + 2^k j$ by the row of $b$; the words of a piece and-ed over specs that read
+  tests read the conjunction of the tests and the class word.
+\end{lemma}
+
+\begin{proof}
+  The row bit at the index $\mathrm{rbaLength}(i + o) + 64 y + t$ admits that index for
+  $\mathrm{bp}$ (Definitions~\ref{def:row} and~\ref{def:rows}); multiplied by the unit $2^k$ with
+  the inverse $v$ (Lemma~\ref{lem:admits_mul}) it is the admission of
+  $2^k(\mathrm{rbaLength}\, i + 64 y + t) + a_0$ for $b$.
+\end{proof}
+
+\section{The row indices of the first two stages}\label{sec:rowIndices}
+
+\begin{lemma}[The row indices]\label{lem:rowIndices}
+  \uses{lem:mulMod, lem:modMul, def:packingConstants, def:rows, def:barrett, def:useCLong}
+  Proposed names: \lname{Ratpoints.Sieve.SieveSpec.Fits}, \lname{Ratpoints.Sieve.SmallFits},
+  \lname{Ratpoints.Sieve.smallFits\_decide},
+  \lname{Ratpoints.Sieve.SieveSpec.Fits.ite\_modMul\_modLong\_eq\_emod},
+  \lname{Ratpoints.Sieve.SieveSpec.Fits.ite\_mulMod\_modLong\_eq\_toNat\_emod}. A sieve spec
+  \emph{fits} when $0 < p \le \mathrm{maxPrimeEven}$ and
+  $\mathrm{rowBias} \le \mathrm{offset} < \mathrm{rowBias} + 2p$; the test \verb|small| of a piece
+  from $w_0$ to $w_0 + n$ gives $-\mathrm{rowBias} \le w_0$ and
+  $w_0 + n \le \mathrm{rowBias} - 2\,\mathrm{maxPrimeEven}$. Then the remainder $r$ with which the
+  first stage starts each modulus, at the bit array $p - r$ of its row, computed by \verb|mod_mul|
+  under \verb|small| and by \verb|mod| otherwise, is $(-w_0 - \mathrm{offset}) \bmod p$, and the
+  second stage's index for a word number $i$ of the piece, computed by $\mathrm{mulMod}$ under
+  \verb|small| and by \verb|mod| otherwise, is $(i + \mathrm{offset}) \bmod p$.
+\end{lemma}
+
+\begin{proof}
+  Under \verb|small| the values have absolute value at most
+  $2\,\mathrm{rowBias} - 1 \le \mathrm{mulModLimit} < 2^{32}$, and $p \le 2^{10}$, so the reductions
+  are exact (Lemmas~\ref{lem:mulMod} and~\ref{lem:modMul}); \verb|mod| is the Euclidean remainder.
+  The proof uses the static assertion, never the value of $\mathrm{rowBias}$.
+\end{proof}
+
+The model passes the reciprocals of the first two stages to the stages as \verb|magics| holds them,
+from the position $0$ for the first stage and from $s_1$ for the second, and the loops over the
+moduli step the sieve specs and the reciprocals together, by two cursors, as the C code steps
+\verb|ssp| and \verb|mg|. The first stage (Definition~\ref{def:andRows}), the second
+(Definition~\ref{def:secondStage}) and one piece (Definition~\ref{def:siftPiece}), which computes
+\verb|small|, take the offsets of the sieve specs (Definition~\ref{def:rows}); their contracts take
+fitting specs, the reciprocals of their moduli and the bounds of \verb|small|, with their
+conclusions in the words of Lemma~\ref{lem:reads_row}.
+
+\section{The bits of one denominator}\label{sec:bits}
+
+\begin{definition}[The bits of an interval of numerators]\label{def:numeratorsToBits}
+  \uses{def:numClasses}
+  Proposed name: \lname{Ratpoints.Sieve.numeratorsToBits}. For the ends of an interval of
+  numerators, $64$-bit signed words, and a class: the bits $-((a_0 - \mathrm{low}) \gg k)$ and
+  $(\mathrm{high} - a_0) \gg k$ in the plain form, and
+  $(\mathrm{low} \gg k) + (((\mathrm{low} \mathbin{\&} (2^k - 1)) - a_0 + 2^k - 1) \gg k)$ and
+  $(\mathrm{high} \gg k) + (((\mathrm{high} \mathbin{\&} (2^k - 1)) - a_0) \gg k)$ in the split
+  form, with the arithmetic shift and the and of two's complement, as the C code computes them on
+  longs (\csource{find_points.c}{3355}{3370}).
+\end{definition}
+
+\begin{lemma}[The bits of the heights]\label{lem:numeratorsToBits}
+  \uses{def:numeratorsToBits, lem:numClasses}
+  Proposed names: \lname{Ratpoints.Sieve.toInt\_numeratorsToBits},
+  \lname{Ratpoints.Sieve.toInt\_numeratorsToBits\_height},
+  \lname{Ratpoints.Sieve.le\_numerator\_and\_numerator\_le\_iff},
+  \lname{Ratpoints.Sieve.map\_range\_numerator\_eq\_filter\_numerators}. For a class with $k \le 6$
+  and $a_0 < 2^k$, the split form gives $-\lfloor(a_0 - \mathrm{low})/2^k\rfloor$ and
+  $\lfloor(\mathrm{high} - a_0)/2^k\rfloor$ without overflow, and so does the plain form when
+  $a_0 - \mathrm{low} < 2^{63}$ and $\mathrm{high} - a_0 \ge -2^{63}$; for the ends $\mp H$ with
+  $H < 2^{63}$ and the form the C code takes, the bits are $-\lfloor (H + a_0)/2^k\rfloor$ and
+  $\lfloor (H - a_0)/2^k\rfloor$. A numerator $a_0 + 2^k t$ lies in $[\mathrm{low}, \mathrm{high}]$
+  exactly when $t$ lies between the bits, and the bits from the low to the high end, mapped to
+  $a_0 + 2^k t$, are the numerators of $[-H, H]$ that are $\equiv a_0 \pmod{2^k}$, in increasing
+  order.
+\end{lemma}
+
+\begin{proof}
+  The arithmetic shift of a word is the floor division of its integer by $2^k$, the and with
+  $2^k - 1$ its Euclidean remainder; each sum stays in the range of a word. The enumeration counts
+  the members of a residue class in an interval.
+\end{proof}
+
+\begin{definition}[The bits of one denominator]\label{def:siftBits}
+  \uses{def:siftPiece, def:rows, def:numClasses, def:rbaPack}
+  Proposed names: \lname{Ratpoints.Sieve.setRows}, \lname{Ratpoints.Sieve.siftBits}. The sieve specs
+  of a denominator: for each modulus of the first two stages, the row of its residue for the stride
+  and the offset of the class's row (\verb|set_rows|, \csource{find_points.c}{3149}{3170}); and the
+  bits from $\mathrm{low}$ to $\mathrm{high}$: nothing if $\mathrm{low} > \mathrm{high}$, else the
+  pieces of the word numbers $\lfloor \mathrm{low}/\mathrm{rbaLength}\rfloor$ to
+  $\lfloor \mathrm{high}/\mathrm{rbaLength}\rfloor$ with the masks
+  $\mathrm{low} - \mathrm{rbaLength}\, w_{\mathrm{low}}$ and
+  $\mathrm{rbaLength} - 1 - (\mathrm{high} \bmod \mathrm{rbaLength})$
+  (\csource{find_points.c}{3563}{3612}). One denominator (Definition~\ref{def:sift}) takes the
+  class, the residues and the array of offsets, makes the specs, turns $[-H, H]$ into bits and sifts
+  them.
+\end{definition}
+
+\begin{lemma}[The bits of one denominator]\label{lem:siftBits}
+  \uses{def:siftBits, lem:reads_row, lem:numeratorsToBits, lem:classOffsets, lem:fillBpList,
+    def:siftPiece, lem:numClasses}
+  Proposed names: \lname{Ratpoints.Sieve.siftBits\_spec}, \lname{Ratpoints.Sieve.packedReads},
+  \lname{Ratpoints.Sieve.setRows\_map}, \lname{Ratpoints.Sieve.flatMap\_filter\_bits\_eq}. The bits
+  of an interval give the points of the bits from $\mathrm{low}$ to $\mathrm{high}$ that pass the
+  class pattern and the tests that the specs read, none for an empty interval; the specs that
+  \verb|set_rows| makes for entries with their residues $b\,\mathrm{dinv}[k] \bmod p$ and the
+  offsets of the class read the admissions of the numerators $a_0 + 2^k j$ by the rows of $b$; and
+  the bits of $[-H, H]$ in the packing of a class of the word $w$ that pass its pattern give the
+  numerators of $[-H, H]$ that pass $w$.
+\end{lemma}
+
+\begin{proof}
+  An invariant of the loop over the pieces, as before over the bits instead of the numerators
+  (Definition~\ref{def:sift}); Lemma~\ref{lem:reads_row} with the offsets of
+  Lemma~\ref{lem:classOffsets} and the residues of Lemma~\ref{lem:fillBpList};
+  Lemmas~\ref{lem:numeratorsToBits} and~\ref{lem:numClasses} for the class.
+\end{proof}
+
+\section{The sieve in the packing}\label{sec:packedSieve}
+
+The contracts below one denominator stay on the bit numbers: the walk through the set bits of a word
+(Definition~\ref{def:walkWord}) takes the step $2^k$; a bit array through the second stage and the
+extraction (Definition~\ref{def:siftBitArray}), the scan and one piece take the class and give the
+points of the numerators $a_0 + 2^k j$ of the bits $j$ that survive, quantified over the tests that
+the specs read. The contract of one denominator (Definition~\ref{def:sift}) and the lemma that the
+words compute the Booleans (Lemma~\ref{lem:sift_eq_checkDen}) keep their conclusions, the points of
+the numerators of $[-H, H]$ that pass the 2-adic word $w$ and survive all the entries, with $w$ as a
+ghost argument, under the hypotheses that the class packs $w$, has a row at the position
+$\mathrm{pos}$, the specs are those of the rows of the entries, the reciprocals those of their
+moduli, the residues $b\,\mathrm{dinv}[k] \bmod p$, the tables of inverses invert, and each entry is
+packed for the class at its offset. The run (Definition~\ref{def:sieveRun}) takes the classes and
+the array of offsets, calls \verb|fill_bp_list| before each denominator, and keeps its conclusion
+with the 2-adic words as a ghost argument packed by the classes, under the tables of inverses of the
+first $s_2$ entries, their offsets, and \verb|den_bits| matching the classes (the shape of the
+forbidden divisors tested with words reads \verb|den_bits|, the others the class's pattern,
+Definition~\ref{def:Shape}). The search (Definition~\ref{def:searchPoints}) makes the classes after
+the 2-adic information, sizes the array of offsets and computes them after \verb|sieving_info|,
+which gives packable entries with their tables of inverses (Lemma~\ref{lem:sievingInfo}).
+
+\begin{lemma}[What the run needs of the search]\label{lem:soundRun}
+  \uses{lem:sievingInfo, lem:classOffsets, lem:numClasses, lem:admits_mul, def:stage3, def:twoAdic}
+  Proposed names: \lname{Ratpoints.Sieve.IsSoundRun},
+  \lname{Ratpoints.Sieve.IsSoundRun.bits\_bne\_zero},
+  \lname{Ratpoints.Sieve.IsSoundRun.getLsbD\_db}. The sieve entries, reciprocals, classes, offsets
+  and \verb|den_bits| that the search hands to the run are sound: sound rows, prime entries in the
+  third stage, the reciprocals in their order, tables of inverses and the offsets of the classes for
+  the first two stages, classes that pack the 2-adic words, and \verb|den_bits| the word of
+  Definition~\ref{def:twoAdic}; so a pattern is nonzero exactly when the word of its class is, and
+  \verb|den_bits| has the bits of the classes with a pattern. The search establishes it for its
+  arguments in its proof.
+\end{lemma}
+
+\begin{proof}
+  Lemma~\ref{lem:sievingInfo}, Lemma~\ref{lem:numClasses} and Lemma~\ref{lem:classOffsets}; the
+  entries that \verb|class_offsets| returns differ only in $\mathrm{dinv}$, which the soundness, the
+  shape of a prime entry and the tables of inverses do not read.
+\end{proof}
+
+\begin{lemma}[The longs of the packing]\label{lem:packingLongs}
+  \uses{lem:numeratorsToBits, lem:classOffsets, def:packingConstants, def:useCLong}
+  Proposed names: \lname{Ratpoints.Sieve.NumClass.fitsLong\_numerator},
+  \lname{Ratpoints.Sieve.neg\_two\_pow\_le\_rbaLength\_mul\_ediv},
+  \lname{Ratpoints.Sieve.rbaLength\_mul\_ediv\_add\_one\_le\_two\_pow},
+  \lname{Ratpoints.Sieve.fitsLong\_neg\_sub\_and\_fitsLong\_add},
+  \lname{Ratpoints.Sieve.SieveEntry.PackedFor.lt\_two\_pow\_63},
+  \lname{Ratpoints.Sieve.mul\_le\_mulModLimit\_of\_le\_div},
+  \lname{Ratpoints.Sieve.mul\_lt\_two\_pow\_63}. The values that the C code holds in longs fit a
+  long ($\mathrm{fitsLong}$, Definition~\ref{def:useCLong}) for $H < 2^{63}$: the numerator of every
+  bit of the bit arrays of $[-H, H]$ and the base $a_0 + i\,\mathrm{rbaLength}\, 2^k$ of the
+  extraction with its steps, $\mathrm{rbaLength}\, w_{\mathrm{low}}$ and $w_{\mathrm{high}}$,
+  $-w_{\mathrm{low}} - \mathrm{offset}$ and $i + \mathrm{offset}$ outside \verb|small|, the offsets,
+  and the products of \verb|fill_bp_list|, at most $\mathrm{mulModLimit}$ in the first branch, and
+  of \verb|class_offsets|; for $k \le 6$, the multiple of $\mathrm{rbaLength}$ at or below a bit
+  $\ge -2^{63-k}$ and the one above a bit $< 2^{63-k}$ lie in $[-2^{63-k}, 2^{63-k}]$.
+\end{lemma}
+
+\begin{proof}
+  $\mathrm{rbaLength}\, 2^k$ is a power of $2$ that divides $2^{63}$
+  ($\mathrm{rbaLength} = 2^{\mathrm{rbaShift}}$, $\mathrm{rbaShift} + k \le 63$). So the multiples
+  of it at the two ends of the bit arrays of $[-H, H]$, at or below the low end and above the high
+  end, lie in $[-2^{63}, 2^{63}]$, and the numerators $a_0 + 2^k j$ of the bits between them, with
+  $a_0 < 2^k$, lie in $[-2^{63}, 2^{63})$, which also keeps in range the base of the extraction,
+  stepped before each word after the first. The others are bounded by the word numbers, the moduli
+  and the bias.
+\end{proof}
+
+\section{The command-line program and the differential tests}\label{sec:packingCli}
+
+The program does not change. The differential tests compare every point list in its order and cannot
+see the packing, since the output is the same at every stride; the evidence that the packing is that
+of ratpoints is the comparison of the model's classes, offsets, residues, bit ranges, masks and test
+\verb|small| with those that an instrumented build of the C program prints
+(Section~\ref{sec:packing-evidence}), and \verb|#guard| examples against values of the C program:
+the classes of words against the C's block for every stride, the packing of the curve
+$y^2 = x^3 - 2$ that the C program prints in its \verb|DEBUG| build (classes, \verb|den_bits|, seven
+packings, biases, residues and offsets), the rows of offsets against their rule for moduli of every
+kind up to $255$, the residues in the three branches, the bits in both forms near $2^{63}$ (the
+plain form wrapping at $H = 2^{63} - 1$, where the C code takes the split form), \verb|mod_mul|
+against the Euclidean remainder, the high half against the product of natural numbers, and one
+denominator in the packing against the reference for both values of the flag of the reversal and at
+the heights $1$ to $3$, where a bit interval can be empty or have a negative end.
+
+\section{Deviations}\label{sec:packingDeviations}
+
+Each component differs from the C code in a stated way, recorded in its \verb|Deviation:| paragraph:
+\begin{itemize}
+  \item the high half of the $128$-bit product from the $32$-bit halves, for the product of type
+    \verb|__uint128_t|; natural numbers for the \verb|long| arguments and results of the reductions,
+    cast to words as the macros cast them;
+  \item the packed pattern of a class a component of its own, called by the loop over the classes,
+    as the loop of \verb|relprime| is; the pattern one word, which the first stage writes into every
+    word of a bit array (\verb|RBA(packed)|); the class's row of offsets by its position in the
+    array, for the pointer; the masks of the strides read as $0$ beyond the table, as the C code
+    reads the zero-initialized entries of a larger \verb|RP_NUM_STRIDES|;
+  \item the halving step, the loop over the classes of \verb|class_offsets| and the bits of one
+    interval of \verb|sift| as functions of their own; one definition for the two copies of
+    \verb|mod|, without the hooks of the counts of \verb|sift.c|; the two ends of
+    \verb|numerators_to_bits| returned as a pair, for its pointer arguments;
+  \item the rows of offsets with an offset for each sieve entry of the run, those of its three
+    stages, where ratpoints sizes the rows for the $\mathrm{sp3\_max}$ entries with the reserve that
+    the correction of the moduli may take (stage~I); the entries returned by \verb|class_offsets|
+    with their field $\mathrm{dinv}$, for the writes into the sieve entries; $\mathrm{dinv}$ an
+    array of the strides up to the largest, where the C code has \verb|RP_NUM_STRIDES| entries and
+    leaves those above the largest unset;
+  \item the fields $\mathrm{bias}$ and $\mathrm{rbainv}$ of a prime's sieve entry set where the
+    model makes the entry of a modulus, as its reciprocal is, where \verb|examine_prime| sets them;
+  \item the array of the offsets and the residues of the denominator as arguments of one
+    denominator, for the pointers of the class and of the arguments; the residues as a list made
+    before the call, as \verb|run_block| fills \verb|bp_list|; no measurement of the time of
+    \verb|fill_bp_list| (\verb|RP_BP_TIC|, \verb|RP_BP_TOC|);
+  \item the bits of the interval on $64$-bit signed words in both forms, with the form that the C
+    code takes for the whole line, decided by lines of the search intervals (stage~H); the bit range
+    after it, the masks and the extraction base as integers, with the floor division and the
+    Euclidean remainder for the shift and the and of a negative long, and their range obligations as
+    lemmas (Lemma~\ref{lem:packingLongs});
+  \item the reciprocals of the first two stages as lists stepped with the sieve specs, for the
+    pointer \verb|mg| into \verb|magics|; \verb|small| a Boolean, for the \verb|int|;
+  \item the sieve specs, and with them the rows of the residues, made before the bits of the
+    interval, where \verb|sift| turns the interval into bits first and sets up once an interval of
+    numerators is not empty (the flag \verb|do_setup|), which for the whole line is at once and so
+    before the test $\mathrm{low} \le \mathrm{high}$ of the bits.
+\end{itemize}
+The lines of the packing that are neither modelled nor left to a later stage are excluded in
+\verb|correspondence/ratpoints.toml|: none beyond those already excluded (the timing lines of
+\verb|fill_bp_list| are owned with a deviation, as those of \verb|sift| are). Left to stage~F4 are
+the start pointers of the chunked first stage (\csource{sift.c}{596}{606}), which read \verb|small|
+and \verb|mod_mul| too, and the ends of the rows; to stage~H the search intervals, among them the
+choice of the form of \verb|numerators_to_bits| and the clipping of the interval; to stage~I the
+reserve of the offsets for the correction of the moduli and the cost model of the packing
+(\verb|clipped_padding|).
+
+\section{What changes in the earlier chapters}\label{sec:packingEarlier}
+
+\begin{itemize}
+  \item Chapter~\ref{chap:sieve}: the run (Definition~\ref{def:sieveRun}) as in
+    Section~\ref{sec:packedSieve}, its node using Definition~\ref{def:fillBpList}, and the reduction
+    of the run to the reference (Theorem~\ref{thm:run_reference}) with the classes, the residues and
+    the offsets, under the tables of inverses and the offsets of the first $s_2$ entries and
+    \verb|den_bits| matching the classes in place of the positivity of the moduli, and with them the
+    passages on the run after Lemma~\ref{lem:sift_eq_checkDen}, after Theorem~\ref{thm:refusals} and
+    in Section~\ref{sec:staged}; the record of comparator after Theorem~\ref{thm:findPoints}; the
+    rules of the translation name \verb|numeratorsToBits| on $64$-bit signed words and the high half
+    on $64$-bit words next to the test for common factors; the list of deviations loses its items on
+    the residues of $b / 2^k$, on every numerator for the packing and on the plain layout, keeping
+    the search region (H) and the correction between the blocks (I).
+  \item Chapter~\ref{chap:words}: the sieve specs gain the offset (Definition~\ref{def:rows}); the
+    first stage (Definition~\ref{def:andRows}) takes the reciprocals and \verb|small| and computes
+    for each modulus $r = (-w_0 - \mathrm{offset}) \bmod p$, starting at bit array $p - r$ of its
+    row; the walk (Definition~\ref{def:walkWord}) takes the step; the scan and one piece
+    (Definitions~\ref{def:scanPiece} and~\ref{def:siftPiece}) take the class and the reciprocals of
+    their moduli, the scan also \verb|small|, which one piece computes; one denominator
+    (Definition~\ref{def:sift}) takes the class, the reciprocals, the residues and the offsets, with
+    \verb|set_rows| and the bits as components of their own, its node using
+    Definitions~\ref{def:siftBits} and~\ref{def:numeratorsToBits} and giving
+    \csource{find_points.c}{3149}{3170} and \csource{find_points.c}{3563}{3612} to
+    Definition~\ref{def:siftBits}, keeping \csource{find_points.c}{3613}{3617}; their contracts and
+    Lemma~\ref{lem:sift_eq_checkDen} as in Section~\ref{sec:packedSieve};
+    Definition~\ref{def:rbaPack} gives the lines of \verb|RBA_SHIFT| to
+    Definition~\ref{def:packingConstants}, and its proofs use
+    $\mathrm{rbaLength} = 2^{\mathrm{rbaShift}}$ and $\mathrm{rbaShift} < 32$ besides
+    $\mathrm{rbaPack} > 0$, which hold for every build; the paragraph after
+    Lemma~\ref{lem:sift_eq_checkDen} no longer has \verb|sift| compute $b \bmod p$, the run
+    computing the residues of $b / 2^k$ before each call, as \verb|fill_bp_list| does; the
+    introduction and the list of deviations no longer name the packing as later work (the plain
+    layout, the row at index $w \bmod p$); the contract of the trailing zeros and the class word
+    move to a new file below \verb|Words.lean|.
+  \item Chapter~\ref{chap:setup}: \verb|modLong| (Definition~\ref{def:useCLong}) also models the
+    \verb|mod| of \verb|sift.c| (\csource{sift.c}{370}{389}, the same function as in
+    \verb|find_points.c| but for the hooks of its counts), and its lemma moves to
+    \verb|Ratpoints/Proof/Reductions.lean|; the search (Definition~\ref{def:searchPoints}) takes the
+    classes and the offsets (\csource{find_points.c}{5119}{5119},
+    \csource{find_points.c}{5132}{5132}); the deviation on \verb|examine_prime| says that its bias
+    and \verb|rbainv| are set in the sieve entry that \verb|makeModulus?| makes, as its reciprocal
+    is; the record of \verb|find_points_work_1| lacks only what belongs to stages~F4, H and~I.
+  \item Chapter~\ref{chap:denominators}: the 2-adic information (Definition~\ref{def:twoAdic}) gives
+    the lines of \verb|den_bits| and of the output under \verb|DEBUG| to the classes, and no longer
+    keeps the stride~$1$ or computes \verb|den_bits| itself; the shapes (Definition~\ref{def:Shape})
+    test the class's pattern, with \lname{Ratpoints.Sieve.Shape.bits\_ne\_zero\_of\_mem\_dens} in
+    the node of Lemma~\ref{lem:shape_dens}; the introduction loses the simplification of the
+    stride~$1$; the paragraph after Lemma~\ref{lem:twoAdic_point} describes the classes of
+    Definition~\ref{def:numClasses} in place of the class word and loses its links to the lines of
+    the packing; the deviation on the stride~$1$ and the packing among the work left to later stages
+    go.
+  \item Chapter~\ref{chap:tables}: the sieve entries (Definition~\ref{def:SieveEntry}) gain
+    $\mathrm{bias}$, $\mathrm{rbainv}$ and $\mathrm{dinv}$; the sieve entry of a modulus
+    (Definition~\ref{def:makeModulus}) sets the first two with the C's formulas and leaves
+    $\mathrm{dinv}$ empty for the rows of offsets (Definition~\ref{def:classOffsets}) to fill; its
+    contract (Lemma~\ref{lem:sieveEntry_admits}, with \lname{Ratpoints.IsModulusEntry} and
+    \lname{Ratpoints.Sieve.Factor.IsSound}) describes the entry of a modulus that satisfies the
+    conditions of the well-formedness (sound rows, tables of inverses, packable), and that of
+    \verb|sieving_info| (Lemma~\ref{lem:sievingInfo}) passes this on; the lemmas of a factor's rows
+    modulo a multiple move to Lemma~\ref{lem:admits_mul}; the bounds
+    $\mathrm{maxPrimeEven} \le 2^{10}$ and $\le 2^{32}$ move to
+    \verb|Ratpoints/Proof/Reductions.lean|; the deviations on the fields of the sieve entry that
+    serve the packing and the sentence on the first two stages reading the reciprocals with the
+    packing say what F3 does.
+  \item Chapter~\ref{chap:stages}: the reductions (Definition~\ref{def:mulMod}) through the high
+    half, the node using Definition~\ref{def:mulHi}, and Lemma~\ref{lem:mulMod}, whose proofs rest
+    on Lemma~\ref{lem:mulHi}, which its node uses, with the quotient for $1 < p$; the shape of a
+    prime entry stated field by field, whatever its fields of the packing
+    (Definition~\ref{def:stage3}); Lemma~\ref{lem:stage3} states its lemmas over the single factor
+    of an entry, names the existing \verb|Ratpoints.Sieve.SieveEntry.IsPrimeEntry.admits_checkOf| in
+    place of \verb|Ratpoints.Sieve.CheckSpec.admits_checkOf|, which is folded into it, and
+    \lname{Ratpoints.Sieve.bias\_checkOf\_ne\_zero}, and gives \verb|isPrimeEntry_examinePrime| for
+    any entry with the fields of a prime; the second stage (Definition~\ref{def:secondStage},
+    Lemma~\ref{lem:secondStage}, with \lname{Ratpoints.Sieve.SecondStageWordInvariant}) with the
+    reciprocals, \verb|small| and the offsets; a bit array through the second stage and the
+    extraction (Definition~\ref{def:siftBitArray}) with the class, the walk of the whole bit array
+    stepping its base before each word after the first, as the C code does; the deviations on the
+    exact $128$-bit products, on the reciprocal that does not wrap at $p = 1$ and on the row at
+    index $i \bmod p$, and the work left to stage~F3, are rewritten or go.
+  \item The stage list of the introduction names the reductions by a reciprocal on $64$-bit words in
+    the item of F3 and this chapter (Chapter~\ref{chap:packing}), which is input after
+    Chapter~\ref{chap:stages}; Chapter~\ref{chap:sieve} already counts the packing among the data
+    refinements. The files sections, the uses and the generated table follow.
+\end{itemize}
+
+\section{Files, names and order of work}\label{sec:packingFiles}
+
+The constants go into \verb|Ratpoints/Model/Constants.lean|; the high half and \verb|mod_mul| into
+\verb|Ratpoints/Model/Tables.lean|; the classes, the rows of offsets and the residues into a new
+file \verb|Ratpoints/Model/Packing.lean|, which the run and the search import; the class, the bits,
+the specs of a denominator and the changed components of the sieve stay in
+\verb|Ratpoints/Model/Sieve.lean|, which gives the points of a reversed curve, the trailing zeros of
+a word, the test of a candidate and the exact check (the test for common factors, the third stage,
+the check of a numerator) and the points at infinity, about $420$ lines with their guards, to a new
+file \verb|Ratpoints/Model/Candidate.lean| below it, so that both stay below $1500$ lines
+(\verb|Ratpoints/Model/Sieve.lean| has $1506$ in the prototype). The proofs: a new file without
+Mathlib \verb|Ratpoints/Proof/Reductions.lean| below \verb|Words.lean| for the reductions, the row
+indices, the bounds of $\mathrm{maxPrimeEven}$, which leave \verb|Params.lean|, and the lemma of
+\verb|mod|, which leaves \verb|Tables.lean|; a new file without Mathlib
+\verb|Ratpoints/Proof/SetBits.lean|, also below \verb|Words.lean|, for the contract of the trailing
+zeros, the walk through the set bits and the class word, which \verb|Words.lean| gives up; the
+general facts on words, natural numbers and integers in \verb|Bits.lean|; the rows under a unit and
+the rows read in the packing in \verb|Words.lean|; the classes, the offsets, the residues and the
+bounds of their products in a new file without Mathlib \verb|Ratpoints/Proof/Packing.lean|, and
+above it the bits of an interval with the other range lemmas of the longs in a new file without
+Mathlib \verb|Ratpoints/Proof/BitRange.lean|, so that both stay below $1500$ lines; the second stage
+and the prime entries in \verb|Stages.lean|; the contracts of the sieve in \verb|Sift.lean|; the
+entries of the moduli in \verb|Moduli.lean|, the run in \verb|Denominators.lean|, the shapes in
+\verb|Shapes.lean|, the classes' \verb|den_bits| in \verb|TwoAdic.lean|, and the search in
+\verb|FindPoints.lean|. Every new module joins its part root and \verb|Ratpoints.lean|. One commit
+per item, each passing the project's checks, the constants check and the differential tests, with
+the nodes of the earlier chapters that it changes:
+\begin{enumerate}
+  \item[F3.1] The constants with their facts (Definition~\ref{def:packingConstants}); the high half
+    and the reductions through it (Definition~\ref{def:mulHi}, Lemma~\ref{lem:mulHi});
+    \verb|mod_mul| and \verb|modLong|'s second range (Definition~\ref{def:modMul},
+    Lemma~\ref{lem:modMul}), \verb|mod_mul| not yet called; \verb|Ratpoints/Proof/Reductions.lean|
+    without the row indices; the points of a reversed curve, the trailing zeros of a word, the test
+    of a candidate, the exact check and the points at infinity to
+    \verb|Ratpoints/Model/Candidate.lean| with their guards, about $420$ lines; the nodes of
+    Definitions~\ref{def:mulMod}, \ref{def:rbaPack} and~\ref{def:useCLong} and of
+    Lemma~\ref{lem:mulMod}, and the files sections of Chapters~\ref{chap:sieve}, \ref{chap:words},
+    \ref{chap:setup} and~\ref{chap:stages}.
+  \item[F3.2] The fields of the sieve entries and the entry of a modulus with them; the shape of a
+    prime entry field by field; the rows under a unit (Lemma~\ref{lem:admits_mul}); the contracts of
+    the entry of a modulus and of \verb|sieving_info| with packable entries and tables of inverses,
+    with \verb|Ratpoints/Proof/Packing.lean| begun for the packable entries and the bias (importing
+    the model of the sieve until F3.3 adds \verb|Ratpoints/Model/Packing.lean|); the nodes of
+    Chapters~\ref{chap:tables} and~\ref{chap:stages}.
+  \item[F3.3] The classes (Definition~\ref{def:numClasses}, Lemma~\ref{lem:numClasses}),
+    \verb|Ratpoints/Model/Packing.lean| and \verb|Ratpoints/Proof/SetBits.lean|, and the classes in
+    \verb|Ratpoints/Proof/Packing.lean|; the search takes \verb|den_bits| from the classes; the
+    nodes of Definition~\ref{def:twoAdic} and of the search.
+  \item[F3.4] The rows of offsets (Definition~\ref{def:classOffsets}, Lemma~\ref{lem:classOffsets}),
+    not yet called.
+  \item[F3.5] The residues and the bits of an interval (Definitions~\ref{def:fillBpList}
+    and~\ref{def:numeratorsToBits}, Lemmas~\ref{lem:fillBpList}, \ref{lem:numeratorsToBits}
+    and~\ref{lem:packingLongs}), \verb|Ratpoints/Proof/BitRange.lean|, not yet called.
+  \item[F3.6] The packing on: the offsets of the sieve specs, the first two stages with the
+    reciprocals, stepped with the sieve specs by two cursors as the C code steps \verb|ssp| and
+    \verb|mg|, \verb|small| and the offsets (Lemmas~\ref{lem:reads_row} and~\ref{lem:rowIndices}),
+    the step of the walk, the class in the extraction with the base of a bit array stepped before
+    each word after the first, as the C code does, the scan and one piece, \verb|set_rows| and the
+    bits of one denominator (Definition~\ref{def:siftBits}, Lemma~\ref{lem:siftBits}), one
+    denominator with the class, the residues and the offsets, the shapes on the classes, the run
+    with the classes and \verb|fill_bp_list|, the search with the rows of offsets
+    (Lemma~\ref{lem:soundRun}); comparator; the nodes of Chapters~\ref{chap:sieve},
+    \ref{chap:words}, \ref{chap:setup}, \ref{chap:denominators} and~\ref{chap:stages}. One item,
+    since every split leaves temporary code that changes the run's contract twice.
+  \item[F3.7] The \verb|#guard| examples against the C program's \verb|DEBUG| output; the passages
+    of the earlier chapters that F3 makes untrue (Section~\ref{sec:packingEarlier}); the description
+    of the repository and \verb|formalization.yaml|.
+\end{enumerate}
+
+\section{The evidence}\label{sec:packing-evidence}
+
+\begin{itemize}
+  \item A reading of the C code of the packing at the pin, with a second reader who checked it, on
+    instrumented builds of the C program (the build of the model with \verb|RATPOINTS_CHUNK=1|, the
+    same with composite moduli up to $255$, and the default build with composite moduli up to
+    $255$): the classes, \verb|rbainv|, the biases, \verb|dinv|, the offsets, the residues, the bit
+    ranges, the masks and the survivors of the first and second stages equal those that the
+    definitions give, on $19\,438$ intervals of $600$ cases (above the height $3000$ for the
+    denominators up to $40$), each run in the three builds, with $53$ composite moduli, and the
+    three branches of \verb|fill_bp_list| on runs with denominators near $2^{24}$, $2^{32}$,
+    $10^{12}$ and $2^{62}$; the output of the C program by increasing numerators for each
+    denominator, $(a, y)$ before $(a, -y)$, on $1100$ runs; the strides $k \le 3$ on every curve by
+    an exhaustive search (all polynomial functions modulo 64 for odd $b$, all truncated reversed
+    coefficients for even $b$); the split form of \verb|numerators_to_bits| exact and without
+    overflow by a simulation on $64$-bit longs, and no overflow in the extraction. No defect of the
+    C code.
+  \item A sketch of the model in Lean, which agrees with \verb|ratpoints -q| on the differential
+    tests, every point list in its order, and whose classes, offsets, residues, bit ranges, masks
+    and test \verb|small| equal those of the instrumented builds on $806$ runs ($51\,584$ classes,
+    $25\,233$ sieve entries, $1.14$ million offsets, $7.66$ million residues in all three branches
+    with every stride from $2^0$ to $2^3$, $30\,856$ intervals with their pieces and masks, $192$
+    pieces outside \verb|small|, $8.39$ million survivors of the first stage and $1.42$ million of
+    the second, $25$ composite moduli up to $247$), with a check that two swapped moduli or a
+    deleted survivor show as a difference; two reviews of the sketch, each finding checked by a
+    second reader, which found no difference from the C code; a timing of the reductions on $64$-bit
+    words with the loops stepping two cursors, on one pinned core, by which the model with the
+    packing runs \verb|test4high| about a quarter faster than before F3 (1m32s against 2m02s) and
+    the default suites about as fast (their time is that of starting the processes).
+  \item A prototype of all the proofs on the sketch: the whole library builds, standard axioms,
+    every proof at most $20$ lines, the statements that comparator certifies unchanged, the
+    differential tests $3315$ compared with none failed and $13$ in \verb|test4high|, and the build
+    with other values of the constants ($\mathrm{numStrides}$ $1$ and $8$, $\mathrm{rowBias}$ $0$
+    and $2^{30}$, $\mathrm{rbaPack}$ $1$ and $8$ with their shifts); it changed the model of the
+    sketch only by the high half of a product, through which the quotient now wraps the reciprocal
+    $2^{64}$ of $1$ to $0$, as the C code does, and by the move of the classes, the offsets and the
+    residues into a file of their own; the files \verb|Ratpoints/Model/Candidate.lean| and
+    \verb|Ratpoints/Proof/BitRange.lean|, the base of the extraction stepped before each word after
+    the first, and the names of the row indices and of the range lemmas of the longs, which the
+    prototype states under other names, are proposals of this chapter that the prototype does not
+    have yet.
+\end{itemize}
