@@ -325,18 +325,20 @@ by row, and not only its verdict.
   homogenization is squarefree exactly when the polynomial of $c'$ is.
 \end{proof}
 
-The check of a numerator (Definition~\ref{def:checkNum}) takes the flag \verb|RATPOINTS_REVERSED|
-as an argument before the numerator and maps each point it delivers by $\mathrm{swapPoint}$ when it
-is set; the points at infinity (Definition~\ref{def:pointsAtInfinity}) take it after the degree and
-use the candidate $(0, 1)$ in place of $(1, 0)$, as the C code does, so that their points are those
-of the flag clear mapped by $\mathrm{swapPoint}$; the lines they cite hold the reversal. The
-components between the check and the run, \verb|walkWord|, \verb|scanPiece|, \verb|siftPiece|,
-\verb|sift| and \verb|sieveRun| (Definitions~\ref{def:walkWord}, \ref{def:scanPiece},
-\ref{def:siftPiece}, \ref{def:sift} and~\ref{def:sieveRun}), pass the flag on: the invariants of the
-walk and the scan take the check as an argument; the postconditions of the contracts of \verb|sift|
-and \verb|sieveRun| and their equations map their lists by $\mathrm{swapPoint}$ when the flag is
-set, through the equation of the flagged check with the unflagged one; and the sieve and the check
-of stage~C1, their reference, have no flag, so that the equation of
+The exact check (Definition~\ref{def:accepted}) takes the flag \verb|RATPOINTS_REVERSED| as an
+argument before the numerator and maps each point it delivers by $\mathrm{swapPoint}$ when it is
+set, as does its reference, the check of a numerator (Definition~\ref{def:checkNum}); the points at
+infinity (Definition~\ref{def:pointsAtInfinity}) take it after the degree and use the candidate
+$(0, 1)$ in place of $(1, 0)$, as the C code does, so that their points are those of the flag clear
+mapped by $\mathrm{swapPoint}$; the lines that the exact check and the points at infinity cite hold
+the reversal. The components between the exact check and the run, \verb|walkWord|,
+\verb|siftBitArray|, \verb|scanPiece|, \verb|siftPiece|, \verb|sift| and \verb|sieveRun|
+(Definitions~\ref{def:walkWord}, \ref{def:siftBitArray}, \ref{def:scanPiece}, \ref{def:siftPiece},
+\ref{def:sift} and~\ref{def:sieveRun}), pass the flag on: the invariants of the walk, of a bit array
+and of the scan take the points of a numerator as an argument; the postconditions of the contracts
+of \verb|sift| and \verb|sieveRun| and their equations map their lists by $\mathrm{swapPoint}$ when
+the flag is set, through the equation of the flagged check with the unflagged one; and the sieve and
+the check of stage~C1, their reference, have no flag, so that the equation of
 Lemma~\ref{lem:sift_eq_checkDen} maps their side.
 
 \section{The coefficients as longs and the exit}\label{sec:longsExit}
@@ -615,9 +617,9 @@ The lines of the set-up that are neither modelled nor left to a later stage are 
 the instrumentation of the development, the management of memory and its failures, the input fields
 that \verb|find_points_work| saves and puts back, the checks of arguments that only a caller of the
 library can fail, and the threads; so the record of \verb|find_points_work_1| up to the run lacks
-only what belongs to stages~F2 to~F4, H and~I, now that stages~E and~F1 have recorded their lines
-(Chapters~\ref{chap:denominators} and~\ref{chap:tables}). The macros of the flags and of the return
-codes in \verb|ratpoints.h| are recorded later, for all stages together.
+only what belongs to stages~F3, F4, H and~I, now that stages~E, F1 and~F2 have recorded their lines
+(Chapters~\ref{chap:denominators}, \ref{chap:tables} and~\ref{chap:stages}). The macros of the flags
+and of the return codes in \verb|ratpoints.h| are recorded later, for all stages together.
 
 \section{Files and names}
 

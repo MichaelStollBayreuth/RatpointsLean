@@ -287,9 +287,11 @@ row admits, for every `w ≡ x (mod p)`.
 C: `rp-private.h:378-379`
 
 Deviation: the row for the pointer `ptr` to it, with no `offset`, which carries the shift of the
-packing of the 2-adic classes and a multiple of `p` that keeps the index non-negative (stage F3),
-and no pointers `start` and `end` into the row, which only the chunked first stage reads (stage F4):
-the components index the row by the word number modulo `p`. -/
+packing of the 2-adic classes and a multiple of `p` of at least `RP_ROW_BIAS` that keeps the index
+non-negative, with the check at compile time that twice that bias stays within `RP_MULMOD_LIMIT`
+(`rp-private.h:387`, `rp-private.h:426-427`; stage F3), and no pointers `start` and `end` into the
+row, which only the chunked first stage reads (stage F4): the components index the row by the word
+number modulo `p`. -/
 structure SieveSpec where
   /-- The modulus. -/
   p : Nat
@@ -524,7 +526,8 @@ the products `w`, times `f`. For the products `w` of the coefficients `cₖ` wit
 reference (`Ratpoints.Sieve.checkNum`). The walk through the set bits of a word calls it
 (`Ratpoints.Sieve.walkWord`).
 
-C: `sift.c:202-205`, `find_points.c:3122`, `find_points.c:5250-5338`, `rp-private.h:596-597`
+C: `sift.c:202-205`, `find_points.c:3122`, `find_points.c:5250-5338`, `rp-private.h:576`,
+`rp-private.h:596-597`
 
 Deviation: the products `w` as a thunk, which the sieve of one denominator makes for each
 denominator (`Ratpoints.Sieve.sift`) and which is forced when the first numerator of `b` reaches the
@@ -642,9 +645,10 @@ array, for the vector `RBA(packed)` that `get_2adic_info` makes once per class
 (`find_points.c:1098`) and `_ratpoints_sift0` copies into each bit array (`bits64`, `sift.c:519`,
 `sift.c:954`); the row of the word number `w` at index `w mod p`, where ratpoints adds the offset of
 the packing and a multiple of `p` that keeps the index non-negative, and reduces by a multiplication
-when that is exact (stage F3); indices for the pointers into the rows and into the survivors, and
-the number of whole periods and the rest computed before their loops; natural numbers and integers
-for the `long`s (stage F); no output under `DEBUG`. -/
+with the reciprocal of `p` where that is exact and by the helper `mod` otherwise (`mod_mul` and
+`mod` of `sift.c`, stage F3); indices for the pointers into the rows and into the survivors, and the
+number of whole periods and the rest computed before their loops; natural numbers and integers for
+the `long`s (stage F); no output under `DEBUG`. -/
 def andRows (specs : List SieveSpec) (cw : UInt64) (w0 : Int) (n : Nat)
     (surv : Vector UInt64 ((n + 1) * rbaPack)) :
     Id (Vector UInt64 ((n + 1) * rbaPack)) := do
@@ -795,7 +799,7 @@ thunk `checks` of the third stage). This is `_ratpoints_sift0` of the C code, wi
 the survivors array that it works in.
 
 C: `find_points.c:3119-3121`, `sift.c:498-531`, `sift.c:548`, `sift.c:1030-1041`,
-`sift.c:1056-1058`, `sift.c:1300-1305`, `rp-private.h:610-614`
+`sift.c:1056-1058`, `sift.c:1300-1305`, `rp-private.h:575`, `rp-private.h:610-614`
 
 Deviation: a fresh array of zeros for each piece, for the survivors array of the sieving thread,
 which every piece reuses, with one bit array more for the alignment, and whose words `malloc` leaves

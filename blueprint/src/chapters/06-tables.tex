@@ -22,10 +22,10 @@ the search at a prime modulo which the curve has no points. And the moduli may b
 products of prime powers, as those of ratpoints are: their tables are those of \verb|examine_power|,
 and their rows are the rows of their factors, combined.
 
-The theorems of Chapter~\ref{chap:denominators}, the refusal theorems and the statements that
-comparator certifies keep their text, and change only through the parameters that they quantify
-over (Definition~\ref{def:Params}): the parameters have the number of primes that the loop of the
-tables examines, and their well-formedness admits composite moduli, below
+In this sub-stage the theorems of Chapter~\ref{chap:denominators}, the refusal theorems and the
+statements that comparator certifies keep their text, and change only through the parameters that
+they quantify over (Definition~\ref{def:Params}): the parameters have the number of primes that the
+loop of the tables examines, and their well-formedness admits composite moduli, below
 $2^{\mathrm{maxBitsInPrime}}$ as in the C code, where before it admitted the $171$ primes of the
 table; it does not admit the primes of the table from $2^{\mathrm{maxBitsInPrime}}$ on. The bound is
 the C code's own: ratpoints examines only the primes below $2^{\mathrm{maxBitsInPrime}}$, and its
@@ -447,11 +447,11 @@ parameters of the command line examine the first $q$ primes and take primes as m
 
 The search (Definition~\ref{def:searchPoints}) takes its sieve entries and its forbidden divisors
 from \verb|sieving_info|, and otherwise runs as in Chapter~\ref{chap:denominators}; the soundness of
-the run over a shape takes sound sieve entries. Its theorem (Theorem~\ref{thm:findPoints_order}),
-the main theorems and the refusal theorems keep their text: the output is the list of the points at
-infinity followed by the points of the brute-force reference over the denominators of the shape in
-its order, each mapped back after a reversal, for every well-formed choice of the parameters, also
-when an exit is taken.
+the run over a shape takes sound sieve entries. In this sub-stage its theorem
+(Theorem~\ref{thm:findPoints_order}), the main theorems and the refusal theorems keep their text:
+the output is the list of the points at infinity followed by the points of the brute-force reference
+over the denominators of the shape in its order, each mapped back after a reversal, for every
+well-formed choice of the parameters, also when an exit is taken.
 
 \section{The command-line program and the differential tests}\label{sec:tablesCli}
 
@@ -521,9 +521,9 @@ those of the third stage among them, and for the composite moduli of the first t
 prime-power factors, which fails only for lack of memory. The reciprocals of the moduli are fields
 of their sieve entries, which \verb|sieving_info| collects at its end
 (\csource{find_points.c}{3064}{3070}; Definition~\ref{def:sievingInfo}); the third stage reads them
-(stage~F2), the first two stages with the packing (stage~F3); left to stage~I are the density of a
-prime and of a power, \verb|add_moduli| beyond the factorization, the ranking and the choice of the
-moduli with the rule for looking at further primes.
+(Definition~\ref{def:stage3}), the first two stages with the packing (stage~F3); left to stage~I are
+the density of a prime and of a power, \verb|add_moduli| beyond the factorization, the ranking and
+the choice of the moduli with the rule for looking at further primes.
 
 \section{Files and names}\label{sec:tablesFiles}
 
@@ -545,11 +545,12 @@ inverses, and the sieve entry of a modulus in \verb|Ratpoints/Proof/Moduli.lean|
 table of primes, the other range lemmas of \verb|examine_power|, the factors of a modulus and the
 well-formedness in \verb|Ratpoints/Proof/Params.lean|; the loop of the tables and the forbidden
 divisors in \verb|Ratpoints/Proof/Forbidden.lean|; the sieve entries in the contracts of
-\verb|Ratpoints/Proof/Sieve.lean|, \verb|Words.lean| and \verb|Denominators.lean|; and the soundness
-of the sieve entries, \verb|sieving_info| and the search in \verb|Ratpoints/Proof/FindPoints.lean|.
-The lemmas on words, arrays and integers in core's namespaces are in
-\verb|Ratpoints/Proof/Bits.lean|, and the lemma on sorted lists in the mirror
-\verb|Ratpoints/Mathlib/Data/List/Sort.lean|, as a lemma on \verb|List.SortedLE|.
+\verb|Ratpoints/Proof/Sieve.lean|, \verb|Words.lean|, \verb|Stages.lean| (the prime entries of the
+third stage), \verb|Sift.lean| and \verb|Denominators.lean|; and the soundness of the sieve entries,
+\verb|sieving_info| and the search in \verb|Ratpoints/Proof/FindPoints.lean|. The lemmas on words,
+arrays and integers in core's namespaces are in \verb|Ratpoints/Proof/Bits.lean|, and the lemma on
+sorted lists in the mirror \verb|Ratpoints/Mathlib/Data/List/Sort.lean|, as a lemma on
+\verb|List.SortedLE|.
 
 \section{The evidence}\label{sec:tables-evidence}
 

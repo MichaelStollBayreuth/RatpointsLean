@@ -213,9 +213,9 @@ C: `find_points.c:1619-1623`, `find_points.c:2503`, `find_points.c:2566`,
 `find_points.c:4655-4656`, `find_points.c:4662-4665`, `main.c:221-222`, `main.c:347`
 
 Deviation: the moduli are the first primes of the table, in increasing order, where ratpoints ranks
-the primes by what they say about the curve and adds composite moduli (`sieving_info`), and takes
-the entries of its stages from that ranking, skipping a modulus that shares a prime with one taken
-(`take_entries`); it leaves the primes that say nothing out of its pool (lines 1764-1765 and
+the primes by what they say about the curve and adds composite moduli (`sieving_info`; stage I), and
+takes the entries of its stages from that ranking, skipping a modulus that shares a prime with one
+taken (`take_entries`); it leaves the primes that say nothing out of its pool (lines 1764-1765 and
 2613-2622), and those that say only that the numerator is prime to the denominator stay in the pool
 of the first two stages without counting toward the primes that it looks for (`n_weak`, line 2704)
 and leave the pool of the third stage with the composite moduli not taken (lines 2873-2890 and
@@ -226,17 +226,17 @@ in a stage or fewer (no bound on a stage for `-N` without `-n`, nor for `-P` alo
 the first stage ends at `Ratpoints.defaultSp1`, the fixed choice of the header, where ratpoints
 chooses the end from the curve by its costs; without `-N`, the second stage adds the flat offset
 `Ratpoints.sp2Extra`, as ratpoints does under `-U 0` (`phase_2_offset` for `u0 = 0`), where it
-otherwise scales the offset by the length of the run, and the model ignores `-R`, whose value
-ratpoints takes in place of `RATPOINTS_SP2_EXTRA` (lines 2571-2572 and 2808); without `-P`, the
-third stage is the rest of the first `q` primes, where ratpoints takes the primes of its pool in
+otherwise scales the offset by the length of the run (stage I), and the model ignores `-R`, whose
+value ratpoints takes in place of `RATPOINTS_SP2_EXTRA` (lines 2571-2572 and 2808); without `-P`,
+the third stage is the rest of the first `q` primes, where ratpoints takes the primes of its pool in
 increasing order of their density `r`, the most selective first, stops by its cost rule (lines
 2949-2992) and may look past the first `q` when `-p` is absent; the primes examined are the first
 `q`, where ratpoints, when `-p` is absent, looks at further primes while its pool is short of the
-moduli that its first two stages want, and later for its third stage, `-p` being a hard limit of
-the first two stages (line 2693) as of the third (line 2980), and the model examines the primes of
-its moduli beyond the first `q` when it makes their entries (`Ratpoints.makeModulus?`); no
-correction of the moduli during the run (`adapt_primes`, stage I); natural numbers for the `long`s,
-so that the sums of the counts cannot overflow. -/
+moduli that its first two stages want, and later for its third stage, `-p` being a hard limit of the
+first two stages (line 2693) as of the third (line 2980), and the model examines the primes of its
+moduli beyond the first `q` when it makes their entries (`Ratpoints.makeModulus?`); no correction of
+the moduli during the run (`adapt_primes`, stage I); natural numbers for the `long`s, so that the
+sums of the counts cannot overflow. -/
 def sieveParams (o : SieveOptions) : Params :=
   let q := min (if o.numPrimes < 0 then defaultNumPrimes else o.numPrimes.toNat) numPrimes
   let lim := if o.numPrimes < 0 then numPrimes else q

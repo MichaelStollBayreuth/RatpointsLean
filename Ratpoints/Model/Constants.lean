@@ -46,7 +46,8 @@ table the proofs use only that its entries are the odd primes below 1022, in inc
   polynomial of odd degree.
 * `Ratpoints.veryBig`: the valuation of `0` in the C code.
 * `Ratpoints.jacobiPrimes`, `Ratpoints.jacobiTable`, `Ratpoints.mulModLimit`: the bounds of the
-  Jacobi test by tables; the last is the largest value that the C code reduces by a multiplication.
+  Jacobi test by tables; the last is the largest value that the C code reduces by a multiplication,
+  in the Jacobi test and in the third stage of the sieve.
 * `Ratpoints.stage3Limit`: the bound below which the third stage of the sieve reduces by a
   multiplication.
 * `Ratpoints.useLongInPhase2`: whether the second stage of the sieve runs one word at a time.
@@ -210,18 +211,20 @@ C: `find_points.c:670` -/
 def jacobiTable : Nat := 8192
 
 /-- The largest value that the C code reduces by a multiplication with a reciprocal,
-`RP_MULMOD_LIMIT`: the set-up of the Jacobi test by tables gives tables only when the denominators
-stay at most this (`Ratpoints.Sieve.jacobiSetup`).
+`RP_MULMOD_LIMIT`: the third stage of the sieve reduces a denominator up to this by a multiplication
+and a larger one by a division (`Ratpoints.Sieve.checkOf`), and the set-up of the Jacobi test by
+tables gives tables only when the denominators stay at most this (`Ratpoints.Sieve.jacobiSetup`).
 
 C: `rp-private.h:421` -/
 def mulModLimit : Nat := 2 ^ 32 - 1
 
-/-- The bound that the third stage of the sieve (stage F) compares `2 p H` with, for a prime `p` of
-the stage and the height bound `H`, `RP_STAGE3_LIMIT`: below it, the third stage shifts the product
-of a numerator and the inverse of the denominator modulo `p` by the multiple `p H` of `p`, which
-makes it a natural number below the bound, and reduces that by a multiplication with the reciprocal
-of `p` (`Ratpoints.Sieve.mulMod`), exact below `2 ^ 64 / p`; at or above it, the stage divides. The
-proofs use only that it is at most `2 ^ 32` (`Ratpoints.stage3Limit_le_two_pow_32`).
+/-- The bound that the third stage of the sieve (`Ratpoints.Sieve.checkOf`) compares `2 p H` with,
+for a prime `p` of the stage and the height bound `H`, `RP_STAGE3_LIMIT`: below it, the third stage
+shifts the product of a numerator and the inverse of the denominator modulo `p` by the multiple
+`p H` of `p`, which makes it a natural number below the bound, and reduces that by a multiplication
+with the reciprocal of `p` (`Ratpoints.Sieve.mulMod`), exact below `2 ^ 64 / p`; at or above it, the
+stage divides. The proofs use only that it is at most `2 ^ 32`
+(`Ratpoints.stage3Limit_le_two_pow_32`).
 
 C: `rp-private.h:472`
 
@@ -249,8 +252,8 @@ def useLongInPhase2 : Bool := false
 C: `ratpoints.h:42`
 
 Deviation: the parameters of the program take it for an absent `-n`, where ratpoints, which reads
-the macro nowhere, chooses the end of the first stage from the curve by its costs (`sieving_info`;
-stage I). -/
+the macro nowhere, chooses the end of the first stage from the curve by its costs (`sieving_info`,
+with the target `RATPOINTS_SURVIVORS_PER_WORD` of `ratpoints.h:92-94`; stage I). -/
 def defaultSp1 : Nat := 11
 
 /-- How many moduli the second stage of the sieve adds to the first when neither the option `-N`

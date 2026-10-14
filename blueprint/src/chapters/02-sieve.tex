@@ -13,16 +13,17 @@ same order, and membership and no duplicates follow from Theorem~\ref{thm:bruteF
 
 The later stages contribute in four ways. A \emph{data refinement} computes the same predicate in
 another way, with a lemma that it does: the bit arrays of words of stage~C2, the faithful tables of
-stage~F1 and the packing of stage~F3; the equation with the reference survives it. A
-\emph{transformation}, the reversal of stage~D, is a bijection of the point sets that preserves the
-box. A \emph{sound filter} comes with the lemma that every point passes it: the 2-adic information
-and the tests on the denominators of stage~E, the composite moduli of stage~F1 and the third stage
-of stage~F2. An \emph{enumeration refinement} visits the denominators that carry points in another
-order: the loop shapes of stage~E. From the reversal on, and with the divisor order of stage~E, the
-statement is that the output is a permutation of the reference, which still gives membership and no
-duplicates; since stage~E a theorem also gives its order, that of the reference over the
-denominators in the order of the loop of the search (Theorem~\ref{thm:findPoints_order}), which
-stage~G spells out in terms of the polynomial.
+stage~F1, the stages of the sieve and the check of stage~F2, whose third stage tests the rows of
+moduli that the sieve applies already, and the packing of stage~F3; the equation with the reference
+survives it. A \emph{transformation}, the reversal of stage~D, is a bijection of the point sets that
+preserves the box. A \emph{sound filter} comes with the lemma that every point passes it: the 2-adic
+information and the tests on the denominators of stage~E and the composite moduli of stage~F1. An
+\emph{enumeration refinement} visits the denominators that carry points in another order: the loop
+shapes of stage~E. From the reversal on, and with the divisor order of stage~E, the statement is
+that the output is a permutation of the reference, which still gives membership and no duplicates;
+since stage~E a theorem also gives its order, that of the reference over the denominators in the
+order of the loop of the search (Theorem~\ref{thm:findPoints_order}), which stage~G spells out in
+terms of the polynomial.
 
 \section{What a default run of the C code does}\label{sec:skeleton}
 
@@ -409,13 +410,9 @@ paragraph of the component whose range holds it:
     choose the rows, which ratpoints computes once per denominator before it calls \verb|sift| (F3);
   \item every numerator from $-H$ to $H$ for the search region (H) and the packing of the 2-adic
         classes (F3);
-  \item every modulus applied to every numerator before the test for common factors, for the packing
-    and the three stages (F2, F3), whose third stage runs after the test for common factors and
-    skips the primes that divide $b$, and for their correction between the blocks of the run from
-    the counts of the survivors (I);
-  \item a plain $\gcd$ for the binary $\gcd$ of \verb|relprime|, whose loop body has no branch (F2);
-  \item the products $c_k b^{d-k}$ computed for every denominator, where ratpoints computes them
-    when the first survivor reaches the check;
+  \item the moduli applied to the numerators of the plain layout, for the packing (F3), and the
+    cut points of the three stages fixed for the run, for their correction between the blocks of
+    the run from the counts of the survivors (I);
   \item the flag of the reversal as an argument of the points at infinity, for the bit
     \verb|RATPOINTS_REVERSED| of the flags, which the search hands on from the reversal check of
     $\mathrm{findPoints}$; and a list of points for the callback \verb|process|, with no stop it may
@@ -541,7 +538,10 @@ point-rich curves at the heights $2000$ and $5000$, and the bit arrays of stage~
 heights (Section~\ref{sec:wordsCli}). A further suite runs both programs with other parameters (no
 moduli, all 53 primes and a cap above them, the cut points in several positions, a third stage, no
 Jacobi test, no forbidden divisors and many, and negative values, which mean the defaults) on
-point-rich and on random curves.
+point-rich and on random curves; since stage~F2 it also has option sets of \verb|-n|, \verb|-N| and
+\verb|-P| that run the second and the third stage after few moduli or none in the first, at its
+small heights, since most numerators then reach the test of a candidate, which the model runs
+numerator by numerator, as the C code does but more slowly (Chapter~\ref{chap:stages}).
 
 \section{Files and names}
 

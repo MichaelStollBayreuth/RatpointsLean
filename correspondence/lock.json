@@ -619,6 +619,12 @@
         "Ratpoints.Sieve.sift"
       ]
     },
+    "find_points.c:3132-3136": {
+      "hash": "09affaf437f274b5ae21e135b3f31f07fc46499b035adec0ce332ec0a56bf885",
+      "owners": [
+        "excluded (memory)"
+      ]
+    },
     "find_points.c:3149-3170": {
       "hash": "b67a52065a3855a34bb73825b01af82d100dbfe9c90c354f1a375506ff128864",
       "owners": [
@@ -1935,6 +1941,12 @@
         "Ratpoints.defaultSp1"
       ]
     },
+    "ratpoints.h:43-43": {
+      "hash": "d80b73efea196cc15fa2904b14df20d243f0b22e7382af26d59e9d5abd90bd01",
+      "owners": [
+        "excluded (other)"
+      ]
+    },
     "ratpoints.h:95-97": {
       "hash": "571b37dae13e217648638b716b3cca28df4a0d954bc5c67b2a071678a327f34e",
       "owners": [
@@ -2356,6 +2368,12 @@
         "Ratpoints.Sieve.ctz"
       ]
     },
+    "rp-private.h:450-456": {
+      "hash": "aa54e5115058a1f98c415f1127d27072c16e5d0048a4b72de9c32e4304aeb6b3",
+      "owners": [
+        "excluded (other)"
+      ]
+    },
     "rp-private.h:465-466": {
       "hash": "2caf17b3bed8de3f7484ba9fec8825d1e2825c142ab0860d81e9a8695d8a0197",
       "owners": [
@@ -2417,6 +2435,18 @@
         "Ratpoints.rbaPack"
       ]
     },
+    "rp-private.h:575-575": {
+      "hash": "3d48f381209cca77b7f1300d7c3fc4eb18694b15f72b0722a1c8c7f9eeed2e9d",
+      "owners": [
+        "Ratpoints.Sieve.siftPiece"
+      ]
+    },
+    "rp-private.h:576-576": {
+      "hash": "8338cf39461c5968978d0097218a6c6751c43fe8077a4577b7451971def8f3b7",
+      "owners": [
+        "Ratpoints.Sieve.checkPoint"
+      ]
+    },
     "rp-private.h:577-578": {
       "hash": "741417530ba2b7fdd08640d26ba699d1c6f7b56d2dd6cdaea15dbdd39902bf47",
       "owners": [
@@ -2454,10 +2484,22 @@
         "Ratpoints.Setup.slope"
       ]
     },
+    "sift.c:1024-1024": {
+      "hash": "fee7cde07d27f6a1ea75820ac10ffd814173826b1b2d1a80a703f650f9d9af50",
+      "owners": [
+        "excluded (instrumentation)"
+      ]
+    },
     "sift.c:1030-1041": {
       "hash": "0dc0be2dcaafb97068f868bd12906bc1890d0f50db01213fc06b00e6907db364",
       "owners": [
         "Ratpoints.Sieve.siftPiece"
+      ]
+    },
+    "sift.c:1043-1054": {
+      "hash": "d80ad1dba278fdd83be49fb2f586a06ba5c817784ef589b7f92cef73338c8a92",
+      "owners": [
+        "excluded (instrumentation)"
       ]
     },
     "sift.c:1056-1058": {
@@ -2622,10 +2664,28 @@
         "Ratpoints.Sieve.siftPiece"
       ]
     },
+    "sift.c:194-201": {
+      "hash": "6308d1ca1eb73a3d399fb63ec42490be87c406bf0c26c64eec94164b3ba892a4",
+      "owners": [
+        "excluded (instrumentation)"
+      ]
+    },
     "sift.c:202-205": {
       "hash": "b1565d0bb8bd58cb2c8495a0ae4d91f355a6f1f46575eae5237b182a5c1ba46a",
       "owners": [
         "Ratpoints.Sieve.checkPoint"
+      ]
+    },
+    "sift.c:207-213": {
+      "hash": "df07733793456f4430658d2fa35eebe9b22d07b6b75e0e2075387cc9b9d80723",
+      "owners": [
+        "excluded (instrumentation)"
+      ]
+    },
+    "sift.c:225-238": {
+      "hash": "f5be1977c2d7b850aca177a763c57b1861d051e450b76df9933ed803ccf14db1",
+      "owners": [
+        "excluded (instrumentation)"
       ]
     },
     "sift.c:262-264": {
@@ -2670,6 +2730,12 @@
         "Ratpoints.Sieve.relprime"
       ]
     },
+    "sift.c:349-367": {
+      "hash": "8b2db51ba75be81b471ab9bb244bb034dbd53ac0fbf27822a440725426a0c4ad",
+      "owners": [
+        "excluded (instrumentation)"
+      ]
+    },
     "sift.c:405-413": {
       "hash": "d8b928e08189bc801498cb948ba5b9c294196325337666ce52346291ca9a62b7",
       "owners": [
@@ -2700,10 +2766,28 @@
         "Ratpoints.Sieve.siftPiece"
       ]
     },
+    "sift.c:533-544": {
+      "hash": "b908f70bb7f9ca3fddb403f75f34244f9ad6b5104fd01f60fb5982d2cbddad54",
+      "owners": [
+        "excluded (instrumentation)"
+      ]
+    },
     "sift.c:548-548": {
       "hash": "5d83641369208b0b915046542051bec2e8ca03983a0066a98b1e98114a70dc42",
       "owners": [
         "Ratpoints.Sieve.siftPiece"
+      ]
+    },
+    "sift.c:55-176": {
+      "hash": "65aa5de047df9f504400d4d3603b4f418eb6cb79e305c8018fb079fa1432b024",
+      "owners": [
+        "excluded (instrumentation)"
+      ]
+    },
+    "sift.c:550-573": {
+      "hash": "95e1955ad49c05d9cbde955256b97f7c83f8b89b41386cc201c1513369f185a8",
+      "owners": [
+        "excluded (instrumentation)"
       ]
     },
     "sift.c:943-1022": {
@@ -3112,6 +3196,8 @@
     "rp-private.h:523-523": "6f7a19fe597d903490a7e0a892d700c02f4a5e297a6b8e6648b011121872b6ea",
     "rp-private.h:531-534": "e8b16d804ca29725a0429ce2cb726b9bb2dcbe73f987f30bc0a03ddb3eef920b",
     "rp-private.h:542-555": "35545fa2f80164462a2e92e543f56f9ceace7fcfccb179d0f60ba51292630ae1",
+    "rp-private.h:575-575": "3d48f381209cca77b7f1300d7c3fc4eb18694b15f72b0722a1c8c7f9eeed2e9d",
+    "rp-private.h:576-576": "8338cf39461c5968978d0097218a6c6751c43fe8077a4577b7451971def8f3b7",
     "rp-private.h:577-578": "741417530ba2b7fdd08640d26ba699d1c6f7b56d2dd6cdaea15dbdd39902bf47",
     "rp-private.h:583-583": "f60584924f2f49fac245e83826a139a29422a9a6952dd5715d63e186c83aabbe",
     "rp-private.h:596-597": "de9a3ae3ebb0fedbe898f7657c8348bdbb28d99822b0342285a93bf6d234913a",

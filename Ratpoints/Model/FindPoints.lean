@@ -423,14 +423,15 @@ passes on to the test of the leading zeros. -/
   | none => false
 
 -- Pieces of one, two and three bit arrays, at heights around the multiples of 64 and of
--- `rbaLength`: several pieces, the masks on the same piece and on different ones, and no low mask
--- when `H` is a multiple of `rbaLength`.
+-- `rbaLength`, with five moduli in the three stages: several pieces, the masks on the same piece
+-- and on different ones, and no low mask when `H` is a multiple of `rbaLength`.
 #guard [([-2, 0, 0, 1], [63, 64, 65, 255, 256, 257]), ([1, 1, 1, 1, 0], [128, 129])].all
   fun (c, Hs) ↦ Hs.all fun H ↦
     let bf := bruteForce c H
     [1, 2, 3].all fun A ↦
-      let P := { defaultParams with moduli := primeTable.toList.take 5, arraySize := A }
-      (findPoints c H P).toOption == some bf
+      let P : Params := { defaultParams with
+        moduli := primeTable.toList.take 5, sp1 := 2, sp2 := 4, arraySize := A }
+      decide P.WF && (findPoints c H P).toOption == some bf
 
 -- The zero polynomial and polynomials of degree 0 with two or more coefficients, whose leading
 -- zeros lower `⌈n / 2⌉`: refused as not squarefree whatever the options, as `ratpoints c H -q`

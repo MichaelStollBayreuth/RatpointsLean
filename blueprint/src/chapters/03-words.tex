@@ -19,7 +19,8 @@ ratpoints tests as \verb|chunk1| (256-bit bit arrays and \verb|-DRATPOINTS_CHUNK
 configurations of \verb|make test4configs|). The numerators keep the plain layout of stage~C1, one
 bit per numerator from $-H$ to $H$; the 2-adic classes come with stage~E, as the word of the class
 from which the first stage starts (Chapter~\ref{chap:denominators}), their packing with stage~F3,
-the chunks with stage~F4 and the second and third stages of the sieve with stage~F2.
+the chunks with stage~F4, and the second and the third stage of the sieve with the test of a
+candidate with stage~F2 (Chapter~\ref{chap:stages}).
 
 \section{What the C code does with words}\label{sec:wordsC}
 
@@ -316,18 +317,19 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
   \lean{Ratpoints.Sieve.siftPiece, Ratpoints.Sieve.siftPiece_spec}
   \leanok
   A fresh array of $n + 1$ bit arrays, as the worker's array of \verb|array_size| bit arrays and two
-  more (\csource{find_points.c}{3119}{3121}); the first stage with the first $s_1$ moduli of the
-  piece; the low mask $m_l$ on the first bit array if $m_l \ne 0$ and the high mask $m_h$ on the
-  last if $m_h \ne 0$ (\csource{sift.c}{1030}{1041}); and the scan with the other moduli, those of
-  the second stage, the thunks of the check and the flag of the reversal; the first stage starts
-  from a class word $\omega$, an argument of the piece. The piece also has the prototype and the
-  head of \verb|_ratpoints_sift0| (\csource{rp-private.h}{610}{614}, \csource{sift.c}{498}{531}),
-  the count of its words (\csource{sift.c}{548}{548}), the timer and the test before its second
-  stage (\csource{sift.c}{1056}{1058}) and its end (\csource{sift.c}{1300}{1305}). Its contract, for
-  $m_h < R$ and every list of sieve entries with $p > 0$ whose rows for $b$ the moduli carry: the
-  concatenation of the points of the numerators from $R w_0 + m_l$ to $R (w_0 + n) - 1 - m_h$ that
-  pass the class bit of $\omega$, survive the sieve entries, the first $s_1$ in the first stage and
-  the others in the second, and pass the test of a candidate.
+  more (\csource{rp-private.h}{575}{575}, \csource{find_points.c}{3119}{3121}); the first stage with
+  the first $s_1$ moduli of the piece; the low mask $m_l$ on the first bit array if $m_l \ne 0$ and
+  the high mask $m_h$ on the last if $m_h \ne 0$ (\csource{sift.c}{1030}{1041}); and the scan with
+  the other moduli, those of the second stage, the thunks of the check and the flag of the reversal;
+  the first stage starts from a class word $\omega$, an argument of the piece. The piece also has
+  the prototype and the head of \verb|_ratpoints_sift0| (\csource{rp-private.h}{610}{614},
+  \csource{sift.c}{498}{531}), the count of its words (\csource{sift.c}{548}{548}), the timer and
+  the test before its second stage (\csource{sift.c}{1056}{1058}) and its end
+  (\csource{sift.c}{1300}{1305}). Its contract, for $m_h < R$ and every list of sieve entries with
+  $p > 0$ whose rows for $b$ the moduli carry: the concatenation of the points of the numerators
+  from $R w_0 + m_l$ to $R (w_0 + n) - 1 - m_h$ that pass the class bit of $\omega$, survive the
+  sieve entries, the first $s_1$ in the first stage and the others in the second, and pass the test
+  of a candidate.
 \end{definition}
 
 \section{One denominator and the run}\label{sec:siftDen}

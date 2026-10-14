@@ -877,19 +877,19 @@ Deviation: the cut points `sp1` and `sp2` of the parameters for the whole run, f
 the sieving thread: `sp1`, which `worker_init` copies from the arguments for the run (line 3124,
 `Ratpoints.Sieve.sift`), and `sp2` and the end of the list of the entries, for the ends `wk->sp2`
 and `wk->sp3` of the second and the third stage, which `run_block` sets for each block from the last
-decision of the correction of the moduli (`wk->dec`, `run->dec_sp2`, `run->dec_sp3`, line 3911),
-the first decision being that of the arguments (line 3861, with its first block `dec_block[0]`),
-and no later decisions (stage I); the denominators of the shape listed first, then tested and sifted
-one after the other, where `run_block` tests and sifts each as its loop reaches it; no blocks (stage
-I): the steps of each segment in order, for the blocks of `len` consecutive steps, which the threads
-share and which deliver their points in the same order; the word `nb[b mod 64]` of the 2-adic
-information, for the class `cls[b & 0x3f]` that `sift` receives, whose pattern it is at the stride 1
-(its `k`, `a0` and row offsets come with the packing, stage F3); the residues `b mod p` that choose
-the rows computed by `Ratpoints.Sieve.sift`, for the residues of `b` divided by `2^k` that
-`fill_bp_list` computes before each call (`k` the stride of the packing; stage F3); a list of
-points, for the counts `total` of points that `sift` and `run_block` return, with no stop by the
-callback (stage G); natural numbers for the `long`s (stage F); no correction of the moduli between
-the blocks (stage I); no output under `DEBUG`. -/
+decision of the correction of the moduli (`wk->dec`, `run->dec_sp2`, `run->dec_sp3`, line 3911), the
+first decision being that of the arguments (line 3861, with its first block `dec_block[0]`), and no
+count of the decisions and no later ones (lines 3862-3863; stage I); the denominators of the shape
+listed first, then tested and sifted one after the other, where `run_block` tests and sifts each as
+its loop reaches it; no blocks (stage I): the steps of each segment in order, for the blocks of
+`len` consecutive steps, which the threads share and which deliver their points in the same order;
+the word `nb[b mod 64]` of the 2-adic information, for the class `cls[b & 0x3f]` that `sift`
+receives, whose pattern it is at the stride 1 (its `k`, `a0` and row offsets come with the packing,
+stage F3); the residues `b mod p` that choose the rows computed by `Ratpoints.Sieve.sift`, for the
+residues of `b` divided by `2^k` that `fill_bp_list` computes before each call (`k` the stride of
+the packing; stage F3); a list of points, for the counts `total` of points that `sift` and
+`run_block` return, with no stop by the callback (stage G); natural numbers for the `long`s
+(stage F); no correction of the moduli between the blocks (stage I); no output under `DEBUG`. -/
 def sieveRun (c : List Int) (d H A : Nat) (rev : Bool) (sp1 sp2 : Nat) (entries : List SieveEntry)
     (magics : Array Nat) (nb : Vector UInt64 64) (db : UInt64) (shape : Shape) (bLow bHigh : Nat) :
     Id (Array (Int × Int × Int)) := do

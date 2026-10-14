@@ -449,9 +449,10 @@ def Factor.admits : Factor → Nat → Int → Bool
 
 /-- The sieve entry of a modulus `p` of the sieve, a prime, a prime power or a product of primes and
 prime powers, given by its factors (`Ratpoints.Sieve.Factor`): one for a prime or a prime power, two
-or more for a product; with the reciprocal of `p` (`Ratpoints.Sieve.magic`), with which the stages
-of the sieve reduce (stage F). Its row for a denominator is the and of the rows of its factors
-(`Ratpoints.Sieve.SieveEntry.admits`).
+or more for a product; with the reciprocal of `p` (`Ratpoints.Sieve.magic`), which the third stage
+of the sieve copies for its primes (`Ratpoints.Sieve.checkOf`) and with which the first two stages
+reduce their row indices with the packing (stage F3). Its row for a denominator is the and of the
+rows of its factors (`Ratpoints.Sieve.SieveEntry.admits`).
 
 C: `rp-private.h:497-498`, `rp-private.h:520`, `rp-private.h:542-555`
 

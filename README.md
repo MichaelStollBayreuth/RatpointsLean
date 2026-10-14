@@ -40,23 +40,38 @@ of the points at infinity followed by the points of the brute-force reference of
 searched over the denominators in the order of the loop of its search, mapped back after a reversal,
 so that `ratpoints-lean` prints the points in the order of ratpoints; the main theorems, the refusal
 theorems and the challenge of Comparator keep their statements. Stage F, the side of the numerators,
-runs in four sub-stages, of which F1 is done: the tables and the moduli as the C code has them. The
-table of a prime is computed as `examine_prime` computes it, by Horner's rule with the Barrett
-reduction on its fixed schedule, and hands back the coefficients modulo the prime and its entry at
-infinity to the forbidden divisors, prime by prime in the loop of the tables of `sieving_info`,
-which ends the search at a prime modulo which the curve has no points; the moduli may be prime
-powers, with the tables of `examine_power` and the inverses by the extended Euclidean algorithm, and
-products of prime powers, whose rows are those of their factors, combined, so that the rows of every
-modulus let every point through without the Chinese remainder theorem; the range obligations of the
-C `long`s of these computations are lemmas. The parameters gain the number of primes examined, and
-their well-formedness, which the challenge of Comparator imports from the model, now admits the
-moduli below `2^maxBitsInPrime` that factor over the first `numPrimes` primes of the table,
-composite ones included, and no longer the primes of the table from `2^maxBitsInPrime` on; the main
-theorems, the refusal theorems and the challenge keep their text, and change only through the
-parameters they quantify over. The differential tests compare every point list in its order: 3219
-comparisons in the default suites, and 13 in the suite run locally. The blueprint and the API
-documentation will be at <https://michaelstollbayreuth.github.io/RatpointsLean/> once the repository
-is public.
+runs in four sub-stages, of which F1 and F2 are done. F1 models the tables and the moduli as the C
+code has them. The table of a prime is computed as `examine_prime` computes it, by Horner's rule
+with the Barrett reduction on its fixed schedule, and hands back the coefficients modulo the prime
+and its entry at infinity to the forbidden divisors, prime by prime in the loop of the tables of
+`sieving_info`, which ends the search at a prime modulo which the curve has no points; the moduli
+may be prime powers, with the tables of `examine_power` and the inverses by the extended Euclidean
+algorithm, and products of prime powers, whose rows are those of their factors, combined, so that
+the rows of every modulus let every point through without the Chinese remainder theorem; the range
+obligations of the C `long`s of these computations are lemmas. The parameters gain the number of
+primes examined, and their well-formedness, which the challenge of Comparator imports from the
+model, now admits the moduli below `2^maxBitsInPrime` that factor over the first `numPrimes` primes
+of the table, composite ones included, and no longer the primes of the table from `2^maxBitsInPrime`
+on; the main theorems, the refusal theorems and the challenge keep their text, and change only
+through the parameters they quantify over. F2 models the stages of the sieve and the check as the C
+code has them: the first stage with the first moduli of the parameters, the second on each bit array
+that the first leaves nonzero, in both arms of the build (the whole bit array, or one word at a
+time), and for each numerator that survives, the test for common factors by the binary algorithm of
+the C code on its 64-bit `long`s, then the third stage, which tests the numerator against the tables
+of the primes from the second cut point on, before the exact check; the reduction of a value `u` by
+a modulus `p` multiplies by the reciprocal of `p`, a field of the sieve entries and of the tables of
+the Jacobi test, as `RP_MULMOD` and `RP_MULDIV` do, which is exact for `u p < 2^64`; the table of
+the third stage and the products of the check are made once per denominator, when its first
+numerator needs them. The stages give the numerators of the sieve with all the moduli in the first
+stage, in the same order, so that the main theorems keep their statements. `findPoints` refuses a
+height bound of `2^63` or more, which is not a C `long`, with error 4, as the program does when it
+reads one, so that the refusal theorems refuse `H = 0` or `H ≥ 2^63`, and the parameters of the
+command line take the cut points of the stages by the counting rules of ratpoints where these do not
+depend on the curve: a run without options uses all three stages, 11, 11 and 8 of the first 30
+primes. The differential tests compare every point list in its order: 3315 comparisons in the
+default suites, among them option sets that run the second and the third stage after few moduli in
+the first, and 13 in the suite run locally. The blueprint and the API documentation will be at
+<https://michaelstollbayreuth.github.io/RatpointsLean/> once the repository is public.
 
 ## Layout
 
@@ -97,16 +112,16 @@ that `--c PATH` or `RATPOINTS_BIN` names). CI runs these checks and more
 `ratpoints-lean 'a_0 a_1 ... a_n' H [options]` has the command line of ratpoints. It reads the
 coefficients (constant term first), the height bound and the options as ratpoints does, with its
 checks, messages and exit statuses, and prints the points of height at most `H` on
-`y² = a_n xⁿ + ⋯ + a_0` as ratpoints does with `-q`: one line `(x : y : z)` per point. It finds
-the points by the sieve on bit arrays of words, whose parameters the options `-p -n -N -P -F -j -J`
-set; `-k` and `-K` forbid and allow the reversal of the polynomial, and `-s` and `-S [depth]` switch
-the Sturm step off and on, of which the model has the test for a repeated factor so far; it accepts
-`-q`, `-v` and the other options that tune the sieve of ratpoints, checking their arguments, but
-ignores them. It refuses a binary form that is not squarefree with error 8 as ratpoints does with
-the same options, and prints the points in the order of ratpoints. It answers the options of
-ratpoints that it does not support yet, those of the search region and the denominator range
-(`-l -u -dl -du`) and those of the output (`-x -X -y -Y -z -Z -1 -i -I -f -fs -fm -fe`), with the
-exit status 12.
+`y² = a_n xⁿ + ⋯ + a_0` as ratpoints does with `-q`: one line `(x : y : z)` per point. It finds the
+points by the sieve on bit arrays of words in its three stages, whose parameters the options
+`-p -n -N -P -F -j -J` set; `-k` and `-K` forbid and allow the reversal of the polynomial, and `-s`
+and `-S [depth]` switch the Sturm step off and on, of which the model has the test for a repeated
+factor so far; it accepts `-q`, `-v` and the other options that tune the sieve of ratpoints,
+checking their arguments, but ignores them. It refuses a binary form that is not squarefree with
+error 8 as ratpoints does with the same options, and prints the points in the order of ratpoints. It
+answers the options of ratpoints that it does not support yet, those of the search region and the
+denominator range (`-l -u -dl -du`) and those of the output
+(`-x -X -y -Y -z -Z -1 -i -I -f -fs -fm -fe`), with the exit status 12.
 
 ## Licence
 

@@ -22,8 +22,9 @@ and compares it with the recorded outputs and with the C program:
   fuzz    random command lines (scripts/difftest_cases.py) against the C program;
   params  the options that set the sieving parameters (-p -n -N -P -F -j), with values that
           give no moduli, all the primes of the default build, the cut points in several
-          positions, a third stage and the defaults, on point-rich and on random curves
-          against the C program, whose points do not depend on them;
+          positions, a third stage, the second and the third stage after few moduli or none in
+          the first, and the defaults, on point-rich and on random curves against the C program,
+          whose points do not depend on them;
   high    point-rich curves at the heights 2000, 5000 and 30000 against the C program;
   test4high  the invocations of test4.sh that search with a height bound above --max-height and
           at most --test4-max-height, a few minutes in all: run locally, not by default.
@@ -87,12 +88,16 @@ UNSUPPORTED = set('luxXyYzZ1iI')
 POINT = re.compile(r'^\((-?\d+) : (-?\d+) : (\d+)\)$')
 # The params suite: the options that set the sieving parameters, with values that give no
 # moduli, all the primes of the default build and a cap above them, the cut points in several
-# positions, a third stage, no Jacobi test, no forbidden divisors and many of them, and
-# negative values, which mean the defaults; and the point-rich curves it runs them on, with
-# their height bounds.
+# positions, a third stage, the second and the third stage after few moduli or none in the first
+# (at the small heights of the suite, since most numerators then reach the test of a candidate,
+# which the model runs numerator by numerator, as the C program does but more slowly), no Jacobi
+# test, no forbidden divisors and many of them, and negative values, which mean the defaults; and
+# the point-rich curves it runs them on, with their height bounds.
 PARAM_OPTIONS = [['-p', '0'], ['-p', '53'], ['-p', '200'], ['-n', '0'], ['-n', '5', '-N', '10'],
                  ['-N', '3', '-P', '20'], ['-p', '10', '-P', '43'], ['-j'], ['-F', '0'],
-                 ['-F', '500'], ['-p', '-5', '-n', '-1', '-N', '-2', '-P', '-3', '-F', '-4']]
+                 ['-F', '500'], ['-p', '-5', '-n', '-1', '-N', '-2', '-P', '-3', '-F', '-4'],
+                 ['-n', '3', '-N', '5', '-P', '2'], ['-n', '0', '-N', '0'], ['-N', '30'],
+                 ['-n', '2', '-N', '20'], ['-N', '10', '-P', '3'], ['-n', '1', '-P', '0']]
 PARAM_CURVES = [('1 0 126 0 441', 200), ('-2 0 0 1', 130), ('1 1 1 1 0', 60),
                 ('1 2 3 4 5 6 7', 60), ('-1 0 9', 100), ('0 1 1', 40)]
 # The high suite: the first four of these curves at larger heights.
