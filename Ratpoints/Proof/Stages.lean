@@ -41,6 +41,9 @@ with loop invariants that are named definitions.
 * `Ratpoints.Sieve.CheckSpec.admits`, `Ratpoints.Sieve.Stage3Invariant`: whether the third stage
   lets a numerator through one of its primes, and the invariant of its loop.
 * `Ratpoints.Sieve.SieveEntry.IsPrimeEntry`: the shape of the sieve entries of the third stage.
+* `Ratpoints.Sieve.acceptedPoints`: the points that the extraction gives for a numerator, those of
+  the exact check when the numerator passes the test of a candidate, the test for common factors
+  and the third stage.
 * `Ratpoints.Sieve.SecondStageInvariant`: the invariant of the loop of the second stage on a bit
   array.
 
@@ -61,10 +64,11 @@ with loop invariants that are named definitions.
 * `Ratpoints.Sieve.CheckSpec.admits_checkOf`, `Ratpoints.Sieve.run_stage3_fillChecks`: for a
   numerator prime to `b` with `|a| ≤ H`, a prime entry admits it in the third stage exactly when
   its row of `b` does, and the third stage is the survivor test of its entries.
-* `Ratpoints.Sieve.accepted_spec`, `Ratpoints.Sieve.ite_run_accepted_checkPoint`: the test of a
-  candidate is the test of `gcd(a, b) = 1` followed by the third stage, and with the exact check it
-  gives the points of the check of the reference for the numerators that survive the entries of the
-  third stage.
+* `Ratpoints.Sieve.accepted_spec`: the test of a candidate is the test of `gcd(a, b) = 1` followed
+  by the third stage; `Ratpoints.Sieve.acceptedPoints_eq_ite`: for a numerator `a` with
+  `|a| ≤ H < 2 ^ 63` and a denominator `0 < b < 2 ^ 63`, the test with the exact check gives the
+  points of the check of the reference (`Ratpoints.Sieve.checkNum`) when `a` survives the entries
+  of the third stage, and none otherwise.
 * `Ratpoints.Sieve.secondStage_spec`, `Ratpoints.Sieve.secondStageWord_spec`: the second stage on a
   bit array, or on one of its words, gives its words and-ed with the rows of all its moduli;
   `Ratpoints.Sieve.andWords_append`: and-ing the rows of two lists of moduli one after the other is
@@ -582,18 +586,26 @@ theorem checkPoint_eq_checkNum (w : Thunk (List Int)) (d : Nat) {b : Int} (rev :
     checkPoint w d b rev a = checkNum w.get (if d % 2 = 1 then b else 1) b rev a := by
   simp [checkPoint, checkNum, hab]
 
-/-- The test of `Ratpoints.Sieve.accepted` and the exact check of `Ratpoints.Sieve.checkPoint` give
-the points that the check of the reference `Ratpoints.Sieve.checkNum` gives for a numerator `a`
-with `|a| ≤ H < 2 ^ 63` that survives the sieve entries `es` of the third stage, of the shape of
-`Ratpoints.Sieve.SieveEntry.IsPrimeEntry`, and none for the others, for a denominator
-`0 < b < 2 ^ 63`. -/
-theorem ite_run_accepted_checkPoint {es : List SieveEntry} (hes : ∀ e ∈ es, e.IsPrimeEntry)
-    {a : Int} {b H : Nat} {checks : Thunk (List CheckSpec)}
+/-- The points that the extraction gives for the numerator `a` over the denominator `b`: those of
+the exact check (`Ratpoints.Sieve.checkPoint`, with the thunk `w` of the products, the degree `d`
+and the flag `rev` of the reversal) when `a` passes the test of a candidate
+(`Ratpoints.Sieve.accepted`, with the thunk `checks` of the third stage), and none otherwise. -/
+def acceptedPoints (w : Thunk (List Int)) (d b : Nat) (rev : Bool)
+    (checks : Thunk (List CheckSpec)) (a : Int) : List (Int × Int × Int) :=
+  if Id.run (accepted a b checks) then checkPoint w d b rev a else []
+
+/-- The points of `Ratpoints.Sieve.acceptedPoints`, the test of `Ratpoints.Sieve.accepted` followed
+by the exact check of `Ratpoints.Sieve.checkPoint`, are those that the check of the reference
+`Ratpoints.Sieve.checkNum` gives for a numerator `a` with `|a| ≤ H < 2 ^ 63` that survives the sieve
+entries `es` of the third stage, of the shape of `Ratpoints.Sieve.SieveEntry.IsPrimeEntry`, and none
+for the others, for a denominator `0 < b < 2 ^ 63`. -/
+theorem acceptedPoints_eq_ite {es : List SieveEntry} (hes : ∀ e ∈ es, e.IsPrimeEntry) {a : Int}
+    {b H : Nat} {checks : Thunk (List CheckSpec)}
     (hc : checks.get = fillChecks b H es (es.map fun e ↦ magic e.p)) (w : Thunk (List Int))
     (d : Nat) (rev : Bool) (hb : 0 < b) (hb63 : b < 2 ^ 63) (ha : a.natAbs ≤ H) (hH : H < 2 ^ 63) :
-    (if Id.run (accepted a b checks) then checkPoint w d b rev a else []) =
+    acceptedPoints w d b rev checks a =
       if survives es b a then checkNum w.get (if d % 2 = 1 then b else 1) b rev a else [] := by
-  rw [run_accepted hes hc hb hb63 ha hH]
+  rw [acceptedPoints, run_accepted hes hc hb hb63 ha hH]
   by_cases hab : Int.gcd a b = 1
   · simp [hab, checkPoint_eq_checkNum w d rev hab]
   · simp [hab, checkNum]

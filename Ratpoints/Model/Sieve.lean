@@ -563,7 +563,7 @@ curve. It is the reference of the test of a candidate and the exact check
 (`Ratpoints.Sieve.accepted`, `Ratpoints.Sieve.checkPoint`), which test for common factors by the
 binary algorithm (`Ratpoints.Sieve.relprime`) and run the third stage before the exact check, and
 give the same points for the numerators that the rows of the primes of the third stage admit
-(`Ratpoints.Sieve.ite_run_accepted_checkPoint`). -/
+(`Ratpoints.Sieve.acceptedPoints_eq_ite`). -/
 def checkNum (w : List Int) (f b : Int) (rev : Bool) (a : Int) : List (Int × Int × Int) :=
   if Int.gcd a b = 1 then
     let pts := BruteForce.pointsAbove a b (BruteForce.horner w a * f)

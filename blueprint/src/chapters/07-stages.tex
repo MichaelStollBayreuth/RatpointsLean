@@ -248,7 +248,7 @@ $b_{\mathrm{high}} \le \mathrm{mulModLimit}$ stays as it is
 
 \begin{definition}[The test of a candidate and the exact check]\label{def:accepted}
   \uses{def:relprime, def:stage3, def:bruteForce, def:swapPoint}
-  \lean{Ratpoints.Sieve.accepted, Ratpoints.Sieve.checkPoint}
+  \lean{Ratpoints.Sieve.accepted, Ratpoints.Sieve.checkPoint, Ratpoints.Sieve.acceptedPoints}
   \leanok
   A numerator $a$ goes on to the exact check for the denominator $b$ when it is prime to $b$
   (Definition~\ref{def:relprime}, on the words of $a$ and $b$) and passes the third stage, whose
@@ -260,18 +260,22 @@ $b_{\mathrm{high}} \le \mathrm{mulModLimit}$ stays as it is
   (\csource{sift.c}{202}{205}, \csource{find_points.c}{3122}{3122},
   \csource{find_points.c}{5250}{5338}, \csource{rp-private.h}{576}{576},
   \csource{rp-private.h}{596}{597}); the check of a numerator of Definition~\ref{def:checkNum},
-  which tests the $\gcd$ itself, becomes the reference of the two.
+  which tests the $\gcd$ itself, becomes the reference of the two. The points that the extraction
+  gives for a numerator are those of the exact check when it passes the test of a candidate, and
+  none otherwise.
 \end{definition}
 
 \begin{lemma}[The test of a candidate]\label{lem:accepted}
   \uses{def:accepted, lem:relprime, lem:stage3, def:checkNum}
-  \lean{Ratpoints.Sieve.accepted_spec, Ratpoints.Sieve.run_accepted, Ratpoints.Sieve.checkPoint_eq_checkNum, Ratpoints.Sieve.ite_run_accepted_checkPoint, Int64.minValue_lt_ofInt, Int64.ofNat_pos}
+  \lean{Ratpoints.Sieve.accepted_spec, Ratpoints.Sieve.run_accepted, Ratpoints.Sieve.checkPoint_eq_checkNum, Ratpoints.Sieve.acceptedPoints_eq_ite, Int64.minValue_lt_ofInt, Int64.ofNat_pos}
   \leanok
   For $1 \le b < 2^{63}$ and $|a| < 2^{63}$, the test of a candidate is the test of
   $\gcd(a, b) = 1$ followed by the third stage. For $1 \le b < 2^{63}$, $|a| \le H < 2^{63}$ and
   prime entries in the third stage with their reciprocals, with no hypothesis on $\gcd(a, b)$, a
   numerator passes the test exactly when it is prime to $b$ and every entry's row of $b$ admits it;
-  the exact check of a numerator prime to $b$ gives the points of the reference check.
+  the exact check of a numerator prime to $b$ gives the points of the reference check. So the points
+  that the extraction gives for a numerator $a$ are those of the reference check when $a$ survives
+  the entries of the third stage, and none otherwise.
 \end{lemma}
 
 \begin{proof}
@@ -279,7 +283,8 @@ $b_{\mathrm{high}} \le \mathrm{mulModLimit}$ stays as it is
   The words of $a$ and $b$ are $a$ and $b$, and that of $a$ is not $-2^{63}$; then
   Lemma~\ref{lem:relprime} for the first test, which rejects every numerator with a common factor;
   Lemma~\ref{lem:stage3} for the second, which runs only after the first has passed, so that its
-  hypothesis $\gcd(a, b) = 1$ holds; a thunk has the value of its function.
+  hypothesis $\gcd(a, b) = 1$ holds; a thunk has the value of its function. The reference check
+  gives no points for a numerator with a common factor.
 \end{proof}
 
 \section{The second stage}\label{sec:secondStage}
@@ -334,7 +339,7 @@ $b_{\mathrm{high}} \le \mathrm{mulModLimit}$ stays as it is
 \end{definition}
 
 \begin{lemma}[A bit array through the second stage and the extraction]\label{lem:siftBitArray}
-  \uses{def:siftBitArray, lem:secondStage, def:walkWord, lem:staged}
+  \uses{def:siftBitArray, lem:secondStage, def:walkWord}
   \lean{Ratpoints.Sieve.SiftBitArrayInvariant, Ratpoints.Sieve.SiftBitArrayWalkInvariant, Ratpoints.Sieve.siftBitArray_spec}
   \leanok
   In both arms, the points appended are those of the numerators of the bit array whose bits
@@ -368,26 +373,21 @@ that $1 \le b \le H < 2^{63}$, that the reciprocals that it reads are those of t
 the entries of the third stage are prime entries. It rests on the following.
 
 \begin{lemma}[The stages compute the unstaged sieve]\label{lem:staged}
-  \uses{lem:accepted}
-  \lean{Ratpoints.Sieve.acceptedPoints, Ratpoints.Sieve.acceptedPoints_eq_ite, Ratpoints.Sieve.survives_append}
+  \uses{def:SieveEntry}
+  \lean{Ratpoints.Sieve.survives_append}
   \leanok
-  For $|a| \le H < 2^{63}$, a denominator $0 < b < 2^{63}$ and prime entries in the third stage with
-  their reciprocals, the points that the extraction gives for a numerator $a$, those of the exact
-  check when $a$ passes the test of a candidate and none otherwise, are those of the reference check
-  when $a$ survives the entries of the third stage, and none otherwise; a numerator survives a list
-  of entries followed by another when it survives both. With these and the second stage
-  (Lemma~\ref{lem:secondStage}), the contracts of one piece and of one denominator
-  (Definitions~\ref{def:siftPiece} and~\ref{def:sift}) give for the numerators whose bits survive
-  the first $s_1$ moduli in the first stage and the others of the first two stages in the second,
-  and that pass the test of a candidate with the entries of the third stage, the points that the
-  reference check gives for the numerators that survive all the entries.
+  A numerator survives a list of entries followed by another when it survives both. With this, the
+  test of a candidate (Lemma~\ref{lem:accepted}) and the second stage (Lemma~\ref{lem:secondStage}),
+  the contracts of one piece and of one denominator (Definitions~\ref{def:siftPiece}
+  and~\ref{def:sift}) give for the numerators whose bits survive the first $s_1$ moduli in the first
+  stage and the others of the first two stages in the second, and that pass the test of a candidate
+  with the entries of the third stage, the points that the reference check gives for the numerators
+  that survive all the entries.
 \end{lemma}
 
 \begin{proof}
   \leanok
-  Lemma~\ref{lem:accepted} for the first part, since the reference check gives no points for a
-  numerator with a common factor; the survivor test of a list of entries is the conjunction of the
-  tests of its entries.
+  The survivor test of a list of entries is the conjunction of the tests of its entries.
 \end{proof}
 
 The run over the denominators (Definition~\ref{def:sieveRun}) takes the cut points $s_1$ and $s_2$:

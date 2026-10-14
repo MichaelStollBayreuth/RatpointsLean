@@ -23,12 +23,6 @@ sieve of one denominator from a class word, the numerators modulo 64 from which 
 starts, as `@[spec]` theorems proved with `vcgen`, the program logic of Lean core, with loop
 invariants that are named definitions.
 
-## Main definitions
-
-* `Ratpoints.Sieve.acceptedPoints`: the points that the extraction gives for a numerator, those of
-  the exact check when the numerator passes the test of a candidate, the test for common factors
-  and the third stage.
-
 ## Main statements
 
 * `Ratpoints.Sieve.walkWord_spec`: the walk through the set bits of a word appends the points of the
@@ -43,10 +37,6 @@ invariants that are named definitions.
   gives the points of the numerators that the masks at its two ends leave and that pass the class
   word (`Ratpoints.Sieve.classBit`) and survive the entries of the first two stages, in increasing
   order.
-* `Ratpoints.Sieve.acceptedPoints_eq_ite`: for a numerator `a` with `|a| ≤ H < 2 ^ 63` and a
-  denominator `0 < b < 2 ^ 63`, these are the points of the check of the reference
-  (`Ratpoints.Sieve.checkNum`) when `a` survives the entries of the third stage, and none
-  otherwise.
 * `Ratpoints.Sieve.sift_spec`: the pieces of a denominator `0 < b < 2 ^ 63`, for `H < 2 ^ 63` and
   entries of the third stage of the shape of `Ratpoints.Sieve.SieveEntry.IsPrimeEntry` with the
   reciprocals of their moduli, give what the brute-force reference finds over `b` and the
@@ -81,26 +71,6 @@ namespace Sieve
 universe u
 
 /-! ### The walk through the set bits of a word -/
-
-/-- The points that the extraction gives for the numerator `a` over the denominator `b`: those of
-the exact check (`Ratpoints.Sieve.checkPoint`, with the thunk `w` of the products, the degree `d`
-and the flag `rev` of the reversal) when `a` passes the test of a candidate
-(`Ratpoints.Sieve.accepted`, with the thunk `checks` of the third stage), and none otherwise. -/
-def acceptedPoints (w : Thunk (List Int)) (d b : Nat) (rev : Bool)
-    (checks : Thunk (List CheckSpec)) (a : Int) : List (Int × Int × Int) :=
-  if Id.run (accepted a b checks) then checkPoint w d b rev a else []
-
-/-- With the thunk of what the third stage needs of prime entries and their reciprocals, the points
-of `Ratpoints.Sieve.acceptedPoints` are those of the check of the reference for the numerators that
-survive these entries (`Ratpoints.Sieve.ite_run_accepted_checkPoint`); the bounds are those of the
-test for common factors on the words of the C code. -/
-theorem acceptedPoints_eq_ite {es : List SieveEntry} (hes : ∀ e ∈ es, e.IsPrimeEntry) {a : Int}
-    {b H : Nat} {checks : Thunk (List CheckSpec)}
-    (hc : checks.get = fillChecks b H es (es.map fun e ↦ magic e.p)) (w : Thunk (List Int))
-    (d : Nat) (rev : Bool) (hb : 0 < b) (hb63 : b < 2 ^ 63) (ha : a.natAbs ≤ H) (hH : H < 2 ^ 63) :
-    acceptedPoints w d b rev checks a =
-      if survives es b a then checkNum w.get (if d % 2 = 1 then b else 1) b rev a else [] :=
-  ite_run_accepted_checkPoint hes hc w d rev hb hb63 ha hH
 
 -- The test of a candidate, as a value for the contract of the walk: the walk's contract speaks of
 -- its result, without the hypotheses of `Ratpoints.Sieve.accepted_spec`.

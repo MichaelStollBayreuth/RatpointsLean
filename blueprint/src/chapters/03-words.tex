@@ -280,7 +280,7 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
 \end{definition}
 
 \begin{definition}[The set bits of a word]\label{def:walkWord}
-  \uses{def:ctz, def:accepted, lem:staged}
+  \uses{def:ctz, def:accepted}
   \lean{Ratpoints.Sieve.walkWord, Ratpoints.Sieve.walkWord_spec}
   \leanok
   For a word $x$ whose bit $t$ stands for the numerator $a_0 + t$: while $x \ne 0$, the numerator
@@ -295,8 +295,7 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
 \end{definition}
 
 \begin{definition}[The scan]\label{def:scanPiece}
-  \uses{def:siftBitArray, def:bitArrayOps, def:secondStage, lem:staged, lem:secondStage,
-    lem:siftBitArray}
+  \uses{def:siftBitArray, def:bitArrayOps, def:secondStage, lem:secondStage, lem:siftBitArray}
   \lean{Ratpoints.Sieve.scanPiece, Ratpoints.Sieve.scanPiece_spec}
   \leanok
   A sentinel, a bit array of ones, just past the piece; then from the first bit array on: step over
@@ -337,7 +336,7 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
 \section{One denominator and the run}\label{sec:siftDen}
 
 \begin{definition}[One denominator]\label{def:sift}
-  \uses{def:siftPiece, def:stage3, def:checkNum, lem:staged}
+  \uses{def:siftPiece, def:stage3, def:checkNum, lem:staged, lem:accepted}
   \lean{Ratpoints.Sieve.sift, Ratpoints.Sieve.sift_spec}
   \leanok
   The row of $b$ for each modulus of the first two stages (\csource{find_points.c}{3149}{3170},
