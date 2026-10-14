@@ -55,10 +55,10 @@ core, with loop invariants that are named definitions.
 ## Implementation notes
 
 The file uses Lean core and `Std` only, as `Ratpoints.Proof.Sieve` does; the lemmas on words that
-are not about the model are in `Ratpoints.Proof.Bits`. The proofs use only that
-`Ratpoints.rbaPack` is positive, never its value. The contracts of the later stages and of the
-check are in `Ratpoints.Proof.Stages`, those of the walk, of the scan, of one piece and of one
-denominator in `Ratpoints.Proof.Sift`. The invariant of a `while` loop over the set bits of a word,
+are not about the model are in `Ratpoints.Proof.Bits`. The proofs use only that `Ratpoints.rbaPack`
+is positive, never its value. The contracts of the second and the third stage and of the check are
+in `Ratpoints.Proof.Stages`, those of the walk, of the scan, of one piece and of one denominator in
+`Ratpoints.Proof.Sift`. The invariant of a `while` loop over the set bits of a word,
 `Ratpoints.Sieve.WalkWhileInvariant`, serves the loops of the 2-adic information in
 `Ratpoints.Proof.TwoAdic` and of the word shape in `Ratpoints.Proof.Shapes` as well.
 -/
@@ -257,9 +257,10 @@ theorem classBit_rbaLength_mul_add (cw : UInt64) (w0 : Int) (y : Nat) {t : Nat} 
   rw [classBit_eq, h, Int.add_mul_emod_self_left, Int.emod_eq_of_lt (by lia) (by lia)]
   rfl
 
-/-- The word `y` of a piece from the word number `w0` on after the first stage with the rows
-`specs` and the class word `cw`: `cw`, and-ed in turn with the row words of `y`
-(`Ratpoints.Sieve.SieveSpec.wordAt`). -/
+/-- The word `cw` and-ed in turn with the words of the rows `specs` at word `y` of a piece from the
+word number `w0` on (`Ratpoints.Sieve.SieveSpec.wordAt`): word `y` of the piece after the first
+stage from the class word `cw`, or, with `w0` the word number of a bit array and `y` one of its
+words, that word after the second stage from its word `cw` in a copy of the bit array. -/
 def andWords (specs : List SieveSpec) (cw : UInt64) (w0 : Int) (y : Nat) : UInt64 :=
   specs.foldl (fun acc s ↦ acc &&& s.wordAt w0 y) cw
 
@@ -583,9 +584,9 @@ theorem WalkWhileInvariant.exists_clearedBelow_zero {σ : Type u} {x0 w : UInt64
 /-- The property of the array `out` of a walk through the set bits of the word `x0`, lowest first,
 that appends the list `g t` of each set bit `t` to the array `out0`, after the set bits below `k`:
 `out` is `out0` followed by the lists of the set bits `t < k` of `x0`, in increasing order. In
-`Ratpoints.Sieve.walkWord`, `g t` is the list of the points of the check `Ratpoints.Sieve.checkNum`
-of the numerator of bit `t`; in `Ratpoints.Sieve.wordsDens`, the list of the denominator of bit
-`t` alone. -/
+`Ratpoints.Sieve.walkWord`, `g t` is the list of the points that `Ratpoints.Sieve.acceptedPoints`
+gives for the numerator of bit `t` (the test of a candidate, then the exact check); in
+`Ratpoints.Sieve.wordsDens`, the list of the denominator of bit `t` alone. -/
 def WalkWordInvariant {β : Type u} (g : Nat → List β) (x0 : UInt64) (out0 : Array β) (k : Nat)
     (out : Array β) : Prop :=
   out.toList = out0.toList ++ ((List.range k).filter (x0.toBitVec.getLsbD ·)).flatMap g

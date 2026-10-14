@@ -46,10 +46,10 @@ Every row, and the word of the class of a denominator in the 2-adic information,
 through, so the sieve of a denominator finds exactly its points in the brute-force reference
 `Ratpoints.bruteForce`, in the same order, each mapped by `Ratpoints.Sieve.swapPoint` when the flag
 of the reversal is set: the map gives the point of the caller's curve for a point of a polynomial
-that the reversal check has reversed (`Ratpoints.Setup.reversal`), the check of a numerator and the
-points at infinity deliver the mapped points when their flag is set, and the components from the run
-down to the check hand the flag on. The rows of `0` that the build of ratpoints generates are
-computed here as words, by `Ratpoints.Sieve.SieveEntry.row`.
+that the reversal check has reversed (`Ratpoints.Setup.reversal`), the exact check and the points at
+infinity deliver the mapped points when their flag is set, and the components from the run down to
+the check hand the flag on. The rows of `0` that the build of ratpoints generates are computed here
+as words, by `Ratpoints.Sieve.SieveEntry.row`.
 
 ## Main definitions
 
@@ -105,7 +105,7 @@ namespace Sieve
 replaced by its conjunction with the row of `b` at its numerator
 (`Ratpoints.Sieve.SieveEntry.admits`). With `Ratpoints.Sieve.checkDen` it is the reference of the
 bit arrays of words: for pieces of at least one bit array, moduli `p > 0`, a denominator
-`1 ≤ b ≤ H < 2 ^ 63` and entries of the third stage of the shape of
+`0 < b < 2 ^ 63`, `H < 2 ^ 63` and entries of the third stage of the shape of
 `Ratpoints.Sieve.SieveEntry.IsPrimeEntry`, with the reciprocals of their moduli, the points that
 `Ratpoints.Sieve.sift` finds with the rows of the entries of its first two stages
 (`Ratpoints.Sieve.SieveEntry.rows`) from a class word are those that `Ratpoints.Sieve.checkDen`
@@ -126,14 +126,14 @@ checked exactly, as the brute-force reference checks it (`Ratpoints.BruteForce.p
 `F(a, b)` by Horner's rule on the products `cₖ b^(d - k)`, computed once, with one more factor `b`
 for odd `d`, then `(a, y, b)` and, for `y ≠ 0`, `(a, -y, b)` when `F(a, b) = y ^ 2` with `y ≥ 0`.
 With the plain sieve `Ratpoints.Sieve.sieveDen` it is the reference of the bit arrays of words: for
-a denominator `1 ≤ b ≤ H < 2 ^ 63`, sieve entries with `p > 0` in the first two stages and entries
-of the shape of `Ratpoints.Sieve.SieveEntry.IsPrimeEntry` with the reciprocals of their moduli in
-the third, `Ratpoints.Sieve.sift` with the rows of the first (`Ratpoints.Sieve.SieveEntry.rows`), in
-pieces of at least one bit array, finds the points that it finds on the plain sieve with all these
-entries whose numerators pass the class word, all of them from the class word `~~~0` or from any
-class word that admits the numerators of the points (such as the word `nb[b mod 64]` of
-`Ratpoints.Sieve.twoAdic`), each mapped by `Ratpoints.Sieve.swapPoint` when the flag of the reversal
-is set (`Ratpoints.Sieve.toList_run_sift_eq_checkDen`). -/
+a denominator `0 < b < 2 ^ 63`, `H < 2 ^ 63`, sieve entries with `p > 0` in the first two stages and
+entries of the shape of `Ratpoints.Sieve.SieveEntry.IsPrimeEntry` with the reciprocals of their
+moduli in the third, `Ratpoints.Sieve.sift` with the rows of the first
+(`Ratpoints.Sieve.SieveEntry.rows`), in pieces of at least one bit array, finds the points that it
+finds on the plain sieve with all these entries whose numerators pass the class word, all of them
+from the class word `~~~0` or from any class word that admits the numerators of the points (such as
+the word `nb[b mod 64]` of `Ratpoints.Sieve.twoAdic`), each mapped by `Ratpoints.Sieve.swapPoint`
+when the flag of the reversal is set (`Ratpoints.Sieve.toList_run_sift_eq_checkDen`). -/
 def checkDen (c : List Int) (d H b : Nat) (surv : Vector Bool (2 * H + 1)) :
     Id (Array (Int × Int × Int)) := do
   let w := BruteForce.scaledCoeffs c d b
@@ -302,14 +302,15 @@ structure SieveSpec where
 
 /-- The point of the caller's curve for the point `(a, y, b)` of the reversed curve: `(b, y, a)` for
 `a ≥ 0` and `(-b, y, -a)` for `a < 0`. After the reversal check has reversed the polynomial
-(`Ratpoints.Setup.reversal`), the C code delivers the mapped points: the check of a numerator maps
-each point that it finds by this map, and the points at infinity take the candidate `(0, 1)` in
-place of `(1, 0)`, which gives the image of `(1, y, 0)`; the two components deliver the mapped
-points when their flag of the reversal is set (`Ratpoints.Sieve.checkNum`,
-`Ratpoints.Sieve.pointsAtInfinity`). It maps the normalized points of height at most `H` of the
-reversed curve one to one onto those of the caller's curve
-(`Ratpoints.Sieve.perm_map_swapPoint_bruteForce`). Its negations `-b` and `-a` stay in the range of
-a `long`, since `|a| ≤ H`, `1 ≤ b ≤ H` and `H < 2 ^ 63` (`Ratpoints.fitsLong_neg`). -/
+(`Ratpoints.Setup.reversal`), the C code delivers the mapped points: the exact check maps each point
+that it finds by this map, and the points at infinity take the candidate `(0, 1)` in place of
+`(1, 0)`, which gives the image of `(1, y, 0)`; the two components deliver the mapped points when
+their flag of the reversal is set (`Ratpoints.Sieve.checkPoint`,
+`Ratpoints.Sieve.pointsAtInfinity`), and so does the check of the reference
+(`Ratpoints.Sieve.checkNum`). It maps the normalized points of height at most `H` of the reversed
+curve one to one onto those of the caller's curve (`Ratpoints.Sieve.perm_map_swapPoint_bruteForce`).
+Its negations `-b` and `-a` stay in the range of a `long`, since `|a| ≤ H`, `1 ≤ b ≤ H` and
+`H < 2 ^ 63` (`Ratpoints.fitsLong_neg`). -/
 def swapPoint (q : Int × Int × Int) : Int × Int × Int :=
   if 0 ≤ q.1 then (q.2.2, q.2.1, q.1) else (-q.2.2, q.2.1, -q.1)
 
