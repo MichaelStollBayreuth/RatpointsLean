@@ -8,7 +8,6 @@ module
 public import Ratpoints.Model.FindPoints
 public import Ratpoints.Proof.Forbidden
 public import Ratpoints.Proof.Stages
-public import Ratpoints.Spec.Basic
 
 import Ratpoints.Mathlib.Data.List.Basic
 import Ratpoints.Proof.BruteForce

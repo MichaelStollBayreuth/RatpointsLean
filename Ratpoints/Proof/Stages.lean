@@ -5,9 +5,7 @@ Authors: Michael Stoll
 -/
 module
 
-public import Ratpoints.Model.Sieve
 public import Ratpoints.Proof.Words
-public import Std.WP
 
 import Ratpoints.Proof.Bits
 import Std.Tactic.Do

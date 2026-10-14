@@ -20,7 +20,6 @@ import Ratpoints.Proof.Jacobi
 import Ratpoints.Proof.Params
 import Ratpoints.Proof.Stages
 import Ratpoints.Proof.Valuation
-import Ratpoints.Proof.Words
 import Std.Tactic.Do
 
 /-!

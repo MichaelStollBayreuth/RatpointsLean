@@ -6,12 +6,9 @@ Authors: Michael Stoll
 module
 
 public import Mathlib.Algebra.Field.ZMod
-public import Ratpoints.Model.BruteForce
 public import Ratpoints.Model.Setup
-public import Ratpoints.Model.Tables
 public import Ratpoints.Proof.Stages
 public import Ratpoints.Spec.Basic
-public import Std.WP
 
 import Mathlib.Data.List.GetD
 import Ratpoints.Mathlib.Algebra.Group.Even
