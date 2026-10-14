@@ -184,7 +184,8 @@ C: `find_points.c:157-161`
 
 Deviation: the words as an array, for the pointers `start` and `end` into the pattern `sieves0` of
 the build or into the buffer of the arguments, and no reciprocal `magic`, with which the C code
-reduces the word number by a multiplication; a natural number for the `long` `p`. -/
+reduces the word number of the first word of a block by a multiplication (with the blocks, stage I);
+a natural number for the `long` `p`. -/
 structure ForbiddenEntry where
   /-- The prime. -/
   p : Nat
@@ -337,8 +338,9 @@ C: `find_points.c:2627-2631`, `find_points.c:2642-2676`
 
 Deviation: the entry returned, for the entries that the C code writes into the arrays
 `args->forb_ba` and `args->forbidden` and counts; the words of the prime made with its entry, for
-the pointers into the pattern `sieves0` of the build, and no reciprocal `magic`; natural numbers
-for the `long`s; no output under `DEBUG`. -/
+the pointers into the pattern `sieves0` of the build, and no reciprocal `magic`, which ratpoints
+reads only for the first word of a block (stage I); natural numbers for the `long`s; no output under
+`DEBUG`. -/
 def forbiddenOfPrime (c : List Int) (d p bHigh : Nat) (cm : Array Nat) (atInf : Bool) :
     Id (Option (ForbiddenEntry ⊕ ForbiddenVal)) := do
   if cm[d]! = 0 then
@@ -409,7 +411,8 @@ forbidden divisors only when the flag is set, for even degree (`Ratpoints.sievin
 the two arrays of the arguments with their terminating zeros; the words of a prime made with its
 entry, for the pointers into `sieves0` and the buffer `forb_words`, with no failure for lack of
 memory, where `sieving_info` drops the primes beyond the table whose words it cannot store; no
-reciprocals `magic`; natural numbers for the `long`s; no output under `DEBUG`. -/
+reciprocals `magic`, which ratpoints reads only for the first word of a block (stage I); natural
+numbers for the `long`s; no output under `DEBUG`. -/
 def forbidden (c : List Int) (d examined maxForbidden bHigh : Nat) (ba : Array ForbiddenEntry)
     (val : Array ForbiddenVal) :
     Id (List ForbiddenEntry × List ForbiddenVal) := do
@@ -695,9 +698,9 @@ of `bLow` the bits below `bLow mod 64` are cleared, and in the word of `bHigh` t
 C: `find_points.c:3981-3988`, `find_points.c:3990`, `find_points.c:3993-4006`
 
 Deviation: word `w mod p` read at its index, for the pointers `cur` that the C code sets to the
-words of the first word of a block, by `RP_MULMOD` or the helper `mod`, and steps on with every
-word, wrapping at the end; divisions and remainders for the shifts and masks by `LONG_SHIFT` and
-`LONG_MASK`; no output under `DEBUG`. -/
+words of the first word of a block, by `RP_MULMOD` with the reciprocal of the divisor or the helper
+`mod` (with the blocks, stage I), and steps on with every word, wrapping at the end; divisions and
+remainders for the shifts and masks by `LONG_SHIFT` and `LONG_MASK`; no output under `DEBUG`. -/
 def wordBits (db : UInt64) (forb : List ForbiddenEntry) (bLow bHigh w : Nat) : UInt64 :=
   let x := forb.foldl (fun x e ↦ x &&& e.words[w % e.p]!) db
   let x := if w = bLow / 64 then x &&& ~~~0 <<< (bLow % 64).toUInt64 else x
@@ -888,8 +891,8 @@ receives, whose pattern it is at the stride 1 (its `k`, `a0` and row offsets com
 stage F3); the residues `b mod p` that choose the rows computed by `Ratpoints.Sieve.sift`, for the
 residues of `b` divided by `2^k` that `fill_bp_list` computes before each call (`k` the stride of
 the packing; stage F3); a list of points, for the counts `total` of points that `sift` and
-`run_block` return, with no stop by the callback (stage G); natural numbers for the `long`s
-(stage F); no correction of the moduli between the blocks (stage I); no output under `DEBUG`. -/
+`run_block` return, with no stop by the callback (stage G); natural numbers for the `long`s; no
+correction of the moduli between the blocks (stage I); no output under `DEBUG`. -/
 def sieveRun (c : List Int) (d H A : Nat) (rev : Bool) (sp1 sp2 : Nat) (entries : List SieveEntry)
     (magics : Array Nat) (nb : Vector UInt64 64) (db : UInt64) (shape : Shape) (bLow bHigh : Nat) :
     Id (Array (Int × Int × Int)) := do

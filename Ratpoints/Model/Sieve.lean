@@ -327,11 +327,13 @@ decreases, so that the loop ends at `m = n = gcd(m, n)`, and the numbers are cop
 C: `sift.c:328-342`
 
 Deviation: `Int64` for `long`, `toUInt64` for the cast to `unsigned long`, and the `toInt64` of the
-count for the `long` that `RP_CTZL` returns; `63` for `LONG_LENGTH - 1`; `>>>` on `Int64` is the
-arithmetic shift, which gcc gives the `>>` of a negative `long` that the C standard leaves to the
-implementation; the lowest set bit by the loop of `RP_CTZL` for a compiler without the builtin
-(`Ratpoints.Sieve.ctz`), where gcc and clang take `__builtin_ctzl`; the loop a function of its own,
-for the end of the function `relprime`. -/
+count for the `long` that `RP_CTZL` returns; `63` for `LONG_LENGTH - 1`; `Int64` in two's
+complement, the representation of the negative `long`s on which the and `d &&& msk` and the
+exclusive or `d ^^^ msk` of the step act, and `>>>` on `Int64` the arithmetic shift, for the `>>` of
+a negative `long`, both of which the C standard leaves to the implementation (the representation
+before C23) and gcc defines so; the lowest set bit by the loop of `RP_CTZL` for a compiler without
+the builtin (`Ratpoints.Sieve.ctz`), where gcc and clang take `__builtin_ctzl`; the loop a function
+of its own, for the end of the function `relprime`. -/
 def relprimeOdd (m n : Int64) : Id Bool := do
   let mut m := m
   let mut n := n
@@ -586,8 +588,8 @@ the count `sp2 - sp1`, with no bound `2 RATPOINTS_NUM_PRIMES` on their number (t
 `magics`, `find_points.c:347`), which ratpoints never reaches since each entry of `sieve_list` owns
 its own prime (`find_points.c:329-331`), where well-formed parameters may repeat a modulus; one bit
 array of `Ratpoints.rbaPack` words, for the vector `nums`; natural numbers and integers for the
-`long`s (stage F); no count of the ands of the second stage under `RP_PHASE_COUNTS`, and no output
-under `DEBUG`. -/
+`long`s; no count of the ands of the second stage under `RP_PHASE_COUNTS`, and no output under
+`DEBUG`. -/
 def secondStage (specs : List SieveSpec) (i : Int) (nums : Vector UInt64 rbaPack) :
     Id (Vector UInt64 rbaPack) := do
   let mut nums := nums
@@ -612,7 +614,7 @@ with the reciprocal of `p` from the array `magics` where that is exact (`small`)
 the count `sp2 - sp1`, with no bound `2 RATPOINTS_NUM_PRIMES` on their number (the length of
 `magics`, `find_points.c:347`), which ratpoints never reaches since each entry of `sieve_list` owns
 its own prime (`find_points.c:329-331`), where well-formed parameters may repeat a modulus; natural
-numbers and integers for the `long`s (stage F); no count of the ands of the second stage under
+numbers and integers for the `long`s; no count of the ands of the second stage under
 `RP_PHASE_COUNTS`. -/
 def secondStageWord (specs : List SieveSpec) (i : Int) (κ : Nat) (x : UInt64) : Id UInt64 := do
   let mut x := x
@@ -648,7 +650,7 @@ the packing and a multiple of `p` that keeps the index non-negative, and reduces
 with the reciprocal of `p` where that is exact and by the helper `mod` otherwise (`mod_mul` and
 `mod` of `sift.c`, stage F3); indices for the pointers into the rows and into the survivors, and the
 number of whole periods and the rest computed before their loops; natural numbers and integers for
-the `long`s (stage F); no output under `DEBUG`. -/
+the `long`s; no output under `DEBUG`. -/
 def andRows (specs : List SieveSpec) (cw : UInt64) (w0 : Int) (n : Nat)
     (surv : Vector UInt64 ((n + 1) * rbaPack)) :
     Id (Vector UInt64 ((n + 1) * rbaPack)) := do
@@ -687,11 +689,10 @@ Deviation: bit `t` for the numerator `a0 + t`, where the step from one bit to th
 `2^k` of the packing of the 2-adic class of `b` (stage F3); the lowest set bit by the loop of
 `RP_CTZL` for a compiler without the builtin (`Ratpoints.Sieve.ctz`); one definition for the body at
 the three places of the extraction, the first word of a bit array, the others, and a word of the arm
-of the second stage for one word at a time; natural numbers and integers for the `long`s (stage F);
-no count of the numerators that reach the test for common factors (`n_bits`), which ratpoints reads
-to correct the moduli between the blocks of the run (stage I), and no counts under
-`RP_PHASE_COUNTS`; no stop that the callback `process` may request (`quit`, stage G), and no output
-under `DEBUG`. -/
+of the second stage for one word at a time; natural numbers and integers for the `long`s; no count
+of the numerators that reach the test for common factors (`n_bits`), which ratpoints reads to
+correct the moduli between the blocks of the run (stage I), and no counts under `RP_PHASE_COUNTS`;
+no stop that the callback `process` may request (`quit`, stage G), and no output under `DEBUG`. -/
 def walkWord (w : Thunk (List Int)) (f : Int) (b : Nat) (rev : Bool)
     (checks : Thunk (List CheckSpec)) (x : UInt64) (a0 : Int) (out : Array (Int × Int × Int)) :
     Id (Array (Int × Int × Int)) := do
@@ -728,9 +729,9 @@ body of the loop of the scan over one bit array; the plain layout, bit `t` of th
 word number `i` for the numerator `rbaLength i + t`, where bit `t` stands for the numerator
 `a₀ + 2^k (rbaLength i + t)` of the packing of the 2-adic class of `b` (stage F3); the words of the
 bit array read as entries of the vector, for `EXT0` and `EXT`, with one loop over the words, for the
-read of the first word and the loop over the others; natural numbers and integers for the `long`s
-(stage F); no counts under `RP_PHASE_COUNTS`, no stop after a phase (`RP_STOP_AFTER`), and no output
-under `DEBUG`. -/
+read of the first word and the loop over the others; natural numbers and integers for the `long`s;
+no counts under `RP_PHASE_COUNTS`, no stop after a phase (`RP_STOP_AFTER`), and no output under
+`DEBUG`. -/
 def siftBitArray (useLong : Bool) (w : Thunk (List Int)) (f : Int) (b : Nat) (rev : Bool)
     (specs : List SieveSpec) (checks : Thunk (List CheckSpec)) (i : Int)
     (nums : Vector UInt64 rbaPack) (out : Array (Int × Int × Int)) :
@@ -767,8 +768,8 @@ Deviation: indices for the pointers into the survivors, and a scan that holds it
 index, where ratpoints recovers the word number from a pointer difference; the copy `nums` of the
 bit array a vector of `Ratpoints.rbaPack` words; the sentinel `~zero` of every build as
 `Ratpoints.rbaPack` words `~~~0`, written one at a time; natural numbers and integers for the
-`long`s (stage F); no count of the bit arrays that survive the first stage (`n_arrays`), which
-ratpoints reads to correct the moduli between the blocks of the run (stage I). -/
+`long`s; no count of the bit arrays that survive the first stage (`n_arrays`), which ratpoints reads
+to correct the moduli between the blocks of the run (stage I). -/
 def scanPiece (w : Thunk (List Int)) (f : Int) (b : Nat) (rev : Bool) (specs : List SieveSpec)
     (checks : Thunk (List CheckSpec)) (w0 : Int) (n : Nat)
     (surv : Vector UInt64 ((n + 1) * rbaPack)) :
@@ -817,9 +818,9 @@ the thunk `w` of the products and the factor `f` of the check as arguments, wher
 `_ratpoints_check_point` computes the products when the first survivor of `b` reaches it and
 multiplies each value by `b` for odd `d`; a list of points, for the callback `process` with its
 argument `info` and for the count `total` of points that `_ratpoints_sift0` returns, with no flag
-`quit` for a stop that `process` may request (stage G); natural numbers and integers for the `long`s
-(stage F); no measurements of the phases (`RP_TIC`, `RP_TOC`, `RP_PHASE_TIMING`) and no stop after
-one of them (`RP_STOP_AFTER`). -/
+`quit` for a stop that `process` may request (stage G); natural numbers and integers for the
+`long`s; no measurements of the phases (`RP_TIC`, `RP_TOC`, `RP_PHASE_TIMING`) and no stop after one
+of them (`RP_STOP_AFTER`). -/
 def siftPiece (w : Thunk (List Int)) (f : Int) (b : Nat) (rev : Bool) (sp1 : Nat)
     (specs : List SieveSpec) (checks : Thunk (List CheckSpec)) (cw : UInt64) (w0 : Int)
     (n maskLow maskHigh : Nat) :
@@ -865,27 +866,28 @@ made by its thunk when it is first needed, for the row of `b 2^(-k) mod p` that 
 from the residues that `fill_bp_list` computes before the call (stage F3), with a test for the rows
 that are missing and their construction by the function `init` of the entry under the lock of the
 tables, which threads share; the moduli of the first two stages with their rows, for the sieve specs
-with the offsets of the packing and the ends of the rows (`sieve_spec`, stage F3); the end `sp1` of
-the first stage, the entries `es3` of the third stage and their reciprocals `mgs3` as arguments, for
-the numbers `sp1`, `sp2` and `sp3` that the sieving thread keeps (`worker_init`) and the entries
-`sieve_list[sp2], …, sieve_list[sp3 - 1]` and the reciprocals `magics[sp2], …, magics[sp3 - 1]` of
-the arguments, which `fill_checks` reads, with no correction of `sp2` and `sp3` between the blocks
-of the run (stage I); the thunk of `Ratpoints.Sieve.fillChecks`, for the table `checks` of the
-sieving thread, which `fill_checks` fills, and its flag `stage3_filled`, which `sift` clears; the
-thunk of the products `w`, for the flag `compute_bc`, which `sift` sets and `_ratpoints_check_point`
-clears when it computes the products, and the factor `f` computed for every denominator, where
-`_ratpoints_check_point` multiplies each value by `b` for odd `d`; no count of the denominators
-sieved (`n_sifts`), which ratpoints reads to correct the moduli between the blocks of the run (stage
-I); a list of points, for the callback `process` with its argument `info` and for the count `total`
-of points that `sift` returns, with no stop that `process` may request (`quit`, which `worker_init`
-clears, stage G); the arguments of the run passed explicitly, for the pointer `args` of the sieving
-thread (`rp-private.h:574`), which `worker_init` sets and through which `sift` reads them; no search
+(`sieve_spec`) with the offsets of the packing (stage F3) and the ends of the rows, which only the
+chunked first stage reads (stage F4); the end `sp1` of the first stage, the entries `es3` of the
+third stage and their reciprocals `mgs3` as arguments, for the numbers `sp1`, `sp2` and `sp3` that
+the sieving thread keeps (`worker_init`) and the entries `sieve_list[sp2], …, sieve_list[sp3 - 1]`
+and the reciprocals `magics[sp2], …, magics[sp3 - 1]` of the arguments, which `fill_checks` reads,
+with no correction of `sp2` and `sp3` between the blocks of the run (stage I); the thunk of
+`Ratpoints.Sieve.fillChecks`, for the table `checks` of the sieving thread, which `fill_checks`
+fills, and its flag `stage3_filled`, which `sift` clears; the thunk of the products `w`, for the
+flag `compute_bc`, which `sift` sets and `_ratpoints_check_point` clears when it computes the
+products, and the factor `f` computed for every denominator, where `_ratpoints_check_point`
+multiplies each value by `b` for odd `d`; no count of the denominators sieved (`n_sifts`), which
+ratpoints reads to correct the moduli between the blocks of the run (stage I); a list of points, for
+the callback `process` with its argument `info` and for the count `total` of points that `sift`
+returns, with no stop that `process` may request (`quit`, which `worker_init` clears, stage G); the
+arguments of the run passed explicitly, for the pointer `args` of the sieving thread
+(`rp-private.h:574`), which `worker_init` sets and through which `sift` reads them; no search
 intervals `iv` of the sieving thread, which `worker_init` clears (`find_points.c:3130`) and
 `run_block` sets for each block (`rp-private.h:574`; stage H); no pool, slot and stop flag of a
 thread of the pool, the flag by which the pool of threads tells it to abandon its block (`pool`,
-`slot`, `stop`, `rp-private.h:584-585`; stage I); natural numbers and integers for the `long`s
-(stage F); no measurements of the phases (`RP_SIFT_TIC`, `RP_SETUP_TIC`, `RP_INIT_TIC` and their
-`TOC`) and no output under `DEBUG`. -/
+`slot`, `stop`, `rp-private.h:584-585`; stage I); natural numbers and integers for the `long`s; no
+measurements of the phases (`RP_SIFT_TIC`, `RP_SETUP_TIC`, `RP_INIT_TIC` and their `TOC`) and no
+output under `DEBUG`. -/
 -- lint: allow long-proof: the set-up of `sift` and its loop over the pieces, as in the C code
 def sift (c : List Int) (d H A b : Nat) (rev : Bool) (sp1 : Nat)
     (rows : List (Nat × Array (Thunk (Array UInt64)))) (es3 : List SieveEntry) (mgs3 : List Nat)

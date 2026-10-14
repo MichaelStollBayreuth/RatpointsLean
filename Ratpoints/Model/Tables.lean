@@ -357,13 +357,15 @@ def examinePower (c : List Int) (d p e : Nat) (useCLong : Bool) : Id Power := do
 /-! ### The reductions by a reciprocal -/
 
 /-- The reciprocal `⌊(2 ^ 64 - 1) / p⌋ + 1` of the modulus `p ≥ 2`, which is `2 ^ 64 / p` rounded
-up: with it, the remainder (`Ratpoints.Sieve.mulMod`) and the quotient (`Ratpoints.Sieve.mulDiv`)
-by `p` of every `u` with `u p < 2 ^ 64` are computed by multiplications. The C code computes it as
+up: with it, the remainder (`Ratpoints.Sieve.mulMod`) and the quotient (`Ratpoints.Sieve.mulDiv`) by
+`p` of every `u` with `u p < 2 ^ 64` are computed by multiplications. The C code computes it as
 `ULONG_MAX/p + 1` where it sets a field `magic`: in the sieve entries of the moduli, which
-`examine_prime`, `make_power` and `make_modulus` make (lines 1808, 2422 and 2454 of
-`find_points.c`; here `Ratpoints.makeModulus?`), and in the tables of the Jacobi test (line 700;
-here `Ratpoints.Sieve.jacobiSetup`). For `p = 1`, which is no modulus, it is `2 ^ 64`, where
-`ULONG_MAX / 1 + 1` wraps to `0` in the C code. -/
+`examine_prime`, `make_power` and `make_modulus` make (lines 1808, 2422 and 2454 of `find_points.c`;
+here `Ratpoints.makeModulus?`), in the tables of the Jacobi test (line 700; here
+`Ratpoints.Sieve.jacobiSetup`), and in the entries of the forbidden divisors tested with words
+(lines 2648, 2668 and 2738; here `Ratpoints.Sieve.ForbiddenEntry`), which keep no reciprocal in the
+model (stage I). For `p = 1`, which is no modulus, it is `2 ^ 64`, where `ULONG_MAX / 1 + 1` wraps
+to `0` in the C code. -/
 def magic (p : Nat) : Nat := (2 ^ 64 - 1) / p + 1
 
 /-- The remainder of `u` modulo `p` by a multiplication with the reciprocal `m`, `RP_MULMOD`: the

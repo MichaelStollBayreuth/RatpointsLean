@@ -146,30 +146,31 @@ curve (\verb|sieving_info|, which ranks the primes and may look past the first $
 absent), and moves the end of the third stage during the run (\verb|adapt_primes|; with \verb|-A 2|
 also $s_2$); where it decides by the curve, for an absent \verb|-n|, \verb|-N| or \verb|-P|, its
 stages may be longer or shorter than those of the parameters of the executable, and where the
-options fix their counts, they are at most as long (Section~\ref{sec:cuts}). None of this changes
-the points found or their order, since a modulus only removes candidates that are not points, a test
-on the denominators (the forbidden divisors among the examined primes and beyond them, at most the
-bound of them, and the Jacobi test that the switch lets run) removes only denominators without
-points, and the two shapes of the loop between which these choices decide, the words of 64
-denominators and every denominator, both run in increasing order (\verb|-q| suppresses the report of
-the moduli used, which does depend on the choice). So the model takes the choice as an input, and
-the theorems hold for every well-formed choice. They quantify over the parameters that
-\verb|Params.WF| admits, a definition of a few lines in the model, which has no Mathlib, so the
-comparator challenge imports it; the runs of the executable need no such reading, since
-\verb|wf_sieveParams|, certified with the main theorems, shows that every parameter set the command
-line produces is well-formed, which also rules out a well-formedness that nothing satisfies. C1
-reads only the moduli and treats all stages alike, and C2 reads the array size too
-(Definition~\ref{def:arraySize}); the bound on the forbidden divisors and the Jacobi switch are read
-since stage~E, the number of primes examined since stage~F1 (Chapter~\ref{chap:tables}), and the cut
-points from stage~F2 on, and further choices (the block length) join \verb|Params| with the
-components that use them. Well-formedness constrains a field only as far as its component needs it
-to be meaningful. The constants of the build that these definitions read, the size in bits of the
-moduli, the defaults of \verb|-p| and \verb|-F| and those of the cut points, are definitions of the
-model like $\mathrm{maxDegree}$ (Definition~\ref{def:maxDegree}), and no proof depends on their
-values: \verb|wf_sieveParams| needs only that $\mathrm{numPrimes}$, the number of primes of the
-table below $\mathrm{maxPrimeEven}$, is at most its size, and that these primes come first in the
-table, which is sorted (Definition~\ref{def:barrett}): the moduli that the options give are among
-them, each a prime whose only divisor above $1$ is itself.
+options fix their counts, they are at most as long, unless \verb|-R| raises the offset of the second
+stage (Section~\ref{sec:cuts}). None of this changes the points found or their order, since a
+modulus only removes candidates that are not points, a test on the denominators (the forbidden
+divisors among the examined primes and beyond them, at most the bound of them, and the Jacobi test
+that the switch lets run) removes only denominators without points, and the two shapes of the loop
+between which these choices decide, the words of 64 denominators and every denominator, both run in
+increasing order (\verb|-q| suppresses the report of the moduli used, which does depend on the
+choice). So the model takes the choice as an input, and the theorems hold for every well-formed
+choice. They quantify over the parameters that \verb|Params.WF| admits, a definition of a few lines
+in the model, which has no Mathlib, so the comparator challenge imports it; the runs of the
+executable need no such reading, since \verb|wf_sieveParams|, certified with the main theorems,
+shows that every parameter set the command line produces is well-formed, which also rules out a
+well-formedness that nothing satisfies. C1 reads only the moduli and treats all stages alike, and C2
+reads the array size too (Definition~\ref{def:arraySize}); the bound on the forbidden divisors and
+the Jacobi switch are read since stage~E, the number of primes examined since stage~F1
+(Chapter~\ref{chap:tables}), and the cut points from stage~F2 on, and further choices (the block
+length) join \verb|Params| with the components that use them. Well-formedness constrains a field
+only as far as its component needs it to be meaningful. The constants of the build that these
+definitions read, the size in bits of the moduli, the defaults of \verb|-p| and \verb|-F| and those
+of the cut points, are definitions of the model like $\mathrm{maxDegree}$
+(Definition~\ref{def:maxDegree}), and no proof depends on their values: \verb|wf_sieveParams| needs
+only that $\mathrm{numPrimes}$, the number of primes of the table below $\mathrm{maxPrimeEven}$, is
+at most its size, and that these primes come first in the table, which is sorted
+(Definition~\ref{def:barrett}): the moduli that the options give are among them, each a prime whose
+only divisor above $1$ is itself.
 
 \section{The table of a prime}\label{sec:primeTables}
 
