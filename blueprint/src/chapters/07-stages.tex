@@ -6,27 +6,35 @@
 % declarations exist.
 \chapter{The stages of the sieve and the check}\label{chap:stages}
 
-F2 models the three stages in which ratpoints applies its moduli to the numerators of a
-denominator, and the check of a candidate. The first stage and-s the rows of the first $s_1$ moduli
-into every bit array of a piece, as in Chapter~\ref{chap:words}; the second and-s the rows of the
-moduli from $s_1$ to $s_2$ into each bit array that the first stage leaves nonzero, one after the
-other, and stops when no bit is left; and each numerator whose bit survives goes to the test for
-common factors with the denominator, by the binary algorithm of \verb|relprime|, and then to the
-third stage, which looks up, for each prime from $s_2$ on, whether the form can be a square at that
-numerator, before the exact check. The reductions of the third stage and of the Jacobi test multiply
-by the reciprocal of the modulus, as the C code does; the cut points $s_1$ and $s_2$ come from the
-parameters, and the parameters of the command line take them by the counting rules of ratpoints.
+F2 models the three stages in which ratpoints applies its moduli to the numerators of a denominator,
+and the check of a candidate. The first stage and-s the rows of the first $s_1$ moduli into every
+bit array of a piece, as in Chapter~\ref{chap:words}; the second and-s the rows of the moduli from
+$s_1$ to $s_2$ into each bit array that the first stage leaves nonzero, one after the other, and
+stops when no bit is left; and each numerator whose bit survives goes to the test for common factors
+with the denominator, by the binary algorithm of \verb|relprime| on the 64-bit \verb|long|s of the C
+code, and then to the third stage, which looks up, for each prime from $s_2$ on, whether the form
+can be a square at that numerator, before the exact check. The reductions of the third stage and of
+the Jacobi test multiply by the reciprocal of the modulus, which the sieve entries and the tables of
+the Jacobi test keep in a field and \verb|sieving_info| collects for the moduli, as in the C code;
+the cut points $s_1$ and $s_2$ come from the parameters, and the parameters of the command line take
+them by the counting rules of ratpoints.
 
 Each stage only tests the moduli of the parameters, so the numerators that reach the exact check are
-those of the unstaged sieve of Chapter~\ref{chap:words} with its check, in the same order, and the
-theorems of Chapter~\ref{chap:denominators} keep their statements. The statements that comparator
-certifies keep their text too: the well-formedness of the parameters (Definition~\ref{def:Params})
+those of the unstaged sieve of Chapter~\ref{chap:words} with its check, in the same order. The test
+for common factors holds the numerator and the denominator in \verb|long|s, as the C code does,
+which is exact for the heights that a \verb|long| holds, the type of the height bound of the
+library: so \verb|findPoints| refuses a height bound of $2^{63}$ or more, with error~4, the error
+with which the program refuses such a height when it reads it, so that \verb|ratpoints-lean| behaves
+as before; the contracts below \verb|findPoints| take $H < 2^{63}$. The membership and no-duplicates
+theorems keep their statements, which speak only of the searches that return points; the refusal
+theorems (Theorem~\ref{thm:refusals}) gain $2^{63} \le H$ next to $H = 0$, and comparator certifies
+them again. The well-formedness of the parameters (Definition~\ref{def:Params}) keeps its text: it
 has required the moduli of the third stage to be primes of the table since stage~F1, which is what
-the third stage needs. What changes for comparator is what \verb|wf_sieveParams| states, through
-\verb|sieveParams|, which the challenge imports from the model: the parameters of the command line
-now take their three stages by the counting rules of ratpoints, and comparator checks the statement
-again; and the proofs of the theorems change through the contracts of the run, of
-\verb|sieving_info| and of the Jacobi test on which they rest.
+the third stage needs. What changes for comparator besides is what \verb|wf_sieveParams| states,
+through \verb|sieveParams|, which the challenge imports from the model: the parameters of the
+command line now take their three stages by the counting rules of ratpoints; and the proofs of the
+theorems change through the contracts of the run, of \verb|sieving_info| and of the Jacobi test on
+which they rest.
 
 \section{What the C code does in the stages}\label{sec:stagesC}
 
@@ -53,15 +61,22 @@ that the products of the check are still to be computed. Then for each piece of 
     $c_k b^{d - k}$ when the first numerator of $b$ reaches it
     (\csource{find_points.c}{5250}{5338}).
 \end{enumerate}
-The table of the third stage holds, for each prime $p$: the inverse of $b$ modulo $p$, $0$ when
-$p \mid b$, from the residue $b \bmod p$ computed by \verb|RP_MULMOD| for $b < 2^{32}$ and by
-\verb|%| above; the reciprocal of $p$; and the bias $p H$ when $2 p H < 2^{32}$, else $0$. With the
-bias, \verb|stage3| reduces the value $a b^{-1} + p H$, which lies in $[H, 2 p H - H]$ for
-$|a| \le H$, by \verb|RP_MULMOD|; without it, it divides. \verb|RP_MULMOD| and \verb|RP_MULDIV|
+The table of the third stage holds, for each prime $p$: the inverse of $b$ modulo $p$, $0$ when $p
+\mid b$, from the residue $b \bmod p$ computed by \verb|RP_MULMOD| for $b < 2^{32}$ and by \verb|%|
+above; the reciprocal of $p$; and the bias $p H$ when $2 p H < 2^{32}$, else $0$. With the bias,
+\verb|stage3| reduces the value $a b^{-1} + p H$, which lies in $[H, 2 p H - H]$ for $|a| \le H$, by
+\verb|RP_MULMOD|; without it, it divides. \verb|RP_MULMOD| and \verb|RP_MULDIV|
 (\csource{rp-private.h}{404}{417}) compute the remainder and the quotient of $u$ by $p$ from the
 reciprocal $m = \lfloor (2^{64} - 1) / p \rfloor + 1$ with a 128-bit product; the C code relies on
 $u < 2^{32}$, and they are exact whenever $u p < 2^{64}$. The Jacobi test by tables
-(Definition~\ref{def:jacobiTables}) divides by its primes with \verb|RP_MULDIV|.
+(Definition~\ref{def:jacobiTables}) divides by its primes with \verb|RP_MULDIV|. The reciprocal of a
+modulus is a field of its sieve entry, set when the entry is made, and \verb|sieving_info| copies
+those of the moduli, and of the further primes that it keeps after them for the correction of the
+moduli during the run, in their order, into the array \verb|magics| of its arguments
+(\csource{find_points.c}{3064}{3070}), in which \verb|fill_checks| reads the reciprocal of each
+prime of the third stage for $b$; the tables of the Jacobi test keep the reciprocals of their
+primes. The numerators and the denominators are \verb|long|s throughout: $|a| \le H$ and $b \le H$
+for the height bound $H$, itself a \verb|long|.
 
 \verb|sieving_info| chooses the cut points: $s_1$ moduli for the first stage, up to $s_2$ for the
 second, and the primes of the third stage up to $s_3$, by the options \verb|-n|, \verb|-N| and
@@ -88,8 +103,10 @@ the unstaged sieve with its check: the same numerators reach the exact check, in
   The bound $\mathrm{stage3Limit} = 2^{32}$ below which the third stage reduces by a multiplication
   (\verb|RP_STAGE3_LIMIT|, \csource{rp-private.h}{472}{472}), with the fact
   $\mathrm{stage3Limit} \le 2^{32}$ checked by evaluation; the reciprocal of a modulus $p$,
-  $\mathrm{magic}(p) = \lfloor (2^{64} - 1) / p \rfloor + 1$, computed where it is read, as
-  \verb|sieving_info| collects those of the moduli (\csource{find_points.c}{3064}{3070}); the
+  $\mathrm{magic}(p) = \lfloor (2^{64} - 1) / p \rfloor + 1$, the value that the C code computes
+  where it sets the field \verb|magic| of a sieve entry (Definition~\ref{def:SieveEntry}) and of the
+  tables of the Jacobi test (Definition~\ref{def:jacobiTables}), and which \verb|sieving_info|
+  collects for the moduli in the array \verb|magics| (Definition~\ref{def:sievingInfo}); the
   remainder of $u$ by $p$ from the reciprocal $m$, the low $64$ bits of $m u$, times $p$, shifted
   right by $64$ bits (\csource{rp-private.h}{404}{408}, \csource{rp-private.h}{411}{411},
   \csource{rp-private.h}{413}{414}, \csource{rp-private.h}{417}{417}); and the quotient, the high
@@ -121,45 +138,53 @@ $\mathrm{mulModLimit} = 2^{32} - 1$, below $2^{32}$ by a fact checked by evaluat
 (\lname{Ratpoints.mulModLimit\_lt\_two\_pow\_32}, in the node of the Jacobi test by tables), and
 their moduli are below $2^{10}$; the values that \verb|stage3| reduces are below $2 p H <
 \mathrm{stage3Limit} \le 2^{32}$. The Jacobi test by tables (Definition~\ref{def:jacobiTables})
-takes the quotient and the remainder by each of its primes by the quotient with the reciprocal, as
-\verb|jacobi_test| does; its contract takes $b q < 2^{64}$ for the primes $q$ of the Jacobi
-information, which the set-up of the test now gives as primes of the table, and the statement of the
-test for the denominators up to $b_{\mathrm{high}} \le \mathrm{mulModLimit}$ stays as it is
+takes the quotient and the remainder by each of its primes by the quotient with the reciprocal that
+its tables keep for the prime, set by \verb|jacobi_setup|, as \verb|jacobi_test| does; its contract
+takes $b q < 2^{64}$ for the primes $q$ of the Jacobi information, which the set-up of the test now
+gives as primes of the table, and the statement of the test for the denominators up to
+$b_{\mathrm{high}} \le \mathrm{mulModLimit}$ stays as it is
 (\lname{Ratpoints.Sieve.jacobiSetup\_spec}, \lname{Ratpoints.Sieve.jacobiTest\_spec},
 \lname{Ratpoints.Sieve.run\_jacobiTest}).
 
 \section{The test for common factors}\label{sec:relprime}
 
 \begin{definition}[The binary algorithm of \texttt{relprime}]\label{def:relprime}
-  Proposed names: \lname{Ratpoints.Sieve.ctzNat}, \lname{Ratpoints.Sieve.relprimeOdd},
-  \lname{Ratpoints.Sieve.relprime}.
-  The number of trailing zeros of a natural number $n \ge 1$, by the loop of \verb|RP_CTZL|, which
-  halves $n$ while it is even (\csource{rp-private.h}{429}{444}); the loop is modelled twice, on
-  words in Definition~\ref{def:ctz} and on natural numbers here. For odd $m, n \ge 1$: while
-  $n \ne m$, $n$ becomes $\min(m, n)$ and $m$ the odd part of $|m - n|$; the result is whether $m$
-  ends as $1$ (\csource{sift.c}{334}{342}). For an integer $a$ and $b \ge 1$: for $a = 0$, whether
-  $b = 1$; otherwise, for $m = |a|$, false when $m$ and $b$ are both even, and else the loop on the
-  odd parts of $m$ and $b$ (\csource{sift.c}{318}{332}, \csource{sift.c}{343}{343}).
+  \uses{def:ctz}
+  Proposed names: \lname{Ratpoints.Sieve.relprimeOdd}, \lname{Ratpoints.Sieve.relprime}.
+  On 64-bit signed words, the \verb|long|s of the C code. For words $m, n$: while $n \ne m$, the
+  difference $d = m - n$, the mask $d \gg 63$ by the arithmetic shift, $-1$ for $d < 0$ and $0$
+  otherwise, $n$ plus the and of $d$ with the mask, and $m$ the word $(d \oplus \mathrm{mask}) -
+  \mathrm{mask}$ shifted right by its number of trailing zeros (Definition~\ref{def:ctz}, on the
+  word read as unsigned); the result is whether $m$ ends as $1$ (\csource{sift.c}{334}{342}). For
+  words $m$ and $n$: for $m = 0$, whether $n = 1$; otherwise $m$ replaced by $-m$ when it is
+  negative, false when $m$ and $n$ are both even, and else the loop on $m$, shifted right by its
+  number of trailing zeros when it is even, and $n$ shifted right by its number of trailing zeros
+  (\csource{sift.c}{318}{332}, \csource{sift.c}{343}{343}). The test of a candidate gives it the
+  numerator and the denominator of the loops of the model, integers, as words.
 \end{definition}
 
 \begin{lemma}[The test for common factors]\label{lem:relprime}
   \uses{def:relprime}
-  Proposed names: \lname{Ratpoints.Sieve.CtzNatInvariant}, \lname{Ratpoints.Sieve.ctzNat\_spec},
-  \lname{Ratpoints.Sieve.RelprimeOddInvariant}, \lname{Ratpoints.Sieve.relprimeOdd\_spec},
-  \lname{Ratpoints.Sieve.relprime\_spec}, \lname{Ratpoints.fitsLong\_natCast\_sub\_natCast}. For $n
-  \ge 1$ the number of trailing zeros $t$ has $n = 2^t n'$ with $n'$ odd; for odd $m, n \ge 1$ the
-  loop gives whether $\gcd(m, n) = 1$; and for $b \ge 1$ the test gives whether $\gcd(a, b) = 1$.
-  The values of the loop stay at most $\max(m, n)$, so that the \verb|long|s of the C code stay in
-  range for $|a|, b < 2^{63}$.
+  Proposed names: \lname{Ratpoints.Sieve.RelprimeOddInvariant},
+  \lname{Ratpoints.Sieve.relprimeOdd\_spec}, \lname{Ratpoints.Sieve.relprime\_spec}. For odd
+  words $m, n \ge 1$ the loop gives whether $\gcd(m, n) = 1$; for words $m > -2^{63}$ and $n \ge
+  1$ the test gives whether $\gcd(m, n) = 1$. No operation leaves the range of a \verb|long|, so
+  that the words compute the integers of the binary algorithm: the difference of two positive
+  words is a word, and so are its negation and its absolute value.
 \end{lemma}
 
 \begin{proof}
-  Halving keeps $n = 2^t n'$ and ends since $n$ decreases. In the loop, both numbers stay odd and
-  their $\gcd$ stays the same: $\gcd(m, n) = \gcd(\min(m, n), |m - n|)$, and the power of $2$ in
-  $|m - n|$ is prime to the odd $\min(m, n)$; the sum $m + n$ decreases, since
-  $\min(m, n) + |m - n| / 2 < m + n$; at the end $m = n = \gcd$. For $a \ne 0$: when $m$ and $b$ are
-  both even, $2$ divides both; otherwise removing the powers of $2$ does not change whether the
-  $\gcd$ is $1$, since one of the two is odd.
+  \uses{def:ctz}
+  For positive words $m$ and $n$, $d = m - n$ is a word, the mask is $-1$ exactly when $m < n$,
+  and the and of $d$ with the mask is $d$ or $0$, so that $n$ becomes $\min(m, n)$; the exclusive
+  or with the mask minus the mask is $-d$ or $d$, that is $|m - n|$, a positive word for $m \ne
+  n$, which its number of trailing zeros shifts to its odd part, read as unsigned
+  (Definition~\ref{def:ctz}). So the loop computes on the integers: both numbers stay positive and
+  odd and their $\gcd$ stays the same, $\gcd(m, n) = \gcd(\min(m, n), |m - n|)$, and the power of
+  $2$ in $|m - n|$ is prime to the odd $\min(m, n)$; the sum $m + n$ decreases, since $\min(m, n) +
+  |m - n| / 2 < m + n$; at the end $m = n = \gcd$. For $m \ne 0$: $-m$ is a word for $m >
+  -2^{63}$; when $|m|$ and $n$ are both even, $2$ divides both; otherwise removing the powers of
+  $2$ does not change whether the $\gcd$ is $1$, since one of the two is odd.
 \end{proof}
 
 \section{The third stage}\label{sec:stage3}
@@ -171,12 +196,15 @@ test for the denominators up to $b_{\mathrm{high}} \le \mathrm{mulModLimit}$ sta
   \lname{Ratpoints.Sieve.stage3}, \lname{Ratpoints.Sieve.CheckSpec.admits},
   \lname{Ratpoints.Sieve.SieveEntry.IsPrimeEntry}. What the third stage needs of a prime $p$ for the
   denominator $b$ (\csource{rp-private.h}{465}{466}): $p$, the inverse $b^{-1}$ modulo $p$ read from
-  the table of inverses of $p$ at $b \bmod p$, computed by the reduction with the reciprocal for $b
-  \le \mathrm{mulModLimit}$ and by the remainder above, or $0$ when $p \mid b$; the bias $p H$ when
-  $2 p H < \mathrm{stage3Limit}$ and $0$ otherwise; the reciprocal of $p$; and the table of $p$
+  the table of inverses of $p$ at $b \bmod p$, computed by the reduction with the reciprocal that
+  the array \verb|magics| holds at the position of the entry for $b \le \mathrm{mulModLimit}$ and
+  by the remainder above, or $0$ when $p \mid b$; the bias $p H$ when
+  $2 p H < \mathrm{stage3Limit}$ and $0$ otherwise; the reciprocal of $p$, copied from its sieve
+  entry; and the table of $p$
   (\csource{sift.c}{414}{428}). For a sieve entry of another shape than a prime with its table,
   which the third stage of well-formed parameters never holds, the inverse is $0$, so that the stage
-  skips it. The list of these for the sieve entries of the third stage, in their order
+  skips it. The list of these for the sieve entries of the third stage with their reciprocals in
+  \verb|magics|, in their order
   (\csource{sift.c}{405}{413}, \csource{sift.c}{429}{431}). The residue at which the table of $p$ is
   read for the numerator $a$: with the bias, $a b^{-1} + p H$ reduced with the reciprocal; without
   it, the remainder of $a$ by the truncating division, plus $p$ if it is negative, times $b^{-1}$,
@@ -184,7 +212,8 @@ test for the denominators up to $b_{\mathrm{high}} \le \mathrm{mulModLimit}$ sta
   turn, skipped when the inverse is $0$, $a$ is rejected when the table says that $f$ is not a
   square modulo $p$ at that residue (\csource{sift.c}{291}{301}, \csource{sift.c}{309}{312}). A
   \emph{prime entry} is a sieve entry whose single factor is a prime $1 < p \le 2^{32}$ with its
-  table, which holds for each nonzero residue an inverse in $[1, p - 1]$.
+  table, which holds for each nonzero residue an inverse in $[1, p - 1]$, and whose reciprocal
+  is that of $p$.
 \end{definition}
 
 \begin{lemma}[The third stage tests the rows]\label{lem:stage3}
@@ -195,13 +224,14 @@ test for the denominators up to $b_{\mathrm{high}} \le \mathrm{mulModLimit}$ sta
   \lname{Ratpoints.Sieve.CheckSpec.admits\_checkOf},
   \lname{Ratpoints.Sieve.run\_stage3\_fillChecks},
   \lname{Ratpoints.Sieve.getElem!\_inversesMod\_lt},
-  \lname{Ratpoints.Sieve.isPrimeEntry\_examinePrime}. For prime entries, $|a| \le H$ and $\gcd(a, b)
-  = 1$: the residue at which the table of $p$ is read is $a b^{-1} \bmod p$ for $p \nmid b$, in both
-  branches of the bias and on both sides of $\mathrm{mulModLimit}$, and the third stage passes $a$
-  exactly when every entry's row of $b$ admits $a$. The values that the C code holds in \verb|long|s
-  stay in range: $a b^{-1} + p H$ lies in $[H, 2 p H - H]$, and the product of the residue and the
-  inverse is below $p^2$. The entry of a prime $p \le 2^{32}$ with its table
-  (Definition~\ref{def:examinePrime}) is a prime entry.
+  \lname{Ratpoints.Sieve.isPrimeEntry\_examinePrime}. For prime entries with their reciprocals in
+  \verb|magics|, $|a| \le H$ and $\gcd(a, b) = 1$: the residue at which the table of $p$ is read is
+  $a b^{-1} \bmod p$ for $p \nmid b$, in both branches of the bias and on both sides of
+  $\mathrm{mulModLimit}$, and the third stage passes $a$ exactly when every entry's row of $b$
+  admits $a$. The values that the C code holds in \verb|long|s stay in range: $a b^{-1} + p H$ lies
+  in $[H, 2 p H - H]$, and the product of the residue and the inverse is below $p^2$. The entry of a
+  prime $p \le 2^{32}$ with its table (Definition~\ref{def:examinePrime}) and its reciprocal is a
+  prime entry.
 \end{lemma}
 
 \begin{proof}
@@ -219,26 +249,28 @@ test for the denominators up to $b_{\mathrm{high}} \le \mathrm{mulModLimit}$ sta
 
 \begin{definition}[The test of a candidate and the exact check]\label{def:accepted}
   \uses{def:relprime, def:stage3, def:bruteForce, def:swapPoint}
-  Proposed names: \lname{Ratpoints.Sieve.accepted}, \lname{Ratpoints.Sieve.checkPoint}.
-  A numerator $a$ goes on to the exact check for the denominator $b$ when it is prime to $b$
-  (Definition~\ref{def:relprime}) and passes the third stage, whose list is a thunk made once per
-  denominator and forced when the first numerator of $b$ gets that far, for \verb|stage3_filled|
-  (\csource{sift.c}{438}{446}). The exact check of $a$ from the products $c_k b^{d - k}$, a thunk
-  made once per denominator for \verb|compute_bc|, and the factor $b$ for odd $d$: the points
-  $(a, y, b)$ and, for $y \ne 0$, $(a, -y, b)$, each mapped by $\mathrm{swapPoint}$ when the flag of
-  the reversal is set (\csource{sift.c}{202}{205}, \csource{find_points.c}{3122}{3122},
-  \csource{find_points.c}{5250}{5338}, \csource{rp-private.h}{596}{597}); the check of a numerator
-  of Definition~\ref{def:checkNum}, which tests the $\gcd$ itself, becomes the reference of the two.
+  Proposed names: \lname{Ratpoints.Sieve.accepted}, \lname{Ratpoints.Sieve.checkPoint}. A numerator
+  $a$ goes on to the exact check for the denominator $b$ when it is prime to $b$
+  (Definition~\ref{def:relprime}, on the words of $a$ and $b$) and passes the third stage, whose
+  list is a thunk made once per denominator and forced when the first numerator of $b$ gets that
+  far, for \verb|stage3_filled| (\csource{sift.c}{438}{446}). The exact check of $a$ from the
+  products $c_k b^{d - k}$, a thunk made once per denominator for \verb|compute_bc|, and the factor
+  $b$ for odd $d$: the points $(a, y, b)$ and, for $y \ne 0$, $(a, -y, b)$, each mapped by
+  $\mathrm{swapPoint}$ when the flag of the reversal is set (\csource{sift.c}{202}{205},
+  \csource{find_points.c}{3122}{3122}, \csource{find_points.c}{5250}{5338},
+  \csource{rp-private.h}{596}{597}); the check of a numerator of Definition~\ref{def:checkNum},
+  which tests the $\gcd$ itself, becomes the reference of the two.
 \end{definition}
 
 \begin{lemma}[The test of a candidate]\label{lem:accepted}
   \uses{def:accepted, lem:relprime, lem:stage3, def:checkNum}
   Proposed names: \lname{Ratpoints.Sieve.accepted\_spec}, \lname{Ratpoints.Sieve.run\_accepted},
   \lname{Ratpoints.Sieve.checkPoint\_eq\_checkNum},
-  \lname{Ratpoints.Sieve.ite\_run\_accepted\_checkPoint}. For $b \ge 1$, $|a| \le H$ and prime
-  entries in the third stage, with no hypothesis on $\gcd(a, b)$, a numerator passes the test
-  exactly when it is prime to $b$ and every entry's row of $b$ admits it; the exact check of a
-  numerator prime to $b$ gives the points of the reference check.
+  \lname{Ratpoints.Sieve.ite\_run\_accepted\_checkPoint}. For $1 \le b < 2^{63}$, $|a| < 2^{63}$,
+  $|a| \le H$ and prime entries in the third stage with their reciprocals, with no hypothesis on
+  $\gcd(a, b)$, a numerator passes the test exactly when it is prime to $b$ and every entry's row of
+  $b$ admits it; the exact check of a numerator prime to $b$ gives the points of the reference
+  check.
 \end{lemma}
 
 \begin{proof}
@@ -325,7 +357,8 @@ moduli of the second and that pass the test of a candidate, and the piece those 
 that survive the first stage, the masks and the second stage and pass the test. The lemma that the
 words compute the Booleans (Lemma~\ref{lem:sift_eq_checkDen}) keeps its conclusion, the points of
 the sieve of stage~C1 over all the sieve entries followed by its check, and gains the hypotheses
-that $b \ge 1$ and that the entries of the third stage are prime entries. It rests on the following.
+that $1 \le b \le H < 2^{63}$, that the reciprocals that it reads are those of the entries, and that
+the entries of the third stage are prime entries. It rests on the following.
 
 \begin{lemma}[The stages compute the unstaged sieve]\label{lem:staged}
   \uses{lem:secondStage, lem:accepted, lem:siftBitArray, def:sift}
@@ -350,12 +383,16 @@ it makes the rows of the first $s_2$ sieve entries, and hands the rest to \verb|
 stage, for the ends of the second and the third stage, which the run takes from the arguments as its
 first decision (\csource{find_points.c}{3861}{3861}) and \verb|run_block| sets for each block
 (\csource{find_points.c}{3911}{3911}). Its contract keeps its conclusion and needs that the
-denominators are positive, $b_{\mathrm{low}} \ge 1$, since the test for common factors does not end
-for $b = 0$ and an odd numerator, and that the entries from $s_2$ on are prime entries; the search
-(Definition~\ref{def:searchPoints}) passes $b_{\mathrm{low}} = 1$ and the cut points of its
-parameters, and what \verb|sieving_info| computes (Definition~\ref{def:sievingInfo}) gives entries
-of that shape for the first $\mathrm{numPrimes}$ primes of the table, one for each modulus in its
-order, which the well-formedness makes the moduli of the third stage
+denominators are positive and at most the height, which is below $2^{63}$, $b_{\mathrm{low}} \ge 1$,
+$b_{\mathrm{high}} \le H$ and $H < 2^{63}$, since the test for common factors computes on words and
+does not end for $b = 0$ and an odd numerator, that the array \verb|magics| holds the reciprocals of
+the entries, and that the entries from $s_2$ on are prime entries; the search
+(Definition~\ref{def:searchPoints}), whose contract takes $H < 2^{63}$, passes $b_{\mathrm{low}} =
+1$, $b_{\mathrm{high}} = H$, the cut points of its parameters and the reciprocals that
+\verb|sieving_info| collects, its height being below $2^{63}$ by the refusal of \verb|findPoints|,
+and what \verb|sieving_info| computes (Definition~\ref{def:sievingInfo}) gives entries of that shape
+for the first $\mathrm{numPrimes}$ primes of the table, one for each modulus in its order, with its
+reciprocal, which the well-formedness makes the moduli of the third stage
 (\lname{Ratpoints.makeModulus?\_spec},
 \lname{Ratpoints.factors\_eq\_of\_run\_makeModulus?\_eq\_some}, \lname{Ratpoints.sievingInfo\_spec},
 \lname{Ratpoints.Params.WF.exists\_getElem!\_primeTable\_eq\_of\_mem\_drop}).
@@ -415,8 +452,9 @@ run the second and the third stage, at heights at which a run with few moduli be
 stays short, since then most numerators reach the test of a candidate, which the model runs
 numerator by numerator, as the C code does but more slowly. \verb|#guard| examples compare each new
 component with values of the C program and with the reference: the reductions with the remainder and
-the quotient at the ends of their range, the test for common factors with the $\gcd$ beyond
-$2^{64}$, the third stage after its table with the rows of its primes in both branches of the bias
+the quotient at the ends of their range, the test for common factors with the $\gcd$ at the ends of
+the range of a \verb|long| (numerators near $\pm(2^{63} - 1)$, denominators near $2^{63} - 1$, even
+and odd), the third stage after its table with the rows of its primes in both branches of the bias
 and above $\mathrm{mulModLimit}$, both arms of the second stage with the and of the rows, the piece
 and the denominator at many cut points with the unstaged sieve, and the stage sizes of the
 parameters with those that \verb|ratpoints -v| reports, with \verb|-U 0| where \verb|-N| is absent.
@@ -426,16 +464,21 @@ parameters with those that \verb|ratpoints -v| reports, with \verb|-U 0| where \
 Each component of this chapter differs from the C code in a stated way, recorded in its
 \verb|Deviation:| paragraph:
 \begin{itemize}
-  \item natural numbers and integers for the \verb|long|s and \verb|unsigned long|s: the reductions
-    compute the exact values of the 128-bit products, the test for common factors runs on natural
-    numbers, so that it ends for every height, with the minimum and the absolute difference for the
-    loop body without branches and the mask of an arithmetic shift, and its trailing zeros by the
-    loop of \verb|RP_CTZL| on natural numbers; the bounds that keep the C values in range are lemmas
-    (Lemmas~\ref{lem:relprime} and~\ref{lem:stage3});
-  \item the reciprocal computed where it is read, for the field of the sieve entry, the array
-    \verb|magics| that \verb|sieving_info| fills and the field \verb|magic| of the tables of the
-    Jacobi test; the comparison $2 p H < \mathrm{stage3Limit}$ of natural numbers, for the
-    comparison of \verb|double|s, which has the same outcome for every $H < 2^{63}$;
+  \item natural numbers and integers for the \verb|long|s and \verb|unsigned long|s outside the test
+    for common factors: the reductions compute the exact values of the 128-bit products, and the
+    bounds that keep the values of the third stage in range are lemmas (Lemma~\ref{lem:stage3});
+    the test for common factors computes on 64-bit words in two's complement, for the
+    representation of the negative \verb|long|s on which the and and the exclusive or of its step
+    act, and with the arithmetic shift for the shift of a negative \verb|long|, both of which the C
+    standard leaves to the implementation (before C23, for the representation) and gcc defines so,
+    and the trailing
+    zeros by the loop of \verb|RP_CTZL| (Definition~\ref{def:ctz}); the numerator and the
+    denominator, integers in the loops of the model, become words for the test, which is exact
+    below $2^{63}$, where the refusal of \verb|findPoints| keeps the height;
+  \item the reciprocal a natural number, $\lfloor (2^{64} - 1) / p \rfloor + 1$, which does not
+    wrap at $p = 1$, a modulus that never occurs; the comparison $2 p H < \mathrm{stage3Limit}$ of
+    natural numbers, for the comparison of \verb|double|s, which has the same outcome for every $H <
+    2^{63}$;
   \item the table of the third stage and the products of the check as thunks made once per
     denominator, for the arrays of the sieving thread and the flags \verb|stage3_filled| and
     \verb|compute_bc|; the table a list, with no bound $\mathrm{RATPOINTS\_NUM\_PRIMES}$ on its
@@ -454,22 +497,39 @@ Each component of this chapter differs from the C code in a stated way, recorded
 \end{itemize}
 The lines of this part of the C code that are neither modelled nor left to a later stage are
 excluded in \verb|correspondence/ratpoints.toml|: the instrumentation of \verb|sift.c| between
-statements that are not modelled, with the arms of its production build; the inlining attributes
-of \verb|rp-private.h|, which carry no meaning; and \verb|RATPOINTS_DEFAULT_SP2|, which the C code
+statements that are not modelled, with the arms of its production build; the inlining attributes of
+\verb|rp-private.h|, which carry no meaning; and \verb|RATPOINTS_DEFAULT_SP2|, which the C code
 reads nowhere. Left to stage~F3 are the reductions of the row indices of the first two stages
-(\verb|mod_mul|, the second copy of \verb|mod| in \verb|sift.c|, the test \verb|small|) with the
-offsets of the packing and the residues of $b\, 2^{-k}$ (\verb|fill_bp_list|); left to stage~I the
-correction of the moduli between the blocks, the choice of the cut points by cost, and, with the
-blocks, the reduction of the first word of a block modulo the forbidden divisors tested with words,
-which still divides (\verb|wordBits|).
+(\verb|mod_mul|, the second copy of \verb|mod| in \verb|sift.c|, the test \verb|small|), which read
+the array \verb|magics|, with the offsets of the packing and the residues of $b\, 2^{-k}$
+(\verb|fill_bp_list|); left to stage~I the correction of the moduli between the blocks, the choice
+of the cut points by cost, and, with the blocks, the reduction of the first word of a block modulo
+the forbidden divisors tested with words, which still divides (\verb|wordBits|), with the
+reciprocals of these divisors.
 
 \section{What changes in the earlier chapters}\label{sec:stagesEarlier}
 
-Each item of the order of work changes the nodes of Chapters~\ref{chap:sieve}
+Each item of the order of work changes the nodes of Chapters~\ref{chap:spec}
 to~\ref{chap:tables} that its declarations belong to, and the nodes whose C lines its declarations
 take, in the same commit, so that the names of the nodes exist and their C links are the ranges of
 their declarations:
 \begin{itemize}
+  \item the search for the points (Definition~\ref{def:findPoints}) refuses a height bound that is
+    not a \verb|long|, $2^{63}$ or more, with error~4, and its deviation no longer says that only
+    the reading of the program bounds the height; the refusals of Definition~\ref{def:reversal} say
+    that error~4 covers the height bound $0$ and the heights that are not \verb|long|s, as the
+    program refuses them (\verb|Refusal.incorrectHeight|, \verb|Refusal|); the refusal theorems
+    (Theorem~\ref{thm:refusals}) and the statements that comparator certifies (in
+    Chapter~\ref{chap:sieve} and in \verb|comparator/README.md|) take $2^{63} \le H$ next to $H =
+    0$, and so do the refusals and their order in Section~\ref{sec:refusals} and the list of
+    Section~\ref{sec:comparator-ab} of Chapter~\ref{chap:spec}, the introduction of
+    Chapter~\ref{chap:setup}, the paragraph after Definition~\ref{def:searchPoints}, the sentence
+    after Theorem~\ref{thm:findPoints_order} and the item on the height in
+    Section~\ref{sec:setupDeviations}, which says that the height is a natural number that
+    \verb|findPoints| refuses from $2^{63}$ on, for the \verb|long| height of the library;
+  \item the rules of the translation in Section~\ref{sec:sieve} say that a C \verb|long| is an
+    \verb|Int| or a \verb|Nat| except in the test for common factors, which computes on the 64-bit
+    words of core Lean (Definition~\ref{def:relprime}; F2.4);
   \item the introduction of Chapter~\ref{chap:sieve} counts the stages of the sieve and the check of
     stage~F2 among the data refinements, with the bit arrays of stage~C2, the faithful tables of
     stage~F1 and the packing of stage~F3, and no longer counts the third stage among the sound
@@ -508,31 +568,47 @@ their declarations:
   \item the run over the denominators (Definition~\ref{def:sieveRun}) takes the cut points, with
     \csource{find_points.c}{3861}{3861} and \csource{find_points.c}{3911}{3911}, makes the rows of
     the first $s_2$ entries and hands the rest to the third stage; its contract and the reduction of
-    the run to the reference (Theorem~\ref{thm:run_reference}) need $b_{\mathrm{low}} \ge 1$ and the
+    the run to the reference (Theorem~\ref{thm:run_reference}) need $b_{\mathrm{low}} \ge 1$,
+    $b_{\mathrm{high}} \le H < 2^{63}$, the reciprocals of the entries in \verb|magics| and the
     entries from $s_2$ on to be prime entries, and so do the passages on the run after
     Lemma~\ref{lem:sift_eq_checkDen} and in Section~\ref{sec:shapes}; the search
-    (Definition~\ref{def:searchPoints}) passes the cut points of its parameters and reads the shape
-    of the entries of the third stage off Lemma~\ref{lem:sievingInfo};
+    (Definition~\ref{def:searchPoints}) takes $H < 2^{63}$ in its contract and its node, passes
+    $b_{\mathrm{high}} = H$, the cut points of its parameters and the reciprocals that
+    \verb|sieving_info| collects, and reads the shape of the entries of the third stage off
+    Lemma~\ref{lem:sievingInfo};
   \item the Jacobi test by tables (Definition~\ref{def:jacobiTables}) reduces with the reciprocal
-    and uses Definition~\ref{def:mulMod}, its contract needs the primes of the table, its links to
+    that its tables keep for each prime, a field that \verb|jacobi_setup| sets, and uses
+    Definition~\ref{def:mulMod}, its contract needs the primes of the table, its links to
     \verb|RP_MULDIV| move to Definition~\ref{def:mulMod}, and it holds the fact
     $\mathrm{mulModLimit} < 2^{32}$, which the files section of Chapter~\ref{chap:denominators}
     names among the facts that the proofs use; the deviation of Chapter~\ref{chap:denominators} on
     the divisions for \verb|RP_MULDIV| and \verb|RP_MULMOD| keeps only the reduction of the first
     word of a block modulo the forbidden divisors (stage~I);
-  \item the sieve entry of a modulus (Lemma~\ref{lem:sieveEntry_admits}) and what
-    \verb|sieving_info| computes (Lemma~\ref{lem:sievingInfo}) state the shape of the entries of the
-    primes of the table and that the entries are those of the moduli in their order; the deviations
-    that send the reciprocal of a sieve entry to stages~F2 and~F3 (in Chapter~\ref{chap:setup} the
-    item on \verb|examine_prime|, in Chapter~\ref{chap:tables} the fields of the sieve entry of a
-    prime and the last item) say that it is computed where it is read
-    (Definition~\ref{def:mulMod}), the bias, \verb|rbainv| and \verb|dinv| serving the packing
-    (stage~F3); the reciprocals left to stage~F2 in Chapter~\ref{chap:tables} are those of
-    Definition~\ref{def:mulMod}, read by the third stage, the first two stages reading them in
-    stage~F3, and the Jacobi test computes those of its primes in the same way where it reads them;
-    the deviations of Chapter~\ref{chap:tables} on the primes beyond those examined, which ratpoints
-    examines for its first two stages too when \verb|-p| is absent, and on the primes that \verb|-P|
-    takes after the first $q$, which the parameters no longer take under \verb|-p|;
+  \item the sieve entries (Definition~\ref{def:SieveEntry}) gain the field of the reciprocal, which
+    the sieve entry of a modulus sets for every kind of modulus (Definition~\ref{def:makeModulus},
+    where \verb|examine_prime| sets that of a prime with its tables, \verb|make_power| that of a
+    prime power and \verb|make_modulus| that of a product) and uses Definition~\ref{def:mulMod}, and
+    what \verb|sieving_info| computes (Definition~\ref{def:sievingInfo}) gains the array
+    \verb|magics| of the reciprocals of the moduli (\csource{find_points.c}{3064}{3070}), with the
+    deviation that it holds those of the moduli of the parameters only, where \verb|sieving_info|
+    also copies those of the primes after them that the correction of the moduli may take (stage~I);
+    their lemmas (Lemmas~\ref{lem:sieveEntry_admits} and~\ref{lem:sievingInfo}) state the
+    reciprocals, the shape of the entries of the primes of the table and that the entries are those
+    of the moduli in their order; the deviations that send the reciprocal of a sieve entry to
+    stages~F2 and~F3 (in Chapter~\ref{chap:setup} the item on \verb|examine_prime|, in
+    Chapter~\ref{chap:tables} the fields of the sieve entry of a prime and the last item) say that
+    the entry has it, set where the model makes the entry, and so does the deviation of the table of
+    a prime (Definition~\ref{def:examinePrime}), which counts the reciprocal among the fields of the
+    sieve entry, the bias, \verb|rbainv| and \verb|dinv| serving the packing (stage~F3); the
+    reciprocals left to stage~F2 in Chapter~\ref{chap:tables} are now fields, the third stage
+    reading them, the first two stages in stage~F3; the deviations of Chapter~\ref{chap:tables} on
+    the primes beyond those examined, which ratpoints examines for its first two stages too when
+    \verb|-p| is absent, and on the primes that \verb|-P| takes after the first $q$, which the
+    parameters no longer take under \verb|-p|;
+  \item the deviations of the forbidden divisors tested with words in
+    Chapter~\ref{chap:denominators} (their entries, the forbidden divisor of a prime and the second
+    loop, and the list of deviations of the chapter) say that their reciprocals, which ratpoints
+    reads only for the first word of a block, come with the blocks (stage~I);
   \item the files sections of Chapters~\ref{chap:words} to~\ref{chap:denominators}, which name
     \verb|Ratpoints/Proof/Sift.lean| for the contracts from the walk on; the record of
     \verb|find_points_work_1| in Chapter~\ref{chap:setup}, which then lacks only what belongs to
@@ -545,7 +621,11 @@ their declarations:
 The constants $\mathrm{stage3Limit}$, $\mathrm{useLongInPhase2}$, $\mathrm{defaultSp1}$ and
 $\mathrm{sp2Extra}$, and the fact $\mathrm{mulModLimit} < 2^{32}$, go into
 \verb|Ratpoints/Model/Constants.lean|, each citing its macro; the reciprocal and the reductions into
-\verb|Ratpoints/Model/Tables.lean|; the test for common factors, the third stage, the second stage
+\verb|Ratpoints/Model/Tables.lean|, with the field of the reciprocal of the sieve entries; the
+refusal of the heights beyond a \verb|long| into \verb|Ratpoints/Model/FindPoints.lean| and the
+text of the refusals into \verb|Ratpoints/Model/Setup.lean|, with the
+refusal theorems in \verb|Ratpoints/Proof/FindPoints.lean| and in the challenge and the solution of
+comparator; the test for common factors, the third stage, the second stage
 and the staged sieve into \verb|Ratpoints/Model/Sieve.lean|; the run with the cut points and the
 Jacobi test into \verb|Ratpoints/Model/Denominators.lean|; the search into
 \verb|Ratpoints/Model/FindPoints.lean|; and the parameters into \verb|Ratpoints/Model/Params.lean|.
@@ -564,47 +644,56 @@ the run in \verb|Ratpoints/Proof/Denominators.lean|, the sieve entries in
 earlier chapters that it changes and those whose C lines it takes
 (Section~\ref{sec:stagesEarlier}):
 \begin{enumerate}
-  \item[F2.1] The constant $\mathrm{stage3Limit}$ with its fact, the fact
+  \item[F2.1] The refusal of a height bound of $2^{63}$ or more by \verb|findPoints|, with error~4,
+    and the refusal theorems with $2^{63} \le H$, in the model, the proofs, the challenge and the
+    solution of comparator and \verb|comparator/README.md|, with a \verb|#guard| example; the nodes
+    of the search for the points, of the reversal check and of the refusal theorems, and the
+    passages on the refusals and the statements that comparator certifies.
+  \item[F2.2] The constant $\mathrm{stage3Limit}$ with its fact, the fact
     $\mathrm{mulModLimit} < 2^{32}$, the reciprocal and the reductions (Definition~\ref{def:mulMod},
     Lemma~\ref{lem:mulMod}), with \verb|#guard| examples against the remainder and the quotient over
-    the table; nothing calls them yet, and the quotient shares the lines of \verb|RP_MULDIV| with
-    the Jacobi test until F2.2.
-  \item[F2.2] The Jacobi test by the quotient with the reciprocal, its contract with the primes of
-    the table; the node of the Jacobi test, whose links to \verb|RP_MULDIV| pass to
-    Definition~\ref{def:mulMod}.
-  \item[F2.3] The test for common factors (Definition~\ref{def:relprime}, Lemma~\ref{lem:relprime})
-    with its range lemma and \verb|#guard| examples against the $\gcd$; nothing calls it yet, and
-    the check of a numerator gives it its lines (\csource{sift.c}{318}{343}); the node of
+    the table; the field of the reciprocal of the sieve entries, set by the sieve entry of a
+    modulus, and the array \verb|magics| of \verb|sieving_info|, with their contracts; nothing reads
+    them yet, and the quotient shares the lines of \verb|RP_MULDIV| with the Jacobi test until F2.3;
+    the nodes of the sieve entries and of \verb|sieving_info|.
+  \item[F2.3] The Jacobi test by the quotient with the reciprocal that its tables keep, its
+    contract with the primes of the table; the node of the Jacobi test, whose links to
+    \verb|RP_MULDIV| pass to Definition~\ref{def:mulMod}.
+  \item[F2.4] The test for common factors on words (Definition~\ref{def:relprime},
+    Lemma~\ref{lem:relprime}), with \verb|#guard| examples against the $\gcd$; nothing calls it
+    yet, and the check of a numerator gives it its lines (\csource{sift.c}{318}{343}); the node of
     Definition~\ref{def:checkNum}.
-  \item[F2.4] The third stage and the test of a candidate (Definitions~\ref{def:stage3}
+  \item[F2.5] The third stage and the test of a candidate (Definitions~\ref{def:stage3}
     and~\ref{def:accepted}, Lemmas~\ref{lem:stage3} and~\ref{lem:accepted}), with \verb|#guard|
     examples in both branches of the bias and above $\mathrm{mulModLimit}$; nothing calls them yet,
     and they take their lines from the first stage (\csource{sift.c}{291}{312}), from one
     denominator (\csource{sift.c}{405}{431}) and from the check of a numerator, which keeps none;
     the nodes of Definitions~\ref{def:andRows}, \ref{def:checkNum} and~\ref{def:sift}.
-  \item[F2.5] The second stage (Definition~\ref{def:secondStage}, Lemma~\ref{lem:secondStage}), with
+  \item[F2.6] The second stage (Definition~\ref{def:secondStage}, Lemma~\ref{lem:secondStage}), with
     the constant $\mathrm{useLongInPhase2}$; nothing calls them yet, and the first stage gives them
     \csource{sift.c}{1083}{1086} and \csource{sift.c}{1174}{1202}, the scan line~1297; the nodes of
     Definitions~\ref{def:andRows} and~\ref{def:scanPiece}.
-  \item[F2.6] The staged sieve: a bit array through the second stage and the extraction
+  \item[F2.7] The staged sieve: a bit array through the second stage and the extraction
     (Definition~\ref{def:siftBitArray}, Lemma~\ref{lem:siftBitArray}), then the walk, the scan, the
     piece and one denominator with the test of a candidate, the second stage, the end of the first
-    stage and the entries of the third, and the thunks (Lemma~\ref{lem:staged}); the new
-    \verb|Ratpoints/Proof/Sift.lean|; the run passes all the entries to the first stage for now, and
-    its contract gains only $b_{\mathrm{low}} \ge 1$; the nodes of Chapter~\ref{chap:words} and of
-    the run.
-  \item[F2.7] The run with the cut points, the search passing those of its parameters, the shape of
+    stage, the entries of the third and their reciprocals, and the thunks (Lemma~\ref{lem:staged});
+    the new \verb|Ratpoints/Proof/Sift.lean|; the run passes all the entries to the first stage for
+    now, takes the reciprocals from the search, and its contract gains $b_{\mathrm{low}} \ge 1$ and
+    $b_{\mathrm{high}} \le H < 2^{63}$; the search takes $H < 2^{63}$ in its contract, which the
+    refusal of \verb|findPoints| gives; the nodes of Chapter~\ref{chap:words}, of the run and of the
+    search.
+  \item[F2.8] The run with the cut points, the search passing those of its parameters, the shape of
     the entries in the contracts of the sieve entry of a modulus and of \verb|sieving_info|; the
     theorems with their statements unchanged; the nodes of the run, of the search and of the sieve
     entries.
-  \item[F2.8] The parameters of the command line by the counting rules of
+  \item[F2.9] The parameters of the command line by the counting rules of
     Section~\ref{sec:cuts}, with the constants $\mathrm{defaultSp1}$ and $\mathrm{sp2Extra}$ and
     \verb|#guard| examples of the stage sizes, confirmed by \verb|ratpoints -v| with \verb|-U 0|
-    where \verb|-N| is absent; comparator, whose run covers the changes of F2.2 to F2.7 as well; the
+    where \verb|-N| is absent; comparator, whose run covers the changes of F2.1 to F2.8 as well; the
     node of the parameters.
-  \item[F2.9] The exclusions; the option sets of the differential tests; the build with other values
-    of the constants, a Boolean among them and $\mathrm{mulModLimit}$ within its fact; the passages
-    of the earlier chapters that F2 makes untrue; and the description of the repository and
+  \item[F2.10] The exclusions; the option sets of the differential tests; the build with other
+    values of the constants, a Boolean among them and $\mathrm{mulModLimit}$ within its fact; the
+    passages of the earlier chapters that F2 makes untrue; and the description of the repository and
     \verb|formalization.yaml|.
 \end{enumerate}
 
@@ -662,5 +751,12 @@ Checks made while this chapter was written:
     each item takes the C lines of its components from the earlier nodes in its own commit and a bit
     array through the second stage comes with the walk that it calls, the positive denominators of
     the run, the changes of the earlier chapters, the C links, the uses of the nodes, and the claims
-    of the evidence.
+    of the evidence;
+  \item the parts that the decisions on this plan changed are in neither the sketch nor the
+    prototype, which tested the common factors on natural numbers and computed the reciprocals
+    where they read them, so that the checks of the test for common factors above are of that
+    version: the test on
+    the words of the C code, the reciprocals as fields where the C code has them, and the refusal of
+    the heights beyond a \verb|long|; their proofs come with the order of work, the test on words
+    through the arithmetic of the 64-bit words of core Lean.
 \end{itemize}
