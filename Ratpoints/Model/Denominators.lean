@@ -504,18 +504,21 @@ def jacobi (b : Nat) (lcf : Int) : Id Int := do
 odd primes `q_i` in increasing order, each with the table of the non-squares modulo `q_i` when
 `e_i` is odd (entry `r` true when `r` is not a nonzero square modulo `q_i`) and none when `e_i` is
 even, and the eight signs, entry `i` true when `(-1 / b)^neg (2 / b)^v` times the signs of the
-reciprocity of the `q_i` with odd `e_i` is `-1` for `b ≡ i (mod 8)`.
+reciprocity of the `q_i` with odd `e_i` is `-1` for `b ≡ i (mod 8)`; and the reciprocals of the
+`q_i` (`Ratpoints.Sieve.magic`), in their order, with which the test reduces modulo them.
 
 C: `find_points.c:672-681`
 
-Deviation: a list of pairs for the arrays `q` and `nonsq` and their count `nq`, with no reciprocals
-`magic`, the model dividing; the tables as arrays of their own, for the space that they take from
-the table `jtab` of the run; natural numbers for the `long`s `q`, and Booleans for the
-`unsigned char`s of the tables and of the signs. -/
+Deviation: a list of pairs for the arrays `q` and `nonsq` and their count `nq`, and an array of its
+own for the array `magic`; the tables as arrays of their own, for the space that they take from the
+table `jtab` of the run; natural numbers for the `long`s `q` and the `unsigned long`s `magic`, and
+Booleans for the `unsigned char`s of the tables and of the signs. -/
 structure JacobiInfo where
   /-- The odd primes of the leading coefficient, each with its table of non-squares when its
   exponent is odd. -/
   primes : List (Nat × Option (Array Bool))
+  /-- The reciprocals of the primes, in their order. -/
+  magic : Array Nat
   /-- The eight signs, indexed by the residues modulo 8. -/
   sign : Array Bool
 
@@ -555,7 +558,8 @@ coefficient `lcf ≠ 0` and the largest denominator `bHigh`, or `none` where the
 primes with an odd exponent sum to more than `Ratpoints.jacobiTable`. The power `2^v` is divided
 off; then each prime `q` of the table that divides the cofactor, in turn while the cofactor is not
 `1`, with its exponent, and for an odd exponent the table of the non-squares modulo `q`
-(`Ratpoints.Sieve.nonSquares`); and the signs (`Ratpoints.Sieve.jacobiSigns`).
+(`Ratpoints.Sieve.nonSquares`); and the signs (`Ratpoints.Sieve.jacobiSigns`) and the reciprocals
+of the primes (`Ratpoints.Sieve.magic`).
 
 C: `find_points.c:683-708`, `find_points.c:714-720`, `find_points.c:730-731`
 
@@ -563,8 +567,10 @@ Deviation: the tables as fresh arrays, for the table `jtab` of the run that `tab
 give, whose bound `Ratpoints.jacobiTable` on their total size is kept; the valuations by
 `Ratpoints.Setup.valuation`, for `mpz_scan1` at `2` and the loop of exact divisions at the odd
 primes, the power then divided off at once; the number `n3` of the primes `≡ 3 (mod 4)` with an odd
-exponent counted in the list at the end, where the C code counts them in its loop; natural numbers
-for the GMP integer `tmp` and the `long`s; no reciprocals `magic`; `none` and the tables returned,
+exponent counted in the list at the end, where the C code counts them in its loop, and the
+reciprocals of the primes made from the list at the end, where the C code sets each with its prime
+(line 700); natural numbers for the GMP integer `tmp`, the `long`s and the `unsigned long`s of the
+reciprocals, which are `ULONG_MAX / q + 1` for the odd primes `q`; `none` and the tables returned,
 for the return values `0` and `1` and the structure that `ji` points to. -/
 def jacobiSetup (lcf : Int) (bHigh : Nat) : Id (Option JacobiInfo) := do
   if mulModLimit < bHigh then return none
@@ -585,35 +591,40 @@ def jacobiSetup (lcf : Int) (bHigh : Nat) : Id (Option JacobiInfo) := do
     else qs := qs.push (q, none)
   if w != 1 then return none
   let n3 := (qs.filter fun (q, ns) ↦ ns.isSome && q &&& 2 != 0).size
-  return some ⟨qs.toList, jacobiSigns n3 (lcf < 0) v⟩
+  return some ⟨qs.toList, qs.map fun (q, _) ↦ magic q, jacobiSigns n3 (lcf < 0) v⟩
 
-/-- Whether `(lcf / b*) = 1` for the denominator `0 < b < 2 ^ 64`, by the tables `ji` of the leading
-coefficient `lcf` (`Ratpoints.Sieve.jacobiSetup`): the odd part of `b` (`Ratpoints.Sieve.ctz`), out
-of which every prime `q` of `lcf` is divided as often as it divides, is `b*`; the sign of `b* mod 8`
-is combined by exclusive or with the entry of `b* mod q` in the table of each prime with an odd
-exponent, and the test passes when the result is false. For `b = 0` and every multiple of `2 ^ 64`,
-whose word `b.toUInt64` is `0`, the loop of `Ratpoints.Sieve.ctz` does not end; the tables apply
-only for `b ≤ Ratpoints.mulModLimit < 2 ^ 64` (`Ratpoints.mulModLimit_lt_size`).
+/-- Whether `(lcf / b*) = 1` for the denominator `0 < b ≤ Ratpoints.mulModLimit` (more generally
+`b q < 2 ^ 64` for every prime `q` of `ji`), by the tables `ji` of the leading coefficient `lcf`
+(`Ratpoints.Sieve.jacobiSetup`): the odd part of `b` (`Ratpoints.Sieve.ctz`), out of which every
+prime `q` of `lcf` is divided as often as it divides, is `b*`; the sign of `b* mod 8` is combined by
+exclusive or with the entry of `b* mod q` in the table of each prime with an odd exponent, and the
+test passes when the result is false. The quotient `k` by `q` and the remainder `b - k q` are
+computed by a multiplication with the reciprocal of `q` that the tables hold
+(`Ratpoints.Sieve.mulDiv`), which gives the quotient for `b q < 2 ^ 64`: for the denominators up to
+the bound `Ratpoints.mulModLimit < 2 ^ 32` for which the tables are made, and their primes, primes
+of `Ratpoints.primeTable`, below `2 ^ 10`. For `b = 0` and every multiple of `2 ^ 64`, whose word
+`b.toUInt64` is `0`, the loop of `Ratpoints.Sieve.ctz` does not end.
 
-C: `find_points.c:734-759`, `rp-private.h:409-410`, `rp-private.h:415-416`
+C: `find_points.c:734-759`
 
-Deviation: divisions and remainders for `RP_MULDIV`, which divides in a build without a 128-bit
-integer type (`rp-private.h:415-416`) and otherwise multiplies by the reciprocal
-(`rp-private.h:409-410`), exact below `2^32`, the bound `Ratpoints.mulModLimit` on the denominators
-for which the tables are made; the odd part as the shift by the lowest set bit of the word `b`
-(`Ratpoints.Sieve.ctz`, the loop of `RP_CTZL`); `b mod 8` for `b & 7`; natural numbers for the
-`long`s; a Boolean for the `unsigned char` `s`, with exclusive or for `^=` and negation for the test
-`s == 0`, and the test returned as a Boolean, for the `int`. -/
+Deviation: the list of the primes with their tables walked with the positions (`List.zipIdx`), at
+which the reciprocals are read, for the index `i` of the arrays; the odd part as the shift by the
+lowest set bit of the word `b` (`Ratpoints.Sieve.ctz`, the loop of `RP_CTZL`); `b mod 8` for
+`b & 7`; natural numbers for the `long`s, the difference `b - k q` truncated at `0`, which is the
+difference of the C code, since `k q ≤ b` where the multiplication gives the quotient; a Boolean for
+the `unsigned char` `s`, with exclusive or for `^=` and negation for the test `s == 0`, and the test
+returned as a Boolean, for the `int`. -/
 def jacobiTest (ji : JacobiInfo) (b : Nat) : Id Bool := do
   let t ← ctz b.toUInt64
   let mut b := b >>> t
-  for (q, _) in ji.primes do
+  for ((q, _), i) in ji.primes.zipIdx do
     repeat
-      if b % q != 0 then break
-      b := b / q
+      let k := mulDiv b ji.magic[i]!
+      if b - k * q != 0 then break
+      b := k
   let mut s := ji.sign[b % 8]!
-  for (q, ns) in ji.primes do
-    if let some ns := ns then s := s ^^ ns[b % q]!
+  for ((q, ns), i) in ji.primes.zipIdx do
+    if let some ns := ns then s := s ^^ ns[b - mulDiv b ji.magic[i]! * q]!
   return !s
 
 /-! ### The shapes of the run -/
@@ -1045,6 +1056,21 @@ prints. -/
     | some ji => (List.range' 1 600).all fun b ↦
         Id.run (jacobiTest ji b) == (Id.run (jacobi b lcf) == 1)
     | none => false
+
+-- The test by tables at the bound `Ratpoints.mulModLimit` of its denominators, where the
+-- reductions by the reciprocals of the largest primes of the table come nearest to `2 ^ 64`, with
+-- denominators divisible by them and not, against the binary algorithm.
+#guard [1019 * 1021 * 9, 3 * 5 * 7 * 11, -1021, 1021 ^ 3].all fun lcf ↦
+  match Id.run (jacobiSetup lcf mulModLimit) with
+  | some ji => [mulModLimit, mulModLimit - 1, mulModLimit - 2, 1021 ^ 3, 1019 * 1021 * 4093,
+      2 ^ 31 + 1, 3 * 1021 ^ 3].all fun b ↦
+      Id.run (jacobiTest ji b) == (Id.run (jacobi b lcf) == 1)
+  | none => false
+
+-- The tables hold the reciprocals of their primes, in their order.
+#guard (Id.run (jacobiSetup (2 ^ 5 * 3 ^ 3 * 1021 * 7) 600)).map (fun ji ↦
+    (ji.primes.map (·.1), ji.magic.toList)) ==
+  some ([3, 7, 1021], [magic 3, magic 7, magic 1021])
 
 -- The bounds of the square shapes.
 #guard (List.range 200).all fun n ↦

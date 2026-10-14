@@ -362,8 +362,8 @@ by `p` of every `u` with `u p < 2 ^ 64` are computed by multiplications. The C c
 `ULONG_MAX/p + 1` where it sets a field `magic`: in the sieve entries of the moduli, which
 `examine_prime`, `make_power` and `make_modulus` make (lines 1808, 2422 and 2454 of
 `find_points.c`; here `Ratpoints.makeModulus?`), and in the tables of the Jacobi test (line 700;
-stage F). For `p = 1`, which is no modulus, it is `2 ^ 64`, where `ULONG_MAX / 1 + 1` wraps to `0`
-in the C code. -/
+here `Ratpoints.Sieve.jacobiSetup`). For `p = 1`, which is no modulus, it is `2 ^ 64`, where
+`ULONG_MAX / 1 + 1` wraps to `0` in the C code. -/
 def magic (p : Nat) : Nat := (2 ^ 64 - 1) / p + 1
 
 /-- The remainder of `u` modulo `p` by a multiplication with the reciprocal `m`, `RP_MULMOD`: the

@@ -222,7 +222,7 @@ $\gcd(b, G(a, b)) = \gcd(b, c_d)$. This restricts the denominators of the points
 
 \begin{definition}[The divisors of the leading coefficient]\label{def:setupUs1}
   \uses{def:valuation, def:primeTable, def:useCLong}
-  \lean{Ratpoints.maxDivisors, Ratpoints.Setup.DenInfo, Ratpoints.Setup.factorLcf, Ratpoints.Setup.squarefreeDivisors, Ratpoints.Setup.slope, Ratpoints.Setup.setupUs1, Ratpoints.Setup.IsFactorization, Ratpoints.Setup.factorLcf_spec, Ratpoints.Setup.extendDivisors, Ratpoints.Setup.squarefreeDivisors_spec, Ratpoints.Setup.slope_spec, Ratpoints.Setup.setupUs1_spec, Ratpoints.Setup.isFactorization_of_run_factorLcf_eq, Ratpoints.Setup.exists_of_setupUs1_eq_some, Ratpoints.Setup.eq_foldl_of_setupUs1_eq_some, Ratpoints.mem_primeTable_of_prime, Ratpoints.mem_of_toList_primeTable_eq, List.mem_of_mem_append_cons_of_rel, Ratpoints.lt_of_mem_primeTable, Nat.prime_of_lt_mul_self, Ratpoints.Setup.fitsLong_mul_of_le_div, Ratpoints.Setup.mul_self_lt_of_mem_primeTable, Ratpoints.Setup.fitsLong_of_lt_mul_self}
+  \lean{Ratpoints.maxDivisors, Ratpoints.Setup.DenInfo, Ratpoints.Setup.factorLcf, Ratpoints.Setup.squarefreeDivisors, Ratpoints.Setup.slope, Ratpoints.Setup.setupUs1, Ratpoints.Setup.IsFactorization, Ratpoints.Setup.factorLcf_spec, Ratpoints.Setup.extendDivisors, Ratpoints.Setup.squarefreeDivisors_spec, Ratpoints.Setup.slope_spec, Ratpoints.Setup.setupUs1_spec, Ratpoints.Setup.isFactorization_of_run_factorLcf_eq, Ratpoints.Setup.exists_of_setupUs1_eq_some, Ratpoints.Setup.eq_foldl_of_setupUs1_eq_some, Ratpoints.mem_primeTable_of_prime, Ratpoints.mem_of_toList_primeTable_eq, List.mem_of_mem_append_cons_of_rel, Nat.prime_of_lt_mul_self, Ratpoints.Setup.fitsLong_mul_of_le_div, Ratpoints.Setup.mul_self_lt_of_mem_primeTable, Ratpoints.Setup.fitsLong_of_lt_mul_self}
   \leanok
   For odd $d$ and $|c_d| \ne 1$, as \verb|setup_us1| computes it: the factorization of $|c_d|$, the
   power of $2$ divided off, then for the odd primes $p$ of the table in turn, while the cofactor is
@@ -447,33 +447,36 @@ $(c_d / q) = -1$, which these do not reach.
 \end{proof}
 
 \begin{definition}[The Jacobi test by tables]\label{def:jacobiTables}
-  \uses{def:valuation, def:primeTable, def:ctz}
+  \uses{def:valuation, def:primeTable, def:ctz, def:mulMod, lem:mulMod}
   \lean{Ratpoints.jacobiPrimes, Ratpoints.jacobiTable, Ratpoints.mulModLimit, Ratpoints.Sieve.JacobiInfo, Ratpoints.Sieve.nonSquares, Ratpoints.Sieve.jacobiSigns, Ratpoints.Sieve.jacobiSetup, Ratpoints.Sieve.jacobiTest, Ratpoints.Sieve.nonSquares_spec, Ratpoints.Sieve.legendreSym_eq_ite_getElem!_nonSquares, Ratpoints.Sieve.ite_getElem!_jacobiSigns, Ratpoints.Sieve.IsJacobiInfo, Ratpoints.Sieve.jacobiSetup_spec, Ratpoints.Sieve.jacobiTest_spec, ZMod.isSquare_natCast_iff_exists_mul_self_mod_eq, Ratpoints.mulModLimit_lt_size, Ratpoints.mulModLimit_lt_two_pow_32, Ratpoints.mul_lt_two_pow_64_of_le_mulModLimit, Ratpoints.Sieve.le_mulModLimit_of_jacobiSetup_eq_some}
   \leanok
   For $\ell = \pm 2^v \prod q_i^{e_i}$ and $b_{\mathrm{high}} \le \mathrm{mulModLimit} = 2^{32} - 1$
   (\verb|RP_MULMOD_LIMIT|, \csource{rp-private.h}{421}{421}): a record
   (\csource{find_points.c}{672}{681}) of the odd primes $q_i$ of the table, found by trial division,
-  at most $\mathrm{jacobiPrimes} = 16$ of them, each with the table of the non-squares modulo $q_i$
-  when $e_i$ is odd (\csource{find_points.c}{709}{713}), at most $\mathrm{jacobiTable} = 8192$
-  entries in all (\verb|RP_JACOBI_PRIMES|, \verb|RP_JACOBI_TABLE|,
-  \csource{find_points.c}{669}{669}, \csource{find_points.c}{670}{670}), and of eight signs, the
-  sign for $b^* \bmod 8$ the product of $(-1 / b^*)$ for negative $\ell$, $(2 / b^*)^v$ and the
-  signs of the reciprocity of the $q_i \equiv 3 \pmod 4$ with odd $e_i$
-  (\csource{find_points.c}{721}{729}); none when a prime of $\ell$ is beyond the table, or a bound
-  is passed (\csource{find_points.c}{683}{708}, \csource{find_points.c}{714}{720},
-  \csource{find_points.c}{730}{731}). The test of $b$: its odd part with every $q_i$ divided out,
-  the sign of the result modulo $8$ combined with the table entry of the result modulo each $q_i$
-  with odd $e_i$, passing when the product is $1$ (\csource{find_points.c}{734}{759}, with the
-  reductions by \verb|RP_MULDIV|, \csource{rp-private.h}{409}{410} and
-  \csource{rp-private.h}{415}{416}). The contracts
-  describe the loops: the table of $q$ marks the residues $x^2 \bmod q$, $1 \le x \le q / 2$, made
-  by the steps $2x + 1$ with one subtraction, so that it gives the Legendre symbol of a residue
-  other than $0$; the tables exist only for $b_{\mathrm{high}} \le \mathrm{mulModLimit}$ and
-  $\ell \ne 0$, and then describe $\ell$ as above; and the test negates the exclusive or of the sign
-  and the entries over the part of $b$ free of $2$ and of the primes of the tables, the odd part
-  taken by the lowest set bit. A denominator of the test is at most $\mathrm{mulModLimit}$, below
-  $2^{32}$, where \verb|RP_MULDIV| is exact, and below $2^{64}$, so that it is a word; a value at
-  most $\mathrm{mulModLimit}$ times a modulus $p \le 2^{32}$ is below $2^{64}$.
+  at most $\mathrm{jacobiPrimes} = 16$ of them, each with its reciprocal
+  (Definition~\ref{def:mulMod}) and with the table of the non-squares modulo $q_i$ when $e_i$ is odd
+  (\csource{find_points.c}{709}{713}), at most $\mathrm{jacobiTable} = 8192$ entries in all
+  (\verb|RP_JACOBI_PRIMES|, \verb|RP_JACOBI_TABLE|, \csource{find_points.c}{669}{669},
+  \csource{find_points.c}{670}{670}), and of eight signs, the sign for $b^* \bmod 8$ the product of
+  $(-1 / b^*)$ for negative $\ell$, $(2 / b^*)^v$ and the signs of the reciprocity of the
+  $q_i \equiv 3 \pmod 4$ with odd $e_i$ (\csource{find_points.c}{721}{729}); none when a prime of
+  $\ell$ is beyond the table, or a bound is passed (\csource{find_points.c}{683}{708},
+  \csource{find_points.c}{714}{720}, \csource{find_points.c}{730}{731}). The test of $b$: its odd
+  part with every $q_i$ divided out, the sign of the result modulo $8$ combined with the table entry
+  of the result modulo each $q_i$ with odd $e_i$, passing when the product is $1$; the quotient by
+  $q_i$ is computed with the reciprocal that the record holds, and the remainder from the quotient
+  (\csource{find_points.c}{734}{759}). The contracts describe the loops: the table of $q$ marks the
+  residues $x^2 \bmod q$, $1 \le x \le q / 2$, made by the steps $2x + 1$ with one subtraction, so
+  that it gives the Legendre symbol of a residue other than $0$; the tables exist only for
+  $b_{\mathrm{high}} \le \mathrm{mulModLimit}$ and $\ell \ne 0$, and then describe $\ell$ as above,
+  their primes are primes of the table and they hold the reciprocals of their primes; and for primes
+  $q$ of the tables with $b q < 2^{64}$, where the quotient with the reciprocal is exact
+  (Lemma~\ref{lem:mulMod}), the test negates the exclusive or of the sign and the entries over the
+  part of $b$ free of $2$ and of the primes of the tables, the odd part taken by the lowest set bit.
+  A denominator of the test is at most $\mathrm{mulModLimit}$, below $2^{32}$, and below $2^{64}$,
+  so that it is a word; a value at most $\mathrm{mulModLimit}$ times a modulus $p \le 2^{32}$ is
+  below $2^{64}$, so that the reductions of the test by the primes of the table, below $2^{10}$, are
+  exact.
 \end{definition}
 
 \begin{lemma}[The Jacobi test]\label{lem:jacobiTest}
@@ -709,8 +712,9 @@ Each component of this chapter differs from the C code in a stated way, recorded
     C code, which never binds for a \verb|long| $b_{\mathrm{high}}$ and an odd prime ($3^{40} >
     2^{63}$), so that the model stays sound for every height;
   \item lists for the arrays with their terminating zeros, natural numbers for the \verb|long|s and
-    \verb|int|s, divisions for the multiplications by reciprocals (\verb|RP_MULDIV|,
-    \verb|RP_MULMOD|), fresh arrays for the buffers of the run and of the arguments; the values
+    \verb|int|s, divisions for the multiplications by reciprocals (\verb|RP_MULMOD|) of the first
+    word of a block modulo the forbidden divisors tested with words, which come with the blocks
+    (stage~I), fresh arrays for the buffers of the run and of the arguments; the values
     that could leave their C types are proved to stay in them for a \verb|long| $b_{\mathrm{high}}$,
     by lemmas that the nodes of their components name: the denominators $k^2$, $s k^2$ and
     $64 w + j$ of the shapes, the products $x p$ of the divisors and $p^m$ of the masks, the square

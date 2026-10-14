@@ -2167,7 +2167,6 @@
     "rp-private.h:409-410": {
       "hash": "3fadd98ca0e6075c12ad4816aa9acfa0385e86f6f45bf58bfe23dd8951366776",
       "owners": [
-        "Ratpoints.Sieve.jacobiTest",
         "Ratpoints.Sieve.mulDiv"
       ]
     },
@@ -2192,7 +2191,6 @@
     "rp-private.h:415-416": {
       "hash": "045d14c76f16560085b389c2fdcf89fbff8872160f51e96997eb8607bbd62771",
       "owners": [
-        "Ratpoints.Sieve.jacobiTest",
         "Ratpoints.Sieve.mulDiv"
       ]
     },

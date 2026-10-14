@@ -18,6 +18,7 @@ import Ratpoints.Mathlib.NumberTheory.LegendreSymbol.JacobiSymbol
 import Ratpoints.Proof.Bits
 import Ratpoints.Proof.Jacobi
 import Ratpoints.Proof.Params
+import Ratpoints.Proof.Stages
 import Ratpoints.Proof.Valuation
 import Ratpoints.Proof.Words
 import Std.Tactic.Do
@@ -36,7 +37,8 @@ part of `b` free of `2` and of the primes of the tables; and
 `Ratpoints.Sieve.jacobiSym_eq_ite_foldl` reads the Jacobi symbol off the tables. So the test lets
 the denominator of every point of a curve of even degree through. The set-up gives tables only for
 `bHigh ≤ Ratpoints.mulModLimit`, so that the denominators of the test stay below `2 ^ 32`, where
-`RP_MULDIV` is exact (`Ratpoints.Sieve.le_mulModLimit_of_jacobiSetup_eq_some`).
+`RP_MULDIV` with the reciprocals that the tables hold, those of their primes, is exact
+(`Ratpoints.Sieve.le_mulModLimit_of_jacobiSetup_eq_some`).
 
 ## Main definitions
 
@@ -48,8 +50,9 @@ the denominator of every point of a curve of even degree through. The set-up giv
 * `Ratpoints.Sieve.nonSquares_spec`, `Ratpoints.Sieve.legendreSym_eq_ite_getElem!_nonSquares`: the
   tables of the non-squares give the Legendre symbol; `Ratpoints.Sieve.ite_getElem!_jacobiSigns`:
   the signs.
-* `Ratpoints.Sieve.jacobiSetup_spec`, `Ratpoints.Sieve.jacobiTest_spec`: the contracts of the set-up
-  and of the test by tables.
+* `Ratpoints.Sieve.jacobiSetup_spec`, `Ratpoints.Sieve.jacobiTest_spec`: the contracts of the
+  set-up, whose tables hold primes of `Ratpoints.primeTable` with their reciprocals, and of the test
+  by tables.
 * `Ratpoints.Sieve.jacobiSym_eq_ite_foldl`: the Jacobi symbol read off the tables.
 * `Ratpoints.Sieve.run_jacobiTest`: the test by tables decides whether `(lcf / b*) = 1`.
 * `Ratpoints.Sieve.run_jacobiTest_of_sq_eq`: the test by tables passes the denominator of every
@@ -63,9 +66,13 @@ The contracts are proved with `vcgen`, with loop invariants that are named defin
 with Mathlib, since they speak of primes, their valuations and the Legendre symbol. A contract that
 needs the exact value of a component that its loop calls takes a private specification
 `⦃True⦄ x ⦃fun r ↦ r = Id.run x⦄` of it, since the registered contract would give only what it says
-of the value. The proofs use only that `Ratpoints.mulModLimit` is below `2 ^ 64`
-(`Ratpoints.mulModLimit_lt_size`, which `decide` checks next to the constant), never the values of
-`Ratpoints.mulModLimit`, `Ratpoints.jacobiPrimes` and `Ratpoints.jacobiTable`.
+of the value. The test reduces by the reciprocals that the tables hold, which the set-up makes those
+of their primes, and the reductions are exact (`Ratpoints.Sieve.mulDiv_magic`), since these are
+primes of `Ratpoints.primeTable`, below `1022`, and the denominators are at most
+`Ratpoints.mulModLimit < 2 ^ 32` (`Ratpoints.mul_lt_two_pow_64_of_le_mulModLimit`). The proofs use
+only that `Ratpoints.mulModLimit` is below `2 ^ 64` and `2 ^ 32` (`Ratpoints.mulModLimit_lt_size`,
+`Ratpoints.mulModLimit_lt_two_pow_32`, which `decide` checks next to the constant), never the values
+of `Ratpoints.mulModLimit`, `Ratpoints.jacobiPrimes` and `Ratpoints.jacobiTable`.
 -/
 
 @[expose] public section
@@ -203,12 +210,12 @@ def IsJacobiInfo (lcf : ℤ) (ji : JacobiInfo) : Prop :=
 /-- The invariant of the loop of `Ratpoints.Sieve.jacobiSetup` on `lcf` with the exponent `v` of `2`
 in it, on the cofactor `w` and the entries `qs`: for `lcf = 0`, `w = 0`; otherwise `|lcf|` is
 `2 ^ v w` times the powers of the primes of `qs` with their exponents in `lcf`, `w` is odd, and the
-entries are odd primes of `lcf` that do not divide `w`, each with the table of the non-squares
-exactly when its exponent in `lcf` is odd. -/
+entries are odd primes of `lcf` from `Ratpoints.primeTable` that do not divide `w`, each with the
+table of the non-squares exactly when its exponent in `lcf` is odd. -/
 def JacobiSetupInvariant (lcf : ℤ) (v w : ℕ) (qs : Array (ℕ × Option (Array Bool))) : Prop :=
   (lcf = 0 → w = 0) ∧ (lcf ≠ 0 →
     lcf.natAbs = 2 ^ v * w * (qs.toList.map fun x ↦ x.1 ^ padicValNat x.1 lcf.natAbs).prod ∧
-    w % 2 = 1 ∧ ∀ x ∈ qs.toList, x.1.Prime ∧ x.1 ≠ 2 ∧ x.1 ∣ lcf.natAbs ∧ ¬x.1 ∣ w ∧
+    w % 2 = 1 ∧ ∀ x ∈ qs.toList, x.1 ∈ primeTable ∧ x.1 ≠ 2 ∧ x.1 ∣ lcf.natAbs ∧ ¬x.1 ∣ w ∧
       x.2 = if padicValNat x.1 lcf.natAbs % 2 = 1 then some (Id.run (nonSquares x.1)) else none)
 
 theorem jacobiSetupInvariant_empty {lcf : ℤ} {v r : ℕ}
@@ -269,8 +276,8 @@ theorem JacobiSetupInvariant.padicValNat_eq {lcf : ℤ} {v w q e m : ℕ}
   have hP : ¬q ∣ (qs.toList.map fun x ↦ x.1 ^ padicValNat x.1 lcf.natAbs).prod :=
     hq.prime.not_dvd_prod fun a ha hd ↦ by
       obtain ⟨x, hx, rfl⟩ := List.mem_map.mp ha
-      exact (h3 x hx).2.2.2.1 ((Nat.prime_dvd_prime_iff_eq hq (h3 x hx).1).mp
-        (hq.dvd_of_dvd_pow hd) ▸ hqw)
+      exact (h3 x hx).2.2.2.1 ((Nat.prime_dvd_prime_iff_eq hq
+        (prime_of_mem_primeTable (h3 x hx).1)).mp (hq.dvd_of_dvd_pow hd) ▸ hqw)
   refine padicValNat_eq_of_eq_pow_mul_of_not_dvd hq.ne_zero ?_ (hq.prime.not_dvd_mul
     (hq.prime.not_dvd_mul hqm (mt (hq.prime.dvd_of_dvd_pow (n := v)) h2q)) hP)
   nth_rw 1 [h1, hm]
@@ -286,7 +293,8 @@ theorem JacobiSetupInvariant.push {lcf : ℤ} {v w cur e r : ℕ} {pref suff : L
     JacobiSetupInvariant lcf v (w / cur ^ e) (qs.push (cur, ns)) := by
   refine ⟨fun h0 ↦ by simp [h.1 h0], fun h0 ↦ ?_⟩
   obtain ⟨h1, h2, h3⟩ := h.2 h0
-  have hcur : cur.Prime := prime_of_mem_primeTable (Array.mem_of_forIn_toList_eq_append_cons hl)
+  have hmem := Array.mem_of_forIn_toList_eq_append_cons hl
+  have hcur : cur.Prime := prime_of_mem_primeTable hmem
   have hw0 : w ≠ 0 := by rintro rfl; simp at h1; lia
   obtain ⟨m, hm, hcm⟩ := Setup.exists_eq_of_eq_run_valuation hw0 hcur.one_lt he
   have hcw : cur ∣ w := Nat.dvd_of_mod_eq_zero (by simpa using hw)
@@ -302,7 +310,7 @@ theorem JacobiSetupInvariant.push {lcf : ℤ} {v w cur e r : ℕ} {pref suff : L
   · exact ⟨(h3 x hx).1, (h3 x hx).2.1, (h3 x hx).2.2.1, fun hd ↦ (h3 x hx).2.2.2.1 (hd.trans hmw),
       (h3 x hx).2.2.2.2⟩
   obtain rfl := List.mem_singleton.mp hx
-  exact ⟨hcur, fun h2' ↦ by subst h2'; lia, hcw.trans (h.dvd_natAbs h0), hcm, by rwa [hv]⟩
+  exact ⟨hmem, fun h2' ↦ by subst h2'; lia, hcw.trans (h.dvd_natAbs h0), hcm, by rwa [hv]⟩
 
 theorem JacobiSetupLoopInvariant.push_some {lcf : ℤ} {v w u cur e r : ℕ} {pref suff : List ℕ}
     {qs : Array (ℕ × Option (Array Bool))} {o : Option (Option JacobiInfo)} {ns : Array Bool}
@@ -328,15 +336,18 @@ theorem JacobiSetupLoopInvariant.false_of_some {lcf : ℤ} {v w u : ℕ}
   subst ho ha
   exact Option.some_ne_none ji h.2
 
-/-- At the end of the loop of `Ratpoints.Sieve.jacobiSetup` with the cofactor `1`, `lcf ≠ 0` and the
-tables are those of `lcf`. -/
+/-- At the end of the loop of `Ratpoints.Sieve.jacobiSetup` with the cofactor `1`, `lcf ≠ 0`, the
+tables are those of `lcf`, their primes are from `Ratpoints.primeTable`, and they hold the
+reciprocals of their primes. -/
 theorem JacobiSetupLoopInvariant.isJacobiInfo {lcf : ℤ} {bHigh v r w u : ℕ}
     {qs : Array (ℕ × Option (Array Bool))} {o : Option (Option JacobiInfo)} {ji : JacobiInfo}
     (hb : ¬mulModLimit < bHigh) (hv : (v, r) = Id.run (Setup.valuation lcf 2))
     (h : JacobiSetupLoopInvariant lcf v [] (o, w, qs, u)) (ho : o = none) (hw : ¬(w != 1) = true)
-    (hji : some ⟨qs.toList, jacobiSigns (qs.filter fun x ↦ x.2.isSome && x.1 &&& 2 != 0).size
-      (decide (lcf < 0)) v⟩ = some ji) :
-    bHigh ≤ mulModLimit ∧ lcf ≠ 0 ∧ IsJacobiInfo lcf ji := by
+    (hji : some ⟨qs.toList, qs.map (fun x ↦ magic x.1),
+      jacobiSigns (qs.filter fun x ↦ x.2.isSome && x.1 &&& 2 != 0).size (decide (lcf < 0)) v⟩ =
+        some ji) :
+    bHigh ≤ mulModLimit ∧ lcf ≠ 0 ∧ IsJacobiInfo lcf ji ∧ (∀ x ∈ ji.primes, x.1 ∈ primeTable) ∧
+      ji.magic.toList = ji.primes.map fun x ↦ magic x.1 := by
   subst ho
   obtain rfl : w = 1 := by simpa using hw
   have h0 : lcf ≠ 0 := fun h0 ↦ one_ne_zero (h.1 h0)
@@ -344,8 +355,10 @@ theorem JacobiSetupLoopInvariant.isJacobiInfo {lcf : ℤ} {bHigh v r w u : ℕ}
   obtain rfl : v = padicValNat 2 lcf.natAbs := by
     rw [← Setup.fst_run_valuation h0 Nat.one_lt_two, ← hv]
   obtain rfl := Option.some.inj hji
-  refine ⟨Nat.le_of_not_lt hb, h0, fun x hx ↦ ?_, by simpa using h1, ?_⟩
-  · exact ⟨(h3 x hx).1, (h3 x hx).2.1, (h3 x hx).2.2.1, (h3 x hx).2.2.2.2⟩
+  refine ⟨Nat.le_of_not_lt hb, h0, ⟨fun x hx ↦ ?_, by simpa using h1, ?_⟩, fun x hx ↦ (h3 x hx).1,
+    Array.toList_map ..⟩
+  · exact ⟨prime_of_mem_primeTable (h3 x hx).1, (h3 x hx).2.1, (h3 x hx).2.2.1,
+      (h3 x hx).2.2.2.2⟩
   · rw [← Array.length_toList, Array.toList_filter]
 
 -- The valuation, as a value for the contract of the set-up.
@@ -366,11 +379,15 @@ attribute [local irreducible] JacobiSetupInvariant JacobiSetupLoopInvariant prim
   Setup.valuation nonSquares
 
 /-- The set-up of the test by tables gives tables only for `bHigh ≤ Ratpoints.mulModLimit` and
-`lcf ≠ 0`, and then the tables of `lcf` (`Ratpoints.Sieve.IsJacobiInfo`). -/
+`lcf ≠ 0`, and then the tables of `lcf` (`Ratpoints.Sieve.IsJacobiInfo`), whose primes are from
+`Ratpoints.primeTable` and which hold their reciprocals, so that the reductions of the test by them
+are exact. -/
 @[spec]
 theorem jacobiSetup_spec (lcf : ℤ) (bHigh : ℕ) :
     ⦃ True ⦄ jacobiSetup lcf bHigh
-    ⦃ fun r ↦ ∀ ji, r = some ji → bHigh ≤ mulModLimit ∧ lcf ≠ 0 ∧ IsJacobiInfo lcf ji ⦄ := by
+    ⦃ fun r ↦ ∀ ji, r = some ji → bHigh ≤ mulModLimit ∧ lcf ≠ 0 ∧ IsJacobiInfo lcf ji ∧
+        (∀ x ∈ ji.primes, x.1 ∈ primeTable) ∧
+        ji.magic.toList = ji.primes.map fun x ↦ magic x.1 ⦄ := by
   vcgen [jacobiSetup, valuation_value, nonSquares_value] invariants
   | inv1 => fun _ suff st ↦ JacobiSetupLoopInvariant lcf v suff st
   all_goals try dsimp only at *
@@ -390,13 +407,14 @@ end
 
 /-- The invariant of the first loop of `Ratpoints.Sieve.jacobiTest` on the tables `ji` and the
 denominator `b`, after the entries `pref`: the current `b'` is odd and positive, has the part of `b`
-free of `2` and of the primes of `ji`, and is prime to the primes of `pref`. -/
+free of `2` and of the primes of `ji`, is prime to the primes of `pref`, and is at most `b`, so that
+the reductions by the reciprocals of the primes stay exact (`Ratpoints.Sieve.mulDiv_magic`). -/
 def JacobiTestInvariant (ji : JacobiInfo) (b : ℕ) (pref : List (ℕ × Option (Array Bool)))
     (b' : ℕ) : Prop :=
   0 < b' ∧ b' % 2 = 1 ∧
     (b'.primeFactorsList.filter fun p ↦ decide (p ≠ 2 ∧ p ∉ ji.primes.map Prod.fst)).prod =
       (b.primeFactorsList.filter fun p ↦ decide (p ≠ 2 ∧ p ∉ ji.primes.map Prod.fst)).prod ∧
-    ∀ x ∈ pref, ¬x.1 ∣ b'
+    (∀ x ∈ pref, ¬x.1 ∣ b') ∧ b' ≤ b
 
 /-- The invariant of the loop of `Ratpoints.Sieve.jacobiTest` that divides `b'` by the prime `q` as
 often as it divides: that of the first loop, and `q ∤ b'` at the exit. -/
@@ -405,23 +423,49 @@ def JacobiDivideInvariant (ji : JacobiInfo) (b : ℕ) (pref : List (ℕ × Optio
   .mk fun exit b' ↦ JacobiTestInvariant ji b pref b' ∧ (exit = true → ¬q ∣ b')
 
 theorem jacobiTestInvariant_nil {ji : JacobiInfo} {b t : ℕ}
-    (h : 0 < b ∧ b < UInt64.size ∧ ∀ x ∈ ji.primes, x.1.Prime)
+    (h : 0 < b ∧ b < UInt64.size ∧ (∀ x ∈ ji.primes, x.1.Prime ∧ b * x.1 < 2 ^ 64) ∧
+      ji.magic.toList = ji.primes.map fun x ↦ magic x.1)
     (ht : t = (UInt64.ofNat b).toBitVec.ctz.toNat) : JacobiTestInvariant ji b [] (b >>> t) := by
   have h1 := UInt64.two_pow_ctz_mul_shiftRight_ofNat h.1 h.2.1
   have h2 := UInt64.shiftRight_ctz_ofNat_mod_two h.1 h.2.1
   rw [← ht] at h1 h2
-  refine ⟨by lia, h2, ?_, by simp⟩
+  refine ⟨by lia, h2, ?_, by simp, Nat.shiftRight_le b t⟩
   conv_rhs => rw [← h1]
   rw [Nat.prod_filter_primeFactorsList_mul_of_forall (by simp) fun q hq ↦ ?_]
   rw [Nat.prime_two.primeFactorsList_pow] at hq
   simp [List.eq_of_mem_replicate hq]
+
+/-- The quotient by the prime `q` of the entry at the position `i` of the tables `ji`, by the
+reciprocal that the tables hold there, is exact for the current `b' ≤ b`, since `b q < 2 ^ 64`. -/
+theorem JacobiTestInvariant.mulDiv_getElem!_magic {ji : JacobiInfo} {b b' q i : ℕ}
+    {o : Option (Array Bool)} {pref : List (ℕ × Option (Array Bool))}
+    {pref' suff' : List ((ℕ × Option (Array Bool)) × ℕ)}
+    (hpre : 0 < b ∧ b < UInt64.size ∧ (∀ x ∈ ji.primes, x.1.Prime ∧ b * x.1 < 2 ^ 64) ∧
+      ji.magic.toList = ji.primes.map fun x ↦ magic x.1)
+    (hl : ji.primes.zipIdx = pref' ++ ((q, o), i) :: suff') (h : JacobiTestInvariant ji b pref b') :
+    mulDiv b' ji.magic[i]! = b' / q := by
+  have hmem : ((q, o), i) ∈ ji.primes.zipIdx := by simp [hl]
+  have hq := hpre.2.2.1 _ (List.fst_mem_of_mem_zipIdx hmem)
+  have hm : ji.magic[i]! = magic q := by rw [← Array.getElem!_toList, hpre.2.2.2]; grind
+  exact hm ▸ mulDiv_magic hq.1.pos (Nat.lt_of_le_of_lt (Nat.mul_le_mul_right q h.2.2.2.2) hq.2)
+
+/-- The remainder by the prime `q` of the entry at the position `i` of the tables `ji`, by the
+reciprocal that the tables hold there, is exact for the current `b' ≤ b`, since `b q < 2 ^ 64`. -/
+theorem JacobiTestInvariant.sub_mulDiv_getElem!_magic_mul {ji : JacobiInfo} {b b' q i : ℕ}
+    {o : Option (Array Bool)} {pref : List (ℕ × Option (Array Bool))}
+    {pref' suff' : List ((ℕ × Option (Array Bool)) × ℕ)}
+    (hpre : 0 < b ∧ b < UInt64.size ∧ (∀ x ∈ ji.primes, x.1.Prime ∧ b * x.1 < 2 ^ 64) ∧
+      ji.magic.toList = ji.primes.map fun x ↦ magic x.1)
+    (hl : ji.primes.zipIdx = pref' ++ ((q, o), i) :: suff') (h : JacobiTestInvariant ji b pref b') :
+    b' - mulDiv b' ji.magic[i]! * q = b' % q := by
+  rw [h.mulDiv_getElem!_magic hpre hl, Nat.mod_eq_sub_div_mul]
 
 /-- At the end of the first loop of `Ratpoints.Sieve.jacobiTest`, `b'` is the part of `b` free of
 `2` and of the primes of the tables. -/
 theorem JacobiTestInvariant.eq_prod_filter {ji : JacobiInfo} {b b' : ℕ}
     (h : JacobiTestInvariant ji b ji.primes b') :
     b' = (b.primeFactorsList.filter fun p ↦ decide (p ≠ 2 ∧ p ∉ ji.primes.map Prod.fst)).prod := by
-  obtain ⟨h1, h2, h3, h4⟩ := h
+  obtain ⟨h1, h2, h3, h4, -⟩ := h
   rw [← h3, Nat.prod_filter_primeFactorsList_eq_self (by lia) fun q hq ↦ ?_]
   have hqb := Nat.dvd_of_mem_primeFactorsList hq
   refine decide_eq_true ⟨fun hq2 ↦ by subst hq2; lia, fun hm ↦ ?_⟩
@@ -447,11 +491,17 @@ theorem JacobiTestSignInvariant.not_eq_not_foldl {ji : JacobiInfo} {b b' : ℕ} 
         fun p ↦ decide (p ≠ 2 ∧ p ∉ ji.primes.map Prod.fst)).prod % 8]!) := by
   rw [hs, ← h.eq_prod_filter]
 
-theorem JacobiTestSignInvariant.append_some {ji : JacobiInfo} {b' q : ℕ} {s : Bool}
-    {pref : List (ℕ × Option (Array Bool))} {o : Option (Array Bool)} {ns : Array Bool}
+theorem JacobiTestSignInvariant.append_some {ji : JacobiInfo} {b b' q i : ℕ} {s : Bool}
+    {pref : List (ℕ × Option (Array Bool))} {pref' suff' : List ((ℕ × Option (Array Bool)) × ℕ)}
+    {o : Option (Array Bool)} {ns : Array Bool}
+    (hpre : 0 < b ∧ b < UInt64.size ∧ (∀ x ∈ ji.primes, x.1.Prime ∧ b * x.1 < 2 ^ 64) ∧
+      ji.magic.toList = ji.primes.map fun x ↦ magic x.1)
+    (hb : JacobiTestInvariant ji b ji.primes b')
+    (hl : ji.primes.zipIdx = pref' ++ ((q, o), i) :: suff')
     (hs : JacobiTestSignInvariant ji b' pref s) (ho : o = some ns) :
-    JacobiTestSignInvariant ji b' (pref ++ [(q, o)]) (s ^^ ns[b' % q]!) := by
-  simp only [JacobiTestSignInvariant] at hs ⊢
+    JacobiTestSignInvariant ji b' (pref ++ [(q, o)])
+      (s ^^ ns[b' - mulDiv b' ji.magic[i]! * q]!) := by
+  simp only [JacobiTestSignInvariant, hb.sub_mulDiv_getElem!_magic_mul hpre hl] at hs ⊢
   subst hs ho
   simp
 
@@ -470,18 +520,24 @@ theorem JacobiTestInvariant.jacobiDivideInvariant {ji : JacobiInfo} {b b' q : �
     JacobiDivideInvariant ji b pref q false b' :=
   ⟨h, nofun⟩
 
-theorem JacobiDivideInvariant.exit {ji : JacobiInfo} {b b' q mb : ℕ}
-    {pref : List (ℕ × Option (Array Bool))} (hq : (b' % q != 0) = true)
+theorem JacobiDivideInvariant.exit {ji : JacobiInfo} {b b' q i mb : ℕ}
+    {pref : List (ℕ × Option (Array Bool))} {pref' suff' : List ((ℕ × Option (Array Bool)) × ℕ)}
+    {o : Option (Array Bool)}
+    (hpre : 0 < b ∧ b < UInt64.size ∧ (∀ x ∈ ji.primes, x.1.Prime ∧ b * x.1 < 2 ^ 64) ∧
+      ji.magic.toList = ji.primes.map fun x ↦ magic x.1)
+    (hl : ji.primes.zipIdx = pref' ++ ((q, o), i) :: suff')
+    (hq : (b' - mulDiv b' ji.magic[i]! * q != 0) = true)
     (h : b' = mb ∧ JacobiDivideInvariant ji b pref q false b') :
-    JacobiDivideInvariant ji b pref q true b' :=
-  ⟨h.2.1, fun _ hd ↦ by simp [Nat.mod_eq_zero_of_dvd hd] at hq⟩
+    JacobiDivideInvariant ji b pref q true b' := by
+  rw [h.2.1.sub_mulDiv_getElem!_magic_mul hpre hl] at hq
+  exact ⟨h.2.1, fun _ hd ↦ by simp [Nat.mod_eq_zero_of_dvd hd] at hq⟩
 
 theorem JacobiDivideInvariant.jacobiTestInvariant {ji : JacobiInfo} {b b' q : ℕ}
     {pref : List (ℕ × Option (Array Bool))} {o : Option (Array Bool)}
     (h : JacobiDivideInvariant ji b pref q true b') :
     JacobiTestInvariant ji b (pref ++ [(q, o)]) b' := by
-  obtain ⟨⟨h1, h2, h3, h4⟩, h5⟩ := h
-  refine ⟨h1, h2, h3, fun x hx ↦ ?_⟩
+  obtain ⟨⟨h1, h2, h3, h4, hb⟩, h5⟩ := h
+  refine ⟨h1, h2, h3, fun x hx ↦ ?_, hb⟩
   rcases List.mem_append.mp hx with hx | hx
   · exact h4 x hx
   · obtain rfl := List.mem_singleton.mp hx
@@ -489,25 +545,31 @@ theorem JacobiDivideInvariant.jacobiTestInvariant {ji : JacobiInfo} {b b' q : �
 
 /-- Dividing `b'` by a prime `q` of the tables keeps the part of `b'` free of `2` and of the primes
 of the tables. -/
-theorem JacobiDivideInvariant.div {ji : JacobiInfo} {b b' q mb : ℕ} {o : Option (Array Bool)}
-    {pref suff : List (ℕ × Option (Array Bool))}
-    (hpre : 0 < b ∧ b < UInt64.size ∧ ∀ x ∈ ji.primes, x.1.Prime)
-    (hl : ji.primes = pref ++ (q, o) :: suff) (hq : ¬(b' % q != 0) = true)
+theorem JacobiDivideInvariant.div {ji : JacobiInfo} {b b' q i mb : ℕ} {o : Option (Array Bool)}
+    {pref : List (ℕ × Option (Array Bool))} {pref' suff' : List ((ℕ × Option (Array Bool)) × ℕ)}
+    (hpre : 0 < b ∧ b < UInt64.size ∧ (∀ x ∈ ji.primes, x.1.Prime ∧ b * x.1 < 2 ^ 64) ∧
+      ji.magic.toList = ji.primes.map fun x ↦ magic x.1)
+    (hl : ji.primes.zipIdx = pref' ++ ((q, o), i) :: suff')
+    (hq : ¬(b' - mulDiv b' ji.magic[i]! * q != 0) = true)
     (h : b' = mb ∧ JacobiDivideInvariant ji b pref q false b') :
-    b' / q < mb ∧ JacobiDivideInvariant ji b pref q false (b' / q) := by
-  obtain ⟨rfl, ⟨h1, h2, h3, h4⟩, -⟩ := h
-  have hmem : (q, o) ∈ ji.primes := by simp [hl]
-  have hqp : q.Prime := hpre.2.2 _ hmem
+    mulDiv b' ji.magic[i]! < mb ∧
+      JacobiDivideInvariant ji b pref q false (mulDiv b' ji.magic[i]!) := by
+  rw [h.2.1.sub_mulDiv_getElem!_magic_mul hpre hl] at hq
+  rw [h.2.1.mulDiv_getElem!_magic hpre hl]
+  obtain ⟨rfl, ⟨h1, h2, h3, h4, hb⟩, -⟩ := h
+  have hmem : ((q, o), i) ∈ ji.primes.zipIdx := by simp [hl]
+  have hqp : q.Prime := (hpre.2.2.1 _ (List.fst_mem_of_mem_zipIdx hmem)).1
   have hqb : q ∣ b' := Nat.dvd_of_mod_eq_zero (by simpa using hq)
   have hpos : 0 < b' / q := Nat.div_pos (Nat.le_of_dvd h1 hqb) hqp.pos
   refine ⟨Nat.div_lt_self h1 hqp.one_lt, ⟨hpos,
     Nat.odd_iff.mp ((Nat.odd_iff.mpr h2).of_dvd_nat (Nat.div_dvd_of_dvd hqb)), ?_,
-    fun x hx hd ↦ h4 x hx (hd.trans (Nat.div_dvd_of_dvd hqb))⟩, nofun⟩
+    fun x hx hd ↦ h4 x hx (hd.trans (Nat.div_dvd_of_dvd hqb)), (Nat.div_le_self b' q).trans hb⟩,
+    nofun⟩
   rw [← h3, ← Nat.mul_div_cancel' hqb, Nat.mul_div_cancel_left _ hqp.pos,
     Nat.prod_filter_primeFactorsList_mul_of_forall hqp.ne_zero fun r hr ↦ ?_]
   rw [Nat.primeFactorsList_prime hqp, List.mem_singleton] at hr
   subst hr
-  exact decide_eq_false fun hc ↦ hc.2 (List.mem_map.mpr ⟨_, hmem, rfl⟩)
+  exact decide_eq_false fun hc ↦ hc.2 (List.mem_map.mpr ⟨_, List.fst_mem_of_mem_zipIdx hmem, rfl⟩)
 
 section
 
@@ -515,35 +577,39 @@ section
 `Ratpoints.Sieve.jacobiTest` are closed by their lemmas, never by unfolding them. -/
 attribute [local irreducible] JacobiTestInvariant JacobiDivideInvariant JacobiTestSignInvariant
 
-/-- The test by tables on `0 < b < 2 ^ 64`, for tables whose entries are primes: the exclusive or of
-the sign of `b* mod 8` and the entries of `b* mod q` in the tables of the primes `q`, negated, for
-`b*` the part of `b` free of `2` and of the primes of the tables. -/
+/-- The test by tables on `0 < b < 2 ^ 64`, for tables whose entries are primes `q` with
+`b q < 2 ^ 64` and which hold the reciprocals of their primes, so that the reductions by them are
+exact: the exclusive or of the sign of `b* mod 8` and the entries of `b* mod q` in the tables of the
+primes `q`, negated, for `b*` the part of `b` free of `2` and of the primes of the tables. -/
 @[spec]
 theorem jacobiTest_spec (ji : JacobiInfo) (b : ℕ) :
-    ⦃ 0 < b ∧ b < UInt64.size ∧ ∀ x ∈ ji.primes, x.1.Prime ⦄ jacobiTest ji b
+    ⦃ 0 < b ∧ b < UInt64.size ∧ (∀ x ∈ ji.primes, x.1.Prime ∧ b * x.1 < 2 ^ 64) ∧
+        ji.magic.toList = ji.primes.map fun x ↦ magic x.1 ⦄
+    jacobiTest ji b
     ⦃ fun r ↦ r = !(ji.primes.foldl (fun s x ↦ x.2.elim s fun ns ↦
         s ^^ ns[(b.primeFactorsList.filter
           fun p ↦ decide (p ≠ 2 ∧ p ∉ ji.primes.map Prod.fst)).prod % x.1]!)
         ji.sign[(b.primeFactorsList.filter
           fun p ↦ decide (p ≠ 2 ∧ p ∉ ji.primes.map Prod.fst)).prod % 8]!) ⦄ := by
   vcgen [jacobiTest] invariants
-  | inv1 => fun pref _ b' ↦ JacobiTestInvariant ji b pref b'
-  | inv2 b' _ => fun pref _ s ↦ JacobiTestSignInvariant ji b' pref s
-  | inv3 pref q _ _ _ _ _ => JacobiDivideInvariant ji b pref q
+  | inv1 => fun pref _ b' ↦ JacobiTestInvariant ji b (pref.map Prod.fst) b'
+  | inv2 b' _ => fun pref _ s ↦ JacobiTestSignInvariant ji b' (pref.map Prod.fst) s
+  | inv3 pref q _ _ _ _ _ _ => JacobiDivideInvariant ji b (pref.map Prod.fst) q
   | inv4 => .ofMeasure fun b' : ℕ ↦ b'
   all_goals try simp only [Std.WP.Variant.evalsTo_ofMeasure,
     Std.WP.Variant.evalsBelow_ofMeasure_nat, Std.WP.Assertion.NondetFun.evalsTo_pure,
-    Lean.Order.meet_prop_eq_and, Lean.Order.ofProp_prop_eq] at *
+    Lean.Order.meet_prop_eq_and, Lean.Order.ofProp_prop_eq, List.map_append, List.map_cons,
+    List.map_nil, List.zipIdx_map_fst] at *
   all_goals first
     | exact UInt64.ofNat_ne_zero_of_lt (And.left ‹_›) (And.left (And.right ‹_›))
     | exact jacobiTestInvariant_nil ‹_› ‹_›
     | exact jacobiTestSignInvariant_nil _ _
     | exact JacobiTestSignInvariant.not_eq_not_foldl ‹_› ‹_›
-    | exact JacobiTestSignInvariant.append_some ‹_› ‹_›
+    | exact JacobiTestSignInvariant.append_some ‹_› ‹_› ‹_› ‹_› ‹_›
     | exact JacobiTestSignInvariant.append_none ‹_› ‹_› ‹_›
     | exact JacobiTestInvariant.jacobiDivideInvariant ‹_›
     | exact JacobiDivideInvariant.jacobiTestInvariant ‹_›
-    | exact JacobiDivideInvariant.exit ‹_› ‹_›
+    | exact JacobiDivideInvariant.exit ‹_› ‹_› ‹_› ‹_›
     | exact JacobiDivideInvariant.div ‹_› ‹_› ‹_› ‹_›
 
 end
@@ -666,11 +732,13 @@ prime to `2 lcf`, for `1 ≤ b ≤ bHigh` when the set-up gives tables. -/
 theorem run_jacobiTest {lcf : ℤ} {bHigh : ℕ} {ji : JacobiInfo}
     (hji : Id.run (jacobiSetup lcf bHigh) = some ji) {b : ℕ} (hb : b ≠ 0) (hbH : b ≤ bHigh) :
     Id.run (jacobiTest ji b) = decide (J(lcf | b.coprimePart (2 * lcf.natAbs)) = 1) := by
-  obtain ⟨hH, -, hI⟩ :=
+  obtain ⟨hH, -, hI, hT, hM⟩ :=
     (Std.WP.Id.of_run_eq_wp rfl _ ((jacobiSetup_spec lcf bHigh).le_wp trivial)) ji hji
   have hbs : b < UInt64.size := by have := mulModLimit_lt_size; lia
   rw [Std.WP.Id.of_run_eq_wp rfl _ ((jacobiTest_spec ji b).le_wp
-    ⟨Nat.pos_of_ne_zero hb, hbs, fun x hx ↦ (hI.1 x hx).1⟩), hI.prod_filter_primeFactorsList_eq]
+    ⟨Nat.pos_of_ne_zero hb, hbs, fun x hx ↦ ⟨(hI.1 x hx).1, mul_lt_two_pow_64_of_le_mulModLimit
+      (hbH.trans hH) ((lt_of_mem_primeTable (hT x hx)).le.trans (by norm_num))⟩, hM⟩),
+    hI.prod_filter_primeFactorsList_eq]
   have hc := Nat.coprime_coprimePart b (2 * lcf.natAbs)
   rw [jacobiSym_eq_ite_foldl hI (Nat.odd_iff.mp (Nat.coprime_two_right.mp
     (hc.coprime_dvd_right (dvd_mul_right 2 _)))) fun x hx hd ↦ (hI.1 x hx).1.one_lt.ne'
