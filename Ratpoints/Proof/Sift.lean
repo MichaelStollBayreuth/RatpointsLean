@@ -83,12 +83,12 @@ universe u
 /-! ### The walk through the set bits of a word -/
 
 /-- The points that the extraction gives for the numerator `a` over the denominator `b`: those of
-the exact check (`Ratpoints.Sieve.checkPoint`, with the thunk `w` of the products, the factor `f`
+the exact check (`Ratpoints.Sieve.checkPoint`, with the thunk `w` of the products, the degree `d`
 and the flag `rev` of the reversal) when `a` passes the test of a candidate
 (`Ratpoints.Sieve.accepted`, with the thunk `checks` of the third stage), and none otherwise. -/
-def acceptedPoints (w : Thunk (List Int)) (f : Int) (b : Nat) (rev : Bool)
+def acceptedPoints (w : Thunk (List Int)) (d b : Nat) (rev : Bool)
     (checks : Thunk (List CheckSpec)) (a : Int) : List (Int × Int × Int) :=
-  if Id.run (accepted a b checks) then checkPoint w f b rev a else []
+  if Id.run (accepted a b checks) then checkPoint w d b rev a else []
 
 /-- With the thunk of what the third stage needs of prime entries and their reciprocals, the points
 of `Ratpoints.Sieve.acceptedPoints` are those of the check of the reference for the numerators that
@@ -97,9 +97,10 @@ test for common factors on the words of the C code. -/
 theorem acceptedPoints_eq_ite {es : List SieveEntry} (hes : ∀ e ∈ es, e.IsPrimeEntry) {a : Int}
     {b H : Nat} {checks : Thunk (List CheckSpec)}
     (hc : checks.get = fillChecks b H es (es.map fun e ↦ magic e.p)) (w : Thunk (List Int))
-    (f : Int) (rev : Bool) (hb : 0 < b) (hb63 : b < 2 ^ 63) (ha : a.natAbs ≤ H) (hH : H < 2 ^ 63) :
-    acceptedPoints w f b rev checks a = if survives es b a then checkNum w.get f b rev a else [] :=
-  ite_run_accepted_checkPoint hes hc w f rev hb hb63 ha hH
+    (d : Nat) (rev : Bool) (hb : 0 < b) (hb63 : b < 2 ^ 63) (ha : a.natAbs ≤ H) (hH : H < 2 ^ 63) :
+    acceptedPoints w d b rev checks a =
+      if survives es b a then checkNum w.get (if d % 2 = 1 then b else 1) b rev a else [] :=
+  ite_run_accepted_checkPoint hes hc w d rev hb hb63 ha hH
 
 -- The test of a candidate, as a value for the contract of the walk: the walk's contract speaks of
 -- its result, without the hypotheses of `Ratpoints.Sieve.accepted_spec`.
@@ -129,14 +130,14 @@ attribute [local irreducible] WalkWhileInvariant WalkWordInvariant
 /-- The loop ends, since clearing the lowest set bit makes a word other than `0` smaller; the test
 of a candidate is read as its value, `Ratpoints.Sieve.acceptedPoints`. -/
 @[spec]
-theorem walkWord_spec (w : Thunk (List Int)) (f : Int) (b : Nat) (rev : Bool)
+theorem walkWord_spec (w : Thunk (List Int)) (d b : Nat) (rev : Bool)
     (checks : Thunk (List CheckSpec)) (x : UInt64) (a0 : Int) (out : Array (Int × Int × Int)) :
-    ⦃ True ⦄ walkWord w f b rev checks x a0 out
+    ⦃ True ⦄ walkWord w d b rev checks x a0 out
     ⦃ fun out' ↦ out'.toList = out.toList ++
         (((List.range 64).filter (x.toBitVec.getLsbD ·)).map fun t : Nat ↦ a0 + t).flatMap
-          (acceptedPoints w f b rev checks) ⦄ := by
+          (acceptedPoints w d b rev checks) ⦄ := by
   vcgen [walkWord, accepted_value] invariants
-  · WalkWordWhileInvariant (fun t : Nat ↦ acceptedPoints w f b rev checks (a0 + t)) x out
+  · WalkWordWhileInvariant (fun t : Nat ↦ acceptedPoints w d b rev checks (a0 + t)) x out
   · Std.WP.Variant.ofMeasure fun s : UInt64 × Array (Int × Int × Int) ↦ s.1.toNat
   all_goals simp only [WalkWordWhileInvariant, Std.WP.Variant.evalsTo_ofMeasure,
     Std.WP.Variant.evalsBelow_ofMeasure_nat, Std.WP.Assertion.NondetFun.evalsTo_pure,
@@ -264,19 +265,19 @@ and the other skips the walks when the second stage leaves the bit array zero, w
 each arm has its own invariant (`Ratpoints.Sieve.SiftBitArrayInvariant`,
 `Ratpoints.Sieve.SiftBitArrayWalkInvariant`). -/
 @[spec]
-theorem siftBitArray_spec (useLong : Bool) (w : Thunk (List Int)) (f : Int) (b : Nat) (rev : Bool)
+theorem siftBitArray_spec (useLong : Bool) (w : Thunk (List Int)) (d b : Nat) (rev : Bool)
     (specs : List SieveSpec) (checks : Thunk (List CheckSpec)) (i : Int)
     (nums : Vector UInt64 rbaPack) (out : Array (Int × Int × Int)) :
-    ⦃ True ⦄ siftBitArray useLong w f b rev specs checks i nums out
+    ⦃ True ⦄ siftBitArray useLong w d b rev specs checks i nums out
     ⦃ fun out' ↦ out'.toList = out.toList ++ ((List.range rbaPack).flatMap fun κ ↦
         ((List.range 64).filter ((andWords specs nums[κ]! i κ).toBitVec.getLsbD ·)).map
           fun t : Nat ↦ i * rbaLength + 64 * κ + t).flatMap
-            (acceptedPoints w f b rev checks) ⦄ := by
+            (acceptedPoints w d b rev checks) ⦄ := by
   vcgen [siftBitArray] invariants
   | inv1 => fun done _ ↦ SiftBitArrayInvariant (fun κ ↦ andWords specs nums[κ]! i κ)
-      (acceptedPoints w f b rev checks) i out done.length
+      (acceptedPoints w d b rev checks) i out done.length
   | inv2 => fun done _ ↦ SiftBitArrayWalkInvariant (fun κ ↦ nums[κ]!)
-      (acceptedPoints w f b rev checks) i out done.length
+      (acceptedPoints w d b rev checks) i out done.length
   all_goals subst_vars
   all_goals first
     | exact Std.Legacy.Range.lt_of_toList_eq_append_cons ‹_›
@@ -432,20 +433,20 @@ attribute [local irreducible] ScanPieceSentinelInvariant ScanPieceInvariant
 
 -- The contract of `Ratpoints.Sieve.scanPiece` in terms of the set bits of the words of the piece
 -- and-ed with the rows of the second stage.
-private theorem scanPiece_spec_getLsbD (w : Thunk (List Int)) (f : Int) (b : Nat) (rev : Bool)
+private theorem scanPiece_spec_getLsbD (w : Thunk (List Int)) (d b : Nat) (rev : Bool)
     (specs : List SieveSpec) (checks : Thunk (List CheckSpec)) (w0 : Int) (n : Nat)
     (surv : Vector UInt64 ((n + 1) * rbaPack)) :
-    ⦃ True ⦄ scanPiece w f b rev specs checks w0 n surv
+    ⦃ True ⦄ scanPiece w d b rev specs checks w0 n surv
     ⦃ fun out ↦ out.toList = ((List.range (n * rbaPack)).flatMap fun y : Nat ↦
         ((List.range 64).filter ((andWords specs surv[y]! w0 y).toBitVec.getLsbD ·)).map
           fun t : Nat ↦ rbaLength * w0 + 64 * y + t).flatMap
-            (acceptedPoints w f b rev checks) ⦄ := by
+            (acceptedPoints w d b rev checks) ⦄ := by
   vcgen [scanPiece] invariants
   | inv1 => fun done _ ↦ ScanPieceSentinelInvariant n surv done.length
-  | inv2 sv _ => ScanPieceWhileInvariant sv specs (acceptedPoints w f b rev checks) w0 n
+  | inv2 sv _ => ScanPieceWhileInvariant sv specs (acceptedPoints w d b rev checks) w0 n
   | inv3 => Std.WP.Variant.ofMeasure fun s : Nat × Array (Int × Int × Int) ↦ n - s.1
   | inv4 sv _ pos0 out _ _ =>
-      ScanPieceZeroInvariant sv specs (acceptedPoints w f b rev checks) w0 n pos0 out
+      ScanPieceZeroInvariant sv specs (acceptedPoints w d b rev checks) w0 n pos0 out
   | inv5 => Std.WP.Variant.ofMeasure fun s : Nat ↦ n - s
   all_goals first
     | exact scanPieceSentinelInvariant_zero n surv
@@ -460,17 +461,17 @@ private theorem scanPiece_spec_getLsbD (w : Thunk (List Int)) (f : Int) (b : Nat
 scan end by the measure `n - pos`; the test `keep` is quantified in the postcondition, since the
 program does not mention it. -/
 @[spec]
-theorem scanPiece_spec (w : Thunk (List Int)) (f : Int) (b : Nat) (rev : Bool)
+theorem scanPiece_spec (w : Thunk (List Int)) (d b : Nat) (rev : Bool)
     (specs : List SieveSpec) (checks : Thunk (List CheckSpec)) (w0 : Int) (n : Nat)
     (surv : Vector UInt64 ((n + 1) * rbaPack)) :
-    ⦃ True ⦄ scanPiece w f b rev specs checks w0 n surv
+    ⦃ True ⦄ scanPiece w d b rev specs checks w0 n surv
     ⦃ fun out ↦ ∀ keep : Int → Bool, (∀ y < n * rbaPack, ∀ t : Nat,
         (andWords specs surv[y]! w0 y).toBitVec.getLsbD t =
           (decide (t < 64) && keep (rbaLength * w0 + 64 * y + t))) →
       out.toList = (((List.range (n * rbaLength)).map fun k : Nat ↦
-        rbaLength * w0 + k).filter keep).flatMap (acceptedPoints w f b rev checks) ⦄ :=
+        rbaLength * w0 + k).filter keep).flatMap (acceptedPoints w d b rev checks) ⦄ :=
   ⟨fun _ keep hkeep ↦ by
-    rw [(scanPiece_spec_getLsbD w f b rev specs checks w0 n surv).le_wp trivial,
+    rw [(scanPiece_spec_getLsbD w d b rev specs checks w0 n surv).le_wp trivial,
       List.flatMap_range_map_filter hkeep, rbaLength_eq, Nat.mul_left_comm]⟩
 
 /-! ### The masks and one piece -/
@@ -559,15 +560,15 @@ and the first `sp1` of them go to the first stage, the others to the second; the
 `maskHigh` is that of the high mask (`Ratpoints.Sieve.getLsbD_clearHighBits`), and the low mask
 needs none. -/
 @[spec]
-theorem siftPiece_spec (w : Thunk (List Int)) (f : Int) (b : Nat) (rev : Bool) (sp1 : Nat)
+theorem siftPiece_spec (w : Thunk (List Int)) (d b : Nat) (rev : Bool) (sp1 : Nat)
     (specs : List SieveSpec) (checks : Thunk (List CheckSpec)) (cw : UInt64) (w0 : Int)
     (n maskLow maskHigh : Nat) :
-    ⦃ maskHigh < rbaLength ⦄ siftPiece w f b rev sp1 specs checks cw w0 n maskLow maskHigh
+    ⦃ maskHigh < rbaLength ⦄ siftPiece w d b rev sp1 specs checks cw w0 n maskLow maskHigh
     ⦃ fun out ↦ ∀ entries : List SieveEntry, (∀ e ∈ entries, 0 < e.p) →
         specs = entries.map (fun e ↦ ⟨e.p, e.row b⟩) →
         out.toList = (((List.range (n * rbaLength - maskLow - maskHigh)).map fun k : Nat ↦
           rbaLength * w0 + maskLow + k).filter fun a ↦
-            classBit cw a && survives entries b a).flatMap (acceptedPoints w f b rev checks) ⦄ := by
+            classBit cw a && survives entries b a).flatMap (acceptedPoints w d b rev checks) ⦄ := by
   vcgen [siftPiece]
   all_goals first
     | exact IsMasked.toList_eq ‹_› (isMasked_clearHighBits_clearLowBits _ _ ‹_›) ‹_› ‹_› ‹_›
@@ -766,8 +767,8 @@ theorem SiftInvariant.toList_eq_pointsOfDen {c : List Int} {d b : Nat} {rev : Bo
     {entries es3 : List SieveEntry} (hes : ∀ e ∈ es3, e.IsPrimeEntry) {H range : Nat}
     {w0 w1 : Int} {out : Array (Int × Int × Int)} (hb : 0 < b) (hb63 : b < 2 ^ 63)
     (hH : H < 2 ^ 63)
-    (h : SiftInvariant (acceptedPoints (.mk fun _ ↦ scaledCoeffs c d b) (if d % 2 = 1 then b else 1)
-      b rev (.mk fun _ ↦ fillChecks b H es3 (es3.map fun e ↦ magic e.p)))
+    (h : SiftInvariant (acceptedPoints (.mk fun _ ↦ scaledCoeffs c d b) d b rev
+      (.mk fun _ ↦ fillChecks b H es3 (es3.map fun e ↦ magic e.p)))
         (fun a ↦ classBit cw a && survives entries b a) H true range w0 w1 out) :
     out.toList = (pointsOfDen c d b ((numerators H).filter fun a ↦
       classBit cw a && survives (entries ++ es3) b a)).map (if rev then swapPoint else id) := by
@@ -789,8 +790,7 @@ private theorem sift_spec_map (c : List Int) (d H b : Nat) (rev : Bool) (sp1 : N
     ⦃ fun out ↦ out.toList = (pointsOfDen c d b ((numerators H).filter fun a ↦
         classBit cw a && survives (entries ++ es3) b a)).map (if rev then swapPoint else id) ⦄ := by
   vcgen [sift] invariants
-  · SiftWhileInvariant (acceptedPoints (.mk fun _ ↦ scaledCoeffs c d b)
-      (if d % 2 = 1 then b else 1) b rev
+  · SiftWhileInvariant (acceptedPoints (.mk fun _ ↦ scaledCoeffs c d b) d b rev
       (.mk fun _ ↦ fillChecks b H es3 (es3.map fun e ↦ magic e.p)))
       (fun a ↦ classBit cw a && survives entries b a) H
   · .ofMeasure fun s ↦ ((H : Int) / rbaLength + 1 - s.2.1).toNat

@@ -577,8 +577,9 @@ theorem run_accepted {es : List SieveEntry} (hes : ∀ e ∈ es, e.IsPrimeEntry)
   · rw [all_admits_fillChecks hes hab ha]
   · simp [hab]
 
-theorem checkPoint_eq_checkNum (w : Thunk (List Int)) (f : Int) {b : Int} (rev : Bool) {a : Int}
-    (hab : Int.gcd a b = 1) : checkPoint w f b rev a = checkNum w.get f b rev a := by
+theorem checkPoint_eq_checkNum (w : Thunk (List Int)) (d : Nat) {b : Int} (rev : Bool) {a : Int}
+    (hab : Int.gcd a b = 1) :
+    checkPoint w d b rev a = checkNum w.get (if d % 2 = 1 then b else 1) b rev a := by
   simp [checkPoint, checkNum, hab]
 
 /-- The test of `Ratpoints.Sieve.accepted` and the exact check of `Ratpoints.Sieve.checkPoint` give
@@ -589,12 +590,12 @@ with `|a| ≤ H < 2 ^ 63` that survives the sieve entries `es` of the third stag
 theorem ite_run_accepted_checkPoint {es : List SieveEntry} (hes : ∀ e ∈ es, e.IsPrimeEntry)
     {a : Int} {b H : Nat} {checks : Thunk (List CheckSpec)}
     (hc : checks.get = fillChecks b H es (es.map fun e ↦ magic e.p)) (w : Thunk (List Int))
-    (f : Int) (rev : Bool) (hb : 0 < b) (hb63 : b < 2 ^ 63) (ha : a.natAbs ≤ H) (hH : H < 2 ^ 63) :
-    (if Id.run (accepted a b checks) then checkPoint w f b rev a else []) =
-      if survives es b a then checkNum w.get f b rev a else [] := by
+    (d : Nat) (rev : Bool) (hb : 0 < b) (hb63 : b < 2 ^ 63) (ha : a.natAbs ≤ H) (hH : H < 2 ^ 63) :
+    (if Id.run (accepted a b checks) then checkPoint w d b rev a else []) =
+      if survives es b a then checkNum w.get (if d % 2 = 1 then b else 1) b rev a else [] := by
   rw [run_accepted hes hc hb hb63 ha hH]
   by_cases hab : Int.gcd a b = 1
-  · simp [hab, checkPoint_eq_checkNum w f rev hab]
+  · simp [hab, checkPoint_eq_checkNum w d rev hab]
   · simp [hab, checkNum]
 
 /-! ### The second stage -/

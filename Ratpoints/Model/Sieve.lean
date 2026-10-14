@@ -523,11 +523,11 @@ def accepted (a : Int) (b : Nat) (checks : Thunk (List CheckSpec)) : Id Bool := 
 /-- The points of the numerator `a` over the denominator `b` by the exact check, each mapped by
 `Ratpoints.Sieve.swapPoint` when the flag `rev` of the reversal is set: `(a, y, b)` and, for
 `y ≠ 0`, `(a, -y, b)` when `v = y ^ 2` with `y ≥ 0`, for the value `v` of Horner's rule in `a` on
-the products `w`, times `f`. For the products `w` of the coefficients `cₖ` with the powers
-`b^(d - k)` (`Ratpoints.BruteForce.scaledCoeffs`), and `f = b` for odd `d` and `f = 1` for even `d`,
-`v` is the value `F(a, b)` of the binary form. For a numerator prime to `b` it is the check of the
-reference (`Ratpoints.Sieve.checkNum`). The walk through the set bits of a word calls it
-(`Ratpoints.Sieve.walkWord`).
+the products `w`, times `b` if the degree `d` is odd. For the products `w` of the coefficients `cₖ`
+with the powers `b^(d - k)` (`Ratpoints.BruteForce.scaledCoeffs`), `v` is the value `F(a, b)` of the
+binary form. For a numerator prime to `b` it is the check of the reference
+(`Ratpoints.Sieve.checkNum`) with the factor `b` for odd `d` and `1` for even `d`. The walk through
+the set bits of a word calls it (`Ratpoints.Sieve.walkWord`).
 
 C: `sift.c:202-205`, `find_points.c:3122`, `find_points.c:5250-5338`, `rp-private.h:576`,
 `rp-private.h:596-597`
@@ -536,33 +536,33 @@ Deviation: the products `w` as a thunk, which the sieve of one denominator makes
 denominator (`Ratpoints.Sieve.sift`) and which is forced when the first numerator of `b` reaches the
 check, for the array `work` of the sieving thread, which `worker_init` gives it, and its flag
 `compute_bc`, which `sift` sets and `_ratpoints_check_point` clears when it computes the products;
-the factor `f` as an argument, where `_ratpoints_check_point` multiplies the value by `b` for odd
-`d`; the flag `rev` as an argument, handed down from `Ratpoints.Sieve.sieveRun` through the
-components that call the check, for the bit `RATPOINTS_REVERSED` of the flags of the search, which
-`_ratpoints_check_point` reads through its worker (`args->flags`); a list of points, for the
-callback `process` and for the count of points that `_ratpoints_check_point` returns, with no stop
-that `process` may request, and no `RATPOINTS_NO_Y` and no `RATPOINTS_NO_CHECK` (stage G); integers
-for the `long`s `a` and `b` (the negations of `Ratpoints.Sieve.swapPoint` stay `long`s by
-`Ratpoints.fitsLong_neg`); no measurements of the time of the check and of its products (`RP_CHECK`,
-`RP_BC_TIC`, `RP_BC_TOC` under `RP_PHASE_TIMING`), and no output under `DEBUG`. -/
-def checkPoint (w : Thunk (List Int)) (f b : Int) (rev : Bool) (a : Int) :
+the degree `d` and the flag `rev` as arguments, handed down from `Ratpoints.Sieve.sieveRun` through
+the components that call the check, for the degree and the bit `RATPOINTS_REVERSED` of the flags of
+the search, which `_ratpoints_check_point` reads through its worker (`args->degree`, `args->flags`);
+a list of points, for the callback `process` and for the count of points that
+`_ratpoints_check_point` returns, with no stop that `process` may request, and no `RATPOINTS_NO_Y`
+and no `RATPOINTS_NO_CHECK` (stage G); integers for the `long`s `a` and `b` (the negations of
+`Ratpoints.Sieve.swapPoint` stay `long`s by `Ratpoints.fitsLong_neg`); no measurements of the time
+of the check and of its products (`RP_CHECK`, `RP_BC_TIC`, `RP_BC_TOC` under `RP_PHASE_TIMING`), and
+no output under `DEBUG`. -/
+def checkPoint (w : Thunk (List Int)) (d : Nat) (b : Int) (rev : Bool) (a : Int) :
     List (Int × Int × Int) :=
-  let pts := BruteForce.pointsAbove a b (BruteForce.horner w.get a * f)
+  let pts := BruteForce.pointsAbove a b (BruteForce.horner w.get a * if d % 2 = 1 then b else 1)
   if rev then pts.map swapPoint else pts
 
 /-- The points of the numerator `a` over the denominator `b`, as the brute-force reference checks it
 (`Ratpoints.BruteForce.pointsOfDen`), each mapped by `Ratpoints.Sieve.swapPoint` when the flag `rev`
 of the reversal is set: none when `a` and `b` have a common factor, and otherwise `(a, y, b)` and,
 for `y ≠ 0`, `(a, -y, b)` when `v = y ^ 2` with `y ≥ 0`, for the value `v` of Horner's rule in `a`
-on `w`, times `f`, the points of the exact check (`Ratpoints.Sieve.checkPoint`). For the products
-`w` of the coefficients `cₖ` with the powers `b^(d - k)` (`Ratpoints.BruteForce.scaledCoeffs`), and
-`f = b` for odd `d` and `f = 1` for even `d`, `v` is the value `F(a, b)` of the binary form. So the
-check with the flag set gives the points of the check without it, mapped
-(`Ratpoints.Sieve.checkNum_eq_map`), which after a reversal are points of the caller's curve. It is
-the reference of the test of a candidate and the exact check (`Ratpoints.Sieve.accepted`,
-`Ratpoints.Sieve.checkPoint`), which test for common factors by the binary algorithm
-(`Ratpoints.Sieve.relprime`) and run the third stage before the exact check, and give the same
-points for the numerators that the rows of the primes of the third stage admit
+on `w`, times `f`. For the products `w` of the coefficients `cₖ` with the powers `b^(d - k)`
+(`Ratpoints.BruteForce.scaledCoeffs`), and `f = b` for odd `d` and `f = 1` for even `d`, `v` is the
+value `F(a, b)` of the binary form, and these are the points of the exact check of the degree `d`
+(`Ratpoints.Sieve.checkPoint`). So the check with the flag set gives the points of the check without
+it, mapped (`Ratpoints.Sieve.checkNum_eq_map`), which after a reversal are points of the caller's
+curve. It is the reference of the test of a candidate and the exact check
+(`Ratpoints.Sieve.accepted`, `Ratpoints.Sieve.checkPoint`), which test for common factors by the
+binary algorithm (`Ratpoints.Sieve.relprime`) and run the third stage before the exact check, and
+give the same points for the numerators that the rows of the primes of the third stage admit
 (`Ratpoints.Sieve.ite_run_accepted_checkPoint`). -/
 def checkNum (w : List Int) (f b : Int) (rev : Bool) (a : Int) : List (Int × Int × Int) :=
   if Int.gcd a b = 1 then
@@ -680,7 +680,7 @@ def andRows (specs : List SieveSpec) (cw : UInt64) (w0 : Int) (n : Nat)
 the test for common factors with the denominator `b` and the third stage
 (`Ratpoints.Sieve.accepted`, with the thunk `checks` of what that stage needs), and if it passes,
 its points by the exact check (`Ratpoints.Sieve.checkPoint`, with the thunk `w` of the products, the
-factor `f` and the flag `rev` of the reversal) are appended to `out`; then that bit is cleared by
+degree `d` and the flag `rev` of the reversal) are appended to `out`; then that bit is cleared by
 `x &&& (x - 1)`. This is the loop `RP_EACH_SET_BIT` of the C code with the body that the extraction
 runs for each set bit.
 
@@ -694,7 +694,7 @@ of the second stage for one word at a time; natural numbers and integers for the
 of the numerators that reach the test for common factors (`n_bits`), which ratpoints reads to
 correct the moduli between the blocks of the run (stage I), and no counts under `RP_PHASE_COUNTS`;
 no stop that the callback `process` may request (`quit`, stage G), and no output under `DEBUG`. -/
-def walkWord (w : Thunk (List Int)) (f : Int) (b : Nat) (rev : Bool)
+def walkWord (w : Thunk (List Int)) (d b : Nat) (rev : Bool)
     (checks : Thunk (List CheckSpec)) (x : UInt64) (a0 : Int) (out : Array (Int × Int × Int)) :
     Id (Array (Int × Int × Int)) := do
   let mut x := x
@@ -702,7 +702,7 @@ def walkWord (w : Thunk (List Int)) (f : Int) (b : Nat) (rev : Bool)
   while x != 0 do
     let t ← ctz x
     if ← accepted (a0 + t) b checks then
-      out := out ++ (checkPoint w f b rev (a0 + t)).toArray
+      out := out ++ (checkPoint w d b rev (a0 + t)).toArray
     x := x &&& (x - 1)
   return out
 
@@ -713,9 +713,9 @@ whole bit array (`Ratpoints.Sieve.secondStage`), and, if it is still nonzero, th
 words walked through in turn (`Ratpoints.Sieve.walkWord`); for `useLong = true`, for each word that
 is not zero, the second stage on that word (`Ratpoints.Sieve.secondStageWord`) and the walk through
 its set bits. Bit `t` of word `κ` stands for the numerator `rbaLength i + 64 κ + t`, for the number
-`rbaLength` of bits of a bit array (`Ratpoints.rbaLength`), and each numerator goes to the test of
-a candidate (`Ratpoints.Sieve.accepted`, with the thunk `checks` of the third stage) and, if it
-passes, to the exact check, with the thunk `w` of the products, the factor `f`, the denominator `b`
+`rbaLength` of bits of a bit array (`Ratpoints.rbaLength`), and each numerator goes to the test of a
+candidate (`Ratpoints.Sieve.accepted`, with the thunk `checks` of the third stage) and, if it
+passes, to the exact check, with the thunk `w` of the products, the degree `d`, the denominator `b`
 and the flag `rev`. Both arms walk through the set bits of the same words, the words of `nums`
 and-ed with the rows of all the moduli of `specs`, in the same order.
 
@@ -733,7 +733,7 @@ bit array read as entries of the vector, for `EXT0` and `EXT`, with one loop ove
 read of the first word and the loop over the others; natural numbers and integers for the `long`s;
 no counts under `RP_PHASE_COUNTS`, no stop after a phase (`RP_STOP_AFTER`), and no output under
 `DEBUG`. -/
-def siftBitArray (useLong : Bool) (w : Thunk (List Int)) (f : Int) (b : Nat) (rev : Bool)
+def siftBitArray (useLong : Bool) (w : Thunk (List Int)) (d b : Nat) (rev : Bool)
     (specs : List SieveSpec) (checks : Thunk (List CheckSpec)) (i : Int)
     (nums : Vector UInt64 rbaPack) (out : Array (Int × Int × Int)) :
     Id (Array (Int × Int × Int)) := do
@@ -742,13 +742,13 @@ def siftBitArray (useLong : Bool) (w : Thunk (List Int)) (f : Int) (b : Nat) (re
     for κ in [0:rbaPack] do
       if nums[κ]! != 0 then
         let x ← secondStageWord specs i κ nums[κ]!
-        out ← walkWord w f b rev checks x (i * rbaLength + 64 * κ) out
+        out ← walkWord w d b rev checks x (i * rbaLength + 64 * κ) out
   else
     let nums ← secondStage specs i nums
     if !isZeroAt nums 0 then
       let mut a0 := i * rbaLength
       for κ in [0:rbaPack] do
-        out ← walkWord w f b rev checks nums[κ]! a0 out
+        out ← walkWord w d b rev checks nums[κ]! a0 out
         a0 := a0 + 64
   return out
 
@@ -759,7 +759,7 @@ then from bit array `0` on, the bit arrays that are zero (`Ratpoints.Sieve.isZer
 over, the scan stops at the sentinel, and each of the other bit arrays `pos` is copied and goes,
 with its word number `w0 + pos`, through the second stage with the moduli and rows of `specs` and
 the extraction (`Ratpoints.Sieve.siftBitArray`, in the arm `Ratpoints.useLongInPhase2`, with the
-thunk `w` of the products, the factor `f`, the denominator `b`, the flag `rev` and the thunk
+thunk `w` of the products, the degree `d`, the denominator `b`, the flag `rev` and the thunk
 `checks` of the third stage).
 
 C: `sift.c:1061-1082`, `sift.c:1088-1092`, `sift.c:1298-1299`, `rp-private.h:133`,
@@ -771,7 +771,7 @@ bit array a vector of `Ratpoints.rbaPack` words; the sentinel `~zero` of every b
 `Ratpoints.rbaPack` words `~~~0`, written one at a time; natural numbers and integers for the
 `long`s; no count of the bit arrays that survive the first stage (`n_arrays`), which ratpoints reads
 to correct the moduli between the blocks of the run (stage I). -/
-def scanPiece (w : Thunk (List Int)) (f : Int) (b : Nat) (rev : Bool) (specs : List SieveSpec)
+def scanPiece (w : Thunk (List Int)) (d b : Nat) (rev : Bool) (specs : List SieveSpec)
     (checks : Thunk (List CheckSpec)) (w0 : Int) (n : Nat)
     (surv : Vector UInt64 ((n + 1) * rbaPack)) :
     Id (Array (Int × Int × Int)) := do
@@ -785,7 +785,7 @@ def scanPiece (w : Thunk (List Int)) (f : Int) (b : Nat) (rev : Bool) (specs : L
       pos := pos + 1
     if n ≤ pos then break
     let nums : Vector UInt64 rbaPack := .ofFn fun κ ↦ surv[rbaPack * pos + κ]!
-    out ← siftBitArray useLongInPhase2 w f b rev specs checks (w0 + pos) nums out
+    out ← siftBitArray useLongInPhase2 w d b rev specs checks (w0 + pos) nums out
     pos := pos + 1
   return out
 
@@ -796,7 +796,7 @@ stage with the first `sp1` moduli of `specs` and their rows, from the class word
 `maskLow ≠ 0` (`Ratpoints.Sieve.clearLowBits`), and the highest `maskHigh` bits of the last bit
 array of the piece, `n - 1`, if `maskHigh ≠ 0` (`Ratpoints.Sieve.clearHighBits`); and the scan with
 the second stage, with the other moduli of `specs`, and the extraction (`Ratpoints.Sieve.scanPiece`,
-with the thunk `w` of the products, the factor `f`, the denominator `b`, the flag `rev` and the
+with the thunk `w` of the products, the degree `d`, the denominator `b`, the flag `rev` and the
 thunk `checks` of the third stage). This is `_ratpoints_sift0` of the C code, with the allocation of
 the survivors array that it works in.
 
@@ -815,21 +815,20 @@ residue `a0`, which the extraction reads (`sift.c:1221-1222`, `sift.c:1130-1131`
 packing (stage F3); no `magics` and no test `small` of whether the reductions modulo the moduli of
 the first two stages can multiply by a reciprocal (stage F3); no count of the words of the piece
 (`n_words`), which ratpoints reads to correct the moduli between the blocks of the run (stage I);
-the thunk `w` of the products and the factor `f` of the check as arguments, where
-`_ratpoints_check_point` computes the products when the first survivor of `b` reaches it and
-multiplies each value by `b` for odd `d`; a list of points, for the callback `process` with its
-argument `info` and for the count `total` of points that `_ratpoints_sift0` returns, with no flag
-`quit` for a stop that `process` may request (stage G); natural numbers and integers for the
+the thunk `w` of the products of the check as an argument, where `_ratpoints_check_point` computes
+the products when the first survivor of `b` reaches it; a list of points, for the callback `process`
+with its argument `info` and for the count `total` of points that `_ratpoints_sift0` returns, with
+no flag `quit` for a stop that `process` may request (stage G); natural numbers and integers for the
 `long`s; no measurements of the phases (`RP_TIC`, `RP_TOC`, `RP_PHASE_TIMING`) and no stop after one
 of them (`RP_STOP_AFTER`). -/
-def siftPiece (w : Thunk (List Int)) (f : Int) (b : Nat) (rev : Bool) (sp1 : Nat)
+def siftPiece (w : Thunk (List Int)) (d b : Nat) (rev : Bool) (sp1 : Nat)
     (specs : List SieveSpec) (checks : Thunk (List CheckSpec)) (cw : UInt64) (w0 : Int)
     (n maskLow maskHigh : Nat) :
     Id (Array (Int × Int × Int)) := do
   let mut surv ← andRows (specs.take sp1) cw w0 n (Vector.replicate ((n + 1) * rbaPack) 0)
   if maskLow ≠ 0 then surv := clearLowBits surv maskLow
   if maskHigh ≠ 0 then surv := clearHighBits surv (n - 1) maskHigh
-  scanPiece w f b rev (specs.drop sp1) checks w0 n surv
+  scanPiece w d b rev (specs.drop sp1) checks w0 n surv
 
 /-! ### One denominator -/
 
@@ -842,14 +841,14 @@ residue `b mod p`, which its thunk makes when it is first needed
 needs of the sieve entries `es3` of its primes, with the reciprocals `mgs3` of their moduli, for `b`
 and `H` (`Ratpoints.Sieve.fillChecks`) is a thunk, and so are the products `w` of the coefficients
 `cₖ` with the powers `b^(d - k)` (`Ratpoints.BruteForce.scaledCoeffs`), both forced when the first
-numerator of `b` needs them; the factor `f`, `b` for odd `d` and `1` for even `d`, is that of the
-check, which gets the flag `rev` of the reversal too; for the number `rbaLength` of bits of a bit
-array (`Ratpoints.rbaLength`), the bit arrays have the word numbers from `wLow = ⌊-H / rbaLength⌋`
-to `wHigh - 1`, for `wHigh = ⌊H / rbaLength⌋ + 1`; and while `w0 < wHigh`, the piece of the word
-numbers `w0, …, w1 - 1`, for `w1 = min (w0 + A) wHigh`, gives its points
-(`Ratpoints.Sieve.siftPiece`, with the class word), with the low mask `-H - rbaLength wLow` if it is
-the first piece and the high mask `rbaLength - 1 - (H mod rbaLength)` if it is the last, so that the
-numerators that the masks leave lie end to end and make up `-H, …, H`.
+numerator of `b` needs them; the check gets the degree `d` and the flag `rev` of the reversal; for
+the number `rbaLength` of bits of a bit array (`Ratpoints.rbaLength`), the bit arrays have the word
+numbers from `wLow = ⌊-H / rbaLength⌋` to `wHigh - 1`, for `wHigh = ⌊H / rbaLength⌋ + 1`; and while
+`w0 < wHigh`, the piece of the word numbers `w0, …, w1 - 1`, for `w1 = min (w0 + A) wHigh`, gives
+its points (`Ratpoints.Sieve.siftPiece`, with the class word), with the low mask
+`-H - rbaLength wLow` if it is the first piece and the high mask `rbaLength - 1 - (H mod rbaLength)`
+if it is the last, so that the numerators that the masks leave lie end to end and make up
+`-H, …, H`.
 
 C: `find_points.c:3112-3114`, `find_points.c:3123-3124`, `find_points.c:3129`,
 `find_points.c:3149-3170`, `find_points.c:3442-3488`, `find_points.c:3490-3561`,
@@ -876,20 +875,17 @@ with no correction of `sp2` and `sp3` between the blocks of the run (stage I); t
 `Ratpoints.Sieve.fillChecks`, for the table `checks` of the sieving thread, which `fill_checks`
 fills, and its flag `stage3_filled`, which `sift` clears; the thunk of the products `w`, for the
 flag `compute_bc`, which `sift` sets and `_ratpoints_check_point` clears when it computes the
-products, and the factor `f` computed for every denominator, where `_ratpoints_check_point`
-multiplies each value by `b` for odd `d`; no count of the denominators sieved (`n_sifts`), which
-ratpoints reads to correct the moduli between the blocks of the run (stage I); a list of points, for
-the callback `process` with its argument `info` and for the count `total` of points that `sift`
-returns, with no stop that `process` may request (`quit`, which `worker_init` clears, stage G); the
-arguments of the run passed explicitly, for the pointer `args` of the sieving thread
-(`rp-private.h:574`), which `worker_init` sets and through which `sift` reads them; no search
-intervals `iv` of the sieving thread, which `worker_init` clears (`find_points.c:3130`) and
-`run_block` sets for each block (`rp-private.h:574`; stage H); no pool, slot and stop flag of a
-thread of the pool, the flag by which the pool of threads tells it to abandon its block (`pool`,
-`slot`, `stop`, `rp-private.h:584-585`; stage I); natural numbers and integers for the `long`s; no
-measurements of the phases (`RP_SIFT_TIC`, `RP_SETUP_TIC`, `RP_INIT_TIC` and their `TOC`) and no
-output under `DEBUG`. -/
--- lint: allow long-proof: the set-up of `sift` and its loop over the pieces, as in the C code
+products; no count of the denominators sieved (`n_sifts`), which ratpoints reads to correct the
+moduli between the blocks of the run (stage I); a list of points, for the callback `process` with
+its argument `info` and for the count `total` of points that `sift` returns, with no stop that
+`process` may request (`quit`, which `worker_init` clears, stage G); the arguments of the run passed
+explicitly, for the pointer `args` of the sieving thread (`rp-private.h:574`), which `worker_init`
+sets and through which `sift` reads them; no search intervals `iv` of the sieving thread, which
+`worker_init` clears (`find_points.c:3130`) and `run_block` sets for each block (`rp-private.h:574`;
+stage H); no pool, slot and stop flag of a thread of the pool, the flag by which the pool of threads
+tells it to abandon its block (`pool`, `slot`, `stop`, `rp-private.h:584-585`; stage I); natural
+numbers and integers for the `long`s; no measurements of the phases (`RP_SIFT_TIC`, `RP_SETUP_TIC`,
+`RP_INIT_TIC` and their `TOC`) and no output under `DEBUG`. -/
 def sift (c : List Int) (d H A b : Nat) (rev : Bool) (sp1 : Nat)
     (rows : List (Nat × Array (Thunk (Array UInt64)))) (es3 : List SieveEntry) (mgs3 : List Nat)
     (cw : UInt64) :
@@ -897,7 +893,6 @@ def sift (c : List Int) (d H A b : Nat) (rev : Bool) (sp1 : Nat)
   let specs : List SieveSpec := rows.map fun (p, rs) ↦ ⟨p, rs[b % p]!.get⟩
   let w : Thunk (List Int) := .mk fun _ ↦ BruteForce.scaledCoeffs c d b
   let checks : Thunk (List CheckSpec) := .mk fun _ ↦ fillChecks b H es3 mgs3
-  let f : Int := if d % 2 = 1 then b else 1
   let wLow := -(H : Int) / rbaLength
   let wHigh := (H : Int) / rbaLength + 1
   let mut range := A
@@ -910,7 +905,7 @@ def sift (c : List Int) (d H A b : Nat) (rev : Bool) (sp1 : Nat)
       range := (w1 - w0).toNat
     let maskLow := if w0 = wLow then (-(H : Int) - rbaLength * wLow).toNat else 0
     let maskHigh := if w1 = wHigh then rbaLength - 1 - ((H : Int) % rbaLength).toNat else 0
-    out := out ++ (← siftPiece w f b rev sp1 specs checks cw w0 range maskLow maskHigh)
+    out := out ++ (← siftPiece w d b rev sp1 specs checks cw w0 range maskLow maskHigh)
     w0 := w1
     w1 := w1 + range
   return out
@@ -1050,7 +1045,7 @@ def pointsAtInfinity (c : List Int) (d : Nat) (rev : Bool) : List (Int × Int ×
     (BruteForce.numerators 130).all fun a ↦
       let w := BruteForce.scaledCoeffs c d b
       let f : Int := if d % 2 = 1 then b else 1
-      checkNum w f b rev a == if Int.gcd a b = 1 then checkPoint (.pure w) f b rev a else []
+      checkNum w f b rev a == if Int.gcd a b = 1 then checkPoint (.pure w) d b rev a else []
 
 -- The second stage on a bit array and on one of its words against the words and-ed with the rows of
 -- all its moduli, for bit arrays that the rows leave nonzero and that they clear on the way, at
@@ -1158,7 +1153,7 @@ def pointsAtInfinity (c : List Int) (d : Nat) (rev : Bool) : List (Int × Int ×
       let w := BruteForce.scaledCoeffs c 3 b
       let es3 := es.drop sp2
       let checks := fillChecks b 2000 es3 (es3.map (·.magic))
-      let run (useLong : Bool) := (Id.run (siftBitArray useLong (.pure w) b b false
+      let run (useLong : Bool) := (Id.run (siftBitArray useLong (.pure w) 3 b false
         ((es.take sp2).map fun e ↦ ⟨e.p, e.row b⟩) (.pure checks) i nums #[])).toList
       let ref := (((List.range rbaLength).filter fun k ↦
           nums[k / 64]!.toBitVec.getLsbD (k % 64)).map fun k : Nat ↦ i * rbaLength + k).flatMap
@@ -1171,7 +1166,7 @@ def pointsAtInfinity (c : List Int) (d : Nat) (rev : Bool) : List (Int × Int ×
 #guard
   ([0, 1, 0x8000000000000000, 0xf0f0f0f0f0f0f0f0, 0x123456789abcdef1] : List UInt64).all fun x ↦
     let pts :=
-      (Id.run (walkWord (.pure [0, 0, 1]) 1 1 false (.pure []) x (-37) #[(5, 5, 5)])).toList
+      (Id.run (walkWord (.pure [0, 0, 1]) 2 1 false (.pure []) x (-37) #[(5, 5, 5)])).toList
     pts == (5, 5, 5) :: ((List.range 64).filter x.toBitVec.getLsbD).flatMap
       (fun t : Nat ↦ checkNum [0, 0, 1] 1 1 false (-37 + t)) &&
     ((pts.drop 1).map (·.1)).eraseDups ==
@@ -1218,7 +1213,7 @@ def pointsAtInfinity (c : List Int) (d : Nat) (rev : Bool) : List (Int × Int ×
     let v : Vector UInt64 ((n + 1) * rbaPack) := .ofFn fun ⟨y, _⟩ ↦
       if zeros.contains (y / rbaPack) then 0
       else if y % 2 = 0 then 0x8000000000000001 else 1 <<< (y * 7 % 64).toUInt64
-    (Id.run (scanPiece (.pure [0, 0, 1]) 1 1 false [] (.pure []) w0 n v)).toList ==
+    (Id.run (scanPiece (.pure [0, 0, 1]) 2 1 false [] (.pure []) w0 n v)).toList ==
       ((List.range (n * rbaPack)).flatMap fun y : Nat ↦
         ((List.range 64).filter v[y]!.toBitVec.getLsbD).map fun t : Nat ↦
           rbaLength * w0 + 64 * y + t).flatMap (checkNum [0, 0, 1] 1 1 false)
@@ -1231,7 +1226,7 @@ def pointsAtInfinity (c : List Int) (d : Nat) (rev : Bool) : List (Int × Int ×
     let v : Vector UInt64 ((n + 1) * rbaPack) := .ofFn fun ⟨y, _⟩ ↦
       (List.range 64).foldl (fun x (t : Nat) ↦
         if keep (rbaLength * w0 + 64 * (y : Int) + t) then x ||| 1 <<< t.toUInt64 else x) 0
-    (Id.run (scanPiece (.pure [0, 0, 1]) 1 1 false [] (.pure []) w0 n v)).toList ==
+    (Id.run (scanPiece (.pure [0, 0, 1]) 2 1 false [] (.pure []) w0 n v)).toList ==
       (((List.range (n * rbaLength)).map fun k : Nat ↦ rbaLength * w0 + k).filter keep).flatMap
         (checkNum [0, 0, 1] 1 1 false)
 
@@ -1246,7 +1241,7 @@ def pointsAtInfinity (c : List Int) (d : Nat) (rev : Bool) : List (Int × Int ×
   let es := [3, 5, 7, 11, 13].map fun p ↦ (⟨p, [.prime (examinePrime c 3 p)], magic p⟩ : SieveEntry)
   let piece (sp1 sp2 b : Nat) (w0 : Int) (n mL mH : Nat) : List (Int × Int × Int) :=
     let es3 := es.drop sp2
-    (Id.run (siftPiece (.pure (BruteForce.scaledCoeffs c 3 b)) b b false sp1
+    (Id.run (siftPiece (.pure (BruteForce.scaledCoeffs c 3 b)) 3 b false sp1
       ((es.take sp2).map fun e ↦ ⟨e.p, e.row b⟩) (.pure (fillChecks b 1000 es3 (es3.map (·.magic))))
       (~~~0) w0 n mL mH)).toList
   piece 5 5 100 0 1 129 0 == [(129, 3830, 100), (129, -3830, 100)] &&

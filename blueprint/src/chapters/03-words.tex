@@ -348,8 +348,8 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
   (Definition~\ref{def:stage3}) and the products $c_k b^{d - k}$ of the check as thunks, made once
   per denominator and forced when the first numerator of $b$ needs them, for the flags
   \verb|stage3_filled| and \verb|compute_bc| of the sieving thread
-  (\csource{find_points.c}{3129}{3129}, \csource{rp-private.h}{583}{583}); the factor of the check,
-  which also gets the flag of the reversal; the word numbers
+  (\csource{find_points.c}{3129}{3129}, \csource{rp-private.h}{583}{583}); the degree $d$ and the
+  flag of the reversal, which the check reads; the word numbers
   $w_{\mathrm{low}} = \lfloor -H/R \rfloor$ and $w_{\mathrm{high}} = \lfloor H/R \rfloor + 1$; and
   while $w_0 < w_{\mathrm{high}}$, the piece from $w_0$ to $w_1 = \min(w_0 + A, w_{\mathrm{high}})$,
   with the low mask $-H - R w_{\mathrm{low}}$ if it is the first and the high mask
