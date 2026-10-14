@@ -424,24 +424,24 @@ Lemma~\ref{lem:sift_eq_checkDen} maps their side.
   \csource{find_points.c}{4954}{4963}); then what \verb|sieving_info| computes
   (Definition~\ref{def:sievingInfo}), with the flag of the \verb|long|s: the tables of the examined
   primes, the forbidden divisors for even $d$ (Definition~\ref{def:forbidden}) and the sieve entries
-  of the moduli with their reciprocals, which the run takes with stage~F, and no points when the
-  curve has no points modulo a prime examined on the way (\csource{find_points.c}{4992}{5012}); the
-  checked loop off when there are no forbidden divisors and no Jacobi test
-  (\csource{find_points.c}{2793}{2795}); the shape that \verb|run_setup| chooses
-  (Definition~\ref{def:Shape}); and the points at infinity followed by the points of the
-  denominators of the shape, with its tests, the class words and pieces of at most
-  $\mathrm{arraySizeAt}(H)$ bit arrays, each mapped by $\mathrm{swapPoint}$ when the flag is set
-  (\csource{find_points.c}{5116}{5116}, \csource{find_points.c}{5137}{5139},
+  of the moduli with their reciprocals, which the run takes, and no points when the curve has no
+  points modulo a prime examined on the way (\csource{find_points.c}{4992}{5012}); the checked loop
+  off when there are no forbidden divisors and no Jacobi test (\csource{find_points.c}{2793}{2795});
+  the shape that \verb|run_setup| chooses (Definition~\ref{def:Shape}); and the points at infinity
+  followed by the points of the denominators of the shape, with its tests, the class words and
+  pieces of at most $\mathrm{arraySizeAt}(H)$ bit arrays, each mapped by $\mathrm{swapPoint}$ when
+  the flag is set (\csource{find_points.c}{5116}{5116}, \csource{find_points.c}{5137}{5139},
   \csource{find_points.c}{5167}{5167}, the block that sets up the run and runs the denominators;
   \csource{find_points.c}{5106}{5106}, the return when the Sturm step leaves nothing to search, is
   not met before stage~H). A definition of type \verb|Id|, which $\mathrm{findPoints}$ runs. For
-  well-formed parameters, $H \ge 1$ and $d$ the degree of $c$, its result is the list of the points
-  at infinity followed by the points of the reference over the denominators of the search
-  (Definition~\ref{def:searchDens}), in their order, each mapped by $\mathrm{swapPoint}$ when the
-  flag is set, also when an exit fires, since the curve has no points then
-  (Lemmas~\ref{lem:sievingInfo} and~\ref{lem:twoAdic_exit}) and the denominators of the search lie
-  in $1, \dots, H$; otherwise the run of the shape gives the reference over its denominators, since
-  its tests, the class words and the sieve entries of the moduli, which are sound
+  well-formed parameters, $1 \le H < 2^{63}$, as the refusals of $\mathrm{findPoints}$ leave it, and
+  $d$ the degree of $c$, its result is the list of the points at infinity followed by the points of
+  the reference over the denominators of the search (Definition~\ref{def:searchDens}), in their
+  order, each mapped by $\mathrm{swapPoint}$ when the flag is set, also when an exit fires, since
+  the curve has no points then (Lemmas~\ref{lem:sievingInfo} and~\ref{lem:twoAdic_exit}) and the
+  denominators of the search lie in $1, \dots, H$; otherwise the run of the shape gives the
+  reference over its denominators, since its tests, the class words and the sieve entries of the
+  moduli, which are sound and whose reciprocals \verb|sieving_info| returns in their order
   (Lemma~\ref{lem:sievingInfo}), let every point through (Lemmas~\ref{lem:shape_dens},
   \ref{lem:twoAdic_point} and~\ref{lem:survives}, Theorem~\ref{thm:run_reference}).
 \end{definition}
@@ -633,7 +633,8 @@ without Mathlib, is in \verb|Ratpoints/Proof/Sturm.lean|, and the lemmas on arra
 the absolute values of a list as a left fold, on the cursor of a loop over a range and on exact
 quotients of integers that it needs and Lean core lacks are in \verb|Ratpoints/Proof/Bits.lean|,
 under their names in the namespaces of core. The flagged contracts are in
-\verb|Ratpoints/Proof/Words.lean|, that of the run since stage~E in
+\verb|Ratpoints/Proof/Words.lean|, those from the walk on since stage~F2 in
+\verb|Ratpoints/Proof/Sift.lean|, that of the run since stage~E in
 \verb|Ratpoints/Proof/Denominators.lean|; the lemmas on \verb|mod|, the \verb|long|s and the table
 with the exit in \verb|Ratpoints/Proof/Tables.lean|; the polynomial of a coefficient list, the
 squarefreeness of the chain and of the reversal, the reflection and the bijection in

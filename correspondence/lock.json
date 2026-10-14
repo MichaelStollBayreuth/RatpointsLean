@@ -511,6 +511,18 @@
         "Ratpoints.Sieve.checkPoint"
       ]
     },
+    "find_points.c:3123-3124": {
+      "hash": "168cb4ece44d6cdc0c2db05f6f9edea5b6da4cc9f3b55b9fff8a9789c093fb70",
+      "owners": [
+        "Ratpoints.Sieve.sift"
+      ]
+    },
+    "find_points.c:3129-3129": {
+      "hash": "d0a0ae6886b5b256845dae987e6ba8fe9aa274390dc29cadcc6d83433ea4ea48",
+      "owners": [
+        "Ratpoints.Sieve.sift"
+      ]
+    },
     "find_points.c:3149-3170": {
       "hash": "b67a52065a3855a34bb73825b01af82d100dbfe9c90c354f1a375506ff128864",
       "owners": [
@@ -1848,7 +1860,7 @@
     "rp-private.h:135-136": {
       "hash": "afb3d29e7d1e1a718827b3defe9b7f4ec9fb01fe2fe5e012968e0fe5f0d04d7d",
       "owners": [
-        "Ratpoints.Sieve.scanPiece"
+        "Ratpoints.Sieve.siftBitArray"
       ]
     },
     "rp-private.h:137-152": {
@@ -1902,7 +1914,7 @@
     "rp-private.h:177-178": {
       "hash": "afb3d29e7d1e1a718827b3defe9b7f4ec9fb01fe2fe5e012968e0fe5f0d04d7d",
       "owners": [
-        "Ratpoints.Sieve.scanPiece"
+        "Ratpoints.Sieve.siftBitArray"
       ]
     },
     "rp-private.h:179-202": {
@@ -1980,7 +1992,7 @@
     "rp-private.h:238-239": {
       "hash": "afb3d29e7d1e1a718827b3defe9b7f4ec9fb01fe2fe5e012968e0fe5f0d04d7d",
       "owners": [
-        "Ratpoints.Sieve.scanPiece"
+        "Ratpoints.Sieve.siftBitArray"
       ]
     },
     "rp-private.h:241-241": {
@@ -2046,7 +2058,7 @@
     "rp-private.h:264-266": {
       "hash": "1b981d0e6a1572ef3028a2ea6c56ca2f042da238a8c1ca2ad587ecd508e34e6d",
       "owners": [
-        "Ratpoints.Sieve.scanPiece"
+        "Ratpoints.Sieve.siftBitArray"
       ]
     },
     "rp-private.h:267-267": {
@@ -2106,7 +2118,7 @@
     "rp-private.h:288-289": {
       "hash": "a7858a0fc105ef06d82d305aa49782f4654bc0cf98e4d9fa1a1ec99f6aa5b2e7",
       "owners": [
-        "Ratpoints.Sieve.scanPiece"
+        "Ratpoints.Sieve.siftBitArray"
       ]
     },
     "rp-private.h:290-290": {
@@ -2279,10 +2291,28 @@
         "Ratpoints.rbaPack"
       ]
     },
+    "rp-private.h:577-578": {
+      "hash": "741417530ba2b7fdd08640d26ba699d1c6f7b56d2dd6cdaea15dbdd39902bf47",
+      "owners": [
+        "Ratpoints.Sieve.sift"
+      ]
+    },
+    "rp-private.h:583-583": {
+      "hash": "f60584924f2f49fac245e83826a139a29422a9a6952dd5715d63e186c83aabbe",
+      "owners": [
+        "Ratpoints.Sieve.sift"
+      ]
+    },
     "rp-private.h:596-597": {
       "hash": "de9a3ae3ebb0fedbe898f7657c8348bdbb28d99822b0342285a93bf6d234913a",
       "owners": [
         "Ratpoints.Sieve.checkPoint"
+      ]
+    },
+    "rp-private.h:610-614": {
+      "hash": "76e8b0b3543985b6e472ca7d226f024469d796ad2fce40bda254a84b19a95dda",
+      "owners": [
+        "Ratpoints.Sieve.siftPiece"
       ]
     },
     "rp-private.h:86-86": {
@@ -2346,10 +2376,22 @@
         "Ratpoints.Sieve.scanPiece"
       ]
     },
+    "sift.c:1094-1111": {
+      "hash": "d0202b9bf02519bf1d7e96543272f821988206233712ca98dccc78d4091161f7",
+      "owners": [
+        "Ratpoints.Sieve.siftBitArray"
+      ]
+    },
     "sift.c:1113-1113": {
       "hash": "4c65923df22c523079708a02a19f17ef6d508361c80c7bac223628372175bade",
       "owners": [
         "Ratpoints.useLongInPhase2"
+      ]
+    },
+    "sift.c:1126-1134": {
+      "hash": "c47bf386f71abc0eca4032579e2790df6bd6219d48860280aa49e8c2dc51280f",
+      "owners": [
+        "Ratpoints.Sieve.siftBitArray"
       ]
     },
     "sift.c:1135-1136": {
@@ -2358,10 +2400,34 @@
         "Ratpoints.Sieve.secondStageWord"
       ]
     },
+    "sift.c:1137-1139": {
+      "hash": "b1cd67c7ffd8359a91426f8093d1239e7df42a0d7f620dad304119f0dcf9fb2c",
+      "owners": [
+        "Ratpoints.Sieve.siftBitArray"
+      ]
+    },
     "sift.c:1141-1152": {
       "hash": "968087e854336d9530d3e30fea384a4bf73a81394f85cc070e2fddbf9d2645fe",
       "owners": [
         "Ratpoints.Sieve.secondStageWord"
+      ]
+    },
+    "sift.c:1154-1159": {
+      "hash": "451c0865c5b40fdbe8e5229f082ed7cba3299b2fe4516e88df2710bb2761ad3d",
+      "owners": [
+        "Ratpoints.Sieve.siftBitArray"
+      ]
+    },
+    "sift.c:1161-1171": {
+      "hash": "4fc4ac794469a90334637b6104b6b3eeb98c62bfc1ea50a65402925435d6bf34",
+      "owners": [
+        "Ratpoints.Sieve.walkWord"
+      ]
+    },
+    "sift.c:1172-1173": {
+      "hash": "a470d58ebd584ae30221d1fd75c3a59dd9942b9ef65b6fe0bbbbc7a733bacc2f",
+      "owners": [
+        "Ratpoints.Sieve.siftBitArray"
       ]
     },
     "sift.c:1174-1174": {
@@ -2376,10 +2442,16 @@
         "Ratpoints.Sieve.secondStage"
       ]
     },
+    "sift.c:1204-1210": {
+      "hash": "9a00dffbaa9aa443a2a6204ddeba489c544802d58ea743411c82e8839ef508d1",
+      "owners": [
+        "Ratpoints.Sieve.siftBitArray"
+      ]
+    },
     "sift.c:1213-1226": {
       "hash": "d4597eb8f82911382c0889e3e29ddb3faf482f426f953a24710230933d4910e6",
       "owners": [
-        "Ratpoints.Sieve.scanPiece"
+        "Ratpoints.Sieve.siftBitArray"
       ]
     },
     "sift.c:1227-1255": {
@@ -2391,7 +2463,7 @@
     "sift.c:1257-1264": {
       "hash": "1b30de168b2b0078bbb74083174dc96fdfe343d27ed02faf89af22415b77a9df",
       "owners": [
-        "Ratpoints.Sieve.scanPiece"
+        "Ratpoints.Sieve.siftBitArray"
       ]
     },
     "sift.c:1265-1292": {
@@ -2403,7 +2475,7 @@
     "sift.c:1293-1296": {
       "hash": "f9bd7f2f595dec528b29874c95dbe271adc78ccf0ff9c8192f27377bc70ae42c",
       "owners": [
-        "Ratpoints.Sieve.scanPiece"
+        "Ratpoints.Sieve.siftBitArray"
       ]
     },
     "sift.c:1297-1297": {

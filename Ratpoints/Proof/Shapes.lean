@@ -27,14 +27,15 @@ for distinct squarefree divisors `s`, since `s k ^ 2` determines the squarefree 
 word shape lists the denominators of a range whose class admits a numerator and which no forbidden
 divisor tested with words divides, in increasing order (`Ratpoints.Sieve.wordsDens`), since bit `j`
 of word `r` of the words of a prime `p` is clear exactly when `p ∣ 64 r + j`
-(`Ratpoints.Sieve.forbiddenRow`) and the walk over the set bits of a word pushes their
-denominators, lowest first. The tests let the denominator of every point through: the class test
+(`Ratpoints.Sieve.forbiddenRow`) and the walk over the set bits of a word pushes their denominators,
+lowest first. The tests let the denominator of every point through: the class test
 (`Ratpoints.Sieve.getElem!_twoAdic_ne_zero`), the valuation test of the divisor shape with the
 slopes of the divisor set-up (`Ratpoints.Setup.DenInfo.excludes_eq_false_of_sq_eq`), and the tests
 of the word shape, the forbidden divisors and both Jacobi tests
 (`Ratpoints.Sieve.IsForbiddenEntry.not_dvd`, `Ratpoints.Sieve.IsForbiddenVal.excludes_eq_false`,
 `Ratpoints.Sieve.run_jacobi_eq_one_of_sq_eq`, `Ratpoints.Sieve.run_jacobiTest_of_sq_eq`). The
-denominators that the C code computes as `long`s are at most the largest denominator.
+denominators that the C code computes as `long`s are at most the largest denominator, and those of
+every shape lie between the smallest and the largest.
 
 ## Main statements
 
@@ -57,6 +58,8 @@ denominators that the C code computes as `long`s are at most the largest denomin
 * `Ratpoints.Sieve.fitsLong_of_mem_squaresDens`, `Ratpoints.Sieve.fitsLong_of_mem_squares1Dens`,
   `Ratpoints.Sieve.fitsLong_of_mem_wordsDens`: the denominators `k ^ 2`, `s k ^ 2` and `64 w + t`
   of the C code are `long`s for a `long` largest denominator.
+* `Ratpoints.Sieve.Shape.le_and_le_of_mem_dens`: the denominators of every shape lie between the
+  smallest denominator `bLow ≥ 1` and the largest.
 
 ## Implementation notes
 
@@ -318,6 +321,41 @@ theorem fitsLong_of_mem_wordsDens {db : UInt64} {forb : List ForbiddenEntry} {bL
   simp only [Bool.and_eq_true, decide_eq_true_eq] at this
   simp [fitsLong]
   lia
+
+/-! ### The bounds of the denominators of the shapes -/
+
+/-- No divisor need be positive: a divisor `0` has an empty segment. -/
+theorem le_and_le_of_mem_squares1Dens {divisors : List ℕ} {bLow bHigh b : ℕ} (hbLow : 1 ≤ bLow)
+    (hb : b ∈ squares1Dens divisors bLow bHigh) : bLow ≤ b ∧ b ≤ bHigh := by
+  obtain ⟨s, -, k, hk, rfl⟩ : ∃ s ∈ divisors, ∃ k ∈ List.range' (ceilSqrt ((bLow - 1) / s + 1))
+      (floorSqrt (bHigh / s) + 1 - ceilSqrt ((bLow - 1) / s + 1)), b = s * k * k := by
+    simpa [squares1Dens, eq_comm] using hb
+  rcases Nat.eq_zero_or_pos s with rfl | hs
+  · simp [ceilSqrt, floorSqrt] at hk
+  · exact (mem_range'_ceilSqrt_iff hs hbLow).mp hk
+
+theorem le_and_le_of_mem_wordsDens {db : UInt64} {forb : List ForbiddenEntry} {bLow bHigh b : ℕ}
+    (hb : b ∈ (Id.run (wordsDens db forb bLow bHigh)).toList) : bLow ≤ b ∧ b ≤ bHigh := by
+  rw [Std.WP.Id.of_run_eq_wp rfl _ ((wordsDens_spec db forb bLow bHigh).le_wp trivial)] at hb
+  obtain ⟨w, hw, hb⟩ := List.mem_flatMap.mp hb
+  obtain ⟨t, ht, rfl⟩ := List.mem_map.mp hb
+  have hw' := List.mem_range'_1.mp hw
+  have := (List.mem_filter.mp ht).2
+  rw [getLsbD_wordBits db forb hw'.1 (by lia)] at this
+  simp only [Bool.and_eq_true, decide_eq_true_eq] at this
+  exact ⟨this.1.2, this.2⟩
+
+/-- The denominators of every shape lie between `bLow ≥ 1` and `bHigh`, as the test for common
+factors on the words of the C code needs (`Ratpoints.Sieve.sieveRun_spec`). -/
+theorem Shape.le_and_le_of_mem_dens (s : Shape) (db : UInt64) {bLow bHigh b : ℕ} (hbLow : 1 ≤ bLow)
+    (hb : b ∈ Id.run (s.dens db bLow bHigh)) : bLow ≤ b ∧ b ≤ bHigh := by
+  cases s with
+  | squares => exact ((mem_squaresDens_iff hbLow).mp hb).imp_right And.left
+  | squares1 _ divisors => exact le_and_le_of_mem_squares1Dens hbLow hb
+  | words forb _ _ _ _ => exact le_and_le_of_mem_wordsDens hb
+  | all =>
+    have := List.mem_range'_1.mp hb
+    lia
 
 /-! ### The tests of the word shape -/
 

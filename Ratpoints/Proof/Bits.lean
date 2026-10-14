@@ -13,32 +13,33 @@ import Std.Internal.ForIn.Lemmas
 Lemmas on vectors, arrays, lists, ranges, natural numbers, integers and 64-bit words that the
 contracts of the model need and Lean core lacks, under their names in the namespaces of Lean core:
 the entries of a vector after `Vector.set!` and after a fold of `Vector.set!` over consecutive
-positions, the entries of an array made by a map over a range, the last entry and the entries of an
-array after `Array.push`, `Array.pop` and `Array.map`, the elements of `List.range n` that pass a
-test which fails from some position on, the integers of a range that lie in a smaller one or between
-two bounds, the gcd of the absolute values of a list of integers as a left fold, the length of the
-list of a range and the position of the cursor of a loop over it, the cursor of a loop over an array
-as one of its entries, the bound `y < (n + 1) k` for `y < n k`, the residues modulo `p` of the
-integers from `a` on, the residue of an integer modulo `p`, below `p` and read off its residue
-modulo a multiple of `p`, exact quotients of integers, the bits of the word `~~~0` and of the masks
-`~~~0 <<< n` and `~~~0 >>> n`, the lowest bit and the lowest set bit of a word, the word
-`x &&& (x - 1)`, which is `x` with its lowest set bit cleared, the bits of a word set one at a time,
-at their own positions or at others, the 64 bits of two words from a position within the first, the
-bits of a word and-ed in turn with the words of a list, the numerators and the denominators of the
-set bits of a list of words, read in turn, the numbers of a range between two bounds, the odd part
-of a number below `2 ^ 64` by the lowest set bit of its word, bit 1 of odd numbers, the gcd of half
-an even number with an odd one, a residue below `2 q` modulo `q` by one subtraction, the estimate of
-a quotient by Barrett's reduction, the bounds of a step of Horner's rule and of a power of a number
-below a power of 2, the entries of an array of Booleans after a fold of `setIfInBounds · true`, the
-absolute value of the step of the cofactors of the extended Euclidean algorithm, the divisors of the
-gcd of `b` and a residue `f ≡ a (mod b)`, the remainder and the quotient by a multiplication with a
-reciprocal, the gcd of the odd part of a number with an odd one and the step of the binary algorithm
-for the gcd, the residue modulo a divisor of `b` of a numerator prime to `b`, C's remainder, which
-truncates, made non-negative, the residue of `(a mod p) b` and the bound `|a b| + H ≤ p H` for
-`|a| ≤ H` and `b < p`, and, for the signed 64-bit words, the arithmetic shift, the mask `x >>> 63`
-with the smaller and the distance of two non-negative words that it gives without a branch, the odd
-part of a positive word by the lowest set bit of the word read as unsigned, its lowest bit, the
-absolute value, and the words of an integer and of a natural number below `2 ^ 63`.
+positions, the entries of `Vector.ofFn f`, the entries of an array made by a map over a range, the
+last entry and the entries of an array after `Array.push`, `Array.pop` and `Array.map`, the elements
+of `List.range n` that pass a test which fails from some position on, `List.flatMap` over a filtered
+list, the integers of a range that lie in a smaller one or between two bounds, the gcd of the
+absolute values of a list of integers as a left fold, the length of the list of a range and the
+position of the cursor of a loop over it, the cursor of a loop over an array as one of its entries,
+the bound `y < (n + 1) k` for `y < n k`, the residues modulo `p` of the integers from `a` on, the
+residue of an integer modulo `p`, below `p` and read off its residue modulo a multiple of `p`, exact
+quotients of integers, the bits of the word `~~~0` and of the masks `~~~0 <<< n` and `~~~0 >>> n`,
+the lowest bit and the lowest set bit of a word, the word `x &&& (x - 1)`, which is `x` with its
+lowest set bit cleared, the bits of a word set one at a time, at their own positions or at others,
+the 64 bits of two words from a position within the first, the bits of a word and-ed in turn with
+the words of a list, the numerators and the denominators of the set bits of a list of words, read in
+turn, the numbers of a range between two bounds, the odd part of a number below `2 ^ 64` by the
+lowest set bit of its word, bit 1 of odd numbers, the gcd of half an even number with an odd one, a
+residue below `2 q` modulo `q` by one subtraction, the estimate of a quotient by Barrett's
+reduction, the bounds of a step of Horner's rule and of a power of a number below a power of 2, the
+entries of an array of Booleans after a fold of `setIfInBounds · true`, the absolute value of the
+step of the cofactors of the extended Euclidean algorithm, the divisors of the gcd of `b` and a
+residue `f ≡ a (mod b)`, the remainder and the quotient by a multiplication with a reciprocal, the
+gcd of the odd part of a number with an odd one and the step of the binary algorithm for the gcd,
+the residue modulo a divisor of `b` of a numerator prime to `b`, C's remainder, which truncates,
+made non-negative, the residue of `(a mod p) b` and the bound `|a b| + H ≤ p H` for `|a| ≤ H` and
+`b < p`, and, for the signed 64-bit words, the arithmetic shift, the mask `x >>> 63` with the
+smaller and the distance of two non-negative words that it gives without a branch, the odd part of a
+positive word by the lowest set bit of the word read as unsigned, its lowest bit, the absolute
+value, and the words of an integer and of a natural number below `2 ^ 63`.
 
 ## Main statements
 
@@ -146,6 +147,10 @@ theorem getElem!_fold_set! {α : Type u} [Inhabited α] {n : Nat} {xs : Vector �
   induction k with
   | zero => grind
   | succ k ih => grind [Nat.fold_succ, getElem!_set!]
+
+theorem getElem!_ofFn {α : Type u} [Inhabited α] {n : Nat} {f : Fin n → α} {i : Nat} (h : i < n) :
+    (ofFn f)[i]! = f ⟨i, h⟩ := by
+  rw [getElem!_pos _ i h, getElem_ofFn]
 
 end Vector
 
@@ -338,6 +343,12 @@ theorem filter_range'_le_and_le {a n lo hi : Nat} (ha : a ≤ lo) (hn : hi < a +
     (filter_eq_nil_iff (l := range' (a + (m + (hi + 1 - (a + m)))) k)).mpr fun b hb ↦ by
       simp at hb ⊢; lia,
     filter_eq_self.mpr fun b hb ↦ by simp at hb ⊢; lia, nil_append, append_nil]
+
+theorem flatMap_filter {α : Type u} {β : Type v} {l : List α} {p : α → Bool} {f : α → List β} :
+    (l.filter p).flatMap f = l.flatMap fun a ↦ if p a then f a else [] := by
+  induction l with
+  | nil => rfl
+  | cons a l ih => by_cases h : p a <;> simp [h, ih]
 
 theorem foldl_gcd_natAbs_dvd (l : List Int) (g : Nat) :
     l.foldl (fun g a ↦ g.gcd a.natAbs) g ∣ g := by

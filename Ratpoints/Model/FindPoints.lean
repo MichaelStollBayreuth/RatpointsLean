@@ -197,17 +197,18 @@ divisors of `c_d` (`Ratpoints.Setup.setupUs1`). Then the 2-adic information
 (`Ratpoints.Sieve.twoAdic`, `Ratpoints.Sieve.denBits`), and no points when no class of the
 denominators admits a numerator and there is no point at infinity, as there is for odd degree or
 `c_d` a square. Then the tables of the primes examined, the forbidden divisors for even degree and
-the sieve entries of the moduli of `P` and their reciprocals, which the run takes with stage F
-(`Ratpoints.sievingInfo`), with the flag of the `long`s (`Ratpoints.Setup.useCLong`), and no points
-when the curve has no points modulo one of the primes examined; the checked loop off when there are
-no forbidden divisors and no Jacobi test; the shape of the run (`Ratpoints.Sieve.runSetup`); and the
-points at infinity (`Ratpoints.Sieve.pointsAtInfinity`), followed by those of the denominators of
-the shape (`Ratpoints.Sieve.sieveRun`) with the sieve entries of the moduli and pieces of at most
-`Ratpoints.Params.arraySizeAt P H` bit arrays, each point mapped by `Ratpoints.Sieve.swapPoint` when
-`rev` is set. For well-formed parameters, `H ≥ 1` and `d` the degree of `c`, these are the points at
-infinity followed by the points of the brute-force reference over the denominators of the search
-(`Ratpoints.searchDens`), in the order of its loop, increasing unless the shape is that of the
-divisors, each mapped when `rev` is set, also when an exit is taken (`Ratpoints.run_searchPoints`).
+the sieve entries of the moduli of `P` and their reciprocals (`Ratpoints.sievingInfo`), with the
+flag of the `long`s (`Ratpoints.Setup.useCLong`), and no points when the curve has no points modulo
+one of the primes examined; the checked loop off when there are no forbidden divisors and no Jacobi
+test; the shape of the run (`Ratpoints.Sieve.runSetup`); and the points at infinity
+(`Ratpoints.Sieve.pointsAtInfinity`), followed by those of the denominators of the shape
+(`Ratpoints.Sieve.sieveRun`) with the sieve entries of the moduli, their reciprocals and pieces of
+at most `Ratpoints.Params.arraySizeAt P H` bit arrays, each point mapped by
+`Ratpoints.Sieve.swapPoint` when `rev` is set. For well-formed parameters, `1 ≤ H < 2 ^ 63` and `d`
+the degree of `c`, these are the points at infinity followed by the points of the brute-force
+reference over the denominators of the search (`Ratpoints.searchDens`), in the order of its loop,
+increasing unless the shape is that of the divisors, each mapped when `rev` is set, also when an
+exit is taken (`Ratpoints.run_searchPoints`).
 
 C: `find_points.c:2793-2795`, `find_points.c:4573`, `find_points.c:4588-4589`,
 `find_points.c:4595-4596`, `find_points.c:4603-4604`, `find_points.c:4607`,
@@ -242,10 +243,11 @@ def searchPoints (c : List Int) (d H : Nat) (P : Params) (rev : Bool) :
   let nb ← twoAdic c d
   let db := denBits nb
   if db == 0 && !(d % 2 == 1 || Setup.isSquare lcf) then return []
-  let some (entries, _, forb, forbVal) ← sievingInfo c d useCLong checkDenom P bHigh | return []
+  let some (entries, magics, forb, forbVal) ← sievingInfo c d useCLong checkDenom P bHigh
+    | return []
   if forb.isEmpty && forbVal.isEmpty && !useJacobi then checkDenom := false
   let shape ← runSetup useSquares us1 checkDenom useJacobi forb forbVal lcf bHigh
-  let pts ← sieveRun c d H (P.arraySizeAt H) rev entries nb db shape 1 bHigh
+  let pts ← sieveRun c d H (P.arraySizeAt H) rev entries magics nb db shape 1 bHigh
   return pointsAtInfinity c d rev ++ pts.toList
 
 /-- The points of height at most `H` on `y ^ 2 = F(x, z)` for the coefficient list `c`, found by the

@@ -316,7 +316,8 @@ $b_{\mathrm{high}} \le \mathrm{mulModLimit}$ stays as it is
 
 \begin{definition}[A bit array through the second stage and the extraction]\label{def:siftBitArray}
   \uses{def:secondStage, def:walkWord, def:accepted}
-  Proposed names: \lname{Ratpoints.Sieve.siftBitArray}.
+  \lean{Ratpoints.Sieve.siftBitArray}
+  \leanok
   For a bit array that the first stage leaves nonzero, with the word number $i$, from a copy of it:
   in the arm that an argument chooses, $\mathrm{useLongInPhase2}$ in the run, either the second
   stage on the whole copy and, if it is still nonzero, the set bits of its words walked through in
@@ -332,15 +333,16 @@ $b_{\mathrm{high}} \le \mathrm{mulModLimit}$ stays as it is
 \end{definition}
 
 \begin{lemma}[A bit array through the second stage and the extraction]\label{lem:siftBitArray}
-  \uses{def:siftBitArray, lem:secondStage, def:walkWord}
-  Proposed names: \lname{Ratpoints.Sieve.SiftBitArrayInvariant},
-  \lname{Ratpoints.Sieve.SiftBitArrayWalkInvariant}, \lname{Ratpoints.Sieve.siftBitArray\_spec}.
+  \uses{def:siftBitArray, lem:secondStage, def:walkWord, lem:staged}
+  \lean{Ratpoints.Sieve.SiftBitArrayInvariant, Ratpoints.Sieve.SiftBitArrayWalkInvariant, Ratpoints.Sieve.siftBitArray_spec}
+  \leanok
   In both arms, the points appended are those of the numerators of the bit array whose bits
   survive the and of the copy with the rows of the moduli of the second stage and that pass the
   test of a candidate, in increasing order.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   Lemma~\ref{lem:secondStage} and the contract of the walk (Definition~\ref{def:walkWord}), in each
   arm with its own invariant: a word that is zero, or a bit array that the second stage leaves zero,
   has no set bits to walk.
@@ -365,21 +367,26 @@ that $1 \le b \le H < 2^{63}$, that the reciprocals that it reads are those of t
 the entries of the third stage are prime entries. It rests on the following.
 
 \begin{lemma}[The stages compute the unstaged sieve]\label{lem:staged}
-  \uses{lem:secondStage, lem:accepted, lem:siftBitArray, def:sift}
-  Proposed names: \lname{Ratpoints.Sieve.acceptedPoints},
-  \lname{Ratpoints.Sieve.acceptedPoints\_eq\_ite}, \lname{Ratpoints.Sieve.survives\_append}. The
-  points that the extraction gives for a numerator $a$ with $|a| \le H$, those of the exact check
-  when $a$ passes the test of a candidate and none otherwise, are those of the reference check when
-  $a$ survives the entries of the third stage, and none otherwise; a numerator survives a list of
-  entries followed by another when it survives both. So for $s_1 \le s_2 \le$ the number of moduli,
-  the numerators whose bits survive the first $s_1$ moduli in the first stage and the next $s_2 -
-  s_1$ in the second, and that pass the test of a candidate with the entries from $s_2$ on, give the
-  points that the reference check gives for the numerators that survive all the entries.
+  \uses{lem:accepted}
+  \lean{Ratpoints.Sieve.acceptedPoints, Ratpoints.Sieve.acceptedPoints_eq_ite, Ratpoints.Sieve.survives_append}
+  \leanok
+  For $|a| \le H < 2^{63}$, a denominator $0 < b < 2^{63}$ and prime entries in the third stage with
+  their reciprocals, the points that the extraction gives for a numerator $a$, those of the exact
+  check when $a$ passes the test of a candidate and none otherwise, are those of the reference check
+  when $a$ survives the entries of the third stage, and none otherwise; a numerator survives a list
+  of entries followed by another when it survives both. With these and the second stage
+  (Lemma~\ref{lem:secondStage}), the contracts of one piece and of one denominator
+  (Definitions~\ref{def:siftPiece} and~\ref{def:sift}) give for the numerators whose bits survive
+  the first $s_1$ moduli in the first stage and the others of the first two stages in the second,
+  and that pass the test of a candidate with the entries of the third stage, the points that the
+  reference check gives for the numerators that survive all the entries.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   Lemma~\ref{lem:accepted} for the first part, since the reference check gives no points for a
-  numerator with a common factor; Lemma~\ref{lem:secondStage} for the split of the list at $s_1$.
+  numerator with a common factor; the survivor test of a list of entries is the conjunction of the
+  tests of its entries.
 \end{proof}
 
 The run over the denominators (Definition~\ref{def:sieveRun}) takes the cut points $s_1$ and $s_2$:

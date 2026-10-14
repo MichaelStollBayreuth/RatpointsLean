@@ -297,10 +297,11 @@ power, which loop over the residues, are components of type \verb|Id| with their
 \end{definition}
 
 \begin{definition}[The denominators]\label{def:sieveRun}
-  \uses{def:sift, def:Shape}
+  \uses{def:sift, def:Shape, lem:shape_dens}
   \lean{Ratpoints.Sieve.sieveRun, Ratpoints.Sieve.sieveRun_spec, Ratpoints.Sieve.toList_run_sieveRun}
   \leanok
-  The rows of the moduli made once, and the denominators of a shape of the loop
+  The rows of the moduli made once, all of them for the first stage, so that the third stage gets no
+  entries and none of the reciprocals of the moduli, and the denominators of a shape of the loop
   (Definition~\ref{def:Shape}) from $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$, in the order of its
   loop: for each that passes the test of the shape, the points that \verb|sift|
   (Definition~\ref{def:sift}) finds from the word $\mathrm{nb}[b \bmod 64]$ of its class in the
@@ -310,11 +311,15 @@ power, which loop over the residues, are components of type \verb|Id| with their
   \csource{find_points.c}{4009}{4009}, \csource{find_points.c}{4042}{4052},
   \csource{find_points.c}{4059}{4059}, \csource{find_points.c}{4066}{4072},
   \csource{find_points.c}{4075}{4078}, \csource{find_points.c}{5120}{5120},
-  \csource{find_points.c}{5152}{5160}). Its contract, for an array size $A \ge 1$ and moduli
-  $p > 0$: the result is the concatenation, over the denominators $b$ of the list of the shape that
-  pass its test, of what the brute-force reference finds over $b$ and the numerators that pass the
-  class bit of $\mathrm{nb}[b \bmod 64]$ and survive the moduli for $b$, mapped by
-  $\mathrm{swapPoint}$ (Definition~\ref{def:swapPoint}) when the flag is set.
+  \csource{find_points.c}{5152}{5160}). Its contract, for an array size $A \ge 1$, moduli $p > 0$
+  whose reciprocals the array of the reciprocals holds in their order, denominators from
+  $b_{\mathrm{low}} \ge 1$ to $b_{\mathrm{high}} < 2^{63}$ and $H < 2^{63}$, as the test for common
+  factors on the words of the C code needs (the denominators of every shape lie between
+  $b_{\mathrm{low}}$ and $b_{\mathrm{high}}$, Lemma~\ref{lem:shape_dens}): the result is the
+  concatenation, over the denominators $b$ of the list of the shape that pass its test, of what the
+  brute-force reference finds over $b$ and the numerators that pass the class bit of
+  $\mathrm{nb}[b \bmod 64]$ and survive the moduli for $b$, mapped by $\mathrm{swapPoint}$
+  (Definition~\ref{def:swapPoint}) when the flag is set.
 \end{definition}
 
 \begin{definition}[The points at infinity]\label{def:pointsAtInfinity}
@@ -431,12 +436,13 @@ meets; ratpoints refuses it before it gets there, and so does $\mathrm{findPoint
   \uses{def:sieveRun, def:bruteForce}
   \lean{Ratpoints.Sieve.toList_run_sieveRun_eq_flatMap}
   \leanok
-  For an array size $A \ge 1$, moduli $p > 0$ and a list $l$ of denominators such that the list of
-  the shape is $l$ filtered by a test, every denominator of $l$ over which the brute-force reference
-  finds a point passes that test and the test of the shape, and every numerator of such a point
-  passes the class word of its denominator and the sieve entries: the run gives the concatenation of
-  what the reference finds over the denominators of $l$, in the order of $l$, mapped by
-  $\mathrm{swapPoint}$ when the flag of the reversal is set.
+  For an array size $A \ge 1$, moduli $p > 0$ with their reciprocals, denominators from
+  $b_{\mathrm{low}} \ge 1$ to $b_{\mathrm{high}} < 2^{63}$, $H < 2^{63}$ and a list $l$ of
+  denominators such that the list of the shape is $l$ filtered by a test, every denominator of $l$
+  over which the brute-force reference finds a point passes that test and the test of the shape, and
+  every numerator of such a point passes the class word of its denominator and the sieve entries:
+  the run gives the concatenation of what the reference finds over the denominators of $l$, in the
+  order of $l$, mapped by $\mathrm{swapPoint}$ when the flag of the reversal is set.
 \end{theorem}
 
 \begin{proof}

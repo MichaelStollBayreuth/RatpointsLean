@@ -554,15 +554,16 @@ $(c_d / q) = -1$, which these do not reach.
 
 \begin{lemma}[The lists of the shapes]\label{lem:shape_dens}
   \uses{def:Shape, lem:twoAdic_point, lem:odd_denominators, lem:forbidden, lem:jacobiTest}
-  \lean{Ratpoints.Sieve.squaresDens_eq_filter, Ratpoints.Sieve.mem_squaresDens_iff, Ratpoints.Sieve.mem_range'_ceilSqrt_iff, Ratpoints.Sieve.mem_squares1Dens_iff, Ratpoints.Sieve.nodup_squares1Dens, Nat.eq_of_mul_sq_eq_mul_sq, Ratpoints.Sieve.toList_run_wordsDens, Ratpoints.Sieve.run_denInfoTest_of_sq_eq, Ratpoints.Sieve.getLsbD_denBits_and_all_of_sq_eq, Ratpoints.Sieve.run_wordsTest_of_sq_eq}
+  \lean{Ratpoints.Sieve.squaresDens_eq_filter, Ratpoints.Sieve.mem_squaresDens_iff, Ratpoints.Sieve.mem_range'_ceilSqrt_iff, Ratpoints.Sieve.mem_squares1Dens_iff, Ratpoints.Sieve.nodup_squares1Dens, Nat.eq_of_mul_sq_eq_mul_sq, Ratpoints.Sieve.toList_run_wordsDens, Ratpoints.Sieve.run_denInfoTest_of_sq_eq, Ratpoints.Sieve.getLsbD_denBits_and_all_of_sq_eq, Ratpoints.Sieve.run_wordsTest_of_sq_eq, Ratpoints.Sieve.Shape.le_and_le_of_mem_dens}
   \leanok
-  Let $1 \le b_{\mathrm{low}}$. The list of the squares is that of the squares from
-  $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$, in increasing order. The list of the divisors times
-  squares, for squarefree divisors without duplicates, has no duplicates and holds exactly the
-  $s k^2$ from $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$ with $s$ a divisor. The list of the words,
-  for primes tested with words with their words, is that of the denominators from $b_{\mathrm{low}}$
-  to $b_{\mathrm{high}}$ whose bit in $\mathrm{den\_bits}$ is set and which no such prime divides,
-  in increasing order. For integers $a$ and $y$ and a natural number $1 \le b \le H$ with
+  Let $1 \le b_{\mathrm{low}}$. The denominators of every shape lie between $b_{\mathrm{low}}$ and
+  $b_{\mathrm{high}}$. The list of the squares is that of the squares from $b_{\mathrm{low}}$ to
+  $b_{\mathrm{high}}$, in increasing order. The list of the divisors times squares, for squarefree
+  divisors without duplicates, has no duplicates and holds exactly the $s k^2$ from
+  $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$ with $s$ a divisor. The list of the words, for primes
+  tested with words with their words, is that of the denominators from $b_{\mathrm{low}}$ to
+  $b_{\mathrm{high}}$ whose bit in $\mathrm{den\_bits}$ is set and which no such prime divides, in
+  increasing order. For integers $a$ and $y$ and a natural number $1 \le b \le H$ with
   $\gcd(a, b) = 1$ and $y^2 = F(a, b)$, as for a normalized point $(a, y, b)$ of height at most $H$,
   $b$ passes the tests of the shapes: the class test, the valuation test with the records of the
   divisors of Definition~\ref{def:setupUs1}, and for forbidden divisors that the contract of
@@ -654,6 +655,7 @@ among them, with the frame of the block that sets up the run (\csource{find_poin
 \end{theorem}
 
 \begin{proof}
+  \uses{thm:refusals}
   \leanok
   $L$ is the list of the search of $c'$ (Definition~\ref{def:searchPoints}), which takes an exit
   only when the curve has no points (Lemmas~\ref{lem:twoAdic_exit}
@@ -664,6 +666,8 @@ among them, with the frame of the block that sets up the run (\csource{find_poin
   (Lemma~\ref{lem:shape_dens}; for the shapes other than the divisors they are $1, \dots, H$), so
   the points over them are a permutation of those over $1, \dots, H$. The degree that the reversal
   check hands on is that of $c'$, and without a reversal $c' = c$ (Lemma~\ref{lem:reversal_swap}).
+  When $\mathrm{findPoints}$ returns a list, its height bound is below $2^{63}$ by its refusals
+  (Theorem~\ref{thm:refusals}), as the search needs.
 \end{proof}
 
 Theorem~\ref{thm:findPoints_perm} states the permutation, and Theorem~\ref{thm:findPoints}
@@ -768,14 +772,15 @@ in \verb|Shapes.lean|; and the run over a shape in \verb|Denominators.lean|. Unl
 C1 to D, the contracts of this stage are proved in files with Mathlib, next to the lemmas they
 serve, since several of them speak of notions of Mathlib (the primes and their valuations, the
 squares modulo a prime, the Jacobi symbol). The class word is in the contracts of
-\verb|Ratpoints/Proof/Words.lean|, which also holds the invariant of a loop over the set bits of a
-word that the walk of the check, the 2-adic information and the words of the shapes share; the
-filter of the reference by a test on the numerators is in \verb|Ratpoints/Proof/Sieve.lean|, the
-denominators of a point and the filter of the reference by the denominators in
-\verb|Ratpoints/Proof/BruteForce.lean|, the facts about the table of primes that the factorization
-uses, checked by \verb|decide|, in \verb|Ratpoints/Proof/Params.lean|, the lemmas on words, lists
-and ranges in core's namespaces in \verb|Ratpoints/Proof/Bits.lean|, the binary form at $a = k b$,
-the squares modulo $p$ and the negation of the quarter of \verb|LONG_MIN| in
+\verb|Ratpoints/Proof/Words.lean| and, since stage~F2, of \verb|Ratpoints/Proof/Sift.lean|, which
+holds those from the walk on; \verb|Ratpoints/Proof/Words.lean| also holds the invariant of a loop
+over the set bits of a word that the walk of the check, the 2-adic information and the words of the
+shapes share; the filter of the reference by a test on the numerators is in
+\verb|Ratpoints/Proof/Sieve.lean|, the denominators of a point and the filter of the reference by
+the denominators in \verb|Ratpoints/Proof/BruteForce.lean|, the facts about the table of primes that
+the factorization uses, checked by \verb|decide|, in \verb|Ratpoints/Proof/Params.lean|, the lemmas
+on words, lists and ranges in core's namespaces in \verb|Ratpoints/Proof/Bits.lean|, the binary form
+at $a = k b$, the squares modulo $p$ and the negation of the quarter of \verb|LONG_MIN| in
 \verb|Ratpoints/Proof/Tables.lean|, and the denominators of the search with the theorems in
 \verb|Ratpoints/Proof/FindPoints.lean|. The lemmas of Mathlib's generality are in
 \verb|Ratpoints/Mathlib|, in the files that mirror their homes in Mathlib:

@@ -856,7 +856,10 @@ def runSetup (useSquares : Bool) (us1 : Option (List Setup.DenInfo × List Nat))
 
 /-- The points of the denominators from `bLow` to `bHigh` of the shape `shape`, for the polynomial
 of degree `d` with the coefficient list `c`: the rows of the sieve entries `entries` of the moduli
-are made once for the run, each residue's row as a thunk (`Ratpoints.Sieve.SieveEntry.rows`); for
+are made once for the run, each residue's row as a thunk (`Ratpoints.Sieve.SieveEntry.rows`), and
+all of them go to the first stage, so that the second and the third stage have no moduli: the third
+stage gets no entries and the reciprocals of `magics` from the position `entries.length` on, none
+when `magics` holds those of the moduli in the order of the entries (`Ratpoints.sievingInfo`); for
 each denominator `b` of the shape, in the order of its loop (`Ratpoints.Sieve.Shape.dens`, with the
 word `db` of the classes that admit a numerator), that passes its tests
 (`Ratpoints.Sieve.Shape.keep`, with the words `nb` of the 2-adic information), the points that
@@ -868,26 +871,28 @@ C: `find_points.c:3889-3904`, `find_points.c:3917-3918`, `find_points.c:3926-393
 `find_points.c:4066-4072`, `find_points.c:4075-4078`, `find_points.c:5120`,
 `find_points.c:5152-5160`
 
-Deviation: the denominators of the shape listed first, then tested and sifted one after the other,
-where `run_block` tests and sifts each as its loop reaches it; no blocks (stage I): the steps of
-each segment in order, for the blocks of `len` consecutive steps, which the threads share and which
-deliver their points in the same order; the word `nb[b mod 64]` of the 2-adic information, for the
-class `cls[b & 0x3f]` that `sift` receives, whose pattern it is at the stride 1 (its `k`, `a0` and
-row offsets come with the packing, stage F3); the residues `b mod p` that choose the rows computed
-by `Ratpoints.Sieve.sift`, for the residues of `b` divided by `2^k` that `fill_bp_list` computes
-before each call (`k` the stride of the packing; stage F3); a list of points, for the counts `total`
-of points that `sift` and `run_block` return, with no stop by the callback (stage G); natural
-numbers for the `long`s (stage F); no correction of the moduli between the blocks (stage I); no
-output under `DEBUG`. -/
+Deviation: every modulus in the first stage, for the ends `sp1`, `sp2` and `sp3` of the stages,
+which `worker_init` copies from the arguments into the sieving thread (stage F); the denominators of
+the shape listed first, then tested and sifted one after the other, where `run_block` tests and
+sifts each as its loop reaches it; no blocks (stage I): the steps of each segment in order, for the
+blocks of `len` consecutive steps, which the threads share and which deliver their points in the
+same order; the word `nb[b mod 64]` of the 2-adic information, for the class `cls[b & 0x3f]` that
+`sift` receives, whose pattern it is at the stride 1 (its `k`, `a0` and row offsets come with the
+packing, stage F3); the residues `b mod p` that choose the rows computed by `Ratpoints.Sieve.sift`,
+for the residues of `b` divided by `2^k` that `fill_bp_list` computes before each call (`k` the
+stride of the packing; stage F3); a list of points, for the counts `total` of points that `sift` and
+`run_block` return, with no stop by the callback (stage G); natural numbers for the `long`s (stage
+F); no correction of the moduli between the blocks (stage I); no output under `DEBUG`. -/
 def sieveRun (c : List Int) (d H A : Nat) (rev : Bool) (entries : List SieveEntry)
-    (nb : Vector UInt64 64) (db : UInt64) (shape : Shape) (bLow bHigh : Nat) :
+    (magics : Array Nat) (nb : Vector UInt64 64) (db : UInt64) (shape : Shape) (bLow bHigh : Nat) :
     Id (Array (Int × Int × Int)) := do
   let rows := entries.map fun e ↦ (e.p, e.rows)
+  let mgs3 := magics.toList.drop entries.length
   let dens ← shape.dens db bLow bHigh
   let mut out := #[]
   for b in dens do
     if ← shape.keep nb b then
-      out := out ++ (← sift c d H A b rev rows nb[b % 64]!)
+      out := out ++ (← sift c d H A b rev entries.length rows [] mgs3 nb[b % 64]!)
   return out
 
 /-! ### Examples
@@ -1144,8 +1149,8 @@ prints. -/
   let nb := Id.run (twoAdic c 1)
   let entries := (primeTable.toList.take 30).filterMap fun p ↦
     (Id.run (examinePrime? c 1 p true)).map fun (e, _) ↦ (⟨p, [.prime e], magic p⟩ : SieveEntry)
-  (Id.run (sieveRun c 1 20 1 false entries nb (denBits nb) (.squares1 [⟨2, 1, 2⟩] [1, 2]) 1
-      20)).toList ==
+  (Id.run (sieveRun c 1 20 1 false entries (entries.toArray.map (·.magic)) nb (denBits nb)
+      (.squares1 [⟨2, 1, 2⟩] [1, 2]) 1 20)).toList ==
     [(0, 1, 1), (0, -1, 1), (4, 3, 1), (4, -3, 1), (12, 5, 1), (12, -5, 1), (-4, 3, 9), (-4, -3, 9),
       (8, 15, 9), (8, -15, 9), (20, 21, 9), (20, -21, 9), (-1, 0, 2), (3, 4, 2), (3, -4, 2),
       (15, 8, 2), (15, -8, 2), (-3, 4, 8), (-3, -4, 8), (5, 12, 8), (5, -12, 8), (-5, 12, 18),

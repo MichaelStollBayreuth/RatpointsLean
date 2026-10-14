@@ -60,7 +60,7 @@ refusal theorems (`comparator/Challenge.lean`).
   `Ratpoints.sievingInfo` makes are sound and hold the reciprocals of their moduli, which it returns
   in the order of the entries, and its forbidden divisors are among those that the loops of the
   tables and of the further primes may record; when it returns none, the curve has no points.
-* `Ratpoints.run_searchPoints`: for well-formed parameters, `H ≥ 1` and the degree of the
+* `Ratpoints.run_searchPoints`: for well-formed parameters, `1 ≤ H < 2 ^ 63` and the degree of the
   polynomial, the search gives these points, mapped by `Ratpoints.Sieve.swapPoint` when the flag of
   the reversal is set, also when it takes an exit.
 * `Ratpoints.exists_eq_of_findPoints_eq_ok`: for well-formed parameters, every list that
@@ -85,9 +85,10 @@ refusal theorems (`comparator/Challenge.lean`).
 ## Proof
 
 By the reduction of the run to the reference (`Ratpoints.Sieve.toList_run_sieveRun_eq_flatMap`), for
-pieces of at least one bit array and sieve entries with positive moduli, the run gives the reference
-over the list of its shape when its filters are sound: every numerator of a point passes the word of
-the class of its denominator and survives the sieve entries, when they are sound
+pieces of at least one bit array, sieve entries with positive moduli and their reciprocals, and
+denominators and a height below `2 ^ 63`, the run gives the reference over the list of its shape
+when its filters are sound: every numerator of a point passes the word of the class of its
+denominator and survives the sieve entries, when they are sound
 (`Ratpoints.Sieve.classBit_and_survives_of_ne_nil`), and every denominator of a point passes the
 tests of the shape that `Ratpoints.Sieve.runSetup` chooses: the squares for odd degree and
 `|c_d| = 1` (`Ratpoints.isSquare_of_sq_eq_binaryForm_of_odd`,
@@ -102,22 +103,23 @@ once (`Ratpoints.exists_eq_mul_mul_of_sq_eq_binaryForm_of_odd`,
 (`List.perm_flatMap_of_nodup`). The points at infinity are those of the candidate `(1, 0)` of the
 reference (`Ratpoints.Sieve.pointsAtInfinity_eq_pointsOfDen`), mapped when the flag is set
 (`Ratpoints.Sieve.pointsAtInfinity_eq_map`). In the search, the pieces have at least one bit array
-(`Ratpoints.Params.one_le_arraySizeAt`); the tables of the loop of the tables are those of the
+(`Ratpoints.Params.one_le_arraySizeAt`), and the height, the largest denominator, is below `2 ^ 63`
+by the refusals of `Ratpoints.findPoints`; the tables of the loop of the tables are those of the
 reference (`Ratpoints.Sieve.getElem_eq_examinePrime_of_run_examinePrimes_eq_some`), so that the
-sieve entries that the loop over the moduli of well-formed parameters makes are sound
-(`Ratpoints.makeModulus?_spec`, `Ratpoints.SievingInfoInvariant.push`), and the forbidden divisors
-are those that the loops of the tables and of the further primes may record
-(`Ratpoints.Sieve.isForbiddenEntry_of_run_examinePrimes_eq_some`,
-`Ratpoints.Sieve.forbidden_spec` and their counterparts for the valuations), with the switch of the
-forbidden divisors on or off; when the search takes the exit of the loop of the tables or of a
-modulus, the curve has no points (`Ratpoints.Sieve.not_isPoint_of_run_examinePrimes_eq_none`,
-`Ratpoints.makeModulus?_spec`), and when it takes the 2-adic exit, no class of the
-denominators admits a numerator, so that the curve has no points either
-(`Ratpoints.Sieve.not_isPoint_of_denBits_eq_zero`): the reference is empty, and so are the points at
-infinity and those of the denominators of the search, which lie in `1, …, H`. `Ratpoints.findPoints`
-runs the search on the polynomial that the reversal check hands on, with its degree
-(`Ratpoints.Setup.degree_eq_of_reversal_eq_ok`) and its flag of the reversal; the binary form of a
-reversed polynomial is that of `c` with `x` and `z` exchanged
+sieve entries that the loop over the moduli of well-formed parameters makes are sound and hold the
+reciprocals of their moduli, which it returns in their order (`Ratpoints.makeModulus?_spec`,
+`Ratpoints.SievingInfoInvariant.push`), and the forbidden divisors are those that the loops of the
+tables and of the further primes may record
+(`Ratpoints.Sieve.isForbiddenEntry_of_run_examinePrimes_eq_some`, `Ratpoints.Sieve.forbidden_spec`
+and their counterparts for the valuations), with the switch of the forbidden divisors on or off;
+when the search takes the exit of the loop of the tables or of a modulus, the curve has no points
+(`Ratpoints.Sieve.not_isPoint_of_run_examinePrimes_eq_none`, `Ratpoints.makeModulus?_spec`), and
+when it takes the 2-adic exit, no class of the denominators admits a numerator, so that the curve
+has no points either (`Ratpoints.Sieve.not_isPoint_of_denBits_eq_zero`): the reference is empty, and
+so are the points at infinity and those of the denominators of the search, which lie in `1, …, H`.
+`Ratpoints.findPoints` runs the search on the polynomial that the reversal check hands on, with its
+degree (`Ratpoints.Setup.degree_eq_of_reversal_eq_ok`) and its flag of the reversal; the binary form
+of a reversed polynomial is that of `c` with `x` and `z` exchanged
 (`Ratpoints.Setup.binaryForm_eq_of_reversal_eq_ok`), so that its reference, mapped back, is a
 permutation of that of `c` (`Ratpoints.Sieve.perm_map_swapPoint_bruteForce`). Of the refusals, the
 heights that are not `long`s are those of `2 ^ 63` or more (`Ratpoints.fitsLong_natCast`), and the
@@ -323,40 +325,46 @@ theorem append_flatMap_searchDens_eq_bruteForce {c : List ℤ} {H : ℕ} (hH : 1
 
 namespace Sieve
 
--- The run with sound sieve entries and the words of the 2-adic information, for a shape whose list
--- is `l` filtered by `p` and whose tests let the denominator of every point through.
+-- The run with sound sieve entries, their reciprocals and the words of the 2-adic information, for
+-- a shape whose list is `l` filtered by `p` and whose tests let the denominator of every point
+-- through.
 private theorem toList_run_sieveRun_of_sound {c : List ℤ} {H A : ℕ} {entries : List SieveEntry}
-    (hent : ∀ e ∈ entries, e.IsSound c) (hA : 1 ≤ A) (rev : Bool) {shape : Shape} {l : List ℕ}
-    {p : ℕ → Bool}
+    (hent : ∀ e ∈ entries, e.IsSound c) {magics : Array ℕ}
+    (hmg : magics.toList = entries.map fun e ↦ magic e.p) (hH63 : H < 2 ^ 63) (hA : 1 ≤ A)
+    (rev : Bool) {shape : Shape} {l : List ℕ} {p : ℕ → Bool}
     (hdens : Id.run (shape.dens (denBits (Id.run (twoAdic c (degree c)))) 1 H) = l.filter p)
     (hkeep : ∀ b ∈ l, pointsOfDen c (degree c) b (numerators H) ≠ [] →
       p b = true ∧ Id.run (shape.keep (Id.run (twoAdic c (degree c))) b) = true) :
-    (Id.run (sieveRun c (degree c) H A rev entries (Id.run (twoAdic c (degree c)))
+    (Id.run (sieveRun c (degree c) H A rev entries magics (Id.run (twoAdic c (degree c)))
       (denBits (Id.run (twoAdic c (degree c)))) shape 1 H)).toList =
       (l.flatMap fun b : ℕ ↦ pointsOfDen c (degree c) b (numerators H)).map
         (if rev then swapPoint else id) :=
-  toList_run_sieveRun_eq_flatMap hA (fun e he ↦ (hent e he).pos) hdens hkeep
+  toList_run_sieveRun_eq_flatMap hA (fun e he ↦ (hent e he).pos) hmg le_rfl hH63 hH63 hdens hkeep
     fun _ _ _ h ↦ classBit_and_survives_of_ne_nil hent h
 
 -- The shape of every denominator.
 private theorem toList_run_sieveRun_all {c : List ℤ} {H A : ℕ} {entries : List SieveEntry}
-    (hent : ∀ e ∈ entries, e.IsSound c) (hA : 1 ≤ A) (rev : Bool) :
-    (Id.run (sieveRun c (degree c) H A rev entries (Id.run (twoAdic c (degree c)))
+    (hent : ∀ e ∈ entries, e.IsSound c) {magics : Array ℕ}
+    (hmg : magics.toList = entries.map fun e ↦ magic e.p) (hH63 : H < 2 ^ 63) (hA : 1 ≤ A)
+    (rev : Bool) :
+    (Id.run (sieveRun c (degree c) H A rev entries magics (Id.run (twoAdic c (degree c)))
       (denBits (Id.run (twoAdic c (degree c)))) .all 1 H)).toList =
       ((List.range' 1 H).flatMap fun b : ℕ ↦ pointsOfDen c (degree c) b (numerators H)).map
         (if rev then swapPoint else id) :=
-  toList_run_sieveRun_of_sound hent hA rev (p := fun _ ↦ true) (by simp [Shape.dens])
+  toList_run_sieveRun_of_sound hent hmg hH63 hA rev (p := fun _ ↦ true) (by simp [Shape.dens])
     fun _ _ h ↦ ⟨rfl, by simpa [Shape.keep] using getElem!_twoAdic_ne_zero h⟩
 
 -- The square shape, for odd degree and `|c_d| = 1`.
 private theorem toList_run_sieveRun_squares {c : List ℤ} {H A : ℕ} {entries : List SieveEntry}
-    (hent : ∀ e ∈ entries, e.IsSound c) (hA : 1 ≤ A) (rev : Bool) (hd : degree c % 2 = 1)
-    (hc : (c.getD (degree c) 0).natAbs = 1) :
-    (Id.run (sieveRun c (degree c) H A rev entries (Id.run (twoAdic c (degree c)))
+    (hent : ∀ e ∈ entries, e.IsSound c) {magics : Array ℕ}
+    (hmg : magics.toList = entries.map fun e ↦ magic e.p) (hH63 : H < 2 ^ 63) (hA : 1 ≤ A)
+    (rev : Bool) (hd : degree c % 2 = 1) (hc : (c.getD (degree c) 0).natAbs = 1) :
+    (Id.run (sieveRun c (degree c) H A rev entries magics (Id.run (twoAdic c (degree c)))
       (denBits (Id.run (twoAdic c (degree c)))) .squares 1 H)).toList =
       ((List.range' 1 H).flatMap fun b : ℕ ↦ pointsOfDen c (degree c) b (numerators H)).map
         (if rev then swapPoint else id) := by
-  refine toList_run_sieveRun_of_sound hent hA rev (p := fun b ↦ Nat.sqrt b * Nat.sqrt b == b)
+  refine toList_run_sieveRun_of_sound hent hmg hH63 hA rev
+    (p := fun b ↦ Nat.sqrt b * Nat.sqrt b == b)
     (by simp [Shape.dens, squaresDens_eq_filter (le_refl 1)]) fun b _ h ↦
       ⟨?_, by simpa [Shape.keep] using getElem!_twoAdic_ne_zero h⟩
   obtain ⟨a, -, y, hg, hy⟩ := exists_sq_eq_of_pointsOfDen_ne_nil h
@@ -365,15 +373,16 @@ private theorem toList_run_sieveRun_squares {c : List ℤ} {H A : ℕ} {entries 
 
 -- The divisor shape, for odd degree when the divisor set-up succeeds.
 private theorem toList_run_sieveRun_squares1 {c : List ℤ} {H A : ℕ} {entries : List SieveEntry}
-    (hent : ∀ e ∈ entries, e.IsSound c) (hA : 1 ≤ A) (rev : Bool) (hH : 1 ≤ H)
-    (hd : degree c % 2 = 1) {info : List Setup.DenInfo} {divisors : List ℕ}
-    (hs : Id.run (Setup.setupUs1 c (degree c) H) = some (info, divisors)) :
-    (Id.run (sieveRun c (degree c) H A rev entries (Id.run (twoAdic c (degree c)))
+    (hent : ∀ e ∈ entries, e.IsSound c) {magics : Array ℕ}
+    (hmg : magics.toList = entries.map fun e ↦ magic e.p) (hH63 : H < 2 ^ 63) (hA : 1 ≤ A)
+    (rev : Bool) (hH : 1 ≤ H) (hd : degree c % 2 = 1) {info : List Setup.DenInfo}
+    {divisors : List ℕ} (hs : Id.run (Setup.setupUs1 c (degree c) H) = some (info, divisors)) :
+    (Id.run (sieveRun c (degree c) H A rev entries magics (Id.run (twoAdic c (degree c)))
       (denBits (Id.run (twoAdic c (degree c)))) (.squares1 info divisors) 1 H)).toList =
       ((squares1Dens divisors 1 H).flatMap fun b : ℕ ↦
         pointsOfDen c (degree c) b (numerators H)).map (if rev then swapPoint else id) := by
-  refine toList_run_sieveRun_of_sound hent hA rev (p := fun _ ↦ true) (by simp [Shape.dens])
-    fun b hb h ↦ ⟨rfl, ?_⟩
+  refine toList_run_sieveRun_of_sound hent hmg hH63 hA rev (p := fun _ ↦ true)
+    (by simp [Shape.dens]) fun b hb h ↦ ⟨rfl, ?_⟩
   obtain ⟨a, -, y, hg, hy⟩ := exists_sq_eq_of_pointsOfDen_ne_nil h
   have hb0 : b ≠ 0 :=
     Nat.one_le_iff_ne_zero.mp (List.mem_range'_1.mp (mem_range'_of_mem_squares1Dens hH hd hs hb)).1
@@ -381,17 +390,18 @@ private theorem toList_run_sieveRun_squares1 {c : List ℤ} {H A : ℕ} {entries
 
 -- The word shape, for even degree.
 private theorem toList_run_sieveRun_words {c : List ℤ} {H A : ℕ} {entries : List SieveEntry}
-    (hent : ∀ e ∈ entries, e.IsSound c) (hA : 1 ≤ A) (rev : Bool) (hd : degree c % 2 = 0)
-    {forb : List ForbiddenEntry} {forbVal : List ForbiddenVal}
+    (hent : ∀ e ∈ entries, e.IsSound c) {magics : Array ℕ}
+    (hmg : magics.toList = entries.map fun e ↦ magic e.p) (hH63 : H < 2 ^ 63) (hA : 1 ≤ A)
+    (rev : Bool) (hd : degree c % 2 = 0) {forb : List ForbiddenEntry} {forbVal : List ForbiddenVal}
     (hforb : ∀ e ∈ forb, IsForbiddenEntry c (degree c) H e)
     (hval : ∀ e ∈ forbVal, IsForbiddenVal c (degree c) H e) (useJacobi : Bool) :
-    (Id.run (sieveRun c (degree c) H A rev entries (Id.run (twoAdic c (degree c)))
+    (Id.run (sieveRun c (degree c) H A rev entries magics (Id.run (twoAdic c (degree c)))
       (denBits (Id.run (twoAdic c (degree c)))) (.words forb forbVal useJacobi
         (if useJacobi then Id.run (jacobiSetup (c.getD (degree c) 0) H) else none)
         (c.getD (degree c) 0)) 1 H)).toList =
       ((List.range' 1 H).flatMap fun b : ℕ ↦ pointsOfDen c (degree c) b (numerators H)).map
         (if rev then swapPoint else id) := by
-  refine toList_run_sieveRun_of_sound hent hA rev ?_ fun _ hb h ↦
+  refine toList_run_sieveRun_of_sound hent hmg hH63 hA rev ?_ fun _ hb h ↦
     have hb' := List.mem_range'_1.mp hb
     (exists_sq_eq_of_pointsOfDen_ne_nil h).elim fun _ ⟨_, _, hg, hy⟩ ↦
       ⟨getLsbD_denBits_and_all_of_sq_eq hd hforb (by lia) (by lia) hg hy,
@@ -580,7 +590,9 @@ private theorem run_sievingInfo_spec {c : List ℤ} {u checkDenom : Bool} {P : P
 
 -- The shape that `Ratpoints.Sieve.runSetup` chooses from the flags of the search.
 private theorem toList_run_sieveRun_runSetup {c : List ℤ} {H A : ℕ} {entries : List SieveEntry}
-    (hent : ∀ e ∈ entries, e.IsSound c) (hH : 1 ≤ H) (hA : 1 ≤ A) (rev : Bool)
+    (hent : ∀ e ∈ entries, e.IsSound c) {magics : Array ℕ}
+    (hmg : magics.toList = entries.map fun e ↦ magic e.p) (hH : 1 ≤ H) (hH63 : H < 2 ^ 63)
+    (hA : 1 ≤ A) (rev : Bool)
     {us1 : Option (List Setup.DenInfo × List ℕ)}
     (hus1 : (if degree c % 2 == 1 && (c.getD (degree c) 0).natAbs != 1 then
       Id.run (Setup.setupUs1 c (degree c) H) else none) = us1)
@@ -588,7 +600,7 @@ private theorem toList_run_sieveRun_runSetup {c : List ℤ} {H A : ℕ} {entries
     (hforb : ∀ e ∈ forb, IsForbiddenEntry c (degree c) H e)
     (hval : ∀ e ∈ forbVal, IsForbiddenVal c (degree c) H e)
     (hcd : checkDenom = true → degree c % 2 = 0) :
-    (Id.run (sieveRun c (degree c) H A rev entries (Id.run (twoAdic c (degree c)))
+    (Id.run (sieveRun c (degree c) H A rev entries magics (Id.run (twoAdic c (degree c)))
       (denBits (Id.run (twoAdic c (degree c))))
       (Id.run (runSetup (degree c % 2 == 1 && (c.getD (degree c) 0).natAbs == 1) us1 checkDenom
         useJacobi forb forbVal (c.getD (degree c) 0) H)) 1 H)).toList =
@@ -599,19 +611,20 @@ private theorem toList_run_sieveRun_runSetup {c : List ℤ} {H A : ℕ} {entries
   · obtain rfl : us1 = none := by rw [← hus1, hd]; rfl
     rw [hd]
     cases checkDenom
-    · exact toList_run_sieveRun_all hent hA rev
-    · cases useJacobi <;> exact toList_run_sieveRun_words hent hA rev hd hforb hval _
+    · exact toList_run_sieveRun_all hent hmg hH63 hA rev
+    · cases useJacobi <;> exact toList_run_sieveRun_words hent hmg hH63 hA rev hd hforb hval _
   by_cases hc : (c.getD (degree c) 0).natAbs = 1
   · obtain rfl : us1 = none := by rw [← hus1, hd, hc]; rfl
     rw [hd, hc]
-    exact toList_run_sieveRun_squares hent hA rev hd hc
+    exact toList_run_sieveRun_squares hent hmg hH63 hA rev hd hc
   have hflag : (degree c % 2 == 1 && (c.getD (degree c) 0).natAbs == 1) = false := by
     rw [hd, beq_eq_false_iff_ne.mpr hc, Bool.and_false]
   rw [hflag]
   rcases us1 with _ | ⟨info, divisors⟩
   · obtain rfl : checkDenom = false := by cases checkDenom <;> simp_all
-    exact toList_run_sieveRun_all hent hA rev
-  · exact toList_run_sieveRun_squares1 hent hA rev hH hd (Option.ite_none_right_eq_some.mp hus1).2
+    exact toList_run_sieveRun_all hent hmg hH63 hA rev
+  · exact toList_run_sieveRun_squares1 hent hmg hH63 hA rev hH hd
+      (Option.ite_none_right_eq_some.mp hus1).2
 
 -- A curve without points of height at most `H` has an empty reference.
 private theorem bruteForce_eq_nil_of_forall_not_isPoint {c : List ℤ} {H : ℕ}
@@ -659,16 +672,16 @@ private theorem nil_eq_of_run_sievingInfo_eq_none {c : List ℤ} {H : ℕ} {P : 
 
 -- The run of the search after its exits, with the shape that `Ratpoints.Sieve.runSetup` chooses.
 private theorem append_eq_of_run_sievingInfo_eq_some {c : List ℤ} {H : ℕ} {P : Params} (hP : P.WF)
-    (hH : 1 ≤ H) (rev : Bool) {entries : List SieveEntry} {nb : Vector UInt64 64} {shape : Shape}
-    {pts : Array (ℤ × ℤ × ℤ)}
-    (hpts : pts = Id.run (sieveRun c (degree c) H (P.arraySizeAt H) rev entries nb (denBits nb)
-      shape 1 H))
+    (hH : 1 ≤ H) (hH63 : H < 2 ^ 63) (rev : Bool) {entries : List SieveEntry} {magics : Array ℕ}
+    {nb : Vector UInt64 64} {shape : Shape} {pts : Array (ℤ × ℤ × ℤ)}
+    (hpts : pts = Id.run (sieveRun c (degree c) H (P.arraySizeAt H) rev entries magics nb
+      (denBits nb) shape 1 H))
     {us1 : Option (List Setup.DenInfo × List ℕ)} {checkDenom useJacobi : Bool}
     {forb : List ForbiddenEntry} {forbVal : List ForbiddenVal}
     (hshape : shape = Id.run (runSetup (degree c % 2 == 1 && (c.getD (degree c) 0).natAbs == 1) us1
       checkDenom useJacobi forb forbVal (c.getD (degree c) 0) H))
     {u cd : Bool} {r : Option (List SieveEntry × Array ℕ × List ForbiddenEntry × List ForbiddenVal)}
-    {magics : Array ℕ} (hr : r = Id.run (sievingInfo c (degree c) u cd P H))
+    (hr : r = Id.run (sievingInfo c (degree c) u cd P H))
     (hs : r = some (entries, magics, forb, forbVal))
     (hnb : nb = Id.run (twoAdic c (degree c)))
     (hus1 : (if degree c % 2 == 1 && (c.getD (degree c) 0).natAbs != 1 then
@@ -678,9 +691,10 @@ private theorem append_eq_of_run_sievingInfo_eq_some {c : List ℤ} {H : ℕ} {P
       (pointsAtInfinity c (degree c) false ++ (searchDens c (degree c) H).flatMap
         fun b : ℕ ↦ pointsOfDen c (degree c) b (numerators H)).map
           (if rev then swapPoint else id) := by
-  obtain ⟨hent, -, -, hforb, hval⟩ := (run_sievingInfo_spec hP).1 _ _ _ _ (hr.symm.trans hs)
+  obtain ⟨hent, -, hmg, hforb, hval⟩ := (run_sievingInfo_spec hP).1 _ _ _ _ (hr.symm.trans hs)
   subst hnb hshape hpts
-  rw [toList_run_sieveRun_runSetup hent hH (P.one_le_arraySizeAt hH) rev hus1 hforb hval hcd,
+  rw [toList_run_sieveRun_runSetup hent hmg hH hH63 (P.one_le_arraySizeAt hH) rev hus1 hforb hval
+    hcd,
     pointsAtInfinity_eq_map, List.map_append]
 
 -- The components of the search, as values for its contract.
@@ -706,37 +720,41 @@ private theorem runSetup_value (useSquares : Bool) (us1 : Option (List Setup.Den
   ⟨fun _ ↦ rfl⟩
 
 private theorem sieveRun_value (c : List ℤ) (d H A : ℕ) (rev : Bool) (entries : List SieveEntry)
-    (nb : Vector UInt64 64) (db : UInt64) (shape : Shape) (bLow bHigh : ℕ) :
-    ⦃ True ⦄ sieveRun c d H A rev entries nb db shape bLow bHigh
-    ⦃ fun r ↦ r = Id.run (sieveRun c d H A rev entries nb db shape bLow bHigh) ⦄ :=
+    (magics : Array ℕ) (nb : Vector UInt64 64) (db : UInt64) (shape : Shape) (bLow bHigh : ℕ) :
+    ⦃ True ⦄ sieveRun c d H A rev entries magics nb db shape bLow bHigh
+    ⦃ fun r ↦ r = Id.run (sieveRun c d H A rev entries magics nb db shape bLow bHigh) ⦄ :=
   ⟨fun _ ↦ rfl⟩
 
 -- The contract of the search, for the degree of the polynomial.
 private theorem searchPoints_spec (c : List ℤ) (H : ℕ) (P : Params) (rev : Bool) :
-    ⦃ P.WF ∧ 1 ≤ H ⦄ searchPoints c (degree c) H P rev
+    ⦃ P.WF ∧ 1 ≤ H ∧ H < 2 ^ 63 ⦄ searchPoints c (degree c) H P rev
     ⦃ fun r ↦ r = (pointsAtInfinity c (degree c) false ++ (searchDens c (degree c) H).flatMap
         fun b : ℕ ↦ pointsOfDen c (degree c) b (numerators H)).map
           (if rev then swapPoint else id) ⦄ := by
   vcgen [searchPoints, setupUs1_value, twoAdic_value, sievingInfo_value, runSetup_value,
     sieveRun_value]
+  all_goals obtain ⟨hP, hH, hH63⟩ := ‹P.WF ∧ 1 ≤ H ∧ H < 2 ^ 63›
   all_goals first
-    | exact nil_eq_of_denBits_eq_zero ‹P.WF ∧ 1 ≤ H›.2 rev ‹_› ‹_›
-    | exact nil_eq_of_run_sievingInfo_eq_none ‹P.WF ∧ 1 ≤ H›.1 ‹P.WF ∧ 1 ≤ H›.2 rev ‹_› ‹_› ‹_›
-    | exact append_eq_of_run_sievingInfo_eq_some ‹P.WF ∧ 1 ≤ H›.1 ‹P.WF ∧ 1 ≤ H›.2 rev ‹_› ‹_› ‹_›
-        ‹_› ‹_› (by split <;> simp_all) (by simp)
+    | exact nil_eq_of_denBits_eq_zero hH rev ‹_› ‹_›
+    | exact nil_eq_of_run_sievingInfo_eq_none hP hH rev ‹_› ‹_› ‹_›
+    | exact append_eq_of_run_sievingInfo_eq_some hP hH hH63 rev ‹_› ‹_› ‹_› ‹_› ‹_›
+        (by split <;> simp_all) (by simp)
 
 /-- The run of the shape that `Ratpoints.Sieve.runSetup` chooses gives the reference over the
 denominators of the search, its tests, the class words and the sieve entries of the moduli being
-sound (`Ratpoints.Sieve.toList_run_sieveRun_eq_flatMap`, `Ratpoints.sievingInfo_spec`); when the
-search takes the exit of `Ratpoints.sievingInfo` or the 2-adic exit, the curve has no points
-(`Ratpoints.Sieve.not_isPoint_of_denBits_eq_zero`), so that both sides are empty. -/
+sound (`Ratpoints.Sieve.toList_run_sieveRun_eq_flatMap`, `Ratpoints.sievingInfo_spec`), with the
+reciprocals that `Ratpoints.sievingInfo` returns; the height below `2 ^ 63`, which
+`Ratpoints.findPoints` gives by its refusals, is what the test for common factors on the words of
+the C code needs. When the search takes the exit of `Ratpoints.sievingInfo` or the 2-adic exit, the
+curve has no points (`Ratpoints.Sieve.not_isPoint_of_denBits_eq_zero`), so that both sides are
+empty. -/
 theorem run_searchPoints {c : List ℤ} {d H : ℕ} {P : Params} (hP : P.WF) (hH : 1 ≤ H)
-    (hd : d = degree c) (rev : Bool) :
+    (hH63 : H < 2 ^ 63) (hd : d = degree c) (rev : Bool) :
     Id.run (searchPoints c d H P rev) =
       (pointsAtInfinity c d false ++ (searchDens c d H).flatMap fun b : ℕ ↦
         pointsOfDen c d b (numerators H)).map (if rev then swapPoint else id) := by
   subst hd
-  exact (searchPoints_spec c H P rev).le_wp ⟨hP, hH⟩
+  exact (searchPoints_spec c H P rev).le_wp ⟨hP, hH, hH63⟩
 
 /-! ### The output of `Ratpoints.findPoints` -/
 
@@ -758,7 +776,8 @@ theorem exists_eq_of_findPoints_eq_ok {c : List ℤ} {H : ℕ} {P : Params} {o :
   split_ifs at h
   cases h
   have hd := (Setup.degree_eq_of_reversal_eq_ok rfl hr).symm
-  exact ⟨c', d', rev, hr, hd, by lia, run_searchPoints hP (by lia) hd rev⟩
+  exact ⟨c', d', rev, hr, hd, by lia, run_searchPoints hP (by lia) (by simp_all [fitsLong_natCast])
+    hd rev⟩
 
 /-- When the options forbid the reversal and the denominators of the search are `1, …, H`
 (`Ratpoints.searchDens_eq_range'`: even degree, `|c_d| = 1`, or the divisor set-up fails), the list

@@ -231,7 +231,8 @@ def stage3Limit : Nat := 2 ^ 32
 `false` in the default build, whose second stage and-s the rows of its moduli into a whole bit array
 at a time; the build `long2` of `make test4configs` sets it. The model has both arms, on a bit array
 (`Ratpoints.Sieve.secondStage`) and on one of its words (`Ratpoints.Sieve.secondStageWord`), which
-leave the same bits, and the scan takes the arm that this constant chooses with stage F.
+leave the same bits, and the scan takes the arm that this constant chooses
+(`Ratpoints.Sieve.scanPiece`, `Ratpoints.Sieve.siftBitArray`).
 
 C: `sift.c:1084`, `sift.c:1086`, `sift.c:1113`, `sift.c:1174`, `sift.c:1297`
 
