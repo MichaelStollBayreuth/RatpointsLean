@@ -331,7 +331,8 @@ power, which loop over the residues, are components of type \verb|Id| with their
 \end{definition}
 
 \begin{definition}[The search for the points]\label{def:findPoints}
-  \uses{def:Params, def:Options, def:searchPoints, def:maxDegree, def:reversal, def:sturmChain}
+  \uses{def:Params, def:Options, def:searchPoints, def:maxDegree, def:reversal, def:sturmChain,
+    def:useCLong}
   \lean{Ratpoints.findPoints}
   \leanok
   For the parameters $P$ and the options $o$ (Definition~\ref{def:Options}), by default those of a
@@ -340,26 +341,29 @@ power, which loop over the residues, are components of type \verb|Id| with their
   \csource{find_points.c}{4546}{4546}, \csource{find_points.c}{4557}{4559},
   \csource{find_points.c}{4564}{4565}, \csource{find_points.c}{5226}{5229},
   \csource{find_points.c}{5235}{5235}, \csource{find_points.c}{5241}{5242}): refuse more than
-  $\mathrm{maxDegree} + 1$ coefficients, fewer than two, and $H = 0$, in the order of the program,
-  with its errors 3, 5 and~4 (Section~\ref{sec:refusals}; the refusals of
-  Definition~\ref{def:reversal}), where the library refuses them as bad arguments: a degree above
-  $\mathrm{maxDegree}$, and the empty list as the degree $-1$, before it drops the leading zeros,
-  and the degree $0$ and a height below $1$ after it; then, as not squarefree (error~8), a form that
-  loses $\lceil n/2 \rceil$ with the leading zeros (\csource{find_points.c}{4567}{4571},
-  \csource{find_points.c}{4578}{4585}, \csource{find_points.c}{4606}{4606},
-  \csource{find_points.c}{4624}{4633}, \csource{find_points.c}{4658}{4658}). Then run the reversal
-  check with the switch of the options (Definition~\ref{def:reversal}), which may refuse the form as
-  not squarefree too or reverse the polynomial; with the Sturm step on, refuse the form when the
-  remainder chain of the polynomial searched is $\mathrm{none}$ (Definition~\ref{def:sturmChain};
-  \csource{find_points.c}{4857}{4892}, whose restriction of the search region is stage~H); and run
-  the search of the polynomial that the check hands on (Definition~\ref{def:searchPoints}), with its
-  flag of the reversal: the 2-adic information, no points when no class of the denominators modulo
-  $64$ admits a numerator and there is no point at infinity, the tables of the examined primes and
-  the sieve entry of each modulus (Definition~\ref{def:sievingInfo}), no points when the curve has
-  none modulo a prime examined on the way, and else the points at infinity followed by the points of
-  the denominators in the order of the loop of the search, found with pieces of at most
-  $\mathrm{arraySizeAt}(H)$ bit arrays, the array size of the parameters, each mapped back to the
-  caller's curve after a reversal (\csource{find_points.c}{5219}{5220}).
+  $\mathrm{maxDegree} + 1$ coefficients, fewer than two, and $H = 0$ or $H \ge 2^{63}$, a height
+  that is not a C \verb|long| (Definition~\ref{def:useCLong}), in the order of the program, with its
+  errors 3, 5 and~4 (Section~\ref{sec:refusals}; the refusals of Definition~\ref{def:reversal}),
+  where the library refuses the first three as bad arguments: a degree above $\mathrm{maxDegree}$,
+  and the empty list as the degree $-1$, before it drops the leading zeros, and the degree $0$ and a
+  height below $1$ after it, and cannot be given the last, its height being a C \verb|long|
+  (\csource{ratpoints.h}{362}{362}), which the program refuses when it reads it; then, as not
+  squarefree (error~8), a form that loses $\lceil n/2 \rceil$ with the leading zeros
+  (\csource{find_points.c}{4567}{4571}, \csource{find_points.c}{4578}{4585},
+  \csource{find_points.c}{4606}{4606}, \csource{find_points.c}{4624}{4633},
+  \csource{find_points.c}{4658}{4658}). Then run the reversal check with the switch of the options
+  (Definition~\ref{def:reversal}), which may refuse the form as not squarefree too or reverse the
+  polynomial; with the Sturm step on, refuse the form when the remainder chain of the polynomial
+  searched is $\mathrm{none}$ (Definition~\ref{def:sturmChain}; \csource{find_points.c}{4857}{4892},
+  whose restriction of the search region is stage~H); and run the search of the polynomial that the
+  check hands on (Definition~\ref{def:searchPoints}), with its flag of the reversal: the 2-adic
+  information, no points when no class of the denominators modulo $64$ admits a numerator and there
+  is no point at infinity, the tables of the examined primes and the sieve entry of each modulus
+  (Definition~\ref{def:sievingInfo}), no points when the curve has none modulo a prime examined on
+  the way, and else the points at infinity followed by the points of the denominators in the order
+  of the loop of the search, found with pieces of at most $\mathrm{arraySizeAt}(H)$ bit arrays, the
+  array size of the parameters, each mapped back to the caller's curve after a reversal
+  (\csource{find_points.c}{5219}{5220}).
 \end{definition}
 
 Each component differs from the C code in a stated way, recorded in the \verb|Deviation:|
@@ -472,8 +476,9 @@ of the polynomial searched over the denominators of its search, in their order, 
 Comparator certifies the two main theorems, the refusal theorems of stage~D, which rule out a
 \verb|findPoints| that refuses every input, with or without the Sturm step, and
 \verb|wf_sieveParams|, which rules out a well-formedness that nothing satisfies (it accepted these
-statements on 2026-10-11, again on the model of stage E on 2026-10-12, and with the parameters of
-sub-stage F1 on 2026-10-13): the challenge states them with \verb|sorry| over \verb|findPoints|,
+statements on 2026-10-11, again on the model of stage E on 2026-10-12, with the parameters of
+sub-stage F1 on 2026-10-13, and with the refusal of the heights that are not \verb|long|s on
+2026-10-14): the challenge states them with \verb|sorry| over \verb|findPoints|,
 \verb|Options|, \verb|Params|, \verb|Params.WF|, \verb|SieveOptions|, \verb|sieveParams| and
 \verb|maxDegree|, imported from the model, never restated, since a definition of the model
 elaborates without Mathlib to other instance terms. Each main theorem has a guard on its axioms,

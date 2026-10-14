@@ -49,17 +49,17 @@ divisors up to the largest denominator, with the slopes of a valuation test
 namespace Ratpoints
 
 /-- The refusals of a search, each with the number of the error with which the program `ratpoints`
-refuses the input. The program itself refuses too many or too few coefficients and the height bound
-`0`, before it calls the library; the library refuses a binary form that is not squarefree in the
-set-up of the search: when the leading zeros of `n + 1` coefficients lower `⌈n / 2⌉`, in the
-reversal check (`Ratpoints.Setup.reversal`) and with the remainder chain of the Sturm step
-(`Ratpoints.Sturm.chain`). -/
+refuses the input. The program itself refuses too many or too few coefficients, the height bound `0`
+and the heights that are not `long`s, before it calls the library; the library refuses a binary form
+that is not squarefree in the set-up of the search: when the leading zeros of `n + 1` coefficients
+lower `⌈n / 2⌉`, in the reversal check (`Ratpoints.Setup.reversal`) and with the remainder chain of
+the Sturm step (`Ratpoints.Sturm.chain`). -/
 inductive Refusal where
   /-- More than `Ratpoints.maxDegree + 1` coefficients: error 3. -/
   | tooManyCoefficients
   /-- Fewer than two coefficients: error 5. -/
   | tooFewCoefficients
-  /-- The height bound `0`: error 4. -/
+  /-- The height bound `0`, or one that is not a `long` (`Ratpoints.fitsLong`): error 4. -/
   | incorrectHeight
   /-- A binary form that is not squarefree: error 8. -/
   | notSquarefree

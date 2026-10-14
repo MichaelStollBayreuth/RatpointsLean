@@ -92,6 +92,7 @@ of a negative leading coefficient in `jacobi1`, with `LONG_MIN` replaced by its 
   `Ratpoints.Sieve.not_isPoint_of_run_examinePrime?_eq_none`,
   `Ratpoints.Sieve.not_isPoint_of_lt_numPrimes_of_run_examinePrime?_eq_none`: a point makes an
   entry of the table of a prime true, so a curve without points modulo a prime has no points.
+* `Ratpoints.fitsLong_natCast`: a natural number is a `long` exactly when it is below `2 ^ 63`.
 * `Ratpoints.fitsLong_sixteen_mul`, `Ratpoints.fitsLong_add_sixteen_mul`, `Ratpoints.fitsLong_neg`,
   `Ratpoints.fitsLong_neg_ite_div_four`: the values of the C code that could leave the range of a
   `long` stay in it.
@@ -758,6 +759,11 @@ theorem not_isPoint_of_lt_numPrimes_of_run_examinePrime?_eq_none {c : List ℤ} 
 end Sieve
 
 /-! ### The coefficients as `long`s -/
+
+/-- A natural number is a `long` exactly when it is below `2 ^ 63`: the height bounds that
+`Ratpoints.findPoints` does not refuse are those from `1` to `2 ^ 63 - 1`. -/
+theorem fitsLong_natCast (n : ℕ) : fitsLong n = decide (n < 2 ^ 63) := by
+  simp [fitsLong]
 
 /-- The value `b1 = 16 b` that the helper `mod` of the C code (`Ratpoints.Sieve.modLong`) computes
 first is a `long` for `0 ≤ b < 2 ^ 59`, and so is its negation (`Ratpoints.fitsLong_neg`), which

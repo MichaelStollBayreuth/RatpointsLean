@@ -9,10 +9,10 @@ coefficients, refuses a binary form that is not squarefree, reverses the polynom
 reads the coefficients as \verb|long|s where they fit, ends the search when the curve has no points
 modulo one of the primes it examines, and delivers the points at infinity, after a reversal as
 affine points of the caller's curve. With it the refusal theorem of Section~\ref{sec:refusals} has
-its proof: with the Sturm step on, as in a run of the program without options,
-$\mathrm{findPoints}$ refuses $(c, H)$ exactly when $c$ has fewer than two or more than
-$\mathrm{maxDegree} + 1$ entries, $H = 0$, or $\Phi_c$ is not squarefree; with the Sturm step off,
-it refuses exactly what the program refuses under \verb|-s|.
+its proof: with the Sturm step on, as in a run of the program without options, $\mathrm{findPoints}$
+refuses $(c, H)$ exactly when $c$ has fewer than two or more than $\mathrm{maxDegree} + 1$ entries,
+$H = 0$ or $H \ge 2^{63}$, or $\Phi_c$ is not squarefree; with the Sturm step off, it refuses
+exactly what the program refuses under \verb|-s|.
 
 The reversal is the transformation of Chapter~\ref{chap:sieve}: it exchanges $x$ and $z$ in the
 binary form, and the map that the C code applies to every point it finds of the reversed polynomial
@@ -247,11 +247,12 @@ by row, and not only its verdict.
   (\csource{find_points.c}{4732}{4803}). The squares are those of \verb|mpz_perfect_square_p|: $0$
   and the squares of the positive integers. The switch is the test of the flags that guards the C
   block; of its two bits the model has the caller's, \verb|RATPOINTS_NO_REVERSE|, and not
-  \verb|RATPOINTS_NO_REVERSE_AUTO|, which a search region or a denominator range sets (stage~H).
-  The refusals of a search carry the errors of the program: more than $\mathrm{maxDegree} + 1$
-  coefficients (3), fewer than two (5), the height bound $0$ (4), and a binary form that is not
-  squarefree (8); the check returns the last for even $d$ with $c_0 = c_1 = 0$, as the test of the
-  leading zeros and the remainder chain do for the forms they find.
+  \verb|RATPOINTS_NO_REVERSE_AUTO|, which a search region or a denominator range sets (stage~H). The
+  refusals of a search carry the errors of the program: more than $\mathrm{maxDegree} + 1$
+  coefficients (3), fewer than two (5), the height bound $0$ or one that is not a C \verb|long| (4),
+  and a binary form that is not squarefree (8); the check returns the last for even $d$ with
+  $c_0 = c_1 = 0$, as the test of the leading zeros and the remainder chain do for the forms they
+  find.
 \end{definition}
 
 \begin{lemma}[The reversal exchanges $x$ and $z$]\label{lem:reversal_swap}
@@ -445,15 +446,16 @@ Lemma~\ref{lem:sift_eq_checkDen} maps their side.
 \end{definition}
 
 $\mathrm{findPoints}(c, H, P, o)$ (Definition~\ref{def:findPoints}) refuses, in the order of the
-program, more than $\mathrm{maxDegree} + 1$ coefficients, fewer than two and $H = 0$ (errors 3, 5
-and~4), and then, with error~8, a drop of $\lceil n/2 \rceil$ by the leading zeros; it runs the
-reversal check with the switch of the options, which may refuse with error~8 as well, and with the
-Sturm step on refuses the form when the remainder chain of the polynomial searched is
-$\mathrm{none}$; and it runs $\mathrm{searchPoints}$ on the polynomial that the check hands on. Its
-C ranges are the lines of \verb|find_points| and \verb|find_points_work| that make the three
-functions of the library one, the head and the locals of \verb|find_points_work_1| that the set-up
-uses, its reset of the flags and its end, the test of the leading zeros and of the height, and the
-Sturm step, whose restriction of the search region is stage~H's.
+program, more than $\mathrm{maxDegree} + 1$ coefficients, fewer than two, and $H = 0$ or
+$H \ge 2^{63}$, a height that is not a \verb|long| (errors 3, 5 and~4), and then, with error~8, a
+drop of $\lceil n/2 \rceil$ by the leading zeros; it runs the reversal check with the switch of the
+options, which may refuse with error~8 as well, and with the Sturm step on refuses the form when the
+remainder chain of the polynomial searched is $\mathrm{none}$; and it runs $\mathrm{searchPoints}$
+on the polynomial that the check hands on. Its C ranges are the lines of \verb|find_points| and
+\verb|find_points_work| that make the three functions of the library one, the head and the locals of
+\verb|find_points_work_1| that the set-up uses, its reset of the flags and its end, the test of the
+leading zeros and of the height, the Sturm step, whose restriction of the search region is
+stage~H's, and the height of the arguments of the library, a \verb|long|.
 
 \begin{theorem}[A permutation of the reference]\label{thm:findPoints_perm}
   \uses{def:findPoints, thm:findPoints_order, lem:swapPoint_bijection}
@@ -472,28 +474,31 @@ Sturm step, whose restriction of the search region is stage~H's.
 \end{proof}
 
 \begin{theorem}[The refusals]\label{thm:refusals}
-  \uses{def:findPoints, def:Options, def:reversal, lem:sturmChain_squarefree,
+  \uses{def:findPoints, def:Options, def:reversal, def:useCLong, lem:sturmChain_squarefree,
     lem:reversal_squarefree, lem:squarefree_binaryFormPoly}
-  \lean{Ratpoints.exists_findPoints_eq_error_iff_of_sturm_nonneg, Ratpoints.exists_findPoints_eq_error_iff_of_sturm_neg, Ratpoints.Sturm.run_chain_eq_none_iff_of_reversal_eq_ok, Ratpoints.Setup.one_le_of_reversal_eq_ok, Ratpoints.Setup.exists_reversal_eq_error_iff, Ratpoints.Setup.not_squarefree_binaryFormPoly_of_reversal_eq_error}
+  \lean{Ratpoints.exists_findPoints_eq_error_iff_of_sturm_nonneg, Ratpoints.exists_findPoints_eq_error_iff_of_sturm_neg, Ratpoints.fitsLong_natCast, Ratpoints.Sturm.run_chain_eq_none_iff_of_reversal_eq_ok, Ratpoints.Setup.one_le_of_reversal_eq_ok, Ratpoints.Setup.exists_reversal_eq_error_iff, Ratpoints.Setup.not_squarefree_binaryFormPoly_of_reversal_eq_error}
   \leanok
   For any parameters and options: with the Sturm step on ($\mathrm{sturm} \ge 0$),
   $\mathrm{findPoints}(c, H, P, o)$ refuses the input exactly when $c$ has fewer than two or more
-  than $\mathrm{maxDegree} + 1$ entries, $H = 0$, or $\Phi_c$ is not squarefree. With the Sturm step
-  off, it refuses exactly when $c$ has fewer than two or more than $\mathrm{maxDegree} + 1$ entries,
-  $H = 0$, $d + 2 \le N$, or the reversal is allowed, $d$ is even and $c_0 = c_1 = 0$.
+  than $\mathrm{maxDegree} + 1$ entries, $H = 0$ or $H \ge 2^{63}$, or $\Phi_c$ is not squarefree.
+  With the Sturm step off, it refuses exactly when $c$ has fewer than two or more than
+  $\mathrm{maxDegree} + 1$ entries, $H = 0$ or $H \ge 2^{63}$, $d + 2 \le N$, or the reversal is
+  allowed, $d$ is even and $c_0 = c_1 = 0$.
 \end{theorem}
 
 \begin{proof}
   \leanok
-  The refusals of the leading zeros and of the reversal check stand for $Z^2 \mid \Phi_c$ and $X^2
-  \mid \Phi_c$, each of which makes $\Phi_c$ not squarefree
+  The refusals of the leading zeros and of the reversal check stand for $Z^2 \mid \Phi_c$ and
+  $X^2 \mid \Phi_c$, each of which makes $\Phi_c$ not squarefree
   (Lemma~\ref{lem:squarefree_binaryFormPoly}). When neither happens, $N \le d + 1$; since $c$ has at
   least two entries, $N \ge 2$ and so $d \ge 1$; case~1 lowers an even $d \ge 2$ to $d - 1 \ge 1$
   with the leading coefficient $c_1 \ne 0$, and cases~2 and~3 keep $d$ with the leading coefficients
   $c_0 \ne 0$ and $c_1 = \pm 1$; so the chain of the polynomial searched is $\mathrm{none}$ exactly
   when $\Phi_c$ is not squarefree (Lemmas~\ref{lem:sturmChain_squarefree}
   and~\ref{lem:reversal_squarefree}, the latter also when the reversal is forbidden and the
-  polynomial searched is $f$). Without the Sturm step only the first two remain.
+  polynomial searched is $f$). Without the Sturm step only the first two remain. A natural number is
+  a \verb|long| exactly when it is below $2^{63}$, so that the test of the height refuses $H = 0$
+  and $H \ge 2^{63}$.
 \end{proof}
 
 Theorem~\ref{thm:run_reference} reduces the run of any polynomial with its degree to the reference:
@@ -558,8 +563,8 @@ Each component of the set-up differs from the C code in a stated way, recorded i
   \item the refusals of the program, in its order and with its errors, for the library's codes and
     order: the library tests the leading zeros before the height, and refuses as bad arguments a
     degree $0$ and inputs that the program never passes; no error~9, which the program meets only
-    for such codes; a natural number for the height, with no bound $2^{63} - 1$ but that of the
-    program's reading of it;
+    for such codes; a natural number for the height, a height of $2^{63}$ or more, which is not a
+    \verb|long|, refused with error~4, as the program refuses it when it reads it;
   \item the options as a structure: a Boolean for the bit \verb|RATPOINTS_NO_REVERSE| of the flags
     that \verb|main.c| clears, whose Jacobi switch is that of the sieving parameters and whose
     output bits are stage~G's, and an integer for \verb|args->sturm|; the reversal check runs

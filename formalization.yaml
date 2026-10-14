@@ -13,10 +13,10 @@ project:
     The model mirrors the hardware-independent structure of the C code function by function (the
     same loops, tables, bit arrays of 64-bit words and index arithmetic); the proofs are to show
     that, for every well-formed choice of the sieving parameters, it returns exactly the normalized
-    points of height at most H, without duplicates, and refuses, for heights below 2^63, exactly
-    the inputs that the C program refuses in a default run (fewer than two or more than
-    maxDegree + 1 = 101 coefficients, H = 0, a binary form that is not squarefree); a
-    correspondence record and differential tests link the model to the C code.
+    points of height at most H, without duplicates, and refuses exactly the inputs that the C
+    program refuses in a default run (fewer than two or more than maxDegree + 1 = 101
+    coefficients, H = 0 or H >= 2^63, a height that is not a C long, and a binary form that is not
+    squarefree); a correspondence record and differential tests link the model to the C code.
   authors: ["Michael Stoll"]
   responsible_maintainers: ["Michael Stoll"]
   license: "Apache-2.0"
@@ -264,7 +264,7 @@ alignment:
         certified by comparator, through the permutation of the brute-force reference
         (Ratpoints.perm_bruteForce_of_findPoints_eq_ok); the later stages bring Ratpoints.findPoints
         closer to the C code, and the theorems move with it
-    - source: "the refusals: fewer than two or more than maxDegree + 1 = 101 coefficients, H = 0, a binary form that is not squarefree"
+    - source: "the refusals: fewer than two or more than maxDegree + 1 = 101 coefficients, H = 0 or H >= 2^63, a binary form that is not squarefree"
       lean: "Ratpoints.exists_findPoints_eq_error_iff_of_sturm_nonneg"
       module: "Ratpoints.Proof.FindPoints"
       status: "formalized"

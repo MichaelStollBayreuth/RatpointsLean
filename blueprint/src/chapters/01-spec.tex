@@ -125,17 +125,17 @@ coefficient $2$ is not a square.
 The refusal theorem of stage~D (Theorem~\ref{thm:refusals}) has its predicate in the specification:
 with the Sturm step on, as in a run of the program without options, and for all sieving parameters,
 \verb|findPoints| refuses $(c, H)$ if and only if $c$ has fewer than two or more than
-$\mathrm{maxDegree} + 1$ entries (Definition~\ref{def:maxDegree}), $H = 0$, or $\Phi_c$ is not
-squarefree. In a default run with $2$ to $\mathrm{maxDegree} + 1$ coefficients and
-$1 \le H \le 2^{63} - 1$, the program refuses exactly the inputs for which $\Phi_c$ is not
-squarefree. The reason: $\Phi_c = Z^{N - d}\, \Phi^0$, where $\Phi^0$ is the homogenization of
-$f = \sum c_i x^i$ in degree $d$, which is prime to $Z$; so $\Phi_c$ is squarefree if and only if
-$N - d \le 1$ and $f$ is squarefree. The library tests the first condition when it drops the leading
-zeros (\csource{find_points.c}{4624}{4632}) and the second with the remainder sequence of $f$ and
-$f'$ in the Sturm step, the remainder chain of Definition~\ref{def:sturmChain}
-(\csource{sturm.c}{99}{163}); its test of $c_0 = c_1 = 0$ in the reversal
-(\csource{find_points.c}{4744}{4749}) catches $X^2 \mid \Phi_c$, which the remainder sequence would
-also catch.
+$\mathrm{maxDegree} + 1$ entries (Definition~\ref{def:maxDegree}), $H = 0$ or $H \ge 2^{63}$ (a
+height that is not a C \verb|long|), or $\Phi_c$ is not squarefree. In a default run with $2$ to
+$\mathrm{maxDegree} + 1$ coefficients and $1 \le H \le 2^{63} - 1$, the program refuses exactly the
+inputs for which $\Phi_c$ is not squarefree. The reason: $\Phi_c = Z^{N - d}\, \Phi^0$, where
+$\Phi^0$ is the homogenization of $f = \sum c_i x^i$ in degree $d$, which is prime to $Z$; so
+$\Phi_c$ is squarefree if and only if $N - d \le 1$ and $f$ is squarefree. The library tests the
+first condition when it drops the leading zeros (\csource{find_points.c}{4624}{4632}) and the second
+with the remainder sequence of $f$ and $f'$ in the Sturm step, the remainder chain of
+Definition~\ref{def:sturmChain} (\csource{sturm.c}{99}{163}); its test of $c_0 = c_1 = 0$ in the
+reversal (\csource{find_points.c}{4744}{4749}) catches $X^2 \mid \Phi_c$, which the remainder
+sequence would also catch.
 
 \begin{definition}[The bound on the degree]\label{def:maxDegree}
   \lean{Ratpoints.maxDegree}
@@ -152,16 +152,19 @@ depends on its value. The model keeps the bound, which 3.1.1 imposes in the libr
 library and the program differ, and the model follows the program: the library checks the leading
 zeros before the height, so that \verb|5 0| with $H = 0$ is \verb|NON_SQUAREFREE| for it, while the
 program checks the coefficient list and the height before it calls the library
-(\csource{main.c}{362}{380}) and reports error~4. So \verb|findPoints| refuses more than
-$\mathrm{maxDegree} + 1$ coefficients and fewer than two, then $H = 0$, with the program's error
-numbers 3, 5 and~4, and after these, with error~8, the forms that the set-up of the library refuses
-as not squarefree (Definition~\ref{def:findPoints}).
+(\csource{main.c}{362}{380}) and reports error~4; a height of $2^{63}$ or more, which the library
+cannot be given, its height being a C \verb|long| (\csource{ratpoints.h}{362}{362}), the program
+refuses with the same error when it reads it. So \verb|findPoints| refuses more than
+$\mathrm{maxDegree} + 1$ coefficients and fewer than two, then $H = 0$ and $H \ge 2^{63}$, with the
+program's error numbers 3, 5 and~4, and after these, with error~8, the forms that the set-up of the
+library refuses as not squarefree (Definition~\ref{def:findPoints}).
 
 With the options of stage~D the predicate changes: under \verb|-s| (no Sturm step) the program
-refuses, besides the coefficient count and $H = 0$, exactly the inputs with $N - d \ge 2$ and,
-when the reversal check runs (no \verb|-k|, no search intervals, the full range of denominators),
-those with even $d$ and $c_0 = c_1 = 0$; under \verb|-s -k| only those with $N - d \ge 2$. This is
-the predicate of the refusal theorem with the Sturm step off (Theorem~\ref{thm:refusals}).
+refuses, besides the coefficient count, $H = 0$ and $H \ge 2^{63}$, exactly the inputs with
+$N - d \ge 2$ and, when the reversal check runs (no \verb|-k|, no search intervals, the full range
+of denominators), those with even $d$ and $c_0 = c_1 = 0$; under \verb|-s -k| only those with
+$N - d \ge 2$. This is the predicate of the refusal theorem with the Sturm step off
+(Theorem~\ref{thm:refusals}).
 
 \section{The brute-force reference}\label{sec:bruteForce}
 

@@ -36,14 +36,14 @@ theorem challenge_nodup_of_findPoints_eq_ok (c : List ℤ) (H : ℕ) (P : Ratpoi
 theorem challenge_exists_findPoints_eq_error_iff_of_sturm_nonneg (c : List ℤ) (H : ℕ)
     (P : Ratpoints.Params) (o : Ratpoints.Options) (hs : 0 ≤ o.sturm) :
     (∃ e, Ratpoints.findPoints c H P o = .error e) ↔
-      c.length < 2 ∨ Ratpoints.maxDegree + 1 < c.length ∨ H = 0 ∨
+      c.length < 2 ∨ Ratpoints.maxDegree + 1 < c.length ∨ H = 0 ∨ 2 ^ 63 ≤ H ∨
         ¬ Squarefree (Ratpoints.binaryFormPoly c) :=
   Ratpoints.exists_findPoints_eq_error_iff_of_sturm_nonneg hs
 
 theorem challenge_exists_findPoints_eq_error_iff_of_sturm_neg (c : List ℤ) (H : ℕ)
     (P : Ratpoints.Params) (o : Ratpoints.Options) (hs : o.sturm < 0) :
     (∃ e, Ratpoints.findPoints c H P o = .error e) ↔
-      c.length < 2 ∨ Ratpoints.maxDegree + 1 < c.length ∨ H = 0 ∨
+      c.length < 2 ∨ Ratpoints.maxDegree + 1 < c.length ∨ H = 0 ∨ 2 ^ 63 ≤ H ∨
         Ratpoints.degree c + 2 ≤ 2 * (c.length / 2) ∨
         o.reverse = true ∧ Ratpoints.degree c % 2 = 0 ∧ c.getD 0 0 = 0 ∧ c.getD 1 0 = 0 :=
   Ratpoints.exists_findPoints_eq_error_iff_of_sturm_neg hs

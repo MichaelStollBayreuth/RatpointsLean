@@ -26,15 +26,16 @@ the membership and no-duplicates theorems for `Ratpoints.findPoints` for well-fo
 since stage D for every option, and the well-formedness of every parameter set that the options of
 the program give, which rules out a well-formedness that nothing satisfies; and the refusal theorems
 of stage D, with the Sturm step on (`Ratpoints.findPoints` refuses exactly the inputs with fewer
-than two or more than `Ratpoints.maxDegree + 1` coefficients, the height bound `0` and the binary
-forms `Ratpoints.binaryFormPoly c` that are not squarefree) and off (it refuses exactly what the
-program refuses under `-s`, and under `-s -k` when the reversal is off), which rule out a
-`Ratpoints.findPoints` that refuses every input, with or without the Sturm step.
-`Ratpoints.bruteForce`, `Ratpoints.findPoints`, `Ratpoints.Options`, `Ratpoints.Params`,
-`Ratpoints.Params.WF`, `Ratpoints.SieveOptions`, `Ratpoints.sieveParams` and `Ratpoints.maxDegree`
-come from the model, never restated, since a definition of the model elaborates without Mathlib to
-other instance terms. Of Mathlib, the file imports exactly the public imports of
-`Ratpoints/Spec/Basic.lean`, so that the restated definitions elaborate to the same terms as there.
+than two or more than `Ratpoints.maxDegree + 1` coefficients, the height bound `0` or one of
+`2 ^ 63` or more, which is not a `long`, and the binary forms `Ratpoints.binaryFormPoly c` that are
+not squarefree) and off (it refuses exactly what the program refuses under `-s`, and under `-s -k`
+when the reversal is off), which rule out a `Ratpoints.findPoints` that refuses every input, with or
+without the Sturm step. `Ratpoints.bruteForce`, `Ratpoints.findPoints`, `Ratpoints.Options`,
+`Ratpoints.Params`, `Ratpoints.Params.WF`, `Ratpoints.SieveOptions`, `Ratpoints.sieveParams` and
+`Ratpoints.maxDegree` come from the model, never restated, since a definition of the model
+elaborates without Mathlib to other instance terms. Of Mathlib, the file imports exactly the public
+imports of `Ratpoints/Spec/Basic.lean`, so that the restated definitions elaborate to the same terms
+as there.
 -/
 
 @[expose] public section
@@ -87,14 +88,14 @@ theorem challenge_nodup_of_findPoints_eq_ok (c : List ℤ) (H : ℕ) (P : Ratpoi
 theorem challenge_exists_findPoints_eq_error_iff_of_sturm_nonneg (c : List ℤ) (H : ℕ)
     (P : Ratpoints.Params) (o : Ratpoints.Options) (hs : 0 ≤ o.sturm) :
     (∃ e, Ratpoints.findPoints c H P o = .error e) ↔
-      c.length < 2 ∨ Ratpoints.maxDegree + 1 < c.length ∨ H = 0 ∨
+      c.length < 2 ∨ Ratpoints.maxDegree + 1 < c.length ∨ H = 0 ∨ 2 ^ 63 ≤ H ∨
         ¬ Squarefree (Ratpoints.binaryFormPoly c) :=
   sorry
 
 theorem challenge_exists_findPoints_eq_error_iff_of_sturm_neg (c : List ℤ) (H : ℕ)
     (P : Ratpoints.Params) (o : Ratpoints.Options) (hs : o.sturm < 0) :
     (∃ e, Ratpoints.findPoints c H P o = .error e) ↔
-      c.length < 2 ∨ Ratpoints.maxDegree + 1 < c.length ∨ H = 0 ∨
+      c.length < 2 ∨ Ratpoints.maxDegree + 1 < c.length ∨ H = 0 ∨ 2 ^ 63 ≤ H ∨
         Ratpoints.degree c + 2 ≤ 2 * (c.length / 2) ∨
         o.reverse = true ∧ Ratpoints.degree c % 2 = 0 ∧ c.getD 0 0 = 0 ∧ c.getD 1 0 = 0 :=
   sorry

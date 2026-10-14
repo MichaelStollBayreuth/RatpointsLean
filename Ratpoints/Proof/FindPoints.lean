@@ -18,6 +18,7 @@ import Ratpoints.Proof.Params
 import Ratpoints.Proof.Setup
 import Ratpoints.Proof.Shapes
 import Ratpoints.Proof.Sieve
+import Ratpoints.Proof.Tables
 import Ratpoints.Proof.TwoAdic
 import Std.Tactic.Do
 
@@ -36,9 +37,10 @@ a reversal (`Ratpoints.exists_eq_of_findPoints_eq_ok`): in every case a permutat
 reference of `c`, so that it holds exactly the points of the specification, each once, for every
 option. `Ratpoints.findPoints` refuses exactly the inputs that the program refuses: with the Sturm
 step on, those with fewer than two or more than `Ratpoints.maxDegree + 1` coefficients, the height
-bound `0` and the binary forms `Φ_c` that are not squarefree; without it, instead of the last, those
-that the test of the leading zeros and the reversal check refuse. Comparator certifies the
-membership, the absence of duplicates and both refusal theorems (`comparator/Challenge.lean`).
+bound `0` or one of `2 ^ 63` or more, which is not a `long`, and the binary forms `Φ_c` that are not
+squarefree; without it, instead of the last, those that the test of the leading zeros and the
+reversal check refuse. Comparator certifies the membership, the absence of duplicates and both
+refusal theorems (`comparator/Challenge.lean`).
 
 ## Main definitions
 
@@ -73,11 +75,12 @@ membership, the absence of duplicates and both refusal theorems (`comparator/Cha
 * `Ratpoints.toFinset_eq_points_of_findPoints_eq_ok`: its set of elements is `Ratpoints.points`.
 * `Ratpoints.exists_findPoints_eq_error_iff_of_sturm_nonneg`: with the Sturm step on,
   `Ratpoints.findPoints` refuses exactly the inputs with fewer than two or more than
-  `Ratpoints.maxDegree + 1` coefficients, the height bound `0` and the forms that are not
-  squarefree.
+  `Ratpoints.maxDegree + 1` coefficients, the height bound `0` or one of `2 ^ 63` or more, and the
+  forms that are not squarefree.
 * `Ratpoints.exists_findPoints_eq_error_iff_of_sturm_neg`: without it, those with fewer than two or
-  more than `Ratpoints.maxDegree + 1` coefficients, the height bound `0`, a degree `d` with
-  `d + 2 ≤ 2 ⌈n / 2⌉`, and, when the reversal is allowed, an even degree with `c₀ = c₁ = 0`.
+  more than `Ratpoints.maxDegree + 1` coefficients, the height bound `0` or one of `2 ^ 63` or
+  more, a degree `d` with `d + 2 ≤ 2 ⌈n / 2⌉`, and, when the reversal is allowed, an even degree
+  with `c₀ = c₁ = 0`.
 
 ## Proof
 
@@ -117,6 +120,7 @@ runs the search on the polynomial that the reversal check hands on, with its deg
 reversed polynomial is that of `c` with `x` and `z` exchanged
 (`Ratpoints.Setup.binaryForm_eq_of_reversal_eq_ok`), so that its reference, mapped back, is a
 permutation of that of `c` (`Ratpoints.Sieve.perm_map_swapPoint_bruteForce`). Of the refusals, the
+heights that are not `long`s are those of `2 ^ 63` or more (`Ratpoints.fitsLong_natCast`), and the
 test of the leading zeros and that of the reversal check stand for `Z ^ 2 ∣ Φ_c` and `X ^ 2 ∣ Φ_c`
 (`Ratpoints.not_squarefree_binaryFormPoly_of_lt`,
 `Ratpoints.Setup.not_squarefree_binaryFormPoly_of_reversal_eq_error`), and after them the remainder
@@ -788,22 +792,25 @@ theorem toFinset_eq_points_of_findPoints_eq_ok {c : List ℤ} {H : ℕ} {P : Par
 
 /-- With the Sturm step on (`0 ≤ o.sturm`, as in a run of the program without options),
 `Ratpoints.findPoints` refuses exactly the inputs with fewer than two or more than
-`Ratpoints.maxDegree + 1` coefficients, the height bound `0` and the binary forms
-`Ratpoints.binaryFormPoly c` that are not squarefree, for all parameters, whether the reversal is
-allowed or not; comparator certifies this (`comparator/Challenge.lean`). -/
+`Ratpoints.maxDegree + 1` coefficients, the height bound `0` or one of `2 ^ 63` or more, which is
+not a `long` (`Ratpoints.fitsLong_natCast`), and the binary forms `Ratpoints.binaryFormPoly c` that
+are not squarefree, for all parameters, whether the reversal is allowed or not; comparator certifies
+this (`comparator/Challenge.lean`). -/
 theorem exists_findPoints_eq_error_iff_of_sturm_nonneg {c : List ℤ} {H : ℕ} {P : Params}
     {o : Options} (hs : 0 ≤ o.sturm) :
     (∃ e, findPoints c H P o = .error e) ↔
-      c.length < 2 ∨ maxDegree + 1 < c.length ∨ H = 0 ∨ ¬ Squarefree (binaryFormPoly c) := by
+      c.length < 2 ∨ maxDegree + 1 < c.length ∨ H = 0 ∨ 2 ^ 63 ≤ H ∨
+        ¬ Squarefree (binaryFormPoly c) := by
   rw [findPoints]
   dsimp only
   rw [BruteForce.degree_eq]
+  simp only [fitsLong_natCast, Bool.not_eq_true', decide_eq_false_iff_not, not_lt]
   split_ifs with h1 h2 h3 h4
   · simp [h1]
   · simp [h2]
-  · simp [h3]
+  · grind
   · simp [not_squarefree_binaryFormPoly_of_lt h4]
-  simp only [h1, h2, h3, false_or]
+  simp only [h1, h2, not_or.mp h3, false_or]
   split <;> rename_i hr
   · exact iff_of_true ⟨_, rfl⟩ (Setup.not_squarefree_binaryFormPoly_of_reversal_eq_error hr)
   · rw [← Sturm.run_chain_eq_none_iff_of_reversal_eq_ok (by lia) (by lia) hr]
@@ -811,7 +818,8 @@ theorem exists_findPoints_eq_error_iff_of_sturm_nonneg {c : List ℤ} {H : ℕ} 
 
 /-- Without the Sturm step (`o.sturm < 0`, the option `-s` of the program), `Ratpoints.findPoints`
 refuses, besides the coefficient lists of fewer than two or more than `Ratpoints.maxDegree + 1`
-entries and the height bound `0`, exactly the forms whose leading zeros lower `⌈n / 2⌉`, for `n + 1`
+entries and the height bound `0` or one of `2 ^ 63` or more, which is not a `long`
+(`Ratpoints.fitsLong_natCast`), exactly the forms whose leading zeros lower `⌈n / 2⌉`, for `n + 1`
 coefficients, that is `d + 2 ≤ 2 ⌈n / 2⌉` for the degree `d`, and, when the reversal is allowed,
 those of even degree with `c₀ = c₁ = 0`: forms that are not squarefree, but not all of them;
 comparator certifies this (`comparator/Challenge.lean`), so that a `Ratpoints.findPoints` that
@@ -819,18 +827,20 @@ refused every input under `-s` would not pass. -/
 theorem exists_findPoints_eq_error_iff_of_sturm_neg {c : List ℤ} {H : ℕ} {P : Params}
     {o : Options} (hs : o.sturm < 0) :
     (∃ e, findPoints c H P o = .error e) ↔
-      c.length < 2 ∨ maxDegree + 1 < c.length ∨ H = 0 ∨ degree c + 2 ≤ 2 * (c.length / 2) ∨
+      c.length < 2 ∨ maxDegree + 1 < c.length ∨ H = 0 ∨ 2 ^ 63 ≤ H ∨
+        degree c + 2 ≤ 2 * (c.length / 2) ∨
         o.reverse = true ∧ degree c % 2 = 0 ∧ c.getD 0 0 = 0 ∧ c.getD 1 0 = 0 := by
   rw [findPoints]
   dsimp only
   rw [BruteForce.degree_eq]
+  simp only [fitsLong_natCast, Bool.not_eq_true', decide_eq_false_iff_not, not_lt]
   split_ifs with h1 h2 h3 h4
   · simp [h1]
   · simp [h2]
-  · simp [h3]
+  · grind
   · simp only [Except.error.injEq, exists_eq', true_iff]
     lia
-  simp only [h1, h2, h3, false_or, show ¬ degree c + 2 ≤ 2 * (c.length / 2) by lia,
+  simp only [h1, h2, not_or.mp h3, false_or, show ¬ degree c + 2 ≤ 2 * (c.length / 2) by lia,
     ← Setup.exists_reversal_eq_error_iff]
   split <;> rename_i hr <;> simp [hr, hs.not_ge]
 

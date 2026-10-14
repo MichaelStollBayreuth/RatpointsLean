@@ -38,19 +38,21 @@ membership and no-duplicates theorems for `findPoints` for well-formed parameter
 every value of the options of `findPoints`, and the well-formedness of every parameter set that the
 options of the program give, which rules out a `P.WF` that nothing satisfies; and, since stage D,
 the two refusal theorems: with the Sturm step on, `findPoints` refuses exactly the inputs with fewer
-than two or more than `maxDegree + 1` coefficients, the height bound `0` and the binary forms that
-are not squarefree, and with it off exactly what the program refuses under `-s`, so that a
-`findPoints` that refuses every input, with or without the Sturm step, is ruled out. They replace
-the refusal theorem of stage C1, which had only the first three disjuncts. `challenges.json` lists
-`challenge_mem_bruteForce_iff` and `challenge_nodup_bruteForce`, which Comparator accepted on
-2026-10-09; `challenge_mem_iff_isPoint_of_findPoints_eq_ok` and
-`challenge_nodup_of_findPoints_eq_ok`, which Comparator accepted on 2026-10-10 in their form of
-stage C1, without the options, and `challenge_wf_sieveParams`, which it accepted on the same day;
-and `challenge_exists_findPoints_eq_error_iff_of_sturm_nonneg` and
+than two or more than `maxDegree + 1` coefficients, the height bound `0` or one of `2 ^ 63` or more,
+which is not a `long`, and the binary forms that are not squarefree, and with it off exactly what
+the program refuses under `-s`, so that a `findPoints` that refuses every input, with or without the
+Sturm step, is ruled out. They replace the refusal theorem of stage C1, which had only the first
+three disjuncts. `challenges.json` lists `challenge_mem_bruteForce_iff` and
+`challenge_nodup_bruteForce`, which Comparator accepted on 2026-10-09;
+`challenge_mem_iff_isPoint_of_findPoints_eq_ok` and `challenge_nodup_of_findPoints_eq_ok`, which
+Comparator accepted on 2026-10-10 in their form of stage C1, without the options, and
+`challenge_wf_sieveParams`, which it accepted on the same day; and
+`challenge_exists_findPoints_eq_error_iff_of_sturm_nonneg` and
 `challenge_exists_findPoints_eq_error_iff_of_sturm_neg`, the refusal theorems of stage D. Comparator
 accepted all seven, the two main theorems with the options among them, on 2026-10-11, again on the
-model of stage E on 2026-10-12, and with the parameters of sub-stage F1, whose well-formedness
-admits composite moduli, on 2026-10-13.
+model of stage E on 2026-10-12, with the parameters of sub-stage F1, whose well-formedness
+admits composite moduli, on 2026-10-13, and with the refusal of the heights that are not `long`s,
+which the refusal theorems state as `2 ^ 63 ≤ H`, on 2026-10-14.
 
 ## Running
 

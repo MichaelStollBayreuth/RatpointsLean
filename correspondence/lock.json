@@ -1785,6 +1785,12 @@
         "Ratpoints.defaultArraySize"
       ]
     },
+    "ratpoints.h:362-362": {
+      "hash": "26040812a75ae8623e4fa22bd396b9ccb8afb7d61b79f3b674913bca0be1d7e9",
+      "owners": [
+        "Ratpoints.findPoints"
+      ]
+    },
     "rp-private.h:113-113": {
       "hash": "cd5b2d5a731073323a87117dacb20ea8d30c09d90fee6220eec53d3685ac8901",
       "owners": [
@@ -2685,6 +2691,7 @@
     "ratpoints.h:341-343": "814472659d3770972360323dbb127823d403baf9caf8725c2b57c69348231295",
     "ratpoints.h:345-352": "b239276d48af72097442345ba7e5639ead541b1b19f642578ff99078083b5bd7",
     "ratpoints.h:354-356": "201cc1076a414bb5c5a31af9865e049dcd519630f3a30188217cd65429885a04",
+    "ratpoints.h:362-362": "26040812a75ae8623e4fa22bd396b9ccb8afb7d61b79f3b674913bca0be1d7e9",
     "rp-private.h:41-43": "b1cdf6bfb6993a5469f282a00642df6f98c08f2df577f36110709941ed7e7f3d",
     "rp-private.h:47-47": "cd3497ee363c6aa475e6545a5633fc060ecf397c2a58a956ddbd584986b94b72",
     "rp-private.h:49-51": "a88a56965e41b54a986468e7422ef3a6cd276006aea64c20c81eba170eebeb74",
