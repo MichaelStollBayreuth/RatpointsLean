@@ -34,6 +34,8 @@ table the proofs use only that its entries are the odd primes below 1022, in inc
   of a prime.
 * `Ratpoints.defaultNumPrimes`, `Ratpoints.defaultMaxForbidden`: how many primes the sieve takes
   and at most how many forbidden divisors it tests, unless the options say.
+* `Ratpoints.defaultSp1`, `Ratpoints.sp2Extra`: where the first stage of the sieve ends, and how
+  many moduli the second stage adds, unless the options say.
 * `Ratpoints.defaultSturm`: the depth of the Sturm step, unless the options say.
 * `Ratpoints.rbaPack`, `Ratpoints.rbaLength`: how many words and how many bits a bit array of the
   sieve has.
@@ -240,6 +242,25 @@ Deviation: a constant of the model, set here, for the macro that the compiler is
 (`-DUSE_LONG_IN_PHASE_2`), which the C code tests with `#ifdef` and `#ifndef`. -/
 def useLongInPhase2 : Bool := false
 
+/-- The end of the first stage of the sieve when the option `-n` does not say,
+`RATPOINTS_DEFAULT_SP1`: the fixed choice of the versions 2.x, which the header of ratpoints keeps
+(`Ratpoints.sieveParams`).
+
+C: `ratpoints.h:42`
+
+Deviation: the parameters of the program take it for an absent `-n`, where ratpoints, which reads
+the macro nowhere, chooses the end of the first stage from the curve by its costs (`sieving_info`;
+stage I). -/
+def defaultSp1 : Nat := 11
+
+/-- How many moduli the second stage of the sieve adds to the first when neither the option `-N`
+nor `-R` says, `RATPOINTS_SP2_EXTRA`, the compiled-in default of `-R`: the offset that ratpoints
+takes as it is under `-U 0` and otherwise scales by the length of the run (`phase_2_offset`;
+`Ratpoints.sieveParams`).
+
+C: `ratpoints.h:95-97` -/
+def sp2Extra : Nat := 11
+
 theorem rbaPack_pos : 0 < rbaPack := by decide
 theorem defaultArraySize_pos : 0 < defaultArraySize := by decide
 theorem maxArraySize_pos : 0 < maxArraySize := by decide
@@ -280,7 +301,7 @@ theorem stage3Limit_le_two_pow_32 : stage3Limit ≤ 2 ^ 32 := by decide
 #guard maxDivisors == 512 && veryBig == 1000 && jacobiPrimes == 16 && jacobiTable == 8192 &&
   mulModLimit == 4294967295
 
-#guard stage3Limit == 4294967296 && !useLongInPhase2
+#guard stage3Limit == 4294967296 && !useLongInPhase2 && defaultSp1 == 11 && sp2Extra == 11
 
 -- The numbers of primes that the header lists for the builds with moduli of 5 to 10 bits.
 #guard [5, 6, 7, 8, 9, 10].map (fun b ↦ (primeTable.toList.filter (· < 2 ^ b)).length) ==

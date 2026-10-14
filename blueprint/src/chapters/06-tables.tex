@@ -504,9 +504,9 @@ Each component of this chapter differs from the C code in a stated way, recorded
     (stage~I): the moduli, their stages and the number of primes examined are those of the
     parameters, and the parameters may hold moduli that ratpoints never offers (composites above
     $\mathrm{RATPOINTS\_COMPOSITE\_MAX}$, with a factor beyond the examined primes, or with a factor
-    that says nothing), all sound; the parameters of the command line with \verb|-P| take
-    third-stage primes after the first $q$, which ratpoints with \verb|-p| never examines, and the
-    model makes their entries with the others;
+    that says nothing), all sound; the parameters of the command line without \verb|-p| take
+    primes after the first $q$ when the counts of their stages ask for more, primes that ratpoints
+    then may examine too, and the model makes their entries with the others;
   \item the bias, the inverse of $\mathrm{rbaLength}$ and the inverses \verb|dinv| of a sieve entry
     serve the packing and come with stage~F3; the reciprocal of a sieve entry is set with the entry
     for every kind of modulus (Definition~\ref{def:makeModulus}).

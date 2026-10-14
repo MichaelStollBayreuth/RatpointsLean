@@ -98,7 +98,7 @@ are no points modulo $p$ (D) and the options of the output (G) come in their sta
 
 \begin{definition}[The parameters of the executable]\label{def:sieveParams}
   \uses{def:Params, def:primeTable, def:arraySize, def:barrett}
-  \lean{Ratpoints.SieveOptions, Ratpoints.sieveParams, Ratpoints.defaultParams, Ratpoints.defaultNumPrimes, Ratpoints.defaultMaxForbidden, Ratpoints.wf_sieveParams, Ratpoints.wf_defaultParams}
+  \lean{Ratpoints.SieveOptions, Ratpoints.sieveParams, Ratpoints.defaultParams, Ratpoints.defaultNumPrimes, Ratpoints.defaultMaxForbidden, Ratpoints.defaultSp1, Ratpoints.sp2Extra, Ratpoints.wf_sieveParams, Ratpoints.wf_defaultParams}
   \leanok
   The parameters made from the values of the options \verb|-p|, \verb|-n|, \verb|-N|, \verb|-P|,
   \verb|-F| and \verb|-j|/\verb|-J|, which are $-1$ and the Jacobi test on when the options are
@@ -106,50 +106,69 @@ are no points modulo $p$ (D) and the options of the output (G) come in their sta
   \csource{main.c}{352}{352}), with the defaults and caps of ratpoints
   (\csource{ratpoints.h}{333}{340}, \csource{ratpoints.h}{345}{352},
   \csource{find_points.c}{4643}{4649}, \csource{find_points.c}{4655}{4656},
-  \csource{find_points.c}{4662}{4665}): $q = \min(k, \mathrm{numPrimes})$ primes are taken, for the
-  value $k \ge 0$ of \verb|-p| or else $k = \mathrm{defaultNumPrimes} = 30$, and the first $q$
-  primes of the table are examined, the number \verb|pn_lim| with which \verb|sieving_info| starts
-  (\csource{find_points.c}{2566}{2566}); $s_2 = \min(N, q)$ and $s_1 = \min(n, s_2)$ for the values
-  of \verb|-N| and \verb|-n|, $s_2 = q$ and $s_1 = s_2$ when they are absent or negative; the moduli
-  are the first $\min(q + P, \mathrm{numPrimes})$ primes of the table for the value $P \ge 0$ of
-  \verb|-P|, the first $q$ when it is absent or negative; at most $\min(F, 171)$ forbidden divisors,
-  for the value $F \ge 0$ of \verb|-F| or else $F = \mathrm{defaultMaxForbidden} = 64$; the Jacobi
-  test unless \verb|-j| is the last of \verb|-j| and \verb|-J|; and pieces of at most
+  \csource{find_points.c}{4662}{4665}) and the rules by which it counts the moduli of its stages,
+  where these do not depend on the curve: the number of the primes looked at is
+  $q = \min(k, \mathrm{numPrimes})$, for the value $k \ge 0$ of \verb|-p| or else
+  $k = \mathrm{defaultNumPrimes} = 30$, and the first $q$ primes of the table are examined, the
+  number \verb|pn_lim| with which \verb|sieving_info| starts (\csource{find_points.c}{2566}{2566});
+  the moduli are the first primes of the table, at most the first $L$, where $L = q$ under
+  \verb|-p|, a hard limit for every stage (\csource{find_points.c}{4577}{4577},
+  \csource{find_points.c}{2693}{2705}, \csource{find_points.c}{2980}{2980}), and
+  $L = \mathrm{numPrimes}$ without it. For the values $n$, $N$ and $P$ of \verb|-n|, \verb|-N| and
+  \verb|-P|, each absent when negative, and $N$ capped at $q$: the first stage ends at
+  $s_1 = \min(n, N)$, or at $\min(n, L)$ without \verb|-N|, or at $\min(\mathrm{defaultSp1}, L)$
+  without \verb|-n|, for $\mathrm{defaultSp1} = 11$ (\csource{ratpoints.h}{42}{42},
+  \csource{find_points.c}{2503}{2503}, \csource{find_points.c}{2845}{2846}); the second at
+  $s_2 = \max(s_1, N)$, the first two stages topped up to $N$, or without \verb|-N| at
+  $\min(s_1 + \mathrm{sp2Extra}, L)$, for the offset $\mathrm{sp2Extra} = 11$ that ratpoints adds as
+  it is under \verb|-U 0| (\csource{ratpoints.h}{95}{97}, \csource{find_points.c}{1619}{1623},
+  \csource{find_points.c}{2571}{2572}, \csource{find_points.c}{2599}{2599},
+  \csource{find_points.c}{2808}{2808}, \csource{find_points.c}{2815}{2815},
+  \csource{find_points.c}{2864}{2869}); and the moduli are the first $\min(s_2 + P, L)$ primes of
+  the table, or without \verb|-P| the first $\max(s_2, q)$, the third stage holding the rest of the
+  first $q$ (\csource{find_points.c}{2922}{2922}, \csource{find_points.c}{2926}{2928},
+  \csource{find_points.c}{2949}{2949}, \csource{find_points.c}{2973}{2975},
+  \csource{find_points.c}{3015}{3015}, \csource{find_points.c}{3017}{3017}). At most $\min(F, 171)$
+  forbidden divisors are tested, for the value $F \ge 0$ of \verb|-F| or else
+  $F = \mathrm{defaultMaxForbidden} = 64$; the Jacobi test runs unless \verb|-j| is the last of
+  \verb|-j| and \verb|-J|; and a piece of the numerators has at most
   $\mathrm{defaultArraySize} = 256$ bit arrays, the array size that the program sets when it reads
   the arguments and again before the search (\csource{main.c}{347}{347},
-  \csource{main.c}{221}{222}). The default parameters are those of no options: the first 30 primes,
-  all in the first stage. Every parameter set made this way is well-formed.
+  \csource{main.c}{221}{222}). The default parameters are those of no options: $11$ moduli in the
+  first stage, $11$ more in the second and $8$ in the third, the first $30$ primes in all. Every
+  parameter set made this way is well-formed.
 \end{definition}
 
 \verb|Params| holds the choices that the theorems quantify over: which moduli the sieve uses, in
 which order and in which stage, and how many primes are examined. ratpoints makes them from the
-curve (\verb|sieving_info|, which ranks the primes and may look past the first $q$ when the curve
-needs it), and moves the end of the third stage during the run (\verb|adapt_primes|; with
-\verb|-A 2| also $s_2$); its third stage holds the $P$ primes after $s_2$ for the value $P$ of
-\verb|-P|, and the primes up to $\mathrm{numPrimes}$ when \verb|-P| is absent or negative, where the
-third stage of the model is the rest of its moduli after $s_2$. None of this changes the points
-found or their order, since a modulus only removes candidates that are not points, a test on the
-denominators (the forbidden divisors among the examined primes and beyond them, at most the bound of
-them, and the Jacobi test that the switch lets run) removes only denominators without points, and
-the two shapes of the loop between which these choices decide, the words of 64 denominators and
-every denominator, both run in increasing order (\verb|-q| suppresses the report of the moduli used,
-which does depend on the choice). So the model takes the choice as an input, and the theorems hold
-for every well-formed choice. They quantify over the parameters that \verb|Params.WF| admits, a
-definition of a few lines in the model, which has no Mathlib, so the comparator challenge imports
-it; the runs of the executable need no such reading, since \verb|wf_sieveParams|, certified with the
-main theorems, shows that every parameter set the command line produces is well-formed, which also
-rules out a well-formedness that nothing satisfies. C1 reads only the moduli and treats all stages
-alike, and C2 reads the array size too (Definition~\ref{def:arraySize}); the bound on the forbidden
-divisors and the Jacobi switch are read since stage~E, the number of primes examined since stage~F1
-(Chapter~\ref{chap:tables}), and the cut points from stage~F2 on, and further choices (the block
-length) join \verb|Params| with the components that use them. Well-formedness constrains a field
-only as far as its component needs it to be meaningful. The constants of the build that these
-definitions read, the size in bits of the moduli and the defaults of \verb|-p| and \verb|-F|, are
-definitions of the model like $\mathrm{maxDegree}$ (Definition~\ref{def:maxDegree}), and no proof
-depends on their values: \verb|wf_sieveParams| needs only that $\mathrm{numPrimes}$, the number of
-primes of the table below $\mathrm{maxPrimeEven}$, is at most its size, and that these primes come
-first in the table, which is sorted (Definition~\ref{def:barrett}): the moduli that the options give
-are among them, each a prime whose only divisor above $1$ is itself.
+curve (\verb|sieving_info|, which ranks the primes and may look past the first $q$ when \verb|-p| is
+absent), and moves the end of the third stage during the run (\verb|adapt_primes|; with \verb|-A 2|
+also $s_2$); where it decides by the curve, for an absent \verb|-n|, \verb|-N| or \verb|-P|, its
+stages may be longer or shorter than those of the parameters of the executable, and where the
+options fix their counts, they are at most as long (Section~\ref{sec:cuts}). None of this changes
+the points found or their order, since a modulus only removes candidates that are not points, a test
+on the denominators (the forbidden divisors among the examined primes and beyond them, at most the
+bound of them, and the Jacobi test that the switch lets run) removes only denominators without
+points, and the two shapes of the loop between which these choices decide, the words of 64
+denominators and every denominator, both run in increasing order (\verb|-q| suppresses the report of
+the moduli used, which does depend on the choice). So the model takes the choice as an input, and
+the theorems hold for every well-formed choice. They quantify over the parameters that
+\verb|Params.WF| admits, a definition of a few lines in the model, which has no Mathlib, so the
+comparator challenge imports it; the runs of the executable need no such reading, since
+\verb|wf_sieveParams|, certified with the main theorems, shows that every parameter set the command
+line produces is well-formed, which also rules out a well-formedness that nothing satisfies. C1
+reads only the moduli and treats all stages alike, and C2 reads the array size too
+(Definition~\ref{def:arraySize}); the bound on the forbidden divisors and the Jacobi switch are read
+since stage~E, the number of primes examined since stage~F1 (Chapter~\ref{chap:tables}), and the cut
+points from stage~F2 on, and further choices (the block length) join \verb|Params| with the
+components that use them. Well-formedness constrains a field only as far as its component needs it
+to be meaningful. The constants of the build that these definitions read, the size in bits of the
+moduli, the defaults of \verb|-p| and \verb|-F| and those of the cut points, are definitions of the
+model like $\mathrm{maxDegree}$ (Definition~\ref{def:maxDegree}), and no proof depends on their
+values: \verb|wf_sieveParams| needs only that $\mathrm{numPrimes}$, the number of primes of the
+table below $\mathrm{maxPrimeEven}$, is at most its size, and that these primes come first in the
+table, which is sorted (Definition~\ref{def:barrett}): the moduli that the options give are among
+them, each a prime whose only divisor above $1$ is itself.
 
 \section{The table of a prime}\label{sec:primeTables}
 

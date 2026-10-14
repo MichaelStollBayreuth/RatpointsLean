@@ -542,15 +542,21 @@ theorem Params.WF.exists_getElem!_primeTable_eq_of_mem_drop {P : Params} (hP : P
   exact ⟨pn, hpn, (Nat.prime_dvd_prime_iff_eq (prime_getElem!_primeTable
     (hpn.trans_le numPrimes_le_size_primeTable)) (hP.prime_of_mem_drop hm)).mp hd⟩
 
+-- The parameters that the options give take the first `k ≤ numPrimes` primes of the table as their
+-- moduli, with the cut points in order and the second at most `k`.
+private theorem exists_take_sieveParams (o : SieveOptions) :
+    ∃ k ≤ numPrimes, (sieveParams o).moduli = primeTable.toList.take k ∧
+      (sieveParams o).sp1 ≤ (sieveParams o).sp2 ∧ (sieveParams o).sp2 ≤ k := by
+  simp only [sieveParams]
+  refine ⟨_, ?_, rfl, ?_⟩ <;> split_ifs <;> simp <;> lia
+
 -- The moduli of the parameters that the options give are among the first `numPrimes` primes of
 -- the table.
 private theorem exists_lt_numPrimes_of_mem_moduli_sieveParams {o : SieveOptions} {m : ℕ}
     (hm : m ∈ (sieveParams o).moduli) : ∃ pn < numPrimes, primeTable[pn]! = m := by
-  simp only [sieveParams] at hm
-  obtain ⟨i, hi, rfl⟩ := List.mem_take_iff_getElem.mp hm
-  refine ⟨i, ?_, by rw [Array.getElem_toList, getElem!_pos]⟩
-  rw [lt_min_iff] at hi
-  split_ifs at hi <;> lia
+  obtain ⟨k, hk, he, -⟩ := exists_take_sieveParams o
+  obtain ⟨i, hi, rfl⟩ := List.mem_take_iff_getElem.mp (he ▸ hm)
+  exact ⟨i, (lt_min_iff.mp hi).1.trans_le hk, by rw [Array.getElem_toList, getElem!_pos]⟩
 
 /-- Every parameter set that the options of the program give is well-formed; comparator certifies
 this (`comparator/Challenge.lean`): its moduli are the first primes of the table, which are below
@@ -566,13 +572,11 @@ theorem wf_sieveParams (o : SieveOptions) : (sieveParams o).WF where
   mem_primeTable_of_mem_drop _ hm :=
     Array.mem_toList_iff.mp (List.mem_of_mem_take (List.mem_of_mem_drop hm))
   examined_le := Nat.min_le_right _ _
-  sp1_le_sp2 := by
-    simp only [sieveParams]
-    split_ifs <;> lia
+  sp1_le_sp2 := have ⟨_, _, _, h, _⟩ := exists_take_sieveParams o; h
   sp2_le_length := by
-    have := numPrimes_le_size_primeTable
-    simp only [sieveParams, List.length_take, Array.length_toList]
-    split_ifs <;> lia
+    obtain ⟨k, hk, he, -, h⟩ := exists_take_sieveParams o
+    rw [he, List.length_take, Array.length_toList]
+    exact le_min h (h.trans (hk.trans numPrimes_le_size_primeTable))
 
 theorem wf_defaultParams : defaultParams.WF := wf_sieveParams {}
 

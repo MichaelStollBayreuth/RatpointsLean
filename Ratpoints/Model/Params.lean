@@ -23,10 +23,10 @@ only removes candidates that are not points, the pieces of the numerators follow
 increasing order, a test on the denominators removes only denominators without points, and the two
 shapes of the loop over the denominators between which these choices decide, the words of 64
 denominators and every denominator, both run in increasing order. So the model takes the choice as
-an input, and the theorems hold for every well-formed choice. The sieve reads the moduli and the
-array size, the loop of the tables reads the number of primes examined, which give the exit and the
-first forbidden divisors, and the tests on the denominators read the bound on the forbidden divisors
-and the switch of the Jacobi test.
+an input, and the theorems hold for every well-formed choice. The sieve reads the moduli, the cut
+points of its stages and the array size, the loop of the tables reads the number of primes examined,
+which give the exit and the first forbidden divisors, and the tests on the denominators read the
+bound on the forbidden divisors and the switch of the Jacobi test.
 
 ## Main definitions
 
@@ -37,7 +37,8 @@ and the switch of the Jacobi test.
   height bound.
 * `Ratpoints.SieveOptions`: the values of the options of the program that set the parameters.
 * `Ratpoints.sieveParams`: the parameters that these values give, with the defaults and caps of
-  ratpoints; `Ratpoints.defaultParams`, those of a run without options.
+  ratpoints and its rules for the sizes of the stages; `Ratpoints.defaultParams`, those of a run
+  without options.
 -/
 
 @[expose] public section
@@ -173,7 +174,7 @@ Deviation: integers for the `long`s of the fields, and a Boolean for the bit `RA
 of the flags, which `main.c` clears with the others; the bit of the reversal is in
 `Ratpoints.Options`. -/
 structure SieveOptions where
-  /-- The value of `-p`: how many primes are taken. -/
+  /-- The value of `-p`: how many primes are looked at (examined). -/
   numPrimes : Int := -1
   /-- The value of `-n`: the end of the first stage. -/
   sp1 : Int := -1
@@ -186,69 +187,128 @@ structure SieveOptions where
   /-- Whether the Jacobi test runs: `false` when `-j` is the last of `-j` and `-J`. -/
   jacobi : Bool := true
 
-/-- The sieving parameters that the options `o` give, with the defaults and caps of ratpoints: `q`
-primes are taken, the value `k ≥ 0` of `-p` or else `Ratpoints.defaultNumPrimes`, at most
-`Ratpoints.numPrimes`, and the first `q` primes of the table are examined; the second stage ends at
-`s₂ = min(N, q)` and the first at `min(n, s₂)` for the values `N` of `-N` and `n` of `-n`, at `q`
-and at `s₂` when these are absent or negative; the moduli are the first `min(q + P, numPrimes)`
-primes of `Ratpoints.primeTable` for the value `P ≥ 0` of `-P`, the first `q` when it is absent or
-negative; at most `F` forbidden divisors are tested for the value `F ≥ 0` of `-F` or else
-`Ratpoints.defaultMaxForbidden`, at most as many as the table has primes; the Jacobi test runs
-unless `-j` is the last of `-j` and `-J`; and a piece of the numerators has at most
+/-- The sieving parameters that the options `o` give, with the defaults and caps of ratpoints and
+the rules by which it counts the moduli of its stages, where these do not depend on the curve: the
+number `q` of the primes looked at is the value `k ≥ 0` of `-p` or else
+`Ratpoints.defaultNumPrimes`, at most `Ratpoints.numPrimes`, and the first `q` primes of the table
+are examined; the moduli are the first primes of `Ratpoints.primeTable`, at most the first `L` of
+them, `L = q` when `-p` is given and `L = Ratpoints.numPrimes` when it is absent or negative. For
+the value `n ≥ 0` of `-n` and the value `N ≥ 0` of `-N`, the latter capped at `q`, the first stage
+ends at `s₁ = min(n, N)` and the second at `s₂ = max(s₁, N)`; without `-N` (absent or negative), the
+first stage ends at `s₁ = min(n, L)` and the second at `s₂ = min(s₁ + Ratpoints.sp2Extra, L)`;
+without `-n`, the first stage ends at `s₁ = min(Ratpoints.defaultSp1, L)`, also with `-N`. The third
+stage has the next `min(P, L - s₂)` primes for the value `P ≥ 0` of `-P`, and without `-P` the rest
+of the first `q` primes, if any. At most `F` forbidden divisors are tested for the value `F ≥ 0` of
+`-F` or else `Ratpoints.defaultMaxForbidden`, at most as many as the table has primes; the Jacobi
+test runs unless `-j` is the last of `-j` and `-J`; and a piece of the numerators has at most
 `Ratpoints.defaultArraySize` bit arrays, the array size that the program sets when it reads the
-arguments and again before the search.
+arguments and again before the search. In the default build, a run without options has 11 moduli in
+the first stage, 22 in the first two and 30 in all (`Ratpoints.defaultParams`).
 
-C: `find_points.c:2566`, `find_points.c:4643-4649`, `find_points.c:4655-4656`,
-`find_points.c:4662-4665`, `main.c:221-222`, `main.c:347`
+C: `find_points.c:1619-1623`, `find_points.c:2503`, `find_points.c:2566`,
+`find_points.c:2571-2572`, `find_points.c:2599`, `find_points.c:2693-2705`, `find_points.c:2808`,
+`find_points.c:2815`, `find_points.c:2845-2846`, `find_points.c:2864-2869`, `find_points.c:2922`,
+`find_points.c:2926-2928`, `find_points.c:2949`, `find_points.c:2973-2975`, `find_points.c:2980`,
+`find_points.c:3015`, `find_points.c:3017`, `find_points.c:4577`, `find_points.c:4643-4649`,
+`find_points.c:4655-4656`, `find_points.c:4662-4665`, `main.c:221-222`, `main.c:347`
 
 Deviation: the moduli are the first primes of the table, in increasing order, where ratpoints ranks
-the primes by what they say about the curve (`sieving_info`), looks past the first `q` when `-p` is
-absent and the curve needs it, chooses the cut points from the curve when `-n` or `-N` is absent or
-negative, and corrects the choice during the run (`adapt_primes`); the third stage is the rest of
-the list after `s₂`, where ratpoints takes up to `P` primes after `s₂`, or primes up to all
-`Ratpoints.numPrimes` when `-P` is absent or negative, from those it has looked at, which are among
-the first `q` when `-p` is given (line 2980, `may_extend = 0`); the model examines the primes of the
-third stage beyond the first `q` when it makes their entries (`Ratpoints.makeModulus?`); the number
-`examined` of the primes examined, which stands for `pn_lim` of `sieving_info` (line 2566), is `q`,
-as in ratpoints when `-p` is given, where it looks at more primes when `-p` is absent and the choice
-of the moduli needs them. -/
+the primes by what they say about the curve and adds composite moduli (`sieving_info`), and takes
+the entries of its stages from that ranking, skipping a modulus that shares a prime with one taken
+(`take_entries`); it leaves the primes that say nothing out of its pool (lines 1764-1765 and
+2613-2622), and those that say only that the numerator is prime to the denominator stay in the pool
+of the first two stages without counting toward the primes that it looks for (`n_weak`, line 2704)
+and leave the pool of the third stage with the composite moduli not taken (lines 2873-2890 and
+2999-3000); so the counts that the options fix, of the first stage under `-n`, of the first two
+stages under `-n` and `-N` (or `-U 0`) and of all the moduli under `-n`, `-N` and `-P`, bound those
+of ratpoints, which can be smaller, while where an option is absent ratpoints can take more moduli
+in a stage or fewer (no bound on a stage for `-N` without `-n`, nor for `-P` alone); without `-n`,
+the first stage ends at `Ratpoints.defaultSp1`, the fixed choice of the header, where ratpoints
+chooses the end from the curve by its costs; without `-N`, the second stage adds the flat offset
+`Ratpoints.sp2Extra`, as ratpoints does under `-U 0` (`phase_2_offset` for `u0 = 0`), where it
+otherwise scales the offset by the length of the run, and the model ignores `-R`, whose value
+ratpoints takes in place of `RATPOINTS_SP2_EXTRA` (lines 2571-2572 and 2808); without `-P`, the
+third stage is the rest of the first `q` primes, where ratpoints takes the primes of its pool in
+increasing order of their density `r`, the most selective first, stops by its cost rule (lines
+2949-2992) and may look past the first `q` when `-p` is absent; the primes examined are the first
+`q`, where ratpoints, when `-p` is absent, looks at further primes while its pool is short of the
+moduli that its first two stages want, and later for its third stage, `-p` being a hard limit of
+the first two stages (line 2693) as of the third (line 2980), and the model examines the primes of
+its moduli beyond the first `q` when it makes their entries (`Ratpoints.makeModulus?`); no
+correction of the moduli during the run (`adapt_primes`, stage I); natural numbers for the `long`s,
+so that the sums of the counts cannot overflow. -/
 def sieveParams (o : SieveOptions) : Params :=
   let q := min (if o.numPrimes < 0 then defaultNumPrimes else o.numPrimes.toNat) numPrimes
-  let sp2 := if o.sp2 < 0 then q else min o.sp2.toNat q
+  let lim := if o.numPrimes < 0 then numPrimes else q
+  let n2 : Option Nat := if o.sp2 < 0 then none else some (min o.sp2.toNat q)
+  let s1 := if o.sp1 < 0 then min defaultSp1 lim else min o.sp1.toNat (n2.getD lim)
+  let s2 := match n2 with
+    | some t => max s1 t
+    | none => min (s1 + sp2Extra) lim
   { moduli := primeTable.toList.take
-      (if o.sp3Extra < 0 then q else min (q + o.sp3Extra.toNat) numPrimes)
+      (if o.sp3Extra < 0 then max s2 q else min (s2 + o.sp3Extra.toNat) lim)
     examined := q
-    sp1 := if o.sp1 < 0 then sp2 else min o.sp1.toNat sp2
-    sp2
+    sp1 := s1
+    sp2 := s2
     maxForbidden :=
       min (if o.maxForbidden < 0 then defaultMaxForbidden else o.maxForbidden.toNat) primeTable.size
     jacobi := o.jacobi
     arraySize := defaultArraySize }
 
 /-- The sieving parameters of a run without options (`Ratpoints.sieveParams` of the defaults): the
-first `Ratpoints.defaultNumPrimes` primes of `Ratpoints.primeTable` (at most
-`Ratpoints.numPrimes`), all in the first stage, at most `Ratpoints.defaultMaxForbidden` forbidden
-divisors, the Jacobi test, and pieces of at most `Ratpoints.defaultArraySize` bit arrays. -/
+first `Ratpoints.defaultNumPrimes` primes of `Ratpoints.primeTable` examined, at most
+`Ratpoints.numPrimes`; the first `Ratpoints.defaultSp1` primes of the table in the first stage and
+the next `Ratpoints.sp2Extra` in the second, the end of each stage at most `Ratpoints.numPrimes`,
+and the rest of the examined primes, if any, in the third; at most `Ratpoints.defaultMaxForbidden`
+forbidden divisors, the Jacobi test, and pieces of at most `Ratpoints.defaultArraySize` bit arrays.
+With the values of the default build, the first stage has 11 moduli, the first two 22 and all three
+30. -/
 def defaultParams : Params := sieveParams {}
 
 /-! ### Examples -/
 
+-- A run without options: 11 moduli in the first stage and 22 in the first two, as
+-- `ratpoints c H -v -n 11 -U 0` reports for each of the curves of the guard of the stage sizes
+-- below, and 30 in all.
 #guard defaultParams.moduli == primeTable.toList.take 30 && defaultParams.examined == 30 &&
-  defaultParams.sp1 == 30 && defaultParams.sp2 == 30 && defaultParams.maxForbidden == 64 &&
+  defaultParams.sp1 == 11 && defaultParams.sp2 == 22 && defaultParams.maxForbidden == 64 &&
   defaultParams.jacobi && defaultParams.arraySize == 256
 
 #guard defaultParams.WF
 
--- `-p 100 -N 40 -n 50 -P 5 -F 200 -j`: 53 primes, both cut points at 40, 171 forbidden divisors.
+-- `-p 100 -N 40 -n 50 -P 5 -F 200 -j`: 53 primes examined, both cut points at 40, five primes in
+-- the third stage, 171 forbidden divisors.
 #guard
   let P := sieveParams
     { numPrimes := 100, sp1 := 50, sp2 := 40, sp3Extra := 5, maxForbidden := 200, jacobi := false }
-  P.moduli.length == 53 && P.sp1 == 40 && P.sp2 == 40 && P.maxForbidden == 171 && !P.jacobi
+  P.examined == 53 && P.moduli.length == 45 && P.sp1 == 40 && P.sp2 == 40 &&
+    P.maxForbidden == 171 && !P.jacobi
 
--- `-p 10 -n 4 -P 3`: 13 primes, the first stage ends at 4 and the second at 10.
+-- The sizes of the stages that `ratpoints c H -v` reports with the same options, and with `-U 0`
+-- where `-N` is absent (the flat offset `Ratpoints.sp2Extra`), for each of the curves
+-- `1 2 3 -4 5 6 1`, `1 0 126 0 441`, `3 2 -1 12`, `1 -3 2 5 -7 1 4 -2 3` and the second and the
+-- last of `testdata-many.h`, at the heights 500 and 20000: the moduli in the first stage, in the
+-- first two and in all, for `-n 3 -N 5 -P 2`, `-n 11 -N 22 -P 8`, `-n 50 -N 40 -P 5 -p 100`,
+-- `-n 3 -P 10 -p 53`, `-n 100 -N 0 -P 10`, `-n 0 -P 8`, `-n 5 -N 10 -P 3`, `-n 20 -N 10 -P 8 -p 53`
+-- and `-n 1 -N 25 -P 60 -p 0`.
+#guard ([({ sp1 := 3, sp2 := 5, sp3Extra := 2 }, (3, 5, 7)),
+    ({ sp1 := 11, sp2 := 22, sp3Extra := 8 }, (11, 22, 30)),
+    ({ sp1 := 50, sp2 := 40, sp3Extra := 5, numPrimes := 100 }, (40, 40, 45)),
+    ({ sp1 := 3, sp3Extra := 10, numPrimes := 53 }, (3, 14, 24)),
+    ({ sp1 := 100, sp2 := 0, sp3Extra := 10 }, (0, 0, 10)),
+    ({ sp1 := 0, sp3Extra := 8 }, (0, 11, 19)),
+    ({ sp1 := 5, sp2 := 10, sp3Extra := 3 }, (5, 10, 13)),
+    ({ sp1 := 20, sp2 := 10, sp3Extra := 8, numPrimes := 53 }, (10, 10, 18)),
+    ({ sp1 := 1, sp2 := 25, sp3Extra := 60, numPrimes := 0 }, (0, 0, 0))] :
+      List (SieveOptions × Nat × Nat × Nat)).all fun (o, s) ↦
+  let P := sieveParams o
+  (P.sp1, P.sp2, P.moduli.length) == s
+
+-- `-p 10 -n 4 -P 3`: the first ten primes, the first stage ends at 4 and the second at 10, with no
+-- prime left for the third stage, since `-p` is a hard limit.
 #guard
   let P := sieveParams { numPrimes := 10, sp1 := 4, sp3Extra := 3 }
-  P.moduli == primeTable.toList.take 13 && P.sp1 == 4 && P.sp2 == 10 && decide P.WF
+  P.moduli == primeTable.toList.take 10 && P.sp1 == 4 && P.sp2 == 10 && decide P.WF
 
 -- Well-formed parameters with the prime power 9, and with the products 15 = 3 · 5 and
 -- 245 = 5 · 7 ^ 2 and the prime powers 27 and 243, the primes 3, 5 and 7 among the first ten
