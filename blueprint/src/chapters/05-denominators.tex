@@ -691,9 +691,9 @@ printed points is that of Theorem~\ref{thm:findPoints_order}. The differential t
 point list in its order, the divisors of the leading coefficient included; in the suites that run
 the C program, a run on which it prints nothing (with \verb|-q|, as at the 2-adic exit) is compared
 even above the largest height, which the harness skips only when the C program prints something,
-so that \verb|test3.sh| compares 16 of its 21 runs. \verb|ratpoints-lean| and the C program agree
-on all 3219 comparisons of the eight default suites, 261 of the runs of \verb|test4.sh| by their
-points, and on the 13 of \verb|test4high|.
+so that \verb|test3.sh| compares 16 of its 21 runs. At the end of stage~E, \verb|ratpoints-lean| and
+the C program agreed on all 3219 comparisons of the eight default suites, 261 of the runs of
+\verb|test4.sh| by their points, and on the 13 of \verb|test4high|.
 
 \section{Deviations}\label{sec:denDeviations}
 
@@ -823,13 +823,13 @@ Besides the proofs:
     confirmed and 12 in part, all applied), each finding checked by a second reader; after the
     stage, two independent reviews, each finding checked by a second reader: of the C ranges, the
     deviations and the exclusions against the C code (9 findings, all confirmed: the definitions of
-    \verb|RP_MULDIV| go to the Jacobi test by tables, and eight deviations name the types and
-    arguments they left out), and of the code against the conventions of the project (85 findings,
-    82 confirmed), applied in eighteen rounds, among them one invariant for the loops over the set
-    bits of a word, a predicate for the result of the subtraction loop of the Jacobi symbol, the
-    part of a number prime to another as a definition, unfolding lemmas for the tests, the lemmas of
-    Mathlib's generality in their homes and at their generality, the weakest hypotheses, and names
-    from the statements;
+    \verb|RP_MULDIV| went to the Jacobi test by tables, and since stage~F2 belong to the reductions
+    (Definition~\ref{def:mulMod}), and eight deviations name the types and arguments they left out),
+    and of the code against the conventions of the project (85 findings, 82 confirmed), applied in
+    eighteen rounds, among them one invariant for the loops over the set bits of a word, a predicate
+    for the result of the subtraction loop of the Jacobi symbol, the part of a number prime to
+    another as a definition, unfolding lemmas for the tests, the lemmas of Mathlib's generality in
+    their homes and at their generality, the weakest hypotheses, and names from the statements;
   \item the \verb|#guard| examples of the model: the valuation, the factorizations with their
     cofactors, the divisors and the slopes against what \verb|ratpoints -v| and the build with
     \verb|DEBUG| print, the boundary of $512$ divisors, the words of the 2-adic information, the

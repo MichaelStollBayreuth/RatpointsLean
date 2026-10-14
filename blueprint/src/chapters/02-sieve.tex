@@ -271,21 +271,24 @@ sieve's denominators and the primes of the table need no side conditions.
 \section{The sieve}\label{sec:sieve}
 
 The model follows the rules of the translation throughout. A C \verb|long| is an \verb|Int| or a
-\verb|Nat|; the obligation that its value lies in the range of the type is a lemma of the faithful
-component that computes in \verb|long|s: since stage~D for the helper \verb|mod| and the negations
-of the map of a reversed search (Definition~\ref{def:useCLong}), and from stage~F on for the
-faithful components of the sieve. The remainder \verb|mod()| of the C code is Lean's Euclidean
-\verb|%|, but in the table of a prime with the exit and the tables of a prime power, which model it
-as it is and prove it equal to \verb|%| (Definitions~\ref{def:useCLong} and~\ref{def:examinePower}).
-The tables that the build of ratpoints generates (the squares, the inverses, the row of $0$) are
-Lean functions with lemmas that they compute what they claim, checked against the generated header
-by \verb|#guard| examples, and stage~F4 will check them as a whole against its faithful rows. Each
-loop of the sieve is a definition of type \verb|Id α| that its callers bind with \verb|←|, so that
-its contract, an \verb|@[spec]| theorem proved with the program logic of Lean core and with loop
-invariants that are named definitions, applies at the call; only \verb|findPoints| runs a component
-with \verb|Id.run|. The reference table of a prime (Definition~\ref{def:examinePrime}) is made of
-folds and maps, specified by ordinary lemmas; the table with the exit and the tables of a prime
-power, which loop over the residues, are components of type \verb|Id| with their contracts
+\verb|Nat|, except in the test for common factors, which computes on the 64-bit words of Lean core
+as the C code does (Definition~\ref{def:relprime}, Lemma~\ref{lem:relprime}); the obligation that
+its value lies in the range of the type is a lemma of the faithful component that computes in
+\verb|long|s: since stage~D for the helper \verb|mod| and the negations of the map of a reversed
+search (Definition~\ref{def:useCLong}), and from stage~F on for the faithful components of the sieve
+(in stage~F2 the bounds of the third stage, Lemma~\ref{lem:stage3}). The remainder \verb|mod()| of
+the C code is Lean's Euclidean \verb|%|, but in the table of a prime with the exit and the tables of
+a prime power, which model it as it is and prove it equal to \verb|%|
+(Definitions~\ref{def:useCLong} and~\ref{def:examinePower}). The tables that the build of ratpoints
+generates (the squares, the inverses, the row of $0$) are Lean functions with lemmas that they
+compute what they claim, checked against the generated header by \verb|#guard| examples, and
+stage~F4 will check them as a whole against its faithful rows. Each loop of the sieve is a
+definition of type \verb|Id α| that its callers bind with \verb|←|, so that its contract, an
+\verb|@[spec]| theorem proved with the program logic of Lean core and with loop invariants that are
+named definitions, applies at the call; only \verb|findPoints| runs a component with \verb|Id.run|.
+The reference table of a prime (Definition~\ref{def:examinePrime}) is made of folds and maps,
+specified by ordinary lemmas; the table with the exit and the tables of a prime power, which loop
+over the residues, are components of type \verb|Id| with their contracts
 (Lemmas~\ref{lem:examinePrime_eq} and~\ref{lem:power_admits}).
 
 \begin{definition}[The sieve of one denominator]\label{def:sieveDen}

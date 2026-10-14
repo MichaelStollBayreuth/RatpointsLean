@@ -213,10 +213,12 @@ nonzero and gives the bit arrays their numerators.
   $s \le 64 y + t$, and for $s < R$ the high mask on bit array $j$ keeps bit $t$ of word
   $y < \mathrm{rbaPack} \cdot (j + 1)$ exactly when $64 y + t + s < R (j + 1)$. The masks follow the
   form of the 512-bit build, of which the macros of the other builds are unrolled cases. Of the
-  other lines of the blocks of the builds, the constant \verb|zero| and the reads \verb|EXT0| and
-  \verb|EXT| go with the scan (Definition~\ref{def:scanPiece}); the constructor \verb|RBA|, used
-  only for the 2-adic pattern of a class, goes with the first stage (Definition~\ref{def:andRows});
-  the includes of the vector intrinsics and the printing of bit arrays are excluded from the model.
+  other lines of the blocks of the builds, the constant \verb|zero| goes with the scan
+  (Definition~\ref{def:scanPiece}) and the reads \verb|EXT0| and \verb|EXT| with a bit array through
+  the second stage and the extraction (Definition~\ref{def:siftBitArray}); the constructor
+  \verb|RBA|, used only for the 2-adic pattern of a class, goes with the first stage
+  (Definition~\ref{def:andRows}); the includes of the vector intrinsics and the printing of bit
+  arrays are excluded from the model.
 \end{definition}
 
 \begin{definition}[The lowest set bit]\label{def:ctz}
