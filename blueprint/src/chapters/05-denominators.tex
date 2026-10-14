@@ -448,7 +448,7 @@ $(c_d / q) = -1$, which these do not reach.
 
 \begin{definition}[The Jacobi test by tables]\label{def:jacobiTables}
   \uses{def:valuation, def:primeTable, def:ctz}
-  \lean{Ratpoints.jacobiPrimes, Ratpoints.jacobiTable, Ratpoints.mulModLimit, Ratpoints.Sieve.JacobiInfo, Ratpoints.Sieve.nonSquares, Ratpoints.Sieve.jacobiSigns, Ratpoints.Sieve.jacobiSetup, Ratpoints.Sieve.jacobiTest, Ratpoints.Sieve.nonSquares_spec, Ratpoints.Sieve.legendreSym_eq_ite_getElem!_nonSquares, Ratpoints.Sieve.ite_getElem!_jacobiSigns, Ratpoints.Sieve.IsJacobiInfo, Ratpoints.Sieve.jacobiSetup_spec, Ratpoints.Sieve.jacobiTest_spec, ZMod.isSquare_natCast_iff_exists_mul_self_mod_eq, Ratpoints.mulModLimit_lt_size, Ratpoints.Sieve.le_mulModLimit_of_jacobiSetup_eq_some}
+  \lean{Ratpoints.jacobiPrimes, Ratpoints.jacobiTable, Ratpoints.mulModLimit, Ratpoints.Sieve.JacobiInfo, Ratpoints.Sieve.nonSquares, Ratpoints.Sieve.jacobiSigns, Ratpoints.Sieve.jacobiSetup, Ratpoints.Sieve.jacobiTest, Ratpoints.Sieve.nonSquares_spec, Ratpoints.Sieve.legendreSym_eq_ite_getElem!_nonSquares, Ratpoints.Sieve.ite_getElem!_jacobiSigns, Ratpoints.Sieve.IsJacobiInfo, Ratpoints.Sieve.jacobiSetup_spec, Ratpoints.Sieve.jacobiTest_spec, ZMod.isSquare_natCast_iff_exists_mul_self_mod_eq, Ratpoints.mulModLimit_lt_size, Ratpoints.mulModLimit_lt_two_pow_32, Ratpoints.mul_lt_two_pow_64_of_le_mulModLimit, Ratpoints.Sieve.le_mulModLimit_of_jacobiSetup_eq_some}
   \leanok
   For $\ell = \pm 2^v \prod q_i^{e_i}$ and $b_{\mathrm{high}} \le \mathrm{mulModLimit} = 2^{32} - 1$
   (\verb|RP_MULMOD_LIMIT|, \csource{rp-private.h}{421}{421}): a record
@@ -472,7 +472,8 @@ $(c_d / q) = -1$, which these do not reach.
   $\ell \ne 0$, and then describe $\ell$ as above; and the test negates the exclusive or of the sign
   and the entries over the part of $b$ free of $2$ and of the primes of the tables, the odd part
   taken by the lowest set bit. A denominator of the test is at most $\mathrm{mulModLimit}$, below
-  $2^{32}$, where \verb|RP_MULDIV| is exact, and below $2^{64}$, so that it is a word.
+  $2^{32}$, where \verb|RP_MULDIV| is exact, and below $2^{64}$, so that it is a word; a value at
+  most $\mathrm{mulModLimit}$ times a modulus $p \le 2^{32}$ is below $2^{64}$.
 \end{definition}
 
 \begin{lemma}[The Jacobi test]\label{lem:jacobiTest}
@@ -744,40 +745,42 @@ examined (stage~I).
 The constants of the stage are in \verb|Ratpoints/Model/Constants.lean|, each citing its macro, and
 no proof depends on their values: $\mathrm{maxDivisors}$, $\mathrm{veryBig}$,
 $\mathrm{jacobiPrimes}$, $\mathrm{jacobiTable}$ and $\mathrm{mulModLimit}$, of which the proofs use
-only $\mathrm{mulModLimit} < 2^{64}$ (\verb|Ratpoints.mulModLimit_lt_size|, next to the constant),
-so that a denominator of the Jacobi test by tables is a word. The valuation and the divisors of the
-leading coefficient are in \verb|Ratpoints/Model/Setup.lean|, in the namespace
-\verb|Ratpoints.Setup|; the 2-adic information, the forbidden divisors, the Jacobi test, the shapes
-and the run in \verb|Ratpoints/Model/Denominators.lean|, in the namespace \verb|Ratpoints.Sieve|;
-the class word in the components of \verb|Ratpoints/Model/Sieve.lean| that make a piece and the
-numerators of one denominator; and the steps of the search in
-\verb|Ratpoints/Model/FindPoints.lean|. The contracts and the lemmas are in the files of
-\verb|Ratpoints/Proof| that the stage adds: the valuation in \verb|Valuation.lean|; the 2-adic
-information in \verb|TwoAdic.lean|; the denominators of odd degree, the factorization and the
-divisors with their slopes in \verb|Divisors.lean|; the forbidden valuations and divisors in
-\verb|Forbidden.lean|; the Jacobi test by the binary algorithm in \verb|Jacobi.lean| and by tables
-in \verb|JacobiTables.lean|; the lists and the tests of the shapes in \verb|Shapes.lean|; and the
-run over a shape in \verb|Denominators.lean|. Unlike those of stages C1 to D, the contracts of this
-stage are proved in files with Mathlib, next to the lemmas they serve, since several of them speak
-of notions of Mathlib (the primes and their valuations, the squares modulo a prime, the Jacobi
-symbol). The class word is in the contracts of \verb|Ratpoints/Proof/Words.lean|, which also holds
-the invariant of a loop over the set bits of a word that the walk of the check, the 2-adic
-information and the words of the shapes share; the filter of the reference by a test on the
-numerators is in \verb|Ratpoints/Proof/Sieve.lean|, the denominators of a point and the filter of
-the reference by the denominators in \verb|Ratpoints/Proof/BruteForce.lean|, the facts about the
-table of primes that the factorization uses, checked by \verb|decide|, in
-\verb|Ratpoints/Proof/Params.lean|, the lemmas on words, lists and ranges in core's namespaces in
-\verb|Ratpoints/Proof/Bits.lean|, the binary form at $a = k b$, the squares modulo $p$ and the
-negation of the quarter of \verb|LONG_MIN| in \verb|Ratpoints/Proof/Tables.lean|, and the
-denominators of the search with the theorems in \verb|Ratpoints/Proof/FindPoints.lean|. The lemmas
-of Mathlib's generality are in \verb|Ratpoints/Mathlib|, in the files that mirror their homes in
-Mathlib: \verb|Algebra/BigOperators/Group/List/Basic|, \verb|Algebra/Group/Even|,
-\verb|Data/Int/GCD|, \verb|Data/List/Basic|, \verb|Data/List/Pairwise|, \verb|Data/Nat/Factors|
-(with the part of a number prime to another, \verb|Nat.coprimePart|, which is $b^*$),
-\verb|Data/Nat/PadicValNat|, \verb|Data/Nat/Prime/Defs|, \verb|Data/Nat/Squarefree|,
-\verb|Data/ZMod/Basic|, \verb|NumberTheory/LegendreSymbol/JacobiSymbol| and
-\verb|NumberTheory/Padics/PadicVal/Basic|; that the macro \verb|CEIL| rounds up, a fact about the C
-code, is a private lemma next to its use.
+only $\mathrm{mulModLimit} < 2^{64}$ and $\mathrm{mulModLimit} < 2^{32}$
+(\verb|Ratpoints.mulModLimit_lt_size| and \verb|Ratpoints.mulModLimit_lt_two_pow_32|, next to the
+constant), so that a denominator of the Jacobi test by tables is a word, and a value at most
+$\mathrm{mulModLimit}$ times a modulus $p \le 2^{32}$ is below $2^{64}$, where the reductions by a
+reciprocal are exact (Lemma~\ref{lem:mulMod}). The valuation and the divisors of the leading
+coefficient are in \verb|Ratpoints/Model/Setup.lean|, in the namespace \verb|Ratpoints.Setup|; the
+2-adic information, the forbidden divisors, the Jacobi test, the shapes and the run in
+\verb|Ratpoints/Model/Denominators.lean|, in the namespace \verb|Ratpoints.Sieve|; the class word in
+the components of \verb|Ratpoints/Model/Sieve.lean| that make a piece and the numerators of one
+denominator; and the steps of the search in \verb|Ratpoints/Model/FindPoints.lean|. The contracts
+and the lemmas are in the files of \verb|Ratpoints/Proof| that the stage adds: the valuation in
+\verb|Valuation.lean|; the 2-adic information in \verb|TwoAdic.lean|; the denominators of odd
+degree, the factorization and the divisors with their slopes in \verb|Divisors.lean|; the forbidden
+valuations and divisors in \verb|Forbidden.lean|; the Jacobi test by the binary algorithm in
+\verb|Jacobi.lean| and by tables in \verb|JacobiTables.lean|; the lists and the tests of the shapes
+in \verb|Shapes.lean|; and the run over a shape in \verb|Denominators.lean|. Unlike those of stages
+C1 to D, the contracts of this stage are proved in files with Mathlib, next to the lemmas they
+serve, since several of them speak of notions of Mathlib (the primes and their valuations, the
+squares modulo a prime, the Jacobi symbol). The class word is in the contracts of
+\verb|Ratpoints/Proof/Words.lean|, which also holds the invariant of a loop over the set bits of a
+word that the walk of the check, the 2-adic information and the words of the shapes share; the
+filter of the reference by a test on the numerators is in \verb|Ratpoints/Proof/Sieve.lean|, the
+denominators of a point and the filter of the reference by the denominators in
+\verb|Ratpoints/Proof/BruteForce.lean|, the facts about the table of primes that the factorization
+uses, checked by \verb|decide|, in \verb|Ratpoints/Proof/Params.lean|, the lemmas on words, lists
+and ranges in core's namespaces in \verb|Ratpoints/Proof/Bits.lean|, the binary form at $a = k b$,
+the squares modulo $p$ and the negation of the quarter of \verb|LONG_MIN| in
+\verb|Ratpoints/Proof/Tables.lean|, and the denominators of the search with the theorems in
+\verb|Ratpoints/Proof/FindPoints.lean|. The lemmas of Mathlib's generality are in
+\verb|Ratpoints/Mathlib|, in the files that mirror their homes in Mathlib:
+\verb|Algebra/BigOperators/Group/List/Basic|, \verb|Algebra/Group/Even|, \verb|Data/Int/GCD|,
+\verb|Data/List/Basic|, \verb|Data/List/Pairwise|, \verb|Data/Nat/Factors| (with the part of a
+number prime to another, \verb|Nat.coprimePart|, which is $b^*$), \verb|Data/Nat/PadicValNat|,
+\verb|Data/Nat/Prime/Defs|, \verb|Data/Nat/Squarefree|, \verb|Data/ZMod/Basic|,
+\verb|NumberTheory/LegendreSymbol/JacobiSymbol| and \verb|NumberTheory/Padics/PadicVal/Basic|; that
+the macro \verb|CEIL| rounds up, a fact about the C code, is a private lemma next to its use.
 
 \section{The evidence}\label{sec:den-evidence}
 

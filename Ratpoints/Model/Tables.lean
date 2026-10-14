@@ -19,18 +19,20 @@ the coefficients reduced by the helper `mod` of the C code for `long`s or by the
 GMP integers, by Horner's rule with Barrett's reduction on a fixed schedule, handing back the
 coefficients reduced modulo the prime (`Ratpoints.Sieve.examinePrime?`, `Ratpoints.Sieve.modLong`,
 `Ratpoints.Sieve.hornerBarrett`), the tables of a prime power (`Ratpoints.Sieve.examinePower`), and
-the sieve entry of a modulus, a prime, a prime power or a product of them, by its factors
-(`Ratpoints.Sieve.SieveEntry`), with the rows of a denominator
-(`Ratpoints.Sieve.SieveEntry.admits`). The table of a prime without the exit
-(`Ratpoints.Sieve.examinePrime`) is the reference of the table with it, which gives the same table
-for `0 < p < Ratpoints.maxPrimeEven` whenever it gives one (`Ratpoints.Sieve.examinePrime?_spec`).
-The tables that the build of ratpoints generates are computed here: the squares and the inverses by
-`Ratpoints.Sieve.squaresMod` and `Ratpoints.Sieve.inversesMod`, and the row of `0` of a prime by
-`Ratpoints.Sieve.Entry.admits`, in its case `r = 0`. The loop of the tables
-(`Ratpoints.Sieve.examinePrimes`) is in `Ratpoints.Model.Denominators`, the factors of a modulus
-(`Ratpoints.modulusFactors`) in `Ratpoints.Model.Params`, and the construction of the sieve entry of
-a modulus (`Ratpoints.makeModulus?`) in `Ratpoints.Model.FindPoints`; the rows as words and the
-sieve that uses them are in `Ratpoints.Model.Sieve`.
+the sieve entry of a modulus, a prime, a prime power or a product of them, by its factors and with
+the reciprocal of the modulus (`Ratpoints.Sieve.SieveEntry`), with the rows of a denominator
+(`Ratpoints.Sieve.SieveEntry.admits`). The reciprocal of a modulus gives the remainder and the
+quotient by a multiplication (`Ratpoints.Sieve.magic`, `Ratpoints.Sieve.mulMod`,
+`Ratpoints.Sieve.mulDiv`). The table of a prime without the exit (`Ratpoints.Sieve.examinePrime`) is
+the reference of the table with it, which gives the same table for `0 < p < Ratpoints.maxPrimeEven`
+whenever it gives one (`Ratpoints.Sieve.examinePrime?_spec`). The tables that the build of ratpoints
+generates are computed here: the squares and the inverses by `Ratpoints.Sieve.squaresMod` and
+`Ratpoints.Sieve.inversesMod`, and the row of `0` of a prime by `Ratpoints.Sieve.Entry.admits`, in
+its case `r = 0`. The loop of the tables (`Ratpoints.Sieve.examinePrimes`) is in
+`Ratpoints.Model.Denominators`, the factors of a modulus (`Ratpoints.modulusFactors`) in
+`Ratpoints.Model.Params`, and the construction of the sieve entry of a modulus
+(`Ratpoints.makeModulus?`) in `Ratpoints.Model.FindPoints`; the rows as words and the sieve that
+uses them are in `Ratpoints.Model.Sieve`.
 
 ## Main definitions
 
@@ -46,6 +48,8 @@ sieve that uses them are in `Ratpoints.Model.Sieve`.
   modulo the prime.
 * `Ratpoints.Sieve.modinv`, `Ratpoints.Sieve.Power`, `Ratpoints.Sieve.examinePower`: the inverse
   modulo `m` by the extended Euclidean algorithm, and the tables of a prime power.
+* `Ratpoints.Sieve.magic`, `Ratpoints.Sieve.mulMod`, `Ratpoints.Sieve.mulDiv`: the reciprocal of a
+  modulus, and the remainder and the quotient by a multiplication with it.
 * `Ratpoints.Sieve.Entry.admits`, `Ratpoints.Sieve.Power.admits`, `Ratpoints.Sieve.Factor`,
   `Ratpoints.Sieve.SieveEntry`, `Ratpoints.Sieve.SieveEntry.admits`, `Ratpoints.Sieve.survives`:
   the rows of a denominator for a prime, for a prime power, and for a modulus by its factors.
@@ -97,10 +101,9 @@ Deviation: only the fields that the rows of a prime read; the rows of the residu
 keeps in the field `sieve`, that of `0` from the build and the others made by `init` when a
 denominator first needs them, are those of the sieve entry of the prime
 (`Ratpoints.Sieve.SieveEntry.rows`), made from `Ratpoints.Sieve.Entry.admits` when first needed and
-kept for the run; the fields `init`, `nf`, `factor` and `pw` are those of the sieve entry
-`Ratpoints.Sieve.SieveEntry`, of which the prime is the single factor; `magic`, `bias`, `rbainv` and
-`dinv` serve the reductions of the sieve and the packing (stages F2 and F3), `r` the choice of the
-moduli (stage I). -/
+kept for the run; the fields `init`, `magic`, `nf`, `factor` and `pw` are those of the sieve entry
+`Ratpoints.Sieve.SieveEntry`, of which the prime is the single factor; `bias`, `rbainv` and `dinv`
+serve the packing (stage F3), `r` the choice of the moduli (stage I). -/
 structure Entry where
   /-- The prime. -/
   p : Nat
@@ -241,11 +244,11 @@ field `ssp` of `prec_entry`; it keeps only `p`, the table and the inverses
 (`Ratpoints.Sieve.Entry`), and no rows: those of the sieve entry of the prime
 (`Ratpoints.Sieve.SieveEntry.rows`) are made from it when they are first needed, also the row of
 `0`, which `examine_prime` installs from the build; the fields `init`, `nf` and `pw` that
-`examine_prime` sets (lines 1800 and 1817) are those of the sieve entry of the prime
-(`Ratpoints.Sieve.SieveEntry`), of which the prime is the single factor, made by
-`Ratpoints.makeModulus?`; no reciprocal `magic`, bias `bias` and inverse `rbainv`, which serve the
-reduction of the sieve and the packing (stages F2 and F3), and no density `r` (line 1811), which
-serves the choice of the moduli (stage I). -/
+`examine_prime` sets (lines 1800 and 1817) and its reciprocal `magic` (line 1808) are those of the
+sieve entry of the prime (`Ratpoints.Sieve.SieveEntry`), of which the prime is the single factor,
+made by `Ratpoints.makeModulus?`, which sets the reciprocal there; no bias `bias` and inverse
+`rbainv`, which serve the packing (stage F3), and no density `r` (line 1811), which serves the
+choice of the moduli (stage I). -/
 def examinePrime? (c : List Int) (d p : Nat) (useCLong : Bool) :
     Id (Option (Entry × Array Nat)) := do
   let cm := (Array.range (d + 1)).map fun n ↦
@@ -351,6 +354,46 @@ def examinePower (c : List Int) (d p e : Nat) (useCLong : Bool) : Id Power := do
     else inv := inv.push (← modinv x m)
   return { p, e, m, fsq, gsq, inv }
 
+/-! ### The reductions by a reciprocal -/
+
+/-- The reciprocal `⌊(2 ^ 64 - 1) / p⌋ + 1` of the modulus `p ≥ 2`, which is `2 ^ 64 / p` rounded
+up: with it, the remainder (`Ratpoints.Sieve.mulMod`) and the quotient (`Ratpoints.Sieve.mulDiv`)
+by `p` of every `u` with `u p < 2 ^ 64` are computed by multiplications. The C code computes it as
+`ULONG_MAX/p + 1` where it sets a field `magic`: in the sieve entries of the moduli, which
+`examine_prime`, `make_power` and `make_modulus` make (lines 1808, 2422 and 2454 of
+`find_points.c`; here `Ratpoints.makeModulus?`), and in the tables of the Jacobi test (line 700;
+stage F). For `p = 1`, which is no modulus, it is `2 ^ 64`, where `ULONG_MAX / 1 + 1` wraps to `0`
+in the C code. -/
+def magic (p : Nat) : Nat := (2 ^ 64 - 1) / p + 1
+
+/-- The remainder of `u` modulo `p` by a multiplication with the reciprocal `m`, `RP_MULMOD`: the
+low 64 bits of `m u`, times `p`, shifted right by 64 bits. For the reciprocal
+`m = Ratpoints.Sieve.magic p` it is `u % p` whenever `u p < 2 ^ 64`, which the C code ensures by
+reducing only values below `2 ^ 32` modulo moduli below `2 ^ 32`.
+
+C: `rp-private.h:404-408`, `rp-private.h:411`, `rp-private.h:413-414`, `rp-private.h:417`
+
+Deviation: natural numbers for the `unsigned long`s and for the `long` result, which is below `p`;
+the product `m u` reduced modulo `2 ^ 64`, as the multiplication of `unsigned long`s wraps, and its
+product with `p` exact, as the 128-bit product; the argument `u` a natural number, for the `long`
+that the macro converts to an `unsigned long`, which the C code passes non-negative; the form with
+the 128-bit product, which the builds of the model compile (the compiler defines
+`__SIZEOF_INT128__`, and neither `RP_MULMOD_DIVIDE` nor `RP_NO_INT128` is set), for the division
+`u % p` of the other builds, which gives the same remainder where the multiplication is exact. -/
+def mulMod (u p m : Nat) : Nat := m * u % 2 ^ 64 * p / 2 ^ 64
+
+/-- The quotient of `u` by `p` by a multiplication with the reciprocal `m`, `RP_MULDIV`: the high 64
+bits of `u m`. For the reciprocal `m = Ratpoints.Sieve.magic p` it is `u / p` whenever
+`u p < 2 ^ 64`.
+
+C: `rp-private.h:409-410`, `rp-private.h:415-416`
+
+Deviation: natural numbers for the `unsigned long`s and for the `long` result, the product `u m`
+exact, as the 128-bit product; no argument `p`, which that form does not read; the form with the
+128-bit product, which the builds of the model compile, for the division `u / p` of the other
+builds, which gives the same quotient where the multiplication is exact. -/
+def mulDiv (u m : Nat) : Nat := u * m / 2 ^ 64
+
 /-! ### The rows of a denominator -/
 
 /-- Whether the row of the denominator `b` in the table `e` of the prime `p` admits the numerator
@@ -406,7 +449,8 @@ def Factor.admits : Factor → Nat → Int → Bool
 
 /-- The sieve entry of a modulus `p` of the sieve, a prime, a prime power or a product of primes and
 prime powers, given by its factors (`Ratpoints.Sieve.Factor`): one for a prime or a prime power, two
-or more for a product. Its row for a denominator is the and of the rows of its factors
+or more for a product; with the reciprocal of `p` (`Ratpoints.Sieve.magic`), with which the stages
+of the sieve reduce (stage F). Its row for a denominator is the and of the rows of its factors
 (`Ratpoints.Sieve.SieveEntry.admits`).
 
 C: `rp-private.h:497-498`, `rp-private.h:520`, `rp-private.h:542-555`
@@ -418,15 +462,16 @@ whose entry has `nf ≥ 2` and points to the entries `factor` of its factors; no
 `RP_MAX_FACTORS` on the number of factors; the rows of the residues, which ratpoints keeps in the
 field `sieve`, are `Ratpoints.Sieve.SieveEntry.rows`, made when first needed and kept for the run,
 by one function for every kind (`Ratpoints.Sieve.SieveEntry.row`), for the function `init` of the
-kind, of the type `ratpoints_init_fun`; no reciprocal `magic`, bias `bias`, inverse `rbainv` and
-inverses `dinv`, which serve the reduction of the sieve and the packing (stages F2 and F3), and no
-density
-`r`, which serves the choice of the moduli (stage I). -/
+kind, of the type `ratpoints_init_fun`; a natural number for the `unsigned long` reciprocal
+`magic`; no bias `bias`, inverse `rbainv` and inverses `dinv`, which serve the packing (stage F3),
+and no density `r`, which serves the choice of the moduli (stage I). -/
 structure SieveEntry where
   /-- The modulus. -/
   p : Nat
   /-- The factors: one for a prime or a prime power, two or more for a product. -/
   factors : List Factor
+  /-- The reciprocal of the modulus (`Ratpoints.Sieve.magic`). -/
+  magic : Nat
 
 /-- Whether the row of the denominator `b` in the sieve entry `e` of the modulus `p` admits the
 numerator `a`: for the residues `r = b mod p` and `x = a mod p`, the row of `r` of every factor
@@ -563,13 +608,25 @@ def survives (entries : List SieveEntry) (b : Nat) (a : Int) : Bool := entries.a
   let c := [6, -3, 5, 2, 75]
   let pw := Id.run (examinePower c 4 3 2 true)
   let e5 := examinePrime c 4 5
-  let se : SieveEntry := ⟨45, [.power pw, .prime e5]⟩
+  let se : SieveEntry := ⟨45, [.power pw, .prime e5], magic 45⟩
   (List.range 45).all fun b ↦ (List.range 90).all fun a : Nat ↦
     se.admits b a == (pw.admits b a && e5.admits b a)
 #guard [3, 5, 7, 13].all fun p ↦
   let e := examinePrime [6, -3, 5, 2, 75] 4 p
   (List.range (2 * p)).all fun b ↦ (List.range (3 * p)).all fun a : Nat ↦
-    (⟨p, [.prime e]⟩ : SieveEntry).admits b a == e.admits b a
+    (⟨p, [.prime e], magic p⟩ : SieveEntry).admits b a == e.admits b a
+
+-- The reductions by the reciprocal against the remainder and the quotient, at the ends of their
+-- range `u p < 2 ^ 64` (the largest such `u`, its neighbours below, the multiples of `p` and next
+-- to them, and the bound `Ratpoints.mulModLimit` of the callers), for every prime of the table,
+-- the composite moduli 9, 15, 45 and 255, and `2`; and the reciprocals of 3, 5 and 251.
+#guard (primeTable.toList ++ [2, 9, 15, 45, 255]).all fun p ↦
+  let top := (2 ^ 64 - 1) / p
+  ([0, 1, p - 1, p, p + 1, 2 * p - 1, 2 * p, mulModLimit, mulModLimit + 1, top, top - 1, top - p,
+      top / p * p, top / p * p - 1] ++ (List.range 64).map (2 ^ ·)).all fun u ↦
+    2 ^ 64 ≤ u * p || mulMod u p (magic p) == u % p && mulDiv u (magic p) == u / p
+#guard magic 3 == 6148914691236517206 && magic 5 == 3689348814741910324 &&
+  magic 251 == 73493004277727298
 
 -- The row of `b = 3` modulo 5 admits `a` when `f(a / 3)` is a square modulo 5.
 #guard (List.range 5).map (fun a : Nat ↦ (examinePrime [1, 0, 1] 2 5).admits 3 a) ==

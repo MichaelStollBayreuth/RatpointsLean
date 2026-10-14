@@ -424,9 +424,10 @@ Lemma~\ref{lem:sift_eq_checkDen} maps their side.
   \csource{find_points.c}{4954}{4963}); then what \verb|sieving_info| computes
   (Definition~\ref{def:sievingInfo}), with the flag of the \verb|long|s: the tables of the examined
   primes, the forbidden divisors for even $d$ (Definition~\ref{def:forbidden}) and the sieve entries
-  of the moduli, and no points when the curve has no points modulo a prime examined on the way
-  (\csource{find_points.c}{4992}{5012}); the checked loop off when there are no forbidden divisors
-  and no Jacobi test (\csource{find_points.c}{2793}{2795}); the shape that \verb|run_setup| chooses
+  of the moduli with their reciprocals, which the run takes with stage~F, and no points when the
+  curve has no points modulo a prime examined on the way (\csource{find_points.c}{4992}{5012}); the
+  checked loop off when there are no forbidden divisors and no Jacobi test
+  (\csource{find_points.c}{2793}{2795}); the shape that \verb|run_setup| chooses
   (Definition~\ref{def:Shape}); and the points at infinity followed by the points of the
   denominators of the shape, with its tests, the class words and pieces of at most
   $\mathrm{arraySizeAt}(H)$ bit arrays, each mapped by $\mathrm{swapPoint}$ when the flag is set
@@ -589,11 +590,12 @@ Each component of the set-up differs from the C code in a stated way, recorded i
     helper \verb|mod| (\verb|Sieve.modLong|);
   \item of \verb|examine_prime| what the table, its last entry, the coefficients modulo $p$ that it
     hands back and the exit need: its entry of the prime and its codes $0$, $1$ and $2$ serve the
-    choice of the moduli (stage~I), and its reciprocal \verb|magic|, bias and inverse \verb|rbainv|
-    the reduction of the sieve and the packing (stages~F2 and~F3); one loop over the residues, where
-    the C code has one for each branch of the schedule of Horner's rule; the table and the
-    coefficients fresh arrays and the entry a fresh value, returned, for the buffers that the C code
-    takes them from and the entry and the array of its caller where it stores them;
+    choice of the moduli (stage~I), its reciprocal \verb|magic| is set in the sieve entry of the
+    prime that the model makes (\verb|makeModulus?|), and its bias and inverse \verb|rbainv| serve
+    the packing (stage~F3); one loop over the residues, where the C code has one for each branch of
+    the schedule of Horner's rule; the table and the coefficients fresh arrays and the entry a fresh
+    value, returned, for the buffers that the C code takes them from and the entry and the array of
+    its caller where it stores them;
   \item the arguments of \verb|sieving_info| that serve the choice of the moduli (the mean number of
     bits per word, whether the number of primes was left to the library, the 2-adic classes) are not
     modelled; the exits give the empty list, where \verb|sieving_info| returns the prime and

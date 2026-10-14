@@ -13,10 +13,12 @@ value of the default build and a docstring that names its macro, and the table o
 the sieve takes its moduli. Changing a constant changes the model as changing the macro changes the
 C program: no proof depends on the values of the constants beyond the facts checked here by
 `decide`, that `Ratpoints.rbaPack`, `Ratpoints.defaultArraySize` and `Ratpoints.maxArraySize` are
-positive, that `Ratpoints.mulModLimit` is below `2 ^ 64` (`Ratpoints.mulModLimit_lt_size`), that
-`Ratpoints.hornerSteps` is at least 1 (`Ratpoints.one_le_hornerSteps`) and that
-`Ratpoints.maxBitsInPrime` is at most 10 (`Ratpoints.maxBitsInPrime_le_ten`), and of the table the
-proofs use only that its entries are the odd primes below 1022, in increasing order
+positive, that `Ratpoints.mulModLimit` is below `2 ^ 64` and `2 ^ 32`
+(`Ratpoints.mulModLimit_lt_size`, `Ratpoints.mulModLimit_lt_two_pow_32`), that
+`Ratpoints.hornerSteps` is at least 1 (`Ratpoints.one_le_hornerSteps`), that
+`Ratpoints.maxBitsInPrime` is at most 10 (`Ratpoints.maxBitsInPrime_le_ten`) and that
+`Ratpoints.stage3Limit` is at most `2 ^ 32` (`Ratpoints.stage3Limit_le_two_pow_32`), and of the
+table the proofs use only that its entries are the odd primes below 1022, in increasing order
 (`Ratpoints.prime_of_mem_primeTable`, which checks them one by one, and
 `Ratpoints.lt_of_mem_primeTable`, `Ratpoints.mem_primeTable_of_prime` and
 `Ratpoints.pairwise_lt_toList_primeTable`, which `decide` checks).
@@ -42,7 +44,9 @@ proofs use only that its entries are the odd primes below 1022, in increasing or
   polynomial of odd degree.
 * `Ratpoints.veryBig`: the valuation of `0` in the C code.
 * `Ratpoints.jacobiPrimes`, `Ratpoints.jacobiTable`, `Ratpoints.mulModLimit`: the bounds of the
-  Jacobi test by tables.
+  Jacobi test by tables; the last is the largest value that the C code reduces by a multiplication.
+* `Ratpoints.stage3Limit`: the bound below which the third stage of the sieve reduces by a
+  multiplication.
 -/
 
 @[expose] public section
@@ -209,6 +213,19 @@ stay at most this (`Ratpoints.Sieve.jacobiSetup`).
 C: `rp-private.h:421` -/
 def mulModLimit : Nat := 2 ^ 32 - 1
 
+/-- The bound that the third stage of the sieve (stage F) compares `2 p H` with, for a prime `p` of
+the stage and the height bound `H`, `RP_STAGE3_LIMIT`: below it, the third stage shifts the product
+of a numerator and the inverse of the denominator modulo `p` by the multiple `p H` of `p`, which
+makes it a natural number below the bound, and reduces that by a multiplication with the reciprocal
+of `p` (`Ratpoints.Sieve.mulMod`), exact below `2 ^ 64 / p`; at or above it, the stage divides. The
+proofs use only that it is at most `2 ^ 32` (`Ratpoints.stage3Limit_le_two_pow_32`).
+
+C: `rp-private.h:472`
+
+Deviation: a natural number for the `double` `4294967296.0`, which the C code compares with the
+`double` product `2 p H`. -/
+def stage3Limit : Nat := 2 ^ 32
+
 theorem rbaPack_pos : 0 < rbaPack := by decide
 theorem defaultArraySize_pos : 0 < defaultArraySize := by decide
 theorem maxArraySize_pos : 0 < maxArraySize := by decide
@@ -216,6 +233,12 @@ theorem maxArraySize_pos : 0 < maxArraySize := by decide
 /-- The bound `Ratpoints.mulModLimit` on the denominators of the Jacobi test by tables is below
 `2 ^ 64`, so that `Ratpoints.Sieve.jacobiTest` reads them as words. -/
 theorem mulModLimit_lt_size : mulModLimit < UInt64.size := by decide
+
+/-- The values that the C code reduces by a multiplication with a reciprocal, at most
+`Ratpoints.mulModLimit`, are below `2 ^ 32`, as `RP_MULMOD_LIMIT` says: so the product of such a
+value and a modulus below `2 ^ 32` is below `2 ^ 64`, where the reduction is exact
+(`Ratpoints.Sieve.mulMod`, `Ratpoints.Sieve.mulDiv`). -/
+theorem mulModLimit_lt_two_pow_32 : mulModLimit < 2 ^ 32 := by decide
 
 /-- The Horner steps of the table of a prime reduce their accumulator at all
 (`Ratpoints.hornerSteps`), as the C code would check at compile time: `maxBitsInPrime ≤ 32`. -/
@@ -225,6 +248,11 @@ theorem one_le_hornerSteps : 1 ≤ hornerSteps := by decide
 header knows only the sizes 5 to 10 and takes 7 for any other (`rp-private.h:321-361`), and the
 comment on Horner's rule in `examine_power` relies on `m < 2 ^ 10` (`find_points.c:2286-2287`). -/
 theorem maxBitsInPrime_le_ten : maxBitsInPrime ≤ 10 := by decide
+
+/-- The third stage of the sieve reduces by a multiplication only values below `2 ^ 32`
+(`Ratpoints.stage3Limit`), the bound below which the reciprocal of every modulus below `2 ^ 32`
+reduces exactly, as the C code assumes of `RP_STAGE3_LIMIT` without a check. -/
+theorem stage3Limit_le_two_pow_32 : stage3Limit ≤ 2 ^ 32 := by decide
 
 /-! ### Examples -/
 
@@ -237,6 +265,8 @@ theorem maxBitsInPrime_le_ten : maxBitsInPrime ≤ 10 := by decide
 
 #guard maxDivisors == 512 && veryBig == 1000 && jacobiPrimes == 16 && jacobiTable == 8192 &&
   mulModLimit == 4294967295
+
+#guard stage3Limit == 4294967296
 
 -- The numbers of primes that the header lists for the builds with moduli of 5 to 10 bits.
 #guard [5, 6, 7, 8, 9, 10].map (fun b ↦ (primeTable.toList.filter (· < 2 ^ b)).length) ==

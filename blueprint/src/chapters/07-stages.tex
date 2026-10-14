@@ -98,8 +98,8 @@ the unstaged sieve with its check: the same numerators reach the exact check, in
 \section{The reductions by a multiplication}\label{sec:mulMod}
 
 \begin{definition}[The reciprocal and the reductions]\label{def:mulMod}
-  Proposed names: \lname{Ratpoints.stage3Limit}, \lname{Ratpoints.stage3Limit\_le\_two\_pow\_32},
-  \lname{Ratpoints.Sieve.magic}, \lname{Ratpoints.Sieve.mulMod}, \lname{Ratpoints.Sieve.mulDiv}.
+  \lean{Ratpoints.stage3Limit, Ratpoints.stage3Limit_le_two_pow_32, Ratpoints.Sieve.magic, Ratpoints.Sieve.mulMod, Ratpoints.Sieve.mulDiv}
+  \leanok
   The bound $\mathrm{stage3Limit} = 2^{32}$ below which the third stage reduces by a multiplication
   (\verb|RP_STAGE3_LIMIT|, \csource{rp-private.h}{472}{472}), with the fact
   $\mathrm{stage3Limit} \le 2^{32}$ checked by evaluation; the reciprocal of a modulus $p$,
@@ -117,14 +117,15 @@ the unstaged sieve with its check: the same numerators reach the exact check, in
 
 \begin{lemma}[The reductions are exact]\label{lem:mulMod}
   \uses{def:mulMod}
-  Proposed names: \lname{Ratpoints.Sieve.magic\_mul\_eq}, \lname{Ratpoints.Sieve.mulMod\_magic},
-  \lname{Ratpoints.Sieve.mulDiv\_magic}, \lname{Ratpoints.Sieve.sub\_mulDiv\_magic\_mul},
-  \lname{Ratpoints.mul\_lt\_two\_pow\_64\_of\_le\_mulModLimit}. For $0 < p$ and $u p < 2^{64}$, the
-  reduction with the reciprocal of $p$ gives $u \bmod p$, and the quotient gives $\lfloor u / p
-  \rfloor$.
+  \lean{Ratpoints.Sieve.magic_mul_eq, Ratpoints.Sieve.mulMod_magic, Ratpoints.Sieve.mulDiv_magic, Ratpoints.Sieve.sub_mulDiv_magic_mul}
+  \leanok
+  For $0 < p$ and $u p < 2^{64}$, the reduction with the reciprocal of $p$ gives $u \bmod p$, and
+  the quotient gives $\lfloor u / p \rfloor$, so that $u$ less $p$ times the quotient is
+  $u \bmod p$.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   Write $\mathrm{magic}(p)\, p = 2^{64} + \delta$ with $0 \le \delta < p$ and $u = k p + s$ with
   $s < p$. Then $\mathrm{magic}(p)\, u = k\, 2^{64} + (s\, 2^{64} + u \delta) / p$, whose second
   part is an integer below $2^{64}$, since $s < p$ and $u \delta \le u p < 2^{64}$; so the low half

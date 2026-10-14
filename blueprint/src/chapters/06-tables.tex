@@ -325,25 +325,27 @@ which $\mathrm{maxPrimeEven} \le 2^{32}$ gives.
   \leanok
   A factor of a modulus is a prime with its table or a prime power with its tables; the sieve entry
   of a modulus $m$ is $m$ with its factors, one for a prime or a prime power, two or more for a
-  product (\csource{rp-private.h}{497}{498}, \csource{rp-private.h}{520}{520},
-  \csource{rp-private.h}{542}{555}). Its row of $b$ admits $a$ when the row of every factor admits
-  $a$, each factor reading $b$ and $a$ modulo its own modulus, which divides $m$
-  (\csource{init.c}{399}{414}, \csource{init.c}{419}{429}); a numerator \emph{survives} a list of
-  sieve entries for $b$ when the row of $b$ of every entry admits it, the test that
-  Definition~\ref{def:admits} gave for the tables of primes. A sieve entry is \emph{sound} when its
-  modulus is positive and its row of $b$ admits $a$ for every $\gcd(a, b) = 1$ and $y^2 = F(a, b)$.
+  product, and the reciprocal of $m$ (Definition~\ref{def:mulMod}; \csource{rp-private.h}{497}{498},
+  \csource{rp-private.h}{520}{520}, \csource{rp-private.h}{542}{555}). Its row of $b$ admits $a$
+  when the row of every factor admits $a$, each factor reading $b$ and $a$ modulo its own modulus,
+  which divides $m$ (\csource{init.c}{399}{414}, \csource{init.c}{419}{429}); a numerator
+  \emph{survives} a list of sieve entries for $b$ when the row of $b$ of every entry admits it, the
+  test that Definition~\ref{def:admits} gave for the tables of primes. A sieve entry is \emph{sound}
+  when its modulus is positive and its row of $b$ admits $a$ for every $\gcd(a, b) = 1$ and
+  $y^2 = F(a, b)$.
 \end{definition}
 
 \begin{definition}[The sieve entry of a modulus]\label{def:makeModulus}
-  \uses{def:SieveEntry, def:modulusFactors, def:examinePrimeExit, def:examinePower}
+  \uses{def:SieveEntry, def:modulusFactors, def:examinePrimeExit, def:examinePower, def:mulMod}
   \lean{Ratpoints.makeModulus?}
   \leanok
   A component of type \verb|Id|: by the factors of $m$, a factor with the exponent $1$ takes the
-  table of its prime from the loop of the tables when its position is below the number examined,
-  and is examined now, with the exit, otherwise; a factor with the exponent $e \ge 2$ gets the
-  tables of its prime power (\verb|make_power| and \verb|make_modulus|,
-  \csource{find_points.c}{2414}{2429}, \csource{find_points.c}{2434}{2475},
-    \csource{find_points.c}{2546}{2546}; the tables of a prime power that \verb|add_moduli| examines
+  table of its prime from the loop of the tables when its position is below the number examined, and
+  is examined now, with the exit, otherwise; a factor with the exponent $e \ge 2$ gets the tables of
+  its prime power; the entry holds the reciprocal of $m$, which \verb|examine_prime| sets for a
+  prime, \verb|make_power| for a prime power and \verb|make_modulus| for a product
+  (\csource{find_points.c}{2414}{2429}, \csource{find_points.c}{2434}{2475},
+  \csource{find_points.c}{2546}{2546}; the tables of a prime power that \verb|add_moduli| examines
   when a candidate first needs it and keeps by its index, \csource{find_points.c}{2350}{2354},
   \csource{find_points.c}{2358}{2359}, \csource{find_points.c}{2387}{2395}, with their count,
   \csource{find_points.c}{2548}{2548}; the primes examined for the third stage,
@@ -352,12 +354,13 @@ which $\mathrm{maxPrimeEven} \le 2^{32}$ gives.
 
 \begin{lemma}[The rows of a modulus let every point through]\label{lem:sieveEntry_admits}
   \uses{def:makeModulus, lem:modulusFactors, lem:admits_examinePrime, lem:power_admits,
-    lem:examinePrime_eq, lem:examinePrime_none}
+    lem:examinePrime_eq, lem:examinePrime_none, def:mulMod}
   \lean{Ratpoints.Sieve.Entry.admits_mod_of_dvd, Ratpoints.Sieve.Power.admits_mod_of_dvd, Ratpoints.MakeModulusInvariant, Ratpoints.makeModulus?_spec}
   \leanok
   For tables of the loop that are those of the reference: if the entry of $m$ is made, it is an
-  entry of $m$, and its row of $b$ admits $a$ for every $\gcd(a, b) = 1$ with $y^2 = F(a, b)$; if it
-  is not made, the curve has no points. Neither needs more of $m$ than the factorization computes.
+  entry of $m$ with the reciprocal of $m$, and its row of $b$ admits $a$ for every $\gcd(a, b) = 1$
+  with $y^2 = F(a, b)$; if it is not made, the curve has no points. Neither needs more of $m$ than
+  the factorization computes.
 \end{lemma}
 
 \begin{proof}
@@ -404,28 +407,31 @@ parameters of the command line examine the first $q$ primes and take primes as m
   \lean{Ratpoints.sievingInfo}
   \leanok
   The loop of the tables over the examined primes (Definition~\ref{def:examinePrimes}); for the
-  checked loop on, the forbidden divisors of the further primes; and the sieve entries of the
-  moduli, in a loop over them in their order (Definition~\ref{def:makeModulus}); none when the curve
-  has no points modulo a prime examined on the way (\csource{find_points.c}{2522}{2532},
+  checked loop on, the forbidden divisors of the further primes; the sieve entries of the moduli,
+  in a loop over them in their order (Definition~\ref{def:makeModulus}); and the array of the
+  reciprocals of the entries, in their order (\csource{find_points.c}{3064}{3070}); none when the
+  curve has no points modulo a prime examined on the way (\csource{find_points.c}{2522}{2532},
   \csource{find_points.c}{2892}{2900}, \csource{find_points.c}{3102}{3103}).
 \end{definition}
 
 \begin{lemma}[What \texttt{sieving\_info} computes is sound]\label{lem:sievingInfo}
-  \uses{def:sievingInfo, lem:examinePrimes, lem:sieveEntry_admits, def:forbidden}
+  \uses{def:sievingInfo, lem:examinePrimes, lem:sieveEntry_admits, def:forbidden, def:mulMod}
   \lean{Ratpoints.SievingInfoInvariant, Ratpoints.sievingInfo_spec}
   \leanok
   For well-formed parameters and either value of the switch of the checked loop: if
-  \verb|sieving_info| gives a result, every sieve entry is sound and the forbidden divisors are
-  among those that the two loops may record; if it gives none, the curve has no points.
+  \verb|sieving_info| gives a result, every sieve entry is sound and holds the reciprocal of its
+  modulus, the reciprocals returned are those of the entries in their order, and the forbidden
+  divisors are among those that the two loops may record; if it gives none, the curve has no
+  points.
 \end{lemma}
 
 \begin{proof}
   \leanok
   Lemma~\ref{lem:examinePrimes} gives tables equal to the reference, which
   Lemma~\ref{lem:sieveEntry_admits} needs, in an invariant of the loop over the moduli, and $1 < m$
-  comes from the well-formedness; the forbidden
-  divisors of the second loop are those of the contract of Definition~\ref{def:forbidden}. The exit
-  is that of the loop of the tables or of a modulus.
+  comes from the well-formedness; the forbidden divisors of the second loop are those of the
+  contract of Definition~\ref{def:forbidden}. The exit is that of the loop of the tables or of a
+  modulus. The reciprocal of each entry is that of its modulus by Lemma~\ref{lem:sieveEntry_admits}.
 \end{proof}
 
 The search (Definition~\ref{def:searchPoints}) takes its sieve entries and its forbidden divisors
@@ -462,9 +468,9 @@ Each component of this chapter differs from the C code in a stated way, recorded
   \item \verb|examine_prime| counts the residues with a square value; the model asks whether an
     entry of the table is set, which is the same test. Its code $0$, every residue a square and no
     point at infinity, makes no sieve entry in ratpoints and an entry in the model, which the
-    parameters may use as a modulus: its rows let every numerator through for a unit $b$. The
-    fields of the sieve entry of a prime that serve the reductions and the packing come with
-    stages~F2 and~F3; the others are those of a sieve entry with the prime as its single factor;
+    parameters may use as a modulus: its rows let every numerator through for a unit $b$. The fields
+    of the sieve entry of a prime that serve the packing come with stage~F3; the others, the
+    reciprocal among them, are those of a sieve entry with the prime as its single factor;
   \item the coefficients and the tables are fresh arrays, where the C code fills arrays of its
     caller and buffers; the tables of a prime power are computed for each modulus that needs them,
     where \verb|add_moduli| examines each prime power once and keeps it, and \verb|make_modulus|
@@ -472,9 +478,10 @@ Each component of this chapter differs from the C code in a stated way, recorded
   \item the factors of a modulus are a list, for the codes of the factors and their number, without
     the bound of three factors or of the position $64$, which serve the choice of the moduli, and
     over the first $\mathrm{numPrimes}$ primes, where \verb|add_moduli| factors over the examined
-    ones; a prime factor beyond the examined primes is examined when its modulus is made, which
-    ratpoints does only for the primes of the third stage, and only when the number of primes was
-    left to the library; a factor whose prime says nothing takes its table from the loop, where
+    ones; a prime factor beyond the examined primes is examined when its modulus is made, where
+    ratpoints examines further primes in the order of the table, in the loop of the tables while its
+    first two stages want more primes and for its third stage, both only when the number of primes
+    was left to the library; a factor whose prime says nothing takes its table from the loop, where
     \verb|add_moduli| offers no composite with such a factor, and a prime-power factor whose tables
     say nothing is used with them, where \verb|add_moduli| refuses such a modulus;
   \item the rows of a prime power and of a product are made by the plain builder from the admission
@@ -489,9 +496,9 @@ Each component of this chapter differs from the C code in a stated way, recorded
     that says nothing), all sound; the parameters of the command line with \verb|-P| take
     third-stage primes after the first $q$, which ratpoints with \verb|-p| never examines, and the
     model makes their entries with the others;
-  \item the reciprocal, the bias, the inverse of $\mathrm{rbaLength}$ and the inverses
-    \verb|dinv| of a sieve entry serve the reductions of the sieve and the packing, and come with
-    stages~F2 and~F3.
+  \item the bias, the inverse of $\mathrm{rbaLength}$ and the inverses \verb|dinv| of a sieve entry
+    serve the packing and come with stage~F3; the reciprocal of a sieve entry is set with the entry
+    for every kind of modulus (Definition~\ref{def:makeModulus}).
 \end{itemize}
 The lines of this part of the C code that are neither modelled nor left to a later stage are
 excluded in \verb|correspondence/ratpoints.toml|: the check \verb|RP_VERIFY_MODULI| of the rows of
@@ -500,12 +507,12 @@ the moduli against the form, compiled only on request (\verb|init.c|); the outpu
 statements that are not modelled, where the output inside a modelled block goes with the block,
 whose deviation says so; and the enlargement of the buffer of the tables for every prime looked at,
 those of the third stage among them, and for the composite moduli of the first two stages with their
-prime-power factors, which fails only for lack of memory. Left to stage~F2 are the reciprocals of
-all the moduli, up to the reserve of the third stage, which \verb|sieving_info| collects at its end
-(\csource{find_points.c}{3064}{3070}) and with which the three stages reduce, the packing (stage~F3)
-reading them too; left to stage~I are the density of a prime and of a power, \verb|add_moduli|
-beyond the factorization, the ranking and the choice of the moduli with the rule for looking at
-further primes.
+prime-power factors, which fails only for lack of memory. The reciprocals of the moduli are fields
+of their sieve entries, which \verb|sieving_info| collects at its end
+(\csource{find_points.c}{3064}{3070}; Definition~\ref{def:sievingInfo}); the third stage reads them
+(stage~F2), the first two stages with the packing (stage~F3); left to stage~I are the density of a
+prime and of a power, \verb|add_moduli| beyond the factorization, the ranking and the choice of the
+moduli with the rule for looking at further primes.
 
 \section{Files and names}\label{sec:tablesFiles}
 

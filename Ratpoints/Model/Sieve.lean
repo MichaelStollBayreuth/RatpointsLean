@@ -597,7 +597,7 @@ def pointsAtInfinity (c : List Int) (d : Nat) (rev : Bool) : List (Int × Int ×
 -- The plain sieve of a denominator is the survivor test of the numerators.
 #guard
   let es := [3, 5, 7].map fun p ↦
-    (⟨p, [.prime (examinePrime [1, 2, 3, 4, 5, 6, 7] 6 p)]⟩ : SieveEntry)
+    (⟨p, [.prime (examinePrime [1, 2, 3, 4, 5, 6, 7] 6 p)], magic p⟩ : SieveEntry)
   (Id.run (sieveDen 20 7 es)).toList ==
     (List.range 41).map fun i : Nat ↦ survives es 7 ((i : Int) - 20)
 
@@ -605,7 +605,7 @@ def pointsAtInfinity (c : List Int) (d : Nat) (rev : Bool) : List (Int × Int ×
 -- `(129 : 3830 : 100)`, which every numerator gives as well.
 #guard
   let es := [3, 5, 7, 11, 13].map fun p ↦
-    (⟨p, [.prime (examinePrime [-2, 0, 0, 1] 3 p)]⟩ : SieveEntry)
+    (⟨p, [.prime (examinePrime [-2, 0, 0, 1] 3 p)], magic p⟩ : SieveEntry)
   (Id.run (checkDen [-2, 0, 0, 1] 3 130 100 (Id.run (sieveDen 130 100 es)))).toList ==
     [(129, 3830, 100), (129, -3830, 100)] &&
   (Id.run (checkDen [-2, 0, 0, 1] 3 130 100 (Vector.replicate _ true))).toList ==
@@ -648,7 +648,7 @@ def pointsAtInfinity (c : List Int) (d : Nat) (rev : Bool) : List (Int × Int ×
 -- a prime above 64.
 #guard
   [3, 5, 7, 13, 67].all fun p ↦
-    let e : SieveEntry := ⟨p, [.prime (examinePrime [1, 2, 3, 4, 5, 6, 7] 6 p)]⟩
+    let e : SieveEntry := ⟨p, [.prime (examinePrime [1, 2, 3, 4, 5, 6, 7] 6 p)], magic p⟩
     [0, 1, 2, 5, p + 3].all fun b ↦
       let row := e.row b
       row.size == p * rbaPack && (List.range (p * rbaPack)).all fun j ↦
@@ -661,7 +661,8 @@ def pointsAtInfinity (c : List Int) (d : Nat) (rev : Bool) : List (Int × Int ×
   let p9 : Factor := .power (Id.run (examinePower c 6 3 2 true))
   let e3 : Factor := .prime (examinePrime c 6 3)
   let e5 : Factor := .prime (examinePrime c 6 5)
-  ([⟨9, [p9]⟩, ⟨15, [e3, e5]⟩, ⟨45, [p9, e5]⟩] : List SieveEntry).all fun e ↦
+  ([⟨9, [p9], magic 9⟩, ⟨15, [e3, e5], magic 15⟩, ⟨45, [p9, e5], magic 45⟩] :
+      List SieveEntry).all fun e ↦
     [0, 1, 3, 5, 6, 10, 18].all fun b ↦
       let row := e.row b
       row.size == e.p * rbaPack && (List.range (e.p * rbaPack)).all fun j ↦
@@ -682,12 +683,12 @@ def pointsAtInfinity (c : List Int) (d : Nat) (rev : Bool) : List (Int × Int ×
       0xfefff7ffbffdffef, 0xfdffefff7ffbffdf, 0xfbffdffefff7ffbf, 0xf7ffbffdffefff7f,
       0xefff7ffbffdffeff, 0xdffefff7ffbffdff, 0xbffdffefff7ffbff, 0x7ffbffdffefff7ff,
       0xfff7ffbffdffefff])] : List (Nat × Array UInt64)).all fun (p, ws) ↦
-    ((⟨p, [.prime (examinePrime [1, 0, 1] 2 p)]⟩ : SieveEntry).row 0).extract 0 p == ws
+    ((⟨p, [.prime (examinePrime [1, 0, 1] 2 p)], magic p⟩ : SieveEntry).row 0).extract 0 p == ws
 
 -- The rows of the residues: one thunk for each of the `p` residues, the thunk of `r` giving the
 -- row of `r`.
 #guard
-  let e : SieveEntry := ⟨7, [.prime (examinePrime [1, 2, 3, 4, 5, 6, 7] 6 7)]⟩
+  let e : SieveEntry := ⟨7, [.prime (examinePrime [1, 2, 3, 4, 5, 6, 7] 6 7)], magic 7⟩
   e.rows.size == 7 && (List.range 7).all fun r ↦ e.rows[r]!.get == e.row r
 
 -- The points of a reversed search: `ratpoints '-1 0 9' 10 -q` reverses the polynomial to `9 0 -1`
@@ -710,7 +711,7 @@ def pointsAtInfinity (c : List Int) (d : Nat) (rev : Bool) : List (Int × Int ×
 -- `≡ 1 (mod 8)`.
 #guard
   let es := [3, 5, 7].map fun p ↦
-    (⟨p, [.prime (examinePrime [1, 2, 3, 4, 5, 6, 7] 6 p)]⟩ : SieveEntry)
+    (⟨p, [.prime (examinePrime [1, 2, 3, 4, 5, 6, 7] 6 p)], magic p⟩ : SieveEntry)
   ([(-9, 1), (-9, 12), (-35, 4), (6, 2), (15, 17)] : List (Int × Nat)).all fun (w0, n) ↦
     [1, 10].all fun b ↦
       [~~~0, 0xdddddddddddddddd, 0x0202020202020202].all fun cw ↦
@@ -794,7 +795,7 @@ def pointsAtInfinity (c : List Int) (d : Nat) (rev : Bool) : List (Int × Int ×
 -- `(129 : 3830 : 100)` of `y ^ 2 = x ^ 3 - 2` keep it or drop it.
 #guard
   let c := [-2, 0, 0, 1]
-  let es := [3, 5, 7, 11, 13].map fun p ↦ (⟨p, [.prime (examinePrime c 3 p)]⟩ : SieveEntry)
+  let es := [3, 5, 7, 11, 13].map fun p ↦ (⟨p, [.prime (examinePrime c 3 p)], magic p⟩ : SieveEntry)
   let piece (b : Nat) (w0 : Int) (n mL mH : Nat) : List (Int × Int × Int) :=
     (Id.run (siftPiece (BruteForce.scaledCoeffs c 3 b) b b false (es.map fun e ↦ ⟨e.p, e.row b⟩)
       (~~~0) w0 n mL mH)).toList
@@ -813,7 +814,7 @@ def pointsAtInfinity (c : List Int) (d : Nat) (rev : Bool) : List (Int × Int ×
 -- with the flag of the reversal the same points, mapped.
 #guard
   let c := [-2, 0, 0, 1]
-  let es := [3, 5, 7, 11, 13].map fun p ↦ (⟨p, [.prime (examinePrime c 3 p)]⟩ : SieveEntry)
+  let es := [3, 5, 7, 11, 13].map fun p ↦ (⟨p, [.prime (examinePrime c 3 p)], magic p⟩ : SieveEntry)
   [1, 7, 100].all fun b ↦ [1, 2, 3].all fun A ↦ [false, true].all fun rev ↦
     let ref := (Id.run (checkDen c 3 300 b (Id.run (sieveDen 300 b es)))).toList
     (Id.run (sift c 3 300 A b rev (es.map fun e ↦ (e.p, e.rows)) (~~~0))).toList ==

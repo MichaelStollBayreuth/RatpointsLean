@@ -971,7 +971,8 @@ prints. -/
   row.size == p && (List.range p).all fun r ↦ (List.range 64).all fun j ↦
     row[r]!.toBitVec.getLsbD j == ((64 * r + j) % p != 0)
 #guard [3, 5, 7, 13, 251].all fun p ↦
-  forbiddenRow p == ((⟨p, [.prime (examinePrime [1, 0, 1] 2 p)]⟩ : SieveEntry).row 0).extract 0 p
+  forbiddenRow p ==
+    ((⟨p, [.prime (examinePrime [1, 0, 1] 2 p)], magic p⟩ : SieveEntry).row 0).extract 0 p
 
 -- The forbidden divisors of the dump, for the first 30 primes of the table as the examined primes
 -- (the loop of the tables, then the further primes): `1 2 3 4 5 6 7` at the height 100,
@@ -1116,7 +1117,7 @@ prints. -/
   let c : List Int := [1, 2]
   let nb := Id.run (twoAdic c 1)
   let entries := (primeTable.toList.take 30).filterMap fun p ↦
-    (Id.run (examinePrime? c 1 p true)).map fun (e, _) ↦ (⟨p, [.prime e]⟩ : SieveEntry)
+    (Id.run (examinePrime? c 1 p true)).map fun (e, _) ↦ (⟨p, [.prime e], magic p⟩ : SieveEntry)
   (Id.run (sieveRun c 1 20 1 false entries nb (denBits nb) (.squares1 [⟨2, 1, 2⟩] [1, 2]) 1
       20)).toList ==
     [(0, 1, 1), (0, -1, 1), (4, 3, 1), (4, -3, 1), (12, 5, 1), (12, -5, 1), (-4, 3, 9), (-4, -3, 9),

@@ -38,9 +38,10 @@ powers below `Ratpoints.maxPrimeEven`: the cofactors of the extended Euclidean a
 (`Ratpoints.Sieve.getElem!_inv_run_examinePower_lt_two_pow_16`). Each factor divides `m`, so that
 its row reads the residues modulo `m` as those of the numbers
 (`Ratpoints.Sieve.Entry.admits_mod_of_dvd`, `Ratpoints.Sieve.Power.admits_mod_of_dvd`), and the
-entry of `m` lets every point through when the tables of the loop of the tables are those of the
-reference (`Ratpoints.makeModulus?_spec`); no Chinese remainder theorem is needed. When the entry is
-none, a prime examined for it has no points modulo it, and the curve has none.
+entry of `m`, which holds the reciprocal of `m`, lets every point through when the tables of the
+loop of the tables are those of the reference (`Ratpoints.makeModulus?_spec`); no Chinese remainder
+theorem is needed. When the entry is none, a prime examined for it has no points modulo it, and the
+curve has none.
 
 ## Main definitions
 
@@ -69,8 +70,8 @@ none, a prime examined for it has no points modulo it, and the curve has none.
 * `Ratpoints.Sieve.Entry.admits_mod_of_dvd`, `Ratpoints.Sieve.Power.admits_mod_of_dvd`: the row of
   a prime or a prime power reads the residues modulo a multiple of its modulus as those of the
   numbers.
-* `Ratpoints.makeModulus?_spec`: the sieve entry of a modulus has the modulus and lets every point
-  through, and when it is none the curve has no points.
+* `Ratpoints.makeModulus?_spec`: the sieve entry of a modulus has the modulus and its reciprocal and
+  lets every point through, and when it is none the curve has no points.
 
 ## Implementation notes
 
@@ -576,7 +577,7 @@ theorem makeModulusInvariant_some_none {c : List ℤ} {u : Bool} {m r pn e : ℕ
 theorem MakeModulusInvariant.post_some {c : List ℤ} {m : ℕ} {o : Option (Option SieveEntry)}
     {factors : Array Factor} {r : Option SieveEntry} (h : MakeModulusInvariant c m [] (o, factors))
     (ho : o = some r) :
-    (∀ s, r = some s → s.p = m ∧ ∀ ⦃a y : ℤ⦄ ⦃b : ℕ⦄, Int.gcd a b = 1 →
+    (∀ s, r = some s → s.p = m ∧ s.magic = magic m ∧ ∀ ⦃a y : ℤ⦄ ⦃b : ℕ⦄, Int.gcd a b = 1 →
         y ^ 2 = binaryForm c a b → s.admits b a = true) ∧
       (r = none → ∀ H q, ¬IsPoint c H q) := by
   subst ho
@@ -584,16 +585,17 @@ theorem MakeModulusInvariant.post_some {c : List ℤ} {m : ℕ} {o : Option (Opt
   exact ⟨nofun, fun _ ↦ h⟩
 
 /-- The end of the loop of `Ratpoints.makeModulus?` over all the factors: the sieve entry of `m`
-with the factors made admits every point. -/
+with the factors made and the reciprocal of `m` admits every point. -/
 theorem MakeModulusInvariant.post_none {c : List ℤ} {m : ℕ} {o : Option (Option SieveEntry)}
     {factors : Array Factor} (h : MakeModulusInvariant c m [] (o, factors)) (ho : o = none) :
-    (∀ s, some (⟨m, factors.toList⟩ : SieveEntry) = some s → s.p = m ∧ ∀ ⦃a y : ℤ⦄ ⦃b : ℕ⦄,
-        Int.gcd a b = 1 → y ^ 2 = binaryForm c a b → s.admits b a = true) ∧
-      (some (⟨m, factors.toList⟩ : SieveEntry) = none → ∀ H q, ¬IsPoint c H q) := by
+    (∀ s, some (⟨m, factors.toList, magic m⟩ : SieveEntry) = some s → s.p = m ∧
+        s.magic = magic m ∧ ∀ ⦃a y : ℤ⦄ ⦃b : ℕ⦄, Int.gcd a b = 1 → y ^ 2 = binaryForm c a b →
+          s.admits b a = true) ∧
+      (some (⟨m, factors.toList, magic m⟩ : SieveEntry) = none → ∀ H q, ¬IsPoint c H q) := by
   subst ho
   refine ⟨fun _ hs ↦ ?_, nofun⟩
   obtain rfl := Option.some.inj hs
-  exact ⟨rfl, fun _ _ _ hab hy ↦
+  exact ⟨rfl, rfl, fun _ _ _ hab hy ↦
     List.all_eq_true.mpr fun f hf ↦ h f (Array.mem_toList_iff.mp hf) hab hy⟩
 
 -- The factors of a modulus, the table of a prime and the tables of a prime power, as values for
@@ -612,8 +614,9 @@ private theorem examinePower_value (c : List ℤ) (d p e : ℕ) (u : Bool) :
 
 attribute [local irreducible] MakeModulusInvariant in
 /-- The contract of `Ratpoints.makeModulus?`, when the tables of the loop of the tables are those of
-the reference: on a sieve entry, its modulus is `m`, and it admits every point `(a, y, b)` with
-`gcd(a, b) = 1`, since each factor of `m` over the table, a prime or a prime power, divides `m`
+the reference: on a sieve entry, its modulus is `m`, its reciprocal that of `m`
+(`Ratpoints.Sieve.magic`), and it admits every point `(a, y, b)` with `gcd(a, b) = 1`, since each
+factor of `m` over the table, a prime or a prime power, divides `m`
 (`Ratpoints.pow_dvd_of_mem_run_modulusFactors`), so that its row reads the residues modulo `m` as
 those of `b` and `a`, and admits every point (`Ratpoints.Sieve.admits_examinePrime_of_sq_eq`,
 `Ratpoints.Sieve.admits_run_examinePower_of_sq_eq`); no Chinese remainder theorem is needed. On
@@ -624,8 +627,8 @@ none, a prime examined for `m` beyond the loop of the tables has no points modul
 theorem makeModulus?_spec (c : List ℤ) (u : Bool) (tables : Array Entry) (m : ℕ) :
     ⦃ ∀ (i : ℕ) (hi : i < tables.size), tables[i] = examinePrime c (degree c) primeTable[i]! ⦄
     makeModulus? c (degree c) u tables m
-    ⦃ fun r ↦ (∀ s, r = some s → s.p = m ∧ ∀ ⦃a y : ℤ⦄ ⦃b : ℕ⦄, Int.gcd a b = 1 →
-        y ^ 2 = binaryForm c a b → s.admits b a = true) ∧
+    ⦃ fun r ↦ (∀ s, r = some s → s.p = m ∧ s.magic = magic m ∧ ∀ ⦃a y : ℤ⦄ ⦃b : ℕ⦄,
+        Int.gcd a b = 1 → y ^ 2 = binaryForm c a b → s.admits b a = true) ∧
       (r = none → ∀ H q, ¬IsPoint c H q) ⦄ := by
   vcgen [makeModulus?, modulusFactors_value, examinePrime?_value, examinePower_value] invariants
   · fun _ suff st ↦ MakeModulusInvariant c m suff st

@@ -469,6 +469,12 @@
         "excluded (memory)"
       ]
     },
+    "find_points.c:3064-3070": {
+      "hash": "a6a028e9d3f268ff42cdded74388bce3859bdb67a83e9b1f9bedac6b1aac4dbd",
+      "owners": [
+        "Ratpoints.sievingInfo"
+      ]
+    },
     "find_points.c:3073-3087": {
       "hash": "d42f48b46e8f7866e7ceaaa2573eea9e9111193a1868459e49595bfa08113c16",
       "owners": [
@@ -2152,10 +2158,17 @@
         "Ratpoints.Sieve.SieveSpec"
       ]
     },
+    "rp-private.h:404-408": {
+      "hash": "37590e41bc6f6506e2f889b229fe345e6b69f661bc8bdd0ea2f3ae8bfe32e965",
+      "owners": [
+        "Ratpoints.Sieve.mulMod"
+      ]
+    },
     "rp-private.h:409-410": {
       "hash": "3fadd98ca0e6075c12ad4816aa9acfa0385e86f6f45bf58bfe23dd8951366776",
       "owners": [
-        "Ratpoints.Sieve.jacobiTest"
+        "Ratpoints.Sieve.jacobiTest",
+        "Ratpoints.Sieve.mulDiv"
       ]
     },
     "rp-private.h:41-43": {
@@ -2164,10 +2177,29 @@
         "Ratpoints.fitsLong"
       ]
     },
+    "rp-private.h:411-411": {
+      "hash": "cd31727502550a74af67e8e5a448d73e73abfa5e17f280b881a2d2394e8afc40",
+      "owners": [
+        "Ratpoints.Sieve.mulMod"
+      ]
+    },
+    "rp-private.h:413-414": {
+      "hash": "4827901e0f2c57096b372b4487210bc2d195a19457336068375f5d28e0fe7ce3",
+      "owners": [
+        "Ratpoints.Sieve.mulMod"
+      ]
+    },
     "rp-private.h:415-416": {
       "hash": "045d14c76f16560085b389c2fdcf89fbff8872160f51e96997eb8607bbd62771",
       "owners": [
-        "Ratpoints.Sieve.jacobiTest"
+        "Ratpoints.Sieve.jacobiTest",
+        "Ratpoints.Sieve.mulDiv"
+      ]
+    },
+    "rp-private.h:417-417": {
+      "hash": "1e258076b154c8a5a3303fe08eb08c3253d26728e5b64f90a29cc1752f787781",
+      "owners": [
+        "Ratpoints.Sieve.mulMod"
       ]
     },
     "rp-private.h:421-421": {
@@ -2186,6 +2218,12 @@
       "hash": "cd3497ee363c6aa475e6545a5633fc060ecf397c2a58a956ddbd584986b94b72",
       "owners": [
         "Ratpoints.fitsLong"
+      ]
+    },
+    "rp-private.h:472-472": {
+      "hash": "42c786f8c5d30336b11c9cb1d450ca6da91a9c288dc5fe20b1e791d9a89ffc3d",
+      "owners": [
+        "Ratpoints.stage3Limit"
       ]
     },
     "rp-private.h:49-51": {

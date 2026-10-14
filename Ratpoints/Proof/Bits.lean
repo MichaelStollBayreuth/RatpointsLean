@@ -27,11 +27,12 @@ at their own positions or at others, the 64 bits of two words from a position wi
 bits of a word and-ed in turn with the words of a list, the numerators and the denominators of the
 set bits of a list of words, read in turn, the numbers of a range between two bounds, the odd part
 of a number below `2 ^ 64` by the lowest set bit of its word, bit 1 of odd numbers, the gcd of half
-an even number with an odd one, a residue below `2 q` modulo `q` by one subtraction, the estimate
-of a quotient by Barrett's reduction, the bounds of a step of Horner's rule and of a power of a
-number below a power of 2, the entries of an array of Booleans after a fold of
-`setIfInBounds · true`, the absolute value of the step of the cofactors of the extended Euclidean
-algorithm, and the divisors of the gcd of `b` and a residue `f ≡ a (mod b)`.
+an even number with an odd one, a residue below `2 q` modulo `q` by one subtraction, the estimate of
+a quotient by Barrett's reduction, the bounds of a step of Horner's rule and of a power of a number
+below a power of 2, the entries of an array of Booleans after a fold of `setIfInBounds · true`, the
+absolute value of the step of the cofactors of the extended Euclidean algorithm, the divisors of the
+gcd of `b` and a residue `f ≡ a (mod b)`, and the remainder and the quotient by a multiplication
+with a reciprocal.
 
 ## Main statements
 
@@ -89,6 +90,8 @@ algorithm, and the divisors of the gcd of `b` and a residue `f ≡ a (mod b)`.
   by `p`, and `p ^ n < 2 ^ N` for `p < 2 ^ b`, `n ≠ 0` and `b n ≤ N`.
 * `Int.natAbs_sub_mul_of_mul_nonpos`: `|a - q b| = |a| + q |b|` for `a b ≤ 0` and `q ≥ 0`.
 * `Int.dvd_natAbs_of_dvd_gcd`: a divisor of the gcd of `f ≡ a (mod b)` and `b` divides `a`.
+* `Nat.mul_mod_mul_div_eq_mod`, `Nat.mul_div_eq_div_of_mul_eq_add`: the remainder and the quotient
+  by a reciprocal `m` of `p` scaled by `N`, for `m p = N + δ` and `u δ < N`.
 
 ## Implementation notes
 
@@ -453,6 +456,34 @@ theorem gcd_div_two_of_mod_two {x y : Nat} (hx : x % 2 = 0) (hy : y % 2 = 1) :
   have h2 : Coprime 2 y := by rw [Coprime, Nat.gcd_rec, hy]; rfl
   conv => rhs; rw [← Nat.mul_div_cancel' (Nat.dvd_of_mod_eq_zero hx)]
   exact (Coprime.gcd_mul_left_cancel _ h2).symm
+
+/-- For `m p = N + δ` and `u δ < N`, the product `m u` is `L + N ⌊u / p⌋` for some `L < N` with
+`L p = u δ + N (u mod p)`: the product of `u` with a reciprocal `m` of `p` scaled by `N`, rounded
+up when `δ ≥ 0` is small. -/
+theorem exists_mul_eq_add_mul_div {u p m N δ : Nat} (hp : 0 < p) (hm : m * p = N + δ)
+    (hu : u * δ < N) : ∃ L < N, m * u = L + N * (u / p) ∧ L * p = u * δ + N * (u % p) := by
+  have hs := Nat.mod_lt u hp
+  have hu' := Nat.div_add_mod u p
+  generalize u / p = k, u % p = s at hs hu' ⊢
+  have h1 : m * u = (k * δ + m * s) + N * k := by grind
+  have h2 : (k * δ + m * s) * p = u * δ + N * s := by grind
+  have h3 : N * (s + 1) ≤ N * p := Nat.mul_le_mul_left N hs
+  exact ⟨k * δ + m * s, Nat.lt_of_mul_lt_mul_right (a := p) (by grind), h1, h2⟩
+
+/-- The remainder by a reciprocal: for `m p = N + δ` and `u δ < N`, the low part `m u mod N` of the
+product of `u` with `m`, times `p`, has the high part `u mod p`. -/
+theorem mul_mod_mul_div_eq_mod {u p m N δ : Nat} (hp : 0 < p) (hm : m * p = N + δ)
+    (hu : u * δ < N) : m * u % N * p / N = u % p := by
+  obtain ⟨L, hL, h1, h2⟩ := exists_mul_eq_add_mul_div hp hm hu
+  rw [h1, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hL, h2, Nat.add_mul_div_left _ _ (by lia),
+    Nat.div_eq_of_lt hu, Nat.zero_add]
+
+/-- The quotient by a reciprocal: for `m p = N + δ` and `u δ < N`, the high part of the product of
+`u` with `m` is `⌊u / p⌋`. -/
+theorem mul_div_eq_div_of_mul_eq_add {u p m N δ : Nat} (hp : 0 < p) (hm : m * p = N + δ)
+    (hu : u * δ < N) : m * u / N = u / p := by
+  obtain ⟨L, hL, h1, -⟩ := exists_mul_eq_add_mul_div hp hm hu
+  rw [h1, Nat.add_mul_div_left _ _ (by lia), Nat.div_eq_of_lt hL, Nat.zero_add]
 
 end Nat
 
