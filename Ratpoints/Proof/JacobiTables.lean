@@ -230,27 +230,36 @@ theorem jacobiSetupInvariant_empty {lcf : ℤ} {v r : ℕ}
   exact Nat.two_dvd_ne_zero.mp (Nat.not_dvd_ordCompl Nat.prime_two (by simpa using h))
 
 /-- The invariant of the loop of `Ratpoints.Sieve.jacobiSetup` over the primes of the table, with
-the primes `suff` still to come, on the result of an early return, the cofactor and the entries:
-`Ratpoints.Sieve.JacobiSetupInvariant` without a result, and a result, which is `none`, only at the
-end. -/
+the primes `suff` still to come, on the result of an early return, the cofactor, the entries, the
+reciprocals, the number `n3` and the space taken by the tables: without a result,
+`Ratpoints.Sieve.JacobiSetupInvariant` of the cofactor and the entries, with the reciprocals those
+of the primes of the entries in their order (`Ratpoints.Sieve.magic`) and `n3` the number of the
+entries with a table whose prime is `3 (mod 4)`; and a result, which is `none`, only at the end. -/
 def JacobiSetupLoopInvariant (lcf : ℤ) (v : ℕ) (suff : List ℕ)
-    (st : Option (Option JacobiInfo) × ℕ × Array (ℕ × Option (Array Bool)) × ℕ) : Prop :=
-  st.1.elim (JacobiSetupInvariant lcf v st.2.1 st.2.2.1) fun r ↦ suff = [] ∧ r = none
+    (st : Option (Option JacobiInfo) × ℕ × Array (ℕ × Option (Array Bool)) × Array ℕ × ℕ × ℕ) :
+    Prop :=
+  st.1.elim (JacobiSetupInvariant lcf v st.2.1 st.2.2.1 ∧
+      st.2.2.2.1.toList = st.2.2.1.toList.map (fun x ↦ magic x.1) ∧
+      st.2.2.2.2.1 = (st.2.2.1.toList.filter fun x ↦ x.2.isSome && x.1 &&& 2 != 0).length)
+    fun r ↦ suff = [] ∧ r = none
 
-theorem JacobiSetupInvariant.jacobiSetupLoopInvariant {lcf : ℤ} {v w u : ℕ}
-    {qs : Array (ℕ × Option (Array Bool))} {suff : List ℕ} (h : JacobiSetupInvariant lcf v w qs) :
-    JacobiSetupLoopInvariant lcf v suff (none, w, qs, u) :=
-  h
+theorem jacobiSetupLoopInvariant_empty {lcf : ℤ} {v r : ℕ}
+    (hv : (v, r) = Id.run (Setup.valuation lcf 2)) (suff : List ℕ) (u : ℕ) :
+    JacobiSetupLoopInvariant lcf v suff (none, lcf.natAbs / 2 ^ v, #[], #[], 0, u) :=
+  ⟨jacobiSetupInvariant_empty hv, rfl, rfl⟩
 
-theorem jacobiSetupLoopInvariant_some_none (lcf : ℤ) (v w u : ℕ)
-    (qs : Array (ℕ × Option (Array Bool))) :
-    JacobiSetupLoopInvariant lcf v [] (some none, w, qs, u) :=
+theorem jacobiSetupLoopInvariant_some_none (lcf : ℤ) (v w n3 u : ℕ)
+    (qs : Array (ℕ × Option (Array Bool))) (ms : Array ℕ) :
+    JacobiSetupLoopInvariant lcf v [] (some none, w, qs, ms, n3, u) :=
   ⟨rfl, rfl⟩
 
-theorem JacobiSetupLoopInvariant.jacobiSetupInvariant {lcf : ℤ} {v w u cur : ℕ}
-    {qs : Array (ℕ × Option (Array Bool))} {suff : List ℕ} {o : Option (Option JacobiInfo)}
-    (h : JacobiSetupLoopInvariant lcf v (cur :: suff) (o, w, qs, u)) :
-    JacobiSetupInvariant lcf v w qs := by
+/-- Before the last prime, the loop of `Ratpoints.Sieve.jacobiSetup` has not returned, and its state
+passes on unchanged to any primes to come. -/
+theorem JacobiSetupLoopInvariant.of_cons {lcf : ℤ} {v w n3 u cur : ℕ}
+    {qs : Array (ℕ × Option (Array Bool))} {ms : Array ℕ} {suff suff' : List ℕ}
+    {o : Option (Option JacobiInfo)}
+    (h : JacobiSetupLoopInvariant lcf v (cur :: suff) (o, w, qs, ms, n3, u)) :
+    JacobiSetupLoopInvariant lcf v suff' (none, w, qs, ms, n3, u) := by
   cases o with
   | none => exact h
   | some r => exact absurd h.1 (List.cons_ne_nil _ _)
@@ -312,26 +321,46 @@ theorem JacobiSetupInvariant.push {lcf : ℤ} {v w cur e r : ℕ} {pref suff : L
   obtain rfl := List.mem_singleton.mp hx
   exact ⟨hmem, fun h2' ↦ by subst h2'; lia, hcw.trans (h.dvd_natAbs h0), hcm, by rwa [hv]⟩
 
-theorem JacobiSetupLoopInvariant.push_some {lcf : ℤ} {v w u cur e r : ℕ} {pref suff : List ℕ}
-    {qs : Array (ℕ × Option (Array Bool))} {o : Option (Option JacobiInfo)} {ns : Array Bool}
+theorem JacobiSetupLoopInvariant.push_some_add_one {lcf : ℤ} {v w n3 u cur e r : ℕ}
+    {pref suff : List ℕ} {qs : Array (ℕ × Option (Array Bool))} {ms : Array ℕ}
+    {o : Option (Option JacobiInfo)} {ns : Array Bool}
     (hl : ForIn.toList primeTable = pref ++ cur :: suff)
-    (h : JacobiSetupLoopInvariant lcf v (cur :: suff) (o, w, qs, u)) (hw : ¬(w % cur != 0) = true)
-    (he : (e, r) = Id.run (Setup.valuation (w : ℤ) cur)) (hodd : (e % 2 == 1) = true)
-    (hns : ns = Id.run (nonSquares cur)) :
-    JacobiSetupLoopInvariant lcf v suff (none, w / cur ^ e, qs.push (cur, some ns), u + cur) :=
-  h.jacobiSetupInvariant.push hl hw he (by simp_all)
+    (h : JacobiSetupLoopInvariant lcf v (cur :: suff) (o, w, qs, ms, n3, u))
+    (hw : ¬(w % cur != 0) = true) (he : (e, r) = Id.run (Setup.valuation (w : ℤ) cur))
+    (hodd : (e % 2 == 1) = true) (hns : ns = Id.run (nonSquares cur))
+    (h3 : (cur &&& 2 != 0) = true) :
+    JacobiSetupLoopInvariant lcf v suff
+      (none, w / cur ^ e, qs.push (cur, some ns), ms.push (magic cur), n3 + 1, u + cur) := by
+  have h' := h.of_cons (suff' := suff)
+  exact ⟨h'.1.push hl hw he (by simp_all), by simpa using h'.2.1, by simpa [h3] using h'.2.2⟩
 
-theorem JacobiSetupLoopInvariant.push_none {lcf : ℤ} {v w u cur e r : ℕ} {pref suff : List ℕ}
-    {qs : Array (ℕ × Option (Array Bool))} {o : Option (Option JacobiInfo)}
+theorem JacobiSetupLoopInvariant.push_some {lcf : ℤ} {v w n3 u cur e r : ℕ} {pref suff : List ℕ}
+    {qs : Array (ℕ × Option (Array Bool))} {ms : Array ℕ} {o : Option (Option JacobiInfo)}
+    {ns : Array Bool} (hl : ForIn.toList primeTable = pref ++ cur :: suff)
+    (h : JacobiSetupLoopInvariant lcf v (cur :: suff) (o, w, qs, ms, n3, u))
+    (hw : ¬(w % cur != 0) = true) (he : (e, r) = Id.run (Setup.valuation (w : ℤ) cur))
+    (hodd : (e % 2 == 1) = true) (hns : ns = Id.run (nonSquares cur))
+    (h3 : ¬(cur &&& 2 != 0) = true) :
+    JacobiSetupLoopInvariant lcf v suff
+      (none, w / cur ^ e, qs.push (cur, some ns), ms.push (magic cur), n3, u + cur) := by
+  have h' := h.of_cons (suff' := suff)
+  exact ⟨h'.1.push hl hw he (by simp_all), by simpa using h'.2.1, by simpa [h3] using h'.2.2⟩
+
+theorem JacobiSetupLoopInvariant.push_none {lcf : ℤ} {v w n3 u cur e r : ℕ} {pref suff : List ℕ}
+    {qs : Array (ℕ × Option (Array Bool))} {ms : Array ℕ} {o : Option (Option JacobiInfo)}
     (hl : ForIn.toList primeTable = pref ++ cur :: suff)
-    (h : JacobiSetupLoopInvariant lcf v (cur :: suff) (o, w, qs, u)) (hw : ¬(w % cur != 0) = true)
-    (he : (e, r) = Id.run (Setup.valuation (w : ℤ) cur)) (heven : ¬(e % 2 == 1) = true) :
-    JacobiSetupLoopInvariant lcf v suff (none, w / cur ^ e, qs.push (cur, none), u) :=
-  h.jacobiSetupInvariant.push hl hw he (by simp_all)
+    (h : JacobiSetupLoopInvariant lcf v (cur :: suff) (o, w, qs, ms, n3, u))
+    (hw : ¬(w % cur != 0) = true) (he : (e, r) = Id.run (Setup.valuation (w : ℤ) cur))
+    (heven : ¬(e % 2 == 1) = true) :
+    JacobiSetupLoopInvariant lcf v suff
+      (none, w / cur ^ e, qs.push (cur, none), ms.push (magic cur), n3, u) := by
+  have h' := h.of_cons (suff' := suff)
+  exact ⟨h'.1.push hl hw he (by simp_all), by simpa using h'.2.1, by simpa using h'.2.2⟩
 
-theorem JacobiSetupLoopInvariant.false_of_some {lcf : ℤ} {v w u : ℕ}
-    {qs : Array (ℕ × Option (Array Bool))} {o : Option (Option JacobiInfo)} {a : Option JacobiInfo}
-    {ji : JacobiInfo} (h : JacobiSetupLoopInvariant lcf v [] (o, w, qs, u)) (ho : o = some a)
+theorem JacobiSetupLoopInvariant.false_of_some {lcf : ℤ} {v w n3 u : ℕ}
+    {qs : Array (ℕ × Option (Array Bool))} {ms : Array ℕ} {o : Option (Option JacobiInfo)}
+    {a : Option JacobiInfo} {ji : JacobiInfo}
+    (h : JacobiSetupLoopInvariant lcf v [] (o, w, qs, ms, n3, u)) (ho : o = some a)
     (ha : a = some ji) : False := by
   subst ho ha
   exact Option.some_ne_none ji h.2
@@ -339,26 +368,25 @@ theorem JacobiSetupLoopInvariant.false_of_some {lcf : ℤ} {v w u : ℕ}
 /-- At the end of the loop of `Ratpoints.Sieve.jacobiSetup` with the cofactor `1`, `lcf ≠ 0`, the
 tables are those of `lcf`, their primes are from `Ratpoints.primeTable`, and they hold the
 reciprocals of their primes. -/
-theorem JacobiSetupLoopInvariant.isJacobiInfo {lcf : ℤ} {bHigh v r w u : ℕ}
-    {qs : Array (ℕ × Option (Array Bool))} {o : Option (Option JacobiInfo)} {ji : JacobiInfo}
-    (hb : ¬mulModLimit < bHigh) (hv : (v, r) = Id.run (Setup.valuation lcf 2))
-    (h : JacobiSetupLoopInvariant lcf v [] (o, w, qs, u)) (ho : o = none) (hw : ¬(w != 1) = true)
-    (hji : some ⟨qs.toList, qs.map (fun x ↦ magic x.1),
-      jacobiSigns (qs.filter fun x ↦ x.2.isSome && x.1 &&& 2 != 0).size (decide (lcf < 0)) v⟩ =
-        some ji) :
+theorem JacobiSetupLoopInvariant.isJacobiInfo {lcf : ℤ} {bHigh v r w n3 u : ℕ}
+    {qs : Array (ℕ × Option (Array Bool))} {ms : Array ℕ} {o : Option (Option JacobiInfo)}
+    {ji : JacobiInfo} (hb : ¬mulModLimit < bHigh) (hv : (v, r) = Id.run (Setup.valuation lcf 2))
+    (h : JacobiSetupLoopInvariant lcf v [] (o, w, qs, ms, n3, u)) (ho : o = none)
+    (hw : ¬(w != 1) = true)
+    (hji : some ⟨qs.toList, ms, jacobiSigns n3 (decide (lcf < 0)) v⟩ = some ji) :
     bHigh ≤ mulModLimit ∧ lcf ≠ 0 ∧ IsJacobiInfo lcf ji ∧ (∀ x ∈ ji.primes, x.1 ∈ primeTable) ∧
       ji.magic.toList = ji.primes.map fun x ↦ magic x.1 := by
   subst ho
+  obtain ⟨h, hms, hn3⟩ := h
   obtain rfl : w = 1 := by simpa using hw
   have h0 : lcf ≠ 0 := fun h0 ↦ one_ne_zero (h.1 h0)
   obtain ⟨h1, -, h3⟩ := h.2 h0
   obtain rfl : v = padicValNat 2 lcf.natAbs := by
     rw [← Setup.fst_run_valuation h0 Nat.one_lt_two, ← hv]
   obtain rfl := Option.some.inj hji
-  refine ⟨Nat.le_of_not_lt hb, h0, ⟨fun x hx ↦ ?_, by simpa using h1, ?_⟩, fun x hx ↦ (h3 x hx).1,
-    Array.toList_map ..⟩
-  · exact ⟨prime_of_mem_primeTable (h3 x hx).1, (h3 x hx).2.1, (h3 x hx).2.2.1, (h3 x hx).2.2.2.2⟩
-  · rw [← Array.length_toList, Array.toList_filter]
+  refine ⟨Nat.le_of_not_lt hb, h0, ⟨fun x hx ↦ ?_, by simpa using h1, congr(jacobiSigns $hn3 _ _)⟩,
+    fun x hx ↦ (h3 x hx).1, hms⟩
+  exact ⟨prime_of_mem_primeTable (h3 x hx).1, (h3 x hx).2.1, (h3 x hx).2.2.1, (h3 x hx).2.2.2.2⟩
 
 -- The valuation, as a value for the contract of the set-up.
 private theorem valuation_value (n : ℤ) (p : ℕ) :
@@ -391,13 +419,14 @@ theorem jacobiSetup_spec (lcf : ℤ) (bHigh : ℕ) :
   | inv1 => fun _ suff st ↦ JacobiSetupLoopInvariant lcf v suff st
   all_goals try dsimp only at *
   all_goals first
-    | exact (jacobiSetupInvariant_empty ‹_›).jacobiSetupLoopInvariant
-    | exact (JacobiSetupLoopInvariant.jacobiSetupInvariant ‹_›).jacobiSetupLoopInvariant
-    | exact jacobiSetupLoopInvariant_some_none _ _ _ _ _
+    | exact jacobiSetupLoopInvariant_empty ‹_› _ _
+    | exact JacobiSetupLoopInvariant.of_cons ‹_›
+    | exact jacobiSetupLoopInvariant_some_none _ _ _ _ _ _ _
     | exact (nomatch ‹none = some _›)
     | exact (JacobiSetupLoopInvariant.false_of_some ‹_› ‹_› ‹_›).elim
     | exact JacobiSetupLoopInvariant.isJacobiInfo ‹_› ‹_› ‹_› ‹_› ‹_› ‹_›
-    | exact JacobiSetupLoopInvariant.push_some ‹_› ‹_› ‹_› ‹_› ‹_› ‹_›
+    | exact JacobiSetupLoopInvariant.push_some_add_one ‹_› ‹_› ‹_› ‹_› ‹_› ‹_› ‹_›
+    | exact JacobiSetupLoopInvariant.push_some ‹_› ‹_› ‹_› ‹_› ‹_› ‹_› ‹_›
     | exact JacobiSetupLoopInvariant.push_none ‹_› ‹_› ‹_› ‹_› ‹_›
 
 end

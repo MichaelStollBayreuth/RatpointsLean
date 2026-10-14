@@ -560,26 +560,27 @@ coefficient `lcf ≠ 0` and the largest denominator `bHigh`, or `none` where the
 `Ratpoints.primeTable` or more than `Ratpoints.jacobiPrimes` distinct prime factors, or when the
 primes with an odd exponent sum to more than `Ratpoints.jacobiTable`. The power `2^v` is divided
 off; then each prime `q` of the table that divides the cofactor, in turn while the cofactor is not
-`1`, with its exponent, and for an odd exponent the table of the non-squares modulo `q`
-(`Ratpoints.Sieve.nonSquares`); and the signs (`Ratpoints.Sieve.jacobiSigns`) and the reciprocals
-of the primes (`Ratpoints.Sieve.magic`).
+`1`, with its exponent, its reciprocal (`Ratpoints.Sieve.magic`) and, for an odd exponent, the table
+of the non-squares modulo `q` (`Ratpoints.Sieve.nonSquares`), counting the primes `≡ 3 (mod 4)` with
+an odd exponent; and the signs (`Ratpoints.Sieve.jacobiSigns`).
 
 C: `find_points.c:683-708`, `find_points.c:714-720`, `find_points.c:730-731`
 
 Deviation: the tables as fresh arrays, for the table `jtab` of the run that `tab` and `tab_len`
 give, whose bound `Ratpoints.jacobiTable` on their total size is kept; the valuations by
 `Ratpoints.Setup.valuation`, for `mpz_scan1` at `2` and the loop of exact divisions at the odd
-primes, the power then divided off at once; the number `n3` of the primes `≡ 3 (mod 4)` with an odd
-exponent counted in the list at the end, where the C code counts them in its loop, and the
-reciprocals of the primes made from the list at the end, where the C code sets each with its prime
-(line 700); natural numbers for the GMP integer `tmp`, the `long`s and the `unsigned long`s of the
-reciprocals, which are `ULONG_MAX / q + 1` for the odd primes `q`; `none` and the tables returned,
-for the return values `0` and `1` and the structure that `ji` points to. -/
+primes, the power then divided off at once; natural numbers for the GMP integer `tmp`, the `long`s
+and the `unsigned long`s of the reciprocals, which are `ULONG_MAX / q + 1` for the odd primes `q`;
+`none` and the tables returned, for the return values `0` and `1` and the structure that `ji` points
+to. -/
+-- lint: allow long-proof: the loop of jacobi_setup, as in the C code
 def jacobiSetup (lcf : Int) (bHigh : Nat) : Id (Option JacobiInfo) := do
   if mulModLimit < bHigh then return none
   let (v, _) ← Setup.valuation lcf 2
   let mut w := lcf.natAbs / 2 ^ v
   let mut qs : Array (Nat × Option (Array Bool)) := #[]
+  let mut ms : Array Nat := #[]
+  let mut n3 := 0
   let mut used := 0
   for q in primeTable do
     if w == 1 then break
@@ -587,14 +588,15 @@ def jacobiSetup (lcf : Int) (bHigh : Nat) : Id (Option JacobiInfo) := do
     let (e, _) ← Setup.valuation w q
     w := w / q ^ e
     if qs.size == jacobiPrimes then return none
+    ms := ms.push (magic q)
     if e % 2 == 1 then
       if jacobiTable < used + q then return none
       used := used + q
       qs := qs.push (q, some (← nonSquares q))
+      if q &&& 2 != 0 then n3 := n3 + 1
     else qs := qs.push (q, none)
   if w != 1 then return none
-  let n3 := (qs.filter fun (q, ns) ↦ ns.isSome && q &&& 2 != 0).size
-  return some ⟨qs.toList, qs.map fun (q, _) ↦ magic q, jacobiSigns n3 (lcf < 0) v⟩
+  return some ⟨qs.toList, ms, jacobiSigns n3 (lcf < 0) v⟩
 
 /-- Whether `(lcf / b*) = 1` for the denominator `0 < b ≤ Ratpoints.mulModLimit` (more generally
 `b q < 2 ^ 64` for every prime `q` of `ji`), by the tables `ji` of the leading coefficient `lcf`
