@@ -202,13 +202,14 @@ flag of the `long`s (`Ratpoints.Setup.useCLong`), and no points when the curve h
 one of the primes examined; the checked loop off when there are no forbidden divisors and no Jacobi
 test; the shape of the run (`Ratpoints.Sieve.runSetup`); and the points at infinity
 (`Ratpoints.Sieve.pointsAtInfinity`), followed by those of the denominators of the shape
-(`Ratpoints.Sieve.sieveRun`) with the sieve entries of the moduli, their reciprocals and pieces of
-at most `Ratpoints.Params.arraySizeAt P H` bit arrays, each point mapped by
-`Ratpoints.Sieve.swapPoint` when `rev` is set. For well-formed parameters, `1 ≤ H < 2 ^ 63` and `d`
-the degree of `c`, these are the points at infinity followed by the points of the brute-force
-reference over the denominators of the search (`Ratpoints.searchDens`), in the order of its loop,
-increasing unless the shape is that of the divisors, each mapped when `rev` is set, also when an
-exit is taken (`Ratpoints.run_searchPoints`).
+(`Ratpoints.Sieve.sieveRun`) with the sieve entries of the moduli in the three stages that the cut
+points `P.sp1` and `P.sp2` give, their reciprocals and pieces of at most
+`Ratpoints.Params.arraySizeAt P H` bit arrays, each point mapped by `Ratpoints.Sieve.swapPoint` when
+`rev` is set. For well-formed parameters, `1 ≤ H < 2 ^ 63` and `d` the degree of `c`, these are the
+points at infinity followed by the points of the brute-force reference over the denominators of the
+search (`Ratpoints.searchDens`), in the order of its loop, increasing unless the shape is that of
+the divisors, each mapped when `rev` is set, also when an exit is taken
+(`Ratpoints.run_searchPoints`).
 
 C: `find_points.c:2793-2795`, `find_points.c:4573`, `find_points.c:4588-4589`,
 `find_points.c:4595-4596`, `find_points.c:4603-4604`, `find_points.c:4607`,
@@ -247,7 +248,7 @@ def searchPoints (c : List Int) (d H : Nat) (P : Params) (rev : Bool) :
     | return []
   if forb.isEmpty && forbVal.isEmpty && !useJacobi then checkDenom := false
   let shape ← runSetup useSquares us1 checkDenom useJacobi forb forbVal lcf bHigh
-  let pts ← sieveRun c d H (P.arraySizeAt H) rev entries magics nb db shape 1 bHigh
+  let pts ← sieveRun c d H (P.arraySizeAt H) rev P.sp1 P.sp2 entries magics nb db shape 1 bHigh
   return pointsAtInfinity c d rev ++ pts.toList
 
 /-- The points of height at most `H` on `y ^ 2 = F(x, z)` for the coefficient list `c`, found by the

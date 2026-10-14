@@ -301,14 +301,16 @@ which $\mathrm{maxPrimeEven} \le 2^{32}$ gives.
 
 \begin{lemma}[The factors of a modulus]\label{lem:modulusFactors}
   \uses{def:modulusFactors}
-  \lean{Ratpoints.ModulusFactorsInvariant, Ratpoints.ModulusFactorsPowInvariant, Ratpoints.modulusFactors_spec, Ratpoints.eq_mul_prod_run_modulusFactors, Ratpoints.lt_numPrimes_of_mem_run_modulusFactors, Ratpoints.one_le_of_mem_run_modulusFactors, Ratpoints.pow_dvd_of_mem_run_modulusFactors, Ratpoints.getElem!_primeTable_le_of_le, Ratpoints.getElem!_primeTable_ne_snd_run_modulusFactors, Ratpoints.snd_run_modulusFactors_lt_mul_self_of_dvd, Ratpoints.snd_run_modulusFactors_eq_one}
+  \lean{Ratpoints.ModulusFactorsInvariant, Ratpoints.ModulusFactorsPowInvariant, Ratpoints.modulusFactors_spec, Ratpoints.eq_mul_prod_run_modulusFactors, Ratpoints.lt_numPrimes_of_mem_run_modulusFactors, Ratpoints.one_le_of_mem_run_modulusFactors, Ratpoints.pow_dvd_of_mem_run_modulusFactors, Ratpoints.getElem!_primeTable_le_of_le, Ratpoints.getElem!_primeTable_inj, Ratpoints.getElem!_primeTable_ne_snd_run_modulusFactors, Ratpoints.snd_run_modulusFactors_lt_mul_self_of_dvd, Ratpoints.snd_run_modulusFactors_eq_one, Ratpoints.fst_run_modulusFactors_getElem!_primeTable}
   \leanok
   $m$ is the cofactor times the product of the powers of the primes at the positions; the positions
   increase and are below $\mathrm{numPrimes}$, the exponents are at least $1$, the cofactor is none
   of the first $\mathrm{numPrimes}$ primes of the table, and each of them that divides it is above
   its square root. So each factor divides $m$, and if every divisor $q > 1$ of $m$ is divisible by
   one of the first $\mathrm{numPrimes}$ primes of the table, as for those primes themselves, the
-  cofactor is $1$ and the product of the factors is $m$.
+  cofactor is $1$ and the product of the factors is $m$; one of these primes is its only factor,
+  with the exponent $1$, since the table increases, so that different positions hold different
+  primes.
 \end{lemma}
 
 \begin{proof}
@@ -355,12 +357,13 @@ which $\mathrm{maxPrimeEven} \le 2^{32}$ gives.
 \begin{lemma}[The rows of a modulus let every point through]\label{lem:sieveEntry_admits}
   \uses{def:makeModulus, lem:modulusFactors, lem:admits_examinePrime, lem:power_admits,
     lem:examinePrime_eq, lem:examinePrime_none, def:mulMod}
-  \lean{Ratpoints.Sieve.Entry.admits_mod_of_dvd, Ratpoints.Sieve.Power.admits_mod_of_dvd, Ratpoints.MakeModulusInvariant, Ratpoints.makeModulus?_spec}
+  \lean{Ratpoints.Sieve.Entry.admits_mod_of_dvd, Ratpoints.Sieve.Power.admits_mod_of_dvd, Ratpoints.MakeModulusInvariant, Ratpoints.factors_eq_of_run_makeModulus?_eq_some, Ratpoints.makeModulus?_spec}
   \leanok
   For tables of the loop that are those of the reference: if the entry of $m$ is made, it is an
   entry of $m$ with the reciprocal of $m$, and its row of $b$ admits $a$ for every $\gcd(a, b) = 1$
-  with $y^2 = F(a, b)$; if it is not made, the curve has no points. Neither needs more of $m$ than
-  the factorization computes.
+  with $y^2 = F(a, b)$, and for one of the first $\mathrm{numPrimes}$ primes of the table its only
+  factor is that prime with the table of the reference; if it is not made, the curve has no points.
+  Neither needs more of $m$ than the factorization computes.
 \end{lemma}
 
 \begin{proof}
@@ -372,7 +375,9 @@ which $\mathrm{maxPrimeEven} \le 2^{32}$ gives.
   the table that its examination gives is the reference (Lemma~\ref{lem:examinePrime_eq}). No sieve
   entry is made only when a prime examined for it has no table with the exit, and then the curve has
   no points (Lemma~\ref{lem:examinePrime_none}). No Chinese remainder theorem is needed: the entry
-  only intersects the conditions of its factors.
+  only intersects the conditions of its factors. A prime among the first $\mathrm{numPrimes}$ of the
+  table is its own only factor (Lemma~\ref{lem:modulusFactors}), whose table the loop has kept or
+  the examination gives as the reference (Lemma~\ref{lem:examinePrime_eq}).
 \end{proof}
 
 The rows of a sieve entry are made from its admission test by the plain builder of
@@ -415,14 +420,16 @@ parameters of the command line examine the first $q$ primes and take primes as m
 \end{definition}
 
 \begin{lemma}[What \texttt{sieving\_info} computes is sound]\label{lem:sievingInfo}
-  \uses{def:sievingInfo, lem:examinePrimes, lem:sieveEntry_admits, def:forbidden, def:mulMod}
+  \uses{def:sievingInfo, lem:examinePrimes, lem:sieveEntry_admits, def:forbidden, def:mulMod,
+    def:Params, def:stage3, lem:stage3}
   \lean{Ratpoints.SievingInfoInvariant, Ratpoints.sievingInfo_spec}
   \leanok
   For well-formed parameters and either value of the switch of the checked loop: if
-  \verb|sieving_info| gives a result, every sieve entry is sound and holds the reciprocal of its
-  modulus, the reciprocals returned are those of the entries in their order, and the forbidden
-  divisors are among those that the two loops may record; if it gives none, the curve has no
-  points.
+  \verb|sieving_info| gives a result, the sieve entries are those of the moduli, in their order,
+  every sieve entry is sound and holds the reciprocal of its modulus, those of the third stage, from
+  the position $s_2$ on, are prime entries (Definition~\ref{def:stage3}), the reciprocals returned
+  are those of the entries in their order, and the forbidden divisors are among those that the two
+  loops may record; if it gives none, the curve has no points.
 \end{lemma}
 
 \begin{proof}
@@ -432,6 +439,10 @@ parameters of the command line examine the first $q$ primes and take primes as m
   comes from the well-formedness; the forbidden divisors of the second loop are those of the
   contract of Definition~\ref{def:forbidden}. The exit is that of the loop of the tables or of a
   modulus. The reciprocal of each entry is that of its modulus by Lemma~\ref{lem:sieveEntry_admits}.
+  A modulus of the third stage is one of the first $\mathrm{numPrimes}$ primes of the table
+  (Definition~\ref{def:Params}), whose entry has that prime with the table of the reference as its
+  only factor (Lemma~\ref{lem:sieveEntry_admits}) and its reciprocal, a prime entry since the prime
+  is below $2^{32}$ (Lemma~\ref{lem:stage3}).
 \end{proof}
 
 The search (Definition~\ref{def:searchPoints}) takes its sieve entries and its forbidden divisors

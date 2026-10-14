@@ -386,20 +386,22 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
 
 The sieve of one denominator and the check of stage~C1 are the reference of the words, with this
 lemma, and hold no C ranges: the components of this chapter model those lines, with the cuts above.
-The run over the denominators (Definition~\ref{def:sieveRun}) makes the rows of the moduli once and
-returns, for each denominator of its shape that passes the test of the shape, the points that
-\verb|sift| finds from the word of its class; its contract holds for $A \ge 1$, sieve entries with
-$p > 0$ and their reciprocals, the denominators from $b_{\mathrm{low}} \ge 1$ to
-$b_{\mathrm{high}} < 2^{63}$ and $H < 2^{63}$, and \verb|sift| computes the residues $b \bmod p$
-once per denominator, where ratpoints computes the residues of $b / 2^k$ before each call of
-\verb|sift| (\verb|fill_bp_list|). The search of the polynomial (Definition~\ref{def:searchPoints}),
-which \verb|findPoints| (Definition~\ref{def:findPoints}) runs on the polynomial that the reversal
-check hands on, runs it with $A = \mathrm{arraySizeAt}(H)$ of its parameters and the sieve entries
-that \verb|sieving_info| makes of its moduli (Definition~\ref{def:sievingInfo}), primes, prime
-powers and products of them. So the reduction of the run to the reference
-(Theorem~\ref{thm:run_reference}) needs the positivity of the moduli, and the equation of the search
-the lower bound of the array size, two facts that stage~C1 did not need; stage~C2 changed neither
-the statements of the main theorems nor the comparator challenge.
+The run over the denominators (Definition~\ref{def:sieveRun}) makes the rows of the moduli of the
+first two stages once, the first $s_2$, hands the sieve entries from $s_2$ on and their reciprocals
+to the third stage, and returns, for each denominator of its shape that passes the test of the
+shape, the points that \verb|sift| finds from the word of its class with the first stage ending at
+$s_1$; its contract holds for any cut points, $A \ge 1$, sieve entries with $p > 0$ and their
+reciprocals, those from $s_2$ on prime entries (Definition~\ref{def:stage3}), the denominators from
+$b_{\mathrm{low}} \ge 1$ to $b_{\mathrm{high}} < 2^{63}$ and $H < 2^{63}$, and \verb|sift| computes
+the residues $b \bmod p$ once per denominator, where ratpoints computes the residues of $b / 2^k$
+before each call of \verb|sift| (\verb|fill_bp_list|). The search of the polynomial
+(Definition~\ref{def:searchPoints}), which \verb|findPoints| (Definition~\ref{def:findPoints}) runs
+on the polynomial that the reversal check hands on, runs it with $A = \mathrm{arraySizeAt}(H)$ of
+its parameters and the sieve entries that \verb|sieving_info| makes of its moduli
+(Definition~\ref{def:sievingInfo}), primes, prime powers and products of them. So the reduction of
+the run to the reference (Theorem~\ref{thm:run_reference}) needs the positivity of the moduli, and
+the equation of the search the lower bound of the array size, two facts that stage~C1 did not need;
+stage~C2 changed neither the statements of the main theorems nor the comparator challenge.
 
 Each component of this chapter differs from the C code in a stated way, recorded in its
 \verb|Deviation:| paragraph:
@@ -408,12 +410,6 @@ Each component of this chapter differs from the C code in a stated way, recorded
     every numerator from $-H$ to $H$, and the class word of the first stage written into every word,
     the 2-adic pattern of the class at the stride $1$, for the packing of the 2-adic classes (F3)
     and the search region (H);
-  \item every modulus in the first stage, over every bit array, for the second stage, which and-s
-    the rows of its moduli, one after the other, into each bit array that the scan finds nonzero,
-    and stops as soon as no bit of it is left, and the third stage, which tests one numerator at a
-    time after the test for common factors, stops at the first prime that rejects it, skips the
-    primes that divide $b$, and looks up the inverses of $b$ when the first numerator of $b$ reaches
-    it (F2);
   \item the first stage of the builds with one register per chunk, for the chunks of sixteen
     registers of the default build with the legs over the tail of a piece (F4);
   \item the rows from the admission test of the sieve entry (Definition~\ref{def:SieveEntry}), one

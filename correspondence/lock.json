@@ -613,6 +613,12 @@
         "excluded (memory)"
       ]
     },
+    "find_points.c:3861-3861": {
+      "hash": "15874e20c9da1026d31f10f529d66ee78f221671553f81d04eda1903a4dd1dc9",
+      "owners": [
+        "Ratpoints.Sieve.sieveRun"
+      ]
+    },
     "find_points.c:3866-3868": {
       "hash": "055106846ee63d6c343d0ca88540fea57cd51a97691d13d89ca390e7a5fa332f",
       "owners": [
@@ -639,6 +645,12 @@
     },
     "find_points.c:3889-3904": {
       "hash": "29cd4d589b42c1d5287fa18ba407df64a3b9f33dadf326916ed0eefe929cc4a0",
+      "owners": [
+        "Ratpoints.Sieve.sieveRun"
+      ]
+    },
+    "find_points.c:3911-3911": {
+      "hash": "d4b551f091b060e022f610cfb1962dd539c93edbd616f3ce39abebf95b715541",
       "owners": [
         "Ratpoints.Sieve.sieveRun"
       ]

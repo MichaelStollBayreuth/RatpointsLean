@@ -581,26 +581,30 @@ $(c_d / q) = -1$, which these do not reach.
   (Lemmas~\ref{lem:odd_denominators}, \ref{lem:forbidden} and~\ref{lem:jacobiTest}).
 \end{proof}
 
-The run (Definition~\ref{def:sieveRun}) takes the shape, the words of the 2-adic information and the
-range $b_{\mathrm{low}}, \dots, b_{\mathrm{high}}$, and lives in the model file of this chapter: for
-each denominator of the list of the shape that passes its test, the points that \verb|sift| finds
-from the word of its class, appended in turn (\csource{find_points.c}{3889}{3904},
-\csource{find_points.c}{3917}{3918}, \csource{find_points.c}{3926}{3936},
-\csource{find_points.c}{3954}{3966}, \csource{find_points.c}{4009}{4009},
-\csource{find_points.c}{4042}{4052}, \csource{find_points.c}{4059}{4059},
-\csource{find_points.c}{4066}{4072}, \csource{find_points.c}{4075}{4078},
-\csource{find_points.c}{5120}{5120}, \csource{find_points.c}{5152}{5160}). Its contract, for an
-array size $A \ge 1$ and sieve entries of moduli $p > 0$, is the concatenation, over the
-denominators of the list that pass the test, of what the brute-force reference finds over the
-numerators that pass the class word and survive the sieve entries, mapped by $\mathrm{swapPoint}$
-when the flag of the reversal is set (\verb|Ratpoints.Sieve.sieveRun_spec|,
-\verb|Ratpoints.Sieve.toList_run_sieveRun|). For sound sieve entries
-(Definition~\ref{def:SieveEntry}) and the shapes of Lemma~\ref{lem:shape_dens}, the filters change
-nothing, and the result is the concatenation of what the reference finds over each denominator of
-the list: given a list $l$ such that the list of the shape is $l$ filtered by a test, every
-denominator of $l$ that carries a point passes that test and the test of the shape, and every
-numerator that gives a point passes the class word and survives the sieve entries, the run gives the
-reference over $l$ (Theorem~\ref{thm:run_reference},
+The run (Definition~\ref{def:sieveRun}) takes the shape, the words of the 2-adic information, the
+range $b_{\mathrm{low}}, \dots, b_{\mathrm{high}}$ and the cut points $s_1$ and $s_2$ of the stages,
+and lives in the model file of this chapter: for each denominator of the list of the shape that
+passes its test, the points that \verb|sift| finds from the word of its class, with the rows of the
+first $s_2$ sieve entries and the others in the third stage, appended in turn
+(\csource{find_points.c}{3861}{3861}, \csource{find_points.c}{3889}{3904},
+\csource{find_points.c}{3911}{3911}, \csource{find_points.c}{3917}{3918},
+\csource{find_points.c}{3926}{3936}, \csource{find_points.c}{3954}{3966},
+\csource{find_points.c}{4009}{4009}, \csource{find_points.c}{4042}{4052},
+\csource{find_points.c}{4059}{4059}, \csource{find_points.c}{4066}{4072},
+\csource{find_points.c}{4075}{4078}, \csource{find_points.c}{5120}{5120},
+\csource{find_points.c}{5152}{5160}). Its contract, for an array size $A \ge 1$, sieve entries of
+moduli $p > 0$ with their reciprocals, those from $s_2$ on prime entries
+(Definition~\ref{def:stage3}), the denominators from $b_{\mathrm{low}} \ge 1$ to
+$b_{\mathrm{high}} < 2^{63}$ and $H < 2^{63}$, is the concatenation, over the denominators of the
+list that pass the test, of what the brute-force reference finds over the numerators that pass the
+class word and survive the sieve entries, mapped by $\mathrm{swapPoint}$ when the flag of the
+reversal is set (\verb|Ratpoints.Sieve.sieveRun_spec|, \verb|Ratpoints.Sieve.toList_run_sieveRun|).
+For sound sieve entries (Definition~\ref{def:SieveEntry}) and the shapes of
+Lemma~\ref{lem:shape_dens}, the filters change nothing, and the result is the concatenation of what
+the reference finds over each denominator of the list: given a list $l$ such that the list of the
+shape is $l$ filtered by a test, every denominator of $l$ that carries a point passes that test and
+the test of the shape, and every numerator that gives a point passes the class word and survives the
+sieve entries, the run gives the reference over $l$ (Theorem~\ref{thm:run_reference},
 \verb|Ratpoints.Sieve.toList_run_sieveRun_eq_flatMap|); the points at infinity come from the search.
 
 \section{The search and the theorems}\label{sec:denSearch}
@@ -611,14 +615,15 @@ divisors of the leading coefficient for odd degree, the 2-adic information and i
 \verb|sieving_info| computes (Definition~\ref{def:sievingInfo}), the tables of the examined primes
 with their exit, the forbidden divisors for even degree and the sieve entries of the moduli, the
 switch of the checked loop, the shape, and the points at infinity followed by the run over the
-denominators from $1$ to $H$. For well-formed parameters, $H \ge 1$ and $d$ the degree of $c$, its
-result is the list of the points at infinity followed by the points of the reference over the
-denominators of the search (Definition~\ref{def:searchDens}), in their order, each mapped by
-$\mathrm{swapPoint}$ when the flag of the reversal is set, also at both exits; its node names
-\verb|Ratpoints.run_searchPoints| with this statement, uses Definitions~\ref{def:Shape}
-and~\ref{def:searchDens}, Lemmas~\ref{lem:twoAdic_exit} and~\ref{lem:shape_dens} and the reduction
-of the run, and holds the C ranges of the flags and of the exits, the call of \verb|sieving_info|
-among them, with the frame of the block that sets up the run (\csource{find_points.c}{2793}{2795},
+denominators from $1$ to $H$ with the cut points of the parameters. For well-formed parameters,
+$1 \le H < 2^{63}$ and $d$ the degree of $c$, its result is the list of the points at infinity
+followed by the points of the reference over the denominators of the search
+(Definition~\ref{def:searchDens}), in their order, each mapped by $\mathrm{swapPoint}$ when the flag
+of the reversal is set, also at both exits; its node names \verb|Ratpoints.run_searchPoints| with
+this statement, uses Definitions~\ref{def:Shape} and~\ref{def:searchDens},
+Lemmas~\ref{lem:twoAdic_exit} and~\ref{lem:shape_dens} and the reduction of the run, and holds the C
+ranges of the flags and of the exits, the call of \verb|sieving_info| among them, with the frame of
+the block that sets up the run (\csource{find_points.c}{2793}{2795},
 \csource{find_points.c}{4573}{4573}, \csource{find_points.c}{4588}{4589},
 \csource{find_points.c}{4595}{4596}, \csource{find_points.c}{4603}{4604},
 \csource{find_points.c}{4607}{4607}, \csource{find_points.c}{4900}{4943},

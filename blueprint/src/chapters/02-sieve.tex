@@ -76,7 +76,7 @@ are no points modulo $p$ (D) and the options of the output (G) come in their sta
 
 \begin{definition}[Sieving parameters]\label{def:Params}
   \uses{def:primeTable, def:barrett}
-  \lean{Ratpoints.Params, Ratpoints.Params.WF, Ratpoints.Params.WF.one_lt_of_mem, Ratpoints.Params.WF.prime_of_mem_drop}
+  \lean{Ratpoints.Params, Ratpoints.Params.WF, Ratpoints.Params.WF.one_lt_of_mem, Ratpoints.Params.WF.prime_of_mem_drop, Ratpoints.Params.WF.exists_getElem!_primeTable_eq_of_mem_drop}
   \leanok
   The free choices of the sieve: the moduli, in the order of the stages, primes of the table,
   powers of them and products of such powers; how many primes the loop of the tables examines, the
@@ -91,7 +91,8 @@ are no points modulo $p$ (D) and the options of the output (G) come in their sta
   Lemma~\ref{lem:modulusFactors}); when the moduli of the third stage, from the position $s_2$ on,
   are primes of the table; when at most $\mathrm{numPrimes}$ primes are examined; and when
   $s_1 \le s_2 \le$ the number of moduli. So the moduli of well-formed parameters are above $1$,
-  and those of the third stage are primes. The table holds no $2$, so an even modulus is never
+  and those of the third stage are primes, each one of the first $\mathrm{numPrimes}$ primes of the
+  table, the one that divides it. The table holds no $2$, so an even modulus is never
   well-formed, as ratpoints offers odd moduli only.
 \end{definition}
 
@@ -297,29 +298,35 @@ power, which loop over the residues, are components of type \verb|Id| with their
 \end{definition}
 
 \begin{definition}[The denominators]\label{def:sieveRun}
-  \uses{def:sift, def:Shape, lem:shape_dens}
-  \lean{Ratpoints.Sieve.sieveRun, Ratpoints.Sieve.sieveRun_spec, Ratpoints.Sieve.toList_run_sieveRun}
+  \uses{def:sift, def:Shape, lem:shape_dens, def:stage3}
+  \lean{Ratpoints.Sieve.sieveRun, Ratpoints.Sieve.SieveRunInvariant.append_of_forall, Ratpoints.Sieve.sieveRun_spec, Ratpoints.Sieve.toList_run_sieveRun}
   \leanok
-  The rows of the moduli made once, all of them for the first stage, so that the third stage gets no
-  entries and none of the reciprocals of the moduli, and the denominators of a shape of the loop
+  The sieve entries of the moduli cut into the three stages at the cut points $s_1 \le s_2$, the
+  same for the whole run (\verb|run_block| takes the ends of the second and the third stage for each
+  block from the correction of the moduli, whose first decision is that of the arguments; stage~I):
+  the rows of the moduli of the first two stages, the first $s_2$, made once, the first stage ending
+  at $s_1$, and the entries from $s_2$ on, the third stage, with the reciprocals that the array of
+  the reciprocals holds from the position $s_2$ on; and the denominators of a shape of the loop
   (Definition~\ref{def:Shape}) from $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$, in the order of its
   loop: for each that passes the test of the shape, the points that \verb|sift|
   (Definition~\ref{def:sift}) finds from the word $\mathrm{nb}[b \bmod 64]$ of its class in the
   2-adic information, with pieces of at most $A$ bit arrays and the flag of the reversal, appended
-  in turn (\csource{find_points.c}{3889}{3904}, \csource{find_points.c}{3917}{3918},
+  in turn (\csource{find_points.c}{3861}{3861}, \csource{find_points.c}{3889}{3904},
+  \csource{find_points.c}{3911}{3911}, \csource{find_points.c}{3917}{3918},
   \csource{find_points.c}{3926}{3936}, \csource{find_points.c}{3954}{3966},
   \csource{find_points.c}{4009}{4009}, \csource{find_points.c}{4042}{4052},
   \csource{find_points.c}{4059}{4059}, \csource{find_points.c}{4066}{4072},
   \csource{find_points.c}{4075}{4078}, \csource{find_points.c}{5120}{5120},
   \csource{find_points.c}{5152}{5160}). Its contract, for an array size $A \ge 1$, moduli $p > 0$
-  whose reciprocals the array of the reciprocals holds in their order, denominators from
+  whose reciprocals the array of the reciprocals holds in their order, of which those from $s_2$ on
+  are prime entries (Definition~\ref{def:stage3}), as the third stage needs, denominators from
   $b_{\mathrm{low}} \ge 1$ to $b_{\mathrm{high}} < 2^{63}$ and $H < 2^{63}$, as the test for common
   factors on the words of the C code needs (the denominators of every shape lie between
-  $b_{\mathrm{low}}$ and $b_{\mathrm{high}}$, Lemma~\ref{lem:shape_dens}): the result is the
-  concatenation, over the denominators $b$ of the list of the shape that pass its test, of what the
-  brute-force reference finds over $b$ and the numerators that pass the class bit of
-  $\mathrm{nb}[b \bmod 64]$ and survive the moduli for $b$, mapped by $\mathrm{swapPoint}$
-  (Definition~\ref{def:swapPoint}) when the flag is set.
+  $b_{\mathrm{low}}$ and $b_{\mathrm{high}}$, Lemma~\ref{lem:shape_dens}): the result, for any cut
+  points, is the concatenation, over the denominators $b$ of the list of the shape that pass its
+  test, of what the brute-force reference finds over $b$ and the numerators that pass the class bit
+  of $\mathrm{nb}[b \bmod 64]$ and survive the moduli of all three stages for $b$, mapped by
+  $\mathrm{swapPoint}$ (Definition~\ref{def:swapPoint}) when the flag is set.
 \end{definition}
 
 \begin{definition}[The points at infinity]\label{def:pointsAtInfinity}
@@ -433,10 +440,11 @@ meets; ratpoints refuses it before it gets there, and so does $\mathrm{findPoint
 \end{proof}
 
 \begin{theorem}[The run and the reference]\label{thm:run_reference}
-  \uses{def:sieveRun, def:bruteForce}
+  \uses{def:sieveRun, def:bruteForce, def:stage3}
   \lean{Ratpoints.Sieve.toList_run_sieveRun_eq_flatMap}
   \leanok
-  For an array size $A \ge 1$, moduli $p > 0$ with their reciprocals, denominators from
+  For an array size $A \ge 1$, any cut points, moduli $p > 0$ with their reciprocals, of which those
+  from $s_2$ on are prime entries (Definition~\ref{def:stage3}), denominators from
   $b_{\mathrm{low}} \ge 1$ to $b_{\mathrm{high}} < 2^{63}$, $H < 2^{63}$ and a list $l$ of
   denominators such that the list of the shape is $l$ filtered by a test, every denominator of $l$
   over which the brute-force reference finds a point passes that test and the test of the shape, and

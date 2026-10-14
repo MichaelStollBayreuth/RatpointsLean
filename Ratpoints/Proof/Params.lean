@@ -45,7 +45,7 @@ least one bit array.
   lists every odd prime below an entry before it.
 * `Ratpoints.getElem!_primeTable_lt_maxPrimeEven`: the first `Ratpoints.numPrimes` primes of the
   table are below `Ratpoints.maxPrimeEven`; `Ratpoints.getElem!_primeTable_le_of_le`: the table
-  increases.
+  increases; `Ratpoints.getElem!_primeTable_inj`: different positions hold different primes.
 * `Ratpoints.maxPrimeEven_le_two_pow_10`, `Ratpoints.maxPrimeEven_le_two_pow_32`: the moduli below
   `Ratpoints.maxPrimeEven` are below `2 ^ 10`, so below `2 ^ 32`;
   `Ratpoints.mul_add_lt_two_pow_64_of_lt_maxPrimeEven`,
@@ -63,9 +63,12 @@ least one bit array.
   cofactor being above its square root.
 * `Ratpoints.snd_run_modulusFactors_eq_one`: a modulus each of whose divisors above `1` is
   divisible by one of the first `Ratpoints.numPrimes` primes of the table, as the moduli of
-  well-formed parameters are, factors completely over the table.
-* `Ratpoints.Params.WF.one_lt_of_mem`, `Ratpoints.Params.WF.prime_of_mem_drop`: what the search
-  reads off well-formed parameters, beyond their fields.
+  well-formed parameters are, factors completely over the table;
+  `Ratpoints.fst_run_modulusFactors_getElem!_primeTable`: one of these primes is its only factor.
+* `Ratpoints.Params.WF.one_lt_of_mem`, `Ratpoints.Params.WF.prime_of_mem_drop`,
+  `Ratpoints.Params.WF.exists_getElem!_primeTable_eq_of_mem_drop`: what the search reads off
+  well-formed parameters, beyond their fields, the last that the moduli of the third stage are among
+  the first `Ratpoints.numPrimes` primes of the table.
 * `Ratpoints.wf_sieveParams`: every parameter set that the options of the program give is
   well-formed; comparator certifies this (`comparator/Challenge.lean`), which also rules out a
   well-formedness that nothing satisfies.
@@ -162,6 +165,13 @@ theorem getElem!_primeTable_le_of_le {i j : ℕ} (hij : i ≤ j) (hj : j < prime
   rw [getElem!_pos primeTable i (hij.trans_lt hj), getElem!_pos primeTable j hj,
     ← Array.getElem_toList, ← Array.getElem_toList]
   exact pairwise_lt_toList_primeTable.sortedLT.sortedLE.getElem_le_getElem_of_le hij
+
+/-- Different positions of the table hold different primes, since the table increases. -/
+theorem getElem!_primeTable_inj {i j : ℕ} (hi : i < primeTable.size) (hj : j < primeTable.size) :
+    primeTable[i]! = primeTable[j]! ↔ i = j := by
+  rw [getElem!_pos primeTable i hi, getElem!_pos primeTable j hj, ← Array.getElem_toList,
+    ← Array.getElem_toList]
+  exact pairwise_lt_toList_primeTable.nodup.getElem_inj_iff
 
 /-! ### The moduli in the range of the C types -/
 
@@ -483,6 +493,33 @@ theorem snd_run_modulusFactors_eq_one {m : ℕ} (hm : 0 < m)
   rw [← heq, sq] at hsq
   lia
 
+-- A factor of a prime `primeTable[pn]` of the table is `(pn, 1)`.
+private theorem eq_of_mem_run_modulusFactors_getElem!_primeTable {pn : ℕ} (hpn : pn < numPrimes)
+    {f : ℕ × ℕ} (hf : f ∈ (Id.run (modulusFactors primeTable[pn]!)).1) : f = (pn, 1) := by
+  have hs := numPrimes_le_size_primeTable
+  have hp := prime_getElem!_primeTable (hpn.trans_le hs)
+  have hf1 := lt_numPrimes_of_mem_run_modulusFactors hf
+  have hq := (prime_getElem!_primeTable (hf1.trans_le hs)).one_lt
+  obtain h1 | h := (Nat.dvd_prime hp).mp (pow_dvd_of_mem_run_modulusFactors hf)
+  · exact absurd h1 (Nat.one_lt_pow (by have := one_le_of_mem_run_modulusFactors hf; lia) hq).ne'
+  obtain ⟨heq, he⟩ := hp.pow_eq_iff.mp h
+  exact Prod.ext ((getElem!_primeTable_inj (hf1.trans_le hs) (hpn.trans_le hs)).mp heq) he
+
+/-- The factorization over the table of one of its first `Ratpoints.numPrimes` primes is the prime
+itself, with the exponent `1`: every factor divides the prime, so that it is the prime at its own
+position (`Ratpoints.getElem!_primeTable_inj`), and the product of the factors is the prime. -/
+theorem fst_run_modulusFactors_getElem!_primeTable {pn : ℕ} (hpn : pn < numPrimes) :
+    (Id.run (modulusFactors primeTable[pn]!)).1 = [(pn, 1)] := by
+  have hp := prime_getElem!_primeTable (hpn.trans_le numPrimes_le_size_primeTable)
+  have hr := snd_run_modulusFactors_eq_one hp.pos fun q hq hd ↦
+    ⟨pn, hpn, ((hp.eq_one_or_self_of_dvd q hd).resolve_left hq.ne') ▸ dvd_refl _⟩
+  have hl := List.eq_replicate_iff.mpr
+    ⟨rfl, fun _ ↦ eq_of_mem_run_modulusFactors_getElem!_primeTable hpn⟩
+  have hm := eq_mul_prod_run_modulusFactors primeTable[pn]!
+  rw [hr, hl] at hm
+  simp only [List.map_replicate, List.prod_replicate, Nat.pow_one, Nat.one_mul] at hm
+  rw [hl, (Nat.pow_eq_self_iff hp.one_lt).mp hm.symm, List.replicate_one]
+
 /-! ### Well-formed parameters -/
 
 /-- A modulus of well-formed parameters is above `1`. -/
@@ -494,6 +531,16 @@ theorem Params.WF.one_lt_of_mem {P : Params} (hP : P.WF) {m : ℕ} (hm : m ∈ P
 theorem Params.WF.prime_of_mem_drop {P : Params} (hP : P.WF) {m : ℕ}
     (hm : m ∈ P.moduli.drop P.sp2) : m.Prime :=
   prime_of_mem_primeTable (hP.mem_primeTable_of_mem_drop m hm)
+
+/-- A modulus of the third stage of well-formed parameters, from the position
+`Ratpoints.Params.sp2` on, is one of the first `Ratpoints.numPrimes` primes of the table: a prime
+that one of them divides. -/
+theorem Params.WF.exists_getElem!_primeTable_eq_of_mem_drop {P : Params} (hP : P.WF) {m : ℕ}
+    (hm : m ∈ P.moduli.drop P.sp2) : ∃ pn < numPrimes, primeTable[pn]! = m := by
+  have hm' := List.mem_of_mem_drop hm
+  obtain ⟨pn, hpn, hd⟩ := (hP.modulus m hm').2.2 m (hP.one_lt_of_mem hm') dvd_rfl
+  exact ⟨pn, hpn, (Nat.prime_dvd_prime_iff_eq (prime_getElem!_primeTable
+    (hpn.trans_le numPrimes_le_size_primeTable)) (hP.prime_of_mem_drop hm)).mp hd⟩
 
 -- The moduli of the parameters that the options give are among the first `numPrimes` primes of
 -- the table.

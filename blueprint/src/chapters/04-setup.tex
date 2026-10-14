@@ -428,9 +428,10 @@ Lemma~\ref{lem:sift_eq_checkDen} maps their side.
   points modulo a prime examined on the way (\csource{find_points.c}{4992}{5012}); the checked loop
   off when there are no forbidden divisors and no Jacobi test (\csource{find_points.c}{2793}{2795});
   the shape that \verb|run_setup| chooses (Definition~\ref{def:Shape}); and the points at infinity
-  followed by the points of the denominators of the shape, with its tests, the class words and
-  pieces of at most $\mathrm{arraySizeAt}(H)$ bit arrays, each mapped by $\mathrm{swapPoint}$ when
-  the flag is set (\csource{find_points.c}{5116}{5116}, \csource{find_points.c}{5137}{5139},
+  followed by the points of the denominators of the shape, with its tests, the class words, the
+  three stages that the cut points $s_1$ and $s_2$ of the parameters give and pieces of at most
+  $\mathrm{arraySizeAt}(H)$ bit arrays, each mapped by $\mathrm{swapPoint}$ when the flag is set
+  (\csource{find_points.c}{5116}{5116}, \csource{find_points.c}{5137}{5139},
   \csource{find_points.c}{5167}{5167}, the block that sets up the run and runs the denominators;
   \csource{find_points.c}{5106}{5106}, the return when the Sturm step leaves nothing to search, is
   not met before stage~H). A definition of type \verb|Id|, which $\mathrm{findPoints}$ runs. For
@@ -441,9 +442,10 @@ Lemma~\ref{lem:sift_eq_checkDen} maps their side.
   the curve has no points then (Lemmas~\ref{lem:sievingInfo} and~\ref{lem:twoAdic_exit}) and the
   denominators of the search lie in $1, \dots, H$; otherwise the run of the shape gives the
   reference over its denominators, since its tests, the class words and the sieve entries of the
-  moduli, which are sound and whose reciprocals \verb|sieving_info| returns in their order
-  (Lemma~\ref{lem:sievingInfo}), let every point through (Lemmas~\ref{lem:shape_dens},
-  \ref{lem:twoAdic_point} and~\ref{lem:survives}, Theorem~\ref{thm:run_reference}).
+  moduli, which are sound, those of the third stage prime entries, and whose reciprocals
+  \verb|sieving_info| returns in their order (Lemma~\ref{lem:sievingInfo}), let every point through
+  (Lemmas~\ref{lem:shape_dens}, \ref{lem:twoAdic_point} and~\ref{lem:survives},
+  Theorem~\ref{thm:run_reference}).
 \end{definition}
 
 $\mathrm{findPoints}(c, H, P, o)$ (Definition~\ref{def:findPoints}) refuses, in the order of the
@@ -503,10 +505,11 @@ stage~H's, and the height of the arguments of the library, a \verb|long|.
 \end{proof}
 
 Theorem~\ref{thm:run_reference} reduces the run of any polynomial with its degree to the reference:
-for an array size at least $1$, sieve entries of moduli $p > 0$ and filters that let every point
-through, it gives the points of the reference over its denominators, mapped by $\mathrm{swapPoint}$
-when the flag of the reversal is set; Definition~\ref{def:searchPoints} rests on it, with the lists
-and the tests of the shapes (Lemma~\ref{lem:shape_dens}), the 2-adic exit
+for an array size at least $1$, sieve entries of moduli $p > 0$ with their reciprocals, those of the
+third stage prime entries, denominators and a height below $2^{63}$, and filters that let every
+point through, it gives the points of the reference over its denominators, mapped by
+$\mathrm{swapPoint}$ when the flag of the reversal is set; Definition~\ref{def:searchPoints} rests
+on it, with the lists and the tests of the shapes (Lemma~\ref{lem:shape_dens}), the 2-adic exit
 (Lemma~\ref{lem:twoAdic_exit}) and the exit of the tables. Theorem~\ref{thm:findPoints} has
 membership, no duplicates and the set of elements, for every option, from
 Theorem~\ref{thm:findPoints_perm}, and Theorem~\ref{thm:refusals} the refusals, with guards on their

@@ -71,7 +71,10 @@ curve has none.
   a prime or a prime power reads the residues modulo a multiple of its modulus as those of the
   numbers.
 * `Ratpoints.makeModulus?_spec`: the sieve entry of a modulus has the modulus and its reciprocal and
-  lets every point through, and when it is none the curve has no points.
+  lets every point through, that of one of the first `Ratpoints.numPrimes` primes of the table has
+  the prime with the table of the reference as its only factor
+  (`Ratpoints.factors_eq_of_run_makeModulus?_eq_some`), and when it is none the curve has no
+  points.
 
 ## Implementation notes
 
@@ -613,18 +616,8 @@ private theorem examinePower_value (c : List ℤ) (d p e : ℕ) (u : Bool) :
   ⟨fun _ ↦ rfl⟩
 
 attribute [local irreducible] MakeModulusInvariant in
-/-- The contract of `Ratpoints.makeModulus?`, when the tables of the loop of the tables are those of
-the reference: on a sieve entry, its modulus is `m`, its reciprocal that of `m`
-(`Ratpoints.Sieve.magic`), and it admits every point `(a, y, b)` with `gcd(a, b) = 1`, since each
-factor of `m` over the table, a prime or a prime power, divides `m`
-(`Ratpoints.pow_dvd_of_mem_run_modulusFactors`), so that its row reads the residues modulo `m` as
-those of `b` and `a`, and admits every point (`Ratpoints.Sieve.admits_examinePrime_of_sq_eq`,
-`Ratpoints.Sieve.admits_run_examinePower_of_sq_eq`); no Chinese remainder theorem is needed. On
-none, a prime examined for `m` beyond the loop of the tables has no points modulo it, where
-`sieving_info` returns that prime and the search ends, and the curve has no points
-(`Ratpoints.Sieve.not_isPoint_of_run_examinePrime?_eq_none`). -/
-@[spec]
-theorem makeModulus?_spec (c : List ℤ) (u : Bool) (tables : Array Entry) (m : ℕ) :
+-- The contract of `Ratpoints.makeModulus?` without the shape of the entry of a prime of the table.
+private theorem makeModulus?_admits_spec (c : List ℤ) (u : Bool) (tables : Array Entry) (m : ℕ) :
     ⦃ ∀ (i : ℕ) (hi : i < tables.size), tables[i] = examinePrime c (degree c) primeTable[i]! ⦄
     makeModulus? c (degree c) u tables m
     ⦃ fun r ↦ (∀ s, r = some s → s.p = m ∧ s.magic = magic m ∧ ∀ ⦃a y : ℤ⦄ ⦃b : ℕ⦄,
@@ -643,6 +636,58 @@ theorem makeModulus?_spec (c : List ℤ) (u : Bool) (tables : Array Entry) (m : 
     | exact MakeModulusInvariant.push_run_examinePrime? ‹_› ‹_› ‹_› ‹_› ‹_›
     | exact MakeModulusInvariant.push_run_examinePower ‹_› ‹_› ‹_›
     | exact makeModulusInvariant_some_none ‹_› ‹_› ‹_› ‹_›
+
+/-- The sieve entry of one of the first `Ratpoints.numPrimes` primes of the table, when the tables
+of the loop of the tables are those of the reference, has the prime as its only factor, with the
+table of the reference: the prime is its only factor over the table
+(`Ratpoints.fst_run_modulusFactors_getElem!_primeTable`), whose table the loop of the tables has
+kept or `Ratpoints.Sieve.examinePrime?` gives
+(`Ratpoints.Sieve.eq_examinePrime_of_lt_numPrimes_of_run_examinePrime?_eq_some`). -/
+theorem factors_eq_of_run_makeModulus?_eq_some {c : List ℤ} {u : Bool} {tables : Array Entry}
+    {pn : ℕ} (hpn : pn < numPrimes)
+    (htab : ∀ (i : ℕ) (hi : i < tables.size), tables[i] = examinePrime c (degree c) primeTable[i]!)
+    {s : SieveEntry} (h : Id.run (makeModulus? c (degree c) u tables primeTable[pn]!) = some s) :
+    s.factors = [.prime (examinePrime c (degree c) primeTable[pn]!)] := by
+  simp only [makeModulus?, Id.run_bind, fst_run_modulusFactors_getElem!_primeTable hpn,
+    List.forIn_cons, List.forIn_nil, ↓reduceIte] at h
+  cases ht : tables[pn]? with
+  | some t =>
+    obtain ⟨hi, rfl⟩ := Array.getElem?_eq_some_iff.mp ht
+    simp only [ht, List.push_toArray, List.nil_append, Id.run_pure, Option.some.injEq] at h
+    rw [← h, htab]
+  | none =>
+    cases he : Id.run (examinePrime? c (degree c) primeTable[pn]! u) with
+    | none => simp [ht, he] at h
+    | some x =>
+      simp only [ht, List.push_toArray, List.nil_append, Id.run_bind, he, Id.run_pure,
+        Option.some.injEq] at h
+      rw [← h, eq_examinePrime_of_lt_numPrimes_of_run_examinePrime?_eq_some hpn he]
+
+/-- The contract of `Ratpoints.makeModulus?`, when the tables of the loop of the tables are those of
+the reference: on a sieve entry, its modulus is `m`, its reciprocal that of `m`
+(`Ratpoints.Sieve.magic`), and it admits every point `(a, y, b)` with `gcd(a, b) = 1`, since each
+factor of `m` over the table, a prime or a prime power, divides `m`
+(`Ratpoints.pow_dvd_of_mem_run_modulusFactors`), so that its row reads the residues modulo `m` as
+those of `b` and `a`, and admits every point (`Ratpoints.Sieve.admits_examinePrime_of_sq_eq`,
+`Ratpoints.Sieve.admits_run_examinePower_of_sq_eq`); no Chinese remainder theorem is needed. For
+one of the first `Ratpoints.numPrimes` primes of the table, its only factor is the prime with the
+table of the reference (`Ratpoints.factors_eq_of_run_makeModulus?_eq_some`), the shape that the
+third stage of the sieve needs. On none, a prime examined for `m` beyond the loop of the tables has
+no points modulo it, where `sieving_info` returns that prime and the search ends, and the curve has
+no points (`Ratpoints.Sieve.not_isPoint_of_run_examinePrime?_eq_none`). -/
+@[spec]
+theorem makeModulus?_spec (c : List ℤ) (u : Bool) (tables : Array Entry) (m : ℕ) :
+    ⦃ ∀ (i : ℕ) (hi : i < tables.size), tables[i] = examinePrime c (degree c) primeTable[i]! ⦄
+    makeModulus? c (degree c) u tables m
+    ⦃ fun r ↦ (∀ s, r = some s → s.p = m ∧ s.magic = magic m ∧ (∀ ⦃a y : ℤ⦄ ⦃b : ℕ⦄,
+        Int.gcd a b = 1 → y ^ 2 = binaryForm c a b → s.admits b a = true) ∧
+        ∀ pn < numPrimes, primeTable[pn]! = m →
+          s.factors = [.prime (examinePrime c (degree c) m)]) ∧
+      (r = none → ∀ H q, ¬IsPoint c H q) ⦄ :=
+  ⟨fun htab ↦
+    have h := Std.WP.Id.of_run_eq_wp rfl _ ((makeModulus?_admits_spec c u tables m).le_wp htab)
+    ⟨fun s hs ↦ ⟨(h.1 s hs).1, (h.1 s hs).2.1, (h.1 s hs).2.2, fun _ hpn hm ↦
+      hm ▸ factors_eq_of_run_makeModulus?_eq_some hpn htab (hm ▸ hs)⟩, h.2⟩⟩
 
 end Ratpoints
 
