@@ -2316,10 +2316,28 @@
         "Ratpoints.Sieve.scanPiece"
       ]
     },
-    "sift.c:1083-1086": {
-      "hash": "1076c7a6a4d2ebc1eb70a9bdbc4fac4acc08049bf9bc613e459ced0cd990c7c3",
+    "sift.c:1083-1083": {
+      "hash": "7348ec5dc6e683803d514a4500a3dcb273a7dd61a23c8d1b4fc4a6bd17975e80",
       "owners": [
-        "Ratpoints.Sieve.andRows"
+        "Ratpoints.Sieve.secondStage"
+      ]
+    },
+    "sift.c:1084-1084": {
+      "hash": "d33b48fd3920050697d8128edace07d3f27d2c46dc646be9c881083906218c5d",
+      "owners": [
+        "Ratpoints.useLongInPhase2"
+      ]
+    },
+    "sift.c:1085-1085": {
+      "hash": "091eafbe9a2039fc79af5ff88b1480840616826fe2549ca020ef37a64c562ef6",
+      "owners": [
+        "Ratpoints.Sieve.secondStage"
+      ]
+    },
+    "sift.c:1086-1086": {
+      "hash": "1e258076b154c8a5a3303fe08eb08c3253d26728e5b64f90a29cc1752f787781",
+      "owners": [
+        "Ratpoints.useLongInPhase2"
       ]
     },
     "sift.c:1088-1092": {
@@ -2328,10 +2346,34 @@
         "Ratpoints.Sieve.scanPiece"
       ]
     },
-    "sift.c:1174-1202": {
-      "hash": "f4632b73176bb9b2c046bd609fa5583f101e58c7bc9bdc5b4af18e67657390a8",
+    "sift.c:1113-1113": {
+      "hash": "4c65923df22c523079708a02a19f17ef6d508361c80c7bac223628372175bade",
       "owners": [
-        "Ratpoints.Sieve.andRows"
+        "Ratpoints.useLongInPhase2"
+      ]
+    },
+    "sift.c:1135-1136": {
+      "hash": "8f85c565bf51bb4780cf3364dfcb6c5ac7a8bc36fdebf4886261c1c4166ba193",
+      "owners": [
+        "Ratpoints.Sieve.secondStageWord"
+      ]
+    },
+    "sift.c:1141-1152": {
+      "hash": "968087e854336d9530d3e30fea384a4bf73a81394f85cc070e2fddbf9d2645fe",
+      "owners": [
+        "Ratpoints.Sieve.secondStageWord"
+      ]
+    },
+    "sift.c:1174-1174": {
+      "hash": "cd31727502550a74af67e8e5a448d73e73abfa5e17f280b881a2d2394e8afc40",
+      "owners": [
+        "Ratpoints.useLongInPhase2"
+      ]
+    },
+    "sift.c:1175-1202": {
+      "hash": "ac4f2fbf5cc104f0b3b7c8cc5cfd7dc101b8f18491905d465d23b7b10dca66cb",
+      "owners": [
+        "Ratpoints.Sieve.secondStage"
       ]
     },
     "sift.c:1213-1226": {
@@ -2358,8 +2400,20 @@
         "Ratpoints.Sieve.walkWord"
       ]
     },
-    "sift.c:1293-1299": {
-      "hash": "e84d5875d42290ba4a97f342fdf343d5954ff501679f0108ab61bf940161fe7f",
+    "sift.c:1293-1296": {
+      "hash": "f9bd7f2f595dec528b29874c95dbe271adc78ccf0ff9c8192f27377bc70ae42c",
+      "owners": [
+        "Ratpoints.Sieve.scanPiece"
+      ]
+    },
+    "sift.c:1297-1297": {
+      "hash": "08412ff4cae92f4302e4199fc8ace94486ae51ef25ce79ea40948e5854f9d55f",
+      "owners": [
+        "Ratpoints.useLongInPhase2"
+      ]
+    },
+    "sift.c:1298-1299": {
+      "hash": "531290f57cbd4dc640349830b0162664b9e84b465fbe1892d5554e80f4785ee1",
       "owners": [
         "Ratpoints.Sieve.scanPiece"
       ]
@@ -2918,7 +2972,6 @@
     "sift.c:1257-1264": "1b30de168b2b0078bbb74083174dc96fdfe343d27ed02faf89af22415b77a9df",
     "sift.c:1265-1292": "d5fc26ec2dbb44cefb7b0df04369978d52653ac1d494fa794a51a3fe9980a65f",
     "sift.c:1293-1296": "f9bd7f2f595dec528b29874c95dbe271adc78ccf0ff9c8192f27377bc70ae42c",
-    "sift.c:1293-1299": "e84d5875d42290ba4a97f342fdf343d5954ff501679f0108ab61bf940161fe7f",
     "sift.c:1297-1297": "08412ff4cae92f4302e4199fc8ace94486ae51ef25ce79ea40948e5854f9d55f",
     "sift.c:1298-1299": "531290f57cbd4dc640349830b0162664b9e84b465fbe1892d5554e80f4785ee1",
     "sift.c:1300-1305": "19388f4fbfbcc24229fc0ebdd7e18c0abbb994a9d618699f865c99e1e3a8ae16",

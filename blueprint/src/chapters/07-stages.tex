@@ -285,29 +285,31 @@ $b_{\mathrm{high}} \le \mathrm{mulModLimit}$ stays as it is
 
 \begin{definition}[The second stage]\label{def:secondStage}
   \uses{def:bitArrayOps, def:rows}
-  Proposed names: \lname{Ratpoints.useLongInPhase2}, \lname{Ratpoints.Sieve.secondStage},
-  \lname{Ratpoints.Sieve.secondStageWord}. Whether the second stage runs one word at a time,
-  $\mathrm{useLongInPhase2} = \mathrm{false}$ as in the default build (\verb|USE_LONG_IN_PHASE_2|,
-  \csource{sift.c}{1084}{1084}, \csource{sift.c}{1086}{1086}, \csource{sift.c}{1113}{1113},
-  \csource{sift.c}{1174}{1174}, \csource{sift.c}{1297}{1297}). The second stage on a copy of a bit
-  array with the word number $i$: for each modulus $p$ with its row in turn, while the copy is
-  nonzero, the copy is and-ed with bit array $i \bmod p$ of the row (\csource{sift.c}{1083}{1083},
-  \csource{sift.c}{1085}{1085}, \csource{sift.c}{1175}{1202}); and on one word $\kappa$ of it,
-  likewise with word $\kappa$ of those bit arrays (\csource{sift.c}{1135}{1136},
-  \csource{sift.c}{1141}{1152}).
+  \lean{Ratpoints.useLongInPhase2, Ratpoints.Sieve.secondStage, Ratpoints.Sieve.secondStageWord}
+  \leanok
+  Whether the second stage runs one word at a time, $\mathrm{useLongInPhase2} = \mathrm{false}$ as
+  in the default build (\verb|USE_LONG_IN_PHASE_2|, \csource{sift.c}{1084}{1084},
+  \csource{sift.c}{1086}{1086}, \csource{sift.c}{1113}{1113}, \csource{sift.c}{1174}{1174},
+  \csource{sift.c}{1297}{1297}). The second stage on a copy of a bit array with the word number $i$:
+  for each modulus $p$ with its row in turn, while the copy is nonzero, the copy is and-ed with bit
+  array $i \bmod p$ of the row (\csource{sift.c}{1083}{1083}, \csource{sift.c}{1085}{1085},
+  \csource{sift.c}{1175}{1202}); and on one word $\kappa$ of it, likewise with word $\kappa$ of
+  those bit arrays (\csource{sift.c}{1135}{1136}, \csource{sift.c}{1141}{1152}).
 \end{definition}
 
 \begin{lemma}[The second stage]\label{lem:secondStage}
   \uses{def:secondStage}
-  Proposed names: \lname{Ratpoints.Sieve.SecondStageInvariant},
-  \lname{Ratpoints.Sieve.secondStage\_spec}, \lname{Ratpoints.Sieve.secondStageWord\_spec},
-  \lname{Ratpoints.Sieve.andWords\_append}, \lname{Ratpoints.Sieve.andWords\_rbaPack\_mul\_add}.
+  \lean{Ratpoints.Sieve.SecondStageInvariant, Ratpoints.Sieve.secondStage_spec, Ratpoints.Sieve.secondStageWord_spec, Ratpoints.Sieve.andWords_append, Ratpoints.Sieve.andWords_rbaPack_mul_add}
+  \leanok
   The second stage gives the copy and-ed with the bit arrays $i \bmod p$ of the rows of all its
   moduli, and on one word the same word of that; and-ing the rows of a list of moduli and then those
-  of a second list is and-ing those of the concatenation.
+  of a second list is and-ing those of the concatenation; and word $\kappa$ of bit array $j$ of a
+  piece from the word number $w_0$ on is and-ed with the same row words as word $\kappa$ of the bit
+  array with the word number $w_0 + j$.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   An invariant of the loop over the moduli: the copy is the and of the rows so far, or zero, and
   then the and of all of them is zero too.
 \end{proof}

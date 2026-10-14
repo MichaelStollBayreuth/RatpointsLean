@@ -47,6 +47,7 @@ table the proofs use only that its entries are the odd primes below 1022, in inc
   Jacobi test by tables; the last is the largest value that the C code reduces by a multiplication.
 * `Ratpoints.stage3Limit`: the bound below which the third stage of the sieve reduces by a
   multiplication.
+* `Ratpoints.useLongInPhase2`: whether the second stage of the sieve runs one word at a time.
 -/
 
 @[expose] public section
@@ -226,6 +227,18 @@ Deviation: a natural number for the `double` `4294967296.0`, which the C code co
 `double` product `2 p H`. -/
 def stage3Limit : Nat := 2 ^ 32
 
+/-- Whether the second stage of the sieve runs one 64-bit word at a time, `USE_LONG_IN_PHASE_2`:
+`false` in the default build, whose second stage and-s the rows of its moduli into a whole bit array
+at a time; the build `long2` of `make test4configs` sets it. The model has both arms, on a bit array
+(`Ratpoints.Sieve.secondStage`) and on one of its words (`Ratpoints.Sieve.secondStageWord`), which
+leave the same bits, and the scan takes the arm that this constant chooses with stage F.
+
+C: `sift.c:1084`, `sift.c:1086`, `sift.c:1113`, `sift.c:1174`, `sift.c:1297`
+
+Deviation: a constant of the model, set here, for the macro that the compiler is given or not
+(`-DUSE_LONG_IN_PHASE_2`), which the C code tests with `#ifdef` and `#ifndef`. -/
+def useLongInPhase2 : Bool := false
+
 theorem rbaPack_pos : 0 < rbaPack := by decide
 theorem defaultArraySize_pos : 0 < defaultArraySize := by decide
 theorem maxArraySize_pos : 0 < maxArraySize := by decide
@@ -266,7 +279,7 @@ theorem stage3Limit_le_two_pow_32 : stage3Limit ≤ 2 ^ 32 := by decide
 #guard maxDivisors == 512 && veryBig == 1000 && jacobiPrimes == 16 && jacobiTable == 8192 &&
   mulModLimit == 4294967295
 
-#guard stage3Limit == 4294967296
+#guard stage3Limit == 4294967296 && !useLongInPhase2
 
 -- The numbers of primes that the header lists for the builds with moduli of 5 to 10 bits.
 #guard [5, 6, 7, 8, 9, 10].map (fun b ↦ (primeTable.toList.filter (· < 2 ^ b)).length) ==

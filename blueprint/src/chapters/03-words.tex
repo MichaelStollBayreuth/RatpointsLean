@@ -252,9 +252,9 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
   with bit array $(w_0 + j) \bmod p$ of the row, in the three loops of the C code: $n$ bit arrays of
   the row from $p - r$ on when $n < r$, and otherwise $r$ bit arrays from $p - r$ on, then whole
   periods of $p$ from $0$, then the rest from $0$ (\csource{sift.c}{943}{1022}). Every modulus is
-  applied here, those of the second and the third stage too (\csource{sift.c}{1083}{1086},
-  \csource{sift.c}{1174}{1202}). Its contract: for every list of sieve entries with $p > 0$ whose
-  rows for $b$ the moduli carry, bit $t$ of word $y < n \cdot \mathrm{rbaPack}$ is bit $t$ of
+  applied here, those of the second stage (Definition~\ref{def:secondStage}) and of the third
+  (Definition~\ref{def:stage3}) too. Its contract: for every list of sieve entries with $p > 0$
+  whose rows for $b$ the moduli carry, bit $t$ of word $y < n \cdot \mathrm{rbaPack}$ is bit $t$ of
   $\omega$ and the survivor test of $R w_0 + 64 y + t$. The class bit of a numerator $a$ is bit
   $a \bmod 64$ of $\omega$; that of $R w_0 + 64 y + t$, for $t < 64$, is bit $t$, since $64 \mid R$.
 \end{definition}
@@ -296,15 +296,16 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
   the zero bit arrays, stop at the sentinel, and walk the words of each other bit array, with the
   flag of the reversal, the bit $0$ of word $\kappa$ of bit array $i$ standing for the numerator
   $R (w_0 + i) + 64 \kappa$ (\csource{sift.c}{1061}{1082}, \csource{sift.c}{1088}{1092},
-  \csource{sift.c}{1213}{1226}, \csource{sift.c}{1257}{1264}, \csource{sift.c}{1293}{1299}; with
-  \verb|zero|, \csource{rp-private.h}{133}{133}, \csource{rp-private.h}{205}{205},
-  \csource{rp-private.h}{236}{236}, \csource{rp-private.h}{262}{262},
-  \csource{rp-private.h}{286}{286}, and \verb|EXT0|, \verb|EXT|, \csource{rp-private.h}{135}{136},
-  \csource{rp-private.h}{177}{178}, \csource{rp-private.h}{238}{239},
-  \csource{rp-private.h}{264}{266}, \csource{rp-private.h}{288}{289}). Its contract: if bit $t$ of
-  word $y$ is $t < 64$ and $k(R w_0 + 64 y + t)$, for a test $k$ of the numerators and every
-  $y < n \cdot \mathrm{rbaPack}$, the result is the concatenation of the checks of the numerators
-  $R w_0, \dots, R(w_0 + n) - 1$ that pass $k$, in increasing order.
+  \csource{sift.c}{1213}{1226}, \csource{sift.c}{1257}{1264}, \csource{sift.c}{1293}{1296},
+  \csource{sift.c}{1298}{1299}; with \verb|zero|, \csource{rp-private.h}{133}{133},
+  \csource{rp-private.h}{205}{205}, \csource{rp-private.h}{236}{236},
+  \csource{rp-private.h}{262}{262}, \csource{rp-private.h}{286}{286}, and \verb|EXT0|, \verb|EXT|,
+  \csource{rp-private.h}{135}{136}, \csource{rp-private.h}{177}{178},
+  \csource{rp-private.h}{238}{239}, \csource{rp-private.h}{264}{266},
+  \csource{rp-private.h}{288}{289}). Its contract: if bit $t$ of word $y$ is $t < 64$ and
+  $k(R w_0 + 64 y + t)$, for a test $k$ of the numerators and every $y < n \cdot \mathrm{rbaPack}$,
+  the result is the concatenation of the checks of the numerators $R w_0, \dots, R(w_0 + n) - 1$
+  that pass $k$, in increasing order.
 \end{definition}
 
 \begin{definition}[One piece]\label{def:siftPiece}

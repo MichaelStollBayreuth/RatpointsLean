@@ -6,10 +6,10 @@ Authors: Michael Stoll
 module
 
 public import Ratpoints.Model.Sieve
+public import Ratpoints.Proof.Words
 public import Std.WP
 
 import Ratpoints.Proof.Bits
-import Ratpoints.Proof.Words
 import Std.Tactic.Do
 
 /-!
@@ -18,20 +18,22 @@ import Std.Tactic.Do
 The reductions by a reciprocal (`Ratpoints.Sieve.mulMod`, `Ratpoints.Sieve.mulDiv`) compute the
 remainder and the quotient where the C code relies on them: with the reciprocal
 `Ratpoints.Sieve.magic p`, which exceeds `2 ^ 64 / p` by less than `1`, for every `u` with
-`u p < 2 ^ 64`, and so for the values at most `Ratpoints.mulModLimit` and the moduli up to
-`2 ^ 32`. The test for common factors on the 64-bit words of the C code
-(`Ratpoints.Sieve.relprime`) decides whether a numerator is prime to the denominator, and none of
-its operations leaves the range of a `long`. For a numerator `a` prime to the denominator `b` with
-`|a| ≤ H`, the third stage (`Ratpoints.Sieve.stage3`) with the sieve entries of primes
-`1 < p ≤ 2 ^ 32` with their tables and reciprocals (`Ratpoints.Sieve.SieveEntry.IsPrimeEntry`) is
-the test of the rows of these entries: it reads the table of each prime at `a b⁻¹ mod p`, in both
-branches of the bias, and a prime that divides `b` admits every numerator prime to `b`; the values
-that the C code holds in `long`s stay in range. So the test of a candidate
-(`Ratpoints.Sieve.accepted`), for `|a| < 2 ^ 63` and `0 < b < 2 ^ 63`, followed by the exact check
-(`Ratpoints.Sieve.checkPoint`), gives the points of the check of the reference
-(`Ratpoints.Sieve.checkNum`) for the numerators that survive these entries. The contracts of the
-loops are `@[spec]` theorems proved with `vcgen`, the program logic of Lean core, with loop
-invariants that are named definitions.
+`u p < 2 ^ 64`, and so for the values at most `Ratpoints.mulModLimit` and the moduli up to `2 ^ 32`.
+The test for common factors on the 64-bit words of the C code (`Ratpoints.Sieve.relprime`) decides
+whether a numerator is prime to the denominator, and none of its operations leaves the range of a
+`long`. For a numerator `a` prime to the denominator `b` with `|a| ≤ H`, the third stage
+(`Ratpoints.Sieve.stage3`) with the sieve entries of primes `1 < p ≤ 2 ^ 32` with their tables and
+reciprocals (`Ratpoints.Sieve.SieveEntry.IsPrimeEntry`) is the test of the rows of these entries: it
+reads the table of each prime at `a b⁻¹ mod p`, in both branches of the bias, and a prime that
+divides `b` admits every numerator prime to `b`; the values that the C code holds in `long`s stay in
+range. So the test of a candidate (`Ratpoints.Sieve.accepted`), for `|a| < 2 ^ 63` and
+`0 < b < 2 ^ 63`, followed by the exact check (`Ratpoints.Sieve.checkPoint`), gives the points of
+the check of the reference (`Ratpoints.Sieve.checkNum`) for the numerators that survive these
+entries. The second stage on a bit array (`Ratpoints.Sieve.secondStage`), or on one of its words
+(`Ratpoints.Sieve.secondStageWord`), gives its words and-ed with the rows of all its moduli
+(`Ratpoints.Sieve.andWords`), although it stops when the bit array or the word is zero. The
+contracts of the loops are `@[spec]` theorems proved with `vcgen`, the program logic of Lean core,
+with loop invariants that are named definitions.
 
 ## Main definitions
 
@@ -39,6 +41,8 @@ invariants that are named definitions.
 * `Ratpoints.Sieve.CheckSpec.admits`, `Ratpoints.Sieve.Stage3Invariant`: whether the third stage
   lets a numerator through one of its primes, and the invariant of its loop.
 * `Ratpoints.Sieve.SieveEntry.IsPrimeEntry`: the shape of the sieve entries of the third stage.
+* `Ratpoints.Sieve.SecondStageInvariant`: the invariant of the loop of the second stage on a bit
+  array.
 
 ## Main statements
 
@@ -61,15 +65,20 @@ invariants that are named definitions.
   candidate is the test of `gcd(a, b) = 1` followed by the third stage, and with the exact check it
   gives the points of the check of the reference for the numerators that survive the entries of the
   third stage.
+* `Ratpoints.Sieve.secondStage_spec`, `Ratpoints.Sieve.secondStageWord_spec`: the second stage on a
+  bit array, or on one of its words, gives its words and-ed with the rows of all its moduli;
+  `Ratpoints.Sieve.andWords_append`: and-ing the rows of two lists of moduli one after the other is
+  and-ing those of their concatenation.
 
 ## Implementation notes
 
-The file uses Lean core and `Std` only. The proofs use only the facts on the constants that
-`decide` checks next to them, that `Ratpoints.mulModLimit < 2 ^ 32` and
-`Ratpoints.stage3Limit ≤ 2 ^ 32`, never their values. The words of the
-test for common factors are read as natural numbers by `Int64.toNatClampNeg`, which is faithful on
-the non-negative words that the binary algorithm keeps; the facts on words that are not about the
-model are in `Ratpoints.Proof.Bits`.
+The file uses Lean core and `Std` only, as `Ratpoints.Proof.Words` does, on whose words of the rows
+(`Ratpoints.Sieve.SieveSpec.wordAt`, `Ratpoints.Sieve.andWords`) the second stage builds. The proofs
+use only the facts on the constants that `decide` checks next to them, that
+`Ratpoints.mulModLimit < 2 ^ 32` and `Ratpoints.stage3Limit ≤ 2 ^ 32`, never their values. The words
+of the test for common factors are read as natural numbers by `Int64.toNatClampNeg`, which is
+faithful on the non-negative words that the binary algorithm keeps; the facts on words that are not
+about the model are in `Ratpoints.Proof.Bits`.
 -/
 
 @[expose] public section
@@ -590,6 +599,105 @@ theorem ite_run_accepted_checkPoint {es : List SieveEntry} (hes : ∀ e ∈ es, 
   by_cases hab : Int.gcd a b = 1
   · simp [hab, checkPoint_eq_checkNum w f rev hab]
   · simp [hab, checkNum]
+
+/-! ### The second stage -/
+
+theorem andWords_append (l₁ l₂ : List SieveSpec) (cw : UInt64) (w0 : Int) (y : Nat) :
+    andWords (l₁ ++ l₂) cw w0 y = andWords l₂ (andWords l₁ cw w0 y) w0 y :=
+  List.foldl_append ..
+
+@[simp]
+theorem andWords_zero (l : List SieveSpec) (w0 : Int) (y : Nat) : andWords l 0 w0 y = 0 := by
+  induction l with
+  | nil => rfl
+  | cons s l ih => simpa [andWords] using ih
+
+theorem andWords_concat (l : List SieveSpec) (s : SieveSpec) (cw : UInt64) (w0 : Int) (y : Nat) :
+    andWords (l ++ [s]) cw w0 y = andWords l cw w0 y &&& s.wordAt w0 y := by
+  simp [andWords]
+
+/-- Word `κ < Ratpoints.rbaPack` of the row of `s` for the word number `i` is word `κ` of bit array
+`i mod p`. -/
+theorem SieveSpec.wordAt_of_lt (s : SieveSpec) (i : Int) {κ : Nat} (hκ : κ < rbaPack) :
+    s.wordAt i κ = s.row[rbaPack * (i % (s.p : Int)).toNat + κ]! := by
+  simp [SieveSpec.wordAt, Nat.div_eq_of_lt hκ, Nat.mod_eq_of_lt hκ]
+
+/-- The row word of word `κ` of bit array `pos` of a piece from the word number `w0` on is the row
+word of word `κ` of the bit array with the word number `w0 + pos`. -/
+theorem SieveSpec.wordAt_rbaPack_mul_add (s : SieveSpec) (w0 : Int) (pos : Nat) {κ : Nat}
+    (hκ : κ < rbaPack) : s.wordAt w0 (rbaPack * pos + κ) = s.wordAt (w0 + pos) κ := by
+  simp only [SieveSpec.wordAt, Nat.mul_add_div rbaPack_pos, Nat.div_eq_of_lt hκ, Nat.mul_add_mod,
+    Nat.add_zero, Int.natCast_zero, Int.add_zero]
+
+theorem andWords_rbaPack_mul_add (specs : List SieveSpec) (x : UInt64) (w0 : Int) (pos : Nat)
+    {κ : Nat} (hκ : κ < rbaPack) :
+    andWords specs x w0 (rbaPack * pos + κ) = andWords specs x (w0 + pos) κ := by
+  simp only [andWords, SieveSpec.wordAt_rbaPack_mul_add _ _ _ hκ]
+
+/-- The invariant of the loop of `Ratpoints.Sieve.secondStage` on the bit array `nums` with the word
+number `i`, after the moduli `pref`: word `κ` of the bit array is word `κ` of `nums` and-ed with the
+row words of the moduli of `pref`. -/
+def SecondStageInvariant (nums : Vector UInt64 rbaPack) (i : Int) (pref : List SieveSpec)
+    (v : Vector UInt64 rbaPack) : Prop :=
+  ∀ κ < rbaPack, v[κ]! = andWords pref nums[κ]! i κ
+
+theorem secondStageInvariant_nil (nums : Vector UInt64 rbaPack) (i : Int) :
+    SecondStageInvariant nums i [] nums :=
+  fun _ _ ↦ rfl
+
+theorem SecondStageInvariant.getElem!_eq {nums v : Vector UInt64 rbaPack} {i : Int}
+    {specs : List SieveSpec} (h : SecondStageInvariant nums i specs v) {κ : Nat}
+    (hκ : κ < rbaPack) : v[κ]! = andWords specs nums[κ]! i κ :=
+  h κ hκ
+
+/-- At the stop the bit array is zero, and so is its and with the rows of the other moduli. -/
+theorem SecondStageInvariant.of_isZeroAt {nums v : Vector UInt64 rbaPack} {i : Int}
+    {specs pref suff : List SieveSpec} {cur : SieveSpec} (hs : specs = pref ++ cur :: suff)
+    (h : SecondStageInvariant nums i pref v) (hz : isZeroAt v 0 = true) :
+    SecondStageInvariant nums i specs v := by
+  intro κ hκ
+  have h0 := (isZeroAt_eq_true_iff v 0).mp hz κ hκ
+  rw [Nat.mul_zero, Nat.zero_add] at h0
+  rw [h0, hs, andWords_append, ← h κ hκ, h0, andWords_zero]
+
+theorem SecondStageInvariant.andBitArray {nums v : Vector UInt64 rbaPack} {i : Int}
+    {pref : List SieveSpec} {s : SieveSpec} (h : SecondStageInvariant nums i pref v) :
+    SecondStageInvariant nums i (pref ++ [s])
+      (Sieve.andBitArray v 0 s.row (i % (s.p : Int)).toNat) := by
+  intro κ hκ
+  simp only [getElem!_andBitArray _ _ _ _ hκ, Nat.div_eq_of_lt hκ, ↓reduceIte, Nat.mod_eq_of_lt hκ,
+    h κ hκ, andWords_concat, SieveSpec.wordAt_of_lt _ _ hκ]
+
+attribute [local irreducible] SecondStageInvariant in
+/-- The stop when the bit array is zero loses nothing, since a zero bit array stays zero. -/
+@[spec]
+theorem secondStage_spec (specs : List SieveSpec) (i : Int) (nums : Vector UInt64 rbaPack) :
+    ⦃ True ⦄ secondStage specs i nums
+    ⦃ fun r ↦ ∀ κ < rbaPack, r[κ]! = andWords specs nums[κ]! i κ ⦄ := by
+  vcgen [secondStage] invariants
+  · fun pref _ v ↦ SecondStageInvariant nums i pref v
+  all_goals first
+    | exact secondStageInvariant_nil nums i
+    | exact SecondStageInvariant.getElem!_eq ‹_› ‹_›
+    | exact SecondStageInvariant.of_isZeroAt ‹_› ‹_› ‹_›
+    | exact SecondStageInvariant.andBitArray ‹_›
+
+theorem andWords_concat_of_eq {x y : UInt64} {pref : List SieveSpec} {i : Int} {κ : Nat}
+    {s : SieveSpec} (hy : y = andWords pref x i κ) (hκ : κ < rbaPack) :
+    y &&& s.row[rbaPack * (i % (s.p : Int)).toNat + κ]! = andWords (pref ++ [s]) x i κ := by
+  rw [andWords_concat, SieveSpec.wordAt_of_lt _ _ hκ, hy]
+
+/-- The stop when the word is zero loses nothing, since a zero word stays zero. -/
+@[spec]
+theorem secondStageWord_spec (specs : List SieveSpec) (i : Int) {κ : Nat} (hκ : κ < rbaPack)
+    (x : UInt64) :
+    ⦃ True ⦄ secondStageWord specs i κ x ⦃ fun r ↦ r = andWords specs x i κ ⦄ := by
+  vcgen [secondStageWord] invariants
+  · fun pref _ r ↦ r = andWords pref x i κ
+  all_goals first
+    | rfl
+    | exact andWords_concat_of_eq ‹_› hκ
+    | simp_all [andWords_append]
 
 end Sieve
 
