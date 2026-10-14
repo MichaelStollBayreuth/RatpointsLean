@@ -2370,10 +2370,22 @@
         "Ratpoints.Sieve.andRows"
       ]
     },
-    "sift.c:318-343": {
-      "hash": "eb81df87599d191f3bba67e917a79cd1831cd70ff41b281ebfcb3b70a5acfda3",
+    "sift.c:318-332": {
+      "hash": "d27900851b9174005c058799c14f4d3e95dda199154b7a3dc483e592df7ddfbc",
       "owners": [
-        "Ratpoints.Sieve.checkNum"
+        "Ratpoints.Sieve.relprime"
+      ]
+    },
+    "sift.c:334-342": {
+      "hash": "d3a17e433efbe79bc63c59b7f8f41cd253b451b653710ac40e0ca3ff748d3b51",
+      "owners": [
+        "Ratpoints.Sieve.relprimeOdd"
+      ]
+    },
+    "sift.c:343-343": {
+      "hash": "d10b36aa74a59bcf4a88185837f658afaf3646eff2bb16c3928d0e9335e945d2",
+      "owners": [
+        "Ratpoints.Sieve.relprime"
       ]
     },
     "sift.c:405-431": {

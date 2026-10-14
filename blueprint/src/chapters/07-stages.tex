@@ -151,7 +151,8 @@ $b_{\mathrm{high}} \le \mathrm{mulModLimit}$ stays as it is
 
 \begin{definition}[The binary algorithm of \texttt{relprime}]\label{def:relprime}
   \uses{def:ctz}
-  Proposed names: \lname{Ratpoints.Sieve.relprimeOdd}, \lname{Ratpoints.Sieve.relprime}.
+  \lean{Ratpoints.Sieve.relprimeOdd, Ratpoints.Sieve.relprime}
+  \leanok
   On 64-bit signed words, the \verb|long|s of the C code. For words $m, n$: while $n \ne m$, the
   difference $d = m - n$, the mask $d \gg 63$ by the arithmetic shift, $-1$ for $d < 0$ and $0$
   otherwise, $n$ plus the and of $d$ with the mask, and $m$ the word $(d \oplus \mathrm{mask}) -
@@ -160,22 +161,22 @@ $b_{\mathrm{high}} \le \mathrm{mulModLimit}$ stays as it is
   words $m$ and $n$: for $m = 0$, whether $n = 1$; otherwise $m$ replaced by $-m$ when it is
   negative, false when $m$ and $n$ are both even, and else the loop on $m$, shifted right by its
   number of trailing zeros when it is even, and $n$ shifted right by its number of trailing zeros
-  (\csource{sift.c}{318}{332}, \csource{sift.c}{343}{343}). The test of a candidate gives it the
-  numerator and the denominator of the loops of the model, integers, as words.
+  (\csource{sift.c}{318}{332}, \csource{sift.c}{343}{343}).
 \end{definition}
 
 \begin{lemma}[The test for common factors]\label{lem:relprime}
   \uses{def:relprime}
-  Proposed names: \lname{Ratpoints.Sieve.RelprimeOddInvariant},
-  \lname{Ratpoints.Sieve.relprimeOdd\_spec}, \lname{Ratpoints.Sieve.relprime\_spec}. For odd
-  words $m, n \ge 1$ the loop gives whether $\gcd(m, n) = 1$; for words $m > -2^{63}$ and $n \ge
-  1$ the test gives whether $\gcd(m, n) = 1$. No operation leaves the range of a \verb|long|, so
-  that the words compute the integers of the binary algorithm: the difference of two positive
-  words is a word, and so are its negation and its absolute value.
+  \lean{Ratpoints.Sieve.RelprimeOddInvariant, Ratpoints.Sieve.relprimeOdd_spec, Ratpoints.Sieve.relprime_spec, Int64.shiftRight_63, Int64.toNatClampNeg_add_and_shiftRight_63, Int64.toNatClampNeg_xor_shiftRight_63_sub, Int64.two_pow_ctz_mul_toNatClampNeg_shiftRight, Int64.toNatClampNeg_ite_neg, Nat.gcd_min_eq_gcd_of_two_pow_mul_eq}
+  \leanok
+  For odd words $m, n \ge 1$ the loop gives whether $\gcd(m, n) = 1$; for words $m > -2^{63}$ and
+  $n \ge 1$ the test gives whether $\gcd(m, n) = 1$. No operation leaves the range of a
+  \verb|long|, so that the words compute the integers of the binary algorithm: the difference of
+  two positive words is a word, and so are its negation and its absolute value.
 \end{lemma}
 
 \begin{proof}
   \uses{def:ctz}
+  \leanok
   For positive words $m$ and $n$, $d = m - n$ is a word, the mask is $-1$ exactly when $m < n$,
   and the and of $d$ with the mask is $d$ or $0$, so that $n$ becomes $\min(m, n)$; the exclusive
   or with the mask minus the mask is $-d$ or $d$, that is $|m - n|$, a positive word for $m \ne

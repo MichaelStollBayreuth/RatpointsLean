@@ -31,8 +31,12 @@ an even number with an odd one, a residue below `2 q` modulo `q` by one subtract
 a quotient by Barrett's reduction, the bounds of a step of Horner's rule and of a power of a number
 below a power of 2, the entries of an array of Booleans after a fold of `setIfInBounds · true`, the
 absolute value of the step of the cofactors of the extended Euclidean algorithm, the divisors of the
-gcd of `b` and a residue `f ≡ a (mod b)`, and the remainder and the quotient by a multiplication
-with a reciprocal.
+gcd of `b` and a residue `f ≡ a (mod b)`, the remainder and the quotient by a multiplication with
+a reciprocal, the gcd of the odd part of a number with an odd one and the step of the binary
+algorithm for the gcd, and, for the signed 64-bit words, the arithmetic shift, the mask `x >>> 63`
+with the smaller and the distance of two non-negative words that it gives without a branch, the
+odd part of a positive word by the lowest set bit of the word read as unsigned, its lowest bit and
+the absolute value.
 
 ## Main statements
 
@@ -92,6 +96,19 @@ with a reciprocal.
 * `Int.dvd_natAbs_of_dvd_gcd`: a divisor of the gcd of `f ≡ a (mod b)` and `b` divides `a`.
 * `Nat.mul_mod_mul_div_eq_mod`, `Nat.mul_div_eq_div_of_mul_eq_add`: the remainder and the quotient
   by a reciprocal `m` of `p` scaled by `N`, for `m p = N + δ` and `u δ < N`.
+* `Nat.gcd_eq_of_two_pow_mul_eq`: for `x = 2 ^ t y`, `y` has the gcd of `x` with an odd number;
+  `Nat.gcd_min_eq_gcd_of_two_pow_mul_eq`, `Nat.add_min_lt_add_of_two_pow_mul_eq`: the odd part of
+  the distance of two odd numbers has with the smaller of the two their gcd and a sum below theirs,
+  the step of the binary algorithm for the gcd.
+* `Int64.toInt_shiftRight_ofNat`, `Int64.shiftRight_63`: the arithmetic shift of a `long` by
+  `k < 64`, and the mask `x >>> 63`, `-1` for a negative `x` and `0` otherwise.
+* `Int64.toNatClampNeg_add_and_shiftRight_63`, `Int64.toNatClampNeg_xor_shiftRight_63_sub`: for
+  `d = m - n`, `n + (d &&& d >>> 63)` and `(d ^^^ d >>> 63) - d >>> 63` are the smaller and the
+  distance of two non-negative `long`s.
+* `Int64.two_pow_ctz_mul_toNatClampNeg_shiftRight`, `Int64.toNatClampNeg_shiftRight_ctz_mod_two`: a
+  positive `long` `x` is `2 ^ t` times the odd number `x >>> t`, for the position `t` of the lowest
+  set bit of the word `x` read as unsigned.
+* `Int64.toNatClampNeg_ite_neg`: the absolute value of a `long` other than `-2 ^ 63`.
 
 ## Implementation notes
 
@@ -485,6 +502,30 @@ theorem mul_div_eq_div_of_mul_eq_add {u p m N δ : Nat} (hp : 0 < p) (hm : m * p
   obtain ⟨L, hL, h1, -⟩ := exists_mul_eq_add_mul_div hp hm hu
   rw [h1, Nat.add_mul_div_left _ _ (by lia), Nat.div_eq_of_lt hL, Nat.zero_add]
 
+/-- Removing the factors `2` of `x = 2 ^ t y` keeps its gcd with an odd `n`. -/
+theorem gcd_eq_of_two_pow_mul_eq {x y n t : Nat} (h : 2 ^ t * y = x) (hn : n % 2 = 1) :
+    gcd y n = gcd x n := by
+  rw [← h, Coprime.gcd_mul_left_cancel _ (Coprime.pow_left _ ?_)]
+  rw [Coprime, Nat.gcd_rec, hn, Nat.gcd_one_left]
+
+/-- The odd part `y` of the distance of two odd numbers `m` and `n` has with the smaller of the two
+the gcd of `m` and `n`: the step of the binary algorithm for the gcd. -/
+theorem gcd_min_eq_gcd_of_two_pow_mul_eq {m n y t : Nat} (hm : m % 2 = 1) (hn : n % 2 = 1)
+    (h : 2 ^ t * y = if m < n then n - m else m - n) : gcd y (min m n) = gcd m n := by
+  rw [gcd_eq_of_two_pow_mul_eq h (by rw [Nat.min_def]; split <;> assumption)]
+  by_cases hlt : m < n
+  · simp only [hlt, ↓reduceIte, Nat.min_eq_left (Nat.le_of_lt hlt),
+      Nat.gcd_sub_self_left (Nat.le_of_lt hlt), Nat.gcd_comm]
+  · simp only [hlt, ↓reduceIte, Nat.min_eq_right (Nat.le_of_not_lt hlt),
+      Nat.gcd_sub_self_left (Nat.le_of_not_lt hlt)]
+
+/-- A part `y` of the distance of two positive numbers, together with the smaller of the two, is
+less than their sum: the measure of the binary algorithm for the gcd decreases. -/
+theorem add_min_lt_add_of_two_pow_mul_eq {m n y t : Nat} (hm : 0 < m) (hn : 0 < n)
+    (h : 2 ^ t * y = if m < n then n - m else m - n) : y + min m n < m + n := by
+  have := Nat.le_mul_of_pos_left y (Nat.two_pow_pos t)
+  split at h <;> lia
+
 end Nat
 
 /-! ### Integers -/
@@ -699,5 +740,133 @@ theorem shiftRight_ctz_ofNat_mod_two {b : Nat} (hb0 : 0 < b) (hb : b < UInt64.si
   simpa [Nat.testBit_eq_decide_div_mod_eq] using ht.2
 
 end UInt64
+
+/-! ### Signed words -/
+
+namespace Int64
+
+/-- The arithmetic shift `>>>` of a `long` by `k < 64` is the shift of its value, the floor of its
+quotient by `2 ^ k`. -/
+theorem toInt_shiftRight_ofNat (x : Int64) {k : Nat} (hk : k < 64) :
+    (x >>> ofNat k).toInt = x.toInt >>> k := by
+  rw [toInt, Int64.toBitVec_shiftRight, BitVec.toInt_sshiftRight']
+  have h1 : (BitVec.ofNat 64 k).msb = false := by simp [BitVec.msb_eq_decide]; lia
+  have h2 : (64#64).msb = false := by decide
+  simp [BitVec.smod, h1, h2, Nat.mod_eq_of_lt hk]
+
+/-- The mask `x >>> 63` of a `long` is `-1` for a negative one and `0` otherwise. -/
+theorem shiftRight_63 (x : Int64) : x >>> 63 = if x < 0 then -1 else 0 := by
+  have h := toInt_shiftRight_ofNat x (k := 63) (by decide)
+  rw [Int.shiftRight_eq_div_pow] at h
+  have := x.toInt_lt
+  have := x.le_toInt
+  refine toInt_inj.mp (h.trans ?_)
+  split <;> grind [lt_iff_toInt_lt]
+
+theorem and_shiftRight_63 (x : Int64) : x &&& x >>> 63 = if x < 0 then x else 0 := by
+  rw [shiftRight_63]
+  split <;> simp
+
+theorem xor_shiftRight_63_sub (x : Int64) :
+    (x ^^^ x >>> 63) - x >>> 63 = if x < 0 then -x else x := by
+  rw [shiftRight_63]
+  split <;> simp [not_eq_neg_sub]
+
+theorem sub_lt_zero_iff_of_nonneg {a b : Int64} (ha : 0 ≤ a) (hb : 0 ≤ b) : a - b < 0 ↔ a < b := by
+  have := a.toInt_lt
+  have := b.toInt_lt
+  grind [lt_iff_toInt_lt, le_iff_toInt_le, toInt_sub, Int.bmod_eq_of_le]
+
+/-- `n + (d &&& d >>> 63)` for `d = m - n` is the smaller of two non-negative `long`s `m` and `n`,
+without a branch. -/
+theorem toNatClampNeg_add_and_shiftRight_63 {m n : Int64} (hm : 0 ≤ m) (hn : 0 ≤ n) :
+    (n + (m - n &&& (m - n) >>> 63)).toNatClampNeg = min m.toNatClampNeg n.toNatClampNeg := by
+  rw [and_shiftRight_63]
+  have := toInt_eq_toNatClampNeg hm
+  have := toInt_eq_toNatClampNeg hn
+  have := sub_lt_zero_iff_of_nonneg hm hn
+  split <;> grind [lt_iff_toInt_lt]
+
+/-- `(d ^^^ d >>> 63) - d >>> 63` for `d = m - n` is the distance of two non-negative `long`s `m`
+and `n`, without a branch. -/
+theorem toNatClampNeg_xor_shiftRight_63_sub {m n : Int64} (hm : 0 ≤ m) (hn : 0 ≤ n) :
+    ((m - n ^^^ (m - n) >>> 63) - (m - n) >>> 63).toNatClampNeg =
+      if m.toNatClampNeg < n.toNatClampNeg then n.toNatClampNeg - m.toNatClampNeg
+      else m.toNatClampNeg - n.toNatClampNeg := by
+  rw [xor_shiftRight_63_sub]
+  have := toInt_eq_toNatClampNeg hm
+  have := toInt_eq_toNatClampNeg hn
+  have := sub_lt_zero_iff_of_nonneg hm hn
+  split <;> grind [lt_iff_toInt_lt, Int64.neg_sub, toNatClampNeg_sub_of_le]
+
+theorem xor_shiftRight_63_sub_pos {m n : Int64} (hm : 0 ≤ m) (hn : 0 ≤ n) (h : m ≠ n) :
+    (0 : Int64) < (m - n ^^^ (m - n) >>> 63) - (m - n) >>> 63 := by
+  have := ofNat_toNatClampNeg m hm
+  have := ofNat_toNatClampNeg n hn
+  have hne : m.toNatClampNeg ≠ n.toNatClampNeg := fun h' ↦ h (by grind)
+  rw [← toNatClampNeg_pos_iff, toNatClampNeg_xor_shiftRight_63_sub hm hn]
+  split <;> lia
+
+theorem toNatClampNeg_shiftRight_ofNat {x : Int64} (hx : 0 ≤ x) {k : Nat} (hk : k < 64) :
+    (x >>> ofNat k).toNatClampNeg = x.toNatClampNeg >>> k := by
+  rw [← toNat_toInt, toInt_shiftRight_ofNat x hk, toInt_eq_toNatClampNeg hx,
+    ← Int.natCast_shiftRight, Int.toNat_natCast]
+
+theorem toUInt64_eq_ofNat_toNatClampNeg {x : Int64} (hx : 0 ≤ x) :
+    x.toUInt64 = UInt64.ofNat x.toNatClampNeg := by
+  rw [← toNat_toUInt64_of_le hx, UInt64.ofNat_toNat]
+
+theorem toUInt64_ne_zero_of_pos {x : Int64} (hx : 0 < x) : x.toUInt64 ≠ 0 := by
+  rw [toUInt64_eq_ofNat_toNatClampNeg (Int64.le_of_lt hx)]
+  exact UInt64.ofNat_ne_zero_of_lt ((toNatClampNeg_pos_iff x).mpr hx)
+    (Nat.lt_trans x.toNatClampNeg_lt (by decide))
+
+/-- A positive `long` `x` is `2 ^ t` times `x >>> t`, for the position `t` of the lowest set bit of
+the word `x` read as unsigned. -/
+theorem two_pow_ctz_mul_toNatClampNeg_shiftRight {x : Int64} (hx : 0 < x) :
+    2 ^ x.toUInt64.toBitVec.ctz.toNat * (x >>> ofNat x.toUInt64.toBitVec.ctz.toNat).toNatClampNeg =
+      x.toNatClampNeg := by
+  rw [toNatClampNeg_shiftRight_ofNat (Int64.le_of_lt hx)
+    (UInt64.toNat_ctz_lt (toUInt64_ne_zero_of_pos hx)), toUInt64_eq_ofNat_toNatClampNeg
+    (Int64.le_of_lt hx)]
+  exact UInt64.two_pow_ctz_mul_shiftRight_ofNat ((toNatClampNeg_pos_iff x).mpr hx)
+    (Nat.lt_trans x.toNatClampNeg_lt (by decide))
+
+/-- A positive `long` `x` shifted right by the position of the lowest set bit of the word `x` read
+as unsigned is odd. -/
+theorem toNatClampNeg_shiftRight_ctz_mod_two {x : Int64} (hx : 0 < x) :
+    (x >>> ofNat x.toUInt64.toBitVec.ctz.toNat).toNatClampNeg % 2 = 1 := by
+  rw [toNatClampNeg_shiftRight_ofNat (Int64.le_of_lt hx)
+    (UInt64.toNat_ctz_lt (toUInt64_ne_zero_of_pos hx)), toUInt64_eq_ofNat_toNatClampNeg
+    (Int64.le_of_lt hx)]
+  exact UInt64.shiftRight_ctz_ofNat_mod_two ((toNatClampNeg_pos_iff x).mpr hx)
+    (Nat.lt_trans x.toNatClampNeg_lt (by decide))
+
+theorem and_one_eq_zero_iff {x : Int64} (hx : 0 ≤ x) : x &&& 1 = 0 ↔ x.toNatClampNeg % 2 = 0 := by
+  rw [← toNat_toUInt64_of_le hx, ← toNat_toBitVec, ← toBitVec_inj, ← BitVec.toNat_inj]
+  simp [Nat.and_one_is_mod]
+
+theorem toNatClampNeg_eq_natAbs {x : Int64} (hx : 0 ≤ x) : x.toNatClampNeg = x.toInt.natAbs := by
+  have := le_iff_toInt_le.mp hx
+  rw [← toNat_toInt]
+  lia
+
+/-- The absolute value of a `long` other than `-2 ^ 63`, whose negation would leave the range. -/
+theorem toNatClampNeg_ite_neg {x : Int64} (h : minValue < x) :
+    (if x < 0 then -x else x).toNatClampNeg = x.toInt.natAbs := by
+  split
+  · have h1 := lt_iff_toInt_lt.mp h
+    have h2 := lt_iff_toInt_lt.mp ‹x < 0›
+    rw [toInt_minValue] at h1
+    rw [toInt_zero] at h2
+    rw [← toNat_toInt, toInt_neg, Int.bmod_eq_of_le (by lia) (by lia)]
+    lia
+  · exact toNatClampNeg_eq_natAbs (Int64.not_lt.mp ‹_›)
+
+theorem toNatClampNeg_eq_one_iff (x : Int64) : x.toNatClampNeg = 1 ↔ x = 1 := by
+  rw [← toNat_toInt, ← toInt_inj, toInt_one]
+  lia
+
+end Int64
 
 end

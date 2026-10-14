@@ -50,6 +50,9 @@ The rows of `0` that the build of ratpoints generates are computed here as words
   `Ratpoints.Sieve.SieveSpec`: the row of a denominator as words, the rows of the residues, each
   made when first needed, and a modulus with its row for the denominator at hand.
 * `Ratpoints.Sieve.swapPoint`: the point of the caller's curve for a point of the reversed curve.
+* `Ratpoints.Sieve.relprimeOdd`, `Ratpoints.Sieve.relprime`: the test for common factors of a
+  numerator and a denominator by the binary algorithm on the 64-bit words of the C code, which the
+  test of a candidate calls with stage F.
 * `Ratpoints.Sieve.andRows`: the first stage over a piece of bit arrays, from a class word, the rows
   of the moduli and-ed into its words.
 * `Ratpoints.Sieve.checkNum`, `Ratpoints.Sieve.walkWord`: the test for common factors and the exact
@@ -281,6 +284,65 @@ a `long`, since `|a| ≤ H`, `1 ≤ b ≤ H` and `H < 2 ^ 63` (`Ratpoints.fitsLo
 def swapPoint (q : Int × Int × Int) : Int × Int × Int :=
   if 0 ≤ q.1 then (q.2.2, q.2.1, q.1) else (-q.2.2, q.2.1, -q.1)
 
+/-! ### The test for common factors -/
+
+/-- Whether the odd positive words `m` and `n`, `long`s of the C code, are coprime, by the loop of
+the binary algorithm of `relprime`: while `n ≠ m`, with the difference `d = m - n` and its mask
+`msk = d >>> 63`, `-1` for `d < 0` and `0` otherwise, `n` becomes `n + (d &&& msk)`, the smaller of
+the two, and `m` the word `(d ^^^ msk) - msk`, the absolute difference `|m - n|`, which is even and
+nonzero, shifted right by its number of trailing zeros (`Ratpoints.Sieve.ctz`, on the word read as
+unsigned), its odd part. The two stay odd and positive, their gcd stays the same and their sum
+decreases, so that the loop ends at `m = n = gcd(m, n)`, and the numbers are coprime when that is
+`1`; no operation leaves the range of a `long` (`Ratpoints.Sieve.relprimeOdd_spec`).
+
+C: `sift.c:334-342`
+
+Deviation: `Int64` for `long`, `toUInt64` for the cast to `unsigned long`, and the `toInt64` of the
+count for the `long` that `RP_CTZL` returns; `63` for `LONG_LENGTH - 1`; `>>>` on `Int64` is the
+arithmetic shift, which gcc gives the `>>` of a negative `long` that the C standard leaves to the
+implementation; the lowest set bit by the loop of `RP_CTZL` for a compiler without the builtin
+(`Ratpoints.Sieve.ctz`), where gcc and clang take `__builtin_ctzl`; the loop a function of its own,
+for the end of the function `relprime`. -/
+def relprimeOdd (m n : Int64) : Id Bool := do
+  let mut m := m
+  let mut n := n
+  while n != m do
+    let d := m - n
+    let msk := d >>> 63
+    n := n + (d &&& msk)
+    let d := (d ^^^ msk) - msk
+    m := d >>> (← ctz d.toUInt64).toInt64
+  return m == 1
+
+/-- Whether the words `m` and `n`, the `long`s of the C code for a numerator and a denominator
+`n ≥ 1`, are coprime, by the binary algorithm of `relprime`: for `m = 0`, whether `n = 1`; otherwise
+`m` replaced by `-m` when it is negative, false when `m` and `n` are both even, and else whether
+their odd parts are coprime (`Ratpoints.Sieve.relprimeOdd`), each word shifted right by its number
+of trailing zeros (`Ratpoints.Sieve.ctz`, on the word read as unsigned), `m` only when it is even.
+It is `gcd(m, n) = 1` for `m > -2 ^ 63` and `n ≥ 1`, and no operation leaves the range of a `long`
+(`Ratpoints.Sieve.relprime_spec`); for `n = 0` it is that too when `m` is `0` or even, and for an
+odd `m` the loop of `Ratpoints.Sieve.ctz` on `0` does not end, as the fallback loop of `RP_CTZL`
+does not.
+
+C: `sift.c:318-332`, `sift.c:343`
+
+Deviation: `Int64` for `long`, `toUInt64` for the cast to `unsigned long`, and the `toInt64` of the
+count for the `long` that `RP_CTZL` returns; the negation of a negative `m` as a conditional
+expression, for the statement `if(m < 0)`; for `m = -2 ^ 63`, whose negation overflows in the C
+code, the model wraps; the contract excludes that value, which the search never passes, its
+numerators being at most `H < 2 ^ 63` in absolute value; `m &&& 1 == 0` for `!(m & 1)`; the lowest
+set bit by the loop of `RP_CTZL` for a compiler without the builtin (`Ratpoints.Sieve.ctz`), where
+gcc and clang take `__builtin_ctzl`; the builtin is undefined on `0` and the loop does not end
+there, which the contract excludes, with `n ≥ 1` and `m ≠ 0` at the calls; the loop of the binary
+algorithm a function of its own (`Ratpoints.Sieve.relprimeOdd`); a Boolean for the `int`. -/
+def relprime (m n : Int64) : Id Bool := do
+  if m == 0 then return n == 1
+  let mut m := if m < 0 then -m else m
+  if m &&& 1 == 0 then
+    if n &&& 1 == 0 then return false
+    m := m >>> (← ctz m.toUInt64).toInt64
+  relprimeOdd m (n >>> (← ctz n.toUInt64).toInt64)
+
 /-! ### One piece -/
 
 /-- The first stage over a piece, the bit arrays with the word numbers `w0, …, w0 + n - 1`, which
@@ -347,23 +409,23 @@ even `d`, `v` is the value `F(a, b)` of the binary form. So the check with the f
 points of the check without it, mapped (`Ratpoints.Sieve.checkNum_eq_map`), which after a reversal
 are points of the caller's curve.
 
-C: `sift.c:202-205`, `sift.c:318-343`, `sift.c:438-446`, `find_points.c:5250-5338`
+C: `sift.c:202-205`, `sift.c:438-446`, `find_points.c:5250-5338`
 
-Deviation: a plain `gcd`, for the binary `gcd` of `relprime`, whose loop body has no branch (stage
-F2); the third stage of `accepted` is applied with the other moduli in the first stage
-(`Ratpoints.Sieve.andRows`, stage F2); the products `w` and the factor `f` come in as arguments,
-computed for every denominator, where `_ratpoints_check_point` computes the products when the first
-survivor of `b` reaches it; the flag `rev` comes in as an argument too, handed down from
-`Ratpoints.Sieve.sieveRun` through the components that call the check, for the bit
-`RATPOINTS_REVERSED` of the flags of the search, which `_ratpoints_check_point` reads through its
-worker (`args->flags`); a list of points, for the callback `process` and for the count of points
-that `_ratpoints_check_point` returns, with no stop that `process` may request, and no
-`RATPOINTS_NO_Y` and no `RATPOINTS_NO_CHECK` (stage G); no counts of the numerators that pass the
-test for common factors and the third stage (`n_coprime`, `n_checks`), which ratpoints reads to
-correct the moduli between the blocks of the run (stage I); integers for the `long`s `a` and `b` and
-the operands of `relprime` (stage F2; the negations of `Ratpoints.Sieve.swapPoint` stay `long`s by
-`Ratpoints.fitsLong_neg`); no measurements of the time of the check and of its products (`RP_CHECK`,
-`RP_BC_TIC`, `RP_BC_TOC` under `RP_PHASE_TIMING`), and no output under `DEBUG`. -/
+Deviation: a plain `gcd`, for the test for common factors `relprime` on the words of the C code
+(`Ratpoints.Sieve.relprime`), which the test of a candidate calls with stage F; the third stage of
+`accepted` is applied with the other moduli in the first stage (`Ratpoints.Sieve.andRows`, stage
+F2); the products `w` and the factor `f` come in as arguments, computed for every denominator, where
+`_ratpoints_check_point` computes the products when the first survivor of `b` reaches it; the flag
+`rev` comes in as an argument too, handed down from `Ratpoints.Sieve.sieveRun` through the
+components that call the check, for the bit `RATPOINTS_REVERSED` of the flags of the search, which
+`_ratpoints_check_point` reads through its worker (`args->flags`); a list of points, for the
+callback `process` and for the count of points that `_ratpoints_check_point` returns, with no stop
+that `process` may request, and no `RATPOINTS_NO_Y` and no `RATPOINTS_NO_CHECK` (stage G); no counts
+of the numerators that pass the test for common factors and the third stage (`n_coprime`,
+`n_checks`), which ratpoints reads to correct the moduli between the blocks of the run (stage I);
+integers for the `long`s `a` and `b` (stage F; the negations of `Ratpoints.Sieve.swapPoint` stay
+`long`s by `Ratpoints.fitsLong_neg`); no measurements of the time of the check and of its products
+(`RP_CHECK`, `RP_BC_TIC`, `RP_BC_TOC` under `RP_PHASE_TIMING`), and no output under `DEBUG`. -/
 def checkNum (w : List Int) (f b : Int) (rev : Bool) (a : Int) : List (Int × Int × Int) :=
   if Int.gcd a b = 1 then
     let pts := BruteForce.pointsAbove a b (BruteForce.horner w a * f)
@@ -642,6 +704,18 @@ def pointsAtInfinity (c : List Int) (d : Nat) (rev : Bool) : List (Int × Int ×
 #guard (List.range 64).all fun k ↦ Id.run (ctz (1 <<< k.toUInt64 ||| 0x8000000000000000)) == k
 #guard [1, 2, 40, 0xfff0, 0x8000000000000000].all fun w : UInt64 ↦
   Id.run (ctz w) == w.toBitVec.ctz.toNat
+
+-- The binary algorithm on words against `Int.gcd`: every numerator of `-40, …, 40` with every
+-- denominator `1, …, 60`, and numerators and denominators around `2 ^ 62` and up to the largest
+-- `long` `2 ^ 63 - 1 = 7 ^ 2 · 73 · 127 · 337 · 92737 · 649657`, with common factors and without,
+-- both even among them.
+#guard (List.range 81).all fun i ↦ (List.range' 1 60).all fun b ↦
+  Id.run (relprime ((i : Int) - 40).toInt64 b.toInt64) == (Int.gcd ((i : Int) - 40) b == 1)
+#guard ([(2 ^ 62, 3), (2 ^ 62, 2), (2 ^ 62 + 1, 1), (-2 ^ 62, 2 ^ 62 + 1), (2 ^ 63 - 1, 2 ^ 63 - 2),
+    (-(2 ^ 63 - 1), 7 * 73 * 127 * 337 * 92737 * 649657), (3 * 2 ^ 60, 9 * 2 ^ 59 + 9),
+    (2 ^ 62 - 1, 2 ^ 62 + 1), (-(2 ^ 62 - 2), 2 ^ 61 - 1), (0, 1), (0, 2), (5 * 2 ^ 40, 5 ^ 3),
+    (-6, 3 * 2 ^ 61), (-(2 ^ 63 - 1), 1)] : List (Int × Nat)).all fun (a, b) ↦
+  Id.run (relprime a.toInt64 b.toInt64) == (Int.gcd a b == 1)
 
 -- The rows as words against the row test: bit `t` of word `j` of the row of `b` says whether the
 -- row admits `64 j + t`, for denominators of several residues modulo `p`, `0` among them, and for
