@@ -1,0 +1,666 @@
+% Sub-stage F2: the stages of the sieve and the check: the reductions by a multiplication with the
+% reciprocal of a modulus, the test for common factors by the binary algorithm, the third stage
+% numerator by numerator, the second stage on the bit arrays that the first leaves nonzero, the
+% staged sieve with the cut points of the parameters, and the parameters of the command line by the
+% counting rules of ratpoints. Proposed names are set with \lname and become \lean once the
+% declarations exist.
+\chapter{The stages of the sieve and the check}\label{chap:stages}
+
+F2 models the three stages in which ratpoints applies its moduli to the numerators of a
+denominator, and the check of a candidate. The first stage and-s the rows of the first $s_1$ moduli
+into every bit array of a piece, as in Chapter~\ref{chap:words}; the second and-s the rows of the
+moduli from $s_1$ to $s_2$ into each bit array that the first stage leaves nonzero, one after the
+other, and stops when no bit is left; and each numerator whose bit survives goes to the test for
+common factors with the denominator, by the binary algorithm of \verb|relprime|, and then to the
+third stage, which looks up, for each prime from $s_2$ on, whether the form can be a square at that
+numerator, before the exact check. The reductions of the third stage and of the Jacobi test multiply
+by the reciprocal of the modulus, as the C code does; the cut points $s_1$ and $s_2$ come from the
+parameters, and the parameters of the command line take them by the counting rules of ratpoints.
+
+Each stage only tests the moduli of the parameters, so the numerators that reach the exact check are
+those of the unstaged sieve of Chapter~\ref{chap:words} with its check, in the same order, and the
+theorems of Chapter~\ref{chap:denominators} keep their statements. The statements that comparator
+certifies keep their text too: the well-formedness of the parameters (Definition~\ref{def:Params})
+has required the moduli of the third stage to be primes of the table since stage~F1, which is what
+the third stage needs. What changes for comparator is what \verb|wf_sieveParams| states, through
+\verb|sieveParams|, which the challenge imports from the model: the parameters of the command line
+now take their three stages by the counting rules of ratpoints, and comparator checks the statement
+again; and the proofs of the theorems change through the contracts of the run, of
+\verb|sieving_info| and of the Jacobi test on which they rest.
+
+\section{What the C code does in the stages}\label{sec:stagesC}
+
+For a denominator $b$, \verb|sift| (\csource{find_points.c}{3442}{3617}) sets the rows of $b$ for
+the moduli of the first two stages, clears the flag \verb|stage3_filled| of the sieving thread,
+whether the table of the third stage has been filled for $b$, and sets its flag \verb|compute_bc|,
+that the products of the check are still to be computed. Then for each piece of its numerators,
+\verb|_ratpoints_sift0| (\csource{sift.c}{498}{1305}):
+\begin{enumerate}
+  \item and-s the rows of the moduli $0, \dots, s_1 - 1$ into every bit array of the piece, from the
+    pattern of the 2-adic class, and applies the masks of the ends of the piece;
+  \item scans the bit arrays from the first; for each nonzero one with the word number $i$, copies
+    it and and-s into the copy the bit array $(i + \mathrm{offset}) \bmod p$ of the row of each
+    modulus $p$ from $s_1$ to $s_2 - 1$ in turn, stopping when the copy is zero
+    (\csource{sift.c}{1174}{1202}); with \verb|USE_LONG_IN_PHASE_2|, a build option that the default
+    build leaves off, it does this one word of the copy at a time (\csource{sift.c}{1113}{1173});
+  \item for each set bit of what is left, lowest first, tests the numerator $a$ it stands for:
+    \verb|accepted| (\csource{sift.c}{438}{446}) runs \verb|relprime| (\csource{sift.c}{318}{343}),
+    the binary algorithm for $\gcd(a, b) = 1$ with a loop body without branches, then fills the
+    table of the third stage if it is not filled yet (\verb|fill_checks|,
+    \csource{sift.c}{405}{431}) and runs \verb|stage3| (\csource{sift.c}{291}{312}), which for each
+    prime $p$ of the third stage that does not divide $b$ rejects $a$ when $f(a b^{-1})$ is not a
+    square modulo $p$; a numerator that passes goes to the exact check, which computes the products
+    $c_k b^{d - k}$ when the first numerator of $b$ reaches it
+    (\csource{find_points.c}{5250}{5338}).
+\end{enumerate}
+The table of the third stage holds, for each prime $p$: the inverse of $b$ modulo $p$, $0$ when
+$p \mid b$, from the residue $b \bmod p$ computed by \verb|RP_MULMOD| for $b < 2^{32}$ and by
+\verb|%| above; the reciprocal of $p$; and the bias $p H$ when $2 p H < 2^{32}$, else $0$. With the
+bias, \verb|stage3| reduces the value $a b^{-1} + p H$, which lies in $[H, 2 p H - H]$ for
+$|a| \le H$, by \verb|RP_MULMOD|; without it, it divides. \verb|RP_MULMOD| and \verb|RP_MULDIV|
+(\csource{rp-private.h}{404}{417}) compute the remainder and the quotient of $u$ by $p$ from the
+reciprocal $m = \lfloor (2^{64} - 1) / p \rfloor + 1$ with a 128-bit product; the C code relies on
+$u < 2^{32}$, and they are exact whenever $u p < 2^{64}$. The Jacobi test by tables
+(Definition~\ref{def:jacobiTables}) divides by its primes with \verb|RP_MULDIV|.
+
+\verb|sieving_info| chooses the cut points: $s_1$ moduli for the first stage, up to $s_2$ for the
+second, and the primes of the third stage up to $s_3$, by the options \verb|-n|, \verb|-N| and
+\verb|-P| where they are given and by the cost of each stage, which depends on the curve, where they
+are not (\csource{find_points.c}{2803}{3034}). Its third stage takes primes only, and only those
+that exclude a residue.
+
+Why the stages change nothing: the and of the rows is commutative and associative, and a bit array
+that is zero stays zero, so the second stage leaves exactly the bits that the first stage would
+leave with the moduli of both; for a numerator $a$ prime to $b$, the third stage passes $a$ exactly
+when the row of $b$ of every prime of the stage admits $a$, since for $p \nmid b$ the row of $b$
+reads the same table at the same residue $a b^{-1} \bmod p$ (Definition~\ref{def:admits}), and for
+$p \mid b$ the row admits every numerator prime to $p$; and a numerator with a common factor has no
+point. So the numerators that reach the exact check are those that survive all the moduli and are
+prime to $b$: those that the unstaged sieve keeps and that the test of the $\gcd$ in its check
+(Definition~\ref{def:checkNum}) lets through. The stages, like the caches, are a data refinement of
+the unstaged sieve with its check: the same numerators reach the exact check, in the same order.
+
+\section{The reductions by a multiplication}\label{sec:mulMod}
+
+\begin{definition}[The reciprocal and the reductions]\label{def:mulMod}
+  Proposed names: \lname{Ratpoints.stage3Limit}, \lname{Ratpoints.stage3Limit\_le\_two\_pow\_32},
+  \lname{Ratpoints.Sieve.magic}, \lname{Ratpoints.Sieve.mulMod}, \lname{Ratpoints.Sieve.mulDiv}.
+  The bound $\mathrm{stage3Limit} = 2^{32}$ below which the third stage reduces by a multiplication
+  (\verb|RP_STAGE3_LIMIT|, \csource{rp-private.h}{472}{472}), with the fact
+  $\mathrm{stage3Limit} \le 2^{32}$ checked by evaluation; the reciprocal of a modulus $p$,
+  $\mathrm{magic}(p) = \lfloor (2^{64} - 1) / p \rfloor + 1$, computed where it is read, as
+  \verb|sieving_info| collects those of the moduli (\csource{find_points.c}{3064}{3070}); the
+  remainder of $u$ by $p$ from the reciprocal $m$, the low $64$ bits of $m u$, times $p$, shifted
+  right by $64$ bits (\csource{rp-private.h}{404}{408}, \csource{rp-private.h}{411}{411},
+  \csource{rp-private.h}{413}{414}, \csource{rp-private.h}{417}{417}); and the quotient, the high
+  $64$ bits of $u m$ (\csource{rp-private.h}{409}{410}, \csource{rp-private.h}{415}{416}): the
+  forms with a 128-bit product, which the default build and the build of the model compile, where
+  the others divide.
+\end{definition}
+
+\begin{lemma}[The reductions are exact]\label{lem:mulMod}
+  \uses{def:mulMod}
+  Proposed names: \lname{Ratpoints.Sieve.magic\_mul\_eq}, \lname{Ratpoints.Sieve.mulMod\_magic},
+  \lname{Ratpoints.Sieve.mulDiv\_magic}, \lname{Ratpoints.Sieve.sub\_mulDiv\_magic\_mul},
+  \lname{Ratpoints.mul\_lt\_two\_pow\_64\_of\_le\_mulModLimit}. For $0 < p$ and $u p < 2^{64}$, the
+  reduction with the reciprocal of $p$ gives $u \bmod p$, and the quotient gives $\lfloor u / p
+  \rfloor$.
+\end{lemma}
+
+\begin{proof}
+  Write $\mathrm{magic}(p)\, p = 2^{64} + \delta$ with $0 \le \delta < p$ and $u = k p + s$ with
+  $s < p$. Then $\mathrm{magic}(p)\, u = k\, 2^{64} + (s\, 2^{64} + u \delta) / p$, whose second
+  part is an integer below $2^{64}$, since $s < p$ and $u \delta \le u p < 2^{64}$; so the low half
+  is $(s\, 2^{64} + u \delta)/p$ and the high half $k$. The low half times $p$ is
+  $s\, 2^{64} + u \delta$, whose high half is $s$.
+\end{proof}
+
+The callers satisfy the bound: the denominators that \verb|fill_checks| reduces with the reciprocal
+(it takes the remainder of the larger ones) and those of the Jacobi test are at most
+$\mathrm{mulModLimit} = 2^{32} - 1$, below $2^{32}$ by a fact checked by evaluation
+(\lname{Ratpoints.mulModLimit\_lt\_two\_pow\_32}, in the node of the Jacobi test by tables), and
+their moduli are below $2^{10}$; the values that \verb|stage3| reduces are below $2 p H <
+\mathrm{stage3Limit} \le 2^{32}$. The Jacobi test by tables (Definition~\ref{def:jacobiTables})
+takes the quotient and the remainder by each of its primes by the quotient with the reciprocal, as
+\verb|jacobi_test| does; its contract takes $b q < 2^{64}$ for the primes $q$ of the Jacobi
+information, which the set-up of the test now gives as primes of the table, and the statement of the
+test for the denominators up to $b_{\mathrm{high}} \le \mathrm{mulModLimit}$ stays as it is
+(\lname{Ratpoints.Sieve.jacobiSetup\_spec}, \lname{Ratpoints.Sieve.jacobiTest\_spec},
+\lname{Ratpoints.Sieve.run\_jacobiTest}).
+
+\section{The test for common factors}\label{sec:relprime}
+
+\begin{definition}[The binary algorithm of \texttt{relprime}]\label{def:relprime}
+  Proposed names: \lname{Ratpoints.Sieve.ctzNat}, \lname{Ratpoints.Sieve.relprimeOdd},
+  \lname{Ratpoints.Sieve.relprime}.
+  The number of trailing zeros of a natural number $n \ge 1$, by the loop of \verb|RP_CTZL|, which
+  halves $n$ while it is even (\csource{rp-private.h}{429}{444}); the loop is modelled twice, on
+  words in Definition~\ref{def:ctz} and on natural numbers here. For odd $m, n \ge 1$: while
+  $n \ne m$, $n$ becomes $\min(m, n)$ and $m$ the odd part of $|m - n|$; the result is whether $m$
+  ends as $1$ (\csource{sift.c}{334}{342}). For an integer $a$ and $b \ge 1$: for $a = 0$, whether
+  $b = 1$; otherwise, for $m = |a|$, false when $m$ and $b$ are both even, and else the loop on the
+  odd parts of $m$ and $b$ (\csource{sift.c}{318}{332}, \csource{sift.c}{343}{343}).
+\end{definition}
+
+\begin{lemma}[The test for common factors]\label{lem:relprime}
+  \uses{def:relprime}
+  Proposed names: \lname{Ratpoints.Sieve.CtzNatInvariant}, \lname{Ratpoints.Sieve.ctzNat\_spec},
+  \lname{Ratpoints.Sieve.RelprimeOddInvariant}, \lname{Ratpoints.Sieve.relprimeOdd\_spec},
+  \lname{Ratpoints.Sieve.relprime\_spec}, \lname{Ratpoints.fitsLong\_natCast\_sub\_natCast}. For $n
+  \ge 1$ the number of trailing zeros $t$ has $n = 2^t n'$ with $n'$ odd; for odd $m, n \ge 1$ the
+  loop gives whether $\gcd(m, n) = 1$; and for $b \ge 1$ the test gives whether $\gcd(a, b) = 1$.
+  The values of the loop stay at most $\max(m, n)$, so that the \verb|long|s of the C code stay in
+  range for $|a|, b < 2^{63}$.
+\end{lemma}
+
+\begin{proof}
+  Halving keeps $n = 2^t n'$ and ends since $n$ decreases. In the loop, both numbers stay odd and
+  their $\gcd$ stays the same: $\gcd(m, n) = \gcd(\min(m, n), |m - n|)$, and the power of $2$ in
+  $|m - n|$ is prime to the odd $\min(m, n)$; the sum $m + n$ decreases, since
+  $\min(m, n) + |m - n| / 2 < m + n$; at the end $m = n = \gcd$. For $a \ne 0$: when $m$ and $b$ are
+  both even, $2$ divides both; otherwise removing the powers of $2$ does not change whether the
+  $\gcd$ is $1$, since one of the two is odd.
+\end{proof}
+
+\section{The third stage}\label{sec:stage3}
+
+\begin{definition}[The third stage]\label{def:stage3}
+  \uses{def:mulMod, def:SieveEntry, def:jacobiTables}
+  Proposed names: \lname{Ratpoints.Sieve.CheckSpec}, \lname{Ratpoints.Sieve.checkOf},
+  \lname{Ratpoints.Sieve.fillChecks}, \lname{Ratpoints.Sieve.CheckSpec.index},
+  \lname{Ratpoints.Sieve.stage3}, \lname{Ratpoints.Sieve.CheckSpec.admits},
+  \lname{Ratpoints.Sieve.SieveEntry.IsPrimeEntry}. What the third stage needs of a prime $p$ for the
+  denominator $b$ (\csource{rp-private.h}{465}{466}): $p$, the inverse $b^{-1}$ modulo $p$ read from
+  the table of inverses of $p$ at $b \bmod p$, computed by the reduction with the reciprocal for $b
+  \le \mathrm{mulModLimit}$ and by the remainder above, or $0$ when $p \mid b$; the bias $p H$ when
+  $2 p H < \mathrm{stage3Limit}$ and $0$ otherwise; the reciprocal of $p$; and the table of $p$
+  (\csource{sift.c}{414}{428}). For a sieve entry of another shape than a prime with its table,
+  which the third stage of well-formed parameters never holds, the inverse is $0$, so that the stage
+  skips it. The list of these for the sieve entries of the third stage, in their order
+  (\csource{sift.c}{405}{413}, \csource{sift.c}{429}{431}). The residue at which the table of $p$ is
+  read for the numerator $a$: with the bias, $a b^{-1} + p H$ reduced with the reciprocal; without
+  it, the remainder of $a$ by the truncating division, plus $p$ if it is negative, times $b^{-1}$,
+  reduced by the remainder (\csource{sift.c}{302}{308}). The third stage for $a$: for each prime in
+  turn, skipped when the inverse is $0$, $a$ is rejected when the table says that $f$ is not a
+  square modulo $p$ at that residue (\csource{sift.c}{291}{301}, \csource{sift.c}{309}{312}). A
+  \emph{prime entry} is a sieve entry whose single factor is a prime $1 < p \le 2^{32}$ with its
+  table, which holds for each nonzero residue an inverse in $[1, p - 1]$.
+\end{definition}
+
+\begin{lemma}[The third stage tests the rows]\label{lem:stage3}
+  \uses{def:stage3, lem:mulMod, def:admits, def:SieveEntry, def:examinePrime}
+  Proposed names: \lname{Ratpoints.Sieve.Stage3Invariant}, \lname{Ratpoints.Sieve.stage3\_spec},
+  \lname{Ratpoints.Sieve.CheckSpec.index\_eq}, \lname{Ratpoints.Sieve.le\_mul\_add\_mul\_and\_le},
+  \lname{Ratpoints.Sieve.toNat\_emod\_mul\_lt\_sq}, \lname{Ratpoints.Sieve.binv\_checkOf},
+  \lname{Ratpoints.Sieve.CheckSpec.admits\_checkOf},
+  \lname{Ratpoints.Sieve.run\_stage3\_fillChecks},
+  \lname{Ratpoints.Sieve.getElem!\_inversesMod\_lt},
+  \lname{Ratpoints.Sieve.isPrimeEntry\_examinePrime}. For prime entries, $|a| \le H$ and $\gcd(a, b)
+  = 1$: the residue at which the table of $p$ is read is $a b^{-1} \bmod p$ for $p \nmid b$, in both
+  branches of the bias and on both sides of $\mathrm{mulModLimit}$, and the third stage passes $a$
+  exactly when every entry's row of $b$ admits $a$. The values that the C code holds in \verb|long|s
+  stay in range: $a b^{-1} + p H$ lies in $[H, 2 p H - H]$, and the product of the residue and the
+  inverse is below $p^2$. The entry of a prime $p \le 2^{32}$ with its table
+  (Definition~\ref{def:examinePrime}) is a prime entry.
+\end{lemma}
+
+\begin{proof}
+  \uses{lem:mulMod}
+  A prime that does not divide $b$ is not skipped: the inverse that its table holds for a nonzero
+  residue lies in $[1, p - 1]$, which also puts $a b^{-1} + p H$ in $[H, 2 p H - H]$ and the product
+  of the residue and the inverse below $p^2$. The reductions are exact by Lemma~\ref{lem:mulMod}: $b
+  p < 2^{64}$ for $b \le \mathrm{mulModLimit} < 2^{32}$ and $p \le 2^{32}$, and the biased value is
+  below $2 p H < 2^{32}$. The biased value is congruent to $a b^{-1}$, and the truncated remainder
+  plus $p$ is congruent to $a$. A prime that divides $b$ is skipped, and its row admits $a$ since $p
+  \nmid a$ by the $\gcd$; for the others, the row of $b$ admits $a$ exactly when the table of $p$ is
+  true at $a b^{-1} \bmod p$ (Definition~\ref{def:admits}). The inverses of the table of a prime are
+  those of the nonzero residues.
+\end{proof}
+
+\begin{definition}[The test of a candidate and the exact check]\label{def:accepted}
+  \uses{def:relprime, def:stage3, def:bruteForce, def:swapPoint}
+  Proposed names: \lname{Ratpoints.Sieve.accepted}, \lname{Ratpoints.Sieve.checkPoint}.
+  A numerator $a$ goes on to the exact check for the denominator $b$ when it is prime to $b$
+  (Definition~\ref{def:relprime}) and passes the third stage, whose list is a thunk made once per
+  denominator and forced when the first numerator of $b$ gets that far, for \verb|stage3_filled|
+  (\csource{sift.c}{438}{446}). The exact check of $a$ from the products $c_k b^{d - k}$, a thunk
+  made once per denominator for \verb|compute_bc|, and the factor $b$ for odd $d$: the points
+  $(a, y, b)$ and, for $y \ne 0$, $(a, -y, b)$, each mapped by $\mathrm{swapPoint}$ when the flag of
+  the reversal is set (\csource{sift.c}{202}{205}, \csource{find_points.c}{3122}{3122},
+  \csource{find_points.c}{5250}{5338}, \csource{rp-private.h}{596}{597}); the check of a numerator
+  of Definition~\ref{def:checkNum}, which tests the $\gcd$ itself, becomes the reference of the two.
+\end{definition}
+
+\begin{lemma}[The test of a candidate]\label{lem:accepted}
+  \uses{def:accepted, lem:relprime, lem:stage3, def:checkNum}
+  Proposed names: \lname{Ratpoints.Sieve.accepted\_spec}, \lname{Ratpoints.Sieve.run\_accepted},
+  \lname{Ratpoints.Sieve.checkPoint\_eq\_checkNum},
+  \lname{Ratpoints.Sieve.ite\_run\_accepted\_checkPoint}. For $b \ge 1$, $|a| \le H$ and prime
+  entries in the third stage, with no hypothesis on $\gcd(a, b)$, a numerator passes the test
+  exactly when it is prime to $b$ and every entry's row of $b$ admits it; the exact check of a
+  numerator prime to $b$ gives the points of the reference check.
+\end{lemma}
+
+\begin{proof}
+  Lemma~\ref{lem:relprime} for the first test, which rejects every numerator with a common factor;
+  Lemma~\ref{lem:stage3} for the second, which runs only after the first has passed, so that its
+  hypothesis $\gcd(a, b) = 1$ holds; a thunk has the value of its function.
+\end{proof}
+
+\section{The second stage}\label{sec:secondStage}
+
+\begin{definition}[The second stage]\label{def:secondStage}
+  \uses{def:bitArrayOps, def:rows}
+  Proposed names: \lname{Ratpoints.useLongInPhase2}, \lname{Ratpoints.Sieve.secondStage},
+  \lname{Ratpoints.Sieve.secondStageWord}. Whether the second stage runs one word at a time,
+  $\mathrm{useLongInPhase2} = \mathrm{false}$ as in the default build (\verb|USE_LONG_IN_PHASE_2|,
+  \csource{sift.c}{1084}{1084}, \csource{sift.c}{1086}{1086}, \csource{sift.c}{1113}{1113},
+  \csource{sift.c}{1174}{1174}, \csource{sift.c}{1297}{1297}). The second stage on a copy of a bit
+  array with the word number $i$: for each modulus $p$ with its row in turn, while the copy is
+  nonzero, the copy is and-ed with bit array $i \bmod p$ of the row (\csource{sift.c}{1083}{1083},
+  \csource{sift.c}{1085}{1085}, \csource{sift.c}{1175}{1202}); and on one word $\kappa$ of it,
+  likewise with word $\kappa$ of those bit arrays (\csource{sift.c}{1135}{1136},
+  \csource{sift.c}{1141}{1152}).
+\end{definition}
+
+\begin{lemma}[The second stage]\label{lem:secondStage}
+  \uses{def:secondStage}
+  Proposed names: \lname{Ratpoints.Sieve.SecondStageInvariant},
+  \lname{Ratpoints.Sieve.secondStage\_spec}, \lname{Ratpoints.Sieve.secondStageWord\_spec},
+  \lname{Ratpoints.Sieve.andWords\_append}, \lname{Ratpoints.Sieve.andWords\_rbaPack\_mul\_add}.
+  The second stage gives the copy and-ed with the bit arrays $i \bmod p$ of the rows of all its
+  moduli, and on one word the same word of that; and-ing the rows of a list of moduli and then those
+  of a second list is and-ing those of the concatenation.
+\end{lemma}
+
+\begin{proof}
+  An invariant of the loop over the moduli: the copy is the and of the rows so far, or zero, and
+  then the and of all of them is zero too.
+\end{proof}
+
+\begin{definition}[A bit array through the second stage and the extraction]\label{def:siftBitArray}
+  \uses{def:secondStage, def:walkWord, def:accepted}
+  Proposed names: \lname{Ratpoints.Sieve.siftBitArray}.
+  For a bit array that the first stage leaves nonzero, with the word number $i$, from a copy of it:
+  in the arm that an argument chooses, $\mathrm{useLongInPhase2}$ in the run, either the second
+  stage on the whole copy and, if it is still nonzero, the set bits of its words walked through in
+  turn, or for each nonzero word the second stage on that word and the walk through its set bits,
+  bit $t$ of word $\kappa$ standing for the numerator $R i + 64 \kappa + t$; each numerator goes to
+  the test of a candidate and, if it passes, to the exact check (\csource{sift.c}{1094}{1111},
+  \csource{sift.c}{1126}{1134}, \csource{sift.c}{1137}{1139}, \csource{sift.c}{1154}{1159},
+  \csource{sift.c}{1172}{1173}, \csource{sift.c}{1204}{1210}, \csource{sift.c}{1213}{1226},
+  \csource{sift.c}{1257}{1264}, \csource{sift.c}{1293}{1296}; with \verb|EXT0| and \verb|EXT|,
+  \csource{rp-private.h}{135}{136}, \csource{rp-private.h}{177}{178},
+  \csource{rp-private.h}{238}{239}, \csource{rp-private.h}{264}{266},
+  \csource{rp-private.h}{288}{289}).
+\end{definition}
+
+\begin{lemma}[A bit array through the second stage and the extraction]\label{lem:siftBitArray}
+  \uses{def:siftBitArray, lem:secondStage, def:walkWord}
+  Proposed names: \lname{Ratpoints.Sieve.SiftBitArrayInvariant},
+  \lname{Ratpoints.Sieve.SiftBitArrayWalkInvariant}, \lname{Ratpoints.Sieve.siftBitArray\_spec}.
+  In both arms, the points appended are those of the numerators of the bit array whose bits
+  survive the and of the copy with the rows of the moduli of the second stage and that pass the
+  test of a candidate, in increasing order.
+\end{lemma}
+
+\begin{proof}
+  Lemma~\ref{lem:secondStage} and the contract of the walk (Definition~\ref{def:walkWord}), in each
+  arm with its own invariant: a word that is zero, or a bit array that the second stage leaves zero,
+  has no set bits to walk.
+\end{proof}
+
+\section{The staged sieve}\label{sec:staged}
+
+The walk through the set bits of a word (Definition~\ref{def:walkWord}) runs the test of a candidate
+and then the exact check for each set bit; the scan (Definition~\ref{def:scanPiece}) copies each
+nonzero bit array and hands it to Definition~\ref{def:siftBitArray}, with the moduli of the second
+stage; one piece (Definition~\ref{def:siftPiece}) runs the first stage with the first $s_1$ moduli
+of its list and the scan with the rest; and one denominator (Definition~\ref{def:sift}) takes the
+end $s_1$ of the first stage, the rows of the moduli of the first two stages and the sieve entries
+of the third, and makes the thunks of the products and of the table of the third stage. Their
+contracts keep their form: the walk appends the points of the numerators of its set bits that pass
+the test of a candidate, the scan those of the numerators whose bits survive the first stage and the
+moduli of the second and that pass the test of a candidate, and the piece those of the numerators
+that survive the first stage, the masks and the second stage and pass the test. The lemma that the
+words compute the Booleans (Lemma~\ref{lem:sift_eq_checkDen}) keeps its conclusion, the points of
+the sieve of stage~C1 over all the sieve entries followed by its check, and gains the hypotheses
+that $b \ge 1$ and that the entries of the third stage are prime entries. It rests on the following.
+
+\begin{lemma}[The stages compute the unstaged sieve]\label{lem:staged}
+  \uses{lem:secondStage, lem:accepted, lem:siftBitArray, def:sift}
+  Proposed names: \lname{Ratpoints.Sieve.acceptedPoints},
+  \lname{Ratpoints.Sieve.acceptedPoints\_eq\_ite}, \lname{Ratpoints.Sieve.survives\_append}. The
+  points that the extraction gives for a numerator $a$ with $|a| \le H$, those of the exact check
+  when $a$ passes the test of a candidate and none otherwise, are those of the reference check when
+  $a$ survives the entries of the third stage, and none otherwise; a numerator survives a list of
+  entries followed by another when it survives both. So for $s_1 \le s_2 \le$ the number of moduli,
+  the numerators whose bits survive the first $s_1$ moduli in the first stage and the next $s_2 -
+  s_1$ in the second, and that pass the test of a candidate with the entries from $s_2$ on, give the
+  points that the reference check gives for the numerators that survive all the entries.
+\end{lemma}
+
+\begin{proof}
+  Lemma~\ref{lem:accepted} for the first part, since the reference check gives no points for a
+  numerator with a common factor; Lemma~\ref{lem:secondStage} for the split of the list at $s_1$.
+\end{proof}
+
+The run over the denominators (Definition~\ref{def:sieveRun}) takes the cut points $s_1$ and $s_2$:
+it makes the rows of the first $s_2$ sieve entries, and hands the rest to \verb|sift| for the third
+stage, for the ends of the second and the third stage, which the run takes from the arguments as its
+first decision (\csource{find_points.c}{3861}{3861}) and \verb|run_block| sets for each block
+(\csource{find_points.c}{3911}{3911}). Its contract keeps its conclusion and needs that the
+denominators are positive, $b_{\mathrm{low}} \ge 1$, since the test for common factors does not end
+for $b = 0$ and an odd numerator, and that the entries from $s_2$ on are prime entries; the search
+(Definition~\ref{def:searchPoints}) passes $b_{\mathrm{low}} = 1$ and the cut points of its
+parameters, and what \verb|sieving_info| computes (Definition~\ref{def:sievingInfo}) gives entries
+of that shape for the first $\mathrm{numPrimes}$ primes of the table, one for each modulus in its
+order, which the well-formedness makes the moduli of the third stage
+(\lname{Ratpoints.makeModulus?\_spec},
+\lname{Ratpoints.factors\_eq\_of\_run\_makeModulus?\_eq\_some}, \lname{Ratpoints.sievingInfo\_spec},
+\lname{Ratpoints.Params.WF.exists\_getElem!\_primeTable\_eq\_of\_mem\_drop}).
+
+\section{The cut points of the command line}\label{sec:cuts}
+
+The parameters of the executable (Definition~\ref{def:sieveParams}) take the cut points by the
+counting rules of ratpoints, where they do not depend on the curve. For the number
+$q = \min(k, \mathrm{numPrimes})$ of primes examined, with the value $k \ge 0$ of \verb|-p| or else
+$\mathrm{defaultNumPrimes}$, the bound $L$ on the moduli is $q$ under \verb|-p|, which is a hard
+limit for every stage (\csource{find_points.c}{4577}{4577}), and $\mathrm{numPrimes}$ without it,
+since ratpoints then looks at further primes when its stages want more
+(\csource{find_points.c}{2693}{2705}, \csource{find_points.c}{2980}{2980}). With the values $n$, $N$
+and $P$ of \verb|-n|, \verb|-N| and \verb|-P|, each absent when negative, and the constants
+\lname{Ratpoints.defaultSp1} $= 11$ (\verb|RATPOINTS_DEFAULT_SP1|) and \lname{Ratpoints.sp2Extra}
+$= 11$ (\verb|RATPOINTS_SP2_EXTRA|), which join the node of the parameters of the executable:
+\begin{itemize}
+  \item $N$ is capped at $q$, and the first stage takes $s_1 = \min(n, N)$ moduli, or
+    $\min(n, L)$ without \verb|-N|, or $\min(\mathrm{defaultSp1}, L)$ without \verb|-n|, a count
+    that an option gives being taken as it is (\csource{ratpoints.h}{42}{42},
+    \csource{find_points.c}{2503}{2503}, \csource{find_points.c}{2845}{2846},
+    \csource{find_points.c}{4655}{4656});
+  \item the second stage ends at $s_2 = \max(s_1, N)$, the first two stages topped up to $N$, or
+    without \verb|-N| at $\min(s_1 + \mathrm{sp2Extra}, L)$, the offset that ratpoints adds unscaled
+    under \verb|-U 0| (\csource{ratpoints.h}{95}{97}, \csource{find_points.c}{1619}{1623},
+    \csource{find_points.c}{2571}{2572}, \csource{find_points.c}{2599}{2599},
+    \csource{find_points.c}{2808}{2808}, \csource{find_points.c}{2815}{2815},
+    \csource{find_points.c}{2864}{2869});
+  \item the moduli are the first $\min(s_2 + P, L)$ primes of the table, or without \verb|-P| the
+    first $\max(s_2, q)$, so that the third stage holds the rest of the first $q$
+    (\csource{find_points.c}{2922}{2922}, \csource{find_points.c}{2926}{2928},
+    \csource{find_points.c}{2949}{2949}, \csource{find_points.c}{2973}{2975},
+    \csource{find_points.c}{3015}{3015}, \csource{find_points.c}{3017}{3017}).
+\end{itemize}
+A run without options has $11$ moduli in the first stage, $11$ more in the second and $8$ in the
+third, the first $30$ primes in all, and uses all three stages. The parameters are well-formed as
+before (\verb|wf_sieveParams|, whose text is unchanged): the moduli are a prefix of the first
+$\mathrm{numPrimes}$ primes of the table, and $s_1 \le s_2 \le$ their number. Where ratpoints
+decides by the curve, it may take fewer moduli in a stage: the primes that say nothing leave its
+pool, those that say only that the numerator is prime to the denominator stay in the pool of the
+first two stages without counting toward the primes it looks for and leave that of the third, and
+its composite moduli take several primes of the pool. With \verb|-n|, \verb|-N| (or \verb|-U 0|) and
+\verb|-P| given, the first stage, the first two stages and the moduli in all are at most these
+counts; where an option is absent, ratpoints chooses $s_1$, the offset of the second stage and the
+length of the third by their costs, its third stage taking the primes of its pool in increasing
+order of their densities, which may give more moduli in a stage or fewer. The cut points change
+neither the points nor their order, so the model takes the counts that the options give and states
+the rest as a deviation.
+
+\section{The command-line program and the differential tests}\label{sec:stagesCli}
+
+The program runs the three stages with the cut points of its parameters; without options, the moduli
+of the first $30$ primes are now split $11$, $11$ and $8$, where they were all in the first stage.
+The differential tests compare every point list in its order, as before; the suite of the sieving
+parameters (Section~\ref{sec:sieveCli}) gains option sets of \verb|-n|, \verb|-N| and \verb|-P| that
+run the second and the third stage, at heights at which a run with few moduli before the third stage
+stays short, since then most numerators reach the test of a candidate, which the model runs
+numerator by numerator, as the C code does but more slowly. \verb|#guard| examples compare each new
+component with values of the C program and with the reference: the reductions with the remainder and
+the quotient at the ends of their range, the test for common factors with the $\gcd$ beyond
+$2^{64}$, the third stage after its table with the rows of its primes in both branches of the bias
+and above $\mathrm{mulModLimit}$, both arms of the second stage with the and of the rows, the piece
+and the denominator at many cut points with the unstaged sieve, and the stage sizes of the
+parameters with those that \verb|ratpoints -v| reports, with \verb|-U 0| where \verb|-N| is absent.
+
+\section{Deviations}\label{sec:stagesDeviations}
+
+Each component of this chapter differs from the C code in a stated way, recorded in its
+\verb|Deviation:| paragraph:
+\begin{itemize}
+  \item natural numbers and integers for the \verb|long|s and \verb|unsigned long|s: the reductions
+    compute the exact values of the 128-bit products, the test for common factors runs on natural
+    numbers, so that it ends for every height, with the minimum and the absolute difference for the
+    loop body without branches and the mask of an arithmetic shift, and its trailing zeros by the
+    loop of \verb|RP_CTZL| on natural numbers; the bounds that keep the C values in range are lemmas
+    (Lemmas~\ref{lem:relprime} and~\ref{lem:stage3});
+  \item the reciprocal computed where it is read, for the field of the sieve entry, the array
+    \verb|magics| that \verb|sieving_info| fills and the field \verb|magic| of the tables of the
+    Jacobi test; the comparison $2 p H < \mathrm{stage3Limit}$ of natural numbers, for the
+    comparison of \verb|double|s, which has the same outcome for every $H < 2^{63}$;
+  \item the table of the third stage and the products of the check as thunks made once per
+    denominator, for the arrays of the sieving thread and the flags \verb|stage3_filled| and
+    \verb|compute_bc|; the table a list, with no bound $\mathrm{RATPOINTS\_NUM\_PRIMES}$ on its
+    length, which ratpoints never reaches since each of its sieve entries owns a prime, where
+    well-formed parameters may repeat a prime; an entry of another shape skipped;
+  \item the arm of the second stage an argument, so that the guards run both in one build; the row
+    of the word number $i$ at index $i \bmod p$, where ratpoints adds the offset of the packing and
+    reduces by a multiplication where that is exact (stage~F3);
+  \item the cut points of the parameters for the whole run, where \verb|run_block| sets the end of
+    the second and the third stage for each block from the correction of the moduli (stage~I); the
+    parameters of the command line by the counts that the options give, with the flat offset of the
+    second stage, for the choices by cost, the scaled offset and \verb|-R|, which the model ignores;
+  \item no counts of the numerators that reach the test for common factors and the third stage,
+    which ratpoints reads to correct the moduli between the blocks (stage~I), and no counts, stops
+    and output of the instrumentation of the stages.
+\end{itemize}
+The lines of this part of the C code that are neither modelled nor left to a later stage are
+excluded in \verb|correspondence/ratpoints.toml|: the instrumentation of \verb|sift.c| between
+statements that are not modelled, with the arms of its production build; the inlining attributes
+of \verb|rp-private.h|, which carry no meaning; and \verb|RATPOINTS_DEFAULT_SP2|, which the C code
+reads nowhere. Left to stage~F3 are the reductions of the row indices of the first two stages
+(\verb|mod_mul|, the second copy of \verb|mod| in \verb|sift.c|, the test \verb|small|) with the
+offsets of the packing and the residues of $b\, 2^{-k}$ (\verb|fill_bp_list|); left to stage~I the
+correction of the moduli between the blocks, the choice of the cut points by cost, and, with the
+blocks, the reduction of the first word of a block modulo the forbidden divisors tested with words,
+which still divides (\verb|wordBits|).
+
+\section{What changes in the earlier chapters}\label{sec:stagesEarlier}
+
+Each item of the order of work changes the nodes of Chapters~\ref{chap:sieve}
+to~\ref{chap:tables} that its declarations belong to, and the nodes whose C lines its declarations
+take, in the same commit, so that the names of the nodes exist and their C links are the ranges of
+their declarations:
+\begin{itemize}
+  \item the introduction of Chapter~\ref{chap:sieve} counts the stages of the sieve and the check of
+    stage~F2 among the data refinements, with the bit arrays of stage~C2, the faithful tables of
+    stage~F1 and the packing of stage~F3, and no longer counts the third stage among the sound
+    filters: it tests the rows of moduli that the unstaged sieve applies already; the list of
+    deviations of Chapter~\ref{chap:sieve} keeps, of its item on the moduli applied before the test
+    for common factors, only the packing (stage~F3) and the correction between the blocks
+    (stage~I), and loses its items on the plain $\gcd$ and on the products computed for every
+    denominator;
+  \item the parameters of the executable (Definition~\ref{def:sieveParams}) take the cut points of
+    Section~\ref{sec:cuts}, with the constants $\mathrm{defaultSp1}$ and $\mathrm{sp2Extra}$; the
+    paragraph after them says that the cut points are read since stage~F2 and that the stages of
+    ratpoints may be longer or shorter where it decides by the curve;
+  \item the first stage (Definition~\ref{def:andRows}) applies the first $s_1$ moduli only, and
+    gives the lines of the second and the third stage to Definitions~\ref{def:secondStage}
+    and~\ref{def:stage3}; the check of a numerator (Definition~\ref{def:checkNum}) becomes the
+    reference, with no C links, its lines going to Definitions~\ref{def:relprime}
+    and~\ref{def:accepted}; the walk, the scan, the piece and one denominator
+    (Definitions~\ref{def:walkWord} to~\ref{def:sift}) take the test of a candidate, the second
+    stage, the cut points and the thunks: the walk gains the walk of the arm one word at a time
+    (\csource{sift.c}{1161}{1171}) and uses Definitions~\ref{def:ctz} and~\ref{def:accepted} instead
+    of Definition~\ref{def:checkNum}; the scan copies the bit array, keeps
+    \csource{sift.c}{1061}{1082}, \csource{sift.c}{1088}{1092}, \csource{sift.c}{1298}{1299} and the
+    lines of \verb|zero|, gives the extraction and the lines of \verb|EXT0| and \verb|EXT| to
+    Definition~\ref{def:siftBitArray} and line~1297 to Definition~\ref{def:secondStage}, and uses
+    Definition~\ref{def:siftBitArray} instead of Definition~\ref{def:walkWord}; the piece gains the
+    prototype of \verb|_ratpoints_sift0| (\csource{rp-private.h}{610}{614}); one denominator gains
+    the set-up of the sieving thread for the cut points, the table of the third stage and the two
+    flags (\csource{find_points.c}{3123}{3124}, \csource{find_points.c}{3129}{3129},
+    \csource{rp-private.h}{577}{578}, \csource{rp-private.h}{583}{583}), gives
+    \csource{sift.c}{405}{431} to Definition~\ref{def:stage3}, and also uses that definition; and
+    Lemma~\ref{lem:sift_eq_checkDen} keeps \verb|Ratpoints.Sieve.toList_run_sift_eq_checkDen| with
+    its new hypotheses, resting on Lemma~\ref{lem:staged}; the list of deviations of
+    Chapter~\ref{chap:words} no longer names the stages, the binary $\gcd$ and the products as later
+    work, nor a scan that reads a bit array in place, and the reduction of the row indices is left
+    to stage~F3 alone;
+  \item the run over the denominators (Definition~\ref{def:sieveRun}) takes the cut points, with
+    \csource{find_points.c}{3861}{3861} and \csource{find_points.c}{3911}{3911}, makes the rows of
+    the first $s_2$ entries and hands the rest to the third stage; its contract and the reduction of
+    the run to the reference (Theorem~\ref{thm:run_reference}) need $b_{\mathrm{low}} \ge 1$ and the
+    entries from $s_2$ on to be prime entries, and so do the passages on the run after
+    Lemma~\ref{lem:sift_eq_checkDen} and in Section~\ref{sec:shapes}; the search
+    (Definition~\ref{def:searchPoints}) passes the cut points of its parameters and reads the shape
+    of the entries of the third stage off Lemma~\ref{lem:sievingInfo};
+  \item the Jacobi test by tables (Definition~\ref{def:jacobiTables}) reduces with the reciprocal
+    and uses Definition~\ref{def:mulMod}, its contract needs the primes of the table, its links to
+    \verb|RP_MULDIV| move to Definition~\ref{def:mulMod}, and it holds the fact
+    $\mathrm{mulModLimit} < 2^{32}$, which the files section of Chapter~\ref{chap:denominators}
+    names among the facts that the proofs use; the deviation of Chapter~\ref{chap:denominators} on
+    the divisions for \verb|RP_MULDIV| and \verb|RP_MULMOD| keeps only the reduction of the first
+    word of a block modulo the forbidden divisors (stage~I);
+  \item the sieve entry of a modulus (Lemma~\ref{lem:sieveEntry_admits}) and what
+    \verb|sieving_info| computes (Lemma~\ref{lem:sievingInfo}) state the shape of the entries of the
+    primes of the table and that the entries are those of the moduli in their order; the deviations
+    that send the reciprocal of a sieve entry to stages~F2 and~F3 (in Chapter~\ref{chap:setup} the
+    item on \verb|examine_prime|, in Chapter~\ref{chap:tables} the fields of the sieve entry of a
+    prime and the last item) say that it is computed where it is read
+    (Definition~\ref{def:mulMod}), the bias, \verb|rbainv| and \verb|dinv| serving the packing
+    (stage~F3); the reciprocals left to stage~F2 in Chapter~\ref{chap:tables} are those of
+    Definition~\ref{def:mulMod}, read by the third stage, the first two stages reading them in
+    stage~F3, and the Jacobi test computes those of its primes in the same way where it reads them;
+    the deviations of Chapter~\ref{chap:tables} on the primes beyond those examined, which ratpoints
+    examines for its first two stages too when \verb|-p| is absent, and on the primes that \verb|-P|
+    takes after the first $q$, which the parameters no longer take under \verb|-p|;
+  \item the files sections of Chapters~\ref{chap:words} to~\ref{chap:denominators}, which name
+    \verb|Ratpoints/Proof/Sift.lean| for the contracts from the walk on; the record of
+    \verb|find_points_work_1| in Chapter~\ref{chap:setup}, which then lacks only what belongs to
+    stages~F3, F4, H and~I; the passages that say that every modulus is applied in the first stage,
+    that the cut points are not read, and that a run without options has a single stage.
+\end{itemize}
+
+\section{Files, names and order of work}\label{sec:stagesFiles}
+
+The constants $\mathrm{stage3Limit}$, $\mathrm{useLongInPhase2}$, $\mathrm{defaultSp1}$ and
+$\mathrm{sp2Extra}$, and the fact $\mathrm{mulModLimit} < 2^{32}$, go into
+\verb|Ratpoints/Model/Constants.lean|, each citing its macro; the reciprocal and the reductions into
+\verb|Ratpoints/Model/Tables.lean|; the test for common factors, the third stage, the second stage
+and the staged sieve into \verb|Ratpoints/Model/Sieve.lean|; the run with the cut points and the
+Jacobi test into \verb|Ratpoints/Model/Denominators.lean|; the search into
+\verb|Ratpoints/Model/FindPoints.lean|; and the parameters into \verb|Ratpoints/Model/Params.lean|.
+The contracts of the reductions, of the test for common factors, of the third stage with the test of
+a candidate and of the second stage go into a new file without Mathlib,
+\verb|Ratpoints/Proof/Stages.lean|; the corollary of the third stage for the tables of the reference
+into \verb|Ratpoints/Proof/Tables.lean|; the contracts from the walk on (the walk, a bit array
+through the second stage, the scan, one piece and one denominator) move from
+\verb|Ratpoints/Proof/Words.lean| to a new file \verb|Ratpoints/Proof/Sift.lean|, which builds on
+both, so that \verb|Words.lean| stays below the limit of $1500$ lines; the Jacobi test stays in
+\verb|Ratpoints/Proof/JacobiTables.lean|, whose users in \verb|Ratpoints/Proof/Shapes.lean| follow;
+the run in \verb|Ratpoints/Proof/Denominators.lean|, the sieve entries in
+\verb|Ratpoints/Proof/Moduli.lean| and \verb|Ratpoints/Proof/FindPoints.lean|, and the parameters in
+\verb|Ratpoints/Proof/Params.lean|. Every new module joins its part root and the listing
+\verb|Ratpoints.lean|. One commit per item, each passing the project's checks, with the nodes of the
+earlier chapters that it changes and those whose C lines it takes
+(Section~\ref{sec:stagesEarlier}):
+\begin{enumerate}
+  \item[F2.1] The constant $\mathrm{stage3Limit}$ with its fact, the fact
+    $\mathrm{mulModLimit} < 2^{32}$, the reciprocal and the reductions (Definition~\ref{def:mulMod},
+    Lemma~\ref{lem:mulMod}), with \verb|#guard| examples against the remainder and the quotient over
+    the table; nothing calls them yet, and the quotient shares the lines of \verb|RP_MULDIV| with
+    the Jacobi test until F2.2.
+  \item[F2.2] The Jacobi test by the quotient with the reciprocal, its contract with the primes of
+    the table; the node of the Jacobi test, whose links to \verb|RP_MULDIV| pass to
+    Definition~\ref{def:mulMod}.
+  \item[F2.3] The test for common factors (Definition~\ref{def:relprime}, Lemma~\ref{lem:relprime})
+    with its range lemma and \verb|#guard| examples against the $\gcd$; nothing calls it yet, and
+    the check of a numerator gives it its lines (\csource{sift.c}{318}{343}); the node of
+    Definition~\ref{def:checkNum}.
+  \item[F2.4] The third stage and the test of a candidate (Definitions~\ref{def:stage3}
+    and~\ref{def:accepted}, Lemmas~\ref{lem:stage3} and~\ref{lem:accepted}), with \verb|#guard|
+    examples in both branches of the bias and above $\mathrm{mulModLimit}$; nothing calls them yet,
+    and they take their lines from the first stage (\csource{sift.c}{291}{312}), from one
+    denominator (\csource{sift.c}{405}{431}) and from the check of a numerator, which keeps none;
+    the nodes of Definitions~\ref{def:andRows}, \ref{def:checkNum} and~\ref{def:sift}.
+  \item[F2.5] The second stage (Definition~\ref{def:secondStage}, Lemma~\ref{lem:secondStage}), with
+    the constant $\mathrm{useLongInPhase2}$; nothing calls them yet, and the first stage gives them
+    \csource{sift.c}{1083}{1086} and \csource{sift.c}{1174}{1202}, the scan line~1297; the nodes of
+    Definitions~\ref{def:andRows} and~\ref{def:scanPiece}.
+  \item[F2.6] The staged sieve: a bit array through the second stage and the extraction
+    (Definition~\ref{def:siftBitArray}, Lemma~\ref{lem:siftBitArray}), then the walk, the scan, the
+    piece and one denominator with the test of a candidate, the second stage, the end of the first
+    stage and the entries of the third, and the thunks (Lemma~\ref{lem:staged}); the new
+    \verb|Ratpoints/Proof/Sift.lean|; the run passes all the entries to the first stage for now, and
+    its contract gains only $b_{\mathrm{low}} \ge 1$; the nodes of Chapter~\ref{chap:words} and of
+    the run.
+  \item[F2.7] The run with the cut points, the search passing those of its parameters, the shape of
+    the entries in the contracts of the sieve entry of a modulus and of \verb|sieving_info|; the
+    theorems with their statements unchanged; the nodes of the run, of the search and of the sieve
+    entries.
+  \item[F2.8] The parameters of the command line by the counting rules of
+    Section~\ref{sec:cuts}, with the constants $\mathrm{defaultSp1}$ and $\mathrm{sp2Extra}$ and
+    \verb|#guard| examples of the stage sizes, confirmed by \verb|ratpoints -v| with \verb|-U 0|
+    where \verb|-N| is absent; comparator, whose run covers the changes of F2.2 to F2.7 as well; the
+    node of the parameters.
+  \item[F2.9] The exclusions; the option sets of the differential tests; the build with other values
+    of the constants, a Boolean among them and $\mathrm{mulModLimit}$ within its fact; the passages
+    of the earlier chapters that F2 makes untrue; and the description of the repository and
+    \verb|formalization.yaml|.
+\end{enumerate}
+
+\section{The evidence}\label{sec:stages-evidence}
+
+Checks made while this chapter was written:
+\begin{itemize}
+  \item a reading of the C code of the stages at the pin, with a second reader who checked it: the
+    stages and the caches are a data refinement of the unstaged sieve with its check, the numerators
+    that reach the exact check and their order are the same, on 2300 runs of instrumented builds
+    against a transcription; \verb|RP_MULMOD| and \verb|RP_MULDIV| exact for $u \delta < 2^{64}$,
+    where $m p = 2^{64} + \delta$ with $\delta < p$, a bound that is sharp, and so for
+    $u p < 2^{64}$; every \verb|long| of the stages in range for $H < 2^{63}$; the counting rules of
+    the cut points, with five differences of the earlier parameters from them, which the parameters
+    of Section~\ref{sec:cuts} remove;
+  \item a sketch of the model of this chapter in Lean, whose \verb|#guard| examples give values of
+    the C program; it agrees with \verb|ratpoints -q| on the 3219 runs of the differential tests,
+    every point list in its order (in 22 seconds, against 35 before, since the second and the third
+    stage now do part of the work), on the 13 runs at heights up to 100000 (in 116 seconds, against
+    254), and on 1200 runs on 75 curves at heights up to 20000, without options and with fifteen
+    option sets of \verb|-n|, \verb|-N|, \verb|-P| and \verb|-p|; where few moduli come before the
+    test of a candidate, the model is much slower than ratpoints, up to 1209 seconds against 1.7 for
+    \verb|-n 3 -N 5 -P 2| at the height 20000, since most numerators then reach the test and the
+    reduction with the bias computes products above $2^{63}$ as big numbers; in a Lean test, the
+    staged sieve gives the output of all the moduli in the first stage on 320 runs with random cut
+    points, the test for common factors the $\gcd$ on 20000 pairs, the third stage after its table
+    the rows of its primes on 4929 numerators (in both branches of the bias and above
+    $\mathrm{mulModLimit}$), and the reductions the remainder and the quotient on 20000 arguments;
+    the cut points of the parameters against those that \verb|ratpoints -v| reports on 1440 runs
+    with \verb|-n| given and \verb|-U 0| where \verb|-N| is absent, the third stage compared where
+    \verb|-P| is given: ratpoints has more moduli than the parameters in none, fewer in 275, each
+    where its pool runs short; and the model built with other values of the constants of F2 (the
+    arm of the second stage word by word, with all guards; and, with the guards left out, a third
+    stage always without the bias with the cut points $53$ and $+0$, or a lower bound of the bias
+    with $0$ and $+40$) gives the output of \verb|ratpoints -q| on the differential tests;
+  \item two reviews of the sketch against the C code, each finding checked by a second reader: of
+    the stages and the check, 26 findings, 24 confirmed or confirmed in part, several of them one
+    finding of two readers, none on what the model computes (107000 cases of the arithmetic against
+    the C code, none different); of the parameters, 16 findings, all on the text and the ranges; the
+    rule bounds the counts of \verb|ratpoints -v| from above in every run where the options fix them
+    (22080 runs: equal in 16912, below in 5168, where its pool runs short, above in none), and the
+    well-formedness holds for 30 million choices of the options; the ranges and the deviations of
+    this chapter are the corrected ones;
+  \item a prototype of the proofs on the sketch, in a copy of the repository, in three parts in
+    sequence: every contract and lemma of this chapter proved, with the standard axioms only, every
+    proof of at most $20$ lines, the statements that comparator certifies and the comparator
+    solution unchanged in their text, the build with other values of the constants, both arms of the
+    second stage among them, and the differential tests of its program; it changed nothing in the
+    model but the fact $\mathrm{mulModLimit} < 2^{32}$, which the exactness of the reductions of the
+    denominators needs, and the entries of the third stage need of the tables only the inverses of
+    the nonzero residues and the bound $p \le 2^{32}$;
+  \item a review of this chapter by four readers, each finding checked by a second reader: 64
+    findings, 44 confirmed, 19 in part and 1 refuted; the prototype then gave the hypotheses of the
+    third stage as prime entries; the rest was applied to this chapter: the order of work, in which
+    each item takes the C lines of its components from the earlier nodes in its own commit and a bit
+    array through the second stage comes with the walk that it calls, the positive denominators of
+    the run, the changes of the earlier chapters, the C links, the uses of the nodes, and the claims
+    of the evidence.
+\end{itemize}
