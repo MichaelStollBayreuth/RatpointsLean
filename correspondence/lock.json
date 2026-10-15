@@ -685,6 +685,12 @@
         "Ratpoints.Sieve.sift"
       ]
     },
+    "find_points.c:3355-3370": {
+      "hash": "4fdcc4d1bc1a411dfad0b4eaa079d2a79e80ecae3d88f0fde35fb6dc1befd14c",
+      "owners": [
+        "Ratpoints.Sieve.numeratorsToBits"
+      ]
+    },
     "find_points.c:3442-3488": {
       "hash": "22b79014fdecd46acf80f8bda5d34ef14fe75d6ca6329da15a2ef8709ffdc222",
       "owners": [
@@ -701,6 +707,12 @@
       "hash": "a9293f8510a12c44adae7d157f9c4a1f5b73b2ce5c6be23c2fee7e101a5ac8ff",
       "owners": [
         "Ratpoints.Sieve.sift"
+      ]
+    },
+    "find_points.c:3639-3679": {
+      "hash": "9aaaa756852fb36bb9821e3bbccfd34af9cfc3966b1689fe832861193b449241",
+      "owners": [
+        "Ratpoints.Sieve.fillBpList"
       ]
     },
     "find_points.c:3725-3728": {

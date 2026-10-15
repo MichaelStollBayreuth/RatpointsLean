@@ -24,10 +24,11 @@ the starting value of the first stage of the sieve in the packing (stage F), wit
 (`Ratpoints.Sieve.numPackings`), and the inverses of the strides modulo the moduli with the row
 offsets of each packing, one for each modulus, which shift the rows so that bit `t` of the bit array
 with the word number `w` stands for the numerator `a₀ + 2 ^ k (Ratpoints.rbaLength w + t)`
-(`Ratpoints.Sieve.classOffsets`). The classes (`Ratpoints.Sieve.NumClass`) are in
+(`Ratpoints.Sieve.classOffsets`); and for a denominator the residues of the denominator divided by
+the stride of its class modulo the moduli of the first two stages, as `fill_bp_list` computes them
+(`Ratpoints.Sieve.fillBpList`). The classes (`Ratpoints.Sieve.NumClass`) are in
 `Ratpoints.Model.Sieve`, the 2-adic information in `Ratpoints.Model.Denominators`; the run reads the
-row offsets, and the residues of a denominator divided by the stride of its class come, with the
-packing (stage F).
+row offsets and the residues with the packing (stage F).
 
 ## Main definitions
 
@@ -36,6 +37,7 @@ packing (stage F).
 * `Ratpoints.Sieve.numPackings`, `Ratpoints.Sieve.halve`, `Ratpoints.Sieve.classRows`,
   `Ratpoints.Sieve.classOffsets`: the number of the packings, and the row offsets of the packings
   with the inverses of the strides.
+* `Ratpoints.Sieve.fillBpList`: the residues of a denominator divided by the stride of its class.
 -/
 
 @[expose] public section
@@ -213,9 +215,9 @@ are known, as `class_offsets` makes them: the largest stride exponent `kmax` amo
 a pattern; for each modulus `p`, the chains of halvings modulo `p` (`Ratpoints.Sieve.halve`) from
 `1` and from the inverse `rbainv` of `Ratpoints.rbaLength` modulo `p`, for `k = 0, …, kmax`, which
 give the inverses `2 ^ (-k) mod p`, which the sieve entry of `p` keeps for `fill_bp_list`
-(`Ratpoints.Sieve.SieveEntry.dinv`), and the inverses `(2 ^ k Ratpoints.rbaLength)⁻¹ mod p`; and the
-rows of offsets of the classes, written into the array `offsets` of the run, of
-`Ratpoints.Sieve.numPackings cls` rows of one offset for each modulus
+(`Ratpoints.Sieve.SieveEntry.dinv`, `Ratpoints.Sieve.fillBpList`), and the inverses
+`(2 ^ k Ratpoints.rbaLength)⁻¹ mod p`; and the rows of offsets of the classes, written into the
+array `offsets` of the run, of `Ratpoints.Sieve.numPackings cls` rows of one offset for each modulus
 (`Ratpoints.Sieve.classRows`): the offset of a class of the stride `2 ^ k` and the residue `a₀` for
 `p` is `a₀ (2 ^ k Ratpoints.rbaLength)⁻¹ mod p` plus the bias of `p`. The classes and the entries
 return with their offsets and their inverses, and the array of the offsets filled.
@@ -253,11 +255,39 @@ def classOffsets (cls : Vector NumClass 64) (es : List SieveEntry) (offsets : Ar
   let (cls, offsets) ← classRows cls es' rinv es.length offsets
   return (cls, es'.toList, offsets)
 
+/-! ### The residues of a denominator -/
+
+/-- The residues of the denominator `b` divided by the stride `2 ^ k` of its class modulo the moduli
+of the sieve entries `es` of the first two stages, `b dinv[k] mod p` for the inverse `dinv[k]` of
+`2 ^ k` modulo the modulus `p` (`Ratpoints.Sieve.SieveEntry.dinv`), each by multiplications with the
+reciprocal `mg` of `p` from `mgs` (`Ratpoints.Sieve.mulMod`), exact below `2 ^ 64 / p`: for
+`b ≤ Ratpoints.mulModLimit / Ratpoints.maxPrimeEven`, the product `b dinv[k]` reduced at once; for
+`b ≤ Ratpoints.mulModLimit`, `b` reduced first and then its product with `dinv[k]`; and beyond, `b`
+reduced by the helper `mod` of the C code (`Ratpoints.Sieve.modLong`), which divides, and then the
+product. The branch is chosen once for `b`. The sieve in the packing reads the rows of these
+residues (stage F).
+
+C: `find_points.c:3639-3679`
+
+Deviation: a list, made by a map over the entries and their reciprocals (`List.zipWith`) in the
+branch that `b` chooses and returned, for the array `bp_list` that the loops over the positions
+`0, …, sp2 - 1` of `sieve_list` and `magics` fill through the pointer argument; the entries of the
+first two stages and their reciprocals as arguments, for `wk->sp2` and the arrays `sieve_list` and
+`magics` of the arguments; natural numbers for the `long`s, the products natural numbers for the
+`long`s that `RP_MULMOD` converts to `unsigned long`s; no measurement of its time (`RP_BP_TIC`,
+`RP_BP_TOC`). -/
+def fillBpList (b k : Nat) (es : List SieveEntry) (mgs : List Nat) : List Nat :=
+  if b ≤ mulModLimit / maxPrimeEven then
+    List.zipWith (fun e mg ↦ mulMod (b * e.dinv[k]!) e.p mg) es mgs
+  else if b ≤ mulModLimit then
+    List.zipWith (fun e mg ↦ mulMod (mulMod b e.p mg * e.dinv[k]!) e.p mg) es mgs
+  else List.zipWith (fun e mg ↦ mulMod ((modLong b e.p).toNat * e.dinv[k]!) e.p mg) es mgs
+
 /-! ### Examples
 
 The packings of the classes against those of the loop over the classes of `get_2adic_info`, and
-the patterns against their rule; the row offsets, which need the sieve entries of the moduli, are
-examples of `Ratpoints.Model.FindPoints`. -/
+the patterns and the residues of `fill_bp_list` against their rules; the row offsets, which need the
+sieve entries of the moduli, are examples of `Ratpoints.Model.FindPoints`. -/
 
 -- The packings of 64 words against those that the loop over the classes of `get_2adic_info`
 -- (`find_points.c:1058-1095`, compiled apart at the pinned commit) gives for them: the pattern,
@@ -313,6 +343,21 @@ examples of `Ratpoints.Model.FindPoints`. -/
     let pk := Id.run (packPattern w k a0)
     (List.range 64).all fun t ↦
       pk.toBitVec.getLsbD t == w.toBitVec.getLsbD ((a0 + 2 ^ k * t) % 64)
+
+-- The residues of `fill_bp_list` in its three branches, for the denominators up to and above
+-- `mulModLimit / maxPrimeEven` and `mulModLimit` and up to the largest `long`, and the strides
+-- `2 ^ k`, `k ≤ 6`, with the inverses of the strides that the halvings of `class_offsets` give:
+-- `b 2 ^ (-k) mod p`, which times `2 ^ k` is `b` modulo `p`, for primes of the table and composite
+-- moduli up to 255.
+#guard
+  let es : List SieveEntry := ([3, 5, 7, 9, 15, 45, 77, 251, 255] : List Nat).map fun p ↦
+    ⟨p, [], magic p, 0, 0, (Array.range 7).map fun k ↦ (List.range k).foldl (fun x _ ↦ halve x p) 1⟩
+  ([1, 2, 1000, mulModLimit / maxPrimeEven, mulModLimit / maxPrimeEven + 1, mulModLimit - 1,
+      mulModLimit, mulModLimit + 1, 10 ^ 12, 2 ^ 62 + 3, 2 ^ 63 - 1] : List Nat).all fun b ↦
+    (List.range 7).all fun k ↦
+      let bp := fillBpList b k es (es.map (·.magic))
+      bp == es.map (fun e ↦ b * e.dinv[k]! % e.p) &&
+        (bp.zip es).all fun (r, e) ↦ 2 ^ k * r % e.p == b % e.p && e.dinv[k]! * 2 ^ k % e.p == 1
 
 end Sieve
 

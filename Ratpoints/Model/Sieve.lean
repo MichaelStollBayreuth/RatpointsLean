@@ -30,7 +30,8 @@ with the first moduli, through the second, with the others, to the points of its
 numerators modulo 64 from which the first stage starts, with the products of the check and what the
 third stage needs as thunks (`Ratpoints.Sieve.sift`); and the packing of the numerators of a class
 of the denominators modulo 64 into one class modulo a power of 2 (`Ratpoints.Sieve.NumClass`), whose
-classes `Ratpoints.Model.Packing` makes, for the sieve in the packing (stage F). The components that
+classes `Ratpoints.Model.Packing` makes, and the bits of an interval of numerators in it
+(`Ratpoints.Sieve.numeratorsToBits`), for the sieve in the packing (stage F). The components that
 take one numerator at a time, the test of a candidate that survives the first two stages, with the
 test for common factors and the third stage (`Ratpoints.Sieve.accepted`), the exact check
 (`Ratpoints.Sieve.checkPoint`) and its reference, the check of a numerator
@@ -75,6 +76,8 @@ as words, by `Ratpoints.Sieve.SieveEntry.row`.
   extraction.
 * `Ratpoints.Sieve.siftPiece`: one piece of bit arrays, from the first stage and the masks at its
   two ends, through the second stage, to the points of its numerators.
+* `Ratpoints.Sieve.numeratorsToBits`: the bits of an interval of numerators in the packing of a
+  class.
 * `Ratpoints.Sieve.sift`: the points of one denominator, its numerators `-H, …, H` in pieces of bit
   arrays, from a class word.
 -/
@@ -562,6 +565,35 @@ def siftPiece (w : Thunk (List Int)) (d b : Nat) (rev : Bool) (sp1 : Nat)
 
 /-! ### One denominator -/
 
+/-- The bits of the numerators `low, …, high` in the packing of the class `cl`, whose bit `t` stands
+for the numerator `a₀ + 2 ^ k t` (`Ratpoints.Sieve.NumClass`): from
+`⌈(low - a₀) / 2 ^ k⌉ = -⌊(a₀ - low) / 2 ^ k⌋` to `⌊(high - a₀) / 2 ^ k⌋`, by arithmetic shifts.
+With `split` clear, as the shifts of the differences `a₀ - low` and `high - a₀`, which stay in the
+range of a `long` for `|low|, |high| ≤ 2 ^ 63 - 65`; with `split` set, each end split into its
+multiple of `2 ^ k`, the end shifted right by `k`, and its rest, the end and-ed with the mask
+`2 ^ k - 1`, from which `a₀` is taken, so that nothing leaves the range of a `long` also for an end
+within `2 ^ k` of its bounds. Both forms give the same bits where both stay in range.
+
+C: `find_points.c:3355-3370`
+
+Deviation: `Int64` for the `long`s, in two's complement, the representation on which the and with
+the mask acts, also on a negative end, and `>>>` on `Int64` the arithmetic shift, for the `>>` of a
+negative `long`, both of which the C standard leaves to the implementation (the representation
+before C23) and gcc defines so; the stride `k` and the residue `a₀` of the class converted to
+`Int64`; the two ends returned as a pair, for the pointers `low` and `high` through which the
+function reads and writes them; a Boolean for the `int` `split`, an argument, whose value for the
+whole line of numerators, the split form exactly for the heights above `2 ^ 63 - 65`, the C code
+decides in lines of the search intervals, by the test of `exact_bounds` and the path through
+`interval_bits_exact` (stage H). -/
+def numeratorsToBits (low high : Int64) (cl : NumClass) (split : Bool) : Int64 × Int64 :=
+  let k := cl.k.toInt64
+  let a0 := cl.a0.toInt64
+  if split then
+    let mask := (1 <<< k) - 1
+    ((low >>> k) + (((low &&& mask) - a0 + mask) >>> k),
+      (high >>> k) + (((high &&& mask) - a0) >>> k))
+  else (-((a0 - low) >>> k), (high - a0) >>> k)
+
 /-- The points of the denominator `b`, its numerators `-H, …, H` in pieces of at most `A` bit
 arrays, for `A ≥ 1` (for `A = 0` the loop does not end), from the class word `cw` of `b`, the
 numerators modulo 64 that the 2-adic information admits (`Ratpoints.Sieve.twoAdic`): for each
@@ -645,7 +677,7 @@ def sift (c : List Int) (d H A b : Nat) (rev : Bool) (sp1 : Nat)
 -- The sieve entries of the examples have the bias, the inverse of `rbaLength` and the inverses of
 -- the strides `0`, `0` and the empty array, which `[k]!` reads as `0`: fields that only the packing
 -- of the numerators reads, the row offsets (`Ratpoints.Sieve.classOffsets`) the first two and the
--- residues of `fill_bp_list` (stage F) the third.
+-- residues of a denominator (`Ratpoints.Sieve.fillBpList`) the third.
 
 -- Curves without points modulo 3, 5 and 7, on which ratpoints takes the exit at that prime
 -- (`ratpoints '20 6 -14 12 -10' 30 -v` says `no points mod p = 3`, and so do
@@ -887,6 +919,34 @@ def sift (c : List Int) (d H A b : Nat) (rev : Bool) (sp1 : Nat)
       let es3 := es.drop sp2
       (Id.run (sift c 3 300 A b rev sp1 ((es.take sp2).map fun e ↦ (e.p, e.rows)) es3
         (es3.map (·.magic)) (~~~0))).toList == if rev then ref.map swapPoint else ref
+
+-- The bits of the numerators `-H, …, H` in the packings of the strides `2 ^ k`, `k ≤ 6`, with every
+-- residue: both forms give `⌈(-H - a₀) / 2 ^ k⌉` and `⌊(H - a₀) / 2 ^ k⌋`, for heights from 0 up,
+-- around `2 ^ 63 - 65`, where the C code changes forms, and up to the largest `long` `2 ^ 63 - 1`;
+-- the plain form only up to `2 ^ 63 - 65`, the split form for all of them.
+#guard (List.range 7).all fun k ↦ (List.range (2 ^ k)).all fun a0 ↦
+  ([0, 1, 2, 3, 63, 64, 1000, 2 ^ 62, 2 ^ 63 - 129, 2 ^ 63 - 66, 2 ^ 63 - 65, 2 ^ 63 - 64,
+      2 ^ 63 - 2, 2 ^ 63 - 1] : List Nat).all fun H ↦
+    let cl : NumClass := ⟨1, k, a0, none⟩
+    let lo : Int := -((H + a0 : Nat) / (2 ^ k : Nat) : Int)
+    let hi : Int := ((H : Int) - a0) / (2 ^ k : Nat)
+    let bits (split : Bool) := numeratorsToBits (-H.toInt64) H.toInt64 cl split
+    (bits true).1.toInt == lo && (bits true).2.toInt == hi &&
+      (2 ^ 63 - 65 < H || (bits false).1.toInt == lo && (bits false).2.toInt == hi)
+
+-- The interval of bits is empty for `H = 1`, `k = 2`, `a₀ = 2`, whose class has no numerator in
+-- `-1, 0, 1`: the bits from `0` to `-1`; and it ends below `0` for `H = 3`, `k = 3`, `a₀ = 5`,
+-- whose only numerator `-3` has the bit `-1`.
+#guard numeratorsToBits (-1) 1 ⟨1, 2, 2, none⟩ false == (0, -1) &&
+  numeratorsToBits (-3) 3 ⟨1, 3, 5, none⟩ false == (-1, -1)
+
+-- The plain form wraps at the largest `long` `H = 2 ^ 63 - 1` for `k = 1`, `a₀ = 1`: `a₀ + H` is
+-- `2 ^ 63`, which wraps to `-2 ^ 63`, so that its low bit is `2 ^ 62` in place of `-2 ^ 62`, the
+-- low bit of the split form, which the C code takes there.
+#guard
+  let H : Nat := 2 ^ 63 - 1
+  (numeratorsToBits (-H.toInt64) H.toInt64 ⟨1, 1, 1, none⟩ false).1.toInt == 2 ^ 62 &&
+    (numeratorsToBits (-H.toInt64) H.toInt64 ⟨1, 1, 1, none⟩ true).1.toInt == -2 ^ 62
 
 end Sieve
 

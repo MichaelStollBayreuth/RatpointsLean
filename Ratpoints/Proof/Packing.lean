@@ -35,7 +35,8 @@ from `Ratpoints.rowBias` on, as `examine_prime`, `make_power` and `make_modulus`
 offsets, with the offset of its packing for each sieve entry
 (`Ratpoints.Sieve.SieveEntry.PackedFor`): between `Ratpoints.rowBias` and `Ratpoints.rowBias + 2 p`,
 `a₀ (2 ^ k Ratpoints.rbaLength)⁻¹` modulo `p`, with the inverse of the stride modulo `p` in the
-entry.
+entry. `fill_bp_list` divides the denominator by the stride modulo each modulus, exactly in each of
+its branches, since its products stay below `2 ^ 64 / p`.
 
 ## Main definitions
 
@@ -66,16 +67,23 @@ entry.
   least 1.
 * `Ratpoints.Sieve.classRows_spec`, `Ratpoints.Sieve.classOffsets_spec`: the rows of offsets of the
   classes and the inverses of the strides in the entries.
+* `Ratpoints.Sieve.mul_le_mulModLimit_of_le_div`, `Ratpoints.Sieve.mul_lt_two_pow_63`: the products
+  of `fill_bp_list` and of `class_offsets` are `long`s, those of the first branch of `fill_bp_list`
+  at most `Ratpoints.mulModLimit`.
+* `Ratpoints.Sieve.fillBpList_eq_map`: the residues of the denominator divided by the stride.
 
 ## Implementation notes
 
 The file uses Lean core and `Std` only, so that the contracts of the sieve, in files without
 Mathlib, can use it. The proofs use only the facts on the constants that `decide` checks next to
-them, never their values: here that `Ratpoints.numStrides ≥ 1` and that
-`Ratpoints.maxBitsInPrime ≤ 10` (`Ratpoints.maxPrimeEven_le_two_pow_10`); that the masks of the
-strides beyond `k = 6` are `0` is read with the default of the array. The facts on words, natural
-numbers and integers that are not about the model are in `Ratpoints.Proof.Bits`.
+them, never their values: here that `Ratpoints.numStrides ≥ 1`, that `Ratpoints.maxBitsInPrime ≤ 10`
+(`Ratpoints.maxPrimeEven_le_two_pow_10`) and that `Ratpoints.mulModLimit < 2 ^ 32`; that the masks
+of the strides beyond `k = 6` are `0` is read with the default of the array. The facts on words,
+natural numbers and integers that are not about the model are in `Ratpoints.Proof.Bits`. The bits of
+an interval of numerators and the other range lemmas of the `long`s of the packing are in
+`Ratpoints.Proof.BitRange`.
 -/
+
 @[expose] public section
 
 set_option experimental.vcgen true
@@ -1234,6 +1242,66 @@ theorem classOffsets_spec (cls : Vector NumClass 64) (es : List SieveEntry) (off
     | exact KmaxInvariant.append_of_lt ‹_› ‹_› _ ‹_›
     | exact KmaxInvariant.append_of_not_lt ‹_› ‹_› _ ‹_›
     | exact classOffsets_post ‹_› ‹_› ‹_› ‹_›
+
+/-! ### The residues of a denominator -/
+
+/-- The products `b dinv` of the first branch of `fill_bp_list`, for
+`b ≤ Ratpoints.mulModLimit / Ratpoints.maxPrimeEven` and `dinv < p ≤ Ratpoints.maxPrimeEven`, are at
+most `Ratpoints.mulModLimit`, so `long`s that the reduction by the reciprocal of `p` reduces
+exactly. -/
+theorem mul_le_mulModLimit_of_le_div {b d p : Nat} (hb : b ≤ mulModLimit / maxPrimeEven)
+    (hd : d < p) (hp : p ≤ maxPrimeEven) : b * d ≤ mulModLimit :=
+  Nat.le_trans (Nat.mul_le_mul hb (Nat.le_trans (Nat.le_of_lt hd) hp)) (Nat.div_mul_le_self _ _)
+
+/-- The products `x d` of the other branches of `fill_bp_list`, `(b mod p) dinv`, and of
+`class_offsets`, `a₀ rinv`, for `x ≤ 2 ^ 10` and `d < p ≤ Ratpoints.maxPrimeEven`, are `long`s. -/
+theorem mul_lt_two_pow_63 {x d p : Nat} (hx : x ≤ 2 ^ 10) (hd : d < p) (hp : p ≤ maxPrimeEven) :
+    x * d < 2 ^ 63 := by
+  have := maxPrimeEven_le_two_pow_10
+  calc x * d ≤ 2 ^ 10 * 2 ^ 10 := Nat.mul_le_mul hx (by lia)
+    _ < 2 ^ 63 := by decide
+
+theorem mod_le_two_pow_10 (b : Nat) {p : Nat} (hp : 0 < p) (hpm : p ≤ maxPrimeEven) :
+    b % p ≤ 2 ^ 10 :=
+  Nat.le_of_lt (Nat.lt_of_lt_of_le (Nat.mod_lt _ hp) (Nat.le_trans hpm maxPrimeEven_le_two_pow_10))
+
+/-- The first branch of `fill_bp_list`: for `b ≤ Ratpoints.mulModLimit / Ratpoints.maxPrimeEven`
+the product `b dinv` is reduced at once, exactly. -/
+theorem mulMod_mul_magic {b d p : Nat} (hp : 0 < p) (hpm : p ≤ maxPrimeEven) (hd : d < p)
+    (hb : b ≤ mulModLimit / maxPrimeEven) : mulMod (b * d) p (magic p) = b * d % p :=
+  mulMod_magic hp (mul_lt_two_pow_64_of_le_mulModLimit (mul_le_mulModLimit_of_le_div hb hd hpm)
+    (Nat.le_trans hpm maxPrimeEven_le_two_pow_32))
+
+/-- The second branch of `fill_bp_list`: for `b ≤ Ratpoints.mulModLimit`, `b` is reduced first and
+then its product with `dinv`, both exactly. -/
+theorem mulMod_mulMod_mul_magic {b d p : Nat} (hp : 0 < p) (hpm : p ≤ maxPrimeEven) (hd : d < p)
+    (hb : b ≤ mulModLimit) : mulMod (mulMod b p (magic p) * d) p (magic p) = b * d % p := by
+  rw [mulMod_magic hp (mul_lt_two_pow_64_of_le_mulModLimit hb
+      (Nat.le_trans hpm maxPrimeEven_le_two_pow_32)),
+    mulMod_magic hp (mul_mul_lt_two_pow_64 (mod_le_two_pow_10 b hp hpm) hd hpm), Nat.mod_mul_mod]
+
+/-- The third branch of `fill_bp_list`: `b` reduced by the helper `mod` of the C code, then the
+product with `dinv` exactly. -/
+theorem mulMod_toNat_modLong_mul_magic {b d p : Nat} (hp : 0 < p) (hpm : p ≤ maxPrimeEven)
+    (hd : d < p) : mulMod ((modLong b p).toNat * d) p (magic p) = b * d % p := by
+  have : (modLong b p).toNat = b % p := by rw [modLong_eq_emod _ (Int.natCast_nonneg _)]; lia
+  rw [this, mulMod_magic hp (mul_mul_lt_two_pow_64 (mod_le_two_pow_10 b hp hpm) hd hpm),
+    Nat.mod_mul_mod]
+
+/-- `fill_bp_list` computes `b dinv[k] mod p` for every modulus `0 < p ≤ Ratpoints.maxPrimeEven`
+with `dinv[k] < p`, in each of its three branches, with the reciprocals of the moduli. -/
+theorem fillBpList_eq_map {b k : Nat} {es : List SieveEntry}
+    (hes : ∀ e ∈ es, 0 < e.p ∧ e.p ≤ maxPrimeEven ∧ e.dinv[k]! < e.p) :
+    fillBpList b k es (es.map (magic ·.p)) = es.map fun e ↦ b * e.dinv[k]! % e.p := by
+  simp only [fillBpList, List.zipWith_map_right, List.zipWith_self]
+  split
+  · exact List.map_congr_left fun e he ↦ mulMod_mul_magic (hes e he).1 (hes e he).2.1
+      (hes e he).2.2 ‹_›
+  split
+  · exact List.map_congr_left fun e he ↦ mulMod_mulMod_mul_magic (hes e he).1 (hes e he).2.1
+      (hes e he).2.2 ‹_›
+  · exact List.map_congr_left fun e he ↦ mulMod_toNat_modLong_mul_magic (hes e he).1
+      (hes e he).2.1 (hes e he).2.2
 
 end Sieve
 

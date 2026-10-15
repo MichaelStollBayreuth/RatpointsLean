@@ -47,7 +47,12 @@ integer `a`. For the classes of the packing: the residues and the places in a pa
 `2 ^ k` dividing 64, a residue `a + m j` modulo 64, and the bits of a word and-ed with the
 complement of a mask and of a word or-ed with itself shifted. For the rows of offsets: the entries
 of a vector after `Vector.set`, of an array of `none`s and of an array whose list is a map, the bit
-`(x >>> j) &&& 1` of a word, and the bits of two words of 128 bits after a bit is set.
+`(x >>> j) &&& 1` of a word, and the bits of two words of 128 bits after a bit is set. For the
+residues and the bits of an interval: the numbers of a range in one class modulo `m`, the multiples
+of `m` among `N + (m - r)`, a numerator `i - H` in a class modulo `m`, the quotients of the split
+form of `numerators_to_bits`, its carries and their sums with a quotient, in the range of a `long`,
+and the sums, differences and negations of `long`s that do not overflow, the mask `(1 <<< k) - 1`
+and the and with it, the Euclidean remainder modulo `2 ^ k` also of a negative `long`.
 
 ## Main statements
 
@@ -136,6 +141,13 @@ of a vector after `Vector.set`, of an array of `none`s and of an array whose lis
   read with an inverse `i` of `r` when `x` and `r` are both scaled.
 * `Nat.sub_mod_div_eq_mod_iff`: the place `(a - a₀) mod 64 / m` of a residue `a ≡ a₀` in a packing
   of stride `m`, `m P = 64`.
+* `List.filter_range_mod_eq`: the numbers below `N` that are `r` modulo `m > r`, `r, r + m, …`.
+* `Int.ediv_add_emod_sub_add_sub_one_ediv`, `Int.ediv_add_emod_sub_ediv`: the two ends of the split
+  form of `numerators_to_bits`, `⌈(lo - a₀) / m⌉` and `⌊(hi - a₀) / m⌋`.
+* `Int64.toInt_add_of_lt`, `Int64.toInt_sub_of_lt`, `Int64.toInt_neg_of_lt`: the sums, differences
+  and negations of `long`s that do not overflow.
+* `Int64.toInt_and_ofNat_two_pow_sub_one`: a `long` and-ed with the mask `2 ^ k - 1` is its
+  Euclidean remainder modulo `2 ^ k`.
 
 ## Implementation notes
 
@@ -676,7 +688,47 @@ theorem sub_mod_div_eq_mod_iff {a a0 m P t : Nat} (hm : m * P = 64) (ha : a < 64
   · intro h; rw [← h]; lia
   · intro h; exact Nat.eq_of_mul_eq_mul_left hm0 (by lia)
 
+/-- `N + (m - r)` is a multiple of `m` exactly when `N` is `r` modulo `m`, for `r < m`. -/
+theorem add_sub_mod_eq_zero_iff {N m r : Nat} (hr : r < m) :
+    (N + (m - r)) % m = 0 ↔ N % m = r := by
+  have hs := Nat.mod_lt N (by lia : 0 < m)
+  have h1 := Nat.div_add_mod N m
+  rw [show N + (m - r) = N % m + (m - r) + m * (N / m) by lia, Nat.add_mul_mod_self_left]
+  rcases Nat.lt_trichotomy (N % m) r with h | h | h
+  · rw [Nat.mod_eq_of_lt (by lia)]
+    lia
+  · rw [h, Nat.add_sub_cancel' (Nat.le_of_lt hr), Nat.mod_self]
+    exact ⟨fun _ ↦ rfl, fun _ ↦ rfl⟩
+  · rw [show N % m + (m - r) = N % m - r + m by lia, Nat.add_mod_right, Nat.mod_eq_of_lt (by lia)]
+    lia
+
 end Nat
+
+/-- The numbers below `N` that are `r` modulo `m`, for `r < m`: `r, r + m, r + 2 m, …`, of which
+there are `⌈(N - r) / m⌉`. -/
+theorem List.filter_range_mod_eq {m r : Nat} (hr : r < m) (N : Nat) :
+    (List.range N).filter (fun i ↦ i % m == r) =
+      (List.range ((N + (m - 1 - r)) / m)).map fun j ↦ r + m * j := by
+  induction N with
+  | zero =>
+    rw [List.range_zero, List.filter_nil, Nat.zero_add, Nat.div_eq_of_lt (by lia), List.range_zero,
+      List.map_nil]
+  | succ N ih =>
+    have e : N + 1 + (m - 1 - r) = N + (m - 1 - r) + 1 := by lia
+    have e' : N + (m - 1 - r) + 1 = N + (m - r) := by lia
+    rw [List.range_succ, List.filter_append, ih, e]
+    by_cases hN : N % m = r
+    · rw [Nat.succ_div_of_mod_eq_zero (by rw [e']; exact (Nat.add_sub_mod_eq_zero_iff hr).mpr hN),
+        List.range_succ, List.map_append]
+      simp only [hN, beq_self_eq_true, List.filter_cons_of_pos, List.filter_nil, List.map_cons,
+        List.map_nil]
+      have h1 := Nat.div_add_mod N m
+      rw [show N + (m - 1 - r) = m - 1 + m * (N / m) by lia, Nat.add_mul_div_left _ _ (by lia),
+        Nat.div_eq_of_lt (by lia), Nat.zero_add]
+      congr 2
+      lia
+    · rw [Nat.succ_div_of_mod_ne_zero (by rw [e']; exact mt (Nat.add_sub_mod_eq_zero_iff hr).mp hN)]
+      simp [hN]
 
 /-! ### Integers -/
 
@@ -811,6 +863,74 @@ theorem toNat_add_mul_emod_sixty_four (a m : Nat) (j : Int) :
   have h2 : ((j % 64).toNat : Int) = j % 64 := Int.toNat_of_nonneg (Int.emod_nonneg j (by decide))
   rw [h1, ← h2, ← Int.add_assoc, Int.add_mul_emod_self_left]
   lia
+
+theorem sub_emod_eq_iff {i H a0 m : Nat} (ha : a0 < m) :
+    ((i : Int) - H) % m = a0 ↔ i % m = (a0 + H) % m := by
+  have h1 : (a0 : Int) % m = a0 := Int.emod_eq_of_lt (by lia) (by lia)
+  rw [← h1, Int.emod_eq_emod_iff_emod_sub_eq_zero, ← Int.ofNat_inj, Int.natCast_emod,
+    Int.natCast_emod, Int.emod_eq_emod_iff_emod_sub_eq_zero]
+  simp only [Int.natCast_add]
+  rw [show (i : Int) - H - a0 = i - (a0 + H) by lia]
+
+/-- `-⌊x / m⌋ = ⌊(m - 1 - x) / m⌋`, the ceiling of `-x / m`, for `m > 0`. -/
+theorem neg_ediv_eq_sub_one_sub_ediv (x : Int) {m : Int} (hm : 0 < m) :
+    -(x / m) = (m - 1 - x) / m := by
+  have key (n : Int) : n ≤ -(x / m) ↔ n ≤ (m - 1 - x) / m := by
+    rw [Int.le_neg_iff, Int.ediv_le_iff_le_mul hm, Int.le_ediv_iff_mul_le hm]
+    constructor <;> intro h <;> lia
+  exact Int.le_antisymm ((key _).mp (Int.le_refl _)) ((key _).mpr (Int.le_refl _))
+
+/-- The low bit by the split form, the end split into its multiple of `m` and its rest. -/
+theorem ediv_add_emod_sub_add_sub_one_ediv (lo : Int) (a0 : Int) {m : Int} (hm : 0 < m) :
+    lo / m + (lo % m - a0 + (m - 1)) / m = -((a0 - lo) / m) := by
+  have h1 := Int.emod_add_ediv_mul lo m
+  have e1 : (a0 : Int) - lo = (a0 - lo % m) + -(lo / m) * m := by lia
+  rw [e1, Int.add_mul_ediv_right _ _ (Int.ne_of_gt hm), Int.neg_add, Int.neg_neg,
+    Int.neg_ediv_eq_sub_one_sub_ediv _ hm, Int.add_comm]
+  congr 2
+  lia
+
+/-- The high bit by the split form. -/
+theorem ediv_add_emod_sub_ediv (hi : Int) (a0 : Int) {m : Int} (hm : 0 < m) :
+    hi / m + (hi % m - a0) / m = (hi - a0) / m := by
+  have h2 := Int.emod_add_ediv_mul hi m
+  have e2 : hi - (a0 : Int) = (hi % m - a0) + hi / m * m := by lia
+  rw [e2, Int.add_mul_ediv_right _ _ (Int.ne_of_gt hm), Int.add_comm]
+
+/-- A quotient by `m > 0` of an integer above `-2 ^ 63` is above `-2 ^ 63`. -/
+theorem neg_two_pow_63_lt_ediv {z m : Int} (hz : -2 ^ 63 < z) (hm : 0 < m) :
+    -2 ^ 63 < z / m :=
+  Int.lt_of_lt_of_le (by decide : (-2 ^ 63 : Int) < -2 ^ 63 + 1)
+    ((Int.le_ediv_iff_mul_le hm).mpr (by lia))
+
+/-- A `long` divided by `m ≥ 2` lies in `[-2 ^ 62, 2 ^ 62)`. -/
+theorem ediv_mem_of_two_le {z m : Int} (hz : -2 ^ 63 ≤ z) (hz' : z < 2 ^ 63) (hm : 2 ≤ m) :
+    -2 ^ 62 ≤ z / m ∧ z / m < 2 ^ 62 :=
+  ⟨(Int.le_ediv_iff_mul_le (by lia)).mpr (by lia), (Int.ediv_lt_iff_lt_mul (by lia)).mpr (by lia)⟩
+
+/-- The carry of the split form at the low end, `⌈(r - a₀) / m⌉` for `0 ≤ r, a₀ < m`: `0` or `1`. -/
+theorem sub_add_sub_one_ediv_mem {r a0 m : Int} (hr : 0 ≤ r) (hr' : r < m) (ha : 0 ≤ a0)
+    (ha' : a0 < m) : 0 ≤ (r - a0 + (m - 1)) / m ∧ (r - a0 + (m - 1)) / m ≤ 1 :=
+  ⟨Int.ediv_nonneg (by lia) (by lia),
+    Int.lt_add_one_iff.mp ((Int.ediv_lt_iff_lt_mul (by lia)).mpr (by lia))⟩
+
+/-- The carry of the split form at the high end, `⌊(r - a₀) / m⌋` for `0 ≤ r, a₀ < m`: `-1` or
+`0`. -/
+theorem sub_ediv_mem {r a0 m : Int} (hr : 0 ≤ r) (hr' : r < m) (ha : 0 ≤ a0)
+    (ha' : a0 < m) : -1 ≤ (r - a0) / m ∧ (r - a0) / m ≤ 0 :=
+  ⟨(Int.le_ediv_iff_mul_le (by lia)).mpr (by lia),
+    Int.lt_add_one_iff.mp ((Int.ediv_lt_iff_lt_mul (by lia)).mpr (by lia))⟩
+
+/-- The sum of a `long` divided by `m = 2 ^ k` and a carry in `[c₀, c₀ + 1]`, `c₀ ∈ {-1, 0}`, which
+is `0` for `m = 1`, is a `long`. -/
+theorem ediv_add_mem {z c m : Int} (hz : -2 ^ 63 ≤ z) (hz' : z < 2 ^ 63) (hm : 1 ≤ m)
+    (hc : -1 ≤ c) (hc' : c ≤ 1) (h1 : m = 1 → c = 0) :
+    -2 ^ 63 ≤ z / m + c ∧ z / m + c < 2 ^ 63 := by
+  rcases Int.lt_or_le m 2 with h | h
+  · rw [show m = 1 by lia, h1 (by lia), Int.ediv_one]
+    lia
+  · have := Int.ediv_mem_of_two_le hz hz' h
+    lia
 
 end Int
 
@@ -1138,6 +1258,49 @@ theorem minValue_lt_ofInt {a : Int} (ha : a.natAbs < 2 ^ 63) : minValue < ofInt 
 theorem ofNat_pos {n : Nat} (h0 : 0 < n) (h : n < 2 ^ 63) : 0 < ofNat n := by
   rw [lt_iff_toInt_lt, toInt_zero, toInt_ofNat_of_lt h]
   lia
+
+theorem toInt_add_of_lt {a b : Int64} (h1 : -2 ^ 63 ≤ a.toInt + b.toInt)
+    (h2 : a.toInt + b.toInt < 2 ^ 63) : (a + b).toInt = a.toInt + b.toInt := by
+  rw [toInt_add, Int.bmod_eq_of_le (by lia) (by lia)]
+
+theorem toInt_sub_of_lt {a b : Int64} (h1 : -2 ^ 63 ≤ a.toInt - b.toInt)
+    (h2 : a.toInt - b.toInt < 2 ^ 63) : (a - b).toInt = a.toInt - b.toInt := by
+  rw [toInt_sub, Int.bmod_eq_of_le (by lia) (by lia)]
+
+theorem toInt_neg_of_lt {a : Int64} (h : -2 ^ 63 < a.toInt) : (-a).toInt = -a.toInt := by
+  have := a.toInt_lt
+  rw [toInt_neg, Int.bmod_eq_of_le (by lia) (by lia)]
+
+/-- The mask `(1 <<< k) - 1` of the low `k ≤ 6` bits of a `long`, `2 ^ k - 1`. -/
+theorem one_shiftLeft_sub_one {k : Nat} (hk : k ≤ 6) :
+    (1 : Int64) <<< ofNat k - 1 = ofNat (2 ^ k - 1) := by
+  have h : ∀ k < 7, (1 : Int64) <<< ofNat k - 1 = ofNat (2 ^ k - 1) := by decide
+  exact h k (Nat.lt_succ_of_le hk)
+
+/-- A `long` and-ed with the mask `2 ^ k - 1 < 2 ^ 63` is its Euclidean remainder modulo `2 ^ k`,
+also for a negative one, in two's complement. -/
+theorem toInt_and_ofNat_two_pow_sub_one (x : Int64) {k : Nat} (hk : k < 63) :
+    (x &&& ofNat (2 ^ k - 1)).toInt = x.toInt % 2 ^ k := by
+  have h2 : 2 ^ k < 2 ^ 63 := Nat.pow_lt_pow_right (by decide) hk
+  have hm : (BitVec.ofNat 64 (2 ^ k - 1)).toNat = 2 ^ k - 1 := by
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by lia)]
+  have hd : (2 : Int) ^ k ∣ (2 ^ 64 : Nat) := by
+    exact_mod_cast Nat.pow_dvd_pow 2 (by lia : k ≤ 64)
+  have := Nat.mod_lt x.toBitVec.toNat (Nat.two_pow_pos k)
+  rw [toInt, toInt, Int64.toBitVec_and, BitVec.toInt_and, Int64.toBitVec_ofNat', hm,
+    Nat.and_two_pow_sub_one_eq_mod, Int.bmod_eq_of_le (by lia) (by lia),
+    BitVec.toInt_eq_toNat_bmod, ← Int.emod_emod_of_dvd _ hd, Int.bmod_emod,
+    Int.emod_emod_of_dvd _ hd]
+  simp
+
+theorem toInt_ofNat_two_pow_sub_one {k : Nat} (hk : k < 63) :
+    (ofNat (2 ^ k - 1)).toInt = 2 ^ k - 1 := by
+  have h := Nat.one_le_two_pow (n := k)
+  have h2 : 2 ^ k < 2 ^ 63 := Nat.pow_lt_pow_right (by decide) hk
+  rw [toInt_ofNat_of_lt (by lia)]
+  have h1 : ((2 ^ k - 1 : Nat) : Int) = ((2 ^ k : Nat) : Int) - 1 := by lia
+  rw [h1, Int.natCast_pow]
+  rfl
 
 end Int64
 

@@ -139,10 +139,10 @@ for `a ≥ 16 b`, by C's division; and otherwise by adding `16 b` to a negative 
 `8 b`, `4 b`, `2 b` and `b` where it can. For every integer `a` and every `b ≥ 0` it is the
 Euclidean `%` (`Ratpoints.Sieve.modLong_eq_emod`). Its copy in `find_points.c` reduces, among
 others, the coefficients in `examine_prime` and `examine_power` (`Ratpoints.Sieve.examinePrime?`,
-`Ratpoints.Sieve.examinePower`) and a denominator above `Ratpoints.mulModLimit` in `fill_bp_list`,
-and its copy in `sift.c` the row indices of the first two stages of the sieve where they cannot be
-reduced by a multiplication with the reciprocal; the model reduces with it in these two places with
-the packing of the numerators (stage F).
+`Ratpoints.Sieve.examinePower`) and a denominator above `Ratpoints.mulModLimit` in `fill_bp_list`
+(`Ratpoints.Sieve.fillBpList`), and its copy in `sift.c` the row indices of the first two stages of
+the sieve where they cannot be reduced by a multiplication with the reciprocal, which the model
+computes with the packing of the numerators (stage F).
 
 C: `find_points.c:477-492`, `sift.c:370-389`
 
@@ -510,7 +510,8 @@ reduce their row indices with the packing (stage F); and with what the packing o
 needs (stage F): the bias, the least multiple of `p` that is at least `Ratpoints.rowBias`, which the
 row offsets carry (`Ratpoints.Sieve.classOffsets`), the inverse of `Ratpoints.rbaLength` modulo `p`,
 from which the row offsets are computed, and the inverses of the strides `2 ^ k` modulo `p` for the
-strides in use, with which `fill_bp_list` divides the denominator by the stride. Its row for a
+strides in use, with which `fill_bp_list` divides the denominator by the stride
+(`Ratpoints.Sieve.fillBpList`). Its row for a
 denominator is the and of the rows of its factors (`Ratpoints.Sieve.SieveEntry.admits`).
 
 C: `rp-private.h:497-498`, `rp-private.h:520`, `rp-private.h:542-555`
@@ -673,7 +674,7 @@ def survives (entries : List SieveEntry) (b : Nat) (a : Int) : Bool := entries.a
 -- the table admits. The bias, the inverse of `rbaLength` and the inverses of the strides of these
 -- sieve entries, `0`, `0` and the empty array, which `[k]!` reads as `0`, are fields that only the
 -- packing of the numerators reads, the row offsets (`Ratpoints.Sieve.classOffsets`) the first two
--- and the residues of `fill_bp_list` (stage F) the third.
+-- and the residues of a denominator (`Ratpoints.Sieve.fillBpList`) the third.
 #guard
   let pw := Id.run (examinePower [-2, 0, 0, 1] 3 5 2 true)
   pw.admits 100 129 && !pw.admits 100 130 && (List.range 25).all fun a ↦

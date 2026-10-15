@@ -281,27 +281,33 @@ order: a data refinement.
 
 \begin{definition}[The residues of a denominator for its stride]\label{def:fillBpList}
   \uses{def:SieveEntry, def:mulMod, def:useCLong, def:jacobiTables, def:barrett}
-  Proposed name: \lname{Ratpoints.Sieve.fillBpList}. For the denominator $b$, the stride exponent
-  $k$, the sieve entries of the first two stages and their reciprocals: the residues
-  $b\,\mathrm{dinv}[k] \bmod p$, by $\mathrm{mulMod}$ of the product for
-  $b \le \mathrm{mulModLimit}/\mathrm{maxPrimeEven}$, of the reduced $b$ times $\mathrm{dinv}[k]$
-  for $b \le \mathrm{mulModLimit}$, and of $(b \bmod p) \,\mathrm{dinv}[k]$ by \verb|modLong| above,
-  the branch chosen once for $b$ (\csource{find_points.c}{3639}{3679}).
+  \lean{Ratpoints.Sieve.fillBpList}
+  \leanok
+  For the denominator $b$, the stride exponent $k$, the sieve entries of the first two stages and
+  their reciprocals: the residues $b\,\mathrm{dinv}[k] \bmod p$, by $\mathrm{mulMod}$ of the product
+  for $b \le \mathrm{mulModLimit}/\mathrm{maxPrimeEven}$, of the reduced $b$ times
+  $\mathrm{dinv}[k]$ for $b \le \mathrm{mulModLimit}$, and of $(b \bmod p) \,\mathrm{dinv}[k]$ by
+  \verb|modLong| above, the branch chosen once for $b$ (\csource{find_points.c}{3639}{3679}).
 \end{definition}
 
 \begin{lemma}[The residues]\label{lem:fillBpList}
   \uses{def:fillBpList, lem:mulMod}
-  Proposed name: \lname{Ratpoints.Sieve.fillBpList\_eq\_map}. For entries with
-  $0 < p \le \mathrm{maxPrimeEven}$ and $\mathrm{dinv}[k] < p$ and their reciprocals, the residues
-  are $b\, \mathrm{dinv}[k] \bmod p$, in all three branches.
+  \lean{Ratpoints.Sieve.fillBpList_eq_map, Ratpoints.Sieve.mulMod_mul_magic, Ratpoints.Sieve.mulMod_mulMod_mul_magic, Ratpoints.Sieve.mulMod_toNat_modLong_mul_magic, Ratpoints.Sieve.mod_le_two_pow_10}
+  \leanok
+  For entries with $0 < p \le \mathrm{maxPrimeEven}$ and $\mathrm{dinv}[k] < p$ and their
+  reciprocals, the residues are $b\, \mathrm{dinv}[k] \bmod p$, in all three branches.
 \end{lemma}
 
 \begin{proof}
+  \uses{lem:classOffsets, lem:packingLongs}
+  \leanok
   Each value $u$ that is reduced has $u\, p < 2^{64}$:
-  $b\,\mathrm{dinv}[k] \le \mathrm{mulModLimit}$ in the first branch, $b \le \mathrm{mulModLimit}$
-  for the first reduction of the second, and $(b \bmod p)\,\mathrm{dinv}[k] < p^2$ for the last
-  reduction of the second and of the third, since $\mathrm{mulModLimit} < 2^{32}$ and
-  $p \le 2^{10}$; Lemma~\ref{lem:mulMod}, and \verb|modLong| is the Euclidean remainder
+  $b\,\mathrm{dinv}[k] \le \mathrm{mulModLimit}$ in the first branch
+  (Lemma~\ref{lem:packingLongs}), $b \le \mathrm{mulModLimit}$ for the first reduction of the
+  second, and $(b \bmod p)\,\mathrm{dinv}[k] < p^2$ for the last reduction of the second and of the
+  third, which times $p$ is below $2^{64}$ as the products of the offsets are
+  (Lemma~\ref{lem:classOffsets}), since $\mathrm{mulModLimit} < 2^{32}$ and $p \le 2^{10}$;
+  Lemma~\ref{lem:mulMod}, and \verb|modLong| is the Euclidean remainder
   (Definition~\ref{def:useCLong}).
 \end{proof}
 
@@ -386,9 +392,10 @@ conclusions in the words of Lemma~\ref{lem:reads_row}.
 
 \begin{definition}[The bits of an interval of numerators]\label{def:numeratorsToBits}
   \uses{def:numClasses}
-  Proposed name: \lname{Ratpoints.Sieve.numeratorsToBits}. For the ends of an interval of
-  numerators, $64$-bit signed words, and a class: the bits $-((a_0 - \mathrm{low}) \gg k)$ and
-  $(\mathrm{high} - a_0) \gg k$ in the plain form, and
+  \lean{Ratpoints.Sieve.numeratorsToBits}
+  \leanok
+  For the ends of an interval of numerators, $64$-bit signed words, and a class: the bits
+  $-((a_0 - \mathrm{low}) \gg k)$ and $(\mathrm{high} - a_0) \gg k$ in the plain form, and
   $(\mathrm{low} \gg k) + (((\mathrm{low} \mathbin{\&} (2^k - 1)) - a_0 + 2^k - 1) \gg k)$ and
   $(\mathrm{high} \gg k) + (((\mathrm{high} \mathbin{\&} (2^k - 1)) - a_0) \gg k)$ in the split
   form, with the arithmetic shift and the and of two's complement, as the C code computes them on
@@ -397,21 +404,20 @@ conclusions in the words of Lemma~\ref{lem:reads_row}.
 
 \begin{lemma}[The bits of the heights]\label{lem:numeratorsToBits}
   \uses{def:numeratorsToBits, lem:numClasses}
-  Proposed names: \lname{Ratpoints.Sieve.toInt\_numeratorsToBits},
-  \lname{Ratpoints.Sieve.toInt\_numeratorsToBits\_height},
-  \lname{Ratpoints.Sieve.le\_numerator\_and\_numerator\_le\_iff},
-  \lname{Ratpoints.Sieve.map\_range\_numerator\_eq\_filter\_numerators}. For a class with $k \le 6$
-  and $a_0 < 2^k$, the split form gives $-\lfloor(a_0 - \mathrm{low})/2^k\rfloor$ and
-  $\lfloor(\mathrm{high} - a_0)/2^k\rfloor$ without overflow, and so does the plain form when
-  $a_0 - \mathrm{low} < 2^{63}$ and $\mathrm{high} - a_0 \ge -2^{63}$; for the ends $\mp H$ with
-  $H < 2^{63}$ and the form the C code takes, the bits are $-\lfloor (H + a_0)/2^k\rfloor$ and
-  $\lfloor (H - a_0)/2^k\rfloor$. A numerator $a_0 + 2^k t$ lies in $[\mathrm{low}, \mathrm{high}]$
-  exactly when $t$ lies between the bits, and the bits from the low to the high end, mapped to
-  $a_0 + 2^k t$, are the numerators of $[-H, H]$ that are $\equiv a_0 \pmod{2^k}$, in increasing
-  order.
+  \lean{Ratpoints.Sieve.toInt_numeratorsToBits, Ratpoints.Sieve.toInt_numeratorsToBits_height, Ratpoints.Sieve.le_numerator_and_numerator_le_iff, Ratpoints.Sieve.map_range_numerator_eq_filter_numerators, Ratpoints.Sieve.toInt_numeratorsToBits_false, Ratpoints.Sieve.toInt_numeratorsToBits_true, Ratpoints.Sieve.filter_numerators_emod_eq}
+  \leanok
+  For a class with $k \le 6$, $k < \mathrm{numStrides}$ and $a_0 < 2^k$, the split form gives
+  $-\lfloor(a_0 - \mathrm{low})/2^k\rfloor$ and $\lfloor(\mathrm{high} - a_0)/2^k\rfloor$ without
+  overflow, and so does the plain form when $a_0 - \mathrm{low} < 2^{63}$ and
+  $\mathrm{high} - a_0 \ge -2^{63}$; for the ends $\mp H$ with $H < 2^{63}$ and the form the C code
+  takes, the bits are $-\lfloor (H + a_0)/2^k\rfloor$ and $\lfloor (H - a_0)/2^k\rfloor$. A
+  numerator $a_0 + 2^k t$ lies in $[\mathrm{low}, \mathrm{high}]$ exactly when $t$ lies between the
+  bits, and the bits from the low to the high end, mapped to $a_0 + 2^k t$, are the numerators of
+  $[-H, H]$ that are $\equiv a_0 \pmod{2^k}$, in increasing order.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   The arithmetic shift of a word is the floor division of its integer by $2^k$, the and with
   $2^k - 1$ its Euclidean remainder; each sum stays in the range of a word. The enumeration counts
   the members of a residue class in an interval.
@@ -493,17 +499,13 @@ which gives packable entries with their tables of inverses (Lemma~\ref{lem:sievi
 \end{proof}
 
 \begin{lemma}[The longs of the packing]\label{lem:packingLongs}
-  \uses{lem:numeratorsToBits, lem:classOffsets, def:packingConstants, def:useCLong}
-  Proposed names: \lname{Ratpoints.Sieve.NumClass.fitsLong\_numerator},
-  \lname{Ratpoints.Sieve.neg\_two\_pow\_le\_rbaLength\_mul\_ediv},
-  \lname{Ratpoints.Sieve.rbaLength\_mul\_ediv\_add\_one\_le\_two\_pow},
-  \lname{Ratpoints.Sieve.fitsLong\_neg\_sub\_and\_fitsLong\_add},
-  \lname{Ratpoints.Sieve.SieveEntry.PackedFor.lt\_two\_pow\_63},
-  \lname{Ratpoints.Sieve.mul\_le\_mulModLimit\_of\_le\_div},
-  \lname{Ratpoints.Sieve.mul\_lt\_two\_pow\_63}. The values that the C code holds in longs fit a
-  long ($\mathrm{fitsLong}$, Definition~\ref{def:useCLong}) for $H < 2^{63}$: the numerator of every
-  bit of the bit arrays of $[-H, H]$ and the base $a_0 + i\,\mathrm{rbaLength}\, 2^k$ of the
-  extraction with its steps, $\mathrm{rbaLength}\, w_{\mathrm{low}}$ and $w_{\mathrm{high}}$,
+  \uses{lem:classOffsets, def:packingConstants, def:useCLong}
+  \lean{Ratpoints.Sieve.NumClass.fitsLong_numerator, Ratpoints.Sieve.neg_two_pow_le_rbaLength_mul_ediv, Ratpoints.Sieve.rbaLength_mul_ediv_add_one_le_two_pow, Ratpoints.Sieve.fitsLong_neg_sub_and_fitsLong_add, Ratpoints.Sieve.SieveEntry.PackedFor.lt_two_pow_63, Ratpoints.Sieve.mul_le_mulModLimit_of_le_div, Ratpoints.Sieve.mul_lt_two_pow_63, Ratpoints.rowBias_le_two_pow_31, Ratpoints.Sieve.rbaLength_mul_two_pow, Ratpoints.Sieve.sixty_four_le_rbaLength}
+  \leanok
+  The values that the C code holds in longs fit a long ($\mathrm{fitsLong}$,
+  Definition~\ref{def:useCLong}) for $H < 2^{63}$: the numerator of every bit of the bit arrays of
+  $[-H, H]$ (Lemma~\ref{lem:numeratorsToBits}) and the base $a_0 + i\,\mathrm{rbaLength}\, 2^k$ of
+  the extraction with its steps, $\mathrm{rbaLength}\, w_{\mathrm{low}}$ and $w_{\mathrm{high}}$,
   $-w_{\mathrm{low}} - \mathrm{offset}$ and $i + \mathrm{offset}$ outside \verb|small|, the offsets,
   and the products of \verb|fill_bp_list|, at most $\mathrm{mulModLimit}$ in the first branch, and
   of \verb|class_offsets|; for $k \le 6$, the multiple of $\mathrm{rbaLength}$ at or below a bit
@@ -511,6 +513,7 @@ which gives packable entries with their tables of inverses (Lemma~\ref{lem:sievi
 \end{lemma}
 
 \begin{proof}
+  \leanok
   $\mathrm{rbaLength}\, 2^k$ is a power of $2$ that divides $2^{63}$
   ($\mathrm{rbaLength} = 2^{\mathrm{rbaShift}}$, $\mathrm{rbaShift} + k \le 63$). So the multiples
   of it at the two ends of the bit arrays of $[-H, H]$, at or below the low end and above the high

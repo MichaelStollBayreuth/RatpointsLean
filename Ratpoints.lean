@@ -32,6 +32,7 @@ public import Ratpoints.Model.Sieve
 public import Ratpoints.Model.Sturm
 public import Ratpoints.Model.Tables
 public import Ratpoints.Proof
+public import Ratpoints.Proof.BitRange
 public import Ratpoints.Proof.Bits
 public import Ratpoints.Proof.BruteForce
 public import Ratpoints.Proof.Denominators

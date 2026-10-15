@@ -27,6 +27,8 @@ value of either sign (`Ratpoints.Sieve.modMul`), and the helper `mod` of the C c
 
 * `Ratpoints.maxPrimeEven_le_two_pow_10`, `Ratpoints.maxPrimeEven_le_two_pow_32`: the moduli are
   below `2 ^ 10`, and so below `2 ^ 32`.
+* `Ratpoints.rowBias_le_two_pow_31`: the least multiple of a modulus in an offset is at most
+  `2 ^ 31`.
 * `Ratpoints.mul_lt_two_pow_64_of_le_mulModLimit`: `u p < 2 ^ 64` for `u ≤ Ratpoints.mulModLimit`
   and `p ≤ 2 ^ 32`.
 * `Ratpoints.Sieve.toNat_mulHi`: `Ratpoints.Sieve.mulHi a b` is `⌊a b / 2 ^ 64⌋`.
@@ -43,8 +45,9 @@ value of either sign (`Ratpoints.Sieve.modMul`), and the helper `mod` of the C c
 
 The file uses Lean core and `Std` only, so that the contracts of the sieve, in files without
 Mathlib, can use it. The proofs use only the facts on the constants that `decide` checks next to
-them, that `Ratpoints.mulModLimit < 2 ^ 32` and that `Ratpoints.maxBitsInPrime ≤ 10`, never their
-values.
+them, that `Ratpoints.mulModLimit < 2 ^ 32`, that `Ratpoints.maxBitsInPrime ≤ 10` and that
+`2 Ratpoints.rowBias - 1 ≤ Ratpoints.mulModLimit`, never their values; `Ratpoints.rowBias` is
+generalized before `lia`, which otherwise fails on its value with a deep recursion of the kernel.
 -/
 
 @[expose] public section
@@ -67,6 +70,17 @@ reciprocal of the values at most `Ratpoints.mulModLimit` modulo them are exact
 (`Ratpoints.mul_lt_two_pow_64_of_le_mulModLimit`). -/
 theorem maxPrimeEven_le_two_pow_32 : maxPrimeEven ≤ 2 ^ 32 :=
   Nat.le_trans maxPrimeEven_le_two_pow_10 (by decide)
+
+/-- `Ratpoints.rowBias` is at most `2 ^ 31`, since `2 rowBias - 1 ≤ Ratpoints.mulModLimit < 2 ^ 32`
+(`Ratpoints.two_mul_rowBias_sub_one_le_mulModLimit`, `Ratpoints.mulModLimit_lt_two_pow_32`): so the
+offsets of the rows, below `rowBias + 2 p`, and the sums of a word number and an offset that the
+first two stages reduce stay far within the range of a `long`. -/
+theorem rowBias_le_two_pow_31 : rowBias ≤ 2 ^ 31 := by
+  have := two_mul_rowBias_sub_one_le_mulModLimit
+  have := mulModLimit_lt_two_pow_32
+  generalize rowBias = R at *
+  generalize mulModLimit = L at *
+  lia
 
 /-- A value at most `Ratpoints.mulModLimit` times a modulus `p ≤ 2 ^ 32` is below `2 ^ 64`, where
 the reductions by a reciprocal are exact (`Ratpoints.Sieve.mulMod_magic`,
