@@ -175,8 +175,7 @@ theorem toInt_numeratorsToBits_height {H : Nat} (hH : H < 2 ^ 63) {cl : NumClass
         -((cl.a0 + H : Int) / 2 ^ cl.k) ∧
       (numeratorsToBits (-H.toInt64) H.toInt64 cl (decide (2 ^ 63 - 65 < H))).2.toInt =
         ((H : Int) - cl.a0) / 2 ^ cl.k := by
-  have ha : cl.a0 < 64 :=
-    Nat.lt_of_lt_of_le hcl.a0_lt (Nat.pow_le_pow_right (n := 2) (by decide) hcl.k_le)
+  have ha := hcl.a0_lt_sixty_four
   have hl : (-H.toInt64).toInt = -H := Int64.toInt_neg_ofNat_of_le (by lia)
   have hh : H.toInt64.toInt = H := Int64.toInt_ofNat_of_lt hH
   have := toInt_numeratorsToBits hcl (low := -H.toInt64) (high := H.toInt64)
@@ -200,13 +199,13 @@ theorem le_numerator_and_numerator_le_iff (cl : NumClass) (lo hi t : Int) :
 theorem filter_numerators_emod_eq {a0 m : Nat} (ha : a0 < m) (H : Nat) :
     (BruteForce.numerators H).filter (fun a ↦ a % (m : Int) == (a0 : Int)) =
       (List.range ((2 * H + 1 + (m - 1 - (a0 + H) % m)) / m)).map
-        fun j ↦ (((a0 + H) % m + m * j : Nat) : Int) - H := by
+        fun j : Nat ↦ ((a0 : Int) + H) % m + m * j - H := by
   simp only [BruteForce.numerators, List.filter_map]
   rw [List.filter_congr (q := fun i ↦ i % m == (a0 + H) % m) fun i _ ↦ by
     rw [Function.comp_apply, Bool.eq_iff_iff, beq_iff_eq, beq_iff_eq]
-    exact_mod_cast Int.sub_emod_eq_iff ha,
+    exact_mod_cast Int.natCast_sub_natCast_emod_eq_iff ha,
     List.filter_range_mod_eq (Nat.mod_lt _ (by lia)), List.map_map]
-  rfl
+  simp
 
 -- The numerators `a₀ + m (lo + i)` of the bits from `lo = -q` to `hi = ⌊(H - a₀) / m⌋`, for
 -- `a₀ + H = m q + r` with `r < m`, are `r - H, r + m - H, …`, as many as there are numerators of
@@ -215,7 +214,7 @@ private theorem map_range_eq_map_range {a0 H m q r : Nat} (hm : 0 < m) (hr : r <
     (hA : m * q + r = a0 + H) :
     (List.range (((H : Int) - a0) / m + 1 - -(q : Int)).toNat).map
         (fun i : Nat ↦ (a0 : Int) + m * (-(q : Int) + i)) =
-      (List.range ((2 * H + 1 + (m - 1 - r)) / m)).map fun j ↦ ((r + m * j : Nat) : Int) - H := by
+      (List.range ((2 * H + 1 + (m - 1 - r)) / m)).map fun j : Nat ↦ (r : Int) + m * j - H := by
   have hA' : (a0 + H : Int) = m * q + r := mod_cast hA.symm
   have hm0 : (m : Int) ≠ 0 := by lia
   have e1 : ((H : Int) - a0) = (2 * H - r : Int) + (-(q : Int)) * m := by rw [Int.neg_mul]; lia
@@ -228,7 +227,6 @@ private theorem map_range_eq_map_range {a0 H m q r : Nat} (hm : 0 < m) (hr : r <
   rw [hlen]
   refine List.map_congr_left fun j _ ↦ ?_
   simp only [Int.mul_add, Int.mul_neg]
-  push_cast
   lia
 
 /-- The numerators of `-H, …, H` that are `a₀` modulo the stride `2 ^ k` of a class, in increasing
@@ -241,8 +239,9 @@ theorem map_range_numerator_eq_filter_numerators {cl : NumClass} (hcl : cl.WF) {
   have hk : (2 : Int) ^ cl.k = ((2 ^ cl.k : Nat) : Int) := by push_cast; rfl
   rw [hk, filter_numerators_emod_eq hcl.a0_lt H]
   simp only [NumClass.numerator, hlo, hhi, hk]
-  exact map_range_eq_map_range (Nat.two_pow_pos _) (Nat.mod_lt _ (Nat.two_pow_pos _))
-    (Nat.div_add_mod _ _)
+  have := map_range_eq_map_range (r := (cl.a0 + H) % 2 ^ cl.k) (Nat.two_pow_pos _)
+    (Nat.mod_lt _ (Nat.two_pow_pos _)) (Nat.div_add_mod _ _)
+  rwa [Int.natCast_emod, Int.natCast_add] at this
 
 
 /-! ### The longs of the offsets and of the bit ranges -/
@@ -287,8 +286,8 @@ theorem NumClass.fitsLong_numerator {cl : NumClass} (hcl : cl.WF) {H : Nat} (hH 
     (hj' : j < rbaLength * (((H : Int) - cl.a0) / 2 ^ cl.k / rbaLength + 1)) :
     fitsLong (cl.numerator j) = true := by
   have hm : (0 : Int) < 2 ^ cl.k := Int.pow_pos (by decide)
-  have hkT : (2 : Int) ^ cl.k * 2 ^ (63 - cl.k) = 2 ^ 63 := by
-    rw [← Int.pow_add]; congr 1; have := hcl.k_le; lia
+  have hkT : (2 : Int) ^ cl.k * 2 ^ (63 - cl.k) = 2 ^ 63 :=
+    Int.pow_mul_pow_sub 2 (by have := hcl.k_le; lia)
   have ha : (cl.a0 : Int) < 2 ^ cl.k := mod_cast hcl.a0_lt
   have hlo : -2 ^ (63 - cl.k) ≤ -((cl.a0 + H : Int) / 2 ^ cl.k) :=
     Int.neg_le_neg (Int.lt_add_one_iff.mp ((Int.ediv_lt_iff_lt_mul hm).mpr (by

@@ -905,12 +905,6 @@ theorem map_magic_packedReads (es : List SieveEntry) (b : Nat) (cl : NumClass) (
     es.map (magic ·.p) = ((packedReads es b cl offsets pos).map Prod.fst).map (magic ·.p) :=
   List.ext_getElem (by simp [packedReads]) fun n _ _ ↦ by simp [packedReads]
 
-/-- `2 ^ k (b dinv mod p) ≡ b (mod p)` for the inverse `dinv` of `2 ^ k` modulo `p`. -/
-theorem two_pow_mul_mul_mod_mod {p k b dinv : Nat} (h : dinv * 2 ^ k % p = 1) :
-    2 ^ k * (b * dinv % p) % p = b % p := by
-  rw [Nat.mul_mod_mod, ← Nat.mul_assoc, Nat.mul_comm (2 ^ k) b, Nat.mul_assoc,
-    Nat.mul_comm (2 ^ k) dinv, Nat.mul_mod_of_mod_eq_one _ h]
-
 /-- The rows of `Ratpoints.Sieve.packedReads` read their tests, for entries whose factors have their
 tables of inverses and whose offsets are those of the packing of the class. -/
 theorem reads_of_mem_packedReads {es : List SieveEntry} {b : Nat} {cl : NumClass}
@@ -921,7 +915,7 @@ theorem reads_of_mem_packedReads {es : List SieveEntry} {b : Nat} {cl : NumClass
   obtain ⟨n, hn, rfl⟩ := List.mem_mapIdx.mp hsf
   have h := hoff n hn
   exact SieveEntry.reads_row (hinv _ (List.getElem_mem hn)) h.pos h.dinv_mul_mod h.mul_mod
-    (two_pow_mul_mul_mod_mod h.dinv_mul_mod)
+    (Nat.mul_mul_mod_mod_of_mul_mod_eq_one _ h.dinv_mul_mod)
 
 theorem all_packedReads (es : List SieveEntry) (b : Nat) (cl : NumClass) (offsets : Array Nat)
     (pos : Nat) (j : Int) :

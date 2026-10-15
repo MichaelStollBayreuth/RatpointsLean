@@ -64,7 +64,6 @@ its branches, since its products stay below `2 ^ 64 / p`.
 * `Ratpoints.Sieve.getLsbD_classMasks`: the masks of the strides, `0` beyond the seven of `k ≤ 6`.
 * `Ratpoints.Sieve.packPattern_spec`, `Ratpoints.Sieve.numClasses_spec`: the packed pattern, and the
   classes of the 64 words with `den_bits`.
-* `Ratpoints.Sieve.rowBias_le_mul_div_and_mul_div_lt`: the bias of a modulus.
 * `Ratpoints.Sieve.numPackings_spec`: the number of the packings is that of the distinct keys, at
   least 1.
 * `Ratpoints.Sieve.classRows_spec`, `Ratpoints.Sieve.classOffsets_spec`: the rows of offsets of the
@@ -195,6 +194,9 @@ theorem NumClass.WF.key_lt_128 {cl : NumClass} (h : cl.WF) : cl.key < 128 := by
   have : 2 ^ (cl.k + 1) ≤ 2 ^ 7 := Nat.pow_le_pow_right (by decide) (by have := h.k_le; lia)
   exact Nat.lt_of_lt_of_le h.key_lt this
 
+theorem NumClass.WF.a0_lt_sixty_four {cl : NumClass} (h : cl.WF) : cl.a0 < 64 :=
+  Nat.lt_of_lt_of_le h.a0_lt (Nat.pow_le_pow_right (n := 2) (by decide) h.k_le)
+
 theorem NumClass.WF.key_lt_two_pow_numStrides {cl : NumClass} (h : cl.WF) :
     cl.key < 2 ^ numStrides :=
   Nat.lt_of_lt_of_le h.key_lt (Nat.pow_le_pow_right (by decide) h.k_lt)
@@ -310,24 +312,6 @@ theorem WalkWhileInvariant.doubleInvariant {w p0 x : UInt64} {k a0 : Nat} (hk : 
     intro j _ _ hj
     exact ht (hj ▸ Nat.div_lt_of_lt_mul (by rw [hP]; exact Nat.mod_lt _ (by decide)))
 
-/-- One doubling of a pattern of period `P ∣ s`, `2 s ≤ 64`, that fills the bits below `s`: the
-pattern now fills the bits below `2 s`. -/
-theorem getLsbD_or_shiftLeft_of_dvd {x p0 : UInt64} {s P : Nat} (hPs : P ∣ s) (hs : 2 * s ≤ 64)
-    (hs0 : 0 < s) (hx : ∀ t, x.toBitVec.getLsbD t = (decide (t < s) && p0.toBitVec.getLsbD (t % P)))
-    (t : Nat) :
-    (x ||| x <<< UInt64.ofNat s).toBitVec.getLsbD t =
-      (decide (t < 2 * s) && p0.toBitVec.getLsbD (t % P)) := by
-  rw [UInt64.getLsbD_or_shiftLeft _ (by lia), hx, hx]
-  by_cases h1 : t < s
-  · simp [h1, show t < 2 * s by lia, Nat.not_le.mpr h1]
-  · have h2 : (t - s) % P = t % P := by
-      obtain ⟨q, rfl⟩ := hPs
-      rw [Nat.sub_mul_mod (by lia)]
-    simp only [h1, decide_false, Bool.false_and, Bool.false_or, h2]
-    by_cases h4 : t < 2 * s
-    · simp [h4, show t < 64 by lia, show s ≤ t by lia, show t - s < s by lia]
-    · simp [h4, show ¬t - s < s by lia]
-
 theorem DoubleInvariant.or_shiftLeft {k s mb : Nat} {p0 packed : UInt64} (hk : k ≤ 6)
     (h : 64 - s = mb ∧ DoubleInvariant k p0 false (packed, s)) (hs : s < 64) :
     64 - 2 * s < mb ∧ DoubleInvariant k p0 false (packed ||| packed <<< UInt64.ofNat s, 2 * s) := by
@@ -343,7 +327,7 @@ theorem DoubleInvariant.or_shiftLeft {k s mb : Nat} {p0 packed : UInt64} (hk : k
   rw [Nat.pow_succ] at h3
   have : (2 : Nat) ^ 6 = 64 := rfl
   exact ⟨by lia, ⟨j + 1, by rw [Nat.pow_succ]; lia, by lia, by lia⟩, nofun,
-    getLsbD_or_shiftLeft_of_dvd hPs (by lia) hj0 hb⟩
+    UInt64.getLsbD_or_shiftLeft_of_dvd hPs (by lia) hj0 hb⟩
 
 theorem DoubleInvariant.exit {k s mb : Nat} {p0 packed : UInt64} (hs : ¬s < 64)
     (h : 64 - s = mb ∧ DoubleInvariant k p0 false (packed, s)) :
@@ -553,16 +537,6 @@ theorem packs_getElem!_fst_run_numClasses (nb : Vector UInt64 64) {b : Nat} (hb 
   ((Std.WP.Id.of_run_eq_wp rfl _ ((numClasses_spec nb).le_wp trivial)).1 b hb).1
 
 /-! ### The fields of the sieve entries -/
-
-/-- The bias `m ⌈Ratpoints.rowBias / m⌉ = m ((rowBias + m - 1) / m)` of a modulus `m > 0`, as
-`examine_prime`, `make_power` and `make_modulus` compute it, lies from `Ratpoints.rowBias` to below
-`Ratpoints.rowBias + m`. -/
-theorem rowBias_le_mul_div_and_mul_div_lt {m : Nat} (hm : 0 < m) :
-    rowBias ≤ m * ((rowBias + m - 1) / m) ∧ m * ((rowBias + m - 1) / m) < rowBias + m := by
-  generalize rowBias = R
-  have h1 := Nat.div_add_mod (R + m - 1) m
-  have h2 := Nat.mod_lt (R + m - 1) hm
-  constructor <;> lia
 
 /-- The fields of a sieve entry that the row offsets of the packing read: an odd modulus
 `1 < p ≤ Ratpoints.maxPrimeEven` with its reciprocal, the inverse `rbainv < p` of
@@ -1022,6 +996,11 @@ theorem halveIter_mul_two_pow_mod {p : Nat} (hp : p % 2 = 1) (x n : Nat) :
     rw [halveIter, Nat.pow_succ, Nat.mul_comm (2 ^ n), ← Nat.mul_assoc, Nat.mul_mod,
       Nat.mul_comm _ 2, two_mul_halve_mod hp, ← Nat.mul_mod, ih]
 
+/-- The inverse `x₀` of `L` modulo the odd `p`, halved `k` times, is the inverse of `2 ^ k L`. -/
+theorem halveIter_mul_two_pow_mul_mod {p x0 L : Nat} (hp : p % 2 = 1) (hx : x0 * L % p = 1)
+    (k : Nat) : halveIter p k x0 * (2 ^ k * L) % p = 1 := by
+  rw [← Nat.mul_assoc, Nat.mul_mod, halveIter_mul_two_pow_mod hp, ← Nat.mul_mod, hx]
+
 theorem getElem!_toArray_halveChain (p n x : Nat) {k : Nat} (hk : k < n) :
     (halveChain p n x).toArray[k]! = halveIter p k x := by
   simp [halveChain, hk]
@@ -1074,17 +1053,6 @@ theorem OffsetsFor.take {cls : Vector NumClass 64} {es : List SieveEntry} {offse
       rw [List.getElem_take]
       exact hn n (Nat.lt_of_lt_of_le hn' (List.length_take_le' _ _))⟩
 
-/-- The residue `a₀ x mod p` plus a multiple of `p`, times `2 ^ k L`, is `a₀` modulo `p`, when `x`
-is the inverse of `r` halved `k` times and `r L ≡ 1 (mod p)` for an odd `p`. -/
-theorem mod_add_mul_mod {p a0 x0 L bias k : Nat} (hp : p % 2 = 1) (hx : x0 * L % p = 1)
-    (hb : bias % p = 0) :
-    (a0 * halveIter p k x0 % p + bias) * (2 ^ k * L) % p = a0 % p := by
-  have e1 : halveIter p k x0 * 2 ^ k * L % p = 1 := by
-    rw [Nat.mul_mod, halveIter_mul_two_pow_mod hp, ← Nat.mul_mod, hx]
-  rw [Nat.add_mul, Nat.add_mod, Nat.mul_mod bias, hb, Nat.zero_mul, Nat.zero_mod, Nat.add_zero,
-    Nat.mod_mod, Nat.mod_mul_mod, Nat.mul_assoc, ← Nat.mul_assoc (halveIter p k x0), Nat.mul_mod,
-    e1, Nat.mul_one, Nat.mod_mod]
-
 /-- The products `x d p` of `fill_bp_list` and `class_offsets` that a reduction by the reciprocal
 of a modulus `p ≤ Ratpoints.maxPrimeEven` takes, for `x ≤ 2 ^ 10` and `d < p`, are below `2 ^ 64`,
 where it is exact. -/
@@ -1102,16 +1070,15 @@ theorem SieveEntry.Packable.packedFor {e : SieveEntry} (he : e.Packable) {cl : N
     SieveEntry.PackedFor { e with dinv := (halveChain e.p (kmax + 1) 1).toArray } cl
       (mulMod (cl.a0 * halveIter e.p cl.k e.rbainv) e.p e.magic + e.bias) := by
   have hp0 : 0 < e.p := Nat.lt_trans Nat.zero_lt_one he.one_lt
-  have ha : cl.a0 < 64 :=
-    Nat.lt_of_lt_of_le hcl.a0_lt (Nat.pow_le_pow_right (n := 2) (by decide) hcl.k_le)
+  have ha := hcl.a0_lt_sixty_four
   rw [he.magic_eq, mulMod_magic hp0 (mul_mul_lt_two_pow_64 (by lia) (halveIter_lt he.rbainv_lt cl.k)
     he.le_maxPrimeEven)]
   have := Nat.mod_lt (cl.a0 * halveIter e.p cl.k e.rbainv) hp0
   have := he.bias_lt
   have := he.rowBias_le_bias
   have hk' := Nat.lt_succ_of_le hk
-  refine ⟨hp0, he.le_maxPrimeEven, by lia, by lia, mod_add_mul_mod he.odd he.rbainv_mul_mod
-    he.bias_mod, ?_, ?_⟩
+  refine ⟨hp0, he.le_maxPrimeEven, by lia, by lia, Nat.mul_mod_add_mul_mod_eq_mod
+    (halveIter_mul_two_pow_mul_mod he.odd he.rbainv_mul_mod cl.k) he.bias_mod, ?_, ?_⟩
   · simp only [getElem!_toArray_halveChain _ _ _ hk']
     rw [halveIter_mul_two_pow_mod he.odd, Nat.mod_eq_of_lt he.one_lt]
   · simp only [getElem!_toArray_halveChain _ _ _ hk']

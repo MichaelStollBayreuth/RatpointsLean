@@ -251,7 +251,7 @@ order: a data refinement.
 
 \begin{lemma}[The offsets]\label{lem:classOffsets}
   \uses{def:classOffsets, lem:mulMod, lem:numClasses, def:packingConstants, def:barrett}
-  \lean{Ratpoints.Sieve.NumClass.key, Ratpoints.Sieve.NumClass.WF.k_eq_and_a0_eq, Ratpoints.Sieve.IsFirstKey, Ratpoints.Sieve.firstKeys, Ratpoints.Sieve.numPackings_spec, Ratpoints.Sieve.classOffset, Ratpoints.Sieve.classRows_spec, Ratpoints.Sieve.halveIter, Ratpoints.Sieve.halveChain, Ratpoints.Sieve.halveIter_mul_two_pow_mod, Ratpoints.Sieve.SieveEntry.Packable, Ratpoints.Sieve.SieveEntry.PackedFor, Ratpoints.Sieve.SieveEntry.PackedFor.congr, Ratpoints.Sieve.OffsetsFor, Ratpoints.Sieve.OffsetsFor.take, Ratpoints.Sieve.mul_mul_lt_two_pow_64, Ratpoints.Sieve.classOffsets_spec}
+  \lean{Ratpoints.Sieve.NumClass.key, Ratpoints.Sieve.NumClass.WF.k_eq_and_a0_eq, Ratpoints.Sieve.IsFirstKey, Ratpoints.Sieve.firstKeys, Ratpoints.Sieve.numPackings_spec, Ratpoints.Sieve.classOffset, Ratpoints.Sieve.classRows_spec, Ratpoints.Sieve.halveIter, Ratpoints.Sieve.halveChain, Ratpoints.Sieve.halveIter_mul_two_pow_mod, Ratpoints.Sieve.halveIter_mul_two_pow_mul_mod, Ratpoints.Sieve.SieveEntry.Packable, Ratpoints.Sieve.SieveEntry.PackedFor, Ratpoints.Sieve.SieveEntry.PackedFor.congr, Ratpoints.Sieve.OffsetsFor, Ratpoints.Sieve.OffsetsFor.take, Ratpoints.Sieve.mul_mul_lt_two_pow_64, Ratpoints.Sieve.classOffsets_spec}
   \leanok
   The number of the packings is $\max(1, f)$ for the number $f$ of the classes with a pattern whose
   key no earlier class with a pattern has (the classes being well formed, so that the keys are below

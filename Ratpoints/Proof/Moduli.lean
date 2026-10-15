@@ -657,12 +657,12 @@ theorem MakeModulusInvariant.post_none {c : List ℤ} {m : ℕ} {fac : List (ℕ
   subst ho
   refine ⟨fun _ hs ↦ ?_, nofun⟩
   obtain rfl := Option.some.inj hs
-  have hb := rowBias_le_mul_div_and_mul_div_lt (Nat.zero_lt_of_lt hm.1)
   exact ⟨rfl, fun _ _ _ hab hy ↦ List.all_eq_true.mpr fun f hf ↦
       (h.1 f (Array.mem_toList_iff.mp hf)).admits_of_sq_eq hab hy,
     fun f hf ↦ (h.1 f (Array.mem_toList_iff.mp hf)).hasInverses,
     ⟨hm.1, mod_two_eq_one_of_forall_dvd hm.2.2, hm.2.1.le, rfl, hx.1, hx.2, Nat.mul_mod_right _ _,
-      hb.1, hb.2⟩⟩
+      Nat.le_mul_add_sub_one_div _ (Nat.zero_lt_of_lt hm.1),
+      Nat.mul_add_sub_one_div_lt _ (Nat.zero_lt_of_lt hm.1)⟩⟩
 
 /-- The moduli of the factors of `m` over the table multiply to `m` when its factorization is
 complete. -/

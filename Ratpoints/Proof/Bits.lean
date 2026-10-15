@@ -42,21 +42,25 @@ smaller and the distance of two non-negative words that it gives without a branc
 positive word by the lowest set bit of the word read as unsigned, its lowest bit, the absolute
 value, and the words of an integer and of a natural number below `2 ^ 63`. For the rows under a
 unit: the residues under a unit `u` with an inverse modulo `q`, zero or not, modulo a divisor of `q`
-too, the residue `x i mod q` read with an inverse `i` of `r`, and the residue of `u a` for an
-integer `a`. For the loops over two lists: the cursor of the second list of a loop
-`for x in l, y in l.map f`, and a list whose next element is known. For the classes of the packing:
-the residues and the places in a packing of the stride `2 ^ k` dividing 64, a residue `a + m j`
+too, the residue `x i mod q` read with an inverse `i` of `r`, the residue `u (b v mod p)` for an
+inverse `v` of `u`, and the residue of `u a` for an integer `a`. For the loops over two lists: the
+cursor of the second list of a loop `for x in l, y in l.map f`, and a list whose next element is
+known. For the classes of the packing: the residues in a packing of the stride `2 ^ k` dividing 64,
+the place `(a - a₀) mod n / m` of a residue `a ≡ a₀ (mod m)` below `n = m P`, a residue `a + m j`
 modulo 64, and the bits of a word and-ed with the complement of a mask and of a word or-ed with
-itself shifted. For the rows of offsets: the entries of a vector after `Vector.set`, of an array of
-`none`s and of an array whose list is a map, the bit `(x >>> j) &&& 1` of a word, and the 128 bits
-of two words after one bit is set. For the residues and the bits of an interval: the numbers of a
-range in one class modulo `m`, the multiples of `m` among `N + (m - r)`, a numerator `i - H` in a
-class modulo `m`, the quotient by `m > 0` of a number above a negative bound, which stays above it,
-the quotients of the split form of `numerators_to_bits`, its carries and their sums with a quotient,
-in the range of a `long`, the multiples of a divisor of `N` at or below a number `≥ -N` and above a
-number `< N`, which lie in `[-N, N]`, and the sums, differences and negations of `long`s that do not
-overflow, the mask `(1 <<< k) - 1` and the and with it, the Euclidean remainder modulo `2 ^ k` also
-of a negative `long`.
+itself shifted, `x ||| x <<< s`, which doubles a pattern of period `P ∣ s`. For the rows of offsets:
+the multiple `m ⌈R / m⌉` of `m > 0`, from `R` to below `R + m`, the residue `(a y mod p + c) M` of
+`a` for a multiple `c` of `p` and an inverse `M` of `y`, the entries of a vector after `Vector.set`,
+of an array of `none`s and of an array whose list is a map, the bit `(x >>> j) &&& 1` of a word, and
+the 128 bits of two words after one bit is set. For the residues and the bits of an interval: the
+numbers of a range in one class modulo `m`, the multiples of `m` among `N + (m - r)`, a numerator
+`i - H` in a class modulo `m`, the quotient by `m > 0` of a number above a negative bound, which
+stays above it, the quotients of the split form of `numerators_to_bits`, its carries and their sums
+with a quotient, in the range of a `long`, the multiples of a divisor of `N` at or below a number
+`≥ -N` and above a number `< N`, which lie in `[-N, N]`, the product `a ^ m a ^ (n - m) = a ^ n` of
+integers, and the sums, differences and negations of `long`s that do not overflow, the mask
+`(1 <<< k) - 1` and the and with it, the Euclidean remainder modulo `2 ^ k` also of a negative
+`long`.
 
 ## Main statements
 
@@ -144,8 +148,10 @@ of a negative `long`.
 * `Nat.mul_mod_eq_zero_iff_of_mul_mod`, `Nat.mul_mod_eq_mul_mod_of_mul_mod_eq_one`: scaling by a
   unit `u` with an inverse modulo `q` keeps a residue zero or not, and keeps the residue `x i mod q`
   read with an inverse `i` of `r` when `x` and `r` are both scaled.
-* `Nat.sub_mod_div_eq_mod_iff`: the place `(a - a₀) mod 64 / m` of a residue `a ≡ a₀` in a packing
-  of stride `m`, `m P = 64`.
+* `Nat.sub_mod_div_eq_mod_iff`: the place `(a - a₀) mod n / m` of a residue `a ≡ a₀ (mod m)` below
+  `n = m P`, in a packing of stride `m`.
+* `Nat.le_mul_add_sub_one_div`, `Nat.mul_add_sub_one_div_lt`: the multiple `m ⌈R / m⌉` of `m > 0`
+  lies from `R` to below `R + m`, as the bias of a modulus does.
 * `List.filter_range_mod_eq`: the numbers below `N` that are `r` modulo `m > r`, `r, r + m, …`.
 * `Int.ediv_add_emod_sub_add_sub_one_ediv`, `Int.ediv_add_emod_sub_ediv`: the two ends of the split
   form of `numerators_to_bits`, `⌈(lo - a₀) / m⌉` and `⌊(hi - a₀) / m⌋`.
@@ -657,6 +663,12 @@ theorem mul_le_of_lt_two_pow_32 {x y : Nat} (hx : x < 2 ^ 32) (hy : y < 2 ^ 32) 
 theorem mul_mod_of_mod_eq_one (a : Nat) {b q : Nat} (h : b % q = 1) : a * b % q = a % q := by
   rw [Nat.mul_mod, h, Nat.mul_one, Nat.mod_mod]
 
+/-- `u (b v mod p) ≡ b (mod p)` for an inverse `v` of `u` modulo `p`. -/
+theorem mul_mul_mod_mod_of_mul_mod_eq_one {p u v : Nat} (b : Nat) (h : v * u % p = 1) :
+    u * (b * v % p) % p = b % p := by
+  rw [Nat.mul_mod_mod, ← Nat.mul_assoc, Nat.mul_comm u b, Nat.mul_assoc, Nat.mul_comm u v,
+    Nat.mul_mod_of_mod_eq_one _ h]
+
 theorem mul_mod_eq_mul_mod_of_mod_eq {a a' : Nat} (b : Nat) {q : Nat} (h : a % q = a' % q) :
     a * b % q = a' * b % q := by
   rw [Nat.mul_mod, h, ← Nat.mul_mod]
@@ -705,30 +717,45 @@ theorem two_pow_mul_sixty_four_div {k : Nat} (hk : k ≤ 6) :
 theorem sixty_four_div_two_pow {k : Nat} (hk : k ≤ 6) : 64 / 2 ^ k = 2 ^ (6 - k) :=
   Nat.pow_div hk (by decide : 0 < 2)
 
-/-- For a residue `a ≡ a0 (mod m)` below 64 and `m * P = 64`, the place of `a` in the packing is
-`t mod P` exactly when `a` is the numerator `(a0 + m t) mod 64` of bit `t`. -/
-theorem sub_mod_div_eq_mod_iff {a a0 m P t : Nat} (hm : m * P = 64) (ha : a < 64)
+/-- For a residue `a ≡ a₀ (mod m)` below `n` and `m P = n`, the place `(a - a₀) mod n / m` of `a`
+is `t mod P` exactly when `a` is `(a₀ + m t) mod n`. -/
+theorem sub_mod_div_eq_mod_iff {a a0 m P t n : Nat} (hm : m * P = n) (ha : a < n)
     (haa : a % m = a0) :
-    (a - a0) % 64 / m = t % P ↔ a = (a0 + m * t) % 64 := by
-  have hm0 : 0 < m := Nat.pos_of_ne_zero (by rintro rfl; simp at hm)
-  have hP0 : 0 < P := Nat.pos_of_ne_zero (by rintro rfl; simp at hm)
+    (a - a0) % n / m = t % P ↔ a = (a0 + m * t) % n := by
+  have hm0 : 0 < m := Nat.pos_of_ne_zero (by rintro rfl; lia)
+  have hP0 : 0 < P := Nat.pos_of_ne_zero (by rintro rfl; lia)
   have h1 := Nat.div_add_mod a m
   have h2 := Nat.div_add_mod t P
   have h3 : a / m < P := Nat.div_lt_of_lt_mul (by rwa [hm])
   have h4 := Nat.mod_lt t hP0
   have h6 : a0 < m := haa ▸ Nat.mod_lt a hm0
-  have hlt : a0 + m * (t % P) < 64 := by
+  have hlt : a0 + m * (t % P) < n := by
     have : m * (t % P) + m ≤ m * P := by rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ h4
     lia
-  have h5 : (a0 + m * t) % 64 = a0 + m * (t % P) := by
-    have h7 : m * t = m * (t % P) + 64 * (t / P) := by grind
+  have h5 : (a0 + m * t) % n = a0 + m * (t % P) := by
+    have h7 : m * t = m * (t % P) + n * (t / P) := by grind
     rw [h7, ← Nat.add_assoc, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hlt]
-  rw [h5, ← haa, Nat.mod_eq_of_lt (by lia : a - a % m < 64)]
+  rw [h5, ← haa, Nat.mod_eq_of_lt (by lia : a - a % m < n)]
   have : a - a % m = m * (a / m) := by lia
   rw [this, Nat.mul_div_cancel_left _ hm0]
   constructor
   · intro h; rw [← h]; lia
   · intro h; exact Nat.eq_of_mul_eq_mul_left hm0 (by lia)
+
+/-- The multiple `m ⌈R / m⌉ = m ((R + m - 1) / m)` of `m > 0` is at least `R`. -/
+theorem le_mul_add_sub_one_div (R : Nat) {m : Nat} (hm : 0 < m) : R ≤ m * ((R + m - 1) / m) :=
+  (Nat.le_mul_iff_le_right hm).mpr (Nat.le_refl _)
+
+/-- The multiple `m ⌈R / m⌉ = m ((R + m - 1) / m)` of `m > 0` is below `R + m`. -/
+theorem mul_add_sub_one_div_lt (R : Nat) {m : Nat} (hm : 0 < m) : m * ((R + m - 1) / m) < R + m :=
+  Nat.lt_of_le_of_lt (Nat.mul_div_le _ m) (by lia)
+
+/-- The residue `a y mod p` plus a multiple `c` of `p`, times an inverse `M` of `y` modulo `p`, is
+`a` modulo `p`. -/
+theorem mul_mod_add_mul_mod_eq_mod {p a y c M : Nat} (hy : y * M % p = 1) (hc : c % p = 0) :
+    (a * y % p + c) * M % p = a % p := by
+  rw [Nat.add_mul, Nat.add_mod, Nat.mul_mod c, hc, Nat.zero_mul, Nat.zero_mod, Nat.add_zero,
+    Nat.mod_mod, Nat.mod_mul_mod, Nat.mul_assoc, Nat.mul_mod_of_mod_eq_one _ hy]
 
 /-- `N + (m - r)` is a multiple of `m` exactly when `N` is `r` modulo `m`, for `r < m`. -/
 theorem add_sub_mod_eq_zero_iff {N m r : Nat} (hr : r < m) :
@@ -906,7 +933,7 @@ theorem toNat_add_mul_emod_sixty_four (a m : Nat) (j : Int) :
   rw [h1, ← h2, ← Int.add_assoc, Int.add_mul_emod_self_left]
   lia
 
-theorem sub_emod_eq_iff {i H a0 m : Nat} (ha : a0 < m) :
+theorem natCast_sub_natCast_emod_eq_iff {i H a0 m : Nat} (ha : a0 < m) :
     ((i : Int) - H) % m = a0 ↔ i % m = (a0 + H) % m := by
   have h1 : (a0 : Int) % m = a0 := Int.emod_eq_of_lt (by lia) (by lia)
   rw [← h1, Int.emod_eq_emod_iff_emod_sub_eq_zero, ← Int.ofNat_inj, Int.natCast_emod,
@@ -996,6 +1023,9 @@ theorem mul_ediv_add_one_le_of_dvd {d N hi : Int} (hd : 0 < d) (hdN : d ∣ N) (
   obtain ⟨q, rfl⟩ := hdN
   refine Int.mul_le_mul_of_nonneg_left (Int.add_one_le_of_lt ?_) (Int.le_of_lt hd)
   exact (Int.ediv_lt_iff_lt_mul hd).mpr (by rwa [Int.mul_comm])
+
+theorem pow_mul_pow_sub (a : Int) {m n : Nat} (h : m ≤ n) : a ^ m * a ^ (n - m) = a ^ n := by
+  rw [← Int.pow_add, Nat.add_sub_cancel' h]
 
 end Int
 
@@ -1164,6 +1194,24 @@ theorem getLsbD_or_shiftLeft (x : UInt64) {s : Nat} (hs : s < 64) (t : Nat) :
   rw [UInt64.toBitVec_or, BitVec.getLsbD_or, UInt64.toBitVec_shiftLeft, BitVec.shiftLeft_eq',
     BitVec.getLsbD_shiftLeft, BitVec.toNat_umod, hs']
   grind
+
+/-- One doubling of a pattern of period `P ∣ s`, `2 s ≤ 64`, that fills the bits below `s`: the
+pattern now fills the bits below `2 s`. -/
+theorem getLsbD_or_shiftLeft_of_dvd {x p0 : UInt64} {s P : Nat} (hPs : P ∣ s) (hs : 2 * s ≤ 64)
+    (hs0 : 0 < s) (hx : ∀ t, x.toBitVec.getLsbD t = (decide (t < s) && p0.toBitVec.getLsbD (t % P)))
+    (t : Nat) :
+    (x ||| x <<< UInt64.ofNat s).toBitVec.getLsbD t =
+      (decide (t < 2 * s) && p0.toBitVec.getLsbD (t % P)) := by
+  rw [UInt64.getLsbD_or_shiftLeft _ (by lia), hx, hx]
+  by_cases h1 : t < s
+  · simp [h1, show t < 2 * s by lia, Nat.not_le.mpr h1]
+  · have h2 : (t - s) % P = t % P := by
+      obtain ⟨q, rfl⟩ := hPs
+      rw [Nat.sub_mul_mod (by lia)]
+    simp only [h1, decide_false, Bool.false_and, Bool.false_or, h2]
+    by_cases h4 : t < 2 * s
+    · simp [h4, show t < 64 by lia, show s ≤ t by lia, show t - s < s by lia]
+    · simp [h4, show ¬t - s < s by lia]
 
 theorem shiftRight_and_one_beq_zero (x : UInt64) {j : Nat} (hj : j < 64) :
     ((x >>> UInt64.ofNat j) &&& 1 == 0) = !x.toBitVec.getLsbD j := by
