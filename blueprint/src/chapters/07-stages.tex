@@ -523,8 +523,9 @@ Measured on a sketch of the model, the stages make the default suites faster (22
 3219 runs of stage~F1, against 35 with every modulus in the first stage, and 116 seconds for the 13
 runs of \verb|test4high|, against 254), while a run with few moduli before the test of a candidate
 is much slower than ratpoints, up to 1209 seconds against 1.7 for \verb|-n 3 -N 5 -P 2| at the
-height 20000: most numerators then reach the test, and the reduction with the bias computes products
-above $2^{63}$, which Lean holds as big numbers.
+height 20000: most numerators then reach the test, and the reduction with the bias computed products
+above $2^{63}$, which Lean held as big numbers (until sub-stage~F3, whose reductions compute on
+$64$-bit words, Chapter~\ref{chap:packing}).
 
 \section{Deviations}\label{sec:stagesDeviations}
 
