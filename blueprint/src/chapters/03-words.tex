@@ -16,11 +16,14 @@ words per bit array, as a constant that no proof depends on, so that the proofs 
 width; and it takes the first stage of the builds that and the rows into one bit array at a time,
 which the default build does in chunks of sixteen registers. So the model is the build that
 ratpoints tests as \verb|chunk1| (256-bit bit arrays and \verb|-DRATPOINTS_CHUNK=1|, one of the
-configurations of \verb|make test4configs|). The numerators keep the plain layout of stage~C1, one
-bit per numerator from $-H$ to $H$; the 2-adic classes come with stage~E, as the word of the class
-from which the first stage starts (Chapter~\ref{chap:denominators}), their packing with stage~F3,
-the chunks with stage~F4, and the second and the third stage of the sieve with the test of a
-candidate with stage~F2 (Chapter~\ref{chap:stages}).
+configurations of \verb|make test4configs|). In stage~C2 the numerators kept the plain layout of
+stage~C1, one bit per numerator from $-H$ to $H$; since stage~F3 they are packed by the stride of
+the 2-adic class of the denominator, bit $t$ of the bit array with word number $w$ standing for the
+numerator $a_0 + 2^k (R w + t)$ (Chapter~\ref{chap:packing}), and the components of this chapter
+take the class with its pattern and its stride. The 2-adic classes come with stage~E, as the words
+of the classes from which the patterns of the first stage are made
+(Chapter~\ref{chap:denominators}), the second and the third stage of the sieve with the test of a
+candidate with stage~F2 (Chapter~\ref{chap:stages}), and the chunks with stage~F4.
 
 \section{What the C code does with words}\label{sec:wordsC}
 
@@ -339,8 +342,8 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
   \verb|small|, whether the word numbers of the piece lie between $-\mathrm{rowBias}$ and
   $\mathrm{rowBias} - 2\,\mathrm{maxPrimeEven}$, so that the first two stages may reduce their row
   indices by a multiplication with the reciprocals (Lemma~\ref{lem:rowIndices}); the first stage
-  with the first $s_1$ moduli of the piece and their reciprocals; the low mask $m_l$ on the first bit
-  array if $m_l \ne 0$ and the high mask $m_h$ on the last if $m_h \ne 0$
+  with the first $s_1$ moduli of the piece and their reciprocals; the low mask $m_l$ on the first
+  bit array if $m_l \ne 0$ and the high mask $m_h$ on the last if $m_h \ne 0$
   (\csource{sift.c}{1030}{1041}); and the scan with the other moduli, those of the second stage,
   with their reciprocals, the thunks of the check and the flag of the reversal; the first stage
   starts from the pattern of the class of the denominator, an argument of the piece. The piece also
@@ -420,27 +423,32 @@ lemma, and hold no C ranges: the components of this chapter model those lines, w
 The run over the denominators (Definition~\ref{def:sieveRun}) makes the rows of the moduli of the
 first two stages once, the first $s_2$, hands the sieve entries from $s_2$ on and their reciprocals
 to the third stage, and returns, for each denominator of its shape that passes the test of the
-shape, the points that \verb|sift| finds from the word of its class with the first stage ending at
-$s_1$; its contract holds for any cut points, $A \ge 1$, sieve entries with $p > 0$ and their
-reciprocals, those from $s_2$ on prime entries (Definition~\ref{def:stage3}), the denominators from
-$b_{\mathrm{low}} \ge 1$ to $b_{\mathrm{high}} < 2^{63}$ and $H < 2^{63}$, and \verb|sift| computes
-the residues $b \bmod p$ once per denominator, where ratpoints computes the residues of $b / 2^k$
-before each call of \verb|sift| (\verb|fill_bp_list|). The search of the polynomial
-(Definition~\ref{def:searchPoints}), which \verb|findPoints| (Definition~\ref{def:findPoints}) runs
-on the polynomial that the reversal check hands on, runs it with $A = \mathrm{arraySizeAt}(H)$ of
-its parameters and the sieve entries that \verb|sieving_info| makes of its moduli
-(Definition~\ref{def:sievingInfo}), primes, prime powers and products of them. So the reduction of
-the run to the reference (Theorem~\ref{thm:run_reference}) needs the positivity of the moduli, and
-the equation of the search the lower bound of the array size, two facts that stage~C1 did not need;
-stage~C2 changed neither the statements of the main theorems nor the comparator challenge.
+shape, the points that \verb|sift| finds in the packing of its class with the first stage ending at
+$s_1$, with the residues of $b / 2^k$ modulo the moduli of the first two stages, which the run
+computes before each call of \verb|sift|, as \verb|fill_bp_list| computes them
+(Definition~\ref{def:fillBpList}); its contract holds for any cut points, $A \ge 1$, sieve entries
+with their reciprocals, the first $s_2$ with their tables of inverses and the row offsets of the
+classes, those from $s_2$ on prime entries (Definition~\ref{def:stage3}), classes that pack the
+2-adic words and whose patterns give the bits of \verb|den_bits|, the denominators from
+$b_{\mathrm{low}} \ge 1$ to $b_{\mathrm{high}} < 2^{63}$ and $H < 2^{63}$. The search of the
+polynomial (Definition~\ref{def:searchPoints}), which \verb|findPoints|
+(Definition~\ref{def:findPoints}) runs on the polynomial that the reversal check hands on, runs it
+with $A = \mathrm{arraySizeAt}(H)$ of its parameters, the sieve entries that \verb|sieving_info|
+makes of its moduli (Definition~\ref{def:sievingInfo}), primes, prime powers and products of them,
+and the classes with their row offsets (Lemma~\ref{lem:soundRun}). So the equation of the search
+needs the lower bound of the array size, a fact that stage~C1 did not need, and the reduction of the
+run to the reference (Theorem~\ref{thm:run_reference}), which needed the positivity of the moduli in
+stage~C2, needs since stage~F3 the tables of inverses and the row offsets of the entries of the
+first two stages and the classes that pack the 2-adic words; neither stage~C2 nor stage~F3 changed
+the statements of the main theorems or of the comparator challenge.
 
 Each component of this chapter differs from the C code in a stated way, recorded in its
 \verb|Deviation:| paragraph:
 \begin{itemize}
-  \item the plain layout, bit $t$ of the bit array with word number $w$ for the numerator $R w + t$,
-    every numerator from $-H$ to $H$, and the class word of the first stage written into every word,
-    the 2-adic pattern of the class at the stride $1$, for the packing of the 2-adic classes (F3)
-    and the search region (H);
+  \item every numerator from $-H$ to $H$ in the packing of the class of the denominator, for the
+    intervals of the search region (H); the pattern of the class written into the words of a piece
+    one word at a time from the first, where ratpoints copies the vector of the pattern into its bit
+    arrays from the last;
   \item the first stage of the builds with one register per chunk, for the chunks of sixteen
     registers of the default build with the legs over the tail of a piece (F4);
   \item the rows from the admission test of the sieve entry (Definition~\ref{def:SieveEntry}), one
@@ -450,11 +458,12 @@ Each component of this chapter differs from the C code in a stated way, recorded
   \item the rows of all residues, that of $0$ among them, made when a denominator first needs them
     and kept for the run, where ratpoints installs the row of $0$ from the build when it examines
     the prime and keeps the rows in its sieve entry (F4);
-  \item the row of $b \bmod p$, computed in \verb|sift|, for the row of $b\,2^{-k} \bmod p$ that
-    \verb|set_rows| reads from the residues that \verb|fill_bp_list| computes before the call, and
-    the row of the word number $w$ at index $w \bmod p$, where ratpoints adds the offset of the
-    packing and a multiple of $p$ that keeps the index non-negative, and reduces by a
-    multiplication when that is exact (F3);
+  \item the residues of the denominator divided by the stride of its class and the class as
+    values, for the pointers \verb|bp_list| and \verb|cls|, and the array of the row offsets of the
+    run as an argument, which the C code reaches through the pointer \verb|offset| of the class; the
+    sieve specs and the reciprocals of the first stage as two lists stepped together, for the
+    pointers into the sieve specs and into the array \verb|magics|, and \verb|small| a Boolean, for
+    the \verb|int|;
   \item indices for the pointers of the C code, into the rows and into the survivors, and a scan
     that holds its position as an index, where ratpoints recovers the word number from a pointer
     difference;

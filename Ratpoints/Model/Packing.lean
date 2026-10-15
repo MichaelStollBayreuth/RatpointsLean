@@ -285,8 +285,8 @@ def fillBpList (b k : Nat) (es : List SieveEntry) (mgs : List Nat) : List Nat :=
 
 /-! ### Examples
 
-The packings of the classes against those of the loop over the classes of `get_2adic_info`, and
-the patterns and the residues of `fill_bp_list` against their rules; the row offsets, which need the
+The packings of the classes against those of the loop over the classes of `get_2adic_info`, and the
+patterns and the residues of `fill_bp_list` against their rules; the row offsets, which need the
 sieve entries of the moduli, and the sieve of one denominator in the packing of its class are
 examples of `Ratpoints.Model.FindPoints`. -/
 

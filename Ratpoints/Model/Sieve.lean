@@ -315,8 +315,8 @@ structure NumClass where
   k : Nat
   /-- The residue `a₀ < 2 ^ k` of the admissible numerators. -/
   a0 : Nat
-  /-- Where the offsets of the row of the packing begin in the array of the row offsets, none
-  until they are made. -/
+  /-- Where the offsets of the row of the packing begin in the array of the row offsets, none until
+  they are made. -/
   offset : Option Nat
   deriving Inhabited
 
@@ -570,8 +570,7 @@ last bit array of the piece, `n - 1`, if `maskHigh ≠ 0` (`Ratpoints.Sieve.clea
 scan with the second stage, with the other moduli of `specs` and their reciprocals, and the
 extraction in the packing of `cl` (`Ratpoints.Sieve.scanPiece`, with the thunk `w` of the products,
 the degree `d`, the denominator `b`, the flag `rev` and the thunk `checks` of the third stage). This
-is `_ratpoints_sift0` of the C code, with the allocation of the survivors array that it works
-in.
+is `_ratpoints_sift0` of the C code, with the allocation of the survivors array that it works in.
 
 C: `find_points.c:3119-3121`, `sift.c:498-531`, `sift.c:548`, `sift.c:1030-1041`,
 `sift.c:1056-1058`, `sift.c:1300-1305`, `rp-private.h:575`, `rp-private.h:610-614`

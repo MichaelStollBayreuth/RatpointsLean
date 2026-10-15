@@ -60,10 +60,10 @@ refusal theorems (`comparator/Challenge.lean`).
 * `Ratpoints.sievingInfo_spec`: for well-formed parameters, the sieve entries that
   `Ratpoints.sievingInfo` makes are those of the moduli, in their order, are sound, have the fields
   that the packing reads and the tables of inverses of their factors, and hold the reciprocals of
-  their moduli, which it returns in the order of the entries, those of the third
-  stage having the shape that it needs (`Ratpoints.Sieve.SieveEntry.IsPrimeEntry`), and its
-  forbidden divisors are among those that the loops of the tables and of the further primes may
-  record; when it returns none, the curve has no points.
+  their moduli, which it returns in the order of the entries, those of the third stage having the
+  shape that it needs (`Ratpoints.Sieve.SieveEntry.IsPrimeEntry`), and its forbidden divisors are
+  among those that the loops of the tables and of the further primes may record; when it returns
+  none, the curve has no points.
 * `Ratpoints.run_searchPoints`: for well-formed parameters, `1 ≤ H < 2 ^ 63` and the degree of the
   polynomial, the search gives these points, mapped by `Ratpoints.Sieve.swapPoint` when the flag of
   the reversal is set, also when it takes an exit.

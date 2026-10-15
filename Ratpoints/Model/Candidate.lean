@@ -78,8 +78,8 @@ def swapPoint (q : Int × Int × Int) : Int × Int × Int :=
 
 /-! ### The lowest set bit -/
 
-/-- The position of the lowest set bit of a word `w ≠ 0`: `w` is shifted right while its lowest
-bit is clear, and the steps are counted. On `0` the loop does not end, as in the C code.
+/-- The position of the lowest set bit of a word `w ≠ 0`: `w` is shifted right while its lowest bit
+is clear, and the steps are counted. On `0` the loop does not end, as in the C code.
 
 C: `rp-private.h:429-444`
 

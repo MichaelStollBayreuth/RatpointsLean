@@ -66,14 +66,13 @@ the bits of the numerators `-H, …, H` of one denominator.
 The file uses Lean core and `Std` only, as `Ratpoints.Proof.Words`, `Ratpoints.Proof.Stages`,
 `Ratpoints.Proof.Packing` and `Ratpoints.Proof.BitRange` do, whose lemmas on bit arrays, rows,
 walks, classes and the bits of an interval and whose contracts of the first, the second and the
-third stage it builds on. The walk reads the test of a
-candidate as its value (`Ratpoints.Sieve.acceptedPoints`), so that the contracts of the walk, of one
-bit array, of the scan, of one piece and of one interval need nothing of the numerators and the
-denominator; the hypotheses of the test on the words of the C code, `0 < b < 2 ^ 63` and
-`|a| ≤ H < 2 ^ 63`, come in with the numerators `-H, …, H` of one denominator
-(`Ratpoints.Sieve.acceptedPoints_eq_ite`). The contract of the run over the denominators, which
-calls `Ratpoints.Sieve.sift` with the class of each denominator, is in
-`Ratpoints.Proof.Denominators`.
+third stage it builds on. The walk reads the test of a candidate as its value
+(`Ratpoints.Sieve.acceptedPoints`), so that the contracts of the walk, of one bit array, of the
+scan, of one piece and of one interval need nothing of the numerators and the denominator; the
+hypotheses of the test on the words of the C code, `0 < b < 2 ^ 63` and `|a| ≤ H < 2 ^ 63`, come in
+with the numerators `-H, …, H` of one denominator (`Ratpoints.Sieve.acceptedPoints_eq_ite`). The
+contract of the run over the denominators, which calls `Ratpoints.Sieve.sift` with the class of each
+denominator, is in `Ratpoints.Proof.Denominators`.
 -/
 
 @[expose] public section
@@ -258,8 +257,8 @@ theorem SiftBitArrayInvariant.toList_eq {words : Nat → UInt64} {g : Int → Li
   exact congrArg (out0.toList ++ ·) <| congrArg (List.flatMap _) <| congrArg List.flatten <|
     List.map_congr_left fun κ hκ ↦ by rw [hw κ (List.mem_range.mp hκ)]
 
-/-- `Ratpoints.Sieve.SiftBitArrayInvariant.toList_eq` for the invariant with the numerator of
-bit `0` of the last word, at the end of the loop over the words after the first. -/
+/-- `Ratpoints.Sieve.SiftBitArrayInvariant.toList_eq` for the invariant with the numerator of bit
+`0` of the last word, at the end of the loop over the words after the first. -/
 theorem SiftBitArrayWalkInvariant.toList_eq {words : Nat → UInt64}
     {g : Int → List (Int × Int × Int)} {cl : NumClass} {specs : List SieveSpec} {i : Int}
     {nums : Vector UInt64 rbaPack} {out0 : Array (Int × Int × Int)}

@@ -36,8 +36,8 @@ the first two stages reduce outside the test `small`; the products of `fill_bp_l
   bits of the numerators of an interval, in both forms, and those of `-H, …, H`.
 * `Ratpoints.Sieve.le_numerator_and_numerator_le_iff`,
   `Ratpoints.Sieve.map_range_numerator_eq_filter_numerators`: the numerator of a bit lies in an
-  interval exactly when the bit lies between its bits, and the numerators of the bits of
-  `-H, …, H` are those of `-H, …, H` in the class of the packing, in increasing order.
+  interval exactly when the bit lies between its bits, and the numerators of the bits of `-H, …, H`
+  are those of `-H, …, H` in the class of the packing, in increasing order.
 * `Ratpoints.Sieve.SieveEntry.PackedFor.lt_two_pow_63`: the offsets of the rows are `long`s.
 * `Ratpoints.Sieve.neg_two_pow_le_rbaLength_mul_ediv`,
   `Ratpoints.Sieve.rbaLength_mul_ediv_add_one_le_two_pow`: the first bit of the bit array of a bit
@@ -165,8 +165,8 @@ theorem toInt_numeratorsToBits {low high : Int64} {cl : NumClass} (hcl : cl.WF) 
   | true => exact toInt_numeratorsToBits_true hcl
 
 /-- The bits of the numerators `-H, …, H` of a height bound `H < 2 ^ 63` in the packing of a class,
-in the form of `numerators_to_bits` that `sift` takes, the split one for `H > 2 ^ 63 - 65`:
-from `⌈(-H - a₀) / 2 ^ k⌉` to `⌊(H - a₀) / 2 ^ k⌋`. -/
+in the form of `numerators_to_bits` that `sift` takes, the split one for `H > 2 ^ 63 - 65`: from
+`⌈(-H - a₀) / 2 ^ k⌉` to `⌊(H - a₀) / 2 ^ k⌋`. -/
 theorem toInt_numeratorsToBits_height {H : Nat} (hH : H < 2 ^ 63) {cl : NumClass} (hcl : cl.WF) :
     (numeratorsToBits (-H.toInt64) H.toInt64 cl (decide (2 ^ 63 - 65 < H))).1.toInt =
         -((cl.a0 + H : Int) / 2 ^ cl.k) ∧

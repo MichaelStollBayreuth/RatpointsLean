@@ -467,11 +467,11 @@ def Factor.modulus : Factor → ℕ
   | .prime t => t.p
   | .power pw => pw.m
 
-/-- A factor that `Ratpoints.makeModulus?` makes for the modulus `m` of the curve
-`y ^ 2 = F(x, z)` with the coefficient list `c`: it admits every point `(a, y, b)` with
-`gcd(a, b) = 1` at the residues of `b` and `a` modulo `m`, its tables of inverses serve the scaling
-of the rows by a unit modulo `m` (`Ratpoints.Sieve.Factor.HasInverses`), and a prime has the
-inverses of the reference (`Ratpoints.Sieve.inversesMod`). -/
+/-- A factor that `Ratpoints.makeModulus?` makes for the modulus `m` of the curve `y ^ 2 = F(x, z)`
+with the coefficient list `c`: it admits every point `(a, y, b)` with `gcd(a, b) = 1` at the
+residues of `b` and `a` modulo `m`, its tables of inverses serve the scaling of the rows by a unit
+modulo `m` (`Ratpoints.Sieve.Factor.HasInverses`), and a prime has the inverses of the reference
+(`Ratpoints.Sieve.inversesMod`). -/
 structure Factor.IsSound (c : List ℤ) (m : ℕ) (f : Factor) : Prop where
   /-- The factor admits every point at the residues modulo `m`. -/
   admits_of_sq_eq ⦃a y : ℤ⦄ ⦃b : ℕ⦄ (hab : Int.gcd a b = 1) (hy : y ^ 2 = binaryForm c a b) :
@@ -718,9 +718,9 @@ theorem MakeModulusInvariant.rbainv_prime {c : List ℤ} {m r : ℕ} {fac : List
   exact ⟨hs.inverses_eq t rfl ▸ hs.hasInverses.2 _ (Nat.mod_lt _ (by lia)) (hp ▸ hr0),
     getElem!_inversesMod_lt (Nat.mod_lt _ (by lia))⟩
 
-/-- The precondition of `Ratpoints.Sieve.modinv` for the inverse of `Ratpoints.rbaLength` modulo
-a modulus `m > 1` all of whose divisors above `1` are divisible by primes of the table, an odd
-modulus (`Ratpoints.mod_two_eq_one_of_forall_dvd`). -/
+/-- The precondition of `Ratpoints.Sieve.modinv` for the inverse of `Ratpoints.rbaLength` modulo a
+modulus `m > 1` all of whose divisors above `1` are divisible by primes of the table, an odd modulus
+(`Ratpoints.mod_two_eq_one_of_forall_dvd`). -/
 theorem one_lt_and_coprime_rbaLength_mod {m : ℕ}
     (hm : 1 < m ∧ m < maxPrimeEven ∧ ∀ q > 1, q ∣ m → ∃ pn < numPrimes, primeTable[pn]! ∣ q) :
     1 < m ∧ Nat.Coprime (rbaLength % m) m :=

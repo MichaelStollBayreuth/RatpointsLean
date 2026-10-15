@@ -390,8 +390,8 @@ sum leaves the range of a 64-bit word. It is the shift by 64 bits of the 128-bit
 
 C: `rp-private.h:404-408`, `rp-private.h:409-410`
 
-Deviation: the high half of the product from the products of the 32-bit halves, for the product
-of type `__uint128_t` that gcc provides and Lean core does not. -/
+Deviation: the high half of the product from the products of the 32-bit halves, for the product of
+type `__uint128_t` that gcc provides and Lean core does not. -/
 def mulHi (a b : UInt64) : UInt64 :=
   let a0 := a &&& 0xffffffff
   let a1 := a >>> 32

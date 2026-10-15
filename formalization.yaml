@@ -57,8 +57,8 @@ classification:
 # project status
 status:
   scope: >
-    Stages A, B, C1, C2, D and E, and the sub-stages F1 and F2 of stage F. Stage A set up the Lake
-    project with the libraries of the model (Lean core and Std only), the specification and the
+    Stages A, B, C1, C2, D and E, and the sub-stages F1, F2 and F3 of stage F. Stage A set up the
+    Lake project with the libraries of the model (Lean core and Std only), the specification and the
     proofs, the CI, the blueprint, the correspondence record with its checking script, and the
     comparator harness, and settled the specification in the blueprint. Stage B: the specification
     in Lean (the binary form, the normalized points of height at most H, the finite set of them, and
@@ -161,11 +161,28 @@ status:
     the well-formedness theorem of these parameters keeps its text; the differential tests compare
     every point list in its order (3315 comparisons in the default suites, among them option sets
     that run the second and the third stage after few moduli in the first, and 13 in the suite run
-    locally). Next: the sub-stages F3 and F4 of stage F (the packing of the numerators, the chunked
-    first stage and the faithful rows); the introduction of the blueprint lists the later stages
-    (the order and protocol, the search region and the Sturm step, the blocks of the loop over the
-    denominators with the threads and the correction of the moduli, and the choice of the sieving
-    parameters by the curve).
+    locally). Stage F3: the packing of the numerators as the C code has it: the classes of the
+    denominators modulo 64, whose admitted numerators lie in one residue class a0 modulo a stride
+    2^k, with the pattern of each class packed to its stride, so that bit t of the sieve of a
+    denominator stands for the numerator a0 + 2^k t; the rows of offsets that the packings share,
+    with the inverses of the strides, and the fields bias, rbainv and dinv of the sieve entries set
+    as the C code sets them; the residues of a denominator divided by its stride in the three
+    branches of fill_bp_list; the bits of the heights on 64-bit signed words in both forms of
+    numerators_to_bits; the row indices of the first two stages with the offsets, reduced by mod_mul
+    with the reciprocal of the modulus where the word numbers of a piece allow it (the test small)
+    and by a division otherwise, the reciprocals stepped with the moduli; the stride in the
+    extraction; and the reductions by a reciprocal on 64-bit words, the high half of the 128-bit
+    product from the products of the 32-bit halves; the contracts proved with the program logic of
+    Lean core in files without Mathlib, with the range obligations of the longs; a row is unchanged
+    when the residue and the numerator are multiplied by the same unit, given tables of inverses
+    that invert, so the packed sieve keeps exactly the numerators that the unpacked one keeps, in
+    the same order, and the output, the main theorems, the refusal theorems, the statements for
+    comparator, the parameters and their well-formedness do not change; the differential tests agree
+    as before (3315 comparisons in the default suites and 13 in the suite run locally). Next: the
+    sub-stage F4 of stage F (the chunked first stage and the faithful rows); the introduction of the
+    blueprint lists the later stages (the order and protocol, the search region and the Sturm step,
+    the blocks of the loop over the denominators with the threads and the correction of the moduli,
+    and the choice of the sieving parameters by the curve).
   sorry_count: 0
   sorry_in_definitions: 0
   axioms: ["propext", "Classical.choice", "Quot.sound"]
@@ -243,15 +260,17 @@ automation:
 fidelity:
   divergences: >
     By design: a C long is an Int or a Nat, with the obligation that its value lies in the range of
-    the C type, or, in the test for common factors, a 64-bit word, as in the C code; a pointer is an
-    index; the SIMD operations are the word operations they implement; the threads are replaced by
-    the sequential order of the blocks; the heuristics that choose the sieving parameters by the
-    curve are not modelled yet (stage I), since the theorems quantify over every well-formed choice;
-    the parameters of the command line follow the counting rules of ratpoints where these do not
-    depend on the curve; the search intervals have exact rational ends. Where the library function
-    find_points and the command-line program differ (the order of the checks on the input), the
-    model follows the program. Each deviation is recorded with its component in the correspondence
-    record.
+    the C type, or, in the test for common factors and in the bits of an interval of numerators, a
+    64-bit word, as in the C code; the reductions by a reciprocal compute on 64-bit words, with the
+    high half of the 128-bit product, for which Lean core has no type, from the 32-bit halves; a
+    pointer is an index; the SIMD operations are the word operations they implement; the threads are
+    replaced by the sequential order of the blocks; the heuristics that choose the sieving
+    parameters by the curve are not modelled yet (stage I), since the theorems quantify over every
+    well-formed choice; the parameters of the command line follow the counting rules of ratpoints
+    where these do not depend on the curve; the search intervals have exact rational ends. Where the
+    library function find_points and the command-line program differ (the order of the checks on the
+    input), the model follows the program. Each deviation is recorded with its component in the
+    correspondence record.
 
 # review status
 review:
@@ -285,7 +304,10 @@ alignment:
         tables and the moduli of stage F1 (the table of a prime as the C code builds it, the loop of
         the tables, prime powers and products of them as moduli) and the stages of the sieve and the
         check of stage F2 (the second and the third stage, the test for common factors on the longs
-        of the C code, the reductions by a reciprocal, the cut points of the stages), every
+        of the C code, the reductions by a reciprocal, the cut points of the stages) and the packing
+        of the numerators of stage F3 (the classes with their strides, the rows of offsets, the
+        residues of a denominator divided by its stride, the bits of the heights, the row indices of
+        the first two stages with the test small), every
         well-formed choice of the sieving parameters, the array size of the pieces included, and
         every value of the options (Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok,
         Ratpoints.nodup_of_findPoints_eq_ok), certified by comparator, through the permutation of

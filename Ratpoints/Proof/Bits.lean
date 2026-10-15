@@ -627,10 +627,10 @@ theorem add_min_lt_add_of_two_pow_mul_eq {m n y t : Nat} (hm : 0 < m) (hn : 0 < 
   have := Nat.le_mul_of_pos_left y (Nat.two_pow_pos t)
   split at h <;> lia
 
-/-- The high half of the product of `2 ^ 32 a₁ + a₀` and `2 ^ 32 b₁ + b₀` from the four products
-of the halves, as `Ratpoints.Sieve.mulHi` adds them: the high product, the high halves of the two
-middle products, and the carry of the high half of the low product with the low halves of the
-middle products. -/
+/-- The high half of the product of `2 ^ 32 a₁ + a₀` and `2 ^ 32 b₁ + b₀` from the four products of
+the halves, as `Ratpoints.Sieve.mulHi` adds them: the high product, the high halves of the two
+middle products, and the carry of the high half of the low product with the low halves of the middle
+products. -/
 theorem mul_div_two_pow_64_eq (a0 a1 b0 b1 : Nat) :
     (2 ^ 32 * a1 + a0) * (2 ^ 32 * b1 + b0) / 2 ^ 64 =
       a1 * b1 + a0 * b1 / 2 ^ 32 + a1 * b0 / 2 ^ 32 +

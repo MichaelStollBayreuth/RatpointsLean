@@ -172,9 +172,9 @@ C: `rp-private.h:49-51`, `rp-private.h:125`, `rp-private.h:172`, `rp-private.h:2
 `rp-private.h:257`, `rp-private.h:281`
 
 Deviation: computed from `Ratpoints.rbaPack`, where each build sets `RBA_LENGTH` by a literal, and
-its logarithm `RBA_SHIFT` too (`Ratpoints.rbaShift`); the shifts by `RBA_SHIFT` and by
-`LONG_SHIFT` are divisions by `rbaLength` and by 64, which round down also for a negative value, as
-the arithmetic shifts of gcc do, and the masks by `RBA_LENGTH - 1` and by `LONG_MASK` Euclidean
+its logarithm `RBA_SHIFT` too (`Ratpoints.rbaShift`); the shifts by `RBA_SHIFT` and by `LONG_SHIFT`
+are divisions by `rbaLength` and by 64, which round down also for a negative value, as the
+arithmetic shifts of gcc do, and the masks by `RBA_LENGTH - 1` and by `LONG_MASK` Euclidean
 remainders. -/
 def rbaLength : Nat := 64 * rbaPack
 
@@ -190,8 +190,8 @@ they stand for within the range of a `long`; the proofs use only that and `rbaSh
 C: `rp-private.h:126`, `rp-private.h:173`, `rp-private.h:232`, `rp-private.h:258`,
 `rp-private.h:282`
 
-Deviation: the value of the default build, set here, where each build sets it by a literal, and
-the build with 64-bit bit arrays by `LONG_SHIFT`; the model shifts by none of them: the shifts by
+Deviation: the value of the default build, set here, where each build sets it by a literal, and the
+build with 64-bit bit arrays by `LONG_SHIFT`; the model shifts by none of them: the shifts by
 `RBA_SHIFT` are divisions by `Ratpoints.rbaLength`. -/
 def rbaShift : Nat := 8
 

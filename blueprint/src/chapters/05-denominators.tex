@@ -21,19 +21,19 @@ complete and gives fewer than $512$ squarefree divisors up to the largest denomi
 denominator~$2$: the divisors of the leading coefficient $2$ are $1$ and $2$, and the loop takes $1,
 4, 9, 16$ and then $2, 8, 18$.
 
-So the output is the points at infinity followed by the points of the brute-force reference
-over the denominators that the loop of the search visits, in its order, each mapped back after a
-reversal. It is a permutation of the reference, as in stage~D, so that the main theorems, the
-refusal theorems and the statements that comparator certifies do not change; and it is the reference
-itself, without a reversal, wherever the loop visits the denominators in increasing order, in
-particular for every shape but the divisors times squares. Besides the deviations of
-Section~\ref{sec:denDeviations}, which name their stages, the model of this chapter keeps two
-simplifications of the loop, each the subject of a later stage: every class of the denominators
-packs its numerators with the stride~$1$, so that the class word is a pattern of the plain layout of
-the model, where ratpoints packs the numerators of a class that are all congruent modulo $2^e$ into
-the bits of every $2^e$-th numerator (stage~F3); and the loop visits the denominators of each
-segment in order, where ratpoints cuts the segments into blocks for its threads and for the
-correction of the moduli between blocks (stage~I). Neither changes the points or their order.
+So the output is the points at infinity followed by the points of the brute-force reference over the
+denominators that the loop of the search visits, in its order, each mapped back after a reversal. It
+is a permutation of the reference, as in stage~D, so that the main theorems, the refusal theorems
+and the statements that comparator certifies do not change; and it is the reference itself, without
+a reversal, wherever the loop visits the denominators in increasing order, in particular for every
+shape but the divisors times squares. Besides the deviations of Section~\ref{sec:denDeviations},
+which name their stages, the model of this chapter keeps one simplification of the loop, the subject
+of a later stage: the loop visits the denominators of each segment in order, where ratpoints cuts
+the segments into blocks for its threads and for the correction of the moduli between blocks
+(stage~I), which changes neither the points nor their order. In stage~E every class of the
+denominators packed its numerators with the stride~$1$, its word a pattern of the plain layout of
+the model; since stage~F3 the run packs the numerators of a class that are all congruent modulo
+$2^e$ into the bits of every $2^e$-th numerator, as ratpoints does (Chapter~\ref{chap:packing}).
 
 \section{What the C code does on the side of the denominators}\label{sec:denC}
 
@@ -129,10 +129,9 @@ which bit of a bit array stands for which numerator.
   for every odd $a$ (\csource{find_points.c}{983}{994}, \csource{find_points.c}{996}{1000},
   \csource{find_points.c}{1023}{1050}, \csource{find_points.c}{1115}{1115}); and
   $\mathrm{den\_bits}$, bit $b$ set exactly when $\mathrm{nb}[b] \ne 0$, the reference of the word
-  that the loop over the classes computes with their packings (Definition~\ref{def:numClasses}). The
-  run of the model sifts every class from its word $\mathrm{nb}[b]$, its pattern at the stride~$1$,
-  until Chapter~\ref{chap:packing} switches the packing on. Bit $a$ of $\mathrm{nb}[b]$ is set
-  exactly when $a$ or $b$ is odd and $F(a, b)$ is a square modulo $64$.
+  that the loop over the classes computes with their packings (Definition~\ref{def:numClasses}), in
+  which the run sifts every class. Bit $a$ of $\mathrm{nb}[b]$ is set exactly when $a$ or $b$ is odd
+  and $F(a, b)$ is a square modulo $64$.
 \end{definition}
 
 \begin{lemma}[The class of a point]\label{lem:twoAdic_point}
@@ -161,26 +160,28 @@ which bit of a bit array stands for which numerator.
   $\mathrm{squares64}$ are checked by \verb|decide|.
 \end{proof}
 
-The packing by the stride, from the masks of the classes to the stride and the offset of each class
-(\csource{find_points.c}{1058}{1062}, \csource{find_points.c}{1066}{1067},
-\csource{find_points.c}{1069}{1069}, \csource{find_points.c}{1071}{1095},
-\csource{find_points.c}{1099}{1101}), is stage~F3. The first stage of the sieve starts from the word
-of the class of the denominator: the components of Chapter~\ref{chap:words} that make a piece and
-the numerators of one denominator take the class word $\omega$ as an argument, and the first stage
-(Definition~\ref{def:andRows}) writes $\omega$ into every word of the piece in place of all ones, as
-ratpoints writes the pattern of the class, which \verb|get_2adic_info| makes once per class, one
+The packing by the stride, from the masks of the classes to the stride, the residue and the pattern
+of each class, is the loop over the classes (Definition~\ref{def:numClasses}): a class whose word
+$\mathrm{nb}[b]$ admits only numerators $\equiv a_0 \pmod{2^e}$ has the stride $2^e$, the residue
+$a_0$ and the pattern whose bit $t$ is bit $(a_0 + 2^e t) \bmod 64$ of $\mathrm{nb}[b]$, so that it
+packs its word (Lemma~\ref{lem:numClasses}). The first stage of the sieve starts from the pattern of
+the class of the denominator: the components of Chapter~\ref{chap:words} that make a piece and the
+numerators of one denominator take the class as an argument, and the first stage
+(Definition~\ref{def:andRows}) writes its pattern into every word of the piece in place of all ones,
+as ratpoints writes the pattern of the class, which \verb|get_2adic_info| makes once per class, one
 word repeated over a bit array by the macro \verb|RBA| of the build, and copies into each bit array;
 so the node of the first stage holds the line that makes the pattern and the macro of every build
 (\csource{find_points.c}{1098}{1098}, \csource{rp-private.h}{129}{132},
 \csource{rp-private.h}{203}{204}, \csource{rp-private.h}{235}{235},
 \csource{rp-private.h}{261}{261}, \csource{rp-private.h}{285}{285}); and their contracts state the
-class bit: bit $t$ of word $y$ of a piece is bit $t$ of $\omega$ and the survivor test of the
-numerator $R w_0 + 64 y + t$, which is congruent to $t$ modulo $64$ since $64 \mid R$
+class bit: bit $t$ of word $y$ of a piece is bit $t$ of the pattern and the tests of the bit
+$j = R w_0 + 64 y + t$, whose bit in the pattern, bit $j \bmod 64$, is bit $t$ since $64 \mid R$
 (\verb|Ratpoints.Sieve.classBit|, the bit $a \bmod 64$ of a word, and
-\verb|Ratpoints.Sieve.classBit_rbaLength_mul_add|, which the node of the first stage names). So
-\verb|sift| with the class word $\omega$ gives what the brute-force reference finds over $b$ and the
-numerators that pass bit $a \bmod 64$ of $\omega$ and survive the sieve entries
-(Definitions~\ref{def:siftPiece} and~\ref{def:sift}): the equation of
+\verb|Ratpoints.Sieve.classBit_rbaLength_mul_add|, which the node of the first stage names); for a
+class that packs the word $w$, the bit of $j$ in the pattern is the bit of the numerator
+$a_0 + 2^e j$ in $w$. So \verb|sift| in the packing of a class that packs $w$ gives what the
+brute-force reference finds over $b$ and the numerators that pass bit $a \bmod 64$ of $w$ and
+survive the sieve entries (Definition~\ref{def:sift}, Lemma~\ref{lem:siftBits}): the equation of
 Lemma~\ref{lem:sift_eq_checkDen} filters the points of the plain sieve by the class bit of their
 numerators (\verb|Ratpoints.BruteForce.pointsOfDen_filter|, which its node names); with the word of
 the class of $b$, by Lemma~\ref{lem:twoAdic_point}, that is what the reference finds over $b$ and
@@ -584,30 +585,34 @@ $(c_d / q) = -1$, which these do not reach.
   denominator of the list of the words has its bit in $\mathrm{den\_bits}$.
 \end{proof}
 
-The run (Definition~\ref{def:sieveRun}) takes the shape, the words of the 2-adic information, the
-range $b_{\mathrm{low}}, \dots, b_{\mathrm{high}}$ and the cut points $s_1$ and $s_2$ of the stages,
-and lives in the model file of this chapter: for each denominator of the list of the shape that
-passes its test, the points that \verb|sift| finds from the word of its class, with the rows of the
-first $s_2$ sieve entries and the others in the third stage, appended in turn
+The run (Definition~\ref{def:sieveRun}) takes the shape, the classes of the denominators with their
+row offsets and the word $\mathrm{den\_bits}$, the range
+$b_{\mathrm{low}}, \dots, b_{\mathrm{high}}$ and the cut points $s_1$ and $s_2$ of the stages, and
+lives in the model file of this chapter: for each denominator of the list of the shape that passes
+its test, the residues of $b$ divided by the stride of its class (Definition~\ref{def:fillBpList})
+and the points that \verb|sift| finds in the packing of its class, with the rows of the first $s_2$
+sieve entries and the others in the third stage, appended in turn
 (\csource{find_points.c}{3861}{3861}, \csource{find_points.c}{3889}{3904},
 \csource{find_points.c}{3911}{3911}, \csource{find_points.c}{3917}{3918},
 \csource{find_points.c}{3926}{3936}, \csource{find_points.c}{3954}{3966},
 \csource{find_points.c}{4009}{4009}, \csource{find_points.c}{4042}{4052},
 \csource{find_points.c}{4059}{4059}, \csource{find_points.c}{4066}{4072},
 \csource{find_points.c}{4075}{4078}, \csource{find_points.c}{5120}{5120},
-\csource{find_points.c}{5152}{5160}). Its contract, for an array size $A \ge 1$, sieve entries of
-moduli $p > 0$ with their reciprocals, those from $s_2$ on prime entries
-(Definition~\ref{def:stage3}), the denominators from $b_{\mathrm{low}} \ge 1$ to
+\csource{find_points.c}{5152}{5160}). Its contract, for an array size $A \ge 1$, sieve entries with
+their reciprocals, the first $s_2$ with their tables of inverses and the row offsets of the classes,
+those from $s_2$ on prime entries (Definition~\ref{def:stage3}), the bits of $\mathrm{den\_bits}$
+those of the classes with a pattern, the denominators from $b_{\mathrm{low}} \ge 1$ to
 $b_{\mathrm{high}} < 2^{63}$ and $H < 2^{63}$, is the concatenation, over the denominators of the
 list that pass the test, of what the brute-force reference finds over the numerators that pass the
-class word and survive the sieve entries, mapped by $\mathrm{swapPoint}$ when the flag of the
-reversal is set (\verb|Ratpoints.Sieve.sieveRun_spec|, \verb|Ratpoints.Sieve.toList_run_sieveRun|).
-For sound sieve entries (Definition~\ref{def:SieveEntry}) and the shapes of
-Lemma~\ref{lem:shape_dens}, the filters change nothing, and the result is the concatenation of what
-the reference finds over each denominator of the list: given a list $l$ such that the list of the
-shape is $l$ filtered by a test, every denominator of $l$ that carries a point passes that test and
-the test of the shape, and every numerator that gives a point passes the class word and survives the
-sieve entries, the run gives the reference over $l$ (Theorem~\ref{thm:run_reference},
+word $\mathrm{nb}[b \bmod 64]$ of the class, for any 2-adic words $\mathrm{nb}$ that the classes
+pack, and survive the sieve entries, mapped by $\mathrm{swapPoint}$ when the flag of the reversal is
+set (\verb|Ratpoints.Sieve.sieveRun_spec|, \verb|Ratpoints.Sieve.toList_run_sieveRun|). For sound
+sieve entries (Definition~\ref{def:SieveEntry}) and the shapes of Lemma~\ref{lem:shape_dens}, the
+filters change nothing, and the result is the concatenation of what the reference finds over each
+denominator of the list: given a list $l$ such that the list of the shape is $l$ filtered by a test,
+every denominator of $l$ that carries a point passes that test and the test of the shape, and every
+numerator that gives a point passes the word of its class and survives the sieve entries, the run
+gives the reference over $l$ (Theorem~\ref{thm:run_reference},
 \verb|Ratpoints.Sieve.toList_run_sieveRun_eq_flatMap|); the points at infinity come from the search.
 
 \section{The search and the theorems}\label{sec:denSearch}
@@ -703,9 +708,7 @@ the C program agreed on all 3219 comparisons of the eight default suites, 261 of
 Each component of this chapter differs from the C code in a stated way, recorded in its
 \verb|Deviation:| paragraph:
 \begin{itemize}
-  \item the stride~$1$ for every class of the denominators, the pattern of a class being its word
-    repeated, for the packing of the numerators of a class by the stride $2^e$ with its offsets
-    (stage~F3); the classes and $\mathrm{den\_bits}$ made from the words that the 2-adic information
+  \item the classes and $\mathrm{den\_bits}$ made from the words that the 2-adic information
     returns, by a component of their own (Definition~\ref{def:numClasses});
   \item one function for the valuations on GMP integers and on \verb|long|s, and one for the
     binary algorithm of \verb|jacobi| and \verb|jacobi1|, which take other steps to the same
@@ -753,10 +756,9 @@ statements that are not modelled, the management of memory (the arrays of the ru
 with the failures of their allocation, the release of the run and of the worker, the enlargement of
 the buffer of the tables when \verb|sieving_info| has looked at more primes), and the pool of
 threads with the threaded run; the output under \verb|RATPOINTS_VERBOSE| and \verb|DEBUG| inside a
-modelled block goes with the block, whose deviation says so. Left to later stages are the packing
-of the classes with their row offsets (stage~F3), the search intervals of the run (stage~H), and the
-blocks with the correction of the moduli between them and the choice of the number of primes
-examined (stage~I).
+modelled block goes with the block, whose deviation says so. Left to later stages are the search
+intervals of the run (stage~H), and the blocks with the correction of the moduli between them and
+the choice of the number of primes examined (stage~I).
 
 \section{Files and names}
 
@@ -771,37 +773,39 @@ reciprocal are exact (Lemma~\ref{lem:mulMod}). The valuation and the divisors of
 coefficient are in \verb|Ratpoints/Model/Setup.lean|, in the namespace \verb|Ratpoints.Setup|; the
 2-adic information, the forbidden divisors, the Jacobi test, the shapes and the run in
 \verb|Ratpoints/Model/Denominators.lean|, in the namespace \verb|Ratpoints.Sieve|, and, since
-stage~F3, the classes with $\mathrm{den\_bits}$ in \verb|Ratpoints/Model/Packing.lean|; the class
-word in the components of \verb|Ratpoints/Model/Sieve.lean| that make a piece and the numerators of
-one denominator; and the steps of the search in \verb|Ratpoints/Model/FindPoints.lean|. The
-contracts and the lemmas are in the files of \verb|Ratpoints/Proof| that the stage adds: the
-valuation in \verb|Valuation.lean|; the 2-adic information in \verb|TwoAdic.lean|; the denominators
-of odd degree, the factorization and the divisors with their slopes in \verb|Divisors.lean|; the
-forbidden valuations and divisors in \verb|Forbidden.lean|; the Jacobi test by the binary algorithm
-in \verb|Jacobi.lean| and by tables in \verb|JacobiTables.lean|; the lists and the tests of the
-shapes in \verb|Shapes.lean|; and the run over a shape in \verb|Denominators.lean|. Unlike those of
-stages C1 to D, the contracts of this stage are proved in files with Mathlib, next to the lemmas
-they serve, since several of them speak of notions of Mathlib (the primes and their valuations, the
-squares modulo a prime, the Jacobi symbol). The class word is in the contracts of
-\verb|Ratpoints/Proof/Words.lean| and, since stage~F2, of \verb|Ratpoints/Proof/Sift.lean|, which
-holds those from the walk on; \verb|Ratpoints/Proof/SetBits.lean| holds, since stage~F3, the class
-bit and the invariant of a loop over the set bits of a word that the walk of the check, the 2-adic
-information and the words of the shapes share; the filter of the reference by a test on the
-numerators is in \verb|Ratpoints/Proof/Sieve.lean|, the denominators of a point and the filter of
-the reference by the denominators in \verb|Ratpoints/Proof/BruteForce.lean|, the facts about the
-table of primes that the factorization uses, checked by \verb|decide|, in
-\verb|Ratpoints/Proof/Params.lean|, the lemmas on words, lists and ranges in core's namespaces in
-\verb|Ratpoints/Proof/Bits.lean|, the binary form at $a = k b$, the squares modulo $p$ and the
-negation of the quarter of \verb|LONG_MIN| in \verb|Ratpoints/Proof/Tables.lean|, and the
-denominators of the search with the theorems in \verb|Ratpoints/Proof/FindPoints.lean|. The lemmas
-of Mathlib's generality are in \verb|Ratpoints/Mathlib|, in the files that mirror their homes in
-Mathlib: \verb|Algebra/BigOperators/Group/List/Basic|, \verb|Algebra/Group/Even|,
-\verb|Data/Int/GCD|, \verb|Data/List/Basic|, \verb|Data/List/Pairwise|, \verb|Data/Nat/Factors|
-(with the part of a number prime to another, \verb|Nat.coprimePart|, which is $b^*$),
-\verb|Data/Nat/PadicValNat|, \verb|Data/Nat/Prime/Defs|, \verb|Data/Nat/Squarefree|,
-\verb|Data/ZMod/Basic|, \verb|NumberTheory/LegendreSymbol/JacobiSymbol| and
-\verb|NumberTheory/Padics/PadicVal/Basic|; that the macro \verb|CEIL| rounds up, a fact about the C
-code, is a private lemma next to its use.
+stage~F3, the classes with $\mathrm{den\_bits}$ in \verb|Ratpoints/Model/Packing.lean|; the class of
+a denominator in \verb|Ratpoints/Model/Sieve.lean|, whose components that make a piece and the
+numerators of one denominator take it; and the steps of the search in
+\verb|Ratpoints/Model/FindPoints.lean|. The contracts and the lemmas are in the files of
+\verb|Ratpoints/Proof| that the stage adds: the valuation in \verb|Valuation.lean|; the 2-adic
+information in \verb|TwoAdic.lean|; the denominators of odd degree, the factorization and the
+divisors with their slopes in \verb|Divisors.lean|; the forbidden valuations and divisors in
+\verb|Forbidden.lean|; the Jacobi test by the binary algorithm in \verb|Jacobi.lean| and by tables
+in \verb|JacobiTables.lean|; the lists and the tests of the shapes in \verb|Shapes.lean|; and the
+run over a shape in \verb|Denominators.lean|. Unlike those of stages C1 to D, the contracts of this
+stage are proved in files with Mathlib, next to the lemmas they serve, since several of them speak
+of notions of Mathlib (the primes and their valuations, the squares modulo a prime, the Jacobi
+symbol). The class bit is in the contracts of \verb|Ratpoints/Proof/Words.lean| and, since stage~F2,
+of \verb|Ratpoints/Proof/Sift.lean|, which holds those from the walk on, and the classes with their
+packings are in \verb|Ratpoints/Proof/Packing.lean| since stage~F3, without Mathlib, with
+\verb|den_bits| of the classes in \verb|Ratpoints/Proof/TwoAdic.lean|;
+\verb|Ratpoints/Proof/SetBits.lean| holds, since stage~F3, the class bit and the invariant of a loop
+over the set bits of a word that the walk of the check, the 2-adic information and the words of the
+shapes share; the filter of the reference by a test on the numerators is in
+\verb|Ratpoints/Proof/Sieve.lean|, the denominators of a point and the filter of the reference by
+the denominators in \verb|Ratpoints/Proof/BruteForce.lean|, the facts about the table of primes that
+the factorization uses, checked by \verb|decide|, in \verb|Ratpoints/Proof/Params.lean|, the lemmas
+on words, lists and ranges in core's namespaces in \verb|Ratpoints/Proof/Bits.lean|, the binary form
+at $a = k b$, the squares modulo $p$ and the negation of the quarter of \verb|LONG_MIN| in
+\verb|Ratpoints/Proof/Tables.lean|, and the denominators of the search with the theorems in
+\verb|Ratpoints/Proof/FindPoints.lean|. The lemmas of Mathlib's generality are in
+\verb|Ratpoints/Mathlib|, in the files that mirror their homes in Mathlib:
+\verb|Algebra/BigOperators/Group/List/Basic|, \verb|Algebra/Group/Even|, \verb|Data/Int/GCD|,
+\verb|Data/List/Basic|, \verb|Data/List/Pairwise|, \verb|Data/Nat/Factors| (with the part of a
+number prime to another, \verb|Nat.coprimePart|, which is $b^*$), \verb|Data/Nat/PadicValNat|,
+\verb|Data/Nat/Prime/Defs|, \verb|Data/Nat/Squarefree|, \verb|Data/ZMod/Basic|,
+\verb|NumberTheory/LegendreSymbol/JacobiSymbol| and \verb|NumberTheory/Padics/PadicVal/Basic|; that
+the macro \verb|CEIL| rounds up, a fact about the C code, is a private lemma next to its use.
 
 \section{The evidence}\label{sec:den-evidence}
 

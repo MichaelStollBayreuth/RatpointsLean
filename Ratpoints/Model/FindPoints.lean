@@ -216,18 +216,18 @@ when no class admits a numerator and there is no point at infinity, as there is 
 the sieve entries of the moduli of `P` and their reciprocals (`Ratpoints.sievingInfo`), with the
 flag of the `long`s (`Ratpoints.Setup.useCLong`), and no points when the curve has no points modulo
 one of the primes examined; the checked loop off when there are no forbidden divisors and no Jacobi
-test; an array of `Ratpoints.Sieve.numPackings` rows of one offset for each sieve entry, and the
-row offsets of the classes in it, with the inverses of the strides in the entries
+test; an array of `Ratpoints.Sieve.numPackings` rows of one offset for each sieve entry, and the row
+offsets of the classes in it, with the inverses of the strides in the entries
 (`Ratpoints.Sieve.classOffsets`); the shape of the run (`Ratpoints.Sieve.runSetup`); and the points
 at infinity (`Ratpoints.Sieve.pointsAtInfinity`), followed by those of the denominators of the shape
 (`Ratpoints.Sieve.sieveRun`) with the classes and their row offsets, the sieve entries of the moduli
 in the three stages that the cut points `P.sp1` and `P.sp2` give, their reciprocals and pieces of at
 most `Ratpoints.Params.arraySizeAt P H` bit arrays, each point mapped by `Ratpoints.Sieve.swapPoint`
-when `rev` is set. For well-formed parameters, `1 ≤ H < 2 ^ 63` and `d`
-the degree of `c`, these are the points at infinity followed by the points of the brute-force
-reference over the denominators of the search (`Ratpoints.searchDens`), in the order of its loop,
-increasing unless the shape is that of the divisors, each mapped when `rev` is set, also when an
-exit is taken (`Ratpoints.run_searchPoints`).
+when `rev` is set. For well-formed parameters, `1 ≤ H < 2 ^ 63` and `d` the degree of `c`, these are
+the points at infinity followed by the points of the brute-force reference over the denominators of
+the search (`Ratpoints.searchDens`), in the order of its loop, increasing unless the shape is that
+of the divisors, each mapped when `rev` is set, also when an exit is taken
+(`Ratpoints.run_searchPoints`).
 
 C: `find_points.c:2793-2795`, `find_points.c:4573`, `find_points.c:4588-4589`,
 `find_points.c:4595-4596`, `find_points.c:4603-4604`, `find_points.c:4607`,
@@ -345,12 +345,14 @@ the flag of the reversal, for polynomials to which ratpoints reverses others, an
 points modulo `3`, `5` and `7`, where it takes an exit, and without points modulo 64, where it takes
 the 2-adic exit; composite moduli, prime powers and products of them, in any order and with primes
 beyond those examined; the sieve entries of each kind, and the exits of `Ratpoints.sievingInfo`; the
-row offsets of the packing and the inverses of the strides against their rule
-(`Ratpoints.Sieve.classOffsets`); the sieve of one denominator in the packing of its class, with the
-residues of the denominator divided by the stride and the row offsets of the class, against the
-plain sieve of the numerators that the word of the class admits, also for words whose bits of the
-heights 1 to 3 can be none or end below `0`, with either flag of the reversal; the tables of
-inverses and squares (`Ratpoints.Sieve.inversesMod`, `Ratpoints.Sieve.squaresMod`) of the
+packing of `-2 0 0 1` as the build of ratpoints with `DEBUG` prints it, with its classes, the word
+of the classes that admit a numerator, its seven packings, the biases of its moduli and the residues
+and row offsets of four denominators; the row offsets of the packing and the inverses of the strides
+against their rule (`Ratpoints.Sieve.classOffsets`); the sieve of one denominator in the packing of
+its class, with the residues of the denominator divided by the stride and the row offsets of the
+class, against the plain sieve of the numerators that the word of the class admits, also for words
+whose bits of the heights 1 to 3 can be none or end below `0`, with either flag of the reversal; the
+tables of inverses and squares (`Ratpoints.Sieve.inversesMod`, `Ratpoints.Sieve.squaresMod`) of the
 `Ratpoints.numPrimes` primes among which the moduli are chosen; and the refusals in the order of the
 program, the coefficients before the height bound and the height bound before the leading zeros, for
 the height bound `0` and for `2 ^ 63`, the least height that is not a `long`, while `2 ^ 63 - 1`
@@ -452,6 +454,35 @@ passes on to the test of the leading zeros. -/
     magics.toList == [45, 7, 9, 67].map Sieve.magic &&
     entries.all fun e ↦ e.magic == Sieve.magic e.p && e.bias % e.p == 0 && rowBias ≤ e.bias &&
       e.bias < rowBias + e.p && e.rbainv < e.p && e.rbainv * rbaLength % e.p == 1 && e.dinv.isEmpty
+  | none => false
+
+-- The packing of `-2 0 0 1` with the moduli 3, 7, 5 and 11, those of the first stage of ratpoints
+-- at the height 30, as the build of ratpoints with `DEBUG` at the pinned commit prints it
+-- (`ratpoints '-2 0 0 1' 30`): the word of the classes that admit a numerator, and the classes
+-- `b ≡ 0, 1, 4, 9, 16, 48 (mod 64)` with the strides 2, 8, 8, 8, 4, 4 and the residues 1, 3, 1, 3,
+-- 1, 3, all of them with the pattern of ones; seven packings; the biases of the moduli; and for the
+-- denominators 1, 4, 9 and 16 the residues `bp` of `b` divided by the stride of its class and the
+-- offsets of the rows of the class, less the biases
+-- (`p = 7, bp = 1, offset = 6 (+ bias 2147483653)` for `b = 1`).
+#guard
+  let c : List Int := [-2, 0, 0, 1]
+  match Id.run (sievingInfo c 3 true false ⟨[3, 7, 5, 11], 0, 2, 4, 64, true, 0⟩ 30) with
+  | some (entries, magics, _, _) =>
+    let (cls, db) := Id.run (Sieve.numClasses (Id.run (Sieve.twoAdic c 3)))
+    let np := Id.run (Sieve.numPackings cls)
+    let (cls, entries, offsets) :=
+      Id.run (Sieve.classOffsets cls entries (Array.replicate (np * entries.length) 0))
+    db == 0xbabbbabababbbabb && np == 7 &&
+      ([0, 1, 4, 9, 16, 48].map fun b ↦ (cls[b]!.bits, cls[b]!.k, cls[b]!.a0)) ==
+        [(~~~0, 1, 1), (~~~0, 3, 3), (~~~0, 3, 1), (~~~0, 3, 3), (~~~0, 2, 1), (~~~0, 2, 3)] &&
+      entries.map (·.bias) == [2147483649, 2147483653, 2147483650, 2147483657] &&
+      ([(1, [2, 1, 2, 7], [0, 6, 1, 7]), (4, [2, 4, 3, 6], [2, 2, 2, 6]),
+          (9, [0, 2, 3, 8], [0, 6, 1, 7]), (16, [1, 4, 4, 4], [1, 4, 4, 1])] :
+          List (Nat × List Nat × List Nat)).all fun (b, bp, off) ↦
+        let cl := cls[b % 64]!
+        let bp' := Sieve.fillBpList b cl.k entries magics.toList
+        bp' == bp && (Sieve.setRows (entries.map fun e ↦ (e.p, e.rows)) bp' cl offsets).map
+          (·.offset) == List.zipWith (· + ·.bias) off entries
   | none => false
 
 -- The row offsets and the inverses of the strides that `class_offsets` makes, against their rule,

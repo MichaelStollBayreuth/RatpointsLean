@@ -894,8 +894,8 @@ theorem ClassRowsInvariant.add_one_mul_le {cls : Vector NumClass 64} {es : Array
     ((by simp [firstKeys_succ, hf, h.2.2.1] : firstKeys cls (cur + 1) = rows + 1) ▸
       firstKeys_mono cls (by lia))) hsize
 
--- An earlier class keeps its row when the first class `cur` with its key gets the row `rows`:
--- the earlier rows lie below it, and the table of the rows changes only at the new key.
+-- An earlier class keeps its row when the first class `cur` with its key gets the row `rows`: the
+-- earlier rows lie below it, and the table of the rows changes only at the new key.
 private theorem ClassRowsInvariant.entry_newRow {cls : Vector NumClass 64} {es : Array SieveEntry}
     {rinv : Array (Array Nat)} {np size cur : Nat} {cls' : Vector NumClass 64} {o o' : Array Nat}
     {rowOf : Array (Option Nat)} {rows : Nat} {cl : NumClass}

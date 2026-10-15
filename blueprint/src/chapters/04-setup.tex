@@ -516,22 +516,24 @@ stage~H's, and the height of the arguments of the library, a \verb|long|.
 \end{proof}
 
 Theorem~\ref{thm:run_reference} reduces the run of any polynomial with its degree to the reference:
-for an array size at least $1$, sieve entries of moduli $p > 0$ with their reciprocals, those of the
-third stage prime entries, denominators and a height below $2^{63}$, and filters that let every
-point through, it gives the points of the reference over its denominators, mapped by
+for an array size at least $1$, sieve entries with their reciprocals, those of the first two stages
+with their tables of inverses and the row offsets of the classes, which pack the 2-adic words, and
+those of the third stage prime entries, denominators and a height below $2^{63}$, and filters that
+let every point through, it gives the points of the reference over its denominators, mapped by
 $\mathrm{swapPoint}$ when the flag of the reversal is set; Definition~\ref{def:searchPoints} rests
-on it, with the lists and the tests of the shapes (Lemma~\ref{lem:shape_dens}), the 2-adic exit
-(Lemma~\ref{lem:twoAdic_exit}) and the exit of the tables. Theorem~\ref{thm:findPoints} has
-membership, no duplicates and the set of elements, for every option, from
-Theorem~\ref{thm:findPoints_perm}, and Theorem~\ref{thm:refusals} the refusals, with guards on their
-axioms. Comparator certifies the two main theorems with the options argument, both refusal theorems
-and \verb|wf_sieveParams|; the challenge restates $\Phi_c$ verbatim, as it restates $F_c$, takes the
-options from the model, and has the refusal theorem with the Sturm step off too, so that a
-$\mathrm{findPoints}$ that refused every input under \verb|-s| would not pass. Since the challenge
-needs \verb|Squarefree|, the specification imports \verb|Mathlib.Algebra.Squarefree.Basic|, so that
-the challenge still imports, besides the model, exactly the public imports of the specification.
-Stage~D left the structure \verb|Params| and its well-formedness as stage~C2 had them; stage~F1 adds
-the number of primes examined and the composite moduli (Chapter~\ref{chap:tables}).
+on it, with what the search hands to the run (Lemma~\ref{lem:soundRun}), the lists and the tests of
+the shapes (Lemma~\ref{lem:shape_dens}), the 2-adic exit (Lemma~\ref{lem:twoAdic_exit}) and the exit
+of the tables. Theorem~\ref{thm:findPoints} has membership, no duplicates and the set of elements,
+for every option, from Theorem~\ref{thm:findPoints_perm}, and Theorem~\ref{thm:refusals} the
+refusals, with guards on their axioms. Comparator certifies the two main theorems with the options
+argument, both refusal theorems and \verb|wf_sieveParams|; the challenge restates $\Phi_c$ verbatim,
+as it restates $F_c$, takes the options from the model, and has the refusal theorem with the Sturm
+step off too, so that a $\mathrm{findPoints}$ that refused every input under \verb|-s| would not
+pass. Since the challenge needs \verb|Squarefree|, the specification imports
+\verb|Mathlib.Algebra.Squarefree.Basic|, so that the challenge still imports, besides the model,
+exactly the public imports of the specification. Stage~D left the structure \verb|Params| and its
+well-formedness as stage~C2 had them; stage~F1 adds the number of primes examined and the composite
+moduli (Chapter~\ref{chap:tables}).
 
 \section{The command-line program and the differential tests}\label{sec:setupCli}
 
@@ -626,9 +628,10 @@ The lines of the set-up that are neither modelled nor left to a later stage are 
 the instrumentation of the development, the management of memory and its failures, the input fields
 that \verb|find_points_work| saves and puts back, the checks of arguments that only a caller of the
 library can fail, and the threads; so the record of \verb|find_points_work_1| up to the run lacks
-only what belongs to stages~F3, F4, H and~I, now that stages~E, F1 and~F2 have recorded their lines
-(Chapters~\ref{chap:denominators}, \ref{chap:tables} and~\ref{chap:stages}). The macros of the flags
-and of the return codes in \verb|ratpoints.h| are recorded later, for all stages together.
+only what belongs to stages~F4, H and~I, now that stages~E, F1, F2 and~F3 have recorded their lines
+(Chapters~\ref{chap:denominators}, \ref{chap:tables}, \ref{chap:stages} and~\ref{chap:packing}). The
+macros of the flags and of the return codes in \verb|ratpoints.h| are recorded later, for all stages
+together.
 
 \section{Files and names}
 

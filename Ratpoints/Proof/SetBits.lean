@@ -70,15 +70,15 @@ theorem classBit_zero (a : Int) : classBit 0 a = false := by
 
 /-! ### The lowest set bit -/
 
-/-- The invariant of the loop of `Ratpoints.Sieve.ctz` on a word `w ≠ 0`: the word is `w`
-shifted right by the count, the count is at most the position of the lowest set bit of `w`, and
-it is that position at the exit. -/
+/-- The invariant of the loop of `Ratpoints.Sieve.ctz` on a word `w ≠ 0`: the word is `w` shifted
+right by the count, the count is at most the position of the lowest set bit of `w`, and it is that
+position at the exit. -/
 def CtzInvariant (w : UInt64) : Std.WP.WhileInvariant (UInt64 × Nat) Prop :=
   .mk fun exit s ↦ s.1.toBitVec = w.toBitVec >>> s.2 ∧ s.2 ≤ w.toBitVec.ctz.toNat ∧
     (exit = true → s.2 = w.toBitVec.ctz.toNat)
 
-/-- The loop ends, since the count stays at most the position of the lowest set bit, which is
-below 64. -/
+/-- The loop ends, since the count stays at most the position of the lowest set bit, which is below
+64. -/
 @[spec]
 theorem ctz_spec (w : UInt64) : ⦃ w ≠ 0 ⦄ ctz w ⦃ fun t ↦ t = w.toBitVec.ctz.toNat ⦄ := by
   vcgen [ctz] invariants

@@ -40,8 +40,8 @@ of the points at infinity followed by the points of the brute-force reference of
 searched over the denominators in the order of the loop of its search, mapped back after a reversal,
 so that `ratpoints-lean` prints the points in the order of ratpoints; the main theorems, the refusal
 theorems and the challenge of Comparator keep their statements. Stage F, the side of the numerators,
-runs in four sub-stages, of which F1 and F2 are done. F1 models the tables and the moduli as the C
-code has them. The table of a prime is computed as `examine_prime` computes it, by Horner's rule
+runs in four sub-stages, of which F1, F2 and F3 are done. F1 models the tables and the moduli as the
+C code has them. The table of a prime is computed as `examine_prime` computes it, by Horner's rule
 with the Barrett reduction on its fixed schedule, and hands back the coefficients modulo the prime
 and its entry at infinity to the forbidden divisors, prime by prime in the loop of the tables of
 `sieving_info`, which ends the search at a prime modulo which the curve has no points; the moduli
@@ -61,18 +61,31 @@ the C code on its 64-bit `long`s, then the third stage, which tests the numerato
 of the primes from the second cut point on, before the exact check; the third stage and the Jacobi
 test reduce a value `u` by a modulus `p` with a multiplication by the reciprocal of `p`, a field of
 the sieve entries and of the tables of the Jacobi test, as `RP_MULMOD` and `RP_MULDIV` do, where
-that is exact (`u p < 2^64`), and divide otherwise, as the C code does; the reductions of the row
-indices of the first two stages follow with the packing; the table of the third stage and the
-products of the check are made once per denominator, when its first numerator needs them. The stages
-give the numerators of the sieve with all the moduli in the first stage, in the same order, so that
-the main theorems keep their statements. `findPoints` refuses a height bound of `2^63` or more,
-which is not a C `long`, with error 4, as the program does when it reads one, so that the refusal
-theorems refuse `H = 0` or `H ≥ 2^63`, and the parameters of the command line take the cut points of
-the stages by the counting rules of ratpoints where these do not depend on the curve: a run without
-options uses all three stages, 11, 11 and 8 of the first 30 primes. The differential tests compare
-every point list in its order: 3315 comparisons in the default suites, among them option sets that
-run the second and the third stage after few moduli in the first, and 13 in the suite run locally.
-The blueprint and the API documentation will be at
+that is exact (`u p < 2^64`), and divide otherwise, as the C code does; the table of the third stage
+and the products of the check are made once per denominator, when its first numerator needs them.
+The stages give the numerators of the sieve with all the moduli in the first stage, in the same
+order, so that the main theorems keep their statements. `findPoints` refuses a height bound of
+`2^63` or more, which is not a C `long`, with error 4, as the program does when it reads one, so
+that the refusal theorems refuse `H = 0` or `H ≥ 2^63`, and the parameters of the command line take
+the cut points of the stages by the counting rules of ratpoints where these do not depend on the
+curve: a run without options uses all three stages, 11, 11 and 8 of the first 30 primes. The
+differential tests compare every point list in its order: 3315 comparisons in the default suites,
+among them option sets that run the second and the third stage after few moduli in the first, and 13
+in the suite run locally. F3 models the packing of the numerators as the C code has it: the
+numerators of a class of the denominators modulo 64 that the 2-adic information admits lie in one
+residue class `a0` modulo a stride `2^k`, and the sieve of a denominator holds only those, bit `t`
+standing for the numerator `a0 + 2^k t`, from the pattern of the class packed to its stride; the
+rows of offsets that the packings share, the fields of the sieve entries that serve them, the
+residues of a denominator divided by its stride, in the three branches of `fill_bp_list`, the bits
+of the heights on 64-bit signed words in both forms of `numerators_to_bits`, and the row indices of
+the first two stages with the offsets, reduced by a multiplication with the reciprocal of the
+modulus where the word numbers of the piece allow it (the test `small`) and by a division otherwise,
+are those of the C code, with the range obligations of its `long`s as lemmas; the reductions by a
+reciprocal compute on 64-bit words, the high half of the 128-bit product from the 32-bit halves. A
+row is unchanged when the residue and the numerator are multiplied by the same unit, so the packed
+sieve keeps exactly the numerators that the unpacked one keeps, in the same order: the output, the
+main theorems, the refusal theorems, the challenge of Comparator, the parameters and their
+well-formedness do not change. The blueprint and the API documentation will be at
 <https://michaelstollbayreuth.github.io/RatpointsLean/> once the repository is public.
 
 ## Layout
@@ -115,15 +128,16 @@ that `--c PATH` or `RATPOINTS_BIN` names). CI runs these checks and more
 coefficients (constant term first), the height bound and the options as ratpoints does, with its
 checks, messages and exit statuses, and prints the points of height at most `H` on
 `y² = a_n xⁿ + ⋯ + a_0` as ratpoints does with `-q`: one line `(x : y : z)` per point. It finds the
-points by the sieve on bit arrays of words in its three stages, whose parameters the options
-`-p -n -N -P -F -j -J` set; `-k` and `-K` forbid and allow the reversal of the polynomial, and `-s`
-and `-S [depth]` switch the Sturm step off and on, of which the model has the test for a repeated
-factor so far; it accepts `-q`, `-v` and the other options that tune the sieve of ratpoints,
-checking their arguments, but ignores them. It refuses a binary form that is not squarefree with
-error 8 as ratpoints does with the same options, and prints the points in the order of ratpoints. It
-answers the options of ratpoints that it does not support yet, those of the search region and the
-denominator range (`-l -u -dl -du`) and those of the output
-(`-x -X -y -Y -z -Z -1 -i -I -f -fs -fm -fe`), with the exit status 12.
+points by the sieve on bit arrays of words in its three stages, the numerators of each denominator
+packed by the stride of its class, with the parameters that the options `-p -n -N -P -F -j -J` set;
+`-k` and `-K` forbid and allow the reversal of the polynomial, and `-s` and `-S [depth]` switch the
+Sturm step off and on, of which the model has the test for a repeated factor so far; it accepts
+`-q`, `-v` and the other options that tune the sieve of ratpoints, checking their arguments, but
+ignores them. It refuses a binary form that is not squarefree with error 8 as ratpoints does with
+the same options, and prints the points in the order of ratpoints. It answers the options of
+ratpoints that it does not support yet, those of the search region and the denominator range
+(`-l -u -dl -du`) and those of the output (`-x -X -y -Y -z -Z -1 -i -I -f -fs -fm -fe`), with the
+exit status 12.
 
 ## Licence
 
