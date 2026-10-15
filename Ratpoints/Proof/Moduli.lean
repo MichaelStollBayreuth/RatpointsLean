@@ -17,7 +17,6 @@ import Mathlib.Tactic.LinearCombination
 import Ratpoints.Mathlib.Data.ZMod.Basic
 import Ratpoints.Proof.Bits
 import Ratpoints.Proof.Params
-import Ratpoints.Proof.Reductions
 import Ratpoints.Proof.Tables
 import Std.Tactic.Do
 

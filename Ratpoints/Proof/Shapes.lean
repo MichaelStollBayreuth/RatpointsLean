@@ -34,8 +34,9 @@ slopes of the divisor set-up (`Ratpoints.Setup.DenInfo.excludes_eq_false_of_sq_e
 of the word shape, the forbidden divisors and both Jacobi tests
 (`Ratpoints.Sieve.IsForbiddenEntry.not_dvd`, `Ratpoints.Sieve.IsForbiddenVal.excludes_eq_false`,
 `Ratpoints.Sieve.run_jacobi_eq_one_of_sq_eq`, `Ratpoints.Sieve.run_jacobiTest_of_sq_eq`). The
-denominators that the C code computes as `long`s are at most the largest denominator, and those of
-every shape lie between the smallest and the largest.
+denominators that the C code computes as `long`s are at most the largest denominator, those of
+every shape lie between the smallest and the largest, and those that pass the tests of the shape
+have a class with a pattern, which the packing of the numerators needs.
 
 ## Main statements
 
@@ -60,6 +61,9 @@ every shape lie between the smallest and the largest.
   of the C code are `long`s for a `long` largest denominator.
 * `Ratpoints.Sieve.Shape.le_and_le_of_mem_dens`: the denominators of every shape lie between the
   smallest denominator `bLow ≥ 1` and the largest.
+* `Ratpoints.Sieve.getLsbD_of_mem_wordsDens`, `Ratpoints.Sieve.Shape.bits_ne_zero_of_mem_dens`: a
+  denominator of a shape that passes its tests has a class with a pattern, when the word `den_bits`
+  has the bits of the classes with a pattern.
 
 ## Implementation notes
 
@@ -316,6 +320,21 @@ theorem le_and_le_of_mem_wordsDens {db : UInt64} {forb : List ForbiddenEntry} {b
   simp only [Bool.and_eq_true, decide_eq_true_eq] at this
   exact ⟨this.1.2, this.2⟩
 
+/-- The word shape lists only denominators whose class has its bit in `db`. -/
+theorem getLsbD_of_mem_wordsDens {db : UInt64} {forb : List ForbiddenEntry} {bLow bHigh b : ℕ}
+    (hb : b ∈ (Id.run (wordsDens db forb bLow bHigh)).toList) :
+    db.toBitVec.getLsbD (b % 64) = true := by
+  rw [Std.WP.Id.of_run_eq_wp rfl _ ((wordsDens_spec db forb bLow bHigh).le_wp trivial)] at hb
+  obtain ⟨w, hw, hb⟩ := List.mem_flatMap.mp hb
+  obtain ⟨t, ht, rfl⟩ := List.mem_map.mp hb
+  have hw' := List.mem_range'_1.mp hw
+  have ht' := List.mem_range.mp (List.mem_filter.mp ht).1
+  have := (List.mem_filter.mp ht).2
+  rw [getLsbD_wordBits db forb hw'.1 (by lia)] at this
+  simp only [Bool.and_eq_true] at this
+  rw [Nat.mul_add_mod_self_left, Nat.mod_eq_of_lt ht']
+  exact this.1.1.1
+
 /-- The denominators `64 w + t` of the word shape, which the C code computes as `long`s
 (`base = w << LONG_SHIFT` and `b = base + RP_CTZL(b_bits)`, `find_points.c:3991`,
 `find_points.c:4008`), are at most `bHigh`, and so `long`s for a `long` `bHigh`; so is `64 w` for
@@ -350,6 +369,23 @@ theorem Shape.le_and_le_of_mem_dens (s : Shape) (db : UInt64) {bLow bHigh b : �
   | all =>
     have := List.mem_range'_1.mp hb
     lia
+
+/-- A denominator of a shape that passes its tests has a class with a pattern, when the bits of the
+word `db` are those of the classes with a pattern: the class test of the other shapes reads the
+pattern, and the word shape lists only denominators whose class has its bit in `db`
+(`Ratpoints.Sieve.getLsbD_of_mem_wordsDens`). -/
+theorem Shape.bits_ne_zero_of_mem_dens (s : Shape) {db : UInt64} {cls : Vector NumClass 64}
+    (hdb : ∀ j < 64, db.toBitVec.getLsbD j = (cls[j]!.bits != 0)) {bLow bHigh b : ℕ}
+    (hb : b ∈ Id.run (s.dens db bLow bHigh)) (hk : Id.run (s.keep cls b) = true) :
+    cls[b % 64]!.bits ≠ 0 := by
+  cases s with
+  | squares => simpa [Shape.keep] using hk
+  | squares1 => simp only [Shape.keep] at hk; split at hk <;> simp_all
+  | words =>
+    have := getLsbD_of_mem_wordsDens hb
+    rw [hdb _ (Nat.mod_lt _ (by decide))] at this
+    simpa using this
+  | all => simpa [Shape.keep] using hk
 
 /-! ### The tests of the word shape -/
 

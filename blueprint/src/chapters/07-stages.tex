@@ -306,25 +306,30 @@ reciprocals, and the test of the denominators up to $b_{\mathrm{high}} \le \math
 \section{The second stage}\label{sec:secondStage}
 
 \begin{definition}[The second stage]\label{def:secondStage}
-  \uses{def:bitArrayOps, def:rows}
+  \uses{def:bitArrayOps, def:rows, def:mulMod}
   \lean{Ratpoints.useLongInPhase2, Ratpoints.Sieve.secondStage, Ratpoints.Sieve.secondStageWord}
   \leanok
   Whether the second stage runs one word at a time, $\mathrm{useLongInPhase2} = \mathrm{false}$ as
   in the default build (\verb|USE_LONG_IN_PHASE_2|, \csource{sift.c}{1084}{1084},
   \csource{sift.c}{1086}{1086}, \csource{sift.c}{1113}{1113}, \csource{sift.c}{1174}{1174},
   \csource{sift.c}{1297}{1297}). The second stage on a copy of a bit array with the word number $i$:
-  for each modulus $p$ with its row in turn, while the copy is nonzero, the copy is and-ed with bit
-  array $i \bmod p$ of the row (\csource{sift.c}{1083}{1083}, \csource{sift.c}{1085}{1085},
-  \csource{sift.c}{1175}{1202}); and on one word $\kappa$ of it, likewise with word $\kappa$ of
-  those bit arrays (\csource{sift.c}{1135}{1136}, \csource{sift.c}{1141}{1152}).
+  for each modulus $p$ with its row, its offset and its reciprocal in turn, the sieve specs and the
+  reciprocals stepped together, while the copy is nonzero, the copy is and-ed with bit array
+  $(i + \mathrm{offset}) \bmod p$ of the row, the index reduced by a multiplication with the
+  reciprocal when the test \verb|small| of the piece allows it and by \verb|mod| otherwise
+  (\csource{sift.c}{1083}{1083}, \csource{sift.c}{1085}{1085}, \csource{sift.c}{1175}{1202}); and
+  on one word $\kappa$ of it, likewise with word $\kappa$ of those bit arrays
+  (\csource{sift.c}{1135}{1136}, \csource{sift.c}{1141}{1152}).
 \end{definition}
 
 \begin{lemma}[The second stage]\label{lem:secondStage}
-  \uses{def:secondStage}
-  \lean{Ratpoints.Sieve.SecondStageInvariant, Ratpoints.Sieve.secondStage_spec, Ratpoints.Sieve.secondStageWord_spec, Ratpoints.Sieve.andWords_append, Ratpoints.Sieve.andWords_rbaPack_mul_add}
+  \uses{def:secondStage, def:andRows, def:mulMod, lem:rowIndices}
+  \lean{Ratpoints.Sieve.SecondStageInvariant, Ratpoints.Sieve.SecondStageWordInvariant, Ratpoints.Sieve.secondStage_spec, Ratpoints.Sieve.secondStageWord_spec, Ratpoints.Sieve.andWords_append, Ratpoints.Sieve.andWords_rbaPack_mul_add}
   \leanok
-  The second stage gives the copy and-ed with the bit arrays $i \bmod p$ of the rows of all its
-  moduli, and on one word the same word of that; and-ing the rows of a list of moduli and then those
+  For sieve specs that fit (Lemma~\ref{lem:rowIndices}), the reciprocals of their moduli and the
+  bounds of \verb|small| for the word number $i$, the second stage gives the copy and-ed with the bit
+  arrays $(i + \mathrm{offset}) \bmod p$ of the rows of all its moduli, and on one word the same
+  word of that; and-ing the rows of a list of moduli and then those
   of a second list is and-ing those of the concatenation; and word $\kappa$ of bit array $j$ of a
   piece from the word number $w_0$ on is and-ed with the same row words as word $\kappa$ of the bit
   array with the word number $w_0 + j$.
@@ -333,19 +338,25 @@ reciprocals, and the test of the denominators up to $b_{\mathrm{high}} \le \math
 \begin{proof}
   \leanok
   An invariant of the loop over the moduli: the copy is the and of the rows so far, or zero, and
-  then the and of all of them is zero too.
+  then the and of all of them is zero too; the cursor of the reciprocals holds the reciprocal of the
+  modulus at hand, so that the row index is $(i + \mathrm{offset}) \bmod p$
+  (Lemma~\ref{lem:rowIndices}).
 \end{proof}
 
 \begin{definition}[A bit array through the second stage and the extraction]\label{def:siftBitArray}
-  \uses{def:secondStage, def:walkWord, def:accepted}
+  \uses{def:secondStage, def:walkWord, def:accepted, def:numClasses}
   \lean{Ratpoints.Sieve.siftBitArray}
   \leanok
   For a bit array that the first stage leaves nonzero, with the word number $i$, from a copy of it:
   in the arm that an argument chooses, $\mathrm{useLongInPhase2}$ in the run, either the second
   stage on the whole copy and, if it is still nonzero, the set bits of its words walked through in
   turn, or for each nonzero word the second stage on that word and the walk through its set bits,
-  bit $t$ of word $\kappa$ standing for the numerator $R i + 64 \kappa + t$; each numerator goes to
-  the test of a candidate and, if it passes, to the exact check (\csource{sift.c}{1094}{1111},
+  bit $t$ of word $\kappa$ standing for the numerator $a_0 + 2^k (R i + 64 \kappa + t)$ of the class
+  of the denominator (Definition~\ref{def:numClasses}): the walk of the whole bit array starts word
+  $0$ from the first numerator $a_0 + 2^k R i$ of the bit array and steps it by $64 \cdot 2^k$
+  before each word after the first, as the C code does, and the arm of one word at a time walks word
+  $\kappa$ from $a_0 + 2^k R i + 64 \cdot 2^k \kappa$; each numerator goes to the test of a
+  candidate and, if it passes, to the exact check (\csource{sift.c}{1094}{1111},
   \csource{sift.c}{1126}{1134}, \csource{sift.c}{1137}{1139}, \csource{sift.c}{1154}{1159},
   \csource{sift.c}{1172}{1173}, \csource{sift.c}{1204}{1210}, \csource{sift.c}{1213}{1226},
   \csource{sift.c}{1257}{1264}, \csource{sift.c}{1293}{1296}; with \verb|EXT0| and \verb|EXT|,
@@ -355,19 +366,24 @@ reciprocals, and the test of the denominators up to $b_{\mathrm{high}} \le \math
 \end{definition}
 
 \begin{lemma}[A bit array through the second stage and the extraction]\label{lem:siftBitArray}
-  \uses{def:siftBitArray, lem:secondStage, def:walkWord}
+  \uses{def:siftBitArray, lem:secondStage, def:walkWord, def:andRows, def:numClasses,
+    lem:numClasses, lem:rowIndices}
   \lean{Ratpoints.Sieve.SiftBitArrayInvariant, Ratpoints.Sieve.SiftBitArrayWalkInvariant, Ratpoints.Sieve.siftBitArray_spec}
   \leanok
-  In both arms, the points appended are those of the numerators of the bit array whose bits
-  survive the and of the copy with the rows of the moduli of the second stage and that pass the
-  test of a candidate, in increasing order.
+  For sieve specs that fit (Lemma~\ref{lem:rowIndices}), the reciprocals of their moduli and the
+  bounds of \verb|small| for the word number $i$: in both arms, the points appended are those of the
+  numerators $a_0 + 2^k j$ of the bits $j$ of the bit array that survive the and of the copy with
+  the rows of the moduli of the second stage and that pass the test of a candidate, in increasing
+  order.
 \end{lemma}
 
 \begin{proof}
   \leanok
   Lemma~\ref{lem:secondStage} and the contract of the walk (Definition~\ref{def:walkWord}), in each
   arm with its own invariant: a word that is zero, or a bit array that the second stage leaves zero,
-  has no set bits to walk.
+  has no set bits to walk; the invariant of the loop over the words after the first holds the
+  first numerator of the last word walked, which the step before the next word makes that of the
+  next word.
 \end{proof}
 
 \section{The staged sieve}\label{sec:staged}

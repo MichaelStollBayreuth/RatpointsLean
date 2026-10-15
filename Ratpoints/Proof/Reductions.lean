@@ -5,12 +5,12 @@ Authors: Michael Stoll
 -/
 module
 
-public import Ratpoints.Model.Tables
+public import Ratpoints.Model.Sieve
 
 import Ratpoints.Proof.Bits
 
 /-!
-# The reductions by a reciprocal
+# The reductions by a reciprocal and of the row indices
 
 The high half of the product of two 64-bit words from the products of their 32-bit halves
 (`Ratpoints.Sieve.mulHi`) is the high half of the product of natural numbers
@@ -21,7 +21,19 @@ exceeds `2 ^ 64 / p` by less than `1`, for every `u` with `u p < 2 ^ 64`, and so
 most `Ratpoints.mulModLimit` and the moduli up to `2 ^ 32`; the quotient for `p ≥ 2`, since the
 reciprocal `2 ^ 64` of `1` wraps to `0` on a word, as in the C code. So does the remainder of a
 value of either sign (`Ratpoints.Sieve.modMul`), and the helper `mod` of the C code
-(`Ratpoints.Sieve.modLong`) is the Euclidean `%` for every integer.
+(`Ratpoints.Sieve.modLong`) is the Euclidean `%` for every integer. The first two stages of the
+sieve reduce the sums of a word number and the offset of a row modulo the moduli of their sieve
+specs, by a multiplication with the reciprocal when the test `small` says that the word numbers of
+the piece allow it and by the helper `mod` otherwise; for a sieve spec whose offset lies in the
+range that the packing gives it (`Ratpoints.Sieve.SieveSpec.Fits`), both give the Euclidean
+remainder.
+
+## Main definitions
+
+* `Ratpoints.Sieve.SieveSpec.Fits`: a sieve spec of a modulus `0 < p ≤ Ratpoints.maxPrimeEven` with
+  an offset from `Ratpoints.rowBias` to below `Ratpoints.rowBias + 2 p`.
+* `Ratpoints.Sieve.SmallFits`: when the test `small` holds, the word numbers lie between
+  `-Ratpoints.rowBias` and `Ratpoints.rowBias - 2 Ratpoints.maxPrimeEven`.
 
 ## Main statements
 
@@ -40,6 +52,10 @@ value of either sign (`Ratpoints.Sieve.modMul`), and the helper `mod` of the C c
   `u p < 2 ^ 64`; `Ratpoints.Sieve.sub_mulDiv_magic_mul`: the remainder as `u - RP_MULDIV(u) p`.
 * `Ratpoints.Sieve.modMul_magic`: `mod_mul` gives the Euclidean `a % p` for `|a| p < 2 ^ 64`.
 * `Ratpoints.Sieve.modLong_eq_emod`: the helper `mod` of the C code is the Euclidean `%`.
+* `Ratpoints.Sieve.SieveSpec.Fits.ite_modMul_modLong_eq_emod`,
+  `Ratpoints.Sieve.SieveSpec.Fits.ite_mulMod_modLong_eq_toNat_emod`: the first row index of the
+  first stage and the row index of the second stage are the Euclidean remainders of `-w0 - offset`
+  and of `i + offset`.
 
 ## Implementation notes
 
@@ -70,6 +86,8 @@ reciprocal of the values at most `Ratpoints.mulModLimit` modulo them are exact
 (`Ratpoints.mul_lt_two_pow_64_of_le_mulModLimit`). -/
 theorem maxPrimeEven_le_two_pow_32 : maxPrimeEven ≤ 2 ^ 32 :=
   Nat.le_trans maxPrimeEven_le_two_pow_10 (by decide)
+
+theorem maxPrimeEven_pos : 0 < maxPrimeEven := Nat.two_pow_pos _
 
 /-- `Ratpoints.rowBias` is at most `2 ^ 31`, since `2 rowBias - 1 ≤ Ratpoints.mulModLimit < 2 ^ 32`
 (`Ratpoints.two_mul_rowBias_sub_one_le_mulModLimit`, `Ratpoints.mulModLimit_lt_two_pow_32`): so the
@@ -235,6 +253,98 @@ theorem modLong_eq_emod (a : Int) {b : Int} (hb : 0 ≤ b) : modLong a b = a % b
     · exact modLong_eq_emod_of_le_of_lt hb h h'
     · grind [modLong, Int.tmod_eq_emod_of_nonneg]
   · simp [modLong]
+
+/-! ### The row indices of the first two stages -/
+
+/-- A sieve spec whose modulus `p` and offset lie in the range that the packing of the numerators
+gives them (`Ratpoints.Sieve.classOffsets`): `0 < p ≤ Ratpoints.maxPrimeEven`, and the offset a
+residue below `2 p` plus `Ratpoints.rowBias`, so that under the test `small` the sums of a word
+number and the offset that the first two stages reduce are at most `Ratpoints.mulModLimit` in
+absolute value (`Ratpoints.Sieve.SieveSpec.Fits.ite_modMul_modLong_eq_emod`,
+`Ratpoints.Sieve.SieveSpec.Fits.ite_mulMod_modLong_eq_toNat_emod`). -/
+structure SieveSpec.Fits (s : SieveSpec) : Prop where
+  /-- The modulus is positive. -/
+  pos : 0 < s.p
+  /-- The modulus is at most `Ratpoints.maxPrimeEven`. -/
+  le_maxPrimeEven : s.p ≤ maxPrimeEven
+  /-- The offset is at least `Ratpoints.rowBias`. -/
+  rowBias_le : rowBias ≤ s.offset
+  /-- The offset is below `Ratpoints.rowBias + 2 p`. -/
+  lt_rowBias_add : s.offset < rowBias + 2 * s.p
+
+/-- When the test `small` of `Ratpoints.Sieve.siftPiece` holds, the word numbers from `lo` to `hi`
+lie between `-Ratpoints.rowBias` and `Ratpoints.rowBias - 2 Ratpoints.maxPrimeEven`: the hypothesis
+under which the first two stages may reduce by a multiplication. -/
+def SmallFits (small : Bool) (lo hi : Int) : Prop :=
+  small = true → -(rowBias : Int) ≤ lo ∧ hi ≤ rowBias - 2 * maxPrimeEven
+
+/-- The test `small` of a piece, as `Ratpoints.Sieve.siftPiece` computes it, says what
+`Ratpoints.Sieve.SmallFits` asks of its word numbers. -/
+theorem smallFits_decide (w0 : Int) (n : Nat) :
+    SmallFits (decide (-(rowBias : Int) ≤ w0 ∧ w0 + n ≤ (rowBias : Int) - 2 * maxPrimeEven)) w0
+      (w0 + n) :=
+  of_decide_eq_true
+
+theorem SmallFits.mono {small : Bool} {lo hi lo' hi' : Int} (h : SmallFits small lo hi)
+    (hlo : lo ≤ lo') (hhi : hi' ≤ hi) : SmallFits small lo' hi' :=
+  fun hs ↦ ⟨Int.le_trans (h hs).1 hlo, Int.le_trans hhi (h hs).2⟩
+
+/-- For a word number `-Ratpoints.rowBias ≤ w0 ≤ Ratpoints.rowBias - 2 Ratpoints.maxPrimeEven`, the
+value `-w0 - offset` that the first stage reduces is at most `Ratpoints.mulModLimit` in absolute
+value. -/
+theorem SieveSpec.Fits.natAbs_neg_sub_le {s : SieveSpec} (hs : s.Fits) {w0 : Int}
+    (h0 : -(rowBias : Int) ≤ w0) (h1 : w0 ≤ rowBias - 2 * maxPrimeEven) :
+    (-w0 - s.offset).natAbs ≤ mulModLimit := by
+  have := two_mul_rowBias_sub_one_le_mulModLimit
+  have := hs.le_maxPrimeEven
+  have := hs.rowBias_le
+  have := hs.lt_rowBias_add
+  have := maxPrimeEven_pos
+  generalize rowBias = R at *
+  lia
+
+/-- For a word number `-Ratpoints.rowBias ≤ i < Ratpoints.rowBias - 2 Ratpoints.maxPrimeEven`, the
+value `i + offset` that the second stage reduces lies between `0` and `Ratpoints.mulModLimit`. -/
+theorem SieveSpec.Fits.add_nonneg_and_toNat_le {s : SieveSpec} (hs : s.Fits) {i : Int}
+    (h0 : -(rowBias : Int) ≤ i) (h1 : i < rowBias - 2 * maxPrimeEven) :
+    0 ≤ i + s.offset ∧ (i + s.offset).toNat ≤ mulModLimit := by
+  have := two_mul_rowBias_sub_one_le_mulModLimit
+  have := hs.le_maxPrimeEven
+  have := hs.rowBias_le
+  have := hs.lt_rowBias_add
+  generalize rowBias = R at *
+  lia
+
+/-- The index of the first row of the first stage over a piece from the word number `w0` on, by
+`mod_mul` under the test `small` and by the helper `mod` otherwise, is the Euclidean remainder of
+`-w0 - offset`. -/
+theorem SieveSpec.Fits.ite_modMul_modLong_eq_emod {s : SieveSpec} (hs : s.Fits) {small : Bool}
+    {w0 : Int} {n : Nat} (h : SmallFits small w0 (w0 + n)) :
+    (if small then modMul (-w0 - s.offset) s.p (magic s.p) else modLong (-w0 - s.offset) s.p) =
+      (-w0 - s.offset) % s.p := by
+  cases small with
+  | false => exact modLong_eq_emod _ (Int.natCast_nonneg _)
+  | true =>
+    have h' := h rfl
+    exact modMul_magic hs.pos (mul_lt_two_pow_64_of_le_mulModLimit
+      (hs.natAbs_neg_sub_le h'.1 (by lia))
+      (Nat.le_trans hs.le_maxPrimeEven maxPrimeEven_le_two_pow_32))
+
+/-- The row index of the second stage at the word number `i`, by a multiplication with the
+reciprocal under the test `small` and by the helper `mod` otherwise, is the Euclidean remainder of
+`i + offset`. -/
+theorem SieveSpec.Fits.ite_mulMod_modLong_eq_toNat_emod {s : SieveSpec} (hs : s.Fits)
+    {small : Bool} {i : Int} (h : SmallFits small i (i + 1)) :
+    (if small then mulMod (i + s.offset).toNat s.p (magic s.p)
+      else (modLong (i + s.offset) s.p).toNat) = ((i + s.offset) % s.p).toNat := by
+  cases small with
+  | false => rw [modLong_eq_emod _ (Int.natCast_nonneg _)]; rfl
+  | true =>
+    have ⟨h0, h1⟩ := hs.add_nonneg_and_toNat_le (h rfl).1 (by have := (h rfl).2; lia)
+    simp only [↓reduceIte]
+    rw [mulMod_magic hs.pos (mul_lt_two_pow_64_of_le_mulModLimit h1
+      (Nat.le_trans hs.le_maxPrimeEven maxPrimeEven_le_two_pow_32)), Int.toNat_emod h0
+      (Int.natCast_nonneg _), Int.toNat_natCast]
 
 end Sieve
 

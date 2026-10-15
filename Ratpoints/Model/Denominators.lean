@@ -5,25 +5,24 @@ Authors: Michael Stoll
 -/
 module
 
+public import Ratpoints.Model.Packing
 public import Ratpoints.Model.Setup
-public import Ratpoints.Model.Sieve
 
 -- The `#guard` examples run code of the imported modules at compile time.
+meta import Ratpoints.Model.Packing
 meta import Ratpoints.Model.Setup
-meta import Ratpoints.Model.Sieve
 
 /-!
 # The denominators
 
 The side of the denominators of the sieve, each component in its place in `find_points_work_1`: the
 2-adic information, which says for each class of the denominators modulo 64 which numerators modulo
-64 it admits (`Ratpoints.Sieve.twoAdic`), the word of a class being the pattern from which the run
-starts the first stage (the class word of `Ratpoints.Sieve.andRows`) at the stride 1, and which
-classes admit a numerator at all (`Ratpoints.Sieve.denBits`), the packings of the classes being made
-from the words (`Ratpoints.Sieve.numClasses`, in `Ratpoints.Model.Packing`); the forbidden divisors
-of the denominators of a polynomial of even degree, primes tested with words of 64 denominators or
-by their valuations, that an examined prime gives from what its table hands back in the loop of the
-tables of `sieving_info`, which also takes the exit (`Ratpoints.Sieve.examinePrimes`,
+64 it admits (`Ratpoints.Sieve.twoAdic`), and which classes admit a numerator at all
+(`Ratpoints.Sieve.denBits`), from which the packings of the classes are made
+(`Ratpoints.Sieve.numClasses`, in `Ratpoints.Model.Packing`); the forbidden divisors of the
+denominators of a polynomial of even degree, primes tested with words of 64 denominators or by their
+valuations, that an examined prime gives from what its table hands back in the loop of the tables of
+`sieving_info`, which also takes the exit (`Ratpoints.Sieve.examinePrimes`,
 `Ratpoints.Sieve.forbiddenOfPrime`), and that the further primes give (`Ratpoints.Sieve.forbidden`);
 the Jacobi test, by the binary algorithm (`Ratpoints.Sieve.jacobi`) or by tables
 (`Ratpoints.Sieve.jacobiSetup`, `Ratpoints.Sieve.jacobiTest`); and the loop over the denominators in
@@ -31,11 +30,13 @@ its four shapes, as `run_setup` chooses them (`Ratpoints.Sieve.Shape`, `Ratpoint
 the squares, the divisors of the leading coefficient times squares (`Ratpoints.Setup.setupUs1`), the
 words of 64 denominators, and every denominator, each with the list of its denominators in the order
 of its loop and its tests on a single denominator (`Ratpoints.Sieve.Shape.dens`,
-`Ratpoints.Sieve.Shape.keep`), and the run itself (`Ratpoints.Sieve.sieveRun`). Every class word
-lets every numerator of a point through; no forbidden divisor excludes the denominator of a point,
-the primes examined for them being primes of the table; both Jacobi tests let it through, and so
-does every test of a shape, so that the run finds the points of the denominators of its shape, in
-the order of its loop: increasing, except for the divisors.
+`Ratpoints.Sieve.Shape.keep`), and the run itself (`Ratpoints.Sieve.sieveRun`), with the residues of
+a denominator divided by the stride of its class (`Ratpoints.Sieve.fillBpList`, in
+`Ratpoints.Model.Packing`). Every class word lets every numerator of a point through, and so does
+its packing; no forbidden divisor excludes the denominator of a point, the primes examined for them
+being primes of the table; both Jacobi tests let it through, and so does every test of a shape, so
+that the run finds the points of the denominators of its shape, in the order of its loop:
+increasing, except for the divisors.
 
 ## Main definitions
 
@@ -127,10 +128,9 @@ words start at `0`; for each set bit `k` of the word of `f` (`Ratpoints.Sieve.fs
 (`Ratpoints.Sieve.ctz`), bit `k b mod 64` is set in the word of every odd `b`, and for each set bit
 `t` of the word of the reversed polynomial (`Ratpoints.Sieve.gsq`), bit `a` in the word of
 `t a mod 64` for every odd `a`. From the words the packings of the classes are made, with the word
-`den_bits` of the classes that admit a numerator (`Ratpoints.Sieve.numClasses`); the run sifts from
-the word of the class of a denominator itself, the class word of `Ratpoints.Sieve.andRows`, the
-pattern of the class at the stride 1, until the packing (stage F); and a denominator whose class has
-the word `0` carries no point (`Ratpoints.Sieve.denBits`).
+`den_bits` of the classes that admit a numerator (`Ratpoints.Sieve.numClasses`), in which the run
+sifts the numerators of each denominator; and a denominator whose class has the word `0` carries no
+point (`Ratpoints.Sieve.denBits`).
 
 C: `find_points.c:983-994`, `find_points.c:996-1000`, `find_points.c:1023-1050`,
 `find_points.c:1115`
@@ -775,8 +775,8 @@ flags and the leading coefficient `args->cof[args->degree]`, which `run_block` r
 field `args`, the run taking the rest of what it reads of the arguments as its own arguments
 (`Ratpoints.Sieve.sieveRun`); no copies of `use_c_long` and `lcf_long`, which only `jacobi1` reads
 (`Ratpoints.Sieve.jacobi`); no blocks and segments (stage I), no search intervals (stage H), no
-counters and decisions of the correction of the moduli (stage I); the words of the classes and
-`den_bits` passed to the run apart (`Ratpoints.Sieve.sieveRun`). -/
+counters and decisions of the correction of the moduli (stage I); the classes with their row
+offsets and `den_bits` passed to the run apart (`Ratpoints.Sieve.sieveRun`). -/
 inductive Shape where
   /-- `RP_SHAPE_SQUARES`: the squares. -/
   | squares
@@ -810,22 +810,22 @@ def Shape.dens (s : Shape) (db : UInt64) (bLow bHigh : Nat) : Id (List Nat) := d
   | .words forb .. => return (← wordsDens db forb bLow bHigh).toList
   | .all => return List.range' bLow (bHigh + 1 - bLow)
 
-/-- The tests of the shape `s` on a single denominator `b`: the class test, that the word
-`nb[b mod 64]` of the class of `b` in the 2-adic information (`Ratpoints.Sieve.twoAdic`) is not `0`,
-and for the divisors then the valuation test (`Ratpoints.Sieve.denInfoTest`); for the words the
-tests of `Ratpoints.Sieve.wordsTest`, the class test being made by the words.
+/-- The tests of the shape `s` on a single denominator `b`: the class test, that the pattern of the
+class of `b` modulo 64 among the classes `cls` (`Ratpoints.Sieve.numClasses`) is not `0`, that is,
+that the class admits a numerator, and for the divisors then the valuation test
+(`Ratpoints.Sieve.denInfoTest`); for the words the tests of `Ratpoints.Sieve.wordsTest`, the class
+test being made by the words, with `den_bits`.
 
 C: `find_points.c:3923-3925`, `find_points.c:3941-3943`, `find_points.c:4063-4065`
 
-Deviation: the word of the class read from the words `nb`, for the first word of the pattern of the
-class `cls` (`EXT0(cl->bits)`), which is nonzero exactly when the word is, at every stride
-(`find_points.c:1070-1098`). -/
-def Shape.keep (s : Shape) (nb : Vector UInt64 64) (b : Nat) : Id Bool := do
+Deviation: the pattern of the class read as its one word (`Ratpoints.Sieve.NumClass`), for the
+first word `EXT0(cl->bits)` of the vector of copies of it. -/
+def Shape.keep (s : Shape) (cls : Vector NumClass 64) (b : Nat) : Id Bool := do
   match s with
-  | .squares => return nb[b % 64]! != 0
-  | .squares1 info _ => if nb[b % 64]! != 0 then denInfoTest info b else return false
+  | .squares => return cls[b % 64]!.bits != 0
+  | .squares1 info _ => if cls[b % 64]!.bits != 0 then denInfoTest info b else return false
   | .words _ forbVal useJacobi fast lcf => wordsTest forbVal useJacobi fast lcf b
-  | .all => return nb[b % 64]! != 0
+  | .all => return cls[b % 64]!.bits != 0
 
 /-- The shape of the run (`Ratpoints.Sieve.Shape`), as `run_setup` chooses it from the flags of the
 search: the squares when `useSquares`; the divisors with their data when the divisor set-up has
@@ -858,16 +858,18 @@ def runSetup (useSquares : Bool) (us1 : Option (List Setup.DenInfo × List Nat))
 /-- The points of the denominators from `bLow` to `bHigh` of the shape `shape`, for the polynomial
 of degree `d` with the coefficient list `c`: the sieve entries `entries` of the moduli are cut into
 the three stages of the sieve, the first `sp1`, then those up to `sp2`, then the rest, the third
-stage, with the reciprocals of `magics` from the position `sp2` on, those of their moduli when
-`magics` holds the reciprocals of the moduli in the order of the entries (`Ratpoints.sievingInfo`);
-the rows of the moduli of the first two stages are made once for the run, each residue's row as a
-thunk (`Ratpoints.Sieve.SieveEntry.rows`), and the moduli of the third stage need none; for each
+stage, with the reciprocals of `magics` in their order, those of their moduli when `magics` holds
+the reciprocals of the moduli in the order of the entries (`Ratpoints.sievingInfo`); the rows of the
+moduli of the first two stages are made once for the run, each residue's row as a thunk
+(`Ratpoints.Sieve.SieveEntry.rows`), and the moduli of the third stage need none; for each
 denominator `b` of the shape, in the order of its loop (`Ratpoints.Sieve.Shape.dens`, with the word
 `db` of the classes that admit a numerator), that passes its tests (`Ratpoints.Sieve.Shape.keep`,
-with the words `nb` of the 2-adic information), the points that `Ratpoints.Sieve.sift` finds from
-the word `nb[b mod 64]` of its class, with pieces of at most `A` bit arrays, for `A ≥ 1`, the first
-stage ending at `sp1`, the entries of the third stage with their reciprocals, and the flag `rev` of
-the reversal, are appended in turn.
+with the classes `cls`), the residues of `b` divided by the stride of its class `cls[b mod 64]`
+modulo the moduli of the first two stages (`Ratpoints.Sieve.fillBpList`), and the points that
+`Ratpoints.Sieve.sift` finds in the packing of that class with the row offsets `offsets` of the
+classes (`Ratpoints.Sieve.classOffsets`), with pieces of at most `A` bit arrays, for `A ≥ 1`, the
+first stage ending at `sp1`, the reciprocals of the first two stages, the entries of the third stage
+with their reciprocals, and the flag `rev` of the reversal, appended in turn.
 
 C: `find_points.c:3861`, `find_points.c:3889-3904`, `find_points.c:3911`,
 `find_points.c:3917-3918`, `find_points.c:3926-3936`, `find_points.c:3954-3966`,
@@ -884,24 +886,29 @@ count of the decisions and no later ones (lines 3862-3863; stage I); the denomin
 listed first, then tested and sifted one after the other, where `run_block` tests and sifts each as
 its loop reaches it; no blocks (stage I): the steps of each segment in order, for the blocks of
 `len` consecutive steps, which the threads share and which deliver their points in the same order;
-the word `nb[b mod 64]` of the 2-adic information, for the class `cls[b & 0x3f]` that `sift`
-receives, whose pattern it is at the stride 1 (its `k`, `a0` and row offsets come with the packing,
-stage F3); the residues `b mod p` that choose the rows computed by `Ratpoints.Sieve.sift`, for the
-residues of `b` divided by `2^k` that `fill_bp_list` computes before each call (`k` the stride of
-the packing; stage F3); a list of points, for the counts `total` of points that `sift` and
-`run_block` return, with no stop by the callback (stage G); natural numbers for the `long`s; no
-correction of the moduli between the blocks (stage I); no output under `DEBUG`. -/
+the classes `cls` and the array `offsets` of their row offsets as arguments, for the field `cls` of
+the run that `run_block` reads (line 3893), whose classes reach their rows of offsets through their
+pointers `offset`; the class `cls[b mod 64]` and the residues of `fill_bp_list` passed to
+`Ratpoints.Sieve.sift` as values, for the pointers `cl` and `bp_list`, and the residues a list of
+the length of the first two stages, for the array `bp_list` of `sp3_max` entries; a list of points,
+for the counts `total` of points that `sift` and `run_block` return, with no stop by the callback
+(stage G); natural numbers for the `long`s; no correction of the moduli between the blocks (stage
+I); no output under `DEBUG`. -/
 def sieveRun (c : List Int) (d H A : Nat) (rev : Bool) (sp1 sp2 : Nat) (entries : List SieveEntry)
-    (magics : Array Nat) (nb : Vector UInt64 64) (db : UInt64) (shape : Shape) (bLow bHigh : Nat) :
+    (magics : Array Nat) (cls : Vector NumClass 64) (offsets : Array Nat) (db : UInt64)
+    (shape : Shape) (bLow bHigh : Nat) :
     Id (Array (Int × Int × Int)) := do
   let rows := (entries.take sp2).map fun e ↦ (e.p, e.rows)
+  let mgs := magics.toList.take sp2
   let es3 := entries.drop sp2
   let mgs3 := magics.toList.drop sp2
   let dens ← shape.dens db bLow bHigh
   let mut out := #[]
   for b in dens do
-    if ← shape.keep nb b then
-      out := out ++ (← sift c d H A b rev sp1 rows es3 mgs3 nb[b % 64]!)
+    if ← shape.keep cls b then
+      let cl := cls[b % 64]!
+      let bp := fillBpList b cl.k (entries.take sp2) mgs
+      out := out ++ (← sift c d H A b rev sp1 rows mgs bp cl offsets es3 mgs3)
   return out
 
 /-! ### Examples
@@ -1141,7 +1148,8 @@ prints. -/
     let shape := Id.run (runSetup (d % 2 == 1 && lcf.natAbs == 1) us1 checkDenom useJacobi forb
       forbVal lcf H)
     let code := match shape with | .squares => 0 | .squares1 .. => 1 | .words .. => 2 | .all => 3
-    (code, (Id.run (shape.dens (denBits nb) 1 H)).filter fun b ↦ Id.run (shape.keep nb b))
+    let cls := (Id.run (numClasses nb)).1
+    (code, (Id.run (shape.dens (denBits nb) 1 H)).filter fun b ↦ Id.run (shape.keep cls b))
   sifted [1, 2] 1 20 64 == (1, [1, 9, 2, 8, 18]) &&
     sifted [1, 2, 3, 4, 5, 6, 7] 6 100 64 ==
       (2, [1, 3, 7, 9, 19, 21, 27, 29, 31, 37, 47, 53, 57, 59, 63, 81, 83, 87, 93]) &&
@@ -1155,11 +1163,13 @@ prints. -/
 -- prints, by the divisors `1` and `2`, so with the denominator 9 before 2.
 #guard
   let c : List Int := [1, 2]
-  let nb := Id.run (twoAdic c 1)
+  let (cls, db) := Id.run (numClasses (Id.run (twoAdic c 1)))
   let entries := (primeTable.toList.take 30).filterMap fun p ↦
     (Id.run (examinePrime? c 1 p true)).map fun (e, _) ↦ (⟨p, [.prime e], magic p,
       p * ((rowBias + p - 1) / p), e.inverses[mulMod rbaLength p (magic p)]!, #[]⟩ : SieveEntry)
-  (Id.run (sieveRun c 1 20 1 false 11 22 entries (entries.toArray.map (·.magic)) nb (denBits nb)
+  let offsets := Array.replicate (Id.run (numPackings cls) * entries.length) 0
+  let (cls, entries, offsets) := Id.run (classOffsets cls entries offsets)
+  (Id.run (sieveRun c 1 20 1 false 11 22 entries (entries.toArray.map (·.magic)) cls offsets db
       (.squares1 [⟨2, 1, 2⟩] [1, 2]) 1 20)).toList ==
     [(0, 1, 1), (0, -1, 1), (4, 3, 1), (4, -3, 1), (12, 5, 1), (12, -5, 1), (-4, 3, 9), (-4, -3, 9),
       (8, 15, 9), (8, -15, 9), (20, 21, 9), (20, -21, 9), (-1, 0, 2), (3, 4, 2), (3, -4, 2),

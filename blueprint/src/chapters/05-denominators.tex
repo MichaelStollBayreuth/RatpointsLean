@@ -503,7 +503,7 @@ $(c_d / q) = -1$, which these do not reach.
 
 \begin{definition}[The shapes of the loop]\label{def:Shape}
   \uses{def:setupUs1, def:forbidden, def:jacobi, def:jacobiTables, def:valuation, def:useCLong,
-    lem:odd_denominators, lem:forbidden}
+    lem:odd_denominators, lem:forbidden, def:numClasses}
   \lean{Ratpoints.Sieve.Shape, Ratpoints.Sieve.runSetup, Ratpoints.Sieve.ceilSqrt, Ratpoints.Sieve.floorSqrt, Ratpoints.Sieve.squaresDens, Ratpoints.Sieve.squares1Dens, Ratpoints.Sieve.denInfoTest, Ratpoints.Sieve.wordBits, Ratpoints.Sieve.wordsDens, Ratpoints.Sieve.wordsTest, Ratpoints.Sieve.Shape.dens, Ratpoints.Sieve.Shape.keep, Ratpoints.Sieve.ceilSqrt_le_iff, Ratpoints.Sieve.le_floorSqrt_iff, Ratpoints.Sieve.getLsbD_wordBits, Ratpoints.Sieve.wordsDens_spec, Ratpoints.Sieve.run_denInfoTest_eq_true, Ratpoints.Sieve.run_wordsTest_eq_true, Ratpoints.Sieve.fitsLong_of_mem_squaresDens, Ratpoints.Sieve.fitsLong_of_mem_squares1Dens, Ratpoints.Sieve.fitsLong_of_mem_wordsDens}
   \leanok
   The four shapes, with their data (\csource{find_points.c}{3725}{3728},
@@ -537,7 +537,8 @@ $(c_d / q) = -1$, which these do not reach.
       (\csource{find_points.c}{3812}{3815}, \csource{find_points.c}{3829}{3837},
       \csource{find_points.c}{4060}{4062}, \csource{find_points.c}{4073}{4074}).
   \end{itemize}
-  The class test is that the word $\mathrm{nb}[b \bmod 64]$ is not zero
+  The class test is that the pattern of the class of $b \bmod 64$ (Definition~\ref{def:numClasses})
+  is not zero, which it is exactly when the word $\mathrm{nb}[b \bmod 64]$ is not
   (\csource{find_points.c}{3923}{3925}, \csource{find_points.c}{3941}{3943},
   \csource{find_points.c}{4063}{4065}); for the words it is made by $\mathrm{den\_bits}$. The model
   lists the denominators of a shape and then tests and sifts them one after the other, where
@@ -552,10 +553,12 @@ $(c_d / q) = -1$, which these do not reach.
 
 \begin{lemma}[The lists of the shapes]\label{lem:shape_dens}
   \uses{def:Shape, lem:twoAdic_point, lem:odd_denominators, lem:forbidden, lem:jacobiTest}
-  \lean{Ratpoints.Sieve.squaresDens_eq_filter, Ratpoints.Sieve.mem_squaresDens_iff, Ratpoints.Sieve.mem_range'_ceilSqrt_iff, Ratpoints.Sieve.mem_squares1Dens_iff, Ratpoints.Sieve.nodup_squares1Dens, Nat.eq_of_mul_sq_eq_mul_sq, Ratpoints.Sieve.toList_run_wordsDens, Ratpoints.Sieve.run_denInfoTest_of_sq_eq, Ratpoints.Sieve.getLsbD_denBits_and_all_of_sq_eq, Ratpoints.Sieve.run_wordsTest_of_sq_eq, Ratpoints.Sieve.Shape.le_and_le_of_mem_dens}
+  \lean{Ratpoints.Sieve.squaresDens_eq_filter, Ratpoints.Sieve.mem_squaresDens_iff, Ratpoints.Sieve.mem_range'_ceilSqrt_iff, Ratpoints.Sieve.mem_squares1Dens_iff, Ratpoints.Sieve.nodup_squares1Dens, Nat.eq_of_mul_sq_eq_mul_sq, Ratpoints.Sieve.toList_run_wordsDens, Ratpoints.Sieve.run_denInfoTest_of_sq_eq, Ratpoints.Sieve.getLsbD_denBits_and_all_of_sq_eq, Ratpoints.Sieve.run_wordsTest_of_sq_eq, Ratpoints.Sieve.Shape.le_and_le_of_mem_dens, Ratpoints.Sieve.getLsbD_of_mem_wordsDens, Ratpoints.Sieve.Shape.bits_ne_zero_of_mem_dens}
   \leanok
   Let $1 \le b_{\mathrm{low}}$. The denominators of every shape lie between $b_{\mathrm{low}}$ and
-  $b_{\mathrm{high}}$. The list of the squares is that of the squares from $b_{\mathrm{low}}$ to
+  $b_{\mathrm{high}}$, and when the bits of $\mathrm{den\_bits}$ are those of the classes with a
+  pattern, a denominator of a shape that passes its test has a class with a pattern, so a row of
+  offsets. The list of the squares is that of the squares from $b_{\mathrm{low}}$ to
   $b_{\mathrm{high}}$, in increasing order. The list of the divisors times squares, for squarefree
   divisors without duplicates, has no duplicates and holds exactly the $s k^2$ from
   $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$ with $s$ a divisor. The list of the words, for primes
@@ -576,7 +579,9 @@ $(c_d / q) = -1$, which these do not reach.
   divisors times squares have no duplicates since $s k^2$ determines the squarefree $s$ and $k$.
   The class bit and the primes tested with words miss no denominator of a point
   (Lemmas~\ref{lem:twoAdic_point} and~\ref{lem:forbidden}), and the tests pass it
-  (Lemmas~\ref{lem:odd_denominators}, \ref{lem:forbidden} and~\ref{lem:jacobiTest}).
+  (Lemmas~\ref{lem:odd_denominators}, \ref{lem:forbidden} and~\ref{lem:jacobiTest}). The class
+  test of the squares, the divisors and every denominator reads the pattern of the class, and a
+  denominator of the list of the words has its bit in $\mathrm{den\_bits}$.
 \end{proof}
 
 The run (Definition~\ref{def:sieveRun}) takes the shape, the words of the 2-adic information, the

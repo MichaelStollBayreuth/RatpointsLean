@@ -18,7 +18,6 @@ import Ratpoints.Mathlib.NumberTheory.LegendreSymbol.JacobiSymbol
 import Ratpoints.Proof.Bits
 import Ratpoints.Proof.Jacobi
 import Ratpoints.Proof.Params
-import Ratpoints.Proof.Reductions
 import Ratpoints.Proof.Stages
 import Ratpoints.Proof.Valuation
 import Std.Tactic.Do

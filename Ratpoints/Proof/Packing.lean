@@ -6,11 +6,11 @@ Authors: Michael Stoll
 module
 
 public import Ratpoints.Model.Packing
+public import Ratpoints.Proof.Reductions
 public import Ratpoints.Proof.SetBits
 public import Std.WP
 
 import Ratpoints.Proof.Bits
-import Ratpoints.Proof.Reductions
 import Std.Tactic.Do
 
 /-!
@@ -58,7 +58,9 @@ its branches, since its products stay below `2 ^ 64 / p`.
   `Ratpoints.Sieve.NumClass.Packs.emod_eq_of_classBit`,
   `Ratpoints.Sieve.NumClass.Packs.bits_eq_zero_iff`: the pattern lets bit `j` through exactly when
   the word lets the numerator of `j` through, the word lets nothing off the class through, and the
-  pattern is `0` exactly when the word is.
+  pattern is `0` exactly when the word is; `Ratpoints.Sieve.NumClass.Packs.filter_filter_emod`: so
+  the numerators that the word lets through are among those of the class;
+  `Ratpoints.Sieve.NumClass.Packs.bits_bne_zero`: the test of the pattern is the test of the word.
 * `Ratpoints.Sieve.getLsbD_classMasks`: the masks of the strides, `0` beyond the seven of `k ≤ 6`.
 * `Ratpoints.Sieve.packPattern_spec`, `Ratpoints.Sieve.numClasses_spec`: the packed pattern, and the
   classes of the 64 words with `den_bits`.
@@ -67,6 +69,8 @@ its branches, since its products stay below `2 ^ 64 / p`.
   least 1.
 * `Ratpoints.Sieve.classRows_spec`, `Ratpoints.Sieve.classOffsets_spec`: the rows of offsets of the
   classes and the inverses of the strides in the entries.
+* `Ratpoints.Sieve.SieveEntry.PackedFor.fits`: the sieve spec of an entry with the offset of the
+  packing of a class fits the reductions of the row indices of the first two stages.
 * `Ratpoints.Sieve.mul_le_mulModLimit_of_le_div`, `Ratpoints.Sieve.mul_lt_two_pow_63`: the products
   of `fill_bp_list` and of `class_offsets` are `long`s, those of the first branch of `fill_bp_list`
   at most `Ratpoints.mulModLimit`.
@@ -151,6 +155,25 @@ theorem NumClass.Packs.bits_eq_zero_iff {cl : NumClass} {w : UInt64} (h : cl.Pac
     simp at this
   · refine UInt64.toBitVec_inj.mp (BitVec.eq_of_getLsbD_eq fun t ht ↦ ?_)
     simp [h.getLsbD_bits t ht, hw]
+
+/-- The numerators in the class `a₀ mod 2 ^ k` of a list that the class word `w` and a test `p` let
+through are those of the list that they let through, since the class word lets nothing off the
+class through. -/
+theorem NumClass.Packs.filter_filter_emod {cl : NumClass} {w : UInt64} (h : cl.Packs w)
+    (l : List Int) (p : Int → Bool) :
+    (l.filter fun a ↦ a % 2 ^ cl.k == (cl.a0 : Int)).filter (fun a ↦ classBit w a && p a) =
+      l.filter fun a ↦ classBit w a && p a := by
+  rw [List.filter_filter]
+  refine List.filter_congr fun a _ ↦ ?_
+  cases hc : classBit w a
+  · simp
+  · simp [h.emod_eq_of_classBit hc]
+
+/-- The test `EXT0(cl->bits)` of the C code on a class that packs the word `w` is the test `w ≠ 0`:
+the classes with a pattern are those whose word admits a numerator, the classes of `den_bits`. -/
+theorem NumClass.Packs.bits_bne_zero {cl : NumClass} {w : UInt64} (h : cl.Packs w) :
+    (cl.bits != 0) = (w != 0) := by
+  rw [Bool.eq_iff_iff, bne_iff_ne, bne_iff_ne, ne_eq, ne_eq, h.bits_eq_zero_iff]
 
 /-- `Ratpoints.Sieve.NumClass.Packs` reads only the pattern, the stride and the residue of the
 class, not its row offsets. -/
@@ -1031,6 +1054,12 @@ theorem SieveEntry.PackedFor.congr {e : SieveEntry} {cl cl' : NumClass} {off : N
     (h : e.PackedFor cl off) (hk : cl'.k = cl.k) (ha : cl'.a0 = cl.a0) : e.PackedFor cl' off :=
   ⟨h.pos, h.le_maxPrimeEven, h.rowBias_le, h.lt_rowBias_add, hk ▸ ha ▸ h.mul_mod,
     hk ▸ h.dinv_mul_mod, hk ▸ h.dinv_lt⟩
+
+/-- The sieve spec of a modulus with the offset of the packing of a class has the modulus and the
+offset in the range that the reductions of the row indices need. -/
+theorem SieveEntry.PackedFor.fits {e : SieveEntry} {cl : NumClass} {off : Nat}
+    (h : e.PackedFor cl off) (row : Array UInt64) : SieveSpec.Fits ⟨e.p, off, row⟩ :=
+  ⟨h.pos, h.le_maxPrimeEven, h.rowBias_le, h.lt_rowBias_add⟩
 
 /-- Every class with a pattern among `cls` has a row of offsets in the array `offsets`, at the
 position `pos` that it holds, with the offset for the `n`-th sieve entry of `es` at `pos + n`. -/

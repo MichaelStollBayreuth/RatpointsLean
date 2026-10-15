@@ -69,7 +69,8 @@ and the and with it, the Euclidean remainder modulo `2 ^ k` also of a negative `
   that pass a test which fails from `k` on are those of `List.range k`, followed by the next one
   that passes it.
 * `List.filter_map_range_eq_map_range`: of the integers `s, …, s + m - 1`, those from `s + k₁` to
-  `s + m - 1 - k₂`; `List.filter_map_range_eq_map_range'`: those from `lo` to `hi`.
+  `s + m - 1 - k₂`; `List.filter_map_range_eq_map_range'`: those from `lo` to `hi`;
+  `List.filter_map_range_eq_map_range_of_le`: those from `lo` to `hi` within the range, as a range.
 * `List.flatMap_range_map_filter`: the integers `a + 64 y + t` of the positions `t` of the blocks
   `y < m` that pass a test, in increasing order, are those of `a, …, a + 64 m - 1` that pass a test
   `p`, when the first test is `p` on these integers: the numerators of the set bits of words.
@@ -148,6 +149,8 @@ and the and with it, the Euclidean remainder modulo `2 ^ k` also of a negative `
   and negations of `long`s that do not overflow.
 * `Int64.toInt_and_ofNat_two_pow_sub_one`: a `long` and-ed with the mask `2 ^ k - 1` is its
   Euclidean remainder modulo `2 ^ k`.
+* `List.next?_drop_map`, `List.next?_drop_map_ne_none`: the cursor of the second list of a loop
+  `for x in l, y in l.map f`.
 
 ## Implementation notes
 
@@ -335,6 +338,15 @@ theorem filter_map_range_eq_map_range' (s lo hi : Int) (m : Nat) :
     have := mem_range.mp hk
     lia
 
+/-- Of the integers `s, …, s + m - 1`, for `s ≤ lo` and `hi < s + m`, those from `lo` to `hi`. -/
+theorem filter_map_range_eq_map_range_of_le {s lo hi : Int} {m : Nat} (h1 : s ≤ lo)
+    (h2 : hi < s + m) :
+    ((range m).map fun k : Nat ↦ s + k).filter (fun a ↦ decide (lo ≤ a ∧ a ≤ hi)) =
+      (range (hi + 1 - lo).toNat).map fun k : Nat ↦ lo + k := by
+  have hm : m - (lo - s).toNat - (s + m - 1 - hi).toNat = (hi + 1 - lo).toNat := by lia
+  rw [filter_map_range_eq_map_range', hm]
+  exact map_congr_left fun k _ ↦ by lia
+
 /-- The positions `t` of the blocks `y < m` that pass the test `g y`, read as the integers
 `a + 64 y + t`, in increasing order, are the integers `a, …, a + 64 m - 1` that pass `p`, when
 `g y t` is `t < 64` and `p (a + 64 y + t)`: for `g y` the bits of a word `y`, the numerators of the
@@ -413,6 +425,29 @@ theorem foldl_gcd_natAbs_dvd_natAbs {l : List Int} (g : Nat) {x : Int} (hx : x �
     rcases mem_cons.mp hx with rfl | hx
     · exact Nat.dvd_trans (foldl_gcd_natAbs_dvd l _) (Nat.gcd_dvd_right ..)
     · exact ih _ hx
+
+/-- The cursor of the second list of a loop `for x in l, y in l.map f`, after the entries `pref` of
+`l`, at the entry `a`: the next value is `f a`, and the rest of the list follows. -/
+theorem next?_drop_map {α : Type u} {β : Type v} (f : α → β) {l pref suff : List α} {a : α}
+    (hl : l = pref ++ a :: suff) {b : β} {rest : List β}
+    (h : Std.Stream.next? ((l.map f).drop pref.length) = some (b, rest)) :
+    b = f a ∧ rest = (l.map f).drop (pref.length + 1) := by
+  subst hl
+  rw [map_append, map_cons, drop_left' (length_map ..)] at h
+  rw [map_append, map_cons, ← drop_drop, drop_left' (length_map ..)]
+  simp only [Std.Stream.next?, Option.some.injEq, Prod.mk.injEq] at h
+  exact ⟨h.1.symm, by rw [← h.2]; rfl⟩
+
+/-- The second list of a loop `for x in l, y in l.map f` does not run out before the first. -/
+theorem next?_drop_map_ne_none {α : Type u} {β : Type v} (f : α → β) {l pref suff : List α}
+    {a : α} (hl : l = pref ++ a :: suff) :
+    Std.Stream.next? ((l.map f).drop pref.length) ≠ none := by
+  subst hl
+  simp [Std.Stream.next?]
+
+theorem eq_cons_of_next?_eq_some {α : Type u} {l l' : List α} {b : α}
+    (h : Std.Stream.next? l = some (b, l')) : l = b :: l' := by
+  cases l <;> simp_all [Std.Stream.next?]
 
 end List
 

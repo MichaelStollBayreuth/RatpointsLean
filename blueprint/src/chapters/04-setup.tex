@@ -411,7 +411,8 @@ Lemma~\ref{lem:sift_eq_checkDen} maps their side.
   \uses{def:Params, def:arraySize, def:sievingInfo, def:useCLong, def:pointsAtInfinity,
     def:sieveRun, def:swapPoint, lem:sievingInfo, thm:bruteForce, def:twoAdic, def:Shape,
     lem:twoAdic_point, lem:twoAdic_exit, lem:survives, thm:run_reference, def:setupUs1,
-    def:forbidden, def:searchDens, lem:shape_dens, def:numClasses, lem:numClasses, lem:classOffsets}
+    def:forbidden, def:searchDens, lem:shape_dens, def:numClasses, lem:numClasses, lem:classOffsets,
+    def:classOffsets, lem:soundRun}
   \lean{Ratpoints.searchPoints, Ratpoints.run_searchPoints}
   \leanok
   For the coefficients $c$ of degree $d$ that the set-up hands on, the flag of the reversal, the
@@ -432,9 +433,13 @@ Lemma~\ref{lem:sift_eq_checkDen} maps their side.
   of the moduli with their reciprocals, which the run takes, and no points when the curve has no
   points modulo a prime examined on the way (\csource{find_points.c}{4992}{5012}); the checked loop
   off when there are no forbidden divisors and no Jacobi test (\csource{find_points.c}{2793}{2795});
-  the shape that \verb|run_setup| chooses (Definition~\ref{def:Shape}); and the points at infinity
-  followed by the points of the denominators of the shape, with its tests, the class words and
-  \verb|den_bits|, the three stages that the cut points $s_1$ and $s_2$ of the parameters give and
+  an array of rows of offsets, one for each packing, of one offset for each sieve entry
+  (\csource{find_points.c}{5119}{5119}), and the rows of offsets of the classes in it, with the
+  inverses of the strides in the entries (Definition~\ref{def:classOffsets};
+  \csource{find_points.c}{5132}{5132}); the shape that \verb|run_setup| chooses
+  (Definition~\ref{def:Shape}); and the points at infinity followed by the points of the
+  denominators of the shape, with its tests, the classes and their offsets and \verb|den_bits|, the
+  three stages that the cut points $s_1$ and $s_2$ of the parameters give and
   pieces of at most $\mathrm{arraySizeAt}(H)$ bit arrays, each mapped by $\mathrm{swapPoint}$ when
   the flag is set (\csource{find_points.c}{5116}{5116}, \csource{find_points.c}{5137}{5139},
   \csource{find_points.c}{5167}{5167}, the block that sets up the run and runs the denominators;
@@ -446,7 +451,8 @@ Lemma~\ref{lem:sift_eq_checkDen} maps their side.
   order, each mapped by $\mathrm{swapPoint}$ when the flag is set, also when an exit fires, since
   the curve has no points then (Lemmas~\ref{lem:sievingInfo} and~\ref{lem:twoAdic_exit}) and the
   denominators of the search lie in $1, \dots, H$; otherwise the run of the shape gives the
-  reference over its denominators, since its tests, the class words and the sieve entries of the
+  reference over its denominators, since what the search hands to it is sound
+  (Lemma~\ref{lem:soundRun}) and its tests, the words of the classes and the sieve entries of the
   moduli, which are sound, those of the third stage prime entries, and whose reciprocals
   \verb|sieving_info| returns in their order (Lemma~\ref{lem:sievingInfo}), let every point through
   (Lemmas~\ref{lem:shape_dens}, \ref{lem:twoAdic_point} and~\ref{lem:survives},

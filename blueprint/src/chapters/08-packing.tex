@@ -335,11 +335,10 @@ order: a data refinement.
 \end{proof}
 
 \begin{lemma}[The rows read in the packing]\label{lem:reads_row}
-  \uses{lem:admits_mul, def:rows}
-  Proposed names: \lname{Ratpoints.Sieve.SieveSpec.Reads},
-  \lname{Ratpoints.Sieve.SieveSpec.getLsbD\_wordAt\_mk},
-  \lname{Ratpoints.Sieve.SieveEntry.reads\_row}, \lname{Ratpoints.Sieve.getLsbD\_andWords}. A sieve
-  spec reads a test $f$ of the bit numbers when bit $t$ of word $y$ of the piece from the word
+  \uses{lem:admits_mul, def:rows, def:andRows}
+  \lean{Ratpoints.Sieve.SieveSpec.Reads, Ratpoints.Sieve.SieveSpec.getLsbD_wordAt_mk, Ratpoints.Sieve.SieveEntry.reads_row, Ratpoints.Sieve.getLsbD_andWords}
+  \leanok
+  A sieve spec reads a test $f$ of the bit numbers when bit $t$ of word $y$ of the piece from the word
   number $i$ is $f(\mathrm{rbaLength}\, i + 64 y + t)$ for $t < 64$. For a sieve entry with $0 < p$
   and tables that invert, $v\, 2^k \equiv 1$, $o\, 2^k\,\mathrm{rbaLength} \equiv a_0$ and
   $2^k\, \mathrm{bp} \equiv b \pmod p$, the spec of the row of $\mathrm{bp}$ at the offset $o$ reads
@@ -348,6 +347,7 @@ order: a data refinement.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   The row bit at the index $\mathrm{rbaLength}(i + o) + 64 y + t$ admits that index for
   $\mathrm{bp}$ (Definitions~\ref{def:row} and~\ref{def:rows}); multiplied by the unit $2^k$ with
   the inverse $v$ (Lemma~\ref{lem:admits_mul}) it is the admission of
@@ -358,11 +358,9 @@ order: a data refinement.
 
 \begin{lemma}[The row indices]\label{lem:rowIndices}
   \uses{lem:mulMod, lem:modMul, def:packingConstants, def:rows, def:barrett, def:useCLong}
-  Proposed names: \lname{Ratpoints.Sieve.SieveSpec.Fits}, \lname{Ratpoints.Sieve.SmallFits},
-  \lname{Ratpoints.Sieve.smallFits\_decide},
-  \lname{Ratpoints.Sieve.SieveSpec.Fits.ite\_modMul\_modLong\_eq\_emod},
-  \lname{Ratpoints.Sieve.SieveSpec.Fits.ite\_mulMod\_modLong\_eq\_toNat\_emod}. A sieve spec
-  \emph{fits} when $0 < p \le \mathrm{maxPrimeEven}$ and
+  \lean{Ratpoints.Sieve.SieveSpec.Fits, Ratpoints.Sieve.SmallFits, Ratpoints.Sieve.smallFits_decide, Ratpoints.Sieve.SmallFits.mono, Ratpoints.Sieve.SieveSpec.Fits.natAbs_neg_sub_le, Ratpoints.Sieve.SieveSpec.Fits.add_nonneg_and_toNat_le, Ratpoints.Sieve.SieveSpec.Fits.ite_modMul_modLong_eq_emod, Ratpoints.Sieve.SieveSpec.Fits.ite_mulMod_modLong_eq_toNat_emod, Ratpoints.maxPrimeEven_pos}
+  \leanok
+  A sieve spec \emph{fits} when $0 < p \le \mathrm{maxPrimeEven}$ and
   $\mathrm{rowBias} \le \mathrm{offset} < \mathrm{rowBias} + 2p$; the test \verb|small| of a piece
   from $w_0$ to $w_0 + n$ gives $-\mathrm{rowBias} \le w_0$ and
   $w_0 + n \le \mathrm{rowBias} - 2\,\mathrm{maxPrimeEven}$. Then the remainder $r$ with which the
@@ -373,6 +371,7 @@ order: a data refinement.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   Under \verb|small| the values have absolute value at most
   $2\,\mathrm{rowBias} - 1 \le \mathrm{mulModLimit} < 2^{32}$, and $p \le 2^{10}$, so the reductions
   are exact (Lemmas~\ref{lem:mulMod} and~\ref{lem:modMul}); \verb|mod| is the Euclidean remainder.
@@ -425,8 +424,9 @@ conclusions in the words of Lemma~\ref{lem:reads_row}.
 
 \begin{definition}[The bits of one denominator]\label{def:siftBits}
   \uses{def:siftPiece, def:rows, def:numClasses, def:rbaPack}
-  Proposed names: \lname{Ratpoints.Sieve.setRows}, \lname{Ratpoints.Sieve.siftBits}. The sieve specs
-  of a denominator: for each modulus of the first two stages, the row of its residue for the stride
+  \lean{Ratpoints.Sieve.setRows, Ratpoints.Sieve.siftBits}
+  \leanok
+  The sieve specs of a denominator: for each modulus of the first two stages, the row of its residue for the stride
   and the offset of the class's row (\verb|set_rows|, \csource{find_points.c}{3149}{3170}); and the
   bits from $\mathrm{low}$ to $\mathrm{high}$: nothing if $\mathrm{low} > \mathrm{high}$, else the
   pieces of the word numbers $\lfloor \mathrm{low}/\mathrm{rbaLength}\rfloor$ to
@@ -439,11 +439,11 @@ conclusions in the words of Lemma~\ref{lem:reads_row}.
 \end{definition}
 
 \begin{lemma}[The bits of one denominator]\label{lem:siftBits}
-  \uses{def:siftBits, lem:reads_row, lem:numeratorsToBits, lem:classOffsets, lem:fillBpList,
-    def:siftPiece, lem:numClasses}
-  Proposed names: \lname{Ratpoints.Sieve.siftBits\_spec}, \lname{Ratpoints.Sieve.packedReads},
-  \lname{Ratpoints.Sieve.setRows\_map}, \lname{Ratpoints.Sieve.flatMap\_filter\_bits\_eq}. The bits
-  of an interval give the points of the bits from $\mathrm{low}$ to $\mathrm{high}$ that pass the
+  \uses{def:siftBits, lem:reads_row, lem:numeratorsToBits, lem:classOffsets, def:siftPiece,
+    lem:numClasses, lem:rowIndices}
+  \lean{Ratpoints.Sieve.siftBits_spec, Ratpoints.Sieve.packedReads, Ratpoints.Sieve.setRows_map, Ratpoints.Sieve.flatMap_filter_bits_eq, Ratpoints.Sieve.reads_of_mem_packedReads, Ratpoints.Sieve.all_packedReads, Ratpoints.Sieve.fits_of_mem_packedReads, Ratpoints.Sieve.map_magic_packedReads, Ratpoints.Sieve.flatMap_acceptedPoints_eq_pointsOfDen, Ratpoints.Sieve.SieveEntry.PackedFor.fits, Ratpoints.Sieve.NumClass.Packs.filter_filter_emod}
+  \leanok
+  The bits of an interval give the points of the bits from $\mathrm{low}$ to $\mathrm{high}$ that pass the
   class pattern and the tests that the specs read, none for an empty interval; the specs that
   \verb|set_rows| makes for entries with their residues $b\,\mathrm{dinv}[k] \bmod p$ and the
   offsets of the class read the admissions of the numerators $a_0 + 2^k j$ by the rows of $b$; and
@@ -452,6 +452,8 @@ conclusions in the words of Lemma~\ref{lem:reads_row}.
 \end{lemma}
 
 \begin{proof}
+  \uses{def:checkNum, lem:accepted, lem:staged}
+  \leanok
   An invariant of the loop over the pieces, as before over the bits instead of the numerators
   (Definition~\ref{def:sift}); Lemma~\ref{lem:reads_row} with the offsets of
   Lemma~\ref{lem:classOffsets} and the residues of Lemma~\ref{lem:fillBpList};
@@ -481,9 +483,9 @@ which gives packable entries with their tables of inverses (Lemma~\ref{lem:sievi
 
 \begin{lemma}[What the run needs of the search]\label{lem:soundRun}
   \uses{lem:sievingInfo, lem:classOffsets, lem:numClasses, lem:admits_mul, def:stage3, def:twoAdic}
-  Proposed names: \lname{Ratpoints.Sieve.IsSoundRun},
-  \lname{Ratpoints.Sieve.IsSoundRun.bits\_bne\_zero},
-  \lname{Ratpoints.Sieve.IsSoundRun.getLsbD\_db}. The sieve entries, reciprocals, classes, offsets
+  \lean{Ratpoints.Sieve.IsSoundRun, Ratpoints.Sieve.IsSoundRun.bits_bne_zero, Ratpoints.Sieve.IsSoundRun.getLsbD_db, Ratpoints.Sieve.NumClass.Packs.bits_bne_zero}
+  \leanok
+  The sieve entries, reciprocals, classes, offsets
   and \verb|den_bits| that the search hands to the run are sound: sound rows, prime entries in the
   third stage, the reciprocals in their order, tables of inverses and the offsets of the classes for
   the first two stages, classes that pack the 2-adic words, and \verb|den_bits| the word of
@@ -493,6 +495,7 @@ which gives packable entries with their tables of inverses (Lemma~\ref{lem:sievi
 \end{lemma}
 
 \begin{proof}
+  \leanok
   Lemma~\ref{lem:sievingInfo}, Lemma~\ref{lem:numClasses} and Lemma~\ref{lem:classOffsets}; the
   entries that \verb|class_offsets| returns differ only in $\mathrm{dinv}$, which the soundness, the
   shape of a prime entry and the tables of inverses do not read.

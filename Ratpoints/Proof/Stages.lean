@@ -8,7 +8,6 @@ module
 public import Ratpoints.Proof.Words
 
 import Ratpoints.Proof.Bits
-import Ratpoints.Proof.Reductions
 import Std.Tactic.Do
 
 /-!
@@ -25,8 +24,9 @@ range. So the test of a candidate (`Ratpoints.Sieve.accepted`), for `|a| < 2 ^ 6
 `0 < b < 2 ^ 63`, followed by the exact check (`Ratpoints.Sieve.checkPoint`), gives the points of
 the check of the reference (`Ratpoints.Sieve.checkNum`) for the numerators that survive these
 entries. The second stage on a bit array (`Ratpoints.Sieve.secondStage`), or on one of its words
-(`Ratpoints.Sieve.secondStageWord`), gives its words and-ed with the rows of all its moduli
-(`Ratpoints.Sieve.andWords`), although it stops when the bit array or the word is zero. The
+(`Ratpoints.Sieve.secondStageWord`), with moduli in the range of the packing and their reciprocals
+and the test `small` of the piece, gives its words and-ed with the rows of all its moduli at their
+offsets (`Ratpoints.Sieve.andWords`), although it stops when the bit array or the word is zero. The
 contracts of the loops are `@[spec]` theorems proved with `vcgen`, the program logic of Lean core,
 with loop invariants that are named definitions.
 
@@ -39,8 +39,9 @@ with loop invariants that are named definitions.
 * `Ratpoints.Sieve.acceptedPoints`: the points that the extraction gives for a numerator, those of
   the exact check when the numerator passes the test of a candidate, the test for common factors
   and the third stage.
-* `Ratpoints.Sieve.SecondStageInvariant`: the invariant of the loop of the second stage on a bit
-  array.
+* `Ratpoints.Sieve.SecondStageInvariant`, `Ratpoints.Sieve.SecondStageWordInvariant`: the
+  invariants of the loops of the second stage on a bit array and on a word, over the moduli with
+  their reciprocals.
 
 ## Main statements
 
@@ -552,70 +553,173 @@ theorem acceptedPoints_eq_ite {es : List SieveEntry} (hes : ∀ e ∈ es, e.IsPr
 
 /-! ### The second stage -/
 
-/-- The invariant of the loop of `Ratpoints.Sieve.secondStage` on the bit array `nums` with the word
-number `i`, after the moduli `pref`: word `κ` of the bit array is word `κ` of `nums` and-ed with the
-row words of the moduli of `pref`. -/
-def SecondStageInvariant (nums : Vector UInt64 rbaPack) (i : Int) (pref : List SieveSpec)
-    (v : Vector UInt64 rbaPack) : Prop :=
-  ∀ κ < rbaPack, v[κ]! = andWords pref nums[κ]! i κ
+/-- The reciprocals of the moduli `specs` that a loop over the moduli and their reciprocals in step
+has still to read after the moduli `pref`, before it has gone through all of them, are those after
+the first `pref.length`: the next is that of the next modulus, and the cursor moves on. -/
+theorem eq_magic_and_of_next?_eq_some {specs pref suff : List SieveSpec} {s : SieveSpec}
+    {mgs rest rest' : List Nat} {mg : Nat} (hmg : mgs = specs.map (magic ·.p))
+    (hs : specs = pref ++ s :: suff)
+    (hrest : pref.length < specs.length → rest = mgs.drop pref.length)
+    (hnext : Std.Stream.next? rest = some (mg, rest')) :
+    mg = magic s.p ∧
+      ((pref ++ [s]).length < specs.length → rest' = mgs.drop (pref ++ [s]).length) := by
+  rw [hrest (by simp [hs]), hmg] at hnext
+  obtain ⟨rfl, h⟩ := List.next?_drop_map _ hs hnext
+  exact ⟨rfl, fun _ ↦ by rw [h, hmg, List.length_append, List.length_singleton]⟩
 
-theorem secondStageInvariant_nil (nums : Vector UInt64 rbaPack) (i : Int) :
-    SecondStageInvariant nums i [] nums :=
-  fun _ _ ↦ rfl
+/-- The reciprocals of a loop over the moduli and their reciprocals in step do not run out before
+the moduli. -/
+theorem next?_ne_none_of_lt {specs pref suff : List SieveSpec} {s : SieveSpec} {mgs rest : List Nat}
+    (hmg : mgs = specs.map (magic ·.p)) (hs : specs = pref ++ s :: suff)
+    (hrest : pref.length < specs.length → rest = mgs.drop pref.length) :
+    Std.Stream.next? rest ≠ none := by
+  rw [hrest (by simp [hs]), hmg]
+  exact List.next?_drop_map_ne_none _ hs
 
-theorem SecondStageInvariant.getElem!_eq {nums v : Vector UInt64 rbaPack} {i : Int}
-    {specs : List SieveSpec} (h : SecondStageInvariant nums i specs v) {κ : Nat}
-    (hκ : κ < rbaPack) : v[κ]! = andWords specs nums[κ]! i κ :=
-  h κ hκ
+/-- The invariant of the loop of `Ratpoints.Sieve.secondStage` over the moduli `specs` and their
+reciprocals `mgs` on the bit array `nums` with the word number `i`, after the moduli `pref`, whose
+state is the bit array and the reciprocals still to come: before the loop has gone through all the
+moduli, these are the reciprocals after the first `pref.length`; and word `κ` of the bit array is
+word `κ` of `nums` and-ed with the row words of the moduli of `pref`. -/
+def SecondStageInvariant (nums : Vector UInt64 rbaPack) (i : Int) (specs : List SieveSpec)
+    (mgs : List Nat) (pref : List SieveSpec) (st : Vector UInt64 rbaPack × List Nat) : Prop :=
+  (pref.length < specs.length → st.2 = mgs.drop pref.length) ∧
+    ∀ κ < rbaPack, st.1[κ]! = andWords pref nums[κ]! i κ
+
+theorem SecondStageInvariant.next?_ne_none {nums v : Vector UInt64 rbaPack} {i : Int} {small : Bool}
+    {specs pref suff : List SieveSpec} {s : SieveSpec} {mgs rest : List Nat}
+    (pre : (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p) ∧ SmallFits small i (i + 1))
+    (hs : specs = pref ++ s :: suff) (h : SecondStageInvariant nums i specs mgs pref (v, rest)) :
+    Std.Stream.next? rest ≠ none :=
+  next?_ne_none_of_lt pre.2.1 hs h.1
+
+theorem secondStageInvariant_nil (nums : Vector UInt64 rbaPack) (i : Int) (specs : List SieveSpec)
+    (mgs : List Nat) : SecondStageInvariant nums i specs mgs [] (nums, Std.toStream mgs) :=
+  ⟨fun _ ↦ rfl, fun _ _ ↦ rfl⟩
+
+theorem SecondStageInvariant.getElem!_eq {nums : Vector UInt64 rbaPack} {i : Int}
+    {specs : List SieveSpec} {mgs : List Nat} {st : Vector UInt64 rbaPack × List Nat}
+    (h : SecondStageInvariant nums i specs mgs specs st) {κ : Nat} (hκ : κ < rbaPack) :
+    st.1[κ]! = andWords specs nums[κ]! i κ :=
+  h.2 κ hκ
 
 /-- At the stop the bit array is zero, and so is its and with the rows of the other moduli. -/
 theorem SecondStageInvariant.of_isZeroAt {nums v : Vector UInt64 rbaPack} {i : Int}
-    {specs pref suff : List SieveSpec} {cur : SieveSpec} (hs : specs = pref ++ cur :: suff)
-    (h : SecondStageInvariant nums i pref v) (hz : isZeroAt v 0 = true) :
-    SecondStageInvariant nums i specs v := by
-  intro κ hκ
+    {specs pref suff : List SieveSpec} {cur : SieveSpec} {mgs rest rest' : List Nat}
+    (hs : specs = pref ++ cur :: suff) (h : SecondStageInvariant nums i specs mgs pref (v, rest))
+    (hz : isZeroAt v 0 = true) : SecondStageInvariant nums i specs mgs specs (v, rest') := by
+  refine ⟨fun h' ↦ absurd h' (Nat.lt_irrefl _), fun κ hκ ↦ ?_⟩
   have h0 := (isZeroAt_eq_true_iff v 0).mp hz κ hκ
   rw [Nat.mul_zero, Nat.zero_add] at h0
-  rw [h0, hs, andWords_append, ← h κ hκ, h0, andWords_zero]
+  rw [h0, hs, andWords_append, ← h.2 κ hκ, h0, andWords_zero]
 
-theorem SecondStageInvariant.andBitArray {nums v : Vector UInt64 rbaPack} {i : Int}
-    {pref : List SieveSpec} {s : SieveSpec} (h : SecondStageInvariant nums i pref v) :
-    SecondStageInvariant nums i (pref ++ [s])
-      (Sieve.andBitArray v 0 s.row (i % (s.p : Int)).toNat) := by
-  intro κ hκ
+/-- A step of the loop of `Ratpoints.Sieve.secondStage`: the bit array and-ed with bit array
+`(i + offset) mod p` of the row of the next modulus `s`, the index that the reduction by the
+reciprocal of the cursor gives under the test `small`
+(`Ratpoints.Sieve.SieveSpec.Fits.ite_mulMod_modLong_eq_toNat_emod`). -/
+theorem SecondStageInvariant.andBitArray {nums v : Vector UInt64 rbaPack} {i : Int} {small : Bool}
+    {specs pref suff : List SieveSpec} {s : SieveSpec} {mgs rest rest' : List Nat} {mg : Nat}
+    (pre : (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p) ∧ SmallFits small i (i + 1))
+    (hs : specs = pref ++ s :: suff) (h : SecondStageInvariant nums i specs mgs pref (v, rest))
+    (hnext : Std.Stream.next? rest = some (mg, rest')) :
+    SecondStageInvariant nums i specs mgs (pref ++ [s]) (Sieve.andBitArray v 0 s.row
+      (if small then mulMod (i + s.offset).toNat s.p mg else (modLong (i + s.offset) s.p).toNat),
+        rest') := by
+  obtain ⟨rfl, hc⟩ := eq_magic_and_of_next?_eq_some pre.2.1 hs h.1 hnext
+  rw [(pre.1 s (by simp [hs])).ite_mulMod_modLong_eq_toNat_emod pre.2.2]
+  refine ⟨hc, fun κ hκ ↦ ?_⟩
   simp only [getElem!_andBitArray _ _ _ _ hκ, Nat.div_eq_of_lt hκ, ↓reduceIte, Nat.mod_eq_of_lt hκ,
-    h κ hκ, andWords_concat, SieveSpec.wordAt_of_lt _ _ hκ]
+    h.2 κ hκ, andWords_concat, SieveSpec.wordAt_of_lt _ _ hκ]
 
 attribute [local irreducible] SecondStageInvariant in
-/-- The stop when the bit array is zero loses nothing, since a zero bit array stays zero. -/
+/-- The stop when the bit array is zero loses nothing, since a zero bit array stays zero; the
+reciprocals run in step with the moduli and do not run out before them. -/
 @[spec]
-theorem secondStage_spec (specs : List SieveSpec) (i : Int) (nums : Vector UInt64 rbaPack) :
-    ⦃ True ⦄ secondStage specs i nums
+theorem secondStage_spec (specs : List SieveSpec) (mgs : List Nat) (small : Bool) (i : Int)
+    (nums : Vector UInt64 rbaPack) :
+    ⦃ (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p) ∧ SmallFits small i (i + 1) ⦄
+    secondStage specs mgs small i nums
     ⦃ fun r ↦ ∀ κ < rbaPack, r[κ]! = andWords specs nums[κ]! i κ ⦄ := by
   vcgen [secondStage] invariants
-  · fun pref _ v ↦ SecondStageInvariant nums i pref v
+  · fun pref _ ↦ SecondStageInvariant nums i specs mgs pref
   all_goals first
-    | exact secondStageInvariant_nil nums i
+    | exact secondStageInvariant_nil nums i specs mgs
     | exact SecondStageInvariant.getElem!_eq ‹_› ‹_›
     | exact SecondStageInvariant.of_isZeroAt ‹_› ‹_› ‹_›
-    | exact SecondStageInvariant.andBitArray ‹_›
+    | exact absurd ‹_› (SecondStageInvariant.next?_ne_none ‹_› ‹_› ‹_›)
+    | exact SecondStageInvariant.andBitArray ‹_› ‹_› ‹_› ‹_›
 
-theorem andWords_concat_of_eq {x y : UInt64} {pref : List SieveSpec} {i : Int} {κ : Nat}
-    {s : SieveSpec} (hy : y = andWords pref x i κ) (hκ : κ < rbaPack) :
-    y &&& s.row[rbaPack * (i % (s.p : Int)).toNat + κ]! = andWords (pref ++ [s]) x i κ := by
-  rw [andWords_concat, SieveSpec.wordAt_of_lt _ _ hκ, hy]
+/-- The invariant of the loop of `Ratpoints.Sieve.secondStageWord` over the moduli `specs` and their
+reciprocals `mgs` on word `κ` of the bit array with the word number `i`, from the word `x0` on,
+after the moduli `pref`, whose state is the word and the reciprocals still to come: before the loop
+has gone through all the moduli, these are the reciprocals after the first `pref.length`; and the
+word is `x0` and-ed with the row words of the moduli of `pref`. -/
+def SecondStageWordInvariant (x0 : UInt64) (i : Int) (κ : Nat) (specs : List SieveSpec)
+    (mgs : List Nat) (pref : List SieveSpec) (st : UInt64 × List Nat) : Prop :=
+  (pref.length < specs.length → st.2 = mgs.drop pref.length) ∧ st.1 = andWords pref x0 i κ
 
-/-- The stop when the word is zero loses nothing, since a zero word stays zero. -/
+/-- A step of the loop of `Ratpoints.Sieve.secondStageWord`, as for
+`Ratpoints.Sieve.SecondStageInvariant.andBitArray`. -/
+theorem SecondStageWordInvariant.and {x0 x : UInt64} {i : Int} {κ : Nat} (hκ : κ < rbaPack)
+    {small : Bool} {specs pref suff : List SieveSpec} {s : SieveSpec} {mgs rest rest' : List Nat}
+    {mg : Nat}
+    (pre : (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p) ∧ SmallFits small i (i + 1))
+    (hs : specs = pref ++ s :: suff) (h : SecondStageWordInvariant x0 i κ specs mgs pref (x, rest))
+    (hnext : Std.Stream.next? rest = some (mg, rest')) :
+    SecondStageWordInvariant x0 i κ specs mgs (pref ++ [s]) (x &&& s.row[rbaPack *
+      (if small then mulMod (i + s.offset).toNat s.p mg else (modLong (i + s.offset) s.p).toNat) +
+        κ]!, rest') := by
+  obtain ⟨rfl, hc⟩ := eq_magic_and_of_next?_eq_some pre.2.1 hs h.1 hnext
+  rw [(pre.1 s (by simp [hs])).ite_mulMod_modLong_eq_toNat_emod pre.2.2]
+  have h2 : x = andWords pref x0 i κ := h.2
+  refine ⟨hc, ?_⟩
+  change x &&& _ = _
+  rw [h2, andWords_concat, SieveSpec.wordAt_of_lt _ _ hκ]
+
+theorem SecondStageWordInvariant.next?_ne_none {x0 x : UInt64} {i : Int} {κ : Nat} {small : Bool}
+    {specs pref suff : List SieveSpec} {s : SieveSpec} {mgs rest : List Nat}
+    (pre : (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p) ∧ SmallFits small i (i + 1))
+    (hs : specs = pref ++ s :: suff)
+    (h : SecondStageWordInvariant x0 i κ specs mgs pref (x, rest)) :
+    Std.Stream.next? rest ≠ none :=
+  next?_ne_none_of_lt pre.2.1 hs h.1
+
+theorem secondStageWordInvariant_nil (x0 : UInt64) (i : Int) (κ : Nat) (specs : List SieveSpec)
+    (mgs : List Nat) : SecondStageWordInvariant x0 i κ specs mgs [] (x0, Std.toStream mgs) :=
+  ⟨fun _ ↦ rfl, rfl⟩
+
+theorem SecondStageWordInvariant.eq {x0 : UInt64} {i : Int} {κ : Nat} {specs : List SieveSpec}
+    {mgs : List Nat} {st : UInt64 × List Nat}
+    (h : SecondStageWordInvariant x0 i κ specs mgs specs st) :
+    st.1 = andWords specs x0 i κ :=
+  h.2
+
+/-- At the stop the word is zero, and so is its and with the rows of the other moduli. -/
+theorem SecondStageWordInvariant.of_eq_zero {x0 x : UInt64} {i : Int} {κ : Nat}
+    {specs pref suff : List SieveSpec} {cur : SieveSpec} {mgs rest rest' : List Nat}
+    (hs : specs = pref ++ cur :: suff)
+    (h : SecondStageWordInvariant x0 i κ specs mgs pref (x, rest))
+    (hz : (x == 0) = true) : SecondStageWordInvariant x0 i κ specs mgs specs (x, rest') := by
+  refine ⟨fun h' ↦ absurd h' (Nat.lt_irrefl _), ?_⟩
+  rw [beq_iff_eq.mp hz] at h ⊢
+  rw [hs, andWords_append, ← h.2, andWords_zero]
+
+attribute [local irreducible] SecondStageWordInvariant in
+/-- The stop when the word is zero loses nothing, since a zero word stays zero; the reciprocals run
+in step with the moduli and do not run out before them. -/
 @[spec]
-theorem secondStageWord_spec (specs : List SieveSpec) (i : Int) {κ : Nat} (hκ : κ < rbaPack)
-    (x : UInt64) :
-    ⦃ True ⦄ secondStageWord specs i κ x ⦃ fun r ↦ r = andWords specs x i κ ⦄ := by
+theorem secondStageWord_spec (specs : List SieveSpec) (mgs : List Nat) (small : Bool) (i : Int)
+    {κ : Nat} (hκ : κ < rbaPack) (x : UInt64) :
+    ⦃ (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p) ∧ SmallFits small i (i + 1) ⦄
+    secondStageWord specs mgs small i κ x ⦃ fun r ↦ r = andWords specs x i κ ⦄ := by
   vcgen [secondStageWord] invariants
-  · fun pref _ r ↦ r = andWords pref x i κ
+  · fun pref _ ↦ SecondStageWordInvariant x i κ specs mgs pref
   all_goals first
-    | rfl
-    | exact andWords_concat_of_eq ‹_› hκ
-    | simp_all [andWords_append]
+    | exact secondStageWordInvariant_nil x i κ specs mgs
+    | exact SecondStageWordInvariant.eq ‹_›
+    | exact SecondStageWordInvariant.of_eq_zero ‹_› ‹_› ‹_›
+    | exact absurd ‹_› (SecondStageWordInvariant.next?_ne_none ‹_› ‹_› ‹_›)
+    | exact SecondStageWordInvariant.and hκ ‹_› ‹_› ‹_› ‹_›
 
 end Sieve
 

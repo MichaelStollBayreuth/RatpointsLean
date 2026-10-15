@@ -18,7 +18,7 @@ power of 2, as `get_2adic_info` and `class_offsets` make it: for each class of t
 modulo 64, with the word of the numerators modulo 64 that it admits in the 2-adic information
 (`Ratpoints.Sieve.twoAdic`), the largest stride `2 ^ k`, `k ≤ 6` and `k < Ratpoints.numStrides`, for
 which these numerators lie in one class `a₀ mod 2 ^ k`, and the pattern of the word in that packing,
-the starting value of the first stage of the sieve in the packing (stage F), with the word
+from which the first stage of the sieve starts (`Ratpoints.Sieve.andRows`), with the word
 `den_bits` of the classes that admit a numerator (`Ratpoints.Sieve.numClasses`,
 `Ratpoints.Sieve.packPattern`); and, once the moduli are known, the number of the distinct packings
 (`Ratpoints.Sieve.numPackings`), and the inverses of the strides modulo the moduli with the row
@@ -26,9 +26,9 @@ offsets of each packing, one for each modulus, which shift the rows so that bit 
 with the word number `w` stands for the numerator `a₀ + 2 ^ k (Ratpoints.rbaLength w + t)`
 (`Ratpoints.Sieve.classOffsets`); and for a denominator the residues of the denominator divided by
 the stride of its class modulo the moduli of the first two stages, as `fill_bp_list` computes them
-(`Ratpoints.Sieve.fillBpList`). The classes (`Ratpoints.Sieve.NumClass`) are in
-`Ratpoints.Model.Sieve`, the 2-adic information in `Ratpoints.Model.Denominators`; the run reads the
-row offsets and the residues with the packing (stage F).
+(`Ratpoints.Sieve.fillBpList`). The classes (`Ratpoints.Sieve.NumClass`) and the sieve of one
+denominator in the packing of its class are in `Ratpoints.Model.Sieve`, the 2-adic information and
+the run, which reads the row offsets and the residues, in `Ratpoints.Model.Denominators`.
 
 ## Main definitions
 
@@ -138,8 +138,8 @@ def numClasses (nb : Vector UInt64 64) : Id (Vector NumClass 64 × UInt64) := do
 
 /-- The number of the distinct packings `(k, a₀)` of the classes `cls` with a pattern
 (`Ratpoints.Sieve.NumClass`), at least 1: the number of the rows of offsets that
-`Ratpoints.Sieve.classOffsets` makes, which sizes the array of the offsets of the run with the
-packing (stage F). The packings are told apart by the key `2 ^ k + a₀`, below
+`Ratpoints.Sieve.classOffsets` makes, which sizes the array of the offsets of the run
+(`Ratpoints.searchPoints`). The packings are told apart by the key `2 ^ k + a₀`, below
 `2 ^ Ratpoints.numStrides` and 128, marked in two words.
 
 C: `find_points.c:1119-1130`
@@ -226,13 +226,13 @@ C: `find_points.c:1142-1158`, `find_points.c:1161-1162`, `find_points.c:1183`
 
 Deviation: the classes, the entries and the array of the offsets returned, for the arrays that
 `class_offsets` writes through its pointer arguments; the number `np` of the moduli the number of
-the sieve entries `es`, for the run those of its three stages (stage F), where `find_points_work_1`
-passes `sp3_max`, the number with the reserve of further primes that the correction of the moduli
-may take into the second stage during the run (stage I); the inverses of `2 ^ k` an array of
-`kmax + 1` entries, for the array `dinv` of `RP_NUM_STRIDES` `long`s of the sieve entry, whose
-entries beyond `kmax` stay unset and unread; the inverses `rinv` an array of arrays, for the array
-on the stack; the loop over the classes by a function of its own (`Ratpoints.Sieve.classRows`);
-natural numbers for the `long`s. -/
+the sieve entries `es`, for the run those of its three stages (`Ratpoints.searchPoints`), where
+`find_points_work_1` passes `sp3_max`, the number with the reserve of further primes that the
+correction of the moduli may take into the second stage during the run (stage I); the inverses of
+`2 ^ k` an array of `kmax + 1` entries, for the array `dinv` of `RP_NUM_STRIDES` `long`s of the
+sieve entry, whose entries beyond `kmax` stay unset and unread; the inverses `rinv` an array of
+arrays, for the array on the stack; the loop over the classes by a function of its own
+(`Ratpoints.Sieve.classRows`); natural numbers for the `long`s. -/
 def classOffsets (cls : Vector NumClass 64) (es : List SieveEntry) (offsets : Array Nat) :
     Id (Vector NumClass 64 × List SieveEntry × Array Nat) := do
   let mut kmax := 0
@@ -264,8 +264,8 @@ reciprocal `mg` of `p` from `mgs` (`Ratpoints.Sieve.mulMod`), exact below `2 ^ 6
 `b ≤ Ratpoints.mulModLimit / Ratpoints.maxPrimeEven`, the product `b dinv[k]` reduced at once; for
 `b ≤ Ratpoints.mulModLimit`, `b` reduced first and then its product with `dinv[k]`; and beyond, `b`
 reduced by the helper `mod` of the C code (`Ratpoints.Sieve.modLong`), which divides, and then the
-product. The branch is chosen once for `b`. The sieve in the packing reads the rows of these
-residues (stage F).
+product. The branch is chosen once for `b`. The sieve of the denominator reads the rows of these
+residues (`Ratpoints.Sieve.setRows`).
 
 C: `find_points.c:3639-3679`
 
@@ -287,7 +287,8 @@ def fillBpList (b k : Nat) (es : List SieveEntry) (mgs : List Nat) : List Nat :=
 
 The packings of the classes against those of the loop over the classes of `get_2adic_info`, and
 the patterns and the residues of `fill_bp_list` against their rules; the row offsets, which need the
-sieve entries of the moduli, are examples of `Ratpoints.Model.FindPoints`. -/
+sieve entries of the moduli, and the sieve of one denominator in the packing of its class are
+examples of `Ratpoints.Model.FindPoints`. -/
 
 -- The packings of 64 words against those that the loop over the classes of `get_2adic_info`
 -- (`find_points.c:1058-1095`, compiled apart at the pinned commit) gives for them: the pattern,

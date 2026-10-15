@@ -162,7 +162,7 @@ model it is $1$.
 
 \begin{definition}[The rows of a modulus]\label{def:rows}
   \uses{def:row}
-  \lean{Ratpoints.Sieve.SieveEntry.rows, Ratpoints.Sieve.SieveEntry.get_rows, Ratpoints.Sieve.SieveEntry.row_mod, Ratpoints.Sieve.SieveSpec}
+  \lean{Ratpoints.Sieve.SieveEntry.rows, Ratpoints.Sieve.SieveEntry.get_rows, Ratpoints.Sieve.SieveEntry.row_mod, Ratpoints.Sieve.SieveSpec, Ratpoints.Sieve.SieveSpec.wordAt}
   \leanok
   The rows of the residues $r = 0, \dots, p - 1$, each made when a denominator first needs it, as a
   suspended computation that runs once, and kept for the run, which makes these computations once
@@ -171,8 +171,12 @@ model it is $1$.
   (Definition~\ref{def:examinePrimeExit}), and whose other rows, and every row of a prime power or a
   product, \verb|sift| builds when first needed; the model makes the row of $0$ when first needed
   too. The row of $b$ is that of $b \bmod p$. For the denominator at hand, each modulus comes with
-  its row, as in the \verb|sieve_spec| of the C code (\csource{rp-private.h}{378}{379}), without the
-  offset and the pointers into the row.
+  its row and the offset of the row, as in the \verb|sieve_spec| of the C code
+  (\csource{rp-private.h}{378}{379}), without the pointers into the row: the bit array with the word
+  number $w$ reads bit array $(w + \mathrm{offset}) \bmod p$ of the row, the offset carrying the
+  shift that the packing of the class of the denominator needs and a multiple of $p$ of at least
+  $\mathrm{rowBias}$ that keeps $w + \mathrm{offset}$ non-negative
+  (Definition~\ref{def:classOffsets}).
 \end{definition}
 
 \section{Words and bit arrays}\label{sec:wordOps}
@@ -245,24 +249,29 @@ coefficients, so their contracts quantify over the sieve entries whose rows they
 contract of the check of stage~C1 quantifies over the test of the numerators.
 
 \begin{definition}[The first stage]\label{def:andRows}
-  \uses{def:bitArrayOps, def:rows}
-  \lean{Ratpoints.Sieve.andRows, Ratpoints.Sieve.andRows_spec, Ratpoints.Sieve.classBit, Ratpoints.Sieve.classBit_rbaLength_mul_add}
+  \uses{def:bitArrayOps, def:rows, def:mulMod, def:modMul, lem:rowIndices}
+  \lean{Ratpoints.Sieve.andRows, Ratpoints.Sieve.andRows_spec, Ratpoints.Sieve.andWords, Ratpoints.Sieve.classBit, Ratpoints.Sieve.classBit_rbaLength_mul_add}
   \leanok
-  Every word of the piece set to the class word $\omega$, the numerators modulo $64$ that the 2-adic
-  information admits for $b$, as ratpoints writes the 2-adic pattern of the class of $b$, which
-  \verb|get_2adic_info| makes once per class, one word repeated over a bit array by the macro
+  Every word of the piece set to the pattern $\omega$ of the class of $b$ in its packing
+  (Definition~\ref{def:numClasses}), as ratpoints writes the 2-adic pattern of the class of $b$,
+  which \verb|get_2adic_info| makes once per class, one word repeated over a bit array by the macro
   \verb|RBA| of the build (\csource{find_points.c}{1098}{1098}; \csource{rp-private.h}{129}{132},
   \csource{rp-private.h}{203}{204}, \csource{rp-private.h}{235}{235},
   \csource{rp-private.h}{261}{261}, \csource{rp-private.h}{285}{285}), and copies into each bit
-  array; then for each modulus $p$ with its row, for $r = (-w_0) \bmod p$, bit array $j$ is and-ed
-  with bit array $(w_0 + j) \bmod p$ of the row, in the three loops of the C code: $n$ bit arrays of
-  the row from $p - r$ on when $n < r$, and otherwise $r$ bit arrays from $p - r$ on, then whole
+  array; then for each modulus $p$ with its row, its offset and its reciprocal, the sieve specs and
+  the reciprocals stepped together, for $r = (-w_0 - \mathrm{offset}) \bmod p$, computed by
+  \verb|mod_mul| (Definition~\ref{def:modMul}) when the test \verb|small| of the piece allows it and
+  by \verb|mod| (Definition~\ref{def:useCLong}) otherwise, bit array $j$ is and-ed with bit array
+  $(w_0 + \mathrm{offset} + j) \bmod p$ of the row, in the three loops of the C code: $n$ bit arrays
+  of the row from $p - r$ on when $n < r$, and otherwise $r$ bit arrays from $p - r$ on, then whole
   periods of $p$ from $0$, then the rest from $0$ (\csource{sift.c}{943}{1022}). It and-s in the
   moduli that it is given, the first $s_1$ of a piece (Definition~\ref{def:siftPiece}); those of the
   second and the third stage come after it (Definitions~\ref{def:secondStage} and~\ref{def:stage3}).
-  Its contract: for every list of sieve entries with $p > 0$ whose rows for $b$ the moduli carry,
-  bit $t$ of word $y < n \cdot \mathrm{rbaPack}$ is bit $t$ of $\omega$ and the survivor test of
-  $R w_0 + 64 y + t$. The class bit of a numerator $a$ is bit $a \bmod 64$ of $\omega$; that of
+  Its contract, for sieve specs that fit (Lemma~\ref{lem:rowIndices}), the reciprocals of their
+  moduli and the bounds of \verb|small|: word $y < n \cdot \mathrm{rbaPack}$ is $\omega$ and-ed with
+  the words of the rows that the specs read for it, each at its offset; for specs that read tests of
+  the bits (Lemma~\ref{lem:reads_row}), bit $t$ of word $y$ is bit $t$ of $\omega$ and the tests of
+  the bit $R w_0 + 64 y + t$. The class bit of a bit $j$ is bit $j \bmod 64$ of $\omega$; that of
   $R w_0 + 64 y + t$, for $t < 64$, is bit $t$, since $64 \mid R$.
 \end{definition}
 
@@ -286,102 +295,117 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
   \uses{def:ctz, def:accepted}
   \lean{Ratpoints.Sieve.walkWord, Ratpoints.Sieve.walkWord_spec}
   \leanok
-  For a word $x$ whose bit $t$ stands for the numerator $a_0 + t$: while $x \ne 0$, the numerator
-  $a_0 + \mathrm{ctz}(x)$ goes to the test of a candidate and, if it passes, to the exact check
+  For a word $x$ whose bit $t$ stands for the numerator $a_0 + s t$, with the step $s$, the stride
+  $2^k$ of the packing of the class of the denominator: while $x \ne 0$, the numerator
+  $a_0 + s\,\mathrm{ctz}(x)$ goes to the test of a candidate and, if it passes, to the exact check
   (Definition~\ref{def:accepted}), with the thunks of the third stage and of the products and the
   flag of the reversal that the walk hands on, and $x \mathbin{\&} (x - 1)$ for $x$: the loop of the
   C code with its body at the three places of the extraction (\csource{sift.c}{262}{264},
   \csource{sift.c}{1161}{1171}, \csource{sift.c}{1227}{1255}, \csource{sift.c}{1265}{1292}). Its
-  contract: the points of the numerators $a_0 + t$ for the set bits $t$ of $x$ that pass the test of
-  a candidate, in increasing order, are appended; the test enters as its value, so that the contract
-  needs nothing of the numerators and the denominator.
+  contract: the points of the numerators $a_0 + s t$ for the set bits $t$ of $x$ that pass the test
+  of a candidate, in increasing order, are appended; the test enters as its value, so that the
+  contract needs nothing of the numerators and the denominator.
 \end{definition}
 
 \begin{definition}[The scan]\label{def:scanPiece}
-  \uses{def:siftBitArray, def:bitArrayOps, def:secondStage, lem:secondStage, lem:siftBitArray}
+  \uses{def:siftBitArray, def:bitArrayOps, def:secondStage, lem:secondStage, lem:siftBitArray,
+    def:andRows, def:numClasses, lem:numClasses, lem:rowIndices}
   \lean{Ratpoints.Sieve.scanPiece, Ratpoints.Sieve.scanPiece_spec}
   \leanok
   A sentinel, a bit array of ones, just past the piece; then from the first bit array on: step over
   the zero bit arrays, stop at the sentinel, and copy each other bit array $i$ and hand the copy,
-  with the word number $w_0 + i$, the moduli of the second stage, the thunks of the check and the
-  flag of the reversal, to the second stage and the extraction in the arm of
-  $\mathrm{useLongInPhase2}$ (Definition~\ref{def:siftBitArray}; \csource{sift.c}{1061}{1082},
-  \csource{sift.c}{1088}{1092}, \csource{sift.c}{1298}{1299}; with \verb|zero|,
-  \csource{rp-private.h}{133}{133}, \csource{rp-private.h}{205}{205},
-  \csource{rp-private.h}{236}{236}, \csource{rp-private.h}{262}{262},
-  \csource{rp-private.h}{286}{286}). Its contract: if bit $t$ of word $y$ and-ed with the rows of
-  the moduli of the second stage is $t < 64$ and $k(R w_0 + 64 y + t)$, for a test $k$ of the
-  numerators and every $y < n \cdot \mathrm{rbaPack}$, the result is the concatenation of the points
-  of the numerators $R w_0, \dots, R(w_0 + n) - 1$ that pass $k$ and the test of a candidate, in
-  increasing order.
+  with the word number $w_0 + i$, the moduli of the second stage with their reciprocals, the test
+  \verb|small|, the class of the denominator, the thunks of the check and the flag of the reversal,
+  to the second stage and the extraction in the arm of $\mathrm{useLongInPhase2}$
+  (Definition~\ref{def:siftBitArray}; \csource{sift.c}{1061}{1082}, \csource{sift.c}{1088}{1092},
+  \csource{sift.c}{1298}{1299}; with \verb|zero|, \csource{rp-private.h}{133}{133},
+  \csource{rp-private.h}{205}{205}, \csource{rp-private.h}{236}{236},
+  \csource{rp-private.h}{262}{262}, \csource{rp-private.h}{286}{286}). Its contract, for sieve specs
+  that fit (Lemma~\ref{lem:rowIndices}), the reciprocals of their moduli and the bounds of
+  \verb|small|: if bit $t$ of word $y$ and-ed with the rows of the moduli of the second stage is
+  $t < 64$ and $k(R w_0 + 64 y + t)$, for a test $k$ of the bits and every
+  $y < n \cdot \mathrm{rbaPack}$, the result is the concatenation of the points of the numerators
+  $a_0 + 2^k j$ of the class of the bits $j = R w_0, \dots, R(w_0 + n) - 1$ that pass $k$ and the
+  test of a candidate, in increasing order.
 \end{definition}
 
 \begin{definition}[One piece]\label{def:siftPiece}
-  \uses{def:andRows, def:scanPiece, lem:staged}
+  \uses{def:andRows, def:scanPiece, def:numClasses, lem:numClasses, lem:reads_row, lem:rowIndices,
+    def:barrett, def:packingConstants}
   \lean{Ratpoints.Sieve.siftPiece, Ratpoints.Sieve.siftPiece_spec}
   \leanok
   A fresh array of $n + 1$ bit arrays, as the worker's array of \verb|array_size| bit arrays and two
-  more (\csource{rp-private.h}{575}{575}, \csource{find_points.c}{3119}{3121}); the first stage with
-  the first $s_1$ moduli of the piece; the low mask $m_l$ on the first bit array if $m_l \ne 0$ and
-  the high mask $m_h$ on the last if $m_h \ne 0$ (\csource{sift.c}{1030}{1041}); and the scan with
-  the other moduli, those of the second stage, the thunks of the check and the flag of the reversal;
-  the first stage starts from a class word $\omega$, an argument of the piece. The piece also has
-  the prototype and the head of \verb|_ratpoints_sift0| (\csource{rp-private.h}{610}{614},
-  \csource{sift.c}{498}{531}), the count of its words (\csource{sift.c}{548}{548}), the timer and
-  the test before its second stage (\csource{sift.c}{1056}{1058}) and its end
-  (\csource{sift.c}{1300}{1305}). Its contract, for $m_h < R$ and every list of sieve entries with
-  $p > 0$ whose rows for $b$ the moduli carry: the concatenation of the points of the numerators
-  from $R w_0 + m_l$ to $R (w_0 + n) - 1 - m_h$ that pass the class bit of $\omega$, survive the
-  sieve entries, the first $s_1$ in the first stage and the others in the second, and pass the test
-  of a candidate.
+  more (\csource{rp-private.h}{575}{575}, \csource{find_points.c}{3119}{3121}); the test
+  \verb|small|, whether the word numbers of the piece lie between $-\mathrm{rowBias}$ and
+  $\mathrm{rowBias} - 2\,\mathrm{maxPrimeEven}$, so that the first two stages may reduce their row
+  indices by a multiplication with the reciprocals (Lemma~\ref{lem:rowIndices}); the first stage
+  with the first $s_1$ moduli of the piece and their reciprocals; the low mask $m_l$ on the first bit
+  array if $m_l \ne 0$ and the high mask $m_h$ on the last if $m_h \ne 0$
+  (\csource{sift.c}{1030}{1041}); and the scan with the other moduli, those of the second stage,
+  with their reciprocals, the thunks of the check and the flag of the reversal; the first stage
+  starts from the pattern of the class of the denominator, an argument of the piece. The piece also
+  has the prototype and the head of \verb|_ratpoints_sift0| with the test \verb|small|
+  (\csource{rp-private.h}{610}{614}, \csource{sift.c}{498}{531}), the count of its words
+  (\csource{sift.c}{548}{548}), the timer and the test before its second stage
+  (\csource{sift.c}{1056}{1058}) and its end (\csource{sift.c}{1300}{1305}). Its contract, for
+  $m_h < R$, sieve specs that fit (Lemma~\ref{lem:rowIndices}) with the reciprocals of their moduli,
+  and every list of tests of the bits that the specs read (Lemma~\ref{lem:reads_row}): the
+  concatenation of the points of the numerators $a_0 + 2^k j$ of the bits $j$ from $R w_0 + m_l$ to
+  $R (w_0 + n) - 1 - m_h$ that pass the pattern of the class and the tests of the specs, the first
+  $s_1$ in the first stage and the others in the second, and pass the test of a candidate.
 \end{definition}
 
 \section{One denominator and the run}\label{sec:siftDen}
 
 \begin{definition}[One denominator]\label{def:sift}
-  \uses{def:siftPiece, def:stage3, def:checkNum, lem:staged, lem:accepted}
+  \uses{def:siftPiece, def:stage3, def:checkNum, lem:staged, lem:accepted, def:siftBits,
+    def:numeratorsToBits, lem:admits_mul, lem:classOffsets, lem:numClasses, lem:numeratorsToBits,
+    lem:reads_row, lem:rowIndices, lem:siftBits}
   \lean{Ratpoints.Sieve.sift, Ratpoints.Sieve.sift_spec}
   \leanok
-  The row of $b$ for each modulus of the first two stages (\csource{find_points.c}{3149}{3170},
-  \csource{find_points.c}{3490}{3561}), the end $s_1$ of the first stage, and the entries of the
-  third stage with their reciprocals, which the sieving thread takes from the arguments of the run
-  that it is set up with (\csource{find_points.c}{3112}{3114}, \csource{find_points.c}{3123}{3124},
+  For the denominator $b$ in the packing of its class (Definition~\ref{def:numClasses}): the sieve
+  specs of the moduli of the first two stages, the rows of the residues of $b$ divided by the stride
+  of the class, which the run computes (Definition~\ref{def:fillBpList}), read at the offsets of the
+  row of the class (Definition~\ref{def:siftBits}; \csource{find_points.c}{3490}{3561}); the end
+  $s_1$ of the first stage, the reciprocals of the first two stages, and the entries of the third
+  stage with their reciprocals, which the sieving thread takes from the arguments of the run that it
+  is set up with (\csource{find_points.c}{3112}{3114}, \csource{find_points.c}{3123}{3124},
   \csource{rp-private.h}{577}{578}); what the third stage needs of its entries
   (Definition~\ref{def:stage3}) and the products $c_k b^{d - k}$ of the check as thunks, made once
   per denominator and forced when the first numerator of $b$ needs them, for the flags
   \verb|stage3_filled| and \verb|compute_bc| of the sieving thread
   (\csource{find_points.c}{3129}{3129}, \csource{rp-private.h}{583}{583}); the degree $d$ and the
-  flag of the reversal, which the check reads; the word numbers
-  $w_{\mathrm{low}} = \lfloor -H/R \rfloor$ and $w_{\mathrm{high}} = \lfloor H/R \rfloor + 1$; and
-  while $w_0 < w_{\mathrm{high}}$, the piece from $w_0$ to $w_1 = \min(w_0 + A, w_{\mathrm{high}})$,
-  with the low mask $-H - R w_{\mathrm{low}}$ if it is the first and the high mask
-  $R - 1 - (H \bmod R)$ if it is the last (\csource{find_points.c}{3442}{3488},
-  \csource{find_points.c}{3563}{3617}), each from the class word $\omega$ of $b$, an argument of
-  \verb|sift|, for the class of $b$ that ratpoints passes. Its contract, for $A \ge 1$, a
-  denominator $0 < b < 2^{63}$, $H < 2^{63}$, the rows of sieve entries with $p > 0$ in the first
-  two stages and prime entries with their reciprocals in the third (Definition~\ref{def:stage3}):
-  what the brute-force reference finds over $b$ and the numerators $-H, \dots, H$ that pass the
-  class bit of $\omega$ and survive the sieve entries of all three stages, the points of the sieve
-  of $b$ followed by its check in stage~C1 whose numerators pass the class bit, mapped by
-  $\mathrm{swapPoint}$ when the flag is set. The masked ranges of the pieces lie end to end and make
-  up $[-H, H]$: the low mask moves the start of the first piece from $R w_{\mathrm{low}}$ to $-H$,
-  the high mask the end of the last one from $R w_{\mathrm{high}} - 1$ to $H$, and a piece between
-  them has no numerator outside $[-H, H]$.
+  flag of the reversal, which the check reads; the bits of the numerators $-H, \dots, H$ in the
+  packing of the class, in the form that splits the ends for $H > 2^{63} - 65$
+  (Definition~\ref{def:numeratorsToBits}; \csource{find_points.c}{3442}{3488}); and the points of
+  these bits in pieces (Definition~\ref{def:siftBits}; \csource{find_points.c}{3613}{3617}). Its
+  contract, for $A \ge 1$, a denominator $0 < b < 2^{63}$, $H < 2^{63}$, a class that packs a word
+  $w$ (Lemma~\ref{lem:numClasses}) and has a row of offsets, the rows of sieve entries in the first
+  two stages whose tables of inverses invert, with the reciprocals of their moduli, the residues
+  $b\,\mathrm{dinv}[k] \bmod p$ and the offsets of the class (Lemma~\ref{lem:classOffsets}), and
+  prime entries with their reciprocals in the third (Definition~\ref{def:stage3}): what the
+  brute-force reference finds over $b$ and the numerators $-H, \dots, H$ that pass the class bit of
+  $w$ and survive the sieve entries of all three stages, the points of the sieve of $b$ followed by
+  its check in stage~C1 whose numerators pass the class bit, mapped by $\mathrm{swapPoint}$ when the
+  flag is set. The bits of $[-H, H]$ in the packing of the class that pass its pattern give the
+  numerators of $[-H, H]$ that pass $w$, in increasing order (Lemma~\ref{lem:siftBits}).
 \end{definition}
 
 \begin{lemma}[The words compute the Booleans]\label{lem:sift_eq_checkDen}
-  \uses{def:sift, def:sieveDen, def:checkDen}
+  \uses{def:sift, def:sieveDen, def:checkDen, lem:admits_mul, lem:classOffsets, lem:numClasses}
   \lean{Ratpoints.Sieve.toList_run_sift_eq_checkDen, Ratpoints.BruteForce.pointsOfDen_filter}
   \leanok
-  For $A \ge 1$, a class word $\omega$, a denominator $0 < b < 2^{63}$, $H < 2^{63}$, sieve entries
-  with $p > 0$ in the first two stages and prime entries with their reciprocals in the third, the
-  points of the denominator $b$ that \verb|sift| returns from $\omega$ are those that the check of
-  stage~C1 returns on the sieve of stage~C1 with all these entries whose numerators pass the class
-  bit of $\omega$, mapped by $\mathrm{swapPoint}$ when the flag of the reversal is set.
+  For $A \ge 1$, a denominator $0 < b < 2^{63}$, $H < 2^{63}$, a class that packs a word $w$ and
+  has a row of offsets, sieve entries in the first two stages whose tables of inverses invert and
+  that are packed for the class at its offsets, and prime entries with their reciprocals in the
+  third, the points of the denominator $b$ that \verb|sift| returns in the packing of the class,
+  with the residues of $b$ divided by the stride, are those that the check of stage~C1 returns on
+  the sieve of stage~C1 with all these entries whose numerators pass the class bit of $w$, mapped by
+  $\mathrm{swapPoint}$ when the flag of the reversal is set.
 \end{lemma}
 
 \begin{proof}
-  \uses{lem:staged}
+  \uses{lem:staged, lem:numeratorsToBits, lem:reads_row, lem:rowIndices, lem:siftBits}
   \leanok
   The check of stage~C1 on the sieve of stage~C1 gives what the brute-force reference finds over $b$
   and the numerators $-H, \dots, H$ that survive the sieve entries, by the contracts of

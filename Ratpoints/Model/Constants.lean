@@ -154,7 +154,7 @@ def defaultMaxForbidden : Nat := 64
 whose bit arrays have 256 bits, and 8, 2 and 1 in the builds with 512-bit, 128-bit and 64-bit bit
 arrays. The proofs use only that it is positive (`Ratpoints.rbaPack_pos`) and that
 `64 rbaPack = 2 ^ Ratpoints.rbaShift` (`Ratpoints.rbaLength_eq_two_pow_rbaShift`), which the
-packing of the numerators needs (stage F).
+packing of the numerators needs (`Ratpoints.Sieve.classOffsets`, `Ratpoints.Sieve.siftBits`).
 
 C: `rp-private.h:55-58`, `rp-private.h:113`, `rp-private.h:127-128`, `rp-private.h:167`,
 `rp-private.h:174-175`, `rp-private.h:226`, `rp-private.h:233-234`, `rp-private.h:252`,
@@ -293,13 +293,14 @@ C: `ratpoints.h:95-97` -/
 def sp2Extra : Nat := 11
 
 /-- The lower bound of the multiple of a modulus `p` that the offset of a row of the sieve carries,
-`RP_ROW_BIAS`: in the packing of the numerators (stage F) the offset of the row of `p` carries the
-least multiple of `p` that is at least `rowBias`, so that the sum of a word number `w ≥ -rowBias`
-and an offset is never negative; the first two stages of the sieve reduce that sum, or its
-negation, by a multiplication with the reciprocal of `p` when the word numbers of a piece lie
-between `-rowBias` and `rowBias - 2 Ratpoints.maxPrimeEven` (the test `small`), the value then
-staying below `2 rowBias` in absolute value, which the C code checks at compile time to be at most
-`RP_MULMOD_LIMIT` (`Ratpoints.two_mul_rowBias_sub_one_le_mulModLimit`).
+`RP_ROW_BIAS`: in the packing of the numerators the offset of the row of `p` carries the least
+multiple of `p` that is at least `rowBias` (`Ratpoints.Sieve.SieveEntry.bias`,
+`Ratpoints.Sieve.classOffsets`), so that the sum of a word number `w ≥ -rowBias` and an offset is
+never negative; the first two stages of the sieve reduce that sum, or its negation, by a
+multiplication with the reciprocal of `p` when the word numbers of a piece lie between `-rowBias`
+and `rowBias - 2 Ratpoints.maxPrimeEven` (the test `small` of `Ratpoints.Sieve.siftPiece`), the
+value then staying below `2 rowBias` in absolute value, which the C code checks at compile time to
+be at most `RP_MULMOD_LIMIT` (`Ratpoints.two_mul_rowBias_sub_one_le_mulModLimit`).
 
 C: `rp-private.h:387`, `rp-private.h:426-427`
 
@@ -311,9 +312,9 @@ def rowBias : Nat := 2 ^ 31
 /-- The number of the strides with which the sieve packs the numerators of the denominators of a
 class modulo 64, `RP_NUM_STRIDES`: the strides are the powers `2 ^ k` with `k < numStrides` and
 `k ≤ 6`, up to the modulus `64 = 2 ^ 6` of the 2-adic information; for a larger value the stride
-stays at most `2 ^ 6`, the masks of the classes having seven entries, read as `0` beyond (the
-packing of the numerators, stage F). The proofs use only that it is at least 1
-(`Ratpoints.one_le_numStrides`), for the stride `2 ^ 0`.
+stays at most `2 ^ 6`, the masks of the classes having seven entries, read as `0` beyond
+(`Ratpoints.Sieve.classMasks`, `Ratpoints.Sieve.numClasses`). The proofs use only that it is at
+least 1 (`Ratpoints.one_le_numStrides`), for the stride `2 ^ 0`.
 
 C: `rp-private.h:476` -/
 def numStrides : Nat := 7

@@ -6,6 +6,7 @@ Authors: Michael Stoll
 module
 
 public import Ratpoints.Model.Sieve
+public import Ratpoints.Proof.Reductions
 public import Ratpoints.Proof.SetBits
 public import Std.WP
 
@@ -24,6 +25,12 @@ bits of a word, and the contract of the first stage over a piece, as `@[spec]` t
 
 * `Ratpoints.Sieve.Factor.HasInverses`: what the scaling of the rows by a unit needs of a factor of
   a modulus: its modulus divides the modulus, and its table of inverses inverts its units.
+* `Ratpoints.Sieve.SieveSpec.wordAt`, `Ratpoints.Sieve.andWords`: the row word that the first stage
+  ands into a word of a piece, at the offset of the row, and the words of a piece after it.
+* `Ratpoints.Sieve.SieveSpec.Reads`: the rows of a modulus read a test of the bits.
+* `Ratpoints.Sieve.AndRowsLoopInvariant`, `Ratpoints.Sieve.AndRowsStartInvariant`: the invariants of
+  the loop of the first stage over the moduli with their reciprocals, and of its loops over the bit
+  arrays of a modulus.
 * `Ratpoints.Sieve.WalkWordInvariant`: the invariant of the array that a walk through the set bits
   of a word, lowest first, appends to.
 
@@ -43,12 +50,16 @@ bits of a word, and the contract of the first stage over a piece, as `@[spec]` t
   numbers.
 * `Ratpoints.Sieve.SieveEntry.admits_mul`: the row of a sieve entry whose factors have their tables
   of inverses is unchanged when the denominator and the numerator are scaled by a unit.
+* `Ratpoints.Sieve.SieveEntry.reads_row`: the row of `b / 2 ^ k` at the offset of the class
+  `a₀ mod 2 ^ k` reads at bit `j` whether the row of `b` admits the numerator `a₀ + 2 ^ k j`.
+* `Ratpoints.Sieve.getLsbD_andWords`: the words of rows that read tests of the bits, and-ed into a
+  word, have the bits of the word that pass all the tests.
 * `Ratpoints.Sieve.andWords_append`: and-ing the rows of two lists of moduli one after the other is
   and-ing those of their concatenation.
-* `Ratpoints.Sieve.andRows_spec`: after the first stage over a piece with the rows of a denominator
-  `b` from the class word `cw`, bit `t` of word `y` of the piece is bit `t` of `cw` and the survivor
-  test of the numerator `rbaLength w0 + 64 y + t`, whose bit in `cw` is bit `t`
-  (`Ratpoints.Sieve.classBit_rbaLength_mul_add`).
+* `Ratpoints.Sieve.andRows_spec`: after the first stage over a piece from the class word `cw`, with
+  moduli in the range of the packing and their reciprocals (`Ratpoints.Sieve.SieveSpec.Fits`) and
+  the test `small` of the piece (`Ratpoints.Sieve.SmallFits`), each word of the piece is `cw` and-ed
+  with its row words (`Ratpoints.Sieve.andWords`).
 * `Ratpoints.Sieve.pointsOfDen_eq_flatMap_checkNum`: the points that the brute-force reference finds
   over a denominator are those of `Ratpoints.Sieve.checkNum` for its numerators, one after the
   other, with the flag of the reversal clear.
@@ -66,7 +77,8 @@ inverses, no primality. The contracts of the second and the third stage and of t
 `Ratpoints.Proof.Stages`, those of the walk, of the scan, of one piece and of one denominator in
 `Ratpoints.Proof.Sift`. The bit of a numerator in a class word, the contract of the lowest set bit
 of a word and the invariant of a `while` loop over the set bits of a word are in
-`Ratpoints.Proof.SetBits`.
+`Ratpoints.Proof.SetBits`, the reductions by a reciprocal and of the row indices in
+`Ratpoints.Proof.Reductions`.
 -/
 
 @[expose] public section
@@ -278,15 +290,15 @@ theorem SieveEntry.admits_mul {e : SieveEntry} (he : ∀ f ∈ e.factors, f.HasI
 /-! ### One piece -/
 
 /-- The word of the row of `s` that the first stage ands into word `y` of the piece from the word
-number `w0` on: word `y % rbaPack` of bit array `(w0 + y / rbaPack) mod p` of the row, for the
-number `rbaPack` of words of a bit array (`Ratpoints.rbaPack`). -/
+number `w0` on: word `y % rbaPack` of bit array `(w0 + offset + y / rbaPack) mod p` of the row, for
+the number `rbaPack` of words of a bit array (`Ratpoints.rbaPack`). -/
 def SieveSpec.wordAt (s : SieveSpec) (w0 : Int) (y : Nat) : UInt64 :=
-  s.row[rbaPack * ((w0 + (y / rbaPack : Nat)) % (s.p : Int)).toNat + y % rbaPack]!
+  s.row[rbaPack * ((w0 + s.offset + (y / rbaPack : Nat)) % (s.p : Int)).toNat + y % rbaPack]!
 
 /-- Word `κ < Ratpoints.rbaPack` of the row of `s` for the word number `i` is word `κ` of bit array
-`i mod p`. -/
+`(i + offset) mod p`. -/
 theorem SieveSpec.wordAt_of_lt (s : SieveSpec) (i : Int) {κ : Nat} (hκ : κ < rbaPack) :
-    s.wordAt i κ = s.row[rbaPack * (i % (s.p : Int)).toNat + κ]! := by
+    s.wordAt i κ = s.row[rbaPack * ((i + s.offset) % (s.p : Int)).toNat + κ]! := by
   simp [SieveSpec.wordAt, Nat.div_eq_of_lt hκ, Nat.mod_eq_of_lt hκ]
 
 /-- The row word of word `κ` of bit array `pos` of a piece from the word number `w0` on is the row
@@ -294,7 +306,7 @@ word of word `κ` of the bit array with the word number `w0 + pos`. -/
 theorem SieveSpec.wordAt_rbaPack_mul_add (s : SieveSpec) (w0 : Int) (pos : Nat) {κ : Nat}
     (hκ : κ < rbaPack) : s.wordAt w0 (rbaPack * pos + κ) = s.wordAt (w0 + pos) κ := by
   simp only [SieveSpec.wordAt, Nat.mul_add_div rbaPack_pos, Nat.div_eq_of_lt hκ, Nat.mul_add_mod,
-    Nat.add_zero, Int.natCast_zero, Int.add_zero]
+    Nat.add_zero, Int.natCast_zero, Int.add_zero, Int.add_right_comm w0]
 
 -- The position in the row of bit `t` of the row word of word `y` is congruent modulo `p` to the
 -- numerator of bit `t` of word `y`.
@@ -316,18 +328,48 @@ private theorem emod_wordIndex (p : Nat) (hp : 0 < p) (w0 : Int) (y t : Nat) :
     grind
   rw [key, Int.add_mul_emod_self_left]
 
-theorem SieveSpec.getLsbD_wordAt_mk (e : SieveEntry) (b : Nat) (hp : 0 < e.p) (w0 : Int)
-    (y t : Nat) :
-    (wordAt ⟨e.p, e.row b⟩ w0 y).toBitVec.getLsbD t =
-      (decide (t < 64) && e.admits b (rbaLength * w0 + 64 * y + t)) := by
-  have hu : ((w0 + (y / rbaPack : Nat)) % (e.p : Int)).toNat < e.p := by
-    have := Int.emod_lt_of_pos (w0 + (y / rbaPack : Nat)) (b := e.p) (by lia)
-    lia
-  have hj : rbaPack * ((w0 + (y / rbaPack : Nat)) % (e.p : Int)).toNat + y % rbaPack <
+/-- Bit `t` of the row word of word `y` of a piece from the word number `w0` on, in the row of the
+denominator `b` with the offset `off`, is the bit of the numerator `rbaLength (w0 + off) + 64 y + t`
+in the row of `b`. -/
+theorem SieveSpec.getLsbD_wordAt_mk (e : SieveEntry) (b : Nat) (hp : 0 < e.p) (off : Nat)
+    (w0 : Int) (y t : Nat) :
+    (wordAt ⟨e.p, off, e.row b⟩ w0 y).toBitVec.getLsbD t =
+      (decide (t < 64) && e.admits b (rbaLength * (w0 + off) + 64 * y + t)) := by
+  have hu : ((w0 + off + (y / rbaPack : Nat)) % (e.p : Int)).toNat < e.p :=
+    Int.toNat_emod_lt _ hp
+  have hj : rbaPack * ((w0 + off + (y / rbaPack : Nat)) % (e.p : Int)).toNat + y % rbaPack <
       e.p * rbaPack :=
     Nat.lt_of_lt_of_le (Nat.add_lt_add_left (Nat.mod_lt y rbaPack_pos) _)
       (by rw [← Nat.mul_succ, Nat.mul_comm]; exact Nat.mul_le_mul_right _ hu)
-  rw [wordAt, SieveEntry.getLsbD_row e b hj, e.admits_congr b (emod_wordIndex e.p hp w0 y t)]
+  rw [wordAt, SieveEntry.getLsbD_row e b hj, e.admits_congr b (emod_wordIndex e.p hp _ y t)]
+
+/-- The rows of the sieve spec `s` read the test `f` of the bits: bit `t` of the row word of word
+`y` of a piece from the word number `i` on is `f` at the bit `rbaLength i + 64 y + t`. -/
+def SieveSpec.Reads (s : SieveSpec) (f : Int → Bool) : Prop :=
+  ∀ (i : Int) (y t : Nat), (s.wordAt i y).toBitVec.getLsbD t =
+    (decide (t < 64) && f (rbaLength * i + 64 * y + t))
+
+/-- The row of the residue `bp` of the denominator `b` divided by the stride `2 ^ k`
+(`2 ^ k bp ≡ b`), read at the offset `off` of the class `a₀ mod 2 ^ k`
+(`off 2 ^ k Ratpoints.rbaLength ≡ a₀`), reads at bit `j` whether the row of `b` admits the numerator
+`a₀ + 2 ^ k j`, when `2 ^ k` has an inverse `v` modulo `p` and the factors of the entry have their
+tables of inverses: the rows are unchanged when the denominator and the numerator are scaled by the
+unit `2 ^ k` (`Ratpoints.Sieve.SieveEntry.admits_mul`). -/
+theorem SieveEntry.reads_row {e : SieveEntry} (he : ∀ f ∈ e.factors, f.HasInverses e.p)
+    (hp : 0 < e.p) {k a0 off bp b v : Nat} (hv : v * 2 ^ k % e.p = 1)
+    (hoff : off * (2 ^ k * rbaLength) % e.p = a0 % e.p) (hbp : 2 ^ k * bp % e.p = b % e.p) :
+    SieveSpec.Reads ⟨e.p, off, e.row bp⟩ fun j ↦ e.admits b (a0 + 2 ^ k * j) := by
+  intro i y t
+  rw [SieveSpec.getLsbD_wordAt_mk e bp hp, ← e.admits_mul he hv, ← e.admits_mod, hbp,
+    e.admits_mod]
+  refine congrArg (decide (t < 64) && ·) (e.admits_congr b ?_)
+  have h' : ((off * (2 ^ k * rbaLength) : Nat) : Int) % e.p = (a0 : Int) % e.p := by
+    rw [← Int.natCast_emod, ← Int.natCast_emod, hoff]
+  have key : ((2 ^ k : Nat) : Int) * (rbaLength * (i + off) + 64 * y + t) =
+      ((off * (2 ^ k * rbaLength) : Nat) : Int) + 2 ^ k * (rbaLength * i + 64 * y + t) := by
+    push_cast
+    grind
+  rw [key, Int.add_emod_eq_add_emod_right _ h']
 
 theorem classBit_rbaLength_mul_add (cw : UInt64) (w0 : Int) (y : Nat) {t : Nat} (ht : t < 64) :
     classBit cw (rbaLength * w0 + 64 * y + t) = cw.toBitVec.getLsbD t := by
@@ -363,24 +405,24 @@ theorem andWords_rbaPack_mul_add (specs : List SieveSpec) (x : UInt64) (w0 : Int
     andWords specs x w0 (rbaPack * pos + κ) = andWords specs x (w0 + pos) κ := by
   simp only [andWords, SieveSpec.wordAt_rbaPack_mul_add _ _ _ hκ]
 
-theorem getLsbD_andWords_map {entries : List SieveEntry} (b : Nat) (hp : ∀ e ∈ entries, 0 < e.p)
+/-- The words of rows that read the tests `sf.2` of the bits (`Ratpoints.Sieve.SieveSpec.Reads`),
+and-ed into the word `cw`, have bit `t` set when `cw` has it and all the tests pass at the bit
+`rbaLength w0 + 64 y + t`. -/
+theorem getLsbD_andWords {sfs : List (SieveSpec × (Int → Bool))} (h : ∀ sf ∈ sfs, sf.1.Reads sf.2)
     (cw : UInt64) (w0 : Int) (y t : Nat) :
-    (andWords (entries.map fun e ↦ ⟨e.p, e.row b⟩) cw w0 y).toBitVec.getLsbD t =
-      (cw.toBitVec.getLsbD t && survives entries b (rbaLength * w0 + 64 * y + t)) := by
-  rw [andWords, UInt64.getLsbD_foldl_and, List.all_map, survives]
-  grind [SieveSpec.getLsbD_wordAt_mk, List.all_eq_true]
+    (andWords (sfs.map Prod.fst) cw w0 y).toBitVec.getLsbD t =
+      (cw.toBitVec.getLsbD t && sfs.all (·.2 (rbaLength * w0 + 64 * y + t))) := by
+  rw [andWords, UInt64.getLsbD_foldl_and, List.all_map]
+  grind [SieveSpec.Reads, List.all_eq_true]
 
-/-- The invariant of the loop of `Ratpoints.Sieve.andRows` that fills the piece with the class
-word `cw`: the first `k` words are `cw`. -/
-def AndRowsFillInvariant {m : Nat} (cw : UInt64) (k : Nat) (surv : Vector UInt64 m) : Prop :=
-  ∀ y < k, surv[y]! = cw
-
-/-- The invariant of the loop of `Ratpoints.Sieve.andRows` over the moduli: after the moduli
-`pref`, the words of the piece are the class word `cw` and-ed with their row words
-(`Ratpoints.Sieve.andWords`). -/
-def AndRowsInvariant {m : Nat} (cw : UInt64) (w0 : Int) (n : Nat) (pref : List SieveSpec)
-    (surv : Vector UInt64 m) : Prop :=
-  ∀ y < n * rbaPack, surv[y]! = andWords pref cw w0 y
+/-- The invariant of the loop of `Ratpoints.Sieve.andRows` over the moduli and, in step with them,
+their reciprocals `mgs`, whose state is the piece and the reciprocals still to come, and, with no
+moduli yet, of the loop that fills the piece with the class word `cw` before it: after the moduli
+`pref`, the reciprocals still to come are those after the first `pref.length`, and the first `k`
+words of the piece are `cw` and-ed with their row words (`Ratpoints.Sieve.andWords`). -/
+def AndRowsLoopInvariant {m : Nat} (cw : UInt64) (w0 : Int) (k : Nat) (mgs : List Nat)
+    (pref : List SieveSpec) (st : Vector UInt64 m × List Nat) : Prop :=
+  st.2 = mgs.drop pref.length ∧ ∀ y < k, st.1[y]! = andWords pref cw w0 y
 
 /-- The invariant of the loops of `Ratpoints.Sieve.andRows` over the bit arrays for the modulus
 `s` after the moduli `pref`: the words of the bit arrays below `c` are and-ed with the row of `s`
@@ -390,81 +432,140 @@ def AndRowsRowInvariant {m : Nat} (cw : UInt64) (w0 : Int) (n : Nat) (pref : Lis
   ∀ y < n * rbaPack, surv[y]! =
     if y / rbaPack < c then andWords pref cw w0 y &&& s.wordAt w0 y else andWords pref cw w0 y
 
-/-- The invariant of the loop of `Ratpoints.Sieve.andRows` over the whole periods for the modulus
-`s`: the bit arrays before the first whole period and the periods `done` are done. -/
-abbrev AndRowsPeriodInvariant {m : Nat} (cw : UInt64) (w0 : Int) (n : Nat) (pref : List SieveSpec)
-    (s : SieveSpec) (done : List Nat) (surv : Vector UInt64 m) : Prop :=
-  AndRowsRowInvariant cw w0 n pref s (((-w0) % (s.p : Int)).toNat + done.length * s.p) surv
+/-- The index `r` of the bit array of the row of `s` that the first stage ands into bit array `0`
+of a piece from the word number `w0` on is `p - r`, computed as `Ratpoints.Sieve.andRows` computes
+it with the reciprocal `mg` of the cursor: the residue of `-w0 - offset` by `mod_mul` under the
+test `small` and by the helper `mod` otherwise. -/
+abbrev andRowsStart (small : Bool) (w0 : Int) (s : SieveSpec) (mg : Nat) : Nat :=
+  (if small then modMul (-w0 - s.offset) s.p mg else modLong (-w0 - s.offset) s.p).toNat
 
-/-- The invariant of the loop of `Ratpoints.Sieve.andRows` over one whole period for the modulus
-`s`, after the periods `periods`: the bit arrays `done` of the current period are done too. -/
-abbrev AndRowsPacketInvariant {m : Nat} (cw : UInt64) (w0 : Int) (n : Nat) (pref : List SieveSpec)
-    (s : SieveSpec) (periods done : List Nat) (surv : Vector UInt64 m) : Prop :=
-  AndRowsRowInvariant cw w0 n pref s
-    (((-w0) % (s.p : Int)).toNat + periods.length * s.p + done.length) surv
+/-- `Ratpoints.Sieve.AndRowsRowInvariant` for the modulus `s` with the bit arrays below `c` done,
+and `r`, the index that the loops over the bit arrays use, is the residue of `-(w0 + offset)`
+modulo `p > 0`: the invariant of each loop over the bit arrays, with the `c` of that loop. -/
+def AndRowsStartInvariant {m : Nat} (cw : UInt64) (w0 : Int) (n : Nat) (pref : List SieveSpec)
+    (s : SieveSpec) (r c : Nat) (surv : Vector UInt64 m) : Prop :=
+  (0 < s.p ∧ r = ((-(w0 + s.offset)) % (s.p : Int)).toNat) ∧
+    AndRowsRowInvariant cw w0 n pref s c surv
 
-/-- The invariant of the loop of `Ratpoints.Sieve.andRows` over the bit arrays after the last
-whole period for the modulus `s`: the bit arrays before them and the bit arrays `done` are
+/-- The invariant of the loops of `Ratpoints.Sieve.andRows` over the bit arrays before the first
+whole period of the row of `s`, with the reciprocal `mg` of the cursor: the bit arrays `done` are
 done. -/
-abbrev AndRowsTailInvariant {m : Nat} (cw : UInt64) (w0 : Int) (n : Nat) (pref : List SieveSpec)
-    (s : SieveSpec) (done : List Nat) (surv : Vector UInt64 m) : Prop :=
-  AndRowsRowInvariant cw w0 n pref s (((-w0) % (s.p : Int)).toNat +
-    (n - ((-w0) % (s.p : Int)).toNat) / s.p * s.p + done.length) surv
+abbrev AndRowsHeadInvariant {m : Nat} (small : Bool) (cw : UInt64) (w0 : Int) (n : Nat)
+    (pref : List SieveSpec) (s : SieveSpec) (mg : Nat) (done : List Nat) (surv : Vector UInt64 m) :
+    Prop :=
+  AndRowsStartInvariant cw w0 n pref s (andRowsStart small w0 s mg) done.length surv
 
-theorem andRowsFillInvariant_zero {m : Nat} (cw : UInt64) (surv : Vector UInt64 m) :
-    AndRowsFillInvariant cw 0 surv :=
-  fun _ h ↦ absurd h (Nat.not_lt_zero _)
+/-- The invariant of the loop of `Ratpoints.Sieve.andRows` over the whole periods of the row of
+`s`, with the reciprocal `mg` of the cursor: the bit arrays before the first whole period and the
+periods `done` are done. -/
+abbrev AndRowsPeriodInvariant {m : Nat} (small : Bool) (cw : UInt64) (w0 : Int) (n : Nat)
+    (pref : List SieveSpec) (s : SieveSpec) (mg : Nat) (done : List Nat) (surv : Vector UInt64 m) :
+    Prop :=
+  AndRowsStartInvariant cw w0 n pref s (andRowsStart small w0 s mg)
+    (andRowsStart small w0 s mg + done.length * s.p) surv
 
-theorem AndRowsFillInvariant.append_set! {cw : UInt64} {n : Nat} {done suff : List Nat}
-    {cur : Nat} {surv : Vector UInt64 ((n + 1) * rbaPack)}
-    (h : AndRowsFillInvariant cw done.length surv)
+/-- The invariant of the loop of `Ratpoints.Sieve.andRows` over one whole period of the row of `s`,
+with the reciprocal `mg` of the cursor, after the periods `periods`: the bit arrays `done` of the
+current period are done too. -/
+abbrev AndRowsPacketInvariant {m : Nat} (small : Bool) (cw : UInt64) (w0 : Int) (n : Nat)
+    (pref : List SieveSpec) (s : SieveSpec) (mg : Nat) (periods done : List Nat)
+    (surv : Vector UInt64 m) : Prop :=
+  AndRowsStartInvariant cw w0 n pref s (andRowsStart small w0 s mg)
+    (andRowsStart small w0 s mg + periods.length * s.p + done.length) surv
+
+/-- The invariant of the loop of `Ratpoints.Sieve.andRows` over the bit arrays after the last whole
+period of the row of `s`, with the reciprocal `mg` of the cursor: the bit arrays before them and
+the bit arrays `done` are done. -/
+abbrev AndRowsTailInvariant {m : Nat} (small : Bool) (cw : UInt64) (w0 : Int) (n : Nat)
+    (pref : List SieveSpec) (s : SieveSpec) (mg : Nat) (done : List Nat) (surv : Vector UInt64 m) :
+    Prop :=
+  AndRowsStartInvariant cw w0 n pref s (andRowsStart small w0 s mg)
+    (andRowsStart small w0 s mg + (n - andRowsStart small w0 s mg) / s.p * s.p + done.length) surv
+
+theorem andRowsLoopInvariant_zero {m : Nat} (cw : UInt64) (w0 : Int) (mgs : List Nat)
+    (surv : Vector UInt64 m) : AndRowsLoopInvariant cw w0 0 mgs [] (surv, Std.toStream mgs) :=
+  ⟨rfl, fun _ h ↦ absurd h (Nat.not_lt_zero _)⟩
+
+/-- A step of the loop of `Ratpoints.Sieve.andRows` that fills the piece with the class word. -/
+theorem AndRowsLoopInvariant.append_set! {cw : UInt64} {w0 : Int} {n : Nat} {mgs : List Nat}
+    {done suff : List Nat} {cur : Nat} {surv : Vector UInt64 ((n + 1) * rbaPack)}
+    (h : AndRowsLoopInvariant cw w0 done.length mgs [] (surv, Std.toStream mgs))
     (hl : ForIn.toList [0:n * rbaPack] = done ++ cur :: suff) :
-    AndRowsFillInvariant cw (done ++ [cur]).length (surv.set! cur cw) := by
+    AndRowsLoopInvariant cw w0 (done ++ [cur]).length mgs []
+      (surv.set! cur cw, Std.toStream mgs) := by
   have := Std.Legacy.Range.length_eq_of_toList_eq_append_cons hl
   have := Std.Legacy.Range.lt_of_toList_eq_append_cons hl
-  intro y hy
+  refine ⟨h.1, fun y hy ↦ ?_⟩
   rw [List.length_append, List.length_singleton] at hy
   rw [Vector.getElem!_set! (Nat.lt_add_one_mul_of_lt_mul (by lia))]
   split
   · rfl
-  · exact h y (by lia)
+  · exact h.2 y (by lia)
 
-theorem andRowsInvariant_nil {m n : Nat} {cw : UInt64} {w0 : Int} {surv : Vector UInt64 m}
-    (h : AndRowsFillInvariant cw (ForIn.toList [0:n * rbaPack]).length surv) :
-    AndRowsInvariant cw w0 n [] surv :=
-  fun y hy ↦ h y (by simpa using hy)
+theorem AndRowsLoopInvariant.getElem!_eq {m n : Nat} {cw : UInt64} {w0 : Int} {mgs : List Nat}
+    {pref : List SieveSpec} {st : Vector UInt64 m × List Nat}
+    (h : AndRowsLoopInvariant cw w0 (ForIn.toList [0:n * rbaPack]).length mgs pref st) {y : Nat}
+    (hy : y < n * rbaPack) : st.1[y]! = andWords pref cw w0 y :=
+  h.2 y (by simpa using hy)
 
-theorem AndRowsInvariant.getElem!_eq {m n : Nat} {cw : UInt64} {w0 : Int} {pref : List SieveSpec}
-    {surv : Vector UInt64 m} (h : AndRowsInvariant cw w0 n pref surv) {y : Nat}
-    (hy : y < n * rbaPack) : surv[y]! = andWords pref cw w0 y :=
-  h y hy
+/-- The reciprocals do not run out before the moduli. -/
+theorem AndRowsLoopInvariant.next?_ne_none {m k n : Nat} {cw : UInt64} {w0 : Int} {small : Bool}
+    {specs pref suff : List SieveSpec} {s : SieveSpec} {mgs rest : List Nat}
+    {surv : Vector UInt64 m}
+    (pre : (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p) ∧ SmallFits small w0 (w0 + n))
+    (hs : specs = pref ++ s :: suff) (h : AndRowsLoopInvariant cw w0 k mgs pref (surv, rest)) :
+    Std.Stream.next? rest ≠ none := by
+  rw [show rest = _ from h.1, pre.2.1]
+  exact List.next?_drop_map_ne_none _ hs
 
-theorem AndRowsInvariant.andRowsRowInvariant {m n : Nat} {cw : UInt64} {w0 : Int}
-    {pref : List SieveSpec} {s : SieveSpec} {surv : Vector UInt64 m}
-    (h : AndRowsInvariant cw w0 n pref surv) :
-    AndRowsRowInvariant cw w0 n pref s 0 surv := by
-  intro y hy
-  simp [h y hy]
+/-- The index of the first row of the first stage, as `Ratpoints.Sieve.andRows` computes it with the
+reciprocal `mg` of the cursor, is the residue of `-(w0 + offset)`
+(`Ratpoints.Sieve.SieveSpec.Fits.ite_modMul_modLong_eq_emod`), since `mg` is the reciprocal of the
+modulus. -/
+theorem AndRowsLoopInvariant.andRowsHeadInvariant {m n : Nat} {cw : UInt64} {w0 : Int}
+    {small : Bool} {specs pref suff : List SieveSpec} {s : SieveSpec} {mgs rest rest' : List Nat}
+    {mg : Nat} {surv : Vector UInt64 m}
+    (pre : (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p) ∧ SmallFits small w0 (w0 + n))
+    (hs : specs = pref ++ s :: suff)
+    (h : AndRowsLoopInvariant cw w0 (ForIn.toList [0:n * rbaPack]).length mgs pref (surv, rest))
+    (hnext : Std.Stream.next? rest = some (mg, rest')) :
+    AndRowsHeadInvariant small cw w0 n pref s mg [] surv := by
+  rw [show rest = _ from h.1, pre.2.1] at hnext
+  obtain ⟨rfl, -⟩ := List.next?_drop_map _ hs hnext
+  have hfit := pre.1 s (by simp [hs])
+  refine ⟨⟨hfit.pos, ?_⟩, fun y hy ↦ by simp [h.2 y (by simpa using hy)]⟩
+  rw [andRowsStart, hfit.ite_modMul_modLong_eq_emod pre.2.2, Int.neg_add, Int.sub_eq_add_neg]
 
-theorem AndRowsRowInvariant.of_eq {m n : Nat} {cw : UInt64} {w0 : Int} {pref : List SieveSpec}
-    {s : SieveSpec} {c c' : Nat} {surv : Vector UInt64 m}
-    (h : AndRowsRowInvariant cw w0 n pref s c surv)
-    (hc : c = c') : AndRowsRowInvariant cw w0 n pref s c' surv :=
+/-- After the bit arrays of the modulus `s` are all done, the cursor moves on. -/
+theorem AndRowsLoopInvariant.push {m n c : Nat} {cw : UInt64} {w0 : Int}
+    {mgs rest rest' : List Nat} {pref : List SieveSpec} {s : SieveSpec} {r mg : Nat}
+    {surv surv' : Vector UInt64 m}
+    (h : AndRowsLoopInvariant cw w0 (ForIn.toList [0:n * rbaPack]).length mgs pref (surv, rest))
+    (hnext : Std.Stream.next? rest = some (mg, rest'))
+    (h' : AndRowsStartInvariant cw w0 n pref s r c surv') (hc : n ≤ c) :
+    AndRowsLoopInvariant cw w0 (ForIn.toList [0:n * rbaPack]).length mgs (pref ++ [s])
+      (surv', rest') := by
+  refine ⟨?_, fun y hy ↦ ?_⟩
+  · change rest' = mgs.drop (pref ++ [s]).length
+    rw [List.length_append, List.length_singleton, ← List.drop_drop, ← show rest = _ from h.1,
+      List.eq_cons_of_next?_eq_some hnext]
+    rfl
+  · simp only [Std.Legacy.Range.length_toList, Nat.sub_zero] at hy
+    have : y / rbaPack < c := Nat.lt_of_lt_of_le ((Nat.div_lt_iff_lt_mul rbaPack_pos).mpr hy) hc
+    simp [h'.2 y hy, this, andWords_concat]
+
+theorem AndRowsStartInvariant.of_eq {m n : Nat} {cw : UInt64} {w0 : Int} {pref : List SieveSpec}
+    {s : SieveSpec} {r c c' : Nat} {surv : Vector UInt64 m}
+    (h : AndRowsStartInvariant cw w0 n pref s r c surv) (hc : c = c') :
+    AndRowsStartInvariant cw w0 n pref s r c' surv :=
   hc ▸ h
 
-theorem AndRowsRowInvariant.andRowsInvariant {m n : Nat} {cw : UInt64} {w0 : Int}
-    {pref : List SieveSpec} {s : SieveSpec} {c : Nat} {surv : Vector UInt64 m}
-    (h : AndRowsRowInvariant cw w0 n pref s c surv) (hc : n ≤ c) :
-    AndRowsInvariant cw w0 n (pref ++ [s]) surv := by
-  intro y hy
-  have : y / rbaPack < c := Nat.lt_of_lt_of_le ((Nat.div_lt_iff_lt_mul rbaPack_pos).mpr hy) hc
-  simp [h y hy, this, andWords_concat]
-
 /-- One step of the loops of `Ratpoints.Sieve.andRows` for the modulus `s`: bit array `c` and-ed
-with bit array `(w0 + c) mod p` of the row. -/
+with bit array `(w0 + offset + c) mod p` of the row. -/
 theorem AndRowsRowInvariant.add_one_andBitArray {n : Nat} {cw : UInt64} {w0 : Int}
     {pref : List SieveSpec} {s : SieveSpec} {c x : Nat} {surv : Vector UInt64 ((n + 1) * rbaPack)}
-    (h : AndRowsRowInvariant cw w0 n pref s c surv) (hx : ((w0 + c) % (s.p : Int)).toNat = x) :
+    (h : AndRowsRowInvariant cw w0 n pref s c surv)
+    (hx : ((w0 + s.offset + c) % (s.p : Int)).toNat = x) :
     AndRowsRowInvariant cw w0 n pref s (c + 1) (andBitArray surv c s.row x) := by
   intro y hy
   rw [getElem!_andBitArray _ _ _ _ (Nat.lt_add_one_mul_of_lt_mul hy), h y hy]
@@ -474,108 +575,103 @@ theorem AndRowsRowInvariant.add_one_andBitArray {n : Nat} {cw : UInt64} {w0 : In
   · simp only [hyc, ite_false]
     split <;> split <;> first | rfl | lia
 
-theorem AndRowsRowInvariant.add_append_andBitArray {n m : Nat} {cw : UInt64} {w0 : Int}
-    {pref : List SieveSpec} {s : SieveSpec} {c0 x : Nat} {done suff : List Nat} {cur : Nat}
+theorem AndRowsStartInvariant.add_append_andBitArray {n m : Nat} {cw : UInt64} {w0 : Int}
+    {pref : List SieveSpec} {s : SieveSpec} {r c0 x : Nat} {done suff : List Nat} {cur : Nat}
     {surv : Vector UInt64 ((n + 1) * rbaPack)}
-    (h : AndRowsRowInvariant cw w0 n pref s (c0 + done.length) surv)
+    (h : AndRowsStartInvariant cw w0 n pref s r (c0 + done.length) surv)
     (hl : ForIn.toList [0:m] = done ++ cur :: suff)
-    (hx : ((w0 + ((c0 + cur : Nat) : Int)) % (s.p : Int)).toNat = x) :
-    AndRowsRowInvariant cw w0 n pref s (c0 + (done ++ [cur]).length)
+    (hx : ((w0 + s.offset + ((c0 + cur : Nat) : Int)) % (s.p : Int)).toNat = x) :
+    AndRowsStartInvariant cw w0 n pref s r (c0 + (done ++ [cur]).length)
       (andBitArray surv (c0 + cur) s.row x) := by
   have := Std.Legacy.Range.length_eq_of_toList_eq_append_cons hl
-  simpa [this, Nat.add_assoc] using (h.of_eq (by rw [this])).add_one_andBitArray hx
+  have h2 : AndRowsRowInvariant cw w0 n pref s (c0 + cur) surv := this ▸ h.2
+  exact ⟨h.1, by simpa [this, Nat.add_assoc] using h2.add_one_andBitArray hx⟩
 
 /-- The loops of `Ratpoints.Sieve.andRows` before the first whole period: bit array `cur` is and-ed
-with bit array `p - r + cur` of the row, for `r = (-w0) mod p`. -/
-theorem AndRowsRowInvariant.append_andBitArray_sub {specs pref suff : List SieveSpec}
-    {s : SieveSpec} {n m : Nat} {cw : UInt64} {w0 : Int} {done suff' : List Nat} {cur : Nat}
+with bit array `p - r + cur` of the row, for `r = -(w0 + offset) mod p`. -/
+theorem AndRowsStartInvariant.append_andBitArray_sub {n m : Nat} {cw : UInt64} {w0 : Int}
+    {pref : List SieveSpec} {s : SieveSpec} {r : Nat} {done suff : List Nat} {cur : Nat}
     {surv : Vector UInt64 ((n + 1) * rbaPack)}
-    (h : AndRowsRowInvariant cw w0 n pref s done.length surv)
-    (hl : ForIn.toList [0:m] = done ++ cur :: suff') (hm : m ≤ ((-w0) % (s.p : Int)).toNat)
-    (hp : ∀ s ∈ specs, 0 < s.p) (hs : specs = pref ++ s :: suff) :
-    AndRowsRowInvariant cw w0 n pref s (done ++ [cur]).length
-      (andBitArray surv cur s.row (s.p - ((-w0) % (s.p : Int)).toNat + cur)) := by
-  have hlen := Std.Legacy.Range.length_eq_of_toList_eq_append_cons hl
+    (h : AndRowsStartInvariant cw w0 n pref s r done.length surv)
+    (hl : ForIn.toList [0:m] = done ++ cur :: suff) (hm : m ≤ r) :
+    AndRowsStartInvariant cw w0 n pref s r (done ++ [cur]).length
+      (andBitArray surv cur s.row (s.p - r + cur)) := by
   have := Std.Legacy.Range.lt_of_toList_eq_append_cons hl
-  simpa [hlen] using (h.of_eq hlen).add_one_andBitArray
-    (Int.toNat_add_emod_of_lt (hp s (by simp [hs])) (by lia))
+  have hx := Int.toNat_add_emod_of_lt (a := w0 + s.offset) (j := cur) h.1.1 (by rw [← h.1.2]; lia)
+  rw [← h.1.2] at hx
+  simpa using AndRowsStartInvariant.add_append_andBitArray (c0 := 0)
+    (h.of_eq (Nat.zero_add _).symm) hl (by simpa using hx)
 
 /-- The loop of `Ratpoints.Sieve.andRows` over one whole period: bit array `r + k p + i` is and-ed
-with bit array `i` of the row, for `r = (-w0) mod p`. -/
-theorem AndRowsRowInvariant.append_andBitArray_period {s : SieveSpec} {pref : List SieveSpec}
-    {n mk : Nat} {cw : UInt64} {w0 : Int} {periods suffK done suff : List Nat} {k i : Nat}
-    {surv : Vector UInt64 ((n + 1) * rbaPack)}
-    (h : AndRowsPacketInvariant cw w0 n pref s periods done surv)
+with bit array `i` of the row, for `r = -(w0 + offset) mod p`. -/
+theorem AndRowsStartInvariant.append_andBitArray_period {n mk : Nat} {cw : UInt64} {w0 : Int}
+    {pref : List SieveSpec} {s : SieveSpec} {r : Nat} {periods suffK done suff : List Nat}
+    {k i : Nat} {surv : Vector UInt64 ((n + 1) * rbaPack)}
+    (h : AndRowsStartInvariant cw w0 n pref s r (r + periods.length * s.p + done.length) surv)
     (hlk : ForIn.toList [0:mk] = periods ++ k :: suffK)
     (hl : ForIn.toList [0:s.p] = done ++ i :: suff) :
-    AndRowsPacketInvariant cw w0 n pref s periods (done ++ [i])
-      (andBitArray surv (((-w0) % (s.p : Int)).toNat + k * s.p + i) s.row i) := by
+    AndRowsStartInvariant cw w0 n pref s r (r + periods.length * s.p + (done ++ [i]).length)
+      (andBitArray surv (r + k * s.p + i) s.row i) := by
   have hk := Std.Legacy.Range.length_eq_of_toList_eq_append_cons hlk
-  rw [AndRowsPacketInvariant, hk] at h ⊢
-  exact h.add_append_andBitArray hl
-    (Int.toNat_add_add_emod (Std.Legacy.Range.lt_of_toList_eq_append_cons hl))
+  have hx := Int.toNat_add_add_emod (a := w0 + s.offset) (k := k)
+    (Std.Legacy.Range.lt_of_toList_eq_append_cons hl)
+  rw [← h.1.2] at hx
+  rw [hk] at h ⊢
+  exact h.add_append_andBitArray hl hx
 
 /-- The loop of `Ratpoints.Sieve.andRows` after the last whole period: bit array
-`r + ⌊(n - r) / p⌋ p + i` is and-ed with bit array `i` of the row, for `r = (-w0) mod p`. -/
-theorem AndRowsRowInvariant.append_andBitArray_tail {specs pref suff : List SieveSpec}
-    {s : SieveSpec} {n : Nat} {cw : UInt64} {w0 : Int} {done suff' : List Nat} {i : Nat}
+`r + ⌊(n - r) / p⌋ p + i` is and-ed with bit array `i` of the row, for
+`r = -(w0 + offset) mod p`. -/
+theorem AndRowsStartInvariant.append_andBitArray_tail {n : Nat} {cw : UInt64} {w0 : Int}
+    {pref : List SieveSpec} {s : SieveSpec} {r : Nat} {done suff : List Nat} {i : Nat}
     {surv : Vector UInt64 ((n + 1) * rbaPack)}
-    (h : AndRowsTailInvariant cw w0 n pref s done surv)
-    (hl : ForIn.toList [0:(n - ((-w0) % (s.p : Int)).toNat) % s.p] = done ++ i :: suff')
-    (hp : ∀ s ∈ specs, 0 < s.p) (hs : specs = pref ++ s :: suff) :
-    AndRowsTailInvariant cw w0 n pref s (done ++ [i])
-      (andBitArray surv (((-w0) % (s.p : Int)).toNat +
-        (n - ((-w0) % (s.p : Int)).toNat) / s.p * s.p + i) s.row i) :=
-  h.add_append_andBitArray hl (Int.toNat_add_add_emod
-    (Nat.lt_of_lt_of_le (Std.Legacy.Range.lt_of_toList_eq_append_cons hl)
-      (Nat.le_of_lt (Nat.mod_lt _ (hp s (by simp [hs]))))))
+    (h : AndRowsStartInvariant cw w0 n pref s r (r + (n - r) / s.p * s.p + done.length) surv)
+    (hl : ForIn.toList [0:(n - r) % s.p] = done ++ i :: suff) :
+    AndRowsStartInvariant cw w0 n pref s r (r + (n - r) / s.p * s.p + (done ++ [i]).length)
+      (andBitArray surv (r + (n - r) / s.p * s.p + i) s.row i) := by
+  have hi := Nat.lt_of_lt_of_le (Std.Legacy.Range.lt_of_toList_eq_append_cons hl)
+    (Nat.le_of_lt (Nat.mod_lt _ h.1.1))
+  have hx := Int.toNat_add_add_emod (a := w0 + s.offset) (k := (n - r) / s.p) hi
+  rw [← h.1.2] at hx
+  exact h.add_append_andBitArray hl hx
 
 /- The invariants are irreducible from here on, so that each alternative of the dispatch of the
 verification conditions of `Ratpoints.Sieve.andRows` below fails fast on the conditions of the
 other loops. -/
-attribute [local irreducible] AndRowsFillInvariant AndRowsInvariant AndRowsRowInvariant
+attribute [local irreducible] AndRowsLoopInvariant AndRowsStartInvariant
 
--- The contract of `Ratpoints.Sieve.andRows` for rows of positive moduli: each word of the piece
--- is the class word and-ed with its row words.
-private theorem andRows_spec_of_pos (specs : List SieveSpec) (cw : UInt64) (w0 : Int) (n : Nat)
-    (surv : Vector UInt64 ((n + 1) * rbaPack)) :
-    ⦃ ∀ s ∈ specs, 0 < s.p ⦄ andRows specs cw w0 n surv
-    ⦃ AndRowsInvariant cw w0 n specs ⦄ := by
-  vcgen [andRows] invariants
-  | inv1 => fun done _ ↦ AndRowsFillInvariant cw done.length
-  | inv2 => fun pref _ ↦ AndRowsInvariant cw w0 n pref
-  | inv3 pref s _ _ _ _ _ => fun done _ ↦ AndRowsRowInvariant cw w0 n pref s done.length
-  | inv4 pref s _ _ _ _ _ => fun done _ ↦ AndRowsRowInvariant cw w0 n pref s done.length
-  | inv5 pref s _ _ _ _ _ _ _ => fun done _ ↦ AndRowsPeriodInvariant cw w0 n pref s done
-  | inv6 pref s _ _ _ _ _ _ _ _ _ => fun done _ ↦ AndRowsTailInvariant cw w0 n pref s done
-  | inv7 pref s _ _ _ _ _ _ _ periods _ _ _ _ _ => fun done _ ↦
-      AndRowsPacketInvariant cw w0 n pref s periods done
-  all_goals first
-    | exact AndRowsFillInvariant.append_set! ‹_› ‹_›
-    | exact AndRowsRowInvariant.append_andBitArray_sub ‹_› ‹_› (by lia) ‹_› ‹_›
-    | exact AndRowsRowInvariant.append_andBitArray_period ‹_› ‹_› ‹_›
-    | exact AndRowsRowInvariant.append_andBitArray_tail ‹_› ‹_› ‹_› ‹_›
-    | exact AndRowsRowInvariant.andRowsInvariant ‹_›
-        (by simp [Nat.add_assoc, Nat.div_add_mod'] <;> lia)
-    | exact AndRowsRowInvariant.of_eq ‹_› (by simp [Nat.add_mul, Nat.add_assoc]; done)
-    | exact AndRowsInvariant.andRowsRowInvariant ‹_›
-    | exact andRowsInvariant_nil ‹_›
-    | exact andRowsFillInvariant_zero _ _
-
-/-- The sieve entries and the denominator are quantified in the postcondition, since the program
-does not mention them. -/
+attribute [local simp] Nat.div_add_mod' in
+/-- Each modulus `s` has its row read at the offset of `s` (`Ratpoints.Sieve.SieveSpec.wordAt`): the
+loops over the bit arrays start at the index `r` of the residue of `-(w0 + offset)`, which the
+reduction by the reciprocal of the cursor gives under the test `small`
+(`Ratpoints.Sieve.SieveSpec.Fits.ite_modMul_modLong_eq_emod`); the reciprocals run in step with the
+moduli and do not run out before them. -/
 @[spec]
-theorem andRows_spec (specs : List SieveSpec) (cw : UInt64) (w0 : Int) (n : Nat)
-    (surv : Vector UInt64 ((n + 1) * rbaPack)) :
-    ⦃ True ⦄ andRows specs cw w0 n surv
-    ⦃ fun surv' ↦ ∀ (entries : List SieveEntry) (b : Nat), (∀ e ∈ entries, 0 < e.p) →
-        specs = entries.map (fun e ↦ ⟨e.p, e.row b⟩) → ∀ y < n * rbaPack, ∀ t : Nat,
-          surv'[y]!.toBitVec.getLsbD t =
-            (cw.toBitVec.getLsbD t && survives entries b (rbaLength * w0 + 64 * y + t)) ⦄ :=
-  ⟨fun _ entries b hp hspecs y hy t ↦ by
-    subst hspecs
-    rw [((andRows_spec_of_pos _ cw w0 n surv).le_wp (List.forall_mem_map.mpr hp)).getElem!_eq hy,
-      getLsbD_andWords_map b hp]⟩
+theorem andRows_spec (specs : List SieveSpec) (mgs : List Nat) (small : Bool) (cw : UInt64)
+    (w0 : Int) (n : Nat) (surv : Vector UInt64 ((n + 1) * rbaPack)) :
+    ⦃ (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p) ∧ SmallFits small w0 (w0 + n) ⦄
+    andRows specs mgs small cw w0 n surv
+    ⦃ fun surv' ↦ ∀ y < n * rbaPack, surv'[y]! = andWords specs cw w0 y ⦄ := by
+  vcgen [andRows] invariants
+  | inv1 => fun done _ surv ↦ AndRowsLoopInvariant cw w0 done.length mgs [] (surv, Std.toStream mgs)
+  | inv2 => fun l _ ↦ AndRowsLoopInvariant cw w0 (ForIn.toList [0:n * rbaPack]).length mgs l
+  | inv3 l s _ _ _ _ _ mg _ _ _ => fun d _ ↦ AndRowsHeadInvariant small cw w0 n l s mg d
+  | inv4 l s _ _ _ _ _ mg _ _ _ => fun d _ ↦ AndRowsHeadInvariant small cw w0 n l s mg d
+  | inv5 l s _ _ _ _ _ mg _ _ _ _ _ => fun d _ ↦ AndRowsPeriodInvariant small cw w0 n l s mg d
+  | inv6 l s _ _ _ _ _ mg _ _ _ _ _ _ _ => fun d _ ↦ AndRowsTailInvariant small cw w0 n l s mg d
+  | inv7 l s _ _ _ _ _ mg _ _ _ _ _ periods _ _ _ _ _ => fun d _ ↦
+      AndRowsPacketInvariant small cw w0 n l s mg periods d
+  all_goals first
+    | exact andRowsLoopInvariant_zero ..
+    | exact AndRowsLoopInvariant.append_set! ‹_› ‹_›
+    | exact AndRowsLoopInvariant.getElem!_eq ‹_› ‹_›
+    | exact absurd ‹_› (AndRowsLoopInvariant.next?_ne_none ‹_› ‹_› ‹_›)
+    | exact AndRowsLoopInvariant.andRowsHeadInvariant ‹_› ‹_› ‹_› ‹_›
+    | exact AndRowsStartInvariant.append_andBitArray_sub ‹_› ‹_› (by lia)
+    | exact AndRowsStartInvariant.append_andBitArray_period ‹_› ‹_› ‹_›
+    | exact AndRowsStartInvariant.append_andBitArray_tail ‹_› ‹_›
+    | exact AndRowsLoopInvariant.push ‹_› ‹_› ‹_› (by simp [Nat.add_assoc] <;> lia)
+    | exact AndRowsStartInvariant.of_eq ‹_› (by simp [Nat.add_mul, Nat.add_assoc]; done)
 
 /-! ### The check of a numerator and the set bits of a word -/
 
