@@ -280,7 +280,7 @@ C: `rp-private.h:378-379`
 
 Deviation: the row for the pointer `ptr` to it, and no pointers `start` and `end` into the row,
 which only the chunked first stage reads (stage F4); natural numbers for the `long`s `p` and
-`offset`. -/
+`offset`, the offset below `2 ^ 32` (`Ratpoints.Sieve.SieveEntry.PackedFor.lt_two_pow_32`). -/
 structure SieveSpec where
   /-- The modulus. -/
   p : Nat
@@ -340,8 +340,10 @@ on and the count `sp2 - sp1`, with no bound `2 RATPOINTS_NUM_PRIMES` on their nu
 its own prime (`find_points.c:329-331`), where well-formed parameters may repeat a modulus; one bit
 array of `Ratpoints.rbaPack` words, for the vector `nums`; natural numbers and integers for the
 `long`s, and the sum `v` a natural number for the `long` that `RP_MULMOD` converts to an
-`unsigned long`, which is not negative under `small`; a Boolean for the `int` `small`; no count of
-the ands of the second stage under `RP_PHASE_COUNTS`, and no output under `DEBUG`. -/
+`unsigned long`, which is not negative under `small`, and which stays a `long` where the helper
+`mod` reduces it outside `small` (`Ratpoints.Sieve.fitsLong_neg_sub_and_fitsLong_add`); a Boolean
+for the `int` `small`; no count of the ands of the second stage under `RP_PHASE_COUNTS`, and no
+output under `DEBUG`. -/
 def secondStage (specs : List SieveSpec) (mgs : List Nat) (small : Bool) (i : Int)
     (nums : Vector UInt64 rbaPack) : Id (Vector UInt64 rbaPack) := do
   let mut nums := nums
@@ -368,8 +370,10 @@ pointers `sspk` and `mg` that step through the sieve specs and the array `magics
 length of `magics`, `find_points.c:347`), which ratpoints never reaches since each entry of
 `sieve_list` owns its own prime (`find_points.c:329-331`), where well-formed parameters may repeat a
 modulus; natural numbers and integers for the `long`s, and the sum `v` a natural number for the
-`long` that `RP_MULMOD` converts to an `unsigned long`, which is not negative under `small`; a
-Boolean for the `int` `small`; no count of the ands of the second stage under `RP_PHASE_COUNTS`. -/
+`long` that `RP_MULMOD` converts to an `unsigned long`, which is not negative under `small`, and
+which stays a `long` where the helper `mod` reduces it outside `small`
+(`Ratpoints.Sieve.fitsLong_neg_sub_and_fitsLong_add`); a Boolean for the `int` `small`; no count of
+the ands of the second stage under `RP_PHASE_COUNTS`. -/
 def secondStageWord (specs : List SieveSpec) (mgs : List Nat) (small : Bool) (i : Int) (κ : Nat)
     (x : UInt64) : Id UInt64 := do
   let mut x := x
@@ -406,9 +410,11 @@ vector `RBA(packed)` that `get_2adic_info` makes once per class (`find_points.c:
 `_ratpoints_sift0` copies into each bit array (`bits64`, `sift.c:519`, `sift.c:954`); the moduli of
 the stage with their rows and their reciprocals as two lists, for the first `sp1` sieve specs and
 the array `magics` from position `0` on; the value `-w_low - offset` written out in both reductions,
-for the `long` `a`; indices for the pointers into the rows and into the survivors, and the number of
-whole periods and the rest computed before their loops; natural numbers and integers for the
-`long`s; a Boolean for the `int` `small`; no output under `DEBUG`. -/
+for the `long` `a`, which stays a `long` where the helper `mod` reduces it outside `small`
+(`Ratpoints.Sieve.fitsLong_neg_sub_and_fitsLong_add`); indices for the pointers into the rows and
+into the survivors, and the number of whole periods and the rest computed before their loops;
+natural numbers and integers for the `long`s; a Boolean for the `int` `small`; no output under
+`DEBUG`. -/
 def andRows (specs : List SieveSpec) (mgs : List Nat) (small : Bool) (cw : UInt64) (w0 : Int)
     (n : Nat) (surv : Vector UInt64 ((n + 1) * rbaPack)) :
     Id (Vector UInt64 ((n + 1) * rbaPack)) := do

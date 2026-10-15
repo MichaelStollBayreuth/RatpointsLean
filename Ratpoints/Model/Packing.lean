@@ -187,8 +187,8 @@ arguments; the table of the rows by their keys an array of options of positions,
 its position in the array of the offsets, for the pointer `row`; the inverses `rinv` an array of
 arrays, for the array of `RP_NUM_STRIDES` `long`s for each modulus on the stack; natural numbers for
 the `long`s, the product `a₀ rinv[n][k]` a natural number for the `long` that `RP_MULMOD` converts
-to an `unsigned long`; the reciprocal and the bias read from the sieve entry, as the C code reads
-them. -/
+to an `unsigned long`, below `2 ^ 63` (`Ratpoints.Sieve.mul_lt_two_pow_63`); the reciprocal and the
+bias read from the sieve entry, as the C code reads them. -/
 def classRows (cls : Vector NumClass 64) (es : Array SieveEntry) (rinv : Array (Array Nat))
     (np : Nat) (offsets : Array Nat) : Id (Vector NumClass 64 × Array Nat) := do
   let mut cls := cls
@@ -274,8 +274,9 @@ branch that `b` chooses and returned, for the array `bp_list` that the loops ove
 `0, …, sp2 - 1` of `sieve_list` and `magics` fill through the pointer argument; the entries of the
 first two stages and their reciprocals as arguments, for `wk->sp2` and the arrays `sieve_list` and
 `magics` of the arguments; natural numbers for the `long`s, the products natural numbers for the
-`long`s that `RP_MULMOD` converts to `unsigned long`s; no measurement of its time (`RP_BP_TIC`,
-`RP_BP_TOC`). -/
+`long`s that `RP_MULMOD` converts to `unsigned long`s, at most `Ratpoints.mulModLimit` in the first
+branch (`Ratpoints.Sieve.mul_le_mulModLimit_of_le_div`) and below `2 ^ 63` in the others
+(`Ratpoints.Sieve.mul_lt_two_pow_63`); no measurement of its time (`RP_BP_TIC`, `RP_BP_TOC`). -/
 def fillBpList (b k : Nat) (es : List SieveEntry) (mgs : List Nat) : List Nat :=
   if b ≤ mulModLimit / maxPrimeEven then
     List.zipWith (fun e mg ↦ mulMod (b * e.dinv[k]!) e.p mg) es mgs

@@ -38,7 +38,8 @@ the first two stages reduce outside the test `small`; the products of `fill_bp_l
   `Ratpoints.Sieve.map_range_numerator_eq_filter_numerators`: the numerator of a bit lies in an
   interval exactly when the bit lies between its bits, and the numerators of the bits of `-H, …, H`
   are those of `-H, …, H` in the class of the packing, in increasing order.
-* `Ratpoints.Sieve.SieveEntry.PackedFor.lt_two_pow_63`: the offsets of the rows are `long`s.
+* `Ratpoints.Sieve.SieveEntry.PackedFor.lt_two_pow_32`: the offsets of the rows are below
+  `2 ^ 32`, so `long`s.
 * `Ratpoints.Sieve.neg_two_pow_le_rbaLength_mul_ediv`,
   `Ratpoints.Sieve.rbaLength_mul_ediv_add_one_le_two_pow`: the first bit of the bit array of a bit
   `lo ≥ -2 ^ (63 - k)` and the bit after the bit array of a bit `hi < 2 ^ (63 - k)` lie in
@@ -86,7 +87,7 @@ theorem toInt_numeratorsToBits_false {low high : Int64} {cl : NumClass} (hcl : c
     e1, e2, Int.shiftRight_eq_div_pow, Int.shiftRight_eq_div_pow]
   · exact ⟨rfl, rfl⟩
   · rw [Int64.toInt_shiftRight_ofNat _ hk, e1, Int.shiftRight_eq_div_pow]
-    exact Int.neg_two_pow_63_lt_ediv (by lia) hm
+    exact Int.lt_ediv_of_neg (by decide) (by lia) hm
 
 -- The facts on the stride `m = 2 ^ k`, `k ≤ 6`, and the residue `a₀ < m` of a class that the split
 -- form of `numerators_to_bits` needs: `1 ≤ m ≤ 64`, `a₀ < m`, and the words of `a₀` and of `m - 1`.
@@ -115,10 +116,11 @@ private theorem toInt_shiftRight_add_shiftRight_add (x : Int64) {k a0 : Nat} (hk
   have e3 : ((x &&& Int64.ofNat (2 ^ k - 1)) - Int64.ofNat a0 + Int64.ofNat (2 ^ k - 1)).toInt =
       x.toInt % 2 ^ k - a0 + (2 ^ k - 1) := by
     rw [Int64.toInt_add_of_lt] <;> lia
-  have hc := Int.sub_add_sub_one_ediv_mem hl0 hl (Int.natCast_nonneg a0) ha'
-  have hb := Int.ediv_add_mem x.le_toInt x.toInt_lt hm (by lia) hc.2 fun h ↦ by
-    rw [h] at hl ha' ⊢
-    lia
+  have hc := Int.sub_add_sub_one_ediv_nonneg_and_le_one hl0 hl (Int.natCast_nonneg a0) ha'
+  have hb := Int.neg_two_pow_63_le_ediv_add_and_ediv_add_lt_two_pow_63 x.le_toInt x.toInt_lt hm
+    (by lia) hc.2 fun h ↦ by
+      rw [h] at hl ha' ⊢
+      lia
   rw [Int64.toInt_add_of_lt] <;>
     simp only [Int64.toInt_shiftRight_ofNat _ (by lia : k < 64), e3, Int.shiftRight_eq_div_pow,
       Int.natCast_pow, Int.cast_ofNat_Int, hb.1, hb.2]
@@ -135,10 +137,11 @@ private theorem toInt_shiftRight_add_shiftRight (x : Int64) {k a0 : Nat} (hk : k
   have f1 := Int64.toInt_and_ofNat_two_pow_sub_one x (by lia : k < 63)
   have f2 : ((x &&& Int64.ofNat (2 ^ k - 1)) - Int64.ofNat a0).toInt = x.toInt % 2 ^ k - a0 := by
     rw [Int64.toInt_sub_of_lt] <;> lia
-  have hc := Int.sub_ediv_mem hh0 hh (Int.natCast_nonneg a0) ha'
-  have hb := Int.ediv_add_mem x.le_toInt x.toInt_lt hm hc.1 (by lia) fun h ↦ by
-    rw [h] at hh ha' ⊢
-    lia
+  have hc := Int.neg_one_le_sub_ediv_and_sub_ediv_nonpos hh0 hh (Int.natCast_nonneg a0) ha'
+  have hb := Int.neg_two_pow_63_le_ediv_add_and_ediv_add_lt_two_pow_63 x.le_toInt x.toInt_lt hm
+    hc.1 (by lia) fun h ↦ by
+      rw [h] at hh ha' ⊢
+      lia
   rw [Int64.toInt_add_of_lt] <;>
     simp only [Int64.toInt_shiftRight_ofNat _ (by lia : k < 64), f2, Int.shiftRight_eq_div_pow,
       Int.natCast_pow, Int.cast_ofNat_Int, hb.1, hb.2]
@@ -244,48 +247,36 @@ theorem map_range_numerator_eq_filter_numerators {cl : NumClass} (hcl : cl.WF) {
 
 /-! ### The longs of the offsets and of the bit ranges -/
 
-/-- The offsets of the rows are `long`s, below `Ratpoints.rowBias + 2 p ≤ 2 ^ 31 + 2 ^ 11`. -/
-theorem SieveEntry.PackedFor.lt_two_pow_63 {e : SieveEntry} {cl : NumClass} {off : Nat}
-    (h : e.PackedFor cl off) : off < 2 ^ 63 := by
+/-- The offsets of the rows are below `Ratpoints.rowBias + 2 p ≤ 2 ^ 31 + 2 ^ 11 < 2 ^ 32`, so
+`long`s, and in the range that `Ratpoints.Sieve.fitsLong_neg_sub_and_fitsLong_add` takes. -/
+theorem SieveEntry.PackedFor.lt_two_pow_32 {e : SieveEntry} {cl : NumClass} {off : Nat}
+    (h : e.PackedFor cl off) : off < 2 ^ 32 := by
   have := h.lt_rowBias_add
   have := Nat.le_trans h.le_maxPrimeEven maxPrimeEven_le_two_pow_10
   have := rowBias_le_two_pow_31
   generalize rowBias = R at *
   lia
 
-/-- The width `Ratpoints.rbaLength = 2 ^ Ratpoints.rbaShift` of the bit arrays times
-`2 ^ (63 - k - rbaShift)` is `2 ^ (63 - k)`, for a stride `2 ^ k`, `k ≤ 6`. -/
-theorem rbaLength_mul_two_pow {k : Nat} (hk : k ≤ 6) :
-    (rbaLength : Int) * 2 ^ (63 - k - rbaShift) = 2 ^ (63 - k) := by
-  have hs := rbaShift_lt_thirty_two
-  rw [rbaLength_eq_two_pow_rbaShift, Int.natCast_pow, Int.cast_ofNat_Int, ← Int.pow_add]
-  congr 1
-  lia
+/-- The width `Ratpoints.rbaLength = 2 ^ Ratpoints.rbaShift` of the bit arrays divides `2 ^ n` for
+`n ≥ Ratpoints.rbaShift`. -/
+theorem natCast_rbaLength_dvd_two_pow {n : Nat} (hn : rbaShift ≤ n) : (rbaLength : Int) ∣ 2 ^ n :=
+  rbaLength_eq_two_pow_rbaShift ▸ mod_cast Nat.pow_dvd_pow 2 hn
 
 /-- The first bit `Ratpoints.rbaLength ⌊lo / Ratpoints.rbaLength⌋` of the bit array of the bit
 `lo ≥ -2 ^ (63 - k)` is at least `-2 ^ (63 - k)`, for a stride `2 ^ k`, `k ≤ 6`, since
 `Ratpoints.rbaLength` divides `2 ^ (63 - k)`. -/
 theorem neg_two_pow_le_rbaLength_mul_ediv {k : Nat} (hk : k ≤ 6) {lo : Int}
-    (hlo : -2 ^ (63 - k) ≤ lo) : -2 ^ (63 - k) ≤ rbaLength * (lo / rbaLength) := by
-  have hT := rbaLength_mul_two_pow hk
-  have h1 : -2 ^ (63 - k - rbaShift) ≤ lo / rbaLength :=
-    (Int.le_ediv_iff_mul_le natCast_rbaLength_pos).mpr (by
-      rw [Int.neg_mul, Int.mul_comm, hT]; exact hlo)
-  calc -2 ^ (63 - k) = (rbaLength : Int) * -2 ^ (63 - k - rbaShift) := by rw [Int.mul_neg, hT]
-    _ ≤ rbaLength * (lo / rbaLength) :=
-      Int.mul_le_mul_of_nonneg_left h1 (Int.le_of_lt natCast_rbaLength_pos)
+    (hlo : -2 ^ (63 - k) ≤ lo) : -2 ^ (63 - k) ≤ rbaLength * (lo / rbaLength) :=
+  Int.neg_le_mul_ediv_of_dvd natCast_rbaLength_pos
+    (natCast_rbaLength_dvd_two_pow (by have := rbaShift_lt_thirty_two; lia)) hlo
 
 /-- The bit `Ratpoints.rbaLength (⌊hi / Ratpoints.rbaLength⌋ + 1)` after the bit array of the bit
 `hi < 2 ^ (63 - k)` is at most `2 ^ (63 - k)`, for a stride `2 ^ k`, `k ≤ 6`, since
 `Ratpoints.rbaLength` divides `2 ^ (63 - k)`. -/
 theorem rbaLength_mul_ediv_add_one_le_two_pow {k : Nat} (hk : k ≤ 6) {hi : Int}
-    (hhi : hi < 2 ^ (63 - k)) : rbaLength * (hi / rbaLength + 1) ≤ 2 ^ (63 - k) := by
-  have hT := rbaLength_mul_two_pow hk
-  have h2 : hi / rbaLength < 2 ^ (63 - k - rbaShift) :=
-    (Int.ediv_lt_iff_lt_mul natCast_rbaLength_pos).mpr (by rw [Int.mul_comm, hT]; exact hhi)
-  calc (rbaLength : Int) * (hi / rbaLength + 1) ≤ rbaLength * 2 ^ (63 - k - rbaShift) :=
-        Int.mul_le_mul_of_nonneg_left (by lia) (Int.le_of_lt natCast_rbaLength_pos)
-    _ = 2 ^ (63 - k) := hT
+    (hhi : hi < 2 ^ (63 - k)) : rbaLength * (hi / rbaLength + 1) ≤ 2 ^ (63 - k) :=
+  Int.mul_ediv_add_one_le_of_dvd natCast_rbaLength_pos
+    (natCast_rbaLength_dvd_two_pow (by have := rbaShift_lt_thirty_two; lia)) hhi
 
 /-- The numerators of the bits of the bit arrays from `⌊lo / Ratpoints.rbaLength⌋` to
 `⌊hi / Ratpoints.rbaLength⌋`, for the bits `lo, hi` of the numerators `-H, …, H` of a height bound

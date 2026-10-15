@@ -51,10 +51,12 @@ itself shifted. For the rows of offsets: the entries of a vector after `Vector.s
 `none`s and of an array whose list is a map, the bit `(x >>> j) &&& 1` of a word, and the 128 bits
 of two words after one bit is set. For the residues and the bits of an interval: the numbers of a
 range in one class modulo `m`, the multiples of `m` among `N + (m - r)`, a numerator `i - H` in a
-class modulo `m`, the quotients of the split form of `numerators_to_bits`, its carries and their
-sums with a quotient, in the range of a `long`, and the sums, differences and negations of `long`s
-that do not overflow, the mask `(1 <<< k) - 1` and the and with it, the Euclidean remainder modulo
-`2 ^ k` also of a negative `long`.
+class modulo `m`, the quotient by `m > 0` of a number above a negative bound, which stays above it,
+the quotients of the split form of `numerators_to_bits`, its carries and their sums with a quotient,
+in the range of a `long`, the multiples of a divisor of `N` at or below a number `≥ -N` and above a
+number `< N`, which lie in `[-N, N]`, and the sums, differences and negations of `long`s that do not
+overflow, the mask `(1 <<< k) - 1` and the and with it, the Euclidean remainder modulo `2 ^ k` also
+of a negative `long`.
 
 ## Main statements
 
@@ -147,6 +149,9 @@ that do not overflow, the mask `(1 <<< k) - 1` and the and with it, the Euclidea
 * `List.filter_range_mod_eq`: the numbers below `N` that are `r` modulo `m > r`, `r, r + m, …`.
 * `Int.ediv_add_emod_sub_add_sub_one_ediv`, `Int.ediv_add_emod_sub_ediv`: the two ends of the split
   form of `numerators_to_bits`, `⌈(lo - a₀) / m⌉` and `⌊(hi - a₀) / m⌋`.
+* `Int.neg_le_mul_ediv_of_dvd`, `Int.mul_ediv_add_one_le_of_dvd`: for a divisor `d > 0` of `N`, the
+  multiple of `d` at or below a number `lo ≥ -N` and the one above a number `hi < N` lie in
+  `[-N, N]`.
 * `Int64.toInt_add_of_lt`, `Int64.toInt_sub_of_lt`, `Int64.toInt_neg_of_lt`: the sums, differences
   and negations of `long`s that do not overflow.
 * `Int64.toInt_and_ofNat_two_pow_sub_one`: a `long` and-ed with the mask `2 ^ k - 1` is its
@@ -937,40 +942,60 @@ theorem ediv_add_emod_sub_ediv (hi : Int) (a0 : Int) {m : Int} (hm : 0 < m) :
   have e2 : hi - (a0 : Int) = (hi % m - a0) + hi / m * m := by lia
   rw [e2, Int.add_mul_ediv_right _ _ (Int.ne_of_gt hm), Int.add_comm]
 
-theorem neg_two_pow_63_lt_ediv {z m : Int} (hz : -2 ^ 63 < z) (hm : 0 < m) :
-    -2 ^ 63 < z / m :=
-  Int.lt_of_lt_of_le (by decide : (-2 ^ 63 : Int) < -2 ^ 63 + 1)
-    ((Int.le_ediv_iff_mul_le hm).mpr (by lia))
+theorem lt_ediv_of_neg {c z m : Int} (hc : c < 0) (hz : c < z) (hm : 0 < m) : c < z / m := by
+  rcases Int.lt_or_le z 0 with h | h
+  · exact Int.lt_of_lt_of_le hz (self_le_ediv_of_nonpos_of_nonneg (by lia) (by lia))
+  · exact Int.lt_of_lt_of_le hc (ediv_nonneg h (by lia))
 
-theorem ediv_mem_of_two_le {z m : Int} (hz : -2 ^ 63 ≤ z) (hz' : z < 2 ^ 63) (hm : 2 ≤ m) :
+theorem neg_two_pow_62_le_ediv_and_ediv_lt_two_pow_62 {z m : Int} (hz : -2 ^ 63 ≤ z)
+    (hz' : z < 2 ^ 63) (hm : 2 ≤ m) :
     -2 ^ 62 ≤ z / m ∧ z / m < 2 ^ 62 :=
   ⟨(Int.le_ediv_iff_mul_le (by lia)).mpr (by lia), (Int.ediv_lt_iff_lt_mul (by lia)).mpr (by lia)⟩
 
 /-- The carry `⌈(r - a₀) / m⌉` of the split form of `Ratpoints.Sieve.numeratorsToBits` at the low
 end, for `0 ≤ r, a₀ < m`: `0` or `1`. -/
-theorem sub_add_sub_one_ediv_mem {r a0 m : Int} (hr : 0 ≤ r) (hr' : r < m) (ha : 0 ≤ a0)
-    (ha' : a0 < m) : 0 ≤ (r - a0 + (m - 1)) / m ∧ (r - a0 + (m - 1)) / m ≤ 1 :=
+theorem sub_add_sub_one_ediv_nonneg_and_le_one {r a0 m : Int} (hr : 0 ≤ r) (hr' : r < m)
+    (ha : 0 ≤ a0) (ha' : a0 < m) :
+    0 ≤ (r - a0 + (m - 1)) / m ∧ (r - a0 + (m - 1)) / m ≤ 1 :=
   ⟨Int.ediv_nonneg (by lia) (by lia),
     Int.lt_add_one_iff.mp ((Int.ediv_lt_iff_lt_mul (by lia)).mpr (by lia))⟩
 
 /-- The carry `⌊(r - a₀) / m⌋` of the split form of `Ratpoints.Sieve.numeratorsToBits` at the high
 end, for `0 ≤ r, a₀ < m`: `-1` or `0`. -/
-theorem sub_ediv_mem {r a0 m : Int} (hr : 0 ≤ r) (hr' : r < m) (ha : 0 ≤ a0)
-    (ha' : a0 < m) : -1 ≤ (r - a0) / m ∧ (r - a0) / m ≤ 0 :=
+theorem neg_one_le_sub_ediv_and_sub_ediv_nonpos {r a0 m : Int} (hr : 0 ≤ r) (hr' : r < m)
+    (ha : 0 ≤ a0) (ha' : a0 < m) :
+    -1 ≤ (r - a0) / m ∧ (r - a0) / m ≤ 0 :=
   ⟨(Int.le_ediv_iff_mul_le (by lia)).mpr (by lia),
     Int.lt_add_one_iff.mp ((Int.ediv_lt_iff_lt_mul (by lia)).mpr (by lia))⟩
 
 /-- For `m ≥ 1` and `-1 ≤ c ≤ 1`, with `c = 0` when `m = 1`, `z / m + c` is a `long` for a `long`
 `z`: an arithmetic shift plus a carry, as in the split form of
 `Ratpoints.Sieve.numeratorsToBits`. -/
-theorem ediv_add_mem {z c m : Int} (hz : -2 ^ 63 ≤ z) (hz' : z < 2 ^ 63) (hm : 1 ≤ m)
-    (hc : -1 ≤ c) (hc' : c ≤ 1) (h1 : m = 1 → c = 0) :
+theorem neg_two_pow_63_le_ediv_add_and_ediv_add_lt_two_pow_63 {z c m : Int} (hz : -2 ^ 63 ≤ z)
+    (hz' : z < 2 ^ 63) (hm : 1 ≤ m) (hc : -1 ≤ c) (hc' : c ≤ 1) (h1 : m = 1 → c = 0) :
     -2 ^ 63 ≤ z / m + c ∧ z / m + c < 2 ^ 63 := by
   rcases Int.lt_or_le m 2 with h | h
   · rw [show m = 1 by lia, h1 (by lia), Int.ediv_one]
     lia
-  · have := Int.ediv_mem_of_two_le hz hz' h
+  · have := Int.neg_two_pow_62_le_ediv_and_ediv_lt_two_pow_62 hz hz' h
     lia
+
+/-- The multiple `d ⌊lo / d⌋` of `d > 0` at or below `lo` is at least every multiple `-N ≤ lo` of
+`d`. -/
+theorem neg_le_mul_ediv_of_dvd {d N lo : Int} (hd : 0 < d) (hdN : d ∣ N) (hlo : -N ≤ lo) :
+    -N ≤ d * (lo / d) := by
+  obtain ⟨q, rfl⟩ := hdN
+  rw [← Int.mul_neg]
+  refine Int.mul_le_mul_of_nonneg_left ((Int.le_ediv_iff_mul_le hd).mpr ?_) (Int.le_of_lt hd)
+  rwa [Int.neg_mul, Int.mul_comm]
+
+/-- The multiple `d (⌊hi / d⌋ + 1)` of `d > 0` above `hi` is at most every multiple `N > hi` of
+`d`. -/
+theorem mul_ediv_add_one_le_of_dvd {d N hi : Int} (hd : 0 < d) (hdN : d ∣ N) (hhi : hi < N) :
+    d * (hi / d + 1) ≤ N := by
+  obtain ⟨q, rfl⟩ := hdN
+  refine Int.mul_le_mul_of_nonneg_left (Int.add_one_le_of_lt ?_) (Int.le_of_lt hd)
+  exact (Int.ediv_lt_iff_lt_mul hd).mpr (by rwa [Int.mul_comm])
 
 end Int
 

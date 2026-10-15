@@ -503,16 +503,17 @@ which gives packable entries with their tables of inverses (Lemma~\ref{lem:sievi
 
 \begin{lemma}[The longs of the packing]\label{lem:packingLongs}
   \uses{lem:classOffsets, def:packingConstants, def:useCLong}
-  \lean{Ratpoints.Sieve.NumClass.fitsLong_numerator, Ratpoints.Sieve.neg_two_pow_le_rbaLength_mul_ediv, Ratpoints.Sieve.rbaLength_mul_ediv_add_one_le_two_pow, Ratpoints.Sieve.fitsLong_neg_sub_and_fitsLong_add, Ratpoints.Sieve.SieveEntry.PackedFor.lt_two_pow_63, Ratpoints.Sieve.mul_le_mulModLimit_of_le_div, Ratpoints.Sieve.mul_lt_two_pow_63, Ratpoints.rowBias_le_two_pow_31, Ratpoints.Sieve.rbaLength_mul_two_pow, Ratpoints.Sieve.sixty_four_le_rbaLength}
+  \lean{Ratpoints.Sieve.NumClass.fitsLong_numerator, Ratpoints.Sieve.neg_two_pow_le_rbaLength_mul_ediv, Ratpoints.Sieve.rbaLength_mul_ediv_add_one_le_two_pow, Ratpoints.Sieve.fitsLong_neg_sub_and_fitsLong_add, Ratpoints.Sieve.SieveEntry.PackedFor.lt_two_pow_32, Ratpoints.Sieve.mul_le_mulModLimit_of_le_div, Ratpoints.Sieve.mul_lt_two_pow_63, Ratpoints.rowBias_le_two_pow_31, Ratpoints.Sieve.natCast_rbaLength_dvd_two_pow, Ratpoints.Sieve.sixty_four_le_rbaLength}
   \leanok
   The values that the C code holds in longs fit a long ($\mathrm{fitsLong}$,
   Definition~\ref{def:useCLong}) for $H < 2^{63}$: the numerator of every bit of the bit arrays of
   $[-H, H]$ (Lemma~\ref{lem:numeratorsToBits}) and the base $a_0 + i\,\mathrm{rbaLength}\, 2^k$ of
   the extraction with its steps, $\mathrm{rbaLength}\, w_{\mathrm{low}}$ and $w_{\mathrm{high}}$,
   $-w_{\mathrm{low}} - \mathrm{offset}$ and $i + \mathrm{offset}$ outside \verb|small|, the offsets,
-  and the products of \verb|fill_bp_list|, at most $\mathrm{mulModLimit}$ in the first branch, and
-  of \verb|class_offsets|; for $k \le 6$, the multiple of $\mathrm{rbaLength}$ at or below a bit
-  $\ge -2^{63-k}$ and the one above a bit $< 2^{63-k}$ lie in $[-2^{63-k}, 2^{63-k}]$.
+  below $2^{32}$, and the products of \verb|fill_bp_list|, at most $\mathrm{mulModLimit}$ in the
+  first branch, and of \verb|class_offsets|; for $k \le 6$, the multiple of $\mathrm{rbaLength}$ at
+  or below a bit $\ge -2^{63-k}$ and the one above a bit $< 2^{63-k}$ lie in
+  $[-2^{63-k}, 2^{63-k}]$.
 \end{lemma}
 
 \begin{proof}
