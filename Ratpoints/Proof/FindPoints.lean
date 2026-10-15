@@ -91,10 +91,10 @@ refusal theorems (`comparator/Challenge.lean`).
 By the reduction of the run to the reference (`Ratpoints.Sieve.toList_run_sieveRun_eq_flatMap`), for
 pieces of at least one bit array, sieve entries and their reciprocals, of which those of the first
 two stages have their tables of inverses and the row offsets of the packings of the classes, which
-pack the words of the 2-adic information, and those of the third stage the shape that it needs, and
-denominators and a height below `2 ^ 63` (`Ratpoints.Sieve.IsSoundRun`), the run gives the reference
-over the list of its shape when its filters are sound: every numerator of a point passes the word of
-the class of its denominator and survives the sieve entries, when they are sound
+pack the words of the 2-adic information, and those of the third stage the shape that it needs
+(`Ratpoints.Sieve.IsSoundRun`), and denominators and a height below `2 ^ 63`, the run gives the
+reference over the list of its shape when its filters are sound: every numerator of a point passes
+the word of the class of its denominator and survives the sieve entries, when they are sound
 (`Ratpoints.Sieve.classBit_and_survives_of_ne_nil`), and every denominator of a point passes the
 tests of the shape that `Ratpoints.Sieve.runSetup` chooses: the squares for odd degree and
 `|c_d| = 1` (`Ratpoints.isSquare_of_sq_eq_binaryForm_of_odd`,

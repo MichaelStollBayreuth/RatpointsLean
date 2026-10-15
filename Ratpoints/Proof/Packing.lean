@@ -199,13 +199,11 @@ theorem NumClass.WF.key_lt_two_pow_numStrides {cl : NumClass} (h : cl.WF) :
     cl.key < 2 ^ numStrides :=
   Nat.lt_of_lt_of_le h.key_lt (Nat.pow_le_pow_right (by decide) h.k_lt)
 
-/-- A packing of a smaller stride has a smaller key. -/
 theorem NumClass.WF.key_lt_key {cl cl' : NumClass} (h : cl.WF) (hk : cl.k < cl'.k) :
     cl.key < cl'.key :=
   Nat.lt_of_lt_of_le h.key_lt (Nat.le_trans (Nat.pow_le_pow_right (by decide) hk)
     (Nat.le_add_right _ _))
 
-/-- Packings with the same key have the same stride and residue. -/
 theorem NumClass.WF.k_eq_and_a0_eq {cl cl' : NumClass} (h : cl.WF) (h' : cl'.WF)
     (hk : cl.key = cl'.key) : cl.k = cl'.k ∧ cl.a0 = cl'.a0 := by
   have hkk : cl.k = cl'.k := by

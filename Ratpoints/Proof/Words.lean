@@ -75,8 +75,8 @@ are not about the model are in `Ratpoints.Proof.Bits`. The proofs use only that 
 is positive, never its value. The scaling by a unit needs an inverse of the unit and the tables of
 inverses, no primality. The contracts of the second and the third stage and of the check are in
 `Ratpoints.Proof.Stages`, those of the walk, of the scan, of one piece and of one denominator in
-`Ratpoints.Proof.Sift`. The bit of a numerator in a class word, the contract of the lowest set bit
-of a word and the invariant of a `while` loop over the set bits of a word are in
+`Ratpoints.Proof.Sift`. The bit of a number in a word (`Ratpoints.Sieve.classBit`), the contract of
+the lowest set bit of a word and the invariant of a `while` loop over the set bits of a word are in
 `Ratpoints.Proof.SetBits`, the reductions by a reciprocal and of the row indices in
 `Ratpoints.Proof.Reductions`.
 -/
@@ -432,10 +432,10 @@ def AndRowsRowInvariant {m : Nat} (cw : UInt64) (w0 : Int) (n : Nat) (pref : Lis
   ∀ y < n * rbaPack, surv[y]! =
     if y / rbaPack < c then andWords pref cw w0 y &&& s.wordAt w0 y else andWords pref cw w0 y
 
-/-- The index `r` of the bit array of the row of `s` that the first stage ands into bit array `0`
-of a piece from the word number `w0` on is `p - r`, computed as `Ratpoints.Sieve.andRows` computes
-it with the reciprocal `mg` of the cursor: the residue of `-w0 - offset` by `mod_mul` under the
-test `small` and by the helper `mod` otherwise. -/
+/-- The residue `r` of `-w0 - offset` modulo `p` that `Ratpoints.Sieve.andRows` computes with the
+reciprocal `mg` of the cursor, by `Ratpoints.Sieve.modMul` under the test `small` and by
+`Ratpoints.Sieve.modLong` otherwise: the first stage ands bit array `p - r + j` of the row of `s`
+into bit array `j` of a piece from the word number `w0` on, for `j < r`. -/
 abbrev andRowsStart (small : Bool) (w0 : Int) (s : SieveSpec) (mg : Nat) : Nat :=
   (if small then modMul (-w0 - s.offset) s.p mg else modLong (-w0 - s.offset) s.p).toNat
 

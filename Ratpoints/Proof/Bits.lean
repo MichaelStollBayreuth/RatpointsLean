@@ -43,16 +43,18 @@ positive word by the lowest set bit of the word read as unsigned, its lowest bit
 value, and the words of an integer and of a natural number below `2 ^ 63`. For the rows under a
 unit: the residues under a unit `u` with an inverse modulo `q`, zero or not, modulo a divisor of `q`
 too, the residue `x i mod q` read with an inverse `i` of `r`, and the residue of `u a` for an
-integer `a`. For the classes of the packing: the residues and the places in a packing of the stride
-`2 ^ k` dividing 64, a residue `a + m j` modulo 64, and the bits of a word and-ed with the
-complement of a mask and of a word or-ed with itself shifted. For the rows of offsets: the entries
-of a vector after `Vector.set`, of an array of `none`s and of an array whose list is a map, the bit
-`(x >>> j) &&& 1` of a word, and the bits of two words of 128 bits after a bit is set. For the
-residues and the bits of an interval: the numbers of a range in one class modulo `m`, the multiples
-of `m` among `N + (m - r)`, a numerator `i - H` in a class modulo `m`, the quotients of the split
-form of `numerators_to_bits`, its carries and their sums with a quotient, in the range of a `long`,
-and the sums, differences and negations of `long`s that do not overflow, the mask `(1 <<< k) - 1`
-and the and with it, the Euclidean remainder modulo `2 ^ k` also of a negative `long`.
+integer `a`. For the loops over two lists: the cursor of the second list of a loop
+`for x in l, y in l.map f`, and a list whose next element is known. For the classes of the packing:
+the residues and the places in a packing of the stride `2 ^ k` dividing 64, a residue `a + m j`
+modulo 64, and the bits of a word and-ed with the complement of a mask and of a word or-ed with
+itself shifted. For the rows of offsets: the entries of a vector after `Vector.set`, of an array of
+`none`s and of an array whose list is a map, the bit `(x >>> j) &&& 1` of a word, and the 128 bits
+of two words after one bit is set. For the residues and the bits of an interval: the numbers of a
+range in one class modulo `m`, the multiples of `m` among `N + (m - r)`, a numerator `i - H` in a
+class modulo `m`, the quotients of the split form of `numerators_to_bits`, its carries and their
+sums with a quotient, in the range of a `long`, and the sums, differences and negations of `long`s
+that do not overflow, the mask `(1 <<< k) - 1` and the and with it, the Euclidean remainder modulo
+`2 ^ k` also of a negative `long`.
 
 ## Main statements
 
@@ -915,7 +917,9 @@ theorem neg_ediv_eq_sub_one_sub_ediv (x : Int) {m : Int} (hm : 0 < m) :
     constructor <;> intro h <;> lia
   exact Int.le_antisymm ((key _).mp (Int.le_refl _)) ((key _).mpr (Int.le_refl _))
 
-/-- The low bit by the split form, the end split into its multiple of `m` and its rest. -/
+/-- `⌊lo / m⌋ + ⌈(lo mod m - a₀) / m⌉ = ⌈(lo - a₀) / m⌉` for `m > 0`: the first bit of the split
+form of `numerators_to_bits` (`Ratpoints.Sieve.numeratorsToBits`), from the multiple of `m` in `lo`
+and its rest. -/
 theorem ediv_add_emod_sub_add_sub_one_ediv (lo : Int) (a0 : Int) {m : Int} (hm : 0 < m) :
     lo / m + (lo % m - a0 + (m - 1)) / m = -((a0 - lo) / m) := by
   have h1 := Int.emod_add_ediv_mul lo m
@@ -925,39 +929,40 @@ theorem ediv_add_emod_sub_add_sub_one_ediv (lo : Int) (a0 : Int) {m : Int} (hm :
   congr 2
   lia
 
-/-- The high bit by the split form. -/
+/-- `⌊hi / m⌋ + ⌊(hi mod m - a₀) / m⌋ = ⌊(hi - a₀) / m⌋` for `m > 0`: the last bit of the split form
+of `numerators_to_bits` (`Ratpoints.Sieve.numeratorsToBits`). -/
 theorem ediv_add_emod_sub_ediv (hi : Int) (a0 : Int) {m : Int} (hm : 0 < m) :
     hi / m + (hi % m - a0) / m = (hi - a0) / m := by
   have h2 := Int.emod_add_ediv_mul hi m
   have e2 : hi - (a0 : Int) = (hi % m - a0) + hi / m * m := by lia
   rw [e2, Int.add_mul_ediv_right _ _ (Int.ne_of_gt hm), Int.add_comm]
 
-/-- A quotient by `m > 0` of an integer above `-2 ^ 63` is above `-2 ^ 63`. -/
 theorem neg_two_pow_63_lt_ediv {z m : Int} (hz : -2 ^ 63 < z) (hm : 0 < m) :
     -2 ^ 63 < z / m :=
   Int.lt_of_lt_of_le (by decide : (-2 ^ 63 : Int) < -2 ^ 63 + 1)
     ((Int.le_ediv_iff_mul_le hm).mpr (by lia))
 
-/-- A `long` divided by `m ≥ 2` lies in `[-2 ^ 62, 2 ^ 62)`. -/
 theorem ediv_mem_of_two_le {z m : Int} (hz : -2 ^ 63 ≤ z) (hz' : z < 2 ^ 63) (hm : 2 ≤ m) :
     -2 ^ 62 ≤ z / m ∧ z / m < 2 ^ 62 :=
   ⟨(Int.le_ediv_iff_mul_le (by lia)).mpr (by lia), (Int.ediv_lt_iff_lt_mul (by lia)).mpr (by lia)⟩
 
-/-- The carry of the split form at the low end, `⌈(r - a₀) / m⌉` for `0 ≤ r, a₀ < m`: `0` or `1`. -/
+/-- The carry `⌈(r - a₀) / m⌉` of the split form of `Ratpoints.Sieve.numeratorsToBits` at the low
+end, for `0 ≤ r, a₀ < m`: `0` or `1`. -/
 theorem sub_add_sub_one_ediv_mem {r a0 m : Int} (hr : 0 ≤ r) (hr' : r < m) (ha : 0 ≤ a0)
     (ha' : a0 < m) : 0 ≤ (r - a0 + (m - 1)) / m ∧ (r - a0 + (m - 1)) / m ≤ 1 :=
   ⟨Int.ediv_nonneg (by lia) (by lia),
     Int.lt_add_one_iff.mp ((Int.ediv_lt_iff_lt_mul (by lia)).mpr (by lia))⟩
 
-/-- The carry of the split form at the high end, `⌊(r - a₀) / m⌋` for `0 ≤ r, a₀ < m`: `-1` or
-`0`. -/
+/-- The carry `⌊(r - a₀) / m⌋` of the split form of `Ratpoints.Sieve.numeratorsToBits` at the high
+end, for `0 ≤ r, a₀ < m`: `-1` or `0`. -/
 theorem sub_ediv_mem {r a0 m : Int} (hr : 0 ≤ r) (hr' : r < m) (ha : 0 ≤ a0)
     (ha' : a0 < m) : -1 ≤ (r - a0) / m ∧ (r - a0) / m ≤ 0 :=
   ⟨(Int.le_ediv_iff_mul_le (by lia)).mpr (by lia),
     Int.lt_add_one_iff.mp ((Int.ediv_lt_iff_lt_mul (by lia)).mpr (by lia))⟩
 
-/-- The sum of a `long` divided by `m = 2 ^ k` and a carry in `[c₀, c₀ + 1]`, `c₀ ∈ {-1, 0}`, which
-is `0` for `m = 1`, is a `long`. -/
+/-- For `m ≥ 1` and `-1 ≤ c ≤ 1`, with `c = 0` when `m = 1`, `z / m + c` is a `long` for a `long`
+`z`: an arithmetic shift plus a carry, as in the split form of
+`Ratpoints.Sieve.numeratorsToBits`. -/
 theorem ediv_add_mem {z c m : Int} (hz : -2 ^ 63 ≤ z) (hz' : z < 2 ^ 63) (hm : 1 ≤ m)
     (hc : -1 ≤ c) (hc' : c ≤ 1) (h1 : m = 1 → c = 0) :
     -2 ^ 63 ≤ z / m + c ∧ z / m + c < 2 ^ 63 := by

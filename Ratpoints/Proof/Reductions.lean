@@ -39,8 +39,8 @@ remainder.
 
 * `Ratpoints.maxPrimeEven_le_two_pow_10`, `Ratpoints.maxPrimeEven_le_two_pow_32`: the moduli are
   below `2 ^ 10`, and so below `2 ^ 32`.
-* `Ratpoints.rowBias_le_two_pow_31`: the least multiple of a modulus in an offset is at most
-  `2 ^ 31`.
+* `Ratpoints.rowBias_le_two_pow_31`: `Ratpoints.rowBias`, the lower bound of the bias of a modulus
+  (the multiple of the modulus in an offset), is at most `2 ^ 31`.
 * `Ratpoints.mul_lt_two_pow_64_of_le_mulModLimit`: `u p < 2 ^ 64` for `u ≤ Ratpoints.mulModLimit`
   and `p ≤ 2 ^ 32`.
 * `Ratpoints.Sieve.toNat_mulHi`: `Ratpoints.Sieve.mulHi a b` is `⌊a b / 2 ^ 64⌋`.

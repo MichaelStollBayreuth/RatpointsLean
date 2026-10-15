@@ -14,16 +14,15 @@ import Std.Tactic.Do
 /-!
 # The set bits of a word
 
-The bit that stands for a numerator in a class word (`Ratpoints.Sieve.classBit`), the contract of
-the loop of the lowest set bit of a word (`Ratpoints.Sieve.ctz`), and the invariant of a `while`
-loop that walks through the set bits of a word, lowest first, clearing each with `x &&& (x - 1)`
+The bit of a numerator or a bit number in a word (`Ratpoints.Sieve.classBit`), the contract of the
+loop of the lowest set bit of a word (`Ratpoints.Sieve.ctz`), and the invariant of a `while` loop
+that walks through the set bits of a word, lowest first, clearing each with `x &&& (x - 1)`
 (`Ratpoints.Sieve.WalkWhileInvariant`), which the walks of the extraction, of the packing of the
 classes, of the 2-adic information and of the word shape share.
 
 ## Main definitions
 
-* `Ratpoints.Sieve.classBit`: whether the class word lets a numerator `a` through, bit `a mod 64` of
-  the word.
+* `Ratpoints.Sieve.classBit`: whether a word lets `a` through, bit `a mod 64` of the word.
 * `Ratpoints.Sieve.ClearedBelow`: a word with the bits of another below a position cleared.
 * `Ratpoints.Sieve.WalkWhileInvariant`: the invariant of a walk through the set bits of a word,
   lowest first.
@@ -54,11 +53,14 @@ namespace Sieve
 
 universe u
 
-/-! ### The bit of a numerator in a class word -/
+/-! ### The bit of a number in a word -/
 
-/-- Whether the class word `cw` lets the numerator `a` through: bit `a mod 64` of `cw`, the bit that
-stands for `a` in every word of a piece of `Ratpoints.Sieve.andRows`, since `64` divides
-`Ratpoints.rbaLength`. -/
+/-- Whether the word `cw` lets `a` through: bit `a mod 64` of `cw`. For the 2-adic word of a class
+of denominators (`Ratpoints.Sieve.twoAdic`), `a` is a numerator. For the pattern of a class in its
+packing (`Ratpoints.Sieve.NumClass.bits`), which `Ratpoints.Sieve.andRows` writes into every word of
+a piece, `a` is a bit number: bit `a mod 64` of every word stands for the bits `≡ a (mod 64)`, since
+`64` divides `Ratpoints.rbaLength`. `Ratpoints.Sieve.NumClass.Packs.classBit_bits` converts between
+the two. -/
 def classBit (cw : UInt64) (a : Int) : Bool := cw.toBitVec.getLsbD (a % 64).toNat
 
 theorem classBit_eq (cw : UInt64) (a : Int) : classBit cw a = cw.toBitVec.getLsbD (a % 64).toNat :=
