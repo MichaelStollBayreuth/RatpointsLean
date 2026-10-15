@@ -66,12 +66,14 @@ with loop invariants that are named definitions.
 ## Implementation notes
 
 The file uses Lean core and `Std` only, as `Ratpoints.Proof.Words` does, on whose words of the rows
-(`Ratpoints.Sieve.SieveSpec.wordAt`, `Ratpoints.Sieve.andWords`) the second stage builds. The proofs
-use only the facts on the constants that `decide` checks next to them, that
-`Ratpoints.mulModLimit < 2 ^ 32` and `Ratpoints.stage3Limit ≤ 2 ^ 32`, never their values. The words
-of the test for common factors are read as natural numbers by `Int64.toNatClampNeg`, which is
-faithful on the non-negative words that the binary algorithm keeps; the facts on words that are not
-about the model are in `Ratpoints.Proof.Bits`.
+(`Ratpoints.Sieve.SieveSpec.wordAt`, `Ratpoints.Sieve.andWords`) and reading of the reciprocals in
+step with the moduli (`Ratpoints.Sieve.eq_magic_and_of_next?_eq_some`,
+`Ratpoints.Sieve.next?_ne_none_of_lt`) the second stage builds. The proofs use only the facts on the
+constants that `decide` checks next to them, that `Ratpoints.mulModLimit < 2 ^ 32` and
+`Ratpoints.stage3Limit ≤ 2 ^ 32`, never their values. The words of the test for common factors are
+read as natural numbers by `Int64.toNatClampNeg`, which is faithful on the non-negative words that
+the binary algorithm keeps; the facts on words that are not about the model are in
+`Ratpoints.Proof.Bits`.
 -/
 
 @[expose] public section
@@ -422,8 +424,9 @@ theorem CheckSpec.index_eq {cs : CheckSpec} {a : Int} {H : Nat} (hb : cs.binv < 
 /-- The bias of what the third stage needs of the entry `e` of a prime, when it is not `0`, is
 `p H` with `2 p H < 2 ^ 32`, and its reciprocal, that of the entry, is that of `p` when the entry's
 is. -/
-theorem bias_checkOf_ne_zero {b H : Nat} {e : SieveEntry} {t : Entry} (hf : e.factors = [.prime t])
-    (hm : e.magic = Sieve.magic e.p) {mg : Nat} (h0 : (checkOf b H e mg).bias ≠ 0) :
+theorem bias_checkOf_eq_and_of_ne_zero {b H : Nat} {e : SieveEntry} {t : Entry}
+    (hf : e.factors = [.prime t]) (hm : e.magic = Sieve.magic e.p) {mg : Nat}
+    (h0 : (checkOf b H e mg).bias ≠ 0) :
     (checkOf b H e mg).bias = (checkOf b H e mg).p * H ∧
       2 * (checkOf b H e mg).p * H < 2 ^ 32 ∧
         (checkOf b H e mg).magic = Sieve.magic (checkOf b H e mg).p := by
@@ -469,7 +472,7 @@ theorem SieveEntry.IsPrimeEntry.admits_checkOf {e : SieveEntry} (he : e.IsPrimeE
   have hi : (checkOf b H e (Sieve.magic e.p)).index a =
       (a % e.p).toNat * t.inverses[b % e.p]! % e.p := by
     rw [CheckSpec.index_eq (H := H) (by rw [hb, p_checkOf]; lia) ha
-      (bias_checkOf_ne_zero hf (hpt ▸ hm)), hb, p_checkOf]
+      (bias_checkOf_eq_and_of_ne_zero hf (hpt ▸ hm)), hb, p_checkOf]
   simp [CheckSpec.admits, Entry.admits, ← hpt, hr, hb, hi, hi0, isFSquare_checkOf b H hf]
 
 /-- For a numerator `a` prime to `b` with `|a| ≤ H`, what the third stage needs of the sieve entries
@@ -552,29 +555,6 @@ theorem acceptedPoints_eq_ite {es : List SieveEntry} (hes : ∀ e ∈ es, e.IsPr
   · simp [hab, checkNum]
 
 /-! ### The second stage -/
-
-/-- The reciprocals of the moduli `specs` that a loop over the moduli and their reciprocals in step
-has still to read after the moduli `pref`, before it has gone through all of them, are those after
-the first `pref.length`: the next is that of the next modulus, and the cursor moves on. -/
-theorem eq_magic_and_of_next?_eq_some {specs pref suff : List SieveSpec} {s : SieveSpec}
-    {mgs rest rest' : List Nat} {mg : Nat} (hmg : mgs = specs.map (magic ·.p))
-    (hs : specs = pref ++ s :: suff)
-    (hrest : pref.length < specs.length → rest = mgs.drop pref.length)
-    (hnext : Std.Stream.next? rest = some (mg, rest')) :
-    mg = magic s.p ∧
-      ((pref ++ [s]).length < specs.length → rest' = mgs.drop (pref ++ [s]).length) := by
-  rw [hrest (by simp [hs]), hmg] at hnext
-  obtain ⟨rfl, h⟩ := List.next?_drop_map _ hs hnext
-  exact ⟨rfl, fun _ ↦ by rw [h, hmg, List.length_append, List.length_singleton]⟩
-
-/-- The reciprocals of a loop over the moduli and their reciprocals in step do not run out before
-the moduli. -/
-theorem next?_ne_none_of_lt {specs pref suff : List SieveSpec} {s : SieveSpec} {mgs rest : List Nat}
-    (hmg : mgs = specs.map (magic ·.p)) (hs : specs = pref ++ s :: suff)
-    (hrest : pref.length < specs.length → rest = mgs.drop pref.length) :
-    Std.Stream.next? rest ≠ none := by
-  rw [hrest (by simp [hs]), hmg]
-  exact List.next?_drop_map_ne_none _ hs
 
 /-- The invariant of the loop of `Ratpoints.Sieve.secondStage` over the moduli `specs` and their
 reciprocals `mgs` on the bit array `nums` with the word number `i`, after the moduli `pref`, whose

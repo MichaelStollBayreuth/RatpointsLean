@@ -499,6 +499,10 @@ theorem NumClassesInvariant.post {nb : Vector UInt64 64} {cls : Vector NumClass 
       ∀ j, db.toBitVec.getLsbD j = (decide (j < 64) && nb[j]! != 0) := by
   rwa [Std.Legacy.Range.length_toList] at h
 
+-- `StrideInvariant` stays reducible: at the two exits of the loop over the strides (`k` reaching
+-- `Ratpoints.numStrides`, and the `break` at a set bit of `w` outside the class of the stride
+-- `2 ^ k`), `‹_ ∧ _›.2` gives the invariant with the exit flag `true` from the one with `false`,
+-- which the invariant does not depend on.
 attribute [local irreducible] NumClassesInvariant in
 open Std.WP Lean.Order in
 /-- Each class packs its word of the 2-adic information and has no row offsets yet, and the word
@@ -683,23 +687,29 @@ def classOffset (es : Array SieveEntry) (rinv : Array (Array Nat)) (cl : NumClas
   mulMod (cl.a0 * rinv[n]![cl.k]!) es[n]!.p es[n]!.magic + es[n]!.bias
 
 /-- The invariant of the loop of `Ratpoints.Sieve.classRows` over the classes after those below
-`m`, for the classes `cls` it starts from: the array of the offsets `o` keeps its size and the table
-of the rows `rowOf` its `2 ^ Ratpoints.numStrides` entries; `rows` rows are made, one for each
-distinct packing of the classes below `m` with a pattern; the classes `cls'` from `m` on are as they
-were; each class below `m` keeps its pattern, stride and residue, and one with a pattern has the row
-of its packing, at a position `r np` for some `r < rows`, which the table of the rows holds at its
-key and whose `np` offsets are those of the class; and the table holds a row only at the key of a
-class below `m` with a pattern. -/
-def ClassRowsInvariant (cls : Vector NumClass 64) (es : Array SieveEntry) (rinv : Array (Array Nat))
-    (np size m : Nat) (cls' : Vector NumClass 64) (o : Array Nat) (rowOf : Array (Option Nat))
-    (rows : Nat) : Prop :=
-  o.size = size ∧ rowOf.size = 2 ^ numStrides ∧ rows = firstKeys cls m ∧
-    (∀ b < 64, m ≤ b → cls'[b]! = cls[b]!) ∧
-    (∀ b < m, cls'[b]!.bits = cls[b]!.bits ∧ cls'[b]!.k = cls[b]!.k ∧ cls'[b]!.a0 = cls[b]!.a0 ∧
-      (cls[b]!.bits ≠ 0 → ∃ r < rows, cls'[b]!.offset = some (r * np) ∧
-        rowOf[cls[b]!.key]! = some (r * np) ∧
-        ∀ n < np, o[r * np + n]! = classOffset es rinv cls[b]! n)) ∧
-    ∀ K, rowOf[K]!.isSome → ∃ b < m, cls[b]!.bits ≠ 0 ∧ cls[b]!.key = K
+`m`, for the classes `cls` it starts from and the sieve entries `es` with the inverses `rinv`, rows
+of `np` offsets: the state is the classes `cls'`, the array of the offsets `o`, the table of the
+rows `rowOf` at the keys of the packings and the number `rows` of rows made. -/
+structure ClassRowsInvariant (cls : Vector NumClass 64) (es : Array SieveEntry)
+    (rinv : Array (Array Nat)) (np size m : Nat) (cls' : Vector NumClass 64) (o : Array Nat)
+    (rowOf : Array (Option Nat)) (rows : Nat) : Prop where
+  /-- The array of the offsets keeps its size. -/
+  size_eq : o.size = size
+  /-- The table of the rows keeps its `2 ^ Ratpoints.numStrides` entries. -/
+  size_rowOf : rowOf.size = 2 ^ numStrides
+  /-- One row is made for each distinct packing of the classes below `m` with a pattern. -/
+  rows_eq : rows = firstKeys cls m
+  /-- The classes from `m` on are as they were. -/
+  eq_of_le : ∀ b < 64, m ≤ b → cls'[b]! = cls[b]!
+  /-- Each class below `m` keeps its pattern, stride and residue, and one with a pattern has the
+  row of its packing, at a position `r np` for some `r < rows`, which the table of the rows holds
+  at its key and whose `np` offsets are those of the class. -/
+  entry : ∀ b < m, cls'[b]!.bits = cls[b]!.bits ∧ cls'[b]!.k = cls[b]!.k ∧
+    cls'[b]!.a0 = cls[b]!.a0 ∧ (cls[b]!.bits ≠ 0 → ∃ r < rows, cls'[b]!.offset = some (r * np) ∧
+      rowOf[cls[b]!.key]! = some (r * np) ∧
+      ∀ n < np, o[r * np + n]! = classOffset es rinv cls[b]! n)
+  /-- The table holds a row only at the key of a class below `m` with a pattern. -/
+  exists_of_isSome : ∀ K, rowOf[K]!.isSome → ∃ b < m, cls[b]!.bits ≠ 0 ∧ cls[b]!.key = K
 
 /-- The invariant of the loop of `Ratpoints.Sieve.classRows` that writes the row of the class `cl`
 at the position `row` into the array of the offsets `o₀`, after the moduli below `j`: the array
@@ -727,8 +737,8 @@ theorem ClassRowsInvariant.post {cls : Vector NumClass 64} {es : Array SieveEntr
         ∃ pos, cls'[b]!.offset = some pos ∧
           ∀ n < np, o[pos + n]! = classOffset es rinv cls[b]! n) := by
   rw [Std.Legacy.Range.length_toList] at h
-  refine ⟨h.1, fun b hb ↦ ?_⟩
-  obtain ⟨h1, h2, h3, h4⟩ := h.2.2.2.2.1 b hb
+  refine ⟨h.size_eq, fun b hb ↦ ?_⟩
+  obtain ⟨h1, h2, h3, h4⟩ := h.entry b hb
   exact ⟨h1, h2, h3, fun hb0 ↦ (h4 hb0).elim fun _ ⟨_, hr, _, hv⟩ ↦ ⟨_, hr, hv⟩⟩
 
 /-- A class without a pattern is stepped over: it is not the first with its key, and it keeps its
@@ -765,8 +775,8 @@ theorem ClassRowsInvariant.exists_row_of_getElem!_eq_some {cls : Vector NumClass
     (hrow : rowOf[cls[cur]!.key]! = some row) :
     ∃ r < rows, row = r * np ∧ (∀ n < np, o[r * np + n]! = classOffset es rinv cls[cur]! n) ∧
       ¬IsFirstKey cls cur := by
-  obtain ⟨b, hbc, hb0, hkey⟩ := h.2.2.2.2.2 cls[cur]!.key (by simp [hrow])
-  obtain ⟨r, hr, -, hrow', hv⟩ := (h.2.2.2.2.1 b hbc).2.2.2 hb0
+  obtain ⟨b, hbc, hb0, hkey⟩ := h.exists_of_isSome cls[cur]!.key (by simp [hrow])
+  obtain ⟨r, hr, -, hrow', hv⟩ := (h.entry b hbc).2.2.2 hb0
   rw [hkey, hrow, Option.some.injEq] at hrow'
   obtain ⟨hk, ha⟩ := (hwf b (by lia)).k_eq_and_a0_eq (hwf cur hc) hkey
   refine ⟨r, hr, hrow', fun n hn ↦ ?_, fun hf ↦ hf.2 b hbc hb0 hkey⟩
@@ -785,7 +795,7 @@ theorem ClassRowsInvariant.reuse {cls : Vector NumClass 64} {es : Array SieveEnt
       (cls'.set cur { cls'[cur] with offset := some row } hc) o rowOf rows := by
   rw [List.length_append, List.length_singleton,
     Std.Legacy.Range.length_eq_of_toList_eq_append_cons hl] at *
-  have hcur := h.2.2.2.1 cur hc (Nat.le_refl _)
+  have hcur := h.eq_of_le cur hc (Nat.le_refl _)
   rw [getElem!_pos cls' cur hc] at hcur
   rw [hcur, ← NumClass.key] at hrow
   obtain ⟨r, hr, rfl, hv, hf⟩ := h.exists_row_of_getElem!_eq_some hwf hc hrow
@@ -832,7 +842,7 @@ theorem ClassRowsInvariant.isFirstKey {cls : Vector NumClass 64} {es : Array Sie
     (h : ClassRowsInvariant cls es rinv np size cur cls' o rowOf rows) (hb : cls[cur]!.bits ≠ 0)
     (hnone : rowOf[cls[cur]!.key]! = none) : IsFirstKey cls cur := by
   refine ⟨hb, fun b hb' hb0 hkey ↦ ?_⟩
-  obtain ⟨r, -, -, hr, -⟩ := (h.2.2.2.2.1 b hb').2.2.2 hb0
+  obtain ⟨r, -, -, hr, -⟩ := (h.entry b hb').2.2.2 hb0
   rw [hkey, hnone] at hr
   simp at hr
 
@@ -860,7 +870,7 @@ theorem ClassRowsInvariant.add_one_mul_le {cls : Vector NumClass 64} {es : Array
     (h : ClassRowsInvariant cls es rinv np size cur cls' o rowOf rows) (hf : IsFirstKey cls cur)
     (hcur : cur < 64) (hsize : firstKeys cls 64 * np ≤ size) : (rows + 1) * np ≤ size :=
   Nat.le_trans (Nat.mul_le_mul_right np
-    ((by simp [firstKeys_succ, hf, h.2.2.1] : firstKeys cls (cur + 1) = rows + 1) ▸
+    ((by simp [firstKeys_succ, hf, h.rows_eq] : firstKeys cls (cur + 1) = rows + 1) ▸
       firstKeys_mono cls (by lia))) hsize
 
 -- An earlier class keeps its row when the first class `cur` with its key gets the row `rows`: the
@@ -874,7 +884,7 @@ private theorem ClassRowsInvariant.entry_newRow {cls : Vector NumClass 64} {es :
       (cls[b]!.bits ≠ 0 → ∃ r < rows + 1, cls'[b]!.offset = some (r * np) ∧
         (rowOf.set! cls[cur]!.key (some (rows * np)))[cls[b]!.key]! = some (r * np) ∧
         ∀ n < np, o'[r * np + n]! = classOffset es rinv cls[b]! n) := by
-  obtain ⟨e1, e2, e3, e4⟩ := h.2.2.2.2.1 b hb
+  obtain ⟨e1, e2, e3, e4⟩ := h.entry b hb
   refine ⟨e1, e2, e3, fun hb0 ↦ (e4 hb0).elim fun r ⟨hr, ho, hro, hv⟩ ↦
     ⟨r, by lia, ho, ?_, fun n hn ↦ by rw [hrow.getElem!_of_lt hr hn, hv n hn]⟩⟩
   rw [Array.getElem!_set!_ne _ _ _ _ (fun hk ↦ hf.2 b hb hb0 hk.symm), hro]
@@ -890,7 +900,7 @@ private theorem ClassRowsInvariant.exists_of_isSome_set! {cls : Vector NumClass 
   by_cases hk : cls[cur]!.key = K
   · exact ⟨cur, by lia, hb, hk⟩
   · rw [Array.getElem!_set!_ne _ _ _ _ hk] at hK
-    exact (h.2.2.2.2.2 K hK).elim fun b ⟨hb', h'⟩ ↦ ⟨b, by lia, h'⟩
+    exact (h.exists_of_isSome K hK).elim fun b ⟨hb', h'⟩ ↦ ⟨b, by lia, h'⟩
 
 /-- A class with a pattern whose key has no row gets a new row, after the rows made so far: it is
 the first with its key, and the earlier rows keep their offsets. -/
@@ -909,25 +919,25 @@ theorem ClassRowsInvariant.newRow {cls : Vector NumClass 64} {es : Array SieveEn
   rw [List.length_append, List.length_singleton,
     Std.Legacy.Range.length_eq_of_toList_eq_append_cons hl] at *
   rw [Std.Legacy.Range.length_toList, Nat.sub_zero] at hrow
-  have hcur : cls'[cur] = cls[cur]! := getElem!_pos cls' cur hc ▸ h.2.2.2.1 cur hc (Nat.le_refl _)
+  have hcur : cls'[cur] = cls[cur]! := getElem!_pos cls' cur hc ▸ h.eq_of_le cur hc (Nat.le_refl _)
   rw [hcur, beq_iff_eq] at hb
   rw [hcur] at hrow
   rw [hcur, ← NumClass.key] at hx ⊢
   have hf := h.isFirstKey hb (by cases x <;> first | exact hx | exact absurd rfl (hnone _))
   have hlt := h.add_one_mul_le hf hc hsize
-  have hK := (hwf cur hc).key_lt_two_pow_numStrides
-  refine ⟨hrow.1.trans h.1, by simp [h.2.1], by simp [h.2.2.1, firstKeys_succ, hf],
+  have hK : cls[cur]!.key < rowOf.size := h.size_rowOf ▸ (hwf cur hc).key_lt_two_pow_numStrides
+  refine ⟨hrow.1.trans h.size_eq, by simp [h.size_rowOf], by simp [h.rows_eq, firstKeys_succ, hf],
     fun b hb' hb'' ↦ ?_, fun b hb' ↦ ?_, h.exists_of_isSome_set! hb _⟩
   · simp only [Vector.getElem!_set hc hb', show cur ≠ b by lia, ↓reduceIte]
-    exact h.2.2.2.1 b hb' (by lia)
+    exact h.eq_of_le b hb' (by lia)
   · rw [Vector.getElem!_set hc (by lia)]
     split <;> rename_i hcb
     · subst hcb
-      exact ⟨rfl, rfl, rfl, fun _ ↦ ⟨rows, by lia, rfl, Array.getElem!_set!_self _ _ _ (h.2.1 ▸ hK),
-        fun n hn ↦ hrow.getElem!_row (h.1 ▸ hlt) hn⟩⟩
+      exact ⟨rfl, rfl, rfl, fun _ ↦ ⟨rows, by lia, rfl, Array.getElem!_set!_self _ _ _ hK,
+        fun n hn ↦ hrow.getElem!_row (h.size_eq ▸ hlt) hn⟩⟩
     · exact h.entry_newRow hf hrow (by lia)
 
-attribute [local irreducible] ClassRowsInvariant RowInvariant in
+attribute [local irreducible] RowInvariant in
 open Std.WP Lean.Order in
 /-- Each class with a pattern gets the row of its packing, whose offset for the `n`-th modulus is
 `Ratpoints.Sieve.classOffset`, when the array of the offsets has room for a row of `np` offsets for

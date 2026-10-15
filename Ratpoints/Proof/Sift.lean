@@ -698,12 +698,6 @@ private theorem ite_eq_toNat_mul_sub {high w1 : Int} (hw1 : w1 ≤ high / rbaLen
     have := Int.mul_le_mul_of_nonneg_left (show w1 ≤ high / rbaLength by lia) (Int.le_of_lt hR)
     lia
 
-/-- The high mask of a piece of `Ratpoints.Sieve.siftBits` is below `Ratpoints.rbaLength`. -/
-theorem ite_sub_toNat_emod_lt (P : Prop) [Decidable P] (high : Int) :
-    (if P then rbaLength - 1 - (high % rbaLength).toNat else 0) < rbaLength := by
-  have := rbaLength_pos
-  split <;> lia
-
 /-- The invariant of the loop of `Ratpoints.Sieve.siftBits` over the pieces, for the bits from
 `low` to `high`, a test `keep` of the bits and their points `g`, at the exit of the loop or not:
 the bit arrays from that of `low` up to the word number `w0` are done, and their bits that lie in

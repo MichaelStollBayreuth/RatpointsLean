@@ -770,15 +770,15 @@ private theorem nil_eq_of_run_sievingInfo_eq_none {c : List ℤ} {H : ℕ} {P : 
 -- admit a numerator.
 private theorem isSoundRun_of_map {c : List ℤ} {sp2 : ℕ} {entries : List SieveEntry}
     {magics : Array ℕ} {cls cls' : Vector NumClass 64} {offsets : Array ℕ}
-    {f : SieveEntry → Array ℕ}
+    {dinv : SieveEntry → Array ℕ}
     (hent : ∀ e ∈ entries, e.IsSound c ∧ e.Packable ∧ ∀ f ∈ e.factors, f.HasInverses e.p)
     (hes : ∀ e ∈ entries.drop sp2, e.IsPrimeEntry)
     (hmg : magics.toList = entries.map fun e ↦ magic e.p)
     (hcls : ∀ b < 64, cls[b]!.Packs (Id.run (twoAdic c (degree c)))[b]!)
     (hbits : ∀ b < 64, cls'[b]!.bits = cls[b]!.bits ∧ cls'[b]!.k = cls[b]!.k ∧
       cls'[b]!.a0 = cls[b]!.a0)
-    (hoff : OffsetsFor cls' (entries.map fun e ↦ { e with dinv := f e }) offsets) :
-    IsSoundRun c sp2 (entries.map fun e ↦ { e with dinv := f e }) magics cls' offsets
+    (hoff : OffsetsFor cls' (entries.map fun e ↦ { e with dinv := dinv e }) offsets) :
+    IsSoundRun c sp2 (entries.map fun e ↦ { e with dinv := dinv e }) magics cls' offsets
       (denBits (Id.run (twoAdic c (degree c)))) := by
   refine ⟨fun e he ↦ ?_, fun e he ↦ ?_, by simp [hmg], fun e he ↦ ?_, hoff.take sp2,
     fun b hb ↦ (hcls b hb).congr (hbits b hb).1 (hbits b hb).2.1 (hbits b hb).2.2, rfl⟩

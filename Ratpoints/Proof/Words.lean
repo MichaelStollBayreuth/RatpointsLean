@@ -407,6 +407,29 @@ theorem getLsbD_andWords {sfs : List (SieveSpec × (Int → Bool))} (h : ∀ sf 
   rw [andWords, UInt64.getLsbD_foldl_and, List.all_map]
   grind [SieveSpec.Reads, List.all_eq_true]
 
+/-- The reciprocals of the moduli `specs` that a loop over the moduli and their reciprocals in step
+has still to read after the moduli `pref`, before it has gone through all of them, are those after
+the first `pref.length`: the next is that of the next modulus, and the cursor moves on. -/
+theorem eq_magic_and_of_next?_eq_some {specs pref suff : List SieveSpec} {s : SieveSpec}
+    {mgs rest rest' : List Nat} {mg : Nat} (hmg : mgs = specs.map (magic ·.p))
+    (hs : specs = pref ++ s :: suff)
+    (hrest : pref.length < specs.length → rest = mgs.drop pref.length)
+    (hnext : Std.Stream.next? rest = some (mg, rest')) :
+    mg = magic s.p ∧
+      ((pref ++ [s]).length < specs.length → rest' = mgs.drop (pref ++ [s]).length) := by
+  rw [hrest (by simp [hs]), hmg] at hnext
+  obtain ⟨rfl, h⟩ := List.next?_drop_map _ hs hnext
+  exact ⟨rfl, fun _ ↦ by rw [h, hmg, List.length_append, List.length_singleton]⟩
+
+/-- The reciprocals of a loop over the moduli and their reciprocals in step do not run out before
+the moduli. -/
+theorem next?_ne_none_of_lt {specs pref suff : List SieveSpec} {s : SieveSpec} {mgs rest : List Nat}
+    (hmg : mgs = specs.map (magic ·.p)) (hs : specs = pref ++ s :: suff)
+    (hrest : pref.length < specs.length → rest = mgs.drop pref.length) :
+    Std.Stream.next? rest ≠ none := by
+  rw [hrest (by simp [hs]), hmg]
+  exact List.next?_drop_map_ne_none _ hs
+
 /-- The invariant of the loop of `Ratpoints.Sieve.andRows` over the moduli and, in step with them,
 their reciprocals `mgs`, whose state is the piece and the reciprocals still to come, and, with no
 moduli yet, of the loop that fills the piece with the class word `cw` before it: after the moduli
@@ -506,9 +529,8 @@ theorem AndRowsLoopInvariant.next?_ne_none {m k n : Nat} {cw : UInt64} {w0 : Int
     {surv : Vector UInt64 m}
     (pre : (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p) ∧ SmallFits small w0 (w0 + n))
     (hs : specs = pref ++ s :: suff) (h : AndRowsLoopInvariant cw w0 k mgs pref (surv, rest)) :
-    Std.Stream.next? rest ≠ none := by
-  rw [show rest = _ from h.1, pre.2.1]
-  exact List.next?_drop_map_ne_none _ hs
+    Std.Stream.next? rest ≠ none :=
+  next?_ne_none_of_lt pre.2.1 hs fun _ ↦ h.1
 
 /-- The index of the first row of the first stage, as `Ratpoints.Sieve.andRows` computes it with the
 reciprocal `mg` of the cursor, is the residue of `-(w0 + offset)`
@@ -522,8 +544,7 @@ theorem AndRowsLoopInvariant.andRowsHeadInvariant {m n : Nat} {cw : UInt64} {w0 
     (h : AndRowsLoopInvariant cw w0 (ForIn.toList [0:n * rbaPack]).length mgs pref (surv, rest))
     (hnext : Std.Stream.next? rest = some (mg, rest')) :
     AndRowsHeadInvariant small cw w0 n pref s mg [] surv := by
-  rw [show rest = _ from h.1, pre.2.1] at hnext
-  obtain ⟨rfl, -⟩ := List.next?_drop_map _ hs hnext
+  obtain ⟨rfl, -⟩ := eq_magic_and_of_next?_eq_some pre.2.1 hs (fun _ ↦ h.1) hnext
   have hfit := pre.1 s (by simp [hs])
   refine ⟨⟨hfit.pos, ?_⟩, fun y hy ↦ by simp [h.2 y (by simpa using hy)]⟩
   rw [andRowsStart, hfit.ite_modMul_modLong_eq_emod pre.2.2, Int.neg_add, Int.sub_eq_add_neg]

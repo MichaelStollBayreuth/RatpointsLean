@@ -231,7 +231,7 @@ reciprocals, and the test of the denominators up to $b_{\mathrm{high}} \le \math
 
 \begin{lemma}[The third stage tests the rows]\label{lem:stage3}
   \uses{def:stage3, lem:mulMod, def:admits, def:SieveEntry, def:examinePrime}
-  \lean{Ratpoints.Sieve.Stage3Invariant, Ratpoints.Sieve.stage3_spec, Ratpoints.Sieve.CheckSpec.index_eq, Ratpoints.Sieve.le_mul_add_natCast_mul, Ratpoints.Sieve.mul_add_natCast_mul_le_two_mul_mul_sub, Ratpoints.Sieve.toNat_emod_mul_lt_sq, Ratpoints.Sieve.binv_checkOf, Ratpoints.Sieve.bias_checkOf_ne_zero, Ratpoints.Sieve.SieveEntry.IsPrimeEntry.admits_checkOf, Ratpoints.Sieve.all_admits_fillChecks, Ratpoints.Sieve.run_stage3_fillChecks, Ratpoints.Sieve.getElem!_inversesMod_lt, Ratpoints.Sieve.isPrimeEntry_examinePrime}
+  \lean{Ratpoints.Sieve.Stage3Invariant, Ratpoints.Sieve.stage3_spec, Ratpoints.Sieve.CheckSpec.index_eq, Ratpoints.Sieve.le_mul_add_natCast_mul, Ratpoints.Sieve.mul_add_natCast_mul_le_two_mul_mul_sub, Ratpoints.Sieve.toNat_emod_mul_lt_sq, Ratpoints.Sieve.binv_checkOf, Ratpoints.Sieve.bias_checkOf_eq_and_of_ne_zero, Ratpoints.Sieve.SieveEntry.IsPrimeEntry.admits_checkOf, Ratpoints.Sieve.all_admits_fillChecks, Ratpoints.Sieve.run_stage3_fillChecks, Ratpoints.Sieve.getElem!_inversesMod_lt, Ratpoints.Sieve.isPrimeEntry_examinePrime}
   \leanok
   The third stage passes $a$ exactly when every prime lets it through. For prime entries with their
   reciprocals in \verb|magics|, $|a| \le H$ and $\gcd(a, b) = 1$: the residue at which the table of
