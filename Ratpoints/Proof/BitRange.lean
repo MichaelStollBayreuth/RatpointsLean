@@ -69,8 +69,7 @@ theorem toInt_numeratorsToBits_false {low high : Int64} {cl : NumClass} (hcl : c
     (h1 : cl.a0 - low.toInt < 2 ^ 63) (h2 : -2 ^ 63 ≤ high.toInt - cl.a0) :
     (numeratorsToBits low high cl false).1.toInt = -((cl.a0 - low.toInt) / 2 ^ cl.k) ∧
       (numeratorsToBits low high cl false).2.toInt = (high.toInt - cl.a0) / 2 ^ cl.k := by
-  have ha : cl.a0 < 2 ^ 63 :=
-    Nat.lt_trans hcl.a0_lt (Nat.pow_lt_pow_right (by decide) (by have := hcl.k_le; lia))
+  have ha : cl.a0 < 2 ^ 63 := Nat.lt_trans hcl.a0_lt_sixty_four (by decide)
   have hk : cl.k < 64 := by have := hcl.k_le; lia
   have hm : (0 : Int) < 2 ^ cl.k := Int.pow_pos (by decide)
   have := low.toInt_lt

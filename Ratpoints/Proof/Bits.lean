@@ -810,7 +810,7 @@ theorem toNat_add_emod_of_lt {a : Int} {p j : Nat} (hp : 0 < p) (hj : j < (-a % 
   have := emod_nonneg (-a) (b := p) (by lia)
   have := emod_lt_of_pos (-a) (b := p) (by lia)
   have := mul_ediv_add_emod (-a) p
-  have key : a + j = (p - -a % p + j) + p * (-((-a) / p) - 1) := by
+  have key : a + j = p - -a % p + j + p * (-(-a / p) - 1) := by
     rw [Int.mul_sub, Int.mul_neg, Int.mul_one]
     lia
   rw [key, add_mul_emod_self_left, emod_eq_of_lt (by lia) (by lia)]
@@ -822,7 +822,7 @@ theorem toNat_add_add_emod {a : Int} {p i k : Nat} (hi : i < p) :
     ((a + (((-a % (p : Int)).toNat + k * p + i : Nat) : Int)) % (p : Int)).toNat = i := by
   have := mul_ediv_add_emod (-a) p
   have hR : ((-a % (p : Int)).toNat : Int) = -a % p := toNat_of_nonneg (emod_nonneg _ (by lia))
-  have key : a + (((-a % (p : Int)).toNat + k * p + i : Nat) : Int) = i + p * (k - (-a) / p) := by
+  have key : a + (((-a % (p : Int)).toNat + k * p + i : Nat) : Int) = i + p * (k - -a / p) := by
     push_cast
     rw [hR, Int.mul_sub, Int.mul_comm (p : Int) k]
     lia
