@@ -456,7 +456,10 @@ Lemma~\ref{lem:sift_eq_checkDen} maps their side.
   moduli, which are sound, those of the third stage prime entries, and whose reciprocals
   \verb|sieving_info| returns in their order (Lemma~\ref{lem:sievingInfo}), let every point through
   (Lemmas~\ref{lem:shape_dens}, \ref{lem:twoAdic_point} and~\ref{lem:survives},
-  Theorem~\ref{thm:run_reference}).
+  Theorem~\ref{thm:run_reference}). The search establishes what the run needs of its arguments by
+  Lemmas~\ref{lem:sievingInfo}, \ref{lem:numClasses} and~\ref{lem:classOffsets}: the entries that
+  \verb|class_offsets| returns differ from those of \verb|sieving_info| only in $\mathrm{dinv}$,
+  which the soundness, the shape of a prime entry and the tables of inverses do not read.
 \end{definition}
 
 $\mathrm{findPoints}(c, H, P, o)$ (Definition~\ref{def:findPoints}) refuses, in the order of the

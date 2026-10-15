@@ -208,7 +208,7 @@ order: a data refinement.
 
 \begin{lemma}[A class packs its word]\label{lem:numClasses}
   \uses{def:numClasses, def:andRows, lem:twoAdic_point}
-  \lean{Ratpoints.Sieve.NumClass.WF, Ratpoints.Sieve.NumClass.Packs, Ratpoints.Sieve.NumClass.numerator, Ratpoints.Sieve.getLsbD_classMasks, Ratpoints.Sieve.packPattern_spec, Ratpoints.Sieve.numClasses_spec, Ratpoints.Sieve.packs_getElem!_fst_run_numClasses, Ratpoints.Sieve.NumClass.Packs.classBit_bits, Ratpoints.Sieve.NumClass.Packs.emod_eq_of_classBit, Ratpoints.Sieve.NumClass.Packs.bits_eq_zero_iff, Ratpoints.Sieve.NumClass.Packs.congr, Ratpoints.Sieve.snd_run_numClasses}
+  \lean{Ratpoints.Sieve.NumClass.WF, Ratpoints.Sieve.NumClass.Packs, Ratpoints.Sieve.NumClass.numerator, Ratpoints.Sieve.getLsbD_classMasks, Ratpoints.Sieve.packPattern_spec, Ratpoints.Sieve.numClasses_spec, Ratpoints.Sieve.packs_getElem!_fst_run_numClasses, Ratpoints.Sieve.NumClass.Packs.classBit_bits, Ratpoints.Sieve.NumClass.Packs.emod_eq_of_classBit, Ratpoints.Sieve.NumClass.Packs.bits_eq_zero_iff, Ratpoints.Sieve.NumClass.Packs.bits_bne_zero, Ratpoints.Sieve.NumClass.Packs.congr, Ratpoints.Sieve.snd_run_numClasses}
   \leanok
   The class of the word $w$ packs it: $k < \mathrm{numStrides}$, $k \le 6$, $a_0 < 2^k$, every set
   bit $a$ of $w$ is $\equiv a_0 \pmod{2^k}$, and bit $t$ of the pattern is bit
@@ -292,7 +292,7 @@ order: a data refinement.
 
 \begin{lemma}[The residues]\label{lem:fillBpList}
   \uses{def:fillBpList, lem:mulMod}
-  \lean{Ratpoints.Sieve.fillBpList_eq_map, Ratpoints.Sieve.mulMod_mul_magic, Ratpoints.Sieve.mulMod_mulMod_mul_magic, Ratpoints.Sieve.mulMod_toNat_modLong_mul_magic, Ratpoints.mod_le_two_pow_10}
+  \lean{Ratpoints.Sieve.fillBpList_eq_map, Ratpoints.Sieve.mulMod_mul_magic, Ratpoints.Sieve.mulMod_mulMod_mul_magic, Ratpoints.Sieve.mulMod_toNat_modLong_mul_magic}
   \leanok
   For entries with $0 < p \le \mathrm{maxPrimeEven}$ and $\mathrm{dinv}[k] < p$ and their
   reciprocals, the residues are $b\, \mathrm{dinv}[k] \bmod p$, in all three branches.
@@ -441,7 +441,7 @@ conclusions in the words of Lemma~\ref{lem:reads_row}.
 \begin{lemma}[The bits of one denominator]\label{lem:siftBits}
   \uses{def:siftBits, lem:reads_row, lem:numeratorsToBits, lem:classOffsets, def:siftPiece,
     lem:numClasses, lem:rowIndices}
-  \lean{Ratpoints.Sieve.siftBits_spec, Ratpoints.Sieve.packedReads, Ratpoints.Sieve.setRows_map, Ratpoints.Sieve.flatMap_filter_bits_eq, Ratpoints.Sieve.reads_of_mem_packedReads, Ratpoints.Sieve.all_packedReads, Ratpoints.Sieve.fits_of_mem_packedReads, Ratpoints.Sieve.map_magic_packedReads, Ratpoints.Sieve.flatMap_acceptedPoints_eq_pointsOfDen, Ratpoints.Sieve.SieveEntry.PackedFor.fits, Ratpoints.Sieve.NumClass.Packs.filter_filter_emod}
+  \lean{Ratpoints.Sieve.siftBits_spec, Ratpoints.Sieve.packedReads, Ratpoints.Sieve.setRows_map, Ratpoints.Sieve.flatMap_filter_bits_eq, Ratpoints.Sieve.reads_of_mem_packedReads, Ratpoints.Sieve.SieveEntry.PackedFor.fits, Ratpoints.Sieve.NumClass.Packs.filter_filter_emod}
   \leanok
   The bits of an interval give the points of the bits from $\mathrm{low}$ to $\mathrm{high}$ that pass the
   class pattern and the tests that the specs read, none for an empty interval; the specs that
@@ -452,7 +452,6 @@ conclusions in the words of Lemma~\ref{lem:reads_row}.
 \end{lemma}
 
 \begin{proof}
-  \uses{def:checkNum, lem:accepted, lem:staged}
   \leanok
   An invariant of the loop over the pieces, as before over the bits instead of the numerators
   (Definition~\ref{def:sift}); Lemma~\ref{lem:reads_row} with the offsets of
@@ -482,23 +481,22 @@ the 2-adic information, sizes the array of offsets and computes them after \verb
 which gives packable entries with their tables of inverses (Lemma~\ref{lem:sievingInfo}).
 
 \begin{lemma}[What the run needs of the search]\label{lem:soundRun}
-  \uses{lem:sievingInfo, lem:classOffsets, lem:numClasses, lem:admits_mul, def:stage3, def:twoAdic}
-  \lean{Ratpoints.Sieve.IsSoundRun, Ratpoints.Sieve.IsSoundRun.bits_bne_zero, Ratpoints.Sieve.IsSoundRun.getLsbD_db, Ratpoints.Sieve.NumClass.Packs.bits_bne_zero}
+  \uses{lem:classOffsets, lem:numClasses, lem:admits_mul, def:stage3, def:twoAdic}
+  \lean{Ratpoints.Sieve.IsSoundRun, Ratpoints.Sieve.IsSoundRun.mk, Ratpoints.Sieve.IsSoundRun.bits_bne_zero, Ratpoints.Sieve.IsSoundRun.getLsbD_db}
   \leanok
   The sieve entries, reciprocals, classes, offsets
   and \verb|den_bits| that the search hands to the run are sound: sound rows, prime entries in the
   third stage, the reciprocals in their order, tables of inverses and the offsets of the classes for
   the first two stages, classes that pack the 2-adic words, and \verb|den_bits| the word of
   Definition~\ref{def:twoAdic}; so a pattern is nonzero exactly when the word of its class is, and
-  \verb|den_bits| has the bits of the classes with a pattern. The search establishes it for its
-  arguments in its proof.
+  \verb|den_bits| has the bits of the classes with a pattern.
 \end{lemma}
 
 \begin{proof}
   \leanok
-  Lemma~\ref{lem:sievingInfo}, Lemma~\ref{lem:numClasses} and Lemma~\ref{lem:classOffsets}; the
-  entries that \verb|class_offsets| returns differ only in $\mathrm{dinv}$, which the soundness, the
-  shape of a prime entry and the tables of inverses do not read.
+  A pattern is $0$ exactly when the word that its class packs is (Lemma~\ref{lem:numClasses}); bit
+  $j < 64$ of \verb|den_bits| is set exactly when the word of $j$ is not $0$
+  (Lemma~\ref{lem:twoAdic_point}), so exactly when the pattern of the class of $j$ is not $0$.
 \end{proof}
 
 \begin{lemma}[The longs of the packing]\label{lem:packingLongs}

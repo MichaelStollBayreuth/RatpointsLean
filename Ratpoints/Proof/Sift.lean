@@ -891,7 +891,9 @@ theorem setRows_map {es : List SieveEntry} (hp : ∀ e ∈ es, 0 < e.p) (b : Nat
   simp [setRows, packedReads, hpos,
     SieveEntry.get_rows _ (Nat.mod_lt _ (hp _ (List.getElem_mem hn)))]
 
-theorem fits_of_mem_packedReads {es : List SieveEntry} {b : Nat} {cl : NumClass}
+-- The specs of `Ratpoints.Sieve.packedReads` fit, for entries packed for the class at their
+-- offsets.
+private theorem fits_of_mem_packedReads {es : List SieveEntry} {b : Nat} {cl : NumClass}
     {offsets : Array Nat} {pos : Nat}
     (hoff : ∀ n (h : n < es.length), es[n].PackedFor cl offsets[pos + n]!) :
     ∀ s ∈ (packedReads es b cl offsets pos).map Prod.fst, s.Fits := by
@@ -900,8 +902,10 @@ theorem fits_of_mem_packedReads {es : List SieveEntry} {b : Nat} {cl : NumClass}
   obtain ⟨n, hn, rfl⟩ := List.mem_mapIdx.mp hsf
   exact (hoff n hn).fits _
 
-theorem map_magic_packedReads (es : List SieveEntry) (b : Nat) (cl : NumClass) (offsets : Array Nat)
-    (pos : Nat) :
+-- The reciprocals of the moduli of the entries are those of the specs of
+-- `Ratpoints.Sieve.packedReads`.
+private theorem map_magic_packedReads (es : List SieveEntry) (b : Nat) (cl : NumClass)
+    (offsets : Array Nat) (pos : Nat) :
     es.map (magic ·.p) = ((packedReads es b cl offsets pos).map Prod.fst).map (magic ·.p) :=
   List.ext_getElem (by simp [packedReads]) fun n _ _ ↦ by simp [packedReads]
 
@@ -917,8 +921,10 @@ theorem reads_of_mem_packedReads {es : List SieveEntry} {b : Nat} {cl : NumClass
   exact SieveEntry.reads_row (hinv _ (List.getElem_mem hn)) h.pos h.dinv_mul_mod h.mul_mod
     (Nat.mul_mul_mod_mod_of_mul_mod_eq_one _ h.dinv_mul_mod)
 
-theorem all_packedReads (es : List SieveEntry) (b : Nat) (cl : NumClass) (offsets : Array Nat)
-    (pos : Nat) (j : Int) :
+-- The tests of `Ratpoints.Sieve.packedReads` pass the bit `j` exactly when its numerator survives
+-- the entries.
+private theorem all_packedReads (es : List SieveEntry) (b : Nat) (cl : NumClass)
+    (offsets : Array Nat) (pos : Nat) (j : Int) :
     (packedReads es b cl offsets pos).all (·.2 j) = survives es b (cl.numerator j) := by
   rw [Bool.eq_iff_iff, List.all_eq_true, survives, List.all_eq_true]
   refine ⟨fun h e he ↦ ?_, fun h sf hsf ↦ ?_⟩

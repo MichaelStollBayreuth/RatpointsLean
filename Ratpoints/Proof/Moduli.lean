@@ -684,10 +684,10 @@ theorem coprime_rbaLength_of_mod_two_eq_one {m : ℕ} (hm : m % 2 = 1) :
   rw [rbaLength_eq_two_pow_rbaShift]
   exact (Nat.coprime_two_left.mpr (Nat.odd_iff.mpr hm)).pow_left _
 
-/-- The product of `Ratpoints.rbaLength < 2 ^ 32` (`Ratpoints.rbaShift_lt_thirty_two`) and a
-modulus `m ≤ 2 ^ 32` is below `2 ^ 64`, so that the remainder of `Ratpoints.rbaLength` by the
-reciprocal of `m` is exact. -/
-theorem rbaLength_mul_lt_two_pow_64 {m : ℕ} (hm : m ≤ 2 ^ 32) : rbaLength * m < 2 ^ 64 := by
+-- The product of `Ratpoints.rbaLength < 2 ^ 32` (`Ratpoints.rbaShift_lt_thirty_two`) and a
+-- modulus `m ≤ 2 ^ 32` is below `2 ^ 64`, so that the remainder of `Ratpoints.rbaLength` by the
+-- reciprocal of `m` is exact.
+private theorem rbaLength_mul_lt_two_pow_64 {m : ℕ} (hm : m ≤ 2 ^ 32) : rbaLength * m < 2 ^ 64 := by
   have h := Nat.pow_lt_pow_right (by decide : 1 < 2) rbaShift_lt_thirty_two
   rw [← rbaLength_eq_two_pow_rbaShift] at h
   calc rbaLength * m < 2 ^ 32 * 2 ^ 32 := Nat.mul_lt_mul_of_lt_of_le h hm (by decide)
@@ -717,18 +717,18 @@ theorem MakeModulusInvariant.rbainv_prime {c : List ℤ} {m r : ℕ} {fac : List
   exact ⟨hs.inverses_eq t rfl ▸ hs.hasInverses.2 _ (Nat.mod_lt _ (by lia)) (hp ▸ hr0),
     getElem!_inversesMod_lt (Nat.mod_lt _ (by lia))⟩
 
-/-- The precondition of `Ratpoints.Sieve.modinv` for the inverse of `Ratpoints.rbaLength` modulo a
-modulus `m > 1` all of whose divisors above `1` are divisible by primes of the table, an odd modulus
-(`Ratpoints.mod_two_eq_one_of_forall_dvd`). -/
-theorem one_lt_and_coprime_rbaLength_mod {m : ℕ}
+-- The precondition of `Ratpoints.Sieve.modinv` for the inverse of `Ratpoints.rbaLength` modulo a
+-- modulus `m > 1` all of whose divisors above `1` are divisible by primes of the table, an odd
+-- modulus (`Ratpoints.mod_two_eq_one_of_forall_dvd`).
+private theorem one_lt_and_coprime_rbaLength_mod {m : ℕ}
     (hm : 1 < m ∧ m < maxPrimeEven ∧ ∀ q > 1, q ∣ m → ∃ pn < numPrimes, primeTable[pn]! ∣ q) :
     1 < m ∧ Nat.Coprime (rbaLength % m) m :=
   ⟨hm.1, (ZMod.coprime_mod_iff_coprime _ _).mpr
     (coprime_rbaLength_of_mod_two_eq_one (mod_two_eq_one_of_forall_dvd hm.2.2))⟩
 
-/-- The inverse of `Ratpoints.rbaLength` that `Ratpoints.Sieve.modinv` gives, in the form of
-`Ratpoints.Sieve.SieveEntry.Packable`. -/
-theorem mul_rbaLength_mod_and_lt {m r : ℕ} (h : r < m ∧ rbaLength % m * r % m = 1) :
+-- The inverse of `Ratpoints.rbaLength` that `Ratpoints.Sieve.modinv` gives, in the form of
+-- `Ratpoints.Sieve.SieveEntry.Packable`.
+private theorem mul_rbaLength_mod_and_lt {m r : ℕ} (h : r < m ∧ rbaLength % m * r % m = 1) :
     r * rbaLength % m = 1 ∧ r < m :=
   ⟨by rw [Nat.mul_comm, ← Nat.mod_mul_mod]; exact h.2, h.1⟩
 
