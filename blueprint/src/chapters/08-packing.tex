@@ -251,7 +251,7 @@ order: a data refinement.
 
 \begin{lemma}[The offsets]\label{lem:classOffsets}
   \uses{def:classOffsets, lem:mulMod, lem:numClasses, def:packingConstants, def:barrett}
-  \lean{Ratpoints.Sieve.NumClass.key, Ratpoints.Sieve.NumClass.WF.k_eq_and_a0_eq, Ratpoints.Sieve.IsFirstKey, Ratpoints.Sieve.firstKeys, Ratpoints.Sieve.numPackings_spec, Ratpoints.Sieve.classOffset, Ratpoints.Sieve.classRows_spec, Ratpoints.Sieve.halveIter, Ratpoints.Sieve.halveChain, Ratpoints.Sieve.halveIter_mul_two_pow_mod, Ratpoints.Sieve.halveIter_mul_two_pow_mul_mod, Ratpoints.Sieve.SieveEntry.Packable, Ratpoints.Sieve.SieveEntry.PackedFor, Ratpoints.Sieve.SieveEntry.PackedFor.congr, Ratpoints.Sieve.OffsetsFor, Ratpoints.Sieve.OffsetsFor.take, Ratpoints.Sieve.mul_mul_lt_two_pow_64, Ratpoints.Sieve.classOffsets_spec}
+  \lean{Ratpoints.Sieve.NumClass.key, Ratpoints.Sieve.NumClass.WF.k_eq_and_a0_eq, Ratpoints.Sieve.IsFirstKey, Ratpoints.Sieve.firstKeys, Ratpoints.Sieve.numPackings_spec, Ratpoints.Sieve.classOffset, Ratpoints.Sieve.classRows_spec, Ratpoints.Sieve.halveIter, Ratpoints.Sieve.halveChain, Ratpoints.Sieve.halveIter_mul_two_pow_mod, Ratpoints.Sieve.halveIter_mul_two_pow_mul_mod, Ratpoints.Sieve.SieveEntry.Packable, Ratpoints.Sieve.SieveEntry.PackedFor, Ratpoints.Sieve.SieveEntry.PackedFor.congr, Ratpoints.Sieve.OffsetsFor, Ratpoints.Sieve.OffsetsFor.take, Ratpoints.mul_mul_lt_two_pow_64, Ratpoints.Sieve.classOffsets_spec}
   \leanok
   The number of the packings is $\max(1, f)$ for the number $f$ of the classes with a pattern whose
   key no earlier class with a pattern has (the classes being well formed, so that the keys are below
@@ -292,7 +292,7 @@ order: a data refinement.
 
 \begin{lemma}[The residues]\label{lem:fillBpList}
   \uses{def:fillBpList, lem:mulMod}
-  \lean{Ratpoints.Sieve.fillBpList_eq_map, Ratpoints.Sieve.mulMod_mul_magic, Ratpoints.Sieve.mulMod_mulMod_mul_magic, Ratpoints.Sieve.mulMod_toNat_modLong_mul_magic, Ratpoints.Sieve.mod_le_two_pow_10}
+  \lean{Ratpoints.Sieve.fillBpList_eq_map, Ratpoints.Sieve.mulMod_mul_magic, Ratpoints.Sieve.mulMod_mulMod_mul_magic, Ratpoints.Sieve.mulMod_toNat_modLong_mul_magic, Ratpoints.mod_le_two_pow_10}
   \leanok
   For entries with $0 < p \le \mathrm{maxPrimeEven}$ and $\mathrm{dinv}[k] < p$ and their
   reciprocals, the residues are $b\, \mathrm{dinv}[k] \bmod p$, in all three branches.
@@ -403,7 +403,7 @@ conclusions in the words of Lemma~\ref{lem:reads_row}.
 
 \begin{lemma}[The bits of the heights]\label{lem:numeratorsToBits}
   \uses{def:numeratorsToBits, lem:numClasses}
-  \lean{Ratpoints.Sieve.toInt_numeratorsToBits, Ratpoints.Sieve.toInt_numeratorsToBits_height, Ratpoints.Sieve.le_numerator_and_numerator_le_iff, Ratpoints.Sieve.map_range_numerator_eq_filter_numerators, Ratpoints.Sieve.toInt_numeratorsToBits_false, Ratpoints.Sieve.toInt_numeratorsToBits_true, Ratpoints.Sieve.filter_numerators_emod_eq}
+  \lean{Ratpoints.Sieve.toInt_numeratorsToBits, Ratpoints.Sieve.toInt_numeratorsToBits_height, Ratpoints.Sieve.NumClass.le_numerator_and_numerator_le_iff, Ratpoints.Sieve.NumClass.WF.map_range_numerator_eq_filter_numerators, Ratpoints.Sieve.toInt_numeratorsToBits_false, Ratpoints.Sieve.toInt_numeratorsToBits_true, Ratpoints.BruteForce.filter_numerators_emod_eq}
   \leanok
   For a class with $k \le 6$, $k < \mathrm{numStrides}$ and $a_0 < 2^k$, the split form gives
   $-\lfloor(a_0 - \mathrm{low})/2^k\rfloor$ and $\lfloor(\mathrm{high} - a_0)/2^k\rfloor$ without
@@ -503,7 +503,7 @@ which gives packable entries with their tables of inverses (Lemma~\ref{lem:sievi
 
 \begin{lemma}[The longs of the packing]\label{lem:packingLongs}
   \uses{lem:classOffsets, def:packingConstants, def:useCLong}
-  \lean{Ratpoints.Sieve.NumClass.fitsLong_numerator, Ratpoints.Sieve.neg_two_pow_le_rbaLength_mul_ediv, Ratpoints.Sieve.rbaLength_mul_ediv_add_one_le_two_pow, Ratpoints.Sieve.fitsLong_neg_sub_and_fitsLong_add, Ratpoints.Sieve.SieveEntry.PackedFor.lt_two_pow_32, Ratpoints.Sieve.mul_le_mulModLimit_of_le_div, Ratpoints.Sieve.mul_lt_two_pow_63, Ratpoints.rowBias_le_two_pow_31, Ratpoints.Sieve.natCast_rbaLength_dvd_two_pow, Ratpoints.Sieve.sixty_four_le_rbaLength}
+  \lean{Ratpoints.Sieve.NumClass.fitsLong_numerator, Ratpoints.Sieve.neg_two_pow_le_rbaLength_mul_ediv, Ratpoints.Sieve.rbaLength_mul_ediv_add_one_le_two_pow, Ratpoints.Sieve.fitsLong_neg_sub_and_fitsLong_add, Ratpoints.Sieve.SieveEntry.PackedFor.lt_two_pow_32, Ratpoints.mul_le_mulModLimit_of_le_div, Ratpoints.mul_lt_two_pow_63, Ratpoints.rowBias_le_two_pow_31, Ratpoints.Sieve.natCast_rbaLength_dvd_two_pow, Ratpoints.Sieve.sixty_four_le_rbaLength}
   \leanok
   The values that the C code holds in longs fit a long ($\mathrm{fitsLong}$,
   Definition~\ref{def:useCLong}) for $H < 2^{63}$: the numerator of every bit of the bit arrays of

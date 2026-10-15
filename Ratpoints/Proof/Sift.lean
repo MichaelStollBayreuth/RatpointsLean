@@ -960,9 +960,9 @@ theorem flatMap_acceptedPoints_eq_pointsOfDen {c : List Int} {d b : Nat} {rev : 
 the class word `w` (`Ratpoints.Sieve.NumClass.Packs`), with the tests of the rows of the entries
 `entries` read in the packing, give the points of the numerators `-H, …, H` that pass `w` and
 survive these entries: the numerators of the bits are those of the class among `-H, …, H`
-(`Ratpoints.Sieve.map_range_numerator_eq_filter_numerators`), the pattern of the class lets the
-numerator of a bit through exactly when `w` does (`Ratpoints.Sieve.NumClass.Packs.classBit_bits`),
-and `w` lets nothing off the class through. -/
+(`Ratpoints.Sieve.NumClass.WF.map_range_numerator_eq_filter_numerators`), the pattern of the class
+lets the numerator of a bit through exactly when `w` does
+(`Ratpoints.Sieve.NumClass.Packs.classBit_bits`), and `w` lets nothing off the class through. -/
 theorem flatMap_filter_bits_eq {cl : NumClass} {w : UInt64} (hcl : cl.Packs w)
     {entries : List SieveEntry} {b H : Nat} {lo hi : Int}
     (hlo : lo = -((cl.a0 + H : Int) / 2 ^ cl.k))
@@ -972,7 +972,7 @@ theorem flatMap_filter_bits_eq {cl : NumClass} {w : UInt64} (hcl : cl.Packs w)
         fun j ↦ classBit cl.bits j && test j).flatMap (fun j ↦ g (cl.numerator j)) =
       ((numerators H).filter fun a ↦ classBit w a && survives entries b a).flatMap g := by
   rw [← List.flatMap_map, ← hcl.filter_filter_emod,
-    ← map_range_numerator_eq_filter_numerators hcl.toWF hlo hhi]
+    ← hcl.toWF.map_range_numerator_eq_filter_numerators hlo hhi]
   simp only [List.filter_map, List.map_map]
   congr 2
   exact List.filter_congr fun j _ ↦ by simp [hcl.classBit_bits, htest]

@@ -28,16 +28,16 @@ between the two bits, and the numerators of these bits, in increasing order, are
 stay in range (`Ratpoints.fitsLong`): the offsets of the rows, the first and the last bit of the bit
 arrays of `-H, …, H`, the numerators of their bits, and the sums of a word number and an offset that
 the first two stages reduce outside the test `small`; the products of `fill_bp_list` and of
-`class_offsets` are bounded in `Ratpoints.Proof.Packing`.
+`class_offsets` are bounded in `Ratpoints.Proof.Reductions`.
 
 ## Main statements
 
 * `Ratpoints.Sieve.toInt_numeratorsToBits`, `Ratpoints.Sieve.toInt_numeratorsToBits_height`: the
   bits of the numerators of an interval, in both forms, and those of `-H, …, H`.
-* `Ratpoints.Sieve.le_numerator_and_numerator_le_iff`,
-  `Ratpoints.Sieve.map_range_numerator_eq_filter_numerators`: the numerator of a bit lies in an
-  interval exactly when the bit lies between its bits, and the numerators of the bits of `-H, …, H`
-  are those of `-H, …, H` in the class of the packing, in increasing order.
+* `Ratpoints.Sieve.NumClass.le_numerator_and_numerator_le_iff`,
+  `Ratpoints.Sieve.NumClass.WF.map_range_numerator_eq_filter_numerators`: the numerator of a bit
+  lies in an interval exactly when the bit lies between its bits, and the numerators of the bits of
+  `-H, …, H` are those of `-H, …, H` in the class of the packing, in increasing order.
 * `Ratpoints.Sieve.SieveEntry.PackedFor.lt_two_pow_32`: the offsets of the rows are below
   `2 ^ 32`, so `long`s.
 * `Ratpoints.Sieve.neg_two_pow_le_rbaLength_mul_ediv`,
@@ -187,25 +187,33 @@ theorem toInt_numeratorsToBits_height {H : Nat} (hH : H < 2 ^ 63) {cl : NumClass
 
 /-- The numerator of bit `t` of a class lies in `lo, …, hi` exactly when `t` lies between the bits
 of `numerators_to_bits` (`Ratpoints.Sieve.toInt_numeratorsToBits`). -/
-theorem le_numerator_and_numerator_le_iff (cl : NumClass) (lo hi t : Int) :
+theorem NumClass.le_numerator_and_numerator_le_iff (cl : NumClass) (lo hi t : Int) :
     (lo ≤ cl.numerator t ∧ cl.numerator t ≤ hi) ↔
       (-((cl.a0 - lo) / 2 ^ cl.k) ≤ t ∧ t ≤ (hi - cl.a0) / 2 ^ cl.k) := by
   have hk : (0 : Int) < 2 ^ cl.k := Int.pow_pos (by decide)
-  rw [NumClass.numerator, Int.neg_le_iff, Int.le_ediv_iff_mul_le hk, Int.le_ediv_iff_mul_le hk]
+  rw [numerator, Int.neg_le_iff, Int.le_ediv_iff_mul_le hk, Int.le_ediv_iff_mul_le hk]
   constructor <;> intro h <;> constructor <;> lia
+
+end Sieve
+
+namespace BruteForce
 
 /-- The numerators of `-H, …, H` that are `a₀` modulo `m`, for `a₀ < m`, in increasing order:
 `r - H, r + m - H, …`, for the residue `r` of `a₀ + H` modulo `m`. -/
 theorem filter_numerators_emod_eq {a0 m : Nat} (ha : a0 < m) (H : Nat) :
-    (BruteForce.numerators H).filter (fun a ↦ a % (m : Int) == (a0 : Int)) =
+    (numerators H).filter (fun a ↦ a % (m : Int) == (a0 : Int)) =
       (List.range ((2 * H + 1 + (m - 1 - (a0 + H) % m)) / m)).map
         fun j : Nat ↦ ((a0 : Int) + H) % m + m * j - H := by
-  simp only [BruteForce.numerators, List.filter_map]
+  simp only [numerators, List.filter_map]
   rw [List.filter_congr (q := fun i ↦ i % m == (a0 + H) % m) fun i _ ↦ by
     rw [Function.comp_apply, Bool.eq_iff_iff, beq_iff_eq, beq_iff_eq]
     exact_mod_cast Int.natCast_sub_natCast_emod_eq_iff ha,
     List.filter_range_mod_eq (Nat.mod_lt _ (by lia)), List.map_map]
   simp
+
+end BruteForce
+
+namespace Sieve
 
 -- The numerators `a₀ + m (lo + i)` of the bits from `lo = -q` to `hi = ⌊(H - a₀) / m⌋`, for
 -- `a₀ + H = m q + r` with `r < m`, are `r - H, r + m - H, …`, as many as there are numerators of
@@ -231,14 +239,14 @@ private theorem map_range_eq_map_range {a0 H m q r : Nat} (hm : 0 < m) (hr : r <
 
 /-- The numerators of `-H, …, H` that are `a₀` modulo the stride `2 ^ k` of a class, in increasing
 order, are those of the bits from `lo = ⌈(-H - a₀) / 2 ^ k⌉` to `hi = ⌊(H - a₀) / 2 ^ k⌋`. -/
-theorem map_range_numerator_eq_filter_numerators {cl : NumClass} (hcl : cl.WF) {H : Nat}
-    {lo hi : Int} (hlo : lo = -((cl.a0 + H : Int) / 2 ^ cl.k))
+theorem NumClass.WF.map_range_numerator_eq_filter_numerators {cl : NumClass} (hcl : cl.WF)
+    {H : Nat} {lo hi : Int} (hlo : lo = -((cl.a0 + H : Int) / 2 ^ cl.k))
     (hhi : hi = ((H : Int) - cl.a0) / 2 ^ cl.k) :
     (List.range (hi + 1 - lo).toNat).map (fun i : Nat ↦ cl.numerator (lo + i)) =
       (BruteForce.numerators H).filter fun a ↦ a % 2 ^ cl.k == (cl.a0 : Int) := by
   have hk : (2 : Int) ^ cl.k = ((2 ^ cl.k : Nat) : Int) := by push_cast; rfl
-  rw [hk, filter_numerators_emod_eq hcl.a0_lt H]
-  simp only [NumClass.numerator, hlo, hhi, hk]
+  rw [hk, BruteForce.filter_numerators_emod_eq hcl.a0_lt H]
+  simp only [numerator, hlo, hhi, hk]
   have := map_range_eq_map_range (r := (cl.a0 + H) % 2 ^ cl.k) (Nat.two_pow_pos _)
     (Nat.mod_lt _ (Nat.two_pow_pos _)) (Nat.div_add_mod _ _)
   rwa [Int.natCast_emod, Int.natCast_add] at this

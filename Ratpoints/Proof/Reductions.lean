@@ -43,6 +43,9 @@ remainder.
   (the multiple of the modulus in an offset), is at most `2 ^ 31`.
 * `Ratpoints.mul_lt_two_pow_64_of_le_mulModLimit`: `u p < 2 ^ 64` for `u ≤ Ratpoints.mulModLimit`
   and `p ≤ 2 ^ 32`.
+* `Ratpoints.mul_le_mulModLimit_of_le_div`, `Ratpoints.mul_lt_two_pow_63`: the products of
+  `fill_bp_list` and of `class_offsets` are `long`s, those of the first branch of `fill_bp_list` at
+  most `Ratpoints.mulModLimit`.
 * `Ratpoints.Sieve.toNat_mulHi`: `Ratpoints.Sieve.mulHi a b` is `⌊a b / 2 ^ 64⌋`.
 * `Ratpoints.Sieve.mulMod_eq`, `Ratpoints.Sieve.mulDiv_eq`: the reductions on 64-bit words are those
   of the macros on natural numbers reduced modulo `2 ^ 64`.
@@ -107,6 +110,36 @@ theorem mul_lt_two_pow_64_of_le_mulModLimit {u p : Nat} (hu : u ≤ mulModLimit)
     (hp : p ≤ 2 ^ 32) : u * p < 2 ^ 64 :=
   Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_le (Nat.lt_of_le_of_lt hu mulModLimit_lt_two_pow_32)
     hp (Nat.two_pow_pos 32)) (by decide)
+
+/-- The products `x d p` of `fill_bp_list` and `class_offsets` that a reduction by the reciprocal
+of a modulus `p ≤ Ratpoints.maxPrimeEven` takes, for `x ≤ 2 ^ 10` and `d < p`, are below `2 ^ 64`,
+where it is exact. -/
+theorem mul_mul_lt_two_pow_64 {x d p : Nat} (hx : x ≤ 2 ^ 10) (hd : d < p)
+    (hp : p ≤ maxPrimeEven) : x * d * p < 2 ^ 64 := by
+  have := maxPrimeEven_le_two_pow_10
+  calc x * d * p ≤ 2 ^ 10 * 2 ^ 10 * 2 ^ 10 :=
+        Nat.mul_le_mul (Nat.mul_le_mul hx (by lia)) (by lia)
+    _ < 2 ^ 64 := by decide
+
+/-- The products `b dinv` of the first branch of `fill_bp_list`, for
+`b ≤ Ratpoints.mulModLimit / Ratpoints.maxPrimeEven` and `dinv < p ≤ Ratpoints.maxPrimeEven`, are at
+most `Ratpoints.mulModLimit`, so `long`s that the reduction by the reciprocal of `p` reduces
+exactly. -/
+theorem mul_le_mulModLimit_of_le_div {b d p : Nat} (hb : b ≤ mulModLimit / maxPrimeEven)
+    (hd : d < p) (hp : p ≤ maxPrimeEven) : b * d ≤ mulModLimit :=
+  Nat.le_trans (Nat.mul_le_mul hb (Nat.le_trans (Nat.le_of_lt hd) hp)) (Nat.div_mul_le_self _ _)
+
+/-- The products `x d` of the other branches of `fill_bp_list`, `(b mod p) dinv`, and of
+`class_offsets`, `a₀ rinv`, for `x ≤ 2 ^ 10` and `d < p ≤ Ratpoints.maxPrimeEven`, are `long`s. -/
+theorem mul_lt_two_pow_63 {x d p : Nat} (hx : x ≤ 2 ^ 10) (hd : d < p) (hp : p ≤ maxPrimeEven) :
+    x * d < 2 ^ 63 := by
+  have := maxPrimeEven_le_two_pow_10
+  calc x * d ≤ 2 ^ 10 * 2 ^ 10 := Nat.mul_le_mul hx (by lia)
+    _ < 2 ^ 63 := by decide
+
+theorem mod_le_two_pow_10 (b : Nat) {p : Nat} (hp : 0 < p) (hpm : p ≤ maxPrimeEven) :
+    b % p ≤ 2 ^ 10 :=
+  Nat.le_of_lt (Nat.lt_of_lt_of_le (Nat.mod_lt _ hp) (Nat.le_trans hpm maxPrimeEven_le_two_pow_10))
 
 namespace Sieve
 

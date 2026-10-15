@@ -70,9 +70,6 @@ its branches, since its products stay below `2 ^ 64 / p`.
   classes and the inverses of the strides in the entries.
 * `Ratpoints.Sieve.SieveEntry.PackedFor.fits`: the sieve spec of an entry with the offset of the
   packing of a class fits the reductions of the row indices of the first two stages.
-* `Ratpoints.Sieve.mul_le_mulModLimit_of_le_div`, `Ratpoints.Sieve.mul_lt_two_pow_63`: the products
-  of `fill_bp_list` and of `class_offsets` are `long`s, those of the first branch of `fill_bp_list`
-  at most `Ratpoints.mulModLimit`.
 * `Ratpoints.Sieve.fillBpList_eq_map`: the residues of the denominator divided by the stride.
 
 ## Implementation notes
@@ -82,8 +79,9 @@ Mathlib, can use it. The proofs use only the facts on the constants that `decide
 them, never their values: here that `Ratpoints.numStrides ≥ 1`, that `Ratpoints.maxBitsInPrime ≤ 10`
 (`Ratpoints.maxPrimeEven_le_two_pow_10`) and that `Ratpoints.mulModLimit < 2 ^ 32`; that the masks
 of the strides beyond `k = 6` are `0` is read with the default of the array. The facts on words,
-natural numbers and integers that are not about the model are in `Ratpoints.Proof.Bits`. The bits of
-an interval of numerators and the other range lemmas of the `long`s of the packing are in
+natural numbers and integers that are not about the model are in `Ratpoints.Proof.Bits`. The bounds
+of the products of `fill_bp_list` and of `class_offsets` are in `Ratpoints.Proof.Reductions`, the
+bits of an interval of numerators and the other range lemmas of the `long`s of the packing in
 `Ratpoints.Proof.BitRange`.
 -/
 
@@ -399,15 +397,15 @@ theorem packPattern_spec (w : UInt64) (k c : Nat) :
 /-- A class of the stride `2 ^ k`, `k ≤ 6` and `k < Ratpoints.numStrides`, with the residue
 `c mod 2 ^ k` of all the set bits of `w` and the pattern of bit `t` the bit `(a₀ + 2 ^ k t) mod 64`
 of `w` packs `w`. -/
-theorem packs_mk {w packed : UInt64} {c k : Nat} (hk : k < numStrides) (hk6 : k ≤ 6)
+theorem NumClass.packs_mk {w packed : UInt64} {c k : Nat} (hk : k < numStrides) (hk6 : k ≤ 6)
     (hcl : ClassOf w c k)
     (hp : ∀ t < 64,
       packed.toBitVec.getLsbD t = w.toBitVec.getLsbD ((c % 2 ^ k + 2 ^ k * t) % 64)) :
-    NumClass.Packs ⟨packed, k, c % 2 ^ k, none⟩ w :=
+    Packs ⟨packed, k, c % 2 ^ k, none⟩ w :=
   ⟨⟨hk, hk6, Nat.mod_lt _ (Nat.two_pow_pos k)⟩, fun a ha hwa ↦ hcl a ha hwa, hp⟩
 
 /-- The class of the word `0`: the stride 1, the residue `0` and the pattern `0`. -/
-theorem packs_zero {w : UInt64} (hw : ¬(w != 0) = true) : NumClass.Packs ⟨0, 0, 0, none⟩ w := by
+theorem NumClass.packs_zero {w : UInt64} (hw : ¬(w != 0) = true) : Packs ⟨0, 0, 0, none⟩ w := by
   have hw : w = 0 := by simpa using hw
   subst hw
   exact packs_mk (c := 0) (Nat.lt_of_lt_of_le Nat.zero_lt_one one_le_numStrides) (by decide)
@@ -440,7 +438,7 @@ theorem StrideInvariant.packs {w packed : UInt64} {c k : Nat} (h : StrideInvaria
     (hp : ∀ t < 64, packed.toBitVec.getLsbD t =
       w.toBitVec.getLsbD ((c % 2 ^ (k - 1) + 2 ^ (k - 1) * t) % 64)) :
     NumClass.Packs ⟨packed, k - 1, c % 2 ^ (k - 1), none⟩ w :=
-  packs_mk (by have := h.1; have := h.2.1; lia) h.sub_one.1 h.sub_one.2 hp
+  NumClass.packs_mk (by have := h.1; have := h.2.1; lia) h.sub_one.1 h.sub_one.2 hp
 
 theorem StrideInvariant.packs_self {w : UInt64} {c k : Nat} (h : StrideInvariant w c true k)
     (hk : k - 1 = 0) : NumClass.Packs ⟨w, k - 1, c % 2 ^ (k - 1), none⟩ w :=
@@ -494,7 +492,7 @@ theorem NumClassesInvariant.set_zero {nb : Vector UInt64 64} {pref suff : List N
     (h : NumClassesInvariant nb pref.length (cls, db)) (hc : cur < 64)
     (hw : ¬(nb[cur] != 0) = true) :
     NumClassesInvariant nb (pref ++ [cur]).length (cls.set cur ⟨0, 0, 0, none⟩ hc, db) :=
-  h.set hl hc (packs_zero hw) rfl fun j ↦ by simp [Bool.eq_false_iff.mpr hw]
+  h.set hl hc (NumClass.packs_zero hw) rfl fun j ↦ by simp [Bool.eq_false_iff.mpr hw]
 
 theorem NumClassesInvariant.post {nb : Vector UInt64 64} {cls : Vector NumClass 64} {db : UInt64}
     (h : NumClassesInvariant nb (ForIn.toList [:64]).length (cls, db)) :
@@ -1053,16 +1051,6 @@ theorem OffsetsFor.take {cls : Vector NumClass 64} {es : List SieveEntry} {offse
       rw [List.getElem_take]
       exact hn n (Nat.lt_of_lt_of_le hn' (List.length_take_le' _ _))⟩
 
-/-- The products `x d p` of `fill_bp_list` and `class_offsets` that a reduction by the reciprocal
-of a modulus `p ≤ Ratpoints.maxPrimeEven` takes, for `x ≤ 2 ^ 10` and `d < p`, are below `2 ^ 64`,
-where it is exact. -/
-theorem mul_mul_lt_two_pow_64 {x d p : Nat} (hx : x ≤ 2 ^ 10) (hd : d < p)
-    (hp : p ≤ maxPrimeEven) : x * d * p < 2 ^ 64 := by
-  have := maxPrimeEven_le_two_pow_10
-  calc x * d * p ≤ 2 ^ 10 * 2 ^ 10 * 2 ^ 10 :=
-        Nat.mul_le_mul (Nat.mul_le_mul hx (by lia)) (by lia)
-    _ < 2 ^ 64 := by decide
-
 /-- The offset that `class_offsets` computes for the class `cl` and the sieve entry `e`, from the
 inverse of `2 ^ k Ratpoints.rbaLength` that the halvings give, is that of the packing. -/
 theorem SieveEntry.Packable.packedFor {e : SieveEntry} (he : e.Packable) {cl : NumClass}
@@ -1238,26 +1226,6 @@ theorem classOffsets_spec (cls : Vector NumClass 64) (es : List SieveEntry) (off
     | exact classOffsets_post ‹_› ‹_› ‹_› ‹_›
 
 /-! ### The residues of a denominator -/
-
-/-- The products `b dinv` of the first branch of `fill_bp_list`, for
-`b ≤ Ratpoints.mulModLimit / Ratpoints.maxPrimeEven` and `dinv < p ≤ Ratpoints.maxPrimeEven`, are at
-most `Ratpoints.mulModLimit`, so `long`s that the reduction by the reciprocal of `p` reduces
-exactly. -/
-theorem mul_le_mulModLimit_of_le_div {b d p : Nat} (hb : b ≤ mulModLimit / maxPrimeEven)
-    (hd : d < p) (hp : p ≤ maxPrimeEven) : b * d ≤ mulModLimit :=
-  Nat.le_trans (Nat.mul_le_mul hb (Nat.le_trans (Nat.le_of_lt hd) hp)) (Nat.div_mul_le_self _ _)
-
-/-- The products `x d` of the other branches of `fill_bp_list`, `(b mod p) dinv`, and of
-`class_offsets`, `a₀ rinv`, for `x ≤ 2 ^ 10` and `d < p ≤ Ratpoints.maxPrimeEven`, are `long`s. -/
-theorem mul_lt_two_pow_63 {x d p : Nat} (hx : x ≤ 2 ^ 10) (hd : d < p) (hp : p ≤ maxPrimeEven) :
-    x * d < 2 ^ 63 := by
-  have := maxPrimeEven_le_two_pow_10
-  calc x * d ≤ 2 ^ 10 * 2 ^ 10 := Nat.mul_le_mul hx (by lia)
-    _ < 2 ^ 63 := by decide
-
-theorem mod_le_two_pow_10 (b : Nat) {p : Nat} (hp : 0 < p) (hpm : p ≤ maxPrimeEven) :
-    b % p ≤ 2 ^ 10 :=
-  Nat.le_of_lt (Nat.lt_of_lt_of_le (Nat.mod_lt _ hp) (Nat.le_trans hpm maxPrimeEven_le_two_pow_10))
 
 /-- The first branch of `fill_bp_list`: for `b ≤ Ratpoints.mulModLimit / Ratpoints.maxPrimeEven`
 the product `b dinv` is reduced at once, exactly. -/
