@@ -20,20 +20,21 @@ meta import Ratpoints.Model.Tables
 The components of the sieve that take one numerator at a time, each in its place in the C function
 `find_points_work_1`: the test of a candidate that survives the first two stages of the sieve, the
 test for common factors by the binary algorithm on the 64-bit words of the C code
-(`Ratpoints.Sieve.relprime`), with the lowest set bit of a word (`Ratpoints.Sieve.ctz`), and the
-third stage, one numerator at a time against the tables of its primes (`Ratpoints.Sieve.stage3`,
-`Ratpoints.Sieve.fillChecks`), and the exact check (`Ratpoints.Sieve.accepted`,
-`Ratpoints.Sieve.checkPoint`), whose reference is the check of a numerator
-(`Ratpoints.Sieve.checkNum`); the point of the caller's curve for a point of a reversed curve
-(`Ratpoints.Sieve.swapPoint`); and the points at infinity (`Ratpoints.Sieve.pointsAtInfinity`). The
-third stage removes only numerators that the rows of its primes would remove, or that have a common
-factor with the denominator, so that the test of a candidate and the exact check give the points of
-the check of the reference for the numerators that survive the rows of these primes. The exact check
-and the points at infinity deliver the points mapped by `Ratpoints.Sieve.swapPoint` when their flag
-of the reversal is set, and so does the check of the reference. The sieve that calls these
-components, on the bit arrays of 64-bit words, is in `Ratpoints.Model.Sieve`; the tables of the
-primes and the sieve entries of the moduli, with the rows of a denominator, are in
-`Ratpoints.Model.Tables`.
+(`Ratpoints.Sieve.relprime`), with the lowest set bit of a word (`Ratpoints.Sieve.ctz`), which the
+walk through the set bits of the sieve, the 2-adic information and the classes of the packing read
+as well, and the third stage, one numerator at a time against the tables of its primes
+(`Ratpoints.Sieve.stage3`, `Ratpoints.Sieve.fillChecks`), and the exact check
+(`Ratpoints.Sieve.accepted`, `Ratpoints.Sieve.checkPoint`), whose reference is the check of a
+numerator (`Ratpoints.Sieve.checkNum`); the point of the caller's curve for a point of a reversed
+curve (`Ratpoints.Sieve.swapPoint`); and the points at infinity
+(`Ratpoints.Sieve.pointsAtInfinity`). The third stage removes only numerators that the rows of its
+primes would remove, or that have a common factor with the denominator, so that the test of a
+candidate and the exact check give the points of the check of the reference for the numerators that
+survive the rows of these primes. The exact check and the points at infinity deliver the points
+mapped by `Ratpoints.Sieve.swapPoint` when their flag of the reversal is set, and so does the check
+of the reference. The sieve that calls these components, on the bit arrays of 64-bit words, is in
+`Ratpoints.Model.Sieve`; the tables of the primes and the sieve entries of the moduli, with the rows
+of a denominator, are in `Ratpoints.Model.Tables`.
 
 ## Main definitions
 

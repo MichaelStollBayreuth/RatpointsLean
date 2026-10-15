@@ -172,10 +172,10 @@ C: `rp-private.h:49-51`, `rp-private.h:125`, `rp-private.h:172`, `rp-private.h:2
 `rp-private.h:257`, `rp-private.h:281`
 
 Deviation: computed from `Ratpoints.rbaPack`, where each build sets `RBA_LENGTH` by a literal, and
-its logarithm `RBA_SHIFT` too (`Ratpoints.rbaShift`); the shifts by `RBA_SHIFT` and by `LONG_SHIFT`
-are divisions by `rbaLength` and by 64, which round down also for a negative value, as the
-arithmetic shifts of gcc do, and the masks by `RBA_LENGTH - 1` and by `LONG_MASK` Euclidean
-remainders. -/
+the build with 64-bit bit arrays by `LONG_LENGTH`, and its logarithm `RBA_SHIFT` likewise
+(`Ratpoints.rbaShift`); the shifts by `RBA_SHIFT` and by `LONG_SHIFT` are divisions by `rbaLength`
+and by 64, which round down also for a negative value, as the arithmetic shifts of gcc do, and the
+masks by `RBA_LENGTH - 1` and by `LONG_MASK` Euclidean remainders. -/
 def rbaLength : Nat := 64 * rbaPack
 
 /-- The logarithm of the number of bits of a bit array of the sieve, `RBA_SHIFT`: 8 in the default

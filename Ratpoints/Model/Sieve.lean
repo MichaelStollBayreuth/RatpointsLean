@@ -266,14 +266,14 @@ kept from then on, as long as the array is. -/
 def SieveEntry.rows (e : SieveEntry) : Array (Thunk (Array UInt64)) :=
   (Array.range e.p).map fun r ↦ Thunk.mk fun _ ↦ e.row r
 
-/-- A modulus with its row for the denominator at hand, `p` bit arrays of `Ratpoints.rbaPack`
-words, and the offset of the row: the bit array with the word number `w` reads bit array
-`(w + offset) mod p` of the row. The offset is the shift of the row that the packing of the class
-of the denominator needs, `a₀ (2 ^ k Ratpoints.rbaLength)⁻¹ mod p` for the stride `2 ^ k` and the
-residue `a₀` of the class, plus the bias of the modulus, a multiple of `p` of at least
-`Ratpoints.rowBias` that keeps `w + offset` non-negative (`Ratpoints.Sieve.classOffsets`); with the
-row of the denominator divided by the stride modulo `p` (`Ratpoints.Sieve.fillBpList`), bit `t` of
-that bit array says whether the row of the denominator admits the numerator
+/-- A modulus with its row for the denominator at hand, `p` bit arrays of `Ratpoints.rbaPack` words,
+and the offset of the row: the bit array with the word number `w` reads bit array
+`(w + offset) mod p` of the row. The offset is the shift of the row that the packing of the class of
+the denominator needs, `a₀ (2 ^ k Ratpoints.rbaLength)⁻¹ mod p` for the stride `2 ^ k` and the
+residue `a₀` of the class, plus the bias of the modulus, the least multiple of `p` of at least
+`Ratpoints.rowBias`, which keeps `w + offset` non-negative (`Ratpoints.Sieve.classOffsets`); with
+the row of the denominator divided by the stride modulo `p` (`Ratpoints.Sieve.fillBpList`), bit `t`
+of that bit array says whether the row of the denominator admits the numerator
 `a₀ + 2 ^ k (Ratpoints.rbaLength w + t)`.
 
 C: `rp-private.h:378-379`
@@ -446,10 +446,12 @@ C: `sift.c:262-264`, `sift.c:1161-1171`, `sift.c:1227-1255`, `sift.c:1265-1292`
 Deviation: the lowest set bit by the loop of `RP_CTZL` for a compiler without the builtin
 (`Ratpoints.Sieve.ctz`); one definition for the body at the three places of the extraction, the
 first word of a bit array, the others, and a word of the arm of the second stage for one word at a
-time; natural numbers and integers for the `long`s; no count of the numerators that reach the test
-for common factors (`n_bits`), which ratpoints reads to correct the moduli between the blocks of the
-run (stage I), and no counts under `RP_PHASE_COUNTS`; no stop that the callback `process` may
-request (`quit`, stage G), and no output under `DEBUG`. -/
+time; natural numbers and integers for the `long`s; the points of the exact check appended to the
+array `out`, for the count `total` to which `RP_CHECK_POINT` adds them (lines 1168, 1240, 1250,
+1279, 1287); no count of the numerators that reach the test for common factors (`n_bits`), which
+ratpoints reads to correct the moduli between the blocks of the run (stage I), and no counts under
+`RP_PHASE_COUNTS`; no stop that the callback `process` may request (`quit`, stage G), and no output
+under `DEBUG`. -/
 def walkWord (w : Thunk (List Int)) (d b : Nat) (rev : Bool)
     (checks : Thunk (List CheckSpec)) (x : UInt64) (a0 : Int) (step : Nat)
     (out : Array (Int × Int × Int)) : Id (Array (Int × Int × Int)) := do
@@ -559,18 +561,19 @@ def scanPiece (w : Thunk (List Int)) (d b : Nat) (rev : Bool) (specs : List Siev
 /-- One piece, the bit arrays with the word numbers `w0, …, w0 + n - 1`, and the points of its
 numerators: whether the reductions of the row indices modulo the moduli of the first two stages can
 multiply by the reciprocals, `small`, when the word numbers lie between `-Ratpoints.rowBias` and
-`Ratpoints.rowBias - 2 Ratpoints.maxPrimeEven`, so that the sum of a word number and an offset, a
-multiple of the modulus of at least `Ratpoints.rowBias` plus less than the modulus, is not negative
-and below `2 Ratpoints.rowBias`, at most `Ratpoints.mulModLimit`; a fresh array of `n + 1` bit
-arrays, the last one the place of the sentinel; the first stage with the first `sp1` moduli of
-`specs`, their rows and offsets, and their reciprocals in `mgs`, from the pattern of the class `cl`
-of the denominator (`Ratpoints.Sieve.andRows`); the lowest `maskLow` bits of the first bit array
-cleared if `maskLow ≠ 0` (`Ratpoints.Sieve.clearLowBits`), and the highest `maskHigh` bits of the
-last bit array of the piece, `n - 1`, if `maskHigh ≠ 0` (`Ratpoints.Sieve.clearHighBits`); and the
-scan with the second stage, with the other moduli of `specs` and their reciprocals, and the
-extraction in the packing of `cl` (`Ratpoints.Sieve.scanPiece`, with the thunk `w` of the products,
-the degree `d`, the denominator `b`, the flag `rev` and the thunk `checks` of the third stage). This
-is `_ratpoints_sift0` of the C code, with the allocation of the survivors array that it works in.
+`Ratpoints.rowBias - 2 Ratpoints.maxPrimeEven`, so that the sum of a word number and an offset, the
+least multiple of the modulus of at least `Ratpoints.rowBias` (below `Ratpoints.rowBias` plus the
+modulus) plus less than the modulus, is not negative and below `2 Ratpoints.rowBias`, at most
+`Ratpoints.mulModLimit`; a fresh array of `n + 1` bit arrays, the last one the place of the
+sentinel; the first stage with the first `sp1` moduli of `specs`, their rows and offsets, and their
+reciprocals in `mgs`, from the pattern of the class `cl` of the denominator
+(`Ratpoints.Sieve.andRows`); the lowest `maskLow` bits of the first bit array cleared if
+`maskLow ≠ 0` (`Ratpoints.Sieve.clearLowBits`), and the highest `maskHigh` bits of the last bit
+array of the piece, `n - 1`, if `maskHigh ≠ 0` (`Ratpoints.Sieve.clearHighBits`); and the scan with
+the second stage, with the other moduli of `specs` and their reciprocals, and the extraction in the
+packing of `cl` (`Ratpoints.Sieve.scanPiece`, with the thunk `w` of the products, the degree `d`,
+the denominator `b`, the flag `rev` and the thunk `checks` of the third stage). This is
+`_ratpoints_sift0` of the C code, with the allocation of the survivors array that it works in.
 
 C: `find_points.c:3119-3121`, `sift.c:498-531`, `sift.c:548`, `sift.c:1030-1041`,
 `sift.c:1056-1058`, `sift.c:1300-1305`, `rp-private.h:575`, `rp-private.h:610-614`
@@ -618,11 +621,14 @@ C: `find_points.c:3355-3370`
 Deviation: `Int64` for the `long`s, in two's complement, the representation on which the and with
 the mask acts, also on a negative end, and `>>>` on `Int64` the arithmetic shift, for the `>>` of a
 negative `long`, both of which the C standard leaves to the implementation (the representation
-before C23) and gcc defines so; the stride `k` and the residue `a₀` of the class converted to
-`Int64`; the two ends returned as a pair, for the pointers `low` and `high` through which the
-function reads and writes them; a Boolean for the `int` `split`, an argument, whose value for the
-whole line of numerators, the split form exactly for the heights above `2 ^ 63 - 65`, the C code
-decides in lines of the search intervals, by the test of `exact_bounds` and the path through
+before C23) and gcc defines so; the arithmetic of `Int64` wrapping where that of the `long`s
+overflows, which the C standard leaves undefined: the differences of the plain form for an end
+within `a₀` of `-2 ^ 63`, so beyond `2 ^ 63 - 65` in absolute value, where neither the C code nor
+`Ratpoints.Sieve.sift` takes the plain form; the stride `k` and the residue `a₀` of the class
+converted to `Int64`; the two ends returned as a pair, for the pointers `low` and `high` through
+which the function reads and writes them; a Boolean for the `int` `split`, an argument, whose value
+for the whole line of numerators, the split form exactly for the heights above `2 ^ 63 - 65`, the C
+code decides in lines of the search intervals, by the test of `exact_bounds` and the path through
 `interval_bits_exact` (stage H). -/
 def numeratorsToBits (low high : Int64) (cl : NumClass) (split : Bool) : Int64 × Int64 :=
   let k := cl.k.toInt64
@@ -670,12 +676,14 @@ masks leave lie end to end and make up `low, …, high`.
 C: `find_points.c:3563-3612`
 
 Deviation: a function of its own for the bits of one interval of the numerators, the part of the
-loop over the intervals of `sift` after the set-up; natural numbers and integers for the `long`s,
-the word numbers and the masks by the division and the remainder, rounding down, by
-`Ratpoints.rbaLength`, for the shift by `RBA_SHIFT` and the mask by `RBA_LENGTH - 1` (with
-`Ratpoints.rbaLength = 2 ^ Ratpoints.rbaShift`), which gcc makes the floor division and the
-Euclidean remainder on a negative `long` too, the first bits of the bit arrays staying `long`s for
-the bits of a height bound below `2 ^ 63` (`Ratpoints.Sieve.neg_two_pow_le_rbaLength_mul_ediv`,
+loop over the intervals of `sift` after the set-up; the size `A` of the pieces as an argument, for
+`args->array_size` (line 3571), which `sift` reads through the pointer `args` of the sieving thread;
+natural numbers and integers for the `long`s, the word numbers and the masks by the division and the
+remainder, rounding down, by `Ratpoints.rbaLength`, for the shift by `RBA_SHIFT` and the mask by
+`RBA_LENGTH - 1` (with `Ratpoints.rbaLength = 2 ^ Ratpoints.rbaShift`), which gcc makes the floor
+division and the Euclidean remainder on a negative `long` too, the first bits of the bit arrays
+staying `long`s for the bits of a height bound below `2 ^ 63`
+(`Ratpoints.Sieve.neg_two_pow_le_rbaLength_mul_ediv`,
 `Ratpoints.Sieve.rbaLength_mul_ediv_add_one_le_two_pow`); a list of points, for the count `total` of
 points that `sift` returns; no test of the flag `stop` of a thread of the pool (stage I) and of the
 flag `quit` (stage G) after a piece, and so no measurement (`RP_SIFT_TOC`) on the return at a
@@ -728,8 +736,9 @@ ends `interval_bits` computes and clips to the height bound (lines 3426-3427), w
 H); the height bound converted to `Int64`, which is exact for `H < 2 ^ 63`, and the bits back to
 integers; the sieve specs, and with them the rows of the residues, made before the bits of the
 interval, where `sift` turns the interval into bits first and makes them (the flag `do_setup`) once
-an interval of numerators is not empty, which for the whole line is at once and so before the test
-`low ≤ high` of the bits; the rows made by their thunks when they are first needed
+`interval_bits` does not report an interval empty (it returns 0 also for an interval that holds no
+numerator, lines 3426-3427), which for the whole line is at once, and so before the test
+`low ≤ high` of the bits (line 3568); the rows made by their thunks when they are first needed
 (`Ratpoints.Sieve.setRows`), for the test for the rows that are missing and their construction by
 the function `init` of the entry under the lock of the tables, which threads share; the end `sp1` of
 the first stage, the reciprocals `mgs` of the first two stages, the entries `es3` of the third stage
@@ -748,12 +757,13 @@ moduli between the blocks of the run (stage I); a list of points, for the callba
 its argument `info` and for the count `total` of points that `sift` returns, with no stop that
 `process` may request (`quit`, which `worker_init` clears, stage G); the arguments of the run passed
 explicitly, for the pointer `args` of the sieving thread (`rp-private.h:574`), which `worker_init`
-sets and through which `sift` reads them; no search intervals `iv` of the sieving thread, which
-`worker_init` clears (`find_points.c:3130`) and `run_block` sets for each block (`rp-private.h:574`;
-stage H); no pool, slot and stop flag of a thread of the pool, the flag by which the pool of threads
-tells it to abandon its block (`pool`, `slot`, `stop`, `rp-private.h:584-585`; stage I); natural
-numbers and integers for the `long`s; no measurements of the phases (`RP_SIFT_TIC`, `RP_SETUP_TIC`,
-`RP_INIT_TIC` and their `TOC`) and no output under `DEBUG`. -/
+sets and through which `sift` reads them; no search intervals `iv` of the sieving thread
+(`rp-private.h:574`), which `worker_init` clears (`find_points.c:3130`) and `run_block` sets for
+each block (`find_points.c:3913`; stage H); no pool, slot and stop flag of a thread of the pool, the
+flag by which the pool of threads tells it to abandon its block (`pool`, `slot`, `stop`,
+`rp-private.h:584-585`; stage I); natural numbers and integers for the `long`s; no measurements of
+the phases (`RP_SIFT_TIC`, `RP_SETUP_TIC`, `RP_INIT_TIC` and their `TOC`) and no output under
+`DEBUG`. -/
 def sift (c : List Int) (d H A b : Nat) (rev : Bool) (sp1 : Nat)
     (rows : List (Nat × Array (Thunk (Array UInt64)))) (mgs bp : List Nat) (cl : NumClass)
     (offsets : Array Nat) (es3 : List SieveEntry) (mgs3 : List Nat) :

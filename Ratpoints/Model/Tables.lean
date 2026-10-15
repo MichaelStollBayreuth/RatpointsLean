@@ -402,9 +402,9 @@ def mulHi (a b : UInt64) : UInt64 :=
 
 /-- The remainder of `u` modulo `p` by a multiplication with the reciprocal `m`, `RP_MULMOD`: the
 low 64 bits of `m u`, times `p`, shifted right by 64 bits, on 64-bit words
-(`Ratpoints.Sieve.mulHi`). For the reciprocal `m = Ratpoints.Sieve.magic p` it is `u % p` whenever
-`u p < 2 ^ 64`, which the C code ensures by reducing only values below `2 ^ 32` modulo moduli below
-`2 ^ 32`.
+(`Ratpoints.Sieve.mulHi`). For the reciprocal `m = Ratpoints.Sieve.magic p` of a modulus `p ≥ 1` it
+is `u % p` whenever `u p < 2 ^ 64`, which the C code ensures by reducing only values below `2 ^ 32`
+modulo moduli below `2 ^ 32`.
 
 C: `rp-private.h:404-408`, `rp-private.h:411`, `rp-private.h:413-414`, `rp-private.h:417`
 
@@ -434,10 +434,11 @@ def mulDiv (u m : Nat) : Nat := (mulHi u.toUInt64 m.toUInt64).toNat
 
 /-- The remainder of `a` modulo `p` by a multiplication with the reciprocal `m`, `mod_mul` of
 `sift.c`: the remainder `r` of `|a|` by `Ratpoints.Sieve.mulMod`, and `p - r` for a negative `a`
-with `r ≠ 0`. For the reciprocal `m = Ratpoints.Sieve.magic p` it is the Euclidean `a % p` whenever
-`|a| p < 2 ^ 64`, which the C code ensures by reducing only `|a| ≤ RP_MULMOD_LIMIT` modulo moduli
-below `2 ^ 32`: the first stage of the sieve reduces its first row index so when the word numbers
-of the piece allow it (`Ratpoints.Sieve.andRows`, the test `small` of `Ratpoints.Sieve.siftPiece`).
+with `r ≠ 0`. For the reciprocal `m = Ratpoints.Sieve.magic p` of a modulus `p ≥ 1` it is the
+Euclidean `a % p` whenever `|a| p < 2 ^ 64`, which the C code ensures by reducing only
+`|a| ≤ RP_MULMOD_LIMIT` modulo moduli below `2 ^ 32`: the first stage of the sieve reduces its first
+row index so when the word numbers of the piece allow it (`Ratpoints.Sieve.andRows`, the test
+`small` of `Ratpoints.Sieve.siftPiece`).
 
 C: `sift.c:243-247`
 
