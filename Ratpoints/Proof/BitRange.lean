@@ -9,8 +9,6 @@ public import Ratpoints.Model.Setup
 public import Ratpoints.Proof.Packing
 
 import Ratpoints.Proof.Bits
-import Ratpoints.Proof.Reductions
-import Ratpoints.Proof.Words
 
 /-!
 # The bits of an interval of numerators and the longs of the packing

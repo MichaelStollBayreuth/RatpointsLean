@@ -46,6 +46,8 @@ remainder.
 * `Ratpoints.mul_le_mulModLimit_of_le_div`, `Ratpoints.mul_lt_two_pow_63`: the products of
   `fill_bp_list` and of `class_offsets` are `long`s, those of the first branch of `fill_bp_list` at
   most `Ratpoints.mulModLimit`.
+* `Ratpoints.rbaLength_eq`, `Ratpoints.rbaLength_pos`, `Ratpoints.natCast_rbaLength_pos`: the width
+  `Ratpoints.rbaLength` of the bit arrays is `64 Ratpoints.rbaPack`, and positive.
 * `Ratpoints.Sieve.toNat_mulHi`: `Ratpoints.Sieve.mulHi a b` is `⌊a b / 2 ^ 64⌋`.
 * `Ratpoints.Sieve.mulMod_eq`, `Ratpoints.Sieve.mulDiv_eq`: the reductions on 64-bit words are those
   of the macros on natural numbers reduced modulo `2 ^ 64`.
@@ -64,9 +66,10 @@ remainder.
 
 The file uses Lean core and `Std` only, so that the contracts of the sieve, in files without
 Mathlib, can use it. The proofs use only the facts on the constants that `decide` checks next to
-them, that `Ratpoints.mulModLimit < 2 ^ 32`, that `Ratpoints.maxBitsInPrime ≤ 10` and that
-`2 Ratpoints.rowBias - 1 ≤ Ratpoints.mulModLimit`, never their values; `Ratpoints.rowBias` is
-generalized before `lia`, which otherwise fails on its value with a deep recursion of the kernel.
+them, that `Ratpoints.rbaPack > 0`, that `Ratpoints.mulModLimit < 2 ^ 32`, that
+`Ratpoints.maxBitsInPrime ≤ 10` and that `2 Ratpoints.rowBias - 1 ≤ Ratpoints.mulModLimit`, never
+their values; `Ratpoints.rowBias` is generalized before `lia`, which otherwise fails on its value
+with a deep recursion of the kernel.
 -/
 
 @[expose] public section
@@ -140,6 +143,14 @@ theorem mul_lt_two_pow_63 {x d p : Nat} (hx : x ≤ 2 ^ 10) (hd : d < p) (hp : p
 theorem mod_le_two_pow_10 (b : Nat) {p : Nat} (hp : 0 < p) (hpm : p ≤ maxPrimeEven) :
     b % p ≤ 2 ^ 10 :=
   Nat.le_of_lt (Nat.lt_of_lt_of_le (Nat.mod_lt _ hp) (Nat.le_trans hpm maxPrimeEven_le_two_pow_10))
+
+/-! ### The width of the bit arrays -/
+
+theorem rbaLength_eq : rbaLength = 64 * rbaPack := rfl
+
+theorem rbaLength_pos : 0 < rbaLength := rbaLength_eq ▸ Nat.mul_pos (by decide) rbaPack_pos
+
+theorem natCast_rbaLength_pos : (0 : Int) < rbaLength := Int.natCast_pos.mpr rbaLength_pos
 
 namespace Sieve
 

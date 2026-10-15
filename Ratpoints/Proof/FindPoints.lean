@@ -5,10 +5,8 @@ Authors: Michael Stoll
 -/
 module
 
-public import Ratpoints.Model.FindPoints
 public import Ratpoints.Proof.Forbidden
 public import Ratpoints.Proof.Moduli
-public import Ratpoints.Proof.Packing
 public import Ratpoints.Proof.Stages
 
 import Ratpoints.Mathlib.Data.List.Basic

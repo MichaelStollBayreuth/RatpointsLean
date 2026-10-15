@@ -8,7 +8,6 @@ module
 public import Ratpoints.Model.Packing
 public import Ratpoints.Proof.Reductions
 public import Ratpoints.Proof.SetBits
-public import Std.WP
 
 import Ratpoints.Proof.Bits
 import Std.Tactic.Do

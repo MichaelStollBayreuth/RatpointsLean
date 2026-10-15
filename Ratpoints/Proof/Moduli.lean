@@ -10,7 +10,6 @@ public import Ratpoints.Model.FindPoints
 public import Ratpoints.Proof.Packing
 public import Ratpoints.Proof.Words
 public import Ratpoints.Spec.Basic
-public import Std.WP
 
 import Mathlib.Data.List.GetD
 import Mathlib.Tactic.LinearCombination

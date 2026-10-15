@@ -14,6 +14,7 @@ import Ratpoints.Proof.Jacobi
 import Ratpoints.Proof.JacobiTables
 import Ratpoints.Proof.Setup
 import Ratpoints.Proof.TwoAdic
+import Ratpoints.Proof.Words
 import Std.Tactic.Do
 
 /-!

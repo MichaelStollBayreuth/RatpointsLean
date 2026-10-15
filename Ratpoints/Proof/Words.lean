@@ -5,10 +5,8 @@ Authors: Michael Stoll
 -/
 module
 
-public import Ratpoints.Model.Sieve
 public import Ratpoints.Proof.Reductions
 public import Ratpoints.Proof.SetBits
-public import Std.WP
 
 import Ratpoints.Proof.Bits
 import Std.Tactic.Do
@@ -77,8 +75,8 @@ inverses, no primality. The contracts of the second and the third stage and of t
 `Ratpoints.Proof.Stages`, those of the walk, of the scan, of one piece and of one denominator in
 `Ratpoints.Proof.Sift`. The bit of a number in a word (`Ratpoints.Sieve.classBit`), the contract of
 the lowest set bit of a word and the invariant of a `while` loop over the set bits of a word are in
-`Ratpoints.Proof.SetBits`, the reductions by a reciprocal and of the row indices in
-`Ratpoints.Proof.Reductions`.
+`Ratpoints.Proof.SetBits`, the reductions by a reciprocal and of the row indices and the positivity
+of the width `Ratpoints.rbaLength` of the bit arrays in `Ratpoints.Proof.Reductions`.
 -/
 
 @[expose] public section
@@ -90,12 +88,6 @@ open scoped Std.WP
 namespace Ratpoints
 
 /-! ### The width of the bit arrays -/
-
-theorem rbaLength_eq : rbaLength = 64 * rbaPack := rfl
-
-theorem rbaLength_pos : 0 < rbaLength := rbaLength_eq ▸ Nat.mul_pos (by decide) rbaPack_pos
-
-theorem natCast_rbaLength_pos : (0 : Int) < rbaLength := Int.natCast_pos.mpr rbaLength_pos
 
 theorem rbaLength_mul (j : Nat) : rbaLength * j = 64 * (rbaPack * j) := by
   rw [rbaLength_eq, Nat.mul_assoc]

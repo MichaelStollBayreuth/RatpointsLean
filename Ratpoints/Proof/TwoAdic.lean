@@ -7,8 +7,7 @@ module
 
 public import Mathlib.Data.ZMod.Defs
 public import Ratpoints.Model.Denominators
-public import Ratpoints.Model.Packing
-public import Ratpoints.Proof.Words
+public import Ratpoints.Proof.SetBits
 public import Ratpoints.Spec.Basic
 
 import Mathlib.Data.Fintype.Parity
