@@ -20,7 +20,8 @@ GMP integers, by Horner's rule with Barrett's reduction on a fixed schedule, han
 coefficients reduced modulo the prime (`Ratpoints.Sieve.examinePrime?`, `Ratpoints.Sieve.modLong`,
 `Ratpoints.Sieve.hornerBarrett`), the tables of a prime power (`Ratpoints.Sieve.examinePower`), and
 the sieve entry of a modulus, a prime, a prime power or a product of them, by its factors and with
-the reciprocal of the modulus (`Ratpoints.Sieve.SieveEntry`), with the rows of a denominator
+the reciprocal of the modulus and what the packing of the numerators needs
+(`Ratpoints.Sieve.SieveEntry`), with the rows of a denominator
 (`Ratpoints.Sieve.SieveEntry.admits`). The reciprocal of a modulus gives the remainder and the
 quotient by a multiplication on 64-bit words, with the high half of the 128-bit product from the
 products of the 32-bit halves (`Ratpoints.Sieve.magic`, `Ratpoints.Sieve.mulHi`,
@@ -106,8 +107,8 @@ keeps in the field `sieve`, that of `0` from the build and the others made by `i
 denominator first needs them, are those of the sieve entry of the prime
 (`Ratpoints.Sieve.SieveEntry.rows`), made from `Ratpoints.Sieve.Entry.admits` when first needed and
 kept for the run; the fields `init`, `magic`, `nf`, `factor` and `pw` are those of the sieve entry
-`Ratpoints.Sieve.SieveEntry`, of which the prime is the single factor; `bias`, `rbainv` and `dinv`
-serve the packing (stage F3), `r` the choice of the moduli (stage I). -/
+`Ratpoints.Sieve.SieveEntry`, of which the prime is the single factor, and so are `bias`, `rbainv`
+and `dinv`; `r` serves the choice of the moduli (stage I). -/
 structure Entry where
   /-- The prime. -/
   p : Nat
@@ -257,9 +258,10 @@ field `ssp` of `prec_entry`; it keeps only `p`, the table and the inverses
 `0`, which `examine_prime` installs from the build; the fields `init`, `nf` and `pw` that
 `examine_prime` sets (lines 1800 and 1817) and its reciprocal `magic` (line 1808) are those of the
 sieve entry of the prime (`Ratpoints.Sieve.SieveEntry`), of which the prime is the single factor,
-made by `Ratpoints.makeModulus?`, which sets the reciprocal there; no bias `bias` and inverse
-`rbainv`, which serve the packing (stage F3), and no density `r` (line 1811), which serves the
-choice of the moduli (stage I). -/
+made by `Ratpoints.makeModulus?`, which sets the reciprocal there, and so are the bias `bias` and
+the inverse `rbainv` of `Ratpoints.rbaLength` (lines 1815 and 1816), which `Ratpoints.makeModulus?`
+sets there with the formulas of these lines; no density `r` (line 1811), which serves the choice of
+the moduli (stage I). -/
 def examinePrime? (c : List Int) (d p : Nat) (useCLong : Bool) :
     Id (Option (Entry × Array Nat)) := do
   let cm := (Array.range (d + 1)).map fun n ↦
@@ -504,7 +506,11 @@ def Factor.admits : Factor → Nat → Int → Bool
 prime powers, given by its factors (`Ratpoints.Sieve.Factor`): one for a prime or a prime power, two
 or more for a product; with the reciprocal of `p` (`Ratpoints.Sieve.magic`), which the third stage
 of the sieve copies for its primes (`Ratpoints.Sieve.checkOf`) and with which the first two stages
-reduce their row indices with the packing (stage F3). Its row for a denominator is the and of the
+reduce their row indices with the packing (stage F); and with what the packing of the numerators
+needs (stage F): the bias, the least multiple of `p` that is at least `Ratpoints.rowBias`, which the
+row offsets carry, the inverse of `Ratpoints.rbaLength` modulo `p`, from which the row offsets are
+computed, and the inverses of the strides `2 ^ k` modulo `p` for the strides in use, with which
+`fill_bp_list` divides the denominator by the stride. Its row for a denominator is the and of the
 rows of its factors (`Ratpoints.Sieve.SieveEntry.admits`).
 
 C: `rp-private.h:497-498`, `rp-private.h:520`, `rp-private.h:542-555`
@@ -516,9 +522,11 @@ whose entry has `nf ≥ 2` and points to the entries `factor` of its factors; no
 `RP_MAX_FACTORS` on the number of factors; the rows of the residues, which ratpoints keeps in the
 field `sieve`, are `Ratpoints.Sieve.SieveEntry.rows`, made when first needed and kept for the run,
 by one function for every kind (`Ratpoints.Sieve.SieveEntry.row`), for the function `init` of the
-kind, of the type `ratpoints_init_fun`; a natural number for the `unsigned long` reciprocal
-`magic`; no bias `bias`, inverse `rbainv` and inverses `dinv`, which serve the packing (stage F3),
-and no density `r`, which serves the choice of the moduli (stage I). -/
+kind, of the type `ratpoints_init_fun`; a natural number for the `unsigned long` reciprocal `magic`,
+and natural numbers for the `long`s `bias` and `rbainv`; the inverses `dinv` an array, for the array
+of `RP_NUM_STRIDES` `long`s, which the row offsets of the packing fill (stage F) with an entry for
+each stride up to the largest in use, where the entries of the C code beyond it stay unset and
+unread; no density `r`, which serves the choice of the moduli (stage I). -/
 structure SieveEntry where
   /-- The modulus. -/
   p : Nat
@@ -526,6 +534,15 @@ structure SieveEntry where
   factors : List Factor
   /-- The reciprocal of the modulus (`Ratpoints.Sieve.magic`). -/
   magic : Nat
+  /-- The bias of the row offsets: the least multiple of the modulus that is at least
+  `Ratpoints.rowBias`. -/
+  bias : Nat
+  /-- The inverse of `Ratpoints.rbaLength` modulo the modulus. -/
+  rbainv : Nat
+  /-- Entry `k` the inverse of `2 ^ k` modulo the modulus, for the strides `2 ^ k` in use; empty
+  until the row offsets of the packing fill it (stage F). -/
+  dinv : Array Nat
+  deriving Inhabited
 
 /-- Whether the row of the denominator `b` in the sieve entry `e` of the modulus `p` admits the
 numerator `a`: for the residues `r = b mod p` and `x = a mod p`, the row of `r` of every factor
@@ -652,7 +669,8 @@ def survives (entries : List SieveEntry) (b : Nat) (a : Int) : Bool := entries.a
 -- `F(a, 100)` not a square modulo 25 do not pass; and the row of a product is the and of the rows
 -- of its factors: for `45 = 9 · 5` and `6 -3 5 2 75`, the sieve entry admits `a` for `b` exactly
 -- when both factors do, and the sieve entry of a prime with its table as its one factor admits what
--- the table admits.
+-- the table admits. The bias, the inverse of `rbaLength` and the inverses of the strides of these
+-- sieve entries, `0`, `0` and none, are fields that only the packing of the numerators reads.
 #guard
   let pw := Id.run (examinePower [-2, 0, 0, 1] 3 5 2 true)
   pw.admits 100 129 && !pw.admits 100 130 && (List.range 25).all fun a ↦
@@ -662,13 +680,13 @@ def survives (entries : List SieveEntry) (b : Nat) (a : Int) : Bool := entries.a
   let c := [6, -3, 5, 2, 75]
   let pw := Id.run (examinePower c 4 3 2 true)
   let e5 := examinePrime c 4 5
-  let se : SieveEntry := ⟨45, [.power pw, .prime e5], magic 45⟩
+  let se : SieveEntry := ⟨45, [.power pw, .prime e5], magic 45, 0, 0, #[]⟩
   (List.range 45).all fun b ↦ (List.range 90).all fun a : Nat ↦
     se.admits b a == (pw.admits b a && e5.admits b a)
 #guard [3, 5, 7, 13].all fun p ↦
   let e := examinePrime [6, -3, 5, 2, 75] 4 p
   (List.range (2 * p)).all fun b ↦ (List.range (3 * p)).all fun a : Nat ↦
-    (⟨p, [.prime e], magic p⟩ : SieveEntry).admits b a == e.admits b a
+    (⟨p, [.prime e], magic p, 0, 0, #[]⟩ : SieveEntry).admits b a == e.admits b a
 
 -- The reductions by the reciprocal against the remainder and the quotient, at the ends of their
 -- range `u p < 2 ^ 64` (the largest such `u`, its neighbours below, the multiples of `p` and next

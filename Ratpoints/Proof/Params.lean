@@ -14,6 +14,7 @@ import Mathlib.Tactic.NormNum.Prime
 import Ratpoints.Mathlib.Data.List.Pairwise
 import Ratpoints.Mathlib.Data.List.Sort
 import Ratpoints.Proof.Bits
+import Ratpoints.Proof.Reductions
 import Std.Tactic.Do
 
 /-!
@@ -46,13 +47,12 @@ least one bit array.
 * `Ratpoints.getElem!_primeTable_lt_maxPrimeEven`: the first `Ratpoints.numPrimes` primes of the
   table are below `Ratpoints.maxPrimeEven`; `Ratpoints.getElem!_primeTable_le_of_le`: the table
   increases; `Ratpoints.getElem!_primeTable_inj`: different positions hold different primes.
-* `Ratpoints.maxPrimeEven_le_two_pow_10`, `Ratpoints.maxPrimeEven_le_two_pow_32`: the moduli below
-  `Ratpoints.maxPrimeEven` are below `2 ^ 10`, so below `2 ^ 32`;
-  `Ratpoints.mul_add_lt_two_pow_64_of_lt_maxPrimeEven`,
+* `Ratpoints.mul_add_lt_two_pow_64_of_lt_maxPrimeEven`,
   `Ratpoints.mul_self_lt_two_pow_63_of_lt_maxPrimeEven`: the values of `examine_power` stay in the
-  range of their C types; `Ratpoints.pow_hornerSteps_add_one_lt`: so does the accumulator of
-  Horner's rule in `examine_prime` between two reductions, since
-  `hornerSteps + 1 = 64 / maxBitsInPrime` (`Ratpoints.hornerSteps_add_one`).
+  range of their C types, the moduli being below `2 ^ 10` (`Ratpoints.maxPrimeEven_le_two_pow_10`);
+  `Ratpoints.pow_hornerSteps_add_one_lt`: so does the accumulator of Horner's rule in
+  `examine_prime` between two reductions, since `hornerSteps + 1 = 64 / maxBitsInPrime`
+  (`Ratpoints.hornerSteps_add_one`).
 * `Ratpoints.modulusFactors_spec`: the contract of the factors of a modulus over the table, with its
   plain forms `Ratpoints.eq_mul_prod_run_modulusFactors`,
   `Ratpoints.lt_numPrimes_of_mem_run_modulusFactors`, `Ratpoints.one_le_of_mem_run_modulusFactors`,
@@ -174,19 +174,6 @@ theorem getElem!_primeTable_inj {i j : ℕ} (hi : i < primeTable.size) (hj : j <
   exact pairwise_lt_toList_primeTable.nodup.getElem_inj_iff
 
 /-! ### The moduli in the range of the C types -/
-
-/-- The moduli below `Ratpoints.maxPrimeEven` are below `2 ^ 10`, since `maxBitsInPrime ≤ 10`
-(`Ratpoints.maxBitsInPrime_le_ten`), as the comment on Horner's rule in `examine_power` assumes
-(`find_points.c:2286-2287`). -/
-theorem maxPrimeEven_le_two_pow_10 : maxPrimeEven ≤ 2 ^ 10 :=
-  Nat.pow_le_pow_right Nat.two_pos maxBitsInPrime_le_ten
-
-/-- The moduli below `Ratpoints.maxPrimeEven` are below `2 ^ 32`
-(`Ratpoints.maxPrimeEven_le_two_pow_10`): so the helper `mod` of the C code keeps its values in the
-range of a `long` for them (`Ratpoints.fitsLong_sixteen_mul`, `Ratpoints.fitsLong_add_sixteen_mul`,
-for `b < 2 ^ 59`), where `examine_power` calls it (`find_points.c:2278`). -/
-theorem maxPrimeEven_le_two_pow_32 : maxPrimeEven ≤ 2 ^ 32 :=
-  maxPrimeEven_le_two_pow_10.trans (by norm_num)
 
 /-- The range obligation of the steps of Horner's rule in `examine_power`: for a modulus
 `m < maxPrimeEven`, the steps `v x + c` (`find_points.c:2291`, `find_points.c:2298`), with `v`, `x`

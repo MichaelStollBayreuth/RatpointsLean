@@ -608,6 +608,9 @@ def sift (c : List Int) (d H A b : Nat) (rev : Bool) (sp1 : Nat)
 
 /-! ### Examples -/
 
+-- The sieve entries of the examples have the bias, the inverse of `rbaLength` and the inverses of
+-- the strides `0`, `0` and none, fields that only the packing of the numerators reads.
+
 -- Curves without points modulo 3, 5 and 7, on which ratpoints takes the exit at that prime
 -- (`ratpoints '20 6 -14 12 -10' 30 -v` says `no points mod p = 3`, and so do
 -- `ratpoints '-2 -20 7 15 2' 30 -v` for 5 and `ratpoints '20 7 -18 0 3' 30 -v` for 7): on both
@@ -621,7 +624,7 @@ def sift (c : List Int) (d H A b : Nat) (rev : Bool) (sp1 : Nat)
 -- The plain sieve of a denominator is the survivor test of the numerators.
 #guard
   let es := [3, 5, 7].map fun p ↦
-    (⟨p, [.prime (examinePrime [1, 2, 3, 4, 5, 6, 7] 6 p)], magic p⟩ : SieveEntry)
+    (⟨p, [.prime (examinePrime [1, 2, 3, 4, 5, 6, 7] 6 p)], magic p, 0, 0, #[]⟩ : SieveEntry)
   (Id.run (sieveDen 20 7 es)).toList ==
     (List.range 41).map fun i : Nat ↦ survives es 7 ((i : Int) - 20)
 
@@ -629,7 +632,7 @@ def sift (c : List Int) (d H A b : Nat) (rev : Bool) (sp1 : Nat)
 -- `(129 : 3830 : 100)`, which every numerator gives as well.
 #guard
   let es := [3, 5, 7, 11, 13].map fun p ↦
-    (⟨p, [.prime (examinePrime [-2, 0, 0, 1] 3 p)], magic p⟩ : SieveEntry)
+    (⟨p, [.prime (examinePrime [-2, 0, 0, 1] 3 p)], magic p, 0, 0, #[]⟩ : SieveEntry)
   (Id.run (checkDen [-2, 0, 0, 1] 3 130 100 (Id.run (sieveDen 130 100 es)))).toList ==
     [(129, 3830, 100), (129, -3830, 100)] &&
   (Id.run (checkDen [-2, 0, 0, 1] 3 130 100 (Vector.replicate _ true))).toList ==
@@ -666,7 +669,7 @@ def sift (c : List Int) (d H A b : Nat) (rev : Bool) (sp1 : Nat)
 -- word numbers below and above zero.
 #guard
   let es := [3, 5, 7, 11, 13].map fun p ↦
-    (⟨p, [.prime (examinePrime [1, 2, 3, 4, 5, 6, 7] 6 p)], magic p⟩ : SieveEntry)
+    (⟨p, [.prime (examinePrime [1, 2, 3, 4, 5, 6, 7] 6 p)], magic p, 0, 0, #[]⟩ : SieveEntry)
   let specs : List SieveSpec := es.map fun e ↦ ⟨e.p, e.row 7⟩
   ([.replicate rbaPack (~~~0), .ofFn fun κ ↦ 1 <<< (κ.val * 13).toUInt64,
       .ofFn fun κ ↦ 0x0123456789abcdef * (κ.val.toUInt64 + 1), .replicate rbaPack 0] :
@@ -682,7 +685,7 @@ def sift (c : List Int) (d H A b : Nat) (rev : Bool) (sp1 : Nat)
 -- a prime above 64.
 #guard
   [3, 5, 7, 13, 67].all fun p ↦
-    let e : SieveEntry := ⟨p, [.prime (examinePrime [1, 2, 3, 4, 5, 6, 7] 6 p)], magic p⟩
+    let e : SieveEntry := ⟨p, [.prime (examinePrime [1, 2, 3, 4, 5, 6, 7] 6 p)], magic p, 0, 0, #[]⟩
     [0, 1, 2, 5, p + 3].all fun b ↦
       let row := e.row b
       row.size == p * rbaPack && (List.range (p * rbaPack)).all fun j ↦
@@ -695,8 +698,9 @@ def sift (c : List Int) (d H A b : Nat) (rev : Bool) (sp1 : Nat)
   let p9 : Factor := .power (Id.run (examinePower c 6 3 2 true))
   let e3 : Factor := .prime (examinePrime c 6 3)
   let e5 : Factor := .prime (examinePrime c 6 5)
-  ([⟨9, [p9], magic 9⟩, ⟨15, [e3, e5], magic 15⟩, ⟨45, [p9, e5], magic 45⟩] :
-      List SieveEntry).all fun e ↦ [0, 1, 3, 5, 6, 10, 18].all fun b ↦
+  ([⟨9, [p9], magic 9, 0, 0, #[]⟩, ⟨15, [e3, e5], magic 15, 0, 0, #[]⟩,
+      ⟨45, [p9, e5], magic 45, 0, 0, #[]⟩] : List SieveEntry).all fun e ↦
+    [0, 1, 3, 5, 6, 10, 18].all fun b ↦
     let row := e.row b
     row.size == e.p * rbaPack && (List.range (e.p * rbaPack)).all fun j ↦
       (List.range 64).all fun t ↦ row[j]!.toBitVec.getLsbD t == e.admits b (64 * j + t)
@@ -716,12 +720,13 @@ def sift (c : List Int) (d H A b : Nat) (rev : Bool) (sp1 : Nat)
       0xfefff7ffbffdffef, 0xfdffefff7ffbffdf, 0xfbffdffefff7ffbf, 0xf7ffbffdffefff7f,
       0xefff7ffbffdffeff, 0xdffefff7ffbffdff, 0xbffdffefff7ffbff, 0x7ffbffdffefff7ff,
       0xfff7ffbffdffefff])] : List (Nat × Array UInt64)).all fun (p, ws) ↦
-    ((⟨p, [.prime (examinePrime [1, 0, 1] 2 p)], magic p⟩ : SieveEntry).row 0).extract 0 p == ws
+    let e : SieveEntry := ⟨p, [.prime (examinePrime [1, 0, 1] 2 p)], magic p, 0, 0, #[]⟩
+    (e.row 0).extract 0 p == ws
 
 -- The rows of the residues: one thunk for each of the `p` residues, the thunk of `r` giving the
 -- row of `r`.
 #guard
-  let e : SieveEntry := ⟨7, [.prime (examinePrime [1, 2, 3, 4, 5, 6, 7] 6 7)], magic 7⟩
+  let e : SieveEntry := ⟨7, [.prime (examinePrime [1, 2, 3, 4, 5, 6, 7] 6 7)], magic 7, 0, 0, #[]⟩
   e.rows.size == 7 && (List.range 7).all fun r ↦ e.rows[r]!.get == e.row r
 
 -- The first stage against the survivor test: bit `t` of word `y` of a piece is bit `t` of the class
@@ -732,7 +737,7 @@ def sift (c : List Int) (d H A b : Nat) (rev : Bool) (sp1 : Nat)
 -- `≡ 1 (mod 8)`.
 #guard
   let es := [3, 5, 7].map fun p ↦
-    (⟨p, [.prime (examinePrime [1, 2, 3, 4, 5, 6, 7] 6 p)], magic p⟩ : SieveEntry)
+    (⟨p, [.prime (examinePrime [1, 2, 3, 4, 5, 6, 7] 6 p)], magic p, 0, 0, #[]⟩ : SieveEntry)
   ([(-9, 1), (-9, 12), (-35, 4), (6, 2), (15, 17)] : List (Int × Nat)).all fun (w0, n) ↦
     [1, 10].all fun b ↦
       [~~~0, 0xdddddddddddddddd, 0x0202020202020202].all fun cw ↦
@@ -748,7 +753,8 @@ def sift (c : List Int) (d H A b : Nat) (rev : Bool) (sp1 : Nat)
 -- several places.
 #guard
   let c := [-2, 0, 0, 1]
-  let es := [3, 5, 7, 11, 13].map fun p ↦ (⟨p, [.prime (examinePrime c 3 p)], magic p⟩ : SieveEntry)
+  let es := [3, 5, 7, 11, 13].map fun p ↦
+    (⟨p, [.prime (examinePrime c 3 p)], magic p, 0, 0, #[]⟩ : SieveEntry)
   [0, 2, 5].all fun sp2 ↦ [1, 7, 100].all fun b : Nat ↦ [-2, 0, 3].all fun i : Int ↦
     ([.replicate rbaPack (~~~0), .ofFn fun κ ↦ 0x0123456789abcdef * (κ.val.toUInt64 + 1)] :
         List (Vector UInt64 rbaPack)).all fun nums ↦
@@ -810,7 +816,8 @@ def sift (c : List Int) (d H A b : Nat) (rev : Bool) (sp1 : Nat)
 -- the numerator 129 of the point `(129 : 3830 : 100)` of `y ^ 2 = x ^ 3 - 2` keep it or drop it.
 #guard
   let c := [-2, 0, 0, 1]
-  let es := [3, 5, 7, 11, 13].map fun p ↦ (⟨p, [.prime (examinePrime c 3 p)], magic p⟩ : SieveEntry)
+  let es := [3, 5, 7, 11, 13].map fun p ↦
+    (⟨p, [.prime (examinePrime c 3 p)], magic p, 0, 0, #[]⟩ : SieveEntry)
   let piece (sp1 sp2 b : Nat) (w0 : Int) (n mL mH : Nat) : List (Int × Int × Int) :=
     let es3 := es.drop sp2
     (Id.run (siftPiece (.pure (BruteForce.scaledCoeffs c 3 b)) 3 b false sp1
@@ -835,7 +842,8 @@ def sift (c : List Int) (d H A b : Nat) (rev : Bool) (sp1 : Nat)
 -- with the flag of the reversal the same points, mapped.
 #guard
   let c := [-2, 0, 0, 1]
-  let es := [3, 5, 7, 11, 13].map fun p ↦ (⟨p, [.prime (examinePrime c 3 p)], magic p⟩ : SieveEntry)
+  let es := [3, 5, 7, 11, 13].map fun p ↦
+    (⟨p, [.prime (examinePrime c 3 p)], magic p, 0, 0, #[]⟩ : SieveEntry)
   let cuts := (List.range 6).flatMap fun sp2 ↦ (List.range (sp2 + 1)).map (·, sp2)
   ((4, 2) :: cuts).all fun (sp1, sp2) ↦
     [1, 7, 100].all fun b ↦ [1, 2, 3].all fun A ↦ [false, true].all fun rev ↦

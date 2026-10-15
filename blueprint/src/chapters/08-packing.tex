@@ -311,18 +311,16 @@ order: a data refinement.
 
 \begin{lemma}[A row is unchanged under a unit]\label{lem:admits_mul}
   \uses{def:SieveEntry, def:examinePower, def:admits}
-  Proposed names: \lname{Ratpoints.Sieve.Factor.HasInverses},
-  \lname{Ratpoints.Sieve.Entry.admits\_mul}, \lname{Ratpoints.Sieve.Power.admits\_mul},
-  \lname{Ratpoints.Sieve.SieveEntry.admits\_mul},
-  \lname{Ratpoints.Sieve.Entry.admits\_mod\_of\_dvd},
-  \lname{Ratpoints.Sieve.Power.admits\_mod\_of\_dvd}. If the modulus of each factor of a sieve entry
-  divides $p$ and its table of inverses inverts its units (the nonzero residues of a prime, the
-  residues prime to $\ell$ of a prime power $\ell^e$), and $v u \equiv 1 \pmod p$, then the row of
-  $u b$ admits $u a$ exactly when the row of $b$ admits $a$; a row of a factor depends only on the
-  residues modulo a multiple of its modulus.
+  \lean{Ratpoints.Sieve.Factor.HasInverses, Ratpoints.Sieve.Entry.admits_mul, Ratpoints.Sieve.Power.admits_mul, Ratpoints.Sieve.Factor.HasInverses.admits_mod, Ratpoints.Sieve.Factor.HasInverses.admits_mul, Ratpoints.Sieve.SieveEntry.admits_mul, Ratpoints.Sieve.Entry.admits_mod_of_dvd, Ratpoints.Sieve.Power.admits_mod_of_dvd}
+  \leanok
+  If the modulus of each factor of a sieve entry divides $p$ and its table of inverses inverts its
+  units (the nonzero residues of a prime, the residues prime to $\ell$ of a prime power $\ell^e$),
+  and $v u \equiv 1 \pmod p$, then the row of $u b$ admits $u a$ exactly when the row of $b$ admits
+  $a$; a row of a factor depends only on the residues modulo a multiple of its modulus.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   The table of a prime is read at $a\, \mathrm{inv}(b)$, that of a prime power at $a\,
   \mathrm{inv}(b)$ or at $b\,\mathrm{inv}(a)$; with $u b$ and $u a$ the index is $u a\,
   \mathrm{inv}(u b) \equiv u a\, \mathrm{inv}(u b)\, b\, \mathrm{inv}(b) \equiv a\,

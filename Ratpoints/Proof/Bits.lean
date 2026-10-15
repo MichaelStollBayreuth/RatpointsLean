@@ -40,7 +40,10 @@ made non-negative, the residue of `(a mod p) b` and the bound `|a b| + H ≤ p H
 `b < p`, and, for the signed 64-bit words, the arithmetic shift, the mask `x >>> 63` with the
 smaller and the distance of two non-negative words that it gives without a branch, the odd part of a
 positive word by the lowest set bit of the word read as unsigned, its lowest bit, the absolute
-value, and the words of an integer and of a natural number below `2 ^ 63`.
+value, and the words of an integer and of a natural number below `2 ^ 63`. For the rows under a
+unit: the residues under a unit `u` with an inverse modulo `q`, zero or not, modulo a divisor of `q`
+too, the residue `x i mod q` read with an inverse `i` of `r`, and the residue of `u a` for an
+integer `a`.
 
 ## Main statements
 
@@ -124,6 +127,9 @@ value, and the words of an integer and of a natural number below `2 ^ 63`.
   `-2 ^ 63`, and that of a natural number `0 < n < 2 ^ 63` is positive.
 * `Nat.mul_div_two_pow_64_eq`: the high half of a product from the products of the halves of 32
   bits of its factors.
+* `Nat.mul_mod_eq_zero_iff_of_mul_mod`, `Nat.mul_mod_eq_mul_mod_of_mul_mod_eq_one`: scaling by a
+  unit `u` with an inverse modulo `q` keeps a residue zero or not, and keeps the residue `x i mod q`
+  read with an inverse `i` of `r` when `x` and `r` are both scaled.
 
 ## Implementation notes
 
@@ -571,6 +577,41 @@ theorem mul_le_of_lt_two_pow_32 {x y : Nat} (hx : x < 2 ^ 32) (hy : y < 2 ^ 32) 
     x * y ≤ 2 ^ 64 - 2 ^ 33 + 1 :=
   Nat.le_trans (Nat.mul_le_mul (Nat.le_sub_one_of_lt hx) (Nat.le_sub_one_of_lt hy)) (by decide)
 
+theorem mul_mod_of_mod_eq_one (a : Nat) {b q : Nat} (h : b % q = 1) : a * b % q = a % q := by
+  rw [Nat.mul_mod, h, Nat.mul_one, Nat.mod_mod]
+
+theorem mul_mod_eq_mul_mod_of_mod_eq {a a' : Nat} (b : Nat) {q : Nat} (h : a % q = a' % q) :
+    a * b % q = a' * b % q := by
+  rw [Nat.mul_mod, h, ← Nat.mul_mod]
+
+/-- Scaling `b` by `u`, with an inverse `v` modulo `q`, keeps it zero modulo `q` or not. -/
+theorem mul_mod_eq_zero_iff_of_mul_mod {q u v : Nat} (huv : v * u % q = 1 % q) (b : Nat) :
+    u * b % q = 0 ↔ b % q = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [Nat.mul_mod, h, Nat.mul_zero, Nat.zero_mod]⟩
+  rw [← Nat.one_mul b, ← Nat.mod_mul_mod, ← huv, Nat.mod_mul_mod, Nat.mul_assoc, Nat.mul_mod, h,
+    Nat.mul_zero, Nat.zero_mod]
+
+/-- Scaling `b` by `u`, with an inverse `v` modulo `q`, keeps its residue modulo `q` zero modulo a
+divisor `p` of `q` or not. -/
+theorem mul_mod_mod_eq_zero_iff_of_mul_mod {p q u v : Nat} (hpq : p ∣ q)
+    (huv : v * u % q = 1 % q) (b : Nat) : u * b % q % p = 0 ↔ b % q % p = 0 := by
+  rw [Nat.mod_mod_of_dvd _ hpq, Nat.mod_mod_of_dvd _ hpq]
+  exact Nat.mul_mod_eq_zero_iff_of_mul_mod
+    (by rw [← Nat.mod_mod_of_dvd _ hpq, huv, Nat.mod_mod_of_dvd _ hpq]) b
+
+/-- The residue `x i mod q`, for an inverse `i` of `r` modulo `q`, is unchanged when `x` and `r`
+are both scaled by `u`: `x' i' ≡ x i` for `x' ≡ u x`, `r' ≡ u r`, `i r ≡ 1` and `i' r' ≡ 1`. -/
+theorem mul_mod_eq_mul_mod_of_mul_mod_eq_one {q u x x' r r' i i' : Nat}
+    (hx : x' % q = u * x % q) (hr : r' % q = u * r % q) (hi : i * r % q = 1)
+    (hi' : i' * r' % q = 1) : x' * i' % q = x * i % q := by
+  calc x' * i' % q = x' * (i' * (i * r)) % q := by
+        rw [← Nat.mul_assoc, Nat.mul_mod_of_mod_eq_one _ hi]
+    _ = u * x * (i' * (i * r)) % q := Nat.mul_mod_eq_mul_mod_of_mod_eq _ hx
+    _ = u * r * (i' * (x * i)) % q := congrArg (· % q) (by ac_rfl)
+    _ = r' * (i' * (x * i)) % q := Nat.mul_mod_eq_mul_mod_of_mod_eq _ hr.symm
+    _ = x * i * (i' * r') % q := congrArg (· % q) (by ac_rfl)
+    _ = x * i % q := Nat.mul_mod_of_mod_eq_one _ hi'
+
 end Nat
 
 /-! ### Integers -/
@@ -608,6 +649,13 @@ theorem toNat_add_add_emod {a : Int} {p i k : Nat} (hi : i < p) :
 
 theorem toNat_emod_lt (a : Int) {p : Nat} (hp : 0 < p) : (a % (p : Int)).toNat < p :=
   (toNat_lt' hp).mpr (emod_lt_of_pos a (by lia))
+
+theorem toNat_mul_emod (u : Nat) (a : Int) {q : Nat} (hq : 0 < q) :
+    ((u * a) % (q : Int)).toNat = u * (a % (q : Int)).toNat % q := by
+  have h0 := Int.emod_nonneg a (b := q) (by lia)
+  rw [← Int.toNat_natCast (u * (a % (q : Int)).toNat % q)]
+  push_cast
+  rw [Int.toNat_of_nonneg h0, Int.mul_emod (u : Int) (a % q), Int.emod_emod, ← Int.mul_emod]
 
 theorem toNat_emod_mod_of_dvd (a : Int) {m p : Nat} (hm : 0 < m) (hpm : p ∣ m) :
     (a % (m : Int)).toNat % p = (a % (p : Int)).toNat := by

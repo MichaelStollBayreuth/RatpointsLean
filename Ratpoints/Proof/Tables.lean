@@ -72,8 +72,8 @@ of a negative leading coefficient in `jacobi1`, with `LONG_MIN` replaced by its 
 * `Ratpoints.Sieve.getElem!_isFSquare_examinePrime_self`: the entry of the table of a prime at `p`
   says whether there are points at infinity modulo `p`.
 * `Ratpoints.Sieve.admits_examinePrime_of_sq_eq`: the rows let every point through.
-* `Ratpoints.Sieve.isPrimeEntry_examinePrime`: the sieve entry of a prime `p ≤ 2 ^ 32` with its
-  table and its reciprocal has the shape that the third stage needs.
+* `Ratpoints.Sieve.isPrimeEntry_examinePrime`: a sieve entry of a prime `p ≤ 2 ^ 32` whose single
+  factor is its table, with its reciprocal, has the shape that the third stage needs.
 * `Ratpoints.Sieve.barrett_eq`: Barrett's reduction computes the remainder of every `u < 2 ^ 64`.
 * `Ratpoints.Sieve.HornerInvariant.lt_two_pow_64`: the accumulator of Horner's rule in the table of
   `p < maxPrimeEven` stays below `2 ^ 64` (`Ratpoints.pow_hornerSteps_add_one_lt`).
@@ -448,12 +448,14 @@ theorem p_examinePrime (c : List ℤ) (d p : ℕ) : (examinePrime c d p).p = p :
 theorem inverses_examinePrime (c : List ℤ) (d p : ℕ) :
     (examinePrime c d p).inverses = inversesMod p := rfl
 
-/-- The sieve entry of a prime `p ≤ 2 ^ 32` with the table of the reference and the reciprocal of
-`p` has the shape that the third stage needs (`Ratpoints.Sieve.SieveEntry.IsPrimeEntry`): the
-inverses of the nonzero residues are residues, and nonzero, since they are inverses. -/
-theorem isPrimeEntry_examinePrime (c : List ℤ) (d : ℕ) {p : ℕ} (hp : p.Prime) (hp32 : p ≤ 2 ^ 32) :
-    SieveEntry.IsPrimeEntry ⟨p, [.prime (examinePrime c d p)], magic p⟩ :=
-  ⟨examinePrime c d p, rfl, hp.one_lt, hp32, fun r hr hr0 ↦
+/-- The sieve entry of a prime `p ≤ 2 ^ 32` whose single factor is the table of the reference, with
+the reciprocal of `p`, has the shape that the third stage needs
+(`Ratpoints.Sieve.SieveEntry.IsPrimeEntry`), whatever its fields of the packing: the inverses of
+the nonzero residues are residues, and nonzero, since they are inverses. -/
+theorem isPrimeEntry_examinePrime (c : List ℤ) (d : ℕ) {p : ℕ} (hp : p.Prime) (hp32 : p ≤ 2 ^ 32)
+    {e : SieveEntry} (hf : e.factors = [.prime (examinePrime c d p)]) (hep : e.p = p)
+    (hm : e.magic = magic p) : e.IsPrimeEntry :=
+  ⟨examinePrime c d p, hf, hep, hm, hp.one_lt, hp32, fun r hr hr0 ↦
     ⟨fun h ↦ absurd (getElem!_inversesMod_mul_mod hp hr hr0) (by simp_all),
       getElem!_inversesMod_lt hr⟩⟩
 

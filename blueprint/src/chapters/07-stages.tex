@@ -213,32 +213,36 @@ reciprocals, and the test of the denominators up to $b_{\mathrm{high}} \le \math
   remainder above, or $0$ when $p \mid b$; the bias $p H$ when $2 p H < \mathrm{stage3Limit}$ and
   $0$ otherwise; the reciprocal of $p$, copied from its sieve entry; and the table of $p$
   (\csource{sift.c}{414}{428}). For a sieve entry of another shape than a prime with its table,
-  which the third stage of well-formed parameters never holds, the inverse is $0$, so that the
-  stage skips it. The list of these for the sieve entries of the third stage with their reciprocals
-  in \verb|magics|, in their order (\csource{sift.c}{405}{413}, \csource{sift.c}{429}{431}). The
+  which the third stage of well-formed parameters never holds, the inverse is $0$, so that the stage
+  skips it. The list of these for the sieve entries of the third stage with their reciprocals in
+  \verb|magics|, in their order (\csource{sift.c}{405}{413}, \csource{sift.c}{429}{431}). The
   residue at which the table of $p$ is read for the numerator $a$: with the bias, $a b^{-1} + p H$
   reduced with the reciprocal; without it, the remainder of $a$ by the truncating division, plus $p$
   if it is negative, times $b^{-1}$, reduced by the remainder (\csource{sift.c}{302}{308}). The
   third stage for $a$: for each prime in turn, skipped when the inverse is $0$, $a$ is rejected when
   the table says that $f$ is not a square modulo $p$ at that residue (\csource{sift.c}{291}{301},
   \csource{sift.c}{309}{312}); a prime lets $a$ through when its inverse is $0$ or its table is true
-  at that residue. A \emph{prime entry} is a sieve entry of a modulus $1 < p \le 2^{32}$ whose
-  single factor is a table of the kind of a prime, which holds for each nonzero residue an inverse
-  in $[1, p - 1]$, and whose reciprocal is that of $p$; that $p$ is prime is not needed.
+  at that residue. A \emph{prime entry} is a sieve entry, stated field by field, whose single factor
+  is a table of the kind of a prime $1 < p \le 2^{32}$, which holds for each nonzero residue an
+  inverse in $[1, p - 1]$, whose modulus is $p$ and whose reciprocal is that of $p$, whatever its
+  fields of the packing (the bias and the inverses of $\mathrm{rbaLength}$ and of the strides); that
+  $p$ is prime is not needed.
 \end{definition}
 
 \begin{lemma}[The third stage tests the rows]\label{lem:stage3}
   \uses{def:stage3, lem:mulMod, def:admits, def:SieveEntry, def:examinePrime}
-  \lean{Ratpoints.Sieve.Stage3Invariant, Ratpoints.Sieve.stage3_spec, Ratpoints.Sieve.CheckSpec.index_eq, Ratpoints.Sieve.le_mul_add_natCast_mul, Ratpoints.Sieve.mul_add_natCast_mul_le_two_mul_mul_sub, Ratpoints.Sieve.toNat_emod_mul_lt_sq, Ratpoints.Sieve.binv_checkOf, Ratpoints.Sieve.CheckSpec.admits_checkOf, Ratpoints.Sieve.all_admits_fillChecks, Ratpoints.Sieve.run_stage3_fillChecks, Ratpoints.Sieve.getElem!_inversesMod_lt, Ratpoints.Sieve.isPrimeEntry_examinePrime}
+  \lean{Ratpoints.Sieve.Stage3Invariant, Ratpoints.Sieve.stage3_spec, Ratpoints.Sieve.CheckSpec.index_eq, Ratpoints.Sieve.le_mul_add_natCast_mul, Ratpoints.Sieve.mul_add_natCast_mul_le_two_mul_mul_sub, Ratpoints.Sieve.toNat_emod_mul_lt_sq, Ratpoints.Sieve.binv_checkOf, Ratpoints.Sieve.bias_checkOf_ne_zero, Ratpoints.Sieve.SieveEntry.IsPrimeEntry.admits_checkOf, Ratpoints.Sieve.all_admits_fillChecks, Ratpoints.Sieve.run_stage3_fillChecks, Ratpoints.Sieve.getElem!_inversesMod_lt, Ratpoints.Sieve.isPrimeEntry_examinePrime}
   \leanok
   The third stage passes $a$ exactly when every prime lets it through. For prime entries with their
   reciprocals in \verb|magics|, $|a| \le H$ and $\gcd(a, b) = 1$: the residue at which the table of
   $p$ is read is $a b^{-1} \bmod p$ for $p \nmid b$, in both branches of the bias and on both sides
   of $\mathrm{mulModLimit}$, and the third stage passes $a$ exactly when every entry's row of $b$
   admits $a$. The values that the C code holds in \verb|long|s stay in range: $a b^{-1} + p H$ lies
-  in $[H, 2 p H - H]$, and the product of the residue and the inverse is below $p^2$. The entry of a
-  prime $p \le 2^{32}$ with its table (Definition~\ref{def:examinePrime}) and its reciprocal is a
-  prime entry.
+  in $[H, 2 p H - H]$, and the product of the residue and the inverse is below $p^2$. What the third
+  stage takes of an entry is read off its single factor: the inverse of $b$, the bias $p H$ with
+  $2 p H < 2^{32}$ when it is not $0$, and the table. A sieve entry of a prime $p \le 2^{32}$ whose
+  single factor is its table (Definition~\ref{def:examinePrime}), with its reciprocal, is a prime
+  entry, whatever its fields of the packing.
 \end{lemma}
 
 \begin{proof}

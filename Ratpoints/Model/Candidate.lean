@@ -379,6 +379,9 @@ def pointsAtInfinity (c : List Int) (d : Nat) (rev : Bool) : List (Int × Int ×
 
 /-! ### Examples -/
 
+-- The sieve entries of the examples have the bias, the inverse of `rbaLength` and the inverses of
+-- the strides `0`, `0` and none, fields that only the packing of the numerators reads.
+
 -- The points of a reversed search: `ratpoints '-1 0 9' 10 -q` reverses the polynomial to `9 0 -1`
 -- and prints the points of the brute-force reference of `y ^ 2 = 9 z ^ 2 - x ^ 2`, in its order,
 -- each mapped, `(1 : 3 : 0)` for `(0 : 3 : 1)` among them; so do `ratpoints '0 1 0 0 4' 10 -q` and
@@ -419,7 +422,7 @@ def pointsAtInfinity (c : List Int) (d : Nat) (rev : Bool) : List (Int × Int ×
 #guard
   let c := [1, 2, 3, 4, 5, 6, 7]
   let es := [3, 5, 7, 11, 13, 251].map fun p ↦
-    (⟨p, [.prime (examinePrime c 6 p)], magic p⟩ : SieveEntry)
+    (⟨p, [.prime (examinePrime c 6 p)], magic p, 0, 0, #[]⟩ : SieveEntry)
   ([(50, List.replicate 6 true), (8555711, List.replicate 6 true),
     (8555712, [true, true, true, true, true, false]), (2 ^ 31, List.replicate 6 false),
     (2 ^ 62, List.replicate 6 false)] : List (Nat × List Bool)).all fun (H, biased) ↦
@@ -435,7 +438,7 @@ def pointsAtInfinity (c : List Int) (d : Nat) (rev : Bool) : List (Int × Int ×
 #guard
   let pw := Id.run (examinePower [1, 2, 3, 4, 5, 6, 7] 6 3 2 true)
   (List.range 40).all fun a : Nat ↦
-    Id.run (stage3 a [checkOf 7 100 ⟨9, [.power pw], magic 9⟩ (magic 9)])
+    Id.run (stage3 a [checkOf 7 100 ⟨9, [.power pw], magic 9, 0, 0, #[]⟩ (magic 9)])
 
 -- The exact check with the test for common factors in front is the check of the reference.
 #guard ([([-2, 0, 0, 1], 3), ([1, 0, 126, 0, 441], 4)] : List (List Int × Nat)).all fun (c, d) ↦

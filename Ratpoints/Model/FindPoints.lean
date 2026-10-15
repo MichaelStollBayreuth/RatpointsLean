@@ -83,9 +83,14 @@ tables, by their positions (`Ratpoints.Sieve.examinePrimes`): in a loop over the
 factor `p ^ e` with `e = 1`, the table of `p` from the loop of the tables when `p` is among the
 primes examined there, and otherwise the table that its examination gives now
 (`Ratpoints.Sieve.examinePrime?`), with none at once when the curve has no points modulo `p`; and
-for `e ≥ 2` the tables of the prime power (`Ratpoints.Sieve.examinePower`). A prime or a prime
-power has one factor, a product two or more; the entry holds the reciprocal of `m`
-(`Ratpoints.Sieve.magic`).
+for `e ≥ 2` the tables of the prime power (`Ratpoints.Sieve.examinePower`). A prime or a prime power
+has one factor, a product two or more; the entry holds the reciprocal of `m`
+(`Ratpoints.Sieve.magic`), the bias `m ⌈Ratpoints.rowBias / m⌉`, the least multiple of `m` that is
+at least `Ratpoints.rowBias`, and the inverse of `Ratpoints.rbaLength` modulo `m`: for a prime, the
+entry of the table of inverses of its table at the remainder of `Ratpoints.rbaLength` by the
+multiplication with the reciprocal (`Ratpoints.Sieve.mulMod`), and otherwise the inverse by the
+extended Euclidean algorithm (`Ratpoints.Sieve.modinv`); its inverses of the strides are made with
+the row offsets of the packing of the numerators (stage F).
 
 C: `find_points.c:2350-2354`, `find_points.c:2358-2359`, `find_points.c:2387-2395`,
 `find_points.c:2414-2429`, `find_points.c:2434-2475`, `find_points.c:2546`, `find_points.c:2548`,
@@ -119,13 +124,16 @@ of powers of primes of the table below `Ratpoints.maxPrimeEven` (`Ratpoints.Para
 `ratpoints.h:210-211`, 64 by default) whose table is not too dear for the run (line 2368), with room
 in the buffer of the prime powers for its new prime powers (lines 2351 and 2390), a density `r < 1`
 (line 2402) and at most `RP_MAX_MODULI` candidates (line 2403), restrictions that the model lifts as
-choices of the moduli (stage I); the reciprocal `magic` of every kind of modulus set here, where
-`examine_prime` sets that of a prime with its table (line 1808), `make_power` that of a prime power
-(line 2422) and `make_modulus` that of a product (line 2454); no bias `bias` and inverse `rbainv`,
-which serve the packing (stage F3), no density `r` (stage I), and no field `init`, the rows of every
-kind being made by one function (`Ratpoints.Sieve.SieveEntry.row`); the entry a fresh value, for the
-space that `make_power` and `make_modulus` take from the buffer of the sieve entries (`se_next`),
-and the exit as `none`, for the prime that `sieving_info` returns. -/
+choices of the moduli (stage I); the reciprocal `magic`, the bias `bias` and the inverse `rbainv` of
+every kind of modulus set here, with the formulas of the C code, where `examine_prime` sets those of
+a prime with its table (lines 1808, 1815 and 1816), `make_power` those of a prime power (lines 2422,
+2424 and 2425) and `make_modulus` those of a product (lines 2454, 2456 and 2457), the inverse of a
+prime read from its table, as from the table `inverses[pn]` of the build; natural numbers for the
+`long`s of these formulas; the inverses `dinv` empty, which the row offsets of the packing fill
+(stage F); no density `r` (stage I), and no field `init`, the rows of every kind being made by one
+function (`Ratpoints.Sieve.SieveEntry.row`); the entry a fresh value, for the space that
+`make_power` and `make_modulus` take from the buffer of the sieve entries (`se_next`), and the exit
+as `none`, for the prime that `sieving_info` returns. -/
 def makeModulus? (c : List Int) (d : Nat) (useCLong : Bool) (tables : Array Entry) (m : Nat) :
     Id (Option SieveEntry) := do
   let (fac, _) ← modulusFactors m
@@ -140,7 +148,12 @@ def makeModulus? (c : List Int) (d : Nat) (useCLong : Bool) (tables : Array Entr
     else
       let pw ← examinePower c d primeTable[pn]! e useCLong
       factors := factors.push (.power pw)
-  return some { p := m, factors := factors.toList, magic := magic m }
+  let rbainv ← match factors.toList with
+    | [.prime t] => pure t.inverses[mulMod rbaLength m (magic m)]!
+    | _ => modinv (rbaLength % m) m
+  return some
+    { p := m, factors := factors.toList, magic := magic m, bias := m * ((rowBias + m - 1) / m),
+      rbainv, dinv := #[] }
 
 open Sieve in
 /-- What `sieving_info` computes for the search of the polynomial with the coefficient list `c` of
@@ -413,13 +426,16 @@ passes on to the test of the leading zeros. -/
     Id.run (searchPoints c 4 30 ⟨[9], 0, 1, 1, 64, true, 0⟩ false) == []
 
 -- The reciprocals that `Ratpoints.sievingInfo` collects for `1 2 3 4 5 6 7` are those of the
--- moduli, in their order, each sieve entry holding the reciprocal of its modulus.
+-- moduli, in their order, each sieve entry holding the reciprocal of its modulus, the bias, a
+-- multiple of the modulus from `rowBias` to below `rowBias + p`, and the inverse of `rbaLength`,
+-- read from the table of a prime and computed by `modinv` for a product and a prime power.
 #guard
   match Id.run (sievingInfo [1, 2, 3, 4, 5, 6, 7] 6 true true ⟨[45, 7, 9, 67], 2, 2, 4, 64, true, 0⟩
       30) with
   | some (entries, magics, _, _) => entries.map (·.p) == [45, 7, 9, 67] &&
     magics.toList == [45, 7, 9, 67].map Sieve.magic &&
-    entries.all fun e ↦ e.magic == Sieve.magic e.p
+    entries.all fun e ↦ e.magic == Sieve.magic e.p && e.bias % e.p == 0 && rowBias ≤ e.bias &&
+      e.bias < rowBias + e.p && e.rbainv < e.p && e.rbainv * rbaLength % e.p == 1 && e.dinv.isEmpty
   | none => false
 
 -- Pieces of one, two and three bit arrays, at heights around the multiples of 64 and of

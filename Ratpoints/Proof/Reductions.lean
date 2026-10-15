@@ -25,6 +25,8 @@ value of either sign (`Ratpoints.Sieve.modMul`), and the helper `mod` of the C c
 
 ## Main statements
 
+* `Ratpoints.maxPrimeEven_le_two_pow_10`, `Ratpoints.maxPrimeEven_le_two_pow_32`: the moduli are
+  below `2 ^ 10`, and so below `2 ^ 32`.
 * `Ratpoints.mul_lt_two_pow_64_of_le_mulModLimit`: `u p < 2 ^ 64` for `u ≤ Ratpoints.mulModLimit`
   and `p ≤ 2 ^ 32`.
 * `Ratpoints.Sieve.toNat_mulHi`: `Ratpoints.Sieve.mulHi a b` is `⌊a b / 2 ^ 64⌋`.
@@ -40,13 +42,31 @@ value of either sign (`Ratpoints.Sieve.modMul`), and the helper `mod` of the C c
 ## Implementation notes
 
 The file uses Lean core and `Std` only, so that the contracts of the sieve, in files without
-Mathlib, can use it. The proofs use only the fact on the constants that `decide` checks next to
-them, that `Ratpoints.mulModLimit < 2 ^ 32`, never their values.
+Mathlib, can use it. The proofs use only the facts on the constants that `decide` checks next to
+them, that `Ratpoints.mulModLimit < 2 ^ 32` and that `Ratpoints.maxBitsInPrime ≤ 10`, never their
+values.
 -/
 
 @[expose] public section
 
 namespace Ratpoints
+
+/-! ### The moduli -/
+
+/-- The moduli below `Ratpoints.maxPrimeEven` are below `2 ^ 10`, since `maxBitsInPrime ≤ 10`
+(`Ratpoints.maxBitsInPrime_le_ten`), as the comment on Horner's rule in `examine_power` assumes
+(`find_points.c:2286-2287`). -/
+theorem maxPrimeEven_le_two_pow_10 : maxPrimeEven ≤ 2 ^ 10 :=
+  Nat.pow_le_pow_right Nat.two_pos maxBitsInPrime_le_ten
+
+/-- The moduli below `Ratpoints.maxPrimeEven` are below `2 ^ 32`
+(`Ratpoints.maxPrimeEven_le_two_pow_10`): so the helper `mod` of the C code keeps its values in the
+range of a `long` for them (`Ratpoints.fitsLong_sixteen_mul`, `Ratpoints.fitsLong_add_sixteen_mul`,
+for `b < 2 ^ 59`), where `examine_power` calls it (`find_points.c:2278`), and the reductions by a
+reciprocal of the values at most `Ratpoints.mulModLimit` modulo them are exact
+(`Ratpoints.mul_lt_two_pow_64_of_le_mulModLimit`). -/
+theorem maxPrimeEven_le_two_pow_32 : maxPrimeEven ≤ 2 ^ 32 :=
+  Nat.le_trans maxPrimeEven_le_two_pow_10 (by decide)
 
 /-- A value at most `Ratpoints.mulModLimit` times a modulus `p ≤ 2 ^ 32` is below `2 ^ 64`, where
 the reductions by a reciprocal are exact (`Ratpoints.Sieve.mulMod_magic`,

@@ -15,14 +15,16 @@ import Std.Tactic.Do
 # The contracts of the bit arrays of words
 
 The lemmas on the operations on the bit arrays of 64-bit words of the model, on its rows as words,
-on the check of a numerator and on the walks through the set bits of a word, and the contract of
-the first stage over a piece, as `@[spec]` theorems proved with `vcgen`, the program logic of Lean
-core, with loop invariants that are named definitions.
+on the rows under a unit, on the check of a numerator and on the walks through the set bits of a
+word, and the contract of the first stage over a piece, as `@[spec]` theorems proved with `vcgen`,
+the program logic of Lean core, with loop invariants that are named definitions.
 
 ## Main definitions
 
 * `Ratpoints.Sieve.classBit`: whether the class word lets a numerator `a` through, bit `a mod 64` of
   the word.
+* `Ratpoints.Sieve.Factor.HasInverses`: what the scaling of the rows by a unit needs of a factor of
+  a modulus: its modulus divides the modulus, and its table of inverses inverts its units.
 * `Ratpoints.Sieve.WalkWhileInvariant`, `Ratpoints.Sieve.WalkWordInvariant`: the invariants of a
   walk through the set bits of a word, lowest first, and of the array that it appends to.
 
@@ -39,6 +41,11 @@ core, with loop invariants that are named definitions.
   says whether the row admits the numerator `64 j + t`.
 * `Ratpoints.Sieve.SieveEntry.get_rows`, `Ratpoints.Sieve.SieveEntry.row_mod`: the thunk of a
   residue gives its row, and the row of `b` is the row of `b mod p`.
+* `Ratpoints.Sieve.Entry.admits_mod_of_dvd`, `Ratpoints.Sieve.Power.admits_mod_of_dvd`: the row of
+  a prime or a prime power reads the residues modulo a multiple of its modulus as those of the
+  numbers.
+* `Ratpoints.Sieve.SieveEntry.admits_mul`: the row of a sieve entry whose factors have their tables
+  of inverses is unchanged when the denominator and the numerator are scaled by a unit.
 * `Ratpoints.Sieve.andWords_append`: and-ing the rows of two lists of moduli one after the other is
   and-ing those of their concatenation.
 * `Ratpoints.Sieve.andRows_spec`: after the first stage over a piece with the rows of a denominator
@@ -57,8 +64,9 @@ core, with loop invariants that are named definitions.
 
 The file uses Lean core and `Std` only, as `Ratpoints.Proof.Sieve` does; the lemmas on words that
 are not about the model are in `Ratpoints.Proof.Bits`. The proofs use only that `Ratpoints.rbaPack`
-is positive, never its value. The contracts of the second and the third stage and of the check are
-in `Ratpoints.Proof.Stages`, those of the walk, of the scan, of one piece and of one denominator in
+is positive, never its value. The scaling by a unit needs an inverse of the unit and the tables of
+inverses, no primality. The contracts of the second and the third stage and of the check are in
+`Ratpoints.Proof.Stages`, those of the walk, of the scan, of one piece and of one denominator in
 `Ratpoints.Proof.Sift`. The invariant of a `while` loop over the set bits of a word,
 `Ratpoints.Sieve.WalkWhileInvariant`, serves the loops of the 2-adic information in
 `Ratpoints.Proof.TwoAdic` and of the word shape in `Ratpoints.Proof.Shapes` as well.
@@ -196,6 +204,99 @@ theorem SieveEntry.get_rows (e : SieveEntry) {r : Nat} (hr : r < e.p) : e.rows[r
 
 theorem SieveEntry.row_mod (e : SieveEntry) (b : Nat) : e.row (b % e.p) = e.row b := by
   simp [SieveEntry.row, SieveEntry.admits_mod]
+
+/-! ### The rows under a unit -/
+
+theorem Entry.admits_mod_of_dvd (e : Entry) {m : Nat} (h : e.p ∣ m) (b : Nat) (a : Int) :
+    e.admits (b % m) (a % m) = e.admits b a := by
+  simp only [Entry.admits, Nat.mod_mod_of_dvd b h,
+    Int.emod_emod_of_dvd a (Int.natCast_dvd_natCast.mpr h)]
+
+theorem Power.admits_mod_of_dvd (pw : Power) {m : Nat} (h : pw.m ∣ m) (b : Nat) (a : Int) :
+    pw.admits (b % m) (a % m) = pw.admits b a := by
+  simp only [Power.admits, Nat.mod_mod_of_dvd b h,
+    Int.emod_emod_of_dvd a (Int.natCast_dvd_natCast.mpr h)]
+
+/-- What the scaling of the rows by a unit needs of a factor of the modulus `P` of a sieve entry:
+the modulus of the factor divides `P`, and its table of inverses inverts the residues at which its
+row reads it, the nonzero residues of a prime and the units of a prime power `p ^ e`, whose prime
+divides it (`Ratpoints.Sieve.SieveEntry.admits_mul`). -/
+def Factor.HasInverses : Factor → Nat → Prop
+  | .prime t, P => t.p ∣ P ∧ ∀ r < t.p, r ≠ 0 → t.inverses[r]! * r % t.p = 1
+  | .power pw, P => pw.p ∣ pw.m ∧ pw.m ∣ P ∧
+      ∀ x < pw.m, x % pw.p ≠ 0 → pw.inv[x]! * x % pw.m = 1
+
+/-- The row of a prime `q > 0` whose table inverts the nonzero residues is unchanged when the
+denominator and the numerator are scaled by a unit `u` modulo `q`. -/
+theorem Entry.admits_mul {t : Entry} (hq : 0 < t.p)
+    (hinv : ∀ r < t.p, r ≠ 0 → t.inverses[r]! * r % t.p = 1) {u v : Nat}
+    (huv : v * u % t.p = 1 % t.p) (b : Nat) (a : Int) :
+    t.admits (u * b) (u * a) = t.admits b a := by
+  have hzb := Nat.mul_mod_eq_zero_iff_of_mul_mod huv b
+  have hx := Int.toNat_emod_lt a hq
+  have hzx := Nat.mul_mod_eq_zero_iff_of_mul_mod huv (a % (t.p : Int)).toNat
+  rw [Nat.mod_eq_of_lt hx] at hzx
+  simp only [Entry.admits, Int.toNat_mul_emod u a hq]
+  by_cases hb : b % t.p = 0
+  · simp only [hb, hzb.mpr hb, ↓reduceIte]
+    rw [Bool.eq_iff_iff, bne_iff_ne, bne_iff_ne, ne_eq, ne_eq, hzx]
+  · simp only [hb, mt hzb.mp hb, ↓reduceIte]
+    rw [Nat.mul_mod_eq_mul_mod_of_mul_mod_eq_one (by rw [Nat.mod_mod]) (by rw [Nat.mod_mod,
+      Nat.mul_mod_mod]) (hinv _ (Nat.mod_lt b hq) hb) (hinv _ (Nat.mod_lt _ hq) (mt hzb.mp hb))]
+
+/-- The row of a prime power `p ^ e` with `p ∣ p ^ e`, whose table inverts its units, is unchanged
+when the denominator and the numerator are scaled by a unit `u` modulo `p ^ e`. -/
+theorem Power.admits_mul {pw : Power} (hm : 0 < pw.m) (hpm : pw.p ∣ pw.m)
+    (hinv : ∀ x < pw.m, x % pw.p ≠ 0 → pw.inv[x]! * x % pw.m = 1) {u v : Nat}
+    (huv : v * u % pw.m = 1 % pw.m) (b : Nat) (a : Int) :
+    pw.admits (u * b) (u * a) = pw.admits b a := by
+  have hzb := Nat.mul_mod_mod_eq_zero_iff_of_mul_mod hpm huv b
+  have hx := Int.toNat_emod_lt a hm
+  have hzx := Nat.mul_mod_mod_eq_zero_iff_of_mul_mod hpm huv (a % (pw.m : Int)).toNat
+  rw [Nat.mod_eq_of_lt hx] at hzx
+  have hm1 : u * b % pw.m % pw.m = u * (b % pw.m) % pw.m := by rw [Nat.mod_mod, Nat.mul_mod_mod]
+  simp only [Power.admits, Int.toNat_mul_emod u a hm]
+  by_cases hb : b % pw.m % pw.p = 0
+  · simp only [hb, hzb.mpr hb, ne_eq, not_true_eq_false, ↓reduceIte]
+    by_cases ha : (a % (pw.m : Int)).toNat % pw.p = 0
+    · simp [ha, hzx.mpr ha]
+    · rw [Nat.mul_mod_eq_mul_mod_of_mul_mod_eq_one hm1 (Nat.mod_mod _ _) (hinv _ hx ha)
+        (hinv _ (Nat.mod_lt _ hm) (mt hzx.mp ha))]
+      simp only [bne_iff_ne.mpr ha, bne_iff_ne.mpr (mt hzx.mp ha), Bool.true_and]
+  · simp only [hb, mt hzb.mp hb, ne_eq, not_false_eq_true, ↓reduceIte]
+    rw [Nat.mul_mod_eq_mul_mod_of_mul_mod_eq_one (Nat.mod_mod _ _) hm1
+      (hinv _ (Nat.mod_lt b hm) hb) (hinv _ (Nat.mod_lt _ hm) (mt hzb.mp hb))]
+
+theorem Factor.HasInverses.admits_mod {f : Factor} {P : Nat} (hf : f.HasInverses P) (b : Nat)
+    (a : Int) : f.admits (b % P) (a % P) = f.admits b a := by
+  cases f with
+  | prime t => exact Entry.admits_mod_of_dvd t hf.1 b a
+  | power pw => exact Power.admits_mod_of_dvd pw hf.2.1 b a
+
+/-- The row of a factor of a modulus `P > 0` with its tables of inverses is unchanged when the
+denominator and the numerator are scaled by a unit `u` modulo `P`. -/
+theorem Factor.HasInverses.admits_mul {f : Factor} {P : Nat} (hf : f.HasInverses P) (hP : 0 < P)
+    {u v : Nat} (huv : v * u % P = 1) (b : Nat) (a : Int) :
+    f.admits (u * b) (u * a) = f.admits b a := by
+  cases f with
+  | prime t =>
+    exact Entry.admits_mul (Nat.pos_of_dvd_of_pos hf.1 hP) hf.2
+      (by rw [← Nat.mod_mod_of_dvd _ hf.1, huv]) b a
+  | power pw =>
+    exact Power.admits_mul (Nat.pos_of_dvd_of_pos hf.2.1 hP) hf.1 hf.2.2
+      (by rw [← Nat.mod_mod_of_dvd _ hf.2.1, huv]) b a
+
+/-- The row of a sieve entry whose factors have their tables of inverses is unchanged when the
+denominator and the numerator are scaled by a unit `u` modulo the modulus, with an inverse `v`. -/
+theorem SieveEntry.admits_mul {e : SieveEntry} (he : ∀ f ∈ e.factors, f.HasInverses e.p)
+    {u v : Nat} (huv : v * u % e.p = 1) (b : Nat) (a : Int) :
+    e.admits (u * b) (u * a) = e.admits b a := by
+  rcases Nat.eq_zero_or_pos e.p with h0 | hP
+  · rw [h0, Nat.mod_zero] at huv
+    rw [Nat.eq_one_of_mul_eq_one_left huv, Nat.one_mul, Int.natCast_one, Int.one_mul]
+  · rw [SieveEntry.admits, SieveEntry.admits, Bool.eq_iff_iff, List.all_eq_true, List.all_eq_true]
+    refine forall₂_congr fun f hf ↦ ?_
+    rw [(he f hf).admits_mod, (he f hf).admits_mul hP huv, (he f hf).admits_mod]
 
 /-! ### One piece -/
 

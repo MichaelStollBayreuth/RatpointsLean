@@ -597,9 +597,9 @@ Each component of the set-up differs from the C code in a stated way, recorded i
     helper \verb|mod| (\verb|Sieve.modLong|);
   \item of \verb|examine_prime| what the table, its last entry, the coefficients modulo $p$ that it
     hands back and the exit need: its entry of the prime and its codes $0$, $1$ and $2$ serve the
-    choice of the moduli (stage~I), its reciprocal \verb|magic| is set in the sieve entry of the
-    prime that the model makes (\verb|makeModulus?|), and its bias and inverse \verb|rbainv| serve
-    the packing (stage~F3); one loop over the residues, where the C code has one for each branch of
+    choice of the moduli (stage~I), and its reciprocal \verb|magic|, its bias and its inverse
+    \verb|rbainv| are set, with its formulas, in the sieve entry of the prime that the model makes
+    (\verb|makeModulus?|); one loop over the residues, where the C code has one for each branch of
     the schedule of Horner's rule; the table and the coefficients fresh arrays and the entry a fresh
     value, returned, for the buffers that the C code takes them from and the entry and the array of
     its caller where it stores them;
