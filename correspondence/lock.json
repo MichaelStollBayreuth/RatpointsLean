@@ -73,6 +73,42 @@
         "Ratpoints.Sieve.twoAdic"
       ]
     },
+    "find_points.c:1119-1130": {
+      "hash": "261590fcf2d9db067b39963fa2e094add9d92782e96e3bb88c5d8816615bf0b9",
+      "owners": [
+        "Ratpoints.Sieve.numPackings"
+      ]
+    },
+    "find_points.c:1142-1158": {
+      "hash": "fc3dfb1d0462c9d5d42870f893534ffd97b43ae30e59d9d3f952d038fb4f7796",
+      "owners": [
+        "Ratpoints.Sieve.classOffsets"
+      ]
+    },
+    "find_points.c:1159-1160": {
+      "hash": "51003c12e7431d832b6c3b321091592305a544c5e09e139bedbbe5505f8d1c5f",
+      "owners": [
+        "Ratpoints.Sieve.halve"
+      ]
+    },
+    "find_points.c:1161-1162": {
+      "hash": "531290f57cbd4dc640349830b0162664b9e84b465fbe1892d5554e80f4785ee1",
+      "owners": [
+        "Ratpoints.Sieve.classOffsets"
+      ]
+    },
+    "find_points.c:1164-1182": {
+      "hash": "5fae566e69b0ff4addaa0d1d6ddf913eab6d7d6177a42712c20641c13225a52b",
+      "owners": [
+        "Ratpoints.Sieve.classRows"
+      ]
+    },
+    "find_points.c:1183-1183": {
+      "hash": "d10b36aa74a59bcf4a88185837f658afaf3646eff2bb16c3928d0e9335e945d2",
+      "owners": [
+        "Ratpoints.Sieve.classOffsets"
+      ]
+    },
     "find_points.c:121-121": {
       "hash": "0ccbbb679fd4ba9d65221eda1db3d23321c1c8374220a10aa0fc146a724db015",
       "owners": [

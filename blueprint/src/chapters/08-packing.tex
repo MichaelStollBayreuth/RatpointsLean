@@ -232,30 +232,29 @@ order: a data refinement.
 
 \begin{definition}[The rows of offsets]\label{def:classOffsets}
   \uses{def:numClasses, def:SieveEntry, def:mulMod, def:packingConstants}
-  Proposed names: \lname{Ratpoints.Sieve.numPackings}, \lname{Ratpoints.Sieve.halve},
-  \lname{Ratpoints.Sieve.classRows}, \lname{Ratpoints.Sieve.classOffsets}. The number of the
-  packings, the distinct keys $2^k + a_0$ of the classes with a nonzero pattern, kept in two words
-  as the C code keeps them, and at least $1$ (\csource{find_points.c}{1119}{1130}); the halving step
-  modulo an odd $p$ (\csource{find_points.c}{1159}{1160}); the rows: for each class with a pattern,
-  the row of its key if it has one, else a new row whose offsets are
+  \lean{Ratpoints.Sieve.numPackings, Ratpoints.Sieve.halve, Ratpoints.Sieve.classRows, Ratpoints.Sieve.classOffsets}
+  \leanok
+  The number of the packings, the distinct keys $2^k + a_0$ of the classes with a nonzero pattern,
+  kept in two words as the C code keeps them, and at least $1$
+  (\csource{find_points.c}{1119}{1130}); the halving step modulo an odd $p$
+  (\csource{find_points.c}{1159}{1160}); the rows: for each class with a pattern, the row of its key
+  if it has one, else a new row whose offsets are
   $\mathrm{mulMod}(a_0 \cdot (2^k\,\mathrm{rbaLength})^{-1}) + \mathrm{bias}$ for each sieve entry,
   with the class getting the position of its row (\csource{find_points.c}{1164}{1182}); and
   \verb|class_offsets|: the largest stride of the classes with a pattern, the two halving chains of
   each sieve entry from $1$ and from $\mathrm{rbainv}$ up to it, the first stored as the field
   $\mathrm{dinv}$ of the entry, and the rows (\csource{find_points.c}{1142}{1158},
-  \csource{find_points.c}{1161}{1162}, \csource{find_points.c}{1183}{1183}). The sieve entries gain
-  the fields $\mathrm{bias}$, $\mathrm{rbainv}$ and $\mathrm{dinv}$
+  \csource{find_points.c}{1161}{1162}, \csource{find_points.c}{1183}{1183}). The bias,
+  $\mathrm{rbainv}$ and $\mathrm{dinv}$ are fields of the sieve entries
   (Definition~\ref{def:SieveEntry}).
 \end{definition}
 
 \begin{lemma}[The offsets]\label{lem:classOffsets}
   \uses{def:classOffsets, lem:mulMod, lem:numClasses, def:packingConstants, def:barrett}
-  Proposed names: \lname{Ratpoints.Sieve.IsFirstKey}, \lname{Ratpoints.Sieve.firstKeys},
-  \lname{Ratpoints.Sieve.numPackings\_spec}, \lname{Ratpoints.Sieve.classRows\_spec},
-  \lname{Ratpoints.Sieve.SieveEntry.Packable}, \lname{Ratpoints.Sieve.SieveEntry.PackedFor},
-  \lname{Ratpoints.Sieve.OffsetsFor}, \lname{Ratpoints.Sieve.classOffsets\_spec}. The number of the
-  packings is $\max(1, f)$ for the number $f$ of the classes with a pattern whose key no earlier
-  class with a pattern has (the classes being well formed, so that the keys are below
+  \lean{Ratpoints.Sieve.NumClass.key, Ratpoints.Sieve.NumClass.WF.k_eq_and_a0_eq, Ratpoints.Sieve.IsFirstKey, Ratpoints.Sieve.firstKeys, Ratpoints.Sieve.numPackings_spec, Ratpoints.Sieve.classOffset, Ratpoints.Sieve.classRows_spec, Ratpoints.Sieve.halveIter, Ratpoints.Sieve.halveChain, Ratpoints.Sieve.halveIter_mul_two_pow_mod, Ratpoints.Sieve.SieveEntry.Packable, Ratpoints.Sieve.SieveEntry.PackedFor, Ratpoints.Sieve.SieveEntry.PackedFor.congr, Ratpoints.Sieve.OffsetsFor, Ratpoints.Sieve.OffsetsFor.take, Ratpoints.Sieve.mul_mul_lt_two_pow_64, Ratpoints.Sieve.classOffsets_spec}
+  \leanok
+  The number of the packings is $\max(1, f)$ for the number $f$ of the classes with a pattern whose
+  key no earlier class with a pattern has (the classes being well formed, so that the keys are below
   $2^{\mathrm{numStrides}}$). For sieve entries of odd moduli $1 < p \le \mathrm{maxPrimeEven}$ with
   the reciprocal of $p$, $\mathrm{rbainv} < p$ with
   $\mathrm{rbainv} \cdot \mathrm{rbaLength} \equiv 1 \pmod p$ and the bias a multiple of $p$ in
@@ -269,6 +268,7 @@ order: a data refinement.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   The halving step multiplies by $2^{-1}$ modulo an odd $p$ and stays below $p$. The rows occupy the
   disjoint ranges $[r\, n_p, (r + 1)\, n_p)$, for the number $n_p$ of the sieve entries, one for
   each class with a pattern whose key no earlier class with a pattern has, and the keys $2^k + a_0$

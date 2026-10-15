@@ -380,7 +380,9 @@ def pointsAtInfinity (c : List Int) (d : Nat) (rev : Bool) : List (Int × Int ×
 /-! ### Examples -/
 
 -- The sieve entries of the examples have the bias, the inverse of `rbaLength` and the inverses of
--- the strides `0`, `0` and none, fields that only the packing of the numerators reads.
+-- the strides `0`, `0` and the empty array, which `[k]!` reads as `0`: fields that only the packing
+-- of the numerators reads, the row offsets (`Ratpoints.Sieve.classOffsets`) the first two and the
+-- residues of `fill_bp_list` (stage F) the third.
 
 -- The points of a reversed search: `ratpoints '-1 0 9' 10 -q` reverses the polynomial to `9 0 -1`
 -- and prints the points of the brute-force reference of `y ^ 2 = 9 z ^ 2 - x ^ 2`, in its order,

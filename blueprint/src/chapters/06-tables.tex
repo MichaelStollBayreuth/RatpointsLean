@@ -330,7 +330,8 @@ which $\mathrm{maxPrimeEven} \le 2^{32}$ gives.
   product, the reciprocal of $m$ (Definition~\ref{def:mulMod}), and the fields that the packing of
   the numerators reads (Chapter~\ref{chap:packing}): the bias, the least multiple of $m$ from
   $\mathrm{rowBias}$ on, the inverse $\mathrm{rbainv}$ of $\mathrm{rbaLength}$ modulo $m$, and the
-  inverses $\mathrm{dinv}$ of the strides $2^k$ modulo $m$ (\csource{rp-private.h}{497}{498},
+  inverses $\mathrm{dinv}$ of the strides $2^k$ modulo $m$ up to the largest stride in use, which
+  the rows of offsets fill (Definition~\ref{def:classOffsets}; \csource{rp-private.h}{497}{498},
   \csource{rp-private.h}{520}{520}, \csource{rp-private.h}{542}{555}). Its row of $b$ admits $a$
   when the row of every factor admits $a$, each factor reading $b$ and $a$ modulo its own modulus,
   which divides $m$ (\csource{init.c}{399}{414}, \csource{init.c}{419}{429},
@@ -374,16 +375,16 @@ which $\mathrm{maxPrimeEven} \le 2^{32}$ gives.
   $\mathrm{numPrimes}$ primes of the table, as the well-formedness of the parameters asks of their
   moduli: if the entry of $m$ is made, it is an entry of $m$ whose row of $b$ admits $a$ for every
   $\gcd(a, b) = 1$ with $y^2 = F(a, b)$, whose factors have moduli that divide $m$ and tables of
-  inverses that invert their units (Lemma~\ref{lem:admits_mul}), and which is \emph{packable}: $m$
-  is odd, the entry holds the reciprocal of $m$, $\mathrm{rbainv} < m$ with
-  $\mathrm{rbainv} \cdot \mathrm{rbaLength} \equiv 1 \pmod m$, and the bias is a multiple of $m$ in
-  $[\mathrm{rowBias}, \mathrm{rowBias} + m)$; and for one of the first $\mathrm{numPrimes}$ primes
-  of the table its only factor is that prime with the table of the reference; if it is not made, the
-  curve has no points.
+  inverses that invert their units (Lemma~\ref{lem:admits_mul}), and which is \emph{packable}
+  (Lemma~\ref{lem:classOffsets}): $m$ is odd, the entry holds the reciprocal of $m$,
+  $\mathrm{rbainv} < m$ with $\mathrm{rbainv} \cdot \mathrm{rbaLength} \equiv 1 \pmod m$, and the
+  bias is a multiple of $m$ in $[\mathrm{rowBias}, \mathrm{rowBias} + m)$; and for one of the first
+  $\mathrm{numPrimes}$ primes of the table its only factor is that prime with the table of the
+  reference; if it is not made, the curve has no points.
 \end{lemma}
 
 \begin{proof}
-  \uses{lem:stage3}
+  \uses{lem:stage3, lem:classOffsets}
   \leanok
   Each factor's modulus divides $m$, so $b \bmod m$ and $a \bmod m$ reduce to the residues of the
   factor (Lemma~\ref{lem:admits_mul}); each factor admits the point by
@@ -448,7 +449,7 @@ parameters of the command line examine the first $q$ primes and take primes as m
 
 \begin{lemma}[What \texttt{sieving\_info} computes is sound]\label{lem:sievingInfo}
   \uses{def:sievingInfo, lem:examinePrimes, lem:sieveEntry_admits, def:forbidden, def:mulMod,
-    def:Params, def:stage3, lem:stage3}
+    def:Params, def:stage3, lem:stage3, lem:classOffsets}
   \lean{Ratpoints.SievingInfoInvariant, Ratpoints.sievingInfo_spec}
   \leanok
   For well-formed parameters and either value of the switch of the checked loop: if

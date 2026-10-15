@@ -92,7 +92,7 @@ at least `Ratpoints.rowBias`, and the inverse of `Ratpoints.rbaLength` modulo `m
 entry of the table of inverses of its table at the remainder of `Ratpoints.rbaLength` by the
 multiplication with the reciprocal (`Ratpoints.Sieve.mulMod`), and otherwise the inverse by the
 extended Euclidean algorithm (`Ratpoints.Sieve.modinv`); its inverses of the strides are made with
-the row offsets of the packing of the numerators (stage F).
+the row offsets of the packing of the numerators (`Ratpoints.Sieve.classOffsets`).
 
 C: `find_points.c:2350-2354`, `find_points.c:2358-2359`, `find_points.c:2387-2395`,
 `find_points.c:2414-2429`, `find_points.c:2434-2475`, `find_points.c:2546`, `find_points.c:2548`,
@@ -132,10 +132,10 @@ a prime with its table (lines 1808, 1815 and 1816), `make_power` those of a prim
 2424 and 2425) and `make_modulus` those of a product (lines 2454, 2456 and 2457), the inverse of a
 prime read from its table, as from the table `inverses[pn]` of the build; natural numbers for the
 `long`s of these formulas; the inverses `dinv` empty, which the row offsets of the packing fill
-(stage F); no density `r` (stage I), and no field `init`, the rows of every kind being made by one
-function (`Ratpoints.Sieve.SieveEntry.row`); the entry a fresh value, for the space that
-`make_power` and `make_modulus` take from the buffer of the sieve entries (`se_next`), and the exit
-as `none`, for the prime that `sieving_info` returns. -/
+(`Ratpoints.Sieve.classOffsets`); no density `r` (stage I), and no field `init`, the rows of every
+kind being made by one function (`Ratpoints.Sieve.SieveEntry.row`); the entry a fresh value, for the
+space that `make_power` and `make_modulus` take from the buffer of the sieve entries (`se_next`),
+and the exit as `none`, for the prime that `sieving_info` returns. -/
 def makeModulus? (c : List Int) (d : Nat) (useCLong : Bool) (tables : Array Entry) (m : Nat) :
     Id (Option SieveEntry) := do
   let (fac, _) ← modulusFactors m
@@ -338,11 +338,12 @@ the flag of the reversal, for polynomials to which ratpoints reverses others, an
 points modulo `3`, `5` and `7`, where it takes an exit, and without points modulo 64, where it takes
 the 2-adic exit; composite moduli, prime powers and products of them, in any order and with primes
 beyond those examined; the sieve entries of each kind, and the exits of `Ratpoints.sievingInfo`; the
-tables of inverses and squares (`Ratpoints.Sieve.inversesMod`, `Ratpoints.Sieve.squaresMod`) of the
-`Ratpoints.numPrimes` primes among which the moduli are chosen; and the refusals in the order of the
-program, the coefficients before the height bound and the height bound before the leading zeros, for
-the height bound `0` and for `2 ^ 63`, the least height that is not a `long`, while `2 ^ 63 - 1`
-passes on to the test of the leading zeros. -/
+row offsets of the packing and the inverses of the strides against their rule
+(`Ratpoints.Sieve.classOffsets`); the tables of inverses and squares (`Ratpoints.Sieve.inversesMod`,
+`Ratpoints.Sieve.squaresMod`) of the `Ratpoints.numPrimes` primes among which the moduli are chosen;
+and the refusals in the order of the program, the coefficients before the height bound and the
+height bound before the leading zeros, for the height bound `0` and for `2 ^ 63`, the least height
+that is not a `long`, while `2 ^ 63 - 1` passes on to the test of the leading zeros. -/
 
 #guard (findPoints [-2, 0, 0, 1] 130 defaultParams).toOption ==
   some [(1, 0, 0), (3, 5, 1), (3, -5, 1), (129, 3830, 100), (129, -3830, 100)]
@@ -440,6 +441,35 @@ passes on to the test of the leading zeros. -/
     magics.toList == [45, 7, 9, 67].map Sieve.magic &&
     entries.all fun e ↦ e.magic == Sieve.magic e.p && e.bias % e.p == 0 && rowBias ≤ e.bias &&
       e.bias < rowBias + e.p && e.rbainv < e.p && e.rbainv * rbaLength % e.p == 1 && e.dinv.isEmpty
+  | none => false
+
+-- The row offsets and the inverses of the strides that `class_offsets` makes, against their rule,
+-- for the classes with a pattern of four curves and moduli of every kind up to 255: the offset of a
+-- class of the stride `2 ^ k` and the residue `a₀` for the modulus `p` times `2 ^ k rbaLength` is
+-- `a₀` modulo `p`, between `rowBias` and `rowBias + 2 p`; `dinv[k] 2 ^ k ≡ 1 (mod p)` with
+-- `dinv[k] < p`, and `rbainv rbaLength ≡ 1`; the classes of one packing share a row, and there are
+-- as many rows as packings.
+#guard
+  ([([-2, 0, 0, 1], 3), ([1, 2, 3, 4, 5, 6, 7], 6), ([1, 0, 126, 0, 441], 4),
+      ([6, -3, 5, 2, 75], 4)] : List (List Int × Nat)).all fun (c, d) ↦
+  match Id.run (sievingInfo c d true false
+      ⟨[3, 7, 5, 11, 9, 15, 25, 45, 77, 121, 243, 255, 251], 0, 2, 13, 64, true, 0⟩ 30) with
+  | some (entries, _, _, _) =>
+    let (cls, _) := Id.run (Sieve.numClasses (Id.run (Sieve.twoAdic c d)))
+    let np := Id.run (Sieve.numPackings cls)
+    let (cls', entries', offsets) :=
+      Id.run (Sieve.classOffsets cls entries (Array.replicate (np * entries.length) 0))
+    let rows := ((List.range 64).filterMap fun b ↦ cls'[b]!.offset).eraseDups
+    rows.length == np && entries'.map (·.p) == entries.map (·.p) &&
+      entries.all (fun e ↦ e.rbainv * rbaLength % e.p == 1) &&
+      (List.range 64).all fun b ↦ let cl := cls'[b]!
+        cl.bits == 0 && cl.offset == none || (List.range entries.length).all fun n ↦
+          let e := entries'[n]!
+          let o := offsets[cl.offset.getD 0 + n]!
+          o * (2 ^ cl.k * rbaLength) % e.p == cl.a0 % e.p && rowBias ≤ o && o < rowBias + 2 * e.p &&
+            e.dinv[cl.k]! * 2 ^ cl.k % e.p == 1 && e.dinv[cl.k]! < e.p &&
+            (List.range 64).all fun b' ↦ cls'[b']!.bits == 0 || cls'[b']!.k != cl.k ||
+              cls'[b']!.a0 != cl.a0 || cls'[b']!.offset == cl.offset
   | none => false
 
 -- Pieces of one, two and three bit arrays, at heights around the multiples of 64 and of

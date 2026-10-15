@@ -508,10 +508,10 @@ or more for a product; with the reciprocal of `p` (`Ratpoints.Sieve.magic`), whi
 of the sieve copies for its primes (`Ratpoints.Sieve.checkOf`) and with which the first two stages
 reduce their row indices with the packing (stage F); and with what the packing of the numerators
 needs (stage F): the bias, the least multiple of `p` that is at least `Ratpoints.rowBias`, which the
-row offsets carry, the inverse of `Ratpoints.rbaLength` modulo `p`, from which the row offsets are
-computed, and the inverses of the strides `2 ^ k` modulo `p` for the strides in use, with which
-`fill_bp_list` divides the denominator by the stride. Its row for a denominator is the and of the
-rows of its factors (`Ratpoints.Sieve.SieveEntry.admits`).
+row offsets carry (`Ratpoints.Sieve.classOffsets`), the inverse of `Ratpoints.rbaLength` modulo `p`,
+from which the row offsets are computed, and the inverses of the strides `2 ^ k` modulo `p` for the
+strides in use, with which `fill_bp_list` divides the denominator by the stride. Its row for a
+denominator is the and of the rows of its factors (`Ratpoints.Sieve.SieveEntry.admits`).
 
 C: `rp-private.h:497-498`, `rp-private.h:520`, `rp-private.h:542-555`
 
@@ -524,9 +524,10 @@ field `sieve`, are `Ratpoints.Sieve.SieveEntry.rows`, made when first needed and
 by one function for every kind (`Ratpoints.Sieve.SieveEntry.row`), for the function `init` of the
 kind, of the type `ratpoints_init_fun`; a natural number for the `unsigned long` reciprocal `magic`,
 and natural numbers for the `long`s `bias` and `rbainv`; the inverses `dinv` an array, for the array
-of `RP_NUM_STRIDES` `long`s, which the row offsets of the packing fill (stage F) with an entry for
-each stride up to the largest in use, where the entries of the C code beyond it stay unset and
-unread; no density `r`, which serves the choice of the moduli (stage I). -/
+of `RP_NUM_STRIDES` `long`s, which the row offsets of the packing fill
+(`Ratpoints.Sieve.classOffsets`) with an entry for each stride up to the largest in use, where the
+entries of the C code beyond it stay unset and unread; no density `r`, which serves the choice of
+the moduli (stage I). -/
 structure SieveEntry where
   /-- The modulus. -/
   p : Nat
@@ -540,7 +541,7 @@ structure SieveEntry where
   /-- The inverse of `Ratpoints.rbaLength` modulo the modulus. -/
   rbainv : Nat
   /-- Entry `k` the inverse of `2 ^ k` modulo the modulus, for the strides `2 ^ k` in use; empty
-  until the row offsets of the packing fill it (stage F). -/
+  until the row offsets of the packing fill it (`Ratpoints.Sieve.classOffsets`). -/
   dinv : Array Nat
   deriving Inhabited
 
@@ -670,7 +671,9 @@ def survives (entries : List SieveEntry) (b : Nat) (a : Int) : Bool := entries.a
 -- of its factors: for `45 = 9 · 5` and `6 -3 5 2 75`, the sieve entry admits `a` for `b` exactly
 -- when both factors do, and the sieve entry of a prime with its table as its one factor admits what
 -- the table admits. The bias, the inverse of `rbaLength` and the inverses of the strides of these
--- sieve entries, `0`, `0` and none, are fields that only the packing of the numerators reads.
+-- sieve entries, `0`, `0` and the empty array, which `[k]!` reads as `0`, are fields that only the
+-- packing of the numerators reads, the row offsets (`Ratpoints.Sieve.classOffsets`) the first two
+-- and the residues of `fill_bp_list` (stage F) the third.
 #guard
   let pw := Id.run (examinePower [-2, 0, 0, 1] 3 5 2 true)
   pw.admits 100 129 && !pw.admits 100 130 && (List.range 25).all fun a ↦

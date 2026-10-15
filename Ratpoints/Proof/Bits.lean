@@ -45,7 +45,9 @@ unit: the residues under a unit `u` with an inverse modulo `q`, zero or not, mod
 too, the residue `x i mod q` read with an inverse `i` of `r`, and the residue of `u a` for an
 integer `a`. For the classes of the packing: the residues and the places in a packing of the stride
 `2 ^ k` dividing 64, a residue `a + m j` modulo 64, and the bits of a word and-ed with the
-complement of a mask and of a word or-ed with itself shifted.
+complement of a mask and of a word or-ed with itself shifted. For the rows of offsets: the entries
+of a vector after `Vector.set`, of an array of `none`s and of an array whose list is a map, the bit
+`(x >>> j) &&& 1` of a word, and the bits of two words of 128 bits after a bit is set.
 
 ## Main statements
 
@@ -167,6 +169,10 @@ theorem getElem!_ofFn {α : Type u} [Inhabited α] {n : Nat} {f : Fin n → α} 
     (ofFn f)[i]! = f ⟨i, h⟩ := by
   rw [getElem!_pos _ i h, getElem_ofFn]
 
+theorem getElem!_set {α : Type u} [Inhabited α] {n : Nat} {xs : Vector α n} {i j : Nat}
+    {x : α} (hi : i < n) (hj : j < n) : (xs.set i x hi)[j]! = if i = j then x else xs[j]! := by
+  rw [getElem!_pos _ j hj, getElem!_pos xs j hj, Vector.getElem_set]
+
 end Vector
 
 /-! ### Arrays -/
@@ -256,6 +262,19 @@ theorem mem_of_forIn_toList_eq_append_cons {α : Type u} {xs : Array α} {pref s
     {cur : α} (hl : ForIn.toList xs = pref ++ cur :: suff) : cur ∈ xs := by
   rw [Std.Internal.ForIn.toList_array] at hl
   exact Array.mem_toList_iff.mp (hl ▸ by simp)
+
+theorem getElem!_replicate_none {α : Type u} (n K : Nat) :
+    (Array.replicate n (none : Option α))[K]! = none := by
+  by_cases h : K < n
+  · simp [h]
+  · exact getElem!_neg _ K (by simpa using h)
+
+theorem getElem!_of_toList_eq_map {α : Type u} {β : Type v} [Inhabited β] {xs : Array β}
+    {l : List α} {f : α → β} (h : xs.toList = l.map f) {n : Nat} (hn : n < l.length) :
+    xs[n]! = f l[n] := by
+  have hs : n < xs.size := by rw [← Array.length_toList, h, List.length_map]; exact hn
+  rw [getElem!_pos xs n hs, ← Array.getElem_toList]
+  simp only [h, List.getElem_map]
 
 end Array
 
@@ -960,6 +979,28 @@ theorem getLsbD_or_shiftLeft (x : UInt64) {s : Nat} (hs : s < 64) (t : Nat) :
   rw [UInt64.toBitVec_or, BitVec.getLsbD_or, UInt64.toBitVec_shiftLeft, BitVec.shiftLeft_eq',
     BitVec.getLsbD_shiftLeft, BitVec.toNat_umod, hs']
   grind
+
+theorem shiftRight_and_one_beq_zero (x : UInt64) {j : Nat} (hj : j < 64) :
+    ((x >>> UInt64.ofNat j) &&& 1 == 0) = !x.toBitVec.getLsbD j := by
+  have : (UInt64.ofNat j).toBitVec.toNat % (64 : BitVec 64).toNat = j := by
+    simp [UInt64.toBitVec_ofNat']
+    lia
+  rw [Bool.eq_iff_iff, beq_iff_eq, UInt64.and_one_eq_zero_iff, UInt64.toBitVec_shiftRight,
+    BitVec.ushiftRight_eq', BitVec.getLsbD_ushiftRight, BitVec.toNat_umod, this]
+  simp
+
+/-- Setting bit `K₀` of the 128 bits of the two words `seen` sets the bit `K < 128` exactly when
+`K = K₀`, and keeps the others. -/
+theorem getLsbD_getElem!_set!_or_one_shiftLeft {seen : Array UInt64} (hs : seen.size = 2)
+    {K K0 : Nat} (hK : K < 128) :
+    (seen.set! (K0 / 64)
+        (seen[K0 / 64]! ||| 1 <<< UInt64.ofNat (K0 % 64)))[K / 64]!.toBitVec.getLsbD (K % 64) =
+      (seen[K / 64]!.toBitVec.getLsbD (K % 64) || decide (K = K0)) := by
+  by_cases h : K0 / 64 = K / 64
+  · rw [h, Array.getElem!_set!_self _ _ _ (by lia), getLsbD_or_one_shiftLeft _ (by lia)]
+    grind
+  · rw [Array.getElem!_set!_ne _ _ _ _ h]
+    grind
 
 end UInt64
 

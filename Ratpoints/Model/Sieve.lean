@@ -279,8 +279,8 @@ those, bit `t` of the bit array with the word number `0` standing for the numera
 word, from which the first stage starts in the packing, and `0` for a class without admissible
 numerators, which the run never sifts; `offset` is the position in the array of the row offsets of
 the run at which the offsets of the row of the packing `(k, a₀)` begin, one for each modulus, none
-until the row offsets of the packings are made (stage F). The classes of a run are made by
-`Ratpoints.Sieve.numClasses`.
+until the row offsets of the packings are made (`Ratpoints.Sieve.classOffsets`). The classes of a
+run are made by `Ratpoints.Sieve.numClasses`.
 
 C: `rp-private.h:494-495`
 
@@ -643,7 +643,9 @@ def sift (c : List Int) (d H A b : Nat) (rev : Bool) (sp1 : Nat)
 /-! ### Examples -/
 
 -- The sieve entries of the examples have the bias, the inverse of `rbaLength` and the inverses of
--- the strides `0`, `0` and none, fields that only the packing of the numerators reads.
+-- the strides `0`, `0` and the empty array, which `[k]!` reads as `0`: fields that only the packing
+-- of the numerators reads, the row offsets (`Ratpoints.Sieve.classOffsets`) the first two and the
+-- residues of `fill_bp_list` (stage F) the third.
 
 -- Curves without points modulo 3, 5 and 7, on which ratpoints takes the exit at that prime
 -- (`ratpoints '20 6 -14 12 -10' 30 -v` says `no points mod p = 3`, and so do

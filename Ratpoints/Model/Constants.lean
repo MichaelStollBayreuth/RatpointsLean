@@ -179,12 +179,12 @@ remainders. -/
 def rbaLength : Nat := 64 * rbaPack
 
 /-- The logarithm of the number of bits of a bit array of the sieve, `RBA_SHIFT`: 8 in the default
-build, whose bit arrays have `2 ^ 8 = 256` bits, and 9, 7 and 6 in the builds with 512-bit,
-128-bit and 64-bit bit arrays, so that `Ratpoints.rbaLength = 2 ^ rbaShift`
+build, whose bit arrays have `2 ^ 8 = 256` bits, and 9, 7 and 6 in the builds with 512-bit, 128-bit
+and 64-bit bit arrays, so that `Ratpoints.rbaLength = 2 ^ rbaShift`
 (`Ratpoints.rbaLength_eq_two_pow_rbaShift`). That `Ratpoints.rbaLength` is a power of 2 makes it a
 unit modulo every odd modulus, which the row offsets of the packing of the numerators need
-(stage F), and keeps the word numbers of the bit arrays and the numerators they stand for within
-the range of a `long`; the proofs use only that and `rbaShift < 32`
+(`Ratpoints.Sieve.classOffsets`), and keeps the word numbers of the bit arrays and the numerators
+they stand for within the range of a `long`; the proofs use only that and `rbaShift < 32`
 (`Ratpoints.rbaShift_lt_thirty_two`).
 
 C: `rp-private.h:126`, `rp-private.h:173`, `rp-private.h:232`, `rp-private.h:258`,
