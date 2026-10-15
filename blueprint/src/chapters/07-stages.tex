@@ -101,6 +101,7 @@ the unstaged sieve with its check: the same numerators reach the exact check, in
 \section{The reductions by a multiplication}\label{sec:mulMod}
 
 \begin{definition}[The reciprocal and the reductions]\label{def:mulMod}
+  \uses{def:mulHi}
   \lean{Ratpoints.stage3Limit, Ratpoints.stage3Limit_le_two_pow_32, Ratpoints.Sieve.magic, Ratpoints.Sieve.mulMod, Ratpoints.Sieve.mulDiv}
   \leanok
   The bound $\mathrm{stage3Limit} = 2^{32}$ below which the third stage reduces by a multiplication
@@ -115,24 +116,30 @@ the unstaged sieve with its check: the same numerators reach the exact check, in
   \csource{rp-private.h}{413}{414}, \csource{rp-private.h}{417}{417}); and the quotient, the high
   $64$ bits of $u m$ (\csource{rp-private.h}{409}{410}, \csource{rp-private.h}{415}{416}): the
   forms with a 128-bit product, which the default build and the build of the model compile, where
-  the others divide.
+  the others divide. Both compute on $64$-bit words, the arguments cast to words as the macros cast
+  them to \verb|unsigned long|, with the C's $64$-bit product of $m$ and $u$ and the high half of
+  the $128$-bit product by Definition~\ref{def:mulHi}.
 \end{definition}
 
 \begin{lemma}[The reductions are exact]\label{lem:mulMod}
-  \uses{def:mulMod}
-  \lean{Ratpoints.Sieve.magic_mul_eq, Ratpoints.Sieve.mulMod_magic, Ratpoints.Sieve.mulDiv_magic, Ratpoints.Sieve.sub_mulDiv_magic_mul}
+  \uses{def:mulMod, lem:mulHi}
+  \lean{Ratpoints.Sieve.magic_mul_eq, Ratpoints.Sieve.magic_lt_two_pow_64, Ratpoints.Sieve.mulMod_magic, Ratpoints.Sieve.mulDiv_magic, Ratpoints.Sieve.sub_mulDiv_magic_mul}
   \leanok
-  For $0 < p$ and $u p < 2^{64}$, the reduction with the reciprocal of $p$ gives $u \bmod p$, and
-  the quotient gives $\lfloor u / p \rfloor$, so that $u$ less $p$ times the quotient is
-  $u \bmod p$.
+  For $0 < p$ and $u p < 2^{64}$, the reduction with the reciprocal of $p$ gives $u \bmod p$; for
+  $1 < p$, whose reciprocal is below $2^{64}$, the quotient gives $\lfloor u / p \rfloor$, so that
+  $u$ less $p$ times the quotient is $u \bmod p$. The reciprocal $2^{64}$ of $1$ wraps to $0$ on a
+  word, as in the C code.
 \end{lemma}
 
 \begin{proof}
   \leanok
-  Write $\mathrm{magic}(p)\, p = 2^{64} + \delta$ with $0 \le \delta < p$ and $u = k p + s$ with
-  $s < p$. Then $\mathrm{magic}(p)\, u = k\, 2^{64} + (s\, 2^{64} + u \delta) / p$, whose second
-  part is an integer below $2^{64}$, since $s < p$ and $u \delta \le u p < 2^{64}$; so the low half
-  is $(s\, 2^{64} + u \delta)/p$ and the high half $k$. The low half times $p$ is
+  By Lemma~\ref{lem:mulHi} the words compute the macros on natural numbers, with $m u$ reduced
+  modulo $2^{64}$, in which $p$ and $u$ are their own remainders modulo $2^{64}$, since
+  $p, u \le u p < 2^{64}$ for $u \ne 0$, and so is $m$ for $1 < p$. Write
+  $\mathrm{magic}(p)\, p = 2^{64} + \delta$ with $0 \le \delta < p$ and $u = k p + s$ with $s < p$.
+  Then $\mathrm{magic}(p)\, u = k\, 2^{64} + (s\, 2^{64} + u \delta) / p$, whose second part is an
+  integer below $2^{64}$, since $s < p$ and $u \delta \le u p < 2^{64}$; so the low half is
+  $(s\, 2^{64} + u \delta)/p$ and the high half $k$. The low half times $p$ is
   $s\, 2^{64} + u \delta$, whose high half is $s$.
 \end{proof}
 
@@ -500,9 +507,11 @@ Each component of this chapter differs from the C code in a stated way, recorded
 \verb|Deviation:| paragraph:
 \begin{itemize}
   \item natural numbers and integers for the \verb|long|s and \verb|unsigned long|s outside the test
-    for common factors, as in all the components of the sieve: the reductions compute the exact
-    values of the 128-bit products, and the bounds that keep the values of the third stage in range
-    are lemmas (Lemma~\ref{lem:stage3});
+    for common factors, as in all the components of the sieve, with the bounds that keep the values
+    of the third stage in range as lemmas (Lemma~\ref{lem:stage3}); the reductions cast them to
+    $64$-bit words, as the macros cast them to \verb|unsigned long|, and take the high half of the
+    128-bit product from the products of the 32-bit halves (Definition~\ref{def:mulHi}), for the
+    product of type \verb|__uint128_t| that gcc provides and Lean core does not;
   \item the test for common factors on the 64-bit words of core Lean, in two's complement, for the
     representation of the negative \verb|long|s on which the and and the exclusive or of its step
     act, and with the arithmetic shift for the shift of a negative \verb|long|, both of which the C
@@ -518,12 +527,12 @@ Each component of this chapter differs from the C code in a stated way, recorded
   \item the height bound a natural number, refused from $2^{63}$ on with error~4, as the program
     refuses such a height when it reads it, where the library cannot be given one, its height being
     a \verb|long|;
-  \item the reciprocal a natural number, $\lfloor (2^{64} - 1) / p \rfloor + 1$, which does not
-    wrap at $p = 1$, a modulus that never occurs; the reductions in the form with the 128-bit
-    product, which the builds of the model compile, for the divisions of the other builds, which
-    give the same results where the multiplication is exact; the comparison
-    $2 p H < \mathrm{stage3Limit}$ of natural numbers, for the comparison of \verb|double|s, which
-    has the same outcome for every $H < 2^{63}$;
+  \item the reciprocal a natural number, $\lfloor (2^{64} - 1) / p \rfloor + 1$, which does not wrap
+    at $p = 1$, a modulus that never occurs, where the reductions, which cast it to a word, read
+    $0$, as the C code does; the reductions in the form with the 128-bit product, which the builds
+    of the model compile, for the divisions of the other builds, which give the same results where
+    the multiplication is exact; the comparison $2 p H < \mathrm{stage3Limit}$ of natural numbers,
+    for the comparison of \verb|double|s, which has the same outcome for every $H < 2^{63}$;
   \item the table of the third stage and the products of the check as thunks made once per
     denominator, for the arrays of the sieving thread and the flags \verb|stage3_filled| and
     \verb|compute_bc|; the table a list, made from the entries of the third stage and their
@@ -590,36 +599,39 @@ $\mathrm{sp2Extra}$ are in \verb|Ratpoints/Model/Constants.lean|, each citing it
 two facts decided there that the proofs of the sub-stage use, never the values:
 $\mathrm{stage3Limit} \le 2^{32}$ and $\mathrm{mulModLimit} < 2^{32}$
 (\verb|Ratpoints.stage3Limit_le_two_pow_32|, \verb|Ratpoints.mulModLimit_lt_two_pow_32|). The
-reciprocal and the reductions are in \verb|Ratpoints/Model/Tables.lean|, with the field of the
-reciprocal of the sieve entries; the test for common factors, the third stage, the test of a
-candidate and the exact check, the second stage in both arms, a bit array through the second stage
-and the extraction, and the walk, the scan, one piece and one denominator that run the stages in
-\verb|Ratpoints/Model/Sieve.lean|, in the namespace \verb|Ratpoints.Sieve|, next to the check of a
-numerator, their reference; the run with the cut points and the Jacobi test with the reciprocals of
-its tables in \verb|Ratpoints/Model/Denominators.lean|; the parameters of the command line in
+reciprocal and the reductions, on $64$-bit words since stage~F3, are in
+\verb|Ratpoints/Model/Tables.lean|, with the field of the reciprocal of the sieve entries; the test
+for common factors, the third stage, the test of a candidate and the exact check in
+\verb|Ratpoints/Model/Candidate.lean| since stage~F3, next to the check of a numerator, their
+reference; the second stage in both arms, a bit array through the second stage and the extraction,
+and the walk, the scan, one piece and one denominator that run the stages in
+\verb|Ratpoints/Model/Sieve.lean|, in the namespace \verb|Ratpoints.Sieve|; the run with the cut
+points and the Jacobi test with the reciprocals of its tables in
+\verb|Ratpoints/Model/Denominators.lean|; the parameters of the command line in
 \verb|Ratpoints/Model/Params.lean|; the refusal of the heights from $2^{63}$ on, the reciprocal of
 the sieve entry of a modulus, the reciprocals that \verb|sieving_info| returns and the search with
 the cut points of its parameters in \verb|Ratpoints/Model/FindPoints.lean|; and the description of
 error~4 in \verb|Ratpoints/Model/Setup.lean|.
 
-The contracts of the reductions, of the test for common factors, of the third stage with the test of
-a candidate, with the points that the extraction gives for a numerator, and of the second stage are
-in \verb|Ratpoints/Proof/Stages.lean|, and the contracts from the walk on (the walk, a bit array
+The contracts of the test for common factors, of the third stage with the test of a candidate, with
+the points that the extraction gives for a numerator, and of the second stage are in
+\verb|Ratpoints/Proof/Stages.lean|, and the contracts from the walk on (the walk, a bit array
 through the second stage and the extraction, the scan, one piece and one denominator, with the lemma
 that the words compute the Booleans) in \verb|Ratpoints/Proof/Sift.lean|, which builds on it. Both
 files are new with this sub-stage and use Lean core and \verb|Std| only, like
 \verb|Ratpoints/Proof/Words.lean|, which keeps the contract of the first stage and holds the lemmas
-on the words of the rows that both stages use. The lemmas in core's namespaces that the sub-stage
-adds are in \verb|Ratpoints/Proof/Bits.lean|: the facts on the signed 64-bit words (the arithmetic
-shift, the mask $x \gg 63$ with the smaller and the distance of two words that it gives without a
-branch, the odd part of a positive word by the lowest set bit, the absolute value, and the words of
-an integer and of a natural number below $2^{63}$), the steps of the binary algorithm and of the
-reductions by a reciprocal on natural numbers, two facts on lists and vectors that the scan and the
-sieve of one denominator use (\verb|List.flatMap_filter|, \verb|Vector.getElem!_ofFn|), and the
-integer facts of the third stage (C's remainder made non-negative, the residue of $(a \bmod p)\, b$
-and its shift by $p H$, the bound $|a b| + H \le p H$, and a divisor $p > 1$ of $b$ that divides no
-numerator prime to $b$). The Jacobi test with the reciprocals of its tables is in
-\verb|Ratpoints/Proof/JacobiTables.lean|; the run with the cut points in
+on the words of the rows that both stages use, and like \verb|Ratpoints/Proof/Reductions.lean|,
+which holds the contracts of the reductions since stage~F3. The lemmas in core's namespaces that the
+sub-stage adds are in \verb|Ratpoints/Proof/Bits.lean|: the facts on the signed 64-bit words (the
+arithmetic shift, the mask $x \gg 63$ with the smaller and the distance of two words that it gives
+without a branch, the odd part of a positive word by the lowest set bit, the absolute value, and the
+words of an integer and of a natural number below $2^{63}$), the steps of the binary algorithm and
+of the reductions by a reciprocal on natural numbers, two facts on lists and vectors that the scan
+and the sieve of one denominator use (\verb|List.flatMap_filter|, \verb|Vector.getElem!_ofFn|), and
+the integer facts of the third stage (C's remainder made non-negative, the residue of
+$(a \bmod p)\, b$ and its shift by $p H$, the bound $|a b| + H \le p H$, and a divisor $p > 1$ of
+$b$ that divides no numerator prime to $b$). The Jacobi test with the reciprocals of its tables is
+in \verb|Ratpoints/Proof/JacobiTables.lean|; the run with the cut points in
 \verb|Ratpoints/Proof/Denominators.lean|, with the bounds of the denominators of the shapes, between
 $b_{\mathrm{low}}$ and $b_{\mathrm{high}}$, in \verb|Ratpoints/Proof/Shapes.lean|; the reciprocal
 and the shape of the sieve entry of a modulus in \verb|Ratpoints/Proof/Moduli.lean|; the entries and

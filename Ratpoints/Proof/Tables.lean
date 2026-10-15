@@ -16,6 +16,7 @@ import Ratpoints.Mathlib.Data.ZMod.Basic
 import Ratpoints.Proof.Bits
 import Ratpoints.Proof.BruteForce
 import Ratpoints.Proof.Params
+import Ratpoints.Proof.Reductions
 import Std.Tactic.Do
 
 /-!
@@ -73,7 +74,6 @@ of a negative leading coefficient in `jacobi1`, with `LONG_MIN` replaced by its 
 * `Ratpoints.Sieve.admits_examinePrime_of_sq_eq`: the rows let every point through.
 * `Ratpoints.Sieve.isPrimeEntry_examinePrime`: the sieve entry of a prime `p ≤ 2 ^ 32` with its
   table and its reciprocal has the shape that the third stage needs.
-* `Ratpoints.Sieve.modLong_eq_emod`: the helper `mod` of the C code is the Euclidean `%`.
 * `Ratpoints.Sieve.barrett_eq`: Barrett's reduction computes the remainder of every `u < 2 ^ 64`.
 * `Ratpoints.Sieve.HornerInvariant.lt_two_pow_64`: the accumulator of Horner's rule in the table of
   `p < maxPrimeEven` stays below `2 ^ 64` (`Ratpoints.pow_hornerSteps_add_one_lt`).
@@ -505,46 +505,6 @@ theorem admits_examinePrime_of_sq_eq {c : List ℤ} {p : ℕ} (hp : p.Prime) {a 
     rw [BruteForce.degree_eq, natCast_mul_getElem!_inversesMod_mod _ (Nat.mod_lt _ hp.pos) hb,
       ZMod.natCast_toNat_emod, ZMod.natCast_mod]
     exact isSquare_sum_mul_div_pow_of_sq_eq_binaryForm hb hy
-
-/-! ### The helper `mod` -/
-
--- A conditional subtraction of `m` reduces `0 ≤ a < 2 m` modulo `m`: a rung of the ladder of `mod`.
-private theorem ite_le_sub_eq_emod {a m : ℤ} (h0 : 0 ≤ a) (h1 : a < 2 * m) :
-    (if m ≤ a then a - m else a) = a % m := by
-  split
-  · rw [← Int.sub_emod_right a m, Int.emod_eq_of_lt (by lia) (by lia)]
-  · rw [Int.emod_eq_of_lt h0 (by lia)]
-
--- The rung on a residue modulo `n = 2 m`.
-private theorem ite_le_emod_sub_eq_emod (a m : ℤ) {n : ℤ} (hm : 0 < m) (hn : n = 2 * m) :
-    (if m ≤ a % n then a % n - m else a % n) = a % m := by
-  rw [ite_le_sub_eq_emod (Int.emod_nonneg _ (by lia)) (hn ▸ Int.emod_lt_of_pos _ (by lia)),
-    Int.emod_emod_of_dvd _ (hn ▸ dvd_mul_left m 2)]
-
--- `mod` for `-16 b ≤ a < 16 b`: `16 b` added to a negative `a`, then the ladder of conditional
--- subtractions.
-private theorem modLong_eq_emod_of_le_of_lt {a b : ℤ} (hb : 0 < b) (h0 : -(16 * b) ≤ a)
-    (h1 : a < 16 * b) : modLong a b = a % b := by
-  simp only [modLong, h0.not_gt, h1.not_ge, and_false, ↓reduceIte]
-  have hy : (if a < 0 then a + 16 * b else a) % b = a % b := by split <;> simp
-  have h2 : 0 ≤ (if a < 0 then a + 16 * b else a) := by split <;> lia
-  have h3 : (if a < 0 then a + 16 * b else a) < 2 * (8 * b) := by split <;> lia
-  generalize (if a < 0 then a + 16 * b else a) = y at hy h2 h3 ⊢
-  rw [← hy, ite_le_sub_eq_emod h2 h3, ite_le_emod_sub_eq_emod y (4 * b) (by lia) (by lia),
-    ite_le_emod_sub_eq_emod y (2 * b) (by lia) (by lia), ite_le_emod_sub_eq_emod y b hb rfl]
-
-/-- The helper `mod` of the C code is the Euclidean `%`, for every integer `a` and every `b ≥ 0`:
-the model computes with integers, and the obligations that the values of the C code stay in the
-range of a `long` are `Ratpoints.fitsLong_sixteen_mul`, `Ratpoints.fitsLong_neg` and
-`Ratpoints.fitsLong_add_sixteen_mul`. -/
-theorem modLong_eq_emod (a : ℤ) {b : ℤ} (hb : 0 ≤ b) : modLong a b = a % b := by
-  obtain rfl | hb := hb.eq_or_lt
-  · simp [modLong]
-  rcases lt_or_ge a (-(16 * b)) with h | h
-  · grind [modLong, Int.tmod_eq_emod, Int.emod_nonneg a hb.ne', Int.emod_lt_of_pos a hb]
-  rcases lt_or_ge a (16 * b) with h' | h'
-  · exact modLong_eq_emod_of_le_of_lt hb h h'
-  · grind [modLong, Int.tmod_eq_emod_of_nonneg]
 
 /-! ### The table of a prime with the exit -/
 

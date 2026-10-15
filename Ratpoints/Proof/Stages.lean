@@ -8,15 +8,12 @@ module
 public import Ratpoints.Proof.Words
 
 import Ratpoints.Proof.Bits
+import Ratpoints.Proof.Reductions
 import Std.Tactic.Do
 
 /-!
 # The contracts of the stages of the sieve
 
-The reductions by a reciprocal (`Ratpoints.Sieve.mulMod`, `Ratpoints.Sieve.mulDiv`) compute the
-remainder and the quotient where the C code relies on them: with the reciprocal
-`Ratpoints.Sieve.magic p`, which exceeds `2 ^ 64 / p` by less than `1`, for every `u` with
-`u p < 2 ^ 64`, and so for the values at most `Ratpoints.mulModLimit` and the moduli up to `2 ^ 32`.
 The test for common factors on the 64-bit words of the C code (`Ratpoints.Sieve.relprime`) decides
 whether a numerator is prime to the denominator, and none of its operations leaves the range of a
 `long`. For a numerator `a` prime to the denominator `b` with `|a| ≤ H`, the third stage
@@ -47,12 +44,6 @@ with loop invariants that are named definitions.
 
 ## Main statements
 
-* `Ratpoints.Sieve.magic_mul_eq`: `magic p · p = 2 ^ 64 + δ` with `δ < p`.
-* `Ratpoints.Sieve.mulMod_magic`, `Ratpoints.Sieve.mulDiv_magic`: with the reciprocal
-  `Ratpoints.Sieve.magic p`, the reductions give `u % p` and `u / p` for `u p < 2 ^ 64`;
-  `Ratpoints.Sieve.sub_mulDiv_magic_mul`: the remainder as `u - RP_MULDIV(u) p`.
-* `Ratpoints.mul_lt_two_pow_64_of_le_mulModLimit`: `u p < 2 ^ 64` for `u ≤ Ratpoints.mulModLimit`
-  and `p ≤ 2 ^ 32`.
 * `Ratpoints.Sieve.relprimeOdd_spec`, `Ratpoints.Sieve.relprime_spec`: the binary algorithm
   decides whether `gcd(m, n) = 1` for odd positive words `m` and `n`, and for words
   `m > -2 ^ 63` and `n ≥ 1`.
@@ -89,47 +80,7 @@ open scoped Std.WP
 
 namespace Ratpoints
 
-/-- A value at most `Ratpoints.mulModLimit` times a modulus `p ≤ 2 ^ 32` is below `2 ^ 64`, where
-the reductions by a reciprocal are exact (`Ratpoints.Sieve.mulMod_magic`,
-`Ratpoints.Sieve.mulDiv_magic`); this reads off only `Ratpoints.mulModLimit_lt_two_pow_32`. -/
-theorem mul_lt_two_pow_64_of_le_mulModLimit {u p : Nat} (hu : u ≤ mulModLimit)
-    (hp : p ≤ 2 ^ 32) : u * p < 2 ^ 64 :=
-  Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_le (Nat.lt_of_le_of_lt hu mulModLimit_lt_two_pow_32)
-    hp (Nat.two_pow_pos 32)) (by decide)
-
 namespace Sieve
-
-/-! ### The reductions by a reciprocal -/
-
-/-- The reciprocal of `p > 0` exceeds `2 ^ 64 / p` by less than `1`: `magic p · p = 2 ^ 64 + δ` with
-`δ < p`. -/
-theorem magic_mul_eq {p : Nat} (hp : 0 < p) :
-    magic p * p = 2 ^ 64 + (p - 1 - (2 ^ 64 - 1) % p) := by
-  have h1 := Nat.div_add_mod (2 ^ 64 - 1) p
-  have h2 := Nat.mod_lt (2 ^ 64 - 1) hp
-  simp only [magic]
-  grind
-
-/-- `RP_MULMOD` with the reciprocal of `p` computes the remainder of every `u` with `u p < 2 ^ 64`,
-since `magic p` exceeds `2 ^ 64 / p` by less than `1`. -/
-theorem mulMod_magic {u p : Nat} (hp : 0 < p) (hu : u * p < 2 ^ 64) :
-    mulMod u p (magic p) = u % p :=
-  Nat.mul_mod_mul_div_eq_mod_of_mul_eq_add hp (magic_mul_eq hp)
-    (Nat.lt_of_le_of_lt (Nat.mul_le_mul_left u (by lia)) hu)
-
-/-- `RP_MULDIV` with the reciprocal of `p` computes the quotient of every `u` with
-`u p < 2 ^ 64`. -/
-theorem mulDiv_magic {u p : Nat} (hp : 0 < p) (hu : u * p < 2 ^ 64) :
-    mulDiv u (magic p) = u / p := by
-  rw [mulDiv, Nat.mul_comm]
-  exact Nat.mul_div_eq_div_of_mul_eq_add hp (magic_mul_eq hp)
-    (Nat.lt_of_le_of_lt (Nat.mul_le_mul_left u (by lia)) hu)
-
-/-- The remainder `u - RP_MULDIV(u) p`, as the Jacobi test by tables of the C code takes it
-(`find_points.c:755`), is `u % p` for `u p < 2 ^ 64`. -/
-theorem sub_mulDiv_magic_mul {u p : Nat} (hp : 0 < p) (hu : u * p < 2 ^ 64) :
-    u - mulDiv u (magic p) * p = u % p := by
-  rw [mulDiv_magic hp hu, Nat.mod_eq_sub_div_mul]
 
 /-! ### The test for common factors -/
 

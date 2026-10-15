@@ -356,8 +356,10 @@ Lemma~\ref{lem:sift_eq_checkDen} maps their side.
   paths of the table give the same result; and for $b < 2^{59}$ the values that it computes and that
   could leave the range of a \verb|long|, $16b$, its negation, and $a + 16b$ for $-16b \le a < 0$,
   stay in it, its other values lying in $(-b, 16b)$, while its inputs are \verb|long|s by the flag;
-  the negation of an integer of absolute value below $2^{63}$ is a \verb|long|, which also covers
-  the negations of the map of a reversed search (Definition~\ref{def:swapPoint}).
+  its copy in \verb|sift.c| is the same function but for the hooks of its counts
+  (\csource{sift.c}{370}{389}); the negation of an integer of absolute value below $2^{63}$ is a
+  \verb|long|, which also covers the negations of the map of a reversed search
+  (Definition~\ref{def:swapPoint}).
 \end{definition}
 
 \begin{definition}[The table of a prime, or the exit]\label{def:examinePrimeExit}
@@ -630,21 +632,22 @@ refusals and $\mathrm{fitsLong}$ in the namespace \verb|Ratpoints| and the rest 
 \verb|Ratpoints.Setup|, so that $\mathrm{findPoints}$ and the search can use them; the table of a
 prime takes the flag of the \verb|long|s as an argument, which the search computes with
 \verb|Setup.useCLong|. The helper \verb|mod| and the table with the exit are in
-\verb|Ratpoints/Model/Tables.lean|, and $\mathrm{swapPoint}$ in \verb|Ratpoints/Model/Sieve.lean|,
-before the components that use them; $\mathrm{defaultSturm}$ is in
-\verb|Ratpoints/Model/Constants.lean|; and the options, $\mathrm{searchPoints}$ and
-$\mathrm{findPoints}$ are in \verb|Ratpoints/Model/FindPoints.lean|. The contract of the chain,
-without Mathlib, is in \verb|Ratpoints/Proof/Sturm.lean|, and the lemmas on arrays, on the gcd of
-the absolute values of a list as a left fold, on the cursor of a loop over a range and on exact
-quotients of integers that it needs and Lean core lacks are in \verb|Ratpoints/Proof/Bits.lean|,
-under their names in the namespaces of core. The flagged contracts are in
-\verb|Ratpoints/Proof/Words.lean|, those from the walk on since stage~F2 in
+\verb|Ratpoints/Model/Tables.lean|, and $\mathrm{swapPoint}$ in
+\verb|Ratpoints/Model/Candidate.lean| (since stage~F3), before the components that use them;
+$\mathrm{defaultSturm}$ is in \verb|Ratpoints/Model/Constants.lean|; and the options,
+$\mathrm{searchPoints}$ and $\mathrm{findPoints}$ are in \verb|Ratpoints/Model/FindPoints.lean|. The
+contract of the chain, without Mathlib, is in \verb|Ratpoints/Proof/Sturm.lean|, and the lemmas on
+arrays, on the gcd of the absolute values of a list as a left fold, on the cursor of a loop over a
+range and on exact quotients of integers that it needs and Lean core lacks are in
+\verb|Ratpoints/Proof/Bits.lean|, under their names in the namespaces of core. The flagged contracts
+are in \verb|Ratpoints/Proof/Words.lean|, those from the walk on since stage~F2 in
 \verb|Ratpoints/Proof/Sift.lean|, that of the run since stage~E in
-\verb|Ratpoints/Proof/Denominators.lean|; the lemmas on \verb|mod|, the \verb|long|s and the table
-with the exit in \verb|Ratpoints/Proof/Tables.lean|; the polynomial of a coefficient list, the
-squarefreeness of the chain and of the reversal, the reflection and the bijection in
-\verb|Ratpoints/Proof/Setup.lean|; the equation of $\mathrm{searchPoints}$ and the theorems in
-\verb|Ratpoints/Proof/FindPoints.lean|; and the lemmas of Mathlib's generality in
+\verb|Ratpoints/Proof/Denominators.lean|; the lemma on \verb|mod| in
+\verb|Ratpoints/Proof/Reductions.lean|, without Mathlib, since stage~F3; the lemmas on the
+\verb|long|s and the table with the exit in \verb|Ratpoints/Proof/Tables.lean|; the polynomial of a
+coefficient list, the squarefreeness of the chain and of the reversal, the reflection and the
+bijection in \verb|Ratpoints/Proof/Setup.lean|; the equation of $\mathrm{searchPoints}$ and the
+theorems in \verb|Ratpoints/Proof/FindPoints.lean|; and the lemmas of Mathlib's generality in
 \verb|Ratpoints/Mathlib|, in the files that mirror their homes in Mathlib: those on homogenizations
 in \verb|Algebra/Polynomial/Homogenize| and \verb|RingTheory/MvPolynomial/Homogeneous|,
 squarefreeness under multiplicative equivalences in \verb|Algebra/Squarefree/Basic|, the coprimality

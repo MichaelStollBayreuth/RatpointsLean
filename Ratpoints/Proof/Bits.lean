@@ -33,6 +33,7 @@ reduction, the bounds of a step of Horner's rule and of a power of a number belo
 entries of an array of Booleans after a fold of `setIfInBounds · true`, the absolute value of the
 step of the cofactors of the extended Euclidean algorithm, the divisors of the gcd of `b` and a
 residue `f ≡ a (mod b)`, the remainder and the quotient by a multiplication with a reciprocal, the
+high half of a product from the products of the halves of its factors and the halves of a word, the
 gcd of the odd part of a number with an odd one and the step of the binary algorithm for the gcd,
 the residue modulo a divisor of `b` of a numerator prime to `b`, C's remainder, which truncates,
 made non-negative, the residue of `(a mod p) b` and the bound `|a b| + H ≤ p H` for `|a| ≤ H` and
@@ -121,6 +122,8 @@ value, and the words of an integer and of a natural number below `2 ^ 63`.
 * `Int64.toNatClampNeg_ite_neg`: the absolute value of a `long` other than `-2 ^ 63`.
 * `Int64.minValue_lt_ofInt`, `Int64.ofNat_pos`: the word of an integer `|a| < 2 ^ 63` is not
   `-2 ^ 63`, and that of a natural number `0 < n < 2 ^ 63` is positive.
+* `Nat.mul_div_two_pow_64_eq`: the high half of a product from the products of the halves of 32
+  bits of its factors.
 
 ## Implementation notes
 
@@ -548,6 +551,26 @@ theorem add_min_lt_add_of_two_pow_mul_eq {m n y t : Nat} (hm : 0 < m) (hn : 0 < 
   have := Nat.le_mul_of_pos_left y (Nat.two_pow_pos t)
   split at h <;> lia
 
+/-- The high half of the product of `2 ^ 32 a₁ + a₀` and `2 ^ 32 b₁ + b₀` from the four products
+of the halves, as `Ratpoints.Sieve.mulHi` adds them: the high product, the high halves of the two
+middle products, and the carry of the high half of the low product with the low halves of the
+middle products. -/
+theorem mul_div_two_pow_64_eq (a0 a1 b0 b1 : Nat) :
+    (2 ^ 32 * a1 + a0) * (2 ^ 32 * b1 + b0) / 2 ^ 64 =
+      a1 * b1 + a0 * b1 / 2 ^ 32 + a1 * b0 / 2 ^ 32 +
+        (a0 * b0 / 2 ^ 32 + a0 * b1 % 2 ^ 32 + a1 * b0 % 2 ^ 32) / 2 ^ 32 := by
+  have e : (2 ^ 32 * a1 + a0) * (2 ^ 32 * b1 + b0) =
+      2 ^ 64 * (a1 * b1) + 2 ^ 32 * (a0 * b1 + a1 * b0) + a0 * b0 := by
+    simp only [Nat.add_mul, Nat.mul_add]
+    lia
+  rw [e]
+  generalize a0 * b0 = P0, a0 * b1 = P1, a1 * b0 = P2, a1 * b1 = P3
+  lia
+
+theorem mul_le_of_lt_two_pow_32 {x y : Nat} (hx : x < 2 ^ 32) (hy : y < 2 ^ 32) :
+    x * y ≤ 2 ^ 64 - 2 ^ 33 + 1 :=
+  Nat.le_trans (Nat.mul_le_mul (Nat.le_sub_one_of_lt hx) (Nat.le_sub_one_of_lt hy)) (by decide)
+
 end Nat
 
 /-! ### Integers -/
@@ -800,6 +823,13 @@ theorem shiftRight_ctz_ofNat_mod_two {b : Nat} (hb0 : 0 < b) (hb : b < UInt64.si
   rw [UInt64.toBitVec_ofNat', BitVec.getLsbD_ofNat, Bool.and_eq_true] at ht
   rw [UInt64.toBitVec_ofNat', Nat.shiftRight_eq_div_pow]
   simpa [Nat.testBit_eq_decide_div_mod_eq] using ht.2
+
+theorem toNat_shiftRight_32 (x : UInt64) : (x >>> 32).toNat = x.toNat / 2 ^ 32 := by
+  simp [UInt64.toNat_shiftRight, Nat.shiftRight_eq_div_pow]
+
+theorem toNat_and_0xffffffff (x : UInt64) :
+    (x &&& 0xffffffff).toNat = x.toNat % 2 ^ 32 := by
+  simpa using Nat.and_two_pow_sub_one_eq_mod x.toNat 32
 
 end UInt64
 

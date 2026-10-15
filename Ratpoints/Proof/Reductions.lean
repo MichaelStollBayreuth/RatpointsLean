@@ -1,0 +1,209 @@
+/-
+Copyright (c) 2026 Michael Stoll. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Michael Stoll
+-/
+module
+
+public import Ratpoints.Model.Tables
+
+import Ratpoints.Proof.Bits
+
+/-!
+# The reductions by a reciprocal
+
+The high half of the product of two 64-bit words from the products of their 32-bit halves
+(`Ratpoints.Sieve.mulHi`) is the high half of the product of natural numbers
+(`Nat.mul_div_two_pow_64_eq`, in `Ratpoints.Proof.Bits`), so that the reductions by a reciprocal on
+64-bit words (`Ratpoints.Sieve.mulMod`, `Ratpoints.Sieve.mulDiv`) compute the remainder and the
+quotient where the C code relies on them: with the reciprocal `Ratpoints.Sieve.magic p`, which
+exceeds `2 ^ 64 / p` by less than `1`, for every `u` with `u p < 2 ^ 64`, and so for the values at
+most `Ratpoints.mulModLimit` and the moduli up to `2 ^ 32`; the quotient for `p ≥ 2`, since the
+reciprocal `2 ^ 64` of `1` wraps to `0` on a word, as in the C code. So does the remainder of a
+value of either sign (`Ratpoints.Sieve.modMul`), and the helper `mod` of the C code
+(`Ratpoints.Sieve.modLong`) is the Euclidean `%` for every integer.
+
+## Main statements
+
+* `Ratpoints.mul_lt_two_pow_64_of_le_mulModLimit`: `u p < 2 ^ 64` for `u ≤ Ratpoints.mulModLimit`
+  and `p ≤ 2 ^ 32`.
+* `Ratpoints.Sieve.toNat_mulHi`: `Ratpoints.Sieve.mulHi a b` is `⌊a b / 2 ^ 64⌋`.
+* `Ratpoints.Sieve.mulMod_eq`, `Ratpoints.Sieve.mulDiv_eq`: the reductions on 64-bit words are those
+  of the macros on natural numbers reduced modulo `2 ^ 64`.
+* `Ratpoints.Sieve.magic_mul_eq`: `magic p · p = 2 ^ 64 + δ` with `δ < p`.
+* `Ratpoints.Sieve.mulMod_magic`, `Ratpoints.Sieve.mulDiv_magic`: with the reciprocal
+  `Ratpoints.Sieve.magic p`, the reductions give `u % p` and, for `p ≥ 2`, `u / p` for
+  `u p < 2 ^ 64`; `Ratpoints.Sieve.sub_mulDiv_magic_mul`: the remainder as `u - RP_MULDIV(u) p`.
+* `Ratpoints.Sieve.modMul_magic`: `mod_mul` gives the Euclidean `a % p` for `|a| p < 2 ^ 64`.
+* `Ratpoints.Sieve.modLong_eq_emod`: the helper `mod` of the C code is the Euclidean `%`.
+
+## Implementation notes
+
+The file uses Lean core and `Std` only, so that the contracts of the sieve, in files without
+Mathlib, can use it. The proofs use only the fact on the constants that `decide` checks next to
+them, that `Ratpoints.mulModLimit < 2 ^ 32`, never their values.
+-/
+
+@[expose] public section
+
+namespace Ratpoints
+
+/-- A value at most `Ratpoints.mulModLimit` times a modulus `p ≤ 2 ^ 32` is below `2 ^ 64`, where
+the reductions by a reciprocal are exact (`Ratpoints.Sieve.mulMod_magic`,
+`Ratpoints.Sieve.mulDiv_magic`); this reads off only `Ratpoints.mulModLimit_lt_two_pow_32`. -/
+theorem mul_lt_two_pow_64_of_le_mulModLimit {u p : Nat} (hu : u ≤ mulModLimit)
+    (hp : p ≤ 2 ^ 32) : u * p < 2 ^ 64 :=
+  Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_le (Nat.lt_of_le_of_lt hu mulModLimit_lt_two_pow_32)
+    hp (Nat.two_pow_pos 32)) (by decide)
+
+namespace Sieve
+
+/-! ### The high half of a product -/
+
+-- The partial sums of `Ratpoints.Sieve.mulHi` stay below `2 ^ 64`, for products of 32-bit halves.
+private theorem sum_halves_mod {P0 P1 P2 P3 : Nat} (h0 : P0 ≤ 2 ^ 64 - 2 ^ 33 + 1)
+    (h1 : P1 ≤ 2 ^ 64 - 2 ^ 33 + 1) (h2 : P2 ≤ 2 ^ 64 - 2 ^ 33 + 1)
+    (h3 : P3 ≤ 2 ^ 64 - 2 ^ 33 + 1) :
+    (((P3 % 2 ^ 64 + P1 % 2 ^ 64 / 2 ^ 32) % 2 ^ 64 + P2 % 2 ^ 64 / 2 ^ 32) % 2 ^ 64 +
+        ((P0 % 2 ^ 64 / 2 ^ 32 + P1 % 2 ^ 64 % 2 ^ 32) % 2 ^ 64 + P2 % 2 ^ 64 % 2 ^ 32) % 2 ^ 64 /
+          2 ^ 32) % 2 ^ 64 =
+      P3 + P1 / 2 ^ 32 + P2 / 2 ^ 32 + (P0 / 2 ^ 32 + P1 % 2 ^ 32 + P2 % 2 ^ 32) / 2 ^ 32 := by
+  rw [Nat.mod_eq_of_lt (a := P0) (by lia), Nat.mod_eq_of_lt (a := P1) (by lia),
+    Nat.mod_eq_of_lt (a := P2) (by lia), Nat.mod_eq_of_lt (a := P3) (by lia),
+    Nat.mod_eq_of_lt (a := P3 + P1 / 2 ^ 32) (by lia),
+    Nat.mod_eq_of_lt (a := P3 + P1 / 2 ^ 32 + P2 / 2 ^ 32) (by lia),
+    Nat.mod_eq_of_lt (a := P0 / 2 ^ 32 + P1 % 2 ^ 32) (by lia),
+    Nat.mod_eq_of_lt (a := P0 / 2 ^ 32 + P1 % 2 ^ 32 + P2 % 2 ^ 32) (by lia),
+    Nat.mod_eq_of_lt (by lia)]
+
+/-- The high half of the product of two 64-bit words from the products of their 32-bit halves is
+the high half of the product of natural numbers: no partial sum wraps. -/
+theorem toNat_mulHi (a b : UInt64) : (mulHi a b).toNat = a.toNat * b.toNat / 2 ^ 64 := by
+  have e := Nat.mul_div_two_pow_64_eq (a.toNat % 2 ^ 32) (a.toNat / 2 ^ 32) (b.toNat % 2 ^ 32)
+    (b.toNat / 2 ^ 32)
+  rw [Nat.div_add_mod, Nat.div_add_mod] at e
+  have ha1 : a.toNat / 2 ^ 32 < 2 ^ 32 := Nat.div_lt_of_lt_mul a.toNat_lt
+  have hb1 : b.toNat / 2 ^ 32 < 2 ^ 32 := Nat.div_lt_of_lt_mul b.toNat_lt
+  have ha0 := Nat.mod_lt a.toNat (Nat.two_pow_pos 32)
+  have hb0 := Nat.mod_lt b.toNat (Nat.two_pow_pos 32)
+  simp only [mulHi, UInt64.toNat_add, UInt64.toNat_mul, UInt64.toNat_shiftRight_32,
+    UInt64.toNat_and_0xffffffff]
+  rw [e]
+  exact sum_halves_mod (Nat.mul_le_of_lt_two_pow_32 ha0 hb0) (Nat.mul_le_of_lt_two_pow_32 ha0 hb1)
+    (Nat.mul_le_of_lt_two_pow_32 ha1 hb0) (Nat.mul_le_of_lt_two_pow_32 ha1 hb1)
+
+/-! ### The reductions by a reciprocal -/
+
+/-- `RP_MULMOD` on 64-bit words is the macro on natural numbers: the product `m u` reduced modulo
+`2 ^ 64`, as the product of `unsigned long`s wraps, times `p` as an `unsigned long`, shifted right
+by 64 bits. -/
+theorem mulMod_eq (u p m : Nat) : mulMod u p m = m * u % 2 ^ 64 * (p % 2 ^ 64) / 2 ^ 64 := by
+  simp [mulMod, toNat_mulHi, UInt64.toNat_mul, Nat.mul_mod]
+
+theorem mulDiv_eq (u m : Nat) : mulDiv u m = u % 2 ^ 64 * (m % 2 ^ 64) / 2 ^ 64 := by
+  simp [mulDiv, toNat_mulHi]
+
+/-- The reciprocal of `p > 0` exceeds `2 ^ 64 / p` by less than `1`: `magic p · p = 2 ^ 64 + δ` with
+`δ < p`. -/
+theorem magic_mul_eq {p : Nat} (hp : 0 < p) :
+    magic p * p = 2 ^ 64 + (p - 1 - (2 ^ 64 - 1) % p) := by
+  have h1 := Nat.div_add_mod (2 ^ 64 - 1) p
+  have h2 := Nat.mod_lt (2 ^ 64 - 1) hp
+  simp only [magic]
+  grind
+
+/-- The reciprocal of a modulus `p ≥ 2` is an `unsigned long`; that of `1`, no modulus, is
+`2 ^ 64`, which wraps to `0` in the C code. -/
+theorem magic_lt_two_pow_64 {p : Nat} (hp : 1 < p) : magic p < 2 ^ 64 := by
+  have : (2 ^ 64 - 1) / p ≤ (2 ^ 64 - 1) / 2 := Nat.div_le_div_left hp (by decide)
+  simp only [magic]
+  lia
+
+/-- `RP_MULMOD` with the reciprocal of `p` computes the remainder of every `u` with `u p < 2 ^ 64`,
+since `magic p` exceeds `2 ^ 64 / p` by less than `1`. -/
+theorem mulMod_magic {u p : Nat} (hp : 0 < p) (hu : u * p < 2 ^ 64) :
+    mulMod u p (magic p) = u % p := by
+  rcases Nat.eq_zero_or_pos u with rfl | hu0
+  · simp [mulMod_eq]
+  rw [mulMod_eq, Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt (Nat.le_mul_of_pos_left p hu0) hu)]
+  exact Nat.mul_mod_mul_div_eq_mod_of_mul_eq_add hp (magic_mul_eq hp)
+    (Nat.lt_of_le_of_lt (Nat.mul_le_mul_left u (by lia)) hu)
+
+/-- `RP_MULDIV` with the reciprocal of `p ≥ 2` computes the quotient of every `u` with
+`u p < 2 ^ 64`. For `p = 1` the reciprocal `2 ^ 64` wraps to `0`, as in the C code. -/
+theorem mulDiv_magic {u p : Nat} (hp : 1 < p) (hu : u * p < 2 ^ 64) :
+    mulDiv u (magic p) = u / p := by
+  have hu' : u < 2 ^ 64 := Nat.lt_of_le_of_lt (Nat.le_mul_of_pos_right u (by lia)) hu
+  rw [mulDiv_eq, Nat.mod_eq_of_lt hu', Nat.mod_eq_of_lt (magic_lt_two_pow_64 hp), Nat.mul_comm]
+  exact Nat.mul_div_eq_div_of_mul_eq_add (by lia) (magic_mul_eq (by lia))
+    (Nat.lt_of_le_of_lt (Nat.mul_le_mul_left u (by lia)) hu)
+
+/-- The remainder `u - RP_MULDIV(u) p`, as the Jacobi test by tables of the C code takes it
+(`find_points.c:755`), is `u % p` for `p ≥ 2` and `u p < 2 ^ 64`. -/
+theorem sub_mulDiv_magic_mul {u p : Nat} (hp : 1 < p) (hu : u * p < 2 ^ 64) :
+    u - mulDiv u (magic p) * p = u % p := by
+  rw [mulDiv_magic hp hu, Nat.mod_eq_sub_div_mul]
+
+/-- `mod_mul` with the reciprocal of `p` computes the Euclidean remainder of every `a` with
+`|a| p < 2 ^ 64`: the remainder of `|a|`, and its complement for a negative `a`. -/
+theorem modMul_magic {a : Int} {p : Nat} (hp : 0 < p) (ha : a.natAbs * p < 2 ^ 64) :
+    modMul a p (magic p) = a % p := by
+  have h : (if a < 0 then -a else a).toNat = a.natAbs := by split <;> lia
+  simp only [modMul, h, mulMod_magic hp ha]
+  have h1 := Nat.div_add_mod a.natAbs p
+  have hs := Nat.mod_lt a.natAbs hp
+  generalize a.natAbs / p = k, a.natAbs % p = s at h1 hs
+  refine ((Int.emod_eq_iff (b := p) (by lia)).mpr ⟨by split <;> lia, by split <;> lia, ?_⟩).symm
+  by_cases ha0 : a < 0
+  · split
+    · exact ⟨k + 1, by grind⟩
+    · exact ⟨k, by grind⟩
+  · simp only [ha0, false_and, ↓reduceIte]
+    exact ⟨-k, by grind⟩
+
+/-! ### The helper `mod` -/
+
+-- A conditional subtraction of `m` reduces `0 ≤ a < 2 m` modulo `m`: a rung of the ladder of `mod`.
+private theorem ite_le_sub_eq_emod {a m : Int} (h0 : 0 ≤ a) (h1 : a < 2 * m) :
+    (if m ≤ a then a - m else a) = a % m := by
+  split
+  · rw [← Int.sub_emod_right a m, Int.emod_eq_of_lt (by lia) (by lia)]
+  · rw [Int.emod_eq_of_lt h0 (by lia)]
+
+-- The rung on a residue modulo `n = 2 m`.
+private theorem ite_le_emod_sub_eq_emod (a m : Int) {n : Int} (hm : 0 < m) (hn : n = 2 * m) :
+    (if m ≤ a % n then a % n - m else a % n) = a % m := by
+  rw [ite_le_sub_eq_emod (Int.emod_nonneg _ (by lia)) (hn ▸ Int.emod_lt_of_pos _ (by lia)),
+    Int.emod_emod_of_dvd _ (hn ▸ Int.dvd_mul_left 2 m)]
+
+-- `mod` for `-16 b ≤ a < 16 b`: `16 b` added to a negative `a`, then the ladder of conditional
+-- subtractions.
+private theorem modLong_eq_emod_of_le_of_lt {a b : Int} (hb : 0 < b) (h0 : -(16 * b) ≤ a)
+    (h1 : a < 16 * b) : modLong a b = a % b := by
+  simp only [modLong, Int.not_lt.mpr h0, Int.not_le.mpr h1, and_false, ↓reduceIte]
+  have hy : (if a < 0 then a + 16 * b else a) % b = a % b := by split <;> simp
+  have h2 : 0 ≤ (if a < 0 then a + 16 * b else a) := by split <;> lia
+  have h3 : (if a < 0 then a + 16 * b else a) < 2 * (8 * b) := by split <;> lia
+  generalize (if a < 0 then a + 16 * b else a) = y at hy h2 h3 ⊢
+  rw [← hy, ite_le_sub_eq_emod h2 h3, ite_le_emod_sub_eq_emod y (4 * b) (by lia) (by lia),
+    ite_le_emod_sub_eq_emod y (2 * b) (by lia) (by lia), ite_le_emod_sub_eq_emod y b hb rfl]
+
+/-- The helper `mod` of the C code is the Euclidean `%`, for every integer `a` and every `b ≥ 0`:
+the model computes with integers, and the obligations that the values of the C code stay in the
+range of a `long` are `Ratpoints.fitsLong_sixteen_mul`, `Ratpoints.fitsLong_neg` and
+`Ratpoints.fitsLong_add_sixteen_mul`. -/
+theorem modLong_eq_emod (a : Int) {b : Int} (hb : 0 ≤ b) : modLong a b = a % b := by
+  rcases Int.lt_or_eq_of_le hb with hb | rfl
+  · rcases Int.lt_or_le a (-(16 * b)) with h | h
+    · grind [modLong, Int.tmod_eq_emod, Int.emod_nonneg a (Int.ne_of_gt hb),
+        Int.emod_lt_of_pos a hb]
+    rcases Int.lt_or_le a (16 * b) with h' | h'
+    · exact modLong_eq_emod_of_le_of_lt hb h h'
+    · grind [modLong, Int.tmod_eq_emod_of_nonneg]
+  · simp [modLong]
+
+end Sieve
+
+end Ratpoints
+
+end

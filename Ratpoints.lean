@@ -20,6 +20,7 @@ public import Ratpoints.Mathlib.RingTheory.Coprime.Basic
 public import Ratpoints.Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import Ratpoints.Model
 public import Ratpoints.Model.BruteForce
+public import Ratpoints.Model.Candidate
 public import Ratpoints.Model.Cli
 public import Ratpoints.Model.Constants
 public import Ratpoints.Model.Denominators
@@ -40,6 +41,7 @@ public import Ratpoints.Proof.Jacobi
 public import Ratpoints.Proof.JacobiTables
 public import Ratpoints.Proof.Moduli
 public import Ratpoints.Proof.Params
+public import Ratpoints.Proof.Reductions
 public import Ratpoints.Proof.Setup
 public import Ratpoints.Proof.Shapes
 public import Ratpoints.Proof.Sieve

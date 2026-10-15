@@ -116,10 +116,8 @@ order: a data refinement.
 
 \begin{definition}[The constants of the packing]\label{def:packingConstants}
   \uses{def:rbaPack, def:jacobiTables}
-  Proposed names: \lname{Ratpoints.rowBias},
-  \lname{Ratpoints.two\_mul\_rowBias\_sub\_one\_le\_mulModLimit}, \lname{Ratpoints.numStrides},
-  \lname{Ratpoints.one\_le\_numStrides}, \lname{Ratpoints.rbaShift},
-  \lname{Ratpoints.rbaLength\_eq\_two\_pow\_rbaShift}, \lname{Ratpoints.rbaShift\_lt\_thirty\_two}.
+  \lean{Ratpoints.rowBias, Ratpoints.two_mul_rowBias_sub_one_le_mulModLimit, Ratpoints.numStrides, Ratpoints.one_le_numStrides, Ratpoints.rbaShift, Ratpoints.rbaLength_eq_two_pow_rbaShift, Ratpoints.rbaShift_lt_thirty_two}
+  \leanok
   The lower bound $\mathrm{rowBias} = 2^{31}$ of the multiple of a modulus in the offset of a row
   (\verb|RP_ROW_BIAS|, \csource{rp-private.h}{387}{387}), with the C's static assertion
   $2\,\mathrm{rowBias} - 1 \le \mathrm{mulModLimit}$ as a fact checked by evaluation
@@ -133,7 +131,9 @@ order: a data refinement.
 \end{definition}
 
 \begin{definition}[The high half of a product]\label{def:mulHi}
-  Proposed name: \lname{Ratpoints.Sieve.mulHi}. The high $64$ bits of the $128$-bit product of two
+  \lean{Ratpoints.Sieve.mulHi}
+  \leanok
+  The high $64$ bits of the $128$-bit product of two
   $64$-bit words, from the four products of their $32$-bit halves, for the product of type
   \verb|__uint128_t| that gcc provides and Lean core does not (\csource{rp-private.h}{404}{408},
   \csource{rp-private.h}{409}{410}, ranges it shares with Definition~\ref{def:mulMod}). The
@@ -145,8 +145,9 @@ order: a data refinement.
 
 \begin{lemma}[The words compute the products]\label{lem:mulHi}
   \uses{def:mulHi, def:mulMod}
-  Proposed names: \lname{Ratpoints.Sieve.toNat\_mulHi}, \lname{Ratpoints.Sieve.mulMod\_eq},
-  \lname{Ratpoints.Sieve.mulDiv\_eq}. The high half is $\lfloor a b / 2^{64} \rfloor$ for all words
+  \lean{Ratpoints.Sieve.toNat_mulHi, Ratpoints.Sieve.mulMod_eq, Ratpoints.Sieve.mulDiv_eq}
+  \leanok
+  The high half is $\lfloor a b / 2^{64} \rfloor$ for all words
   $a, b$; so the reduction is $\lfloor (m u \bmod 2^{64}) (p \bmod 2^{64}) / 2^{64} \rfloor$ and the
   quotient $\lfloor (u \bmod 2^{64}) (m \bmod 2^{64}) / 2^{64} \rfloor$, and Lemma~\ref{lem:mulMod}
   keeps the statement of the remainder, while the quotient now needs $1 < p$, since the reciprocal
@@ -154,6 +155,7 @@ order: a data refinement.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   With $a = 2^{32} a_1 + a_0$ and $b = 2^{32} b_1 + b_0$,
   $a b = 2^{64} a_1 b_1 + 2^{32}(a_1 b_0 + a_0 b_1) + a_0 b_0$; the middle sum of the low halves of
   the cross products and the high half of $a_0 b_0$ is below $3 \cdot 2^{32}$, and its high half is
@@ -162,20 +164,25 @@ order: a data refinement.
 
 \begin{definition}[The remainder of a long of either sign]\label{def:modMul}
   \uses{def:mulMod}
-  Proposed name: \lname{Ratpoints.Sieve.modMul}. For an integer $a$, the reduction of $|a|$ with the
+  \lean{Ratpoints.Sieve.modMul}
+  \leanok
+  For an integer $a$, the reduction of $|a|$ with the
   reciprocal, and $p$ minus it for negative $a$ with a nonzero remainder (\verb|mod_mul|,
   \csource{sift.c}{243}{247}).
 \end{definition}
 
 \begin{lemma}[The remainder of a long]\label{lem:modMul}
   \uses{def:modMul, lem:mulMod}
-  Proposed name: \lname{Ratpoints.Sieve.modMul\_magic}. For $0 < p$ and $|a|\, p < 2^{64}$,
+  \lean{Ratpoints.Sieve.modMul_magic}
+  \leanok
+  For $0 < p$ and $|a|\, p < 2^{64}$,
   $\mathrm{modMul}(a, p, \mathrm{magic}(p)) = a \bmod p$, the Euclidean remainder; \verb|modLong| is
   the Euclidean remainder for a modulus $p \ge 0$ (Definition~\ref{def:useCLong}, whose lemma moves
   to a file without Mathlib).
 \end{lemma}
 
 \begin{proof}
+  \leanok
   Lemma~\ref{lem:mulMod} for $|a|$; for negative $a$, $p - (|a| \bmod p) = a \bmod p$ when the
   remainder is not $0$.
 \end{proof}

@@ -18,6 +18,7 @@ import Ratpoints.Mathlib.NumberTheory.LegendreSymbol.JacobiSymbol
 import Ratpoints.Proof.Bits
 import Ratpoints.Proof.Jacobi
 import Ratpoints.Proof.Params
+import Ratpoints.Proof.Reductions
 import Ratpoints.Proof.Stages
 import Ratpoints.Proof.Valuation
 import Std.Tactic.Do
@@ -474,7 +475,7 @@ theorem JacobiTestInvariant.mulDiv_getElem!_magic {ji : JacobiInfo} {b b' q i : 
   have hmem : ((q, o), i) ∈ ji.primes.zipIdx := by simp [hl]
   have hq := hpre.2.2.1 _ (List.fst_mem_of_mem_zipIdx hmem)
   have hm : ji.magic[i]! = magic q := by rw [← Array.getElem!_toList, hpre.2.2.2]; grind
-  exact hm ▸ mulDiv_magic hq.1.pos (Nat.lt_of_le_of_lt (Nat.mul_le_mul_right q h.2.2.2.2) hq.2)
+  exact hm ▸ mulDiv_magic hq.1.one_lt (Nat.lt_of_le_of_lt (Nat.mul_le_mul_right q h.2.2.2.2) hq.2)
 
 /-- The remainder by the prime `q` of the entry at the position `i` of the tables `ji`, by the
 reciprocal that the tables hold there, is exact for the current `b' ≤ b`, since `b q < 2 ^ 64`. -/

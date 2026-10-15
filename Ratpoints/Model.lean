@@ -6,6 +6,7 @@ Authors: Michael Stoll
 module
 
 public import Ratpoints.Model.BruteForce
+public import Ratpoints.Model.Candidate
 public import Ratpoints.Model.Cli
 public import Ratpoints.Model.Constants
 public import Ratpoints.Model.Denominators

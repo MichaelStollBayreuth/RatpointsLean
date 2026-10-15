@@ -14,13 +14,17 @@ the sieve takes its moduli. Changing a constant changes the model as changing th
 C program: no proof depends on the values of the constants beyond the facts checked here by
 `decide`, that `Ratpoints.rbaPack`, `Ratpoints.defaultArraySize` and `Ratpoints.maxArraySize` are
 positive, that `Ratpoints.mulModLimit` is below `2 ^ 64` and `2 ^ 32`
-(`Ratpoints.mulModLimit_lt_size`, `Ratpoints.mulModLimit_lt_two_pow_32`), that
-`Ratpoints.hornerSteps` is at least 1 (`Ratpoints.one_le_hornerSteps`), that
-`Ratpoints.maxBitsInPrime` is at most 10 (`Ratpoints.maxBitsInPrime_le_ten`) and that
-`Ratpoints.stage3Limit` is at most `2 ^ 32` (`Ratpoints.stage3Limit_le_two_pow_32`), and of the
-table the proofs use only that its entries are the odd primes below 1022, in increasing order
-(`Ratpoints.prime_of_mem_primeTable`, which checks them one by one, and
-`Ratpoints.lt_of_mem_primeTable`, `Ratpoints.mem_primeTable_of_prime` and
+(`Ratpoints.mulModLimit_lt_size`, `Ratpoints.mulModLimit_lt_two_pow_32`), that `Ratpoints.rbaLength`
+is `2 ^ Ratpoints.rbaShift` with `Ratpoints.rbaShift < 32`
+(`Ratpoints.rbaLength_eq_two_pow_rbaShift`, `Ratpoints.rbaShift_lt_thirty_two`), that
+`2 Ratpoints.rowBias - 1` is at most `Ratpoints.mulModLimit`
+(`Ratpoints.two_mul_rowBias_sub_one_le_mulModLimit`), that `Ratpoints.numStrides` is at least 1
+(`Ratpoints.one_le_numStrides`), that `Ratpoints.hornerSteps` is at least 1
+(`Ratpoints.one_le_hornerSteps`), that `Ratpoints.maxBitsInPrime` is at most 10
+(`Ratpoints.maxBitsInPrime_le_ten`) and that `Ratpoints.stage3Limit` is at most `2 ^ 32`
+(`Ratpoints.stage3Limit_le_two_pow_32`), and of the table the proofs use only that its entries are
+the odd primes below 1022, in increasing order (`Ratpoints.prime_of_mem_primeTable`, which checks
+them one by one, and `Ratpoints.lt_of_mem_primeTable`, `Ratpoints.mem_primeTable_of_prime` and
 `Ratpoints.pairwise_lt_toList_primeTable`, which `decide` checks).
 
 ## Main definitions
@@ -37,8 +41,8 @@ table the proofs use only that its entries are the odd primes below 1022, in inc
 * `Ratpoints.defaultSp1`, `Ratpoints.sp2Extra`: where the first stage of the sieve ends, and how
   many moduli the second stage adds, unless the options say.
 * `Ratpoints.defaultSturm`: the depth of the Sturm step, unless the options say.
-* `Ratpoints.rbaPack`, `Ratpoints.rbaLength`: how many words and how many bits a bit array of the
-  sieve has.
+* `Ratpoints.rbaPack`, `Ratpoints.rbaLength`, `Ratpoints.rbaShift`: how many words and how many
+  bits a bit array of the sieve has, and the logarithm of the second.
 * `Ratpoints.defaultArraySize`, `Ratpoints.maxArraySize`: at most how many bit arrays a piece of
   the numerators has, unless the parameters say, and in any case.
 * `Ratpoints.maxDivisors`: the bound, never reached, on the number of squarefree divisors of the
@@ -51,6 +55,9 @@ table the proofs use only that its entries are the odd primes below 1022, in inc
 * `Ratpoints.stage3Limit`: the bound below which the third stage of the sieve reduces by a
   multiplication.
 * `Ratpoints.useLongInPhase2`: whether the second stage of the sieve runs one word at a time.
+* `Ratpoints.rowBias`: the lower bound of the multiple of a modulus that the offset of a row
+  carries.
+* `Ratpoints.numStrides`: the number of the strides with which the numerators are packed.
 -/
 
 @[expose] public section
@@ -145,7 +152,9 @@ def defaultMaxForbidden : Nat := 64
 
 /-- The number of 64-bit words of a bit array of the sieve, `RBA_PACK`: 4 in the default build,
 whose bit arrays have 256 bits, and 8, 2 and 1 in the builds with 512-bit, 128-bit and 64-bit bit
-arrays. The proofs use only that it is positive (`Ratpoints.rbaPack_pos`).
+arrays. The proofs use only that it is positive (`Ratpoints.rbaPack_pos`) and that
+`64 rbaPack = 2 ^ Ratpoints.rbaShift` (`Ratpoints.rbaLength_eq_two_pow_rbaShift`), which the
+packing of the numerators needs (stage F).
 
 C: `rp-private.h:55-58`, `rp-private.h:113`, `rp-private.h:127-128`, `rp-private.h:167`,
 `rp-private.h:174-175`, `rp-private.h:226`, `rp-private.h:233-234`, `rp-private.h:252`,
@@ -159,13 +168,32 @@ def rbaPack : Nat := 4
 /-- The number of bits of a bit array of the sieve, `RBA_LENGTH`: `Ratpoints.rbaPack` words of
 `LONG_LENGTH = 64` bits.
 
-C: `rp-private.h:49-51`, `rp-private.h:125-126`, `rp-private.h:172-173`, `rp-private.h:231-232`,
-`rp-private.h:257-258`, `rp-private.h:281-282`
+C: `rp-private.h:49-51`, `rp-private.h:125`, `rp-private.h:172`, `rp-private.h:231`,
+`rp-private.h:257`, `rp-private.h:281`
 
-Deviation: computed from `Ratpoints.rbaPack`, where each build sets `RBA_LENGTH` and its logarithm
-`RBA_SHIFT` by literals; the shifts by `RBA_SHIFT` and by `LONG_SHIFT` are divisions by
-`rbaLength` and by 64, and the masks by `RBA_LENGTH - 1` and by `LONG_MASK` remainders. -/
+Deviation: computed from `Ratpoints.rbaPack`, where each build sets `RBA_LENGTH` by a literal, and
+its logarithm `RBA_SHIFT` too (`Ratpoints.rbaShift`); the shifts by `RBA_SHIFT` and by
+`LONG_SHIFT` are divisions by `rbaLength` and by 64, which round down also for a negative value, as
+the arithmetic shifts of gcc do, and the masks by `RBA_LENGTH - 1` and by `LONG_MASK` Euclidean
+remainders. -/
 def rbaLength : Nat := 64 * rbaPack
+
+/-- The logarithm of the number of bits of a bit array of the sieve, `RBA_SHIFT`: 8 in the default
+build, whose bit arrays have `2 ^ 8 = 256` bits, and 9, 7 and 6 in the builds with 512-bit,
+128-bit and 64-bit bit arrays, so that `Ratpoints.rbaLength = 2 ^ rbaShift`
+(`Ratpoints.rbaLength_eq_two_pow_rbaShift`). That `Ratpoints.rbaLength` is a power of 2 makes it a
+unit modulo every odd modulus, which the row offsets of the packing of the numerators need
+(stage F), and keeps the word numbers of the bit arrays and the numerators they stand for within
+the range of a `long`; the proofs use only that and `rbaShift < 32`
+(`Ratpoints.rbaShift_lt_thirty_two`).
+
+C: `rp-private.h:126`, `rp-private.h:173`, `rp-private.h:232`, `rp-private.h:258`,
+`rp-private.h:282`
+
+Deviation: the value of the default build, set here, where each build sets it by a literal, and
+the build with 64-bit bit arrays by `LONG_SHIFT`; the model shifts by none of them: the shifts by
+`RBA_SHIFT` are divisions by `Ratpoints.rbaLength`. -/
+def rbaShift : Nat := 8
 
 /-- At most how many bit arrays a piece of the numerators has when the parameters do not say,
 `RATPOINTS_ARRAY_SIZE`.
@@ -264,6 +292,32 @@ takes as it is under `-U 0` and otherwise scales by the length of the run (`phas
 C: `ratpoints.h:95-97` -/
 def sp2Extra : Nat := 11
 
+/-- The lower bound of the multiple of a modulus `p` that the offset of a row of the sieve carries,
+`RP_ROW_BIAS`: in the packing of the numerators (stage F) the offset of the row of `p` carries the
+least multiple of `p` that is at least `rowBias`, so that the sum of a word number `w ≥ -rowBias`
+and an offset is never negative; the first two stages of the sieve reduce that sum, or its
+negation, by a multiplication with the reciprocal of `p` when the word numbers of a piece lie
+between `-rowBias` and `rowBias - 2 Ratpoints.maxPrimeEven` (the test `small`), the value then
+staying below `2 rowBias` in absolute value, which the C code checks at compile time to be at most
+`RP_MULMOD_LIMIT` (`Ratpoints.two_mul_rowBias_sub_one_le_mulModLimit`).
+
+C: `rp-private.h:387`, `rp-private.h:426-427`
+
+Deviation: the check at compile time that `2 RP_ROW_BIAS - 1 ≤ RP_MULMOD_LIMIT`, an array of
+negative size otherwise, a theorem checked by `decide`
+(`Ratpoints.two_mul_rowBias_sub_one_le_mulModLimit`). -/
+def rowBias : Nat := 2 ^ 31
+
+/-- The number of the strides with which the sieve packs the numerators of the denominators of a
+class modulo 64, `RP_NUM_STRIDES`: the strides are the powers `2 ^ k` with `k < numStrides` and
+`k ≤ 6`, up to the modulus `64 = 2 ^ 6` of the 2-adic information; for a larger value the stride
+stays at most `2 ^ 6`, the masks of the classes having seven entries, read as `0` beyond (the
+packing of the numerators, stage F). The proofs use only that it is at least 1
+(`Ratpoints.one_le_numStrides`), for the stride `2 ^ 0`.
+
+C: `rp-private.h:476` -/
+def numStrides : Nat := 7
+
 theorem rbaPack_pos : 0 < rbaPack := by decide
 theorem defaultArraySize_pos : 0 < defaultArraySize := by decide
 theorem maxArraySize_pos : 0 < maxArraySize := by decide
@@ -292,6 +346,23 @@ theorem maxBitsInPrime_le_ten : maxBitsInPrime ≤ 10 := by decide
 reduces exactly, as the C code assumes of `RP_STAGE3_LIMIT` without a check. -/
 theorem stage3Limit_le_two_pow_32 : stage3Limit ≤ 2 ^ 32 := by decide
 
+/-- The bit arrays have `2 ^ Ratpoints.rbaShift` bits, as `RBA_SHIFT` says of `RBA_LENGTH`
+(`rp-private.h:91`). -/
+theorem rbaLength_eq_two_pow_rbaShift : rbaLength = 2 ^ rbaShift := by decide
+
+/-- The number of bits of a bit array is below `2 ^ 32`, so that its product with a modulus below
+`2 ^ 32` is below `2 ^ 64` and its remainder by the multiplication with the reciprocal exact, as the
+C code assumes at `find_points.c:1816`. -/
+theorem rbaShift_lt_thirty_two : rbaShift < 32 := by decide
+
+/-- The check at compile time of `rp-private.h:426-427`: the values that the first two stages of the
+sieve reduce by a multiplication, a word number plus an offset or its negation, at most
+`2 Ratpoints.rowBias - 1` in absolute value, are at most `Ratpoints.mulModLimit`. -/
+theorem two_mul_rowBias_sub_one_le_mulModLimit : 2 * rowBias - 1 ≤ mulModLimit := by decide
+
+/-- There is at least the stride `2 ^ 0`. -/
+theorem one_le_numStrides : 1 ≤ numStrides := by decide
+
 /-! ### Examples -/
 
 #guard primeTable.size == 171 && numPrimes == 53 && primeTable[numPrimes - 1]! == 251
@@ -299,12 +370,13 @@ theorem stage3Limit_le_two_pow_32 : stage3Limit ≤ 2 ^ 32 := by decide
 #guard maxPrimeEven == 256 && hornerSteps == 7 &&
   (primeTable.toList.take numPrimes).all (· < maxPrimeEven) && maxPrimeEven ≤ primeTable[numPrimes]!
 
-#guard rbaLength == 256 && defaultArraySize == 256 && maxArraySize == 1048576
+#guard rbaLength == 256 && rbaShift == 8 && defaultArraySize == 256 && maxArraySize == 1048576
 
 #guard maxDivisors == 512 && veryBig == 1000 && jacobiPrimes == 16 && jacobiTable == 8192 &&
   mulModLimit == 4294967295
 
-#guard stage3Limit == 4294967296 && !useLongInPhase2 && defaultSp1 == 11 && sp2Extra == 11
+#guard stage3Limit == 4294967296 && !useLongInPhase2 && defaultSp1 == 11 && sp2Extra == 11 &&
+  rowBias == 2147483648 && numStrides == 7
 
 -- The numbers of primes that the header lists for the builds with moduli of 5 to 10 bits.
 #guard [5, 6, 7, 8, 9, 10].map (fun b ↦ (primeTable.toList.filter (· < 2 ^ b)).length) ==

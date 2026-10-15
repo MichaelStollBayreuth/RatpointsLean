@@ -22,17 +22,19 @@ coefficients reduced modulo the prime (`Ratpoints.Sieve.examinePrime?`, `Ratpoin
 the sieve entry of a modulus, a prime, a prime power or a product of them, by its factors and with
 the reciprocal of the modulus (`Ratpoints.Sieve.SieveEntry`), with the rows of a denominator
 (`Ratpoints.Sieve.SieveEntry.admits`). The reciprocal of a modulus gives the remainder and the
-quotient by a multiplication (`Ratpoints.Sieve.magic`, `Ratpoints.Sieve.mulMod`,
-`Ratpoints.Sieve.mulDiv`). The table of a prime without the exit (`Ratpoints.Sieve.examinePrime`) is
-the reference of the table with it, which gives the same table for `0 < p < Ratpoints.maxPrimeEven`
-whenever it gives one (`Ratpoints.Sieve.examinePrime?_spec`). The tables that the build of ratpoints
-generates are computed here: the squares and the inverses by `Ratpoints.Sieve.squaresMod` and
-`Ratpoints.Sieve.inversesMod`, and the row of `0` of a prime by `Ratpoints.Sieve.Entry.admits`, in
-its case `r = 0`. The loop of the tables (`Ratpoints.Sieve.examinePrimes`) is in
-`Ratpoints.Model.Denominators`, the factors of a modulus (`Ratpoints.modulusFactors`) in
-`Ratpoints.Model.Params`, and the construction of the sieve entry of a modulus
-(`Ratpoints.makeModulus?`) in `Ratpoints.Model.FindPoints`; the rows as words and the sieve that
-uses them are in `Ratpoints.Model.Sieve`.
+quotient by a multiplication on 64-bit words, with the high half of the 128-bit product from the
+products of the 32-bit halves (`Ratpoints.Sieve.magic`, `Ratpoints.Sieve.mulHi`,
+`Ratpoints.Sieve.mulMod`, `Ratpoints.Sieve.mulDiv`), and the remainder of a `long` of either sign
+(`Ratpoints.Sieve.modMul`). The table of a prime without the exit (`Ratpoints.Sieve.examinePrime`)
+is the reference of the table with it, which gives the same table for
+`0 < p < Ratpoints.maxPrimeEven` whenever it gives one (`Ratpoints.Sieve.examinePrime?_spec`). The
+tables that the build of ratpoints generates are computed here: the squares and the inverses by
+`Ratpoints.Sieve.squaresMod` and `Ratpoints.Sieve.inversesMod`, and the row of `0` of a prime by
+`Ratpoints.Sieve.Entry.admits`, in its case `r = 0`. The loop of the tables
+(`Ratpoints.Sieve.examinePrimes`) is in `Ratpoints.Model.Denominators`, the factors of a modulus
+(`Ratpoints.modulusFactors`) in `Ratpoints.Model.Params`, and the construction of the sieve entry of
+a modulus (`Ratpoints.makeModulus?`) in `Ratpoints.Model.FindPoints`; the rows as words and the
+sieve that uses them are in `Ratpoints.Model.Sieve`.
 
 ## Main definitions
 
@@ -48,8 +50,10 @@ uses them are in `Ratpoints.Model.Sieve`.
   modulo the prime.
 * `Ratpoints.Sieve.modinv`, `Ratpoints.Sieve.Power`, `Ratpoints.Sieve.examinePower`: the inverse
   modulo `m` by the extended Euclidean algorithm, and the tables of a prime power.
-* `Ratpoints.Sieve.magic`, `Ratpoints.Sieve.mulMod`, `Ratpoints.Sieve.mulDiv`: the reciprocal of a
-  modulus, and the remainder and the quotient by a multiplication with it.
+* `Ratpoints.Sieve.magic`, `Ratpoints.Sieve.mulHi`, `Ratpoints.Sieve.mulMod`,
+  `Ratpoints.Sieve.mulDiv`, `Ratpoints.Sieve.modMul`: the reciprocal of a modulus, the high half of
+  the product of two 64-bit words, the remainder and the quotient by a multiplication with the
+  reciprocal, and the remainder of a `long` of either sign.
 * `Ratpoints.Sieve.Entry.admits`, `Ratpoints.Sieve.Power.admits`, `Ratpoints.Sieve.Factor`,
   `Ratpoints.Sieve.SieveEntry`, `Ratpoints.Sieve.SieveEntry.admits`, `Ratpoints.Sieve.survives`:
   the rows of a denominator for a prime, for a prime power, and for a modulus by its factors.
@@ -132,16 +136,23 @@ def examinePrime (c : List Int) (d p : Nat) : Entry :=
 `a < -16 b`, by C's division, which truncates (`Int.tmod`), with `b` added to a negative remainder;
 for `a ≥ 16 b`, by C's division; and otherwise by adding `16 b` to a negative `a`, then subtracting
 `8 b`, `4 b`, `2 b` and `b` where it can. For every integer `a` and every `b ≥ 0` it is the
-Euclidean `%` (`Ratpoints.Sieve.modLong_eq_emod`).
+Euclidean `%` (`Ratpoints.Sieve.modLong_eq_emod`). Its copy in `find_points.c` reduces, among
+others, the coefficients in `examine_prime` and `examine_power` (`Ratpoints.Sieve.examinePrime?`,
+`Ratpoints.Sieve.examinePower`) and a denominator above `Ratpoints.mulModLimit` in `fill_bp_list`,
+and its copy in `sift.c` the row indices of the first two stages of the sieve where they cannot be
+reduced by a multiplication with the reciprocal; the model reduces with it in these two places with
+the packing of the numerators (stage F).
 
-C: `find_points.c:477-492`
+C: `find_points.c:477-492`, `sift.c:370-389`
 
-Deviation: integers for the `long`s, with the obligations that the values it computes stay in the
-range of a `long` stated as lemmas: for `0 ≤ b < 2 ^ 59`, `16 b` (`Ratpoints.fitsLong_sixteen_mul`),
-its negation (`Ratpoints.fitsLong_neg`), and `a + 16 b` for `-16 b ≤ a < 0`
-(`Ratpoints.fitsLong_add_sixteen_mul`), its other values lying between `-b` and `16 b`; `Int.tmod`
-for C's division of `long`s, which truncates; the multiples `16 b`, `8 b`, `4 b` and `2 b` as
-products, for the shifts of `b1`. -/
+Deviation: one definition for the two copies of the function, in `find_points.c` and in `sift.c`,
+which are the same but for the hooks of the counts of the reductions in `sift.c` (`RP_MOD_TICK`,
+`RP_MOD_DIV`), empty unless `RP_MOD_COUNTS` is set; integers for the `long`s, with the obligations
+that the values it computes stay in the range of a `long` stated as lemmas: for `0 ≤ b < 2 ^ 59`,
+`16 b` (`Ratpoints.fitsLong_sixteen_mul`), its negation (`Ratpoints.fitsLong_neg`), and `a + 16 b`
+for `-16 b ≤ a < 0` (`Ratpoints.fitsLong_add_sixteen_mul`), its other values lying between `-b` and
+`16 b`; `Int.tmod` for C's division of `long`s, which truncates; the multiples `16 b`, `8 b`, `4 b`
+and `2 b` as products, for the shifts of `b1`. -/
 def modLong (a b : Int) : Int :=
   let b1 := 16 * b
   if a < -b1 then
@@ -365,36 +376,76 @@ here `Ratpoints.makeModulus?`), in the tables of the Jacobi test (line 700; here
 `Ratpoints.Sieve.jacobiSetup`), and in the entries of the forbidden divisors tested with words
 (lines 2648, 2668 and 2738; here `Ratpoints.Sieve.ForbiddenEntry`), which keep no reciprocal in the
 model (stage I). For `p = 1`, which is no modulus, it is `2 ^ 64`, where `ULONG_MAX / 1 + 1` wraps
-to `0` in the C code. -/
+to `0` in the C code; the reductions, which read it as a 64-bit word, read `0` too. -/
 def magic (p : Nat) : Nat := (2 ^ 64 - 1) / p + 1
 
+/-- The high 64 bits of the 128-bit product of the 64-bit words `a` and `b`, `⌊a b / 2 ^ 64⌋`, from
+the four products of their 32-bit halves: the high half of the low product and the low halves of the
+two middle products make `mid`, whose high half is the carry into the high half of the result, the
+high product plus the high halves of the middle products and the carry; no product and no partial
+sum leaves the range of a 64-bit word. It is the shift by 64 bits of the 128-bit product of
+`RP_MULMOD` (`Ratpoints.Sieve.mulMod`) and of `RP_MULDIV` (`Ratpoints.Sieve.mulDiv`).
+
+C: `rp-private.h:404-408`, `rp-private.h:409-410`
+
+Deviation: the high half of the product from the products of the 32-bit halves, for the product
+of type `__uint128_t` that gcc provides and Lean core does not. -/
+def mulHi (a b : UInt64) : UInt64 :=
+  let a0 := a &&& 0xffffffff
+  let a1 := a >>> 32
+  let b0 := b &&& 0xffffffff
+  let b1 := b >>> 32
+  let mid := ((a0 * b0) >>> 32) + ((a0 * b1) &&& 0xffffffff) + ((a1 * b0) &&& 0xffffffff)
+  a1 * b1 + ((a0 * b1) >>> 32) + ((a1 * b0) >>> 32) + (mid >>> 32)
+
 /-- The remainder of `u` modulo `p` by a multiplication with the reciprocal `m`, `RP_MULMOD`: the
-low 64 bits of `m u`, times `p`, shifted right by 64 bits. For the reciprocal
-`m = Ratpoints.Sieve.magic p` it is `u % p` whenever `u p < 2 ^ 64`, which the C code ensures by
-reducing only values below `2 ^ 32` modulo moduli below `2 ^ 32`.
+low 64 bits of `m u`, times `p`, shifted right by 64 bits, on 64-bit words
+(`Ratpoints.Sieve.mulHi`). For the reciprocal `m = Ratpoints.Sieve.magic p` it is `u % p` whenever
+`u p < 2 ^ 64`, which the C code ensures by reducing only values below `2 ^ 32` modulo moduli below
+`2 ^ 32`.
 
 C: `rp-private.h:404-408`, `rp-private.h:411`, `rp-private.h:413-414`, `rp-private.h:417`
 
-Deviation: natural numbers for the `unsigned long`s and for the `long` result, which is below `p`;
-the product `m u` reduced modulo `2 ^ 64`, as the multiplication of `unsigned long`s wraps, and its
-product with `p` exact, as the 128-bit product; the argument `u` a natural number, for the `long`
-that the macro converts to an `unsigned long`, which the C code passes non-negative; the form with
-the 128-bit product, which the builds of the model compile (the compiler defines
-`__SIZEOF_INT128__`, and neither `RP_MULMOD_DIVIDE` nor `RP_NO_INT128` is set), for the division
-`u % p` of the other builds, which gives the same remainder where the multiplication is exact. -/
-def mulMod (u p m : Nat) : Nat := m * u % 2 ^ 64 * p / 2 ^ 64
+Deviation: natural numbers for the `unsigned long` reciprocal, the `long`s `u` and `p`, and the
+`long` result, which is below `p`; the arguments converted to `UInt64`, as the macro converts `u`
+and `p` to `unsigned long`s, so that the product `m u` wraps as the product of `unsigned long`s
+does; the argument `u` a natural number, for the `long` that the C code passes non-negative; the
+high half of the 128-bit product by `Ratpoints.Sieve.mulHi`; the form with the 128-bit product,
+which the builds of the model compile (the compiler defines `__SIZEOF_INT128__`, and neither
+`RP_MULMOD_DIVIDE` nor `RP_NO_INT128` is set), for the division `u % p` of the other builds, which
+gives the same remainder where the multiplication is exact. -/
+def mulMod (u p m : Nat) : Nat := (mulHi (m.toUInt64 * u.toUInt64) p.toUInt64).toNat
 
 /-- The quotient of `u` by `p` by a multiplication with the reciprocal `m`, `RP_MULDIV`: the high 64
-bits of `u m`. For the reciprocal `m = Ratpoints.Sieve.magic p` it is `u / p` whenever
-`u p < 2 ^ 64`.
+bits of `u m`, on 64-bit words (`Ratpoints.Sieve.mulHi`). For the reciprocal
+`m = Ratpoints.Sieve.magic p` of a modulus `p ≥ 2` it is `u / p` whenever `u p < 2 ^ 64`.
 
 C: `rp-private.h:409-410`, `rp-private.h:415-416`
 
-Deviation: natural numbers for the `unsigned long`s and for the `long` result, the product `u m`
-exact, as the 128-bit product; no argument `p`, which that form does not read; the form with the
-128-bit product, which the builds of the model compile, for the division `u / p` of the other
-builds, which gives the same quotient where the multiplication is exact. -/
-def mulDiv (u m : Nat) : Nat := u * m / 2 ^ 64
+Deviation: natural numbers for the `unsigned long` reciprocal, the `long` `u` and the `long`
+result, the arguments converted to `UInt64`, as the macro converts `u` to an `unsigned long`; the
+high half of the 128-bit product by `Ratpoints.Sieve.mulHi`; no argument `p`, which that form does
+not read; the form with the 128-bit product, which the builds of the model compile, for the
+division `u / p` of the other builds, which gives the same quotient where the multiplication is
+exact. -/
+def mulDiv (u m : Nat) : Nat := (mulHi u.toUInt64 m.toUInt64).toNat
+
+/-- The remainder of `a` modulo `p` by a multiplication with the reciprocal `m`, `mod_mul` of
+`sift.c`: the remainder `r` of `|a|` by `Ratpoints.Sieve.mulMod`, and `p - r` for a negative `a`
+with `r ≠ 0`. For the reciprocal `m = Ratpoints.Sieve.magic p` it is the Euclidean `a % p` whenever
+`|a| p < 2 ^ 64`, which the C code ensures by reducing only `|a| ≤ RP_MULMOD_LIMIT` modulo moduli
+below `2 ^ 32`: the first stage of the sieve reduces its first row index so when the word numbers
+of the piece allow it (the test `small`), which the model does with the packing of the numerators
+(stage F).
+
+C: `sift.c:243-247`
+
+Deviation: integers for the `long`s `a` and the result, and natural numbers for the `long` `p` and
+the `unsigned long` reciprocal `m`; `|a|` a natural number, for the `long` that `RP_MULMOD` converts
+to an `unsigned long`. -/
+def modMul (a : Int) (p m : Nat) : Int :=
+  let r : Int := mulMod (if a < 0 then -a else a).toNat p m
+  if a < 0 ∧ r ≠ 0 then p - r else r
 
 /-! ### The rows of a denominator -/
 
@@ -630,6 +681,21 @@ def survives (entries : List SieveEntry) (b : Nat) (a : Int) : Bool := entries.a
     2 ^ 64 ≤ u * p || mulMod u p (magic p) == u % p && mulDiv u (magic p) == u / p
 #guard magic 3 == 6148914691236517206 && magic 5 == 3689348814741910324 &&
   magic 251 == 73493004277727298
+
+-- The high half of the 128-bit product of two words against the product of natural numbers, for
+-- words at the ends of the range and around the powers `2 ^ 32` of the halves.
+#guard
+  let ws : List UInt64 := [0, 1, 2, 0xffffffff, 0x100000000, 0x100000001, 0x123456789abcdef0,
+    0x8000000000000000, 0xfffffffeffffffff, 0xffffffff00000000, 0xfffffffffffffffe, ~~~0]
+  ws.all fun a ↦ ws.all fun b ↦ (mulHi a b).toNat == a.toNat * b.toNat / 2 ^ 64
+
+-- The remainder `mod_mul` of a value of either sign against the Euclidean `%`, at the ends of the
+-- range `|a| ≤ Ratpoints.mulModLimit` of its callers and around the multiples of the modulus, for
+-- every prime of the table and the composite moduli 9, 15, 45 and 255.
+#guard (primeTable.toList ++ [9, 15, 45, 255]).all fun p ↦
+  ([0, 1, p - 1, p, p + 1, 2 * p - 1, 2 * p, 7 * p + 3, mulModLimit - 1, mulModLimit] :
+      List Nat).all fun u ↦
+    [(u : Int), -(u : Int)].all fun a ↦ modMul a p (magic p) == a % p
 
 -- The row of `b = 3` modulo 5 admits `a` when `f(a / 3)` is a square modulo 5.
 #guard (List.range 5).map (fun a : Nat ↦ (examinePrime [1, 0, 1] 2 5).admits 3 a) ==

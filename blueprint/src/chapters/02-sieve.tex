@@ -556,8 +556,9 @@ monoids in \verb|Ratpoints/Mathlib| under their names in Mathlib's namespaces. T
 and the constants of the build are in \verb|Ratpoints/Model/Constants.lean| with
 $\mathrm{maxDegree}$; the rest of the model is in \verb|Ratpoints/Model/Params.lean|,
 \verb|Ratpoints/Model/Tables.lean| (the tables and the rows of a denominator),
-\verb|Ratpoints/Model/Sieve.lean| and \verb|Ratpoints/Model/FindPoints.lean| (the refusals, since
-stage~D, in \verb|Ratpoints/Model/Setup.lean|, and the run, since stage~E, in
+\verb|Ratpoints/Model/Sieve.lean| (the check of a numerator, since stage~F3, in
+\verb|Ratpoints/Model/Candidate.lean|) and \verb|Ratpoints/Model/FindPoints.lean| (the refusals,
+since stage~D, in \verb|Ratpoints/Model/Setup.lean|, and the run, since stage~E, in
 \verb|Ratpoints/Model/Denominators.lean|), each with \verb|#guard| examples taken from the tables
 and the output of ratpoints; the contracts, without Mathlib, are in
 \verb|Ratpoints/Proof/Sieve.lean|, and that of the run, since stage~E, in
