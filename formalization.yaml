@@ -307,12 +307,12 @@ alignment:
         of the C code, the reductions by a reciprocal, the cut points of the stages) and the packing
         of the numerators of stage F3 (the classes with their strides, the rows of offsets, the
         residues of a denominator divided by its stride, the bits of the heights, the row indices of
-        the first two stages with the test small), every
-        well-formed choice of the sieving parameters, the array size of the pieces included, and
-        every value of the options (Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok,
-        Ratpoints.nodup_of_findPoints_eq_ok), certified by comparator, through the permutation of
-        the brute-force reference (Ratpoints.perm_bruteForce_of_findPoints_eq_ok); the later stages
-        bring Ratpoints.findPoints closer to the C code, and the theorems move with it
+        the first two stages with the test small), every well-formed choice of the sieving
+        parameters, the array size of the pieces included, and every value of the options
+        (Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok, Ratpoints.nodup_of_findPoints_eq_ok),
+        certified by comparator, through the permutation of the brute-force reference
+        (Ratpoints.perm_bruteForce_of_findPoints_eq_ok); the later stages bring Ratpoints.findPoints
+        closer to the C code, and the theorems move with it
     - source: "the refusals: fewer than two or more than maxDegree + 1 = 101 coefficients, H = 0 or H >= 2^63, a binary form that is not squarefree"
       lean: "Ratpoints.exists_findPoints_eq_error_iff_of_sturm_nonneg"
       module: "Ratpoints.Proof.FindPoints"

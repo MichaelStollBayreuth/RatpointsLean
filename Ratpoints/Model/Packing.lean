@@ -152,7 +152,7 @@ def numPackings (cls : Vector NumClass 64) : Id Nat := do
   let mut n := 0
   for h : b in [0:64] do
     let key := 2 ^ cls[b].k + cls[b].a0
-    if cls[b].bits != 0 && (seen[key / 64]! >>> (key % 64).toUInt64) &&& 1 == 0 then
+    if cls[b].bits != 0 && seen[key / 64]! >>> (key % 64).toUInt64 &&& 1 == 0 then
       seen := seen.set! (key / 64) (seen[key / 64]! ||| 1 <<< (key % 64).toUInt64)
       n := n + 1
   return if n > 0 then n else 1

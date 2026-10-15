@@ -300,7 +300,7 @@ theorem getElem!_replicate_none {α : Type u} (n K : Nat) :
 theorem getElem!_of_toList_eq_map {α : Type u} {β : Type v} [Inhabited β] {xs : Array β}
     {l : List α} {f : α → β} (h : xs.toList = l.map f) {n : Nat} (hn : n < l.length) :
     xs[n]! = f l[n] := by
-  have hs : n < xs.size := by rw [← Array.length_toList, h, List.length_map]; exact hn
+  have hs : n < xs.size := by rwa [← Array.length_toList, h, List.length_map]
   rw [getElem!_pos xs n hs, ← Array.getElem_toList]
   simp only [h, List.getElem_map]
 
@@ -805,13 +805,12 @@ namespace Int
 
 /-- Before the first multiple of `p` from `a` on: for `r = (-a) mod p` and `j < r`, the residue of
 `a + j` modulo `p` is `p - r + j`. -/
-theorem toNat_add_emod_of_lt {a : Int} {p j : Nat} (hp : 0 < p)
-    (hj : j < ((-a) % (p : Int)).toNat) :
-    ((a + j) % (p : Int)).toNat = p - ((-a) % (p : Int)).toNat + j := by
+theorem toNat_add_emod_of_lt {a : Int} {p j : Nat} (hp : 0 < p) (hj : j < (-a % (p : Int)).toNat) :
+    ((a + j) % (p : Int)).toNat = p - (-a % (p : Int)).toNat + j := by
   have := emod_nonneg (-a) (b := p) (by lia)
   have := emod_lt_of_pos (-a) (b := p) (by lia)
   have := mul_ediv_add_emod (-a) p
-  have key : a + j = (p - (-a) % p + j) + p * (-((-a) / p) - 1) := by
+  have key : a + j = (p - -a % p + j) + p * (-((-a) / p) - 1) := by
     rw [Int.mul_sub, Int.mul_neg, Int.mul_one]
     lia
   rw [key, add_mul_emod_self_left, emod_eq_of_lt (by lia) (by lia)]
@@ -820,12 +819,10 @@ theorem toNat_add_emod_of_lt {a : Int} {p j : Nat} (hp : 0 < p)
 /-- From the first multiple of `p` from `a` on: for `r = (-a) mod p` and `i < p`, the residue of
 `a + r + k p + i` modulo `p` is `i`. -/
 theorem toNat_add_add_emod {a : Int} {p i k : Nat} (hi : i < p) :
-    ((a + ((((-a) % (p : Int)).toNat + k * p + i : Nat) : Int)) % (p : Int)).toNat = i := by
+    ((a + (((-a % (p : Int)).toNat + k * p + i : Nat) : Int)) % (p : Int)).toNat = i := by
   have := mul_ediv_add_emod (-a) p
-  have hR : (((-a) % (p : Int)).toNat : Int) = (-a) % p :=
-    toNat_of_nonneg (emod_nonneg _ (by lia))
-  have key : a + ((((-a) % (p : Int)).toNat + k * p + i : Nat) : Int) =
-      i + p * (k - (-a) / p) := by
+  have hR : ((-a % (p : Int)).toNat : Int) = -a % p := toNat_of_nonneg (emod_nonneg _ (by lia))
+  have key : a + (((-a % (p : Int)).toNat + k * p + i : Nat) : Int) = i + p * (k - (-a) / p) := by
     push_cast
     rw [hR, Int.mul_sub, Int.mul_comm (p : Int) k]
     lia
@@ -836,7 +833,7 @@ theorem toNat_emod_lt (a : Int) {p : Nat} (hp : 0 < p) : (a % (p : Int)).toNat <
   (toNat_lt' hp).mpr (emod_lt_of_pos a (by lia))
 
 theorem toNat_mul_emod (u : Nat) (a : Int) {q : Nat} (hq : 0 < q) :
-    ((u * a) % (q : Int)).toNat = u * (a % (q : Int)).toNat % q := by
+    (u * a % (q : Int)).toNat = u * (a % (q : Int)).toNat % q := by
   have h0 := Int.emod_nonneg a (b := q) (by lia)
   rw [← Int.toNat_natCast (u * (a % (q : Int)).toNat % q)]
   push_cast
@@ -952,10 +949,10 @@ theorem neg_ediv_eq_sub_one_sub_ediv (x : Int) {m : Int} (hm : 0 < m) :
 /-- `⌊lo / m⌋ + ⌈(lo mod m - a₀) / m⌉ = ⌈(lo - a₀) / m⌉` for `m > 0`: the first bit of the split
 form of `numerators_to_bits` (`Ratpoints.Sieve.numeratorsToBits`), from the multiple of `m` in `lo`
 and its rest. -/
-theorem ediv_add_emod_sub_add_sub_one_ediv (lo : Int) (a0 : Int) {m : Int} (hm : 0 < m) :
+theorem ediv_add_emod_sub_add_sub_one_ediv (lo a0 : Int) {m : Int} (hm : 0 < m) :
     lo / m + (lo % m - a0 + (m - 1)) / m = -((a0 - lo) / m) := by
   have h1 := Int.emod_add_ediv_mul lo m
-  have e1 : (a0 : Int) - lo = (a0 - lo % m) + -(lo / m) * m := by lia
+  have e1 : a0 - lo = a0 - lo % m + -(lo / m) * m := by lia
   rw [e1, Int.add_mul_ediv_right _ _ (Int.ne_of_gt hm), Int.neg_add, Int.neg_neg,
     Int.neg_ediv_eq_sub_one_sub_ediv _ hm, Int.add_comm]
   congr 2
@@ -963,10 +960,10 @@ theorem ediv_add_emod_sub_add_sub_one_ediv (lo : Int) (a0 : Int) {m : Int} (hm :
 
 /-- `⌊hi / m⌋ + ⌊(hi mod m - a₀) / m⌋ = ⌊(hi - a₀) / m⌋` for `m > 0`: the last bit of the split form
 of `numerators_to_bits` (`Ratpoints.Sieve.numeratorsToBits`). -/
-theorem ediv_add_emod_sub_ediv (hi : Int) (a0 : Int) {m : Int} (hm : 0 < m) :
+theorem ediv_add_emod_sub_ediv (hi a0 : Int) {m : Int} (hm : 0 < m) :
     hi / m + (hi % m - a0) / m = (hi - a0) / m := by
   have h2 := Int.emod_add_ediv_mul hi m
-  have e2 : hi - (a0 : Int) = (hi % m - a0) + hi / m * m := by lia
+  have e2 : hi - a0 = hi % m - a0 + hi / m * m := by lia
   rw [e2, Int.add_mul_ediv_right _ _ (Int.ne_of_gt hm), Int.add_comm]
 
 theorem lt_ediv_of_neg {c z m : Int} (hc : c < 0) (hz : c < z) (hm : 0 < m) : c < z / m := by
@@ -1139,7 +1136,7 @@ theorem ofNat_ne_zero_of_lt {b : Nat} (hb0 : 0 < b) (hb : b < UInt64.size) :
 /-- For `0 < b < 2 ^ 64`, `b` is `2 ^ t` times `b >>> t`, for the position `t` of the lowest set
 bit of the word `b`, since the bits of `b` below it are clear. -/
 theorem two_pow_ctz_mul_shiftRight_ofNat {b : Nat} (hb0 : 0 < b) (hb : b < UInt64.size) :
-    2 ^ (UInt64.ofNat b).toBitVec.ctz.toNat * (b >>> (UInt64.ofNat b).toBitVec.ctz.toNat) = b := by
+    2 ^ (UInt64.ofNat b).toBitVec.ctz.toNat * b >>> (UInt64.ofNat b).toBitVec.ctz.toNat = b := by
   have hlt := BitVec.lt_def.mp (BitVec.ctz_lt_iff_ne_zero.mpr
     (UInt64.toBitVec_ne_of_ne (ofNat_ne_zero_of_lt hb0 hb)))
   rw [UInt64.toBitVec_ofNat'] at hlt ⊢
@@ -1153,7 +1150,7 @@ theorem two_pow_ctz_mul_shiftRight_ofNat {b : Nat} (hb0 : 0 < b) (hb : b < UInt6
 /-- For `0 < b < 2 ^ 64`, `b >>> t` is odd, for the position `t` of the lowest set bit of the word
 `b`. -/
 theorem shiftRight_ctz_ofNat_mod_two {b : Nat} (hb0 : 0 < b) (hb : b < UInt64.size) :
-    (b >>> (UInt64.ofNat b).toBitVec.ctz.toNat) % 2 = 1 := by
+    b >>> (UInt64.ofNat b).toBitVec.ctz.toNat % 2 = 1 := by
   have ht := BitVec.getLsbD_true_ctz_of_ne_zero
     (UInt64.toBitVec_ne_of_ne (ofNat_ne_zero_of_lt hb0 hb))
   rw [UInt64.toBitVec_ofNat', BitVec.getLsbD_ofNat, Bool.and_eq_true] at ht
@@ -1214,7 +1211,7 @@ theorem getLsbD_or_shiftLeft_of_dvd {x p0 : UInt64} {s P : Nat} (hPs : P ∣ s) 
     · simp [h4, show ¬t - s < s by lia]
 
 theorem shiftRight_and_one_beq_zero (x : UInt64) {j : Nat} (hj : j < 64) :
-    ((x >>> UInt64.ofNat j) &&& 1 == 0) = !x.toBitVec.getLsbD j := by
+    (x >>> UInt64.ofNat j &&& 1 == 0) = !x.toBitVec.getLsbD j := by
   have : (UInt64.ofNat j).toBitVec.toNat % (64 : BitVec 64).toNat = j := by
     simp [UInt64.toBitVec_ofNat']
     lia
@@ -1397,8 +1394,7 @@ theorem toInt_and_ofNat_two_pow_sub_one (x : Int64) {k : Nat} (hk : k < 63) :
   have h2 : 2 ^ k < 2 ^ 63 := Nat.pow_lt_pow_right (by decide) hk
   have hm : (BitVec.ofNat 64 (2 ^ k - 1)).toNat = 2 ^ k - 1 := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by lia)]
-  have hd : (2 : Int) ^ k ∣ (2 ^ 64 : Nat) := by
-    exact_mod_cast Nat.pow_dvd_pow 2 (by lia : k ≤ 64)
+  have hd : (2 : Int) ^ k ∣ (2 ^ 64 : Nat) := mod_cast Nat.pow_dvd_pow 2 (by lia : k ≤ 64)
   have := Nat.mod_lt x.toBitVec.toNat (Nat.two_pow_pos k)
   rw [toInt, toInt, Int64.toBitVec_and, BitVec.toInt_and, Int64.toBitVec_ofNat', hm,
     Nat.and_two_pow_sub_one_eq_mod, Int.bmod_eq_of_le (by lia) (by lia),

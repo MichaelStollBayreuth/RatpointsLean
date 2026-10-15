@@ -320,13 +320,12 @@ structure SieveSpec.Fits (s : SieveSpec) : Prop where
 lie between `-Ratpoints.rowBias` and `Ratpoints.rowBias - 2 Ratpoints.maxPrimeEven`: the hypothesis
 under which the first two stages may reduce by a multiplication. -/
 def SmallFits (small : Bool) (lo hi : Int) : Prop :=
-  small = true → -(rowBias : Int) ≤ lo ∧ hi ≤ rowBias - 2 * maxPrimeEven
+  small = true → -rowBias ≤ lo ∧ hi ≤ rowBias - 2 * maxPrimeEven
 
 /-- The test `small` of a piece, as `Ratpoints.Sieve.siftPiece` computes it, says what
 `Ratpoints.Sieve.SmallFits` asks of its word numbers. -/
 theorem smallFits_decide (w0 : Int) (n : Nat) :
-    SmallFits (decide (-(rowBias : Int) ≤ w0 ∧ w0 + n ≤ (rowBias : Int) - 2 * maxPrimeEven)) w0
-      (w0 + n) :=
+    SmallFits (decide (-rowBias ≤ w0 ∧ w0 + n ≤ rowBias - 2 * maxPrimeEven)) w0 (w0 + n) :=
   of_decide_eq_true
 
 theorem SmallFits.mono {small : Bool} {lo hi lo' hi' : Int} (h : SmallFits small lo hi)
@@ -337,7 +336,7 @@ theorem SmallFits.mono {small : Bool} {lo hi lo' hi' : Int} (h : SmallFits small
 value `-w0 - offset` that the first stage reduces is at most `Ratpoints.mulModLimit` in absolute
 value. -/
 theorem SieveSpec.Fits.natAbs_neg_sub_le {s : SieveSpec} (hs : s.Fits) {w0 : Int}
-    (h0 : -(rowBias : Int) ≤ w0) (h1 : w0 ≤ rowBias - 2 * maxPrimeEven) :
+    (h0 : -rowBias ≤ w0) (h1 : w0 ≤ rowBias - 2 * maxPrimeEven) :
     (-w0 - s.offset).natAbs ≤ mulModLimit := by
   have := two_mul_rowBias_sub_one_le_mulModLimit
   have := hs.le_maxPrimeEven
@@ -350,7 +349,7 @@ theorem SieveSpec.Fits.natAbs_neg_sub_le {s : SieveSpec} (hs : s.Fits) {w0 : Int
 /-- For a word number `-Ratpoints.rowBias ≤ i < Ratpoints.rowBias - 2 Ratpoints.maxPrimeEven`, the
 value `i + offset` that the second stage reduces lies between `0` and `Ratpoints.mulModLimit`. -/
 theorem SieveSpec.Fits.add_nonneg_and_toNat_le {s : SieveSpec} (hs : s.Fits) {i : Int}
-    (h0 : -(rowBias : Int) ≤ i) (h1 : i < rowBias - 2 * maxPrimeEven) :
+    (h0 : -rowBias ≤ i) (h1 : i < rowBias - 2 * maxPrimeEven) :
     0 ≤ i + s.offset ∧ (i + s.offset).toNat ≤ mulModLimit := by
   have := two_mul_rowBias_sub_one_le_mulModLimit
   have := hs.le_maxPrimeEven

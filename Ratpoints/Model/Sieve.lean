@@ -604,7 +604,7 @@ def siftPiece (w : Thunk (List Int)) (d b : Nat) (rev : Bool) (sp1 : Nat)
     (specs : List SieveSpec) (mgs : List Nat) (checks : Thunk (List CheckSpec)) (cl : NumClass)
     (w0 : Int) (n maskLow maskHigh : Nat) :
     Id (Array (Int × Int × Int)) := do
-  let small := decide (-(rowBias : Int) ≤ w0 ∧ w0 + n ≤ (rowBias : Int) - 2 * maxPrimeEven)
+  let small := decide (-rowBias ≤ w0 ∧ w0 + n ≤ rowBias - 2 * maxPrimeEven)
   let mut surv ← andRows (specs.take sp1) (mgs.take sp1) small cl.bits w0 n
     (Vector.replicate ((n + 1) * rbaPack) 0)
   if maskLow ≠ 0 then surv := clearLowBits surv maskLow
@@ -636,6 +636,7 @@ which the function reads and writes them; a Boolean for the `int` `split`, an ar
 for the whole line of numerators, the split form exactly for the heights above `2 ^ 63 - 65`, the C
 code decides in lines of the search intervals, by the test of `exact_bounds` and the path through
 `interval_bits_exact` (stage H). -/
+-- The parentheses are those of the C code, in which `>>` binds looser than `+` and `-`.
 def numeratorsToBits (low high : Int64) (cl : NumClass) (split : Bool) : Int64 × Int64 :=
   let k := cl.k.toInt64
   let a0 := cl.a0.toInt64

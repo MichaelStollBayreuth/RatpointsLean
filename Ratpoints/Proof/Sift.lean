@@ -609,8 +609,7 @@ theorem fits_take {specs : List SieveSpec} {mgs : List Nat} {maskHigh : Nat}
     (h : maskHigh < rbaLength ∧ (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p)) (sp1 : Nat)
     (w0 : Int) (n : Nat) :
     (∀ s ∈ specs.take sp1, s.Fits) ∧ mgs.take sp1 = (specs.take sp1).map (magic ·.p) ∧
-      SmallFits (decide (-(rowBias : Int) ≤ w0 ∧ w0 + n ≤ (rowBias : Int) - 2 * maxPrimeEven)) w0
-        (w0 + n) :=
+      SmallFits (decide (-rowBias ≤ w0 ∧ w0 + n ≤ rowBias - 2 * maxPrimeEven)) w0 (w0 + n) :=
   ⟨fun s hs ↦ h.2.1 s (List.mem_of_mem_take hs), by rw [h.2.2, List.map_take],
     smallFits_decide w0 n⟩
 
@@ -621,8 +620,7 @@ theorem fits_drop {specs : List SieveSpec} {mgs : List Nat} {maskHigh : Nat}
     (h : maskHigh < rbaLength ∧ (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p)) (sp1 : Nat)
     (w0 : Int) (n : Nat) :
     (∀ s ∈ specs.drop sp1, s.Fits) ∧ mgs.drop sp1 = (specs.drop sp1).map (magic ·.p) ∧
-      SmallFits (decide (-(rowBias : Int) ≤ w0 ∧ w0 + n ≤ (rowBias : Int) - 2 * maxPrimeEven)) w0
-        (w0 + n) :=
+      SmallFits (decide (-rowBias ≤ w0 ∧ w0 + n ≤ rowBias - 2 * maxPrimeEven)) w0 (w0 + n) :=
   ⟨fun s hs ↦ h.2.1 s (List.mem_of_mem_drop hs), by rw [h.2.2, List.map_drop],
     smallFits_decide w0 n⟩
 
@@ -788,7 +786,7 @@ theorem SiftInvariant.toList_eq_flatMap_filter {g : Int → List (Int × Int × 
   have hR := natCast_rbaLength_pos
   have hL := Int.mul_ediv_self_le (x := low) (Int.ne_of_gt hR)
   have := Int.lt_mul_ediv_self_add (x := high) hR
-  have hM : ((((high / rbaLength + 1 - low / rbaLength).toNat * rbaLength : Nat) : Int)) =
+  have hM : (((high / rbaLength + 1 - low / rbaLength).toNat * rbaLength : Nat) : Int) =
       rbaLength * (high / rbaLength) + rbaLength - rbaLength * (low / rbaLength) := by
     rw [Int.natCast_mul, Int.toNat_of_nonneg (by have := h.le_w0; have := h.eq_of_exit rfl; lia)]
     grind

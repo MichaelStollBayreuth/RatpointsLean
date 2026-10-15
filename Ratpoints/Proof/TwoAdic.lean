@@ -82,14 +82,13 @@ namespace Sieve
 /-! ### The squares modulo 64 and Horner's rule on words -/
 
 theorem squares64_test_iff_of_lt {x : ℕ} (hx : x < 64) :
-    ((squares64 >>> UInt64.ofNat x) &&& 1 != 0) = true ↔ IsSquare (x : ZMod 64) := by
-  decide +revert
+    (squares64 >>> UInt64.ofNat x &&& 1 != 0) = true ↔ IsSquare (x : ZMod 64) := by decide +revert
 
 /-- The test of the mask of the squares modulo 64 (`Ratpoints.Sieve.squares64`) on the residue
 `s mod 64` of a word, as `Ratpoints.Sieve.fsq` and `Ratpoints.Sieve.gsq` make it, is the test of
 the squares modulo 64, which `decide` checks for each residue. -/
 theorem squares64_test_iff (s : UInt64) :
-    ((squares64 >>> (s &&& 0x3f)) &&& 1 != 0) = true ↔ IsSquare (s.toNat : ZMod 64) := by
+    (squares64 >>> (s &&& 0x3f) &&& 1 != 0) = true ↔ IsSquare (s.toNat : ZMod 64) := by
   have h63 : (0x3f : UInt64).toNat = 2 ^ 6 - 1 := rfl
   have h : s &&& 0x3f = UInt64.ofNat (s.toNat % 64) := by
     apply UInt64.toNat_inj.mp

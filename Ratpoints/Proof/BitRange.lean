@@ -249,7 +249,6 @@ theorem NumClass.WF.map_range_numerator_eq_filter_numerators {cl : NumClass} (hc
     (Nat.mod_lt _ (Nat.two_pow_pos _)) (Nat.div_add_mod _ _)
   rwa [Int.natCast_emod, Int.natCast_add] at this
 
-
 /-! ### The longs of the offsets and of the bit ranges -/
 
 /-- The offsets of the rows are below `Ratpoints.rowBias + 2 p ≤ 2 ^ 31 + 2 ^ 11 < 2 ^ 32`, so

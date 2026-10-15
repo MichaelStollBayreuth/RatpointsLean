@@ -436,7 +436,6 @@ theorem bias_checkOf_eq_and_of_ne_zero {b H : Nat} {e : SieveEntry} {t : Entry}
   · exact ⟨by simp [hc], Nat.lt_of_lt_of_le hc stage3Limit_le_two_pow_32, rfl⟩
   · simp [hc] at h0
 
-
 theorem SieveEntry.admits_prime {e : SieveEntry} {t : Entry} (he : e.factors = [.prime t])
     (hp : e.p = t.p) (b : Nat) (a : Int) : e.admits b a = t.admits b a := by
   simp [SieveEntry.admits, he, hp, Factor.admits, Entry.admits]

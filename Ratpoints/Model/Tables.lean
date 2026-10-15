@@ -174,13 +174,12 @@ less, so that the result is `u % p`.
 
 C: `find_points.c:1639-1650`
 
-Deviation: natural numbers for the `unsigned long`s, the product `u m` exact as the 128-bit
-product of the C code, and the difference exact, which does not wrap since the quotient times `p`
-is at most `u` for `m ≤ (2 ^ 64 - 1) / p`; the obligation that `u` is below `2 ^ 64`, which the C
-type gives, a hypothesis of the lemma that the result is `u % p` (`Ratpoints.Sieve.barrett_eq`); the
-form with the 128-bit
-product, which the builds of the model compile (the compiler defines `__SIZEOF_INT128__`, and
-`RP_NO_INT128` is not set), for the division `u % p` of the other builds, which gives the same
+Deviation: natural numbers for the `unsigned long`s, the product `u m` exact as the 128-bit product
+of the C code, and the difference exact, which does not wrap since the quotient times `p` is at most
+`u` for `m ≤ (2 ^ 64 - 1) / p`; the obligation that `u` is below `2 ^ 64`, which the C type gives, a
+hypothesis of the lemma that the result is `u % p` (`Ratpoints.Sieve.barrett_eq`); the form with the
+128-bit product, which the builds of the model compile (the compiler defines `__SIZEOF_INT128__`,
+and `RP_NO_INT128` is not set), for the division `u % p` of the other builds, which gives the same
 remainder. -/
 def barrett (u p m : Nat) : Nat :=
   let r := u - u * m / 2 ^ 64 * p
@@ -397,8 +396,8 @@ def mulHi (a b : UInt64) : UInt64 :=
   let a1 := a >>> 32
   let b0 := b &&& 0xffffffff
   let b1 := b >>> 32
-  let mid := ((a0 * b0) >>> 32) + ((a0 * b1) &&& 0xffffffff) + ((a1 * b0) &&& 0xffffffff)
-  a1 * b1 + ((a0 * b1) >>> 32) + ((a1 * b0) >>> 32) + (mid >>> 32)
+  let mid := (a0 * b0) >>> 32 + ((a0 * b1) &&& 0xffffffff) + ((a1 * b0) &&& 0xffffffff)
+  a1 * b1 + (a0 * b1) >>> 32 + (a1 * b0) >>> 32 + mid >>> 32
 
 /-- The remainder of `u` modulo `p` by a multiplication with the reciprocal `m`, `RP_MULMOD`: the
 low 64 bits of `m u`, times `p`, shifted right by 64 bits, on 64-bit words
