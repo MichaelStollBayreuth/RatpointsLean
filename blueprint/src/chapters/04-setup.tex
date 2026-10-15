@@ -431,15 +431,15 @@ Lemma~\ref{lem:sift_eq_checkDen} maps their side.
   (Definition~\ref{def:sievingInfo}), with the flag of the \verb|long|s: the tables of the examined
   primes, the forbidden divisors for even $d$ (Definition~\ref{def:forbidden}) and the sieve entries
   of the moduli with their reciprocals, which the run takes, and no points when the curve has no
-  points modulo a prime examined on the way (\csource{find_points.c}{4992}{5012}); the checked loop
-  off when there are no forbidden divisors and no Jacobi test (\csource{find_points.c}{2793}{2795});
-  an array of rows of offsets, one for each packing, of one offset for each sieve entry
-  (\csource{find_points.c}{5119}{5119}), and the rows of offsets of the classes in it, with the
-  inverses of the strides in the entries (Definition~\ref{def:classOffsets};
-  \csource{find_points.c}{5132}{5132}); the shape that \verb|run_setup| chooses
-  (Definition~\ref{def:Shape}); and the points at infinity followed by the points of the
-  denominators of the shape, with its tests, the classes and their offsets and \verb|den_bits|, the
-  three stages that the cut points $s_1$ and $s_2$ of the parameters give and
+  points modulo a prime examined on the way (\csource{find_points.c}{4602}{4602},
+  \csource{find_points.c}{4992}{5012}); the checked loop off when there are no forbidden divisors
+  and no Jacobi test (\csource{find_points.c}{2793}{2795}); an array of rows of offsets, one for
+  each packing, of one offset for each sieve entry (\csource{find_points.c}{5119}{5119}), and the
+  rows of offsets of the classes in it, with the inverses of the strides in the entries
+  (Definition~\ref{def:classOffsets}; \csource{find_points.c}{5132}{5132}); the shape that
+  \verb|run_setup| chooses (Definition~\ref{def:Shape}); and the points at infinity followed by the
+  points of the denominators of the shape, with its tests, the classes and their offsets and
+  \verb|den_bits|, the three stages that the cut points $s_1$ and $s_2$ of the parameters give and
   pieces of at most $\mathrm{arraySizeAt}(H)$ bit arrays, each mapped by $\mathrm{swapPoint}$ when
   the flag is set (\csource{find_points.c}{5116}{5116}, \csource{find_points.c}{5137}{5139},
   \csource{find_points.c}{5167}{5167}, the block that sets up the run and runs the denominators;
