@@ -190,16 +190,17 @@ order: a data refinement.
 \section{The classes}\label{sec:classes}
 
 \begin{definition}[The classes of the numerators]\label{def:numClasses}
-  \uses{def:twoAdic, def:ctz, def:packingConstants}
-  Proposed names: \lname{Ratpoints.Sieve.NumClass}, \lname{Ratpoints.Sieve.classMasks},
-  \lname{Ratpoints.Sieve.packPattern}, \lname{Ratpoints.Sieve.numClasses}. A class: its packed
-  pattern, a word; its stride exponent $k$ and residue $a_0$; and the position of its row in the
-  array of offsets, absent until the offsets are computed (\csource{rp-private.h}{494}{495}). The
-  masks of the multiples of $2^k$ for $k \le 6$, the C's literal table of seven words, read as $0$
-  beyond (\csource{find_points.c}{1058}{1062}). The packed pattern of a word for $k$ and $a_0$: each
-  set bit $a$ scattered to $((a - a_0) \bmod 64) / 2^k$, then the pattern doubled up to $64$ bits
-  (\csource{find_points.c}{1082}{1094}). The classes of the $64$ words of the 2-adic information and
-  the word \verb|den_bits| (\csource{find_points.c}{995}{995}, \csource{find_points.c}{1064}{1081},
+  \uses{def:ctz, def:packingConstants}
+  \lean{Ratpoints.Sieve.NumClass, Ratpoints.Sieve.classMasks, Ratpoints.Sieve.packPattern, Ratpoints.Sieve.numClasses}
+  \leanok
+  A class: its packed pattern, a word; its stride exponent $k$ and residue $a_0$; and the position
+  of its row in the array of offsets, absent until the offsets are computed
+  (\csource{rp-private.h}{494}{495}). The masks of the multiples of $2^k$ for $k \le 6$, the C's
+  literal table of seven words, read as $0$ beyond (\csource{find_points.c}{1058}{1062}). The packed
+  pattern of a word for $k$ and $a_0$: each set bit $a$ scattered to $((a - a_0) \bmod 64) / 2^k$,
+  then the pattern doubled up to $64$ bits (\csource{find_points.c}{1082}{1094}). The classes of the
+  $64$ words of the 2-adic information (Definition~\ref{def:twoAdic}) and the word \verb|den_bits|
+  (\csource{find_points.c}{995}{995}, \csource{find_points.c}{1064}{1081},
   \csource{find_points.c}{1095}{1097}, \csource{find_points.c}{1099}{1104},
   \csource{find_points.c}{1106}{1114}): for each word, the stride by the loop over the masks with
   its stop and decrement, the residue, and the packed pattern, or the word itself for $k = 0$.
@@ -207,22 +208,19 @@ order: a data refinement.
 
 \begin{lemma}[A class packs its word]\label{lem:numClasses}
   \uses{def:numClasses, def:andRows, lem:twoAdic_point}
-  Proposed names: \lname{Ratpoints.Sieve.NumClass.WF}, \lname{Ratpoints.Sieve.NumClass.Packs},
-  \lname{Ratpoints.Sieve.NumClass.numerator}, \lname{Ratpoints.Sieve.getLsbD\_classMasks},
-  \lname{Ratpoints.Sieve.packPattern\_spec}, \lname{Ratpoints.Sieve.numClasses\_spec},
-  \lname{Ratpoints.Sieve.NumClass.Packs.classBit\_bits},
-  \lname{Ratpoints.Sieve.NumClass.Packs.emod\_eq\_of\_classBit},
-  \lname{Ratpoints.Sieve.NumClass.Packs.bits\_eq\_zero\_iff},
-  \lname{Ratpoints.Sieve.snd\_run\_numClasses}. The class of the word $w$ packs it:
-  $k < \mathrm{numStrides}$, $k \le 6$, $a_0 < 2^k$, every set bit $a$ of $w$ is
-  $\equiv a_0 \pmod{2^k}$, and bit $t$ of the pattern is bit $(a_0 + 2^k t) \bmod 64$ of $w$. So the
-  pattern's bit for the bit number $n$ is the bit of $w$ for the numerator $a_0 + 2^k n$, a
-  numerator of $w$ lies in the class $a_0 \bmod 2^k$, and the pattern is $0$ exactly when $w$ is.
-  Bit $b$ of \verb|den_bits| is set exactly when the word of $b$ is not $0$, so \verb|den_bits| is
-  the word of Definition~\ref{def:twoAdic}.
+  \lean{Ratpoints.Sieve.NumClass.WF, Ratpoints.Sieve.NumClass.Packs, Ratpoints.Sieve.NumClass.numerator, Ratpoints.Sieve.getLsbD_classMasks, Ratpoints.Sieve.packPattern_spec, Ratpoints.Sieve.numClasses_spec, Ratpoints.Sieve.packs_getElem!_fst_run_numClasses, Ratpoints.Sieve.NumClass.Packs.classBit_bits, Ratpoints.Sieve.NumClass.Packs.emod_eq_of_classBit, Ratpoints.Sieve.NumClass.Packs.bits_eq_zero_iff, Ratpoints.Sieve.NumClass.Packs.congr, Ratpoints.Sieve.snd_run_numClasses}
+  \leanok
+  The class of the word $w$ packs it: $k < \mathrm{numStrides}$, $k \le 6$, $a_0 < 2^k$, every set
+  bit $a$ of $w$ is $\equiv a_0 \pmod{2^k}$, and bit $t$ of the pattern is bit
+  $(a_0 + 2^k t) \bmod 64$ of $w$; and it has no row of offsets yet. So the pattern's bit for the
+  bit number $n$ is the bit of $w$ for the numerator $a_0 + 2^k n$, a numerator of $w$ lies in the
+  class $a_0 \bmod 2^k$, and the pattern is $0$ exactly when $w$ is; whether a class packs a word
+  depends only on its pattern, its stride and its residue. Bit $b$ of \verb|den_bits| is set exactly
+  when the word of $b$ is not $0$, so \verb|den_bits| is the word of Definition~\ref{def:twoAdic}.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   The mask of $k$ has the bits $\equiv 0 \pmod{2^k}$ for $k \le 6$ and none beyond, which ends the
   stride loop by $k = 7$ at the latest, whatever $\mathrm{numStrides}$ is; an invariant of that loop
   says that the set bits are $\equiv \mathrm{ctz}(w) \pmod{2^{k-1}}$. The scatter puts bit $a$ at

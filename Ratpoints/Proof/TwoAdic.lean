@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.ZMod.Defs
 public import Ratpoints.Model.Denominators
+public import Ratpoints.Model.Packing
 public import Ratpoints.Proof.Words
 public import Ratpoints.Spec.Basic
 
@@ -15,6 +16,7 @@ import Ratpoints.Mathlib.Data.Int.GCD
 import Ratpoints.Mathlib.Data.ZMod.Basic
 import Ratpoints.Proof.Bits
 import Ratpoints.Proof.BruteForce
+import Ratpoints.Proof.Packing
 import Ratpoints.Proof.Tables
 import Std.Tactic.Do
 
@@ -55,7 +57,8 @@ no class admits a numerator, the curve has no points at all, not even at infinit
   of the class `b mod 64` is set; `Ratpoints.Sieve.getElem!_twoAdic_ne_zero`: so the word of the
   class of the denominator of a point is not `0`.
 * `Ratpoints.Sieve.getLsbD_denBits`: bit `j` of `Ratpoints.Sieve.denBits nb` says whether `nb[j]`
-  is not `0`.
+  is not `0`; `Ratpoints.Sieve.snd_run_numClasses`: the word `den_bits` of
+  `Ratpoints.Sieve.numClasses` is `Ratpoints.Sieve.denBits`.
 * `Ratpoints.Sieve.not_isPoint_of_denBits_eq_zero`: when no class of the denominators admits a
   numerator, the curve has no points, so that the 2-adic exit of the search is sound.
 
@@ -428,6 +431,12 @@ theorem getLsbD_denBits (nb : Vector UInt64 64) (j : ℕ) :
     funext i hi w
     rw [getElem!_pos nb i hi]
   rw [h, UInt64.getLsbD_fold_or_one_shiftLeft _ (Nat.le_refl 64)]
+
+/-- The word `den_bits` that `Ratpoints.Sieve.numClasses` returns with the classes is
+`Ratpoints.Sieve.denBits` (`Ratpoints.Sieve.numClasses_spec`). -/
+theorem snd_run_numClasses (nb : Vector UInt64 64) : (Id.run (numClasses nb)).2 = denBits nb :=
+  UInt64.toBitVec_inj.mp (BitVec.eq_of_getLsbD_eq fun j _ ↦ by
+    rw [getLsbD_denBits, (Std.WP.Id.of_run_eq_wp rfl _ ((numClasses_spec nb).le_wp trivial)).2 j])
 
 /-! ### The 2-adic exit -/
 

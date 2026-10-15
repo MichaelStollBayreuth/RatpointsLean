@@ -120,12 +120,13 @@ the tables and of the further primes may record
 and their counterparts for the valuations), with the switch of the forbidden divisors on or off;
 when the search takes the exit of the loop of the tables or of a modulus, the curve has no points
 (`Ratpoints.Sieve.not_isPoint_of_run_examinePrimes_eq_none`, `Ratpoints.makeModulus?_spec`), and
-when it takes the 2-adic exit, no class of the denominators admits a numerator, so that the curve
-has no points either (`Ratpoints.Sieve.not_isPoint_of_denBits_eq_zero`): the reference is empty, and
-so are the points at infinity and those of the denominators of the search, which lie in `1, …, H`.
-`Ratpoints.findPoints` runs the search on the polynomial that the reversal check hands on, with its
-degree (`Ratpoints.Setup.degree_eq_of_reversal_eq_ok`) and its flag of the reversal; the binary form
-of a reversed polynomial is that of `c` with `x` and `z` exchanged
+when it takes the 2-adic exit, no class of the denominators admits a numerator, the word `den_bits`
+of the classes being that of `Ratpoints.Sieve.denBits` (`Ratpoints.Sieve.snd_run_numClasses`), so
+that the curve has no points either (`Ratpoints.Sieve.not_isPoint_of_denBits_eq_zero`): the
+reference is empty, and so are the points at infinity and those of the denominators of the search,
+which lie in `1, …, H`. `Ratpoints.findPoints` runs the search on the polynomial that the reversal
+check hands on, with its degree (`Ratpoints.Setup.degree_eq_of_reversal_eq_ok`) and its flag of the
+reversal; the binary form of a reversed polynomial is that of `c` with `x` and `z` exchanged
 (`Ratpoints.Setup.binaryForm_eq_of_reversal_eq_ok`), so that its reference, mapped back, is a
 permutation of that of `c` (`Ratpoints.Sieve.perm_map_swapPoint_bruteForce`). Of the refusals, the
 heights that are not `long`s are those of `2 ^ 63` or more (`Ratpoints.fitsLong_natCast`), and the
@@ -698,13 +699,15 @@ private theorem nil_eq_of_bruteForce_eq_nil {c : List ℤ} {H : ℕ} (hH : 1 ≤
 -- The 2-adic exit of the search: no class of the denominators admits a numerator, so that the
 -- curve has no points.
 private theorem nil_eq_of_denBits_eq_zero {c : List ℤ} {H : ℕ} (hH : 1 ≤ H) (rev : Bool)
-    {nb : Vector UInt64 64} (hnb : nb = Id.run (twoAdic c (degree c)))
-    (h : (denBits nb == 0 && !(degree c % 2 == 1 || Setup.isSquare (c.getD (degree c) 0))) = true) :
+    {nb : Vector UInt64 64} (hnb : nb = Id.run (twoAdic c (degree c))) {cls : Vector NumClass 64}
+    {db : UInt64} (hnc : (cls, db) = Id.run (numClasses nb))
+    (h : (db == 0 && !(degree c % 2 == 1 || Setup.isSquare (c.getD (degree c) 0))) = true) :
     [] = (pointsAtInfinity c (degree c) false ++ (searchDens c (degree c) H).flatMap
       fun b : ℕ ↦ pointsOfDen c (degree c) b (numerators H)).map
         (if rev then swapPoint else id) := by
   subst hnb
-  simp only [Bool.and_eq_true, beq_iff_eq] at h
+  have hdb : db = denBits (Id.run (twoAdic c (degree c))) := by rw [← snd_run_numClasses, ← hnc]
+  simp only [Bool.and_eq_true, beq_iff_eq, hdb] at h
   exact nil_eq_of_bruteForce_eq_nil hH
     (bruteForce_eq_nil_of_forall_not_isPoint (not_isPoint_of_denBits_eq_zero h.1 H)) rev
 
@@ -726,9 +729,9 @@ private theorem nil_eq_of_run_sievingInfo_eq_none {c : List ℤ} {H : ℕ} {P : 
 -- The run of the search after its exits, with the shape that `Ratpoints.Sieve.runSetup` chooses.
 private theorem append_eq_of_run_sievingInfo_eq_some {c : List ℤ} {H : ℕ} {P : Params} (hP : P.WF)
     (hH : 1 ≤ H) (hH63 : H < 2 ^ 63) (rev : Bool) {entries : List SieveEntry} {magics : Array ℕ}
-    {nb : Vector UInt64 64} {shape : Shape} {pts : Array (ℤ × ℤ × ℤ)}
+    {nb : Vector UInt64 64} {db : UInt64} {shape : Shape} {pts : Array (ℤ × ℤ × ℤ)}
     (hpts : pts = Id.run (sieveRun c (degree c) H (P.arraySizeAt H) rev P.sp1 P.sp2 entries magics
-      nb (denBits nb) shape 1 H))
+      nb db shape 1 H))
     {us1 : Option (List Setup.DenInfo × List ℕ)} {checkDenom useJacobi : Bool}
     {forb : List ForbiddenEntry} {forbVal : List ForbiddenVal}
     (hshape : shape = Id.run (runSetup (degree c % 2 == 1 && (c.getD (degree c) 0).natAbs == 1) us1
@@ -736,6 +739,7 @@ private theorem append_eq_of_run_sievingInfo_eq_some {c : List ℤ} {H : ℕ} {P
     {u cd : Bool} {r : Option (List SieveEntry × Array ℕ × List ForbiddenEntry × List ForbiddenVal)}
     (hr : r = Id.run (sievingInfo c (degree c) u cd P H))
     (hs : r = some (entries, magics, forb, forbVal)) (hnb : nb = Id.run (twoAdic c (degree c)))
+    {cls : Vector NumClass 64} (hnc : (cls, db) = Id.run (numClasses nb))
     (hus1 : (if degree c % 2 == 1 && (c.getD (degree c) 0).natAbs != 1 then
       Id.run (Setup.setupUs1 c (degree c) H) else none) = us1)
     (hcd : checkDenom = true → degree c % 2 = 0) :
@@ -745,6 +749,7 @@ private theorem append_eq_of_run_sievingInfo_eq_some {c : List ℤ} {H : ℕ} {P
           (if rev then swapPoint else id) := by
   obtain ⟨hent, hmg, -, hes, hforb, hval⟩ :=
     (run_sievingInfo_spec hP).1 _ _ _ _ (hr.symm.trans hs)
+  obtain rfl : db = denBits nb := by rw [← snd_run_numClasses, ← hnc]
   subst hnb hshape hpts
   rw [toList_run_sieveRun_runSetup (fun e he ↦ (hent e he).1) hes hmg hH63
     (P.one_le_arraySizeAt hH) rev hus1 hforb hval hcd, pointsAtInfinity_eq_map, List.map_append]
@@ -756,6 +761,10 @@ private theorem setupUs1_value (c : List ℤ) (d bHigh : ℕ) :
 
 private theorem twoAdic_value (c : List ℤ) (d : ℕ) :
     ⦃ True ⦄ twoAdic c d ⦃ fun r ↦ r = Id.run (twoAdic c d) ⦄ :=
+  ⟨fun _ ↦ rfl⟩
+
+private theorem numClasses_value (nb : Vector UInt64 64) :
+    ⦃ True ⦄ numClasses nb ⦃ fun r ↦ r = Id.run (numClasses nb) ⦄ :=
   ⟨fun _ ↦ rfl⟩
 
 private theorem sievingInfo_value (c : List ℤ) (d : ℕ) (u checkDenom : Bool) (P : Params)
@@ -784,13 +793,13 @@ private theorem searchPoints_spec (c : List ℤ) (H : ℕ) (P : Params) (rev : B
     ⦃ fun r ↦ r = (pointsAtInfinity c (degree c) false ++ (searchDens c (degree c) H).flatMap
         fun b : ℕ ↦ pointsOfDen c (degree c) b (numerators H)).map
           (if rev then swapPoint else id) ⦄ := by
-  vcgen [searchPoints, setupUs1_value, twoAdic_value, sievingInfo_value, runSetup_value,
-    sieveRun_value]
+  vcgen [searchPoints, setupUs1_value, twoAdic_value, numClasses_value, sievingInfo_value,
+    runSetup_value, sieveRun_value]
   all_goals obtain ⟨hP, hH, hH63⟩ := ‹P.WF ∧ 1 ≤ H ∧ H < 2 ^ 63›
   all_goals first
-    | exact nil_eq_of_denBits_eq_zero hH rev ‹_› ‹_›
+    | exact nil_eq_of_denBits_eq_zero hH rev ‹_› ‹_› ‹_›
     | exact nil_eq_of_run_sievingInfo_eq_none hP hH rev ‹_› ‹_› ‹_›
-    | exact append_eq_of_run_sievingInfo_eq_some hP hH hH63 rev ‹_› ‹_› ‹_› ‹_› ‹_›
+    | exact append_eq_of_run_sievingInfo_eq_some hP hH hH63 rev ‹_› ‹_› ‹_› ‹_› ‹_› ‹_›
         (by split <;> simp_all) (by simp)
 
 /-- The run of the shape that `Ratpoints.Sieve.runSetup` chooses gives the reference over the

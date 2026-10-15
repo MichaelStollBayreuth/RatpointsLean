@@ -23,14 +23,16 @@ The components of the sieve, each in its place in the C function `find_points_wo
 arrays of 64-bit words of the C code with their operations and the rows as words
 (`Ratpoints.Sieve.SieveEntry.row`); the second stage, on a bit array that the first leaves nonzero
 or on one of its words (`Ratpoints.Sieve.secondStage`, `Ratpoints.Sieve.secondStageWord`); one bit
-array through the second stage and the extraction of the points of its numerators, in either arm
-of the second stage (`Ratpoints.Sieve.siftBitArray`); one piece of bit arrays from the first stage,
+array through the second stage and the extraction of the points of its numerators, in either arm of
+the second stage (`Ratpoints.Sieve.siftBitArray`); one piece of bit arrays from the first stage,
 with the first moduli, through the second, with the others, to the points of its numerators
-(`Ratpoints.Sieve.siftPiece`); and the numerators of one denominator in pieces, from a class word,
-the numerators modulo 64 from which the first stage starts, with the products of the check and what
-the third stage needs as thunks (`Ratpoints.Sieve.sift`). The components that take one numerator at
-a time, the test of a candidate that survives the first two stages, with the test for common
-factors and the third stage (`Ratpoints.Sieve.accepted`), the exact check
+(`Ratpoints.Sieve.siftPiece`); the numerators of one denominator in pieces, from a class word, the
+numerators modulo 64 from which the first stage starts, with the products of the check and what the
+third stage needs as thunks (`Ratpoints.Sieve.sift`); and the packing of the numerators of a class
+of the denominators modulo 64 into one class modulo a power of 2 (`Ratpoints.Sieve.NumClass`), whose
+classes `Ratpoints.Model.Packing` makes, for the sieve in the packing (stage F). The components that
+take one numerator at a time, the test of a candidate that survives the first two stages, with the
+test for common factors and the third stage (`Ratpoints.Sieve.accepted`), the exact check
 (`Ratpoints.Sieve.checkPoint`) and its reference, the check of a numerator
 (`Ratpoints.Sieve.checkNum`), and the points at infinity (`Ratpoints.Sieve.pointsAtInfinity`), are
 in `Ratpoints.Model.Candidate`. The tables of the primes and of the prime powers and the sieve
@@ -58,6 +60,8 @@ as words, by `Ratpoints.Sieve.SieveEntry.row`.
 * `Ratpoints.Sieve.SieveEntry.row`, `Ratpoints.Sieve.SieveEntry.rows`,
   `Ratpoints.Sieve.SieveSpec`: the row of a denominator as words, the rows of the residues, each
   made when first needed, and a modulus with its row for the denominator at hand.
+* `Ratpoints.Sieve.NumClass`: the packing of the numerators of a class of the denominators modulo
+  64, its stride, its residue, its pattern and the position of its row offsets.
 * `Ratpoints.Sieve.secondStage`, `Ratpoints.Sieve.secondStageWord`: the second stage on a bit array
   and on one of its words, the rows of its moduli and-ed in while a bit is left.
 * `Ratpoints.Sieve.andRows`: the first stage over a piece of bit arrays, from a class word, the rows
@@ -265,6 +269,36 @@ structure SieveSpec where
   p : Nat
   /-- The row: `p` bit arrays of `Ratpoints.rbaPack` words. -/
   row : Array UInt64
+
+/-- The packing of the numerators of the denominators of one class modulo 64, `rp_num_class`: the
+admissible numerators modulo 64 of the class (the word of the class in the 2-adic information,
+`Ratpoints.Sieve.twoAdic`) lie in one class `a₀ mod 2 ^ k`, with `k` the largest below
+`Ratpoints.numStrides` and at most 6 that allows this, so that the sieve in the packing holds only
+those, bit `t` of the bit array with the word number `0` standing for the numerator `a₀ + 2 ^ k t`;
+`bits` is the pattern of the class in that packing, bit `t` the bit `(a₀ + 2 ^ k t) mod 64` of the
+word, from which the first stage starts in the packing, and `0` for a class without admissible
+numerators, which the run never sifts; `offset` is the position in the array of the row offsets of
+the run at which the offsets of the row of the packing `(k, a₀)` begin, one for each modulus, none
+until the row offsets of the packings are made (stage F). The classes of a run are made by
+`Ratpoints.Sieve.numClasses`.
+
+C: `rp-private.h:494-495`
+
+Deviation: one word for the bit array `bits`, the vector `RBA(packed)` of `RBA_PACK` copies of the
+word, which the first stage writes into every word of a bit array; natural numbers for the `long`s
+`k` and `a0`; the position of the row of offsets in the array of the offsets as an option, for the
+pointer `offset` into that array, none for `NULL`. -/
+structure NumClass where
+  /-- The pattern of the class in its packing, `0` for a class without admissible numerators. -/
+  bits : UInt64
+  /-- The exponent of the stride `2 ^ k` of the packing. -/
+  k : Nat
+  /-- The residue `a₀ < 2 ^ k` of the admissible numerators. -/
+  a0 : Nat
+  /-- Where the offsets of the row of the packing begin in the array of the row offsets, none
+  until they are made. -/
+  offset : Option Nat
+  deriving Inhabited
 
 /-! ### The second stage -/
 

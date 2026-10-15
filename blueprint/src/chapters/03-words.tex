@@ -480,7 +480,8 @@ each with \verb|#guard| examples, but for the lowest set bit, which is in
 uses it; the run, which stage~C2 put below them, is in \verb|Ratpoints/Model/Denominators.lean|
 since stage~E. The lower bound of the array size is in \verb|Ratpoints/Proof/Params.lean|. The
 contracts, without Mathlib, are in \verb|Ratpoints/Proof/Words.lean| for the bit arrays, the rows
-and the first stage, and in \verb|Ratpoints/Proof/Sift.lean| from the walk through the set bits of a
+and the first stage, in \verb|Ratpoints/Proof/SetBits.lean| since stage~F3 for the lowest set bit
+and the class bit, and in \verb|Ratpoints/Proof/Sift.lean| from the walk through the set bits of a
 word on, since stage~F2, on which the contract of the run rests (since stage~E in
 \verb|Ratpoints/Proof/Denominators.lean|, with Mathlib); the lemmas on vectors, arrays, lists,
 ranges, natural numbers, integers and words that are not about the model are in

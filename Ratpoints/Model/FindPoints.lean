@@ -6,6 +6,7 @@ Authors: Michael Stoll
 module
 
 public import Ratpoints.Model.Denominators
+public import Ratpoints.Model.Packing
 public import Ratpoints.Model.Params
 public import Ratpoints.Model.Setup
 public import Ratpoints.Model.Sieve
@@ -13,6 +14,7 @@ public import Ratpoints.Model.Sturm
 
 -- The `#guard` examples run code of the imported modules at compile time.
 meta import Ratpoints.Model.Denominators
+meta import Ratpoints.Model.Packing
 meta import Ratpoints.Model.Params
 meta import Ratpoints.Model.Setup
 meta import Ratpoints.Model.Sieve
@@ -207,22 +209,23 @@ on, for the height `H`, the parameters `P` and the flag `rev` of the reversal, o
 even degree; the Jacobi test for even degree, `c_d` not a square (`Ratpoints.Setup.isSquare`) and
 the switch `P.jacobi`; the squares for odd degree and `|c_d| = 1`; and for odd degree otherwise the
 divisors of `c_d` (`Ratpoints.Setup.setupUs1`). Then the 2-adic information
-(`Ratpoints.Sieve.twoAdic`, `Ratpoints.Sieve.denBits`), and no points when no class of the
-denominators admits a numerator and there is no point at infinity, as there is for odd degree or
+(`Ratpoints.Sieve.twoAdic`) with the packings of the classes of the denominators modulo 64 and the
+word `den_bits` of the classes that admit a numerator (`Ratpoints.Sieve.numClasses`), and no points
+when no class admits a numerator and there is no point at infinity, as there is for odd degree or
 `c_d` a square. Then the tables of the primes examined, the forbidden divisors for even degree and
 the sieve entries of the moduli of `P` and their reciprocals (`Ratpoints.sievingInfo`), with the
 flag of the `long`s (`Ratpoints.Setup.useCLong`), and no points when the curve has no points modulo
 one of the primes examined; the checked loop off when there are no forbidden divisors and no Jacobi
 test; the shape of the run (`Ratpoints.Sieve.runSetup`); and the points at infinity
 (`Ratpoints.Sieve.pointsAtInfinity`), followed by those of the denominators of the shape
-(`Ratpoints.Sieve.sieveRun`) with the sieve entries of the moduli in the three stages that the cut
-points `P.sp1` and `P.sp2` give, their reciprocals and pieces of at most
-`Ratpoints.Params.arraySizeAt P H` bit arrays, each point mapped by `Ratpoints.Sieve.swapPoint` when
-`rev` is set. For well-formed parameters, `1 ≤ H < 2 ^ 63` and `d` the degree of `c`, these are the
-points at infinity followed by the points of the brute-force reference over the denominators of the
-search (`Ratpoints.searchDens`), in the order of its loop, increasing unless the shape is that of
-the divisors, each mapped when `rev` is set, also when an exit is taken
-(`Ratpoints.run_searchPoints`).
+(`Ratpoints.Sieve.sieveRun`) with the words of the classes and `den_bits`, the sieve entries of the
+moduli in the three stages that the cut points `P.sp1` and `P.sp2` give, their reciprocals and
+pieces of at most `Ratpoints.Params.arraySizeAt P H` bit arrays, each point mapped by
+`Ratpoints.Sieve.swapPoint` when `rev` is set. For well-formed parameters, `1 ≤ H < 2 ^ 63` and `d`
+the degree of `c`, these are the points at infinity followed by the points of the brute-force
+reference over the denominators of the search (`Ratpoints.searchDens`), in the order of its loop,
+increasing unless the shape is that of the divisors, each mapped when `rev` is set, also when an
+exit is taken (`Ratpoints.run_searchPoints`).
 
 C: `find_points.c:2793-2795`, `find_points.c:4573`, `find_points.c:4588-4589`,
 `find_points.c:4595-4596`, `find_points.c:4603-4604`, `find_points.c:4607`,
@@ -243,8 +246,9 @@ the same value for an even degree, the only one that reads it; the test on `poin
 list, where `sieving_info` returns the prime and `find_points_work_1` the number `0` of points
 found; the Sturm step does not restrict the search region before stage H, so that the return when it
 leaves nothing to search is never taken, and the run always follows the points at infinity; no
-failure for lack of memory, which the model cannot meet; no output under `RATPOINTS_VERBOSE` or
-`DEBUG`. -/
+failure for lack of memory, which the model cannot meet; the classes not passed to the run, which
+sifts from the words of the classes at the stride 1 until the packing (stage F); no output under
+`RATPOINTS_VERBOSE` or `DEBUG`. -/
 def searchPoints (c : List Int) (d H : Nat) (P : Params) (rev : Bool) :
     Id (List (Int × Int × Int)) := do
   let bHigh := H
@@ -255,7 +259,7 @@ def searchPoints (c : List Int) (d H : Nat) (P : Params) (rev : Bool) :
   let useSquares := d % 2 == 1 && lcf.natAbs == 1
   let us1 ← if d % 2 == 1 && lcf.natAbs != 1 then Setup.setupUs1 c d bHigh else pure none
   let nb ← twoAdic c d
-  let db := denBits nb
+  let (_, db) ← numClasses nb
   if db == 0 && !(d % 2 == 1 || Setup.isSquare lcf) then return []
   let some (entries, magics, forb, forbVal) ← sievingInfo c d useCLong checkDenom P bHigh
     | return []

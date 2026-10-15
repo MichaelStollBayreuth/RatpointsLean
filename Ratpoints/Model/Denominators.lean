@@ -17,24 +17,25 @@ meta import Ratpoints.Model.Sieve
 
 The side of the denominators of the sieve, each component in its place in `find_points_work_1`: the
 2-adic information, which says for each class of the denominators modulo 64 which numerators modulo
-64 it admits (`Ratpoints.Sieve.twoAdic`), the word of a class being the pattern from which ratpoints
-starts the first stage (the class word of `Ratpoints.Sieve.andRows`), and which classes admit a
-numerator at all (`Ratpoints.Sieve.denBits`); the forbidden divisors of the denominators of a
-polynomial of even degree, primes tested with words of 64 denominators or by their valuations, that
-an examined prime gives from what its table hands back in the loop of the tables of `sieving_info`,
-which also takes the exit (`Ratpoints.Sieve.examinePrimes`, `Ratpoints.Sieve.forbiddenOfPrime`), and
-that the further primes give (`Ratpoints.Sieve.forbidden`); the Jacobi test, by the binary algorithm
-(`Ratpoints.Sieve.jacobi`) or by tables (`Ratpoints.Sieve.jacobiSetup`,
-`Ratpoints.Sieve.jacobiTest`); and the loop over the denominators in its four shapes, as `run_setup`
-chooses them (`Ratpoints.Sieve.Shape`, `Ratpoints.Sieve.runSetup`): the squares, the divisors of the
-leading coefficient times squares (`Ratpoints.Setup.setupUs1`), the words of 64 denominators, and
-every denominator, each with the list of its denominators in the order of its loop and its tests on
-a single denominator (`Ratpoints.Sieve.Shape.dens`, `Ratpoints.Sieve.Shape.keep`), and the run
-itself (`Ratpoints.Sieve.sieveRun`). Every class word lets every numerator of a point through; no
-forbidden divisor excludes the denominator of a point, the primes examined for them being primes of
-the table; both Jacobi tests let it through, and so does every test of a shape, so that the run
-finds the points of the denominators of its shape, in the order of its loop: increasing, except for
-the divisors.
+64 it admits (`Ratpoints.Sieve.twoAdic`), the word of a class being the pattern from which the run
+starts the first stage (the class word of `Ratpoints.Sieve.andRows`) at the stride 1, and which
+classes admit a numerator at all (`Ratpoints.Sieve.denBits`), the packings of the classes being made
+from the words (`Ratpoints.Sieve.numClasses`, in `Ratpoints.Model.Packing`); the forbidden divisors
+of the denominators of a polynomial of even degree, primes tested with words of 64 denominators or
+by their valuations, that an examined prime gives from what its table hands back in the loop of the
+tables of `sieving_info`, which also takes the exit (`Ratpoints.Sieve.examinePrimes`,
+`Ratpoints.Sieve.forbiddenOfPrime`), and that the further primes give (`Ratpoints.Sieve.forbidden`);
+the Jacobi test, by the binary algorithm (`Ratpoints.Sieve.jacobi`) or by tables
+(`Ratpoints.Sieve.jacobiSetup`, `Ratpoints.Sieve.jacobiTest`); and the loop over the denominators in
+its four shapes, as `run_setup` chooses them (`Ratpoints.Sieve.Shape`, `Ratpoints.Sieve.runSetup`):
+the squares, the divisors of the leading coefficient times squares (`Ratpoints.Setup.setupUs1`), the
+words of 64 denominators, and every denominator, each with the list of its denominators in the order
+of its loop and its tests on a single denominator (`Ratpoints.Sieve.Shape.dens`,
+`Ratpoints.Sieve.Shape.keep`), and the run itself (`Ratpoints.Sieve.sieveRun`). Every class word
+lets every numerator of a point through; no forbidden divisor excludes the denominator of a point,
+the primes examined for them being primes of the table; both Jacobi tests let it through, and so
+does every test of a shape, so that the run finds the points of the denominators of its shape, in
+the order of its loop: increasing, except for the divisors.
 
 ## Main definitions
 
@@ -125,20 +126,19 @@ admit, bit `a` set exactly when `a` or `b` is odd and `F(a, b) mod 64` is a squa
 words start at `0`; for each set bit `k` of the word of `f` (`Ratpoints.Sieve.fsq`), lowest first
 (`Ratpoints.Sieve.ctz`), bit `k b mod 64` is set in the word of every odd `b`, and for each set bit
 `t` of the word of the reversed polynomial (`Ratpoints.Sieve.gsq`), bit `a` in the word of
-`t a mod 64` for every odd `a`. The word of the class of a denominator is the pattern from which
-ratpoints starts the first stage, the class word of `Ratpoints.Sieve.andRows`, and a denominator
-whose class has the word `0` carries no point (`Ratpoints.Sieve.denBits`).
+`t a mod 64` for every odd `a`. From the words the packings of the classes are made, with the word
+`den_bits` of the classes that admit a numerator (`Ratpoints.Sieve.numClasses`); the run sifts from
+the word of the class of a denominator itself, the class word of `Ratpoints.Sieve.andRows`, the
+pattern of the class at the stride 1, until the packing (stage F); and a denominator whose class has
+the word `0` carries no point (`Ratpoints.Sieve.denBits`).
 
 C: `find_points.c:983-994`, `find_points.c:996-1000`, `find_points.c:1023-1050`,
-`find_points.c:1106-1115`
+`find_points.c:1115`
 
 Deviation: the words returned, for the classes `cls` and the word `den_bits` that `get_2adic_info`
-fills, `den_bits` computed from the words (`Ratpoints.Sieve.denBits`); the stride 1 for every class,
-`k = 0` and `a₀ = 0`, so that the pattern of a class is its word itself, for the packing of the
-numerators of a class into the residues `a₀ mod 2^k` that hold all of its admissible numerators,
-with its row offsets and its packed pattern (stage F3); the lowest set bit by the loop of `RP_CTZL`
-(`Ratpoints.Sieve.ctz`); remainders for the masks by `0x3f`; natural numbers for the `long`s `k`,
-`b`, `t` and `a`; no output under `DEBUG`. -/
+fills from them in the same function, which `Ratpoints.Sieve.numClasses` makes from the words; the
+lowest set bit by the loop of `RP_CTZL` (`Ratpoints.Sieve.ctz`); remainders for the masks by `0x3f`;
+natural numbers for the `long`s `k`, `b`, `t` and `a`; no output under `DEBUG`. -/
 def twoAdic (c : List Int) (d : Nat) : Id (Vector UInt64 64) := do
   let cm := coeffsMod64 c d
   let mut nb : Vector UInt64 64 := Vector.replicate 64 0
@@ -163,13 +163,9 @@ def twoAdic (c : List Int) (d : Nat) : Id (Vector UInt64 64) := do
 denominator whose class has its bit clear carries no point; when no bit is set, the curve has no
 point at all, not even at infinity (`Ratpoints.Sieve.not_isPoint_of_denBits_eq_zero`), and ratpoints
 ends the search with none, after a test of the points at infinity that then always passes (the
-2-adic exit of `Ratpoints.searchPoints`).
-
-C: `find_points.c:995`, `find_points.c:1064-1065`, `find_points.c:1070`,
-`find_points.c:1096-1097`, `find_points.c:1102-1104`
-
-Deviation: computed from the words apart, where `get_2adic_info` sets the bit in the loop that makes
-the classes. -/
+2-adic exit of `Ratpoints.searchPoints`). It is the reference of the word `den_bits` that
+`get_2adic_info` computes in the loop that makes the classes, with them
+(`Ratpoints.Sieve.numClasses`). -/
 def denBits (nb : Vector UInt64 64) : UInt64 :=
   Nat.fold 64 (fun b h db ↦ if nb[b] != 0 then db ||| 1 <<< b.toUInt64 else db) 0
 

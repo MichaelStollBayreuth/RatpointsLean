@@ -25,22 +25,28 @@
         "Ratpoints.Sieve.twoAdic"
       ]
     },
-    "find_points.c:1064-1065": {
-      "hash": "e9153884ff4d31b31424e104292e607962b9a16830ea54f86533af3a8f95d704",
+    "find_points.c:1058-1062": {
+      "hash": "f16f1c9b9f34ef04a03d52fe79727aa760de310d61917f5effe8c37d52683563",
       "owners": [
-        "Ratpoints.Sieve.denBits"
+        "Ratpoints.Sieve.classMasks"
       ]
     },
-    "find_points.c:1070-1070": {
-      "hash": "f9f78d17ab4da13b6be748c6eef30e6c0f1cad5ca0af2b3234eea958d7c17c97",
+    "find_points.c:1064-1081": {
+      "hash": "94e325bd8f58956ce23487f39dbe21a4e76681b2eaae4d559aa25808baa8d6b0",
       "owners": [
-        "Ratpoints.Sieve.denBits"
+        "Ratpoints.Sieve.numClasses"
       ]
     },
-    "find_points.c:1096-1097": {
-      "hash": "e7996709fb9da5fd48d3160620f8f515bd340993f509773ded560054083603ad",
+    "find_points.c:1082-1094": {
+      "hash": "5c5215e4d7de05746a8e3b530a7c87584ca69bbdf9eacdcb5948b68a97e647aa",
       "owners": [
-        "Ratpoints.Sieve.denBits"
+        "Ratpoints.Sieve.packPattern"
+      ]
+    },
+    "find_points.c:1095-1097": {
+      "hash": "ef71758542a6eab163a9360d8ce5047d2352471ed9dfd53aa284a501eb5ac065",
+      "owners": [
+        "Ratpoints.Sieve.numClasses"
       ]
     },
     "find_points.c:1098-1098": {
@@ -49,14 +55,20 @@
         "Ratpoints.Sieve.andRows"
       ]
     },
-    "find_points.c:1102-1104": {
-      "hash": "be4535f48359628060af5f20ae2a50e852b1ead53ab74bd8dcee449076c4af8f",
+    "find_points.c:1099-1104": {
+      "hash": "2174d9588d9f861ec57e23d2b31541ffc69dcaad865bee163813778b68d0a8f2",
       "owners": [
-        "Ratpoints.Sieve.denBits"
+        "Ratpoints.Sieve.numClasses"
       ]
     },
-    "find_points.c:1106-1115": {
-      "hash": "49e1b06157660f760b4a35c4b9fedd498bd1af5d1fa41f462b1c8a0b84c0a16c",
+    "find_points.c:1106-1114": {
+      "hash": "d03fb51492282db0e76300062df036d95037e462b46765b29638f1b916859b68",
+      "owners": [
+        "Ratpoints.Sieve.numClasses"
+      ]
+    },
+    "find_points.c:1115-1115": {
+      "hash": "d10b36aa74a59bcf4a88185837f658afaf3646eff2bb16c3928d0e9335e945d2",
       "owners": [
         "Ratpoints.Sieve.twoAdic"
       ]
@@ -1486,7 +1498,7 @@
     "find_points.c:995-995": {
       "hash": "268bc81d902a426fe6a8b9f3e17225c2eb8892c0a6cb7f0ac56f7b950f67827b",
       "owners": [
-        "Ratpoints.Sieve.denBits"
+        "Ratpoints.Sieve.numClasses"
       ]
     },
     "find_points.c:996-1000": {
@@ -2460,6 +2472,12 @@
         "Ratpoints.rbaLength"
       ]
     },
+    "rp-private.h:494-495": {
+      "hash": "dca79acd01bb2c30241f1afdaf8bd8df0248ca8f970f479a790d12795a3ccb03",
+      "owners": [
+        "Ratpoints.Sieve.NumClass"
+      ]
+    },
     "rp-private.h:497-498": {
       "hash": "96ab4090071c8eff7a76966a8a9e17fcadf5d660ceea208ad3222273849431c8",
       "owners": [
@@ -2936,21 +2954,17 @@
     "find_points.c:1023-1050": "9165a7bddd072b02a0821fb63748fcf14c62ceec095483c1ea98401bfacd829e",
     "find_points.c:1058-1062": "f16f1c9b9f34ef04a03d52fe79727aa760de310d61917f5effe8c37d52683563",
     "find_points.c:1058-1104": "9e42e53d9009455e01ea9bb3fe90e1e7fce335bdbab3f4a300780e5494422e43",
-    "find_points.c:1064-1065": "e9153884ff4d31b31424e104292e607962b9a16830ea54f86533af3a8f95d704",
     "find_points.c:1064-1081": "94e325bd8f58956ce23487f39dbe21a4e76681b2eaae4d559aa25808baa8d6b0",
     "find_points.c:1066-1067": "092c4a00a868b12d48c34ecd16cf54051ad8f32b72bec3497782067fcd5ef694",
     "find_points.c:1069-1069": "16773c2eee0cea7c3e17a22d001ea070566f0999a374a13115e15a7ec100de83",
-    "find_points.c:1070-1070": "f9f78d17ab4da13b6be748c6eef30e6c0f1cad5ca0af2b3234eea958d7c17c97",
     "find_points.c:1071-1095": "4cf1b1dc3119cd985698683b095921dfc6aa771bc5ea780770bd65e273e74272",
     "find_points.c:1082-1094": "5c5215e4d7de05746a8e3b530a7c87584ca69bbdf9eacdcb5948b68a97e647aa",
     "find_points.c:1095-1097": "ef71758542a6eab163a9360d8ce5047d2352471ed9dfd53aa284a501eb5ac065",
-    "find_points.c:1096-1097": "e7996709fb9da5fd48d3160620f8f515bd340993f509773ded560054083603ad",
     "find_points.c:1098-1098": "5b524d79cc1fd7d45f9d7cab86252981f527e22f5c876e41ae430de9090aa9c7",
     "find_points.c:1099-1101": "831d5a2fc4f6148301b5483e708c3508c796b271d0ec61b1c9022e3994744270",
     "find_points.c:1099-1104": "2174d9588d9f861ec57e23d2b31541ffc69dcaad865bee163813778b68d0a8f2",
-    "find_points.c:1102-1104": "be4535f48359628060af5f20ae2a50e852b1ead53ab74bd8dcee449076c4af8f",
     "find_points.c:1106-1114": "d03fb51492282db0e76300062df036d95037e462b46765b29638f1b916859b68",
-    "find_points.c:1106-1115": "49e1b06157660f760b4a35c4b9fedd498bd1af5d1fa41f462b1c8a0b84c0a16c",
+    "find_points.c:1115-1115": "d10b36aa74a59bcf4a88185837f658afaf3646eff2bb16c3928d0e9335e945d2",
     "find_points.c:1119-1130": "261590fcf2d9db067b39963fa2e094add9d92782e96e3bb88c5d8816615bf0b9",
     "find_points.c:1142-1158": "fc3dfb1d0462c9d5d42870f893534ffd97b43ae30e59d9d3f952d038fb4f7796",
     "find_points.c:1142-1183": "aaedc451e9434ee981a09cc290a487fe86794dfc0a350d2467cff080466ac27d",
