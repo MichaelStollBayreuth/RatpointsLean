@@ -182,14 +182,13 @@ theorem RepeatedBits.set!_zero {g : Nat → Bool} {m n cur : Nat} {pref suff : L
     {rep : Vector UInt64 n} (hl : ForIn.toList [0:W] = pref ++ cur :: suff)
     (h : RepeatedBits g m pref.length 0 rep) :
     RepeatedBits g m (pref ++ [cur]).length 0 (rep.set! cur 0) := by
-  have hc := Std.Legacy.Range.length_eq_of_toList_eq_append_cons hl
   intro w hw j
   rw [List.length_append, List.length_singleton] at hw
   by_cases hwn : w < n
   · rw [Vector.getElem!_set! hwn]
     split
     · simp
-    · exact h w (by lia) j
+    · exact h w (by lia [Std.Legacy.Range.length_eq_of_toList_eq_append_cons hl]) j
   · rw [getElem!_neg (rep.set! cur 0) w hwn]
     change (0 : UInt64).toBitVec.getLsbD j = _
     simp
@@ -247,7 +246,6 @@ theorem LayOuterInvariant.add {g : Nat → Bool} {m W o n mb : Nat} {rep rep' : 
     W * 64 - (o + m) < mb ∧ LayOuterInvariant g m W false (rep', o + m) := by
   obtain ⟨rfl, hmo, -, -⟩ := h
   obtain ⟨hi, hr, hex⟩ := h'
-  have := Nat.div_add_mod o 64
   refine ⟨by lia, Nat.dvd_add hmo (Nat.dvd_refl m), hr.mono ?_, nofun⟩
   rcases hex rfl with h1 | h1 <;> lia
 
@@ -365,10 +363,9 @@ theorem RowWords.set!_copy {g : Nat → Bool} {m cur : Nat} {pref suff : List Na
   have hcl := Std.Legacy.Range.lt_of_toList_eq_append_cons hl
   have hn : (m + chunk - 1) * rbaPack = m * rbaPack + (chunk - 1) * rbaPack := by
     rw [Nat.add_sub_assoc chunk_pos, Nat.add_mul]
-  have := Nat.mul_pos pre.1 rbaPack_pos
   rw [List.length_append, List.length_singleton, hc, ← Nat.add_assoc]
   rw [hc] at h
-  refine h.set!_self (by lia) ((h cur (by lia)).congr_left ?_)
+  refine h.set!_self (by lia) ((h cur (by lia [Nat.mul_pos pre.1 rbaPack_pos])).congr_left ?_)
   rw [Nat.mul_add, Nat.add_mod, show 64 * (m * rbaPack) % m = 0 by
     rw [Nat.mul_comm m, ← Nat.mul_assoc, Nat.mul_mod_left], Nat.zero_add, Nat.mod_mod]
 

@@ -182,7 +182,7 @@ namespace BruteForce
 theorem horner_scaledCoeffs_one_zero (c : List ℤ) (d : ℕ) :
     horner (scaledCoeffs c d 0) 1 = c.getD d 0 := by
   rw [horner_scaledCoeffs, Finset.sum_range_succ, Finset.sum_eq_zero fun k hk ↦ by
-    rw [zero_pow (by have := Finset.mem_range.mp hk; lia)]; simp]
+    rw [zero_pow (by lia [Finset.mem_range.mp hk])]; simp]
   simp
 
 end BruteForce

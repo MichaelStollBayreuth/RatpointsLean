@@ -367,17 +367,15 @@ theorem binv_checkOf {b : Nat} (H : Nat) {e : SieveEntry} {t : Entry} (he : e.fa
 `binv < p`, is at least `H` (`sift.c:303`): a natural number. -/
 theorem le_mul_add_natCast_mul {a : Int} {p binv H : Nat} (ha : a.natAbs ≤ H) (hb : binv < p) :
     (H : Int) ≤ a * binv + (p * H : Nat) := by
-  have := Int.natAbs_mul_add_le_mul ha hb
-  lia
+  lia [Int.natAbs_mul_add_le_mul ha hb]
 
 /-- The value `a binv + p H` that the third stage reduces with the bias `p H`, for `|a| ≤ H` and
 `binv < p`, is at most `2 p H - H` (`sift.c:303`), below the bound `2 p H < Ratpoints.stage3Limit`
 of the bias, and so a `long`. -/
 theorem mul_add_natCast_mul_le_two_mul_mul_sub {a : Int} {p binv H : Nat} (ha : a.natAbs ≤ H)
     (hb : binv < p) : a * binv + (p * H : Nat) ≤ 2 * p * H - H := by
-  have := Int.natAbs_mul_add_le_mul ha hb
   push_cast
-  lia
+  lia [Int.natAbs_mul_add_le_mul ha hb]
 
 /-- The product `am binv` that the third stage reduces without the bias, of the residue `am` of the
 numerator modulo `p` and the inverse `binv < p`, is below `p ^ 2` (`sift.c:307`), a `long` for the
@@ -398,7 +396,7 @@ theorem mulMod_toNat_mul_add_mul_magic {a : Int} {p binv H : Nat} (ha : a.natAbs
   have hu : (a * binv + (p * H : Nat)).toNat * p < 2 ^ 64 := by
     rcases Nat.eq_zero_or_pos H with rfl | hH0
     · simp [show a = 0 by lia]
-    · have hp32 : p < 2 ^ 32 := by have := Nat.le_mul_of_pos_right p hH0; lia
+    · have hp32 : p < 2 ^ 32 := by lia [Nat.le_mul_of_pos_right p hH0]
       have hu32 : (a * binv + (p * H : Nat)).toNat < 2 ^ 32 := by push_cast at h2 ⊢; lia
       exact Nat.lt_of_lt_of_le
         (Nat.mul_lt_mul_of_lt_of_le hu32 (Nat.le_of_lt hp32) (Nat.two_pow_pos 32)) (by decide)

@@ -512,14 +512,12 @@ theorem AndRowsFillInvariant.append_fillBitArray {n cur : Nat} {cw : UInt64}
     (h : AndRowsFillInvariant cw n done.length surv)
     (hl : ForIn.toList [0:n] = done ++ cur :: suff) :
     AndRowsFillInvariant cw n (done ++ [cur]).length (fillBitArray surv (n - 1 - cur) cw) := by
-  have := Std.Legacy.Range.length_eq_of_toList_eq_append_cons hl
-  have := Std.Legacy.Range.lt_of_toList_eq_append_cons hl
   intro y hy hy'
   rw [getElem!_fillBitArray _ _ _ (Nat.lt_add_one_mul_of_lt_mul hy)]
   rw [List.length_append, List.length_singleton] at hy'
   split
   · rfl
-  · exact h y hy (by lia)
+  · exact h y hy (by lia [Std.Legacy.Range.length_eq_of_toList_eq_append_cons hl])
 
 /-- After the bit arrays are all set to the class word, the loop over the moduli starts with no
 moduli. -/

@@ -277,8 +277,7 @@ theorem SiftBitArrayWalkInvariant.toList_eq {words : Nat → UInt64}
         fun t : Nat ↦ i * rbaLength + 64 * κ + t).flatMap fun j ↦ g (cl.numerator j) := by
   have hl : (ForIn.toList [1:rbaPack]).length + 1 = (ForIn.toList [0:rbaPack]).length := by
     simp only [Std.Legacy.Range.length_toList]
-    have := rbaPack_pos
-    lia
+    lia [rbaPack_pos]
   exact (hl ▸ h.2).toList_eq hw
 
 /-- When the second stage leaves the bit array zero, its words have no set bits. -/
@@ -699,11 +698,8 @@ private theorem ite_eq_toNat_sub {low w0 : Int} (hw0 : low / rbaLength ≤ w0) :
 private theorem sub_toNat_emod_eq_toNat_mul_sub (high : Int) :
     rbaLength - 1 - (high % rbaLength).toNat =
       (rbaLength * (high / rbaLength + 1) - 1 - high).toNat := by
-  have := Int.emod_def high rbaLength
-  have := Int.emod_lt_of_pos high natCast_rbaLength_pos
-  have := Int.emod_nonneg high (Int.ne_of_gt natCast_rbaLength_pos)
   rw [Int.mul_add, Int.mul_one]
-  lia
+  lia [Int.emod_def high rbaLength, Int.emod_nonneg high (Int.ne_of_gt natCast_rbaLength_pos)]
 
 -- The high mask of `Ratpoints.Sieve.siftBits` on the piece that ends at the word number `w1`: the
 -- number of its bits above `high`, `0` for every piece but the last.
@@ -714,9 +710,8 @@ private theorem ite_eq_toNat_mul_sub {high w1 : Int} (hw1 : w1 ≤ high / rbaLen
   · subst_vars
     exact sub_toNat_emod_eq_toNat_mul_sub high
   · have hR := natCast_rbaLength_pos
-    have := Int.mul_ediv_self_le (x := high) (Int.ne_of_gt hR)
-    have := Int.mul_le_mul_of_nonneg_left (show w1 ≤ high / rbaLength by lia) (Int.le_of_lt hR)
-    lia
+    lia [Int.mul_ediv_self_le (x := high) (Int.ne_of_gt hR),
+      Int.mul_le_mul_of_nonneg_left (show w1 ≤ high / rbaLength by lia) (Int.le_of_lt hR)]
 
 /-- The invariant of the loop of `Ratpoints.Sieve.siftBits` over the pieces, for the bits from
 `low` to `high`, a test `keep` of the bits and their points `g`, at the exit of the loop or not:
@@ -748,9 +743,8 @@ def SiftWhileInvariant (g : Int → List (Int × Int × Int)) (keep : Int → Bo
 
 theorem siftInvariant_empty (g : Int → List (Int × Int × Int)) (keep : Int → Bool) {low high : Int}
     (h : low ≤ high) {A : Nat} (hA : 1 ≤ A) :
-    SiftInvariant g keep low high false A (low / rbaLength) (low / rbaLength + A) #[] := by
-  have := Int.ediv_le_ediv natCast_rbaLength_pos h
-  exact ⟨Int.le_refl _, by lia, nofun, rfl, hA, by simp⟩
+    SiftInvariant g keep low high false A (low / rbaLength) (low / rbaLength + A) #[] :=
+  ⟨Int.le_refl _, by lia [Int.ediv_le_ediv natCast_rbaLength_pos h], nofun, rfl, hA, by simp⟩
 
 /-- A piece of `r ≥ 1` bit arrays from the word number `w0` on, which ends at
 `w1' ≤ high / rbaLength + 1`, with the low mask of `Ratpoints.Sieve.siftBits` and a high mask `mH`,
@@ -765,14 +759,12 @@ theorem SiftInvariant.append {g : Int → List (Int × Int × Int)} {keep : Int 
           (low - rbaLength * (low / rbaLength)).toNat else 0 : Nat) : Int) + k).filter keep).flatMap
             g) :
     SiftInvariant g keep low high false r w1' (w1' + r) (out ++ pts) := by
-  refine ⟨by have := h.le_w0; lia, hw1', nofun, rfl, hr1, ?_⟩
+  refine ⟨by lia [h.le_w0], hw1', nofun, rfl, hr1, ?_⟩
   have hm : (rbaLength : Int) * w1' - 1 - high =
       rbaLength * w0 + ((r * rbaLength : Nat) : Int) - 1 - high := by
     rw [hr, Int.mul_add, Int.natCast_mul, Int.mul_comm (r : Int)]
   rw [ite_eq_toNat_sub h.le_w0, hmH, hm, ← List.filter_map_range_eq_map_range'] at hpts
-  have hl : (w1' - low / rbaLength).toNat = (w0 - low / rbaLength).toNat + r := by
-    have := h.le_w0
-    lia
+  have hl : (w1' - low / rbaLength).toNat = (w0 - low / rbaLength).toNat + r := by lia [h.le_w0]
   have hmap : (List.range (r * rbaLength)).map ((fun k : Nat ↦ rbaLength * (low / rbaLength) + k) ∘
         fun x ↦ (w0 - low / rbaLength).toNat * rbaLength + x) =
       (List.range (r * rbaLength)).map fun k : Nat ↦ rbaLength * w0 + k :=
@@ -786,9 +778,7 @@ theorem SiftInvariant.toNat_sub_lt {g : Int → List (Int × Int × Int)} {keep 
     {low high : Int} {range : Nat} {w0 w1 : Int} {out : Array (Int × Int × Int)}
     (h : SiftInvariant g keep low high false range w0 w1 out) (hw0 : w0 < high / rbaLength + 1) :
     (high / rbaLength + 1 - w1).toNat < (high / rbaLength + 1 - w0).toNat := by
-  have := h.w1_eq
-  have := h.one_le_range
-  lia
+  lia [h.w1_eq, h.one_le_range]
 
 /-- The loop of `Ratpoints.Sieve.siftBits` ends at the word number one past that of `high`. -/
 theorem SiftInvariant.exit_of_not_lt {g : Int → List (Int × Int × Int)} {keep : Int → Bool}
@@ -810,7 +800,7 @@ theorem SiftInvariant.toList_eq_flatMap_filter {g : Int → List (Int × Int × 
   have := Int.lt_mul_ediv_self_add (x := high) hR
   have hM : (((high / rbaLength + 1 - low / rbaLength).toNat * rbaLength : Nat) : Int) =
       rbaLength * (high / rbaLength) + rbaLength - rbaLength * (low / rbaLength) := by
-    rw [Int.natCast_mul, Int.toNat_of_nonneg (by have := h.le_w0; have := h.eq_of_exit rfl; lia)]
+    rw [Int.natCast_mul, Int.toNat_of_nonneg (by lia [h.le_w0, h.eq_of_exit rfl])]
     grind
   rw [h.toList_eq, h.eq_of_exit rfl, List.filter_map_range_eq_map_range_of_le hL (by lia)]
 
@@ -854,7 +844,7 @@ private theorem siftBits_spec_reads (w : Thunk (List Int)) (d b A : Nat) (rev : 
     | exact toList_empty_eq_of_not_le ‹_›
     | exact ‹SiftInvariant _ _ _ _ true _ _ _ _›.toList_eq_flatMap_filter
     | exact ‹_ ∧ SiftInvariant _ _ _ _ false _ _ _ _›.2.exit_of_not_lt ‹_›
-    | exact ⟨by have := rbaLength_pos; (try split) <;> lia, hfits, hmg⟩
+    | exact ⟨by (try split) <;> lia [rbaLength_pos], hfits, hmg⟩
     | obtain ⟨rfl, h⟩ := ‹_ ∧ SiftInvariant _ _ _ _ false _ _ _ _›
       first
         | exact ⟨h.toNat_sub_lt ‹_›, h.append h.w1_eq h.one_le_range (by lia)

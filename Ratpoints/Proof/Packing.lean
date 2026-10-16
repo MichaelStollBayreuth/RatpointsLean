@@ -127,14 +127,12 @@ structure NumClass.Packs (cl : NumClass) (w : UInt64) : Prop extends cl.WF where
 has bit `j`. -/
 theorem NumClass.Packs.classBit_bits {cl : NumClass} {w : UInt64} (h : cl.Packs w) (j : Int) :
     classBit cl.bits j = classBit w (cl.numerator j) := by
-  have hj := Int.emod_lt_of_pos j (by decide : (0 : Int) < 64)
   rw [classBit_eq, classBit_eq, h.getLsbD_bits _ (by lia), NumClass.numerator,
     show ((2 : Int) ^ cl.k) = ((2 ^ cl.k : Nat) : Int) by simp, Int.toNat_add_mul_emod_sixty_four]
 
 /-- A numerator that the class word lets through lies in the class `a₀ mod 2 ^ k`. -/
 theorem NumClass.Packs.emod_eq_of_classBit {cl : NumClass} {w : UInt64} (h : cl.Packs w) {a : Int}
     (ha : classBit w a = true) : a % 2 ^ cl.k = cl.a0 := by
-  have h64 := Int.emod_lt_of_pos a (by decide : (0 : Int) < 64)
   have h0 : ((a % 64).toNat : Int) = a % 64 := Int.toNat_of_nonneg (Int.emod_nonneg a (by decide))
   have hm := h.mod_eq _ (by lia) ha
   have hd : (2 : Int) ^ cl.k ∣ 64 := mod_cast Nat.two_pow_dvd_sixty_four h.k_le
@@ -186,12 +184,11 @@ tell the packings apart. -/
 def NumClass.key (cl : NumClass) : Nat := 2 ^ cl.k + cl.a0
 
 theorem NumClass.WF.key_lt {cl : NumClass} (h : cl.WF) : cl.key < 2 ^ (cl.k + 1) := by
-  have := h.a0_lt
   rw [NumClass.key, Nat.pow_succ]
-  lia
+  lia [h.a0_lt]
 
 theorem NumClass.WF.key_lt_128 {cl : NumClass} (h : cl.WF) : cl.key < 128 := by
-  have : 2 ^ (cl.k + 1) ≤ 2 ^ 7 := Nat.pow_le_pow_right (by decide) (by have := h.k_le; lia)
+  have : 2 ^ (cl.k + 1) ≤ 2 ^ 7 := Nat.pow_le_pow_right (by decide) (by lia [h.k_le])
   exact Nat.lt_of_lt_of_le h.key_lt this
 
 theorem NumClass.WF.a0_lt_sixty_four {cl : NumClass} (h : cl.WF) : cl.a0 < 64 :=
@@ -325,7 +322,6 @@ theorem DoubleInvariant.or_shiftLeft {k s mb : Nat} {p0 packed : UInt64} (hk : k
   have hj0 := Nat.two_pow_pos j
   have h3 : 2 ^ (j + 1) ≤ 2 ^ 6 := Nat.pow_le_pow_right (by decide) hj6
   rw [Nat.pow_succ] at h3
-  have : (2 : Nat) ^ 6 = 64 := rfl
   exact ⟨by lia, ⟨j + 1, by rw [Nat.pow_succ]; lia, by lia, by lia⟩, nofun, fun t ↦
     (UInt64.getLsbD_or_shiftLeft_of_dvd hPs hs hb t).trans (by rw [Nat.min_eq_left (by lia)])⟩
 
@@ -355,10 +351,7 @@ theorem getLsbD_of_doubleInvariant {w p0 x packed : UInt64} {c k s : Nat} (hk : 
   obtain ⟨n, hz, hp⟩ := hw.exists_clearedBelow_zero
   obtain ⟨⟨j, hj, -, hj6⟩, h64, hb⟩ := h
   simp only at hj h64 hb
-  have hs : s = 64 := by
-    have := h64 trivial
-    have : 2 ^ j ≤ 2 ^ 6 := Nat.pow_le_pow_right (by decide) hj6
-    lia
+  have hs : s = 64 := by lia [Nat.pow_le_pow_right (n := 2) (by decide) hj6]
   intro t ht
   simp only [hb, hs, ht, decide_true, Bool.true_and]
   rw [hp]
@@ -432,7 +425,7 @@ theorem strideInvariant_add_one {w : UInt64} {c k : Nat} (hw : (w != 0) = true)
 
 theorem StrideInvariant.sub_one {w : UInt64} {c k : Nat} (h : StrideInvariant w c true k) :
     k - 1 ≤ 6 ∧ ClassOf w c (k - 1) :=
-  ⟨by have := h.2.2.1; lia, h.2.2.2⟩
+  ⟨by lia [h.2.2.1], h.2.2.2⟩
 
 /-- The class after the loop over the strides packs the word, with the pattern `w` itself for
 `k = 1` and with the packed pattern `packed` otherwise. -/
@@ -440,7 +433,7 @@ theorem StrideInvariant.packs {w packed : UInt64} {c k : Nat} (h : StrideInvaria
     (hp : ∀ t < 64, packed.toBitVec.getLsbD t =
       w.toBitVec.getLsbD ((c % 2 ^ (k - 1) + 2 ^ (k - 1) * t) % 64)) :
     NumClass.Packs ⟨packed, k - 1, c % 2 ^ (k - 1), none⟩ w :=
-  NumClass.packs_mk (by have := h.1; have := h.2.1; lia) h.sub_one.1 h.sub_one.2 hp
+  NumClass.packs_mk (by lia [h.1, h.2.1]) h.sub_one.1 h.sub_one.2 hp
 
 theorem StrideInvariant.packs_self {w : UInt64} {c k : Nat} (h : StrideInvariant w c true k)
     (hk : k - 1 = 0) : NumClass.Packs ⟨w, k - 1, c % 2 ^ (k - 1), none⟩ w :=
@@ -591,7 +584,7 @@ theorem firstKeys_mono (cls : Vector NumClass 64) {m n : Nat} (h : m ≤ n) :
   obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le h
   induction d with
   | zero => exact Nat.le_refl _
-  | succ d ih => rw [← Nat.add_assoc, firstKeys_succ]; have := ih (Nat.le_add_right m d); lia
+  | succ d ih => rw [← Nat.add_assoc, firstKeys_succ]; lia
 
 /-- The invariant of the loop of `Ratpoints.Sieve.numPackings` after the classes below `n`: the two
 words `seen` mark the keys of the classes below `n` with a pattern, and the count is the number of
@@ -1073,9 +1066,8 @@ theorem SieveEntry.Packable.packedFor {e : SieveEntry} (he : e.Packable) {cl : N
     SieveEntry.PackedFor { e with dinv := (halveChain e.p (kmax + 1) 1).toArray } cl
       (mulMod (cl.a0 * halveIter e.p cl.k e.rbainv) e.p e.magic + e.bias) := by
   have hp0 : 0 < e.p := Nat.lt_trans Nat.zero_lt_one he.one_lt
-  have ha := hcl.a0_lt_sixty_four
-  rw [he.magic_eq, mulMod_magic hp0 (mul_mul_lt_two_pow_64 (by lia) (halveIter_lt he.rbainv_lt cl.k)
-    he.le_maxPrimeEven)]
+  rw [he.magic_eq, mulMod_magic hp0 (mul_mul_lt_two_pow_64 (by lia [hcl.a0_lt_sixty_four])
+    (halveIter_lt he.rbainv_lt cl.k) he.le_maxPrimeEven)]
   have := Nat.mod_lt (cl.a0 * halveIter e.p cl.k e.rbainv) hp0
   have := he.bias_lt
   have := he.rowBias_le_bias

@@ -303,8 +303,7 @@ theorem forbiddenAtInvariant_zero (us : Array (Option (ℕ × ℕ))) (m : ℕ) :
 -- The cursor of the loop of `Ratpoints.Sieve.forbiddenAt` and the number of coefficients done.
 private theorem eq_length_of_toList_eq {n cur : ℕ} {pref suff : List ℕ}
     (hl : ForIn.toList [1:n] = pref ++ cur :: suff) : cur = pref.length + 1 := by
-  have := Std.Legacy.Range.add_length_eq_of_toList_eq_append_cons hl
-  lia
+  lia [Std.Legacy.Range.add_length_eq_of_toList_eq_append_cons hl]
 
 /-- The step of `Ratpoints.Sieve.forbiddenAt` at a coefficient whose term has a valuation less than
 `vmin`: it becomes the least one, with no tie. -/
@@ -511,10 +510,9 @@ theorem ValuationsInvariant.exit_of_div_lt {f : ℕ → Bool} {p bHigh mask m pm
   rw [testBit_eq_of_testBit_or hmask h' hm]
   have : p ^ t ≤ bHigh ↔ t < m + 1 := by
     refine ⟨fun ht ↦ Nat.lt_of_not_le fun ht' ↦ ?_, fun ht ↦ ?_⟩
-    · have := (Nat.div_lt_iff_lt_mul hp).mp hb
-      have := Nat.pow_le_pow_right hp ht'
+    · have := Nat.pow_le_pow_right hp ht'
       rw [pow_succ] at this
-      lia
+      lia [(Nat.div_lt_iff_lt_mul hp).mp hb]
     · exact (Nat.pow_le_pow_right hp (Nat.le_of_lt_succ ht)).trans hpm
   grind
 
@@ -562,9 +560,8 @@ theorem ValuationsInvariant.sub_mul_lt {f : ℕ → Bool} {p bHigh mask m pm : �
   obtain ⟨hpm, -⟩ := h.1 rfl
   dsimp only at hpm
   have h1 : 1 ≤ pm := hpm ▸ Nat.one_le_pow _ _ (by lia)
-  have h2 : pm * p ≤ bHigh := (Nat.le_div_iff_mul_le (by lia)).mp (Nat.le_of_not_lt hb)
-  have h3 : pm < pm * p := (Nat.lt_mul_iff_one_lt_right (by lia)).mpr hp
-  lia
+  lia [(Nat.le_div_iff_mul_le (by lia)).mp (Nat.le_of_not_lt hb),
+    (Nat.lt_mul_iff_one_lt_right (a := pm) (by lia)).mpr hp]
 
 /-- The step of the loops of `Ratpoints.Sieve.forbiddenValuations` and
 `Ratpoints.Sieve.allValuations` that goes on, with the measure. -/
@@ -1255,10 +1252,7 @@ set are defined. The values `pm * p` of these loops, computed only for `pm ≤ �
 theorem lt_forty_of_pow_le {p m bHigh : ℕ} (hp : 3 ≤ p) (hH : bHigh < 2 ^ 63) (h : p ^ m ≤ bHigh) :
     m < 40 := by
   by_contra hm
-  have h1 := Nat.pow_le_pow_left hp m
-  have h2 := Nat.pow_le_pow_right three_pos (Nat.le_of_not_lt hm)
-  have h3 : 2 ^ 63 < 3 ^ 40 := by decide
-  lia
+  lia [Nat.pow_le_pow_left hp m, Nat.pow_le_pow_right three_pos (Nat.le_of_not_lt hm)]
 
 /-- For `p ≥ 3`, as for an odd prime, and a `long` `bHigh`, the mask of the forbidden valuations is
 below `2 ^ 40`, so that the `unsigned long` `mask` of `forbidden_valuations` holds it

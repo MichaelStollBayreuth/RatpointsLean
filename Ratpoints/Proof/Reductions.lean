@@ -142,8 +142,7 @@ theorem mul_le_mulModLimit_of_le_div {b d p : Nat} (hb : b ≤ mulModLimit / max
 `class_offsets`, `a₀ rinv`, for `x ≤ 2 ^ 10` and `d < p ≤ Ratpoints.maxPrimeEven`, are `long`s. -/
 theorem mul_lt_two_pow_63 {x d p : Nat} (hx : x ≤ 2 ^ 10) (hd : d < p) (hp : p ≤ maxPrimeEven) :
     x * d < 2 ^ 63 := by
-  have := maxPrimeEven_le_two_pow_10
-  calc x * d ≤ 2 ^ 10 * 2 ^ 10 := Nat.mul_le_mul hx (by lia)
+  calc x * d ≤ 2 ^ 10 * 2 ^ 10 := Nat.mul_le_mul hx (by lia [maxPrimeEven_le_two_pow_10])
     _ < 2 ^ 63 := by decide
 
 theorem mod_le_two_pow_10 (b : Nat) {p : Nat} (hp : 0 < p) (hpm : p ≤ maxPrimeEven) :
@@ -217,9 +216,8 @@ theorem magic_mul_eq {p : Nat} (hp : 0 < p) :
 /-- The reciprocal of a modulus `p ≥ 2` is an `unsigned long`; that of `1`, no modulus, is
 `2 ^ 64`, which wraps to `0` in the C code. -/
 theorem magic_lt_two_pow_64 {p : Nat} (hp : 1 < p) : magic p < 2 ^ 64 := by
-  have : (2 ^ 64 - 1) / p ≤ (2 ^ 64 - 1) / 2 := Nat.div_le_div_left hp (by decide)
   simp only [magic]
-  lia
+  lia [Nat.div_le_div_left (a := 2 ^ 64 - 1) hp (by decide)]
 
 /-- `RP_MULMOD` with the reciprocal of `p` computes the remainder of every `u` with `u p < 2 ^ 64`,
 since `magic p` exceeds `2 ^ 64 / p` by less than `1`. -/
@@ -420,7 +418,7 @@ theorem SieveSpec.Fits.ite_mulMod_modLong_eq_toNat_emod {s : SieveSpec} (hs : s.
   cases small with
   | false => rw [modLong_eq_emod _ (Int.natCast_nonneg _)]; rfl
   | true =>
-    have ⟨h0, h1⟩ := hs.add_nonneg_and_toNat_le (h rfl).1 (by have := (h rfl).2; lia)
+    have ⟨h0, h1⟩ := hs.add_nonneg_and_toNat_le (h rfl).1 (by lia [(h rfl).2])
     simp only [↓reduceIte]
     rw [mulMod_magic hs.pos (mul_lt_two_pow_64_of_le_mulModLimit h1
       (Nat.le_trans hs.le_maxPrimeEven maxPrimeEven_le_two_pow_32)), Int.toNat_emod h0
