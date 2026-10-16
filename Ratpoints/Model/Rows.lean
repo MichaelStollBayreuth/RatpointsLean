@@ -102,11 +102,11 @@ the tables of the build writes for the prime `p = prime[pn]`: the `p` words `wor
 divisor `p` (`Ratpoints.Sieve.forbiddenRow`) written `Ratpoints.rbaPack` times, the first `p` bit
 arrays, and then the `rbaPack (chunk - 1)` words `work[i mod p]`, the copies of the first
 `Ratpoints.chunk - 1` bit arrays, so that word `x` is word `x mod p` of `work` for
-`x < (p + chunk - 1) rbaPack`. Bit `t` of word `x` is set exactly when `p ∤ 64 x + t`. In the C
-code the sieve entry of a prime of the table has it as its row of `0`, and the forbidden divisors
-that are primes of the table read its first `p` words; the run and the forbidden divisors of the
-model read it from stage F4 on, and until then the same words from the plain builder
-(`Ratpoints.Sieve.SieveEntry.row`) and from `Ratpoints.Sieve.forbiddenRow`.
+`x < (p + chunk - 1) rbaPack`. Bit `t` of word `x` is set exactly when `p ∤ 64 x + t`. The
+forbidden divisors that are primes of the table read its first `p` words
+(`Ratpoints.Sieve.forbiddenOfPrime`, `Ratpoints.Sieve.forbidden`); in the C code the sieve entry of
+a prime of the table has it as its row of `0`, which the run of the model reads from stage F4 on,
+and until then the same words from the plain builder (`Ratpoints.Sieve.SieveEntry.row`).
 
 C: `find_points.c:37`, `gen_find_points_h.c:102-116`, `gen_find_points_h.c:122-134`
 

@@ -16,6 +16,7 @@ import Ratpoints.Mathlib.Data.ZMod.Basic
 import Ratpoints.Mathlib.NumberTheory.Padics.PadicVal.Basic
 import Ratpoints.Proof.Containers
 import Ratpoints.Proof.Params
+import Ratpoints.Proof.Rows
 import Ratpoints.Proof.Tables
 import Ratpoints.Proof.Valuation
 import Std.Tactic.Do
@@ -39,12 +40,15 @@ denominator `b ≤ bHigh` of a point, since the mask holds every valuation that 
 have (`Ratpoints.Sieve.allValuations`) or there are no points at infinity modulo `p`, that is `c_d`
 is not a square modulo `p`, and its words are those of `Ratpoints.Sieve.forbiddenRow`, bit `j` of
 word `r` clear exactly when `p ∣ 64 r + j` (`Ratpoints.Sieve.getLsbD_getElem!_forbiddenRow`); a
-prime tested by its valuation excludes no denominator of a point. The loop of the tables also keeps
-the table of every prime it examines, that of the reference (`Ratpoints.Sieve.examinePrime`), and
-when it takes its exit, the curve has no points. The masks, which the C code keeps in an
-`unsigned long`, stay below `2 ^ 40` for an odd prime and a `long` `b_high`, so that its cap on the
-valuations never binds; the products `pm p` of its loops of the valuations and the square `p p` of a
-prime of the table that its loop over the further primes compares with `b_high` are `long`s
+prime tested by its valuation excludes no denominator of a point. The words of a forbidden divisor
+that is one of the first `Ratpoints.numPrimes` primes of the table are the first `p` words of its
+row of `0`, the pattern `sieves0`, which are those of `Ratpoints.Sieve.forbiddenRow`
+(`Ratpoints.Sieve.extract_sieves0`). The loop of the tables also keeps the table of every prime it
+examines, that of the reference (`Ratpoints.Sieve.examinePrime`), and when it takes its exit, the
+curve has no points. The masks, which the C code keeps in an `unsigned long`, stay below `2 ^ 40`
+for an odd prime and a `long` `b_high`, so that its cap on the valuations never binds; the products
+`pm p` of its loops of the valuations and the square `p p` of a prime of the table that its loop
+over the further primes compares with `b_high` are `long`s
 (`Ratpoints.Setup.fitsLong_mul_of_le_div`, `Ratpoints.Setup.mul_self_lt_of_mem_primeTable`).
 
 ## Main definitions
@@ -677,7 +681,7 @@ theorem eq_of_run_forbiddenOfPrime_eq_inl {c : List ℤ} {d p bHigh : ℕ} {cm :
     e = ⟨p, forbiddenRow p⟩ ∧ ((cm[d]! = 0 ∧
       Id.run (forbiddenValuations c d p bHigh cm) &&& Id.run (allValuations p bHigh) =
         Id.run (allValuations p bHigh)) ∨ atInf = false) := by
-  simp only [forbiddenOfPrime, apply_ite Id.run, Id.run_bind] at h
+  simp only [forbiddenOfPrime, apply_ite Id.run, Id.run_bind, extract_sieves0] at h
   split_ifs at h <;> simp_all
 
 /-- A forbidden divisor tested by its valuation that `Ratpoints.Sieve.forbiddenOfPrime` gives for
@@ -1136,11 +1140,12 @@ theorem forall_isForbiddenEntry_push {c : List ℤ} {d examined bHigh : ℕ} {pr
     {cur : ℕ} {ba : Array ForbiddenEntry} (h : ∀ e ∈ ba, IsForbiddenEntry c d bHigh e)
     (hl : ForIn.toList [examined:primeTable.size] = pref ++ cur :: suff)
     (hs : (!(squaresMod primeTable[cur]!)[(c.getD d 0 % (primeTable[cur]! : ℤ)).toNat]!) = true) :
-    ∀ e ∈ ba.push ⟨primeTable[cur]!, forbiddenRow primeTable[cur]!⟩,
+    ∀ e ∈ ba.push ⟨primeTable[cur]!, if cur < numPrimes then
+        (sieves0 primeTable[cur]!).extract 0 primeTable[cur]! else forbiddenRow primeTable[cur]!⟩,
       IsForbiddenEntry c d bHigh e :=
-  -- `rfl` for the words would unfold `Ratpoints.Sieve.forbiddenRow` until the recursion limit
   Array.forall_mem_push.mpr ⟨.inr ⟨Array.getElem!_mem
-    (Std.Legacy.Range.lt_of_toList_eq_append_cons hl), by dsimp only, Bool.not_eq_true' _ ▸ hs⟩, h⟩
+    (Std.Legacy.Range.lt_of_toList_eq_append_cons hl), by simp only [extract_sieves0, ite_self],
+    Bool.not_eq_true' _ ▸ hs⟩, h⟩
 
 theorem forall_isForbiddenEntry_and_forall_isForbiddenVal {c : List ℤ} {d bHigh : ℕ}
     {ba : Array ForbiddenEntry} {val : Array ForbiddenVal}
