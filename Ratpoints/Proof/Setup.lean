@@ -90,9 +90,9 @@ open Polynomial
 /-- The polynomial `f = ∑ cᵢ Xⁱ` over `ℚ` with the coefficient list `c`, constant term first, which
 the C code works with; `Ratpoints.binaryFormPoly c` is its homogenization of degree `2 ⌈n / 2⌉`,
 where `n + 1` is the length of `c` (`Ratpoints.binaryFormPoly_eq_homogenize`). Mathlib's
-`Polynomial.ofFn` builds the same polynomial from a vector `Fin n → R`; the sum here has the shape
-of `Ratpoints.binaryFormPoly`, so that `Ratpoints.binaryFormPoly_eq_homogenize` holds term by
-term. -/
+`Polynomial.ofCoeffList` builds the same polynomial from the list `c.map (↑)`; the sum here has
+the shape of `Ratpoints.binaryFormPoly`, so that `Ratpoints.binaryFormPoly_eq_homogenize` holds
+term by term. -/
 noncomputable def poly (c : List ℤ) : ℚ[X] :=
   ∑ i ∈ Finset.range c.length, C (c.getD i 0 : ℚ) * X ^ i
 

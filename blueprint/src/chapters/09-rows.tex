@@ -1025,22 +1025,21 @@ the tables (\verb|Ratpoints/Proof/Forbidden.lean|), of the run
 (\verb|Ratpoints/Proof/FindPoints.lean|), which are in files with Mathlib.
 \verb|Ratpoints/Proof/Containers.lean|, new, has the general facts on vectors, arrays, lists, ranges
 and the natural numbers and integers that index them, split off \verb|Ratpoints/Proof/Bits.lean|,
-which keeps those on \verb|UInt64| and \verb|Int64|; neither imports the other ($1152$ and $474$
+which keeps those on \verb|UInt64| and \verb|Int64|; neither imports the other ($1139$ and $471$
 lines). The general facts of this sub-stage are there, under their names in the namespaces of Lean
 core and in their natural generality, among them: in \verb|Ratpoints/Proof/Containers.lean|
-\verb|Nat.ite_add_mod_mod| and \verb|Nat.ite_eq_add_one_mod_add_one|, the sum of two residues and
-the position after another in a ring, \verb|Nat.le_add_sub_one_mul|,
-\verb|Nat.mul_add_lt_mul_of_lt_of_lt'| and \verb|Nat.mul_add_mod_mul_of_lt|, on blocks of $k$ words
-(the primed one, since Batteries has the same statement under the plain name, which would collide in
-the files with Mathlib), \verb|List.all_and_left|, \verb|List.all_congr_left| and
-\verb|List.all_range_length_getElem!|, on the tests of a list, \verb|Array.getElem!_append|,
-\verb|Array.size_fold_append|, \verb|Array.getElem!_fold_append| and
-\verb|Array.forall_getElem_push|, on arrays, and \verb|Int.toNat_emod_add_mod| and
-\verb|Int.toNat_natCast_emod|, on residues; in \verb|Ratpoints/Proof/Bits.lean|
-\verb|UInt64.eq_of_getLsbD_eq|, \verb|UInt64.getLsbD_shiftLeft_ofNat| and
-\verb|UInt64.getLsbD_shiftRight_ofNat|, and \verb|UInt64.getLsbD_or_shiftLeft_of_dvd|, the doubling
-of a periodic pattern in a word, restated in this sub-stage for any pattern, so that the packing and
-the builders of a prime share it.
+\verb|Nat.ite_eq_add_one_mod_add_one|, the position after another in a ring,
+\verb|Nat.le_add_sub_one_mul|, \verb|Nat.mul_add_lt_mul_of_lt_of_lt'| and
+\verb|Nat.mul_add_mod_mul_of_lt|, on blocks of $k$ words (the primed one, since Batteries has the
+same statement under the plain name, which would collide in the files with Mathlib),
+\verb|List.all_and_left|, \verb|List.all_congr_left| and \verb|List.all_range_length_getElem!|, on
+the tests of a list, \verb|Array.getElem!_append|, \verb|Array.size_fold_append|,
+\verb|Array.getElem!_fold_append| and \verb|Array.forall_getElem_push|, on arrays, and
+\verb|Int.toNat_emod_add_mod| and \verb|Int.toNat_natCast_emod|, on residues; in
+\verb|Ratpoints/Proof/Bits.lean| \verb|UInt64.eq_of_getLsbD_eq|,
+\verb|UInt64.getLsbD_shiftLeft_ofNat| and \verb|UInt64.getLsbD_shiftRight_ofNat|, and
+\verb|UInt64.getLsbD_or_shiftLeft_of_dvd|, the doubling of a periodic pattern in a word, restated in
+this sub-stage for any pattern, so that the packing and the builders of a prime share it.
 
 \verb|Ratpoints/Proof/Rows.lean|, new, above \verb|Ratpoints/Proof/Reductions.lean| and below
 \verb|Ratpoints/Proof/Words.lean|, has the closed form, the words of a periodic pattern, the bits of

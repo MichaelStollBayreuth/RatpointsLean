@@ -80,10 +80,10 @@ def LanesAt (p d ab0 x ab ab1 ab2 ab3 : Nat) : Prop :=
     ab3 = (ab0 + (x + 3) * d) % p
 
 /-- A lane stepped by `d4 = 4 d mod p`. -/
-theorem ite_add_mod_eq_add_four_mul_mod {p d ab0 x : Nat} (hp : 0 < p) :
+theorem ite_add_mod_eq_add_four_mul_mod {p d ab0 x : Nat} :
     (if p ≤ (ab0 + x * d) % p + 4 * d % p then (ab0 + x * d) % p + 4 * d % p - p
       else (ab0 + x * d) % p + 4 * d % p) = (ab0 + (x + 4) * d) % p := by
-  rw [Nat.ite_add_mod_mod hp, Nat.add_mul, Nat.add_assoc, Nat.mul_comm 4 d]
+  rw [← Nat.add_mod_eq_ite, Nat.add_mul, Nat.add_assoc, Nat.mul_comm 4 d]
 
 /-- `RP_INIT_FOUR_DECL` puts the lanes at the bits `0, 1, 2, 3` of the pattern from `0` on, for
 `d < p`, and their step at `4 d mod p`. -/
@@ -168,7 +168,7 @@ theorem FourInvariant.add_four {isfs : Array Bool} {p d4 ab0 ab10 ab20 ab30 hi m
   obtain ⟨⟨rfl, rfl, rfl, rfl⟩, hw⟩ := hl d hd hd4 h0
   subst hd4
   refine ⟨⟨?_, ?_, ?_, ?_⟩, hw.or_four (by lia)⟩ <;> dsimp only <;>
-    rw [ite_add_mod_eq_add_four_mul_mod hp] <;> simp only [Nat.add_right_comm _ 4]
+    rw [ite_add_mod_eq_add_four_mul_mod] <;> simp only [Nat.add_right_comm _ 4]
 
 theorem FourInvariant.exit {isfs : Array Bool} {p d4 ab0 ab10 ab20 ab30 hi mb : Nat} {w : UInt64}
     {ab ab1 ab2 ab3 i : Nat}

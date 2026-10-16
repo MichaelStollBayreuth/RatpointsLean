@@ -107,9 +107,8 @@ lemmas on 64-bit words are in `Ratpoints.Proof.Bits`.
   `m`, and that of the residue plus `x` is the residue of `a + x`.
 * `Nat.and_two_ne_zero_iff`, `Nat.and_and_two_ne_zero_iff`: bit 1 of odd numbers says whether they
   are `3 (mod 4)`; `Nat.gcd_div_two_of_mod_two`: halving an even number keeps its gcd with an odd
-  one; `Nat.mod_eq_ite_of_lt_two_mul`: a residue below `2 q` modulo `q` by one subtraction,
-  `Nat.ite_add_mod_mod`: the sum of two residues so, and `Nat.ite_eq_add_one_mod_add_one`: the
-  position after `a` in a ring of `n + 1` positions.
+  one; `Nat.mod_eq_ite_of_lt_two_mul`: a residue below `2 q` modulo `q` by one subtraction, and
+  `Nat.ite_eq_add_one_mod_add_one`: the position after `a` in a ring of `n + 1` positions.
 * `Nat.mul_sub_one_div_div_mul_le`, `Nat.lt_mul_sub_one_div_div_add_two_mul`: Barrett's estimate
   `⌊u ⌊(N - 1) / p⌋ / N⌋` of `⌊u / p⌋` for `u < N` is the quotient or one less.
 * `Nat.mul_add_lt_mul_of_lt`, `Nat.pow_lt_two_pow_of_lt`: a step of Horner's rule multiplies a bound
@@ -657,12 +656,6 @@ theorem mod_eq_ite_of_lt_two_mul {a q : Nat} (h : a < 2 * q) :
   split
   · rw [Nat.mod_eq_sub_mod ‹_›, Nat.mod_eq_of_lt (by lia)]
   · exact Nat.mod_eq_of_lt (by lia)
-
-/-- The sum of two residues modulo `p > 0` with one conditional subtraction of `p` is the residue
-of the sum. -/
-theorem ite_add_mod_mod {a b p : Nat} (hp : 0 < p) :
-    (if p ≤ a % p + b % p then a % p + b % p - p else a % p + b % p) = (a + b) % p := by
-  rw [← Nat.mod_eq_ite_of_lt_two_mul (by lia [Nat.mod_lt a hp, Nat.mod_lt b hp]), ← Nat.add_mod]
 
 /-- The position after `a ≤ n` in a ring of the positions `0, …, n`, by a test for the last. -/
 theorem ite_eq_add_one_mod_add_one {a n : Nat} (h : a ≤ n) :
