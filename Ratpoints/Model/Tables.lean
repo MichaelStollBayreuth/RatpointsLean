@@ -120,13 +120,12 @@ C: `rp-private.h:542-555`
 
 Deviation: only the fields that the rows of a prime read; the rows of the residues, which ratpoints
 keeps in the field `sieve`, that of `0` from the build and the others made by `init` when a
-denominator first needs them, are kept in the table of rows of the prime
-(`Ratpoints.Sieve.EntryRef.prime`, `Ratpoints.Sieve.primeRows`), and the run reads them from the
-sieve entry of the prime (`Ratpoints.Sieve.SieveEntry.rows`), made from
-`Ratpoints.Sieve.Entry.admits` when first needed and kept for the run, until stage F4 hands it the
-tables of rows; the fields `init`, `magic`, `nf`, `factor` and `pw` are those of the sieve entry
-`Ratpoints.Sieve.SieveEntry`, of which the prime is the single factor, and so are `bias`, `rbainv`
-and `dinv`; `r` serves the choice of the moduli (stage I). -/
+denominator first needs them, are kept in the table of rows of the prime in the store of the run
+(`Ratpoints.Sieve.EntryRef.prime`, `Ratpoints.Sieve.primeRows`), from which the run reads them and
+into which it builds them (`Ratpoints.Sieve.setRows`, `Ratpoints.Sieve.buildRows`); the fields
+`init`, `magic`, `nf`, `factor` and `pw` are those of the sieve entry `Ratpoints.Sieve.SieveEntry`,
+of which the prime is the single factor, and so are `bias`, `rbainv` and `dinv`; `r` serves the
+choice of the moduli (stage I). -/
 structure Entry where
   /-- The prime. -/
   p : Nat
@@ -278,15 +277,13 @@ the run by the loop of the tables when the prime says something (`Ratpoints.Siev
 and for a prime that a modulus needs, one beyond the loop of the tables, which
 `Ratpoints.makeModulus?` examines, or one that says nothing, by
 `Ratpoints.Sieve.SieveEntry.addTables` in the loop of `Ratpoints.sievingInfo` over the moduli, right
-after the entry; the run reads the rows of the sieve entry of the prime from its thunks
-(`Ratpoints.Sieve.SieveEntry.rows`), made from the table when they are first needed, also the row of
-`0`, until stage F4 hands it the tables of rows; the fields `init`, `nf` and `pw` that
-`examine_prime` sets (lines 1800 and 1817) and its reciprocal `magic` (line 1808) are those of the
-sieve entry of the prime (`Ratpoints.Sieve.SieveEntry`), of which the prime is the single factor,
-made by `Ratpoints.makeModulus?`, which sets the reciprocal there, and so are the bias `bias` and
-the inverse `rbainv` of `Ratpoints.rbaLength` (lines 1815 and 1816), which `Ratpoints.makeModulus?`
-sets there with the formulas of these lines; no density `r` (line 1811), which serves the choice of
-the moduli (stage I). -/
+after the entry; the fields `init`, `nf` and `pw` that `examine_prime` sets (lines 1800 and 1817)
+and its reciprocal `magic` (line 1808) are those of the sieve entry of the prime
+(`Ratpoints.Sieve.SieveEntry`), of which the prime is the single factor, made by
+`Ratpoints.makeModulus?`, which sets the reciprocal there, and so are the bias `bias` and the
+inverse `rbainv` of `Ratpoints.rbaLength` (lines 1815 and 1816), which `Ratpoints.makeModulus?` sets
+there with the formulas of these lines; no density `r` (line 1811), which serves the choice of the
+moduli (stage I). -/
 def examinePrime? (c : List Int) (d p : Nat) (useCLong : Bool) :
     Id (Option (Entry × Array Nat)) := do
   let cm := (Array.range (d + 1)).map fun n ↦
@@ -670,10 +667,8 @@ entry has `nf = 0` and the tables `is_f_square` and `inverses` of its own; one p
 for a prime power, whose entry has `nf = 1` and its tables `pw`; and two or more for a product,
 whose entry has `nf ≥ 2` and points to the entries `factor` of its factors; no bound
 `RP_MAX_FACTORS` on the number of factors; the rows of the residues, which ratpoints keeps in the
-array `sieve` of the entry, are `Ratpoints.Sieve.SieveEntry.rows`, made when first needed and kept
-for the run, by the plain builder for every kind (`Ratpoints.Sieve.SieveEntry.row`), which gives
-the words of the builders of the C code, until stage F4 keeps them in the tables of rows of the run
-(`Ratpoints.Sieve.RowStore`); the reference `ref` to the entry whose table of rows holds its rows
+array `sieve` of the entry, kept in the store of the run (`Ratpoints.Sieve.RowStore`) in the table
+of rows of the reference `ref`; the reference `ref` to the entry whose table of rows holds its rows
 (`Ratpoints.Sieve.EntryRef`), for the pointer to the entry: a prime or a prime power that of its one
 factor, so that the modulus and the products with it as a factor read one table of rows, as they
 read one entry in the C code, and a product its own; the kind of its builder `init`

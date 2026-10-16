@@ -327,22 +327,24 @@ type \verb|Id| with their contracts (Lemmas~\ref{lem:examinePrime_eq} and~\ref{l
 
 \begin{definition}[The denominators]\label{def:sieveRun}
   \uses{def:sift, def:Shape, lem:shape_dens, def:stage3, def:fillBpList, lem:fillBpList,
-    lem:admits_mul, lem:classOffsets, lem:numClasses}
+    lem:admits_mul, lem:classOffsets, lem:numClasses, lem:buildRows}
   \lean{Ratpoints.Sieve.sieveRun, Ratpoints.Sieve.SieveRunInvariant, Ratpoints.Sieve.SieveRunInvariant.append_of_forall, Ratpoints.Sieve.sieveRunInvariant_nil, Ratpoints.Sieve.SieveRunInvariant.append_of_not, Ratpoints.Sieve.sieveRun_spec, Ratpoints.Sieve.toList_run_sieveRun}
   \leanok
   The sieve entries of the moduli cut into the three stages at the cut points $s_1 \le s_2$, the
   same for the whole run (\verb|run_block| takes the ends of the second and the third stage for each
   block from the correction of the moduli, whose first decision is that of the arguments; stage~I):
-  the rows of the moduli of the first two stages, the first $s_2$, made once, the first stage ending
-  at $s_1$, with the reciprocals that the array of the reciprocals holds up to the position $s_2$,
-  and the entries from $s_2$ on, the third stage, with the reciprocals that it holds from the
-  position $s_2$ on; and the denominators of a shape of the loop (Definition~\ref{def:Shape}) from
-  $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$, in the order of its loop: for each that passes the test
-  of the shape, the residues of $b$ divided by the stride of its class modulo the moduli of the
-  first two stages (Definition~\ref{def:fillBpList}) and the points that \verb|sift|
-  (Definition~\ref{def:sift}) finds in the packing of its class $\mathrm{cls}[b \bmod 64]$ with the
-  row offsets of the classes, with pieces of at most $A$ bit arrays and the flag of the reversal,
-  appended in turn (\csource{find_points.c}{3861}{3861}, \csource{find_points.c}{3889}{3904},
+  the sieve entries of the first two stages, the first $s_2$, whose rows the run reads from the
+  store of the tables of rows (Definition~\ref{def:entryRef}) or builds into it, the store passed
+  from one denominator to the next, the first stage ending at $s_1$, with the reciprocals that the
+  array of the reciprocals holds up to the position $s_2$, and the entries from $s_2$ on, the third
+  stage, with the reciprocals that it holds from the position $s_2$ on; and the denominators of a
+  shape of the loop (Definition~\ref{def:Shape}) from $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$, in
+  the order of its loop: for each that passes the test of the shape, the residues of $b$ divided by
+  the stride of its class modulo the moduli of the first two stages
+  (Definition~\ref{def:fillBpList}) and the points that \verb|sift| (Definition~\ref{def:sift})
+  finds in the packing of its class $\mathrm{cls}[b \bmod 64]$ with the row offsets of the classes,
+  with pieces of at most $A$ bit arrays and the flag of the reversal, appended in turn
+  (\csource{find_points.c}{3861}{3861}, \csource{find_points.c}{3889}{3904},
   \csource{find_points.c}{3911}{3911}, \csource{find_points.c}{3917}{3918},
   \csource{find_points.c}{3926}{3936}, \csource{find_points.c}{3954}{3966},
   \csource{find_points.c}{4009}{4009}, \csource{find_points.c}{4042}{4052},
@@ -351,8 +353,9 @@ type \verb|Id| with their contracts (Lemmas~\ref{lem:examinePrime_eq} and~\ref{l
   \csource{find_points.c}{5152}{5160}). Its contract, for an array size $A \ge 1$, sieve entries
   whose reciprocals the array of the reciprocals holds in their order, the first $s_2$ with their
   tables of inverses (Lemma~\ref{lem:admits_mul}) and the row offsets of the classes with a pattern
-  (Lemma~\ref{lem:classOffsets}), whose bits are those of the word \verb|den_bits|, and those from
-  $s_2$ on prime entries (Definition~\ref{def:stage3}), as the third stage needs, denominators from
+  (Lemma~\ref{lem:classOffsets}), whose bits are those of the word \verb|den_bits|, and a store of
+  the tables of rows that fits them (Lemma~\ref{lem:storeTables}), and those from $s_2$ on prime
+  entries (Definition~\ref{def:stage3}), as the third stage needs, denominators from
   $b_{\mathrm{low}} \ge 1$ to $b_{\mathrm{high}} < 2^{63}$ and $H < 2^{63}$, as the test for common
   factors on the words of the C code needs (the denominators of every shape lie between
   $b_{\mathrm{low}}$ and $b_{\mathrm{high}}$, Lemma~\ref{lem:shape_dens}): the result, for any cut
@@ -470,14 +473,14 @@ meets; ratpoints refuses it before it gets there, and so does $\mathrm{findPoint
   \leanok
   For an array size $A \ge 1$, any cut points, sieve entries with their reciprocals, the first $s_2$
   with their tables of inverses and the row offsets of the classes with a pattern, whose bits are
-  those of \verb|den_bits|, and those from $s_2$ on prime entries (Definition~\ref{def:stage3}),
-  2-adic words that the classes pack, denominators from $b_{\mathrm{low}} \ge 1$ to
-  $b_{\mathrm{high}} < 2^{63}$, $H < 2^{63}$ and a list $l$ of denominators such that the list of
-  the shape is $l$ filtered by a test, every denominator of $l$ over which the brute-force reference
-  finds a point passes that test and the test of the shape, and every numerator of such a point
-  passes the word of the class of its denominator and the sieve entries:
-  the run gives the concatenation of what the reference finds over the denominators of $l$, in the
-  order of $l$, mapped by $\mathrm{swapPoint}$ when the flag of the reversal is set.
+  those of \verb|den_bits|, and a store of the tables of rows that fits them, and those from $s_2$
+  on prime entries (Definition~\ref{def:stage3}), 2-adic words that the classes pack, denominators
+  from $b_{\mathrm{low}} \ge 1$ to $b_{\mathrm{high}} < 2^{63}$, $H < 2^{63}$ and a list $l$ of
+  denominators such that the list of the shape is $l$ filtered by a test, every denominator of $l$
+  over which the brute-force reference finds a point passes that test and the test of the shape, and
+  every numerator of such a point passes the word of the class of its denominator and the sieve
+  entries: the run gives the concatenation of what the reference finds over the denominators of $l$,
+  in the order of $l$, mapped by $\mathrm{swapPoint}$ when the flag of the reversal is set.
 \end{theorem}
 
 \begin{proof}

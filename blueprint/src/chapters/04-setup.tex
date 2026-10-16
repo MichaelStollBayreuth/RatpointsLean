@@ -414,7 +414,7 @@ Lemma~\ref{lem:sift_eq_checkDen} maps their side.
     def:sieveRun, def:swapPoint, lem:sievingInfo, thm:bruteForce, def:twoAdic, def:Shape,
     lem:twoAdic_point, lem:twoAdic_exit, lem:survives, thm:run_reference, def:setupUs1,
     def:forbidden, def:searchDens, lem:shape_dens, def:numClasses, lem:numClasses, lem:classOffsets,
-    def:classOffsets, lem:soundRun}
+    def:classOffsets, lem:soundRun, lem:storeTables}
   \lean{Ratpoints.searchPoints, Ratpoints.run_searchPoints}
   \leanok
   For the coefficients $c$ of degree $d$ that the set-up hands on, the flag of the reversal, the
@@ -431,8 +431,9 @@ Lemma~\ref{lem:sift_eq_checkDen} maps their side.
   (\csource{find_points.c}{4603}{4604}, \csource{find_points.c}{4948}{4948},
   \csource{find_points.c}{4954}{4963}); then what \verb|sieving_info| computes
   (Definition~\ref{def:sievingInfo}), with the flag of the \verb|long|s: the tables of the examined
-  primes, the forbidden divisors for even $d$ (Definition~\ref{def:forbidden}) and the sieve entries
-  of the moduli with their reciprocals, which the run takes, and no points when the curve has no
+  primes, the forbidden divisors for even $d$ (Definition~\ref{def:forbidden}), the sieve entries of
+  the moduli with their reciprocals and the store of the tables of rows of the run
+  (Definition~\ref{def:storeTables}), which the run takes, and no points when the curve has no
   points modulo a prime examined on the way (\csource{find_points.c}{4602}{4602},
   \csource{find_points.c}{4992}{5012}); the checked loop off when there are no forbidden divisors
   and no Jacobi test (\csource{find_points.c}{2793}{2795}); an array of rows of offsets, one for
@@ -461,7 +462,8 @@ Lemma~\ref{lem:sift_eq_checkDen} maps their side.
   Theorem~\ref{thm:run_reference}). The search establishes what the run needs of its arguments by
   Lemmas~\ref{lem:sievingInfo}, \ref{lem:numClasses} and~\ref{lem:classOffsets}: the entries that
   \verb|class_offsets| returns differ from those of \verb|sieving_info| only in $\mathrm{dinv}$,
-  which the soundness, the shape of a prime entry and the tables of inverses do not read.
+  which the soundness, the shape of a prime entry, the tables of inverses and the fit of the store
+  of the tables of rows (Lemma~\ref{lem:storeTables}) do not read.
 \end{definition}
 
 $\mathrm{findPoints}(c, H, P, o)$ (Definition~\ref{def:findPoints}) refuses, in the order of the
@@ -522,23 +524,23 @@ stage~H's, and the height of the arguments of the library, a \verb|long|.
 
 Theorem~\ref{thm:run_reference} reduces the run of any polynomial with its degree to the reference:
 for an array size at least $1$, sieve entries with their reciprocals, those of the first two stages
-with their tables of inverses and the row offsets of the classes, which pack the 2-adic words, and
-those of the third stage prime entries, denominators and a height below $2^{63}$, and filters that
-let every point through, it gives the points of the reference over its denominators, mapped by
-$\mathrm{swapPoint}$ when the flag of the reversal is set; Definition~\ref{def:searchPoints} rests
-on it, with what the search hands to the run (Lemma~\ref{lem:soundRun}), the lists and the tests of
-the shapes (Lemma~\ref{lem:shape_dens}), the 2-adic exit (Lemma~\ref{lem:twoAdic_exit}) and the exit
-of the tables. Theorem~\ref{thm:findPoints} has membership, no duplicates and the set of elements,
-for every option, from Theorem~\ref{thm:findPoints_perm}, and Theorem~\ref{thm:refusals} the
-refusals, with guards on their axioms. Comparator certifies the two main theorems with the options
-argument, both refusal theorems and \verb|wf_sieveParams|; the challenge restates $\Phi_c$ verbatim,
-as it restates $F_c$, takes the options from the model, and has the refusal theorem with the Sturm
-step off too, so that a $\mathrm{findPoints}$ that refused every input under \verb|-s| would not
-pass. Since the challenge needs \verb|Squarefree|, the specification imports
-\verb|Mathlib.Algebra.Squarefree.Basic|, so that the challenge still imports, besides the model,
-exactly the public imports of the specification. Stage~D left the structure \verb|Params| and its
-well-formedness as stage~C2 had them; stage~F1 adds the number of primes examined and the composite
-moduli (Chapter~\ref{chap:tables}).
+with their tables of inverses, the row offsets of the classes, which pack the 2-adic words, and a
+store of the tables of rows that fits them, and those of the third stage prime entries, denominators
+and a height below $2^{63}$, and filters that let every point through, it gives the points of the
+reference over its denominators, mapped by $\mathrm{swapPoint}$ when the flag of the reversal is
+set; Definition~\ref{def:searchPoints} rests on it, with what the search hands to the run
+(Lemma~\ref{lem:soundRun}), the lists and the tests of the shapes (Lemma~\ref{lem:shape_dens}), the
+2-adic exit (Lemma~\ref{lem:twoAdic_exit}) and the exit of the tables. Theorem~\ref{thm:findPoints}
+has membership, no duplicates and the set of elements, for every option, from
+Theorem~\ref{thm:findPoints_perm}, and Theorem~\ref{thm:refusals} the refusals, with guards on their
+axioms. Comparator certifies the two main theorems with the options argument, both refusal theorems
+and \verb|wf_sieveParams|; the challenge restates $\Phi_c$ verbatim, as it restates $F_c$, takes the
+options from the model, and has the refusal theorem with the Sturm step off too, so that a
+$\mathrm{findPoints}$ that refused every input under \verb|-s| would not pass. Since the challenge
+needs \verb|Squarefree|, the specification imports \verb|Mathlib.Algebra.Squarefree.Basic|, so that
+the challenge still imports, besides the model, exactly the public imports of the specification.
+Stage~D left the structure \verb|Params| and its well-formedness as stage~C2 had them; stage~F1 adds
+the number of primes examined and the composite moduli (Chapter~\ref{chap:tables}).
 
 \section{The command-line program and the differential tests}\label{sec:setupCli}
 

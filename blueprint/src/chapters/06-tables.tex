@@ -443,14 +443,13 @@ which $\mathrm{maxPrimeEven} \le 2^{32}$ gives.
   $[\mathrm{rowBias}, \mathrm{rowBias} + m)$ by the division with remainder.
 \end{proof}
 
-The rows of a sieve entry that the run reads are made from its admission test by the plain builder
-of Definition~\ref{def:row}, for every kind; the bits of a row depend on the entry only through the
-test, which reduces $b$ and $a$ modulo $m$ first, so the words of Chapter~\ref{chap:words} and their
+The rows of a sieve entry that the run reads are built by the builders of ratpoints, the functions
+of \verb|init.c| for each prime, \verb|lay_out_pattern| for the prime powers and the blocks of
+\verb|_ratpoints_sieve_init_product|, which are in Chapter~\ref{chap:rows}, proved to build the
+closed forms of the admission tests; the bits of a row depend on the entry only through the test,
+which reduces $b$ and $a$ modulo $m$ first, so the words of Chapter~\ref{chap:words} and their
 contracts hold for the sieve entries of every kind with the proofs that they had for the tables of
-primes. The builders of ratpoints, the functions of \verb|init.c| for each prime,
-\verb|lay_out_pattern| for the prime powers and the blocks of \verb|_ratpoints_sieve_init_product|,
-are in Chapter~\ref{chap:rows}, proved to build the closed forms of the admission tests; the run
-calls them later in stage~F4.
+primes.
 
 \section{The parameters and the search}\label{sec:tablesSearch}
 
@@ -569,11 +568,10 @@ Each component of this chapter differs from the C code in a stated way, recorded
     was left to the library; a factor whose prime says nothing takes its table from the loop, where
     \verb|add_moduli| offers no composite with such a factor, and a prime-power factor whose tables
     say nothing is used with them, where \verb|add_moduli| refuses such a modulus;
-  \item the rows of a prime power and of a product are made by the plain builder from the admission
-    test, where \verb|_ratpoints_sieve_init_power| steps through the residues and lays the pattern
-    out with \verb|lay_out_pattern|, and \verb|_ratpoints_sieve_init_product| lays down the rows of
-    its factors in blocks, read with an acquire load and published with a release store
-    (stage~F4);
+  \item the rows of a prime power and of a product are built by the builders of
+    Chapter~\ref{chap:rows}, with their deviations (Section~\ref{sec:rowsDeviations}): the rows of
+    the factors of a product read plainly, for the acquire load, and every row stored plainly, for
+    the release store (stage~I);
   \item the density, the ranking, the choice of the moduli and their stages are not modelled
     (stage~I): the moduli, their stages and the number of primes examined are those of the
     parameters, and the parameters may hold moduli that ratpoints never offers (composites above

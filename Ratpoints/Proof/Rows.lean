@@ -15,12 +15,11 @@ import Ratpoints.Proof.Containers
 
 The closed form of a row of words (`Ratpoints.Sieve.closedRow`): for an admission test `adm`, a
 modulus `m` and a residue `r`, the `(m + chunk - 1) Ratpoints.rbaPack` words whose word `j` has bit
-`t` set exactly when `adm r` admits the numerator `64 j + t`. The row of a denominator as words
-(`Ratpoints.Sieve.SieveEntry.row`) is the closed form of the admission test of its sieve entry
-(`Ratpoints.Sieve.SieveEntry.row_eq_closedRow`), and so are the rows that the builders of `init.c`
-and the generators of the headers of the build compute (`Ratpoints.Proof.PrimeRows`, and stage F4
-for the rows of a prime power and of a product). For a test of period `m` the closed form repeats
-its first `m` bit arrays in the `Ratpoints.chunk - 1` after them
+`t` set exactly when `adm r` admits the numerator `64 j + t`. Every builder of the rows of `init.c`
+and of the generators of the headers of the build computes the closed form of its admission test
+(`Ratpoints.Proof.PrimeRows`, `Ratpoints.Proof.CompositeRows`), and the tables of rows of a run hold
+closed forms (`Ratpoints.Proof.RowStore`). For a test of period `m` the closed form repeats its
+first `m` bit arrays in the `Ratpoints.chunk - 1` after them
 (`Ratpoints.Sieve.getElem!_closedRow_mod`), the copies that the chunked first stage reads
 (`Ratpoints.Sieve.SieveSpec.Wraps`). The words of a forbidden divisor
 (`Ratpoints.Sieve.forbiddenRow`) have bit `t` of word `r` clear exactly when `p ∣ 64 r + t`, and the

@@ -141,47 +141,42 @@ brings the chunked first stage and the copies in the rows that it decides
 \section{The rows as words}\label{sec:wordRows}
 
 \begin{definition}[The row of a denominator in words]\label{def:row}
-  \uses{def:SieveEntry, def:rbaPack, def:chunk, def:layOutPattern}
-  \lean{Ratpoints.Sieve.packedPattern, Ratpoints.Sieve.SieveEntry.row, Ratpoints.Sieve.SieveEntry.admits_congr, Ratpoints.Sieve.SieveEntry.admits_add_mul, Ratpoints.Sieve.SieveEntry.admits_mod}
+  \uses{def:SieveEntry}
+  \lean{Ratpoints.Sieve.SieveEntry.admits_congr, Ratpoints.Sieve.SieveEntry.admits_add_mul, Ratpoints.Sieve.SieveEntry.admits_mod}
   \leanok
   For the sieve entry of a modulus $p$ (Definition~\ref{def:SieveEntry}) and a denominator $b$: the
-  pattern of one period, whether the row of $b$ admits $N$ for $N = 0, \dots, p - 1$; the pattern
-  over the positions $0, \dots, p + 63$, packed into words; for $j < p$, word $j$ of the row, the 64
-  bits of the packed pattern from position $64 j \bmod p$ on, cut out with two shifts
-  (Definition~\ref{def:layOutPattern}); and these words repeated through the
-  $(p + \mathrm{chunk} - 1) \cdot \mathrm{rbaPack}$ words of the row, word $j$ being word
-  $j \bmod p$: $p$ bit arrays and the copies of the first $\mathrm{chunk} - 1$ of them
-  (Definition~\ref{def:chunk}), which the chunked first stage reads past the first $p$
-  (Chapter~\ref{chap:rows}). Since the row admits $a$ exactly when it admits $a + p k$, and the row
-  of $b$ is that of $b \bmod p$, bit $t$ of word $j$ says whether the row admits $64 j + t$, for
-  every $j < (p + \mathrm{chunk} - 1) \cdot \mathrm{rbaPack}$: the row is the closed form of the
-  admission test (Definition~\ref{def:closedRow}, Lemma~\ref{lem:closedRow}). For a prime, ratpoints
-  builds the same row from the table of the prime and the inverses, the pattern of one period four
-  bits at a time and then the words by rotating it through them, by a function for each prime that
-  its build generates, with the copies, and takes the row of $0$ from the generated pattern
-  \verb|sieves0|; the model has these builders and the pattern (Definitions~\ref{def:sieves0},
-  \ref{def:sieveInit1} and~\ref{def:sieveInit2}). For a prime power it lays the pattern out by
-  \verb|lay_out_pattern|, and for a product it lays down the rows of the factors in blocks, building
-  an absent row of a factor first; the model has these builders too
-  (Definitions~\ref{def:sieveInitPower} and~\ref{def:sieveInitProduct}), each storing its row into
-  the table of rows of its entry. The run does not call the builders yet, and the \verb|#guard|
-  examples compare them with this row word for word. The model computes the copies at the end of a
-  row as the other words, where the builders copy them.
+  $(p + \mathrm{chunk} - 1) \cdot \mathrm{rbaPack}$ words, $p$ bit arrays and the copies of the
+  first $\mathrm{chunk} - 1$ of them, which the chunked first stage reads past the first $p$
+  (Chapter~\ref{chap:rows}), whose word $j$ has bit $t$ set exactly when the row of $b$ admits
+  $64 j + t$, the closed form of the admission test (Definition~\ref{def:closedRow}). Since the row
+  admits $a$ exactly when it admits $a + p k$, and the row of $b$ is that of $b \bmod p$, word $j$
+  is word $j \bmod p$, so that the copies at the end of the row are its first bit arrays. Ratpoints
+  builds these rows: for a prime from the table of the prime and the inverses, the pattern of one
+  period four bits at a time and then the words by rotating it through them, by a function for each
+  prime that its build generates, with the copies, and the row of $0$ from the generated pattern
+  \verb|sieves0|; for a prime power by laying its pattern out with \verb|lay_out_pattern|; and for a
+  product by laying down the rows of its factors in blocks, building an absent row of a factor
+  first. The model has these builders and the pattern (Definitions~\ref{def:sieves0},
+  \ref{def:sieveInit1}, \ref{def:sieveInit2}, \ref{def:sieveInitPower}
+  and~\ref{def:sieveInitProduct}), each storing its row into the table of rows of its entry, proved
+  to build the closed forms (Lemmas~\ref{lem:sieves0}, \ref{lem:primeRows}
+  and~\ref{lem:compositeRows}); the run reads the rows from the tables of rows and builds the missing
+  ones into them (Definition~\ref{def:buildRows}).
 \end{definition}
 
 \begin{definition}[The rows of a modulus]\label{def:rows}
-  \uses{def:row}
-  \lean{Ratpoints.Sieve.SieveEntry.rows, Ratpoints.Sieve.SieveEntry.get_rows, Ratpoints.Sieve.SieveSpec, Ratpoints.Sieve.SieveSpec.wordAt}
+  \uses{def:rbaPack}
+  \lean{Ratpoints.Sieve.SieveSpec, Ratpoints.Sieve.SieveSpec.wordAt}
   \leanok
-  The rows of the residues $r = 0, \dots, p - 1$, each made when a denominator first needs it, as a
-  suspended computation that runs once, and kept for the run, which makes these computations once
-  (Definition~\ref{def:sieveRun}). They stand for the field \verb|sieve| of the sieve entry of
-  ratpoints, whose row of $0$, for a prime, \verb|examine_prime| installs from the build
-  (Definition~\ref{def:examinePrimeExit}), and whose other rows, and every row of a prime power or a
-  product, \verb|sift| builds when first needed; the model makes the row of $0$ when first needed
-  too. The row of $b$ is that of $b \bmod p$. For the denominator at hand, each modulus comes with
-  its row, the offset of the row, and the start and the end of the walk of the chunked first stage
-  through the row (Chapter~\ref{chap:rows}), as in the \verb|sieve_spec| of the C code
+  The rows of the residues $r = 0, \dots, p - 1$ of a sieve entry stand for the field \verb|sieve|
+  of the sieve entry of ratpoints, whose row of $0$, for a prime, \verb|examine_prime| installs from
+  the build (Definition~\ref{def:examinePrimeExit}), and whose other rows, and every row of a prime
+  power or a product, \verb|sift| builds when first needed; the model keeps them in the tables of
+  rows of the run (Definition~\ref{def:entryRef}), with the row of $0$ of a prime from the build,
+  builds the others when a denominator first needs them (Definition~\ref{def:buildRows}) and keeps
+  them for the run. The row of $b$ is that of $b \bmod p$. For the denominator at hand, each modulus
+  comes with its row, the offset of the row, and the start and the end of the walk of the chunked
+  first stage through the row (Chapter~\ref{chap:rows}), as in the \verb|sieve_spec| of the C code
   (\csource{rp-private.h}{378}{379}), indices into the row for the pointers \verb|start| and
   \verb|end|, the end named $\mathrm{stop}$ since \verb|end| is a keyword of Lean: the bit array
   with the word number $w$ reads bit array $(w + \mathrm{offset}) \bmod p$ of the row, the offset
@@ -379,14 +374,17 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
 \begin{definition}[One denominator]\label{def:sift}
   \uses{def:siftPiece, def:stage3, def:checkNum, lem:staged, lem:accepted, def:siftBits,
     def:numeratorsToBits, lem:admits_mul, lem:classOffsets, lem:numClasses, lem:numeratorsToBits,
-    lem:reads_row, lem:rowIndices, lem:siftBits}
+    lem:reads_row, lem:rowIndices, lem:siftBits, def:buildRows, lem:buildRows}
   \lean{Ratpoints.Sieve.sift, Ratpoints.Sieve.sift_spec, Ratpoints.Sieve.flatMap_acceptedPoints_eq_pointsOfDen}
   \leanok
-  For the denominator $b$ in the packing of its class (Definition~\ref{def:numClasses}): the sieve
-  specs of the moduli of the first two stages, the rows of the residues of $b$ divided by the stride
-  of the class, which the run computes (Definition~\ref{def:fillBpList}), read at the offsets of the
-  row of the class (Definition~\ref{def:siftBits}; \csource{find_points.c}{3490}{3561}); the end
-  $s_1$ of the first stage, the reciprocals of the first two stages, and the entries of the third
+  For the denominator $b$ in the packing of its class (Definition~\ref{def:numClasses}) and the
+  store of the tables of rows of the run (Definition~\ref{def:entryRef}): the sieve specs of the
+  sieve entries of the first two stages, the rows of the residues of $b$ divided by the stride of
+  the class, which the run computes (Definition~\ref{def:fillBpList}), read from the tables of rows
+  of their entries, the missing ones built into them (Definition~\ref{def:buildRows}), read at the
+  offsets of the row of the class (Definition~\ref{def:siftBits};
+  \csource{find_points.c}{3490}{3521}, \csource{find_points.c}{3555}{3561}); the end $s_1$ of the
+  first stage, the entries and the reciprocals of the first two stages, and the entries of the third
   stage with their reciprocals, which the sieving thread takes from the arguments of the run that it
   is set up with (\csource{find_points.c}{3112}{3114}, \csource{find_points.c}{3123}{3124},
   \csource{rp-private.h}{577}{578}); what the third stage needs of its entries
@@ -397,30 +395,34 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
   flag of the reversal, which the check reads; the bits of the numerators $-H, \dots, H$ in the
   packing of the class, in the form that splits the ends for $H > 2^{63} - 65$
   (Definition~\ref{def:numeratorsToBits}; \csource{find_points.c}{3442}{3488}); and the points of
-  these bits in pieces (Definition~\ref{def:siftBits}; \csource{find_points.c}{3613}{3617}). Its
-  contract, for $A \ge 1$, a denominator $0 < b < 2^{63}$, $H < 2^{63}$, a class that packs a word
-  $w$ (Lemma~\ref{lem:numClasses}) and has a row of offsets, the rows of sieve entries in the first
-  two stages whose tables of inverses invert, with the reciprocals of their moduli, the residues
-  $b\,\mathrm{dinv}[k] \bmod p$ and the offsets of the class (Lemma~\ref{lem:classOffsets}), and
-  prime entries with their reciprocals in the third (Definition~\ref{def:stage3}): what the
-  brute-force reference finds over $b$ and the numerators $-H, \dots, H$ that pass the class bit of
-  $w$ and survive the sieve entries of all three stages, the points of the sieve of $b$ followed by
-  its check in stage~C1 whose numerators pass the class bit, mapped by $\mathrm{swapPoint}$ when the
-  flag is set. The bits of $[-H, H]$ in the packing of the class that pass its pattern give the
-  numerators of $[-H, H]$ that pass $w$, in increasing order (Lemma~\ref{lem:siftBits}).
+  these bits in pieces (Definition~\ref{def:siftBits}; \csource{find_points.c}{3613}{3617}),
+  returned with the store, which keeps the rows built for the rest of the run. Its contract, for
+  $A \ge 1$, a denominator $0 < b < 2^{63}$, $H < 2^{63}$, a class that packs a word $w$
+  (Lemma~\ref{lem:numClasses}) and has a row of offsets, sieve entries in the first two stages whose
+  tables of inverses invert, with the reciprocals of their moduli, the residues
+  $b\,\mathrm{dinv}[k] \bmod p$ and the offsets of the class (Lemma~\ref{lem:classOffsets}), a store
+  of the tables of rows that fits them (Lemma~\ref{lem:storeTables}), and prime entries with their
+  reciprocals in the third (Definition~\ref{def:stage3}): the store after the denominator fits the
+  entries again (Lemma~\ref{lem:buildRows}), and the points are what the brute-force reference finds
+  over $b$ and the numerators $-H, \dots, H$ that pass the class bit of $w$ and survive the sieve
+  entries of all three stages, the points of the sieve of $b$ followed by its check in stage~C1
+  whose numerators pass the class bit, mapped by $\mathrm{swapPoint}$ when the flag is set. The bits
+  of $[-H, H]$ in the packing of the class that pass its pattern give the numerators of $[-H, H]$
+  that pass $w$, in increasing order (Lemma~\ref{lem:siftBits}).
 \end{definition}
 
 \begin{lemma}[The words compute the Booleans]\label{lem:sift_eq_checkDen}
   \uses{def:sift, def:sieveDen, def:checkDen, lem:admits_mul, lem:classOffsets, lem:numClasses}
   \lean{Ratpoints.Sieve.toList_run_sift_eq_checkDen, Ratpoints.BruteForce.pointsOfDen_filter}
   \leanok
-  For $A \ge 1$, a denominator $0 < b < 2^{63}$, $H < 2^{63}$, a class that packs a word $w$ and
-  has a row of offsets, sieve entries in the first two stages whose tables of inverses invert and
-  that are packed for the class at its offsets, and prime entries with their reciprocals in the
-  third, the points of the denominator $b$ that \verb|sift| returns in the packing of the class,
-  with the residues of $b$ divided by the stride, are those that the check of stage~C1 returns on
-  the sieve of stage~C1 with all these entries whose numerators pass the class bit of $w$, mapped by
-  $\mathrm{swapPoint}$ when the flag of the reversal is set.
+  For $A \ge 1$, a denominator $0 < b < 2^{63}$, $H < 2^{63}$, a class that packs a word $w$ and has
+  a row of offsets, sieve entries in the first two stages whose tables of inverses invert and that
+  are packed for the class at its offsets, a store of the tables of rows that fits them
+  (Lemma~\ref{lem:storeTables}), and prime entries with their reciprocals in the third, the points
+  of the denominator $b$ that \verb|sift| returns in the packing of the class, with the residues of
+  $b$ divided by the stride, are those that the check of stage~C1 returns on the sieve of stage~C1
+  with all these entries whose numerators pass the class bit of $w$, mapped by $\mathrm{swapPoint}$
+  when the flag of the reversal is set.
 \end{lemma}
 
 \begin{proof}
@@ -436,27 +438,30 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
 
 The sieve of one denominator and the check of stage~C1 are the reference of the words, with this
 lemma, and hold no C ranges: the components of this chapter model those lines, with the cuts above.
-The run over the denominators (Definition~\ref{def:sieveRun}) makes the rows of the moduli of the
-first two stages once, the first $s_2$, hands the sieve entries from $s_2$ on and their reciprocals
+The run over the denominators (Definition~\ref{def:sieveRun}) passes the store of the tables of rows
+from one denominator to the next, the rows of the first $s_2$ sieve entries, those of the first two
+stages, read from it or built into it, hands the sieve entries from $s_2$ on and their reciprocals
 to the third stage, and returns, for each denominator of its shape that passes the test of the
 shape, the points that \verb|sift| finds in the packing of its class with the first stage ending at
 $s_1$, with the residues of $b / 2^k$ modulo the moduli of the first two stages, which the run
 computes before each call of \verb|sift|, as \verb|fill_bp_list| computes them
 (Definition~\ref{def:fillBpList}); its contract holds for any cut points, $A \ge 1$, sieve entries
-with their reciprocals, the first $s_2$ with their tables of inverses and the row offsets of the
-classes, those from $s_2$ on prime entries (Definition~\ref{def:stage3}), classes that pack the
-2-adic words and whose patterns give the bits of \verb|den_bits|, the denominators from
-$b_{\mathrm{low}} \ge 1$ to $b_{\mathrm{high}} < 2^{63}$ and $H < 2^{63}$. The search of the
-polynomial (Definition~\ref{def:searchPoints}), which \verb|findPoints|
-(Definition~\ref{def:findPoints}) runs on the polynomial that the reversal check hands on, runs it
-with $A = \mathrm{arraySizeAt}(H)$ of its parameters, the sieve entries that \verb|sieving_info|
-makes of its moduli (Definition~\ref{def:sievingInfo}), primes, prime powers and products of them,
-and the classes with their row offsets (Lemma~\ref{lem:soundRun}). So the equation of the search
-needs the lower bound of the array size, a fact that stage~C1 did not need, and the reduction of the
-run to the reference (Theorem~\ref{thm:run_reference}), which needed the positivity of the moduli in
-stage~C2, needs since stage~F3 the tables of inverses and the row offsets of the entries of the
-first two stages and the classes that pack the 2-adic words; neither stage~C2 nor stage~F3 changed
-the statements of the main theorems or of the comparator challenge.
+with their reciprocals, the first $s_2$ with their tables of inverses, the row offsets of the
+classes and a store of the tables of rows that fits them, those from $s_2$ on prime entries
+(Definition~\ref{def:stage3}), classes that pack the 2-adic words and whose patterns give the bits
+of \verb|den_bits|, the denominators from $b_{\mathrm{low}} \ge 1$ to $b_{\mathrm{high}} < 2^{63}$
+and $H < 2^{63}$. The search of the polynomial (Definition~\ref{def:searchPoints}), which
+\verb|findPoints| (Definition~\ref{def:findPoints}) runs on the polynomial that the reversal check
+hands on, runs it with $A = \mathrm{arraySizeAt}(H)$ of its parameters, the sieve entries that
+\verb|sieving_info| makes of its moduli (Definition~\ref{def:sievingInfo}), primes, prime powers and
+products of them, the store of the tables of rows that it returns, and the classes with their row
+offsets (Lemma~\ref{lem:soundRun}). So the equation of the search needs the lower bound of the array
+size, a fact that stage~C1 did not need, and the reduction of the run to the reference
+(Theorem~\ref{thm:run_reference}), which needed the positivity of the moduli in stage~C2, needs
+since stage~F3 the tables of inverses and the row offsets of the entries of the first two stages and
+the classes that pack the 2-adic words, and since stage~F4 a store of the tables of rows that fits
+these entries; neither stage~C2 nor stage~F3 nor stage~F4 changed the statements of the main
+theorems or of the comparator challenge.
 
 Each component of this chapter differs from the C code in a stated way, recorded in its
 \verb|Deviation:| paragraph:
@@ -465,13 +470,6 @@ Each component of this chapter differs from the C code in a stated way, recorded
     intervals of the search region (H);
   \item the arm of the first stage chosen by a test on the constant $\mathrm{chunk}$, for the
     conditional compilation of the C code, which compiles one arm only (Chapter~\ref{chap:rows});
-  \item the rows from the admission test of the sieve entry (Definition~\ref{def:SieveEntry}), one
-    period laid out in words, as \verb|lay_out_pattern| lays out the pattern of a prime power, for
-    the builders of the rows of a prime with their bit arithmetic and for the blocks of the rows of
-        a product (F4);
-  \item the rows of all residues, that of $0$ among them, made when a denominator first needs them
-    and kept for the run, where ratpoints installs the row of $0$ from the build when it examines
-    the prime and keeps the rows in its sieve entry (F4);
   \item the residues of the denominator divided by the stride of its class and the class as
     values, for the pointers \verb|bp_list| and \verb|cls|, and the array of the row offsets of the
     run as an argument, which the C code reaches through the pointer \verb|offset| of the class; the

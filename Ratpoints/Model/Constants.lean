@@ -217,10 +217,9 @@ the number of registers of the chunked first stage (`Ratpoints.Sieve.andRowsChun
 code compiles for a chunk from 2 to 16 and which the model takes on the same condition
 (`Ratpoints.Sieve.siftPiece`), and otherwise the first stage on one bit array at a time
 (`Ratpoints.Sieve.andRows`); every row of the sieve has `chunk - 1` bit arrays more than its
-modulus, copies of its first ones (`Ratpoints.Sieve.SieveEntry.row`), which the chunked first stage
-reads past the end of the row; and the size of a piece of the numerators is a multiple of the chunk
-(`Ratpoints.Params.arraySizeAt`, `Ratpoints.maxArraySize`). The proofs use only that it is positive
-(`Ratpoints.chunk_pos`).
+modulus, copies of its first ones, which the chunked first stage reads past the end of the row; and
+the size of a piece of the numerators is a multiple of the chunk (`Ratpoints.Params.arraySizeAt`,
+`Ratpoints.maxArraySize`). The proofs use only that it is positive (`Ratpoints.chunk_pos`).
 
 C: `rp-private.h:160-165`, `rp-private.h:222-224`, `rp-private.h:248-250`,
 `rp-private.h:274-276`, `rp-private.h:293-295`

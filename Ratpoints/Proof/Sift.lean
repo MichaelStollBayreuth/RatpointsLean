@@ -6,6 +6,7 @@ Authors: Michael Stoll
 module
 
 public import Ratpoints.Proof.Packing
+public import Ratpoints.Proof.RowStore
 public import Ratpoints.Proof.Stages
 
 import Ratpoints.Proof.BitRange
@@ -48,27 +49,31 @@ the bits of the numerators `-H, …, H` of one denominator.
   rows, in increasing order.
 * `Ratpoints.Sieve.siftBits_spec`: the bits from `low` to `high` in pieces give the points of the
   numerators of those that pass the pattern of the class and the tests of the rows.
-* `Ratpoints.Sieve.setRows_map`, `Ratpoints.Sieve.reads_of_mem_packedReads`: the rows of the
-  residues `b dinv[k] mod p` at the offsets of the class read whether the rows of `b` admit the
-  numerators of the bits (`Ratpoints.Sieve.SieveEntry.reads_row`).
+* `Ratpoints.Sieve.eq_map_fst_packedReads_of_eq_run_buildRows`,
+  `Ratpoints.Sieve.reads_of_mem_packedReads`: the rows that `Ratpoints.Sieve.setRows` and
+  `Ratpoints.Sieve.buildRows` give for the residues `b dinv[k] mod p`, the closed forms of the rows
+  of the entries, at the offsets of the class read whether the rows of `b` admit the numerators of
+  the bits (`Ratpoints.Sieve.SieveEntry.reads_row`).
 * `Ratpoints.Sieve.flatMap_filter_bits_eq`: the bits of `numerators_to_bits` of the height in the
   packing of the class of a class word `w` give the numerators `-H, …, H` that pass `w`.
 * `Ratpoints.Sieve.sift_spec`: the pieces of a denominator `0 < b < 2 ^ 63` in the packing of a
   class `cl` of the class word `w`, for `H < 2 ^ 63`, entries of the first two stages with their
-  tables of inverses and the row offsets of the packing of `cl`, and entries of the third stage of
-  the shape of `Ratpoints.Sieve.SieveEntry.IsPrimeEntry` with the reciprocals of their moduli, give
-  what the brute-force reference finds over `b` and the numerators `-H, …, H` that pass `w` and
-  survive the sieve entries of all three stages, mapped by `Ratpoints.Sieve.swapPoint` when the flag
-  of the reversal is set; `Ratpoints.Sieve.toList_run_sift_eq_checkDen`: these are the points that
-  the plain sieve of `b` with all the entries gives whose numerators pass `w`, mapped in the same
-  way.
+  tables of inverses and the row offsets of the packing of `cl`, a store of the tables of rows that
+  fits them (`Ratpoints.Sieve.RowStore.Fits`), and entries of the third stage of the shape of
+  `Ratpoints.Sieve.SieveEntry.IsPrimeEntry` with the reciprocals of their moduli, give what the
+  brute-force reference finds over `b` and the numerators `-H, …, H` that pass `w` and survive the
+  sieve entries of all three stages, mapped by `Ratpoints.Sieve.swapPoint` when the flag of the
+  reversal is set, and the store with the rows built for `b` still fits the entries;
+  `Ratpoints.Sieve.toList_run_sift_eq_checkDen`: these are the points that the plain sieve of `b`
+  with all the entries gives whose numerators pass `w`, mapped in the same way.
 
 ## Implementation notes
 
 The file uses Lean core and `Std` only, as `Ratpoints.Proof.Words`, `Ratpoints.Proof.FirstStage`,
-`Ratpoints.Proof.Stages`, `Ratpoints.Proof.Packing` and `Ratpoints.Proof.BitRange` do, whose lemmas
-on bit arrays, rows, walks, classes and the bits of an interval and whose contracts of both arms of
-the first stage, of the second and of the third stage it builds on. The walk reads the test of a
+`Ratpoints.Proof.Stages`, `Ratpoints.Proof.Packing`, `Ratpoints.Proof.BitRange` and
+`Ratpoints.Proof.RowStore` do, whose lemmas on bit arrays, rows, walks, classes and the bits of an
+interval and whose contracts of both arms of the first stage, of the second and of the third stage
+and of the rows built into the tables of rows of the run it builds on. The walk reads the test of a
 candidate as its value (`Ratpoints.Sieve.acceptedPoints`), so that the contracts of the walk, of one
 bit array, of the scan, of one piece and of one interval need nothing of the numerators and the
 denominator; the hypotheses of the test on the words of the C code, `0 < b < 2 ^ 63` and
@@ -880,30 +885,26 @@ theorem siftBits_spec (w : Thunk (List Int)) (d b A : Nat) (rev : Bool) (sp1 : N
 /-! ### One denominator -/
 
 /-- The rows of the sieve entries `es` for the denominator `b` in the packing of the class `cl`,
-with the row offsets from position `pos` of `offsets` on, as `Ratpoints.Sieve.setRows` makes them:
-the closed forms of the rows of the residues `b dinv[k] mod p` (`Ratpoints.Sieve.closedRow`), with
-the start `0` and the end `p`, each with the test of the bits that it reads
-(`Ratpoints.Sieve.SieveSpec.Reads`): whether the row of `b` admits the numerator of the bit
-(`Ratpoints.Sieve.SieveEntry.reads_row`). -/
+with the row offsets from position `pos` of `offsets` on, as `Ratpoints.Sieve.setRows` and
+`Ratpoints.Sieve.buildRows` make them: the closed forms of the rows of the residues
+`b dinv[k] mod p` (`Ratpoints.Sieve.closedRow`), with the start `0` and the end `p`, each with the
+test of the bits that it reads (`Ratpoints.Sieve.SieveSpec.Reads`): whether the row of `b` admits
+the numerator of the bit (`Ratpoints.Sieve.SieveEntry.reads_row`). -/
 def packedReads (es : List SieveEntry) (b : Nat) (cl : NumClass) (offsets : Array Nat) (pos : Nat) :
     List (SieveSpec × (Int → Bool)) :=
   es.mapIdx fun n e ↦ (⟨e.p, offsets[pos + n]!, closedRow e.admits e.p (b * e.dinv[cl.k]! % e.p),
     0, e.p⟩, fun j ↦ e.admits b (cl.numerator j))
 
-/-- `Ratpoints.Sieve.setRows` reads the row of the residue `b dinv[k] mod p` of each modulus, the
-residue `bp` that `Ratpoints.Sieve.fillBpList` gives (`Ratpoints.Sieve.fillBpList_eq_map`), from the
-thunks of the rows of the entries, the closed form of the row
-(`Ratpoints.Sieve.SieveEntry.row_eq_closedRow`), at the offsets of the class from its position
-`pos` on. -/
-theorem setRows_map {es : List SieveEntry} (hp : ∀ e ∈ es, 0 < e.p) (b : Nat) {cl : NumClass}
-    {pos : Nat} (hpos : cl.offset = some pos) (offsets : Array Nat) :
-    setRows (es.map fun e ↦ (e.p, e.rows)) (es.map fun e ↦ b * e.dinv[cl.k]! % e.p) cl offsets =
-      (packedReads es b cl offsets pos).map Prod.fst := by
-  refine List.ext_getElem (by simp [setRows, packedReads]) fun n h1 h2 ↦ ?_
-  have hn : n < es.length := by simpa [packedReads] using h2
-  have hpn := hp _ (List.getElem_mem hn)
-  simp [setRows, packedReads, hpos, SieveEntry.get_rows _ (Nat.mod_lt _ hpn),
-    SieveEntry.row_eq_closedRow _ hpn]
+/-- The sieve specs that `Ratpoints.Sieve.buildRows` completes for the residues `b dinv[k] mod p`
+of the entries (`Ratpoints.Sieve.buildRows_setRows_map_spec`), the residues that
+`Ratpoints.Sieve.fillBpList` gives (`Ratpoints.Sieve.fillBpList_eq_map`), at the offsets of the
+class from its position `pos` on, are those of `Ratpoints.Sieve.packedReads`. -/
+theorem mapIdx_eq_map_fst_packedReads (es : List SieveEntry) (b : Nat) {cl : NumClass} {pos : Nat}
+    (hpos : cl.offset = some pos) (offsets : Array Nat) :
+    es.mapIdx (fun n e ↦ (⟨e.p, offsets[cl.offset.getD 0 + n]!,
+      closedRow e.admits e.p (b * e.dinv[cl.k]! % e.p), 0, e.p⟩ : SieveSpec)) =
+      (packedReads es b cl offsets pos).map Prod.fst :=
+  List.ext_getElem (by simp [packedReads]) fun n _ _ ↦ by simp [packedReads, hpos]
 
 -- The specs of `Ratpoints.Sieve.packedReads` fit, for entries packed for the class at their
 -- offsets.
@@ -997,63 +998,87 @@ theorem flatMap_filter_bits_eq {cl : NumClass} {w : UInt64} (hcl : cl.Packs w)
   congr 2
   exact List.filter_congr fun j _ ↦ by simp [hcl.classBit_bits, htest]
 
--- The contract of `Ratpoints.Sieve.sift` for the rows, reciprocals and residues of the sieve
--- entries `entries` in the packing of the class `cl` of the class word `w`.
+-- The rows of the sieve specs of the denominator that `Ratpoints.Sieve.setRows` and
+-- `Ratpoints.Sieve.buildRows` make, as a value for the contract of `Ratpoints.Sieve.sift`.
+private theorem buildRows_value (missing : Bool) (es : List SieveEntry) (bp : List Nat)
+    (specs : List SieveSpec) (store : RowStore) :
+    ⦃ True ⦄ buildRows missing es bp specs store
+    ⦃ fun r ↦ r = Id.run (buildRows missing es bp specs store) ⦄ :=
+  ⟨fun _ ↦ rfl⟩
+
+/-- The sieve specs of the denominator `b` that `Ratpoints.Sieve.setRows` makes and
+`Ratpoints.Sieve.buildRows` completes, for the residues `b dinv[k] mod p` of the entries, the class
+`cl` with its row offsets from position `pos` on and a store that fits the entries
+(`Ratpoints.Sieve.RowStore.Fits`), are those of `Ratpoints.Sieve.packedReads`. -/
+theorem eq_map_fst_packedReads_of_eq_run_buildRows {store store' : RowStore}
+    {es : List SieveEntry} (hs : store.Fits es) {b : Nat} {cl : NumClass} {pos : Nat}
+    (hpos : cl.offset = some pos) {offsets : Array Nat} {specs : List SieveSpec}
+    (hr : (specs, store') = Id.run (buildRows
+      (setRows store es (es.map fun e ↦ b * e.dinv[cl.k]! % e.p) cl offsets).2 es
+      (es.map fun e ↦ b * e.dinv[cl.k]! % e.p)
+      (setRows store es (es.map fun e ↦ b * e.dinv[cl.k]! % e.p) cl offsets).1 store)) :
+    specs = (packedReads es b cl offsets pos).map Prod.fst :=
+  ((hs.buildRows_setRows (fun e he ↦ Nat.mod_lt _ (hs.pos e he)) hr).1).trans
+    (mapIdx_eq_map_fst_packedReads es b hpos offsets)
+
+-- The contract of `Ratpoints.Sieve.sift` for the reciprocals and residues of the sieve entries `es`
+-- in the packing of the class `cl` of the class word `w`.
 private theorem sift_spec_map (c : List Int) (d H b : Nat) (rev : Bool) (sp1 : Nat)
-    (es3 : List SieveEntry) {A : Nat} {entries : List SieveEntry} {w : UInt64} {cl : NumClass}
-    {pos : Nat} (offsets : Array Nat) (hA : 1 ≤ A) (hb : 0 < b) (hb63 : b < 2 ^ 63)
-    (hH : H < 2 ^ 63) (hes : ∀ e ∈ es3, e.IsPrimeEntry) (hcl : cl.Packs w)
-    (hpos : cl.offset = some pos) (hinv : ∀ e ∈ entries, ∀ f ∈ e.factors, f.HasInverses e.p)
-    (hoff : ∀ n (h : n < entries.length), entries[n].PackedFor cl offsets[pos + n]!) :
+    (es3 : List SieveEntry) {A : Nat} {es : List SieveEntry} {w : UInt64} {cl : NumClass}
+    {pos : Nat} (offsets : Array Nat) (store : RowStore) (hA : 1 ≤ A) (hb : 0 < b)
+    (hb63 : b < 2 ^ 63) (hH : H < 2 ^ 63) (hes : ∀ e ∈ es3, e.IsPrimeEntry) (hcl : cl.Packs w)
+    (hpos : cl.offset = some pos) (hinv : ∀ e ∈ es, ∀ f ∈ e.factors, f.HasInverses e.p)
+    (hoff : ∀ n (h : n < es.length), es[n].PackedFor cl offsets[pos + n]!) (hs : store.Fits es) :
     ⦃ True ⦄
-    sift c d H A b rev sp1 (entries.map fun e ↦ (e.p, e.rows)) (entries.map (magic ·.p))
-      (entries.map fun e ↦ b * e.dinv[cl.k]! % e.p) cl offsets es3 (es3.map fun e ↦ magic e.p)
-    ⦃ fun out ↦ out.toList = (pointsOfDen c d b ((numerators H).filter fun a ↦
-        classBit w a && survives (entries ++ es3) b a)).map (if rev then swapPoint else id) ⦄ := by
-  have hp (e : SieveEntry) (he : e ∈ entries) : 0 < e.p := by
-    obtain ⟨n, hn, rfl⟩ := List.getElem_of_mem he
-    exact (hoff n hn).pos
-  have hrows := setRows_map hp b hpos offsets
+    sift c d H A b rev sp1 es (es.map (magic ·.p)) (es.map fun e ↦ b * e.dinv[cl.k]! % e.p) cl
+      offsets es3 (es3.map fun e ↦ magic e.p) store
+    ⦃ fun r ↦ r.1.toList = (pointsOfDen c d b ((numerators H).filter fun a ↦
+        classBit w a && survives (es ++ es3) b a)).map (if rev then swapPoint else id) ⦄ := by
   obtain ⟨hl, hh⟩ := toInt_numeratorsToBits_height hH hcl.toWF
-  vcgen [sift]
-  · rw [hrows]
+  vcgen [sift, buildRows_value]
+  · rename_i hr
+    rw [eq_map_fst_packedReads_of_eq_run_buildRows hs hpos hr]
     exact ⟨hA, fits_of_mem_packedReads hoff, map_magic_packedReads ..⟩
-  · rename_i h
-    rw [h _ hrows (reads_of_mem_packedReads hinv hoff),
-      flatMap_filter_bits_eq hcl hl hh (all_packedReads entries b cl offsets pos),
+  · rename_i hr _ h
+    rw [h _ (eq_map_fst_packedReads_of_eq_run_buildRows hs hpos hr)
+        (reads_of_mem_packedReads hinv hoff),
+      flatMap_filter_bits_eq hcl hl hh (all_packedReads es b cl offsets pos),
       flatMap_acceptedPoints_eq_pointsOfDen hes hb hb63 hH]
 
-/-- The sieve entries of the first two stages, the class word `w` that the class `cl` packs, the
-position `pos` of the row offsets of `cl` and what the packing needs of the entries are quantified
-in the postcondition, since the program does not mention them: the rows, the reciprocals and the
-residues `b dinv[k] mod p` (`Ratpoints.Sieve.fillBpList_eq_map`) of the entries, their tables of
-inverses, and the offsets of the packing of `cl` (`Ratpoints.Sieve.SieveEntry.PackedFor`); the test
-for common factors on the words of the C code needs `0 < b < 2 ^ 63` and the numerators
-`|a| ≤ H < 2 ^ 63` (`Ratpoints.Sieve.accepted_spec`), and the third stage entries of the shape of
-`Ratpoints.Sieve.SieveEntry.IsPrimeEntry` with the reciprocals of their moduli. -/
+/-- The store of the tables of rows fits the sieve entries `es` of the first two stages
+(`Ratpoints.Sieve.RowStore.Fits`) before the denominator and after it, with the rows built for it.
+The class word `w` that the class `cl` packs and the position `pos` of the row offsets of `cl` are
+quantified in the postcondition, since the program does not mention them; the reciprocals and the
+residues `b dinv[k] mod p` (`Ratpoints.Sieve.fillBpList_eq_map`) are those of the entries, which
+have their tables of inverses and the offsets of the packing of `cl`
+(`Ratpoints.Sieve.SieveEntry.PackedFor`); the test for common factors on the words of the C code
+needs `0 < b < 2 ^ 63` and the numerators `|a| ≤ H < 2 ^ 63` (`Ratpoints.Sieve.accepted_spec`), and
+the third stage entries of the shape of `Ratpoints.Sieve.SieveEntry.IsPrimeEntry` with the
+reciprocals of their moduli. -/
 @[spec]
-theorem sift_spec (c : List Int) (d H A b : Nat) (rev : Bool) (sp1 : Nat)
-    (rows : List (Nat × Array (Thunk (Array UInt64)))) (mgs bp : List Nat) (cl : NumClass)
-    (offsets : Array Nat) (es3 : List SieveEntry) (mgs3 : List Nat) :
+theorem sift_spec (c : List Int) (d H A b : Nat) (rev : Bool) (sp1 : Nat) (es : List SieveEntry)
+    (mgs bp : List Nat) (cl : NumClass) (offsets : Array Nat) (es3 : List SieveEntry)
+    (mgs3 : List Nat) (store : RowStore) :
     ⦃ 1 ≤ A ∧ 0 < b ∧ b < 2 ^ 63 ∧ H < 2 ^ 63 ∧ (∀ e ∈ es3, e.IsPrimeEntry) ∧
-        mgs3 = es3.map fun e ↦ magic e.p ⦄
-    sift c d H A b rev sp1 rows mgs bp cl offsets es3 mgs3
-    ⦃ fun out ↦ ∀ (entries : List SieveEntry) (w : UInt64) (pos : Nat), cl.Packs w →
-        cl.offset = some pos → rows = entries.map (fun e ↦ (e.p, e.rows)) →
-        mgs = entries.map (magic ·.p) → bp = entries.map (fun e ↦ b * e.dinv[cl.k]! % e.p) →
-        (∀ e ∈ entries, ∀ f ∈ e.factors, f.HasInverses e.p) →
-        (∀ n (h : n < entries.length), entries[n].PackedFor cl offsets[pos + n]!) →
-        out.toList = (pointsOfDen c d b ((numerators H).filter fun a ↦
-          classBit w a && survives (entries ++ es3) b a)).map (if rev then swapPoint else id) ⦄ :=
-  ⟨fun ⟨hA, hb, hb63, hH, hes, hmg3⟩ _ _ _ hcl hpos hrows hmg hbp hinv hoff ↦ by
-    subst hrows hmg hbp hmg3
-    exact (sift_spec_map c d H b rev sp1 es3 offsets hA hb hb63 hH hes hcl hpos hinv hoff).le_wp
-      trivial⟩
+        mgs3 = es3.map (fun e ↦ magic e.p) ∧ mgs = es.map (magic ·.p) ∧
+        bp = es.map (fun e ↦ b * e.dinv[cl.k]! % e.p) ∧
+        (∀ e ∈ es, ∀ f ∈ e.factors, f.HasInverses e.p) ∧ store.Fits es ⦄
+    sift c d H A b rev sp1 es mgs bp cl offsets es3 mgs3 store
+    ⦃ fun r ↦ r.2.Fits es ∧ ∀ (w : UInt64) (pos : Nat), cl.Packs w → cl.offset = some pos →
+        (∀ n (h : n < es.length), es[n].PackedFor cl offsets[pos + n]!) →
+        r.1.toList = (pointsOfDen c d b ((numerators H).filter fun a ↦
+          classBit w a && survives (es ++ es3) b a)).map (if rev then swapPoint else id) ⦄ :=
+  ⟨fun ⟨hA, hb, hb63, hH, hes, hmg3, hmg, hbp, hinv, hs⟩ ↦ by
+    subst hmg3 hmg hbp
+    exact ⟨(hs.buildRows_setRows (fun e he ↦ Nat.mod_lt _ (hs.pos e he)) rfl).2,
+      fun w pos hcl hpos hoff ↦ (sift_spec_map c d H b rev sp1 es3 offsets store hA hb hb63 hH hes
+        hcl hpos hinv hoff hs).le_wp trivial⟩⟩
 
 /-- `Ratpoints.Sieve.sift` with the flag `rev` of the reversal, the class `cl` that packs the class
-word `w` with its row offsets from position `pos` of `offsets` on, the entries `entries` of the
-first two stages with their rows, reciprocals and residues `b dinv[k] mod p`, their tables of
-inverses and the offsets of the packing of `cl`, and the entries `es3` of the third, of the shape of
+word `w` with its row offsets from position `pos` of `offsets` on, the entries `es` of the first two
+stages with their reciprocals and residues `b dinv[k] mod p`, their tables of inverses and the
+offsets of the packing of `cl`, a store of the tables of rows that fits them
+(`Ratpoints.Sieve.RowStore.Fits`), and the entries `es3` of the third, of the shape of
 `Ratpoints.Sieve.SieveEntry.IsPrimeEntry`, with the reciprocals of their moduli, for a denominator
 `0 < b < 2 ^ 63` and `H < 2 ^ 63`, gives the points of the plain sieve with all these entries and
 its check, the reference of the words, whose numerators pass `w` (`Ratpoints.Sieve.classBit`),
@@ -1064,19 +1089,18 @@ those of these points whose numerators pass `w`, mapped (`Ratpoints.Sieve.sift_s
 `Ratpoints.BruteForce.pointsOfDen_filter`). -/
 theorem toList_run_sift_eq_checkDen (c : List Int) (d H b : Nat) (rev : Bool) (sp1 : Nat)
     {A : Nat} (hA : 1 ≤ A) (hb : 0 < b) (hb63 : b < 2 ^ 63) (hH : H < 2 ^ 63)
-    {entries es3 : List SieveEntry} {w : UInt64} {cl : NumClass} {pos : Nat} (offsets : Array Nat)
-    (hes : ∀ e ∈ es3, e.IsPrimeEntry) (hcl : cl.Packs w) (hpos : cl.offset = some pos)
-    (hinv : ∀ e ∈ entries, ∀ f ∈ e.factors, f.HasInverses e.p)
-    (hoff : ∀ n (h : n < entries.length), entries[n].PackedFor cl offsets[pos + n]!) :
-    (Id.run (sift c d H A b rev sp1 (entries.map fun e ↦ (e.p, e.rows)) (entries.map (magic ·.p))
-      (entries.map fun e ↦ b * e.dinv[cl.k]! % e.p) cl offsets es3
-        (es3.map fun e ↦ magic e.p))).toList =
-      ((Id.run (checkDen c d H b (Id.run (sieveDen H b (entries ++ es3))))).toList.filter
+    {es es3 : List SieveEntry} {w : UInt64} {cl : NumClass} {pos : Nat} (offsets : Array Nat)
+    {store : RowStore} (hes : ∀ e ∈ es3, e.IsPrimeEntry) (hcl : cl.Packs w)
+    (hpos : cl.offset = some pos) (hinv : ∀ e ∈ es, ∀ f ∈ e.factors, f.HasInverses e.p)
+    (hoff : ∀ n (h : n < es.length), es[n].PackedFor cl offsets[pos + n]!) (hs : store.Fits es) :
+    (Id.run (sift c d H A b rev sp1 es (es.map (magic ·.p)) (es.map fun e ↦ b * e.dinv[cl.k]! % e.p)
+      cl offsets es3 (es3.map fun e ↦ magic e.p) store)).1.toList =
+      ((Id.run (checkDen c d H b (Id.run (sieveDen H b (es ++ es3))))).toList.filter
         fun q ↦ classBit w q.1).map (if rev then swapPoint else id) :=
-  ((sift_spec_map c d H b rev sp1 es3 offsets hA hb hb63 hH hes hcl hpos hinv hoff).le_wp
+  ((sift_spec_map c d H b rev sp1 es3 offsets store hA hb hb63 hH hes hcl hpos hinv hoff hs).le_wp
     trivial).trans <| by
     rw [← List.filter_filter, pointsOfDen_filter, ← (checkDen_spec c d H b _).le_wp trivial _
-      ((sieveDen_spec H b (entries ++ es3)).le_wp trivial)]
+      ((sieveDen_spec H b (es ++ es3)).le_wp trivial)]
     rfl
 
 end Sieve

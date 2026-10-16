@@ -206,8 +206,8 @@ $p$. So F4 is a data refinement: the sieve computes the same predicate as before
 \end{definition}
 
 \begin{lemma}[The closed form]\label{lem:closedRow}
-  \uses{def:closedRow, def:SieveEntry, def:row}
-  \lean{Ratpoints.Sieve.getLsbD_closedRow, Ratpoints.Sieve.eq_closedRow, Ratpoints.Sieve.size_closedRow, Ratpoints.Sieve.closedRow_congr, Ratpoints.Sieve.getElem!_closedRow_mod, Ratpoints.Sieve.wraps_closedRow, Ratpoints.Sieve.SieveEntry.wraps_closedRow, Ratpoints.Sieve.getLsbD_wordOfBits, Ratpoints.Sieve.PatternBits, Ratpoints.Sieve.RowWords, Ratpoints.Sieve.RowWords.toArray_eq_closedRow, Ratpoints.Sieve.SieveEntry.row_eq_closedRow}
+  \uses{def:closedRow, def:SieveEntry}
+  \lean{Ratpoints.Sieve.getLsbD_closedRow, Ratpoints.Sieve.eq_closedRow, Ratpoints.Sieve.size_closedRow, Ratpoints.Sieve.closedRow_congr, Ratpoints.Sieve.getElem!_closedRow_mod, Ratpoints.Sieve.wraps_closedRow, Ratpoints.Sieve.SieveEntry.wraps_closedRow, Ratpoints.Sieve.getLsbD_wordOfBits, Ratpoints.Sieve.PatternBits, Ratpoints.Sieve.RowWords, Ratpoints.Sieve.RowWords.toArray_eq_closedRow}
   \leanok
   Bit $t$ of word $j < (m + \mathrm{chunk} - 1)\,\mathrm{rbaPack}$ of the closed form is $t < 64$
   and $\mathrm{adm}(r)(64 j + t)$, and an array of that size with these bits is the closed form. For
@@ -218,9 +218,7 @@ $p$. So F4 is a data refinement: the sieve computes the same predicate as before
   the pattern at that position plus $t$ and its other bits are clear; the words of a row are the
   windows of the pattern when word $j$ holds its $64$ bits from $64 j$ on; and a row whose words are
   the windows of a pattern that a test reads at the residues of the numerators is the closed form of
-  the test, which is how the contracts of the builders conclude. The row of a denominator in words
-  (Definition~\ref{def:row}) of a sieve entry with a positive modulus is the closed form of the
-  admission test of the entry.
+  the test, which is how the contracts of the builders conclude.
 \end{lemma}
 
 \begin{proof}
@@ -529,7 +527,7 @@ contract keeps its statement, the first stage of either arm giving the same word
 
 \begin{definition}[The layout of a pattern]\label{def:layOutPattern}
   \uses{def:powerWords, def:chunk, def:rbaPack}
-  \lean{Ratpoints.Sieve.window, Ratpoints.Sieve.getLsbD_window, Ratpoints.Sieve.repeatPattern, Ratpoints.Sieve.layOutPattern}
+  \lean{Ratpoints.Sieve.window, Ratpoints.Sieve.repeatPattern, Ratpoints.Sieve.layOutPattern}
   \leanok
   The $64$ bits of an array of words from a position on, cut out of two words by two shifts, for
   line 291 of \verb|lay_out_pattern|, bit $t$ the bit of the words at the position plus $t$ for
@@ -582,7 +580,7 @@ contract keeps its statement, the first stage of either arm giving the same word
 
 \begin{lemma}[The builders of a prime power and of a product]\label{lem:compositeRows}
   \uses{def:layOutPattern, def:sieveInitPower, def:sieveInitProduct, lem:closedRow}
-  \lean{Ratpoints.Sieve.PatClear, Ratpoints.Sieve.PatZero, Ratpoints.Sieve.repeatPattern_spec, Ratpoints.Sieve.LayOuterInvariant, Ratpoints.Sieve.LayInnerInvariant, Ratpoints.Sieve.RowLoopInvariant, Ratpoints.Sieve.layOutPattern_spec, Ratpoints.Sieve.powerPatternUnit_spec, Ratpoints.Sieve.powerPatternNonunit_spec, Ratpoints.Sieve.sieveInitPower_spec, Ratpoints.Sieve.factorWord, Ratpoints.Sieve.productWord, Ratpoints.Sieve.FirstInvariant, Ratpoints.Sieve.FactorInvariant, Ratpoints.Sieve.productCopy_spec, Ratpoints.Sieve.productAnd_spec, Ratpoints.Sieve.toArray_eq_closedRow_of_productWord, Ratpoints.Sieve.Factor.admits_mod_of_dvd, Ratpoints.Sieve.SieveEntry.admits_eq_all}
+  \lean{Ratpoints.Sieve.getLsbD_window, Ratpoints.Sieve.PatClear, Ratpoints.Sieve.PatZero, Ratpoints.Sieve.repeatPattern_spec, Ratpoints.Sieve.LayOuterInvariant, Ratpoints.Sieve.LayInnerInvariant, Ratpoints.Sieve.RowLoopInvariant, Ratpoints.Sieve.layOutPattern_spec, Ratpoints.Sieve.powerPatternUnit_spec, Ratpoints.Sieve.powerPatternNonunit_spec, Ratpoints.Sieve.sieveInitPower_spec, Ratpoints.Sieve.factorWord, Ratpoints.Sieve.productWord, Ratpoints.Sieve.FirstInvariant, Ratpoints.Sieve.FactorInvariant, Ratpoints.Sieve.productCopy_spec, Ratpoints.Sieve.productAnd_spec, Ratpoints.Sieve.toArray_eq_closedRow_of_productWord, Ratpoints.Sieve.Factor.admits_mod_of_dvd, Ratpoints.Sieve.SieveEntry.admits_eq_all}
   \leanok
   For a pattern of period $0 < m \le 64\,\mathrm{modWords}$ without bits from $m$ on, the layout
   gives the row whose words are the windows of the pattern; for the tables of a prime power
@@ -735,7 +733,9 @@ contract keeps its statement, the first stage of either arm giving the same word
 
 \begin{definition}[The missing rows of a denominator]\label{def:buildRows}
   \uses{def:fetchRow, def:rows}
-  Proposed name: \lname{Ratpoints.Sieve.buildRows}. For the sieve specs of the first two stages that
+  \lean{Ratpoints.Sieve.buildRows}
+  \leanok
+  For the sieve specs of the first two stages that
   \verb|set_rows| makes (Definition~\ref{def:siftBits}), with the empty array for a row not built
   yet and the flag of a missing row: when a row is missing, for each spec whose row is not built
   yet, of the $n$-th sieve entry and its residue, the row of the residue from the table of rows of
@@ -746,13 +746,9 @@ contract keeps its statement, the first stage of either arm giving the same word
 
 \begin{lemma}[The sieve specs of a denominator]\label{lem:buildRows}
   \uses{def:buildRows, lem:fetchRow, lem:storeTables, def:siftBits, lem:siftBits}
-  Proposed names: \lname{Ratpoints.Sieve.BuildRowsPre}, \lname{Ratpoints.Sieve.BuildRowsInvariant},
-  \lname{Ratpoints.Sieve.buildRows\_spec}, \lname{Ratpoints.Sieve.length\_setRows},
-  \lname{Ratpoints.Sieve.getElem!\_setRows}, \lname{Ratpoints.Sieve.buildRows\_setRows\_spec},
-  \lname{Ratpoints.Sieve.buildRows\_setRows\_map\_spec},
-  \lname{Ratpoints.Sieve.RowStore.Fits.buildRows\_setRows},
-  \lname{Ratpoints.Sieve.mapIdx\_eq\_map\_fst\_packedReads},
-  \lname{Ratpoints.Sieve.eq\_map\_fst\_packedReads\_of\_eq\_run\_buildRows}. For a store that holds
+  \lean{Ratpoints.Sieve.BuildRowsPre, Ratpoints.Sieve.BuildRowsInvariant, Ratpoints.Sieve.buildRows_spec, Ratpoints.Sieve.length_setRows, Ratpoints.Sieve.getElem!_setRows, Ratpoints.Sieve.buildRowsPre_setRows, Ratpoints.Sieve.mapIdx_setRows, Ratpoints.Sieve.buildRows_setRows_spec, Ratpoints.Sieve.buildRows_setRows_map_spec, Ratpoints.Sieve.StoreHolds.fetchRow_pre, Ratpoints.Sieve.StoreHolds.of_fetchRow, Ratpoints.Sieve.RowStore.Fits.buildRows_setRows, Ratpoints.Sieve.mapIdx_eq_map_fst_packedReads, Ratpoints.Sieve.eq_map_fst_packedReads_of_eq_run_buildRows}
+  \leanok
+  For a store that holds
   $R$ for the sieve entries of the first two stages, entries that fit $R$ at their positions and
   residues below their moduli: the sieve specs that \verb|set_rows| makes and \verb|buildRows|
   completes have the closed forms of the rows of their entries at their residues, the offsets of the
@@ -764,6 +760,7 @@ contract keeps its statement, the first stage of either arm giving the same word
 \end{lemma}
 
 \begin{proof}
+  \leanok
   An invariant of the loop over the specs: the store holds $R$, and each spec has its closed form
   and the end $p$ or, from the position of the loop on, no row yet. A row present is $R$ at its
   reference, the closed form by the fit of the entry; a row built is the closed form

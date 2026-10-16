@@ -306,7 +306,7 @@ reciprocals, and the test of the denominators up to $b_{\mathrm{high}} \le \math
 \section{The second stage}\label{sec:secondStage}
 
 \begin{definition}[The second stage]\label{def:secondStage}
-  \uses{def:bitArrayOps, def:rows, def:mulMod}
+  \uses{def:bitArrayOps, def:rows, def:mulMod, def:useCLong}
   \lean{Ratpoints.useLongInPhase2, Ratpoints.Sieve.secondStage, Ratpoints.Sieve.secondStageWord}
   \leanok
   Whether the second stage runs one word at a time, $\mathrm{useLongInPhase2} = \mathrm{false}$ as
@@ -393,20 +393,22 @@ and then the exact check for each set bit; the scan (Definition~\ref{def:scanPie
 nonzero bit array and hands it to Definition~\ref{def:siftBitArray}, with the moduli of the second
 stage; one piece (Definition~\ref{def:siftPiece}) runs the first stage with the first $s_1$ moduli
 of its list and the scan with the rest; and one denominator (Definition~\ref{def:sift}) takes the
-end $s_1$ of the first stage, the rows of the moduli of the first two stages with their reciprocals,
-the residues of $b$ divided by the stride of its class and the row offsets of the class, and the
-sieve entries of the third stage with their reciprocals, and makes the thunks of the products and of
-the table of the third stage. Their contracts: the walk appends the points of the numerators of its
-set bits that pass the test of a candidate, the scan those of the numerators whose bits survive the
-first stage and the moduli of the second and that pass the test of a candidate, and the piece those
-of the numerators that survive the first stage, the masks and the second stage and pass the test.
-The walk reads the test of a candidate as its value, the points that \verb|acceptedPoints| gives
-(Definition~\ref{def:accepted}), so that these contracts need nothing of the numerators and the
-denominator; the hypotheses of the test on the words of the C code come in with one denominator. The
-lemma that the words compute the Booleans (Lemma~\ref{lem:sift_eq_checkDen}) gives the points of the
-sieve of stage~C1 over all the sieve entries followed by its check whose numerators pass the word
-that the class packs, for a denominator $0 < b < 2^{63}$, $H < 2^{63}$, entries of the first two
-stages whose tables of inverses invert and that are packed for the class at its offsets, the
+end $s_1$ of the first stage, the sieve entries of the first two stages with their reciprocals and
+the store of the tables of rows, from which it reads their rows or into which it builds them
+(Definition~\ref{def:buildRows}), the residues of $b$ divided by the stride of its class and the row
+offsets of the class, and the sieve entries of the third stage with their reciprocals, and makes the
+thunks of the products and of the table of the third stage. Their contracts: the walk appends the
+points of the numerators of its set bits that pass the test of a candidate, the scan those of the
+numerators whose bits survive the first stage and the moduli of the second and that pass the test of
+a candidate, and the piece those of the numerators that survive the first stage, the masks and the
+second stage and pass the test. The walk reads the test of a candidate as its value, the points that
+\verb|acceptedPoints| gives (Definition~\ref{def:accepted}), so that these contracts need nothing of
+the numerators and the denominator; the hypotheses of the test on the words of the C code come in
+with one denominator. The lemma that the words compute the Booleans
+(Lemma~\ref{lem:sift_eq_checkDen}) gives the points of the sieve of stage~C1 over all the sieve
+entries followed by its check whose numerators pass the word that the class packs, for a denominator
+$0 < b < 2^{63}$, $H < 2^{63}$, entries of the first two stages whose tables of inverses invert and
+that are packed for the class at its offsets, a store of the tables of rows that fits them, the
 reciprocals of all the entries, which it reads, and prime entries in the third stage. It rests on
 the following.
 
@@ -429,24 +431,27 @@ the following.
 \end{proof}
 
 The run over the denominators (Definition~\ref{def:sieveRun}) takes the cut points $s_1$ and $s_2$:
-it makes the rows of the first $s_2$ sieve entries, ends the first stage at $s_1$ and hands the rest
-to \verb|sift| for the third stage, with the reciprocals that the array of the reciprocals holds
-from the position $s_2$ on; $s_2$ and the end of the list of the entries stand for the ends of the
-second and the third stage, which ratpoints takes from the arguments as the first decision of the
-run (\csource{find_points.c}{3861}{3861}) and \verb|run_block| sets for each block
+it reads the rows of the first $s_2$ sieve entries from the store of the tables of rows or builds
+them into it, passing the store from one denominator to the next, ends the first stage at $s_1$ and
+hands the rest to \verb|sift| for the third stage, with the reciprocals that the array of the
+reciprocals holds from the position $s_2$ on; $s_2$ and the end of the list of the entries stand for
+the ends of the second and the third stage, which ratpoints takes from the arguments as the first
+decision of the run (\csource{find_points.c}{3861}{3861}) and \verb|run_block| sets for each block
 (\csource{find_points.c}{3911}{3911}). Its contract (Definition~\ref{def:sieveRun},
 Theorem~\ref{thm:run_reference}) holds for any cut points and needs $b_{\mathrm{low}} \ge 1$,
 $b_{\mathrm{high}} < 2^{63}$ and $H < 2^{63}$, since the test for common factors computes on words
 and does not end for $b = 0$ and an odd numerator, that the array of the reciprocals holds those of
 the entries in their order, that the entries from $s_2$ on are prime entries, and, for the packing
 (Chapter~\ref{chap:packing}), that the first $s_2$ entries have their tables of inverses and the row
-offsets of the classes, which pack the 2-adic words. The search (Definition~\ref{def:searchPoints}),
-whose contract takes $H < 2^{63}$, which the refusal of \verb|findPoints| gives, passes
+offsets of the classes, which pack the 2-adic words, and, for their rows, a store of the tables of
+rows that fits them (Chapter~\ref{chap:rows}). The search (Definition~\ref{def:searchPoints}), whose
+contract takes $H < 2^{63}$, which the refusal of \verb|findPoints| gives, passes
 $b_{\mathrm{low}} = 1$, $b_{\mathrm{high}} = H$, the cut points of its parameters, the reciprocals
-that \verb|sieving_info| collects and the classes with their row offsets (Lemma~\ref{lem:soundRun});
-what \verb|sieving_info| computes (Lemma~\ref{lem:sievingInfo}) gives the entries of the moduli in
-their order, each with the reciprocal of its modulus, and for one of the first $\mathrm{numPrimes}$
-primes of the table the entry of that prime with the table of the reference as its only factor
+and the store of the tables of rows that \verb|sieving_info| returns and the classes with their row
+offsets (Lemma~\ref{lem:soundRun}); what \verb|sieving_info| computes (Lemma~\ref{lem:sievingInfo})
+gives the entries of the moduli in their order, each with the reciprocal of its modulus, a store of
+the tables of rows that fits them, and for one of the first $\mathrm{numPrimes}$ primes of the table
+the entry of that prime with the table of the reference as its only factor
 (Lemma~\ref{lem:sieveEntry_admits}), a prime entry (Lemma~\ref{lem:stage3}); the well-formedness
 makes the moduli of the third stage such primes (Definition~\ref{def:Params}).
 

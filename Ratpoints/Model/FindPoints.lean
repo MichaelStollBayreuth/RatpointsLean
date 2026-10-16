@@ -245,8 +245,9 @@ offsets of the classes in it, with the inverses of the strides in the entries
 (`Ratpoints.Sieve.classOffsets`); the shape of the run (`Ratpoints.Sieve.runSetup`); and the points
 at infinity (`Ratpoints.Sieve.pointsAtInfinity`), followed by those of the denominators of the shape
 (`Ratpoints.Sieve.sieveRun`) with the classes and their row offsets, the sieve entries of the moduli
-in the three stages that the cut points `P.sp1` and `P.sp2` give, their reciprocals and pieces of at
-most `Ratpoints.Params.arraySizeAt P H` bit arrays, each point mapped by `Ratpoints.Sieve.swapPoint`
+in the three stages that the cut points `P.sp1` and `P.sp2` give, their reciprocals, the store of
+the tables of rows that `Ratpoints.sievingInfo` makes, and pieces of at most
+`Ratpoints.Params.arraySizeAt P H` bit arrays, each point mapped by `Ratpoints.Sieve.swapPoint`
 when `rev` is set. For well-formed parameters, `1 ≤ H < 2 ^ 63` and `d` the degree of `c`, these are
 the points at infinity followed by the points of the brute-force reference over the denominators of
 the search (`Ratpoints.searchDens`), in the order of its loop, increasing unless the shape is that
@@ -269,9 +270,9 @@ sieve entries as a list, for the array `args->sieve_list` that `sieving_info` fi
 `class_offsets` reads; the square test `lcfsq` of line 4906 made on the polynomial searched
 (`Ratpoints.Setup.isSquare`), where the C code computes it before the reversal check (line 4634) and
 clears it in case 2 (line 4770): the same value for an even degree, the only one that reads it; the
-store of the tables of rows that `Ratpoints.sievingInfo` returns not handed to the run, which reads
-the rows of the sieve entries from their thunks (`Ratpoints.Sieve.SieveEntry.rows`) until stage F4
-hands it the store; the test on `point_at_infty` of the 2-adic exit recomputed, as
+store of the tables of rows that `Ratpoints.sievingInfo` returns handed to the run as a value, for
+the arrays `sieve` of the entries of `args->sieve_list`; the test on `point_at_infty` of the 2-adic
+exit recomputed, as
 `Ratpoints.Sieve.pointsAtInfinity` decides it; the exits give the empty list, where `sieving_info`
 returns the prime and `find_points_work_1` the number `0` of points found; the Sturm step does not
 restrict the search region before stage H, so that the return when it leaves nothing to search is
@@ -292,14 +293,14 @@ def searchPoints (c : List Int) (d H : Nat) (P : Params) (rev : Bool) :
   let nb ← twoAdic c d
   let (cls, db) ← numClasses nb
   if db == 0 && !(d % 2 == 1 || Setup.isSquare lcf) then return []
-  let some (entries, magics, forb, forbVal, _) ← sievingInfo c d useCLong checkDenom P bHigh
+  let some (entries, magics, forb, forbVal, store) ← sievingInfo c d useCLong checkDenom P bHigh
     | return []
   if forb.isEmpty && forbVal.isEmpty && !useJacobi then checkDenom := false
   let offsets := Array.replicate ((← numPackings cls) * max entries.length 1) 0
   let (cls, entries, offsets) ← classOffsets cls entries offsets
   let shape ← runSetup useSquares us1 checkDenom useJacobi forb forbVal lcf bHigh
   let pts ← sieveRun c d H (P.arraySizeAt H) rev P.sp1 P.sp2 entries magics cls offsets db shape 1
-    bHigh
+    bHigh store
   return pointsAtInfinity c d rev ++ pts.toList
 
 /-- The points of height at most `H` on `y ^ 2 = F(x, z)` for the coefficient list `c`, found by the
@@ -522,7 +523,7 @@ passes on to the test of the leading zeros. -/
 #guard
   let c : List Int := [-2, 0, 0, 1]
   match Id.run (sievingInfo c 3 true false ⟨[3, 7, 5, 11], 0, 2, 4, 64, true, 0⟩ 30) with
-  | some (entries, magics, _, _, _) =>
+  | some (entries, magics, _, _, store) =>
     let (cls, db) := Id.run (Sieve.numClasses (Id.run (Sieve.twoAdic c 3)))
     let np := Id.run (Sieve.numPackings cls)
     let (cls, entries, offsets) :=
@@ -536,8 +537,8 @@ passes on to the test of the leading zeros. -/
           List (Nat × List Nat × List Nat)).all fun (b, bp, off) ↦
         let cl := cls[b % 64]!
         let bp' := Sieve.fillBpList b cl.k entries magics.toList
-        bp' == bp && (Sieve.setRows (entries.map fun e ↦ (e.p, e.rows)) bp' cl offsets).map
-          (·.offset) == List.zipWith (· + ·.bias) off entries
+        bp' == bp && (Sieve.setRows store entries bp' cl offsets).1.map (·.offset) ==
+          List.zipWith (· + ·.bias) off entries
   | none => false
 
 -- The row offsets and the inverses of the strides that `class_offsets` makes, against their rule,
@@ -579,13 +580,12 @@ passes on to the test of the leading zeros. -/
       List (List Int × Nat)).all fun (c, d) ↦
   match Id.run (sievingInfo c d true false ⟨[3, 7, 9, 5, 11, 15, 13, 17, 19], 0, 3, 7, 0, true, 0⟩
       300) with
-  | some (entries, magics, _, _, _) =>
+  | some (entries, magics, _, _, store) =>
     let nb := Id.run (Sieve.twoAdic c d)
     let (cls, _) := Id.run (Sieve.numClasses nb)
     let np := Id.run (Sieve.numPackings cls)
     let (cls, entries, offsets) :=
       Id.run (Sieve.classOffsets cls entries (Array.replicate (np * entries.length) 0))
-    let rows := (entries.take 7).map fun e ↦ (e.p, e.rows)
     let mgs := magics.toList
     (List.range' 1 40).all fun b ↦ cls[b % 64]!.bits == 0 || [1, 3].all fun A ↦
       let cl := cls[b % 64]!
@@ -595,8 +595,9 @@ passes on to the test of the leading zeros. -/
           Sieve.survives entries b ((i.val : Int) - 300)
       let ref := (Id.run (Sieve.checkDen c d 300 b surv)).toList
       [false, true].all fun rev ↦
-        (Id.run (Sieve.sift c d 300 A b rev 3 rows (mgs.take 7) bp cl offsets (entries.drop 7)
-          (mgs.drop 7))).toList == if rev then ref.map Sieve.swapPoint else ref
+        (Id.run (Sieve.sift c d 300 A b rev 3 (entries.take 7) (mgs.take 7) bp cl offsets
+          (entries.drop 7) (mgs.drop 7) store)).1.toList ==
+          if rev then ref.map Sieve.swapPoint else ref
   | none => false
 
 -- The sieve of one denominator in the packings of words that are not those of a curve, against the
@@ -609,7 +610,7 @@ passes on to the test of the leading zeros. -/
   let c : List Int := [-2, 0, 0, 1]
   match Id.run (sievingInfo c 3 true false ⟨[3, 7, 9, 5, 11, 15, 13, 17, 19], 0, 3, 7, 0, true, 0⟩
       12) with
-  | some (entries, magics, _, _, _) =>
+  | some (entries, magics, _, _, store) =>
     let word (m r : Nat) : UInt64 := (List.range 64).foldl (fun w a ↦
       if a % m = r then w ||| 1 <<< a.toUInt64 else w) 0
     let words := [word 4 2, word 8 5, word 8 3, word 2 1, ~~~0, 0]
@@ -618,7 +619,6 @@ passes on to the test of the leading zeros. -/
     let np := Id.run (Sieve.numPackings cls)
     let (cls, entries, offsets) :=
       Id.run (Sieve.classOffsets cls entries (Array.replicate (np * entries.length) 0))
-    let rows := (entries.take 7).map fun e ↦ (e.p, e.rows)
     let mgs := magics.toList
     (cls[1]!.k, cls[1]!.a0, cls[2]!.k, cls[2]!.a0) == (3, 5, 3, 3) && [1, 2, 3].all fun H ↦
       (List.range' 1 12).all fun b ↦ cls[b % 64]!.bits == 0 || [false, true].all fun rev ↦
@@ -628,8 +628,9 @@ passes on to the test of the leading zeros. -/
           nb[b % 64]!.toBitVec.getLsbD ((((i.val : Int) - H) % 64).toNat) &&
             Sieve.survives entries b ((i.val : Int) - H)
         let ref := (Id.run (Sieve.checkDen c 3 H b surv)).toList
-        (Id.run (Sieve.sift c 3 H 1 b rev 3 rows (mgs.take 7) bp cl offsets (entries.drop 7)
-          (mgs.drop 7))).toList == if rev then ref.map Sieve.swapPoint else ref
+        (Id.run (Sieve.sift c 3 H 1 b rev 3 (entries.take 7) (mgs.take 7) bp cl offsets
+          (entries.drop 7) (mgs.drop 7) store)).1.toList ==
+          if rev then ref.map Sieve.swapPoint else ref
   | none => false
 
 -- The array size 1, which `arraySizeAt` rounds up to the chunk 16, at heights around the multiples

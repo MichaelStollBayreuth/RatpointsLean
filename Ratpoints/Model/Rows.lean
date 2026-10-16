@@ -14,6 +14,7 @@ public import Std.Data.HashMap.Basic
 meta import Ratpoints.Model.Constants
 meta import Ratpoints.Model.FirstStage
 meta import Ratpoints.Model.Tables
+meta import Std.Data.HashMap.Basic
 
 /-!
 # The rows of the moduli
@@ -43,9 +44,8 @@ table of rows of its entry (`Ratpoints.Sieve.RowStore.publish`); the row of a si
 from its table of rows or built into it by the builder of its kind
 (`Ratpoints.Sieve.SieveEntry.fetchRow`, `Ratpoints.Sieve.SieveEntry.initRow`,
 `Ratpoints.Sieve.initFactorRow`). The loop of the tables and `Ratpoints.sievingInfo` make the tables
-of rows of a run; the run does not read them yet: it takes its rows from the plain builder
-(`Ratpoints.Sieve.SieveEntry.row`), which gives the same words, until stage F4 hands it the tables
-of rows and builds its rows into them.
+of rows of a run, and the run reads the rows of each denominator from them and builds those that are
+missing into them (`Ratpoints.Sieve.setRows`, `Ratpoints.Sieve.buildRows`).
 
 ## Main definitions
 
@@ -112,8 +112,7 @@ arrays, and then the `rbaPack (chunk - 1)` words `work[i mod p]`, the copies of 
 divisors that are primes of the table read its first `p` words (`Ratpoints.Sieve.forbiddenOfPrime`,
 `Ratpoints.Sieve.forbidden`); the table of rows of a prime has it as its row of `0`
 (`Ratpoints.Sieve.primeRows`), as the sieve entry of a prime of the table has it in the C code, and
-the run of the model reads it from there from stage F4 on, until then the same words from the plain
-builder (`Ratpoints.Sieve.SieveEntry.row`).
+the run reads it from there (`Ratpoints.Sieve.setRows`).
 
 C: `find_points.c:37`, `gen_find_points_h.c:102-116`, `gen_find_points_h.c:122-134`
 
@@ -136,8 +135,10 @@ entries (`sieve_list[n]`, and the field `factor` of the entry of a product), wit
 A table of rows is made, with the row of `0` of a prime from the build and the others absent, where
 the C code makes the entry (`Ratpoints.Sieve.examinePrimes`,
 `Ratpoints.Sieve.SieveEntry.addTables`), and the builders store the rows that they build into the
-table of their entry (`Ratpoints.Sieve.RowStore.publish`); the run, which reads the rows of a
-denominator from the tables of rows and builds them into them, comes with stage F4. -/
+table of their entry (`Ratpoints.Sieve.RowStore.publish`); the run reads the rows of a denominator
+from the tables of rows and builds the missing ones into them (`Ratpoints.Sieve.setRows`,
+`Ratpoints.Sieve.buildRows`), and hands the store on from one denominator to the next
+(`Ratpoints.Sieve.sieveRun`). -/
 abbrev RowStore := Std.HashMap EntryRef (Array (Option (Array UInt64)))
 
 /-- The row of the residue `r` in the table of the entry `ref`, the pointer `se->sieve[r]`: none
@@ -779,6 +780,109 @@ def SieveEntry.fetchRow (e : SieveEntry) (b : Nat) (store : RowStore) :
 #guard (primeTable.toList.take numPrimes).all fun p ↦
   (sieves0 p).size == (p + chunk - 1) * rbaPack &&
     (List.range ((p + chunk - 1) * rbaPack)).all fun x ↦ (sieves0 p)[x]! == (forbiddenRow p)[x % p]!
+
+-- The rows of the residues `b ≠ 0` of a prime by the function that the build generates for it, from
+-- `CODE_INIT_SIEVE1` below 64 and from `CODE_INIT_SIEVE2` above, called through the kind of the
+-- builder of the prime (`Ratpoints.Sieve.initFactorRow`, `Ratpoints.Sieve.sieveInit`), against the
+-- closed form, word for word over all `(p + chunk - 1) rbaPack` words, bit `t` of word `j` set
+-- exactly when the row admits `64 j + t` (`Ratpoints.Sieve.Entry.admits`): every residue of the
+-- primes up to 13 and four residues of the larger primes up to 251, with the tables of two curves
+-- and a table of all ones, which tests only coprimality; the builder stores the row into the table
+-- of rows of the entry of the prime (`Ratpoints.Sieve.primeRows`), which keeps its row of `0`, and
+-- no other row.
+#guard
+  let closed (adm : Nat → Bool) (n : Nat) : Array UInt64 := (Array.range n).map fun j ↦
+    (List.range 64).foldl (fun w t ↦ if adm (64 * j + t) then w ||| 1 <<< t.toUInt64 else w) 0
+  [3, 5, 7, 11, 13, 31, 61, 67, 71, 127, 251].all fun p ↦
+    let s0 : RowStore := ({} : RowStore).insert (.prime p) (primeRows p)
+    [examinePrime [1, 2, 3, 4, 5, 6, 7] 6 p, examinePrime [-2, 0, 0, 1] 3 p,
+        ⟨p, .replicate (p + 1) true, inversesMod p⟩].all fun t ↦
+      (if p ≤ 13 then List.range' 1 (p - 1) else [1, 2, p / 2, p - 1]).all fun b ↦
+        let (row, s) := Id.run (initFactorRow (Factor.prime t).init (.prime p) (.prime t) b s0)
+        row == closed (fun N ↦ t.admits b N) ((p + chunk - 1) * rbaPack) && s.size == 1 &&
+          (List.range p).all fun r ↦
+            s.row? (.prime p) r == if r = b then some row else s0.row? (.prime p) r
+
+-- The rows of a prime power by the builder of the rows of a prime power, called through the kind of
+-- its builder (`Ratpoints.Sieve.initFactorRow`), against the closed form
+-- (`Ratpoints.Sieve.Power.admits`), word for word over all `(m + chunk - 1) rbaPack` words: every
+-- residue of 9, 27, 25, 49 and 121, and the residues `0, 1, 3, 5, 9, 242` of 243; the builder
+-- stores the row into the table of rows of the entry of the prime power, and no other row.
+#guard
+  let closed (adm : Nat → Bool) (n : Nat) : Array UInt64 := (Array.range n).map fun j ↦
+    (List.range 64).foldl (fun w t ↦ if adm (64 * j + t) then w ||| 1 <<< t.toUInt64 else w) 0
+  ([(3, 2), (3, 3), (5, 2), (7, 2), (11, 2), (3, 5)] : List (Nat × Nat)).all fun (p, k) ↦
+    let pw := Id.run (examinePower [1, 2, 3, 4, 5, 6, 7] 6 p k true)
+    let s0 : RowStore := ({} : RowStore).insert (.power p k) (.replicate pw.m none)
+    (if pw.m < 200 then List.range pw.m else [0, 1, 3, 5, 9, 242]).all fun b ↦
+      let (row, s) := Id.run (initFactorRow (Factor.power pw).init (.power p k) (.power pw) b s0)
+      row == closed (fun N ↦ pw.admits b N) ((pw.m + chunk - 1) * rbaPack) && s.size == 1 &&
+        (List.range pw.m).all fun r ↦ s.row? (.power p k) r == if r = b then some row else none
+
+-- The rows of a product by the builder of the rows of a product against the closed form
+-- (`Ratpoints.Sieve.SieveEntry.admits`), word for word over all `(m + chunk - 1) rbaPack` words,
+-- from a store with the tables of rows of its entry and of its factors and no rows but those of `0`
+-- of the primes, made as `Ratpoints.sievingInfo` makes them
+-- (`Ratpoints.Sieve.SieveEntry.addTables`): the rows of its factors are built into the tables of
+-- rows of their entries, each the closed form of the row of the residue modulo the modulus of the
+-- factor, and the builder stores the row of the product into its table of rows and no other row
+-- there; every residue of 15, 21 and 45 = 9 · 5, and residues of 63 = 9 · 7, 105 = 3 · 5 · 7, 225 =
+-- 9 · 25 and 255 = 3 · 5 · 17.
+#guard
+  let closed (adm : Nat → Bool) (n : Nat) : Array UInt64 := (Array.range n).map fun j ↦
+    (List.range 64).foldl (fun w t ↦ if adm (64 * j + t) then w ||| 1 <<< t.toUInt64 else w) 0
+  let c : List Int := [1, 2, 3, 4, 5, 6, 7]
+  let pr (p : Nat) : Factor := .prime (examinePrime c 6 p)
+  let pp (p k : Nat) : Factor := .power (Id.run (examinePower c 6 p k true))
+  ([(15, [pr 3, pr 5]), (21, [pr 3, pr 7]), (45, [pp 3 2, pr 5]), (63, [pp 3 2, pr 7]),
+      (105, [pr 3, pr 5, pr 7]), (225, [pp 3 2, pp 5 2]), (255, [pr 3, pr 5, pr 17])] :
+      List (Nat × List Factor)).all fun (m, fs) ↦
+    let e : SieveEntry := ⟨m, fs, magic m, 0, 0, #[], .product 0, .product⟩
+    let s0 := e.addTables {}
+    (if m ≤ 45 then List.range m else [0, 1, 2, 7, 15, m - 1]).all fun b ↦
+      let (row, s) := Id.run (sieveInitProduct e b s0)
+      row.toArray == closed (fun N ↦ e.admits b N) ((m + chunk - 1) * rbaPack) &&
+        (List.range m).all (fun r ↦
+          s.row? (.product 0) r == if r = b then some row.toArray else none) &&
+        fs.all fun f ↦ s.row? f.ref (b % f.modulus) ==
+          some (closed (fun N ↦ f.admits b N) ((f.modulus + chunk - 1) * rbaPack))
+
+-- The rows through the tables of rows, read or built as the run takes them
+-- (`Ratpoints.Sieve.SieveEntry.fetchRow`), against the closed form, for the sieve entries of the
+-- primes 3 and 67, the prime power 9, the product 15 = 3 · 5, which shares the table of rows of 3,
+-- and the product 45 = 9 · 5, which shares the table of rows of 9: the tables of rows made by
+-- `Ratpoints.Sieve.SieveEntry.addTables`, one for each entry, of the size of its modulus, with the
+-- row of `0` of a prime from the build; the rows fetched in turn, the products first, each stored
+-- in the table of rows of its entry; the rows of `1` and `2` of 3 and of `3` of 9 then read from
+-- the tables of rows, where the products built them, and every table of rows holding the rows
+-- fetched or built and no others.
+#guard
+  let closed (adm : Nat → Bool) (n : Nat) : Array UInt64 := (Array.range n).map fun j ↦
+    (List.range 64).foldl (fun w t ↦ if adm (64 * j + t) then w ||| 1 <<< t.toUInt64 else w) 0
+  let c : List Int := [1, 2, 3, 4, 5, 6, 7]
+  let t3 := examinePrime c 6 3
+  let pw9 := Id.run (examinePower c 6 3 2 true)
+  let f5 : Factor := .prime (examinePrime c 6 5)
+  let e3 : SieveEntry := ⟨3, [.prime t3], magic 3, 0, 0, #[], .prime 3, sieveInit 3⟩
+  let e67 : SieveEntry :=
+    ⟨67, [.prime (examinePrime c 6 67)], magic 67, 0, 0, #[], .prime 67, sieveInit 67⟩
+  let e9 : SieveEntry := ⟨9, [.power pw9], magic 9, 0, 0, #[], .power 3 2, .power⟩
+  let e15 : SieveEntry := ⟨15, [.prime t3, f5], magic 15, 0, 0, #[], .product 3, .product⟩
+  let e45 : SieveEntry := ⟨45, [.power pw9, f5], magic 45, 0, 0, #[], .product 4, .product⟩
+  let s0 := [e3, e67, e9, e15, e45].foldl (fun s e ↦ e.addTables s) {}
+  let wants : List (SieveEntry × Nat) :=
+    [(e15, 7), (e45, 12), (e45, 30), (e3, 1), (e3, 2), (e3, 0), (e9, 3), (e67, 0), (e67, 66)]
+  let (ok, s) := wants.foldl (fun (ok, s) (e, b) ↦
+    let (row, s) := Id.run (e.fetchRow b s)
+    (ok && row == closed (fun N ↦ e.admits b N) ((e.p + chunk - 1) * rbaPack), s)) (true, s0)
+  let present (k : EntryRef) : List Nat :=
+    (List.range (s.getD k #[]).size).filter fun r ↦ (s.row? k r).isSome
+  ok && s0.size == 6 && [(EntryRef.prime 3, 3), (.prime 67, 67), (.power 3 2, 9), (.prime 5, 5),
+      (.product 3, 15), (.product 4, 45)].all (fun (k, m) ↦ (s0.getD k #[]).size == m) &&
+    s0.row? (.prime 3) 0 == some (sieves0 3) && s0.row? (.prime 3) 1 == none &&
+    present (.prime 3) == [0, 1, 2] && present (.power 3 2) == [3] &&
+    present (.prime 5) == [0, 2] && present (.product 3) == [7] &&
+    present (.product 4) == [12, 30] && present (.prime 67) == [0, 66]
 
 end Sieve
 

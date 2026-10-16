@@ -770,8 +770,20 @@
         "Ratpoints.Sieve.sift"
       ]
     },
-    "find_points.c:3490-3561": {
-      "hash": "6c266d44441a8ea4f6a4d2ec83700be4c61da60f36e3880f92acb75a8cad5f2f",
+    "find_points.c:3490-3521": {
+      "hash": "84fa296bf6d02b26972fcf8bd25197ad84556fd846adfebc73aa1c71f04190cd",
+      "owners": [
+        "Ratpoints.Sieve.sift"
+      ]
+    },
+    "find_points.c:3522-3554": {
+      "hash": "28d159fabfa484e1f8db5f9c3d92307bdcd7d50682ea9e2d3a32a730d79327d6",
+      "owners": [
+        "Ratpoints.Sieve.buildRows"
+      ]
+    },
+    "find_points.c:3555-3561": {
+      "hash": "b864471341edfb5a3a41106416c8f651726a7db78956ab7111a3cd09883749a4",
       "owners": [
         "Ratpoints.Sieve.sift"
       ]

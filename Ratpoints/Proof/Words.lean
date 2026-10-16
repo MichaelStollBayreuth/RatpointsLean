@@ -44,10 +44,6 @@ bits of a word, and the contract of the first stage over a piece, as `@[spec]` t
 * `Ratpoints.Sieve.getLsbD_clearLowBits`, `Ratpoints.Sieve.getLsbD_clearHighBits`: which bits the
   masks at the two ends of the numerator range keep.
 * `Ratpoints.Sieve.isZeroAt_eq_true_iff`: a bit array is zero when all its words are.
-* `Ratpoints.Sieve.SieveEntry.row_eq_closedRow`: the row of a denominator in words is the closed
-  form of the admission test (`Ratpoints.Sieve.closedRow`): bit `t` of word `j` says whether the row
-  admits the numerator `64 j + t`.
-* `Ratpoints.Sieve.SieveEntry.get_rows`: the thunk of a residue gives its row.
 * `Ratpoints.Sieve.Entry.admits_mod_of_dvd`, `Ratpoints.Sieve.Power.admits_mod_of_dvd`: the row of
   a prime or a prime power reads the residues modulo a multiple of its modulus as those of the
   numbers.
@@ -182,13 +178,6 @@ theorem SieveEntry.admits_add_mul (e : SieveEntry) (b : Nat) (a k : Int) :
 theorem SieveEntry.admits_mod (e : SieveEntry) (b : Nat) : e.admits (b % e.p) = e.admits b :=
   funext fun _ ↦ by simp [SieveEntry.admits]
 
-theorem getLsbD_packedPattern (pat : Array Bool) (p : Nat) {i : Nat}
-    (hi : i < 64 * (p / 64 + 2)) :
-    (packedPattern pat p)[i / 64]!.toBitVec.getLsbD (i % 64) = pat[i % p]! := by
-  rw [packedPattern, Array.getElem!_map_range _ (by lia),
-    UInt64.getLsbD_fold_or_one_shiftLeft _ (Nat.le_refl 64), Nat.div_add_mod]
-  simp [Nat.mod_lt]
-
 theorem getLsbD_window (E : Array UInt64) (s t : Nat) :
     (window E s).toBitVec.getLsbD t =
       (decide (t < 64) && E[(s + t) / 64]!.toBitVec.getLsbD ((s + t) % 64)) := by
@@ -197,25 +186,6 @@ theorem getLsbD_window (E : Array UInt64) (s t : Nat) :
   · grind
   · rw [UInt64.getLsbD_shiftRight_or_shiftLeft ‹s % 64 ≠ 0› (Nat.mod_lt s (by decide))]
     grind
-
-/-- The hypothesis `s < p` keeps the 64 positions read within the packed words. -/
-theorem getLsbD_window_packedPattern (pat : Array Bool) {p s : Nat} (hs : s < p) (t : Nat) :
-    (window (packedPattern pat p) s).toBitVec.getLsbD t =
-      (decide (t < 64) && pat[(s + t) % p]!) := by
-  grind [getLsbD_window, getLsbD_packedPattern]
-
-/-- The row of the denominator `b` in words, for a sieve entry of a modulus `p > 0`, is the closed
-form of its admission test at `b`: bit `t` of word `j` says whether the row admits `64 j + t`, for
-every word, the copies of the first bit arrays at its end included. -/
-theorem SieveEntry.row_eq_closedRow (e : SieveEntry) (hp : 0 < e.p) (b : Nat) :
-    e.row b = closedRow e.admits e.p b := by
-  refine eq_closedRow (by simp [SieveEntry.row]) fun j hj t ↦ ?_
-  simp only [SieveEntry.row, Array.getElem!_map_range _ hj,
-    Array.getElem!_map_range _ (Nat.mod_lt _ hp), getLsbD_window_packedPattern _ (Nat.mod_lt _ hp)]
-  exact congrArg (decide (t < 64) && ·) (e.admits_congr b (by simp))
-
-theorem SieveEntry.get_rows (e : SieveEntry) {r : Nat} (hr : r < e.p) : e.rows[r]!.get = e.row r :=
-  congrArg Thunk.get (Array.getElem!_map_range _ hr)
 
 /-! ### The rows under a unit -/
 

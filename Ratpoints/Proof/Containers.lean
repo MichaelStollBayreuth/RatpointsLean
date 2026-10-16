@@ -16,43 +16,43 @@ vector after `Vector.set!` and after a fold of `Vector.set!` over consecutive po
 of `Vector.ofFn f` and of the array of a vector, the entries of an array made by a map over a range
 and of the vector of an array, the last entry and the entries of an array after `Array.set!`,
 `Array.push`, `Array.pop` and `Array.map`, the entries of the concatenation of two arrays and of an
-array written `k` times one after the other, the elements of `List.range n` that pass a test which
-fails from some position on, `List.flatMap` over a filtered list, the test of a list by the indices
-of its entries, the test of a nonempty list that and-s a fixed Boolean with a test, the tests of a
-list that agree on its entries, the integers of a range that lie in a smaller one or between two
-bounds, the gcd of the absolute values of a list of integers as a left fold, the length of the list
-of a range and the position of the cursor of a loop over it, the cursor of a loop over an array as
-one of its entries, the bound `y < (n + 1) k` for `y < n k`, the residues modulo `p` of the integers
-from `a` on, the residue of an integer modulo `p`, below `p`, read off its residue modulo a multiple
-of `p` and shifted by a natural number, exact quotients of integers, the numerators and the
-denominators of the set bits of a list of words, read in turn, the numbers of a range between two
-bounds, bit 1 of odd numbers, the gcd of half an even number with an odd one, a residue below `2 q`
-modulo `q` by one subtraction, among them the sum of two residues and the position after another in
-a ring, the estimate of a quotient by Barrett's reduction, the bounds of a step of Horner's rule and
-of a power of a number below a power of 2, the entries of an array of Booleans after a fold of
-`setIfInBounds · true`, the absolute value of the step of the cofactors of the extended Euclidean
-algorithm, the divisors of the gcd of `b` and a residue `f ≡ a (mod b)`, the remainder and the
-quotient by a multiplication with a reciprocal, the high half of a product from the products of the
-halves of its factors, the gcd of the odd part of a number with an odd one and the step of the
-binary algorithm for the gcd, the residue modulo a divisor of `b` of a numerator prime to `b`, C's
-remainder, which truncates, made non-negative, and the residue of `(a mod p) b` with the bound
-`|a b| + H ≤ p H` for `|a| ≤ H` and `b < p`. For the rows under a unit: the residues under a unit
-`u` with an inverse modulo `q`, zero or not, modulo a divisor of `q` too, the residue `x i mod q`
-read with an inverse `i` of `r`, the residue `u (b v mod p)` for an inverse `v` of `u`, and the
-residue of `u a` for an integer `a`. For the loops over two lists: the cursor of the second list of
-a loop `for x in l, y in l.map f`, and a list whose next element is known. For the classes of the
-packing: the residues in a packing of the stride `2 ^ k` dividing 64, the place `(a - a₀) mod n / m`
-of a residue `a ≡ a₀ (mod m)` below `n = m P`, and a residue `a + m j` modulo 64. For the rows of
-offsets: the multiple `m ⌈R / m⌉` of `m > 0`, from `R` to below `R + m`, the residue
-`(a y mod p + c) M` of `a` for a multiple `c` of `p` and an inverse `M` of `y`, and the entries of a
-vector after `Vector.set`, of an array of `none`s and of an array whose list is a map. For the
-residues and the bits of an interval: the numbers of a range in one class modulo `m`, the multiples
-of `m` among `N + (m - r)`, a numerator `i - H` in a class modulo `m`, the quotient by `m > 0` of a
-number above a negative bound, which stays above it, the quotients of the split form of
-`numerators_to_bits`, its carries and their sums with a quotient, in the range of a `long`, the
-multiples of a divisor of `N` at or below a number `≥ -N` and above a number `< N`, which lie in
-`[-N, N]`, and the product `a ^ m a ^ (n - m) = a ^ n` of integers. The lemmas on 64-bit words are
-in `Ratpoints.Proof.Bits`.
+array written `k` times one after the other, the entries of a list after `List.set`, the elements of
+`List.range n` that pass a test which fails from some position on, `List.flatMap` over a filtered
+list, the test of a list by the indices of its entries, the test of a nonempty list that and-s a
+fixed Boolean with a test, the tests of a list that agree on its entries, the integers of a range
+that lie in a smaller one or between two bounds, the gcd of the absolute values of a list of
+integers as a left fold, the length of the list of a range and the position of the cursor of a loop
+over it, the cursor of a loop over an array as one of its entries, the bound `y < (n + 1) k` for
+`y < n k`, the residues modulo `p` of the integers from `a` on, the residue of an integer modulo
+`p`, below `p`, read off its residue modulo a multiple of `p` and shifted by a natural number, exact
+quotients of integers, the numerators and the denominators of the set bits of a list of words, read
+in turn, the numbers of a range between two bounds, bit 1 of odd numbers, the gcd of half an even
+number with an odd one, a residue below `2 q` modulo `q` by one subtraction, among them the sum of
+two residues and the position after another in a ring, the estimate of a quotient by Barrett's
+reduction, the bounds of a step of Horner's rule and of a power of a number below a power of 2, the
+entries of an array of Booleans after a fold of `setIfInBounds · true`, the absolute value of the
+step of the cofactors of the extended Euclidean algorithm, the divisors of the gcd of `b` and a
+residue `f ≡ a (mod b)`, the remainder and the quotient by a multiplication with a reciprocal, the
+high half of a product from the products of the halves of its factors, the gcd of the odd part of a
+number with an odd one and the step of the binary algorithm for the gcd, the residue modulo a
+divisor of `b` of a numerator prime to `b`, C's remainder, which truncates, made non-negative, and
+the residue of `(a mod p) b` with the bound `|a b| + H ≤ p H` for `|a| ≤ H` and `b < p`. For the
+rows under a unit: the residues under a unit `u` with an inverse modulo `q`, zero or not, modulo a
+divisor of `q` too, the residue `x i mod q` read with an inverse `i` of `r`, the residue
+`u (b v mod p)` for an inverse `v` of `u`, and the residue of `u a` for an integer `a`. For the
+loops over two lists: the cursor of the second list of a loop `for x in l, y in l.map f`, and a list
+whose next element is known. For the classes of the packing: the residues in a packing of the stride
+`2 ^ k` dividing 64, the place `(a - a₀) mod n / m` of a residue `a ≡ a₀ (mod m)` below `n = m P`,
+and a residue `a + m j` modulo 64. For the rows of offsets: the multiple `m ⌈R / m⌉` of `m > 0`,
+from `R` to below `R + m`, the residue `(a y mod p + c) M` of `a` for a multiple `c` of `p` and an
+inverse `M` of `y`, and the entries of a vector after `Vector.set`, of an array of `none`s and of an
+array whose list is a map. For the residues and the bits of an interval: the numbers of a range in
+one class modulo `m`, the multiples of `m` among `N + (m - r)`, a numerator `i - H` in a class
+modulo `m`, the quotient by `m > 0` of a number above a negative bound, which stays above it, the
+quotients of the split form of `numerators_to_bits`, its carries and their sums with a quotient, in
+the range of a `long`, the multiples of a divisor of `N` at or below a number `≥ -N` and above a
+number `< N`, which lie in `[-N, N]`, and the product `a ^ m a ^ (n - m) = a ^ n` of integers. The
+lemmas on 64-bit words are in `Ratpoints.Proof.Bits`.
 
 ## Main statements
 
@@ -60,6 +60,7 @@ in `Ratpoints.Proof.Bits`.
   `Vector.set!`, at the place set and elsewhere.
 * `Vector.getElem!_fold_set!`: the entries of a vector after a fold of `Vector.set!` over the
   positions `base, …, base + k - 1`.
+* `List.getElem!_set`: the entries of a list after `List.set`.
 * `List.filter_range_eq_of_le`, `List.filter_range_succ_eq_append`: the elements of `List.range n`
   that pass a test which fails from `k` on are those of `List.range k`, followed by the next one
   that passes it.
@@ -338,6 +339,10 @@ end Array
 /-! ### Lists -/
 
 namespace List
+
+theorem getElem!_set {α : Type u} [Inhabited α] {l : List α} {i j : Nat} (h : j < l.length)
+    (x : α) : (l.set i x)[j]! = if i = j then x else l[j]! := by
+  rw [getElem!_pos _ j (by simpa using h), getElem_set, getElem!_pos l j h]
 
 theorem filter_range_eq_of_le {p : Nat → Bool} {k n : Nat} (hk : k ≤ n)
     (hz : ∀ j ≥ k, j < n → p j = false) :

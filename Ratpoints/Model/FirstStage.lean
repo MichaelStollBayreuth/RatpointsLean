@@ -115,9 +115,10 @@ least the end `stop`, which is `p` (`Ratpoints.Sieve.setRows`); the other stages
 
 C: `rp-private.h:378-379`
 
-Deviation: the row for the pointer `ptr` to it, and indices into the row for the pointers `start`
-and `end` into it, the end named `stop` (`end` is a keyword of Lean); natural numbers for the
-`long`s `p` and `offset`, the offset below `2 ^ 32`
+Deviation: the row for the pointer `ptr` to it, the empty array for the null pointer of a row not
+built yet (`Ratpoints.Sieve.setRows`, `Ratpoints.Sieve.buildRows`), and indices into the row for the
+pointers `start` and `end` into it, the end named `stop` (`end` is a keyword of Lean); natural
+numbers for the `long`s `p` and `offset`, the offset below `2 ^ 32`
 (`Ratpoints.Sieve.SieveEntry.PackedFor.lt_two_pow_32`). -/
 structure SieveSpec where
   /-- The modulus. -/
@@ -126,7 +127,7 @@ structure SieveSpec where
   `(w + offset) mod p` of the row. -/
   offset : Nat
   /-- The row: `p + Ratpoints.chunk - 1` bit arrays of `Ratpoints.rbaPack` words, the last
-  `chunk - 1` of them copies of the first ones. -/
+  `chunk - 1` of them copies of the first ones; empty until it is built. -/
   row : Array UInt64
   /-- The bit array of the row from which the chunked first stage reads next. -/
   start : Nat

@@ -595,27 +595,30 @@ row offsets and the word $\mathrm{den\_bits}$, the range
 $b_{\mathrm{low}}, \dots, b_{\mathrm{high}}$ and the cut points $s_1$ and $s_2$ of the stages, and
 lives in the model file of this chapter: for each denominator of the list of the shape that passes
 its test, the residues of $b$ divided by the stride of its class (Definition~\ref{def:fillBpList})
-and the points that \verb|sift| finds in the packing of its class, with the rows of the first $s_2$
-sieve entries and the others in the third stage, appended in turn
-(\csource{find_points.c}{3861}{3861}, \csource{find_points.c}{3889}{3904},
-\csource{find_points.c}{3911}{3911}, \csource{find_points.c}{3917}{3918},
-\csource{find_points.c}{3926}{3936}, \csource{find_points.c}{3954}{3966},
-\csource{find_points.c}{4009}{4009}, \csource{find_points.c}{4042}{4052},
-\csource{find_points.c}{4059}{4059}, \csource{find_points.c}{4066}{4072},
-\csource{find_points.c}{4075}{4078}, \csource{find_points.c}{5120}{5120},
-\csource{find_points.c}{5152}{5160}). Its contract, for an array size $A \ge 1$, sieve entries with
-their reciprocals, the first $s_2$ with their tables of inverses and the row offsets of the classes,
-those from $s_2$ on prime entries (Definition~\ref{def:stage3}), the bits of $\mathrm{den\_bits}$
-those of the classes with a pattern, the denominators from $b_{\mathrm{low}} \ge 1$ to
-$b_{\mathrm{high}} < 2^{63}$ and $H < 2^{63}$, is the concatenation, over the denominators of the
-list that pass the test, of what the brute-force reference finds over the numerators that pass the
-word $\mathrm{nb}[b \bmod 64]$ of the class, for any 2-adic words $\mathrm{nb}$ that the classes
-pack, and survive the sieve entries, mapped by $\mathrm{swapPoint}$ when the flag of the reversal is
-set (\verb|Ratpoints.Sieve.sieveRun_spec|, \verb|Ratpoints.Sieve.toList_run_sieveRun|). For sound
-sieve entries (Definition~\ref{def:SieveEntry}) and the shapes of Lemma~\ref{lem:shape_dens}, the
-filters change nothing, and the result is the concatenation of what the reference finds over each
-denominator of the list: given a list $l$ such that the list of the shape is $l$ filtered by a test,
-every denominator of $l$ that carries a point passes that test and the test of the shape, and every
+and the points that \verb|sift| finds in the packing of its class, with the first $s_2$ sieve
+entries in the first two stages, their rows read from the store of the tables of rows or built into
+it (Definition~\ref{def:buildRows}), and the others in the third stage, appended in turn, the store
+passed from one denominator to the next (\csource{find_points.c}{3861}{3861},
+\csource{find_points.c}{3889}{3904}, \csource{find_points.c}{3911}{3911},
+\csource{find_points.c}{3917}{3918}, \csource{find_points.c}{3926}{3936},
+\csource{find_points.c}{3954}{3966}, \csource{find_points.c}{4009}{4009},
+\csource{find_points.c}{4042}{4052}, \csource{find_points.c}{4059}{4059},
+\csource{find_points.c}{4066}{4072}, \csource{find_points.c}{4075}{4078},
+\csource{find_points.c}{5120}{5120}, \csource{find_points.c}{5152}{5160}). Its contract, for an
+array size $A \ge 1$, sieve entries with their reciprocals, the first $s_2$ with their tables of
+inverses, the row offsets of the classes and a store of the tables of rows that fits them
+(Lemma~\ref{lem:storeTables}), those from $s_2$ on prime entries (Definition~\ref{def:stage3}), the
+bits of $\mathrm{den\_bits}$ those of the classes with a pattern, the denominators from
+$b_{\mathrm{low}} \ge 1$ to $b_{\mathrm{high}} < 2^{63}$ and $H < 2^{63}$, is the concatenation,
+over the denominators of the list that pass the test, of what the brute-force reference finds over
+the numerators that pass the word $\mathrm{nb}[b \bmod 64]$ of the class, for any 2-adic words
+$\mathrm{nb}$ that the classes pack, and survive the sieve entries, mapped by $\mathrm{swapPoint}$
+when the flag of the reversal is set (\verb|Ratpoints.Sieve.sieveRun_spec|,
+\verb|Ratpoints.Sieve.toList_run_sieveRun|). For sound sieve entries
+(Definition~\ref{def:SieveEntry}) and the shapes of Lemma~\ref{lem:shape_dens}, the filters change
+nothing, and the result is the concatenation of what the reference finds over each denominator of
+the list: given a list $l$ such that the list of the shape is $l$ filtered by a test, every
+denominator of $l$ that carries a point passes that test and the test of the shape, and every
 numerator that gives a point passes the word of its class and survives the sieve entries, the run
 gives the reference over $l$ (Theorem~\ref{thm:run_reference},
 \verb|Ratpoints.Sieve.toList_run_sieveRun_eq_flatMap|); the points at infinity come from the search.
@@ -626,26 +629,26 @@ The search of the polynomial handed on (Definition~\ref{def:searchPoints}) does 
 Section~\ref{sec:denC} describes, in its order: the flags of the tests on the denominators, the
 divisors of the leading coefficient for odd degree, the 2-adic information and its exit, what
 \verb|sieving_info| computes (Definition~\ref{def:sievingInfo}), the tables of the examined primes
-with their exit, the forbidden divisors for even degree and the sieve entries of the moduli, the
-switch of the checked loop, the shape, and the points at infinity followed by the run over the
-denominators from $1$ to $H$ with the cut points of the parameters. For well-formed parameters,
-$1 \le H < 2^{63}$ and $d$ the degree of $c$, its result is the list of the points at infinity
-followed by the points of the reference over the denominators of the search
-(Definition~\ref{def:searchDens}), in their order, each mapped by $\mathrm{swapPoint}$ when the flag
-of the reversal is set, also at both exits; its node names \verb|Ratpoints.run_searchPoints| with
-this statement, uses Definitions~\ref{def:Shape} and~\ref{def:searchDens},
-Lemmas~\ref{lem:twoAdic_exit} and~\ref{lem:shape_dens} and the reduction of the run, and holds the C
-ranges of the flags and of the exits, the call of \verb|sieving_info| and the list of the sieve
-entries that it fills among them, with the frame of the block that sets up the run and the rows of
-offsets of the classes (\csource{find_points.c}{2793}{2795}, \csource{find_points.c}{4573}{4573},
-\csource{find_points.c}{4588}{4589}, \csource{find_points.c}{4595}{4596},
-\csource{find_points.c}{4602}{4602}, \csource{find_points.c}{4603}{4604},
-\csource{find_points.c}{4607}{4607}, \csource{find_points.c}{4900}{4943},
-\csource{find_points.c}{4948}{4948}, \csource{find_points.c}{4954}{4963},
-\csource{find_points.c}{4992}{5012}, \csource{find_points.c}{5106}{5106},
-\csource{find_points.c}{5116}{5116}, \csource{find_points.c}{5119}{5119},
-\csource{find_points.c}{5132}{5132}, \csource{find_points.c}{5137}{5139},
-\csource{find_points.c}{5167}{5167}).
+with their exit, the forbidden divisors for even degree, the sieve entries of the moduli and the
+store of the tables of rows, the switch of the checked loop, the shape, and the points at infinity
+followed by the run over the denominators from $1$ to $H$ with the cut points of the parameters and
+the store that \verb|sieving_info| returns. For well-formed parameters, $1 \le H < 2^{63}$ and $d$
+the degree of $c$, its result is the list of the points at infinity followed by the points of the
+reference over the denominators of the search (Definition~\ref{def:searchDens}), in their order,
+each mapped by $\mathrm{swapPoint}$ when the flag of the reversal is set, also at both exits; its
+node names \verb|Ratpoints.run_searchPoints| with this statement, uses Definitions~\ref{def:Shape}
+and~\ref{def:searchDens}, Lemmas~\ref{lem:twoAdic_exit} and~\ref{lem:shape_dens} and the reduction
+of the run, and holds the C ranges of the flags and of the exits, the call of \verb|sieving_info|
+and the list of the sieve entries that it fills among them, with the frame of the block that sets up
+the run and the rows of offsets of the classes (\csource{find_points.c}{2793}{2795},
+\csource{find_points.c}{4573}{4573}, \csource{find_points.c}{4588}{4589},
+\csource{find_points.c}{4595}{4596}, \csource{find_points.c}{4602}{4602},
+\csource{find_points.c}{4603}{4604}, \csource{find_points.c}{4607}{4607},
+\csource{find_points.c}{4900}{4943}, \csource{find_points.c}{4948}{4948},
+\csource{find_points.c}{4954}{4963}, \csource{find_points.c}{4992}{5012},
+\csource{find_points.c}{5106}{5106}, \csource{find_points.c}{5116}{5116},
+\csource{find_points.c}{5119}{5119}, \csource{find_points.c}{5132}{5132},
+\csource{find_points.c}{5137}{5139}, \csource{find_points.c}{5167}{5167}).
 
 \begin{definition}[The denominators of the search]\label{def:searchDens}
   \uses{def:setupUs1, def:Shape}

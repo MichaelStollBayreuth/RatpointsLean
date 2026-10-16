@@ -355,7 +355,7 @@ order: a data refinement.
 \end{lemma}
 
 \begin{proof}
-  \uses{lem:closedRow}
+  \uses{lem:closedRow, def:row}
   \leanok
   The bit of the closed form at the index $\mathrm{rbaLength}(i + o) + 64 y + t$ admits that index
   for $\mathrm{bp}$ (Lemma~\ref{lem:closedRow}, Definitions~\ref{def:row} and~\ref{def:rows});
@@ -442,11 +442,13 @@ fitting specs and the reciprocals of their moduli.
 \end{proof}
 
 \begin{definition}[The bits of one denominator]\label{def:siftBits}
-  \uses{def:siftPiece, def:rows, def:numClasses, def:rbaPack}
+  \uses{def:siftPiece, def:rows, def:numClasses, def:rbaPack, def:entryRef}
   \lean{Ratpoints.Sieve.setRows, Ratpoints.Sieve.siftBits}
   \leanok
-  The sieve specs of a denominator: for each modulus of the first two stages, the row of its
-  residue for the stride and the offset of the class's row (\verb|set_rows|,
+  The sieve specs of a denominator: for each sieve entry of the first two stages, its modulus, the
+  offset of the class's row, the row of its residue for the stride from the table of rows of its
+  entry in the store of the run (Definition~\ref{def:entryRef}), the empty array for a row not built
+  yet, the start $0$ and the end $p$, and whether a row is missing (\verb|set_rows|,
   \csource{find_points.c}{3149}{3170}); and the bits from $\mathrm{low}$ to $\mathrm{high}$: nothing
   if $\mathrm{low} > \mathrm{high}$, else the pieces of the word numbers
   $\lfloor \mathrm{low}/\mathrm{rbaLength}\rfloor$ to
@@ -454,23 +456,24 @@ fitting specs and the reciprocals of their moduli.
   $\mathrm{low} - \mathrm{rbaLength}\, w_{\mathrm{low}}$ and
   $\mathrm{rbaLength} - 1 - (\mathrm{high} \bmod \mathrm{rbaLength})$
   (\csource{find_points.c}{3563}{3612}). One denominator (Definition~\ref{def:sift}) takes the
-  class, the residues and the array of offsets, makes the specs, turns $[-H, H]$ into bits and sifts
-  them.
+  class, the residues, the array of offsets and the store, makes the specs, builds the missing rows
+  (Definition~\ref{def:buildRows}), turns $[-H, H]$ into bits and sifts them.
 \end{definition}
 
 \begin{lemma}[The bits of one denominator]\label{lem:siftBits}
   \uses{def:siftBits, lem:reads_row, lem:numeratorsToBits, lem:classOffsets, def:siftPiece,
     lem:numClasses, lem:rowIndices}
-  \lean{Ratpoints.Sieve.siftBits_spec, Ratpoints.Sieve.packedReads, Ratpoints.Sieve.setRows_map, Ratpoints.Sieve.flatMap_filter_bits_eq, Ratpoints.Sieve.reads_of_mem_packedReads, Ratpoints.Sieve.SieveEntry.PackedFor.fits, Ratpoints.Sieve.NumClass.Packs.filter_filter_emod}
+  \lean{Ratpoints.Sieve.siftBits_spec, Ratpoints.Sieve.packedReads, Ratpoints.Sieve.flatMap_filter_bits_eq, Ratpoints.Sieve.reads_of_mem_packedReads, Ratpoints.Sieve.SieveEntry.PackedFor.fits, Ratpoints.Sieve.NumClass.Packs.filter_filter_emod}
   \leanok
   The bits of an interval, in pieces of at least one bit array, with fitting specs and the
   reciprocals of their moduli, give the points of the bits from $\mathrm{low}$ to $\mathrm{high}$
   that pass the class pattern and the tests that the specs read, none for an empty interval; the
-  specs that \verb|set_rows| makes for entries with their residues $b\,\mathrm{dinv}[k] \bmod p$ and
-  the offsets of the class, the closed forms of the rows of these residues with the start $0$ and
-  the end $p$ (Lemma~\ref{lem:closedRow}), fit and read the admissions of the numerators
-  $a_0 + 2^k j$ by the rows of $b$; and the bits of $[-H, H]$ in the packing of a class of the word
-  $w$ that pass its pattern give the numerators of $[-H, H]$ that pass $w$.
+  specs of entries with their residues $b\,\mathrm{dinv}[k] \bmod p$ and the offsets of the class,
+  the closed forms of the rows of these residues with the start $0$ and the end $p$
+  (Lemma~\ref{lem:closedRow}), which \verb|set_rows| and the building of the missing rows make
+  (Lemma~\ref{lem:buildRows}), fit and read the admissions of the numerators $a_0 + 2^k j$ by the
+  rows of $b$; and the bits of $[-H, H]$ in the packing of a class of the word $w$ that pass its
+  pattern give the numerators of $[-H, H]$ that pass $w$.
 \end{lemma}
 
 \begin{proof}
@@ -492,28 +495,32 @@ and one piece quantified over the tests of the bits that the rows read. The cont
 denominator (Definition~\ref{def:sift}) and the lemma that the words compute the Booleans
 (Lemma~\ref{lem:sift_eq_checkDen}) keep their conclusions, the points of the numerators of $[-H, H]$
 that pass the 2-adic word $w$ and survive all the entries, with $w$ as a ghost argument, under the
-hypotheses that the class packs $w$, has a row at the position $\mathrm{pos}$, the specs are those
-of the rows of the entries, the reciprocals those of their moduli, the residues
-$b\,\mathrm{dinv}[k] \bmod p$, the tables of inverses invert, and each entry is packed for the class
-at its offset. The run (Definition~\ref{def:sieveRun}) takes the classes and the array of offsets,
-calls \verb|fill_bp_list| before each denominator, and keeps its conclusion with the 2-adic words as
-a ghost argument packed by the classes, under the tables of inverses of the first $s_2$ entries,
-their offsets, and \verb|den_bits| matching the classes (the shape of the forbidden divisors tested
-with words reads \verb|den_bits|, the others the class's pattern, Definition~\ref{def:Shape}). The
-search (Definition~\ref{def:searchPoints}) makes the classes after the 2-adic information, sizes the
-array of offsets and computes them after \verb|sieving_info|, which gives packable entries with
-their tables of inverses (Lemma~\ref{lem:sievingInfo}).
+hypotheses that the class packs $w$, has a row at the position $\mathrm{pos}$, the store of the
+tables of rows fits the entries (Lemma~\ref{lem:storeTables}), the reciprocals are those of their
+moduli, the residues $b\,\mathrm{dinv}[k] \bmod p$, the tables of inverses invert, and each entry is
+packed for the class at its offset; the store after the denominator fits the entries again. The run
+(Definition~\ref{def:sieveRun}) takes the classes, the array of offsets and the store, calls
+\verb|fill_bp_list| before each denominator, passes the store from one denominator to the next, and
+keeps its conclusion with the 2-adic words as a ghost argument packed by the classes, under the
+tables of inverses of the first $s_2$ entries, their offsets, a store that fits them, and
+\verb|den_bits| matching the classes (the shape of the forbidden divisors tested with words reads
+\verb|den_bits|, the others the class's pattern, Definition~\ref{def:Shape}). The search
+(Definition~\ref{def:searchPoints}) makes the classes after the 2-adic information, sizes the array
+of offsets and computes them after \verb|sieving_info|, which gives packable entries with their
+tables of inverses and a store of the tables of rows that fits them (Lemma~\ref{lem:sievingInfo}),
+and hands that store on to the run.
 
 \begin{lemma}[What the run needs of the search]\label{lem:soundRun}
-  \uses{lem:classOffsets, lem:numClasses, lem:admits_mul, def:stage3, def:twoAdic}
+  \uses{lem:classOffsets, lem:numClasses, lem:admits_mul, def:stage3, def:twoAdic, lem:storeTables}
   \lean{Ratpoints.Sieve.IsSoundRun, Ratpoints.Sieve.IsSoundRun.mk, Ratpoints.Sieve.IsSoundRun.bits_bne_zero, Ratpoints.Sieve.IsSoundRun.getLsbD_db}
   \leanok
-  The sieve entries, reciprocals, classes, offsets and \verb|den_bits| that the search hands to the
-  run are sound, a structure whose constructor takes the conditions as its fields: sound rows, prime
-  entries in the third stage, the reciprocals in their order, tables of inverses and the offsets of
-  the classes for the first two stages, classes that pack the 2-adic words, and \verb|den_bits| the
-  word of Definition~\ref{def:twoAdic}; so a pattern is nonzero exactly when the word of its class
-  is, and \verb|den_bits| has the bits of the classes with a pattern.
+  The sieve entries, reciprocals, classes, offsets, \verb|den_bits| and store of the tables of rows
+  that the search hands to the run are sound, a structure whose constructor takes the conditions as
+  its fields: sound rows, prime entries in the third stage, the reciprocals in their order, tables
+  of inverses and the offsets of the classes for the first two stages, classes that pack the 2-adic
+  words, \verb|den_bits| the word of Definition~\ref{def:twoAdic}, and a store that fits the entries
+  of the first two stages (Lemma~\ref{lem:storeTables}); so a pattern is nonzero exactly when the
+  word of its class is, and \verb|den_bits| has the bits of the classes with a pattern.
 \end{lemma}
 
 \begin{proof}
@@ -651,9 +658,9 @@ Each component of this chapter differs from the C code in a stated way, recorded
     \verb|interval_bits| does not report the interval empty (the flag \verb|do_setup|), which for
     the whole line is at once and so before the test $\mathrm{low} \le \mathrm{high}$ of the bits;
     the sieve specs a list, with the start $0$, where the C code leaves the field until the first
-    stage sets it, and the end $p$ also for a row that the C code builds after \verb|set_rows| and
-    whose end it sets then (Chapter~\ref{chap:rows}), no test for a missing row, which its thunk
-    makes when it is first needed, and no flag \verb|shared| and acquire load, which serve the
+    stage sets it, the empty array for the null pointer of a row not built yet and the end $p$ also
+    for such a row, where the C code adds $p$ to the null pointer (Chapter~\ref{chap:rows}), and the
+    row read plainly, for the acquire load that the flag \verb|shared| chooses, which serves the
     threads; a class without a row of offsets, which the run never sifts, reading the offsets from
     position~$0$;
   \item the reciprocals of the first two stages as lists stepped with the sieve specs, for the

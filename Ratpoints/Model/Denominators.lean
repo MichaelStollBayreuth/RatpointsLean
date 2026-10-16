@@ -860,16 +860,18 @@ of degree `d` with the coefficient list `c`: the sieve entries `entries` of the 
 the three stages of the sieve, the first `sp1`, then those up to `sp2`, then the rest, the third
 stage, with the reciprocals of `magics` in their order, those of their moduli when `magics` holds
 the reciprocals of the moduli in the order of the entries (`Ratpoints.sievingInfo`); the rows of the
-moduli of the first two stages are made once for the run, each residue's row as a thunk
-(`Ratpoints.Sieve.SieveEntry.rows`), and the moduli of the third stage need none; for each
+moduli of the first two stages come from the tables of rows of their entries in the store `store`
+(`Ratpoints.Sieve.RowStore`), each built into its table of rows when a denominator first needs it
+and kept for the rest of the run, and the moduli of the third stage need none; for each
 denominator `b` of the shape, in the order of its loop (`Ratpoints.Sieve.Shape.dens`, with the word
 `db` of the classes that admit a numerator), that passes its tests (`Ratpoints.Sieve.Shape.keep`,
 with the classes `cls`), the residues of `b` divided by the stride of its class `cls[b mod 64]`
 modulo the moduli of the first two stages (`Ratpoints.Sieve.fillBpList`), and the points that
 `Ratpoints.Sieve.sift` finds in the packing of that class with the row offsets `offsets` of the
 classes (`Ratpoints.Sieve.classOffsets`), with pieces of at most `A` bit arrays, for `A ≥ 1`, the
-first stage ending at `sp1`, the reciprocals of the first two stages, the entries of the third stage
-with their reciprocals, and the flag `rev` of the reversal, appended in turn.
+first stage ending at `sp1`, the entries and the reciprocals of the first two stages, the entries of
+the third stage with their reciprocals, and the flag `rev` of the reversal, appended in turn, the
+store with the rows that `Ratpoints.Sieve.sift` builds going on to the next denominator.
 
 C: `find_points.c:3861`, `find_points.c:3889-3904`, `find_points.c:3911`,
 `find_points.c:3917-3918`, `find_points.c:3926-3936`, `find_points.c:3954-3966`,
@@ -892,23 +894,28 @@ pointers `offset`; the class `cls[b mod 64]` and the residues of `fill_bp_list` 
 `Ratpoints.Sieve.sift` as values, for the pointers `cl` and `bp_list`, and the residues a list of
 the length of the first two stages, for the array `bp_list` of `sp3_max` entries; a list of points,
 for the counts `total` of points that `sift` and `run_block` return, with no stop by the callback
-(stage G); natural numbers for the `long`s; no correction of the moduli between the blocks (stage
-I); no output under `DEBUG`. -/
+(stage G); the store of the tables of rows passed from one denominator to the next, for the arrays
+`sieve` of the entries of the arguments, which the run reads and fills, its last state not returned,
+as nothing reads the tables of rows after the run; natural numbers for the `long`s; no correction of
+the moduli between the blocks (stage I); no output under `DEBUG`. -/
 def sieveRun (c : List Int) (d H A : Nat) (rev : Bool) (sp1 sp2 : Nat) (entries : List SieveEntry)
     (magics : Array Nat) (cls : Vector NumClass 64) (offsets : Array Nat) (db : UInt64)
-    (shape : Shape) (bLow bHigh : Nat) :
+    (shape : Shape) (bLow bHigh : Nat) (store : RowStore) :
     Id (Array (Int × Int × Int)) := do
-  let rows := (entries.take sp2).map fun e ↦ (e.p, e.rows)
+  let es := entries.take sp2
   let mgs := magics.toList.take sp2
   let es3 := entries.drop sp2
   let mgs3 := magics.toList.drop sp2
   let dens ← shape.dens db bLow bHigh
   let mut out := #[]
+  let mut store := store
   for b in dens do
     if ← shape.keep cls b then
       let cl := cls[b % 64]!
-      let bp := fillBpList b cl.k (entries.take sp2) mgs
-      out := out ++ (← sift c d H A b rev sp1 rows mgs bp cl offsets es3 mgs3)
+      let bp := fillBpList b cl.k es mgs
+      let (pts, st) ← sift c d H A b rev sp1 es mgs bp cl offsets es3 mgs3 store
+      out := out ++ pts
+      store := st
   return out
 
 /-! ### Examples
@@ -1173,7 +1180,7 @@ prints. -/
   let offsets := Array.replicate (Id.run (numPackings cls) * entries.length) 0
   let (cls, entries, offsets) := Id.run (classOffsets cls entries offsets)
   (Id.run (sieveRun c 1 20 1 false 11 22 entries (entries.toArray.map (·.magic)) cls offsets db
-      (.squares1 [⟨2, 1, 2⟩] [1, 2]) 1 20)).toList ==
+      (.squares1 [⟨2, 1, 2⟩] [1, 2]) 1 20 (entries.foldl (fun s e ↦ e.addTables s) {}))).toList ==
     [(0, 1, 1), (0, -1, 1), (4, 3, 1), (4, -3, 1), (12, 5, 1), (12, -5, 1), (-4, 3, 9), (-4, -3, 9),
       (8, 15, 9), (8, -15, 9), (20, 21, 9), (20, -21, 9), (-1, 0, 2), (3, 4, 2), (3, -4, 2),
       (15, 8, 2), (15, -8, 2), (-3, 4, 8), (-3, -4, 8), (5, 12, 8), (5, -12, 8), (-5, 12, 18),
