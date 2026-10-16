@@ -141,16 +141,17 @@ brings the chunked first stage and the copies in the rows that it decides
 \section{The rows as words}\label{sec:wordRows}
 
 \begin{definition}[The row of a denominator in words]\label{def:row}
-  \uses{def:SieveEntry, def:rbaPack, def:chunk}
-  \lean{Ratpoints.Sieve.packedPattern, Ratpoints.Sieve.window, Ratpoints.Sieve.SieveEntry.row, Ratpoints.Sieve.SieveEntry.admits_congr, Ratpoints.Sieve.SieveEntry.admits_add_mul, Ratpoints.Sieve.SieveEntry.admits_mod, Ratpoints.Sieve.getLsbD_window}
+  \uses{def:SieveEntry, def:rbaPack, def:chunk, def:layOutPattern}
+  \lean{Ratpoints.Sieve.packedPattern, Ratpoints.Sieve.SieveEntry.row, Ratpoints.Sieve.SieveEntry.admits_congr, Ratpoints.Sieve.SieveEntry.admits_add_mul, Ratpoints.Sieve.SieveEntry.admits_mod}
   \leanok
   For the sieve entry of a modulus $p$ (Definition~\ref{def:SieveEntry}) and a denominator $b$: the
   pattern of one period, whether the row of $b$ admits $N$ for $N = 0, \dots, p - 1$; the pattern
   over the positions $0, \dots, p + 63$, packed into words; for $j < p$, word $j$ of the row, the 64
-  bits of the packed pattern from position $64 j \bmod p$ on, cut out with two shifts; and these
-  words repeated through the $(p + \mathrm{chunk} - 1) \cdot \mathrm{rbaPack}$ words of the row,
-  word $j$ being word $j \bmod p$: $p$ bit arrays and the copies of the first $\mathrm{chunk} - 1$
-  of them (Definition~\ref{def:chunk}), which the chunked first stage reads past the first $p$
+  bits of the packed pattern from position $64 j \bmod p$ on, cut out with two shifts
+  (Definition~\ref{def:layOutPattern}); and these words repeated through the
+  $(p + \mathrm{chunk} - 1) \cdot \mathrm{rbaPack}$ words of the row, word $j$ being word
+  $j \bmod p$: $p$ bit arrays and the copies of the first $\mathrm{chunk} - 1$ of them
+  (Definition~\ref{def:chunk}), which the chunked first stage reads past the first $p$
   (Chapter~\ref{chap:rows}). Since the row admits $a$ exactly when it admits $a + p k$, and the row
   of $b$ is that of $b \bmod p$, bit $t$ of word $j$ says whether the row admits $64 j + t$, for
   every $j < (p + \mathrm{chunk} - 1) \cdot \mathrm{rbaPack}$: the row is the closed form of the
@@ -159,13 +160,13 @@ brings the chunked first stage and the copies in the rows that it decides
   bits at a time and then the words by rotating it through them, by a function for each prime that
   its build generates, with the copies, and takes the row of $0$ from the generated pattern
   \verb|sieves0|; the model has these builders and the pattern (Definitions~\ref{def:sieves0},
-  \ref{def:sieveInit1} and~\ref{def:sieveInit2}), which the run does not call yet and which the
-  \verb|#guard| examples compare with this row word for word. For a prime power it lays the pattern
-  out by \verb|lay_out_pattern| (\csource{init.c}{259}{297}, \csource{init.c}{387}{387}), and for a
-  product it lays down the rows of the factors in blocks (\csource{init.c}{415}{418},
-  \csource{init.c}{430}{430}); both publish the row (\csource{init.c}{391}{393},
-  \csource{init.c}{443}{445}). The model computes the copies at the end of a row as the other words,
-  where the builders copy them.
+  \ref{def:sieveInit1} and~\ref{def:sieveInit2}). For a prime power it lays the pattern out by
+  \verb|lay_out_pattern|, and for a product it lays down the rows of the factors in blocks, building
+  an absent row of a factor first; the model has these builders too
+  (Definitions~\ref{def:sieveInitPower} and~\ref{def:sieveInitProduct}), each storing its row into
+  the table of rows of its entry. The run does not call the builders yet, and the \verb|#guard|
+  examples compare them with this row word for word. The model computes the copies at the end of a
+  row as the other words, where the builders copy them.
 \end{definition}
 
 \begin{definition}[The rows of a modulus]\label{def:rows}

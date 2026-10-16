@@ -13,16 +13,18 @@ import Std.Internal.ForIn.Lemmas
 Lemmas on vectors, arrays, lists, ranges, natural numbers and integers that the contracts of the
 model need and Lean core lacks, under their names in the namespaces of Lean core: the entries of a
 vector after `Vector.set!` and after a fold of `Vector.set!` over consecutive positions, the entries
-of `Vector.ofFn f` and of the array of a vector, the entries of an array made by a map over a range,
-the last entry and the entries of an array after `Array.set!`, `Array.push`, `Array.pop` and
-`Array.map`, the entries of the concatenation of two arrays and of an array written `k` times one
-after the other, the elements of `List.range n` that pass a test which fails from some position on,
-`List.flatMap` over a filtered list, the integers of a range that lie in a smaller one or between
-two bounds, the gcd of the absolute values of a list of integers as a left fold, the length of the
-list of a range and the position of the cursor of a loop over it, the cursor of a loop over an array
-as one of its entries, the bound `y < (n + 1) k` for `y < n k`, the residues modulo `p` of the
-integers from `a` on, the residue of an integer modulo `p`, below `p`, read off its residue modulo a
-multiple of `p` and shifted by a natural number, exact quotients of integers, the numerators and the
+of `Vector.ofFn f` and of the array of a vector, the entries of an array made by a map over a range
+and of the vector of an array, the last entry and the entries of an array after `Array.set!`,
+`Array.push`, `Array.pop` and `Array.map`, the entries of the concatenation of two arrays and of an
+array written `k` times one after the other, the elements of `List.range n` that pass a test which
+fails from some position on, `List.flatMap` over a filtered list, the test of a list by the indices
+of its entries, the test of a nonempty list that and-s a fixed Boolean with a test, the tests of a
+list that agree on its entries, the integers of a range that lie in a smaller one or between two
+bounds, the gcd of the absolute values of a list of integers as a left fold, the length of the list
+of a range and the position of the cursor of a loop over it, the cursor of a loop over an array as
+one of its entries, the bound `y < (n + 1) k` for `y < n k`, the residues modulo `p` of the integers
+from `a` on, the residue of an integer modulo `p`, below `p`, read off its residue modulo a multiple
+of `p` and shifted by a natural number, exact quotients of integers, the numerators and the
 denominators of the set bits of a list of words, read in turn, the numbers of a range between two
 bounds, bit 1 of odd numbers, the gcd of half an even number with an odd one, a residue below `2 q`
 modulo `q` by one subtraction, among them the sum of two residues and the position after another in
@@ -91,6 +93,9 @@ in `Ratpoints.Proof.Bits`.
   entries.
 * `List.foldl_gcd_natAbs_dvd_natAbs`: the gcd of the absolute values of the entries of a list, as a
   left fold, divides each of them.
+* `List.all_range_length_getElem!`, `List.all_and_left`, `List.all_congr_left`: the test of a list
+  by the indices of its entries, the test of a nonempty list that and-s a fixed Boolean with a test,
+  and the tests of a list that agree on its entries.
 * `Int.toNat_add_emod_of_lt`, `Int.toNat_add_add_emod`: the residues modulo `p` of `a + j` before
   and from the first multiple of `p` from `a` on.
 * `Int.toNat_emod_lt`, `Int.toNat_emod_mod_of_dvd`, `Int.toNat_emod_add_mod`: the residue of `a`
@@ -200,6 +205,10 @@ namespace Array
 theorem getElem!_set! {α : Type u} [Inhabited α] {xs : Array α} {i j : Nat} {x : α}
     (hj : j < xs.size) : (xs.set! i x)[j]! = if i = j then x else xs[j]! := by
   grind
+
+theorem getElem!_toVector {α : Type u} [Inhabited α] {xs : Array α} (i : Nat) :
+    xs.toVector[i]! = xs[i]! := by
+  rw [← Vector.getElem!_toArray]
 
 theorem getElem!_map_range {α : Type u} [Inhabited α] (f : Nat → α) {n j : Nat} (hj : j < n) :
     ((Array.range n).map f)[j]! = f j := by
@@ -481,6 +490,29 @@ theorem next?_drop_map_ne_none {α : Type u} {β : Type v} (f : α → β) {l pr
 theorem eq_cons_of_next?_eq_some {α : Type u} {l l' : List α} {b : α}
     (h : Std.Stream.next? l = some (b, l')) : l = b :: l' := by
   cases l <;> simp_all [Std.Stream.next?]
+
+/-- A test of the entries of a list by their indices is the test of the list. -/
+theorem all_range_length_getElem! {α : Type u} [Inhabited α] (l : List α) (P : α → Bool) :
+    ((range l.length).all fun i ↦ P l[i]!) = l.all P := by
+  rw [Bool.eq_iff_iff, all_eq_true, all_eq_true]
+  refine ⟨fun h a ha ↦ ?_, fun h i hi ↦ ?_⟩
+  · obtain ⟨i, hi, rfl⟩ := getElem_of_mem ha
+    simpa [getElem!_pos l i hi] using h i (mem_range.mpr hi)
+  · rw [getElem!_pos l i (mem_range.mp hi)]
+    exact h _ (getElem_mem _)
+
+/-- A test of the entries of a nonempty list that and-s a fixed Boolean with a test is the Boolean
+and-ed with the test of the list. -/
+theorem all_and_left {α : Type u} {l : List α} (hl : l ≠ []) (c : Bool) (P : α → Bool) :
+    (l.all fun a ↦ c && P a) = (c && l.all P) := by
+  cases c
+  · obtain ⟨a, l, rfl⟩ := exists_cons_of_ne_nil hl
+    simp
+  · simp
+
+theorem all_congr_left {α : Type u} {l : List α} {P Q : α → Bool} (h : ∀ a ∈ l, P a = Q a) :
+    l.all P = l.all Q := by
+  grind
 
 end List
 

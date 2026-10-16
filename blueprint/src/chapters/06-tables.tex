@@ -252,8 +252,9 @@ that a point makes some entry of the reference true.
   \csource{find_points.c}{2285}{2301}; \csource{rp-private.h}{531}{534}). The row of $b$ admits $a$
   when, for $r = b \bmod q$ and $x = a \bmod q$, bit $x r^{-1}$ of \verb|fsq| is set, that is
   $f(x r^{-1})$ is a square modulo $q$, if $p \nmid r$, and $p \nmid x$ and bit $r x^{-1}$ of
-  \verb|gsq| is set, that is $\tilde f(r x^{-1})$ is a square modulo $q$, if $p \mid r$
-  (\csource{init.c}{359}{386}, \csource{rp-private.h}{592}{592}).
+  \verb|gsq| is set, that is $\tilde f(r x^{-1})$ is a square modulo $q$, if $p \mid r$: the
+  admission test, which the builder of the rows of a prime power reads off the tables
+  (Definition~\ref{def:sieveInitPower}).
 \end{definition}
 
 \begin{lemma}[The rows of a prime power let every point through]\label{lem:power_admits}
@@ -329,8 +330,8 @@ which $\mathrm{maxPrimeEven} \le 2^{32}$ gives.
 \end{proof}
 
 \begin{definition}[The sieve entries]\label{def:SieveEntry}
-  \uses{def:admits, def:examinePower, def:binaryForm}
-  \lean{Ratpoints.Sieve.Factor, Ratpoints.Sieve.Factor.admits, Ratpoints.Sieve.Factor.modulus, Ratpoints.Sieve.SieveEntry, Ratpoints.Sieve.SieveEntry.admits, Ratpoints.Sieve.survives, Ratpoints.Sieve.SieveEntry.IsSound}
+  \uses{def:admits, def:examinePower, def:binaryForm, def:entryRef, def:rowInit}
+  \lean{Ratpoints.Sieve.Factor, Ratpoints.Sieve.Factor.admits, Ratpoints.Sieve.Factor.modulus, Ratpoints.Sieve.Factor.ref, Ratpoints.Sieve.Factor.init, Ratpoints.Sieve.SieveEntry, Ratpoints.Sieve.SieveEntry.refInit, Ratpoints.Sieve.SieveEntry.admits, Ratpoints.Sieve.survives, Ratpoints.Sieve.SieveEntry.IsSound}
   \leanok
   A factor of a modulus is a prime with its table or a prime power with its tables, its modulus the
   prime or the prime power; the sieve entry of a modulus $m$ is $m$ with its factors, one for a
@@ -339,15 +340,23 @@ which $\mathrm{maxPrimeEven} \le 2^{32}$ gives.
   (Chapter~\ref{chap:packing}): the bias, the least multiple of $m$ from $\mathrm{rowBias}$ on, the
   inverse $\mathrm{rbainv}$ of $\mathrm{rbaLength}$ modulo $m$, and the inverses $\mathrm{dinv}$ of
   the strides $2^k$ modulo $m$ up to the largest stride in use, which the rows of offsets fill
-  (Definition~\ref{def:classOffsets}; \csource{rp-private.h}{520}{520},
-  \csource{rp-private.h}{542}{555}; the type of the pointer \verb|init| to the builder of its rows
-  goes with Definition~\ref{def:rowInit}). Its row of $b$ admits $a$ when the row of every factor
-  admits $a$, each factor reading $b$ and $a$ modulo its own modulus, which divides $m$
-  (\csource{init.c}{399}{414}, \csource{init.c}{419}{429}, \csource{rp-private.h}{593}{593}); a
-  numerator \emph{survives} a list of sieve entries for $b$ when the row of $b$ of every entry
-  admits it, the test that Definition~\ref{def:admits} gave for the tables of primes. A sieve entry
-  is \emph{sound} when its modulus is positive and its row of $b$ admits $a$ for every
-  $\gcd(a, b) = 1$ and $y^2 = F(a, b)$.
+  (Definition~\ref{def:classOffsets}); and the reference to the entry whose table of rows holds its
+  rows and the kind of its builder (Definitions~\ref{def:entryRef} and~\ref{def:rowInit};
+  \csource{rp-private.h}{520}{520}, \csource{rp-private.h}{542}{555}). The reference of a factor, to
+  which the field \verb|factor| of the entry of a product points, is that of its prime or of its
+  prime power; the kind of the builder of the entry of a factor is, for a prime, the kind of the
+  builder of the prime of its table, which \verb|examine_prime| sets (line 1800), and for a prime
+  power the builder of a prime power, which \verb|make_power| sets (line 2420); and the reference
+  and the kind of the builder of the modulus at the position $n$ with its factors are, for one
+  factor (a prime or a prime power), those of the entry of that factor, whose entry the modulus
+  shares, as \verb|sieve_list[n]| is \verb|prime_se[pn]| or \verb|power_se[idx]|, and for a product
+  the reference to its own entry, by the position $n$, and the builder of a product. Its row of $b$
+  admits $a$ when the row of every factor admits $a$, each factor reading $b$ and $a$ modulo its own
+  modulus, which divides $m$, the admission test, which the builder of the rows of a product reads
+  off the rows of its factors (Definition~\ref{def:sieveInitProduct}); a numerator \emph{survives} a
+  list of sieve entries for $b$ when the row of $b$ of every entry admits it, the test that
+  Definition~\ref{def:admits} gave for the tables of primes. A sieve entry is \emph{sound} when its
+  modulus is positive and its row of $b$ admits $a$ for every $\gcd(a, b) = 1$ and $y^2 = F(a, b)$.
 \end{definition}
 
 \begin{definition}[The sieve entry of a modulus]\label{def:makeModulus}
@@ -364,7 +373,9 @@ which $\mathrm{maxPrimeEven} \le 2^{32}$ gives.
   $\mathrm{rbainv}$ from the table of inverses at the remainder of $\mathrm{rbaLength}$ by the
   reciprocal, \verb|make_power| for a prime power and \verb|make_modulus| for a product, computing
   it by Definition~\ref{def:modinv}, and leaves the inverses $\mathrm{dinv}$ empty for the rows of
-  offsets (Definition~\ref{def:classOffsets}) to fill (\csource{find_points.c}{2414}{2429},
+  offsets (Definition~\ref{def:classOffsets}) to fill, and it holds the reference and the kind of
+  builder of the position $n$ of $m$ among the moduli with its factors, as
+  Definition~\ref{def:SieveEntry} gives them (\csource{find_points.c}{2414}{2429},
   \csource{find_points.c}{2434}{2475}, \csource{find_points.c}{2546}{2546}; the tables of a prime
   power that \verb|add_moduli| examines when a candidate first needs it and keeps by its index,
   \csource{find_points.c}{2350}{2354}, \csource{find_points.c}{2358}{2359},
@@ -389,7 +400,8 @@ which $\mathrm{maxPrimeEven} \le 2^{32}$ gives.
   $\mathrm{rbainv} < m$ with $\mathrm{rbainv} \cdot \mathrm{rbaLength} \equiv 1 \pmod m$, and the
   bias is a multiple of $m$ in $[\mathrm{rowBias}, \mathrm{rowBias} + m)$; and for one of the first
   $\mathrm{numPrimes}$ primes of the table its only factor is that prime with the table of the
-  reference; if it is not made, the curve has no points.
+  reference; it holds the reference and the kind of builder of its position $n$ with its factors
+  (Definition~\ref{def:SieveEntry}); if it is not made, the curve has no points.
 \end{lemma}
 
 \begin{proof}
@@ -418,13 +430,14 @@ which $\mathrm{maxPrimeEven} \le 2^{32}$ gives.
   $[\mathrm{rowBias}, \mathrm{rowBias} + m)$ by the division with remainder.
 \end{proof}
 
-The rows of a sieve entry are made from its admission test by the plain builder of
-Definition~\ref{def:row}, for every kind; the bits of a row depend on the entry only through the
+The rows of a sieve entry that the run reads are made from its admission test by the plain builder
+of Definition~\ref{def:row}, for every kind; the bits of a row depend on the entry only through the
 test, which reduces $b$ and $a$ modulo $m$ first, so the words of Chapter~\ref{chap:words} and their
 contracts hold for the sieve entries of every kind with the proofs that they had for the tables of
 primes. The builders of ratpoints, the functions of \verb|init.c| for each prime,
 \verb|lay_out_pattern| for the prime powers and the blocks of \verb|_ratpoints_sieve_init_product|,
-come with stage~F4.
+are in Chapter~\ref{chap:rows}, proved to build the closed forms of the admission tests; the run
+calls them later in stage~F4.
 
 \section{The parameters and the search}\label{sec:tablesSearch}
 

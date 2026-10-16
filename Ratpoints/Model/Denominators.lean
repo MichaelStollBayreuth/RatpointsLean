@@ -1139,7 +1139,8 @@ prints. -/
   let (cls, db) := Id.run (numClasses (Id.run (twoAdic c 1)))
   let entries := (primeTable.toList.take 30).filterMap fun p ↦
     (Id.run (examinePrime? c 1 p true)).map fun (e, _) ↦ (⟨p, [.prime e], magic p,
-      p * ((rowBias + p - 1) / p), e.inverses[mulMod rbaLength p (magic p)]!, #[]⟩ : SieveEntry)
+      p * ((rowBias + p - 1) / p), e.inverses[mulMod rbaLength p (magic p)]!, #[], .prime p,
+      sieveInit p⟩ : SieveEntry)
   let offsets := Array.replicate (Id.run (numPackings cls) * entries.length) 0
   let (cls, entries, offsets) := Id.run (classOffsets cls entries offsets)
   (Id.run (sieveRun c 1 20 1 false 11 22 entries (entries.toArray.map (·.magic)) cls offsets db

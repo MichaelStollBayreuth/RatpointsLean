@@ -425,7 +425,8 @@ def pointsAtInfinity (c : List Int) (d : Nat) (rev : Bool) : List (Int × Int ×
 #guard
   let c := [1, 2, 3, 4, 5, 6, 7]
   let es := [3, 5, 7, 11, 13, 251].map fun p ↦
-    (⟨p, [.prime (examinePrime c 6 p)], magic p, 0, 0, #[]⟩ : SieveEntry)
+    let t := examinePrime c 6 p
+    (⟨p, [.prime t], magic p, 0, 0, #[], .prime p, sieveInit p⟩ : SieveEntry)
   ([(50, List.replicate 6 true), (8555711, List.replicate 6 true),
     (8555712, [true, true, true, true, true, false]), (2 ^ 31, List.replicate 6 false),
     (2 ^ 62, List.replicate 6 false)] : List (Nat × List Bool)).all fun (H, biased) ↦
@@ -441,7 +442,8 @@ def pointsAtInfinity (c : List Int) (d : Nat) (rev : Bool) : List (Int × Int ×
 #guard
   let pw := Id.run (examinePower [1, 2, 3, 4, 5, 6, 7] 6 3 2 true)
   (List.range 40).all fun a : Nat ↦
-    Id.run (stage3 a [checkOf 7 100 ⟨9, [.power pw], magic 9, 0, 0, #[]⟩ (magic 9)])
+    Id.run (stage3 a
+      [checkOf 7 100 ⟨9, [.power pw], magic 9, 0, 0, #[], .power 3 2, .power⟩ (magic 9)])
 
 -- The exact check with the test for common factors in front is the check of the reference.
 #guard ([([-2, 0, 0, 1], 3), ([1, 0, 126, 0, 441], 4)] : List (List Int × Nat)).all fun (c, d) ↦

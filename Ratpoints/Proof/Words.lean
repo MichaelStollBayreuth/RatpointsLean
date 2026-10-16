@@ -78,13 +78,15 @@ The file uses Lean core and `Std` only, as `Ratpoints.Proof.Sieve` does; the lem
 are not about the model are in `Ratpoints.Proof.Bits`, the closed form of the rows in
 `Ratpoints.Proof.Rows`. The proofs use only that `Ratpoints.rbaPack` and `Ratpoints.chunk` are
 positive, never their values. The contract of the chunked first stage is in
-`Ratpoints.Proof.FirstStage`. The scaling by a unit needs an inverse of the unit and the tables of
-inverses, no primality. The contracts of the second and the third stage and of the check are in
-`Ratpoints.Proof.Stages`, those of the walk, of the scan, of one piece and of one denominator in
-`Ratpoints.Proof.Sift`. The bit of a number in a word (`Ratpoints.Sieve.classBit`), the contract of
-the lowest set bit of a word and the invariant of a `while` loop over the set bits of a word are in
-`Ratpoints.Proof.SetBits`, the reductions by a reciprocal and of the row indices and the positivity
-of the width `Ratpoints.rbaLength` of the bit arrays in `Ratpoints.Proof.Reductions`.
+`Ratpoints.Proof.FirstStage`, those of the builders of the rows in `Ratpoints.Proof.PrimeRows`,
+`Ratpoints.Proof.CompositeRows` and `Ratpoints.Proof.RowStore`. The scaling by a unit needs an
+inverse of the unit and the tables of inverses, no primality. The contracts of the second and the
+third stage and of the check are in `Ratpoints.Proof.Stages`, those of the walk, of the scan, of one
+piece and of one denominator in `Ratpoints.Proof.Sift`. The bit of a number in a word
+(`Ratpoints.Sieve.classBit`), the contract of the lowest set bit of a word and the invariant of a
+`while` loop over the set bits of a word are in `Ratpoints.Proof.SetBits`, the reductions by a
+reciprocal and of the row indices and the positivity of the width `Ratpoints.rbaLength` of the bit
+arrays in `Ratpoints.Proof.Reductions`.
 -/
 
 @[expose] public section

@@ -529,86 +529,77 @@ contract keeps its statement, the first stage of either arm giving the same word
 
 \begin{definition}[The layout of a pattern]\label{def:layOutPattern}
   \uses{def:powerWords, def:chunk, def:rbaPack}
-  Proposed names: \lname{Ratpoints.Sieve.window}, \lname{Ratpoints.Sieve.repeatPattern},
-  \lname{Ratpoints.Sieve.layOutPattern}. The $64$ bits of an array of words from a position on, cut
-  out of two words by two shifts, for line 291 of \verb|lay_out_pattern|; the pattern of period $m$
-  of an array of words repeated through $\mathrm{words} = \lfloor (m + 127)/64 \rfloor$ words, with
-  $64\,\mathrm{words} \ge m + 64$, the words cleared first and each copy or-ed in at its offset
-  $o = 0, m, 2m, \dots$, word by word and with the guard $s \ne 0$ of the C code before the shift by
-  $64 - s$ (\csource{init.c}{268}{279}); and the row of $m + \mathrm{chunk} - 1$ bit arrays: for
-  $x < m\,\mathrm{rbaPack}$, word $x$ the $64$ bits of the repeated pattern from the offset
-  $o = 64 x \bmod m$ on, the offset stepped by $64 \bmod m$ modulo $m$, then the copies of the first
-  $(\mathrm{chunk} - 1)\,\mathrm{rbaPack}$ words, with its own loop of copies
-  (\csource{init.c}{259}{267}, \csource{init.c}{280}{297}).
+  \lean{Ratpoints.Sieve.window, Ratpoints.Sieve.getLsbD_window, Ratpoints.Sieve.repeatPattern, Ratpoints.Sieve.layOutPattern}
+  \leanok
+  The $64$ bits of an array of words from a position on, cut out of two words by two shifts, for
+  line 291 of \verb|lay_out_pattern|, bit $t$ the bit of the words at the position plus $t$ for
+  $t < 64$; the pattern of period $m$ of an array of words repeated through
+  $\mathrm{words} = \lfloor (m + 127)/64 \rfloor$ words, with $64\,\mathrm{words} \ge m + 64$, the
+  words cleared first and each copy or-ed in at its offset $o = 0, m, 2m, \dots$, word by word and
+  with the guard $s \ne 0$ of the C code before the shift by $64 - s$ (\csource{init.c}{268}{279});
+  and the row of $m + \mathrm{chunk} - 1$ bit arrays: for $x < m\,\mathrm{rbaPack}$, word $x$ the
+  $64$ bits of the repeated pattern from the offset $o = 64 x \bmod m$ on, the offset stepped by
+  $64 \bmod m$ modulo $m$, then the copies of the first $(\mathrm{chunk} - 1)\,\mathrm{rbaPack}$
+  words, with its own loop of copies (\csource{init.c}{259}{267}, \csource{init.c}{280}{297}).
 \end{definition}
 
 \begin{definition}[The rows of a prime power]\label{def:sieveInitPower}
   \uses{def:layOutPattern, def:powerWords, def:examinePower, def:entryRef}
-  Proposed names: \lname{Ratpoints.Sieve.powerPatternUnit},
-  \lname{Ratpoints.Sieve.powerPatternNonunit}, \lname{Ratpoints.Sieve.sieveInitPower}. For the
-  tables of a prime power $m = p^e$ (Definition~\ref{def:examinePower}), the reference to its entry,
-  a residue $b$ and the store of the tables of rows, as \verb|_ratpoints_sieve_init_power| builds
-  the row: the pattern of $\mathrm{modWords}$ words cleared; for a unit $b$, bit $x$ set when bit
-  $r$ of \verb|fsq| is, the residue $r$ stepped by the inverse of $b$ modulo $m$
-  (\csource{init.c}{369}{375}); for $p \mid b$, bit $x$ of a unit $x$ set when bit $b\, x^{-1} \bmod
-  m$ of \verb|gsq| is, the other residues skipped by \verb|continue| (\csource{init.c}{378}{385});
-  the pattern laid out as a row (Definition~\ref{def:layOutPattern}); and the row stored into the
-  table of rows of the entry (\csource{init.c}{359}{368}, \csource{init.c}{376}{377},
-  \csource{init.c}{386}{387}, \csource{init.c}{391}{393}, with its prototype
-  \csource{rp-private.h}{592}{592}).
+  \lean{Ratpoints.Sieve.powerPatternUnit, Ratpoints.Sieve.powerPatternNonunit, Ratpoints.Sieve.sieveInitPower}
+  \leanok
+  For the tables of a prime power $m = p^e$ (Definition~\ref{def:examinePower}), the reference to
+  its entry, a residue $b$ and the store of the tables of rows, as
+  \verb|_ratpoints_sieve_init_power| builds the row: the pattern of $\mathrm{modWords}$ words
+  cleared; for a unit $b$, bit $x$ set when bit $r$ of \verb|fsq| is, the residue $r$ stepped by the
+  inverse of $b$ modulo $m$ (\csource{init.c}{369}{375}); for $p \mid b$, bit $x$ of a unit $x$ set
+  when bit $b\, x^{-1} \bmod m$ of \verb|gsq| is, the other residues skipped by \verb|continue|
+  (\csource{init.c}{378}{385}); the pattern laid out as a row (Definition~\ref{def:layOutPattern});
+  and the row stored into the table of rows of the entry (\csource{init.c}{359}{368},
+  \csource{init.c}{376}{377}, \csource{init.c}{386}{387}, \csource{init.c}{391}{393}, with its
+  prototype \csource{rp-private.h}{592}{592}).
 \end{definition}
 
 \begin{definition}[The rows of a product]\label{def:sieveInitProduct}
   \uses{def:entryRef, def:rowInit, def:sieveInit1, def:sieveInit2, def:sieveInitPower,
     def:SieveEntry, def:bitArrayMoves, def:bitArrayOps}
-  Proposed names: \lname{Ratpoints.Sieve.initFactorRow}, \lname{Ratpoints.Sieve.factorRows},
-  \lname{Ratpoints.Sieve.productCopy}, \lname{Ratpoints.Sieve.productAnd},
-  \lname{Ratpoints.Sieve.sieveInitProduct}. The call \verb|(*(fe->init))(fe, bf, args)| through the
-  pointer of the entry of a prime or a prime power: a match on the kind of builder
-  (Definition~\ref{def:rowInit}) that calls the builder of that kind on the table of the prime or
-  the tables of the prime power of the factor, with the reference given, which stores the row into
-  that table of rows (a kind that does not fit the factor, which no entry of the model has, gives
-  the empty row). For the sieve entry of a product $m$, a residue $b$ and the store, as
-  \verb|_ratpoints_sieve_init_product| builds the row: for each factor of modulus $q$, the row of $b
-  \bmod q$ from the table of rows of the entry of the factor, and when it is absent the row that the
-  builder of that entry builds into it (\csource{init.c}{407}{414}); the row of the first factor
-  laid down in blocks of its $q$ bit arrays (\csource{init.c}{419}{423}); the rows of the others
-  and-ed in, in blocks of theirs (\csource{init.c}{424}{429}); the copies of the first
-  $\mathrm{chunk} - 1$ bit arrays after the first $m$; and the row stored into the table of rows of
-  the entry of the product (\csource{init.c}{399}{406}, \csource{init.c}{415}{418},
-  \csource{init.c}{430}{430}, \csource{init.c}{443}{445}, with its prototype
-  \csource{rp-private.h}{593}{593}).
+  \lean{Ratpoints.Sieve.initFactorRow, Ratpoints.Sieve.factorRows, Ratpoints.Sieve.productCopy, Ratpoints.Sieve.productAnd, Ratpoints.Sieve.sieveInitProduct}
+  \leanok
+  The call \verb|(*(fe->init))(fe, bf, args)| through the pointer of the entry of a prime or a prime
+  power: a match on the kind of builder (Definition~\ref{def:rowInit}) that calls the builder of
+  that kind on the table of the prime or the tables of the prime power of the factor, with the
+  reference given, which stores the row into that table of rows (a kind that does not fit the
+  factor, which no entry of the model has, gives the empty row). For the sieve entry of a product
+  $m$, a residue $b$ and the store, as \verb|_ratpoints_sieve_init_product| builds the row: for each
+  factor of modulus $q$, the row of $b \bmod q$ from the table of rows of the entry of the factor,
+  and when it is absent the row that the builder of that entry builds into it
+  (\csource{init.c}{407}{414}); the row of the first factor laid down in blocks of its $q$ bit
+  arrays (\csource{init.c}{419}{423}); the rows of the others and-ed in, in blocks of theirs
+  (\csource{init.c}{424}{429}); the copies of the first $\mathrm{chunk} - 1$ bit arrays after the
+  first $m$; and the row stored into the table of rows of the entry of the product
+  (\csource{init.c}{399}{406}, \csource{init.c}{415}{418}, \csource{init.c}{430}{430},
+  \csource{init.c}{443}{445}, with its prototype \csource{rp-private.h}{593}{593}).
 \end{definition}
 
 \begin{lemma}[The builders of a prime power and of a product]\label{lem:compositeRows}
   \uses{def:layOutPattern, def:sieveInitPower, def:sieveInitProduct, lem:closedRow}
-  Proposed names: \lname{Ratpoints.Sieve.getLsbD\_window}, \lname{Ratpoints.Sieve.PatClear},
-  \lname{Ratpoints.Sieve.PatZero}, \lname{Ratpoints.Sieve.repeatPattern\_spec},
-  \lname{Ratpoints.Sieve.LayOuterInvariant}, \lname{Ratpoints.Sieve.LayInnerInvariant},
-  \lname{Ratpoints.Sieve.RowLoopInvariant}, \lname{Ratpoints.Sieve.layOutPattern\_spec},
-  \lname{Ratpoints.Sieve.powerPatternUnit\_spec}, \lname{Ratpoints.Sieve.powerPatternNonunit\_spec},
-  \lname{Ratpoints.Sieve.sieveInitPower\_spec}, \lname{Ratpoints.Sieve.factorWord},
-  \lname{Ratpoints.Sieve.productWord}, \lname{Ratpoints.Sieve.FirstInvariant},
-  \lname{Ratpoints.Sieve.FactorInvariant}, \lname{Ratpoints.Sieve.productCopy\_spec},
-  \lname{Ratpoints.Sieve.productAnd\_spec},
-  \lname{Ratpoints.Sieve.toArray\_eq\_closedRow\_of\_productWord},
-  \lname{Ratpoints.Sieve.Factor.admits\_mod\_of\_dvd},
-  \lname{Ratpoints.Sieve.SieveEntry.admits\_eq\_all}. For a pattern of period $0 < m \le
-  64\,\mathrm{modWords}$ without bits from $m$ on, the layout gives the row whose words are the
-  windows of the pattern; for the tables of a prime power $m \le 64\,\mathrm{modWords}$ and a
-  residue $b < m$ whose inverse in the table is below $m$, the pattern for a unit $b$ has bit $x$
-  the bit of \verb|fsq| at $x\, b^{-1} \bmod m$, that for $p \mid b$ bit $x$ the bit of \verb|gsq|
-  at $b\, x^{-1} \bmod m$ for a unit $x$, and the builder returns the closed form of the row of $b$
-  of the tables of the prime power, and the store with it in the table of rows of the entry; for a
-  product with at least one factor, whose factors have positive moduli dividing $m$, the first
-  factor laid down and the others and-ed in give word $y < m\,\mathrm{rbaPack}$ the and of the words
-  of the factors read in their blocks, and from rows of the factors that are the closed forms of
-  their rows at $b \bmod q$ the row, repeated after its first $m$ bit arrays, is the closed form of
-  the row of $b$ of the product.
+  \lean{Ratpoints.Sieve.PatClear, Ratpoints.Sieve.PatZero, Ratpoints.Sieve.repeatPattern_spec, Ratpoints.Sieve.LayOuterInvariant, Ratpoints.Sieve.LayInnerInvariant, Ratpoints.Sieve.RowLoopInvariant, Ratpoints.Sieve.layOutPattern_spec, Ratpoints.Sieve.powerPatternUnit_spec, Ratpoints.Sieve.powerPatternNonunit_spec, Ratpoints.Sieve.sieveInitPower_spec, Ratpoints.Sieve.factorWord, Ratpoints.Sieve.productWord, Ratpoints.Sieve.FirstInvariant, Ratpoints.Sieve.FactorInvariant, Ratpoints.Sieve.productCopy_spec, Ratpoints.Sieve.productAnd_spec, Ratpoints.Sieve.toArray_eq_closedRow_of_productWord, Ratpoints.Sieve.Factor.admits_mod_of_dvd, Ratpoints.Sieve.SieveEntry.admits_eq_all}
+  \leanok
+  For a pattern of period $0 < m \le 64\,\mathrm{modWords}$ without bits from $m$ on, the layout
+  gives the row whose words are the windows of the pattern; for the tables of a prime power
+  $m \le 64\,\mathrm{modWords}$ and a residue $b < m$ whose inverse in the table is below $m$, the
+  pattern for a unit $b$ has bit $x$ the bit of \verb|fsq| at $x\, b^{-1} \bmod m$, that for
+  $p \mid b$ bit $x$ the bit of \verb|gsq| at $b\, x^{-1} \bmod m$ for a unit $x$, and the builder
+  returns the closed form of the row of $b$ of the tables of the prime power, and the store with it
+  in the table of rows of the entry; for a product with at least one factor, whose factors have
+  positive moduli dividing $m$, the first factor laid down and the others and-ed in give word
+  $y < m\,\mathrm{rbaPack}$ the and of the words of the factors read in their blocks, and from rows
+  of the factors that are the closed forms of their rows at $b \bmod q$ the row, repeated after its
+  first $m$ bit arrays, is the closed form of the row of $b$ of the product.
 \end{lemma}
 
 \begin{proof}
   \uses{lem:admits_mul}
+  \leanok
   The repeated pattern holds the pattern at every bit up to $64\,\mathrm{words}$, so the window at
   $64 x \bmod m$ is the window at $64 x$ of the periodic pattern; the guard $s \ne 0$ keeps every
   shift in $[1, 63]$. The admission test of a prime power reads \verb|fsq| at $x\, r^{-1}$ or
@@ -639,45 +630,41 @@ contract keeps its statement, the first stage of either arm giving the same word
 
 \begin{definition}[The row of a sieve entry, read or built]\label{def:fetchRow}
   \uses{def:sieveInitProduct, def:rowInit, def:entryRef, def:SieveEntry}
-  Proposed names: \lname{Ratpoints.Sieve.SieveEntry.initRow},
-  \lname{Ratpoints.Sieve.SieveEntry.fetchRow}. The call \verb|(*(se->init))(se, b, args)| of the run
-  through the pointer of a sieve entry: for a product the builder of the rows of a product, which
-  builds the absent rows of its factors into their tables of rows first, and for a prime or a prime
-  power the builder of its kind on the table of the prime or the tables of the prime power of its
-  one factor, with the reference to the entry (Definition~\ref{def:sieveInitProduct}). And the row
-  of a residue $b < p$ of a sieve entry: the row in the table of rows of its entry when it is there,
-  and otherwise the row that its builder builds into that table of rows, the body of the loop of
-  \verb|sift| that builds the missing rows, which reads the pointer to the row again before it calls
-  the builder (Definition~\ref{def:buildRows}).
+  \lean{Ratpoints.Sieve.SieveEntry.initRow, Ratpoints.Sieve.SieveEntry.fetchRow}
+  \leanok
+  The call \verb|(*(se->init))(se, b, args)| of the run through the pointer of a sieve entry: for a
+  product the builder of the rows of a product, which builds the absent rows of its factors into
+  their tables of rows first, and for a prime or a prime power the builder of its kind on the table
+  of the prime or the tables of the prime power of its one factor, with the reference to the entry
+  (Definition~\ref{def:sieveInitProduct}). And the row of a residue $b < p$ of a sieve entry: the
+  row in the table of rows of its entry when it is there, and otherwise the row that its builder
+  builds into that table of rows, the body of the loop of \verb|sift| that builds the missing rows,
+  which reads the pointer to the row again before it calls the builder
+  (Definition~\ref{def:buildRows}).
 \end{definition}
 
 \begin{lemma}[Rows read or built are closed forms]\label{lem:fetchRow}
   \uses{def:fetchRow, lem:primeRows, lem:compositeRows, def:closedRow}
-  Proposed names: \lname{Ratpoints.Sieve.RowStore.Grows},
-  \lname{Ratpoints.Sieve.RowStore.row?\_publish}, \lname{Ratpoints.Sieve.Factor.Buildable},
-  \lname{Ratpoints.Sieve.Factor.Builds}, \lname{Ratpoints.Sieve.initFactorRow\_spec},
-  \lname{Ratpoints.Sieve.FactorRow}, \lname{Ratpoints.Sieve.FactorRowsPre},
-  \lname{Ratpoints.Sieve.FactorRowsInvariant}, \lname{Ratpoints.Sieve.factorRows\_spec},
-  \lname{Ratpoints.Sieve.ProductRowsPre}, \lname{Ratpoints.Sieve.sieveInitProduct\_spec},
-  \lname{Ratpoints.Sieve.InitRowPre}, \lname{Ratpoints.Sieve.SieveEntry.initRow\_spec},
-  \lname{Ratpoints.Sieve.SieveEntry.fetchRow\_spec}. A factor is \emph{buildable} when its builder
-  has what it needs: a prime $p > 0$ with the inverses of its residues below $p$ and $p \bmod 64 \ne
-  0$ when $p \ge 64$, or a prime power $0 < m \le 64\,\mathrm{modWords}$ with its inverses below
-  $m$; its builder is called at a residue below the modulus, other than $0$ for a prime. Then the
-  call through the pointer gives the closed form of the row of the factor and puts it into the table
-  of rows given. For a product with a positive modulus $m$ and at least one factor, whose factors
-  are buildable, have positive moduli dividing $m$, rows in their tables of rows that are closed
-  forms, an absent row only where their builders may be called, and one closed form for two factors
-  with one reference, the rows of the factors that the builder of the product reads or builds are
-  their closed forms, the store \emph{grows} by rows of the factors (the tables of rows and their
-  sizes kept, no row replaced, the new rows those of the factors), and the row of the product is its
-  closed form, put into its table of rows. The row of a sieve entry read or built is the closed form
-  of its row, and the store is the same or has grown in this way, with the row put into the table of
-  rows of the entry.
+  \lean{Ratpoints.Sieve.RowStore.Grows, Ratpoints.Sieve.RowStore.row?_publish, Ratpoints.Sieve.Factor.Buildable, Ratpoints.Sieve.Factor.Builds, Ratpoints.Sieve.initFactorRow_spec, Ratpoints.Sieve.FactorRow, Ratpoints.Sieve.FactorRowsPre, Ratpoints.Sieve.FactorRowsInvariant, Ratpoints.Sieve.factorRows_spec, Ratpoints.Sieve.ProductRowsPre, Ratpoints.Sieve.sieveInitProduct_spec, Ratpoints.Sieve.InitRowPre, Ratpoints.Sieve.SieveEntry.initRow_spec, Ratpoints.Sieve.SieveEntry.fetchRow_spec}
+  \leanok
+  A factor is \emph{buildable} when its builder has what it needs: a prime $p > 0$ with the inverses
+  of its residues below $p$ and $p \bmod 64 \ne 0$ when $p \ge 64$, or a prime power
+  $0 < m \le 64\,\mathrm{modWords}$ with its inverses below $m$; its builder is called at a residue
+  below the modulus, other than $0$ for a prime. Then the call through the pointer gives the closed
+  form of the row of the factor and puts it into the table of rows given. For a product with a
+  positive modulus $m$ and at least one factor, whose factors are buildable, have positive moduli
+  dividing $m$, rows in their tables of rows that are closed forms, an absent row only where their
+  builders may be called, and one closed form for two factors with one reference, the rows of the
+  factors that the builder of the product reads or builds are their closed forms, the store
+  \emph{grows} by rows of the factors (the tables of rows and their sizes kept, no row replaced, the
+  new rows those of the factors), and the row of the product is its closed form, put into its table
+  of rows. The row of a sieve entry read or built is the closed form of its row, and the store is
+  the same or has grown in this way, with the row put into the table of rows of the entry.
 \end{lemma}
 
 \begin{proof}
   \uses{lem:admits_mul}
+  \leanok
   Lemmas~\ref{lem:primeRows} and~\ref{lem:compositeRows}, and for the product an invariant of the
   loop over its factors: each row read is a closed form by the hypothesis on the tables of rows,
   each row built is one by the contract of its builder, at $b \bmod q$, which for a prime is not $0$

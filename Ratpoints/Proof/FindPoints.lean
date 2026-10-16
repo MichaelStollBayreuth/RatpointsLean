@@ -501,11 +501,12 @@ inverses of its factors and the fields that the packing reads (`Ratpoints.IsModu
 one of the first `Ratpoints.numPrimes` primes of the table, the prime with the table of the
 reference as its only factor (`Ratpoints.makeModulus?_spec`): the entry is sound, its modulus being
 above `1`, and has the shape that the third stage needs for such a prime. -/
-theorem SievingInfoInvariant.push {c : List ℤ} {H m : ℕ} {pref suff : List ℕ}
+theorem SievingInfoInvariant.push {c : List ℤ} {H m n : ℕ} {pref suff : List ℕ}
     {o : Option (Option (List SieveEntry × Array ℕ × List ForbiddenEntry × List ForbiddenVal))}
     {entries : Array SieveEntry} {r : Option SieveEntry} {e : SieveEntry}
     (h : SievingInfoInvariant c H pref (m :: suff) (o, entries))
-    (hr : (∀ s, r = some s → IsModulusEntry c m s ∧ ∀ pn < numPrimes, primeTable[pn]! = m →
+    (hr : (∀ s, r = some s → IsModulusEntry c m s ∧
+          (s.ref, s.init) = SieveEntry.refInit n s.factors ∧ ∀ pn < numPrimes, primeTable[pn]! = m →
           s.factors = [.prime (examinePrime c (degree c) m)]) ∧
       (r = none → ∀ H q, ¬IsPoint c H q))
     (he : r = some e) :
@@ -513,16 +514,17 @@ theorem SievingInfoInvariant.push {c : List ℤ} {H m : ℕ} {pref suff : List �
   cases o with
   | some _ => exact absurd h.1 (List.cons_ne_nil _ _)
   | none =>
-    obtain ⟨⟨rfl, hadm, hinv, hpk⟩, hf⟩ := hr.1 e he
+    obtain ⟨⟨rfl, hadm, hinv, hpk⟩, -, hf⟩ := hr.1 e he
     exact ⟨by simp [h.1], Array.forall_mem_push.mpr ⟨⟨⟨Nat.zero_lt_of_lt hpk.one_lt,
       fun hab hy ↦ hadm hab hy⟩, hpk, hinv, fun pn hpn hm ↦
         isPrimeEntry_of_factors_eq hpn hm (hf pn hpn hm) hpk.magic_eq⟩, h.2⟩⟩
 
 /-- The early return of the loop of `Ratpoints.sievingInfo` at a modulus whose sieve entry is none:
 the curve has no points. -/
-theorem sievingInfoInvariant_some_none {c : List ℤ} {H m : ℕ} {pref : List ℕ}
+theorem sievingInfoInvariant_some_none {c : List ℤ} {H m n : ℕ} {pref : List ℕ}
     {entries : Array SieveEntry} {r x : Option SieveEntry}
-    (hr : (∀ s, r = some s → IsModulusEntry c m s ∧ ∀ pn < numPrimes, primeTable[pn]! = m →
+    (hr : (∀ s, r = some s → IsModulusEntry c m s ∧
+          (s.ref, s.init) = SieveEntry.refInit n s.factors ∧ ∀ pn < numPrimes, primeTable[pn]! = m →
           s.factors = [.prime (examinePrime c (degree c) m)]) ∧
       (r = none → ∀ H q, ¬IsPoint c H q))
     (hx : ∀ e, x = some e → False) (he : r = x) :

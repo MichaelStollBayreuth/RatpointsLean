@@ -1754,10 +1754,22 @@
         "Ratpoints.Sieve.sieveInit"
       ]
     },
-    "init.c:259-297": {
-      "hash": "4db1fe15bedb3445b4cee37d69fc1cfe5d1ae4bb0305d9ff7975229e190b86fc",
+    "init.c:259-267": {
+      "hash": "bd26cc02397f164868e260189ba944ccfb3a4bd49142a1cec7c3274517d93c1a",
       "owners": [
-        "Ratpoints.Sieve.SieveEntry.row"
+        "Ratpoints.Sieve.layOutPattern"
+      ]
+    },
+    "init.c:268-279": {
+      "hash": "c54b03b6f1f094e515105ba62e2f592f37585d72a86a51f03cce2b5dcdae310f",
+      "owners": [
+        "Ratpoints.Sieve.repeatPattern"
+      ]
+    },
+    "init.c:280-297": {
+      "hash": "9420395f150d9fbb9449b1b5ea659a0e192c755f29dbd6dc32b3930b7123ead6",
+      "owners": [
+        "Ratpoints.Sieve.layOutPattern"
       ]
     },
     "init.c:299-353": {
@@ -1772,16 +1784,34 @@
         "excluded (other)"
       ]
     },
-    "init.c:359-386": {
-      "hash": "ac02b08c884451446e48a37f67e1ad03ac0d1a9fa7237a98b92a7fb156d92bc4",
+    "init.c:359-368": {
+      "hash": "b52889ebbb7a7060b4afa736d9113db9c09d07aa4b943862abeae9aa6efa0af3",
       "owners": [
-        "Ratpoints.Sieve.Power.admits"
+        "Ratpoints.Sieve.sieveInitPower"
       ]
     },
-    "init.c:387-387": {
-      "hash": "d0781bcdcc7a9187fffbaa0232622bdef27c7ecd977c6d8c5a187b30f409820b",
+    "init.c:369-375": {
+      "hash": "4e21995dcf6563d78ff3e2aa8285bbe22a33ac7aeb8a1fccdd08367dc6346f3e",
       "owners": [
-        "Ratpoints.Sieve.SieveEntry.row"
+        "Ratpoints.Sieve.powerPatternUnit"
+      ]
+    },
+    "init.c:376-377": {
+      "hash": "a89ce46ad7184419f7815503e6ab9a7b8e78ae308a9854b9c68f65356ed9ee6f",
+      "owners": [
+        "Ratpoints.Sieve.sieveInitPower"
+      ]
+    },
+    "init.c:378-385": {
+      "hash": "86578f348c0ad711f2bc163b5315c1211ed501eb6a19a943b23f0703404cb33a",
+      "owners": [
+        "Ratpoints.Sieve.powerPatternNonunit"
+      ]
+    },
+    "init.c:386-387": {
+      "hash": "d721c2e204401aff924b527e2de1d61134ab6a5ff7ee11cb47779f7f3690228d",
+      "owners": [
+        "Ratpoints.Sieve.sieveInitPower"
       ]
     },
     "init.c:388-390": {
@@ -1793,25 +1823,31 @@
     "init.c:391-393": {
       "hash": "573a984ae62b780fc5e1ce7791b377599ebba39c03c4f5208d778427a6c9dd91",
       "owners": [
-        "Ratpoints.Sieve.SieveEntry.row"
+        "Ratpoints.Sieve.sieveInitPower"
       ]
     },
-    "init.c:399-414": {
-      "hash": "97b51c70d1af4d32b22076a2bfdb6d752d6ce1a8d03b4498dd02902614849497",
+    "init.c:399-406": {
+      "hash": "e021268ee5d4e8c31f9913d7716e4afe93ec73bfd2798d68707becbcaee75aec",
       "owners": [
-        "Ratpoints.Sieve.SieveEntry.admits"
+        "Ratpoints.Sieve.sieveInitProduct"
+      ]
+    },
+    "init.c:407-414": {
+      "hash": "c50cbbc0aa786691bd0520a336c88a54c980c102803f845312f1ed6842e406c6",
+      "owners": [
+        "Ratpoints.Sieve.factorRows"
       ]
     },
     "init.c:415-418": {
       "hash": "31b07b060bda922d90ae542da70d9f7e4a1af8dbfd4335f48205a5efe3a22fee",
       "owners": [
-        "Ratpoints.Sieve.SieveEntry.row"
+        "Ratpoints.Sieve.sieveInitProduct"
       ]
     },
-    "init.c:419-429": {
-      "hash": "b2c73f309f9a0f5d6ed6919c2f9d69725d9d2eec908d731710e002c96c33030d",
+    "init.c:419-423": {
+      "hash": "c016bbae72f1b10f3edf33bbf36fe5728fe6047309182ddc2e60dc147795f547",
       "owners": [
-        "Ratpoints.Sieve.SieveEntry.admits"
+        "Ratpoints.Sieve.productCopy"
       ]
     },
     "init.c:42-46": {
@@ -1820,10 +1856,16 @@
         "Ratpoints.Sieve.initBit"
       ]
     },
+    "init.c:424-429": {
+      "hash": "e33dbd21237612644bd4783b57a4089f7e7ed8112e93bd27ca174d8209da476c",
+      "owners": [
+        "Ratpoints.Sieve.productAnd"
+      ]
+    },
     "init.c:430-430": {
       "hash": "525f48f361ea9b086f3da5fe443b28cf9d8362ffcc4a8b83298f57726be433a4",
       "owners": [
-        "Ratpoints.Sieve.SieveEntry.row"
+        "Ratpoints.Sieve.sieveInitProduct"
       ]
     },
     "init.c:431-442": {
@@ -1835,7 +1877,7 @@
     "init.c:443-445": {
       "hash": "573a984ae62b780fc5e1ce7791b377599ebba39c03c4f5208d778427a6c9dd91",
       "owners": [
-        "Ratpoints.Sieve.SieveEntry.row"
+        "Ratpoints.Sieve.sieveInitProduct"
       ]
     },
     "init.c:62-63": {
@@ -2769,13 +2811,13 @@
     "rp-private.h:592-592": {
       "hash": "f2b00acca0e3ca6323ad3b731bf231990ac4c1a74418256f9986cb6898d55162",
       "owners": [
-        "Ratpoints.Sieve.Power.admits"
+        "Ratpoints.Sieve.sieveInitPower"
       ]
     },
     "rp-private.h:593-593": {
       "hash": "55992eab039f4305e6174d048334dec4bc205a3197c301f2f70d7fac17dda7ba",
       "owners": [
-        "Ratpoints.Sieve.SieveEntry.admits"
+        "Ratpoints.Sieve.sieveInitProduct"
       ]
     },
     "rp-private.h:596-597": {
@@ -3562,7 +3604,6 @@
     "init.c:376-377": "a89ce46ad7184419f7815503e6ab9a7b8e78ae308a9854b9c68f65356ed9ee6f",
     "init.c:378-385": "86578f348c0ad711f2bc163b5315c1211ed501eb6a19a943b23f0703404cb33a",
     "init.c:386-387": "d721c2e204401aff924b527e2de1d61134ab6a5ff7ee11cb47779f7f3690228d",
-    "init.c:387-387": "d0781bcdcc7a9187fffbaa0232622bdef27c7ecd977c6d8c5a187b30f409820b",
     "init.c:391-393": "573a984ae62b780fc5e1ce7791b377599ebba39c03c4f5208d778427a6c9dd91",
     "init.c:399-406": "e021268ee5d4e8c31f9913d7716e4afe93ec73bfd2798d68707becbcaee75aec",
     "init.c:399-414": "97b51c70d1af4d32b22076a2bfdb6d752d6ce1a8d03b4498dd02902614849497",
