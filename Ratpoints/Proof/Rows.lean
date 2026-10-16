@@ -26,7 +26,10 @@ closed form repeats its first `m` bit arrays in the `Ratpoints.chunk - 1` after 
 The words of a pattern in the shape in which the builders compute them: a word holding a stretch of
 bits of a pattern of period `m` (`Ratpoints.Sieve.PatternBits`), and the words of a row that are the
 windows of 64 bits of the pattern (`Ratpoints.Sieve.RowWords`), which give the closed form
-(`Ratpoints.Sieve.RowWords.toArray_eq_closedRow`).
+(`Ratpoints.Sieve.RowWords.toArray_eq_closedRow`). The proofs read the bits of a bit array of words
+off the bits of its words (`Ratpoints.Sieve.patBit`); these are the bits that the C code reads with
+a shift and a mask (`Ratpoints.Sieve.bitAt_eq_patBit`) and sets one at a time
+(`Ratpoints.Sieve.bitAt_setBitAt`).
 
 ## Main definitions
 
@@ -34,6 +37,7 @@ windows of 64 bits of the pattern (`Ratpoints.Sieve.RowWords`), which give the c
 * `Ratpoints.Sieve.closedRow`: the closed form of a row.
 * `Ratpoints.Sieve.PatternBits`, `Ratpoints.Sieve.RowWords`: a word holding a stretch of a periodic
   pattern, and the words of a row that are windows of it.
+* `Ratpoints.Sieve.patBit`: bit `x` of an array of words, read off the bits of its word.
 
 ## Main statements
 
@@ -44,6 +48,8 @@ windows of 64 bits of the pattern (`Ratpoints.Sieve.RowWords`), which give the c
   first `m` bit arrays.
 * `Ratpoints.Sieve.RowWords.toArray_eq_closedRow`: words of a row that are the windows of a pattern
   are the closed form of a test that reads the pattern.
+* `Ratpoints.Sieve.bitAt_eq_patBit`, `Ratpoints.Sieve.bitAt_setBitAt`: the bit of a bit array of
+  words that the C code reads, and the bits after one is set.
 
 ## Implementation notes
 
@@ -215,6 +221,46 @@ theorem RowWords.toArray_eq_closedRow {g : Nat → Bool} {adm : Nat → Int → 
   eq_closedRow (by simp) fun j hj t ↦ by
     rw [Vector.getElem!_toArray, h j hj t, hg]
     rfl
+
+/-! ### The bits of a bit array of words -/
+
+/-- Bit `x` of the words `pat`: bit `x mod 64` of word `⌊x / 64⌋`, read off the bits of the word, as
+the proofs read the patterns of the rows and the bit arrays of the tables of a prime power
+(`Ratpoints.Sieve.bitAt_eq_patBit`). -/
+def patBit (pat : Array UInt64) (x : Nat) : Bool := pat[x / 64]!.toBitVec.getLsbD (x % 64)
+
+/-- Setting bit `x` of the words of a pattern, `x` within the words, sets bit `x` of the pattern. -/
+theorem patBit_setBitAt {pat : Array UInt64} {x : Nat} (hx : x / 64 < pat.size) (y : Nat) :
+    patBit (setBitAt pat x) y = (patBit pat y || decide (y = x)) := by
+  simp only [patBit, setBitAt]
+  by_cases hq : x / 64 = y / 64
+  · have hs : (pat.set! (x / 64) (pat[x / 64]! ||| 1 <<< (x % 64).toUInt64))[y / 64]! =
+        pat[x / 64]! ||| 1 <<< (x % 64).toUInt64 := by
+      rw [← hq]
+      grind
+    rw [hs, Nat.toUInt64_eq, UInt64.getLsbD_or_one_shiftLeft _ (Nat.mod_lt _ (by decide)), hq]
+    congr 1
+    exact decide_eq_decide.mpr ⟨fun h ↦ by lia, fun h ↦ by subst h; rfl⟩
+  · have hs : (pat.set! (x / 64) (pat[x / 64]! ||| 1 <<< (x % 64).toUInt64))[y / 64]! =
+        pat[y / 64]! := by
+      grind
+    have : y ≠ x := fun h ↦ hq (by rw [h])
+    rw [hs]
+    simp [this]
+
+theorem size_setBitAt (pat : Array UInt64) (x : Nat) : (setBitAt pat x).size = pat.size := by
+  simp [setBitAt]
+
+/-- Bit `x` of a bit array of words read with the shift and the mask of the C code is the bit of
+the pattern. -/
+theorem bitAt_eq_patBit (ws : Array UInt64) (x : Nat) : bitAt ws x = patBit ws x := by
+  rw [bitAt, patBit, bne, Nat.toUInt64_eq,
+    UInt64.shiftRight_and_one_beq_zero _ (Nat.mod_lt _ (by decide)), Bool.not_not]
+
+/-- Setting bit `x` of a bit array of words, `x` within the words, sets bit `x`. -/
+theorem bitAt_setBitAt {ws : Array UInt64} {x : Nat} (hx : x / 64 < ws.size) (y : Nat) :
+    bitAt (setBitAt ws x) y = (bitAt ws y || decide (y = x)) := by
+  rw [bitAt_eq_patBit, bitAt_eq_patBit, patBit_setBitAt hx]
 
 end Sieve
 

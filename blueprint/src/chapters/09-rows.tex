@@ -360,16 +360,16 @@ contract keeps its statement, the first stage of either arm giving the same word
 
 \begin{definition}[Bit arrays of words for the tables of a prime power]\label{def:powerWords}
   \uses{def:barrett, def:modinv}
-  Proposed names: \lname{Ratpoints.modWords}, \lname{Ratpoints.Sieve.bitAt},
-  \lname{Ratpoints.Sieve.setBitAt}, \lname{Ratpoints.Sieve.patBit},
-  \lname{Ratpoints.Sieve.setSquareBits}, \lname{Ratpoints.Sieve.unitInverses}. The number of words
-  of a pattern of $\mathrm{maxPrimeEven}$ bits, $\mathrm{modWords} = \lceil \mathrm{maxPrimeEven}/64
-  \rceil$ (\verb|RP_MODWORDS|, \csource{rp-private.h}{523}{523}); bit $x$ of a bit array of words,
-  bit $x \bmod 64$ of word $\lfloor x/64 \rfloor$, read and set as the C code reads and sets the
-  bits of the tables of a prime power and of the patterns of the rows, and the same bit read off the
-  bits of the word, as the proofs read the patterns; the bits of the squares $x^2 \bmod m$ of the
-  residues $x < m$ set in the bit array \verb|sq| (\csource{find_points.c}{2283}{2284}); and the
-  inverses of the units modulo $m = p^e$, $0$ for the other residues, in the loop over the residues
+  \lean{Ratpoints.modWords, Ratpoints.Sieve.bitAt, Ratpoints.Sieve.setBitAt, Ratpoints.Sieve.patBit, Ratpoints.Sieve.setSquareBits, Ratpoints.Sieve.unitInverses}
+  \leanok
+  The number of words of a pattern of $\mathrm{maxPrimeEven}$ bits,
+  $\mathrm{modWords} = \lceil \mathrm{maxPrimeEven}/64 \rceil$ (\verb|RP_MODWORDS|,
+  \csource{rp-private.h}{523}{523}); bit $x$ of a bit array of words, bit $x \bmod 64$ of word
+  $\lfloor x/64 \rfloor$, read and set as the C code reads and sets the bits of the tables of a
+  prime power and of the patterns of the rows, and the same bit read off the bits of the word, as
+  the proofs read the patterns; the bits of the squares $x^2 \bmod m$ of the residues $x < m$ set in
+  the bit array \verb|sq| (\csource{find_points.c}{2283}{2284}); and the inverses of the units
+  modulo $m = p^e$, $0$ for the other residues, in the loop over the residues
   (\csource{find_points.c}{2302}{2303}). The tables of a prime power
   (Definition~\ref{def:examinePower}) keep \verb|fsq| and \verb|gsq| as bit arrays of
   $\mathrm{modWords}$ words, which \verb|examine_power| clears together with \verb|sq| and sets bit
@@ -378,20 +378,19 @@ contract keeps its statement, the first stage of either arm giving the same word
 
 \begin{lemma}[The bit arrays of a prime power]\label{lem:powerWords}
   \uses{def:powerWords, lem:modinv}
-  Proposed names: \lname{Ratpoints.Sieve.maxPrimeEven\_le\_sixty\_four\_mul\_modWords},
-  \lname{Ratpoints.Sieve.SquareBitsInvariant}, \lname{Ratpoints.Sieve.setSquareBits\_spec},
-  \lname{Ratpoints.Sieve.UnitInversesInvariant}, \lname{Ratpoints.Sieve.unitInverses\_spec},
-  \lname{Ratpoints.Sieve.FsqInvariant}, \lname{Ratpoints.Sieve.GsqInvariant}. A modulus below
-  $\mathrm{maxPrimeEven}$ fits the $\mathrm{modWords}$ words, $\mathrm{maxPrimeEven} \le
-  64\,\mathrm{modWords}$; on a bit array of $\mathrm{modWords}$ words and $m \le
-  64\,\mathrm{modWords}$ the bits of the squares modulo $m$ get set; and for a prime $p$ and $e \ge
-  1$ the inverses are below $p^e$, that of a unit its inverse modulo $p^e$. With the invariants of
-  the loops of \verb|fsq| and \verb|gsq|, the contract of the tables of a prime power and the lemma
-  that its rows let every point through are restated on the bits (Lemma~\ref{lem:power_admits}), for
-  $p^e \le 64\, \mathrm{modWords}$.
+  \lean{Ratpoints.Sieve.maxPrimeEven_le_sixty_four_mul_modWords, Ratpoints.Sieve.SquareBitsInvariant, Ratpoints.Sieve.setSquareBits_spec, Ratpoints.Sieve.UnitInversesInvariant, Ratpoints.Sieve.unitInverses_spec, Ratpoints.Sieve.FsqInvariant, Ratpoints.Sieve.GsqInvariant}
+  \leanok
+  A modulus below $\mathrm{maxPrimeEven}$ fits the $\mathrm{modWords}$ words,
+  $\mathrm{maxPrimeEven} \le 64\,\mathrm{modWords}$; on a bit array of $\mathrm{modWords}$ words and
+  $m \le 64\,\mathrm{modWords}$ the bits of the squares modulo $m$ get set; and for a prime $p$ and
+  $e \ge 1$ the inverses are below $p^e$, that of a unit its inverse modulo $p^e$. With the
+  invariants of the loops of \verb|fsq| and \verb|gsq|, the contract of the tables of a prime power
+  and the lemma that its rows let every point through are restated on the bits
+  (Lemma~\ref{lem:power_admits}), for $p^e \le 64\, \mathrm{modWords}$.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   The bit set by \verb|setBitAt| is the bit read by \verb|bitAt| and no other bit changes; the loop
   over the multiples of $p$ is a \verb|while| loop with the measure $m - t$; the inverses are those
   of the extended Euclidean algorithm (Lemma~\ref{lem:modinv}).

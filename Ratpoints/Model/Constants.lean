@@ -34,6 +34,7 @@ them one by one, and `Ratpoints.lt_of_mem_primeTable`, `Ratpoints.mem_primeTable
 * `Ratpoints.maxBitsInPrime`, `Ratpoints.numPrimes`, `Ratpoints.maxPrimeEven`: the moduli are
   chosen among the primes of the table below `maxPrimeEven = 2 ^ maxBitsInPrime`, the first
   `numPrimes` of them, and the prime powers and products of them below `maxPrimeEven`.
+* `Ratpoints.modWords`: the number of 64-bit words of a pattern of `maxPrimeEven` bits.
 * `Ratpoints.hornerSteps`: after how many steps Horner's rule reduces its accumulator in the table
   of a prime.
 * `Ratpoints.defaultNumPrimes`, `Ratpoints.defaultMaxForbidden`: how many primes the sieve takes
@@ -116,6 +117,15 @@ C: `rp-private.h:325-361`
 Deviation: computed from `Ratpoints.maxBitsInPrime`, where the header lists the values for 5 to
 10 bits, the powers of 2 that the computation gives, and takes 7 bits for any other value. -/
 def maxPrimeEven : Nat := 2 ^ maxBitsInPrime
+
+/-- The number of 64-bit words of a pattern of `Ratpoints.maxPrimeEven` bits, `RP_MODWORDS`: the
+size of the bit arrays of the tables of a prime power, one bit for each residue modulo the prime
+power (`Ratpoints.Sieve.Power`).
+
+C: `rp-private.h:523`
+
+Deviation: `64` for `LONG_LENGTH`. -/
+def modWords : Nat := (maxPrimeEven + 64 - 1) / 64
 
 /-- After how many steps Horner's rule modulo a prime reduces its accumulator in `examine_prime`
 (`Ratpoints.Sieve.hornerBarrett`), `RP_HORNER_STEPS`: `64 / maxBitsInPrime - 1`. After `k` steps
@@ -394,7 +404,7 @@ theorem one_le_numStrides : 1 ≤ numStrides := by decide
   (primeTable.toList.take numPrimes).all (· < maxPrimeEven) && maxPrimeEven ≤ primeTable[numPrimes]!
 
 #guard rbaLength == 256 && rbaShift == 8 && chunk == 16 && defaultArraySize == 256 &&
-  maxArraySize == 1048576
+  maxArraySize == 1048576 && modWords == 4
 
 #guard maxDivisors == 512 && veryBig == 1000 && jacobiPrimes == 16 && jacobiTable == 8192 &&
   mulModLimit == 4294967295

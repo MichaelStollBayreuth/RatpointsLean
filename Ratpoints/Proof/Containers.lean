@@ -72,7 +72,8 @@ in `Ratpoints.Proof.Bits`.
   `[0:m]`; `Std.Legacy.Range.add_length_eq_of_toList_eq_append_cons`,
   `Std.Legacy.Range.lt_of_toList_eq_append_cons`,
   `Std.Legacy.Range.length_add_length_add_one_of_toList_eq_append_cons`: that of a loop over
-  `[a:m]`, below `m`, and the lengths of the lists before and after it.
+  `[a:m]`, below `m`, and the lengths of the lists before and after it;
+  `Std.Legacy.Range.mem_toList_of_lt`: a number below `m` is in the list of a loop over `[0:m]`.
 * `Array.getElem!_pop`, `Array.getElem!_pop_of_back!_eq`: the entries of an array without its last
   entry, the same as before when that entry is the default value.
 * `Array.getElem!_set!`: the entries of an array after `Array.set!`.
@@ -120,6 +121,8 @@ in `Ratpoints.Proof.Bits`.
   `n = m P`, in a packing of stride `m`.
 * `Nat.le_mul_add_sub_one_div`, `Nat.mul_add_sub_one_div_lt`: the multiple `m ⌈R / m⌉` of `m > 0`
   lies from `R` to below `R + m`, as the bias of a modulus does.
+* `Nat.eq_of_mod_eq_zero_of_le_of_lt`: the multiples of `p` lie `p` apart, as the loop over the
+  multiples of `p` of `examine_power` steps through them.
 * `List.filter_range_mod_eq`: the numbers below `N` that are `r` modulo `m > r`, `r, r + m, …`.
 * `Int.ediv_add_emod_sub_add_sub_one_ediv`, `Int.ediv_add_emod_sub_ediv`: the two ends of the split
   form of `numerators_to_bits`, `⌈(lo - a₀) / m⌉` and `⌊(hi - a₀) / m⌋`.
@@ -470,6 +473,10 @@ theorem lt_of_toList_eq_append_cons {a m cur : Nat} {pref suff : List Nat}
   simp only [Std.Internal.ForIn.toList_range, List.mem_range'_1, size] at this
   lia
 
+/-- A number below `m` is in the list of a loop over `[0:m]`. -/
+theorem mem_toList_of_lt {x m : Nat} (h : x < m) : x ∈ ForIn.toList [0:m] := by
+  simp [Std.Internal.ForIn.toList_range, List.mem_range'_1, size, h]
+
 /-- The form of `List.length_of_range'_eq_append_cons` for the list `ForIn.toList [a:m]` of a loop
 over `[a:m]`: the lists before and after the cursor have `m - a - 1` entries together. -/
 theorem length_add_length_add_one_of_toList_eq_append_cons {a m cur : Nat} {pref suff : List Nat}
@@ -745,6 +752,13 @@ theorem add_sub_mod_eq_zero_iff {N m r : Nat} (hr : r < m) :
     exact ⟨fun _ ↦ rfl, fun _ ↦ rfl⟩
   · rw [show N % m + (m - r) = N % m - r + m by lia, Nat.add_mod_right, Nat.mod_eq_of_lt (by lia)]
     lia
+
+/-- A multiple `t'` of `p` from the multiple `t` of `p` on and below `t + p` is `t`. -/
+theorem eq_of_mod_eq_zero_of_le_of_lt {p t t' : Nat} (ht : t % p = 0) (ht' : t' % p = 0)
+    (hle : t ≤ t') (hlt : t' < t + p) : t' = t := by
+  have h := Nat.eq_zero_of_dvd_of_lt (Nat.dvd_sub (Nat.dvd_of_mod_eq_zero ht')
+    (Nat.dvd_of_mod_eq_zero ht)) (by lia)
+  lia
 
 end Nat
 

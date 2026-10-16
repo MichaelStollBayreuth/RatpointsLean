@@ -237,45 +237,52 @@ that a point makes some entry of the reference true.
 \end{proof}
 
 \begin{definition}[The tables of a prime power]\label{def:examinePower}
-  \uses{def:modinv, def:useCLong, def:examinePrime}
+  \uses{def:modinv, def:useCLong, def:examinePrime, def:powerWords}
   \lean{Ratpoints.Sieve.Power, Ratpoints.Sieve.examinePower, Ratpoints.Sieve.Power.admits}
   \leanok
   For a prime $p$ and $e \ge 2$, $q = p^e$, a component of type \verb|Id|: the coefficients reduced
-  modulo $q$ on the path of the flag of the \verb|long|s, with $c_D = 0$ for odd $d$; the squares
-  modulo $q$; for each residue $x$ whether $f(x)$ is a square modulo $q$, by Horner's rule reduced
-  at every step; for each residue $t$ whether $p \mid t$ and $\tilde f(t)$ is a square modulo $q$;
-  and, in a loop over the residues, the inverses of the units modulo $q$ by
-  Definition~\ref{def:modinv} (\csource{find_points.c}{2267}{2303};
-  \csource{rp-private.h}{523}{523}, \csource{rp-private.h}{531}{534}). The row of $b$ admits $a$
-  when, for $r = b \bmod q$ and $x = a \bmod q$, $f(x r^{-1})$ is a square modulo $q$ if
-  $p \nmid r$, and $p \nmid x$ and $\tilde f(r x^{-1})$ is a square modulo $q$ if $p \mid r$
+  modulo $q$ on the path of the flag of the \verb|long|s, with $c_D = 0$ for odd $d$; the bit arrays
+  \verb|sq|, \verb|fsq| and \verb|gsq| of $\mathrm{modWords}$ words cleared in one loop, and the
+  bits of the squares modulo $q$ set in \verb|sq| (Definition~\ref{def:powerWords}); for each
+  residue $x$, bit $x$ of \verb|fsq| set when $f(x)$ is a square modulo $q$, by Horner's rule
+  reduced at every step; for each multiple $t < q$ of $p$, bit $t$ of \verb|gsq| set when
+  $\tilde f(t)$ is a square modulo $q$, the squares read from \verb|sq|; and, in a loop over the
+  residues, the inverses of the units modulo $q$ by Definition~\ref{def:modinv}
+  (Definition~\ref{def:powerWords}; \csource{find_points.c}{2267}{2282},
+  \csource{find_points.c}{2285}{2301}; \csource{rp-private.h}{531}{534}). The row of $b$ admits $a$
+  when, for $r = b \bmod q$ and $x = a \bmod q$, bit $x r^{-1}$ of \verb|fsq| is set, that is
+  $f(x r^{-1})$ is a square modulo $q$, if $p \nmid r$, and $p \nmid x$ and bit $r x^{-1}$ of
+  \verb|gsq| is set, that is $\tilde f(r x^{-1})$ is a square modulo $q$, if $p \mid r$
   (\csource{init.c}{359}{386}, \csource{rp-private.h}{592}{592}).
 \end{definition}
 
 \begin{lemma}[The rows of a prime power let every point through]\label{lem:power_admits}
   \uses{def:examinePower, lem:modinv, lem:isSquare_div, lem:twoAdic_point, def:examinePrime,
-    def:barrett, def:binaryForm}
-  \lean{Ratpoints.Sieve.ExaminePowerInvariant, Ratpoints.Sieve.examinePower_spec, Ratpoints.Sieve.examinePower_eq_examinePower_false, Ratpoints.Sieve.getElem!_fsq_run_examinePower_of_isSquare, Ratpoints.Sieve.getElem!_gsq_run_examinePower_of_isSquare, Ratpoints.Sieve.mul_getElem!_inv_run_examinePower_mod, Ratpoints.Sieve.natCast_evalMod_reverse, Ratpoints.Sieve.admits_run_examinePower_of_sq_eq, Ratpoints.mul_add_lt_two_pow_64_of_lt_maxPrimeEven, Ratpoints.mul_self_lt_two_pow_63_of_lt_maxPrimeEven, Ratpoints.Sieve.getElem!_inv_run_examinePower_lt, Ratpoints.Sieve.getElem!_inv_run_examinePower_lt_two_pow_16}
+    def:barrett, def:binaryForm, lem:powerWords}
+  \lean{Ratpoints.Sieve.examinePower_spec, Ratpoints.Sieve.examinePower_eq_examinePower_false, Ratpoints.Sieve.bitAt_fsq_run_examinePower_of_isSquare, Ratpoints.Sieve.bitAt_gsq_run_examinePower_of_isSquare, Ratpoints.Sieve.mul_getElem!_inv_run_examinePower_mod, Ratpoints.Sieve.natCast_evalMod_reverse, Ratpoints.Sieve.admits_run_examinePower_of_sq_eq, Ratpoints.mul_add_lt_two_pow_64_of_lt_maxPrimeEven, Ratpoints.mul_self_lt_two_pow_63_of_lt_maxPrimeEven, Ratpoints.Sieve.getElem!_inv_run_examinePower_lt, Ratpoints.Sieve.getElem!_inv_run_examinePower_lt_two_pow_16}
   \leanok
-  The two paths of the coefficients give the same tables; the tables mark what they claim: $f(x)$ a
-  square modulo $q$, $\tilde f(t)$ a square modulo $q$ for $p \mid t$, and, by the contract of the
-  loop of the inverses, the inverses of the units. For a prime $p$, $e \ge 1$, $\gcd(a, b) = 1$ and
-  $y^2 = F(a, b)$, the row of $b$ in the tables of $p^e$ admits $a$. The values of
-  \verb|examine_power| and of the row stay in their C types, the moduli being below
-  $\mathrm{maxPrimeEven} \le 2^{10}$: the accumulator $v x + c$ of Horner's rule with $v, x, c < q$,
-  an \verb|unsigned long|, and likewise the product of a residue and an inverse in the row; the
-  square $x \cdot x$, a signed \verb|long|; and the inverses, below $q$, \verb|unsigned short|s.
+  The two paths of the coefficients give the same tables; for $q \le 64\,\mathrm{modWords}$, within
+  the words of the bit arrays, the bits of the tables mark what they claim: $f(x)$ a square modulo
+  $q$, $\tilde f(t)$ a square modulo $q$ for $p \mid t$, and, by the contract of the loop of the
+  inverses, the inverses of the units. For a prime $p$, $e \ge 1$ with
+  $p^e \le 64\,\mathrm{modWords}$, $\gcd(a, b) = 1$ and $y^2 = F(a, b)$, the row of $b$ in the
+  tables of $p^e$ admits $a$. The values of \verb|examine_power| and of the row stay in their C
+  types, the moduli being below $\mathrm{maxPrimeEven} \le 2^{10}$: the accumulator $v x + c$ of
+  Horner's rule with $v, x, c < q$, an \verb|unsigned long|, and likewise the product of a residue
+  and an inverse in the row; the square $x \cdot x$, a signed \verb|long|; and the inverses, below
+  $q$, \verb|unsigned short|s.
 \end{lemma}
 
 \begin{proof}
-  \uses{lem:modinv}
+  \uses{lem:modinv, lem:powerWords}
   \leanok
-  For $p \nmid b$, $b$ is a unit modulo $q$ and $F(a, b) = b^D f(a b^{-1})$ there, with $b^D$ the
-  square of a unit (Lemma~\ref{lem:isSquare_div}). For $p \mid b$, $p \nmid a$, so $a$ is a unit,
-  and $F(a, b) = a^D \tilde f(b a^{-1})$ modulo $q$, by the form of that lemma with the roles of $a$
-  and $b$ exchanged (Lemma~\ref{lem:twoAdic_point}); Horner's rule on the reversed coefficients
-  computes $\tilde f$. Zero counts as a square, so a high power of $p$ dividing $F(a, b)$ needs no
-  case of its own.
+  The bits of the tables come from the contracts of the loops that set them
+  (Lemma~\ref{lem:powerWords}). For $p \nmid b$, $b$ is a unit modulo $q$ and
+  $F(a, b) = b^D f(a b^{-1})$ there, with $b^D$ the square of a unit (Lemma~\ref{lem:isSquare_div}).
+  For $p \mid b$, $p \nmid a$, so $a$ is a unit, and $F(a, b) = a^D \tilde f(b a^{-1})$ modulo $q$,
+  by the form of that lemma with the roles of $a$ and $b$ exchanged (Lemma~\ref{lem:twoAdic_point});
+  Horner's rule on the reversed coefficients computes $\tilde f$. Zero counts as a square, so a high
+  power of $p$ dividing $F(a, b)$ needs no case of its own.
 \end{proof}
 
 The coefficients reduced by \verb|mod| need moduli below $2^{59}$ (Definition~\ref{def:useCLong}),
@@ -323,15 +330,16 @@ which $\mathrm{maxPrimeEven} \le 2^{32}$ gives.
 
 \begin{definition}[The sieve entries]\label{def:SieveEntry}
   \uses{def:admits, def:examinePower, def:binaryForm}
-  \lean{Ratpoints.Sieve.Factor, Ratpoints.Sieve.Factor.admits, Ratpoints.Sieve.SieveEntry, Ratpoints.Sieve.SieveEntry.admits, Ratpoints.Sieve.survives, Ratpoints.Sieve.SieveEntry.IsSound}
+  \lean{Ratpoints.Sieve.Factor, Ratpoints.Sieve.Factor.admits, Ratpoints.Sieve.Factor.modulus, Ratpoints.Sieve.SieveEntry, Ratpoints.Sieve.SieveEntry.admits, Ratpoints.Sieve.survives, Ratpoints.Sieve.SieveEntry.IsSound}
   \leanok
-  A factor of a modulus is a prime with its table or a prime power with its tables; the sieve entry
-  of a modulus $m$ is $m$ with its factors, one for a prime or a prime power, two or more for a
-  product, the reciprocal of $m$ (Definition~\ref{def:mulMod}), and the fields that the packing of
-  the numerators reads (Chapter~\ref{chap:packing}): the bias, the least multiple of $m$ from
-  $\mathrm{rowBias}$ on, the inverse $\mathrm{rbainv}$ of $\mathrm{rbaLength}$ modulo $m$, and the
-  inverses $\mathrm{dinv}$ of the strides $2^k$ modulo $m$ up to the largest stride in use, which
-  the rows of offsets fill (Definition~\ref{def:classOffsets}; \csource{rp-private.h}{497}{498},
+  A factor of a modulus is a prime with its table or a prime power with its tables, its modulus the
+  prime or the prime power; the sieve entry of a modulus $m$ is $m$ with its factors, one for a
+  prime or a prime power, two or more for a product, the reciprocal of $m$
+  (Definition~\ref{def:mulMod}), and the fields that the packing of the numerators reads
+  (Chapter~\ref{chap:packing}): the bias, the least multiple of $m$ from $\mathrm{rowBias}$ on, the
+  inverse $\mathrm{rbainv}$ of $\mathrm{rbaLength}$ modulo $m$, and the inverses $\mathrm{dinv}$ of
+  the strides $2^k$ modulo $m$ up to the largest stride in use, which the rows of offsets fill
+  (Definition~\ref{def:classOffsets}; \csource{rp-private.h}{497}{498},
   \csource{rp-private.h}{520}{520}, \csource{rp-private.h}{542}{555}). Its row of $b$ admits $a$
   when the row of every factor admits $a$, each factor reading $b$ and $a$ modulo its own modulus,
   which divides $m$ (\csource{init.c}{399}{414}, \csource{init.c}{419}{429},
@@ -368,7 +376,7 @@ which $\mathrm{maxPrimeEven} \le 2^{32}$ gives.
   \uses{def:makeModulus, lem:modulusFactors, lem:admits_examinePrime, lem:power_admits,
     lem:examinePrime_eq, lem:examinePrime_none, def:mulMod, lem:admits_mul, lem:modinv, lem:mulMod,
     def:packingConstants}
-  \lean{Ratpoints.Sieve.Factor.modulus, Ratpoints.Sieve.Factor.IsSound, Ratpoints.MakeModulusInvariant, Ratpoints.IsModulusEntry, Ratpoints.mod_two_eq_one_of_forall_dvd, Ratpoints.coprime_rbaLength_of_mod_two_eq_one, Ratpoints.factors_eq_of_run_makeModulus?_eq_some, Ratpoints.makeModulus?_spec}
+  \lean{Ratpoints.Sieve.Factor.IsSound, Ratpoints.MakeModulusInvariant, Ratpoints.IsModulusEntry, Ratpoints.mod_two_eq_one_of_forall_dvd, Ratpoints.coprime_rbaLength_of_mod_two_eq_one, Ratpoints.factors_eq_of_run_makeModulus?_eq_some, Ratpoints.makeModulus?_spec}
   \leanok
   For tables of the loop that are those of the reference and a modulus
   $1 < m < \mathrm{maxPrimeEven}$ each of whose divisors $q > 1$ is divisible by one of the first
@@ -388,9 +396,10 @@ which $\mathrm{maxPrimeEven} \le 2^{32}$ gives.
   \leanok
   Each factor's modulus divides $m$, so $b \bmod m$ and $a \bmod m$ reduce to the residues of the
   factor (Lemma~\ref{lem:admits_mul}); each factor admits the point by
-  Lemma~\ref{lem:admits_examinePrime} or Lemma~\ref{lem:power_admits}, and its table of inverses
-  inverts its units, by the inverses modulo a prime and by Lemma~\ref{lem:power_admits} for a prime
-  power. A prime factor beyond the loop has its position below $\mathrm{numPrimes}$
+  Lemma~\ref{lem:admits_examinePrime} or Lemma~\ref{lem:power_admits}, a prime power dividing
+  $m < \mathrm{maxPrimeEven} \le 64\,\mathrm{modWords}$ (Lemma~\ref{lem:powerWords}), and its table
+  of inverses inverts its units, by the inverses modulo a prime and by Lemma~\ref{lem:power_admits}
+  for a prime power. A prime factor beyond the loop has its position below $\mathrm{numPrimes}$
   (Lemma~\ref{lem:modulusFactors}), so it is below $\mathrm{maxPrimeEven}$ and the table that its
   examination gives is the reference (Lemma~\ref{lem:examinePrime_eq}). No sieve entry is made only
   when a prime examined for it has no table with the exit, and then the curve has no points
