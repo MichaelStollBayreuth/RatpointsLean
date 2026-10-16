@@ -116,9 +116,21 @@ reason = "RATPOINTS_DEFAULT_SP2, the fixed end of the second stage of the versio
 
 [[excluded]]
 file = "find_points.c"
+lines = "30"
+kind = "other"
+reason = "the include of the private header; the model has no headers"
+
+[[excluded]]
+file = "find_points.c"
+lines = "69-118"
+kind = "instrumentation"
+reason = "RP_PHASE_TIMING and RP_PHASE_COUNTS, development instrumentation: the counters of sift.c declared extern and the timers RP_BC_TIC/TOC, RP_BP_TIC/TOC, RP_SIFT_TIC/TOC, RP_INIT_TIC/TOC and RP_SETUP_TIC/TOC, which time with rdtsc the part of the exact check that is done once per denominator, the residues of a denominator modulo the moduli of the first two stages, the whole of sift, the building of a row and the set-up of a denominator, with the arm of the production build, where they are empty"
+
+[[excluded]]
+file = "find_points.c"
 lines = "181-270"
 kind = "memory"
-reason = "pointer_align, which aligns the buffers and the survivors array; ba_buffer_need, alloc_ba_buffer and ensure_ba_buffer, which size, allocate and enlarge the buffer from which the builders take the rows of the tables; num_powers, the number of prime powers below RATPOINTS_MAX_PRIME_EVEN, which sizes the buffers of the sieve entries and of the prime powers; and hold_nothing, which clears the pointers to the buffers: the model allocates nothing itself and keeps the rows in tables of its own"
+reason = "pointer_align, which aligns the buffers and the survivors array; ba_buffer_need, alloc_ba_buffer and ensure_ba_buffer, which size, allocate and enlarge the buffer from which the builders take the rows of the tables; num_powers, the number of prime powers below RATPOINTS_MAX_PRIME_EVEN, which sizes the buffers of the sieve entries and of the prime powers (and gives add_moduli its bound on the prime powers it keeps, line 2351, which never binds); and hold_nothing, which clears the pointers to the buffers: the model allocates nothing itself and keeps the rows in tables of its own"
 
 [[excluded]]
 file = "find_points.c"

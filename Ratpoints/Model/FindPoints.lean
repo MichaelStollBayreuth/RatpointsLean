@@ -133,23 +133,26 @@ output does not depend on the primes examined, since the exit is taken only when
 points; every modulus of the parameters taken, any product of powers of primes of the table below
 `Ratpoints.maxPrimeEven` (`Ratpoints.Params.WF`), where `add_moduli` offers a composite only for an
 odd `9 ≤ m ≤ RATPOINTS_COMPOSITE_MAX` (line 2361; `ratpoints.h:210-211`, 64 by default) whose table
-is not too dear for the run (line 2368), with room in the buffer of the prime powers for its new
-prime powers (lines 2351 and 2390), a density `r < 1` (line 2402) and at most `RP_MAX_MODULI`
+is not too dear for the run (line 2368), a density `r < 1` (line 2402) and at most `RP_MAX_MODULI`
 candidates (line 2403), restrictions that the model lifts as choices of the moduli (stage I); the
-reciprocal `magic`, the bias `bias` and the inverse `rbainv` of every kind of modulus set here, with
-the formulas of the C code, where `examine_prime` sets those of a prime with its table (lines 1808,
-1815 and 1816), `make_power` those of a prime power (lines 2422, 2424 and 2425) and `make_modulus`
-those of a product (lines 2454, 2456 and 2457), the inverse of a prime read from its table, as from
-the table `inverses[pn]` of the build; natural numbers for the `long`s of these formulas; the
-inverses `dinv` empty, which the row offsets of the packing fill (`Ratpoints.Sieve.classOffsets`);
-no density `r` (stage I); the kind `init` of the builder set here for every kind of modulus, where
-`examine_prime` sets that of a prime with its table (line 1800); the reference to the entry whose
-table of rows holds its rows (`Ratpoints.Sieve.EntryRef`), for the pointer to the entry, the
-position `n` of a product its own entry; the tables of rows of the entry and of its factors, which
-`make_power` (line 2427) and `make_modulus` (line 2471) clear, made in the store of the run by the
-loop over the moduli after the entry (`Ratpoints.Sieve.SieveEntry.addTables`); the entry a fresh
-value, for the space that `make_power` and `make_modulus` take from the buffer of the sieve entries
-(`se_next`), and the exit as `none`, for the prime that `sieving_info` returns. -/
+test of room in the buffer of the prime powers (lines 2351 and 2390) not made, which never fails,
+since `add_moduli` runs once for the curve (line 2821, `npw = 0` at line 2548) and examines each
+power `p^e < RATPOINTS_MAX_PRIME_EVEN` of the first `RATPOINTS_NUM_PRIMES` primes at most once
+(`pw_idx`, lines 2358-2359 and 2387-2393), all of which `num_powers` counts; the reciprocal `magic`,
+the bias `bias` and the inverse `rbainv` of every kind of modulus set here, with the formulas of the
+C code, where `examine_prime` sets those of a prime with its table (lines 1808, 1815 and 1816),
+`make_power` those of a prime power (lines 2422, 2424 and 2425) and `make_modulus` those of a
+product (lines 2454, 2456 and 2457), the inverse of a prime read from its table, as from the table
+`inverses[pn]` of the build; natural numbers for the `long`s of these formulas; the inverses `dinv`
+empty, which the row offsets of the packing fill (`Ratpoints.Sieve.classOffsets`); no density `r`
+(stage I); the kind `init` of the builder set here for every kind of modulus, where `examine_prime`
+sets that of a prime with its table (line 1800); the reference to the entry whose table of rows
+holds its rows (`Ratpoints.Sieve.EntryRef`), for the pointer to the entry, the position `n` of a
+product its own entry; the tables of rows of the entry and of its factors, which `make_power` (line
+2427) and `make_modulus` (line 2471) clear, made in the store of the run by the loop over the moduli
+after the entry (`Ratpoints.Sieve.SieveEntry.addTables`); the entry a fresh value, for the space
+that `make_power` and `make_modulus` take from the buffer of the sieve entries (`se_next`), and the
+exit as `none`, for the prime that `sieving_info` returns. -/
 def makeModulus? (c : List Int) (d : Nat) (useCLong : Bool) (tables : Array Entry) (n m : Nat) :
     Id (Option SieveEntry) := do
   let (fac, _) ← modulusFactors m

@@ -475,9 +475,9 @@ contract keeps its statement, the first stage of either arm giving the same word
   itself shifted left by $i = p, 2p, 4p, \dots$ below $64$; the first $p$ words of the row rotated
   out of the two words, by the shifts
   $\mathrm{diff\_shift} = (\lfloor 64/p \rfloor + 1)\, p \bmod 64$ and $64 - \mathrm{diff\_shift}$
-  (\csource{init.c}{160}{177}); the copies; and the row stored into the table of rows of the entry,
-  \verb|RP_PUBLISH| (\csource{init.c}{118}{130}, \csource{init.c}{144}{159},
-  \csource{init.c}{178}{183}).
+  (\csource{init.c}{126}{129}, \csource{init.c}{160}{177}); the copies; and the row stored into the
+  table of rows of the entry, \verb|RP_PUBLISH| (\csource{init.c}{118}{125},
+  \csource{init.c}{130}{130}, \csource{init.c}{144}{159}, \csource{init.c}{178}{183}).
 \end{definition}
 
 \begin{definition}[The rows of a prime above $64$]\label{def:sieveInit2}
@@ -492,9 +492,9 @@ contract keeps its statement, the first stage of either arm giving the same word
   loop, the four residues carried from word to word (\csource{init.c}{209}{216},
   \csource{init.c}{204}{208}, \csource{init.c}{217}{219}); the first $p$ words of the row, the first
   $\lfloor p/64 \rfloor$ copied and the others rotated out of the ring of $\lfloor p/64 \rfloor + 1$
-  words by the shifts $p \bmod 64$ and $64 - (p \bmod 64)$ (\csource{init.c}{220}{238}); the copies;
-  and the row stored into the table of rows of the entry (\csource{init.c}{186}{203},
-  \csource{init.c}{239}{244}).
+  words by the shifts $p \bmod 64$ and $64 - (p \bmod 64)$ (\csource{init.c}{195}{196},
+  \csource{init.c}{220}{238}); the copies; and the row stored into the table of rows of the entry
+  (\csource{init.c}{186}{194}, \csource{init.c}{197}{203}, \csource{init.c}{239}{244}).
 \end{definition}
 
 \begin{lemma}[The builders of a prime build the closed forms]\label{lem:primeRows}

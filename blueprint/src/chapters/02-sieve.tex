@@ -68,11 +68,12 @@ are no points modulo $p$ (D) and the options of the output (G) come in their sta
   \lean{Ratpoints.primeTable, Ratpoints.maxBitsInPrime, Ratpoints.numPrimes, Ratpoints.prime_of_mem_primeTable, Ratpoints.pairwise_lt_toList_primeTable, Ratpoints.lt_of_mem_primeTable}
   \leanok
   The 171 odd primes below $1024$, in increasing order, which \verb|decide| checks, the table of
-  \verb|primes.h| (\csource{primes.h}{29}{40}); every entry is a prime below $1022$. The moduli are
-  chosen among those below $2^b$, for the size in bits $b = \mathrm{maxBitsInPrime}$ that the build
-  of ratpoints fixes (\csource{rp-private.h}{321}{323}): $8$ in the default build, whose Makefile
-  sets it, where the header takes $7$ when it is given none. There are $\mathrm{numPrimes}$ of them,
-  $53$ for $b = 8$ (\csource{rp-private.h}{325}{361}, where the header lists the numbers for
+  \verb|primes.h| (\csource{primes.h}{29}{40}), which \verb|find_points.c| includes
+  (\csource{find_points.c}{32}{32}); every entry is a prime below $1022$. The moduli are chosen
+  among those below $2^b$, for the size in bits $b = \mathrm{maxBitsInPrime}$ that the build of
+  ratpoints fixes (\csource{rp-private.h}{321}{323}): $8$ in the default build, whose Makefile sets
+  it, where the header takes $7$ when it is given none. There are $\mathrm{numPrimes}$ of them, $53$
+  for $b = 8$ (\csource{rp-private.h}{325}{361}, where the header lists the numbers for
   $b = 5, \dots, 10$).
 \end{definition}
 
@@ -187,8 +188,10 @@ $a$. These two facts make sound the rows that the tables below define.
   The table of the squares modulo $p$, made as the generator of the tables of ratpoints makes it:
   zero, and the squares of the odd residues (\csource{gen_find_points_h.c}{69}{88}); and the
   table of the inverses modulo $p$ of the residues $1, \dots, p - 1$, each the least positive one
-  found by trial (\csource{gen_find_points_h.c}{33}{44}, \csource{gen_find_points_h.c}{90}{100}).
-  The squares of all residues are marked, and $r \cdot r^{-1} \equiv 1 \pmod p$ for a prime $p$.
+  found by trial (\csource{gen_find_points_h.c}{33}{44}, \csource{gen_find_points_h.c}{90}{100}):
+  the rows of $p$ in the tables \verb|squares| and \verb|inverses| that the build generates and
+  \verb|find_points.c| includes (\csource{find_points.c}{37}{37}). The squares of all residues are
+  marked, and $r \cdot r^{-1} \equiv 1 \pmod p$ for a prime $p$.
 \end{definition}
 
 \begin{definition}[The table of a prime]\label{def:examinePrime}

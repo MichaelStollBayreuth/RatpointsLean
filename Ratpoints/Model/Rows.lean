@@ -300,9 +300,9 @@ shifted right by `64 mod p`: word `0` of the row `help0`, and for `a = 1, …, p
 rotation `help1 | help0 << diff_shift`, for `diff_shift = (⌊64 / p⌋ + 1) p mod 64`, with `help1`
 then the bits of the old `help0` shifted out by `diff = 64 - diff_shift`.
 
-C: `init.c:160-177`
+C: `init.c:126-129`, `init.c:160-177`
 
-Deviation: `ldp`, `p1`, `diff_shift` and `diff` computed where they are used, for the variables of
+Deviation: `ldp`, `p1`, `diff_shift` and `diff` computed here, for the variables at the head of
 the function; the mask `p1 & LONG_MASK` as the remainder by 64; a fresh vector of
 `(p + chunk - 1) rbaPack` words, for the space that the builder takes from the buffer of the tables
 (`ba_next`); natural numbers for the `long`s. -/
@@ -332,7 +332,7 @@ repeated in `help0` by or-ing in `help0` shifted left by `i` for `i = p, 2 p, 4 
 first `p` words of the row rotated out of `help0` and `help1` (`Ratpoints.Sieve.sieve1Rows`); then
 the copies (`Ratpoints.Sieve.initReplicate`).
 
-C: `init.c:118-130`, `init.c:144-159`, `init.c:178-183`
+C: `init.c:118-125`, `init.c:130`, `init.c:144-159`, `init.c:178-183`
 
 Deviation: one function for every prime below 64, the prime that of its tables, for the function
 that the build generates for each prime with the prime a constant (`init_sieve.h`); the tables of
@@ -410,13 +410,13 @@ def sieve2Pattern (t : Entry) (b : Nat) (help : Vector UInt64 (t.p / 64 + 2)) :
 and the next position `t` after it in the ring of the `wp + 1` words: `help[a1] |= help[t] << ds`,
 word `a` of the row `help[a1]`, the cursor moved on to `t` and `help[t] >>= 64 - ds`.
 
-C: `init.c:220-238`
+C: `init.c:195-196`, `init.c:220-238`
 
-Deviation: the words `help` passed, for the array of the function; `wp`, `diff_shift` and `diff`
-computed where they are used, for the variables of the function; a fresh vector of
-`(p + chunk - 1) rbaPack` words, for the space that the builder takes from the buffer of the tables
-(`ba_next`); the shift by `LONG_SHIFT` and the mask by `LONG_MASK` as the division and the
-remainder by 64. -/
+Deviation: the words `help` passed, for the array of the function; `diff_shift` and `diff` computed
+here, for the variables at the head of the function, and `wp` where it is used, for the variable of
+the function; a fresh vector of `(p + chunk - 1) rbaPack` words, for the space that the builder
+takes from the buffer of the tables (`ba_next`); the shift by `LONG_SHIFT` and the mask by
+`LONG_MASK` as the division and the remainder by 64. -/
 def sieve2Rows (p : Nat) (help : Vector UInt64 (p / 64 + 2)) :
     Id (Vector UInt64 ((p + chunk - 1) * rbaPack)) := do
   let wp := p / 64
@@ -442,7 +442,7 @@ store `store` with the row stored into the table of rows of the entry `ref`
 pattern of the row in them (`Ratpoints.Sieve.sieve2Pattern`), the first `p` words of the row rotated
 out of them (`Ratpoints.Sieve.sieve2Rows`), and the copies (`Ratpoints.Sieve.initReplicate`).
 
-C: `init.c:186-203`, `init.c:239-244`
+C: `init.c:186-194`, `init.c:197-203`, `init.c:239-244`
 
 Deviation: one function for every prime above 64, the prime that of its tables, for the function
 that the build generates for each prime with the prime a constant (`init_sieve.h`); the tables of

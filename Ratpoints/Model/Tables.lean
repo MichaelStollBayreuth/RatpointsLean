@@ -88,10 +88,10 @@ namespace Sieve
 of the odd residues `i < p`, as the generator of the tables of ratpoints marks them; for odd `p`,
 the squares of `i` and of `p - i` agree, so these are all the squares.
 
-C: `gen_find_points_h.c:69-88`
+C: `find_points.c:37`, `gen_find_points_h.c:69-88`
 
 Deviation: a function of `p`, computed when it is called, for the row of `p` in the table
-`squares` that the build generates. -/
+`squares` that the build generates and that `find_points.c` includes. -/
 def squaresMod (p : Nat) : Array Bool :=
   (List.range' 1 (p / 2) 2).foldl (fun w i ↦ w.set! (i * i % p) true)
     ((Array.replicate p false).set! 0 true)
@@ -99,12 +99,12 @@ def squaresMod (p : Nat) : Array Bool :=
 /-- The inverses modulo `p`, as a table indexed by the residues: `0` for `0`, and for every other
 residue `b` the least `i ≥ 1` with `i b ≡ 1 (mod p)`, found by trial.
 
-C: `gen_find_points_h.c:33-44`, `gen_find_points_h.c:90-100`
+C: `find_points.c:37`, `gen_find_points_h.c:33-44`, `gen_find_points_h.c:90-100`
 
-Deviation: a function of `p`, computed when it is called, for the row of `p` in the table
-`inverses` that the build generates; the trial stops before `p` and gives `0` when it finds
-nothing, where `inv_mod_p` would not stop, which never happens for a prime `p` and a residue other
-than `0`. -/
+Deviation: a function of `p`, computed when it is called, for the row of `p` in the table `inverses`
+that the build generates and that `find_points.c` includes; the trial stops before `p` and gives `0`
+when it finds nothing, where `inv_mod_p` would not stop, which never happens for a prime `p` and a
+residue other than `0`. -/
 def inversesMod (p : Nat) : Array Nat :=
   (Array.range p).map fun b ↦ ((List.range' 1 (p - 1)).find? (· * b % p == 1)).getD 0
 

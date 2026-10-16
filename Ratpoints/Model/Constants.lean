@@ -73,9 +73,9 @@ C: `ratpoints.h:33` -/
 def maxDegree : Nat := 100
 
 /-- The odd primes below 1024, in increasing order: the table `prime` of `primes.h`, of size
-`PRIMES1000`, among which ratpoints chooses its moduli.
+`PRIMES1000`, which `find_points.c` includes, among which ratpoints chooses its moduli.
 
-C: `primes.h:29-40` -/
+C: `primes.h:29-40`, `find_points.c:32` -/
 def primeTable : Array Nat :=
   #[3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97,
     101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193,
