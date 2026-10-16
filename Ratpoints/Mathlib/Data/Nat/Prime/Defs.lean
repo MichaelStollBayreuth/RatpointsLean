@@ -29,9 +29,7 @@ theorem prime_of_lt_mul_self {n p : ℕ} (hn0 : n ≠ 0) (hn1 : n ≠ 1) (hlt : 
     (h : ∀ q, q.Prime → q ∣ n → p ≤ q) : n.Prime := by
   by_contra hnp
   have h1 := minFac_sq_le_self (Nat.pos_of_ne_zero hn0) hnp
-  have := mul_self_le_mul_self (h _ (minFac_prime hn1) (minFac_dvd n))
-  rw [Nat.pow_two] at h1
-  lia
+  lia [mul_self_le_mul_self (h _ (minFac_prime hn1) (minFac_dvd n))]
 
 end Nat
 

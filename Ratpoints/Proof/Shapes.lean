@@ -156,9 +156,9 @@ theorem nodup_squares1Dens {divisors : List ℕ} (hnd : divisors.Nodup)
   · refine List.disjoint_left.mpr fun b hb hb' ↦ hne ?_
     obtain ⟨k, hk, rfl⟩ := List.mem_map.mp hb
     obtain ⟨k', hk', h⟩ := List.mem_map.mp hb'
+    have : 1 ≤ k' := (List.mem_range'_1.mp hk').1.trans' (Nat.le_add_left 1 _)
     have h2 : s * k ^ 2 = s' * k' ^ 2 := by rw [sq, sq, ← Nat.mul_assoc, ← Nat.mul_assoc, h]
-    exact Nat.eq_of_mul_sq_eq_mul_sq (hsq s hs) (hsq s' hs')
-      (by lia [(List.mem_range'_1.mp hk').1.trans' (Nat.le_add_left 1 _)]) h2
+    exact Nat.eq_of_mul_sq_eq_mul_sq (hsq s hs) (hsq s' hs') (by lia) h2
 
 /-- The denominators `k ^ 2` of the square shape, which the C code computes as `long`s
 (`find_points.c:3922`), are at most `bHigh`, and so `long`s for a `long` `bHigh`. -/

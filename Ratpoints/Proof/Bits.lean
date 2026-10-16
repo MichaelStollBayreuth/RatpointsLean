@@ -451,10 +451,11 @@ theorem toInt_and_ofNat_two_pow_sub_one (x : Int64) {k : Nat} (hk : k < 63) :
   have hm : (BitVec.ofNat 64 (2 ^ k - 1)).toNat = 2 ^ k - 1 := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by lia)]
   have hd : (2 : Int) ^ k ∣ (2 ^ 64 : Nat) := mod_cast Nat.pow_dvd_pow 2 (by lia : k ≤ 64)
+  have := Nat.mod_lt x.toBitVec.toNat (Nat.two_pow_pos k)
   rw [toInt, toInt, Int64.toBitVec_and, BitVec.toInt_and, Int64.toBitVec_ofNat', hm,
-    Nat.and_two_pow_sub_one_eq_mod, Int.bmod_eq_of_le (by lia)
-      (by lia [Nat.mod_lt x.toBitVec.toNat (Nat.two_pow_pos k)]), BitVec.toInt_eq_toNat_bmod,
-    ← Int.emod_emod_of_dvd _ hd, Int.bmod_emod, Int.emod_emod_of_dvd _ hd]
+    Nat.and_two_pow_sub_one_eq_mod, Int.bmod_eq_of_le (by lia) (by lia),
+    BitVec.toInt_eq_toNat_bmod, ← Int.emod_emod_of_dvd _ hd, Int.bmod_emod,
+    Int.emod_emod_of_dvd _ hd]
   simp
 
 theorem toInt_ofNat_two_pow_sub_one {k : Nat} (hk : k < 63) :

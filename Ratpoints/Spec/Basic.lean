@@ -97,8 +97,7 @@ theorem getD_eq_zero_of_degree_lt {c : List ℤ} {i : ℕ} (hi : degree c < i) :
 `Ratpoints.binaryForm`: the hypothesis, `⌈n / 2⌉ ≤ ⌈d / 2⌉`, makes the two degrees equal. -/
 theorem eval_binaryFormPoly {c : List ℤ} (h : c.length / 2 ≤ (degree c + 1) / 2) (x z : ℤ) :
     MvPolynomial.eval ![(x : ℚ), z] (binaryFormPoly c) = (binaryForm c x z : ℚ) := by
-  have hd := degree_le_length_sub_one c
-  have hN : 2 * (c.length / 2) = degree c + degree c % 2 := by lia
+  have hN : 2 * (c.length / 2) = degree c + degree c % 2 := by lia [degree_le_length_sub_one c]
   simp only [binaryFormPoly, binaryForm, hN, map_sum, map_mul, map_pow, MvPolynomial.eval_C,
     MvPolynomial.eval_X, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one,
     Int.cast_sum, Int.cast_mul, Int.cast_pow]
