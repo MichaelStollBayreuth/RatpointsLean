@@ -136,8 +136,8 @@ python3 scripts/difftest.py --suites test4high   # the runs of test4.sh above he
 clone of ratpoints that contains the pinned commit, given by `--repo PATH` or the environment
 variable `RATPOINTS_REPO`; `scripts/difftest.py` also runs the C program built there (or the one
 that `--c PATH` or `RATPOINTS_BIN` names). CI runs these checks and more
-(`.github/workflows/build-project.yml`). `scripts/run-comparator.sh` runs Comparator
-(`comparator/README.md`).
+(`.github/workflows/build-project.yml`). `scripts/run-comparator.sh --paranoid` runs Comparator,
+built into Lake as `lake comparator` (`comparator/README.md`).
 
 ## The program `ratpoints-lean`
 

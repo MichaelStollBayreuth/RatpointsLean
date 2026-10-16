@@ -1,50 +1,37 @@
 #!/usr/bin/env bash
 
-# Run the leanprover/comparator check for this project locally.
+# Run the comparator check for this project locally, with Lake's built-in `lake comparator`
+# (Lean v4.35.0 and later). It certifies that the repository proves the challenge statements of
+# comparator/Challenge.lean that the config lists (default: all seven); see comparator/README.md
+# for what is checked.
 #
-# Certifies that the repository proves the challenge statements of comparator/Challenge.lean
-# that the config lists (default: comparator/challenges.json). See comparator/README.md for what
-# is checked.
+# Usage: scripts/run-comparator.sh [CONFIG] [OPTIONS]
+#   CONFIG   the challenge description (default: comparator/challenges.json)
+#   OPTIONS  passed on to `lake comparator`, e.g. `--paranoid` to run all external checkers
+#            bundled with Lean besides its own kernel, as the certification of a stage does
 #
-# Requires three binaries, each given by its environment variable or else found on the PATH:
-#   COMPARATOR_BIN         the `comparator` binary (built from leanprover/comparator)
-#   COMPARATOR_LEAN4EXPORT `lean4export`, built at THIS project's Lean version
-#   COMPARATOR_LANDRUN     `landrun`, built from its `main` branch
-# NB: rebuild lean4export whenever the project's Lean version changes.
+# Requires bubblewrap (`bwrap`) with unprivileged user namespaces; `lake comparator` builds and
+# exports both modules inside its sandbox and never loads the project's `.olean`s itself.
 
 set -euo pipefail
-
-: "${COMPARATOR_BIN:=$(command -v comparator || echo comparator)}"
-: "${COMPARATOR_LEAN4EXPORT:=$(command -v lean4export || echo lean4export)}"
-: "${COMPARATOR_LANDRUN:=$(command -v landrun || echo landrun)}"
-export COMPARATOR_LEAN4EXPORT COMPARATOR_LANDRUN
-case "$COMPARATOR_LANDRUN" in
-  /*) export PATH="$(dirname "$COMPARATOR_LANDRUN"):$PATH" ;;
-esac
-
-# Config file to check (default: all challenge theorems).
-CONFIG="${1:-comparator/challenges.json}"
 
 # Move to the repository root (this script lives in scripts/).
 cd "$(dirname "$0")/.."
 
+CONFIG="comparator/challenges.json"
+if [ $# -gt 0 ] && [ "${1#-}" = "$1" ]; then
+  CONFIG="$1"
+  shift
+fi
+
 if [ ! -f "$CONFIG" ]; then
-  echo "ERROR: no comparator config $CONFIG (the challenge statements come in stage B with the" >&2
-  echo "theorems of the brute-force reference; see comparator/README.md)." >&2
+  echo "ERROR: no comparator config $CONFIG (see comparator/README.md)." >&2
   exit 1
 fi
 
-# Fail early with a helpful message if a binary is missing.
-for bin in "$COMPARATOR_BIN" "$COMPARATOR_LEAN4EXPORT" "$COMPARATOR_LANDRUN"; do
-  if [ ! -x "$bin" ]; then
-    echo "ERROR: comparator binary not found or not executable: $bin" >&2
-    echo "See comparator/README.md for how to build it; give its path by the environment." >&2
-    exit 1
-  fi
-done
-
-# Ensure the library oleans are current so the sandboxed Solution build reuses them.
+# Bring the library oleans up to date first: the sandbox cannot write to the project directory,
+# and with a current build the sandboxed Solution build only replays it.
 lake build RatpointsModel Ratpoints
 
-# Run the check (exit 0 and "Your solution is okay!" = certified).
-exec lake env "$COMPARATOR_BIN" "$CONFIG"
+# Exit 0 and "Your solution is okay!" = certified; exit 1 = rejected; exit 2 = could not start.
+exec lake comparator --config "$CONFIG" "$@"

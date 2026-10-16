@@ -1,8 +1,9 @@
 # Comparator verification harness
 
 This directory lets [Comparator](https://github.com/leanprover/comparator), "a trustworthy judge
-for Lean proofs", certify the main theorems of the project independently of the repository's own
-build, using only the permitted axioms (`propext`, `Quot.sound`, `Classical.choice`).
+for Lean proofs", built into Lake as `lake comparator` since Lean v4.35.0, certify the main
+theorems of the project independently of the repository's own build, using only the permitted
+axioms (`propext`, `Quot.sound`, `Classical.choice`).
 
 ## What is checked
 
@@ -21,8 +22,9 @@ build, using only the permitted axioms (`propext`, `Quot.sound`, `Classical.choi
 - [`Solution.lean`](Solution.lean) imports the library and proves the same statements by its
   theorems.
 
-Comparator builds both modules (the solution in a sandbox), exports them with `lean4export`, and
-checks that each challenge theorem in the solution
+`lake comparator` builds and exports both modules inside a `bubblewrap` sandbox (it never loads
+the project's `.olean` files into its own process) and checks that each challenge theorem in the
+solution
 
 1. proves the **same statement** as in the challenge, comparing the full bodies (not just the
    types) of every definition the statement refers to, so the specification of the library must
@@ -30,7 +32,8 @@ checks that each challenge theorem in the solution
 2. uses no axioms beyond `permitted_axioms`; in particular a `native_decide` or `bv_decide`
    anywhere below a main theorem makes it fail, and `scripts/check_layout.py` forbids both in the
    project;
-3. is accepted by the Lean kernel.
+3. is accepted by the Lean kernel and, with `--paranoid`, by every external checker bundled with
+   Lean (`leanchecker-paranoid`, `lean4lean`, `nanoda`, `con-leche`, `con-ron`).
 
 The statements come in stage by stage, as the blueprint describes them: the theorems of stage B (the
 brute-force reference finds exactly the points, without duplicates); from stage C1 on, the
@@ -54,29 +57,35 @@ model of stage E on 2026-10-12, with the parameters of sub-stage F1, whose well-
 admits composite moduli, on 2026-10-13, with the refusal of the heights that are not `long`s, which
 the refusal theorems state as `2 ^ 63 ≤ H`, and the cut points of sub-stage F2, on 2026-10-14, with
 the packing of the numerators of sub-stage F3 on 2026-10-15, and with the chunked first stage and
-the rows of sub-stage F4 on 2026-10-16.
+the rows of sub-stage F4 on 2026-10-16; on Lean and Mathlib v4.35.0, `lake comparator --paranoid`
+accepted all seven on the same day, with Lean's kernel and the five external checkers.
 
 ## Running
 
-Prerequisites (see the Comparator README): a built `comparator` binary, `landrun` built from its
-`main` branch, and a `lean4export` built at **the same Lean version as this project** (it loads the
-project's `.olean`s; a mismatch fails with `incompatible header`), i.e. the tag matching
-`lean-toolchain`. Point Comparator at them via `COMPARATOR_BIN`, `COMPARATOR_LEAN4EXPORT` and
-`COMPARATOR_LANDRUN`, or put them on `PATH`. Rebuild `lean4export` at every change of the
-toolchain.
-
-From the repository root, inside the `systemd-run` guard that the Comparator README asks for:
+Run from the repository root; the only prerequisite besides Lean is `bubblewrap` (`bwrap`) with
+unprivileged user namespaces (or installed setuid root):
 
 ```bash
-systemd-run --property=RestrictAddressFamilies=~AF_UNIX --user --pipe --wait \
-  -E PATH="$PATH" -E HOME="$HOME" --working-directory "$(pwd)" -- scripts/run-comparator.sh
+scripts/run-comparator.sh --paranoid    # the certification: Lean's kernel and the external checkers
+scripts/run-comparator.sh               # Lean's kernel only
 ```
 
-The script builds the library and runs `lake env comparator comparator/challenges.json`; it
-prints `Your solution is okay!` and exits 0 when the check passes.
+The script builds the library (`lake build RatpointsModel Ratpoints`) and runs `lake comparator
+--config comparator/challenges.json` with the options given. Exit code `0` (and `Your solution is
+okay!`) means that the check passed, `1` that it was rejected, `2` that it could not start (no
+`bwrap`, no `lake-manifest.json`, a malformed configuration). The library is built first because
+the sandbox may write only to `.lake`, and with a current build the sandboxed builds only replay
+it. `lake comparator` writes the exports into the temporary directory of the system (`TMPDIR`).
 
-On 2026-10-09 the whole pipeline (landrun, `lean4export` v4.35.0-rc4, the kernel check) was
-tested on a copy of this layout, with a Mathlib-importing challenge over a model
-definition: a faithful solution passed, and a solution whose library defined the restated
-predicate differently (equal in meaning, different as a term) was rejected with `Const does not
-match between challenge and target`.
+Until 2026-10-16 the check ran on the external tools, a separately built `comparator` binary,
+`landrun` and a `lean4export` built at the project's Lean version, inside a `systemd-run` guard,
+through an earlier version of the wrapper (see the history of `scripts/run-comparator.sh`);
+`lake comparator` replaces all three. On 2026-10-16 both accepted the seven statements on the
+same commit, on Lean and Mathlib v4.35.0, in about a minute and a half each, and `lake comparator
+--paranoid` accepted them with all six kernels in four and a half minutes.
+
+On 2026-10-09 the whole pipeline of the external tools (landrun, `lean4export` v4.35.0-rc4, the
+kernel check) was tested on a copy of this layout, with a Mathlib-importing challenge over a model
+definition: a faithful solution passed, and a solution whose library defined the restated predicate
+differently (equal in meaning, different as a term) was rejected with `Const does not match between
+challenge and target`.
