@@ -798,17 +798,18 @@ shapes share; the filter of the reference by a test on the numerators is in
 \verb|Ratpoints/Proof/Sieve.lean|, the denominators of a point and the filter of the reference by
 the denominators in \verb|Ratpoints/Proof/BruteForce.lean|, the facts about the table of primes that
 the factorization uses, checked by \verb|decide|, in \verb|Ratpoints/Proof/Params.lean|, the lemmas
-on words, lists and ranges in core's namespaces in \verb|Ratpoints/Proof/Bits.lean|, the binary form
-at $a = k b$, the squares modulo $p$ and the negation of the quarter of \verb|LONG_MIN| in
-\verb|Ratpoints/Proof/Tables.lean|, and the denominators of the search with the theorems in
-\verb|Ratpoints/Proof/FindPoints.lean|. The lemmas of Mathlib's generality are in
-\verb|Ratpoints/Mathlib|, in the files that mirror their homes in Mathlib:
-\verb|Algebra/BigOperators/Group/List/Basic|, \verb|Algebra/Group/Even|, \verb|Data/Int/GCD|,
-\verb|Data/List/Basic|, \verb|Data/List/Pairwise|, \verb|Data/Nat/Factors| (with the part of a
-number prime to another, \verb|Nat.coprimePart|, which is $b^*$), \verb|Data/Nat/PadicValNat|,
-\verb|Data/Nat/Prime/Defs|, \verb|Data/Nat/Squarefree|, \verb|Data/ZMod/Basic|,
-\verb|NumberTheory/LegendreSymbol/JacobiSymbol| and \verb|NumberTheory/Padics/PadicVal/Basic|; that
-the macro \verb|CEIL| rounds up, a fact about the C code, is a private lemma next to its use.
+on words in core's namespaces in \verb|Ratpoints/Proof/Bits.lean| and those on lists and ranges in
+\verb|Ratpoints/Proof/Containers.lean|, the binary form at $a = k b$, the squares modulo $p$ and the
+negation of the quarter of \verb|LONG_MIN| in \verb|Ratpoints/Proof/Tables.lean|, and the
+denominators of the search with the theorems in \verb|Ratpoints/Proof/FindPoints.lean|. The lemmas
+of Mathlib's generality are in \verb|Ratpoints/Mathlib|, in the files that mirror their homes in
+Mathlib: \verb|Algebra/BigOperators/Group/List/Basic|, \verb|Algebra/Group/Even|,
+\verb|Data/Int/GCD|, \verb|Data/List/Basic|, \verb|Data/List/Pairwise|, \verb|Data/Nat/Factors|
+(with the part of a number prime to another, \verb|Nat.coprimePart|, which is $b^*$),
+\verb|Data/Nat/PadicValNat|, \verb|Data/Nat/Prime/Defs|, \verb|Data/Nat/Squarefree|,
+\verb|Data/ZMod/Basic|, \verb|NumberTheory/LegendreSymbol/JacobiSymbol| and
+\verb|NumberTheory/Padics/PadicVal/Basic|; that the macro \verb|CEIL| rounds up, a fact about the C
+code, is a private lemma next to its use.
 
 \section{The evidence}\label{sec:den-evidence}
 

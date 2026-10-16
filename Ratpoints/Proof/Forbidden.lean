@@ -15,6 +15,7 @@ import Ratpoints.Mathlib.Data.Int.GCD
 import Ratpoints.Mathlib.Data.ZMod.Basic
 import Ratpoints.Mathlib.NumberTheory.Padics.PadicVal.Basic
 import Ratpoints.Proof.Bits
+import Ratpoints.Proof.Containers
 import Ratpoints.Proof.Params
 import Ratpoints.Proof.Tables
 import Ratpoints.Proof.Valuation

@@ -687,32 +687,32 @@ numerator, and the points at infinity. So each file of the model stays below $15
 (\verb|Ratpoints/Model/Sieve.lean| has $1104$, \verb|Ratpoints/Model/Candidate.lean| $499$).
 
 The proofs of the sub-stage use Lean core and \verb|Std| only, but for those of the entries of the
-moduli, the run, the shapes, the 2-adic information and the search, which are in files with
-Mathlib. \verb|Ratpoints/Proof/Reductions.lean|, new and below \verb|Ratpoints/Proof/Words.lean|,
-holds the reductions on words (the high half, the remainder and the quotient with the reciprocal,
+moduli, the run, the shapes, the 2-adic information and the search, which are in files with Mathlib.
+\verb|Ratpoints/Proof/Reductions.lean|, new and below \verb|Ratpoints/Proof/Words.lean|, holds the
+reductions on words (the high half, the remainder and the quotient with the reciprocal,
 \verb|mod_mul| and \verb|mod|), the row indices with the test \verb|small|, the bounds of
-$\mathrm{maxPrimeEven}$ and of $\mathrm{rowBias}$, the bounds of the products of
-\verb|fill_bp_list| and \verb|class_offsets|, and the width of the bit arrays;
-\verb|Ratpoints/Proof/SetBits.lean|, new and also below \verb|Ratpoints/Proof/Words.lean|, the bit
-of a number in a word, the contract of the trailing zeros and the walk through the set bits of a
-word, which the extraction, the classes, the 2-adic information and the word shape share;
-\verb|Ratpoints/Proof/Bits.lean| the general facts on words, natural numbers, integers, lists and
-arrays; \verb|Ratpoints/Proof/Words.lean| the rows under a unit, the rows read in the packing and
-the reciprocals read in step with the moduli; \verb|Ratpoints/Proof/Packing.lean|,
-new, the classes, the number of the packings, the rows of offsets and the residues, and above it
-\verb|Ratpoints/Proof/BitRange.lean|, new, the bits of an interval and the other range lemmas of the
-\verb|long|s of the packing, so that both stay below $1500$ lines ($1281$ and $334$);
-\verb|Ratpoints/Proof/Stages.lean| the second stage with its cursors and the prime entries field by
-field; \verb|Ratpoints/Proof/Sift.lean| the contracts of the sieve on the bit numbers and of one
-denominator; \verb|Ratpoints/Proof/Moduli.lean| the packable entry of a modulus with its tables of
-inverses; \verb|Ratpoints/Proof/Denominators.lean| the run with the classes, the residues and the
-offsets; \verb|Ratpoints/Proof/Shapes.lean| the shapes on the patterns of the classes;
-\verb|Ratpoints/Proof/TwoAdic.lean| the word \verb|den_bits| of the classes and the 2-adic exit with
-it; and \verb|Ratpoints/Proof/FindPoints.lean| what the run needs of the search and the search with
-the classes and the offsets. The constants with their decided facts, and in
-\verb|Ratpoints/Proof/Reductions.lean| the bounds of $\mathrm{maxPrimeEven}$, of $\mathrm{rowBias}$
-and of the products with their factors and the width of the bit arrays, are in the namespace
-\verb|Ratpoints|, the numerators of a residue class among $-H, \dots, H$ in
+$\mathrm{maxPrimeEven}$ and of $\mathrm{rowBias}$, the bounds of the products of \verb|fill_bp_list|
+and \verb|class_offsets|, and the width of the bit arrays; \verb|Ratpoints/Proof/SetBits.lean|, new
+and also below \verb|Ratpoints/Proof/Words.lean|, the bit of a number in a word, the contract of the
+trailing zeros and the walk through the set bits of a word, which the extraction, the classes, the
+2-adic information and the word shape share; \verb|Ratpoints/Proof/Bits.lean| the general facts on
+words, and \verb|Ratpoints/Proof/Containers.lean|, split off it in stage~F4, those on natural
+numbers, integers, lists and arrays; \verb|Ratpoints/Proof/Words.lean| the rows under a unit, the
+rows read in the packing and the reciprocals read in step with the moduli;
+\verb|Ratpoints/Proof/Packing.lean|, new, the classes, the number of the packings, the rows of
+offsets and the residues, and above it \verb|Ratpoints/Proof/BitRange.lean|, new, the bits of an
+interval and the other range lemmas of the \verb|long|s of the packing, so that both stay below
+$1500$ lines ($1281$ and $334$); \verb|Ratpoints/Proof/Stages.lean| the second stage with its
+cursors and the prime entries field by field; \verb|Ratpoints/Proof/Sift.lean| the contracts of the
+sieve on the bit numbers and of one denominator; \verb|Ratpoints/Proof/Moduli.lean| the packable
+entry of a modulus with its tables of inverses; \verb|Ratpoints/Proof/Denominators.lean| the run
+with the classes, the residues and the offsets; \verb|Ratpoints/Proof/Shapes.lean| the shapes on the
+patterns of the classes; \verb|Ratpoints/Proof/TwoAdic.lean| the word \verb|den_bits| of the classes
+and the 2-adic exit with it; and \verb|Ratpoints/Proof/FindPoints.lean| what the run needs of the
+search and the search with the classes and the offsets. The constants with their decided facts, and
+in \verb|Ratpoints/Proof/Reductions.lean| the bounds of $\mathrm{maxPrimeEven}$, of
+$\mathrm{rowBias}$ and of the products with their factors and the width of the bit arrays, are in
+the namespace \verb|Ratpoints|, the numerators of a residue class among $-H, \dots, H$ in
 \verb|Ratpoints.BruteForce|, the general facts in the namespaces of Lean core, and the rest, among
 them the divisibility and the lower bound of $\mathrm{rbaLength}$ in
 \verb|Ratpoints/Proof/BitRange.lean|, in \verb|Ratpoints.Sieve|. The six new modules are in their

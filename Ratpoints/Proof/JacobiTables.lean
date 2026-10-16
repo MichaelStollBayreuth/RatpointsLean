@@ -16,6 +16,7 @@ import Ratpoints.Mathlib.Data.Nat.PadicValNat
 import Ratpoints.Mathlib.Data.ZMod.Basic
 import Ratpoints.Mathlib.NumberTheory.LegendreSymbol.JacobiSymbol
 import Ratpoints.Proof.Bits
+import Ratpoints.Proof.Containers
 import Ratpoints.Proof.Jacobi
 import Ratpoints.Proof.Params
 import Ratpoints.Proof.Stages

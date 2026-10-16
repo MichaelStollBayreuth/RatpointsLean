@@ -13,8 +13,8 @@ public import Ratpoints.Spec.Basic
 import Mathlib.Data.List.GetD
 import Ratpoints.Mathlib.Algebra.Group.Even
 import Ratpoints.Mathlib.Data.ZMod.Basic
-import Ratpoints.Proof.Bits
 import Ratpoints.Proof.BruteForce
+import Ratpoints.Proof.Containers
 import Ratpoints.Proof.Params
 import Std.Tactic.Do
 

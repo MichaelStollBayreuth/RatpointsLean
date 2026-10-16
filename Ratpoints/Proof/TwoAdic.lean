@@ -15,6 +15,7 @@ import Ratpoints.Mathlib.Data.Int.GCD
 import Ratpoints.Mathlib.Data.ZMod.Basic
 import Ratpoints.Proof.Bits
 import Ratpoints.Proof.BruteForce
+import Ratpoints.Proof.Containers
 import Ratpoints.Proof.Packing
 import Ratpoints.Proof.Tables
 import Std.Tactic.Do

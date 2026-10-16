@@ -9,7 +9,7 @@ public import Ratpoints.Proof.Packing
 public import Ratpoints.Proof.Stages
 
 import Ratpoints.Proof.BitRange
-import Ratpoints.Proof.Bits
+import Ratpoints.Proof.Containers
 import Ratpoints.Proof.Sieve
 import Std.Tactic.Do
 

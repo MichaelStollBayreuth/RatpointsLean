@@ -10,6 +10,7 @@ public import Ratpoints.Proof.Reductions
 public import Ratpoints.Proof.SetBits
 
 import Ratpoints.Proof.Bits
+import Ratpoints.Proof.Containers
 import Std.Tactic.Do
 
 /-!
@@ -77,11 +78,11 @@ The file uses Lean core and `Std` only, so that the contracts of the sieve, in f
 Mathlib, can use it. The proofs use only the facts on the constants that `decide` checks next to
 them, never their values: here that `Ratpoints.numStrides ≥ 1`, that `Ratpoints.maxBitsInPrime ≤ 10`
 (`Ratpoints.maxPrimeEven_le_two_pow_10`) and that `Ratpoints.mulModLimit < 2 ^ 32`; that the masks
-of the strides beyond `k = 6` are `0` is read with the default of the array. The facts on words,
-natural numbers and integers that are not about the model are in `Ratpoints.Proof.Bits`. The bounds
-of the products of `fill_bp_list` and of `class_offsets` are in `Ratpoints.Proof.Reductions`, the
-bits of an interval of numerators and the other range lemmas of the `long`s of the packing in
-`Ratpoints.Proof.BitRange`.
+of the strides beyond `k = 6` are `0` is read with the default of the array. The facts on words that
+are not about the model are in `Ratpoints.Proof.Bits`, those on natural numbers and integers in
+`Ratpoints.Proof.Containers`. The bounds of the products of `fill_bp_list` and of `class_offsets`
+are in `Ratpoints.Proof.Reductions`, the bits of an interval of numerators and the other range
+lemmas of the `long`s of the packing in `Ratpoints.Proof.BitRange`.
 -/
 
 @[expose] public section

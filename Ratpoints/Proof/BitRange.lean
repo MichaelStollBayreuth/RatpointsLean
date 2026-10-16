@@ -9,6 +9,7 @@ public import Ratpoints.Model.Setup
 public import Ratpoints.Proof.Packing
 
 import Ratpoints.Proof.Bits
+import Ratpoints.Proof.Containers
 
 /-!
 # The bits of an interval of numerators and the longs of the packing
@@ -53,8 +54,9 @@ The file uses Lean core and `Std` only, so that the contracts of the sieve, in f
 Mathlib, can use it. The proofs use only the facts on the constants that `decide` checks next to
 them, never their values: that `Ratpoints.rbaLength = 2 ^ Ratpoints.rbaShift` with
 `Ratpoints.rbaShift < 32`, that `Ratpoints.rbaPack > 0`, that `Ratpoints.maxBitsInPrime ≤ 10` and
-that `2 Ratpoints.rowBias - 1 ≤ Ratpoints.mulModLimit < 2 ^ 32`; the facts on words, natural
-numbers and integers that are not about the model are in `Ratpoints.Proof.Bits`.
+that `2 Ratpoints.rowBias - 1 ≤ Ratpoints.mulModLimit < 2 ^ 32`; the facts on words that are not
+about the model are in `Ratpoints.Proof.Bits`, those on natural numbers and integers in
+`Ratpoints.Proof.Containers`.
 -/
 
 @[expose] public section

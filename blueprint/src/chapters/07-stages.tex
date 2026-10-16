@@ -646,16 +646,17 @@ files are new with this sub-stage and use Lean core and \verb|Std| only, like
 \verb|Ratpoints/Proof/Words.lean|, which keeps the contract of the first stage and holds the lemmas
 on the words of the rows that both stages use, and like \verb|Ratpoints/Proof/Reductions.lean|,
 which holds the contracts of the reductions since stage~F3. The lemmas in core's namespaces that the
-sub-stage adds are in \verb|Ratpoints/Proof/Bits.lean|: the facts on the signed 64-bit words (the
-arithmetic shift, the mask $x \gg 63$ with the smaller and the distance of two words that it gives
-without a branch, the odd part of a positive word by the lowest set bit, the absolute value, and the
-words of an integer and of a natural number below $2^{63}$), the steps of the binary algorithm and
-of the reductions by a reciprocal on natural numbers, two facts on lists and vectors that the scan
-and the sieve of one denominator use (\verb|List.flatMap_filter|, \verb|Vector.getElem!_ofFn|), and
-the integer facts of the third stage (C's remainder made non-negative, the residue of
-$(a \bmod p)\, b$ and its shift by $p H$, the bound $|a b| + H \le p H$, and a divisor $p > 1$ of
-$b$ that divides no numerator prime to $b$). The Jacobi test with the reciprocals of its tables is
-in \verb|Ratpoints/Proof/JacobiTables.lean|; the run with the cut points in
+sub-stage adds are the facts on the signed 64-bit words (the arithmetic shift, the mask $x \gg 63$
+with the smaller and the distance of two words that it gives without a branch, the odd part of a
+positive word by the lowest set bit, the absolute value, and the words of an integer and of a
+natural number below $2^{63}$), in \verb|Ratpoints/Proof/Bits.lean|, and, in
+\verb|Ratpoints/Proof/Containers.lean| since stage~F4, the steps of the binary algorithm and of the
+reductions by a reciprocal on natural numbers, two facts on lists and vectors that the scan and the
+sieve of one denominator use (\verb|List.flatMap_filter|, \verb|Vector.getElem!_ofFn|), and the
+integer facts of the third stage (C's remainder made non-negative, the residue of $(a \bmod p)\, b$
+and its shift by $p H$, the bound $|a b| + H \le p H$, and a divisor $p > 1$ of $b$ that divides no
+numerator prime to $b$). The Jacobi test with the reciprocals of its tables is in
+\verb|Ratpoints/Proof/JacobiTables.lean|; the run with the cut points in
 \verb|Ratpoints/Proof/Denominators.lean|, with the bounds of the denominators of the shapes, between
 $b_{\mathrm{low}}$ and $b_{\mathrm{high}}$, in \verb|Ratpoints/Proof/Shapes.lean|; the reciprocal
 and the shape of the sieve entry of a modulus in \verb|Ratpoints/Proof/Moduli.lean|; the entries and

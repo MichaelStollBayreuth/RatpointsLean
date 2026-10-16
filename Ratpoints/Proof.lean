@@ -8,6 +8,7 @@ module
 public import Ratpoints.Proof.BitRange
 public import Ratpoints.Proof.Bits
 public import Ratpoints.Proof.BruteForce
+public import Ratpoints.Proof.Containers
 public import Ratpoints.Proof.Denominators
 public import Ratpoints.Proof.Divisors
 public import Ratpoints.Proof.FindPoints

@@ -18,8 +18,8 @@ import Mathlib.FieldTheory.Perfect
 import Ratpoints.Mathlib.Algebra.Polynomial.Homogenize
 import Ratpoints.Mathlib.Data.List.Nodup
 import Ratpoints.Mathlib.RingTheory.Coprime.Basic
-import Ratpoints.Proof.Bits
 import Ratpoints.Proof.BruteForce
+import Ratpoints.Proof.Containers
 
 /-!
 # The set-up of a search: the polynomial of a coefficient list, the remainder chain, the reversal

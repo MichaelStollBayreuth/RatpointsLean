@@ -13,7 +13,7 @@ import Mathlib.Algebra.BigOperators.Group.List.Lemmas
 import Mathlib.Tactic.NormNum.Prime
 import Ratpoints.Mathlib.Data.List.Pairwise
 import Ratpoints.Mathlib.Data.List.Sort
-import Ratpoints.Proof.Bits
+import Ratpoints.Proof.Containers
 import Ratpoints.Proof.Reductions
 import Std.Tactic.Do
 

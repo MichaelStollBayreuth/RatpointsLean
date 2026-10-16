@@ -8,25 +8,26 @@ module
 public import Ratpoints.Model.Sieve
 
 import Ratpoints.Proof.Bits
+import Ratpoints.Proof.Containers
 
 /-!
 # The reductions by a reciprocal and of the row indices
 
 The high half of the product of two 64-bit words from the products of their 32-bit halves
 (`Ratpoints.Sieve.mulHi`) is the high half of the product of natural numbers
-(`Nat.mul_div_two_pow_64_eq`, in `Ratpoints.Proof.Bits`), so that the reductions by a reciprocal on
-64-bit words (`Ratpoints.Sieve.mulMod`, `Ratpoints.Sieve.mulDiv`) compute the remainder and the
-quotient where the C code relies on them: with the reciprocal `Ratpoints.Sieve.magic p`, which
-exceeds `2 ^ 64 / p` by less than `1`, for every `u` with `u p < 2 ^ 64`, and so for the values at
-most `Ratpoints.mulModLimit` and the moduli up to `2 ^ 32`; the quotient for `p ≥ 2`, since the
-reciprocal `2 ^ 64` of `1` wraps to `0` on a word, as in the C code. So does the remainder of a
-value of either sign (`Ratpoints.Sieve.modMul`), and the helper `mod` of the C code
-(`Ratpoints.Sieve.modLong`) is the Euclidean `%` for every integer. The first two stages of the
-sieve reduce the sums of a word number and the offset of a row modulo the moduli of their sieve
-specs, by a multiplication with the reciprocal when the test `small` says that the word numbers of
-the piece allow it and by the helper `mod` otherwise; for a sieve spec whose offset lies in the
-range that the packing gives it (`Ratpoints.Sieve.SieveSpec.Fits`), both give the Euclidean
-remainder.
+(`Nat.mul_div_two_pow_64_eq`, in `Ratpoints.Proof.Containers`), so that the reductions by a
+reciprocal on 64-bit words (`Ratpoints.Sieve.mulMod`, `Ratpoints.Sieve.mulDiv`) compute the
+remainder and the quotient where the C code relies on them: with the reciprocal
+`Ratpoints.Sieve.magic p`, which exceeds `2 ^ 64 / p` by less than `1`, for every `u` with
+`u p < 2 ^ 64`, and so for the values at most `Ratpoints.mulModLimit` and the moduli up to `2 ^ 32`;
+the quotient for `p ≥ 2`, since the reciprocal `2 ^ 64` of `1` wraps to `0` on a word, as in the C
+code. So does the remainder of a value of either sign (`Ratpoints.Sieve.modMul`), and the helper
+`mod` of the C code (`Ratpoints.Sieve.modLong`) is the Euclidean `%` for every integer. The first
+two stages of the sieve reduce the sums of a word number and the offset of a row modulo the moduli
+of their sieve specs, by a multiplication with the reciprocal when the test `small` says that the
+word numbers of the piece allow it and by the helper `mod` otherwise; for a sieve spec whose offset
+lies in the range that the packing gives it (`Ratpoints.Sieve.SieveSpec.Fits`), both give the
+Euclidean remainder.
 
 ## Main definitions
 

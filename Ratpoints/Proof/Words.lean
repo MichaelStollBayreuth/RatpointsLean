@@ -9,6 +9,7 @@ public import Ratpoints.Proof.Reductions
 public import Ratpoints.Proof.SetBits
 
 import Ratpoints.Proof.Bits
+import Ratpoints.Proof.Containers
 import Std.Tactic.Do
 
 /-!

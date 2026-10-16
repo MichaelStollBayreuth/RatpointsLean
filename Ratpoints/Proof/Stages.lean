@@ -8,6 +8,7 @@ module
 public import Ratpoints.Proof.Words
 
 import Ratpoints.Proof.Bits
+import Ratpoints.Proof.Containers
 import Std.Tactic.Do
 
 /-!

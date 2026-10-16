@@ -9,6 +9,7 @@ public import Ratpoints.Model.Candidate
 public import Std.WP
 
 import Ratpoints.Proof.Bits
+import Ratpoints.Proof.Containers
 import Std.Tactic.Do
 
 /-!

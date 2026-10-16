@@ -10,6 +10,7 @@ public import Ratpoints.Proof.Forbidden
 
 import Ratpoints.Mathlib.Data.Nat.Squarefree
 import Ratpoints.Proof.Bits
+import Ratpoints.Proof.Containers
 import Ratpoints.Proof.Jacobi
 import Ratpoints.Proof.JacobiTables
 import Ratpoints.Proof.Setup

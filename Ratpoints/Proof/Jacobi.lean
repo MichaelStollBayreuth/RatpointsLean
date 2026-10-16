@@ -12,7 +12,7 @@ public import Ratpoints.Spec.Basic
 public import Std.WP
 
 import Ratpoints.Mathlib.NumberTheory.LegendreSymbol.JacobiSymbol
-import Ratpoints.Proof.Bits
+import Ratpoints.Proof.Containers
 import Ratpoints.Proof.Tables
 import Std.Tactic.Do
 

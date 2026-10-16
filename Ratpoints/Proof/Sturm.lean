@@ -8,7 +8,7 @@ module
 public import Ratpoints.Model.Sturm
 public import Std.WP
 
-import Ratpoints.Proof.Bits
+import Ratpoints.Proof.Containers
 import Std.Tactic.Do
 
 /-!
@@ -41,9 +41,9 @@ invariants that are named definitions.
 ## Implementation notes
 
 The file uses Lean core and `Std` only, as `Ratpoints.Proof.Words` does; the lemmas on arrays,
-lists, ranges and integers that are not about the model are in `Ratpoints.Proof.Bits`. The plain
-statement `Ratpoints.Sturm.isChainResult_run_chain` lets the files with Mathlib use the contract
-without the program logic.
+lists, ranges and integers that are not about the model are in `Ratpoints.Proof.Containers`. The
+plain statement `Ratpoints.Sturm.isChainResult_run_chain` lets the files with Mathlib use the
+contract without the program logic.
 -/
 
 @[expose] public section
