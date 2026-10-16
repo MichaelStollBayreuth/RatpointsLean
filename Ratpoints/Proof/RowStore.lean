@@ -155,10 +155,13 @@ theorem RowStore.row?_publish (s : RowStore) (ref ref' : EntryRef) (r r' : Nat)
 /-- The store `s'` keeps the tables of rows of `s` with their sizes and their rows, and its other
 rows, the row `row` at the residue `r` of the table of rows `ref`, satisfy `P ref r row`: what
 building rows into the tables of rows does to the store. -/
-def RowStore.Grows (s s' : RowStore) (P : EntryRef → Nat → Array UInt64 → Prop) : Prop :=
-  (∀ ref, (s'.getD ref #[]).size = (s.getD ref #[]).size) ∧
-    (∀ ref r row, s.row? ref r = some row → s'.row? ref r = some row) ∧
-    ∀ ref r row, s'.row? ref r = some row → s.row? ref r = some row ∨ P ref r row
+structure RowStore.Grows (s s' : RowStore) (P : EntryRef → Nat → Array UInt64 → Prop) : Prop where
+  /-- The tables of rows keep their sizes. -/
+  size_eq : ∀ ref, (s'.getD ref #[]).size = (s.getD ref #[]).size
+  /-- The rows are kept. -/
+  row?_of_row? : ∀ ref r row, s.row? ref r = some row → s'.row? ref r = some row
+  /-- The other rows satisfy `P`. -/
+  row?_or : ∀ ref r row, s'.row? ref r = some row → s.row? ref r = some row ∨ P ref r row
 
 theorem RowStore.Grows.refl (s : RowStore) (P : EntryRef → Nat → Array UInt64 → Prop) :
     s.Grows s P :=
@@ -166,10 +169,10 @@ theorem RowStore.Grows.refl (s : RowStore) (P : EntryRef → Nat → Array UInt6
 
 theorem RowStore.Grows.trans {s1 s2 s3 : RowStore} {P : EntryRef → Nat → Array UInt64 → Prop}
     (h1 : s1.Grows s2 P) (h2 : s2.Grows s3 P) : s1.Grows s3 P := by
-  refine ⟨fun ref ↦ by rw [h2.1, h1.1], fun ref r row h ↦ h2.2.1 _ _ _ (h1.2.1 _ _ _ h),
-    fun ref r row h ↦ ?_⟩
-  rcases h2.2.2 _ _ _ h with h | h
-  · exact h1.2.2 _ _ _ h
+  refine ⟨fun ref ↦ by rw [h2.size_eq, h1.size_eq],
+    fun ref r row h ↦ h2.row?_of_row? _ _ _ (h1.row?_of_row? _ _ _ h), fun ref r row h ↦ ?_⟩
+  rcases h2.row?_or _ _ _ h with h | h
+  · exact h1.row?_or _ _ _ h
   · exact .inr h
 
 /-- A row stored at a place where the store has no row. -/
@@ -204,6 +207,23 @@ def Factor.Builds : Factor → Nat → Prop
   | .prime t, b => 0 < b ∧ b < t.p
   | .power pw, b => b < pw.m
 
+theorem Factor.Buildable.modulus_pos {f : Factor} (h : f.Buildable) : 0 < f.modulus := by
+  cases f <;> exact h.1
+
+@[simp]
+theorem Factor.init_prime (t : Entry) : (Factor.prime t).init = sieveInit t.p :=
+  rfl
+
+@[simp]
+theorem Factor.init_power (pw : Power) : (Factor.power pw).init = .power :=
+  rfl
+
+theorem sieveInit_of_lt {p : Nat} (h : p < 64) : sieveInit p = .sieve1 := by
+  simp [sieveInit, h]
+
+theorem sieveInit_of_not_lt {p : Nat} (h : ¬p < 64) : sieveInit p = .sieve2 := by
+  simp [sieveInit, h]
+
 theorem initFactorRow_pre_sieve1 {t : Entry} {b : Nat} (hp : t.p < 64)
     (pre : (Factor.prime t).Buildable ∧ (Factor.prime t).Builds b) :
     0 < b ∧ b < t.p ∧ t.p < 64 ∧ t.inverses[b]! < t.p :=
@@ -231,18 +251,18 @@ theorem initFactorRow_spec (f : Factor) (ref : EntryRef) (b : Nat) (store : RowS
   cases f with
   | prime t =>
     by_cases hp : t.p < 64
-    · rw [show (Factor.prime t).init = .sieve1 by simp [Factor.init, sieveInit, hp]]
+    · rw [Factor.init_prime, sieveInit_of_lt hp]
       vcgen [initFactorRow]
       all_goals first
         | exact initFactorRow_pre_sieve1 hp ‹_›
         | exact ‹_›
-    · rw [show (Factor.prime t).init = .sieve2 by simp [Factor.init, sieveInit, hp]]
+    · rw [Factor.init_prime, sieveInit_of_not_lt hp]
       vcgen [initFactorRow]
       all_goals first
         | exact initFactorRow_pre_sieve2 hp ‹_›
         | exact ‹_›
   | power pw =>
-    rw [show (Factor.power pw).init = .power from rfl]
+    rw [Factor.init_power]
     vcgen [initFactorRow]
     all_goals first
       | exact initFactorRow_pre_power ‹_›
@@ -291,7 +311,7 @@ theorem FactorRowsPre.eq_closedRow {e : SieveEntry} {store s : RowStore}
     (pre : FactorRowsPre e store) (hs : store.Grows s (FactorRow e)) {f : Factor}
     (hf : f ∈ e.factors) {r : Nat} {row : Array UInt64} (h : s.row? f.ref r = some row) :
     row = closedRow f.admits f.modulus r := by
-  rcases hs.2.2 _ _ _ h with h' | ⟨f', hf', href, rfl⟩
+  rcases hs.row?_or _ _ _ h with h' | ⟨f', hf', href, rfl⟩
   · exact pre.rows f hf r row h'
   · rw [pre.coherent f' hf' f hf href]
 
@@ -326,15 +346,10 @@ theorem FactorRowsInvariant.pre_none {e : SieveEntry} {b : Nat} {store : RowStor
     (h : FactorRowsInvariant e b store pref st) (hr : st.1.row? f.ref (b % f.modulus) = none) :
     f.Buildable ∧ f.Builds (b % f.modulus) := by
   have hf : f ∈ e.factors := by simp [hl]
-  have hpos : 0 < f.modulus := by
-    have := pre.buildable f hf
-    cases f with
-    | prime t => exact this.1
-    | power pw => exact this.1
-  refine ⟨pre.buildable f hf, pre.builds f hf _ (Nat.mod_lt _ hpos) ?_⟩
+  refine ⟨pre.buildable f hf, pre.builds f hf _ (Nat.mod_lt _ (pre.buildable f hf).modulus_pos) ?_⟩
   cases hs : store.row? f.ref (b % f.modulus) with
   | none => rfl
-  | some row => rw [h.2.2.1 _ _ _ hs] at hr; cases hr
+  | some row => rw [h.2.row?_of_row? _ _ _ hs] at hr; cases hr
 
 theorem FactorRowsInvariant.post {e : SieveEntry} {b : Nat} {store : RowStore}
     {st : RowStore × Array (Array UInt64)} (h : FactorRowsInvariant e b store e.factors st) :
@@ -375,32 +390,20 @@ structure ProductRowsPre (e : SieveEntry) (store : RowStore) : Prop where
   /-- The moduli of the factors divide the modulus. -/
   dvd : ∀ f ∈ e.factors, f.modulus ∣ e.p
 
-theorem sieveInitProduct_pre_copy {e : SieveEntry} {store : RowStore}
-    (pre : ProductRowsPre e store) :
-    0 < e.factors[0]!.modulus ∧ e.factors[0]!.modulus ∣ e.p ∧
-      e.p * rbaPack ≤ (e.p + chunk - 1) * rbaPack := by
-  have hmem : e.factors[0]! ∈ e.factors := by
-    rw [getElem!_pos e.factors 0 (by lia [pre.one_le_length])]
-    exact List.getElem_mem _
-  refine ⟨?_, pre.dvd _ hmem, Nat.mul_le_mul_right _ (by lia [chunk_pos])⟩
-  have := pre.factorRows.buildable _ hmem
-  revert this
-  cases e.factors[0]! with
-  | prime t => exact fun h ↦ h.1
-  | power pw => exact fun h ↦ h.1
-
 theorem ProductRowsPre.pos_and_dvd {e : SieveEntry} {store : RowStore}
     (pre : ProductRowsPre e store) {i : Nat} (hi : i < e.factors.length) :
     0 < e.factors[i]!.modulus ∧ e.factors[i]!.modulus ∣ e.p := by
   have hmem : e.factors[i]! ∈ e.factors := by
     rw [getElem!_pos e.factors i hi]
     exact List.getElem_mem _
-  refine ⟨?_, pre.dvd _ hmem⟩
-  have := pre.factorRows.buildable _ hmem
-  revert this
-  cases e.factors[i]! with
-  | prime t => exact fun h ↦ h.1
-  | power pw => exact fun h ↦ h.1
+  exact ⟨(pre.factorRows.buildable _ hmem).modulus_pos, pre.dvd _ hmem⟩
+
+theorem sieveInitProduct_pre_copy {e : SieveEntry} {store : RowStore}
+    (pre : ProductRowsPre e store) :
+    0 < e.factors[0]!.modulus ∧ e.factors[0]!.modulus ∣ e.p ∧
+      e.p * rbaPack ≤ (e.p + chunk - 1) * rbaPack :=
+  ⟨(pre.pos_and_dvd pre.one_le_length).1, (pre.pos_and_dvd pre.one_le_length).2,
+    Nat.mul_le_mul_right _ (by lia [chunk_pos])⟩
 
 theorem sieveInitProduct_pre_and {e : SieveEntry} {store : RowStore} {frows : Array (Array UInt64)}
     {row : Vector UInt64 ((e.p + chunk - 1) * rbaPack)}
@@ -512,7 +515,7 @@ def InitRowPre (e : SieveEntry) (b : Nat) (store : RowStore) : Prop :=
 
 theorem Factor.init_ne_product (f : Factor) : f.init ≠ .product := by
   cases f with
-  | prime t => simp only [Factor.init, sieveInit]; split <;> nofun
+  | prime t => rw [Factor.init_prime, sieveInit]; split <;> nofun
   | power pw => nofun
 
 /-- The row of the residue `b` of the sieve entry `e` built by its builder is the closed form of the
@@ -574,13 +577,13 @@ theorem RowStore.Holds.publish {R : EntryRef → Nat → Array UInt64} {s : RowS
 theorem RowStore.Holds.of_grows {R : EntryRef → Nat → Array UInt64} {s s' : RowStore}
     {P : EntryRef → Nat → Array UInt64 → Prop} (h : s.Holds R) (hs : s.Grows s' P)
     (hP : ∀ ref r row, P ref r row → row = R ref r) : s'.Holds R := fun _ _ _ h' ↦
-  (hs.2.2 _ _ _ h').elim (h _ _ _) (hP _ _ _)
+  (hs.row?_or _ _ _ h').elim (h _ _ _) (hP _ _ _)
 
 theorem RowStore.Grows.row?_ne_none {s s' : RowStore} {P : EntryRef → Nat → Array UInt64 → Prop}
     (hs : s.Grows s' P) {ref : EntryRef} {r : Nat} (h : s.row? ref r ≠ none) :
     s'.row? ref r ≠ none := by
   obtain ⟨row, hrow⟩ := Option.ne_none_iff_exists'.mp h
-  rw [hs.2.1 _ _ _ hrow]
+  rw [hs.row?_of_row? _ _ _ hrow]
   exact Option.some_ne_none row
 
 theorem RowStore.row?_publish_ne_none {s : RowStore} {ref ref' : EntryRef} {r r' : Nat}
@@ -1174,6 +1177,16 @@ theorem buildRows_setRows_map_spec (R : EntryRef → Nat → Array UInt64) (stor
 
 /-! ### The rows of the references of a run -/
 
+@[simp]
+theorem p_run_examinePower (c : List Int) (d p e : Nat) (u : Bool) :
+    (Id.run (examinePower c d p e u)).p = p :=
+  rfl
+
+@[simp]
+theorem m_run_examinePower (c : List Int) (d p e : Nat) (u : Bool) :
+    (Id.run (examinePower c d p e u)).m = p ^ e :=
+  rfl
+
 /-- The rows of the references of a run for the polynomial of degree `d` with the coefficient list
 `c` and the sieve entries `es` of the moduli in their order: for a prime `p`, the closed forms of
 the rows of its table (`Ratpoints.Sieve.examinePrime`); for a prime power `p ^ e`, those of its
@@ -1199,7 +1212,7 @@ theorem runRows_ref (c : List Int) (d : Nat) (es : List SieveEntry) {f : Factor}
     change closedRow (examinePrime c d t.p).admits t.p = closedRow t.admits t.p
     rw [← hprime t rfl]
   | power pw =>
-    have hm : pw.m = pw.p ^ pw.e := (congrArg Power.m (hpower pw rfl)).trans rfl
+    have hm : pw.m = pw.p ^ pw.e := (congrArg Power.m (hpower pw rfl)).trans (m_run_examinePower ..)
     change closedRow (Id.run (examinePower c d pw.p pw.e false)).admits (pw.p ^ pw.e) =
       closedRow pw.admits pw.m
     rw [← hpower pw rfl, hm]

@@ -438,12 +438,12 @@ theorem next?_ne_none_of_lt {specs pref suff : List SieveSpec} {s : SieveSpec} {
 
 /-- The invariant of the loop of `Ratpoints.Sieve.andRows` over the moduli and, in step with them,
 their reciprocals `mgs`, whose state is the piece and the reciprocals still to come: after the
-moduli `pref`, the reciprocals still to come are those after the first `pref.length`, and the first
-`k` words of the piece, all its `n rbaPack` words in the loop, are the class word `cw` and-ed with
-their row words (`Ratpoints.Sieve.andWords`). -/
-def AndRowsLoopInvariant {m : Nat} (cw : UInt64) (w0 : Int) (k : Nat) (mgs : List Nat)
+moduli `pref`, the reciprocals still to come are those after the first `pref.length`, and the words
+of the `n` bit arrays of the piece are the class word `cw` and-ed with their row words
+(`Ratpoints.Sieve.andWords`). -/
+def AndRowsLoopInvariant {m : Nat} (cw : UInt64) (w0 : Int) (n : Nat) (mgs : List Nat)
     (pref : List SieveSpec) (st : Vector UInt64 m × List Nat) : Prop :=
-  st.2 = mgs.drop pref.length ∧ ∀ y < k, st.1[y]! = andWords pref cw w0 y
+  st.2 = mgs.drop pref.length ∧ ∀ y < n * rbaPack, st.1[y]! = andWords pref cw w0 y
 
 /-- The invariant of the loops of `Ratpoints.Sieve.andRows` over the bit arrays for the modulus
 `s` after the moduli `pref`: the words of the bit arrays below `c` are and-ed with the row of `s`
@@ -535,13 +535,13 @@ moduli. -/
 theorem AndRowsFillInvariant.andRowsLoopInvariant {m n : Nat} {cw : UInt64} {w0 : Int}
     {mgs : List Nat} {surv : Vector UInt64 m}
     (h : AndRowsFillInvariant cw n (ForIn.toList [0:n]).length surv) :
-    AndRowsLoopInvariant cw w0 (n * rbaPack) mgs [] (surv, Std.toStream mgs) :=
+    AndRowsLoopInvariant cw w0 n mgs [] (surv, Std.toStream mgs) :=
   ⟨rfl, fun y hy ↦ h y hy (by simp)⟩
 
 theorem AndRowsLoopInvariant.getElem!_eq {m n : Nat} {cw : UInt64} {w0 : Int} {mgs : List Nat}
     {pref : List SieveSpec} {st : Vector UInt64 m × List Nat}
-    (h : AndRowsLoopInvariant cw w0 (n * rbaPack) mgs pref st) {y : Nat}
-    (hy : y < n * rbaPack) : st.1[y]! = andWords pref cw w0 y :=
+    (h : AndRowsLoopInvariant cw w0 n mgs pref st) {y : Nat} (hy : y < n * rbaPack) :
+    st.1[y]! = andWords pref cw w0 y :=
   h.2 y hy
 
 /-- The reciprocals do not run out before the moduli. -/
@@ -562,7 +562,7 @@ theorem AndRowsLoopInvariant.andRowsHeadInvariant {m n : Nat} {cw : UInt64} {w0 
     {mg : Nat} {surv : Vector UInt64 m}
     (pre : (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p) ∧ SmallFits small w0 (w0 + n))
     (hs : specs = pref ++ s :: suff)
-    (h : AndRowsLoopInvariant cw w0 (n * rbaPack) mgs pref (surv, rest))
+    (h : AndRowsLoopInvariant cw w0 n mgs pref (surv, rest))
     (hnext : Std.Stream.next? rest = some (mg, rest')) :
     AndRowsHeadInvariant small cw w0 n pref s mg [] surv := by
   obtain ⟨rfl, -⟩ := eq_magic_and_of_next?_eq_some pre.2.1 hs (fun _ ↦ h.1) hnext
@@ -574,10 +574,10 @@ theorem AndRowsLoopInvariant.andRowsHeadInvariant {m n : Nat} {cw : UInt64} {w0 
 theorem AndRowsLoopInvariant.push {m n c : Nat} {cw : UInt64} {w0 : Int}
     {mgs rest rest' : List Nat} {pref : List SieveSpec} {s : SieveSpec} {r mg : Nat}
     {surv surv' : Vector UInt64 m}
-    (h : AndRowsLoopInvariant cw w0 (n * rbaPack) mgs pref (surv, rest))
+    (h : AndRowsLoopInvariant cw w0 n mgs pref (surv, rest))
     (hnext : Std.Stream.next? rest = some (mg, rest'))
     (h' : AndRowsStartInvariant cw w0 n pref s r c surv') (hc : n ≤ c) :
-    AndRowsLoopInvariant cw w0 (n * rbaPack) mgs (pref ++ [s]) (surv', rest') := by
+    AndRowsLoopInvariant cw w0 n mgs (pref ++ [s]) (surv', rest') := by
   refine ⟨?_, fun y hy ↦ ?_⟩
   · change rest' = mgs.drop (pref ++ [s]).length
     rw [List.length_append, List.length_singleton, ← List.drop_drop, ← show rest = _ from h.1,
@@ -686,7 +686,7 @@ theorem andRows_spec (specs : List SieveSpec) (mgs : List Nat) (small : Bool) (c
     ⦃ fun surv' ↦ ∀ y < n * rbaPack, surv'[y]! = andWords specs cw w0 y ⦄ := by
   vcgen [andRows] invariants
   | inv1 => fun done _ surv ↦ AndRowsFillInvariant cw n done.length surv
-  | inv2 => fun l _ ↦ AndRowsLoopInvariant cw w0 (n * rbaPack) mgs l
+  | inv2 => fun l _ ↦ AndRowsLoopInvariant cw w0 n mgs l
   | inv3 l s _ _ _ _ _ mg _ _ _ => fun d _ ↦ AndRowsHeadInvariant small cw w0 n l s mg d
   | inv4 l s _ _ _ _ _ mg _ _ _ => fun d _ ↦ AndRowsHeadInvariant small cw w0 n l s mg d
   | inv5 l s _ _ _ _ _ mg _ _ _ _ _ => fun d _ ↦ AndRowsPeriodInvariant small cw w0 n l s mg d

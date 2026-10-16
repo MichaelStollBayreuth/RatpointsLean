@@ -995,13 +995,8 @@ theorem getLsbD_productWord (e : SieveEntry) (frows : Array (Array UInt64)) {K :
 /-- The row of a sieve entry whose factors have moduli dividing its modulus admits a numerator when
 each factor does, the factors reading the residues modulo their own moduli. -/
 theorem SieveEntry.admits_eq_all {e : SieveEntry} (h : ∀ f ∈ e.factors, f.modulus ∣ e.p) (b : Nat)
-    (a : Int) : e.admits b a = e.factors.all (·.admits b a) := by
-  rw [SieveEntry.admits, Bool.eq_iff_iff, List.all_eq_true, List.all_eq_true]
-  constructor <;> intro hf f hmem
-  · rw [← Factor.admits_mod_of_dvd f (h f hmem)]
-    exact hf f hmem
-  · rw [Factor.admits_mod_of_dvd f (h f hmem)]
-    exact hf f hmem
+    (a : Int) : e.admits b a = e.factors.all (·.admits b a) :=
+  List.all_congr_left fun f hf ↦ Factor.admits_mod_of_dvd f (h f hf) b a
 
 /-- The row of a product whose words are those of the rows of its factors, in closed form at the
 residue `b` modulo their moduli, and-ed in the blocks of their lengths and repeated after the first

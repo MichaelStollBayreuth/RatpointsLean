@@ -938,7 +938,7 @@ theorem sieve2_shifts {p : Nat} (pre : 64 ≤ p ∧ p % 64 ≠ 0) :
     p = 64 * (p / 64) + p % 64 ∧ 0 < p / 64 ∧ 0 < p % 64 ∧ p % 64 < 64 :=
   ⟨(Nat.div_add_mod p 64).symm, by lia, by lia, Nat.mod_lt _ (by decide)⟩
 
-theorem rowWords_nil {p n : Nat} (si : Vector UInt64 n) (g : Nat → Bool) {P : Prop} (_ : P) :
+theorem rowWords_nil {p n : Nat} (si : Vector UInt64 n) (g : Nat → Bool) :
     RowWords g p ([] : List Nat).length si :=
   nofun
 
@@ -1036,7 +1036,7 @@ theorem sieve2Rows_spec (p : Nat) (help : Vector UInt64 (p / 64 + 2)) :
       RingState g p (p / 64) (p % 64) (64 * (p / 64 + done.length)) st.2.2 st.1 ∧
         RowWords g p (p / 64 + done.length) st.2.1
   all_goals first
-    | exact rowWords_nil _ _ ‹_›
+    | exact rowWords_nil _ _
     | exact ringState_init ‹_› _ ‹_›
     | exact RingState.post ‹_› ‹_› _ ‹_›
     | exact RingState.append ‹_› (by lia) ‹_› ‹_›

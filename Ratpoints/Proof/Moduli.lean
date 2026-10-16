@@ -299,16 +299,6 @@ theorem bitAt_of_isSquare {m v : ℕ} {sq : Array UInt64}
   obtain ⟨s, hs, rfl⟩ := ZMod.exists_eq_mul_self_mod_of_isSquare hv hsq
   exact h s hs
 
-@[simp]
-theorem p_run_examinePower (c : List ℤ) (d p e : ℕ) (u : Bool) :
-    (Id.run (examinePower c d p e u)).p = p :=
-  rfl
-
-@[simp]
-theorem m_run_examinePower (c : List ℤ) (d p e : ℕ) (u : Bool) :
-    (Id.run (examinePower c d p e u)).m = p ^ e :=
-  rfl
-
 /-- The path through `long`s, with the helper `mod` of the C code, and the path through GMP
 integers give the same tables of a prime power. -/
 theorem examinePower_eq_examinePower_false (c : List ℤ) (d p e : ℕ) (u : Bool) :
