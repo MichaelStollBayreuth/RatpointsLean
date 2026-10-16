@@ -185,9 +185,12 @@ Deviation: the tables of rows made in the store of the run, by the reference to 
 after the entry of the modulus (`Ratpoints.sievingInfo`), where `make_power` and `make_modulus` make
 them with the entry; a table of rows made only when its reference is absent, for the test of
 `power_se` (lines 2444 and 2466) by which the entry of a prime power is made once, and for the entry
-of a prime, which `examine_prime` makes once; the table of rows of a prime made also for a prime
-beyond those of the loop of the tables and for one that says nothing, for which `examine_prime`
-makes no entry and which ratpoints takes as no factor (`Ratpoints.makeModulus?`). -/
+of a prime, which `examine_prime` makes once; the table of rows of a prime made also for one that
+says nothing, for which `examine_prime` makes no entry (lines 1764-1765) and which `add_moduli`
+takes as no factor (line 2383), and for a prime beyond those of the loop of the tables, which
+`add_moduli` takes as no factor either (line 2370) and whose entry, with its row of `0`,
+`examine_prime` makes only when the third stage examines it (lines 2994-2995), where the model makes
+it for every modulus that has the prime as a factor (`Ratpoints.makeModulus?`). -/
 def SieveEntry.addTables (e : SieveEntry) (s : RowStore) : RowStore :=
   let s := e.factors.foldl (fun s f ↦ s.insertIfNew f.ref f.newRows) s
   if e.init = .product then s.insertIfNew e.ref (.replicate e.p none) else s

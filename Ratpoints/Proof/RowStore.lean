@@ -44,10 +44,11 @@ denominator nothing reads the store. The tables of rows made by the loop of the 
 sieve entries (`Ratpoints.Sieve.primeRows`, `Ratpoints.Sieve.SieveEntry.addTables`) keep the
 invariant (`Ratpoints.Sieve.RowStore.Holds.addTables`) and the rows of `0` of the primes
 (`Ratpoints.Sieve.RowStore.PrimeZeroRows.row?_addTables_ne_none`). For a run, `R` is the function of
-the closed forms of the rows of the tables of the reference of the primes and the prime powers and
-of the entries of the products at their positions (`Ratpoints.Sieve.runRows`), which every sieve
-entry made by `Ratpoints.makeModulus?` fits (`Ratpoints.Sieve.SieveEntry.rowsFit_runRows`), and
-which the store that the loop over the moduli of `Ratpoints.sievingInfo` makes holds
+the closed forms of the rows of the table of each prime and the tables of each prime power as
+`Ratpoints.Sieve.examinePrime` and `Ratpoints.Sieve.examinePower` compute them, and of the entries
+of the products at their positions (`Ratpoints.Sieve.runRows`), which every sieve entry made by
+`Ratpoints.makeModulus?` fits (`Ratpoints.Sieve.SieveEntry.rowsFit_runRows`), and which the store
+that the loop over the moduli of `Ratpoints.sievingInfo` makes holds
 (`Ratpoints.Sieve.RowStore.MadeFor`).
 
 ## Main definitions
@@ -1195,9 +1196,9 @@ theorem runRows_prime_zero (c : List Int) (d : Nat) (es : List SieveEntry) {p : 
     runRows c d es (.prime p) 0 = sieves0 p :=
   (sieves0_eq_closedRow (examinePrime c d p) hp).symm
 
-/-- The rows of the reference of a factor of a run whose tables are those of the reference
-(`Ratpoints.Sieve.examinePrime`, `Ratpoints.Sieve.examinePower`) are the closed forms of the rows
-of the factor. -/
+/-- The rows of the reference of a factor of a run whose table or tables are those that
+`Ratpoints.Sieve.examinePrime` and `Ratpoints.Sieve.examinePower` compute are the closed forms of
+the rows of the factor. -/
 theorem runRows_ref (c : List Int) (d : Nat) (es : List SieveEntry) {f : Factor}
     (hprime : ∀ t : Entry, f = .prime t → t = examinePrime c d t.p)
     (hpower : ∀ pw : Power, f = .power pw → pw = Id.run (examinePower c d pw.p pw.e false)) :
@@ -1214,8 +1215,9 @@ theorem runRows_ref (c : List Int) (d : Nat) (es : List SieveEntry) {f : Factor}
 
 /-- A sieve entry at the position `n` of the entries `es` of a run, with the reference and the kind
 that `Ratpoints.makeModulus?` sets, a positive modulus, at least one factor, the moduli of the
-factors dividing the modulus, builders that have what they need and the tables of the reference,
-fits the rows of the references of the run (`Ratpoints.Sieve.runRows`). -/
+factors dividing the modulus, builders that have what they need and the tables that
+`Ratpoints.Sieve.examinePrime` and `Ratpoints.Sieve.examinePower` compute, fits the rows of the
+references of the run (`Ratpoints.Sieve.runRows`). -/
 theorem SieveEntry.rowsFit_runRows {c : List Int} {d : Nat} {es : List SieveEntry} {n : Nat}
     {e : SieveEntry} (hn : es[n]? = some e) (hrf : e.RefFits n) (hpos : 0 < e.p)
     (hne : e.factors ≠ []) (hdvd : ∀ f ∈ e.factors, f.modulus ∣ e.p)

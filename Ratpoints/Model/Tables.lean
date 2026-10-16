@@ -24,22 +24,22 @@ the reciprocal of the modulus and what the packing of the numerators needs
 (`Ratpoints.Sieve.SieveEntry`), with the admission test of the rows of a denominator
 (`Ratpoints.Sieve.SieveEntry.admits`), the kinds of the builders of the rows
 (`Ratpoints.Sieve.RowInit`) and the references to the entries that hold the tables of rows
-(`Ratpoints.Sieve.EntryRef`). The reciprocal of a modulus gives the remainder and the
-quotient by a multiplication on 64-bit words, with the high half of the 128-bit product from the
-products of the 32-bit halves (`Ratpoints.Sieve.magic`, `Ratpoints.Sieve.mulHi`,
-`Ratpoints.Sieve.mulMod`, `Ratpoints.Sieve.mulDiv`), and the remainder of a `long` of either sign
-(`Ratpoints.Sieve.modMul`). The table of a prime without the exit (`Ratpoints.Sieve.examinePrime`)
-is the reference of the table with it, which gives the same table for
-`0 < p < Ratpoints.maxPrimeEven` whenever it gives one (`Ratpoints.Sieve.examinePrime?_spec`). The
-tables that the build of ratpoints generates are computed here: the squares and the inverses by
-`Ratpoints.Sieve.squaresMod` and `Ratpoints.Sieve.inversesMod`, and the table `sieve_init` of the
-builders of the rows of the primes by `Ratpoints.Sieve.sieveInit`; the row of `0` of a prime,
-`Ratpoints.Sieve.sieves0`, and the builders of the rows are in `Ratpoints.Model.Rows`, and the
-admission tests here are their reference. The loop of the tables (`Ratpoints.Sieve.examinePrimes`)
-is in `Ratpoints.Model.Denominators`, the factors of a modulus (`Ratpoints.modulusFactors`) in
+(`Ratpoints.Sieve.EntryRef`). The reciprocal of a modulus gives the remainder and the quotient by a
+multiplication on 64-bit words, with the high half of the 128-bit product from the products of the
+32-bit halves (`Ratpoints.Sieve.magic`, `Ratpoints.Sieve.mulHi`, `Ratpoints.Sieve.mulMod`,
+`Ratpoints.Sieve.mulDiv`), and the remainder of a `long` of either sign (`Ratpoints.Sieve.modMul`).
+The table of a prime without the exit (`Ratpoints.Sieve.examinePrime`) is the reference of the table
+with it, which gives the same table for `0 < p < Ratpoints.maxPrimeEven` whenever it gives one
+(`Ratpoints.Sieve.examinePrime?_spec`). The tables that the build of ratpoints generates are
+computed here: the squares and the inverses by `Ratpoints.Sieve.squaresMod` and
+`Ratpoints.Sieve.inversesMod`, and the table `sieve_init` of the builders of the rows of the primes
+by `Ratpoints.Sieve.sieveInit`; the row of `0` of a prime, `Ratpoints.Sieve.sieves0`, and the
+builders of the rows are in `Ratpoints.Model.Rows`, and the admission tests here are their
+reference. The loop of the tables (`Ratpoints.Sieve.examinePrimes`) is in
+`Ratpoints.Model.Denominators`, the factors of a modulus (`Ratpoints.modulusFactors`) in
 `Ratpoints.Model.Params`, and the construction of the sieve entry of a modulus
-(`Ratpoints.makeModulus?`) in `Ratpoints.Model.FindPoints`; the rows as words are in
-`Ratpoints.Model.Rows` and `Ratpoints.Model.Sieve`, and the sieve that uses them in
+(`Ratpoints.makeModulus?`) in `Ratpoints.Model.FindPoints`; the sieve that reads the rows from the
+tables of rows of the run, and has the missing ones built (`Ratpoints.Sieve.buildRows`), is in
 `Ratpoints.Model.Sieve`.
 
 ## Main definitions

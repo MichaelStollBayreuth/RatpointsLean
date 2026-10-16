@@ -191,7 +191,8 @@ the `long`s, the product `a₀ rinv[n][k]` a natural number for the `long` that 
 to an `unsigned long`, below `2 ^ 63` (`Ratpoints.mul_lt_two_pow_63`); the reciprocal and the bias
 read from the sieve entry, as the C code reads them. -/
 def classRows (cls : Vector NumClass 64) (es : Array SieveEntry) (rinv : Array (Array Nat))
-    (np : Nat) (offsets : Array Nat) : Id (Vector NumClass 64 × Array Nat) := do
+    (np : Nat) (offsets : Array Nat) :
+    Id (Vector NumClass 64 × Array Nat) := do
   let mut cls := cls
   let mut offsets := offsets
   let mut rowOf : Array (Option Nat) := .replicate (2 ^ numStrides) none

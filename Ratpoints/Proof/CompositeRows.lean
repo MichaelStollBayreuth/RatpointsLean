@@ -374,9 +374,7 @@ theorem layOutPattern_pre {m : Nat} {pat : Array UInt64}
 attribute [local irreducible] RowLoopInvariant RepInv in
 /-- The row of the pattern of period `0 < m ≤ 64 Ratpoints.modWords` in the words `pat`, without
 bits from `m` on, as `lay_out_pattern` lays it out: `m + chunk - 1` bit arrays, word `j` the window
-of the pattern at `64 j`. The alternatives of the dispatch match at reducible transparency: with a
-chunk of 1 and one word of the pattern a failing alternative otherwise unfolds the sizes into a
-timeout. -/
+of the pattern at `64 j`. -/
 @[spec]
 theorem layOutPattern_spec (pat : Array UInt64) (m : Nat) :
     ⦃ 0 < m ∧ m ≤ 64 * modWords ∧ PatClear m pat ⦄ layOutPattern pat m
@@ -384,6 +382,8 @@ theorem layOutPattern_spec (pat : Array UInt64) (m : Nat) :
   vcgen [layOutPattern] invariants
   | inv1 => fun done _ st ↦ RowLoopInvariant (patBit pat) m done.length st
   | inv2 => fun done _ si ↦ RowWords (patBit pat) m (m * rbaPack + done.length) si
+  -- The alternatives match at reducible transparency: with a chunk of 1 and one word of the
+  -- pattern a failing alternative otherwise unfolds the sizes into a timeout.
   all_goals first
     | with_reducible exact layOutPattern_pre ‹_›
     | with_reducible exact rowLoopInvariant_init _ m
@@ -394,11 +394,12 @@ theorem layOutPattern_spec (pat : Array UInt64) (m : Nat) :
 
 /-! ### The rows of a prime power -/
 
-/-- The words of a cleared pattern: `modWords` words, every bit clear. -/
+/-- The words of a cleared pattern: `Ratpoints.modWords` words, every bit clear. -/
 def PatZero (pat : Array UInt64) : Prop := pat.size = modWords ∧ ∀ y, patBit pat y = false
 
 /-- The invariant of the loop of `Ratpoints.Sieve.powerPatternUnit` after the residues below `x`:
-the residue `r = x b⁻¹ mod m` and the bits below `x` set where `fsq` has the bit of `y b⁻¹`. -/
+the residue `r = x b⁻¹ mod m` and the bits below `x` set where `Ratpoints.Sieve.Power.fsq` has the
+bit of `y b⁻¹`. -/
 def UnitPatInv (pw : Power) (binv x : Nat) (st : Array UInt64 × Nat) : Prop :=
   st.2 = x * binv % pw.m ∧ st.1.size = modWords ∧
     ∀ y, patBit st.1 y = (decide (y < x) && bitAt pw.fsq (y * binv % pw.m))
@@ -408,8 +409,8 @@ theorem unitPatInv_init {pw : Power} {b : Nat} {pat : Array UInt64}
     UnitPatInv pw pw.inv[b]! ([] : List Nat).length (pat, 0) :=
   ⟨by simp, pre.2.2.2.1, fun y ↦ by rw [pre.2.2.2.2 y]; simp⟩
 
-/-- The bits of the pattern of a unit after the residue `cur`, its bit set when `fsq` has the bit of
-`cur b⁻¹`. -/
+/-- The bits of the pattern of a unit after the residue `cur`, its bit set when
+`Ratpoints.Sieve.Power.fsq` has the bit of `cur b⁻¹`. -/
 theorem patBit_ite_setBitAt {pw : Power} {binv cur r : Nat} {pat : Array UInt64}
     (hr : r = cur * binv % pw.m) (hs : cur / 64 < pat.size)
     (hp : ∀ y, patBit pat y = (decide (y < cur) && bitAt pw.fsq (y * binv % pw.m))) (y : Nat) :
@@ -476,7 +477,8 @@ theorem UnitPatInv.post {pw : Power} {binv : Nat} {st : Array UInt64 × Nat}
 
 attribute [local irreducible] UnitPatInv in
 /-- The pattern of the row of a unit `b` modulo the prime power `m`, from a cleared pattern: bit
-`x < m` set when bit `x b⁻¹ mod m` of `fsq` is, for the inverse of `b` below `m`. -/
+`x < m` set when bit `x b⁻¹ mod m` of `Ratpoints.Sieve.Power.fsq` is, for the inverse of `b` below
+`m`. -/
 @[spec]
 theorem powerPatternUnit_spec (pw : Power) (b : Nat) (pat : Array UInt64) :
     ⦃ 0 < pw.m ∧ pw.m ≤ 64 * modWords ∧ pw.inv[b]! < pw.m ∧ PatZero pat ⦄
@@ -492,7 +494,8 @@ theorem powerPatternUnit_spec (pw : Power) (b : Nat) (pat : Array UInt64) :
     | exact UnitPatInv.skip ‹_› ‹_› ‹_› ‹_›
 
 /-- The invariant of the loop of `Ratpoints.Sieve.powerPatternNonunit` after the residues below
-`1 + c`: the bits `1 ≤ y < 1 + c` of the units `y` set where `gsq` has the bit of `b y⁻¹`. -/
+`1 + c`: the bits `1 ≤ y < 1 + c` of the units `y` set where `Ratpoints.Sieve.Power.gsq` has the bit
+of `b y⁻¹`. -/
 def NonunitPatInv (pw : Power) (b c : Nat) (pat : Array UInt64) : Prop :=
   pat.size = modWords ∧ ∀ y, patBit pat y =
     (decide (1 ≤ y ∧ y < 1 + c) && (y % pw.p != 0 && bitAt pw.gsq (b * pw.inv[y]! % pw.m)))
@@ -544,7 +547,8 @@ theorem NonunitPatInv.post {pw : Power} {b : Nat} {pat : Array UInt64} {P Q : Pr
 
 attribute [local irreducible] NonunitPatInv in
 /-- The pattern of the row of a residue `b` divisible by `p` modulo the prime power `m`, from a
-cleared pattern: bit `x` of a unit `x < m` set when bit `b x⁻¹ mod m` of `gsq` is. -/
+cleared pattern: bit `x` of a unit `x < m` set when bit `b x⁻¹ mod m` of `Ratpoints.Sieve.Power.gsq`
+is. -/
 @[spec]
 theorem powerPatternNonunit_spec (pw : Power) (b : Nat) (pat : Array UInt64) :
     ⦃ 0 < pw.m ∧ pw.m ≤ 64 * modWords ∧ PatZero pat ⦄ powerPatternNonunit pw b pat

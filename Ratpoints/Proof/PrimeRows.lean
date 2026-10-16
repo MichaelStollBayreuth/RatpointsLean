@@ -41,8 +41,8 @@ words (`Ratpoints.Sieve.RingState`); both end with the copies of `RP_INIT_REPLIC
   bits that they compute.
 * `Ratpoints.Sieve.initReplicate_spec`: the copies of `RP_INIT_REPLICATE`.
 * `Ratpoints.Sieve.sieveInit1_spec`, `Ratpoints.Sieve.sieveInit2_spec`: the rows of a prime below
-  and above 64 are the closed forms of the rows of their tables, stored into the tables of their
-  entries.
+  and above 64 are the closed forms of the rows of their tables, stored into the tables of rows of
+  their entries.
 
 ## Implementation notes
 
@@ -659,7 +659,7 @@ attribute [local irreducible] PatternDoubleInvariant in
 open Std.WP Lean.Order in
 /-- The row of the residue `0 < b < p` of a prime `p < 64` by `CODE_INIT_SIEVE1` is the closed form
 of the row of `b` of its table, for the inverse of `b` below `p`, and the builder stores it into the
-table of the entry `ref`. -/
+table of rows of the entry `ref`. -/
 @[spec]
 theorem sieveInit1_spec (t : Entry) (ref : EntryRef) (b : Nat) (store : RowStore) :
     ⦃ 0 < b ∧ b < t.p ∧ t.p < 64 ∧ t.inverses[b]! < t.p ⦄ sieveInit1 t ref b store

@@ -275,15 +275,15 @@ sieve entries as a list, for the array `args->sieve_list` that `sieving_info` fi
 clears it in case 2 (line 4770): the same value for an even degree, the only one that reads it; the
 store of the tables of rows that `Ratpoints.sievingInfo` returns handed to the run as a value, for
 the arrays `sieve` of the entries of `args->sieve_list`; the test on `point_at_infty` of the 2-adic
-exit recomputed, as
-`Ratpoints.Sieve.pointsAtInfinity` decides it; the exits give the empty list, where `sieving_info`
-returns the prime and `find_points_work_1` the number `0` of points found; the Sturm step does not
-restrict the search region before stage H, so that the return when it leaves nothing to search is
-never taken, and the run always follows the points at infinity; no failure for lack of memory, which
-the model cannot meet; the array of the row offsets made with zeros, for the array on the stack,
-whose entries the C code leaves unset until `class_offsets` writes them, with one offset in each row
-for each sieve entry of the run, those of its three stages, for the `sp3_max` entries with the
-reserve of further primes (stage I); no output under `RATPOINTS_VERBOSE` or `DEBUG`. -/
+exit recomputed, as `Ratpoints.Sieve.pointsAtInfinity` decides it; the exits give the empty list,
+where `sieving_info` returns the prime and `find_points_work_1` the number `0` of points found; the
+Sturm step does not restrict the search region before stage H, so that the return when it leaves
+nothing to search is never taken, and the run always follows the points at infinity; no failure for
+lack of memory, which the model cannot meet; the array of the row offsets made with zeros, for the
+array on the stack, whose entries the C code leaves unset until `class_offsets` writes them, with
+one offset in each row for each sieve entry of the run, those of its three stages, for the `sp3_max`
+entries with the reserve of further primes (stage I); no output under `RATPOINTS_VERBOSE` or
+`DEBUG`. -/
 def searchPoints (c : List Int) (d H : Nat) (P : Params) (rev : Bool) :
     Id (List (Int × Int × Int)) := do
   let bHigh := H

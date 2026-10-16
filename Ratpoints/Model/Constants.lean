@@ -215,11 +215,13 @@ def defaultArraySize : Nat := 256
 /-- The number of bit arrays that the first stage of the sieve takes at a time, `RATPOINTS_CHUNK`:
 the number of registers of the chunked first stage (`Ratpoints.Sieve.andRowsChunked`), which the C
 code compiles for a chunk from 2 to 16 and which the model takes on the same condition
-(`Ratpoints.Sieve.siftPiece`), and otherwise the first stage on one bit array at a time
+(`Ratpoints.Sieve.siftPiece`), and otherwise the first stage one row at a time
 (`Ratpoints.Sieve.andRows`); every row of the sieve has `chunk - 1` bit arrays more than its
 modulus, copies of its first ones, which the chunked first stage reads past the end of the row; and
-the size of a piece of the numerators is a multiple of the chunk (`Ratpoints.Params.arraySizeAt`,
-`Ratpoints.maxArraySize`). The proofs use only that it is positive (`Ratpoints.chunk_pos`).
+the largest number of bit arrays of a piece of the numerators is a multiple of the chunk
+(`Ratpoints.Params.arraySizeAt`, `Ratpoints.maxArraySize`), so that of the pieces of an interval
+only the last one can end in a partial chunk, which the tail legs take. The proofs use only that it
+is positive (`Ratpoints.chunk_pos`).
 
 C: `rp-private.h:160-165`, `rp-private.h:222-224`, `rp-private.h:248-250`,
 `rp-private.h:274-276`, `rp-private.h:293-295`
@@ -349,9 +351,9 @@ theorem rbaPack_pos : 0 < rbaPack := by decide
 theorem defaultArraySize_pos : 0 < defaultArraySize := by decide
 theorem maxArraySize_pos : 0 < maxArraySize := by decide
 
-/-- The chunk is positive, which the C code assumes without a check: the size of a piece of the
-numerators is rounded up to a multiple of it (`Ratpoints.Params.arraySizeAt`), which is then
-positive. -/
+/-- The chunk is positive, which the C code assumes without a check: the largest number of bit
+arrays of a piece of the numerators is rounded up to a multiple of it
+(`Ratpoints.Params.arraySizeAt`), which is then positive. -/
 theorem chunk_pos : 0 < chunk := by decide
 
 /-- The bound `Ratpoints.mulModLimit` on the denominators of the Jacobi test by tables is below

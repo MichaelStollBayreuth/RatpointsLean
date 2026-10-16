@@ -80,7 +80,8 @@ def andBitArray {m : Nat} (v : Vector UInt64 m) (j : Nat) (row : Array UInt64) (
 word `rbaPack * x + κ` of `row`; the load `reg = bits64 & *siv` of a register of the chunked first
 stage, with the class word in each word of the bit array `bits64`. -/
 def loadBitArray {m : Nat} (v : Vector UInt64 m) (j : Nat) (cw : UInt64) (row : Array UInt64)
-    (x : Nat) : Vector UInt64 m :=
+    (x : Nat) :
+    Vector UInt64 m :=
   Nat.fold rbaPack (fun κ _ v ↦ v.set! (rbaPack * j + κ) (cw &&& row[rbaPack * x + κ]!)) v
 
 /-- Bit array `y` of the words `v` set to bit array `j` of the words `regs`, one word at a time: for
@@ -285,7 +286,8 @@ the stores a loop over the registers, for the code that the build unrolls under
 `#if (RATPOINTS_CHUNK >= k)`, for `k` up to 16; the local array of the sieve specs, for the sieve
 specs of the sieving thread. -/
 def andChunks (sv : Array SieveSpec) (cw : UInt64) (full : Nat) {m : Nat}
-    (surv : Vector UInt64 m) : Id (Vector UInt64 m × Array SieveSpec) := do
+    (surv : Vector UInt64 m) :
+    Id (Vector UInt64 m × Array SieveSpec) := do
   let mut sv := sv
   let mut surv := surv
   let mut c := 0
@@ -297,14 +299,16 @@ def andChunks (sv : Array SieveSpec) (cw : UInt64) (full : Nat) {m : Nat}
     c := c + chunk
   return (surv, sv)
 
-/-- One leg of the first stage over the tail of a piece, `tail_leg`: `w ≤ 8` registers, loaded with
-the class word `cw` and-ed with the bit arrays `start + off, …, start + off + w - 1` of the row of
-the first modulus of the local sieve specs `sv` (`Ratpoints.Sieve.loadBitArray`), and-ed with the
-bit arrays from `start + off` on of the rows of the further moduli in turn
-(`Ratpoints.Sieve.andBitArray`), and stored into the bit arrays `base + off, …, base + off + w - 1`
-of `surv` (`Ratpoints.Sieve.storeBitArray`), where `base` is the first bit array of the tail; the
-starts stay as they are. The legs of a tail together read fewer than `Ratpoints.chunk` bit arrays
-from the starts on, which the copies of the first bit arrays at the end of the rows cover.
+/-- One leg of the first stage over the tail of a piece, `tail_leg`, which the C code compiles only
+with the chunked first stage, for a chunk from 2 to 16 (`Ratpoints.Sieve.andRowsChunked`): `w ≤ 8`
+registers, loaded with the class word `cw` and-ed with the bit arrays
+`start + off, …, start + off + w - 1` of the row of the first modulus of the local sieve specs `sv`
+(`Ratpoints.Sieve.loadBitArray`), and-ed with the bit arrays from `start + off` on of the rows of
+the further moduli in turn (`Ratpoints.Sieve.andBitArray`), and stored into the bit arrays
+`base + off, …, base + off + w - 1` of `surv` (`Ratpoints.Sieve.storeBitArray`), where `base` is the
+first bit array of the tail; the starts stay as they are. The legs of a tail together read fewer
+than `Ratpoints.chunk` bit arrays from the starts on, which the copies of the first bit arrays at
+the end of the rows cover.
 
 C: `sift.c:452-465`, `sift.c:473-496`
 
@@ -315,7 +319,8 @@ specs for the number `sp1` of the moduli; no pragmas that make the compiler unro
 the registers (`RP_UNROLL_REGS`, `sift.c:466-472`, excluded); natural numbers for the `long`s `w`
 and `off`. -/
 def tailLeg (w off : Nat) {m : Nat} (surv : Vector UInt64 m) (base : Nat) (cw : UInt64)
-    (sv : Array SieveSpec) : Id (Vector UInt64 m) := do
+    (sv : Array SieveSpec) :
+    Id (Vector UInt64 m) := do
   let mut reg : Vector UInt64 (8 * rbaPack) := .replicate _ 0
   let s := sv[0]!
   for i in [0:w] do
@@ -346,7 +351,8 @@ stage for a chunk up to 16 makes dead code: a chunk above 16 compiles the first 
 time, and the model chooses the arm by the same test (`Ratpoints.Sieve.siftPiece`,
 `Ratpoints.Sieve.andRows`); natural numbers for the `long`s. -/
 def tailLegs (sv : Array SieveSpec) (cw : UInt64) (full n : Nat) {m : Nat}
-    (surv : Vector UInt64 m) : Id (Vector UInt64 m) := do
+    (surv : Vector UInt64 m) :
+    Id (Vector UInt64 m) := do
   let t := n - full
   let mut surv := surv
   if 8 < chunk ∧ t &&& 8 ≠ 0 then surv ← tailLeg 8 0 surv full cw sv

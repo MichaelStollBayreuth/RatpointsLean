@@ -258,7 +258,8 @@ array of `Ratpoints.rbaPack` words, for the vector `nums`; natural numbers and i
 for the `int` `small`; no count of the ands of the second stage under `RP_PHASE_COUNTS`, and no
 output under `DEBUG`. -/
 def secondStage (specs : List SieveSpec) (mgs : List Nat) (small : Bool) (i : Int)
-    (nums : Vector UInt64 rbaPack) : Id (Vector UInt64 rbaPack) := do
+    (nums : Vector UInt64 rbaPack) :
+    Id (Vector UInt64 rbaPack) := do
   let mut nums := nums
   for s in specs, mg in mgs do
     if isZeroAt nums 0 then break
@@ -288,7 +289,8 @@ which stays a `long` where the helper `mod` reduces it outside `small`
 (`Ratpoints.Sieve.fitsLong_neg_sub_and_fitsLong_add`); a Boolean for the `int` `small`; no count of
 the ands of the second stage under `RP_PHASE_COUNTS`. -/
 def secondStageWord (specs : List SieveSpec) (mgs : List Nat) (small : Bool) (i : Int) (κ : Nat)
-    (x : UInt64) : Id UInt64 := do
+    (x : UInt64) :
+    Id UInt64 := do
   let mut x := x
   for s in specs, mg in mgs do
     if x == 0 then break
@@ -321,7 +323,8 @@ ratpoints reads to correct the moduli between the blocks of the run (stage I), a
 under `DEBUG`. -/
 def walkWord (w : Thunk (List Int)) (d b : Nat) (rev : Bool)
     (checks : Thunk (List CheckSpec)) (x : UInt64) (a0 : Int) (step : Nat)
-    (out : Array (Int × Int × Int)) : Id (Array (Int × Int × Int)) := do
+    (out : Array (Int × Int × Int)) :
+    Id (Array (Int × Int × Int)) := do
   let mut x := x
   let mut out := out
   while x != 0 do
@@ -449,24 +452,24 @@ C: `find_points.c:3119-3121`, `sift.c:498-531`, `sift.c:548`, `sift.c:1030-1041`
 `sift.c:1056-1058`, `sift.c:1300-1305`, `rp-private.h:575`, `rp-private.h:610-614`
 
 Deviation: the arm of the first stage chosen by a test on the constant `Ratpoints.chunk`, for the
-conditional compilation `#if (RATPOINTS_CHUNK > 1) && (RATPOINTS_CHUNK <= 16)` (`sift.c:575`,
-`sift.c:943`), which compiles one arm only; a fresh array of zeros for each piece, for the survivors
-array of the sieving thread, which every piece reuses, with one bit array more for the alignment,
-and whose words `malloc` leaves uninitialized; the piece by its first word number `w0` and its
-number `n` of bit arrays, for `w_low` and `w_high`, and an index for the pointer to its last bit
-array; the moduli of the first two stages with their rows and offsets as the list `specs` and the
-end `sp1` of the first stage, for the sieve specs `sieves` and the number `sp1` that the sieving
-thread keeps, the reciprocals of their moduli as the list `mgs`, for the array `magics` of the
-arguments, and the thunk `checks`, for the table `checks` of the third stage and its length
-`nchecks = sp3 - sp2`; the class `cl` as a value, for the pointer `cls`; integers for the `long`s of
-the test `small`, which stay `long`s, and a Boolean for its `int`; no count of the words of the
-piece (`n_words`), which ratpoints reads to correct the moduli between the blocks of the run (stage
-I); the thunk `w` of the products of the check as an argument, where `_ratpoints_check_point`
-computes the products when the first survivor of `b` reaches it; a list of points, for the callback
-`process` with its argument `info` and for the count `total` of points that `_ratpoints_sift0`
-returns, with no flag `quit` for a stop that `process` may request (stage G); natural numbers and
-integers for the `long`s; no measurements of the phases (`RP_TIC`, `RP_TOC`, `RP_PHASE_TIMING`) and
-no stop after one of them (`RP_STOP_AFTER`). -/
+conditional compilation `#if (RATPOINTS_CHUNK > 1) && (RATPOINTS_CHUNK <= 16)` (`sift.c:452`,
+`sift.c:575`, `sift.c:943`), which compiles one arm only, and `tail_leg` with the chunked one; a
+fresh array of zeros for each piece, for the survivors array of the sieving thread, which every
+piece reuses, with one bit array more for the alignment, and whose words `malloc` leaves
+uninitialized; the piece by its first word number `w0` and its number `n` of bit arrays, for `w_low`
+and `w_high`, and an index for the pointer to its last bit array; the moduli of the first two stages
+with their rows and offsets as the list `specs` and the end `sp1` of the first stage, for the sieve
+specs `sieves` and the number `sp1` that the sieving thread keeps, the reciprocals of their moduli
+as the list `mgs`, for the array `magics` of the arguments, and the thunk `checks`, for the table
+`checks` of the third stage and its length `nchecks = sp3 - sp2`; the class `cl` as a value, for the
+pointer `cls`; integers for the `long`s of the test `small`, which stay `long`s, and a Boolean for
+its `int`; no count of the words of the piece (`n_words`), which ratpoints reads to correct the
+moduli between the blocks of the run (stage I); the thunk `w` of the products of the check as an
+argument, where `_ratpoints_check_point` computes the products when the first survivor of `b`
+reaches it; a list of points, for the callback `process` with its argument `info` and for the count
+`total` of points that `_ratpoints_sift0` returns, with no flag `quit` for a stop that `process` may
+request (stage G); natural numbers and integers for the `long`s; no measurements of the phases
+(`RP_TIC`, `RP_TOC`, `RP_PHASE_TIMING`) and no stop after one of them (`RP_STOP_AFTER`). -/
 def siftPiece (w : Thunk (List Int)) (d b : Nat) (rev : Bool) (sp1 : Nat)
     (specs : List SieveSpec) (mgs : List Nat) (checks : Thunk (List CheckSpec)) (cl : NumClass)
     (w0 : Int) (n maskLow maskHigh : Nat) :
@@ -538,7 +541,8 @@ tables of rows of the run as an argument, for the arrays `sieve` of the entries 
 through the pointer `offset` of the class, and a class without a row of offsets (none, for `NULL`),
 which the run never sifts, reads the offsets from position `0`; natural numbers for the `long`s. -/
 def setRows (store : RowStore) (es : List SieveEntry) (bp : List Nat) (cl : NumClass)
-    (offsets : Array Nat) : List SieveSpec × Bool :=
+    (offsets : Array Nat) :
+    List SieveSpec × Bool :=
   let rows := (es.zip bp).map fun (e, r) ↦ store.row? e.ref r
   ((es.zip rows).mapIdx fun n (e, row) ↦
     ⟨e.p, offsets[cl.offset.getD 0 + n]!, row.getD #[], 0, e.p⟩, rows.any (·.isNone))
@@ -559,7 +563,8 @@ pointer read again plainly, for the acquire load, both for the threads that shar
 (stage I); no measurement of the construction (`RP_INIT_TIC`, `RP_INIT_TOC`) and no output under
 `DEBUG`. -/
 def buildRows (missing : Bool) (es : List SieveEntry) (bp : List Nat) (specs : List SieveSpec)
-    (store : RowStore) : Id (List SieveSpec × RowStore) := do
+    (store : RowStore) :
+    Id (List SieveSpec × RowStore) := do
   let mut specs := specs
   let mut store := store
   if missing then
@@ -621,21 +626,20 @@ def siftBits (w : Thunk (List Int)) (d b A : Nat) (rev : Bool) (sp1 : Nat) (spec
   return out
 
 /-- The points of the denominator `b`, its numerators `-H, …, H`, for `H < 2 ^ 63`, in pieces of at
-most `A` bit arrays, for `A ≥ 1`, in the packing of its class `cl` (`Ratpoints.Sieve.NumClass`),
-and the store of the tables of rows with the rows built for it: the sieve specs of the moduli of the
+most `A` bit arrays, for `A ≥ 1`, in the packing of its class `cl` (`Ratpoints.Sieve.NumClass`), and
+the store of the tables of rows with the rows built for it: the sieve specs of the moduli of the
 first two stages, of the sieve entries `es`, the row of the residue `bp[n]` of `b` divided by the
 stride of the class modulo the `n`-th modulus from the table of rows of its entry in `store`, and
 the offset of the row of the class for that modulus in `offsets` (`Ratpoints.Sieve.setRows`), with
 the rows that are not built yet built into their tables of rows (`Ratpoints.Sieve.buildRows`); what
-the third stage
-needs of the sieve entries `es3` of its primes, with the reciprocals `mgs3` of their moduli, for `b`
-and `H` (`Ratpoints.Sieve.fillChecks`) as a thunk, and so the products `w` of the coefficients `cₖ`
-with the powers `b^(d - k)` (`Ratpoints.BruteForce.scaledCoeffs`), both forced when the first
-numerator of `b` needs them; the bits of the numerators `-H, …, H` in the packing of `cl`
-(`Ratpoints.Sieve.numeratorsToBits`), in the form that splits the ends for `H > 2 ^ 63 - 65`; and
-the points of these bits (`Ratpoints.Sieve.siftBits`, with the reciprocals `mgs` of the moduli of
-the first two stages, the first stage ending after `sp1` of them, the degree `d` and the flag `rev`
-of the reversal).
+the third stage needs of the sieve entries `es3` of its primes, with the reciprocals `mgs3` of their
+moduli, for `b` and `H` (`Ratpoints.Sieve.fillChecks`) as a thunk, and so the products `w` of the
+coefficients `cₖ` with the powers `b^(d - k)` (`Ratpoints.BruteForce.scaledCoeffs`), both forced
+when the first numerator of `b` needs them; the bits of the numerators `-H, …, H` in the packing of
+`cl` (`Ratpoints.Sieve.numeratorsToBits`), in the form that splits the ends for `H > 2 ^ 63 - 65`;
+and the points of these bits (`Ratpoints.Sieve.siftBits`, with the reciprocals `mgs` of the moduli
+of the first two stages, the first stage ending after `sp1` of them, the degree `d` and the flag
+`rev` of the reversal).
 
 C: `find_points.c:3112-3114`, `find_points.c:3123-3124`, `find_points.c:3129`,
 `find_points.c:3442-3488`, `find_points.c:3490-3521`, `find_points.c:3555-3561`,
@@ -652,20 +656,19 @@ integers; the sieve specs, and with them the rows of the residues, made before t
 interval, where `sift` turns the interval into bits first and makes them (the flag `do_setup`) once
 `interval_bits` does not report an interval empty (it returns 0 also for an interval that holds no
 numerator, lines 3426-3427), which for the whole line is at once, and so before the test
-`low ≤ high` of the bits (line 3568); one call of `Ratpoints.Sieve.setRows`, for the two calls
-with the flag `shared` a constant, between which the pool of threads chooses (stage I); the store of
-the tables of rows passed and returned, for the arrays `sieve` of the entries of the arguments,
-which `sift` reaches through `sieve_list` and which keep the rows built for the rest of the run; the
-end `sp1` of the first stage, the entries `es` and the reciprocals `mgs` of the first two stages,
-the entries `es3` of the third stage and their reciprocals `mgs3` as arguments, for the numbers
-`sp1`, `sp2` and `sp3` that the sieving thread keeps (`worker_init`), the entries
+`low ≤ high` of the bits (line 3568); one call of `Ratpoints.Sieve.setRows`, for the two calls with
+the flag `shared` a constant, between which the pool of threads chooses (stage I); the store of the
+tables of rows passed and returned, for the arrays `sieve` of the entries of the arguments, which
+`sift` reaches through `sieve_list` and which keep the rows built for the rest of the run; the end
+`sp1` of the first stage, the entries `es` and the reciprocals `mgs` of the first two stages, the
+entries `es3` of the third stage and their reciprocals `mgs3` as arguments, for the numbers `sp1`,
+`sp2` and `sp3` that the sieving thread keeps (`worker_init`), the entries
 `sieve_list[0], …, sieve_list[sp2 - 1]`, the array `magics` of the arguments, which
 `_ratpoints_sift0` reads, and the entries `sieve_list[sp2], …, sieve_list[sp3 - 1]` and the
-reciprocals
-`magics[sp2], …, magics[sp3 - 1]`, which `fill_checks` reads, with no correction of `sp2` and `sp3`
-between the blocks of the run (stage I); the residues `bp` and the class `cl` as values, for the
-pointers `bp_list` and `cls`, and the array `offsets` of the row offsets of the run as an argument,
-which the C code reaches through the pointer `offset` of the class; the thunk of
+reciprocals `magics[sp2], …, magics[sp3 - 1]`, which `fill_checks` reads, with no correction of
+`sp2` and `sp3` between the blocks of the run (stage I); the residues `bp` and the class `cl` as
+values, for the pointers `bp_list` and `cls`, and the array `offsets` of the row offsets of the run
+as an argument, which the C code reaches through the pointer `offset` of the class; the thunk of
 `Ratpoints.Sieve.fillChecks`, for the table `checks` of the sieving thread, which `fill_checks`
 fills, and its flag `stage3_filled`, which `sift` clears; the thunk of the products `w`, for the
 flag `compute_bc`, which `sift` sets and `_ratpoints_check_point` clears when it computes the
@@ -682,7 +685,8 @@ flag by which the pool of threads tells it to abandon its block (`pool`, `slot`,
 the phases (`RP_SIFT_TIC`, `RP_SETUP_TIC` and their `TOC`) and no output under `DEBUG`. -/
 def sift (c : List Int) (d H A b : Nat) (rev : Bool) (sp1 : Nat) (es : List SieveEntry)
     (mgs bp : List Nat) (cl : NumClass) (offsets : Array Nat) (es3 : List SieveEntry)
-    (mgs3 : List Nat) (store : RowStore) : Id (Array (Int × Int × Int) × RowStore) := do
+    (mgs3 : List Nat) (store : RowStore) :
+    Id (Array (Int × Int × Int) × RowStore) := do
   let (specs, missing) := setRows store es bp cl offsets
   let (specs, store) ← buildRows missing es bp specs store
   let w : Thunk (List Int) := .mk fun _ ↦ BruteForce.scaledCoeffs c d b

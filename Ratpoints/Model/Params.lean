@@ -159,7 +159,8 @@ most the cap `Ratpoints.maxArraySize`, a multiple of the chunk; at least 1 for `
 C: `rp-private.h:87`, `find_points.c:4666-4677`
 
 Deviation: a `Nat` for the `long` field, so that only `0` stands for the default, which the library
-takes for every value `≤ 0`. -/
+takes for every value `≤ 0`; `64` for `LONG_LENGTH`; and the macro `CEIL` of a natural number `x` by
+`d` as `(x + d - 1) / d`, which is its value for every `x ≥ 0`. -/
 def Params.arraySizeAt (P : Params) (H : Nat) : Nat :=
   let a := min (min (if P.arraySize = 0 then defaultArraySize else P.arraySize)
     (2 * ((H + 63) / 64))) maxArraySize
