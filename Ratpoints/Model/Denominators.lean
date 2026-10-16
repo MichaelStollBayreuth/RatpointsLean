@@ -1022,15 +1022,16 @@ prints. -/
 
 -- The words of the forbidden divisors tested with words of `1 2 3 4 5 6 7` at the height 70000, for
 -- the first 30 primes of the table as the examined primes: the first `p` words of the pattern
--- `sieves0` for the primes of the table, from the loop of the tables and from the further primes,
--- and the words made after that loop for 257 and 263, beyond the table, all those of
--- `Ratpoints.Sieve.forbiddenRow`.
+-- `sieves0` for the primes of the table, from the loop of the tables (5, and 127, the last of its
+-- 30 primes) and from the further primes (151), and the words made after that loop for 257 and 263,
+-- beyond the table, all those of `Ratpoints.Sieve.forbiddenRow`.
 #guard
   let c : List Int := [1, 2, 3, 4, 5, 6, 7]
   let ba : List ForbiddenEntry := match Id.run (examinePrimes c 6 true true 30 64 70000) with
     | some (_, ba, val, _) => (Id.run (forbidden c 6 30 64 70000 ba val)).1
     | none => []
-  [5, 127, 257, 263].all (fun p ↦ ba.any (·.p == p)) && ba.all fun e ↦ e.words == forbiddenRow e.p
+  [5, 127, 151, 257, 263].all (fun p ↦ ba.any (·.p == p)) &&
+    ba.all fun e ↦ e.words == forbiddenRow e.p
 
 -- The Jacobi symbol by the binary algorithm: `(2 / 7) = 1`, `(3 / 7) = -1`, `(-1 / 3) = -1`,
 -- `(5 / 21) = 1`, `(10 / 21) = -1`; `b*` without the primes of `2 lcf`: `(6 / 9)` over `b* = 1`,

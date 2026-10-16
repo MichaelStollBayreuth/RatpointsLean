@@ -787,53 +787,67 @@ def SieveEntry.fetchRow (e : SieveEntry) (b : Nat) (store : RowStore) :
 -- The rows of the residues `b ≠ 0` of a prime by the function that the build generates for it, from
 -- `CODE_INIT_SIEVE1` below 64 and from `CODE_INIT_SIEVE2` above, called through the kind of the
 -- builder of the prime (`Ratpoints.Sieve.initFactorRow`, `Ratpoints.Sieve.sieveInit`), against the
--- closed form, word for word over all `(p + chunk - 1) rbaPack` words, bit `t` of word `j` set
--- exactly when the row admits `64 j + t` (`Ratpoints.Sieve.Entry.admits`): every residue of the
--- primes up to 13 and four residues of the larger primes up to 251, with the tables of two curves
--- and a table of all ones, which tests only coprimality; the builder stores the row into the table
--- of rows of the entry of the prime (`Ratpoints.Sieve.primeRows`), which keeps its row of `0`, and
--- no other row.
+-- closed form: `(p + chunk - 1) rbaPack` words, the first `p` of them, one period of the bits,
+-- word for word, bit `t` of word `j` set exactly when the row admits `64 j + t`
+-- (`Ratpoints.Sieve.Entry.admits`), and word `x` of the others equal to word `x mod p`, as in the
+-- closed form, since the admission test depends only on the numerator modulo `p`: every residue of
+-- the primes up to 13 and four residues of the larger primes up to 251, with the tables of two
+-- curves and a table of all ones, which tests only coprimality; the builder stores the row into the
+-- table of rows of the entry of the prime (`Ratpoints.Sieve.primeRows`), which keeps its row of
+-- `0`, and no other row.
 #guard
-  let closed (adm : Nat → Bool) (n : Nat) : Array UInt64 := (Array.range n).map fun j ↦
-    (List.range 64).foldl (fun w t ↦ if adm (64 * j + t) then w ||| 1 <<< t.toUInt64 else w) 0
+  let agrees (row : Array UInt64) (m : Nat) (adm : Nat → Bool) : Bool :=
+    row.size == (m + chunk - 1) * rbaPack && (List.range row.size).all fun x ↦
+      row[x]! == if x < m then
+        (List.range 64).foldl (fun w t ↦ if adm (64 * x + t) then w ||| 1 <<< t.toUInt64 else w) 0
+      else row[x % m]!
   [3, 5, 7, 11, 13, 31, 61, 67, 71, 127, 251].all fun p ↦
     let s0 : RowStore := ({} : RowStore).insert (.prime p) (primeRows p)
     [examinePrime [1, 2, 3, 4, 5, 6, 7] 6 p, examinePrime [-2, 0, 0, 1] 3 p,
         ⟨p, .replicate (p + 1) true, inversesMod p⟩].all fun t ↦
       (if p ≤ 13 then List.range' 1 (p - 1) else [1, 2, p / 2, p - 1]).all fun b ↦
         let (row, s) := Id.run (initFactorRow (Factor.prime t).init (.prime p) (.prime t) b s0)
-        row == closed (fun N ↦ t.admits b N) ((p + chunk - 1) * rbaPack) && s.size == 1 &&
+        agrees row p (fun N ↦ t.admits b N) && s.size == 1 &&
           (List.range p).all fun r ↦
             s.row? (.prime p) r == if r = b then some row else s0.row? (.prime p) r
 
 -- The rows of a prime power by the builder of the rows of a prime power, called through the kind of
 -- its builder (`Ratpoints.Sieve.initFactorRow`), against the closed form
--- (`Ratpoints.Sieve.Power.admits`), word for word over all `(m + chunk - 1) rbaPack` words: every
--- residue of 9, 27, 25, 49 and 121, and the residues `0, 1, 3, 5, 9, 242` of 243; the builder
--- stores the row into the table of rows of the entry of the prime power, and no other row.
+-- (`Ratpoints.Sieve.Power.admits`): `(m + chunk - 1) rbaPack` words, the first `m` of them, one
+-- period of the bits, word for word, and word `x` of the others equal to word `x mod m`, as in the
+-- closed form: every residue of 9, 27, 25, 49 and 121, and the residues `0, 1, 3, 5, 9, 242` of
+-- 243; the builder stores the row into the table of rows of the entry of the prime power, and no
+-- other row.
 #guard
-  let closed (adm : Nat → Bool) (n : Nat) : Array UInt64 := (Array.range n).map fun j ↦
-    (List.range 64).foldl (fun w t ↦ if adm (64 * j + t) then w ||| 1 <<< t.toUInt64 else w) 0
+  let agrees (row : Array UInt64) (m : Nat) (adm : Nat → Bool) : Bool :=
+    row.size == (m + chunk - 1) * rbaPack && (List.range row.size).all fun x ↦
+      row[x]! == if x < m then
+        (List.range 64).foldl (fun w t ↦ if adm (64 * x + t) then w ||| 1 <<< t.toUInt64 else w) 0
+      else row[x % m]!
   ([(3, 2), (3, 3), (5, 2), (7, 2), (11, 2), (3, 5)] : List (Nat × Nat)).all fun (p, k) ↦
     let pw := Id.run (examinePower [1, 2, 3, 4, 5, 6, 7] 6 p k true)
     let s0 : RowStore := ({} : RowStore).insert (.power p k) (.replicate pw.m none)
     (if pw.m < 200 then List.range pw.m else [0, 1, 3, 5, 9, 242]).all fun b ↦
       let (row, s) := Id.run (initFactorRow (Factor.power pw).init (.power p k) (.power pw) b s0)
-      row == closed (fun N ↦ pw.admits b N) ((pw.m + chunk - 1) * rbaPack) && s.size == 1 &&
+      agrees row pw.m (fun N ↦ pw.admits b N) && s.size == 1 &&
         (List.range pw.m).all fun r ↦ s.row? (.power p k) r == if r = b then some row else none
 
 -- The rows of a product by the builder of the rows of a product against the closed form
--- (`Ratpoints.Sieve.SieveEntry.admits`), word for word over all `(m + chunk - 1) rbaPack` words,
--- from a store with the tables of rows of its entry and of its factors and no rows but those of `0`
--- of the primes, made as `Ratpoints.sievingInfo` makes them
+-- (`Ratpoints.Sieve.SieveEntry.admits`): `(m + chunk - 1) rbaPack` words, the first `m` of them,
+-- one period of the bits, word for word, and word `x` of the others equal to word `x mod m`, as in
+-- the closed form; from a store with the tables of rows of its entry and of its factors and no rows
+-- but those of `0` of the primes, made as `Ratpoints.sievingInfo` makes them
 -- (`Ratpoints.Sieve.SieveEntry.addTables`): the rows of its factors are built into the tables of
--- rows of their entries, each the closed form of the row of the residue modulo the modulus of the
--- factor, and the builder stores the row of the product into its table of rows and no other row
--- there; every residue of 15, 21 and 45 = 9 · 5, and residues of 63 = 9 · 7, 105 = 3 · 5 · 7, 225 =
--- 9 · 25 and 255 = 3 · 5 · 17.
+-- rows of their entries, each the closed form of the row of the residue modulo the modulus `q` of
+-- the factor, checked in the same way on its first `q` words, and the builder stores the row of the
+-- product into its table of rows and no other row there; every residue of 15, 21 and 45 = 9 · 5,
+-- and residues of 63 = 9 · 7, 105 = 3 · 5 · 7, 225 = 9 · 25 and 255 = 3 · 5 · 17.
 #guard
-  let closed (adm : Nat → Bool) (n : Nat) : Array UInt64 := (Array.range n).map fun j ↦
-    (List.range 64).foldl (fun w t ↦ if adm (64 * j + t) then w ||| 1 <<< t.toUInt64 else w) 0
+  let agrees (row : Array UInt64) (m : Nat) (adm : Nat → Bool) : Bool :=
+    row.size == (m + chunk - 1) * rbaPack && (List.range row.size).all fun x ↦
+      row[x]! == if x < m then
+        (List.range 64).foldl (fun w t ↦ if adm (64 * x + t) then w ||| 1 <<< t.toUInt64 else w) 0
+      else row[x % m]!
   let c : List Int := [1, 2, 3, 4, 5, 6, 7]
   let pr (p : Nat) : Factor := .prime (examinePrime c 6 p)
   let pp (p k : Nat) : Factor := .power (Id.run (examinePower c 6 p k true))
@@ -844,11 +858,11 @@ def SieveEntry.fetchRow (e : SieveEntry) (b : Nat) (store : RowStore) :
     let s0 := e.addTables {}
     (if m ≤ 45 then List.range m else [0, 1, 2, 7, 15, m - 1]).all fun b ↦
       let (row, s) := Id.run (sieveInitProduct e b s0)
-      row.toArray == closed (fun N ↦ e.admits b N) ((m + chunk - 1) * rbaPack) &&
+      agrees row.toArray m (fun N ↦ e.admits b N) &&
         (List.range m).all (fun r ↦
           s.row? (.product 0) r == if r = b then some row.toArray else none) &&
-        fs.all fun f ↦ s.row? f.ref (b % f.modulus) ==
-          some (closed (fun N ↦ f.admits b N) ((f.modulus + chunk - 1) * rbaPack))
+        fs.all fun f ↦ (s.row? f.ref (b % f.modulus)).any fun r ↦
+          agrees r f.modulus fun N ↦ f.admits b N
 
 -- The rows through the tables of rows, read or built as the run takes them
 -- (`Ratpoints.Sieve.SieveEntry.fetchRow`), against the closed form, for the sieve entries of the
@@ -856,9 +870,10 @@ def SieveEntry.fetchRow (e : SieveEntry) (b : Nat) (store : RowStore) :
 -- and the product 45 = 9 · 5, which shares the table of rows of 9: the tables of rows made by
 -- `Ratpoints.Sieve.SieveEntry.addTables`, one for each entry, of the size of its modulus, with the
 -- row of `0` of a prime from the build; the rows fetched in turn, the products first, each stored
--- in the table of rows of its entry; the rows of `1` and `2` of 3 and of `3` of 9 then read from
--- the tables of rows, where the products built them, and every table of rows holding the rows
--- fetched or built and no others.
+-- in the table of rows of its entry; the row of `1` of 3 and the row of `3` of 9 then read from the
+-- tables of rows, where the products built them (with the row of `2` of 5), the row of `2` of 3
+-- built by its own builder, and every table of rows holding the rows fetched or built and no
+-- others.
 #guard
   let closed (adm : Nat → Bool) (n : Nat) : Array UInt64 := (Array.range n).map fun j ↦
     (List.range 64).foldl (fun w t ↦ if adm (64 * j + t) then w ||| 1 <<< t.toUInt64 else w) 0
