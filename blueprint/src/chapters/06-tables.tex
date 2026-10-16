@@ -466,10 +466,9 @@ divisor form says what the factorization of Definition~\ref{def:modulusFactors} 
 can be read without it. For the values of the constants of the build these are the odd moduli from
 $3$ to $255$, the first $\mathrm{numPrimes}$ primes being the odd primes below $256$. Pairwise
 coprimality, the bound of three factors, the bound $\mathrm{RATPOINTS\_COMPOSITE\_MAX}$, the cost of
-the table, the room for the tables of the prime powers, what a modulus says about the curve and the
-number of candidates are rules of the choice of the moduli, which soundness does not need. The
-parameters of the command line examine the first $q$ primes and take primes as moduli
-(Definition~\ref{def:sieveParams}).
+the table, what a modulus says about the curve and the number of candidates are rules of the choice
+of the moduli, which soundness does not need. The parameters of the command line examine the first
+$q$ primes and take primes as moduli (Definition~\ref{def:sieveParams}).
 
 \begin{definition}[What \texttt{sieving\_info} computes]\label{def:sievingInfo}
   \uses{def:examinePrimes, def:forbidden, def:makeModulus, def:Params, def:storeTables}
@@ -559,7 +558,8 @@ Each component of this chapter differs from the C code in a stated way, recorded
     caller and buffers; the tables of a prime power are computed for each modulus that needs them,
     where \verb|add_moduli| examines each prime power once and keeps it, and \verb|make_modulus|
     keeps the sieve entry of each prime power, whose table of rows the model makes once too, by its
-    prime and its exponent (Definition~\ref{def:storeTables});
+    prime and its exponent (Definition~\ref{def:storeTables}); the test of room in the buffer of
+    the prime powers, which never fails, is not made (Definition~\ref{def:makeModulus});
   \item the factors of a modulus are a list, for the codes of the factors and their number, without
     the bound of three factors or of the position $64$, which serve the choice of the moduli, and
     over the first $\mathrm{numPrimes}$ primes, where \verb|add_moduli| factors over the examined

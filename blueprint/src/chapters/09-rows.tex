@@ -1,8 +1,11 @@
 % Sub-stage F4: the chunked first stage of the default build and the rows of the C code: the chunk
-% RATPOINTS_CHUNK and both arms of the first stage, the rows of m + chunk - 1 bit arrays with their
-% copies, the builders of init.c and the generated tables, the tables of a prime power as words, and
-% the rows kept in the tables of the sieve entries, built before a denominator by the loop of sift.
-% Proposed names are set with \lname and become \lean once the declarations exist.
+% RATPOINTS_CHUNK and both arms of the first stage, chosen as the conditional compilation chooses
+% them; the sieve specs with the start and the end of the walk through a row; the rows of
+% m + chunk - 1 bit arrays with their copies as closed forms of the admission tests; the tables of
+% a prime power as words; the row of 0 sieves0, which the forbidden divisors read too; the builders
+% of init.c, each storing its row into the table of rows of its entry; and the tables of rows of
+% the entries, made where the C code makes the entries, the missing rows built by the loop of sift,
+% handed through the run.
 \chapter{The chunked first stage and the rows}\label{chap:rows}
 
 F4 models the first stage of the sieve as the default build of ratpoints compiles it, and the rows
@@ -14,42 +17,43 @@ the last whole chunk in legs of $8$, $4$, $2$ and $1$; for the other chunks, the
 row at a time into the bit arrays of a piece, which the model has had since stage~C2 and which is
 the build \verb|chunk1| that ratpoints tests. The chunked arm reads up to $\mathrm{chunk} - 1$ bit
 arrays past the first $p$ bit arrays of a row of the modulus $p$, so every row of ratpoints has
-$p + \mathrm{chunk} - 1$ bit arrays, the last ones copies of the first. F4 makes the chunk a
-constant of the model, $16$ as in the default build, models both arms and chooses between them as
-the conditional compilation of the C code does; the proofs hold for every value of the chunk, and
-the build with other values of the constants varies it.
+$p + \mathrm{chunk} - 1$ bit arrays, the last ones copies of the first. The chunk is a constant of
+the model, $16$ as in the default build; the model has both arms and chooses between them as the
+conditional compilation of the C code does; the proofs hold for every positive value of the chunk,
+and the build with other values of the constants varies it.
 
-Until now the model made each row from the admission test of its sieve entry, one period laid out in
-words by one function for every kind of modulus, and kept it in a thunk, a suspended computation. F4
-builds the rows as ratpoints does: the row of $0$ of a prime is the pattern \verb|sieves0| that the
-build generates, the other rows of a prime come from the function that the build generates for the
-prime from \verb|CODE_INIT_SIEVE1| or \verb|CODE_INIT_SIEVE2|, the rows of a prime power from
-\verb|_ratpoints_sieve_init_power| with \verb|lay_out_pattern|, and those of a product from
-\verb|_ratpoints_sieve_init_product|, out of the rows of its factors. They are kept where ratpoints
-keeps them, in the tables of rows of the sieve entries: one table of rows for each entry of
-ratpoints, reached as the C code reaches the entry (a prime by itself, a prime power by its prime
-and its exponent, a product by its position among the moduli), the rows that a denominator needs
-built before it by the loop of \verb|sift|, a product building the missing rows of its factors into
-their tables of rows first, and the tables of rows handed on through the run as state. With them
-come the tables of a prime power as bit arrays of words, as \verb|examine_power| fills them, and the
-forbidden divisors of the primes of the table read their words from \verb|sieves0|, as
-\verb|sieving_info| does. In this sub-stage, as in the others, the model follows the data and the
-loops of the C code where the C code has them; the speed of the model is not an aim.
+Before this sub-stage the model made each row from the admission test of its sieve entry and kept
+it in a thunk, a suspended computation. Now it builds the rows as ratpoints does: the row of $0$ of
+a prime is the pattern \verb|sieves0| that the build generates, the other rows of a prime come from
+the function that the build generates for the prime from \verb|CODE_INIT_SIEVE1| or
+\verb|CODE_INIT_SIEVE2|, the rows of a prime power from \verb|_ratpoints_sieve_init_power| with
+\verb|lay_out_pattern|, and those of a product from \verb|_ratpoints_sieve_init_product|, out of the
+rows of its factors. They are kept where ratpoints keeps them, in the tables of rows of the sieve
+entries: one table of rows for each entry of ratpoints, reached as the C code reaches the entry (a
+prime by itself, a prime power by its prime and its exponent, a product by its position among the
+moduli), the rows that a denominator needs built before it by the loop of \verb|sift|, a product
+building the missing rows of its factors into their tables of rows first, and the tables of rows
+handed on through the run as state. With them come the tables of a prime power as bit arrays of
+words, as \verb|examine_power| fills them, and the forbidden divisors of the primes of the table
+read their words from \verb|sieves0|, as \verb|sieving_info| does. Here, as in the other
+sub-stages, the model follows the data and the loops of the C code where the C code has them; the
+speed of the model is not an aim.
 
 The rows that the builders build are the closed forms of the admission tests: their first $p$ bit
-arrays are the ones the plain builder computed, and the $\mathrm{chunk} - 1$ after them are copies
-of the first ones (F4.3 gives the plain row these copies too, until F4.10 retires it); the chunked
-arm and-s the same words into a piece as the other arm, since its reads past the first $p$ bit
-arrays of a row meet copies of the bit arrays that the other arm reads; and every row in the tables
-of rows of the run is the closed form of the row of its entry, so that the rows that a denominator
-reads are those that the thunks of the rows gave. So the output of \verb|findPoints| does not
-change, nor do the statements that comparator certifies, \verb|Params| or \verb|Params.WF|: the
-well-formedness already makes every prime of the moduli odd and every modulus a product of primes of
-the table below $\mathrm{maxPrimeEven}$, which is all the builders need. The contracts of the stages
-keep their conclusions; a sieve spec that fits also has the end $p$ of the walk through its row and
-a row with its copies; the contracts of one denominator, of the run and of \verb|sieving_info| take,
-or give, a store of the tables of rows that fits the sieve entries, in place of the thunks of the
-rows. Comparator checks the statements again, since the proofs change.
+arrays hold the bits that the admission test gives, and the $\mathrm{chunk} - 1$ after them are
+copies of the first ones; the chunked arm and-s the same words into a piece as the other arm, since
+its reads past the first $p$ bit arrays of a row meet copies of the bit arrays that the other arm
+reads; and every row in the tables of rows of the run is the closed form of the row of its entry,
+so that the rows that a denominator reads are the closed forms that the admission tests give. So
+the output of \verb|findPoints| is the same, and neither the statements that comparator certifies
+nor \verb|Params| and \verb|Params.WF| change: the well-formedness already makes every prime of the
+moduli odd and every modulus a product of primes of the table below $\mathrm{maxPrimeEven}$, which
+is all the builders need. The contracts of the stages keep their conclusions; a sieve spec that
+fits also has the end $p$ of the walk through its row and a row with its copies; the contracts of
+one denominator and of the run take a store of the tables of rows that fits the sieve entries, the
+first giving it back fitting them, and that of \verb|sieving_info| gives one. Comparator accepted
+the seven statements on 2026-10-16, the date that Chapter~\ref{chap:sieve} and
+\verb|comparator/README.md| record.
 
 \section{What the C code does}\label{sec:rowsC}
 
@@ -88,7 +92,9 @@ are. A start is below $p$ after each chunk, so a chunk or a tail reads up to bit
 $16$, an \verb|#error| (\csource{sift.c}{927}{929}), sits inside the conditional compilation of the
 chunked arm and never fires: a chunk above $16$ compiles the other arm
 (\csource{sift.c}{943}{1022}), which writes \verb|bits64| into the bit arrays from the last
-(\csource{sift.c}{954}{954}) and and-s one row at a time.
+(\csource{sift.c}{954}{954}) and and-s one row at a time. The model has the chunked arm in
+Definitions~\ref{def:chunkStarts} to~\ref{def:andRowsChunked} and the other in
+Definition~\ref{def:andRows}.
 
 \paragraph{The rows of a prime.} The row of a residue $b$ modulo the prime $p$ has $p +
 \mathrm{chunk} - 1$ bit arrays, bit $t$ of word $j$ standing for the bit number $64 j + t$. Its row
@@ -166,9 +172,10 @@ which the other arm reads; and the legs of a tail of $t < 16$ bit arrays cover t
 run put there, the row of $0$ of a prime or a row that a builder built, or absent; so every row
 present is the closed form of the row of its entry, and two entries with one table of rows, a prime
 or a prime power as a modulus and as a factor, have the same table of the prime or tables of the
-prime power, and so the same closed forms. The bits of \verb|fsq| and \verb|gsq| are the Booleans
-that they replace, and the first $p$ words of \verb|sieves0| are the words of the forbidden divisor
-$p$. So F4 is a data refinement: the sieve computes the same predicate as before.
+prime power, and so the same closed forms. The admission test of a prime power reads the bits of
+\verb|fsq| and \verb|gsq|, and the first $p$ words of \verb|sieves0| are the words of the forbidden
+divisor $p$. So the chunked first stage and the rows are a data refinement: the sieve computes the
+predicate of the admission tests.
 
 \section{The chunk}\label{sec:chunkConstants}
 
@@ -182,7 +189,7 @@ $p$. So F4 is a data refinement: the sieve computes the same predicate as before
   builds, as $\mathrm{rbaPack}$ owns those of its macro), with the fact $0 < \mathrm{chunk}$ checked
   by evaluation, which the rounding of the array size uses. No proof uses its value: the chunked
   first stage needs $\mathrm{chunk} \le 16$, which the test that chooses the arm gives
-  (Definition~\ref{def:siftPiece}). The largest array size becomes
+  (Definition~\ref{def:siftPiece}). The largest array size is
   $\lfloor 2^{20}/\mathrm{chunk} \rfloor \cdot \mathrm{chunk}$ and the array size is rounded up to a
   multiple of the chunk after its caps (Definition~\ref{def:arraySize}); every row has
   $p + \mathrm{chunk} - 1$ bit arrays (Definition~\ref{def:closedRow}).
@@ -199,10 +206,10 @@ $p$. So F4 is a data refinement: the sieve computes the same predicate as before
   word $j$ has bit $t$ set exactly when $t < 64$ and $\mathrm{adm}(r)$ admits $64 j + t$, each word
   built bit by bit from its $64$ bits. With the admission test of a sieve entry or of a factor
   (Definitions~\ref{def:admits}, \ref{def:examinePower} and~\ref{def:SieveEntry}) it is the row that
-  ratpoints builds for the residue, against which the builders are proved, as the admission tests
-  were for the plain builder. The row of a sieve spec \emph{wraps} when its bit arrays
-  $p, \dots, p + \mathrm{chunk} - 2$ are copies of its first ones: word $\kappa < \mathrm{rbaPack}$
-  of bit array $x < p + \mathrm{chunk} - 1$ is word $\kappa$ of bit array $x \bmod p$.
+  ratpoints builds for the residue, against which the builders are proved. The row of a sieve spec
+  \emph{wraps} when its bit arrays $p, \dots, p + \mathrm{chunk} - 2$ are copies of its first ones:
+  word $\kappa < \mathrm{rbaPack}$ of bit array $x < p + \mathrm{chunk} - 1$ is word $\kappa$ of bit
+  array $x \bmod p$.
 \end{definition}
 
 \begin{lemma}[The closed form]\label{lem:closedRow}
@@ -211,14 +218,15 @@ $p$. So F4 is a data refinement: the sieve computes the same predicate as before
   \leanok
   Bit $t$ of word $j < (m + \mathrm{chunk} - 1)\,\mathrm{rbaPack}$ of the closed form is $t < 64$
   and $\mathrm{adm}(r)(64 j + t)$, and an array of that size with these bits is the closed form. For
-  a test of period $m > 0$ in the numerator, word $j$ of the closed form is word
-  $j \bmod m\,\mathrm{rbaPack}$, so the closed form of the row of a sieve entry with a positive
-  modulus wraps, whatever the offset, the start and the end of its spec. A word \emph{holds}
-  $n \le 64$ bits of a pattern of period $m$ from a position on when its bit $t < n$ is the bit of
-  the pattern at that position plus $t$ and its other bits are clear; the words of a row are the
-  windows of the pattern when word $j$ holds its $64$ bits from $64 j$ on; and a row whose words are
-  the windows of a pattern that a test reads at the residues of the numerators is the closed form of
-  the test, which is how the contracts of the builders conclude.
+  a test of period $m > 0$ in the numerator, word $j$ of the closed form is word $j \bmod
+  m\,\mathrm{rbaPack}$, so the row of a sieve spec that is the closed form of a test of period $p >
+  0$ wraps, among them the closed form of the row of a sieve entry with a positive modulus, whatever
+  the offset, the start and the end of its spec. A word \emph{holds} $n \le 64$ bits of a pattern of
+  period $m$ from a position on when its bit $t < n$ is the bit of the pattern at that position plus
+  $t$ and its other bits are clear; the words of a row are the windows of the pattern when word $j$
+  holds its $64$ bits from $64 j$ on; and a row whose words are the windows of a pattern that a test
+  reads at the residues of the numerators is the closed form of the test, which is how the contracts
+  of the builders conclude.
 \end{lemma}
 
 \begin{proof}
@@ -228,12 +236,12 @@ $p$. So F4 is a data refinement: the sieve computes the same predicate as before
   $64\,\mathrm{rbaPack}\, m$, a multiple of $m$.
 \end{proof}
 
-A sieve spec gains the start and the end of the walk of the chunked arm through its row, indices
-into the row for the pointers \verb|start| and \verb|end| of the \verb|sieve_spec| of the C code,
-the end named $\mathrm{stop}$ since \verb|end| is a keyword of Lean (Definition~\ref{def:rows}); a
-sieve spec \emph{fits} when, besides the bounds of its modulus and its offset, its end is $p$ and
-its row wraps (Lemma~\ref{lem:rowIndices}), which the sieve specs of a denominator do, their rows
-being closed forms (Section~\ref{sec:storeRun}).
+A sieve spec has the start and the end of the walk of the chunked arm through its row, indices into
+the row for the pointers \verb|start| and \verb|end| of the \verb|sieve_spec| of the C code, the end
+named $\mathrm{stop}$ since \verb|end| is a keyword of Lean (Definition~\ref{def:rows}); a sieve
+spec \emph{fits} when, besides the bounds of its modulus and its offset, its end is $p$ and its row
+wraps (Lemma~\ref{lem:rowIndices}), which the sieve specs of a denominator do, their rows being
+closed forms (Section~\ref{sec:storeRun}).
 
 \section{The chunked first stage}\label{sec:chunked}
 
@@ -352,7 +360,8 @@ arrays from the last, as the C code does, and one piece (Definition~\ref{def:sif
 arm by the test $1 < \mathrm{chunk} \le 16$ of the conditional compilation of the C code
 (\csource{sift.c}{452}{452}, \csource{sift.c}{575}{575}, \csource{sift.c}{943}{943}): the chunked
 arm for the chunk $16$ of the model, and the other arm for a chunk of $1$ or above $16$. Its
-contract keeps its statement, the first stage of either arm giving the same words.
+contract does not depend on the arm: the first stage of either arm gives the same words
+(Lemma~\ref{lem:andRowsChunked}).
 
 \section{The tables of a prime power as words}\label{sec:powerWords}
 
@@ -383,7 +392,7 @@ contract keeps its statement, the first stage of either arm giving the same word
   $m \le 64\,\mathrm{modWords}$ the bits of the squares modulo $m$ get set; and for a prime $p$ and
   $e \ge 1$ the inverses are below $p^e$, that of a unit its inverse modulo $p^e$. With the
   invariants of the loops of \verb|fsq| and \verb|gsq|, the contract of the tables of a prime power
-  and the lemma that its rows let every point through are restated on the bits
+  and the lemma that its rows let every point through are stated on the bits
   (Lemma~\ref{lem:power_admits}), for $p^e \le 64\, \mathrm{modWords}$.
 \end{lemma}
 
@@ -402,27 +411,26 @@ contract keeps its statement, the first stage of either arm giving the same word
   \leanok
   The $p$ words of the forbidden divisor $p$, with the bits of the multiples $p i$, $i < 64$,
   cleared: the array \verb|work| of the generator of \verb|find_points.h| for the primes of the
-  table, and the words that \verb|sieving_info| makes for the forbidden divisors beyond it
-  (\csource{find_points.c}{2773}{2777}, \csource{gen_find_points_h.c}{118}{120}); they move here
-  from the forbidden divisors (Definition~\ref{def:forbidden}), which read them. And for a prime $p$
-  of the table these words written $\mathrm{rbaPack}$ times one after the other, then the copies,
-  word $i$ of $\mathrm{rbaPack}\,(\mathrm{chunk} - 1)$ of them the word $i \bmod p$: the row of $p$
-  in the table \verb|sieves0| that the build generates and \verb|find_points.c| includes
+  table, and the words that \verb|sieving_info| makes for the forbidden divisors beyond it, which
+  read them (\csource{find_points.c}{2773}{2777}, \csource{gen_find_points_h.c}{118}{120};
+  Definition~\ref{def:forbidden}). And for a prime $p$ of the table these words written
+  $\mathrm{rbaPack}$ times one after the other, then the copies, word $i$ of
+  $\mathrm{rbaPack}\,(\mathrm{chunk} - 1)$ of them the word $i \bmod p$: the row of $p$ in the table
+  \verb|sieves0| that the build generates and \verb|find_points.c| includes
   (\csource{find_points.c}{37}{37}, \csource{gen_find_points_h.c}{102}{116},
   \csource{gen_find_points_h.c}{122}{134}), a function of $p$ as the squares and the inverses modulo
-  $p$ are.
+  $p$ are; the forbidden divisors that are primes of the table read its first $p$ words.
 \end{definition}
 
 \begin{lemma}[The row of $0$]\label{lem:sieves0}
   \uses{def:sieves0, def:closedRow, lem:closedRow, def:admits}
   \lean{Ratpoints.Sieve.getLsbD_getElem!_forbiddenRow, Ratpoints.Sieve.size_forbiddenRow, Ratpoints.Sieve.size_sieves0, Ratpoints.Sieve.getElem!_sieves0, Ratpoints.Sieve.sieves0_eq_closedRow, Ratpoints.Sieve.extract_sieves0}
   \leanok
-  Bit $t$ of word $r < p$ of the words of the forbidden divisor $p$ is clear exactly when
-  $p \mid 64 r + t$, the lemma that moves here from the forbidden divisors
-  (Definition~\ref{def:forbidden}) into a file without Mathlib; for $p > 0$ the row of $0$ is the
-  closed form of the row of $0$ of the table of $p$, whatever its entries: bit $t$ of word $x$ set
-  exactly when $p \nmid 64 x + t$; and its first $p$ words are the words of the forbidden divisor
-  $p$.
+  Bit $t$ of word $r < p$ of the words of the forbidden divisor $p$ is clear exactly when $p \mid 64
+  r + t$, in a file without Mathlib, which the forbidden divisors (Definition~\ref{def:forbidden})
+  use; for $p > 0$ the row of $0$ is the closed form of the row of $0$ of the table of $p$, whatever
+  its entries: bit $t$ of word $x$ set exactly when $p \nmid 64 x + t$; and its first $p$ words are
+  the words of the forbidden divisor $p$.
 \end{lemma}
 
 \begin{proof}
@@ -711,10 +719,10 @@ contract keeps its statement, the first stage of either arm giving the same word
   $d$ and the sieve entries $\mathrm{es}$, the rows of the references are: for a prime $p$ the
   closed forms of the rows of its table \verb|examinePrime c d p|
   (Definition~\ref{def:examinePrime}), for a prime power $p^e$ those of its tables
-  \verb|examinePower c d p e| (Definition~\ref{def:examinePower}), and for a product those of the
-  entry at its position. The store that the loop of \verb|sieving_info| makes from a store of the
-  primes, with each entry made at its position, holds the rows of the references of every run whose
-  entries begin with the entries made, and every entry that \verb|makeModulus?| makes at the
+  \verb|examinePower c d p e false| (Definition~\ref{def:examinePower}), and for a product those of
+  the entry at its position. The store that the loop of \verb|sieving_info| makes from a store of
+  the primes, with each entry made at its position, holds the rows of the references of every run
+  whose entries begin with the entries made, and every entry that \verb|makeModulus?| makes at the
   position $n$ fits them.
 \end{lemma}
 
@@ -722,43 +730,41 @@ contract keeps its statement, the first stage of either arm giving the same word
   \leanok
   The coherence of the shared tables of rows is in $R$, a function of the reference: two factors
   with one reference have the same table of the prime or tables of the prime power, both
-  \verb|examinePrime c d p| or both \verb|examinePower c d p e|, which the contract of the sieve
-  entry of a modulus gives, so they have one closed form. A store of the primes holds no row but
-  rows of $0$ of primes, which are \verb|sieves0| and the closed forms for every table of the prime
-  (Lemma~\ref{lem:sieves0}); the tables of rows made with an entry are made only when absent and
-  hold no row but the rows of $0$ of primes. No sizes of the tables of rows are needed: a row read
-  or built is the closed form even where the table of rows is missing (Lemma~\ref{lem:fetchRow}).
-  The fit of an entry needs only its modulus, its factors, its reference and its kind, so it
-  survives the filling of the inverses of the strides $\mathrm{dinv}$ by the rows of offsets
-  (Definition~\ref{def:classOffsets}).
+  \verb|examinePrime c d p| or both \verb|examinePower c d p e false|, which the contract of the
+  sieve entry of a modulus gives, so they have one closed form. A store of the primes holds no row
+  but rows of $0$ of primes, which are \verb|sieves0| and the closed forms for every table of the
+  prime (Lemma~\ref{lem:sieves0}); the tables of rows made with an entry are made only when absent
+  and hold no row but the rows of $0$ of primes. No sizes of the tables of rows are needed: a row
+  read or built is the closed form even where the table of rows is missing
+  (Lemma~\ref{lem:fetchRow}). The fit of an entry needs only its modulus, its factors, its reference
+  and its kind, so it survives the filling of the inverses of the strides $\mathrm{dinv}$ by the
+  rows of offsets (Definition~\ref{def:classOffsets}).
 \end{proof}
 
 \begin{definition}[The missing rows of a denominator]\label{def:buildRows}
   \uses{def:fetchRow, def:rows}
   \lean{Ratpoints.Sieve.buildRows}
   \leanok
-  For the sieve specs of the first two stages that
-  \verb|set_rows| makes (Definition~\ref{def:siftBits}), with the empty array for a row not built
-  yet and the flag of a missing row: when a row is missing, for each spec whose row is not built
-  yet, of the $n$-th sieve entry and its residue, the row of the residue from the table of rows of
-  the entry, read again, and otherwise built into it by the builder of the entry
-  (Definition~\ref{def:fetchRow}), with the end $p$; the specs and the store returned
-  (\csource{find_points.c}{3522}{3554}).
+  For the sieve specs of the first two stages that \verb|set_rows| makes
+  (Definition~\ref{def:siftBits}), with the empty array for a row not built yet and the flag of a
+  missing row: when a row is missing, for each spec whose row is not built yet, of the $n$-th sieve
+  entry and its residue, the row of the residue from the table of rows of the entry, read again, and
+  otherwise built into it by the builder of the entry (Definition~\ref{def:fetchRow}), with the end
+  $p$; the specs and the store returned (\csource{find_points.c}{3522}{3554}).
 \end{definition}
 
 \begin{lemma}[The sieve specs of a denominator]\label{lem:buildRows}
   \uses{def:buildRows, lem:fetchRow, lem:storeTables, def:siftBits, lem:siftBits}
   \lean{Ratpoints.Sieve.BuildRowsPre, Ratpoints.Sieve.BuildRowsInvariant, Ratpoints.Sieve.buildRows_spec, Ratpoints.Sieve.length_setRows, Ratpoints.Sieve.getElem!_setRows, Ratpoints.Sieve.buildRowsPre_setRows, Ratpoints.Sieve.mapIdx_setRows, Ratpoints.Sieve.buildRows_setRows_spec, Ratpoints.Sieve.buildRows_setRows_map_spec, Ratpoints.Sieve.StoreHolds.fetchRow_pre, Ratpoints.Sieve.StoreHolds.of_fetchRow, Ratpoints.Sieve.RowStore.Fits.buildRows_setRows, Ratpoints.Sieve.mapIdx_eq_map_fst_packedReads, Ratpoints.Sieve.eq_map_fst_packedReads_of_eq_run_buildRows}
   \leanok
-  For a store that holds
-  $R$ for the sieve entries of the first two stages, entries that fit $R$ at their positions and
-  residues below their moduli: the sieve specs that \verb|set_rows| makes and \verb|buildRows|
-  completes have the closed forms of the rows of their entries at their residues, the offsets of the
-  class, the start $0$ and the end $p$, and the store after them still holds $R$; so a store that
-  fits the entries fits them again after a denominator, and with the residues $b\,\mathrm{dinv}[k]
-  \bmod p$ these specs are those whose readings Lemma~\ref{lem:siftBits} takes. This equation hides
-  the store from the contracts below one denominator, which see sieve specs with the closed forms of
-  their rows and do not mention the store.
+  For a store that holds $R$ for the sieve entries of the first two stages, entries that fit $R$ at
+  their positions and residues below their moduli: the sieve specs that \verb|set_rows| makes and
+  \verb|buildRows| completes have the closed forms of the rows of their entries at their residues,
+  the offsets of the class, the start $0$ and the end $p$, and the store after them still holds $R$;
+  so a store that fits the entries fits them again after a denominator, and with the residues
+  $b\,\mathrm{dinv}[k] \bmod p$ these specs are those whose readings Lemma~\ref{lem:siftBits} takes.
+  This equation hides the store from the contracts below one denominator, which see sieve specs with
+  the closed forms of their rows and do not mention the store.
 \end{lemma}
 
 \begin{proof}
@@ -774,34 +780,41 @@ contract keeps its statement, the first stage of either arm giving the same word
 \verb|sift| takes the store and returns it with the rows built for the denominator: \verb|set_rows|
 reads the rows from the tables of rows of the entries, \verb|buildRows| builds the missing ones, and
 the bits of the interval are sifted with these specs (Definition~\ref{def:sift}). It takes the sieve
-entries of the first two stages in place of their moduli with the thunks of the rows; its contract
-takes, beside the entries, their reciprocals, their residues $b\,\mathrm{dinv}[k] \bmod p$, their
-tables of inverses, and a store that fits them, as hypotheses on its arguments; it gives the store
-back fitting them; the class word, the position of the row offsets of the class, and the packing of
-the entries at those offsets remain hypotheses of the points equation, which is unchanged. The run
+entries of the first two stages, whose rows it reads or builds; its contract takes, beside the
+entries, their reciprocals, their residues $b\,\mathrm{dinv}[k] \bmod p$, their tables of inverses,
+and a store that fits them, as hypotheses on its arguments; it gives the store back fitting them;
+the class word, the position of the row offsets of the class, and the packing of the entries at
+those offsets remain hypotheses of the points equation, which is unchanged. The run
 (Definition~\ref{def:sieveRun}) passes the store from one denominator to the next, the store fitting
 the first $s_2$ entries in the invariant of its loop, and does not return it, nothing reading the
 tables of rows after the run; the search (Definition~\ref{def:searchPoints}) hands the store of
-\verb|sieving_info| to the run; and what the run needs of the search (Lemma~\ref{lem:soundRun})
-gains the store with the field that it fits the entries of the first two stages, which the store of
+\verb|sieving_info| to the run; and what the run needs of the search (Lemma~\ref{lem:soundRun}) has
+the store, with the field that it fits the entries of the first two stages, which the store of
 \verb|sieving_info| gives, the entries changing after it only in the inverses of the strides.
 
 \section{The command-line program and the differential tests}\label{sec:rowsCli}
 
 The program does not change. The differential tests compare every point list in its order. Whole
-chunks occur in the real runs only from heights of about $2000$ on, where the stride $1$ gives
-pieces of $16$ bit arrays and more: at $H = 2000$ one whole chunk (a piece of $16$ bit arrays at the
-stride $1$), at $5000$ two in the pieces of $40$ bit arrays of the stride $1$ and one in those of
-$20$ of the stride $2$, at $30000$ up to $14$; so the suite of point-rich curves at each of its
-heights $2000$, $5000$ and $30000$, the runs of \verb|test4.sh| at the height $30000$ and
+chunks occur in the differential tests only from heights of about $2000$ on, where the stride $1$
+gives pieces of $16$ bit arrays and more: at $H = 2000$ one whole chunk (a piece of $16$ bit arrays
+at the stride $1$), at $5000$ two in the pieces of $40$ bit arrays of the stride $1$ and one in
+those of $20$ of the stride $2$, at $30000$ up to $14$; so the suite of point-rich curves at each of
+its heights $2000$, $5000$ and $30000$, the runs of \verb|test4.sh| at the height $30000$ and
 \verb|test4high| run whole chunks. Below those heights every piece that reaches a first stage with a
 modulus is a tail of fewer than $16$ bit arrays, so every suite that sieves runs tails, and the
 suite of the sieving parameters runs the arm with no modulus of the first stage (\verb|-p 0|,
-\verb|-n 0| and \verb|-n 0 -N 0|), which runs neither chunks nor tails. Pieces outside \verb|small|
-occur only in the \verb|#guard| examples, since the tests stay far below its limit. Since
-\verb|findPoints| now rounds the array size up to the chunk, its \verb|#guard| examples run each
-class as one piece of $16$ bit arrays, and the examples with pieces of fewer than $16$ bit arrays
-call \verb|sift| and the run directly.
+\verb|-n 0| and \verb|-n 0 -N 0|), which runs neither chunks nor tails. An interval of numerators
+takes more than one piece of the array size $256$ only from the height $32768$ on, so through
+\verb|findPoints| only in \verb|test4high|. Among the tests of the model, pieces outside
+\verb|small| occur only in the \verb|#guard| examples, since the heights of the differential tests
+stay far below its limit. Every \verb|#guard| example of \verb|findPoints| that sieves runs each
+class as one piece, which \verb|siftBits| cuts at $w_{\mathrm{high}}$ to fewer than $16$ bit arrays,
+a tail of the chunked arm, with the low and the high mask on the same piece: at most four bit arrays
+in the example with the array size $1$, which \verb|findPoints| rounds up to the chunk, and at most
+$12$ in the others, with the default array size at heights up to $1300$. Several pieces and the
+masks on different pieces come from the examples of \verb|sift| and of the run and, through
+\verb|findPoints|, from \verb|test4high|; whole chunks come from the examples of the first stage and
+from the differential tests at the heights $2000$, $5000$ and $30000$ and \verb|test4high|.
 
 The \verb|#guard| examples compare the chunked arm with the first stage one row at a time, word for
 word with the place of the sentinel, on pseudo-random rows with their copies, for pieces of $1$ to
@@ -810,477 +823,261 @@ with \verb|small| and without, at word numbers far below $0$, and with no modulu
 every tail of $t < 16$ bit arrays. They compare the row of $0$ with the pattern \verb|sieves0| of
 the build of ratpoints for the primes $3$ to $13$, and over all its words with the words of the
 forbidden divisor for every prime of the table; each builder with the closed form of its admission
-test over all its words: every residue of the primes up to $13$ and four residues of the larger
-primes up to $251$, with the tables of two curves and a table of all ones, every residue of the
-prime powers $9$, $25$, $27$, $49$ and $121$ and six of $243$, and every residue of the products
-$15$, $21$ and $45$ and some of $63$, $105$, $225$ and $255$, each builder storing its row into the
-table of rows of its entry and no other row there, a product building the rows of its factors into
-their tables of rows; the bits of \verb|fsq| and \verb|gsq| of the prime powers $9$ and $25$ for two
-curves, read from a build of ratpoints, with none set from $m$ on; and the array size rounded up to
-a multiple of the chunk, and the cap $2^{20}$, a multiple of it. They check the row of a sieve entry
-read or built for the primes $3$ and $67$, the prime power $9$ and the products $15$ and $45$, which
-share tables of rows with them; three denominators through \verb|sift| with one store, whose tables
-of rows hold exactly the rows needed; and the tables of rows that \verb|sieving_info| makes, a prime
-that says nothing among them.
+test, on the first $m$ words of a row of the modulus $m$, a period of its words, word for word, and
+on the other words by that period, word $x$ being word $x \bmod m$: every residue of the primes up
+to $13$ and four residues of the larger primes up to $251$, with the tables of two curves and a
+table of all ones, every residue of the prime powers $9$, $25$, $27$, $49$ and $121$ and six of
+$243$, and every residue of the products $15$, $21$ and $45$ and some of $63$, $105$, $225$ and
+$255$, each builder storing its row into the table of rows of its entry and no other row there, a
+product building the rows of its factors into their tables of rows; the bits of \verb|fsq| and
+\verb|gsq| of the prime powers $9$ and $25$ for two curves, read from a build of ratpoints, with
+none set from $m$ on; and the array size rounded up to a multiple of the chunk, and the cap
+$2^{20}$, a multiple of it. They check the row of a sieve entry read or built for the primes $3$ and
+$67$, the prime power $9$ and the products $15$ and $45$, which share tables of rows with them;
+three denominators through \verb|sift| with one store, whose tables of rows hold exactly the rows
+needed; the tables of rows that \verb|sieving_info| makes, a prime that says nothing among them; and
+the forbidden divisors at the height $70000$, among them primes of the table, whose words are the
+first $p$ words of their rows of $0$, and two primes beyond it.
 
 \section{Deviations}\label{sec:rowsDeviations}
 
-Each component differs from the C code in a stated way, recorded in its \verb|Deviation:| paragraph:
+Each component of this chapter differs from the C code in a stated way, recorded in its
+\verb|Deviation:| paragraph:
 \begin{itemize}
   \item the chunk $16$, the value of the default build, set in the model, where the C code chooses
     it by the macros that the compiler is given, each build with vector registers taking $16$ and
-    the build with $64$-bit bit arrays $1$ unless \verb|RATPOINTS_CHUNK| is given; the arm of the
-    first stage chosen by a test on the constant, for the conditional compilation that compiles one
-    arm only, and the guards of the legs of the tail on the chunk tested with those on $t$; no check
-    at compile time that the chunk is at most $16$, the \verb|#error| of the C code, which its place
-    inside the conditional compilation of the chunked arm makes dead code: a chunk above $16$
-    compiles the other arm, and the model chooses the arm by the same test;
+    the build with $64$-bit bit arrays $1$ unless \verb|RATPOINTS_CHUNK| is given; in the array size
+    rounded up to the chunk, $64$ for \verb|LONG_LENGTH| and the macro \verb|CEIL| of a natural
+    number $x$ by $d$ as $(x + d - 1)/d$, its value for every $x \ge 0$; the arm of the first stage
+    chosen by a test on the constant, for the conditional compilation (lines 452, 575 and 943 of
+    \verb|sift.c|) that compiles one arm only, and \verb|tail_leg| with the chunked one; the
+    conditions of the legs of the tail on the chunk tested with those on $t$, for
+    \verb|#if (RATPOINTS_CHUNK > 8)|, \verb|> 4| and \verb|> 2|; no check at compile time that the
+    chunk is at most $16$, the \verb|#error| of the C code, which its place inside the conditional
+    compilation of the chunked arm makes dead code: a chunk above $16$ compiles the other arm, and
+    the model chooses the arm by the same test;
   \item the starts of the rows in a local array of the sieve specs, for the sieve specs of the
-    sieving thread, whose starts the C code writes and nothing reads after the first stage; the
-    reduction by the reciprocal under \verb|small| alone, for \verb|small && RP_USE_MOD_MUL|, with
-    \verb|RP_USE_MOD_MUL| the constant $1$ of the production build (\csource{sift.c}{236}{238},
-    excluded with the switch of the development builds); the sum $w_{\mathrm{low}} +
-    \mathrm{offset}$ of the starts an integer that stays a \verb|long| where \verb|mod| reduces it
-    outside \verb|small| (\verb|fitsLong_neg_sub_and_fitsLong_add|); one definition for the stepping
-    back of a start at its two places (after the first modulus of a chunk and after each further
-    one); the registers \verb|reg0|, \dots, \verb|reg15| a vector of $\mathrm{chunk}$ bit arrays,
-    made of zeros and then loaded, and the loads, the ands and the stores of the registers loops
-    over its bit arrays, for the variables and the code that the build unrolls under
-    \verb|#if (RATPOINTS_CHUNK >= k)|; the pointers that each load and each and steps on by one bit
-    array as the start plus the chunk; the array \verb|reg[8]| of a leg a vector of $8$ bit arrays,
-    without the pragmas that make the compiler unroll its loops (\verb|RP_UNROLL_REGS|,
-    \csource{sift.c}{466}{472}, excluded); indices into the rows and into the survivors for the
-    pointers \verb|start|, \verb|end| and \verb|surv|, the chunk counted from the first bit array of
-    the piece for the word number \verb|w_low_new|, and the end of the whole chunks an index for
-    \verb|w_high_full|; no modulus tested by the size of the local array, for \verb|sp1 == 0|; the
-    class word written into the bit arrays by a loop that counts up, bit array $n - 1 - i$ at the
-    step $i$, for the loop that counts down from the last, in both arms; no output under
-    \verb|DEBUG|; the other deviations of the first stage of Section~\ref{sec:packingDeviations}
-    (the class word for \verb|RBA(packed)|, the moduli and the reciprocals as two lists) hold for
-    both arms;
+  sieving thread, whose starts the C code writes and nothing reads after the first stage, its size
+  for the number $s_1$ of the moduli of the stage, and no modulus tested by that size, for
+  \verb|sp1 == 0|; the moduli of the stage with their rows and their reciprocals as two lists, for
+  the first $s_1$ sieve specs and the array \verb|magics| from position $0$ on; the reduction by the
+  reciprocal under \verb|small| alone, for \verb|small && RP_USE_MOD_MUL|, with
+  \verb|RP_USE_MOD_MUL| the constant $1$ of the production build (\csource{sift.c}{236}{238},
+  excluded with the switch of the development builds); integers for the \verb|long|s, the sum $a =
+  w_{\mathrm{low}} + \mathrm{offset}$ of the starts staying a \verb|long| where \verb|mod| reduces
+  it outside \verb|small| (\verb|fitsLong_neg_sub_and_fitsLong_add|); one definition for the
+  stepping back of a start at its two places, after the first modulus of a chunk and after each
+  further one; the registers \verb|reg0|, \dots, \verb|reg15| a vector of $\mathrm{chunk}$ bit
+  arrays, made of zeros and then loaded, and the loads, the ands and the stores of the registers
+  loops over its bit arrays, for the variables that the build declares and the code that it unrolls
+  under \verb|#if (RATPOINTS_CHUNK >= k)|, for $k$ up to $16$; the pointers that each load and each
+  and steps on by one bit array as the start plus the chunk; the array \verb|reg[8]| of a leg a
+  vector of $8$ bit arrays, made of zeros, without the pragmas that make the compiler unroll its
+  loops (\verb|RP_UNROLL_REGS|, \csource{sift.c}{466}{472}, excluded); the rows for the pointers
+  \verb|ptr| to them, and indices into the rows and into the survivors for the pointers
+  \verb|start|, \verb|end| and \verb|surv|, the start for \verb|ptr| plus the remainder, the end
+  named $\mathrm{stop}$ since \verb|end| is a keyword of Lean, the chunk counted from the first bit
+  array of the piece, for the word number \verb|w_low_new|, and the end of the whole chunks an
+  index, for \verb|w_high_full|, which is also the first bit array of the tail; the class word
+  written into the bit arrays by a loop that counts up, bit array $n - 1 - i$ at the step $i$, for
+  the loop that counts down from the last, in both arms, and into each word of a bit array, for the
+  vector \verb|RBA(packed)| that \verb|get_2adic_info| makes once per class and
+  \verb|_ratpoints_sift0| copies into each bit array (\verb|bits64|); a Boolean for the \verb|int|
+  \verb|small|; natural numbers for the \verb|long|s of a leg; no output under \verb|DEBUG|;
   \item one function for every prime below $64$ and one for every prime above $64$, with the prime
     that of its table, for the function that the build generates for each prime with the prime a
-    constant, and the kind of the builder for the pointer \verb|init|, the call through it a match
-    on the kind, and the kind set where the model makes the sieve entry of every kind of modulus
+    constant (\verb|init_sieve.h|), and the kind of the builder for the pointer \verb|init| of the
+    type \verb|ratpoints_init_fun|, the call through it a match on the kind; the kind of the builder
+    of a prime a function of $p$, for the generated table of pointers \verb|sieve_init|; the kind
+    set where the model makes the sieve entry of every kind of modulus
     (Definition~\ref{def:makeModulus}), where \verb|examine_prime| sets that of a prime when it
-    makes its entry (\csource{find_points.c}{1800}{1800}), as the reciprocal, the bias and
-    $\mathrm{rbainv}$ are; the table of the prime or the tables of the prime power of the factor and
-    the reference to its entry as arguments, for the sieve entry \verb|se| from which the builders
-    read them and into which they store the row, and the store of the tables of rows passed and
-    returned, for the arrays \verb|sieve| of the entries; the row stored plainly, for the release
-    store of \verb|RP_PUBLISH| in a build with threads, and read plainly by the builder of a
-    product, for the acquire load \verb|RP_ACQUIRE| (stage~I); a fresh vector for each row, for the
-    space that the builders take from the buffer of the tables (\verb|ba_next|), fresh arrays of
-    zeros for \verb|help| and the pattern of a prime power, whose words the C code leaves unset
-    until its loops clear them, and for \verb|rep|, of which \verb|lay_out_pattern| clears the first
-    \verb|words| words and leaves the others unset and never reads them, the loops kept; the forms
+    makes its entry (line 1800), as the reciprocal, the bias and $\mathrm{rbainv}$ are; the table of
+    the prime or the tables of the prime power and the reference to the entry as arguments, for the
+    sieve entry \verb|se| from which the builders read them and into which they store the row, and
+    the store of the tables of rows passed and returned, for the arrays \verb|sieve| of the entries,
+    among them those of the factors that the builder of a product reaches through the pointers
+    \verb|factor|; the row stored plainly, for the release store of \verb|RP_PUBLISH| in a build
+    with threads, and read plainly by the builder of a product, for the acquire load
+    \verb|RP_ACQUIRE| (stage~I); a fresh vector for each row, for the space that the builders take
+    from the buffer of the tables (\verb|ba_next|); fresh arrays of zeros, which the loops of the
+    builders clear, for \verb|help| and for the pattern of a prime power, whose words the C code
+    leaves unset until those loops clear them, and for \verb|rep|, of which \verb|lay_out_pattern|
+    clears the first \verb|words| words and leaves the others unset and never reads them; the forms
     of the production builds, where \verb|RP_INIT_BRANCH| and \verb|RP_INIT_ONEWAY| are not set; the
-    variables that the macros declare or read in their callers passed and returned; the steps
-    \verb|ab += d; if (ab >= p) ab -= p;| and the like as conditional values; no copy \verb|pattern|
-    of \verb|help0|; the variables \verb|ldp|, \verb|p1|, \verb|wp|, \verb|diff_shift| and
-    \verb|diff| computed where they are used; the shifts by \verb|LONG_SHIFT| and the masks by
-    \verb|LONG_MASK| as divisions and remainders by $64$; the loops that step by $m$ or by $q$ as
-    \verb|while| loops; the number of the factors the length of their list, for \verb|nf|;
+    variables that the macros declare, or read and write, in their callers passed and returned, and
+    the words and the rows of the functions passed and returned; Booleans for the \verb|int| entries
+    of \verb|is_f_square|; the steps \verb|ab += d; if (ab >= p) ab -= p;| and the like as
+    conditional values; no copy \verb|pattern| of \verb|help0|; the variables \verb|ldp|, \verb|p1|,
+    \verb|diff_shift| and \verb|diff| at the head of the functions of a prime computed by the part
+    that rotates the row, and \verb|wp| where it is used; the shifts by \verb|LONG_SHIFT| and the
+    masks by \verb|LONG_MASK| as divisions and remainders by $64$; the loops that step by $m$ or by
+    $q$ as \verb|while| loops; the number of the factors the length of their list, for \verb|nf|;
   \item the row of $0$ of a prime a function of $p$, computed when it is called, its first $(p +
     \mathrm{chunk} - 1)\,\mathrm{rbaPack}$ words, for the row of the generated table, whose other
-    words are $0$ and never read; the kind of the builder of a prime a function of $p$, for the
-    generated table of pointers; the words of a forbidden divisor one function for the array
+    words are $0$ and never read; the words of a forbidden divisor one function for the array
     \verb|work| of the generator and for the words that \verb|sieving_info| makes for the primes
     beyond the table, with the positions $p\,i$ for $i < 64$, for the positions $m = 0, p, 2p,
-    \dots$ below $64p$ (line 2776), in a fresh array of $p$ words, for \verb|work| of
+    \dots$ below $64p$ (lines 2776-2777), in a fresh array of $p$ words, for \verb|work| of
     \verb|RATPOINTS_MAX_PRIME| words and the space in \verb|forb_words|, and those of a prime of the
     table an array of the first $p$ words of the row of $0$, for the pointers \verb|start| and
     \verb|end| into it;
   \item the tables of rows in a store that maps the reference to an entry to its table of rows, for
     the arrays \verb|sieve| of the entries, which the C code reaches through pointers
     (\verb|sieve_list[n]| and the field \verb|factor| of a product), none for \verb|NULL|: a prime
-    by itself for its index in the table, a prime power by its prime and its exponent for the index
-    of its entry in \verb|pw_idx[pn][e]|, a product by its position among the moduli; the table of
-    rows of a prime made by the loop of the tables when the prime says something, the test of line
-    1764 made there on the table of the prime; the tables of rows of a prime power and of a product
-    made by the loop over the moduli right after the entry, where \verb|make_power| and
-    \verb|make_modulus| make them with the entry, each only when its reference is absent, as the
-    entry of a prime power is made once; a table of rows made also for a prime beyond those of the
-    loop of the tables and for one that says nothing, for which \verb|examine_prime| makes no entry
-    and which ratpoints never takes as a factor; the store not returned by the run, which nothing
-    reads after it;
+    by itself, for the entry \verb|prime_se[pn]|, a prime power by its prime and its exponent, for
+    the entry \verb|power_se[idx]| with its index in \verb|pw_idx[pn][e]|, a product by its position
+    among the moduli, the number of the entries made before it, for its own entry; the table of rows
+    of a prime returned, for the array \verb|sieve| that \verb|examine_prime| fills, with the row of
+    $0$ the words of the pattern, for the pointer to them; the table of rows of a prime made by the
+    loop of the tables when the prime says something, the test of line 1764 made there on the table
+    of the prime, where \verb|examine_prime| makes it before it makes the entry; the tables of rows
+    of the factors of a modulus and of a product made by the loop over the moduli right after the
+    entry, where \verb|make_power| and \verb|make_modulus| make them with the entry, each only when
+    its reference is absent, for the test of \verb|power_se| by which the entry of a prime power is
+    made once; the table of rows of a prime made, for every modulus that has the prime as a factor,
+    also for one that says nothing, for which \verb|examine_prime| makes no entry (lines 1764-1765)
+    and which \verb|add_moduli| takes as no factor (line 2383), and for a prime beyond those of the
+    loop of the tables, which \verb|add_moduli| takes as no factor either (line 2370) and whose
+    entry, with its row of $0$, \verb|examine_prime| makes only when the third stage examines it
+    (lines 2994-2995); the store handed by the search to the run as a value, and not returned by the
+    run, which nothing reads after it;
   \item in \verb|set_rows|, the empty array for the null pointer of a row not built yet; the start
     $0$, where the C code leaves the field as it is until the first stage sets it; the end $p$ also
     for a row not built yet, where the C code adds $p$ to the null pointer; the row read plainly,
     for the acquire load that the flag \verb|shared| chooses, and one call, for the two calls with
-    the flag a constant (stage~I); in the loop that builds the missing rows, no lock of the tables
+    the flag a constant, between which the pool of threads chooses (stage~I); in the loop that
+    builds the missing rows, the specs and the store passed and returned, no lock of the tables
     (\verb|rp_tables_lock|, \verb|rp_tables_unlock|) and the pointer read again plainly, for the
-    acquire load, both for the threads that share the tables of rows (stage~I), the reading again
-    itself modelled, since with one thread it finds a row that an earlier spec of the same
-    denominator built into the same table of rows: when a prime or a prime power occurs twice among
-    the moduli of the first two stages, which then have one table of rows, or when it comes after a
-    product among them that has it as a factor, whose builder builds the row of the factor into the
-    table of rows of the factor (cases that the parameters admit and ratpoints never has, since it
-    never takes two moduli with a common prime); a product that occurs twice has a table of rows of
-    its own at each position, so that its reading again finds nothing; no measurement of the
-    construction (\verb|RP_INIT_TIC|, \verb|RP_INIT_TOC|) and no output under \verb|DEBUG|;
+    acquire load, both for the threads that share the tables of rows (stage~I); no measurement of
+    the construction (\verb|RP_INIT_TIC|, \verb|RP_INIT_TOC|) and no output under \verb|DEBUG|. The
+    reading again itself is modelled: with one thread it finds a row that an earlier spec of the
+    same denominator built into the same table of rows, when a prime or a prime power occurs twice
+    among the moduli of the first two stages or comes after a product among them that has it as a
+    factor, cases that well-formed parameters admit and ratpoints never has
+    (Section~\ref{sec:rowsC}); a product that occurs twice has a table of rows of its own at each
+    position, so that its reading again finds nothing;
   \item the bit arrays \verb|sq|, \verb|fsq| and \verb|gsq| of \verb|examine_power| fresh arrays of
     $\mathrm{modWords}$ words, with $64$ for \verb|LONG_LENGTH| in $\mathrm{modWords}$, which the
-    loop at line 2282 clears, for the local array and the arrays of the entry \verb|pw|; the
-    variable $t$ for the multiples of $p$, where the C code reuses $x$; the bits of the squares and
-    the inverses functions of their own, the bit array passed and returned and the inverses a fresh
-    array returned; the deviation of sub-stage~F1 for the Booleans of \verb|fsq| and \verb|gsq|
-    goes;
+    loop at line 2282 clears, for the local array that the function leaves unset and the arrays of
+    the entry \verb|pw|; the variable $t$ for the multiples of $p$, where the C code reuses $x$; the
+    bits of the squares and the inverses functions of their own, the bit array of the squares passed
+    and returned and the inverses a fresh array, returned, for the array \verb|inv| of the entry;
   \item natural numbers, and integers for the starts, for the \verb|long|s of these components, the
     product $b\,\mathrm{inv}[x]$ of the builder of a prime power below $m^2$; the range obligations
-    of \verb|examine_power| keep their lemmas (Section~\ref{sec:tablesDeviations}).
+    of \verb|examine_power|, among them the squares $x x$ of the bit array \verb|sq| below $m^2$ and
+    the inverses below $m$, stated as lemmas (Section~\ref{sec:tablesDeviations}).
 \end{itemize}
 The lines of this part of the C code that are neither modelled nor left to a later stage are
 excluded in \verb|correspondence/ratpoints.toml|: the pragma \verb|RP_UNROLL_REGS| of
-\verb|tail_leg| (\csource{sift.c}{466}{472}), which carries no meaning; the alignment of the buffers
-and the sizing, allocation and enlargement of the buffer of the rows of the tables, the number of
-the prime powers that sizes the buffers, and the clearing of the pointers to them
-(\csource{find_points.c}{181}{270}); the function \verb|find_points_init|
-(\csource{find_points.c}{272}{375}), which a caller of the library calls before
-\verb|find_points_work| to allocate the arrays of the arguments, and whose refusal of a degree
-\verb|find_points_work| repeats (lines 4557-4558, which the model has; the reason of the exclusion
-of lines 4618-4623 says the same); and \verb|find_points_clear| (\csource{find_points.c}{377}{416}),
-which frees them; the model allocates nothing. Left to stage~I are the lock of the tables and the
-pool of threads (among them the declarations at \csource{find_points.c}{41}{43}), the orderings of
-the acquire loads and the release stores, and the cost model of the choice of the moduli, which
-reads the array size rounded to the chunk, so that ratpoints chooses its moduli by the chunk too:
-the moduli of the model are those of the parameters.
+\verb|tail_leg| (\csource{sift.c}{466}{472}), which carries no meaning; the include of the private
+header (\csource{find_points.c}{30}{30}), the model having no headers, where the includes of
+\verb|primes.h| and of the generated \verb|find_points.h| belong to the table of the primes, to the
+tables of the squares and the inverses and to \verb|sieves0|; the development instrumentation
+\verb|RP_PHASE_TIMING| and \verb|RP_PHASE_COUNTS| (\csource{find_points.c}{69}{118}), the counters
+of \verb|sift.c| declared \verb|extern| and the timers of the exact check, of the residues of a
+denominator, of \verb|sift|, of the building of a row and of the set-up of a denominator, empty in
+the production build; the alignment of the buffers, the sizing, allocation and enlargement of the
+buffer of the rows of the tables, the number \verb|num_powers| of the prime powers, which sizes the
+buffers and gives \verb|add_moduli| a bound on the prime powers it keeps that never binds, and the
+clearing of the pointers to the buffers (\csource{find_points.c}{181}{270}); the function
+\verb|find_points_init| (\csource{find_points.c}{272}{375}), which a caller of the library calls
+before \verb|find_points_work| to allocate the arrays of the arguments, and whose refusal of a
+degree \verb|find_points_work| repeats (lines 4557-4558, which the model has; the reason of the
+exclusion of lines 4618-4623 says the same); and \verb|find_points_clear|
+(\csource{find_points.c}{377}{416}), which frees them; the model allocates nothing. Left to stage~G
+is the stop that the callback may request; to stage~H the intervals of the search region, by which
+\verb|sift| sets up a denominator, and so reads or builds its rows, only once one of its intervals
+is not empty (the flag \verb|do_setup|); and to stage~I the lock of the tables and the pool of
+threads (among them the declarations at \csource{find_points.c}{41}{43}), the orderings of the
+acquire loads and the release stores, and the cost model of the choice of the moduli, which reads
+the array size rounded to the chunk, so that ratpoints chooses its moduli by the chunk too: the
+moduli of the model are those of the parameters.
 
-\section{What changes in the earlier chapters}\label{sec:rowsEarlier}
+\section{Files and names}\label{sec:rowsFiles}
 
-\begin{itemize}
-  \item Chapter~\ref{chap:sieve}: the rows of a denominator (Definition~\ref{def:admits}) lose their
-    links to \verb|init.c|, \verb|gen_init_sieve_h.c| and \verb|gen_find_points_h.c|, which go to
-    the builders and the row of $0$ of Chapter~\ref{chap:rows}: the admission test, with no C range,
-    is what the rows are specified by through the closed form (Definition~\ref{def:closedRow}); the
-    paragraph on the rules of the translation no longer leaves the generated tables to stage~F4, the
-    row of $0$ being proved the closed form (Lemma~\ref{lem:sieves0}); the run
-    (Definition~\ref{def:sieveRun}) passes the store of the tables of rows from one denominator to
-    the next, its contract and the reduction of the run to the brute-force reference
-    (Theorem~\ref{thm:run_reference}) taking a store that fits the first $s_2$ entries, its node
-    using Lemma~\ref{lem:buildRows}; the introduction counts the chunked first stage and the rows of
-    the builders among the data refinements; the record of comparator after
-    Theorem~\ref{thm:findPoints}, with the files of the rows among those without Mathlib; the files
-    section names \verb|Ratpoints/Model/Rows.lean| for the rows.
-  \item Chapter~\ref{chap:words}: the introduction describes the default build with the chunk $16$
-    and both arms in place of the build \verb|chunk1|, and its paragraph on \verb|array_size| names
-    \verb|find_points_work_1| for the caps and the rounding; the pieces
-    (Definition~\ref{def:arraySize}) are capped at $\lfloor 2^{20}/\mathrm{chunk} \rfloor \cdot
-    \mathrm{chunk}$ and rounded up to a multiple of the chunk,
-    \verb|Ratpoints.Params.one_le_arraySizeAt| using $0 < \mathrm{chunk}$, the node using
-    Definition~\ref{def:chunk}, and the paragraph after it gives the chunk its value; the row of a
-    denominator in words (Definition~\ref{def:row}) is the closed form of $p + \mathrm{chunk} - 1$
-    bit arrays that the builders build, with \verb|Ratpoints.Sieve.SieveEntry.admits_congr|,
-    \verb|admits_add_mul| and \verb|admits_mod| and no C range, its node using
-    Definition~\ref{def:SieveEntry} only, no longer Definition~\ref{def:rbaPack}, and naming
-    Definition~\ref{def:closedRow} for the closed form without using it: the plain builder
-    (\verb|packedPattern|, \verb|SieveEntry.row|, \verb|SieveEntry.getLsbD_row|) retires, and
-    \verb|window| with \verb|getLsbD_window| goes to Definition~\ref{def:layOutPattern} and
-    Lemma~\ref{lem:compositeRows}; the rows of a modulus (Definition~\ref{def:rows}) keep
-    \verb|SieveSpec| with the start and the end, in \verb|Ratpoints/Model/FirstStage.lean|, and
-    \verb|SieveSpec.wordAt|, the node using Definition~\ref{def:rbaPack} in place of
-    Definition~\ref{def:row}, the thunks of the rows (\verb|SieveEntry.rows|,
-    \verb|SieveEntry.get_rows|, \verb|SieveEntry.row_mod|) retiring for the tables of rows of
-    Definition~\ref{def:entryRef}; the operations on bit arrays (Definition~\ref{def:bitArrayOps})
-    say that \verb|RBA| goes with both arms; the first stage (Definition~\ref{def:andRows}) writes
-    the class word from the last bit array (\csource{sift.c}{954}{954}, within its range) and is the
-    arm of a chunk of $1$ or above $16$, its node using Definition~\ref{def:bitArrayMoves}; one
-    piece (Definition~\ref{def:siftPiece}) chooses the arm, its node using
-    Definition~\ref{def:andRowsChunked} and Lemma~\ref{lem:andRowsChunked}; one denominator
-    (Definition~\ref{def:sift}) takes the sieve entries of the first two stages in place of their
-    moduli with the thunks of the rows, and takes and returns the store, the node using
-    Definition~\ref{def:buildRows} and Lemma~\ref{lem:buildRows}, gives
-    \csource{find_points.c}{3522}{3554} to Definition~\ref{def:buildRows} and keeps
-    \csource{find_points.c}{3490}{3521} and \csource{find_points.c}{3555}{3561}; its contract and
-    Lemma~\ref{lem:sift_eq_checkDen} take those sieve entries, no longer the rows of sieve entries,
-    and a store that fits them, the contract giving the store back fitting them, the points equation
-    unchanged; the paragraph after that lemma speaks of the store; the list of deviations loses the
-    items on the pattern written from the first bit array, on the first stage of one register per
-    chunk, on the rows from the admission test and on the rows made when first needed; the files
-    section names \verb|Ratpoints/Model/FirstStage.lean| and \verb|Ratpoints/Proof/FirstStage.lean|.
-  \item Chapter~\ref{chap:setup}: the table of a prime with the exit
-    (Definition~\ref{def:examinePrimeExit}) gives \csource{find_points.c}{1820}{1821} to
-    Definition~\ref{def:storeTables} and keeps \csource{find_points.c}{1795}{1819} and
-    \csource{find_points.c}{1822}{1826}; the search (Definition~\ref{def:searchPoints}) hands the
-    store of \verb|sieving_info| to the run, the node using Lemma~\ref{lem:storeTables}; the
-    paragraph after the proof of Theorem~\ref{thm:refusals}, on Theorem~\ref{thm:run_reference},
-    adds a store of the tables of rows that fits the first $s_2$ entries to its list of hypotheses;
-    the record of \verb|find_points_work_1| lacks only what belongs to stages~H and~I, with the
-    exclusions of Section~\ref{sec:rowsDeviations}.
-  \item Chapter~\ref{chap:denominators}: the forbidden divisors (Definition~\ref{def:forbidden})
-    give the words of a forbidden divisor (\verb|forbiddenRow|) with
-    \csource{find_points.c}{2773}{2777} and their bit lemma to Definition~\ref{def:sieves0} and
-    Lemma~\ref{lem:sieves0}, which they use, and their link to \verb|gen_find_points_h.c| to
-    Definition~\ref{def:sieves0}; the words of a prime of the table are the first $p$ words of the
-    row of $0$, their lemmas going through Lemma~\ref{lem:sieves0}; the paragraph on the run before
-    Section~\ref{sec:denSearch} says that the run also takes the store of the tables of rows and
-    passes it from one denominator to the next, the rows of the first $s_2$ entries read from it or
-    built, and its contract (\verb|sieveRun_spec|, \verb|toList_run_sieveRun|,
-    \verb|toList_run_sieveRun_eq_flatMap|) adds a store that fits the first $s_2$ entries; the
-    search paragraph of Section~\ref{sec:denSearch} says that \verb|sieving_info| returns the store
-    and the search hands it to the run; the files section puts the words in
-    \verb|Ratpoints/Model/Rows.lean| and their bit lemma in \verb|Ratpoints/Proof/Rows.lean|.
-  \item Chapter~\ref{chap:tables}: the introduction refers to Chapter~\ref{chap:rows} for F4; the
-    tables of a prime power (Definition~\ref{def:examinePower}) keep \verb|fsq|, \verb|gsq| and
-    \verb|sq| as bit arrays of words, the node using Definition~\ref{def:powerWords}, with
-    \csource{find_points.c}{2267}{2282}, \csource{find_points.c}{2285}{2301} and
-    \csource{rp-private.h}{531}{534}, giving \csource{rp-private.h}{523}{523},
-    \csource{find_points.c}{2283}{2284} and \csource{find_points.c}{2302}{2303} to
-    Definition~\ref{def:powerWords} and \csource{init.c}{359}{386} and
-    \csource{rp-private.h}{592}{592} to Definition~\ref{def:sieveInitPower}; its lemma
-    (Lemma~\ref{lem:power_admits}) names \verb|bitAt_fsq_run_examinePower_of_isSquare| and
-    \verb|bitAt_gsq_run_examinePower_of_isSquare| in place of the lemmas on Booleans and loses
-    \verb|ExaminePowerInvariant|, its contract and the lemma on the points taking $p^e \le
-    64\,\mathrm{modWords}$, its proof using Lemma~\ref{lem:powerWords}; the sieve entries
-    (Definition~\ref{def:SieveEntry}) gain the new fields \verb|ref| and \verb|init|, the reference
-    to their table of rows and the kind of their builder, the node gaining
-    \verb|Ratpoints.Sieve.Factor.ref|, \verb|Ratpoints.Sieve.Factor.init|,
-    \verb|Ratpoints.Sieve.SieveEntry.refInit| and \verb|Ratpoints.Sieve.Factor.modulus|, the modulus
-    of a factor, now a definition of the model, which moves here from
-    Lemma~\ref{lem:sieveEntry_admits}: the reference of a factor, to which the field \verb|factor|
-    of the entry of a product points, is that of its prime or of its prime power; the kind of the
-    builder of the entry of a factor is, for a prime, the kind of the builder of the prime of its
-    table, which \verb|examine_prime| sets (line 1800), and for a prime power the builder of a prime
-    power, which \verb|make_power| sets (line 2420); and the reference and the kind of the builder
-    of the modulus at the position $n$ with its factors are, for one factor (a prime or a prime
-    power), those of the entry of that factor, whose entry the modulus shares, as
-    \verb|sieve_list[n]| is \verb|prime_se[pn]| or \verb|power_se[idx]|, and for a product the
-    reference to its own entry, by the position $n$, and the builder of a product; the node uses
-    Definitions~\ref{def:entryRef} and~\ref{def:rowInit} and gives \csource{rp-private.h}{497}{498}
-    to Definition~\ref{def:rowInit} and \csource{init.c}{399}{414}, \csource{init.c}{419}{429} and
-    \csource{rp-private.h}{593}{593} to Definition~\ref{def:sieveInitProduct}; the sieve entry of a
-    modulus (Definition~\ref{def:makeModulus}) takes the position and sets the reference and the
-    kind of builder of its position (Definition~\ref{def:SieveEntry}), with
-    \csource{find_points.c}{2414}{2426}, \csource{find_points.c}{2428}{2429},
-    \csource{find_points.c}{2434}{2470} and \csource{find_points.c}{2472}{2475}, giving lines 2427
-    and 2471 to Definition~\ref{def:storeTables}; its contract (Lemma~\ref{lem:sieveEntry_admits})
-    gives the reference and the kind of builder of the position, the node using
-    Lemma~\ref{lem:fetchRow} for the buildable factors, and \verb|Ratpoints.IsModulusEntry| and
-    \verb|Ratpoints.Sieve.Factor.IsSound| gain that the factors are buildable, that their tables are
-    those of \verb|examinePrime| and \verb|examinePower|, and that the moduli of the factors
-    multiply to the modulus; the paragraph after that lemma has the builders of
-    Chapter~\ref{chap:rows} in place of the plain builder; the loop of the tables
-    (Definition~\ref{def:examinePrimes}) returns the store with the tables of rows of its primes,
-    the node using Definition~\ref{def:storeTables}, and its lemma (Lemma~\ref{lem:examinePrimes})
-    gains \verb|Ratpoints.Sieve.primeStore_of_run_examinePrimes_eq_some| next to its other lemmas on
-    what the loop gives, with the statement that the store of the loop is a store of the primes
-    (\verb|PrimeStore|: it holds every $R$ whose rows of $0$ of the primes are \verb|sieves0|, and
-    every table of rows of a prime in it has its row of $0$), the node using
-    Lemma~\ref{lem:storeTables}; \verb|sieving_info| (Definition~\ref{def:sievingInfo}) makes the
-    tables of rows of each entry and returns the store, the node using
-    Definition~\ref{def:storeTables}; its contract (Lemma~\ref{lem:sievingInfo}) takes the result
-    with the store, and its postcondition becomes the structure \verb|Ratpoints.IsSievingInfo|, the
-    six former conjuncts and the new field \verb|fits|, that the store fits the entries, the loop
-    invariant \verb|Ratpoints.SievingInfoInvariant| holding, before a return, the structure
-    \verb|Ratpoints.SievingInfoEntries| with the store made for the entries, so that the store that
-    \verb|sieving_info| returns fits its entries; the node gains \verb|Ratpoints.IsSievingInfo|,
-    \verb|Ratpoints.SievingInfoEntries|, \verb|Ratpoints.SievingInfoEntries.fits| and
-    \verb|Ratpoints.refInit_push| and uses Lemma~\ref{lem:storeTables}; the deviations on the rows
-    of a prime power and of a product and on the entry of a prime power kept once say what F4 does.
-  \item Chapter~\ref{chap:stages}: the second stage (Definition~\ref{def:secondStage}) uses
-    Definition~\ref{def:useCLong}, which it reached through Definition~\ref{def:row} before; the
-    paragraph before Lemma~\ref{lem:staged} gives Lemma~\ref{lem:sift_eq_checkDen} a store that fits
-    the entries; the paragraph on the run before Section~\ref{sec:cuts} says that the run reads or
-    builds the rows of the first $s_2$ entries through the store, adds the fitting store to the
-    hypotheses of its contract, and says that the search passes the store of \verb|sieving_info|,
-    which Lemma~\ref{lem:sievingInfo} gives fitting the entries; the deviations no longer leave the
-    chunked first stage and the ends of the rows to stage~F4.
-  \item Chapter~\ref{chap:packing}: the paragraph on \verb|_ratpoints_sift0| in the section on the C
-    code says that the start $r = (-w_{\mathrm{low}} - \mathrm{offset}) \bmod p$ at bit array $p -
-    r$ is that of the arm one row at a time (Definition~\ref{def:andRows}), the arm of a chunk of
-    $1$ or above $16$, and that the chunked arm of the default build, the chunk $16$ of the model,
-    starts each modulus at $(w_{\mathrm{low}} + \mathrm{offset}) \bmod p$, by \verb|mod_mul| under
-    \verb|small| and by \verb|mod| otherwise (\csource{sift.c}{596}{606},
-    Definition~\ref{def:chunkStarts}); the rows read in the packing (Lemma~\ref{lem:reads_row})
-    speak of sieve specs of five fields with the closed form of the row, the node using
-    Definition~\ref{def:row} and, in its proof, Lemma~\ref{lem:closedRow}; a sieve spec that fits
-    (Lemma~\ref{lem:rowIndices}) has the end $p$ and a row that wraps, the node using
-    Definition~\ref{def:closedRow} through the constructor of \verb|SieveSpec.Fits|, whose field
-    says that the row wraps, and the lemma gains
-    \verb|SieveSpec.Fits.ite_modMul_modLong_add_eq_emod|: the start of the chunked arm, by the same
-    reductions, is $(w_0 + \mathrm{offset}) \bmod p$, the sentence on $p - r$ naming the arm one row
-    at a time; the paragraph after that lemma has either arm, Definition~\ref{def:andRows} or
-    Definition~\ref{def:andRowsChunked}, chosen by one piece, as the first stage, both taking the
-    offsets and the reciprocals from the position $0$ and their contracts giving the same words; the
-    bits of one denominator (Definition~\ref{def:siftBits}) have \verb|set_rows| read the rows from
-    the store, with the empty array for a row not built yet, the start $0$, the end $p$ and the flag
-    of a missing row, the node using Definition~\ref{def:entryRef}; its lemma
-    (Lemma~\ref{lem:siftBits}) builds the specs with the closed forms, \verb|setRows_map| giving way
-    to the lemmas of Lemma~\ref{lem:buildRows}; the paragraph before Lemma~\ref{lem:soundRun} adds
-    the fitting store to the hypotheses of the contracts of one denominator and of the run, and says
-    that the search hands on the store that \verb|sieving_info| returns; what the run needs of the
-    search (Lemma~\ref{lem:soundRun}) gains the store, the node using Lemma~\ref{lem:storeTables};
-    the deviation that writes out $-w_{\mathrm{low}} - \mathrm{offset}$ in both reductions of the
-    first stage names the arm one row at a time, the \verb|long| $a = w_{\mathrm{low}} +
-    \mathrm{offset}$ of the chunked arm being covered by the deviation of
-    Definition~\ref{def:chunkStarts}; the deviations and the work left to stage~F4 go; the files
-    section counts the lines anew.
-  \item The stage list of the introduction refers to this chapter (Chapter~\ref{chap:rows}), which
-    is input after Chapter~\ref{chap:packing}. The files sections, the uses and the generated table
-    follow.
-\end{itemize}
+The constants $\mathrm{chunk}$ and $\mathrm{modWords}$ are in \verb|Ratpoints/Model/Constants.lean|,
+each citing its macro, with the fact $0 < \mathrm{chunk}$ decided there, which the proofs use, never
+the value; the largest array size there is a multiple of the chunk, and the array size of the
+parameters, in \verb|Ratpoints/Model/Params.lean|, is rounded up to one.
+\verb|Ratpoints/Model/Tables.lean| has the bits of a bit array of words, the squares and the
+inverses of a prime power and its tables as bit arrays, the kinds of builders with that of a prime
+for the generated table \verb|sieve_init|, the references to the entries, the modulus, the reference
+and the kind of builder of a factor, and the fields \verb|ref| and \verb|init| of the sieve entries.
+\verb|Ratpoints/Model/FirstStage.lean|, new and above \verb|Ratpoints/Model/Tables.lean|, has the
+operations on bit arrays of the first stage, the sieve specs with the start and the end, and both
+arms of the first stage; \verb|Ratpoints/Model/Rows.lean|, new and above
+\verb|Ratpoints/Model/FirstStage.lean| and \verb|Ratpoints/Model/Tables.lean|, the words of a
+forbidden divisor and the row of $0$, the store of the tables of rows with the tables made with the
+entries, the macros and the builders of \verb|init.c|, and the row of a sieve entry read or built;
+and \verb|Ratpoints/Model/Sieve.lean|, above both, \verb|set_rows|, the missing rows of a
+denominator and \verb|sift|, with the choice of the arm in one piece. The loop of the tables, which
+makes the tables of rows of the primes, the forbidden divisors, which read \verb|sieves0|, and the
+run, which hands the store on from one denominator to the next, are in
+\verb|Ratpoints/Model/Denominators.lean|, and the sieve entry of a modulus, \verb|sieving_info| and
+the search in \verb|Ratpoints/Model/FindPoints.lean|. So each file of the model stays below $1500$
+lines (\verb|Ratpoints/Model/FirstStage.lean| has $476$, \verb|Ratpoints/Model/Rows.lean| $909$ and
+\verb|Ratpoints/Model/Sieve.lean| $1009$).
 
-\section{Files, names and order of work}\label{sec:rowsFiles}
+The proofs of the sub-stage use Lean core and \verb|Std| only, but for those of the bit arrays of a
+prime power and of the entries of the moduli (\verb|Ratpoints/Proof/Moduli.lean|), of the loop of
+the tables (\verb|Ratpoints/Proof/Forbidden.lean|), of the run
+(\verb|Ratpoints/Proof/Denominators.lean|) and of the search
+(\verb|Ratpoints/Proof/FindPoints.lean|), which are in files with Mathlib.
+\verb|Ratpoints/Proof/Containers.lean|, new, has the general facts on vectors, arrays, lists, ranges
+and the natural numbers and integers that index them, split off \verb|Ratpoints/Proof/Bits.lean|,
+which keeps those on \verb|UInt64| and \verb|Int64|; neither imports the other ($1152$ and $474$
+lines). The general facts of this sub-stage are there, under their names in the namespaces of Lean
+core and in their natural generality, among them: in \verb|Ratpoints/Proof/Containers.lean|
+\verb|Nat.ite_add_mod_mod| and \verb|Nat.ite_eq_add_one_mod_add_one|, the sum of two residues and
+the position after another in a ring, \verb|Nat.le_add_sub_one_mul|,
+\verb|Nat.mul_add_lt_mul_of_lt_of_lt'| and \verb|Nat.mul_add_mod_mul_of_lt|, on blocks of $k$ words
+(the primed one, since Batteries has the same statement under the plain name, which would collide in
+the files with Mathlib), \verb|List.all_and_left|, \verb|List.all_congr_left| and
+\verb|List.all_range_length_getElem!|, on the tests of a list, \verb|Array.getElem!_append|,
+\verb|Array.size_fold_append|, \verb|Array.getElem!_fold_append| and
+\verb|Array.forall_getElem_push|, on arrays, and \verb|Int.toNat_emod_add_mod| and
+\verb|Int.toNat_natCast_emod|, on residues; in \verb|Ratpoints/Proof/Bits.lean|
+\verb|UInt64.eq_of_getLsbD_eq|, \verb|UInt64.getLsbD_shiftLeft_ofNat| and
+\verb|UInt64.getLsbD_shiftRight_ofNat|, and \verb|UInt64.getLsbD_or_shiftLeft_of_dvd|, the doubling
+of a periodic pattern in a word, restated in this sub-stage for any pattern, so that the packing and
+the builders of a prime share it.
 
-The model, in the folder \verb|Ratpoints/Model|: the chunk goes into \verb|Constants.lean| with
-$\mathrm{modWords}$, each citing its macro; the bits of a bit array of words, the squares and the
-inverses of a prime power, the references, the kinds of builders with that of a prime for the
-generated table \verb|sieve_init|, and the modulus of a factor into \verb|Tables.lean|; the sieve
-specs, the and of two bit arrays with the load, the store and the fill, and both arms of the first
-stage into a new file \verb|FirstStage.lean| below \verb|Sieve.lean| (about $470$ lines); the row of
-$0$, the words of a forbidden divisor, the store, the builders and the reading and building of the
-row of a sieve entry into a new file \verb|Rows.lean| above it (about $870$ lines); the missing rows
-of a denominator stay with \verb|sift| in \verb|Sieve.lean|, with the clearing of the low and the
-high bits and the test for zero (Definition~\ref{def:bitArrayOps}), which shrinks to about $1000$
-lines. The proofs, in the folder \verb|Ratpoints/Proof| and all without Mathlib but for those of the
-entries of the moduli, the loop of the tables, the run and the search: the facts on vectors, arrays,
-lists, ranges and the natural numbers and integers that index them in a new core file
-\verb|Containers.lean|, split off \verb|Bits.lean| and below it, \verb|Bits.lean| keeping the facts
-on \verb|UInt64| and \verb|Int64| (about $1100$ and $420$ lines); the closed form, the row of $0$
-and the bit lemma of the words of a forbidden divisor, which leaves \verb|Forbidden.lean|, in a new
-file \verb|Rows.lean| below \verb|Words.lean|; the end and the copies of a fitting spec in
-\verb|Reductions.lean|; the loads, the stores and the fill of the first stage in \verb|Words.lean|;
-the chunked arm in a new file \verb|FirstStage.lean| above it; the builders of a prime in a new file
-\verb|PrimeRows.lean| and those of a prime power and of a product in a new file
-\verb|CompositeRows.lean| above it; the store, the builders through it, its invariant and the
-missing rows of a denominator in a new file \verb|RowStore.lean| above them; the bit arrays of a
-prime power and the entry of a modulus with its reference in \verb|Moduli.lean|; the store of the
-loop of the tables in \verb|Forbidden.lean|; the arms of one piece and one denominator on the store
-in \verb|Sift.lean|; the run in \verb|Denominators.lean|; and the store of \verb|sieving_info| and
-what the run needs of the search in \verb|FindPoints.lean|. The general facts on core types go to
-\verb|Containers.lean| and \verb|Bits.lean| under their names in the namespaces of Lean core: among
-the helpers of the prototype, \verb|ite_add_mod_mod| and \verb|ringNext_eq| as lemmas on natural
-numbers, \verb|all_range_and|, \verb|all_range_congr| and \verb|all_range_length_getElem!|,
-generalized from the factors to any list, as lemmas on lists (once it is checked that core has none
-of them), \verb|getElem!_append| and the entries of a fold of appends as lemmas on arrays and
-\verb|toNat_emod_add_mod| as a lemma on integers; a helper that one lemma gives is inlined at its
-uses instead (\verb|sub_mod_chunk_mod| by \verb|Nat.sub_mod_eq_zero_of_mod_eq|, \verb|add_le_of_dvd|
-by \verb|Nat.le_of_lt_add_of_dvd|, \verb|ite_add_eq_mod| and \verb|add_mod_ring| by
-\verb|Nat.mod_eq_ite_of_lt_two_mul|); the facts on the constants of the model and on the four lanes
-of the builders of a prime stay in their files. Every file stays below $1500$ lines (the largest new
-one, \verb|RowStore.lean|, about $1350$). The eight new modules join their part roots and
-\verb|Ratpoints.lean|. The docstrings say ``table of rows'' for a table of the store, keep ``the
-table of a prime'' and ``the tables of a prime power'' for the data of
-Definitions~\ref{def:examinePrime} and~\ref{def:examinePower}, and use ``reference'' only for a
-reference to an entry. One commit per item, each passing the project's checks, the build with other
-values of the constants and the differential tests, and leaving the output unchanged, with the nodes
-of the earlier chapters that it changes and the C links moved from their old owners in the same
-commit:
-\begin{enumerate}
-  \item[F4.1] The chunk with $0 < \mathrm{chunk}$ (Definition~\ref{def:chunk}); the largest array
-    size and the array size rounded to the chunk, with the lower bound of the array size; the
-    \verb|#guard| examples at the chunk $16$, among them the example of \verb|findPoints| with
-    pieces of $1$, $2$ and $3$ bit arrays restated: one array size in place of the three, which all
-    round to $16$, at the same heights, its comment saying that each class runs as one piece of $16$
-    bit arrays with the low and the high mask on the same piece, the last bit array cut at
-    $w_{\mathrm{high}}$ inside the piece and no low mask when $H$ is a multiple of
-    $\mathrm{rbaLength}$, and that several pieces and masks on different pieces are tested at the
-    level of \verb|sift| (the example with pieces of one, two and three bit arrays at $H = 300$), by
-    the example of the run with the array size $1$, and through \verb|findPoints| by the
-    differential tests at the heights $5000$ and $30000$ and \verb|test4high|; the build with other
-    values of the constants varies the chunk ($1$ and $17$ with the other constants, $2$, $3$, $5$
-    and $12$ alone) and the width of the bit arrays alone ($\mathrm{rbaPack}$ $8$ and $2$, and $1$
-    with the chunk $5$), and no longer the largest array size, which is derived; the node of
-    Definition~\ref{def:arraySize}. About $100$ lines.
-  \item[F4.2] The split of \verb|Ratpoints/Proof/Bits.lean| before it reaches $1500$ lines: the
-    facts on vectors, arrays, lists, ranges, natural numbers and integers into the new core file
-    \verb|Ratpoints/Proof/Containers.lean| below it, the facts on \verb|UInt64| and \verb|Int64|
-    staying, both in the namespaces of Lean core, with the module docstrings, the row of the layout
-    table of \verb|README.md|, the part root and \verb|Ratpoints.lean|; the type dump unchanged.
-    About $1100$ lines moved.
-  \item[F4.3] The sieve specs with the start and the end, the and of two bit arrays, the fill of a
-    bit array (Definition~\ref{def:bitArrayMoves}, begun) and the first stage one row at a time,
-    writing from the last bit array, in \verb|Ratpoints/Model/FirstStage.lean|; \verb|set_rows| with
-    the start $0$ and the end $p$; the plain row with its copies, $p + \mathrm{chunk} - 1$ bit
-    arrays; the closed form (Definition~\ref{def:closedRow}, Lemma~\ref{lem:closedRow}) in
-    \verb|Ratpoints/Proof/Rows.lean|, with a lemma, until F4.10, that the plain row is the closed
-    form, in the node of Definition~\ref{def:row} in place of \verb|SieveEntry.getLsbD_row| there
-    and of \verb|SieveEntry.row_mod| in that of Definition~\ref{def:rows}; a fitting spec with its
-    end and its copies, and the rows read in the packing, the first stage and the specs of a
-    denominator on the five fields and the closed forms; the nodes of Definitions~\ref{def:row},
-    \ref{def:rows} and~\ref{def:andRows} and Lemmas~\ref{lem:reads_row}, \ref{lem:rowIndices}
-    and~\ref{lem:siftBits}. About $900$ lines.
-  \item[F4.4] The chunked first stage (Definitions~\ref{def:chunkStarts}, \ref{def:chunkSieve},
-    \ref{def:tailLegs} and~\ref{def:andRowsChunked}, Lemma~\ref{lem:andRowsChunked}), with the load
-    and the store of a bit array (Definition~\ref{def:bitArrayMoves}),
-    \verb|Ratpoints/Proof/FirstStage.lean|, and the choice of the arm in one piece; the exclusion of
-    \verb|RP_UNROLL_REGS|; the first stage one row at a time the arm of a chunk of $1$ or above
-    $16$, its \verb|Deviation:| paragraph losing the clause on the first stage of the builds with
-    one register per chunk, and the generated table of the correspondence refreshed; the
-    differential tests at the heights with whole chunks; comparator; the nodes of
-    Definitions~\ref{def:siftPiece}, \ref{def:bitArrayOps} (\verb|RBA| with both arms)
-    and~\ref{def:andRows} (the arm of a chunk of $1$ or above $16$) and of
-    Lemma~\ref{lem:rowIndices} (the start of the chunked arm). About $1450$ lines.
-  \item[F4.5] The tables of a prime power as words (Definition~\ref{def:powerWords},
-    Lemma~\ref{lem:powerWords}), with $\mathrm{modWords}$, \verb|setSquareBits| and
-    \verb|unitInverses|, which take \csource{rp-private.h}{523}{523},
-    \csource{find_points.c}{2283}{2284} and \csource{find_points.c}{2302}{2303} from the tables of a
-    prime power, and \verb|Ratpoints.Sieve.Factor.modulus| moved into the model, claimed by
-    Definition~\ref{def:SieveEntry}; the nodes of Definitions~\ref{def:examinePower}
-    and~\ref{def:SieveEntry} and Lemmas~\ref{lem:power_admits} and~\ref{lem:sieveEntry_admits}.
-    About $500$ lines.
-  \item[F4.6] The words of a forbidden divisor, the row of $0$ and the builders of a prime
-    (Definitions~\ref{def:sieves0}, \ref{def:rowInit}, \ref{def:initMacros}, \ref{def:sieveInit1}
-    and~\ref{def:sieveInit2}, Lemmas~\ref{lem:sieves0} and~\ref{lem:primeRows}), with the
-    references, the store and its lookup and put (Definition~\ref{def:entryRef}),
-    \verb|Ratpoints/Model/Rows.lean| with the words of a forbidden divisor and \verb|window| moved
-    in, their bit lemma moved to \verb|Ratpoints/Proof/Rows.lean|,
-    \verb|Ratpoints/Proof/PrimeRows.lean| and the beginning of \verb|Ratpoints/Proof/RowStore.lean|:
-    the run does not call the builders yet, and \verb|#guard| examples compare them with the plain
-    row, which, with the admission test of a prime, gives its C lines of the primes to the builders;
-    the nodes of Definitions~\ref{def:admits}, \ref{def:row}, \ref{def:forbidden}
-    and~\ref{def:SieveEntry}. About $1500$ lines.
-  \item[F4.7] The builders of a prime power and of a product and the row of a sieve entry read or
-    built (Definitions~\ref{def:layOutPattern}, \ref{def:sieveInitPower}, \ref{def:sieveInitProduct}
-    and~\ref{def:fetchRow}, Lemmas~\ref{lem:compositeRows} and~\ref{lem:fetchRow}), with the
-    references and the kinds of builders of the factors and of the moduli and the fields \verb|ref|
-    and \verb|init| of the sieve entries in Definition~\ref{def:SieveEntry}, set by the sieve entry
-    of a modulus at its position, \verb|Ratpoints/Proof/CompositeRows.lean| and the builders through
-    the store in \verb|Ratpoints/Proof/RowStore.lean|; still not called by the run, and compared
-    with the plain row, which, with the admission tests of a prime power and of a product, gives
-    them its last C lines; the nodes of Definitions~\ref{def:row}, \ref{def:examinePower},
-    \ref{def:SieveEntry} and~\ref{def:makeModulus} and Lemma~\ref{lem:sieveEntry_admits}. About
-    $1800$ lines.
-  \item[F4.8] The forbidden divisors of the primes of the table read the row of $0$; the node of
-    Definition~\ref{def:forbidden}. About $60$ lines.
-  \item[F4.9] The tables of rows made with the entries (Definition~\ref{def:storeTables},
-    Lemma~\ref{lem:storeTables}): the loop of the tables and \verb|sieving_info| make the tables of
-    rows and return the store, which the search does not hand on yet; the invariant of the store,
-    the store of the loop of the tables and the fit of the store that \verb|sieving_info| returns,
-    with the soundness of the entries of the moduli extended; the \verb|Deviation:| paragraph of
-    \verb|examinePrime?| saying that the table of rows of a prime that a modulus needs (one beyond
-    the loop of the tables, which \verb|makeModulus?| examines, or one that says nothing) is made by
-    \verb|SieveEntry.addTables| in the loop of \verb|sieving_info| over the moduli, right after the
-    entry; the exclusions of the buffers (\verb|find_points.c:181-270|, memory), of
-    \verb|find_points_init| (\verb|find_points.c:272-375|, interface) and of
-    \verb|find_points_clear| (\verb|find_points.c:377-416|, memory), with the reason of the
-    exclusion of \verb|find_points.c:4618-4623| restated: \verb|find_points_work| refuses an
-    inadmissible degree first, at lines 4557-4558, so that a missing work array there comes only
-    from a caller who changed the degree after \verb|find_points_init|; the nodes of
-    Definitions~\ref{def:examinePrimeExit}, \ref{def:examinePrimes}, \ref{def:makeModulus}
-    and~\ref{def:sievingInfo} and Lemmas~\ref{lem:examinePrimes}, \ref{lem:sieveEntry_admits}
-    and~\ref{lem:sievingInfo}. About $1200$ lines.
-  \item[F4.10] The run on the store: \verb|set_rows| reads the rows from the tables of rows, the
-    missing rows of a denominator are built (Definition~\ref{def:buildRows},
-    Lemma~\ref{lem:buildRows}), \verb|sift| and the run pass the store on and the search hands it to
-    the run; the plain builder and the thunks of the rows retire, with the lemma of F4.3; the
-    contracts of one denominator, of the run and what the run needs of the search on the store;
-    comparator; the nodes of Definitions~\ref{def:sieveRun}, \ref{def:row}, \ref{def:rows},
-    \ref{def:sift}, \ref{def:searchPoints} and~\ref{def:siftBits}, Theorem~\ref{thm:run_reference}
-    and Lemmas~\ref{lem:sift_eq_checkDen}, \ref{lem:siftBits} and~\ref{lem:soundRun}. About $1000$
-    lines.
-  \item[F4.11] The passages of the earlier chapters that F4 makes untrue
-    (Section~\ref{sec:rowsEarlier}) beyond the nodes of the items; the records of comparator; the
-    description of the repository and \verb|formalization.yaml|.
-\end{enumerate}
-F4.9 and F4.10 together are the switch to the store; the cut between them changes each contract
-once, that of \verb|sieving_info| in F4.9 and those of one denominator and of the run in F4.10, and
-leaves for one commit a store that the search makes and does not use.
+\verb|Ratpoints/Proof/Rows.lean|, new, above \verb|Ratpoints/Proof/Reductions.lean| and below
+\verb|Ratpoints/Proof/Words.lean|, has the closed form, the words of a periodic pattern, the bits of
+a bit array of words as the proofs read them, the bit lemma of the words of a forbidden divisor, the
+row of $0$, and the bound $p \le (p + \mathrm{chunk} - 1)\,\mathrm{rbaPack}$ of the words of a row
+(\verb|Ratpoints.le_add_chunk_sub_one_mul_rbaPack|); \verb|Ratpoints/Proof/Reductions.lean| the row
+that wraps, the sieve spec that fits with its end and its copies, and the start of the chunked arm;
+\verb|Ratpoints/Proof/Words.lean| the loads, the stores and the fill of the first stage;
+\verb|Ratpoints/Proof/FirstStage.lean|, new and above it, the contracts of the chunked arm;
+\verb|Ratpoints/Proof/PrimeRows.lean| and \verb|Ratpoints/Proof/CompositeRows.lean|, new, side by
+side above \verb|Ratpoints/Proof/Rows.lean|, the builders of a prime, and those of a prime power and
+of a product with the windows of the layout (\verb|getLsbD_window|), the second also above
+\verb|Ratpoints/Proof/Words.lean|, whose lemmas on the stores and the ands of bit arrays and on the
+admission tests modulo a multiple of the modulus it uses;
+\verb|Ratpoints/Proof/RowStore.lean|, new and above both, the builders through the store, the growth
+of the store (\verb|RowStore.Grows|, a structure with named fields), its invariant, the rows of the
+references of a run with the prime and the modulus of the tables of a prime power, and the missing
+rows of a denominator; \verb|Ratpoints/Proof/Moduli.lean| the bit arrays of a prime power and the
+sieve entry of a modulus with its reference, its kind of builder and its buildable factors;
+\verb|Ratpoints/Proof/Forbidden.lean| the store of the loop of the tables;
+\verb|Ratpoints/Proof/Sift.lean| one piece through either arm and one denominator on the store;
+\verb|Ratpoints/Proof/Denominators.lean| the run with the store; and
+\verb|Ratpoints/Proof/FindPoints.lean| the store of \verb|sieving_info| and what the run needs of
+the search. Every file stays below $1500$ lines, the largest new one,
+\verb|Ratpoints/Proof/RowStore.lean|, with $1358$ (\verb|Ratpoints/Proof/PrimeRows.lean| has $1078$,
+\verb|Ratpoints/Proof/CompositeRows.lean| $1043$, \verb|Ratpoints/Proof/FirstStage.lean| $950$ and
+\verb|Ratpoints/Proof/Rows.lean| $345$). The eight new modules are in their part roots and in the
+listing \verb|Ratpoints.lean|. The docstrings of this sub-stage say ``table of rows'' for a table of
+the store, keep ``the table of a prime'' and ``the tables of a prime power'' for the data of
+Definitions~\ref{def:examinePrime} and~\ref{def:examinePower}, and call the key of a table of rows a
+reference to an entry.
 
 \section{The evidence}\label{sec:rows-evidence}
 
+Besides the proofs:
 \begin{itemize}
-  \item A reading of the C code of the chunk, the first stage and the rows at the pin, with a second
+  \item a reading of the C code of the chunk, the first stage and the rows at the pin, with a second
     reader who checked it, on instrumented builds of the C program: the survivors of the first stage
     equal, word for word, those of the closed forms, on the runs of \verb|test4.sh| and $900$ random
     runs in the default build with the chunk $16$, the build with the chunk $1$ and one with the
@@ -1291,46 +1088,71 @@ leaves for one commit a store that the search makes and does not use.
     read during these runs, each with all its $m + \mathrm{chunk} - 1$ bit arrays, \verb|sieves0|
     and the rows of primes, prime powers and products, equal their closed forms; a build with the
     chunk $17$ compiles the other arm and gives the output of \verb|testbase4|, the \verb|#error|
-    never firing. The reading finds one more defect of the C code without effect on the points, now
+    never firing. The reading finds one more defect of the C code without effect on the points,
     recorded with ratpoints: \verb|set_rows| adds $p$ to the null pointer of a row not built yet
-    (line 3166), which the C standard leaves undefined and gcc compiles harmlessly.
-  \item Before the sub-stage, a sketch of the model in Lean, in three parts (the chunked first
-    stage; the builders and the tables of a prime power as words; the store and the switch), which
-    agrees with \verb|ratpoints -q| on the differential tests, every point list in its order, $3315$
-    comparisons in the default suites and $13$ in \verb|test4high|; whose rows equal those of the
-    builders of the C code, read from builds of a program that dumps them: in the default build
-    $6079$ rows of primes (the rows of $0$ against \verb|sieves0|), $849$ of prime powers and $9455$
-    of products, every prime up to $251$ with every residue and every composite modulus up to $255$,
-    all their words, the same through the store with the $19\,861$ rows of factors that the products
-    built in their tables of rows, and in the build with the chunk $1$ all $16\,383$ rows on their
-    first $m$ bit arrays, with a check that one flipped bit or three changed rows show as a
-    difference; and whose builds of rows, a line at each set-up of a denominator, at each call of a
-    builder by the loop of \verb|sift| and at each row of a factor that a product builds, equal
-    those of an instrumented build of the C program line for line on $340$ runs ($17$ curves of
-    degrees $3$ to $8$ at heights up to $20\,000$ with five sets of options, all with \verb|-s|,
-    four of them with \verb|-k| and one with the reversal, since with the Sturm step on the C code
-    skips the set-up of a denominator whose search intervals leave no bits, which belongs to
-    stage~H: $1\,003\,520$ set-ups, $114\,535$ rows built, $103\,421$ of primes, $2104$ of prime
-    powers and $9010$ of products, and $2788$ rows of factors; the composite moduli from $9$ to $63$
-    in the first two stages), with a check that two swapped moduli show as a difference. The first
-    stage of either arm agrees for the chunks from $1$ to $12$; at the chunk $17$ the chunked arm
-    differs exactly at tails of $16$ bit arrays, which is why the arm is chosen by $\mathrm{chunk}
-    \le 16$. Built with other values of the constants (the chunk $1$, $2$, $3$, $5$, $12$ and $17$,
-    and $\mathrm{rbaPack}$ $8$, $2$, and $1$ with the chunk $5$), the sketch gives the same rows
-    through the store and the same output.
-  \item Two reviews of the sketch, each finding checked by a second reader, which found no
-    difference from the C code; their findings made the builders store their own rows, as the C code
-    does, derived the reference and the kind of builder of a modulus from its factors, kept the
-    squares of \verb|examine_power| as words, gave a prime power its table of rows by its prime and
-    its exponent, as \verb|pw_idx| keeps its entry, gave line 1800, which sets the builder of a
-    prime, back from the sieve entry of a modulus (Definition~\ref{def:makeModulus}) to the table of
-    a prime with the exit (Definition~\ref{def:examinePrimeExit}), and added the trace of the builds
-    of rows against the C program.
-  \item A prototype of all the proofs on the sketch: the whole library builds, standard axioms,
-    every proof and every definition at most $20$ lines with no new exception, the statements that
-    comparator certifies and \verb|Params.WF| unchanged, the differential tests $3315$ compared with
-    none failed and $13$ in \verb|test4high|, and the build with other values of the constants in
-    nine variants (the chunk $1$ and $17$ with the other constants changed too, the chunk $2$, $3$,
-    $5$ and $12$ alone, $\mathrm{rbaPack}$ $8$ and $2$, and $\mathrm{rbaPack}$ $1$ with the chunk
-    $5$); it changed no model file of the sketch.
+    (line 3166), which the C standard leaves undefined and gcc compiles harmlessly;
+  \item before the sub-stage, a sketch of the model in Lean, in three parts (the chunked first
+    stage; the builders and the tables of a prime power as words; the store and the run on it),
+    which agrees with \verb|ratpoints -q| on the differential tests, every point list in its order;
+    whose rows equal those of the builders of the C code, read from builds of a program that dumps
+    them, with no mismatch: in the default build all $16\,383$ rows of every prime up to $251$ with
+    every residue and of every composite modulus up to $255$, $6079$ of primes (the rows of $0$
+    against \verb|sieves0|), $849$ of prime powers and $9455$ of products, all their words, the same
+    through the tables of rows with the $19\,861$ rows of factors that the products built in them,
+    and in the build \verb|chunk1| all $16\,383$ rows on their first $m$ bit arrays, with a check
+    that one flipped bit or three changed rows show as a difference; whose builds of rows, a line at
+    each set-up of a denominator, at each call of a builder by the loop of \verb|sift| and at each
+    row of a factor that a product builds, equal those of an instrumented build of the C program
+    line for line on $340$ whole runs ($17$ curves of degrees $3$ to $8$ at heights up to $20\,000$
+    with five sets of options, all with \verb|-s|, four of them with \verb|-k| and one with the
+    reversal, since with the Sturm step on the C code skips the set-up of a denominator whose search
+    intervals leave no bits, which belongs to stage~H: $1\,003\,520$ set-ups, $114\,535$ rows built,
+    $103\,421$ of primes, $2104$ of prime powers and $9010$ of products, and $2788$ rows of factors;
+    the composite moduli from $9$ to $63$ in the first two stages), with a check that two swapped
+    moduli show as a difference; whose first stage of either arm agrees for the chunks from $1$ to
+    $12$, while at the chunk $17$ the chunked arm differs exactly at tails of $16$ bit arrays, which
+    is why the arm is chosen by $\mathrm{chunk} \le 16$; and which, built with other values of the
+    constants (the chunk $1$, $2$, $3$, $5$, $12$ and $17$, and $\mathrm{rbaPack}$ $8$, $2$, and $1$
+    with the chunk $5$), gives the same rows through the store and the same output; two reviews of
+    the sketch, each finding checked by a second reader, which found no difference from the C code;
+    a prototype of all the proofs on the sketch; and a review of the plan of this chapter by four
+    readers (45 findings, 35 confirmed and 10 in part), each finding checked by a second reader;
+  \item the eleven items of the sub-stage drafted one after the other in a copy of the repository,
+    each passing the project's checks, the build with nine other sets of values of the constants and
+    the differential tests, and taken over one commit each;
+  \item after the sub-stage, independent reviews, each finding checked by a second reader: two of
+    the C ranges, the deviations and the exclusions against the C code (11 findings, 10 confirmed),
+    and three of the code, the blueprint and the descriptions against the conventions of the project
+    (58 findings, 52 confirmed), 69 findings and 62 confirmed in all, applied in nine rounds and a
+    tenth for a lemma in captivity that the round of the idioms found, among them the ranges of the
+    builders of a prime tightened, the variables at the heads of the functions going to the parts
+    that compute them; the include of the private header and the instrumentation of
+    \verb|find_points.c| excluded; the prime that says nothing and the prime beyond the loop of the
+    tables told apart in the deviation of the tables of rows; the comments of the \verb|#guard|
+    examples made to say what the examples test, and the examples of the builders checked against
+    the closed form on one period of the words and by that period; the orphans deleted and the
+    helpers used once private; the abbreviated names of the invariants spelled out
+    (\verb|RepeatedBits|, \verb|UnitPatternInvariant|, \verb|NonunitPatternInvariant|) and the two
+    lemmas on the patterns of the layout named after their patterns
+    (\verb|sieveInitPower_pre_layOut_unit| and \verb|sieveInitPower_pre_layOut_nonunit|, the second
+    primed before); the general facts in their natural generality in
+    \verb|Ratpoints/Proof/Containers.lean| and \verb|Ratpoints/Proof/Bits.lean|; the growth of the
+    store a structure with named fields; the records of comparator; and the bound of a row by its
+    modulus a lemma (\verb|Nat.le_add_sub_one_mul|) in place of the same proof at four sites; the
+    uses recorded in the nodes were checked against the dependencies of the Lean code;
+  \item the \verb|#guard| examples of Section~\ref{sec:rowsCli}, against values of the C program,
+    against the closed forms of the admission tests and against the first stage one row at a time;
+  \item the differential tests of Section~\ref{sec:rowsCli}: 3315 comparisons in the default
+    suites, 272 of them in the suite of the sieving parameters, and 13 in \verb|test4high|, none
+    failed, every point list compared in its order;
+  \item Comparator accepted the solution of the challenge twice on 2026-10-16, after the items and
+    again on the final state of the sub-stage after its audit;
+  \item the project builds, with all its proofs, for nine other sets of values of the constants of
+    the build, among them the two that change all the constants; together they take the chunk $1$,
+    $2$, $3$, $5$, $12$ and $17$ and $\mathrm{rbaPack}$ $1$, $2$ and $8$, with $\mathrm{rbaShift}$
+    $6$, $7$ and $9$; so no proof depends on their values;
+  \item every proof and every definition of the sub-stage takes at most 20 lines; the only longer
+    one in the project is the set-up of the Jacobi test by tables (\verb|jacobiSetup|,
+    Definition~\ref{def:jacobiTables}), which follows the loop of \verb|jacobi_setup| since
+    sub-stage~F2.
 \end{itemize}
