@@ -509,15 +509,12 @@ theorem RotInvariant.append {p cur : Nat} {pref suff : List Nat} {help0 help1 x0
   obtain ⟨hk, -, h0', h64⟩ := sieve1_shifts p pre.2 pre.1
   have hc := Std.Legacy.Range.add_length_eq_of_toList_eq_append_cons hl
   have hcp := Std.Legacy.Range.lt_of_toList_eq_append_cons hl
-  have hn : p ≤ (p + chunk - 1) * rbaPack :=
-    Nat.le_trans (Nat.le_mul_of_pos_right p rbaPack_pos)
-      (Nat.mul_le_mul_right _ (by lia [chunk_pos]))
   obtain ⟨hx0, hx1, hsi⟩ := h g h0 h1
   obtain ⟨r0, r1⟩ := hx0.rotate hk h0' h64 hx1
   rw [List.length_append, List.length_singleton, ← hc, Nat.add_comm 1 pref.length]
   refine ⟨by rwa [Nat.mul_add_one], by rwa [Nat.mul_add_one], ?_⟩
   rw [← hc, Nat.add_comm 1] at *
-  exact hsi.set!_self (by lia) (by rwa [Nat.mul_add_one])
+  exact hsi.set!_self (by lia [le_add_chunk_sub_one_mul_rbaPack p]) (by rwa [Nat.mul_add_one])
 
 theorem RotInvariant.post {p : Nat} {help0 help1 : UInt64} {st : UInt64 × UInt64 ×
     Vector UInt64 ((p + chunk - 1) * rbaPack)} (pre : 0 < p ∧ p < 64)
@@ -954,11 +951,8 @@ theorem RowWords.copy {p cur m : Nat} {pref suff : List Nat}
   have hcl := Std.Legacy.Range.lt_of_toList_eq_append_cons hl
   have hw := hg cur (by lia)
   simp only [hcl, ↓reduceIte] at hw
-  have hn : p ≤ (p + chunk - 1) * rbaPack :=
-    Nat.le_trans (Nat.le_mul_of_pos_right p rbaPack_pos)
-      (Nat.mul_le_mul_right _ (by lia [chunk_pos]))
   rw [List.length_append, List.length_singleton, hc]
-  exact (hc ▸ h g hg).set!_self (by lia) hw
+  exact (hc ▸ h g hg).set!_self (by lia [le_add_chunk_sub_one_mul_rbaPack p]) hw
 
 /-- The start of the ring: the cursor at `wp`, the ring at the bit `64 wp`, the first `wp` words of
 the row copied. -/
@@ -1004,15 +998,12 @@ theorem RingState.append {p cur m : Nat} {pref suff : List Nat} {help0 : Vector 
   obtain ⟨hp, hwp, hds0, hds⟩ := sieve2_shifts pre
   have hc := Std.Legacy.Range.add_length_eq_of_toList_eq_append_cons hl
   have hcl := Std.Legacy.Range.lt_of_toList_eq_append_cons hl
-  have hn : p ≤ (p + chunk - 1) * rbaPack :=
-    Nat.le_trans (Nat.le_mul_of_pos_right p rbaPack_pos)
-      (Nat.mul_le_mul_right _ (by lia [chunk_pos]))
   obtain ⟨hr, hsi⟩ := h g hg
   subst hc
   rw [List.length_append, List.length_singleton, ← Nat.add_assoc, Nat.mul_add_one]
   refine ⟨hr.rotate hp hwp hds0 hds hm, ?_⟩
   rw [Vector.getElem!_set!_self (by lia [hr.1])]
-  exact hsi.set!_self (by lia) (hr.out hwp hds)
+  exact hsi.set!_self (by lia [le_add_chunk_sub_one_mul_rbaPack p]) (hr.out hwp hds)
 
 theorem RingState.post {p m : Nat} {help0 help : Vector UInt64 m}
     {si : Vector UInt64 ((p + chunk - 1) * rbaPack)} {a1 : Nat} (pre : 64 ≤ p ∧ p % 64 ≠ 0)

@@ -68,6 +68,11 @@ The file uses Lean core and `Std` only, as the contracts of the sieve do; the pr
 
 namespace Ratpoints
 
+/-- A row of `p + Ratpoints.chunk - 1` bit arrays of `Ratpoints.rbaPack` words has at least `p`
+words. -/
+theorem le_add_chunk_sub_one_mul_rbaPack (p : Nat) : p ≤ (p + chunk - 1) * rbaPack :=
+  Nat.le_add_sub_one_mul p chunk_pos rbaPack_pos
+
 namespace Sieve
 
 /-! ### The closed form -/
@@ -327,9 +332,7 @@ theorem sieves0_eq_closedRow (e : Entry) (hp : 0 < e.p) : sieves0 e.p = closedRo
 /-- The first `p` words of the row of `0` of the prime `p` are the words of the forbidden divisor
 `p`. -/
 theorem extract_sieves0 (p : Nat) : (sieves0 p).extract 0 p = forbiddenRow p := by
-  have hle : p ≤ (p + chunk - 1) * rbaPack :=
-    Nat.le_trans (Nat.le_mul_of_pos_right p rbaPack_pos)
-      (Nat.mul_le_mul_right _ (by lia [chunk_pos]))
+  have hle := le_add_chunk_sub_one_mul_rbaPack p
   refine Array.ext (by simp [size_sieves0, size_forbiddenRow, Nat.min_eq_left hle]) fun i h1 h2 ↦ ?_
   have hi : i < p := by rwa [size_forbiddenRow] at h2
   rw [Array.getElem_extract, ← getElem!_pos (sieves0 p) _ (by rw [size_sieves0]; lia),
