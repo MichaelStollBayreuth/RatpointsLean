@@ -549,19 +549,9 @@ theorem sieve1Rows_spec (p : Nat) (help0 help1 : UInt64) :
 /-- One doubling `x | x << i` of the pattern of period `p ∣ i` in the bits below `i < 64`. -/
 theorem PatternBits.or_shiftLeft {g : Nat → Bool} {p i : Nat} {x : UInt64} (hpi : p ∣ i)
     (hi : i < 64) (h : PatternBits g p 0 i x) :
-    PatternBits g p 0 (min (2 * i) 64) (x ||| x <<< UInt64.ofNat i) := by
-  intro t
-  rw [UInt64.toBitVec_or, BitVec.getLsbD_or, UInt64.getLsbD_shiftLeft_ofNat _ hi, h, h]
-  by_cases h1 : t < i
-  · simp [h1, show t < min (2 * i) 64 by lia, show ¬i ≤ t by lia]
-  · obtain ⟨q, rfl⟩ := hpi
-    have h2 : (t - p * q) % p = t % p := Nat.sub_mul_mod (by lia)
-    by_cases h4 : t < min (2 * (p * q)) 64
-    · simp [h1, h2, show t < 64 by lia, show p * q ≤ t by lia, show t - p * q < p * q by lia, h4]
-    · simp only [h1, decide_false, Bool.false_and, Bool.false_or, h4]
-      by_cases h5 : t < 64
-      · simp [h5, show ¬t - p * q < p * q by lia]
-      · simp [h5]
+    PatternBits g p 0 (min (2 * i) 64) (x ||| x <<< UInt64.ofNat i) := fun t ↦ by
+  rw [Nat.zero_add]
+  exact UInt64.getLsbD_or_shiftLeft_of_dvd hpi hi (fun u ↦ by rw [h u, Nat.zero_add]) t
 
 /-- The invariant of the loop of `Ratpoints.Sieve.sieveInit1` that doubles the pattern of period
 `p` through the word, on the word and the shift. -/
@@ -591,10 +581,8 @@ theorem PatternDoubleInvariant.exit {g : Nat → Bool} {p i mb : Nat} {x : UInt6
 numerator, is the row of the residue `b` of the table. -/
 theorem lanePattern_mod_eq_admits {t : Entry} {b : Nat} (hb0 : 0 < b) (hbp : b < t.p) (N : Nat) :
     lanePattern t.isFSquare t.p 0 t.inverses[b]! (N % t.p) = t.admits b N := by
-  have hx : ((N : Int) % (t.p : Int)).toNat = N % t.p := by
-    rw [← Int.natCast_emod, Int.toNat_natCast]
   simp only [lanePattern, Entry.admits, Nat.mod_eq_of_lt hbp, Nat.pos_iff_ne_zero.mp hb0,
-    ↓reduceIte, hx, Nat.zero_add]
+    ↓reduceIte, Int.toNat_natCast_emod, Nat.zero_add]
 
 /-- The row of words whose first `p` words are the windows of the pattern of the lanes, copied
 through all the words, is the closed form of the row of `0 < b < p`, and so is what the builder
@@ -892,7 +880,7 @@ theorem RingState.cur {g : Nat → Bool} {p wp ds s a1 n t : Nat} {help : Vector
       (((help.set! a1 x).set! t ((help.set! a1 x)[t]! >>> UInt64.ofNat (64 - ds)))[t]!) := by
   intro j
   rw [Vector.getElem!_set!_self (by lia), UInt64.getLsbD_shiftRight_ofNat _ (by lia),
-    Vector.getElem!_set!_ne (by lia) hta]
+    Vector.getElem!_set!_ne hta]
   have := h.2.2 0 hwp (64 - ds + j)
   rw [Nat.add_zero, Nat.mul_zero, Nat.add_zero, ← ht] at this
   rw [this]
@@ -917,14 +905,13 @@ theorem RingState.rest {g : Nat → Bool} {p wp ds s a1 n t : Nat} {help : Vecto
   rw [Nat.mod_eq_ite_of_lt_two_mul (a := a1 + (k + 2)) (q := wp + 1) (by lia)] at hidx
   rw [hidx]
   by_cases hk' : k + 1 < wp
-  · rw [Vector.getElem!_set!_ne (by split <;> lia) (by split <;> lia),
-      Vector.getElem!_set!_ne (by split <;> lia) (by split <;> lia)]
+  · rw [Vector.getElem!_set!_ne (by split <;> lia), Vector.getElem!_set!_ne (by split <;> lia)]
     have := h.2.2 (k + 1) hk' j
     rw [show a1 + 1 + (k + 1) = a1 + (k + 2) by lia,
       Nat.mod_eq_ite_of_lt_two_mul (a := a1 + (k + 2)) (q := wp + 1) (by lia)] at this
     rw [this, show s + ds + 64 * (k + 1) + j = s + 64 + ds + 64 * k + j by lia]
   · simp only [show wp + 1 ≤ a1 + (k + 2) by lia, ↓reduceIte]
-    rw [show a1 + (k + 2) - (wp + 1) = a1 by lia, Vector.getElem!_set!_ne (by lia) (Ne.symm hta),
+    rw [show a1 + (k + 2) - (wp + 1) = a1 by lia, Vector.getElem!_set!_ne (Ne.symm hta),
       Vector.getElem!_set!_self (by lia), hout j,
       show s + 64 + ds + 64 * k + j = s + j + p * 1 by lia, Nat.add_mul_mod_self_left]
 

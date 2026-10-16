@@ -318,7 +318,7 @@ theorem getElem!_loadBitArray_chunk {sv : Array SieveSpec} {cw : UInt64} {cur : 
   have hcl := Std.Legacy.Range.lt_of_toList_eq_append_cons hl
   intro j hj κ hκ
   rw [List.length_append, List.length_singleton] at hj
-  rw [getElem!_loadBitArray _ _ _ _ _ (rbaPack_mul_add_lt (by lia) hκ),
+  rw [getElem!_loadBitArray _ _ _ _ _ (Nat.mul_add_lt_mul_of_lt_of_lt' (by lia) hκ),
     Nat.mul_add_div rbaPack_pos, Nat.div_eq_of_lt hκ, Nat.add_zero, Nat.mul_add_mod,
     Nat.mod_eq_of_lt hκ]
   split
@@ -388,9 +388,9 @@ theorem ChunkAndInvariant.append_andBitArray {sv : Array SieveSpec} {cw : UInt64
   have hc := Std.Legacy.Range.length_eq_of_toList_eq_append_cons hl
   have hst : st[K]! = sv[K]! := by rw [hmod.2.2 K hKs, ite_eq_right (by lia)]
   intro j hj κ hκ
-  rw [getElem!_andBitArray _ _ _ _ (rbaPack_mul_add_lt hj hκ), Nat.mul_add_div rbaPack_pos,
-    Nat.div_eq_of_lt hκ, Nat.add_zero, Nat.mul_add_mod, Nat.mod_eq_of_lt hκ,
-    List.length_append, List.length_singleton]
+  rw [getElem!_andBitArray _ _ _ _ (Nat.mul_add_lt_mul_of_lt_of_lt' hj hκ),
+    Nat.mul_add_div rbaPack_pos, Nat.div_eq_of_lt hκ, Nat.add_zero, Nat.mul_add_mod,
+    Nat.mod_eq_of_lt hκ, List.length_append, List.length_singleton]
   split
   · subst_vars
     rw [h _ hj κ hκ, hst, ite_eq_right (by lia), ite_eq_left (by lia), partialReg_take_succ hKs]
@@ -629,7 +629,7 @@ theorem getElem!_loadBitArray_leg {sv : Array SieveSpec} {cw : UInt64} {w off cu
   have hcl := Std.Legacy.Range.lt_of_toList_eq_append_cons hl
   intro i hi κ hκ
   rw [List.length_append, List.length_singleton] at hi
-  rw [getElem!_loadBitArray _ _ _ _ _ (rbaPack_mul_add_lt (by lia) hκ),
+  rw [getElem!_loadBitArray _ _ _ _ _ (Nat.mul_add_lt_mul_of_lt_of_lt' (by lia) hκ),
     Nat.mul_add_div rbaPack_pos, Nat.div_eq_of_lt hκ, Nat.add_zero, Nat.mul_add_mod,
     Nat.mod_eq_of_lt hκ]
   split
@@ -649,9 +649,9 @@ theorem LegAndInvariant.append_andBitArray {sv : Array SieveSpec} {cw : UInt64} 
   have hc := Std.Legacy.Range.length_eq_of_toList_eq_append_cons hl
   have hKs := Std.Legacy.Range.lt_of_toList_eq_append_cons hl'
   intro i hi κ hκ
-  rw [getElem!_andBitArray _ _ _ _ (rbaPack_mul_add_lt (by lia) hκ), Nat.mul_add_div rbaPack_pos,
-    Nat.div_eq_of_lt hκ, Nat.add_zero, Nat.mul_add_mod, Nat.mod_eq_of_lt hκ,
-    List.length_append, List.length_singleton]
+  rw [getElem!_andBitArray _ _ _ _ (Nat.mul_add_lt_mul_of_lt_of_lt' (by lia) hκ),
+    Nat.mul_add_div rbaPack_pos, Nat.div_eq_of_lt hκ, Nat.add_zero, Nat.mul_add_mod,
+    Nat.mod_eq_of_lt hκ, List.length_append, List.length_singleton]
   split
   · subst_vars
     rw [h _ hi κ hκ, ite_eq_right (by lia), ite_eq_left (by lia), partialReg_take_succ hKs,

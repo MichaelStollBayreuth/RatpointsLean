@@ -439,7 +439,7 @@ theorem productCopies_storeBitArray {e : SieveEntry} {frows : Array (Array UInt6
     (Nat.mul_le_mul_right _ (by lia [chunk_pos])))]
   split
   · rename_i hyc
-    rw [h _ (rbaPack_mul_add_lt (show cur < e.p + pref.length by lia [pre.pos]) hκ)]
+    rw [h _ (Nat.mul_add_lt_mul_of_lt_of_lt' (show cur < e.p + pref.length by lia [pre.pos]) hκ)]
     congr 1
     have hy' : y = rbaPack * cur + y % rbaPack + e.p * rbaPack := by
       rw [hyc, Nat.mul_add, Nat.mul_comm rbaPack e.p] at hyq

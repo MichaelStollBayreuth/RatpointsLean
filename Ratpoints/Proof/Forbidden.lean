@@ -925,12 +925,10 @@ theorem ExaminePrimesInvariant.push {c : List ℤ} {d maxForbidden bHigh k : ℕ
       store' = store.insertIfNew (.prime primeTable[k]!) (primeRows primeTable[k]!)) :
     ExaminePrimesInvariant c d maxForbidden bHigh (k + 1) (tables.push e) ba' val' store' := by
   obtain ⟨hsz, ht, -, -, -, hst⟩ := h
-  refine ⟨by simp [hsz], fun i hi ↦ ?_, hba, hval, hsize, hst.of_eq_or_eq hk hs⟩
-  rw [Array.getElem_push]
-  split
-  · exact ht i _
-  · obtain rfl : i = k := by simp at hi; lia
-    exact eq_examinePrime_of_lt_numPrimes_of_run_examinePrime?_eq_some hk he
+  exact ⟨by simp [hsz],
+    Array.forall_getElem_push (P := fun i t ↦ t = examinePrime c d primeTable[i]!) ht
+      (hsz ▸ eq_examinePrime_of_lt_numPrimes_of_run_examinePrime?_eq_some hk he),
+    hba, hval, hsize, hst.of_eq_or_eq hk hs⟩
 
 -- The position at the cursor of the loop of `Ratpoints.Sieve.examinePrimes` is that of a prime of
 -- the table, the number of positions done.

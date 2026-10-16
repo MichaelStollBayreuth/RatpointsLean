@@ -20,12 +20,13 @@ shift, the mask `x >>> 63` with the smaller and the distance of two non-negative
 without a branch, the odd part of a positive word by the lowest set bit of the word read as
 unsigned, its lowest bit, the absolute value, and the words of an integer and of a natural number
 below `2 ^ 63`. For the classes of the packing: the bits of a word and-ed with the complement of a
-mask and of a word or-ed with itself shifted, `x ||| x <<< s`, which doubles a pattern of period
-`P ∣ s`. For the rows of offsets: the bit `(x >>> j) &&& 1` of a word, and the 128 bits of two words
-after one bit is set. For the bits of an interval: the sums, differences and negations of `long`s
-that do not overflow, the mask `(1 <<< k) - 1` and the and with it, the Euclidean remainder modulo
-`2 ^ k` also of a negative `long`. The lemmas on vectors, arrays, lists, ranges, natural numbers and
-integers are in `Ratpoints.Proof.Containers`.
+mask. For the classes of the packing and the rows of a prime: the bits of a word or-ed with itself
+shifted, `x ||| x <<< s`, which doubles a pattern of period `P ∣ s`. For the rows of offsets: the
+bit `(x >>> j) &&& 1` of a word, and the 128 bits of two words after one bit is set. For the bits of
+an interval: the sums, differences and negations of `long`s that do not overflow, the mask
+`(1 <<< k) - 1` and the and with it, the Euclidean remainder modulo `2 ^ k` also of a negative
+`long`. The lemmas on vectors, arrays, lists, ranges, natural numbers and integers are in
+`Ratpoints.Proof.Containers`.
 
 ## Main statements
 
@@ -259,38 +260,21 @@ theorem getLsbD_or_shiftLeft (x : UInt64) {s : Nat} (hs : s < 64) (t : Nat) :
     (x ||| x <<< UInt64.ofNat s).toBitVec.getLsbD t =
       (x.toBitVec.getLsbD t ||
         (decide (t < 64) && decide (s ≤ t) && x.toBitVec.getLsbD (t - s))) := by
-  have hs' : (UInt64.ofNat s).toBitVec.toNat % (64 : BitVec 64).toNat = s := by
-    simp [UInt64.toBitVec_ofNat']
-    lia
-  rw [UInt64.toBitVec_or, BitVec.getLsbD_or, UInt64.toBitVec_shiftLeft, BitVec.shiftLeft_eq',
-    BitVec.getLsbD_shiftLeft, BitVec.toNat_umod, hs']
-  grind
+  rw [UInt64.toBitVec_or, BitVec.getLsbD_or, getLsbD_shiftLeft_ofNat _ hs]
 
-/-- One doubling of a pattern of period `P ∣ s`, `2 s ≤ 64`, that fills the bits below `s`: the
-pattern now fills the bits below `2 s`. -/
-theorem getLsbD_or_shiftLeft_of_dvd {x p0 : UInt64} {s P : Nat} (hPs : P ∣ s) (hs : 2 * s ≤ 64)
-    (hs0 : 0 < s) (hx : ∀ t, x.toBitVec.getLsbD t = (decide (t < s) && p0.toBitVec.getLsbD (t % P)))
-    (t : Nat) :
+/-- One doubling of a pattern `g` of period `P ∣ s`, `s < 64`, that fills the bits below `s`: the
+pattern now fills the bits below `min (2 s) 64`. -/
+theorem getLsbD_or_shiftLeft_of_dvd {x : UInt64} {g : Nat → Bool} {s P : Nat} (hPs : P ∣ s)
+    (hs : s < 64) (hx : ∀ t, x.toBitVec.getLsbD t = (decide (t < s) && g (t % P))) (t : Nat) :
     (x ||| x <<< UInt64.ofNat s).toBitVec.getLsbD t =
-      (decide (t < 2 * s) && p0.toBitVec.getLsbD (t % P)) := by
-  rw [UInt64.getLsbD_or_shiftLeft _ (by lia), hx, hx]
-  by_cases h1 : t < s
-  · simp [h1, show t < 2 * s by lia, Nat.not_le.mpr h1]
-  · have h2 : (t - s) % P = t % P := by
-      obtain ⟨q, rfl⟩ := hPs
-      rw [Nat.sub_mul_mod (by lia)]
-    simp only [h1, decide_false, Bool.false_and, Bool.false_or, h2]
-    by_cases h4 : t < 2 * s
-    · simp [h4, show t < 64 by lia, show s ≤ t by lia, show t - s < s by lia]
-    · simp [h4, show ¬t - s < s by lia]
+      (decide (t < min (2 * s) 64) && g (t % P)) := by
+  rw [getLsbD_or_shiftLeft _ hs, hx, hx]
+  obtain ⟨q, rfl⟩ := hPs
+  grind [Nat.sub_mul_mod]
 
 theorem shiftRight_and_one_beq_zero (x : UInt64) {j : Nat} (hj : j < 64) :
     (x >>> UInt64.ofNat j &&& 1 == 0) = !x.toBitVec.getLsbD j := by
-  have : (UInt64.ofNat j).toBitVec.toNat % (64 : BitVec 64).toNat = j := by
-    simp [UInt64.toBitVec_ofNat']
-    lia
-  rw [Bool.eq_iff_iff, beq_iff_eq, UInt64.and_one_eq_zero_iff, UInt64.toBitVec_shiftRight,
-    BitVec.ushiftRight_eq', BitVec.getLsbD_ushiftRight, BitVec.toNat_umod, this]
+  rw [Bool.eq_iff_iff, beq_iff_eq, and_one_eq_zero_iff, getLsbD_shiftRight_ofNat _ hj, Nat.add_zero]
   simp
 
 /-- Setting bit `K₀` of the 128 bits of the two words `seen` sets the bit `K < 128` exactly when

@@ -326,8 +326,8 @@ theorem DoubleInvariant.or_shiftLeft {k s mb : Nat} {p0 packed : UInt64} (hk : k
   have h3 : 2 ^ (j + 1) ≤ 2 ^ 6 := Nat.pow_le_pow_right (by decide) hj6
   rw [Nat.pow_succ] at h3
   have : (2 : Nat) ^ 6 = 64 := rfl
-  exact ⟨by lia, ⟨j + 1, by rw [Nat.pow_succ]; lia, by lia, by lia⟩, nofun,
-    UInt64.getLsbD_or_shiftLeft_of_dvd hPs (by lia) hj0 hb⟩
+  exact ⟨by lia, ⟨j + 1, by rw [Nat.pow_succ]; lia, by lia, by lia⟩, nofun, fun t ↦
+    (UInt64.getLsbD_or_shiftLeft_of_dvd hPs hs hb t).trans (by rw [Nat.min_eq_left (by lia)])⟩
 
 theorem DoubleInvariant.exit {k s mb : Nat} {p0 packed : UInt64} (hs : ¬s < 64)
     (h : 64 - s = mb ∧ DoubleInvariant k p0 false (packed, s)) :

@@ -132,28 +132,16 @@ theorem getElem!_closedRow_mod {adm : Nat → Int → Bool} {m r : Nat} (hm : 0 
     lia
   rw [key, hadm]
 
-/-- Word `κ < rbaPack` of bit array `j < c` of `c` bit arrays is below `c rbaPack`. -/
-theorem rbaPack_mul_add_lt {c j κ : Nat} (hj : j < c) (hκ : κ < rbaPack) :
-    rbaPack * j + κ < c * rbaPack := by
-  rw [Nat.mul_comm c]
-  lia [Nat.mul_le_mul_left rbaPack (show j + 1 ≤ c from hj)]
-
-/-- Word `κ < rbaPack` of bit array `x` is word `κ` of bit array `x mod p` in the words modulo
-`rbaPack p`. -/
-theorem rbaPack_mul_add_mod {x κ p : Nat} (hκ : κ < rbaPack) :
-    (rbaPack * x + κ) % (rbaPack * p) = rbaPack * (x % p) + κ := by
-  rw [Nat.mod_mul, Nat.mul_add_mod, Nat.mod_eq_of_lt hκ, Nat.mul_add_div rbaPack_pos,
-    Nat.div_eq_of_lt hκ, Nat.add_zero, Nat.add_comm]
-
 /-- The row of a sieve spec that is the closed form of a test of period `p > 0` repeats its first
 `p` bit arrays where the chunked first stage reads it. -/
 theorem wraps_closedRow {adm : Nat → Int → Bool} {s : SieveSpec} {r : Nat} (hp : 0 < s.p)
     (hadm : ∀ a k, adm r (a + s.p * k) = adm r a) (hrow : s.row = closedRow adm s.p r) :
     s.Wraps := by
   intro x hx κ hκ
-  rw [hrow, getElem!_closedRow_mod hp hadm (rbaPack_mul_add_lt hx hκ),
-    getElem!_closedRow_mod hp hadm (rbaPack_mul_add_lt (by lia [Nat.mod_lt x hp, chunk_pos]) hκ),
-    Nat.mul_comm s.p, rbaPack_mul_add_mod hκ, rbaPack_mul_add_mod hκ, Nat.mod_mod]
+  rw [hrow, getElem!_closedRow_mod hp hadm (Nat.mul_add_lt_mul_of_lt_of_lt' hx hκ),
+    getElem!_closedRow_mod hp hadm
+      (Nat.mul_add_lt_mul_of_lt_of_lt' (by lia [Nat.mod_lt x hp, chunk_pos]) hκ),
+    Nat.mul_comm s.p, Nat.mul_add_mod_mul_of_lt hκ, Nat.mul_add_mod_mul_of_lt hκ, Nat.mod_mod]
 
 /-- The sieve spec of the closed form of a row of the sieve entry `e`, of a modulus `p > 0`, with
 any offset, start and end, repeats its first bit arrays where the chunked first stage reads it. -/
@@ -333,7 +321,7 @@ theorem sieves0_eq_closedRow (e : Entry) (hp : 0 < e.p) : sieves0 e.p = closedRo
   eq_closedRow (size_sieves0 e.p) fun j hj t ↦ by
     have hc : ((64 * (j : Int) + t) % (e.p : Int)).toNat = (64 * j + t) % e.p := by
       rw [show 64 * (j : Int) + t = ((64 * j + t : Nat) : Int) by push_cast; rfl,
-        ← Int.natCast_emod, Int.toNat_natCast]
+        Int.toNat_natCast_emod]
     rw [getElem!_sieves0 hj, getLsbD_getElem!_forbiddenRow (Nat.mod_lt _ hp), Entry.admits]
     simp only [Nat.zero_mod, ↓reduceIte, hc]
     rw [Nat.add_mod, Nat.mul_mod, Nat.mod_mod, ← Nat.mul_mod, ← Nat.add_mod]

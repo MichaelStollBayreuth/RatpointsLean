@@ -11,6 +11,7 @@ public import Ratpoints.Proof.Stages
 
 import Ratpoints.Mathlib.Data.List.Basic
 import Ratpoints.Proof.BruteForce
+import Ratpoints.Proof.Containers
 import Ratpoints.Proof.Denominators
 import Ratpoints.Proof.Params
 import Ratpoints.Proof.Setup
@@ -540,21 +541,18 @@ private theorem IsModulusEntry.pos_of_prime_mem {c : List ℤ} {m : ℕ} {s : Si
     (h : IsModulusEntry c m s) (t : Entry) (ht : .prime t ∈ s.factors) : 0 < t.p :=
   (h.buildable _ ht).1
 
-/-- The references and the kinds of builder of the entries made after the next entry `e`, of the
-position `entries.size`. -/
+/-- The references and the kinds of builder of the entries are those of
+`Ratpoints.Sieve.SieveEntry.refInit` at their positions also after the next entry `e`, made at the
+position `entries.size`, is pushed. -/
 theorem refInit_push {entries : Array SieveEntry}
-    (h : ∀ n (h : n < entries.size),
+    (h : ∀ n (hn : n < entries.size),
       (entries[n].ref, entries[n].init) = SieveEntry.refInit n entries[n].factors)
     {e : SieveEntry} (he : (e.ref, e.init) = SieveEntry.refInit entries.size e.factors) :
-    ∀ n (h : n < (entries.push e).size),
+    ∀ n (hn : n < (entries.push e).size),
       ((entries.push e)[n].ref, (entries.push e)[n].init) =
-        SieveEntry.refInit n (entries.push e)[n].factors := by
-  intro n hn
-  rw [Array.getElem_push]
-  split
-  · exact h n ‹_›
-  · obtain rfl : n = entries.size := by simp at hn; lia
-    exact he
+        SieveEntry.refInit n (entries.push e)[n].factors :=
+  Array.forall_getElem_push
+    (P := fun n (s : SieveEntry) ↦ (s.ref, s.init) = SieveEntry.refInit n s.factors) h he
 
 /-- The step of the loop of `Ratpoints.sievingInfo` at a modulus `m`, whose sieve entry
 `Ratpoints.makeModulus?` makes at the position `entries.size` (`Ratpoints.makeModulus?_spec`), with

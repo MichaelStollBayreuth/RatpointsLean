@@ -23,36 +23,38 @@ fixed Boolean with a test, the tests of a list that agree on its entries, the in
 that lie in a smaller one or between two bounds, the gcd of the absolute values of a list of
 integers as a left fold, the length of the list of a range and the position of the cursor of a loop
 over it, the cursor of a loop over an array as one of its entries, the bound `y < (n + 1) k` for
-`y < n k`, the residues modulo `p` of the integers from `a` on, the residue of an integer modulo
-`p`, below `p`, read off its residue modulo a multiple of `p` and shifted by a natural number, exact
-quotients of integers, the numerators and the denominators of the set bits of a list of words, read
-in turn, the numbers of a range between two bounds, bit 1 of odd numbers, the gcd of half an even
-number with an odd one, a residue below `2 q` modulo `q` by one subtraction, among them the sum of
-two residues and the position after another in a ring, the estimate of a quotient by Barrett's
-reduction, the bounds of a step of Horner's rule and of a power of a number below a power of 2, the
-entries of an array of Booleans after a fold of `setIfInBounds · true`, the absolute value of the
-step of the cofactors of the extended Euclidean algorithm, the divisors of the gcd of `b` and a
-residue `f ≡ a (mod b)`, the remainder and the quotient by a multiplication with a reciprocal, the
-high half of a product from the products of the halves of its factors, the gcd of the odd part of a
-number with an odd one and the step of the binary algorithm for the gcd, the residue modulo a
-divisor of `b` of a numerator prime to `b`, C's remainder, which truncates, made non-negative, and
-the residue of `(a mod p) b` with the bound `|a b| + H ≤ p H` for `|a| ≤ H` and `b < p`. For the
-rows under a unit: the residues under a unit `u` with an inverse modulo `q`, zero or not, modulo a
-divisor of `q` too, the residue `x i mod q` read with an inverse `i` of `r`, the residue
-`u (b v mod p)` for an inverse `v` of `u`, and the residue of `u a` for an integer `a`. For the
-loops over two lists: the cursor of the second list of a loop `for x in l, y in l.map f`, and a list
-whose next element is known. For the classes of the packing: the residues in a packing of the stride
-`2 ^ k` dividing 64, the place `(a - a₀) mod n / m` of a residue `a ≡ a₀ (mod m)` below `n = m P`,
-and a residue `a + m j` modulo 64. For the rows of offsets: the multiple `m ⌈R / m⌉` of `m > 0`,
-from `R` to below `R + m`, the residue `(a y mod p + c) M` of `a` for a multiple `c` of `p` and an
-inverse `M` of `y`, and the entries of a vector after `Vector.set`, of an array of `none`s and of an
-array whose list is a map. For the residues and the bits of an interval: the numbers of a range in
-one class modulo `m`, the multiples of `m` among `N + (m - r)`, a numerator `i - H` in a class
-modulo `m`, the quotient by `m > 0` of a number above a negative bound, which stays above it, the
-quotients of the split form of `numerators_to_bits`, its carries and their sums with a quotient, in
-the range of a `long`, the multiples of a divisor of `N` at or below a number `≥ -N` and above a
-number `< N`, which lie in `[-N, N]`, and the product `a ^ m a ^ (n - m) = a ^ n` of integers. The
-lemmas on 64-bit words are in `Ratpoints.Proof.Bits`.
+`y < n k`, word `κ < k` of block `j` of blocks of `k` words, below `c k` for `j < c` and modulo
+`k p` word `κ` of block `j mod p`, the residues modulo `p` of the integers from `a` on, the residue
+of a natural number modulo another as an integer, the residue of an integer modulo `p`, below `p`,
+read off its residue modulo a multiple of `p` and shifted by a natural number, exact quotients of
+integers, the numerators and the denominators of the set bits of a list of words, read in turn, the
+numbers of a range between two bounds, bit 1 of odd numbers, the gcd of half an even number with an
+odd one, a residue below `2 q` modulo `q` by one subtraction, among them the sum of two residues and
+the position after another in a ring, the estimate of a quotient by Barrett's reduction, the bounds
+of a step of Horner's rule and of a power of a number below a power of 2, the entries of an array of
+Booleans after a fold of `setIfInBounds · true`, the absolute value of the step of the cofactors of
+the extended Euclidean algorithm, the divisors of the gcd of `b` and a residue `f ≡ a (mod b)`, the
+remainder and the quotient by a multiplication with a reciprocal, the high half of a product from
+the products of the halves of its factors, the gcd of the odd part of a number with an odd one and
+the step of the binary algorithm for the gcd, the residue modulo a divisor of `b` of a numerator
+prime to `b`, C's remainder, which truncates, made non-negative, and the residue of `(a mod p) b`
+with the bound `|a b| + H ≤ p H` for `|a| ≤ H` and `b < p`. For the rows under a unit: the residues
+under a unit `u` with an inverse modulo `q`, zero or not, modulo a divisor of `q` too, the residue
+`x i mod q` read with an inverse `i` of `r`, the residue `u (b v mod p)` for an inverse `v` of `u`,
+and the residue of `u a` for an integer `a`. For the loops over two lists: the cursor of the second
+list of a loop `for x in l, y in l.map f`, and a list whose next element is known. For the classes
+of the packing: the residues in a packing of the stride `2 ^ k` dividing 64, the place
+`(a - a₀) mod n / m` of a residue `a ≡ a₀ (mod m)` below `n = m P`, and a residue `a + m j` modulo
+64. For the rows of offsets: the multiple `m ⌈R / m⌉` of `m > 0`, from `R` to below `R + m`, the
+residue `(a y mod p + c) M` of `a` for a multiple `c` of `p` and an inverse `M` of `y`, and the
+entries of a vector after `Vector.set`, of an array of `none`s and of an array whose list is a map.
+For the residues and the bits of an interval: the numbers of a range in one class modulo `m`, the
+multiples of `m` among `N + (m - r)`, a numerator `i - H` in a class modulo `m`, the quotient by
+`m > 0` of a number above a negative bound, which stays above it, the quotients of the split form of
+`numerators_to_bits`, its carries and their sums with a quotient, in the range of a `long`, the
+multiples of a divisor of `N` at or below a number `≥ -N` and above a number `< N`, which lie in
+`[-N, N]`, and the product `a ^ m a ^ (n - m) = a ^ n` of integers. The lemmas on 64-bit words are
+in `Ratpoints.Proof.Bits`.
 
 ## Main statements
 
@@ -89,7 +91,8 @@ lemmas on 64-bit words are in `Ratpoints.Proof.Bits`.
 * `Array.getElem!_mem`: an entry in range of an array is a member of it.
 * `Array.getElem!_foldl_setIfInBounds`, `Array.any_id_eq_true_of_getElem!_eq_true`: the entries of
   an array of Booleans that a fold of `setIfInBounds · true` marks, and an array with a true entry.
-* `Array.forall_mem_toList_push`: a property of the members of the list of an array after a push.
+* `Array.forall_mem_toList_push`: a property of the members of the list of an array after a push;
+  `Array.forall_getElem_push`: a predicate on the indices and the entries of an array after a push.
 * `Array.mem_of_forIn_toList_eq_append_cons`: the cursor of a loop over an array is one of its
   entries.
 * `List.foldl_gcd_natAbs_dvd_natAbs`: the gcd of the absolute values of the entries of a list, as a
@@ -111,6 +114,8 @@ lemmas on 64-bit words are in `Ratpoints.Proof.Bits`.
   `⌊u ⌊(N - 1) / p⌋ / N⌋` of `⌊u / p⌋` for `u < N` is the quotient or one less.
 * `Nat.mul_add_lt_mul_of_lt`, `Nat.pow_lt_two_pow_of_lt`: a step of Horner's rule multiplies a bound
   by `p`, and `p ^ n < 2 ^ N` for `p < 2 ^ b`, `n ≠ 0` and `b n ≤ N`.
+* `Nat.mul_add_lt_mul_of_lt_of_lt'`, `Nat.mul_add_mod_mul_of_lt`: word `κ < k` of block `j < c` of
+  `c` blocks of `k` words is below `c k`, and modulo `k p` it is word `κ` of block `j mod p`.
 * `Int.natAbs_sub_mul_of_mul_nonpos`: `|a - q b| = |a| + q |b|` for `a b ≤ 0` and `q ≥ 0`.
 * `Int.dvd_natAbs_of_dvd_gcd`: a divisor of the gcd of `f ≡ a (mod b)` and `b` divides `a`.
 * `Nat.mul_mod_mul_div_eq_mod_of_mul_eq_add`, `Nat.mul_div_eq_div_of_mul_eq_add`: the remainder
@@ -169,8 +174,10 @@ theorem getElem!_set!_self {α : Type u} [Inhabited α] {n i : Nat} {xs : Vector
   rw [getElem!_set! hi, ite_eq_left rfl]
 
 theorem getElem!_set!_ne {α : Type u} [Inhabited α] {n i j : Nat} {xs : Vector α n} {x : α}
-    (hj : j < n) (h : i ≠ j) : (xs.set! i x)[j]! = xs[j]! := by
-  rw [getElem!_set! hj, ite_eq_right h]
+    (h : i ≠ j) : (xs.set! i x)[j]! = xs[j]! := by
+  by_cases hj : j < n
+  · rw [getElem!_set! hj, ite_eq_right h]
+  · rw [getElem!_neg (xs.set! i x) j hj, getElem!_neg xs j hj]
 
 /-- Setting the entries `base, …, base + k - 1` one after the other, entry `base + l` to `g l` of
 its value. -/
@@ -276,6 +283,17 @@ theorem getElem!_push_lt {α : Type u} [Inhabited α] {xs : Array α} {x : α} {
 theorem getElem!_push_eq {α : Type u} [Inhabited α] {xs : Array α} {x : α} :
     (xs.push x)[xs.size]! = x := by
   simp
+
+/-- A predicate on the indices and the entries of `xs` that holds at every index of `xs`, and at
+`xs.size` for `a`, holds at every index of `xs.push a`. -/
+theorem forall_getElem_push {α : Type u} {P : Nat → α → Prop} {xs : Array α} {a : α}
+    (h : ∀ i (hi : i < xs.size), P i xs[i]) (ha : P xs.size a) (i : Nat)
+    (hi : i < (xs.push a).size) : P i (xs.push a)[i] := by
+  rw [getElem_push]
+  split
+  · exact h i ‹_›
+  · obtain rfl : i = xs.size := by simp at hi; lia
+    exact ha
 
 theorem getElem!_map {α : Type u} {β : Type v} [Inhabited α] [Inhabited β] {f : α → β}
     (hf : f default = default) (xs : Array α) (i : Nat) : (xs.map f)[i]! = f xs[i]! := by
@@ -607,6 +625,19 @@ theorem mul_add_lt_mul_of_lt {s a c P p : Nat} (hs : s < P) (ha : a < p) (hc : c
     _ = (s + 1) * p := (Nat.succ_mul s p).symm
     _ ≤ P * p := Nat.mul_le_mul_right p hs
 
+/-- Word `κ < k` of block `j < c` of `c` blocks of `k` words is below `c k`: the statement of
+Batteries' `Nat.mul_add_lt_mul_of_lt_of_lt`, for the files that use Lean core only. -/
+theorem mul_add_lt_mul_of_lt_of_lt' {k c j κ : Nat} (hj : j < c) (hκ : κ < k) :
+    k * j + κ < c * k := by
+  rw [Nat.mul_comm c]
+  lia [Nat.mul_le_mul_left k (show j + 1 ≤ c from hj)]
+
+/-- Word `κ < k` of block `x` is word `κ` of block `x mod p` in the words modulo `k p`. -/
+theorem mul_add_mod_mul_of_lt {k x κ p : Nat} (hκ : κ < k) :
+    (k * x + κ) % (k * p) = k * (x % p) + κ := by
+  rw [Nat.mod_mul, Nat.mul_add_mod, Nat.mod_eq_of_lt hκ, Nat.mul_add_div (Nat.zero_lt_of_lt hκ),
+    Nat.div_eq_of_lt hκ, Nat.add_zero, Nat.add_comm]
+
 theorem pow_lt_two_pow_of_lt {p b n N : Nat} (hp : p < 2 ^ b) (hn : b * n ≤ N) (hn0 : n ≠ 0) :
     p ^ n < 2 ^ N :=
   calc p ^ n < (2 ^ b) ^ n := Nat.pow_lt_pow_left hp hn0
@@ -913,6 +944,10 @@ theorem toNat_add_add_emod {a : Int} {p i k : Nat} (hi : i < p) :
 
 theorem toNat_emod_lt (a : Int) {p : Nat} (hp : 0 < p) : (a % (p : Int)).toNat < p :=
   (toNat_lt' hp).mpr (emod_lt_of_pos a (by lia))
+
+@[simp]
+theorem toNat_natCast_emod (a b : Nat) : ((a : Int) % (b : Int)).toNat = a % b := by
+  rw [← natCast_emod, toNat_natCast]
 
 theorem toNat_emod_add_mod (a : Int) (x : Nat) {p : Nat} (hp : 0 < p) :
     ((a % (p : Int)).toNat + x) % p = ((a + x) % (p : Int)).toNat := by

@@ -598,10 +598,8 @@ theorem patBit_mod_eq_admits_of_unit {pw : Power} {b : Nat} {pat : Array UInt64}
     (hpat : ∀ y, patBit pat y = (decide (y < pw.m) && bitAt pw.fsq (y * pw.inv[b]! % pw.m)))
     (N : Nat) : patBit pat (N % pw.m) = pw.admits b N := by
   have hm : 0 < pw.m := by lia
-  have hx : ((N : Int) % (pw.m : Int)).toNat = N % pw.m := by
-    rw [← Int.natCast_emod, Int.toNat_natCast]
   rw [hpat, Power.admits]
-  simp [hx, Nat.mod_eq_of_lt hb, hbp, Nat.mod_lt _ hm]
+  simp [Nat.mod_eq_of_lt hb, hbp, Nat.mod_lt _ hm]
 
 /-- The pattern of a residue `b < m` divisible by `p` read at the residue of a numerator is the row
 of `b` of the prime power. -/
@@ -611,10 +609,8 @@ theorem patBit_mod_eq_admits_of_dvd {pw : Power} {b : Nat} {pat : Array UInt64} 
       (y % pw.p != 0 && bitAt pw.gsq (b * pw.inv[y]! % pw.m))))
     (N : Nat) : patBit pat (N % pw.m) = pw.admits b N := by
   have hm : 0 < pw.m := by lia
-  have hx : ((N : Int) % (pw.m : Int)).toNat = N % pw.m := by
-    rw [← Int.natCast_emod, Int.toNat_natCast]
   rw [hpat, Power.admits]
-  simp only [hx, Nat.mod_eq_of_lt hb, hbp, ↓reduceIte]
+  simp only [Int.toNat_natCast_emod, Nat.mod_eq_of_lt hb, hbp, ↓reduceIte]
   rcases Nat.eq_zero_or_pos (N % pw.m) with h0 | h0
   · simp [h0]
   · simp [show 1 ≤ N % pw.m by lia, Nat.mod_lt _ hm]
@@ -979,7 +975,8 @@ theorem getLsbD_factorWord {e : SieveEntry} {frows : Array (Array UInt64)} {b i 
       (decide (t < 64) && e.factors[i]!.admits b (64 * y + t)) := by
   have hj : rbaPack * (y / rbaPack % e.factors[i]!.modulus) + y % rbaPack <
       (e.factors[i]!.modulus + chunk - 1) * rbaPack :=
-    Nat.lt_of_lt_of_le (rbaPack_mul_add_lt (Nat.mod_lt _ hq) (Nat.mod_lt _ rbaPack_pos))
+    Nat.lt_of_lt_of_le
+      (Nat.mul_add_lt_mul_of_lt_of_lt' (Nat.mod_lt _ hq) (Nat.mod_lt _ rbaPack_pos))
       (Nat.mul_le_mul_right _ (by lia [chunk_pos]))
   rw [factorWord, hf, getLsbD_closedRow _ _ _ hj, Factor.admits_mod_left]
   congr 1

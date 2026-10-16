@@ -336,7 +336,8 @@ theorem SieveSpec.getLsbD_wordAt_mk (e : SieveEntry) (b : Nat) (hp : 0 < e.p) (o
       (decide (t < 64) && e.admits b (rbaLength * (w0 + off) + 64 * y + t)) := by
   have hu : ((w0 + off + (y / rbaPack : Nat)) % (e.p : Int)).toNat < e.p + chunk - 1 := by
     lia [Int.toNat_emod_lt (w0 + off + (y / rbaPack : Nat)) hp, chunk_pos]
-  rw [wordAt, getLsbD_closedRow _ _ _ (rbaPack_mul_add_lt hu (Nat.mod_lt y rbaPack_pos)),
+  rw [wordAt,
+    getLsbD_closedRow _ _ _ (Nat.mul_add_lt_mul_of_lt_of_lt' hu (Nat.mod_lt y rbaPack_pos)),
     e.admits_congr b (emod_wordIndex e.p hp _ y t)]
 
 /-- The rows of the sieve spec `s` read the test `f` of the bits: bit `t` of the row word of word
