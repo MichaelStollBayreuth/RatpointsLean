@@ -204,11 +204,6 @@ def Factor.Builds : Factor → Nat → Prop
   | .prime t, b => 0 < b ∧ b < t.p
   | .power pw, b => b < pw.m
 
-theorem Factor.Builds.lt_modulus {f : Factor} {b : Nat} (h : f.Builds b) : b < f.modulus := by
-  cases f with
-  | prime t => exact h.2
-  | power pw => exact h
-
 theorem initFactorRow_pre_sieve1 {t : Entry} {b : Nat} (hp : t.p < 64)
     (pre : (Factor.prime t).Buildable ∧ (Factor.prime t).Builds b) :
     0 < b ∧ b < t.p ∧ t.p < 64 ∧ t.inverses[b]! < t.p :=
@@ -380,10 +375,6 @@ structure ProductRowsPre (e : SieveEntry) (store : RowStore) : Prop where
   /-- The moduli of the factors divide the modulus. -/
   dvd : ∀ f ∈ e.factors, f.modulus ∣ e.p
 
-theorem ProductRowsPre.factorRowsPre {e : SieveEntry} {store : RowStore}
-    (h : ProductRowsPre e store) : FactorRowsPre e store :=
-  h.factorRows
-
 theorem sieveInitProduct_pre_copy {e : SieveEntry} {store : RowStore}
     (pre : ProductRowsPre e store) :
     0 < e.factors[0]!.modulus ∧ e.factors[0]!.modulus ∣ e.p ∧
@@ -501,7 +492,7 @@ theorem sieveInitProduct_spec (e : SieveEntry) (b : Nat) (store : RowStore) :
   | inv1 => fun done _ row ↦ ∀ y < (e.p + done.length) * rbaPack,
       row[y]! = productWord e frows e.factors.length (y % (e.p * rbaPack))
   all_goals first
-    | exact ProductRowsPre.factorRowsPre ‹_›
+    | exact ProductRowsPre.factorRows ‹_›
     | exact sieveInitProduct_pre_copy ‹_›
     | exact sieveInitProduct_pre_and ‹_› ‹_›
     | exact productCopies_init ‹_› ‹_›
@@ -935,7 +926,7 @@ theorem RowStore.PrimeZeroRows.row?_addTables_ne_none {s : RowStore} (h : s.Prim
 
 /-! ### The rows of the sieve specs of a denominator -/
 
-theorem SieveSpec.eq_with_row_stop {s : SieveSpec} {row : Array UInt64} {stop : Nat}
+private theorem SieveSpec.eq_with_row_stop {s : SieveSpec} {row : Array UInt64} {stop : Nat}
     (hr : s.row = row) (hs : s.stop = stop) : s = { s with row, stop } := by
   subst hr hs
   rfl

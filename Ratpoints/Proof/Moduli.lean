@@ -430,13 +430,15 @@ def GsqInvariant (c : List ℤ) (d p m : ℕ) : Std.WP.WhileInvariant (Array UIn
     IsSquare (∑ k ∈ Finset.range (d + 1), (c.getD k 0 : ZMod m) * t ^ (d + d % 2 - k)) →
       bitAt s.1 t = true) ∧ (exit = true → m ≤ s.2)
 
-theorem size_eq_of_eq_replicate {sq fsq gsq : Array UInt64}
+-- The three bit arrays of `Ratpoints.Sieve.examinePower` as its clearing loop starts and leaves
+-- them: `Ratpoints.modWords` zero words each.
+private theorem size_eq_of_eq_replicate {sq fsq gsq : Array UInt64}
     (h : (sq, fsq, gsq) = (.replicate modWords 0, .replicate modWords 0, .replicate modWords 0)) :
     sq.size = modWords ∧ fsq.size = modWords ∧ gsq.size = modWords := by
   simp only [Prod.mk.injEq] at h
   simp [h]
 
-theorem set!_eq_replicate {sq fsq gsq : Array UInt64} (k : ℕ)
+private theorem set!_eq_replicate {sq fsq gsq : Array UInt64} (k : ℕ)
     (h : (sq, fsq, gsq) = (.replicate modWords 0, .replicate modWords 0, .replicate modWords 0)) :
     (sq.set! k 0, fsq.set! k 0, gsq.set! k 0) =
       (.replicate modWords 0, .replicate modWords 0, .replicate modWords 0) := by

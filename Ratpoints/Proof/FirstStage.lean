@@ -682,7 +682,9 @@ theorem legAndInvariant_init {sv : Array SieveSpec} {cw : UInt64} {w off cur : N
   rw [h i hi κ hκ, hK]
   simp
 
-theorem leg_load_done {sv : Array SieveSpec} {cw : UInt64} {w off i κ : Nat}
+-- After the load loop of `Ratpoints.Sieve.tailLeg`, the registers hold the class word and-ed with
+-- the row of the first modulus, in the form the loop over the further moduli starts from.
+private theorem leg_load_done {sv : Array SieveSpec} {cw : UInt64} {w off i κ : Nat}
     {reg : Vector UInt64 (8 * rbaPack)}
     (h : ∀ i < (ForIn.toList [0:w]).length, ∀ κ < rbaPack,
       reg[rbaPack * i + κ]! = partialReg (sv.toList.take 1) cw (off + i) κ) (hi : i < w)
@@ -809,20 +811,14 @@ theorem TailDone.leg {sv : Array SieveSpec} {cw : UInt64} {full u w t m : Nat}
   · rename_i hgt
     rwa [(Decidable.of_not_not (mt hg.mpr hgt) : t &&& w = 0), Nat.add_zero]
 
-/-- The bits of a tail of `t < 16` bit arrays: each leg that runs has its width, which is at most
-`t`, and the offsets of the legs are the sums of the widths of those before them. -/
-theorem tail_bits : ∀ t < 16,
+-- The bits of a tail of `t < 16` bit arrays: each leg that runs has its width, which is at most
+-- `t`, and the offsets of the legs are the sums of the widths of those before them.
+private theorem tail_bits : ∀ t < 16,
     (t &&& 8 ≠ 0 → 8 ≤ t ∧ t &&& 8 = 8) ∧ (t &&& 4 ≠ 0 → 4 ≤ t ∧ t &&& 4 = 4) ∧
       (t &&& 2 ≠ 0 → 2 ≤ t ∧ t &&& 2 = 2) ∧ (t &&& 1 ≠ 0 → t &&& 1 = 1) ∧
       0 + (t &&& 8) = t &&& 8 ∧ (t &&& 8) + (t &&& 4) = t &&& 12 ∧
       (t &&& 12) + (t &&& 2) = t &&& 14 ∧ (t &&& 14) + (t &&& 1) = t := by
   decide
-
-/-- A leg that the guard of the chunk `k < chunk` lets run exactly when bit `k` of `t < chunk` is
-set: the guard is no test on a tail shorter than the chunk. -/
-theorem guard_iff {t k : Nat} (ht : t < chunk) (hk : t &&& k ≠ 0 → k ≤ t) :
-    (k < chunk ∧ t &&& k ≠ 0) ↔ t &&& k ≠ 0 :=
-  ⟨And.right, fun h ↦ ⟨by lia [hk h], h⟩⟩
 
 /-- The legs over the tail of `t = n - full < chunk ≤ 16` bit arrays do its bit arrays
 `full, …, n - 1`: the class word and-ed with the rows of all the moduli of the local array at their
@@ -835,11 +831,13 @@ theorem tailLegs_spec (sv : Array SieveSpec) (cw : UInt64) (full n : Nat) {m : N
     ⦃ fun surv' ↦ TailDone sv cw full (n - full) surv surv' ⦄ := ⟨fun pre ↦ by
   obtain ⟨f8, f4, f2, f1, e1, e2, e3, e4⟩ := tail_bits (n - full) (by lia)
   have h1 := (tailDone_zero sv cw full surv).leg pre.2.2 (by decide)
-    (guard_iff pre.2.1 (f8 · |>.1)) (f8 · |>.2)
+    (and_iff_right_of_imp fun h ↦ Nat.lt_of_le_of_lt (f8 h).1 pre.2.1) (f8 · |>.2)
   rw [e1] at h1
-  have h2 := h1.leg pre.2.2 (by decide) (guard_iff pre.2.1 (f4 · |>.1)) (f4 · |>.2)
+  have h2 := h1.leg pre.2.2 (by decide)
+    (and_iff_right_of_imp fun h ↦ Nat.lt_of_le_of_lt (f4 h).1 pre.2.1) (f4 · |>.2)
   rw [e2] at h2
-  have h3 := h2.leg pre.2.2 (by decide) (guard_iff pre.2.1 (f2 · |>.1)) (f2 · |>.2)
+  have h3 := h2.leg pre.2.2 (by decide)
+    (and_iff_right_of_imp fun h ↦ Nat.lt_of_le_of_lt (f2 h).1 pre.2.1) (f2 · |>.2)
   rw [e3] at h3
   have h4 := h3.leg (g := n - full &&& 1 ≠ 0) pre.2.2 (by decide) Iff.rfl f1
   rw [e4] at h4

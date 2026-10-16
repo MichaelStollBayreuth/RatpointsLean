@@ -100,11 +100,6 @@ theorem getLsbD_closedRow (adm : Nat → Int → Bool) (m r : Nat) {j : Nat}
     (closedRow adm m r)[j]!.toBitVec.getLsbD t = (decide (t < 64) && adm r (64 * j + t)) := by
   rw [closedRow, Array.getElem!_map_range _ hj, getLsbD_wordOfBits]
 
-/-- The closed forms of two tests that agree at their residues are equal. -/
-theorem closedRow_congr {adm adm' : Nat → Int → Bool} {m r r' : Nat}
-    (h : ∀ a, adm r a = adm' r' a) : closedRow adm m r = closedRow adm' m r' := by
-  simp only [closedRow, h]
-
 /-- An array of `(m + chunk - 1) rbaPack` words whose word `j` has bit `t` set exactly when `adm r`
 admits `64 j + t` is the closed form. -/
 theorem eq_closedRow {adm : Nat → Int → Bool} {m r : Nat} {row : Array UInt64}
@@ -179,10 +174,6 @@ theorem PatternBits.congr_left {g : Nat → Bool} {m s s' n : Nat} {x : UInt64}
   intro t
   rw [h t, Nat.add_mod, hs, ← Nat.add_mod]
 
-theorem PatternBits.ext {g : Nat → Bool} {m s n : Nat} {x y : UInt64}
-    (hx : PatternBits g m s n x) (hy : PatternBits g m s n y) : x = y :=
-  UInt64.eq_of_getLsbD_eq fun t ↦ by rw [hx t, hy t]
-
 /-- The words `0, …, L - 1` of `si` are the windows of the pattern `g` of period `m`: word `j` the
 64 bits from the position `64 j` on. -/
 def RowWords (g : Nat → Bool) (m L : Nat) {n : Nat} (si : Vector UInt64 n) : Prop :=
@@ -207,16 +198,6 @@ theorem RowWords.of_mod {g : Nat → Bool} {p n L : Nat} {si si' : Vector UInt64
   intro j hj
   rw [h' j hj]
   exact (h (j % p) (Nat.mod_lt _ hp)).congr_left (by rw [Nat.mul_mod, Nat.mod_mod, ← Nat.mul_mod])
-
-/-- Words that repeat the first `m rbaPack` words of a row, whose word `j < m rbaPack` is the window
-of the pattern at `64 j`, are windows of the pattern, since `m ∣ 64 m rbaPack`. -/
-theorem RowWords.of_mod_mul {g : Nat → Bool} {m n L : Nat} {si si' : Vector UInt64 n}
-    (hm : 0 < m) (h : RowWords g m (m * rbaPack) si)
-    (h' : ∀ j < L, si'[j]! = si[j % (m * rbaPack)]!) : RowWords g m L si' := by
-  intro j hj
-  rw [h' j hj]
-  refine (h _ (Nat.mod_lt _ (Nat.mul_pos hm rbaPack_pos))).congr_left ?_
-  rw [Nat.mul_mod, Nat.mod_mod_of_dvd _ (Nat.dvd_mul_right m rbaPack), ← Nat.mul_mod]
 
 /-- Words of a row of `(m + chunk - 1) rbaPack` words that are the windows of the pattern `g` of
 period `m` are the closed form of a test `adm r` that reads the pattern at the residues of the
