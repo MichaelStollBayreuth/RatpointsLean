@@ -161,7 +161,7 @@ theorem FourInvariant.add_four {isfs : Array Bool} {p d4 ab0 ab10 ab20 ab30 hi m
         if p ≤ ab1 + d4 then ab1 + d4 - p else ab1 + d4,
         if p ≤ ab2 + d4 then ab2 + d4 - p else ab2 + d4,
         if p ≤ ab3 + d4 then ab3 + d4 - p else ab3 + d4, i + 4) := by
-  obtain ⟨-, -, hp, h64⟩ := pre
+  obtain ⟨-, -, -, h64⟩ := pre
   obtain ⟨rfl, hi0, -, -, hl⟩ := h
   dsimp only at hi0 hl ⊢
   refine ⟨by lia, by lia, by lia, nofun, fun d hd hd4 h0 ↦ ?_⟩

@@ -73,8 +73,9 @@ scripts/run-comparator.sh               # Lean's kernel only
 The script builds the library (`lake build RatpointsModel Ratpoints`) and runs `lake comparator
 --config comparator/challenges.json` with the options given. Exit code `0` (and `Your solution is
 okay!`) means that the check passed, `1` that it was rejected, `2` that it could not start (no
-`bwrap`, no `lake-manifest.json`, a malformed configuration). The library is built first because
-the sandbox may write only to `.lake`, and with a current build the sandboxed builds only replay
+`bwrap`, no `lake-manifest.json`, a missing or malformed configuration). The library is built
+first, outside the sandbox, where the caller's environment applies (the sandbox clears it but for
+`PATH`), so that the sandboxed builds of `Challenge` and `Solution` find it current and only replay
 it. `lake comparator` writes the exports into the temporary directory of the system (`TMPDIR`).
 
 Until 2026-10-16 the check ran on the external tools, a separately built `comparator` binary,

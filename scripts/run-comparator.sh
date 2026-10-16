@@ -2,8 +2,7 @@
 
 # Run the comparator check for this project locally, with Lake's built-in `lake comparator`
 # (Lean v4.35.0 and later). It certifies that the repository proves the challenge statements of
-# comparator/Challenge.lean that the config lists (default: all seven); see comparator/README.md
-# for what is checked.
+# comparator/Challenge.lean that the config lists; see comparator/README.md for what is checked.
 #
 # Usage: scripts/run-comparator.sh [CONFIG] [OPTIONS]
 #   CONFIG   the challenge description (default: comparator/challenges.json)
@@ -26,12 +25,14 @@ fi
 
 if [ ! -f "$CONFIG" ]; then
   echo "ERROR: no comparator config $CONFIG (see comparator/README.md)." >&2
-  exit 1
+  exit 2
 fi
 
-# Bring the library oleans up to date first: the sandbox cannot write to the project directory,
-# and with a current build the sandboxed Solution build only replays it.
+# Build the library first, outside the sandbox, where the caller's environment applies (the
+# sandbox clears it but for PATH), so that the sandboxed builds of Challenge and Solution find it
+# current and only replay it.
 lake build RatpointsModel Ratpoints
 
-# Exit 0 and "Your solution is okay!" = certified; exit 1 = rejected; exit 2 = could not start.
+# Exit 0 and "Your solution is okay!" = certified; exit 1 = rejected; exit 2 = could not start
+# (also when the config is missing, above).
 exec lake comparator --config "$CONFIG" "$@"
