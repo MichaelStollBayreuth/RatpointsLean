@@ -21,8 +21,10 @@ coefficients reduced modulo the prime (`Ratpoints.Sieve.examinePrime?`, `Ratpoin
 `Ratpoints.Sieve.hornerBarrett`), the tables of a prime power (`Ratpoints.Sieve.examinePower`), and
 the sieve entry of a modulus, a prime, a prime power or a product of them, by its factors and with
 the reciprocal of the modulus and what the packing of the numerators needs
-(`Ratpoints.Sieve.SieveEntry`), with the rows of a denominator
-(`Ratpoints.Sieve.SieveEntry.admits`). The reciprocal of a modulus gives the remainder and the
+(`Ratpoints.Sieve.SieveEntry`), with the admission test of the rows of a denominator
+(`Ratpoints.Sieve.SieveEntry.admits`), the kinds of the builders of the rows
+(`Ratpoints.Sieve.RowInit`) and the references to the entries that hold the tables of rows
+(`Ratpoints.Sieve.EntryRef`). The reciprocal of a modulus gives the remainder and the
 quotient by a multiplication on 64-bit words, with the high half of the 128-bit product from the
 products of the 32-bit halves (`Ratpoints.Sieve.magic`, `Ratpoints.Sieve.mulHi`,
 `Ratpoints.Sieve.mulMod`, `Ratpoints.Sieve.mulDiv`), and the remainder of a `long` of either sign
@@ -30,12 +32,15 @@ products of the 32-bit halves (`Ratpoints.Sieve.magic`, `Ratpoints.Sieve.mulHi`,
 is the reference of the table with it, which gives the same table for
 `0 < p < Ratpoints.maxPrimeEven` whenever it gives one (`Ratpoints.Sieve.examinePrime?_spec`). The
 tables that the build of ratpoints generates are computed here: the squares and the inverses by
-`Ratpoints.Sieve.squaresMod` and `Ratpoints.Sieve.inversesMod`, and the row of `0` of a prime by
-`Ratpoints.Sieve.Entry.admits`, in its case `r = 0`. The loop of the tables
-(`Ratpoints.Sieve.examinePrimes`) is in `Ratpoints.Model.Denominators`, the factors of a modulus
-(`Ratpoints.modulusFactors`) in `Ratpoints.Model.Params`, and the construction of the sieve entry of
-a modulus (`Ratpoints.makeModulus?`) in `Ratpoints.Model.FindPoints`; the rows as words and the
-sieve that uses them are in `Ratpoints.Model.Sieve`.
+`Ratpoints.Sieve.squaresMod` and `Ratpoints.Sieve.inversesMod`, and the table `sieve_init` of the
+builders of the rows of the primes by `Ratpoints.Sieve.sieveInit`; the row of `0` of a prime,
+`Ratpoints.Sieve.sieves0`, and the builders of the rows are in `Ratpoints.Model.Rows`, and the
+admission tests here are their reference. The loop of the tables (`Ratpoints.Sieve.examinePrimes`)
+is in `Ratpoints.Model.Denominators`, the factors of a modulus (`Ratpoints.modulusFactors`) in
+`Ratpoints.Model.Params`, and the construction of the sieve entry of a modulus
+(`Ratpoints.makeModulus?`) in `Ratpoints.Model.FindPoints`; the rows as words are in
+`Ratpoints.Model.Rows` and `Ratpoints.Model.Sieve`, and the sieve that uses them in
+`Ratpoints.Model.Sieve`.
 
 ## Main definitions
 
@@ -60,8 +65,12 @@ sieve that uses them are in `Ratpoints.Model.Sieve`.
   reciprocal, and the remainder of a `long` of either sign.
 * `Ratpoints.Sieve.Entry.admits`, `Ratpoints.Sieve.Power.admits`, `Ratpoints.Sieve.Factor`,
   `Ratpoints.Sieve.Factor.modulus`, `Ratpoints.Sieve.SieveEntry`,
-  `Ratpoints.Sieve.SieveEntry.admits`, `Ratpoints.Sieve.survives`: the rows of a denominator for a
-  prime, for a prime power, and for a modulus by its factors, with the modulus of a factor.
+  `Ratpoints.Sieve.SieveEntry.admits`, `Ratpoints.Sieve.survives`: the admission tests of the rows
+  of a denominator for a prime, for a prime power, and for a modulus by its factors, with the
+  modulus of a factor.
+* `Ratpoints.Sieve.RowInit`, `Ratpoints.Sieve.sieveInit`, `Ratpoints.Sieve.EntryRef`: the kinds of
+  the builders of the rows, that of a prime of the table, and the references to the entries that
+  hold the tables of rows.
 -/
 
 @[expose] public section
@@ -509,20 +518,16 @@ def modMul (a : Int) (p m : Nat) : Int :=
   let r : Int := mulMod (if a < 0 then -a else a).toNat p m
   if a < 0 ∧ r ≠ 0 then p - r else r
 
-/-! ### The rows of a denominator -/
+/-! ### The admission tests of the rows of a denominator -/
 
 /-- Whether the row of the denominator `b` in the table `e` of the prime `p` admits the numerator
 `a`: for the residues `r = b mod p` and `x = a mod p`, the entry of the table at `x r⁻¹ mod p` if
-`r ≠ 0`, and whether `x ≠ 0` if `r = 0`.
-
-C: `init.c:42-46`, `init.c:62-83`, `init.c:99-111`, `init.c:118-246`, `gen_find_points_h.c:102-134`,
-`gen_init_sieve_h.c:48-62`
-
-Deviation: the bit of `a` in the row of `r`, computed from the tables for each numerator, where
-ratpoints builds the row of a residue `r ≠ 0` once, when a denominator first needs it, as a bit
-pattern of `p` bits repeated through words, by a function for each prime that the build generates,
-and takes the row of `0` from the pattern `sieves0` that the build generates, whose bit `N` is
-clear exactly when `p` divides `N`. -/
+`r ≠ 0`, and whether `x ≠ 0` if `r = 0`. It is the reference of the rows of a prime: ratpoints
+builds the row of a residue `r ≠ 0` once, when a denominator first needs it, as a bit pattern of
+`p` bits repeated through words, by a function for each prime that the build generates
+(`Ratpoints.Sieve.sieveInit1`, `Ratpoints.Sieve.sieveInit2`), and takes the row of `0` from the
+pattern `sieves0` that the build generates (`Ratpoints.Sieve.sieves0`), whose bit `N` is clear
+exactly when `p` divides `N`. -/
 def Entry.admits (e : Entry) (b : Nat) (a : Int) : Bool :=
   let r := b % e.p
   let x := (a % (e.p : Int)).toNat
@@ -570,6 +575,55 @@ def Factor.modulus : Factor → Nat
   | .prime t => t.p
   | .power pw => pw.m
 
+/-- The builder of the rows of a sieve entry, `init`, by its kind: the function that the build
+generates for a prime below 64 from `CODE_INIT_SIEVE1` (`Ratpoints.Sieve.sieveInit1`) and for a
+prime above 64 from `CODE_INIT_SIEVE2` (`Ratpoints.Sieve.sieveInit2`), the builder of the rows of a
+prime power and that of the rows of a product (stage F4).
+
+C: `rp-private.h:497-498`
+
+Deviation: the kind of the builder, for the pointer to the function of the type
+`ratpoints_init_fun`, which for a prime points to the function that the build generates for it;
+the call through the pointer a match on the kind (stage F4). -/
+inductive RowInit where
+  /-- The function of a prime below 64, from `CODE_INIT_SIEVE1`. -/
+  | sieve1
+  /-- The function of a prime above 64, from `CODE_INIT_SIEVE2`. -/
+  | sieve2
+  /-- The builder of the rows of a prime power, `_ratpoints_sieve_init_power`. -/
+  | power
+  /-- The builder of the rows of a product, `_ratpoints_sieve_init_product`. -/
+  | product
+  deriving DecidableEq, Repr, Inhabited
+
+/-- The kind of the builder of the rows of the prime `p` of the table, the entry of `p` in the table
+`sieve_init` that the build generates: the function from `CODE_INIT_SIEVE1` for `p < 64`, and that
+from `CODE_INIT_SIEVE2` otherwise.
+
+C: `find_points.c:133`, `gen_init_sieve_h.c:48-62`, `init.c:246`
+
+Deviation: a function of `p`, for the entry of `p` in the table of the pointers to the functions
+that the build generates, one for each prime, and that `init.c` includes; the kind of the function,
+for the pointer to it. -/
+def sieveInit (p : Nat) : RowInit := if p < 64 then .sieve1 else .sieve2
+
+/-- A reference to the entry that holds a table of rows (`Ratpoints.Sieve.RowStore`), for a pointer
+to a sieve entry of ratpoints, whose array `sieve` holds the rows of the residues: a prime `p` by
+itself, for the entry `prime_se[pn]` of the prime `p = prime[pn]` that `examine_prime` makes; a
+prime power `p ^ e` by its prime and its exponent, for the entry `power_se[idx]` that `make_power`
+makes once, when a modulus first needs it, and that the prime power as a modulus and as a factor of
+products shares, whose index `idx` `add_moduli` keeps in `pw_idx[pn][e]` (lines 2352-2354 and
+2387-2393 of `find_points.c`); and a product by the position `n` of its modulus among the moduli of
+the parameters, for the entry of its own that `make_modulus` makes. -/
+inductive EntryRef where
+  /-- The entry of the prime `p`. -/
+  | prime (p : Nat)
+  /-- The entry of the prime power `p ^ e`. -/
+  | power (p e : Nat)
+  /-- The entry of the product that is the modulus at the position `n` of the parameters. -/
+  | product (n : Nat)
+  deriving DecidableEq, Hashable, Repr, Inhabited
+
 /-- The sieve entry of a modulus `p` of the sieve, a prime, a prime power or a product of primes and
 prime powers, given by its factors (`Ratpoints.Sieve.Factor`): one for a prime or a prime power, two
 or more for a product; with the reciprocal of `p` (`Ratpoints.Sieve.magic`), which the third stage
@@ -582,7 +636,7 @@ row offsets are computed, and the inverses of the strides `2 ^ k` modulo `p` for
 with which `fill_bp_list` divides the denominator by the stride (`Ratpoints.Sieve.fillBpList`). Its
 row for a denominator is the and of the rows of its factors (`Ratpoints.Sieve.SieveEntry.admits`).
 
-C: `rp-private.h:497-498`, `rp-private.h:520`, `rp-private.h:542-555`
+C: `rp-private.h:520`, `rp-private.h:542-555`
 
 Deviation: the kinds of modulus as the list of the factors: one prime factor for a prime, whose
 entry has `nf = 0` and the tables `is_f_square` and `inverses` of its own; one prime-power factor
@@ -590,13 +644,13 @@ for a prime power, whose entry has `nf = 1` and its tables `pw`; and two or more
 whose entry has `nf ≥ 2` and points to the entries `factor` of its factors; no bound
 `RP_MAX_FACTORS` on the number of factors; the rows of the residues, which ratpoints keeps in the
 field `sieve`, are `Ratpoints.Sieve.SieveEntry.rows`, made when first needed and kept for the run,
-by one function for every kind (`Ratpoints.Sieve.SieveEntry.row`), for the function `init` of the
-kind, of the type `ratpoints_init_fun`; a natural number for the `unsigned long` reciprocal `magic`,
-and natural numbers for the `long`s `bias` and `rbainv`; the inverses `dinv` an array, for the array
-of `RP_NUM_STRIDES` `long`s, which the row offsets of the packing fill
-(`Ratpoints.Sieve.classOffsets`) with an entry for each stride up to the largest in use, where the
-entries of the C code beyond it stay unset and unread; no density `r`, which serves the choice of
-the moduli (stage I). -/
+by the plain builder for every kind (`Ratpoints.Sieve.SieveEntry.row`), the reference of the
+builders of the C code, for the function `init` of the kind (`Ratpoints.Sieve.RowInit`); a natural
+number for the `unsigned long` reciprocal `magic`, and natural numbers for the `long`s `bias` and
+`rbainv`; the inverses `dinv` an array, for the array of `RP_NUM_STRIDES` `long`s, which the row
+offsets of the packing fill (`Ratpoints.Sieve.classOffsets`) with an entry for each stride up to the
+largest in use, where the entries of the C code beyond it stay unset and unread; no density `r`,
+which serves the choice of the moduli (stage I). -/
 structure SieveEntry where
   /-- The modulus. -/
   p : Nat

@@ -400,42 +400,44 @@ contract keeps its statement, the first stage of either arm giving the same word
 
 \begin{definition}[The words of a forbidden divisor and the row of $0$]\label{def:sieves0}
   \uses{def:chunk, def:rbaPack}
-  Proposed names: \lname{Ratpoints.Sieve.forbiddenRow}, \lname{Ratpoints.Sieve.sieves0}. The $p$
-  words of the forbidden divisor $p$, with the bits of the multiples $p i$, $i < 64$, cleared: the
-  array \verb|work| of the generator of \verb|find_points.h| for the primes of the table, and the
-  words that \verb|sieving_info| makes for the forbidden divisors beyond it
+  \lean{Ratpoints.Sieve.forbiddenRow, Ratpoints.Sieve.sieves0}
+  \leanok
+  The $p$ words of the forbidden divisor $p$, with the bits of the multiples $p i$, $i < 64$,
+  cleared: the array \verb|work| of the generator of \verb|find_points.h| for the primes of the
+  table, and the words that \verb|sieving_info| makes for the forbidden divisors beyond it
   (\csource{find_points.c}{2773}{2777}, \csource{gen_find_points_h.c}{118}{120}); they move here
   from the forbidden divisors (Definition~\ref{def:forbidden}), which read them. And for a prime $p$
   of the table these words written $\mathrm{rbaPack}$ times one after the other, then the copies,
   word $i$ of $\mathrm{rbaPack}\,(\mathrm{chunk} - 1)$ of them the word $i \bmod p$: the row of $p$
   in the table \verb|sieves0| that the build generates and \verb|find_points.c| includes
   (\csource{find_points.c}{37}{37}, \csource{gen_find_points_h.c}{102}{116},
-  \csource{gen_find_points_h.c}{122}{134}), a function of $p$ as the squares and the inverses
-  modulo $p$ are.
+  \csource{gen_find_points_h.c}{122}{134}), a function of $p$ as the squares and the inverses modulo
+  $p$ are.
 \end{definition}
 
 \begin{lemma}[The row of $0$]\label{lem:sieves0}
   \uses{def:sieves0, def:closedRow, lem:closedRow, def:admits}
-  Proposed names: \lname{Ratpoints.Sieve.getLsbD\_getElem!\_forbiddenRow},
-  \lname{Ratpoints.Sieve.size\_forbiddenRow}, \lname{Ratpoints.Sieve.size\_sieves0},
-  \lname{Ratpoints.Sieve.getElem!\_sieves0}, \lname{Ratpoints.Sieve.sieves0\_eq\_closedRow},
-  \lname{Ratpoints.Sieve.extract\_sieves0}. Bit $t$ of word $r < p$ of the words of the forbidden
-  divisor $p$ is clear exactly when $p \mid 64 r + t$, the lemma that moves here from the forbidden
-  divisors (Definition~\ref{def:forbidden}) into a file without Mathlib; for $p > 0$ the row of $0$
-  is the closed form of the row of $0$ of the table of $p$, whatever its entries: bit $t$ of word
-  $x$ set exactly when $p \nmid 64 x + t$; and its first $p$ words are the words of the forbidden
-  divisor $p$.
+  \lean{Ratpoints.Sieve.getLsbD_getElem!_forbiddenRow, Ratpoints.Sieve.size_forbiddenRow, Ratpoints.Sieve.size_sieves0, Ratpoints.Sieve.getElem!_sieves0, Ratpoints.Sieve.sieves0_eq_closedRow, Ratpoints.Sieve.extract_sieves0}
+  \leanok
+  Bit $t$ of word $r < p$ of the words of the forbidden divisor $p$ is clear exactly when
+  $p \mid 64 r + t$, the lemma that moves here from the forbidden divisors
+  (Definition~\ref{def:forbidden}) into a file without Mathlib; for $p > 0$ the row of $0$ is the
+  closed form of the row of $0$ of the table of $p$, whatever its entries: bit $t$ of word $x$ set
+  exactly when $p \nmid 64 x + t$; and its first $p$ words are the words of the forbidden divisor
+  $p$.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   The $64$ multiples $p i$, $i < 64$, are the multiples of $p$ below $64 p$, the bits of the $p$
   words; word $j$ of the row is word $j \bmod p$ of the words of the forbidden divisor, and
   $64 j + t \equiv 64 (j \bmod p) + t \pmod p$.
 \end{proof}
 
 \begin{definition}[The kinds of builders]\label{def:rowInit}
-  Proposed names: \lname{Ratpoints.Sieve.RowInit}, \lname{Ratpoints.Sieve.sieveInit}. The builder of
-  the rows of a sieve entry by its kind, for the pointer \verb|init| of the type
+  \lean{Ratpoints.Sieve.RowInit, Ratpoints.Sieve.sieveInit}
+  \leanok
+  The builder of the rows of a sieve entry by its kind, for the pointer \verb|init| of the type
   \verb|ratpoints_init_fun| (\csource{rp-private.h}{497}{498}): the function that the build
   generates for a prime below $64$ from \verb|CODE_INIT_SIEVE1|, that for a prime above $64$ from
   \verb|CODE_INIT_SIEVE2|, the builder of the rows of a prime power and that of the rows of a
@@ -448,70 +450,61 @@ contract keeps its statement, the first stage of either arm giving the same word
 
 \begin{definition}[The macros of the builders of a prime]\label{def:initMacros}
   \uses{def:chunk, def:rbaPack}
-  Proposed names: \lname{Ratpoints.Sieve.initBit}, \lname{Ratpoints.Sieve.initFourDecl},
-  \lname{Ratpoints.Sieve.initFourLoop}, \lname{Ratpoints.Sieve.initReplicate}. One definition for
-  each macro whose body is a unit of code, in the form of the production builds: a bit of a word set
-  from an entry of the table by a shift, \verb|RP_INIT_BIT| (\csource{init.c}{42}{46}); the four
-  residues $d$, $2d$, $3d$ and the step $4d$ modulo $p$, \verb|RP_INIT_FOUR_DECL|
-  (\csource{init.c}{62}{63}, \csource{init.c}{65}{70}); the loop that sets four bits of a word at a
-  time from the four residues, stepping each by $4d \bmod p$, \verb|RP_INIT_FOUR_LOOP|
-  (\csource{init.c}{64}{64}, \csource{init.c}{72}{83}); and the copies of the first $p$ words of a
-  row into the next $(\mathrm{rbaPack} - 1)\, p$, so that word $j$ is word $j \bmod p$, and of the
-  first $(\mathrm{chunk} - 1)\,\mathrm{rbaPack}$ words to the end, \verb|RP_INIT_REPLICATE|
-  (\csource{init.c}{99}{111}), whose forward copies read words already copied, so that a prime below
-  $\mathrm{chunk} - 1$ is copied as in the C code.
+  \lean{Ratpoints.Sieve.initBit, Ratpoints.Sieve.initFourDecl, Ratpoints.Sieve.initFourLoop, Ratpoints.Sieve.initReplicate}
+  \leanok
+  One definition for each macro whose body is a unit of code, in the form of the production builds:
+  a bit of a word set from an entry of the table by a shift, \verb|RP_INIT_BIT|
+  (\csource{init.c}{42}{46}); the four residues $d$, $2d$, $3d$ and the step $4d$ modulo $p$,
+  \verb|RP_INIT_FOUR_DECL| (\csource{init.c}{62}{63}, \csource{init.c}{65}{70}); the loop that sets
+  four bits of a word at a time from the four residues, stepping each by $4d \bmod p$,
+  \verb|RP_INIT_FOUR_LOOP| (\csource{init.c}{64}{64}, \csource{init.c}{72}{83}); and the copies of
+  the first $p$ words of a row into the next $(\mathrm{rbaPack} - 1)\, p$, so that word $j$ is word
+  $j \bmod p$, and of the first $(\mathrm{chunk} - 1)\,\mathrm{rbaPack}$ words to the end,
+  \verb|RP_INIT_REPLICATE| (\csource{init.c}{99}{111}), whose forward copies read words already
+  copied, so that a prime below $\mathrm{chunk} - 1$ is copied as in the C code.
 \end{definition}
 
 \begin{definition}[The rows of a prime below $64$]\label{def:sieveInit1}
   \uses{def:initMacros, def:entryRef, def:examinePrime}
-  Proposed names: \lname{Ratpoints.Sieve.sieve1Pattern}, \lname{Ratpoints.Sieve.sieve1Rows},
-  \lname{Ratpoints.Sieve.sieveInit1}. For the table of a prime $p < 64$
-  (Definition~\ref{def:examinePrime}), the reference to its entry, a residue $b$ and the store of
-  the tables of rows (Definition~\ref{def:entryRef}), as the function that the build generates for
-  $p$ from \verb|CODE_INIT_SIEVE1|: the pattern of $p$ bits in a word, bit $a$ the entry of the
-  table of the prime at $a\, d \bmod p$ for $d$ the inverse of $b$ from it, by the loop of four bits
-  and then the plain loop (\csource{init.c}{131}{143}); the pattern shifted right by $64 \bmod p$
-  for the second word, and the pattern repeated through the word by or-ing in itself shifted left by
-  $i = p, 2p, 4p, \dots$ below $64$; the first $p$ words of the row rotated out of the two words, by
-  the shifts $\mathrm{diff\_shift} = (\lfloor 64/p \rfloor + 1)\, p \bmod 64$ and $64 -
-  \mathrm{diff\_shift}$ (\csource{init.c}{160}{177}); the copies; and the row stored into the table
-  of rows of the entry, \verb|RP_PUBLISH| (\csource{init.c}{118}{130}, \csource{init.c}{144}{159},
+  \lean{Ratpoints.Sieve.sieve1Pattern, Ratpoints.Sieve.sieve1Rows, Ratpoints.Sieve.sieveInit1}
+  \leanok
+  For the table of a prime $p < 64$ (Definition~\ref{def:examinePrime}), the reference to its entry,
+  a residue $b$ and the store of the tables of rows (Definition~\ref{def:entryRef}), as the function
+  that the build generates for $p$ from \verb|CODE_INIT_SIEVE1|: the pattern of $p$ bits in a word,
+  bit $a$ the entry of the table of the prime at $a\, d \bmod p$ for $d$ the inverse of $b$ from it,
+  by the loop of four bits and then the plain loop (\csource{init.c}{131}{143}); the pattern shifted
+  right by $64 \bmod p$ for the second word, and the pattern repeated through the word by or-ing in
+  itself shifted left by $i = p, 2p, 4p, \dots$ below $64$; the first $p$ words of the row rotated
+  out of the two words, by the shifts
+  $\mathrm{diff\_shift} = (\lfloor 64/p \rfloor + 1)\, p \bmod 64$ and $64 - \mathrm{diff\_shift}$
+  (\csource{init.c}{160}{177}); the copies; and the row stored into the table of rows of the entry,
+  \verb|RP_PUBLISH| (\csource{init.c}{118}{130}, \csource{init.c}{144}{159},
   \csource{init.c}{178}{183}).
 \end{definition}
 
 \begin{definition}[The rows of a prime above $64$]\label{def:sieveInit2}
   \uses{def:initMacros, def:entryRef, def:examinePrime}
-  Proposed names: \lname{Ratpoints.Sieve.sieve2Word}, \lname{Ratpoints.Sieve.sieve2Pattern},
-  \lname{Ratpoints.Sieve.sieve2Rows}, \lname{Ratpoints.Sieve.sieveInit2}. For the table of a prime
-  $p > 64$ (Definition~\ref{def:examinePrime}), the reference to its entry, a residue $b$ and the
-  store of the tables of rows, as the function that the build generates for $p$ from
-  \verb|CODE_INIT_SIEVE2|: the $\lfloor p/64 \rfloor + 2$ words \verb|help| cleared from the last;
-  word $n \le \lfloor p/64 \rfloor$ of the pattern, $64$ bits for $n < \lfloor p/64 \rfloor$ and $p
-  \bmod 64$ for the last, by the loop of four bits and the plain loop, the four residues carried
-  from word to word (\csource{init.c}{209}{216}, \csource{init.c}{204}{208},
-  \csource{init.c}{217}{219}); the first $p$ words of the row, the first $\lfloor p/64 \rfloor$
-  copied and the others rotated out of the ring of $\lfloor p/64 \rfloor + 1$ words by the shifts $p
-  \bmod 64$ and $64 - (p \bmod 64)$ (\csource{init.c}{220}{238}); the copies; and the row stored
-  into the table of rows of the entry (\csource{init.c}{186}{203}, \csource{init.c}{239}{244}).
+  \lean{Ratpoints.Sieve.sieve2Word, Ratpoints.Sieve.sieve2Pattern, Ratpoints.Sieve.sieve2Rows, Ratpoints.Sieve.sieveInit2}
+  \leanok
+  For the table of a prime $p > 64$ (Definition~\ref{def:examinePrime}), the reference to its entry,
+  a residue $b$ and the store of the tables of rows, as the function that the build generates for
+  $p$ from \verb|CODE_INIT_SIEVE2|: the $\lfloor p/64 \rfloor + 2$ words \verb|help| cleared from
+  the last; word $n \le \lfloor p/64 \rfloor$ of the pattern, $64$ bits for
+  $n < \lfloor p/64 \rfloor$ and $p \bmod 64$ for the last, by the loop of four bits and the plain
+  loop, the four residues carried from word to word (\csource{init.c}{209}{216},
+  \csource{init.c}{204}{208}, \csource{init.c}{217}{219}); the first $p$ words of the row, the first
+  $\lfloor p/64 \rfloor$ copied and the others rotated out of the ring of $\lfloor p/64 \rfloor + 1$
+  words by the shifts $p \bmod 64$ and $64 - (p \bmod 64)$ (\csource{init.c}{220}{238}); the copies;
+  and the row stored into the table of rows of the entry (\csource{init.c}{186}{203},
+  \csource{init.c}{239}{244}).
 \end{definition}
 
 \begin{lemma}[The builders of a prime build the closed forms]\label{lem:primeRows}
   \uses{def:sieveInit1, def:sieveInit2, lem:closedRow, def:admits}
-  Proposed names: \lname{Ratpoints.Sieve.lanePattern}, \lname{Ratpoints.Sieve.LanesAt},
-  \lname{Ratpoints.Sieve.FourLanes}, \lname{Ratpoints.Sieve.initFourDecl\_lanes},
-  \lname{Ratpoints.Sieve.FourInvariant}, \lname{Ratpoints.Sieve.initFourLoop\_spec},
-  \lname{Ratpoints.Sieve.PatInvariant}, \lname{Ratpoints.Sieve.sieve1Pattern\_spec},
-  \lname{Ratpoints.Sieve.PatternDoubleInvariant}, \lname{Ratpoints.Sieve.RotInvariant},
-  \lname{Ratpoints.Sieve.sieve1Rows\_spec}, \lname{Ratpoints.Sieve.sieve1\_shifts},
-  \lname{Ratpoints.Sieve.RepInvariant}, \lname{Ratpoints.Sieve.CopyInvariant},
-  \lname{Ratpoints.Sieve.initReplicate\_spec}, \lname{Ratpoints.Sieve.sieve2Word\_spec},
-  \lname{Ratpoints.Sieve.sieve2Pattern\_spec}, \lname{Ratpoints.Sieve.PatternWords},
-  \lname{Ratpoints.Sieve.RingState}, \lname{Ratpoints.Sieve.sieve2Rows\_spec},
-  \lname{Ratpoints.Sieve.sieve2\_shifts},
-  \lname{Ratpoints.Sieve.toArray\_eq\_closedRow\_of\_rowWords},
-  \lname{Ratpoints.Sieve.sieveInit1\_spec}, \lname{Ratpoints.Sieve.sieveInit2\_spec}. For the table
-  of a prime $p$ and a residue $0 < b < p$ whose inverse is below $p$: for $p < 64$ the builder from
-  \verb|CODE_INIT_SIEVE1| and for $64 \le p$ with $p \bmod 64 \ne 0$ that from
+  \lean{Ratpoints.Sieve.lanePattern, Ratpoints.Sieve.LanesAt, Ratpoints.Sieve.FourLanes, Ratpoints.Sieve.initFourDecl_lanes, Ratpoints.Sieve.FourInvariant, Ratpoints.Sieve.initFourLoop_spec, Ratpoints.Sieve.PatInvariant, Ratpoints.Sieve.sieve1Pattern_spec, Ratpoints.Sieve.PatternDoubleInvariant, Ratpoints.Sieve.RotInvariant, Ratpoints.Sieve.sieve1Rows_spec, Ratpoints.Sieve.sieve1_shifts, Ratpoints.Sieve.RepInvariant, Ratpoints.Sieve.CopyInvariant, Ratpoints.Sieve.initReplicate_spec, Ratpoints.Sieve.sieve2Word_spec, Ratpoints.Sieve.sieve2Pattern_spec, Ratpoints.Sieve.PatternWords, Ratpoints.Sieve.RingState, Ratpoints.Sieve.sieve2Rows_spec, Ratpoints.Sieve.sieve2_shifts, Ratpoints.Sieve.toArray_eq_closedRow_of_rowWords, Ratpoints.Sieve.sieveInit1_spec, Ratpoints.Sieve.sieveInit2_spec}
+  \leanok
+  For the table of a prime $p$ and a residue $0 < b < p$ whose inverse is below $p$: for $p < 64$
+  the builder from \verb|CODE_INIT_SIEVE1| and for $64 \le p$ with $p \bmod 64 \ne 0$ that from
   \verb|CODE_INIT_SIEVE2| return the closed form of the row of $b$ of the table of the prime
   (Definition~\ref{def:closedRow}) and the store with that row in the table of rows of the entry.
   The pattern of the four residues is the pattern of the table of the prime at $a\, d \bmod p$, the
@@ -521,6 +514,7 @@ contract keeps its statement, the first stage of either arm giving the same word
 \end{lemma}
 
 \begin{proof}
+  \leanok
   The four residues are $(a + i)\, d \bmod p$ for $i < 4$ at the bit $a$, stepped by $4d \bmod p$;
   the invariant of each loop says which bits of the pattern the word holds. The doubling repeats the
   pattern with the period $p$ through $64$ bits; the rotation keeps in the two words, or in the
@@ -626,20 +620,21 @@ contract keeps its statement, the first stage of either arm giving the same word
 \section{The tables of rows}\label{sec:rowStore}
 
 \begin{definition}[The tables of rows]\label{def:entryRef}
-  Proposed names: \lname{Ratpoints.Sieve.EntryRef}, \lname{Ratpoints.Sieve.RowStore},
-  \lname{Ratpoints.Sieve.RowStore.row?}, \lname{Ratpoints.Sieve.RowStore.publish}. A reference to
-  the sieve entry of ratpoints that holds a table of rows, for a pointer to the entry: a prime $p$
-  by itself, for the entry \verb|prime_se[pn]| of $p = \mathrm{prime}[\mathrm{pn}]$ that
-  \verb|examine_prime| makes; a prime power $p^e$ by its prime and its exponent, for the entry
-  \verb|power_se[idx]| that \verb|make_power| makes once and that the prime power as a modulus and
-  as a factor of products share, whose index \verb|add_moduli| keeps in \verb|pw_idx[pn][e]|; and a
-  product by the position $n$ of its modulus among the moduli of the parameters, for the entry of
-  its own that \verb|make_modulus| makes. The store of the run maps each reference to its table of
-  rows, the rows by the residue, $m$ of them for the modulus $m$, each absent until it is built, for
-  the arrays \verb|sieve| of the entries with \verb|NULL| for an absent row; the row of a residue in
-  it, none for an absent row or table of rows; and the store with a row put into a table of rows,
-  which each builder does at its end, as \verb|RP_PUBLISH| stores the row into the entry, and which
-  leaves a store without that table of rows as it is.
+  \lean{Ratpoints.Sieve.EntryRef, Ratpoints.Sieve.RowStore, Ratpoints.Sieve.RowStore.row?, Ratpoints.Sieve.RowStore.publish}
+  \leanok
+  A reference to the sieve entry of ratpoints that holds a table of rows, for a pointer to the
+  entry: a prime $p$ by itself, for the entry \verb|prime_se[pn]| of
+  $p = \mathrm{prime}[\mathrm{pn}]$ that \verb|examine_prime| makes; a prime power $p^e$ by its
+  prime and its exponent, for the entry \verb|power_se[idx]| that \verb|make_power| makes once and
+  that the prime power as a modulus and as a factor of products share, whose index \verb|add_moduli|
+  keeps in \verb|pw_idx[pn][e]|; and a product by the position $n$ of its modulus among the moduli
+  of the parameters, for the entry of its own that \verb|make_modulus| makes. The store of the run
+  maps each reference to its table of rows, the rows by the residue, $m$ of them for the modulus
+  $m$, each absent until it is built, for the arrays \verb|sieve| of the entries with \verb|NULL|
+  for an absent row; the row of a residue in it, none for an absent row or table of rows; and the
+  store with a row put into a table of rows, which each builder does at its end, as
+  \verb|RP_PUBLISH| stores the row into the entry, and which leaves a store without that table of
+  rows as it is.
 \end{definition}
 
 \begin{definition}[The row of a sieve entry, read or built]\label{def:fetchRow}

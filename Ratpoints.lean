@@ -28,6 +28,7 @@ public import Ratpoints.Model.FindPoints
 public import Ratpoints.Model.FirstStage
 public import Ratpoints.Model.Packing
 public import Ratpoints.Model.Params
+public import Ratpoints.Model.Rows
 public import Ratpoints.Model.Setup
 public import Ratpoints.Model.Sieve
 public import Ratpoints.Model.Sturm
@@ -47,7 +48,9 @@ public import Ratpoints.Proof.JacobiTables
 public import Ratpoints.Proof.Moduli
 public import Ratpoints.Proof.Packing
 public import Ratpoints.Proof.Params
+public import Ratpoints.Proof.PrimeRows
 public import Ratpoints.Proof.Reductions
+public import Ratpoints.Proof.RowStore
 public import Ratpoints.Proof.Rows
 public import Ratpoints.Proof.SetBits
 public import Ratpoints.Proof.Setup

@@ -14,7 +14,6 @@ public import Std.WP
 import Ratpoints.Mathlib.Data.Int.GCD
 import Ratpoints.Mathlib.Data.ZMod.Basic
 import Ratpoints.Mathlib.NumberTheory.Padics.PadicVal.Basic
-import Ratpoints.Proof.Bits
 import Ratpoints.Proof.Containers
 import Ratpoints.Proof.Params
 import Ratpoints.Proof.Tables
@@ -39,14 +38,14 @@ those of the further primes (`Ratpoints.Sieve.forbidden`): a prime tested with w
 denominator `b ≤ bHigh` of a point, since the mask holds every valuation that such a denominator can
 have (`Ratpoints.Sieve.allValuations`) or there are no points at infinity modulo `p`, that is `c_d`
 is not a square modulo `p`, and its words are those of `Ratpoints.Sieve.forbiddenRow`, bit `j` of
-word `r` clear exactly when `p ∣ 64 r + j`; a prime tested by its valuation excludes no denominator
-of a point. The loop of the tables also keeps the table of every prime it examines, that of the
-reference (`Ratpoints.Sieve.examinePrime`), and when it takes its exit, the curve has no points. The
-masks, which the C code keeps in an `unsigned long`, stay below `2 ^ 40` for an odd prime and a
-`long` `b_high`, so that its cap on the valuations never binds; the products `pm p` of its loops of
-the valuations and the square `p p` of a prime of the table that its loop over the further primes
-compares with `b_high` are `long`s (`Ratpoints.Setup.fitsLong_mul_of_le_div`,
-`Ratpoints.Setup.mul_self_lt_of_mem_primeTable`).
+word `r` clear exactly when `p ∣ 64 r + j` (`Ratpoints.Sieve.getLsbD_getElem!_forbiddenRow`); a
+prime tested by its valuation excludes no denominator of a point. The loop of the tables also keeps
+the table of every prime it examines, that of the reference (`Ratpoints.Sieve.examinePrime`), and
+when it takes its exit, the curve has no points. The masks, which the C code keeps in an
+`unsigned long`, stay below `2 ^ 40` for an odd prime and a `long` `b_high`, so that its cap on the
+valuations never binds; the products `pm p` of its loops of the valuations and the square `p p` of a
+prime of the table that its loop over the further primes compares with `b_high` are `long`s
+(`Ratpoints.Setup.fitsLong_mul_of_le_div`, `Ratpoints.Setup.mul_self_lt_of_mem_primeTable`).
 
 ## Main definitions
 
@@ -75,7 +74,6 @@ compares with `b_high` are `long`s (`Ratpoints.Setup.fitsLong_mul_of_le_div`,
   forbidden divisors tested with words are primes with the words of `Ratpoints.Sieve.forbiddenRow`.
 * `Ratpoints.Sieve.IsForbiddenEntry.not_dvd`, `Ratpoints.Sieve.IsForbiddenVal.excludes_eq_false`:
   the forbidden divisors let the denominator of every point through.
-* `Ratpoints.Sieve.getLsbD_getElem!_forbiddenRow`: the bits of the words of a forbidden divisor.
 * `Ratpoints.Sieve.lt_forty_of_pow_le`, `Ratpoints.Sieve.run_forbiddenValuations_lt`,
   `Ratpoints.Sieve.run_allValuations_lt`: the cap of the loops of the valuations never binds, and
   the masks fit an `unsigned long`.
@@ -1176,63 +1174,6 @@ theorem forbidden_spec (c : List ℤ) (d examined maxForbidden bHigh : ℕ) (ba 
     | exact forall_isForbiddenEntry_and_forall_isForbiddenVal h.2 h.1
     | exact forall_isForbiddenEntry_push ‹_› ‹_› ‹_›
     | assumption
-
-/-! ### The words of a forbidden divisor -/
-
--- The words of `Ratpoints.Sieve.forbiddenRow` after the bits of the first `k` multiples of `p` are
--- cleared.
-private theorem size_fold_modify (p k : ℕ) :
-    (Nat.fold k (fun i _ row ↦ row.modify (p * i / 64) (· &&& ~~~(1 <<< (p * i % 64).toUInt64)))
-      (Array.replicate p (~~~0 : UInt64))).size = p := by
-  induction k with
-  | zero => simp
-  | succ k ih => rw [Nat.fold_succ, Array.size_modify, ih]
-
-private theorem exists_lt_succ_mul_eq_iff {p k r t : ℕ} (ht : t < 64) :
-    (∃ i < k + 1, p * i = 64 * r + t) ↔
-      (∃ i < k, p * i = 64 * r + t) ∨ (p * k / 64 = r ∧ t = p * k % 64) := by
-  rw [Nat.exists_lt_succ_right]
-  exact or_congr_right ⟨fun h ↦ ⟨by lia, by lia⟩, fun h ↦ by lia⟩
-
-private theorem getLsbD_fold_modify {p r : ℕ} (hr : r < p) (k t : ℕ) :
-    (Nat.fold k (fun i _ row ↦ row.modify (p * i / 64) (· &&& ~~~(1 <<< (p * i % 64).toUInt64)))
-      (Array.replicate p (~~~0 : UInt64)))[r]!.toBitVec.getLsbD t =
-      (decide (t < 64) && !decide (∃ i < k, p * i = 64 * r + t)) := by
-  induction k with
-  | zero =>
-    rw [Nat.fold_zero, getElem!_pos _ r (by rwa [Array.size_replicate]),
-      Array.getElem_replicate, UInt64.getLsbD_allOnes]
-    simp
-  | succ k ih =>
-    rw [Nat.fold_succ, getElem!_pos _ r (by rwa [Array.size_modify, size_fold_modify]),
-      Array.getElem_modify, ← getElem!_pos _ r (by rwa [size_fold_modify])]
-    rcases Nat.lt_or_ge t 64 with ht | ht
-    · simp only [decide_eq_true ht, Bool.true_and, exists_lt_succ_mul_eq_iff ht]
-      split
-      · rw [UInt64.toBitVec_and, BitVec.getLsbD_and, ih, UInt64.toBitVec_not, BitVec.getLsbD_not,
-          UInt64.getLsbD_one_shiftLeft (Nat.mod_lt _ (by decide))]
-        simp [*]
-      · rw [ih]
-        simp [*]
-    · simp [BitVec.getLsbD_of_ge _ _ ht, decide_eq_false (Nat.not_lt.mpr ht)]
-
--- The multiples `p i`, `i < 64`, of `p` are those among the positions `64 r + t` with `r < p` and
--- `t < 64`.
-private theorem exists_lt_mul_eq_iff {p r t : ℕ} (hr : r < p) (ht : t < 64) :
-    (∃ i < 64, p * i = 64 * r + t) ↔ (64 * r + t) % p = 0 := by
-  refine ⟨fun ⟨i, _, h⟩ ↦ h ▸ Nat.mul_mod_right p i, fun h ↦ ⟨(64 * r + t) / p, ?_,
-    Nat.mul_div_cancel' (Nat.dvd_of_mod_eq_zero h)⟩⟩
-  rw [Nat.div_lt_iff_lt_mul (by lia)]
-  lia
-
-/-- Bit `t` of word `r < p` of the words of the forbidden divisor `p` is clear exactly when
-`p ∣ 64 r + t`, the multiples `p i` of `p` with `i < 64` being cleared. -/
-theorem getLsbD_getElem!_forbiddenRow {p r : ℕ} (hr : r < p) (t : ℕ) :
-    (forbiddenRow p)[r]!.toBitVec.getLsbD t = (decide (t < 64) && (64 * r + t) % p != 0) := by
-  rw [forbiddenRow, getLsbD_fold_modify hr]
-  rcases Nat.lt_or_ge t 64 with ht | ht
-  · by_cases h : (64 * r + t) % p = 0 <;> simp [ht, exists_lt_mul_eq_iff hr ht, h]
-  · simp [decide_eq_false (Nat.not_lt.mpr ht)]
 
 /-! ### The `long`s of the C code -/
 

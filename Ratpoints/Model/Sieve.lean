@@ -9,6 +9,7 @@ public import Ratpoints.Model.BruteForce
 public import Ratpoints.Model.Candidate
 public import Ratpoints.Model.Constants
 public import Ratpoints.Model.FirstStage
+public import Ratpoints.Model.Rows
 public import Ratpoints.Model.Tables
 
 -- The `#guard` examples run code of the imported modules at compile time.
@@ -16,6 +17,7 @@ meta import Ratpoints.Model.BruteForce
 meta import Ratpoints.Model.Candidate
 meta import Ratpoints.Model.Constants
 meta import Ratpoints.Model.FirstStage
+meta import Ratpoints.Model.Rows
 meta import Ratpoints.Model.Tables
 
 /-!
@@ -62,8 +64,11 @@ brute-force reference `Ratpoints.bruteForce`, in the same order, each mapped by
 caller's curve for a point of a polynomial that the reversal check has reversed
 (`Ratpoints.Setup.reversal`), the exact check and the points at infinity deliver the mapped points
 when their flag is set, and the components from the run down to the check hand the flag on. The rows
-of `0` that the build of ratpoints generates are computed here as words, by
-`Ratpoints.Sieve.SieveEntry.row`.
+of the run are made here as words by a plain builder for every kind of modulus
+(`Ratpoints.Sieve.SieveEntry.row`), the reference of the builders of the C code; the row of `0` of a
+prime that the build of ratpoints generates and the builders of the rows of a prime, which the run
+calls from stage F4 on, are in `Ratpoints.Model.Rows`, with the windows of packed words that the
+plain builder cuts out (`Ratpoints.Sieve.window`).
 
 ## Main definitions
 
@@ -209,14 +214,6 @@ def packedPattern (pat : Array Bool) (p : Nat) : Array UInt64 :=
   (Array.range (p / 64 + 2)).map fun q ↦
     Nat.fold 64 (fun t _ w ↦ if pat[(64 * q + t) % p]! then w ||| 1 <<< t.toUInt64 else w) 0
 
-/-- The 64 bits of the packed words `E` from position `s` on, where bit `t` of word `q` is at
-position `64 q + t`: word `s / 64` shifted right by `r = s % 64`, and for `r ≠ 0` the lowest `r`
-bits of the next word above them. -/
-def window (E : Array UInt64) (s : Nat) : UInt64 :=
-  let q := s / 64
-  let r := s % 64
-  if r = 0 then E[q]! else E[q]! >>> r.toUInt64 ||| E[q + 1]! <<< (64 - r).toUInt64
-
 /-- The row of the denominator `b` in the sieve entry `e` of the modulus `p = e.p`, as
 `p + chunk - 1` bit arrays of `Ratpoints.rbaPack` words, for the chunk `Ratpoints.chunk`: the
 pattern of one period, whether the row admits the numerator `N` for `N < p`
@@ -230,25 +227,23 @@ past the first `p`. Bit `t` of word `j` says whether the row admits `64 j + t`, 
 form of the admission test at `b` (`Ratpoints.Sieve.closedRow`,
 `Ratpoints.Sieve.SieveEntry.row_eq_closedRow`).
 
-C: `init.c:42-46`, `init.c:62-83`, `init.c:99-111`, `init.c:118-246`, `init.c:259-297`,
-`init.c:387`, `init.c:391-393`, `init.c:415-418`, `init.c:430`, `init.c:443-445`,
-`gen_find_points_h.c:102-134`, `gen_init_sieve_h.c:48-62`
+C: `init.c:259-297`, `init.c:387`, `init.c:391-393`, `init.c:415-418`, `init.c:430`,
+`init.c:443-445`
 
 Deviation: one function for every kind of modulus, the pattern of one period from
 `Ratpoints.Sieve.SieveEntry.admits` laid out in words by windows into its packed form, as
-`lay_out_pattern` lays out the pattern of a prime power, for the builders of the rows of a prime in
-`init.c`, which step through the residues `a b⁻¹ mod p` four at a time and rotate the pattern
-through the words, one function for each prime that the build generates, for the pattern `sieves0`
-that the build generates for the row of `0` of a prime, and for the row of a product, which
-`_ratpoints_sieve_init_product` lays down from the rows of its factors (stage F4); in
-`lay_out_pattern`, the packed pattern made bit by bit, where it is or-ed together from shifted
-copies of the pattern, the position of each window computed, where it is stepped by `64 mod p`, and
-the first `p` words repeated, where all `p rbaPack` are computed; a fresh array, for the space that
-the builders take from the buffer of the tables (`ba_next`), and the row returned, where the
-builders also store it in the field `sieve` of the entry, with a release store for the threads
-(`RP_PUBLISH`), which the thunks of `Ratpoints.Sieve.SieveEntry.rows` do; the copies of the first
-`Ratpoints.chunk - 1` bit arrays at the end of a row computed as the others, where the builders copy
-them. -/
+`lay_out_pattern` lays out the pattern of a prime power, also for the row of a product, which
+`_ratpoints_sieve_init_product` lays down from the rows of its factors (stage F4), and for the rows
+of a prime, for which the run calls neither the pattern `sieves0` of the row of `0`
+(`Ratpoints.Sieve.sieves0`) nor the builders that the build generates (`Ratpoints.Sieve.sieveInit1`,
+`Ratpoints.Sieve.sieveInit2`) yet, which give the same words (stage F4); in `lay_out_pattern`, the
+packed pattern made bit by bit, where it is or-ed together from shifted copies of the pattern, the
+position of each window computed, where it is stepped by `64 mod p`, and the first `p` words
+repeated, where all `p rbaPack` are computed; a fresh array, for the space that the builders take
+from the buffer of the tables (`ba_next`), and the row returned, where the builders also store it in
+the field `sieve` of the entry, with a release store for the threads (`RP_PUBLISH`), which the
+thunks of `Ratpoints.Sieve.SieveEntry.rows` do; the copies of the first `Ratpoints.chunk - 1` bit
+arrays at the end of a row computed as the others, where the builders copy them. -/
 def SieveEntry.row (e : SieveEntry) (b : Nat) : Array UInt64 :=
   let pat := (Array.range e.p).map fun N : Nat ↦ e.admits b N
   let E := packedPattern pat e.p
@@ -815,23 +810,31 @@ def sift (c : List Int) (d H A b : Nat) (rev : Bool) (sp1 : Nat)
     row.size == (e.p + chunk - 1) * rbaPack && (List.range row.size).all fun j ↦
       (List.range 64).all fun t ↦ row[j]!.toBitVec.getLsbD t == e.admits b (64 * j + t)
 
--- The row of `0` against the pattern `sieves0` that the build of ratpoints generates, for 3, 5, 7,
--- 11 and 13: the first `p` of its `RBA_PACK * p` words, which repeat them.
+-- The rows of a prime as the build of ratpoints makes them against the plain builder, word for
+-- word over all `(p + chunk - 1) rbaPack` words: the row of `0`, the pattern `sieves0`
+-- (`Ratpoints.Sieve.sieves0`), for every prime of the table of the build; and the rows of the
+-- residues `b ≠ 0` by the function that the build generates for the prime, of the kind of the prime
+-- (`Ratpoints.Sieve.sieveInit`), from `CODE_INIT_SIEVE1` below 64 and from `CODE_INIT_SIEVE2`
+-- above: every residue of the primes up to 13 and four residues of the larger primes up to 251,
+-- with the tables of two curves and a table of all ones, which tests only coprimality; the builder
+-- stores the row into the table of rows of the entry of the prime, which keeps its row of `0`, and
+-- no other row.
+#guard (primeTable.toList.take numPrimes).all fun p ↦
+  let e : SieveEntry := ⟨p, [.prime (examinePrime [1, 0, 1] 2 p)], magic p, 0, 0, #[]⟩
+  sieves0 p == e.row 0
 #guard
-  ([(3, #[0x6db6db6db6db6db6, 0xb6db6db6db6db6db, 0xdb6db6db6db6db6d]),
-    (5, #[0xef7bdef7bdef7bde, 0xdef7bdef7bdef7bd, 0xbdef7bdef7bdef7b, 0x7bdef7bdef7bdef7,
-      0xf7bdef7bdef7bdef]),
-    (7, #[0x7efdfbf7efdfbf7e, 0xbf7efdfbf7efdfbf, 0xdfbf7efdfbf7efdf, 0xefdfbf7efdfbf7ef,
-      0xf7efdfbf7efdfbf7, 0xfbf7efdfbf7efdfb, 0xfdfbf7efdfbf7efd]),
-    (11, #[0xff7feffdffbff7fe, 0xfdffbff7feffdffb, 0xf7feffdffbff7fef, 0xdffbff7feffdffbf,
-      0x7feffdffbff7feff, 0xffbff7feffdffbff, 0xfeffdffbff7feffd, 0xfbff7feffdffbff7,
-      0xeffdffbff7feffdf, 0xbff7feffdffbff7f, 0xffdffbff7feffdff]),
-    (13, #[0xffefff7ffbffdffe, 0xffdffefff7ffbffd, 0xffbffdffefff7ffb, 0xff7ffbffdffefff7,
-      0xfefff7ffbffdffef, 0xfdffefff7ffbffdf, 0xfbffdffefff7ffbf, 0xf7ffbffdffefff7f,
-      0xefff7ffbffdffeff, 0xdffefff7ffbffdff, 0xbffdffefff7ffbff, 0x7ffbffdffefff7ff,
-      0xfff7ffbffdffefff])] : List (Nat × Array UInt64)).all fun (p, ws) ↦
-    let e : SieveEntry := ⟨p, [.prime (examinePrime [1, 0, 1] 2 p)], magic p, 0, 0, #[]⟩
-    (e.row 0).extract 0 p == ws
+  [3, 5, 7, 11, 13, 31, 61, 67, 71, 127, 251].all fun p ↦
+    let s0 : RowStore :=
+      ({} : RowStore).insert (.prime p) (#[some (sieves0 p)] ++ .replicate (p - 1) none)
+    [examinePrime [1, 2, 3, 4, 5, 6, 7] 6 p, examinePrime [-2, 0, 0, 1] 3 p,
+        ⟨p, .replicate (p + 1) true, inversesMod p⟩].all fun t ↦
+      let e : SieveEntry := ⟨p, [.prime t], magic p, 0, 0, #[]⟩
+      (if p ≤ 13 then List.range' 1 (p - 1) else [1, 2, p / 2, p - 1]).all fun b ↦
+        let (row, s) := Id.run <| match sieveInit p with
+          | .sieve1 => sieveInit1 t (.prime p) b s0
+          | _ => sieveInit2 t (.prime p) b s0
+        row.toArray == e.row b && s.size == 1 && (List.range p).all fun r ↦
+          s.row? (.prime p) r == if r = b then some row.toArray else s0.row? (.prime p) r
 
 -- The rows of the residues: one thunk for each of the `p` residues, the thunk of `r` giving the
 -- row of `r`.

@@ -18,10 +18,14 @@ modulus `m` and a residue `r`, the `(m + chunk - 1) Ratpoints.rbaPack` words who
 `t` set exactly when `adm r` admits the numerator `64 j + t`. The row of a denominator as words
 (`Ratpoints.Sieve.SieveEntry.row`) is the closed form of the admission test of its sieve entry
 (`Ratpoints.Sieve.SieveEntry.row_eq_closedRow`), and so are the rows that the builders of `init.c`
-and the generators of the headers of the build compute (stage F4). For a test of period `m` the
-closed form repeats its first `m` bit arrays in the `Ratpoints.chunk - 1` after them
+and the generators of the headers of the build compute (`Ratpoints.Proof.PrimeRows`, and stage F4
+for the rows of a prime power and of a product). For a test of period `m` the closed form repeats
+its first `m` bit arrays in the `Ratpoints.chunk - 1` after them
 (`Ratpoints.Sieve.getElem!_closedRow_mod`), the copies that the chunked first stage reads
-(`Ratpoints.Sieve.SieveSpec.Wraps`).
+(`Ratpoints.Sieve.SieveSpec.Wraps`). The words of a forbidden divisor
+(`Ratpoints.Sieve.forbiddenRow`) have bit `t` of word `r` clear exactly when `p ∣ 64 r + t`, and the
+row of `0` of a prime of the table (`Ratpoints.Sieve.sieves0`) is the closed form of the row of `0`
+of every table of the prime, the first `p` of its words those of the forbidden divisor `p`.
 
 The words of a pattern in the shape in which the builders compute them: a word holding a stretch of
 bits of a pattern of period `m` (`Ratpoints.Sieve.PatternBits`), and the words of a row that are the
@@ -50,6 +54,10 @@ a shift and a mask (`Ratpoints.Sieve.bitAt_eq_patBit`) and sets one at a time
   are the closed form of a test that reads the pattern.
 * `Ratpoints.Sieve.bitAt_eq_patBit`, `Ratpoints.Sieve.bitAt_setBitAt`: the bit of a bit array of
   words that the C code reads, and the bits after one is set.
+* `Ratpoints.Sieve.getLsbD_getElem!_forbiddenRow`: the bits of the words of a forbidden divisor.
+* `Ratpoints.Sieve.sieves0_eq_closedRow`, `Ratpoints.Sieve.extract_sieves0`: the row of `0` of a
+  prime is the closed form of the row of `0` of its table, and its first `p` words are those of the
+  forbidden divisor `p`.
 
 ## Implementation notes
 
@@ -261,6 +269,105 @@ theorem bitAt_eq_patBit (ws : Array UInt64) (x : Nat) : bitAt ws x = patBit ws x
 theorem bitAt_setBitAt {ws : Array UInt64} {x : Nat} (hx : x / 64 < ws.size) (y : Nat) :
     bitAt (setBitAt ws x) y = (bitAt ws y || decide (y = x)) := by
   rw [bitAt_eq_patBit, bitAt_eq_patBit, patBit_setBitAt hx]
+
+/-! ### The words of a forbidden divisor -/
+
+-- The words of `Ratpoints.Sieve.forbiddenRow` after the bits of the first `k` multiples of `p` are
+-- cleared.
+private theorem size_fold_modify (p k : Nat) :
+    (Nat.fold k (fun i _ row ↦ row.modify (p * i / 64) (· &&& ~~~(1 <<< (p * i % 64).toUInt64)))
+      (Array.replicate p (~~~0 : UInt64))).size = p := by
+  induction k with
+  | zero => simp
+  | succ k ih => rw [Nat.fold_succ, Array.size_modify, ih]
+
+private theorem exists_lt_succ_mul_eq_iff {p k r t : Nat} (ht : t < 64) :
+    (∃ i < k + 1, p * i = 64 * r + t) ↔
+      (∃ i < k, p * i = 64 * r + t) ∨ (p * k / 64 = r ∧ t = p * k % 64) := by
+  rw [Nat.exists_lt_succ_right]
+  exact or_congr_right ⟨fun h ↦ ⟨by lia, by lia⟩, fun h ↦ by lia⟩
+
+private theorem getLsbD_fold_modify {p r : Nat} (hr : r < p) (k t : Nat) :
+    (Nat.fold k (fun i _ row ↦ row.modify (p * i / 64) (· &&& ~~~(1 <<< (p * i % 64).toUInt64)))
+      (Array.replicate p (~~~0 : UInt64)))[r]!.toBitVec.getLsbD t =
+      (decide (t < 64) && !decide (∃ i < k, p * i = 64 * r + t)) := by
+  induction k with
+  | zero =>
+    rw [Nat.fold_zero, getElem!_pos _ r (by rwa [Array.size_replicate]),
+      Array.getElem_replicate, UInt64.getLsbD_allOnes]
+    simp
+  | succ k ih =>
+    rw [Nat.fold_succ, getElem!_pos _ r (by rwa [Array.size_modify, size_fold_modify]),
+      Array.getElem_modify, ← getElem!_pos _ r (by rwa [size_fold_modify])]
+    rcases Nat.lt_or_ge t 64 with ht | ht
+    · simp only [decide_eq_true ht, Bool.true_and, exists_lt_succ_mul_eq_iff ht]
+      split
+      · rw [UInt64.toBitVec_and, BitVec.getLsbD_and, ih, UInt64.toBitVec_not, BitVec.getLsbD_not,
+          UInt64.getLsbD_one_shiftLeft (Nat.mod_lt _ (by decide))]
+        simp [*]
+      · rw [ih]
+        simp [*]
+    · simp [BitVec.getLsbD_of_ge _ _ ht, decide_eq_false (Nat.not_lt.mpr ht)]
+
+-- The multiples `p i`, `i < 64`, of `p` are those among the positions `64 r + t` with `r < p` and
+-- `t < 64`.
+private theorem exists_lt_mul_eq_iff {p r t : Nat} (hr : r < p) (ht : t < 64) :
+    (∃ i < 64, p * i = 64 * r + t) ↔ (64 * r + t) % p = 0 := by
+  refine ⟨fun ⟨i, _, h⟩ ↦ h ▸ Nat.mul_mod_right p i, fun h ↦ ⟨(64 * r + t) / p, ?_,
+    Nat.mul_div_cancel' (Nat.dvd_of_mod_eq_zero h)⟩⟩
+  rw [Nat.div_lt_iff_lt_mul (by lia)]
+  lia
+
+theorem size_forbiddenRow (p : Nat) : (forbiddenRow p).size = p :=
+  size_fold_modify p 64
+
+/-- Bit `t` of word `r < p` of the words of the forbidden divisor `p` is clear exactly when
+`p ∣ 64 r + t`, the multiples `p i` of `p` with `i < 64` being cleared. -/
+theorem getLsbD_getElem!_forbiddenRow {p r : Nat} (hr : r < p) (t : Nat) :
+    (forbiddenRow p)[r]!.toBitVec.getLsbD t = (decide (t < 64) && (64 * r + t) % p != 0) := by
+  rw [forbiddenRow, getLsbD_fold_modify hr]
+  rcases Nat.lt_or_ge t 64 with ht | ht
+  · by_cases h : (64 * r + t) % p = 0 <;> simp [ht, exists_lt_mul_eq_iff hr ht, h]
+  · simp [decide_eq_false (Nat.not_lt.mpr ht)]
+
+/-! ### The row of `0` of a prime -/
+
+theorem size_sieves0 (p : Nat) : (sieves0 p).size = (p + chunk - 1) * rbaPack := by
+  rw [sieves0, Array.size_append, Array.size_fold_append, size_forbiddenRow, Array.size_map,
+    Array.size_range, Nat.add_sub_assoc chunk_pos, Nat.add_mul, Nat.mul_comm rbaPack]
+
+/-- Word `x` of the row of `0` of the prime `p` is word `x mod p` of the words of the forbidden
+divisor `p`. -/
+theorem getElem!_sieves0 {p x : Nat} (hx : x < (p + chunk - 1) * rbaPack) :
+    (sieves0 p)[x]! = (forbiddenRow p)[x % p]! := by
+  rw [sieves0, Array.getElem!_append, Array.size_fold_append, size_forbiddenRow]
+  split
+  · rw [Array.getElem!_fold_append _ (by rwa [size_forbiddenRow]), size_forbiddenRow]
+  · rw [Array.getElem!_map_range _ (by rw [Nat.add_sub_assoc chunk_pos, Nat.add_mul] at hx; lia),
+      Nat.sub_mul_mod (by lia)]
+
+/-- The row of `0` of the prime `p = e.p > 0` of the table is the closed form of the row of `0` of
+the table `e` of the prime, whatever its entries: bit `t` of word `x` set exactly when
+`p ∤ 64 x + t`. -/
+theorem sieves0_eq_closedRow (e : Entry) (hp : 0 < e.p) : sieves0 e.p = closedRow e.admits e.p 0 :=
+  eq_closedRow (size_sieves0 e.p) fun j hj t ↦ by
+    have hc : ((64 * (j : Int) + t) % (e.p : Int)).toNat = (64 * j + t) % e.p := by
+      rw [show 64 * (j : Int) + t = ((64 * j + t : Nat) : Int) by push_cast; rfl,
+        ← Int.natCast_emod, Int.toNat_natCast]
+    rw [getElem!_sieves0 hj, getLsbD_getElem!_forbiddenRow (Nat.mod_lt _ hp), Entry.admits]
+    simp only [Nat.zero_mod, ↓reduceIte, hc]
+    rw [Nat.add_mod, Nat.mul_mod, Nat.mod_mod, ← Nat.mul_mod, ← Nat.add_mod]
+
+/-- The first `p` words of the row of `0` of the prime `p` are the words of the forbidden divisor
+`p`. -/
+theorem extract_sieves0 (p : Nat) : (sieves0 p).extract 0 p = forbiddenRow p := by
+  have hle : p ≤ (p + chunk - 1) * rbaPack :=
+    Nat.le_trans (Nat.le_mul_of_pos_right p rbaPack_pos)
+      (Nat.mul_le_mul_right _ (by lia [chunk_pos]))
+  refine Array.ext (by simp [size_sieves0, size_forbiddenRow, Nat.min_eq_left hle]) fun i h1 h2 ↦ ?_
+  have hi : i < p := by rwa [size_forbiddenRow] at h2
+  rw [Array.getElem_extract, ← getElem!_pos (sieves0 p) _ (by rw [size_sieves0]; lia),
+    getElem!_sieves0 (by lia), Nat.zero_add, Nat.mod_eq_of_lt hi, getElem!_pos]
 
 end Sieve
 

@@ -155,17 +155,17 @@ brings the chunked first stage and the copies in the rows that it decides
   of $b$ is that of $b \bmod p$, bit $t$ of word $j$ says whether the row admits $64 j + t$, for
   every $j < (p + \mathrm{chunk} - 1) \cdot \mathrm{rbaPack}$: the row is the closed form of the
   admission test (Definition~\ref{def:closedRow}, Lemma~\ref{lem:closedRow}). For a prime, ratpoints
-  builds the same table from the table of the prime and the inverses, the pattern of one period bit
-  by bit and then the words by shifting it through them, by a function for each prime that its build
-  generates (\csource{init.c}{42}{46}, \csource{init.c}{62}{83}, \csource{init.c}{118}{246},
-  \csource{gen_init_sieve_h.c}{48}{62}), with the copies \csource{init.c}{99}{111}, and takes the
-  row of $0$ from the generated pattern \verb|sieves0| (\csource{gen_find_points_h.c}{102}{134});
-  these ranges are shared with Definition~\ref{def:admits} until the faithful builders of stage~F4.
-  For a prime power it lays the pattern out by \verb|lay_out_pattern| (\csource{init.c}{259}{297},
-  \csource{init.c}{387}{387}), and for a product it lays down the rows of the factors in blocks
-  (\csource{init.c}{415}{418}, \csource{init.c}{430}{430}); both publish the row
-  (\csource{init.c}{391}{393}, \csource{init.c}{443}{445}). The model computes the copies at the end
-  of a row as the other words, where the builders copy them.
+  builds the same row from the table of the prime and the inverses, the pattern of one period four
+  bits at a time and then the words by rotating it through them, by a function for each prime that
+  its build generates, with the copies, and takes the row of $0$ from the generated pattern
+  \verb|sieves0|; the model has these builders and the pattern (Definitions~\ref{def:sieves0},
+  \ref{def:sieveInit1} and~\ref{def:sieveInit2}), which the run does not call yet and which the
+  \verb|#guard| examples compare with this row word for word. For a prime power it lays the pattern
+  out by \verb|lay_out_pattern| (\csource{init.c}{259}{297}, \csource{init.c}{387}{387}), and for a
+  product it lays down the rows of the factors in blocks (\csource{init.c}{415}{418},
+  \csource{init.c}{430}{430}); both publish the row (\csource{init.c}{391}{393},
+  \csource{init.c}{443}{445}). The model computes the copies at the end of a row as the other words,
+  where the builders copy them.
 \end{definition}
 
 \begin{definition}[The rows of a modulus]\label{def:rows}

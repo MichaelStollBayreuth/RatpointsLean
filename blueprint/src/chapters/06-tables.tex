@@ -339,14 +339,15 @@ which $\mathrm{maxPrimeEven} \le 2^{32}$ gives.
   (Chapter~\ref{chap:packing}): the bias, the least multiple of $m$ from $\mathrm{rowBias}$ on, the
   inverse $\mathrm{rbainv}$ of $\mathrm{rbaLength}$ modulo $m$, and the inverses $\mathrm{dinv}$ of
   the strides $2^k$ modulo $m$ up to the largest stride in use, which the rows of offsets fill
-  (Definition~\ref{def:classOffsets}; \csource{rp-private.h}{497}{498},
-  \csource{rp-private.h}{520}{520}, \csource{rp-private.h}{542}{555}). Its row of $b$ admits $a$
-  when the row of every factor admits $a$, each factor reading $b$ and $a$ modulo its own modulus,
-  which divides $m$ (\csource{init.c}{399}{414}, \csource{init.c}{419}{429},
-  \csource{rp-private.h}{593}{593}); a numerator \emph{survives} a list of sieve entries for $b$
-  when the row of $b$ of every entry admits it, the test that Definition~\ref{def:admits} gave for
-  the tables of primes. A sieve entry is \emph{sound} when its modulus is positive and its row of
-  $b$ admits $a$ for every $\gcd(a, b) = 1$ and $y^2 = F(a, b)$.
+  (Definition~\ref{def:classOffsets}; \csource{rp-private.h}{520}{520},
+  \csource{rp-private.h}{542}{555}; the type of the pointer \verb|init| to the builder of its rows
+  goes with Definition~\ref{def:rowInit}). Its row of $b$ admits $a$ when the row of every factor
+  admits $a$, each factor reading $b$ and $a$ modulo its own modulus, which divides $m$
+  (\csource{init.c}{399}{414}, \csource{init.c}{419}{429}, \csource{rp-private.h}{593}{593}); a
+  numerator \emph{survives} a list of sieve entries for $b$ when the row of $b$ of every entry
+  admits it, the test that Definition~\ref{def:admits} gave for the tables of primes. A sieve entry
+  is \emph{sound} when its modulus is positive and its row of $b$ admits $a$ for every
+  $\gcd(a, b) = 1$ and $y^2 = F(a, b)$.
 \end{definition}
 
 \begin{definition}[The sieve entry of a modulus]\label{def:makeModulus}

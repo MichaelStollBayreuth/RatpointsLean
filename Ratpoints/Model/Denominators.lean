@@ -50,8 +50,7 @@ increasing, except for the divisors.
 * `Ratpoints.Sieve.unitParts`, `Ratpoints.Sieve.forbiddenAt`, `Ratpoints.Sieve.forbiddenValuations`,
   `Ratpoints.Sieve.allValuations`: the valuations at a prime of the leading coefficient that no
   denominator of a point has, and those that a denominator can have at all.
-* `Ratpoints.Sieve.forbiddenRow`, `Ratpoints.Sieve.forbiddenOfPrime`,
-  `Ratpoints.Sieve.examinePrimes`, `Ratpoints.Sieve.forbidden`: the words of a forbidden divisor,
+* `Ratpoints.Sieve.forbiddenOfPrime`, `Ratpoints.Sieve.examinePrimes`, `Ratpoints.Sieve.forbidden`:
   the forbidden divisor of an examined prime, the loop of the tables with the exit and the forbidden
   divisors of the examined primes, and the forbidden divisors among the further primes.
 * `Ratpoints.Sieve.jacobi`: the Jacobi test by the binary algorithm, with its helpers
@@ -303,21 +302,6 @@ def allValuations (p bHigh : Nat) : Id Nat := do
     pm := pm * p
     m := m + 1
   return all
-
-/-- The words of the forbidden divisor `p`: `p` words, word `r` with bit `j` clear exactly when
-`p ∣ 64 r + j`, made as the C code makes them: all ones, then for `i < 64` the bit of the position
-`p i` cleared, the position `N` being bit `N mod 64` of word `⌊N / 64⌋`.
-
-C: `find_points.c:2773-2777`, `gen_find_points_h.c:102-134`
-
-Deviation: one function for the primes of the table of the build, whose words are the first `p`
-words of the pattern `sieves0` that the build generates (the row of `0` of a prime,
-`Ratpoints.Sieve.SieveEntry.row`), those between `start` and `end`, and the primes beyond it, whose
-words `sieving_info` makes in the buffer `forb_words` of the arguments; a fresh array for each
-prime; divisions and remainders for the shifts and masks by `LONG_SHIFT` and `LONG_MASK`. -/
-def forbiddenRow (p : Nat) : Array UInt64 :=
-  Nat.fold 64 (fun i _ row ↦ row.modify (p * i / 64) (· &&& ~~~(1 <<< (p * i % 64).toUInt64)))
-    (Array.replicate p (~~~0))
 
 /-- The forbidden divisor that the examined prime `p` gives for the polynomial of even degree `d`
 with the coefficient list `c` and the largest denominator `bHigh`, if any, from what the table of
@@ -994,17 +978,6 @@ prints. -/
     match Id.run (forbiddenOfPrime c 2 3 (3 ^ 64) #[0, 0, 0] true) with
     | some (.inr e) => e.p == 3 && !e.mask.testBit (Id.run (Setup.valuation (3 ^ 64) 3)).1
     | _ => false
-
--- The words of a forbidden divisor: bit `j` of word `r` is clear exactly when `p ∣ 64 r + j`,
--- for primes of the table of the build and beyond it; and for the primes of the table they are the
--- pattern `sieves0`, the row of `0`.
-#guard [3, 5, 7, 251, 257, 1021].all fun p ↦
-  let row := forbiddenRow p
-  row.size == p && (List.range p).all fun r ↦ (List.range 64).all fun j ↦
-    row[r]!.toBitVec.getLsbD j == ((64 * r + j) % p != 0)
-#guard [3, 5, 7, 13, 251].all fun p ↦
-  let e : SieveEntry := ⟨p, [.prime (examinePrime [1, 0, 1] 2 p)], magic p, 0, 0, #[]⟩
-  forbiddenRow p == (e.row 0).extract 0 p
 
 -- The forbidden divisors of the dump, for the first 30 primes of the table as the examined primes
 -- (the loop of the tables, then the further primes): `1 2 3 4 5 6 7` at the height 100,

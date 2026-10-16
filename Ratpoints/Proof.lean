@@ -19,7 +19,9 @@ public import Ratpoints.Proof.JacobiTables
 public import Ratpoints.Proof.Moduli
 public import Ratpoints.Proof.Packing
 public import Ratpoints.Proof.Params
+public import Ratpoints.Proof.PrimeRows
 public import Ratpoints.Proof.Reductions
+public import Ratpoints.Proof.RowStore
 public import Ratpoints.Proof.Rows
 public import Ratpoints.Proof.SetBits
 public import Ratpoints.Proof.Setup

@@ -12,19 +12,20 @@ Lemmas on the 64-bit words, unsigned and signed, that the contracts of the model
 lacks, under their names in the namespaces of Lean core: two words with the same bits, the bits of
 the word `~~~0` and of the masks `~~~0 <<< n` and `~~~0 >>> n`, the lowest bit and the lowest set
 bit of a word, the word `x &&& (x - 1)`, which is `x` with its lowest set bit cleared, the bits of a
-word set one at a time, at their own positions or at others, the 64 bits of two words from a
-position within the first, the bits of a word and-ed in turn with the words of a list, the odd part
-of a number below `2 ^ 64` by the lowest set bit of its word, the halves of a word, and, for the
-signed 64-bit words, the arithmetic shift, the mask `x >>> 63` with the smaller and the distance of
-two non-negative words that it gives without a branch, the odd part of a positive word by the lowest
-set bit of the word read as unsigned, its lowest bit, the absolute value, and the words of an
-integer and of a natural number below `2 ^ 63`. For the classes of the packing: the bits of a word
-and-ed with the complement of a mask and of a word or-ed with itself shifted, `x ||| x <<< s`, which
-doubles a pattern of period `P ∣ s`. For the rows of offsets: the bit `(x >>> j) &&& 1` of a word,
-and the 128 bits of two words after one bit is set. For the bits of an interval: the sums,
-differences and negations of `long`s that do not overflow, the mask `(1 <<< k) - 1` and the and with
-it, the Euclidean remainder modulo `2 ^ k` also of a negative `long`. The lemmas on vectors, arrays,
-lists, ranges, natural numbers and integers are in `Ratpoints.Proof.Containers`.
+word set one at a time, at their own positions or at others, the bits of a word and of a Boolean
+shifted by an amount below 64, the 64 bits of two words from a position within the first, the bits
+of a word and-ed in turn with the words of a list, the odd part of a number below `2 ^ 64` by the
+lowest set bit of its word, the halves of a word, and, for the signed 64-bit words, the arithmetic
+shift, the mask `x >>> 63` with the smaller and the distance of two non-negative words that it gives
+without a branch, the odd part of a positive word by the lowest set bit of the word read as
+unsigned, its lowest bit, the absolute value, and the words of an integer and of a natural number
+below `2 ^ 63`. For the classes of the packing: the bits of a word and-ed with the complement of a
+mask and of a word or-ed with itself shifted, `x ||| x <<< s`, which doubles a pattern of period
+`P ∣ s`. For the rows of offsets: the bit `(x >>> j) &&& 1` of a word, and the 128 bits of two words
+after one bit is set. For the bits of an interval: the sums, differences and negations of `long`s
+that do not overflow, the mask `(1 <<< k) - 1` and the and with it, the Euclidean remainder modulo
+`2 ^ k` also of a negative `long`. The lemmas on vectors, arrays, lists, ranges, natural numbers and
+integers are in `Ratpoints.Proof.Containers`.
 
 ## Main statements
 
@@ -36,6 +37,9 @@ lists, ranges, natural numbers and integers are in `Ratpoints.Proof.Containers`.
   a word set one at a time, at their own positions or at the positions that a function gives.
 * `UInt64.getLsbD_shiftRight_or_shiftLeft`: the 64 bits from position `r` on of the 128 bits of two
   words, for `0 < r < 64`.
+* `UInt64.getLsbD_shiftLeft_ofNat`, `UInt64.getLsbD_shiftRight_ofNat`,
+  `UInt64.getLsbD_toUInt64_shiftLeft`: the bits of a word and of a Boolean shifted by an amount
+  below 64.
 * `UInt64.getLsbD_foldl_and`: the bits of a word and-ed in turn with the words of a list.
 * `UInt64.two_pow_ctz_mul_shiftRight_ofNat`, `UInt64.shiftRight_ctz_ofNat_mod_two`: a number
   `0 < b < 2 ^ 64` is `2 ^ t` times the odd number `b >>> t`, for the position `t` of the lowest
@@ -155,6 +159,31 @@ theorem getLsbD_fold_or_one_shiftLeft_comp (c : Nat → Bool) (f : Nat → Nat) 
 theorem getLsbD_or_one_shiftLeft (x : UInt64) {n : Nat} (hn : n < 64) (t : Nat) :
     (x ||| 1 <<< UInt64.ofNat n).toBitVec.getLsbD t = (x.toBitVec.getLsbD t || decide (t = n)) := by
   rw [UInt64.toBitVec_or, BitVec.getLsbD_or, ← Nat.toUInt64_eq, getLsbD_one_shiftLeft hn]
+
+theorem getLsbD_shiftLeft_ofNat (x : UInt64) {n : Nat} (hn : n < 64) (t : Nat) :
+    (x <<< UInt64.ofNat n).toBitVec.getLsbD t =
+      (decide (t < 64) && decide (n ≤ t) && x.toBitVec.getLsbD (t - n)) := by
+  have : (UInt64.ofNat n).toBitVec.toNat % (64 : BitVec 64).toNat = n := by
+    simp [UInt64.toBitVec_ofNat']
+    lia
+  rw [UInt64.toBitVec_shiftLeft, BitVec.shiftLeft_eq', BitVec.getLsbD_shiftLeft,
+    BitVec.toNat_umod, this]
+  grind
+
+theorem getLsbD_shiftRight_ofNat (x : UInt64) {n : Nat} (hn : n < 64) (t : Nat) :
+    (x >>> UInt64.ofNat n).toBitVec.getLsbD t = x.toBitVec.getLsbD (n + t) := by
+  have : (UInt64.ofNat n).toBitVec.toNat % (64 : BitVec 64).toNat = n := by
+    simp [UInt64.toBitVec_ofNat']
+    lia
+  rw [UInt64.toBitVec_shiftRight, BitVec.ushiftRight_eq', BitVec.getLsbD_ushiftRight,
+    BitVec.toNat_umod, this]
+
+/-- The bits of a Boolean shifted to the position `n < 64`, as `RP_INIT_BIT` sets a bit. -/
+theorem getLsbD_toUInt64_shiftLeft (v : Bool) {n : Nat} (hn : n < 64) (t : Nat) :
+    (v.toUInt64 <<< UInt64.ofNat n).toBitVec.getLsbD t = (v && decide (t = n)) := by
+  cases v
+  · simp [Bool.toUInt64]
+  · simpa [Bool.toUInt64] using getLsbD_one_shiftLeft hn t
 
 /-- For `0 < r < 64`, the word made of the bits of `x` from `r` on and the lowest `r` bits of `y`
 above them: the 64 bits from position `r` on of the 128 bits of `x` followed by `y`. -/
