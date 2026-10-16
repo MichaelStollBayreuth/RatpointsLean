@@ -19,6 +19,7 @@ public import Ratpoints.Proof.Moduli
 public import Ratpoints.Proof.Packing
 public import Ratpoints.Proof.Params
 public import Ratpoints.Proof.Reductions
+public import Ratpoints.Proof.Rows
 public import Ratpoints.Proof.SetBits
 public import Ratpoints.Proof.Setup
 public import Ratpoints.Proof.Shapes

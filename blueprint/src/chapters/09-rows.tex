@@ -192,40 +192,39 @@ $p$. So F4 is a data refinement: the sieve computes the same predicate as before
 
 \begin{definition}[The closed form of a row]\label{def:closedRow}
   \uses{def:chunk, def:rbaPack, def:rows}
-  Proposed names: \lname{Ratpoints.Sieve.closedRow}, \lname{Ratpoints.Sieve.wordOfBits},
-  \lname{Ratpoints.Sieve.SieveSpec.Wraps}. For a test $\mathrm{adm}$ of a residue and a numerator, a
-  modulus $m$ and a residue $r$: the array of $(m + \mathrm{chunk} - 1)\,\mathrm{rbaPack}$ words, $m
-  + \mathrm{chunk} - 1$ bit arrays, whose word $j$ has bit $t$ set exactly when $t < 64$ and
-  $\mathrm{adm}(r)$ admits $64 j + t$, each word built bit by bit from its $64$ bits. With the
-  admission test of a sieve entry or of a factor (Definitions~\ref{def:admits},
-  \ref{def:examinePower} and~\ref{def:SieveEntry}) it is the row that ratpoints builds for the
-  residue, against which the builders are proved, as the admission tests were for the plain builder.
-  The row of a sieve spec \emph{wraps} when its bit arrays $p, \dots, p + \mathrm{chunk} - 2$ are
-  copies of its first ones: word $\kappa < \mathrm{rbaPack}$ of bit array $x < p + \mathrm{chunk} -
-  1$ is word $\kappa$ of bit array $x \bmod p$.
+  \lean{Ratpoints.Sieve.closedRow, Ratpoints.Sieve.wordOfBits, Ratpoints.Sieve.SieveSpec.Wraps}
+  \leanok
+  For a test $\mathrm{adm}$ of a residue and a numerator, a modulus $m$ and a residue $r$: the array
+  of $(m + \mathrm{chunk} - 1)\,\mathrm{rbaPack}$ words, $m + \mathrm{chunk} - 1$ bit arrays, whose
+  word $j$ has bit $t$ set exactly when $t < 64$ and $\mathrm{adm}(r)$ admits $64 j + t$, each word
+  built bit by bit from its $64$ bits. With the admission test of a sieve entry or of a factor
+  (Definitions~\ref{def:admits}, \ref{def:examinePower} and~\ref{def:SieveEntry}) it is the row that
+  ratpoints builds for the residue, against which the builders are proved, as the admission tests
+  were for the plain builder. The row of a sieve spec \emph{wraps} when its bit arrays
+  $p, \dots, p + \mathrm{chunk} - 2$ are copies of its first ones: word $\kappa < \mathrm{rbaPack}$
+  of bit array $x < p + \mathrm{chunk} - 1$ is word $\kappa$ of bit array $x \bmod p$.
 \end{definition}
 
 \begin{lemma}[The closed form]\label{lem:closedRow}
-  \uses{def:closedRow, def:SieveEntry}
-  Proposed names: \lname{Ratpoints.Sieve.getLsbD\_closedRow}, \lname{Ratpoints.Sieve.eq\_closedRow},
-  \lname{Ratpoints.Sieve.size\_closedRow}, \lname{Ratpoints.Sieve.closedRow\_congr},
-  \lname{Ratpoints.Sieve.getElem!\_closedRow\_mod}, \lname{Ratpoints.Sieve.wraps\_closedRow},
-  \lname{Ratpoints.Sieve.SieveEntry.wraps\_closedRow}, \lname{Ratpoints.Sieve.getLsbD\_wordOfBits},
-  \lname{Ratpoints.Sieve.PatternBits}, \lname{Ratpoints.Sieve.RowWords},
-  \lname{Ratpoints.Sieve.RowWords.toArray\_eq\_closedRow}. Bit $t$ of word $j < (m + \mathrm{chunk}
-  - 1)\,\mathrm{rbaPack}$ of the closed form is $t < 64$ and $\mathrm{adm}(r)(64 j + t)$, and an
-  array of that size with these bits is the closed form. For a test of period $m > 0$ in the
-  numerator, word $j$ of the closed form is word $j \bmod m\,\mathrm{rbaPack}$, so the closed form
-  of the row of a sieve entry with a positive modulus wraps, whatever the offset, the start and the
-  end of its spec. A word \emph{holds} $n \le 64$ bits of a pattern of period $m$ from a position on
-  when its bit $t < n$ is the bit of the pattern at that position plus $t$ and its other bits are
-  clear; the words of a row are the windows of the pattern when word $j$ holds its $64$ bits from
-  $64 j$ on; and a row whose words are the windows of a pattern that a test reads at the residues of
-  the numerators is the closed form of the test, which is how the contracts of the builders
-  conclude.
+  \uses{def:closedRow, def:SieveEntry, def:row}
+  \lean{Ratpoints.Sieve.getLsbD_closedRow, Ratpoints.Sieve.eq_closedRow, Ratpoints.Sieve.size_closedRow, Ratpoints.Sieve.closedRow_congr, Ratpoints.Sieve.getElem!_closedRow_mod, Ratpoints.Sieve.wraps_closedRow, Ratpoints.Sieve.SieveEntry.wraps_closedRow, Ratpoints.Sieve.getLsbD_wordOfBits, Ratpoints.Sieve.PatternBits, Ratpoints.Sieve.RowWords, Ratpoints.Sieve.RowWords.toArray_eq_closedRow, Ratpoints.Sieve.SieveEntry.row_eq_closedRow}
+  \leanok
+  Bit $t$ of word $j < (m + \mathrm{chunk} - 1)\,\mathrm{rbaPack}$ of the closed form is $t < 64$
+  and $\mathrm{adm}(r)(64 j + t)$, and an array of that size with these bits is the closed form. For
+  a test of period $m > 0$ in the numerator, word $j$ of the closed form is word
+  $j \bmod m\,\mathrm{rbaPack}$, so the closed form of the row of a sieve entry with a positive
+  modulus wraps, whatever the offset, the start and the end of its spec. A word \emph{holds}
+  $n \le 64$ bits of a pattern of period $m$ from a position on when its bit $t < n$ is the bit of
+  the pattern at that position plus $t$ and its other bits are clear; the words of a row are the
+  windows of the pattern when word $j$ holds its $64$ bits from $64 j$ on; and a row whose words are
+  the windows of a pattern that a test reads at the residues of the numerators is the closed form of
+  the test, which is how the contracts of the builders conclude. The row of a denominator in words
+  (Definition~\ref{def:row}) of a sieve entry with a positive modulus is the closed form of the
+  admission test of the entry.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   Two words are equal when their bits are; the bits of the closed form are those of the test, and
   the bit $64 j + t$ and the bit $64 (j \bmod m\,\mathrm{rbaPack}) + t$ differ by a multiple of
   $64\,\mathrm{rbaPack}\, m$, a multiple of $m$.

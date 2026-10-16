@@ -13,39 +13,39 @@ import Std.Internal.ForIn.Lemmas
 Lemmas on vectors, arrays, lists, ranges, natural numbers and integers that the contracts of the
 model need and Lean core lacks, under their names in the namespaces of Lean core: the entries of a
 vector after `Vector.set!` and after a fold of `Vector.set!` over consecutive positions, the entries
-of `Vector.ofFn f`, the entries of an array made by a map over a range, the last entry and the
-entries of an array after `Array.push`, `Array.pop` and `Array.map`, the elements of `List.range n`
-that pass a test which fails from some position on, `List.flatMap` over a filtered list, the
-integers of a range that lie in a smaller one or between two bounds, the gcd of the absolute values
-of a list of integers as a left fold, the length of the list of a range and the position of the
-cursor of a loop over it, the cursor of a loop over an array as one of its entries, the bound
-`y < (n + 1) k` for `y < n k`, the residues modulo `p` of the integers from `a` on, the residue of
-an integer modulo `p`, below `p` and read off its residue modulo a multiple of `p`, exact quotients
-of integers, the numerators and the denominators of the set bits of a list of words, read in turn,
-the numbers of a range between two bounds, bit 1 of odd numbers, the gcd of half an even number with
-an odd one, a residue below `2 q` modulo `q` by one subtraction, the estimate of a quotient by
-Barrett's reduction, the bounds of a step of Horner's rule and of a power of a number below a power
-of 2, the entries of an array of Booleans after a fold of `setIfInBounds · true`, the absolute value
-of the step of the cofactors of the extended Euclidean algorithm, the divisors of the gcd of `b` and
-a residue `f ≡ a (mod b)`, the remainder and the quotient by a multiplication with a reciprocal, the
-high half of a product from the products of the halves of its factors, the gcd of the odd part of a
-number with an odd one and the step of the binary algorithm for the gcd, the residue modulo a
-divisor of `b` of a numerator prime to `b`, C's remainder, which truncates, made non-negative, and
-the residue of `(a mod p) b` with the bound `|a b| + H ≤ p H` for `|a| ≤ H` and `b < p`. For the
-rows under a unit: the residues under a unit `u` with an inverse modulo `q`, zero or not, modulo a
-divisor of `q` too, the residue `x i mod q` read with an inverse `i` of `r`, the residue
-`u (b v mod p)` for an inverse `v` of `u`, and the residue of `u a` for an integer `a`. For the
-loops over two lists: the cursor of the second list of a loop `for x in l, y in l.map f`, and a list
-whose next element is known. For the classes of the packing: the residues in a packing of the stride
-`2 ^ k` dividing 64, the place `(a - a₀) mod n / m` of a residue `a ≡ a₀ (mod m)` below `n = m P`,
-and a residue `a + m j` modulo 64. For the rows of offsets: the multiple `m ⌈R / m⌉` of `m > 0`,
-from `R` to below `R + m`, the residue `(a y mod p + c) M` of `a` for a multiple `c` of `p` and an
-inverse `M` of `y`, and the entries of a vector after `Vector.set`, of an array of `none`s and of an
-array whose list is a map. For the residues and the bits of an interval: the numbers of a range in
-one class modulo `m`, the multiples of `m` among `N + (m - r)`, a numerator `i - H` in a class
-modulo `m`, the quotient by `m > 0` of a number above a negative bound, which stays above it, the
-quotients of the split form of `numerators_to_bits`, its carries and their sums with a quotient, in
-the range of a `long`, the multiples of a divisor of `N` at or below a number `≥ -N` and above a
+of `Vector.ofFn f` and of the array of a vector, the entries of an array made by a map over a range,
+the last entry and the entries of an array after `Array.push`, `Array.pop` and `Array.map`, the
+elements of `List.range n` that pass a test which fails from some position on, `List.flatMap` over a
+filtered list, the integers of a range that lie in a smaller one or between two bounds, the gcd of
+the absolute values of a list of integers as a left fold, the length of the list of a range and the
+position of the cursor of a loop over it, the cursor of a loop over an array as one of its entries,
+the bound `y < (n + 1) k` for `y < n k`, the residues modulo `p` of the integers from `a` on, the
+residue of an integer modulo `p`, below `p` and read off its residue modulo a multiple of `p`, exact
+quotients of integers, the numerators and the denominators of the set bits of a list of words, read
+in turn, the numbers of a range between two bounds, bit 1 of odd numbers, the gcd of half an even
+number with an odd one, a residue below `2 q` modulo `q` by one subtraction, the estimate of a
+quotient by Barrett's reduction, the bounds of a step of Horner's rule and of a power of a number
+below a power of 2, the entries of an array of Booleans after a fold of `setIfInBounds · true`, the
+absolute value of the step of the cofactors of the extended Euclidean algorithm, the divisors of the
+gcd of `b` and a residue `f ≡ a (mod b)`, the remainder and the quotient by a multiplication with a
+reciprocal, the high half of a product from the products of the halves of its factors, the gcd of
+the odd part of a number with an odd one and the step of the binary algorithm for the gcd, the
+residue modulo a divisor of `b` of a numerator prime to `b`, C's remainder, which truncates, made
+non-negative, and the residue of `(a mod p) b` with the bound `|a b| + H ≤ p H` for `|a| ≤ H` and
+`b < p`. For the rows under a unit: the residues under a unit `u` with an inverse modulo `q`, zero
+or not, modulo a divisor of `q` too, the residue `x i mod q` read with an inverse `i` of `r`, the
+residue `u (b v mod p)` for an inverse `v` of `u`, and the residue of `u a` for an integer `a`. For
+the loops over two lists: the cursor of the second list of a loop `for x in l, y in l.map f`, and a
+list whose next element is known. For the classes of the packing: the residues in a packing of the
+stride `2 ^ k` dividing 64, the place `(a - a₀) mod n / m` of a residue `a ≡ a₀ (mod m)` below
+`n = m P`, and a residue `a + m j` modulo 64. For the rows of offsets: the multiple `m ⌈R / m⌉` of
+`m > 0`, from `R` to below `R + m`, the residue `(a y mod p + c) M` of `a` for a multiple `c` of `p`
+and an inverse `M` of `y`, and the entries of a vector after `Vector.set`, of an array of `none`s
+and of an array whose list is a map. For the residues and the bits of an interval: the numbers of a
+range in one class modulo `m`, the multiples of `m` among `N + (m - r)`, a numerator `i - H` in a
+class modulo `m`, the quotient by `m > 0` of a number above a negative bound, which stays above it,
+the quotients of the split form of `numerators_to_bits`, its carries and their sums with a quotient,
+in the range of a `long`, the multiples of a divisor of `N` at or below a number `≥ -N` and above a
 number `< N`, which lie in `[-N, N]`, and the product `a ^ m a ^ (n - m) = a ^ n` of integers. The
 lemmas on 64-bit words are in `Ratpoints.Proof.Bits`.
 
@@ -161,6 +161,13 @@ theorem getElem!_ofFn {α : Type u} [Inhabited α] {n : Nat} {f : Fin n → α} 
 theorem getElem!_set {α : Type u} [Inhabited α] {n : Nat} {xs : Vector α n} {i j : Nat}
     {x : α} (hi : i < n) (hj : j < n) : (xs.set i x hi)[j]! = if i = j then x else xs[j]! := by
   rw [getElem!_pos _ j hj, getElem!_pos xs j hj, Vector.getElem_set]
+
+theorem getElem!_toArray {α : Type u} [Inhabited α] {n : Nat} (xs : Vector α n) (i : Nat) :
+    xs.toArray[i]! = xs[i]! := by
+  by_cases h : i < n
+  · rw [getElem!_pos xs.toArray i (by simpa using h), getElem!_pos xs i h]
+    rfl
+  · rw [getElem!_neg xs.toArray i (by simpa using h), getElem!_neg xs i h]
 
 end Vector
 

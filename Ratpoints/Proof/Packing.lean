@@ -7,6 +7,7 @@ module
 
 public import Ratpoints.Model.Packing
 public import Ratpoints.Proof.Reductions
+public import Ratpoints.Proof.Rows
 public import Ratpoints.Proof.SetBits
 
 import Ratpoints.Proof.Bits
@@ -69,7 +70,8 @@ its branches, since its products stay below `2 ^ 64 / p`.
 * `Ratpoints.Sieve.classRows_spec`, `Ratpoints.Sieve.classOffsets_spec`: the rows of offsets of the
   classes and the inverses of the strides in the entries.
 * `Ratpoints.Sieve.SieveEntry.PackedFor.fits`: the sieve spec of an entry with the offset of the
-  packing of a class fits the reductions of the row indices of the first two stages.
+  packing of a class and the closed form of a row fits the reductions of the row indices of the
+  first two stages and the chunked first stage.
 * `Ratpoints.Sieve.fillBpList_eq_map`: the residues of the denominator divided by the stride.
 
 ## Implementation notes
@@ -1040,11 +1042,14 @@ theorem SieveEntry.PackedFor.congr {e : SieveEntry} {cl cl' : NumClass} {off : N
   ⟨h.pos, h.le_maxPrimeEven, h.rowBias_le, h.lt_rowBias_add, hk ▸ ha ▸ h.mul_mod,
     hk ▸ h.dinv_mul_mod, hk ▸ h.dinv_lt⟩
 
-/-- The sieve spec of a modulus with the offset of the packing of a class has the modulus and the
-offset in the range that the reductions of the row indices need. -/
+/-- The sieve spec of a modulus with the offset of the packing of a class, the closed form of a row
+of the entry and the end `p` has the modulus and the offset in the range that the reductions of the
+row indices need, and the copies of the first bit arrays of its row
+(`Ratpoints.Sieve.SieveEntry.wraps_closedRow`). -/
 theorem SieveEntry.PackedFor.fits {e : SieveEntry} {cl : NumClass} {off : Nat}
-    (h : e.PackedFor cl off) (row : Array UInt64) : SieveSpec.Fits ⟨e.p, off, row⟩ :=
-  ⟨h.pos, h.le_maxPrimeEven, h.rowBias_le, h.lt_rowBias_add⟩
+    (h : e.PackedFor cl off) (r st : Nat) :
+    SieveSpec.Fits ⟨e.p, off, closedRow e.admits e.p r, st, e.p⟩ :=
+  ⟨h.pos, h.le_maxPrimeEven, h.rowBias_le, h.lt_rowBias_add, rfl, e.wraps_closedRow h.pos _ _ _ _⟩
 
 /-- Every class with a pattern among `cls` has a row of offsets in the array `offsets`, at the
 position `pos` that it holds, with the offset for the `n`-th sieve entry of `es` at `pos + n`. -/

@@ -31,8 +31,11 @@ Euclidean remainder.
 
 ## Main definitions
 
+* `Ratpoints.Sieve.SieveSpec.Wraps`: the row of a sieve spec repeats its first bit arrays after the
+  first `p`, where the chunked first stage reads it.
 * `Ratpoints.Sieve.SieveSpec.Fits`: a sieve spec of a modulus `0 < p ≤ Ratpoints.maxPrimeEven` with
-  an offset from `Ratpoints.rowBias` to below `Ratpoints.rowBias + 2 p`.
+  an offset from `Ratpoints.rowBias` to below `Ratpoints.rowBias + 2 p`, the end `p` and a row
+  that repeats its first bit arrays.
 * `Ratpoints.Sieve.SmallFits`: when the test `small` holds, the word numbers lie between
   `-Ratpoints.rowBias` and `Ratpoints.rowBias - 2 Ratpoints.maxPrimeEven`.
 
@@ -301,12 +304,22 @@ theorem modLong_eq_emod (a : Int) {b : Int} (hb : 0 ≤ b) : modLong a b = a % b
 
 /-! ### The row indices of the first two stages -/
 
+/-- The row of the sieve spec `s` repeats its first `p` bit arrays in the `Ratpoints.chunk - 1` bit
+arrays after them: word `κ < Ratpoints.rbaPack` of bit array `x < p + chunk - 1` is word `κ` of bit
+array `x mod p`, the copies that the chunked first stage (stage F4) reads past the first `p` bit
+arrays from a start below `p`. -/
+def SieveSpec.Wraps (s : SieveSpec) : Prop :=
+  ∀ x < s.p + chunk - 1, ∀ κ < rbaPack, s.row[rbaPack * x + κ]! = s.row[rbaPack * (x % s.p) + κ]!
+
 /-- A sieve spec whose modulus `p` and offset lie in the range that the packing of the numerators
-gives them (`Ratpoints.Sieve.classOffsets`): `0 < p ≤ Ratpoints.maxPrimeEven`, and the offset a
-residue below `2 p` plus `Ratpoints.rowBias`, so that under the test `small` the sums of a word
-number and the offset that the first two stages reduce are at most `Ratpoints.mulModLimit` in
-absolute value (`Ratpoints.Sieve.SieveSpec.Fits.ite_modMul_modLong_eq_emod`,
-`Ratpoints.Sieve.SieveSpec.Fits.ite_mulMod_modLong_eq_toNat_emod`). -/
+gives them (`Ratpoints.Sieve.classOffsets`) and whose row has the copies of its first bit arrays
+with the end `p`, as the run sets them up (`Ratpoints.Sieve.setRows`): `0 < p ≤
+Ratpoints.maxPrimeEven`, the offset a residue below `2 p` plus `Ratpoints.rowBias`, so that under
+the test `small` the sums of a word number and the offset that the first two stages reduce are at
+most `Ratpoints.mulModLimit` in absolute value
+(`Ratpoints.Sieve.SieveSpec.Fits.ite_modMul_modLong_eq_emod`,
+`Ratpoints.Sieve.SieveSpec.Fits.ite_mulMod_modLong_eq_toNat_emod`), and the row repeating its first
+bit arrays (`Ratpoints.Sieve.SieveSpec.Wraps`) where the chunked first stage reads it. -/
 structure SieveSpec.Fits (s : SieveSpec) : Prop where
   /-- The modulus is positive. -/
   pos : 0 < s.p
@@ -316,6 +329,10 @@ structure SieveSpec.Fits (s : SieveSpec) : Prop where
   rowBias_le : rowBias ≤ s.offset
   /-- The offset is below `Ratpoints.rowBias + 2 p`. -/
   lt_rowBias_add : s.offset < rowBias + 2 * s.p
+  /-- The end of the walk of the chunked first stage through the row is the modulus. -/
+  stop_eq : s.stop = s.p
+  /-- The row repeats its first bit arrays after the first `p`. -/
+  wraps : s.Wraps
 
 /-- When the test `small` of `Ratpoints.Sieve.siftPiece` holds, the word numbers from `lo` to `hi`
 lie between `-Ratpoints.rowBias` and `Ratpoints.rowBias - 2 Ratpoints.maxPrimeEven`: the hypothesis

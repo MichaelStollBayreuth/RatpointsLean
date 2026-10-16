@@ -28,8 +28,8 @@ the bits of the numerators `-H, …, H` of one denominator.
 
 ## Main definitions
 
-* `Ratpoints.Sieve.packedReads`: the rows of the sieve entries for a denominator in the packing of a
-  class, with the tests of the bits that they read.
+* `Ratpoints.Sieve.packedReads`: the closed forms of the rows of the sieve entries for a denominator
+  in the packing of a class, with the tests of the bits that they read.
 
 ## Main statements
 
@@ -863,25 +863,30 @@ theorem siftBits_spec (w : Thunk (List Int)) (d b A : Nat) (rev : Bool) (sp1 : N
 /-! ### One denominator -/
 
 /-- The rows of the sieve entries `es` for the denominator `b` in the packing of the class `cl`,
-with the row offsets from position `pos` of `offsets` on, as `Ratpoints.Sieve.setRows` makes them,
-each with the test of the bits that it reads (`Ratpoints.Sieve.SieveSpec.Reads`): whether the row of
-`b` admits the numerator of the bit (`Ratpoints.Sieve.SieveEntry.reads_row`). -/
+with the row offsets from position `pos` of `offsets` on, as `Ratpoints.Sieve.setRows` makes them:
+the closed forms of the rows of the residues `b dinv[k] mod p` (`Ratpoints.Sieve.closedRow`), with
+the start `0` and the end `p`, each with the test of the bits that it reads
+(`Ratpoints.Sieve.SieveSpec.Reads`): whether the row of `b` admits the numerator of the bit
+(`Ratpoints.Sieve.SieveEntry.reads_row`). -/
 def packedReads (es : List SieveEntry) (b : Nat) (cl : NumClass) (offsets : Array Nat) (pos : Nat) :
     List (SieveSpec × (Int → Bool)) :=
-  es.mapIdx fun n e ↦
-    (⟨e.p, offsets[pos + n]!, e.row (b * e.dinv[cl.k]! % e.p)⟩, fun j ↦ e.admits b (cl.numerator j))
+  es.mapIdx fun n e ↦ (⟨e.p, offsets[pos + n]!, closedRow e.admits e.p (b * e.dinv[cl.k]! % e.p),
+    0, e.p⟩, fun j ↦ e.admits b (cl.numerator j))
 
 /-- `Ratpoints.Sieve.setRows` reads the row of the residue `b dinv[k] mod p` of each modulus, the
 residue `bp` that `Ratpoints.Sieve.fillBpList` gives (`Ratpoints.Sieve.fillBpList_eq_map`), from the
-thunks of the rows of the entries, at the offsets of the class from its position `pos` on. -/
+thunks of the rows of the entries, the closed form of the row
+(`Ratpoints.Sieve.SieveEntry.row_eq_closedRow`), at the offsets of the class from its position
+`pos` on. -/
 theorem setRows_map {es : List SieveEntry} (hp : ∀ e ∈ es, 0 < e.p) (b : Nat) {cl : NumClass}
     {pos : Nat} (hpos : cl.offset = some pos) (offsets : Array Nat) :
     setRows (es.map fun e ↦ (e.p, e.rows)) (es.map fun e ↦ b * e.dinv[cl.k]! % e.p) cl offsets =
       (packedReads es b cl offsets pos).map Prod.fst := by
   refine List.ext_getElem (by simp [setRows, packedReads]) fun n h1 h2 ↦ ?_
   have hn : n < es.length := by simpa [packedReads] using h2
-  simp [setRows, packedReads, hpos,
-    SieveEntry.get_rows _ (Nat.mod_lt _ (hp _ (List.getElem_mem hn)))]
+  have hpn := hp _ (List.getElem_mem hn)
+  simp [setRows, packedReads, hpos, SieveEntry.get_rows _ (Nat.mod_lt _ hpn),
+    SieveEntry.row_eq_closedRow _ hpn]
 
 -- The specs of `Ratpoints.Sieve.packedReads` fit, for entries packed for the class at their
 -- offsets.
@@ -892,7 +897,7 @@ private theorem fits_of_mem_packedReads {es : List SieveEntry} {b : Nat} {cl : N
   intro s hs
   obtain ⟨sf, hsf, rfl⟩ := List.mem_map.mp hs
   obtain ⟨n, hn, rfl⟩ := List.mem_mapIdx.mp hsf
-  exact (hoff n hn).fits _
+  exact (hoff n hn).fits _ _
 
 -- The reciprocals of the moduli of the entries are those of the specs of
 -- `Ratpoints.Sieve.packedReads`.

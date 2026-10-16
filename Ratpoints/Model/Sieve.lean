@@ -8,73 +8,76 @@ module
 public import Ratpoints.Model.BruteForce
 public import Ratpoints.Model.Candidate
 public import Ratpoints.Model.Constants
+public import Ratpoints.Model.FirstStage
 public import Ratpoints.Model.Tables
 
 -- The `#guard` examples run code of the imported modules at compile time.
 meta import Ratpoints.Model.BruteForce
 meta import Ratpoints.Model.Candidate
 meta import Ratpoints.Model.Constants
+meta import Ratpoints.Model.FirstStage
 meta import Ratpoints.Model.Tables
 
 /-!
 # The sieve
 
-The components of the sieve, each in its place in the C function `find_points_work_1`: the bit
-arrays of 64-bit words of the C code with their operations and the rows as words
-(`Ratpoints.Sieve.SieveEntry.row`); the packing of the numerators of a class of the denominators
-modulo 64 into one class modulo a power of 2 (`Ratpoints.Sieve.NumClass`); the second stage, on a
-bit array that the first leaves nonzero or on one of its words, with the rows read at the word
-number plus their offsets (`Ratpoints.Sieve.secondStage`, `Ratpoints.Sieve.secondStageWord`); one
-bit array through the second stage and the extraction of the points of its numerators in the
-packing of a class, in either arm of the second stage (`Ratpoints.Sieve.siftBitArray`); one piece of
-bit arrays from the first stage, with the first moduli, through the second, with the others, to the
-points of its numerators (`Ratpoints.Sieve.siftPiece`); the bits of an interval of numerators in
-the packing of a class (`Ratpoints.Sieve.numeratorsToBits`), the rows of the moduli for a
-denominator with the row offsets of its class (`Ratpoints.Sieve.setRows`) and the points of the
-bits of one interval in pieces (`Ratpoints.Sieve.siftBits`); and the numerators of one denominator,
-in the packing of its class, with the products of the check and what the third stage needs as
-thunks (`Ratpoints.Sieve.sift`). The components that take one numerator at a time, the test of a
-candidate that survives the first two stages, with the test for common factors and the third stage
-(`Ratpoints.Sieve.accepted`), the exact check (`Ratpoints.Sieve.checkPoint`) and its reference, the
-check of a numerator (`Ratpoints.Sieve.checkNum`), and the points at infinity
-(`Ratpoints.Sieve.pointsAtInfinity`), are in `Ratpoints.Model.Candidate`. The tables of the primes
-and of the prime powers and the sieve entries of the moduli, with the rows of a denominator, are in
-`Ratpoints.Model.Tables`; the classes of the denominators modulo 64 with their packings, the row
-offsets of the packings and the residues of a denominator divided by the stride of its class
-(`Ratpoints.Sieve.numClasses`, `Ratpoints.Sieve.classOffsets`, `Ratpoints.Sieve.fillBpList`) are in
-`Ratpoints.Model.Packing`; the loop over the denominators (`Ratpoints.Sieve.sieveRun`), with the
-2-adic information that gives the words of the classes, is in `Ratpoints.Model.Denominators`. The
-plain sieve of one denominator, one Boolean per numerator (`Ratpoints.Sieve.sieveDen`), and the test
-for common factors and the exact check of its survivors (`Ratpoints.Sieve.checkDen`) are not part of
-the run: they are the reference of the bit arrays of words
-(`Ratpoints.Sieve.toList_run_sift_eq_checkDen`). Every row, and the word of the class of a
-denominator in the 2-adic information, let every point through, and the packing keeps every
-numerator that the word admits, the rows of the residue of the denominator divided by the stride,
-read at the row offsets of the class, admitting the numerators of the class that the rows of the
-denominator admit; so the sieve of a denominator finds exactly its points in the brute-force
-reference `Ratpoints.bruteForce`, in the same order, each mapped by `Ratpoints.Sieve.swapPoint` when
-the flag of the reversal is set: the map gives the point of the caller's curve for a point of a
-polynomial that the reversal check has reversed (`Ratpoints.Setup.reversal`), the exact check and
-the points at infinity deliver the mapped points when their flag is set, and the components from the
-run down to the check hand the flag on. The rows of `0` that the build of ratpoints generates are
-computed here as words, by `Ratpoints.Sieve.SieveEntry.row`.
+The components of the sieve, each in its place in the C function `find_points_work_1`: the
+operations on the bit arrays of 64-bit words of the C code that the masks and the second stage use,
+and the rows as words (`Ratpoints.Sieve.SieveEntry.row`); the packing of the numerators of a class
+of the denominators modulo 64 into one class modulo a power of 2 (`Ratpoints.Sieve.NumClass`); the
+second stage, on a bit array that the first leaves nonzero or on one of its words, with the rows
+read at the word number plus their offsets (`Ratpoints.Sieve.secondStage`,
+`Ratpoints.Sieve.secondStageWord`); one bit array through the second stage and the extraction of the
+points of its numerators in the packing of a class, in either arm of the second stage
+(`Ratpoints.Sieve.siftBitArray`); one piece of bit arrays from the first stage, with the first
+moduli, through the second, with the others, to the points of its numerators
+(`Ratpoints.Sieve.siftPiece`); the bits of an interval of numerators in the packing of a class
+(`Ratpoints.Sieve.numeratorsToBits`), the rows of the moduli for a denominator with the row offsets
+of its class (`Ratpoints.Sieve.setRows`) and the points of the bits of one interval in pieces
+(`Ratpoints.Sieve.siftBits`); and the numerators of one denominator, in the packing of its class,
+with the products of the check and what the third stage needs as thunks (`Ratpoints.Sieve.sift`).
+The components that take one numerator at a time, the test of a candidate that survives the first
+two stages, with the test for common factors and the third stage (`Ratpoints.Sieve.accepted`), the
+exact check (`Ratpoints.Sieve.checkPoint`) and its reference, the check of a numerator
+(`Ratpoints.Sieve.checkNum`), and the points at infinity (`Ratpoints.Sieve.pointsAtInfinity`), are
+in `Ratpoints.Model.Candidate`; the first stage, with the operations on bit arrays that it uses and
+the sieve specs (`Ratpoints.Sieve.andRows`, `Ratpoints.Sieve.SieveSpec`), is in
+`Ratpoints.Model.FirstStage`. The tables of the primes and of the prime powers and the sieve entries
+of the moduli, with the rows of a denominator, are in `Ratpoints.Model.Tables`; the classes of the
+denominators modulo 64 with their packings, the row offsets of the packings and the residues of a
+denominator divided by the stride of its class (`Ratpoints.Sieve.numClasses`,
+`Ratpoints.Sieve.classOffsets`, `Ratpoints.Sieve.fillBpList`) are in `Ratpoints.Model.Packing`; the
+loop over the denominators (`Ratpoints.Sieve.sieveRun`), with the 2-adic information that gives the
+words of the classes, is in `Ratpoints.Model.Denominators`. The plain sieve of one denominator, one
+Boolean per numerator (`Ratpoints.Sieve.sieveDen`), and the test for common factors and the exact
+check of its survivors (`Ratpoints.Sieve.checkDen`) are not part of the run: they are the reference
+of the bit arrays of words (`Ratpoints.Sieve.toList_run_sift_eq_checkDen`). Every row, and the word
+of the class of a denominator in the 2-adic information, let every point through, and the packing
+keeps every numerator that the word admits, the rows of the residue of the denominator divided by
+the stride, read at the row offsets of the class, admitting the numerators of the class that the
+rows of the denominator admit; so the sieve of a denominator finds exactly its points in the
+brute-force reference `Ratpoints.bruteForce`, in the same order, each mapped by
+`Ratpoints.Sieve.swapPoint` when the flag of the reversal is set: the map gives the point of the
+caller's curve for a point of a polynomial that the reversal check has reversed
+(`Ratpoints.Setup.reversal`), the exact check and the points at infinity deliver the mapped points
+when their flag is set, and the components from the run down to the check hand the flag on. The rows
+of `0` that the build of ratpoints generates are computed here as words, by
+`Ratpoints.Sieve.SieveEntry.row`.
 
 ## Main definitions
 
 * `Ratpoints.Sieve.sieveDen`, `Ratpoints.Sieve.checkDen`: the plain sieve of one denominator and the
   points of its survivors, the reference of the bit arrays of words.
-* `Ratpoints.Sieve.andBitArray`, `Ratpoints.Sieve.clearLowBits`, `Ratpoints.Sieve.clearHighBits`,
-  `Ratpoints.Sieve.isZeroAt`: the operations on the bit arrays of 64-bit words of the C code.
-* `Ratpoints.Sieve.SieveEntry.row`, `Ratpoints.Sieve.SieveEntry.rows`,
-  `Ratpoints.Sieve.SieveSpec`: the row of a denominator as words, the rows of the residues, each
-  made when first needed, and a modulus with its row and its row offset for the denominator at hand.
+* `Ratpoints.Sieve.clearLowBits`, `Ratpoints.Sieve.clearHighBits`, `Ratpoints.Sieve.isZeroAt`:
+  the masks on the bit arrays of 64-bit words of the C code and the test for zero.
+* `Ratpoints.Sieve.SieveEntry.row`, `Ratpoints.Sieve.SieveEntry.rows`: the row of a denominator as
+  words, with the copies of its first bit arrays at its end, and the rows of the residues, each
+  made when first needed.
 * `Ratpoints.Sieve.NumClass`: the packing of the numerators of a class of the denominators modulo
   64, its stride, its residue, its pattern and the position of its row offsets.
 * `Ratpoints.Sieve.secondStage`, `Ratpoints.Sieve.secondStageWord`: the second stage on a bit array
   and on one of its words, the rows of its moduli, read at the word number plus their offsets,
   and-ed in while a bit is left.
-* `Ratpoints.Sieve.andRows`: the first stage over a piece of bit arrays, from the pattern of a
-  class, the rows of the moduli, read at the word numbers plus their offsets, and-ed into its words.
 * `Ratpoints.Sieve.walkWord`: the walk through the set bits of a word, lowest first, each
   numerator going to the test of a candidate and, if it passes, to the exact check.
 * `Ratpoints.Sieve.siftBitArray`: one bit array that the first stage leaves nonzero, through the
@@ -87,7 +90,7 @@ computed here as words, by `Ratpoints.Sieve.SieveEntry.row`.
 * `Ratpoints.Sieve.numeratorsToBits`: the bits of an interval of numerators in the packing of a
   class.
 * `Ratpoints.Sieve.setRows`: the moduli of the first two stages with their rows and offsets for a
-  denominator.
+  denominator, the start `0` and the end `p`.
 * `Ratpoints.Sieve.siftBits`: the points of the numerators of an interval of bits, in pieces.
 * `Ratpoints.Sieve.sift`: the points of one denominator, its numerators `-H, …, H` in the packing of
   its class, in pieces of bit arrays.
@@ -148,20 +151,6 @@ def checkDen (c : List Int) (d H b : Nat) (surv : Vector Bool (2 * H + 1)) :
   return out
 
 /-! ### Words and bit arrays -/
-
-/-- Bit array `j` of the words `v` and-ed with bit array `x` of the row `row`, one word at a time:
-for `κ < rbaPack` (`Ratpoints.rbaPack`, the number of words of a bit array), word
-`rbaPack * j + κ` of `v` with word `rbaPack * x + κ` of `row`.
-
-C: `rp-private.h:134`, `rp-private.h:176`, `rp-private.h:237`, `rp-private.h:263`,
-`rp-private.h:287`
-
-Deviation: one definition for every build, on bit arrays given by their indices in arrays of
-words, each bit array `rbaPack` consecutive words, for the `&` on the vector type of the build. -/
-def andBitArray {m : Nat} (v : Vector UInt64 m) (j : Nat) (row : Array UInt64) (x : Nat) :
-    Vector UInt64 m :=
-  Nat.fold rbaPack (fun κ _ v ↦
-    v.set! (rbaPack * j + κ) (v[rbaPack * j + κ]! &&& row[rbaPack * x + κ]!)) v
 
 /-- The lowest `s` bits of bit array `0` of the words `v` cleared, for `s < Ratpoints.rbaLength`:
 the words below `s / 64` are set to `0`, and word `s / 64` is and-ed with `~~~0 <<< (s % 64)`.
@@ -227,13 +216,17 @@ def window (E : Array UInt64) (s : Nat) : UInt64 :=
   let r := s % 64
   if r = 0 then E[q]! else E[q]! >>> r.toUInt64 ||| E[q + 1]! <<< (64 - r).toUInt64
 
-/-- The row of the denominator `b` in the sieve entry `e` of the modulus `p = e.p`, as `p` bit
-arrays of `Ratpoints.rbaPack` words: the pattern of one period, whether the row admits the
-numerator `N` for `N < p` (`Ratpoints.Sieve.SieveEntry.admits`), packed into words
-(`Ratpoints.Sieve.packedPattern`); for `j < p`, word `j` the 64 bits of the packed pattern from
-position `64 j mod p` on (`Ratpoints.Sieve.window`); and these `p` words repeated `rbaPack` times.
-Bit `t` of word `j` says whether the row admits `64 j + t`, since
-`Ratpoints.Sieve.SieveEntry.admits` depends only on the residue modulo `p`.
+/-- The row of the denominator `b` in the sieve entry `e` of the modulus `p = e.p`, as
+`p + chunk - 1` bit arrays of `Ratpoints.rbaPack` words, for the chunk `Ratpoints.chunk`: the
+pattern of one period, whether the row admits the numerator `N` for `N < p`
+(`Ratpoints.Sieve.SieveEntry.admits`), packed into words (`Ratpoints.Sieve.packedPattern`); for
+`j < p`, word `j` the 64 bits of the packed pattern from position `64 j mod p` on
+(`Ratpoints.Sieve.window`); and these `p` words repeated through the `(p + chunk - 1) rbaPack` words
+of the row, word `j` being word `j mod p`: the first `p` bit arrays, and then the copies of the
+first `chunk - 1` of them, which the chunked first stage (stage F4) reads past the first `p`. Bit
+`t` of word `j` says whether the row admits `64 j + t`, since `Ratpoints.Sieve.SieveEntry.admits`
+depends only on the residue modulo `p`: the row is the closed form of the admission test at `b`
+(`Ratpoints.Sieve.closedRow`, `Ratpoints.Sieve.SieveEntry.row_eq_closedRow`).
 
 C: `init.c:42-46`, `init.c:62-83`, `init.c:99-111`, `init.c:118-246`, `init.c:259-297`,
 `init.c:387`, `init.c:391-393`, `init.c:415-418`, `init.c:430`, `init.c:443-445`,
@@ -251,44 +244,20 @@ copies of the pattern, the position of each window computed, where it is stepped
 the first `p` words repeated, where all `p rbaPack` are computed; a fresh array, for the space that
 the builders take from the buffer of the tables (`ba_next`), and the row returned, where the
 builders also store it in the field `sieve` of the entry, with a release store for the threads
-(`RP_PUBLISH`), which the thunks of `Ratpoints.Sieve.SieveEntry.rows` do; no copies of the first
-`Ratpoints.chunk - 1` bit arrays, which the builders append at the end of a row and only the
-chunked first stage reads (stage F4). -/
+(`RP_PUBLISH`), which the thunks of `Ratpoints.Sieve.SieveEntry.rows` do; the copies of the first
+`Ratpoints.chunk - 1` bit arrays at the end of a row computed as the others, where the builders copy
+them. -/
 def SieveEntry.row (e : SieveEntry) (b : Nat) : Array UInt64 :=
   let pat := (Array.range e.p).map fun N : Nat ↦ e.admits b N
   let E := packedPattern pat e.p
   let base := (Array.range e.p).map fun j ↦ window E (64 * j % e.p)
-  (Array.range (e.p * rbaPack)).map fun j ↦ base[j % e.p]!
+  (Array.range ((e.p + chunk - 1) * rbaPack)).map fun j ↦ base[j % e.p]!
 
 /-- The rows of the residues `r = 0, …, e.p - 1` in the sieve entry `e`
 (`Ratpoints.Sieve.SieveEntry.row`), each a thunk: it is made when a denominator first needs it and
 kept from then on, as long as the array is. -/
 def SieveEntry.rows (e : SieveEntry) : Array (Thunk (Array UInt64)) :=
   (Array.range e.p).map fun r ↦ Thunk.mk fun _ ↦ e.row r
-
-/-- A modulus with its row for the denominator at hand, `p` bit arrays of `Ratpoints.rbaPack` words,
-and the offset of the row: the bit array with the word number `w` reads bit array
-`(w + offset) mod p` of the row. The offset is the shift of the row that the packing of the class of
-the denominator needs, `a₀ (2 ^ k Ratpoints.rbaLength)⁻¹ mod p` for the stride `2 ^ k` and the
-residue `a₀` of the class, plus the bias of the modulus, the least multiple of `p` of at least
-`Ratpoints.rowBias`, which keeps `w + offset` non-negative (`Ratpoints.Sieve.classOffsets`); with
-the row of the denominator divided by the stride modulo `p` (`Ratpoints.Sieve.fillBpList`), bit `t`
-of that bit array says whether the row of the denominator admits the numerator
-`a₀ + 2 ^ k (Ratpoints.rbaLength w + t)`.
-
-C: `rp-private.h:378-379`
-
-Deviation: the row for the pointer `ptr` to it, and no pointers `start` and `end` into the row,
-which only the chunked first stage reads (stage F4); natural numbers for the `long`s `p` and
-`offset`, the offset below `2 ^ 32` (`Ratpoints.Sieve.SieveEntry.PackedFor.lt_two_pow_32`). -/
-structure SieveSpec where
-  /-- The modulus. -/
-  p : Nat
-  /-- The offset of the row: the bit array with the word number `w` reads bit array
-  `(w + offset) mod p` of the row. -/
-  offset : Nat
-  /-- The row: `p` bit arrays of `Ratpoints.rbaPack` words. -/
-  row : Array UInt64
 
 /-- The packing of the numerators of the denominators of one class modulo 64, `rp_num_class`: the
 admissible numerators modulo 64 of the class (the word of the class in the 2-adic information,
@@ -385,58 +354,6 @@ def secondStageWord (specs : List SieveSpec) (mgs : List Nat) (small : Bool) (i 
   return x
 
 /-! ### One piece -/
-
-/-- The first stage over a piece, the bit arrays with the word numbers `w0, …, w0 + n - 1`, which
-are the first `n` bit arrays of `surv`: their words are set to the class word `cw`, the pattern of
-the class of the denominator in its packing (`Ratpoints.Sieve.NumClass`; bit `t` of every word
-stands for a numerator `a₀ + 2 ^ k t'` with `t' ≡ t (mod 64)`, since `64` divides
-`Ratpoints.rbaLength`); then for each modulus `p` of `specs` with its row and its offset, and its
-reciprocal `mg` from `mgs`, and for `r = (-w0 - offset) mod p`, the remainder by a multiplication
-with `mg` (`Ratpoints.Sieve.modMul`) when `small` says that the word numbers of the piece allow it
-and by the helper `mod` of the C code otherwise (`Ratpoints.Sieve.modLong`), bit array `j` is and-ed
-with bit array `(w0 + offset + j) mod p` of the row (`Ratpoints.Sieve.andBitArray`), in three loops:
-if `n < r`, with the `n` bit arrays of the row from `p - r` on, and otherwise with the `r` bit
-arrays from `p - r` on, then with whole periods of `p` bit arrays from `0`, then with the rest from
-`0`. The last bit array of `surv`, the place of the sentinel, is left as it is.
-
-C: `sift.c:943-1022`, `find_points.c:1098`, `rp-private.h:129-132`, `rp-private.h:203-204`,
-`rp-private.h:235`, `rp-private.h:261`, `rp-private.h:285`
-
-Deviation: the first stage of the builds with one register per chunk, for the chunks of sixteen
-registers of the default build with the legs over the tail of a piece (stage F4); the class word
-written one word at a time from the first, where ratpoints writes the 2-adic pattern of the class of
-`b` into the bit arrays from the last, the class word written into each word of a bit array, for the
-vector `RBA(packed)` that `get_2adic_info` makes once per class (`find_points.c:1098`) and
-`_ratpoints_sift0` copies into each bit array (`bits64`, `sift.c:519`, `sift.c:954`); the moduli of
-the stage with their rows and their reciprocals as two lists, for the first `sp1` sieve specs and
-the array `magics` from position `0` on; the value `-w_low - offset` written out in both reductions,
-for the `long` `a`, which stays a `long` where the helper `mod` reduces it outside `small`
-(`Ratpoints.Sieve.fitsLong_neg_sub_and_fitsLong_add`); indices for the pointers into the rows and
-into the survivors, and the number of whole periods and the rest computed before their loops;
-natural numbers and integers for the `long`s; a Boolean for the `int` `small`; no output under
-`DEBUG`. -/
-def andRows (specs : List SieveSpec) (mgs : List Nat) (small : Bool) (cw : UInt64) (w0 : Int)
-    (n : Nat) (surv : Vector UInt64 ((n + 1) * rbaPack)) :
-    Id (Vector UInt64 ((n + 1) * rbaPack)) := do
-  let mut surv := surv
-  for i in [0:n * rbaPack] do
-    surv := surv.set! i cw
-  for s in specs, mg in mgs do
-    let p := s.p
-    let r := (if small then modMul (-w0 - s.offset) p mg else modLong (-w0 - s.offset) p).toNat
-    if n < r then
-      for j in [0:n] do
-        surv := andBitArray surv j s.row (p - r + j)
-    else
-      for j in [0:r] do
-        surv := andBitArray surv j s.row (p - r + j)
-      let left := n - r
-      for k in [0:left / p] do
-        for i in [0:p] do
-          surv := andBitArray surv (r + k * p + i) s.row i
-      for i in [0:left % p] do
-        surv := andBitArray surv (r + left / p * p + i) s.row i
-  return surv
 
 /-- The set bits of the word `x`, lowest first, bit `t` standing for the numerator
 `a = a0 + step t`: while `x ≠ 0`, for the lowest set bit `t` of `x` (`Ratpoints.Sieve.ctz`), the
@@ -650,22 +567,25 @@ def numeratorsToBits (low high : Int64) (cl : NumClass) (split : Bool) : Int64 �
 `set_rows` makes the sieve specs: for the `n`-th modulus `p` with its rows `rs` in `rows`, the row
 of the residue `bp[n]`, the denominator divided by the stride of its class modulo `p`
 (`Ratpoints.Sieve.fillBpList`), which its thunk makes when it is first needed
-(`Ratpoints.Sieve.SieveEntry.rows`), and the offset of the row of the packing of the class `cl` for
+(`Ratpoints.Sieve.SieveEntry.rows`), the offset of the row of the packing of the class `cl` for
 the `n`-th modulus, at the position `n` after the start `cl.offset` of that row in the array
-`offsets` (`Ratpoints.Sieve.classOffsets`).
+`offsets` (`Ratpoints.Sieve.classOffsets`), the end `p` of the walk of the chunked first stage
+through the row, and the start `0`, which the chunked first stage (stage F4) sets before it reads
+it.
 
 C: `find_points.c:3149-3170`
 
 Deviation: a list of the moduli with their rows and offsets, for the array of sieve specs `ssp` that
-`set_rows` fills; no pointer `end`, which only the chunked first stage reads (stage F4), and no test
-for a missing row, which the thunk makes when it is first needed; no flag `shared` and no acquire
-load, which serve the threads; the array of the row offsets of the run as an argument, which the C
-code reaches through the pointer `offset` of the class, and a class without a row of offsets (none,
-for `NULL`), which the run never sifts, reads the offsets from position `0`; natural numbers for
-the `long`s. -/
+`set_rows` fills; the start set to `0`, where the C code leaves the field as it is until the first
+stage sets it; the end set here also for the rows that the C code builds after `set_rows` and whose
+end it sets then (`find_points.c:3538`), and no test for a missing row, which the thunk makes when
+it is first needed; no flag `shared` and no acquire load, which serve the threads; the array of the
+row offsets of the run as an argument, which the C code reaches through the pointer `offset` of the
+class, and a class without a row of offsets (none, for `NULL`), which the run never sifts, reads the
+offsets from position `0`; natural numbers for the `long`s. -/
 def setRows (rows : List (Nat × Array (Thunk (Array UInt64)))) (bp : List Nat) (cl : NumClass)
     (offsets : Array Nat) : List SieveSpec :=
-  (rows.zip bp).mapIdx fun n ((p, rs), r) ↦ ⟨p, offsets[cl.offset.getD 0 + n]!, rs[r]!.get⟩
+  (rows.zip bp).mapIdx fun n ((p, rs), r) ↦ ⟨p, offsets[cl.offset.getD 0 + n]!, rs[r]!.get, 0, p⟩
 
 /-- The points of the numerators of the bits `low, …, high` of the class `cl` of the denominator `b`
 (`Ratpoints.Sieve.numeratorsToBits`), in pieces of at most `A` bit arrays, for `A ≥ 1` (for `A = 0`
@@ -818,14 +738,6 @@ def sift (c : List Int) (d H A b : Nat) (rev : Bool) (sp1 : Nat)
   (Id.run (checkDen [-2, 0, 0, 1] 3 130 100 (Vector.replicate _ true))).toList ==
     [(129, 3830, 100), (129, -3830, 100)]
 
--- `andBitArray` on two bit arrays: bit array 1 is and-ed with bit array 2 of a row, word by word,
--- and bit array 0 stays as it is.
-#guard
-  let v : Vector UInt64 (2 * rbaPack) := .ofFn fun i ↦ 0x0123456789abcdef * (i.val.toUInt64 + 1)
-  let row : Array UInt64 := .ofFn (n := 3 * rbaPack) fun i ↦ ~~~(1 <<< i.val.toUInt64)
-  (List.range (2 * rbaPack)).all fun y ↦ (andBitArray v 1 row 2)[y]! ==
-    if y / rbaPack = 1 then v[y]! &&& row[rbaPack * 2 + y % rbaPack]! else v[y]!
-
 -- The masks on two bit arrays: the low mask keeps bit `t` of word `y` exactly when
 -- `s ≤ 64 y + t`, and the high mask on bit array 1 exactly when `64 y + t + s < 2 rbaLength`.
 #guard
@@ -856,7 +768,7 @@ def sift (c : List Int) (d H A b : Nat) (rev : Bool) (sp1 : Nat)
   let bias (p : Nat) : Nat := p * ((rowBias + p - 1) / p)
   ([(fun p ↦ bias p, true), (fun p ↦ bias p + p - 2, true), (fun p ↦ bias p + 1, false),
       (fun p ↦ p - 1, false)] : List ((Nat → Nat) × Bool)).all fun (off, sm) ↦
-  let specs : List SieveSpec := es.map fun e ↦ ⟨e.p, off e.p, e.row 7⟩
+  let specs : List SieveSpec := es.map fun e ↦ ⟨e.p, off e.p, e.row 7, 0, e.p⟩
   let mgs := es.map (·.magic)
   ([.replicate rbaPack (~~~0), .ofFn fun κ ↦ 1 <<< (κ.val * 13).toUInt64,
       .ofFn fun κ ↦ 0x0123456789abcdef * (κ.val.toUInt64 + 1), .replicate rbaPack 0] :
@@ -869,17 +781,18 @@ def sift (c : List Int) (d H A b : Nat) (rev : Bool) (sp1 : Nat)
 
 -- The rows as words against the row test: bit `t` of word `j` of the row of `b` says whether the
 -- row admits `64 j + t`, for denominators of several residues modulo `p`, `0` among them, and for
--- a prime above 64.
+-- a prime above 64, over all `(p + chunk - 1) rbaPack` words, the copies of the first bit arrays
+-- at the end included.
 #guard
   [3, 5, 7, 13, 67].all fun p ↦
     let e : SieveEntry := ⟨p, [.prime (examinePrime [1, 2, 3, 4, 5, 6, 7] 6 p)], magic p, 0, 0, #[]⟩
     [0, 1, 2, 5, p + 3].all fun b ↦
       let row := e.row b
-      row.size == p * rbaPack && (List.range (p * rbaPack)).all fun j ↦
+      row.size == (p + chunk - 1) * rbaPack && (List.range row.size).all fun j ↦
         (List.range 64).all fun t ↦ row[j]!.toBitVec.getLsbD t == e.admits b (64 * j + t)
 
 -- The rows as words of composite moduli against the row test: the prime power 9, and the products
--- 15 = 3 · 5 and 45 = 9 · 5, for denominators prime to them and not.
+-- 15 = 3 · 5 and 45 = 9 · 5, for denominators prime to them and not, over all their words.
 #guard
   let c := [1, 2, 3, 4, 5, 6, 7]
   let p9 : Factor := .power (Id.run (examinePower c 6 3 2 true))
@@ -889,7 +802,7 @@ def sift (c : List Int) (d H A b : Nat) (rev : Bool) (sp1 : Nat)
       ⟨45, [p9, e5], magic 45, 0, 0, #[]⟩] : List SieveEntry).all fun e ↦
     [0, 1, 3, 5, 6, 10, 18].all fun b ↦
     let row := e.row b
-    row.size == e.p * rbaPack && (List.range (e.p * rbaPack)).all fun j ↦
+    row.size == (e.p + chunk - 1) * rbaPack && (List.range row.size).all fun j ↦
       (List.range 64).all fun t ↦ row[j]!.toBitVec.getLsbD t == e.admits b (64 * j + t)
 
 -- The row of `0` against the pattern `sieves0` that the build of ratpoints generates, for 3, 5, 7,
@@ -934,8 +847,8 @@ def sift (c : List Int) (d H A b : Nat) (rev : Bool) (sp1 : Nat)
   ([(-9, 1), (-9, 12), (-35, 4), (6, 2), (15, 17)] : List (Int × Nat)).all fun (w0, n) ↦
     [1, 10].all fun b ↦ [false, sm].all fun small ↦
       [~~~0, 0xdddddddddddddddd, 0x0202020202020202].all fun cw ↦
-        let v := Id.run (andRows (es.map fun e ↦ ⟨e.p, off e.p, e.row b⟩) (es.map (·.magic)) small
-          cw w0 n (Vector.replicate _ 0))
+        let v := Id.run (andRows (es.map fun e ↦ ⟨e.p, off e.p, e.row b, 0, e.p⟩) (es.map (·.magic))
+          small cw w0 n (Vector.replicate _ 0))
         (List.range (n * rbaPack)).all fun y ↦ (List.range 64).all fun t ↦
           v[y]!.toBitVec.getLsbD t == (cw.toBitVec.getLsbD t &&
             es.all fun e ↦ e.admits b (rbaLength * (w0 + off e.p) + 64 * y + t))
@@ -962,7 +875,8 @@ def sift (c : List Int) (d H A b : Nat) (rev : Bool) (sp1 : Nat)
       let es3 := es.drop sp2
       let checks := fillChecks b 2000 es3 (es3.map (·.magic))
       let specs : List SieveSpec := (es.take sp2).map fun e ↦ ⟨e.p,
-        a0 * inv (2 ^ k * rbaLength) e.p % e.p + bias e.p, e.row (b * inv (2 ^ k) e.p % e.p)⟩
+        a0 * inv (2 ^ k * rbaLength) e.p % e.p + bias e.p, e.row (b * inv (2 ^ k) e.p % e.p), 0,
+        e.p⟩
       let run (useLong small : Bool) := (Id.run (siftBitArray useLong (.pure w) 3 b false specs
         (specs.map (magic ·.p)) small (.pure checks) ⟨~~~0, k, a0, none⟩ i nums #[])).toList
       let ref := (((List.range rbaLength).filter fun t ↦
@@ -1032,7 +946,7 @@ def sift (c : List Int) (d H A b : Nat) (rev : Bool) (sp1 : Nat)
   let piece (sp1 sp2 b : Nat) (w0 : Int) (n mL mH : Nat) : List (Int × Int × Int) :=
     let es3 := es.drop sp2
     let specs : List SieveSpec :=
-      (es.take sp2).map fun e ↦ ⟨e.p, e.p * ((rowBias + e.p - 1) / e.p), e.row b⟩
+      (es.take sp2).map fun e ↦ ⟨e.p, e.p * ((rowBias + e.p - 1) / e.p), e.row b, 0, e.p⟩
     (Id.run (siftPiece (.pure (BruteForce.scaledCoeffs c 3 b)) 3 b false sp1 specs
       (specs.map (magic ·.p)) (.pure (fillChecks b 1000 es3 (es3.map (·.magic))))
       ⟨~~~0, 0, 0, none⟩ w0 n mL mH)).toList

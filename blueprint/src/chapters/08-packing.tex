@@ -342,35 +342,38 @@ order: a data refinement.
 \end{proof}
 
 \begin{lemma}[The rows read in the packing]\label{lem:reads_row}
-  \uses{lem:admits_mul, def:rows, def:andRows}
+  \uses{lem:admits_mul, def:rows, def:andRows, def:closedRow}
   \lean{Ratpoints.Sieve.SieveSpec.Reads, Ratpoints.Sieve.SieveSpec.getLsbD_wordAt_mk, Ratpoints.Sieve.SieveEntry.reads_row, Ratpoints.Sieve.getLsbD_andWords}
   \leanok
   A sieve spec reads a test $f$ of the bit numbers when bit $t$ of its row word for word $y$ of the
-  piece from the word number $i$ is $f(\mathrm{rbaLength}\, i + 64 y + t)$ for $t < 64$. For a
-  sieve entry with $0 < p$ and tables that invert, $v\, 2^k \equiv 1$,
-  $o\, 2^k\,\mathrm{rbaLength} \equiv a_0$ and $2^k\, \mathrm{bp} \equiv b \pmod p$, the spec of
-  the row of $\mathrm{bp}$ at the offset $o$ reads the admission of $a_0 + 2^k j$ by the row of $b$;
-  the words of a piece and-ed over specs that read tests read the conjunction of the tests and the
-  class word.
+  piece from the word number $i$ is $f(\mathrm{rbaLength}\, i + 64 y + t)$ for $t < 64$. For a sieve
+  entry with $0 < p$ and tables that invert, $v\, 2^k \equiv 1$,
+  $o\, 2^k\,\mathrm{rbaLength} \equiv a_0$ and $2^k\, \mathrm{bp} \equiv b \pmod p$, the spec of the
+  closed form of the row of $\mathrm{bp}$ (Definition~\ref{def:closedRow}) at the offset $o$, with
+  any start and end, reads the admission of $a_0 + 2^k j$ by the row of $b$; the words of a piece
+  and-ed over specs that read tests read the conjunction of the tests and the class word.
 \end{lemma}
 
 \begin{proof}
+  \uses{lem:closedRow}
   \leanok
-  The row bit at the index $\mathrm{rbaLength}(i + o) + 64 y + t$ admits that index for
-  $\mathrm{bp}$ (Definitions~\ref{def:row} and~\ref{def:rows}); multiplied by the unit $2^k$ with
-  the inverse $v$ (Lemma~\ref{lem:admits_mul}) it is the admission of
-  $2^k(\mathrm{rbaLength}\, i + 64 y + t) + a_0$ for $b$.
+  The bit of the closed form at the index $\mathrm{rbaLength}(i + o) + 64 y + t$ admits that index
+  for $\mathrm{bp}$ (Lemma~\ref{lem:closedRow}, Definitions~\ref{def:row} and~\ref{def:rows});
+  multiplied by the unit $2^k$ with the inverse $v$ (Lemma~\ref{lem:admits_mul}) it is the admission
+  of $2^k(\mathrm{rbaLength}\, i + 64 y + t) + a_0$ for $b$.
 \end{proof}
 
 \section{The row indices of the first two stages}\label{sec:rowIndices}
 
 \begin{lemma}[The row indices]\label{lem:rowIndices}
-  \uses{lem:mulMod, lem:modMul, def:packingConstants, def:rows, def:barrett, def:useCLong}
+  \uses{lem:mulMod, lem:modMul, def:packingConstants, def:rows, def:barrett, def:useCLong,
+    def:closedRow}
   \lean{Ratpoints.Sieve.SieveSpec.Fits, Ratpoints.Sieve.SmallFits, Ratpoints.Sieve.smallFits_decide, Ratpoints.Sieve.SmallFits.mono, Ratpoints.Sieve.SieveSpec.Fits.natAbs_neg_sub_le, Ratpoints.Sieve.SieveSpec.Fits.add_nonneg_and_toNat_le, Ratpoints.Sieve.SieveSpec.Fits.ite_modMul_modLong_eq_emod, Ratpoints.Sieve.SieveSpec.Fits.ite_mulMod_modLong_eq_toNat_emod, Ratpoints.maxPrimeEven_pos}
   \leanok
-  A sieve spec \emph{fits} when $0 < p \le \mathrm{maxPrimeEven}$ and
-  $\mathrm{rowBias} \le \mathrm{offset} < \mathrm{rowBias} + 2p$; the test \verb|small| of a piece
-  from $w_0$ to $w_0 + n$ gives $-\mathrm{rowBias} \le w_0$ and
+  A sieve spec \emph{fits} when $0 < p \le \mathrm{maxPrimeEven}$,
+  $\mathrm{rowBias} \le \mathrm{offset} < \mathrm{rowBias} + 2p$, its end is $p$ and its row wraps
+  (Definition~\ref{def:closedRow}), as the chunked first stage needs (Chapter~\ref{chap:rows}); the
+  test \verb|small| of a piece from $w_0$ to $w_0 + n$ gives $-\mathrm{rowBias} \le w_0$ and
   $w_0 + n \le \mathrm{rowBias} - 2\,\mathrm{maxPrimeEven}$. Then the remainder $r$ with which the
   first stage starts each modulus, at the bit array $p - r$ of its row, computed by \verb|mod_mul|
   under \verb|small| and by \verb|mod| otherwise, is $(-w_0 - \mathrm{offset}) \bmod p$, and the
@@ -460,9 +463,10 @@ reads; that of one piece takes fitting specs and the reciprocals of their moduli
   reciprocals of their moduli, give the points of the bits from $\mathrm{low}$ to $\mathrm{high}$
   that pass the class pattern and the tests that the specs read, none for an empty interval; the
   specs that \verb|set_rows| makes for entries with their residues $b\,\mathrm{dinv}[k] \bmod p$ and
-  the offsets of the class read the admissions of the numerators $a_0 + 2^k j$ by the rows of $b$;
-  and the bits of $[-H, H]$ in the packing of a class of the word $w$ that pass its pattern give the
-  numerators of $[-H, H]$ that pass $w$.
+  the offsets of the class, the closed forms of the rows of these residues with the start $0$ and
+  the end $p$ (Lemma~\ref{lem:closedRow}), fit and read the admissions of the numerators
+  $a_0 + 2^k j$ by the rows of $b$; and the bits of $[-H, H]$ in the packing of a class of the word
+  $w$ that pass its pattern give the numerators of $[-H, H]$ that pass $w$.
 \end{lemma}
 
 \begin{proof}
@@ -642,10 +646,12 @@ Each component of this chapter differs from the C code in a stated way, recorded
     the bits of the interval, where \verb|sift| turns the interval into bits first and sets up once
     \verb|interval_bits| does not report the interval empty (the flag \verb|do_setup|), which for
     the whole line is at once and so before the test $\mathrm{low} \le \mathrm{high}$ of the bits;
-    the sieve specs a list, with no pointers to the start and the end of a row (stage~F4), no test
-    for a missing row, which its thunk makes when it is first needed, and no flag \verb|shared| and
-    acquire load, which serve the threads; a class without a row of offsets, which the run never
-    sifts, reading the offsets from position~$0$;
+    the sieve specs a list, with the start $0$, where the C code leaves the field until the first
+    stage sets it, and the end $p$ also for a row that the C code builds after \verb|set_rows| and
+    whose end it sets then (Chapter~\ref{chap:rows}), no test for a missing row, which its thunk
+    makes when it is first needed, and no flag \verb|shared| and acquire load, which serve the
+    threads; a class without a row of offsets, which the run never sifts, reading the offsets from
+    position~$0$;
   \item the reciprocals of the first two stages as lists stepped with the sieve specs, for the
     pointer \verb|mg| into \verb|magics|; \verb|small| a Boolean, for the \verb|int|; the value
     $-w_{\mathrm{low}} - \mathrm{offset}$ written out in both reductions of the first stage, for the

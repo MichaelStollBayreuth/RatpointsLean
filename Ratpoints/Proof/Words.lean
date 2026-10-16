@@ -6,6 +6,7 @@ Authors: Michael Stoll
 module
 
 public import Ratpoints.Proof.Reductions
+public import Ratpoints.Proof.Rows
 public import Ratpoints.Proof.SetBits
 
 import Ratpoints.Proof.Bits
@@ -27,30 +28,33 @@ bits of a word, and the contract of the first stage over a piece, as `@[spec]` t
 * `Ratpoints.Sieve.SieveSpec.wordAt`, `Ratpoints.Sieve.andWords`: the row word that the first stage
   ands into a word of a piece, at the offset of the row, and the words of a piece after it.
 * `Ratpoints.Sieve.SieveSpec.Reads`: the rows of a modulus read a test of the bits.
-* `Ratpoints.Sieve.AndRowsLoopInvariant`, `Ratpoints.Sieve.AndRowsStartInvariant`: the invariants of
-  the loop of the first stage over the moduli with their reciprocals, and of its loops over the bit
-  arrays of a modulus.
+* `Ratpoints.Sieve.AndRowsFillInvariant`, `Ratpoints.Sieve.AndRowsLoopInvariant`,
+  `Ratpoints.Sieve.AndRowsStartInvariant`: the invariants of the loop of the first stage one row at
+  a time that sets the bit arrays to the class word, from the last, of its loop over the moduli with
+  their reciprocals, and of its loops over the bit arrays of a modulus.
 * `Ratpoints.Sieve.WalkWordInvariant`: the invariant of the array that a walk through the set bits
   of a word, lowest first, appends to.
 
 ## Main statements
 
-* `Ratpoints.Sieve.getElem!_andBitArray`: `Ratpoints.Sieve.andBitArray` ands the words of one bit
-  array with the words of a bit array of the row, and leaves the other words as they are.
+* `Ratpoints.Sieve.getElem!_andBitArray`, `Ratpoints.Sieve.getElem!_fillBitArray`: the operations
+  on bit arrays of the first stage set the words of one bit array and leave the other words as they
+  are.
 * `Ratpoints.Sieve.getLsbD_clearLowBits`, `Ratpoints.Sieve.getLsbD_clearHighBits`: which bits the
   masks at the two ends of the numerator range keep.
 * `Ratpoints.Sieve.isZeroAt_eq_true_iff`: a bit array is zero when all its words are.
-* `Ratpoints.Sieve.SieveEntry.getLsbD_row`: bit `t` of word `j` of the row of a denominator in words
-  says whether the row admits the numerator `64 j + t`.
-* `Ratpoints.Sieve.SieveEntry.get_rows`, `Ratpoints.Sieve.SieveEntry.row_mod`: the thunk of a
-  residue gives its row, and the row of `b` is the row of `b mod p`.
+* `Ratpoints.Sieve.SieveEntry.row_eq_closedRow`: the row of a denominator in words is the closed
+  form of the admission test (`Ratpoints.Sieve.closedRow`): bit `t` of word `j` says whether the row
+  admits the numerator `64 j + t`.
+* `Ratpoints.Sieve.SieveEntry.get_rows`: the thunk of a residue gives its row.
 * `Ratpoints.Sieve.Entry.admits_mod_of_dvd`, `Ratpoints.Sieve.Power.admits_mod_of_dvd`: the row of
   a prime or a prime power reads the residues modulo a multiple of its modulus as those of the
   numbers.
 * `Ratpoints.Sieve.SieveEntry.admits_mul`: the row of a sieve entry whose factors have their tables
   of inverses is unchanged when the denominator and the numerator are scaled by a unit.
-* `Ratpoints.Sieve.SieveEntry.reads_row`: the row of `b / 2 ^ k` at the offset of the class
-  `a₀ mod 2 ^ k` reads at bit `j` whether the row of `b` admits the numerator `a₀ + 2 ^ k j`.
+* `Ratpoints.Sieve.SieveEntry.reads_row`: the closed form of the row of `b / 2 ^ k`
+  (`Ratpoints.Sieve.closedRow`) at the offset of the class `a₀ mod 2 ^ k` reads at bit `j` whether
+  the row of `b` admits the numerator `a₀ + 2 ^ k j`.
 * `Ratpoints.Sieve.getLsbD_andWords`: the words of rows that read tests of the bits, and-ed into a
   word, have the bits of the word that pass all the tests.
 * `Ratpoints.Sieve.andWords_append`: and-ing the rows of two lists of moduli one after the other is
@@ -70,8 +74,9 @@ bits of a word, and the contract of the first stage over a piece, as `@[spec]` t
 ## Implementation notes
 
 The file uses Lean core and `Std` only, as `Ratpoints.Proof.Sieve` does; the lemmas on words that
-are not about the model are in `Ratpoints.Proof.Bits`. The proofs use only that `Ratpoints.rbaPack`
-is positive, never its value. The scaling by a unit needs an inverse of the unit and the tables of
+are not about the model are in `Ratpoints.Proof.Bits`, the closed form of the rows in
+`Ratpoints.Proof.Rows`. The proofs use only that `Ratpoints.rbaPack` and `Ratpoints.chunk` are
+positive, never their values. The scaling by a unit needs an inverse of the unit and the tables of
 inverses, no primality. The contracts of the second and the third stage and of the check are in
 `Ratpoints.Proof.Stages`, those of the walk, of the scan, of one piece and of one denominator in
 `Ratpoints.Proof.Sift`. The bit of a number in a word (`Ratpoints.Sieve.classBit`), the contract of
@@ -104,16 +109,23 @@ universe u
 
 /-! ### Operations on bit arrays -/
 
+/-- Word `y` lies in bit array `j` exactly when `y / rbaPack = j`. -/
+theorem rbaPack_mul_le_and_lt_iff {y j : Nat} :
+    rbaPack * j ≤ y ∧ y < rbaPack * j + rbaPack ↔ y / rbaPack = j := by
+  rw [Nat.div_eq_iff rbaPack_pos, Nat.mul_comm j]
+  lia [rbaPack_pos]
+
 theorem getElem!_andBitArray {m : Nat} (v : Vector UInt64 m) (j : Nat) (row : Array UInt64)
     (x : Nat) {y : Nat} (hy : y < m) :
     (andBitArray v j row x)[y]! =
       if y / rbaPack = j then v[y]! &&& row[rbaPack * x + y % rbaPack]! else v[y]! := by
-  have hiff : rbaPack * j ≤ y ∧ y < rbaPack * j + rbaPack ↔ y / rbaPack = j := by
-    have := rbaPack_pos
-    rw [Nat.div_eq_iff rbaPack_pos, Nat.mul_comm j]
-    lia
   rw [andBitArray, Vector.getElem!_fold_set! (fun κ w ↦ w &&& row[rbaPack * x + κ]!) hy]
-  by_cases h : y / rbaPack = j <;> simp only [hiff, h, ↓reduceIte, Nat.mod_def]
+  by_cases h : y / rbaPack = j <;> simp only [rbaPack_mul_le_and_lt_iff, h, ↓reduceIte, Nat.mod_def]
+
+theorem getElem!_fillBitArray {m : Nat} (v : Vector UInt64 m) (y' : Nat) (cw : UInt64) {y : Nat}
+    (hy : y < m) : (fillBitArray v y' cw)[y]! = if y / rbaPack = y' then cw else v[y]! := by
+  rw [fillBitArray, Vector.getElem!_fold_set! (fun _ _ ↦ cw) hy]
+  by_cases h : y / rbaPack = y' <;> simp only [rbaPack_mul_le_and_lt_iff, h, ↓reduceIte]
 
 theorem getLsbD_clearLowBits {m : Nat} (v : Vector UInt64 m) (s : Nat) {y : Nat} (hy : y < m)
     (t : Nat) :
@@ -173,19 +185,18 @@ theorem getLsbD_window_packedPattern (pat : Array Bool) {p s : Nat} (hs : s < p)
       (decide (t < 64) && pat[(s + t) % p]!) := by
   grind [getLsbD_window, getLsbD_packedPattern]
 
-theorem SieveEntry.getLsbD_row (e : SieveEntry) (b : Nat) {j : Nat} (hj : j < e.p * rbaPack)
-    (t : Nat) :
-    (e.row b)[j]!.toBitVec.getLsbD t = (decide (t < 64) && e.admits b (64 * j + t)) := by
-  have hp : 0 < e.p := Nat.pos_of_ne_zero fun h ↦ by simp [h] at hj
+/-- The row of the denominator `b` in words, for a sieve entry of a modulus `p > 0`, is the closed
+form of its admission test at `b`: bit `t` of word `j` says whether the row admits `64 j + t`, for
+every word, the copies of the first bit arrays at its end included. -/
+theorem SieveEntry.row_eq_closedRow (e : SieveEntry) (hp : 0 < e.p) (b : Nat) :
+    e.row b = closedRow e.admits e.p b := by
+  refine eq_closedRow (by simp [SieveEntry.row]) fun j hj t ↦ ?_
   simp only [SieveEntry.row, Array.getElem!_map_range _ hj,
     Array.getElem!_map_range _ (Nat.mod_lt _ hp), getLsbD_window_packedPattern _ (Nat.mod_lt _ hp)]
   exact congrArg (decide (t < 64) && ·) (e.admits_congr b (by simp))
 
 theorem SieveEntry.get_rows (e : SieveEntry) {r : Nat} (hr : r < e.p) : e.rows[r]!.get = e.row r :=
   congrArg Thunk.get (Array.getElem!_map_range _ hr)
-
-theorem SieveEntry.row_mod (e : SieveEntry) (b : Nat) : e.row (b % e.p) = e.row b := by
-  simp [SieveEntry.row, SieveEntry.admits_mod]
 
 /-! ### The rows under a unit -/
 
@@ -321,20 +332,17 @@ private theorem emod_wordIndex (p : Nat) (hp : 0 < p) (w0 : Int) (y t : Nat) :
     grind
   rw [key, Int.add_mul_emod_self_left]
 
-/-- Bit `t` of the row word of word `y` of a piece from the word number `w0` on, in the row of the
-denominator `b` with the offset `off`, is the bit of the numerator `rbaLength (w0 + off) + 64 y + t`
-in the row of `b`. -/
-theorem SieveSpec.getLsbD_wordAt_mk (e : SieveEntry) (b : Nat) (hp : 0 < e.p) (off : Nat)
+/-- Bit `t` of the row word of word `y` of a piece from the word number `w0` on, in the closed form
+of the row of the denominator `b` with the offset `off` and any start and end, is the bit of the
+numerator `rbaLength (w0 + off) + 64 y + t` in the row of `b`. -/
+theorem SieveSpec.getLsbD_wordAt_mk (e : SieveEntry) (b : Nat) (hp : 0 < e.p) (off st stop : Nat)
     (w0 : Int) (y t : Nat) :
-    (wordAt ⟨e.p, off, e.row b⟩ w0 y).toBitVec.getLsbD t =
+    (wordAt ⟨e.p, off, closedRow e.admits e.p b, st, stop⟩ w0 y).toBitVec.getLsbD t =
       (decide (t < 64) && e.admits b (rbaLength * (w0 + off) + 64 * y + t)) := by
-  have hu : ((w0 + off + (y / rbaPack : Nat)) % (e.p : Int)).toNat < e.p :=
-    Int.toNat_emod_lt _ hp
-  have hj : rbaPack * ((w0 + off + (y / rbaPack : Nat)) % (e.p : Int)).toNat + y % rbaPack <
-      e.p * rbaPack :=
-    Nat.lt_of_lt_of_le (Nat.add_lt_add_left (Nat.mod_lt y rbaPack_pos) _)
-      (by rw [← Nat.mul_succ, Nat.mul_comm]; exact Nat.mul_le_mul_right _ hu)
-  rw [wordAt, SieveEntry.getLsbD_row e b hj, e.admits_congr b (emod_wordIndex e.p hp _ y t)]
+  have hu : ((w0 + off + (y / rbaPack : Nat)) % (e.p : Int)).toNat < e.p + chunk - 1 := by
+    lia [Int.toNat_emod_lt (w0 + off + (y / rbaPack : Nat)) hp, chunk_pos]
+  rw [wordAt, getLsbD_closedRow _ _ _ (rbaPack_mul_add_lt hu (Nat.mod_lt y rbaPack_pos)),
+    e.admits_congr b (emod_wordIndex e.p hp _ y t)]
 
 /-- The rows of the sieve spec `s` read the test `f` of the bits: bit `t` of the row word of word
 `y` of a piece from the word number `i` on is `f` at the bit `rbaLength i + 64 y + t`. -/
@@ -342,16 +350,17 @@ def SieveSpec.Reads (s : SieveSpec) (f : Int → Bool) : Prop :=
   ∀ (i : Int) (y t : Nat), (s.wordAt i y).toBitVec.getLsbD t =
     (decide (t < 64) && f (rbaLength * i + 64 * y + t))
 
-/-- The row of the residue `bp` of the denominator `b` divided by the stride `2 ^ k`
-(`2 ^ k bp ≡ b`), read at the offset `off` of the class `a₀ mod 2 ^ k`
-(`off 2 ^ k Ratpoints.rbaLength ≡ a₀`), reads at bit `j` whether the row of `b` admits the numerator
-`a₀ + 2 ^ k j`, when `2 ^ k` has an inverse `v` modulo `p` and the factors of the entry have their
-tables of inverses: the rows are unchanged when the denominator and the numerator are scaled by the
-unit `2 ^ k` (`Ratpoints.Sieve.SieveEntry.admits_mul`). -/
+/-- The closed form of the row of the residue `bp` of the denominator `b` divided by the stride
+`2 ^ k` (`2 ^ k bp ≡ b`), with any start and end, read at the offset `off` of the class
+`a₀ mod 2 ^ k` (`off 2 ^ k Ratpoints.rbaLength ≡ a₀`), reads at bit `j` whether the row of `b`
+admits the numerator `a₀ + 2 ^ k j`, when `2 ^ k` has an inverse `v` modulo `p` and the factors of
+the entry have their tables of inverses: the rows are unchanged when the denominator and the
+numerator are scaled by the unit `2 ^ k` (`Ratpoints.Sieve.SieveEntry.admits_mul`). -/
 theorem SieveEntry.reads_row {e : SieveEntry} (he : ∀ f ∈ e.factors, f.HasInverses e.p)
-    (hp : 0 < e.p) {k a0 off bp b v : Nat} (hv : v * 2 ^ k % e.p = 1)
+    (hp : 0 < e.p) {k a0 off bp b v st stop : Nat} (hv : v * 2 ^ k % e.p = 1)
     (hoff : off * (2 ^ k * rbaLength) % e.p = a0 % e.p) (hbp : 2 ^ k * bp % e.p = b % e.p) :
-    SieveSpec.Reads ⟨e.p, off, e.row bp⟩ fun j ↦ e.admits b (a0 + 2 ^ k * j) := by
+    SieveSpec.Reads ⟨e.p, off, closedRow e.admits e.p bp, st, stop⟩ fun j ↦
+      e.admits b (a0 + 2 ^ k * j) := by
   intro i y t
   rw [SieveSpec.getLsbD_wordAt_mk e bp hp, ← e.admits_mul he hv, ← e.admits_mod, hbp,
     e.admits_mod]
@@ -432,10 +441,10 @@ theorem next?_ne_none_of_lt {specs pref suff : List SieveSpec} {s : SieveSpec} {
   exact List.next?_drop_map_ne_none _ hs
 
 /-- The invariant of the loop of `Ratpoints.Sieve.andRows` over the moduli and, in step with them,
-their reciprocals `mgs`, whose state is the piece and the reciprocals still to come, and, with no
-moduli yet, of the loop that fills the piece with the class word `cw` before it: after the moduli
-`pref`, the reciprocals still to come are those after the first `pref.length`, and the first `k`
-words of the piece are `cw` and-ed with their row words (`Ratpoints.Sieve.andWords`). -/
+their reciprocals `mgs`, whose state is the piece and the reciprocals still to come: after the
+moduli `pref`, the reciprocals still to come are those after the first `pref.length`, and the first
+`k` words of the piece, all its `n rbaPack` words in the loop, are the class word `cw` and-ed with
+their row words (`Ratpoints.Sieve.andWords`). -/
 def AndRowsLoopInvariant {m : Nat} (cw : UInt64) (w0 : Int) (k : Nat) (mgs : List Nat)
     (pref : List SieveSpec) (st : Vector UInt64 m × List Nat) : Prop :=
   st.2 = mgs.drop pref.length ∧ ∀ y < k, st.1[y]! = andWords pref cw w0 y
@@ -498,31 +507,46 @@ abbrev AndRowsTailInvariant {m : Nat} (small : Bool) (cw : UInt64) (w0 : Int) (n
   AndRowsStartInvariant cw w0 n pref s (andRowsStart small w0 s mg)
     (andRowsStart small w0 s mg + (n - andRowsStart small w0 s mg) / s.p * s.p + done.length) surv
 
-theorem andRowsLoopInvariant_zero {m : Nat} (cw : UInt64) (w0 : Int) (mgs : List Nat)
-    (surv : Vector UInt64 m) : AndRowsLoopInvariant cw w0 0 mgs [] (surv, Std.toStream mgs) :=
-  ⟨rfl, fun _ h ↦ absurd h (Nat.not_lt_zero _)⟩
+/-- The invariant of the loop of `Ratpoints.Sieve.andRows` that sets the bit arrays of the piece to
+the class word `cw`, from the last: after `c` steps, the words of the last `c` of the `n` bit arrays
+are `cw`. -/
+def AndRowsFillInvariant {m : Nat} (cw : UInt64) (n c : Nat) (surv : Vector UInt64 m) : Prop :=
+  ∀ y < n * rbaPack, n - c ≤ y / rbaPack → surv[y]! = cw
 
-/-- A step of the loop of `Ratpoints.Sieve.andRows` that fills the piece with the class word. -/
-theorem AndRowsLoopInvariant.append_set! {cw : UInt64} {w0 : Int} {n : Nat} {mgs : List Nat}
-    {done suff : List Nat} {cur : Nat} {surv : Vector UInt64 ((n + 1) * rbaPack)}
-    (h : AndRowsLoopInvariant cw w0 done.length mgs [] (surv, Std.toStream mgs))
-    (hl : ForIn.toList [0:n * rbaPack] = done ++ cur :: suff) :
-    AndRowsLoopInvariant cw w0 (done ++ [cur]).length mgs []
-      (surv.set! cur cw, Std.toStream mgs) := by
+theorem andRowsFillInvariant_zero {m : Nat} (cw : UInt64) (n : Nat) (surv : Vector UInt64 m) :
+    AndRowsFillInvariant cw n ([] : List Nat).length surv := fun y hy h ↦ by
+  simp only [List.length_nil, Nat.sub_zero] at h
+  lia [(Nat.div_lt_iff_lt_mul rbaPack_pos).mpr hy]
+
+/-- A step of the loop of `Ratpoints.Sieve.andRows` that sets the bit arrays to the class word:
+bit array `n - 1 - cur` set. -/
+theorem AndRowsFillInvariant.append_fillBitArray {n cur : Nat} {cw : UInt64}
+    {done suff : List Nat} {surv : Vector UInt64 ((n + 1) * rbaPack)}
+    (h : AndRowsFillInvariant cw n done.length surv)
+    (hl : ForIn.toList [0:n] = done ++ cur :: suff) :
+    AndRowsFillInvariant cw n (done ++ [cur]).length (fillBitArray surv (n - 1 - cur) cw) := by
   have := Std.Legacy.Range.length_eq_of_toList_eq_append_cons hl
   have := Std.Legacy.Range.lt_of_toList_eq_append_cons hl
-  refine ⟨h.1, fun y hy ↦ ?_⟩
-  rw [List.length_append, List.length_singleton] at hy
-  rw [Vector.getElem!_set! (Nat.lt_add_one_mul_of_lt_mul (by lia))]
+  intro y hy hy'
+  rw [getElem!_fillBitArray _ _ _ (Nat.lt_add_one_mul_of_lt_mul hy)]
+  rw [List.length_append, List.length_singleton] at hy'
   split
   · rfl
-  · exact h.2 y (by lia)
+  · exact h y hy (by lia)
+
+/-- After the bit arrays are all set to the class word, the loop over the moduli starts with no
+moduli. -/
+theorem AndRowsFillInvariant.andRowsLoopInvariant {m n : Nat} {cw : UInt64} {w0 : Int}
+    {mgs : List Nat} {surv : Vector UInt64 m}
+    (h : AndRowsFillInvariant cw n (ForIn.toList [0:n]).length surv) :
+    AndRowsLoopInvariant cw w0 (n * rbaPack) mgs [] (surv, Std.toStream mgs) :=
+  ⟨rfl, fun y hy ↦ h y hy (by simp)⟩
 
 theorem AndRowsLoopInvariant.getElem!_eq {m n : Nat} {cw : UInt64} {w0 : Int} {mgs : List Nat}
     {pref : List SieveSpec} {st : Vector UInt64 m × List Nat}
-    (h : AndRowsLoopInvariant cw w0 (ForIn.toList [0:n * rbaPack]).length mgs pref st) {y : Nat}
+    (h : AndRowsLoopInvariant cw w0 (n * rbaPack) mgs pref st) {y : Nat}
     (hy : y < n * rbaPack) : st.1[y]! = andWords pref cw w0 y :=
-  h.2 y (by simpa using hy)
+  h.2 y hy
 
 /-- The reciprocals do not run out before the moduli. -/
 theorem AndRowsLoopInvariant.next?_ne_none {m k n : Nat} {cw : UInt64} {w0 : Int} {small : Bool}
@@ -542,30 +566,28 @@ theorem AndRowsLoopInvariant.andRowsHeadInvariant {m n : Nat} {cw : UInt64} {w0 
     {mg : Nat} {surv : Vector UInt64 m}
     (pre : (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p) ∧ SmallFits small w0 (w0 + n))
     (hs : specs = pref ++ s :: suff)
-    (h : AndRowsLoopInvariant cw w0 (ForIn.toList [0:n * rbaPack]).length mgs pref (surv, rest))
+    (h : AndRowsLoopInvariant cw w0 (n * rbaPack) mgs pref (surv, rest))
     (hnext : Std.Stream.next? rest = some (mg, rest')) :
     AndRowsHeadInvariant small cw w0 n pref s mg [] surv := by
   obtain ⟨rfl, -⟩ := eq_magic_and_of_next?_eq_some pre.2.1 hs (fun _ ↦ h.1) hnext
   have hfit := pre.1 s (by simp [hs])
-  refine ⟨⟨hfit.pos, ?_⟩, fun y hy ↦ by simp [h.2 y (by simpa using hy)]⟩
+  refine ⟨⟨hfit.pos, ?_⟩, fun y hy ↦ by simp [h.2 y hy]⟩
   rw [andRowsStart, hfit.ite_modMul_modLong_eq_emod pre.2.2, Int.neg_add, Int.sub_eq_add_neg]
 
 /-- After the bit arrays of the modulus `s` are all done, the cursor moves on. -/
 theorem AndRowsLoopInvariant.push {m n c : Nat} {cw : UInt64} {w0 : Int}
     {mgs rest rest' : List Nat} {pref : List SieveSpec} {s : SieveSpec} {r mg : Nat}
     {surv surv' : Vector UInt64 m}
-    (h : AndRowsLoopInvariant cw w0 (ForIn.toList [0:n * rbaPack]).length mgs pref (surv, rest))
+    (h : AndRowsLoopInvariant cw w0 (n * rbaPack) mgs pref (surv, rest))
     (hnext : Std.Stream.next? rest = some (mg, rest'))
     (h' : AndRowsStartInvariant cw w0 n pref s r c surv') (hc : n ≤ c) :
-    AndRowsLoopInvariant cw w0 (ForIn.toList [0:n * rbaPack]).length mgs (pref ++ [s])
-      (surv', rest') := by
+    AndRowsLoopInvariant cw w0 (n * rbaPack) mgs (pref ++ [s]) (surv', rest') := by
   refine ⟨?_, fun y hy ↦ ?_⟩
   · change rest' = mgs.drop (pref ++ [s]).length
     rw [List.length_append, List.length_singleton, ← List.drop_drop, ← show rest = _ from h.1,
       List.eq_cons_of_next?_eq_some hnext]
     rfl
-  · simp only [Std.Legacy.Range.length_toList, Nat.sub_zero] at hy
-    have : y / rbaPack < c := Nat.lt_of_lt_of_le ((Nat.div_lt_iff_lt_mul rbaPack_pos).mpr hy) hc
+  · have : y / rbaPack < c := Nat.lt_of_lt_of_le ((Nat.div_lt_iff_lt_mul rbaPack_pos).mpr hy) hc
     simp [h'.2 y hy, this, andWords_concat]
 
 theorem AndRowsStartInvariant.of_eq {m n : Nat} {cw : UInt64} {w0 : Int} {pref : List SieveSpec}
@@ -652,7 +674,7 @@ theorem AndRowsStartInvariant.append_andBitArray_tail {n : Nat} {cw : UInt64} {w
 /- The invariants are irreducible from here on, so that each alternative of the dispatch of the
 verification conditions of `Ratpoints.Sieve.andRows` below fails fast on the conditions of the
 other loops. -/
-attribute [local irreducible] AndRowsLoopInvariant AndRowsStartInvariant
+attribute [local irreducible] AndRowsFillInvariant AndRowsLoopInvariant AndRowsStartInvariant
 
 attribute [local simp] Nat.div_add_mod' in
 /-- Each modulus `s` has its row read at the offset of `s` (`Ratpoints.Sieve.SieveSpec.wordAt`): the
@@ -667,8 +689,8 @@ theorem andRows_spec (specs : List SieveSpec) (mgs : List Nat) (small : Bool) (c
     andRows specs mgs small cw w0 n surv
     ⦃ fun surv' ↦ ∀ y < n * rbaPack, surv'[y]! = andWords specs cw w0 y ⦄ := by
   vcgen [andRows] invariants
-  | inv1 => fun done _ surv ↦ AndRowsLoopInvariant cw w0 done.length mgs [] (surv, Std.toStream mgs)
-  | inv2 => fun l _ ↦ AndRowsLoopInvariant cw w0 (ForIn.toList [0:n * rbaPack]).length mgs l
+  | inv1 => fun done _ surv ↦ AndRowsFillInvariant cw n done.length surv
+  | inv2 => fun l _ ↦ AndRowsLoopInvariant cw w0 (n * rbaPack) mgs l
   | inv3 l s _ _ _ _ _ mg _ _ _ => fun d _ ↦ AndRowsHeadInvariant small cw w0 n l s mg d
   | inv4 l s _ _ _ _ _ mg _ _ _ => fun d _ ↦ AndRowsHeadInvariant small cw w0 n l s mg d
   | inv5 l s _ _ _ _ _ mg _ _ _ _ _ => fun d _ ↦ AndRowsPeriodInvariant small cw w0 n l s mg d
@@ -676,8 +698,8 @@ theorem andRows_spec (specs : List SieveSpec) (mgs : List Nat) (small : Bool) (c
   | inv7 l s _ _ _ _ _ mg _ _ _ _ _ periods _ _ _ _ _ => fun d _ ↦
       AndRowsPacketInvariant small cw w0 n l s mg periods d
   all_goals first
-    | exact andRowsLoopInvariant_zero ..
-    | exact AndRowsLoopInvariant.append_set! ‹_› ‹_›
+    | solve_by_elim [andRowsFillInvariant_zero,
+        AndRowsFillInvariant.append_fillBitArray, AndRowsFillInvariant.andRowsLoopInvariant]
     | exact AndRowsLoopInvariant.getElem!_eq ‹_› ‹_›
     | exact absurd ‹_› (AndRowsLoopInvariant.next?_ne_none ‹_› ‹_› ‹_›)
     | exact AndRowsLoopInvariant.andRowsHeadInvariant ‹_› ‹_› ‹_› ‹_›

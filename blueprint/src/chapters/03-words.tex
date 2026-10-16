@@ -141,34 +141,36 @@ brings the chunked first stage and the copies in the rows that it decides
 \section{The rows as words}\label{sec:wordRows}
 
 \begin{definition}[The row of a denominator in words]\label{def:row}
-  \uses{def:SieveEntry, def:rbaPack}
-  \lean{Ratpoints.Sieve.packedPattern, Ratpoints.Sieve.window, Ratpoints.Sieve.SieveEntry.row, Ratpoints.Sieve.SieveEntry.admits_congr, Ratpoints.Sieve.SieveEntry.admits_add_mul, Ratpoints.Sieve.SieveEntry.admits_mod, Ratpoints.Sieve.getLsbD_window, Ratpoints.Sieve.SieveEntry.getLsbD_row}
+  \uses{def:SieveEntry, def:rbaPack, def:chunk}
+  \lean{Ratpoints.Sieve.packedPattern, Ratpoints.Sieve.window, Ratpoints.Sieve.SieveEntry.row, Ratpoints.Sieve.SieveEntry.admits_congr, Ratpoints.Sieve.SieveEntry.admits_add_mul, Ratpoints.Sieve.SieveEntry.admits_mod, Ratpoints.Sieve.getLsbD_window}
   \leanok
   For the sieve entry of a modulus $p$ (Definition~\ref{def:SieveEntry}) and a denominator $b$: the
   pattern of one period, whether the row of $b$ admits $N$ for $N = 0, \dots, p - 1$; the pattern
   over the positions $0, \dots, p + 63$, packed into words; for $j < p$, word $j$ of the row, the 64
   bits of the packed pattern from position $64 j \bmod p$ on, cut out with two shifts; and these
-  words repeated $\mathrm{rbaPack}$ times, which makes $p$ bit arrays. Since the row admits $a$
-  exactly when it admits $a + p k$, and the row of $b$ is that of $b \bmod p$, bit $t$ of word $j$
-  says whether the row admits $64 j + t$, for every $j < p \cdot \mathrm{rbaPack}$. For a prime,
-  ratpoints builds the same table from the table of the prime and the inverses, the pattern of one
-  period bit by bit and then the words by shifting it through them, by a function for each prime
-  that its build generates (\csource{init.c}{42}{46}, \csource{init.c}{62}{83},
-  \csource{init.c}{118}{246}, \csource{gen_init_sieve_h.c}{48}{62}), with the copies
-  \csource{init.c}{99}{111}, and takes the row of $0$ from the generated pattern \verb|sieves0|
-  (\csource{gen_find_points_h.c}{102}{134}); these ranges are shared with
-  Definition~\ref{def:admits} until the faithful builders of stage~F4. For a prime power it lays the
-  pattern out by \verb|lay_out_pattern| (\csource{init.c}{259}{297}, \csource{init.c}{387}{387}),
-  and for a product it lays down the rows of the factors in blocks (\csource{init.c}{415}{418},
-  \csource{init.c}{430}{430}); both publish the row (\csource{init.c}{391}{393},
-  \csource{init.c}{443}{445}). The model does not make the copies of the first
-  $\mathrm{chunk} - 1$ bit arrays at the end of a row, which only the chunked first stage reads
-  (stage~F4).
+  words repeated through the $(p + \mathrm{chunk} - 1) \cdot \mathrm{rbaPack}$ words of the row,
+  word $j$ being word $j \bmod p$: $p$ bit arrays and the copies of the first $\mathrm{chunk} - 1$
+  of them (Definition~\ref{def:chunk}), which the chunked first stage reads past the first $p$
+  (Chapter~\ref{chap:rows}). Since the row admits $a$ exactly when it admits $a + p k$, and the row
+  of $b$ is that of $b \bmod p$, bit $t$ of word $j$ says whether the row admits $64 j + t$, for
+  every $j < (p + \mathrm{chunk} - 1) \cdot \mathrm{rbaPack}$: the row is the closed form of the
+  admission test (Definition~\ref{def:closedRow}, Lemma~\ref{lem:closedRow}). For a prime, ratpoints
+  builds the same table from the table of the prime and the inverses, the pattern of one period bit
+  by bit and then the words by shifting it through them, by a function for each prime that its build
+  generates (\csource{init.c}{42}{46}, \csource{init.c}{62}{83}, \csource{init.c}{118}{246},
+  \csource{gen_init_sieve_h.c}{48}{62}), with the copies \csource{init.c}{99}{111}, and takes the
+  row of $0$ from the generated pattern \verb|sieves0| (\csource{gen_find_points_h.c}{102}{134});
+  these ranges are shared with Definition~\ref{def:admits} until the faithful builders of stage~F4.
+  For a prime power it lays the pattern out by \verb|lay_out_pattern| (\csource{init.c}{259}{297},
+  \csource{init.c}{387}{387}), and for a product it lays down the rows of the factors in blocks
+  (\csource{init.c}{415}{418}, \csource{init.c}{430}{430}); both publish the row
+  (\csource{init.c}{391}{393}, \csource{init.c}{443}{445}). The model computes the copies at the end
+  of a row as the other words, where the builders copy them.
 \end{definition}
 
 \begin{definition}[The rows of a modulus]\label{def:rows}
   \uses{def:row}
-  \lean{Ratpoints.Sieve.SieveEntry.rows, Ratpoints.Sieve.SieveEntry.get_rows, Ratpoints.Sieve.SieveEntry.row_mod, Ratpoints.Sieve.SieveSpec, Ratpoints.Sieve.SieveSpec.wordAt}
+  \lean{Ratpoints.Sieve.SieveEntry.rows, Ratpoints.Sieve.SieveEntry.get_rows, Ratpoints.Sieve.SieveSpec, Ratpoints.Sieve.SieveSpec.wordAt}
   \leanok
   The rows of the residues $r = 0, \dots, p - 1$, each made when a denominator first needs it, as a
   suspended computation that runs once, and kept for the run, which makes these computations once
@@ -177,11 +179,13 @@ brings the chunked first stage and the copies in the rows that it decides
   (Definition~\ref{def:examinePrimeExit}), and whose other rows, and every row of a prime power or a
   product, \verb|sift| builds when first needed; the model makes the row of $0$ when first needed
   too. The row of $b$ is that of $b \bmod p$. For the denominator at hand, each modulus comes with
-  its row and the offset of the row, as in the \verb|sieve_spec| of the C code
-  (\csource{rp-private.h}{378}{379}), without the pointers into the row: the bit array with the word
-  number $w$ reads bit array $(w + \mathrm{offset}) \bmod p$ of the row, the offset carrying the
-  shift that the packing of the class of the denominator needs and a multiple of $p$ of at least
-  $\mathrm{rowBias}$ that keeps $w + \mathrm{offset}$ non-negative
+  its row, the offset of the row, and the start and the end of the walk of the chunked first stage
+  through the row (Chapter~\ref{chap:rows}), as in the \verb|sieve_spec| of the C code
+  (\csource{rp-private.h}{378}{379}), indices into the row for the pointers \verb|start| and
+  \verb|end|, the end named $\mathrm{stop}$ since \verb|end| is a keyword of Lean: the bit array
+  with the word number $w$ reads bit array $(w + \mathrm{offset}) \bmod p$ of the row, the offset
+  carrying the shift that the packing of the class of the denominator needs and a multiple of $p$ of
+  at least $\mathrm{rowBias}$ that keeps $w + \mathrm{offset}$ non-negative
   (Definition~\ref{def:classOffsets}).
 \end{definition}
 
@@ -255,30 +259,31 @@ coefficients, so their contracts quantify over the sieve entries whose rows they
 contract of the check of stage~C1 quantifies over the test of the numerators.
 
 \begin{definition}[The first stage]\label{def:andRows}
-  \uses{def:bitArrayOps, def:rows, def:mulMod, def:modMul, lem:rowIndices}
+  \uses{def:bitArrayOps, def:bitArrayMoves, def:rows, def:mulMod, def:modMul, lem:rowIndices}
   \lean{Ratpoints.Sieve.andRows, Ratpoints.Sieve.andRows_spec, Ratpoints.Sieve.andWords, Ratpoints.Sieve.classBit, Ratpoints.Sieve.classBit_rbaLength_mul_add}
   \leanok
-  Every word of the piece set to the pattern $\omega$ of the class of $b$ in its packing
+  Every bit array of the piece set to the pattern $\omega$ of the class of $b$ in its packing
   (Definition~\ref{def:numClasses}), as ratpoints writes the 2-adic pattern of the class of $b$,
   which \verb|get_2adic_info| makes once per class, one word repeated over a bit array by the macro
   \verb|RBA| of the build (\csource{find_points.c}{1098}{1098}; \csource{rp-private.h}{129}{132},
   \csource{rp-private.h}{203}{204}, \csource{rp-private.h}{235}{235},
   \csource{rp-private.h}{261}{261}, \csource{rp-private.h}{285}{285}), and copies into each bit
-  array; then for each modulus $p$ with its row, its offset and its reciprocal, the sieve specs and
-  the reciprocals stepped together, for $r = (-w_0 - \mathrm{offset}) \bmod p$, computed by
-  \verb|mod_mul| (Definition~\ref{def:modMul}) when the test \verb|small| of the piece allows it and
-  by \verb|mod| (Definition~\ref{def:useCLong}) otherwise, bit array $j$ is and-ed with bit array
-  $(w_0 + \mathrm{offset} + j) \bmod p$ of the row, in the three loops of the C code: $n$ bit arrays
-  of the row from $p - r$ on when $n < r$, and otherwise $r$ bit arrays from $p - r$ on, then whole
-  periods of $p$ from $0$, then the rest from $0$ (\csource{sift.c}{943}{1022}). It and-s in the
-  moduli that it is given, the first $s_1$ of a piece (Definition~\ref{def:siftPiece}); those of the
-  second and the third stage come after it (Definitions~\ref{def:secondStage} and~\ref{def:stage3}).
-  Its contract, for sieve specs that fit (Lemma~\ref{lem:rowIndices}), the reciprocals of their
-  moduli and the bounds of \verb|small|: word $y < n \cdot \mathrm{rbaPack}$ is $\omega$ and-ed with
-  the words of the rows that the specs read for it, each at its offset; for specs that read tests of
-  the bits (Lemma~\ref{lem:reads_row}), bit $t$ of word $y$ is bit $t$ of $\omega$ and the tests of
-  the bit $R w_0 + 64 y + t$. The class bit of a bit $j$ is bit $j \bmod 64$ of $\omega$; that of
-  $R w_0 + 64 y + t$, for $t < 64$, is bit $t$, since $64 \mid R$.
+  array, from the last, by the fill of a bit array (Definition~\ref{def:bitArrayMoves}; line 954 of
+  the range below); then for each modulus $p$ with its row, its offset and its reciprocal, the sieve
+  specs and the reciprocals stepped together, for $r = (-w_0 - \mathrm{offset}) \bmod p$, computed
+  by \verb|mod_mul| (Definition~\ref{def:modMul}) when the test \verb|small| of the piece allows it
+  and by \verb|mod| (Definition~\ref{def:useCLong}) otherwise, bit array $j$ is and-ed with bit
+  array $(w_0 + \mathrm{offset} + j) \bmod p$ of the row, in the three loops of the C code: $n$ bit
+  arrays of the row from $p - r$ on when $n < r$, and otherwise $r$ bit arrays from $p - r$ on, then
+  whole periods of $p$ from $0$, then the rest from $0$ (\csource{sift.c}{943}{1022}). It and-s in
+  the moduli that it is given, the first $s_1$ of a piece (Definition~\ref{def:siftPiece}); those of
+  the second and the third stage come after it (Definitions~\ref{def:secondStage}
+  and~\ref{def:stage3}). Its contract, for sieve specs that fit (Lemma~\ref{lem:rowIndices}), the
+  reciprocals of their moduli and the bounds of \verb|small|: word $y < n \cdot \mathrm{rbaPack}$ is
+  $\omega$ and-ed with the words of the rows that the specs read for it, each at its offset; for
+  specs that read tests of the bits (Lemma~\ref{lem:reads_row}), bit $t$ of word $y$ is bit $t$ of
+  $\omega$ and the tests of the bit $R w_0 + 64 y + t$. The class bit of a bit $j$ is bit
+  $j \bmod 64$ of $\omega$; that of $R w_0 + 64 y + t$, for $t < 64$, is bit $t$, since $64 \mid R$.
 \end{definition}
 
 \begin{definition}[The check of a numerator]\label{def:checkNum}
@@ -449,9 +454,7 @@ Each component of this chapter differs from the C code in a stated way, recorded
 \verb|Deviation:| paragraph:
 \begin{itemize}
   \item every numerator from $-H$ to $H$ in the packing of the class of the denominator, for the
-    intervals of the search region (H); the pattern of the class written into the words of a piece
-    one word at a time from the first, where ratpoints copies the vector of the pattern into its bit
-    arrays from the last;
+    intervals of the search region (H);
   \item the first stage of the builds with one register per chunk, for the chunks of sixteen
     registers of the default build with the legs over the tail of a piece (F4);
   \item the rows from the admission test of the sieve entry (Definition~\ref{def:SieveEntry}), one
@@ -513,16 +516,18 @@ positive; the field and the cap are in \verb|Ratpoints/Model/Params.lean|, and t
 \verb|Ratpoints/Model/Sieve.lean|, in the namespace \verb|Ratpoints.Sieve| after those of stage~C1,
 each with \verb|#guard| examples, but for the lowest set bit, which is in
 \verb|Ratpoints/Model/Candidate.lean| since stage~F3, with the test for common factors that also
-uses it; the run, which stage~C2 put below them, is in \verb|Ratpoints/Model/Denominators.lean|
-since stage~E. The lower bound of the array size is in \verb|Ratpoints/Proof/Params.lean|. The
-contracts, without Mathlib, are in \verb|Ratpoints/Proof/Words.lean| for the bit arrays, the rows
-and the first stage, in \verb|Ratpoints/Proof/SetBits.lean| since stage~F3 for the lowest set bit
-and the class bit, and in \verb|Ratpoints/Proof/Sift.lean| from the walk through the set bits of a
-word on, since stage~F2, on which the contract of the run rests (since stage~E in
-\verb|Ratpoints/Proof/Denominators.lean|, with Mathlib); the lemmas on vectors, arrays, lists,
-ranges, natural numbers and integers that are not about the model are in
-\verb|Ratpoints/Proof/Containers.lean| and those on words in \verb|Ratpoints/Proof/Bits.lean|, under
-their names in the namespaces of Lean core.
+uses it, and the sieve specs, the and of two bit arrays and the first stage, which are in
+\verb|Ratpoints/Model/FirstStage.lean| since stage~F4; the run, which stage~C2 put below them, is in
+\verb|Ratpoints/Model/Denominators.lean| since stage~E. The lower bound of the array size is in
+\verb|Ratpoints/Proof/Params.lean|. The contracts, without Mathlib, are in
+\verb|Ratpoints/Proof/Words.lean| for the bit arrays, the rows and the first stage, with the closed
+form of the rows in \verb|Ratpoints/Proof/Rows.lean| since stage~F4, in
+\verb|Ratpoints/Proof/SetBits.lean| since stage~F3 for the lowest set bit and the class bit, and in
+\verb|Ratpoints/Proof/Sift.lean| from the walk through the set bits of a word on, since stage~F2, on
+which the contract of the run rests (since stage~E in \verb|Ratpoints/Proof/Denominators.lean|, with
+Mathlib); the lemmas on vectors, arrays, lists, ranges, natural numbers and integers that are not
+about the model are in \verb|Ratpoints/Proof/Containers.lean| and those on words in
+\verb|Ratpoints/Proof/Bits.lean|, under their names in the namespaces of Lean core.
 
 \section{The evidence}\label{sec:words-evidence}
 

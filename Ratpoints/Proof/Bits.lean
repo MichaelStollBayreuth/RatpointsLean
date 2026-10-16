@@ -9,25 +9,26 @@ module
 # Lemmas on 64-bit words for the contracts
 
 Lemmas on the 64-bit words, unsigned and signed, that the contracts of the model need and Lean core
-lacks, under their names in the namespaces of Lean core: the bits of the word `~~~0` and of the
-masks `~~~0 <<< n` and `~~~0 >>> n`, the lowest bit and the lowest set bit of a word, the word
-`x &&& (x - 1)`, which is `x` with its lowest set bit cleared, the bits of a word set one at a time,
-at their own positions or at others, the 64 bits of two words from a position within the first, the
-bits of a word and-ed in turn with the words of a list, the odd part of a number below `2 ^ 64` by
-the lowest set bit of its word, the halves of a word, and, for the signed 64-bit words, the
-arithmetic shift, the mask `x >>> 63` with the smaller and the distance of two non-negative words
-that it gives without a branch, the odd part of a positive word by the lowest set bit of the word
-read as unsigned, its lowest bit, the absolute value, and the words of an integer and of a natural
-number below `2 ^ 63`. For the classes of the packing: the bits of a word and-ed with the complement
-of a mask and of a word or-ed with itself shifted, `x ||| x <<< s`, which doubles a pattern of
-period `P ∣ s`. For the rows of offsets: the bit `(x >>> j) &&& 1` of a word, and the 128 bits of
-two words after one bit is set. For the bits of an interval: the sums, differences and negations of
-`long`s that do not overflow, the mask `(1 <<< k) - 1` and the and with it, the Euclidean remainder
-modulo `2 ^ k` also of a negative `long`. The lemmas on vectors, arrays, lists, ranges, natural
-numbers and integers are in `Ratpoints.Proof.Containers`.
+lacks, under their names in the namespaces of Lean core: two words with the same bits, the bits of
+the word `~~~0` and of the masks `~~~0 <<< n` and `~~~0 >>> n`, the lowest bit and the lowest set
+bit of a word, the word `x &&& (x - 1)`, which is `x` with its lowest set bit cleared, the bits of a
+word set one at a time, at their own positions or at others, the 64 bits of two words from a
+position within the first, the bits of a word and-ed in turn with the words of a list, the odd part
+of a number below `2 ^ 64` by the lowest set bit of its word, the halves of a word, and, for the
+signed 64-bit words, the arithmetic shift, the mask `x >>> 63` with the smaller and the distance of
+two non-negative words that it gives without a branch, the odd part of a positive word by the lowest
+set bit of the word read as unsigned, its lowest bit, the absolute value, and the words of an
+integer and of a natural number below `2 ^ 63`. For the classes of the packing: the bits of a word
+and-ed with the complement of a mask and of a word or-ed with itself shifted, `x ||| x <<< s`, which
+doubles a pattern of period `P ∣ s`. For the rows of offsets: the bit `(x >>> j) &&& 1` of a word,
+and the 128 bits of two words after one bit is set. For the bits of an interval: the sums,
+differences and negations of `long`s that do not overflow, the mask `(1 <<< k) - 1` and the and with
+it, the Euclidean remainder modulo `2 ^ k` also of a negative `long`. The lemmas on vectors, arrays,
+lists, ranges, natural numbers and integers are in `Ratpoints.Proof.Containers`.
 
 ## Main statements
 
+* `UInt64.eq_of_getLsbD_eq`: two words are equal when their bits are.
 * `UInt64.getLsbD_allOnes_shiftLeft`, `UInt64.getLsbD_allOnes_shiftRight`: the bits of the masks.
 * `UInt64.getLsbD_and_sub_one`, `UInt64.toNat_and_sub_one_lt`: for `x ≠ 0`, `x &&& (x - 1)` is `x`
   with its lowest set bit cleared, and smaller than `x`.
@@ -117,6 +118,11 @@ theorem getLsbD_and_sub_one {x : UInt64} (hx : x ≠ 0) (t : Nat) :
 
 theorem toNat_and_sub_one_lt {x : UInt64} (hx : x ≠ 0) : (x &&& (x - 1)).toNat < x.toNat := by
   grind [Nat.and_le_right, UInt64.toNat_sub_of_le, UInt64.pos_iff_ne_zero]
+
+/-- Two words are equal when their bits are. -/
+theorem eq_of_getLsbD_eq {x y : UInt64}
+    (h : ∀ t, x.toBitVec.getLsbD t = y.toBitVec.getLsbD t) : x = y :=
+  UInt64.toBitVec_inj.mp (BitVec.eq_of_getLsbD_eq fun t _ ↦ h t)
 
 theorem getLsbD_one_shiftLeft {t : Nat} (ht : t < 64) (s : Nat) :
     ((1 : UInt64) <<< t.toUInt64).toBitVec.getLsbD s = decide (s = t) := by
