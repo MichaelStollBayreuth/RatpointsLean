@@ -209,8 +209,7 @@ theorem exists_mem_range'_mul_mod_eq_one {p r : ℕ} (hp : p.Prime) (hr : r < p)
     exact fun h ↦ hr0 (Nat.eq_zero_of_dvd_of_lt h hr)
   have h0 := (ZMod.val_ne_zero _).mpr (inv_ne_zero hr')
   refine ⟨((r : ZMod p)⁻¹).val, List.mem_range'_1.mpr ⟨by lia, ?_⟩, ?_⟩
-  · have := ((r : ZMod p)⁻¹).val_lt
-    lia
+  · lia [((r : ZMod p)⁻¹).val_lt]
   · rw [← ZMod.val_natCast, Nat.cast_mul, ZMod.natCast_zmod_val, inv_mul_cancel₀ hr', ZMod.val_one]
 
 theorem getElem!_inversesMod_mul_mod {p r : ℕ} (hp : p.Prime) (hr : r < p) (hr0 : r ≠ 0) :
@@ -227,7 +226,7 @@ theorem getElem!_inversesMod_lt {p r : ℕ} (hr : r < p) : (inversesMod p)[r]! <
   simp only [inversesMod, Array.getElem_map, Array.getElem_range]
   cases h : (List.range' 1 (p - 1)).find? (· * r % p == 1) with
   | none => simpa using Nat.zero_lt_of_lt hr
-  | some s => have := List.mem_range'_1.mp (List.mem_of_find?_eq_some h); simp; lia
+  | some s => simp; lia [List.mem_range'_1.mp (List.mem_of_find?_eq_some h)]
 
 theorem natCast_mul_getElem!_inversesMod_mod {p : ℕ} [hp : Fact p.Prime] (x : ℕ) {r : ℕ}
     (hr : r < p) (hr0 : r ≠ 0) :
@@ -676,7 +675,7 @@ theorem isSquare_getD_degree_of_sq_eq_binaryForm {c : List ℤ} {p : ℕ} [Fact 
   have h2 := congr(($hy : ZMod p))
   push_cast [binaryForm, hb', hd, Nat.add_zero] at h2
   rw [Finset.sum_range_succ, Finset.sum_eq_zero fun i hi ↦ by
-    rw [zero_pow (by have := Finset.mem_range.mp hi; lia), mul_zero], zero_add, Nat.sub_self,
+    rw [zero_pow (by lia [Finset.mem_range.mp hi]), mul_zero], zero_add, Nat.sub_self,
     pow_zero, mul_one] at h2
   rw [eq_div_of_mul_eq (pow_ne_zero _ ha) h2.symm]
   exact (IsSquare.sq (y : ZMod p)).div ((Nat.even_iff.mpr hd).isSquare_pow _)

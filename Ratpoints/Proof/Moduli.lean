@@ -166,9 +166,8 @@ theorem ModinvInvariant.sub_lt_and_sub_mul {x m r₀ r₁ : ℕ} {s₀ s₁ : �
     rw [Int.natAbs_sub_mul_of_mul_nonpos hs]
     zify [hq] at hid ⊢
     linear_combination hid
-  · have : s₁.natAbs * 1 ≤ s₁.natAbs * r₀ := Nat.mul_le_mul_left _ hr0
-    dsimp only
-    lia
+  · dsimp only
+    lia [Nat.mul_le_mul_left s₁.natAbs hr0]
 
 /-- The range obligation of the cofactors of `modinv` (`find_points.c:2246-2249`): in each step of
 the loop, the product `q s₁` and the new cofactor `s₀ - q s₁`, `q = ⌊r₀ / r₁⌋`, lie between `-m` and
@@ -262,9 +261,8 @@ theorem SquareBitsInvariant.push {m cur : ℕ} {pref suff : List ℕ} {sq₀ sq 
     (pre : sq₀.size = modWords ∧ m ≤ 64 * modWords) (hl : ForIn.toList [:m] = pref ++ cur :: suff)
     (h : SquareBitsInvariant m pref sq) :
     SquareBitsInvariant m (pref ++ [cur]) (setBitAt sq (cur * cur % m)) := by
-  have hc := Std.Legacy.Range.lt_of_toList_eq_append_cons hl
-  have hs : cur * cur % m / 64 < sq.size :=
-    h.1 ▸ Nat.div_lt_of_lt_mul ((Nat.mod_lt _ (by lia)).trans_le pre.2)
+  have hs : cur * cur % m / 64 < sq.size := h.1 ▸ Nat.div_lt_of_lt_mul
+    ((Nat.mod_lt _ (by lia [Std.Legacy.Range.lt_of_toList_eq_append_cons hl])).trans_le pre.2)
   refine ⟨by rw [size_setBitAt, h.1], fun x hx ↦ ?_⟩
   rw [bitAt_setBitAt hs]
   rcases List.mem_append.mp hx with hx | hx
@@ -918,11 +916,8 @@ theorem mod_two_eq_one_of_forall_dvd {m : ℕ}
     (h : ∀ q > 1, q ∣ m → ∃ pn < numPrimes, primeTable[pn]! ∣ q) : m % 2 = 1 := by
   by_contra h2
   obtain ⟨pn, hpn, hd⟩ := h 2 (by decide) (Nat.dvd_of_mod_eq_zero (by lia))
-  have h3 : primeTable[0]! ≤ primeTable[pn]! :=
-    getElem!_primeTable_le_of_le (Nat.zero_le pn) (hpn.trans_le numPrimes_le_size_primeTable)
-  have := Nat.le_of_dvd (by decide) hd
-  have : primeTable[0]! = 3 := by decide +kernel
-  lia
+  lia [getElem!_primeTable_le_of_le (Nat.zero_le pn) (hpn.trans_le numPrimes_le_size_primeTable),
+    Nat.le_of_dvd (by decide) hd, (by decide +kernel : primeTable[0]! = 3)]
 
 /-- The moduli of the factors of `m` over the table multiply to `m` when its factorization is
 complete. -/

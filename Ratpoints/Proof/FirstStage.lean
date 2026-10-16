@@ -891,9 +891,8 @@ theorem tailLegs_pre_of_toList_eq {specs : List SieveSpec} {mgs : List Nat} {sma
     (hch : (∀ y < m, surv'[y]! = if y < (n - n % chunk) * rbaPack then andFrom sv0.toList cw y
         else surv[y]!) ∧ sv.toList = sv0.toList.map (SieveSpec.advance (n - n % chunk))) :
     chunk ≤ 16 ∧ n - (n - n % chunk) < chunk ∧ 0 < sv.size := by
-  have := Nat.mod_lt n chunk_pos
   have hs : sv.size = sv0.size := by rw [← Array.length_toList, hch.2]; simp
-  exact ⟨pre.1, by lia, by lia⟩
+  exact ⟨pre.1, by lia [Nat.mod_lt n chunk_pos], by lia⟩
 
 /-- The bit arrays of the whole chunks and of the tail are those of the first stage. -/
 theorem andRowsChunked_post {specs : List SieveSpec} {mgs : List Nat} {small : Bool}

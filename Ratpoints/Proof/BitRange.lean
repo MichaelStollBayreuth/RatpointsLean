@@ -72,10 +72,8 @@ theorem toInt_numeratorsToBits_false {low high : Int64} {cl : NumClass} (hcl : c
     (numeratorsToBits low high cl false).1.toInt = -((cl.a0 - low.toInt) / 2 ^ cl.k) ∧
       (numeratorsToBits low high cl false).2.toInt = (high.toInt - cl.a0) / 2 ^ cl.k := by
   have ha : cl.a0 < 2 ^ 63 := Nat.lt_trans hcl.a0_lt_sixty_four (by decide)
-  have hk : cl.k < 64 := by have := hcl.k_le; lia
+  have hk : cl.k < 64 := by lia [hcl.k_le]
   have hm : (0 : Int) < 2 ^ cl.k := Int.pow_pos (by decide)
-  have := low.toInt_lt
-  have := high.toInt_lt
   have ha' := Int64.toInt_ofNat_of_lt ha
   have e1 : (Int64.ofNat cl.a0 - low).toInt = cl.a0 - low.toInt := by
     rw [Int64.toInt_sub_of_lt] <;> lia
@@ -95,9 +93,8 @@ private theorem stride_facts {k a0 : Nat} (hk : k ≤ 6) (ha : a0 < 2 ^ k) :
       (Int64.ofNat a0).toInt = a0 ∧ (Int64.ofNat (2 ^ k - 1)).toInt = 2 ^ k - 1 := by
   have h64 : 2 ^ k ≤ 2 ^ 6 := Nat.pow_le_pow_right (by decide) hk
   have := Nat.one_le_two_pow (n := k)
-  refine ⟨mod_cast this, mod_cast h64, mod_cast ha, Int64.toInt_ofNat_of_lt (by
-    have : 2 ^ 6 < 2 ^ 63 := by decide
-    lia), Int64.toInt_ofNat_two_pow_sub_one (by lia)⟩
+  refine ⟨mod_cast this, mod_cast h64, mod_cast ha, Int64.toInt_ofNat_of_lt (by lia),
+    Int64.toInt_ofNat_two_pow_sub_one (by lia)⟩
 
 -- The low end of the split form: the multiple of `2 ^ k` in `x`, shifted, and the carry
 -- `⌈(x mod 2 ^ k - a₀) / 2 ^ k⌉`, with no overflow.
@@ -109,9 +106,8 @@ private theorem toInt_shiftRight_add_shiftRight_add (x : Int64) {k a0 : Nat} (hk
   obtain ⟨hm, h64, ha', hA, hM⟩ := stride_facts hk ha
   have hl := Int.emod_lt_of_pos x.toInt (by lia : (0 : Int) < 2 ^ k)
   have hl0 := Int.emod_nonneg x.toInt (by lia : (2 : Int) ^ k ≠ 0)
-  have e1 := Int64.toInt_and_ofNat_two_pow_sub_one x (by lia : k < 63)
   have e2 : ((x &&& Int64.ofNat (2 ^ k - 1)) - Int64.ofNat a0).toInt = x.toInt % 2 ^ k - a0 := by
-    rw [Int64.toInt_sub_of_lt] <;> lia
+    rw [Int64.toInt_sub_of_lt] <;> lia [Int64.toInt_and_ofNat_two_pow_sub_one x (by lia : k < 63)]
   have e3 : ((x &&& Int64.ofNat (2 ^ k - 1)) - Int64.ofNat a0 + Int64.ofNat (2 ^ k - 1)).toInt =
       x.toInt % 2 ^ k - a0 + (2 ^ k - 1) := by
     rw [Int64.toInt_add_of_lt] <;> lia
@@ -133,9 +129,8 @@ private theorem toInt_shiftRight_add_shiftRight (x : Int64) {k a0 : Nat} (hk : k
   obtain ⟨hm, h64, ha', hA, -⟩ := stride_facts hk ha
   have hh := Int.emod_lt_of_pos x.toInt (by lia : (0 : Int) < 2 ^ k)
   have hh0 := Int.emod_nonneg x.toInt (by lia : (2 : Int) ^ k ≠ 0)
-  have f1 := Int64.toInt_and_ofNat_two_pow_sub_one x (by lia : k < 63)
   have f2 : ((x &&& Int64.ofNat (2 ^ k - 1)) - Int64.ofNat a0).toInt = x.toInt % 2 ^ k - a0 := by
-    rw [Int64.toInt_sub_of_lt] <;> lia
+    rw [Int64.toInt_sub_of_lt] <;> lia [Int64.toInt_and_ofNat_two_pow_sub_one x (by lia : k < 63)]
   have hc := Int.neg_one_le_sub_ediv_and_sub_ediv_nonpos hh0 hh (Int.natCast_nonneg a0) ha'
   have hb := Int.neg_two_pow_63_le_ediv_add_and_ediv_add_lt_two_pow_63 x.le_toInt x.toInt_lt hm
     hc.1 (by lia) fun h ↦ by
@@ -174,14 +169,13 @@ theorem toInt_numeratorsToBits_height {H : Nat} (hH : H < 2 ^ 63) {cl : NumClass
         -((cl.a0 + H : Int) / 2 ^ cl.k) ∧
       (numeratorsToBits (-H.toInt64) H.toInt64 cl (decide (2 ^ 63 - 65 < H))).2.toInt =
         ((H : Int) - cl.a0) / 2 ^ cl.k := by
-  have ha := hcl.a0_lt_sixty_four
   have hl : (-H.toInt64).toInt = -H := Int64.toInt_neg_ofNat_of_le (by lia)
   have hh : H.toInt64.toInt = H := Int64.toInt_ofNat_of_lt hH
   have := toInt_numeratorsToBits hcl (low := -H.toInt64) (high := H.toInt64)
     (split := decide (2 ^ 63 - 65 < H)) fun h ↦ by
       simp only [decide_eq_false_iff_not, Nat.not_lt] at h
       rw [hl, hh]
-      constructor <;> lia
+      constructor <;> lia [hcl.a0_lt_sixty_four]
   rwa [hl, hh, Int.sub_neg] at this
 
 /-- The numerator of bit `t` of a class lies in `lo, …, hi` exactly when `t` lies between the bits
@@ -222,7 +216,6 @@ private theorem map_range_eq_map_range {a0 H m q r : Nat} (hm : 0 < m) (hr : r <
     (List.range (((H : Int) - a0) / m + 1 - -(q : Int)).toNat).map
         (fun i : Nat ↦ (a0 : Int) + m * (-(q : Int) + i)) =
       (List.range ((2 * H + 1 + (m - 1 - r)) / m)).map fun j : Nat ↦ (r : Int) + m * j - H := by
-  have hA' : (a0 + H : Int) = m * q + r := mod_cast hA.symm
   have hm0 : (m : Int) ≠ 0 := by lia
   have e1 : ((H : Int) - a0) = (2 * H - r : Int) + (-(q : Int)) * m := by rw [Int.neg_mul]; lia
   have h2 : (((2 * H + 1 + (m - 1 - r)) / m : Nat) : Int) = (2 * H - r : Int) / m + 1 := by
@@ -273,7 +266,7 @@ theorem natCast_rbaLength_dvd_two_pow {n : Nat} (hn : rbaShift ≤ n) : (rbaLeng
 theorem neg_two_pow_le_rbaLength_mul_ediv {k : Nat} (hk : k ≤ 6) {lo : Int}
     (hlo : -2 ^ (63 - k) ≤ lo) : -2 ^ (63 - k) ≤ rbaLength * (lo / rbaLength) :=
   Int.neg_le_mul_ediv_of_dvd natCast_rbaLength_pos
-    (natCast_rbaLength_dvd_two_pow (by have := rbaShift_lt_thirty_two; lia)) hlo
+    (natCast_rbaLength_dvd_two_pow (by lia [rbaShift_lt_thirty_two])) hlo
 
 /-- The bit `Ratpoints.rbaLength (⌊hi / Ratpoints.rbaLength⌋ + 1)` after the bit array of the bit
 `hi < 2 ^ (63 - k)` is at most `2 ^ (63 - k)`, for a stride `2 ^ k`, `k ≤ 6`, since
@@ -281,7 +274,7 @@ theorem neg_two_pow_le_rbaLength_mul_ediv {k : Nat} (hk : k ≤ 6) {lo : Int}
 theorem rbaLength_mul_ediv_add_one_le_two_pow {k : Nat} (hk : k ≤ 6) {hi : Int}
     (hhi : hi < 2 ^ (63 - k)) : rbaLength * (hi / rbaLength + 1) ≤ 2 ^ (63 - k) :=
   Int.mul_ediv_add_one_le_of_dvd natCast_rbaLength_pos
-    (natCast_rbaLength_dvd_two_pow (by have := rbaShift_lt_thirty_two; lia)) hhi
+    (natCast_rbaLength_dvd_two_pow (by lia [rbaShift_lt_thirty_two])) hhi
 
 /-- The numerators of the bits of the bit arrays from `⌊lo / Ratpoints.rbaLength⌋` to
 `⌊hi / Ratpoints.rbaLength⌋`, for the bits `lo, hi` of the numerators `-H, …, H` of a height bound
@@ -293,7 +286,7 @@ theorem NumClass.fitsLong_numerator {cl : NumClass} (hcl : cl.WF) {H : Nat} (hH 
     fitsLong (cl.numerator j) = true := by
   have hm : (0 : Int) < 2 ^ cl.k := Int.pow_pos (by decide)
   have hkT : (2 : Int) ^ cl.k * 2 ^ (63 - cl.k) = 2 ^ 63 :=
-    Int.pow_mul_pow_sub 2 (by have := hcl.k_le; lia)
+    Int.pow_mul_pow_sub 2 (by lia [hcl.k_le])
   have ha : (cl.a0 : Int) < 2 ^ cl.k := mod_cast hcl.a0_lt
   have hlo : -2 ^ (63 - cl.k) ≤ -((cl.a0 + H : Int) / 2 ^ cl.k) :=
     Int.neg_le_neg (Int.lt_add_one_iff.mp ((Int.ediv_lt_iff_lt_mul hm).mpr (by
@@ -324,10 +317,8 @@ theorem fitsLong_neg_sub_and_fitsLong_add {w : Int} {off : Nat} (hw : -2 ^ 63 �
   have hR : (64 : Int) ≤ rbaLength := mod_cast sixty_four_le_rbaLength
   simp only [fitsLong, Bool.and_eq_true, decide_eq_true_eq]
   rcases Int.lt_or_le w 0 with h | h
-  · have := Int.mul_le_mul_of_nonpos_right hR (Int.le_of_lt h)
-    constructor <;> constructor <;> lia
-  · have := Int.mul_le_mul_of_nonneg_right hR h
-    constructor <;> constructor <;> lia
+  · constructor <;> constructor <;> lia [Int.mul_le_mul_of_nonpos_right hR (Int.le_of_lt h)]
+  · constructor <;> constructor <;> lia [Int.mul_le_mul_of_nonneg_right hR h]
 
 end Sieve
 

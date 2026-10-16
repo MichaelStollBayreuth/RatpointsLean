@@ -399,7 +399,6 @@ theorem and_one_beq_zero_iff {x : Int64} (hx : 0 ≤ x) :
   simp [Nat.and_one_is_mod]
 
 theorem toNatClampNeg_eq_natAbs {x : Int64} (hx : 0 ≤ x) : x.toNatClampNeg = x.toInt.natAbs := by
-  have := le_iff_toInt_le.mp hx
   rw [← toNat_toInt]
   lia
 
@@ -436,7 +435,6 @@ theorem toInt_sub_of_lt {a b : Int64} (h1 : -2 ^ 63 ≤ a.toInt - b.toInt)
   rw [toInt_sub, Int.bmod_eq_of_le (by lia) (by lia)]
 
 theorem toInt_neg_of_lt {a : Int64} (h : -2 ^ 63 < a.toInt) : (-a).toInt = -a.toInt := by
-  have := a.toInt_lt
   rw [toInt_neg, Int.bmod_eq_of_le (by lia) (by lia)]
 
 /-- The mask `(1 <<< k) - 1` of the low `k ≤ 6` bits of a `long`, `2 ^ k - 1`. -/
@@ -453,18 +451,16 @@ theorem toInt_and_ofNat_two_pow_sub_one (x : Int64) {k : Nat} (hk : k < 63) :
   have hm : (BitVec.ofNat 64 (2 ^ k - 1)).toNat = 2 ^ k - 1 := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by lia)]
   have hd : (2 : Int) ^ k ∣ (2 ^ 64 : Nat) := mod_cast Nat.pow_dvd_pow 2 (by lia : k ≤ 64)
-  have := Nat.mod_lt x.toBitVec.toNat (Nat.two_pow_pos k)
   rw [toInt, toInt, Int64.toBitVec_and, BitVec.toInt_and, Int64.toBitVec_ofNat', hm,
-    Nat.and_two_pow_sub_one_eq_mod, Int.bmod_eq_of_le (by lia) (by lia),
-    BitVec.toInt_eq_toNat_bmod, ← Int.emod_emod_of_dvd _ hd, Int.bmod_emod,
-    Int.emod_emod_of_dvd _ hd]
+    Nat.and_two_pow_sub_one_eq_mod, Int.bmod_eq_of_le (by lia)
+      (by lia [Nat.mod_lt x.toBitVec.toNat (Nat.two_pow_pos k)]), BitVec.toInt_eq_toNat_bmod,
+    ← Int.emod_emod_of_dvd _ hd, Int.bmod_emod, Int.emod_emod_of_dvd _ hd]
   simp
 
 theorem toInt_ofNat_two_pow_sub_one {k : Nat} (hk : k < 63) :
     (ofNat (2 ^ k - 1)).toInt = 2 ^ k - 1 := by
   have h := Nat.one_le_two_pow (n := k)
-  have h2 : 2 ^ k < 2 ^ 63 := Nat.pow_lt_pow_right (by decide) hk
-  rw [toInt_ofNat_of_lt (by lia)]
+  rw [toInt_ofNat_of_lt (by lia [Nat.pow_lt_pow_right (a := 2) (by decide) hk])]
   have h1 : ((2 ^ k - 1 : Nat) : Int) = ((2 ^ k : Nat) : Int) - 1 := by lia
   rw [h1, Int.natCast_pow]
   rfl

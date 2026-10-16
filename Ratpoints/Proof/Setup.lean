@@ -134,7 +134,7 @@ theorem binaryFormPoly_eq_homogenize (c : List ℤ) :
     binaryFormPoly c = (poly c).homogenize (2 * (c.length / 2)) := by
   rw [binaryFormPoly, poly, homogenize_finsetSum]
   refine Finset.sum_congr rfl fun i hi ↦ ?_
-  rw [homogenize_C_mul, homogenize_X_pow (by have := Finset.mem_range.mp hi; lia), mul_assoc]
+  rw [homogenize_C_mul, homogenize_X_pow (by lia [Finset.mem_range.mp hi]), mul_assoc]
 
 /-- The binary form `Ratpoints.binaryFormPoly c` is squarefree exactly when the polynomial
 `Ratpoints.poly c` is squarefree and the degree `2 ⌈n / 2⌉` of the form, `n + 1` the length of `c`,
@@ -171,7 +171,6 @@ theorem coeff_poly_toList (a : Array ℤ) (i : ℕ) : (poly a.toList).coeff i = 
 
 theorem natDegree_poly_toList {a : Array ℤ} (h : a.back! ≠ 0) :
     (poly a.toList).natDegree = a.size - 1 := by
-  have := Array.size_ne_zero_of_back!_ne h
   refine natDegree_eq_of_le_of_coeff_ne_zero (natDegree_le_iff_coeff_eq_zero.mpr fun i hi ↦ ?_) ?_
   · rw [coeff_poly_toList, getElem!_neg a i (by lia)]
     simp
@@ -295,9 +294,7 @@ theorem IsChain.natDegree_lt {c : List ℤ} {d : ℕ} {ch : Array (Array ℤ)} (
     (poly ch[k + 2]!.toList).natDegree < (poly ch[k + 1]!.toList).natDegree := by
   rw [natDegree_poly_toList (h.back!_ne_zero _ hk),
     natDegree_poly_toList (h.back!_ne_zero _ (by lia))]
-  have := h.size_lt k hk
-  have := Array.size_ne_zero_of_back!_ne (h.back!_ne_zero _ hk)
-  lia
+  lia [h.size_lt k hk, Array.size_ne_zero_of_back!_ne (h.back!_ne_zero _ hk)]
 
 -- Coprimality goes down a remainder chain.
 private theorem IsChain.isCoprime_iff {c : List ℤ} {d : ℕ} {ch : Array (Array ℤ)}
@@ -324,7 +321,7 @@ private theorem IsChain.squarefree_iff_isCoprime_back! {c : List ℤ} {d : ℕ}
 -- The last row of a chain has a nonzero leading coefficient.
 private theorem IsChain.back!_back!_ne_zero {c : List ℤ} {d : ℕ} {ch : Array (Array ℤ)}
     (h : IsChain c d ch) : ch.back!.back! ≠ 0 :=
-  h.back!_ne_zero _ (by have := h.two_le_size; lia)
+  h.back!_ne_zero _ (by lia [h.two_le_size])
 
 /-- For the coefficients `c₀, …, c_d` of a polynomial `f` of degree `d ≥ 1`, the remainder chain is
 `none`, where `sturm.c` returns `-1`, exactly when `f` is not squarefree over `ℚ`; for the degree
@@ -391,7 +388,7 @@ private theorem binaryForm_neg_neg (c : List ℤ) (x z : ℤ) :
     binaryForm c (-x) (-z) = binaryForm c x z := by
   refine Finset.sum_congr rfl fun i hi ↦ ?_
   have h1 : (-1 : ℤ) ^ i * (-1) ^ (degree c + degree c % 2 - i) = 1 := by
-    rw [← pow_add, Nat.add_sub_cancel' (by have := Finset.mem_range.mp hi; lia),
+    rw [← pow_add, Nat.add_sub_cancel' (by lia [Finset.mem_range.mp hi]),
       Even.neg_one_pow (by rw [Nat.even_iff]; lia)]
   rw [neg_pow x, neg_pow z]
   linear_combination c.getD i 0 * x ^ i * z ^ (degree c + degree c % 2 - i) * h1
@@ -419,10 +416,7 @@ theorem getD_eq_of_reversal_eq_ok {allow : Bool} {c c' : List ℤ} {d d' : ℕ} 
     c'.getD i 0 = if i ≤ d + d % 2 then c.getD (d + d % 2 - i) 0 else 0 := by
   obtain rfl | hc := eq_or_ne c []
   · cases allow <;> simp [reversal, hd] at h
-  have hlt : d < c.length := by
-    have := degree_le_length_sub_one c
-    have := List.length_pos_iff.mpr hc
-    lia
+  have hlt : d < c.length := by lia [degree_le_length_sub_one c, List.length_pos_iff.mpr hc]
   simp only [reversal] at h
   split_ifs at h with hs h2 h0 h1 hsq hodd <;>
     simp only [Except.ok.injEq, Prod.mk.injEq, Bool.false_eq_true, and_false] at h <;>
@@ -512,8 +506,7 @@ theorem squarefree_binaryFormPoly_iff_of_reversal_eq_ok {allow rev : Bool} {c c'
   rw [binaryFormPoly_eq_homogenize, show 2 * (c.length / 2) = d + d % 2 by lia, hr,
     squarefree_homogenize_iff_squarefree_reflect (by rw [natDegree_poly]; lia)]
   rw [← hr, natDegree_poly, degree_eq_of_reversal_eq_ok hd h]
-  have := add_mod_two_eq_of_reversal_eq_ok hd h
-  lia
+  lia [add_mod_two_eq_of_reversal_eq_ok hd h]
 
 /-- The refusal of the reversal check is sound: it refuses only when the square of the first
 variable divides `Ratpoints.binaryFormPoly c`

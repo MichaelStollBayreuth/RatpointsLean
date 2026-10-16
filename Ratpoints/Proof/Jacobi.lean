@@ -151,8 +151,7 @@ theorem JacobiReduceHalveInvariant.div_two {x y x₀ x' mb : ℕ} {s s' : ℤ}
     (hy : x % 2 = 1 ∧ y % 2 = 1) (h : x' = mb ∧ JacobiReduceHalveInvariant x y x₀ s false (x', s'))
     (hb : ¬(x' / 2 % 2 == 1) = true) :
     x' / 2 < mb ∧ JacobiReduceHalveInvariant x y x₀ s false (x' / 2, twoSign y s') :=
-  ⟨by have := h.2.1; lia,
-    JacobiReduceHalveInvariant.div_two_of_mod_two_eq hy h (by simpa using hb)⟩
+  ⟨by lia [h.2.1], JacobiReduceHalveInvariant.div_two_of_mod_two_eq hy h (by simpa using hb)⟩
 
 theorem JacobiReduceHalveInvariant.jacobiReduceInvariant {x y x₀ x' mb : ℕ} {s s' s₀ : ℤ}
     (h : JacobiReduceHalveInvariant x y x₀ s true (x', s'))
@@ -285,8 +284,7 @@ theorem JacobiRoundInvariant.jacobiReduce_jacobiReduce {f b n m m' n' mb : ℕ} 
   obtain ⟨rfl, h1, h2, h3, h4, -⟩ := h
   obtain ⟨h5, h6⟩ := hr.mul_jacobiSym_eq_and_gcd_eq h1 h2 h3 h4 ht
   obtain ⟨h7, h8⟩ := hr'.mul_jacobiSym_eq_and_gcd_eq hr.1 h1 h5 h6 (by rwa [Nat.and_comm m' n])
-  have : m' ≠ n := by simpa using hne
-  exact ⟨by have := hr.2; have := hr'.2; lia, hr'.1, hr.1, h7, h8, nofun⟩
+  exact ⟨by lia [hr.2, hr'.2], hr'.1, hr.1, h7, h8, nofun⟩
 
 section
 
@@ -370,8 +368,7 @@ theorem JacobiOddInvariant.jacobiInvariant {b b' : ℕ} {lcf : ℤ}
     JacobiInvariant b lcf false (none, b', (lcf % b').toNat) := by
   obtain ⟨h1, h2, h3⟩ := hi
   have h0 := Int.emod_nonneg lcf (b := b') (by lia)
-  have hlt := Int.emod_lt_of_pos lcf (b := b') (by lia)
-  refine ⟨h1, h3 rfl, by lia, ?_, h2, nofun⟩
+  refine ⟨h1, h3 rfl, by lia [Int.emod_lt_of_pos lcf (b := b') (by lia)], ?_, h2, nofun⟩
   rw [Int.toNat_of_nonneg h0, Int.emod_emod]
 
 theorem JacobiInvariant.eq_jacobiSym_of_eq_some {b b' f : ℕ} {lcf r : ℤ} {o : Option ℤ}
@@ -442,9 +439,7 @@ theorem JacobiInvariant.div_gcd {b b' f g f' mb : ℕ} {lcf s : ℤ} {o : Option
   obtain ⟨rfl, h1, h2, -, h4, h5, -⟩ := hi
   have hgb : g ∣ b' := hr.1 ▸ Nat.gcd_dvd_right f b'
   have hg2 : 1 < g := by
-    have := hr.1 ▸ Nat.gcd_pos_of_pos_left b' (Nat.pos_of_ne_zero (by simpa using hf))
-    have : g ≠ 1 := by simpa using hg
-    lia
+    lia [hr.1 ▸ Nat.gcd_pos_of_pos_left b' (Nat.pos_of_ne_zero (by simpa using hf))]
   have hq : 0 < b' / g := Nat.div_pos (Nat.le_of_dvd h1 hgb) (by lia)
   have hd : ((b' / g : ℕ) : ℤ) ∣ b' := Int.natCast_dvd_natCast.mpr (Nat.div_dvd_of_dvd hgb)
   refine ⟨Nat.div_lt_self h1 hg2, hq,
