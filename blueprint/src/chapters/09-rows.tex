@@ -499,7 +499,7 @@ contract keeps its statement, the first stage of either arm giving the same word
 
 \begin{lemma}[The builders of a prime build the closed forms]\label{lem:primeRows}
   \uses{def:sieveInit1, def:sieveInit2, lem:closedRow, def:admits}
-  \lean{Ratpoints.Sieve.lanePattern, Ratpoints.Sieve.LanesAt, Ratpoints.Sieve.FourLanes, Ratpoints.Sieve.initFourDecl_lanes, Ratpoints.Sieve.FourInvariant, Ratpoints.Sieve.initFourLoop_spec, Ratpoints.Sieve.PatInvariant, Ratpoints.Sieve.sieve1Pattern_spec, Ratpoints.Sieve.PatternDoubleInvariant, Ratpoints.Sieve.RotInvariant, Ratpoints.Sieve.sieve1Rows_spec, Ratpoints.Sieve.sieve1_shifts, Ratpoints.Sieve.RepInvariant, Ratpoints.Sieve.CopyInvariant, Ratpoints.Sieve.initReplicate_spec, Ratpoints.Sieve.sieve2Word_spec, Ratpoints.Sieve.sieve2Pattern_spec, Ratpoints.Sieve.PatternWords, Ratpoints.Sieve.RingState, Ratpoints.Sieve.sieve2Rows_spec, Ratpoints.Sieve.sieve2_shifts, Ratpoints.Sieve.toArray_eq_closedRow_of_rowWords, Ratpoints.Sieve.sieveInit1_spec, Ratpoints.Sieve.sieveInit2_spec}
+  \lean{Ratpoints.Sieve.lanePattern, Ratpoints.Sieve.LanesAt, Ratpoints.Sieve.FourLanes, Ratpoints.Sieve.initFourDecl_lanes, Ratpoints.Sieve.FourInvariant, Ratpoints.Sieve.initFourLoop_spec, Ratpoints.Sieve.RestInvariant, Ratpoints.Sieve.PatInvariant, Ratpoints.Sieve.sieve1Pattern_spec, Ratpoints.Sieve.PatternDoubleInvariant, Ratpoints.Sieve.RotInvariant, Ratpoints.Sieve.sieve1Rows_spec, Ratpoints.Sieve.sieve1_shifts, Ratpoints.Sieve.RepInvariant, Ratpoints.Sieve.CopyInvariant, Ratpoints.Sieve.initReplicate_spec, Ratpoints.Sieve.sieve2Word_spec, Ratpoints.Sieve.sieve2Pattern_spec, Ratpoints.Sieve.PatternWords, Ratpoints.Sieve.RingState, Ratpoints.Sieve.sieve2Rows_spec, Ratpoints.Sieve.sieve2_shifts, Ratpoints.Sieve.toArray_eq_closedRow_of_rowWords, Ratpoints.Sieve.sieveInit1_spec, Ratpoints.Sieve.sieveInit2_spec}
   \leanok
   For the table of a prime $p$ and a residue $0 < b < p$ whose inverse is below $p$: for $p < 64$
   the builder from \verb|CODE_INIT_SIEVE1| and for $64 \le p$ with $p \bmod 64 \ne 0$ that from
@@ -580,7 +580,7 @@ contract keeps its statement, the first stage of either arm giving the same word
 
 \begin{lemma}[The builders of a prime power and of a product]\label{lem:compositeRows}
   \uses{def:layOutPattern, def:sieveInitPower, def:sieveInitProduct, lem:closedRow}
-  \lean{Ratpoints.Sieve.getLsbD_window, Ratpoints.Sieve.PatClear, Ratpoints.Sieve.PatZero, Ratpoints.Sieve.repeatPattern_spec, Ratpoints.Sieve.LayOuterInvariant, Ratpoints.Sieve.LayInnerInvariant, Ratpoints.Sieve.RowLoopInvariant, Ratpoints.Sieve.layOutPattern_spec, Ratpoints.Sieve.powerPatternUnit_spec, Ratpoints.Sieve.powerPatternNonunit_spec, Ratpoints.Sieve.sieveInitPower_spec, Ratpoints.Sieve.factorWord, Ratpoints.Sieve.productWord, Ratpoints.Sieve.FirstInvariant, Ratpoints.Sieve.FactorInvariant, Ratpoints.Sieve.productCopy_spec, Ratpoints.Sieve.productAnd_spec, Ratpoints.Sieve.toArray_eq_closedRow_of_productWord, Ratpoints.Sieve.Factor.admits_mod_of_dvd, Ratpoints.Sieve.SieveEntry.admits_eq_all}
+  \lean{Ratpoints.Sieve.getLsbD_window, Ratpoints.Sieve.PatClear, Ratpoints.Sieve.IsPattern, Ratpoints.Sieve.PatZero, Ratpoints.Sieve.RepeatedBits, Ratpoints.Sieve.repeatPattern_spec, Ratpoints.Sieve.LayOuterInvariant, Ratpoints.Sieve.LayInnerInvariant, Ratpoints.Sieve.RowLoopInvariant, Ratpoints.Sieve.layOutPattern_spec, Ratpoints.Sieve.UnitPatternInvariant, Ratpoints.Sieve.powerPatternUnit_spec, Ratpoints.Sieve.NonunitPatternInvariant, Ratpoints.Sieve.powerPatternNonunit_spec, Ratpoints.Sieve.sieveInitPower_spec, Ratpoints.Sieve.factorWord, Ratpoints.Sieve.productWord, Ratpoints.Sieve.FirstInvariant, Ratpoints.Sieve.FactorInvariant, Ratpoints.Sieve.productCopy_spec, Ratpoints.Sieve.productAnd_spec, Ratpoints.Sieve.toArray_eq_closedRow_of_productWord, Ratpoints.Sieve.Factor.admits_mod_of_dvd, Ratpoints.Sieve.SieveEntry.admits_eq_all, Ratpoints.Sieve.SieveEntry.admits_eq_of_factors_eq}
   \leanok
   For a pattern of period $0 < m \le 64\,\mathrm{modWords}$ without bits from $m$ on, the layout
   gives the row whose words are the windows of the pattern; for the tables of a prime power
@@ -592,7 +592,9 @@ contract keeps its statement, the first stage of either arm giving the same word
   positive moduli dividing $m$, the first factor laid down and the others and-ed in give word
   $y < m\,\mathrm{rbaPack}$ the and of the words of the factors read in their blocks, and from rows
   of the factors that are the closed forms of their rows at $b \bmod q$ the row, repeated after its
-  first $m$ bit arrays, is the closed form of the row of $b$ of the product.
+  first $m$ bit arrays, is the closed form of the row of $b$ of the product; and a sieve entry
+  whose one factor has the modulus of the entry, as for a prime or a prime power, has the row of
+  the factor.
 \end{lemma}
 
 \begin{proof}

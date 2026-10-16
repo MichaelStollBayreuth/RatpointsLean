@@ -31,7 +31,7 @@ of the factors.
 
 * `Ratpoints.Sieve.PatClear`, `Ratpoints.Sieve.PatZero`: a pattern of period `m` with no bits from
   `m` on, and a cleared pattern.
-* `Ratpoints.Sieve.RepInv`: the words of the repeated pattern of `lay_out_pattern`.
+* `Ratpoints.Sieve.RepeatedBits`: the words of the repeated pattern of `lay_out_pattern`.
 * `Ratpoints.Sieve.factorWord`, `Ratpoints.Sieve.productWord`: a word of the row of a factor of a
   product read in the blocks of its length, and the and of those of the first factors.
 
@@ -93,12 +93,13 @@ theorem isPattern_patBit {m : Nat} {pat : Array UInt64} (h : PatClear m pat) :
 
 /-- The words `rep` below `W` hold the bits of the pattern of period `m` below the bound `L`, and
 `0` from `L` on. -/
-def RepInv (g : Nat → Bool) (m W L : Nat) {n : Nat} (rep : Vector UInt64 n) : Prop :=
+def RepeatedBits (g : Nat → Bool) (m W L : Nat) {n : Nat} (rep : Vector UInt64 n) : Prop :=
   ∀ w < W, ∀ j, rep[w]!.toBitVec.getLsbD j =
     (decide (j < 64) && decide (64 * w + j < L) && g ((64 * w + j) % m))
 
-theorem RepInv.mono {g : Nat → Bool} {m W L L' n : Nat} {rep : Vector UInt64 n}
-    (h : RepInv g m W L rep) (hL : min L (64 * W) = min L' (64 * W)) : RepInv g m W L' rep := by
+theorem RepeatedBits.mono {g : Nat → Bool} {m W L L' n : Nat} {rep : Vector UInt64 n}
+    (h : RepeatedBits g m W L rep) (hL : min L (64 * W) = min L' (64 * W)) :
+    RepeatedBits g m W L' rep := by
   intro w hw j
   rw [h w hw j]
   by_cases hj : j < 64
@@ -109,10 +110,10 @@ theorem RepInv.mono {g : Nat → Bool} {m W L L' n : Nat} {rep : Vector UInt64 n
 
 /-- The first or of word `i` of the copy of the pattern at the offset `o = 64 q + s`, a multiple of
 `m`: word `q + i` gets the word shifted left by `s`. -/
-theorem RepInv.first {g : Nat → Bool} {m W n o i : Nat} {rep : Vector UInt64 n}
+theorem RepeatedBits.first {g : Nat → Bool} {m W n o i : Nat} {rep : Vector UInt64 n}
     {pat : Array UInt64} (hpat : IsPattern g m pat) (hmo : m ∣ o) (hi : i < (m + 64 - 1) / 64)
-    (hWn : W ≤ n) (h : RepInv g m W (o + min m (64 * i)) rep) :
-    RepInv g m W (min (64 * (o / 64 + i + 1)) (o + m))
+    (hWn : W ≤ n) (h : RepeatedBits g m W (o + min m (64 * i)) rep) :
+    RepeatedBits g m W (min (64 * (o / 64 + i + 1)) (o + m))
       (rep.set! (o / 64 + i) (rep[o / 64 + i]! ||| pat[i]! <<< UInt64.ofNat (o % 64))) := by
   intro w hw' j
   have hqs := Nat.div_add_mod o 64
@@ -135,11 +136,11 @@ theorem RepInv.first {g : Nat → Bool} {m W n o i : Nat} {rep : Vector UInt64 n
 
 /-- The second or of word `i` of the copy at the offset `o = 64 q + s`, `s ≠ 0`: word `q + i + 1`
 gets the word shifted right by `64 - s`. -/
-theorem RepInv.second {g : Nat → Bool} {m W n o i : Nat} {rep : Vector UInt64 n}
+theorem RepeatedBits.second {g : Nat → Bool} {m W n o i : Nat} {rep : Vector UInt64 n}
     {pat : Array UInt64} (hpat : IsPattern g m pat) (hmo : m ∣ o) (hi : i < (m + 64 - 1) / 64)
     (hs0 : o % 64 ≠ 0) (hWn : W ≤ n)
-    (h : RepInv g m W (min (64 * (o / 64 + i + 1)) (o + m)) rep) :
-    RepInv g m W (o + min m (64 * (i + 1)))
+    (h : RepeatedBits g m W (min (64 * (o / 64 + i + 1)) (o + m)) rep) :
+    RepeatedBits g m W (o + min m (64 * (i + 1)))
       (rep.set! (o / 64 + i + 1)
         (rep[o / 64 + i + 1]! ||| pat[i]! >>> UInt64.ofNat (64 - o % 64))) := by
   intro w hw' j
@@ -166,20 +167,21 @@ the offset `o` is a multiple of `m`, the words of `rep` hold the bits below it, 
 has reached `64 W`. -/
 def LayOuterInvariant (g : Nat → Bool) (m W : Nat) {n : Nat} :
     Std.WP.WhileInvariant (Vector UInt64 n × Nat) Prop :=
-  .mk fun exit s ↦ m ∣ s.2 ∧ RepInv g m W s.2 s.1 ∧ (exit = true → 64 * W ≤ s.2)
+  .mk fun exit s ↦ m ∣ s.2 ∧ RepeatedBits g m W s.2 s.1 ∧ (exit = true → 64 * W ≤ s.2)
 
 /-- The invariant of the loop over the words `i` of the copy at the offset `o`: the words of `rep`
 hold the bits below `o + 64 i` (and below `o + m`), and at the exit the copy is done or cut at the
 end of the words. -/
 def LayInnerInvariant (g : Nat → Bool) (m W o : Nat) {n : Nat} :
     Std.WP.WhileInvariant (Vector UInt64 n × Nat) Prop :=
-  .mk fun exit s ↦ s.2 ≤ (m + 64 - 1) / 64 ∧ RepInv g m W (o + min m (64 * s.2)) s.1 ∧
+  .mk fun exit s ↦ s.2 ≤ (m + 64 - 1) / 64 ∧ RepeatedBits g m W (o + min m (64 * s.2)) s.1 ∧
     (exit = true → (m + 64 - 1) / 64 ≤ s.2 ∨ W ≤ o / 64 + s.2)
 
 /-- A word cleared, by the loop that clears the first words of `rep`. -/
-theorem RepInv.set!_zero {g : Nat → Bool} {m n cur : Nat} {pref suff : List Nat} {W : Nat}
+theorem RepeatedBits.set!_zero {g : Nat → Bool} {m n cur : Nat} {pref suff : List Nat} {W : Nat}
     {rep : Vector UInt64 n} (hl : ForIn.toList [0:W] = pref ++ cur :: suff)
-    (h : RepInv g m pref.length 0 rep) : RepInv g m (pref ++ [cur]).length 0 (rep.set! cur 0) := by
+    (h : RepeatedBits g m pref.length 0 rep) :
+    RepeatedBits g m (pref ++ [cur]).length 0 (rep.set! cur 0) := by
   have hc := Std.Legacy.Range.length_eq_of_toList_eq_append_cons hl
   intro w hw j
   rw [List.length_append, List.length_singleton] at hw
@@ -192,12 +194,13 @@ theorem RepInv.set!_zero {g : Nat → Bool} {m n cur : Nat} {pref suff : List Na
     change (0 : UInt64).toBitVec.getLsbD j = _
     simp
 
-theorem repInv_nil (g : Nat → Bool) (m : Nat) {n : Nat} (rep : Vector UInt64 n) :
-    RepInv g m ([] : List Nat).length 0 rep :=
+theorem repeatedBits_nil (g : Nat → Bool) (m : Nat) {n : Nat} (rep : Vector UInt64 n) :
+    RepeatedBits g m ([] : List Nat).length 0 rep :=
   fun _ h ↦ absurd h (Nat.not_lt_zero _)
 
 theorem layOuterInvariant_init {g : Nat → Bool} {m W n : Nat} {rep : Vector UInt64 n}
-    (h : RepInv g m (ForIn.toList [0:W]).length 0 rep) : LayOuterInvariant g m W false (rep, 0) :=
+    (h : RepeatedBits g m (ForIn.toList [0:W]).length 0 rep) :
+    LayOuterInvariant g m W false (rep, 0) :=
   ⟨Nat.dvd_zero m, by simpa using h, nofun⟩
 
 theorem LayOuterInvariant.inner {g : Nat → Bool} {m W o n mb : Nat} {rep : Vector UInt64 n}
@@ -255,20 +258,21 @@ theorem LayOuterInvariant.exit {g : Nat → Bool} {m W o n mb : Nat} {rep : Vect
   ⟨h.2.1, h.2.2.1, fun _ ↦ by lia⟩
 
 theorem LayOuterInvariant.full {g : Nat → Bool} {m W n o : Nat} {rep : Vector UInt64 n}
-    (h : LayOuterInvariant g m W true (rep, o)) : RepInv g m W (64 * W) rep :=
+    (h : LayOuterInvariant g m W true (rep, o)) : RepeatedBits g m W (64 * W) rep :=
   h.2.1.mono (by lia [h.2.2 rfl])
 
-attribute [local irreducible] LayOuterInvariant LayInnerInvariant RepInv in
+attribute [local irreducible] LayOuterInvariant LayInnerInvariant RepeatedBits in
 open Std.WP Lean.Order in
 /-- The words of `rep` below `words ≤ modWords + 2` hold the pattern of period `m > 0` of the words
-`pat` repeated from `0` on (`Ratpoints.Sieve.RepInv`), for a pattern without bits from `m` on. -/
+`pat` repeated from `0` on (`Ratpoints.Sieve.RepeatedBits`), for a pattern without bits from `m`
+on. -/
 @[spec]
 theorem repeatPattern_spec (pat : Array UInt64) (m words : Nat)
     (rep : Vector UInt64 (modWords + 2)) :
     ⦃ 0 < m ∧ words ≤ modWords + 2 ∧ PatClear m pat ⦄ repeatPattern pat m words rep
-    ⦃ fun rep' ↦ RepInv (patBit pat) m words (64 * words) rep' ⦄ := by
+    ⦃ fun rep' ↦ RepeatedBits (patBit pat) m words (64 * words) rep' ⦄ := by
   vcgen [repeatPattern] invariants
-  | inv1 => fun done _ rep ↦ RepInv (patBit pat) m done.length 0 rep
+  | inv1 => fun done _ rep ↦ RepeatedBits (patBit pat) m done.length 0 rep
   | inv2 => LayOuterInvariant (patBit pat) m words
   | inv3 => Variant.ofMeasure fun s : Vector UInt64 (modWords + 2) × Nat ↦ words * 64 - s.2
   | inv4 _ _ _ o _ _ _ => LayInnerInvariant (patBit pat) m words o
@@ -276,8 +280,8 @@ theorem repeatPattern_spec (pat : Array UInt64) (m words : Nat)
   all_goals try simp only [Variant.evalsTo_ofMeasure, Assertion.NondetFun.evalsTo_pure,
     Variant.evalsBelow_ofMeasure_nat, meet_prop_eq_and, ofProp_prop_eq] at *
   all_goals first
-    | exact repInv_nil _ m rep
-    | exact RepInv.set!_zero ‹_› ‹_›
+    | exact repeatedBits_nil _ m rep
+    | exact RepeatedBits.set!_zero ‹_› ‹_›
     | exact layOuterInvariant_init ‹_›
     | exact LayOuterInvariant.full ‹_›
     | exact LayOuterInvariant.inner ‹_›
@@ -291,7 +295,7 @@ theorem repeatPattern_spec (pat : Array UInt64) (m words : Nat)
 /-- The window of the repeated pattern at the offset `o ≡ 64 x (mod m)`, `o < m`, is the window of
 the pattern at `64 x`. -/
 theorem PatternBits.window_rep {g : Nat → Bool} {m W n o x : Nat} {rep : Vector UInt64 n}
-    (hfull : RepInv g m W (64 * W) rep) (hW : m + 64 ≤ 64 * W) (ho : o < m)
+    (hfull : RepeatedBits g m W (64 * W) rep) (hW : m + 64 ≤ 64 * W) (ho : o < m)
     (hox : o = 64 * x % m) : PatternBits g m (64 * x) 64 (window rep.toArray o) := by
   intro t
   rw [getLsbD_window, Vector.getElem!_toArray]
@@ -315,7 +319,8 @@ on by `64 mod m` modulo `m`. -/
 theorem RowLoopInvariant.set!_window {m cur o : Nat} {pref suff : List Nat} {pat : Array UInt64}
     {rep : Vector UInt64 (modWords + 2)} {si : Vector UInt64 ((m + chunk - 1) * rbaPack)}
     (pre : 0 < m ∧ m ≤ 64 * modWords ∧ PatClear m pat)
-    (hfull : RepInv (patBit pat) m ((m + 64 + 64 - 1) / 64) (64 * ((m + 64 + 64 - 1) / 64)) rep)
+    (hfull : RepeatedBits (patBit pat) m ((m + 64 + 64 - 1) / 64)
+      (64 * ((m + 64 + 64 - 1) / 64)) rep)
     (hl : ForIn.toList [0:m * rbaPack] = pref ++ cur :: suff)
     (h : RowLoopInvariant (patBit pat) m pref.length (si, o)) :
     RowLoopInvariant (patBit pat) m (pref ++ [cur]).length
@@ -371,7 +376,7 @@ theorem layOutPattern_pre {m : Nat} {pat : Array UInt64}
     0 < m ∧ (m + 64 + 64 - 1) / 64 ≤ modWords + 2 ∧ PatClear m pat :=
   ⟨pre.1, by have := pre.2.1; lia, pre.2.2⟩
 
-attribute [local irreducible] RowLoopInvariant RepInv in
+attribute [local irreducible] RowLoopInvariant RepeatedBits in
 /-- The row of the pattern of period `0 < m ≤ 64 Ratpoints.modWords` in the words `pat`, without
 bits from `m` on, as `lay_out_pattern` lays it out: `m + chunk - 1` bit arrays, word `j` the window
 of the pattern at `64 j`. -/
@@ -400,13 +405,13 @@ def PatZero (pat : Array UInt64) : Prop := pat.size = modWords ∧ ∀ y, patBit
 /-- The invariant of the loop of `Ratpoints.Sieve.powerPatternUnit` after the residues below `x`:
 the residue `r = x b⁻¹ mod m` and the bits below `x` set where `Ratpoints.Sieve.Power.fsq` has the
 bit of `y b⁻¹`. -/
-def UnitPatInv (pw : Power) (binv x : Nat) (st : Array UInt64 × Nat) : Prop :=
+def UnitPatternInvariant (pw : Power) (binv x : Nat) (st : Array UInt64 × Nat) : Prop :=
   st.2 = x * binv % pw.m ∧ st.1.size = modWords ∧
     ∀ y, patBit st.1 y = (decide (y < x) && bitAt pw.fsq (y * binv % pw.m))
 
-theorem unitPatInv_init {pw : Power} {b : Nat} {pat : Array UInt64}
+theorem unitPatternInvariant_init {pw : Power} {b : Nat} {pat : Array UInt64}
     (pre : 0 < pw.m ∧ pw.m ≤ 64 * modWords ∧ pw.inv[b]! < pw.m ∧ PatZero pat) :
-    UnitPatInv pw pw.inv[b]! ([] : List Nat).length (pat, 0) :=
+    UnitPatternInvariant pw pw.inv[b]! ([] : List Nat).length (pat, 0) :=
   ⟨by simp, pre.2.2.2.1, fun y ↦ by rw [pre.2.2.2.2 y]; simp⟩
 
 /-- The bits of the pattern of a unit after the residue `cur`, its bit set when
@@ -428,12 +433,12 @@ theorem patBit_ite_setBitAt {pw : Power} {binv cur r : Nat} {pat : Array UInt64}
       simp [*]
     · simp [show (y < cur + 1) = (y < cur) by grind]
 
-theorem UnitPatInv.append_ite {pw : Power} {b cur : Nat} {pref suff : List Nat}
+theorem UnitPatternInvariant.append_ite {pw : Power} {b cur : Nat} {pref suff : List Nat}
     {pat : Array UInt64} {r : Nat}
     (pre : 0 < pw.m ∧ pw.m ≤ 64 * modWords ∧ pw.inv[b]! < pw.m ∧ PatZero pat)
     (hl : ForIn.toList [0:pw.m] = pref ++ cur :: suff) {pat' : Array UInt64}
-    (h : UnitPatInv pw pw.inv[b]! pref.length (pat', r)) :
-    UnitPatInv pw pw.inv[b]! (pref ++ [cur]).length
+    (h : UnitPatternInvariant pw pw.inv[b]! pref.length (pat', r)) :
+    UnitPatternInvariant pw pw.inv[b]! (pref ++ [cur]).length
       (if bitAt pw.fsq r = true then Sieve.setBitAt pat' cur else pat',
         if pw.m ≤ r + pw.inv[b]! then r + pw.inv[b]! - pw.m else r + pw.inv[b]!) := by
   obtain ⟨hm, hmw, hb, -⟩ := pre
@@ -449,33 +454,33 @@ theorem UnitPatInv.append_ite {pw : Power} {b cur : Nat} {pref suff : List Nat}
   · dsimp only
     split <;> simp [size_setBitAt, hs]
 
-theorem UnitPatInv.setBitAt {pw : Power} {b cur : Nat} {pref suff : List Nat}
+theorem UnitPatternInvariant.setBitAt {pw : Power} {b cur : Nat} {pref suff : List Nat}
     {pat : Array UInt64} {r : Nat}
     (pre : 0 < pw.m ∧ pw.m ≤ 64 * modWords ∧ pw.inv[b]! < pw.m ∧ PatZero pat)
     (hl : ForIn.toList [0:pw.m] = pref ++ cur :: suff) {pat' : Array UInt64}
-    (h : UnitPatInv pw pw.inv[b]! pref.length (pat', r)) (hbit : bitAt pw.fsq r = true) :
-    UnitPatInv pw pw.inv[b]! (pref ++ [cur]).length (Sieve.setBitAt pat' cur,
+    (h : UnitPatternInvariant pw pw.inv[b]! pref.length (pat', r)) (hbit : bitAt pw.fsq r = true) :
+    UnitPatternInvariant pw pw.inv[b]! (pref ++ [cur]).length (Sieve.setBitAt pat' cur,
       if pw.m ≤ r + pw.inv[b]! then r + pw.inv[b]! - pw.m else r + pw.inv[b]!) := by
-  have := UnitPatInv.append_ite pre hl h
+  have := UnitPatternInvariant.append_ite pre hl h
   rwa [ite_eq_left hbit] at this
 
-theorem UnitPatInv.skip {pw : Power} {b cur : Nat} {pref suff : List Nat}
+theorem UnitPatternInvariant.skip {pw : Power} {b cur : Nat} {pref suff : List Nat}
     {pat : Array UInt64} {r : Nat}
     (pre : 0 < pw.m ∧ pw.m ≤ 64 * modWords ∧ pw.inv[b]! < pw.m ∧ PatZero pat)
     (hl : ForIn.toList [0:pw.m] = pref ++ cur :: suff) {pat' : Array UInt64}
-    (h : UnitPatInv pw pw.inv[b]! pref.length (pat', r)) (hbit : ¬bitAt pw.fsq r = true) :
-    UnitPatInv pw pw.inv[b]! (pref ++ [cur]).length (pat',
+    (h : UnitPatternInvariant pw pw.inv[b]! pref.length (pat', r)) (hbit : ¬bitAt pw.fsq r = true) :
+    UnitPatternInvariant pw pw.inv[b]! (pref ++ [cur]).length (pat',
       if pw.m ≤ r + pw.inv[b]! then r + pw.inv[b]! - pw.m else r + pw.inv[b]!) := by
-  have := UnitPatInv.append_ite pre hl h
+  have := UnitPatternInvariant.append_ite pre hl h
   rwa [ite_eq_right hbit] at this
 
-theorem UnitPatInv.post {pw : Power} {binv : Nat} {st : Array UInt64 × Nat}
-    (h : UnitPatInv pw binv (ForIn.toList [0:pw.m]).length st) :
+theorem UnitPatternInvariant.post {pw : Power} {binv : Nat} {st : Array UInt64 × Nat}
+    (h : UnitPatternInvariant pw binv (ForIn.toList [0:pw.m]).length st) :
     st.1.size = modWords ∧
       ∀ y, patBit st.1 y = (decide (y < pw.m) && bitAt pw.fsq (y * binv % pw.m)) := by
   simpa using h.2
 
-attribute [local irreducible] UnitPatInv in
+attribute [local irreducible] UnitPatternInvariant in
 /-- The pattern of the row of a unit `b` modulo the prime power `m`, from a cleared pattern: bit
 `x < m` set when bit `x b⁻¹ mod m` of `Ratpoints.Sieve.Power.fsq` is, for the inverse of `b` below
 `m`. -/
@@ -486,31 +491,31 @@ theorem powerPatternUnit_spec (pw : Power) (b : Nat) (pat : Array UInt64) :
     ⦃ fun pat' ↦ pat'.size = modWords ∧
         ∀ y, patBit pat' y = (decide (y < pw.m) && bitAt pw.fsq (y * pw.inv[b]! % pw.m)) ⦄ := by
   vcgen [powerPatternUnit] invariants
-  | inv1 => fun done _ st ↦ UnitPatInv pw pw.inv[b]! done.length st
+  | inv1 => fun done _ st ↦ UnitPatternInvariant pw pw.inv[b]! done.length st
   all_goals first
-    | exact unitPatInv_init ‹_›
-    | exact UnitPatInv.post ‹_›
-    | exact UnitPatInv.setBitAt ‹_› ‹_› ‹_› ‹_›
-    | exact UnitPatInv.skip ‹_› ‹_› ‹_› ‹_›
+    | exact unitPatternInvariant_init ‹_›
+    | exact UnitPatternInvariant.post ‹_›
+    | exact UnitPatternInvariant.setBitAt ‹_› ‹_› ‹_› ‹_›
+    | exact UnitPatternInvariant.skip ‹_› ‹_› ‹_› ‹_›
 
 /-- The invariant of the loop of `Ratpoints.Sieve.powerPatternNonunit` after the residues below
 `1 + c`: the bits `1 ≤ y < 1 + c` of the units `y` set where `Ratpoints.Sieve.Power.gsq` has the bit
 of `b y⁻¹`. -/
-def NonunitPatInv (pw : Power) (b c : Nat) (pat : Array UInt64) : Prop :=
+def NonunitPatternInvariant (pw : Power) (b c : Nat) (pat : Array UInt64) : Prop :=
   pat.size = modWords ∧ ∀ y, patBit pat y =
     (decide (1 ≤ y ∧ y < 1 + c) && (y % pw.p != 0 && bitAt pw.gsq (b * pw.inv[y]! % pw.m)))
 
-theorem nonunitPatInv_init {pw : Power} {b : Nat} {pat : Array UInt64}
+theorem nonunitPatternInvariant_init {pw : Power} {b : Nat} {pat : Array UInt64}
     (pre : 0 < pw.m ∧ pw.m ≤ 64 * modWords ∧ PatZero pat) :
-    NonunitPatInv pw b ([] : List Nat).length pat :=
+    NonunitPatternInvariant pw b ([] : List Nat).length pat :=
   ⟨pre.2.2.1, fun y ↦ by rw [pre.2.2.2 y]; simp; lia⟩
 
-theorem NonunitPatInv.setBitAt {pw : Power} {b cur : Nat} {pref suff : List Nat}
+theorem NonunitPatternInvariant.setBitAt {pw : Power} {b cur : Nat} {pref suff : List Nat}
     {pat : Array UInt64} (pre : 0 < pw.m ∧ pw.m ≤ 64 * modWords ∧ PatZero pat)
     (hl : ForIn.toList [1:pw.m] = pref ++ cur :: suff) {pat' : Array UInt64}
-    (h : NonunitPatInv pw b pref.length pat') (hc0 : ¬cur % pw.p = 0)
+    (h : NonunitPatternInvariant pw b pref.length pat') (hc0 : ¬cur % pw.p = 0)
     (hbit : bitAt pw.gsq (b * pw.inv[cur]! % pw.m) = true) :
-    NonunitPatInv pw b (pref ++ [cur]).length (Sieve.setBitAt pat' cur) := by
+    NonunitPatternInvariant pw b (pref ++ [cur]).length (Sieve.setBitAt pat' cur) := by
   have hc := Std.Legacy.Range.add_length_eq_of_toList_eq_append_cons hl
   have hcl := Std.Legacy.Range.lt_of_toList_eq_append_cons hl
   refine ⟨by rw [size_setBitAt, h.1], fun y ↦ ?_⟩
@@ -524,11 +529,11 @@ theorem NonunitPatInv.setBitAt {pw : Power} {b cur : Nat} {pref suff : List Nat}
     congr 1
     exact decide_eq_decide.mpr (by lia)
 
-theorem NonunitPatInv.skip {pw : Power} {b cur : Nat} {pref suff : List Nat}
+theorem NonunitPatternInvariant.skip {pw : Power} {b cur : Nat} {pref suff : List Nat}
     {pat : Array UInt64} (hl : ForIn.toList [1:pw.m] = pref ++ cur :: suff)
-    (h : NonunitPatInv pw b pref.length pat)
+    (h : NonunitPatternInvariant pw b pref.length pat)
     (hbit : cur % pw.p = 0 ∨ ¬bitAt pw.gsq (b * pw.inv[cur]! % pw.m) = true) :
-    NonunitPatInv pw b (pref ++ [cur]).length pat := by
+    NonunitPatternInvariant pw b (pref ++ [cur]).length pat := by
   have hc := Std.Legacy.Range.add_length_eq_of_toList_eq_append_cons hl
   refine ⟨h.1, fun y ↦ ?_⟩
   rw [List.length_append, List.length_singleton, h.2 y]
@@ -538,14 +543,14 @@ theorem NonunitPatInv.skip {pw : Power} {b cur : Nat} {pref suff : List Nat}
   · congr 1
     exact decide_eq_decide.mpr (by lia)
 
-theorem NonunitPatInv.post {pw : Power} {b : Nat} {pat : Array UInt64} {P Q : Prop}
-    (pre : 0 < pw.m ∧ P ∧ Q) (h : NonunitPatInv pw b (ForIn.toList [1:pw.m]).length pat) :
+theorem NonunitPatternInvariant.post {pw : Power} {b : Nat} {pat : Array UInt64} {P Q : Prop}
+    (pre : 0 < pw.m ∧ P ∧ Q) (h : NonunitPatternInvariant pw b (ForIn.toList [1:pw.m]).length pat) :
     pat.size = modWords ∧ ∀ y, patBit pat y =
       (decide (1 ≤ y ∧ y < pw.m) && (y % pw.p != 0 && bitAt pw.gsq (b * pw.inv[y]! % pw.m))) := by
   refine ⟨h.1, fun y ↦ ?_⟩
   rw [h.2 y, Std.Legacy.Range.length_toList, Nat.add_sub_cancel' pre.1]
 
-attribute [local irreducible] NonunitPatInv in
+attribute [local irreducible] NonunitPatternInvariant in
 /-- The pattern of the row of a residue `b` divisible by `p` modulo the prime power `m`, from a
 cleared pattern: bit `x` of a unit `x < m` set when bit `b x⁻¹ mod m` of `Ratpoints.Sieve.Power.gsq`
 is. -/
@@ -555,13 +560,13 @@ theorem powerPatternNonunit_spec (pw : Power) (b : Nat) (pat : Array UInt64) :
     ⦃ fun pat' ↦ pat'.size = modWords ∧ ∀ y, patBit pat' y = (decide (1 ≤ y ∧ y < pw.m) &&
         (y % pw.p != 0 && bitAt pw.gsq (b * pw.inv[y]! % pw.m))) ⦄ := by
   vcgen [powerPatternNonunit] invariants
-  | inv1 => fun done _ pat ↦ NonunitPatInv pw b done.length pat
+  | inv1 => fun done _ pat ↦ NonunitPatternInvariant pw b done.length pat
   all_goals first
-    | exact nonunitPatInv_init ‹_›
-    | exact NonunitPatInv.post ‹_› ‹_›
-    | exact NonunitPatInv.setBitAt ‹_› ‹_› ‹_› ‹_› ‹_›
-    | exact NonunitPatInv.skip ‹_› ‹_› (.inl ‹_›)
-    | exact NonunitPatInv.skip ‹_› ‹_› (.inr ‹_›)
+    | exact nonunitPatternInvariant_init ‹_›
+    | exact NonunitPatternInvariant.post ‹_› ‹_›
+    | exact NonunitPatternInvariant.setBitAt ‹_› ‹_› ‹_› ‹_› ‹_›
+    | exact NonunitPatternInvariant.skip ‹_› ‹_› (.inl ‹_›)
+    | exact NonunitPatternInvariant.skip ‹_› ‹_› (.inr ‹_›)
 
 theorem patZero_replicate : PatZero (Array.replicate modWords 0) := by
   refine ⟨Array.size_replicate .., fun y ↦ ?_⟩
@@ -624,13 +629,13 @@ theorem sieveInitPower_pre_nonunit {pw : Power} {b : Nat} {pat : Array UInt64}
     0 < pw.m ∧ pw.m ≤ 64 * modWords ∧ PatZero pat :=
   ⟨by lia, pre.2.1, h⟩
 
-theorem sieveInitPower_pre_layOut {pw : Power} {b : Nat} {pat : Array UInt64}
+theorem sieveInitPower_pre_layOut_unit {pw : Power} {b : Nat} {pat : Array UInt64}
     (pre : b < pw.m ∧ pw.m ≤ 64 * modWords ∧ pw.inv[b]! < pw.m) {g : Nat → Bool}
     (hpat : pat.size = modWords ∧ ∀ y, patBit pat y = (decide (y < pw.m) && g y)) :
     0 < pw.m ∧ pw.m ≤ 64 * modWords ∧ PatClear pw.m pat :=
   ⟨by lia, pre.2.1, fun y hy _ ↦ by rw [hpat.2 y]; simp; lia⟩
 
-theorem sieveInitPower_pre_layOut' {pw : Power} {b : Nat} {pat : Array UInt64}
+theorem sieveInitPower_pre_layOut_nonunit {pw : Power} {b : Nat} {pat : Array UInt64}
     (pre : b < pw.m ∧ pw.m ≤ 64 * modWords ∧ pw.inv[b]! < pw.m) {g : Nat → Bool}
     (hpat : pat.size = modWords ∧ ∀ y, patBit pat y = (decide (1 ≤ y ∧ y < pw.m) && g y)) :
     0 < pw.m ∧ pw.m ≤ 64 * modWords ∧ PatClear pw.m pat :=
@@ -663,8 +668,8 @@ theorem sieveInitPower_spec (pw : Power) (ref : EntryRef) (b : Nat) (store : Row
     | exact PatZero.set!_zero ‹_› _
     | exact sieveInitPower_pre_unit ‹_› ‹_›
     | exact sieveInitPower_pre_nonunit ‹_› ‹_›
-    | exact sieveInitPower_pre_layOut ‹_› ‹_›
-    | exact sieveInitPower_pre_layOut' ‹_› ‹_›
+    | exact sieveInitPower_pre_layOut_unit ‹_› ‹_›
+    | exact sieveInitPower_pre_layOut_nonunit ‹_› ‹_›
     | exact sieveInitPower_post (patBit_mod_eq_admits_of_unit ‹_ ∧ _›.1 ‹_› ‹_ ∧ _›.2) ‹_›
     | exact sieveInitPower_post (patBit_mod_eq_admits_of_dvd ‹_ ∧ _›.1 ‹_› ‹_ ∧ _›.2) ‹_›
 
