@@ -16,10 +16,11 @@ exactly its points, each once (certified by Comparator), and the command-line pr
 `ratpoints-lean` prints them; differential tests in CI compare it with the C program. Stage C1 is
 done: the plain sieve returns, for every well-formed choice of the sieving parameters, the list of
 the brute-force reference (the membership, no-duplicates and refusal theorems certified by
-Comparator), and `ratpoints-lean` runs it. Stage C2 is done: the sieve works on the bit arrays of
-64-bit words of the C code, as its build `chunk1` does (256-bit bit arrays, one at a time in the
-first stage), with the same theorems, and the differential tests search up to height 30000 (up to
-100000 in a suite run locally). Stage D is done: the set-up of the search as the C code does it
+Comparator), and `ratpoints-lean` runs it. Stage C2 is done: it put the sieve on the bit arrays of
+64-bit words of the C code, as its build `chunk1` has them (256-bit bit arrays, one at a time in the
+first stage; since F4 the model is the default build), with the same theorems, and the differential
+tests search up to height 30000 (up to 100000 in a suite run locally). Stage D is done: the set-up
+of the search as the C code does it
 before the sieve, with the options of the library that change the refusals and the order of the
 output: the refusal of a binary form that is not squarefree (when the leading zeros lower its even
 degree, in the reversal check, and by the remainder chain of the Sturm step, computed row by row as

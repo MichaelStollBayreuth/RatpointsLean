@@ -52,8 +52,9 @@ Comparator accepted on 2026-10-10 in their form of stage C1, without the options
 accepted all seven, the two main theorems with the options among them, on 2026-10-11, again on the
 model of stage E on 2026-10-12, with the parameters of sub-stage F1, whose well-formedness
 admits composite moduli, on 2026-10-13, with the refusal of the heights that are not `long`s, which
-the refusal theorems state as `2 ^ 63 ≤ H`, and the cut points of sub-stage F2, on 2026-10-14, and
-with the packing of the numerators of sub-stage F3 on 2026-10-15.
+the refusal theorems state as `2 ^ 63 ≤ H`, and the cut points of sub-stage F2, on 2026-10-14, with
+the packing of the numerators of sub-stage F3 on 2026-10-15, and with the chunked first stage and
+the rows of sub-stage F4 on 2026-10-16.
 
 ## Running
 

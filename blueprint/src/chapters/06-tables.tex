@@ -596,9 +596,9 @@ prime-power factors, which fails only for lack of memory. The reciprocals of the
 of their sieve entries, which \verb|sieving_info| collects at its end
 (\csource{find_points.c}{3064}{3070}; Definition~\ref{def:sievingInfo}); the third stage reads them
 (Definition~\ref{def:stage3}), and so do the first two stages, stepping them with the sieve specs
-(Definitions~\ref{def:andRows} and~\ref{def:secondStage}); left to stage~I are the density of a
-prime and of a power, \verb|add_moduli| beyond the factorization, the ranking and the choice of the
-moduli with the rule for looking at further primes.
+(Definitions~\ref{def:chunkStarts} or~\ref{def:andRows}, by the arm, and~\ref{def:secondStage});
+left to stage~I are the density of a prime and of a power, \verb|add_moduli| beyond the
+factorization, the ranking and the choice of the moduli with the rule for looking at further primes.
 
 \section{Files and names}\label{sec:tablesFiles}
 
