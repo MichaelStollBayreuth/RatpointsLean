@@ -10,6 +10,7 @@ public import Ratpoints.Proof.Stages
 
 import Ratpoints.Proof.BitRange
 import Ratpoints.Proof.Containers
+import Ratpoints.Proof.FirstStage
 import Ratpoints.Proof.Sieve
 import Std.Tactic.Do
 
@@ -41,9 +42,10 @@ the bits of the numerators `-H, …, H` of one denominator.
 * `Ratpoints.Sieve.scanPiece_spec`: if the bits of a piece and-ed with the rows of the second stage
   are a test `keep` of the bits, the scan of the piece gives the points of the numerators of its
   bits that pass `keep`, in increasing order.
-* `Ratpoints.Sieve.siftPiece_spec`: one piece with rows that read tests of the bits gives the points
-  of the numerators of the bits that the masks at its two ends leave and that pass the pattern of
-  the class (`Ratpoints.Sieve.classBit`) and the tests of the rows, in increasing order.
+* `Ratpoints.Sieve.siftPiece_spec`: one piece with rows that read tests of the bits gives, in either
+  arm of the first stage, the points of the numerators of the bits that the masks at its two ends
+  leave and that pass the pattern of the class (`Ratpoints.Sieve.classBit`) and the tests of the
+  rows, in increasing order.
 * `Ratpoints.Sieve.siftBits_spec`: the bits from `low` to `high` in pieces give the points of the
   numerators of those that pass the pattern of the class and the tests of the rows.
 * `Ratpoints.Sieve.setRows_map`, `Ratpoints.Sieve.reads_of_mem_packedReads`: the rows of the
@@ -63,16 +65,17 @@ the bits of the numerators `-H, …, H` of one denominator.
 
 ## Implementation notes
 
-The file uses Lean core and `Std` only, as `Ratpoints.Proof.Words`, `Ratpoints.Proof.Stages`,
-`Ratpoints.Proof.Packing` and `Ratpoints.Proof.BitRange` do, whose lemmas on bit arrays, rows,
-walks, classes and the bits of an interval and whose contracts of the first, the second and the
-third stage it builds on. The walk reads the test of a candidate as its value
-(`Ratpoints.Sieve.acceptedPoints`), so that the contracts of the walk, of one bit array, of the
-scan, of one piece and of one interval need nothing of the numerators and the denominator; the
-hypotheses of the test on the words of the C code, `0 < b < 2 ^ 63` and `|a| ≤ H < 2 ^ 63`, come in
-with the numerators `-H, …, H` of one denominator (`Ratpoints.Sieve.acceptedPoints_eq_ite`). The
-contract of the run over the denominators, which calls `Ratpoints.Sieve.sift` with the class of each
-denominator, is in `Ratpoints.Proof.Denominators`.
+The file uses Lean core and `Std` only, as `Ratpoints.Proof.Words`, `Ratpoints.Proof.FirstStage`,
+`Ratpoints.Proof.Stages`, `Ratpoints.Proof.Packing` and `Ratpoints.Proof.BitRange` do, whose lemmas
+on bit arrays, rows, walks, classes and the bits of an interval and whose contracts of both arms of
+the first stage, of the second and of the third stage it builds on. The walk reads the test of a
+candidate as its value (`Ratpoints.Sieve.acceptedPoints`), so that the contracts of the walk, of one
+bit array, of the scan, of one piece and of one interval need nothing of the numerators and the
+denominator; the hypotheses of the test on the words of the C code, `0 < b < 2 ^ 63` and
+`|a| ≤ H < 2 ^ 63`, come in with the numerators `-H, …, H` of one denominator
+(`Ratpoints.Sieve.acceptedPoints_eq_ite`). The contract of the run over the denominators, which
+calls `Ratpoints.Sieve.sift` with the class of each denominator, is in
+`Ratpoints.Proof.Denominators`.
 -/
 
 @[expose] public section
@@ -613,6 +616,17 @@ theorem fits_take {specs : List SieveSpec} {mgs : List Nat} {maskHigh : Nat}
   ⟨fun s hs ↦ h.2.1 s (List.mem_of_mem_take hs), by rw [h.2.2, List.map_take],
     smallFits_decide w0 n⟩
 
+/-- What the chunked first stage of a piece of `n` bit arrays from the word number `w0` on needs of
+the first `sp1` moduli and their reciprocals (`Ratpoints.Sieve.andRowsChunked_spec`), in the arm
+that the test `1 < chunk ∧ chunk ≤ 16` of `Ratpoints.Sieve.siftPiece` chooses. -/
+theorem chunk_le_and_fits_take {specs : List SieveSpec} {mgs : List Nat} {maskHigh : Nat}
+    (hc : 1 < chunk ∧ chunk ≤ 16)
+    (h : maskHigh < rbaLength ∧ (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p)) (sp1 : Nat)
+    (w0 : Int) (n : Nat) :
+    chunk ≤ 16 ∧ (∀ s ∈ specs.take sp1, s.Fits) ∧ mgs.take sp1 = (specs.take sp1).map (magic ·.p) ∧
+      SmallFits (decide (-rowBias ≤ w0 ∧ w0 + n ≤ rowBias - 2 * maxPrimeEven)) w0 (w0 + n) :=
+  ⟨hc.2, fits_take h sp1 w0 n⟩
+
 /-- What the scan of a piece of `n` bit arrays from the word number `w0` on needs of the moduli and
 their reciprocals after the first `sp1`, with the test `small` that `Ratpoints.Sieve.siftPiece`
 computes. -/
@@ -626,10 +640,12 @@ theorem fits_drop {specs : List SieveSpec} {mgs : List Nat} {maskHigh : Nat}
 
 /-- The rows of the moduli, read at their offsets, are given by the tests `sf.2` of the bits that
 they read (`Ratpoints.Sieve.SieveSpec.Reads`), quantified in the postcondition since the program
-does not mention them; the first `sp1` moduli go to the first stage, the others to the second, with
-their reciprocals and the test `small`, which keeps the values that the reductions by the
-reciprocals see in range (`Ratpoints.Sieve.SieveSpec.Fits`); the bound on `maskHigh` is that of the
-high mask (`Ratpoints.Sieve.getLsbD_clearHighBits`), and the low mask needs none. -/
+does not mention them; the first `sp1` moduli go to the first stage, in the chunked arm
+(`Ratpoints.Sieve.andRowsChunked_spec`) for `1 < chunk ≤ 16` and in the other otherwise
+(`Ratpoints.Sieve.andRows_spec`), the others to the second, with their reciprocals and the test
+`small`, which keeps the values that the reductions by the reciprocals see in range
+(`Ratpoints.Sieve.SieveSpec.Fits`); the bound on `maskHigh` is that of the high mask
+(`Ratpoints.Sieve.getLsbD_clearHighBits`), and the low mask needs none. -/
 @[spec]
 theorem siftPiece_spec (w : Thunk (List Int)) (d b : Nat) (rev : Bool) (sp1 : Nat)
     (specs : List SieveSpec) (mgs : List Nat) (checks : Thunk (List CheckSpec)) (cl : NumClass)
@@ -644,6 +660,7 @@ theorem siftPiece_spec (w : Thunk (List Int)) (d b : Nat) (rev : Bool) (sp1 : Na
               fun j ↦ acceptedPoints w d b rev checks (cl.numerator j) ⦄ := by
   vcgen [siftPiece]
   all_goals first
+    | exact chunk_le_and_fits_take ‹_› ‹_› sp1 w0 n
     | exact fits_take ‹_› sp1 w0 n
     | exact fits_drop ‹_› sp1 w0 n
     | exact IsMasked.toList_eq ‹_› (isMasked_clearHighBits_clearLowBits _ _ ‹_ ∧ _›.1) ‹_› ‹_› ‹_›

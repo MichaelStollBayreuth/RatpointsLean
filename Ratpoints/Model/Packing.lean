@@ -18,17 +18,18 @@ power of 2, as `get_2adic_info` and `class_offsets` make it: for each class of t
 modulo 64, with the word of the numerators modulo 64 that it admits in the 2-adic information
 (`Ratpoints.Sieve.twoAdic`), the largest stride `2 ^ k`, `k ≤ 6` and `k < Ratpoints.numStrides`, for
 which these numerators lie in one class `a₀ mod 2 ^ k`, and the pattern of the word in that packing,
-from which the first stage of the sieve starts (`Ratpoints.Sieve.andRows`), with the word
-`den_bits` of the classes that admit a numerator (`Ratpoints.Sieve.numClasses`,
-`Ratpoints.Sieve.packPattern`); and, once the moduli are known, the number of the distinct packings
-(`Ratpoints.Sieve.numPackings`), and the inverses of the strides modulo the moduli with the row
-offsets of each packing, one for each modulus, which shift the rows so that bit `t` of the bit array
-with the word number `w` stands for the numerator `a₀ + 2 ^ k (Ratpoints.rbaLength w + t)`
-(`Ratpoints.Sieve.classOffsets`); and for a denominator the residues of the denominator divided by
-the stride of its class modulo the moduli of the first two stages, as `fill_bp_list` computes them
-(`Ratpoints.Sieve.fillBpList`). The classes (`Ratpoints.Sieve.NumClass`) and the sieve of one
-denominator in the packing of its class are in `Ratpoints.Model.Sieve`, the 2-adic information and
-the run, which reads the row offsets and the residues, in `Ratpoints.Model.Denominators`.
+from which the first stage of the sieve starts (`Ratpoints.Sieve.andRowsChunked`,
+`Ratpoints.Sieve.andRows`), with the word `den_bits` of the classes that admit a numerator
+(`Ratpoints.Sieve.numClasses`, `Ratpoints.Sieve.packPattern`); and, once the moduli are known, the
+number of the distinct packings (`Ratpoints.Sieve.numPackings`), and the inverses of the strides
+modulo the moduli with the row offsets of each packing, one for each modulus, which shift the rows
+so that bit `t` of the bit array with the word number `w` stands for the numerator
+`a₀ + 2 ^ k (Ratpoints.rbaLength w + t)` (`Ratpoints.Sieve.classOffsets`); and for a denominator the
+residues of the denominator divided by the stride of its class modulo the moduli of the first two
+stages, as `fill_bp_list` computes them (`Ratpoints.Sieve.fillBpList`). The classes
+(`Ratpoints.Sieve.NumClass`) and the sieve of one denominator in the packing of its class are in
+`Ratpoints.Model.Sieve`, the 2-adic information and the run, which reads the row offsets and the
+residues, in `Ratpoints.Model.Denominators`.
 
 ## Main definitions
 

@@ -404,6 +404,12 @@ reason = "RP_MOD_COUNTS, development instrumentation that counts how often the h
 
 [[excluded]]
 file = "sift.c"
+lines = "466-472"
+kind = "other"
+reason = "RP_UNROLL_REGS, the pragma GCC unroll 8 with which tail_leg makes gcc and clang unroll its loops over the registers before they decide what to keep in registers, empty on other compilers or when given empty; it carries no meaning"
+
+[[excluded]]
+file = "sift.c"
 lines = "533-544"
 kind = "instrumentation"
 reason = "the output under DEBUG at the start of _ratpoints_sift0: the denominator, the number of bit arrays, the 2-adic pattern and the masks"

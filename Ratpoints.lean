@@ -40,6 +40,7 @@ public import Ratpoints.Proof.Containers
 public import Ratpoints.Proof.Denominators
 public import Ratpoints.Proof.Divisors
 public import Ratpoints.Proof.FindPoints
+public import Ratpoints.Proof.FirstStage
 public import Ratpoints.Proof.Forbidden
 public import Ratpoints.Proof.Jacobi
 public import Ratpoints.Proof.JacobiTables

@@ -241,9 +241,8 @@ being closed forms (Section~\ref{sec:storeRun}).
 
 \begin{definition}[Bit arrays loaded, stored and filled]\label{def:bitArrayMoves}
   \uses{def:rbaPack}
-  Proposed names: \lname{Ratpoints.Sieve.loadBitArray}, \lname{Ratpoints.Sieve.storeBitArray},
-  \lname{Ratpoints.Sieve.fillBitArray}, \lname{Ratpoints.Sieve.getElem!\_loadBitArray},
-  \lname{Ratpoints.Sieve.getElem!\_storeBitArray}, \lname{Ratpoints.Sieve.getElem!\_fillBitArray}.
+  \lean{Ratpoints.Sieve.loadBitArray, Ratpoints.Sieve.storeBitArray, Ratpoints.Sieve.fillBitArray, Ratpoints.Sieve.getElem!_loadBitArray, Ratpoints.Sieve.getElem!_storeBitArray, Ratpoints.Sieve.getElem!_fillBitArray}
+  \leanok
   Next to the and of two bit arrays (Definition~\ref{def:bitArrayOps}), one word at a time: bit
   array $j$ of an array of words set to the class word, the 2-adic pattern of the class of the
   denominator in one word (each word of \verb|bits64|), and-ed with bit array $x$ of a row, the load
@@ -255,55 +254,62 @@ being closed forms (Section~\ref{sec:storeRun}).
 
 \begin{definition}[The starts of the rows]\label{def:chunkStarts}
   \uses{def:rows, def:modMul, def:useCLong}
-  Proposed names: \lname{Ratpoints.Sieve.chunkStarts}, \lname{Ratpoints.Sieve.wrapStart}. The sieve
-  specs of the first stage with their starts at the first word number $w_0$ of a piece, in a local
-  array: for each modulus $p$ with its offset and its reciprocal, stepped together, the start $(w_0
-  + \mathrm{offset}) \bmod p$, by \verb|mod_mul| when \verb|small| holds and by \verb|mod| otherwise
-  (\csource{sift.c}{596}{606}); and a start stepped back by the modulus while it is at least the
-  end, \verb|while (siv >= end) siv -= p| (\csource{sift.c}{683}{683}, \csource{sift.c}{805}{805}).
+  \lean{Ratpoints.Sieve.chunkStarts, Ratpoints.Sieve.wrapStart}
+  \leanok
+  The sieve specs of the first stage with their starts at the first word number $w_0$ of a piece, in
+  a local array: for each modulus $p$ with its offset and its reciprocal, stepped together, the
+  start $(w_0 + \mathrm{offset}) \bmod p$, by \verb|mod_mul| when \verb|small| holds and by
+  \verb|mod| otherwise (\csource{sift.c}{596}{606}); and a start stepped back by the modulus while
+  it is at least the end, \verb|while (siv >= end) siv -= p| (\csource{sift.c}{683}{683},
+  \csource{sift.c}{805}{805}).
 \end{definition}
 
 \begin{definition}[The whole chunks]\label{def:chunkSieve}
   \uses{def:chunkStarts, def:bitArrayMoves, def:bitArrayOps, def:chunk}
-  Proposed names: \lname{Ratpoints.Sieve.chunkSieve}, \lname{Ratpoints.Sieve.andChunks}. One chunk
-  of $\mathrm{chunk}$ bit arrays from the starts of the local sieve specs: the registers, a vector
-  of $\mathrm{chunk}$ bit arrays, loaded with the class word and-ed with the bit arrays
+  \lean{Ratpoints.Sieve.chunkSieve, Ratpoints.Sieve.andChunks}
+  \leanok
+  One chunk of $\mathrm{chunk}$ bit arrays from the starts of the local sieve specs: the registers,
+  a vector of $\mathrm{chunk}$ bit arrays, loaded with the class word and-ed with the bit arrays
   $\mathrm{start}, \dots, \mathrm{start} + \mathrm{chunk} - 1$ of the row of the first modulus,
   whose start moves on by $\mathrm{chunk}$ and is stepped back; then for each further modulus the
   registers and-ed with its bit arrays from its start on, and its start moved in the same way; the
   registers and the specs with the new starts returned (\csource{sift.c}{625}{681},
   \csource{sift.c}{684}{804}, \csource{sift.c}{806}{863}, with both blocks of output under
   \verb|DEBUG|, which the model does not print). The whole chunks of a piece, the bit arrays below
-  $\mathrm{full} = n - n \bmod \mathrm{chunk}$: for $c = 0, \mathrm{chunk}, 2\,\mathrm{chunk},
-  \dots$ below $\mathrm{full}$, one chunk, its registers stored into the bit arrays $c, \dots, c +
-  \mathrm{chunk} - 1$ of the piece (\csource{sift.c}{624}{624}, \csource{sift.c}{864}{913}).
+  $\mathrm{full} = n - n \bmod \mathrm{chunk}$: for
+  $c = 0, \mathrm{chunk}, 2\,\mathrm{chunk}, \dots$ below $\mathrm{full}$, one chunk, its registers
+  stored into the bit arrays $c, \dots, c + \mathrm{chunk} - 1$ of the piece
+  (\csource{sift.c}{624}{624}, \csource{sift.c}{864}{913}).
 \end{definition}
 
 \begin{definition}[The tail]\label{def:tailLegs}
   \uses{def:bitArrayMoves, def:bitArrayOps, def:chunk, def:rows}
-  Proposed names: \lname{Ratpoints.Sieve.tailLeg}, \lname{Ratpoints.Sieve.tailLegs}. One leg of $w
-  \le 8$ registers at the offset $\mathrm{off}$ into the tail, \verb|tail_leg|: a local vector of
-  $8$ bit arrays loaded with the class word and-ed with the bit arrays $\mathrm{start} +
-  \mathrm{off}, \dots$ of the row of the first modulus, and-ed with those of the further moduli, and
-  stored into the bit arrays $\mathrm{full} + \mathrm{off}, \dots$ of the piece, the starts left as
-  they are (\csource{sift.c}{452}{465}, \csource{sift.c}{473}{496}). The tail of $t = n -
-  \mathrm{full}$ bit arrays in the four calls of the C code, each under its guard: $8 <
-  \mathrm{chunk}$ and $t \mathbin{\&} 8 \ne 0$ for the leg of $8$ at $0$, $4 < \mathrm{chunk}$ and
-  $t \mathbin{\&} 4 \ne 0$ for the leg of $4$ at $t \mathbin{\&} 8$, $2 < \mathrm{chunk}$ and $t
-  \mathbin{\&} 2 \ne 0$ for the leg of $2$ at $t \mathbin{\&} 12$, and $t \mathbin{\&} 1 \ne 0$ for
-  the leg of $1$ at $t \mathbin{\&} 14$ (\csource{sift.c}{915}{940}, with the dead \verb|#error|).
+  \lean{Ratpoints.Sieve.tailLeg, Ratpoints.Sieve.tailLegs}
+  \leanok
+  One leg of $w \le 8$ registers at the offset $\mathrm{off}$ into the tail, \verb|tail_leg|: a
+  local vector of $8$ bit arrays loaded with the class word and-ed with the bit arrays
+  $\mathrm{start} + \mathrm{off}, \dots$ of the row of the first modulus, and-ed with those of the
+  further moduli, and stored into the bit arrays $\mathrm{full} + \mathrm{off}, \dots$ of the piece,
+  the starts left as they are (\csource{sift.c}{452}{465}, \csource{sift.c}{473}{496}). The tail of
+  $t = n - \mathrm{full}$ bit arrays in the four calls of the C code, each under its guard:
+  $8 < \mathrm{chunk}$ and $t \mathbin{\&} 8 \ne 0$ for the leg of $8$ at $0$, $4 < \mathrm{chunk}$
+  and $t \mathbin{\&} 4 \ne 0$ for the leg of $4$ at $t \mathbin{\&} 8$, $2 < \mathrm{chunk}$ and
+  $t \mathbin{\&} 2 \ne 0$ for the leg of $2$ at $t \mathbin{\&} 12$, and $t \mathbin{\&} 1 \ne 0$
+  for the leg of $1$ at $t \mathbin{\&} 14$ (\csource{sift.c}{915}{940}, with the dead
+  \verb|#error|).
 \end{definition}
 
 \begin{definition}[The chunked first stage]\label{def:andRowsChunked}
   \uses{def:chunkStarts, def:chunkSieve, def:tailLegs, def:bitArrayMoves}
-  Proposed name: \lname{Ratpoints.Sieve.andRowsChunked}. The first stage over a piece of $n$ bit
-  arrays from the word number $w_0$, the arm of \verb|_ratpoints_sift0| for a chunk from $2$ to
-  $16$, with the arguments of the first stage one row at a time (Definition~\ref{def:andRows}): the
-  local sieve specs with their starts; with no modulus, every bit array set to the class word, from
-  the last; otherwise the whole chunks, then the tail from the starts after them
-  (\csource{sift.c}{575}{575}, \csource{sift.c}{608}{620}, \csource{sift.c}{941}{941}; with the
-  constructor \verb|RBA| of the class word, which both arms share,
-  \csource{find_points.c}{1098}{1098}, \csource{rp-private.h}{129}{132},
+  \lean{Ratpoints.Sieve.andRowsChunked}
+  \leanok
+  The first stage over a piece of $n$ bit arrays from the word number $w_0$, the arm of
+  \verb|_ratpoints_sift0| for a chunk from $2$ to $16$, with the arguments of the first stage one
+  row at a time (Definition~\ref{def:andRows}): the local sieve specs with their starts; with no
+  modulus, every bit array set to the class word, from the last; otherwise the whole chunks, then
+  the tail from the starts after them (\csource{sift.c}{575}{575}, \csource{sift.c}{608}{620},
+  \csource{sift.c}{941}{941}; with the constructor \verb|RBA| of the class word, which both arms
+  share, \csource{find_points.c}{1098}{1098}, \csource{rp-private.h}{129}{132},
   \csource{rp-private.h}{203}{204}, \csource{rp-private.h}{235}{235},
   \csource{rp-private.h}{261}{261}, \csource{rp-private.h}{285}{285}). The rows must have their
   copies, which every row of the model has (Section~\ref{sec:storeRun}).
@@ -311,35 +317,26 @@ being closed forms (Section~\ref{sec:storeRun}).
 
 \begin{lemma}[The chunked first stage and-s the rows]\label{lem:andRowsChunked}
   \uses{def:andRowsChunked, def:closedRow, lem:rowIndices, def:andRows}
-  Proposed names: \lname{Ratpoints.Sieve.SieveSpec.startAt},
-  \lname{Ratpoints.Sieve.SieveSpec.advance}, \lname{Ratpoints.Sieve.SieveSpec.WalkFits},
-  \lname{Ratpoints.Sieve.SieveSpec.Fits.walkFits\_startAt}, \lname{Ratpoints.Sieve.partialReg},
-  \lname{Ratpoints.Sieve.andFrom}, \lname{Ratpoints.Sieve.ChunkStartsInvariant},
-  \lname{Ratpoints.Sieve.chunkStarts\_spec}, \lname{Ratpoints.Sieve.WrapStartInvariant},
-  \lname{Ratpoints.Sieve.wrapStart\_spec}, \lname{Ratpoints.Sieve.ChunkModInvariant},
-  \lname{Ratpoints.Sieve.ChunkAndInvariant}, \lname{Ratpoints.Sieve.chunkSieve\_spec},
-  \lname{Ratpoints.Sieve.AndChunksInvariant}, \lname{Ratpoints.Sieve.andChunks\_spec},
-  \lname{Ratpoints.Sieve.LegAndInvariant}, \lname{Ratpoints.Sieve.LegStoreInvariant},
-  \lname{Ratpoints.Sieve.tailLeg\_spec}, \lname{Ratpoints.Sieve.tail\_bits},
-  \lname{Ratpoints.Sieve.TailDone}, \lname{Ratpoints.Sieve.tailLegs\_spec},
-  \lname{Ratpoints.Sieve.andRowsChunked\_spec}, \lname{Ratpoints.Sieve.andRowsChunked\_post}. For
-  sieve specs that fit (Lemma~\ref{lem:rowIndices}), the reciprocals of their moduli and the bounds
-  of \verb|small|: the local array holds the specs with their starts at $w_0$, the remainder of $w_0
-  + \mathrm{offset}$ (Lemma~\ref{lem:rowIndices}); for the end $p > 0$ a start stepped back is its
-  remainder modulo $p$; a chunk loads into its registers the class word and-ed with the rows of all
-  the moduli from their starts on and moves every start on by the chunk modulo $p$; the whole chunks
-  below a multiple $\mathrm{full}$ of the chunk store into their bit arrays the words that the stage
-  reads from the starts and move the starts on by $\mathrm{full}$, for specs with a positive
-  modulus, the end $p$, a start below $p$ and a row that wraps; a leg of $w \le 8$ registers stores
-  into its bit arrays the class word and-ed with the rows at the starts plus its place in the tail;
-  and the legs of a tail of $t < \mathrm{chunk} \le 16$ bit arrays do its bit arrays $\mathrm{full},
-  \dots, n - 1$. So, for $\mathrm{chunk} \le 16$, the chunked first stage has the postcondition of
-  the first stage one row at a time (Definition~\ref{def:andRows}): word $y < n\,\mathrm{rbaPack}$
-  of the piece is the class word and-ed with the row words that the specs read for it at their
-  offsets.
+  \lean{Ratpoints.Sieve.SieveSpec.startAt, Ratpoints.Sieve.SieveSpec.advance, Ratpoints.Sieve.SieveSpec.WalkFits, Ratpoints.Sieve.SieveSpec.Fits.walkFits_startAt, Ratpoints.Sieve.partialReg, Ratpoints.Sieve.andFrom, Ratpoints.Sieve.ChunkStartsInvariant, Ratpoints.Sieve.chunkStarts_spec, Ratpoints.Sieve.WrapStartInvariant, Ratpoints.Sieve.wrapStart_spec, Ratpoints.Sieve.ChunkModInvariant, Ratpoints.Sieve.ChunkAndInvariant, Ratpoints.Sieve.chunkSieve_spec, Ratpoints.Sieve.AndChunksInvariant, Ratpoints.Sieve.andChunks_spec, Ratpoints.Sieve.LegAndInvariant, Ratpoints.Sieve.LegStoreInvariant, Ratpoints.Sieve.tailLeg_spec, Ratpoints.Sieve.tail_bits, Ratpoints.Sieve.TailDone, Ratpoints.Sieve.tailLegs_spec, Ratpoints.Sieve.andRowsChunked_spec, Ratpoints.Sieve.andRowsChunked_post}
+  \leanok
+  For sieve specs that fit (Lemma~\ref{lem:rowIndices}), the reciprocals of their moduli and the
+  bounds of \verb|small|: the local array holds the specs with their starts at $w_0$, the remainder
+  of $w_0 + \mathrm{offset}$ (Lemma~\ref{lem:rowIndices}); for the end $p > 0$ a start stepped back
+  is its remainder modulo $p$; a chunk loads into its registers the class word and-ed with the rows
+  of all the moduli from their starts on and moves every start on by the chunk modulo $p$; the whole
+  chunks below a multiple $\mathrm{full}$ of the chunk store into their bit arrays the words that
+  the stage reads from the starts and move the starts on by $\mathrm{full}$, for specs with a
+  positive modulus, the end $p$, a start below $p$ and a row that wraps; a leg of $w \le 8$
+  registers stores into its bit arrays the class word and-ed with the rows at the starts plus its
+  place in the tail; and the legs of a tail of $t < \mathrm{chunk} \le 16$ bit arrays do its bit
+  arrays $\mathrm{full}, \dots, n - 1$. So, for $\mathrm{chunk} \le 16$, the chunked first stage has
+  the postcondition of the first stage one row at a time (Definition~\ref{def:andRows}): word
+  $y < n\,\mathrm{rbaPack}$ of the piece is the class word and-ed with the row words that the specs
+  read for it at their offsets.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   The start of the chunk at $c$ is $(w_0 + \mathrm{offset} + c) \bmod p < p$, and the chunk reads
   the bit arrays from it up to $\mathrm{chunk} - 1$ further on, below $p + \mathrm{chunk} - 1$,
   where the row wraps: bit array $s + j$ is bit array $(s + j) \bmod p = (w_0 + \mathrm{offset} + c

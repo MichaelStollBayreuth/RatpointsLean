@@ -233,9 +233,9 @@ nonzero and gives the bit arrays their numerators.
   other lines of the blocks of the builds, the constant \verb|zero| goes with the scan
   (Definition~\ref{def:scanPiece}) and the reads \verb|EXT0| and \verb|EXT| with a bit array through
   the second stage and the extraction (Definition~\ref{def:siftBitArray}); the constructor
-  \verb|RBA|, used only for the 2-adic pattern of a class, goes with the first stage
-  (Definition~\ref{def:andRows}); the includes of the vector intrinsics and the printing of bit
-  arrays are excluded from the model.
+  \verb|RBA|, used only for the 2-adic pattern of a class, goes with both arms of the first stage
+  (Definitions~\ref{def:andRows} and~\ref{def:andRowsChunked}); the includes of the vector
+  intrinsics and the printing of bit arrays are excluded from the model.
 \end{definition}
 
 \begin{definition}[The lowest set bit]\label{def:ctz}
@@ -262,10 +262,13 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
   \uses{def:bitArrayOps, def:bitArrayMoves, def:rows, def:mulMod, def:modMul, lem:rowIndices}
   \lean{Ratpoints.Sieve.andRows, Ratpoints.Sieve.andRows_spec, Ratpoints.Sieve.andWords, Ratpoints.Sieve.classBit, Ratpoints.Sieve.classBit_rbaLength_mul_add}
   \leanok
-  Every bit array of the piece set to the pattern $\omega$ of the class of $b$ in its packing
-  (Definition~\ref{def:numClasses}), as ratpoints writes the 2-adic pattern of the class of $b$,
-  which \verb|get_2adic_info| makes once per class, one word repeated over a bit array by the macro
-  \verb|RBA| of the build (\csource{find_points.c}{1098}{1098}; \csource{rp-private.h}{129}{132},
+  The first stage one row at a time, the arm of \verb|_ratpoints_sift0| for a chunk of $1$ or above
+  $16$, which one piece chooses for such a chunk (Definition~\ref{def:siftPiece}; the chunked arm of
+  the other chunks is Definition~\ref{def:andRowsChunked}): every bit array of the piece set to the
+  pattern $\omega$ of the class of $b$ in its packing (Definition~\ref{def:numClasses}), as
+  ratpoints writes the 2-adic pattern of the class of $b$, which \verb|get_2adic_info| makes once
+  per class, one word repeated over a bit array by the macro \verb|RBA| of the build
+  (\csource{find_points.c}{1098}{1098}; \csource{rp-private.h}{129}{132},
   \csource{rp-private.h}{203}{204}, \csource{rp-private.h}{235}{235},
   \csource{rp-private.h}{261}{261}, \csource{rp-private.h}{285}{285}), and copies into each bit
   array, from the last, by the fill of a bit array (Definition~\ref{def:bitArrayMoves}; line 954 of
@@ -341,8 +344,8 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
 \end{definition}
 
 \begin{definition}[One piece]\label{def:siftPiece}
-  \uses{def:andRows, def:scanPiece, def:numClasses, lem:numClasses, lem:reads_row, lem:rowIndices,
-    def:barrett, def:packingConstants}
+  \uses{def:andRows, def:andRowsChunked, lem:andRowsChunked, def:scanPiece, def:numClasses,
+    lem:numClasses, lem:reads_row, lem:rowIndices, def:barrett, def:packingConstants}
   \lean{Ratpoints.Sieve.siftPiece, Ratpoints.Sieve.siftPiece_spec}
   \leanok
   A fresh array of $n + 1$ bit arrays, as the worker's array of \verb|array_size| bit arrays and two
@@ -350,8 +353,11 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
   \verb|small|, whether the word numbers of the piece lie between $-\mathrm{rowBias}$ and
   $\mathrm{rowBias} - 2\,\mathrm{maxPrimeEven}$, so that the first two stages may reduce their row
   indices by a multiplication with the reciprocals (Lemma~\ref{lem:rowIndices}); the first stage
-  with the first $s_1$ moduli of the piece and their reciprocals; the low mask $m_l$ on the first
-  bit array if $m_l \ne 0$ and the high mask $m_h$ on the last if $m_h \ne 0$
+  with the first $s_1$ moduli of the piece and their reciprocals, in the arm that the chunk chooses
+  by the test $1 < \mathrm{chunk} \le 16$ of the conditional compilation of the C code: the chunked
+  arm (Definition~\ref{def:andRowsChunked}) for the chunk $16$ of the model, and the arm one row at
+  a time (Definition~\ref{def:andRows}) for a chunk of $1$ or above $16$; the low mask $m_l$ on the
+  first bit array if $m_l \ne 0$ and the high mask $m_h$ on the last if $m_h \ne 0$
   (\csource{sift.c}{1030}{1041}); and the scan with the other moduli, those of the second stage,
   with their reciprocals, the thunks of the check and the flag of the reversal; the first stage
   starts from the pattern of the class of the denominator, an argument of the piece. The piece also
@@ -363,7 +369,8 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
   and every list of tests of the bits that the specs read (Lemma~\ref{lem:reads_row}): the
   concatenation of the points of the numerators $a_0 + 2^k j$ of the bits $j$ from $R w_0 + m_l$ to
   $R (w_0 + n) - 1 - m_h$ that pass the pattern of the class and the tests of the specs, the first
-  $s_1$ in the first stage and the others in the second, and pass the test of a candidate.
+  $s_1$ in the first stage, whose arms give the same words (Lemma~\ref{lem:andRowsChunked}), and the
+  others in the second, and pass the test of a candidate.
 \end{definition}
 
 \section{One denominator and the run}\label{sec:siftDen}
@@ -455,8 +462,8 @@ Each component of this chapter differs from the C code in a stated way, recorded
 \begin{itemize}
   \item every numerator from $-H$ to $H$ in the packing of the class of the denominator, for the
     intervals of the search region (H);
-  \item the first stage of the builds with one register per chunk, for the chunks of sixteen
-    registers of the default build with the legs over the tail of a piece (F4);
+  \item the arm of the first stage chosen by a test on the constant $\mathrm{chunk}$, for the
+    conditional compilation of the C code, which compiles one arm only (Chapter~\ref{chap:rows});
   \item the rows from the admission test of the sieve entry (Definition~\ref{def:SieveEntry}), one
     period laid out in words, as \verb|lay_out_pattern| lays out the pattern of a prime power, for
     the builders of the rows of a prime with their bit arithmetic and for the blocks of the rows of
@@ -516,12 +523,13 @@ positive; the field and the cap are in \verb|Ratpoints/Model/Params.lean|, and t
 \verb|Ratpoints/Model/Sieve.lean|, in the namespace \verb|Ratpoints.Sieve| after those of stage~C1,
 each with \verb|#guard| examples, but for the lowest set bit, which is in
 \verb|Ratpoints/Model/Candidate.lean| since stage~F3, with the test for common factors that also
-uses it, and the sieve specs, the and of two bit arrays and the first stage, which are in
-\verb|Ratpoints/Model/FirstStage.lean| since stage~F4; the run, which stage~C2 put below them, is in
-\verb|Ratpoints/Model/Denominators.lean| since stage~E. The lower bound of the array size is in
-\verb|Ratpoints/Proof/Params.lean|. The contracts, without Mathlib, are in
-\verb|Ratpoints/Proof/Words.lean| for the bit arrays, the rows and the first stage, with the closed
-form of the rows in \verb|Ratpoints/Proof/Rows.lean| since stage~F4, in
+uses it, and the sieve specs, the operations on bit arrays of the first stage and both arms of the
+first stage, which are in \verb|Ratpoints/Model/FirstStage.lean| since stage~F4; the run, which
+stage~C2 put below them, is in \verb|Ratpoints/Model/Denominators.lean| since stage~E. The lower
+bound of the array size is in \verb|Ratpoints/Proof/Params.lean|. The contracts, without Mathlib,
+are in \verb|Ratpoints/Proof/Words.lean| for the bit arrays, the rows and the first stage one row at
+a time, with the closed form of the rows in \verb|Ratpoints/Proof/Rows.lean| and the chunked first
+stage in \verb|Ratpoints/Proof/FirstStage.lean| since stage~F4, in
 \verb|Ratpoints/Proof/SetBits.lean| since stage~F3 for the lowest set bit and the class bit, and in
 \verb|Ratpoints/Proof/Sift.lean| from the walk through the set bits of a word on, since stage~F2, on
 which the contract of the run rests (since stage~E in \verb|Ratpoints/Proof/Denominators.lean|, with

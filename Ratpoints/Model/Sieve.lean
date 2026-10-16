@@ -30,18 +30,19 @@ read at the word number plus their offsets (`Ratpoints.Sieve.secondStage`,
 `Ratpoints.Sieve.secondStageWord`); one bit array through the second stage and the extraction of the
 points of its numerators in the packing of a class, in either arm of the second stage
 (`Ratpoints.Sieve.siftBitArray`); one piece of bit arrays from the first stage, with the first
-moduli, through the second, with the others, to the points of its numerators
-(`Ratpoints.Sieve.siftPiece`); the bits of an interval of numerators in the packing of a class
-(`Ratpoints.Sieve.numeratorsToBits`), the rows of the moduli for a denominator with the row offsets
-of its class (`Ratpoints.Sieve.setRows`) and the points of the bits of one interval in pieces
-(`Ratpoints.Sieve.siftBits`); and the numerators of one denominator, in the packing of its class,
-with the products of the check and what the third stage needs as thunks (`Ratpoints.Sieve.sift`).
-The components that take one numerator at a time, the test of a candidate that survives the first
-two stages, with the test for common factors and the third stage (`Ratpoints.Sieve.accepted`), the
-exact check (`Ratpoints.Sieve.checkPoint`) and its reference, the check of a numerator
-(`Ratpoints.Sieve.checkNum`), and the points at infinity (`Ratpoints.Sieve.pointsAtInfinity`), are
-in `Ratpoints.Model.Candidate`; the first stage, with the operations on bit arrays that it uses and
-the sieve specs (`Ratpoints.Sieve.andRows`, `Ratpoints.Sieve.SieveSpec`), is in
+moduli, in the arm that the chunk chooses, through the second, with the others, to the points of its
+numerators (`Ratpoints.Sieve.siftPiece`); the bits of an interval of numerators in the packing of a
+class (`Ratpoints.Sieve.numeratorsToBits`), the rows of the moduli for a denominator with the row
+offsets of its class (`Ratpoints.Sieve.setRows`) and the points of the bits of one interval in
+pieces (`Ratpoints.Sieve.siftBits`); and the numerators of one denominator, in the packing of its
+class, with the products of the check and what the third stage needs as thunks
+(`Ratpoints.Sieve.sift`). The components that take one numerator at a time, the test of a candidate
+that survives the first two stages, with the test for common factors and the third stage
+(`Ratpoints.Sieve.accepted`), the exact check (`Ratpoints.Sieve.checkPoint`) and its reference, the
+check of a numerator (`Ratpoints.Sieve.checkNum`), and the points at infinity
+(`Ratpoints.Sieve.pointsAtInfinity`), are in `Ratpoints.Model.Candidate`; the first stage in both
+arms, with the operations on bit arrays that it uses and the sieve specs
+(`Ratpoints.Sieve.andRowsChunked`, `Ratpoints.Sieve.andRows`, `Ratpoints.Sieve.SieveSpec`), is in
 `Ratpoints.Model.FirstStage`. The tables of the primes and of the prime powers and the sieve entries
 of the moduli, with the rows of a denominator, are in `Ratpoints.Model.Tables`; the classes of the
 denominators modulo 64 with their packings, the row offsets of the packings and the residues of a
@@ -223,10 +224,11 @@ pattern of one period, whether the row admits the numerator `N` for `N < p`
 `j < p`, word `j` the 64 bits of the packed pattern from position `64 j mod p` on
 (`Ratpoints.Sieve.window`); and these `p` words repeated through the `(p + chunk - 1) rbaPack` words
 of the row, word `j` being word `j mod p`: the first `p` bit arrays, and then the copies of the
-first `chunk - 1` of them, which the chunked first stage (stage F4) reads past the first `p`. Bit
-`t` of word `j` says whether the row admits `64 j + t`, since `Ratpoints.Sieve.SieveEntry.admits`
-depends only on the residue modulo `p`: the row is the closed form of the admission test at `b`
-(`Ratpoints.Sieve.closedRow`, `Ratpoints.Sieve.SieveEntry.row_eq_closedRow`).
+first `chunk - 1` of them, which the chunked first stage (`Ratpoints.Sieve.andRowsChunked`) reads
+past the first `p`. Bit `t` of word `j` says whether the row admits `64 j + t`, since
+`Ratpoints.Sieve.SieveEntry.admits` depends only on the residue modulo `p`: the row is the closed
+form of the admission test at `b` (`Ratpoints.Sieve.closedRow`,
+`Ratpoints.Sieve.SieveEntry.row_eq_closedRow`).
 
 C: `init.c:42-46`, `init.c:62-83`, `init.c:99-111`, `init.c:118-246`, `init.c:259-297`,
 `init.c:387`, `init.c:391-393`, `init.c:415-418`, `init.c:430`, `init.c:443-445`,
@@ -489,41 +491,49 @@ least multiple of the modulus of at least `Ratpoints.rowBias` (below `Ratpoints.
 modulus) plus less than the modulus, is not negative and below `2 Ratpoints.rowBias`, at most
 `Ratpoints.mulModLimit`; a fresh array of `n + 1` bit arrays, the last one the place of the
 sentinel; the first stage with the first `sp1` moduli of `specs`, their rows and offsets, and their
-reciprocals in `mgs`, from the pattern of the class `cl` of the denominator
-(`Ratpoints.Sieve.andRows`); the lowest `maskLow` bits of the first bit array cleared if
-`maskLow ≠ 0` (`Ratpoints.Sieve.clearLowBits`), and the highest `maskHigh` bits of the last bit
-array of the piece, `n - 1`, if `maskHigh ≠ 0` (`Ratpoints.Sieve.clearHighBits`); and the scan with
-the second stage, with the other moduli of `specs` and their reciprocals, and the extraction in the
-packing of `cl` (`Ratpoints.Sieve.scanPiece`, with the thunk `w` of the products, the degree `d`,
-the denominator `b`, the flag `rev` and the thunk `checks` of the third stage). This is
-`_ratpoints_sift0` of the C code, with the allocation of the survivors array that it works in.
+reciprocals in `mgs`, from the pattern of the class `cl` of the denominator, in the arm that the
+chunk `Ratpoints.chunk` chooses as the conditional compilation of the C code does: `chunk` bit
+arrays at a time for a chunk from 2 to 16 (`Ratpoints.Sieve.andRowsChunked`), and one row at a time
+otherwise (`Ratpoints.Sieve.andRows`), which leave the same bit arrays; the lowest `maskLow` bits of
+the first bit array cleared if `maskLow ≠ 0` (`Ratpoints.Sieve.clearLowBits`), and the highest
+`maskHigh` bits of the last bit array of the piece, `n - 1`, if `maskHigh ≠ 0`
+(`Ratpoints.Sieve.clearHighBits`); and the scan with the second stage, with the other moduli of
+`specs` and their reciprocals, and the extraction in the packing of `cl`
+(`Ratpoints.Sieve.scanPiece`, with the thunk `w` of the products, the degree `d`, the denominator
+`b`, the flag `rev` and the thunk `checks` of the third stage). This is `_ratpoints_sift0` of the C
+code, with the allocation of the survivors array that it works in.
 
 C: `find_points.c:3119-3121`, `sift.c:498-531`, `sift.c:548`, `sift.c:1030-1041`,
 `sift.c:1056-1058`, `sift.c:1300-1305`, `rp-private.h:575`, `rp-private.h:610-614`
 
-Deviation: a fresh array of zeros for each piece, for the survivors array of the sieving thread,
-which every piece reuses, with one bit array more for the alignment, and whose words `malloc` leaves
-uninitialized; the piece by its first word number `w0` and its number `n` of bit arrays, for `w_low`
-and `w_high`, and an index for the pointer to its last bit array; the moduli of the first two stages
-with their rows and offsets as the list `specs` and the end `sp1` of the first stage, for the sieve
-specs `sieves` and the number `sp1` that the sieving thread keeps, the reciprocals of their moduli
-as the list `mgs`, for the array `magics` of the arguments, and the thunk `checks`, for the table
-`checks` of the third stage and its length `nchecks = sp3 - sp2`; the class `cl` as a value, for the
-pointer `cls`; integers for the `long`s of the test `small`, which stay `long`s, and a Boolean for
-its `int`; no count of the words of the piece (`n_words`), which ratpoints reads to correct the
-moduli between the blocks of the run (stage I); the thunk `w` of the products of the check as an
-argument, where `_ratpoints_check_point` computes the products when the first survivor of `b`
-reaches it; a list of points, for the callback `process` with its argument `info` and for the count
-`total` of points that `_ratpoints_sift0` returns, with no flag `quit` for a stop that `process` may
-request (stage G); natural numbers and integers for the `long`s; no measurements of the phases
-(`RP_TIC`, `RP_TOC`, `RP_PHASE_TIMING`) and no stop after one of them (`RP_STOP_AFTER`). -/
+Deviation: the arm of the first stage chosen by a test on the constant `Ratpoints.chunk`, for the
+conditional compilation `#if (RATPOINTS_CHUNK > 1) && (RATPOINTS_CHUNK <= 16)` (`sift.c:575`,
+`sift.c:943`), which compiles one arm only; a fresh array of zeros for each piece, for the survivors
+array of the sieving thread, which every piece reuses, with one bit array more for the alignment,
+and whose words `malloc` leaves uninitialized; the piece by its first word number `w0` and its
+number `n` of bit arrays, for `w_low` and `w_high`, and an index for the pointer to its last bit
+array; the moduli of the first two stages with their rows and offsets as the list `specs` and the
+end `sp1` of the first stage, for the sieve specs `sieves` and the number `sp1` that the sieving
+thread keeps, the reciprocals of their moduli as the list `mgs`, for the array `magics` of the
+arguments, and the thunk `checks`, for the table `checks` of the third stage and its length
+`nchecks = sp3 - sp2`; the class `cl` as a value, for the pointer `cls`; integers for the `long`s of
+the test `small`, which stay `long`s, and a Boolean for its `int`; no count of the words of the
+piece (`n_words`), which ratpoints reads to correct the moduli between the blocks of the run (stage
+I); the thunk `w` of the products of the check as an argument, where `_ratpoints_check_point`
+computes the products when the first survivor of `b` reaches it; a list of points, for the callback
+`process` with its argument `info` and for the count `total` of points that `_ratpoints_sift0`
+returns, with no flag `quit` for a stop that `process` may request (stage G); natural numbers and
+integers for the `long`s; no measurements of the phases (`RP_TIC`, `RP_TOC`, `RP_PHASE_TIMING`) and
+no stop after one of them (`RP_STOP_AFTER`). -/
 def siftPiece (w : Thunk (List Int)) (d b : Nat) (rev : Bool) (sp1 : Nat)
     (specs : List SieveSpec) (mgs : List Nat) (checks : Thunk (List CheckSpec)) (cl : NumClass)
     (w0 : Int) (n maskLow maskHigh : Nat) :
     Id (Array (Int × Int × Int)) := do
   let small := decide (-rowBias ≤ w0 ∧ w0 + n ≤ rowBias - 2 * maxPrimeEven)
-  let mut surv ← andRows (specs.take sp1) (mgs.take sp1) small cl.bits w0 n
-    (Vector.replicate ((n + 1) * rbaPack) 0)
+  let zeros := Vector.replicate ((n + 1) * rbaPack) 0
+  let mut surv ← if 1 < chunk ∧ chunk ≤ 16 then
+      andRowsChunked (specs.take sp1) (mgs.take sp1) small cl.bits w0 n zeros
+    else andRows (specs.take sp1) (mgs.take sp1) small cl.bits w0 n zeros
   if maskLow ≠ 0 then surv := clearLowBits surv maskLow
   if maskHigh ≠ 0 then surv := clearHighBits surv (n - 1) maskHigh
   scanPiece w d b rev (specs.drop sp1) (mgs.drop sp1) small checks cl w0 n surv
@@ -567,11 +577,11 @@ def numeratorsToBits (low high : Int64) (cl : NumClass) (split : Bool) : Int64 �
 `set_rows` makes the sieve specs: for the `n`-th modulus `p` with its rows `rs` in `rows`, the row
 of the residue `bp[n]`, the denominator divided by the stride of its class modulo `p`
 (`Ratpoints.Sieve.fillBpList`), which its thunk makes when it is first needed
-(`Ratpoints.Sieve.SieveEntry.rows`), the offset of the row of the packing of the class `cl` for
-the `n`-th modulus, at the position `n` after the start `cl.offset` of that row in the array
-`offsets` (`Ratpoints.Sieve.classOffsets`), the end `p` of the walk of the chunked first stage
-through the row, and the start `0`, which the chunked first stage (stage F4) sets before it reads
-it.
+(`Ratpoints.Sieve.SieveEntry.rows`), the offset of the row of the packing of the class `cl` for the
+`n`-th modulus, at the position `n` after the start `cl.offset` of that row in the array `offsets`
+(`Ratpoints.Sieve.classOffsets`), the end `p` of the walk of the chunked first stage through the
+row, and the start `0`, which the chunked first stage sets before it reads it
+(`Ratpoints.Sieve.chunkStarts`).
 
 C: `find_points.c:3149-3170`
 

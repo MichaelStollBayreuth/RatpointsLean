@@ -368,17 +368,19 @@ order: a data refinement.
 \begin{lemma}[The row indices]\label{lem:rowIndices}
   \uses{lem:mulMod, lem:modMul, def:packingConstants, def:rows, def:barrett, def:useCLong,
     def:closedRow}
-  \lean{Ratpoints.Sieve.SieveSpec.Fits, Ratpoints.Sieve.SmallFits, Ratpoints.Sieve.smallFits_decide, Ratpoints.Sieve.SmallFits.mono, Ratpoints.Sieve.SieveSpec.Fits.natAbs_neg_sub_le, Ratpoints.Sieve.SieveSpec.Fits.add_nonneg_and_toNat_le, Ratpoints.Sieve.SieveSpec.Fits.ite_modMul_modLong_eq_emod, Ratpoints.Sieve.SieveSpec.Fits.ite_mulMod_modLong_eq_toNat_emod, Ratpoints.maxPrimeEven_pos}
+  \lean{Ratpoints.Sieve.SieveSpec.Fits, Ratpoints.Sieve.SmallFits, Ratpoints.Sieve.smallFits_decide, Ratpoints.Sieve.SmallFits.mono, Ratpoints.Sieve.SieveSpec.Fits.natAbs_neg_sub_le, Ratpoints.Sieve.SieveSpec.Fits.add_nonneg_and_toNat_le, Ratpoints.Sieve.SieveSpec.Fits.ite_modMul_modLong_eq_emod, Ratpoints.Sieve.SieveSpec.Fits.ite_modMul_modLong_add_eq_emod, Ratpoints.Sieve.SieveSpec.Fits.ite_mulMod_modLong_eq_toNat_emod, Ratpoints.maxPrimeEven_pos}
   \leanok
   A sieve spec \emph{fits} when $0 < p \le \mathrm{maxPrimeEven}$,
   $\mathrm{rowBias} \le \mathrm{offset} < \mathrm{rowBias} + 2p$, its end is $p$ and its row wraps
   (Definition~\ref{def:closedRow}), as the chunked first stage needs (Chapter~\ref{chap:rows}); the
   test \verb|small| of a piece from $w_0$ to $w_0 + n$ gives $-\mathrm{rowBias} \le w_0$ and
   $w_0 + n \le \mathrm{rowBias} - 2\,\mathrm{maxPrimeEven}$. Then the remainder $r$ with which the
-  first stage starts each modulus, at the bit array $p - r$ of its row, computed by \verb|mod_mul|
-  under \verb|small| and by \verb|mod| otherwise, is $(-w_0 - \mathrm{offset}) \bmod p$, and the
-  second stage's index for a word number $i$ of the piece, computed by $\mathrm{mulMod}$ under
-  \verb|small| and by \verb|mod| otherwise, is $(i + \mathrm{offset}) \bmod p$.
+  first stage one row at a time (Definition~\ref{def:andRows}) starts each modulus, at the bit array
+  $p - r$ of its row, computed by \verb|mod_mul| under \verb|small| and by \verb|mod| otherwise, is
+  $(-w_0 - \mathrm{offset}) \bmod p$; the start of each row in the chunked first stage
+  (Definition~\ref{def:chunkStarts}), by the same reductions, is $(w_0 + \mathrm{offset}) \bmod p$;
+  and the second stage's index for a word number $i$ of the piece, computed by $\mathrm{mulMod}$
+  under \verb|small| and by \verb|mod| otherwise, is $(i + \mathrm{offset}) \bmod p$.
 \end{lemma}
 
 \begin{proof}
@@ -392,12 +394,14 @@ order: a data refinement.
 The model passes the reciprocals of the first two stages to the stages as \verb|magics| holds them,
 from the position $0$ for the first stage and from $s_1$ for the second, and the loops over the
 moduli step the sieve specs and the reciprocals together, by two cursors, as the C code steps
-\verb|ssp| and \verb|mg|. The first stage (Definition~\ref{def:andRows}), the second
-(Definition~\ref{def:secondStage}) and one piece (Definition~\ref{def:siftPiece}), which computes
-\verb|small|, take the offsets of the sieve specs (Definition~\ref{def:rows}). The contracts of the
-two stages take fitting specs, the reciprocals of their moduli and the bounds that \verb|small|
-gives, and give the words and-ed with the row words of the specs, which Lemma~\ref{lem:reads_row}
-reads; that of one piece takes fitting specs and the reciprocals of their moduli.
+\verb|ssp| and \verb|mg|. The first stage, in either arm, Definition~\ref{def:andRows} or
+Definition~\ref{def:andRowsChunked}, which one piece (Definition~\ref{def:siftPiece}) chooses, the
+second (Definition~\ref{def:secondStage}) and one piece, which computes \verb|small|, take the
+offsets of the sieve specs (Definition~\ref{def:rows}). The contracts of the two stages take fitting
+specs, the reciprocals of their moduli and the bounds that \verb|small| gives, and give the words
+and-ed with the row words of the specs, the same words in both arms of the first stage
+(Lemma~\ref{lem:andRowsChunked}), which Lemma~\ref{lem:reads_row} reads; that of one piece takes
+fitting specs and the reciprocals of their moduli.
 
 \section{The bits of one denominator}\label{sec:bits}
 

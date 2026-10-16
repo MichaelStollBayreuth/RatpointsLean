@@ -142,7 +142,8 @@ others, the coefficients in `examine_prime` and `examine_power` (`Ratpoints.Siev
 `Ratpoints.Sieve.examinePower`) and a denominator above `Ratpoints.mulModLimit` in `fill_bp_list`
 (`Ratpoints.Sieve.fillBpList`), and its copy in `sift.c` the row indices of the first two stages of
 the sieve where they cannot be reduced by a multiplication with the reciprocal
-(`Ratpoints.Sieve.andRows`, `Ratpoints.Sieve.secondStage`, `Ratpoints.Sieve.secondStageWord`).
+(`Ratpoints.Sieve.andRows`, `Ratpoints.Sieve.chunkStarts`, `Ratpoints.Sieve.secondStage`,
+`Ratpoints.Sieve.secondStageWord`).
 
 C: `find_points.c:477-492`, `sift.c:370-389`
 
@@ -436,8 +437,8 @@ def mulDiv (u m : Nat) : Nat := (mulHi u.toUInt64 m.toUInt64).toNat
 with `r ≠ 0`. For the reciprocal `m = Ratpoints.Sieve.magic p` of a modulus `p ≥ 1` it is the
 Euclidean `a % p` whenever `|a| p < 2 ^ 64`, which the C code ensures by reducing only
 `|a| ≤ RP_MULMOD_LIMIT` modulo moduli below `2 ^ 32`: the first stage of the sieve reduces its first
-row index so when the word numbers of the piece allow it (`Ratpoints.Sieve.andRows`, the test
-`small` of `Ratpoints.Sieve.siftPiece`).
+row index so when the word numbers of the piece allow it (`Ratpoints.Sieve.andRows`,
+`Ratpoints.Sieve.chunkStarts`, the test `small` of `Ratpoints.Sieve.siftPiece`).
 
 C: `sift.c:243-247`
 
@@ -505,13 +506,13 @@ def Factor.admits : Factor → Nat → Int → Bool
 prime powers, given by its factors (`Ratpoints.Sieve.Factor`): one for a prime or a prime power, two
 or more for a product; with the reciprocal of `p` (`Ratpoints.Sieve.magic`), which the third stage
 of the sieve copies for its primes (`Ratpoints.Sieve.checkOf`) and with which the first two stages
-reduce their row indices (`Ratpoints.Sieve.andRows`, `Ratpoints.Sieve.secondStage`); and with what
-the packing of the numerators needs: the bias, the least multiple of `p` that is at least
-`Ratpoints.rowBias`, which the row offsets carry (`Ratpoints.Sieve.classOffsets`), the inverse of
-`Ratpoints.rbaLength` modulo `p`, from which the row offsets are computed, and the inverses of the
-strides `2 ^ k` modulo `p` for the strides in use, with which `fill_bp_list` divides the denominator
-by the stride (`Ratpoints.Sieve.fillBpList`). Its row for a denominator is the and of the rows of
-its factors (`Ratpoints.Sieve.SieveEntry.admits`).
+reduce their row indices (`Ratpoints.Sieve.andRows`, `Ratpoints.Sieve.chunkStarts`,
+`Ratpoints.Sieve.secondStage`); and with what the packing of the numerators needs: the bias, the
+least multiple of `p` that is at least `Ratpoints.rowBias`, which the row offsets carry
+(`Ratpoints.Sieve.classOffsets`), the inverse of `Ratpoints.rbaLength` modulo `p`, from which the
+row offsets are computed, and the inverses of the strides `2 ^ k` modulo `p` for the strides in use,
+with which `fill_bp_list` divides the denominator by the stride (`Ratpoints.Sieve.fillBpList`). Its
+row for a denominator is the and of the rows of its factors (`Ratpoints.Sieve.SieveEntry.admits`).
 
 C: `rp-private.h:497-498`, `rp-private.h:520`, `rp-private.h:542-555`
 

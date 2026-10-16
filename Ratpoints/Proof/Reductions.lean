@@ -62,9 +62,11 @@ Euclidean remainder.
 * `Ratpoints.Sieve.modMul_magic`: `mod_mul` gives the Euclidean `a % p` for `|a| p < 2 ^ 64`.
 * `Ratpoints.Sieve.modLong_eq_emod`: the helper `mod` of the C code is the Euclidean `%`.
 * `Ratpoints.Sieve.SieveSpec.Fits.ite_modMul_modLong_eq_emod`,
+  `Ratpoints.Sieve.SieveSpec.Fits.ite_modMul_modLong_add_eq_emod`,
   `Ratpoints.Sieve.SieveSpec.Fits.ite_mulMod_modLong_eq_toNat_emod`: the first row index of the
-  first stage and the row index of the second stage are the Euclidean remainders of `-w0 - offset`
-  and of `i + offset`.
+  first stage one row at a time, the start of a row of the chunked first stage and the row index of
+  the second stage are the Euclidean remainders of `-w0 - offset`, of `w0 + offset` and of
+  `i + offset`.
 
 ## Implementation notes
 
@@ -306,8 +308,8 @@ theorem modLong_eq_emod (a : Int) {b : Int} (hb : 0 ≤ b) : modLong a b = a % b
 
 /-- The row of the sieve spec `s` repeats its first `p` bit arrays in the `Ratpoints.chunk - 1` bit
 arrays after them: word `κ < Ratpoints.rbaPack` of bit array `x < p + chunk - 1` is word `κ` of bit
-array `x mod p`, the copies that the chunked first stage (stage F4) reads past the first `p` bit
-arrays from a start below `p`. -/
+array `x mod p`, the copies that the chunked first stage reads past the first `p` bit arrays from a
+start below `p` (`Ratpoints.Sieve.andRowsChunked`). -/
 def SieveSpec.Wraps (s : SieveSpec) : Prop :=
   ∀ x < s.p + chunk - 1, ∀ κ < rbaPack, s.row[rbaPack * x + κ]! = s.row[rbaPack * (x % s.p) + κ]!
 
@@ -318,6 +320,7 @@ Ratpoints.maxPrimeEven`, the offset a residue below `2 p` plus `Ratpoints.rowBia
 the test `small` the sums of a word number and the offset that the first two stages reduce are at
 most `Ratpoints.mulModLimit` in absolute value
 (`Ratpoints.Sieve.SieveSpec.Fits.ite_modMul_modLong_eq_emod`,
+`Ratpoints.Sieve.SieveSpec.Fits.ite_modMul_modLong_add_eq_emod`,
 `Ratpoints.Sieve.SieveSpec.Fits.ite_mulMod_modLong_eq_toNat_emod`), and the row repeating its first
 bit arrays (`Ratpoints.Sieve.SieveSpec.Wraps`) where the chunked first stage reads it. -/
 structure SieveSpec.Fits (s : SieveSpec) : Prop where
@@ -389,6 +392,22 @@ theorem SieveSpec.Fits.ite_modMul_modLong_eq_emod {s : SieveSpec} (hs : s.Fits) 
     have h' := h rfl
     exact modMul_magic hs.pos (mul_lt_two_pow_64_of_le_mulModLimit
       (hs.natAbs_neg_sub_le h'.1 (by lia))
+      (Nat.le_trans hs.le_maxPrimeEven maxPrimeEven_le_two_pow_32))
+
+/-- The start of the row of the chunked first stage at the first word number `w0` of a piece, by
+`mod_mul` under the test `small` and by the helper `mod` otherwise, is the Euclidean remainder of
+`w0 + offset`. -/
+theorem SieveSpec.Fits.ite_modMul_modLong_add_eq_emod {s : SieveSpec} (hs : s.Fits) {small : Bool}
+    {w0 : Int} (h : SmallFits small w0 w0) :
+    (if small then modMul (w0 + s.offset) s.p (magic s.p) else modLong (w0 + s.offset) s.p) =
+      (w0 + s.offset) % s.p := by
+  cases small with
+  | false => exact modLong_eq_emod _ (Int.natCast_nonneg _)
+  | true =>
+    have hle : (w0 + s.offset).natAbs ≤ mulModLimit := by
+      rw [← Int.natAbs_neg, Int.neg_add, ← Int.sub_eq_add_neg]
+      exact hs.natAbs_neg_sub_le (h rfl).1 (h rfl).2
+    exact modMul_magic hs.pos (mul_lt_two_pow_64_of_le_mulModLimit hle
       (Nat.le_trans hs.le_maxPrimeEven maxPrimeEven_le_two_pow_32))
 
 /-- The row index of the second stage at the word number `i`, by a multiplication with the

@@ -37,7 +37,8 @@ bits of a word, and the contract of the first stage over a piece, as `@[spec]` t
 
 ## Main statements
 
-* `Ratpoints.Sieve.getElem!_andBitArray`, `Ratpoints.Sieve.getElem!_fillBitArray`: the operations
+* `Ratpoints.Sieve.getElem!_andBitArray`, `Ratpoints.Sieve.getElem!_loadBitArray`,
+  `Ratpoints.Sieve.getElem!_storeBitArray`, `Ratpoints.Sieve.getElem!_fillBitArray`: the operations
   on bit arrays of the first stage set the words of one bit array and leave the other words as they
   are.
 * `Ratpoints.Sieve.getLsbD_clearLowBits`, `Ratpoints.Sieve.getLsbD_clearHighBits`: which bits the
@@ -76,7 +77,8 @@ bits of a word, and the contract of the first stage over a piece, as `@[spec]` t
 The file uses Lean core and `Std` only, as `Ratpoints.Proof.Sieve` does; the lemmas on words that
 are not about the model are in `Ratpoints.Proof.Bits`, the closed form of the rows in
 `Ratpoints.Proof.Rows`. The proofs use only that `Ratpoints.rbaPack` and `Ratpoints.chunk` are
-positive, never their values. The scaling by a unit needs an inverse of the unit and the tables of
+positive, never their values. The contract of the chunked first stage is in
+`Ratpoints.Proof.FirstStage`. The scaling by a unit needs an inverse of the unit and the tables of
 inverses, no primality. The contracts of the second and the third stage and of the check are in
 `Ratpoints.Proof.Stages`, those of the walk, of the scan, of one piece and of one denominator in
 `Ratpoints.Proof.Sift`. The bit of a number in a word (`Ratpoints.Sieve.classBit`), the contract of
@@ -121,6 +123,21 @@ theorem getElem!_andBitArray {m : Nat} (v : Vector UInt64 m) (j : Nat) (row : Ar
       if y / rbaPack = j then v[y]! &&& row[rbaPack * x + y % rbaPack]! else v[y]! := by
   rw [andBitArray, Vector.getElem!_fold_set! (fun κ w ↦ w &&& row[rbaPack * x + κ]!) hy]
   by_cases h : y / rbaPack = j <;> simp only [rbaPack_mul_le_and_lt_iff, h, ↓reduceIte, Nat.mod_def]
+
+theorem getElem!_loadBitArray {m : Nat} (v : Vector UInt64 m) (j : Nat) (cw : UInt64)
+    (row : Array UInt64) (x : Nat) {y : Nat} (hy : y < m) :
+    (loadBitArray v j cw row x)[y]! =
+      if y / rbaPack = j then cw &&& row[rbaPack * x + y % rbaPack]! else v[y]! := by
+  rw [loadBitArray, Vector.getElem!_fold_set! (fun κ _ ↦ cw &&& row[rbaPack * x + κ]!) hy]
+  by_cases h : y / rbaPack = j <;> simp only [rbaPack_mul_le_and_lt_iff, h, ↓reduceIte, Nat.mod_def]
+
+theorem getElem!_storeBitArray {m k : Nat} (v : Vector UInt64 m) (y' : Nat)
+    (regs : Vector UInt64 k) (j : Nat) {y : Nat} (hy : y < m) :
+    (storeBitArray v y' regs j)[y]! =
+      if y / rbaPack = y' then regs[rbaPack * j + y % rbaPack]! else v[y]! := by
+  rw [storeBitArray, Vector.getElem!_fold_set! (fun κ _ ↦ regs[rbaPack * j + κ]!) hy]
+  by_cases h : y / rbaPack = y' <;>
+    simp only [rbaPack_mul_le_and_lt_iff, h, ↓reduceIte, Nat.mod_def]
 
 theorem getElem!_fillBitArray {m : Nat} (v : Vector UInt64 m) (y' : Nat) (cw : UInt64) {y : Nat}
     (hy : y < m) : (fillBitArray v y' cw)[y]! = if y / rbaPack = y' then cw else v[y]! := by
