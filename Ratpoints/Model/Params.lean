@@ -152,16 +152,18 @@ instance Params.instDecidableWF (P : Params) : Decidable P.WF :=
 
 /-- At most how many bit arrays a piece of the numerators has for the height bound `H`: the field
 `arraySize` of the parameters `P`, or `Ratpoints.defaultArraySize` for `0`, capped at `2 ⌈H / 64⌉`
-and at `Ratpoints.maxArraySize`; at least 1 for `H ≥ 1` (`Ratpoints.Params.one_le_arraySizeAt`).
+and at `Ratpoints.maxArraySize`, then rounded up to a multiple of `Ratpoints.chunk`, which stays at
+most the cap `Ratpoints.maxArraySize`, a multiple of the chunk; at least 1 for `H ≥ 1`
+(`Ratpoints.Params.one_le_arraySizeAt`).
 
 C: `rp-private.h:87`, `find_points.c:4666-4677`
 
 Deviation: a `Nat` for the `long` field, so that only `0` stands for the default, which the library
-takes for every value `≤ 0`; no rounding up to a multiple of the chunk, which is one bit array in
-the build of the model (`RATPOINTS_CHUNK`, stage F4). -/
+takes for every value `≤ 0`. -/
 def Params.arraySizeAt (P : Params) (H : Nat) : Nat :=
-  min (min (if P.arraySize = 0 then defaultArraySize else P.arraySize) (2 * ((H + 63) / 64)))
-    maxArraySize
+  let a := min (min (if P.arraySize = 0 then defaultArraySize else P.arraySize)
+    (2 * ((H + 63) / 64))) maxArraySize
+  (a + chunk - 1) / chunk * chunk
 
 /-- The values of the options of ratpoints that set the sieving parameters, as the program reads
 them into the fields of its `ratpoints_args`: `-p`, `-n`, `-N`, `-P` and `-F` give C `long`s,
@@ -331,12 +333,15 @@ def defaultParams : Params := sieveParams {}
     ([(0, 1), (1, 1), (5, 1)], 1), ([(52, 1)], 1), ([], 1), ([], 0), ([], 6),
     ([(0, 1)], 257), ([], 1024)]
 
--- The array size: `2 ⌈H / 64⌉` up to the default 256, which it reaches at `H = 8129`; the default
--- for the field `0`; a field of 10; and the cap `2 ^ 20` from `H = 2 ^ 25 + 1` on.
-#guard [1, 64, 65, 1000, 8128, 8129, 100000].map defaultParams.arraySizeAt ==
-  [2, 2, 4, 32, 254, 256, 256]
+-- The array size: `2 ⌈H / 64⌉` rounded up to a multiple of the chunk 16, up to the default 256,
+-- which it reaches at `H = 8129` and, rounded up, at `H = 7681`; the default for the field `0`;
+-- fields of 10, rounded up, and of 48, a multiple of the chunk; and the cap `2 ^ 20`, a multiple
+-- of the chunk, from `H = 2 ^ 25 + 1` on, which the rounding up does not pass.
+#guard [1, 64, 65, 1000, 7680, 7681, 8128, 8129, 100000].map defaultParams.arraySizeAt ==
+  [16, 16, 16, 32, 240, 256, 256, 256, 256]
 #guard (⟨[], 0, 0, 0, 64, true, 0⟩ : Params).arraySizeAt 100000 == 256
-#guard { defaultParams with arraySize := 10 }.arraySizeAt 100000 == 10
+#guard { defaultParams with arraySize := 10 }.arraySizeAt 100000 == 16 &&
+  { defaultParams with arraySize := 48 }.arraySizeAt 100000 == 48
 #guard [2 ^ 25, 2 ^ 25 + 1].map { defaultParams with arraySize := 3000000 }.arraySizeAt ==
   [2 ^ 20, 2 ^ 20]
 

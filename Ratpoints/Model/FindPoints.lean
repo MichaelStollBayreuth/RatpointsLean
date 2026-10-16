@@ -578,16 +578,19 @@ passes on to the test of the leading zeros. -/
           (mgs.drop 7))).toList == if rev then ref.map Sieve.swapPoint else ref
   | none => false
 
--- Pieces of one, two and three bit arrays, at heights around the multiples of 64 and of
--- `rbaLength`, with five moduli in the three stages: several pieces, the masks on the same piece
--- and on different ones, and no low mask when `H` is a multiple of `rbaLength`.
+-- The array size 1, which `arraySizeAt` rounds up to the chunk 16, at heights around the multiples
+-- of 64 and of `rbaLength`, with five moduli in the three stages: each class runs as one piece of
+-- 16 bit arrays, with the low and the high mask on the same piece, the last bit array cut at
+-- `wHigh` inside the piece, and no low mask when `H` is a multiple of `rbaLength`. Several pieces
+-- and the masks on different pieces are in the examples of `sift` (pieces of one, two and three
+-- bit arrays at `H = 300`, `Ratpoints.Model.Sieve`) and of the run (the array size 1,
+-- `Ratpoints.Model.Denominators`), and through `findPoints` in the differential tests of the suite
+-- `test4high`; those at the heights 5000 and 30000 have pieces of several chunks.
 #guard [([-2, 0, 0, 1], [63, 64, 65, 255, 256, 257]), ([1, 1, 1, 1, 0], [128, 129])].all
   fun (c, Hs) ↦ Hs.all fun H ↦
-    let bf := bruteForce c H
-    [1, 2, 3].all fun A ↦
-      let P : Params := { defaultParams with
-        moduli := primeTable.toList.take 5, sp1 := 2, sp2 := 4, arraySize := A }
-      decide P.WF && (findPoints c H P).toOption == some bf
+    let P : Params := { defaultParams with
+      moduli := primeTable.toList.take 5, sp1 := 2, sp2 := 4, arraySize := 1 }
+    decide P.WF && (findPoints c H P).toOption == some (bruteForce c H)
 
 -- The zero polynomial and polynomials of degree 0 with two or more coefficients, whose leading
 -- zeros lower `⌈n / 2⌉`: refused as not squarefree whatever the options, as `ratpoints c H -q`

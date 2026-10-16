@@ -173,14 +173,15 @@ $p$. So F4 is a data refinement: the sieve computes the same predicate as before
 \section{The chunk}\label{sec:chunkConstants}
 
 \begin{definition}[The chunk]\label{def:chunk}
-  Proposed names: \lname{Ratpoints.chunk}, \lname{Ratpoints.chunk\_pos}. The number of bit arrays
-  that the chunked first stage takes at a time, $\mathrm{chunk} = 16$, the value of the default
-  build (\verb|RATPOINTS_CHUNK|: \csource{rp-private.h}{160}{165},
+  \lean{Ratpoints.chunk, Ratpoints.chunk_pos}
+  \leanok
+  The number of bit arrays that the chunked first stage takes at a time, $\mathrm{chunk} = 16$, the
+  value of the default build (\verb|RATPOINTS_CHUNK|: \csource{rp-private.h}{160}{165},
   \csource{rp-private.h}{222}{224}, \csource{rp-private.h}{248}{250},
   \csource{rp-private.h}{274}{276}, \csource{rp-private.h}{293}{295}, all the definitions of the
-  builds, as $\mathrm{rbaPack}$ owns those of its macro), with the fact $0 < \mathrm{chunk}$
-  checked by evaluation, which the rounding of the array size uses. No proof uses its value: the
-  chunked first stage needs $\mathrm{chunk} \le 16$, which the test that chooses the arm gives
+  builds, as $\mathrm{rbaPack}$ owns those of its macro), with the fact $0 < \mathrm{chunk}$ checked
+  by evaluation, which the rounding of the array size uses. No proof uses its value: the chunked
+  first stage needs $\mathrm{chunk} \le 16$, which the test that chooses the arm gives
   (Definition~\ref{def:siftPiece}). The largest array size becomes
   $\lfloor 2^{20}/\mathrm{chunk} \rfloor \cdot \mathrm{chunk}$ and the array size is rounded up to a
   multiple of the chunk after its caps (Definition~\ref{def:arraySize}); every row has

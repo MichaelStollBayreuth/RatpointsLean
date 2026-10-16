@@ -12,8 +12,8 @@ The constants that the C code of ratpoints fixes when it is compiled, each a def
 value of the default build and a docstring that names its macro, and the table of primes from which
 the sieve takes its moduli. Changing a constant changes the model as changing the macro changes the
 C program: no proof depends on the values of the constants beyond the facts checked here by
-`decide`, that `Ratpoints.rbaPack`, `Ratpoints.defaultArraySize` and `Ratpoints.maxArraySize` are
-positive, that `Ratpoints.mulModLimit` is below `2 ^ 64` and `2 ^ 32`
+`decide`, that `Ratpoints.rbaPack`, `Ratpoints.chunk`, `Ratpoints.defaultArraySize` and
+`Ratpoints.maxArraySize` are positive, that `Ratpoints.mulModLimit` is below `2 ^ 64` and `2 ^ 32`
 (`Ratpoints.mulModLimit_lt_size`, `Ratpoints.mulModLimit_lt_two_pow_32`), that `Ratpoints.rbaLength`
 is `2 ^ Ratpoints.rbaShift` with `Ratpoints.rbaShift < 32`
 (`Ratpoints.rbaLength_eq_two_pow_rbaShift`, `Ratpoints.rbaShift_lt_thirty_two`), that
@@ -43,6 +43,7 @@ them one by one, and `Ratpoints.lt_of_mem_primeTable`, `Ratpoints.mem_primeTable
 * `Ratpoints.defaultSturm`: the depth of the Sturm step, unless the options say.
 * `Ratpoints.rbaPack`, `Ratpoints.rbaLength`, `Ratpoints.rbaShift`: how many words and how many
   bits a bit array of the sieve has, and the logarithm of the second.
+* `Ratpoints.chunk`: the number of bit arrays that the first stage of the sieve takes at a time.
 * `Ratpoints.defaultArraySize`, `Ratpoints.maxArraySize`: at most how many bit arrays a piece of
   the numerators has, unless the parameters say, and in any case.
 * `Ratpoints.maxDivisors`: the bound, never reached, on the number of squarefree divisors of the
@@ -201,13 +202,27 @@ def rbaShift : Nat := 8
 C: `ratpoints.h:354-356` -/
 def defaultArraySize : Nat := 256
 
-/-- The largest number of bit arrays of a piece of the numerators, `RP_ARRAY_SIZE_MAX`.
+/-- The number of bit arrays that the first stage of the sieve takes at a time, `RATPOINTS_CHUNK`:
+the number of registers of the chunked first stage, which the C code compiles for a chunk from 2 to
+16, the first stage on one bit array at a time (`Ratpoints.Sieve.andRows`) being that of the other
+chunks; the chunked first stage, which reads up to `chunk - 1` bit arrays past the end of a row,
+and the copies of the first bit arrays of a row that the C code appends for it come with stage F4.
+The size of a piece of the numerators is a multiple of the chunk (`Ratpoints.Params.arraySizeAt`,
+`Ratpoints.maxArraySize`). The proofs use only that it is positive (`Ratpoints.chunk_pos`).
 
-C: `find_points.c:124`
+C: `rp-private.h:160-165`, `rp-private.h:222-224`, `rp-private.h:248-250`,
+`rp-private.h:274-276`, `rp-private.h:293-295`
 
-Deviation: `2 ^ 20`, the value for a chunk of one bit array, where the C code takes the largest
-multiple of the chunk `RATPOINTS_CHUNK` up to `2 ^ 20` (stage F4). -/
-def maxArraySize : Nat := 2 ^ 20
+Deviation: 16, the value of the default build (`USE_AVX`), set here, where the C code chooses the
+value by the macros that the compiler is given, each build with vector registers taking 16 and the
+build with 64-bit bit arrays 1 unless `RATPOINTS_CHUNK` is given. -/
+def chunk : Nat := 16
+
+/-- The largest number of bit arrays of a piece of the numerators, `RP_ARRAY_SIZE_MAX`: the largest
+multiple of `Ratpoints.chunk` up to `2 ^ 20`.
+
+C: `find_points.c:124` -/
+def maxArraySize : Nat := 2 ^ 20 / chunk * chunk
 
 /-- The bound on the number of squarefree divisors of the leading coefficient that the loop over
 the denominators takes for a polynomial of odd degree, `MAX_DIVISORS`: `setup_us1` gives the
@@ -323,6 +338,11 @@ theorem rbaPack_pos : 0 < rbaPack := by decide
 theorem defaultArraySize_pos : 0 < defaultArraySize := by decide
 theorem maxArraySize_pos : 0 < maxArraySize := by decide
 
+/-- The chunk is positive, which the C code assumes without a check: the size of a piece of the
+numerators is rounded up to a multiple of it (`Ratpoints.Params.arraySizeAt`), which is then
+positive. -/
+theorem chunk_pos : 0 < chunk := by decide
+
 /-- The bound `Ratpoints.mulModLimit` on the denominators of the Jacobi test by tables is below
 `2 ^ 64`, so that `Ratpoints.Sieve.jacobiTest` reads them as words. -/
 theorem mulModLimit_lt_size : mulModLimit < UInt64.size := by decide
@@ -371,7 +391,8 @@ theorem one_le_numStrides : 1 ≤ numStrides := by decide
 #guard maxPrimeEven == 256 && hornerSteps == 7 &&
   (primeTable.toList.take numPrimes).all (· < maxPrimeEven) && maxPrimeEven ≤ primeTable[numPrimes]!
 
-#guard rbaLength == 256 && rbaShift == 8 && defaultArraySize == 256 && maxArraySize == 1048576
+#guard rbaLength == 256 && rbaShift == 8 && chunk == 16 && defaultArraySize == 256 &&
+  maxArraySize == 1048576
 
 #guard maxDivisors == 512 && veryBig == 1000 && jacobiPrimes == 16 && jacobiTable == 8192 &&
   mulModLimit == 4294967295

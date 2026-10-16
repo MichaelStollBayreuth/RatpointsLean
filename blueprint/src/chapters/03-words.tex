@@ -111,18 +111,19 @@ the chunk (\csource{find_points.c}{4666}{4677}).
 \end{definition}
 
 \begin{definition}[The pieces]\label{def:arraySize}
-  \uses{def:Params}
+  \uses{def:Params, def:chunk}
   \lean{Ratpoints.defaultArraySize, Ratpoints.maxArraySize, Ratpoints.Params.arraySize, Ratpoints.Params.arraySizeAt, Ratpoints.defaultArraySize_pos, Ratpoints.maxArraySize_pos, Ratpoints.Params.one_le_arraySizeAt}
   \leanok
   The parameters have the field $\mathrm{arraySize}$, at most how many bit arrays a piece has, with
   $0$ for the default $\mathrm{defaultArraySize} = 256$ (\csource{ratpoints.h}{354}{356}). For the
   height bound $H$ the sieve takes $\mathrm{arraySizeAt}(H)$: the field, or the default for $0$,
   capped at $2 \lceil H/64 \rceil$ (with the macro \verb|CEIL|, \csource{rp-private.h}{87}{87}) and
-  at $\mathrm{maxArraySize} = 2^{20}$ (\csource{find_points.c}{124}{124}), with no rounding to a
-  multiple of the chunk, which is one bit array in the build of the model
-  (\csource{find_points.c}{4666}{4677}). It is at least $1$ for $H \ge 1$, which the proofs read off
-  $0 < \mathrm{defaultArraySize}$ and $0 < \mathrm{maxArraySize}$, two facts about the constants
-  checked once.
+  at $\mathrm{maxArraySize} = \lfloor 2^{20}/\mathrm{chunk} \rfloor \cdot \mathrm{chunk}$, the
+  largest multiple of the chunk (Definition~\ref{def:chunk}) up to $2^{20}$
+  (\csource{find_points.c}{124}{124}), and then rounded up to a multiple of the chunk, which stays at
+  most $\mathrm{maxArraySize}$ (\csource{find_points.c}{4666}{4677}). It is at least $1$ for
+  $H \ge 1$, which the proofs read off $0 < \mathrm{defaultArraySize}$, $0 < \mathrm{maxArraySize}$
+  and $0 < \mathrm{chunk}$, three facts about the constants checked once.
 \end{definition}
 
 The parameters of the executable take the default, as the program does: \verb|sieveParams|
@@ -132,9 +133,10 @@ is a free choice of the library that changes neither the points found nor their 
 theorems quantify over it as over the other parameters, and \verb|Params.WF| does not constrain it:
 every value gives pieces of at least one bit array. The comparator challenge imports \verb|Params|,
 so its structure has this field, and stage~C2 changed neither the statements of the challenge nor
-\verb|Params.WF|. The number of registers of a chunk, \verb|RATPOINTS_CHUNK|, becomes a constant in
-stage~F4, together with the chunked first stage and the copies in the rows that it decides; for the
-model it is $1$.
+\verb|Params.WF|. The number of registers of a chunk, \verb|RATPOINTS_CHUNK|, is the constant
+$\mathrm{chunk}$ of Definition~\ref{def:chunk}, $16$ as in the default build; with it stage~F4
+brings the chunked first stage and the copies in the rows that it decides
+(Chapter~\ref{chap:rows}).
 
 \section{The rows as words}\label{sec:wordRows}
 
@@ -159,8 +161,9 @@ model it is $1$.
   pattern out by \verb|lay_out_pattern| (\csource{init.c}{259}{297}, \csource{init.c}{387}{387}),
   and for a product it lays down the rows of the factors in blocks (\csource{init.c}{415}{418},
   \csource{init.c}{430}{430}); both publish the row (\csource{init.c}{391}{393},
-  \csource{init.c}{443}{445}). The copies of the first bit arrays at the end of a row, which only
-  the chunked first stage reads, are none in the build of the model.
+  \csource{init.c}{443}{445}). The model does not make the copies of the first
+  $\mathrm{chunk} - 1$ bit arrays at the end of a row, which only the chunked first stage reads
+  (stage~F4).
 \end{definition}
 
 \begin{definition}[The rows of a modulus]\label{def:rows}
@@ -540,8 +543,9 @@ Besides the proofs:
     and the scan against the set bits of their words, the check of a numerator against the
     reference, one piece with its masks around the numerator of a point, \verb|sift| against the
     plain sieve with pieces of one, two and three bit arrays, and \verb|findPoints| against the
-    brute-force reference with pieces of one, two and three bit arrays at heights around the
-    multiples of 64 and of $\mathrm{rbaLength}$;
+    brute-force reference at heights around the multiples of 64 and of $\mathrm{rbaLength}$, with
+    pieces of one, two and three bit arrays until stage~F4 rounded the array size up to a multiple
+    of the chunk;
   \item the differential tests of Section~\ref{sec:wordsCli}: \verb|ratpoints-lean| and the C
     program agree on all 3155 comparisons of the eight default suites and on the 13 of
     \verb|test4high|;

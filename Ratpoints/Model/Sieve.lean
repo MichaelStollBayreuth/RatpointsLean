@@ -251,9 +251,9 @@ copies of the pattern, the position of each window computed, where it is stepped
 the first `p` words repeated, where all `p rbaPack` are computed; a fresh array, for the space that
 the builders take from the buffer of the tables (`ba_next`), and the row returned, where the
 builders also store it in the field `sieve` of the entry, with a release store for the threads
-(`RP_PUBLISH`), which the thunks of `Ratpoints.Sieve.SieveEntry.rows` do; the copies of the first
-bit arrays that the builders append at the end of a row, which only the chunked first stage reads,
-are none in the build of the model (`RATPOINTS_CHUNK` = 1; stage F4). -/
+(`RP_PUBLISH`), which the thunks of `Ratpoints.Sieve.SieveEntry.rows` do; no copies of the first
+`Ratpoints.chunk - 1` bit arrays, which the builders append at the end of a row and only the
+chunked first stage reads (stage F4). -/
 def SieveEntry.row (e : SieveEntry) (b : Nat) : Array UInt64 :=
   let pat := (Array.range e.p).map fun N : Nat ↦ e.admits b N
   let E := packedPattern pat e.p

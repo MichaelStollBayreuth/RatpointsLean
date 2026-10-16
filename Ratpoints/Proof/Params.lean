@@ -568,13 +568,13 @@ theorem wf_sieveParams (o : SieveOptions) : (sieveParams o).WF where
 theorem wf_defaultParams : defaultParams.WF := wf_sieveParams {}
 
 /-- The pieces of the numerators are not empty, so that the loop over the pieces of a denominator
-advances; this reads off only that `Ratpoints.defaultArraySize` and `Ratpoints.maxArraySize` are
-positive. -/
+advances; this reads off only that `Ratpoints.defaultArraySize`, `Ratpoints.maxArraySize` and the
+chunk `Ratpoints.chunk` are positive, the rounding up to a multiple of the chunk keeping the size at
+least `1`. -/
 theorem Params.one_le_arraySizeAt (P : Params) {H : ℕ} (hH : 1 ≤ H) : 1 ≤ P.arraySizeAt H := by
-  have := defaultArraySize_pos
-  have := maxArraySize_pos
-  rw [arraySizeAt]
-  split <;> lia
+  rw [arraySizeAt, Nat.mul_comm]
+  refine Nat.le_trans ?_ (Nat.le_mul_add_sub_one_div _ chunk_pos)
+  split <;> lia [defaultArraySize_pos, maxArraySize_pos]
 
 /-! ### The axioms of the certified theorem -/
 
