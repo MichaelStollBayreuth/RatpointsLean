@@ -238,6 +238,12 @@ def Factor.HasInverses : Factor → Nat → Prop
   | .power pw, P => pw.p ∣ pw.m ∧ pw.m ∣ P ∧
       ∀ x < pw.m, x % pw.p ≠ 0 → pw.inv[x]! * x % pw.m = 1
 
+theorem Factor.HasInverses.modulus_dvd {f : Factor} {P : Nat} (hf : f.HasInverses P) :
+    f.modulus ∣ P := by
+  cases f with
+  | prime t => exact hf.1
+  | power pw => exact hf.2.1
+
 /-- The row of a prime `q > 0` whose table inverts the nonzero residues is unchanged when the
 denominator and the numerator are scaled by a unit `u` modulo `q`. -/
 theorem Entry.admits_mul {t : Entry} (hq : 0 < t.p)

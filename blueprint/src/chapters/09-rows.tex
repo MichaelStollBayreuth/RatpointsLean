@@ -675,54 +675,51 @@ contract keeps its statement, the first stage of either arm giving the same word
 
 \begin{definition}[The tables of rows made with the entries]\label{def:storeTables}
   \uses{def:entryRef, def:sieves0, def:rowInit, def:SieveEntry}
-  Proposed names: \lname{Ratpoints.Sieve.primeRows}, \lname{Ratpoints.Sieve.Factor.newRows},
-  \lname{Ratpoints.Sieve.SieveEntry.addTables}. The table of rows of a prime: its row of $0$ the row
-  of $0$ of Definition~\ref{def:sieves0}, the other $p - 1$ rows absent, as \verb|examine_prime|
-  sets the array \verb|sieve| of the entry (\csource{find_points.c}{1820}{1821}); the table of rows
-  that the entry of a factor starts with, that of its prime, or for a prime power $m$ the $m$ rows
-  absent; and the store with the tables of rows of a sieve entry, each made only when its reference
-  is absent: the table of rows of the entry of each factor, and for a product the $m$ rows absent of
-  its own entry, as \verb|make_power| and \verb|make_modulus| clear the arrays \verb|sieve|
-  (\csource{find_points.c}{2427}{2427}, \csource{find_points.c}{2471}{2471}). The loop of the tables
-  (Definition~\ref{def:examinePrimes}) makes the table of rows of each examined prime that says
-  something, as \verb|examine_prime| makes its entry, and returns the store; \verb|sieving_info|
-  (Definition~\ref{def:sievingInfo}) makes each sieve entry at the position $n$, the number of the
-  entries made before it (Definition~\ref{def:makeModulus}), and right after it the tables of rows
-  of that entry, and returns the store with the entries.
+  \lean{Ratpoints.Sieve.primeRows, Ratpoints.Sieve.Factor.newRows, Ratpoints.Sieve.SieveEntry.addTables}
+  \leanok
+  The table of rows of a prime: its row of $0$ the row of $0$ of Definition~\ref{def:sieves0}, the
+  other $p - 1$ rows absent, as \verb|examine_prime| sets the array \verb|sieve| of the entry
+  (\csource{find_points.c}{1820}{1821}); the table of rows that the entry of a factor starts with,
+  that of its prime, or for a prime power $m$ the $m$ rows absent; and the store with the tables of
+  rows of a sieve entry, each made only when its reference is absent: the table of rows of the entry
+  of each factor, and for a product the $m$ rows absent of its own entry, as \verb|make_power| and
+  \verb|make_modulus| clear the arrays \verb|sieve| (\csource{find_points.c}{2427}{2427},
+  \csource{find_points.c}{2471}{2471}). The loop of the tables (Definition~\ref{def:examinePrimes})
+  makes the table of rows of each examined prime that says something, as \verb|examine_prime| makes
+  its entry, and returns the store; \verb|sieving_info| (Definition~\ref{def:sievingInfo}) makes
+  each sieve entry at the position $n$, the number of the entries made before it
+  (Definition~\ref{def:makeModulus}), and right after it the tables of rows of that entry, and
+  returns the store with the entries.
 \end{definition}
 
 \begin{lemma}[The store fits the sieve entries]\label{lem:storeTables}
   \uses{def:storeTables, lem:fetchRow, lem:sieves0, lem:sieveEntry_admits, def:makeModulus,
     def:closedRow}
-  Proposed names: \lname{Ratpoints.Sieve.RowStore.Holds}, \lname{Ratpoints.Sieve.StoreHolds},
-  \lname{Ratpoints.Sieve.SieveEntry.RefFits},
-  \lname{Ratpoints.Sieve.SieveEntry.refFits\_of\_refInit\_eq},
-  \lname{Ratpoints.Sieve.SieveEntry.RowsFit}, \lname{Ratpoints.Sieve.RowStore.PrimeZeroRows},
-  \lname{Ratpoints.Sieve.runRows}, \lname{Ratpoints.Sieve.RowStore.MadeFor},
-  \lname{Ratpoints.Sieve.RowStore.madeFor\_nil}, \lname{Ratpoints.Sieve.RowStore.MadeFor.addTables},
-  \lname{Ratpoints.Sieve.RowStore.MadeFor.storeHolds}, \lname{Ratpoints.Sieve.RowStore.Fits},
-  \lname{Ratpoints.Sieve.PrimeStore}, \lname{Ratpoints.IsModulusEntry.rowsFit\_runRows}. A store
-  \emph{holds} a function $R$ of the references and the residues when every row present at the
-  residue $r$ of the table of rows of a reference is $R$ at them; it holds $R$ for a list of sieve
-  entries when, besides, the table of rows of every prime factor of the entries has its row of $0$.
-  A store is a \emph{store of the primes} when it holds every $R$ whose rows of $0$ of the primes
-  are \verb|sieves0| and the table of rows of each prime in it has its row of $0$; the store of the
-  loop of the tables is one (Lemma~\ref{lem:examinePrimes}). A sieve entry at the position $n$
-  \emph{fits} $R$ when it has the reference and the kind of builder of its position and its factors,
-  a positive modulus, at least one factor, moduli of the factors that divide its modulus, buildable
-  factors, and $R$ at its reference and at the references of its factors the closed forms of their
-  rows. A store \emph{fits} a list of sieve entries when it holds some $R$ for them that every entry
-  fits at its position. For a run of the polynomial with the coefficients $c$ of degree $d$ and the
-  sieve entries $\mathrm{es}$, the rows of the references are: for a prime $p$ the closed forms of
-  the rows of its table \verb|examinePrime c d p| (Definition~\ref{def:examinePrime}), for a prime
-  power $p^e$ those of its tables \verb|examinePower c d p e| (Definition~\ref{def:examinePower}),
-  and for a product those of the entry at its position. The store that the loop of
-  \verb|sieving_info| makes from a store of the primes, with each entry made at its position, holds
-  the rows of the references of every run whose entries begin with the entries made, and every entry
-  that \verb|makeModulus?| makes at the position $n$ fits them.
+  \lean{Ratpoints.Sieve.RowStore.Holds, Ratpoints.Sieve.StoreHolds, Ratpoints.Sieve.SieveEntry.RefFits, Ratpoints.Sieve.SieveEntry.refFits_of_refInit_eq, Ratpoints.Sieve.SieveEntry.RowsFit, Ratpoints.Sieve.RowStore.PrimeZeroRows, Ratpoints.Sieve.RowStore.Holds.addTables, Ratpoints.Sieve.RowStore.PrimeZeroRows.addTables, Ratpoints.Sieve.runRows, Ratpoints.Sieve.SieveEntry.rowsFit_runRows, Ratpoints.Sieve.RowStore.MadeFor, Ratpoints.Sieve.RowStore.madeFor_nil, Ratpoints.Sieve.RowStore.MadeFor.addTables, Ratpoints.Sieve.RowStore.MadeFor.storeHolds, Ratpoints.Sieve.SieveEntry.RowsFit.of_eq, Ratpoints.Sieve.RowStore.Fits, Ratpoints.Sieve.RowStore.Fits.take, Ratpoints.Sieve.RowStore.Fits.map_dinv, Ratpoints.Sieve.PrimeStore, Ratpoints.IsModulusEntry.rowsFit_runRows}
+  \leanok
+  A store \emph{holds} a function $R$ of the references and the residues when every row present at
+  the residue $r$ of the table of rows of a reference is $R$ at them; it holds $R$ for a list of
+  sieve entries when, besides, the table of rows of every prime factor of the entries has its row of
+  $0$. A store is a \emph{store of the primes} when it holds every $R$ whose rows of $0$ of the
+  primes are \verb|sieves0| and the table of rows of each prime in it has its row of $0$; the store
+  of the loop of the tables is one (Lemma~\ref{lem:examinePrimes}). A sieve entry at the position
+  $n$ \emph{fits} $R$ when it has the reference and the kind of builder of its position and its
+  factors, a positive modulus, at least one factor, moduli of the factors that divide its modulus,
+  buildable factors, and $R$ at its reference and at the references of its factors the closed forms
+  of their rows. A store \emph{fits} a list of sieve entries when it holds some $R$ for them that
+  every entry fits at its position. For a run of the polynomial with the coefficients $c$ of degree
+  $d$ and the sieve entries $\mathrm{es}$, the rows of the references are: for a prime $p$ the
+  closed forms of the rows of its table \verb|examinePrime c d p|
+  (Definition~\ref{def:examinePrime}), for a prime power $p^e$ those of its tables
+  \verb|examinePower c d p e| (Definition~\ref{def:examinePower}), and for a product those of the
+  entry at its position. The store that the loop of \verb|sieving_info| makes from a store of the
+  primes, with each entry made at its position, holds the rows of the references of every run whose
+  entries begin with the entries made, and every entry that \verb|makeModulus?| makes at the
+  position $n$ fits them.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   The coherence of the shared tables of rows is in $R$, a function of the reference: two factors
   with one reference have the same table of the prime or tables of the prime power, both
   \verb|examinePrime c d p| or both \verb|examinePower c d p e|, which the contract of the sieve

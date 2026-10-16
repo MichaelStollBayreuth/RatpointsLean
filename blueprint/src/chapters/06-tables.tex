@@ -169,7 +169,7 @@ that a point makes some entry of the reference true.
 \section{The loop of the tables}\label{sec:examinePrimes}
 
 \begin{definition}[The loop of the tables]\label{def:examinePrimes}
-  \uses{def:examinePrimeExit, def:forbidden}
+  \uses{def:examinePrimeExit, def:forbidden, def:storeTables}
   \lean{Ratpoints.Sieve.examinePrimes}
   \leanok
   For the first $n$ primes of the table in turn: the table of the prime with the exit, and none when
@@ -179,7 +179,9 @@ that a point makes some entry of the reference true.
   (\csource{find_points.c}{2537}{2537}, \csource{find_points.c}{2545}{2545},
   \csource{find_points.c}{2601}{2602}, \csource{find_points.c}{2616}{2616},
   \csource{find_points.c}{2619}{2619}, \csource{find_points.c}{2622}{2622},
-  \csource{find_points.c}{2707}{2707}); and, while the checked loop is on and fewer than
+  \csource{find_points.c}{2707}{2707}); the table of rows of each examined prime that says
+  something, in the store that it returns, as \verb|examine_prime| makes the entry of the prime
+  (Definition~\ref{def:storeTables}); and, while the checked loop is on and fewer than
   $\mathrm{maxForbidden}$ forbidden divisors have been found, the forbidden divisor of the prime
   from the coefficients modulo $p$ and the entry at infinity that its table hands back
   (\csource{find_points.c}{2624}{2626}, \csource{find_points.c}{2677}{2677}). The unit parts, the
@@ -191,14 +193,16 @@ that a point makes some entry of the reference true.
 \end{definition}
 
 \begin{lemma}[The loop of the tables]\label{lem:examinePrimes}
-  \uses{def:examinePrimes, lem:examinePrime_eq, lem:examinePrime_none, def:forbidden, def:barrett}
-  \lean{Ratpoints.Sieve.ExaminePrimesInvariant, Ratpoints.Sieve.ExaminePrimesLoopInvariant, Ratpoints.Sieve.examinePrimes_spec, Ratpoints.Sieve.size_eq_of_run_examinePrimes_eq_some, Ratpoints.Sieve.getElem_eq_examinePrime_of_run_examinePrimes_eq_some, Ratpoints.Sieve.isForbiddenEntry_of_run_examinePrimes_eq_some, Ratpoints.Sieve.isForbiddenVal_of_run_examinePrimes_eq_some, Ratpoints.Sieve.not_isPoint_of_run_examinePrimes_eq_none}
+  \uses{def:examinePrimes, lem:examinePrime_eq, lem:examinePrime_none, def:forbidden, def:barrett,
+    lem:storeTables}
+  \lean{Ratpoints.Sieve.ExaminePrimesInvariant, Ratpoints.Sieve.ExaminePrimesLoopInvariant, Ratpoints.Sieve.examinePrimes_spec, Ratpoints.Sieve.size_eq_of_run_examinePrimes_eq_some, Ratpoints.Sieve.getElem_eq_examinePrime_of_run_examinePrimes_eq_some, Ratpoints.Sieve.isForbiddenEntry_of_run_examinePrimes_eq_some, Ratpoints.Sieve.isForbiddenVal_of_run_examinePrimes_eq_some, Ratpoints.Sieve.primeStore_of_run_examinePrimes_eq_some, Ratpoints.Sieve.not_isPoint_of_run_examinePrimes_eq_none}
   \leanok
   For $n \le \mathrm{numPrimes}$: if the loop gives tables, there are $n$ of them, the table at the
   position $i$ is the reference table of the $i$-th prime of the table, and the forbidden divisors
-  found are among those that the loop may record (the predicates of
-  Definition~\ref{def:forbidden}), at most $\mathrm{maxForbidden}$ of them; if it gives none, some
-  prime among the first $n$ has no table with the exit, and the curve has no points.
+  found are among those that the loop may record (the predicates of Definition~\ref{def:forbidden}),
+  at most $\mathrm{maxForbidden}$ of them, and the store is a store of the primes
+  (Lemma~\ref{lem:storeTables}): it holds the rows of $0$ of the primes and no others; if it gives
+  none, some prime among the first $n$ has no table with the exit, and the curve has no points.
 \end{lemma}
 
 \begin{proof}
@@ -375,10 +379,12 @@ which $\mathrm{maxPrimeEven} \le 2^{32}$ gives.
   it by Definition~\ref{def:modinv}, and leaves the inverses $\mathrm{dinv}$ empty for the rows of
   offsets (Definition~\ref{def:classOffsets}) to fill, and it holds the reference and the kind of
   builder of the position $n$ of $m$ among the moduli with its factors, as
-  Definition~\ref{def:SieveEntry} gives them (\csource{find_points.c}{2414}{2429},
-  \csource{find_points.c}{2434}{2475}, \csource{find_points.c}{2546}{2546}; the tables of a prime
-  power that \verb|add_moduli| examines when a candidate first needs it and keeps by its index,
-  \csource{find_points.c}{2350}{2354}, \csource{find_points.c}{2358}{2359},
+  Definition~\ref{def:SieveEntry} gives them (\csource{find_points.c}{2414}{2426},
+  \csource{find_points.c}{2428}{2429}, \csource{find_points.c}{2434}{2470},
+  \csource{find_points.c}{2472}{2475}, \csource{find_points.c}{2546}{2546}; its tables of rows,
+  which lines 2427 and 2471 clear, are made by Definition~\ref{def:storeTables}; the tables of a
+  prime power that \verb|add_moduli| examines when a candidate first needs it and keeps by its
+  index, \csource{find_points.c}{2350}{2354}, \csource{find_points.c}{2358}{2359},
   \csource{find_points.c}{2387}{2395}, with their count, \csource{find_points.c}{2548}{2548}; the
   primes examined for the third stage, \csource{find_points.c}{2976}{2978},
   \csource{find_points.c}{2994}{2998}).
@@ -387,15 +393,18 @@ which $\mathrm{maxPrimeEven} \le 2^{32}$ gives.
 \begin{lemma}[The rows of a modulus let every point through]\label{lem:sieveEntry_admits}
   \uses{def:makeModulus, lem:modulusFactors, lem:admits_examinePrime, lem:power_admits,
     lem:examinePrime_eq, lem:examinePrime_none, def:mulMod, lem:admits_mul, lem:modinv, lem:mulMod,
-    def:packingConstants}
-  \lean{Ratpoints.Sieve.Factor.IsSound, Ratpoints.MakeModulusInvariant, Ratpoints.IsModulusEntry, Ratpoints.mod_two_eq_one_of_forall_dvd, Ratpoints.coprime_rbaLength_of_mod_two_eq_one, Ratpoints.factors_eq_of_run_makeModulus?_eq_some, Ratpoints.makeModulus?_spec}
+    def:packingConstants, lem:fetchRow}
+  \lean{Ratpoints.Sieve.Factor.IsSound, Ratpoints.Sieve.Factor.IsSound.inverses_eq, Ratpoints.Sieve.mod_sixty_four_ne_zero_of_prime, Ratpoints.MakeModulusInvariant, Ratpoints.IsModulusEntry, Ratpoints.IsModulusEntry.factors_ne_nil, Ratpoints.IsModulusEntry.p_eq_modulus, Ratpoints.mod_two_eq_one_of_forall_dvd, Ratpoints.coprime_rbaLength_of_mod_two_eq_one, Ratpoints.factors_eq_of_run_makeModulus?_eq_some, Ratpoints.makeModulus?_spec}
   \leanok
   For tables of the loop that are those of the reference and a modulus
   $1 < m < \mathrm{maxPrimeEven}$ each of whose divisors $q > 1$ is divisible by one of the first
   $\mathrm{numPrimes}$ primes of the table, as the well-formedness of the parameters asks of their
   moduli: if the entry of $m$ is made, it is an entry of $m$ whose row of $b$ admits $a$ for every
-  $\gcd(a, b) = 1$ with $y^2 = F(a, b)$, whose factors have moduli that divide $m$ and tables of
-  inverses that invert their units (Lemma~\ref{lem:admits_mul}), and which is \emph{packable}
+  $\gcd(a, b) = 1$ with $y^2 = F(a, b)$, whose factors have moduli that divide $m$, multiply to $m$
+  and have tables of inverses that invert their units (Lemma~\ref{lem:admits_mul}), whose factors
+  are buildable (Lemma~\ref{lem:fetchRow}) and have the tables of the reference, those of
+  \verb|examinePrime| and of \verb|examinePower| on the path of GMP integers, so that it has a
+  factor and a single factor has the modulus $m$, and which is \emph{packable}
   (Lemma~\ref{lem:classOffsets}): $m$ is odd, the entry holds the reciprocal of $m$,
   $\mathrm{rbainv} < m$ with $\mathrm{rbainv} \cdot \mathrm{rbaLength} \equiv 1 \pmod m$, and the
   bias is a multiple of $m$ in $[\mathrm{rowBias}, \mathrm{rowBias} + m)$; and for one of the first
@@ -412,21 +421,25 @@ which $\mathrm{maxPrimeEven} \le 2^{32}$ gives.
   Lemma~\ref{lem:admits_examinePrime} or Lemma~\ref{lem:power_admits}, a prime power dividing
   $m < \mathrm{maxPrimeEven} \le 64\,\mathrm{modWords}$ (Lemma~\ref{lem:powerWords}), and its table
   of inverses inverts its units, by the inverses modulo a prime and by Lemma~\ref{lem:power_admits}
-  for a prime power. A prime factor beyond the loop has its position below $\mathrm{numPrimes}$
-  (Lemma~\ref{lem:modulusFactors}), so it is below $\mathrm{maxPrimeEven}$ and the table that its
-  examination gives is the reference (Lemma~\ref{lem:examinePrime_eq}). No sieve entry is made only
-  when a prime examined for it has no table with the exit, and then the curve has no points
-  (Lemma~\ref{lem:examinePrime_none}). No Chinese remainder theorem is needed: the entry only
-  intersects the conditions of its factors. A prime among the first $\mathrm{numPrimes}$ of the
-  table is its own only factor (Lemma~\ref{lem:modulusFactors}), whose table the loop has kept or
-  the examination gives as the reference (Lemma~\ref{lem:examinePrime_eq}). The table holds no $2$,
-  so $m$ is odd and prime to $\mathrm{rbaLength} = 2^{\mathrm{rbaShift}}$; the factorization of $m$
-  is complete, so the moduli of its factors multiply to $m$ (Lemma~\ref{lem:modulusFactors}): the
-  single factor of a prime is the table of $m$, whose inverse at $\mathrm{rbaLength} \bmod m$, which
-  the reduction with the reciprocal computes since $\mathrm{rbaLength}\, m < 2^{64}$
-  (Lemma~\ref{lem:mulMod}), is the inverse of $\mathrm{rbaLength}$, below $m$ as every inverse of
-  the table (Lemma~\ref{lem:stage3}), and for a prime power or a product Definition~\ref{def:modinv}
-  computes it (Lemma~\ref{lem:modinv}). The bias $m \lceil \mathrm{rowBias} / m \rceil$ lies in
+  for a prime power. A prime factor is buildable since its inverses are below it and an odd prime is
+  no multiple of $64$; a prime-power factor since it divides $m$, so that it is at most
+  $64\,\mathrm{modWords}$, and its inverses are below it (Lemma~\ref{lem:power_admits}); the tables
+  of a prime power do not depend on the path of the coefficients. A prime factor beyond the loop has
+  its position below $\mathrm{numPrimes}$ (Lemma~\ref{lem:modulusFactors}), so it is below
+  $\mathrm{maxPrimeEven}$ and the table that its examination gives is the reference
+  (Lemma~\ref{lem:examinePrime_eq}). No sieve entry is made only when a prime examined for it has no
+  table with the exit, and then the curve has no points (Lemma~\ref{lem:examinePrime_none}). No
+  Chinese remainder theorem is needed: the entry only intersects the conditions of its factors. A
+  prime among the first $\mathrm{numPrimes}$ of the table is its own only factor
+  (Lemma~\ref{lem:modulusFactors}), whose table the loop has kept or the examination gives as the
+  reference (Lemma~\ref{lem:examinePrime_eq}). The table holds no $2$, so $m$ is odd and prime to
+  $\mathrm{rbaLength} = 2^{\mathrm{rbaShift}}$; the factorization of $m$ is complete, so the moduli
+  of its factors multiply to $m$ (Lemma~\ref{lem:modulusFactors}): the single factor of a prime is
+  the table of $m$, whose inverse at $\mathrm{rbaLength} \bmod m$, which the reduction with the
+  reciprocal computes since $\mathrm{rbaLength}\, m < 2^{64}$ (Lemma~\ref{lem:mulMod}), is the
+  inverse of $\mathrm{rbaLength}$, below $m$ as every inverse of the table (Lemma~\ref{lem:stage3}),
+  and for a prime power or a product Definition~\ref{def:modinv} computes it
+  (Lemma~\ref{lem:modinv}). The bias $m \lceil \mathrm{rowBias} / m \rceil$ lies in
   $[\mathrm{rowBias}, \mathrm{rowBias} + m)$ by the division with remainder.
 \end{proof}
 
@@ -459,29 +472,32 @@ parameters of the command line examine the first $q$ primes and take primes as m
 (Definition~\ref{def:sieveParams}).
 
 \begin{definition}[What \texttt{sieving\_info} computes]\label{def:sievingInfo}
-  \uses{def:examinePrimes, def:forbidden, def:makeModulus, def:Params}
+  \uses{def:examinePrimes, def:forbidden, def:makeModulus, def:Params, def:storeTables}
   \lean{Ratpoints.sievingInfo}
   \leanok
   The loop of the tables over the examined primes (Definition~\ref{def:examinePrimes}); for the
-  checked loop on, the forbidden divisors of the further primes; the sieve entries of the moduli,
-  in a loop over them in their order (Definition~\ref{def:makeModulus}); and the array of the
-  reciprocals of the entries, in their order (\csource{find_points.c}{3064}{3070}); none when the
-  curve has no points modulo a prime examined on the way (\csource{find_points.c}{2522}{2532},
+  checked loop on, the forbidden divisors of the further primes; the sieve entries of the moduli, in
+  a loop over them in their order (Definition~\ref{def:makeModulus}), each with its tables of rows
+  and those of its factors made in the store of the loop of the tables right after it
+  (Definition~\ref{def:storeTables}); the array of the reciprocals of the entries, in their order
+  (\csource{find_points.c}{3064}{3070}); and the store; none when the curve has no points modulo a
+  prime examined on the way (\csource{find_points.c}{2522}{2532},
   \csource{find_points.c}{2892}{2900}, \csource{find_points.c}{3102}{3103}).
 \end{definition}
 
 \begin{lemma}[What \texttt{sieving\_info} computes is sound]\label{lem:sievingInfo}
   \uses{def:sievingInfo, lem:examinePrimes, lem:sieveEntry_admits, def:forbidden, def:mulMod,
-    def:Params, def:stage3, lem:stage3, lem:classOffsets}
-  \lean{Ratpoints.SievingInfoInvariant, Ratpoints.sievingInfo_spec}
+    def:Params, def:stage3, lem:stage3, lem:classOffsets, lem:storeTables}
+  \lean{Ratpoints.SievingInfoEntries, Ratpoints.SievingInfoInvariant, Ratpoints.refInit_push, Ratpoints.IsModulusEntry.isSound, Ratpoints.SievingInfoEntries.fits, Ratpoints.IsSievingInfo, Ratpoints.sievingInfo_spec}
   \leanok
   For well-formed parameters and either value of the switch of the checked loop: if
   \verb|sieving_info| gives a result, the sieve entries are those of the moduli, in their order,
   every sieve entry is sound, packable, so that it holds the reciprocal of its modulus, and has
   factors whose tables of inverses invert their units (Lemma~\ref{lem:sieveEntry_admits}), those of
   the third stage, from the position $s_2$ on, are prime entries (Definition~\ref{def:stage3}), the
-  reciprocals returned are those of the entries in their order, and the forbidden divisors are among
-  those that the two loops may record; if it gives none, the curve has no points.
+  reciprocals returned are those of the entries in their order, the forbidden divisors are among
+  those that the two loops may record, and the store of the tables of rows fits the entries
+  (Lemma~\ref{lem:storeTables}); if it gives none, the curve has no points.
 \end{lemma}
 
 \begin{proof}
@@ -494,7 +510,11 @@ parameters of the command line examine the first $q$ primes and take primes as m
   Lemma~\ref{lem:sieveEntry_admits}. A modulus of the third stage is one of the first
   $\mathrm{numPrimes}$ primes of the table (Definition~\ref{def:Params}), whose entry has that prime
   with the table of the reference as its only factor (Lemma~\ref{lem:sieveEntry_admits}) and its
-  reciprocal, a prime entry since the prime is below $2^{32}$ (Lemma~\ref{lem:stage3}).
+  reciprocal, a prime entry since the prime is below $2^{32}$ (Lemma~\ref{lem:stage3}). The
+  invariant also holds that each entry has the reference and the kind of builder of its position and
+  that the store is made for the entries so far, starting from the store of the primes of the loop
+  of the tables (Lemma~\ref{lem:examinePrimes}); so the store holds the rows of the references of
+  the run, which every entry fits (Lemma~\ref{lem:storeTables}).
 \end{proof}
 
 The search (Definition~\ref{def:searchPoints}) takes its sieve entries and its forbidden divisors
@@ -538,7 +558,8 @@ Each component of this chapter differs from the C code in a stated way, recorded
   \item the coefficients and the tables are fresh arrays, where the C code fills arrays of its
     caller and buffers; the tables of a prime power are computed for each modulus that needs them,
     where \verb|add_moduli| examines each prime power once and keeps it, and \verb|make_modulus|
-    keeps the sieve entry of each prime power;
+    keeps the sieve entry of each prime power, whose table of rows the model makes once too, by its
+    prime and its exponent (Definition~\ref{def:storeTables});
   \item the factors of a modulus are a list, for the codes of the factors and their number, without
     the bound of three factors or of the position $64$, which serve the choice of the moduli, and
     over the first $\mathrm{numPrimes}$ primes, where \verb|add_moduli| factors over the examined

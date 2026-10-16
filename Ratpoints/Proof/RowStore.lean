@@ -28,8 +28,24 @@ tables of rows of their entries or built into them (`Ratpoints.Sieve.factorRows_
 a product (`Ratpoints.Sieve.sieveInitProduct_spec`), the row of a sieve entry built by its builder
 (`Ratpoints.Sieve.SieveEntry.initRow_spec`) and read from its table of rows or built into it
 (`Ratpoints.Sieve.SieveEntry.fetchRow_spec`). Every row that they return or store is a closed form
-(`Ratpoints.Sieve.closedRow`), and no row is replaced. The invariant of the store of a run comes
-with stage F4.
+(`Ratpoints.Sieve.closedRow`), and no row is replaced.
+
+The invariant of the store of a run: its rows are those of a function `R` of the reference and the
+residue (`Ratpoints.Sieve.RowStore.Holds`), and the table of rows of every prime factor of the sieve
+entries has its row of `0` (`Ratpoints.Sieve.StoreHolds`), at which the builders of a prime are
+wrong; the entries fit `R` at their positions when their references and the kinds of their builders
+are those that `Ratpoints.makeModulus?` sets and the closed forms of the rows of the entries and
+their factors are the rows of their references (`Ratpoints.Sieve.SieveEntry.RowsFit`), and the
+store fits the entries when it holds rows that they fit (`Ratpoints.Sieve.RowStore.Fits`). The
+tables of rows made by the loop of the tables and with the sieve entries
+(`Ratpoints.Sieve.primeRows`, `Ratpoints.Sieve.SieveEntry.addTables`) keep the invariant
+(`Ratpoints.Sieve.RowStore.Holds.addTables`) and the rows of `0` of the primes
+(`Ratpoints.Sieve.RowStore.PrimeZeroRows.row?_addTables_ne_none`). For a run, `R` is the function
+of the closed forms of the rows of the tables of the reference of the primes and the prime powers
+and of the entries of the products at their positions (`Ratpoints.Sieve.runRows`), which every
+sieve entry made by `Ratpoints.makeModulus?` fits (`Ratpoints.Sieve.SieveEntry.rowsFit_runRows`),
+and which the store that the loop over the moduli of `Ratpoints.sievingInfo` makes holds
+(`Ratpoints.Sieve.RowStore.MadeFor`).
 
 ## Main definitions
 
@@ -39,6 +55,17 @@ with stage F4.
 * `Ratpoints.Sieve.FactorRow`, `Ratpoints.Sieve.FactorRowsPre`, `Ratpoints.Sieve.ProductRowsPre`,
   `Ratpoints.Sieve.InitRowPre`: the rows that building the rows of the factors of a product adds,
   and what building the rows of the factors, of a product and of an entry needs.
+* `Ratpoints.Sieve.RowStore.Holds`, `Ratpoints.Sieve.StoreHolds`,
+  `Ratpoints.Sieve.RowStore.PrimeZeroRows`: the rows of a store are those of a function of the
+  reference and the residue, the invariant of the store of a run, and the rows of `0` of the tables
+  of rows of the primes.
+* `Ratpoints.Sieve.SieveEntry.RefFits`, `Ratpoints.Sieve.SieveEntry.RowsFit`: the reference and the
+  kind of the builder of a sieve entry at its position, and what building its rows needs of it.
+* `Ratpoints.Sieve.runRows`, `Ratpoints.Sieve.RowStore.MadeFor`: the rows of the references of a
+  run, and the store as the loop of the tables and the tables of rows of the first entries of a run
+  make it.
+* `Ratpoints.Sieve.RowStore.Fits`: the store fits the sieve entries, holding rows that they fit at
+  their positions.
 
 ## Main statements
 
@@ -49,6 +76,17 @@ with stage F4.
   `Ratpoints.Sieve.sieveInitProduct_spec`, `Ratpoints.Sieve.SieveEntry.initRow_spec`,
   `Ratpoints.Sieve.SieveEntry.fetchRow_spec`: the rows built through the tables of rows are closed
   forms.
+* `Ratpoints.Sieve.RowStore.Holds.addTables`, `Ratpoints.Sieve.RowStore.PrimeZeroRows.addTables`:
+  the tables of rows of a sieve entry keep the invariant of the store.
+* `Ratpoints.Sieve.SieveEntry.rowsFit_runRows`: a sieve entry as `Ratpoints.makeModulus?` makes it
+  fits the rows of the references of the run.
+* `Ratpoints.Sieve.RowStore.madeFor_nil`, `Ratpoints.Sieve.RowStore.MadeFor.addTables`,
+  `Ratpoints.Sieve.RowStore.MadeFor.storeHolds`: the store of the loop over the moduli of
+  `Ratpoints.sievingInfo` holds the rows of the references of the run.
+* `Ratpoints.Sieve.StoreHolds.of_factors`, `Ratpoints.Sieve.SieveEntry.RowsFit.of_eq`,
+  `Ratpoints.Sieve.RowStore.Fits.take`, `Ratpoints.Sieve.RowStore.Fits.map_dinv`: the invariant and
+  the fit carry over to the first entries, those of the first two stages, and to the entries with
+  the inverses of the strides.
 
 ## Implementation notes
 
@@ -509,6 +547,440 @@ theorem SieveEntry.fetchRow_spec (e : SieveEntry) (b : Nat) (store : RowStore) :
   | none =>
     have h := Std.WP.Id.of_run_eq_wp rfl _ ((e.initRow_spec b store).le_wp (pre.2 hr))
     exact ⟨h.1, .inr h.2⟩⟩
+
+/-! ### The tables of rows of a run -/
+
+/-- The rows of the store `s` are those of `R`, a row for each reference and residue: every row
+present at the residue `r` of the table of rows of `ref` is `R ref r`. -/
+def RowStore.Holds (R : EntryRef → Nat → Array UInt64) (s : RowStore) : Prop :=
+  ∀ ref r row, s.row? ref r = some row → row = R ref r
+
+/-- The store `s` of a run holds the rows `R` of the references (`Ratpoints.Sieve.RowStore.Holds`),
+and the table of rows of every prime factor of the sieve entries `es` has its row of `0`
+(`Ratpoints.Sieve.primeRows`), at which the builders of a prime are wrong: what building the rows
+of the entries needs of the store, beside what it needs of each entry
+(`Ratpoints.Sieve.SieveEntry.RowsFit`). -/
+structure StoreHolds (R : EntryRef → Nat → Array UInt64) (es : List SieveEntry) (s : RowStore) :
+    Prop where
+  /-- The rows of the store are those of `R`. -/
+  holds : s.Holds R
+  /-- The table of rows of every prime factor has its row of `0`. -/
+  zero : ∀ e ∈ es, ∀ t : Entry, .prime t ∈ e.factors → s.row? (.prime t.p) 0 ≠ none
+
+/-- The sieve entry `e` at the position `n` of the moduli holds the reference to its table of rows
+and the kind of its builder as `Ratpoints.makeModulus?` sets them
+(`Ratpoints.Sieve.SieveEntry.refInit`): for one factor, the modulus, the reference and the kind of
+the factor; otherwise the product's own table of rows, by its position, and the builder of the rows
+of a product. -/
+def SieveEntry.RefFits (e : SieveEntry) (n : Nat) : Prop :=
+  match e.factors with
+  | [f] => e.p = f.modulus ∧ e.ref = f.ref ∧ e.init = f.init
+  | _ => e.ref = .product n ∧ e.init = .product
+
+/-- A sieve entry whose reference and kind of builder are those that
+`Ratpoints.Sieve.SieveEntry.refInit` gives at the position `n`, as `Ratpoints.makeModulus?` sets
+them, and whose modulus is that of its factor when it has one, fits them. -/
+theorem SieveEntry.refFits_of_refInit_eq {e : SieveEntry} {n : Nat}
+    (h : (e.ref, e.init) = SieveEntry.refInit n e.factors)
+    (hp : ∀ f, e.factors = [f] → e.p = f.modulus) : e.RefFits n := by
+  rw [SieveEntry.RefFits]
+  split
+  · rename_i f hf
+    rw [hf, SieveEntry.refInit, Prod.mk.injEq] at h
+    exact ⟨hp f hf, h⟩
+  · rename_i hf
+    rw [SieveEntry.refInit] at h
+    · exact Prod.mk.inj h
+    · exact hf
+
+/-- What building the rows of the sieve entry `e` at the position `n` of the moduli needs of it, for
+the rows `R` of the references (`Ratpoints.Sieve.RowStore.Holds`): its reference and kind
+(`Ratpoints.Sieve.SieveEntry.RefFits`), a positive modulus, at least one factor, the moduli of the
+factors dividing the modulus, builders of the factors that have what they need
+(`Ratpoints.Sieve.Factor.Buildable`), and the rows of its reference and of the references of its
+factors the closed forms of their rows (`Ratpoints.Sieve.closedRow`). -/
+structure SieveEntry.RowsFit (e : SieveEntry) (R : EntryRef → Nat → Array UInt64) (n : Nat) :
+    Prop where
+  /-- The reference and the kind of the builder are those that `Ratpoints.makeModulus?` sets. -/
+  refFits : e.RefFits n
+  /-- The modulus is positive. -/
+  pos : 0 < e.p
+  /-- The entry has a factor. -/
+  factors_ne_nil : e.factors ≠ []
+  /-- The moduli of the factors divide the modulus. -/
+  dvd : ∀ f ∈ e.factors, f.modulus ∣ e.p
+  /-- The builders of the factors have what they need. -/
+  buildable : ∀ f ∈ e.factors, f.Buildable
+  /-- The rows of the reference are the closed forms of the rows of the entry. -/
+  ref_rows : R e.ref = closedRow e.admits e.p
+  /-- The rows of the reference of each factor are the closed forms of the rows of the factor. -/
+  factor_rows : ∀ f ∈ e.factors, R f.ref = closedRow f.admits f.modulus
+
+/-! ### The making of the tables of rows -/
+
+theorem RowStore.row?_insertIfNew (s : RowStore) (k ref : EntryRef)
+    (v : Array (Option (Array UInt64))) (r : Nat) :
+    RowStore.row? (s.insertIfNew k v) ref r =
+      if k = ref ∧ k ∉ s then v.getD r none else s.row? ref r := by
+  simp only [RowStore.row?, Std.HashMap.getD_insertIfNew, beq_iff_eq]
+  split <;> rfl
+
+theorem RowStore.row?_eq_none_of_not_mem {s : RowStore} {ref : EntryRef} (h : ref ∉ s) (r : Nat) :
+    s.row? ref r = none := by
+  simp [RowStore.row?, Std.HashMap.getD_eq_fallback h]
+
+/-- A table of rows made where none was keeps the rows of the store. -/
+theorem RowStore.row?_insertIfNew_of_ne_none {s : RowStore} {ref : EntryRef} {r : Nat}
+    (h : s.row? ref r ≠ none) (k : EntryRef) (v : Array (Option (Array UInt64))) :
+    RowStore.row? (s.insertIfNew k v) ref r = s.row? ref r := by
+  rw [RowStore.row?_insertIfNew]
+  split
+  · rename_i hk
+    obtain ⟨rfl, hk⟩ := hk
+    exact absurd (RowStore.row?_eq_none_of_not_mem hk r) h
+  · rfl
+
+theorem RowStore.Holds.insertIfNew {R : EntryRef → Nat → Array UInt64} {s : RowStore}
+    (h : s.Holds R) {k : EntryRef} {v : Array (Option (Array UInt64))}
+    (hv : ∀ r row, v.getD r none = some row → row = R k r) :
+    RowStore.Holds R (s.insertIfNew k v) := by
+  intro ref r row h'
+  rw [RowStore.row?_insertIfNew] at h'
+  split at h'
+  · rename_i hk
+    obtain ⟨rfl, -⟩ := hk
+    exact hv r row h'
+  · exact h _ _ _ h'
+
+/-- Every table of rows of a prime in the store has its row of `0`, as the loop of the tables and
+the sieve entries make the tables of rows of the primes (`Ratpoints.Sieve.primeRows`). -/
+def RowStore.PrimeZeroRows (s : RowStore) : Prop :=
+  ∀ p, EntryRef.prime p ∈ s → s.row? (.prime p) 0 ≠ none
+
+theorem RowStore.PrimeZeroRows.insertIfNew {s : RowStore} (h : s.PrimeZeroRows) {k : EntryRef}
+    {v : Array (Option (Array UInt64))} (hv : ∀ p, k = .prime p → v.getD 0 none ≠ none) :
+    RowStore.PrimeZeroRows (s.insertIfNew k v) := by
+  intro p hp
+  rw [RowStore.row?_insertIfNew]
+  split
+  · rename_i hk
+    exact hv p hk.1
+  · rename_i hk
+    rw [Std.HashMap.mem_insertIfNew] at hp
+    rcases hp with hp | hp
+    · obtain rfl := beq_iff_eq.mp hp
+      exact h p (Classical.byContradiction fun hm ↦ hk ⟨rfl, hm⟩)
+    · exact h p hp
+
+theorem getD_primeRows (p r : Nat) :
+    (primeRows p).getD r none = if r = 0 then some (sieves0 p) else none := by
+  cases r with
+  | zero => simp [primeRows, Array.getD_eq_getD_getElem?, Array.getElem?_append_left]
+  | succ r =>
+    simp only [primeRows, Array.getD_eq_getD_getElem?, Nat.add_one_ne_zero, ↓reduceIte]
+    rw [Array.getElem?_append_right (by simp), Array.getElem?_replicate]
+    split <;> rfl
+
+theorem RowStore.holds_empty (R : EntryRef → Nat → Array UInt64) : RowStore.Holds R {} :=
+  fun _ _ _ h ↦ by simp [RowStore.row?] at h
+
+theorem RowStore.primeZeroRows_empty : RowStore.PrimeZeroRows {} :=
+  fun _ h ↦ absurd h (Std.HashMap.not_mem_empty)
+
+/-- The table of rows of the prime `p` with its row of `0` (`Ratpoints.Sieve.primeRows`) keeps the
+rows of the store those of `R` when the row of `0` of `p` is that of `R`. -/
+theorem RowStore.Holds.insertIfNew_primeRows {R : EntryRef → Nat → Array UInt64} {s : RowStore}
+    (h : s.Holds R) {p : Nat} (hR : R (.prime p) 0 = sieves0 p) :
+    RowStore.Holds R (s.insertIfNew (.prime p) (primeRows p)) :=
+  h.insertIfNew fun r row hr ↦ by
+    rw [getD_primeRows] at hr
+    split at hr
+    · rename_i hr0
+      subst hr0
+      rw [← Option.some.inj hr, hR]
+    · cases hr
+
+theorem RowStore.PrimeZeroRows.insertIfNew_primeRows {s : RowStore} (h : s.PrimeZeroRows)
+    (p : Nat) : RowStore.PrimeZeroRows (s.insertIfNew (.prime p) (primeRows p)) :=
+  h.insertIfNew fun _ _ ↦ by
+    rw [getD_primeRows]
+    exact Option.some_ne_none _
+
+theorem RowStore.PrimeZeroRows.insertIfNew_newRows {s : RowStore} (h : s.PrimeZeroRows)
+    (f : Factor) :
+    RowStore.PrimeZeroRows (s.insertIfNew f.ref f.newRows) :=
+  h.insertIfNew fun p hp ↦ by
+    cases f with
+    | prime t =>
+      rw [Factor.newRows, getD_primeRows]
+      exact Option.some_ne_none _
+    | power pw => cases hp
+
+theorem RowStore.Holds.insertIfNew_newRows {R : EntryRef → Nat → Array UInt64} {s : RowStore}
+    (h : s.Holds R) {f : Factor} (hR : ∀ t : Entry, f = .prime t → R (.prime t.p) 0 = sieves0 t.p) :
+    RowStore.Holds R (s.insertIfNew f.ref f.newRows) :=
+  h.insertIfNew fun r row hr ↦ by
+    cases f with
+    | prime t =>
+      rw [Factor.newRows, getD_primeRows] at hr
+      split at hr
+      · rename_i hr0
+        subst hr0
+        rw [← Option.some.inj hr]
+        exact (hR t rfl).symm
+      · cases hr
+    | power pw =>
+      simp only [Factor.newRows, Array.getD_eq_getD_getElem?, Array.getElem?_replicate] at hr
+      split at hr <;> cases hr
+
+private theorem mem_foldl_insertIfNew_of_mem (fs : List Factor) {s : RowStore} {ref : EntryRef}
+    (h : ref ∈ s) : ref ∈ fs.foldl (fun s f ↦ s.insertIfNew f.ref f.newRows) s := by
+  induction fs generalizing s with
+  | nil => exact h
+  | cons f fs ih => exact ih (Std.HashMap.mem_insertIfNew.mpr (.inr h))
+
+private theorem mem_foldl_insertIfNew (fs : List Factor) (s : RowStore) {f : Factor} (hf : f ∈ fs) :
+    f.ref ∈ fs.foldl (fun s f ↦ s.insertIfNew f.ref f.newRows) s := by
+  induction fs generalizing s with
+  | nil => cases hf
+  | cons g fs ih =>
+    rcases List.mem_cons.mp hf with rfl | hf
+    · exact mem_foldl_insertIfNew_of_mem fs Std.HashMap.mem_insertIfNew_self
+    · exact ih _ hf
+
+/-- A sieve entry whose builder is that of a product has the product's own table of rows. -/
+theorem SieveEntry.RefFits.ref_eq_of_init_eq {e : SieveEntry} {n : Nat} (h : e.RefFits n)
+    (hinit : e.init = .product) : e.ref = .product n := by
+  rw [SieveEntry.RefFits] at h
+  split at h
+  · exact absurd (h.2.2 ▸ hinit) (Factor.init_ne_product _)
+  · exact h.1
+
+private theorem holds_foldl_insertIfNew {R : EntryRef → Nat → Array UInt64} (fs : List Factor)
+    {s : RowStore} (h : s.Holds R)
+    (hR : ∀ t : Entry, .prime t ∈ fs → R (.prime t.p) 0 = sieves0 t.p) :
+    RowStore.Holds R (fs.foldl (fun s f ↦ s.insertIfNew f.ref f.newRows) s) := by
+  induction fs generalizing s with
+  | nil => exact h
+  | cons f fs ih =>
+    exact ih (h.insertIfNew_newRows fun t ht ↦ hR t (ht ▸ List.mem_cons_self))
+      fun t ht ↦ hR t (List.mem_cons_of_mem _ ht)
+
+private theorem primeZeroRows_foldl_insertIfNew (fs : List Factor) {s : RowStore}
+    (h : s.PrimeZeroRows) :
+    RowStore.PrimeZeroRows (fs.foldl (fun s f ↦ s.insertIfNew f.ref f.newRows) s) := by
+  induction fs generalizing s with
+  | nil => exact h
+  | cons f fs ih => exact ih (h.insertIfNew_newRows f)
+
+private theorem row?_foldl_insertIfNew_of_ne_none (fs : List Factor) {s : RowStore} {ref : EntryRef}
+    {r : Nat} (h : s.row? ref r ≠ none) :
+    RowStore.row? (fs.foldl (fun s f ↦ s.insertIfNew f.ref f.newRows) s) ref r = s.row? ref r := by
+  induction fs generalizing s with
+  | nil => rfl
+  | cons f fs ih =>
+    have h' := RowStore.row?_insertIfNew_of_ne_none h f.ref f.newRows
+    exact (ih (h' ▸ h)).trans h'
+
+/-- The store with the tables of rows of a sieve entry holds the rows `R` of the references when the
+store does and the rows of `0` of the primes of the entry are those of `R`. -/
+theorem RowStore.Holds.addTables {R : EntryRef → Nat → Array UInt64} {s : RowStore} (h : s.Holds R)
+    {e : SieveEntry} (hR : ∀ t : Entry, .prime t ∈ e.factors → R (.prime t.p) 0 = sieves0 t.p) :
+    (e.addTables s).Holds R := by
+  have hf := holds_foldl_insertIfNew e.factors h hR
+  simp only [SieveEntry.addTables]
+  split
+  · refine hf.insertIfNew fun r row hr ↦ ?_
+    simp only [Array.getD_eq_getD_getElem?, Array.getElem?_replicate] at hr
+    split at hr <;> cases hr
+  · exact hf
+
+theorem RowStore.PrimeZeroRows.addTables {s : RowStore} (h : s.PrimeZeroRows) {e : SieveEntry}
+    {n : Nat} (he : e.RefFits n) : (e.addTables s).PrimeZeroRows := by
+  have hf := primeZeroRows_foldl_insertIfNew e.factors h
+  simp only [SieveEntry.addTables]
+  split
+  · rename_i hinit
+    exact hf.insertIfNew fun p hp ↦ absurd ((he.ref_eq_of_init_eq hinit).symm.trans hp) nofun
+  · exact hf
+
+theorem SieveEntry.row?_addTables_of_ne_none {s : RowStore} {ref : EntryRef} {r : Nat}
+    (h : s.row? ref r ≠ none) (e : SieveEntry) : (e.addTables s).row? ref r = s.row? ref r := by
+  have hf := row?_foldl_insertIfNew_of_ne_none e.factors h
+  simp only [SieveEntry.addTables]
+  split
+  · exact (RowStore.row?_insertIfNew_of_ne_none (hf ▸ h) _ _).trans hf
+  · exact hf
+
+theorem SieveEntry.mem_addTables (e : SieveEntry) (s : RowStore) {f : Factor}
+    (hf : f ∈ e.factors) : f.ref ∈ e.addTables s := by
+  have hm := mem_foldl_insertIfNew e.factors s hf
+  simp only [SieveEntry.addTables]
+  split
+  · exact Std.HashMap.mem_insertIfNew.mpr (.inr hm)
+  · exact hm
+
+/-- The table of rows of a prime factor of a sieve entry has its row of `0` once the tables of rows
+of the entry are made, when every table of rows of a prime has it. -/
+theorem RowStore.PrimeZeroRows.row?_addTables_ne_none {s : RowStore} (h : s.PrimeZeroRows)
+    {e : SieveEntry} {n : Nat} (he : e.RefFits n) {t : Entry} (ht : .prime t ∈ e.factors) :
+    (e.addTables s).row? (.prime t.p) 0 ≠ none :=
+  h.addTables he t.p (e.mem_addTables s ht)
+
+/-! ### The rows of the references of a run -/
+
+/-- The rows of the references of a run for the polynomial of degree `d` with the coefficient list
+`c` and the sieve entries `es` of the moduli in their order: for a prime `p`, the closed forms of
+the rows of its table (`Ratpoints.Sieve.examinePrime`); for a prime power `p ^ e`, those of its
+tables (`Ratpoints.Sieve.examinePower`); for a product, those of the entry at its position. -/
+def runRows (c : List Int) (d : Nat) (es : List SieveEntry) : EntryRef → Nat → Array UInt64
+  | .prime p => closedRow (examinePrime c d p).admits p
+  | .power p e => closedRow (Id.run (examinePower c d p e false)).admits (p ^ e)
+  | .product n => closedRow es[n]!.admits es[n]!.p
+
+theorem runRows_prime_zero (c : List Int) (d : Nat) (es : List SieveEntry) {p : Nat} (hp : 0 < p) :
+    runRows c d es (.prime p) 0 = sieves0 p :=
+  (sieves0_eq_closedRow (examinePrime c d p) hp).symm
+
+/-- The rows of the reference of a factor of a run whose tables are those of the reference
+(`Ratpoints.Sieve.examinePrime`, `Ratpoints.Sieve.examinePower`) are the closed forms of the rows
+of the factor. -/
+theorem runRows_ref (c : List Int) (d : Nat) (es : List SieveEntry) {f : Factor}
+    (hprime : ∀ t : Entry, f = .prime t → t = examinePrime c d t.p)
+    (hpower : ∀ pw : Power, f = .power pw → pw = Id.run (examinePower c d pw.p pw.e false)) :
+    runRows c d es f.ref = closedRow f.admits f.modulus := by
+  cases f with
+  | prime t =>
+    change closedRow (examinePrime c d t.p).admits t.p = closedRow t.admits t.p
+    rw [← hprime t rfl]
+  | power pw =>
+    have hm : pw.m = pw.p ^ pw.e := (congrArg Power.m (hpower pw rfl)).trans rfl
+    change closedRow (Id.run (examinePower c d pw.p pw.e false)).admits (pw.p ^ pw.e) =
+      closedRow pw.admits pw.m
+    rw [← hpower pw rfl, hm]
+
+/-- A sieve entry at the position `n` of the entries `es` of a run, with the reference and the kind
+that `Ratpoints.makeModulus?` sets, a positive modulus, at least one factor, the moduli of the
+factors dividing the modulus, builders that have what they need and the tables of the reference,
+fits the rows of the references of the run (`Ratpoints.Sieve.runRows`). -/
+theorem SieveEntry.rowsFit_runRows {c : List Int} {d : Nat} {es : List SieveEntry} {n : Nat}
+    {e : SieveEntry} (hn : es[n]? = some e) (hrf : e.RefFits n) (hpos : 0 < e.p)
+    (hne : e.factors ≠ []) (hdvd : ∀ f ∈ e.factors, f.modulus ∣ e.p)
+    (hb : ∀ f ∈ e.factors, f.Buildable)
+    (hprime : ∀ t : Entry, .prime t ∈ e.factors → t = examinePrime c d t.p)
+    (hpower : ∀ pw : Power, .power pw ∈ e.factors →
+      pw = Id.run (examinePower c d pw.p pw.e false)) :
+    e.RowsFit (runRows c d es) n := by
+  have hf (f : Factor) (hf : f ∈ e.factors) : runRows c d es f.ref = closedRow f.admits f.modulus :=
+    runRows_ref c d es (fun t ht ↦ hprime t (ht ▸ hf)) fun pw hpw ↦ hpower pw (hpw ▸ hf)
+  refine ⟨hrf, hpos, hne, hdvd, hb, ?_, hf⟩
+  have hrf' := hrf
+  rw [SieveEntry.RefFits] at hrf'
+  match hfs : e.factors, hrf' with
+  | [f], ⟨hp, href, _⟩ =>
+    rw [href, hf f (by simp [hfs]), SieveEntry.admits_eq_of_factors_eq hfs hp, hp]
+  | [], _ => exact absurd hfs hne
+  | _ :: _ :: _, ⟨href, _⟩ =>
+    rw [href, runRows, List.getElem!_eq_getElem?_getD, hn, Option.getD_some]
+
+/-! ### The store of a run and its entries -/
+
+/-- The store `s` as the loop of the tables and the tables of the sieve entries `es` of the first
+moduli of a run make it (`Ratpoints.sievingInfo`): it holds the rows of the references of every run
+whose entries begin with `es` (`Ratpoints.Sieve.runRows`), every table of rows of a prime in it has
+its row of `0`, and so has the table of rows of every prime factor of `es`. -/
+structure RowStore.MadeFor (s : RowStore) (c : List Int) (d : Nat) (es : List SieveEntry) :
+    Prop where
+  /-- The store holds the rows of the references of every run whose entries begin with `es`. -/
+  holds : ∀ es', es <+: es' → s.Holds (runRows c d es')
+  /-- Every table of rows of a prime has its row of `0`. -/
+  primeZeroRows : s.PrimeZeroRows
+  /-- The table of rows of every prime factor of `es` has its row of `0`. -/
+  zero : ∀ e ∈ es, ∀ t : Entry, .prime t ∈ e.factors → s.row? (.prime t.p) 0 ≠ none
+
+/-- The store of the loop of the tables, which holds the rows of `0` of the primes and no others
+(`Ratpoints.Sieve.PrimeStore`), is made for no entries. -/
+theorem RowStore.madeFor_nil {s : RowStore} (c : List Int) (d : Nat)
+    (h : ∀ R : EntryRef → Nat → Array UInt64, (∀ p, 0 < p → R (.prime p) 0 = sieves0 p) →
+      s.Holds R) (hz : s.PrimeZeroRows) : s.MadeFor c d [] :=
+  ⟨fun es' _ ↦ h _ fun _ hp ↦ runRows_prime_zero c d es' hp, hz,
+    fun _ he ↦ absurd he List.not_mem_nil⟩
+
+/-- The tables of rows of the next sieve entry `e`, with the reference and the kind of builder of
+its position and positive primes: the store is made for the entries with `e`. -/
+theorem RowStore.MadeFor.addTables {s : RowStore} {c : List Int} {d : Nat} {es : List SieveEntry}
+    (h : s.MadeFor c d es) {e : SieveEntry} {n : Nat} (he : e.RefFits n)
+    (hp : ∀ t : Entry, .prime t ∈ e.factors → 0 < t.p) : (e.addTables s).MadeFor c d (es ++ [e]) :=
+  ⟨fun es' h' ↦ (h.holds es' ((List.prefix_append es [e]).trans h')).addTables fun t ht ↦
+      runRows_prime_zero c d es' (hp t ht), h.primeZeroRows.addTables he,
+    fun e' he' t ht ↦ by
+      rcases List.mem_append.mp he' with he' | he'
+      · rw [e.row?_addTables_of_ne_none (h.zero e' he' t ht)]
+        exact h.zero e' he' t ht
+      · obtain rfl := List.mem_singleton.mp he'
+        exact h.primeZeroRows.row?_addTables_ne_none he ht⟩
+
+/-- The store made for the entries `es` of a run holds the rows of the references of the run for
+them (`Ratpoints.Sieve.StoreHolds`). -/
+theorem RowStore.MadeFor.storeHolds {s : RowStore} {c : List Int} {d : Nat} {es : List SieveEntry}
+    (h : s.MadeFor c d es) : StoreHolds (runRows c d es) es s :=
+  ⟨h.holds es (List.prefix_refl es), h.zero⟩
+
+/-- The invariant of the store holds for entries with the factors of those for which it holds, such
+as the entries with the inverses of the strides (`Ratpoints.Sieve.classOffsets`) and those of the
+first two stages. -/
+theorem StoreHolds.of_factors {R : EntryRef → Nat → Array UInt64} {es es' : List SieveEntry}
+    {s : RowStore} (h : StoreHolds R es s) (h' : ∀ e' ∈ es', ∃ e ∈ es, e'.factors = e.factors) :
+    StoreHolds R es' s :=
+  ⟨h.holds, fun e' he' t ht ↦
+    have ⟨e, he, hf⟩ := h' e' he'
+    h.zero e he t (hf ▸ ht)⟩
+
+/-- An entry with the modulus, the factors, the reference and the kind of builder of an entry that
+fits the rows `R` at its position fits them too, such as the entry with the inverses of the strides
+(`Ratpoints.Sieve.classOffsets`). -/
+theorem SieveEntry.RowsFit.of_eq {e e' : SieveEntry} {R : EntryRef → Nat → Array UInt64} {n : Nat}
+    (h : e.RowsFit R n) (hp : e'.p = e.p) (hf : e'.factors = e.factors) (hr : e'.ref = e.ref)
+    (hi : e'.init = e.init) : e'.RowsFit R n := by
+  have ha : e'.admits = e.admits := funext fun _ ↦ funext fun _ ↦ by
+    simp only [SieveEntry.admits, hp, hf]
+  refine ⟨?_, hp ▸ h.pos, hf ▸ h.factors_ne_nil, hf ▸ hp ▸ h.dvd, hf ▸ h.buildable,
+    by rw [hr, ha, hp]; exact h.ref_rows, hf ▸ h.factor_rows⟩
+  rw [SieveEntry.RefFits, hf, hp, hr, hi]
+  exact h.refFits
+
+/-! ### A store that fits the sieve entries -/
+
+/-- The store `s` fits the sieve entries `es`: it holds rows `R` of the references
+(`Ratpoints.Sieve.StoreHolds`) that every entry fits at its position
+(`Ratpoints.Sieve.SieveEntry.RowsFit`), which is what building the rows of the entries needs. -/
+def RowStore.Fits (s : RowStore) (es : List SieveEntry) : Prop :=
+  ∃ R : EntryRef → Nat → Array UInt64,
+    StoreHolds R es s ∧ ∀ n (h : n < es.length), es[n].RowsFit R n
+
+theorem RowStore.Fits.pos {s : RowStore} {es : List SieveEntry} (h : s.Fits es) :
+    ∀ e ∈ es, 0 < e.p := fun _ he ↦
+  have ⟨_, _, hfit⟩ := h
+  have ⟨n, hn, he⟩ := List.getElem_of_mem he
+  he ▸ (hfit n hn).pos
+
+/-- The store of the sieve entries of a run fits their first `k`, those of the first two stages. -/
+theorem RowStore.Fits.take {s : RowStore} {es : List SieveEntry} (h : s.Fits es) (k : Nat) :
+    s.Fits (es.take k) :=
+  have ⟨R, hs, hfit⟩ := h
+  ⟨R, hs.of_factors fun e he ↦ ⟨e, List.mem_of_mem_take he, rfl⟩, fun n hn ↦ by
+    rw [List.getElem_take]
+    exact hfit n (Nat.lt_of_lt_of_le hn (List.length_take_le' k es))⟩
+
+/-- The store of the sieve entries of a run fits them with the inverses of the strides that
+`Ratpoints.Sieve.classOffsets` sets. -/
+theorem RowStore.Fits.map_dinv {s : RowStore} {es : List SieveEntry} (h : s.Fits es)
+    (dinv : SieveEntry → Array Nat) : s.Fits (es.map fun e ↦ { e with dinv := dinv e }) :=
+  have ⟨R, hs, hfit⟩ := h
+  ⟨R, hs.of_factors fun _ he ↦ have ⟨e, he, h⟩ := List.mem_map.mp he; ⟨e, he, h ▸ rfl⟩,
+    fun n hn ↦ by
+      rw [List.getElem_map]
+      exact (hfit n (by simpa using hn)).of_eq rfl rfl rfl rfl⟩
 
 end Sieve
 

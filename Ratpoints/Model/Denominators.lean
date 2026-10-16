@@ -336,12 +336,14 @@ def forbiddenOfPrime (c : List Int) (d p bHigh : Nat) (cm : Array Nat) (atInf : 
 /-- The loop of the tables over the first `n` primes of `Ratpoints.primeTable`, in the order of the
 table, for the polynomial of degree `d` with the coefficient list `c` and the flag `useCLong` of the
 `long`s: the table of each prime (`Ratpoints.Sieve.examinePrime?`), and none as soon as the curve
-has no points modulo one of them; the tables kept by the position of the prime in the table; and,
-when the switch `checkDenom` of the forbidden divisors is on and fewer than `maxForbidden` have been
-found, the forbidden divisor of each prime for the largest denominator `bHigh`, from the
-coefficients modulo the prime and the entry at infinity that its table hands back
-(`Ratpoints.Sieve.forbiddenOfPrime`); the forbidden divisors tested with words and those tested by
-their valuations each in the order found.
+has no points modulo one of them; the tables kept by the position of the prime in the table; for a
+prime that says something, `f(x)` no square modulo the prime for some residue `x` or a point at
+infinity modulo it, its table of rows in the store of the run, with its row of `0` and the others
+absent (`Ratpoints.Sieve.primeRows`); and, when the switch `checkDenom` of the forbidden divisors is
+on and fewer than `maxForbidden` have been found, the forbidden divisor of each prime for the
+largest denominator `bHigh`, from the coefficients modulo the prime and the entry at infinity that
+its table hands back (`Ratpoints.Sieve.forbiddenOfPrime`); the forbidden divisors tested with words
+and those tested by their valuations each in the order found, and the store.
 
 C: `find_points.c:2537`, `find_points.c:2545`, `find_points.c:2601-2602`,
 `find_points.c:2605-2614`, `find_points.c:2616`, `find_points.c:2619`, `find_points.c:2622`,
@@ -350,28 +352,35 @@ C: `find_points.c:2537`, `find_points.c:2545`, `find_points.c:2601-2602`,
 Deviation: the number `n` of the primes examined as an argument (`Ratpoints.Params.examined`), for
 `pn_lim`, which is `num_primes` at the start and which the loop raises when the number of primes was
 left to the library and the choice of the moduli needs more (stage I); the table of every prime
-kept, also when `examine_prime` returns `0` and `prime_se` stays `NULL`; an array of the tables, for
-`prime_se`, and the exit as `none`, for the prime that `sieving_info` returns; no `pinf`, no keys,
-counts `pnp` and `n_weak` and entries `prec`, which serve the choice of the moduli (stage I); no
-cache `power_se` of the entries of prime powers (`Ratpoints.makeModulus?`); the switch `checkDenom`
-for the flag `RATPOINTS_CHECK_DENOM`; the arrays of the forbidden divisors returned, for the arrays
-of the arguments and their counts `fba` and `fdc`. -/
+kept, also when `examine_prime` returns `0` and `prime_se` stays `NULL`, where the store gets no
+table of rows of the prime, as the C code makes no entry; an array of the tables, for `prime_se`,
+and the store of the tables of rows, for the arrays `sieve` of the entries that `examine_prime`
+makes, by the reference to the prime (`Ratpoints.Sieve.EntryRef.prime`), the test whether the prime
+says something made here on its table, where `examine_prime` makes it (line 1764) before it makes
+the entry; the exit as `none`, for the prime that `sieving_info` returns; no `pinf`, no keys, counts
+`pnp` and `n_weak` and entries `prec`, which serve the choice of the moduli (stage I); no cache
+`power_se` of the entries of prime powers (`Ratpoints.makeModulus?`); the switch `checkDenom` for
+the flag `RATPOINTS_CHECK_DENOM`; the arrays of the forbidden divisors returned, for the arrays of
+the arguments and their counts `fba` and `fdc`. -/
 def examinePrimes (c : List Int) (d : Nat) (useCLong checkDenom : Bool)
     (n maxForbidden bHigh : Nat) :
-    Id (Option (Array Entry × Array ForbiddenEntry × Array ForbiddenVal)) := do
+    Id (Option (Array Entry × Array ForbiddenEntry × Array ForbiddenVal × RowStore)) := do
   let mut tables := #[]
   let mut ba := #[]
   let mut val := #[]
+  let mut store : RowStore := {}
   for pn in [0:n] do
     let p := primeTable[pn]!
     let some (e, cm) ← examinePrime? c d p useCLong | return none
     tables := tables.push e
+    if e.isFSquare[p]! || (e.isFSquare.extract 0 p).any (· == false) then
+      store := store.insertIfNew (.prime p) (primeRows p)
     if checkDenom && ba.size + val.size < maxForbidden then
       match ← forbiddenOfPrime c d p bHigh cm e.isFSquare[p]! with
       | some (.inl f) => ba := ba.push f
       | some (.inr f) => val := val.push f
       | none => pure ()
-  return some (tables, ba, val)
+  return some (tables, ba, val, store)
 
 /-- The forbidden divisors of the denominators of the polynomial of even degree `d` with the
 coefficient list `c`, at most `maxForbidden` of them, for the largest denominator `bHigh`, from
@@ -993,7 +1002,7 @@ prints. -/
 #guard
   let fb (c : List Int) (d F bHigh : Nat) : List Nat × List (Nat × Nat) :=
     let (ba, val) := match Id.run (examinePrimes c d true true 30 F bHigh) with
-      | some (_, ba, val) => Id.run (forbidden c d 30 F bHigh ba val)
+      | some (_, ba, val, _) => Id.run (forbidden c d 30 F bHigh ba val)
       | none => ([], [])
     (ba.map (·.p), val.map fun e ↦ (e.p, e.mask))
   fb [1, 2, 3, 4, 5, 6, 7] 6 64 100 ==
@@ -1012,7 +1021,7 @@ prints. -/
 #guard
   let c : List Int := [1, 2, 3, 4, 5, 6, 7]
   let ba : List ForbiddenEntry := match Id.run (examinePrimes c 6 true true 30 64 70000) with
-    | some (_, ba, val) => (Id.run (forbidden c 6 30 64 70000 ba val)).1
+    | some (_, ba, val, _) => (Id.run (forbidden c 6 30 64 70000 ba val)).1
     | none => []
   [5, 127, 257, 263].all (fun p ↦ ba.any (·.p == p)) && ba.all fun e ↦ e.words == forbiddenRow e.p
 
@@ -1116,7 +1125,7 @@ prints. -/
   let c : List Int := [1, 2, 3, 4, 5, 6, 7]
   let db := denBits (Id.run (twoAdic c 6))
   let forb := match Id.run (examinePrimes c 6 true true 30 64 1000) with
-    | some (_, ba, val) => (Id.run (forbidden c 6 30 64 1000 ba val)).1
+    | some (_, ba, val, _) => (Id.run (forbidden c 6 30 64 1000 ba val)).1
     | none => []
   ([(1, 1000), (1, 63), (64, 64), (5, 70), (130, 520)] : List (Nat × Nat)).all fun (lo, hi) ↦
     (Id.run (wordsDens db forb lo hi)).toList == (List.range' lo (hi + 1 - lo)).filter fun b ↦
@@ -1134,7 +1143,8 @@ prints. -/
     let us1 := if d % 2 == 1 && lcf.natAbs != 1 then Id.run (Setup.setupUs1 c d H) else none
     let nb := Id.run (twoAdic c d)
     let (forb, forbVal) := match Id.run (examinePrimes c d true (d % 2 == 0) 30 F H) with
-      | some (_, ba, val) => if d % 2 == 0 then Id.run (forbidden c d 30 F H ba val) else ([], [])
+      | some (_, ba, val, _) =>
+        if d % 2 == 0 then Id.run (forbidden c d 30 F H ba val) else ([], [])
       | none => ([], [])
     let checkDenom := d % 2 == 0 && (!forb.isEmpty || !forbVal.isEmpty || useJacobi)
     let shape := Id.run (runSetup (d % 2 == 1 && lcf.natAbs == 1) us1 checkDenom useJacobi forb

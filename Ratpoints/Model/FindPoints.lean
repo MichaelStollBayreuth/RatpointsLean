@@ -40,13 +40,15 @@ divisors of the leading coefficient, found by the sieve on the bit arrays of wor
 primes, prime powers and products of them, and the array size of `P`, each mapped back to the
 caller's curve after a reversal. What `sieving_info` computes for the search, the loop of the tables
 of the primes examined with the exit and the forbidden divisors, the further forbidden divisors and
-the sieve entries of the moduli with their reciprocals, is `Ratpoints.sievingInfo`.
+the sieve entries of the moduli with their reciprocals and the tables of their rows, is
+`Ratpoints.sievingInfo`.
 
 ## Main definitions
 
 * `Ratpoints.Options`: the options of a search.
 * `Ratpoints.makeModulus?`, `Ratpoints.sievingInfo`: the sieve entry of a modulus, and the tables,
-  the forbidden divisors and the sieve entries of the moduli of a search, with their reciprocals.
+  the forbidden divisors and the sieve entries of the moduli of a search, with their reciprocals and
+  the tables of their rows.
 * `Ratpoints.searchPoints`: the search of the polynomial that the set-up hands on.
 * `Ratpoints.findPoints`: the points.
 -/
@@ -99,8 +101,9 @@ extended Euclidean algorithm (`Ratpoints.Sieve.modinv`); its inverses of the str
 the row offsets of the packing of the numerators (`Ratpoints.Sieve.classOffsets`).
 
 C: `find_points.c:2350-2354`, `find_points.c:2358-2359`, `find_points.c:2387-2395`,
-`find_points.c:2414-2429`, `find_points.c:2434-2475`, `find_points.c:2546`, `find_points.c:2548`,
-`find_points.c:2976-2978`, `find_points.c:2994-2998`
+`find_points.c:2414-2426`, `find_points.c:2428-2429`, `find_points.c:2434-2470`,
+`find_points.c:2472-2475`, `find_points.c:2546`, `find_points.c:2548`, `find_points.c:2976-2978`,
+`find_points.c:2994-2998`
 
 Deviation: the entry of every modulus made here, by its factors computed again from `m`
 (`Ratpoints.modulusFactors`), where `make_modulus` reads the codes `fac` of the factors and their
@@ -113,35 +116,40 @@ where `add_moduli` examines a prime power once, when the factorization of the fi
 reaches it needs it (the power itself), whether or not that candidate is then offered, and keeps its
 tables in its buffer `pws` by its index (`pw_idx`, lines 2350-2354, 2358-2359 and 2387-2394, with
 the count `npw` of line 2548), and `make_modulus` makes the entry of a prime power once and keeps it
-by its index (`power_se`); the tables of a prime power computed also when they say nothing, where
-`add_moduli` refuses a modulus with such a factor (line 2395), and a prime factor whose prime says
-nothing (`examine_prime` returns `0`, and `prime_se[pn]` stays `NULL`) taken with its table from the
-loop of the tables, where `add_moduli` offers no composite with such a factor (line 2383); a prime
-beyond those of the loop of the tables examined, with the exit, when the entry of a modulus needs
-it, where `sieving_info` examines the primes from `prime[pn_lim]` on, in the order of the table,
-with the exit, in the loop of the tables while its first two stages want more primes (lines
-2693-2705; there they also give forbidden divisors) and for the third stage (lines 2976-3016), both
-only when the number of primes was left to the library (lines 2693 and 2980), also those that it
-then skips, and `add_moduli` makes composites, prime powers and products alike, of the primes of the
-loop of the tables only (line 2370): the output does not depend on the primes examined, since the
-exit is taken only when the curve has no points; every modulus of the parameters taken, any product
-of powers of primes of the table below `Ratpoints.maxPrimeEven` (`Ratpoints.Params.WF`), where
-`add_moduli` offers a composite only for an odd `9 ≤ m ≤ RATPOINTS_COMPOSITE_MAX` (line 2361;
-`ratpoints.h:210-211`, 64 by default) whose table is not too dear for the run (line 2368), with room
-in the buffer of the prime powers for its new prime powers (lines 2351 and 2390), a density `r < 1`
-(line 2402) and at most `RP_MAX_MODULI` candidates (line 2403), restrictions that the model lifts as
-choices of the moduli (stage I); the reciprocal `magic`, the bias `bias` and the inverse `rbainv` of
-every kind of modulus set here, with the formulas of the C code, where `examine_prime` sets those of
-a prime with its table (lines 1808, 1815 and 1816), `make_power` those of a prime power (lines 2422,
-2424 and 2425) and `make_modulus` those of a product (lines 2454, 2456 and 2457), the inverse of a
-prime read from its table, as from the table `inverses[pn]` of the build; natural numbers for the
-`long`s of these formulas; the inverses `dinv` empty, which the row offsets of the packing fill
-(`Ratpoints.Sieve.classOffsets`); no density `r` (stage I); the kind `init` of the builder set here
-for every kind of modulus, where `examine_prime` sets that of a prime with its table (line 1800);
-the reference to the entry whose table of rows holds its rows (`Ratpoints.Sieve.EntryRef`), for the
-pointer to the entry, the position `n` of a product its own entry; the entry a fresh value, for the
-space that `make_power` and `make_modulus` take from the buffer of the sieve entries (`se_next`),
-and the exit as `none`, for the prime that `sieving_info` returns. -/
+by its index (`power_se`), whose table of rows the model makes once too, for the prime power by its
+prime and its exponent, as the C code keeps the index of its entry in `pw_idx[pn][e]`
+(`Ratpoints.Sieve.EntryRef.power`, `Ratpoints.Sieve.SieveEntry.addTables`); the tables of a prime
+power computed also when they say nothing, where `add_moduli` refuses a modulus with such a factor
+(line 2395), and a prime factor whose prime says nothing (`examine_prime` returns `0`, and
+`prime_se[pn]` stays `NULL`) taken with its table from the loop of the tables, where `add_moduli`
+offers no composite with such a factor (line 2383); a prime beyond those of the loop of the tables
+examined, with the exit, when the entry of a modulus needs it, where `sieving_info` examines the
+primes from `prime[pn_lim]` on, in the order of the table, with the exit, in the loop of the tables
+while its first two stages want more primes (lines 2693-2705; there they also give forbidden
+divisors) and for the third stage (lines 2976-3016), both only when the number of primes was left to
+the library (lines 2693 and 2980), also those that it then skips, and `add_moduli` makes composites,
+prime powers and products alike, of the primes of the loop of the tables only (line 2370): the
+output does not depend on the primes examined, since the exit is taken only when the curve has no
+points; every modulus of the parameters taken, any product of powers of primes of the table below
+`Ratpoints.maxPrimeEven` (`Ratpoints.Params.WF`), where `add_moduli` offers a composite only for an
+odd `9 ≤ m ≤ RATPOINTS_COMPOSITE_MAX` (line 2361; `ratpoints.h:210-211`, 64 by default) whose table
+is not too dear for the run (line 2368), with room in the buffer of the prime powers for its new
+prime powers (lines 2351 and 2390), a density `r < 1` (line 2402) and at most `RP_MAX_MODULI`
+candidates (line 2403), restrictions that the model lifts as choices of the moduli (stage I); the
+reciprocal `magic`, the bias `bias` and the inverse `rbainv` of every kind of modulus set here, with
+the formulas of the C code, where `examine_prime` sets those of a prime with its table (lines 1808,
+1815 and 1816), `make_power` those of a prime power (lines 2422, 2424 and 2425) and `make_modulus`
+those of a product (lines 2454, 2456 and 2457), the inverse of a prime read from its table, as from
+the table `inverses[pn]` of the build; natural numbers for the `long`s of these formulas; the
+inverses `dinv` empty, which the row offsets of the packing fill (`Ratpoints.Sieve.classOffsets`);
+no density `r` (stage I); the kind `init` of the builder set here for every kind of modulus, where
+`examine_prime` sets that of a prime with its table (line 1800); the reference to the entry whose
+table of rows holds its rows (`Ratpoints.Sieve.EntryRef`), for the pointer to the entry, the
+position `n` of a product its own entry; the tables of rows of the entry and of its factors, which
+`make_power` (line 2427) and `make_modulus` (line 2471) clear, made in the store of the run by the
+loop over the moduli after the entry (`Ratpoints.Sieve.SieveEntry.addTables`); the entry a fresh
+value, for the space that `make_power` and `make_modulus` take from the buffer of the sieve entries
+(`se_next`), and the exit as `none`, for the prime that `sieving_info` returns. -/
 def makeModulus? (c : List Int) (d : Nat) (useCLong : Bool) (tables : Array Entry) (n m : Nat) :
     Id (Option SieveEntry) := do
   let (fac, _) ← modulusFactors m
@@ -172,10 +180,12 @@ the parameters `P` and the largest denominator `bHigh`: the loop of the tables o
 (`Ratpoints.Sieve.examinePrimes`), and none when the curve has no points modulo one of them; for the
 switch on, the forbidden divisors among the further primes (`Ratpoints.Sieve.forbidden`); and, in a
 loop over the moduli of `P` in their order, the sieve entry of each at its position, the number of
-the entries made before it (`Ratpoints.makeModulus?`), and none at once when the curve has no points
-modulo a prime examined for it. Then the sieve entries of the moduli, their reciprocals in their
-order (`Ratpoints.Sieve.SieveEntry.magic`), and the forbidden divisors tested with words and by
-their valuations.
+the entries made before it (`Ratpoints.makeModulus?`), with the tables of rows of the entry and of
+its factors in the store of the run when they are absent (`Ratpoints.Sieve.SieveEntry.addTables`),
+and none at once when the curve has no points modulo a prime examined for it. Then the sieve entries
+of the moduli, their reciprocals in their order (`Ratpoints.Sieve.SieveEntry.magic`), the forbidden
+divisors tested with words and by their valuations, and the store of the tables of rows that the
+loop of the tables and the entries of the moduli make (`Ratpoints.Sieve.RowStore`).
 
 C: `find_points.c:2522-2532`, `find_points.c:2892-2900`, `find_points.c:3064-3070`,
 `find_points.c:3102-3103`
@@ -194,23 +204,27 @@ there is no forbidden divisor and no Jacobi test (`Ratpoints.searchPoints`); the
 the forbidden divisors returned as lists and the reciprocals as an array, for the arrays
 `sieve_list` and `magics` and the arrays of the arguments, with no bound `2 RATPOINTS_NUM_PRIMES` on
 the number of the entries and the reciprocals (lines 332-333 and 347), which ratpoints never reaches
-since each of its entries owns a prime, where well-formed parameters may repeat a modulus; the
+since each of its entries owns a prime, where well-formed parameters may repeat a modulus; the store
+of the tables of rows returned, for the arrays `sieve` of the entries that `sieving_info` makes; the
 position of a modulus the number of the entries made before it, the reference to a product
 (`Ratpoints.makeModulus?`); and the exit as `none`, for the prime returned; no failure for lack of
 memory, which the model cannot meet; no output under `RATPOINTS_VERBOSE`, `RP_PRIME_STATS` or
 `DEBUG`. -/
 def sievingInfo (c : List Int) (d : Nat) (useCLong checkDenom : Bool) (P : Params) (bHigh : Nat) :
-    Id (Option (List SieveEntry × Array Nat × List ForbiddenEntry × List ForbiddenVal)) := do
-  let some (tables, ba, val) ←
+    Id (Option
+      (List SieveEntry × Array Nat × List ForbiddenEntry × List ForbiddenVal × RowStore)) := do
+  let some (tables, ba, val, store) ←
       examinePrimes c d useCLong checkDenom P.examined P.maxForbidden bHigh | return none
   let (forb, forbVal) ← if checkDenom then forbidden c d P.examined P.maxForbidden bHigh ba val
     else pure (ba.toList, val.toList)
   let mut entries : Array SieveEntry := #[]
+  let mut store := store
   for m in P.moduli do
     let some e ← makeModulus? c d useCLong tables entries.size m | return none
     entries := entries.push e
+    store := e.addTables store
   let magics := entries.map (·.magic)
-  return some (entries.toList, magics, forb, forbVal)
+  return some (entries.toList, magics, forb, forbVal, store)
 
 open Sieve in
 /-- The search of the polynomial with the coefficient list `c` of degree `d` that the set-up hands
@@ -255,15 +269,17 @@ sieve entries as a list, for the array `args->sieve_list` that `sieving_info` fi
 `class_offsets` reads; the square test `lcfsq` of line 4906 made on the polynomial searched
 (`Ratpoints.Setup.isSquare`), where the C code computes it before the reversal check (line 4634) and
 clears it in case 2 (line 4770): the same value for an even degree, the only one that reads it; the
-test on `point_at_infty` of the 2-adic exit recomputed, as `Ratpoints.Sieve.pointsAtInfinity`
-decides it; the exits give the empty list, where `sieving_info` returns the prime and
-`find_points_work_1` the number `0` of points found; the Sturm step does not restrict the search
-region before stage H, so that the return when it leaves nothing to search is never taken, and the
-run always follows the points at infinity; no failure for lack of memory, which the model cannot
-meet; the array of the row offsets made with zeros, for the array on the stack, whose entries the C
-code leaves unset until `class_offsets` writes them, with one offset in each row for each sieve
-entry of the run, those of its three stages, for the `sp3_max` entries with the reserve of further
-primes (stage I); no output under `RATPOINTS_VERBOSE` or `DEBUG`. -/
+store of the tables of rows that `Ratpoints.sievingInfo` returns not handed to the run, which reads
+the rows of the sieve entries from their thunks (`Ratpoints.Sieve.SieveEntry.rows`) until stage F4
+hands it the store; the test on `point_at_infty` of the 2-adic exit recomputed, as
+`Ratpoints.Sieve.pointsAtInfinity` decides it; the exits give the empty list, where `sieving_info`
+returns the prime and `find_points_work_1` the number `0` of points found; the Sturm step does not
+restrict the search region before stage H, so that the return when it leaves nothing to search is
+never taken, and the run always follows the points at infinity; no failure for lack of memory, which
+the model cannot meet; the array of the row offsets made with zeros, for the array on the stack,
+whose entries the C code leaves unset until `class_offsets` writes them, with one offset in each row
+for each sieve entry of the run, those of its three stages, for the `sp3_max` entries with the
+reserve of further primes (stage I); no output under `RATPOINTS_VERBOSE` or `DEBUG`. -/
 def searchPoints (c : List Int) (d H : Nat) (P : Params) (rev : Bool) :
     Id (List (Int × Int × Int)) := do
   let bHigh := H
@@ -276,7 +292,7 @@ def searchPoints (c : List Int) (d H : Nat) (P : Params) (rev : Bool) :
   let nb ← twoAdic c d
   let (cls, db) ← numClasses nb
   if db == 0 && !(d % 2 == 1 || Setup.isSquare lcf) then return []
-  let some (entries, magics, forb, forbVal) ← sievingInfo c d useCLong checkDenom P bHigh
+  let some (entries, magics, forb, forbVal, _) ← sievingInfo c d useCLong checkDenom P bHigh
     | return []
   if forb.isEmpty && forbVal.isEmpty && !useJacobi then checkDenom := false
   let offsets := Array.replicate ((← numPackings cls) * max entries.length 1) 0
@@ -442,7 +458,7 @@ passes on to the test of the leading zeros. -/
   let c : List Int := [1, 2, 3, 4, 5, 6, 7]
   let fs (f : Sieve.Factor) : Nat := match f with | .prime e => e.p | .power pw => pw.m
   match Id.run (Sieve.examinePrimes c 6 true false 2 0 0) with
-  | some (tables, _, _) =>
+  | some (tables, _, _, _) =>
     tables.size == 2 && [3, 67, 9, 243, 15, 45, 231].map (fun m ↦
         (Id.run (makeModulus? c 6 true tables 5 m)).map fun se ↦
           (se.p, se.factors.map fs, se.ref, se.init)) ==
@@ -458,6 +474,30 @@ passes on to the test of the leading zeros. -/
     (Id.run (sievingInfo c 4 true true ⟨[9], 1, 1, 1, 64, true, 0⟩ 30)).isNone &&
     Id.run (searchPoints c 4 30 ⟨[9], 0, 1, 1, 64, true, 0⟩ false) == []
 
+-- The tables of rows that `Ratpoints.sievingInfo` makes: for `1 2 3 4 5 6 7` with the first two
+-- primes examined in the loop of the tables, both of which say something, and the moduli 3, the
+-- prime 67 beyond the loop, the prime power 9, the products 15 = 3 · 5 and 45 = 9 · 5, and the
+-- prime power 243, one table of rows for each prime, each prime power and each product, keyed by
+-- the prime, the prime and the exponent of the prime power and the position of the product, of the
+-- size of the modulus, with the row of `0` of a prime from the build and no other row; and for
+-- `1 0 2`, for which 3 says nothing (`f(x)` a square modulo 3 for every `x`, and `2` not a square),
+-- no table of rows of 3 from the loop of the tables, and one when 3 is a modulus.
+#guard
+  let tabs (c : List Int) (d : Nat) (P : Params) : Option Sieve.RowStore :=
+    (Id.run (sievingInfo c d true false P 30)).map fun (_, _, _, _, s) ↦ s
+  let rows (s : Sieve.RowStore) (k : Sieve.EntryRef) : List Nat :=
+    (List.range (s.getD k #[]).size).filter fun r ↦ (s.row? k r).isSome
+  match tabs [1, 2, 3, 4, 5, 6, 7] 6 ⟨[3, 67, 9, 15, 45, 243], 2, 6, 6, 64, true, 0⟩,
+      tabs [1, 0, 2] 2 ⟨[], 2, 0, 0, 64, true, 0⟩, tabs [1, 0, 2] 2 ⟨[3], 2, 1, 1, 64, true, 0⟩ with
+  | some s, some s', some s'' =>
+    let ks : List (Sieve.EntryRef × Nat) := [(.prime 3, 3), (.prime 5, 5), (.prime 67, 67),
+      (.power 3 2, 9), (.product 3, 15), (.product 4, 45), (.power 3 5, 243)]
+    s.size == 7 && ks.all (fun (k, m) ↦ (s.getD k #[]).size == m &&
+      rows s k == match k with | .prime _ => [0] | _ => []) &&
+    s.row? (.prime 67) 0 == some (Sieve.sieves0 67) &&
+    !s'.contains (.prime 3) && s'.contains (.prime 5) && s''.contains (.prime 3)
+  | _, _, _ => false
+
 -- The reciprocals that `Ratpoints.sievingInfo` collects for `1 2 3 4 5 6 7` are those of the
 -- moduli, in their order, each sieve entry holding the reciprocal of its modulus, the bias, a
 -- multiple of the modulus from `rowBias` to below `rowBias + p`, and the inverse of `rbaLength`,
@@ -465,7 +505,7 @@ passes on to the test of the leading zeros. -/
 #guard
   match Id.run (sievingInfo [1, 2, 3, 4, 5, 6, 7] 6 true true ⟨[45, 7, 9, 67], 2, 2, 4, 64, true, 0⟩
       30) with
-  | some (entries, magics, _, _) => entries.map (·.p) == [45, 7, 9, 67] &&
+  | some (entries, magics, _, _, _) => entries.map (·.p) == [45, 7, 9, 67] &&
     magics.toList == [45, 7, 9, 67].map Sieve.magic &&
     entries.all fun e ↦ e.magic == Sieve.magic e.p && e.bias % e.p == 0 && rowBias ≤ e.bias &&
       e.bias < rowBias + e.p && e.rbainv < e.p && e.rbainv * rbaLength % e.p == 1 && e.dinv.isEmpty
@@ -482,7 +522,7 @@ passes on to the test of the leading zeros. -/
 #guard
   let c : List Int := [-2, 0, 0, 1]
   match Id.run (sievingInfo c 3 true false ⟨[3, 7, 5, 11], 0, 2, 4, 64, true, 0⟩ 30) with
-  | some (entries, magics, _, _) =>
+  | some (entries, magics, _, _, _) =>
     let (cls, db) := Id.run (Sieve.numClasses (Id.run (Sieve.twoAdic c 3)))
     let np := Id.run (Sieve.numPackings cls)
     let (cls, entries, offsets) :=
@@ -511,7 +551,7 @@ passes on to the test of the leading zeros. -/
       ([6, -3, 5, 2, 75], 4)] : List (List Int × Nat)).all fun (c, d) ↦
   match Id.run (sievingInfo c d true false
       ⟨[3, 7, 5, 11, 9, 15, 25, 45, 77, 121, 243, 255, 251], 0, 2, 13, 64, true, 0⟩ 30) with
-  | some (entries, _, _, _) =>
+  | some (entries, _, _, _, _) =>
     let (cls, _) := Id.run (Sieve.numClasses (Id.run (Sieve.twoAdic c d)))
     let np := Id.run (Sieve.numPackings cls)
     let (cls', entries', offsets) :=
@@ -539,7 +579,7 @@ passes on to the test of the leading zeros. -/
       List (List Int × Nat)).all fun (c, d) ↦
   match Id.run (sievingInfo c d true false ⟨[3, 7, 9, 5, 11, 15, 13, 17, 19], 0, 3, 7, 0, true, 0⟩
       300) with
-  | some (entries, magics, _, _) =>
+  | some (entries, magics, _, _, _) =>
     let nb := Id.run (Sieve.twoAdic c d)
     let (cls, _) := Id.run (Sieve.numClasses nb)
     let np := Id.run (Sieve.numPackings cls)
@@ -569,7 +609,7 @@ passes on to the test of the leading zeros. -/
   let c : List Int := [-2, 0, 0, 1]
   match Id.run (sievingInfo c 3 true false ⟨[3, 7, 9, 5, 11, 15, 13, 17, 19], 0, 3, 7, 0, true, 0⟩
       12) with
-  | some (entries, magics, _, _) =>
+  | some (entries, magics, _, _, _) =>
     let word (m r : Nat) : UInt64 := (List.range 64).foldl (fun w a ↦
       if a % m = r then w ||| 1 <<< a.toUInt64 else w) 0
     let words := [word 4 2, word 8 5, word 8 3, word 2 1, ~~~0, 0]

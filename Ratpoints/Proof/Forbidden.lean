@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.ZMod.Defs
 public import Mathlib.NumberTheory.Padics.PadicVal.Defs
 public import Ratpoints.Model.Denominators
+public import Ratpoints.Proof.RowStore
 public import Ratpoints.Spec.Basic
 public import Std.WP
 
@@ -16,7 +17,6 @@ import Ratpoints.Mathlib.Data.ZMod.Basic
 import Ratpoints.Mathlib.NumberTheory.Padics.PadicVal.Basic
 import Ratpoints.Proof.Containers
 import Ratpoints.Proof.Params
-import Ratpoints.Proof.Rows
 import Ratpoints.Proof.Tables
 import Ratpoints.Proof.Valuation
 import Std.Tactic.Do
@@ -44,12 +44,14 @@ prime tested by its valuation excludes no denominator of a point. The words of a
 that is one of the first `Ratpoints.numPrimes` primes of the table are the first `p` words of its
 row of `0`, the pattern `sieves0`, which are those of `Ratpoints.Sieve.forbiddenRow`
 (`Ratpoints.Sieve.extract_sieves0`). The loop of the tables also keeps the table of every prime it
-examines, that of the reference (`Ratpoints.Sieve.examinePrime`), and when it takes its exit, the
-curve has no points. The masks, which the C code keeps in an `unsigned long`, stay below `2 ^ 40`
-for an odd prime and a `long` `b_high`, so that its cap on the valuations never binds; the products
-`pm p` of its loops of the valuations and the square `p p` of a prime of the table that its loop
-over the further primes compares with `b_high` are `long`s
-(`Ratpoints.Setup.fitsLong_mul_of_le_div`, `Ratpoints.Setup.mul_self_lt_of_mem_primeTable`).
+examines, that of the reference (`Ratpoints.Sieve.examinePrime`), makes the tables of rows of the
+primes that say something with their rows of `0`, the patterns `sieves0`
+(`Ratpoints.Sieve.PrimeStore`), and when it takes its exit, the curve has no points. The masks,
+which the C code keeps in an `unsigned long`, stay below `2 ^ 40` for an odd prime and a `long`
+`b_high`, so that its cap on the valuations never binds; the products `pm p` of its loops of the
+valuations and the square `p p` of a prime of the table that its loop over the further primes
+compares with `b_high` are `long`s (`Ratpoints.Setup.fitsLong_mul_of_le_div`,
+`Ratpoints.Setup.mul_self_lt_of_mem_primeTable`).
 
 ## Main definitions
 
@@ -60,6 +62,7 @@ over the further primes compares with `b_high` are `long`s
   add.
 * `Ratpoints.Sieve.ForbiddenVal.excludes`: whether a forbidden divisor tested by its valuation
   excludes a denominator.
+* `Ratpoints.Sieve.PrimeStore`: the store of the tables of rows that the loop of the tables makes.
 
 ## Main statements
 
@@ -72,8 +75,10 @@ over the further primes compares with `b_high` are `long`s
   `Ratpoints.Sieve.testBit_run_forbiddenValuations_eq_false_of_sq_eq`: no denominator of a point has
   a forbidden valuation.
 * `Ratpoints.Sieve.getElem_eq_examinePrime_of_run_examinePrimes_eq_some`,
+  `Ratpoints.Sieve.primeStore_of_run_examinePrimes_eq_some`,
   `Ratpoints.Sieve.not_isPoint_of_run_examinePrimes_eq_none`: the tables that the loop of the tables
-  keeps are those of the reference, and when it takes its exit, the curve has no points.
+  keeps are those of the reference, its store holds the rows of `0` of the primes, and when it takes
+  its exit, the curve has no points.
 * `Ratpoints.Sieve.IsForbiddenEntry.prime`, `Ratpoints.Sieve.IsForbiddenEntry.words_eq`: the
   forbidden divisors tested with words are primes with the words of `Ratpoints.Sieve.forbiddenRow`.
 * `Ratpoints.Sieve.IsForbiddenEntry.not_dvd`, `Ratpoints.Sieve.IsForbiddenVal.excludes_eq_false`:
@@ -827,43 +832,60 @@ theorem run_forbiddenOfPrime_eq_of_run_examinePrime?_eq_some {c : List ℤ} {d k
   rw [eq_map_range_of_run_examinePrime?_eq_some he,
     eq_examinePrime_of_lt_numPrimes_of_run_examinePrime?_eq_some hk he]
 
+/-- The store of the tables of rows that the loop of the tables makes holds every function `R` of
+the references and the residues (`Ratpoints.Sieve.RowStore.Holds`) whose rows of `0` of the primes
+are the patterns `sieves0` (`Ratpoints.Sieve.sieves0`), since it holds only these rows, and every
+table of rows of a prime in it has its row of `0` (`Ratpoints.Sieve.RowStore.PrimeZeroRows`). -/
+def PrimeStore (store : RowStore) : Prop :=
+  (∀ R : EntryRef → ℕ → Array UInt64, (∀ p, 0 < p → R (.prime p) 0 = sieves0 p) → store.Holds R) ∧
+    store.PrimeZeroRows
+
+theorem primeStore_empty : PrimeStore {} :=
+  ⟨fun R _ ↦ RowStore.holds_empty R, RowStore.primeZeroRows_empty⟩
+
+theorem PrimeStore.insertIfNew {store : RowStore} (h : PrimeStore store) {p : ℕ} (hp : 0 < p) :
+    PrimeStore (store.insertIfNew (.prime p) (primeRows p)) :=
+  ⟨fun R hR ↦ (h.1 R hR).insertIfNew_primeRows (hR p hp), h.2.insertIfNew_primeRows p⟩
+
 /-- The invariant of the loop of `Ratpoints.Sieve.examinePrimes` over the positions of the first
-primes of the table, after `k` of them, on the tables and the forbidden divisors found: the tables
-are those of the reference of the primes `Ratpoints.primeTable[i]`, `i < k`, and the forbidden
-divisors are at most `maxForbidden` of those that the loop may record
-(`Ratpoints.Sieve.IsForbiddenEntry`, `Ratpoints.Sieve.IsForbiddenVal`). -/
+primes of the table, after `k` of them, on the tables, the forbidden divisors found and the store:
+the tables are those of the reference of the primes `Ratpoints.primeTable[i]`, `i < k`, the
+forbidden divisors are at most `maxForbidden` of those that the loop may record
+(`Ratpoints.Sieve.IsForbiddenEntry`, `Ratpoints.Sieve.IsForbiddenVal`), and the store holds the rows
+of `0` of the primes and no others (`Ratpoints.Sieve.PrimeStore`). -/
 def ExaminePrimesInvariant (c : List ℤ) (d maxForbidden bHigh k : ℕ) (tables : Array Entry)
-    (ba : Array ForbiddenEntry) (val : Array ForbiddenVal) : Prop :=
+    (ba : Array ForbiddenEntry) (val : Array ForbiddenVal) (store : RowStore) : Prop :=
   tables.size = k ∧
     (∀ (i : ℕ) (hi : i < tables.size), tables[i] = examinePrime c d primeTable[i]!) ∧
     (∀ e ∈ ba, IsForbiddenEntry c d bHigh e) ∧ (∀ e ∈ val, IsForbiddenVal c d bHigh e) ∧
-    ba.size + val.size ≤ maxForbidden
+    ba.size + val.size ≤ maxForbidden ∧ PrimeStore store
 
 /-- The invariant of the loop of `Ratpoints.Sieve.examinePrimes` with the positions `suff` still to
-come, on the result of an early return, the tables and the forbidden divisors:
+come, on the result of an early return, the tables, the forbidden divisors and the store:
 `Ratpoints.Sieve.ExaminePrimesInvariant` after the positions `pref` without a result, and a result,
 which is `none` and comes from a position `pn < n` whose prime has no table
 (`Ratpoints.Sieve.examinePrime?`), only at the end. -/
 def ExaminePrimesLoopInvariant (c : List ℤ) (d : ℕ) (u : Bool) (n maxForbidden bHigh : ℕ)
     (pref suff : List ℕ)
-    (st : Option (Option (Array Entry × Array ForbiddenEntry × Array ForbiddenVal)) ×
-      Array Entry × Array ForbiddenEntry × Array ForbiddenVal) : Prop :=
-  st.1.elim (ExaminePrimesInvariant c d maxForbidden bHigh pref.length st.2.1 st.2.2.1 st.2.2.2)
+    (st : Option (Option (Array Entry × Array ForbiddenEntry × Array ForbiddenVal × RowStore)) ×
+      Array Entry × Array ForbiddenEntry × Array ForbiddenVal × RowStore) : Prop :=
+  st.1.elim (ExaminePrimesInvariant c d maxForbidden bHigh pref.length st.2.1 st.2.2.1 st.2.2.2.1
+      st.2.2.2.2)
     fun r ↦ suff = [] ∧ r = none ∧ ∃ pn < n, Id.run (examinePrime? c d primeTable[pn]! u) = none
 
 theorem examinePrimesLoopInvariant_empty (c : List ℤ) (d : ℕ) (u : Bool)
     (n maxForbidden bHigh : ℕ) (suff : List ℕ) :
-    ExaminePrimesLoopInvariant c d u n maxForbidden bHigh [] suff (none, #[], #[], #[]) :=
-  ⟨rfl, nofun, nofun, nofun, Nat.zero_le _⟩
+    ExaminePrimesLoopInvariant c d u n maxForbidden bHigh [] suff (none, #[], #[], #[], {}) :=
+  ⟨rfl, nofun, nofun, nofun, Nat.zero_le _, primeStore_empty⟩
 
 /-- Before the last position, the loop of `Ratpoints.Sieve.examinePrimes` has not returned. -/
 theorem ExaminePrimesLoopInvariant.examinePrimesInvariant {c : List ℤ} {d : ℕ} {u : Bool}
     {n maxForbidden bHigh cur : ℕ} {pref suff : List ℕ} {o : Option (Option
-      (Array Entry × Array ForbiddenEntry × Array ForbiddenVal))} {tables : Array Entry}
-    {ba : Array ForbiddenEntry} {val : Array ForbiddenVal}
+      (Array Entry × Array ForbiddenEntry × Array ForbiddenVal × RowStore))} {tables : Array Entry}
+    {ba : Array ForbiddenEntry} {val : Array ForbiddenVal} {store : RowStore}
     (h : ExaminePrimesLoopInvariant c d u n maxForbidden bHigh pref (cur :: suff)
-      (o, tables, ba, val)) :
-    ExaminePrimesInvariant c d maxForbidden bHigh pref.length tables ba val := by
+      (o, tables, ba, val, store)) :
+    ExaminePrimesInvariant c d maxForbidden bHigh pref.length tables ba val store := by
   cases o with
   | none => exact h
   | some _ => exact absurd h.1 (List.cons_ne_nil _ _)
@@ -871,26 +893,39 @@ theorem ExaminePrimesLoopInvariant.examinePrimesInvariant {c : List ℤ} {d : �
 /-- After a step of the loop of `Ratpoints.Sieve.examinePrimes` without a return. -/
 theorem ExaminePrimesInvariant.examinePrimesLoopInvariant {c : List ℤ} {d : ℕ} {u : Bool}
     {n maxForbidden bHigh : ℕ} {pref : List ℕ} {tables : Array Entry} {ba : Array ForbiddenEntry}
-    {val : Array ForbiddenVal}
-    (h : ExaminePrimesInvariant c d maxForbidden bHigh (pref.length + 1) tables ba val)
+    {val : Array ForbiddenVal} {store : RowStore}
+    (h : ExaminePrimesInvariant c d maxForbidden bHigh (pref.length + 1) tables ba val store)
     (cur : ℕ) (suff : List ℕ) :
     ExaminePrimesLoopInvariant c d u n maxForbidden bHigh (pref ++ [cur]) suff
-      (none, tables, ba, val) := by
-  change ExaminePrimesInvariant c d maxForbidden bHigh (pref ++ [cur]).length tables ba val
+      (none, tables, ba, val, store) := by
+  change ExaminePrimesInvariant c d maxForbidden bHigh (pref ++ [cur]).length tables ba val store
   rwa [List.length_append, List.length_singleton]
+
+/-- The store after the position `k < Ratpoints.numPrimes` of the loop of the tables, with the table
+of rows of its prime made or not. -/
+theorem PrimeStore.of_eq_or_eq {store store' : RowStore} (h : PrimeStore store) {k : ℕ}
+    (hk : k < numPrimes) (hs : store' = store ∨
+      store' = store.insertIfNew (.prime primeTable[k]!) (primeRows primeTable[k]!)) :
+    PrimeStore store' := by
+  rcases hs with rfl | rfl
+  · exact h
+  · exact h.insertIfNew (prime_getElem!_primeTable (hk.trans_le numPrimes_le_size_primeTable)).pos
 
 /-- The step of the loop of `Ratpoints.Sieve.examinePrimes` at the position
 `k < Ratpoints.numPrimes`, whose prime has a table (`Ratpoints.Sieve.examinePrime?`), the table of
-the reference: the table is kept, and the forbidden divisors become `ba'` and `val'`. -/
+the reference: the table is kept, the table of rows of the prime made or not, and the forbidden
+divisors become `ba'` and `val'`. -/
 theorem ExaminePrimesInvariant.push {c : List ℤ} {d maxForbidden bHigh k : ℕ} {u : Bool}
     {tables : Array Entry} {ba ba' : Array ForbiddenEntry} {val val' : Array ForbiddenVal}
-    {e : Entry} {cm : Array ℕ} (h : ExaminePrimesInvariant c d maxForbidden bHigh k tables ba val)
+    {store store' : RowStore} {e : Entry} {cm : Array ℕ}
+    (h : ExaminePrimesInvariant c d maxForbidden bHigh k tables ba val store)
     (hk : k < numPrimes) (he : Id.run (examinePrime? c d primeTable[k]! u) = some (e, cm))
     (hba : ∀ f ∈ ba', IsForbiddenEntry c d bHigh f) (hval : ∀ f ∈ val', IsForbiddenVal c d bHigh f)
-    (hsize : ba'.size + val'.size ≤ maxForbidden) :
-    ExaminePrimesInvariant c d maxForbidden bHigh (k + 1) (tables.push e) ba' val' := by
-  obtain ⟨hs, ht, -⟩ := h
-  refine ⟨by simp [hs], fun i hi ↦ ?_, hba, hval, hsize⟩
+    (hsize : ba'.size + val'.size ≤ maxForbidden) (hs : store' = store ∨
+      store' = store.insertIfNew (.prime primeTable[k]!) (primeRows primeTable[k]!)) :
+    ExaminePrimesInvariant c d maxForbidden bHigh (k + 1) (tables.push e) ba' val' store' := by
+  obtain ⟨hsz, ht, -, -, -, hst⟩ := h
+  refine ⟨by simp [hsz], fun i hi ↦ ?_, hba, hval, hsize, hst.of_eq_or_eq hk hs⟩
   rw [Array.getElem_push]
   split
   · exact ht i _
@@ -932,23 +967,25 @@ theorem isForbiddenVal_of_run_examinePrime?_eq_some {c : List ℤ} {d bHigh k : 
 with words. -/
 theorem ExaminePrimesLoopInvariant.push_inl {c : List ℤ} {d : ℕ} {u checkDenom : Bool}
     {n maxForbidden bHigh cur : ℕ} {pref suff : List ℕ}
-    {o : Option (Option (Array Entry × Array ForbiddenEntry × Array ForbiddenVal))}
-    {tables : Array Entry} {ba : Array ForbiddenEntry} {val : Array ForbiddenVal} {e : Entry}
-    {cm : Array ℕ} {r : Option (ForbiddenEntry ⊕ ForbiddenVal)} {f : ForbiddenEntry}
-    (hn : n ≤ numPrimes) (hl : ForIn.toList [:n] = pref ++ cur :: suff)
+    {o : Option (Option (Array Entry × Array ForbiddenEntry × Array ForbiddenVal × RowStore))}
+    {tables : Array Entry} {ba : Array ForbiddenEntry} {val : Array ForbiddenVal}
+    {store store' : RowStore} {e : Entry} {cm : Array ℕ}
+    {r : Option (ForbiddenEntry ⊕ ForbiddenVal)}
+    {f : ForbiddenEntry} (hn : n ≤ numPrimes) (hl : ForIn.toList [:n] = pref ++ cur :: suff)
     (h : ExaminePrimesLoopInvariant c d u n maxForbidden bHigh pref (cur :: suff)
-      (o, tables, ba, val))
-    (he : Id.run (examinePrime? c d primeTable[cur]! u) = some (e, cm))
+      (o, tables, ba, val, store))
     (hlt : (checkDenom && decide (ba.size + val.size < maxForbidden)) = true)
     (hr : r = Id.run
       (forbiddenOfPrime c d primeTable[cur]! bHigh cm e.isFSquare[primeTable[cur]!]!))
-    (hf : r = some (.inl f)) :
+    (hf : r = some (.inl f)) (he : Id.run (examinePrime? c d primeTable[cur]! u) = some (e, cm))
+    (hs : store' = store ∨
+      store' = store.insertIfNew (.prime primeTable[cur]!) (primeRows primeTable[cur]!)) :
     ExaminePrimesLoopInvariant c d u n maxForbidden bHigh (pref ++ [cur]) suff
-      (none, tables.push e, ba.push f, val) := by
+      (none, tables.push e, ba.push f, val, store') := by
   obtain ⟨rfl, hk⟩ := eq_length_and_lt_of_toList_eq hl hn
   have h' := h.examinePrimesInvariant
   refine (h'.push hk he (Array.forall_mem_push.mpr ⟨isForbiddenEntry_of_run_examinePrime?_eq_some
-    hk he (hr ▸ hf), h'.2.2.1⟩) h'.2.2.2.1 ?_).examinePrimesLoopInvariant _ _
+    hk he (hr ▸ hf), h'.2.2.1⟩) h'.2.2.2.1 ?_ hs).examinePrimesLoopInvariant _ _
   simp only [Bool.and_eq_true, decide_eq_true_eq, Array.size_push] at hlt ⊢
   lia
 
@@ -956,24 +993,26 @@ theorem ExaminePrimesLoopInvariant.push_inl {c : List ℤ} {d : ℕ} {u checkDen
 by its valuation. -/
 theorem ExaminePrimesLoopInvariant.push_inr {c : List ℤ} {d : ℕ} {u checkDenom : Bool}
     {n maxForbidden bHigh cur : ℕ} {pref suff : List ℕ}
-    {o : Option (Option (Array Entry × Array ForbiddenEntry × Array ForbiddenVal))}
-    {tables : Array Entry} {ba : Array ForbiddenEntry} {val : Array ForbiddenVal} {e : Entry}
-    {cm : Array ℕ} {r : Option (ForbiddenEntry ⊕ ForbiddenVal)} {f : ForbiddenVal}
-    (hn : n ≤ numPrimes) (hl : ForIn.toList [:n] = pref ++ cur :: suff)
+    {o : Option (Option (Array Entry × Array ForbiddenEntry × Array ForbiddenVal × RowStore))}
+    {tables : Array Entry} {ba : Array ForbiddenEntry} {val : Array ForbiddenVal}
+    {store store' : RowStore} {e : Entry} {cm : Array ℕ}
+    {r : Option (ForbiddenEntry ⊕ ForbiddenVal)}
+    {f : ForbiddenVal} (hn : n ≤ numPrimes) (hl : ForIn.toList [:n] = pref ++ cur :: suff)
     (h : ExaminePrimesLoopInvariant c d u n maxForbidden bHigh pref (cur :: suff)
-      (o, tables, ba, val))
-    (he : Id.run (examinePrime? c d primeTable[cur]! u) = some (e, cm))
+      (o, tables, ba, val, store))
     (hlt : (checkDenom && decide (ba.size + val.size < maxForbidden)) = true)
     (hr : r = Id.run
       (forbiddenOfPrime c d primeTable[cur]! bHigh cm e.isFSquare[primeTable[cur]!]!))
-    (hf : r = some (.inr f)) :
+    (hf : r = some (.inr f)) (he : Id.run (examinePrime? c d primeTable[cur]! u) = some (e, cm))
+    (hs : store' = store ∨
+      store' = store.insertIfNew (.prime primeTable[cur]!) (primeRows primeTable[cur]!)) :
     ExaminePrimesLoopInvariant c d u n maxForbidden bHigh (pref ++ [cur]) suff
-      (none, tables.push e, ba, val.push f) := by
+      (none, tables.push e, ba, val.push f, store') := by
   obtain ⟨rfl, hk⟩ := eq_length_and_lt_of_toList_eq hl hn
   have h' := h.examinePrimesInvariant
   refine (h'.push hk he h'.2.2.1 (Array.forall_mem_push.mpr
     ⟨isForbiddenVal_of_run_examinePrime?_eq_some hk he (hr ▸ hf), h'.2.2.2.1⟩)
-    ?_).examinePrimesLoopInvariant _ _
+    ?_ hs).examinePrimesLoopInvariant _ _
   simp only [Bool.and_eq_true, decide_eq_true_eq, Array.size_push] at hlt ⊢
   lia
 
@@ -981,41 +1020,47 @@ theorem ExaminePrimesLoopInvariant.push_inr {c : List ℤ} {d : ℕ} {u checkDen
 forbidden divisor. -/
 theorem ExaminePrimesLoopInvariant.push {c : List ℤ} {d : ℕ} {u : Bool}
     {n maxForbidden bHigh cur : ℕ} {pref suff : List ℕ}
-    {o : Option (Option (Array Entry × Array ForbiddenEntry × Array ForbiddenVal))}
-    {tables : Array Entry} {ba : Array ForbiddenEntry} {val : Array ForbiddenVal} {e : Entry}
-    {cm : Array ℕ} (hn : n ≤ numPrimes) (hl : ForIn.toList [:n] = pref ++ cur :: suff)
+    {o : Option (Option (Array Entry × Array ForbiddenEntry × Array ForbiddenVal × RowStore))}
+    {tables : Array Entry} {ba : Array ForbiddenEntry} {val : Array ForbiddenVal}
+    {store store' : RowStore} {e : Entry} {cm : Array ℕ} (hn : n ≤ numPrimes)
+    (hl : ForIn.toList [:n] = pref ++ cur :: suff)
     (h : ExaminePrimesLoopInvariant c d u n maxForbidden bHigh pref (cur :: suff)
-      (o, tables, ba, val))
-    (he : Id.run (examinePrime? c d primeTable[cur]! u) = some (e, cm)) :
+      (o, tables, ba, val, store))
+    (he : Id.run (examinePrime? c d primeTable[cur]! u) = some (e, cm))
+    (hs : store' = store ∨
+      store' = store.insertIfNew (.prime primeTable[cur]!) (primeRows primeTable[cur]!)) :
     ExaminePrimesLoopInvariant c d u n maxForbidden bHigh (pref ++ [cur]) suff
-      (none, tables.push e, ba, val) := by
+      (none, tables.push e, ba, val, store') := by
   obtain ⟨rfl, hk⟩ := eq_length_and_lt_of_toList_eq hl hn
   have h' := h.examinePrimesInvariant
-  exact (h'.push hk he h'.2.2.1 h'.2.2.2.1 h'.2.2.2.2).examinePrimesLoopInvariant _ _
+  exact (h'.push hk he h'.2.2.1 h'.2.2.2.1 h'.2.2.2.2.1 hs).examinePrimesLoopInvariant _ _
 
 /-- The early return of the loop of `Ratpoints.Sieve.examinePrimes` at a position whose prime has no
 table (`Ratpoints.Sieve.examinePrime?`). -/
 theorem examinePrimesLoopInvariant_some_none {c : List ℤ} {d : ℕ} {u : Bool}
     {n maxForbidden bHigh cur : ℕ} {pref suff pref' : List ℕ} {tables : Array Entry}
-    {ba : Array ForbiddenEntry} {val : Array ForbiddenVal} {x : Option (Entry × Array ℕ)}
+    {ba : Array ForbiddenEntry} {val : Array ForbiddenVal} {store : RowStore}
+    {x : Option (Entry × Array ℕ)}
     (hl : ForIn.toList [:n] = pref ++ cur :: suff) (hx : ∀ e cm, x = some (e, cm) → False)
     (he : Id.run (examinePrime? c d primeTable[cur]! u) = x) :
-    ExaminePrimesLoopInvariant c d u n maxForbidden bHigh pref' [] (some none, tables, ba, val) :=
+    ExaminePrimesLoopInvariant c d u n maxForbidden bHigh pref' []
+      (some none, tables, ba, val, store) :=
   ⟨rfl, rfl, cur, Std.Legacy.Range.lt_of_toList_eq_append_cons hl,
     he.trans (Option.eq_none_iff_forall_ne_some.mpr fun ⟨e, cm⟩ h ↦ hx e cm h)⟩
 
 /-- The end of the loop of `Ratpoints.Sieve.examinePrimes` after an early return. -/
 theorem ExaminePrimesLoopInvariant.post_some {c : List ℤ} {d : ℕ} {u : Bool}
     {n maxForbidden bHigh : ℕ} {pref : List ℕ}
-    {o : Option (Option (Array Entry × Array ForbiddenEntry × Array ForbiddenVal))}
+    {o : Option (Option (Array Entry × Array ForbiddenEntry × Array ForbiddenVal × RowStore))}
     {tables : Array Entry} {ba : Array ForbiddenEntry} {val : Array ForbiddenVal}
-    {r : Option (Array Entry × Array ForbiddenEntry × Array ForbiddenVal)}
-    (h : ExaminePrimesLoopInvariant c d u n maxForbidden bHigh pref [] (o, tables, ba, val))
+    {store : RowStore}
+    {r : Option (Array Entry × Array ForbiddenEntry × Array ForbiddenVal × RowStore)}
+    (h : ExaminePrimesLoopInvariant c d u n maxForbidden bHigh pref [] (o, tables, ba, val, store))
     (ho : o = some r) :
-    (∀ tables ba val, r = some (tables, ba, val) → tables.size = n ∧
+    (∀ tables ba val store, r = some (tables, ba, val, store) → tables.size = n ∧
         (∀ (i : ℕ) (hi : i < tables.size), tables[i] = examinePrime c d primeTable[i]!) ∧
         (∀ e ∈ ba, IsForbiddenEntry c d bHigh e) ∧ (∀ e ∈ val, IsForbiddenVal c d bHigh e) ∧
-        ba.size + val.size ≤ maxForbidden) ∧
+        ba.size + val.size ≤ maxForbidden ∧ PrimeStore store) ∧
       (r = none → ∃ pn < n, Id.run (examinePrime? c d primeTable[pn]! u) = none) := by
   subst ho
   obtain ⟨-, rfl, h⟩ := h
@@ -1024,20 +1069,22 @@ theorem ExaminePrimesLoopInvariant.post_some {c : List ℤ} {d : ℕ} {u : Bool}
 /-- The end of the loop of `Ratpoints.Sieve.examinePrimes` over all the positions `pn < n`. -/
 theorem ExaminePrimesLoopInvariant.post_none {c : List ℤ} {d : ℕ} {u : Bool}
     {n maxForbidden bHigh : ℕ}
-    {o : Option (Option (Array Entry × Array ForbiddenEntry × Array ForbiddenVal))}
+    {o : Option (Option (Array Entry × Array ForbiddenEntry × Array ForbiddenVal × RowStore))}
     {tables : Array Entry} {ba : Array ForbiddenEntry} {val : Array ForbiddenVal}
+    {store : RowStore}
     (h : ExaminePrimesLoopInvariant c d u n maxForbidden bHigh (ForIn.toList [:n]) []
-      (o, tables, ba, val)) (ho : o = none) :
-    (∀ tables' ba' val', some (tables, ba, val) = some (tables', ba', val') → tables'.size = n ∧
+      (o, tables, ba, val, store)) (ho : o = none) :
+    (∀ tables' ba' val' store', some (tables, ba, val, store) = some (tables', ba', val', store') →
+        tables'.size = n ∧
         (∀ (i : ℕ) (hi : i < tables'.size), tables'[i] = examinePrime c d primeTable[i]!) ∧
         (∀ e ∈ ba', IsForbiddenEntry c d bHigh e) ∧ (∀ e ∈ val', IsForbiddenVal c d bHigh e) ∧
-        ba'.size + val'.size ≤ maxForbidden) ∧
-      (some (tables, ba, val) = none →
+        ba'.size + val'.size ≤ maxForbidden ∧ PrimeStore store') ∧
+      (some (tables, ba, val, store) = none →
         ∃ pn < n, Id.run (examinePrime? c d primeTable[pn]! u) = none) := by
   subst ho
-  refine ⟨fun _ _ _ h' ↦ ?_, nofun⟩
+  refine ⟨fun _ _ _ _ h' ↦ ?_, nofun⟩
   simp only [Option.some.injEq, Prod.mk.injEq] at h'
-  obtain ⟨rfl, rfl, rfl⟩ := h'
+  obtain ⟨rfl, rfl, rfl, rfl⟩ := h'
   obtain ⟨hs, h⟩ := h
   exact ⟨by rw [hs, Std.Legacy.Range.length_toList, Nat.sub_zero], h⟩
 
@@ -1053,19 +1100,20 @@ private theorem forbiddenOfPrime_value (c : List ℤ) (d p bHigh : ℕ) (cm : Ar
   ⟨fun _ ↦ rfl⟩
 
 attribute [local irreducible] ExaminePrimesInvariant ExaminePrimesLoopInvariant primeTable in
-/-- The contract of `Ratpoints.Sieve.examinePrimes` for `n ≤ Ratpoints.numPrimes`: on tables and
-forbidden divisors, a table for each of the first `n` primes of the table, that of the reference
-(`Ratpoints.Sieve.examinePrime`), and at most `maxForbidden` forbidden divisors, each one that the
-loop may record (`Ratpoints.Sieve.IsForbiddenEntry`, `Ratpoints.Sieve.IsForbiddenVal`); on none, one
-of these primes has no table (`Ratpoints.Sieve.examinePrime?`), the curve having no points modulo
-it. -/
+/-- The contract of `Ratpoints.Sieve.examinePrimes` for `n ≤ Ratpoints.numPrimes`: on tables,
+forbidden divisors and a store, a table for each of the first `n` primes of the table, that of the
+reference (`Ratpoints.Sieve.examinePrime`), at most `maxForbidden` forbidden divisors, each one that
+the loop may record (`Ratpoints.Sieve.IsForbiddenEntry`, `Ratpoints.Sieve.IsForbiddenVal`), and the
+store of the tables of rows of the primes with their rows of `0` (`Ratpoints.Sieve.PrimeStore`);
+on none, one of these primes has no table (`Ratpoints.Sieve.examinePrime?`), the curve having no
+points modulo it. -/
 @[spec]
 theorem examinePrimes_spec (c : List ℤ) (d : ℕ) (u checkDenom : Bool) (n maxForbidden bHigh : ℕ) :
     ⦃ n ≤ numPrimes ⦄ examinePrimes c d u checkDenom n maxForbidden bHigh
-    ⦃ fun r ↦ (∀ tables ba val, r = some (tables, ba, val) → tables.size = n ∧
+    ⦃ fun r ↦ (∀ tables ba val store, r = some (tables, ba, val, store) → tables.size = n ∧
         (∀ (i : ℕ) (hi : i < tables.size), tables[i] = examinePrime c d primeTable[i]!) ∧
         (∀ e ∈ ba, IsForbiddenEntry c d bHigh e) ∧ (∀ e ∈ val, IsForbiddenVal c d bHigh e) ∧
-        ba.size + val.size ≤ maxForbidden) ∧
+        ba.size + val.size ≤ maxForbidden ∧ PrimeStore store) ∧
       (r = none → ∃ pn < n, Id.run (examinePrime? c d primeTable[pn]! u) = none) ⦄ := by
   vcgen [examinePrimes, examinePrime?_value, forbiddenOfPrime_value] invariants
   | inv1 => fun pref suff st ↦ ExaminePrimesLoopInvariant c d u n maxForbidden bHigh pref suff st
@@ -1075,52 +1123,70 @@ theorem examinePrimes_spec (c : List ℤ) (d : ℕ) (u checkDenom : Bool) (n max
     | exact examinePrimesLoopInvariant_empty c d u n maxForbidden bHigh _
     | exact ExaminePrimesLoopInvariant.post_some ‹_› ‹_›
     | exact ExaminePrimesLoopInvariant.post_none ‹_› ‹_›
-    | exact ExaminePrimesLoopInvariant.push_inl ‹_› ‹_› ‹_› ‹_› ‹_› ‹_› ‹_›
-    | exact ExaminePrimesLoopInvariant.push_inr ‹_› ‹_› ‹_› ‹_› ‹_› ‹_› ‹_›
-    | exact ExaminePrimesLoopInvariant.push ‹_› ‹_› ‹_› ‹_›
+    | exact ExaminePrimesLoopInvariant.push_inl ‹_› ‹_› ‹_› ‹_› ‹_› ‹_› ‹_› (by
+        first | exact .inl rfl | exact .inr rfl)
+    | exact ExaminePrimesLoopInvariant.push_inr ‹_› ‹_› ‹_› ‹_› ‹_› ‹_› ‹_› (by
+        first | exact .inl rfl | exact .inr rfl)
+    | exact ExaminePrimesLoopInvariant.push ‹_› ‹_› ‹_› ‹_› (by
+        first | exact .inl rfl | exact .inr rfl)
     | exact examinePrimesLoopInvariant_some_none ‹_› ‹_› ‹_›
 
 -- `Ratpoints.Sieve.examinePrimes_spec` as a plain statement.
 private theorem run_examinePrimes_spec {c : List ℤ} {d : ℕ} {u checkDenom : Bool}
     {n maxForbidden bHigh : ℕ} (hn : n ≤ numPrimes) :
-    (∀ tables ba val, Id.run (examinePrimes c d u checkDenom n maxForbidden bHigh) =
-        some (tables, ba, val) → tables.size = n ∧
+    (∀ tables ba val store, Id.run (examinePrimes c d u checkDenom n maxForbidden bHigh) =
+        some (tables, ba, val, store) → tables.size = n ∧
         (∀ (i : ℕ) (hi : i < tables.size), tables[i] = examinePrime c d primeTable[i]!) ∧
         (∀ e ∈ ba, IsForbiddenEntry c d bHigh e) ∧ (∀ e ∈ val, IsForbiddenVal c d bHigh e) ∧
-        ba.size + val.size ≤ maxForbidden) ∧
+        ba.size + val.size ≤ maxForbidden ∧ PrimeStore store) ∧
       (Id.run (examinePrimes c d u checkDenom n maxForbidden bHigh) = none →
         ∃ pn < n, Id.run (examinePrime? c d primeTable[pn]! u) = none) :=
   Std.WP.Id.of_run_eq_wp rfl _ ((examinePrimes_spec c d u checkDenom n maxForbidden bHigh).le_wp hn)
 
 theorem size_eq_of_run_examinePrimes_eq_some {c : List ℤ} {d : ℕ} {u checkDenom : Bool}
     {n maxForbidden bHigh : ℕ} {tables : Array Entry} {ba : Array ForbiddenEntry}
-    {val : Array ForbiddenVal}
-    (h : Id.run (examinePrimes c d u checkDenom n maxForbidden bHigh) = some (tables, ba, val))
+    {val : Array ForbiddenVal} {store : RowStore}
+    (h : Id.run (examinePrimes c d u checkDenom n maxForbidden bHigh) =
+      some (tables, ba, val, store))
     (hn : n ≤ numPrimes) : tables.size = n :=
-  ((run_examinePrimes_spec hn).1 _ _ _ h).1
+  ((run_examinePrimes_spec hn).1 _ _ _ _ h).1
 
 /-- The tables that the loop of the tables keeps are those of the reference. -/
 theorem getElem_eq_examinePrime_of_run_examinePrimes_eq_some {c : List ℤ} {d : ℕ}
     {u checkDenom : Bool} {n maxForbidden bHigh : ℕ} {tables : Array Entry}
-    {ba : Array ForbiddenEntry} {val : Array ForbiddenVal}
-    (h : Id.run (examinePrimes c d u checkDenom n maxForbidden bHigh) = some (tables, ba, val))
+    {ba : Array ForbiddenEntry} {val : Array ForbiddenVal} {store : RowStore}
+    (h : Id.run (examinePrimes c d u checkDenom n maxForbidden bHigh) =
+      some (tables, ba, val, store))
     (hn : n ≤ numPrimes) (i : ℕ) (hi : i < tables.size) :
     tables[i] = examinePrime c d primeTable[i]! :=
-  ((run_examinePrimes_spec hn).1 _ _ _ h).2.1 i hi
+  ((run_examinePrimes_spec hn).1 _ _ _ _ h).2.1 i hi
 
 theorem isForbiddenEntry_of_run_examinePrimes_eq_some {c : List ℤ} {d : ℕ} {u checkDenom : Bool}
     {n maxForbidden bHigh : ℕ} {tables : Array Entry} {ba : Array ForbiddenEntry}
-    {val : Array ForbiddenVal}
-    (h : Id.run (examinePrimes c d u checkDenom n maxForbidden bHigh) = some (tables, ba, val))
+    {val : Array ForbiddenVal} {store : RowStore}
+    (h : Id.run (examinePrimes c d u checkDenom n maxForbidden bHigh) =
+      some (tables, ba, val, store))
     (hn : n ≤ numPrimes) {e : ForbiddenEntry} (he : e ∈ ba) : IsForbiddenEntry c d bHigh e :=
-  ((run_examinePrimes_spec hn).1 _ _ _ h).2.2.1 e he
+  ((run_examinePrimes_spec hn).1 _ _ _ _ h).2.2.1 e he
 
 theorem isForbiddenVal_of_run_examinePrimes_eq_some {c : List ℤ} {d : ℕ} {u checkDenom : Bool}
     {n maxForbidden bHigh : ℕ} {tables : Array Entry} {ba : Array ForbiddenEntry}
-    {val : Array ForbiddenVal}
-    (h : Id.run (examinePrimes c d u checkDenom n maxForbidden bHigh) = some (tables, ba, val))
+    {val : Array ForbiddenVal} {store : RowStore}
+    (h : Id.run (examinePrimes c d u checkDenom n maxForbidden bHigh) =
+      some (tables, ba, val, store))
     (hn : n ≤ numPrimes) {e : ForbiddenVal} (he : e ∈ val) : IsForbiddenVal c d bHigh e :=
-  ((run_examinePrimes_spec hn).1 _ _ _ h).2.2.2.1 e he
+  ((run_examinePrimes_spec hn).1 _ _ _ _ h).2.2.2.1 e he
+
+/-- The store of the tables of rows that the loop of the tables makes holds every function of the
+references and the residues whose rows of `0` of the primes are the patterns `sieves0`, and every
+table of rows of a prime in it has its row of `0` (`Ratpoints.Sieve.PrimeStore`). -/
+theorem primeStore_of_run_examinePrimes_eq_some {c : List ℤ} {d : ℕ} {u checkDenom : Bool}
+    {n maxForbidden bHigh : ℕ} {tables : Array Entry} {ba : Array ForbiddenEntry}
+    {val : Array ForbiddenVal} {store : RowStore}
+    (h : Id.run (examinePrimes c d u checkDenom n maxForbidden bHigh) =
+      some (tables, ba, val, store))
+    (hn : n ≤ numPrimes) : PrimeStore store :=
+  ((run_examinePrimes_spec hn).1 _ _ _ _ h).2.2.2.2.2
 
 /-- When the loop of the tables over the first `n ≤ Ratpoints.numPrimes` primes takes its exit, the
 curve has no points of any height (`Ratpoints.Sieve.not_isPoint_of_run_examinePrime?_eq_none`). -/

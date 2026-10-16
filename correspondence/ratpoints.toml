@@ -116,6 +116,24 @@ reason = "RATPOINTS_DEFAULT_SP2, the fixed end of the second stage of the versio
 
 [[excluded]]
 file = "find_points.c"
+lines = "181-270"
+kind = "memory"
+reason = "pointer_align, which aligns the buffers and the survivors array; ba_buffer_need, alloc_ba_buffer and ensure_ba_buffer, which size, allocate and enlarge the buffer from which the builders take the rows of the tables; num_powers, the number of prime powers below RATPOINTS_MAX_PRIME_EVEN, which sizes the buffers of the sieve entries and of the prime powers; and hold_nothing, which clears the pointers to the buffers: the model allocates nothing itself and keeps the rows in tables of its own"
+
+[[excluded]]
+file = "find_points.c"
+lines = "272-375"
+kind = "interface"
+reason = "find_points_init, which a caller of the library calls before find_points_work: it answers a degree outside 0, ..., RATPOINTS_MAX_DEGREE with the work length -1, but find_points_work refuses such a degree itself (lines 4557-4558, which the model has), so the work length -1, refused at lines 4621-4622, matters only to a caller who changes the degree between the two calls; it allocates the scratch integers work and the buffers and arrays of the arguments, giving all of them back when one cannot be had, clears the pointer to the pool of threads, and prints messages under DEBUG; the model allocates nothing"
+
+[[excluded]]
+file = "find_points.c"
+lines = "377-416"
+kind = "memory"
+reason = "find_points_clear, which destroys the pool of threads, clears the scratch integers, frees the buffers and arrays of the arguments and clears the pointers to them, with messages under DEBUG; the model allocates nothing"
+
+[[excluded]]
+file = "find_points.c"
 lines = "1698-1701"
 kind = "instrumentation"
 reason = "the message under DEBUG at the start of examine_prime"
@@ -232,7 +250,7 @@ reason = "the message under DEBUG at the start of find_points_work_1"
 file = "find_points.c"
 lines = "4618-4623"
 kind = "interface"
-reason = "the checks of the coefficient array and of the work array that find_points_init sets up, which only a caller of the library can fail (the work array is missing for a degree that find_points_init refused, which the program never passes, or for lack of memory, which the model cannot meet)"
+reason = "the checks of the coefficient array and of the work array that find_points_init sets up, which only a caller of the library can fail (the work array is missing when find_points_init refused the degree and the caller then gave an admissible one, since find_points_work refuses an inadmissible degree first at lines 4557-4558, or for lack of memory, which the model cannot meet)"
 
 [[excluded]]
 file = "find_points.c"

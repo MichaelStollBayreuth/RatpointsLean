@@ -120,9 +120,11 @@ C: `rp-private.h:542-555`
 
 Deviation: only the fields that the rows of a prime read; the rows of the residues, which ratpoints
 keeps in the field `sieve`, that of `0` from the build and the others made by `init` when a
-denominator first needs them, are those of the sieve entry of the prime
-(`Ratpoints.Sieve.SieveEntry.rows`), made from `Ratpoints.Sieve.Entry.admits` when first needed and
-kept for the run; the fields `init`, `magic`, `nf`, `factor` and `pw` are those of the sieve entry
+denominator first needs them, are kept in the table of rows of the prime
+(`Ratpoints.Sieve.EntryRef.prime`, `Ratpoints.Sieve.primeRows`), and the run reads them from the
+sieve entry of the prime (`Ratpoints.Sieve.SieveEntry.rows`), made from
+`Ratpoints.Sieve.Entry.admits` when first needed and kept for the run, until stage F4 hands it the
+tables of rows; the fields `init`, `magic`, `nf`, `factor` and `pw` are those of the sieve entry
 `Ratpoints.Sieve.SieveEntry`, of which the prime is the single factor, and so are `bias`, `rbainv`
 and `dinv`; `r` serves the choice of the moduli (stage I). -/
 structure Entry where
@@ -255,7 +257,7 @@ table and the inverses modulo `p` (`Ratpoints.Sieve.inversesMod`), that of the r
 
 C: `find_points.c:1683-1697`, `find_points.c:1703-1723`, `find_points.c:1725`,
 `find_points.c:1732-1734`, `find_points.c:1736`, `find_points.c:1745-1749`,
-`find_points.c:1761-1765`, `find_points.c:1795-1826`
+`find_points.c:1761-1765`, `find_points.c:1795-1819`, `find_points.c:1822-1826`
 
 Deviation: the prime `p` itself, for its index `pn` in the table `prime`; the table a fresh array of
 `p + 1` entries, for the integers that `examine_prime` takes from the buffer `int_next` and hands
@@ -270,9 +272,15 @@ and `2`, which only the choice of the moduli tells apart, with the density and t
 `prec_entry` (stage I); the entry is a fresh value, for the space that `examine_prime` takes from
 the buffer of the sieve entries (`se_next`), and returned, where `examine_prime` stores it in the
 field `ssp` of `prec_entry`; it keeps only `p`, the table and the inverses
-(`Ratpoints.Sieve.Entry`), and no rows: those of the sieve entry of the prime
-(`Ratpoints.Sieve.SieveEntry.rows`) are made from it when they are first needed, also the row of
-`0`, which `examine_prime` installs from the build; the fields `init`, `nf` and `pw` that
+(`Ratpoints.Sieve.Entry`), and no rows: the table of rows of the prime, with the row of `0` from the
+build and the others absent (lines 1820-1821, `Ratpoints.Sieve.primeRows`), is made in the store of
+the run by the loop of the tables when the prime says something (`Ratpoints.Sieve.examinePrimes`),
+and for a prime that a modulus needs, one beyond the loop of the tables, which
+`Ratpoints.makeModulus?` examines, or one that says nothing, by
+`Ratpoints.Sieve.SieveEntry.addTables` in the loop of `Ratpoints.sievingInfo` over the moduli, right
+after the entry; the run reads the rows of the sieve entry of the prime from its thunks
+(`Ratpoints.Sieve.SieveEntry.rows`), made from the table when they are first needed, also the row of
+`0`, until stage F4 hands it the tables of rows; the fields `init`, `nf` and `pw` that
 `examine_prime` sets (lines 1800 and 1817) and its reciprocal `magic` (line 1808) are those of the
 sieve entry of the prime (`Ratpoints.Sieve.SieveEntry`), of which the prime is the single factor,
 made by `Ratpoints.makeModulus?`, which sets the reciprocal there, and so are the bias `bias` and

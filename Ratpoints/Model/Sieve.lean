@@ -806,23 +806,22 @@ def sift (c : List Int) (d H A b : Nat) (rev : Bool) (sp1 : Nat)
     row.size == (e.p + chunk - 1) * rbaPack && (List.range row.size).all fun j ↦
       (List.range 64).all fun t ↦ row[j]!.toBitVec.getLsbD t == e.admits b (64 * j + t)
 
--- The rows of a prime as the build of ratpoints makes them against the plain builder, word for
--- word over all `(p + chunk - 1) rbaPack` words: the row of `0`, the pattern `sieves0`
+-- The rows of a prime as the build of ratpoints makes them against the plain builder, word for word
+-- over all `(p + chunk - 1) rbaPack` words: the row of `0`, the pattern `sieves0`
 -- (`Ratpoints.Sieve.sieves0`), for every prime of the table of the build; and the rows of the
--- residues `b ≠ 0` by the function that the build generates for the prime, called through the
--- kind of the builder of the prime (`Ratpoints.Sieve.initFactorRow`, `Ratpoints.Sieve.sieveInit`),
--- from `CODE_INIT_SIEVE1` below 64 and from `CODE_INIT_SIEVE2` above: every residue of the primes
--- up to 13 and four residues of the larger primes up to 251, with the tables of two curves and a
--- table of all ones, which tests only coprimality; the builder stores the row into the table of
--- rows of the entry of the prime, which keeps its row of `0`, and no other row.
+-- residues `b ≠ 0` by the function that the build generates for the prime, called through the kind
+-- of the builder of the prime (`Ratpoints.Sieve.initFactorRow`, `Ratpoints.Sieve.sieveInit`), from
+-- `CODE_INIT_SIEVE1` below 64 and from `CODE_INIT_SIEVE2` above: every residue of the primes up to
+-- 13 and four residues of the larger primes up to 251, with the tables of two curves and a table of
+-- all ones, which tests only coprimality; the builder stores the row into the table of rows of the
+-- entry of the prime (`Ratpoints.Sieve.primeRows`), which keeps its row of `0`, and no other row.
 #guard (primeTable.toList.take numPrimes).all fun p ↦
   let t := examinePrime [1, 0, 1] 2 p
   let e : SieveEntry := ⟨p, [.prime t], magic p, 0, 0, #[], .prime p, sieveInit p⟩
   sieves0 p == e.row 0
 #guard
   [3, 5, 7, 11, 13, 31, 61, 67, 71, 127, 251].all fun p ↦
-    let s0 : RowStore :=
-      ({} : RowStore).insert (.prime p) (#[some (sieves0 p)] ++ .replicate (p - 1) none)
+    let s0 : RowStore := ({} : RowStore).insert (.prime p) (primeRows p)
     [examinePrime [1, 2, 3, 4, 5, 6, 7] 6 p, examinePrime [-2, 0, 0, 1] 3 p,
         ⟨p, .replicate (p + 1) true, inversesMod p⟩].all fun t ↦
       let e : SieveEntry := ⟨p, [.prime t], magic p, 0, 0, #[], .prime p, sieveInit p⟩
@@ -848,25 +847,22 @@ def sift (c : List Int) (d H A b : Nat) (rev : Bool) (sp1 : Nat)
 
 -- The rows of a product by the builder of the rows of a product against the plain builder, word for
 -- word over all `(m + chunk - 1) rbaPack` words, from a store with the tables of rows of its entry
--- and of its factors and no rows but those of `0` of the primes: the rows of its factors are built
--- into the tables of rows of their entries, each the row of the residue modulo the modulus of the
--- factor, which the plain builder gives for the sieve entry of the factor, and the builder stores
--- the row of the product into its table of rows and no other row there; every residue of 15, 21 and
--- 45 = 9 · 5, and residues of 63 = 9 · 7, 105 = 3 · 5 · 7, 225 = 9 · 25 and 255 = 3 · 5 · 17.
+-- and of its factors and no rows but those of `0` of the primes, made as `Ratpoints.sievingInfo`
+-- makes them (`Ratpoints.Sieve.SieveEntry.addTables`): the rows of its factors are built into the
+-- tables of rows of their entries, each the row of the residue modulo the modulus of the factor,
+-- which the plain builder gives for the sieve entry of the factor, and the builder stores the row
+-- of the product into its table of rows and no other row there; every residue of 15, 21 and 45 = 9
+-- · 5, and residues of 63 = 9 · 7, 105 = 3 · 5 · 7, 225 = 9 · 25 and 255 = 3 · 5 · 17.
 #guard
   let c : List Int := [1, 2, 3, 4, 5, 6, 7]
   let pr (p : Nat) : Factor := .prime (examinePrime c 6 p)
   let pp (p k : Nat) : Factor := .power (Id.run (examinePower c 6 p k true))
-  let table : Factor → Array (Option (Array UInt64))
-    | .prime t => #[some (sieves0 t.p)] ++ .replicate (t.p - 1) none
-    | .power pw => .replicate pw.m none
   let single (f : Factor) : SieveEntry := ⟨f.modulus, [f], 0, 0, 0, #[], f.ref, f.init⟩
   ([(15, [pr 3, pr 5]), (21, [pr 3, pr 7]), (45, [pp 3 2, pr 5]), (63, [pp 3 2, pr 7]),
       (105, [pr 3, pr 5, pr 7]), (225, [pp 3 2, pp 5 2]), (255, [pr 3, pr 5, pr 17])] :
       List (Nat × List Factor)).all fun (m, fs) ↦
     let e : SieveEntry := ⟨m, fs, magic m, 0, 0, #[], .product 0, .product⟩
-    let s0 : RowStore := fs.foldl (fun s f ↦ s.insert f.ref (table f))
-      (({} : RowStore).insert (.product 0) (.replicate m none))
+    let s0 := e.addTables {}
     (if m ≤ 45 then List.range m else [0, 1, 2, 7, 15, m - 1]).all fun b ↦
       let (row, s) := Id.run (sieveInitProduct e b s0)
       row.toArray == e.row b &&
@@ -877,11 +873,11 @@ def sift (c : List Int) (d H A b : Nat) (rev : Bool) (sp1 : Nat)
 -- The rows through the tables of rows, read or built (`Ratpoints.Sieve.SieveEntry.fetchRow`),
 -- against the plain builder, for the sieve entries of the primes 3 and 67, the prime power 9, the
 -- product 15 = 3 · 5, which shares the table of rows of 3, and the product 45 = 9 · 5, which shares
--- the table of rows of 9: one table of rows for each entry, of the size of its modulus, with the
--- row of `0` of a prime from the build; the rows fetched in turn, the products first, each stored
--- in the table of rows of its entry; the rows of `1` and `2` of 3 and of `3` of 9 then read from
--- the tables of rows, where the products built them, and every table of rows holding the rows
--- fetched or built and no others.
+-- the table of rows of 9: the tables of rows made by `Ratpoints.Sieve.SieveEntry.addTables`, one
+-- for each entry, of the size of its modulus, with the row of `0` of a prime from the build; the
+-- rows fetched in turn, the products first, each stored in the table of rows of its entry; the rows
+-- of `1` and `2` of 3 and of `3` of 9 then read from the tables of rows, where the products built
+-- them, and every table of rows holding the rows fetched or built and no others.
 #guard
   let c : List Int := [1, 2, 3, 4, 5, 6, 7]
   let t3 := examinePrime c 6 3
@@ -893,11 +889,7 @@ def sift (c : List Int) (d H A b : Nat) (rev : Bool) (sp1 : Nat)
   let e9 : SieveEntry := ⟨9, [.power pw9], magic 9, 0, 0, #[], .power 3 2, .power⟩
   let e15 : SieveEntry := ⟨15, [.prime t3, .prime t5], magic 15, 0, 0, #[], .product 3, .product⟩
   let e45 : SieveEntry := ⟨45, [.power pw9, .prime t5], magic 45, 0, 0, #[], .product 4, .product⟩
-  let prime (p : Nat) : Array (Option (Array UInt64)) :=
-    #[some (sieves0 p)] ++ .replicate (p - 1) none
-  let s0 : RowStore := (((((({} : RowStore).insert (.prime 3) (prime 3)).insert (.prime 67)
-    (prime 67)).insert (.power 3 2) (.replicate 9 none)).insert (.prime 5) (prime 5)).insert
-    (.product 3) (.replicate 15 none)).insert (.product 4) (.replicate 45 none)
+  let s0 := [e3, e67, e9, e15, e45].foldl (fun s e ↦ e.addTables s) {}
   let wants : List (SieveEntry × Nat) :=
     [(e15, 7), (e45, 12), (e45, 30), (e3, 1), (e3, 2), (e3, 0), (e9, 3), (e67, 0), (e67, 66)]
   let (ok, s) := wants.foldl (fun (ok, s) (e, b) ↦
@@ -905,7 +897,10 @@ def sift (c : List Int) (d H A b : Nat) (rev : Bool) (sp1 : Nat)
     (ok && row == e.row b, s)) (true, s0)
   let present (k : EntryRef) : List Nat :=
     (List.range (s.getD k #[]).size).filter fun r ↦ (s.row? k r).isSome
-  ok && present (.prime 3) == [0, 1, 2] && present (.power 3 2) == [3] &&
+  ok && s0.size == 6 && [(EntryRef.prime 3, 3), (.prime 67, 67), (.power 3 2, 9), (.prime 5, 5),
+      (.product 3, 15), (.product 4, 45)].all (fun (k, m) ↦ (s0.getD k #[]).size == m) &&
+    s0.row? (.prime 3) 0 == some (sieves0 3) && s0.row? (.prime 3) 1 == none &&
+    present (.prime 3) == [0, 1, 2] && present (.power 3 2) == [3] &&
     present (.prime 5) == [0, 2] && present (.product 3) == [7] &&
     present (.product 4) == [12, 30] && present (.prime 67) == [0, 66]
 

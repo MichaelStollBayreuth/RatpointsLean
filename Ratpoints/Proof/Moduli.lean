@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.ZMod.Basic
 public import Ratpoints.Model.FindPoints
 public import Ratpoints.Proof.Packing
+public import Ratpoints.Proof.RowStore
 public import Ratpoints.Proof.Words
 public import Ratpoints.Spec.Basic
 
@@ -52,10 +53,12 @@ its factors serve the scaling of the rows by a unit modulo `m`
 completely over the table, the moduli of the factors multiply to `m`, so that the entry of a prime
 reads the inverse of `Ratpoints.rbaLength` modulo `m` from its table, as `examine_prime` does, and
 that of a prime power or a product computes it with `Ratpoints.Sieve.modinv`; with the bias of `m`,
-the entry has what the packing of the numerators reads (`Ratpoints.Sieve.SieveEntry.Packable`). It
-holds the reference to its table of rows and the kind of its builder that
-`Ratpoints.Sieve.SieveEntry.refInit` gives at its position. When the entry is none, a prime examined
-for it has no points modulo it, and the curve has none.
+the entry has what the packing of the numerators reads (`Ratpoints.Sieve.SieveEntry.Packable`). Its
+factors have builders of their rows that have what they need (`Ratpoints.Sieve.Factor.Buildable`)
+and the tables of the reference, and it holds the reference to its table of rows and the kind of its
+builder that `Ratpoints.Sieve.SieveEntry.refInit` gives at its position, so that it fits the rows of
+the references of the run (`Ratpoints.IsModulusEntry.rowsFit_runRows`). When the entry is none, a
+prime examined for it has no points modulo it, and the curve has none.
 
 ## Main definitions
 
@@ -64,8 +67,9 @@ for it has no points modulo it, and the curve has none.
   `Ratpoints.Sieve.GsqInvariant`: the invariants of the loop of `Ratpoints.Sieve.modinv`, of the
   loops over the residues of `Ratpoints.Sieve.setSquareBits` and `Ratpoints.Sieve.unitInverses`,
   and of the loops of `Ratpoints.Sieve.examinePower` that set the bits of `fsq` and `gsq`.
-* `Ratpoints.Sieve.Factor.IsSound`: a factor whose rows admit every point modulo `m` and whose
-  tables of inverses serve the scaling.
+* `Ratpoints.Sieve.Factor.IsSound`: a factor whose rows admit every point modulo `m`, whose tables
+  of inverses serve the scaling, whose builder has what it needs and whose tables are those of the
+  reference.
 * `Ratpoints.MakeModulusInvariant`: the invariant of the loop over the factors of
   `Ratpoints.makeModulus?`.
 * `Ratpoints.IsModulusEntry`: what the contract of `Ratpoints.makeModulus?` says of the entry.
@@ -91,12 +95,15 @@ for it has no points modulo it, and the curve has none.
 * `Ratpoints.Sieve.admits_run_examinePower_of_sq_eq`: the rows of a prime power let every point
   through.
 * `Ratpoints.makeModulus?_spec`: the sieve entry of a modulus of well-formed parameters has the
-  modulus, lets every point through, has the tables of inverses of its factors and the fields that
-  the packing reads (`Ratpoints.IsModulusEntry`), and the reference and the kind of builder of its
-  position (`Ratpoints.Sieve.SieveEntry.refInit`); that of one of the first `Ratpoints.numPrimes`
-  primes of the table has the prime with the table of the reference as its only factor
-  (`Ratpoints.factors_eq_of_run_makeModulus?_eq_some`), and when it is none the curve has no
-  points.
+  modulus, lets every point through, has the tables of inverses of its factors, the fields that the
+  packing reads and factors whose moduli multiply to `m`, with builders that have what they need and
+  the tables of the reference (`Ratpoints.IsModulusEntry`), and the reference and the kind of
+  builder of its position (`Ratpoints.Sieve.SieveEntry.refInit`); that of one of the first
+  `Ratpoints.numPrimes` primes of the table has the prime with the table of the reference as its
+  only factor (`Ratpoints.factors_eq_of_run_makeModulus?_eq_some`), and when it is none the curve
+  has no points.
+* `Ratpoints.IsModulusEntry.rowsFit_runRows`: such an entry fits the rows of the references of the
+  run (`Ratpoints.Sieve.runRows`).
 * `Ratpoints.mod_two_eq_one_of_forall_dvd`, `Ratpoints.coprime_rbaLength_of_mod_two_eq_one`: a
   modulus of well-formed parameters is odd, so prime to `Ratpoints.rbaLength`.
 
@@ -712,16 +719,34 @@ theorem admits_run_examinePower_of_sq_eq {c : List ℤ} {p e : ℕ} (u : Bool) (
 /-- A factor that `Ratpoints.makeModulus?` makes for the modulus `m` of the curve `y ^ 2 = F(x, z)`
 with the coefficient list `c`: it admits every point `(a, y, b)` with `gcd(a, b) = 1` at the
 residues of `b` and `a` modulo `m`, its tables of inverses serve the scaling of the rows by a unit
-modulo `m` (`Ratpoints.Sieve.Factor.HasInverses`), and a prime has the inverses of the reference
-(`Ratpoints.Sieve.inversesMod`). -/
+modulo `m` (`Ratpoints.Sieve.Factor.HasInverses`), its builder has what it needs
+(`Ratpoints.Sieve.Factor.Buildable`), and its tables are those of the reference: of a prime those of
+`Ratpoints.Sieve.examinePrime`, of a prime power those of `Ratpoints.Sieve.examinePower` on the path
+of GMP integers, which both paths give (`Ratpoints.Sieve.examinePower_eq_examinePower_false`). -/
 structure Factor.IsSound (c : List ℤ) (m : ℕ) (f : Factor) : Prop where
   /-- The factor admits every point at the residues modulo `m`. -/
   admits_of_sq_eq ⦃a y : ℤ⦄ ⦃b : ℕ⦄ (hab : Int.gcd a b = 1) (hy : y ^ 2 = binaryForm c a b) :
     f.admits (b % m) (a % m) = true
   /-- The tables of inverses serve the scaling of the rows by a unit modulo `m`. -/
   hasInverses : f.HasInverses m
-  /-- A prime has the inverses of the reference. -/
-  inverses_eq (t : Entry) (h : f = .prime t) : t.inverses = inversesMod t.p
+  /-- The builder of the rows has what it needs. -/
+  buildable : f.Buildable
+  /-- A prime has the table of the reference. -/
+  prime_eq (t : Entry) (h : f = .prime t) : t = examinePrime c (degree c) t.p
+  /-- A prime power has the tables of the reference. -/
+  power_eq (pw : Power) (h : f = .power pw) :
+    pw = Id.run (examinePower c (degree c) pw.p pw.e false)
+
+/-- A prime factor has the inverses of the reference (`Ratpoints.Sieve.inversesMod`). -/
+theorem Factor.IsSound.inverses_eq {c : List ℤ} {m : ℕ} {f : Factor} (hf : f.IsSound c m)
+    (t : Entry) (h : f = .prime t) : t.inverses = inversesMod t.p :=
+  congr(Entry.inverses $(hf.prime_eq t h))
+
+/-- A prime is no multiple of 64, as `CODE_INIT_SIEVE2` needs of a prime above 64. -/
+theorem mod_sixty_four_ne_zero_of_prime {p : ℕ} (hp : p.Prime) : p % 64 ≠ 0 := fun h0 ↦ by
+  have := (Nat.prime_dvd_prime_iff_eq Nat.prime_two hp).mp
+    (Nat.dvd_trans (by decide : 2 ∣ 64) (Nat.dvd_of_mod_eq_zero h0))
+  lia
 
 -- The factor of a prime `p = primeTable[pn]` of `m` over the table, with its table.
 private theorem isSound_prime_examinePrime {c : List ℤ} {m pn : ℕ}
@@ -732,7 +757,8 @@ private theorem isSound_prime_examinePrime {c : List ℤ} {m pn : ℕ}
   have hd := pow_dvd_of_mem_run_modulusFactors hpe
   rw [pow_one] at hd
   refine ⟨fun a y b hab hy ↦ ?_, ⟨hd, fun r hr hr0 ↦ getElem!_inversesMod_mul_mod hp hr hr0⟩,
-    fun _ ht ↦ by obtain rfl := Factor.prime.inj ht; rfl⟩
+    ⟨hp.pos, fun _ ↦ mod_sixty_four_ne_zero_of_prime hp, fun r hr ↦ getElem!_inversesMod_lt hr⟩,
+    fun _ ht ↦ by obtain rfl := Factor.prime.inj ht; rfl, nofun⟩
   rw [Factor.admits, Entry.admits_mod_of_dvd (examinePrime c (degree c) primeTable[pn]!) hd]
   exact admits_examinePrime_of_sq_eq hp hab hy
 
@@ -747,7 +773,10 @@ private theorem isSound_power_run_examinePower {c : List ℤ} {m pn e : ℕ} (u 
   have hd := pow_dvd_of_mem_run_modulusFactors hpe
   have hle : primeTable[pn]! ^ e ≤ 64 * modWords :=
     ((Nat.le_of_dvd hm0 hd).trans hm.le).trans maxPrimeEven_le_sixty_four_mul_modWords
-  refine ⟨fun a y b hab hy ↦ ?_, ⟨?_, by simpa using hd, fun x hx hpx ↦ ?_⟩, nofun⟩
+  refine ⟨fun a y b hab hy ↦ ?_, ⟨?_, by simpa using hd, fun x hx hpx ↦ ?_⟩,
+    ⟨by simpa using pow_pos hp.pos e, by simpa using hle,
+      fun x _ ↦ by simpa using getElem!_inv_run_examinePower_lt u hp he x⟩, nofun,
+    fun _ hpw ↦ by rw [← Factor.power.inj hpw, examinePower_eq_examinePower_false]; rfl⟩
   · rw [Factor.admits, Power.admits_mod_of_dvd _ hd]
     exact admits_run_examinePower_of_sq_eq u hp he hle hab hy
   · simpa using dvd_pow_self primeTable[pn]! (by lia : e ≠ 0)
@@ -854,8 +883,10 @@ theorem makeModulusInvariant_some_none {c : List ℤ} {u : Bool} {m r pn e : ℕ
 /-- What the contract of `Ratpoints.makeModulus?` says of the sieve entry `s` of the modulus `m`
 for the curve with the coefficient list `c`: its modulus is `m`, it admits every point `(a, y, b)`
 with `gcd(a, b) = 1`, its factors have their tables of inverses for `m`
-(`Ratpoints.Sieve.Factor.HasInverses`), and it has the fields that the packing reads
-(`Ratpoints.Sieve.SieveEntry.Packable`). -/
+(`Ratpoints.Sieve.Factor.HasInverses`), it has the fields that the packing reads
+(`Ratpoints.Sieve.SieveEntry.Packable`), the moduli of its factors multiply to `m`, and its factors
+have builders that have what they need (`Ratpoints.Sieve.Factor.Buildable`) and the tables of the
+reference, as the rows of the run need them (`Ratpoints.IsModulusEntry.rowsFit_runRows`). -/
 structure IsModulusEntry (c : List ℤ) (m : ℕ) (s : SieveEntry) : Prop where
   /-- The modulus is `m`. -/
   p_eq : s.p = m
@@ -866,6 +897,15 @@ structure IsModulusEntry (c : List ℤ) (m : ℕ) (s : SieveEntry) : Prop where
   hasInverses : ∀ f ∈ s.factors, f.HasInverses m
   /-- The entry has the fields that the packing reads. -/
   packable : s.Packable
+  /-- The moduli of the factors multiply to `m`. -/
+  prod_modulus : (s.factors.map Factor.modulus).prod = m
+  /-- The builders of the rows of the factors have what they need. -/
+  buildable : ∀ f ∈ s.factors, f.Buildable
+  /-- The prime factors have the tables of the reference. -/
+  prime_eq : ∀ t : Entry, .prime t ∈ s.factors → t = examinePrime c (degree c) t.p
+  /-- The prime-power factors have the tables of the reference. -/
+  power_eq : ∀ pw : Power, .power pw ∈ s.factors →
+    pw = Id.run (examinePower c (degree c) pw.p pw.e false)
 
 /-- The end of the loop of `Ratpoints.makeModulus?` after an early return. -/
 theorem MakeModulusInvariant.post_some {c : List ℤ} {m n : ℕ} {fac : List (ℕ × ℕ)}
@@ -889,45 +929,6 @@ theorem mod_two_eq_one_of_forall_dvd {m : ℕ}
   have : primeTable[0]! = 3 := by decide +kernel
   lia
 
-/-- After the loop of `Ratpoints.makeModulus?` over all the factors, with an inverse `x < m` of
-`Ratpoints.rbaLength` modulo `m`: the sieve entry of `m` with the factors made, the reciprocal and
-the bias of `m`, the inverse `x` and any reference and kind of builder admits every point and has
-the fields that the packing reads. -/
-theorem MakeModulusInvariant.isModulusEntry {c : List ℤ} {m : ℕ} {fac : List (ℕ × ℕ)}
-    {o : Option (Option SieveEntry)} {factors : Array Factor} {x : ℕ}
-    (hm : 1 < m ∧ m < maxPrimeEven ∧ ∀ q > 1, q ∣ m → ∃ pn < numPrimes, primeTable[pn]! ∣ q)
-    (h : MakeModulusInvariant c m fac [] (o, factors)) (ho : o = none)
-    (hx : x * rbaLength % m = 1 ∧ x < m) (ref : EntryRef) (init : RowInit) :
-    IsModulusEntry c m
-      ⟨m, factors.toList, magic m, m * ((rowBias + m - 1) / m), x, #[], ref, init⟩ := by
-  subst ho
-  exact ⟨rfl, fun _ _ _ hab hy ↦ List.all_eq_true.mpr fun f hf ↦
-      (h.1 f (Array.mem_toList_iff.mp hf)).admits_of_sq_eq hab hy,
-    fun f hf ↦ (h.1 f (Array.mem_toList_iff.mp hf)).hasInverses,
-    ⟨hm.1, mod_two_eq_one_of_forall_dvd hm.2.2, hm.2.1.le, rfl, hx.1, hx.2, Nat.mul_mod_right _ _,
-      Nat.le_mul_add_sub_one_div _ (Nat.zero_lt_of_lt hm.1),
-      Nat.mul_add_sub_one_div_lt _ (Nat.zero_lt_of_lt hm.1)⟩⟩
-
-/-- The end of the loop of `Ratpoints.makeModulus?` over all the factors, with an inverse `x < m`
-of `Ratpoints.rbaLength` modulo `m`: the sieve entry of `m` at the position `n`, with the reference
-and the kind of builder of `Ratpoints.Sieve.SieveEntry.refInit`
-(`Ratpoints.MakeModulusInvariant.isModulusEntry`). -/
-theorem MakeModulusInvariant.post_none {c : List ℤ} {m n : ℕ} {fac : List (ℕ × ℕ)}
-    {o : Option (Option SieveEntry)} {factors : Array Factor} {x : ℕ}
-    (hm : 1 < m ∧ m < maxPrimeEven ∧ ∀ q > 1, q ∣ m → ∃ pn < numPrimes, primeTable[pn]! ∣ q)
-    (h : MakeModulusInvariant c m fac [] (o, factors)) (ho : o = none)
-    (hx : x * rbaLength % m = 1 ∧ x < m) :
-    (∀ s, some (⟨m, factors.toList, magic m, m * ((rowBias + m - 1) / m), x, #[],
-          (SieveEntry.refInit n factors.toList).1, (SieveEntry.refInit n factors.toList).2⟩ :
-          SieveEntry) = some s →
-        IsModulusEntry c m s ∧ (s.ref, s.init) = SieveEntry.refInit n s.factors) ∧
-      (some (⟨m, factors.toList, magic m, m * ((rowBias + m - 1) / m), x, #[],
-          (SieveEntry.refInit n factors.toList).1, (SieveEntry.refInit n factors.toList).2⟩ :
-          SieveEntry) = none → ∀ H q, ¬IsPoint c H q) := by
-  refine ⟨fun _ hs ↦ ?_, nofun⟩
-  obtain rfl := Option.some.inj hs
-  exact ⟨h.isModulusEntry hm ho hx _ _, rfl⟩
-
 /-- The moduli of the factors of `m` over the table multiply to `m` when its factorization is
 complete. -/
 private theorem prod_modulus_eq {c : List ℤ} {m r : ℕ} {fac : List (ℕ × ℕ)}
@@ -941,6 +942,49 @@ private theorem prod_modulus_eq {c : List ℤ} {m r : ℕ} {fac : List (ℕ × �
   have h2 := eq_mul_prod_run_modulusFactors m
   rw [← hfac] at h1 h2
   rw [h.2, h2, h1, Nat.one_mul]
+
+/-- After the loop of `Ratpoints.makeModulus?` over all the factors, with an inverse `x < m` of
+`Ratpoints.rbaLength` modulo `m`: the sieve entry of `m` with the factors made, the reciprocal and
+the bias of `m`, the inverse `x` and any reference and kind of builder admits every point, has the
+fields that the packing reads and factors whose moduli multiply to `m`, with builders that have what
+they need and the tables of the reference. -/
+theorem MakeModulusInvariant.isModulusEntry {c : List ℤ} {m r : ℕ} {fac : List (ℕ × ℕ)}
+    {o : Option (Option SieveEntry)} {factors : Array Factor} {x : ℕ}
+    (hm : 1 < m ∧ m < maxPrimeEven ∧ ∀ q > 1, q ∣ m → ∃ pn < numPrimes, primeTable[pn]! ∣ q)
+    (hfac : (fac, r) = Id.run (modulusFactors m)) (h : MakeModulusInvariant c m fac [] (o, factors))
+    (ho : o = none) (hx : x * rbaLength % m = 1 ∧ x < m) (ref : EntryRef) (init : RowInit) :
+    IsModulusEntry c m
+      ⟨m, factors.toList, magic m, m * ((rowBias + m - 1) / m), x, #[], ref, init⟩ := by
+  have hp := prod_modulus_eq hm hfac h ho
+  subst ho
+  have hs (f : Factor) (hf : f ∈ factors.toList) : f.IsSound c m :=
+    h.1 f (Array.mem_toList_iff.mp hf)
+  exact ⟨rfl, fun _ _ _ hab hy ↦ List.all_eq_true.mpr fun f hf ↦ (hs f hf).admits_of_sq_eq hab hy,
+    fun f hf ↦ (hs f hf).hasInverses,
+    ⟨hm.1, mod_two_eq_one_of_forall_dvd hm.2.2, hm.2.1.le, rfl, hx.1, hx.2, Nat.mul_mod_right _ _,
+      Nat.le_mul_add_sub_one_div _ (Nat.zero_lt_of_lt hm.1),
+      Nat.mul_add_sub_one_div_lt _ (Nat.zero_lt_of_lt hm.1)⟩, hp, fun f hf ↦ (hs f hf).buildable,
+    fun t ht ↦ (hs _ ht).prime_eq t rfl, fun pw hpw ↦ (hs _ hpw).power_eq pw rfl⟩
+
+/-- The end of the loop of `Ratpoints.makeModulus?` over all the factors, with an inverse `x < m`
+of `Ratpoints.rbaLength` modulo `m`: the sieve entry of `m` at the position `n`, with the reference
+and the kind of builder of `Ratpoints.Sieve.SieveEntry.refInit`
+(`Ratpoints.MakeModulusInvariant.isModulusEntry`). -/
+theorem MakeModulusInvariant.post_none {c : List ℤ} {m n r : ℕ} {fac : List (ℕ × ℕ)}
+    {o : Option (Option SieveEntry)} {factors : Array Factor} {x : ℕ}
+    (hm : 1 < m ∧ m < maxPrimeEven ∧ ∀ q > 1, q ∣ m → ∃ pn < numPrimes, primeTable[pn]! ∣ q)
+    (hfac : (fac, r) = Id.run (modulusFactors m)) (h : MakeModulusInvariant c m fac [] (o, factors))
+    (ho : o = none) (hx : x * rbaLength % m = 1 ∧ x < m) :
+    (∀ s, some (⟨m, factors.toList, magic m, m * ((rowBias + m - 1) / m), x, #[],
+          (SieveEntry.refInit n factors.toList).1, (SieveEntry.refInit n factors.toList).2⟩ :
+          SieveEntry) = some s →
+        IsModulusEntry c m s ∧ (s.ref, s.init) = SieveEntry.refInit n s.factors) ∧
+      (some (⟨m, factors.toList, magic m, m * ((rowBias + m - 1) / m), x, #[],
+          (SieveEntry.refInit n factors.toList).1, (SieveEntry.refInit n factors.toList).2⟩ :
+          SieveEntry) = none → ∀ H q, ¬IsPoint c H q) := by
+  refine ⟨fun _ hs ↦ ?_, nofun⟩
+  obtain rfl := Option.some.inj hs
+  exact ⟨h.isModulusEntry hm hfac ho hx _ _, rfl⟩
 
 /-- `Ratpoints.rbaLength`, a power of 2 (`Ratpoints.rbaLength_eq_two_pow_rbaShift`), is prime to
 every odd modulus. -/
@@ -1035,8 +1079,8 @@ private theorem makeModulus?_isModulusEntry_spec (c : List ℤ) (u : Bool) (tabl
     | exact MakeModulusInvariant.push_run_examinePrime? ‹_› ‹_› ‹_› ‹_› ‹_›
     | exact MakeModulusInvariant.push_run_examinePower (Nat.zero_lt_of_lt hm.1) hm.2.1 ‹_› ‹_› ‹_›
     | exact makeModulusInvariant_some_none ‹_› ‹_› ‹_› ‹_› _
-    | exact MakeModulusInvariant.post_none hm ‹_› ‹_› (mul_rbaLength_mod_and_lt ‹_›)
-    | exact MakeModulusInvariant.post_none hm ‹_› ‹_›
+    | exact MakeModulusInvariant.post_none hm ‹_› ‹_› ‹_› (mul_rbaLength_mod_and_lt ‹_›)
+    | exact MakeModulusInvariant.post_none hm ‹_› ‹_› ‹_›
         (MakeModulusInvariant.rbainv_prime hm ‹_› ‹_› ‹_› ‹_›)
 
 /-- The sieve entry of one of the first `Ratpoints.numPrimes` primes of the table, when the tables
@@ -1098,6 +1142,31 @@ theorem makeModulus?_spec (c : List ℤ) (u : Bool) (tables : Array Entry) (n m 
       ((makeModulus?_isModulusEntry_spec c u tables n m).le_wp hpre)
     ⟨fun s hs ↦ ⟨(h.1 s hs).1, (h.1 s hs).2, fun _ hpn hm ↦
       hm ▸ factors_eq_of_run_makeModulus?_eq_some hpn hpre.1 (hm ▸ hs)⟩, h.2⟩⟩
+
+/-- The factors of the sieve entry of `m` as `Ratpoints.makeModulus?` makes it are not none, since
+their moduli multiply to `m > 1`. -/
+theorem IsModulusEntry.factors_ne_nil {c : List ℤ} {m : ℕ} {s : SieveEntry}
+    (h : IsModulusEntry c m s) : s.factors ≠ [] := fun hs ↦ by
+  have := h.packable.one_lt
+  rw [h.p_eq, ← h.prod_modulus, hs, List.map_nil, List.prod_nil] at this
+  exact Nat.lt_irrefl 1 this
+
+/-- A sieve entry with one factor as `Ratpoints.makeModulus?` makes it has the modulus of its
+factor. -/
+theorem IsModulusEntry.p_eq_modulus {c : List ℤ} {m : ℕ} {s : SieveEntry}
+    (h : IsModulusEntry c m s) {f : Factor} (hf : s.factors = [f]) : s.p = f.modulus := by
+  rw [h.p_eq, ← h.prod_modulus, hf, List.map_singleton, List.prod_singleton]
+
+/-- The sieve entry of `m` that `Ratpoints.makeModulus?` makes at the position `n` of the entries
+`es` of a run fits the rows of the references of the run (`Ratpoints.Sieve.runRows`): its reference
+and kind of builder are those of `Ratpoints.Sieve.SieveEntry.refInit`, its factors have what their
+builders need and the tables of the reference. -/
+theorem IsModulusEntry.rowsFit_runRows {c : List ℤ} {m n : ℕ} {s : SieveEntry}
+    (h : IsModulusEntry c m s) (href : (s.ref, s.init) = SieveEntry.refInit n s.factors)
+    {es : List SieveEntry} (hn : es[n]? = some s) : s.RowsFit (runRows c (degree c) es) n :=
+  SieveEntry.rowsFit_runRows hn (SieveEntry.refFits_of_refInit_eq href fun _ ↦ h.p_eq_modulus)
+    (by lia [h.packable.one_lt]) h.factors_ne_nil
+    (fun f hf ↦ h.p_eq ▸ (h.hasInverses f hf).modulus_dvd) h.buildable h.prime_eq h.power_eq
 
 end Ratpoints
 

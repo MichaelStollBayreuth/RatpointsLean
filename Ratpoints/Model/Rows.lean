@@ -36,13 +36,16 @@ power is laid out from its pattern (`Ratpoints.Sieve.sieveInitPower`,
 `Ratpoints.Sieve.layOutPattern`), and the row of a product is the and of the rows of its factors,
 laid down in blocks of the length of each factor (`Ratpoints.Sieve.sieveInitProduct`), which builds
 the rows of its factors that are absent first (`Ratpoints.Sieve.factorRows`). The rows are kept in
-tables, one for each entry of the C code, by the residue (`Ratpoints.Sieve.RowStore`), into which
-each builder stores the row that it builds (`Ratpoints.Sieve.RowStore.publish`); the row of a sieve
-entry is read from its table of rows or built into it by the builder of its kind
+tables, one for each entry of the C code, by the residue (`Ratpoints.Sieve.RowStore`): the table of
+rows of a prime starts with its row of `0` (`Ratpoints.Sieve.primeRows`), the others with no rows
+(`Ratpoints.Sieve.SieveEntry.addTables`), and each builder stores the row that it builds into the
+table of rows of its entry (`Ratpoints.Sieve.RowStore.publish`); the row of a sieve entry is read
+from its table of rows or built into it by the builder of its kind
 (`Ratpoints.Sieve.SieveEntry.fetchRow`, `Ratpoints.Sieve.SieveEntry.initRow`,
-`Ratpoints.Sieve.initFactorRow`). The run does not call the builders yet: it takes its rows from the
-plain builder (`Ratpoints.Sieve.SieveEntry.row`), which gives the same words, until stage F4 makes
-the tables of rows of a run and builds its rows into them.
+`Ratpoints.Sieve.initFactorRow`). The loop of the tables and `Ratpoints.sievingInfo` make the tables
+of rows of a run; the run does not read them yet: it takes its rows from the plain builder
+(`Ratpoints.Sieve.SieveEntry.row`), which gives the same words, until stage F4 hands it the tables
+of rows and builds its rows into them.
 
 ## Main definitions
 
@@ -50,6 +53,9 @@ the tables of rows of a run and builds its rows into them.
   the row of `0` of a prime of the table.
 * `Ratpoints.Sieve.RowStore`, `Ratpoints.Sieve.RowStore.row?`, `Ratpoints.Sieve.RowStore.publish`:
   the tables of rows, a row read from them, and a row stored into them.
+* `Ratpoints.Sieve.primeRows`, `Ratpoints.Sieve.Factor.newRows`,
+  `Ratpoints.Sieve.SieveEntry.addTables`: the table of rows of a prime, that of the entry of a
+  factor, and the tables of rows of a sieve entry made in the store.
 * `Ratpoints.Sieve.initBit`, `Ratpoints.Sieve.initFourDecl`, `Ratpoints.Sieve.initFourLoop`,
   `Ratpoints.Sieve.initReplicate`: the macros of `init.c` with which the rows of the primes are
   built.
@@ -102,11 +108,12 @@ the tables of the build writes for the prime `p = prime[pn]`: the `p` words `wor
 divisor `p` (`Ratpoints.Sieve.forbiddenRow`) written `Ratpoints.rbaPack` times, the first `p` bit
 arrays, and then the `rbaPack (chunk - 1)` words `work[i mod p]`, the copies of the first
 `Ratpoints.chunk - 1` bit arrays, so that word `x` is word `x mod p` of `work` for
-`x < (p + chunk - 1) rbaPack`. Bit `t` of word `x` is set exactly when `p ∤ 64 x + t`. The
-forbidden divisors that are primes of the table read its first `p` words
-(`Ratpoints.Sieve.forbiddenOfPrime`, `Ratpoints.Sieve.forbidden`); in the C code the sieve entry of
-a prime of the table has it as its row of `0`, which the run of the model reads from stage F4 on,
-and until then the same words from the plain builder (`Ratpoints.Sieve.SieveEntry.row`).
+`x < (p + chunk - 1) rbaPack`. Bit `t` of word `x` is set exactly when `p ∤ 64 x + t`. The forbidden
+divisors that are primes of the table read its first `p` words (`Ratpoints.Sieve.forbiddenOfPrime`,
+`Ratpoints.Sieve.forbidden`); the table of rows of a prime has it as its row of `0`
+(`Ratpoints.Sieve.primeRows`), as the sieve entry of a prime of the table has it in the C code, and
+the run of the model reads it from there from stage F4 on, until then the same words from the plain
+builder (`Ratpoints.Sieve.SieveEntry.row`).
 
 C: `find_points.c:37`, `gen_find_points_h.c:102-116`, `gen_find_points_h.c:122-134`
 
@@ -126,9 +133,11 @@ def sieves0 (p : Nat) : Array UInt64 :=
 modulus, `m` of them for the modulus `m`, each `none` until it is built. These are the arrays
 `sieve` of the sieve entries of ratpoints, which the C code reaches through the pointers to the
 entries (`sieve_list[n]`, and the field `factor` of the entry of a product), with `none` for `NULL`.
-The builders store the rows that they build into the table of their entry
-(`Ratpoints.Sieve.RowStore.publish`); the tables of a run, made where the C code makes the entries
-and handed through the run, come with stage F4. -/
+A table of rows is made, with the row of `0` of a prime from the build and the others absent, where
+the C code makes the entry (`Ratpoints.Sieve.examinePrimes`,
+`Ratpoints.Sieve.SieveEntry.addTables`), and the builders store the rows that they build into the
+table of their entry (`Ratpoints.Sieve.RowStore.publish`); the run, which reads the rows of a
+denominator from the tables of rows and builds them into them, comes with stage F4. -/
 abbrev RowStore := Std.HashMap EntryRef (Array (Option (Array UInt64)))
 
 /-- The row of the residue `r` in the table of the entry `ref`, the pointer `se->sieve[r]`: none
@@ -142,6 +151,45 @@ def RowStore.row? (s : RowStore) (ref : EntryRef) (r : Nat) : Option (Array UInt
 `Ratpoints.Sieve.sieveInitProduct`); the store as it is when it has no table of `ref`. -/
 def RowStore.publish (s : RowStore) (ref : EntryRef) (r : Nat) (row : Array UInt64) : RowStore :=
   s.modify ref (·.set! r (some row))
+
+/-- The table of rows of the prime `p` as `examine_prime` makes it: the row of `0` the pattern
+`sieves0` of the build (`Ratpoints.Sieve.sieves0`), and the rows of the residues `1, …, p - 1`
+absent until they are built.
+
+C: `find_points.c:1820-1821`
+
+Deviation: the table returned, for the array `sieve` of the entry, which `examine_prime` fills; the
+row of `0` the words of the pattern, for the pointer to them. -/
+def primeRows (p : Nat) : Array (Option (Array UInt64)) :=
+  #[some (sieves0 p)] ++ Array.replicate (p - 1) none
+
+/-- The table of rows that the entry of the factor `f` starts with: for a prime that of
+`examine_prime` (`Ratpoints.Sieve.primeRows`), and for a prime power `m` the `m` rows absent, as
+`make_power` makes them (`Ratpoints.Sieve.SieveEntry.addTables`). -/
+def Factor.newRows : Factor → Array (Option (Array UInt64))
+  | .prime t => primeRows t.p
+  | .power pw => .replicate pw.m none
+
+/-- The store `s` with the tables of rows of the sieve entry `e` of a modulus, each made only when
+its reference is absent: the table of rows of the entry of each factor
+(`Ratpoints.Sieve.Factor.newRows`), that of a prime with its row of `0`
+(`Ratpoints.Sieve.primeRows`) and that of a prime power `m` with its `m` rows absent, as
+`make_power` makes it, and for a product the `m` rows absent of its own entry, as `make_modulus`
+makes them.
+
+C: `find_points.c:2427`, `find_points.c:2471`
+
+Deviation: the tables of rows made in the store of the run, by the reference to the entry
+(`Ratpoints.Sieve.EntryRef`), for the arrays `sieve` of the entries, by the loop over the moduli
+after the entry of the modulus (`Ratpoints.sievingInfo`), where `make_power` and `make_modulus` make
+them with the entry; a table of rows made only when its reference is absent, for the test of
+`power_se` (lines 2444 and 2466) by which the entry of a prime power is made once, and for the entry
+of a prime, which `examine_prime` makes once; the table of rows of a prime made also for a prime
+beyond those of the loop of the tables and for one that says nothing, for which `examine_prime`
+makes no entry and which ratpoints takes as no factor (`Ratpoints.makeModulus?`). -/
+def SieveEntry.addTables (e : SieveEntry) (s : RowStore) : RowStore :=
+  let s := e.factors.foldl (fun s f ↦ s.insertIfNew f.ref f.newRows) s
+  if e.init = .product then s.insertIfNew e.ref (.replicate e.p none) else s
 
 /-! ### The rows of a prime -/
 
