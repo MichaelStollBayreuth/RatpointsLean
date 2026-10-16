@@ -8,10 +8,11 @@
 Stage~F models the side of the numerators: the tables of the moduli, the three stages of the sieve,
 the packing of the numerators of a class by its stride, and the first stage in chunks of bit arrays
 with the rows as the builders of ratpoints lay them out. It runs in four sub-stages with a chapter
-each: F1, the tables and the moduli (this chapter); F2, the stages of the sieve and the check; F3,
-the packing; F4, the chunked first stage and the faithful rows. Each of them only computes what the
-model computes already in another way, or removes candidates that are not points, so the points
-found and their order do not change.
+each: F1, the tables and the moduli (this chapter); F2, the stages of the sieve and the check
+(Chapter~\ref{chap:stages}); F3, the packing (Chapter~\ref{chap:packing}); F4, the chunked first
+stage and the faithful rows (Chapter~\ref{chap:rows}). Each of them only computes what the model
+computes already in another way, or removes candidates that are not points, so the points found and
+their order do not change.
 
 F1 models what ratpoints does with its tables before the sieve. The table of a prime is computed as
 \verb|examine_prime| computes it, by Horner's rule in the arithmetic of 64-bit words with the
@@ -610,22 +611,29 @@ in \verb|Ratpoints/Proof/Reductions.lean|, without Mathlib, and the other bounds
 in \verb|Ratpoints/Proof/Params.lean|. The tables of a prime with the Barrett reduction and Horner's
 rule on its schedule, \verb|modinv|, the tables of a prime power, the factors and the sieve entries
 are in \verb|Ratpoints/Model/Tables.lean|, in the namespace \verb|Ratpoints.Sieve|, with the squares
-and the inverses, the helper \verb|mod| and the rows of a denominator of the earlier stages; the
-factors of a modulus are in \verb|Ratpoints/Model/Params.lean|; the loop of the tables and the
-second loop of the forbidden divisors in \verb|Ratpoints/Model/Denominators.lean|; and the sieve
-entry of a modulus and \verb|sieving_info| in \verb|Ratpoints/Model/FindPoints.lean|. The contracts
-are next to the lemmas they serve: the Barrett reduction, Horner's rule and the table with the exit
-in \verb|Ratpoints/Proof/Tables.lean|; \verb|modinv|, the prime powers with the bounds of their
+and the inverses, the helper \verb|mod|, the admission tests of the rows of a denominator of the
+earlier stages and, since stage~F4, the bits of a bit array of words, the references to the entries
+and the kinds of the builders of the rows, the builders themselves and the tables of rows being in
+\verb|Ratpoints/Model/Rows.lean| (Chapter~\ref{chap:rows}); the factors of a modulus are in
+\verb|Ratpoints/Model/Params.lean|; the loop of the tables and the second loop of the forbidden
+divisors in \verb|Ratpoints/Model/Denominators.lean|; and the sieve entry of a modulus and
+\verb|sieving_info| in \verb|Ratpoints/Model/FindPoints.lean|. The contracts are next to the lemmas
+they serve: the Barrett reduction, Horner's rule and the table with the exit in
+\verb|Ratpoints/Proof/Tables.lean|; \verb|modinv|, the prime powers with the bounds of their
 inverses, and the sieve entry of a modulus in \verb|Ratpoints/Proof/Moduli.lean|, with what the
-packing reads of it in \verb|Ratpoints/Proof/Packing.lean|, without Mathlib; the facts on the table
-of primes, the other range lemmas of \verb|examine_power|, the factors of a modulus and the
-well-formedness in \verb|Ratpoints/Proof/Params.lean|; the loop of the tables and the forbidden
-divisors in \verb|Ratpoints/Proof/Forbidden.lean|; the sieve entries in the contracts of
-\verb|Ratpoints/Proof/Sieve.lean|, \verb|Words.lean|, \verb|Stages.lean| (the prime entries of the
-third stage), \verb|Sift.lean| and \verb|Denominators.lean|; and the soundness of the sieve entries,
-\verb|sieving_info| and the search in \verb|Ratpoints/Proof/FindPoints.lean|. The lemmas on words in
-core's namespaces are in \verb|Ratpoints/Proof/Bits.lean|, those on arrays and integers in
-\verb|Ratpoints/Proof/Containers.lean|, and the lemma on sorted lists in the mirror
+packing reads of it in \verb|Ratpoints/Proof/Packing.lean|, without Mathlib, and, since stage~F4,
+the bits of a bit array of words, which the tables of a prime power are, in
+\verb|Ratpoints/Proof/Rows.lean| and the builders of the rows of a prime power and of a product,
+through the tables of rows, in \verb|Ratpoints/Proof/CompositeRows.lean| and
+\verb|Ratpoints/Proof/RowStore.lean|, without Mathlib; the facts on the table of primes, the other
+range lemmas of \verb|examine_power|, the factors of a modulus and the well-formedness in
+\verb|Ratpoints/Proof/Params.lean|; the loop of the tables and the forbidden divisors, with the
+store of the loop of the tables, in \verb|Ratpoints/Proof/Forbidden.lean|; the sieve entries in the
+contracts of \verb|Ratpoints/Proof/Sieve.lean|, \verb|Words.lean|, \verb|Stages.lean| (the prime
+entries of the third stage), \verb|Sift.lean| and \verb|Denominators.lean|; and the soundness of the
+sieve entries, \verb|sieving_info| and the search in \verb|Ratpoints/Proof/FindPoints.lean|. The
+lemmas on words in core's namespaces are in \verb|Ratpoints/Proof/Bits.lean|, those on arrays and
+integers in \verb|Ratpoints/Proof/Containers.lean|, and the lemma on sorted lists in the mirror
 \verb|Ratpoints/Mathlib/Data/List/Sort.lean|, as a lemma on \verb|List.SortedLE|.
 
 \section{The evidence}\label{sec:tables-evidence}

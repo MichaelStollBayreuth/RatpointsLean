@@ -21,7 +21,7 @@ from `CODE_INIT_SIEVE1` (`Ratpoints.Sieve.sieveInit1`, a prime below 64) and `CO
 theorems proved with `vcgen`, the program logic of Lean core, with loop invariants that are named
 definitions: the row of the residue `0 < b < p` of a prime `p` is the closed form of the row of `b`
 of its table (`Ratpoints.Sieve.closedRow` of `Ratpoints.Sieve.Entry.admits`), and the builder stores
-it into the table of its entry (`Ratpoints.Sieve.RowStore.publish`).
+it into the table of rows of its entry (`Ratpoints.Sieve.RowStore.publish`).
 
 The pattern of a row is computed four bits at a time by four lanes, whose residues step through the
 residues `x d mod p` for the inverse `d` of `b` (`Ratpoints.Sieve.LanesAt`,
@@ -1075,10 +1075,10 @@ theorem sieveInit2_post {t : Entry} {ref : EntryRef} {b : Nat} {store : RowStore
       (si', store.publish ref b si'.toArray).2 = store.publish ref b (closedRow t.admits t.p b) :=
   toArray_eq_closedRow_of_rowWords pre.1 pre.2.1 (hrows _ hpat) hrep
 
-/-- The row of the residue `0 < b < p` of a prime `p ≥ 64` with `p mod 64 ≠ 0` by
-`CODE_INIT_SIEVE2` is the closed form of the row of `b` of its table, for the inverse of `b` below
-`p`, and the builder stores it into the table of the entry `ref`. The words `help` that the builder
-clears from the last are overwritten by the pattern before they are read. -/
+/-- The row of the residue `0 < b < p` of a prime `p ≥ 64` with `p mod 64 ≠ 0` by `CODE_INIT_SIEVE2`
+is the closed form of the row of `b` of its table, for the inverse of `b` below `p`, and the builder
+stores it into the table of rows of the entry `ref`. The words `help` that the builder clears from
+the last are overwritten by the pattern before they are read. -/
 @[spec]
 theorem sieveInit2_spec (t : Entry) (ref : EntryRef) (b : Nat) (store : RowStore) :
     ⦃ 0 < b ∧ b < t.p ∧ 64 ≤ t.p ∧ t.p % 64 ≠ 0 ∧ t.inverses[b]! < t.p ⦄ sieveInit2 t ref b store

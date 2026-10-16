@@ -95,15 +95,19 @@ offset, and if the bits are not empty, they are sifted in pieces with the masks 
 (\csource{find_points.c}{3563}{3617}).
 In \verb|_ratpoints_sift0| the test \verb|small| (\csource{sift.c}{530}{531}) decides whether the
 row indices of the piece can be reduced by $\mathrm{RP\_MULMOD}$ with the reciprocals of
-\verb|magics|: the first stage computes for each modulus
+\verb|magics|: the first stage one row at a time, the arm of a chunk of $1$ or above $16$
+(Definition~\ref{def:andRows}), computes for each modulus
 $r = (-w_{\mathrm{low}} - \mathrm{offset}) \bmod p$ by \verb|mod_mul| (\csource{sift.c}{243}{247})
 or by the division \verb|mod| (\csource{sift.c}{370}{389}) and starts at bit array $p - r$ of the
-row, which is $\equiv w_{\mathrm{low}} + \mathrm{offset} \pmod p$, and the second stage reads the
-bit array $(i + \mathrm{offset}) \bmod p$ in both arms. The extraction gives bit $t$ of word
-$\kappa$ of the bit array with the word number $i$ the numerator $a_0 + 2^k (256 i + 64 \kappa + t)$
-(\csource{sift.c}{1221}{1222}, \csource{sift.c}{1264}{1264}, \csource{sift.c}{262}{264}). The third
-stage is not packed: \verb|fill_checks| reduces $b$ itself, and the third stage tests the numerator
-itself.
+row, which is $\equiv w_{\mathrm{low}} + \mathrm{offset} \pmod p$; the chunked arm of the default
+build, the chunk $16$ of the model, starts each modulus at
+$(w_{\mathrm{low}} + \mathrm{offset}) \bmod p$, by \verb|mod_mul| under \verb|small| and by
+\verb|mod| otherwise (\csource{sift.c}{596}{606}, Definition~\ref{def:chunkStarts}); and the second
+stage reads the bit array $(i + \mathrm{offset}) \bmod p$ in both arms. The extraction gives bit $t$
+of word $\kappa$ of the bit array with the word number $i$ the numerator
+$a_0 + 2^k (256 i + 64 \kappa + t)$ (\csource{sift.c}{1221}{1222}, \csource{sift.c}{1264}{1264},
+\csource{sift.c}{262}{264}). The third stage is not packed: \verb|fill_checks| reduces $b$ itself,
+and the third stage tests the numerator itself.
 
 \paragraph{Why the packing changes nothing.} Bit $j < 256$ of the bit array with the word number
 $i$, the bit $n = 256 i + j$, stands for $a = a_0 + 2^k n$. Since
@@ -665,8 +669,10 @@ Each component of this chapter differs from the C code in a stated way, recorded
     position~$0$;
   \item the reciprocals of the first two stages as lists stepped with the sieve specs, for the
     pointer \verb|mg| into \verb|magics|; \verb|small| a Boolean, for the \verb|int|; the value
-    $-w_{\mathrm{low}} - \mathrm{offset}$ written out in both reductions of the first stage, for the
-    \verb|long| \verb|a|; the offsets natural numbers, below $2^{32}$, and the sums
+    $-w_{\mathrm{low}} - \mathrm{offset}$ written out in both reductions of the first stage one row
+    at a time, for the \verb|long| \verb|a|, the \verb|long|
+    $a = w_{\mathrm{low}} + \mathrm{offset}$ of the chunked arm being covered by the deviation of
+    Definition~\ref{def:chunkStarts}; the offsets natural numbers, below $2^{32}$, and the sums
     $i + \mathrm{offset}$ natural numbers under \verb|small|, where they are not negative, and
     integers that stay \verb|long|s where \verb|mod| reduces them outside it; the stride, the first
     numerators and the steps of the extraction natural numbers and integers, with the powers $2^k$
@@ -675,12 +681,13 @@ Each component of this chapter differs from the C code in a stated way, recorded
 \end{itemize}
 The sub-stage excludes no line in \verb|correspondence/ratpoints.toml| beyond those excluded before:
 the lines of the packing that its components do not model are left to later stages, and the timing
-lines of \verb|fill_bp_list| are owned with a deviation, as those of \verb|sift| are. Left to
-stage~F4 are the start pointers of the chunked first stage (\csource{sift.c}{596}{606}), which read
-\verb|small| and \verb|mod_mul| too, and the ends of the rows in the sieve specs; to stage~H the
-search intervals, among them the choice of the form of \verb|numerators_to_bits| and the clipping
-of an interval to the height bound; to stage~I the reserve of the offsets for the correction of the
-moduli and the cost model of the packing (\verb|clipped_padding|).
+lines of \verb|fill_bp_list| are owned with a deviation, as those of \verb|sift| are. The start
+pointers of the chunked first stage (\csource{sift.c}{596}{606}), which read \verb|small| and
+\verb|mod_mul| too, and the ends of the rows in the sieve specs are modelled since stage~F4
+(Chapter~\ref{chap:rows}). Left to stage~H are the search intervals, among them the choice of the
+form of \verb|numerators_to_bits| and the clipping of an interval to the height bound; to stage~I
+the reserve of the offsets for the correction of the moduli and the cost model of the packing
+(\verb|clipped_padding|).
 
 \section{Files and names}\label{sec:packingFiles}
 
@@ -688,12 +695,12 @@ The constants $\mathrm{rowBias}$, $\mathrm{numStrides}$ and $\mathrm{rbaShift}$ 
 \verb|Ratpoints/Model/Constants.lean|, each citing its macro, with the facts decided there that the
 proofs use, never the values: $2\,\mathrm{rowBias} - 1 \le \mathrm{mulModLimit}$,
 $1 \le \mathrm{numStrides}$, $\mathrm{rbaLength} = 2^{\mathrm{rbaShift}}$ and
-$\mathrm{rbaShift} < 32$. The high half of a product, the remainder and the quotient by a
-reciprocal on $64$-bit words and \verb|mod_mul| are in \verb|Ratpoints/Model/Tables.lean|, with the
-fields $\mathrm{bias}$, $\mathrm{rbainv}$ and $\mathrm{dinv}$ of the sieve entries; the classes,
-their patterns, the number of the packings, the rows of offsets and the residues of a denominator in
-\verb|Ratpoints/Model/Packing.lean|, which builds on \verb|Ratpoints/Model/Sieve.lean| and which
-the run (\verb|Ratpoints/Model/Denominators.lean|) and the search
+$\mathrm{rbaShift} < 32$. The high half of a product, the remainder and the quotient by a reciprocal
+on $64$-bit words and \verb|mod_mul| are in \verb|Ratpoints/Model/Tables.lean|, with the fields
+$\mathrm{bias}$, $\mathrm{rbainv}$ and $\mathrm{dinv}$ of the sieve entries; the classes, their
+patterns, the number of the packings, the rows of offsets and the residues of a denominator in
+\verb|Ratpoints/Model/Packing.lean|, which builds on \verb|Ratpoints/Model/Sieve.lean| and which the
+run (\verb|Ratpoints/Model/Denominators.lean|) and the search
 (\verb|Ratpoints/Model/FindPoints.lean|, with the bias and $\mathrm{rbainv}$ of the entry of a
 modulus) import; the class, the bits of an interval, the sieve specs of a denominator and the
 components of the sieve that run the stages in \verb|Ratpoints/Model/Sieve.lean|, which builds on
@@ -701,7 +708,8 @@ components of the sieve that run the stages in \verb|Ratpoints/Model/Sieve.lean|
 numerator at a time: the points of a reversed curve, the trailing zeros of a word, the test for
 common factors, the third stage, the test of a candidate and the exact check, the check of a
 numerator, and the points at infinity. So each file of the model stays below $1500$ lines
-(\verb|Ratpoints/Model/Sieve.lean| has $1104$, \verb|Ratpoints/Model/Candidate.lean| $499$).
+(\verb|Ratpoints/Model/Sieve.lean| has $1005$ since stage~F4, which moved the first stage to
+\verb|Ratpoints/Model/FirstStage.lean|, and \verb|Ratpoints/Model/Candidate.lean| $501$).
 
 The proofs of the sub-stage use Lean core and \verb|Std| only, but for those of the entries of the
 moduli, the run, the shapes, the 2-adic information and the search, which are in files with Mathlib.
@@ -719,7 +727,7 @@ rows read in the packing and the reciprocals read in step with the moduli;
 \verb|Ratpoints/Proof/Packing.lean|, new, the classes, the number of the packings, the rows of
 offsets and the residues, and above it \verb|Ratpoints/Proof/BitRange.lean|, new, the bits of an
 interval and the other range lemmas of the \verb|long|s of the packing, so that both stay below
-$1500$ lines ($1281$ and $334$); \verb|Ratpoints/Proof/Stages.lean| the second stage with its
+$1500$ lines ($1287$ and $336$); \verb|Ratpoints/Proof/Stages.lean| the second stage with its
 cursors and the prime entries field by field; \verb|Ratpoints/Proof/Sift.lean| the contracts of the
 sieve on the bit numbers and of one denominator; \verb|Ratpoints/Proof/Moduli.lean| the packable
 entry of a modulus with its tables of inverses; \verb|Ratpoints/Proof/Denominators.lean| the run

@@ -14,10 +14,11 @@ same order, and membership and no duplicates follow from Theorem~\ref{thm:bruteF
 The later stages contribute in four ways. A \emph{data refinement} computes the same predicate in
 another way, with a lemma that it does: the bit arrays of words of stage~C2, the faithful tables of
 stage~F1, the stages of the sieve and the check of stage~F2, whose third stage tests the rows of
-moduli that the sieve applies already, and the packing of stage~F3; the equation with the reference
-survives it. A \emph{transformation}, the reversal of stage~D, is a bijection of the point sets that
-preserves the box. A \emph{sound filter} comes with the lemma that every point passes it: the 2-adic
-information and the tests on the denominators of stage~E and the composite moduli of stage~F1. An
+moduli that the sieve applies already, the packing of stage~F3, and the chunked first stage and the
+rows of the builders of stage~F4; the equation with the reference survives it. A
+\emph{transformation}, the reversal of stage~D, is a bijection of the point sets that preserves the
+box. A \emph{sound filter} comes with the lemma that every point passes it: the 2-adic information
+and the tests on the denominators of stage~E and the composite moduli of stage~F1. An
 \emph{enumeration refinement} visits the denominators that carry points in another order: the loop
 shapes of stage~E. From the reversal on, and with the divisor order of stage~E, the statement is
 that the output is a permutation of the reference, which still gives membership and no duplicates;
@@ -532,9 +533,12 @@ Mathlib, so that their \verb|grind| calls see only the lemmas of core, untouched
 updates; the contract of the run over the denominators of a shape, with its plain equation
 \verb|toList_run_sieveRun|, is in the file of the run, with Mathlib, like the other contracts of
 stage~E (Chapter~\ref{chap:denominators}) and those of the tables and the moduli of stage~F1, which
-sit next to the lemmas they serve (Chapter~\ref{chap:tables}); those of the stages of sub-stage~F2
-and of the packing of sub-stage~F3 are in files without Mathlib again (Chapters~\ref{chap:stages}
-and~\ref{chap:packing}). The soundness of the rows needs Mathlib, through $\ZZ/p\ZZ$.
+sit next to the lemmas they serve (Chapter~\ref{chap:tables}); those of the stages of sub-stage~F2,
+of the packing of sub-stage~F3 and of the chunked first stage, the builders of the rows and the
+tables of rows of sub-stage~F4 are in files without Mathlib again (Chapters~\ref{chap:stages},
+\ref{chap:packing} and~\ref{chap:rows}), the store of the tables of rows in the contracts of the
+entries of the moduli, of the loop of the tables, of the run and of the search staying in the files
+of those contracts, with Mathlib. The soundness of the rows needs Mathlib, through $\ZZ/p\ZZ$.
 
 \section{The command-line program and the differential tests}\label{sec:sieveCli}
 
@@ -567,10 +571,12 @@ sieve in \verb|Ratpoints.Sieve|, and the general lemmas on lists, on $\ZZ/n\ZZ$ 
 monoids in \verb|Ratpoints/Mathlib| under their names in Mathlib's namespaces. The table of primes
 and the constants of the build are in \verb|Ratpoints/Model/Constants.lean| with
 $\mathrm{maxDegree}$; the rest of the model is in \verb|Ratpoints/Model/Params.lean|,
-\verb|Ratpoints/Model/Tables.lean| (the tables and the rows of a denominator),
-\verb|Ratpoints/Model/Sieve.lean| (the check of a numerator and the points at infinity, since
-stage~F3, in \verb|Ratpoints/Model/Candidate.lean|) and \verb|Ratpoints/Model/FindPoints.lean| (the
-refusals, since stage~D, in \verb|Ratpoints/Model/Setup.lean|, and the run, since stage~E, in
+\verb|Ratpoints/Model/Tables.lean| (the tables and the rows of a denominator by their admission
+tests; since stage~F4 the rows as words, with their builders and the tables of rows, in
+\verb|Ratpoints/Model/Rows.lean|), \verb|Ratpoints/Model/Sieve.lean| (the check of a numerator and
+the points at infinity, since stage~F3, in \verb|Ratpoints/Model/Candidate.lean|) and
+\verb|Ratpoints/Model/FindPoints.lean| (the refusals, since stage~D, in
+\verb|Ratpoints/Model/Setup.lean|, and the run, since stage~E, in
 \verb|Ratpoints/Model/Denominators.lean|), each with \verb|#guard| examples taken from the tables
 and the output of ratpoints; the contracts, without Mathlib, are in
 \verb|Ratpoints/Proof/Sieve.lean|, and that of the run, since stage~E, in

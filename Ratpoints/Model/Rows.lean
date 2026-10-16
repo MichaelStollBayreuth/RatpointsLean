@@ -141,13 +141,13 @@ from the tables of rows and builds the missing ones into them (`Ratpoints.Sieve.
 (`Ratpoints.Sieve.sieveRun`). -/
 abbrev RowStore := Std.HashMap EntryRef (Array (Option (Array UInt64)))
 
-/-- The row of the residue `r` in the table of the entry `ref`, the pointer `se->sieve[r]`: none
-when the row is not built yet, or when there is no such table or row. -/
+/-- The row of the residue `r` in the table of rows of the entry `ref`, the pointer `se->sieve[r]`:
+none when the row is not built yet, or when there is no such table or row. -/
 def RowStore.row? (s : RowStore) (ref : EntryRef) (r : Nat) : Option (Array UInt64) :=
   (s.getD ref #[]).getD r none
 
-/-- The store with the row `row` of the residue `r` in the table of the entry `ref`, the store
-`RP_PUBLISH(&se->sieve[b], row)` of the row into its entry with which each builder ends
+/-- The store with the row `row` of the residue `r` in the table of rows of the entry `ref`, the
+store `RP_PUBLISH(&se->sieve[b], row)` of the row into its entry with which each builder ends
 (`Ratpoints.Sieve.sieveInit1`, `Ratpoints.Sieve.sieveInit2`, `Ratpoints.Sieve.sieveInitPower`,
 `Ratpoints.Sieve.sieveInitProduct`); the store as it is when it has no table of `ref`. -/
 def RowStore.publish (s : RowStore) (ref : EntryRef) (r : Nat) (row : Array UInt64) : RowStore :=
@@ -325,7 +325,7 @@ def sieve1Rows (p : Nat) (help0 help1 : UInt64) :
 
 /-- The row of the residue `b` of the prime `p = t.p < 64` with the tables `t`, as the function that
 the build generates for `p` from `CODE_INIT_SIEVE1` builds it, `p + chunk - 1` bit arrays, and the
-store `store` with the row stored into the table of the entry `ref`
+store `store` with the row stored into the table of rows of the entry `ref`
 (`Ratpoints.Sieve.RowStore.publish`): the pattern of `p` bits in `help0`
 (`Ratpoints.Sieve.sieve1Pattern`); `help1` the pattern shifted right by `64 mod p`; the pattern
 repeated in `help0` by or-ing in `help0` shifted left by `i` for `i = p, 2 p, 4 p, …` below 64; the
@@ -437,7 +437,7 @@ def sieve2Rows (p : Nat) (help : Vector UInt64 (p / 64 + 2)) :
 
 /-- The row of the residue `b` of the prime `p = t.p > 64` with the tables `t`, as the function that
 the build generates for `p` from `CODE_INIT_SIEVE2` builds it, `p + chunk - 1` bit arrays, and the
-store `store` with the row stored into the table of the entry `ref`
+store `store` with the row stored into the table of rows of the entry `ref`
 (`Ratpoints.Sieve.RowStore.publish`): the `⌊p / 64⌋ + 2` words `help` cleared from the last, the
 pattern of the row in them (`Ratpoints.Sieve.sieve2Pattern`), the first `p` words of the row rotated
 out of them (`Ratpoints.Sieve.sieve2Rows`), and the copies (`Ratpoints.Sieve.initReplicate`).

@@ -610,16 +610,16 @@ sink, the switch \verb|RP_MOD_CHOICE|, the counts of \verb|RP_MOD_COUNTS|, the o
 \verb|rp-private.h|, which carry no meaning; \verb|RATPOINTS_DEFAULT_SP2|, which the C code reads
 nowhere; and the result of \verb|worker_init|, whether the survivors array could be allocated, and
 \verb|worker_clear|, which frees it, where the model takes a fresh array for each piece and cannot
-fail for lack of memory. Left to stage~F4 are the chunked first stage with the legs over the tail of
-a piece and its start pointers, which read \verb|small| and \verb|mod_mul| too, and the ends of the
-rows in the sieve specs, which only it reads; left to stage~G the stop that the callback may request
-and the flags \verb|RATPOINTS_NO_Y| and \verb|RATPOINTS_NO_CHECK|, which the exact check reads; left
-to stage~H the search intervals of the sieving thread and the Sturm step; and left to stage~I the
-correction of the moduli between the blocks, with the counters and the decisions of the sieving
-thread, the choice of the cut points by cost (with the target \verb|RATPOINTS_SURVIVORS_PER_WORD|),
-the pool of threads, and, with the blocks, the reduction of the first word of a block modulo the
-forbidden divisors tested with words, which still divides (\verb|wordBits|), with the reciprocals of
-these divisors.
+fail for lack of memory. The chunked first stage with the legs over the tail of a piece and its
+start pointers, which read \verb|small| and \verb|mod_mul| too, and the ends of the rows in the
+sieve specs, which only it reads, are modelled since stage~F4 (Chapter~\ref{chap:rows}); left to
+stage~G the stop that the callback may request and the flags \verb|RATPOINTS_NO_Y| and
+\verb|RATPOINTS_NO_CHECK|, which the exact check reads; left to stage~H the search intervals of the
+sieving thread and the Sturm step; and left to stage~I the correction of the moduli between the
+blocks, with the counters and the decisions of the sieving thread, the choice of the cut points by
+cost (with the target \verb|RATPOINTS_SURVIVORS_PER_WORD|), the pool of threads, and, with the
+blocks, the reduction of the first word of a block modulo the forbidden divisors tested with words,
+which still divides (\verb|wordBits|), with the reciprocals of these divisors.
 
 \section{Files and names}\label{sec:stagesFiles}
 
@@ -648,30 +648,32 @@ the points that the extraction gives for a numerator, and of the second stage ar
 through the second stage and the extraction, the scan, one piece and one denominator, with the lemma
 that the words compute the Booleans) in \verb|Ratpoints/Proof/Sift.lean|, which builds on it. Both
 files are new with this sub-stage and use Lean core and \verb|Std| only, like
-\verb|Ratpoints/Proof/Words.lean|, which keeps the contract of the first stage and holds the lemmas
-on the words of the rows that both stages use, and like \verb|Ratpoints/Proof/Reductions.lean|,
-which holds the contracts of the reductions since stage~F3. The lemmas in core's namespaces that the
-sub-stage adds are the facts on the signed 64-bit words (the arithmetic shift, the mask $x \gg 63$
-with the smaller and the distance of two words that it gives without a branch, the odd part of a
-positive word by the lowest set bit, the absolute value, and the words of an integer and of a
-natural number below $2^{63}$), in \verb|Ratpoints/Proof/Bits.lean|, and, in
-\verb|Ratpoints/Proof/Containers.lean| since stage~F4, the steps of the binary algorithm and of the
-reductions by a reciprocal on natural numbers, two facts on lists and vectors that the scan and the
-sieve of one denominator use (\verb|List.flatMap_filter|, \verb|Vector.getElem!_ofFn|), and the
-integer facts of the third stage (C's remainder made non-negative, the residue of $(a \bmod p)\, b$
-and its shift by $p H$, the bound $|a b| + H \le p H$, and a divisor $p > 1$ of $b$ that divides no
-numerator prime to $b$). The Jacobi test with the reciprocals of its tables is in
-\verb|Ratpoints/Proof/JacobiTables.lean|; the run with the cut points in
-\verb|Ratpoints/Proof/Denominators.lean|, with the bounds of the denominators of the shapes, between
-$b_{\mathrm{low}}$ and $b_{\mathrm{high}}$, in \verb|Ratpoints/Proof/Shapes.lean|; the reciprocal
-and the shape of the sieve entry of a modulus in \verb|Ratpoints/Proof/Moduli.lean|; the entries and
-the reciprocals of \verb|sieving_info|, the search with $H < 2^{63}$ and the refusal theorems in
-\verb|Ratpoints/Proof/FindPoints.lean|, and the refusal theorems also in the challenge and the
-solution of comparator; the facts on the table of primes behind the shape of the entries of the
-third stage, and \verb|wf_sieveParams|, in \verb|Ratpoints/Proof/Params.lean|; and the inverses of
-the tables of the reference, the prime entries of the primes with those tables and the heights that
-are \verb|long|s in \verb|Ratpoints/Proof/Tables.lean|. The two new modules are in their part root
-and in the listing \verb|Ratpoints.lean|.
+\verb|Ratpoints/Proof/Words.lean|, which keeps the contract of the first stage one row at a time
+(that of the chunked arm is in \verb|Ratpoints/Proof/FirstStage.lean| since stage~F4) and holds the
+lemmas on the words of the rows that both stages use, and like
+\verb|Ratpoints/Proof/Reductions.lean|, which holds the contracts of the reductions since stage~F3.
+The lemmas in core's namespaces that the sub-stage adds are the facts on the signed 64-bit words
+(the arithmetic shift, the mask $x \gg 63$ with the smaller and the distance of two words that it
+gives without a branch, the odd part of a positive word by the lowest set bit, the absolute value,
+and the words of an integer and of a natural number below $2^{63}$), in
+\verb|Ratpoints/Proof/Bits.lean|, and, in \verb|Ratpoints/Proof/Containers.lean| since stage~F4, the
+steps of the binary algorithm and of the reductions by a reciprocal on natural numbers, two facts on
+lists and vectors that the scan and the sieve of one denominator use (\verb|List.flatMap_filter|,
+\verb|Vector.getElem!_ofFn|), and the integer facts of the third stage (C's remainder made
+non-negative, the residue of $(a \bmod p)\, b$ and its shift by $p H$, the bound
+$|a b| + H \le p H$, and a divisor $p > 1$ of $b$ that divides no numerator prime to $b$). The
+Jacobi test with the reciprocals of its tables is in \verb|Ratpoints/Proof/JacobiTables.lean|; the
+run with the cut points in \verb|Ratpoints/Proof/Denominators.lean|, with the bounds of the
+denominators of the shapes, between $b_{\mathrm{low}}$ and $b_{\mathrm{high}}$, in
+\verb|Ratpoints/Proof/Shapes.lean|; the reciprocal and the shape of the sieve entry of a modulus in
+\verb|Ratpoints/Proof/Moduli.lean|; the entries and the reciprocals of \verb|sieving_info|, the
+search with $H < 2^{63}$ and the refusal theorems in \verb|Ratpoints/Proof/FindPoints.lean|, and the
+refusal theorems also in the challenge and the solution of comparator; the facts on the table of
+primes behind the shape of the entries of the third stage, and \verb|wf_sieveParams|, in
+\verb|Ratpoints/Proof/Params.lean|; and the inverses of the tables of the reference, the prime
+entries of the primes with those tables and the heights that are \verb|long|s in
+\verb|Ratpoints/Proof/Tables.lean|. The two new modules are in their part root and in the listing
+\verb|Ratpoints.lean|.
 
 \section{The evidence}\label{sec:stages-evidence}
 

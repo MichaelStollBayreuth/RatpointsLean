@@ -57,7 +57,7 @@ classification:
 # project status
 status:
   scope: >
-    Stages A, B, C1, C2, D and E, and the sub-stages F1, F2 and F3 of stage F. Stage A set up the
+    Stages A, B, C1, C2, D, E and F, the last in its four sub-stages F1 to F4. Stage A set up the
     Lake project with the libraries of the model (Lean core and Std only), the specification and the
     proofs, the CI, the blueprint, the correspondence record with its checking script, and the
     comparator harness, and settled the specification in the blueprint. Stage B: the specification
@@ -178,11 +178,32 @@ status:
     that invert, so the packed sieve keeps exactly the numerators that the unpacked one keeps, in
     the same order, and the output, the main theorems, the refusal theorems, the statements for
     comparator, the parameters and their well-formedness do not change; the differential tests agree
-    as before (3315 comparisons in the default suites and 13 in the suite run locally). Next: the
-    sub-stage F4 of stage F (the chunked first stage and the faithful rows); the introduction of the
-    blueprint lists the later stages (the order and protocol, the search region and the Sturm step,
-    the blocks of the loop over the denominators with the threads and the correction of the moduli,
-    and the choice of the sieving parameters by the curve).
+    as before (3315 comparisons in the default suites and 13 in the suite run locally). Stage F4:
+    the first stage as the default build of the C code compiles it, with the chunk RATPOINTS_CHUNK =
+    16 as a constant of the build: the chunked arm, which takes a chunk of bit arrays at a time in
+    registers, and-s the rows of the moduli into them from starts that it steps through each row and
+    does the tail of a piece in legs of 8, 4, 2 and 1 bit arrays, and the arm one row at a time for
+    the other chunks, chosen as the conditional compilation of the C code chooses them, with the
+    array size rounded up to a multiple of the chunk; the rows as ratpoints builds and keeps them,
+    each of m + chunk - 1 bit arrays for the modulus m, the last ones copies of the first: the row
+    of 0 of a prime the pattern sieves0 that the build generates, the other rows of a prime from the
+    functions that the build generates from CODE_INIT_SIEVE1 and CODE_INIT_SIEVE2, those of a prime
+    power from lay_out_pattern and those of a product from the rows of its factors, each builder
+    storing its row in the table of rows of its entry, the entries reached as the C code reaches
+    them; the tables of rows made with the entries, the missing rows of a denominator built before
+    it by the loop of sift, and the tables of rows handed on through the run as state; the tables of
+    a prime power as bit arrays of words, as examine_power fills them, and the words of the
+    forbidden divisors among the first numPrimes primes of the table read from sieves0; the
+    contracts proved with the program logic of Lean core for every value of the chunk, those of the
+    first stage and of the builders in files without Mathlib: the arms leave the same words, the
+    rows that the builders build are the closed forms of the admission tests, and the store of the
+    tables of rows fits the entries of the run, so the output, the main theorems, the refusal
+    theorems, the statements for comparator, the parameters and their well-formedness do not change;
+    the differential tests agree as before (3315 comparisons in the default suites and 13 in the
+    suite run locally). Next: the later stages that the introduction of the blueprint lists (the
+    order and protocol, the search region and the Sturm step, the blocks of the loop over the
+    denominators with the threads and the correction of the moduli, and the choice of the sieving
+    parameters by the curve).
   sorry_count: 0
   sorry_in_definitions: 0
   axioms: ["propext", "Classical.choice", "Quot.sound"]
@@ -263,14 +284,15 @@ fidelity:
     the C type, or, in the test for common factors and in the bits of an interval of numerators, a
     64-bit word, as in the C code; the reductions by a reciprocal compute on 64-bit words, with the
     high half of the 128-bit product, for which Lean core has no type, from the 32-bit halves; a
-    pointer is an index; the SIMD operations are the word operations they implement; the threads are
-    replaced by the sequential order of the blocks; the heuristics that choose the sieving
-    parameters by the curve are not modelled yet (stage I), since the theorems quantify over every
-    well-formed choice; the parameters of the command line follow the counting rules of ratpoints
-    where these do not depend on the curve; the search intervals have exact rational ends. Where the
-    library function find_points and the command-line program differ (the order of the checks on the
-    input), the model follows the program. Each deviation is recorded with its component in the
-    correspondence record.
+    pointer is an index; the SIMD operations are the word operations they implement, and the arm of
+    the first stage that the build compiles is chosen by a test on the constant of the chunk; the
+    threads are replaced by the sequential order of the blocks; the heuristics that choose the
+    sieving parameters by the curve are not modelled yet (stage I), since the theorems quantify over
+    every well-formed choice; the parameters of the command line follow the counting rules of
+    ratpoints where these do not depend on the curve; the search intervals have exact rational ends.
+    Where the library function find_points and the command-line program differ (the order of the
+    checks on the input), the model follows the program. Each deviation is recorded with its
+    component in the correspondence record.
 
 # review status
 review:
@@ -302,17 +324,19 @@ alignment:
         refusals, the reversal, the exit), the side of the denominators of stage E (the 2-adic
         information, the tests on the denominators, the loop over them in its four shapes), the
         tables and the moduli of stage F1 (the table of a prime as the C code builds it, the loop of
-        the tables, prime powers and products of them as moduli) and the stages of the sieve and the
+        the tables, prime powers and products of them as moduli), the stages of the sieve and the
         check of stage F2 (the second and the third stage, the test for common factors on the longs
-        of the C code, the reductions by a reciprocal, the cut points of the stages) and the packing
-        of the numerators of stage F3 (the classes with their strides, the rows of offsets, the
+        of the C code, the reductions by a reciprocal, the cut points of the stages), the packing of
+        the numerators of stage F3 (the classes with their strides, the rows of offsets, the
         residues of a denominator divided by its stride, the bits of the heights, the row indices of
-        the first two stages with the test small), every well-formed choice of the sieving
-        parameters, the array size of the pieces included, and every value of the options
-        (Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok, Ratpoints.nodup_of_findPoints_eq_ok),
-        certified by comparator, through the permutation of the brute-force reference
-        (Ratpoints.perm_bruteForce_of_findPoints_eq_ok); the later stages bring Ratpoints.findPoints
-        closer to the C code, and the theorems move with it
+        the first two stages with the test small) and the chunked first stage and the rows of stage
+        F4 (both arms of the first stage with the chunk of the default build, the rows built by the
+        builders of the C code and kept in the tables of rows of its entries), every well-formed
+        choice of the sieving parameters, the array size of the pieces included, and every value of
+        the options (Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok,
+        Ratpoints.nodup_of_findPoints_eq_ok), certified by comparator, through the permutation of
+        the brute-force reference (Ratpoints.perm_bruteForce_of_findPoints_eq_ok); the later stages
+        bring Ratpoints.findPoints closer to the C code, and the theorems move with it
     - source: "the refusals: fewer than two or more than maxDegree + 1 = 101 coefficients, H = 0 or H >= 2^63, a binary form that is not squarefree"
       lean: "Ratpoints.exists_findPoints_eq_error_iff_of_sturm_nonneg"
       module: "Ratpoints.Proof.FindPoints"
