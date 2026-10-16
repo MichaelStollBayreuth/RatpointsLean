@@ -739,9 +739,8 @@ theorem Factor.IsSound.inverses_eq {c : List ℤ} {m : ℕ} {f : Factor} (hf : f
 
 /-- A prime is no multiple of 64, as `CODE_INIT_SIEVE2` needs of a prime above 64. -/
 theorem mod_sixty_four_ne_zero_of_prime {p : ℕ} (hp : p.Prime) : p % 64 ≠ 0 := fun h0 ↦ by
-  have := (Nat.prime_dvd_prime_iff_eq Nat.prime_two hp).mp
-    (Nat.dvd_trans (by decide : 2 ∣ 64) (Nat.dvd_of_mod_eq_zero h0))
-  lia
+  lia [(Nat.prime_dvd_prime_iff_eq Nat.prime_two hp).mp
+    (Nat.dvd_trans (by decide : 2 ∣ 64) (Nat.dvd_of_mod_eq_zero h0))]
 
 -- The factor of a prime `p = primeTable[pn]` of `m` over the table, with its table.
 private theorem isSound_prime_examinePrime {c : List ℤ} {m pn : ℕ}

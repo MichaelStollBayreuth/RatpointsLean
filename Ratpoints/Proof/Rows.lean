@@ -88,7 +88,7 @@ factor, this is the row that ratpoints builds for the residue, `m` bit arrays an
 first `chunk - 1` of them (`Ratpoints.Sieve.getElem!_closedRow_mod`). -/
 def closedRow (adm : Nat → Int → Bool) (m r : Nat) : Array UInt64 :=
   (Array.range ((m + chunk - 1) * rbaPack)).map fun (j : Nat) ↦
-    wordOfBits fun (t : Nat) ↦ adm r (64 * j + t)
+    wordOfBits fun t ↦ adm r (64 * j + t)
 
 @[simp]
 theorem size_closedRow (adm : Nat → Int → Bool) (m r : Nat) :
@@ -122,7 +122,7 @@ theorem getElem!_closedRow_mod {adm : Nat → Int → Bool} {m r : Nat} (hm : 0 
     Nat.lt_of_lt_of_le (Nat.mod_lt _ hmr) (Nat.mul_le_mul_right _ (by lia [chunk_pos]))
   refine UInt64.eq_of_getLsbD_eq fun t ↦ ?_
   rw [getLsbD_closedRow adm m r hj, getLsbD_closedRow adm m r hlt]
-  have key : (64 * (j : Int) + t) = 64 * ((j % (m * rbaPack) : Nat) : Int) + t +
+  have key : 64 * (j : Int) + t = 64 * ((j % (m * rbaPack) : Nat) : Int) + t +
       m * (64 * rbaPack * (j / (m * rbaPack) : Nat)) := by
     have hd := Nat.div_add_mod j (m * rbaPack)
     generalize j / (m * rbaPack) = q at hd ⊢
@@ -147,8 +147,7 @@ theorem wraps_closedRow {adm : Nat → Int → Bool} {s : SieveSpec} {r : Nat} (
 any offset, start and end, repeats its first bit arrays where the chunked first stage reads it. -/
 theorem SieveEntry.wraps_closedRow (e : SieveEntry) (hp : 0 < e.p) (off st stop r : Nat) :
     (⟨e.p, off, closedRow e.admits e.p r, st, stop⟩ : SieveSpec).Wraps :=
-  Sieve.wraps_closedRow hp (fun a k ↦ by simp [SieveEntry.admits, Int.add_mul_emod_self_left])
-    rfl
+  Sieve.wraps_closedRow hp (fun a k ↦ by simp [SieveEntry.admits, Int.add_mul_emod_self_left]) rfl
 
 /-! ### Words of a periodic pattern -/
 
@@ -286,8 +285,7 @@ private theorem exists_lt_mul_eq_iff {p r t : Nat} (hr : r < p) (ht : t < 64) :
   rw [Nat.div_lt_iff_lt_mul (by lia)]
   lia
 
-theorem size_forbiddenRow (p : Nat) : (forbiddenRow p).size = p :=
-  size_fold_modify p 64
+theorem size_forbiddenRow (p : Nat) : (forbiddenRow p).size = p := size_fold_modify p 64
 
 /-- Bit `t` of word `r < p` of the words of the forbidden divisor `p` is clear exactly when
 `p ∣ 64 r + t`, the multiples `p i` of `p` with `i < 64` being cleared. -/

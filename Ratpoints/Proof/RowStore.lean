@@ -181,8 +181,7 @@ theorem RowStore.grows_publish {s : RowStore} {P : EntryRef → Nat → Array UI
     s.Grows (s.publish ref r row) P := by
   refine ⟨fun ref' ↦ RowStore.size_getD_publish .., fun ref' r' row' h' ↦ ?_,
     fun ref' r' row' h' ↦ ?_⟩
-  · rw [RowStore.row?_publish, ite_eq_right fun ⟨h1, h2, _⟩ ↦ by subst h1 h2; simp [h] at h']
-    exact h'
+  · rwa [RowStore.row?_publish, ite_eq_right fun ⟨h1, h2, _⟩ ↦ by subst h1 h2; simp [h] at h']
   · rw [RowStore.row?_publish] at h'
     split at h'
     · rename_i hc
@@ -211,12 +210,10 @@ theorem Factor.Buildable.modulus_pos {f : Factor} (h : f.Buildable) : 0 < f.modu
   cases f <;> exact h.1
 
 @[simp]
-theorem Factor.init_prime (t : Entry) : (Factor.prime t).init = sieveInit t.p :=
-  rfl
+theorem Factor.init_prime (t : Entry) : (Factor.prime t).init = sieveInit t.p := rfl
 
 @[simp]
-theorem Factor.init_power (pw : Power) : (Factor.power pw).init = .power :=
-  rfl
+theorem Factor.init_power (pw : Power) : (Factor.power pw).init = .power := rfl
 
 theorem sieveInit_of_lt {p : Nat} (h : p < 64) : sieveInit p = .sieve1 := by
   simp [sieveInit, h]
@@ -323,8 +320,7 @@ theorem FactorRowsInvariant.push_some {e : SieveEntry} {b : Nat} {store : RowSto
     FactorRowsInvariant e b store (pref ++ [f]) (st.1, st.2.push fr) := by
   have hf : f ∈ e.factors := by simp [hl]
   refine ⟨?_, h.2⟩
-  rw [Array.toList_push, h.1, List.map_append, List.map_singleton,
-    pre.eq_closedRow h.2 hf hr]
+  rw [Array.toList_push, h.1, List.map_append, List.map_singleton, pre.eq_closedRow h.2 hf hr]
 
 /-- A factor whose row the builder of its entry builds into the store. -/
 theorem FactorRowsInvariant.push_none {e : SieveEntry} {b : Nat} {store : RowStore}
@@ -457,9 +453,7 @@ theorem productCopies_post {e : SieveEntry} {frows : Array (Array UInt64)}
       row[y]! = productWord e frows e.factors.length (y % (e.p * rbaPack)))
     {y : Nat} (hy : y < (e.p + chunk - 1) * rbaPack) :
     row[y]! = productWord e frows e.factors.length (y % (e.p * rbaPack)) :=
-  h y (by
-    rw [Std.Legacy.Range.length_toList, Nat.sub_zero, ← Nat.add_sub_assoc chunk_pos]
-    exact hy)
+  h y (by rwa [Std.Legacy.Range.length_toList, Nat.sub_zero, ← Nat.add_sub_assoc chunk_pos])
 
 /-- The row of the product built from the closed forms of the rows of its factors is the closed
 form of its row, and so is what the builder stores, into the store grown by the rows of the
@@ -530,8 +524,7 @@ theorem SieveEntry.initRow_spec (e : SieveEntry) (b : Nat) (store : RowStore) :
   · have h := Std.WP.Id.of_run_eq_wp rfl _ ((sieveInitProduct_spec e b store).le_wp hpre)
     simp only [SieveEntry.initRow, hinit, ↓reduceIte]
     exact h
-  · have h := Std.WP.Id.of_run_eq_wp rfl _
-      ((initFactorRow_spec f e.ref b store).le_wp ⟨hbd, hbs⟩)
+  · have h := Std.WP.Id.of_run_eq_wp rfl _ ((initFactorRow_spec f e.ref b store).le_wp ⟨hbd, hbs⟩)
     have he : e.admits = f.admits := SieveEntry.admits_eq_of_factors_eq hfs hp
     have hf0 : e.factors[0]! = f := by rw [hfs]; rfl
     simp only [SieveEntry.initRow, hinit, f.init_ne_product, ↓reduceIte, hf0]
@@ -664,8 +657,7 @@ theorem StoreHolds.builds {R : EntryRef → Nat → Array UInt64} {es : List Sie
   cases f with
   | prime t =>
     refine ⟨Nat.pos_of_ne_zero fun h0 ↦ hs.zero e he t hf ?_, hr⟩
-    rw [← h0]
-    exact h
+    rwa [← h0]
   | power pw => exact hr
 
 /-- What building the rows of the factors of an entry needs (`Ratpoints.Sieve.FactorRowsPre`). -/
@@ -1092,7 +1084,7 @@ theorem getElem!_setRows (store : RowStore) {es : List SieveEntry} {bp : List Na
     (setRows store es bp cl offsets).1[n]! =
       ⟨es[n].p, offsets[cl.offset.getD 0 + n]!, (store.row? es[n].ref bp[n]!).getD #[], 0,
         es[n].p⟩ := by
-  rw [getElem!_pos _ n (by rw [length_setRows store cl offsets hbp]; exact hn)]
+  rw [getElem!_pos _ n (by rwa [length_setRows store cl offsets hbp])]
   simp [setRows, getElem!_pos bp n (hbp ▸ hn)]
 
 theorem row?_ne_none_of_setRows {store : RowStore} {es : List SieveEntry} {bp : List Nat}

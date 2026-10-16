@@ -285,6 +285,7 @@ theorem sieve1Pattern_rest_post {t : Entry} {b : Nat} {r : UInt64 × Nat × Nat 
     PatternBits (lanePattern t.isFSquare t.p 0 t.inverses[b]!) t.p 0 t.p st.1 :=
   (h.post (by rw [hr.1]; lia)).1
 
+attribute [local irreducible] RestInvariant in
 /-- The pattern of the row of the residue `b` of the prime `p = t.p ≤ 64` with the inverse
 `d < p` of `b`: bit `a < p` is the entry of the table at `a d mod p`, the higher bits clear. -/
 @[spec]
@@ -491,8 +492,7 @@ theorem rotInvariant_init {p : Nat} {help0 help1 : UInt64} (pre : 0 < p ∧ p < 
   refine ⟨h0, h1, fun j hj ↦ ?_⟩
   obtain rfl : j = 0 := by simpa using hj
   have : 0 < (p + chunk - 1) * rbaPack := Nat.mul_pos (by lia [chunk_pos]) rbaPack_pos
-  rw [Vector.getElem!_set! this, ite_eq_left rfl]
-  exact h0
+  rwa [Vector.getElem!_set! this, ite_eq_left rfl]
 
 /-- A step of the rotation: word `c + 1` of the row the window at `64 (c + 1)`. -/
 theorem RotInvariant.append {p cur : Nat} {pref suff : List Nat} {help0 help1 x0 x1 : UInt64}
@@ -738,6 +738,7 @@ theorem sieve2Word_post {t : Entry} {d d4 n ab ab1 ab2 ab3 : Nat}
   rw [hM4] at hl
   exact LanesAt.unbase hab ⟨hst, hl.2⟩
 
+attribute [local irreducible] RestInvariant in
 /-- Word `n` of the pattern of the row of a prime `p` in `CODE_INIT_SIEVE2`, from the lanes at the
 bit `64 n` of the pattern from `0` on: the bits `64 n, …` of the pattern, 64 of them for
 `n < ⌊p / 64⌋` and `p mod 64` for the last word, and after a whole word the lanes at the next. -/

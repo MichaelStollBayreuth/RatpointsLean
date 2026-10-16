@@ -215,8 +215,8 @@ theorem getElem!_set! {α : Type u} [Inhabited α] {xs : Array α} {i j : Nat} {
   grind
 
 theorem getElem!_toVector {α : Type u} [Inhabited α] {xs : Array α} (i : Nat) :
-    xs.toVector[i]! = xs[i]! := by
-  rw [← Vector.getElem!_toArray]
+    xs.toVector[i]! = xs[i]! :=
+  (Vector.getElem!_toArray ..).symm
 
 theorem getElem!_map_range {α : Type u} [Inhabited α] (f : Nat → α) {n j : Nat} (hj : j < n) :
     ((Array.range n).map f)[j]! = f j := by
@@ -400,8 +400,7 @@ theorem filter_map_range_eq_map_range' (s lo hi : Int) (m : Nat) :
   rw [← filter_map_range_eq_map_range]
   exact filter_congr fun a ha ↦ by
     obtain ⟨k, hk, rfl⟩ := mem_map.mp ha
-    have := mem_range.mp hk
-    lia
+    lia [mem_range.mp hk]
 
 /-- Of the integers `s, …, s + m - 1`, for `s ≤ lo` and `hi < s + m`, those from `lo` to `hi`. -/
 theorem filter_map_range_eq_map_range_of_le {s lo hi : Int} {m : Nat} (h1 : s ≤ lo)
@@ -666,7 +665,7 @@ theorem ite_eq_add_one_mod_add_one {a n : Nat} (h : a ≤ n) :
   split
   · subst a
     simp
-  · rw [Nat.mod_eq_of_lt (by lia)]
+  · exact (Nat.mod_eq_of_lt (by lia)).symm
 
 /-- The bits of `x &&& k` for `k < 2 ^ n` are those of the residue of `x` modulo `2 ^ n`. -/
 theorem and_eq_mod_two_pow_and {x k n : Nat} (hk : k < 2 ^ n) : x &&& k = x % 2 ^ n &&& k := by
@@ -743,8 +742,7 @@ theorem gcd_min_eq_gcd_of_two_pow_mul_eq {m n y t : Nat} (hm : m % 2 = 1) (hn : 
 less than their sum: the measure of the binary algorithm for the gcd decreases. -/
 theorem add_min_lt_add_of_two_pow_mul_eq {m n y t : Nat} (hm : 0 < m) (hn : 0 < n)
     (h : 2 ^ t * y = if m < n then n - m else m - n) : y + min m n < m + n := by
-  have := Nat.le_mul_of_pos_left y (Nat.two_pow_pos t)
-  split at h <;> lia
+  split at h <;> lia [Nat.le_mul_of_pos_left y (Nat.two_pow_pos t)]
 
 /-- The high half of the product of `2 ^ 32 a₁ + a₀` and `2 ^ 32 b₁ + b₀` from the four products of
 the halves, as `Ratpoints.Sieve.mulHi` adds them: the high product, the high halves of the two
@@ -816,8 +814,7 @@ theorem le_and_sub_mod_eq_zero_iff {a s m : Nat} (hs : s < m) :
 theorem two_pow_dvd_sixty_four {k : Nat} (hk : k ≤ 6) : 2 ^ k ∣ 64 :=
   Nat.pow_dvd_pow_iff_le_right'.mpr hk
 
-theorem two_pow_mul_sixty_four_div {k : Nat} (hk : k ≤ 6) :
-    2 ^ k * (64 / 2 ^ k) = 64 :=
+theorem two_pow_mul_sixty_four_div {k : Nat} (hk : k ≤ 6) : 2 ^ k * (64 / 2 ^ k) = 64 :=
   Nat.mul_div_cancel' (Nat.pow_dvd_pow_iff_le_right'.mpr hk : 2 ^ k ∣ 2 ^ 6)
 
 theorem sixty_four_div_two_pow {k : Nat} (hk : k ≤ 6) : 64 / 2 ^ k = 2 ^ (6 - k) :=
@@ -880,9 +877,8 @@ theorem add_sub_mod_eq_zero_iff {N m r : Nat} (hr : r < m) :
 /-- A multiple `t'` of `p` from the multiple `t` of `p` on and below `t + p` is `t`. -/
 theorem eq_of_mod_eq_zero_of_le_of_lt {p t t' : Nat} (ht : t % p = 0) (ht' : t' % p = 0)
     (hle : t ≤ t') (hlt : t' < t + p) : t' = t := by
-  have h := Nat.eq_zero_of_dvd_of_lt (Nat.dvd_sub (Nat.dvd_of_mod_eq_zero ht')
-    (Nat.dvd_of_mod_eq_zero ht)) (by lia)
-  lia
+  lia [Nat.eq_zero_of_dvd_of_lt (Nat.dvd_sub (Nat.dvd_of_mod_eq_zero ht')
+    (Nat.dvd_of_mod_eq_zero ht)) (by lia)]
 
 end Nat
 
@@ -1010,7 +1006,7 @@ theorem toNat_emod_ne_zero_of_gcd_eq_one {p : Nat} (hp : 1 < p) {a : Int} {b : N
     (hab : gcd a b = 1) (hb : b % p = 0) : (a % (p : Int)).toNat ≠ 0 := by
   intro ha
   have hp0 : (p : Int) ≠ 0 := by lia
-  have hpa : (p : Int) ∣ a := dvd_of_emod_eq_zero (by have := emod_nonneg a hp0; lia)
+  have hpa : (p : Int) ∣ a := dvd_of_emod_eq_zero (by lia [emod_nonneg a hp0])
   have hpb : (p : Int) ∣ b := natCast_dvd_natCast.mpr (Nat.dvd_of_mod_eq_zero hb)
   have := dvd_gcd hpa hpb
   rw [hab, Nat.dvd_one] at this
@@ -1075,8 +1071,7 @@ form of `numerators_to_bits` (`Ratpoints.Sieve.numeratorsToBits`), from the mult
 and its rest. -/
 theorem ediv_add_emod_sub_add_sub_one_ediv (lo a0 : Int) {m : Int} (hm : 0 < m) :
     lo / m + (lo % m - a0 + (m - 1)) / m = -((a0 - lo) / m) := by
-  have h1 := Int.emod_add_ediv_mul lo m
-  have e1 : a0 - lo = a0 - lo % m + -(lo / m) * m := by lia
+  have e1 : a0 - lo = a0 - lo % m + -(lo / m) * m := by lia [Int.emod_add_ediv_mul lo m]
   rw [e1, Int.add_mul_ediv_right _ _ (Int.ne_of_gt hm), Int.neg_add, Int.neg_neg,
     Int.neg_ediv_eq_sub_one_sub_ediv _ hm, Int.add_comm]
   congr 2
@@ -1125,8 +1120,7 @@ theorem neg_two_pow_63_le_ediv_add_and_ediv_add_lt_two_pow_63 {z c m : Int} (hz 
   rcases Int.lt_or_le m 2 with h | h
   · rw [show m = 1 by lia, h1 (by lia), Int.ediv_one]
     lia
-  · have := Int.neg_two_pow_62_le_ediv_and_ediv_lt_two_pow_62 hz hz' h
-    lia
+  · lia [Int.neg_two_pow_62_le_ediv_and_ediv_lt_two_pow_62 hz hz' h]
 
 /-- The multiple `d ⌊lo / d⌋` of `d > 0` at or below `lo` is at least every multiple `-N ≤ lo` of
 `d`. -/

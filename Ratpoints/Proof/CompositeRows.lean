@@ -125,8 +125,8 @@ theorem RepeatedBits.first {g : Nat → Bool} {m W n o i : Nat} {rep : Vector UI
     subst hq
     rw [UInt64.toBitVec_or, BitVec.getLsbD_or, UInt64.getLsbD_shiftLeft_ofNat _ hs,
       h _ hw' j, hpat i hi]
-    have key : o % 64 ≤ j → 64 * i + (j - o % 64) < m →
-        (64 * (o / 64 + i) + j) % m = 64 * i + (j - o % 64) := fun h1 h2 ↦ by
+    have key (h1 : o % 64 ≤ j) (h2 : 64 * i + (j - o % 64) < m) :
+        (64 * (o / 64 + i) + j) % m = 64 * i + (j - o % 64) := by
       obtain ⟨c, hc⟩ := hmo
       rw [show 64 * (o / 64 + i) + j = m * c + (64 * i + (j - o % 64)) by lia,
         Nat.mul_add_mod, Nat.mod_eq_of_lt h2]
@@ -153,8 +153,8 @@ theorem RepeatedBits.second {g : Nat → Bool} {m W n o i : Nat} {rep : Vector U
     subst hq
     rw [UInt64.toBitVec_or, BitVec.getLsbD_or, UInt64.getLsbD_shiftRight_ofNat _ (by lia),
       h _ hw' j, hpat i hi]
-    have key : j < o % 64 → 64 * i + (64 - o % 64 + j) < m →
-        (64 * (o / 64 + i + 1) + j) % m = 64 * i + (64 - o % 64 + j) := fun h1 h2 ↦ by
+    have key (h1 : j < o % 64) (h2 : 64 * i + (64 - o % 64 + j) < m) :
+        (64 * (o / 64 + i + 1) + j) % m = 64 * i + (64 - o % 64 + j) := by
       obtain ⟨c, hc⟩ := hmo
       rw [show 64 * (o / 64 + i + 1) + j = m * c + (64 * i + (64 - o % 64 + j)) by lia,
         Nat.mul_add_mod, Nat.mod_eq_of_lt h2]
@@ -248,7 +248,6 @@ theorem LayOuterInvariant.add {g : Nat → Bool} {m W o n mb : Nat} {rep rep' : 
   obtain ⟨rfl, hmo, -, -⟩ := h
   obtain ⟨hi, hr, hex⟩ := h'
   have := Nat.div_add_mod o 64
-  have := pre.1
   refine ⟨by lia, Nat.dvd_add hmo (Nat.dvd_refl m), hr.mono ?_, nofun⟩
   rcases hex rfl with h1 | h1 <;> lia
 
@@ -291,6 +290,15 @@ theorem repeatPattern_spec (pat : Array UInt64) (m words : Nat)
     | exact LayOuterInvariant.exit ‹_› ‹_›
 
 /-! ### The pattern laid out as a row -/
+
+theorem getLsbD_window (E : Array UInt64) (s t : Nat) :
+    (window E s).toBitVec.getLsbD t =
+      (decide (t < 64) && E[(s + t) / 64]!.toBitVec.getLsbD ((s + t) % 64)) := by
+  rw [window]
+  split
+  · grind
+  · rw [UInt64.getLsbD_shiftRight_or_shiftLeft ‹s % 64 ≠ 0› (Nat.mod_lt s (by decide))]
+    grind
 
 /-- The window of the repeated pattern at the offset `o ≡ 64 x (mod m)`, `o < m`, is the window of
 the pattern at `64 x`. -/
@@ -338,8 +346,7 @@ theorem RowLoopInvariant.set!_window {m cur o : Nat} {pref suff : List Nat} {pat
     rw [← Nat.mod_eq_ite_of_lt_two_mul (by lia [Nat.mod_lt 64 hm]), ho, Nat.mod_add_mod,
       Nat.add_mod_mod, Nat.mul_add_one]
   · rw [hc] at hsi ho ⊢
-    exact hsi.set!_self (Nat.lt_of_lt_of_le hcl
-      (Nat.mul_le_mul_right _ (by lia [chunk_pos])))
+    exact hsi.set!_self (Nat.lt_of_lt_of_le hcl (Nat.mul_le_mul_right _ (by lia [chunk_pos])))
       (PatternBits.window_rep hfull (by lia) hom ho)
 
 theorem RowLoopInvariant.rowWords {g : Nat → Bool} {m n : Nat} {st : Vector UInt64 n × Nat}
@@ -374,7 +381,7 @@ theorem RowWords.post_copy {g : Nat → Bool} {m n : Nat} {si : Vector UInt64 n}
 theorem layOutPattern_pre {m : Nat} {pat : Array UInt64}
     (pre : 0 < m ∧ m ≤ 64 * modWords ∧ PatClear m pat) :
     0 < m ∧ (m + 64 + 64 - 1) / 64 ≤ modWords + 2 ∧ PatClear m pat :=
-  ⟨pre.1, by have := pre.2.1; lia, pre.2.2⟩
+  ⟨pre.1, by lia, pre.2.2⟩
 
 attribute [local irreducible] RowLoopInvariant RepeatedBits in
 /-- The row of the pattern of period `0 < m ≤ 64 Ratpoints.modWords` in the words `pat`, without
@@ -519,8 +526,7 @@ theorem NonunitPatternInvariant.setBitAt {pw : Power} {b cur : Nat} {pref suff :
   have hc := Std.Legacy.Range.add_length_eq_of_toList_eq_append_cons hl
   have hcl := Std.Legacy.Range.lt_of_toList_eq_append_cons hl
   refine ⟨by rw [size_setBitAt, h.1], fun y ↦ ?_⟩
-  rw [List.length_append, List.length_singleton,
-    patBit_setBitAt (by rw [h.1]; have := pre.2.1; lia), h.2 y]
+  rw [List.length_append, List.length_singleton, patBit_setBitAt (by rw [h.1]; lia), h.2 y]
   by_cases hyc : y = cur
   · subst hyc
     simp [*]
@@ -649,6 +655,7 @@ theorem sieveInitPower_post {pw : Power} {ref : EntryRef} {b : Nat} {store : Row
   have h := hrow.toArray_eq_closedRow hg
   exact ⟨h, by rw [← h]⟩
 
+attribute [local irreducible] PatZero in
 /-- The row of the residue `b < m` of the prime power `m ≤ 64 Ratpoints.modWords` with the tables
 `pw`, for the inverse of `b` below `m`, is the closed form of the row of `b` of its tables, and the
 builder stores it into the table of rows of the entry `ref`. -/
@@ -736,7 +743,7 @@ theorem FirstInvariant.add {e : SieveEntry} {frows : Array (Array UInt64)} {n x 
   have hx0 : x % e.factors[0]!.modulus = 0 := hinv.2.1
   have hxq := Nat.le_of_lt_add_of_dvd (Nat.add_lt_add_right hxm _)
     (Nat.dvd_add (Nat.dvd_of_mod_eq_zero hx0) (Nat.dvd_refl _)) pre.2.1
-  refine ⟨by lia, by rw [Nat.add_mod_right]; exact hx0, hxq, nofun, fun y hy ↦ h y ?_⟩
+  refine ⟨by lia, by rwa [Nat.add_mod_right], hxq, nofun, fun y hy ↦ h y ?_⟩
   simpa using hy
 
 theorem FirstInvariant.exit {e : SieveEntry} {frows : Array (Array UInt64)} {n x mb : Nat}
@@ -859,7 +866,7 @@ theorem FactorInvariant.add {e : SieveEntry} {frows : Array (Array UInt64)} {n i
   have hx0 : x % e.factors[i]!.modulus = 0 := hinv.2.1
   have hxq := Nat.le_of_lt_add_of_dvd (Nat.add_lt_add_right hxm _)
     (Nat.dvd_add (Nat.dvd_of_mod_eq_zero hx0) (Nat.dvd_refl _)) hq.2
-  refine ⟨by lia, by rw [Nat.add_mod_right]; exact hx0, hxq, nofun, fun y hy ↦ ?_⟩
+  refine ⟨by lia, by rwa [Nat.add_mod_right], hxq, nofun, fun y hy ↦ ?_⟩
   simpa using h y hy
 
 theorem FactorInvariant.exit {e : SieveEntry} {frows : Array (Array UInt64)} {n i x mb : Nat}
@@ -876,8 +883,8 @@ theorem FactorInvariant.next {e : SieveEntry} {frows : Array (Array UInt64)} {n 
   obtain ⟨-, hx, hex, hr⟩ := h
   obtain rfl : x = e.p := Nat.le_antisymm hx (hex rfl)
   intro y hy
-  have := (Nat.div_lt_iff_lt_mul rbaPack_pos).mpr hy
-  rw [hr y hy, ite_eq_left (by lia), List.length_append, List.length_singleton, ← Nat.add_assoc, hc]
+  rw [hr y hy, ite_eq_left (by lia [(Nat.div_lt_iff_lt_mul rbaPack_pos).mpr hy]),
+    List.length_append, List.length_singleton, ← Nat.add_assoc, hc]
 
 theorem productAnd_post {e : SieveEntry} {frows : Array (Array UInt64)} {n : Nat}
     {row : Vector UInt64 n}

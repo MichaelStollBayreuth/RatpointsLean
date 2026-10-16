@@ -424,7 +424,7 @@ theorem ChunkAndInvariant.next {sv : Array SieveSpec} {cw : UInt64} {cur st' N :
   rw [List.length_append, List.length_singleton, ← Nat.add_assoc, hK]
   refine ⟨fun j hj κ hκ ↦ ?_, by rw [Array.size_set!, hmod.2.1], fun k hk ↦ ?_⟩
   · rw [h j hj κ hκ, ite_eq_left (by simpa using hj)]
-  · rw [Array.getElem!_set! (by rw [hmod.2.1]; exact hk)]
+  · rw [Array.getElem!_set! (by rwa [hmod.2.1])]
     by_cases hkc : cur = k
     · subst hkc hst'
       rw [ite_eq_left rfl, ite_eq_left (by lia), hcur]
@@ -724,8 +724,8 @@ theorem LegStoreInvariant.post {sv : Array SieveSpec} {cw : UInt64} {m : Nat}
 
 theorem legStoreInvariant_nil (sv : Array SieveSpec) (cw : UInt64) {m : Nat}
     (surv : Vector UInt64 m) (base off : Nat) :
-    LegStoreInvariant sv cw surv base off ([] : List Nat).length surv := fun y _ ↦ by
-  rw [ite_eq_right (by simp)]
+    LegStoreInvariant sv cw surv base off ([] : List Nat).length surv := fun y _ ↦
+  (ite_eq_right (by simp)).symm
 
 attribute [local irreducible] LegAndInvariant LegStoreInvariant in
 /-- A leg of `w ≤ 8` registers from `off` on stores into the bit arrays `base + off + i`, `i < w`,
@@ -787,7 +787,7 @@ def TailDone (sv : Array SieveSpec) (cw : UInt64) (full u : Nat) {m : Nat}
 
 theorem tailDone_zero (sv : Array SieveSpec) (cw : UInt64) (full : Nat) {m : Nat}
     (surv : Vector UInt64 m) : TailDone sv cw full 0 surv surv :=
-  fun y _ ↦ by rw [ite_eq_right (by lia)]
+  fun y _ ↦ (ite_eq_right (by lia)).symm
 
 /-- A guarded leg of `w` bit arrays from the offset `u` on, which runs exactly when bit `w` of `t`
 is set, does the bit arrays from `full + u` on, `t &&& w` of them. -/

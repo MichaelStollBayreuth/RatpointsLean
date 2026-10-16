@@ -178,15 +178,6 @@ theorem SieveEntry.admits_add_mul (e : SieveEntry) (b : Nat) (a k : Int) :
 theorem SieveEntry.admits_mod (e : SieveEntry) (b : Nat) : e.admits (b % e.p) = e.admits b :=
   funext fun _ ↦ by simp [SieveEntry.admits]
 
-theorem getLsbD_window (E : Array UInt64) (s t : Nat) :
-    (window E s).toBitVec.getLsbD t =
-      (decide (t < 64) && E[(s + t) / 64]!.toBitVec.getLsbD ((s + t) % 64)) := by
-  rw [window]
-  split
-  · grind
-  · rw [UInt64.getLsbD_shiftRight_or_shiftLeft ‹s % 64 ≠ 0› (Nat.mod_lt s (by decide))]
-    grind
-
 /-! ### The rows under a unit -/
 
 theorem Entry.admits_mod_of_dvd (e : Entry) {m : Nat} (h : e.p ∣ m) (b : Nat) (a : Int) :
