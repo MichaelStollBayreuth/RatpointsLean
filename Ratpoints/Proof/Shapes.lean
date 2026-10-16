@@ -100,7 +100,7 @@ theorem mem_squaresDens_iff {bLow bHigh b : ℕ} (hbLow : 1 ≤ bLow) :
   · rintro ⟨k, hk, rfl⟩
     exact ⟨(ceilSqrt_le_iff hbLow).mp hk.1, le_floorSqrt_iff.mp (by lia), k, rfl⟩
   · rintro ⟨h1, h2, k, rfl⟩
-    exact ⟨k, ⟨(ceilSqrt_le_iff hbLow).mpr h1, by have := le_floorSqrt_iff.mpr h2; lia⟩, rfl⟩
+    exact ⟨k, ⟨(ceilSqrt_le_iff hbLow).mpr h1, by lia [le_floorSqrt_iff.mpr h2]⟩, rfl⟩
 
 theorem pairwise_lt_squaresDens (bLow bHigh : ℕ) : (squaresDens bLow bHigh).Pairwise (· < ·) :=
   List.pairwise_map.mpr ((List.pairwise_lt_range').imp Nat.mul_self_lt_mul_self)
@@ -156,18 +156,17 @@ theorem nodup_squares1Dens {divisors : List ℕ} (hnd : divisors.Nodup)
   · refine List.disjoint_left.mpr fun b hb hb' ↦ hne ?_
     obtain ⟨k, hk, rfl⟩ := List.mem_map.mp hb
     obtain ⟨k', hk', h⟩ := List.mem_map.mp hb'
-    have : 1 ≤ k' := (List.mem_range'_1.mp hk').1.trans' (Nat.le_add_left 1 _)
     have h2 : s * k ^ 2 = s' * k' ^ 2 := by rw [sq, sq, ← Nat.mul_assoc, ← Nat.mul_assoc, h]
-    exact Nat.eq_of_mul_sq_eq_mul_sq (hsq s hs) (hsq s' hs') (by lia) h2
+    exact Nat.eq_of_mul_sq_eq_mul_sq (hsq s hs) (hsq s' hs')
+      (by lia [(List.mem_range'_1.mp hk').1.trans' (Nat.le_add_left 1 _)]) h2
 
 /-- The denominators `k ^ 2` of the square shape, which the C code computes as `long`s
 (`find_points.c:3922`), are at most `bHigh`, and so `long`s for a `long` `bHigh`. -/
 theorem fitsLong_of_mem_squaresDens {bLow bHigh b : ℕ} (hb : b ∈ squaresDens bLow bHigh)
     (hH : bHigh < 2 ^ 63) : fitsLong (b : ℤ) = true := by
   obtain ⟨k, hk, rfl⟩ := List.mem_map.mp hb
-  have := le_floorSqrt_iff.mp (by have := List.mem_range'_1.mp hk; lia : k ≤ floorSqrt bHigh)
   simp [fitsLong]
-  lia
+  lia [le_floorSqrt_iff.mp (by lia [List.mem_range'_1.mp hk] : k ≤ floorSqrt bHigh)]
 
 /-- The denominators `s k ^ 2` of the divisor shape, which the C code computes as `long`s
 (`find_points.c:3940`), are at most `bHigh`, and so `long`s for a `long` `bHigh`, as is
@@ -178,10 +177,9 @@ theorem fitsLong_of_mem_squares1Dens {divisors : List ℕ} {bLow bHigh b : ℕ}
   obtain ⟨s, -, k, hk, rfl⟩ : ∃ s ∈ divisors, ∃ k ∈ List.range' (ceilSqrt ((bLow - 1) / s + 1))
       (floorSqrt (bHigh / s) + 1 - ceilSqrt ((bLow - 1) / s + 1)), b = s * k * k := by
     simpa [squares1Dens, eq_comm] using hb
-  have := le_floorSqrt_iff.mp (by have := List.mem_range'_1.mp hk; lia : k ≤ floorSqrt (bHigh / s))
-  have : s * (k * k) ≤ bHigh := (Nat.mul_le_mul_left s this).trans (Nat.mul_div_le bHigh s)
+  have := le_floorSqrt_iff.mp (by lia [List.mem_range'_1.mp hk] : k ≤ floorSqrt (bHigh / s))
   simp [fitsLong]
-  lia
+  lia [(Nat.mul_le_mul_left s this).trans (Nat.mul_div_le bHigh s)]
 
 /-! ### The valuation test of the divisor shape -/
 
@@ -344,9 +342,8 @@ the words `w ≤ ⌊bHigh / 64⌋` (`Ratpoints.Setup.fitsLong_mul_of_le_div`). -
 theorem fitsLong_of_mem_wordsDens {db : UInt64} {forb : List ForbiddenEntry} {bLow bHigh b : ℕ}
     (hb : b ∈ (Id.run (wordsDens db forb bLow bHigh)).toList) (hH : bHigh < 2 ^ 63) :
     fitsLong (b : ℤ) = true := by
-  have := (le_and_le_of_mem_wordsDens hb).2
   simp [fitsLong]
-  lia
+  lia [le_and_le_of_mem_wordsDens hb]
 
 /-! ### The bounds of the denominators of the shapes -/
 
@@ -368,9 +365,7 @@ theorem Shape.le_and_le_of_mem_dens (s : Shape) (db : UInt64) {bLow bHigh b : �
   | squares => exact ((mem_squaresDens_iff hbLow).mp hb).imp_right And.left
   | squares1 _ divisors => exact le_and_le_of_mem_squares1Dens hbLow hb
   | words forb _ _ _ _ => exact le_and_le_of_mem_wordsDens hb
-  | all =>
-    have := List.mem_range'_1.mp hb
-    lia
+  | all => lia [List.mem_range'_1.mp hb]
 
 /-- A denominator of a shape that passes its tests has a class with a pattern, when the bits of the
 word `db` are those of the classes with a pattern: the class test of the other shapes reads the

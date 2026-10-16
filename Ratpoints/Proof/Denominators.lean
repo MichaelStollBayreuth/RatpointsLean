@@ -111,8 +111,7 @@ private theorem pos_and_lt_of_eq_append_cons {s : Shape} {db : UInt64} {bLow bHi
     (hbLow : 1 ≤ bLow) (hbHigh : bHigh < 2 ^ 63) {dens pref suff : List ℕ} {cur : ℕ}
     (hd : dens = Id.run (s.dens db bLow bHigh)) (h : dens = pref ++ cur :: suff) :
     0 < cur ∧ cur < 2 ^ 63 := by
-  have := s.le_and_le_of_mem_dens db hbLow (hd ▸ h ▸ List.mem_append_right pref List.mem_cons_self)
-  lia
+  lia [s.le_and_le_of_mem_dens db hbLow (hd ▸ h ▸ List.mem_append_right pref List.mem_cons_self)]
 
 -- The entries with the offsets of the packing of a class have what `fill_bp_list` needs.
 private theorem forall_mem_of_packedFor {es : List SieveEntry} {cl : NumClass} {offsets : Array ℕ}

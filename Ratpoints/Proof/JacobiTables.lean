@@ -762,7 +762,7 @@ theorem run_jacobiTest {lcf : ℤ} {bHigh : ℕ} {ji : JacobiInfo}
     Id.run (jacobiTest ji b) = decide (J(lcf | b.coprimePart (2 * lcf.natAbs)) = 1) := by
   obtain ⟨hH, -, hI, hT, hM⟩ :=
     (Std.WP.Id.of_run_eq_wp rfl _ ((jacobiSetup_spec lcf bHigh).le_wp trivial)) ji hji
-  have hbs : b < UInt64.size := by have := mulModLimit_lt_size; lia
+  have hbs : b < UInt64.size := by lia [mulModLimit_lt_size]
   rw [Std.WP.Id.of_run_eq_wp rfl _ ((jacobiTest_spec ji b).le_wp
     ⟨Nat.pos_of_ne_zero hb, hbs, fun x hx ↦ ⟨(hI.1 x hx).1, mul_lt_two_pow_64_of_le_mulModLimit
       (hbH.trans hH) ((lt_of_mem_primeTable (hT x hx)).le.trans (by norm_num))⟩, hM⟩),

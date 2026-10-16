@@ -837,9 +837,7 @@ theorem sub_mod_div_eq_mod_iff {a a0 m P t n : Nat} (hm : m * P = n) (ha : a < n
   have h3 : a / m < P := Nat.div_lt_of_lt_mul (by rwa [hm])
   have h4 := Nat.mod_lt t hP0
   have h6 : a0 < m := haa ▸ Nat.mod_lt a hm0
-  have hlt : a0 + m * (t % P) < n := by
-    have : m * (t % P) + m ≤ m * P := by rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ h4
-    lia
+  have hlt : a0 + m * (t % P) < n := by lia [Nat.mul_le_mul_left m h4]
   have h5 : (a0 + m * t) % n = a0 + m * (t % P) := by
     have h7 : m * t = m * (t % P) + n * (t / P) := by grind
     rw [h7, ← Nat.add_assoc, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hlt]
@@ -921,12 +919,10 @@ namespace Int
 `a + j` modulo `p` is `p - r + j`. -/
 theorem toNat_add_emod_of_lt {a : Int} {p j : Nat} (hp : 0 < p) (hj : j < (-a % (p : Int)).toNat) :
     ((a + j) % (p : Int)).toNat = p - (-a % (p : Int)).toNat + j := by
-  have := emod_nonneg (-a) (b := p) (by lia)
   have := emod_lt_of_pos (-a) (b := p) (by lia)
-  have := mul_ediv_add_emod (-a) p
   have key : a + j = p - -a % p + j + p * (-(-a / p) - 1) := by
     rw [Int.mul_sub, Int.mul_neg, Int.mul_one]
-    lia
+    lia [mul_ediv_add_emod (-a) p]
   rw [key, add_mul_emod_self_left, emod_eq_of_lt (by lia) (by lia)]
   lia
 
@@ -934,12 +930,11 @@ theorem toNat_add_emod_of_lt {a : Int} {p j : Nat} (hp : 0 < p) (hj : j < (-a % 
 `a + r + k p + i` modulo `p` is `i`. -/
 theorem toNat_add_add_emod {a : Int} {p i k : Nat} (hi : i < p) :
     ((a + (((-a % (p : Int)).toNat + k * p + i : Nat) : Int)) % (p : Int)).toNat = i := by
-  have := mul_ediv_add_emod (-a) p
   have hR : ((-a % (p : Int)).toNat : Int) = -a % p := toNat_of_nonneg (emod_nonneg _ (by lia))
   have key : a + (((-a % (p : Int)).toNat + k * p + i : Nat) : Int) = i + p * (k - -a / p) := by
     push_cast
     rw [hR, Int.mul_sub, Int.mul_comm (p : Int) k]
-    lia
+    lia [mul_ediv_add_emod (-a) p]
   rw [key, add_mul_emod_self_left, emod_eq_of_lt (by lia) (by lia)]
   simp
 
@@ -1086,8 +1081,7 @@ theorem ediv_add_emod_sub_add_sub_one_ediv (lo a0 : Int) {m : Int} (hm : 0 < m) 
 of `numerators_to_bits` (`Ratpoints.Sieve.numeratorsToBits`). -/
 theorem ediv_add_emod_sub_ediv (hi a0 : Int) {m : Int} (hm : 0 < m) :
     hi / m + (hi % m - a0) / m = (hi - a0) / m := by
-  have h2 := Int.emod_add_ediv_mul hi m
-  have e2 : hi - a0 = hi % m - a0 + hi / m * m := by lia
+  have e2 : hi - a0 = hi % m - a0 + hi / m * m := by lia [Int.emod_add_ediv_mul hi m]
   rw [e2, Int.add_mul_ediv_right _ _ (Int.ne_of_gt hm), Int.add_comm]
 
 theorem lt_ediv_of_neg {c z m : Int} (hc : c < 0) (hz : c < z) (hm : 0 < m) : c < z / m := by

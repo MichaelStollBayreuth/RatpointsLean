@@ -120,8 +120,7 @@ theorem mem_primeTable_of_prime {q : ℕ} (hq : q.Prime) (h2 : q ≠ 2) (h : q <
   rcases this with ((h3 | h4) | ⟨d, hdm, hdq, hd⟩) | hmem
   · exact absurd hq.two_le (by lia)
   · exact absurd (hq.eq_one_or_self_of_dvd 2 (Nat.dvd_of_mod_eq_zero h4)) (by lia)
-  · have := hq.eq_one_or_self_of_dvd d (Nat.dvd_of_mod_eq_zero hd)
-    lia
+  · lia [hq.eq_one_or_self_of_dvd d (Nat.dvd_of_mod_eq_zero hd)]
   · exact Array.mem_toList_iff.mp hmem
 
 /-- The table lists every odd prime below its entry `cur` before it, since it holds every odd prime
@@ -474,11 +473,10 @@ theorem snd_run_modulusFactors_eq_one {m : ℕ} (hm : 0 < m)
   obtain ⟨pn, hpn, hd⟩ := h _ hq.one_lt ((Nat.minFac_dvd _).trans hr)
   have hp := prime_getElem!_primeTable (hpn.trans_le numPrimes_le_size_primeTable)
   have heq := (Nat.prime_dvd_prime_iff_eq hp hq).mp hd
-  have hlt := snd_run_modulusFactors_lt_mul_self_of_dvd m hpn (heq ▸ Nat.minFac_dvd _)
   have hsq := Nat.minFac_sq_le_self (Nat.pos_of_dvd_of_pos hr hm) fun hrp ↦
     getElem!_primeTable_ne_snd_run_modulusFactors m hpn (heq.trans hrp.minFac_eq)
   rw [← heq, sq] at hsq
-  lia
+  lia [snd_run_modulusFactors_lt_mul_self_of_dvd m hpn (heq ▸ Nat.minFac_dvd _)]
 
 -- A factor of a prime `primeTable[pn]` of the table is `(pn, 1)`.
 private theorem eq_of_mem_run_modulusFactors_getElem!_primeTable {pn : ℕ} (hpn : pn < numPrimes)
@@ -488,7 +486,7 @@ private theorem eq_of_mem_run_modulusFactors_getElem!_primeTable {pn : ℕ} (hpn
   have hf1 := lt_numPrimes_of_mem_run_modulusFactors hf
   have hq := (prime_getElem!_primeTable (hf1.trans_le hs)).one_lt
   obtain h1 | h := (Nat.dvd_prime hp).mp (pow_dvd_of_mem_run_modulusFactors hf)
-  · exact absurd h1 (Nat.one_lt_pow (by have := one_le_of_mem_run_modulusFactors hf; lia) hq).ne'
+  · exact absurd h1 (Nat.one_lt_pow (by lia [one_le_of_mem_run_modulusFactors hf]) hq).ne'
   obtain ⟨heq, he⟩ := hp.pow_eq_iff.mp h
   exact Prod.ext ((getElem!_primeTable_inj (hf1.trans_le hs) (hpn.trans_le hs)).mp heq) he
 

@@ -75,9 +75,7 @@ theorem dropZeros_of_not_beq {t : Array Int} (h : ¬(t.back? == some 0) = true) 
 
 theorem size_dropZeros_le (t : Array Int) : (dropZeros t).size ≤ t.size := by
   fun_induction dropZeros t with
-  | case1 t h ih =>
-    have := Array.size_pop_lt_of_back?_eq_some (beq_iff_eq.mp h)
-    lia
+  | case1 t h ih => lia [Array.size_pop_lt_of_back?_eq_some (beq_iff_eq.mp h)]
   | case2 => exact Nat.le_refl _
 
 theorem back!_dropZeros_ne_zero {t : Array Int} (h : (dropZeros t).size ≠ 0) :
@@ -231,7 +229,7 @@ theorem isChain_pair {c : List Int} {d : Nat} (hd : 1 ≤ d) (hc : c.getD d 0 �
 theorem IsChain.push {c : List Int} {d : Nat} {ch : Array (Array Int)} {t : Array Int}
     (h : IsChain c d ch) (ht : fullReduce ch.back! ch[ch.size - 2]! = t) (ht0 : t.back! ≠ 0)
     (hlt : t.size < ch.back!.size) : IsChain c d (ch.push (normalize t)) := by
-  obtain ⟨m, hm⟩ : ∃ m, ch.size = m + 2 := ⟨ch.size - 2, by have := h.two_le_size; lia⟩
+  obtain ⟨m, hm⟩ : ∃ m, ch.size = m + 2 := ⟨ch.size - 2, by lia [h.two_le_size]⟩
   have hp {i : Nat} (hi : i < m + 2) : (ch.push (normalize t))[i]! = ch[i]! :=
     Array.getElem!_push_lt (hm ▸ hi)
   have hn : (ch.push (normalize t))[m + 2]! = normalize t := hm ▸ Array.getElem!_push_eq
@@ -263,9 +261,8 @@ theorem IsChain.size_getElem!_add_one_add_le {c : List Int} {d : Nat} {ch : Arra
 theorem IsChain.size_le {c : List Int} {d : Nat} {ch : Array (Array Int)} (h : IsChain c d ch) :
     ch.size ≤ d + 1 := by
   have := h.two_le_size
-  have := h.size_getElem!_add_one_add_le (k := ch.size - 2) (by lia)
-  have := Array.size_ne_zero_of_back!_ne (h.back!_ne_zero (ch.size - 2 + 1) (by lia))
-  lia
+  lia [h.size_getElem!_add_one_add_le (k := ch.size - 2) (by lia),
+    Array.size_ne_zero_of_back!_ne (h.back!_ne_zero (ch.size - 2 + 1) (by lia))]
 
 /-! ### The invariants -/
 
@@ -348,9 +345,8 @@ theorem ChainInvariant.chainLoopInvariant {c : List Int} {d : Nat} {pref : List 
 theorem ChainLoopInvariant.size_eq {c : List Int} {d : Nat} {pref : List Nat} {cur : Nat}
     {suff : List Nat} {ch : Array (Array Int)} (hl : ForIn.toList [2:d + 1] = pref ++ cur :: suff)
     (h : ChainLoopInvariant c d pref (cur :: suff) ch) : ch.size = cur := by
-  have := Std.Legacy.Range.add_length_eq_of_toList_eq_append_cons hl
-  have := (h.2.2 (List.cons_ne_nil _ _)).1
-  lia
+  lia [Std.Legacy.Range.add_length_eq_of_toList_eq_append_cons hl,
+    (h.2.2 (List.cons_ne_nil _ _)).1]
 
 theorem ChainInvariant.reduceInvariant {c : List Int} {d : Nat} {pref : List Nat} {cur : Nat}
     {suff : List Nat} {y : Option (Option (Array (Array Int)))} {ch : Array (Array Int)}
@@ -358,8 +354,7 @@ theorem ChainInvariant.reduceInvariant {c : List Int} {d : Nat} {pref : List Nat
     (h : ChainInvariant c d pref (cur :: suff) (y, ch)) :
     ReduceInvariant ch[cur - 1]! ch[cur - 2]! false (none, ch[cur - 2]!) := by
   obtain ⟨-, h⟩ := h.chainLoopInvariant
-  have := h.size_eq hl
-  exact .inl ⟨rfl, rfl, h.1.back!_ne_zero _ (by have := h.1.two_le_size; lia), nofun⟩
+  exact .inl ⟨rfl, rfl, h.1.back!_ne_zero _ (by lia [h.size_eq hl, h.1.two_le_size]), nofun⟩
 
 theorem ChainInvariant.of_reduceInvariant_some {c : List Int} {d : Nat} {pref : List Nat}
     {cur : Nat} {suff : List Nat} {y z : Option (Option (Array (Array Int)))}

@@ -195,12 +195,10 @@ theorem nodup_bruteForce (c : List ℤ) (H : ℕ) : (bruteForce c H).Nodup := by
   · rw [List.nodup_flatMap]
     refine ⟨fun j _ ↦ nodup_pointsOfDen _ _ _ (nodup_numerators H),
       List.nodup_range.pairwise_of_forall_ne fun a _ b _ hab p ha hb ↦ hab ?_⟩
-    have := (hz ha).symm.trans (hz hb)
-    lia
+    lia [(hz ha).symm.trans (hz hb)]
   · split_ifs at h1
     · obtain ⟨j, -, hj⟩ := List.mem_flatMap.mp h2
-      have := (hz h1).symm.trans (hz hj)
-      lia
+      lia [(hz h1).symm.trans (hz hj)]
     · exact List.not_mem_nil h1
 
 theorem toFinset_bruteForce (c : List ℤ) (H : ℕ) : (bruteForce c H).toFinset = points c H :=

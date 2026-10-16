@@ -84,11 +84,8 @@ open scoped Std.WP
 -- `-⌊-t / q⌋` for `t ≤ 0` and `1 + ⌊(t - 1) / q⌋` for `t > 0`.
 private theorem Int.le_mul_ite_neg_ediv (t : ℤ) {q : ℤ} (hq : 0 < q) :
     t ≤ q * if t ≤ 0 then -((-t) / q) else 1 + (t - 1) / q := by
-  have h1 := Int.emod_add_mul_ediv (-t) q
-  have h2 := Int.emod_add_mul_ediv (t - 1) q
-  have h3 := Int.emod_lt_of_pos (t - 1) hq
-  have h4 := Int.emod_nonneg (-t) (by lia : q ≠ 0)
-  split <;> lia
+  split <;> lia [Int.emod_add_mul_ediv (-t) q, Int.emod_add_mul_ediv (t - 1) q,
+    Int.emod_lt_of_pos (t - 1) hq, Int.emod_nonneg (-t) (by lia : q ≠ 0)]
 
 namespace Ratpoints
 
@@ -105,7 +102,7 @@ theorem even_of_sq_eq_binaryForm_of_odd_of_dvd {c : List ℤ} {a y : ℤ} {b : �
   rw [binaryForm, hd] at hy
   exact (Int.even_and_exists_isSquare_add_of_sq_eq_sum hy (Finset.self_mem_range_succ _)
     (by rw [Nat.add_sub_cancel_left, pow_one, hu]) hpu
-    fun i hi hne ↦ h i (by have := Finset.mem_range.mp hi; lia)).1
+    fun i hi hne ↦ h i (by lia [Finset.mem_range.mp hi])).1
 
 -- The terms of `F(a, b)` other than `c_d a ^ d b`, for `b = p ^ m b'` and `k < d`, when
 -- `(d - k) m ≥ 1 + val - v_p(c_k)` for `c_k ≠ 0`, are divisible by `p ^ (val + m + 1)`.
@@ -118,7 +115,6 @@ private theorem pow_dvd_of_add_one_le {c : List ℤ} {a b' : ℤ} {p m val k : �
   have hc : (p : ℤ) ^ padicValNat p (c.getD k 0).natAbs ∣ c.getD k 0 :=
     Int.natCast_dvd.mpr (by simpa using pow_padicValNat_dvd)
   have hle : val + m + 1 ≤ padicValNat p (c.getD k 0).natAbs + m * (degree c + 1 - k) := by
-    have := hmin h0
     have : m * (degree c + 1 - k) = (degree c - k) * m + m := by
       rw [Nat.sub_add_comm hk.le]
       ring
@@ -377,18 +373,15 @@ theorem isFactorization_of_run_factorLcf_eq {w : ℕ} (hw : 0 < w) {fac : List (
 /-- The square `p * p` of a prime of the table, which `setup_us1` computes as an `int`
 (`find_points.c:800`), is below `2 ^ 31`. -/
 theorem mul_self_lt_of_mem_primeTable {p : ℕ} (hp : p ∈ primeTable) : p * p < 2 ^ 31 := by
-  have := lt_of_mem_primeTable hp
-  have := Nat.mul_self_le_mul_self (Nat.le_of_lt_succ this)
-  lia
+  lia [Nat.mul_self_le_mul_self (Nat.le_of_lt_succ (lt_of_mem_primeTable hp))]
 
 /-- A cofactor below the square of a prime of the table is a `long`, so that the test of
 `Ratpoints.Setup.factorLcf` before it takes the cofactor as a prime always passes
 (`find_points.c:808`). -/
 theorem fitsLong_of_lt_mul_self {w p : ℕ} (hp : p ∈ primeTable) (hw : w < p * p) :
     fitsLong (w : ℤ) = true := by
-  have := mul_self_lt_of_mem_primeTable hp
   simp [fitsLong]
-  lia
+  lia [mul_self_lt_of_mem_primeTable hp]
 
 /-! ### The squarefree divisors -/
 
@@ -630,8 +623,7 @@ theorem SlopeInvariant.append_of_lt {c : List ℤ} {d p val cur vk r : ℕ} {pre
       else 1 + (t - 1) / ((d - (d - 1 - cur) : ℕ) : ℤ)) := by
   have hcur := Std.Legacy.Range.lt_of_toList_eq_append_cons hl
   have hm := Int.le_mul_ite_neg_ediv t (q := ((d - (d - 1 - cur) : ℕ) : ℤ)) (by lia)
-  have := h.1
-  refine ⟨by lia, fun j hj ↦ ?_⟩
+  refine ⟨by lia [h.1], fun j hj ↦ ?_⟩
   rcases List.mem_append.mp hj with hj | hj
   · exact (h.2 j hj).trans (Int.mul_le_mul_of_nonneg_left hlt.le (by lia))
   · obtain rfl := List.mem_singleton.mp hj
@@ -657,10 +649,10 @@ theorem SlopeInvariant.one_le_toNat_and_le_mul {c : List ℤ} {d p val : ℕ} {n
     (h : SlopeInvariant c d p val (ForIn.toList [:d]) n) :
     1 ≤ n.toNat ∧ ∀ k < d, 1 + (val : ℤ) - (Id.run (valuation (c.getD k 0) p)).1 ≤
       ((d - k : ℕ) : ℤ) * n.toNat := by
-  refine ⟨by have := h.1; lia, fun k hk ↦ ?_⟩
+  refine ⟨by lia [h.1], fun k hk ↦ ?_⟩
   have := h.2 (d - 1 - k) (by simp; lia)
   rw [Nat.sub_sub_self (by lia : k ≤ d - 1)] at this
-  rwa [Int.toNat_of_nonneg (by have := h.1; lia)]
+  rwa [Int.toNat_of_nonneg (by lia [h.1])]
 
 section
 
@@ -778,9 +770,8 @@ theorem nodup_of_setupUs1_eq_some {c : List ℤ} {d bHigh : ℕ} {info : List De
 (`find_points.c:876`), are at most `bHigh`, and so `long`s for a `long` `bHigh`. -/
 theorem fitsLong_mul_of_le_div {x p bHigh : ℕ} (h : x ≤ bHigh / p) (hH : bHigh < 2 ^ 63) :
     fitsLong ((x * p : ℕ) : ℤ) = true := by
-  have : x * p ≤ bHigh := (Nat.mul_le_mul_right p h).trans (Nat.div_mul_le_self bHigh p)
   simp [fitsLong]
-  lia
+  lia [(Nat.mul_le_mul_right p h).trans (Nat.div_mul_le_self bHigh p)]
 
 /-- Whether the entry `e` of the valuation test of the divisor shape (`Ratpoints.Sieve.denInfoTest`)
 excludes the denominator `b`: `v_p(b) ≥ e.slope` with `v_p(b) + e.val` odd, for the valuation
@@ -809,8 +800,7 @@ theorem DenInfo.excludes_eq_false_of_sq_eq {c : List ℤ} (hd : degree c % 2 = 1
     (even_add_of_sq_eq_binaryForm_of_odd hd hval.symm (fun k hk hck ↦ ?_) hab (by lia) hy)
   have := hsl.2 k hk
   rw [fst_run_valuation hck hp.one_lt] at this
-  have := Nat.mul_le_mul_left (degree c - k) hle
-  lia
+  lia [Nat.mul_le_mul_left (degree c - k) hle]
 
 end Setup
 
