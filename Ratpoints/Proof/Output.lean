@@ -330,8 +330,7 @@ theorem eq_orderedPoints_of_findPoints_eq_ok {c : List ℤ} {H : ℕ} {P : Param
   dsimp only
   rw [List.flatMap_cons, pointsOfDen_zero_eq_pointsWithDen c' hH,
     searchDens_eq_searchDenominators c' hH, List.flatMap_congr fun b hb ↦
-      pointsOfDen_eq_pointsWithDen c' (by lia [le_and_le_of_mem_searchDenominators hb])
-        (by lia [le_and_le_of_mem_searchDenominators hb])]
+      (le_and_le_of_mem_searchDenominators hb).elim (pointsOfDen_eq_pointsWithDen c')]
   cases rev
   · simp only [Bool.false_eq_true, ↓reduceIte, List.map_id]
   · rfl
@@ -428,8 +427,7 @@ theorem exists_findPoints_eq_error_iff_of_sturm_nonneg {c : List ℤ} {H : ℕ} 
     (∃ e, findPoints c H P o = .error e) ↔
       c.length < 2 ∨ maxDegree + 1 < c.length ∨ H = 0 ∨ 2 ^ 63 ≤ H ∨
         ¬ Squarefree (binaryFormPoly c) := by
-  rw [exists_findPoints_eq_error_iff, findPointsWith]
-  rw [BruteForce.degree_eq]
+  rw [exists_findPoints_eq_error_iff, findPointsWith, BruteForce.degree_eq]
   simp only [fitsLong_natCast, Bool.not_eq_true', decide_eq_false_iff_not, not_lt]
   split_ifs with h1 h2 h3 h4
   · simp [h1]
@@ -456,8 +454,7 @@ theorem exists_findPoints_eq_error_iff_of_sturm_neg {c : List ℤ} {H : ℕ} {P 
       c.length < 2 ∨ maxDegree + 1 < c.length ∨ H = 0 ∨ 2 ^ 63 ≤ H ∨
         degree c + 2 ≤ 2 * (c.length / 2) ∨
         o.reverse = true ∧ degree c % 2 = 0 ∧ c.getD 0 0 = 0 ∧ c.getD 1 0 = 0 := by
-  rw [exists_findPoints_eq_error_iff, findPointsWith]
-  rw [BruteForce.degree_eq]
+  rw [exists_findPoints_eq_error_iff, findPointsWith, BruteForce.degree_eq]
   simp only [fitsLong_natCast, Bool.not_eq_true', decide_eq_false_iff_not, not_lt]
   split_ifs with h1 h2 h3 h4
   · simp [h1]

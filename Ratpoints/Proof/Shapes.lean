@@ -160,13 +160,11 @@ theorem squares1Dens_one_eq_filter {divisors : List ℕ} (hpos : ∀ e ∈ divis
     exact Nat.mul_lt_mul_of_pos_left (Nat.pow_lt_pow_left h two_ne_zero) (hpos e he)
   simp only [List.mem_map, List.mem_filter, mem_range'_ceilSqrt_iff (hpos e he) le_rfl,
     List.mem_range'_1, decide_eq_true_eq, sq, ← Nat.mul_assoc]
-  constructor
-  · intro ⟨k, ⟨h1, h2⟩, hb⟩
-    have hk : k ≠ 0 := by rintro rfl; simp at h1
+  refine ⟨fun ⟨k, ⟨h1, h2⟩, hb⟩ ↦ ?_, fun ⟨⟨k, hk, hb⟩, hbH⟩ ↦ ?_⟩
+  · have hk : k ≠ 0 := by rintro rfl; simp at h1
     exact ⟨⟨k, ⟨by lia, by lia [Nat.le_mul_self k, Nat.le_mul_of_pos_left (k * k) (hpos e he),
       Nat.mul_assoc e k k]⟩, hb⟩, by lia⟩
-  · intro ⟨⟨k, hk, hb⟩, hbH⟩
-    exact ⟨k, ⟨Nat.mul_pos (Nat.mul_pos (hpos e he) (by lia)) (by lia), by lia⟩, hb⟩
+  · exact ⟨k, ⟨Nat.mul_pos (Nat.mul_pos (hpos e he) (by lia)) (by lia), by lia⟩, hb⟩
 
 /-- The divisor shape lists each denominator once, for distinct squarefree divisors: `s k ^ 2`
 determines the squarefree `s` (`Nat.eq_of_mul_sq_eq_mul_sq`), and the segments start at `k ≥ 1`. -/

@@ -613,8 +613,7 @@ theorem checkPoint_eq_deliver {σ : Type} (process : Int → Int → Int → σ 
         cases hn : fl.noY
         · simp only [hy0, ↓reduceIte, Bool.false_eq_true, List.filter_cons, Bool.not_false,
             Bool.true_or, List.filter_nil, List.map_cons, List.map_nil, Bool.and_true]
-          rw [show ∀ p q : Int × Int × Int, [p, q] = [p] ++ [q] from fun _ _ ↦ rfl,
-            Delivery.deliver_append]
+          conv => rhs; rw [← List.singleton_append, Delivery.deliver_append]
           generalize r.deliver process [(if fl.reversed then swapPoint else id) (a, y, b)] = r1
           cases hq : r1.quit <;> simp [hq, hy0, Delivery.callMapped_eq_deliver process]
         · simp [Int.le_of_lt hy, hy0]

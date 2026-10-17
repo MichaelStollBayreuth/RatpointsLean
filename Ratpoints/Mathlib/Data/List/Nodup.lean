@@ -40,8 +40,9 @@ theorem perm_map_of_nodup {l : List α} {l' : List β} {f : α → β} (hl : l.N
 /-- A concatenation `l.flatMap f` has no duplicates when `l` and each `f a` have none and the
 member `a` of `l` can be read off each entry of `f a` by a function `g`, so that the lists `f a`
 are disjoint; compare `List.nodup_flatMap`. -/
-theorem Nodup.flatMap {l : List α} {f : α → List β} (hl : l.Nodup) (hf : ∀ a ∈ l, (f a).Nodup)
-    (g : β → α) (hg : ∀ a ∈ l, ∀ b ∈ f a, g b = a) : (l.flatMap f).Nodup :=
+protected theorem Nodup.flatMap {l : List α} {f : α → List β} (hl : l.Nodup)
+    (hf : ∀ a ∈ l, (f a).Nodup) (g : β → α) (hg : ∀ a ∈ l, ∀ b ∈ f a, g b = a) :
+    (l.flatMap f).Nodup :=
   nodup_flatMap.mpr ⟨hf, hl.pairwise_of_forall_ne fun a ha a' ha' hne b hb hb' ↦
     hne ((hg a ha b hb).symm.trans (hg a' ha' b hb'))⟩
 

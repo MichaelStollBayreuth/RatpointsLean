@@ -522,7 +522,7 @@ theorem SiftInvariant.quit_eq_false_and {range mb mH : Nat} {w0 w1 : Int} {o : O
 theorem eq_deliver_of_not_le (h : ¬low ≤ high) (r : Delivery σ) :
     r = r.deliver process ((((List.range (high + 1 - low).toNat).map fun k : Nat ↦ low + k).filter
       keep).flatMap g) := by
-  rw [show (high + 1 - low).toNat = 0 by lia]
+  rw [Int.toNat_of_nonpos (z := high + 1 - low) (by lia)]
   rfl
 
 /-- At the exit of the loop of `Ratpoints.Sieve.siftBits`, the delivery is that of the points of the

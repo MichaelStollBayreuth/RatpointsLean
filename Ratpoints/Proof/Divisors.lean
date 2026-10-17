@@ -633,12 +633,6 @@ private theorem toList_eq_of_cons {bHigh p cur : ℕ} {divs0 divs : Array ℕ} {
   rw [List.length_append, List.length_singleton, take_add_one_eq hl h.eq_of_cons]
   split_ifs with hle <;> simp [h.eq_of_cons, hle]
 
--- The pass up to the position `cur` is a prefix of the whole pass.
-private theorem length_le_of_toList_eq {n cur : ℕ} {pref suff : List ℕ}
-    (hl : ForIn.toList [:n] = pref ++ cur :: suff) :
-    (pref ++ [cur]).length ≤ (ForIn.toList [:n]).length := by
-  simp [hl]
-
 theorem ExtendDivisorsInvariant.push {bHigh p cur : ℕ} {divs0 divs : Array ℕ}
     {pref suff : List ℕ} (hl : ForIn.toList [:divs0.size] = pref ++ cur :: suff)
     (h : ExtendDivisorsInvariant bHigh p divs0 pref (cur :: suff) divs)
@@ -663,7 +657,7 @@ theorem ExtendDivisorsInvariant.push_of_le {bHigh p cur : ℕ} {divs0 divs : Arr
     have h' := toList_eq_of_cons hl h
     simp only [hle, ↓reduceIte] at h'
     rw [h']
-    exact prefix_append_map_filter_take _ (length_le_of_toList_eq hl)⟩
+    exact prefix_append_map_filter_take _ (by simp [hl])⟩
 
 theorem ExtendDivisorsInvariant.skip_of_le {bHigh p cur : ℕ} {divs0 divs : Array ℕ}
     {pref suff : List ℕ} (hl : ForIn.toList [:divs0.size] = pref ++ cur :: suff)
@@ -674,7 +668,7 @@ theorem ExtendDivisorsInvariant.skip_of_le {bHigh p cur : ℕ} {divs0 divs : Arr
     have h' := toList_eq_of_cons hl h
     simp only [hgt, ↓reduceIte] at h'
     rw [h']
-    exact prefix_append_map_filter_take _ (length_le_of_toList_eq hl)⟩
+    exact prefix_append_map_filter_take _ (by simp [hl])⟩
 
 -- The invariants are irreducible here: the verification conditions of
 -- `Ratpoints.Setup.squarefreeDivisors` are closed by their lemmas, never by unfolding them.

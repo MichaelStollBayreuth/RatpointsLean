@@ -76,7 +76,7 @@ theorem le_and_le_of_mem_searchDenominators {maxDiv H b : ℕ} {c : List ℤ}
 
 /-- The points of the brute-force reference with the denominator `1 ≤ z ≤ H` are those of
 `Ratpoints.pointsWithDen`, in the same order. -/
-theorem pointsOfDen_eq_pointsWithDen (c : List ℤ) {H z : ℕ} (hz : 0 < z) (hzH : z ≤ H) :
+theorem pointsOfDen_eq_pointsWithDen (c : List ℤ) {H z : ℕ} (hz : 1 ≤ z) (hzH : z ≤ H) :
     pointsOfDen c (degree c) z (numerators H) = pointsWithDen c H z :=
   List.flatMap_congr fun x hx ↦ by
     rw [← BruteForce.degree_eq, horner_scaledCoeffs_mul]
