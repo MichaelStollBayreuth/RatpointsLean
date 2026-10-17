@@ -413,8 +413,8 @@ Lemma~\ref{lem:sift_eq_checkDen} maps their side.
 
 \begin{definition}[The search of the polynomial handed on]\label{def:searchPoints}
   \uses{def:Params, def:arraySize, def:sievingInfo, def:useCLong, def:pointsAtInfinity,
-    def:sieveRun, def:swapPoint, lem:sievingInfo, thm:bruteForce, def:twoAdic, def:Shape,
-    lem:twoAdic_point, lem:twoAdic_exit, lem:survives, thm:run_reference, def:setupUs1,
+    def:sieving, def:sieveRun, def:swapPoint, lem:sievingInfo, thm:bruteForce, def:twoAdic,
+    def:Shape, lem:twoAdic_point, lem:twoAdic_exit, lem:survives, thm:run_reference, def:setupUs1,
     def:forbidden, def:searchDens, lem:shape_dens, def:numClasses, lem:numClasses, lem:classOffsets,
     def:classOffsets, lem:soundRun, lem:storeTables}
   \lean{Ratpoints.searchPoints, Ratpoints.run_searchPoints}
@@ -425,30 +425,28 @@ Lemma~\ref{lem:sift_eq_checkDen} maps their side.
   the checked loop for even $d$, the Jacobi test for even $d$, $c_d$ not a square and the Jacobi
   switch of the parameters, the squares for odd $d$ and $|c_d| = 1$, and for odd $d$ otherwise the
   divisors of the leading coefficient (Definition~\ref{def:setupUs1};
-  \csource{find_points.c}{4573}{4573}, \csource{find_points.c}{4588}{4589},
-  \csource{find_points.c}{4595}{4596}, \csource{find_points.c}{4607}{4607},
-  \csource{find_points.c}{4900}{4943}); the 2-adic information (Definition~\ref{def:twoAdic}) with
-  the packings of the classes and \verb|den_bits| (Definition~\ref{def:numClasses}), and no points
-  when no class of the denominators admits a numerator and there is no point at infinity
-  (\csource{find_points.c}{4603}{4604}, \csource{find_points.c}{4948}{4948},
-  \csource{find_points.c}{4954}{4963}); then what \verb|sieving_info| computes
-  (Definition~\ref{def:sievingInfo}), with the flag of the \verb|long|s: the tables of the examined
-  primes, the forbidden divisors for even $d$ (Definition~\ref{def:forbidden}), the sieve entries of
-  the moduli with their reciprocals and the store of the tables of rows of the run
-  (Definition~\ref{def:storeTables}), which the run takes, and no points when the curve has no
-  points modulo a prime examined on the way (\csource{find_points.c}{4602}{4602},
-  \csource{find_points.c}{4992}{5012}); the checked loop off when there are no forbidden divisors
-  and no Jacobi test (\csource{find_points.c}{2793}{2795}); an array of rows of offsets, one for
-  each packing, of one offset for each sieve entry (\csource{find_points.c}{5119}{5119}), and the
-  rows of offsets of the classes in it, with the inverses of the strides in the entries
-  (Definition~\ref{def:classOffsets}; \csource{find_points.c}{5132}{5132}); the shape that
-  \verb|run_setup| chooses (Definition~\ref{def:Shape}); and the points at infinity followed by the
-  points of the denominators of the shape, with its tests, the classes and their offsets and
-  \verb|den_bits|, the three stages that the cut points $s_1$ and $s_2$ of the parameters give and
-  pieces of at most $\mathrm{arraySizeAt}(H)$ bit arrays, each mapped by $\mathrm{swapPoint}$ when
-  the flag is set (\csource{find_points.c}{5116}{5116}, \csource{find_points.c}{5137}{5139},
-  \csource{find_points.c}{5167}{5167}, the block that sets up the run and runs the denominators;
-  \csource{find_points.c}{5106}{5106}, the return when the Sturm step leaves nothing to search, is
+  \csource{find_points.c}{4588}{4589}, \csource{find_points.c}{4595}{4596},
+  \csource{find_points.c}{4607}{4607}, \csource{find_points.c}{4900}{4943}); the 2-adic information
+  (Definition~\ref{def:twoAdic}) with the packings of the classes and \verb|den_bits|
+  (Definition~\ref{def:numClasses}), and no points when no class of the denominators admits a
+  numerator and there is no point at infinity (\csource{find_points.c}{4603}{4604},
+  \csource{find_points.c}{4948}{4948}, \csource{find_points.c}{4954}{4963}); then what
+  \verb|sieving_info| computes (Definition~\ref{def:sievingInfo}), with the flag of the
+  \verb|long|s: the tables of the examined primes, the forbidden divisors for even $d$
+  (Definition~\ref{def:forbidden}), the sieve entries of the moduli with their reciprocals and the
+  store of the tables of rows of the run (Definition~\ref{def:storeTables}), which the run takes,
+  and no points when the curve has no points modulo a prime examined on the way
+  (\csource{find_points.c}{4602}{4602}, \csource{find_points.c}{4992}{5012}); the checked loop off
+  when there are no forbidden divisors and no Jacobi test (\csource{find_points.c}{2793}{2795}); and
+  the points at infinity followed by the points of the sieving (Definition~\ref{def:sieving}), the
+  block that sets up the run and runs the denominators: an array of rows of offsets, one for each
+  packing, of one offset for each sieve entry, and the rows of offsets of the classes in it, with
+  the inverses of the strides in the entries (Definition~\ref{def:classOffsets}); the shape that
+  \verb|run_setup| chooses (Definition~\ref{def:Shape}); and the points of the denominators of the
+  shape, with its tests, the classes and their offsets and \verb|den_bits|, the three stages that
+  the cut points $s_1$ and $s_2$ of the parameters give and pieces of at most
+  $\mathrm{arraySizeAt}(H)$ bit arrays, each mapped by $\mathrm{swapPoint}$ when the flag is set
+  (\csource{find_points.c}{5106}{5106}, the return when the Sturm step leaves nothing to search, is
   not met before stage~H). A definition of type \verb|Id|, which $\mathrm{findPoints}$ runs. For
   well-formed parameters, $1 \le H < 2^{63}$, as the refusals of $\mathrm{findPoints}$ leave it, and
   $d$ the degree of $c$, its result is the list of the points at infinity followed by the points of

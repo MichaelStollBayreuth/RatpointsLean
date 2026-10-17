@@ -1007,7 +1007,7 @@ private theorem searchPoints_spec (c : List ℤ) (H : ℕ) (P : Params) (rev : B
     ⦃ fun r ↦ r = (pointsAtInfinity c (degree c) false ++ (searchDens c (degree c) H).flatMap
         fun b : ℕ ↦ pointsOfDen c (degree c) b (numerators H)).map
           (if rev then swapPoint else id) ⦄ := by
-  vcgen [searchPoints, setupUs1_value, twoAdic_value, numClasses_value, sievingInfo_value,
+  vcgen [searchPoints, sieving, setupUs1_value, twoAdic_value, numClasses_value, sievingInfo_value,
     numPackings_value, classOffsets_value, runSetup_value, sieveRun_value]
   all_goals obtain ⟨hP, hH, hH63⟩ := ‹P.WF ∧ 1 ≤ H ∧ H < 2 ^ 63›
   all_goals first

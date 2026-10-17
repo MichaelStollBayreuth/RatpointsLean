@@ -640,25 +640,27 @@ Section~\ref{sec:denC} describes, in its order: the flags of the tests on the de
 divisors of the leading coefficient for odd degree, the 2-adic information and its exit, what
 \verb|sieving_info| computes (Definition~\ref{def:sievingInfo}), the tables of the examined primes
 with their exit, the forbidden divisors for even degree, the sieve entries of the moduli and the
-store of the tables of rows, the switch of the checked loop, the shape, and the points at infinity
-followed by the run over the denominators from $1$ to $H$ with the cut points of the parameters and
-the store that \verb|sieving_info| returns. For well-formed parameters, $1 \le H < 2^{63}$ and $d$
-the degree of $c$, its result is the list of the points at infinity followed by the points of the
-reference over the denominators of the search (Definition~\ref{def:searchDens}), in their order,
-each mapped by $\mathrm{swapPoint}$ when the flag of the reversal is set, also at both exits; its
-node names \verb|Ratpoints.run_searchPoints| with this statement, uses Definitions~\ref{def:Shape}
-and~\ref{def:searchDens}, Lemmas~\ref{lem:twoAdic_exit} and~\ref{lem:shape_dens} and the reduction
-of the run, and holds the C ranges of the flags and of the exits, the call of \verb|sieving_info|
-and the list of the sieve entries that it fills among them, with the frame of the block that sets up
-the run and the rows of offsets of the classes (\csource{find_points.c}{2793}{2795},
-\csource{find_points.c}{4573}{4573}, \csource{find_points.c}{4588}{4589},
+store of the tables of rows, the switch of the checked loop, and the points at infinity followed by
+the sieving (Definition~\ref{def:sieving}): the shape and the run over the denominators from $1$ to
+$H$ with the cut points of the parameters and the store that \verb|sieving_info| returns. For
+well-formed parameters, $1 \le H < 2^{63}$ and $d$ the degree of $c$, its result is the list of the
+points at infinity followed by the points of the reference over the denominators of the search
+(Definition~\ref{def:searchDens}), in their order, each mapped by $\mathrm{swapPoint}$ when the flag
+of the reversal is set, also at both exits; its node names \verb|Ratpoints.run_searchPoints| with
+this statement, uses Definitions~\ref{def:Shape} and~\ref{def:searchDens},
+Lemmas~\ref{lem:twoAdic_exit} and~\ref{lem:shape_dens} and the reduction of the run, and holds the C
+ranges of the flags and of the exits, the call of \verb|sieving_info| and the list of the sieve
+entries that it fills among them, and the return when the Sturm step leaves nothing to search
+(\csource{find_points.c}{2793}{2795}, \csource{find_points.c}{4588}{4589},
 \csource{find_points.c}{4595}{4596}, \csource{find_points.c}{4602}{4602},
 \csource{find_points.c}{4603}{4604}, \csource{find_points.c}{4607}{4607},
 \csource{find_points.c}{4900}{4943}, \csource{find_points.c}{4948}{4948},
 \csource{find_points.c}{4954}{4963}, \csource{find_points.c}{4992}{5012},
-\csource{find_points.c}{5106}{5106}, \csource{find_points.c}{5116}{5116},
-\csource{find_points.c}{5119}{5119}, \csource{find_points.c}{5132}{5132},
-\csource{find_points.c}{5137}{5139}, \csource{find_points.c}{5167}{5167}).
+\csource{find_points.c}{5106}{5106}); the sieving holds the frame of the block that sets up the run
+and the rows of offsets of the classes (\csource{find_points.c}{4573}{4573},
+\csource{find_points.c}{5116}{5116}, \csource{find_points.c}{5119}{5119},
+\csource{find_points.c}{5132}{5132}, \csource{find_points.c}{5137}{5139},
+\csource{find_points.c}{5167}{5167}).
 
 \begin{definition}[The denominators of the search]\label{def:searchDens}
   \uses{def:setupUs1, def:Shape}

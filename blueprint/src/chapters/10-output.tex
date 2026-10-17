@@ -474,18 +474,20 @@ return the delivery as it came. The search returns what a search gives back: the
 of the delivery with the bits of the flags written back.
 
 \begin{definition}[The sieving]\label{def:sieving}
-  \uses{def:sieveRun, def:classOffsets, def:Shape, def:delivery, def:arraySize}
-  Proposed name: \lname{Ratpoints.sieving}. The block that the C code introduces as ``now do the
-  sieving'': an array of rows of offsets, one for each packing, of one offset for each sieve entry,
-  and the row offsets of the classes in it, with the inverses of the strides in the entries
-  (Definition~\ref{def:classOffsets}); the shape that \verb|run_setup| chooses
-  (Definition~\ref{def:Shape}); and the run over the denominators $1, \dots, H$ of the shape with
-  the cut points of the parameters, pieces of at most $\mathrm{arraySizeAt}(H)$ bit arrays, the
-  flags and the delivery, which returns when the callback stops the search
-  (\csource{find_points.c}{4573}{4573}, \csource{find_points.c}{5116}{5116},
-  \csource{find_points.c}{5119}{5119}, \csource{find_points.c}{5132}{5132},
-  \csource{find_points.c}{5137}{5139}, \csource{find_points.c}{5167}{5167}, which move from the
-  search, Definition~\ref{def:searchPoints}).
+  \uses{def:sieveRun, def:classOffsets, def:Shape, def:arraySize}
+  \lean{Ratpoints.sieving}
+  \leanok
+  The block that the C code introduces as ``now do the sieving'': an array of rows of offsets, one
+  for each packing, of one offset for each sieve entry, and the row offsets of the classes in it,
+  with the inverses of the strides in the entries (Definition~\ref{def:classOffsets}); the shape
+  that \verb|run_setup| chooses (Definition~\ref{def:Shape}); and the run over the denominators
+  $1, \dots, H$ of the shape with the cut points of the parameters, pieces of at most
+  $\mathrm{arraySizeAt}(H)$ bit arrays and the flag of the reversal, whose points it returns, each
+  mapped by $\mathrm{swapPoint}$ when the flag is set (\csource{find_points.c}{4573}{4573},
+  \csource{find_points.c}{5116}{5116}, \csource{find_points.c}{5119}{5119},
+  \csource{find_points.c}{5132}{5132}, \csource{find_points.c}{5137}{5139},
+  \csource{find_points.c}{5167}{5167}, which move from the search,
+  Definition~\ref{def:searchPoints}).
 \end{definition}
 
 \begin{definition}[What a search gives back]\label{def:Outcome}

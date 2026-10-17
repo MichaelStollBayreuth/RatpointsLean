@@ -49,7 +49,8 @@ the sieve entries of the moduli with their reciprocals and the tables of their r
 * `Ratpoints.makeModulus?`, `Ratpoints.sievingInfo`: the sieve entry of a modulus, and the tables,
   the forbidden divisors and the sieve entries of the moduli of a search, with their reciprocals and
   the tables of their rows.
-* `Ratpoints.searchPoints`: the search of the polynomial that the set-up hands on.
+* `Ratpoints.sieving`, `Ratpoints.searchPoints`: the sieving of a search, and the search of the
+  polynomial that the set-up hands on.
 * `Ratpoints.findPoints`: the points.
 -/
 
@@ -230,6 +231,45 @@ def sievingInfo (c : List Int) (d : Nat) (useCLong checkDenom : Bool) (P : Param
   return some (entries.toList, magics, forb, forbVal, store)
 
 open Sieve in
+/-- The sieving of the search of the polynomial with the coefficient list `c` of degree `d`, for the
+height `H`, the parameters `P` and the flag `rev` of the reversal, with the classes `cls` of the
+denominators modulo 64 and the word `db` of those that admit a numerator
+(`Ratpoints.Sieve.numClasses`), and the sieve entries `entries` of the moduli of `P`, their
+reciprocals `magics` and the store `store` of the tables of rows (`Ratpoints.sievingInfo`): an array
+of `Ratpoints.Sieve.numPackings` rows of one offset for each sieve entry, and the row offsets of the
+classes in it, with the inverses of the strides in the entries (`Ratpoints.Sieve.classOffsets`); the
+shape of the run (`Ratpoints.Sieve.runSetup`, with the flags of the denominators `useSquares`,
+`us1`, `checkDenom` and `useJacobi` and the forbidden divisors `forb` and `forbVal`); and the points
+of the denominators `1, …, H` of the shape (`Ratpoints.Sieve.sieveRun`) with the cut points `P.sp1`
+and `P.sp2` and pieces of at most `Ratpoints.Params.arraySizeAt P H` bit arrays, each mapped by
+`Ratpoints.Sieve.swapPoint` when `rev` is set. This is the block that the C code introduces as "now
+do the sieving".
+
+C: `find_points.c:4573`, `find_points.c:5116`, `find_points.c:5119`, `find_points.c:5132`,
+`find_points.c:5137-5139`, `find_points.c:5167`
+
+Deviation: a function of its own for the block of the sieving in `find_points_work_1`; the
+denominators from `1` to `H`, for the range `b_low, …, b_high` (stage H); the flags of the
+denominators as Booleans and an option, for the bits of `args->flags` and the arrays
+`args->den_info` and `args->divisors` that `run_setup` reads; the array of the row offsets made with
+zeros, for the array on the stack, whose entries the C code leaves unset until `class_offsets`
+writes them, with one offset in each row for each sieve entry of the run, those of its three stages,
+for the `sp3_max` entries with the reserve of further primes (stage I); an array of points, for the
+count `total` of the points that the run returns, with no stop by the callback (stage G); no
+sieving thread made (`worker_init`, `worker_clear`), whose fields the components that the run calls
+take as arguments, and no pool of threads (stage I); no failure for lack of memory, which the model
+cannot meet. -/
+def sieving (c : List Int) (d H : Nat) (P : Params) (rev : Bool) (useSquares : Bool)
+    (us1 : Option (List Setup.DenInfo × List Nat)) (checkDenom useJacobi : Bool)
+    (forb : List ForbiddenEntry) (forbVal : List ForbiddenVal) (entries : List SieveEntry)
+    (magics : Array Nat) (cls : Vector NumClass 64) (db : UInt64) (store : RowStore) :
+    Id (Array (Int × Int × Int)) := do
+  let offsets := Array.replicate ((← numPackings cls) * max entries.length 1) 0
+  let (cls, entries, offsets) ← classOffsets cls entries offsets
+  let shape ← runSetup useSquares us1 checkDenom useJacobi forb forbVal (c.getD d 0) H
+  sieveRun c d H (P.arraySizeAt H) rev P.sp1 P.sp2 entries magics cls offsets db shape 1 H store
+
+open Sieve in
 /-- The search of the polynomial with the coefficient list `c` of degree `d` that the set-up hands
 on, for the height `H`, the parameters `P` and the flag `rev` of the reversal, over the denominators
 `bLow = 1, …, bHigh = H`. First the flags of the tests on the denominators: the checked loop for
@@ -243,25 +283,18 @@ when no class admits a numerator and there is no point at infinity, as there is 
 the sieve entries of the moduli of `P` and their reciprocals (`Ratpoints.sievingInfo`), with the
 flag of the `long`s (`Ratpoints.Setup.useCLong`), and no points when the curve has no points modulo
 one of the primes examined; the checked loop off when there are no forbidden divisors and no Jacobi
-test; an array of `Ratpoints.Sieve.numPackings` rows of one offset for each sieve entry, and the row
-offsets of the classes in it, with the inverses of the strides in the entries
-(`Ratpoints.Sieve.classOffsets`); the shape of the run (`Ratpoints.Sieve.runSetup`); and the points
-at infinity (`Ratpoints.Sieve.pointsAtInfinity`), followed by those of the denominators of the shape
-(`Ratpoints.Sieve.sieveRun`) with the classes and their row offsets, the sieve entries of the moduli
-in the three stages that the cut points `P.sp1` and `P.sp2` give, their reciprocals, the store of
-the tables of rows that `Ratpoints.sievingInfo` makes, and pieces of at most
-`Ratpoints.Params.arraySizeAt P H` bit arrays, each point mapped by `Ratpoints.Sieve.swapPoint`
-when `rev` is set. For well-formed parameters, `1 ≤ H < 2 ^ 63` and `d` the degree of `c`, these are
-the points at infinity followed by the points of the brute-force reference over the denominators of
-the search (`Ratpoints.searchDens`), in the order of its loop, increasing unless the shape is that
-of the divisors, each mapped when `rev` is set, also when an exit is taken
-(`Ratpoints.run_searchPoints`).
+test; and the points at infinity (`Ratpoints.Sieve.pointsAtInfinity`), followed by those of the
+sieving (`Ratpoints.sieving`) with the flags of the denominators, the forbidden divisors, the
+classes, the sieve entries of the moduli, their reciprocals and the store of the tables of rows that
+`Ratpoints.sievingInfo` makes, each point mapped by `Ratpoints.Sieve.swapPoint` when `rev` is set.
+For well-formed parameters, `1 ≤ H < 2 ^ 63` and `d` the degree of `c`, these are the points at
+infinity followed by the points of the brute-force reference over the denominators of the search
+(`Ratpoints.searchDens`), in the order of its loop, increasing unless the shape is that of the
+divisors, each mapped when `rev` is set, also when an exit is taken (`Ratpoints.run_searchPoints`).
 
-C: `find_points.c:2793-2795`, `find_points.c:4573`, `find_points.c:4588-4589`,
-`find_points.c:4595-4596`, `find_points.c:4602`, `find_points.c:4603-4604`, `find_points.c:4607`,
-`find_points.c:4900-4943`, `find_points.c:4948`, `find_points.c:4954-4963`,
-`find_points.c:4992-5012`, `find_points.c:5106`, `find_points.c:5116`, `find_points.c:5119`,
-`find_points.c:5132`, `find_points.c:5137-5139`, `find_points.c:5167`
+C: `find_points.c:2793-2795`, `find_points.c:4588-4589`, `find_points.c:4595-4596`,
+`find_points.c:4602`, `find_points.c:4603-4604`, `find_points.c:4607`, `find_points.c:4900-4943`,
+`find_points.c:4948`, `find_points.c:4954-4963`, `find_points.c:4992-5012`, `find_points.c:5106`
 
 Deviation: the arguments of `sieving_info` that serve the choice of the moduli (the mean number of
 bits per word, whether the number of primes was left to the library, the 2-adic classes and the word
@@ -273,16 +306,13 @@ sieve entries as a list, for the array `args->sieve_list` that `sieving_info` fi
 `class_offsets` reads; the square test `lcfsq` of line 4906 made on the polynomial searched
 (`Ratpoints.Setup.isSquare`), where the C code computes it before the reversal check (line 4634) and
 clears it in case 2 (line 4770): the same value for an even degree, the only one that reads it; the
-store of the tables of rows that `Ratpoints.sievingInfo` returns handed to the run as a value, for
-the arrays `sieve` of the entries of `args->sieve_list`; the test on `point_at_infty` of the 2-adic
-exit recomputed, as `Ratpoints.Sieve.pointsAtInfinity` decides it; the exits give the empty list,
-where `sieving_info` returns the prime and `find_points_work_1` the number `0` of points found; the
-Sturm step does not restrict the search region before stage H, so that the return when it leaves
-nothing to search is never taken, and the run always follows the points at infinity; no failure for
-lack of memory, which the model cannot meet; the array of the row offsets made with zeros, for the
-array on the stack, whose entries the C code leaves unset until `class_offsets` writes them, with
-one offset in each row for each sieve entry of the run, those of its three stages, for the `sp3_max`
-entries with the reserve of further primes (stage I); no output under `RATPOINTS_VERBOSE` or
+store of the tables of rows that `Ratpoints.sievingInfo` returns handed to the sieving as a value,
+for the arrays `sieve` of the entries of `args->sieve_list`; the test on `point_at_infty` of the
+2-adic exit recomputed, as `Ratpoints.Sieve.pointsAtInfinity` decides it; the exits give the empty
+list, where `sieving_info` returns the prime and `find_points_work_1` the number `0` of points
+found; the Sturm step does not restrict the search region before stage H, so that the return when it
+leaves nothing to search is never taken, and the sieving always follows the points at infinity; no
+failure for lack of memory, which the model cannot meet; no output under `RATPOINTS_VERBOSE` or
 `DEBUG`. -/
 def searchPoints (c : List Int) (d H : Nat) (P : Params) (rev : Bool) :
     Id (List (Int × Int × Int)) := do
@@ -299,11 +329,8 @@ def searchPoints (c : List Int) (d H : Nat) (P : Params) (rev : Bool) :
   let some (entries, magics, forb, forbVal, store) ← sievingInfo c d useCLong checkDenom P bHigh
     | return []
   if forb.isEmpty && forbVal.isEmpty && !useJacobi then checkDenom := false
-  let offsets := Array.replicate ((← numPackings cls) * max entries.length 1) 0
-  let (cls, entries, offsets) ← classOffsets cls entries offsets
-  let shape ← runSetup useSquares us1 checkDenom useJacobi forb forbVal lcf bHigh
-  let pts ← sieveRun c d H (P.arraySizeAt H) rev P.sp1 P.sp2 entries magics cls offsets db shape 1
-    bHigh store
+  let pts ← sieving c d H P rev useSquares us1 checkDenom useJacobi forb forbVal entries magics cls
+    db store
   return pointsAtInfinity c d rev ++ pts.toList
 
 /-- The points of height at most `H` on `y ^ 2 = F(x, z)` for the coefficient list `c`, found by the
