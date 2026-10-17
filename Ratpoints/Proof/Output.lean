@@ -27,13 +27,16 @@ depend on the options of the output (`Ratpoints.exists_searchList_of_findPoints_
 `(1, 0)` and the denominators of the search, mapped back after a reversal, without the points with
 `y < 0` under `RATPOINTS_NO_Y` (`Ratpoints.exists_eq_of_findPoints_eq_ok`), so that it holds
 exactly the points of the specification, those with `y ≥ 0` under `RATPOINTS_NO_Y`, each once.
-Under `RATPOINTS_NO_CHECK` it holds distinct triples `(x, 0, z)` of normalized pairs `(x, z)` of
-height at most `H`. `Ratpoints.findPoints` refuses exactly the inputs that the program refuses:
-with the Sturm step on, those with fewer than two or more than `Ratpoints.maxDegree + 1`
-coefficients, the height bound `0` or one of `2 ^ 63` or more, which is not a `long`, and the
-binary forms `Φ_c` that are not squarefree; without it, instead of the last, those that the test of
-the leading zeros and the reversal check refuse. Comparator certifies the protocol, the membership,
-the absence of duplicates and both refusal theorems (`comparator/Challenge.lean`).
+Under `RATPOINTS_NO_CHECK` it holds triples `(x, 0, z)` of normalized pairs `(x, z)` of height at
+most `H`, each once, among them those of all the points, and the list of the search with
+`RATPOINTS_NO_CHECK` cleared and `RATPOINTS_NO_Y` set, with `y` replaced by `0`, is a sublist of
+it. `Ratpoints.findPoints` refuses exactly the inputs that the program refuses: with the Sturm step
+on, those with fewer than two or more than `Ratpoints.maxDegree + 1` coefficients, the height bound
+`0` or one of `2 ^ 63` or more, which is not a `long`, and the binary forms `Φ_c` that are not
+squarefree; without it, instead of the last, those that the test of the leading zeros and the
+reversal check refuse. Comparator certifies the protocol, the membership, the absence of
+duplicates, the three statements under `RATPOINTS_NO_CHECK` and both refusal theorems
+(`comparator/Challenge.lean`).
 
 ## Main statements
 
@@ -59,6 +62,12 @@ the absence of duplicates and both refusal theorems (`comparator/Challenge.lean`
 * `Ratpoints.nodup_of_findPoints_eq_ok`: for every option, the list has no duplicates.
 * `Ratpoints.toFinset_eq_points_of_findPoints_eq_ok`: without the options of the output, its set of
   elements is `Ratpoints.points`.
+* `Ratpoints.exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck`,
+  `Ratpoints.mem_of_isPoint_of_findPoints_eq_ok_of_noCheck`,
+  `Ratpoints.map_sublist_of_findPoints_eq_ok_of_noCheck`: under `RATPOINTS_NO_CHECK`, the list holds
+  triples `(x, 0, z)` of normalized pairs of height at most `H`, among them `(x, 0, z)` for every
+  point `(x, y, z)`, and the list of the search with `RATPOINTS_NO_CHECK` cleared and
+  `RATPOINTS_NO_Y` set, with `y` replaced by `0`, is a sublist of it.
 * `Ratpoints.exists_findPoints_eq_error_iff_of_sturm_nonneg`: with the Sturm step on,
   `Ratpoints.findPoints` refuses exactly the inputs with fewer than two or more than
   `Ratpoints.maxDegree + 1` coefficients, the height bound `0` or one of `2 ^ 63` or more, and the
@@ -80,10 +89,11 @@ with `x` and `z` exchanged (`Ratpoints.Setup.binaryForm_eq_of_reversal_eq_ok`), 
 reference, mapped back, is a permutation of that of `c`
 (`Ratpoints.Sieve.perm_map_swapPoint_bruteForce`). Under `RATPOINTS_NO_CHECK` the search delivers,
 for the same sound test of the sieve, the survivors of the numerators prime to the denominators of
-the search (`Ratpoints.exists_eq_of_mem_searchList_of_noCheck`), which are distinct
-(`Ratpoints.nodup_searchList_of_noCheck`). Of the refusals, the heights that are not `long`s are
-those of `2 ^ 63` or more (`Ratpoints.fitsLong_natCast`), and the test of the leading zeros and that
-of the reversal check stand for `Z ^ 2 ∣ Φ_c` and `X ^ 2 ∣ Φ_c`
+the search (`Ratpoints.exists_eq_of_mem_searchList_of_noCheck`, distinct by
+`Ratpoints.nodup_searchList_of_noCheck`), of which the points with `y ≥ 0` that the search delivers
+without it are a sublist (`Ratpoints.map_searchList_sublist`). Of the refusals, the heights that are
+not `long`s are those of `2 ^ 63` or more (`Ratpoints.fitsLong_natCast`), and the test of the
+leading zeros and that of the reversal check stand for `Z ^ 2 ∣ Φ_c` and `X ^ 2 ∣ Φ_c`
 (`Ratpoints.not_squarefree_binaryFormPoly_of_lt`,
 `Ratpoints.Setup.not_squarefree_binaryFormPoly_of_reversal_eq_error`), and after them the remainder
 chain of the polynomial searched is none exactly when `Φ_c` is not squarefree
@@ -301,6 +311,51 @@ theorem toFinset_eq_points_of_findPoints_eq_ok {c : List ℤ} {H : ℕ} {P : Par
   (List.toFinset_eq_of_perm _ _ (perm_bruteForce_of_findPoints_eq_ok hP h hc hy)).trans
     (toFinset_bruteForce c H)
 
+/-! ### `RATPOINTS_NO_CHECK` -/
+
+/-- Under `RATPOINTS_NO_CHECK`, for well-formed parameters, every triple of the list that
+`Ratpoints.findPoints` returns is `(x, 0, z)` for the pair `(x, z)` of a normalized point of height
+at most `H`, whether it is a point or not: `x` prime to `z`, `z > 0` or `(x, z) = (1, 0)`,
+`|x| ≤ H` and `z ≤ H` (`Ratpoints.exists_eq_of_mem_searchList_of_noCheck`); comparator certifies
+this (`comparator/Challenge.lean`). -/
+theorem exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck {c : List ℤ} {H : ℕ} {P : Params}
+    {o : Options} {L : List (ℤ × ℤ × ℤ)} (hP : P.WF) (h : findPoints c H P o = .ok L)
+    (hc : o.noCheck = true) {q : ℤ × ℤ × ℤ} (hq : q ∈ L) :
+    ∃ x z : ℤ, q = (x, 0, z) ∧ Int.gcd x z = 1 ∧ (0 < z ∨ z = 0 ∧ x = 1) ∧ |x| ≤ H ∧ z ≤ H := by
+  obtain ⟨c', rev, S, -, -, hH, -, rfl, -⟩ := exists_searchList_of_findPoints_eq_ok hP h
+  exact exists_eq_of_mem_searchList_of_noCheck hc hH hq
+
+/-- Under `RATPOINTS_NO_CHECK`, for well-formed parameters, the list `L'` that
+`Ratpoints.findPoints` returns for the same input with `RATPOINTS_NO_CHECK` cleared and
+`RATPOINTS_NO_Y` set, with `y` replaced by `0`, is a sublist of the list `L` that it returns: both
+searches run with the same test of the sieve, so that the points come in the same order among the
+survivors (`Ratpoints.map_searchList_sublist`); comparator certifies this
+(`comparator/Challenge.lean`). -/
+theorem map_sublist_of_findPoints_eq_ok_of_noCheck {c : List ℤ} {H : ℕ} {P : Params}
+    {o : Options} {L L' : List (ℤ × ℤ × ℤ)} (hP : P.WF) (h : findPoints c H P o = .ok L)
+    (hc : o.noCheck = true)
+    (h' : findPoints c H P { o with noCheck := false, noY := true } = .ok L') :
+    (L'.map fun q ↦ (q.1, 0, q.2.2)).Sublist L := by
+  obtain ⟨c', rev, S, -, -, -, -, rfl, hall⟩ := exists_searchList_of_findPoints_eq_ok hP h
+  obtain rfl := Except.ok.inj (h'.symm.trans (hall false true))
+  rw [hc]
+  exact map_searchList_sublist c' H S rev o.noY
+
+/-- Under `RATPOINTS_NO_CHECK`, for well-formed parameters, the list that `Ratpoints.findPoints`
+returns has the triple `(x, 0, z)` of every normalized point `(x, y, z)` of height at most `H`: the
+point `(x, |y|, z)` is in the list of the search with `RATPOINTS_NO_CHECK` cleared and
+`RATPOINTS_NO_Y` set (`Ratpoints.map_sublist_of_findPoints_eq_ok_of_noCheck`); comparator certifies
+this (`comparator/Challenge.lean`). -/
+theorem mem_of_isPoint_of_findPoints_eq_ok_of_noCheck {c : List ℤ} {H : ℕ} {P : Params}
+    {o : Options} {L : List (ℤ × ℤ × ℤ)} (hP : P.WF) (h : findPoints c H P o = .ok L)
+    (hc : o.noCheck = true) {p : ℤ × ℤ × ℤ} (hp : IsPoint c H p) : (p.1, 0, p.2.2) ∈ L := by
+  obtain ⟨c', rev, S, -, -, -, -, -, hall⟩ := exists_searchList_of_findPoints_eq_ok hP h
+  have hp' : (p.1, |p.2.1|, p.2.2) ∈ searchList c' H S ⟨rev, false, true⟩ :=
+    (mem_iff_isPoint_of_findPoints_eq_ok hP (hall false true) rfl).mpr
+      ⟨by simpa [IsPoint, sq_abs] using hp, fun _ ↦ abs_nonneg _⟩
+  exact (map_sublist_of_findPoints_eq_ok_of_noCheck hP h hc (hall false true)).subset
+    (List.mem_map.mpr ⟨_, hp', rfl⟩)
+
 /-! ### The refusals -/
 
 /-- With the Sturm step on (`0 ≤ o.sturm`, as in a run of the program without options),
@@ -405,6 +460,27 @@ Classical.choice, Quot.sound]
 -/
 #guard_msgs in
 #print axioms map_findPointsWith_eq_map_findPoints
+
+/--
+info: 'Ratpoints.exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck' depends on axioms: [propext,
+Classical.choice, Quot.sound]
+-/
+#guard_msgs in
+#print axioms exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck
+
+/--
+info: 'Ratpoints.mem_of_isPoint_of_findPoints_eq_ok_of_noCheck' depends on axioms: [propext,
+Classical.choice, Quot.sound]
+-/
+#guard_msgs in
+#print axioms mem_of_isPoint_of_findPoints_eq_ok_of_noCheck
+
+/--
+info: 'Ratpoints.map_sublist_of_findPoints_eq_ok_of_noCheck' depends on axioms: [propext,
+Classical.choice, Quot.sound]
+-/
+#guard_msgs in
+#print axioms map_sublist_of_findPoints_eq_ok_of_noCheck
 
 end Ratpoints
 

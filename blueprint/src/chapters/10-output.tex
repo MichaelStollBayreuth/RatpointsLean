@@ -653,19 +653,19 @@ statements. Under $\mathrm{noCheck}$ the following lemma and theorem say what th
 
 \begin{lemma}[The survivors under NO\_CHECK]\label{lem:noCheckList}
   \uses{def:searchList, lem:checkNumWith, lem:swapPoint_bijection, def:searchDens, lem:shape_dens}
-  Proposed names: \lname{Ratpoints.exists\_eq\_of\_mem\_searchList\_of\_noCheck},
-  \lname{Ratpoints.nodup\_searchList\_of\_noCheck}, \lname{Ratpoints.map\_searchList\_sublist},
-  \lname{Ratpoints.searchList\_eq\_map}, \lname{Ratpoints.nodup\_searchDens},
-  \lname{List.Nodup.flatMap}. Under $\mathrm{noCheck}$ and for $1 \le H$, every member of the list
-  that the search of $c$ delivers for any test is $(x, 0, z)$ for a pair $(x, z)$ normalized of
-  height at most $H$ (Lemma~\ref{lem:swapPoint_bijection}), and the list has no duplicates. For any
-  test, with the flag of the reversal set, the list is that with it clear, mapped; and the list with
-  the exact check on and $\mathrm{noY}$ set, with $y$ replaced by $0$, is a sublist of the list
-  under $\mathrm{noCheck}$ with the same flag of the reversal. The denominators of the search have
-  no duplicates.
+  \lean{Ratpoints.exists_eq_of_mem_searchList_of_noCheck, Ratpoints.nodup_searchList_of_noCheck, Ratpoints.map_searchList_sublist, Ratpoints.searchList_eq_map, Ratpoints.nodup_searchDens, List.Nodup.flatMap}
+  \leanok
+  Under $\mathrm{noCheck}$ and for $1 \le H$, every member of the list that the search of $c$
+  delivers for any test is $(x, 0, z)$ for a pair $(x, z)$ normalized of height at most $H$
+  (Lemma~\ref{lem:swapPoint_bijection}), and the list has no duplicates. For any test, with the flag
+  of the reversal set, the list is that with it clear, mapped; and the list with the exact check on
+  and $\mathrm{noY}$ set, with $y$ replaced by $0$, is a sublist of the list under
+  $\mathrm{noCheck}$ with the same flag of the reversal. The denominators of the search have no
+  duplicates.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   The denominators of the search lie in $1, \dots, H$, as the search uses already. The survivors of
   distinct denominators, or of distinct numerators of one denominator, are distinct pairs; a list of
   lists without duplicates whose members carry the index of their part has no duplicates
@@ -677,18 +677,19 @@ statements. Under $\mathrm{noCheck}$ the following lemma and theorem say what th
 
 \begin{theorem}[The output under NO\_CHECK]\label{thm:noCheck}
   \uses{lem:findPoints_searchList, lem:noCheckList, thm:findPoints, def:IsPoint}
-  Proposed names: \lname{Ratpoints.exists\_eq\_of\_mem\_of\_findPoints\_eq\_ok\_of\_noCheck},
-  \lname{Ratpoints.mem\_of\_isPoint\_of\_findPoints\_eq\_ok\_of\_noCheck},
-  \lname{Ratpoints.map\_sublist\_of\_findPoints\_eq\_ok\_of\_noCheck}. For well-formed parameters
-  and options with $\mathrm{noCheck}$, if $\mathrm{findPoints}(c, H, P, o)$ returns the list $L$:
-  every member of $L$ is $(x, 0, z)$ with $\gcd(x, z) = 1$, $z > 0$ or ($z = 0$ and $x = 1$), $|x|
-  \le H$ and $z \le H$; for every normalized point $(x, y, z)$ of height at most $H$, $(x, 0, z)$
-  lies in $L$; and if the search with $\mathrm{noCheck}$ cleared and $\mathrm{noY}$ set returns
-  $L'$, then $L'$ with $y$ replaced by $0$ is a sublist of $L$, so that the points come in the order
-  of the search among the survivors.
+  \lean{Ratpoints.exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck, Ratpoints.mem_of_isPoint_of_findPoints_eq_ok_of_noCheck, Ratpoints.map_sublist_of_findPoints_eq_ok_of_noCheck}
+  \leanok
+  For well-formed parameters and options with $\mathrm{noCheck}$, if
+  $\mathrm{findPoints}(c, H, P, o)$ returns the list $L$: every member of $L$ is $(x, 0, z)$ with
+  $\gcd(x, z) = 1$, $z > 0$ or ($z = 0$ and $x = 1$), $|x| \le H$ and $z \le H$; for every
+  normalized point $(x, y, z)$ of height at most $H$, $(x, 0, z)$ lies in $L$; and if the search
+  with $\mathrm{noCheck}$ cleared and $\mathrm{noY}$ set returns $L'$, then $L'$ with $y$ replaced
+  by $0$ is a sublist of $L$, so that the points come in the order of the search among the
+  survivors.
 \end{theorem}
 
 \begin{proof}
+  \leanok
   Lemma~\ref{lem:findPoints_searchList} gives $L$ and $L'$ as the lists that the search delivers for
   one sound test, and Lemma~\ref{lem:noCheckList} the first and the third statement. For the second,
   the point $(x, |y|, z)$ lies in $L'$ by Theorem~\ref{thm:findPoints}, and the sublist puts $(x, 0,

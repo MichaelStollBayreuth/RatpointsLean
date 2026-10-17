@@ -66,7 +66,9 @@ that of the divisors of the leading coefficient times squares
   without those with `y < 0` under `RATPOINTS_NO_Y`.
 * `Ratpoints.exists_eq_of_mem_searchList_of_noCheck`, `Ratpoints.nodup_searchList_of_noCheck`:
   under `RATPOINTS_NO_CHECK`, the search delivers distinct triples `(x, 0, z)` of normalized pairs
-  `(x, z)` of height at most `H` (`Ratpoints.IsNormalizedPair`), whatever the test.
+  `(x, z)` of height at most `H` (`Ratpoints.IsNormalizedPair`), whatever the test;
+  `Ratpoints.map_searchList_sublist`: the points that it delivers without `RATPOINTS_NO_CHECK` and
+  with `RATPOINTS_NO_Y`, with `y` replaced by `0`, are a sublist of them, for the same test.
 * `Ratpoints.exists_isSoundTest_run_sieveRun`: the run of the shape that the search chooses, with
   sound arguments, delivers the points of the numerators that a sound test lets through.
 * `Ratpoints.sievingInfo_spec`: for well-formed parameters, the sieve entries that
@@ -483,6 +485,18 @@ theorem nodup_searchList_of_noCheck {c : List ℤ} {H : ℕ} (hH : 1 ≤ H) (S :
   obtain ⟨x', z', rfl, hn'⟩ := exists_eq_of_mem_searchList_of_noCheck hc' hH hq'
   cases hr : fl.reversed <;> simp only [hr, Bool.false_eq_true, ↓reduceIte, id] at h
   exacts [h, (swapPoint_inj hn.2.1 hn'.2.1).mp h]
+
+/-- Without `RATPOINTS_NO_CHECK` and with `RATPOINTS_NO_Y`, the points that the search delivers,
+with `y` replaced by `0`, are a sublist of those that it delivers under `RATPOINTS_NO_CHECK` with
+the same test: each numerator gives at most its point with `y ≥ 0` in the one case and its survivor
+in the other (`Ratpoints.Sieve.map_checkNumWith_sublist`). -/
+theorem map_searchList_sublist (c : List ℤ) (H : ℕ) (S : ℕ → ℤ → Bool) (rev noY : Bool) :
+    ((searchList c H S ⟨rev, false, true⟩).map fun q ↦ (q.1, 0, q.2.2)).Sublist
+      (searchList c H S ⟨rev, true, noY⟩) := by
+  simp only [searchList, List.map_append, List.map_flatMap]
+  rw [map_pointsAtInfinityList _ _ _ noY]
+  exact .append_left (.flatMap_right _ fun b _ ↦ .flatMap_right _ fun a _ ↦
+    map_checkNumWith_sublist ..) _
 
 -- A curve without points of height at most `H` has no points at infinity and none over the
 -- denominators of `1, …, H` in its reference.

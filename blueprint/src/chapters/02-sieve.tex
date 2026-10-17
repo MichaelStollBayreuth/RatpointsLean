@@ -452,10 +452,10 @@ $\mathrm{findPoints}$ searches every input that it does not refuse (Theorem~\ref
 with the Sturm step off, forms that are not squarefree among them, which ratpoints searches under
 \verb|-s|, and without $\mathrm{noCheck}$ it returns their points, those with $y < 0$ left out under
 $\mathrm{noY}$, as Theorem~\ref{thm:findPoints} says; under $\mathrm{noCheck}$ it returns the
-survivors of the sieve, each with $y = 0$. The points at infinity deliver $(1, 0, 0)$ twice for
-$c_d = 0$ and even $d$, as the C code would, which only the zero polynomial meets: ratpoints refuses
-it before it gets there, and so does $\mathrm{findPoints}$ since stage~D, so that no input reaches
-it.
+survivors of the sieve, each with $y = 0$, as Theorem~\ref{thm:noCheck} says. The points at infinity
+deliver $(1, 0, 0)$ twice for $c_d = 0$ and even $d$, as the C code would, which only the zero
+polynomial meets: ratpoints refuses it before it gets there, and so does $\mathrm{findPoints}$ since
+stage~D, so that no input reaches it.
 
 \section{The theorems}\label{sec:sieveTheorems}
 

@@ -5,6 +5,9 @@
     "challenge_mem_iff_isPoint_of_findPoints_eq_ok", "challenge_nodup_of_findPoints_eq_ok",
     "challenge_exists_findPoints_eq_error_iff_of_sturm_nonneg",
     "challenge_exists_findPoints_eq_error_iff_of_sturm_neg", "challenge_wf_sieveParams",
+    "challenge_exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck",
+    "challenge_mem_of_isPoint_of_findPoints_eq_ok_of_noCheck",
+    "challenge_map_sublist_of_findPoints_eq_ok_of_noCheck",
     "challenge_map_findPointsWith_eq_map_findPoints"],
   "permitted_axioms": ["propext", "Quot.sound", "Classical.choice"],
   "enable_nanoda": false

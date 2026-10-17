@@ -34,16 +34,20 @@ without the Sturm step; and the theorems of stage G on the options of the output
 the delivery. Since stage G membership holds with the exact check on (`o.noCheck = false`): the list
 of `Ratpoints.findPoints` holds exactly the points, of each pair `(x, ±y, z)` only the one with
 `y ≥ 0` when `o.noY` is set; no duplicates holds for every option, the options of the output among
-them. The search with a callback (`Ratpoints.findPointsWith`) refuses what `Ratpoints.findPoints`
-refuses, and otherwise returns the data of the callback and the count of the delivery of the list of
-`Ratpoints.findPoints` to the callback (`Ratpoints.Delivery.deliver`): the calls of the callback for
-the points of the list in their order, up to and including the first that stops the search.
-`Ratpoints.bruteForce`, `Ratpoints.findPoints`, `Ratpoints.findPointsWith`, `Ratpoints.Answer`,
-`Ratpoints.Delivery`, `Ratpoints.Delivery.deliver`, `Ratpoints.Options`, `Ratpoints.Params`,
-`Ratpoints.Params.WF`, `Ratpoints.SieveOptions`, `Ratpoints.sieveParams` and `Ratpoints.maxDegree`
-come from the model, never restated, since a definition of the model elaborates without Mathlib to
-other instance terms. Of Mathlib, the file imports exactly the public imports of
-`Ratpoints/Spec/Basic.lean`, so that the restated definitions elaborate to the same terms as there.
+them. With the exact check off, every element of the list is `(x, 0, z)` for a normalized coprime
+pair of height at most `H`, every point `(x, y, z)` of height at most `H` gives the element
+`(x, 0, z)`, and the points with `y ≥ 0` of the same search with the exact check on, with `y`
+replaced by `0`, are a sublist of it, so that they come in the same order. The search with a
+callback (`Ratpoints.findPointsWith`) refuses what `Ratpoints.findPoints` refuses, and otherwise
+returns the data of the callback and the count of the delivery of the list of `Ratpoints.findPoints`
+to the callback (`Ratpoints.Delivery.deliver`): the calls of the callback for the points of the list
+in their order, up to and including the first that stops the search. `Ratpoints.bruteForce`,
+`Ratpoints.findPoints`, `Ratpoints.findPointsWith`, `Ratpoints.Answer`, `Ratpoints.Delivery`,
+`Ratpoints.Delivery.deliver`, `Ratpoints.Options`, `Ratpoints.Params`, `Ratpoints.Params.WF`,
+`Ratpoints.SieveOptions`, `Ratpoints.sieveParams` and `Ratpoints.maxDegree` come from the model,
+never restated, since a definition of the model elaborates without Mathlib to other instance terms.
+Of Mathlib, the file imports exactly the public imports of `Ratpoints/Spec/Basic.lean`, so that the
+restated definitions elaborate to the same terms as there.
 -/
 
 @[expose] public section
@@ -110,6 +114,26 @@ theorem challenge_exists_findPoints_eq_error_iff_of_sturm_neg (c : List ℤ) (H 
   sorry
 
 theorem challenge_wf_sieveParams (o : Ratpoints.SieveOptions) : (Ratpoints.sieveParams o).WF :=
+  sorry
+
+theorem challenge_exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck (c : List ℤ) (H : ℕ)
+    (P : Ratpoints.Params) (o : Ratpoints.Options) (L : List (ℤ × ℤ × ℤ)) (hP : P.WF)
+    (hc : o.noCheck = true) (h : Ratpoints.findPoints c H P o = .ok L) (q : ℤ × ℤ × ℤ)
+    (hq : q ∈ L) :
+    ∃ x z : ℤ, q = (x, 0, z) ∧ Int.gcd x z = 1 ∧ (0 < z ∨ z = 0 ∧ x = 1) ∧ |x| ≤ H ∧ z ≤ H :=
+  sorry
+
+theorem challenge_mem_of_isPoint_of_findPoints_eq_ok_of_noCheck (c : List ℤ) (H : ℕ)
+    (P : Ratpoints.Params) (o : Ratpoints.Options) (L : List (ℤ × ℤ × ℤ)) (hP : P.WF)
+    (hc : o.noCheck = true) (h : Ratpoints.findPoints c H P o = .ok L) (p : ℤ × ℤ × ℤ)
+    (hp : Ratpoints.IsPoint c H p) : (p.1, 0, p.2.2) ∈ L :=
+  sorry
+
+theorem challenge_map_sublist_of_findPoints_eq_ok_of_noCheck (c : List ℤ) (H : ℕ)
+    (P : Ratpoints.Params) (o : Ratpoints.Options) (L L' : List (ℤ × ℤ × ℤ)) (hP : P.WF)
+    (hc : o.noCheck = true) (h : Ratpoints.findPoints c H P o = .ok L)
+    (h' : Ratpoints.findPoints c H P { o with noCheck := false, noY := true } = .ok L') :
+    (L'.map fun q ↦ (q.1, 0, q.2.2)).Sublist L :=
   sorry
 
 theorem challenge_map_findPointsWith_eq_map_findPoints {σ : Type} (c : List ℤ) (H : ℕ)

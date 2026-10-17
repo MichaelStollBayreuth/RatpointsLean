@@ -52,6 +52,26 @@ theorem challenge_exists_findPoints_eq_error_iff_of_sturm_neg (c : List ℤ) (H 
 theorem challenge_wf_sieveParams (o : Ratpoints.SieveOptions) : (Ratpoints.sieveParams o).WF :=
   Ratpoints.wf_sieveParams o
 
+theorem challenge_exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck (c : List ℤ) (H : ℕ)
+    (P : Ratpoints.Params) (o : Ratpoints.Options) (L : List (ℤ × ℤ × ℤ)) (hP : P.WF)
+    (hc : o.noCheck = true) (h : Ratpoints.findPoints c H P o = .ok L) (q : ℤ × ℤ × ℤ)
+    (hq : q ∈ L) :
+    ∃ x z : ℤ, q = (x, 0, z) ∧ Int.gcd x z = 1 ∧ (0 < z ∨ z = 0 ∧ x = 1) ∧ |x| ≤ H ∧ z ≤ H :=
+  Ratpoints.exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck hP h hc hq
+
+theorem challenge_mem_of_isPoint_of_findPoints_eq_ok_of_noCheck (c : List ℤ) (H : ℕ)
+    (P : Ratpoints.Params) (o : Ratpoints.Options) (L : List (ℤ × ℤ × ℤ)) (hP : P.WF)
+    (hc : o.noCheck = true) (h : Ratpoints.findPoints c H P o = .ok L) (p : ℤ × ℤ × ℤ)
+    (hp : Ratpoints.IsPoint c H p) : (p.1, 0, p.2.2) ∈ L :=
+  Ratpoints.mem_of_isPoint_of_findPoints_eq_ok_of_noCheck hP h hc hp
+
+theorem challenge_map_sublist_of_findPoints_eq_ok_of_noCheck (c : List ℤ) (H : ℕ)
+    (P : Ratpoints.Params) (o : Ratpoints.Options) (L L' : List (ℤ × ℤ × ℤ)) (hP : P.WF)
+    (hc : o.noCheck = true) (h : Ratpoints.findPoints c H P o = .ok L)
+    (h' : Ratpoints.findPoints c H P { o with noCheck := false, noY := true } = .ok L') :
+    (L'.map fun q ↦ (q.1, 0, q.2.2)).Sublist L :=
+  Ratpoints.map_sublist_of_findPoints_eq_ok_of_noCheck hP h hc h'
+
 theorem challenge_map_findPointsWith_eq_map_findPoints {σ : Type} (c : List ℤ) (H : ℕ)
     (P : Ratpoints.Params) (o : Ratpoints.Options) (process : ℤ → ℤ → ℤ → σ → Ratpoints.Answer σ)
     (info : σ) (hP : P.WF) :

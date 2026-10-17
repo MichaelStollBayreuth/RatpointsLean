@@ -65,11 +65,17 @@ accepted all seven on the same day, with Lean's kernel and the five external che
 Stage G restates the membership theorem for the options of the output: with the exact check on
 (`o.noCheck = false`), `p ∈ L` exactly when `p` is a point and, under `o.noY`, `0 ≤ y`; no
 duplicates keeps its text and now holds for the options of the output too, the exact check off among
-them. It adds the protocol of the delivery, `challenge_map_findPointsWith_eq_map_findPoints`, which
-`challenges.json` lists as well: the search with a callback refuses what `findPoints` refuses and
-otherwise returns the data of the callback and the count of `Delivery.deliver` of the list of
-`findPoints` to the callback, its calls for the points in their order up to and including the
-first that stops the search.
+them. With the exact check off (`o.noCheck = true`), three statements, which `challenges.json`
+lists, say what the list holds: every element is `(x, 0, z)` for a normalized pair `(x, z)` of
+height at most `H` (`challenge_exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck`), every point
+`(x, y, z)` of height at most `H` gives the element `(x, 0, z)`
+(`challenge_mem_of_isPoint_of_findPoints_eq_ok_of_noCheck`), and the list of the same search with
+the exact check on and `o.noY` set, with `y` replaced by `0`, is a sublist of it
+(`challenge_map_sublist_of_findPoints_eq_ok_of_noCheck`). It adds the protocol of the delivery,
+`challenge_map_findPointsWith_eq_map_findPoints`, which `challenges.json` lists as well: the search
+with a callback refuses what `findPoints` refuses and otherwise returns the data of the callback and
+the count of `Delivery.deliver` of the list of `findPoints` to the callback, its calls for the
+points in their order up to and including the first that stops the search.
 
 ## Running
 
