@@ -334,7 +334,7 @@ sieve passes these lists on, and they replace the check of a numerator with the 
 
 \begin{lemma}[The check and the points at infinity deliver their lists]\label{lem:checkDelivery}
   \uses{def:checkNumWith, lem:deliver, def:accepted, def:pointsAtInfinity}
-  \lean{Ratpoints.Sieve.callMapped_eq_deliver, Ratpoints.Sieve.checkPoint_eq_deliver, Ratpoints.Sieve.checkPoint_eq_deliver_acceptedPoints, Ratpoints.Sieve.deliver_acceptedPoints_of_not_accepted, Ratpoints.Sieve.pointsAtInfinity_eq_deliver}
+  \lean{Ratpoints.Delivery.callMapped_eq_deliver, Ratpoints.Sieve.checkPoint_eq_deliver, Ratpoints.Sieve.checkPoint_eq_deliver_acceptedPoints, Ratpoints.Sieve.deliver_acceptedPoints_of_not_accepted, Ratpoints.Sieve.pointsAtInfinity_eq_deliver}
   \leanok
   On a delivery whose flag is clear: the mapped call is the delivery of the one mapped point; the
   exact check delivers its points (\verb|checkPointList|), the call with $-y$ after a call that

@@ -105,7 +105,7 @@ structure SieveRunInvariant (c : List ℤ) (d H : ℕ) (fl : CheckFlags) (entrie
     (sp2 : ℕ) (cls : Vector NumClass 64) (keep : ℕ → Bool) (r0 : Delivery σ) (pref : List ℕ)
     (r : Delivery σ) (store : RowStore) : Prop where
   /-- The callback has not stopped the search. -/
-  quit_eq : r.quit = false
+  quit_eq_false : r.quit = false
   /-- The store fits the sieve entries of the first two stages. -/
   fits : store.Fits (entries.take sp2)
   /-- The delivery is that of the points of the denominators of `pref` that pass `keep` and the
@@ -258,11 +258,11 @@ theorem SieveRunInvariant.eq_deliver_of_quit (hoff : OffsetsFor cls (entries.tak
   rw [hl, List.append_cons pref cur suff]
   exact (List.prefix_append (pref ++ [cur]) suff).filter _
 
-theorem SieveRunInvariant.quit_eq_and
+theorem SieveRunInvariant.quit_eq_false_and_fits
     (h : o = none ∧ SieveRunInvariant process c d H fl entries sp2 cls
       (fun b ↦ Id.run (shape.keep cls b)) r0 pref r store) :
     r.quit = false ∧ store.Fits (entries.take sp2) :=
-  ⟨h.2.quit_eq, h.2.fits⟩
+  ⟨h.2.quit_eq_false, h.2.fits⟩
 
 theorem sieveRunInvariant_nil (c : List ℤ) (d H : ℕ) (fl : CheckFlags) (cls : Vector NumClass 64)
     (keep : ℕ → Bool) (hr : r0.quit = false) (hs : store.Fits (entries.take sp2)) :
@@ -270,11 +270,11 @@ theorem sieveRunInvariant_nil (c : List ℤ) (d H : ℕ) (fl : CheckFlags) (cls 
   ⟨hr, hs, fun _ _ ↦ by simp⟩
 
 /-- A denominator that the tests of the shape reject delivers nothing. -/
-theorem SieveRunInvariant.append_of_not {keep : ℕ → Bool}
+theorem SieveRunInvariant.append_of_not_keep {keep : ℕ → Bool}
     (h : o = none ∧ SieveRunInvariant process c d H fl entries sp2 cls keep r0 pref r store)
     (hk : ¬keep cur = true) :
     SieveRunInvariant process c d H fl entries sp2 cls keep r0 (pref ++ [cur]) r store :=
-  ⟨h.2.quit_eq, h.2.fits, fun nb hnb ↦ by
+  ⟨h.2.quit_eq_false, h.2.fits, fun nb hnb ↦ by
     rw [h.2.eq_deliver nb hnb]
     simp [List.filter_append, hk]⟩
 
@@ -320,11 +320,11 @@ theorem sieveRun_spec (c : List ℤ) (d H A : ℕ) (fl : CheckFlags) (sp1 sp2 : 
     | exact sieveRunInvariant_nil c d H fl cls _ hr hs
     | (rename_i h; exact h _ ‹_›)
     | exact SieveRunInvariant.eq_deliver ‹_› _ ‹_›
-    | exact SieveRunInvariant.append_of_not ‹_› ‹_›
+    | exact SieveRunInvariant.append_of_not_keep ‹_› ‹_›
     | exact SieveRunInvariant.append_of_keep hoff hdb ‹_› ‹_› ‹_› ‹_› ‹_›
     | exact SieveRunInvariant.eq_deliver_of_quit hoff hdb ‹_› ‹_› ‹_› ‹_› ‹_›
     | have := pos_and_lt_of_eq_append_cons hb hb63 ‹_›
-      have := SieveRunInvariant.quit_eq_and ‹_›
+      have := SieveRunInvariant.quit_eq_false_and_fits ‹_›
       exact ⟨this.1, hA, ‹0 < _ ∧ _›.1, ‹0 < _ ∧ _›.2, hH, hes, by rw [hmg, List.map_drop],
         by rw [hmg, List.map_take], fillBpList_eq_map_of_eq_append_cons hmg hoff hdb ‹_› ‹_›, hinv,
         this.2⟩

@@ -454,7 +454,7 @@ private theorem exists_map_eq_of_isNormalizedPair {H : ℕ} {x z : ℤ} (h : IsN
       IsNormalizedPair H x' z' := by
   cases rev
   · exact ⟨x, z, rfl, h⟩
-  · exact ⟨_, _, (swapPoint_fst_zero_snd (x, 0, z)).symm, IsNormalizedPair.swapPoint h⟩
+  · exact ⟨_, _, swapPoint_fst_zero_snd (x, 0, z), IsNormalizedPair.swapPoint h⟩
 
 /-- Under `RATPOINTS_NO_CHECK`, the search delivers triples `(x, 0, z)` of pairs `(x, z)` of
 normalized points of height at most `H` (`Ratpoints.IsNormalizedPair`): the survivors `(a, 0, b)`

@@ -185,7 +185,8 @@ theorem WalkDeliveryInvariant.and_sub_one_of_accepted
     (x &&& x - 1).toNat < mb ∧ WalkWhileInvariant x0
       (WalkDeliveryInvariant process (acceptedPoints w d b fl checks) x0 a0 step r0) false
         (checkPoint process w d b fl (a0 + step * x.toBitVec.ctz.toNat) r, x &&& x - 1) :=
-  WalkDeliveryInvariant.and_sub_one h hx (checkPoint_eq_deliver_acceptedPoints process w d b fl ha)
+  WalkDeliveryInvariant.and_sub_one h hx
+    (checkPoint_eq_deliver_acceptedPoints process w d b fl ha.symm)
     fun _ ↦ Bool.eq_false_iff.mpr hq
 
 /-- A step of the walk at a numerator that does not pass the test of a candidate. -/
@@ -212,7 +213,7 @@ theorem WalkDeliveryInvariant.eq_deliver_of_accepted_of_quit
       r0.deliver process ((((List.range 64).filter (x0.toBitVec.getLsbD ·)).map
         fun t : Nat ↦ a0 + step * t).flatMap (acceptedPoints w d b fl checks)) :=
   WalkDeliveryInvariant.eq_deliver_of_quit h hx
-    (checkPoint_eq_deliver_acceptedPoints process w d b fl ha) hq
+    (checkPoint_eq_deliver_acceptedPoints process w d b fl ha.symm) hq
 
 end
 
@@ -340,7 +341,7 @@ section
 variable {process} {words : Nat → UInt64} {g : Int → List (Int × Int × Int)} {cl : NumClass}
   {i : Int} {r0 r : Delivery σ}
 
-theorem SiftBitArrayInvariant.quit_eq {k : Nat} {o : Option (Delivery σ)}
+theorem SiftBitArrayInvariant.quit_eq_false {k : Nat} {o : Option (Delivery σ)}
     (h : o = none ∧ SiftBitArrayInvariant process words g cl i r0 k r) : r.quit = false :=
   h.2.1
 
@@ -470,7 +471,7 @@ private theorem add_eq_numerator_succ {cl : NumClass} {i a : Int} {k : Nat}
   push_cast
   grind
 
-theorem SiftBitArrayWalkInvariant.quit_eq {k : Nat} {s : Delivery σ × Int}
+theorem SiftBitArrayWalkInvariant.quit_eq_false {k : Nat} {s : Delivery σ × Int}
     {o : Option (Delivery σ)}
     (h : o = none ∧ SiftBitArrayWalkInvariant process words g cl i r0 k s) :
     s.1.quit = false :=
@@ -592,7 +593,7 @@ theorem siftBitArrayByWords_spec (w : Thunk (List Int)) (d b : Nat) (fl : CheckF
   all_goals first
     | exact siftBitArrayInvariant_zero _ _ _ _ ‹_ ∧ _›.1
     | exact ‹_ ∧ _›.2
-    | exact SiftBitArrayInvariant.quit_eq ‹_›
+    | exact SiftBitArrayInvariant.quit_eq_false ‹_›
     | exact ‹_›
     | exact SiftBitArrayInvariant.eq_deliver ‹_›
     | exact Std.Legacy.Range.lt_of_toList_eq_append_cons ‹_›
@@ -630,7 +631,7 @@ theorem siftBitArrayWhole_spec (w : Thunk (List Int)) (d b : Nat) (fl : CheckFla
     | exact siftBitArrayWalkInvariant_zero ‹_ ∧ _›.1 ‹_›
     | exact ‹_ = _›.trans (congrArg (r.deliver process) (flatMap_numerator_range_congr ‹_› _ _ _))
     | exact SiftBitArrayWalkInvariant.eq_deliver ‹_› ‹_›
-    | exact SiftBitArrayWalkInvariant.quit_eq ‹_›
+    | exact SiftBitArrayWalkInvariant.quit_eq_false ‹_›
     | exact SiftBitArrayWalkInvariant.eq_deliver_of_quit ‹_› ‹_› ‹_›
     | exact SiftBitArrayWalkInvariant.append ‹_› ‹_› ‹_›
     | exact eq_deliver_of_isZeroAt ‹_› ‹_› r

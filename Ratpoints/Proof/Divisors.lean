@@ -243,7 +243,7 @@ theorem factorsByTrialDivision_of_isRoughPart_of_lt {q n w : ℕ} (h : Nat.IsRou
 /-- When the part `w` of `n ≠ 0` at the primes from `1021` on is at least `1021 ^ 2`, ratpoints
 factors `n` completely exactly when its part `m` at the primes from `1022` on is `1`. -/
 theorem eq_one_iff_factorsByTrialDivision_of_isRoughPart {n w m : ℕ}
-    (h : Nat.IsRoughPart 1021 n w) (hn : n ≠ 0) (hw : ¬w < 1021 * 1021)
+    (h : Nat.IsRoughPart 1021 n w) (hn : n ≠ 0) (hw : 1021 * 1021 ≤ w)
     (hm : Nat.IsRoughPart 1022 n m) : m = 1 ↔ FactorsByTrialDivision n := by
   refine ⟨fun h1 ↦ factorsByTrialDivision_of_isRoughPart_one (h1 ▸ hm) le_rfl, fun hf ↦ ?_⟩
   rcases hf with hf | hf
@@ -384,7 +384,7 @@ theorem cofactorInvariant_of_isRoughPart {w0 w m cur : ℕ} {pref suff : List �
   cases suff with
   | nil =>
     obtain rfl := eq_of_toList_primeTable_eq_append_singleton hl
-    exact eq_one_iff_factorsByTrialDivision_of_isRoughPart hw hw0 hlt hm
+    exact eq_one_iff_factorsByTrialDivision_of_isRoughPart hw hw0 (Nat.not_lt.mp hlt) hm
   | cons next suff =>
     have hpw := pairwise_lt_toList_primeTable
     rw [hl, List.pairwise_append, List.pairwise_cons] at hpw

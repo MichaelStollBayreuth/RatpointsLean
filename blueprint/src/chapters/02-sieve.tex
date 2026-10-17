@@ -334,7 +334,7 @@ type \verb|Id| with their contracts (Lemmas~\ref{lem:examinePrime_eq} and~\ref{l
 \begin{definition}[The denominators]\label{def:sieveRun}
   \uses{def:sift, def:Shape, lem:shape_dens, def:stage3, def:fillBpList, lem:fillBpList,
     lem:admits_mul, lem:classOffsets, lem:numClasses, lem:buildRows, def:deliver, lem:deliver}
-  \lean{Ratpoints.Sieve.sieveRun, Ratpoints.Sieve.SieveRunInvariant, Ratpoints.Sieve.SieveRunInvariant.quit_eq, Ratpoints.Sieve.SieveRunInvariant.eq_deliver, Ratpoints.Sieve.SieveRunInvariant.eq_deliver_append, Ratpoints.Sieve.SieveRunInvariant.append_of_keep, Ratpoints.Sieve.SieveRunInvariant.quit_eq_and, Ratpoints.Sieve.sieveRunInvariant_nil, Ratpoints.Sieve.SieveRunInvariant.append_of_not, Ratpoints.Sieve.SieveRunLoopInvariant, Ratpoints.Sieve.SieveRunInvariant.eq_deliver_of_quit, Ratpoints.Sieve.sieveRun_spec, Ratpoints.Sieve.run_sieveRun}
+  \lean{Ratpoints.Sieve.sieveRun, Ratpoints.Sieve.SieveRunInvariant, Ratpoints.Sieve.SieveRunInvariant.quit_eq_false, Ratpoints.Sieve.SieveRunInvariant.eq_deliver, Ratpoints.Sieve.SieveRunInvariant.eq_deliver_append, Ratpoints.Sieve.SieveRunInvariant.append_of_keep, Ratpoints.Sieve.SieveRunInvariant.quit_eq_false_and_fits, Ratpoints.Sieve.sieveRunInvariant_nil, Ratpoints.Sieve.SieveRunInvariant.append_of_not_keep, Ratpoints.Sieve.SieveRunLoopInvariant, Ratpoints.Sieve.SieveRunInvariant.eq_deliver_of_quit, Ratpoints.Sieve.sieveRun_spec, Ratpoints.Sieve.run_sieveRun}
   \leanok
   The sieve entries of the moduli cut into the three stages at the cut points $s_1 \le s_2$, the
   same for the whole run (\verb|run_block| takes the ends of the second and the third stage for each

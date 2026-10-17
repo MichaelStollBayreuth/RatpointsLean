@@ -361,7 +361,7 @@ structure SiftInvariant (g : Int → List (Int × Int × Int)) (keep : Int → B
   /-- A piece has at least one bit array. -/
   one_le_range : 1 ≤ range
   /-- The callback has not stopped the search. -/
-  quit_eq : r.quit = false
+  quit_eq_false : r.quit = false
   /-- The delivery is that of the points of the bits of the bit arrays from that of `low` up to `w0`
   that lie in `low, …, high` and pass `keep`, in increasing order. -/
   eq_deliver : r = r0.deliver process (((((List.range ((w0 - low / rbaLength).toNat *
@@ -438,7 +438,7 @@ theorem SiftInvariant.exit_of_not_lt {range : Nat} {w0 w1 : Int}
     (hw0 : ¬w0 < high / rbaLength + 1) :
     SiftInvariant process g keep low high r0 true range w0 w1 r :=
   ⟨h.le_w0, h.w0_le, fun _ ↦ Int.le_antisymm h.w0_le (Int.not_lt.mp hw0), h.w1_eq,
-    h.one_le_range, h.quit_eq, h.eq_deliver⟩
+    h.one_le_range, h.quit_eq_false, h.eq_deliver⟩
 
 /-- A middle piece, which ends at the word number `w1 ≤ high / rbaLength + 1`, when the callback
 does not stop the search in it, in the shape of the verification condition. -/
@@ -511,12 +511,12 @@ theorem SiftInvariant.eq_deliver_of_quit_of_lt {range mb : Nat} {w0 w1 : Int}
 
 /-- What the piece of the verification condition needs of the invariant: the callback has not
 stopped the search. -/
-theorem SiftInvariant.quit_eq_and {range mb mH : Nat} {w0 w1 : Int} {o : Option (Delivery σ)}
+theorem SiftInvariant.quit_eq_false_and {range mb mH : Nat} {w0 w1 : Int} {o : Option (Delivery σ)}
     {P : Prop} (hm : (high / rbaLength + 1 - w0).toNat = mb ∧ o = none ∧
       SiftInvariant process g keep low high r0 false range w0 w1 r) (hP : P)
     (hmH : mH < rbaLength) :
     r.quit = false ∧ mH < rbaLength ∧ P ∧ True :=
-  ⟨hm.2.2.quit_eq, hmH, hP, trivial⟩
+  ⟨hm.2.2.quit_eq_false, hmH, hP, trivial⟩
 
 /-- An empty interval of bits delivers nothing. -/
 theorem eq_deliver_of_not_le (h : ¬low ≤ high) (r : Delivery σ) :
@@ -555,7 +555,7 @@ private theorem siftBits_spec_reads (w : Thunk (List Int)) (d b A : Nat) (fl : C
     meet_prop_eq_and, ofProp_prop_eq, reduceCtorEq, false_and, or_false, false_or, true_and,
     and_false, Option.some.injEq] at *)
   all_goals first
-    | exact SiftInvariant.quit_eq_and ‹_› hfits (by (try split) <;> lia [rbaLength_pos])
+    | exact SiftInvariant.quit_eq_false_and ‹_› hfits (by (try split) <;> lia [rbaLength_pos])
     | have hall := ‹∀ _ : List (SieveSpec × (Int → Bool)), _ → _ → _›
       first
         | have : ¬high / rbaLength + 1 < _ := ‹_›

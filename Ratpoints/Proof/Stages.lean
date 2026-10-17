@@ -565,15 +565,16 @@ theorem filter_map_swapPoint (rev noY : Bool) (L : List (Int × Int × Int)) :
 /-- The map of the reversal commutes with the replacement of `y` by `0`, since it moves only `x`
 and `z`. -/
 theorem swapPoint_fst_zero_snd (q : Int × Int × Int) :
-    ((swapPoint q).1, 0, (swapPoint q).2.2) = swapPoint (q.1, 0, q.2.2) := by
+    swapPoint (q.1, 0, q.2.2) = ((swapPoint q).1, 0, (swapPoint q).2.2) := by
   simp only [swapPoint]
   split <;> rfl
 
 /-- One call of the callback with the point `(a : y : b)`, mapped back after a reversal, on a
 delivery whose flag is clear, is the delivery of that point mapped by `Ratpoints.Sieve.swapPoint`
 when `rev` is set. -/
-theorem callMapped_eq_deliver {σ : Type} (process : Int → Int → Int → σ → Answer σ)
-    {r : Delivery σ} (hr : r.quit = false) (rev : Bool) (a b y : Int) :
+theorem _root_.Ratpoints.Delivery.callMapped_eq_deliver {σ : Type}
+    (process : Int → Int → Int → σ → Answer σ) {r : Delivery σ} (hr : r.quit = false) (rev : Bool)
+    (a b y : Int) :
     r.callMapped process rev a b y =
       r.deliver process [(if rev then swapPoint else id) (a, y, b)] := by
   rw [Delivery.deliver_singleton_of_quit_eq_false process hr]
@@ -605,7 +606,7 @@ theorem checkPoint_eq_deliver {σ : Type} (process : Int → Int → Int → σ 
     generalize (BruteForce.horner w.get a * if d % 2 = 1 then b else 1) = v
     generalize v.toNat.sqrt = y
     by_cases hv : 0 ≤ v ∧ y * y = v.toNat
-    · simp only [hv, and_self, ↓reduceIte, callMapped_eq_deliver process hr]
+    · simp only [hv, and_self, ↓reduceIte, Delivery.callMapped_eq_deliver process hr]
       by_cases hy0 : y = 0
       · cases fl.noY <;> simp [hy0]
       · have hy : (0 : Int) < y := by lia
@@ -615,10 +616,10 @@ theorem checkPoint_eq_deliver {σ : Type} (process : Int → Int → Int → σ 
           rw [show ∀ p q : Int × Int × Int, [p, q] = [p] ++ [q] from fun _ _ ↦ rfl,
             Delivery.deliver_append]
           generalize r.deliver process [(if fl.reversed then swapPoint else id) (a, y, b)] = r1
-          cases hq : r1.quit <;> simp [hq, hy0, callMapped_eq_deliver process]
+          cases hq : r1.quit <;> simp [hq, hy0, Delivery.callMapped_eq_deliver process]
         · simp [Int.le_of_lt hy, hy0]
     · simp [hv]
-  · simp [callMapped_eq_deliver process hr]
+  · simp [Delivery.callMapped_eq_deliver process hr]
 
 /-- The check of the numerator `a` over the denominator `b` with the flags `fl`: the points of
 `Ratpoints.Sieve.checkPointList` when `a` is prime to `b`, and none otherwise. With the flags
@@ -685,7 +686,7 @@ theorem map_checkNumWith_sublist (w : List Int) (f b : Int) (rev noY : Bool) (a 
   · have h := map_filter_pointsAbove_sublist a b (BruteForce.horner w a * f)
     cases rev
     · simpa [checkPointList] using h
-    · simpa [checkPointList, List.map_map, Function.comp_def, swapPoint_fst_zero_snd] using
+    · simpa [checkPointList, List.map_map, Function.comp_def, ← swapPoint_fst_zero_snd] using
         h.map swapPoint
   · exact .slnil
 
@@ -717,9 +718,9 @@ theorem acceptedPoints_eq_ite {es : List SieveEntry} (hes : ∀ e ∈ es, e.IsPr
 clear, delivers the points of `Ratpoints.Sieve.acceptedPoints`. -/
 theorem checkPoint_eq_deliver_acceptedPoints {σ : Type} (process : Int → Int → Int → σ → Answer σ)
     (w : Thunk (List Int)) (d b : Nat) (fl : CheckFlags) {checks : Thunk (List CheckSpec)}
-    {a : Int} (h : true = Id.run (accepted a b checks)) {r : Delivery σ} (hr : r.quit = false) :
+    {a : Int} (h : Id.run (accepted a b checks) = true) {r : Delivery σ} (hr : r.quit = false) :
     checkPoint process w d b fl a r = r.deliver process (acceptedPoints w d b fl checks a) := by
-  simp only [acceptedPoints, ← h, ↓reduceIte, checkPoint_eq_deliver process w d b fl a hr]
+  simp only [acceptedPoints, h, ↓reduceIte, checkPoint_eq_deliver process w d b fl a hr]
 
 /-- A numerator that does not pass the test of a candidate has no points to deliver. -/
 theorem deliver_acceptedPoints_of_not_accepted {σ : Type}
@@ -768,11 +769,11 @@ theorem pointsAtInfinity_eq_deliver {σ : Type} (process : Int → Int → Int �
   simp only [pointsAtInfinity, pointsAtInfinityList, key]
   split
   · cases hc : fl.noCheck <;> by_cases hd : d % 2 = 1 <;>
-      simp only [hd, callMapped_eq_deliver process hr, Bool.false_or, Bool.true_or, beq_iff_eq,
-        ↓reduceIte, Bool.false_eq_true, List.map_cons, List.map_nil]
+      simp only [hd, Delivery.callMapped_eq_deliver process hr, Bool.false_or, Bool.true_or,
+        beq_iff_eq, ↓reduceIte, Bool.false_eq_true, List.map_cons, List.map_nil]
     conv => rhs; rw [← List.singleton_append, Delivery.deliver_append]
     generalize r.deliver process _ = r1
-    cases hq : r1.quit <;> cases fl.noY <;> simp [hq, callMapped_eq_deliver process]
+    cases hq : r1.quit <;> cases fl.noY <;> simp [hq, Delivery.callMapped_eq_deliver process]
   · rfl
 
 /-- Without `RATPOINTS_NO_CHECK`, for odd `d` or `c_d ≠ 0`, the points at infinity delivered are
