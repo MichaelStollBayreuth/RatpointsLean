@@ -88,11 +88,12 @@ bits `RATPOINTS_NO_CHECK`, `RATPOINTS_NO_Y` and `RATPOINTS_NO_REVERSE` of the fl
 `noY` true when their bits are set, `reverse` true when `RATPOINTS_NO_REVERSE` is clear, so that all
 three defaults are those of the cleared flags (`main.c`, line 352); of the other bits of the flags,
 which `main.c` clears with these, the Jacobi switch is that of the sieving parameters
-(`Ratpoints.Params.jacobi`), and `RATPOINTS_VERBOSE` is the program's, for the report of `main.c`
-(stage G), the report of the library under it being instrumentation; and an integer for
-`args->sturm`, of which the model reads only whether it is negative, as the switch of the test for a
-repeated factor (the depth itself is stage H's: in the C code the Sturm step and its depth also
-change what is delivered under `RATPOINTS_NO_CHECK`, by the region they keep). -/
+(`Ratpoints.Params.jacobi`), and `RATPOINTS_VERBOSE` is kept by the program in
+`Ratpoints.Cli.Output.verbose` for the report of `main.c`, the report of the library under it being
+instrumentation; and an integer for `args->sturm`, of which the model reads only whether it is
+negative, as the switch of the test for a repeated factor (the depth itself is stage H's: in the C
+code the Sturm step and its depth also change what is delivered under `RATPOINTS_NO_CHECK`, by the
+region they keep). -/
 structure Options where
   /-- Whether the set-up may reverse the polynomial: the bit `RATPOINTS_NO_REVERSE` of the flags
   clear, which the option `-k` of the program sets and `-K` clears. -/

@@ -950,20 +950,20 @@ which prints the points as the search delivers them.
 
 \begin{definition}[The settings of the output]\label{def:cliOutput}
   \uses{def:Options}
-  Proposed names: \lname{Ratpoints.Cli.Output}, \lname{Ratpoints.Cli.Output.store},
-  \lname{Ratpoints.Cli.OptionArg.word}, \lname{Ratpoints.Cli.defaultFormat}. The global variables of
-  \verb|main.c| with their defaults, those of a command line without options: whether the report is
-  left out (\verb|-q|), whether it is that of \verb|-v| (the bit \verb|RATPOINTS_VERBOSE| of the
-  flags, \csource{ratpoints.h}{407}{407}), whether one point is enough (\verb|-1|), whether the
-  points at infinity are kept (\verb|-I|, and not \verb|-i|), whether no point is printed
-  (\verb|-z|, and not \verb|-Z|), the format of a point (\verb|-f|), none for the default, and the
-  strings before, between and after the points (\verb|-fs|, \verb|-fm|, \verb|-fe|), none for none
-  (\csource{main.c}{57}{64}, \csource{main.c}{383}{390}); the setting that an option changes; the
-  kind of argument of \verb|-f|, \verb|-fs|, \verb|-fm| and \verb|-fe|, the next word, whatever it
-  is, also one that starts with \verb|-|; and the format that \verb|main.c| takes when the command
-  line gives none, \verb|(%x : %z)\n| when the points are not checked exactly or only one point of
-  each pair is delivered, and \verb|(%x : %y : %z)\n| otherwise (\csource{main.c}{681}{685}, which
-  leaves the line of a point of stage~B).
+  \lean{Ratpoints.Cli.Output, Ratpoints.Cli.Output.store, Ratpoints.Cli.OptionArg.word, Ratpoints.Cli.defaultFormat}
+  \leanok
+  The global variables of \verb|main.c| with their defaults, those of a command line without
+  options: whether the report is left out (\verb|-q|), whether it is that of \verb|-v| (the bit
+  \verb|RATPOINTS_VERBOSE| of the flags, \csource{ratpoints.h}{407}{407}), whether one point is
+  enough (\verb|-1|), whether the points at infinity are kept (\verb|-I|, and not \verb|-i|),
+  whether no point is printed (\verb|-z|, and not \verb|-Z|), the format of a point (\verb|-f|),
+  none for the default, and the strings before, between and after the points (\verb|-fs|,
+  \verb|-fm|, \verb|-fe|), none for none (\csource{main.c}{57}{64}, \csource{main.c}{383}{390}); the
+  setting that an option changes; the kind of argument of \verb|-f|, \verb|-fs|, \verb|-fm| and
+  \verb|-fe|, the next word, whatever it is, also one that starts with \verb|-|; and the format that
+  \verb|main.c| takes when the command line gives none, \verb|(%x : %z)\n| when the points are not
+  checked exactly or only one point of each pair is delivered, and \verb|(%x : %y : %z)\n| otherwise
+  (\csource{main.c}{681}{685}, which leaves the line of a point of stage~B).
 \end{definition}
 
 The reading of the options (Definition~\ref{def:cliInput}) reads \verb|-x -X -y -Y| into
@@ -979,37 +979,39 @@ and the array of the coefficients (\csource{main.c}{54}{54}), which goes to
 denominators, \verb|-l -u -dl -du|, keep the exit status 12 (stage~H).
 
 \begin{definition}[The formats and the strings]\label{def:formatPoint}
-  Proposed names: \lname{Ratpoints.Cli.escape}, \lname{Ratpoints.Cli.printString},
-  \lname{Ratpoints.Cli.formatPoint}. What \verb|main.c| prints for a backslash followed by a
-  character in a format or a string: a tab for \verb|t|, a line feed for \verb|n|, a backslash for a
-  backslash, a percent sign for \verb|%|, and the backslash and the character as they are otherwise
-  (\csource{main.c}{178}{182}, \csource{main.c}{961}{965}, the two switches of \verb|process| and
-  \verb|print_string| as one function). What \verb|print_string| prints for a string: nothing for
-  none, otherwise its characters, a backslash with the character after it as above and a backslash
-  at the end as itself, the percent sign not special (\csource{main.c}{952}{960},
-  \csource{main.c}{966}{968}). What \verb|process| prints for the point $(x : y : z)$ in a format,
-  character by character: \verb|%x|, \verb|%y| and \verb|%z| the coordinates in decimal, but
-  \verb|%y| itself when the points are not checked exactly or only one point of each pair is
-  delivered, a percent sign before another character both, a percent sign or a backslash at the end
-  itself, a backslash and the character after it as above, and every other character itself
-  (\csource{main.c}{157}{177}, \csource{main.c}{183}{186}).
+  \lean{Ratpoints.Cli.escape, Ratpoints.Cli.printString, Ratpoints.Cli.formatPoint}
+  \leanok
+  What \verb|main.c| prints for a backslash followed by a character in a format or a string: a tab
+  for \verb|t|, a line feed for \verb|n|, a backslash for a backslash, a percent sign for \verb|%|,
+  and the backslash and the character as they are otherwise (\csource{main.c}{178}{182},
+  \csource{main.c}{961}{965}, the two switches of \verb|process| and \verb|print_string| as one
+  function). What \verb|print_string| prints for a string: nothing for none, otherwise its
+  characters, a backslash with the character after it as above and a backslash at the end as itself,
+  the percent sign not special (\csource{main.c}{952}{960}, \csource{main.c}{966}{968}). What
+  \verb|process| prints for the point $(x : y : z)$ in a format, character by character: \verb|%x|,
+  \verb|%y| and \verb|%z| the coordinates in decimal, but \verb|%y| itself when the points are not
+  checked exactly or only one point of each pair is delivered, a percent sign before another
+  character both, a percent sign or a backslash at the end itself, a backslash and the character
+  after it as above, and every other character itself (\csource{main.c}{157}{177},
+  \csource{main.c}{183}{186}).
 \end{definition}
 
 \begin{definition}[The callback of the program]\label{def:cliProcess}
   \uses{def:delivery, def:formatPoint, def:cliOutput}
-  Proposed names: \lname{Ratpoints.Cli.Data}, \lname{Ratpoints.Cli.Data.ofOutput},
-  \lname{Ratpoints.Cli.process}. The data that \verb|main.c| passes to \verb|process| through
-  \verb|info|: whether a point was printed, whether no point is printed, whether one point is
-  enough, whether the points at infinity are kept, whether \verb|%y| prints itself, the format, the
-  strings before and between the points, and the text printed so far (\csource{main.c}{110}{113});
-  its value for the settings of the output and the options of the search, no point printed yet,
-  \verb|%y| printing itself under either option of the output (\csource{main.c}{235}{242}). The
-  callback on $(x, z, y)$: a point at infinity is passed over when the points at infinity are not
-  kept, with the weight $0$ and the flag clear; every other point has the weight $1$ and stops the
-  search when one point is enough; it is printed unless no point is printed, after the string before
-  the points if it is the first point printed and after the string between them otherwise, in the
-  format (\csource{main.c}{139}{142}, \csource{main.c}{153}{156}, \csource{main.c}{187}{189}; the
-  test of the search region, lines 150-152, is stage~H's).
+  \lean{Ratpoints.Cli.Data, Ratpoints.Cli.Data.ofOutput, Ratpoints.Cli.process}
+  \leanok
+  The data that \verb|main.c| passes to \verb|process| through \verb|info|: whether a point was
+  printed, whether no point is printed, whether one point is enough, whether the points at infinity
+  are kept, whether \verb|%y| prints itself, the format, the strings before and between the points,
+  and the text printed so far (\csource{main.c}{110}{113}); its value for the settings of the output
+  and the options of the search, no point printed yet, \verb|%y| printing itself under either option
+  of the output (\csource{main.c}{235}{242}). The callback on $(x, z, y)$: a point at infinity is
+  passed over when the points at infinity are not kept, with the weight $0$ and the flag clear;
+  every other point has the weight $1$ and stops the search when one point is enough; it is printed
+  unless no point is printed, after the string before the points if it is the first point printed
+  and after the string between them otherwise, in the format (\csource{main.c}{139}{142},
+  \csource{main.c}{153}{156}, \csource{main.c}{187}{189}; the test of the search region, lines
+  150-152, is stage~H's).
 \end{definition}
 
 \begin{definition}[The report]\label{def:cliReport}

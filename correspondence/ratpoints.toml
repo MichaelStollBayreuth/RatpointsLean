@@ -476,6 +476,36 @@ reason = "the bit arrays of the piece printed under DEBUG after the first stage 
 
 [[excluded]]
 file = "main.c"
+lines = "29-37"
+kind = "other"
+reason = "the includes of the program; the model has no headers"
+
+[[excluded]]
+file = "main.c"
+lines = "55"
+kind = "memory"
+reason = "the GMP integers tmp and tmp2 for intermediate results, which the program initializes and releases and the model does not need"
+
+[[excluded]]
+file = "main.c"
+lines = "94-103"
+kind = "other"
+reason = "the prototypes of the functions of the program; the model has no forward declarations"
+
+[[excluded]]
+file = "main.c"
+lines = "199"
+kind = "interface"
+reason = "the declaration of the arguments of the library, ratpoints_args args, whose fields the model passes as the arguments of the search with a callback"
+
+[[excluded]]
+file = "main.c"
+lines = "201-207"
+kind = "memory"
+reason = "the initialization of the GMP integers of the coefficients, of the rational ends of the intervals and of tmp and tmp2 at the start of main"
+
+[[excluded]]
+file = "main.c"
 lines = "232-234"
 kind = "memory"
 reason = "the allocation of the data that the program passes to the callback process, and error 10 when it fails"
@@ -485,6 +515,30 @@ file = "main.c"
 lines = "254-255"
 kind = "memory"
 reason = "the release of the data that the program passed to the callback process, at the end of its block"
+
+[[excluded]]
+file = "main.c"
+lines = "279-283"
+kind = "memory"
+reason = "the release of tmp and tmp2, of the GMP integers of the coefficients and of the rational ends of the intervals at the end of main"
+
+[[excluded]]
+file = "main.c"
+lines = "330-332"
+kind = "interface"
+reason = "the initialization of the fields of the arguments of the library that the model has no counterpart for: the pointer to the coefficients, the degree and the height, which read_input sets later and the model passes as values"
+
+[[excluded]]
+file = "main.c"
+lines = "339-343"
+kind = "parameters"
+reason = "the defaults of the tuning options -r -R -U -C -A, which tune only the heuristics of the C program and which the model checks and ignores"
+
+[[excluded]]
+file = "main.c"
+lines = "345-346"
+kind = "parameters"
+reason = "the defaults of the tuning options -Q -W, which tune only the heuristics of the C program and which the model checks and ignores"
 
 [[excluded]]
 file = "main.c"

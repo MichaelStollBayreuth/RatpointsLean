@@ -571,8 +571,8 @@ Chapter~\ref{chap:spec} (Definitions~\ref{def:cliFailure} and~\ref{def:cliInput}
 ranges, the node of the program (Definition~\ref{def:cliRun}) the call of \verb|find_points| and
 the exit status~$0$ (\csource{main.c}{251}{251}, \csource{main.c}{284}{284}), and the order of the
 printed points is that of Theorem~\ref{thm:findPoints_order}. The options that it does not support
-yet are those of the search region and the denominator range (\verb|-l -u -dl -du|) and those of the
-output (\verb|-x -X -y -Y -z -Z -1 -i -I -f -fs -fm -fe|). The differential tests:
+yet are those of the search region and the denominator range (\verb|-l -u -dl -du|); those of the
+output it reads since stage~G (Section~\ref{sec:outputCli}). The differential tests:
 \begin{itemize}
   \item compare in the suite \verb|test4| 548 of the 582 runs of \verb|test4.sh|, 261 of them by
     their points, each in its order: the runs whose only options of the search are \verb|-k|,
@@ -644,10 +644,7 @@ Each component of the set-up differs from the C code in a stated way, recorded i
     and \verb|find_points_work_1| the count $0$;
   \item integers for the \verb|long|s, with the range obligations of the helper \verb|mod| and of
     the negations of the map stated as lemmas; no failure for lack of memory; no output under
-    \verb|RATPOINTS_VERBOSE| or \verb|DEBUG|;
-  \item in the program, the list of points that \verb|findPoints| returns for the callback
-    \verb|process| and its data (stage~G), printed once it is computed, and no report without
-    \verb|-q|.
+    \verb|RATPOINTS_VERBOSE| or \verb|DEBUG|.
 \end{itemize}
 The lines of the set-up that are neither modelled nor left to a later stage are excluded in
 \verb|correspondence/ratpoints.toml|: the output under \verb|RATPOINTS_VERBOSE| and \verb|DEBUG| and

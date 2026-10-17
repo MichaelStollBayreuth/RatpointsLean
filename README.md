@@ -144,17 +144,19 @@ built into Lake as `lake comparator` (`comparator/README.md`).
 `ratpoints-lean 'a_0 a_1 ... a_n' H [options]` has the command line of ratpoints. It reads the
 coefficients (constant term first), the height bound and the options as ratpoints does, with its
 checks, messages and exit statuses, and prints the points of height at most `H` on
-`y² = a_n xⁿ + ⋯ + a_0` as ratpoints does with `-q`: one line `(x : y : z)` per point. It finds the
-points by the sieve on bit arrays of words in its three stages, the first in chunks of 16 bit arrays
-with the rows that the builders of ratpoints build, the numerators of each denominator packed by the
-stride of its class, with the parameters that the options `-p -n -N -P -F -j -J` set; `-k` and `-K`
-forbid and allow the reversal of the polynomial, and `-s` and `-S [depth]` switch the Sturm step off
-and on, of which the model has the test for a repeated factor so far; it accepts `-q`, `-v` and the
-other options that tune the sieve of ratpoints, checking their arguments, but ignores them. It
-refuses a binary form that is not squarefree with error 8 as ratpoints does with the same options,
-and prints the points in the order of ratpoints. It answers the options of ratpoints that it does
-not support yet, those of the search region and the denominator range (`-l -u -dl -du`) and those of
-the output (`-x -X -y -Y -z -Z -1 -i -I -f -fs -fm -fe`), with the exit status 12.
+`y² = a_n xⁿ + ⋯ + a_0` as ratpoints does, through the callback of its `main.c`: by default one line
+`(x : y : z)` per point, with the options of the output `-x -X -y -Y -z -Z -1 -i -I` and the formats
+and strings of `-f -fs -fm -fe`; the report that ratpoints prints around the points without `-q` is
+still to come, so that it prints as ratpoints does with `-q`. It finds the points by the sieve on
+bit arrays of words in its three stages, the first in chunks of 16 bit arrays with the rows that the
+builders of ratpoints build, the numerators of each denominator packed by the stride of its class,
+with the parameters that the options `-p -n -N -P -F -j -J` set; `-k` and `-K` forbid and allow the
+reversal of the polynomial, and `-s` and `-S [depth]` switch the Sturm step off and on, of which the
+model has the test for a repeated factor so far; it accepts `-q`, `-v` and the other options that
+tune the sieve of ratpoints, checking their arguments, but ignores them. It refuses a binary form
+that is not squarefree with error 8 as ratpoints does with the same options, and prints the points
+in the order of ratpoints. It answers the options of ratpoints that it does not support yet, those
+of the search region and the denominator range (`-l -u -dl -du`), with the exit status 12.
 
 ## Licence
 

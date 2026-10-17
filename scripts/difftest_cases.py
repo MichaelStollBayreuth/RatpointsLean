@@ -1,11 +1,14 @@
 """The command lines of the suites errors and fuzz of scripts/difftest.py.
 
 CASES holds hand-written command lines for the checks that main.c makes on the coefficients, the
-height and the options, for the options of the search and for the refusals of a form that is not
-squarefree, each with a note; random_command_lines gives random ones, with words that the readers
-of numbers of main.c accept or refuse in many ways. An argument is a str or, for a byte string that
-is not UTF-8, bytes. A height that a search could not finish (such as 2^63 - 1) is always followed
-by an option that fails, so that neither program searches.
+height and the options, for the options of the search and of the output and for the refusals of a
+form that is not squarefree, each with a note; STOP_CASES holds searches at a large height that
+both programs stop at once; random_command_lines gives random ones, with words that the readers of
+numbers of main.c accept or refuse in many ways, and options of the output with formats and
+strings, and random_output_options random options of the output for a search. An argument is a
+str or, for a byte string that is not UTF-8, bytes. A height that a search could not finish (such
+as 2^63 - 1) is always followed by an option that fails, so that neither program searches, but in
+STOP_CASES, which the errors suite runs with a short timeout and a cap on the memory.
 """
 
 C102 = ' '.join(['1'] + ['0'] * 100 + ['1'])          # 102 coefficients
@@ -149,39 +152,84 @@ CASES = [
     (['1 2 1', '3', '-q', '-S', '-s'], '-S -s: the last one wins, no Sturm step'),
     (['1 2 1', '3', '-q', '-s', '-S', '3'], '-s -S 3: error 8'),
     (['1 2 1', '3', '-q', '-S', ' -1'], '-S with the argument -1 after a blank: no Sturm step'),
+    # the options of the output: -x and -X (the exact check), -y and -Y (the pairs), -z and -Z (no
+    # points printed), -1 (one point), -i and -I (the points at infinity); the last one wins
+    (['1 0 1', '5', '-q', '-x'], '-x: the survivors of the sieve, (x : z)'),
+    (['1 0 1', '5', '-q', '-x', '-n', '15', '-N', '30', '-p', '30'], '-x with the moduli pinned'),
+    (['1 0 1', '5', '-q', '-x', '-X'], '-x -X: the last one wins, the points checked'),
+    (['1 0 1', '5', '-q', '-xfoo', '-p', '30', '-N', '30'], '-xfoo is -x'),
+    (['1 0 1', '5', '-q', '-y'], '-y: one point of each pair'),
+    (['1 0 1', '5', '-q', '-y', '-Y'], '-y -Y: the last one wins'),
+    (['1 0 1', '5', '-q', '-yes'], '-yes is -y'),
+    (['1 0 1', '5', '-q', '-z'], '-z: no points printed'),
+    (['1 0 1', '5', '-q', '-zap', '-Z'], '-zap -Z: the points printed'),
+    (['1 0 1', '5', '-q', '-1'], '-1: the first point, at infinity'),
+    (['1 0 1', '5', '-q', '-1x'], '-1x is -1'),
+    (['1 0 1', '5', '-q', '-1', '-i'], '-1 -i: the first point not at infinity'),
+    (['1 0 1', '5', '-q', '-i'], '-i: no points at infinity'),
+    (['1 0 1', '5', '-q', '-I', '-i'], '-I -i: the last one wins'),
+    (['1 0 1', '5', '-q', '-i', '-I'], '-i -I: the last one wins'),
+    (['2 0 4', '30', '-q', '-i'], '-i after a reversal: the caller\'s points at infinity dropped'),
+    (['-1 0 9', '10', '-q', '-x', '-n', '15', '-N', '30', '-p', '30'],
+     '-x after a reversal: (1 : 0) second'),
+    (['-110398115831658495200097132973216241257761844312575 0 0 0 1', '10', '-q', '-x', '-p', '30',
+      '-N', '30'], '-x where the Sturm step of the C program narrows its search region to the '
+     'point at infinity: compared exactly with the C program under -s'),
+    (['-1 0 9', '10', '-q', '-1', '-i'], '-1 -i after a reversal'),
+    (['0 1 2', '40', '-q', '-1'], '-1: the point at infinity of the reversed polynomial'),
+    # the formats and the strings
+    (['1 0 1', '5', '-q', '-f', '%x %y %z\\n'], '-f with the three coordinates'),
+    (['1 0 1', '5', '-q', '-f', '%'], '-f %: a percent sign at the end'),
+    (['1 0 1', '5', '-q', '-f', '\\'], '-f \\: a backslash at the end'),
+    (['1 0 1', '5', '-q', '-f', '%%%x'], '%% is no escape'),
+    (['1 0 1', '5', '-q', '-f', '\\0\\a\\%\\\\\\t\\n'], 'the escapes, and \\0 \\a as they are'),
+    (['1 0 1', '5', '-q', '-f', '%q%y'], 'an unknown conversion'),
+    (['1 0 1', '5', '-q', '-f', '%y\\n', '-y'], '%y under -y prints itself'),
+    (['1 0 1', '5', '-q', '-f', '%y\\n', '-x', '-p', '30', '-N', '30'], '%y under -x'),
+    (['1 0 1', '5', '-q', '-f', '', '-fs', 'S', '-fm', 'M', '-fe', 'E'], 'an empty format'),
+    (['1 0 1', '5', '-q', '-fm', '%x', '-fe', '%%'], 'no conversions in the strings'),
+    (['1 0 1', '5', '-q', '-f', '-x'], '-f takes the next word, also -x'),
+    (['1 0 1', '5', '-q', '-fe', '-y'], '-fe takes the next word, also -y'),
+    (['1 0 1', '5', '-q', '-fsfoo', 'S'], '-fsfoo is -fs'),
+    (['1 0 1', '5', '-q', '-f', 'a', '-f', 'b\\n'], 'the last -f wins'),
+    (['-1 0 -1', '50', '-q', '-fs', 'S', '-fm', 'M', '-fe', 'E\\n'], 'no points: -fs and -fe'),
+    (['1 0 126 0 441', '30', '-q', '-fs', 'S', '-fm', 'M', '-fe', 'E', '-y'],
+     '-fs, -fm and -fe around several points'),
+    (['1 0 1', '5', '-q', '-z', '-fs', 'S', '-fe', 'E'], '-z: -fs and -fe around no point'),
+    (['1 0 1', '5', '-q', '-1', '-fs', '{', '-fe', '}\\n'], '-1 with -fs and -fe'),
+    (['1 0 1', '5', '-q', '-f', '\u00e9%x\u20ac\\n'], 'a format in UTF-8'),
+    (['1 0 1', '5', '-q', '-f'], '-f without its argument: error 6'),
+    (['1 0 1', '5', '-q', '-fs'], '-fs without its argument: error 6'),
+    (['1 0 1', '5', '-q', '-fm'], '-fm without its argument: error 6'),
+    (['1 0 1', '5', '-q', '-fe'], '-fe without its argument: error 6'),
+    (['1 0 1', '5', '-q', '-ffoo', 'x'], '-ffoo: error 6'),
+    (['1 0 1', '5', '-q', '-f', '%\u00e9\\\u20ac%\u20ac%\\n'],
+     'characters beyond ASCII after % and \\: as they are'),
+    (['1 2 1', '5', '-q', '-x'], 'a form that is not squarefree and -x: error 8'),
+    (['1 2 1', '5', '-x', '-fs', 'S'], 'error 8 without -q: no strings printed'),
     # the options that ratpoints-lean does not support yet
     (['1 0 1', '5', '-q', '-l', '0', '-u', '1'], '-l -u: unsupported'),
     (['1 0 1', '5', '-q', '-u', '1'], '-u: unsupported'),
     (['1 0 1', '5', '-q', '-dl', '2'], '-dl: unsupported'),
     (['1 0 1', '5', '-q', '-du', '2'], '-du: unsupported'),
     (['1 0 1', '5', '-q', '-dlx', '2'], '-dlx is -dl: unsupported'),
-    (['1 0 1', '5', '-q', '-x'], '-x: unsupported'),
-    (['1 0 1', '5', '-q', '-X'], '-X: unsupported'),
-    (['1 0 1', '5', '-q', '-y'], '-y: unsupported'),
-    (['1 0 1', '5', '-q', '-Y'], '-Y: unsupported'),
-    (['1 0 1', '5', '-q', '-1'], '-1: unsupported'),
-    (['1 0 1', '5', '-q', '-i'], '-i: unsupported'),
-    (['1 0 1', '5', '-q', '-I'], '-I: unsupported'),
-    (['1 0 1', '5', '-q', '-f', '%x'], '-f: unsupported'),
-    (['1 0 1', '5', '-q', '-fs', 'a'], '-fs: unsupported'),
-    (['1 0 1', '5', '-q', '-fm', 'a'], '-fm: unsupported'),
-    (['1 0 1', '5', '-q', '-fe', 'a'], '-fe: unsupported'),
-    (['1 0 1', '5', '-q', '-z'], '-z: unsupported'),
-    (['1 0 1', '5', '-q', '-Z'], '-Z: unsupported'),
-    (['1 0 1', '5', '-q', '-xfoo'], '-xfoo is -x: unsupported, named as written'),
+    (['1 0 1', '5', '-q', '-lfoo', '0'], '-lfoo is -l: unsupported, named as written'),
     (['1 0 1', '5', '-q', '-l'], '-l without its argument: C error 7, unsupported here'),
     (['1 0 1', '5', '-q', '-l', 'x'], '-l x: C error 7, unsupported here'),
-    (['1 0 1', '5', '-q', '-f'], '-f without its argument: C error 6, unsupported here'),
     (['1 0 1', '5', '-q', '-dl'], '-dl without its argument: C error 6, unsupported here'),
-    (['1 0 1', '5', '-q', '-x', '-p', 'x'], '-x before a malformed -p: unsupported first'),
-    (['1 0 1', '5', '-q', '-p', 'x', '-x'], 'a malformed -p before -x: error 6 first'),
-    (['1 0 1', '5', '-q', '-g', '-x'], 'an unknown option before -x: error 6 first'),
-    (['1 0 1', '5', '-q', '-x', '-g'], '-x before an unknown option: unsupported first'),
-    (['x', '5', '-x'], 'bad coefficients before -x: error 11 first'),
-    (['1 0 1', '0', '-x'], 'bad height before -x: error 4 first'),
-    (['1 0 1', '5', '-q', '-S', 'x', '-x'], 'a malformed -S before -x: error 6 first'),
-    (['1 0 1', '5', '-q', '-S', '-x'], '-S followed by -x: -x is not its argument, unsupported'),
-    (['1 2 1', '5', '-q', '-x'], 'a form that is not squarefree and -x: unsupported first'),
+    (['1 0 1', '5', '-q', '-u', '1', '-p', 'x'], '-u before a malformed -p: unsupported first'),
+    (['1 0 1', '5', '-q', '-p', 'x', '-u', '1'], 'a malformed -p before -u: error 6 first'),
+    (['1 0 1', '5', '-q', '-g', '-u', '1'], 'an unknown option before -u: error 6 first'),
+    (['1 0 1', '5', '-q', '-u', '1', '-g'], '-u before an unknown option: unsupported first'),
+    (['1 0 1', '5', '-q', '-f', '-u', '-u', '1'], '-f takes -u as its format: -u unsupported'),
+    (['x', '5', '-u', '1'], 'bad coefficients before -u: error 11 first'),
+    (['1 0 1', '0', '-u', '1'], 'bad height before -u: error 4 first'),
+    (['1 0 1', '5', '-q', '-S', 'x', '-u', '1'], 'a malformed -S before -u: error 6 first'),
+    (['1 0 1', '5', '-q', '-S', '-u', '1'], '-S followed by -u: -u is not its argument'),
+    (['1 2 1', '5', '-q', '-u', '1'], 'a form that is not squarefree and -u: unsupported first'),
+    (['1 0 1', '5', '-q', '-x', '-p', 'x'], '-x before a malformed -p: error 6'),
+    (['1 0 1', '5', '-q', '-x', '-g'], '-x before an unknown option: error 6'),
+    (['1 0 1', '0', '-x'], 'bad height before -x: error 4'),
     # unknown options and other words
     (['1 0 1', '5', '-q', '-g'], '-g: error 6'),
     (['1 0 1', '5', '-q', '-w'], '-w: error 6'),
@@ -197,6 +245,16 @@ CASES = [
     (['1 0 1', '5', '-q', '-é'.encode()], 'a non-ASCII option letter: error 6'),
     (['1 0 1', '5', '-q', b'-\xff'], 'a byte that is not UTF-8 as option letter: error 6'),
     (['1 0 1', '5', '-q', '-fé'.encode()], '-f and a non-ASCII letter: error 6'),
+]
+
+
+# Searches at a large height that both programs stop at once (-1): the polynomial is not reversed
+# and has a point at infinity (odd degree, or a leading coefficient that is a square), which the
+# search delivers before the sieve; chosen by hand, since a stop inside the sieve at such a height
+# would not end in ratpoints-lean, which lists the denominators of a search up front.
+STOP_CASES = [
+    (['1 0 1', '1000000000000', '-q', '-1'], '-1 at a large height: (1 : 1 : 0) at once'),
+    (['3 2 -1 12', '1000000000000', '-q', '-1'], '-1 at a large height, odd degree: (1 : 0 : 0)'),
 ]
 
 
@@ -284,6 +342,16 @@ def random_coefficients(rng):
     return s if rng.random() < 0.8 else s.strip(SPACE)
 
 
+# Formats and strings for -f, -fs, -fm and -fe: conversions, escapes, a percent sign or a backslash
+# at the end, words that look like options, and characters beyond ASCII in UTF-8, also after % and
+# a backslash, which main.c reads byte by byte (main.c:159-183 the format, main.c:950-967 the
+# strings) and ratpoints-lean character by character (the Lean runtime decodes the arguments, so
+# that bytes that are not UTF-8 are a deviation).
+FORMATS = ['%x %y %z\\n', '(%x : %z)\\n', '%x\\t%y\\n', '%', '\\', '%%', '%%%x', '\\%\\\\',
+           '\\0\\a', '', '[%x/%z]', '%q%y%', '-x', '-q', 'x\\n', '\u00e9%x\u20ac\\n', ' %z ',
+           '\\n', '%x\\', '%y', '%\u00e9', '\\\u20ac', '%\u20ac%']
+
+
 def random_options(rng):
     """One to three options of ratpoints, some unknown, some with a random argument."""
     letters = 'pFtnNRAPrUCQWqvjJlukKxXyYzZ1iIsSfdgwbcehmo5-'
@@ -302,18 +370,54 @@ def random_options(rng):
             opts.append(random_double(rng))
         elif o[1] == 'S' and rng.random() < 0.5:
             opts.append(random_long(rng))
+        elif o[1] == 'f' and rng.random() < 0.9:
+            opts.append(rng.choice(FORMATS))
+    return opts
+
+
+def random_output_options(rng):
+    """Options of the output for a search: each of -x -X -y -Y -z -Z -1 -i -I at times, -q in most
+    cases and -v at times, a format and strings at times, and at times the parameters that pin the
+    moduli for -x (-p 30 -N 30)."""
+    opts = [o for o in ['-x', '-X', '-y', '-Y', '-z', '-Z', '-1', '-i', '-I']
+            if rng.random() < 0.15]
+    rng.shuffle(opts)
+    if rng.random() < 0.8:
+        opts.append('-q')
+    elif rng.random() < 0.3:
+        opts.append('-v')
+    for o in ['-f', '-fs', '-fm', '-fe']:
+        if rng.random() < 0.15:
+            opts += [o, rng.choice(FORMATS)]
+    if rng.random() < 0.3:
+        opts += ['-p', '30', '-N', '30']
+    return opts
+
+
+def random_output_words(rng):
+    """One to five options of the output, each of -x -X -y -Y -z -Z -1 -i -I -q -v at times with
+    letters after it, or one of -f -fs -fm -fe with a format or a string."""
+    opts = []
+    for _ in range(rng.randint(1, 5)):
+        if rng.random() < 0.5:
+            opts.append('-' + rng.choice('xXyYzZ1iIqv') + rng.choice(['', '', '', 'foo']))
+        else:
+            opts += ['-f' + rng.choice(['', 's', 'm', 'e']), rng.choice(FORMATS)]
     return opts
 
 
 def random_command_lines(rng):
-    """Seven random command lines: two coefficient lists, three arguments of tuning options, a
-    height and an option list; the height bound is 1 or 2, or an option that fails follows. The
-    option list searches a squarefree form or one that is not, so that the switch of the Sturm step
-    and the depth that -S reads decide between error 8 and the points."""
+    """Eight random command lines: two coefficient lists, three arguments of tuning options, a
+    height, an option list and options of the output; the height bound is at most 5, or an option
+    that fails follows. The option list searches a squarefree form or one that is not, so that the
+    switch of the Sturm step and the depth that -S reads decide between error 8 and the points; the
+    options of the output come after a curve with points, among them points at infinity."""
     return [[random_coefficients(rng), '1', '-g'],
             ['1 0 1', '1', '-q', '-r', random_double(rng)],
             ['1 0 1', '1', '-q', '-W', random_double(rng)],
             ['1 0 1', '1', '-q', '-p', random_long(rng)],
             ['1 0 1', random_long(rng), '-g'],
             [random_coefficients(rng), '1', '-g'],
-            [rng.choice(['1 0 1', '1 2 1']), '2', '-q', *random_options(rng)]]
+            [rng.choice(['1 0 1', '1 2 1']), '2', '-q', *random_options(rng)],
+            [rng.choice(['1 0 1', '0 1 2', '1 0 126 0 441', '-2 0 0 1', '1 2 3 4']),
+             str(rng.randint(1, 5)), *random_output_words(rng)]]
