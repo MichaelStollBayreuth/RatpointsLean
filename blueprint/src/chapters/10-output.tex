@@ -1047,33 +1047,23 @@ is written once, at the end.
 
 \begin{theorem}[What the program prints]\label{thm:cliRun}
   \uses{def:cliProcess, def:cliReport, thm:protocol, def:cliRun, def:cliInput, def:sieveParams}
-  Proposed names: \lname{Ratpoints.Cli.countedPoints}, \lname{Ratpoints.Cli.Data.printPoint},
-  \lname{Ratpoints.Cli.call\_process\_of\_keep}, \lname{Ratpoints.Cli.call\_process\_of\_not\_keep},
-  \lname{Ratpoints.Cli.deliver\_process}, \lname{Ratpoints.Cli.total\_deliver\_process},
-  \lname{Ratpoints.Cli.out\_append\_deliver\_process\_ofOutput},
-  \lname{Ratpoints.Cli.info\_total\_eq\_of\_findPointsWith\_eq\_ok},
-  \lname{Ratpoints.Cli.exists\_findPointsWith\_eq\_ok\_of\_findPoints\_eq\_ok},
-  \lname{Ratpoints.Cli.run\_eq\_of\_findPointsWith\_eq\_ok},
-  \lname{Ratpoints.Cli.run\_eq\_of\_findPoints\_eq\_ok},
-  \lname{Ratpoints.Cli.run\_eq\_of\_onePoint},
-  \lname{Ratpoints.Cli.total\_eq\_of\_findPointsWith\_eq\_ok},
-  \lname{Ratpoints.Cli.preamble\_eq\_empty\_of\_quiet},
-  \lname{Ratpoints.Cli.report\_eq\_empty\_of\_quiet},
-  \lname{String.intercalate\_cons\_eq\_append\_join}. The points of a list that the callback counts:
-  those that \verb|-i| keeps, every point with $z \ne 0$ and the points at infinity unless
-  \verb|-i|, and of them only the first under \verb|-1|. If the command line reads as the
-  coefficients $c$, the height $H$, the values $s$ of the options of the parameters, the options $o$
-  of the search and the settings $u$ of the output, and $\mathrm{findPoints}(c, H,
-  \mathrm{sieveParams}(s), o)$ returns $L$, the program exits with status~$0$ and prints the head of
-  the report, the string before the points, the formats of the counted points of $L$ joined by the
-  string between them (none under \verb|-z|), the string after them, and the end of the report,
-  whose count is the number of the counted points; under \verb|-q| only the strings and the points;
-  and under \verb|-q| and \verb|-1| without \verb|-z|, when $p$ is the first point of $L$ that
-  \verb|-i| keeps, the string before the points, the format of $p$ and the string after them:
-  \verb|-1| prints the first point of the list that \verb|-i| keeps.
+  \lean{Ratpoints.Cli.countedPoints, Ratpoints.Cli.Data.printPoint, Ratpoints.Cli.call_process_of_keep, Ratpoints.Cli.call_process_of_not_keep, Ratpoints.Cli.deliver_process, Ratpoints.Cli.total_deliver_process, Ratpoints.Cli.out_append_deliver_process_ofOutput, Ratpoints.Cli.info_total_eq_of_findPointsWith_eq_ok, Ratpoints.Cli.exists_findPointsWith_eq_ok_of_findPoints_eq_ok, Ratpoints.Cli.run_eq_of_findPointsWith_eq_ok, Ratpoints.Cli.run_eq_of_findPoints_eq_ok, Ratpoints.Cli.run_eq_of_onePoint, Ratpoints.Cli.total_eq_of_findPointsWith_eq_ok, Ratpoints.Cli.preamble_eq_empty_of_quiet, Ratpoints.Cli.report_eq_empty_of_quiet, String.intercalate_cons_eq_append_join}
+  \leanok
+  The points of a list that the callback counts: those that \verb|-i| keeps, every point with
+  $z \ne 0$ and the points at infinity unless \verb|-i|, and of them only the first under \verb|-1|.
+  If the command line reads as the coefficients $c$, the height $H$, the values $s$ of the options
+  of the parameters, the options $o$ of the search and the settings $u$ of the output, and
+  $\mathrm{findPoints}(c, H, \mathrm{sieveParams}(s), o)$ returns $L$, the program exits with
+  status~$0$ and prints the head of the report, the string before the points, the formats of the
+  counted points of $L$ joined by the string between them (none under \verb|-z|), the string after
+  them, and the end of the report, whose count is the number of the counted points; under \verb|-q|
+  only the strings and the points; and under \verb|-q| and \verb|-1| without \verb|-z|, when $p$ is
+  the first point of $L$ that \verb|-i| keeps, the string before the points, the format of $p$ and
+  the string after them: \verb|-1| prints the first point of the list that \verb|-i| keeps.
 \end{theorem}
 
 \begin{proof}
+  \leanok
   The delivery of any list to the callback of the program prints the counted points of the list in
   turn, counts them, and sets the flag exactly under \verb|-1| when a point is kept; by the protocol
   of the delivery (Theorem~\ref{thm:protocol}), with the well-formed parameters of the program, the
