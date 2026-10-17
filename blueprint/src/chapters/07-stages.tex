@@ -644,18 +644,19 @@ error~4 in \verb|Ratpoints/Model/Setup.lean|.
 
 The contracts of the test for common factors, of the third stage with the test of a candidate, with
 the points that the extraction gives for a numerator, and of the second stage are in
-\verb|Ratpoints/Proof/Stages.lean|, and the contracts from the walk on (the walk, a bit array
-through the second stage and the extraction, the scan, one piece and one denominator, with the lemma
-that the words compute the Booleans) in \verb|Ratpoints/Proof/Sift.lean|, which builds on it. Both
-files are new with this sub-stage and use Lean core and \verb|Std| only, like
-\verb|Ratpoints/Proof/Words.lean|, which keeps the contract of the first stage one row at a time
-(that of the chunked arm is in \verb|Ratpoints/Proof/FirstStage.lean| since stage~F4) and holds the
-lemmas on the words of the rows that both stages use, and like
-\verb|Ratpoints/Proof/Reductions.lean|, which holds the contracts of the reductions since stage~F3.
-The lemmas in core's namespaces that the sub-stage adds are the facts on the signed 64-bit words
-(the arithmetic shift, the mask $x \gg 63$ with the smaller and the distance of two words that it
-gives without a branch, the odd part of a positive word by the lowest set bit, the absolute value,
-and the words of an integer and of a natural number below $2^{63}$), in
+\verb|Ratpoints/Proof/Stages.lean|, and the contracts from the walk on in two files that build on
+it: those of the walk, of a bit array through the second stage and the extraction, and of the scan
+in \verb|Ratpoints/Proof/Scan.lean|, and those of one piece and one denominator, with the lemma that
+the words compute the Booleans, in \verb|Ratpoints/Proof/Sift.lean|, from which stage~G split off
+\verb|Scan.lean|. \verb|Stages.lean| and \verb|Sift.lean| are new with this sub-stage; the three
+files use Lean core and \verb|Std| only, like \verb|Ratpoints/Proof/Words.lean|, which keeps the
+contract of the first stage one row at a time (that of the chunked arm is in
+\verb|Ratpoints/Proof/FirstStage.lean| since stage~F4) and holds the lemmas on the words of the rows
+that both stages use, and like \verb|Ratpoints/Proof/Reductions.lean|, which holds the contracts of
+the reductions since stage~F3. The lemmas in core's namespaces that the sub-stage adds are the facts
+on the signed 64-bit words (the arithmetic shift, the mask $x \gg 63$ with the smaller and the
+distance of two words that it gives without a branch, the odd part of a positive word by the lowest
+set bit, the absolute value, and the words of an integer and of a natural number below $2^{63}$), in
 \verb|Ratpoints/Proof/Bits.lean|, and, in \verb|Ratpoints/Proof/Containers.lean| since stage~F4, the
 steps of the binary algorithm and of the reductions by a reciprocal on natural numbers, two facts on
 lists and vectors that the scan and the sieve of one denominator use (\verb|List.flatMap_filter|,

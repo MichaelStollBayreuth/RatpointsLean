@@ -57,6 +57,7 @@ public import Ratpoints.Proof.PrimeRows
 public import Ratpoints.Proof.Reductions
 public import Ratpoints.Proof.RowStore
 public import Ratpoints.Proof.Rows
+public import Ratpoints.Proof.Scan
 public import Ratpoints.Proof.SetBits
 public import Ratpoints.Proof.Setup
 public import Ratpoints.Proof.Shapes

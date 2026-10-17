@@ -728,16 +728,18 @@ rows read in the packing and the reciprocals read in step with the moduli;
 offsets and the residues, and above it \verb|Ratpoints/Proof/BitRange.lean|, new, the bits of an
 interval and the other range lemmas of the \verb|long|s of the packing, so that both stay below
 $1500$ lines ($1279$ and $327$); \verb|Ratpoints/Proof/Stages.lean| the second stage with its
-cursors and the prime entries field by field; \verb|Ratpoints/Proof/Sift.lean| the contracts of the
-sieve on the bit numbers and of one denominator; \verb|Ratpoints/Proof/Moduli.lean| the packable
-entry of a modulus with its tables of inverses; \verb|Ratpoints/Proof/Denominators.lean| the run
-with the classes, the residues and the offsets; \verb|Ratpoints/Proof/Shapes.lean| the shapes on the
-patterns of the classes; \verb|Ratpoints/Proof/TwoAdic.lean| the word \verb|den_bits| of the classes
-and the 2-adic exit with it; and \verb|Ratpoints/Proof/FindPoints.lean| what the run needs of the
-search and the search with the classes and the offsets. The constants with their decided facts, and
-in \verb|Ratpoints/Proof/Reductions.lean| the bounds of $\mathrm{maxPrimeEven}$, of
-$\mathrm{rowBias}$ and of the products with their factors and the width of the bit arrays, are in
-the namespace \verb|Ratpoints|, the numerators of a residue class among $-H, \dots, H$ in
+cursors and the prime entries field by field; \verb|Ratpoints/Proof/Scan.lean|, split off
+\verb|Sift.lean| in stage~G, the contracts of the sieve on the bit numbers up to the scan of a
+piece, and \verb|Ratpoints/Proof/Sift.lean| those from one piece on and that of one denominator;
+\verb|Ratpoints/Proof/Moduli.lean| the packable entry of a modulus with its tables of inverses;
+\verb|Ratpoints/Proof/Denominators.lean| the run with the classes, the residues and the offsets;
+\verb|Ratpoints/Proof/Shapes.lean| the shapes on the patterns of the classes;
+\verb|Ratpoints/Proof/TwoAdic.lean| the word \verb|den_bits| of the classes and the 2-adic exit with
+it; and \verb|Ratpoints/Proof/FindPoints.lean| what the run needs of the search and the search with
+the classes and the offsets. The constants with their decided facts, and in
+\verb|Ratpoints/Proof/Reductions.lean| the bounds of $\mathrm{maxPrimeEven}$, of $\mathrm{rowBias}$
+and of the products with their factors and the width of the bit arrays, are in the namespace
+\verb|Ratpoints|, the numerators of a residue class among $-H, \dots, H$ in
 \verb|Ratpoints.BruteForce|, the general facts in the namespaces of Lean core, and the rest, among
 them the divisibility and the lower bound of $\mathrm{rbaLength}$ in
 \verb|Ratpoints/Proof/BitRange.lean|, in \verb|Ratpoints.Sieve|. The six new modules are in their

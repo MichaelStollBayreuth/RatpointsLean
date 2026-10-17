@@ -34,8 +34,9 @@ prefix up to and including the first point whose call sets the flag.
 ## Implementation notes
 
 The file uses Lean core only, so that the contracts of the sieve in the files without Mathlib
-(`Ratpoints.Proof.Stages`, `Ratpoints.Proof.Sift`) can state what they deliver with it; the count
-as the sum of the values that the calls return is in `Ratpoints.Proof.DeliveryCount`.
+(`Ratpoints.Proof.Stages`, `Ratpoints.Proof.Scan`, `Ratpoints.Proof.Sift`) can state what they
+deliver with it; the count as the sum of the values that the calls return is in
+`Ratpoints.Proof.DeliveryCount`.
 -/
 
 @[expose] public section

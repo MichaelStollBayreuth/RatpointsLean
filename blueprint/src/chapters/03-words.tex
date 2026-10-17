@@ -543,10 +543,11 @@ chunked first stage in \verb|Ratpoints/Proof/FirstStage.lean| since stage~F4 (th
 rows and the tables of rows in \verb|Ratpoints/Proof/PrimeRows.lean|,
 \verb|Ratpoints/Proof/CompositeRows.lean| and \verb|Ratpoints/Proof/RowStore.lean|,
 Chapter~\ref{chap:rows}), in \verb|Ratpoints/Proof/SetBits.lean| since stage~F3 for the lowest set
-bit and the class bit, and in \verb|Ratpoints/Proof/Sift.lean| from the walk through the set bits of
-a word on, since stage~F2, on which the contract of the run rests (since stage~E in
-\verb|Ratpoints/Proof/Denominators.lean|, with Mathlib); the lemmas on vectors, arrays, lists,
-ranges, natural numbers and integers that are not about the model are in
+bit and the class bit, in \verb|Ratpoints/Proof/Scan.lean| from the walk through the set bits of a
+word up to the scan of a piece, since stage~G, which split it off \verb|Ratpoints/Proof/Sift.lean|,
+and in \verb|Ratpoints/Proof/Sift.lean| from one piece on, since stage~F2, on which the contract of
+the run rests (since stage~E in \verb|Ratpoints/Proof/Denominators.lean|, with Mathlib); the lemmas
+on vectors, arrays, lists, ranges, natural numbers and integers that are not about the model are in
 \verb|Ratpoints/Proof/Containers.lean| and those on words in \verb|Ratpoints/Proof/Bits.lean|, under
 their names in the namespaces of Lean core.
 
