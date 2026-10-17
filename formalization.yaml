@@ -336,10 +336,13 @@ alignment:
         F4 (both arms of the first stage with the chunk of the default build, the rows built by the
         builders of the C code and kept in the tables of rows of its entries), every well-formed
         choice of the sieving parameters, the array size of the pieces included, and every value of
-        the options (Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok,
-        Ratpoints.nodup_of_findPoints_eq_ok), certified by comparator, through the permutation of
-        the brute-force reference (Ratpoints.perm_bruteForce_of_findPoints_eq_ok); the later stages
-        bring Ratpoints.findPoints closer to the C code, and the theorems move with it
+        the options, membership with RATPOINTS_NO_CHECK clear and y >= 0 under RATPOINTS_NO_Y
+        (Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok, Ratpoints.nodup_of_findPoints_eq_ok),
+        certified by comparator, through the reference of the polynomial searched
+        (Ratpoints.exists_eq_of_findPoints_eq_ok) and, with both options of the output off, the
+        permutation of the brute-force reference (Ratpoints.perm_bruteForce_of_findPoints_eq_ok);
+        the later stages bring Ratpoints.findPoints closer to the C code, and the theorems move with
+        it
     - source: "the refusals: fewer than two or more than maxDegree + 1 = 101 coefficients, H = 0 or H >= 2^63, a binary form that is not squarefree"
       lean: "Ratpoints.exists_findPoints_eq_error_iff_of_sturm_nonneg"
       module: "Ratpoints.Proof.Output"

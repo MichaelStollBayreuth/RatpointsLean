@@ -21,17 +21,19 @@ that it writes back do not depend on the callback, and for well-formed parameter
 and the count of the delivery (`Ratpoints.Delivery.deliver`) of the list that
 `Ratpoints.findPoints`, its instance with the appending callback, returns: the protocol of the
 delivery (`Ratpoints.map_findPointsWith_eq_map_findPoints`). That list is the list of the points
-that the search of the polynomial searched delivers for a sound test of the sieve
-(`Ratpoints.exists_searchList_of_findPoints_eq_ok`), the brute-force reference of the polynomial
-searched over the candidate `(1, 0)` and the denominators of the search, mapped back after a
-reversal (`Ratpoints.exists_eq_of_findPoints_eq_ok`): a permutation of the reference of `c`, so
-that it holds exactly the points of the specification, each once, for every option.
-`Ratpoints.findPoints` refuses exactly the inputs that the program refuses: with the Sturm step on,
-those with fewer than two or more than `Ratpoints.maxDegree + 1` coefficients, the height bound `0`
-or one of `2 ^ 63` or more, which is not a `long`, and the binary forms `Φ_c` that are not
-squarefree; without it, instead of the last, those that the test of the leading zeros and the
-reversal check refuse. Comparator certifies the protocol, the membership, the absence of duplicates
-and both refusal theorems (`comparator/Challenge.lean`).
+that the search of the polynomial searched delivers for a sound test of the sieve, which does not
+depend on the options of the output (`Ratpoints.exists_searchList_of_findPoints_eq_ok`); without
+`RATPOINTS_NO_CHECK` it is the brute-force reference of the polynomial searched, over the candidate
+`(1, 0)` and the denominators of the search, mapped back after a reversal, without the points with
+`y < 0` under `RATPOINTS_NO_Y` (`Ratpoints.exists_eq_of_findPoints_eq_ok`), so that it holds
+exactly the points of the specification, those with `y ≥ 0` under `RATPOINTS_NO_Y`, each once.
+Under `RATPOINTS_NO_CHECK` it holds distinct triples `(x, 0, z)` of normalized pairs `(x, z)` of
+height at most `H`. `Ratpoints.findPoints` refuses exactly the inputs that the program refuses:
+with the Sturm step on, those with fewer than two or more than `Ratpoints.maxDegree + 1`
+coefficients, the height bound `0` or one of `2 ^ 63` or more, which is not a `long`, and the
+binary forms `Φ_c` that are not squarefree; without it, instead of the last, those that the test of
+the leading zeros and the reversal check refuse. Comparator certifies the protocol, the membership,
+the absence of duplicates and both refusal theorems (`comparator/Challenge.lean`).
 
 ## Main statements
 
@@ -43,16 +45,20 @@ and both refusal theorems (`comparator/Challenge.lean`).
   `Ratpoints.findPoints`; `Ratpoints.map_findPointsWith_flags`: the bits of the flags written back
   do not depend on the callback.
 * `Ratpoints.exists_searchList_of_findPoints_eq_ok`: the list of `Ratpoints.findPoints` is that of
-  the search with a sound test of the sieve.
-* `Ratpoints.exists_eq_of_findPoints_eq_ok`: it is the reference of the polynomial searched, mapped
-  back after a reversal; `Ratpoints.eq_bruteForce_of_findPoints_eq_ok_of_reverse_eq_false`: the
-  reference itself when the options forbid the reversal and the denominators of the search are
-  `1, …, H`.
-* `Ratpoints.perm_bruteForce_of_findPoints_eq_ok`: the list is a permutation of the reference.
-* `Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok`: a triple lies in the list that
-  `Ratpoints.findPoints` returns exactly when it is a normalized point of height at most `H`.
-* `Ratpoints.nodup_of_findPoints_eq_ok`: the list has no duplicates.
-* `Ratpoints.toFinset_eq_points_of_findPoints_eq_ok`: its set of elements is `Ratpoints.points`.
+  the search with a sound test of the sieve, the same for every choice of the options of the output.
+* `Ratpoints.exists_eq_of_findPoints_eq_ok`: without `RATPOINTS_NO_CHECK`, it is the reference of
+  the polynomial searched, mapped back after a reversal, filtered under `RATPOINTS_NO_Y`;
+  `Ratpoints.eq_bruteForce_of_findPoints_eq_ok_of_reverse_eq_false`: the reference itself without
+  the options of the output, when the options forbid the reversal and the denominators of the search
+  are `1, …, H`.
+* `Ratpoints.perm_bruteForce_of_findPoints_eq_ok`: without the options of the output, the list is a
+  permutation of the reference.
+* `Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok`: without `RATPOINTS_NO_CHECK`, a triple lies in
+  the list exactly when it is a normalized point of height at most `H`, with `y ≥ 0` under
+  `RATPOINTS_NO_Y`.
+* `Ratpoints.nodup_of_findPoints_eq_ok`: for every option, the list has no duplicates.
+* `Ratpoints.toFinset_eq_points_of_findPoints_eq_ok`: without the options of the output, its set of
+  elements is `Ratpoints.points`.
 * `Ratpoints.exists_findPoints_eq_error_iff_of_sturm_nonneg`: with the Sturm step on,
   `Ratpoints.findPoints` refuses exactly the inputs with fewer than two or more than
   `Ratpoints.maxDegree + 1` coefficients, the height bound `0` or one of `2 ^ 63` or more, and the
@@ -67,13 +73,17 @@ and both refusal theorems (`comparator/Challenge.lean`).
 `Ratpoints.findPoints` and `Ratpoints.findPointsWith` run the search on the polynomial that the
 reversal check hands on, with its degree (`Ratpoints.Setup.degree_eq_of_reversal_eq_ok`), which is
 positive after the refusals (`Ratpoints.Setup.one_le_of_reversal_eq_ok`), and its flag of the
-reversal as the flags of the check (`Ratpoints.exists_isSoundTest_run_searchPoints`,
-`Ratpoints.run_searchPoints_eq_deliver`, `Ratpoints.searchList_of_noCheck_eq_false`); the binary
-form of a reversed polynomial is that of `c` with `x` and `z` exchanged
-(`Ratpoints.Setup.binaryForm_eq_of_reversal_eq_ok`), so that its reference, mapped back, is a
-permutation of that of `c` (`Ratpoints.Sieve.perm_map_swapPoint_bruteForce`). Of the refusals, the
-heights that are not `long`s are those of `2 ^ 63` or more (`Ratpoints.fitsLong_natCast`), and the
-test of the leading zeros and that of the reversal check stand for `Z ^ 2 ∣ Φ_c` and `X ^ 2 ∣ Φ_c`
+reversal, with the options of the output as the flags of the check
+(`Ratpoints.exists_isSoundTest_run_searchPoints`, `Ratpoints.run_searchPoints_eq_deliver`,
+`Ratpoints.searchList_of_noCheck_eq_false`); the binary form of a reversed polynomial is that of `c`
+with `x` and `z` exchanged (`Ratpoints.Setup.binaryForm_eq_of_reversal_eq_ok`), so that its
+reference, mapped back, is a permutation of that of `c`
+(`Ratpoints.Sieve.perm_map_swapPoint_bruteForce`). Under `RATPOINTS_NO_CHECK` the search delivers,
+for the same sound test of the sieve, the survivors of the numerators prime to the denominators of
+the search (`Ratpoints.exists_eq_of_mem_searchList_of_noCheck`), which are distinct
+(`Ratpoints.nodup_searchList_of_noCheck`). Of the refusals, the heights that are not `long`s are
+those of `2 ^ 63` or more (`Ratpoints.fitsLong_natCast`), and the test of the leading zeros and that
+of the reversal check stand for `Z ^ 2 ∣ Φ_c` and `X ^ 2 ∣ Φ_c`
 (`Ratpoints.not_squarefree_binaryFormPoly_of_lt`,
 `Ratpoints.Setup.not_squarefree_binaryFormPoly_of_reversal_eq_error`), and after them the remainder
 chain of the polynomial searched is none exactly when `Φ_c` is not squarefree
@@ -89,15 +99,15 @@ open BruteForce Sieve
 
 /-- `Ratpoints.findPointsWith` returns the outcome `out` exactly when it refuses none of its inputs,
 in the order of the program, and `out` is the outcome of the search of the polynomial `c'` of degree
-`d'` that the reversal check hands on, with the flag of the reversal as the flags of the check, from
-the data `info`, the count `0` and the flag of the stop clear. -/
+`d'` that the reversal check hands on, with the flag of the reversal and the options of the output,
+from the data `info`, the count `0` and the flag of the stop clear. -/
 theorem findPointsWith_eq_ok_iff {c : List ℤ} {H : ℕ} {P : Params} {o : Options} {σ : Type}
     {process : ℤ → ℤ → ℤ → σ → Answer σ} {info : σ} {out : Outcome σ} :
     findPointsWith c H P o process info = .ok out ↔ ∃ c' d' rev, c.length ≤ maxDegree + 1 ∧
       2 ≤ c.length ∧ 1 ≤ H ∧ H < 2 ^ 63 ∧ c.length / 2 ≤ (degree c + 1) / 2 ∧
       Setup.reversal o.reverse c (degree c) = .ok (c', d', rev) ∧
       ¬(0 ≤ o.sturm ∧ Id.run (Sturm.chain c' d') = none) ∧
-      out = Id.run (searchPoints process c' d' H P { reversed := rev } ⟨info, 0, false⟩) := by
+      out = Id.run (searchPoints process c' d' H P ⟨rev, o.noCheck, o.noY⟩ ⟨info, 0, false⟩) := by
   rw [findPointsWith, ← BruteForce.degree_eq]
   simp only [fitsLong_natCast, Bool.not_eq_true', decide_eq_false_iff_not, not_lt]
   split_ifs with h1 h2 h3 h4
@@ -174,14 +184,18 @@ theorem map_findPointsWith_flags (c : List ℤ) (H : ℕ) (P : Params) (o : Opti
 
 /-- For well-formed parameters, the list that `Ratpoints.findPoints` returns is that of the points
 that the search of the polynomial `c'` that the reversal check hands on delivers
-(`Ratpoints.searchList`), with its flag of the reversal as the flags of the check, for a sound test
-of the sieve (`Ratpoints.IsSoundTest`; `Ratpoints.exists_isSoundTest_run_searchPoints`). The
-polynomial searched has a positive degree, since the refusals leave a degree `d ≥ 1`
+(`Ratpoints.searchList`), with its flag of the reversal and the options of the output, for a sound
+test of the sieve (`Ratpoints.IsSoundTest`) that does not depend on the options of the output:
+with the other options unchanged, `Ratpoints.findPoints` returns the list of the search with this
+test for every choice of them (`Ratpoints.exists_isSoundTest_run_searchPoints`). The polynomial
+searched has a positive degree, since the refusals leave a degree `d ≥ 1`
 (`Ratpoints.Setup.one_le_of_reversal_eq_ok`). -/
 theorem exists_searchList_of_findPoints_eq_ok {c : List ℤ} {H : ℕ} {P : Params} {o : Options}
     {L : List (ℤ × ℤ × ℤ)} (hP : P.WF) (h : findPoints c H P o = .ok L) :
     ∃ c' rev S, Setup.reversal o.reverse c (degree c) = .ok (c', degree c', rev) ∧
-      0 < degree c' ∧ 1 ≤ H ∧ IsSoundTest c' H S ∧ L = searchList c' H S { reversed := rev } := by
+      0 < degree c' ∧ 1 ≤ H ∧ IsSoundTest c' H S ∧ L = searchList c' H S ⟨rev, o.noCheck, o.noY⟩ ∧
+      ∀ noCheck noY : Bool, findPoints c H P { o with noCheck, noY } =
+        .ok (searchList c' H S ⟨rev, noCheck, noY⟩) := by
   obtain ⟨out, hout, rfl⟩ : ∃ out, findPointsWith c H P o appendPoint #[] = .ok out ∧
       L = out.info.toList := by
     rcases h' : findPointsWith c H P o appendPoint #[] <;> simp_all [findPoints, Except.map]
@@ -191,22 +205,27 @@ theorem exists_searchList_of_findPoints_eq_ok {c : List ℤ} {H : ℕ} {P : Para
   have key (fl : CheckFlags) : (Id.run (searchPoints appendPoint c' (degree c') H P fl
       ⟨#[], 0, false⟩)).info.toList = searchList c' H S fl := by
     simpa using congr(($(hrun appendPoint fl ⟨#[], 0, false⟩ rfl)).1.toList)
-  exact ⟨c', rev, S, hr, Setup.one_le_of_reversal_eq_ok hr (by lia), hH, hS, key _⟩
+  refine ⟨c', rev, S, hr, Setup.one_le_of_reversal_eq_ok hr (by lia), hH, hS, key _,
+    fun noCheck noY ↦ ?_⟩
+  rw [findPoints, findPointsWith_eq_ok_iff (o := { o with noCheck, noY }).mpr
+    ⟨c', _, rev, h1, h2, hH, hH63, hl, hr, hs, rfl⟩]
+  exact congr(Except.ok $(key _))
 
-/-- For well-formed parameters, the list that `Ratpoints.findPoints` returns is that of the
-brute-force reference of the polynomial `c'` that the reversal check hands on, over the candidate
-`(1, 0)` and the denominators of its search (`Ratpoints.searchDens`), in this order, mapped back by
-`Ratpoints.Sieve.swapPoint` after a reversal (`Ratpoints.searchList_of_noCheck_eq_false`); also when
-the search takes an exit, since the curve has no points then. -/
+/-- Without `RATPOINTS_NO_CHECK`, for well-formed parameters, the list that `Ratpoints.findPoints`
+returns is that of the brute-force reference of the polynomial `c'` that the reversal check hands
+on, over the candidate `(1, 0)` and the denominators of its search (`Ratpoints.searchDens`), in this
+order, mapped back by `Ratpoints.Sieve.swapPoint` after a reversal, without the points with `y < 0`
+under `RATPOINTS_NO_Y` (`Ratpoints.searchList_of_noCheck_eq_false`); also when the search takes an
+exit, since the curve has no points then. -/
 theorem exists_eq_of_findPoints_eq_ok {c : List ℤ} {H : ℕ} {P : Params} {o : Options}
-    {L : List (ℤ × ℤ × ℤ)} (hP : P.WF) (h : findPoints c H P o = .ok L) :
+    {L : List (ℤ × ℤ × ℤ)} (hP : P.WF) (h : findPoints c H P o = .ok L)
+    (hc : o.noCheck = false) :
     ∃ c' rev, Setup.reversal o.reverse c (degree c) = .ok (c', degree c', rev) ∧ 1 ≤ H ∧
-      L = (pointsOfDen c' (degree c') 0 [1] ++ (searchDens c' (degree c') H).flatMap
+      L = ((pointsOfDen c' (degree c') 0 [1] ++ (searchDens c' (degree c') H).flatMap
         fun b : ℕ ↦ pointsOfDen c' (degree c') b (numerators H)).map
-          (if rev then swapPoint else id) := by
-  obtain ⟨c', rev, S, hr, hd, hH, hS, rfl⟩ := exists_searchList_of_findPoints_eq_ok hP h
-  exact ⟨c', rev, hr, hH,
-    by simpa using searchList_of_noCheck_eq_false (fl := { reversed := rev }) hS hd rfl⟩
+          (if rev then swapPoint else id)).filter fun p ↦ !o.noY || 0 ≤ p.2.1 := by
+  obtain ⟨c', rev, S, hr, hd, hH, hS, rfl, -⟩ := exists_searchList_of_findPoints_eq_ok hP h
+  exact ⟨c', rev, hr, hH, searchList_of_noCheck_eq_false hS hd hc⟩
 
 -- The points of the polynomial that the reversal check hands on, mapped back after a reversal, are
 -- a permutation of the brute-force reference of `c`
@@ -221,50 +240,65 @@ private theorem perm_bruteForce_of_reversal_eq_ok {allow rev : Bool} {c c' : Lis
   · simpa [(Setup.eq_of_reversal_eq_ok_false hr).1] using hp
   · exact hp.trans (perm_map_swapPoint_bruteForce (Setup.binaryForm_eq_of_reversal_eq_ok rfl hr) H)
 
-/-- When the options forbid the reversal and the denominators of the search are `1, …, H`
-(`Ratpoints.searchDens_eq_range'`: even degree, `|c_d| = 1`, or the divisor set-up fails), the list
-that `Ratpoints.findPoints` returns is the brute-force reference itself. -/
+/-- Without the options of the output, when the options forbid the reversal and the denominators of
+the search are `1, …, H` (`Ratpoints.searchDens_eq_range'`: even degree, `|c_d| = 1`, or the divisor
+set-up fails), the list that `Ratpoints.findPoints` returns is the brute-force reference itself. -/
 theorem eq_bruteForce_of_findPoints_eq_ok_of_reverse_eq_false {c : List ℤ} {H : ℕ} {P : Params}
     {o : Options} {L : List (ℤ × ℤ × ℤ)} (hP : P.WF) (h : findPoints c H P o = .ok L)
-    (ho : o.reverse = false) (hs : searchDens c (degree c) H = List.range' 1 H) :
+    (hc : o.noCheck = false) (hy : o.noY = false) (ho : o.reverse = false)
+    (hs : searchDens c (degree c) H = List.range' 1 H) :
     L = bruteForce c H := by
-  obtain ⟨c', rev, hr, hH, rfl⟩ := exists_eq_of_findPoints_eq_ok hP h
+  obtain ⟨c', rev, hr, hH, rfl⟩ := exists_eq_of_findPoints_eq_ok hP h hc
   rw [ho, Setup.reversal_false] at hr
   cases hr
-  simpa using append_flatMap_searchDens_eq_bruteForce hH hs
+  simpa [hy] using append_flatMap_searchDens_eq_bruteForce hH hs
 
-/-- For well-formed parameters, the list that `Ratpoints.findPoints` returns is a permutation of
-the brute-force reference: the search gives the reference of the polynomial searched in the order
-of its denominators (`Ratpoints.perm_bruteForce_append_flatMap_searchDens`), and after a reversal
-the binary form of the polynomial searched is that of `c` with `x` and `z` exchanged
+/-- Without the options of the output, for well-formed parameters, the list that
+`Ratpoints.findPoints` returns is a permutation of the brute-force reference: the search gives the
+reference of the polynomial searched in the order of its denominators
+(`Ratpoints.perm_bruteForce_append_flatMap_searchDens`), and after a reversal the binary form of the
+polynomial searched is that of `c` with `x` and `z` exchanged
 (`Ratpoints.Setup.binaryForm_eq_of_reversal_eq_ok`), so that its reference, mapped back, is a
 permutation of that of `c` (`Ratpoints.Sieve.perm_map_swapPoint_bruteForce`). -/
 theorem perm_bruteForce_of_findPoints_eq_ok {c : List ℤ} {H : ℕ} {P : Params} {o : Options}
-    {L : List (ℤ × ℤ × ℤ)} (hP : P.WF) (h : findPoints c H P o = .ok L) :
+    {L : List (ℤ × ℤ × ℤ)} (hP : P.WF) (h : findPoints c H P o = .ok L)
+    (hc : o.noCheck = false) (hy : o.noY = false) :
     L.Perm (bruteForce c H) := by
-  obtain ⟨c', rev, hr, hH, rfl⟩ := exists_eq_of_findPoints_eq_ok hP h
-  exact perm_bruteForce_of_reversal_eq_ok hr hH
+  obtain ⟨c', rev, hr, hH, rfl⟩ := exists_eq_of_findPoints_eq_ok hP h hc
+  simpa [hy] using perm_bruteForce_of_reversal_eq_ok hr hH
 
 /-! ### The main theorems -/
 
-/-- For well-formed parameters and every option, a triple lies in the list that
-`Ratpoints.findPoints` returns exactly when it is a normalized point of height at most `H`;
-comparator certifies this (`comparator/Challenge.lean`). -/
+/-- Without `RATPOINTS_NO_CHECK`, for well-formed parameters and the other options, a triple lies in
+the list that `Ratpoints.findPoints` returns exactly when it is a normalized point of height at most
+`H`, with `y ≥ 0` under `RATPOINTS_NO_Y`; comparator certifies this
+(`comparator/Challenge.lean`). -/
 theorem mem_iff_isPoint_of_findPoints_eq_ok {c : List ℤ} {H : ℕ} {P : Params} {o : Options}
-    {L : List (ℤ × ℤ × ℤ)} (hP : P.WF) (h : findPoints c H P o = .ok L) {p : ℤ × ℤ × ℤ} :
-    p ∈ L ↔ IsPoint c H p :=
-  (perm_bruteForce_of_findPoints_eq_ok hP h).mem_iff.trans mem_bruteForce_iff
+    {L : List (ℤ × ℤ × ℤ)} (hP : P.WF) (h : findPoints c H P o = .ok L)
+    (hc : o.noCheck = false) {p : ℤ × ℤ × ℤ} :
+    p ∈ L ↔ IsPoint c H p ∧ (o.noY = true → 0 ≤ p.2.1) := by
+  obtain ⟨c', rev, hr, hH, rfl⟩ := exists_eq_of_findPoints_eq_ok hP h hc
+  rw [List.mem_filter, (perm_bruteForce_of_reversal_eq_ok hr hH).mem_iff, mem_bruteForce_iff]
+  cases o.noY <;> simp
 
 /-- For well-formed parameters and every option, the list that `Ratpoints.findPoints` returns has
-no duplicates; comparator certifies this (`comparator/Challenge.lean`). -/
+no duplicates: without `RATPOINTS_NO_CHECK` it is a permutation of the brute-force reference,
+filtered under `RATPOINTS_NO_Y`, and under `RATPOINTS_NO_CHECK` the survivors are distinct
+(`Ratpoints.nodup_searchList_of_noCheck`); comparator certifies this
+(`comparator/Challenge.lean`). -/
 theorem nodup_of_findPoints_eq_ok {c : List ℤ} {H : ℕ} {P : Params} {o : Options}
-    {L : List (ℤ × ℤ × ℤ)} (hP : P.WF) (h : findPoints c H P o = .ok L) : L.Nodup :=
-  (perm_bruteForce_of_findPoints_eq_ok hP h).nodup_iff.mpr (nodup_bruteForce c H)
+    {L : List (ℤ × ℤ × ℤ)} (hP : P.WF) (h : findPoints c H P o = .ok L) : L.Nodup := by
+  cases hc : o.noCheck
+  · obtain ⟨c', rev, hr, hH, rfl⟩ := exists_eq_of_findPoints_eq_ok hP h hc
+    exact ((perm_bruteForce_of_reversal_eq_ok hr hH).nodup_iff.mpr (nodup_bruteForce c H)).filter _
+  · obtain ⟨c', rev, S, -, -, hH, -, rfl, -⟩ := exists_searchList_of_findPoints_eq_ok hP h
+    exact nodup_searchList_of_noCheck hH S hc
 
 theorem toFinset_eq_points_of_findPoints_eq_ok {c : List ℤ} {H : ℕ} {P : Params} {o : Options}
-    {L : List (ℤ × ℤ × ℤ)} (hP : P.WF) (h : findPoints c H P o = .ok L) :
+    {L : List (ℤ × ℤ × ℤ)} (hP : P.WF) (h : findPoints c H P o = .ok L)
+    (hc : o.noCheck = false) (hy : o.noY = false) :
     L.toFinset = points c H :=
-  (List.toFinset_eq_of_perm _ _ (perm_bruteForce_of_findPoints_eq_ok hP h)).trans
+  (List.toFinset_eq_of_perm _ _ (perm_bruteForce_of_findPoints_eq_ok hP h hc hy)).trans
     (toFinset_bruteForce c H)
 
 /-! ### The refusals -/

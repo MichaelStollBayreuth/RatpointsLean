@@ -62,7 +62,10 @@ the packing of the numerators of sub-stage F3 on 2026-10-15, and with the chunke
 the rows of sub-stage F4 on 2026-10-16; on Lean and Mathlib v4.35.0, `lake comparator --paranoid`
 accepted all seven on the same day, with Lean's kernel and the five external checkers.
 
-Stage G adds the protocol of the delivery, `challenge_map_findPointsWith_eq_map_findPoints`, which
+Stage G restates the membership theorem for the options of the output: with the exact check on
+(`o.noCheck = false`), `p ∈ L` exactly when `p` is a point and, under `o.noY`, `0 ≤ y`; no
+duplicates keeps its text and now holds for the options of the output too, the exact check off among
+them. It adds the protocol of the delivery, `challenge_map_findPointsWith_eq_map_findPoints`, which
 `challenges.json` lists as well: the search with a callback refuses what `findPoints` refuses and
 otherwise returns the data of the callback and the count of `Delivery.deliver` of the list of
 `findPoints` to the callback, its calls for the points in their order up to and including the

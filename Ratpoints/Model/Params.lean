@@ -92,7 +92,13 @@ def modulusFactors (m : Nat) : Id (List (Nat × Nat) × Nat) := do
 
 /-- The sieving parameters: the free choices of the sieve, which the theorems quantify over. The
 moduli are cut into three stages: the first `sp1` of them, then those up to `sp2`, then the
-rest. -/
+rest.
+
+C: `ratpoints.h:406`
+
+Deviation: the Jacobi switch a Boolean (`Ratpoints.Params.jacobi`), true when the bit
+`RATPOINTS_NO_JACOBI` of the flags is clear, for that bit of `args->flags`, which `main.c` clears
+with the others. -/
 structure Params where
   /-- The moduli in the order of the stages: primes of `Ratpoints.primeTable`, powers of them and
   products of such powers, below `Ratpoints.maxPrimeEven`. -/

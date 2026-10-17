@@ -19,7 +19,8 @@ binary form, and the map that the C code applies to every point it finds of the 
 is a bijection onto the points of the caller's curve that preserves the box. So after a reversal the
 output is that of the search of the reversed polynomial with each point mapped back, a permutation
 of the reference; the reduction of the run to the reference (Theorem~\ref{thm:run_reference}) holds
-for any polynomial and its degree, and membership and no duplicates hold for every option. The
+for any polynomial and its degree, membership holds with $\mathrm{noCheck}$ false, the set of
+elements with both options of the output off, and no duplicates for every option. The
 set-up has been the most error-prone part of ratpoints: the fixes of 2.2.2 include a reversal that
 marked a cubic reversed and left it as it was, and those of 2.2.4 a search that returned before the
 points at infinity when the Sturm step found no real point in the search region.
@@ -99,14 +100,18 @@ output.
 \begin{definition}[The options of a search]\label{def:Options}
   \lean{Ratpoints.Options, Ratpoints.defaultSturm}
   \leanok
-  The options of the library that change the refusals or the order of the output, an argument of
-  $\mathrm{findPoints}$ whose defaults are those of a run of the program without options: whether
-  the set-up may reverse the polynomial (the bit \verb|RATPOINTS_NO_REVERSE| of the flags clear),
-  and \verb|args->sturm|, the depth of the Sturm step, negative for none, with the default
+  The options of the library that change the refusals, the order of the output or what is delivered,
+  an argument of $\mathrm{findPoints}$ whose defaults are those of a run of the program without
+  options: whether the set-up may reverse the polynomial (the bit \verb|RATPOINTS_NO_REVERSE| of the
+  flags clear), \verb|args->sturm|, the depth of the Sturm step, negative for none, with the default
   $\mathrm{defaultSturm} = 10$ (\verb|RATPOINTS_DEFAULT_STURM|, \csource{ratpoints.h}{341}{343}; the
-  program's defaults \csource{main.c}{348}{348}, \csource{main.c}{352}{352}). The model reads only
-  whether the depth is negative, as the switch of the test for a repeated factor; stage~H reads the
-  depth itself, and stages~G and~H add the options of the output and the search region.
+  program's defaults \csource{main.c}{348}{348}, \csource{main.c}{352}{352}), and the options of the
+  output $\mathrm{noCheck}$ and $\mathrm{noY}$, false by default, the bits \verb|RATPOINTS_NO_CHECK|
+  and \verb|RATPOINTS_NO_Y| of the flags (\csource{ratpoints.h}{403}{405}, with
+  \verb|RATPOINTS_NO_REVERSE|). The model reads only whether the depth is negative, as the switch of
+  the test for a repeated factor; stage~H reads the depth itself and adds the search region; stage~G
+  added the options of the output, which change what is delivered, as the reversal does too under
+  $\mathrm{noCheck}$.
 \end{definition}
 
 The options are not parameters: the parameters are the free choices that change neither the points
@@ -294,12 +299,16 @@ by row, and not only its verdict.
 
 \begin{lemma}[The reversal is a bijection of the points]\label{lem:swapPoint_bijection}
   \uses{def:swapPoint, def:IsPoint, def:bruteForce, thm:bruteForce}
-  \lean{Ratpoints.Sieve.isPoint_swapPoint, Ratpoints.Sieve.swapPoint_swapPoint_of_isPoint, Ratpoints.Sieve.perm_map_swapPoint_bruteForce, List.perm_map_of_nodup}
+  \lean{Ratpoints.Sieve.isPoint_swapPoint, Ratpoints.Sieve.swapPoint_swapPoint, Ratpoints.Sieve.swapPoint_inj, Ratpoints.IsNormalizedPair, Ratpoints.IsNormalizedPair.swapPoint, Ratpoints.Sieve.perm_map_swapPoint_bruteForce, List.perm_map_of_nodup}
   \leanok
-  For lists $c$ and $c'$ with $F_{c'}(x, z) = F_c(z, x)$ for all $x$ and $z$, the map sends a
-  normalized point of height at most $H$ of $c'$ to one of $c$, and back, the two maps being inverse
-  on these points; so $\mathrm{bruteForce}(c', H)$, mapped, is a permutation of
-  $\mathrm{bruteForce}(c, H)$.
+  A pair $(x, z)$ of integers is \emph{normalized of height at most $H$} when $\gcd(x, z) = 1$,
+  $z > 0$ or ($z = 0$ and $x = 1$), $|x| \le H$ and $z \le H$, the conditions of a point
+  (Definition~\ref{def:IsPoint}) without its equation; the map keeps these pairs. It is its own
+  inverse, and so injective, on the triples $(x, y, z)$ with $z > 0$ or $(x, z) = (1, 0)$, among
+  them the normalized points. For lists $c$ and $c'$ with $F_{c'}(x, z) = F_c(z, x)$ for all $x$ and
+  $z$, the map sends a normalized point of height at most $H$ of $c'$ to one of $c$, and back, the
+  two maps being inverse on these points; so $\mathrm{bruteForce}(c', H)$, mapped, is a permutation
+  of $\mathrm{bruteForce}(c, H)$.
 \end{lemma}
 
 \begin{proof}
@@ -307,8 +316,10 @@ by row, and not only its verdict.
   $F_c(-b, -a) = F_c(b, a)$, since $D$ is even, so the equation holds. For $a > 0$ the image has
   $z = a > 0$; for $a < 0$, $z = -a > 0$; for $a = 0$ the normalization of $(0, y, b)$ forces
   $b = 1$, whose image $(1, y, 0)$ is the caller's point at infinity; $|x| = b$ and $z = |a|$, so
-  the box goes onto the box. On points the map is its own inverse, so it is injective there, and
-  both lists have no duplicates (Theorem~\ref{thm:bruteForce}) and the same members.
+  the box goes onto the box, and the same computation without the equation shows that the map keeps
+  the normalized pairs. On the triples with $z > 0$ or $(x, z) = (1, 0)$, among them the points, the
+  map is its own inverse, so it is injective there, and both lists have no duplicates
+  (Theorem~\ref{thm:bruteForce}) and the same members.
 \end{proof}
 
 \begin{lemma}[The reversal and squarefreeness]\label{lem:reversal_squarefree}
@@ -484,8 +495,9 @@ refusals and the mask of the bits of the input that the reset of the flags keeps
   \uses{def:findPoints, thm:findPoints_order, lem:swapPoint_bijection}
   \lean{Ratpoints.perm_bruteForce_of_findPoints_eq_ok}
   \leanok
-  For well-formed parameters and any options, if $\mathrm{findPoints}(c, H, P, o)$ returns the list
-  $L$, then $L$ is a permutation of $\mathrm{bruteForce}(c, H)$.
+  For well-formed parameters and options with both options of the output off, if
+  $\mathrm{findPoints}(c, H, P, o)$ returns the list $L$, then $L$ is a permutation of
+  $\mathrm{bruteForce}(c, H)$.
 \end{theorem}
 
 \begin{proof}
@@ -535,10 +547,11 @@ reference over its denominators, mapped by $\mathrm{swapPoint}$ when the flag of
 set; Lemma~\ref{lem:searchList} rests on it, with what the search hands to the run
 (Lemma~\ref{lem:soundRun}), the lists and the tests of the shapes (Lemma~\ref{lem:shape_dens}), the
 2-adic exit (Lemma~\ref{lem:twoAdic_exit}) and the exit of the tables. Theorem~\ref{thm:findPoints}
-has membership, no duplicates and the set of elements, for every option, from
-Theorem~\ref{thm:findPoints_perm}, and Theorem~\ref{thm:refusals} the refusals, with guards on their
-axioms. Comparator certifies the two main theorems with the options argument, both refusal theorems
-and \verb|wf_sieveParams|; the challenge restates $\Phi_c$ verbatim, as it restates $F_c$, takes the
+has membership with $\mathrm{noCheck}$ false and the set of elements with both options of the output
+off, from Theorem~\ref{thm:findPoints_order} and the permutation, and no duplicates for every
+option; Theorem~\ref{thm:refusals} has the refusals; both have guards on their axioms. Comparator
+certifies the two main theorems with the options argument, both refusal theorems and
+\verb|wf_sieveParams|; the challenge restates $\Phi_c$ verbatim, as it restates $F_c$, takes the
 options from the model, and has the refusal theorem with the Sturm step off too, so that a
 $\mathrm{findPoints}$ that refused every input under \verb|-s| would not pass. Since the challenge
 needs \verb|Squarefree|, the specification imports \verb|Mathlib.Algebra.Squarefree.Basic|, so that
@@ -593,10 +606,11 @@ Each component of the set-up differs from the C code in a stated way, recorded i
     degree $0$ and inputs that the program never passes; no error~9, which the program meets only
     for such codes; a natural number for the height, a height of $2^{63}$ or more, which is not a
     \verb|long|, refused with error~4, as the program refuses it when it reads it;
-  \item the options as a structure: a Boolean for the bit \verb|RATPOINTS_NO_REVERSE| of the flags
-    that \verb|main.c| clears, whose Jacobi switch is that of the sieving parameters and whose
-    output bits are stage~G's, and an integer for \verb|args->sturm|; the reversal check runs
-    whenever the options allow it, without \verb|RATPOINTS_NO_REVERSE_AUTO| (stage~H);
+  \item the options as a structure: Booleans for the bits \verb|RATPOINTS_NO_REVERSE|,
+    \verb|RATPOINTS_NO_CHECK| and \verb|RATPOINTS_NO_Y| of the flags that \verb|main.c| clears,
+    whose Jacobi switch is that of the sieving parameters, and an integer for \verb|args->sturm|;
+    the reversal check runs whenever the options allow it, without \verb|RATPOINTS_NO_REVERSE_AUTO|
+    (stage~H);
   \item a list of integers for the array of GMP integers of the coefficients, a new list for the
     reversal in place, and nothing written back to the caller but the three bits of the flags that
     the program reads (Definition~\ref{def:Outcome}): the reversed coefficients and the degree stay

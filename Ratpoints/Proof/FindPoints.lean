@@ -7,15 +7,16 @@ module
 
 public import Ratpoints.Proof.Forbidden
 public import Ratpoints.Proof.Moduli
+public import Ratpoints.Proof.Setup
 public import Ratpoints.Proof.Stages
 
 import Ratpoints.Mathlib.Data.List.Basic
+import Ratpoints.Mathlib.Data.List.Nodup
 import Ratpoints.Proof.BruteForce
 import Ratpoints.Proof.Containers
 import Ratpoints.Proof.Delivery
 import Ratpoints.Proof.Denominators
 import Ratpoints.Proof.Params
-import Ratpoints.Proof.Setup
 import Ratpoints.Proof.Shapes
 import Ratpoints.Proof.Sieve
 import Ratpoints.Proof.Tables
@@ -63,6 +64,9 @@ that of the divisors of the leading coefficient times squares
 * `Ratpoints.searchList_of_noCheck_eq_false`: without `RATPOINTS_NO_CHECK`, the points that the
   search delivers for a sound test are those of the brute-force reference, mapped after a reversal,
   without those with `y < 0` under `RATPOINTS_NO_Y`.
+* `Ratpoints.exists_eq_of_mem_searchList_of_noCheck`, `Ratpoints.nodup_searchList_of_noCheck`:
+  under `RATPOINTS_NO_CHECK`, the search delivers distinct triples `(x, 0, z)` of normalized pairs
+  `(x, z)` of height at most `H` (`Ratpoints.IsNormalizedPair`), whatever the test.
 * `Ratpoints.exists_isSoundTest_run_sieveRun`: the run of the shape that the search chooses, with
   sound arguments, delivers the points of the numerators that a sound test lets through.
 * `Ratpoints.sievingInfo_spec`: for well-formed parameters, the sieve entries that
@@ -310,6 +314,16 @@ private theorem mem_range'_of_mem_searchDens {c : List ℤ} {H b : ℕ}
   · rwa [h] at hb
   · exact mem_range'_of_mem_squares1Dens (h ▸ hb)
 
+/-- The denominators of the search are distinct: `1, …, H`, or for odd degree the products of the
+distinct squarefree divisors of the set-up with squares (`Ratpoints.Sieve.nodup_squares1Dens`). -/
+theorem nodup_searchDens (c : List ℤ) {H : ℕ} (hH : 1 ≤ H) :
+    (searchDens c (degree c) H).Nodup := by
+  obtain h | ⟨info, divisors, hd, hs, h⟩ := searchDens_eq_range'_or c (degree c) H
+  · exact h ▸ List.nodup_range'
+  · have hc : c.getD (degree c) 0 ≠ 0 := getD_degree_ne_zero_of_pos (by lia)
+    exact h ▸ nodup_squares1Dens (Setup.nodup_of_setupUs1_eq_some hs hc)
+      (fun s hs' ↦ ((Setup.mem_iff_of_setupUs1_eq_some hs hc hH).mp hs').1) 1 H
+
 /-- The divisor shape visits each denominator of a point once, so that it gives a permutation of
 the points of the denominators `1, …, H`: the denominator of every point is `s k ^ 2` with `s`
 squarefree and dividing `c_d`, so one of the divisors of the set-up, and the shape lists each such
@@ -397,6 +411,78 @@ nothing. -/
 theorem searchList_false {c : List ℤ} (H : ℕ) {fl : CheckFlags}
     (h : pointsAtInfinityList c (degree c) fl = []) : searchList c H (fun _ _ ↦ false) fl = [] := by
   simp [searchList, h]
+
+/-- The points that the search delivers are those of the search without the flag of the
+reversal, mapped by `Ratpoints.Sieve.swapPoint` when it is set. -/
+theorem searchList_eq_map (c : List ℤ) (H : ℕ) (S : ℕ → ℤ → Bool) (fl : CheckFlags) :
+    searchList c H S fl = (searchList c H S { fl with reversed := false }).map
+      (if fl.reversed then swapPoint else id) := by
+  simp only [searchList, List.map_append, List.map_flatMap, ← pointsAtInfinityList_eq_map,
+    ← checkNumWith_eq_map]
+
+-- The map of the reversal keeps the triples `(x, 0, z)` of normalized pairs `(x, z)`.
+private theorem exists_map_eq_of_isNormalizedPair {H : ℕ} {x z : ℤ} (h : IsNormalizedPair H x z)
+    (rev : Bool) : ∃ x' z', (if rev then swapPoint else id) (x, 0, z) = (x', 0, z') ∧
+      IsNormalizedPair H x' z' := by
+  cases rev
+  · exact ⟨x, z, rfl, h⟩
+  · exact ⟨_, _, (swapPoint_fst_zero_snd (x, 0, z)).symm, IsNormalizedPair.swapPoint h⟩
+
+/-- Under `RATPOINTS_NO_CHECK`, the search delivers triples `(x, 0, z)` of pairs `(x, z)` of
+normalized points of height at most `H` (`Ratpoints.IsNormalizedPair`): the survivors `(a, 0, b)`
+of the numerators `a` prime to the denominators `b` of the search and the point `(1, 0, 0)` at
+infinity, mapped after a reversal (`Ratpoints.IsNormalizedPair.swapPoint`). -/
+theorem exists_eq_of_mem_searchList_of_noCheck {c : List ℤ} {H : ℕ} {S : ℕ → ℤ → Bool}
+    {fl : CheckFlags} (hc : fl.noCheck = true) (hH : 1 ≤ H) {q : ℤ × ℤ × ℤ}
+    (hq : q ∈ searchList c H S fl) : ∃ x z, q = (x, 0, z) ∧ IsNormalizedPair H x z := by
+  simp only [searchList, List.mem_append, List.mem_flatMap, List.mem_filter,
+    mem_checkNumWith_of_noCheck hc] at hq
+  rcases hq with hq | ⟨b, hb, a, ⟨ha, -⟩, hg, rfl⟩
+  · rw [eq_of_mem_pointsAtInfinityList_of_noCheck hc hq]
+    exact exists_map_eq_of_isNormalizedPair ⟨rfl, .inr ⟨rfl, rfl⟩, by simpa using hH, by lia⟩ _
+  · have hb' := List.mem_range'_1.mp (mem_range'_of_mem_searchDens hb)
+    exact exists_map_eq_of_isNormalizedPair ⟨hg, .inl (by lia), mem_numerators_iff.mp ha,
+      by lia⟩ _
+
+-- Under `RATPOINTS_NO_CHECK` and without the flag of the reversal, the survivors `(a, 0, b)` that
+-- the search delivers are distinct pairs over distinct denominators `b ≥ 1`
+-- (`Ratpoints.nodup_searchDens`), the point `(1, 0, 0)` at infinity apart.
+private theorem nodup_searchList_of_noCheck_of_reversed_eq_false {c : List ℤ} {H : ℕ}
+    (hH : 1 ≤ H) (S : ℕ → ℤ → Bool) {fl : CheckFlags} (hc : fl.noCheck = true)
+    (hr : fl.reversed = false) : (searchList c H S fl).Nodup := by
+  have hmem {b : ℕ} {a : ℤ} {q : ℤ × ℤ × ℤ} (hq : q ∈ checkNumWith (scaledCoeffs c (degree c) b)
+      (if degree c % 2 = 1 then b else 1) b fl a) : q = (a, 0, (b : ℤ)) := by
+    simpa [hr] using ((mem_checkNumWith_of_noCheck hc).mp hq).2
+  refine List.Nodup.append ?_ ((nodup_searchDens c hH).flatMap (fun b _ ↦ ?_)
+    (fun q ↦ q.2.2.toNat) fun b _ q hq ↦ ?_) fun q hq hq' ↦ ?_
+  · rw [pointsAtInfinityList_of_noCheck_eq_true hc]
+    split_ifs <;> simp
+  · refine ((nodup_numerators H).filter _).flatMap (fun a _ ↦ ?_) (fun q ↦ q.1)
+      fun a _ q hq ↦ by rw [hmem hq]
+    rw [checkNumWith_of_noCheck_eq_true hc]
+    split_ifs <;> simp
+  · obtain ⟨a, -, hq⟩ := List.mem_flatMap.mp hq
+    simp [hmem hq]
+  · obtain ⟨b, hb, a, -, hq'⟩ := by simpa only [List.mem_flatMap] using hq'
+    have h1 := (List.mem_range'_1.mp (mem_range'_of_mem_searchDens hb)).1
+    have h2 : q = (1, 0, 0) := by simpa [hr] using eq_of_mem_pointsAtInfinityList_of_noCheck hc hq
+    rw [hmem hq', Prod.mk.injEq, Prod.mk.injEq] at h2
+    lia
+
+/-- Under `RATPOINTS_NO_CHECK`, the points that the search delivers are distinct: the survivors
+`(a, 0, b)` are distinct pairs over distinct denominators `b ≥ 1` (`Ratpoints.nodup_searchDens`),
+the point at infinity apart, and the map of the reversal is injective on the normalized pairs
+(`Ratpoints.Sieve.swapPoint_inj`). -/
+theorem nodup_searchList_of_noCheck {c : List ℤ} {H : ℕ} (hH : 1 ≤ H) (S : ℕ → ℤ → Bool)
+    {fl : CheckFlags} (hc : fl.noCheck = true) : (searchList c H S fl).Nodup := by
+  have hc' : ({ fl with reversed := false } : CheckFlags).noCheck = true := hc
+  rw [searchList_eq_map]
+  refine (nodup_searchList_of_noCheck_of_reversed_eq_false hH S hc' rfl).map_on
+    fun q hq q' hq' h ↦ ?_
+  obtain ⟨x, z, rfl, hn⟩ := exists_eq_of_mem_searchList_of_noCheck hc' hH hq
+  obtain ⟨x', z', rfl, hn'⟩ := exists_eq_of_mem_searchList_of_noCheck hc' hH hq'
+  cases hr : fl.reversed <;> simp only [hr, Bool.false_eq_true, ↓reduceIte, id] at h
+  exacts [h, (swapPoint_inj hn.2.1 hn'.2.1).mp h]
 
 -- A curve without points of height at most `H` has no points at infinity and none over the
 -- denominators of `1, …, H` in its reference.

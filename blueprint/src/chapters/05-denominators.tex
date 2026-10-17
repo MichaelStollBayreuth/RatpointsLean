@@ -685,16 +685,18 @@ and the rows of offsets of the classes (\csource{find_points.c}{4573}{4573},
     lem:examinePrime_none, lem:reversal_swap}
   \lean{Ratpoints.exists_eq_of_findPoints_eq_ok, Ratpoints.perm_flatMap_squares1Dens, Ratpoints.perm_bruteForce_append_flatMap_searchDens, Ratpoints.append_flatMap_searchDens_eq_bruteForce, Ratpoints.eq_bruteForce_of_findPoints_eq_ok_of_reverse_eq_false, List.perm_flatMap_of_nodup}
   \leanok
-  For well-formed parameters and any options, if $\mathrm{findPoints}(c, H, P, o)$ returns the list
-  $L$, and the reversal check hands on the polynomial $c'$ of degree $d'$ with the flag of the
-  reversal: $L$ is the list of the points that the brute-force reference of $c'$ finds over the
-  candidate $(1, 0)$, its points at infinity, followed by those that it finds over the denominators
-  of the search of $c'$ (Definition~\ref{def:searchDens}), in their order, each mapped by
-  $\mathrm{swapPoint}$ when the flag is set. The points of the reference of $c'$ over the candidate
-  $(1, 0)$ and over the denominators of its search are a permutation of
-  $\mathrm{bruteForce}(c', H)$, so that $L$ is a permutation of $\mathrm{bruteForce}(c, H)$
-  (Theorem~\ref{thm:findPoints_perm}), and $L$ is $\mathrm{bruteForce}(c, H)$ when the options
-  forbid the reversal and the search of $c$ does not take the divisors times squares.
+  For well-formed parameters and options with $\mathrm{noCheck}$ false, if
+  $\mathrm{findPoints}(c, H, P, o)$ returns the list $L$, and the reversal check hands on the
+  polynomial $c'$ of degree $d'$ with the flag of the reversal: $L$ is the list of the points that
+  the brute-force reference of $c'$ finds over the candidate $(1, 0)$, its points at infinity,
+  followed by those that it finds over the denominators of the search of $c'$
+  (Definition~\ref{def:searchDens}), in their order, each mapped by $\mathrm{swapPoint}$ when the
+  flag is set, without those with $y < 0$ under $\mathrm{noY}$. The points of the reference of $c'$
+  over the candidate $(1, 0)$ and over the denominators of its search are a permutation of
+  $\mathrm{bruteForce}(c', H)$, so that, with both options of the output off, $L$ is a permutation
+  of $\mathrm{bruteForce}(c, H)$ (Theorem~\ref{thm:findPoints_perm}), and $L$ is
+  $\mathrm{bruteForce}(c, H)$ when also the options forbid the reversal and the search of $c$ does
+  not take the divisors times squares.
 \end{theorem}
 
 \begin{proof}
@@ -716,12 +718,13 @@ and the rows of offsets of the classes (\csource{find_points.c}{4573}{4573},
 \end{proof}
 
 Theorem~\ref{thm:findPoints_perm} states the permutation, and Theorem~\ref{thm:findPoints}
-membership, no duplicates and the set of elements, for every option. The statements that comparator
-certifies are those of stage~D in their text, but for the refusal theorems, which refuse the heights
-of $2^{63}$ or more too since stage~F2 (Theorem~\ref{thm:refusals}); the structure \verb|Params| and
-its well-formedness, which stage~E left as they were, gain the number of primes examined and the
-composite moduli with stage~F1, which changes what those statements quantify over
-(Chapter~\ref{chap:tables}).
+membership with $\mathrm{noCheck}$ false, the set of elements with both options of the output off,
+and no duplicates for every option. The statements that comparator certifies are those of stage~D in
+their text, but for the refusal theorems, which refuse the heights of $2^{63}$ or more too since
+stage~F2 (Theorem~\ref{thm:refusals}), and the challenge's statement of membership, which has the
+options of the output since stage~G; the structure \verb|Params| and its well-formedness, which
+stage~E left as they were, gain the number of primes examined and the composite moduli with
+stage~F1, which changes what those statements quantify over (Chapter~\ref{chap:tables}).
 
 \section{The command-line program and the differential tests}\label{sec:denCli}
 

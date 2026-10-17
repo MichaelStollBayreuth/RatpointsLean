@@ -101,9 +101,9 @@ C: `ratpoints.h:414`
 
 Deviation: a structure with a Boolean for each of the three bits, for the bits of the word `flags`
 of the arguments, which `_ratpoints_check_point` reads through its worker and `find_points_work_1`
-directly; `RATPOINTS_REVERSED` copied from the reversal check (`Ratpoints.Setup.reversal`) and, with
-stage G, the bits `RATPOINTS_NO_CHECK` and `RATPOINTS_NO_Y` from the options of the search
-(`Ratpoints.Options`). -/
+directly; the bits `RATPOINTS_NO_CHECK` and `RATPOINTS_NO_Y` copied from the options of the search
+(`Ratpoints.Options`), and `RATPOINTS_REVERSED` from the reversal check
+(`Ratpoints.Setup.reversal`). -/
 structure CheckFlags where
   /-- `RATPOINTS_REVERSED`: the reversal check has reversed the polynomial. -/
   reversed : Bool := false

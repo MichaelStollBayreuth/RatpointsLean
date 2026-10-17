@@ -81,22 +81,23 @@ are no points modulo $p$ (D) and the options of the output (G) come in their sta
   \uses{def:primeTable, def:barrett}
   \lean{Ratpoints.Params, Ratpoints.Params.WF, Ratpoints.Params.WF.one_lt_of_mem, Ratpoints.Params.WF.prime_of_mem_drop, Ratpoints.Params.WF.exists_getElem!_primeTable_eq_of_mem_drop}
   \leanok
-  The free choices of the sieve: the moduli, in the order of the stages, primes of the table,
-  powers of them and products of such powers; how many primes the loop of the tables examines, the
-  first of the table (Definition~\ref{def:examinePrimes}); the cut points $s_1 \le s_2$, positions
-  in the list of the moduli, which end the first and the second stage (the third stage is the rest
-  of the list); at most how many forbidden divisors are tested; whether the Jacobi test may run;
-  and at most how many bit arrays a piece of the numerators has (Definition~\ref{def:arraySize}).
-  The parameters are \emph{well-formed} when every modulus $m$ has
-  $1 < m < \mathrm{maxPrimeEven}$ (Definition~\ref{def:barrett}) and every divisor $q > 1$ of $m$
-  is divisible by one of the first $\mathrm{numPrimes}$ primes of the table, so that the
-  factorization of $m$ over the table is complete (Definition~\ref{def:modulusFactors},
-  Lemma~\ref{lem:modulusFactors}); when the moduli of the third stage, from the position $s_2$ on,
-  are primes of the table; when at most $\mathrm{numPrimes}$ primes are examined; and when
-  $s_1 \le s_2 \le$ the number of moduli. So the moduli of well-formed parameters are above $1$,
-  and those of the third stage are primes, each one of the first $\mathrm{numPrimes}$ primes of the
-  table, the one that divides it. The table holds no $2$, so an even modulus is never
-  well-formed, as ratpoints offers odd moduli only.
+  The free choices of the sieve: the moduli, in the order of the stages, primes of the table, powers
+  of them and products of such powers; how many primes the loop of the tables examines, the first of
+  the table (Definition~\ref{def:examinePrimes}); the cut points $s_1 \le s_2$, positions in the
+  list of the moduli, which end the first and the second stage (the third stage is the rest of the
+  list); at most how many forbidden divisors are tested; whether the Jacobi test may run; and at
+  most how many bit arrays a piece of the numerators has (Definition~\ref{def:arraySize}). The
+  Jacobi switch stands for the bit \verb|RATPOINTS_NO_JACOBI| of the flags
+  (\csource{ratpoints.h}{406}{406}), on when the bit is clear. The parameters are \emph{well-formed}
+  when every modulus $m$ has $1 < m < \mathrm{maxPrimeEven}$ (Definition~\ref{def:barrett}) and
+  every divisor $q > 1$ of $m$ is divisible by one of the first $\mathrm{numPrimes}$ primes of the
+  table, so that the factorization of $m$ over the table is complete
+  (Definition~\ref{def:modulusFactors}, Lemma~\ref{lem:modulusFactors}); when the moduli of the
+  third stage, from the position $s_2$ on, are primes of the table; when at most
+  $\mathrm{numPrimes}$ primes are examined; and when $s_1 \le s_2 \le$ the number of moduli. So the
+  moduli of well-formed parameters are above $1$, and those of the third stage are primes, each one
+  of the first $\mathrm{numPrimes}$ primes of the table, the one that divides it. The table holds no
+  $2$, so an even modulus is never well-formed, as ratpoints offers odd moduli only.
 \end{definition}
 
 \begin{definition}[The parameters of the executable]\label{def:sieveParams}
@@ -449,10 +450,12 @@ paragraph of the component whose range holds it:
 \end{itemize}
 $\mathrm{findPoints}$ searches every input that it does not refuse (Theorem~\ref{thm:refusals}):
 with the Sturm step off, forms that are not squarefree among them, which ratpoints searches under
-\verb|-s|, and it returns their points, as Theorem~\ref{thm:findPoints} says for every option. The
-points at infinity deliver $(1, 0, 0)$ twice for $c_d = 0$ and even $d$, as the C code would, which
-only the zero polynomial meets: ratpoints refuses it before it gets there, and so does
-$\mathrm{findPoints}$ since stage~D, so that no input reaches it.
+\verb|-s|, and without $\mathrm{noCheck}$ it returns their points, those with $y < 0$ left out under
+$\mathrm{noY}$, as Theorem~\ref{thm:findPoints} says; under $\mathrm{noCheck}$ it returns the
+survivors of the sieve, each with $y = 0$. The points at infinity deliver $(1, 0, 0)$ twice for
+$c_d = 0$ and even $d$, as the C code would, which only the zero polynomial meets: ratpoints refuses
+it before it gets there, and so does $\mathrm{findPoints}$ since stage~D, so that no input reaches
+it.
 
 \section{The theorems}\label{sec:sieveTheorems}
 
@@ -522,25 +525,36 @@ $\mathrm{noY}$, which is what the search needs of it.
   \uses{def:findPoints, def:Params, def:Options, def:IsPoint, def:points}
   \lean{Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok, Ratpoints.nodup_of_findPoints_eq_ok, Ratpoints.toFinset_eq_points_of_findPoints_eq_ok}
   \leanok
-  For well-formed parameters and every option, if $\mathrm{findPoints}(c, H, P, o)$ returns the list
-  $L$, then a triple lies in $L$ if and only if it is a normalized point of height at most $H$, $L$
-  has no duplicates, and its set of elements is $\mathrm{points}(c, H)$.
+  For well-formed parameters, if $\mathrm{findPoints}(c, H, P, o)$ returns the list $L$: for
+  $\mathrm{noCheck}$ false, a triple lies in $L$ if and only if it is a normalized point of height
+  at most $H$, with $y \ge 0$ under $\mathrm{noY}$; $L$ has no duplicates, for every option; and its
+  set of elements is $\mathrm{points}(c, H)$ when both options of the output are off.
 \end{theorem}
 
 \begin{proof}
-  \uses{thm:findPoints_perm, thm:bruteForce}
+  \uses{thm:findPoints_perm, thm:bruteForce, thm:findPoints_order, lem:swapPoint_bijection,
+    lem:findPoints_searchList, lem:noCheckList}
   \leanok
-  $L$ is a permutation of $\mathrm{bruteForce}(c, H)$ (Theorem~\ref{thm:findPoints_perm}), and
-  Theorem~\ref{thm:bruteForce} gives the rest.
+  Without $\mathrm{noCheck}$, $L$ is the list of the reference of the polynomial searched over the
+  denominators of its search, mapped back after a reversal and filtered by $\mathrm{noY}$
+  (Theorem~\ref{thm:findPoints_order}), and that list before the filter is a permutation of
+  $\mathrm{bruteForce}(c, H)$ (Lemma~\ref{lem:swapPoint_bijection}, as in
+  Theorem~\ref{thm:findPoints_perm}), so that Theorem~\ref{thm:bruteForce} gives membership, no
+  duplicates and, with both options of the output off, the set of elements. Under
+  $\mathrm{noCheck}$, $L$ is the list that the search delivers for a sound test
+  (Lemma~\ref{lem:findPoints_searchList}), whose survivors have no duplicates
+  (Lemma~\ref{lem:noCheckList}).
 \end{proof}
 
 \verb|mem_iff_isPoint_of_findPoints_eq_ok| and \verb|nodup_of_findPoints_eq_ok| are the main
 theorems of the project; since stage~D they take the options of \verb|findPoints| as an argument,
-and from stage~H on they take the hypothesis of Sturm's theorem. The reversal of stage~D and the
-divisor order of stage~E change the order of the output, so that the list is that of the reference
-of the polynomial searched over the denominators of its search, in their order, mapped back
-(Theorem~\ref{thm:findPoints_order}), a permutation of the reference
-(Theorem~\ref{thm:findPoints_perm}), and the refusals are those of Theorem~\ref{thm:refusals}.
+membership since stage~G with $\mathrm{noCheck}$ false, and from stage~H on they take the
+hypothesis of Sturm's theorem. The reversal of stage~D and the divisor order of stage~E change the
+order of the output, so that, with $\mathrm{noCheck}$ false, the list is that of the reference of
+the polynomial searched over the denominators of its search, in their order, mapped back and
+filtered by $\mathrm{noY}$ (Theorem~\ref{thm:findPoints_order}), with both options of the output
+off a permutation of the reference (Theorem~\ref{thm:findPoints_perm}), and the refusals are those
+of Theorem~\ref{thm:refusals}.
 Comparator certifies the two main theorems, the refusal theorems of stage~D, which rule out a
 \verb|findPoints| that refuses every input, with or without the Sturm step, and
 \verb|wf_sieveParams|, which rules out a well-formedness that nothing satisfies (it accepted these

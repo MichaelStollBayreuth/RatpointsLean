@@ -24,23 +24,26 @@ The statements come in stage by stage, as `comparator/README.md` lists them: the
 stage B (the brute-force reference finds exactly the points, without duplicates); from stage C1 on,
 the membership and no-duplicates theorems for `Ratpoints.findPoints` for well-formed parameters,
 since stage D for every option, and the well-formedness of every parameter set that the options of
-the program give, which rules out a well-formedness that nothing satisfies; and the refusal theorems
-of stage D, with the Sturm step on (`Ratpoints.findPoints` refuses exactly the inputs with fewer
-than two or more than `Ratpoints.maxDegree + 1` coefficients, the height bound `0` or one of
-`2 ^ 63` or more, which is not a `long`, and the binary forms `Ratpoints.binaryFormPoly c` that are
-not squarefree) and off (it refuses exactly what the program refuses under `-s`, and under `-s -k`
-when the reversal is off), which rule out a `Ratpoints.findPoints` that refuses every input, with or
-without the Sturm step; and the protocol of the delivery of stage G: the search with a callback
-(`Ratpoints.findPointsWith`) refuses what `Ratpoints.findPoints` refuses, and otherwise returns the
-data of the callback and the count of the delivery of the list of `Ratpoints.findPoints` to the
-callback (`Ratpoints.Delivery.deliver`): the calls of the callback for the points of the list in
-their order, up to and including the first that stops the search. `Ratpoints.bruteForce`,
-`Ratpoints.findPoints`, `Ratpoints.findPointsWith`, `Ratpoints.Answer`, `Ratpoints.Delivery`,
-`Ratpoints.Delivery.deliver`, `Ratpoints.Options`, `Ratpoints.Params`, `Ratpoints.Params.WF`,
-`Ratpoints.SieveOptions`, `Ratpoints.sieveParams` and `Ratpoints.maxDegree` come from the model,
-never restated, since a definition of the model elaborates without Mathlib to other instance terms.
-Of Mathlib, the file imports exactly the public imports of `Ratpoints/Spec/Basic.lean`, so that the
-restated definitions elaborate to the same terms as there.
+the program give, which rules out a well-formedness that nothing satisfies; the refusal theorems of
+stage D, with the Sturm step on (`Ratpoints.findPoints` refuses exactly the inputs with fewer than
+two or more than `Ratpoints.maxDegree + 1` coefficients, the height bound `0` or one of `2 ^ 63` or
+more, which is not a `long`, and the binary forms `Ratpoints.binaryFormPoly c` that are not
+squarefree) and off (it refuses exactly what the program refuses under `-s`, and under `-s -k` when
+the reversal is off), which rule out a `Ratpoints.findPoints` that refuses every input, with or
+without the Sturm step; and the theorems of stage G on the options of the output and the protocol of
+the delivery. Since stage G membership holds with the exact check on (`o.noCheck = false`): the list
+of `Ratpoints.findPoints` holds exactly the points, of each pair `(x, ±y, z)` only the one with
+`y ≥ 0` when `o.noY` is set; no duplicates holds for every option, the options of the output among
+them. The search with a callback (`Ratpoints.findPointsWith`) refuses what `Ratpoints.findPoints`
+refuses, and otherwise returns the data of the callback and the count of the delivery of the list of
+`Ratpoints.findPoints` to the callback (`Ratpoints.Delivery.deliver`): the calls of the callback for
+the points of the list in their order, up to and including the first that stops the search.
+`Ratpoints.bruteForce`, `Ratpoints.findPoints`, `Ratpoints.findPointsWith`, `Ratpoints.Answer`,
+`Ratpoints.Delivery`, `Ratpoints.Delivery.deliver`, `Ratpoints.Options`, `Ratpoints.Params`,
+`Ratpoints.Params.WF`, `Ratpoints.SieveOptions`, `Ratpoints.sieveParams` and `Ratpoints.maxDegree`
+come from the model, never restated, since a definition of the model elaborates without Mathlib to
+other instance terms. Of Mathlib, the file imports exactly the public imports of
+`Ratpoints/Spec/Basic.lean`, so that the restated definitions elaborate to the same terms as there.
 -/
 
 @[expose] public section
@@ -81,8 +84,9 @@ theorem challenge_nodup_bruteForce (c : List ℤ) (H : ℕ) : (Ratpoints.bruteFo
   sorry
 
 theorem challenge_mem_iff_isPoint_of_findPoints_eq_ok (c : List ℤ) (H : ℕ) (P : Ratpoints.Params)
-    (o : Ratpoints.Options) (L : List (ℤ × ℤ × ℤ)) (hP : P.WF)
-    (h : Ratpoints.findPoints c H P o = .ok L) (p : ℤ × ℤ × ℤ) : p ∈ L ↔ Ratpoints.IsPoint c H p :=
+    (o : Ratpoints.Options) (L : List (ℤ × ℤ × ℤ)) (hP : P.WF) (hc : o.noCheck = false)
+    (h : Ratpoints.findPoints c H P o = .ok L) (p : ℤ × ℤ × ℤ) :
+    p ∈ L ↔ Ratpoints.IsPoint c H p ∧ (o.noY = true → 0 ≤ p.2.1) :=
   sorry
 
 theorem challenge_nodup_of_findPoints_eq_ok (c : List ℤ) (H : ℕ) (P : Ratpoints.Params)

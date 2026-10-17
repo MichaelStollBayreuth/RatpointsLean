@@ -2309,6 +2309,18 @@
         "Ratpoints.Outcome"
       ]
     },
+    "ratpoints.h:403-405": {
+      "hash": "cbb2c5a3d38218363b4d08190ef7ab96a41c1d699db16b20fd3141777c3caa21",
+      "owners": [
+        "Ratpoints.Options"
+      ]
+    },
+    "ratpoints.h:406-406": {
+      "hash": "d9fbdff32a0ca34f830e4c2eb2bb58925661336ad11db1ecf6302dc420446886",
+      "owners": [
+        "Ratpoints.Params"
+      ]
+    },
     "ratpoints.h:409-411": {
       "hash": "d0908ca3bc24076e1d76bb9c8b0e0f82fdeb24343902853a690ac6ddc0104f2e",
       "owners": [

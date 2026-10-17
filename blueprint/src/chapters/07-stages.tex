@@ -630,14 +630,15 @@ nowhere; and the result of \verb|worker_init|, whether the survivors array could
 \verb|worker_clear|, which frees it, where the model takes a fresh array for each piece and cannot
 fail for lack of memory. The chunked first stage with the legs over the tail of a piece and its
 start pointers, which read \verb|small| and \verb|mod_mul| too, and the ends of the rows in the
-sieve specs, which only it reads, are modelled since stage~F4 (Chapter~\ref{chap:rows}); left to
-stage~G the options of the output \verb|RATPOINTS_NO_Y| and \verb|RATPOINTS_NO_CHECK| of the search,
-which the search is to copy into the flags that the exact check reads; left to stage~H the search
-intervals of the sieving thread and the Sturm step; and left to stage~I the correction of the moduli
-between the blocks, with the counters and the decisions of the sieving thread, the choice of the cut
-points by cost (with the target \verb|RATPOINTS_SURVIVORS_PER_WORD|), the pool of threads, and, with
-the blocks, the reduction of the first word of a block modulo the forbidden divisors tested with
-words, which still divides (\verb|wordBits|), with the reciprocals of these divisors.
+sieve specs, which only it reads, are modelled since stage~F4 (Chapter~\ref{chap:rows}), and the
+options of the output \verb|RATPOINTS_NO_Y| and \verb|RATPOINTS_NO_CHECK| of the search, which the
+search copies into the flags that the exact check reads, since stage~G (Chapter~\ref{chap:output});
+left to stage~H the search intervals of the sieving thread and the Sturm step; and left to stage~I
+the correction of the moduli between the blocks, with the counters and the decisions of the sieving
+thread, the choice of the cut points by cost (with the target \verb|RATPOINTS_SURVIVORS_PER_WORD|),
+the pool of threads, and, with the blocks, the reduction of the first word of a block modulo the
+forbidden divisors tested with words, which still divides (\verb|wordBits|), with the reciprocals of
+these divisors.
 
 \section{Files and names}\label{sec:stagesFiles}
 

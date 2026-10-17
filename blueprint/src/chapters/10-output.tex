@@ -509,23 +509,22 @@ of the delivery with the bits of the flags written back.
   reversal check with the switch of the options (Definition~\ref{def:reversal}), which may refuse
   the form or reverse the polynomial; with the Sturm step on, the refusal when the remainder chain
   of the polynomial searched is $\mathrm{none}$ (Definition~\ref{def:sturmChain}); and otherwise the
-  search of the polynomial handed on, with the flag of the reversal as its flags (the options of the
-  output join it with Section~\ref{sec:outputOptions}), from the data of the caller, the count $0$
-  and the flag of the stop clear, which returns what the search gives back
-  (\csource{find_points.c}{4523}{4528}, \csource{find_points.c}{4546}{4546},
-  \csource{find_points.c}{4557}{4559}, \csource{find_points.c}{4564}{4565},
-  \csource{find_points.c}{4567}{4571}, \csource{find_points.c}{4578}{4585},
-  \csource{find_points.c}{4606}{4606}, \csource{find_points.c}{4624}{4633},
-  \csource{find_points.c}{4658}{4658}, \csource{find_points.c}{4857}{4892},
-  \csource{find_points.c}{5219}{5220}, \csource{find_points.c}{5226}{5229},
-  \csource{find_points.c}{5235}{5235}, \csource{find_points.c}{5241}{5242},
-  \csource{ratpoints.h}{362}{362}, the links of the search for the points until now, and
-  \csource{ratpoints.h}{427}{430}, \csource{ratpoints.h}{436}{437}, \csource{ratpoints.h}{441}{442},
-  the codes of the refusals and the prototypes, and \csource{ratpoints.h}{409}{411}, the mask of the
-  bits of the input that line 4606 keeps). The search for the points
-  (Definition~\ref{def:findPoints}) becomes its instance with the appending callback from the empty
-  array, the list of the array that it returns, or its refusal; it models no C code and holds no C
-  range.
+  search of the polynomial handed on, with the flag of the reversal and the options of the output of
+  the options as its flags, from the data of the caller, the count $0$ and the flag of the stop
+  clear, which returns what the search gives back (\csource{find_points.c}{4523}{4528},
+  \csource{find_points.c}{4546}{4546}, \csource{find_points.c}{4557}{4559},
+  \csource{find_points.c}{4564}{4565}, \csource{find_points.c}{4567}{4571},
+  \csource{find_points.c}{4578}{4585}, \csource{find_points.c}{4606}{4606},
+  \csource{find_points.c}{4624}{4633}, \csource{find_points.c}{4658}{4658},
+  \csource{find_points.c}{4857}{4892}, \csource{find_points.c}{5219}{5220},
+  \csource{find_points.c}{5226}{5229}, \csource{find_points.c}{5235}{5235},
+  \csource{find_points.c}{5241}{5242}, \csource{ratpoints.h}{362}{362}, the links of the search for
+  the points until now, and \csource{ratpoints.h}{427}{430}, \csource{ratpoints.h}{436}{437},
+  \csource{ratpoints.h}{441}{442}, the codes of the refusals and the prototypes, and
+  \csource{ratpoints.h}{409}{411}, the mask of the bits of the input that line 4606 keeps). The
+  search for the points (Definition~\ref{def:findPoints}) becomes its instance with the appending
+  callback from the empty array, the list of the array that it returns, or its refusal; it models no
+  C code and holds no C range.
 \end{definition}
 
 The theorems of the search speak about the list of the points that it delivers for a test of the
@@ -618,13 +617,16 @@ relates the output under \verb|RATPOINTS_NO_CHECK| to the points.
   For well-formed parameters, if $\mathrm{findPoints}(c, H, P, o)$ returns the list $L$, then the
   reversal check hands on a polynomial $c'$ of positive degree with the flag $\mathrm{rev}$ of the
   reversal, $1 \le H$, and there is a sound test $S$ such that $L$ is the list of the points that
-  the search of $c'$ delivers for $S$ (Definition~\ref{def:searchList}) with the flag
-  $\mathrm{rev}$ of the reversal as its flags.
+  the search of $c'$ delivers for $S$ (Definition~\ref{def:searchList}) with the flags
+  $\mathrm{rev}$, $\mathrm{noCheck}$ and $\mathrm{noY}$ of $o$, and such that, for every choice of
+  the options of the output with the other options unchanged, $\mathrm{findPoints}$ returns the
+  list for $S$ with those flags.
 \end{lemma}
 
 \begin{proof}
   \leanok
-  Lemma~\ref{lem:searchList} for the polynomial handed on, with the appending callback.
+  Lemma~\ref{lem:searchList} for the polynomial handed on, with the appending callback; the test
+  does not depend on the flags.
 \end{proof}
 
 \section{The options of the output}\label{sec:outputOptions}

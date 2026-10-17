@@ -79,6 +79,9 @@ curve (`Ratpoints.Sieve.swapPoint`) is a bijection between the points of height 
 * `Ratpoints.Sieve.isPoint_swapPoint`, `Ratpoints.Sieve.perm_map_swapPoint_bruteForce`: the map of
   a reversed search sends the points of the reversed curve to points of the caller's curve, and the
   brute-force reference of the one, mapped, is a permutation of that of the other.
+* `Ratpoints.IsNormalizedPair.swapPoint`, `Ratpoints.Sieve.swapPoint_inj`: the map keeps the pairs
+  `(x, z)` of normalized points of height at most `H` (`Ratpoints.IsNormalizedPair`), with or
+  without the equation, and it is injective on the normalized triples.
 -/
 
 @[expose] public section
@@ -537,33 +540,62 @@ theorem Sturm.run_chain_eq_none_iff_of_reversal_eq_ok {allow rev : Bool} {c c' :
 
 /-! ### The map of a reversed search -/
 
+/-- The pair `(x, z)` of a normalized point of height at most `H`, the conditions of
+`Ratpoints.IsPoint` other than its equation: `x` prime to `z`, `z > 0` or `(x, z) = (1, 0)`, and
+`|x| ≤ H`, `z ≤ H`. Under `RATPOINTS_NO_CHECK` the search delivers the triples `(x, 0, z)` of such
+pairs (`Ratpoints.exists_eq_of_mem_searchList_of_noCheck`). -/
+def IsNormalizedPair (H : ℕ) (x z : ℤ) : Prop :=
+  Int.gcd x z = 1 ∧ (0 < z ∨ z = 0 ∧ x = 1) ∧ |x| ≤ H ∧ z ≤ H
+
 namespace Sieve
 
-theorem swapPoint_swapPoint_of_isPoint {c : List ℤ} {H : ℕ} {q : ℤ × ℤ × ℤ}
-    (hq : IsPoint c H q) : swapPoint (swapPoint q) = q := by
+/-- The map of the reversal is an involution on the triples `(x, y, z)` with `z > 0` or
+`(x, z) = (1, 0)`, among them the normalized points. -/
+theorem swapPoint_swapPoint {q : ℤ × ℤ × ℤ} (hn : 0 < q.2.2 ∨ q.2.2 = 0 ∧ q.1 = 1) :
+    swapPoint (swapPoint q) = q := by
   obtain ⟨a, y, b⟩ := q
-  obtain ⟨-, -, hn, -, -⟩ := hq
   dsimp only at hn
   simp only [swapPoint]
   split_ifs <;> simp_all <;> lia
 
-/-- A point of a curve whose binary form is that of `c` with `x` and `z` exchanged gives a point of
-the curve of `c`: since the degree of `Ratpoints.binaryForm` is even, `F(-x, -z) = F(x, z)`. -/
-theorem isPoint_swapPoint {c c' : List ℤ} (hsw : ∀ x z, binaryForm c' x z = binaryForm c z x)
-    {H : ℕ} {q : ℤ × ℤ × ℤ} (hq : IsPoint c' H q) : IsPoint c H (swapPoint q) := by
+/-- The map of the reversal is injective on the triples `(x, y, z)` with `z > 0` or
+`(x, z) = (1, 0)` (`Ratpoints.Sieve.swapPoint_swapPoint`). -/
+theorem swapPoint_inj {q q' : ℤ × ℤ × ℤ} (hn : 0 < q.2.2 ∨ q.2.2 = 0 ∧ q.1 = 1)
+    (hn' : 0 < q'.2.2 ∨ q'.2.2 = 0 ∧ q'.1 = 1) : swapPoint q = swapPoint q' ↔ q = q' :=
+  ⟨fun h ↦ by rw [← swapPoint_swapPoint hn, h, swapPoint_swapPoint hn'],
+    fun h ↦ congr(swapPoint $h)⟩
+
+end Sieve
+
+/-- The map of the reversal keeps the pairs `(x, z)` of normalized points of height at most `H`:
+it exchanges `x` and `z`, negating both for `x < 0`. -/
+theorem IsNormalizedPair.swapPoint {H : ℕ} {q : ℤ × ℤ × ℤ} (h : IsNormalizedPair H q.1 q.2.2) :
+    IsNormalizedPair H (Sieve.swapPoint q).1 (Sieve.swapPoint q).2.2 := by
   obtain ⟨a, y, b⟩ := q
-  obtain ⟨hy, hg, hn, ha, hb⟩ := hq
-  dsimp only at hy hg hn ha hb
-  rw [hsw] at hy
-  simp only [swapPoint]
+  obtain ⟨hg, hn, ha, hb⟩ := h
+  dsimp only at hg hn ha hb
+  simp only [Sieve.swapPoint]
   split_ifs with h0
-  · refine ⟨hy, by rwa [Int.gcd_comm], ?_, by grind, by grind⟩
+  · refine ⟨by rwa [Int.gcd_comm], ?_, by grind, by grind⟩
     rcases h0.lt_or_eq with h0 | rfl
     · exact .inl h0
     · rw [Int.gcd_zero_left] at hg
       exact .inr ⟨rfl, by lia⟩
-  · exact ⟨by rwa [binaryForm_neg_neg], by simpa [Int.gcd_comm] using hg, .inl (by lia), by grind,
-      by grind⟩
+  · exact ⟨by simpa [Int.gcd_comm] using hg, .inl (by lia), by grind, by grind⟩
+
+namespace Sieve
+
+/-- A point of a curve whose binary form is that of `c` with `x` and `z` exchanged gives a point of
+the curve of `c`: since the degree of `Ratpoints.binaryForm` is even, `F(-x, -z) = F(x, z)`, and
+the map keeps the normalized pairs (`Ratpoints.IsNormalizedPair.swapPoint`). -/
+theorem isPoint_swapPoint {c c' : List ℤ} (hsw : ∀ x z, binaryForm c' x z = binaryForm c z x)
+    {H : ℕ} {q : ℤ × ℤ × ℤ} (hq : IsPoint c' H q) : IsPoint c H (swapPoint q) := by
+  refine ⟨?_, IsNormalizedPair.swapPoint hq.2⟩
+  obtain ⟨a, y, b⟩ := q
+  have hy : y ^ 2 = binaryForm c b a := hq.1.trans (hsw a b)
+  simp only [swapPoint]
+  split_ifs
+  exacts [hy, by rwa [binaryForm_neg_neg]]
 
 -- A list of the points of a curve whose binary form is that of `c` with `x` and `z` exchanged,
 -- mapped by `Ratpoints.Sieve.swapPoint`, is a list of the points of `c`.
@@ -571,7 +603,7 @@ private theorem mem_map_swapPoint_iff {c c' : List ℤ}
     (hsw : ∀ x z, binaryForm c' x z = binaryForm c z x) {H : ℕ} {L : List (ℤ × ℤ × ℤ)}
     (hL : ∀ q, q ∈ L ↔ IsPoint c' H q) {p : ℤ × ℤ × ℤ} :
     p ∈ L.map swapPoint ↔ IsPoint c H p := by
-  refine ⟨fun h ↦ ?_, fun h ↦ List.mem_map.mpr ⟨_, (hL _).mpr ?_, swapPoint_swapPoint_of_isPoint h⟩⟩
+  refine ⟨fun h ↦ ?_, fun h ↦ List.mem_map.mpr ⟨_, (hL _).mpr ?_, swapPoint_swapPoint h.2.2.1⟩⟩
   · obtain ⟨q, hq, rfl⟩ := List.mem_map.mp h
     exact isPoint_swapPoint hsw ((hL q).mp hq)
   · exact isPoint_swapPoint (fun x z ↦ (hsw z x).symm) h
@@ -584,9 +616,8 @@ theorem perm_map_swapPoint_bruteForce {c c' : List ℤ}
     (hsw : ∀ x z, binaryForm c' x z = binaryForm c z x) (H : ℕ) :
     ((bruteForce c' H).map swapPoint).Perm (bruteForce c H) :=
   List.perm_map_of_nodup (nodup_bruteForce c' H) (nodup_bruteForce c H)
-    (fun x hx y hy hxy ↦ by
-      rw [← swapPoint_swapPoint_of_isPoint (mem_bruteForce_iff.mp hx),
-        ← swapPoint_swapPoint_of_isPoint (mem_bruteForce_iff.mp hy), hxy])
+    (fun x hx y hy ↦ (swapPoint_inj (mem_bruteForce_iff.mp hx).2.2.1
+      (mem_bruteForce_iff.mp hy).2.2.1).mp)
     fun q ↦ by rw [mem_bruteForce_iff, ← List.mem_map, mem_map_swapPoint_iff hsw fun _ ↦
       mem_bruteForce_iff]
 

@@ -234,12 +234,15 @@ filtering an explicit box with the bound $\max |F_c|$ for $|y|$, would avoid the
 is not needed.) The specification can be restated because it is elaborated with Mathlib, as the
 challenge is; a definition of the model, elaborated without Mathlib, has other instance terms and is
 always imported, never restated. Since stage~C1 the challenge also states membership and no
-duplicates for \verb|findPoints| for well-formed parameters, since stage~D for every option, and
+duplicates for \verb|findPoints| for well-formed parameters, since stage~D for every option,
+membership since stage~G for $\mathrm{noCheck}$ false, with $y \ge 0$ under $\mathrm{noY}$, and
 \verb|wf_sieveParams|, and since stage~D the refusal theorems with the Sturm step on and off
 (Theorem~\ref{thm:refusals}), which since stage~F2 also refuse the heights of $2^{63}$ or more, over
 \verb|findPoints|, \verb|Options|, \verb|Params|, \verb|Params.WF|, \verb|SieveOptions|,
-\verb|sieveParams| and \verb|maxDegree|, imported from the model (Section~\ref{sec:sieveTheorems});
-for \verb|Squarefree| the challenge and the specification import
+\verb|sieveParams| and \verb|maxDegree|, imported from the model (Section~\ref{sec:sieveTheorems}),
+and since stage~G the protocol of the delivery (Theorem~\ref{thm:protocol}), over
+\verb|findPointsWith|, \verb|Answer|, \verb|Delivery| and \verb|Delivery.deliver|; for
+\verb|Squarefree| the challenge and the specification import
 \verb|Mathlib.Algebra.Squarefree.Basic|, so that the challenge still imports exactly the public
 imports of the specification.
 
