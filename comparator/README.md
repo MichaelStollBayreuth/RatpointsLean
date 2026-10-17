@@ -81,7 +81,9 @@ the count of `Delivery.deliver` of the list of `findPoints` to the callback, its
 points in their order up to and including the first that stops the search. And it adds the order
 theorem, `challenge_eq_orderedPoints_of_findPoints_eq_ok`, which `challenges.json` lists too: with
 the exact check on, the list of `findPoints` is that of `orderedPoints`, the points in the order of
-ratpoints, with the model's bound `maxDivisors` on the number of divisors, filtered by `o.noY`.
+ratpoints, with the model's bound `maxDivisors` on the number of divisors, filtered by `o.noY`. So
+`challenges.json` lists twelve statements, five of them new with stage G; on 2026-10-17
+`lake comparator --paranoid` accepted all twelve, with Lean's kernel and the five external checkers.
 
 ## Running
 

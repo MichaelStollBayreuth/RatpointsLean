@@ -166,7 +166,8 @@ data gives, besides the bits of the flags written back, the data and the count o
 (`Ratpoints.Delivery.deliver`) of the list that `Ratpoints.findPoints` returns, from the data, the
 count `0` and the flag of the stop clear, and it refuses the same inputs with the same errors: the
 calls of the callback are those of the points of that list, in its order, up to and including the
-first that stops the search (`Ratpoints.run_searchPoints_eq_deliver`). -/
+first that stops the search (`Ratpoints.run_searchPoints_eq_deliver`); comparator certifies this
+(`comparator/Challenge.lean`). -/
 theorem map_findPointsWith_eq_map_findPoints {P : Params} (hP : P.WF) (c : List ℤ) (H : ℕ)
     (o : Options) {σ : Type} (process : ℤ → ℤ → ℤ → σ → Answer σ) (info : σ) :
     (findPointsWith c H P o process info).map (fun out ↦ (out.info, out.total)) =

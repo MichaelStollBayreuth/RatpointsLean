@@ -17,8 +17,10 @@ This blueprint describes a Lean~4 development that verifies it in four parts:
     and differential tests that run the model and the C program on the same inputs.
 \end{enumerate}
 Lean has no semantics of C, so the last part is a record and a test, not a proof. What one has to
-read and trust is the specification, the fact that the executable runs the model, and, until
-Mathlib has Sturm's theorem, the statement of it that the theorems about the Sturm step assume.
+read and trust is the specification, with the reference of the delivery of the model, a fold of a
+few lines, of which the protocol of the callback speaks (Theorem~\ref{thm:protocol}), the fact that
+the executable runs the model, and, until Mathlib has Sturm's theorem, the statement of it that the
+theorems about the Sturm step assume.
 The main theorems are certified by \href{https://github.com/leanprover/comparator}{Comparator},
 which checks the proofs of the library against statements written down separately, over a
 verbatim copy of the specification, with the standard axioms only
@@ -66,7 +68,10 @@ that lists the components of the stage with their contracts and proposed names:
   \item[F4] the first stage in chunks of bit arrays as the default build compiles it, and the rows
     as the builders of ratpoints lay them out and its sieve entries keep them
     (Chapter~\ref{chap:rows});
-  \item[G] the order of the output and the callback protocol;
+  \item[G] the delivery of the points to the callback of the caller, with its stops, the options of
+    the output and the flags written back; the order of the output in terms of the polynomial; and
+    the callback, the formats and the report of the command-line program
+    (Chapter~\ref{chap:output});
   \item[H] the search region and the Sturm step, with Sturm's theorem as a hypothesis;
   \item[I] the blocks of the loop over the denominators, with the threads and the correction of the
     moduli between them, and the C program's choice of the sieving parameters by the curve.

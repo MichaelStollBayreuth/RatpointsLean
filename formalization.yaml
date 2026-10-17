@@ -13,7 +13,8 @@ project:
     The model mirrors the hardware-independent structure of the C code function by function (the
     same loops, tables, bit arrays of 64-bit words and index arithmetic); the proofs are to show
     that, for every well-formed choice of the sieving parameters, it returns exactly the normalized
-    points of height at most H, without duplicates, and refuses exactly the inputs that the C
+    points of height at most H, without duplicates, in the order of the C program, delivered to the
+    callback of the caller as the C code delivers them, and refuses exactly the inputs that the C
     program refuses in a default run (fewer than two or more than maxDegree + 1 = 101
     coefficients, H = 0 or H >= 2^63, a height that is not a C long, and a binary form that is not
     squarefree); a correspondence record and differential tests link the model to the C code.
@@ -57,7 +58,7 @@ classification:
 # project status
 status:
   scope: >
-    Stages A, B, C1, C2, D, E and F, the last in its four sub-stages F1 to F4. Stage A set up the
+    Stages A, B, C1, C2, D, E, F, in its four sub-stages F1 to F4, and G. Stage A set up the
     Lake project with the libraries of the model (Lean core and Std only), the specification and the
     proofs, the CI, the blueprint, the correspondence record with its checking script, and the
     comparator harness, and settled the specification in the blueprint. Stage B: the specification
@@ -200,10 +201,46 @@ status:
     tables of rows fits the entries of the run, so the output, the main theorems, the refusal
     theorems, the statements for comparator, the parameters and their well-formedness do not change;
     the differential tests agree as before (3315 comparisons in the default suites and 13 in the
-    suite run locally). Next: the later stages that the introduction of the blueprint lists (the
-    order and protocol, the search region and the Sturm step, the blocks of the loop over the
-    denominators with the threads and the correction of the moduli, and the choice of the sieving
-    parameters by the curve).
+    suite run locally). Stage G: the delivery of the points to the callback of the caller as the C
+    code has it: the callback with the caller's data, the value that each call returns, added to the
+    count, and the stop that it may request, threaded with a delivery (the data, the count and the
+    flag of the stop) through the components that the C code passes process and info through, the
+    flag tested where the C code tests quit, in the exact check and at infinity between the calls
+    with +y and -y, in the walk after each check, after each bit array, piece and denominator, and
+    after the points at infinity, where the search returns before it sieves; the points at infinity
+    delivered call by call as the C code delivers them; the sieving split off the search, and each
+    arm of the extraction a function of its own; the search with a callback findPointsWith, with
+    findPoints its instance with the callback that appends each point to an array, so that it
+    returns the list of before when neither option of the output is set; the options of the output
+    RATPOINTS_NO_CHECK and RATPOINTS_NO_Y as fields of the options, copied into the flags of the
+    check; and the bits of the flags that the program reads after the search written back. The
+    contracts on the delivery, proved with the program logic of Lean core in the files of the
+    contracts they replace, give the protocol: for well-formed parameters, the search with any
+    callback gives the data and the count of the reference of the delivery, a fold over the list of
+    findPoints up to the first call that stops the search, and refuses exactly what findPoints
+    refuses. The specification gains a file with the order in which ratpoints finds the points (the
+    points at infinity of the polynomial searched, then its denominators in the order of the loop of
+    the search, ascending but for the divisors of the leading coefficient in the order of binary
+    counting over its primes, the numerators ascending, +y before -y, mapped back after a reversal),
+    and the order theorem says that findPoints returns that list, filtered by RATPOINTS_NO_Y, when
+    RATPOINTS_NO_CHECK is clear; under RATPOINTS_NO_CHECK it returns the triples (x, 0, z) of
+    normalized pairs of height at most H that survive the sieve, each once, among them those of all
+    the points. The statements for comparator are twelve: membership with RATPOINTS_NO_CHECK clear
+    and y >= 0 under RATPOINTS_NO_Y, no duplicates for every option, the two theorems of the
+    brute-force reference, both refusal theorems and the well-formedness of the parameters of the
+    program, and, new, the order theorem over the file of the order, restated verbatim, three
+    statements under RATPOINTS_NO_CHECK and the protocol; comparator accepted all twelve on
+    2026-10-17. ratpoints-lean runs the search with a callback, with the callback of main.c, and
+    reads the options of the output of main.c (-x -X -y -Y -z -Z -1 -i -I and the formats and
+    strings of -f -fs -fm -fe), with the report that main.c prints without -q but for the messages
+    on the search region, the search intervals and the moduli used; a theorem says what it prints,
+    in particular that -1 prints the first point of the list that -i keeps; and the differential
+    tests compare the reports exactly, with the banner exchanged, -x exactly against the C program
+    with the moduli pinned, and the searches that a stop ends at the height 10^12 (3784 comparisons
+    in the default suites and 13 in the suite run locally). Next: the later stages that the
+    introduction of the blueprint lists (the search region and the Sturm step, the blocks of the
+    loop over the denominators with the threads and the correction of the moduli, and the choice of
+    the sieving parameters by the curve).
   sorry_count: 0
   sorry_in_definitions: 0
   axioms: ["propext", "Classical.choice", "Quot.sound"]
@@ -240,6 +277,31 @@ status:
       comparator_config: "comparator/challenges.json"
     - declaration: "Ratpoints.wf_sieveParams"
       file: "Ratpoints/Proof/Params.lean"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: "comparator/challenges.json"
+    - declaration: "Ratpoints.eq_orderedPoints_of_findPoints_eq_ok"
+      file: "Ratpoints/Proof/Output.lean"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: "comparator/challenges.json"
+    - declaration: "Ratpoints.exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck"
+      file: "Ratpoints/Proof/Output.lean"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: "comparator/challenges.json"
+    - declaration: "Ratpoints.mem_of_isPoint_of_findPoints_eq_ok_of_noCheck"
+      file: "Ratpoints/Proof/Output.lean"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: "comparator/challenges.json"
+    - declaration: "Ratpoints.map_sublist_of_findPoints_eq_ok_of_noCheck"
+      file: "Ratpoints/Proof/Output.lean"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: "comparator/challenges.json"
+    - declaration: "Ratpoints.map_findPointsWith_eq_map_findPoints"
+      file: "Ratpoints/Proof/Output.lean"
       sorry_count: 0
       axioms: ["propext", "Classical.choice", "Quot.sound"]
       comparator_config: "comparator/challenges.json"
@@ -292,7 +354,11 @@ fidelity:
     threads are replaced by the sequential order of the blocks; the heuristics that choose the
     sieving parameters by the curve are not modelled yet (stage I), since the theorems quantify over
     every well-formed choice; the parameters of the command line follow the counting rules of
-    ratpoints where these do not depend on the curve; the search intervals have exact rational ends.
+    ratpoints where these do not depend on the curve; the search intervals have exact rational ends;
+    the callback is a Lean function that takes the coordinates and the caller's data and returns its
+    value, whether it stops the search, and the new data, for the C function with the pointers info
+    and quit; and until the blocks of stage I the model lists the denominators of a shape before it
+    sieves the first one, all of them, also those after a stop.
     Where the library function find_points and the command-line program differ (the order of the
     checks on the input), the model follows the program. Each deviation is recorded with its
     component in the correspondence record.
@@ -336,7 +402,8 @@ alignment:
         F4 (both arms of the first stage with the chunk of the default build, the rows built by the
         builders of the C code and kept in the tables of rows of its entries), every well-formed
         choice of the sieving parameters, the array size of the pieces included, and every value of
-        the options, membership with RATPOINTS_NO_CHECK clear and y >= 0 under RATPOINTS_NO_Y
+        the options, the delivery to the callback of stage G included, membership with
+        RATPOINTS_NO_CHECK clear and y >= 0 under RATPOINTS_NO_Y
         (Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok, Ratpoints.nodup_of_findPoints_eq_ok),
         certified by comparator, through the reference of the polynomial searched
         (Ratpoints.exists_eq_of_findPoints_eq_ok) and, with both options of the output off, the
@@ -353,16 +420,50 @@ alignment:
         refusals of the C program under -s
         (Ratpoints.exists_findPoints_eq_error_iff_of_sturm_neg), both certified by comparator
     - source: "the order of the output"
-      lean: "Ratpoints.exists_eq_of_findPoints_eq_ok"
+      lean: "Ratpoints.eq_orderedPoints_of_findPoints_eq_ok"
       module: "Ratpoints.Proof.Output"
       status: "partially-formalized"
       note: >
-        the list of Ratpoints.findPoints is the list of the points at infinity followed by the
-        points of the brute-force reference of the polynomial searched over the denominators in
-        the order of the loop of its search (Ratpoints.searchDens), mapped back after a reversal,
-        which the differential tests compare with the order of the C program on every point list;
-        the order spelled out in terms of the polynomial and the protocol of the output come with
-        stage G
+        with RATPOINTS_NO_CHECK clear, the list of Ratpoints.findPoints is Ratpoints.orderedPoints
+        (Ratpoints.Spec.Order: the points at infinity of the polynomial searched, then its
+        denominators in the order of the loop of the search, ascending but for the divisors of the
+        leading coefficient in the order of binary counting over its primes, the numerators
+        ascending and +y before -y, mapped back after a reversal), filtered by RATPOINTS_NO_Y,
+        certified by comparator, and the differential tests compare it with the order of the C
+        program on every point list; the search region of stage H, which the model does not have
+        yet, restricts the list
+    - source: "the callback protocol of find_points: process, info, quit and the count"
+      lean: "Ratpoints.map_findPointsWith_eq_map_findPoints"
+      module: "Ratpoints.Proof.Output"
+      status: "formalized"
+      note: >
+        for well-formed parameters and every option, Ratpoints.findPointsWith with any callback and
+        its data gives the data and the count of Ratpoints.Delivery.deliver, the calls of the
+        callback for the points of the list of Ratpoints.findPoints in their order up to and
+        including the first that stops the search, and refuses exactly what Ratpoints.findPoints
+        refuses, with the same errors; certified by comparator
+    - source: "RATPOINTS_NO_CHECK: the survivors of the sieve, delivered with y = 0"
+      lean: "Ratpoints.exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck"
+      module: "Ratpoints.Proof.Output"
+      status: "formalized"
+      note: >
+        under RATPOINTS_NO_CHECK every element of the list is (x, 0, z) for a normalized pair (x, z)
+        of height at most H (Ratpoints.exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck), every
+        point (x, y, z) gives the element (x, 0, z)
+        (Ratpoints.mem_of_isPoint_of_findPoints_eq_ok_of_noCheck), and the list of the search with
+        the exact check and RATPOINTS_NO_Y, with y replaced by 0, is a sublist of it
+        (Ratpoints.map_sublist_of_findPoints_eq_ok_of_noCheck); all three certified by comparator
+    - source: "what the command-line program prints"
+      lean: "Ratpoints.Cli.run_eq_of_findPointsWith_eq_ok"
+      module: "Ratpoints.Proof.Cli"
+      status: "formalized"
+      note: >
+        the head of the report, the string before the points, the points that the callback of the
+        program counts (all but those at infinity under -i, and of these only the first under -1)
+        in the format, joined by the string between them, none under -z, the string after them and
+        the end of the report with their number as its count
+        (Ratpoints.Cli.total_eq_of_findPointsWith_eq_ok); under -q only the strings and the points
+        (Ratpoints.Cli.run_eq_of_findPoints_eq_ok); not certified by comparator
     - source: "the Sturm step covers every real point where F >= 0"
       lean: ""
       module: ""

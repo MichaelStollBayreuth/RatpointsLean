@@ -102,7 +102,29 @@ words, as `examine_power` fills them, and the forbidden divisors among the first
 of the table read their words from `sieves0`. The rows that the builders build are the closed forms
 of the admission tests, proved for every value of the chunk, so the output, the main theorems, the
 refusal theorems, the challenge of Comparator, the parameters and their well-formedness do not
-change. The blueprint and the API documentation will be at
+change. Stage G is done: the delivery of the points as the C code has it. The search hands each
+point to a callback of the caller with the caller's data, adds up the values that the calls return
+and stops when a call asks it to: the callback and the delivery are threaded through the components
+that the C code passes `process` and `info` through, and the stop is tested where the C code tests
+`quit`, so that `ratpoints-lean '1 0 1' 1000000000000 -q -1` returns at once after the point at
+infinity, as ratpoints does. `findPointsWith` is the search with a callback, and `findPoints` its
+instance with a callback that appends each point to an array and never stops the search. The options
+of the output of the library, `RATPOINTS_NO_CHECK` and `RATPOINTS_NO_Y`, are fields of the options,
+and the bits of the flags that the program reads after the search are written back. A new file of
+the specification states the order in which ratpoints finds the points: the points at infinity of
+the polynomial searched first, then its denominators in the order of the loop of the search,
+ascending but for the divisors of the leading coefficient in the order of binary counting over its
+primes, the numerators ascending and the point with `y > 0` before that with `y < 0`, mapped back
+after a reversal; a theorem says that `findPoints` returns that list. The challenge of Comparator
+restates that file and has twelve statements: membership now holds with `RATPOINTS_NO_CHECK` clear
+and gives `y ≥ 0` under `RATPOINTS_NO_Y`; no duplicates, the refusal theorems and the
+well-formedness of the parameters of the program keep their text; and the order theorem, three
+statements on the output under `RATPOINTS_NO_CHECK` and the protocol of the delivery, by which the
+search with any callback gives the data and the count of the delivery of the list of `findPoints`,
+up to the first stop, are new. `ratpoints-lean` runs the search with the callback of the `main.c` of
+ratpoints, with its options of the output, formats, strings and report, and a theorem says what it
+prints; the differential tests compare the reports exactly: 3784 comparisons in the default suites
+and 13 in the suite run locally. The blueprint and the API documentation will be at
 <https://michaelstollbayreuth.github.io/RatpointsLean/> once the repository is public.
 
 ## Layout

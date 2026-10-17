@@ -550,14 +550,17 @@ set; Lemma~\ref{lem:searchList} rests on it, with what the search hands to the r
 has membership with $\mathrm{noCheck}$ false and the set of elements with both options of the output
 off, from Theorem~\ref{thm:findPoints_order} and the permutation, and no duplicates for every
 option; Theorem~\ref{thm:refusals} has the refusals; both have guards on their axioms. Comparator
-certifies the two main theorems with the options argument, both refusal theorems and
-\verb|wf_sieveParams|; the challenge restates $\Phi_c$ verbatim, as it restates $F_c$, takes the
-options from the model, and has the refusal theorem with the Sturm step off too, so that a
-$\mathrm{findPoints}$ that refused every input under \verb|-s| would not pass. Since the challenge
-needs \verb|Squarefree|, the specification imports \verb|Mathlib.Algebra.Squarefree.Basic|, so that
-the challenge still imports, besides the model, exactly the public imports of the specification.
-Stage~D left the structure \verb|Params| and its well-formedness as stage~C2 had them; stage~F1 adds
-the number of primes examined and the composite moduli (Chapter~\ref{chap:tables}).
+certifies the two main theorems with the options argument, membership since stage~G with
+$\mathrm{noCheck}$ false, both refusal theorems and \verb|wf_sieveParams|, and, since stage~G, the
+order theorem, the three statements under $\mathrm{noCheck}$ and the protocol, by which the search
+with a callback refuses exactly what $\mathrm{findPoints}$ refuses (Section~\ref{sec:certifiedG});
+the challenge restates $\Phi_c$ verbatim, as it restates $F_c$, takes the options from the model,
+and has the refusal theorem with the Sturm step off too, so that a $\mathrm{findPoints}$ that
+refused every input under \verb|-s| would not pass. Since the challenge needs \verb|Squarefree|, the
+specification imports \verb|Mathlib.Algebra.Squarefree.Basic|, so that the challenge still imports,
+besides the model, exactly the public imports of the specification. Stage~D left the structure
+\verb|Params| and its well-formedness as stage~C2 had them; stage~F1 adds the number of primes
+examined and the composite moduli (Chapter~\ref{chap:tables}).
 
 \section{The command-line program and the differential tests}\label{sec:setupCli}
 
@@ -654,8 +657,9 @@ library can fail, and the threads; so the record of \verb|find_points_work_1| up
 only what belongs to stages~H and~I, now that stages~E, F1, F2, F3 and~F4 have recorded their lines
 (Chapters~\ref{chap:denominators}, \ref{chap:tables}, \ref{chap:stages}, \ref{chap:packing}
 and~\ref{chap:rows}, the last with the exclusions of the buffers of the tables and of the functions
-that set them up and free them, Section~\ref{sec:rowsDeviations}). The macros of the flags and of
-the return codes in \verb|ratpoints.h| are recorded later, for all stages together.
+that set them up and free them, Section~\ref{sec:rowsDeviations}). Stage~G records the macros of
+the flags and of the return codes in \verb|ratpoints.h| (Chapter~\ref{chap:output}), but for
+\verb|RATPOINTS_NO_REVERSE_AUTO|, which belongs to the search region of stage~H.
 
 \section{Files and names}
 

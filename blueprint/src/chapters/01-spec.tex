@@ -249,7 +249,10 @@ instance and the decidability instance of \verb|IsPoint|, restated verbatim, and
 imported from the model; for \verb|Squarefree| the challenge and the specification import
 \verb|Mathlib.Algebra.Squarefree.Basic|, and for the prime factors the challenge and the file of the
 order \verb|Mathlib.Data.Nat.Factors|, so that the challenge still imports exactly the public
-imports of the specification.
+imports of the specification. So the challenge has twelve statements (Section~\ref{sec:certifiedG}),
+which \verb|lake comparator --paranoid| accepted on 2026-10-17, with Lean's kernel and the five
+external checkers bundled with Lean; Section~\ref{sec:sieveTheorems} records the earlier
+acceptances.
 
 \section{The command-line program}\label{sec:cli}
 
