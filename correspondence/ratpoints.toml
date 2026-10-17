@@ -560,6 +560,12 @@ reason = "the release of the GMP integer fff at the end of read_input"
 
 [[excluded]]
 file = "main.c"
+lines = "977-978"
+kind = "other"
+reason = "the text of message 1, the banner and the usage, which main prints only when read_input returns a value other than 0, which it never does: its only return is at line 691, and every other failure exits through error"
+
+[[excluded]]
+file = "main.c"
 lines = "1048"
 kind = "interface"
 reason = "the message of error 9, which the program gives for a code of the library that only inputs it never passes can cause"

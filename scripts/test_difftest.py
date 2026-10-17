@@ -54,7 +54,9 @@ class Outputs(unittest.TestCase):
 
     def test_agrees(self):
         cfg = SimpleNamespace(lean_usage='\nThis is ratpoints-lean-0.1\nUsage: L\n',
-                              c_usage='\nThis is ratpoints-3.1.1\nUsage: C\n')
+                              c_usage='\nThis is ratpoints-3.1.1\nUsage: C\n',
+                              lean_banner='This is ratpoints-lean-0.1\n\nLean\n\n',
+                              c_banner='This is ratpoints-3.1.1\n\nC\n\n')
         error6 = '\nWrong syntax for optional arguments:\n\n'
         self.assertTrue(dt.agrees(cfg, (error6 + cfg.lean_usage, 6), (error6 + cfg.c_usage, 6),
                                   'exact'))
@@ -69,37 +71,73 @@ class Outputs(unittest.TestCase):
         self.assertFalse(dt.agrees(cfg, ('1 0%0 1%\n', 0), ('1 0%0 1%', 0), 'exact'))
         self.assertTrue(dt.agrees(cfg, ('\nToo many coefficients.\n\n', 3),
                                   ('\nToo many coefficients.\n', 3), 'e'))
-        refusal = '\nPolynomial is not square-free.\n\n'
-        report = 'This is ratpoints-3.1.1\n\nCurve equation is  y^2 = x^2\n\n' + refusal
-        self.assertTrue(dt.agrees(cfg, (refusal, 8), (report, 8), 'message'))
-        self.assertTrue(dt.agrees(cfg, (refusal, 8), (report.rstrip('\n') + '\n', 8), 'message'))
-        self.assertFalse(dt.agrees(cfg, (refusal, 0), (report, 8), 'message'))
-        self.assertFalse(dt.agrees(cfg, ('', 8), (report, 8), 'message'))
-        self.assertFalse(dt.agrees(cfg, (refusal, 8), ('\nToo many coefficients.\n\n', 8),
-                                   'message'))
+        report = '\n{}\n\nCurve equation is  y^2 = 5\n\n\nPolynomial is not square-free.\n\n'
+        self.assertTrue(dt.agrees(cfg, (report.format(cfg.lean_banner), 8),
+                                  (dt.as_recorded_by_e(report.format(cfg.c_banner)), 8), 'e'))
 
-    def test_lines(self):
-        cfg = SimpleNamespace(lean_usage='', c_usage='')
-        plain, strings = dt.Settings(), dt.Settings(strings=True)
-        c = ('\nB\n\nCurve equation is  y^2 = x^2 + 1\n\nmax. Height = 5\n\n(1 : 1 : 0)\n'
-             '(0 : 1 : 1)\n\n\n2 rational points found.\n\n')
-        self.assertTrue(dt.agrees(cfg, ('(1 : 1 : 0)\n(0 : 1 : 1)\n', 0), (c, 0), 'lines',
-                                  st=plain))
-        self.assertTrue(dt.agrees(cfg, ('', 0), ('\nfound 0 points.\n', 0), 'lines', st=plain))
-        self.assertFalse(dt.agrees(cfg, ('(0 : 1 : 1)\n(1 : 1 : 0)\n', 0), (c, 0), 'lines',
-                                   st=plain))
-        self.assertFalse(dt.agrees(cfg, ('(1 : 1 : 0)\n(0 : 1 : 1)\n', 6), (c, 0), 'lines',
-                                   st=plain))
-        # without a format or a string, the output of ratpoints-lean is the lines of points alone
-        self.assertFalse(dt.agrees(cfg, ('S(1 : 1 : 0)\n(1 : 1 : 0)\n(0 : 1 : 1)\n', 0), (c, 0),
-                                   'lines', st=plain))
-        cs = c.replace('(1 : 1', 'S\n(1 : 1').replace('1)\n\n', '1)\nE\n\n')
-        self.assertTrue(dt.agrees(cfg, ('S\n(1 : 1 : 0)\n(0 : 1 : 1)\nE', 0), (cs, 0), 'lines',
-                                  st=strings))
-        # the pairs of -y
-        self.assertTrue(dt.agrees(cfg, ('(1 : 0)\n(0 : 1)\n', 0),
-                                  ('\nB\n(1 : 0)\n(0 : 1)\n\n2 rational point pairs found.\n', 0),
-                                  'lines', st=plain))
+    def test_report(self):
+        cfg = SimpleNamespace(lean_banner='This is ratpoints-lean-0.1\n\nLean\n\n',
+                              c_banner='This is ratpoints-3.1.1\n\nC\n\n')
+        head = '\n{}\n\nCurve equation is  y^2 = x^2 + 1\n\nmax. Height = 5\n\n'
+        lean = head.format(cfg.lean_banner) + '(1 : 1 : 0)\n\n\n\n2 rational points found.\n\n'
+        c = (head.format(cfg.c_banner) + '(1 : 1 : 0)\n\n\n3 moduli used for first stage of '
+             'sieving,\n4 moduli used for both stages of sieving together,\n0 further primes '
+             'used in the third stage.\nSearch intervals:\n[-5.000000, 5.000000]\n\n'
+             '2 rational points found.\n\n')
+        self.assertTrue(dt.agrees(cfg, (lean, 0), (c, 0), 'report'))
+        self.assertFalse(dt.agrees(cfg, (lean, 0), (c.replace('2 rational', '3 rational'), 0),
+                                   'report'))
+        # as test4.sh's m() records it: the first line of the banner and message 4 left out
+        m = '\n'.join(l for l in c.split('\n') if not l.startswith('This is ratpoints-') and
+                      'used for' not in l and 'further primes' not in l)
+        self.assertTrue(dt.agrees(cfg, (lean, 0), (m, 0), 'report'))
+        # the lines that ratpoints-lean does not print are dropped from the C program's only
+        c_banner = c.replace(cfg.c_banner, cfg.lean_banner)
+        self.assertFalse(dt.agrees(cfg, (c_banner, 0), (c, 0), 'report'))
+        refusal = '\nPolynomial is not square-free.\n\n'
+        self.assertTrue(dt.agrees(cfg, (head.format(cfg.lean_banner) + refusal, 8),
+                                  (head.format(cfg.c_banner) + refusal, 8), 'report'))
+        self.assertFalse(dt.agrees(cfg, (refusal, 8), (head.format(cfg.c_banner) + refusal, 8),
+                                   'report'))
+
+    def test_verbose(self):
+        c = ('\nB\n\nCurve equation is  y^2 = x^2 + 1\n\nmax. Height = 5\n\nSE\n\n'
+             '7 moduli used for first stage of sieving,\nx\nPolynomial was reversed for better '
+             'performance.\nSearch intervals:\n[-5.000000, 5.000000]\n\n4 rational points '
+             'found.\n\n')
+        v = '\nB\n\nCurve equation is  y^2 = x^2 + 1\n\nSE\n4 rational points found.\n\n'
+        self.assertEqual(dt.as_verbose(c), v)
+        out = ('\nB\n\nCurve equation is  y^2 = x^2 + 1\n\nlib\n(1 : 1 : 0)\nSE\n'
+               '4 rational points found.\n\n')
+        exp = ('\nB\n\nCurve equation is  y^2 = x^2 + 1\n\n(1 : 1 : 0)\nSE\n'
+               '4 rational points found.\n\n')
+        self.assertTrue(dt.verbose_consistent(exp, out))
+        # a point dropped, a count changed, lines out of order
+        self.assertFalse(dt.verbose_consistent(exp.replace('(1 : 1 : 0)\n', ''), out))
+        self.assertFalse(dt.verbose_consistent(exp.replace('4 rational', '1 rational'), out))
+        self.assertFalse(dt.verbose_consistent('SE\nlib\n', out))
+        # with a format, the library may write into a line of points
+        exp, out = 'B\n-x-x-x\n4 found\n', 'B\n-x\nlib\n-x-x\n4 found\n'
+        self.assertTrue(dt.verbose_consistent(exp, out, True))
+        self.assertFalse(dt.verbose_consistent(exp, out))
+
+    def test_filters(self):
+        cfg = SimpleNamespace(lean_usage='', c_usage='', lean_banner='L\n\nl\n',
+                              c_banner='C\n\nc\nd\n')
+        out = '\nB\n\nCurve equation is  y^2 = x\n(1 : 0 : 0)\n\n2 rational points found.\n\n'
+        self.assertTrue(dt.agrees(cfg, (out, 0), ('2 rational points found.\n', 0),
+                                  'filter:grep found'))
+        self.assertTrue(dt.agrees(cfg, (out, 0), ('Curve equation is  y^2 = x\n', 0),
+                                  "filter:grep 'Curve equation'"))
+        self.assertTrue(dt.agrees(cfg, ('(0 : 1 : 1)\n(0 : -1 : 1)', 0), ('2\n', 0),
+                                  'filter:grep -c .'))
+        self.assertTrue(dt.agrees(cfg, ('', 0), ('', 0), 'filter:grep found'))
+        # the exit code: every filtered run is a search, which exits with 0
+        self.assertFalse(dt.agrees(cfg, (out, -11), ('2 rational points found.\n', 0),
+                                   'filter:grep found'))
+        # the banner is exchanged before the filter
+        self.assertTrue(dt.agrees(cfg, ('\nL\n\nl\n\n(0 : 1 : 1)\n', 0), ('4\n', 0),
+                                  'filter:grep -c .'))
 
     def test_weak(self):
         st = dt.Settings(quiet=True, x=True)
@@ -184,17 +222,18 @@ class Outputs(unittest.TestCase):
 
     def test_settings(self):
         st = dt.settings(['-v', '-x', '-p', ' 30', '-N', '30', '-f', '-q', '-y', '-Y', '-zap'])
-        self.assertEqual((st.quiet, st.x, st.y, st.z, st.strings, st.pinned),
-                         (False, True, False, True, True, True))  # -f takes -q as its format
-        st = dt.settings(['-v', '-xfoo', '-X', '-1', '-p', '30'])
-        self.assertEqual((st.quiet, st.x, st.one, st.pinned, st.plain),
-                         (False, False, True, False, True))
+        self.assertEqual((st.quiet, st.verbose, st.x, st.y, st.z, st.strings, st.pinned),
+                         (False, True, True, False, True, True, True))  # -f takes -q as its format
+        self.assertEqual(st.v_words, [0])
+        st = dt.settings(['-v', '-xfoo', '-X', '-q', '-1', '-p', '30'])
+        self.assertEqual((st.quiet, st.verbose, st.x, st.one, st.pinned, st.plain),
+                         (True, False, False, True, False, True))
         self.assertEqual(dt.mode_of(dt.settings(['-q', '-y']), 0), 'exact')
         self.assertEqual(dt.mode_of(dt.settings(['-q', '-i', '-1']), 0), 'points')
         self.assertEqual(dt.mode_of(dt.settings(['-x']), 0), 'weak')
-        self.assertEqual(dt.mode_of(dt.settings(['-x', '-N', '30', '-p', '30']), 0), 'lines')
+        self.assertEqual(dt.mode_of(dt.settings(['-x', '-N', '30', '-p', '30']), 0), 'report')
         self.assertEqual(dt.live_mode(dt.mode_of(dt.settings(['-q']), 0)), 'exact')
-        self.assertEqual(dt.mode_of(dt.settings([]), 8), 'message')
+        self.assertEqual(dt.mode_of(dt.settings([]), 8), 'report')
         self.assertEqual(dt.mode_of(dt.settings(['-q']), 8), 'exact')
         self.assertEqual(dt.mode_of(dt.settings(['-x']), 6), 'exact')
 
@@ -206,6 +245,7 @@ class Skips(unittest.TestCase):
         self.assertTrue(dt.skips_height(cfg, ['1 0 1', '40000', '-q'], '(0 : 1 : 1)\n', 0))
         self.assertFalse(dt.skips_height(cfg, ['1 0 1', '30000', '-q'], '(0 : 1 : 1)\n', 0))
         self.assertFalse(dt.skips_height(cfg, ['0 0 1', '40000'], '\nerror\n', 1))
+
 
     def test_stop_case_timeout(self):
         cfg = SimpleNamespace(c='/bin/true', lean='/bin/sleep', verbose=False)

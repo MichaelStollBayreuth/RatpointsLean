@@ -2032,6 +2032,12 @@
         "Ratpoints.Sieve.initReplicate"
       ]
     },
+    "main.c:1031-1033": {
+      "hash": "47225afa2a4ac2f2f511615497764c742f6480248765b8f3b6c09e95c2b9b9fb",
+      "owners": [
+        "Ratpoints.Cli.Message.text"
+      ]
+    },
     "main.c:1036-1043": {
       "hash": "f31091ab852d45657454a9dcae84f9f83bc6980b7ccbc787f38098c89d611761",
       "owners": [
@@ -2134,6 +2140,12 @@
         "Ratpoints.Cli.input"
       ]
     },
+    "main.c:215-220": {
+      "hash": "3ba7b56bc25e1e9dac99b1f8d84b95085cbd08e48bdc56d6fec51745ec09db81",
+      "owners": [
+        "Ratpoints.Cli.preamble"
+      ]
+    },
     "main.c:221-222": {
       "hash": "543fba410935ea42b0558d25f3e1fdffb3ea838ff3525b056a67365493956710",
       "owners": [
@@ -2180,6 +2192,12 @@
       "hash": "ad3595dfdaba0951727a320a1fb69b8e5ffd1533f5f24933d3ec18522a75464f",
       "owners": [
         "Ratpoints.Cli.run"
+      ]
+    },
+    "main.c:268-276": {
+      "hash": "d271d46b257f1efb36b6c3ed523e9a778738dc1ad5899dee619d4a4b4d8f0c9d",
+      "owners": [
+        "Ratpoints.Cli.report"
       ]
     },
     "main.c:279-283": {
@@ -2423,6 +2441,12 @@
         "Ratpoints.Cli.usage"
       ]
     },
+    "main.c:913-949": {
+      "hash": "a6a7a2ef10ae975d1415b7c7fee4f476cb1686031a956d4dd4bf3ed4cc3f1e75",
+      "owners": [
+        "Ratpoints.Cli.printPoly"
+      ]
+    },
     "main.c:94-103": {
       "hash": "c05c6a64afb6d05300e7ffad0ffcaf7bb50365953571de91e6e01c978a815856",
       "owners": [
@@ -2445,6 +2469,30 @@
       "hash": "5c891e123de5d829ac78817d3f69bd536ec8d756733f9c6b7a6cfe9a6f94476b",
       "owners": [
         "Ratpoints.Cli.printString"
+      ]
+    },
+    "main.c:972-976": {
+      "hash": "9e7e998917f2d3107a0540c568603026768692192431a961a14c128da6b9aec3",
+      "owners": [
+        "Ratpoints.Cli.Message.text"
+      ]
+    },
+    "main.c:977-978": {
+      "hash": "a242dcd882187e283fa6c1b81ea6ef99c74901ea77b4915ef8121438909686ff",
+      "owners": [
+        "excluded (other)"
+      ]
+    },
+    "main.c:979-983": {
+      "hash": "b23c8e56805abe1c90af02c9c64bc7c478bb45a6ca064dc257c34d3fcb72ecac",
+      "owners": [
+        "Ratpoints.Cli.Message.text"
+      ]
+    },
+    "main.c:999-1021": {
+      "hash": "f58cae7f2d3f47c56da19dc129b5218504574bd9ea2ef58962ab0f3fafe4d047",
+      "owners": [
+        "Ratpoints.Cli.Message.text"
       ]
     },
     "primes.h:29-40": {
