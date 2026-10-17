@@ -307,6 +307,15 @@ private theorem pos_of_mem_of_setupUs1_eq_some {c : List ℤ} {H : ℕ} (hH : 1 
   Nat.pos_of_ne_zero ((Setup.mem_iff_of_setupUs1_eq_some hs
     (getD_degree_ne_zero_of_pos (by lia)) hH).mp hs').1.ne_zero
 
+-- The divisor shape of a successful set-up for odd degree lists each denominator once.
+private theorem nodup_squares1Dens_of_setupUs1_eq_some {c : List ℤ} {H : ℕ} (hH : 1 ≤ H)
+    (hd : degree c % 2 = 1) {info : List Setup.DenInfo} {divisors : List ℕ}
+    (hs : Id.run (Setup.setupUs1 c (degree c) H) = some (info, divisors)) :
+    (squares1Dens divisors 1 H).Nodup :=
+  have hc : c.getD (degree c) 0 ≠ 0 := getD_degree_ne_zero_of_pos (by lia)
+  nodup_squares1Dens (Setup.nodup_of_setupUs1_eq_some hs hc)
+    (fun _ hs' ↦ ((Setup.mem_iff_of_setupUs1_eq_some hs hc hH).mp hs').1) 1 H
+
 -- The divisor shape over `1, …, H` lists denominators of `1, …, H`.
 private theorem mem_range'_of_mem_squares1Dens {divisors : List ℕ} {H b : ℕ}
     (hb : b ∈ squares1Dens divisors 1 H) : b ∈ List.range' 1 H :=
@@ -326,9 +335,7 @@ theorem nodup_searchDens (c : List ℤ) {H : ℕ} (hH : 1 ≤ H) :
     (searchDens c (degree c) H).Nodup := by
   obtain h | ⟨info, divisors, hd, hs, h⟩ := searchDens_eq_range'_or c (degree c) H
   · exact h ▸ List.nodup_range'
-  · have hc : c.getD (degree c) 0 ≠ 0 := getD_degree_ne_zero_of_pos (by lia)
-    exact h ▸ nodup_squares1Dens (Setup.nodup_of_setupUs1_eq_some hs hc)
-      (fun s hs' ↦ ((Setup.mem_iff_of_setupUs1_eq_some hs hc hH).mp hs').1) 1 H
+  · exact h ▸ nodup_squares1Dens_of_setupUs1_eq_some hH hd hs
 
 /-- The denominators of the search of the polynomial with the coefficient list `c` of its degree are
 those of the specification of the order (`Ratpoints.searchDenominators`), for `H ≥ 1`: the divisor
@@ -363,9 +370,9 @@ theorem perm_flatMap_squares1Dens {c : List ℤ} {H : ℕ} (hH : 1 ≤ H) (hd : 
       ((List.range' 1 H).flatMap fun b : ℕ ↦ pointsOfDen c (degree c) b (numerators H)) := by
   have hc : c.getD (degree c) 0 ≠ 0 := getD_degree_ne_zero_of_pos (by lia)
   have hmem (s : ℕ) := Setup.mem_iff_of_setupUs1_eq_some hs hc hH (s := s)
-  refine List.perm_flatMap_of_nodup List.nodup_range' (nodup_squares1Dens
-    (Setup.nodup_of_setupUs1_eq_some hs hc) (fun s hs' ↦ ((hmem s).mp hs').1) 1 H)
-    (fun _ ↦ mem_range'_of_mem_squares1Dens) fun b hb hne ↦ ?_
+  refine List.perm_flatMap_of_nodup List.nodup_range'
+    (nodup_squares1Dens_of_setupUs1_eq_some hH hd hs) (fun _ ↦ mem_range'_of_mem_squares1Dens)
+    fun b hb hne ↦ ?_
   have hb' := List.mem_range'_1.mp hb
   obtain ⟨a, -, y, hg, hy⟩ := exists_sq_eq_of_pointsOfDen_ne_nil hne
   obtain ⟨s, k, hsq, hdvd, hbsk⟩ := exists_eq_mul_mul_of_sq_eq_binaryForm_of_odd hd hg hy

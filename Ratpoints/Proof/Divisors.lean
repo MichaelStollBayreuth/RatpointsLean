@@ -302,26 +302,33 @@ powers of the factors found, ascending primes `p` with their valuations `v_p(w0)
 divide `w`, and the cofactor satisfies `Ratpoints.Setup.CofactorInvariant`: while a prime `cur` of
 the table is still to come, `w` is the part of `w0` at the primes from `cur` on
 (`Ratpoints.Setup.FactorLcfInvariant.isRoughPart`). -/
-def FactorLcfInvariant (w0 : ℕ) (suff : List ℕ) (w : ℕ) (fac : Array (ℕ × ℕ)) : Prop :=
-  w0 = w * (fac.toList.map fun x ↦ x.1 ^ x.2).prod ∧ (fac.toList.map Prod.fst).Pairwise (· < ·) ∧
-    (∀ x ∈ fac.toList, x.1.Prime ∧ x.2 = padicValNat x.1 w0 ∧ 0 < x.2 ∧ ¬x.1 ∣ w) ∧
-    CofactorInvariant w0 fac.toList suff w
+structure FactorLcfInvariant (w0 : ℕ) (suff : List ℕ) (w : ℕ) (fac : Array (ℕ × ℕ)) : Prop where
+  /-- `w0` is the cofactor times the powers of the factors found. -/
+  eq_mul_prod : w0 = w * (fac.toList.map fun x ↦ x.1 ^ x.2).prod
+  /-- The primes found ascend. -/
+  pairwise_lt : (fac.toList.map Prod.fst).Pairwise (· < ·)
+  /-- Each factor found is a prime with its valuation in `w0`, at least `1`, that does not divide
+  the cofactor. -/
+  prime_valuation : ∀ x ∈ fac.toList, x.1.Prime ∧ x.2 = padicValNat x.1 w0 ∧ 0 < x.2 ∧ ¬x.1 ∣ w
+  /-- The cofactor satisfies `Ratpoints.Setup.CofactorInvariant`. -/
+  cofactor : CofactorInvariant w0 fac.toList suff w
 
 theorem FactorLcfInvariant.ne_zero {w0 w : ℕ} {suff : List ℕ} {fac : Array (ℕ × ℕ)}
     (h : FactorLcfInvariant w0 suff w fac) (hw0 : 0 < w0) : w ≠ 0 := by
   rintro rfl
-  simp [h.1] at hw0
+  simp [h.eq_mul_prod] at hw0
 
 /-- While the prime `cur` of the table is still to come, the cofactor is the part of `w0` at the
 primes from `cur` on: the product of the powers of the primes found, all below `cur`, is
 `cur`-smooth. -/
 theorem FactorLcfInvariant.isRoughPart {w0 w cur : ℕ} {suff : List ℕ} {fac : Array (ℕ × ℕ)}
     (h : FactorLcfInvariant w0 (cur :: suff) w fac) : Nat.IsRoughPart cur w0 w := by
-  refine ⟨_, Nat.mem_smoothNumbers'.mpr fun p hp hpd ↦ ?_, h.1.trans (Nat.mul_comm _ _),
-    h.2.2.2.2⟩
+  refine ⟨_, Nat.mem_smoothNumbers'.mpr fun p hp hpd ↦ ?_, h.eq_mul_prod.trans (Nat.mul_comm _ _),
+    h.cofactor.2⟩
   obtain ⟨a, ha, hpa⟩ := hp.prime.dvd_prod_iff.mp hpd
   obtain ⟨x, hx, rfl⟩ := List.mem_map.mp ha
-  exact (Nat.le_of_dvd (h.2.2.1 x hx).1.pos (hp.dvd_of_dvd_pow hpa)).trans_lt (h.2.2.2.1 x hx)
+  exact (Nat.le_of_dvd (h.prime_valuation x hx).1.pos (hp.dvd_of_dvd_pow hpa)).trans_lt
+    (h.cofactor.1 x hx)
 
 /-- A new prime factor `p` of the cofactor `w = p ^ v m`, `p ∤ m`, above the primes found, taken
 with its exponent `v ≥ 1`, leaves the cofactor `m`. -/
@@ -403,9 +410,9 @@ theorem FactorLcfInvariant.push_cur {w0 w cur v r : ℕ} {pref suff : List ℕ}
   have hw := h.isRoughPart
   obtain ⟨m, hm, hpm⟩ := exists_eq_of_eq_run_valuation (h.ne_zero hw0) hcur.one_lt hv
   rw [Nat.div_eq_of_eq_mul_right (Nat.pow_pos hcur.pos) hm]
-  refine h.push hw0 hcur hpos hm hpm h.2.2.2.1 (cofactorInvariant_of_isRoughPart hl hw0.ne' hw hlt
-    ((hm ▸ hw).succ hcur hpm) ?_)
-  exact Array.forall_mem_toList_push (fun x hx ↦ (h.2.2.2.1 x hx).le) le_rfl
+  refine h.push hw0 hcur hpos hm hpm h.cofactor.1 (cofactorInvariant_of_isRoughPart hl hw0.ne' hw
+    hlt ((hm ▸ hw).succ hcur hpm) ?_)
+  exact Array.forall_mem_toList_push (fun x hx ↦ (h.cofactor.1 x hx).le) le_rfl
 
 /-- The prime `cur` of the table, which does not divide `w`, passed. -/
 theorem FactorLcfInvariant.skip {w0 w cur v r : ℕ} {pref suff : List ℕ}
@@ -419,8 +426,8 @@ theorem FactorLcfInvariant.skip {w0 w cur v r : ℕ} {pref suff : List ℕ}
   obtain rfl : v = 0 := by lia
   have hm' := (hm ▸ hw).succ hcur hpm
   rw [Nat.pow_zero, Nat.one_mul] at hm
-  exact ⟨h.1, h.2.1, h.2.2.1, cofactorInvariant_of_isRoughPart hl hw0.ne' hw hlt (hm ▸ hm')
-    fun x hx ↦ (h.2.2.2.1 x hx).le⟩
+  exact ⟨h.eq_mul_prod, h.pairwise_lt, h.prime_valuation,
+    cofactorInvariant_of_isRoughPart hl hw0.ne' hw hlt (hm ▸ hm') fun x hx ↦ (h.cofactor.1 x hx).le⟩
 
 /-- A cofactor `w ≠ 1` below `cur ^ 2`, with no prime factor below `cur`, is a prime
 (`Nat.prime_of_lt_mul_self`), taken with the valuation `1`, which leaves the cofactor `1`. -/
@@ -429,7 +436,7 @@ theorem FactorLcfInvariant.push_self {w0 w cur : ℕ} {pref suff : List ℕ} {fa
     (h : FactorLcfInvariant w0 (cur :: suff) w fac) (hw0 : 0 < w0) (h1 : ¬(w == 1) = true)
     (hlt : w < cur * cur) : FactorLcfInvariant w0 [] 1 (fac.push (w, 1)) := by
   have hcur := lt_of_mem_primeTable (Array.mem_of_forIn_toList_eq_append_cons hl)
-  have h4 : CofactorInvariant w0 fac.toList (cur :: suff) w := h.2.2.2
+  have h4 : CofactorInvariant w0 fac.toList (cur :: suff) w := h.cofactor
   have hw : w.Prime := Nat.prime_of_lt_mul_self (h.ne_zero hw0) (by simpa using h1) hlt h4.2
   exact h.push hw0 hw Nat.one_pos (by simp) hw.not_dvd_one
     (fun x hx ↦ (h4.1 x hx).trans_le (h4.2 w hw dvd_rfl))
@@ -443,7 +450,7 @@ theorem FactorLcfInvariant.of_eq_one {w0 w cur : ℕ} {pref suff : List ℕ} {fa
     FactorLcfInvariant w0 [] w fac := by
   have hcur := lt_of_mem_primeTable (Array.mem_of_forIn_toList_eq_append_cons hl)
   obtain rfl : w = 1 := by simpa using h1
-  exact ⟨h.1, h.2.1, h.2.2.1,
+  exact ⟨h.eq_mul_prod, h.pairwise_lt, h.prime_valuation,
     iff_of_true rfl (factorsByTrialDivision_of_isRoughPart_one h.isRoughPart (by lia))⟩
 
 /-- A cofactor below `cur ^ 2` is a `long`, so the loop never ends with it unfactored. -/
@@ -469,9 +476,9 @@ private theorem valuation_value (n : ℤ) (p : ℕ) :
     ⦃ True ⦄ valuation n p ⦃ fun r ↦ r = Id.run (valuation n p) ⦄ :=
   ⟨fun _ ↦ rfl⟩
 
--- The invariant is irreducible here, and so are the table of primes, the test of the `long`s and
--- the valuation, whose unfolding in a failed unification of the dispatch does not end.
-attribute [local irreducible] FactorLcfInvariant fitsLong valuation primeTable in
+-- The table of primes, the test of the `long`s and the valuation are irreducible here: their
+-- unfolding in a failed unification of the dispatch does not end.
+attribute [local irreducible] fitsLong valuation primeTable in
 /-- The factorization of `w ≥ 1` over `2` and the primes of the table leaves the cofactor `1`
 exactly when ratpoints factors `w` completely, and then it is the factorization of `w`, the primes
 in increasing order, each with its valuation. -/

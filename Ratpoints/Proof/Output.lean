@@ -48,6 +48,10 @@ under `RATPOINTS_NO_CHECK` and both refusal theorems (`comparator/Challenge.lean
   count of `Ratpoints.findPointsWith` are those of the delivery of the list of
   `Ratpoints.findPoints`; `Ratpoints.map_findPointsWith_flags`: the bits of the flags written back
   do not depend on the callback.
+* `Ratpoints.info_total_eq_of_findPointsWith_eq_ok`: for well-formed parameters, the data and the
+  count of a successful search with a callback are those of the delivery of the list of
+  `Ratpoints.findPoints`; `Ratpoints.exists_findPointsWith_eq_ok_of_findPoints_eq_ok`: the search
+  with a callback succeeds when `Ratpoints.findPoints` does.
 * `Ratpoints.exists_searchList_of_findPoints_eq_ok`: the list of `Ratpoints.findPoints` is that of
   the search with a sound test of the sieve, the same for every choice of the options of the output.
 * `Ratpoints.exists_eq_of_findPoints_eq_ok`: without `RATPOINTS_NO_CHECK`, it is the reference of
@@ -199,6 +203,29 @@ theorem map_findPointsWith_flags (c : List ℤ) (H : ℕ) (P : Params) (o : Opti
   split_ifs
   · rfl
   simp only [Except.map, run_searchPoints_flags]
+
+/-- For well-formed parameters, the data and the count of a successful search with a callback are
+those of the delivery of the points of `Ratpoints.findPoints` to it, by the protocol of the
+delivery (`Ratpoints.map_findPointsWith_eq_map_findPoints`). -/
+theorem info_total_eq_of_findPointsWith_eq_ok {σ : Type} {c : List ℤ} {H : ℕ} {P : Params}
+    {o : Options} {process : ℤ → ℤ → ℤ → σ → Answer σ} {info : σ} {r : Outcome σ}
+    {L : List (ℤ × ℤ × ℤ)} (hP : P.WF) (hr : findPointsWith c H P o process info = .ok r)
+    (hL : findPoints c H P o = .ok L) :
+    r.info = (Delivery.deliver process ⟨info, 0, false⟩ L).info ∧
+      r.total = (Delivery.deliver process ⟨info, 0, false⟩ L).total := by
+  simpa [hr, hL, Except.map] using map_findPointsWith_eq_map_findPoints hP c H o process info
+
+/-- The search with a callback succeeds when `Ratpoints.findPoints` does: the refusals of
+`Ratpoints.findPointsWith` do not depend on the callback
+(`Ratpoints.findPointsWith_eq_error_iff`). -/
+theorem exists_findPointsWith_eq_ok_of_findPoints_eq_ok {σ : Type} {c : List ℤ} {H : ℕ}
+    {P : Params} {o : Options} (process : ℤ → ℤ → ℤ → σ → Answer σ) (info : σ)
+    {L : List (ℤ × ℤ × ℤ)} (hL : findPoints c H P o = .ok L) :
+    ∃ r, findPointsWith c H P o process info = .ok r := by
+  rcases h : findPointsWith c H P o process info with _ | r
+  · rw [findPoints, findPointsWith_eq_error_iff.mp h] at hL
+    simp [Except.map] at hL
+  · exact ⟨r, rfl⟩
 
 /-! ### The output of `Ratpoints.findPoints` -/
 

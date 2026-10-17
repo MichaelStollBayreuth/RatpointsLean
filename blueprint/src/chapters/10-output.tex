@@ -587,7 +587,7 @@ relates the output under \verb|RATPOINTS_NO_CHECK| to the points.
 
 \begin{theorem}[The protocol of the delivery]\label{thm:protocol}
   \uses{def:findPointsWith, def:findPoints, lem:searchList, lem:deliver, lem:reversal_swap}
-  \lean{Ratpoints.map_findPointsWith_eq_map_findPoints, Ratpoints.findPointsWith_eq_ok_iff, Ratpoints.findPointsWith_eq_error_iff, Ratpoints.exists_findPoints_eq_error_iff, Ratpoints.map_findPointsWith_flags}
+  \lean{Ratpoints.map_findPointsWith_eq_map_findPoints, Ratpoints.findPointsWith_eq_ok_iff, Ratpoints.findPointsWith_eq_error_iff, Ratpoints.exists_findPoints_eq_error_iff, Ratpoints.map_findPointsWith_flags, Ratpoints.info_total_eq_of_findPointsWith_eq_ok, Ratpoints.exists_findPointsWith_eq_ok_of_findPoints_eq_ok}
   \leanok
   For well-formed parameters, every option and every callback with its data:
   $\mathrm{findPointsWith}$ refuses exactly the inputs that $\mathrm{findPoints}$ refuses, with the
@@ -783,7 +783,7 @@ of the constants varies it ($2$ and $100000$).
 
 \begin{lemma}[The rough part]\label{lem:roughPart}
   \uses{def:binaryDivisors}
-  \lean{Nat.IsRoughPart, Nat.IsRoughPart.ne_zero, Nat.IsRoughPart.eq_prod_filter, Nat.IsRoughPart.succ, Nat.IsRoughPart.of_le_of_forall, Ratpoints.factorsByTrialDivision_of_isRoughPart_one, Ratpoints.factorsByTrialDivision_of_isRoughPart_of_lt, Ratpoints.eq_one_iff_factorsByTrialDivision_of_isRoughPart, Array.pairwise_map_toList_push}
+  \lean{Nat.IsRoughPart, Nat.IsRoughPart.ne_zero, Nat.IsRoughPart.eq_prod_filter, Nat.IsRoughPart.succ, Nat.IsRoughPart.of_le_of_forall, Ratpoints.factorsByTrialDivision_of_isRoughPart_one, Ratpoints.factorsByTrialDivision_of_isRoughPart_of_lt, Ratpoints.eq_one_iff_factorsByTrialDivision_of_isRoughPart}
   \leanok
   The part $w$ of $n$ at the primes from $q$ on, the \emph{rough part}: $n = k w$ with every prime
   factor of $k$ below $q$ (Mathlib's \verb|Nat.smoothNumbers|) and every prime factor of $w$ at
@@ -793,9 +793,7 @@ of the constants varies it ($2$ and $100000$).
   $q' \ge q$ when no prime lies between them. A number whose rough part at some $q \le 1022$ is $1$,
   or a number $n \ne 0$ whose rough part at some $q \le 1021$ is below $q^2$, is factored by trial
   division; and when the rough part of $n \ne 0$ at $1021$ is at least $1021^2$, $n$ is factored by
-  trial division exactly when its rough part at $1022$ is $1$. The images of the members of an array
-  after a push are in order exactly when those before it are and each of them comes before the image
-  of the new member.
+  trial division exactly when its rough part at $1022$ is $1$.
 \end{lemma}
 
 \begin{proof}
@@ -1047,7 +1045,7 @@ is written once, at the end.
 
 \begin{theorem}[What the program prints]\label{thm:cliRun}
   \uses{def:cliProcess, def:cliReport, thm:protocol, def:cliRun, def:cliInput, def:sieveParams}
-  \lean{Ratpoints.Cli.countedPoints, Ratpoints.Cli.Data.printPoint, Ratpoints.Cli.call_process_of_keep, Ratpoints.Cli.call_process_of_not_keep, Ratpoints.Cli.deliver_process, Ratpoints.Cli.total_deliver_process, Ratpoints.Cli.out_append_deliver_process_ofOutput, Ratpoints.Cli.info_total_eq_of_findPointsWith_eq_ok, Ratpoints.Cli.exists_findPointsWith_eq_ok_of_findPoints_eq_ok, Ratpoints.Cli.run_eq_of_findPointsWith_eq_ok, Ratpoints.Cli.run_eq_of_findPoints_eq_ok, Ratpoints.Cli.run_eq_of_onePoint, Ratpoints.Cli.total_eq_of_findPointsWith_eq_ok, Ratpoints.Cli.preamble_eq_empty_of_quiet, Ratpoints.Cli.report_eq_empty_of_quiet, String.intercalate_cons_eq_append_join}
+  \lean{Ratpoints.Cli.countedPoints, Ratpoints.Cli.Data.printPoint, Ratpoints.Cli.call_process_of_keep, Ratpoints.Cli.call_process_of_not_keep, Ratpoints.Cli.deliver_process, Ratpoints.Cli.total_deliver_process, Ratpoints.Cli.out_append_deliver_process_ofOutput, Ratpoints.Cli.run_eq_of_findPointsWith_eq_ok, Ratpoints.Cli.run_eq_of_findPoints_eq_ok, Ratpoints.Cli.run_eq_of_onePoint, Ratpoints.Cli.total_eq_of_findPointsWith_eq_ok, Ratpoints.Cli.preamble_eq_empty_of_quiet, Ratpoints.Cli.report_eq_empty_of_quiet, String.intercalate_cons_eq_append_join}
   \leanok
   The points of a list that the callback counts: those that \verb|-i| keeps, every point with
   $z \ne 0$ and the points at infinity unless \verb|-i|, and of them only the first under \verb|-1|.

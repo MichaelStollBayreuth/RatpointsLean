@@ -218,26 +218,6 @@ theorem out_append_deliver_process_ofOutput (u : Output) (o : Options) (L : List
 
 /-! ### The program -/
 
-/-- For well-formed parameters, the data and the count of a successful search with a callback are
-those of the delivery of the points of `Ratpoints.findPoints` to it, by the protocol of the
-delivery (`Ratpoints.map_findPointsWith_eq_map_findPoints`). -/
-theorem info_total_eq_of_findPointsWith_eq_ok {σ : Type} {c : List ℤ} {H : ℕ} {P : Params}
-    {o : Options} {process : ℤ → ℤ → ℤ → σ → Answer σ} {info : σ} {r : Outcome σ}
-    {L : List (ℤ × ℤ × ℤ)} (hP : P.WF) (hr : findPointsWith c H P o process info = .ok r)
-    (hL : findPoints c H P o = .ok L) :
-    r.info = (Delivery.deliver process ⟨info, 0, false⟩ L).info ∧
-      r.total = (Delivery.deliver process ⟨info, 0, false⟩ L).total := by
-  simpa [hr, hL, Except.map] using map_findPointsWith_eq_map_findPoints hP c H o process info
-
-/-- For well-formed parameters, the search with a callback succeeds when `Ratpoints.findPoints`
-does: its refusals do not depend on the callback. -/
-theorem exists_findPointsWith_eq_ok_of_findPoints_eq_ok {σ : Type} {c : List ℤ} {H : ℕ}
-    {P : Params} {o : Options} (process : ℤ → ℤ → ℤ → σ → Answer σ) (info : σ)
-    {L : List (ℤ × ℤ × ℤ)} (hP : P.WF) (hL : findPoints c H P o = .ok L) :
-    ∃ r, findPointsWith c H P o process info = .ok r := by
-  have hp := map_findPointsWith_eq_map_findPoints hP c H o process info
-  cases h : findPointsWith c H P o process info <;> simp_all [Except.map]
-
 theorem preamble_eq_empty_of_quiet (c : List ℤ) (H : ℕ) {u : Output} (hq : u.quiet = true) :
     preamble c H u = "" := by
   simp [preamble, hq]
@@ -294,8 +274,7 @@ theorem run_eq_of_findPoints_eq_ok {args : List String} {c : List ℤ} {H : ℕ}
         ((if u.noOutput then [] else countedPoints u.pointsAtInfty u.onePoint L).map fun p ↦
           formatPoint (o.noCheck || o.noY) p.1 p.2.2 p.2.1 (u.printFormat.getD "").toList) ++
       printString u.stringAfter, 0) := by
-  obtain ⟨r, hr⟩ :=
-    exists_findPointsWith_eq_ok_of_findPoints_eq_ok process (.ofOutput u o) (wf_sieveParams s) hL
+  obtain ⟨r, hr⟩ := exists_findPointsWith_eq_ok_of_findPoints_eq_ok process (.ofOutput u o) hL
   rw [run_eq_of_findPointsWith_eq_ok hi hr hL, preamble_eq_empty_of_quiet c H hq,
     report_eq_empty_of_quiet s o hq, String.empty_append, String.append_empty]
 
