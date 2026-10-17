@@ -631,7 +631,9 @@ Each component of the set-up differs from the C code in a stated way, recorded i
     \verb|_ratpoints_compute_sturm| keeps its table for the rest of the Sturm step; local values for
     \verb|work[0]|, \verb|work[1]| and \verb|work[2]|; Lean's division for \verb|mpz_fdiv_q|, the
     divisions being exact;
-  \item of the Sturm step only its test for a repeated factor, the rest being stage~H;
+  \item of the Sturm step only its test for a repeated factor, the rest being stage~H, so that
+    under \verb|RATPOINTS_NO_CHECK| the model also delivers survivors outside the region that the
+    Sturm step keeps (Chapter~\ref{chap:output});
   \item no array \verb|c_long|, the flag of the \verb|long|s returned, and the loop that stops at
     the first coefficient that is not a \verb|long| as a test of all of them
     (\verb|Setup.useCLong|); Lean's truncating division for C's, and products for the shifts in the
