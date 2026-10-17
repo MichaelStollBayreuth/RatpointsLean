@@ -14,16 +14,15 @@ and compares it with the recorded outputs and with the C program:
   random  random polynomials at small heights against the C program;
   outputs random polynomials at small heights with random options of the output (-x -X -y -Y -z
           -Z -1 -i -I -q -v, formats and strings), against the C program;
-  errors  the command lines of scripts/difftest_cases.py, for the checks that main.c makes on
-          the coefficients, the height and the options, for the options of the search, -k -K
-          -s -S, for those of the output, -x -X -y -Y -z -Z -1 -i -I and the formats and strings
-          of -f -fs -fm -fe, for the report, and for the refusals of forms that are not
-          squarefree, against the C program; searches at a large height that both programs stop
-          at once (difftest_cases.STOP_CASES);
-          the usage; and failed writes: a standard output whose reader is gone, which ends the C
-          program by SIGPIPE, where ratpoints-lean (the Lean runtime ignores SIGPIPE) is to exit
-          quietly with the status 141 that the shell reports for that, and a full device, whose
-          failed writes both programs ignore;
+  errors  the command lines of scripts/difftest_cases.py, for the checks that main.c makes on the
+          coefficients, the height and the options, for the options of the search, -k -K -s -S, for
+          those of the output, -x -X -y -Y -z -Z -1 -i -I and the formats and strings of -f -fs -fm
+          -fe, for the report, and for the refusals of forms that are not squarefree, against the C
+          program; searches at a large height that both programs stop at once
+          (difftest_cases.STOP_CASES); the usage; and failed writes: a standard output whose reader
+          is gone, which ends the C program by SIGPIPE, where ratpoints-lean (the Lean runtime
+          ignores SIGPIPE) is to exit quietly with the status 141 that the shell reports for that,
+          and a full device, whose failed writes both programs ignore;
   fuzz    random command lines (scripts/difftest_cases.py) against the C program;
   params  the options that set the sieving parameters (-p -n -N -P -F -j), with values that
           give no moduli, all the primes of the default build, the cut points in several

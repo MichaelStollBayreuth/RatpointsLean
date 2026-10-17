@@ -88,7 +88,8 @@ the search, and `r` is the delivery of the lists of the numerators of the set bi
 in increasing order. In `Ratpoints.Sieve.walkWord`, `g a` is the list of the points that
 `Ratpoints.Sieve.acceptedPoints` gives for the numerator `a`. -/
 def WalkDeliveryInvariant (g : Int → List (Int × Int × Int)) (x0 : UInt64) (a0 : Int) (step : Nat)
-    (r0 : Delivery σ) (k : Nat) (r : Delivery σ) : Prop :=
+    (r0 : Delivery σ) (k : Nat) (r : Delivery σ) :
+    Prop :=
   r.quit = false ∧ r = r0.deliver process ((((List.range k).filter (x0.toBitVec.getLsbD ·)).map
     fun t : Nat ↦ a0 + step * t).flatMap g)
 
@@ -111,7 +112,8 @@ variable {process} {g : Int → List (Int × Int × Int)} {x0 x : UInt64} {a0 : 
   {r0 r r' : Delivery σ} {o : Option (Delivery σ)} {mb : Nat}
 
 theorem walkDeliveryInvariant_zero (g : Int → List (Int × Int × Int)) (x0 : UInt64) (a0 : Int)
-    (step : Nat) (h : r0.quit = false) : WalkDeliveryInvariant process g x0 a0 step r0 0 r0 :=
+    (step : Nat) (h : r0.quit = false) :
+    WalkDeliveryInvariant process g x0 a0 step r0 0 r0 :=
   ⟨h, by simp⟩
 
 /-- The step of the walk at the lowest set bit of `x`, which has the bits of `x0` below `k`
@@ -257,7 +259,8 @@ the callback has not stopped the search, and `r` is the delivery of the points o
 the bits `rbaLength i + 64 κ + t` of the set bits `t` of the words `κ < k` in the packing of `cl`
 (`Ratpoints.Sieve.NumClass.numerator`), in increasing order. -/
 def SiftBitArrayInvariant (words : Nat → UInt64) (g : Int → List (Int × Int × Int)) (cl : NumClass)
-    (i : Int) (r0 : Delivery σ) (k : Nat) (r : Delivery σ) : Prop :=
+    (i : Int) (r0 : Delivery σ) (k : Nat) (r : Delivery σ) :
+    Prop :=
   r.quit = false ∧ r = r0.deliver process (((List.range k).flatMap fun κ ↦
     ((List.range 64).filter ((words κ).toBitVec.getLsbD ·)).map fun t : Nat ↦
       i * rbaLength + 64 * κ + t).flatMap fun j ↦ g (cl.numerator j))
@@ -268,7 +271,8 @@ for the stride `2 ^ cl.k` of the class: the invariant of the loop over the words
 the arm of the second stage on the whole bit array (`Ratpoints.Sieve.siftBitArrayWhole`), which
 steps `a0` from one word to the next before it walks through the word, as the C code does. -/
 def SiftBitArrayWalkInvariant (words : Nat → UInt64) (g : Int → List (Int × Int × Int))
-    (cl : NumClass) (i : Int) (r0 : Delivery σ) (k : Nat) (s : Delivery σ × Int) : Prop :=
+    (cl : NumClass) (i : Int) (r0 : Delivery σ) (k : Nat) (s : Delivery σ × Int) :
+    Prop :=
   s.2 = cl.a0 + i * (rbaLength * 2 ^ cl.k) + k * (64 * 2 ^ cl.k) ∧
     SiftBitArrayInvariant process words g cl i r0 (k + 1) s.1
 
@@ -342,7 +346,8 @@ variable {process} {words : Nat → UInt64} {g : Int → List (Int × Int × Int
   {i : Int} {r0 r : Delivery σ}
 
 theorem SiftBitArrayInvariant.quit_eq_false {k : Nat} {o : Option (Delivery σ)}
-    (h : o = none ∧ SiftBitArrayInvariant process words g cl i r0 k r) : r.quit = false :=
+    (h : o = none ∧ SiftBitArrayInvariant process words g cl i r0 k r) :
+    r.quit = false :=
   h.2.1
 
 theorem siftBitArrayInvariant_zero (words : Nat → UInt64) (g : Int → List (Int × Int × Int))
@@ -667,13 +672,13 @@ def ScanPieceSentinelInvariant {m : Nat} (n : Nat) (surv : Vector UInt64 m) (k :
 for a piece of `n` bit arrays from the word number `w0` on, the moduli `specs` of the second stage
 with their rows and the points `g a` of the numerator `a` of a bit in the packing of the class `cl`
 (in the scan, those of `Ratpoints.Sieve.acceptedPoints`), from the delivery `r0`: `pos ≤ n`, the
-callback
-has not stopped the search, and `r` is the delivery of the points of the bits
+callback has not stopped the search, and `r` is the delivery of the points of the bits
 `rbaLength w0 + 64 y + t` of the set bits `t` of the words `y < rbaPack pos` and-ed with the rows of
 `specs` (`Ratpoints.Sieve.andWords`), in increasing order. -/
 def ScanPieceInvariant {m : Nat} (sv : Vector UInt64 m) (specs : List SieveSpec)
     (g : Int → List (Int × Int × Int)) (cl : NumClass) (w0 : Int) (n : Nat) (r0 : Delivery σ)
-    (pos : Nat) (r : Delivery σ) : Prop :=
+    (pos : Nat) (r : Delivery σ) :
+    Prop :=
   pos ≤ n ∧ r.quit = false ∧ r = r0.deliver process (((List.range (rbaPack * pos)).flatMap
     fun y : Nat ↦ ((List.range 64).filter ((andWords specs sv[y]! w0 y).toBitVec.getLsbD ·)).map
       fun t : Nat ↦ rbaLength * w0 + 64 * y + t).flatMap fun j ↦ g (cl.numerator j))
@@ -697,7 +702,8 @@ is at least `pos0`, and `Ratpoints.Sieve.ScanPieceInvariant` holds there with `r
 that is zero has no set bits. -/
 def ScanPieceZeroInvariant {m : Nat} (sv : Vector UInt64 m) (specs : List SieveSpec)
     (g : Int → List (Int × Int × Int)) (cl : NumClass) (w0 : Int) (n : Nat) (r0 : Delivery σ)
-    (pos0 : Nat) (r : Delivery σ) : Std.WP.WhileInvariant Nat Prop :=
+    (pos0 : Nat) (r : Delivery σ) :
+    Std.WP.WhileInvariant Nat Prop :=
   .mk fun _ pos ↦ pos0 ≤ pos ∧ ScanPieceInvariant process sv specs g cl w0 n r0 pos r
 
 /-- What the second stage needs of the bit array `pos < n` of a piece of `n` bit arrays from the
@@ -733,7 +739,8 @@ theorem ScanPieceSentinelInvariant.append_set! {n : Nat}
 /-- A bit array that is zero is not the sentinel, whose words are all ones. -/
 theorem ScanPieceSentinelInvariant.ne_of_isZeroAt {m n : Nat} {surv sv : Vector UInt64 m}
     (h : ScanPieceSentinelInvariant n surv (ForIn.toList [0:rbaPack]).length sv) {pos : Nat}
-    (hz : isZeroAt sv pos = true) : pos ≠ n := by
+    (hz : isZeroAt sv pos = true) :
+    pos ≠ n := by
   rintro rfl
   rw [Std.Legacy.Range.length_toList] at h
   have h0 := (isZeroAt_eq_true_iff sv pos).mp hz 0 rbaPack_pos

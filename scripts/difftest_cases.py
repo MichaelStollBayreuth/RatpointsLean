@@ -357,7 +357,7 @@ def random_coefficients(rng):
 
 # Formats and strings for -f, -fs, -fm and -fe: conversions, escapes, a percent sign or a backslash
 # at the end, words that look like options, and characters beyond ASCII in UTF-8, also after % and
-# a backslash, which main.c reads byte by byte (main.c:159-183 the format, main.c:950-967 the
+# a backslash, which main.c reads byte by byte (main.c:157-186 the format, main.c:952-968 the
 # strings) and ratpoints-lean character by character (the Lean runtime decodes the arguments, so
 # that bytes that are not UTF-8 are a deviation).
 FORMATS = ['%x %y %z\\n', '(%x : %z)\\n', '%x\\t%y\\n', '%', '\\', '%%', '%%%x', '\\%\\\\',

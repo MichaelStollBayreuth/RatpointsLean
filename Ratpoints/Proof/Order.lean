@@ -64,7 +64,8 @@ theorem pos_of_mem_binaryDivisors {n H e : ℕ} (he : e ∈ binaryDivisors n H) 
     (List.mem_dedup.mp ((List.mem_sublists.mp hl).subset hp))).pos
 
 theorem le_and_le_of_mem_searchDenominators {maxDiv H b : ℕ} {c : List ℤ}
-    (hb : b ∈ searchDenominators maxDiv c H) : 1 ≤ b ∧ b ≤ H := by
+    (hb : b ∈ searchDenominators maxDiv c H) :
+    1 ≤ b ∧ b ≤ H := by
   rw [searchDenominators] at hb
   split_ifs at hb
   · obtain ⟨hb, hbH⟩ := List.mem_filter.mp hb

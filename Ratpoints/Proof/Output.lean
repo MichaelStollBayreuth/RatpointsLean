@@ -355,7 +355,8 @@ filtered under `RATPOINTS_NO_Y`, and under `RATPOINTS_NO_CHECK` the survivors ar
 (`Ratpoints.nodup_searchList_of_noCheck`); comparator certifies this
 (`comparator/Challenge.lean`). -/
 theorem nodup_of_findPoints_eq_ok {c : List ℤ} {H : ℕ} {P : Params} {o : Options}
-    {L : List (ℤ × ℤ × ℤ)} (hP : P.WF) (h : findPoints c H P o = .ok L) : L.Nodup := by
+    {L : List (ℤ × ℤ × ℤ)} (hP : P.WF) (h : findPoints c H P o = .ok L) :
+    L.Nodup := by
   cases hc : o.noCheck
   · obtain ⟨c', rev, hr, hH, rfl⟩ := exists_eq_of_findPoints_eq_ok hP h hc
     exact ((perm_bruteForce_of_reversal_eq_ok hr hH).nodup_iff.mpr (nodup_bruteForce c H)).filter _
@@ -406,7 +407,8 @@ point `(x, |y|, z)` is in the list of the search with `RATPOINTS_NO_CHECK` clear
 this (`comparator/Challenge.lean`). -/
 theorem mem_of_isPoint_of_findPoints_eq_ok_of_noCheck {c : List ℤ} {H : ℕ} {P : Params}
     {o : Options} {L : List (ℤ × ℤ × ℤ)} (hP : P.WF) (h : findPoints c H P o = .ok L)
-    (hc : o.noCheck = true) {p : ℤ × ℤ × ℤ} (hp : IsPoint c H p) : (p.1, 0, p.2.2) ∈ L := by
+    (hc : o.noCheck = true) {p : ℤ × ℤ × ℤ} (hp : IsPoint c H p) :
+    (p.1, 0, p.2.2) ∈ L := by
   obtain ⟨c', rev, S, -, -, -, -, -, hall⟩ := exists_searchList_of_findPoints_eq_ok hP h
   have hp' : (p.1, |p.2.1|, p.2.2) ∈ searchList c' H S ⟨rev, false, true⟩ :=
     (mem_iff_isPoint_of_findPoints_eq_ok hP (hall false true) rfl).mpr

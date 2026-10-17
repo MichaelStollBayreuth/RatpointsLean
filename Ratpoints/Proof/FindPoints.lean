@@ -231,8 +231,8 @@ theorem pointsAtInfinityList_eq_filter_map_pointsOfDen {fl : CheckFlags} (hc : f
 /-- When the brute-force reference has no point at infinity, for even `d` and `c_d` not a square,
 the search delivers none, whatever the flags. -/
 theorem pointsAtInfinityList_eq_nil_of_pointsOfDen_eq_nil {c : List ℤ} {d : ℕ}
-    (h : pointsOfDen c d 0 [1] = [])
-    (fl : CheckFlags) : pointsAtInfinityList c d fl = [] := by
+    (h : pointsOfDen c d 0 [1] = []) (fl : CheckFlags) :
+    pointsAtInfinityList c d fl = [] := by
   rw [pointsOfDen_zero_singleton_one] at h
   refine ite_eq_right fun hs ↦ absurd h ?_
   by_cases hd : d % 2 = 1
@@ -444,7 +444,8 @@ theorem searchList_of_noCheck_eq_false {c : List ℤ} {H : ℕ} {S : ℕ → ℤ
 /-- With the test that lets no numerator through, and no point at infinity, the search delivers
 nothing. -/
 theorem searchList_false {c : List ℤ} (H : ℕ) {fl : CheckFlags}
-    (h : pointsAtInfinityList c (degree c) fl = []) : searchList c H (fun _ _ ↦ false) fl = [] := by
+    (h : pointsAtInfinityList c (degree c) fl = []) :
+    searchList c H (fun _ _ ↦ false) fl = [] := by
   simp [searchList, h]
 
 /-- The points that the search delivers are those of the search without the flag of the
@@ -457,7 +458,8 @@ theorem searchList_eq_map (c : List ℤ) (H : ℕ) (S : ℕ → ℤ → Bool) (f
 
 -- The map of the reversal keeps the triples `(x, 0, z)` of normalized pairs `(x, z)`.
 private theorem exists_map_eq_of_isNormalizedPair {H : ℕ} {x z : ℤ} (h : IsNormalizedPair H x z)
-    (rev : Bool) : ∃ x' z', (if rev then swapPoint else id) (x, 0, z) = (x', 0, z') ∧
+    (rev : Bool) :
+    ∃ x' z', (if rev then swapPoint else id) (x, 0, z) = (x', 0, z') ∧
       IsNormalizedPair H x' z' := by
   cases rev
   · exact ⟨x, z, rfl, h⟩
@@ -469,7 +471,8 @@ of the numerators `a` prime to the denominators `b` of the search and the point 
 infinity, mapped after a reversal (`Ratpoints.IsNormalizedPair.swapPoint`). -/
 theorem exists_eq_of_mem_searchList_of_noCheck {c : List ℤ} {H : ℕ} {S : ℕ → ℤ → Bool}
     {fl : CheckFlags} (hc : fl.noCheck = true) (hH : 1 ≤ H) {q : ℤ × ℤ × ℤ}
-    (hq : q ∈ searchList c H S fl) : ∃ x z, q = (x, 0, z) ∧ IsNormalizedPair H x z := by
+    (hq : q ∈ searchList c H S fl) :
+    ∃ x z, q = (x, 0, z) ∧ IsNormalizedPair H x z := by
   simp only [searchList, List.mem_append, List.mem_flatMap, List.mem_filter,
     mem_checkNumWith_of_noCheck hc] at hq
   rcases hq with hq | ⟨b, hb, a, ⟨ha, -⟩, hg, rfl⟩
@@ -482,9 +485,9 @@ theorem exists_eq_of_mem_searchList_of_noCheck {c : List ℤ} {H : ℕ} {S : ℕ
 -- Under `RATPOINTS_NO_CHECK` and without the flag of the reversal, the survivors `(a, 0, b)` that
 -- the search delivers are distinct pairs over distinct denominators `b ≥ 1`
 -- (`Ratpoints.nodup_searchDens`), the point `(1, 0, 0)` at infinity apart.
-private theorem nodup_searchList_of_noCheck_of_reversed_eq_false {c : List ℤ} {H : ℕ}
-    (hH : 1 ≤ H) (S : ℕ → ℤ → Bool) {fl : CheckFlags} (hc : fl.noCheck = true)
-    (hr : fl.reversed = false) : (searchList c H S fl).Nodup := by
+private theorem nodup_searchList_of_noCheck_of_reversed_eq_false {c : List ℤ} {H : ℕ} (hH : 1 ≤ H)
+    (S : ℕ → ℤ → Bool) {fl : CheckFlags} (hc : fl.noCheck = true) (hr : fl.reversed = false) :
+    (searchList c H S fl).Nodup := by
   have hmem {b : ℕ} {a : ℤ} {q : ℤ × ℤ × ℤ} (hq : q ∈ checkNumWith (scaledCoeffs c (degree c) b)
       (if degree c % 2 = 1 then b else 1) b fl a) : q = (a, 0, (b : ℤ)) := by
     simpa [hr] using ((mem_checkNumWith_of_noCheck hc).mp hq).2
@@ -509,7 +512,8 @@ private theorem nodup_searchList_of_noCheck_of_reversed_eq_false {c : List ℤ} 
 the point at infinity apart, and the map of the reversal is injective on the normalized pairs
 (`Ratpoints.Sieve.swapPoint_inj`). -/
 theorem nodup_searchList_of_noCheck {c : List ℤ} {H : ℕ} (hH : 1 ≤ H) (S : ℕ → ℤ → Bool)
-    {fl : CheckFlags} (hc : fl.noCheck = true) : (searchList c H S fl).Nodup := by
+    {fl : CheckFlags} (hc : fl.noCheck = true) :
+    (searchList c H S fl).Nodup := by
   have hc' : ({ fl with reversed := false } : CheckFlags).noCheck = true := hc
   rw [searchList_eq_map]
   refine (nodup_searchList_of_noCheck_of_reversed_eq_false hH S hc' rfl).map_on
@@ -534,7 +538,8 @@ theorem map_searchList_sublist (c : List ℤ) (H : ℕ) (S : ℕ → ℤ → Boo
 -- A curve without points of height at most `H` has no points at infinity and none over the
 -- denominators of `1, …, H` in its reference.
 private theorem pointsOfDen_eq_nil_of_forall_not_isPoint {c : List ℤ} {H : ℕ} (hH : 1 ≤ H)
-    (h : ∀ q, ¬IsPoint c H q) : pointsOfDen c (degree c) 0 [1] = [] ∧
+    (h : ∀ q, ¬IsPoint c H q) :
+    pointsOfDen c (degree c) 0 [1] = [] ∧
       ∀ b ∈ List.range' 1 H, pointsOfDen c (degree c) b (numerators H) = [] := by
   have hb : bruteForce c H = [] :=
     List.eq_nil_iff_forall_not_mem.mpr fun q hq ↦ h q (mem_bruteForce_iff.mp hq)
@@ -543,14 +548,16 @@ private theorem pointsOfDen_eq_nil_of_forall_not_isPoint {c : List ℤ} {H : ℕ
 /-- On a curve without points of height at most `H`, the test that lets no numerator through is
 sound. -/
 theorem isSoundTest_false_of_forall_not_isPoint {c : List ℤ} {H : ℕ} (hH : 1 ≤ H)
-    (h : ∀ q, ¬IsPoint c H q) : IsSoundTest c H fun _ _ ↦ false := fun b hb _ ha hne ↦
+    (h : ∀ q, ¬IsPoint c H q) :
+    IsSoundTest c H fun _ _ ↦ false := fun b hb _ ha hne ↦
   absurd ((pointsOfDen_eq_nil_of_forall_not_isPoint hH h).2 b (mem_range'_of_mem_searchDens hb))
     (pointsOfDen_ne_nil_of_mem ha hne)
 
 /-- On a curve without points of height at most `H`, the search delivers no point at infinity,
 whatever the flags. -/
 theorem pointsAtInfinityList_eq_nil_of_forall_not_isPoint {c : List ℤ} {H : ℕ} (hH : 1 ≤ H)
-    (h : ∀ q, ¬IsPoint c H q) (fl : CheckFlags) : pointsAtInfinityList c (degree c) fl = [] :=
+    (h : ∀ q, ¬IsPoint c H q) (fl : CheckFlags) :
+    pointsAtInfinityList c (degree c) fl = [] :=
   pointsAtInfinityList_eq_nil_of_pointsOfDen_eq_nil
     (pointsOfDen_eq_nil_of_forall_not_isPoint hH h).1 fl
 

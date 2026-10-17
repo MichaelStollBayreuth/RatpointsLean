@@ -135,7 +135,8 @@ theorem pointsOfDen_filter_of_ne {c : List ℤ} {d : ℕ} {z : ℤ} {xs : List �
   List.flatMap_filter_of_ne (by simpa [pointsOfDen] using h)
 
 theorem pointsOfDen_ne_nil_of_mem {c : List ℤ} {d : ℕ} {z : ℤ} {xs : List ℤ} {x : ℤ} (hx : x ∈ xs)
-    (h : pointsOfDen c d z [x] ≠ []) : pointsOfDen c d z xs ≠ [] := by
+    (h : pointsOfDen c d z [x] ≠ []) :
+    pointsOfDen c d z xs ≠ [] := by
   simp only [pointsOfDen, ne_eq, List.flatMap_eq_nil_iff, not_forall] at h ⊢
   obtain ⟨y, hy, hne⟩ := h
   exact ⟨y, by simpa [List.mem_singleton.mp hy] using hx, hne⟩

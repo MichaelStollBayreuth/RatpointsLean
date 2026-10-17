@@ -60,7 +60,8 @@ theorem IsRoughPart.eq_prod_filter {q n w : ℕ} (h : IsRoughPart q n w) (hn : n
 /-- Dividing the part `p ^ v m`, `p ∤ m`, of `n` at the primes from the prime `p` on by `p ^ v`
 leaves the part of `n` at the primes from `p + 1` on. -/
 theorem IsRoughPart.succ {p n v m : ℕ} (h : IsRoughPart p n (p ^ v * m)) (hp : p.Prime)
-    (hpm : ¬p ∣ m) : IsRoughPart (p + 1) n m := by
+    (hpm : ¬p ∣ m) :
+    IsRoughPart (p + 1) n m := by
   obtain ⟨k, hk, hn, hw⟩ := h
   refine ⟨p ^ v * k, pow_mul_mem_smoothNumbers hp.ne_zero v hk, by rw [hn]; ring,
     fun q hq hqm ↦ ?_⟩
@@ -69,7 +70,8 @@ theorem IsRoughPart.succ {p n v m : ℕ} (h : IsRoughPart p n (p ^ v * m)) (hp :
 /-- The part of `n` at the primes from `q` on is its part from `q' ≥ q` on when no prime lies
 between them. -/
 theorem IsRoughPart.of_le_of_forall {q q' n w : ℕ} (h : IsRoughPart q n w) (hqq : q ≤ q')
-    (hno : ∀ p, p.Prime → q ≤ p → q' ≤ p) : IsRoughPart q' n w := by
+    (hno : ∀ p, p.Prime → q ≤ p → q' ≤ p) :
+    IsRoughPart q' n w := by
   obtain ⟨k, hk, hn, hw⟩ := h
   exact ⟨k, smoothNumbers_mono hqq hk, hn, fun p hp hpw ↦ hno p hp (hw p hp hpw)⟩
 

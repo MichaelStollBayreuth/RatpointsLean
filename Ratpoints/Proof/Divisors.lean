@@ -224,7 +224,8 @@ theorem exists_eq_mul_mul_of_sq_eq_binaryForm_of_odd {c : List ℤ} (hd : degree
 /-- A number whose part at the primes from `q ≤ 1022` on is `1` has no prime factor above `1021`,
 so that ratpoints factors it completely. -/
 theorem factorsByTrialDivision_of_isRoughPart_one {q n : ℕ} (h : Nat.IsRoughPart q n 1)
-    (hq : q ≤ 1022) : FactorsByTrialDivision n := by
+    (hq : q ≤ 1022) :
+    FactorsByTrialDivision n := by
   obtain ⟨k, hk, rfl, -⟩ := h
   refine .inr fun p hp ↦ ?_
   have := Nat.mem_smoothNumbers'.mp hk p (Nat.prime_of_mem_primeFactorsList hp)
@@ -234,7 +235,8 @@ theorem factorsByTrialDivision_of_isRoughPart_one {q n : ℕ} (h : Nat.IsRoughPa
 /-- A number whose part at the primes from `q ≤ 1021` on is below `q ^ 2` has its part at the
 primes from `1021` on below `1021 ^ 2`, so that ratpoints factors it completely. -/
 theorem factorsByTrialDivision_of_isRoughPart_of_lt {q n w : ℕ} (h : Nat.IsRoughPart q n w)
-    (hn : n ≠ 0) (hq : q ≤ 1021) (hw : w < q * q) : FactorsByTrialDivision n := by
+    (hn : n ≠ 0) (hq : q ≤ 1021) (hw : w < q * q) :
+    FactorsByTrialDivision n := by
   refine .inl ((Nat.le_of_dvd (Nat.pos_of_ne_zero (h.ne_zero hn)) ?_).trans_lt
     (hw.trans_le (by lia [Nat.mul_le_mul hq hq])))
   rw [h.eq_prod_filter hn]
@@ -242,9 +244,9 @@ theorem factorsByTrialDivision_of_isRoughPart_of_lt {q n w : ℕ} (h : Nat.IsRou
 
 /-- When the part `w` of `n ≠ 0` at the primes from `1021` on is at least `1021 ^ 2`, ratpoints
 factors `n` completely exactly when its part `m` at the primes from `1022` on is `1`. -/
-theorem eq_one_iff_factorsByTrialDivision_of_isRoughPart {n w m : ℕ}
-    (h : Nat.IsRoughPart 1021 n w) (hn : n ≠ 0) (hw : 1021 * 1021 ≤ w)
-    (hm : Nat.IsRoughPart 1022 n m) : m = 1 ↔ FactorsByTrialDivision n := by
+theorem eq_one_iff_factorsByTrialDivision_of_isRoughPart {n w m : ℕ} (h : Nat.IsRoughPart 1021 n w)
+    (hn : n ≠ 0) (hw : 1021 * 1021 ≤ w) (hm : Nat.IsRoughPart 1022 n m) :
+    m = 1 ↔ FactorsByTrialDivision n := by
   refine ⟨fun h1 ↦ factorsByTrialDivision_of_isRoughPart_one (h1 ▸ hm) le_rfl, fun hf ↦ ?_⟩
   rcases hf with hf | hf
   · rw [← h.eq_prod_filter hn] at hf
@@ -314,7 +316,8 @@ structure FactorLcfInvariant (w0 : ℕ) (suff : List ℕ) (w : ℕ) (fac : Array
   cofactor : CofactorInvariant w0 fac.toList suff w
 
 theorem FactorLcfInvariant.ne_zero {w0 w : ℕ} {suff : List ℕ} {fac : Array (ℕ × ℕ)}
-    (h : FactorLcfInvariant w0 suff w fac) (hw0 : 0 < w0) : w ≠ 0 := by
+    (h : FactorLcfInvariant w0 suff w fac) (hw0 : 0 < w0) :
+    w ≠ 0 := by
   rintro rfl
   simp [h.eq_mul_prod] at hw0
 
@@ -322,7 +325,8 @@ theorem FactorLcfInvariant.ne_zero {w0 w : ℕ} {suff : List ℕ} {fac : Array (
 primes from `cur` on: the product of the powers of the primes found, all below `cur`, is
 `cur`-smooth. -/
 theorem FactorLcfInvariant.isRoughPart {w0 w cur : ℕ} {suff : List ℕ} {fac : Array (ℕ × ℕ)}
-    (h : FactorLcfInvariant w0 (cur :: suff) w fac) : Nat.IsRoughPart cur w0 w := by
+    (h : FactorLcfInvariant w0 (cur :: suff) w fac) :
+    Nat.IsRoughPart cur w0 w := by
   refine ⟨_, Nat.mem_smoothNumbers'.mpr fun p hp hpd ↦ ?_, h.eq_mul_prod.trans (Nat.mul_comm _ _),
     h.cofactor.2⟩
   obtain ⟨a, ha, hpa⟩ := hp.prime.dvd_prod_iff.mp hpd
@@ -383,10 +387,11 @@ primes from `cur` on it has divided by the power of `cur`, with the primes found
 while a prime is still to come, the primes found lie below it and `m` is the part of `w0` at the
 primes from it on; after the last prime, `1021`, `m = 1` exactly when ratpoints factors `w0`
 completely. -/
-theorem cofactorInvariant_of_isRoughPart {w0 w m cur : ℕ} {pref suff : List ℕ}
-    {fac : List (ℕ × ℕ)} (hl : ForIn.toList primeTable = pref ++ cur :: suff) (hw0 : w0 ≠ 0)
+theorem cofactorInvariant_of_isRoughPart {w0 w m cur : ℕ} {pref suff : List ℕ} {fac : List (ℕ × ℕ)}
+    (hl : ForIn.toList primeTable = pref ++ cur :: suff) (hw0 : w0 ≠ 0)
     (hw : Nat.IsRoughPart cur w0 w) (hlt : ¬w < cur * cur) (hm : Nat.IsRoughPart (cur + 1) w0 m)
-    (hfac : ∀ x ∈ fac, x.1 ≤ cur) : CofactorInvariant w0 fac suff m := by
+    (hfac : ∀ x ∈ fac, x.1 ≤ cur) :
+    CofactorInvariant w0 fac suff m := by
   rw [Std.Internal.ForIn.toList_array] at hl
   cases suff with
   | nil =>
@@ -434,7 +439,8 @@ theorem FactorLcfInvariant.skip {w0 w cur v r : ℕ} {pref suff : List ℕ}
 theorem FactorLcfInvariant.push_self {w0 w cur : ℕ} {pref suff : List ℕ} {fac : Array (ℕ × ℕ)}
     (hl : ForIn.toList primeTable = pref ++ cur :: suff)
     (h : FactorLcfInvariant w0 (cur :: suff) w fac) (hw0 : 0 < w0) (h1 : ¬(w == 1) = true)
-    (hlt : w < cur * cur) : FactorLcfInvariant w0 [] 1 (fac.push (w, 1)) := by
+    (hlt : w < cur * cur) :
+    FactorLcfInvariant w0 [] 1 (fac.push (w, 1)) := by
   have hcur := lt_of_mem_primeTable (Array.mem_of_forIn_toList_eq_append_cons hl)
   have h4 : CofactorInvariant w0 fac.toList (cur :: suff) w := h.cofactor
   have hw : w.Prime := Nat.prime_of_lt_mul_self (h.ne_zero hw0) (by simpa using h1) hlt h4.2
@@ -455,8 +461,9 @@ theorem FactorLcfInvariant.of_eq_one {w0 w cur : ℕ} {pref suff : List ℕ} {fa
 
 /-- A cofactor below `cur ^ 2` is a `long`, so the loop never ends with it unfactored. -/
 theorem FactorLcfInvariant.of_not_fitsLong {w0 w cur : ℕ} {pref suff : List ℕ}
-    {fac : Array (ℕ × ℕ)} (hl : ForIn.toList primeTable = pref ++ cur :: suff) (hlt : w < cur * cur)
-    (hf : ¬fitsLong (w : ℤ) = true) : FactorLcfInvariant w0 [] w fac :=
+    {fac : Array (ℕ × ℕ)} (hl : ForIn.toList primeTable = pref ++ cur :: suff)
+    (hlt : w < cur * cur) (hf : ¬fitsLong (w : ℤ) = true) :
+    FactorLcfInvariant w0 [] w fac :=
   absurd (fitsLong_of_lt_mul_self (Array.mem_of_forIn_toList_eq_append_cons hl) hlt) hf
 
 /-- At the end of the loop, the cofactor is `1` exactly when ratpoints factors `w0` completely, and
@@ -534,8 +541,8 @@ divisors `divs0`, after the positions `pref` with the positions `suff` still to 
 `divs0` followed by the products `x p` of the entries `x ≤ ⌊bHigh / p⌋` among the first `|pref|`
 ones, or the pass has stopped at the end with `Ratpoints.maxDivisors` entries or more, a prefix of
 that list. -/
-def ExtendDivisorsInvariant (bHigh p : ℕ) (divs0 : Array ℕ) (pref suff : List ℕ)
-    (divs : Array ℕ) : Prop :=
+def ExtendDivisorsInvariant (bHigh p : ℕ) (divs0 : Array ℕ) (pref suff : List ℕ) (divs : Array ℕ) :
+    Prop :=
   divs.toList = divs0.toList ++
       ((divs0.toList.take pref.length).filter (· ≤ bHigh / p)).map (· * p) ∨
     maxDivisors ≤ divs.size ∧ suff = [] ∧ divs.toList <+: divs0.toList ++
@@ -582,7 +589,8 @@ theorem ExtendDivisorsInvariant.divisorsInvariant_of_le {bHigh cur : ℕ} {ps pr
     {divs0 divs : Array ℕ} (hps : ps = pref ++ cur :: suff)
     (h0 : DivisorsInvariant bHigh pref (cur :: suff) divs0)
     (h : ExtendDivisorsInvariant bHigh cur divs0 (ForIn.toList [:divs0.size]) [] divs)
-    (hle : maxDivisors ≤ divs.size) : DivisorsInvariant bHigh ps [] divs := by
+    (hle : maxDivisors ≤ divs.size) :
+    DivisorsInvariant bHigh ps [] divs := by
   have hd0 := h0.eq_of_cons
   refine .inr ⟨hle, rfl, ?_⟩
   have hd : divs.toList <+: (pref ++ [cur]).foldl (extendDivisors bHigh) [1] := by
@@ -593,7 +601,8 @@ theorem ExtendDivisorsInvariant.divisorsInvariant_of_le {bHigh cur : ℕ} {ps pr
 theorem ExtendDivisorsInvariant.divisorsInvariant {bHigh cur : ℕ} {pref suff : List ℕ}
     {divs0 divs : Array ℕ} (h0 : DivisorsInvariant bHigh pref (cur :: suff) divs0)
     (h : ExtendDivisorsInvariant bHigh cur divs0 (ForIn.toList [:divs0.size]) [] divs)
-    (hlt : ¬maxDivisors ≤ divs.size) : DivisorsInvariant bHigh (pref ++ [cur]) suff divs := by
+    (hlt : ¬maxDivisors ≤ divs.size) :
+    DivisorsInvariant bHigh (pref ++ [cur]) suff divs := by
   refine .inl ?_
   rw [h.eq_or.resolve_right fun h ↦ hlt h.1, h0.eq_of_cons, List.foldl_concat]
 
@@ -835,7 +844,8 @@ theorem foldl_extendDivisors_eq_filter {bHigh : ℕ} (hb : 1 ≤ bHigh) {ps : Li
 /-- The distinct primes of a factorization of `n ≠ 0`, in increasing order, are those of
 `Nat.primeFactorsList n`. -/
 theorem IsFactorization.map_fst_eq_dedup {n : ℕ} {fac : List (ℕ × ℕ)} (h : IsFactorization n fac)
-    (hn : n ≠ 0) : fac.map Prod.fst = n.primeFactorsList.dedup := by
+    (hn : n ≠ 0) :
+    fac.map Prod.fst = n.primeFactorsList.dedup := by
   refine h.1.eq_of_mem_iff (((Nat.primeFactorsList_sorted n).pairwise.sublist
     (List.dedup_sublist _)).and (List.nodup_dedup _) |>.imp fun h ↦ lt_of_le_of_ne h.1 h.2)
     fun p ↦ ?_

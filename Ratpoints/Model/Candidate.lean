@@ -340,7 +340,8 @@ zero and returns, and the three branches of the map of the reversal at each call
 by `Ratpoints.fitsLong_neg`); no measurements of the time of the check and of its products
 (`RP_CHECK`, `RP_BC_TIC`, `RP_BC_TOC` under `RP_PHASE_TIMING`), and no output under `DEBUG`. -/
 def checkPoint {σ : Type} (process : Int → Int → Int → σ → Answer σ) (w : Thunk (List Int))
-    (d : Nat) (b : Int) (fl : CheckFlags) (a : Int) (r : Delivery σ) : Delivery σ :=
+    (d : Nat) (b : Int) (fl : CheckFlags) (a : Int) (r : Delivery σ) :
+    Delivery σ :=
   if !fl.noCheck then
     let v := BruteForce.horner w.get a * if d % 2 = 1 then b else 1
     let y := v.toNat.sqrt
@@ -400,7 +401,8 @@ the degree is even, and leaves it, unread, with the odd degree that cases 1 and 
 `point_at_infty` before the exits of the search (lines 4894-4899); the square root by `Nat.sqrt`,
 for `mpz_sqrt`. -/
 def pointsAtInfinity {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : List Int) (d : Nat)
-    (fl : CheckFlags) (r : Delivery σ) : Delivery σ :=
+    (fl : CheckFlags) (r : Delivery σ) :
+    Delivery σ :=
   let a : Int := if fl.reversed then 0 else 1
   let b : Int := if fl.reversed then 1 else 0
   let lcf := c.getD d 0
@@ -557,16 +559,16 @@ def pointsAtInfinity {σ : Type} (process : Int → Int → Int → σ → Answe
     pts [1, 2, 3, 4] 3 { reversed := true } == [(0, 0, 1)] &&
     ([[1, 0, 0, 0, 9], [0, 0, 0, 0, 0], [-3, 1, 4]].all fun c ↦ [2, 3, 4].all fun d ↦
       pts c d { reversed := true } == (pts c d {}).map swapPoint) &&
-    -- `RATPOINTS_NO_Y`: only `+√c_d`; `RATPOINTS_NO_CHECK`: one call with `y = 0` where there
-    -- are points at infinity, for odd degree and `c_d` a square, and none otherwise.
+    -- `RATPOINTS_NO_Y`: only `+√c_d`; `RATPOINTS_NO_CHECK`: one call with `y = 0` where there are
+    -- points at infinity, for odd degree and `c_d` a square, and none otherwise.
     pts [1, 0, 0, 0, 9] 4 { noY := true } == [(1, 3, 0)] &&
     pts [1, 0, 0, 0, 9] 4 { noCheck := true } == [(1, 0, 0)] &&
     pts [1, 0, 0, 0, 9] 4 { noCheck := true, reversed := true } == [(0, 0, 1)] &&
     pts [1, 0, 0, 0, 2] 4 { noCheck := true } == [] &&
     pts [1, 2, 3, 4] 3 { noY := true } == [(1, 0, 0)]
 
--- A stop at the first call at infinity: `-√c_d` is not delivered, the count is `1` and the flag
--- is set.
+-- A stop at the first call at infinity: `-√c_d` is not delivered, the count is `1` and the flag is
+-- set.
 #guard
   let stop1 (x z y : Int) (pts : Array (Int × Int × Int)) : Answer (Array (Int × Int × Int)) :=
     ⟨1, true, pts.push (x, y, z)⟩

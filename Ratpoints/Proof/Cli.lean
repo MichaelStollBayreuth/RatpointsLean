@@ -223,7 +223,8 @@ theorem preamble_eq_empty_of_quiet (c : List ℤ) (H : ℕ) {u : Output} (hq : u
   simp [preamble, hq]
 
 theorem report_eq_empty_of_quiet {σ : Type} (s : SieveOptions) (o : Options) {u : Output}
-    (hq : u.quiet = true) (r : Outcome σ) : report s o u r = "" := by
+    (hq : u.quiet = true) (r : Outcome σ) :
+    report s o u r = "" := by
   simp [report, hq]
 
 /-- What the program prints for a command line that it reads as the coefficients `c`, the height

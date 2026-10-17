@@ -148,7 +148,8 @@ theorem two_lt_of_mem_toList_primeTable {q : ℕ} (hq : q ∈ primeTable.toList)
 
 /-- The last prime of the table is `1021`. -/
 theorem eq_of_toList_primeTable_eq_append_singleton {pref : List ℕ} {cur : ℕ}
-    (hl : primeTable.toList = pref ++ [cur]) : cur = 1021 := by
+    (hl : primeTable.toList = pref ++ [cur]) :
+    cur = 1021 := by
   have h : primeTable.toList.getLast? = some 1021 := by decide
   simpa [hl] using h
 

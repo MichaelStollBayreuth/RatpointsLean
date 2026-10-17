@@ -121,7 +121,8 @@ writes at each of its calls of `process` (`find_points.c:5312-5316`, `find_point
 `find_points.c:5331-5335`), one definition here; the negations stay `long`s for a numerator and a
 denominator of a height bound below `2 ^ 63`. -/
 def Delivery.callMapped (process : Int → Int → Int → σ → Answer σ) (r : Delivery σ)
-    (reversed : Bool) (a b y : Int) : Delivery σ :=
+    (reversed : Bool) (a b y : Int) :
+    Delivery σ :=
   if reversed then
     if 0 ≤ a then r.call process b a y else r.call process (-b) (-a) y
   else r.call process a b y
@@ -146,7 +147,8 @@ code: the search with a callback (`Ratpoints.findPointsWith`) delivers each poin
 and tests the flag where the C code tests `*quit`, and this fold over the list of the points of the
 search (`Ratpoints.findPoints`) is what that delivery is compared with. -/
 def Delivery.deliver (process : Int → Int → Int → σ → Answer σ) (r : Delivery σ)
-    (L : List (Int × Int × Int)) : Delivery σ :=
+    (L : List (Int × Int × Int)) :
+    Delivery σ :=
   L.foldl (fun r p ↦ if r.quit then r else r.call process p.1 p.2.2 p.2.1) r
 
 /-! ### Examples -/

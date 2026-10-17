@@ -1043,8 +1043,8 @@ def sift {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : L
 -- where every numerator prime to the denominator gives a point, with pieces of one bit array: a
 -- callback that stops at its `k`-th call gets the first `k` calls of the search without a stop,
 -- the count is their number, and the flag is set when the search has that many calls; under
--- `RATPOINTS_NO_Y` the points with `y ≥ 0`; under `RATPOINTS_NO_CHECK` the numerators that
--- survive the moduli, prime to the denominator, with `y = 0`.
+-- `RATPOINTS_NO_Y` the points with `y ≥ 0`; under `RATPOINTS_NO_CHECK` the numerators that survive
+-- the moduli, prime to the denominator, with `y = 0`.
 #guard
   let c := [0, 0, 1]
   let es := [3, 5, 7, 11, 13].map fun p ↦

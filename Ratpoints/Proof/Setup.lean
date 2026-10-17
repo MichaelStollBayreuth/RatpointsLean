@@ -571,7 +571,8 @@ theorem swapPoint_swapPoint {q : ℤ × ℤ × ℤ} (hn : 0 < q.2.2 ∨ q.2.2 = 
 /-- The map of the reversal is injective on the triples `(x, y, z)` with `z > 0` or
 `(x, z) = (1, 0)` (`Ratpoints.Sieve.swapPoint_swapPoint`). -/
 theorem swapPoint_inj {q q' : ℤ × ℤ × ℤ} (hn : 0 < q.2.2 ∨ q.2.2 = 0 ∧ q.1 = 1)
-    (hn' : 0 < q'.2.2 ∨ q'.2.2 = 0 ∧ q'.1 = 1) : swapPoint q = swapPoint q' ↔ q = q' :=
+    (hn' : 0 < q'.2.2 ∨ q'.2.2 = 0 ∧ q'.1 = 1) :
+    swapPoint q = swapPoint q' ↔ q = q' :=
   ⟨fun h ↦ by rw [← swapPoint_swapPoint hn, h, swapPoint_swapPoint hn'],
     fun h ↦ congr(swapPoint $h)⟩
 

@@ -48,7 +48,8 @@ theorem flatMap_filter_of_ne {l : List α} {p : α → Bool} {f : α → List β
 /-- Filtering by a test that holds on every element of `l` exactly when `P` holds keeps all of `l`
 or nothing. -/
 theorem filter_eq_ite_of_forall {l : List α} {p : α → Bool} {P : Prop} [Decidable P]
-    (h : ∀ a ∈ l, p a ↔ P) : l.filter p = if P then l else [] := by
+    (h : ∀ a ∈ l, p a ↔ P) :
+    l.filter p = if P then l else [] := by
   split_ifs with hP
   · exact filter_eq_self.mpr fun a ha ↦ (h a ha).mpr hP
   · exact filter_eq_nil_iff.mpr fun a ha hpa ↦ hP ((h a ha).mp hpa)

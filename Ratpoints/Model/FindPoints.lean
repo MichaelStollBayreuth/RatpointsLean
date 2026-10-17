@@ -530,10 +530,9 @@ tables of inverses and squares (`Ratpoints.Sieve.inversesMod`, `Ratpoints.Sieve.
 the first point at infinity at the heights `10 ^ 12` and `2 ^ 63 - 1`, and the bits of the flags
 written back as `ratpoints` reports them; the options of the output (`{ noY := true }`,
 `{ noCheck := true }`), against the output of `ratpoints` under `-y` and, with the moduli pinned,
-under `-x`; and the refusals in the order of the program, the
-coefficients before the height bound and the height bound before the leading zeros, for the height
-bound `0` and for `2 ^ 63`, the least height that is not a `long`, while `2 ^ 63 - 1` passes on to
-the test of the leading zeros. -/
+under `-x`; and the refusals in the order of the program, the coefficients before the height bound
+and the height bound before the leading zeros, for the height bound `0` and for `2 ^ 63`, the least
+height that is not a `long`, while `2 ^ 63 - 1` passes on to the test of the leading zeros. -/
 
 #guard (findPoints [-2, 0, 0, 1] 130 defaultParams).toOption ==
   some [(1, 0, 0), (3, 5, 1), (3, -5, 1), (129, 3830, 100), (129, -3830, 100)]
@@ -877,10 +876,9 @@ the test of the leading zeros. -/
     | .ok o => o.info.toList == [(1, 1, 0)] && o.total == 1
     | .error _ => false
 
--- The bits of the flags written back, which `ratpoints c 20` reports after the points (its
--- message 7): the reversal for `-1 0 9`, `0 1 0 2` and `0 1 0 0 4`, the squares for `-2 0 0 1`
--- and for the reversed `0 1 0 2` and `0 1 0 0 4`, the divisors for `1 2`, and none for
--- `1 0 126 0 441`.
+-- The bits of the flags written back, which `ratpoints c 20` reports after the points (its message
+-- 7): the reversal for `-1 0 9`, `0 1 0 2` and `0 1 0 0 4`, the squares for `-2 0 0 1` and for the
+-- reversed `0 1 0 2` and `0 1 0 0 4`, the divisors for `1 2`, and none for `1 0 126 0 441`.
 #guard
   ([([-1, 0, 9], true, false, false), ([1, 2], false, false, true),
       ([-2, 0, 0, 1], false, true, false), ([0, 1, 0, 2], true, true, false),

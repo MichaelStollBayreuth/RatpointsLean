@@ -247,6 +247,7 @@ class Skips(unittest.TestCase):
         self.assertFalse(dt.skips_height(cfg, ['0 0 1', '40000'], '\nerror\n', 1))
 
 
+class StopCases(unittest.TestCase):
     def test_stop_case_timeout(self):
         cfg = SimpleNamespace(c='/bin/true', lean='/bin/sleep', verbose=False)
         tally = dt.Tally()

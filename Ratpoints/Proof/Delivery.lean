@@ -71,7 +71,8 @@ theorem deliver_cons_of_quit_eq_false {r : Delivery σ} (h : r.quit = false)
   simp [deliver_cons, h]
 
 theorem deliver_singleton_of_quit_eq_false {r : Delivery σ} (h : r.quit = false)
-    (p : Int × Int × Int) : r.deliver process [p] = r.call process p.1 p.2.2 p.2.1 := by
+    (p : Int × Int × Int) :
+    r.deliver process [p] = r.call process p.1 p.2.2 p.2.1 := by
   simp [deliver_cons_of_quit_eq_false process h]
 
 /-! ### The stop -/
@@ -93,7 +94,8 @@ theorem deliver_append_of_quit {r : Delivery σ} {L₁ : List (Int × Int × Int
 /-- Once a call has set the flag, the delivery of a list is that of a prefix of it after which the
 flag is set: the points that follow are passed over. -/
 theorem deliver_eq_of_prefix {r : Delivery σ} {M L : List (Int × Int × Int)} (h : M <+: L)
-    (hq : (r.deliver process M).quit = true) : r.deliver process L = r.deliver process M :=
+    (hq : (r.deliver process M).quit = true) :
+    r.deliver process L = r.deliver process M :=
   h.elim fun t ht ↦ ht ▸ deliver_append_of_quit process hq t
 
 /-- `Ratpoints.Delivery.deliver_eq_of_prefix` for the concatenations of the lists `f a` of the

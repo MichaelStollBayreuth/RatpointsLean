@@ -695,7 +695,8 @@ the exact check (`Ratpoints.Sieve.checkPointList`, with the thunk `w` of the pro
 `d` and the flags `fl`) when `a` passes the test of a candidate (`Ratpoints.Sieve.accepted`, with
 the thunk `checks` of the third stage), and none otherwise. -/
 def acceptedPoints (w : Thunk (List Int)) (d b : Nat) (fl : CheckFlags)
-    (checks : Thunk (List CheckSpec)) (a : Int) : List (Int × Int × Int) :=
+    (checks : Thunk (List CheckSpec)) (a : Int) :
+    List (Int × Int × Int) :=
   if Id.run (accepted a b checks) then checkPointList w.get (if d % 2 = 1 then b else 1) b fl a
   else []
 

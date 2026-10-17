@@ -349,7 +349,8 @@ exit of the loop or not: the bit arrays from that of `low` up to the word number
 callback has not stopped the search, and the delivery is that of the points of their bits that lie
 in `low, …, high` and pass `keep`. -/
 structure SiftInvariant (g : Int → List (Int × Int × Int)) (keep : Int → Bool) (low high : Int)
-    (r0 : Delivery σ) (exit : Bool) (range : Nat) (w0 w1 : Int) (r : Delivery σ) : Prop where
+    (r0 : Delivery σ) (exit : Bool) (range : Nat) (w0 w1 : Int) (r : Delivery σ) :
+    Prop where
   /-- The next piece starts at the word number `w0`, not below that of `low`. -/
   le_w0 : low / rbaLength ≤ w0
   /-- The word number `w0` is at most one past that of `high`. -/

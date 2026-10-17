@@ -103,7 +103,8 @@ the numerators `-H, …, H` that pass the class word `nb[b mod 64]` (`Ratpoints.
 survive the sieve entries `entries`. -/
 structure SieveRunInvariant (c : List ℤ) (d H : ℕ) (fl : CheckFlags) (entries : List SieveEntry)
     (sp2 : ℕ) (cls : Vector NumClass 64) (keep : ℕ → Bool) (r0 : Delivery σ) (pref : List ℕ)
-    (r : Delivery σ) (store : RowStore) : Prop where
+    (r : Delivery σ) (store : RowStore) :
+    Prop where
   /-- The callback has not stopped the search. -/
   quit_eq_false : r.quit = false
   /-- The store fits the sieve entries of the first two stages. -/
@@ -133,7 +134,8 @@ def SieveRunLoopInvariant (c : List ℤ) (d H : ℕ) (fl : CheckFlags) (entries 
 -- A denominator of the loop over the list of a shape is positive and below `2 ^ 63`.
 private theorem pos_and_lt_of_eq_append_cons {s : Shape} {db : UInt64} {bLow bHigh : ℕ}
     (hbLow : 1 ≤ bLow) (hbHigh : bHigh < 2 ^ 63) {pref suff : List ℕ} {cur : ℕ}
-    (hl : Id.run (s.dens db bLow bHigh) = pref ++ cur :: suff) : 0 < cur ∧ cur < 2 ^ 63 := by
+    (hl : Id.run (s.dens db bLow bHigh) = pref ++ cur :: suff) :
+    0 < cur ∧ cur < 2 ^ 63 := by
   lia [s.le_and_le_of_mem_dens db hbLow (hl ▸ List.mem_append_right pref List.mem_cons_self)]
 
 -- The entries with the offsets of the packing of a class have what `fill_bp_list` needs.
