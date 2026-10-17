@@ -7,11 +7,13 @@ module
 
 public import Ratpoints.Model.BruteForce
 public import Ratpoints.Model.Constants
+public import Ratpoints.Model.Delivery
 public import Ratpoints.Model.Tables
 
 -- The `#guard` examples run code of the imported modules at compile time.
 meta import Ratpoints.Model.BruteForce
 meta import Ratpoints.Model.Constants
+meta import Ratpoints.Model.Delivery
 meta import Ratpoints.Model.Tables
 
 /-!
@@ -30,11 +32,14 @@ curve (`Ratpoints.Sieve.swapPoint`); and the points at infinity
 (`Ratpoints.Sieve.pointsAtInfinity`). The third stage removes only numerators that the rows of its
 primes would remove, or that have a common factor with the denominator, so that the test of a
 candidate and the exact check give the points of the check of the reference for the numerators that
-survive the rows of these primes. The exact check and the points at infinity deliver the points
-mapped by `Ratpoints.Sieve.swapPoint` when their flag of the reversal is set, and so does the check
-of the reference. The sieve that calls these components, on the bit arrays of 64-bit words, is in
-`Ratpoints.Model.Sieve`; the tables of the primes and the sieve entries of the moduli, with the rows
-of a denominator, are in `Ratpoints.Model.Tables`.
+survive the rows of these primes. The exact check delivers its points to the callback of the search
+(`Ratpoints.Delivery`), as the bits of the flags of the search (`Ratpoints.CheckFlags`) say: mapped
+back to the caller's curve when the flag of the reversal is set, without the exact check under
+`RATPOINTS_NO_CHECK` and only with `y ≥ 0` under `RATPOINTS_NO_Y`; the points at infinity give the
+points mapped by `Ratpoints.Sieve.swapPoint` when their flag of the reversal is set, and so does the
+check of the reference. The sieve that calls these components, on the bit arrays of 64-bit words, is
+in `Ratpoints.Model.Sieve`; the tables of the primes and the sieve entries of the moduli, with the
+rows of a denominator, are in `Ratpoints.Model.Tables`.
 
 ## Main definitions
 
@@ -46,8 +51,8 @@ of a denominator, are in `Ratpoints.Model.Tables`.
   `Ratpoints.Sieve.CheckSpec.index`, `Ratpoints.Sieve.stage3`: the third stage, what it needs of
   its primes for a denominator, and its test of one numerator.
 * `Ratpoints.Sieve.accepted`, `Ratpoints.Sieve.checkPoint`: the test of a candidate, the test for
-  common factors and the third stage, and the exact check of one numerator, its points mapped by
-  `Ratpoints.Sieve.swapPoint` when the flag of the reversal is set.
+  common factors and the third stage, and the exact check of one numerator, its points delivered to
+  the callback of the search as the flags of the search say.
 * `Ratpoints.Sieve.checkNum`: the check of the reference, the test for common factors by the gcd
   and the exact check of one numerator, its points mapped by `Ratpoints.Sieve.swapPoint` when the
   flag of the reversal is set.
@@ -300,14 +305,19 @@ def accepted (a : Int) (b : Nat) (checks : Thunk (List CheckSpec)) : Id Bool := 
   if !(← relprime a.toInt64 b.toInt64) then return false
   stage3 a checks.get
 
-/-- The points of the numerator `a` over the denominator `b` by the exact check, each mapped by
-`Ratpoints.Sieve.swapPoint` when the flag `rev` of the reversal is set: `(a, y, b)` and, for
-`y ≠ 0`, `(a, -y, b)` when `v = y ^ 2` with `y ≥ 0`, for the value `v` of Horner's rule in `a` on
-the products `w`, times `b` if the degree `d` is odd. For the products `w` of the coefficients `cₖ`
+/-- The exact check of the numerator `a` over the denominator `b`, its points delivered to the
+callback `process` on the delivery `r`, each mapped back to the caller's curve when the flag
+`fl.reversed` of the reversal is set (`Ratpoints.Delivery.callMapped`): unless `fl.noCheck`, for the
+value `v` of Horner's rule in `a` on the products `w`, times `b` if the degree `d` is odd, and
+`y = ⌊√v⌋`, when `v ≥ 0` and `v = y ^ 2`, the call with `(a : y : b)`, and then, unless that call
+stopped the search, `y = 0` or `fl.noY`, the call with `(a : -y : b)`; with `fl.noCheck`, one call
+with `(a : 0 : b)`, whether or not it gives a point. For the products `w` of the coefficients `cₖ`
 with the powers `b^(d - k)` (`Ratpoints.BruteForce.scaledCoeffs`), `v` is the value `F(a, b)` of the
-binary form. For a numerator prime to `b` it is the check of the reference
-(`Ratpoints.Sieve.checkNum`) with the factor `b` for odd `d` and `1` for even `d`. The walk through
-the set bits of a word calls it (`Ratpoints.Sieve.walkWord`).
+binary form; with the flags of the output clear and a callback that does not stop the search, the
+calls are those of the points of the check of the reference (`Ratpoints.Sieve.checkNum`) for a
+numerator prime to `b`, with the factor `b` for odd `d` and `1` for even `d`, in their order. The
+walk through the set bits of a word calls it (`Ratpoints.Sieve.walkWord`), only while the flag
+`quit` of `r` is clear, and returns when the flag is set after it.
 
 C: `sift.c:202-205`, `find_points.c:3122`, `find_points.c:5250-5338`, `rp-private.h:576`,
 `rp-private.h:596-597`
@@ -316,19 +326,26 @@ Deviation: the products `w` as a thunk, which the sieve of one denominator makes
 denominator (`Ratpoints.Sieve.sift`) and which is forced when the first numerator of `b` reaches the
 check, for the array `work` of the sieving thread, which `worker_init` gives it, and its flag
 `compute_bc`, which `sift` sets and `_ratpoints_check_point` clears when it computes the products;
-the degree `d` and the flag `rev` as arguments, handed down from `Ratpoints.Sieve.sieveRun` through
-the components that call the check, for the degree and the bit `RATPOINTS_REVERSED` of the flags of
-the search, which `_ratpoints_check_point` reads through its worker (`args->degree`, `args->flags`);
-a list of points, for the callback `process` and for the count of points that
-`_ratpoints_check_point` returns, with no stop that `process` may request, and no `RATPOINTS_NO_Y`
-and no `RATPOINTS_NO_CHECK` (stage G); integers for the `long`s `a` and `b` (the negations of
-`Ratpoints.Sieve.swapPoint` stay `long`s by `Ratpoints.fitsLong_neg`); no measurements of the time
-of the check and of its products (`RP_CHECK`, `RP_BC_TIC`, `RP_BC_TOC` under `RP_PHASE_TIMING`), and
-no output under `DEBUG`. -/
-def checkPoint (w : Thunk (List Int)) (d : Nat) (b : Int) (rev : Bool) (a : Int) :
-    List (Int × Int × Int) :=
-  let pts := BruteForce.pointsAbove a b (BruteForce.horner w.get a * if d % 2 = 1 then b else 1)
-  if rev then pts.map swapPoint else pts
+the degree `d` and the flags `fl` as arguments, handed down from `Ratpoints.Sieve.sieveRun` through
+the components that call the check, for the degree and the bits `RATPOINTS_REVERSED`,
+`RATPOINTS_NO_CHECK` and `RATPOINTS_NO_Y` of the flags of the search, which `_ratpoints_check_point`
+reads through its worker (`args->degree`, `args->flags`); the delivery `r` passed and returned, for
+the pointers `info` and `wk->quit` and the count `total` that `_ratpoints_check_point` keeps from
+zero and returns, and the three branches of the map of the reversal at each call one definition
+(`Ratpoints.Delivery.callMapped`); the square root and the test of the remainder by `Nat.sqrt` on
+`v`, for `mpz_sqrtrem`; integers for the `long`s `a` and `b` (the negations of the map stay `long`s
+by `Ratpoints.fitsLong_neg`); no measurements of the time of the check and of its products
+(`RP_CHECK`, `RP_BC_TIC`, `RP_BC_TOC` under `RP_PHASE_TIMING`), and no output under `DEBUG`. -/
+def checkPoint {σ : Type} (process : Int → Int → Int → σ → Answer σ) (w : Thunk (List Int))
+    (d : Nat) (b : Int) (fl : CheckFlags) (a : Int) (r : Delivery σ) : Delivery σ :=
+  if !fl.noCheck then
+    let v := BruteForce.horner w.get a * if d % 2 = 1 then b else 1
+    let y := v.toNat.sqrt
+    if 0 ≤ v ∧ y * y = v.toNat then
+      let r := r.callMapped process fl.reversed a b y
+      if !r.quit && y != 0 && !fl.noY then r.callMapped process fl.reversed a b (-y) else r
+    else r
+  else r.callMapped process fl.reversed a b 0
 
 /-- The points of the numerator `a` over the denominator `b`, as the brute-force reference checks it
 (`Ratpoints.BruteForce.pointsOfDen`), each mapped by `Ratpoints.Sieve.swapPoint` when the flag `rev`
@@ -336,13 +353,14 @@ of the reversal is set: none when `a` and `b` have a common factor, and otherwis
 for `y ≠ 0`, `(a, -y, b)` when `v = y ^ 2` with `y ≥ 0`, for the value `v` of Horner's rule in `a`
 on `w`, times `f`. For the products `w` of the coefficients `cₖ` with the powers `b^(d - k)`
 (`Ratpoints.BruteForce.scaledCoeffs`), and `f = b` for odd `d` and `f = 1` for even `d`, `v` is the
-value `F(a, b)` of the binary form, and these are the points of the exact check of the degree `d`
-(`Ratpoints.Sieve.checkPoint`). So the check with the flag set gives the points of the check without
-it, mapped (`Ratpoints.Sieve.checkNum_eq_map`), which after a reversal are points of the caller's
-curve. It is the reference of the test of a candidate and the exact check
-(`Ratpoints.Sieve.accepted`, `Ratpoints.Sieve.checkPoint`), which test for common factors by the
-binary algorithm (`Ratpoints.Sieve.relprime`) and run the third stage before the exact check, and
-give the same points for the numerators that the rows of the primes of the third stage admit
+value `F(a, b)` of the binary form, and these are the points that the exact check of the degree `d`
+delivers, in their order, with the flags of the output clear (`Ratpoints.Sieve.checkPoint`). So the
+check with the flag set gives the points of the check without it, mapped
+(`Ratpoints.Sieve.checkNum_eq_map`), which after a reversal are points of the caller's curve. It is
+the reference of the test of a candidate and the exact check (`Ratpoints.Sieve.accepted`,
+`Ratpoints.Sieve.checkPoint`), which test for common factors by the binary algorithm
+(`Ratpoints.Sieve.relprime`) and run the third stage before the exact check, and give the same
+points for the numerators that the rows of the primes of the third stage admit
 (`Ratpoints.Sieve.acceptedPoints_eq_ite`). -/
 def checkNum (w : List Int) (f b : Int) (rev : Bool) (a : Int) : List (Int × Int × Int) :=
   if Int.gcd a b = 1 then
@@ -451,7 +469,32 @@ def pointsAtInfinity (c : List Int) (d : Nat) (rev : Bool) : List (Int × Int ×
     (BruteForce.numerators 130).all fun a ↦
       let w := BruteForce.scaledCoeffs c d b
       let f : Int := if d % 2 = 1 then b else 1
-      checkNum w f b rev a == if Int.gcd a b = 1 then checkPoint (.pure w) d b rev a else []
+      checkNum w f b rev a == if Int.gcd a b = 1 then
+        (checkPoint appendPoint (.pure w) d b { reversed := rev } a ⟨#[], 0, false⟩).info.toList
+      else []
+
+-- The flags of the output and the stop in the exact check, for the point `(129 : ±3830 : 100)` of
+-- `y ^ 2 = x ^ 3 - 2`, with a callback that appends the points and stops at its `k`-th call:
+-- `+y`, then `-y`; `-y` not delivered after a stop at `+y`, nor under `RATPOINTS_NO_Y`; under
+-- `RATPOINTS_NO_CHECK` the one call `(129 : 0 : 100)`, and `(130 : 0 : 100)` for a numerator that
+-- gives no point; after a reversal the points mapped, `(100 : ±3830 : 129)`; and the count, the
+-- calls made.
+#guard
+  let w := BruteForce.scaledCoeffs [-2, 0, 0, 1] 3 100
+  let stopAt (k : Nat) (x z y : Int) (pts : Array (Int × Int × Int)) :
+      Answer (Array (Int × Int × Int)) := ⟨1, pts.size + 1 == k, pts.push (x, y, z)⟩
+  let run (k : Nat) (fl : CheckFlags) (a : Int) : List (Int × Int × Int) × Int × Bool :=
+    let r := checkPoint (stopAt k) (.pure w) 3 100 fl a ⟨#[], 0, false⟩
+    (r.info.toList, r.total, r.quit)
+  run 0 {} 129 == ([(129, 3830, 100), (129, -3830, 100)], 2, false) &&
+    run 1 {} 129 == ([(129, 3830, 100)], 1, true) &&
+    run 2 {} 129 == ([(129, 3830, 100), (129, -3830, 100)], 2, true) &&
+    run 0 { noY := true } 129 == ([(129, 3830, 100)], 1, false) &&
+    run 0 { noCheck := true } 129 == ([(129, 0, 100)], 1, false) &&
+    run 0 { noCheck := true, noY := true } 130 == ([(130, 0, 100)], 1, false) &&
+    run 0 {} 130 == ([], 0, false) &&
+    run 0 { reversed := true } 129 == ([(100, 3830, 129), (100, -3830, 129)], 2, false) &&
+    run 0 { reversed := true, noCheck := true } (-7) == ([(-100, 0, 7)], 1, false)
 
 -- The check of a numerator against the reference: the point `(129 : 3830 : 100)` on
 -- `y ^ 2 = x ^ 3 - 2` and none for `(258 : 15320 : 200)`, the same point with the common factor 2;

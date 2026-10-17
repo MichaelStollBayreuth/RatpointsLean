@@ -35,8 +35,9 @@ a denominator divided by the stride of its class (`Ratpoints.Sieve.fillBpList`, 
 `Ratpoints.Model.Packing`). Every class word lets every numerator of a point through, and so does
 its packing; no forbidden divisor excludes the denominator of a point, the primes examined for them
 being primes of the table; both Jacobi tests let it through, and so does every test of a shape, so
-that the run finds the points of the denominators of its shape, in the order of its loop:
-increasing, except for the divisors.
+that the run delivers the points of the denominators of its shape to the callback of the search, in
+the order of its loop: increasing, except for the divisors; it returns when the callback stops the
+search.
 
 ## Main definitions
 
@@ -64,7 +65,8 @@ increasing, except for the divisors.
   `Ratpoints.Sieve.squares1Dens`: the denominators of the shapes.
 * `Ratpoints.Sieve.Shape`, `Ratpoints.Sieve.Shape.dens`, `Ratpoints.Sieve.Shape.keep`,
   `Ratpoints.Sieve.runSetup`: the shapes, their denominators and tests, and the choice of the shape.
-* `Ratpoints.Sieve.sieveRun`: the points of the denominators of a shape.
+* `Ratpoints.Sieve.sieveRun`: the points of the denominators of a shape, delivered to the callback
+  of the search.
 -/
 
 @[expose] public section
@@ -798,11 +800,12 @@ C: `find_points.c:3812-3815`, `find_points.c:3829-3837`, `find_points.c:4060-406
 `find_points.c:4073-4074`
 
 Deviation: the denominators listed, to be tested and sifted one after the other
-(`Ratpoints.Sieve.sieveRun`), where the C code tests and sifts each as the loop reaches it; the
-bounds of each segment computed where the denominators are listed (`Ratpoints.Sieve.sieveRun`), for
-the arrays `seg_lo` and `seg_hi` that `run_setup` fills and `run_block` reads; one segment per
-divisor, else one, with no blocks and no count of the steps (stage I); natural numbers for the
-`long`s. -/
+(`Ratpoints.Sieve.sieveRun`), where the C code tests and sifts each as the loop reaches it, and so
+all of them, also those after a stop of the callback, which the loop of the C code never reaches
+(the loops of `run_block` with the blocks, stage I); the bounds of each segment computed where the
+denominators are listed (`Ratpoints.Sieve.sieveRun`), for the arrays `seg_lo` and `seg_hi` that
+`run_setup` fills and `run_block` reads; one segment per divisor, else one, with no blocks and no
+count of the steps (stage I); natural numbers for the `long`s. -/
 def Shape.dens (s : Shape) (db : UInt64) (bLow bHigh : Nat) : Id (List Nat) := do
   match s with
   | .squares => return squaresDens bLow bHigh
@@ -856,22 +859,24 @@ def runSetup (useSquares : Bool) (us1 : Option (List Setup.DenInfo × List Nat))
     else return .all
 
 /-- The points of the denominators from `bLow` to `bHigh` of the shape `shape`, for the polynomial
-of degree `d` with the coefficient list `c`: the sieve entries `entries` of the moduli are cut into
-the three stages of the sieve, the first `sp1`, then those up to `sp2`, then the rest, the third
-stage, with the reciprocals of `magics` in their order, those of their moduli when `magics` holds
-the reciprocals of the moduli in the order of the entries (`Ratpoints.sievingInfo`); the rows of the
+of degree `d` with the coefficient list `c`, delivered to the callback `process` on the delivery
+`r`, whose flag `quit` is clear: the sieve entries `entries` of the moduli are cut into the three
+stages of the sieve, the first `sp1`, then those up to `sp2`, then the rest, the third stage, with
+the reciprocals of `magics` in their order, those of their moduli when `magics` holds the
+reciprocals of the moduli in the order of the entries (`Ratpoints.sievingInfo`); the rows of the
 moduli of the first two stages come from the tables of rows of their entries in the store `store`
 (`Ratpoints.Sieve.RowStore`), each built into its table of rows when a denominator first needs it
-and kept for the rest of the run, and the moduli of the third stage need none; for each
-denominator `b` of the shape, in the order of its loop (`Ratpoints.Sieve.Shape.dens`, with the word
-`db` of the classes that admit a numerator), that passes its tests (`Ratpoints.Sieve.Shape.keep`,
-with the classes `cls`), the residues of `b` divided by the stride of its class `cls[b mod 64]`
-modulo the moduli of the first two stages (`Ratpoints.Sieve.fillBpList`), and the points that
+and kept for the rest of the run, and the moduli of the third stage need none; for each denominator
+`b` of the shape, in the order of its loop (`Ratpoints.Sieve.Shape.dens`, with the word `db` of the
+classes that admit a numerator), that passes its tests (`Ratpoints.Sieve.Shape.keep`, with the
+classes `cls`), the residues of `b` divided by the stride of its class `cls[b mod 64]` modulo the
+moduli of the first two stages (`Ratpoints.Sieve.fillBpList`), and the points that
 `Ratpoints.Sieve.sift` finds in the packing of that class with the row offsets `offsets` of the
 classes (`Ratpoints.Sieve.classOffsets`), with pieces of at most `A` bit arrays, for `A ≥ 1`, the
 first stage ending at `sp1`, the entries and the reciprocals of the first two stages, the entries of
-the third stage with their reciprocals, and the flag `rev` of the reversal, appended in turn, the
-store with the rows that `Ratpoints.Sieve.sift` builds going on to the next denominator.
+the third stage with their reciprocals, and the flags `fl`, delivered in turn, the store with the
+rows that `Ratpoints.Sieve.sift` builds going on to the next denominator; after each denominator
+the run returns if the callback has stopped the search.
 
 C: `find_points.c:3861`, `find_points.c:3889-3904`, `find_points.c:3911`,
 `find_points.c:3917-3918`, `find_points.c:3926-3936`, `find_points.c:3954-3966`,
@@ -886,37 +891,43 @@ decision of the correction of the moduli (`wk->dec`, `run->dec_sp2`, `run->dec_s
 first decision being that of the arguments (line 3861, with its first block `dec_block[0]`), and no
 count of the decisions and no later ones (lines 3862-3863; stage I); the denominators of the shape
 listed first, then tested and sifted one after the other, where `run_block` tests and sifts each as
-its loop reaches it; no blocks (stage I): the steps of each segment in order, for the blocks of
+its loop reaches it, so that after a stop of the callback the list holds denominators that the C
+code never reaches; no blocks (stage I): the steps of each segment in order, for the blocks of
 `len` consecutive steps, which the threads share and which deliver their points in the same order;
 the classes `cls` and the array `offsets` of their row offsets as arguments, for the field `cls` of
 the run that `run_block` reads (line 3893), whose classes reach their rows of offsets through their
 pointers `offset`; the class `cls[b mod 64]` and the residues of `fill_bp_list` passed to
 `Ratpoints.Sieve.sift` as values, for the pointers `cl` and `bp_list`, and the residues a list of
-the length of the first two stages, for the array `bp_list` of `sp3_max` entries; a list of points,
-for the counts `total` of points that `sift` and `run_block` return, with no stop by the callback
-(stage G); the store of the tables of rows passed from one denominator to the next, for the arrays
-`sieve` of the entries of the arguments, which the run reads and fills, its last state not returned,
-as nothing reads the tables of rows after the run; natural numbers for the `long`s; no correction of
-the moduli between the blocks (stage I); no output under `DEBUG`. -/
-def sieveRun (c : List Int) (d H A : Nat) (rev : Bool) (sp1 sp2 : Nat) (entries : List SieveEntry)
-    (magics : Array Nat) (cls : Vector NumClass 64) (offsets : Array Nat) (db : UInt64)
-    (shape : Shape) (bLow bHigh : Nat) (store : RowStore) :
-    Id (Array (Int × Int × Int)) := do
+the length of the first two stages, for the array `bp_list` of `sp3_max` entries; the delivery `r`
+passed and returned, for the pointers `info` and `wk->quit` and the counts `total` that `run_block`
+and the loop over the blocks keep from zero and return, and one test of the flag after each
+denominator and one return, for the return of `run_block` in each shape (lines 3928, 3957, 4044,
+4068) and the end of the loop over the blocks (line 5158); the store of the tables of rows passed
+from one denominator to the next, for the arrays `sieve` of the entries of the arguments, which the
+run reads and fills, its last state not returned, as nothing reads the tables of rows after the
+run; natural numbers for the `long`s; no correction of the moduli between the blocks (stage I); no
+output under `DEBUG`. -/
+def sieveRun {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : List Int) (d H A : Nat)
+    (fl : CheckFlags) (sp1 sp2 : Nat) (entries : List SieveEntry) (magics : Array Nat)
+    (cls : Vector NumClass 64) (offsets : Array Nat) (db : UInt64) (shape : Shape)
+    (bLow bHigh : Nat) (store : RowStore) (r : Delivery σ) :
+    Id (Delivery σ) := do
   let es := entries.take sp2
   let mgs := magics.toList.take sp2
   let es3 := entries.drop sp2
   let mgs3 := magics.toList.drop sp2
   let dens ← shape.dens db bLow bHigh
-  let mut out := #[]
+  let mut r := r
   let mut store := store
   for b in dens do
     if ← shape.keep cls b then
       let cl := cls[b % 64]!
       let bp := fillBpList b cl.k es mgs
-      let (pts, st) ← sift c d H A b rev sp1 es mgs bp cl offsets es3 mgs3 store
-      out := out ++ pts
+      let (r', st) ← sift process c d H A b fl sp1 es mgs bp cl offsets es3 mgs3 store r
+      r := r'
       store := st
-  return out
+      if r.quit then return r
+  return r
 
 /-! ### Examples
 
@@ -1180,8 +1191,9 @@ prints. -/
       sieveInit p⟩ : SieveEntry)
   let offsets := Array.replicate (Id.run (numPackings cls) * entries.length) 0
   let (cls, entries, offsets) := Id.run (classOffsets cls entries offsets)
-  (Id.run (sieveRun c 1 20 1 false 11 22 entries (entries.toArray.map (·.magic)) cls offsets db
-      (.squares1 [⟨2, 1, 2⟩] [1, 2]) 1 20 (entries.foldl (fun s e ↦ e.addTables s) {}))).toList ==
+  (Id.run (sieveRun appendPoint c 1 20 1 {} 11 22 entries (entries.toArray.map (·.magic)) cls
+      offsets db (.squares1 [⟨2, 1, 2⟩] [1, 2]) 1 20 (entries.foldl (fun s e ↦ e.addTables s) {})
+      ⟨#[], 0, false⟩)).info.toList ==
     [(0, 1, 1), (0, -1, 1), (4, 3, 1), (4, -3, 1), (12, 5, 1), (12, -5, 1), (-4, 3, 9), (-4, -3, 9),
       (8, 15, 9), (8, -15, 9), (20, 21, 9), (20, -21, 9), (-1, 0, 2), (3, 4, 2), (3, -4, 2),
       (15, 8, 2), (15, -8, 2), (-3, 4, 8), (-3, -4, 8), (5, 12, 8), (5, -12, 8), (-5, 12, 18),

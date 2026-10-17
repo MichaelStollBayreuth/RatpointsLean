@@ -9,6 +9,7 @@ public import Ratpoints.Proof.Words
 
 import Ratpoints.Proof.Bits
 import Ratpoints.Proof.Containers
+import Ratpoints.Proof.Delivery
 import Std.Tactic.Do
 
 /-!
@@ -21,15 +22,20 @@ whether a numerator is prime to the denominator, and none of its operations leav
 reciprocals (`Ratpoints.Sieve.SieveEntry.IsPrimeEntry`) is the test of the rows of these entries: it
 reads the table of each prime at `a b⁻¹ mod p`, in both branches of the bias, and a prime that
 divides `b` admits every numerator prime to `b`; the values that the C code holds in `long`s stay in
-range. So the test of a candidate (`Ratpoints.Sieve.accepted`), for `|a| < 2 ^ 63` and
-`0 < b < 2 ^ 63`, followed by the exact check (`Ratpoints.Sieve.checkPoint`), gives the points of
-the check of the reference (`Ratpoints.Sieve.checkNum`) for the numerators that survive these
-entries. The second stage on a bit array (`Ratpoints.Sieve.secondStage`), or on one of its words
-(`Ratpoints.Sieve.secondStageWord`), with moduli in the range of the packing and their reciprocals
-and the test `small` of the piece, gives its words and-ed with the rows of all its moduli at their
-offsets (`Ratpoints.Sieve.andWords`), although it stops when the bit array or the word is zero. The
-contracts of the loops are `@[spec]` theorems proved with `vcgen`, the program logic of Lean core,
-with loop invariants that are named definitions.
+range. The exact check (`Ratpoints.Sieve.checkPoint`), on a delivery whose flag of the stop is
+clear, is the reference of the delivery (`Ratpoints.Delivery.deliver`) of the list of the points it
+delivers for the flags of the search: the points of the check of the reference, without the point
+with `y < 0` under `RATPOINTS_NO_Y`, or the one survivor with `y = 0` under `RATPOINTS_NO_CHECK`,
+mapped back after a reversal. So the test of a candidate (`Ratpoints.Sieve.accepted`), for
+`|a| < 2 ^ 63` and `0 < b < 2 ^ 63`, followed by the exact check, delivers the points of the check
+with the flags (`Ratpoints.Sieve.checkNumWith`), which is the check of the reference
+(`Ratpoints.Sieve.checkNum`) with the flags of the output clear, for the numerators that survive
+these entries. The second stage on a bit array (`Ratpoints.Sieve.secondStage`), or on one of its
+words (`Ratpoints.Sieve.secondStageWord`), with moduli in the range of the packing and their
+reciprocals and the test `small` of the piece, gives its words and-ed with the rows of all its
+moduli at their offsets (`Ratpoints.Sieve.andWords`), although it stops when the bit array or the
+word is zero. The contracts of the loops are `@[spec]` theorems proved with `vcgen`, the program
+logic of Lean core, with loop invariants that are named definitions.
 
 ## Main definitions
 
@@ -37,8 +43,11 @@ with loop invariants that are named definitions.
 * `Ratpoints.Sieve.CheckSpec.admits`, `Ratpoints.Sieve.Stage3Invariant`: whether the third stage
   lets a numerator through one of its primes, and the invariant of its loop.
 * `Ratpoints.Sieve.SieveEntry.IsPrimeEntry`: the shape of the sieve entries of the third stage.
-* `Ratpoints.Sieve.acceptedPoints`: the points that the extraction gives for a numerator, those of
-  the exact check when the numerator passes the test of a candidate, the test for common factors
+* `Ratpoints.Sieve.checkPointList`, `Ratpoints.Sieve.checkNumWith`: the points that the exact check
+  delivers for a numerator with the flags of the search, and the same when the numerator is prime
+  to the denominator, the check of the reference with the flags.
+* `Ratpoints.Sieve.acceptedPoints`: the points that the extraction delivers for a numerator, those
+  of the exact check when the numerator passes the test of a candidate, the test for common factors
   and the third stage.
 * `Ratpoints.Sieve.SecondStageInvariant`, `Ratpoints.Sieve.SecondStageWordInvariant`: the
   invariants of the loops of the second stage on a bit array and on a word, over the moduli with
@@ -59,16 +68,27 @@ with loop invariants that are named definitions.
 * `Ratpoints.Sieve.accepted_spec`: the test of a candidate is the test of `gcd(a, b) = 1` followed
   by the third stage; `Ratpoints.Sieve.acceptedPoints_eq_ite`: for a numerator `a` with
   `|a| ≤ H < 2 ^ 63` and a denominator `0 < b < 2 ^ 63`, the test with the exact check gives the
-  points of the check of the reference (`Ratpoints.Sieve.checkNum`) when `a` survives the entries
+  points of the check with the flags (`Ratpoints.Sieve.checkNumWith`) when `a` survives the entries
   of the third stage, and none otherwise.
+* `Ratpoints.Sieve.checkPoint_eq_deliver`: the exact check delivers its list to the callback, the
+  call with `-y` left out after a call that stops the search.
+* `Ratpoints.Sieve.checkNumWith_of_noCheck_eq_false`,
+  `Ratpoints.Sieve.checkNumWith_of_noCheck_eq_true`,
+  `Ratpoints.Sieve.flatMap_checkNumWith_of_noCheck_eq_false`: the check with the flags of the
+  output, in terms of the brute-force reference without `RATPOINTS_NO_CHECK`, and the survivors
+  with it.
+* `Ratpoints.Sieve.checkNumWith_eq_map`: the check with the flag of the reversal is the check
+  without it, mapped; `Ratpoints.Sieve.map_checkNumWith_sublist`: without `RATPOINTS_NO_CHECK` and
+  with `RATPOINTS_NO_Y`, with `y` replaced by `0`, its points are a sublist of those under
+  `RATPOINTS_NO_CHECK`.
 * `Ratpoints.Sieve.secondStage_spec`, `Ratpoints.Sieve.secondStageWord_spec`: the second stage on a
   bit array, or on one of its words, gives its words and-ed with the rows of all its moduli.
 
 ## Implementation notes
 
-The file uses Lean core and `Std` only, as `Ratpoints.Proof.Words` does, on whose words of the rows
-(`Ratpoints.Sieve.SieveSpec.wordAt`, `Ratpoints.Sieve.andWords`) and reading of the reciprocals in
-step with the moduli (`Ratpoints.Sieve.eq_magic_and_of_next?_eq_some`,
+The file uses Lean core and `Std` only, as `Ratpoints.Proof.Words` and `Ratpoints.Proof.Delivery`
+do, on whose words of the rows (`Ratpoints.Sieve.SieveSpec.wordAt`, `Ratpoints.Sieve.andWords`) and
+reading of the reciprocals in step with the moduli (`Ratpoints.Sieve.eq_magic_and_of_next?_eq_some`,
 `Ratpoints.Sieve.next?_ne_none_of_lt`) the second stage builds. The proofs use only the facts on the
 constants that `decide` checks next to them, that `Ratpoints.mulModLimit < 2 ^ 32` and
 `Ratpoints.stage3Limit ≤ 2 ^ 32`, never their values. The words of the test for common factors are
@@ -523,34 +543,194 @@ theorem run_accepted {es : List SieveEntry} (hes : ∀ e ∈ es, e.IsPrimeEntry)
   · rw [all_admits_fillChecks hes hab ha]
   · simp [hab]
 
-theorem checkPoint_eq_checkNum (w : Thunk (List Int)) (d : Nat) {b : Int} (rev : Bool) {a : Int}
-    (hab : Int.gcd a b = 1) :
-    checkPoint w d b rev a = checkNum w.get (if d % 2 = 1 then b else 1) b rev a := by
-  simp [checkPoint, checkNum, hab]
+/-- The map of the reversal keeps the `y`-coordinate. -/
+@[simp]
+theorem fst_snd_swapPoint (p : Int × Int × Int) : (swapPoint p).2.1 = p.2.1 := by
+  simp only [swapPoint]
+  split <;> rfl
 
-/-- The points that the extraction gives for the numerator `a` over the denominator `b`: those of
-the exact check (`Ratpoints.Sieve.checkPoint`, with the thunk `w` of the products, the degree `d`
-and the flag `rev` of the reversal) when `a` passes the test of a candidate
-(`Ratpoints.Sieve.accepted`, with the thunk `checks` of the third stage), and none otherwise. -/
-def acceptedPoints (w : Thunk (List Int)) (d b : Nat) (rev : Bool)
+/-- The map of the reversal commutes with the replacement of `y` by `0`, since it moves only `x`
+and `z`. -/
+theorem swapPoint_fst_zero_snd (q : Int × Int × Int) :
+    ((swapPoint q).1, 0, (swapPoint q).2.2) = swapPoint (q.1, 0, q.2.2) := by
+  simp only [swapPoint]
+  split <;> rfl
+
+/-- One call of the callback with the point `(a : y : b)`, mapped back after a reversal, on a
+delivery whose flag is clear, is the delivery of that point mapped by `Ratpoints.Sieve.swapPoint`
+when `rev` is set. -/
+theorem callMapped_eq_deliver {σ : Type} (process : Int → Int → Int → σ → Answer σ)
+    {r : Delivery σ} (hr : r.quit = false) (rev : Bool) (a b y : Int) :
+    r.callMapped process rev a b y =
+      r.deliver process [(if rev then swapPoint else id) (a, y, b)] := by
+  rw [Delivery.deliver_singleton_of_quit_eq_false process hr]
+  cases rev <;> by_cases ha : 0 ≤ a <;> simp [Delivery.callMapped, swapPoint, ha]
+
+/-- The points that the exact check (`Ratpoints.Sieve.checkPoint`) of the numerator `a` over the
+denominator `b` delivers to a callback that does not stop the search, for the products `w`, the
+factor `f` and the flags `fl`: unless `fl.noCheck`, the points `(a, y, b)` and, for `y ≠ 0`,
+`(a, -y, b)` when the value `v` of Horner's rule in `a` on `w`, times `f`, is `y ^ 2` with `y ≥ 0`
+(`Ratpoints.BruteForce.pointsAbove`), the point with `y < 0` left out when `fl.noY` is set; with
+`fl.noCheck`, the one survivor `(a, 0, b)`; each mapped by `Ratpoints.Sieve.swapPoint` when the flag
+`fl.reversed` of the reversal is set. -/
+def checkPointList (w : List Int) (f b : Int) (fl : CheckFlags) (a : Int) :
+    List (Int × Int × Int) :=
+  (if fl.noCheck then [(a, 0, b)]
+    else (BruteForce.pointsAbove a b (BruteForce.horner w a * f)).filter
+      fun p ↦ !fl.noY || 0 ≤ p.2.1).map (if fl.reversed then swapPoint else id)
+
+/-- The exact check on a delivery whose flag is clear delivers the points of
+`Ratpoints.Sieve.checkPointList`, the call with `-y` left out after a call that stops the search. -/
+theorem checkPoint_eq_deliver {σ : Type} (process : Int → Int → Int → σ → Answer σ)
+    (w : Thunk (List Int)) (d : Nat) (b : Int) (fl : CheckFlags) (a : Int) {r : Delivery σ}
+    (hr : r.quit = false) :
+    checkPoint process w d b fl a r =
+      r.deliver process (checkPointList w.get (if d % 2 = 1 then b else 1) b fl a) := by
+  rw [checkPoint, checkPointList]
+  cases hc : fl.noCheck
+  · simp only [Bool.not_false, ↓reduceIte, BruteForce.pointsAbove]
+    generalize (BruteForce.horner w.get a * if d % 2 = 1 then b else 1) = v
+    generalize v.toNat.sqrt = y
+    by_cases hv : 0 ≤ v ∧ y * y = v.toNat
+    · simp only [hv, and_self, ↓reduceIte, callMapped_eq_deliver process hr]
+      by_cases hy0 : y = 0
+      · cases fl.noY <;> simp [hy0]
+      · have hy : (0 : Int) < y := by lia
+        cases hn : fl.noY
+        · simp only [hy0, ↓reduceIte, Bool.false_eq_true, List.filter_cons, Bool.not_false,
+            Bool.true_or, List.filter_nil, List.map_cons, List.map_nil, Bool.and_true]
+          rw [show ∀ p q : Int × Int × Int, [p, q] = [p] ++ [q] from fun _ _ ↦ rfl,
+            Delivery.deliver_append]
+          generalize r.deliver process [(if fl.reversed then swapPoint else id) (a, y, b)] = r1
+          cases hq : r1.quit <;> simp [hq, hy0, callMapped_eq_deliver process]
+        · simp [Int.le_of_lt hy, hy0]
+    · simp [hv]
+  · simp [callMapped_eq_deliver process hr]
+
+/-- The check of the numerator `a` over the denominator `b` with the flags `fl`: the points of
+`Ratpoints.Sieve.checkPointList` when `a` is prime to `b`, and none otherwise. With the flags
+`RATPOINTS_NO_CHECK` and `RATPOINTS_NO_Y` clear, it is the check of the reference
+(`Ratpoints.Sieve.checkNum_eq_checkNumWith`). -/
+def checkNumWith (w : List Int) (f b : Int) (fl : CheckFlags) (a : Int) : List (Int × Int × Int) :=
+  if Int.gcd a b = 1 then checkPointList w f b fl a else []
+
+/-- Without `RATPOINTS_NO_CHECK`, the check with the flags is the check of the reference with the
+flag of the reversal, without the points with `y < 0` under `RATPOINTS_NO_Y`. -/
+theorem checkNumWith_of_noCheck_eq_false {fl : CheckFlags} (hc : fl.noCheck = false)
+    (w : List Int) (f b a : Int) :
+    checkNumWith w f b fl a =
+      (checkNum w f b fl.reversed a).filter fun p ↦ !fl.noY || 0 ≤ p.2.1 := by
+  by_cases hab : Int.gcd a b = 1
+  · cases hr : fl.reversed <;>
+      simp [checkNumWith, checkPointList, checkNum, hab, hc, hr, List.filter_map,
+        Function.comp_def, fst_snd_swapPoint]
+  · simp [checkNumWith, checkNum, hab]
+
+/-- Under `RATPOINTS_NO_CHECK`, the check with the flags gives the survivor `(a, 0, b)` of a
+numerator prime to `b`, mapped after a reversal. -/
+theorem checkNumWith_of_noCheck_eq_true {fl : CheckFlags} (hc : fl.noCheck = true)
+    (w : List Int) (f b a : Int) :
+    checkNumWith w f b fl a =
+      if Int.gcd a b = 1 then [(if fl.reversed then swapPoint else id) (a, 0, b)] else [] := by
+  simp [checkNumWith, checkPointList, hc]
+
+theorem checkNum_eq_checkNumWith (w : List Int) (f b : Int) (rev : Bool) (a : Int) :
+    checkNum w f b rev a = checkNumWith w f b { reversed := rev } a := by
+  rw [checkNumWith_of_noCheck_eq_false rfl]
+  exact (List.filter_eq_self.mpr fun _ _ ↦ rfl).symm
+
+/-- The check with the flags gives the points of the check without the flag of the reversal, mapped
+by `Ratpoints.Sieve.swapPoint` when it is set. -/
+theorem checkNumWith_eq_map (w : List Int) (f b : Int) (fl : CheckFlags) (a : Int) :
+    checkNumWith w f b fl a = (checkNumWith w f b { fl with reversed := false } a).map
+      (if fl.reversed then swapPoint else id) := by
+  by_cases h : Int.gcd a b = 1 <;> simp [checkNumWith, checkPointList, h]
+
+theorem mem_checkNumWith_of_noCheck {fl : CheckFlags} (hc : fl.noCheck = true) {w : List Int}
+    {f b a : Int} {q : Int × Int × Int} :
+    q ∈ checkNumWith w f b fl a ↔
+      Int.gcd a b = 1 ∧ q = (if fl.reversed then swapPoint else id) (a, 0, b) := by
+  rw [checkNumWith_of_noCheck_eq_true hc]
+  by_cases h : Int.gcd a b = 1 <;> simp [h]
+
+-- The points of a value with `y ≥ 0`, with `y` replaced by `0`: at most the triple `(x, 0, z)`.
+private theorem map_filter_pointsAbove_sublist (x z v : Int) :
+    (((BruteForce.pointsAbove x z v).filter fun p ↦ 0 ≤ p.2.1).map
+      fun q ↦ (q.1, 0, q.2.2)).Sublist [(x, (0 : Int), z)] := by
+  simp only [BruteForce.pointsAbove]
+  have h1 : (0 : Int) ≤ v.toNat.sqrt := Int.natCast_nonneg _
+  by_cases h : 0 ≤ v ∧ v.toNat.sqrt * v.toNat.sqrt = v.toNat
+  · simp only [h, and_self, ↓reduceIte]
+    by_cases h0 : v.toNat.sqrt = 0
+    · simp [h0]
+    · simp [h0, h1]
+  · simp [h]
+
+/-- Without `RATPOINTS_NO_CHECK` and with `RATPOINTS_NO_Y`, the check of a numerator `a` over `b`
+gives at most one point, the one with `y ≥ 0`; with `y` replaced by `0` it is the survivor that the
+check gives under `RATPOINTS_NO_CHECK`. -/
+theorem map_checkNumWith_sublist (w : List Int) (f b : Int) (rev noY : Bool) (a : Int) :
+    ((checkNumWith w f b ⟨rev, false, true⟩ a).map fun q ↦ (q.1, 0, q.2.2)).Sublist
+      (checkNumWith w f b ⟨rev, true, noY⟩ a) := by
+  rw [checkNumWith, checkNumWith]
+  by_cases hab : Int.gcd a b = 1 <;> simp only [hab, ↓reduceIte]
+  · have h := map_filter_pointsAbove_sublist a b (BruteForce.horner w a * f)
+    cases rev
+    · simpa [checkPointList] using h
+    · simpa [checkPointList, List.map_map, Function.comp_def, swapPoint_fst_zero_snd] using
+        h.map swapPoint
+  · exact .slnil
+
+/-- The points that the extraction delivers for the numerator `a` over the denominator `b`: those of
+the exact check (`Ratpoints.Sieve.checkPointList`, with the thunk `w` of the products, the degree
+`d` and the flags `fl`) when `a` passes the test of a candidate (`Ratpoints.Sieve.accepted`, with
+the thunk `checks` of the third stage), and none otherwise. -/
+def acceptedPoints (w : Thunk (List Int)) (d b : Nat) (fl : CheckFlags)
     (checks : Thunk (List CheckSpec)) (a : Int) : List (Int × Int × Int) :=
-  if Id.run (accepted a b checks) then checkPoint w d b rev a else []
+  if Id.run (accepted a b checks) then checkPointList w.get (if d % 2 = 1 then b else 1) b fl a
+  else []
 
 /-- The points of `Ratpoints.Sieve.acceptedPoints`, the test of `Ratpoints.Sieve.accepted` followed
-by the exact check of `Ratpoints.Sieve.checkPoint`, are those that the check of the reference
-`Ratpoints.Sieve.checkNum` gives for a numerator `a` with `|a| ≤ H < 2 ^ 63` that survives the sieve
-entries `es` of the third stage, of the shape of `Ratpoints.Sieve.SieveEntry.IsPrimeEntry`, and none
-for the others, for a denominator `0 < b < 2 ^ 63`. -/
+by the exact check, are those of the check with the flags `Ratpoints.Sieve.checkNumWith` for a
+numerator `a` with `|a| ≤ H < 2 ^ 63` that survives the sieve entries `es` of the third stage, of
+the shape of `Ratpoints.Sieve.SieveEntry.IsPrimeEntry`, and none for the others, for a denominator
+`0 < b < 2 ^ 63`. -/
 theorem acceptedPoints_eq_ite {es : List SieveEntry} (hes : ∀ e ∈ es, e.IsPrimeEntry) {a : Int}
     {b H : Nat} {checks : Thunk (List CheckSpec)}
     (hc : checks.get = fillChecks b H es (es.map fun e ↦ magic e.p)) (w : Thunk (List Int))
-    (d : Nat) (rev : Bool) (hb : 0 < b) (hb63 : b < 2 ^ 63) (ha : a.natAbs ≤ H) (hH : H < 2 ^ 63) :
-    acceptedPoints w d b rev checks a =
-      if survives es b a then checkNum w.get (if d % 2 = 1 then b else 1) b rev a else [] := by
+    (d : Nat) (fl : CheckFlags) (hb : 0 < b) (hb63 : b < 2 ^ 63) (ha : a.natAbs ≤ H)
+    (hH : H < 2 ^ 63) :
+    acceptedPoints w d b fl checks a =
+      if survives es b a then checkNumWith w.get (if d % 2 = 1 then b else 1) b fl a else [] := by
   rw [acceptedPoints, run_accepted hes hc hb hb63 ha hH]
-  by_cases hab : Int.gcd a b = 1
-  · simp [hab, checkPoint_eq_checkNum w d rev hab]
-  · simp [hab, checkNum]
+  by_cases hab : Int.gcd a b = 1 <;> simp [hab, checkNumWith]
+
+/-- The exact check of a numerator that passes the test of a candidate, on a delivery whose flag is
+clear, delivers the points of `Ratpoints.Sieve.acceptedPoints`. -/
+theorem checkPoint_eq_deliver_acceptedPoints {σ : Type} (process : Int → Int → Int → σ → Answer σ)
+    (w : Thunk (List Int)) (d b : Nat) (fl : CheckFlags) {checks : Thunk (List CheckSpec)}
+    {a : Int} (h : true = Id.run (accepted a b checks)) {r : Delivery σ} (hr : r.quit = false) :
+    checkPoint process w d b fl a r = r.deliver process (acceptedPoints w d b fl checks a) := by
+  simp only [acceptedPoints, ← h, ↓reduceIte, checkPoint_eq_deliver process w d b fl a hr]
+
+/-- A numerator that does not pass the test of a candidate has no points to deliver. -/
+theorem deliver_acceptedPoints_of_not_accepted {σ : Type}
+    (process : Int → Int → Int → σ → Answer σ) (w : Thunk (List Int)) (d b : Nat)
+    (fl : CheckFlags) {checks : Thunk (List CheckSpec)} {a : Int}
+    (h : ¬Id.run (accepted a b checks) = true) (r : Delivery σ) :
+    r.deliver process (acceptedPoints w d b fl checks a) = r := by
+  simp [acceptedPoints, h]
+
+/-- Without `RATPOINTS_NO_CHECK`, the checks with the flags of the numerators `xs` over `b` give the
+points of the brute-force reference, mapped by `Ratpoints.Sieve.swapPoint` after a reversal,
+without those with `y < 0` under `RATPOINTS_NO_Y`. -/
+theorem flatMap_checkNumWith_of_noCheck_eq_false {fl : CheckFlags} (hc : fl.noCheck = false)
+    (c : List Int) (d : Nat) (b : Int) (xs : List Int) :
+    xs.flatMap (checkNumWith (BruteForce.scaledCoeffs c d b) (if d % 2 = 1 then b else 1) b fl) =
+      ((BruteForce.pointsOfDen c d b xs).map (if fl.reversed then swapPoint else id)).filter
+        fun p ↦ !fl.noY || 0 ≤ p.2.1 := by
+  rw [funext (checkNumWith_of_noCheck_eq_false hc _ _ b), ← List.filter_flatMap, flatMap_checkNum,
+    pointsOfDen_eq_flatMap_checkNum]
 
 /-! ### The second stage -/
 

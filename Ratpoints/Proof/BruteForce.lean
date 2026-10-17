@@ -132,6 +132,12 @@ theorem pointsOfDen_filter_of_ne {c : List ℤ} {d : ℕ} {z : ℤ} {xs : List �
     pointsOfDen c d z (xs.filter keep) = pointsOfDen c d z xs :=
   List.flatMap_filter_of_ne (by simpa [pointsOfDen] using h)
 
+theorem pointsOfDen_ne_nil_of_mem {c : List ℤ} {d : ℕ} {z : ℤ} {xs : List ℤ} {x : ℤ} (hx : x ∈ xs)
+    (h : pointsOfDen c d z [x] ≠ []) : pointsOfDen c d z xs ≠ [] := by
+  simp only [pointsOfDen, ne_eq, List.flatMap_eq_nil_iff, not_forall] at h ⊢
+  obtain ⟨y, hy, hne⟩ := h
+  exact ⟨y, by simpa [List.mem_singleton.mp hy] using hx, hne⟩
+
 theorem mem_numerators_iff {x : ℤ} {H : ℕ} : x ∈ numerators H ↔ |x| ≤ H := by
   simp only [numerators, List.mem_map, List.mem_range, abs_le]
   exact ⟨fun ⟨i, hi, h⟩ ↦ by lia, fun h ↦ ⟨(x + H).toNat, by lia, by lia⟩⟩

@@ -440,19 +440,19 @@ What they share is the following lemma.
 
 \begin{lemma}[The steps done come first]\label{lem:sieveStops}
   \uses{lem:numClasses, def:andRows, def:rbaPack}
-  Proposed names: \lname{Ratpoints.Sieve.flatMap\_numerator\_range\_prefix},
-  \lname{Ratpoints.Sieve.flatMap\_range\_rbaPack\_mul\_prefix},
-  \lname{Ratpoints.Sieve.flatMap\_filter\_range\_prefix}, \lname{List.range\_prefix\_range}. The
-  points of the first steps of a loop of the sieve are a prefix of the points of all its steps: the
-  points of the numerators of the set bits of the first $k \le m$ words of a bit array among those
-  of the first $m$, those of the bits of the first $\mathrm{pos} \le n$ bit arrays of a piece among
-  those of the first $n$, those of the bits up to the word number $w_0$ among those up to the word
-  number $w_0' \ge w_0$, and the numbers below $k \le m$ among those below $m$. So in both cases of
-  an invariant the delivery at the end is that of the points of all the steps, and each contract
-  concludes with the delivery of its whole list.
+  \lean{Ratpoints.Sieve.flatMap_numerator_range_prefix, Ratpoints.Sieve.flatMap_range_rbaPack_mul_prefix, Ratpoints.Sieve.flatMap_filter_range_prefix, List.range_prefix_range}
+  \leanok
+  The points of the first steps of a loop of the sieve are a prefix of the points of all its steps:
+  the points of the numerators of the set bits of the first $k \le m$ words of a bit array among
+  those of the first $m$, those of the bits of the first $\mathrm{pos} \le n$ bit arrays of a piece
+  among those of the first $n$, those of the bits up to the word number $w_0$ among those up to the
+  word number $w_0' \ge w_0$, and the numbers below $k \le m$ among those below $m$. So in both
+  cases of an invariant the delivery at the end is that of the points of all the steps, and each
+  contract concludes with the delivery of its whole list.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   The lists of the first steps are the first parts of a \verb|flatMap| over a range, and a range
   below $k \le m$ is the first part of the range below $m$. The invariants are built, with the
   program logic of Lean core, with the case of the early return that core provides for the
@@ -474,7 +474,7 @@ return the delivery as it came. The search returns what a search gives back: the
 of the delivery with the bits of the flags written back.
 
 \begin{definition}[The sieving]\label{def:sieving}
-  \uses{def:sieveRun, def:classOffsets, def:Shape, def:arraySize}
+  \uses{def:sieveRun, def:classOffsets, def:Shape, def:delivery, def:arraySize}
   \lean{Ratpoints.sieving}
   \leanok
   The block that the C code introduces as ``now do the sieving'': an array of rows of offsets, one
@@ -482,12 +482,13 @@ of the delivery with the bits of the flags written back.
   with the inverses of the strides in the entries (Definition~\ref{def:classOffsets}); the shape
   that \verb|run_setup| chooses (Definition~\ref{def:Shape}); and the run over the denominators
   $1, \dots, H$ of the shape with the cut points of the parameters, pieces of at most
-  $\mathrm{arraySizeAt}(H)$ bit arrays and the flag of the reversal, whose points it returns, each
-  mapped by $\mathrm{swapPoint}$ when the flag is set (\csource{find_points.c}{4573}{4573},
-  \csource{find_points.c}{5116}{5116}, \csource{find_points.c}{5119}{5119},
-  \csource{find_points.c}{5132}{5132}, \csource{find_points.c}{5137}{5139},
-  \csource{find_points.c}{5167}{5167}, which move from the search,
-  Definition~\ref{def:searchPoints}).
+  $\mathrm{arraySizeAt}(H)$ bit arrays and the flag of the reversal as the only flag of the check,
+  with the appending callback from an empty array (Definition~\ref{def:delivery}), whose array of
+  the points it returns, each mapped by $\mathrm{swapPoint}$ when the flag is set
+  (\csource{find_points.c}{4573}{4573}, \csource{find_points.c}{5116}{5116},
+  \csource{find_points.c}{5119}{5119}, \csource{find_points.c}{5132}{5132},
+  \csource{find_points.c}{5137}{5139}, \csource{find_points.c}{5167}{5167}, which move from the
+  search, Definition~\ref{def:searchPoints}).
 \end{definition}
 
 \begin{definition}[What a search gives back]\label{def:Outcome}

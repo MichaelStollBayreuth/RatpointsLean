@@ -605,33 +605,36 @@ row offsets and the word $\mathrm{den\_bits}$, the range
 $b_{\mathrm{low}}, \dots, b_{\mathrm{high}}$ and the cut points $s_1$ and $s_2$ of the stages, and
 lives in the model file of this chapter: for each denominator of the list of the shape that passes
 its test, the residues of $b$ divided by the stride of its class (Definition~\ref{def:fillBpList})
-and the points that \verb|sift| finds in the packing of its class, with the first $s_2$ sieve
-entries in the first two stages, their rows read from the store of the tables of rows or built into
-it (Definition~\ref{def:buildRows}), and the others in the third stage, appended in turn, the store
-passed from one denominator to the next (\csource{find_points.c}{3861}{3861},
-\csource{find_points.c}{3889}{3904}, \csource{find_points.c}{3911}{3911},
-\csource{find_points.c}{3917}{3918}, \csource{find_points.c}{3926}{3936},
-\csource{find_points.c}{3954}{3966}, \csource{find_points.c}{4009}{4009},
-\csource{find_points.c}{4042}{4052}, \csource{find_points.c}{4059}{4059},
-\csource{find_points.c}{4066}{4072}, \csource{find_points.c}{4075}{4078},
-\csource{find_points.c}{5120}{5120}, \csource{find_points.c}{5152}{5160}). Its contract, for an
-array size $A \ge 1$, sieve entries with their reciprocals, the first $s_2$ with their tables of
-inverses, the row offsets of the classes and a store of the tables of rows that fits them
-(Lemma~\ref{lem:storeTables}), those from $s_2$ on prime entries (Definition~\ref{def:stage3}), the
-bits of $\mathrm{den\_bits}$ those of the classes with a pattern, the denominators from
-$b_{\mathrm{low}} \ge 1$ to $b_{\mathrm{high}} < 2^{63}$ and $H < 2^{63}$, is the concatenation,
-over the denominators of the list that pass the test, of what the brute-force reference finds over
-the numerators that pass the word $\mathrm{nb}[b \bmod 64]$ of the class, for any 2-adic words
-$\mathrm{nb}$ that the classes pack, and survive the sieve entries, mapped by $\mathrm{swapPoint}$
-when the flag of the reversal is set (\verb|Ratpoints.Sieve.sieveRun_spec|,
-\verb|Ratpoints.Sieve.toList_run_sieveRun|). For sound sieve entries
-(Definition~\ref{def:SieveEntry}) and the shapes of Lemma~\ref{lem:shape_dens}, the filters change
-nothing, and the result is the concatenation of what the reference finds over each denominator of
-the list: given a list $l$ such that the list of the shape is $l$ filtered by a test, every
+and the points that \verb|sift| delivers to the callback in the packing of its class, with the first
+$s_2$ sieve entries in the first two stages, their rows read from the store of the tables of rows or
+built into it (Definition~\ref{def:buildRows}), and the others in the third stage, in turn, the run
+returning after a denominator at which the callback stopped the search, the store passed from one
+denominator to the next (\csource{find_points.c}{3861}{3861}, \csource{find_points.c}{3889}{3904},
+\csource{find_points.c}{3911}{3911}, \csource{find_points.c}{3917}{3918},
+\csource{find_points.c}{3926}{3936}, \csource{find_points.c}{3954}{3966},
+\csource{find_points.c}{4009}{4009}, \csource{find_points.c}{4042}{4052},
+\csource{find_points.c}{4059}{4059}, \csource{find_points.c}{4066}{4072},
+\csource{find_points.c}{4075}{4078}, \csource{find_points.c}{5120}{5120},
+\csource{find_points.c}{5152}{5160}). Its contract, for an array size $A \ge 1$, sieve entries with
+their reciprocals, the first $s_2$ with their tables of inverses, the row offsets of the classes and
+a store of the tables of rows that fits them (Lemma~\ref{lem:storeTables}), those from $s_2$ on
+prime entries (Definition~\ref{def:stage3}), the bits of $\mathrm{den\_bits}$ those of the classes
+with a pattern, the denominators from $b_{\mathrm{low}} \ge 1$ to $b_{\mathrm{high}} < 2^{63}$ and
+$H < 2^{63}$, from a delivery whose flag is clear, is the delivery of the concatenation, over the
+denominators of the list that pass the test, of the points of the check with the flags
+(Definition~\ref{def:checkNumWith}) of the numerators that pass the word $\mathrm{nb}[b \bmod 64]$
+of the class, for any 2-adic words $\mathrm{nb}$ that the classes pack, and survive the sieve
+entries (\verb|Ratpoints.Sieve.sieveRun_spec|, with its equation
+\verb|Ratpoints.Sieve.run_sieveRun|); with the exact check on, these are what the brute-force
+reference finds over these numerators, mapped by $\mathrm{swapPoint}$ when the flag of the reversal
+is set, those with $y < 0$ left out under $\mathrm{noY}$. When the list of the shape is a list $l$
+filtered by a test, the run delivers over $l$, the test moved into the test of the numerators
+(Theorem~\ref{thm:run_reference}, \verb|Ratpoints.Sieve.run_sieveRun_of_eq_filter|). For sound sieve
+entries (Definition~\ref{def:SieveEntry}) and the shapes of Lemma~\ref{lem:shape_dens}, every
 denominator of $l$ that carries a point passes that test and the test of the shape, and every
-numerator that gives a point passes the word of its class and survives the sieve entries, the run
-gives the reference over $l$ (Theorem~\ref{thm:run_reference},
-\verb|Ratpoints.Sieve.toList_run_sieveRun_eq_flatMap|); the points at infinity come from the search.
+numerator that gives a point passes the word of its class and survives the sieve entries, so that
+the filters change nothing that the exact check finds and the run delivers the reference over $l$;
+the points at infinity come from the search.
 
 \section{The search and the theorems}\label{sec:denSearch}
 
@@ -691,19 +694,20 @@ and the rows of offsets of the classes (\csource{find_points.c}{4573}{4573},
 \end{theorem}
 
 \begin{proof}
-  \uses{thm:refusals}
+  \uses{thm:refusals, lem:flatMap_sound}
   \leanok
   $L$ is the list of the search of $c'$ (Definition~\ref{def:searchPoints}), which takes an exit
-  only when the curve has no points (Lemmas~\ref{lem:twoAdic_exit}
-  and~\ref{lem:examinePrime_none}), and otherwise gives the points of the reference over the list of
-  its shape (Lemma~\ref{lem:shape_dens}), which are those over the denominators of the search,
-  since a denominator that the one list has and the other lacks carries no point. The denominators
-  of the search have no duplicates, lie in $1, \dots, H$ and hold every denominator of a point
-  (Lemma~\ref{lem:shape_dens}; for the shapes other than the divisors they are $1, \dots, H$), so
-  the points over them are a permutation of those over $1, \dots, H$. The degree that the reversal
-  check hands on is that of $c'$, and without a reversal $c' = c$ (Lemma~\ref{lem:reversal_swap}).
-  When $\mathrm{findPoints}$ returns a list, its height bound is below $2^{63}$ by its refusals
-  (Theorem~\ref{thm:refusals}), as the search needs.
+  only when the curve has no points (Lemmas~\ref{lem:twoAdic_exit} and~\ref{lem:examinePrime_none}),
+  and otherwise gives the points of the reference over the list of its shape
+  (Lemma~\ref{lem:shape_dens}), the tests of the sieve, which every denominator and every numerator
+  of a point pass, changing nothing (Lemma~\ref{lem:flatMap_sound}); these are those over the
+  denominators of the search, since a denominator that the one list has and the other lacks carries
+  no point. The denominators of the search have no duplicates, lie in $1, \dots, H$ and hold every
+  denominator of a point (Lemma~\ref{lem:shape_dens}; for the shapes other than the divisors they
+  are $1, \dots, H$), so the points over them are a permutation of those over $1, \dots, H$. The
+  degree that the reversal check hands on is that of $c'$, and without a reversal $c' = c$
+  (Lemma~\ref{lem:reversal_swap}). When $\mathrm{findPoints}$ returns a list, its height bound is
+  below $2^{63}$ by its refusals (Theorem~\ref{thm:refusals}), as the search needs.
 \end{proof}
 
 Theorem~\ref{thm:findPoints_perm} states the permutation, and Theorem~\ref{thm:findPoints}

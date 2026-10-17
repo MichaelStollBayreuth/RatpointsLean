@@ -713,18 +713,12 @@ theorem flatMap_checkNum (w : List Int) (f b : Int) (rev : Bool) (xs : List Int)
 /-- The property of the array `out` of a walk through the set bits of the word `x0`, lowest first,
 that appends the list `g t` of each set bit `t` to the array `out0`, after the set bits below `k`:
 `out` is `out0` followed by the lists of the set bits `t < k` of `x0`, in increasing order. In
-`Ratpoints.Sieve.walkWord`, `g t` is the list of the points that `Ratpoints.Sieve.acceptedPoints`
-gives for the numerator of bit `t` (the test of a candidate, then the exact check); in
-`Ratpoints.Sieve.wordsDens`, the list of the denominator of bit `t` alone. -/
+`Ratpoints.Sieve.wordsDens`, `g t` is the list of the denominator of bit `t` alone; the walk of the
+sieve, which delivers its points to a callback (`Ratpoints.Sieve.walkWord`), has an invariant of its
+own (`Ratpoints.Sieve.WalkDeliveryInvariant`). -/
 def WalkWordInvariant {β : Type u} (g : Nat → List β) (x0 : UInt64) (out0 : Array β) (k : Nat)
     (out : Array β) : Prop :=
   out.toList = out0.toList ++ ((List.range k).filter (x0.toBitVec.getLsbD ·)).flatMap g
-
-/-- `Ratpoints.Sieve.WalkWhileInvariant` for `Ratpoints.Sieve.WalkWordInvariant` as the invariant of
-the `while` loop of `Ratpoints.Sieve.walkWord`, whose state has the word first. -/
-def WalkWordWhileInvariant {β : Type u} (g : Nat → List β) (x0 : UInt64) (out0 : Array β) :
-    Std.WP.WhileInvariant (UInt64 × Array β) Prop :=
-  .mk fun exit s ↦ WalkWhileInvariant x0 (WalkWordInvariant g x0 out0) exit (s.2, s.1)
 
 theorem walkWordInvariant_zero {β : Type u} (g : Nat → List β) (x0 : UInt64) (out0 : Array β) :
     WalkWordInvariant g x0 out0 0 out0 := by

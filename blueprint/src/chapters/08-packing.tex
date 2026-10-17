@@ -458,32 +458,37 @@ fitting specs and the reciprocals of their moduli.
   $\lfloor \mathrm{low}/\mathrm{rbaLength}\rfloor$ to
   $\lfloor \mathrm{high}/\mathrm{rbaLength}\rfloor$ with the masks
   $\mathrm{low} - \mathrm{rbaLength}\, w_{\mathrm{low}}$ and
-  $\mathrm{rbaLength} - 1 - (\mathrm{high} \bmod \mathrm{rbaLength})$
-  (\csource{find_points.c}{3563}{3612}). One denominator (Definition~\ref{def:sift}) takes the
-  class, the residues, the array of offsets and the store, makes the specs, builds the missing rows
-  (Definition~\ref{def:buildRows}), turns $[-H, H]$ into bits and sifts them.
+  $\mathrm{rbaLength} - 1 - (\mathrm{high} \bmod \mathrm{rbaLength})$, each piece delivering its
+  points to the callback and the loop returning after a piece at which the callback stopped the
+  search, as \verb|sift| does at line 3611 (\csource{find_points.c}{3563}{3612}). One denominator
+  (Definition~\ref{def:sift}) takes the class, the residues, the array of offsets and the store,
+  makes the specs, builds the missing rows (Definition~\ref{def:buildRows}), turns $[-H, H]$ into
+  bits and sifts them.
 \end{definition}
 
 \begin{lemma}[The bits of one denominator]\label{lem:siftBits}
   \uses{def:siftBits, lem:reads_row, lem:numeratorsToBits, lem:classOffsets, def:siftPiece,
-    lem:numClasses, lem:rowIndices}
-  \lean{Ratpoints.Sieve.siftBits_spec, Ratpoints.Sieve.packedReads, Ratpoints.Sieve.flatMap_filter_bits_eq, Ratpoints.Sieve.reads_of_mem_packedReads, Ratpoints.Sieve.SieveEntry.PackedFor.fits, Ratpoints.Sieve.NumClass.Packs.filter_filter_emod}
+    lem:numClasses, lem:rowIndices, def:deliver}
+  \lean{Ratpoints.Sieve.siftBits_spec, Ratpoints.Sieve.SiftInvariant.eq_deliver_of_quit, Ratpoints.Sieve.packedReads, Ratpoints.Sieve.flatMap_filter_bits_eq, Ratpoints.Sieve.reads_of_mem_packedReads, Ratpoints.Sieve.SieveEntry.PackedFor.fits, Ratpoints.Sieve.NumClass.Packs.filter_filter_emod}
   \leanok
   The bits of an interval, in pieces of at least one bit array, with fitting specs and the
-  reciprocals of their moduli, give the points of the bits from $\mathrm{low}$ to $\mathrm{high}$
-  that pass the class pattern and the tests that the specs read, none for an empty interval; the
-  specs of entries with their residues $b\,\mathrm{dinv}[k] \bmod p$ and the offsets of the class,
-  the closed forms of the rows of these residues with the start $0$ and the end $p$
-  (Lemma~\ref{lem:closedRow}), which \verb|set_rows| and the building of the missing rows make
-  (Lemma~\ref{lem:buildRows}), fit and read the admissions of the numerators $a_0 + 2^k j$ by the
-  rows of $b$; and the bits of $[-H, H]$ in the packing of a class of the word $w$ that pass its
-  pattern give the numerators of $[-H, H]$ that pass $w$.
+  reciprocals of their moduli, from a delivery whose flag is clear, deliver the points of the bits
+  from $\mathrm{low}$ to $\mathrm{high}$ that pass the class pattern and the tests that the specs
+  read, none for an empty interval, also after a stop at a piece, when the delivery of the points of
+  the pieces done is that of all of them; the specs of entries with their residues
+  $b\,\mathrm{dinv}[k] \bmod p$ and the offsets of the class, the closed forms of the rows of these
+  residues with the start $0$ and the end $p$ (Lemma~\ref{lem:closedRow}), which \verb|set_rows| and
+  the building of the missing rows make (Lemma~\ref{lem:buildRows}), fit and read the admissions of
+  the numerators $a_0 + 2^k j$ by the rows of $b$; and the bits of $[-H, H]$ in the packing of a
+  class of the word $w$ that pass its pattern give the numerators of $[-H, H]$ that pass $w$.
 \end{lemma}
 
 \begin{proof}
+  \uses{lem:deliver, lem:sieveStops}
   \leanok
   An invariant of the loop over the pieces, over the bits of the packing
-  (Definition~\ref{def:sift}); Lemma~\ref{lem:reads_row} with the offsets of
+  (Definition~\ref{def:sift}), with the case of the return at a stop (Lemma~\ref{lem:deliver} on a
+  prefix, Lemma~\ref{lem:sieveStops}); Lemma~\ref{lem:reads_row} with the offsets of
   Lemma~\ref{lem:classOffsets} and the residues of Lemma~\ref{lem:fillBpList};
   Lemmas~\ref{lem:numeratorsToBits} and~\ref{lem:numClasses} for the class.
 \end{proof}
@@ -494,18 +499,20 @@ The contracts below one denominator speak of the bit numbers: the walk through t
 word (Definition~\ref{def:walkWord}) takes the step $2^k$; a bit array through the second stage and
 the extraction (Definition~\ref{def:siftBitArray}), which steps the first numerator of the bit array
 by $64 \cdot 2^k$ before each word after the first, as the C code does, the scan and one piece take
-the class and give the points of the numerators $a_0 + 2^k j$ of the bits $j$ that survive, the scan
-and one piece quantified over the tests of the bits that the rows read. The contract of one
-denominator (Definition~\ref{def:sift}) and the lemma that the words compute the Booleans
-(Lemma~\ref{lem:sift_eq_checkDen}) keep their conclusions, the points of the numerators of $[-H, H]$
-that pass the 2-adic word $w$ and survive all the entries, with $w$ as a ghost argument, under the
-hypotheses that the class packs $w$, has a row at the position $\mathrm{pos}$, the store of the
-tables of rows fits the entries (Lemma~\ref{lem:storeTables}), the reciprocals are those of their
-moduli, the residues $b\,\mathrm{dinv}[k] \bmod p$, the tables of inverses invert, and each entry is
-packed for the class at its offset; the store after the denominator fits the entries again. The run
+the class and deliver the points of the numerators $a_0 + 2^k j$ of the bits $j$ that survive, the
+scan and one piece quantified over the tests of the bits that the rows read; every contract of the
+sieve concludes with the delivery of its list from a delivery whose flag is clear
+(Section~\ref{sec:sieveDelivery}). The contract of one denominator (Definition~\ref{def:sift}) and
+the lemma that the words compute the Booleans (Lemma~\ref{lem:sift_eq_checkDen}) conclude with the
+delivery of the points of the numerators of $[-H, H]$ that pass the 2-adic word $w$ and survive all
+the entries, with $w$ as a ghost argument, under the hypotheses that the class packs $w$, has a row
+at the position $\mathrm{pos}$, the store of the tables of rows fits the entries
+(Lemma~\ref{lem:storeTables}), the reciprocals are those of their moduli, the residues
+$b\,\mathrm{dinv}[k] \bmod p$, the tables of inverses invert, and each entry is packed for the class
+at its offset; the store after the denominator fits the entries again. The run
 (Definition~\ref{def:sieveRun}) takes the classes, the array of offsets and the store, calls
 \verb|fill_bp_list| before each denominator, passes the store from one denominator to the next, and
-keeps its conclusion with the 2-adic words as a ghost argument packed by the classes, under the
+concludes with the delivery, the 2-adic words a ghost argument packed by the classes, under the
 tables of inverses of the first $s_2$ entries, their offsets, a store that fits them, and
 \verb|den_bits| matching the classes (the shape of the forbidden divisors tested with words reads
 \verb|den_bits|, the others the class's pattern, Definition~\ref{def:Shape}). The search

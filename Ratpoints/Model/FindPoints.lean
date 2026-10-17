@@ -5,6 +5,7 @@ Authors: Michael Stoll
 -/
 module
 
+public import Ratpoints.Model.Delivery
 public import Ratpoints.Model.Denominators
 public import Ratpoints.Model.Packing
 public import Ratpoints.Model.Params
@@ -13,6 +14,7 @@ public import Ratpoints.Model.Sieve
 public import Ratpoints.Model.Sturm
 
 -- The `#guard` examples run code of the imported modules at compile time.
+meta import Ratpoints.Model.Delivery
 meta import Ratpoints.Model.Denominators
 meta import Ratpoints.Model.Packing
 meta import Ratpoints.Model.Params
@@ -240,10 +242,11 @@ of `Ratpoints.Sieve.numPackings` rows of one offset for each sieve entry, and th
 classes in it, with the inverses of the strides in the entries (`Ratpoints.Sieve.classOffsets`); the
 shape of the run (`Ratpoints.Sieve.runSetup`, with the flags of the denominators `useSquares`,
 `us1`, `checkDenom` and `useJacobi` and the forbidden divisors `forb` and `forbVal`); and the points
-of the denominators `1, …, H` of the shape (`Ratpoints.Sieve.sieveRun`) with the cut points `P.sp1`
-and `P.sp2` and pieces of at most `Ratpoints.Params.arraySizeAt P H` bit arrays, each mapped by
-`Ratpoints.Sieve.swapPoint` when `rev` is set. This is the block that the C code introduces as "now
-do the sieving".
+that the run over the denominators `1, …, H` of the shape (`Ratpoints.Sieve.sieveRun`), with the cut
+points `P.sp1` and `P.sp2` and pieces of at most `Ratpoints.Params.arraySizeAt P H` bit arrays,
+delivers to the appending callback (`Ratpoints.appendPoint`) from an empty array, with the flag
+`rev` of the reversal as the only flag of the check, each mapped by `Ratpoints.Sieve.swapPoint` when
+`rev` is set. This is the block that the C code introduces as "now do the sieving".
 
 C: `find_points.c:4573`, `find_points.c:5116`, `find_points.c:5119`, `find_points.c:5132`,
 `find_points.c:5137-5139`, `find_points.c:5167`
@@ -254,11 +257,12 @@ denominators as Booleans and an option, for the bits of `args->flags` and the ar
 `args->den_info` and `args->divisors` that `run_setup` reads; the array of the row offsets made with
 zeros, for the array on the stack, whose entries the C code leaves unset until `class_offsets`
 writes them, with one offset in each row for each sieve entry of the run, those of its three stages,
-for the `sp3_max` entries with the reserve of further primes (stage I); an array of points, for the
-count `total` of the points that the run returns, with no stop by the callback (stage G); no
-sieving thread made (`worker_init`, `worker_clear`), whose fields the components that the run calls
-take as arguments, and no pool of threads (stage I); no failure for lack of memory, which the model
-cannot meet. -/
+for the `sp3_max` entries with the reserve of further primes (stage I); the array of the points that
+the run delivers to the appending callback, which never stops the search, for the callback `process`
+with its data and the count `total` of the points that the run returns (stage G); no sieving thread
+made (`worker_init`, `worker_clear`), whose fields the components that the run calls take as
+arguments, and no pool of threads (stage I); no failure for lack of memory, which the model cannot
+meet. -/
 def sieving (c : List Int) (d H : Nat) (P : Params) (rev : Bool) (useSquares : Bool)
     (us1 : Option (List Setup.DenInfo × List Nat)) (checkDenom useJacobi : Bool)
     (forb : List ForbiddenEntry) (forbVal : List ForbiddenVal) (entries : List SieveEntry)
@@ -267,7 +271,9 @@ def sieving (c : List Int) (d H : Nat) (P : Params) (rev : Bool) (useSquares : B
   let offsets := Array.replicate ((← numPackings cls) * max entries.length 1) 0
   let (cls, entries, offsets) ← classOffsets cls entries offsets
   let shape ← runSetup useSquares us1 checkDenom useJacobi forb forbVal (c.getD d 0) H
-  sieveRun c d H (P.arraySizeAt H) rev P.sp1 P.sp2 entries magics cls offsets db shape 1 H store
+  let r ← sieveRun appendPoint c d H (P.arraySizeAt H) { reversed := rev } P.sp1 P.sp2 entries
+    magics cls offsets db shape 1 H store ⟨#[], 0, false⟩
+  return r.info
 
 open Sieve in
 /-- The search of the polynomial with the coefficient list `c` of degree `d` that the set-up hands
@@ -625,9 +631,9 @@ passes on to the test of the leading zeros. -/
           Sieve.survives entries b ((i.val : Int) - 300)
       let ref := (Id.run (Sieve.checkDen c d 300 b surv)).toList
       [false, true].all fun rev ↦
-        (Id.run (Sieve.sift c d 300 A b rev 3 (entries.take 7) (mgs.take 7) bp cl offsets
-          (entries.drop 7) (mgs.drop 7) store)).1.toList ==
-          if rev then ref.map Sieve.swapPoint else ref
+        (Id.run (Sieve.sift appendPoint c d 300 A b { reversed := rev } 3 (entries.take 7)
+          (mgs.take 7) bp cl offsets (entries.drop 7) (mgs.drop 7) store
+          ⟨#[], 0, false⟩)).1.info.toList == if rev then ref.map Sieve.swapPoint else ref
   | none => false
 
 -- The sieve of one denominator in the packings of words that are not those of a curve, against the
@@ -658,9 +664,9 @@ passes on to the test of the leading zeros. -/
           nb[b % 64]!.toBitVec.getLsbD ((((i.val : Int) - H) % 64).toNat) &&
             Sieve.survives entries b ((i.val : Int) - H)
         let ref := (Id.run (Sieve.checkDen c 3 H b surv)).toList
-        (Id.run (Sieve.sift c 3 H 1 b rev 3 (entries.take 7) (mgs.take 7) bp cl offsets
-          (entries.drop 7) (mgs.drop 7) store)).1.toList ==
-          if rev then ref.map Sieve.swapPoint else ref
+        (Id.run (Sieve.sift appendPoint c 3 H 1 b { reversed := rev } 3 (entries.take 7)
+          (mgs.take 7) bp cl offsets (entries.drop 7) (mgs.drop 7) store
+          ⟨#[], 0, false⟩)).1.info.toList == if rev then ref.map Sieve.swapPoint else ref
   | none => false
 
 -- The array size 1, which `arraySizeAt` rounds up to the chunk 16, at heights around the multiples

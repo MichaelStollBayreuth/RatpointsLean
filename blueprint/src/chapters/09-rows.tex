@@ -984,14 +984,13 @@ clearing of the pointers to the buffers (\csource{find_points.c}{181}{270}); the
 before \verb|find_points_work| to allocate the arrays of the arguments, and whose refusal of a
 degree \verb|find_points_work| repeats (lines 4557-4558, which the model has; the reason of the
 exclusion of lines 4618-4623 says the same); and \verb|find_points_clear|
-(\csource{find_points.c}{377}{416}), which frees them; the model allocates nothing. Left to stage~G
-is the stop that the callback may request; to stage~H the intervals of the search region, by which
-\verb|sift| sets up a denominator, and so reads or builds its rows, only once one of its intervals
-is not empty (the flag \verb|do_setup|); and to stage~I the lock of the tables and the pool of
-threads (among them the declarations at \csource{find_points.c}{41}{43}), the orderings of the
-acquire loads and the release stores, and the cost model of the choice of the moduli, which reads
-the array size rounded to the chunk, so that ratpoints chooses its moduli by the chunk too: the
-moduli of the model are those of the parameters.
+(\csource{find_points.c}{377}{416}), which frees them; the model allocates nothing. Left to stage~H
+are the intervals of the search region, by which \verb|sift| sets up a denominator, and so reads or
+builds its rows, only once one of its intervals is not empty (the flag \verb|do_setup|); and to
+stage~I the lock of the tables and the pool of threads (among them the declarations at
+\csource{find_points.c}{41}{43}), the orderings of the acquire loads and the release stores, and the
+cost model of the choice of the moduli, which reads the array size rounded to the chunk, so that
+ratpoints chooses its moduli by the chunk too: the moduli of the model are those of the parameters.
 
 \section{Files and names}\label{sec:rowsFiles}
 
