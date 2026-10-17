@@ -357,8 +357,13 @@ fidelity:
     ratpoints where these do not depend on the curve; the search intervals have exact rational ends;
     the callback is a Lean function that takes the coordinates and the caller's data and returns its
     value, whether it stops the search, and the new data, for the C function with the pointers info
-    and quit; and until the blocks of stage I the model lists the denominators of a shape before it
-    sieves the first one, all of them, also those after a stop.
+    and quit; until the blocks of stage I the model lists the denominators of a shape before it
+    sieves the first one, all of them, also those after a stop, so that a stop in the sieve does not
+    save the time and the memory of that listing, which grow with the height; and, the search region
+    of the Sturm step being stage H, under RATPOINTS_NO_CHECK the model delivers the numerators of
+    -H, ..., H that pass the sieve, where the C code delivers only those in the region that its
+    Sturm step keeps (the differential tests compare -x exactly against the C program with -s and
+    the moduli pinned).
     Where the library function find_points and the command-line program differ (the order of the
     checks on the input), the model follows the program. Each deviation is recorded with its
     component in the correspondence record.

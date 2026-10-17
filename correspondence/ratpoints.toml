@@ -526,19 +526,7 @@ reason = "the release of tmp and tmp2, of the GMP integers of the coefficients a
 file = "main.c"
 lines = "330-332"
 kind = "interface"
-reason = "the initialization of the fields of the arguments of the library that the model has no counterpart for: the pointer to the coefficients, the degree and the height, which read_input sets later and the model passes as values"
-
-[[excluded]]
-file = "main.c"
-lines = "339-343"
-kind = "parameters"
-reason = "the defaults of the tuning options -r -R -U -C -A, which tune only the heuristics of the C program and which the model checks and ignores"
-
-[[excluded]]
-file = "main.c"
-lines = "345-346"
-kind = "parameters"
-reason = "the defaults of the tuning options -Q -W, which tune only the heuristics of the C program and which the model checks and ignores"
+reason = "the initialization of the fields of the arguments of the library that the model has no counterpart for: the pointer to the global array c of the coefficients, whose entries read_input fills later (line 368), and the degree and the height, which it sets later (lines 374 and 378) and the model passes as values"
 
 [[excluded]]
 file = "main.c"

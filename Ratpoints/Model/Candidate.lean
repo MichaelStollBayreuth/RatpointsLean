@@ -395,9 +395,10 @@ returned, for the pointer `info`, the local flag `quit` and the count `total` of
 caller (`Ratpoints.searchPoints`); no output under `RATPOINTS_VERBOSE` or `DEBUG`; the square test
 of `c_d` and the decision whether there are points at infinity are made on the list that it is
 given, after the reversal check, when the points are delivered, where the C code computes `lcfsq`
-before the check (line 4634), which clears it when it reverses a polynomial of even degree and
-leaves it, unread, with the odd degree of the other reversals, and sets `point_at_infty` before the
-exits of the search (lines 4894-4899); the square root by `Nat.sqrt`, for `mpz_sqrt`. -/
+before the check (line 4634), which clears it in case 2 (line 4770), the only reversal after which
+the degree is even, and leaves it, unread, with the odd degree that cases 1 and 3 leave, and sets
+`point_at_infty` before the exits of the search (lines 4894-4899); the square root by `Nat.sqrt`,
+for `mpz_sqrt`. -/
 def pointsAtInfinity {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : List Int) (d : Nat)
     (fl : CheckFlags) (r : Delivery σ) : Delivery σ :=
   let a : Int := if fl.reversed then 0 else 1

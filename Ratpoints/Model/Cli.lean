@@ -19,21 +19,24 @@ options. It reads them as `main.c` of ratpoints does, with its checks, messages 
 in its order, and prints what ratpoints prints: unless `-q` is given, the report, with the banner of
 `ratpoints-lean`, the curve and the height bound before the points, and after them what the search
 did and the count of the points found, but for message 4 on the moduli used (stage I), message 8 on
-the search intervals (stage H) and, under `-v`, the report of the library; and the points, through
-the callback `process` of `main.c` (`Ratpoints.Cli.process`), which the search calls for each point
-it finds (`Ratpoints.findPointsWith`), in the format of `-f` with the strings of `-fs`, `-fm` and
-`-fe`, the points at infinity passed over under `-i` (neither printed nor counted), none printed
-under `-z`, and the search stopped under `-1` at the first point that `process` does not pass over
-(the first point counted, printed or not). It reads `-p -n -N -P -F -j -J` into the sieving
-parameters and ignores the other options that tune the sieve of ratpoints; it reads `-k -K -s -S`
-and `-x -X -y -Y` into the options of the search (`Ratpoints.Options`): whether the polynomial may
-be reversed, the depth of the Sturm step, whether the points are checked exactly and whether both
-points of a pair are delivered. It answers the options of the search region and the range of the
-denominators, `-l -u -dl -du`, which it does not support yet, with a message and the exit status 12,
-which `main.c` does not use. It runs the search with the parameters `Ratpoints.sieveParams` of these
-options and these options of the search, so that it refuses a binary form that is not squarefree
-with error 8 and, after a reversal, prints the points of the reversed polynomial mapped back to the
-caller's curve, as ratpoints does with the same options.
+the search intervals (stage H) and, under `-v`, the report of the library; under `-x`, the pairs
+that pass the sieve of the model, with the moduli of `Ratpoints.sieveParams` and over all numerators
+from `-H` to `H`, which are those that ratpoints prints when the moduli are pinned and the Sturm
+step is off (`-p 30 -N 30 -s`); and the points, through the callback `process` of `main.c`
+(`Ratpoints.Cli.process`), which the search calls for each point it finds
+(`Ratpoints.findPointsWith`), in the format of `-f` with the strings of `-fs`, `-fm` and `-fe`, the
+points at infinity passed over under `-i` (neither printed nor counted), none printed under `-z`,
+and the search stopped under `-1` at the first point that `process` does not pass over (the first
+point counted, printed or not). It reads `-p -n -N -P -F -j -J` into the sieving parameters and
+ignores the other options that tune the sieve of ratpoints (until stage I, but for `-t` for good);
+it reads `-k -K -s -S` and `-x -X -y -Y` into the options of the search (`Ratpoints.Options`):
+whether the polynomial may be reversed, the depth of the Sturm step, whether the points are checked
+exactly and whether both points of a pair are delivered. It answers the options of the search region
+and the range of the denominators, `-l -u -dl -du`, which it does not support yet, with a message
+and the exit status 12, which `main.c` does not use. It runs the search with the parameters
+`Ratpoints.sieveParams` of these options and these options of the search, so that it refuses a
+binary form that is not squarefree with error 8 and, after a reversal, prints the points of the
+reversed polynomial mapped back to the caller's curve, as ratpoints does with the same options.
 
 ## Main definitions
 
@@ -407,17 +410,19 @@ exact check off and `-X` on again, `-y` makes the search deliver one point of ea
 both; `-f`, `-fs`, `-fm` and `-fe` take the next word, whatever it is, as the format or the string,
 and `-q -v -z -Z -1 -i -I` set the settings of the output (`Ratpoints.Cli.Output.store`); of each
 setting the last one wins. It ignores the other tuning options, which tune only the heuristics of
-the C program and its threads.
+the C program (until stage I) and its threads.
 
 C: `main.c:393-397`, `main.c:437-532`, `main.c:533-577`, `main.c:578-593`, `main.c:594-601`,
 `main.c:602-637`, `main.c:638-649`, `main.c:667-668`
 
 Deviation: the arguments of the tuning options other than `-p -n -N -P -F` are checked and then
-ignored; the strings of `-f`, `-fs`, `-fm` and `-fe` kept as values, for the copies that `main.c`
-allocates, with error 10 when the allocation fails, which the model cannot meet. An option of
-ratpoints that `ratpoints-lean` does not support yet, whose cases are lines 398-436 and 650-666 of
-`main.c`, ends the reading with the exit status 12; of these lines, only the error 6 on a word
-`-d…` that names no option (line 664) is kept. -/
+ignored: those of `-r -R -U -C -A -Q -W` until stage I, which models the choice of the moduli by the
+curve and its correction, and that of `-t`, the number of threads, for good; the strings of `-f`,
+`-fs`, `-fm` and `-fe` kept as values, for the copies that `main.c` allocates, with error 10 when
+the allocation fails, which the model cannot meet. An option of ratpoints that `ratpoints-lean` does
+not support yet, whose cases are lines 398-436 and 650-666 of `main.c`, ends the reading with the
+exit status 12; of these lines, only the error 6 on a word `-d…` that names no option (line 664) is
+kept. -/
 def checkOptions (s : SieveOptions × Options × Output) :
     List String → Except Failure (SieveOptions × Options × Output)
   | [] => return s

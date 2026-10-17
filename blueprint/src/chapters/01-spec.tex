@@ -282,7 +282,8 @@ scripts of the C repository can run it as \verb|RP=ratpoints-lean|:
     thirteen that take one, \csource{main.c}{437}{532}; \verb|-j| and \verb|-J| take none):
     \verb|-n -N -P -p -F -j -J| go into the sieving parameters (Definition~\ref{def:sieveParams}),
     and the others, which tune only the heuristics of the C program and its threads, are ignored
-    (in 373 runs of the C program they did not change the \verb|-q| output);
+    (until stage~I, but for \verb|-t| for good; in 373 runs of the C program they did not change the
+    \verb|-q| output);
   \item it reads \verb|-k| and \verb|-K|, which forbid and allow the reversal of the polynomial,
     and \verb|-s| and \verb|-S|, which switch the Sturm step off and on, \verb|-S| with the depth
     that the next word gives when there is one and it does not start with \verb|-|, the last of
@@ -372,7 +373,8 @@ that they mirror:
   (\csource{main.c}{437}{532}); the switches \verb|-q| and \verb|-v| go into the settings of the
   output, and the values of \verb|-p -n -N -P -F| and the switches \verb|-j| and \verb|-J| into the
   values of the options of Definition~\ref{def:sieveParams} (\csource{main.c}{578}{593}), the last
-  one winning, and the other tuning options are ignored; \verb|-k| and \verb|-K|
+  one winning, and the other tuning options are ignored (until stage~I, but for \verb|-t| for
+  good); \verb|-k| and \verb|-K|
   (\csource{main.c}{594}{601}) and \verb|-s| and \verb|-S| (\csource{main.c}{638}{649}) go into the
   options of Definition~\ref{def:Options}, the last of each pair winning: the reversal forbidden or
   allowed, and the depth of the Sturm step, $-1$ for \verb|-s|, and for \verb|-S| the C \verb|long|

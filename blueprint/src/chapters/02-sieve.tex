@@ -86,7 +86,8 @@ are no points modulo $p$ (D) and the options of the output (G) come in their sta
   the table (Definition~\ref{def:examinePrimes}); the cut points $s_1 \le s_2$, positions in the
   list of the moduli, which end the first and the second stage (the third stage is the rest of the
   list); at most how many forbidden divisors are tested; whether the Jacobi test may run; and at
-  most how many bit arrays a piece of the numerators has (Definition~\ref{def:arraySize}). The
+  most how many bit arrays a piece of the numerators has, the field \verb|array_size| of the
+  arguments of the library (\csource{ratpoints.h}{368}{368}; Definition~\ref{def:arraySize}). The
   Jacobi switch stands for the bit \verb|RATPOINTS_NO_JACOBI| of the flags
   (\csource{ratpoints.h}{406}{406}), on when the bit is clear. The parameters are \emph{well-formed}
   when every modulus $m$ has $1 < m < \mathrm{maxPrimeEven}$ (Definition~\ref{def:barrett}) and

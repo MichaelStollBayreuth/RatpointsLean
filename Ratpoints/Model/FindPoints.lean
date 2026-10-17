@@ -275,10 +275,16 @@ C: `ratpoints.h:377`, `ratpoints.h:414`, `ratpoints.h:416-417`
 Deviation: a structure for what the C code returns and writes back into the arguments: the data of
 the callback, which the caller has behind its pointer `info`, the count, which `find_points` returns
 as a `long` that also carries its error codes (`Ratpoints.findPointsWith` returns the refusals
-apart), and Booleans for three bits of `args->flags`; nothing else written back, neither the
-reversed coefficients and the degree (`args->cof`, `args->degree`) nor the other bits of the flags,
-which nothing reads after the search, nor the numbers of the moduli used (`sp1_used`, `sp2_used`,
-`sp3_used`; stage I). -/
+apart), and Booleans for three bits of `args->flags`; nothing else written back: neither the
+reversed coefficients and the degree (`args->cof`, `args->degree`), which nothing reads after the
+search; nor the other internal bits of the flags, `RATPOINTS_CHECK_DENOM`, `RATPOINTS_USE_JACOBI`
+and `RATPOINTS_NO_REVERSE_AUTO`, which the program does not read either, the bits of the input
+coming back as the caller set them (`find_points.c:4606`), which the program takes from its own
+options and settings (`Ratpoints.Options`, `Ratpoints.Params.jacobi`,
+`Ratpoints.Cli.Output.verbose`); nor the search intervals `args->num_inter` and `args->domain`,
+which the search sets to `[-H, H]` when none is given (`find_points.c:4831-4841`) and the Sturm step
+narrows, and which message 8 of the program reads (stage H); nor the numbers of the moduli used
+(`sp1_used`, `sp2_used`, `sp3_used`; stage I). -/
 structure Outcome (σ : Type) where
   /-- The data of the callback after the search. -/
   info : σ

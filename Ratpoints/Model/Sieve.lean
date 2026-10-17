@@ -333,9 +333,10 @@ time; natural numbers and integers for the `long`s; the delivery `r` passed and 
 pointers `info` and `wk->quit` and the count `total` of `_ratpoints_sift0`, to which
 `RP_CHECK_POINT` adds the count of the check (lines 1168, 1240, 1250, 1279, 1287); the return after
 a stop (lines 1169, 1241, 1251, 1280, 1288) a return from the walk, which its callers pass on,
-testing the flag after it (`Ratpoints.Sieve.siftBitArray`, `Ratpoints.Sieve.scanPiece`), where the
-C code returns from `_ratpoints_sift0`; no count of the numerators that reach the test for common
-factors (`n_bits`), which ratpoints reads to correct the moduli between the blocks of the run
+testing the flag after it (`Ratpoints.Sieve.siftBitArrayByWords`,
+`Ratpoints.Sieve.siftBitArrayWhole`, then `Ratpoints.Sieve.scanPiece` after the bit array), where
+the C code returns from `_ratpoints_sift0`; no count of the numerators that reach the test for
+common factors (`n_bits`), which ratpoints reads to correct the moduli between the blocks of the run
 (stage I), and no counts under `RP_PHASE_COUNTS`; no output under `DEBUG`. -/
 def walkWord {σ : Type} (process : Int → Int → Int → σ → Answer σ) (w : Thunk (List Int))
     (d b : Nat) (fl : CheckFlags) (checks : Thunk (List CheckSpec)) (x : UInt64) (a0 : Int)

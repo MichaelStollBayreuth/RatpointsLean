@@ -94,11 +94,13 @@ def modulusFactors (m : Nat) : Id (List (Nat × Nat) × Nat) := do
 moduli are cut into three stages: the first `sp1` of them, then those up to `sp2`, then the
 rest.
 
-C: `ratpoints.h:406`
+C: `ratpoints.h:368`, `ratpoints.h:406`
 
 Deviation: the Jacobi switch a Boolean (`Ratpoints.Params.jacobi`), true when the bit
 `RATPOINTS_NO_JACOBI` of the flags is clear, for that bit of `args->flags`, which `main.c` clears
-with the others. -/
+with the others; a natural number for the `long` field `array_size` (`Ratpoints.Params.arraySize`),
+`0` for the default, which the library takes for every value `≤ 0`
+(`Ratpoints.Params.arraySizeAt`). -/
 structure Params where
   /-- The moduli in the order of the stages: primes of `Ratpoints.primeTable`, powers of them and
   products of such powers, below `Ratpoints.maxPrimeEven`. -/
