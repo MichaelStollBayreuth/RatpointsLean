@@ -8,12 +8,14 @@ module
 public import Ratpoints.Model.BruteForce
 public import Ratpoints.Model.Constants
 public import Ratpoints.Model.Delivery
+public import Ratpoints.Model.Setup
 public import Ratpoints.Model.Tables
 
 -- The `#guard` examples run code of the imported modules at compile time.
 meta import Ratpoints.Model.BruteForce
 meta import Ratpoints.Model.Constants
 meta import Ratpoints.Model.Delivery
+meta import Ratpoints.Model.Setup
 meta import Ratpoints.Model.Tables
 
 /-!
@@ -32,14 +34,15 @@ curve (`Ratpoints.Sieve.swapPoint`); and the points at infinity
 (`Ratpoints.Sieve.pointsAtInfinity`). The third stage removes only numerators that the rows of its
 primes would remove, or that have a common factor with the denominator, so that the test of a
 candidate and the exact check give the points of the check of the reference for the numerators that
-survive the rows of these primes. The exact check delivers its points to the callback of the search
-(`Ratpoints.Delivery`), as the bits of the flags of the search (`Ratpoints.CheckFlags`) say: mapped
-back to the caller's curve when the flag of the reversal is set, without the exact check under
-`RATPOINTS_NO_CHECK` and only with `y ≥ 0` under `RATPOINTS_NO_Y`; the points at infinity give the
-points mapped by `Ratpoints.Sieve.swapPoint` when their flag of the reversal is set, and so does the
-check of the reference. The sieve that calls these components, on the bit arrays of 64-bit words, is
-in `Ratpoints.Model.Sieve`; the tables of the primes and the sieve entries of the moduli, with the
-rows of a denominator, are in `Ratpoints.Model.Tables`.
+survive the rows of these primes. The exact check and the points at infinity deliver their points to
+the callback of the search (`Ratpoints.Delivery`), as the bits of the flags of the search
+(`Ratpoints.CheckFlags`) say: mapped back to the caller's curve when the flag of the reversal is
+set, without the exact check under `RATPOINTS_NO_CHECK` and only with `y ≥ 0` under
+`RATPOINTS_NO_Y`; the check of the reference gives the points as a list, mapped by
+`Ratpoints.Sieve.swapPoint` when its flag of the reversal is set. The sieve that calls these
+components, on the bit arrays of 64-bit words, is in `Ratpoints.Model.Sieve`; the tables of the
+primes and the sieve entries of the moduli, with the rows of a denominator, are in
+`Ratpoints.Model.Tables`.
 
 ## Main definitions
 
@@ -56,8 +59,8 @@ rows of a denominator, are in `Ratpoints.Model.Tables`.
 * `Ratpoints.Sieve.checkNum`: the check of the reference, the test for common factors by the gcd
   and the exact check of one numerator, its points mapped by `Ratpoints.Sieve.swapPoint` when the
   flag of the reversal is set.
-* `Ratpoints.Sieve.pointsAtInfinity`: the points at infinity, mapped by `Ratpoints.Sieve.swapPoint`
-  when the flag of the reversal is set.
+* `Ratpoints.Sieve.pointsAtInfinity`: the points at infinity, delivered to the callback of the
+  search as the flags of the search say.
 -/
 
 @[expose] public section
@@ -370,31 +373,44 @@ def checkNum (w : List Int) (f b : Int) (rev : Bool) (a : Int) : List (Int × In
 
 /-! ### The points at infinity -/
 
-/-- The points at infinity of the polynomial of degree `d` with the coefficient list `c`, for the
-flag `rev` of the reversal: for the candidate `(a, b) = (1, 0)`, or `(0, 1)` when `rev` is set, the
-point `(a, 0, b)` for odd `d`; for even `d`, `(a, s, b)` and `(a, -s, b)` when `c_d = s ^ 2` with
-`s > 0`, `(a, 0, b)` when `c_d = 0`, and none when `c_d` is not a square. With the flag clear these
-are the points of the candidate `(1, 0)` of the brute-force reference
-(`Ratpoints.Sieve.pointsAtInfinity_eq_pointsOfDen`), and with the flag set the same points mapped by
-`Ratpoints.Sieve.swapPoint` (`Ratpoints.Sieve.pointsAtInfinity_eq_map`): after a reversal, the
-points `(0, y, 1)` of the caller's curve.
+/-- The points at infinity of the polynomial of degree `d` with the coefficient list `c`, delivered
+to the callback `process` on the delivery `r`, whose flag `quit` is clear, for the flags `fl`: when
+there are points at infinity, for odd `d` or `c_d` a square (`Ratpoints.Setup.isSquare`), with the
+candidate `(a, b) = (1, 0)`, or `(0, 1)` when `fl.reversed` is set: with `fl.noCheck`, the one call
+with `(a : 0 : b)`; otherwise for odd `d` the call with `(a : 0 : b)`, and for even `d` the call
+with `(a : s : b)` for `s = √c_d`, and then, unless that call stopped the search or `fl.noY`, the
+call with `(a : -s : b)`. For odd `d` or `c_d ≠ 0`, with the flags of the output clear and a
+callback that does not stop the search, the calls are those of the points of the candidate `(1, 0)`
+of the brute-force reference (`Ratpoints.BruteForce.pointsOfDen`) with `fl.reversed` clear, and with
+it set of the same points mapped by `Ratpoints.Sieve.swapPoint`: after a reversal, the points
+`(0 : y : 1)` of the caller's curve. The search tests the flag `quit` after it and returns when it
+is set (`Ratpoints.searchPoints`).
 
-C: `find_points.c:4634`, `find_points.c:4894-4899`, `find_points.c:5068-5105`
+C: `find_points.c:4634`, `find_points.c:4894-4899`, `find_points.c:5068-5099`
 
-Deviation: the flag `rev` as an argument, for the bit `RATPOINTS_REVERSED` of the flags of the
-search (`args->flags`); a list of points for the callback `process`, with no stop it may request, no
-`RATPOINTS_NO_Y` and no `RATPOINTS_NO_CHECK` (stage G), and no output under `RATPOINTS_VERBOSE` or
-`DEBUG`; the square test of `c_d` and the decision whether there are points at infinity are made on
-the list that it is given, after the reversal check, when the points are delivered, where the C code
-computes `lcfsq` before the check (line 4634), which clears it when it reverses a polynomial of even
-degree and leaves it, unread, with the odd degree of the other reversals, and sets `point_at_infty`
-before the exits of the search (lines 4894-4899); the case `c_d = 0`, that of the zero polynomial,
-which ratpoints refuses before it gets here, gives the one point `(a, 0, b)`, which the cited lines,
-delivering `-y` without a test `y ≠ 0`, would deliver twice. -/
-def pointsAtInfinity (c : List Int) (d : Nat) (rev : Bool) : List (Int × Int × Int) :=
-  let a : Int := if rev then 0 else 1
-  let b : Int := if rev then 1 else 0
-  if d % 2 = 1 then [(a, 0, b)] else BruteForce.pointsAbove a b (c.getD d 0)
+Deviation: the flags `fl` as an argument, for the bits `RATPOINTS_REVERSED`, `RATPOINTS_NO_CHECK`
+and `RATPOINTS_NO_Y` of the flags of the search (`args->flags`); the delivery `r` passed and
+returned, for the pointer `info`, the local flag `quit` and the count `total` of
+`find_points_work_1`; the return when the callback stops the search (lines 5100-5103) made by the
+caller (`Ratpoints.searchPoints`); no output under `RATPOINTS_VERBOSE` or `DEBUG`; the square test
+of `c_d` and the decision whether there are points at infinity are made on the list that it is
+given, after the reversal check, when the points are delivered, where the C code computes `lcfsq`
+before the check (line 4634), which clears it when it reverses a polynomial of even degree and
+leaves it, unread, with the odd degree of the other reversals, and sets `point_at_infty` before the
+exits of the search (lines 4894-4899); the square root by `Nat.sqrt`, for `mpz_sqrt`. -/
+def pointsAtInfinity {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : List Int) (d : Nat)
+    (fl : CheckFlags) (r : Delivery σ) : Delivery σ :=
+  let a : Int := if fl.reversed then 0 else 1
+  let b : Int := if fl.reversed then 1 else 0
+  let lcf := c.getD d 0
+  let s : Int := lcf.toNat.sqrt
+  if d % 2 == 1 || Setup.isSquare lcf then
+    if fl.noCheck then r.call process a b 0
+    else if d % 2 = 1 then r.call process a b 0
+    else
+      let r := r.call process a b s
+      if !r.quit && !fl.noY then r.call process a b (-s) else r
+  else r
 
 /-! ### Examples -/
 
@@ -526,16 +542,35 @@ def pointsAtInfinity (c : List Int) (d : Nat) (rev : Bool) : List (Int × Int ×
         let f : Int := if d % 2 = 1 then b else 1
         checkNum w f b true a == (checkNum w f b false a).map swapPoint
 
-#guard pointsAtInfinity [1, 0, 0, 0, 9] 4 false == [(1, 3, 0), (1, -3, 0)] &&
-  pointsAtInfinity [1, 0, 0, 0, 2] 4 false == [] &&
-  pointsAtInfinity [1, 2, 3, 4] 3 false == [(1, 0, 0)]
+-- The points at infinity with the appending callback, for even degree with `c_d` a square and
+-- not, and for odd degree.
+#guard
+  let pts (c : List Int) (d : Nat) (fl : CheckFlags) : List (Int × Int × Int) :=
+    (pointsAtInfinity appendPoint c d fl ⟨#[], 0, false⟩).info.toList
+  pts [1, 0, 0, 0, 9] 4 {} == [(1, 3, 0), (1, -3, 0)] && pts [1, 0, 0, 0, 2] 4 {} == [] &&
+    pts [1, 2, 3, 4] 3 {} == [(1, 0, 0)] &&
+    -- With the flag of the reversal, the points at infinity mapped: `(0 : y : 1)` for
+    -- `(1 : y : 0)`.
+    pts [1, 0, 0, 0, 9] 4 { reversed := true } == [(0, 3, 1), (0, -3, 1)] &&
+    pts [1, 0, 0, 0, 2] 4 { reversed := true } == [] &&
+    pts [1, 2, 3, 4] 3 { reversed := true } == [(0, 0, 1)] &&
+    ([[1, 0, 0, 0, 9], [0, 0, 0, 0, 0], [-3, 1, 4]].all fun c ↦ [2, 3, 4].all fun d ↦
+      pts c d { reversed := true } == (pts c d {}).map swapPoint) &&
+    -- `RATPOINTS_NO_Y`: only `+√c_d`; `RATPOINTS_NO_CHECK`: one call with `y = 0` where there
+    -- are points at infinity, for odd degree and `c_d` a square, and none otherwise.
+    pts [1, 0, 0, 0, 9] 4 { noY := true } == [(1, 3, 0)] &&
+    pts [1, 0, 0, 0, 9] 4 { noCheck := true } == [(1, 0, 0)] &&
+    pts [1, 0, 0, 0, 9] 4 { noCheck := true, reversed := true } == [(0, 0, 1)] &&
+    pts [1, 0, 0, 0, 2] 4 { noCheck := true } == [] &&
+    pts [1, 2, 3, 4] 3 { noY := true } == [(1, 0, 0)]
 
--- With the flag of the reversal, the points at infinity mapped: `(0 : y : 1)` for `(1 : y : 0)`.
-#guard pointsAtInfinity [1, 0, 0, 0, 9] 4 true == [(0, 3, 1), (0, -3, 1)] &&
-  pointsAtInfinity [1, 0, 0, 0, 2] 4 true == [] &&
-  pointsAtInfinity [1, 2, 3, 4] 3 true == [(0, 0, 1)] &&
-  [[1, 0, 0, 0, 9], [0, 0, 0, 0, 0], [-3, 1, 4]].all fun c ↦ [2, 3, 4].all fun d ↦
-    pointsAtInfinity c d true == (pointsAtInfinity c d false).map swapPoint
+-- A stop at the first call at infinity: `-√c_d` is not delivered, the count is `1` and the flag
+-- is set.
+#guard
+  let stop1 (x z y : Int) (pts : Array (Int × Int × Int)) : Answer (Array (Int × Int × Int)) :=
+    ⟨1, true, pts.push (x, y, z)⟩
+  let r := pointsAtInfinity stop1 [1, 0, 0, 0, 9] 4 {} ⟨#[], 0, false⟩
+  r.info.toList == [(1, 3, 0)] && r.total == 1 && r.quit
 
 end Sieve
 

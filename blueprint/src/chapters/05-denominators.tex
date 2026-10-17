@@ -643,23 +643,27 @@ Section~\ref{sec:denC} describes, in its order: the flags of the tests on the de
 divisors of the leading coefficient for odd degree, the 2-adic information and its exit, what
 \verb|sieving_info| computes (Definition~\ref{def:sievingInfo}), the tables of the examined primes
 with their exit, the forbidden divisors for even degree, the sieve entries of the moduli and the
-store of the tables of rows, the switch of the checked loop, and the points at infinity followed by
-the sieving (Definition~\ref{def:sieving}): the shape and the run over the denominators from $1$ to
-$H$ with the cut points of the parameters and the store that \verb|sieving_info| returns. For
-well-formed parameters, $1 \le H < 2^{63}$ and $d$ the degree of $c$, its result is the list of the
-points at infinity followed by the points of the reference over the denominators of the search
-(Definition~\ref{def:searchDens}), in their order, each mapped by $\mathrm{swapPoint}$ when the flag
-of the reversal is set, also at both exits; its node names \verb|Ratpoints.run_searchPoints| with
-this statement, uses Definitions~\ref{def:Shape} and~\ref{def:searchDens},
-Lemmas~\ref{lem:twoAdic_exit} and~\ref{lem:shape_dens} and the reduction of the run, and holds the C
-ranges of the flags and of the exits, the call of \verb|sieving_info| and the list of the sieve
-entries that it fills among them, and the return when the Sturm step leaves nothing to search
+store of the tables of rows, the switch of the checked loop, the points at infinity, the return
+when the callback has stopped the search, and the sieving (Definition~\ref{def:sieving}): the shape
+and the run over the denominators from $1$ to $H$ with the cut points of the parameters and the
+store that \verb|sieving_info| returns. For well-formed parameters, $1 \le H < 2^{63}$ and $d$ the
+degree of $c$, there is a sound test of the sieve, one that lets the numerator of every point
+through, for which it delivers the points at infinity followed by the points of the check with the
+flags of the numerators that pass the test over the denominators of the search
+(Definition~\ref{def:searchDens}), in their order, up to the first call that stops the search, also
+at both exits; without the options of the output these are the points of the reference over the
+candidate $(1, 0)$ and these denominators, each mapped by $\mathrm{swapPoint}$ when the flag of the
+reversal is set (Lemma~\ref{lem:searchList}, which uses Definitions~\ref{def:Shape}
+and~\ref{def:searchDens}, Lemmas~\ref{lem:twoAdic_exit} and~\ref{lem:shape_dens} and the reduction
+of the run). The node of the search holds the C ranges of the flags and of the exits, the call of
+\verb|sieving_info| and the list of the sieve entries that it fills among them, and the return after
+the points at infinity with the return when the Sturm step leaves nothing to search
 (\csource{find_points.c}{2793}{2795}, \csource{find_points.c}{4588}{4589},
 \csource{find_points.c}{4595}{4596}, \csource{find_points.c}{4602}{4602},
 \csource{find_points.c}{4603}{4604}, \csource{find_points.c}{4607}{4607},
 \csource{find_points.c}{4900}{4943}, \csource{find_points.c}{4948}{4948},
 \csource{find_points.c}{4954}{4963}, \csource{find_points.c}{4992}{5012},
-\csource{find_points.c}{5106}{5106}); the sieving holds the frame of the block that sets up the run
+\csource{find_points.c}{5100}{5106}); the sieving holds the frame of the block that sets up the run
 and the rows of offsets of the classes (\csource{find_points.c}{4573}{4573},
 \csource{find_points.c}{5116}{5116}, \csource{find_points.c}{5119}{5119},
 \csource{find_points.c}{5132}{5132}, \csource{find_points.c}{5137}{5139},
@@ -683,31 +687,32 @@ and the rows of offsets of the classes (\csource{find_points.c}{4573}{4573},
   \leanok
   For well-formed parameters and any options, if $\mathrm{findPoints}(c, H, P, o)$ returns the list
   $L$, and the reversal check hands on the polynomial $c'$ of degree $d'$ with the flag of the
-  reversal: $L$ is the list of the points at infinity of $c'$ followed by the points that the
-  brute-force reference of $c'$ finds over the denominators of the search of $c'$
-  (Definition~\ref{def:searchDens}), in their order, each mapped by $\mathrm{swapPoint}$ when the
-  flag is set. The points at infinity of $c'$ and the points of its reference over the
-  denominators of its search are a permutation of $\mathrm{bruteForce}(c', H)$, so that $L$ is a
-  permutation of $\mathrm{bruteForce}(c, H)$ (Theorem~\ref{thm:findPoints_perm}), and $L$ is
-  $\mathrm{bruteForce}(c, H)$ when the options forbid the reversal and the search of $c$ does not
-  take the divisors times squares.
+  reversal: $L$ is the list of the points that the brute-force reference of $c'$ finds over the
+  candidate $(1, 0)$, its points at infinity, followed by those that it finds over the denominators
+  of the search of $c'$ (Definition~\ref{def:searchDens}), in their order, each mapped by
+  $\mathrm{swapPoint}$ when the flag is set. The points of the reference of $c'$ over the candidate
+  $(1, 0)$ and over the denominators of its search are a permutation of
+  $\mathrm{bruteForce}(c', H)$, so that $L$ is a permutation of $\mathrm{bruteForce}(c, H)$
+  (Theorem~\ref{thm:findPoints_perm}), and $L$ is $\mathrm{bruteForce}(c, H)$ when the options
+  forbid the reversal and the search of $c$ does not take the divisors times squares.
 \end{theorem}
 
 \begin{proof}
-  \uses{thm:refusals, lem:flatMap_sound}
+  \uses{lem:findPoints_searchList, lem:flatMap_sound}
   \leanok
-  $L$ is the list of the search of $c'$ (Definition~\ref{def:searchPoints}), which takes an exit
-  only when the curve has no points (Lemmas~\ref{lem:twoAdic_exit} and~\ref{lem:examinePrime_none}),
-  and otherwise gives the points of the reference over the list of its shape
-  (Lemma~\ref{lem:shape_dens}), the tests of the sieve, which every denominator and every numerator
-  of a point pass, changing nothing (Lemma~\ref{lem:flatMap_sound}); these are those over the
-  denominators of the search, since a denominator that the one list has and the other lacks carries
-  no point. The denominators of the search have no duplicates, lie in $1, \dots, H$ and hold every
-  denominator of a point (Lemma~\ref{lem:shape_dens}; for the shapes other than the divisors they
-  are $1, \dots, H$), so the points over them are a permutation of those over $1, \dots, H$. The
-  degree that the reversal check hands on is that of $c'$, and without a reversal $c' = c$
-  (Lemma~\ref{lem:reversal_swap}). When $\mathrm{findPoints}$ returns a list, its height bound is
-  below $2^{63}$ by its refusals (Theorem~\ref{thm:refusals}), as the search needs.
+  $L$ is the list of the search of $c'$ for a sound test of the sieve
+  (Lemma~\ref{lem:findPoints_searchList}), which takes an exit only when the curve has no points
+  (Lemmas~\ref{lem:twoAdic_exit} and~\ref{lem:examinePrime_none}), and otherwise gives the points of
+  the reference over the list of its shape (Lemma~\ref{lem:shape_dens}), the tests of the sieve,
+  which every denominator and every numerator of a point pass, changing nothing
+  (Lemma~\ref{lem:flatMap_sound}); these are those over the denominators of the search, since a
+  denominator that the one list has and the other lacks carries no point. The denominators of the
+  search have no duplicates, lie in $1, \dots, H$ and hold every denominator of a point
+  (Lemma~\ref{lem:shape_dens}; for the shapes other than the divisors they are $1, \dots, H$), so
+  the points over them are a permutation of those over $1, \dots, H$. The degree that the reversal
+  check hands on is that of $c'$, and without a reversal $c' = c$ (Lemma~\ref{lem:reversal_swap}).
+  When $\mathrm{findPoints}$ returns a list, its height bound is below $2^{63}$ by its refusals, as
+  the search needs.
 \end{proof}
 
 Theorem~\ref{thm:findPoints_perm} states the permutation, and Theorem~\ref{thm:findPoints}
@@ -828,16 +833,17 @@ about the table of primes that the factorization uses, checked by \verb|decide|,
 \verb|Ratpoints/Proof/Bits.lean| and those on lists and ranges in
 \verb|Ratpoints/Proof/Containers.lean|, the binary form at $a = k b$, the squares modulo $p$ and the
 negation of the quarter of \verb|LONG_MIN| in \verb|Ratpoints/Proof/Tables.lean|, and the
-denominators of the search with the theorems in \verb|Ratpoints/Proof/FindPoints.lean|. The lemmas
-of Mathlib's generality are in \verb|Ratpoints/Mathlib|, in the files that mirror their homes in
-Mathlib: \verb|Algebra/BigOperators/Group/List/Basic|, \verb|Algebra/Group/Even|,
-\verb|Data/Int/GCD|, \verb|Data/List/Basic|, \verb|Data/List/Pairwise|, \verb|Data/Nat/Factors|
-(with the part of a number prime to another, \verb|Nat.coprimePart|, which is $b^*$),
-\verb|Data/Nat/PadicValNat|, \verb|Data/Nat/Prime/Defs|, \verb|Data/Nat/Squarefree|,
-\verb|Data/ZMod/Basic|, \verb|NumberTheory/LegendreSymbol/JacobiSymbol|,
-\verb|NumberTheory/Padics/PadicVal/Basic| and \verb|NumberTheory/SmoothNumbers| (with the part of
-a number at the primes from a bound on, \verb|Nat.IsRoughPart|, Lemma~\ref{lem:roughPart}); that the
-macro \verb|CEIL| rounds up, a fact about the C code, is a private lemma next to its use.
+denominators of the search in \verb|Ratpoints/Proof/FindPoints.lean|, with the theorems, which
+stage~G moves to \verb|Ratpoints/Proof/Output.lean|. The lemmas of Mathlib's generality are in
+\verb|Ratpoints/Mathlib|, in the files that mirror their homes in Mathlib:
+\verb|Algebra/BigOperators/Group/List/Basic|, \verb|Algebra/Group/Even|, \verb|Data/Int/GCD|,
+\verb|Data/List/Basic|, \verb|Data/List/Pairwise|, \verb|Data/Nat/Factors| (with the part of a
+number prime to another, \verb|Nat.coprimePart|, which is $b^*$), \verb|Data/Nat/PadicValNat|,
+\verb|Data/Nat/Prime/Defs|, \verb|Data/Nat/Squarefree|, \verb|Data/ZMod/Basic|,
+\verb|NumberTheory/LegendreSymbol/JacobiSymbol|, \verb|NumberTheory/Padics/PadicVal/Basic| and
+\verb|NumberTheory/SmoothNumbers| (with the part of a number at the primes from a bound on,
+\verb|Nat.IsRoughPart|, Lemma~\ref{lem:roughPart}); that the macro \verb|CEIL| rounds up, a fact
+about the C code, is a private lemma next to its use.
 
 \section{The evidence}\label{sec:den-evidence}
 

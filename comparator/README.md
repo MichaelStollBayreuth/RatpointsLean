@@ -11,8 +11,10 @@ axioms (`propext`, `Quot.sound`, `Classical.choice`).
   restates the specification verbatim (`degree`, `binaryForm`, `IsPoint`, and `binaryFormPoly`,
   which the refusal theorems of stage D speak about; `points` stays out, as the blueprint explains)
   and states the main theorems with `sorry`. The main theorems speak about the model's `findPoints`
-  (and, in stage B, the brute-force reference), which the challenge imports with `Options`,
-  `Params`, `Params.WF`, `SieveOptions`, `sieveParams` and `maxDegree`: the model is trusted in the
+  and, since stage G, `findPointsWith` (and, in stage B, the brute-force reference), which the
+  challenge imports with `Options`, `Params`, `Params.WF`, `SieveOptions`, `sieveParams`,
+  `maxDegree`, and the callback's `Answer` and `Delivery` with the reference of the delivery
+  `Delivery.deliver`: the model is trusted in the
   sense that it is the code the executable runs, and nothing else, and a definition of the model,
   which elaborates without Mathlib, is never restated. The specification, by contrast, is
   reproduced in the challenge, so a solution whose library changed it is rejected. The challenge
@@ -59,6 +61,12 @@ the refusal theorems state as `2 ^ 63 ≤ H`, and the cut points of sub-stage F2
 the packing of the numerators of sub-stage F3 on 2026-10-15, and with the chunked first stage and
 the rows of sub-stage F4 on 2026-10-16; on Lean and Mathlib v4.35.0, `lake comparator --paranoid`
 accepted all seven on the same day, with Lean's kernel and the five external checkers.
+
+Stage G adds the protocol of the delivery, `challenge_map_findPointsWith_eq_map_findPoints`, which
+`challenges.json` lists as well: the search with a callback refuses what `findPoints` refuses and
+otherwise returns the data of the callback and the count of `Delivery.deliver` of the list of
+`findPoints` to the callback, its calls for the points in their order up to and including the
+first that stops the search.
 
 ## Running
 

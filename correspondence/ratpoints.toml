@@ -115,6 +115,18 @@ kind = "other"
 reason = "RATPOINTS_DEFAULT_SP2, the fixed end of the second stage of the versions 2.x, which the C code reads nowhere"
 
 [[excluded]]
+file = "ratpoints.h"
+lines = "439"
+kind = "interface"
+reason = "the prototype of find_points_init, which a caller of the library calls before find_points_work and whose definition (find_points.c:272-375) is excluded as interface: the model allocates nothing"
+
+[[excluded]]
+file = "ratpoints.h"
+lines = "444"
+kind = "memory"
+reason = "the prototype of find_points_clear, which frees what find_points_init allocated and whose definition (find_points.c:377-416) is excluded as memory: the model allocates nothing"
+
+[[excluded]]
 file = "find_points.c"
 lines = "30"
 kind = "other"

@@ -219,22 +219,22 @@ status:
       axioms: ["propext", "Classical.choice", "Quot.sound"]
       comparator_config: "comparator/challenges.json"
     - declaration: "Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok"
-      file: "Ratpoints/Proof/FindPoints.lean"
+      file: "Ratpoints/Proof/Output.lean"
       sorry_count: 0
       axioms: ["propext", "Classical.choice", "Quot.sound"]
       comparator_config: "comparator/challenges.json"
     - declaration: "Ratpoints.nodup_of_findPoints_eq_ok"
-      file: "Ratpoints/Proof/FindPoints.lean"
+      file: "Ratpoints/Proof/Output.lean"
       sorry_count: 0
       axioms: ["propext", "Classical.choice", "Quot.sound"]
       comparator_config: "comparator/challenges.json"
     - declaration: "Ratpoints.exists_findPoints_eq_error_iff_of_sturm_nonneg"
-      file: "Ratpoints/Proof/FindPoints.lean"
+      file: "Ratpoints/Proof/Output.lean"
       sorry_count: 0
       axioms: ["propext", "Classical.choice", "Quot.sound"]
       comparator_config: "comparator/challenges.json"
     - declaration: "Ratpoints.exists_findPoints_eq_error_iff_of_sturm_neg"
-      file: "Ratpoints/Proof/FindPoints.lean"
+      file: "Ratpoints/Proof/Output.lean"
       sorry_count: 0
       axioms: ["propext", "Classical.choice", "Quot.sound"]
       comparator_config: "comparator/challenges.json"
@@ -320,7 +320,7 @@ alignment:
         (Ratpoints.mem_bruteForce_iff, Ratpoints.nodup_bruteForce), certified by comparator
     - source: "find_points returns each such point exactly once"
       lean: "Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok"
-      module: "Ratpoints.Proof.FindPoints"
+      module: "Ratpoints.Proof.Output"
       status: "partially-formalized"
       note: >
         for the sieve on the bit arrays of words of stage C2 with the set-up of stage D (the
@@ -342,7 +342,7 @@ alignment:
         bring Ratpoints.findPoints closer to the C code, and the theorems move with it
     - source: "the refusals: fewer than two or more than maxDegree + 1 = 101 coefficients, H = 0 or H >= 2^63, a binary form that is not squarefree"
       lean: "Ratpoints.exists_findPoints_eq_error_iff_of_sturm_nonneg"
-      module: "Ratpoints.Proof.FindPoints"
+      module: "Ratpoints.Proof.Output"
       status: "formalized"
       note: >
         for every choice of the sieving parameters, with the Sturm step on, as in a run without
@@ -351,7 +351,7 @@ alignment:
         (Ratpoints.exists_findPoints_eq_error_iff_of_sturm_neg), both certified by comparator
     - source: "the order of the output"
       lean: "Ratpoints.exists_eq_of_findPoints_eq_ok"
-      module: "Ratpoints.Proof.FindPoints"
+      module: "Ratpoints.Proof.Output"
       status: "partially-formalized"
       note: >
         the list of Ratpoints.findPoints is the list of the points at infinity followed by the

@@ -257,14 +257,15 @@ by row, and not only its verdict.
 
 \begin{lemma}[The reversal exchanges $x$ and $z$]\label{lem:reversal_swap}
   \uses{def:reversal, def:binaryForm}
-  \lean{Ratpoints.Setup.getD_eq_of_reversal_eq_ok, Ratpoints.Setup.degree_eq_of_reversal_eq_ok, Ratpoints.Setup.eq_of_reversal_eq_ok_false, Ratpoints.Setup.binaryForm_eq_of_reversal_eq_ok, Ratpoints.binaryForm_eq_of_getD_eq_getD_sub}
+  \lean{Ratpoints.Setup.getD_eq_of_reversal_eq_ok, Ratpoints.Setup.degree_eq_of_reversal_eq_ok, Ratpoints.Setup.eq_of_reversal_eq_ok_false, Ratpoints.Setup.binaryForm_eq_of_reversal_eq_ok, Ratpoints.binaryForm_eq_of_getD_eq_getD_sub, Ratpoints.Setup.one_le_of_reversal_eq_ok}
   \leanok
   For $d$ the degree of $c$: if the check returns the list $c'$ with the degree $d'$, then $d'$ is
-  the degree of $c'$, and without a reversal $c' = c$ and $d' = d$; if it returns them as reversed,
-  then $c'$ is the reflection of $c$ in degree $D$, $c'_i = c_{D-i}$ for $i \le D$ and $c'_i = 0$
-  beyond, in each of the three cases, and $F_{c'}(x, z) = F_c(z, x)$ for all integers $x$ and $z$,
-  as for any two lists whose degrees round up to the same even number $D$ and whose coefficients
-  are reflected at $D$.
+  the degree of $c'$, $d' \ge 1$ when $d \ge 1$, since the check lowers only an even $d \ge 2$, to
+  $d - 1$, and without a reversal $c' = c$ and $d' = d$; if it returns them as reversed, then $c'$
+  is the reflection of $c$ in degree $D$, $c'_i = c_{D-i}$ for $i \le D$ and $c'_i = 0$ beyond, in
+  each of the three cases, and $F_{c'}(x, z) = F_c(z, x)$ for all integers $x$ and $z$, as for any
+  two lists whose degrees round up to the same even number $D$ and whose coefficients are reflected
+  at $D$.
 \end{lemma}
 
 \begin{proof}
@@ -346,7 +347,7 @@ Lemma~\ref{lem:sift_eq_checkDen} maps their side.
 \section{The coefficients as longs and the exit}\label{sec:longsExit}
 
 \begin{definition}[The coefficients as longs]\label{def:useCLong}
-  \lean{Ratpoints.fitsLong, Ratpoints.Setup.useCLong, Ratpoints.Sieve.modLong, Ratpoints.Sieve.modLong_eq_emod, Ratpoints.fitsLong_sixteen_mul, Ratpoints.fitsLong_add_sixteen_mul, Ratpoints.fitsLong_neg, Ratpoints.Setup.fitsLong_getD_of_useCLong}
+  \lean{Ratpoints.fitsLong, Ratpoints.Setup.useCLong, Ratpoints.Sieve.modLong, Ratpoints.Sieve.modLong_eq_emod, Ratpoints.fitsLong_sixteen_mul, Ratpoints.fitsLong_add_sixteen_mul, Ratpoints.fitsLong_neg, Ratpoints.Setup.fitsLong_getD_of_useCLong, Ratpoints.fitsLong_natCast}
   \leanok
   Whether every coefficient $c_0, \dots, c_d$ is a C \verb|long|, which has 64 bits in every build
   (\csource{rp-private.h}{41}{43}, \csource{rp-private.h}{47}{47}), $-2^{63} \le c_i < 2^{63}$
@@ -361,7 +362,8 @@ Lemma~\ref{lem:sift_eq_checkDen} maps their side.
   its copy in \verb|sift.c| is the same function but for the hooks of its counts
   (\csource{sift.c}{370}{389}); the negation of an integer of absolute value below $2^{63}$ is a
   \verb|long|, which also covers the negations of the map of a reversed search
-  (Definition~\ref{def:swapPoint}).
+  (Definition~\ref{def:swapPoint}); and a natural number is a \verb|long| exactly when it is below
+  $2^{63}$, so that the test of the height refuses $H = 0$ and $H \ge 2^{63}$.
 \end{definition}
 
 \begin{definition}[The table of a prime, or the exit]\label{def:examinePrimeExit}
@@ -413,70 +415,70 @@ Lemma~\ref{lem:sift_eq_checkDen} maps their side.
 
 \begin{definition}[The search of the polynomial handed on]\label{def:searchPoints}
   \uses{def:Params, def:arraySize, def:sievingInfo, def:useCLong, def:pointsAtInfinity,
-    def:sieving, def:sieveRun, def:swapPoint, lem:sievingInfo, thm:bruteForce, def:twoAdic,
-    def:Shape, lem:twoAdic_point, lem:twoAdic_exit, lem:survives, thm:run_reference, def:setupUs1,
-    def:forbidden, def:searchDens, lem:shape_dens, def:numClasses, lem:numClasses, lem:classOffsets,
-    def:classOffsets, lem:soundRun, lem:storeTables}
-  \lean{Ratpoints.searchPoints, Ratpoints.run_searchPoints}
+    def:sieving, def:twoAdic, def:setupUs1, def:forbidden, def:numClasses, def:Outcome,
+    def:delivery}
+  \lean{Ratpoints.searchPoints}
   \leanok
-  For the coefficients $c$ of degree $d$ that the set-up hands on, the flag of the reversal, the
-  height $H$ and the parameters $P$, over the denominators
-  $b_{\mathrm{low}} = 1, \dots, b_{\mathrm{high}} = H$: the flags of the tests on the denominators,
-  the checked loop for even $d$, the Jacobi test for even $d$, $c_d$ not a square and the Jacobi
-  switch of the parameters, the squares for odd $d$ and $|c_d| = 1$, and for odd $d$ otherwise the
-  divisors of the leading coefficient (Definition~\ref{def:setupUs1};
-  \csource{find_points.c}{4588}{4589}, \csource{find_points.c}{4595}{4596},
-  \csource{find_points.c}{4607}{4607}, \csource{find_points.c}{4900}{4943}); the 2-adic information
-  (Definition~\ref{def:twoAdic}) with the packings of the classes and \verb|den_bits|
-  (Definition~\ref{def:numClasses}), and no points when no class of the denominators admits a
-  numerator and there is no point at infinity (\csource{find_points.c}{4603}{4604},
-  \csource{find_points.c}{4948}{4948}, \csource{find_points.c}{4954}{4963}); then what
-  \verb|sieving_info| computes (Definition~\ref{def:sievingInfo}), with the flag of the
-  \verb|long|s: the tables of the examined primes, the forbidden divisors for even $d$
-  (Definition~\ref{def:forbidden}), the sieve entries of the moduli with their reciprocals and the
-  store of the tables of rows of the run (Definition~\ref{def:storeTables}), which the run takes,
-  and no points when the curve has no points modulo a prime examined on the way
-  (\csource{find_points.c}{4602}{4602}, \csource{find_points.c}{4992}{5012}); the checked loop off
-  when there are no forbidden divisors and no Jacobi test (\csource{find_points.c}{2793}{2795}); and
-  the points at infinity followed by the points of the sieving (Definition~\ref{def:sieving}), the
+  For the coefficients $c$ of degree $d$ that the set-up hands on, the flags of the check, the
+  height $H$, the parameters $P$, the callback and a delivery whose flag is clear, over the
+  denominators $b_{\mathrm{low}} = 1, \dots, b_{\mathrm{high}} = H$, in the order of
+  \verb|find_points_work_1|: the flags of the tests on the denominators, the checked loop for even
+  $d$, the Jacobi test for even $d$, $c_d$ not a square and the Jacobi switch of the parameters, the
+  squares for odd $d$ and $|c_d| = 1$, and for odd $d$ otherwise the divisors of the leading
+  coefficient (Definition~\ref{def:setupUs1}; \csource{find_points.c}{4588}{4589},
+  \csource{find_points.c}{4595}{4596}, \csource{find_points.c}{4607}{4607},
+  \csource{find_points.c}{4900}{4943}, with the bits \verb|RATPOINTS_CHECK_DENOM| and
+  \verb|RATPOINTS_USE_JACOBI| that it sets, \csource{ratpoints.h}{415}{415} and
+  \csource{ratpoints.h}{418}{418}); the 2-adic information (Definition~\ref{def:twoAdic}) with the
+  packings of the classes and \verb|den_bits| (Definition~\ref{def:numClasses}), and nothing
+  delivered when no class of the denominators admits a numerator and there is no point at infinity
+  (\csource{find_points.c}{4603}{4604}, \csource{find_points.c}{4948}{4948},
+  \csource{find_points.c}{4954}{4963}); then what \verb|sieving_info| computes
+  (Definition~\ref{def:sievingInfo}), with the flag of the \verb|long|s: the tables of the examined
+  primes, the forbidden divisors for even $d$ (Definition~\ref{def:forbidden}), the sieve entries of
+  the moduli with their reciprocals and the store of the tables of rows of the run
+  (Definition~\ref{def:storeTables}), which the run takes, and nothing delivered when the curve has
+  no points modulo a prime examined on the way (\csource{find_points.c}{4602}{4602},
+  \csource{find_points.c}{4992}{5012}); the checked loop off when there are no forbidden divisors
+  and no Jacobi test (\csource{find_points.c}{2793}{2795}); the points at infinity
+  (Definition~\ref{def:pointsAtInfinity}), after which the search returns when the callback has
+  stopped it (\csource{find_points.c}{5100}{5106}, with the return when the Sturm step leaves
+  nothing to search, not met before stage~H); and the sieving (Definition~\ref{def:sieving}), the
   block that sets up the run and runs the denominators: an array of rows of offsets, one for each
   packing, of one offset for each sieve entry, and the rows of offsets of the classes in it, with
   the inverses of the strides in the entries (Definition~\ref{def:classOffsets}); the shape that
   \verb|run_setup| chooses (Definition~\ref{def:Shape}); and the points of the denominators of the
   shape, with its tests, the classes and their offsets and \verb|den_bits|, the three stages that
   the cut points $s_1$ and $s_2$ of the parameters give and pieces of at most
-  $\mathrm{arraySizeAt}(H)$ bit arrays, each mapped by $\mathrm{swapPoint}$ when the flag is set
-  (\csource{find_points.c}{5106}{5106}, the return when the Sturm step leaves nothing to search, is
-  not met before stage~H). A definition of type \verb|Id|, which $\mathrm{findPoints}$ runs. For
-  well-formed parameters, $1 \le H < 2^{63}$, as the refusals of $\mathrm{findPoints}$ leave it, and
-  $d$ the degree of $c$, its result is the list of the points at infinity followed by the points of
-  the reference over the denominators of the search (Definition~\ref{def:searchDens}), in their
-  order, each mapped by $\mathrm{swapPoint}$ when the flag is set, also when an exit fires, since
-  the curve has no points then (Lemmas~\ref{lem:sievingInfo} and~\ref{lem:twoAdic_exit}) and the
-  denominators of the search lie in $1, \dots, H$; otherwise the run of the shape gives the
-  reference over its denominators, since what the search hands to it is sound
-  (Lemma~\ref{lem:soundRun}) and its tests, the words of the classes and the sieve entries of the
-  moduli, which are sound, those of the third stage prime entries, and whose reciprocals
-  \verb|sieving_info| returns in their order (Lemma~\ref{lem:sievingInfo}), let every point through
-  (Lemmas~\ref{lem:shape_dens}, \ref{lem:twoAdic_point} and~\ref{lem:survives},
-  Theorem~\ref{thm:run_reference}). The search establishes what the run needs of its arguments by
-  Lemmas~\ref{lem:sievingInfo}, \ref{lem:numClasses} and~\ref{lem:classOffsets}: the entries that
-  \verb|class_offsets| returns differ from those of \verb|sieving_info| only in $\mathrm{dinv}$,
-  which the soundness, the shape of a prime entry, the tables of inverses and the fit of the store
-  of the tables of rows (Lemma~\ref{lem:storeTables}) do not read.
+  $\mathrm{arraySizeAt}(H)$ bit arrays, each mapped by $\mathrm{swapPoint}$ when the flag of the
+  reversal is set. Both exits return the delivery as it came. The search returns what a search gives
+  back (Definition~\ref{def:Outcome}): the data and the count of the delivery, with the flag of the
+  reversal, the squares and the success of the divisor set-up. A definition of type \verb|Id|, which
+  $\mathrm{findPointsWith}$ runs. What it delivers for well-formed parameters, $1 \le H < 2^{63}$,
+  as the refusals leave it, and $d$ the degree of $c$ is the subject of Lemma~\ref{lem:searchList}:
+  the points at infinity and, over the denominators of the search (Definition~\ref{def:searchDens}),
+  the points of the check with the flags of the numerators that a sound test of the sieve lets
+  through, up to the first call that stops the search, also when an exit fires, since the curve has
+  no points then (Lemmas~\ref{lem:sievingInfo} and~\ref{lem:twoAdic_exit}).
 \end{definition}
 
-$\mathrm{findPoints}(c, H, P, o)$ (Definition~\ref{def:findPoints}) refuses, in the order of the
-program, more than $\mathrm{maxDegree} + 1$ coefficients, fewer than two, and $H = 0$ or
-$H \ge 2^{63}$, a height that is not a \verb|long| (errors 3, 5 and~4), and then, with error~8, a
-drop of $\lceil n/2 \rceil$ by the leading zeros; it runs the reversal check with the switch of the
-options, which may refuse with error~8 as well, and with the Sturm step on refuses the form when the
-remainder chain of the polynomial searched is $\mathrm{none}$; and it runs $\mathrm{searchPoints}$
-on the polynomial that the check hands on. Its C ranges are the lines of \verb|find_points| and
-\verb|find_points_work| that make the three functions of the library one, the head and the locals of
-\verb|find_points_work_1| that the set-up uses, its reset of the flags and its end, the test of the
-leading zeros and of the height, the Sturm step, whose restriction of the search region is
-stage~H's, and the height of the arguments of the library, a \verb|long|.
+The search with a callback, $\mathrm{findPointsWith}(c, H, P, o)$ with a callback and its data
+(Definition~\ref{def:findPointsWith}), refuses, in the order of the program, more than
+$\mathrm{maxDegree} + 1$ coefficients, fewer than two, and $H = 0$ or $H \ge 2^{63}$, a height that
+is not a \verb|long| (errors 3, 5 and~4), and then, with error~8, a drop of $\lceil n/2 \rceil$ by
+the leading zeros; it runs the reversal check with the switch of the options, which may refuse with
+error~8 as well, and with the Sturm step on refuses the form when the remainder chain of the
+polynomial searched is $\mathrm{none}$; and it runs $\mathrm{searchPoints}$ on the polynomial that
+the check hands on, with the flag of the reversal as the flags of the check, from the data of the
+caller, the count $0$ and the flag of the stop clear, and returns what the search gives back.
+$\mathrm{findPoints}(c, H, P, o)$ (Definition~\ref{def:findPoints}) is its instance with the
+appending callback from the empty array, the list of the array, or its refusal. The C ranges of the
+search with a callback are the lines of \verb|find_points| and \verb|find_points_work| that make the
+three functions of the library one, the head and the locals of \verb|find_points_work_1| that the
+set-up uses, its reset of the flags and its end, the test of the leading zeros and of the height,
+the Sturm step, whose restriction of the search region is stage~H's, the height of the arguments of
+the library, a \verb|long|, the prototypes of the library with the callback, the codes of its
+refusals and the mask of the bits of the input that the reset of the flags keeps.
 
 \begin{theorem}[A permutation of the reference]\label{thm:findPoints_perm}
   \uses{def:findPoints, thm:findPoints_order, lem:swapPoint_bijection}
@@ -496,8 +498,8 @@ stage~H's, and the height of the arguments of the library, a \verb|long|.
 
 \begin{theorem}[The refusals]\label{thm:refusals}
   \uses{def:findPoints, def:Options, def:reversal, def:useCLong, lem:sturmChain_squarefree,
-    lem:reversal_squarefree, lem:squarefree_binaryFormPoly}
-  \lean{Ratpoints.exists_findPoints_eq_error_iff_of_sturm_nonneg, Ratpoints.exists_findPoints_eq_error_iff_of_sturm_neg, Ratpoints.fitsLong_natCast, Ratpoints.Sturm.run_chain_eq_none_iff_of_reversal_eq_ok, Ratpoints.Setup.one_le_of_reversal_eq_ok, Ratpoints.Setup.exists_reversal_eq_error_iff, Ratpoints.Setup.not_squarefree_binaryFormPoly_of_reversal_eq_error}
+    lem:reversal_squarefree, lem:squarefree_binaryFormPoly, thm:protocol}
+  \lean{Ratpoints.exists_findPoints_eq_error_iff_of_sturm_nonneg, Ratpoints.exists_findPoints_eq_error_iff_of_sturm_neg, Ratpoints.Sturm.run_chain_eq_none_iff_of_reversal_eq_ok, Ratpoints.Setup.exists_reversal_eq_error_iff, Ratpoints.Setup.not_squarefree_binaryFormPoly_of_reversal_eq_error}
   \leanok
   For any parameters and options: with the Sturm step on ($\mathrm{sturm} \ge 0$),
   $\mathrm{findPoints}(c, H, P, o)$ refuses the input exactly when $c$ has fewer than two or more
@@ -508,18 +510,20 @@ stage~H's, and the height of the arguments of the library, a \verb|long|.
 \end{theorem}
 
 \begin{proof}
+  \uses{lem:reversal_swap}
   \leanok
-  The refusals of the leading zeros and of the reversal check stand for $Z^2 \mid \Phi_c$ and
-  $X^2 \mid \Phi_c$, each of which makes $\Phi_c$ not squarefree
-  (Lemma~\ref{lem:squarefree_binaryFormPoly}). When neither happens, $N \le d + 1$; since $c$ has at
-  least two entries, $N \ge 2$ and so $d \ge 1$; case~1 lowers an even $d \ge 2$ to $d - 1 \ge 1$
-  with the leading coefficient $c_1 \ne 0$, and cases~2 and~3 keep $d$ with the leading coefficients
-  $c_0 \ne 0$ and $c_1 = \pm 1$; so the chain of the polynomial searched is $\mathrm{none}$ exactly
-  when $\Phi_c$ is not squarefree (Lemmas~\ref{lem:sturmChain_squarefree}
+  $\mathrm{findPoints}$ refuses exactly the inputs that the search with a callback refuses, with the
+  appending callback (Theorem~\ref{thm:protocol}), so that the refusals are its tests. The refusals
+  of the leading zeros and of the reversal check stand for $Z^2 \mid \Phi_c$ and $X^2 \mid \Phi_c$,
+  each of which makes $\Phi_c$ not squarefree (Lemma~\ref{lem:squarefree_binaryFormPoly}). When
+  neither happens, $N \le d + 1$; since $c$ has at least two entries, $N \ge 2$ and so $d \ge 1$;
+  case~1 lowers an even $d \ge 2$ to $d - 1 \ge 1$ with the leading coefficient $c_1 \ne 0$, and
+  cases~2 and~3 keep $d$ with the leading coefficients $c_0 \ne 0$ and $c_1 = \pm 1$
+  (Lemma~\ref{lem:reversal_swap}); so the chain of the polynomial searched is $\mathrm{none}$
+  exactly when $\Phi_c$ is not squarefree (Lemmas~\ref{lem:sturmChain_squarefree}
   and~\ref{lem:reversal_squarefree}, the latter also when the reversal is forbidden and the
-  polynomial searched is $f$). Without the Sturm step only the first two remain. A natural number is
-  a \verb|long| exactly when it is below $2^{63}$, so that the test of the height refuses $H = 0$
-  and $H \ge 2^{63}$.
+  polynomial searched is $f$). Without the Sturm step only the first two remain. The test of the
+  height refuses $H = 0$ and $H \ge 2^{63}$ (Definition~\ref{def:useCLong}).
 \end{proof}
 
 Theorem~\ref{thm:run_reference} reduces the run of any polynomial with its degree to the reference:
@@ -528,7 +532,7 @@ with their tables of inverses, the row offsets of the classes, which pack the 2-
 store of the tables of rows that fits them, and those of the third stage prime entries, denominators
 and a height below $2^{63}$, and filters that let every point through, it gives the points of the
 reference over its denominators, mapped by $\mathrm{swapPoint}$ when the flag of the reversal is
-set; Definition~\ref{def:searchPoints} rests on it, with what the search hands to the run
+set; Lemma~\ref{lem:searchList} rests on it, with what the search hands to the run
 (Lemma~\ref{lem:soundRun}), the lists and the tests of the shapes (Lemma~\ref{lem:shape_dens}), the
 2-adic exit (Lemma~\ref{lem:twoAdic_exit}) and the exit of the tables. Theorem~\ref{thm:findPoints}
 has membership, no duplicates and the set of elements, for every option, from
@@ -594,8 +598,9 @@ Each component of the set-up differs from the C code in a stated way, recorded i
     output bits are stage~G's, and an integer for \verb|args->sturm|; the reversal check runs
     whenever the options allow it, without \verb|RATPOINTS_NO_REVERSE_AUTO| (stage~H);
   \item a list of integers for the array of GMP integers of the coefficients, a new list for the
-    reversal in place, and nothing written back to the caller (the reversed coefficients, the
-    degree, the flags), so that there is no state between calls for the reset of the flags to clear;
+    reversal in place, and nothing written back to the caller but the three bits of the flags that
+    the program reads (Definition~\ref{def:Outcome}): the reversed coefficients and the degree stay
+    unwritten, so that there is no state between calls for the reset of the flags to clear;
     the square test of $c_d$ made where it is used (\verb|Setup.reversal|,
     \verb|Sieve.pointsAtInfinity|, \verb|searchPoints|), for the flag \verb|lcfsq|, which the C code
     computes before the reversal check, and the test on \verb|point_at_infty| of the 2-adic exit
@@ -621,8 +626,8 @@ Each component of the set-up differs from the C code in a stated way, recorded i
     its caller where it stores them;
   \item the arguments of \verb|sieving_info| that serve the choice of the moduli (the mean number of
     bits per word, whether the number of primes was left to the library, the 2-adic classes) are not
-    modelled; the exits give the empty list, where \verb|sieving_info| returns the prime and
-    \verb|find_points_work_1| the count $0$;
+    modelled; the exits return the delivery as it came, where \verb|sieving_info| returns the prime
+    and \verb|find_points_work_1| the count $0$;
   \item integers for the \verb|long|s, with the range obligations of the helper \verb|mod| and of
     the negations of the map stated as lemmas; no failure for lack of memory; no output under
     \verb|RATPOINTS_VERBOSE| or \verb|DEBUG|;
@@ -653,20 +658,21 @@ prime takes the flag of the \verb|long|s as an argument, which the search comput
 \verb|Ratpoints/Model/Tables.lean|, and $\mathrm{swapPoint}$ in
 \verb|Ratpoints/Model/Candidate.lean| (since stage~F3), before the components that use them;
 $\mathrm{defaultSturm}$ is in \verb|Ratpoints/Model/Constants.lean|; and the options,
-$\mathrm{searchPoints}$ and $\mathrm{findPoints}$ are in \verb|Ratpoints/Model/FindPoints.lean|. The
-contract of the chain, without Mathlib, is in \verb|Ratpoints/Proof/Sturm.lean|, and the lemmas on
-arrays, on the gcd of the absolute values of a list as a left fold, on the cursor of a loop over a
-range and on exact quotients of integers that it needs and Lean core lacks are in
-\verb|Ratpoints/Proof/Containers.lean|, under their names in the namespaces of core. The flagged
-contracts are in \verb|Ratpoints/Proof/Words.lean|, those from the walk on since stage~F2 in
-\verb|Ratpoints/Proof/Scan.lean| (up to the scan of a piece, split off \verb|Sift.lean| in stage~G)
-and \verb|Ratpoints/Proof/Sift.lean|, that of the run since stage~E in
+$\mathrm{searchPoints}$, $\mathrm{findPointsWith}$ (since stage~G) and $\mathrm{findPoints}$ are in
+\verb|Ratpoints/Model/FindPoints.lean|. The contract of the chain, without Mathlib, is in
+\verb|Ratpoints/Proof/Sturm.lean|, and the lemmas on arrays, on the gcd of the absolute values of a
+list as a left fold, on the cursor of a loop over a range and on exact quotients of integers that it
+needs and Lean core lacks are in \verb|Ratpoints/Proof/Containers.lean|, under their names in the
+namespaces of core. The flagged contracts are in \verb|Ratpoints/Proof/Words.lean|, those from the
+walk on since stage~F2 in \verb|Ratpoints/Proof/Scan.lean| (up to the scan of a piece, split off
+\verb|Sift.lean| in stage~G) and \verb|Ratpoints/Proof/Sift.lean|, that of the run since stage~E in
 \verb|Ratpoints/Proof/Denominators.lean|; the lemma on \verb|mod| in
 \verb|Ratpoints/Proof/Reductions.lean|, without Mathlib, since stage~F3; the lemmas on the
 \verb|long|s and the table with the exit in \verb|Ratpoints/Proof/Tables.lean|; the polynomial of a
 coefficient list, the squarefreeness of the chain and of the reversal, the reflection and the
-bijection in \verb|Ratpoints/Proof/Setup.lean|; the equation of $\mathrm{searchPoints}$ and the
-theorems in \verb|Ratpoints/Proof/FindPoints.lean|; and the lemmas of Mathlib's generality in
+bijection in \verb|Ratpoints/Proof/Setup.lean|; the contract of $\mathrm{searchPoints}$ in
+\verb|Ratpoints/Proof/FindPoints.lean| and the theorems, since stage~G, in
+\verb|Ratpoints/Proof/Output.lean|; and the lemmas of Mathlib's generality in
 \verb|Ratpoints/Mathlib|, in the files that mirror their homes in Mathlib: those on homogenizations
 in \verb|Algebra/Polynomial/Homogenize| and \verb|RingTheory/MvPolynomial/Homogeneous|,
 squarefreeness under multiplicative equivalences in \verb|Algebra/Squarefree/Basic|, the coprimality

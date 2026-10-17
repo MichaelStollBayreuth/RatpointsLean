@@ -16,9 +16,9 @@ public import Ratpoints.Model
 The main theorems of the project, stated with `sorry` for
 [leanprover/comparator](https://github.com/leanprover/comparator), over a verbatim restatement of
 the specification. The file may import only Mathlib and the model (`scripts/check_layout.py`
-checks this): the main theorems speak about the model's `findPoints`, which is trusted in the
-sense that it is the code the executable runs, while the specification is reproduced here, so
-that a solution that changed it would be rejected.
+checks this): the main theorems speak about the model's `findPoints` and `findPointsWith`, which
+are trusted in the sense that they are the code the executable runs, while the specification is
+reproduced here, so that a solution that changed it would be rejected.
 
 The statements come in stage by stage, as `comparator/README.md` lists them: the two theorems of
 stage B (the brute-force reference finds exactly the points, without duplicates); from stage C1 on,
@@ -30,12 +30,17 @@ than two or more than `Ratpoints.maxDegree + 1` coefficients, the height bound `
 `2 ^ 63` or more, which is not a `long`, and the binary forms `Ratpoints.binaryFormPoly c` that are
 not squarefree) and off (it refuses exactly what the program refuses under `-s`, and under `-s -k`
 when the reversal is off), which rule out a `Ratpoints.findPoints` that refuses every input, with or
-without the Sturm step. `Ratpoints.bruteForce`, `Ratpoints.findPoints`, `Ratpoints.Options`,
-`Ratpoints.Params`, `Ratpoints.Params.WF`, `Ratpoints.SieveOptions`, `Ratpoints.sieveParams` and
-`Ratpoints.maxDegree` come from the model, never restated, since a definition of the model
-elaborates without Mathlib to other instance terms. Of Mathlib, the file imports exactly the public
-imports of `Ratpoints/Spec/Basic.lean`, so that the restated definitions elaborate to the same terms
-as there.
+without the Sturm step; and the protocol of the delivery of stage G: the search with a callback
+(`Ratpoints.findPointsWith`) refuses what `Ratpoints.findPoints` refuses, and otherwise returns the
+data of the callback and the count of the delivery of the list of `Ratpoints.findPoints` to the
+callback (`Ratpoints.Delivery.deliver`): the calls of the callback for the points of the list in
+their order, up to and including the first that stops the search. `Ratpoints.bruteForce`,
+`Ratpoints.findPoints`, `Ratpoints.findPointsWith`, `Ratpoints.Answer`, `Ratpoints.Delivery`,
+`Ratpoints.Delivery.deliver`, `Ratpoints.Options`, `Ratpoints.Params`, `Ratpoints.Params.WF`,
+`Ratpoints.SieveOptions`, `Ratpoints.sieveParams` and `Ratpoints.maxDegree` come from the model,
+never restated, since a definition of the model elaborates without Mathlib to other instance terms.
+Of Mathlib, the file imports exactly the public imports of `Ratpoints/Spec/Basic.lean`, so that the
+restated definitions elaborate to the same terms as there.
 -/
 
 @[expose] public section
@@ -101,6 +106,14 @@ theorem challenge_exists_findPoints_eq_error_iff_of_sturm_neg (c : List ℤ) (H 
   sorry
 
 theorem challenge_wf_sieveParams (o : Ratpoints.SieveOptions) : (Ratpoints.sieveParams o).WF :=
+  sorry
+
+theorem challenge_map_findPointsWith_eq_map_findPoints {σ : Type} (c : List ℤ) (H : ℕ)
+    (P : Ratpoints.Params) (o : Ratpoints.Options) (process : ℤ → ℤ → ℤ → σ → Ratpoints.Answer σ)
+    (info : σ) (hP : P.WF) :
+    (Ratpoints.findPointsWith c H P o process info).map (fun r ↦ (r.info, r.total)) =
+      (Ratpoints.findPoints c H P o).map fun L ↦
+        let r := Ratpoints.Delivery.deliver process ⟨info, 0, false⟩ L; (r.info, r.total) :=
   sorry
 
 end

@@ -289,36 +289,26 @@ sieve passes these lists on, and they replace the check of a numerator with the 
 
 \begin{definition}[The points of a numerator with the flags]\label{def:checkNumWith}
   \uses{def:delivery, def:bruteForce, def:swapPoint, def:reversal}
-  Proposed names: \lname{Ratpoints.Sieve.checkPointList}, \lname{Ratpoints.Sieve.checkNumWith},
-  \lname{Ratpoints.Sieve.pointsAtInfinityList}. The points of the exact check of the numerator $a$
-  over the denominator $b$, for the products $w$, the factor $f$ and the flags: under
-  $\mathrm{noCheck}$ the survivor $(a, 0, b)$; otherwise $(a, y, b)$ and, for $y \ne 0$, $(a, -y,
-  b)$ when the value of Horner's rule in $a$ on $w$, times $f$, is $y^2$ with $y \ge 0$, the point
-  with $y < 0$ left out under $\mathrm{noY}$; each mapped by $\mathrm{swapPoint}$ when the flag of
-  the reversal is set. The check of a numerator with the flags: these points when $\gcd(a, b) = 1$,
-  and none otherwise, the reference of the test of a candidate and the exact check with the flags.
-  The points at infinity with the flags, for the coefficient list $c$ of degree $d$: when $d$ is odd
-  or $c_d$ is a square, $(1, 0, 0)$ under $\mathrm{noCheck}$ or for odd $d$, and otherwise $(1, s,
-  0)$ for $s = \lfloor \sqrt{c_d} \rfloor$ followed, unless $\mathrm{noY}$, by $(1, -s, 0)$, each
-  mapped by $\mathrm{swapPoint}$ when the flag of the reversal is set, which gives $(0, y, 1)$; none
-  when $d$ is even and $c_d$ is not a square, the square test that of the reversal check
-  (Definition~\ref{def:reversal}).
+  \lean{Ratpoints.Sieve.checkPointList, Ratpoints.Sieve.checkNumWith, Ratpoints.Sieve.pointsAtInfinityList}
+  \leanok
+  The points of the exact check of the numerator $a$ over the denominator $b$, for the products $w$,
+  the factor $f$ and the flags: under $\mathrm{noCheck}$ the survivor $(a, 0, b)$; otherwise
+  $(a, y, b)$ and, for $y \ne 0$, $(a, -y, b)$ when the value of Horner's rule in $a$ on $w$, times
+  $f$, is $y^2$ with $y \ge 0$, the point with $y < 0$ left out under $\mathrm{noY}$; each mapped by
+  $\mathrm{swapPoint}$ when the flag of the reversal is set. The check of a numerator with the
+  flags: these points when $\gcd(a, b) = 1$, and none otherwise, the reference of the test of a
+  candidate and the exact check with the flags. The points at infinity with the flags, for the
+  coefficient list $c$ of degree $d$: when $d$ is odd or $c_d$ is a square, $(1, 0, 0)$ under
+  $\mathrm{noCheck}$ or for odd $d$, and otherwise $(1, s, 0)$ for $s = \lfloor \sqrt{c_d} \rfloor$
+  followed, unless $\mathrm{noY}$, by $(1, -s, 0)$, each mapped by $\mathrm{swapPoint}$ when the
+  flag of the reversal is set, which gives $(0, y, 1)$; none when $d$ is even and $c_d$ is not a
+  square, the square test that of the reversal check (Definition~\ref{def:reversal}).
 \end{definition}
 
 \begin{lemma}[The flags of the check]\label{lem:checkNumWith}
   \uses{def:checkNumWith, def:checkNum}
-  Proposed names: \lname{Ratpoints.Sieve.checkNumWith\_of\_noCheck\_eq\_false},
-  \lname{Ratpoints.Sieve.checkNumWith\_of\_noCheck\_eq\_true},
-  \lname{Ratpoints.Sieve.checkNumWith\_eq\_map},
-  \lname{Ratpoints.Sieve.mem\_checkNumWith\_of\_noCheck},
-  \lname{Ratpoints.Sieve.map\_checkNumWith\_sublist},
-  \lname{Ratpoints.Sieve.flatMap\_checkNumWith\_of\_noCheck\_eq\_false},
-  \lname{Ratpoints.Sieve.pointsAtInfinityList\_of\_noCheck\_eq\_false},
-  \lname{Ratpoints.Sieve.pointsAtInfinityList\_of\_noCheck\_eq\_true},
-  \lname{Ratpoints.Sieve.pointsAtInfinityList\_eq\_map},
-  \lname{Ratpoints.Sieve.eq\_of\_mem\_pointsAtInfinityList\_of\_noCheck},
-  \lname{Ratpoints.Sieve.map\_pointsAtInfinityList}, \lname{Ratpoints.Sieve.fst\_snd\_swapPoint},
-  \lname{Ratpoints.Sieve.filter\_map\_swapPoint}, \lname{Ratpoints.Sieve.swapPoint\_fst\_zero\_snd}.
+  \lean{Ratpoints.Sieve.checkNumWith_of_noCheck_eq_false, Ratpoints.Sieve.checkNumWith_of_noCheck_eq_true, Ratpoints.Sieve.checkNumWith_eq_map, Ratpoints.Sieve.mem_checkNumWith_of_noCheck, Ratpoints.Sieve.map_checkNumWith_sublist, Ratpoints.Sieve.flatMap_checkNumWith_of_noCheck_eq_false, Ratpoints.Sieve.pointsAtInfinityList_of_noCheck_eq_false, Ratpoints.Sieve.pointsAtInfinityList_of_noCheck_eq_true, Ratpoints.Sieve.pointsAtInfinityList_eq_map, Ratpoints.Sieve.eq_of_mem_pointsAtInfinityList_of_noCheck, Ratpoints.Sieve.map_pointsAtInfinityList, Ratpoints.Sieve.fst_snd_swapPoint, Ratpoints.Sieve.filter_map_swapPoint, Ratpoints.Sieve.swapPoint_fst_zero_snd}
+  \leanok
   Without $\mathrm{noCheck}$ the check of a numerator with the flags is the check of the reference
   with the flag of the reversal, without the points with $y < 0$ under $\mathrm{noY}$; so over a
   list of numerators it gives the points that the brute-force reference finds over $b$, mapped after
@@ -336,6 +326,7 @@ sieve passes these lists on, and they replace the check of a numerator with the 
 \end{lemma}
 
 \begin{proof}
+  \leanok
   By the cases of the flags. The points of the reference over one numerator are $(a, y, b)$ and $(a,
   -y, b)$, or $(a, 0, b)$, or none, so that the point with $y \ge 0$, with $y$ replaced by $0$, is
   the survivor; the map of the reversal keeps $y$ and maps $(a, 0, b)$ to the image of the survivor.
@@ -343,19 +334,17 @@ sieve passes these lists on, and they replace the check of a numerator with the 
 
 \begin{lemma}[The check and the points at infinity deliver their lists]\label{lem:checkDelivery}
   \uses{def:checkNumWith, lem:deliver, def:accepted, def:pointsAtInfinity}
-  Proposed names: \lname{Ratpoints.Sieve.callMapped\_eq\_deliver},
-  \lname{Ratpoints.Sieve.checkPoint\_eq\_deliver},
-  \lname{Ratpoints.Sieve.checkPoint\_eq\_deliver\_acceptedPoints},
-  \lname{Ratpoints.Sieve.deliver\_acceptedPoints\_of\_not\_accepted},
-  \lname{Ratpoints.Sieve.pointsAtInfinity\_eq\_deliver}. On a delivery whose flag is clear: the
-  mapped call is the delivery of the one mapped point; the exact check delivers its points
-  (\verb|checkPointList|), the call with $-y$ after a call that stops the search being the delivery
-  that passes over the rest; a numerator that passes the test of a candidate delivers the points of
-  the extraction, one that does not delivers nothing; and the points at infinity deliver their list
-  with the flags.
+  \lean{Ratpoints.Sieve.callMapped_eq_deliver, Ratpoints.Sieve.checkPoint_eq_deliver, Ratpoints.Sieve.checkPoint_eq_deliver_acceptedPoints, Ratpoints.Sieve.deliver_acceptedPoints_of_not_accepted, Ratpoints.Sieve.pointsAtInfinity_eq_deliver}
+  \leanok
+  On a delivery whose flag is clear: the mapped call is the delivery of the one mapped point; the
+  exact check delivers its points (\verb|checkPointList|), the call with $-y$ after a call that
+  stops the search being the delivery that passes over the rest; a numerator that passes the test of
+  a candidate delivers the points of the extraction, one that does not delivers nothing; and the
+  points at infinity deliver their list with the flags.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   Each call is the delivery of a singleton (Lemma~\ref{lem:deliver}), and the test of the flag
   between the two calls of a pair is the delivery of the concatenation.
 \end{proof}
@@ -482,59 +471,61 @@ of the delivery with the bits of the flags written back.
   with the inverses of the strides in the entries (Definition~\ref{def:classOffsets}); the shape
   that \verb|run_setup| chooses (Definition~\ref{def:Shape}); and the run over the denominators
   $1, \dots, H$ of the shape with the cut points of the parameters, pieces of at most
-  $\mathrm{arraySizeAt}(H)$ bit arrays and the flag of the reversal as the only flag of the check,
-  with the appending callback from an empty array (Definition~\ref{def:delivery}), whose array of
-  the points it returns, each mapped by $\mathrm{swapPoint}$ when the flag is set
-  (\csource{find_points.c}{4573}{4573}, \csource{find_points.c}{5116}{5116},
-  \csource{find_points.c}{5119}{5119}, \csource{find_points.c}{5132}{5132},
-  \csource{find_points.c}{5137}{5139}, \csource{find_points.c}{5167}{5167}, which move from the
-  search, Definition~\ref{def:searchPoints}).
+  $\mathrm{arraySizeAt}(H)$ bit arrays, the flags and the delivery (Definition~\ref{def:delivery}),
+  which returns when the callback stops the search (\csource{find_points.c}{4573}{4573},
+  \csource{find_points.c}{5116}{5116}, \csource{find_points.c}{5119}{5119},
+  \csource{find_points.c}{5132}{5132}, \csource{find_points.c}{5137}{5139},
+  \csource{find_points.c}{5167}{5167}, which move from the search,
+  Definition~\ref{def:searchPoints}).
 \end{definition}
 
 \begin{definition}[What a search gives back]\label{def:Outcome}
-  Proposed name: \lname{Ratpoints.Outcome}. The data of the callback after the search, the count,
-  which \verb|find_points| returns, and the three bits of \verb|args->flags| that the search writes
-  back and the program reads after it: \verb|RATPOINTS_REVERSED|, \verb|RATPOINTS_USE_SQUARES|, set
-  for odd degree and $|c_d| = 1$, and \verb|RATPOINTS_USE_SQUARES1|, set for odd degree otherwise
-  when the divisor set-up succeeds (\csource{ratpoints.h}{377}{377},
-  \csource{ratpoints.h}{414}{414}, \csource{ratpoints.h}{416}{417}). The search sets the last two
-  before its exits and before the points at infinity, so that they are written back on every path
-  that does not refuse the input. Nothing else is written back: not the reversed coefficients and
-  the degree, which nothing reads after the search; not the other internal bits of the flags,
-  \verb|RATPOINTS_CHECK_DENOM|, \verb|RATPOINTS_USE_JACOBI| and \verb|RATPOINTS_NO_REVERSE_AUTO|,
-  which the program does not read either; not the search intervals, \verb|args->num_inter| and
-  \verb|args->domain|, which the search sets to $[-H, H]$ when none is given and the Sturm step
-  narrows, and which message 8 reads after the search (stage~H); and not the numbers of the moduli
-  used (stage~I).
+  \lean{Ratpoints.Outcome}
+  \leanok
+  The data of the callback after the search, the count, which \verb|find_points| returns, and the
+  three bits of \verb|args->flags| that the search writes back and the program reads after it:
+  \verb|RATPOINTS_REVERSED|, \verb|RATPOINTS_USE_SQUARES|, set for odd degree and $|c_d| = 1$, and
+  \verb|RATPOINTS_USE_SQUARES1|, set for odd degree otherwise when the divisor set-up succeeds
+  (\csource{ratpoints.h}{377}{377}, \csource{ratpoints.h}{414}{414},
+  \csource{ratpoints.h}{416}{417}). The search sets the last two before its exits and before the
+  points at infinity, so that they are written back on every path that does not refuse the input.
+  Nothing else is written back: not the reversed coefficients and the degree, which nothing reads
+  after the search; not the other internal bits of the flags, \verb|RATPOINTS_CHECK_DENOM|,
+  \verb|RATPOINTS_USE_JACOBI| and \verb|RATPOINTS_NO_REVERSE_AUTO|, which the program does not read
+  either; not the search intervals, \verb|args->num_inter| and \verb|args->domain|, which the search
+  sets to $[-H, H]$ when none is given and the Sturm step narrows, and which message 8 reads after
+  the search (stage~H); and not the numbers of the moduli used (stage~I).
 \end{definition}
 
 \begin{definition}[The search with a callback]\label{def:findPointsWith}
   \uses{def:Outcome, def:delivery, def:searchPoints, def:Options, def:reversal, def:sturmChain,
     def:useCLong, def:maxDegree, def:Params}
-  Proposed name: \lname{Ratpoints.findPointsWith}. The library function \verb|find_points| with the
-  callback and its data, as \verb|find_points|, \verb|find_points_work| and
-  \verb|find_points_work_1| do it: the refusals of the search for the points in the order of the
-  program, more than $\mathrm{maxDegree} + 1$ coefficients, fewer than two, $H = 0$ or $H \ge
-  2^{63}$, and a form whose leading zeros lower $\lceil n/2 \rceil$; the reversal check with the
-  switch of the options (Definition~\ref{def:reversal}), which may refuse the form or reverse the
-  polynomial; with the Sturm step on, the refusal when the remainder chain of the polynomial
-  searched is $\mathrm{none}$ (Definition~\ref{def:sturmChain}); and otherwise the search of the
-  polynomial handed on, with the flag of the reversal and the options of the output of the options
-  as its flags, from the data of the caller, the count $0$ and the flag of the stop clear, which
-  returns what the search gives back (\csource{find_points.c}{4523}{4528},
-  \csource{find_points.c}{4546}{4546}, \csource{find_points.c}{4557}{4559},
-  \csource{find_points.c}{4564}{4565}, \csource{find_points.c}{4567}{4571},
-  \csource{find_points.c}{4578}{4585}, \csource{find_points.c}{4606}{4606},
-  \csource{find_points.c}{4624}{4633}, \csource{find_points.c}{4658}{4658},
-  \csource{find_points.c}{4857}{4892}, \csource{find_points.c}{5219}{5220},
-  \csource{find_points.c}{5226}{5229}, \csource{find_points.c}{5235}{5235},
-  \csource{find_points.c}{5241}{5242}, \csource{ratpoints.h}{362}{362}, the links of the search for
-  the points until now, and \csource{ratpoints.h}{427}{430}, \csource{ratpoints.h}{436}{437},
-  \csource{ratpoints.h}{441}{442}, the codes of the refusals and the prototypes, and
-  \csource{ratpoints.h}{409}{411}, the mask of the bits of the input that line 4606 keeps). The
-  search for the points (Definition~\ref{def:findPoints}) becomes its instance with the appending
-  callback from the empty array, the list of the array that it returns, or its refusal; it models no
-  C code and holds no C range.
+  \lean{Ratpoints.findPointsWith}
+  \leanok
+  The library function \verb|find_points| with the callback and its data, as \verb|find_points|,
+  \verb|find_points_work| and \verb|find_points_work_1| do it: the refusals of the search for the
+  points in the order of the program, more than $\mathrm{maxDegree} + 1$ coefficients, fewer than
+  two, $H = 0$ or $H \ge 2^{63}$, and a form whose leading zeros lower $\lceil n/2 \rceil$; the
+  reversal check with the switch of the options (Definition~\ref{def:reversal}), which may refuse
+  the form or reverse the polynomial; with the Sturm step on, the refusal when the remainder chain
+  of the polynomial searched is $\mathrm{none}$ (Definition~\ref{def:sturmChain}); and otherwise the
+  search of the polynomial handed on, with the flag of the reversal as its flags (the options of the
+  output join it with Section~\ref{sec:outputOptions}), from the data of the caller, the count $0$
+  and the flag of the stop clear, which returns what the search gives back
+  (\csource{find_points.c}{4523}{4528}, \csource{find_points.c}{4546}{4546},
+  \csource{find_points.c}{4557}{4559}, \csource{find_points.c}{4564}{4565},
+  \csource{find_points.c}{4567}{4571}, \csource{find_points.c}{4578}{4585},
+  \csource{find_points.c}{4606}{4606}, \csource{find_points.c}{4624}{4633},
+  \csource{find_points.c}{4658}{4658}, \csource{find_points.c}{4857}{4892},
+  \csource{find_points.c}{5219}{5220}, \csource{find_points.c}{5226}{5229},
+  \csource{find_points.c}{5235}{5235}, \csource{find_points.c}{5241}{5242},
+  \csource{ratpoints.h}{362}{362}, the links of the search for the points until now, and
+  \csource{ratpoints.h}{427}{430}, \csource{ratpoints.h}{436}{437}, \csource{ratpoints.h}{441}{442},
+  the codes of the refusals and the prototypes, and \csource{ratpoints.h}{409}{411}, the mask of the
+  bits of the input that line 4606 keeps). The search for the points
+  (Definition~\ref{def:findPoints}) becomes its instance with the appending callback from the empty
+  array, the list of the array that it returns, or its refusal; it models no C code and holds no C
+  range.
 \end{definition}
 
 The theorems of the search speak about the list of the points that it delivers for a test of the
@@ -547,47 +538,42 @@ relates the output under \verb|RATPOINTS_NO_CHECK| to the points.
 
 \begin{definition}[The points that the search delivers]\label{def:searchList}
   \uses{def:checkNumWith, def:searchDens, def:bruteForce}
-  Proposed names: \lname{Ratpoints.searchList}, \lname{Ratpoints.IsSoundTest}. For the coefficient
-  list $c$ of its degree $d$, the height $H$, a test $S(b, a)$ of the numerators $a$ over the
-  denominators $b$ and the flags: the points at infinity with the flags, then, over the denominators
-  $b$ of the search in the order of its loop (Definition~\ref{def:searchDens}), the points of the
-  check with the flags of the numerators $a$ of $-H, \dots, H$ that pass $S(b, \cdot)$, with the
-  products of $c$, $d$ and $b$ and the factor $b$ for odd $d$ and $1$ for even $d$. A test is
-  \emph{sound} when, over each denominator $b$ of the search, it lets through every numerator $a$ of
-  $-H, \dots, H$ for which the brute-force reference finds a point $(a, y, b)$.
+  \lean{Ratpoints.searchList, Ratpoints.IsSoundTest}
+  \leanok
+  For the coefficient list $c$ of its degree $d$, the height $H$, a test $S(b, a)$ of the numerators
+  $a$ over the denominators $b$ and the flags: the points at infinity with the flags, then, over the
+  denominators $b$ of the search in the order of its loop (Definition~\ref{def:searchDens}), the
+  points of the check with the flags of the numerators $a$ of $-H, \dots, H$ that pass
+  $S(b, \cdot)$, with the products of $c$, $d$ and $b$ and the factor $b$ for odd $d$ and $1$ for
+  even $d$. A test is \emph{sound} when, over each denominator $b$ of the search, it lets through
+  every numerator $a$ of $-H, \dots, H$ for which the brute-force reference finds a point
+  $(a, y, b)$.
 \end{definition}
 
 \begin{lemma}[The search delivers the points of a sound test]\label{lem:searchList}
   \uses{def:searchList, def:sieving, def:searchPoints, def:Outcome, lem:sieveStops,
     thm:run_reference, lem:soundRun, lem:checkDelivery, lem:checkNumWith, lem:shape_dens,
     lem:twoAdic_exit, lem:sievingInfo, lem:examinePrime_none}
-  Proposed names: \lname{Ratpoints.exists\_isSoundTest\_run\_searchPoints},
-  \lname{Ratpoints.exists\_isSoundTest\_run\_sieveRun},
-  \lname{Ratpoints.run\_searchPoints\_eq\_deliver}, \lname{Ratpoints.run\_searchPoints\_flags},
-  \lname{Ratpoints.searchList\_of\_noCheck\_eq\_false}, \lname{Ratpoints.searchList\_false},
-  \lname{Ratpoints.isSoundTest\_false\_of\_forall\_not\_isPoint},
-  \lname{Ratpoints.pointsAtInfinityList\_eq\_nil\_of\_forall\_not\_isPoint},
-  \lname{Ratpoints.Sieve.pointsAtInfinityList\_eq\_filter\_map\_pointsOfDen},
-  \lname{Ratpoints.Sieve.pointsAtInfinityList\_eq\_nil\_of\_pointsOfDen\_eq\_nil},
-  \lname{Ratpoints.BruteForce.pointsOfDen\_zero\_singleton\_one},
-  \lname{Ratpoints.BruteForce.pointsOfDen\_ne\_nil\_of\_mem}. For well-formed parameters and $1 \le
-  H < 2^{63}$ there is a sound test $S$ such that the search of $c$ of its degree, with any
-  callback, any flags and a delivery whose flag is clear, gives the data and the count of the
-  delivery of the list of the points of Definition~\ref{def:searchList} for $S$ and these flags; so
-  it gives those of the delivery of the list that the search with the appending callback gives, from
-  the empty array, for the same flags. The run of the shape delivers the part over the denominators
-  for a sound test, whatever the callback and the flags. The bits of the flags that the search
-  writes back are the flag of the reversal as it came, the squares for odd degree and $|c_d| = 1$,
-  and the success of the divisor set-up for odd degree and $|c_d| \ne 1$, whatever the callback.
-  Without $\mathrm{noCheck}$, for a sound test and $c$ of positive degree, the points delivered are
-  those that the brute-force reference finds over the candidate $(1, 0)$ and over the denominators
-  of the search, in this order, mapped by $\mathrm{swapPoint}$ after a reversal, without those with
-  $y < 0$ under $\mathrm{noY}$. When the curve has no points, the test that lets nothing through is
-  sound and there are no points at infinity.
+  \lean{Ratpoints.exists_isSoundTest_run_searchPoints, Ratpoints.exists_isSoundTest_run_sieveRun, Ratpoints.run_searchPoints_eq_deliver, Ratpoints.run_searchPoints_flags, Ratpoints.searchList_of_noCheck_eq_false, Ratpoints.searchList_false, Ratpoints.isSoundTest_false_of_forall_not_isPoint, Ratpoints.pointsAtInfinityList_eq_nil_of_forall_not_isPoint, Ratpoints.Sieve.pointsAtInfinityList_eq_filter_map_pointsOfDen, Ratpoints.Sieve.pointsAtInfinityList_eq_nil_of_pointsOfDen_eq_nil, Ratpoints.BruteForce.pointsOfDen_zero_singleton_one, Ratpoints.BruteForce.pointsOfDen_ne_nil_of_mem}
+  \leanok
+  For well-formed parameters and $1 \le H < 2^{63}$ there is a sound test $S$ such that the search
+  of $c$ of its degree, with any callback, any flags and a delivery whose flag is clear, gives the
+  data and the count of the delivery of the list of the points of Definition~\ref{def:searchList}
+  for $S$ and these flags; so it gives those of the delivery of the list that the search with the
+  appending callback gives, from the empty array, for the same flags. The run of the shape delivers
+  the part over the denominators for a sound test, whatever the callback and the flags. The bits of
+  the flags that the search writes back are the flag of the reversal as it came, the squares for odd
+  degree and $|c_d| = 1$, and the success of the divisor set-up for odd degree and $|c_d| \ne 1$,
+  whatever the callback. Without $\mathrm{noCheck}$, for a sound test and $c$ of positive degree,
+  the points delivered are those that the brute-force reference finds over the candidate $(1, 0)$
+  and over the denominators of the search, in this order, mapped by $\mathrm{swapPoint}$ after a
+  reversal, without those with $y < 0$ under $\mathrm{noY}$. When the curve has no points, the test
+  that lets nothing through is sound and there are no points at infinity.
 \end{lemma}
 
 \begin{proof}
   \uses{lem:flatMap_sound, lem:survives, thm:bruteForce}
+  \leanok
   A lemma over the paths of the search gives its data and its count along each path. At the 2-adic
   exit and the exit of \verb|sieving_info| the curve has no points (Lemmas~\ref{lem:twoAdic_exit}
   and~\ref{lem:examinePrime_none}), so that the test that lets nothing through is sound and nothing
@@ -602,22 +588,22 @@ relates the output under \verb|RATPOINTS_NO_CHECK| to the points.
 
 \begin{theorem}[The protocol of the delivery]\label{thm:protocol}
   \uses{def:findPointsWith, def:findPoints, lem:searchList, lem:deliver, lem:reversal_swap}
-  Proposed names: \lname{Ratpoints.map\_findPointsWith\_eq\_map\_findPoints},
-  \lname{Ratpoints.findPointsWith\_eq\_ok\_iff}, \lname{Ratpoints.findPointsWith\_eq\_error\_iff},
-  \lname{Ratpoints.exists\_findPoints\_eq\_error\_iff},
-  \lname{Ratpoints.map\_findPointsWith\_flags}. For well-formed parameters, every option and every
-  callback with its data: $\mathrm{findPointsWith}$ refuses exactly the inputs that
-  $\mathrm{findPoints}$ refuses, with the same errors, and otherwise gives the data and the count of
-  the delivery (Definition~\ref{def:deliver}) of the list of $\mathrm{findPoints}(c, H, P, o)$ to
-  the callback, from its data, the count $0$ and the flag of the stop clear: the calls of the
-  callback are those of the points of that list, in its order, up to and including the first that
-  stops the search, and the count is the sum of their weights (Lemma~\ref{lem:deliver}). What
-  $\mathrm{findPointsWith}$ returns is the outcome of the search of the polynomial that the reversal
-  check hands on, once none of the refusals applies; its refusals and the bits of the flags that it
-  writes back do not depend on the callback or its data.
+  \lean{Ratpoints.map_findPointsWith_eq_map_findPoints, Ratpoints.findPointsWith_eq_ok_iff, Ratpoints.findPointsWith_eq_error_iff, Ratpoints.exists_findPoints_eq_error_iff, Ratpoints.map_findPointsWith_flags}
+  \leanok
+  For well-formed parameters, every option and every callback with its data:
+  $\mathrm{findPointsWith}$ refuses exactly the inputs that $\mathrm{findPoints}$ refuses, with the
+  same errors, and otherwise gives the data and the count of the delivery
+  (Definition~\ref{def:deliver}) of the list of $\mathrm{findPoints}(c, H, P, o)$ to the callback,
+  from its data, the count $0$ and the flag of the stop clear: the calls of the callback are those
+  of the points of that list, in its order, up to and including the first that stops the search, and
+  the count is the sum of their weights (Lemma~\ref{lem:deliver}). What $\mathrm{findPointsWith}$
+  returns is the outcome of the search of the polynomial that the reversal check hands on, once none
+  of the refusals applies; its refusals and the bits of the flags that it writes back do not depend
+  on the callback or its data.
 \end{theorem}
 
 \begin{proof}
+  \leanok
   The refusals are the same tests on both sides; after them both searches run on the polynomial
   handed on, with its degree, which the refusals leave positive, and Lemma~\ref{lem:searchList}
   gives the data and the count. The theorem needs the well-formedness of the parameters, since the
@@ -627,19 +613,18 @@ relates the output under \verb|RATPOINTS_NO_CHECK| to the points.
 
 \begin{lemma}[The list of the search]\label{lem:findPoints_searchList}
   \uses{lem:searchList, thm:protocol, def:Options, lem:reversal_swap}
-  Proposed name: \lname{Ratpoints.exists\_searchList\_of\_findPoints\_eq\_ok}. For well-formed
-  parameters, if $\mathrm{findPoints}(c, H, P, o)$ returns the list $L$, then the reversal check
-  hands on a polynomial $c'$ of positive degree with the flag $\mathrm{rev}$ of the reversal, $1 \le
-  H$, and there is a sound test $S$ such that $L$ is the list of the points that the search of $c'$
-  delivers for $S$ (Definition~\ref{def:searchList}) with the flags $\mathrm{rev}$,
-  $\mathrm{noCheck}$ and $\mathrm{noY}$ of $o$, and such that, for every choice of the options of
-  the output with the other options unchanged, $\mathrm{findPoints}$ returns the list for $S$ with
-  those flags.
+  \lean{Ratpoints.exists_searchList_of_findPoints_eq_ok}
+  \leanok
+  For well-formed parameters, if $\mathrm{findPoints}(c, H, P, o)$ returns the list $L$, then the
+  reversal check hands on a polynomial $c'$ of positive degree with the flag $\mathrm{rev}$ of the
+  reversal, $1 \le H$, and there is a sound test $S$ such that $L$ is the list of the points that
+  the search of $c'$ delivers for $S$ (Definition~\ref{def:searchList}) with the flag
+  $\mathrm{rev}$ of the reversal as its flags.
 \end{lemma}
 
 \begin{proof}
-  Lemma~\ref{lem:searchList} for the polynomial handed on, with the appending callback; the test
-  does not depend on the flags.
+  \leanok
+  Lemma~\ref{lem:searchList} for the polynomial handed on, with the appending callback.
 \end{proof}
 
 \section{The options of the output}\label{sec:outputOptions}

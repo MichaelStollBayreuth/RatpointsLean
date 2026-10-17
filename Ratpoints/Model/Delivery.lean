@@ -10,16 +10,16 @@ module
 
 The library function `find_points` of ratpoints hands each point it finds to a callback of the
 caller, `int process(long x, long z, const mpz_t y, void *info, int *quit)`: the caller's data
-`info` goes along unchanged, the library adds the value that `process` returns to its count
-`total`, which `find_points` returns, and `process` stops the search by setting `*quit`, which the
-library tests after each call and which is clear at every call. The model gives the callback the
-coordinates in the order of the C code, `x`, `z`, `y`, and the data, and the callback returns what
-the call gives (`Ratpoints.Answer`): its value, whether it set `*quit`, and the data afterwards.
-With stage G the search threads a delivery (`Ratpoints.Delivery`), the data, the count and the
-flag, through the components that the C code passes `process` and `info` through, and each
-component tests the flag where the C code tests `*quit`. What the exact check and the points at
-infinity read of the flags of the search to decide what they deliver, the bits
-`RATPOINTS_REVERSED`, `RATPOINTS_NO_CHECK` and `RATPOINTS_NO_Y`, is `Ratpoints.CheckFlags`.
+`info` goes along unchanged, the library adds the value that `process` returns to its count `total`,
+which `find_points` returns, and `process` stops the search by setting `*quit`, which the library
+tests after each call and which is clear at every call. The model gives the callback the coordinates
+in the order of the C code, `x`, `z`, `y`, and the data, and the callback returns what the call
+gives (`Ratpoints.Answer`): its value, whether it set `*quit`, and the data afterwards. The search
+threads a delivery (`Ratpoints.Delivery`), the data, the count and the flag, through the components
+that the C code passes `process` and `info` through, and each component tests the flag where the C
+code tests `*quit`. What the exact check and the points at infinity read of the flags of the search
+to decide what they deliver, the bits `RATPOINTS_REVERSED`, `RATPOINTS_NO_CHECK` and
+`RATPOINTS_NO_Y`, is `Ratpoints.CheckFlags`.
 
 ## Main definitions
 
@@ -61,16 +61,16 @@ structure Answer (σ : Type) where
 
 /-- The state of the delivery of a search: the data `info` of the callback, the count `total`, the
 sum of the values that the calls of the callback returned so far, and the flag `quit`, whether a
-call has stopped the search. With stage G the search starts with `total = 0` and `quit` clear
-(`find_points.c:4570-4571`, `find_points.c:3129`), and its components test `quit` after each call
-of the callback, where the C code tests `*quit`, and return at once when it is set. One value
-stands for what the C code keeps apart: the pointer `info`, which the library hands on unchanged;
-the counts `total` that each function of the search keeps from zero and returns, which its caller
-adds to its own, as one running count, their sum; and the flag, the local `quit` of
-`find_points_work_1` for the points at infinity and the field `quit` of the sieving thread for the
-sieve (`wk->quit`, which `worker_init` clears). The count is an integer for the `long` `total`,
-with no range obligation, since the weights that the callback returns are arbitrary `int`s (for the
-callback of the program, of the weights `0` and `1`, the count is at most the number of calls). -/
+call has stopped the search. The search starts with `total = 0` and `quit` clear
+(`find_points.c:4570-4571`, `find_points.c:3129`), and its components test `quit` after each call of
+the callback, where the C code tests `*quit`, and return at once when it is set. One value stands
+for what the C code keeps apart: the pointer `info`, which the library hands on unchanged; the
+counts `total` that each function of the search keeps from zero and returns, which its caller adds
+to its own, as one running count, their sum; and the flag, the local `quit` of `find_points_work_1`
+for the points at infinity and the field `quit` of the sieving thread for the sieve (`wk->quit`,
+which `worker_init` clears). The count is an integer for the `long` `total`, with no range
+obligation, since the weights that the callback returns are arbitrary `int`s (for the callback of
+the program, of the weights `0` and `1`, the count is at most the number of calls). -/
 structure Delivery (σ : Type) where
   /-- The data of the callback, behind `info`. -/
   info : σ
@@ -101,9 +101,9 @@ C: `ratpoints.h:414`
 
 Deviation: a structure with a Boolean for each of the three bits, for the bits of the word `flags`
 of the arguments, which `_ratpoints_check_point` reads through its worker and `find_points_work_1`
-directly; with stage G, the bits `RATPOINTS_NO_CHECK` and `RATPOINTS_NO_Y` copied from the options
-of the search (`Ratpoints.Options`), and `RATPOINTS_REVERSED` from the reversal check
-(`Ratpoints.Setup.reversal`). -/
+directly; `RATPOINTS_REVERSED` copied from the reversal check (`Ratpoints.Setup.reversal`) and, with
+stage G, the bits `RATPOINTS_NO_CHECK` and `RATPOINTS_NO_Y` from the options of the search
+(`Ratpoints.Options`). -/
 structure CheckFlags where
   /-- `RATPOINTS_REVERSED`: the reversal check has reversed the polynomial. -/
   reversed : Bool := false
@@ -128,9 +128,9 @@ def Delivery.callMapped (process : Int → Int → Int → σ → Answer σ) (r 
 
 /-- The callback that appends each point `(x, y, z)` to the array of its data, with the weight `1`,
 and never stops the search: with it, the data of a search is the list of the points it delivers, in
-their order, and its count their number (`Ratpoints.findPoints`, with stage G). It is a callback of
-the model: the program `ratpoints` prints the points in its callback `process` (in `Ratpoints.Cli`
-with stage G), and the collector of the threads of the library is another (`collect`, stage I). -/
+their order, and its count their number (`Ratpoints.findPoints`). It is a callback of the model: the
+program `ratpoints` prints the points in its callback `process` (in `Ratpoints.Cli` with stage G),
+and the collector of the threads of the library is another (`collect`, stage I). -/
 def appendPoint (x z y : Int) (pts : Array (Int × Int × Int)) : Answer (Array (Int × Int × Int)) :=
   ⟨1, false, pts.push (x, y, z)⟩
 
@@ -140,11 +140,11 @@ delivery `r`: for each point `(x, y, z)` of `L`, while the flag `quit` is clear,
 them when it is set at the start, are passed over. So the calls made are those of the points of `L`
 up to and including the first at which the callback stops the search, the count grows by the sum of
 the values that they return, and with the callback that appends each point to an array and never
-stops the search (`Ratpoints.appendPoint`) the array grows by `L` and the count by its length. It
-is a reference of the model, as the brute-force reference `Ratpoints.bruteForce` is, and models no
-C code: the search with a callback (stage G) delivers each point where it finds it and tests the
-flag where the C code tests `*quit`, and this fold over the list of the points of the search
-(`Ratpoints.findPoints`) is what that delivery is compared with. -/
+stops the search (`Ratpoints.appendPoint`) the array grows by `L` and the count by its length. It is
+a reference of the model, as the brute-force reference `Ratpoints.bruteForce` is, and models no C
+code: the search with a callback (`Ratpoints.findPointsWith`) delivers each point where it finds it
+and tests the flag where the C code tests `*quit`, and this fold over the list of the points of the
+search (`Ratpoints.findPoints`) is what that delivery is compared with. -/
 def Delivery.deliver (process : Int → Int → Int → σ → Answer σ) (r : Delivery σ)
     (L : List (Int × Int × Int)) : Delivery σ :=
   L.foldl (fun r p ↦ if r.quit then r else r.call process p.1 p.2.2 p.2.1) r

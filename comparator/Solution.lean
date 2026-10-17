@@ -51,4 +51,12 @@ theorem challenge_exists_findPoints_eq_error_iff_of_sturm_neg (c : List ℤ) (H 
 theorem challenge_wf_sieveParams (o : Ratpoints.SieveOptions) : (Ratpoints.sieveParams o).WF :=
   Ratpoints.wf_sieveParams o
 
+theorem challenge_map_findPointsWith_eq_map_findPoints {σ : Type} (c : List ℤ) (H : ℕ)
+    (P : Ratpoints.Params) (o : Ratpoints.Options) (process : ℤ → ℤ → ℤ → σ → Ratpoints.Answer σ)
+    (info : σ) (hP : P.WF) :
+    (Ratpoints.findPointsWith c H P o process info).map (fun r ↦ (r.info, r.total)) =
+      (Ratpoints.findPoints c H P o).map fun L ↦
+        let r := Ratpoints.Delivery.deliver process ⟨info, 0, false⟩ L; (r.info, r.total) :=
+  Ratpoints.map_findPointsWith_eq_map_findPoints hP c H o process info
+
 end
