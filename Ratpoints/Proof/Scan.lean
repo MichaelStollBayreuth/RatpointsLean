@@ -32,7 +32,8 @@ numerator are those that the extraction gives for it (`Ratpoints.Sieve.acceptedP
 
 * `Ratpoints.Sieve.walkWord_spec`: the walk through the set bits of a word appends the points of the
   numerators `a0 + step t` of its set bits `t`, in increasing order.
-* `Ratpoints.Sieve.siftBitArray_spec`: in either arm of the second stage, one bit array appends the
+* `Ratpoints.Sieve.siftBitArrayByWords_spec`, `Ratpoints.Sieve.siftBitArrayWhole_spec`,
+  `Ratpoints.Sieve.siftBitArray_spec`: in either arm of the second stage, one bit array appends the
   points of the numerators of the set bits of its words and-ed with the rows of the moduli of the
   second stage, in increasing order.
 * `Ratpoints.Sieve.scanPiece_spec`: if the bits of a piece and-ed with the rows of the second stage
@@ -117,11 +118,11 @@ theorem walkWord_spec (w : Thunk (List Int)) (d b : Nat) (rev : Bool)
 
 /-! ### The second stage and the extraction of one bit array -/
 
-/-- The invariant of the loops of `Ratpoints.Sieve.siftBitArray` over the words of the bit array
-with the word number `i`, after its first `k` words, for the words `words κ` that the walks go
-through, the class `cl` and the points `g a` of a numerator `a`: `out` is `out0` followed by the
-points of the numerators of the bits `rbaLength i + 64 κ + t` of the set bits `t` of the words
-`κ < k` in the packing of `cl` (`Ratpoints.Sieve.NumClass.numerator`), in increasing order. -/
+/-- The invariant of the loops of the two arms of `Ratpoints.Sieve.siftBitArray` over the words of
+the bit array with the word number `i`, after its first `k` words, for the words `words κ` that the
+walks go through, the class `cl` and the points `g a` of a numerator `a`: `out` is `out0` followed
+by the points of the numerators of the bits `rbaLength i + 64 κ + t` of the set bits `t` of the
+words `κ < k` in the packing of `cl` (`Ratpoints.Sieve.NumClass.numerator`), in increasing order. -/
 def SiftBitArrayInvariant (words : Nat → UInt64) (g : Int → List (Int × Int × Int)) (cl : NumClass)
     (i : Int) (out0 : Array (Int × Int × Int)) (k : Nat) (out : Array (Int × Int × Int)) : Prop :=
   out.toList = out0.toList ++ ((List.range k).flatMap fun κ ↦
@@ -131,7 +132,7 @@ def SiftBitArrayInvariant (words : Nat → UInt64) (g : Int → List (Int × Int
 /-- `Ratpoints.Sieve.SiftBitArrayInvariant` after the words `0, …, k`, with the numerator `a0` of
 bit `0` of word `k`, `a₀ + i (rbaLength 2 ^ cl.k) + k (64 2 ^ cl.k)` as the program computes it,
 for the stride `2 ^ cl.k` of the class: the invariant of the loop over the words after the first in
-the arm of `Ratpoints.Sieve.siftBitArray` that runs the second stage on the whole bit array, which
+the arm of the second stage on the whole bit array (`Ratpoints.Sieve.siftBitArrayWhole`), which
 steps `a0` from one word to the next before it walks through the word, as the C code does. -/
 def SiftBitArrayWalkInvariant (words : Nat → UInt64) (g : Int → List (Int × Int × Int))
     (cl : NumClass) (i : Int) (out0 : Array (Int × Int × Int)) (k : Nat)
@@ -217,8 +218,8 @@ theorem SiftBitArrayWalkInvariant.append {words : Nat → UInt64}
   rw [← hc, Nat.add_comm] at hr ha
   exact h.2.succ (ha ▸ hr)
 
-/-- At the end of the loops of `Ratpoints.Sieve.siftBitArray`, when the words walked through are
-those of the copy `nums` and-ed with the rows of the moduli of `specs`
+/-- At the end of the loops of the two arms of `Ratpoints.Sieve.siftBitArray`, when the words walked
+through are those of the copy `nums` and-ed with the rows of the moduli of `specs`
 (`Ratpoints.Sieve.andWords`). -/
 theorem SiftBitArrayInvariant.toList_eq {words : Nat → UInt64} {g : Int → List (Int × Int × Int)}
     {cl : NumClass} {specs : List SieveSpec} {i : Int} {nums : Vector UInt64 rbaPack}
@@ -260,16 +261,62 @@ theorem toList_eq_append_of_isZeroAt {specs : List SieveSpec} {g : Int → List 
   have := (isZeroAt_eq_true_iff nums' 0).mp (by simpa using hz) κ hκ'
   simp_all
 
-/- The invariants are irreducible from here on: the verification conditions of
+/- The invariants are irreducible from here on: the verification conditions of the two arms of
 `Ratpoints.Sieve.siftBitArray` are closed by their lemmas, never by unfolding them. -/
 attribute [local irreducible] SiftBitArrayInvariant SiftBitArrayWalkInvariant
 
-/-- Both arms walk through the set bits of the same words, the words of `nums` and-ed with the rows
-of the moduli of `specs` (`Ratpoints.Sieve.secondStage_spec`,
-`Ratpoints.Sieve.secondStageWord_spec`), each bit `j` standing for the numerator `a₀ + 2 ^ k j` of
-the class `cl`: the arm for one word at a time skips a word that is zero, and the other skips the
-walks when the second stage leaves the bit array zero, which lose nothing; each arm has its own
-invariant (`Ratpoints.Sieve.SiftBitArrayInvariant`, `Ratpoints.Sieve.SiftBitArrayWalkInvariant`). -/
+/-- The arm for one word at a time walks through the set bits of the words of `nums` and-ed with the
+rows of the moduli of `specs` (`Ratpoints.Sieve.secondStageWord_spec`), each bit `j` standing for
+the numerator `a₀ + 2 ^ k j` of the class `cl`, and skips a word that is zero, which loses
+nothing. -/
+@[spec]
+theorem siftBitArrayByWords_spec (w : Thunk (List Int)) (d b : Nat) (rev : Bool)
+    (specs : List SieveSpec) (mgs : List Nat) (small : Bool) (checks : Thunk (List CheckSpec))
+    (cl : NumClass) (i : Int) (nums : Vector UInt64 rbaPack) (out : Array (Int × Int × Int)) :
+    ⦃ (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p) ∧ SmallFits small i (i + 1) ⦄
+    siftBitArrayByWords w d b rev specs mgs small checks cl i nums out
+    ⦃ fun out' ↦ out'.toList = out.toList ++ ((List.range rbaPack).flatMap fun κ ↦
+        ((List.range 64).filter ((andWords specs nums[κ]! i κ).toBitVec.getLsbD ·)).map
+          fun t : Nat ↦ i * rbaLength + 64 * κ + t).flatMap
+            fun j ↦ acceptedPoints w d b rev checks (cl.numerator j) ⦄ := by
+  vcgen [siftBitArrayByWords] invariants
+  | inv1 => fun done _ ↦ SiftBitArrayInvariant (fun κ ↦ andWords specs nums[κ]! i κ)
+      (acceptedPoints w d b rev checks) cl i out done.length
+  all_goals subst_vars
+  all_goals first
+    | exact ‹(∀ s ∈ specs, s.Fits) ∧ _›
+    | exact Std.Legacy.Range.lt_of_toList_eq_append_cons ‹_›
+    | exact siftBitArrayInvariant_zero ..
+    | exact SiftBitArrayInvariant.append ‹_› ‹_› ‹_›
+    | exact SiftBitArrayInvariant.append_of_eq_zero ‹_› ‹_› (by simp_all)
+    | exact SiftBitArrayInvariant.toList_eq (fun _ _ ↦ rfl) ‹_›
+
+/-- The arm of the second stage on the whole bit array walks through the set bits of the words of
+`nums` and-ed with the rows of the moduli of `specs` (`Ratpoints.Sieve.secondStage_spec`), each bit
+`j` standing for the numerator `a₀ + 2 ^ k j` of the class `cl`, and skips the walks when the second
+stage leaves the bit array zero, which loses nothing. -/
+@[spec]
+theorem siftBitArrayWhole_spec (w : Thunk (List Int)) (d b : Nat) (rev : Bool)
+    (specs : List SieveSpec) (mgs : List Nat) (small : Bool) (checks : Thunk (List CheckSpec))
+    (cl : NumClass) (i : Int) (nums : Vector UInt64 rbaPack) (out : Array (Int × Int × Int)) :
+    ⦃ (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p) ∧ SmallFits small i (i + 1) ⦄
+    siftBitArrayWhole w d b rev specs mgs small checks cl i nums out
+    ⦃ fun out' ↦ out'.toList = out.toList ++ ((List.range rbaPack).flatMap fun κ ↦
+        ((List.range 64).filter ((andWords specs nums[κ]! i κ).toBitVec.getLsbD ·)).map
+          fun t : Nat ↦ i * rbaLength + 64 * κ + t).flatMap
+            fun j ↦ acceptedPoints w d b rev checks (cl.numerator j) ⦄ := by
+  vcgen [siftBitArrayWhole] invariants
+  | inv1 => fun done _ ↦ SiftBitArrayWalkInvariant (fun κ ↦ nums[κ]!)
+      (acceptedPoints w d b rev checks) cl i out done.length
+  all_goals first
+    | exact siftBitArrayWalkInvariant_zero ‹_›
+    | exact SiftBitArrayWalkInvariant.append ‹_› ‹_› ‹_›
+    | exact SiftBitArrayWalkInvariant.toList_eq ‹_› ‹_›
+    | exact toList_eq_append_of_isZeroAt ‹_› ‹_›
+
+/-- Both arms append the points of the numerators of the set bits of the same words, the words of
+`nums` and-ed with the rows of the moduli of `specs`
+(`Ratpoints.Sieve.siftBitArrayByWords_spec`, `Ratpoints.Sieve.siftBitArrayWhole_spec`). -/
 @[spec]
 theorem siftBitArray_spec (useLong : Bool) (w : Thunk (List Int)) (d b : Nat) (rev : Bool)
     (specs : List SieveSpec) (mgs : List Nat) (small : Bool) (checks : Thunk (List CheckSpec))
@@ -280,23 +327,9 @@ theorem siftBitArray_spec (useLong : Bool) (w : Thunk (List Int)) (d b : Nat) (r
         ((List.range 64).filter ((andWords specs nums[κ]! i κ).toBitVec.getLsbD ·)).map
           fun t : Nat ↦ i * rbaLength + 64 * κ + t).flatMap
             fun j ↦ acceptedPoints w d b rev checks (cl.numerator j) ⦄ := by
-  vcgen [siftBitArray] invariants
-  | inv1 => fun done _ ↦ SiftBitArrayInvariant (fun κ ↦ andWords specs nums[κ]! i κ)
-      (acceptedPoints w d b rev checks) cl i out done.length
-  | inv2 => fun done _ ↦ SiftBitArrayWalkInvariant (fun κ ↦ nums[κ]!)
-      (acceptedPoints w d b rev checks) cl i out done.length
-  all_goals subst_vars
-  all_goals first
-    | exact ‹(∀ s ∈ specs, s.Fits) ∧ _›
-    | exact Std.Legacy.Range.lt_of_toList_eq_append_cons ‹_›
-    | exact siftBitArrayInvariant_zero ..
-    | exact siftBitArrayWalkInvariant_zero ‹_›
-    | exact SiftBitArrayInvariant.append ‹_› ‹_› ‹_›
-    | exact SiftBitArrayWalkInvariant.append ‹_› ‹_› ‹_›
-    | exact SiftBitArrayInvariant.append_of_eq_zero ‹_› ‹_› (by simp_all)
-    | exact SiftBitArrayInvariant.toList_eq (fun _ _ ↦ rfl) ‹_›
-    | exact SiftBitArrayWalkInvariant.toList_eq ‹_› ‹_›
-    | exact toList_eq_append_of_isZeroAt ‹_› ‹_›
+  cases useLong
+  · exact siftBitArrayWhole_spec ..
+  · exact siftBitArrayByWords_spec ..
 
 /-! ### The scan of a piece -/
 

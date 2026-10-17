@@ -345,36 +345,38 @@ reciprocals, and the test of the denominators up to $b_{\mathrm{high}} \le \math
 
 \begin{definition}[A bit array through the second stage and the extraction]\label{def:siftBitArray}
   \uses{def:secondStage, def:walkWord, def:accepted, def:numClasses}
-  \lean{Ratpoints.Sieve.siftBitArray}
+  \lean{Ratpoints.Sieve.siftBitArray, Ratpoints.Sieve.siftBitArrayByWords, Ratpoints.Sieve.siftBitArrayWhole}
   \leanok
   For a bit array that the first stage leaves nonzero, with the word number $i$, from a copy of it:
-  in the arm that an argument chooses, $\mathrm{useLongInPhase2}$ in the run, either the second
-  stage on the whole copy and, if it is still nonzero, the set bits of its words walked through in
-  turn, or for each nonzero word the second stage on that word and the walk through its set bits,
-  bit $t$ of word $\kappa$ standing for the numerator $a_0 + 2^k (R i + 64 \kappa + t)$ of the class
-  of the denominator (Definition~\ref{def:numClasses}): the walk of the whole bit array starts word
-  $0$ from the first numerator $a_0 + 2^k R i$ of the bit array and steps it by $64 \cdot 2^k$
-  before each word after the first, as the C code does, and the arm of one word at a time walks word
-  $\kappa$ from $a_0 + 2^k R i + 64 \cdot 2^k \kappa$; each numerator goes to the test of a
-  candidate and, if it passes, to the exact check (\csource{sift.c}{1094}{1111},
-  \csource{sift.c}{1126}{1134}, \csource{sift.c}{1137}{1139}, \csource{sift.c}{1154}{1159},
-  \csource{sift.c}{1172}{1173}, \csource{sift.c}{1204}{1210}, \csource{sift.c}{1213}{1226},
+  in the arm that an argument chooses, $\mathrm{useLongInPhase2}$ in the run
+  (\csource{sift.c}{1094}{1111}), each arm a function of its own, either the second stage on the
+  whole copy and, if it is still nonzero, the set bits of its words walked through in turn, or for
+  each nonzero word the second stage on that word and the walk through its set bits, bit $t$ of word
+  $\kappa$ standing for the numerator $a_0 + 2^k (R i + 64 \kappa + t)$ of the class of the
+  denominator (Definition~\ref{def:numClasses}): the walk of the whole bit array starts word $0$
+  from the first numerator $a_0 + 2^k R i$ of the bit array, computed when the second stage has left
+  the bit array nonzero, and steps it by $64 \cdot 2^k$ before each word after the first, as the C
+  code does (\csource{sift.c}{1204}{1210}, \csource{sift.c}{1213}{1226},
   \csource{sift.c}{1257}{1264}, \csource{sift.c}{1293}{1296}; with \verb|EXT0| and \verb|EXT|,
   \csource{rp-private.h}{135}{136}, \csource{rp-private.h}{177}{178},
   \csource{rp-private.h}{238}{239}, \csource{rp-private.h}{264}{266},
-  \csource{rp-private.h}{288}{289}).
+  \csource{rp-private.h}{288}{289}), and the arm of one word at a time computes that first numerator
+  before its loop over the words and walks word $\kappa$ from $a_0 + 2^k R i + 64 \cdot 2^k \kappa$
+  (\csource{sift.c}{1126}{1134}, \csource{sift.c}{1137}{1139}, \csource{sift.c}{1154}{1159},
+  \csource{sift.c}{1172}{1173}); each numerator goes to the test of a candidate and, if it passes,
+  to the exact check.
 \end{definition}
 
 \begin{lemma}[A bit array through the second stage and the extraction]\label{lem:siftBitArray}
   \uses{def:siftBitArray, lem:secondStage, def:walkWord, def:andRows, def:numClasses,
     lem:numClasses, lem:rowIndices}
-  \lean{Ratpoints.Sieve.SiftBitArrayInvariant, Ratpoints.Sieve.SiftBitArrayWalkInvariant, Ratpoints.Sieve.siftBitArray_spec}
+  \lean{Ratpoints.Sieve.SiftBitArrayInvariant, Ratpoints.Sieve.SiftBitArrayWalkInvariant, Ratpoints.Sieve.siftBitArrayByWords_spec, Ratpoints.Sieve.siftBitArrayWhole_spec, Ratpoints.Sieve.siftBitArray_spec}
   \leanok
   For sieve specs that fit (Lemma~\ref{lem:rowIndices}), the reciprocals of their moduli and the
-  bounds of \verb|small| for the word number $i$: in both arms, the points appended are those of the
-  numerators $a_0 + 2^k j$ of the bits $j$ of the bit array that survive the and of the copy with
-  the rows of the moduli of the second stage and that pass the test of a candidate, in increasing
-  order.
+  bounds of \verb|small| for the word number $i$: in each arm, and so in the arm that the argument
+  chooses, the points appended are those of the numerators $a_0 + 2^k j$ of the bits $j$ of the bit
+  array that survive the and of the copy with the rows of the moduli of the second stage and that
+  pass the test of a candidate, in increasing order.
 \end{lemma}
 
 \begin{proof}
@@ -574,10 +576,10 @@ Each component of this chapter differs from the C code in a stated way, recorded
     well-formed parameters may repeat a modulus; the degree and the flag of the reversal arguments
     of the exact check, handed down from the run, for the fields of the arguments that it reads
     through its worker;
-  \item the arm of the second stage an argument, so that the guards run both in one build; the sieve
-    specs and the reciprocals of the second stage as two lists stepped together, for the pointers
-    into the sieve specs and into the array \verb|magics|, and \verb|small| a Boolean, for the
-    \verb|int|;
+  \item the arm of the second stage an argument, so that the guards run both in one build, each arm
+    a function of its own; the sieve specs and the reciprocals of the second stage as two lists
+    stepped together, for the pointers into the sieve specs and into the array \verb|magics|, and
+    \verb|small| a Boolean, for the \verb|int|;
   \item the reciprocals of the tables of the Jacobi test in an array of their own, read at the
     positions of the primes, and the remainder $b - k q$ truncated at $0$, which is the difference
     of the C code, since $k q \le b$ where the multiplication gives the quotient; the reciprocal of

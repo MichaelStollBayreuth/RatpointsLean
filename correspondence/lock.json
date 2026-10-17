@@ -2391,7 +2391,7 @@
     "rp-private.h:135-136": {
       "hash": "afb3d29e7d1e1a718827b3defe9b7f4ec9fb01fe2fe5e012968e0fe5f0d04d7d",
       "owners": [
-        "Ratpoints.Sieve.siftBitArray"
+        "Ratpoints.Sieve.siftBitArrayWhole"
       ]
     },
     "rp-private.h:137-152": {
@@ -2457,7 +2457,7 @@
     "rp-private.h:177-178": {
       "hash": "afb3d29e7d1e1a718827b3defe9b7f4ec9fb01fe2fe5e012968e0fe5f0d04d7d",
       "owners": [
-        "Ratpoints.Sieve.siftBitArray"
+        "Ratpoints.Sieve.siftBitArrayWhole"
       ]
     },
     "rp-private.h:179-202": {
@@ -2549,7 +2549,7 @@
     "rp-private.h:238-239": {
       "hash": "afb3d29e7d1e1a718827b3defe9b7f4ec9fb01fe2fe5e012968e0fe5f0d04d7d",
       "owners": [
-        "Ratpoints.Sieve.siftBitArray"
+        "Ratpoints.Sieve.siftBitArrayWhole"
       ]
     },
     "rp-private.h:241-241": {
@@ -2628,7 +2628,7 @@
     "rp-private.h:264-266": {
       "hash": "1b981d0e6a1572ef3028a2ea6c56ca2f042da238a8c1ca2ad587ecd508e34e6d",
       "owners": [
-        "Ratpoints.Sieve.siftBitArray"
+        "Ratpoints.Sieve.siftBitArrayWhole"
       ]
     },
     "rp-private.h:267-267": {
@@ -2701,7 +2701,7 @@
     "rp-private.h:288-289": {
       "hash": "a7858a0fc105ef06d82d305aa49782f4654bc0cf98e4d9fa1a1ec99f6aa5b2e7",
       "owners": [
-        "Ratpoints.Sieve.siftBitArray"
+        "Ratpoints.Sieve.siftBitArrayWhole"
       ]
     },
     "rp-private.h:290-290": {
@@ -3048,7 +3048,7 @@
     "sift.c:1126-1134": {
       "hash": "c47bf386f71abc0eca4032579e2790df6bd6219d48860280aa49e8c2dc51280f",
       "owners": [
-        "Ratpoints.Sieve.siftBitArray"
+        "Ratpoints.Sieve.siftBitArrayByWords"
       ]
     },
     "sift.c:1135-1136": {
@@ -3060,7 +3060,7 @@
     "sift.c:1137-1139": {
       "hash": "b1cd67c7ffd8359a91426f8093d1239e7df42a0d7f620dad304119f0dcf9fb2c",
       "owners": [
-        "Ratpoints.Sieve.siftBitArray"
+        "Ratpoints.Sieve.siftBitArrayByWords"
       ]
     },
     "sift.c:1141-1152": {
@@ -3072,7 +3072,7 @@
     "sift.c:1154-1159": {
       "hash": "451c0865c5b40fdbe8e5229f082ed7cba3299b2fe4516e88df2710bb2761ad3d",
       "owners": [
-        "Ratpoints.Sieve.siftBitArray"
+        "Ratpoints.Sieve.siftBitArrayByWords"
       ]
     },
     "sift.c:1161-1171": {
@@ -3084,7 +3084,7 @@
     "sift.c:1172-1173": {
       "hash": "a470d58ebd584ae30221d1fd75c3a59dd9942b9ef65b6fe0bbbbc7a733bacc2f",
       "owners": [
-        "Ratpoints.Sieve.siftBitArray"
+        "Ratpoints.Sieve.siftBitArrayByWords"
       ]
     },
     "sift.c:1174-1174": {
@@ -3102,13 +3102,13 @@
     "sift.c:1204-1210": {
       "hash": "9a00dffbaa9aa443a2a6204ddeba489c544802d58ea743411c82e8839ef508d1",
       "owners": [
-        "Ratpoints.Sieve.siftBitArray"
+        "Ratpoints.Sieve.siftBitArrayWhole"
       ]
     },
     "sift.c:1213-1226": {
       "hash": "d4597eb8f82911382c0889e3e29ddb3faf482f426f953a24710230933d4910e6",
       "owners": [
-        "Ratpoints.Sieve.siftBitArray"
+        "Ratpoints.Sieve.siftBitArrayWhole"
       ]
     },
     "sift.c:1227-1255": {
@@ -3120,7 +3120,7 @@
     "sift.c:1257-1264": {
       "hash": "1b30de168b2b0078bbb74083174dc96fdfe343d27ed02faf89af22415b77a9df",
       "owners": [
-        "Ratpoints.Sieve.siftBitArray"
+        "Ratpoints.Sieve.siftBitArrayWhole"
       ]
     },
     "sift.c:1265-1292": {
@@ -3132,7 +3132,7 @@
     "sift.c:1293-1296": {
       "hash": "f9bd7f2f595dec528b29874c95dbe271adc78ccf0ff9c8192f27377bc70ae42c",
       "owners": [
-        "Ratpoints.Sieve.siftBitArray"
+        "Ratpoints.Sieve.siftBitArrayWhole"
       ]
     },
     "sift.c:1297-1297": {

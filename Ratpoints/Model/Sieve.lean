@@ -30,12 +30,13 @@ of 2 (`Ratpoints.Sieve.NumClass`); the second stage, on a bit array that the fir
 on one of its words, with the rows read at the word number plus their offsets
 (`Ratpoints.Sieve.secondStage`, `Ratpoints.Sieve.secondStageWord`); one bit array through the second
 stage and the extraction of the points of its numerators in the packing of a class, in either arm of
-the second stage (`Ratpoints.Sieve.siftBitArray`); one piece of bit arrays from the first stage,
-with the first moduli, in the arm that the chunk chooses, through the second, with the others, to
-the points of its numerators (`Ratpoints.Sieve.siftPiece`); the bits of an interval of numerators in
-the packing of a class (`Ratpoints.Sieve.numeratorsToBits`), the rows of the moduli for a
-denominator from the tables of rows of their entries with the row offsets of its class
-(`Ratpoints.Sieve.setRows`), the rows that are not built yet built into their tables of rows
+the second stage, one word at a time or on the whole bit array (`Ratpoints.Sieve.siftBitArray`,
+`Ratpoints.Sieve.siftBitArrayByWords`, `Ratpoints.Sieve.siftBitArrayWhole`); one piece of bit arrays
+from the first stage, with the first moduli, in the arm that the chunk chooses, through the second,
+with the others, to the points of its numerators (`Ratpoints.Sieve.siftPiece`); the bits of an
+interval of numerators in the packing of a class (`Ratpoints.Sieve.numeratorsToBits`), the rows of
+the moduli for a denominator from the tables of rows of their entries with the row offsets of its
+class (`Ratpoints.Sieve.setRows`), the rows that are not built yet built into their tables of rows
 (`Ratpoints.Sieve.buildRows`), and the points of the bits of one interval in pieces
 (`Ratpoints.Sieve.siftBits`); and the numerators of one denominator, in the packing of its class,
 with the products of the check and what the third stage needs as thunks (`Ratpoints.Sieve.sift`).
@@ -83,8 +84,10 @@ or built into it (`Ratpoints.Sieve.SieveEntry.fetchRow`) and the tables of rows 
   and-ed in while a bit is left.
 * `Ratpoints.Sieve.walkWord`: the walk through the set bits of a word, lowest first, each
   numerator going to the test of a candidate and, if it passes, to the exact check.
-* `Ratpoints.Sieve.siftBitArray`: one bit array that the first stage leaves nonzero, through the
-  second stage, in either arm, and the walks through its words.
+* `Ratpoints.Sieve.siftBitArrayByWords`, `Ratpoints.Sieve.siftBitArrayWhole`,
+  `Ratpoints.Sieve.siftBitArray`: one bit array that the first stage leaves nonzero, through the
+  second stage one word at a time or on the whole bit array, and the walks through its words; and
+  the choice between the two arms.
 * `Ratpoints.Sieve.scanPiece`: the scan over the bit arrays of a piece up to a sentinel, stepping
   over those that are zero, and a copy of each of the others through the second stage and the
   extraction.
@@ -335,60 +338,109 @@ def walkWord (w : Thunk (List Int)) (d b : Nat) (rev : Bool)
     x := x &&& (x - 1)
   return out
 
-/-- One bit array that the first stage left nonzero, with the word number `i`, from a copy `nums` of
-it, the points of its numerators appended to `out`, in the arm of the second stage that `useLong`
-chooses (`Ratpoints.useLongInPhase2` in the run): for `useLong = false`, the second stage on the
-whole bit array (`Ratpoints.Sieve.secondStage`, with the reciprocals `mgs` of its moduli and the
-test `small`), and, if it is still nonzero, the set bits of its words walked through in turn
-(`Ratpoints.Sieve.walkWord`), the first word from the first numerator of the bit array and each
-further word from the first numerator of the word before it plus the step from one word to the
-next; for `useLong = true`, for each word that is not zero, the second stage on that word
-(`Ratpoints.Sieve.secondStageWord`) and the walk through its set bits. For the stride `2 ^ k` and
-the residue `a₀` of the class `cl` of the denominator (`Ratpoints.Sieve.NumClass`), bit `t` of word
-`κ` stands for the numerator `a₀ + 2 ^ k (rbaLength i + 64 κ + t)`, for the number `rbaLength` of
-bits of a bit array (`Ratpoints.rbaLength`): the first numerator of word `κ` is
-`a₀ + 2 ^ k rbaLength i + κ 64 2 ^ k`, and the step from one bit to the next `2 ^ k`. Each numerator
-goes to the test of a candidate (`Ratpoints.Sieve.accepted`, with the thunk `checks` of the third
-stage) and, if it passes, to the exact check, with the thunk `w` of the products, the degree `d`,
-the denominator `b` and the flag `rev`. Both arms walk through the set bits of the same words, the
-words of `nums` and-ed with the rows of all the moduli of `specs`, in the same order.
+/-- The arm of the second stage one word at a time, for the bit array that the first stage left
+nonzero with the word number `i`, from a copy `nums` of it, the points of its numerators appended to
+`out`: for each word `κ` of `nums` that is not zero, the second stage on that word
+(`Ratpoints.Sieve.secondStageWord`, with the moduli of `specs`, their reciprocals `mgs` and the test
+`small`) and the walk through its set bits (`Ratpoints.Sieve.walkWord`) from the first numerator of
+the word. For the stride `2 ^ k` and the residue `a₀` of the class `cl` of the denominator
+(`Ratpoints.Sieve.NumClass`), bit `t` of word `κ` stands for the numerator
+`a₀ + 2 ^ k (rbaLength i + 64 κ + t)`, for the number `rbaLength` of bits of a bit array
+(`Ratpoints.rbaLength`): the first numerator of the bit array is `a₀ + 2 ^ k rbaLength i`, computed
+before the loop over the words, that of word `κ` is that plus `κ` times the step `64 2 ^ k` from
+one word to the next, and the step from one bit to the next is `2 ^ k`. Each numerator goes to the
+test of a candidate (`Ratpoints.Sieve.accepted`, with the thunk `checks` of the third stage) and,
+if it passes, to the exact check, with the thunk `w` of the products, the degree `d`, the
+denominator `b` and the flag `rev` of the reversal. This is the arm that a build of ratpoints with
+`USE_LONG_IN_PHASE_2` compiles.
 
-C: `sift.c:1094-1111`, `sift.c:1126-1134`, `sift.c:1137-1139`, `sift.c:1154-1159`,
-`sift.c:1172-1173`, `sift.c:1204-1210`, `sift.c:1213-1226`, `sift.c:1257-1264`,
-`sift.c:1293-1296`, `rp-private.h:135-136`, `rp-private.h:177-178`, `rp-private.h:238-239`,
-`rp-private.h:264-266`, `rp-private.h:288-289`
+C: `sift.c:1126-1134`, `sift.c:1137-1139`, `sift.c:1154-1159`, `sift.c:1172-1173`
 
-Deviation: the arm chosen by the argument `useLong`, so that the guards run both in the same build,
-for the arm that the build compiles (`#ifdef USE_LONG_IN_PHASE_2`); a function of its own for the
-body of the loop of the scan over one bit array; the stride, the first numerator and the steps as
-natural numbers and integers, the powers `2 ^ k` for the shifts `1L << k`, `RBA_LENGTH << k` and
-`LONG_LENGTH << k`, the last two of which stay `int`s, while the first numerators of the words, the
-numerators of bits of the bit arrays of a height bound below `2 ^ 63`, stay `long`s
+Deviation: the stride, the first numerator and the steps as natural numbers and integers, the
+powers `2 ^ k` for the shifts `1L << k`, `RBA_LENGTH << k` and `LONG_LENGTH << k`, the last two of
+which stay `int`s, while the first numerators of the words, the numerators of bits of the bit
+arrays of a height bound below `2 ^ 63`, stay `long`s
+(`Ratpoints.Sieve.NumClass.fitsLong_numerator`); the words of the bit array read as entries of the
+vector, for `EXT`; natural numbers and integers for the `long`s; no counts under `RP_PHASE_COUNTS`
+and no stop after a phase (`RP_STOP_AFTER`). -/
+def siftBitArrayByWords (w : Thunk (List Int)) (d b : Nat) (rev : Bool) (specs : List SieveSpec)
+    (mgs : List Nat) (small : Bool) (checks : Thunk (List CheckSpec)) (cl : NumClass) (i : Int)
+    (nums : Vector UInt64 rbaPack) (out : Array (Int × Int × Int)) :
+    Id (Array (Int × Int × Int)) := do
+  let a0 := cl.a0 + i * (rbaLength * 2 ^ cl.k)
+  let da := 64 * 2 ^ cl.k
+  let mut out := out
+  for κ in [0:rbaPack] do
+    if nums[κ]! != 0 then
+      let x ← secondStageWord specs mgs small i κ nums[κ]!
+      out ← walkWord w d b rev checks x (a0 + κ * da) (2 ^ cl.k) out
+  return out
+
+/-- The arm of the second stage on the whole bit array, for the bit array that the first stage left
+nonzero with the word number `i`, from a copy `nums` of it, the points of its numerators appended to
+`out`: the second stage on the whole bit array (`Ratpoints.Sieve.secondStage`, with the moduli of
+`specs`, their reciprocals `mgs` and the test `small`), and, if it is still nonzero, the set bits of
+its words walked through in turn (`Ratpoints.Sieve.walkWord`), the first word from the first
+numerator of the bit array and each further word from the first numerator of the word before it
+plus the step from one word to the next, both computed when the second stage has left the bit array
+nonzero. For the stride `2 ^ k` and the residue `a₀` of the class `cl` of the denominator
+(`Ratpoints.Sieve.NumClass`), bit `t` of word `κ` stands for the numerator
+`a₀ + 2 ^ k (rbaLength i + 64 κ + t)`, for the number `rbaLength` of bits of a bit array
+(`Ratpoints.rbaLength`): the first numerator of word `κ` is `a₀ + 2 ^ k rbaLength i + κ 64 2 ^ k`,
+and the step from one bit to the next `2 ^ k`. Each numerator goes to the test of a candidate
+(`Ratpoints.Sieve.accepted`, with the thunk `checks` of the third stage) and, if it passes, to the
+exact check, with the thunk `w` of the products, the degree `d`, the denominator `b` and the flag
+`rev` of the reversal. This is the arm that the default build of ratpoints compiles.
+
+C: `sift.c:1204-1210`, `sift.c:1213-1226`, `sift.c:1257-1264`, `sift.c:1293-1296`,
+`rp-private.h:135-136`, `rp-private.h:177-178`, `rp-private.h:238-239`, `rp-private.h:264-266`,
+`rp-private.h:288-289`
+
+Deviation: the stride, the first numerator and the steps as natural numbers and integers, the
+powers `2 ^ k` for the shifts `1L << k`, `RBA_LENGTH << k` and `LONG_LENGTH << k`, the last two of
+which stay `int`s, while the first numerators of the words, the numerators of bits of the bit
+arrays of a height bound below `2 ^ 63`, stay `long`s
 (`Ratpoints.Sieve.NumClass.fitsLong_numerator`); the words of the bit array read as entries of the
 vector, for `EXT0` and `EXT`; natural numbers and integers for the `long`s; no counts under
+`RP_PHASE_COUNTS` and no stop after a phase (`RP_STOP_AFTER`). -/
+def siftBitArrayWhole (w : Thunk (List Int)) (d b : Nat) (rev : Bool) (specs : List SieveSpec)
+    (mgs : List Nat) (small : Bool) (checks : Thunk (List CheckSpec)) (cl : NumClass) (i : Int)
+    (nums : Vector UInt64 rbaPack) (out : Array (Int × Int × Int)) :
+    Id (Array (Int × Int × Int)) := do
+  let nums ← secondStage specs mgs small i nums
+  let mut out := out
+  if !isZeroAt nums 0 then
+    let mut a0 := cl.a0 + i * (rbaLength * 2 ^ cl.k)
+    let da := 64 * 2 ^ cl.k
+    out ← walkWord w d b rev checks nums[0]! a0 (2 ^ cl.k) out
+    for κ in [1:rbaPack] do
+      a0 := a0 + da
+      out ← walkWord w d b rev checks nums[κ]! a0 (2 ^ cl.k) out
+  return out
+
+/-- One bit array that the first stage left nonzero, with the word number `i`, from a copy `nums` of
+it, the points of its numerators appended to `out`, in the arm of the second stage that `useLong`
+chooses (`Ratpoints.useLongInPhase2` in the run): the second stage on the whole bit array and then
+the walks through its words for `useLong = false` (`Ratpoints.Sieve.siftBitArrayWhole`), and for
+`useLong = true` the second stage on each word that is not zero and the walk through it
+(`Ratpoints.Sieve.siftBitArrayByWords`), with the moduli of `specs`, their reciprocals `mgs` and the
+test `small`, the thunk `w` of the products, the degree `d`, the denominator `b`, the flag `rev` of
+the reversal, the thunk `checks` of the third stage and the packing of the class `cl` of the
+denominator. Both arms walk through the set bits of the same words, the words of `nums` and-ed with
+the rows of all the moduli of `specs`, in the same order.
+
+C: `sift.c:1094-1111`
+
+Deviation: the arm chosen by the argument `useLong`, so that the guards run both in the same build,
+for the arm that the build compiles (`#ifdef USE_LONG_IN_PHASE_2`), each arm a function of its own;
+a function of its own for the body of the loop of the scan over one bit array; no counts under
 `RP_PHASE_COUNTS`, no stop after a phase (`RP_STOP_AFTER`), and no output under `DEBUG`. -/
 def siftBitArray (useLong : Bool) (w : Thunk (List Int)) (d b : Nat) (rev : Bool)
     (specs : List SieveSpec) (mgs : List Nat) (small : Bool) (checks : Thunk (List CheckSpec))
     (cl : NumClass) (i : Int) (nums : Vector UInt64 rbaPack) (out : Array (Int × Int × Int)) :
-    Id (Array (Int × Int × Int)) := do
-  let mut out := out
-  if useLong then
-    let a0 := cl.a0 + i * (rbaLength * 2 ^ cl.k)
-    let da := 64 * 2 ^ cl.k
-    for κ in [0:rbaPack] do
-      if nums[κ]! != 0 then
-        let x ← secondStageWord specs mgs small i κ nums[κ]!
-        out ← walkWord w d b rev checks x (a0 + κ * da) (2 ^ cl.k) out
-  else
-    let nums ← secondStage specs mgs small i nums
-    if !isZeroAt nums 0 then
-      let mut a0 := cl.a0 + i * (rbaLength * 2 ^ cl.k)
-      let da := 64 * 2 ^ cl.k
-      out ← walkWord w d b rev checks nums[0]! a0 (2 ^ cl.k) out
-      for κ in [1:rbaPack] do
-        a0 := a0 + da
-        out ← walkWord w d b rev checks nums[κ]! a0 (2 ^ cl.k) out
-  return out
+    Id (Array (Int × Int × Int)) :=
+  if useLong then siftBitArrayByWords w d b rev specs mgs small checks cl i nums out
+  else siftBitArrayWhole w d b rev specs mgs small checks cl i nums out
 
 /-- The scan over a piece, the bit arrays with the word numbers `w0, …, w0 + n - 1`, which are the
 first `n` bit arrays of `surv`, and the second stage and the extraction of the points of their
