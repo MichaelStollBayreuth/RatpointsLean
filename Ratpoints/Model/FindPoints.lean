@@ -894,7 +894,7 @@ the test of the leading zeros. -/
 -- `ratpoints '1 0 126 0 441' 200 -q -x -n 15 -N 30 -p 30` print them: the points with `y ≥ 0`,
 -- and, with the moduli pinned so that every prime of the table up to 127 sieves, the survivors,
 -- which are the same `x` and `z` with `y = 0`; under both options the survivors; and for `0 1 2`
--- at 40, which ratpoints reverses, the survivors in the order of the reversed search, with
+-- at 40, which ratpoints reverses, the first four survivors in the order of the reversed search,
 -- `(0 : 1)` first, as `ratpoints '0 1 2' 40 -q -x -n 15 -N 30 -p 30` prints them.
 #guard
   let pinned := sieveParams { numPrimes := 30, sp1 := 15, sp2 := 30 }

@@ -247,12 +247,12 @@ def Failure.status : Failure → UInt32
   | .incorrectCoefficients => 11
   | .unsupportedOption _ => 12
 
-/-- The failure of `ratpoints-lean` for a refusal of `Ratpoints.findPoints`: the error of `main.c`
-with the number that `Ratpoints.Refusal` names, as `main.c` turns the code
-`RATPOINTS_NON_SQUAREFREE` that the library returns into error 8. The reading of the command line
-(`Ratpoints.Cli.input`) refuses the inputs of the other refusals first, so that of the refusals of
-`Ratpoints.findPoints`, which `Ratpoints.Cli.run` maps by it, only
-`Ratpoints.Refusal.notSquarefree` can reach it.
+/-- The failure of `ratpoints-lean` for a refusal of the search (`Ratpoints.findPointsWith`, whose
+refusals are those of `Ratpoints.findPoints`): the error of `main.c` with the number that
+`Ratpoints.Refusal` names, as `main.c` turns the code `RATPOINTS_NON_SQUAREFREE` that the library
+returns into error 8. The reading of the command line (`Ratpoints.Cli.input`) refuses the inputs of
+the other refusals first, so that of the refusals of `Ratpoints.findPointsWith`, which
+`Ratpoints.Cli.run` maps by it, only `Ratpoints.Refusal.notSquarefree` can reach it.
 
 C: `main.c:256-261`
 
@@ -779,9 +779,10 @@ def main (args : List String) : IO UInt32 := do
 
 /-! ### Examples
 
-Each of them is what ratpoints 3.1.1 does, but for the banner and, in the report, messages 4 and 8,
-which `ratpoints-lean` leaves out, and for the exit status 12 on `-lfoo` (that is, `-l`), an option
-that ratpoints has and `ratpoints-lean` does not support yet. -/
+Each of them is what ratpoints 3.1.1 does, but for the banner; for messages 4 and 8 of the report
+and, under `-v`, the report of the library, which `ratpoints-lean` leaves out; and for the exit
+status 12 on `-lfoo` (that is, `-l`), an option that ratpoints has and `ratpoints-lean` does not
+support yet. -/
 
 #guard words " 1\t-2\x0b+3\r".toList == ["1".toList, "-2".toList, "+3".toList]
 

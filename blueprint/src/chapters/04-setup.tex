@@ -575,27 +575,30 @@ ranges, the node of the program (Definition~\ref{def:cliRun}) the call of \verb|
 the exit status~$0$ (\csource{main.c}{251}{251}, \csource{main.c}{284}{284}), and the order of the
 printed points is that of Theorem~\ref{thm:findPoints_order}. The options that it does not support
 yet are those of the search region and the denominator range (\verb|-l -u -dl -du|); those of the
-output it reads since stage~G (Section~\ref{sec:outputCli}). The differential tests:
+output it reads since stage~G (Section~\ref{sec:outputCli}). At the end of stage~D the
+differential tests:
 \begin{itemize}
-  \item compare in the suite \verb|test4| 548 of the 582 runs of \verb|test4.sh|, 261 of them by
+  \item compared in the suite \verb|test4| 548 of the 582 runs of \verb|test4.sh|, 261 of them by
     their points, each in its order: the runs whose only options of the search are \verb|-k|,
     \verb|-K|, \verb|-s| and \verb|-S| by their points (nine with \verb|-S|, among them the
     regression tests of the depth of the Sturm step), the 11 refusals with error~8 (three of them
-    runs without \verb|-q|, compared by the message at the end of the report, since stage~G as whole
-    reports), and the two runs with a malformed argument of \verb|-S|, which fail with error~6 as
-    the C program does; 21 runs stay skipped for their filtered output and 13 for their height,
-    which the suite \verb|test4high| compares;
-  \item compare 16 of the 21 runs of \verb|test3.sh|, the refusal among them, the run with
+    runs without \verb|-q|, then compared by the message at the end of the report, since stage~G as
+    whole reports, Section~\ref{sec:outputTests}), and the two runs with a malformed argument of
+    \verb|-S|, which fail with error~6 as the C program does; 21 runs stayed skipped for their
+    filtered output and 13 for their height, which the suite \verb|test4high| compares;
+  \item compared 16 of the 21 runs of \verb|test3.sh|, the refusal among them, the run with
     \verb|-k| by its points, and the run at the height $300000$, above the largest height of the
     tests, on which both programs print nothing;
-  \item compare in the random suite the inputs that the C program refuses; search in the suite of
-    parameters \verb|0 1 1| in place of \verb|0 0 1|, which both programs refuse; compare in the
-    errors suite (253 cases) \verb|-k|, \verb|-K|, \verb|-s|, \verb|-S| and \verb|-S 5|, error~8,
-    \verb|-s| on a form that is not squarefree and the order of \verb|-s| and \verb|-S|; and give in
-    the fuzz \verb|-S| random arguments, on forms that are squarefree and on forms that are not;
-  \item compare every point list in its order, also where ratpoints visits the denominators
+  \item compared in the random suite the inputs that the C program refuses; searched in the suite
+    of parameters \verb|0 1 1| in place of \verb|0 0 1|, which both programs refuse; compared in
+    the errors suite (then 253 cases) \verb|-k|, \verb|-K|, \verb|-s|, \verb|-S| and \verb|-S 5|,
+    error~8, \verb|-s| on a form that is not squarefree and the order of \verb|-s| and \verb|-S|;
+    and gave in the fuzz \verb|-S| random arguments, on forms that are squarefree and on forms that
+    are not;
+  \item compared every point list in its order, also where ratpoints visits the denominators
     divisor by divisor (Section~\ref{sec:denCli}).
 \end{itemize}
+Section~\ref{sec:outputTests} gives the counts after stage~G.
 
 \section{Deviations}\label{sec:setupDeviations}
 

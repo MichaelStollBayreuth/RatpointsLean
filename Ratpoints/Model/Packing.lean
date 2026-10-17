@@ -140,7 +140,7 @@ def numClasses (nb : Vector UInt64 64) : Id (Vector NumClass 64 × UInt64) := do
 /-- The number of the distinct packings `(k, a₀)` of the classes `cls` with a pattern
 (`Ratpoints.Sieve.NumClass`), at least 1: the number of the rows of offsets that
 `Ratpoints.Sieve.classOffsets` makes, which sizes the array of the offsets of the run
-(`Ratpoints.searchPoints`). The packings are told apart by the key `2 ^ k + a₀`, below
+(`Ratpoints.sieving`). The packings are told apart by the key `2 ^ k + a₀`, below
 `2 ^ Ratpoints.numStrides` and 128, marked in two words.
 
 C: `find_points.c:1119-1130`
@@ -228,7 +228,7 @@ C: `find_points.c:1142-1158`, `find_points.c:1161-1162`, `find_points.c:1183`
 
 Deviation: the classes, the entries and the array of the offsets returned, for the arrays that
 `class_offsets` writes through its pointer arguments; the number `np` of the moduli the number of
-the sieve entries `es`, for the run those of its three stages (`Ratpoints.searchPoints`), where
+the sieve entries `es`, for the run those of its three stages (`Ratpoints.sieving`), where
 `find_points_work_1` passes `sp3_max`, the number with the reserve of further primes that the
 correction of the moduli may take into the second stage during the run (stage I); the inverses of
 `2 ^ k` an array of `kmax + 1` entries, for the array `dinv` of `RP_NUM_STRIDES` `long`s of the

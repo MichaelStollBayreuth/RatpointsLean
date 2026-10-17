@@ -571,24 +571,24 @@ on 2026-10-16, when, on Lean and Mathlib v4.35.0, Lake's \verb|lake comparator -
 builds and exports the project in a sandbox, accepted them too, with Lean's kernel and the five
 external checkers bundled with Lean; and \verb|lake comparator --paranoid| accepted the twelve
 statements of stage~G on 2026-10-17. The challenge states them with \verb|sorry| over
-\verb|findPoints|, \verb|findPointsWith|, \verb|Answer|, \verb|Delivery|, \verb|Delivery.deliver|,
-\verb|Options|, \verb|Params|, \verb|Params.WF|, \verb|SieveOptions|, \verb|sieveParams|,
-\verb|maxDegree| and \verb|maxDivisors|, imported from the model, never restated, since a definition
-of the model elaborates without Mathlib to other instance terms. Each theorem of the library behind
-them has a guard on its axioms, which are the standard ones. The contracts of the sieve of stages C1
-to D need only the program logic of Lean core and stay in files without Mathlib, so that their
-\verb|grind| calls see only the lemmas of core, untouched by Mathlib's updates; the contract of the
-run over the denominators of a shape, with its plain equation \verb|run_sieveRun|, is in the file of
-the run, with Mathlib, like the other contracts of stage~E (Chapter~\ref{chap:denominators}) and
-those of the tables and the moduli of stage~F1, which sit next to the lemmas they serve
-(Chapter~\ref{chap:tables}); those of the stages of sub-stage~F2, of the packing of sub-stage~F3 and
-of the chunked first stage, the builders of the rows and the tables of rows of sub-stage~F4 are in
-files without Mathlib again (Chapters~\ref{chap:stages}, \ref{chap:packing} and~\ref{chap:rows}),
-the store of the tables of rows in the contracts of the entries of the moduli, of the loop of the
-tables, of the run and of the search staying in the files of those contracts, with Mathlib; the
-contracts on the delivery of stage~G replace those of before in their files, and the reference of
-the delivery has its lemmas in a file without Mathlib (Chapter~\ref{chap:output}). The soundness of
-the rows needs Mathlib, through $\ZZ/p\ZZ$.
+\verb|findPoints|, \verb|findPointsWith|, \verb|Outcome|, \verb|Answer|, \verb|Delivery|,
+\verb|Delivery.deliver|, \verb|Options|, \verb|Params|, \verb|Params.WF|, \verb|SieveOptions|,
+\verb|sieveParams|, \verb|maxDegree| and \verb|maxDivisors|, imported from the model, never
+restated, since a definition of the model elaborates without Mathlib to other instance terms. Each
+theorem of the library behind them has a guard on its axioms, which are the standard ones. The
+contracts of the sieve of stages C1 to D need only the program logic of Lean core and stay in files
+without Mathlib, so that their \verb|grind| calls see only the lemmas of core, untouched by
+Mathlib's updates; the contract of the run over the denominators of a shape, with its plain equation
+\verb|run_sieveRun|, is in the file of the run, with Mathlib, like the other contracts of stage~E
+(Chapter~\ref{chap:denominators}) and those of the tables and the moduli of stage~F1, which sit next
+to the lemmas they serve (Chapter~\ref{chap:tables}); those of the stages of sub-stage~F2, of the
+packing of sub-stage~F3 and of the chunked first stage, the builders of the rows and the tables of
+rows of sub-stage~F4 are in files without Mathlib again (Chapters~\ref{chap:stages},
+\ref{chap:packing} and~\ref{chap:rows}), the store of the tables of rows in the contracts of the
+entries of the moduli, of the loop of the tables, of the run and of the search staying in the files
+of those contracts, with Mathlib; the contracts on the delivery of stage~G replace those of before
+in their files, and the reference of the delivery has its lemmas in a file without Mathlib
+(Chapter~\ref{chap:output}). The soundness of the rows needs Mathlib, through $\ZZ/p\ZZ$.
 
 \section{The command-line program and the differential tests}\label{sec:sieveCli}
 

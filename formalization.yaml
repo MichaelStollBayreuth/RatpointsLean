@@ -335,8 +335,11 @@ automation:
         The design was fixed by the author on 2026-10-08, after two rounds of independent review,
         on the basis of an analysis of the whole C library (its components one by one, the
         specification, the history of the bugs, a survey of the Lean tooling, prototypes). Each
-        stage begins with a blueprint chapter (components, contracts, proposed names) that the
-        author reviews before any Lean code of the stage is written.
+        stage begins with a blueprint chapter (components, contracts, proposed names), drafted from
+        research and a prototype in a separate copy and reviewed by the author before the Lean code
+        of the stage enters the repository; for sub-stage F4 and stage G, at the author's leave,
+        the code was drafted and committed while he reviewed the chapter, and it is pushed only
+        after his review.
   spend_usd: "subscription-based usage (no metered API spend)"
   notes: >
     The C defects found while this project was planned were fixed first, in ratpoints 3.1.1, so

@@ -92,10 +92,11 @@ with loop invariants that are named definitions.
 
 ## Implementation notes
 
-The file uses Lean core and `Std` only, as `Ratpoints.Proof.Words` and `Ratpoints.Proof.Delivery`
-do, on whose words of the rows (`Ratpoints.Sieve.SieveSpec.wordAt`, `Ratpoints.Sieve.andWords`) and
-reading of the reciprocals in step with the moduli (`Ratpoints.Sieve.eq_magic_and_of_next?_eq_some`,
-`Ratpoints.Sieve.next?_ne_none_of_lt`) the second stage builds. The proofs use only the facts on the
+The file uses Lean core and `Std` only, as `Ratpoints.Proof.Delivery` and `Ratpoints.Proof.Words`
+do; the second stage builds on the words of the rows of the latter
+(`Ratpoints.Sieve.SieveSpec.wordAt`, `Ratpoints.Sieve.andWords`) and on its reading of the
+reciprocals in step with the moduli (`Ratpoints.Sieve.eq_magic_and_of_next?_eq_some`,
+`Ratpoints.Sieve.next?_ne_none_of_lt`). The proofs use only the facts on the
 constants that `decide` checks next to them, that `Ratpoints.mulModLimit < 2 ^ 32` and
 `Ratpoints.stage3Limit ≤ 2 ^ 32`, never their values. The words of the test for common factors are
 read as natural numbers by `Int64.toNatClampNeg`, which is faithful on the non-negative words that
@@ -779,7 +780,7 @@ theorem pointsAtInfinity_eq_deliver {σ : Type} (process : Int → Int → Int �
 those of the candidate `(1, 0)` with the value `F(1, 0)`, which is `c_d` for even `d` and `0` for
 odd `d`, without the point with `y < 0` under `RATPOINTS_NO_Y`, and mapped after a reversal. (For
 even `d` and `c_d = 0`, which the search refuses before, the point `(1 : 0 : 0)` is delivered
-twice.) -/
+twice, once under `RATPOINTS_NO_Y`.) -/
 theorem pointsAtInfinityList_of_noCheck_eq_false {fl : CheckFlags} (hc : fl.noCheck = false)
     {c : List Int} {d : Nat} (h : d % 2 = 1 ∨ c.getD d 0 ≠ 0) :
     pointsAtInfinityList c d fl =

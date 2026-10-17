@@ -19,9 +19,10 @@ search, each with the error of the program (`Ratpoints.Refusal`); the reversal c
 and `X ^ 2` divides the form (`c₀ = c₁ = 0`), and otherwise may reverse the polynomial, in three
 cases, exchanging `x` and `z` in the binary form (`Ratpoints.Setup.reversal`); and the test whether
 the coefficients are C `long`s (`Ratpoints.fitsLong`, `Ratpoints.Setup.useCLong`), which chooses the
-path of the table of a prime (`Ratpoints.Sieve.examinePrime?`). `Ratpoints.findPoints` runs the
-reversal check after the test of the leading zeros, with the switch of its options, and the search
-that it runs on the polynomial handed on (`Ratpoints.searchPoints`) makes the test of the `long`s.
+path of the table of a prime (`Ratpoints.Sieve.examinePrime?`). `Ratpoints.findPointsWith`, the
+search with a callback, of which `Ratpoints.findPoints` is an instance, runs the reversal check
+after the test of the leading zeros, with the switch of its options, and the search that it runs on
+the polynomial handed on (`Ratpoints.searchPoints`) makes the test of the `long`s.
 For the tests on the denominators (`Ratpoints.Sieve.denInfoTest`, `Ratpoints.Sieve.wordsTest`), the
 C code computes the valuation of an integer at a prime, with its unit part, by repeated division
 (`Ratpoints.Setup.valuation`), and for a polynomial of odd degree whose leading coefficient is not

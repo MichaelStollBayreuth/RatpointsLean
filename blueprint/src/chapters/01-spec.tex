@@ -242,8 +242,8 @@ membership since stage~G for $\mathrm{noCheck}$ false, with $y \ge 0$ under $\ma
 \verb|findPoints|, \verb|Options|, \verb|Params|, \verb|Params.WF|, \verb|SieveOptions|,
 \verb|sieveParams| and \verb|maxDegree|, imported from the model (Section~\ref{sec:sieveTheorems}),
 and since stage~G the protocol of the delivery (Theorem~\ref{thm:protocol}), over
-\verb|findPointsWith|, \verb|Answer|, \verb|Delivery| and \verb|Delivery.deliver|, the three
-statements under $\mathrm{noCheck}$ (Theorem~\ref{thm:noCheck}), and the order theorem
+\verb|findPointsWith|, \verb|Outcome|, \verb|Answer|, \verb|Delivery| and \verb|Delivery.deliver|,
+the three statements under $\mathrm{noCheck}$ (Theorem~\ref{thm:noCheck}), and the order theorem
 (Theorem~\ref{thm:order}), over the definitions of \verb|Ratpoints/Spec/Order.lean| with their
 instance and the decidability instance of \verb|IsPoint|, restated verbatim, and \verb|maxDivisors|,
 imported from the model; for \verb|Squarefree| the challenge and the specification import
@@ -346,10 +346,11 @@ that they mirror:
   usage (\csource{main.c}{77}{88}) instead of a message, and on error~6 both. The banner is that of
   \verb|ratpoints-lean| and the usage that of ratpoints, with the name of the program changed. The
   last failure is an option of ratpoints that \verb|ratpoints-lean| does not support yet, with the
-  exit status 12. A refusal of $\mathrm{findPoints}$ (Definition~\ref{def:reversal}) is the failure
+  exit status 12. A refusal of $\mathrm{findPointsWith}$ (Definition~\ref{def:findPointsWith}),
+  whose refusals are those of $\mathrm{findPoints}$ (Definition~\ref{def:reversal}), is the failure
   with the same number, as \verb|main.c| turns the code that the library returns for a form that is
   not squarefree into error~8 (\csource{main.c}{256}{261}); the reading of the command line meets
-  the other refusals first, so that only error~8 can come from $\mathrm{findPoints}$.
+  the other refusals first, so that only error~8 can come from $\mathrm{findPointsWith}$.
 \end{definition}
 
 \begin{definition}[The command line]\label{def:cliInput}

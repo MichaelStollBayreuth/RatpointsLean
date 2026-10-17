@@ -36,7 +36,7 @@ Mathlib and nothing of the model; the comparator challenge restates its definiti
 
 The file imports `Mathlib.Data.Nat.Factors` for the prime factors of a number
 (`Nat.primeFactorsList`, in increasing order with multiplicity); the comparator challenge imports
-the public imports of this file and of `Ratpoints.Spec.Basic`.
+the Mathlib modules among the public imports of this file and of `Ratpoints.Spec.Basic`.
 -/
 
 @[expose] public section
@@ -93,8 +93,10 @@ def searchDenominators (maxDiv : ℕ) (c : List ℤ) (H : ℕ) : List ℕ :=
   else List.range' 1 H
 
 /-- The points of height at most `H` with the denominator `z`: for the numerators `x = -H, …, H`
-in turn, with `y = ⌊√F(x, z)⌋`, the points among `(x, y, z)` and `(x, -y, z)`, in this order (one
-point when `y = 0`). The denominator `0` gives the points at infinity, whose numerator is `1`. -/
+in turn, with `y = ⌊√F(x, z)⌋` (`Int.sqrt`, which is `0` when `F(x, z) < 0`, where the filter by
+`Ratpoints.IsPoint` keeps nothing), the points among `(x, y, z)` and `(x, -y, z)`, in this order
+(one point when `y = 0`). The denominator `0` gives the points at infinity, whose numerator is
+`1`. -/
 def pointsWithDen (c : List ℤ) (H z : ℕ) : List (ℤ × ℤ × ℤ) :=
   ((List.range (2 * H + 1)).map fun i : ℕ ↦ (i : ℤ) - H).flatMap fun x ↦
     let y := Int.sqrt (binaryForm c x z)

@@ -5,8 +5,9 @@ ratpoints is a C program that finds the rational points of bounded height on cur
 $y^2 = F(x, z)$, where $F$ is a binary form of even degree with integer coefficients, by sieving.
 This blueprint describes a Lean~4 development that verifies it in four parts:
 \begin{enumerate}
-  \item a \emph{specification}, short enough to read in full: the binary form of the polynomial
-    and the predicate ``is a normalized point of height at most $H$'';
+  \item a \emph{specification}, short enough to read in full: the binary form of the polynomial,
+    the predicate ``is a normalized point of height at most $H$'' and the list of these points in
+    the order in which ratpoints finds them;
   \item an \emph{executable model} of ratpoints in Lean, which mirrors the hardware-independent
     structure of the C code function by function: the same loops, tables, bit arrays of 64-bit
     words and index arithmetic; it uses only Lean core and \verb|Std|, not Mathlib, so that the

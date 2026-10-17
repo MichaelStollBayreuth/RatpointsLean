@@ -403,7 +403,7 @@ theorem append_flatMap_searchDens_eq_bruteForce {c : List ℤ} {H : ℕ} (hH : 1
 
 /-! ### The points that the search delivers -/
 
-/-- The points that the search of the polynomial with the coefficient list `c`, of its degree `d`,
+/-- The points that the search of the polynomial with the coefficient list `c`, of its degree,
 delivers for the height `H` and the flags `fl` of the check, for the test `S b a` of the numerators
 `a` over the denominators `b` of the search: the points at infinity
 (`Ratpoints.Sieve.pointsAtInfinityList`), then, for the denominators `b` of the search in the order

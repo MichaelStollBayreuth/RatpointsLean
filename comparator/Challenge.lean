@@ -31,27 +31,28 @@ two or more than `Ratpoints.maxDegree + 1` coefficients, the height bound `0` or
 more, which is not a `long`, and the binary forms `Ratpoints.binaryFormPoly c` that are not
 squarefree) and off (it refuses exactly what the program refuses under `-s`, and under `-s -k` when
 the reversal is off), which rule out a `Ratpoints.findPoints` that refuses every input, with or
-without the Sturm step; and the theorems of stage G on the options of the output, the order and the
-protocol of the delivery. Since stage G membership holds with the exact check on
-(`o.noCheck = false`): the list of `Ratpoints.findPoints` holds exactly the points, of each pair
-`(x, ±y, z)` only the one with `y ≥ 0` when `o.noY` is set, and it is the list of the points in the
-order of ratpoints (`Ratpoints.orderedPoints`, with the bound `Ratpoints.maxDivisors` of the model
-on the number of divisors), filtered by `o.noY`; no duplicates holds for every option, the options
-of the output among them. With the exact check off, every element of the list is `(x, 0, z)` for a
-normalized coprime pair of height at most `H`, every point `(x, y, z)` of height at most `H` gives
-the element `(x, 0, z)`, and the points with `y ≥ 0` of the same search with the exact check on,
-with `y` replaced by `0`, are a sublist of it, so that they come in the same order. The search with
-a callback (`Ratpoints.findPointsWith`) refuses what `Ratpoints.findPoints` refuses, and otherwise
-returns the data of the callback and the count of the delivery of the list of `Ratpoints.findPoints`
-to the callback (`Ratpoints.Delivery.deliver`): the calls of the callback for the points of the list
-in their order, up to and including the first that stops the search. `Ratpoints.bruteForce`,
-`Ratpoints.findPoints`, `Ratpoints.findPointsWith`, `Ratpoints.Answer`, `Ratpoints.Delivery`,
-`Ratpoints.Delivery.deliver`, `Ratpoints.Options`, `Ratpoints.Params`, `Ratpoints.Params.WF`,
-`Ratpoints.SieveOptions`, `Ratpoints.sieveParams`, `Ratpoints.maxDegree` and `Ratpoints.maxDivisors`
-come from the model, never restated, since a definition of the model elaborates without Mathlib to
-other instance terms. Of Mathlib, the file imports exactly the public imports of
-`Ratpoints/Spec/Basic.lean` and of `Ratpoints/Spec/Order.lean` (`Mathlib.Data.Nat.Factors`, for the
-prime factors), so that the restated definitions elaborate to the same terms as there.
+without the Sturm step; and the theorems of stage G, for well-formed parameters, on the options of
+the output, the order and the protocol of the delivery. Since stage G membership holds with the
+exact check on (`o.noCheck = false`): the list of `Ratpoints.findPoints` holds exactly the points,
+of each pair `(x, ±y, z)` only the one with `y ≥ 0` when `o.noY` is set, and it is the list of the
+points in the order of ratpoints (`Ratpoints.orderedPoints`, with the bound `Ratpoints.maxDivisors`
+of the model on the number of divisors), filtered by `o.noY`; no duplicates holds for every option,
+the options of the output among them. With the exact check off, every element of the list is
+`(x, 0, z)` for a normalized coprime pair of height at most `H`, every point `(x, y, z)` of height
+at most `H` gives the element `(x, 0, z)`, and the points with `y ≥ 0` of the same search with the
+exact check on, with `y` replaced by `0`, are a sublist of it, so that they come in the same order.
+The search with a callback (`Ratpoints.findPointsWith`) refuses what `Ratpoints.findPoints` refuses,
+and otherwise returns the data of the callback and the count of the delivery of the list of
+`Ratpoints.findPoints` to the callback (`Ratpoints.Delivery.deliver`): the calls of the callback for
+the points of the list in their order, up to and including the first that stops the search.
+`Ratpoints.bruteForce`, `Ratpoints.findPoints`, `Ratpoints.findPointsWith`, `Ratpoints.Outcome`,
+`Ratpoints.Answer`, `Ratpoints.Delivery`, `Ratpoints.Delivery.deliver`, `Ratpoints.Options`,
+`Ratpoints.Params`, `Ratpoints.Params.WF`, `Ratpoints.SieveOptions`, `Ratpoints.sieveParams`,
+`Ratpoints.maxDegree` and `Ratpoints.maxDivisors` come from the model, never restated, since a
+definition of the model elaborates without Mathlib to other instance terms. Of Mathlib, the file
+imports exactly the public imports of `Ratpoints/Spec/Basic.lean` and of `Ratpoints/Spec/Order.lean`
+(`Mathlib.Data.Nat.Factors`, for the prime factors), so that the restated definitions elaborate to
+the same terms as there.
 -/
 
 @[expose] public section
@@ -135,8 +136,10 @@ def searchDenominators (maxDiv : ℕ) (c : List ℤ) (H : ℕ) : List ℕ :=
   else List.range' 1 H
 
 /-- The points of height at most `H` with the denominator `z`: for the numerators `x = -H, …, H`
-in turn, with `y = ⌊√F(x, z)⌋`, the points among `(x, y, z)` and `(x, -y, z)`, in this order (one
-point when `y = 0`). The denominator `0` gives the points at infinity, whose numerator is `1`. -/
+in turn, with `y = ⌊√F(x, z)⌋` (`Int.sqrt`, which is `0` when `F(x, z) < 0`, where the filter by
+`Ratpoints.IsPoint` keeps nothing), the points among `(x, y, z)` and `(x, -y, z)`, in this order
+(one point when `y = 0`). The denominator `0` gives the points at infinity, whose numerator is
+`1`. -/
 def pointsWithDen (c : List ℤ) (H z : ℕ) : List (ℤ × ℤ × ℤ) :=
   ((List.range (2 * H + 1)).map fun i : ℕ ↦ (i : ℤ) - H).flatMap fun x ↦
     let y := Int.sqrt (binaryForm c x z)
