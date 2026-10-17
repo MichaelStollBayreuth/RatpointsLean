@@ -16,6 +16,7 @@ public import Ratpoints.Mathlib.Data.Nat.Squarefree
 public import Ratpoints.Mathlib.Data.ZMod.Basic
 public import Ratpoints.Mathlib.NumberTheory.LegendreSymbol.JacobiSymbol
 public import Ratpoints.Mathlib.NumberTheory.Padics.PadicVal.Basic
+public import Ratpoints.Mathlib.NumberTheory.SmoothNumbers
 public import Ratpoints.Mathlib.RingTheory.Coprime.Basic
 public import Ratpoints.Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import Ratpoints.Model
@@ -69,3 +70,4 @@ public import Ratpoints.Proof.Valuation
 public import Ratpoints.Proof.Words
 public import Ratpoints.Spec
 public import Ratpoints.Spec.Basic
+public import Ratpoints.Spec.Order

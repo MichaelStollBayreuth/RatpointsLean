@@ -721,9 +721,10 @@ multiplicity.
 
 \begin{definition}[The polynomial searched]\label{def:searchedPoly}
   \uses{def:binaryForm}
-  Proposed name: \lname{Ratpoints.searchedPoly}. For the switch $r$ of the reversal and the
-  coefficient list $c$ of degree $d$, the polynomial that ratpoints searches and whether it is the
-  reversed one:
+  \lean{Ratpoints.searchedPoly}
+  \leanok
+  For the switch $r$ of the reversal and the coefficient list $c$ of degree $d$, the polynomial that
+  ratpoints searches and whether it is the reversed one:
   \[
     \mathrm{searchedPoly}(r, c) =
     \begin{cases}
@@ -741,34 +742,38 @@ multiplicity.
 
 \begin{definition}[The divisors and the denominators of the search]\label{def:binaryDivisors}
   \uses{def:binaryForm}
-  Proposed names: \lname{Ratpoints.FactorsByTrialDivision}, \lname{Ratpoints.binaryDivisors},
-  \lname{Ratpoints.searchDenominators}. A natural number $n$ is \emph{factored by trial division}
-  when the product of its prime factors from $1021$ on, with multiplicity, is below $1021^2$, or
-  none of its prime factors exceeds $1021$: ratpoints divides off $2$ and the odd primes up to
-  $1021$ in turn and takes a cofactor below $p^2$, for the next prime $p$, as a prime, which it is,
-  so that it fails exactly when the part of $n$ at the primes from $1021$ on is at least $1021^2$
-  and not a power of $1021$ (decidable, by an instance). The squarefree divisors of $n$ at most $H$
-  in the order of binary counting: for the distinct prime factors $p_1 < p_2 < \cdots$ of $n$, the
-  products of the sublists of $(p_1, p_2, \dots)$ in the order of \verb|List.sublists|, $1, p_1,
-  p_2, p_1 p_2, p_3, p_1 p_3, \dots$, with $p_1$ the lowest bit, those at most $H$. The denominators
-  of the search of $c$, of degree $d$, for the height $H$ and the bound $m$ of the number of
-  divisors: when $d$ is odd, $n = |c_d| \ne 1$, $n$ is factored by trial division and it has fewer
-  than $m$ squarefree divisors at most $H$, the numbers $e k^2 \le H$, divisor $e$ by divisor in
-  that order and $k = 1, 2, \dots$ for each; otherwise $1, \dots, H$. This is the order of the loop
-  of the search, which visits those of them that its tests let through; the others carry no point.
+  \lean{Ratpoints.FactorsByTrialDivision, Ratpoints.binaryDivisors, Ratpoints.searchDenominators}
+  \leanok
+  A natural number $n$ is \emph{factored by trial division} when the product of its prime factors
+  from $1021$ on, with multiplicity, is below $1021^2$, or none of its prime factors exceeds $1021$:
+  ratpoints divides off $2$ and the odd primes up to $1021$ in turn and takes a cofactor below
+  $p^2$, for the next prime $p$, as a prime, which it is, so that it fails exactly when the part of
+  $n$ at the primes from $1021$ on is at least $1021^2$ and not a power of $1021$ (decidable, by an
+  instance). The squarefree divisors of $n$ at most $H$ in the order of binary counting: for the
+  distinct prime factors $p_1 < p_2 < \cdots$ of $n$, the products of the sublists of
+  $(p_1, p_2, \dots)$ in the order of \verb|List.sublists|,
+  $1, p_1, p_2, p_1 p_2, p_3, p_1 p_3, \dots$, with $p_1$ the lowest bit, those at most $H$. The
+  denominators of the search of $c$, of degree $d$, for the height $H$ and the bound $m$ of the
+  number of divisors: when $d$ is odd, $n = |c_d| \ne 1$, $n$ is factored by trial division and it
+  has fewer than $m$ squarefree divisors at most $H$, the numbers $e k^2 \le H$, divisor $e$ by
+  divisor in that order and $k = 1, 2, \dots$ for each; otherwise $1, \dots, H$. This is the order
+  of the loop of the search, which visits those of them that its tests let through; the others carry
+  no point.
 \end{definition}
 
 \begin{definition}[The points in the order of ratpoints]\label{def:orderedPoints}
   \uses{def:searchedPoly, def:binaryDivisors, def:IsPoint}
-  Proposed names: \lname{Ratpoints.pointsWithDen}, \lname{Ratpoints.orderedPoints}. The points of
-  height at most $H$ with the denominator $z$: for $x = -H, \dots, H$ in turn, with $y = \lfloor
-  \sqrt{F_c(x, z)} \rfloor$, those among $(x, y, z)$ and $(x, -y, z)$ that are normalized points of
-  height at most $H$, in this order, one triple when $y = 0$; the denominator $0$ gives the points
-  at infinity, whose numerator is $1$. The points in the order of ratpoints, for the bound $m$ of
-  the number of divisors, the switch $r$ of the reversal, $c$ and $H$: for $(c', \mathrm{rev}) =
-  \mathrm{searchedPoly}(r, c)$, the concatenation of the points of $c'$ with the denominators $0$
-  and then those of the search of $c'$ in their order, each $(a, y, b)$ mapped to $(b, y, a)$ for $a
-  \ge 0$ and to $(-b, y, -a)$ for $a < 0$ when $\mathrm{rev}$ is set, a point of the caller's curve.
+  \lean{Ratpoints.pointsWithDen, Ratpoints.orderedPoints}
+  \leanok
+  The points of height at most $H$ with the denominator $z$: for $x = -H, \dots, H$ in turn, with
+  $y = \lfloor \sqrt{F_c(x, z)} \rfloor$, those among $(x, y, z)$ and $(x, -y, z)$ that are
+  normalized points of height at most $H$, in this order, one triple when $y = 0$; the denominator
+  $0$ gives the points at infinity, whose numerator is $1$. The points in the order of ratpoints,
+  for the bound $m$ of the number of divisors, the switch $r$ of the reversal, $c$ and $H$: for
+  $(c', \mathrm{rev}) = \mathrm{searchedPoly}(r, c)$, the concatenation of the points of $c'$ with
+  the denominators $0$ and then those of the search of $c'$ in their order, each $(a, y, b)$ mapped
+  to $(b, y, a)$ for $a \ge 0$ and to $(-b, y, -a)$ for $a < 0$ when $\mathrm{rev}$ is set, a point
+  of the caller's curve.
 \end{definition}
 
 The file checks its definitions on outputs of the C program by \verb|decide +kernel|, which the
@@ -787,47 +792,43 @@ of the constants varies it ($2$ and $100000$).
 
 \begin{lemma}[The rough part]\label{lem:roughPart}
   \uses{def:binaryDivisors}
-  Proposed names: \lname{Nat.IsRoughPart}, \lname{Nat.IsRoughPart.ne\_zero},
-  \lname{Nat.IsRoughPart.eq\_prod\_filter}, \lname{Nat.IsRoughPart.succ},
-  \lname{Nat.IsRoughPart.of\_le\_of\_forall},
-  \lname{Ratpoints.factorsByTrialDivision\_of\_isRoughPart\_one},
-  \lname{Ratpoints.factorsByTrialDivision\_of\_isRoughPart\_of\_lt},
-  \lname{Ratpoints.eq\_one\_iff\_factorsByTrialDivision\_of\_isRoughPart},
-  \lname{Array.pairwise\_map\_toList\_push}. The part $w$ of $n$ at the primes from $q$ on, the
-  \emph{rough part}: $n = k w$ with every prime factor of $k$ below $q$ (Mathlib's
-  \verb|Nat.smoothNumbers|) and every prime factor of $w$ at least $q$, a notion for Mathlib. For $n
-  \ne 0$ it is not $0$ and it is the product of the prime factors of $n$ from $q$ on, with
-  multiplicity; dividing the rough part $p^v m$ at a prime $p$, with $p \nmid m$, by $p^v$ leaves
-  the rough part at $p + 1$; and the rough part at $q$ is that at $q' \ge q$ when no prime lies
-  between them. A number whose rough part at some $q \le 1022$ is $1$, or whose rough part at some
-  $q \le 1021$ is below $q^2$, is factored by trial division; and when its rough part at $1021$ is
-  at least $1021^2$, it is factored by trial division exactly when its rough part at $1022$ is $1$.
-  The images of the members of an array after a push are in order exactly when those before it are
-  and each of them comes before the image of the new member.
+  \lean{Nat.IsRoughPart, Nat.IsRoughPart.ne_zero, Nat.IsRoughPart.eq_prod_filter, Nat.IsRoughPart.succ, Nat.IsRoughPart.of_le_of_forall, Ratpoints.factorsByTrialDivision_of_isRoughPart_one, Ratpoints.factorsByTrialDivision_of_isRoughPart_of_lt, Ratpoints.eq_one_iff_factorsByTrialDivision_of_isRoughPart, Array.pairwise_map_toList_push}
+  \leanok
+  The part $w$ of $n$ at the primes from $q$ on, the \emph{rough part}: $n = k w$ with every prime
+  factor of $k$ below $q$ (Mathlib's \verb|Nat.smoothNumbers|) and every prime factor of $w$ at
+  least $q$, a notion for Mathlib. For $n \ne 0$ it is not $0$ and it is the product of the prime
+  factors of $n$ from $q$ on, with multiplicity; dividing the rough part $p^v m$ at a prime $p$,
+  with $p \nmid m$, by $p^v$ leaves the rough part at $p + 1$; and the rough part at $q$ is that at
+  $q' \ge q$ when no prime lies between them. A number whose rough part at some $q \le 1022$ is $1$,
+  or a number $n \ne 0$ whose rough part at some $q \le 1021$ is below $q^2$, is factored by trial
+  division; and when the rough part of $n \ne 0$ at $1021$ is at least $1021^2$, $n$ is factored by
+  trial division exactly when its rough part at $1022$ is $1$. The images of the members of an array
+  after a push are in order exactly when those before it are and each of them comes before the image
+  of the new member.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   From the definitions, with Mathlib's smooth numbers and the prime factors with multiplicity.
 \end{proof}
 
 \begin{lemma}[The divisors of the leading coefficient in binary counting]\label{lem:binaryDivisors}
   \uses{def:setupUs1, def:binaryDivisors}
-  Proposed names: \lname{Ratpoints.Setup.foldl\_extendDivisors\_eq\_filter},
-  \lname{Ratpoints.Setup.IsFactorization.map\_fst\_eq\_dedup},
-  \lname{Ratpoints.Setup.foldl\_extendDivisors\_eq\_binaryDivisors},
-  \lname{Ratpoints.Setup.map\_snd\_run\_setupUs1}. For positive primes, the fold of the step that
-  appends $x p$ for the divisors $x \le \lfloor b_{\mathrm{high}}/p \rfloor$, from $(1)$, is the
-  list of the products of the sublists of the primes that are at most $b_{\mathrm{high}} \ge 1$, in
-  the order of \verb|List.sublists|; the primes of a factorization of $n \ne 0$, in increasing
-  order, are the distinct prime factors of $n$; so for the primes of a factorization of $|c_d|$ with
-  the cofactor $1$ the fold is the list of the squarefree divisors of $|c_d|$ up to
-  $b_{\mathrm{high}}$ in binary counting. So, for $c_d \ne 0$ and $1 \le b_{\mathrm{high}}$, the
-  divisor set-up succeeds exactly when $|c_d|$ is factored by trial division and has fewer than
-  $\mathrm{maxDivisors}$ squarefree divisors at most $b_{\mathrm{high}}$, and its divisors are then
-  those of binary counting.
+  \lean{Ratpoints.Setup.foldl_extendDivisors_eq_filter, Ratpoints.Setup.IsFactorization.map_fst_eq_dedup, Ratpoints.Setup.foldl_extendDivisors_eq_binaryDivisors, Ratpoints.Setup.map_snd_run_setupUs1}
+  \leanok
+  For a list of positive numbers $p$, the fold of the step that appends $x p$ for the divisors
+  $x \le \lfloor b_{\mathrm{high}}/p \rfloor$, from $(1)$, is the list of the products of the
+  sublists of the list that are at most $b_{\mathrm{high}} \ge 1$, in the order of
+  \verb|List.sublists|; the primes of a factorization of $n \ne 0$, in increasing order, are the
+  distinct prime factors of $n$; so for the primes of a factorization of $|c_d|$ with the cofactor
+  $1$ the fold is the list of the squarefree divisors of $|c_d|$ up to $b_{\mathrm{high}}$ in binary
+  counting. So, for $c_d \ne 0$ and $1 \le b_{\mathrm{high}}$, the divisor set-up succeeds exactly
+  when $|c_d|$ is factored by trial division and has fewer than $\mathrm{maxDivisors}$ squarefree
+  divisors at most $b_{\mathrm{high}}$, and its divisors are then those of binary counting.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   By induction on the primes, the doubling step adding the products with the new prime after the old
   ones, as \verb|List.sublists| does; the rest from the contracts of the factorization and of the
   divisor set-up (Definition~\ref{def:setupUs1}).

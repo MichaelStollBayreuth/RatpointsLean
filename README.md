@@ -110,7 +110,7 @@ change. The blueprint and the API documentation will be at
 | part | contents | depends on |
 |---|---|---|
 | `Ratpoints/Model` | the executable model as plain code, one definition per component of the C code; no Mathlib, no contracts, no experimental options | Lean core, `Std` |
-| `Ratpoints/Spec` | the specification: the binary form, the normalized points of height at most `H` | Mathlib |
+| `Ratpoints/Spec` | the specification: the binary form, the normalized points of height at most `H`, their order in the output of ratpoints | Mathlib |
 | `Ratpoints/Proof` | the contract of each component as a theorem, the main theorems, and the lemmas that Lean core lacks, on vectors, arrays, lists, ranges, natural numbers and integers (`Ratpoints/Proof/Containers.lean`) and on words (`Ratpoints/Proof/Bits.lean`) | Mathlib, the specification, the model, the candidates for Mathlib |
 | `Ratpoints/Mathlib` | statements of general interest, as candidates for Mathlib | Mathlib |
 | `comparator/` | the specification restated, and the main theorems with `sorry`, for [Comparator](https://github.com/leanprover/comparator); their proofs by the library | Mathlib, the model (the challenge); the library (the solution) |

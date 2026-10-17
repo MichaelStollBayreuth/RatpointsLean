@@ -220,17 +220,18 @@ $\gcd(b, G(a, b)) = \gcd(b, c_d)$. This restricts the denominators of the points
 \end{definition}
 
 \begin{definition}[The divisors of the leading coefficient]\label{def:setupUs1}
-  \uses{def:valuation, def:primeTable, def:useCLong}
-  \lean{Ratpoints.maxDivisors, Ratpoints.Setup.DenInfo, Ratpoints.Setup.factorLcf, Ratpoints.Setup.squarefreeDivisors, Ratpoints.Setup.slope, Ratpoints.Setup.setupUs1, Ratpoints.Setup.IsFactorization, Ratpoints.Setup.factorLcf_spec, Ratpoints.Setup.extendDivisors, Ratpoints.Setup.squarefreeDivisors_spec, Ratpoints.Setup.slope_spec, Ratpoints.Setup.setupUs1_spec, Ratpoints.Setup.isFactorization_of_run_factorLcf_eq, Ratpoints.Setup.exists_of_setupUs1_eq_some, Ratpoints.Setup.eq_foldl_of_setupUs1_eq_some, Ratpoints.mem_primeTable_of_prime, Ratpoints.mem_of_toList_primeTable_eq, List.mem_of_mem_append_cons_of_rel, Nat.prime_of_lt_mul_self, Ratpoints.Setup.fitsLong_mul_of_le_div, Ratpoints.Setup.mul_self_lt_of_mem_primeTable, Ratpoints.Setup.fitsLong_of_lt_mul_self}
+  \uses{def:valuation, def:primeTable, def:useCLong, def:binaryDivisors, lem:roughPart}
+  \lean{Ratpoints.maxDivisors, Ratpoints.Setup.DenInfo, Ratpoints.Setup.factorLcf, Ratpoints.Setup.squarefreeDivisors, Ratpoints.Setup.slope, Ratpoints.Setup.setupUs1, Ratpoints.Setup.IsFactorization, Ratpoints.Setup.FactorLcfInvariant, Ratpoints.Setup.CofactorInvariant, Ratpoints.Setup.FactorLcfInvariant.isRoughPart, Ratpoints.Setup.FactorLcfInvariant.iff_and_isFactorization, Ratpoints.Setup.factorLcf_spec, Ratpoints.Setup.extendDivisors, Ratpoints.Setup.squarefreeDivisors_spec, Ratpoints.Setup.slope_spec, Ratpoints.Setup.setupUs1_spec, Ratpoints.Setup.run_setupUs1_eq, Ratpoints.Setup.snd_run_factorLcf_eq_one_iff, Ratpoints.Setup.run_squarefreeDivisors_eq_or, Ratpoints.Setup.isFactorization_of_run_factorLcf_eq, Ratpoints.Setup.exists_of_setupUs1_eq_some, Ratpoints.Setup.eq_foldl_of_setupUs1_eq_some, Ratpoints.mem_primeTable_of_prime, Ratpoints.mem_of_toList_primeTable_eq, Ratpoints.forIn_toList_primeTable, Ratpoints.two_lt_of_mem_toList_primeTable, Ratpoints.eq_of_toList_primeTable_eq_append_singleton, Ratpoints.le_of_toList_primeTable_eq_append_cons_cons, List.mem_of_mem_append_cons_of_rel, Nat.prime_of_lt_mul_self, Ratpoints.Setup.fitsLong_mul_of_le_div, Ratpoints.Setup.mul_self_lt_of_mem_primeTable, Ratpoints.Setup.fitsLong_of_lt_mul_self}
   \leanok
   For odd $d$ and $|c_d| \ne 1$, as \verb|setup_us1| computes it: the factorization of $|c_d|$, the
   power of $2$ divided off, then for the odd primes $p$ of the table in turn, while the cofactor is
   not $1$, a cofactor below $p^2$ taken as a prime with the valuation $1$, and otherwise the power
   of $p$ divided off (\csource{find_points.c}{777}{860}); complete exactly when the cofactor ends at
-  $1$, that is when the part of $|c_d|$ prime to $2 \cdot 3 \cdots 1019$ is below $1021^2$ or a
-  power of $1021$; the squarefree divisors at most $b_{\mathrm{high}}$, from $1$, each prime in turn
-  appending $x p$ for every divisor $x \le \lfloor b_{\mathrm{high}} / p \rfloor$ found so far, in
-  their order, and stopping at $\mathrm{maxDivisors} = 512$ entries (\verb|MAX_DIVISORS|,
+  $1$, that is when $|c_d|$ is factored by trial division (Definition~\ref{def:binaryDivisors}): the
+  part of $|c_d|$ prime to $2 \cdot 3 \cdots 1019$ is below $1021^2$ or a power of $1021$; the
+  squarefree divisors at most $b_{\mathrm{high}}$, from $1$, each prime in turn appending $x p$ for
+  every divisor $x \le \lfloor b_{\mathrm{high}} / p \rfloor$ found so far, in their order, and
+  stopping at $\mathrm{maxDivisors} = 512$ entries (\verb|MAX_DIVISORS|,
   \csource{find_points.c}{121}{121}; \csource{find_points.c}{864}{880}); and for each prime $p$ of
   $c_d$ a record of $p$, its valuation $v_p(c_d)$ and the slope (\verb|use_squares1_info|,
   \csource{find_points.c}{155}{155}), the least $n \ge 1$ with $(d - k) n > v_p(c_d) - v_p(c_k)$ for
@@ -241,14 +242,23 @@ $\gcd(b, G(a, b)) = \gcd(b, c_d)$. This restricts the denominators of the points
   \csource{find_points.c}{863}{863}, \csource{find_points.c}{881}{893},
   \csource{find_points.c}{914}{935}). The primes come in increasing order, so the divisors are the
   products of the subsets of the primes that are at most $b_{\mathrm{high}}$, in the order of their
-  bit masks, each once. The contracts: a factorization with the cofactor $1$ lists the distinct
-  primes of $|c_d|$ with their valuations, since the table holds every odd prime below $1022$ in
-  increasing order, which \verb|decide| checks, so that a cofactor below $p^2$, every smaller prime
-  divided out, is a prime; a list of fewer than $\mathrm{maxDivisors}$ divisors is the fold of the
-  step that appends $x p$ for the divisors $x \le \lfloor b_{\mathrm{high}} / p \rfloor$; the slope
-  $n$ is at least $1$ with $(d - k) n \ge 1 + v_p(c_d) - v_p(c_k)$ for every $k < d$, with the
-  valuation of Definition~\ref{def:valuation}, since \verb|CEIL| rounds up; and the products $x p$
-  are \verb|long|s, and the square $p^2$ of a prime of the table and a cofactor below it are
+  bit masks, each once (Lemma~\ref{lem:binaryDivisors}). The contracts: the factorization ends with
+  the cofactor $1$ exactly when $|c_d|$ is factored by trial division, and then it lists the primes
+  of $|c_d|$ in increasing order with their valuations, by one invariant of its loop: the product of
+  the prime powers found and the cofactor is $|c_d|$, the primes found ascend, and while a prime $p$
+  of the table is still to come, the cofactor is the rough part of $|c_d|$ at $p$
+  (Lemma~\ref{lem:roughPart}), since the table begins with $3$, ends with $1021$, holds every odd
+  prime below $1022$ in increasing order and so no prime between two neighbours, which \verb|decide|
+  checks; so a cofactor below $p^2$, every smaller prime divided out, is a prime, and after the last
+  prime, or when the cofactor is below the square of the next prime, the cofactor is $1$ exactly
+  when the factorization is complete; the doubling loop gives the fold of the step that appends
+  $x p$ for the divisors $x \le \lfloor b_{\mathrm{high}} / p \rfloor$ or, when it stops at
+  $\mathrm{maxDivisors}$ entries, a prefix of it with at least $\mathrm{maxDivisors}$ entries; the
+  set-up returns its records and its divisors exactly when the factorization ends with the cofactor
+  $1$ and there are fewer than $\mathrm{maxDivisors}$ divisors, and nothing otherwise; the slope $n$
+  is at least $1$ with $(d - k) n \ge 1 + v_p(c_d) - v_p(c_k)$ for every $k < d$, with the valuation
+  of Definition~\ref{def:valuation}, since \verb|CEIL| rounds up; and the products $x p$ are
+  \verb|long|s, and the square $p^2$ of a prime of the table and a cofactor below it are
   \verb|int|s, so that the test of the C code whether the cofactor is a \verb|long| always passes
   and the record holds it.
 \end{definition}
@@ -817,9 +827,10 @@ Mathlib: \verb|Algebra/BigOperators/Group/List/Basic|, \verb|Algebra/Group/Even|
 \verb|Data/Int/GCD|, \verb|Data/List/Basic|, \verb|Data/List/Pairwise|, \verb|Data/Nat/Factors|
 (with the part of a number prime to another, \verb|Nat.coprimePart|, which is $b^*$),
 \verb|Data/Nat/PadicValNat|, \verb|Data/Nat/Prime/Defs|, \verb|Data/Nat/Squarefree|,
-\verb|Data/ZMod/Basic|, \verb|NumberTheory/LegendreSymbol/JacobiSymbol| and
-\verb|NumberTheory/Padics/PadicVal/Basic|; that the macro \verb|CEIL| rounds up, a fact about the C
-code, is a private lemma next to its use.
+\verb|Data/ZMod/Basic|, \verb|NumberTheory/LegendreSymbol/JacobiSymbol|,
+\verb|NumberTheory/Padics/PadicVal/Basic| and \verb|NumberTheory/SmoothNumbers| (with the part of
+a number at the primes from a bound on, \verb|Nat.IsRoughPart|, Lemma~\ref{lem:roughPart}); that the
+macro \verb|CEIL| rounds up, a fact about the C code, is a private lemma next to its use.
 
 \section{The evidence}\label{sec:den-evidence}
 

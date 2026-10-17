@@ -6,11 +6,13 @@ Authors: Michael Stoll
 module
 
 public import Ratpoints.Spec.Basic
+public import Ratpoints.Spec.Order
 
 /-!
 # The specification
 
 The specification of ratpoints: the binary form of the polynomial, the predicate "is a normalized
-point of height at most `H`" and the finite set of these points, with their basic API. It
-depends on Mathlib only, so that it can be read without the model.
+point of height at most `H`" and the finite set of these points, with their basic API
+(`Ratpoints.Spec.Basic`), and the list of these points in the order in which ratpoints finds them
+(`Ratpoints.Spec.Order`). It depends on Mathlib only, so that it can be read without the model.
 -/

@@ -43,7 +43,10 @@ least one bit array.
 * `Ratpoints.pairwise_lt_toList_primeTable`, `Ratpoints.lt_of_mem_primeTable`,
   `Ratpoints.mem_primeTable_of_prime`: the table lists every odd prime below 1022, and nothing
   larger, in increasing order, which `decide` checks; `Ratpoints.mem_of_toList_primeTable_eq`: so it
-  lists every odd prime below an entry before it.
+  lists every odd prime below an entry before it;
+  `Ratpoints.le_of_toList_primeTable_eq_append_cons_cons`: no prime lies between two neighbours;
+  `Ratpoints.forIn_toList_primeTable`, `Ratpoints.eq_of_toList_primeTable_eq_append_singleton`: it
+  begins with `3` and ends with `1021`.
 * `Ratpoints.getElem!_primeTable_lt_maxPrimeEven`: the first `Ratpoints.numPrimes` primes of the
   table are below `Ratpoints.maxPrimeEven`; `Ratpoints.getElem!_primeTable_le_of_le`: the table
   increases; `Ratpoints.getElem!_primeTable_inj`: different positions hold different primes.
@@ -133,6 +136,36 @@ theorem mem_of_toList_primeTable_eq {pref suff : List ℕ} {cur q : ℕ}
   exact List.mem_of_mem_append_cons_of_rel (hl ▸ pairwise_lt_toList_primeTable)
     (hl ▸ Array.mem_toList_iff.mpr
       (mem_primeTable_of_prime hq h2 ((lt_of_mem_primeTable hcur).trans' hlt))) hlt
+
+/-- The table begins with `3`, the first prime of the loop of `Ratpoints.Setup.factorLcf`. -/
+theorem forIn_toList_primeTable : ForIn.toList primeTable = 3 :: primeTable.toList.tail := by
+  rw [Std.Internal.ForIn.toList_array]
+  rfl
+
+theorem two_lt_of_mem_toList_primeTable {q : ℕ} (hq : q ∈ primeTable.toList) : 2 < q := by
+  have h : (primeTable.toList.all fun p ↦ 2 < p) = true := by decide
+  simpa using List.all_eq_true.mp h q hq
+
+/-- The last prime of the table is `1021`. -/
+theorem eq_of_toList_primeTable_eq_append_singleton {pref : List ℕ} {cur : ℕ}
+    (hl : primeTable.toList = pref ++ [cur]) : cur = 1021 := by
+  have h : primeTable.toList.getLast? = some 1021 := by decide
+  simpa [hl] using h
+
+/-- No prime lies strictly between two neighbours of the table, which lists every odd prime below
+1022 in increasing order. -/
+theorem le_of_toList_primeTable_eq_append_cons_cons {pref suff : List ℕ} {cur next p : ℕ}
+    (hl : primeTable.toList = pref ++ cur :: next :: suff) (hp : p.Prime) (hcp : cur < p) :
+    next ≤ p := by
+  refine Nat.le_of_not_lt fun hlt ↦ ?_
+  have hpw := pairwise_lt_toList_primeTable
+  rw [hl] at hpw
+  have h3 : 2 < cur := two_lt_of_mem_toList_primeTable (by simp [hl])
+  have hm := mem_of_toList_primeTable_eq (pref := pref ++ [cur]) (suff := suff) (by simp [hl]) hp
+    (by lia) hlt
+  rcases List.mem_append.mp hm with hm | hm
+  · exact absurd ((List.pairwise_append.mp hpw).2.2 p hm cur (by simp)) (by lia)
+  · lia [List.mem_singleton.mp hm]
 
 theorem numPrimes_le_size_primeTable : numPrimes ≤ primeTable.size :=
   (List.length_filter_le _ _).trans_eq primeTable.length_toList
@@ -230,16 +263,6 @@ def ModulusFactorsPowInvariant (r p : ℕ) : Std.WP.WhileInvariant (ℕ × ℕ) 
   .mk fun exit s ↦ s.1 * p ^ s.2 = r ∧ 0 < s.1 ∧ (s.2 = 0 → s.1 % p = 0) ∧
     (exit = true → s.1 % p ≠ 0)
 
--- The positions of the factors after a push of a factor at a position above all of them.
-private theorem pairwise_map_fst_toList_push {fac : Array (ℕ × ℕ)} {g : ℕ × ℕ}
-    (h : (fac.toList.map Prod.fst).Pairwise (· < ·)) (hg : ∀ f ∈ fac.toList, f.1 < g.1) :
-    ((fac.push g).toList.map Prod.fst).Pairwise (· < ·) := by
-  rw [Array.toList_push, List.map_append, List.pairwise_append]
-  refine ⟨h, List.pairwise_singleton _ _, fun _ ha _ hb ↦ ?_⟩
-  obtain ⟨f, hf, rfl⟩ := List.mem_map.mp ha
-  rw [List.map_cons, List.map_nil, List.mem_singleton] at hb
-  exact hb ▸ hg f hf
-
 theorem modulusFactorsInvariant_zero (m : ℕ) : ModulusFactorsInvariant m 0 (m, #[]) := by
   simp [ModulusFactorsInvariant]
 
@@ -287,7 +310,7 @@ theorem ModulusFactorsInvariant.push_find {m rest pn : ℕ} {fac : Array (ℕ ×
     (fun _ hj ↦ (one_lt_getElem!_primeTable hj).ne')
     fun _ hj _ ↦ lt_mul_self_getElem!_primeTable_of_le_one le_rfl hj
   · simp [hm, hr, Nat.mul_comm]
-  · exact pairwise_map_fst_toList_push hpw fun f hf' ↦ (hfac f hf').1.trans_le hpn.1
+  · exact Array.pairwise_map_toList_push.mpr ⟨hpw, fun f hf' ↦ (hfac f hf').1.trans_le hpn.1⟩
   · exact Array.forall_mem_toList_push (fun f hf' ↦ ⟨(hfac f hf').1.trans (by lia), (hfac f hf').2⟩)
       ⟨by lia, le_rfl⟩
   · exact fun _ hj ↦ ⟨(one_lt_getElem!_primeTable hj).ne', by lia,
@@ -358,7 +381,7 @@ theorem ModulusFactorsInvariant.push_pow {m rest x e : ℕ} {fac : Array (ℕ ×
   · simp only [Array.toList_push, List.map_append, List.prod_append, hm, ← hxe, List.map_cons,
       List.map_nil, List.prod_singleton]
     ac_rfl
-  · exact pairwise_map_fst_toList_push hpw fun f hf' ↦ (hfac f hf').1
+  · exact Array.pairwise_map_toList_push.mpr ⟨hpw, fun f hf' ↦ (hfac f hf').1⟩
   · exact Array.forall_mem_toList_push (fun f hf' ↦ ⟨(hfac f hf').1.trans (by lia), (hfac f hf').2⟩)
       ⟨by lia, Nat.one_le_iff_ne_zero.mpr fun h0 ↦ hx (he h0)⟩
 
