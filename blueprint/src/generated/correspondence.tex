@@ -14,13 +14,13 @@ file & lines of code & modelled & excluded & not yet recorded \\
 \texttt{init.c} & 302 & 238 & 64 & 0 \\
 \texttt{sturm.c} & 215 & 50 & 0 & 165 \\
 \texttt{rp-private.h} & 282 & 240 & 18 & 24 \\
-\texttt{ratpoints.h} & 128 & 18 & 1 & 109 \\
+\texttt{ratpoints.h} & 128 & 23 & 1 & 104 \\
 \texttt{primes.h} & 11 & 11 & 0 & 0 \\
 \texttt{gen\_find\_points\_h.c} & 76 & 60 & 16 & 0 \\
 \texttt{gen\_init\_sieve\_h.c} & 26 & 13 & 13 & 0 \\
 \texttt{main.c} & 779 & 234 & 9 & 536 \\
 \hline
-total & 5883 & 3231 & 741 & 1911 \\
+total & 5883 & 3236 & 741 & 1906 \\
 \end{tabular}
 \end{center}
 
@@ -1054,7 +1054,16 @@ total & 5883 & 3231 & 741 & 1911 \\
 \item \csource{ratpoints.h}{359}{359}: not yet recorded (1 lines of code)
 \item \csource{ratpoints.h}{362}{362}: modelled by \lname{Ratpoints.findPoints}
   (deviation of \lname{Ratpoints.findPoints}: one function for \texttt{find\_points}, \texttt{find\_points\_work} and \texttt{find\_points\_work\_1}, which the library calls in turn. The refusals of the program, in its order and with its errors (\texttt{Ratpoints.Refusal}), for the codes and the order of the library: fewer than two coefficients are refused on the length of \texttt{c}, as the program refuses them, where the library refuses an empty list as a negative degree and one coefficient as the degree 0 (a longer list of degree 0 fails the test of the leading zeros first); and the height bound, which the program checks before it calls the library, comes before the test of the leading zeros, which the library makes first, so that \texttt{5 0} with \texttt{H = 0} is error 4, as the program gives it. The degree with the leading zeros dropped is \texttt{Ratpoints.BruteForce.degree c}. A natural number \texttt{H} for the \texttt{long} \texttt{height} of the arguments (\texttt{ratpoints.h:362}), so that \texttt{H = 0} stands for the heights below 1 that line 4658 refuses; a height that is not a \texttt{long}, \texttt{2 \textasciicircum{} 63} or more, is refused with error 4, as the program refuses it when it reads the height (\texttt{Ratpoints.Cli.heightBound}), where the library cannot be given one, its height being a \texttt{long}. A list for the array of GMP integers and its scratch integers \texttt{work}, with nothing written back to the caller (the reversed coefficients, the degree, the flags), so that there is no state between calls and the reset of the flags clears nothing; the points are returned as a list, for the count \texttt{total} and the flag \texttt{quit} of the callback (stage G); the points at infinity and the square test of the leading coefficient are decided where they are used (\texttt{Ratpoints.Sieve.pointsAtInfinity}, \texttt{Ratpoints.Setup.reversal}, \texttt{Ratpoints.searchPoints}). Of the Sturm step only its test for a repeated factor: the rest, which restricts the search region and its exit when the polynomial is negative on the whole of it, is stage H, so that \texttt{sturm\_empty} is never set. No search region (stage H); no failure for lack of memory, which the model cannot meet; no output under \texttt{RATPOINTS\_VERBOSE}.)
-\item \csource{ratpoints.h}{363}{444}: not yet recorded (50 lines of code)
+\item \csource{ratpoints.h}{363}{411}: not yet recorded (34 lines of code)
+\item \csource{ratpoints.h}{414}{414}: modelled by \lname{Ratpoints.CheckFlags}
+  (deviation of \lname{Ratpoints.CheckFlags}: a structure with a Boolean for each of the three bits, for the bits of the word \texttt{flags} of the arguments, which \texttt{\_ratpoints\_check\_point} reads through its worker and \texttt{find\_points\_work\_1} directly; with stage G, the bits \texttt{RATPOINTS\_NO\_CHECK} and \texttt{RATPOINTS\_NO\_Y} copied from the options of the search (\texttt{Ratpoints.Options}), and \texttt{RATPOINTS\_REVERSED} from the reversal check (\texttt{Ratpoints.Setup.reversal}).)
+\item \csource{ratpoints.h}{415}{430}: not yet recorded (9 lines of code)
+\item \csource{ratpoints.h}{436}{437}: modelled by \lname{Ratpoints.Answer}
+  (deviation of \lname{Ratpoints.Answer}: the result of the call returned as a value, for the \texttt{int} that \texttt{process} returns, the \texttt{int} that it writes through the pointer \texttt{quit}, which the library clears before the search and tests after each call, so that it is clear at every call and the callback takes no argument for it, and the data that it may change through the pointer \texttt{info}; an integer for the \texttt{int}, with no bound, so that the count of a search has no range obligation (\texttt{Ratpoints.Delivery}); a Boolean for the \texttt{int} \texttt{*quit}.)
+\item \csource{ratpoints.h}{439}{439}: not yet recorded (1 lines of code)
+\item \csource{ratpoints.h}{441}{442}: modelled by \lname{Ratpoints.Answer}
+  (deviation of \lname{Ratpoints.Answer}: the result of the call returned as a value, for the \texttt{int} that \texttt{process} returns, the \texttt{int} that it writes through the pointer \texttt{quit}, which the library clears before the search and tests after each call, so that it is clear at every call and the callback takes no argument for it, and the data that it may change through the pointer \texttt{info}; an integer for the \texttt{int}, with no bound, so that the count of a search has no range obligation (\texttt{Ratpoints.Delivery}); a Boolean for the \texttt{int} \texttt{*quit}.)
+\item \csource{ratpoints.h}{444}{444}: not yet recorded (1 lines of code)
 \end{itemize}
 
 \section*{\texttt{primes.h}}

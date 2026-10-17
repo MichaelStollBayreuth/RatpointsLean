@@ -23,6 +23,7 @@ public import Ratpoints.Model.BruteForce
 public import Ratpoints.Model.Candidate
 public import Ratpoints.Model.Cli
 public import Ratpoints.Model.Constants
+public import Ratpoints.Model.Delivery
 public import Ratpoints.Model.Denominators
 public import Ratpoints.Model.FindPoints
 public import Ratpoints.Model.FirstStage
@@ -39,6 +40,8 @@ public import Ratpoints.Proof.Bits
 public import Ratpoints.Proof.BruteForce
 public import Ratpoints.Proof.CompositeRows
 public import Ratpoints.Proof.Containers
+public import Ratpoints.Proof.Delivery
+public import Ratpoints.Proof.DeliveryCount
 public import Ratpoints.Proof.Denominators
 public import Ratpoints.Proof.Divisors
 public import Ratpoints.Proof.FindPoints

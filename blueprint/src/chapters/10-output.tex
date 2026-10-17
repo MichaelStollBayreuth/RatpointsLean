@@ -206,18 +206,18 @@ protocol theorem (Theorem~\ref{thm:protocol}) carries them over to the search wi
 \section{The delivery}\label{sec:delivery}
 
 \begin{definition}[The callback and the delivery]\label{def:delivery}
-  Proposed names: \lname{Ratpoints.Answer}, \lname{Ratpoints.Delivery},
-  \lname{Ratpoints.Delivery.call}, \lname{Ratpoints.CheckFlags},
-  \lname{Ratpoints.Delivery.callMapped}, \lname{Ratpoints.appendPoint}. What one call of the
-  callback gives: the weight that it returns, an integer with no bound, whether it set \verb|*quit|,
-  and the data after the call (\csource{ratpoints.h}{436}{437}, \csource{ratpoints.h}{441}{442}, the
-  prototypes of the callback, which Definition~\ref{def:findPointsWith} shares); the callback is a
-  function of $x$, $z$, $y$ and the data, in the order of the C code, that returns what the call
-  gives, with no argument for \verb|quit|, which is clear at every call. The delivery of a search:
-  the data of the callback, the count, the sum of the weights so far, and the flag of the stop; one
-  call \verb|total += process(x, z, y, info, &quit)| on a delivery adds the weight to the count and
-  takes the flag and the data that the call leaves. The bits of the flags that the exact check and
-  the points at infinity read, \verb|RATPOINTS_REVERSED|, \verb|RATPOINTS_NO_CHECK| and
+  \lean{Ratpoints.Answer, Ratpoints.Delivery, Ratpoints.Delivery.call, Ratpoints.CheckFlags, Ratpoints.Delivery.callMapped, Ratpoints.appendPoint}
+  \leanok
+  What one call of the callback gives: the weight that it returns, an integer with no bound, whether
+  it set \verb|*quit|, and the data after the call (\csource{ratpoints.h}{436}{437},
+  \csource{ratpoints.h}{441}{442}, the prototypes of the callback, which
+  Definition~\ref{def:findPointsWith} shares); the callback is a function of $x$, $z$, $y$ and the
+  data, in the order of the C code, that returns what the call gives, with no argument for
+  \verb|quit|, which is clear at every call. The delivery of a search: the data of the callback, the
+  count, the sum of the weights so far, and the flag of the stop; one call
+  \verb|total += process(x, z, y, info, &quit)| on a delivery adds the weight to the count and takes
+  the flag and the data that the call leaves. The bits of the flags that the exact check and the
+  points at infinity read, \verb|RATPOINTS_REVERSED|, \verb|RATPOINTS_NO_CHECK| and
   \verb|RATPOINTS_NO_Y|, as three Booleans, all clear by default (\csource{ratpoints.h}{414}{414},
   which Definition~\ref{def:Outcome} shares). One call with the point $(a : y : b)$ of the
   polynomial searched, mapped back to the caller's curve when the flag of the reversal is set: with
@@ -227,52 +227,43 @@ protocol theorem (Theorem~\ref{thm:protocol}) carries them over to the search wi
   model that appends each point $(x, y, z)$ to an array, with the weight $1$, and never stops the
   search. The delivery, the call and the mapped call have no C ranges of their own: the lines they
   stand for (lines 4570-4571 and 3129 for the count and the two flags of the stop, \verb|quit| and
-  \verb|wk->quit|, and the branches of the map)
-  belong to their callers; the appending callback models no C code.
+  \verb|wk->quit|, and the branches of the map) belong to their callers; the appending callback
+  models no C code.
 \end{definition}
 
 \begin{definition}[The reference of the delivery]\label{def:deliver}
   \uses{def:delivery}
-  Proposed name: \lname{Ratpoints.Delivery.deliver}. The delivery of the points of a list $L$, in
-  their order, to the callback on a delivery $r$: for each point $(x, y, z)$ of $L$, while the flag
-  of $r$ is clear, the call with $(x : y : z)$; the points after a call that sets the flag, and all
-  of them when it is set at the start, are passed over. It is a reference of the model, as the
-  brute-force reference is, and models no C code: the search delivers each point where it finds it
-  and tests the flag where the C code tests \verb|quit|, and this fold over the list of the points
-  of \verb|findPoints| is what that delivery is compared with (Theorem~\ref{thm:protocol}).
+  \lean{Ratpoints.Delivery.deliver}
+  \leanok
+  The delivery of the points of a list $L$, in their order, to the callback on a delivery $r$: for
+  each point $(x, y, z)$ of $L$, while the flag of $r$ is clear, the call with $(x : y : z)$; the
+  points after a call that sets the flag, and all of them when it is set at the start, are passed
+  over. It is a reference of the model, as the brute-force reference is, and models no C code: the
+  search delivers each point where it finds it and tests the flag where the C code tests
+  \verb|quit|, and this fold over the list of the points of \verb|findPoints| is what that delivery
+  is compared with (Theorem~\ref{thm:protocol}).
 \end{definition}
 
 \begin{lemma}[The delivery of a list]\label{lem:deliver}
   \uses{def:deliver}
-  Proposed names: \lname{Ratpoints.Delivery.deliver\_nil}, \lname{Ratpoints.Delivery.deliver\_cons},
-  \lname{Ratpoints.Delivery.deliver\_append}, \lname{Ratpoints.Delivery.deliver\_flatMap},
-  \lname{Ratpoints.Delivery.deliver\_cons\_of\_quit\_eq\_false},
-  \lname{Ratpoints.Delivery.deliver\_singleton\_of\_quit\_eq\_false},
-  \lname{Ratpoints.Delivery.deliver\_of\_quit},
-  \lname{Ratpoints.Delivery.deliver\_append\_of\_quit},
-  \lname{Ratpoints.Delivery.deliver\_eq\_of\_prefix},
-  \lname{Ratpoints.Delivery.deliver\_flatMap\_eq\_of\_prefix},
-  \lname{Ratpoints.Delivery.ite\_quit\_eq\_deliver\_append},
-  \lname{Ratpoints.Delivery.deliver\_appendPoint},
-  \lname{Ratpoints.Delivery.deliver\_eq\_foldl\_call},
-  \lname{Ratpoints.Delivery.exists\_prefix\_deliver\_eq},
-  \lname{Ratpoints.Delivery.total\_deliver\_eq\_sum},
-  \lname{Ratpoints.Delivery.exists\_prefix\_total\_deliver\_eq\_sum}. The delivery of the empty list
-  leaves a delivery as it is, and that of $p :: L$ delivers $L$ after the call with $p$, when the
-  flag is clear; the delivery of $L_1 \mathbin{+\!\!+} L_2$ delivers $L_2$ after $L_1$, and that of
-  a \verb|flatMap| is the fold of the deliveries of its parts. A delivery whose flag is set stays as
-  it is, so that nothing changes after a list whose delivery sets the flag: for a prefix $M$ of $L$
-  whose delivery sets it, the delivery of $L$ is that of $M$, also for the prefix of the index list
-  of a \verb|flatMap|; and a test of the flag after the delivery of $L_1$, followed by the delivery
-  of $L_2$ when it is clear, is the delivery of $L_1 \mathbin{+\!\!+} L_2$. With the appending
-  callback, from a delivery whose flag is clear, the array grows by $L$ and the count by its length.
-  For every list $L$ there is a prefix $M$ of $L$ whose delivery is that of $L$, such that the flag
-  is clear before each point of $M$, so that each of them is called, and $M = L$ unless the delivery
-  of $M$ sets the flag; the count grows by the sum of the weights of these calls, each taken on the
-  data that the calls before it left.
+  \lean{Ratpoints.Delivery.deliver_nil, Ratpoints.Delivery.deliver_cons, Ratpoints.Delivery.deliver_append, Ratpoints.Delivery.deliver_flatMap, Ratpoints.Delivery.deliver_cons_of_quit_eq_false, Ratpoints.Delivery.deliver_singleton_of_quit_eq_false, Ratpoints.Delivery.deliver_of_quit, Ratpoints.Delivery.deliver_append_of_quit, Ratpoints.Delivery.deliver_eq_of_prefix, Ratpoints.Delivery.deliver_flatMap_eq_of_prefix, Ratpoints.Delivery.ite_quit_eq_deliver_append, Ratpoints.Delivery.deliver_appendPoint, Ratpoints.Delivery.deliver_eq_foldl_call, Ratpoints.Delivery.exists_prefix_deliver_eq, Ratpoints.Delivery.total_deliver_eq_sum, Ratpoints.Delivery.exists_prefix_total_deliver_eq_sum}
+  \leanok
+  The delivery of the empty list leaves a delivery as it is, and that of $p :: L$ delivers $L$ after
+  the call with $p$, when the flag is clear; the delivery of $L_1 \mathbin{+\!\!+} L_2$ delivers
+  $L_2$ after $L_1$, and that of a \verb|flatMap| is the fold of the deliveries of its parts. A
+  delivery whose flag is set stays as it is, so that nothing changes after a list whose delivery
+  sets the flag: for a prefix $M$ of $L$ whose delivery sets it, the delivery of $L$ is that of $M$,
+  also for the prefix of the index list of a \verb|flatMap|; and a test of the flag after the
+  delivery of $L_1$, followed by the delivery of $L_2$ when it is clear, is the delivery of
+  $L_1 \mathbin{+\!\!+} L_2$. With the appending callback, from a delivery whose flag is clear, the
+  array grows by $L$ and the count by its length. For every list $L$ there is a prefix $M$ of $L$
+  whose delivery is that of $L$, such that the flag is clear before each point of $M$, so that each
+  of them is called, and $M = L$ unless the delivery of $M$ sets the flag; the count grows by the
+  sum of the weights of these calls, each taken on the data that the calls before it left.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   By induction on the list, from the fold. The count as a sum over the indices of $M$ needs
   Mathlib's sums over \verb|Fin|, in a file of its own, and the rest is core.
 \end{proof}

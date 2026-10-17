@@ -2303,6 +2303,12 @@
         "Ratpoints.findPoints"
       ]
     },
+    "ratpoints.h:414-414": {
+      "hash": "992bfd8377ff8e01e181945eb5bebd4725b9df34b61866a8e690f7c866bc52a0",
+      "owners": [
+        "Ratpoints.CheckFlags"
+      ]
+    },
     "ratpoints.h:42-42": {
       "hash": "56ab9e64c7203241c87a2682d97a12b9e87c8796b0b9117d90238b032e1691de",
       "owners": [
@@ -2313,6 +2319,18 @@
       "hash": "d80b73efea196cc15fa2904b14df20d243f0b22e7382af26d59e9d5abd90bd01",
       "owners": [
         "excluded (other)"
+      ]
+    },
+    "ratpoints.h:436-437": {
+      "hash": "c9ae64e72fa5dce959eac5c5704548dc4b069cda5671cb9d37f9f77cd84bd9ef",
+      "owners": [
+        "Ratpoints.Answer"
+      ]
+    },
+    "ratpoints.h:441-442": {
+      "hash": "fb2311558bace12937dce2dc75008d00d8508571da2cea3c3fbdeb1027498e3b",
+      "owners": [
+        "Ratpoints.Answer"
       ]
     },
     "ratpoints.h:95-97": {
