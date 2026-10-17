@@ -41,7 +41,7 @@ pieces together, in `Ratpoints.Proof.Output`.
 
 namespace Ratpoints
 
-open BruteForce Sieve
+open BruteForce
 
 /-! ### The polynomial searched -/
 

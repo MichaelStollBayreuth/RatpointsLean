@@ -7,9 +7,10 @@ module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 public import Mathlib.Data.Fintype.Basic
-public import Ratpoints.Proof.Delivery
+public import Ratpoints.Model.Delivery
 
 import Mathlib.Algebra.BigOperators.Fin
+import Ratpoints.Proof.Delivery
 
 /-!
 # The count of the delivery of a list of points

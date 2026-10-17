@@ -5,13 +5,15 @@ Authors: Michael Stoll
 -/
 module
 
+public import Ratpoints.Proof.Packing
 public import Ratpoints.Proof.RowStore
-public import Ratpoints.Proof.Scan
+public import Ratpoints.Proof.Stages
 
 import Ratpoints.Proof.BitRange
 import Ratpoints.Proof.Containers
 import Ratpoints.Proof.Delivery
 import Ratpoints.Proof.FirstStage
+import Ratpoints.Proof.Scan
 import Ratpoints.Proof.Sieve
 import Std.Tactic.Do
 

@@ -962,7 +962,6 @@ private theorem run_sievingInfo_spec {c : List ℤ} {u checkDenom : Bool} {P : P
 
 /-! ### The search -/
 
-open Sieve in
 -- The shape that `Ratpoints.Sieve.runSetup` chooses from the flags of the search lists the
 -- denominators of the search that a filter lets through, and lets every denominator of a point
 -- through.
@@ -1000,7 +999,6 @@ private theorem exists_dens_eq_filter_runSetup {c : List ℤ} {H sp2 : ℕ}
     exact exists_dens_eq_filter_all hrun
   · exact exists_dens_eq_filter_squares1 hrun hd (Option.ite_none_right_eq_some.mp hus1).2
 
-open Sieve in
 /-- The run of the shape that `Ratpoints.Sieve.runSetup` chooses, with sound arguments
 (`Ratpoints.Sieve.IsSoundRun`), pieces of at least one bit array and the height below `2 ^ 63`,
 delivers, with any callback, flags of the check and delivery whose flag is clear, the points of the
@@ -1233,7 +1231,6 @@ theorem run_searchPoints_flags {σ : Type} (process : ℤ → ℤ → ℤ → σ
     sieving_value]
   all_goals simp_all
 
-open Sieve in
 -- After the exits, the sieving delivers the points of the denominators of the search for a sound
 -- test of the sieve, whatever the callback and the flags.
 private theorem exists_isSoundTest_run_sieving {c : List ℤ} {H : ℕ} {P : Params} (hP : P.WF)
@@ -1274,7 +1271,6 @@ private theorem exists_isSoundTest_of_forall_not_isPoint {c : List ℤ} {H : ℕ
     rw [h, searchList_false H (pointsAtInfinityList_eq_nil_of_forall_not_isPoint hH hno fl),
       Delivery.deliver_nil]⟩
 
-open Sieve in
 /-- For well-formed parameters and `1 ≤ H < 2 ^ 63`, there is a sound test of the numerators
 (`Ratpoints.IsSoundTest`) for which the search of the polynomial with the coefficient list `c`, of
 its degree, with any callback, flags of the check and delivery whose flag is clear, gives the data
