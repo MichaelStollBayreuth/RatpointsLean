@@ -846,26 +846,19 @@ fold.
 \begin{lemma}[The denominators and the points of the search]\label{lem:searchDenominators}
   \uses{lem:binaryDivisors, def:searchDens, def:binaryDivisors, def:searchedPoly, def:orderedPoints,
     def:reversal, lem:shape_dens, def:bruteForce}
-  Proposed names: \lname{Ratpoints.searchDens\_eq\_searchDenominators},
-  \lname{Ratpoints.searchedPoly\_eq\_of\_reversal\_eq\_ok},
-  \lname{Ratpoints.pointsOfDen\_eq\_pointsWithDen},
-  \lname{Ratpoints.pointsOfDen\_zero\_eq\_pointsWithDen},
-  \lname{Ratpoints.pos\_of\_mem\_binaryDivisors},
-  \lname{Ratpoints.le\_and\_le\_of\_mem\_searchDenominators},
-  \lname{Ratpoints.Sieve.squares1Dens\_one\_eq\_filter},
-  \lname{Ratpoints.Setup.isSquare\_eq\_true\_iff}, \lname{Ratpoints.Setup.isSquare\_eq\_false\_iff},
-  \lname{Ratpoints.BruteForce.pointsAbove\_eq\_ite}, \lname{Ratpoints.isPoint\_iff\_of\_le},
-  \lname{Ratpoints.ite\_pointsAbove\_eq\_filter}, \lname{List.filter\_eq\_ite\_of\_forall}. For $1
-  \le H$, the denominators of the search of $c$ of its degree (Definition~\ref{def:searchDens}) are
-  the denominators of the search of the specification with the bound $\mathrm{maxDivisors}$; a
-  reversal check that does not refuse $c$ hands on the polynomial searched of the specification with
-  its flag; and what the brute-force reference finds over a denominator $0 < z \le H$ and the
-  numerators $-H, \dots, H$ are the points with the denominator $z$, and over the candidate $(1, 0)$
-  those with the denominator $0$.
+  \lean{Ratpoints.searchDens_eq_searchDenominators, Ratpoints.searchedPoly_eq_of_reversal_eq_ok, Ratpoints.pointsOfDen_eq_pointsWithDen, Ratpoints.pointsOfDen_zero_eq_pointsWithDen, Ratpoints.pos_of_mem_binaryDivisors, Ratpoints.le_and_le_of_mem_searchDenominators, Ratpoints.Sieve.squares1Dens_one_eq_filter, Ratpoints.Setup.isSquare_eq_true_iff, Ratpoints.Setup.isSquare_eq_false_iff, Ratpoints.BruteForce.pointsAbove_eq_ite, Ratpoints.isPoint_iff_of_le, Ratpoints.ite_pointsAbove_eq_filter, List.filter_eq_ite_of_forall}
+  \leanok
+  For $1 \le H$, the denominators of the search of $c$ of its degree
+  (Definition~\ref{def:searchDens}) are the denominators of the search of the specification with the
+  bound $\mathrm{maxDivisors}$; a reversal check that does not refuse $c$ hands on the polynomial
+  searched of the specification with its flag; and what the brute-force reference finds over a
+  denominator $0 < z \le H$ and the numerators $-H, \dots, H$ are the points with the denominator
+  $z$, and over the candidate $(1, 0)$ those with the denominator $0$.
 \end{lemma}
 
 \begin{proof}
   \uses{lem:flatMap_sound}
+  \leanok
   Lemma~\ref{lem:binaryDivisors} for the divisor set-up, and the divisors times squares of the shape
   as a filter of the products $e k^2$; the reference checks a candidate by its square root and its
   test for common factors, which on the box are the conditions of a point.
@@ -873,14 +866,16 @@ fold.
 
 \begin{theorem}[The order of the points]\label{thm:order}
   \uses{thm:findPoints_order, lem:searchDenominators, def:orderedPoints, def:findPoints}
-  Proposed name: \lname{Ratpoints.eq\_orderedPoints\_of\_findPoints\_eq\_ok}. For well-formed
-  parameters and options with $\mathrm{noCheck}$ false, if $\mathrm{findPoints}(c, H, P, o)$ returns
-  the list $L$, then $L$ is the list of the points in the order of ratpoints for the bound
-  $\mathrm{maxDivisors}$, the switch of the reversal of $o$, $c$ and $H$, without the points with $y
-  < 0$ when $\mathrm{noY}$ is set.
+  \lean{Ratpoints.eq_orderedPoints_of_findPoints_eq_ok}
+  \leanok
+  For well-formed parameters and options with $\mathrm{noCheck}$ false, if
+  $\mathrm{findPoints}(c, H, P, o)$ returns the list $L$, then $L$ is the list of the points in the
+  order of ratpoints for the bound $\mathrm{maxDivisors}$, the switch of the reversal of $o$, $c$
+  and $H$, without the points with $y < 0$ when $\mathrm{noY}$ is set.
 \end{theorem}
 
 \begin{proof}
+  \leanok
   Theorem~\ref{thm:findPoints_order} gives $L$ as what the reference of the polynomial searched
   finds over the candidate $(1, 0)$ and the denominators of its search, mapped back after a reversal
   and filtered by $\mathrm{noY}$, and Lemma~\ref{lem:searchDenominators} turns each part into its

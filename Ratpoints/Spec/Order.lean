@@ -21,8 +21,7 @@ polynomial searched ascend, except when it has odd degree `d` with `|c_d| ≠ 1`
 leading coefficient) and ratpoints factors `|c_d|` completely by trial division and finds fewer than
 `maxDiv` of its squarefree divisors up to `H`: then they are `e k ^ 2`, divisor `e` by divisor in
 the order of binary counting over the primes of `c_d`, and `k` ascending. The specification uses
-Mathlib and nothing of the model; the comparator challenge is to restate its definitions verbatim,
-with the order theorem (stage G).
+Mathlib and nothing of the model; the comparator challenge restates its definitions verbatim.
 
 ## Main definitions
 
@@ -36,9 +35,8 @@ with the order theorem (stage G).
 ## Implementation notes
 
 The file imports `Mathlib.Data.Nat.Factors` for the prime factors of a number
-(`Nat.primeFactorsList`, in increasing order with multiplicity); with the order theorem (stage G),
-the comparator challenge is to import the public imports of this file and of
-`Ratpoints.Spec.Basic`.
+(`Nat.primeFactorsList`, in increasing order with multiplicity); the comparator challenge imports
+the public imports of this file and of `Ratpoints.Spec.Basic`.
 -/
 
 @[expose] public section

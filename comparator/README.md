@@ -8,19 +8,22 @@ axioms (`propext`, `Quot.sound`, `Classical.choice`).
 ## What is checked
 
 - [`Challenge.lean`](Challenge.lean) may import only Mathlib and the model (`Ratpoints.Model`). It
-  restates the specification verbatim (`degree`, `binaryForm`, `IsPoint`, and `binaryFormPoly`,
-  which the refusal theorems of stage D speak about; `points` stays out, as the blueprint explains)
-  and states the main theorems with `sorry`. The main theorems speak about the model's `findPoints`
+  restates the specification verbatim: of `Ratpoints/Spec/Basic.lean` `degree`, `binaryForm`,
+  `IsPoint` with its decidability, and `binaryFormPoly`, which the refusal theorems of stage D speak
+  about (`points` stays out, as the blueprint explains); and, since stage G, all of
+  `Ratpoints/Spec/Order.lean`, the order of the points (`searchedPoly`, `FactorsByTrialDivision`
+  with its decidability, `binaryDivisors`, `searchDenominators`, `pointsWithDen`, `orderedPoints`).
+  It states the main theorems with `sorry`. The main theorems speak about the model's `findPoints`
   and, since stage G, `findPointsWith` (and, in stage B, the brute-force reference), which the
   challenge imports with `Options`, `Params`, `Params.WF`, `SieveOptions`, `sieveParams`,
-  `maxDegree`, and the callback's `Answer` and `Delivery` with the reference of the delivery
-  `Delivery.deliver`: the model is trusted in the
-  sense that it is the code the executable runs, and nothing else, and a definition of the model,
-  which elaborates without Mathlib, is never restated. The specification, by contrast, is
-  reproduced in the challenge, so a solution whose library changed it is rejected. The challenge
-  imports exactly the public imports of the specification (`Ratpoints/Spec/Basic.lean`), among them
-  `Mathlib.Algebra.Squarefree.Basic` for `Squarefree`, so that the restated definitions elaborate to
-  the same terms as there.
+  `maxDegree`, `maxDivisors`, and the callback's `Answer` and `Delivery` with the reference of the
+  delivery `Delivery.deliver`: the model is trusted in the sense that it is the code the executable
+  runs, and nothing else, and a definition of the model, which elaborates without Mathlib, is never
+  restated. The specification, by contrast, is reproduced in the challenge, so a solution whose
+  library changed it is rejected. The challenge imports exactly the public imports of the
+  specification (`Ratpoints/Spec/Basic.lean` and `Ratpoints/Spec/Order.lean`), among them
+  `Mathlib.Algebra.Squarefree.Basic` for `Squarefree` and `Mathlib.Data.Nat.Factors` for the prime
+  factors, so that the restated definitions elaborate to the same terms as there.
 - [`Solution.lean`](Solution.lean) imports the library and proves the same statements by its
   theorems.
 
@@ -75,7 +78,10 @@ the exact check on and `o.noY` set, with `y` replaced by `0`, is a sublist of it
 `challenge_map_findPointsWith_eq_map_findPoints`, which `challenges.json` lists as well: the search
 with a callback refuses what `findPoints` refuses and otherwise returns the data of the callback and
 the count of `Delivery.deliver` of the list of `findPoints` to the callback, its calls for the
-points in their order up to and including the first that stops the search.
+points in their order up to and including the first that stops the search. And it adds the order
+theorem, `challenge_eq_orderedPoints_of_findPoints_eq_ok`, which `challenges.json` lists too: with
+the exact check on, the list of `findPoints` is that of `orderedPoints`, the points in the order of
+ratpoints, with the model's bound `maxDivisors` on the number of divisors, filtered by `o.noY`.
 
 ## Running
 

@@ -197,9 +197,10 @@ for reversed polynomials and for odd degree with $|c_d| \ne 1$, where the two ag
 stage~D the output of \verb|findPoints| is mapped back after a reversal, and since stage~E it is
 that of the reference of the polynomial searched over the denominators in the order of its search
 (Theorem~\ref{thm:findPoints_order}), which is the order of the program on every point list of the
-differential tests, all compared in their order; stage~G spells this order out in terms of the
-polynomial, with the divisors of the leading coefficient in the order of binary counting over its
-primes, and adds the protocol of the callback of the library and the options of the output.
+differential tests, all compared in their order; the order is spelled out in terms of the
+polynomial in Theorem~\ref{thm:order}, with the divisors of the leading coefficient in the order of
+binary counting over its primes, and the protocol of the callback of the library in
+Theorem~\ref{thm:protocol}; stage~G also adds the options of the output.
 
 \begin{theorem}[The brute-force reference finds exactly the points]\label{thm:bruteForce}
   \uses{def:bruteForce, def:IsPoint, def:points}
@@ -241,10 +242,14 @@ membership since stage~G for $\mathrm{noCheck}$ false, with $y \ge 0$ under $\ma
 \verb|findPoints|, \verb|Options|, \verb|Params|, \verb|Params.WF|, \verb|SieveOptions|,
 \verb|sieveParams| and \verb|maxDegree|, imported from the model (Section~\ref{sec:sieveTheorems}),
 and since stage~G the protocol of the delivery (Theorem~\ref{thm:protocol}), over
-\verb|findPointsWith|, \verb|Answer|, \verb|Delivery| and \verb|Delivery.deliver|, and the three
-statements under $\mathrm{noCheck}$ (Theorem~\ref{thm:noCheck}); for \verb|Squarefree| the challenge
-and the specification import \verb|Mathlib.Algebra.Squarefree.Basic|, so that the challenge still
-imports exactly the public imports of the specification.
+\verb|findPointsWith|, \verb|Answer|, \verb|Delivery| and \verb|Delivery.deliver|, the three
+statements under $\mathrm{noCheck}$ (Theorem~\ref{thm:noCheck}), and the order theorem
+(Theorem~\ref{thm:order}), over the definitions of \verb|Ratpoints/Spec/Order.lean| with their
+instance and the decidability instance of \verb|IsPoint|, restated verbatim, and \verb|maxDivisors|,
+imported from the model; for \verb|Squarefree| the challenge and the specification import
+\verb|Mathlib.Algebra.Squarefree.Basic|, and for the prime factors the challenge and the file of the
+order \verb|Mathlib.Data.Nat.Factors|, so that the challenge still imports exactly the public
+imports of the specification.
 
 \section{The command-line program}\label{sec:cli}
 

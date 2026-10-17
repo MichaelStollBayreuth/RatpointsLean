@@ -52,6 +52,13 @@ theorem challenge_exists_findPoints_eq_error_iff_of_sturm_neg (c : List ℤ) (H 
 theorem challenge_wf_sieveParams (o : Ratpoints.SieveOptions) : (Ratpoints.sieveParams o).WF :=
   Ratpoints.wf_sieveParams o
 
+theorem challenge_eq_orderedPoints_of_findPoints_eq_ok (c : List ℤ) (H : ℕ)
+    (P : Ratpoints.Params) (o : Ratpoints.Options) (L : List (ℤ × ℤ × ℤ)) (hP : P.WF)
+    (hc : o.noCheck = false) (h : Ratpoints.findPoints c H P o = .ok L) :
+    L = (Ratpoints.orderedPoints Ratpoints.maxDivisors o.reverse c H).filter
+      fun p ↦ !o.noY || 0 ≤ p.2.1 :=
+  Ratpoints.eq_orderedPoints_of_findPoints_eq_ok hP h hc
+
 theorem challenge_exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck (c : List ℤ) (H : ℕ)
     (P : Ratpoints.Params) (o : Ratpoints.Options) (L : List (ℤ × ℤ × ℤ)) (hP : P.WF)
     (hc : o.noCheck = true) (h : Ratpoints.findPoints c H P o = .ok L) (q : ℤ × ℤ × ℤ)

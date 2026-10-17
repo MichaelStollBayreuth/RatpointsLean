@@ -14,7 +14,8 @@ Candidates for Mathlib's lemmas on lists, about the notions of core: filtering a
 `List.flatMap f` changes nothing when every element `x` with `f x ≠ []` passes the filter, the
 counterpart of `Finset.prod_filter_of_ne`, next to `List.flatMap_congr`, and so a list without
 duplicates within another one without duplicates that holds every `x` with `f x ≠ []` gives a
-permutation of its `List.flatMap f`.
+permutation of its `List.flatMap f`; and a filter by a test that holds on all elements of a list
+or on none keeps all of it or nothing.
 
 ## Main statements
 
@@ -22,6 +23,7 @@ permutation of its `List.flatMap f`.
 * `List.perm_flatMap_of_nodup`: the `List.flatMap` of a list without duplicates of members of a
   list `l` without duplicates, in any order, that holds every member with a nonempty image, is a
   permutation of that of `l`.
+* `List.filter_eq_ite_of_forall`: a filter that keeps all of a list or nothing.
 -/
 
 @[expose] public section
@@ -42,6 +44,14 @@ theorem flatMap_filter_of_ne {l : List α} {p : α → Bool} {f : α → List β
     · simp [hp, ih]
     · have hf : f x = [] := by_contra fun hf ↦ hp (h x (.head _) hf)
       simp [hp, ih, hf]
+
+/-- Filtering by a test that holds on every element of `l` exactly when `P` holds keeps all of `l`
+or nothing. -/
+theorem filter_eq_ite_of_forall {l : List α} {p : α → Bool} {P : Prop} [Decidable P]
+    (h : ∀ a ∈ l, p a ↔ P) : l.filter p = if P then l else [] := by
+  split_ifs with hP
+  · exact filter_eq_self.mpr fun a ha ↦ (h a ha).mpr hP
+  · exact filter_eq_nil_iff.mpr fun a ha hpa ↦ hP ((h a ha).mp hpa)
 
 /-- A list `l'` without duplicates whose members lie in the list `l` without duplicates, and which
 holds every member `x` of `l` with `f x ≠ []`, gives a permutation of `l.flatMap f`, whatever the

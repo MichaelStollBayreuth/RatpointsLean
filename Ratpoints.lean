@@ -51,6 +51,7 @@ public import Ratpoints.Proof.Forbidden
 public import Ratpoints.Proof.Jacobi
 public import Ratpoints.Proof.JacobiTables
 public import Ratpoints.Proof.Moduli
+public import Ratpoints.Proof.Order
 public import Ratpoints.Proof.Output
 public import Ratpoints.Proof.Packing
 public import Ratpoints.Proof.Params

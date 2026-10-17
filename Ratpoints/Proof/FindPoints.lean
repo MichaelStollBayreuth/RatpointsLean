@@ -9,6 +9,7 @@ public import Ratpoints.Proof.Forbidden
 public import Ratpoints.Proof.Moduli
 public import Ratpoints.Proof.Setup
 public import Ratpoints.Proof.Stages
+public import Ratpoints.Spec.Order
 
 import Ratpoints.Mathlib.Data.List.Basic
 import Ratpoints.Mathlib.Data.List.Nodup
@@ -16,6 +17,7 @@ import Ratpoints.Proof.BruteForce
 import Ratpoints.Proof.Containers
 import Ratpoints.Proof.Delivery
 import Ratpoints.Proof.Denominators
+import Ratpoints.Proof.Order
 import Ratpoints.Proof.Params
 import Ratpoints.Proof.Shapes
 import Ratpoints.Proof.Sieve
@@ -61,6 +63,8 @@ that of the divisors of the leading coefficient times squares
   denominators of the search are a permutation of the brute-force reference;
   `Ratpoints.append_flatMap_searchDens_eq_bruteForce`: they are the reference when the denominators
   of the search are `1, …, H` (`Ratpoints.searchDens_eq_range'`).
+* `Ratpoints.searchDens_eq_searchDenominators`: the denominators of the search are those of the
+  specification of the order.
 * `Ratpoints.searchList_of_noCheck_eq_false`: without `RATPOINTS_NO_CHECK`, the points that the
   search delivers for a sound test are those of the brute-force reference, mapped after a reversal,
   without those with `y < 0` under `RATPOINTS_NO_Y`.
@@ -325,6 +329,28 @@ theorem nodup_searchDens (c : List ℤ) {H : ℕ} (hH : 1 ≤ H) :
   · have hc : c.getD (degree c) 0 ≠ 0 := getD_degree_ne_zero_of_pos (by lia)
     exact h ▸ nodup_squares1Dens (Setup.nodup_of_setupUs1_eq_some hs hc)
       (fun s hs' ↦ ((Setup.mem_iff_of_setupUs1_eq_some hs hc hH).mp hs').1) 1 H
+
+/-- The denominators of the search of the polynomial with the coefficient list `c` of its degree are
+those of the specification of the order (`Ratpoints.searchDenominators`), for `H ≥ 1`: the divisor
+set-up succeeds exactly when the specification takes the divisor shape, with the divisors of
+`Ratpoints.binaryDivisors` (`Ratpoints.Setup.map_snd_run_setupUs1`). -/
+theorem searchDens_eq_searchDenominators (c : List ℤ) {H : ℕ} (hH : 1 ≤ H) :
+    searchDens c (degree c) H = searchDenominators maxDivisors c H := by
+  rw [searchDens, searchDenominators]
+  by_cases hd : degree c % 2 = 1 ∧ (c.getD (degree c) 0).natAbs ≠ 1
+  · have hs := Setup.map_snd_run_setupUs1 (getD_degree_ne_zero_of_pos (c := c) (by lia)) hH
+    rw [ite_eq_left (show (degree c % 2 == 1 && (c.getD (degree c) 0).natAbs != 1) = true by
+      simpa using hd)]
+    simp only [hd.1, hd.2, true_and, ne_eq, not_false_eq_true]
+    rcases h : Id.run (Setup.setupUs1 c (degree c) H) with _ | ⟨info, divs⟩ <;> rw [h] at hs <;>
+      split_ifs at hs ⊢
+    · simp at hs
+    · rfl
+    · simp only [Option.map_some, Option.some.injEq] at hs
+      subst hs
+      exact squares1Dens_one_eq_filter (fun e he ↦ pos_of_mem_binaryDivisors he) H
+    · simp at hs
+  · rw [ite_eq_right (by simpa using hd), ite_eq_right (by tauto)]
 
 /-- The divisor shape visits each denominator of a point once, so that it gives a permutation of
 the points of the denominators `1, …, H`: the denominator of every point is `s k ^ 2` with `s`

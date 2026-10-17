@@ -24,6 +24,8 @@ import Ratpoints.Mathlib.Data.List.Basic
   normalized point of height at most `H`.
 * `Ratpoints.nodup_bruteForce`: the list has no duplicates.
 * `Ratpoints.toFinset_bruteForce`: its set of elements is `Ratpoints.points c H`.
+* `Ratpoints.ite_pointsAbove_eq_filter`: the points of one candidate are those that the
+  specification of the order lists, `(x, y, z)` before `(x, -y, z)`.
 
 ## Proof
 
@@ -151,6 +153,17 @@ theorem nodup_pointsAbove (x z v : ℤ) : (pointsAbove x z v).Nodup := by
     lia
   · simp
 
+/-- The test of `Ratpoints.BruteForce.pointsAbove` is that `⌊√v⌋ ^ 2 = v`, with `Int.sqrt`. -/
+theorem pointsAbove_eq_ite (x z v : ℤ) :
+    pointsAbove x z v = if Int.sqrt v ^ 2 = v then
+      (if Int.sqrt v = 0 then [(x, 0, z)] else [(x, Int.sqrt v, z), (x, -Int.sqrt v, z)])
+    else [] := by
+  simp only [pointsAbove, Int.sqrt, Int.natCast_eq_zero]
+  congr 1
+  refine propext ⟨fun ⟨hv, h⟩ ↦ ?_, fun h ↦ ⟨h ▸ sq_nonneg _, ?_⟩⟩
+  · rw [sq, ← Nat.cast_mul, h, Int.toNat_of_nonneg hv]
+  · lia
+
 theorem nodup_numerators (H : ℕ) : (numerators H).Nodup :=
   List.nodup_range.map fun _ _ h ↦ by lia
 
@@ -209,6 +222,32 @@ theorem nodup_bruteForce (c : List ℤ) (H : ℕ) : (bruteForce c H).Nodup := by
 
 theorem toFinset_bruteForce (c : List ℤ) (H : ℕ) : (bruteForce c H).toFinset = points c H :=
   Finset.ext fun _ ↦ by simp [mem_bruteForce_iff]
+
+/-! ### The points of one candidate, as the specification of the order lists them -/
+
+/-- A triple whose `(x, z)` is normalized and of height at most `H` is a point exactly when
+`y ^ 2 = F(x, z)` and `gcd(x, z) = 1`. -/
+theorem isPoint_iff_of_le {c : List ℤ} {H : ℕ} {x y z : ℤ} (hn : 0 < z ∨ z = 0 ∧ x = 1)
+    (hx : |x| ≤ H) (hz : z ≤ H) :
+    IsPoint c H (x, y, z) ↔ y ^ 2 = binaryForm c x z ∧ Int.gcd x z = 1 := by
+  simp [IsPoint, hn, hx, hz]
+
+open BruteForce in
+/-- The points of the brute-force reference over the candidate `(x, z)`, normalized and of height
+at most `H`, are those of the specification of the order (`Ratpoints.pointsWithDen`): `(x, y, z)`
+and then `(x, -y, z)` for `y = ⌊√F(x, z)⌋`, as far as they are points, one when `y = 0`. -/
+theorem ite_pointsAbove_eq_filter {c : List ℤ} {H : ℕ} {x z : ℤ} (hn : 0 < z ∨ z = 0 ∧ x = 1)
+    (hx : |x| ≤ H) (hz : z ≤ H) :
+    (if Int.gcd x z = 1 then pointsAbove x z (binaryForm c x z) else []) =
+      (if Int.sqrt (binaryForm c x z) = 0 then [(x, 0, z)] else
+        [(x, Int.sqrt (binaryForm c x z), z), (x, -Int.sqrt (binaryForm c x z), z)]).filter
+          (IsPoint c H) := by
+  rw [List.filter_eq_ite_of_forall (P := Int.sqrt (binaryForm c x z) ^ 2 = binaryForm c x z ∧
+    Int.gcd x z = 1) fun q hq ↦ ?_, pointsAbove_eq_ite]
+  · split_ifs <;> first | rfl | (exfalso; tauto)
+  · rw [decide_eq_true_iff]
+    split_ifs at hq with h0 <;> simp only [List.mem_cons, List.not_mem_nil, or_false] at hq <;>
+      rcases hq with rfl | rfl <;> simp [isPoint_iff_of_le hn hx hz, h0]
 
 /-! ### The axioms of the main theorems -/
 

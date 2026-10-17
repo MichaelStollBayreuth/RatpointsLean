@@ -408,6 +408,16 @@ private theorem poly_eq_reflect_of_getD {c c' : List ℤ} {N : ℕ} (hc : degree
 
 namespace Setup
 
+/-- The square test of the set-up, as GMP decides it, is `IsSquare`. -/
+theorem isSquare_eq_true_iff (a : ℤ) : isSquare a = true ↔ IsSquare a := by
+  simp only [isSquare, Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq]
+  refine ⟨fun ⟨h0, h⟩ ↦ ⟨a.toNat.sqrt, ?_⟩, fun ⟨r, hr⟩ ↦ ⟨hr ▸ mul_self_nonneg r, ?_⟩⟩
+  · rw [← Nat.cast_mul, h, Int.toNat_of_nonneg h0]
+  · rw [hr, ← Int.natAbs_mul_self, Int.toNat_natCast, Nat.sqrt_eq]
+
+theorem isSquare_eq_false_iff (a : ℤ) : isSquare a = false ↔ ¬IsSquare a := by
+  rw [← Bool.not_eq_true, isSquare_eq_true_iff]
+
 @[simp]
 theorem reversal_false (c : List ℤ) (d : ℕ) : reversal false c d = .ok (c, d, false) := rfl
 
