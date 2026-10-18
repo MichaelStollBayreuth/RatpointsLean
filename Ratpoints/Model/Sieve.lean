@@ -45,11 +45,11 @@ bounds of `Ratpoints.Model.Bounds`), the rows of the moduli for a denominator fr
 rows of their entries with the row offsets of its class (`Ratpoints.Sieve.setRows`), the rows that
 are not built yet built into their tables of rows (`Ratpoints.Sieve.buildRows`), and the points of
 the bits of one interval in pieces (`Ratpoints.Sieve.siftBits`); and the numerators of one
-denominator, in the packing of its class, with the products of the check and what the third stage
-needs as thunks (`Ratpoints.Sieve.sift`).
-The components that take one numerator at a time, the test of a candidate that survives the first
-two stages, with the test for common factors and the third stage (`Ratpoints.Sieve.accepted`), the
-exact check (`Ratpoints.Sieve.checkPoint`) and its reference, the check of a numerator
+denominator in the search intervals, in the packing of its class, with the products of the check and
+what the third stage needs as thunks (`Ratpoints.Sieve.sift`). The components that take one
+numerator at a time, the test of a candidate that survives the first two stages, with the test for
+common factors and the third stage (`Ratpoints.Sieve.accepted`), the exact check
+(`Ratpoints.Sieve.checkPoint`) and its reference, the check of a numerator
 (`Ratpoints.Sieve.checkNum`), and the points at infinity (`Ratpoints.Sieve.pointsAtInfinity`), are
 in `Ratpoints.Model.Candidate`; the first stage in both arms, with the operations on bit arrays that
 it uses and the sieve specs (`Ratpoints.Sieve.andRowsChunked`, `Ratpoints.Sieve.andRows`,
@@ -68,7 +68,8 @@ denominator in the 2-adic information, let every point through, and the packing 
 numerator that the word admits, the rows of the residue of the denominator divided by the stride,
 read at the row offsets of the class, admitting the numerators of the class that the rows of the
 denominator admit; so the sieve of a denominator delivers exactly its points in the brute-force
-reference `Ratpoints.bruteForce`, in the same order, to the callback of the search
+reference `Ratpoints.bruteForce` whose `x / z` lies in a search interval (all of them for the one
+interval `[-h, h]`, `h ≥ H`), in the same order, to the callback of the search
 (`Ratpoints.Delivery`), each mapped by `Ratpoints.Sieve.swapPoint` when the flag of the reversal is
 set: the map gives the point of the caller's curve for a point of a polynomial that the reversal
 check has reversed (`Ratpoints.Setup.reversal`), the exact check delivers the mapped points when its
@@ -114,8 +115,8 @@ built into it (`Ratpoints.Sieve.SieveEntry.fetchRow`) and the tables of rows of 
   their rows from the tables of rows and their offsets for a denominator, the start `0` and the end
   `p`, and the rows that are not built yet built into their tables of rows.
 * `Ratpoints.Sieve.siftBits`: the points of the numerators of an interval of bits, in pieces.
-* `Ratpoints.Sieve.sift`: the points of one denominator, its numerators `-H, …, H` in the packing of
-  its class, in pieces of bit arrays.
+* `Ratpoints.Sieve.sift`: the points of one denominator, its numerators in the search intervals in
+  the packing of its class, in pieces of bit arrays.
 -/
 
 @[expose] public section
@@ -138,12 +139,12 @@ residues of `b` divided by the stride of the class, and entries of the third sta
 `Ratpoints.Sieve.SieveEntry.IsPrimeEntry`, with the reciprocals of their moduli, the points that
 `Ratpoints.Sieve.sift` delivers in the packing of the class with the rows of the entries of its
 first two stages, from a store of the tables of rows that fits these entries
-(`Ratpoints.Sieve.RowStore.Fits`), without `RATPOINTS_NO_CHECK`, are those that
-`Ratpoints.Sieve.checkDen` finds on the plain sieve with all these entries whose numerators pass
-the word, all of them for any word that admits the numerators of the points (such as the word
-`nb[b mod 64]` of `Ratpoints.Sieve.twoAdic`), each mapped by `Ratpoints.Sieve.swapPoint` when the
-flag of the reversal is set, and those with `y < 0` left out under `RATPOINTS_NO_Y`
-(`Ratpoints.Sieve.run_sift_eq_deliver_checkDen`). -/
+(`Ratpoints.Sieve.RowStore.Fits`), with the bounds of the one search interval `[-h, h]`, `h ≥ H`,
+without `RATPOINTS_NO_CHECK`, are those that `Ratpoints.Sieve.checkDen` finds on the plain sieve
+with all these entries whose numerators pass the word, all of them for any word that admits the
+numerators of the points (such as the word `nb[b mod 64]` of `Ratpoints.Sieve.twoAdic`), each mapped
+by `Ratpoints.Sieve.swapPoint` when the flag of the reversal is set, and those with `y < 0` left out
+under `RATPOINTS_NO_Y` (`Ratpoints.Sieve.run_sift_eq_deliver_checkDen`). -/
 def sieveDen (H b : Nat) (entries : List SieveEntry) : Id (Vector Bool (2 * H + 1)) := do
   let mut surv := Vector.replicate (2 * H + 1) true
   for e in entries do
@@ -158,11 +159,12 @@ checked exactly, as the brute-force reference checks it (`Ratpoints.BruteForce.p
 for odd `d`, then `(a, y, b)` and, for `y ≠ 0`, `(a, -y, b)` when `F(a, b) = y ^ 2` with `y ≥ 0`.
 With the plain sieve `Ratpoints.Sieve.sieveDen` it is the reference of the bit arrays of words:
 under the hypotheses of `Ratpoints.Sieve.run_sift_eq_deliver_checkDen`, `Ratpoints.Sieve.sift` in
-the packing of a class of a word delivers the points that it finds on the plain sieve with all the
-sieve entries whose numerators pass the word, all of them for any word that admits the numerators
-of the points (such as the word `nb[b mod 64]` of `Ratpoints.Sieve.twoAdic`), each mapped by
-`Ratpoints.Sieve.swapPoint` when the flag of the reversal is set, those with `y < 0` left out under
-`RATPOINTS_NO_Y`, without `RATPOINTS_NO_CHECK`. -/
+the packing of a class of a word, with the one search interval `[-h, h]`, `h ≥ H`, delivers the
+points that it finds on the plain sieve with all the sieve entries whose numerators pass the word,
+all of them for any word that admits the numerators of the points (such as the word `nb[b mod 64]`
+of `Ratpoints.Sieve.twoAdic`), each mapped by `Ratpoints.Sieve.swapPoint` when the flag of the
+reversal is set, those with `y < 0` left out under `RATPOINTS_NO_Y`, without
+`RATPOINTS_NO_CHECK`. -/
 def checkDen (c : List Int) (d H b : Nat) (surv : Vector Bool (2 * H + 1)) :
     Id (Array (Int × Int × Int)) := do
   let w := BruteForce.scaledCoeffs c d b
@@ -604,10 +606,10 @@ overflows, which the C standard leaves undefined: the differences of the plain f
 within `a₀` of `-2 ^ 63`, so beyond `2 ^ 63 - 65` in absolute value, where neither the C code nor
 `Ratpoints.Sieve.sift` takes the plain form; the stride `k` and the residue `a₀` of the class
 converted to `Int64`; the two ends returned as a pair, for the pointers `low` and `high` through
-which the function reads and writes them; a Boolean for the `int` `split`, an argument, whose value
-for the whole line of numerators, the split form exactly for the heights above `2 ^ 63 - 65`, the C
-code decides in lines of the search intervals, by the test of `exact_bounds` and the path through
-`interval_bits_exact` (stage H). -/
+which the function reads and writes them; a Boolean for the `int` `split`, an argument: clear on the
+path of the forms of the ends (`Ratpoints.Sieve.intervalBits`), which `exact_bounds` gives an
+interval only for `H ≤ 2 ^ 63 - 65`, and on the path of the products in 128 bits
+(`Ratpoints.Sieve.intervalBitsExact`) set exactly for the heights above `2 ^ 63 - 65`. -/
 -- The parentheses are those of the C code, in which `>>` binds looser than `+` and `-`.
 def numeratorsToBits (low high : Int64) (cl : NumClass) (split : Bool) : Int64 × Int64 :=
   let k := cl.k.toInt64
@@ -794,76 +796,83 @@ def siftBits {σ : Type} (process : Int → Int → Int → σ → Answer σ) (w
       w1 := w1 + range
   return r
 
-/-- The points of the denominator `b`, its numerators `-H, …, H`, for `H < 2 ^ 63`, delivered to the
-callback `process` on the delivery `r`, in pieces of at most `A` bit arrays, for `A ≥ 1`, in the
-packing of its class `cl` (`Ratpoints.Sieve.NumClass`), and the store of the tables of rows with the
-rows built for it: the sieve specs of the moduli of the first two stages, of the sieve entries
-`es`, the row of the residue `bp[n]` of `b` divided by the stride of the class modulo the `n`-th
-modulus from the table of rows of its entry in `store`, and the offset of the row of the class for
-that modulus in `offsets` (`Ratpoints.Sieve.setRows`), with the rows that are not built yet built
-into their tables of rows (`Ratpoints.Sieve.buildRows`); what the third stage needs of the sieve
-entries `es3` of its primes, with the reciprocals `mgs3` of their moduli, for `b` and `H`
-(`Ratpoints.Sieve.fillChecks`) as a thunk, and so the products `w` of the coefficients `cₖ` with
-the powers `b^(d - k)` (`Ratpoints.BruteForce.scaledCoeffs`), both forced when the first numerator
-of `b` needs them; the bits of the numerators `-H, …, H` in the packing of `cl`
-(`Ratpoints.Sieve.numeratorsToBits`), in the form that splits the ends for `H > 2 ^ 63 - 65`; and
-the points of these bits (`Ratpoints.Sieve.siftBits`, with the reciprocals `mgs` of the moduli of
-the first two stages, the first stage ending after `sp1` of them, the degree `d` and the flags
-`fl`), which returns when the callback stops the search.
+/-- The points of the denominator `b`, for `H < 2 ^ 63`, its numerators in the search intervals with
+the bounds `iv` (`Ratpoints.Sieve.exactBounds`, increasing and disjoint), delivered to the callback
+`process` on the delivery `r`, in pieces of at most `A` bit arrays, for `A ≥ 1`, in the packing of
+its class `cl` (`Ratpoints.Sieve.NumClass`), and the store of the tables of rows with the rows built
+for it. What the third stage needs of the sieve entries `es3` of its primes, with the reciprocals
+`mgs3` of their moduli, for `b` and `H` (`Ratpoints.Sieve.fillChecks`) is a thunk, and so are the
+products `w` of the coefficients `cₖ` with the powers `b^(d - k)`
+(`Ratpoints.BruteForce.scaledCoeffs`), both forced when the first numerator of `b` needs them. For
+each interval in turn, the bits of its numerators `⌈b l⌉, …, ⌊b u⌋` within the height bound
+(`Ratpoints.Sieve.intervalBits`): the code `2` returns, since no later interval holds a numerator
+within the bound, and the code `1` goes on to the next interval; at the first interval with the code
+`0`, also one without numerators, the sieve specs of the moduli of the first two stages are made,
+of the sieve entries `es`, the row of the residue `bp[n]` of `b` divided by the stride of the class
+modulo the `n`-th modulus from the table of rows of its entry in `store`, and the offset of the row
+of the class for that modulus in `offsets` (`Ratpoints.Sieve.setRows`), with the rows that are not
+built yet built into their tables of rows (`Ratpoints.Sieve.buildRows`); and then the points of the
+bits of the interval (`Ratpoints.Sieve.siftBits`, with the reciprocals `mgs` of the moduli of the
+first two stages, the first stage ending after `sp1` of them, the degree `d` and the flags `fl`),
+which returns when the callback stops the search. With the one interval `[-h, h]` of a search
+without search intervals, for `h ≥ H`, the numerators are `-H, …, H`.
 
-C: `find_points.c:3112-3114`, `find_points.c:3123-3124`, `find_points.c:3129`,
-`find_points.c:3442-3488`, `find_points.c:3490-3521`, `find_points.c:3555-3561`,
-`find_points.c:3613-3617`, `rp-private.h:577-578`, `rp-private.h:583`
+C: `find_points.c:3112-3114`, `find_points.c:3123-3124`, `find_points.c:3129-3130`,
+`find_points.c:3435-3440`, `find_points.c:3442-3488`, `find_points.c:3490-3521`,
+`find_points.c:3555-3561`, `find_points.c:3613-3617`, `rp-private.h:574`, `rp-private.h:577-578`,
+`rp-private.h:583`
 
-Deviation: every numerator from `-H` to `H`, for the intervals of the search region that the Sturm
-step keeps (stage H), returning at the first interval beyond `H` and skipping an empty one, whose
-ends `interval_bits` computes and clips to the height bound (lines 3426-3427), with the form of
-`numerators_to_bits` that the whole line takes: the plain one, which `interval_bits` takes (line
-3432), when `exact_bounds` finds the forms of the ends of an interval, for `H ≤ LONG_MAX - 64`
-(lines 3332-3338), and otherwise the split one, which `interval_bits_exact` takes (line 3404) (stage
-H); the height bound converted to `Int64`, which is exact for `H < 2 ^ 63`, and the bits back to
-integers; the sieve specs, and with them the rows of the residues, made before the bits of the
-interval, where `sift` turns the interval into bits first and makes them (the flag `do_setup`) once
-`interval_bits` does not report an interval empty (it returns 0 also for an interval that holds no
-numerator, lines 3426-3427), which for the whole line is at once, and so before the test
-`low ≤ high` of the bits (line 3568); one call of `Ratpoints.Sieve.setRows`, for the two calls with
-the flag `shared` a constant, between which the pool of threads chooses (stage I); the store of the
-tables of rows passed and returned, for the arrays `sieve` of the entries of the arguments, which
-`sift` reaches through `sieve_list` and which keep the rows built for the rest of the run; the end
-`sp1` of the first stage, the entries `es` and the reciprocals `mgs` of the first two stages, the
-entries `es3` of the third stage and their reciprocals `mgs3` as arguments, for the numbers `sp1`,
-`sp2` and `sp3` that the sieving thread keeps (`worker_init`), the entries
-`sieve_list[0], …, sieve_list[sp2 - 1]`, the array `magics` of the arguments, which
-`_ratpoints_sift0` reads, and the entries `sieve_list[sp2], …, sieve_list[sp3 - 1]` and the
-reciprocals `magics[sp2], …, magics[sp3 - 1]`, which `fill_checks` reads, with no correction of
-`sp2` and `sp3` between the blocks of the run (stage I); the residues `bp` and the class `cl` as
-values, for the pointers `bp_list` and `cls`, and the array `offsets` of the row offsets of the run
-as an argument, which the C code reaches through the pointer `offset` of the class; the thunk of
-`Ratpoints.Sieve.fillChecks`, for the table `checks` of the sieving thread, which `fill_checks`
-fills, and its flag `stage3_filled`, which `sift` clears; the thunk of the products `w`, for the
-flag `compute_bc`, which `sift` sets and `_ratpoints_check_point` clears when it computes the
-products; no count of the denominators sieved (`n_sifts`), which ratpoints reads to correct the
-moduli between the blocks of the run (stage I); the delivery `r` passed and returned, for the
-pointers `info` and `wk->quit`, which `worker_init` clears, and the count `total` that `sift` keeps
-from zero and returns; the arguments of the run passed explicitly, for the pointer `args` of the
-sieving thread (`rp-private.h:574`), which `worker_init` sets and through which `sift` reads them;
-no search intervals `iv` of the sieving thread (`rp-private.h:574`), which `worker_init` clears
-(`find_points.c:3130`) and `run_block` sets for each block (`find_points.c:3913`; stage H); no
-pool, slot and stop flag of a thread of the pool, the flag by which the pool of threads tells it to
-abandon its block (`pool`, `slot`, `stop`, `rp-private.h:584-585`; stage I); natural numbers and
-integers for the `long`s; no measurements of the phases (`RP_SIFT_TIC`, `RP_SETUP_TIC` and their
-`TOC`) and no output under `DEBUG`. -/
+Deviation: the height bound converted to `Int64`, which is exact for `H < 2 ^ 63`, and the
+denominator too, and the bits back to integers; the bounds of the search intervals an array, for
+the struct `rp_intervals` with its pointers `bd` and `end`, which `sift` reaches through the field
+`iv` of the sieving thread, which `worker_init` clears (line 3130) and `run_block` sets for each
+block (line 3913; here `Ratpoints.Sieve.sieveRun`, which passes the array of the run on); one call
+of `Ratpoints.Sieve.setRows`, for the two calls with the flag `shared` a constant, between which the
+pool of threads chooses (stage I); the store of the tables of rows passed and returned, for the
+arrays `sieve` of the entries of the arguments, which `sift` reaches through `sieve_list` and which
+keep the rows built for the rest of the run; the end `sp1` of the first stage, the entries `es` and
+the reciprocals `mgs` of the first two stages, the entries `es3` of the third stage and their
+reciprocals `mgs3` as arguments, for the numbers `sp1`, `sp2` and `sp3` that the sieving thread
+keeps (`worker_init`), the entries `sieve_list[0], …, sieve_list[sp2 - 1]`, the array `magics` of
+the arguments, which `_ratpoints_sift0` reads, and the entries `sieve_list[sp2], …,
+sieve_list[sp3 - 1]` and the reciprocals `magics[sp2], …, magics[sp3 - 1]`, which `fill_checks`
+reads, with no correction of `sp2` and `sp3` between the blocks of the run (stage I); the residues
+`bp` and the class `cl` as values, for the pointers `bp_list` and `cls`, and the array `offsets` of
+the row offsets of the run as an argument, which the C code reaches through the pointer `offset` of
+the class; the thunk of `Ratpoints.Sieve.fillChecks`, for the table `checks` of the sieving thread,
+which `fill_checks` fills, and its flag `stage3_filled`, which `sift` clears; the thunk of the
+products `w`, for the flag `compute_bc`, which `sift` sets and `_ratpoints_check_point` clears when
+it computes the products; no count of the denominators sieved (`n_sifts`), which ratpoints reads to
+correct the moduli between the blocks of the run (stage I); the delivery `r` passed and returned,
+for the pointers `info` and `wk->quit`, which `worker_init` clears, and the count `total` that
+`sift` keeps from zero and returns; the arguments of the run passed explicitly, for the pointer
+`args` of the sieving thread (`rp-private.h:574`), which `worker_init` sets and through which `sift`
+reads them; no pool, slot and stop flag of a thread of the pool, the flag by which the pool of
+threads tells it to abandon its block (`pool`, `slot`, `stop`, `rp-private.h:584-585`; stage I);
+natural numbers and integers for the `long`s; no measurements of the phases (`RP_SIFT_TIC`,
+`RP_SETUP_TIC` and their `TOC`) and no output under `DEBUG`. -/
 def sift {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : List Int) (d H A b : Nat)
     (fl : CheckFlags) (sp1 : Nat) (es : List SieveEntry) (mgs bp : List Nat) (cl : NumClass)
-    (offsets : Array Nat) (es3 : List SieveEntry) (mgs3 : List Nat) (store : RowStore)
-    (r : Delivery σ) :
+    (offsets : Array Nat) (es3 : List SieveEntry) (mgs3 : List Nat) (iv : Array IntervalBounds)
+    (store : RowStore) (r : Delivery σ) :
     Id (Delivery σ × RowStore) := do
-  let (specs, missing) := setRows store es bp cl offsets
-  let (specs, store) ← buildRows missing es bp specs store
   let w : Thunk (List Int) := .mk fun _ ↦ BruteForce.scaledCoeffs c d b
   let checks : Thunk (List CheckSpec) := .mk fun _ ↦ fillChecks b H es3 mgs3
-  let (low, high) := numeratorsToBits (-H.toInt64) H.toInt64 cl (decide (2 ^ 63 - 65 < H))
-  return (← siftBits process w d b A fl sp1 specs mgs checks cl low.toInt high.toInt r, store)
+  let mut r := r
+  let mut store := store
+  let mut doSetup := true
+  let mut specs : List SieveSpec := []
+  for bd in iv do
+    let (empty, low, high) := intervalBits b.toInt64 bd H.toInt64 cl
+    if empty = 2 then return (r, store)
+    if empty = 1 then continue
+    if doSetup then
+      doSetup := false
+      let (sp, missing) := setRows store es bp cl offsets
+      (specs, store) ← buildRows missing es bp sp store
+    r ← siftBits process w d b A fl sp1 specs mgs checks cl low.toInt high.toInt r
+    if r.quit then return (r, store)
+  return (r, store)
 
 /-! ### Examples -/
 
@@ -1104,13 +1113,14 @@ def sift {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : L
     (⟨p, [.prime t], magic p, 0, 0, #[], .prime p, sieveInit p⟩ : SieveEntry)
   let offsets := (es.map fun e ↦ e.p * ((rowBias + e.p - 1) / e.p)).toArray
   let cuts := (List.range 6).flatMap fun sp2 ↦ (List.range (sp2 + 1)).map (·, sp2)
+  let iv := Id.run (exactBounds [((Double.ofInt64 300).neg, Double.ofInt64 300)] 300 300)
   ((4, 2) :: cuts).all fun (sp1, sp2) ↦
     [1, 7, 100].all fun b ↦ [1, 2, 3].all fun A ↦ [false, true].all fun rev ↦
       let ref := (Id.run (checkDen c 3 300 b (Id.run (sieveDen 300 b es)))).toList
       let es3 := es.drop sp2
       (Id.run (sift appendPoint c 3 300 A b { reversed := rev } sp1 (es.take sp2)
         ((es.take sp2).map (·.magic)) ((es.take sp2).map (b % ·.p)) ⟨~~~0, 0, 0, some 0⟩ offsets es3
-        (es3.map (·.magic)) (es.foldl (fun s e ↦ e.addTables s) {})
+        (es3.map (·.magic)) iv (es.foldl (fun s e ↦ e.addTables s) {})
         ⟨#[], 0, false⟩)).1.info.toList == if rev then ref.map swapPoint else ref
 
 -- The numerator intervals of the search intervals, as the build of ratpoints with `DEBUG` at the
@@ -1182,6 +1192,44 @@ def sift {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : L
       out := out ++ [(lo.toInt, hi.toInt)]
     return out) == exp
 
+-- One denominator in several search intervals against the plain sieve: the points of `-2 0 0 1` at
+-- `H = 300` of the denominators 1, 7 and 100 whose `x / z` lies in one of the intervals
+-- (`(129 : ±3830 : 100)` in the first region, `(3 : ±5 : 1)` in the second), for intervals with
+-- infinite ends, ends at integers, at fractions and beyond the height bound, a degenerate interval
+-- at `-0.0` and `0.0`, and an interval with no numerator at `b = 1`; the store of the tables of
+-- rows gets rows only when an interval has the code `0` before one has the code `2`, also one
+-- without numerators.
+#guard
+  let c := [-2, 0, 0, 1]
+  let es := [3, 5, 7, 11, 13].map fun p ↦
+    (⟨p, [.prime (examinePrime c 3 p)], magic p, 0, 0, #[], .prime p, sieveInit p⟩ : SieveEntry)
+  let offsets := (es.map fun e ↦ e.p * ((rowBias + e.p - 1) / e.p)).toArray
+  let dy (n : Int) (e : Int) : Double := Double.ofDyadic (n < 0) n.natAbs e
+  let inf := Double.huge
+  -- `x ≤ a / b` and `a / b ≤ x` for the exact value of a double `x`, an infinity included
+  let le (x : Double) (a : Int) (b : Nat) : Bool := if x.isInf then x.signBit else
+    let (m, e) := x.toDyadic
+    if 0 ≤ e then m * 2 ^ e.toNat * b ≤ a else m * b ≤ a * 2 ^ (-e).toNat
+  let ge (x : Double) (a : Int) (b : Nat) : Bool := if x.isInf then !x.signBit else
+    let (m, e) := x.toDyadic
+    if 0 ≤ e then a ≤ m * 2 ^ e.toNat * b else a * 2 ^ (-e).toNat ≤ m * b
+  let regions : List (List (Double × Double) × Bool) :=
+    [([(dy (-5) (-1), dy (-3) (-1)), (dy 1 0, dy 5 (-1))], true),
+      ([(inf.neg, dy (-401) (-2)), (.zero, .zero), (dy 3 0, dy 31 (-2)), (dy 401 (-1), inf)], true),
+      ([(dy 1000 0, inf)], false), ([(inf.neg, dy (-400) 0)], false),
+      ([(Double.zero.neg, .zero)], true), ([(⟨0x3fb999999999999a⟩, ⟨0x3fc999999999999a⟩)], true)]
+  regions.all fun (dom, built) ↦
+    let iv := Id.run (exactBounds dom 300 300)
+    [1, 7, 100].all fun b ↦
+      let ref := (Id.run (checkDen c 3 300 b (Id.run (sieveDen 300 b es)))).toList.filter
+        fun (x, _, _) ↦ dom.any fun (l, u) ↦ le l x b && ge u x b
+      let (r, s) := Id.run (sift appendPoint c 3 300 2 b {} 2 (es.take 4)
+        ((es.take 4).map (·.magic)) ((es.take 4).map (b % ·.p)) ⟨~~~0, 0, 0, some 0⟩ offsets
+        (es.drop 4) [magic 13] iv
+        (es.foldl (fun s e ↦ e.addTables s) {}) ⟨#[], 0, false⟩)
+      r.info.toList == ref &&
+        (s.row? (.prime 3) (b % 3) |>.isSome) == (built || b % 3 == 0)
+
 -- The stop and the flags of the output through the sieve of one denominator, on `y ^ 2 = x ^ 2`,
 -- where every numerator prime to the denominator gives a point, with pieces of one bit array: a
 -- callback that stops at its `k`-th call gets the first `k` calls of the search without a stop,
@@ -1195,9 +1243,10 @@ def sift {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : L
   let offsets := (es.map fun e ↦ e.p * ((rowBias + e.p - 1) / e.p)).toArray
   let stopAt (k : Nat) (x z y : Int) (pts : Array (Int × Int × Int)) :
       Answer (Array (Int × Int × Int)) := ⟨1, pts.size + 1 == k, pts.push (x, y, z)⟩
+  let iv := Id.run (exactBounds [((Double.ofInt64 300).neg, Double.ofInt64 300)] 300 300)
   let run (k b : Nat) (fl : CheckFlags) : Delivery (Array (Int × Int × Int)) :=
     (Id.run (sift (stopAt k) c 2 300 1 b fl 2 (es.take 4) ((es.take 4).map (·.magic))
-      ((es.take 4).map (b % ·.p)) ⟨~~~0, 0, 0, some 0⟩ offsets (es.drop 4) [magic 13]
+      ((es.take 4).map (b % ·.p)) ⟨~~~0, 0, 0, some 0⟩ offsets (es.drop 4) [magic 13] iv
       (es.foldl (fun s e ↦ e.addTables s) {}) ⟨#[], 0, false⟩)).1
   [1, 7].all fun b ↦
     let full := (run 0 b {}).info.toList
@@ -1232,10 +1281,11 @@ def sift {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : L
   let es := [pr 3, e9, e15, pr 5, pr 7, pr 11]
   let offsets := (es.map fun e ↦ e.p * ((rowBias + e.p - 1) / e.p)).toArray
   let es2 := es.take 5
+  let iv := Id.run (exactBounds [((Double.ofInt64 300).neg, Double.ofInt64 300)] 300 300)
   let (ok, s) := [1, 7, 100].foldl (fun (ok, s) b ↦
     let ref := (Id.run (checkDen c 3 300 b (Id.run (sieveDen 300 b es)))).toList
     let (r, s) := Id.run (sift appendPoint c 3 300 2 b {} 2 es2 (es2.map (·.magic))
-      (es2.map (b % ·.p)) ⟨~~~0, 0, 0, some 0⟩ offsets [pr 11] [magic 11] s ⟨#[], 0, false⟩)
+      (es2.map (b % ·.p)) ⟨~~~0, 0, 0, some 0⟩ offsets [pr 11] [magic 11] iv s ⟨#[], 0, false⟩)
     (ok && r.info.toList == ref, s)) (true, es.foldl (fun s e ↦ e.addTables s) {})
   let present (k : EntryRef) : List Nat :=
     (List.range (s.getD k #[]).size).filter fun r ↦ (s.row? k r).isSome

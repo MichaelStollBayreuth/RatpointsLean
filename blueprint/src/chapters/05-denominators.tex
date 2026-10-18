@@ -517,14 +517,17 @@ $(c_d / q) = -1$, which these do not reach.
 
 \begin{definition}[The shapes of the loop]\label{def:Shape}
   \uses{def:setupUs1, def:forbidden, def:jacobi, def:jacobiTables, def:valuation, def:useCLong,
-    lem:odd_denominators, lem:forbidden, def:numClasses}
-  \lean{Ratpoints.Sieve.Shape, Ratpoints.Sieve.runSetup, Ratpoints.Sieve.ceilSqrt, Ratpoints.Sieve.floorSqrt, Ratpoints.Sieve.squaresDens, Ratpoints.Sieve.squares1Dens, Ratpoints.Sieve.denInfoTest, Ratpoints.Sieve.wordBits, Ratpoints.Sieve.wordsDens, Ratpoints.Sieve.wordsTest, Ratpoints.Sieve.Shape.dens, Ratpoints.Sieve.Shape.keep, Ratpoints.Sieve.ceilSqrt_le_iff, Ratpoints.Sieve.le_floorSqrt_iff, Ratpoints.Sieve.getLsbD_wordBits, Ratpoints.Sieve.wordsDens_spec, Ratpoints.Sieve.run_denInfoTest_eq_true, Ratpoints.Sieve.run_wordsTest_eq_true, Ratpoints.Sieve.fitsLong_of_mem_squaresDens, Ratpoints.Sieve.fitsLong_of_mem_squares1Dens, Ratpoints.Sieve.fitsLong_of_mem_wordsDens}
+    lem:odd_denominators, lem:forbidden, def:numClasses, def:exactBounds}
+  \lean{Ratpoints.Sieve.Shape, Ratpoints.Sieve.runSetup, Ratpoints.Sieve.fst_run_runSetup, Ratpoints.Sieve.snd_run_runSetup, Ratpoints.Sieve.ceilSqrt, Ratpoints.Sieve.floorSqrt, Ratpoints.Sieve.squaresDens, Ratpoints.Sieve.squares1Dens, Ratpoints.Sieve.denInfoTest, Ratpoints.Sieve.wordBits, Ratpoints.Sieve.wordsDens, Ratpoints.Sieve.wordsTest, Ratpoints.Sieve.Shape.dens, Ratpoints.Sieve.Shape.keep, Ratpoints.Sieve.ceilSqrt_le_iff, Ratpoints.Sieve.le_floorSqrt_iff, Ratpoints.Sieve.getLsbD_wordBits, Ratpoints.Sieve.wordsDens_spec, Ratpoints.Sieve.run_denInfoTest_eq_true, Ratpoints.Sieve.run_wordsTest_eq_true, Ratpoints.Sieve.fitsLong_of_mem_squaresDens, Ratpoints.Sieve.fitsLong_of_mem_squares1Dens, Ratpoints.Sieve.fitsLong_of_mem_wordsDens}
   \leanok
   The four shapes, with their data (\csource{find_points.c}{3725}{3728},
   \csource{find_points.c}{3736}{3763}), as \verb|run_setup| chooses them from the flags of the
-  search (\csource{find_points.c}{3778}{3806}, \csource{find_points.c}{3876}{3877}), each with the
-  list of its denominators from $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$ in the order of its loop
-  and its test of a single denominator:
+  search (\csource{find_points.c}{3778}{3806}, \csource{find_points.c}{3876}{3877}), returning with
+  the shape the bounds of the search intervals for the height bound and the largest denominator,
+  which it makes once for the run after the shape (Definition~\ref{def:exactBounds};
+  \csource{find_points.c}{3869}{3870}), each shape with the list of its denominators from
+  $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$ in the order of its loop and its test of a single
+  denominator:
   \begin{itemize}
     \item the squares: $k^2$ for $k$ from $\lceil \sqrt{b_{\mathrm{low}}} \rceil$ to
       $\lfloor \sqrt{b_{\mathrm{high}}} \rfloor$ (\csource{find_points.c}{464}{471},
@@ -557,12 +560,13 @@ $(c_d / q) = -1$, which these do not reach.
   \csource{find_points.c}{4063}{4065}); for the words it is made by $\mathrm{den\_bits}$. The model
   lists the denominators of a shape and then tests and sifts them one after the other, where
   \verb|run_block| tests and sifts each as its loop reaches it, and has no blocks. The words of a
-  forbidden divisor, the word of $64$ denominators and the walk over its set bits are exact, so
-  that the list of the words is the range filtered by the class bit and the primes tested with
-  words; the tests of a denominator pass it when no entry of the valuation test excludes it, the
-  Jacobi tests pass it and no valuation entry excludes it. The bounds of the square shapes are the
-  exact integer square roots, and the denominators of the shapes are at most $b_{\mathrm{high}}$, so
-  \verb|long|s for a \verb|long| $b_{\mathrm{high}}$.
+  forbidden divisor, the word of $64$ denominators and the walk over its set bits are exact, so that
+  the list of the words is the range filtered by the class bit and the primes tested with words; the
+  tests of a denominator pass it when no entry of the valuation test excludes it, the Jacobi tests
+  pass it and no valuation entry excludes it. The bounds of the square shapes are the exact integer
+  square roots, and the denominators of the shapes are at most $b_{\mathrm{high}}$, so \verb|long|s
+  for a \verb|long| $b_{\mathrm{high}}$. The shape that \verb|run_setup| chooses and the bounds that
+  it makes are those of the flags and of the search intervals.
 \end{definition}
 
 \begin{lemma}[The lists of the shapes]\label{lem:shape_dens}
@@ -701,7 +705,7 @@ and the rows of offsets of the classes (\csource{find_points.c}{4573}{4573},
 \end{theorem}
 
 \begin{proof}
-  \uses{lem:findPoints_searchList, lem:flatMap_sound}
+  \uses{lem:findPoints_searchList, lem:flatMap_sound, lem:searchDenominators}
   \leanok
   $L$ is the list of the search of $c'$ for a sound test of the sieve
   (Lemma~\ref{lem:findPoints_searchList}), which takes an exit only when the curve has no points
@@ -795,9 +799,9 @@ statements that are not modelled, the management of memory (the arrays of the ru
 with the failures of their allocation, the release of the run and of the worker, the enlargement of
 the buffer of the tables when \verb|sieving_info| has looked at more primes), and the pool of
 threads with the threaded run; the output under \verb|RATPOINTS_VERBOSE| and \verb|DEBUG| inside a
-modelled block goes with the block, whose deviation says so. Left to later stages are the search
-intervals of the run (stage~H), and the blocks with the correction of the moduli between them and
-the choice of the number of primes examined (stage~I).
+modelled block goes with the block, whose deviation says so. Left to a later stage are the blocks
+with the correction of the moduli between them and the choice of the number of primes examined
+(stage~I).
 
 \section{Files and names}
 

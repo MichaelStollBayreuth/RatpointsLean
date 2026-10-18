@@ -746,8 +746,8 @@
         "Ratpoints.Sieve.sift"
       ]
     },
-    "find_points.c:3129-3129": {
-      "hash": "d0a0ae6886b5b256845dae987e6ba8fe9aa274390dc29cadcc6d83433ea4ea48",
+    "find_points.c:3129-3130": {
+      "hash": "a038dec3836f08fc3bffe96a25d43b5030c7cf4e13a8271c8036a37649155b4e",
       "owners": [
         "Ratpoints.Sieve.sift"
       ]
@@ -846,6 +846,12 @@
       "hash": "736285c8549c3a850ed4e5705d5b07e6a4192f56bde7c30639498f3c647eeeaa",
       "owners": [
         "Ratpoints.Sieve.intervalBits"
+      ]
+    },
+    "find_points.c:3435-3440": {
+      "hash": "caaf3894f4253547b7e06c68301f22b40b6c92707bc92b2eb742e6f4eb4f3b46",
+      "owners": [
+        "Ratpoints.Sieve.sift"
       ]
     },
     "find_points.c:3442-3488": {
@@ -982,6 +988,12 @@
         "excluded (memory)"
       ]
     },
+    "find_points.c:3869-3870": {
+      "hash": "f69ace1aa3cb8afee9036a4a318878a8d389bb9e57d206898e1d375d15ee9add",
+      "owners": [
+        "Ratpoints.Sieve.runSetup"
+      ]
+    },
     "find_points.c:3871-3875": {
       "hash": "c7c417246619ceb5b60e332befc05bee44eb65d7cbd3efb70124f6861cad595a",
       "owners": [
@@ -1008,6 +1020,12 @@
     },
     "find_points.c:3911-3911": {
       "hash": "d4b551f091b060e022f610cfb1962dd539c93edbd616f3ce39abebf95b715541",
+      "owners": [
+        "Ratpoints.Sieve.sieveRun"
+      ]
+    },
+    "find_points.c:3913-3913": {
+      "hash": "a8e83bf2bc4348d51f771677089ed7bc048f433ccb3a428cb9f41872637abde3",
       "owners": [
         "Ratpoints.Sieve.sieveRun"
       ]
@@ -1408,10 +1426,22 @@
         "excluded (instrumentation)"
       ]
     },
+    "find_points.c:4829-4829": {
+      "hash": "8aada97c61bf1fa9f3812cf38a0b200d8d40f813dc017c65cd62dcf517da46cf",
+      "owners": [
+        "Ratpoints.searchIntervals"
+      ]
+    },
     "find_points.c:4830-4830": {
       "hash": "7cbffff80c9544ddbf72db75cb6f323a0e32d4acc34b093a0034044a1b578447",
       "owners": [
         "excluded (interface)"
+      ]
+    },
+    "find_points.c:4831-4841": {
+      "hash": "fa6cc8c905540d83f244646d4925635eb52532f36e73065a41208b6a6a44755d",
+      "owners": [
+        "Ratpoints.searchIntervals"
       ]
     },
     "find_points.c:4857-4892": {
@@ -3293,6 +3323,12 @@
         "Ratpoints.rbaPack"
       ]
     },
+    "rp-private.h:574-574": {
+      "hash": "5b26c3b2c52e2a148e11094f13c4d54255a949f078d77cbf7b6f1497c38288c3",
+      "owners": [
+        "Ratpoints.Sieve.sift"
+      ]
+    },
     "rp-private.h:575-575": {
       "hash": "3d48f381209cca77b7f1300d7c3fc4eb18694b15f72b0722a1c8c7f9eeed2e9d",
       "owners": [
@@ -4091,6 +4127,7 @@
     "find_points.c:4829-4829": "8aada97c61bf1fa9f3812cf38a0b200d8d40f813dc017c65cd62dcf517da46cf",
     "find_points.c:4829-4855": "282f3d193a97f12fec0d83b863ce7fa8610c48b9e962432c78e0593c3a3564a5",
     "find_points.c:4829-4892": "762e61e0ffc9f309cb4f2a34d66ba69668ca74925b73dfa4c33f605735612988",
+    "find_points.c:4831-4841": "fa6cc8c905540d83f244646d4925635eb52532f36e73065a41208b6a6a44755d",
     "find_points.c:4831-4855": "2e54369423dcb62350ef028dec2a2b45bbfcf9cfbd80dba257593957ef07d6a1",
     "find_points.c:4857-4863": "65691e065c83d45756058244bff126fcda4782a97c1328711572850b6b956ccb",
     "find_points.c:4857-4892": "4a405362992d5fa4704adc24360e420c3361ac3906b60fa9e1c2ee88f8734399",

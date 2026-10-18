@@ -57,7 +57,10 @@ number above a negative bound, which stays above it, the quotients of the split 
 `numerators_to_bits`, its carries and their sums with a quotient, in the range of a `long`, the
 multiples of a divisor of `N` at or below a number `≥ -N` and above a number `< N`, which lie in
 `[-N, N]`, the product `a ^ m a ^ (n - m) = a ^ n` of integers, and the strings joined by a
-separator. The lemmas on 64-bit words are in `Ratpoints.Proof.Bits`.
+separator. For the search intervals: the elements of a list that pass one of two tests, those that
+pass the first coming before those that pass the second, and the elements of an increasing list of
+integers in ranges that are increasing and strictly apart, range after range. The lemmas on 64-bit
+words are in `Ratpoints.Proof.Bits`.
 
 ## Main statements
 
@@ -79,6 +82,10 @@ separator. The lemmas on 64-bit words are in `Ratpoints.Proof.Bits`.
   `w = w0, …, w0 + n - 1`: the denominators of the set bits of words.
 * `List.filter_range'_le_and_le`: of a range that covers `lo, …, hi`, the numbers from `lo` to
   `hi`.
+* `List.filter_append_filter_of_pairwise`, `List.flatMap_filter_eq_filter_any`: the elements of
+  a list that pass `p` followed by those that pass `q` are those that pass one of them, when those
+  that pass `p` come first; the elements of an increasing list of integers in ranges that are
+  increasing and strictly apart, range after range, are those in one of the ranges.
 * `Std.Legacy.Range.length_toList`: the list of `[a:b]` has `b - a` entries.
 * `Std.Legacy.Range.length_eq_of_toList_eq_append_cons`: the position of the cursor of a loop over
   `[0:m]`; `Std.Legacy.Range.add_length_eq_of_toList_eq_append_cons`,
@@ -563,6 +570,48 @@ theorem all_and_left {α : Type u} {l : List α} (hl : l ≠ []) (c : Bool) (P :
 theorem all_congr_left {α : Type u} {l : List α} {P Q : α → Bool} (h : ∀ a ∈ l, P a = Q a) :
     l.all P = l.all Q := by
   grind
+
+/-- The elements of a list that pass `p` followed by those that pass `q` are those that pass one of
+the two, for a list whose elements are pairwise in an asymmetric relation `R` that holds from every
+element that passes `p` to every element that passes `q`: none passes both, and those that pass `p`
+come first. -/
+theorem filter_append_filter_of_pairwise {α : Type u} {R : α → α → Prop} [Std.Asymm R]
+    {l : List α} (hl : l.Pairwise R) {p q : α → Bool}
+    (h : ∀ a ∈ l, ∀ b ∈ l, p a = true → q b = true → R a b) :
+    l.filter p ++ l.filter q = l.filter fun a ↦ p a || q a := by
+  induction l with
+  | nil => rfl
+  | cons x t ih =>
+    rw [pairwise_cons] at hl
+    have ih := ih hl.2 fun a ha b hb ↦ h a (.tail _ ha) b (.tail _ hb)
+    by_cases hp : p x <;> by_cases hq : q x
+    · exact absurd (h x mem_cons_self x mem_cons_self hp hq)
+        (Std.Asymm.asymm _ _ (h x mem_cons_self x mem_cons_self hp hq))
+    · simp [hp, hq, ih]
+    · have ht : t.filter p = [] := filter_eq_nil_iff.mpr fun a ha hpa ↦ Std.Asymm.asymm _ _
+        (hl.1 a ha) (h a (.tail _ ha) x mem_cons_self hpa hq)
+      simp [hp, hq, ← ih, ht]
+    · simp [hp, hq, ih]
+
+/-- Over ranges `lo, …, hi` of integers that are increasing and strictly apart, the elements of an
+increasing list `l` that lie in each range and pass `q`, range after range, are the elements of `l`
+that lie in one of the ranges and pass `q`: the loop of `Ratpoints.Sieve.sift` over the search
+intervals. -/
+theorem flatMap_filter_eq_filter_any {l : List Int} (hl : l.Pairwise (· < ·))
+    {rs : List (Int × Int)} (hrs : rs.Pairwise fun r s ↦ r.2 < s.1) (q : Int → Bool) :
+    rs.flatMap (fun r ↦ l.filter fun a ↦ decide (r.1 ≤ a ∧ a ≤ r.2) && q a) =
+      l.filter fun a ↦ (rs.any fun r ↦ decide (r.1 ≤ a ∧ a ≤ r.2)) && q a := by
+  induction rs with
+  | nil => simp
+  | cons r rs ih =>
+    rw [pairwise_cons] at hrs
+    rw [flatMap_cons, ih hrs.2, filter_append_filter_of_pairwise hl fun a _ b _ ha hb ↦ ?_]
+    · refine filter_congr fun a _ ↦ ?_
+      simp only [any_cons]
+      cases decide (r.1 ≤ a ∧ a ≤ r.2) <;> cases q a <;> simp
+    · simp only [Bool.and_eq_true, decide_eq_true_eq, any_eq_true] at ha hb
+      obtain ⟨⟨s, hs, hs'⟩, -⟩ := hb
+      lia [hrs.1 s hs]
 
 end List
 

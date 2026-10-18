@@ -395,8 +395,10 @@ those with the flag of the reversal, from the walk (\verb|Ratpoints.Sieve.walkWo
 \verb|Ratpoints.Sieve.siftBitArray_spec|), the scan (\verb|Ratpoints.Sieve.scanPiece_spec|) and one
 piece (\verb|Ratpoints.Sieve.siftPiece_spec|) up to the bits of one denominator
 (\verb|Ratpoints.Sieve.siftBits_spec|). For one denominator (\verb|Ratpoints.Sieve.sift_spec|) the
-list is that of the numerators of $[-H, H]$ that pass the class bit of the word $w$ that the class
-packs and survive the entries of all three stages, each with the points of its check with the flags
+list is that of the numerators of $[-H, H]$ in the ranges that the bounds of the search intervals
+give at the denominator (Definition~\ref{def:numeratorRanges}) that pass the class bit of the word
+$w$ that the class packs and survive the entries of all three stages, each with the points of its
+check with the flags, which the bits of one search interval give
 (\verb|Ratpoints.Sieve.flatMap_acceptedPoints_eq_flatMap_checkNumWith|), and the store after the
 denominator fits the entries again; for the run (\verb|Ratpoints.Sieve.sieveRun_spec|, with its
 equation \verb|Ratpoints.Sieve.run_sieveRun| and the form
@@ -465,19 +467,21 @@ search returns what a search gives back: the data and the count of the delivery 
 flags written back.
 
 \begin{definition}[The sieving]\label{def:sieving}
-  \uses{def:sieveRun, def:classOffsets, def:Shape, def:delivery, def:arraySize}
+  \uses{def:sieveRun, def:classOffsets, def:Shape, def:delivery, def:arraySize, def:searchIntervals}
   \lean{Ratpoints.sieving}
   \leanok
   The block that the C code introduces as ``now do the sieving'': an array of rows of offsets, one
   for each packing, of one offset for each sieve entry, and the row offsets of the classes in it,
   with the inverses of the strides in the entries (Definition~\ref{def:classOffsets}); the shape
-  that \verb|run_setup| chooses (Definition~\ref{def:Shape}); and the run over the denominators $1,
-  \dots, H$ of the shape with the cut points of the parameters, pieces of at most
-  $\mathrm{arraySizeAt}(H)$ bit arrays, the flags and the delivery (Definition~\ref{def:delivery}),
-  which returns when the callback stops the search (\csource{find_points.c}{4573}{4573},
-  \csource{find_points.c}{5116}{5116}, \csource{find_points.c}{5119}{5119},
-  \csource{find_points.c}{5132}{5132}, \csource{find_points.c}{5137}{5139},
-  \csource{find_points.c}{5167}{5167}).
+  that \verb|run_setup| chooses and the bounds that it makes of the default search interval
+  $[-h, h]$ of a search without search intervals (Definitions~\ref{def:Shape}
+  and~\ref{def:searchIntervals}), which holds every $x = a/b$ of the search; and the run over the
+  denominators $1, \dots, H$ of the shape in that interval with the cut points of the parameters,
+  pieces of at most $\mathrm{arraySizeAt}(H)$ bit arrays, the flags and the delivery
+  (Definition~\ref{def:delivery}), which returns when the callback stops the search
+  (\csource{find_points.c}{4573}{4573}, \csource{find_points.c}{5116}{5116},
+  \csource{find_points.c}{5119}{5119}, \csource{find_points.c}{5132}{5132},
+  \csource{find_points.c}{5137}{5139}, \csource{find_points.c}{5167}{5167}).
 \end{definition}
 
 \begin{definition}[What a search gives back]\label{def:Outcome}
@@ -539,37 +543,43 @@ callback and every setting of the flags, since the components that decide it, th
 relates the output under \verb|RATPOINTS_NO_CHECK| to the points.
 
 \begin{definition}[The points that the search delivers]\label{def:searchList}
-  \uses{def:checkNumWith, def:searchDens, def:bruteForce}
+  \uses{def:checkNumWith, def:searchDens, def:bruteForce, def:inIntervals}
   \lean{Ratpoints.searchList, Ratpoints.IsSoundTest}
   \leanok
-  For the coefficient list $c$ of its degree $d$, the height $H$, a test $S(b, a)$ of the numerators
-  $a$ over the denominators $b$ and the flags: the points at infinity with the flags, then, over the
-  denominators $b$ of the search in the order of its loop (Definition~\ref{def:searchDens}), the
-  points of the check with the flags of the numerators $a$ of $-H, \dots, H$ that pass
-  $S(b, \cdot)$, with the products of $c$, $d$ and $b$ and the factor $b$ for odd $d$ and $1$ for
-  even $d$. A test is \emph{sound} when, over each denominator $b$ of the search, it lets through
-  every numerator $a$ of $-H, \dots, H$ for which the brute-force reference finds a point
-  $(a, y, b)$.
+  For the coefficient list $c$ of its degree $d$, the height $H$, intervals $D$ of values (the
+  values of the ends of search intervals, Definition~\ref{def:inIntervals}), a test $S(b, a)$ of the
+  numerators $a$ over the denominators $b$ and the flags: the points at infinity with the flags,
+  then, over the denominators $b$ of the search in the order of its loop
+  (Definition~\ref{def:searchDens}), the points of the check with the flags of the numerators $a$ of
+  $-H, \dots, H$ with $a/b$ in one of the intervals of $D$ that pass $S(b, \cdot)$, with the
+  products of $c$, $d$ and $b$ and the factor $b$ for odd $d$ and $1$ for even $d$. A test is
+  \emph{sound} when, over each denominator $b$ of the search, it lets through every numerator $a$ of
+  $-H, \dots, H$ for which the brute-force reference finds a point $(a, y, b)$.
 \end{definition}
 
 \begin{lemma}[The search delivers the points of a sound test]\label{lem:searchList}
   \uses{def:searchList, def:sieving, def:searchPoints, def:Outcome, lem:sieveStops,
     thm:run_reference, lem:soundRun, lem:checkDelivery, lem:checkNumWith, lem:shape_dens,
-    lem:twoAdic_exit, lem:sievingInfo, lem:examinePrime_none}
+    lem:twoAdic_exit, lem:sievingInfo, lem:examinePrime_none, lem:sift_eq_checkDen,
+    lem:exactBounds, lem:numeratorRanges, def:searchIntervals}
   \lean{Ratpoints.exists_isSoundTest_run_searchPoints, Ratpoints.exists_isSoundTest_run_sieveRun, Ratpoints.run_searchPoints_eq_deliver, Ratpoints.run_searchPoints_flags, Ratpoints.searchList_of_noCheck_eq_false, Ratpoints.searchList_false, Ratpoints.isSoundTest_false_of_forall_not_isPoint, Ratpoints.pointsAtInfinityList_eq_nil_of_forall_not_isPoint, Ratpoints.Sieve.pointsAtInfinityList_eq_filter_map_pointsOfDen, Ratpoints.Sieve.pointsAtInfinityList_eq_nil_of_pointsOfDen_eq_nil, Ratpoints.BruteForce.pointsOfDen_zero_singleton_one, Ratpoints.BruteForce.pointsOfDen_ne_nil_of_mem}
   \leanok
-  For well-formed parameters and $1 \le H < 2^{63}$ there is a sound test $S$ such that the search
-  of $c$ of its degree, with any callback, any flags and a delivery whose flag is clear, gives the
-  data and the count of the delivery of the list of the points of Definition~\ref{def:searchList}
-  for $S$ and these flags; so it gives those of the delivery of the list that the search with the
-  appending callback gives, from the empty array, for the same flags. The run of the shape delivers
-  the part over the denominators for a sound test, whatever the callback and the flags. The bits of
+  For well-formed parameters, $1 \le H < 2^{63}$ and the default search interval $[-h, h]$ of a
+  search without search intervals (Definition~\ref{def:searchIntervals}) there is a sound test $S$
+  such that the search of $c$ of its degree, with any callback, any flags and a delivery whose flag
+  is clear, gives the data and the count of the delivery of the list of the points of
+  Definition~\ref{def:searchList} for the values of that interval, $S$ and these flags; so it gives
+  those of the delivery of the list that the search with the appending callback gives, from the
+  empty array, for the same flags. The run of the shape with the bounds of well-formed search
+  intervals delivers the part over the denominators for their values and a sound test, whatever the
+  callback, the flags and the intervals. The bits of
   the flags that the search writes back are the flag of the reversal as it came, the squares for odd
   degree and $|c_d| = 1$, and the success of the divisor set-up for odd degree and $|c_d| \ne 1$,
-  whatever the callback. Without $\mathrm{noCheck}$, for a sound test and $c$ of positive degree,
-  the points delivered are those that the brute-force reference finds over the candidate $(1, 0)$
-  and over the denominators of the search, in this order, mapped by $\mathrm{swapPoint}$ after a
-  reversal, without those with $y < 0$ under $\mathrm{noY}$. When the curve has no points, the test
+  whatever the callback. Without $\mathrm{noCheck}$, for a sound test, any intervals of values and
+  $c$ of positive degree, the points delivered are those that the brute-force reference finds over
+  the candidate $(1, 0)$ and over the denominators of the search and the numerators in the
+  intervals, in this order, mapped by $\mathrm{swapPoint}$ after a reversal, without those with
+  $y < 0$ under $\mathrm{noY}$. When the curve has no points, the test
   that lets nothing through is sound and there are no points at infinity.
 \end{lemma}
 
@@ -581,11 +591,14 @@ relates the output under \verb|RATPOINTS_NO_CHECK| to the points.
   and~\ref{lem:examinePrime_none}), so that the test that lets nothing through is sound and nothing
   is delivered; otherwise the points at infinity come first (Lemma~\ref{lem:checkDelivery}), the
   search returns after them at a stop, and the run delivers the points of the check with the flags
-  of the numerators that pass the test of the shape, the class words and the entries (the contract
-  of the run, Definition~\ref{def:sieveRun}, and Theorem~\ref{thm:run_reference}), which let every
-  point through, by what the search hands to the run (Lemma~\ref{lem:soundRun}) and by
-  Lemma~\ref{lem:shape_dens}. The case analysis is on the values of the components that decide the
-  test, which depend neither on the callback nor on the flags, so that one test serves them all.
+  of the numerators in the ranges that the bounds of the default search interval, which is well
+  formed, give (Lemma~\ref{lem:exactBounds}), those with $a/b$ in the interval
+  (Lemma~\ref{lem:numeratorRanges}), that pass the test of the shape, the class words and the
+  entries (the contract of the run, Definition~\ref{def:sieveRun}, and
+  Theorem~\ref{thm:run_reference}), which let every point through, by what the search hands to the
+  run (Lemma~\ref{lem:soundRun}) and by Lemma~\ref{lem:shape_dens}. The case analysis is on the
+  values of the components that decide the test, which depend neither on the callback nor on the
+  flags, so that one test serves them all.
 \end{proof}
 
 \begin{theorem}[The protocol of the delivery]\label{thm:protocol}
@@ -620,17 +633,21 @@ relates the output under \verb|RATPOINTS_NO_CHECK| to the points.
   \leanok
   For well-formed parameters, if $\mathrm{findPoints}(c, H, P, o)$ returns the list $L$, then the
   reversal check hands on a polynomial $c'$ of positive degree with the flag $\mathrm{rev}$ of the
-  reversal, $1 \le H$, and there is a sound test $S$ such that $L$ is the list of the points that
-  the search of $c'$ delivers for $S$ (Definition~\ref{def:searchList}) with the flags
-  $\mathrm{rev}$, $\mathrm{noCheck}$ and $\mathrm{noY}$ of $o$, and such that, for every choice of
-  the options of the output with the other options unchanged, $\mathrm{findPoints}$ returns the
-  list for $S$ with those flags.
+  reversal, $1 \le H$, and there are a sound test $S$ and intervals $D$ of values that hold $a/b$
+  for every $b > 0$ and $|a| \le H$, the values of the default search interval, such that $L$ is the
+  list of the points that the search of $c'$ delivers for $D$ and $S$
+  (Definition~\ref{def:searchList}) with the flags $\mathrm{rev}$, $\mathrm{noCheck}$ and
+  $\mathrm{noY}$ of $o$, and such that, for every choice of the options of the output with the
+  other options unchanged, $\mathrm{findPoints}$ returns the list for $D$ and $S$ with those
+  flags.
 \end{lemma}
 
 \begin{proof}
+  \uses{def:searchIntervals}
   \leanok
-  Lemma~\ref{lem:searchList} for the polynomial handed on, with the appending callback; the test
-  does not depend on the flags.
+  Lemma~\ref{lem:searchList} for the polynomial handed on and the default search interval
+  (Lemma~\ref{lem:searchIntervals}), with the appending callback; the test does not depend on the
+  flags.
 \end{proof}
 
 \section{The options of the output}\label{sec:outputOptions}
@@ -656,16 +673,17 @@ refusal theorems (Theorem~\ref{thm:refusals}) keep their statements. Under $\mat
 following lemma and theorem say what the list holds.
 
 \begin{lemma}[The survivors under NO\_CHECK]\label{lem:noCheckList}
-  \uses{def:searchList, lem:checkNumWith, lem:swapPoint_bijection, def:searchDens, lem:shape_dens}
+  \uses{def:searchList, lem:checkNumWith, lem:swapPoint_bijection, def:searchDens, lem:shape_dens,
+    def:inIntervals}
   \lean{Ratpoints.exists_eq_of_mem_searchList_of_noCheck, Ratpoints.nodup_searchList_of_noCheck, Ratpoints.map_searchList_sublist, Ratpoints.searchList_eq_map, Ratpoints.nodup_searchDens, List.Nodup.flatMap}
   \leanok
   Under $\mathrm{noCheck}$ and for $1 \le H$, every member of the list that the search of $c$
-  delivers for any test is $(x, 0, z)$ for a pair $(x, z)$ normalized of height at most $H$
-  (Lemma~\ref{lem:swapPoint_bijection}), and the list has no duplicates. For any test, with the flag
-  of the reversal set, the list is that with it clear, mapped; and the list with the exact check on
-  and $\mathrm{noY}$ set, with $y$ replaced by $0$, is a sublist of the list under
-  $\mathrm{noCheck}$ with the same flag of the reversal. The denominators of the search have no
-  duplicates.
+  delivers for any intervals of values and any test is $(x, 0, z)$ for a pair $(x, z)$ normalized of
+  height at most $H$ (Lemma~\ref{lem:swapPoint_bijection}), and the list has no duplicates. For any
+  intervals and any test, with the flag of the reversal set, the list is that with it clear, mapped;
+  and the list with the exact check on and $\mathrm{noY}$ set, with $y$ replaced by $0$, is a
+  sublist of the list under $\mathrm{noCheck}$ with the same flag of the reversal. The denominators
+  of the search have no duplicates.
 \end{lemma}
 
 \begin{proof}

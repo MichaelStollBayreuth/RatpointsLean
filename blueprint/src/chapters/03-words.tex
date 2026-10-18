@@ -389,48 +389,58 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
 \section{One denominator and the run}\label{sec:siftDen}
 
 \begin{definition}[One denominator]\label{def:sift}
-  \uses{def:siftPiece, def:stage3, def:deliver, lem:staged, lem:accepted, def:siftBits,
-    def:numeratorsToBits, lem:admits_mul, lem:classOffsets, lem:numClasses, lem:numeratorsToBits,
-    lem:reads_row, lem:rowIndices, lem:siftBits, def:buildRows, lem:buildRows}
-  \lean{Ratpoints.Sieve.sift, Ratpoints.Sieve.sift_spec, Ratpoints.Sieve.flatMap_acceptedPoints_eq_flatMap_checkNumWith}
+  \uses{def:siftPiece, def:stage3, def:deliver, def:siftBits, def:numeratorsToBits, lem:admits_mul,
+    lem:classOffsets, lem:numClasses, lem:numeratorsToBits, lem:reads_row, lem:rowIndices,
+    lem:siftBits, def:buildRows, lem:buildRows, def:intervalBits, def:numeratorRanges,
+    lem:siftIntervals}
+  \lean{Ratpoints.Sieve.sift, Ratpoints.Sieve.sift_spec}
   \leanok
-  For the denominator $b$ in the packing of its class (Definition~\ref{def:numClasses}) and the
-  store of the tables of rows of the run (Definition~\ref{def:entryRef}): the sieve specs of the
-  sieve entries of the first two stages, the rows of the residues of $b$ divided by the stride of
-  the class, which the run computes (Definition~\ref{def:fillBpList}), read from the tables of rows
-  of their entries, the missing ones built into them (Definition~\ref{def:buildRows}), read at the
+  For the denominator $b$ in the packing of its class (Definition~\ref{def:numClasses}), the bounds
+  of the search intervals of the run (Definition~\ref{def:exactBounds}), which the sieving thread
+  holds in the struct \verb|rp_intervals| behind its field \verb|iv|
+  (\csource{find_points.c}{3435}{3440}, \csource{rp-private.h}{574}{574}), and the store of the
+  tables of rows of the run (Definition~\ref{def:entryRef}): for each interval in turn, the bits of
+  its numerators $\lceil b l \rceil, \dots, \lfloor b u \rfloor$ within the height bound in the
+  packing of the class (Definition~\ref{def:intervalBits}; \csource{find_points.c}{3442}{3488}), the
+  code~$2$ returning, since no later interval holds a numerator within the bound, and the code~$1$
+  going on to the next interval; at the first interval with the code~$0$, also one without
+  numerators, once for the denominator (the flag \verb|do_setup|), the sieve specs of the sieve
+  entries of the first two stages, the rows of the residues of $b$ divided by the stride of the
+  class, which the run computes (Definition~\ref{def:fillBpList}), read from the tables of rows of
+  their entries, the missing ones built into them (Definition~\ref{def:buildRows}), read at the
   offsets of the row of the class (Definition~\ref{def:siftBits};
-  \csource{find_points.c}{3490}{3521}, \csource{find_points.c}{3555}{3561}); the end $s_1$ of the
-  first stage, the entries and the reciprocals of the first two stages, and the entries of the third
-  stage with their reciprocals, which the sieving thread takes from the arguments of the run that it
-  is set up with (\csource{find_points.c}{3112}{3114}, \csource{find_points.c}{3123}{3124},
-  \csource{rp-private.h}{577}{578}); what the third stage needs of its entries
-  (Definition~\ref{def:stage3}) and the products $c_k b^{d - k}$ of the check as thunks, made once
-  per denominator and forced when the first numerator of $b$ needs them, for the flags
-  \verb|stage3_filled| and \verb|compute_bc| of the sieving thread
-  (\csource{find_points.c}{3129}{3129}, \csource{rp-private.h}{583}{583}); the degree $d$ and the
-  flags of the check, which the check reads; the bits of the numerators $-H, \dots, H$ in the
-  packing of the class, in the form that splits the ends for $H > 2^{63} - 65$
-  (Definition~\ref{def:numeratorsToBits}; \csource{find_points.c}{3442}{3488}); and the points of
-  these bits in pieces delivered to the callback (Definition~\ref{def:siftBits};
-  \csource{find_points.c}{3613}{3617}), the delivery returned with the store, which keeps the rows
-  built for the rest of the run. Its contract, for a delivery whose flag is clear, $A \ge 1$, a
-  denominator $0 < b < 2^{63}$, $H < 2^{63}$, a class that packs a word $w$
-  (Lemma~\ref{lem:numClasses}) and has a row of offsets, sieve entries in the first two stages whose
-  tables of inverses invert, with the reciprocals of their moduli, the residues
-  $b\,\mathrm{dinv}[k] \bmod p$ and the offsets of the class (Lemma~\ref{lem:classOffsets}), a store
-  of the tables of rows that fits them (Lemma~\ref{lem:storeTables}), and prime entries with their
-  reciprocals in the third (Definition~\ref{def:stage3}): the store after the denominator fits the
-  entries again (Lemma~\ref{lem:buildRows}), and the delivery is that of the points of the check
-  with the flags (Definition~\ref{def:checkNumWith}) of the numerators $-H, \dots, H$ that pass the
-  class bit of $w$ and survive the sieve entries of all three stages, the points that the extraction
-  delivers for a numerator that survives being those of the check with the flags; with the exact
-  check on, these are what the brute-force reference finds over $b$ and these numerators, the points
-  of the sieve of $b$ followed by its check in stage~C1 whose numerators pass the class bit, mapped
-  by $\mathrm{swapPoint}$ when the flag of the reversal is set, those with $y < 0$ left out under
-  $\mathrm{noY}$ (Lemma~\ref{lem:sift_eq_checkDen}). The bits of $[-H, H]$ in the packing of the
-  class that pass its pattern give the numerators of $[-H, H]$ that pass $w$, in increasing order
-  (Lemma~\ref{lem:siftBits}).
+  \csource{find_points.c}{3490}{3521}, \csource{find_points.c}{3555}{3561}); and then the points of
+  the bits of the interval in pieces delivered to the callback (Definition~\ref{def:siftBits};
+  \csource{find_points.c}{3613}{3617}), returning when the callback stops the search. The end $s_1$
+  of the first stage, the entries and the reciprocals of the first two stages, and the entries of
+  the third stage with their reciprocals, which the sieving thread takes from the arguments of the
+  run that it is set up with (\csource{find_points.c}{3112}{3114},
+  \csource{find_points.c}{3123}{3124}, \csource{rp-private.h}{577}{578}); what the third stage needs
+  of its entries (Definition~\ref{def:stage3}) and the products $c_k b^{d - k}$ of the check as
+  thunks, made once per denominator and forced when the first numerator of $b$ needs them, for the
+  flags \verb|stage3_filled| and \verb|compute_bc| of the sieving thread, which \verb|worker_init|
+  clears with its field \verb|iv| (\csource{find_points.c}{3129}{3130},
+  \csource{rp-private.h}{583}{583}); the degree $d$ and the flags of the check, which the check
+  reads; the delivery returned with the store, which keeps the rows built for the rest of the run.
+  For the one interval $[-h, h]$, $h \ge H$, of a search without search intervals the numerators are
+  $-H, \dots, H$, in the form of their bits that splits the ends for $H > 2^{63} - 65$. Its
+  contract, for a delivery whose flag is clear, $A \ge 1$, a denominator $0 < b < 2^{63}$,
+  $H < 2^{63}$, a class that packs a word $w$ (Lemma~\ref{lem:numClasses}) and has a row of offsets,
+  sieve entries in the first two stages whose tables of inverses invert, with the reciprocals of
+  their moduli, the residues $b\,\mathrm{dinv}[k] \bmod p$ and the offsets of the class
+  (Lemma~\ref{lem:classOffsets}), a store of the tables of rows that fits them
+  (Lemma~\ref{lem:storeTables}), prime entries with their reciprocals in the third
+  (Definition~\ref{def:stage3}), and the ranges of the numerators that the bounds give at $b$
+  (Definition~\ref{def:numeratorRanges}), quantified in the postcondition, since the program does
+  not mention them: the store after the denominator fits the entries again, also when no interval
+  asks for the rows (Lemma~\ref{lem:buildRows}), and the delivery is that of the points of the check
+  with the flags (Definition~\ref{def:checkNumWith}) of the numerators $-H, \dots, H$ that lie in
+  one of the ranges, pass the class bit of $w$ and survive the sieve entries of all three stages, in
+  increasing order (Lemma~\ref{lem:siftIntervals}); with the exact check on, these are what the
+  brute-force reference finds over $b$ and these numerators, the points of the sieve of $b$ followed
+  by its check in stage~C1 whose numerators lie in the ranges and pass the class bit, mapped by
+  $\mathrm{swapPoint}$ when the flag of the reversal is set, those with $y < 0$ left out under
+  $\mathrm{noY}$ (Lemma~\ref{lem:sift_eq_checkDen}).
 \end{definition}
 
 \begin{lemma}[The words compute the Booleans]\label{lem:sift_eq_checkDen}
@@ -441,12 +451,14 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
   For $A \ge 1$, a denominator $0 < b < 2^{63}$, $H < 2^{63}$, a class that packs a word $w$ and has
   a row of offsets, sieve entries in the first two stages whose tables of inverses invert and that
   are packed for the class at its offsets, a store of the tables of rows that fits them
-  (Lemma~\ref{lem:storeTables}), prime entries with their reciprocals in the third, the exact check
-  on and a delivery whose flag is clear, the delivery after the denominator $b$ that \verb|sift|
-  makes in the packing of the class, with the residues of $b$ divided by the stride, is that of the
-  points that the check of stage~C1 returns on the sieve of stage~C1 with all these entries whose
-  numerators pass the class bit of $w$, mapped by $\mathrm{swapPoint}$ when the flag of the reversal
-  is set, those with $y < 0$ left out under $\mathrm{noY}$.
+  (Lemma~\ref{lem:storeTables}), prime entries with their reciprocals in the third, bounds of the
+  search intervals that give the ranges of the numerators at $b$
+  (Definition~\ref{def:numeratorRanges}), the exact check on and a delivery whose flag is clear, the
+  delivery after the denominator $b$ that \verb|sift| makes in the packing of the class, with the
+  residues of $b$ divided by the stride, is that of the points that the check of stage~C1 returns on
+  the sieve of stage~C1 with all these entries whose numerators lie in one of the ranges and pass
+  the class bit of $w$, mapped by $\mathrm{swapPoint}$ when the flag of the reversal is set, those
+  with $y < 0$ left out under $\mathrm{noY}$.
 \end{lemma}
 
 \begin{proof}
@@ -456,9 +468,9 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
   The check of stage~C1 on the sieve of stage~C1 gives what the brute-force reference finds over $b$
   and the numerators $-H, \dots, H$ that survive the sieve entries, by the contracts of
   Definitions~\ref{def:sieveDen} and~\ref{def:checkDen}, and \verb|sift| delivers those of these
-  points whose numerators pass the class bit, mapped by $\mathrm{swapPoint}$ when the flag of the
-  reversal is set and without those with $y < 0$ under $\mathrm{noY}$, by the contract of
-  Definition~\ref{def:sift} and the check with the flags without $\mathrm{noCheck}$
+  points whose numerators lie in the ranges and pass the class bit, mapped by $\mathrm{swapPoint}$
+  when the flag of the reversal is set and without those with $y < 0$ under $\mathrm{noY}$, by the
+  contract of Definition~\ref{def:sift} and the check with the flags without $\mathrm{noCheck}$
   (Lemma~\ref{lem:checkNumWith}), which rest on Lemma~\ref{lem:staged}: filtering the numerators by
   a test filters the points of the reference by the test of their numerators.
 \end{proof}
@@ -494,8 +506,6 @@ theorems or of the comparator challenge.
 Each component of this chapter differs from the C code in a stated way, recorded in its
 \verb|Deviation:| paragraph:
 \begin{itemize}
-  \item every numerator from $-H$ to $H$ in the packing of the class of the denominator, for the
-    intervals of the search region (H);
   \item the arm of the first stage chosen by a test on the constant $\mathrm{chunk}$, for the
     conditional compilation of the C code, which compiles one arm only (Chapter~\ref{chap:rows});
   \item the residues of the denominator divided by the stride of its class and the class as

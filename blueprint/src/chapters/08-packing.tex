@@ -85,11 +85,13 @@ after reducing $b$ by $\mathrm{RP\_MULMOD}$, or after reducing it by a division)
 \verb|numerators_to_bits| (\csource{find_points.c}{3355}{3370}) turns the interval of numerators
 into the bits $\lceil(\mathrm{low} - a_0)/2^k\rceil$ to $\lfloor(\mathrm{high} - a_0)/2^k\rfloor$,
 by arithmetic shifts of longs, in a plain form and in a split form that avoids the overflow of the
-plain one for heights above $\mathrm{LONG\_MAX} - 64$; for the whole line, the model's setting, the
-C code takes the split form exactly for those heights (the test of \verb|exact_bounds| and the path
-through \verb|interval_bits_exact|, lines that belong to the search intervals of stage~H). Then,
-once \verb|interval_bits| does not report an interval empty (it returns $0$ also for a clipped
-interval that holds no numerator), which for the whole line is at once, \verb|set_rows|
+plain one for heights above $\mathrm{LONG\_MAX} - 64$; the bounds of the search interval choose the
+form (Definition~\ref{def:intervalBits}): the plain one on the path of the forms of the ends, which
+\verb|exact_bounds| gives an interval only for $H \le \mathrm{LONG\_MAX} - 64$, and on the path
+through \verb|interval_bits_exact| the split one exactly for the heights above, so that for the
+whole line the C code takes the split form exactly for those heights. Then, once
+\verb|interval_bits| does not report an interval empty (it returns $0$ also for a clipped interval
+that holds no numerator), \verb|set_rows|
 (\csource{find_points.c}{3149}{3170}) takes for each modulus the row of that residue and the class's
 offset, and if the bits are not empty, they are sifted in pieces with the masks of the ends
 (\csource{find_points.c}{3563}{3617}).
@@ -461,9 +463,10 @@ fitting specs and the reciprocals of their moduli.
   $\mathrm{rbaLength} - 1 - (\mathrm{high} \bmod \mathrm{rbaLength})$, each piece delivering its
   points to the callback and the loop returning after a piece at which the callback stopped the
   search, as \verb|sift| does at line 3611 (\csource{find_points.c}{3563}{3612}). One denominator
-  (Definition~\ref{def:sift}) takes the class, the residues, the array of offsets and the store,
-  makes the specs, builds the missing rows (Definition~\ref{def:buildRows}), turns $[-H, H]$ into
-  bits and sifts them.
+  (Definition~\ref{def:sift}) takes the class, the residues, the array of offsets, the bounds of the
+  search intervals and the store, turns each interval into bits (Definition~\ref{def:intervalBits}),
+  makes the specs and builds the missing rows (Definition~\ref{def:buildRows}) at the first interval
+  with the code~$0$, and sifts the bits of each interval with the code~$0$.
 \end{definition}
 
 \begin{lemma}[The bits of one denominator]\label{lem:siftBits}
@@ -656,23 +659,23 @@ Each component of this chapter differs from the C code in a stated way, recorded
     their arithmetic wrapping where that of the \verb|long|s overflows, which the C standard leaves
     undefined: the differences of the plain form for an end within $a_0$ of $-2^{63}$, where neither
     the C code nor the model takes the plain form; the two ends returned as a pair, for the pointer
-    arguments; the form an argument, whose value for the whole line, the split form exactly for the
-    heights above $2^{63} - 65$, the C code decides in lines of the search intervals (stage~H); the
-    height bound converted to a $64$-bit word, which is exact for $H < 2^{63}$, and the bits back to
-    integers;
+    arguments; the form an argument, chosen by the bounds of the search interval
+    (Definition~\ref{def:intervalBits}), the split form on the path of the products in 128 bits
+    exactly for the heights above $2^{63} - 65$ and the plain form on the path of the forms of the
+    ends; the height bound converted to a $64$-bit word, which is exact for $H < 2^{63}$, and the
+    bits back to integers;
   \item the bits of one interval a function of its own, the part of the loop over the intervals of
     \verb|sift| after the set-up, with the size of the pieces as an argument; the word numbers and
     the masks by the floor division and the Euclidean remainder by $\mathrm{rbaLength}$, for the
     shift by \verb|RBA_SHIFT| and the mask by \verb|RBA_LENGTH - 1|, which gcc makes so on a
-    negative \verb|long| too; the sieve specs, and with them the rows of the residues, made before
-    the bits of the interval, where \verb|sift| turns the interval into bits first and sets up once
-    \verb|interval_bits| does not report the interval empty (the flag \verb|do_setup|), which for
-    the whole line is at once and so before the test $\mathrm{low} \le \mathrm{high}$ of the bits;
-    the sieve specs a list, with the start $0$, where the C code leaves the field until the first
-    stage sets it, the empty array for the null pointer of a row not built yet and the end $p$ also
-    for such a row, where the C code adds $p$ to the null pointer (Chapter~\ref{chap:rows}), and the
-    row read plainly, for the acquire load that the flag \verb|shared| chooses, which serves the
-    threads; a class without a row of offsets, which the run never sifts, reading the offsets from
+    negative \verb|long| too; the sieve specs an argument, which \verb|sift| makes, with the rows of
+    the residues, at the first interval with the code~$0$, as the C code makes them (the flag
+    \verb|do_setup|), before the test $\mathrm{low} \le \mathrm{high}$ of the bits; the sieve specs
+    a list, with the start $0$, where the C code leaves the field until the first stage sets it, the
+    empty array for the null pointer of a row not built yet and the end $p$ also for such a row,
+    where the C code adds $p$ to the null pointer (Chapter~\ref{chap:rows}), and the row read
+    plainly, for the acquire load that the flag \verb|shared| chooses, which serves the threads; a
+    class without a row of offsets, which the run never sifts, reading the offsets from
     position~$0$;
   \item the reciprocals of the first two stages as lists stepped with the sieve specs, for the
     pointer \verb|mg| into \verb|magics|; \verb|small| a Boolean, for the \verb|int|; the value
@@ -691,10 +694,10 @@ the lines of the packing that its components do not model are left to later stag
 lines of \verb|fill_bp_list| are owned with a deviation, as those of \verb|sift| are. The start
 pointers of the chunked first stage (\csource{sift.c}{596}{606}), which read \verb|small| and
 \verb|mod_mul| too, and the ends of the rows in the sieve specs are modelled since stage~F4
-(Chapter~\ref{chap:rows}). Left to stage~H are the search intervals, among them the choice of the
-form of \verb|numerators_to_bits| and the clipping of an interval to the height bound; to stage~I
-the reserve of the offsets for the correction of the moduli and the cost model of the packing
-(\verb|clipped_padding|).
+(Chapter~\ref{chap:rows}), and the search intervals, among them the choice of the form of
+\verb|numerators_to_bits| and the clipping of an interval to the height bound, since stage~H
+(Chapter~\ref{chap:region}). Left to stage~I are the reserve of the offsets for the correction of
+the moduli and the cost model of the packing (\verb|clipped_padding|).
 
 \section{Files and names}\label{sec:packingFiles}
 

@@ -36,7 +36,7 @@ bounds of the search intervals give for a denominator are stated here too, on Le
   `Ratpoints.Sieve.inRanges`: the range of the numerators that the bounds of a search interval give
   for a denominator, the ranges of the search intervals of a run, and the membership in them, the
   interface between the bounds of the search intervals (`Ratpoints.Proof.Bounds`) and the sieve of
-  one denominator, which reads the bounds with stage H.
+  one denominator (`Ratpoints.Sieve.sift_spec`).
 
 ## Main statements
 
@@ -56,6 +56,9 @@ bounds of the search intervals give for a denominator are stated here too, on Le
   `-H, …, H` are `long`s.
 * `Ratpoints.Sieve.fitsLong_neg_sub_and_fitsLong_add`: the values `-w_low - offset` and
   `i + offset` that the first two stages reduce by the helper `mod` are `long`s.
+* `Ratpoints.Sieve.flatMap_flatMap_filter_eq_flatMap_filter_inRanges`: for ranges that increase and
+  are strictly apart, the points of the elements of an increasing list, range after range, are those
+  of the elements in one of the ranges.
 
 ## Implementation notes
 
@@ -195,6 +198,26 @@ theorem NumClass.le_numerator_and_numerator_le_iff (cl : NumClass) (lo hi t : In
   have hk : (0 : Int) < 2 ^ cl.k := Int.pow_pos (by decide)
   rw [numerator, Int.neg_le_iff, Int.le_ediv_iff_mul_le hk, Int.le_ediv_iff_mul_le hk]
   constructor <;> intro h <;> constructor <;> lia
+
+/-- The bits from `⌈(lo - a₀) / 2 ^ k⌉` to `⌊(hi - a₀) / 2 ^ k⌋` of the packing of a class, for
+`-H ≤ lo` and `hi ≤ H`, are those of the numerators `-H, …, H`
+(`Ratpoints.Sieve.toInt_numeratorsToBits_height`) whose numerators lie in `lo, …, hi`
+(`Ratpoints.Sieve.NumClass.le_numerator_and_numerator_le_iff`). -/
+theorem NumClass.map_range_eq_filter_map_range (cl : NumClass) {H : Nat} {lo hi : Int}
+    (hlo : -(H : Int) ≤ lo) (hhi : hi ≤ H) :
+    (List.range ((hi - cl.a0) / 2 ^ cl.k + 1 - -((cl.a0 - lo) / 2 ^ cl.k)).toNat).map
+        (fun i : Nat ↦ -((cl.a0 - lo) / 2 ^ cl.k) + i) =
+      ((List.range (((H : Int) - cl.a0) / 2 ^ cl.k + 1 -
+        -((cl.a0 + H : Int) / 2 ^ cl.k)).toNat).map
+          fun i : Nat ↦ -((cl.a0 + H : Int) / 2 ^ cl.k) + i).filter
+        fun j ↦ decide (lo ≤ cl.numerator j ∧ cl.numerator j ≤ hi) := by
+  have hm : (0 : Int) < 2 ^ cl.k := Int.pow_pos (by decide)
+  have h1 : (cl.a0 - lo) / 2 ^ cl.k ≤ (cl.a0 + H : Int) / 2 ^ cl.k := Int.ediv_le_ediv hm (by lia)
+  have h2 : (hi - cl.a0) / 2 ^ cl.k ≤ ((H : Int) - cl.a0) / 2 ^ cl.k :=
+    Int.ediv_le_ediv hm (by lia)
+  rw [List.filter_congr fun j _ ↦
+      decide_eq_decide.mpr (cl.le_numerator_and_numerator_le_iff lo hi j),
+    List.filter_map_range_eq_map_range_of_le (by lia) (by lia)]
 
 end Sieve
 
@@ -352,8 +375,8 @@ structure IntervalBounds.Represents (bd : IntervalBounds) (b H : Nat) (lo hi : I
 /-- The bounds `iv` of the search intervals of a run give, for the denominator `b` and the height
 bound `H`, the ranges of the numerators `rs`, one for each interval in turn
 (`Ratpoints.Sieve.IntervalBounds.Represents`), each with `lo ≤ hi + 1`, increasing and strictly
-apart: what the loop of `sift` over the intervals needs, which returns at the first interval above
-`H` (`Ratpoints.Sieve.sift`, with stage H). -/
+apart: what the loop of `Ratpoints.Sieve.sift` over the intervals needs, which returns at the first
+interval above `H`. -/
 structure RangesFor (iv : Array IntervalBounds) (b H : Nat) (rs : List (Int × Int)) : Prop where
   /-- One range for each interval. -/
   length_eq : iv.size = rs.length
@@ -367,6 +390,46 @@ structure RangesFor (iv : Array IntervalBounds) (b H : Nat) (rs : List (Int × I
 /-- Whether the integer `a` lies in one of the ranges `lo, …, hi` of `rs`. -/
 def inRanges (rs : List (Int × Int)) (a : Int) : Bool :=
   rs.any fun r ↦ decide (r.1 ≤ a ∧ a ≤ r.2)
+
+/-- The bounds `cur` of a search interval at the position `pref.length` of the array `iv` give the
+range of the numerators at that position of the ranges `rs` of `iv`. -/
+theorem RangesFor.represents_of_eq_append_cons {iv : Array IntervalBounds} {b H : Nat}
+    {rs : List (Int × Int)} (h : RangesFor iv b H rs) {pref suff : List IntervalBounds}
+    {cur : IntervalBounds} (hl : ForIn.toList iv = pref ++ cur :: suff) :
+    ∃ hk : pref.length < rs.length, cur.Represents b H rs[pref.length].1 rs[pref.length].2 := by
+  rw [Std.Internal.ForIn.toList_array] at hl
+  have hk : pref.length < rs.length := by
+    rw [← h.length_eq, ← Array.length_toList, hl]
+    simp
+  have hz : pref.length < (iv.toList.zip rs).length := by simp [h.length_eq, hk]
+  refine ⟨hk, ?_⟩
+  simpa [List.getElem_zip, hl] using h.represents _ (List.getElem_mem hz)
+
+/-- The ranges of the search intervals from the position `k` on lie above a number `x` below the
+first numerator of the range at `k`: they are increasing and strictly apart, and each is empty at
+most by one. -/
+theorem RangesFor.lt_fst_of_mem_drop {iv : Array IntervalBounds} {b H : Nat}
+    {rs : List (Int × Int)} (h : RangesFor iv b H rs) {k : Nat} (hk : k < rs.length) {x : Int}
+    (hx : x < rs[k].1) : ∀ rg ∈ rs.drop k, x < rg.1 := by
+  intro rg hrg
+  have hp := h.pairwise.sublist (List.drop_sublist k rs)
+  rw [List.drop_eq_getElem_cons hk, List.pairwise_cons] at hp
+  rw [List.drop_eq_getElem_cons hk] at hrg
+  rcases List.mem_cons.mp hrg with rfl | hrg
+  · exact hx
+  · lia [hp.1 rg hrg, h.le_add_one _ (List.getElem_mem hk)]
+
+/-- The points of the elements of an increasing list `l` in each of the ranges `rs`, which are
+increasing and strictly apart, that pass `q`, range after range, are those of the elements of `l`
+in one of the ranges (`Ratpoints.Sieve.inRanges`) that pass `q`
+(`List.flatMap_filter_eq_filter_any`). -/
+theorem flatMap_flatMap_filter_eq_flatMap_filter_inRanges {l : List Int}
+    (hl : l.Pairwise (· < ·)) {rs : List (Int × Int)} (hrs : rs.Pairwise fun r s ↦ r.2 < s.1)
+    (q : Int → Bool) (g : Int → List (Int × Int × Int)) :
+    (rs.flatMap fun rg ↦ (l.filter fun a ↦ decide (rg.1 ≤ a ∧ a ≤ rg.2) && q a).flatMap g) =
+      (l.filter fun a ↦ inRanges rs a && q a).flatMap g := by
+  rw [← List.flatMap_assoc, List.flatMap_filter_eq_filter_any hl hrs]
+  rfl
 
 end Sieve
 

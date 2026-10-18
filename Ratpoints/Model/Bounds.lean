@@ -30,8 +30,9 @@ others by the products in 128 bits (`Ratpoints.Sieve.IntervalBounds`). The funct
 bounds of an interval into the bits of the numerators of a class, `interval_bits` and
 `interval_bits_exact` of the C code, are `Ratpoints.Sieve.intervalBits` and
 `Ratpoints.Sieve.intervalBitsExact` in `Ratpoints.Model.Sieve`, next to the conversion of
-numerators to bits that they end with (`Ratpoints.Sieve.numeratorsToBits`). The run makes the bounds
-and the sieve of one denominator reads them with stage H.
+numerators to bits that they end with (`Ratpoints.Sieve.numeratorsToBits`). The bounds are made
+once for the run (`Ratpoints.Sieve.runSetup`) and read by the sieve of one denominator
+(`Ratpoints.Sieve.sift`).
 
 ## Main definitions
 

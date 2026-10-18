@@ -563,16 +563,19 @@ intervals through their values and their bits.
 
 \begin{definition}[The search intervals of a search]\label{def:searchIntervals}
   \uses{def:Double, def:reversal}
-  Proposed names: \lname{Ratpoints.searchIntervals}, \lname{Ratpoints.Refusal.badArgs}. For the
-  height bound $H \ge 1$ and the intervals of the caller: for none, the default interval $[-h, h]$,
-  where $h$ is the double of $H$, moved up to the next double when $h < 2^{63}$ and $h < H$, so that
-  it holds every $x = a/b$ of the search; otherwise the intervals given, or none, which the search
-  turns into the refusal $\mathrm{badArgs}$, the code \verb|RATPOINTS_BAD_ARGS|, when an interval
-  has not $l \le u$ or does not begin above the end of the one before it, compared as doubles, so
-  that a NaN end is refused too (\csource{find_points.c}{4829}{4829},
-  \csource{find_points.c}{4831}{4855}; the test of a null pointer, line 4830, is excluded as the
-  interface of the library). The program turns the refusal into its error~9, which it gives for a
-  code of the library other than \verb|RATPOINTS_NON_SQUAREFREE| and \verb|RATPOINTS_NO_MEMORY|.
+  \lean{Ratpoints.searchIntervals}
+  Proposed name: \lname{Ratpoints.Refusal.badArgs}. For the height bound $H \ge 1$ and the
+  intervals of the caller: for none, the default interval $[-h, h]$, where $h$ is the double of $H$,
+  moved up to the next double when $h < 2^{63}$ and $h < H$, so that it holds every $x = a/b$ of the
+  search (\csource{find_points.c}{4829}{4829}, \csource{find_points.c}{4831}{4841}); otherwise the
+  intervals given, or none, which the search turns into the refusal $\mathrm{badArgs}$, the code
+  \verb|RATPOINTS_BAD_ARGS|, when an interval has not $l \le u$ or does not begin above the end of
+  the one before it, compared as doubles, so that a NaN end is refused too (lines 4842-4855; the
+  test of a null pointer, line 4830, is excluded as the interface of the library). The program turns
+  the refusal into its error~9, which it gives for a code of the library other than
+  \verb|RATPOINTS_NON_SQUAREFREE| and \verb|RATPOINTS_NO_MEMORY|. Until H.5 the model has the
+  default interval only, which the sieving takes for a search without intervals, and returns the
+  intervals given as they are, never none.
 \end{definition}
 
 \begin{lemma}[The search intervals of a search]\label{lem:searchIntervals}
@@ -839,18 +842,8 @@ numerators with $a/b$ in one of the search intervals.
 \begin{lemma}[The loop over the intervals]\label{lem:siftIntervals}
   \uses{def:intervalBits, def:numeratorRanges, lem:numeratorsToBits, def:siftBits, lem:siftBits,
     def:checkNumWith, lem:deliver, lem:accepted, lem:staged, lem:storeTables}
-  Proposed names: \lname{Ratpoints.Sieve.SiftIntervalsInvariant},
-  \lname{Ratpoints.Sieve.SiftIntervalsLoopInvariant}, \lname{Ratpoints.Sieve.IsSiftArgs},
-  \lname{Ratpoints.Sieve.flatMap\_filter\_intervalBits\_eq},
-  \lname{Ratpoints.Sieve.flatMap\_acceptedPoints\_eq\_flatMap\_checkNumWith},
-  \lname{Ratpoints.Sieve.flatMap\_flatMap\_filter\_eq\_flatMap\_filter\_inRanges},
-  \lname{Ratpoints.Sieve.NumClass.map\_range\_eq\_filter\_map\_range},
-  \lname{Ratpoints.Sieve.RangesFor.represents\_of\_eq\_append\_cons},
-  \lname{Ratpoints.Sieve.RangesFor.lt\_fst\_of\_mem\_drop},
-  \lname{Ratpoints.Sieve.filter\_numerators\_eq\_nil\_of\_lt},
-  \lname{Ratpoints.Sieve.filter\_numerators\_eq\_nil\_of\_lt\_neg},
-  \lname{Ratpoints.BruteForce.pairwise\_lt\_numerators},
-  \lname{List.filter\_append\_filter\_of\_pairwise}, \lname{List.flatMap\_filter\_eq\_filter\_any}.
+  \lean{Ratpoints.Sieve.SiftIntervalsInvariant, Ratpoints.Sieve.SiftIntervalsLoopInvariant, Ratpoints.Sieve.IsSiftArgs, Ratpoints.Sieve.flatMap_filter_intervalBits_eq, Ratpoints.Sieve.flatMap_acceptedPoints_eq_flatMap_checkNumWith, Ratpoints.Sieve.flatMap_flatMap_filter_eq_flatMap_filter_inRanges, Ratpoints.Sieve.NumClass.map_range_eq_filter_map_range, Ratpoints.Sieve.RangesFor.represents_of_eq_append_cons, Ratpoints.Sieve.RangesFor.lt_fst_of_mem_drop, Ratpoints.Sieve.filter_numerators_eq_nil_of_lt, Ratpoints.Sieve.filter_numerators_eq_nil_of_lt_neg, Ratpoints.BruteForce.pairwise_lt_numerators, List.filter_append_filter_of_pairwise, List.flatMap_filter_eq_filter_any}
+  \leanok
   Over an increasing list of integers and ranges that increase and are strictly apart, the
   concatenation, range after range, of the members in the range that pass a test is the list of the
   members in one of the ranges that pass it, so that the points of the numerators come in increasing
@@ -869,6 +862,7 @@ numerators with $a/b$ in one of the search intervals.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   By induction on the ranges, with the members of one range before those of the next; the bits of a
   range by the enumeration of a residue class (Lemma~\ref{lem:numeratorsToBits}); the invariant is
   built with the program logic of Lean core, its verification conditions closed by the step lemmas

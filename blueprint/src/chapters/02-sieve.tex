@@ -333,7 +333,8 @@ type \verb|Id| with their contracts (Lemmas~\ref{lem:examinePrime_eq} and~\ref{l
 
 \begin{definition}[The denominators]\label{def:sieveRun}
   \uses{def:sift, def:Shape, lem:shape_dens, def:stage3, def:fillBpList, lem:fillBpList,
-    lem:admits_mul, lem:classOffsets, lem:numClasses, lem:buildRows, def:deliver, lem:deliver}
+    lem:admits_mul, lem:classOffsets, lem:numClasses, lem:buildRows, def:deliver, lem:deliver,
+    def:exactBounds}
   \lean{Ratpoints.Sieve.sieveRun, Ratpoints.Sieve.SieveRunInvariant, Ratpoints.Sieve.SieveRunInvariant.quit_eq_false, Ratpoints.Sieve.SieveRunInvariant.eq_deliver, Ratpoints.Sieve.SieveRunInvariant.eq_deliver_append, Ratpoints.Sieve.SieveRunInvariant.append_of_keep, Ratpoints.Sieve.SieveRunInvariant.quit_eq_false_and_fits, Ratpoints.Sieve.sieveRunInvariant_nil, Ratpoints.Sieve.SieveRunInvariant.append_of_not_keep, Ratpoints.Sieve.SieveRunLoopInvariant, Ratpoints.Sieve.SieveRunInvariant.eq_deliver_of_quit, Ratpoints.Sieve.sieveRun_spec, Ratpoints.Sieve.run_sieveRun}
   \leanok
   The sieve entries of the moduli cut into the three stages at the cut points $s_1 \le s_2$, the
@@ -349,10 +350,13 @@ type \verb|Id| with their contracts (Lemmas~\ref{lem:examinePrime_eq} and~\ref{l
   the stride of its class modulo the moduli of the first two stages
   (Definition~\ref{def:fillBpList}) and the points that \verb|sift| (Definition~\ref{def:sift})
   delivers to the callback in the packing of its class $\mathrm{cls}[b \bmod 64]$ with the row
-  offsets of the classes, with pieces of at most $A$ bit arrays and the flags of the check, in turn,
-  the run returning after a denominator at which the callback stopped the search
+  offsets of the classes and the bounds of the search intervals of the run
+  (Definition~\ref{def:exactBounds}), which \verb|run_block| hands to the sieving thread for each
+  block, with pieces of at most $A$ bit arrays and the flags of the check, in turn, the run
+  returning after a denominator at which the callback stopped the search
   (\csource{find_points.c}{3861}{3861}, \csource{find_points.c}{3889}{3904},
-  \csource{find_points.c}{3911}{3911}, \csource{find_points.c}{3917}{3918},
+  \csource{find_points.c}{3911}{3911}, \csource{find_points.c}{3913}{3913},
+  \csource{find_points.c}{3917}{3918},
   \csource{find_points.c}{3926}{3936}, \csource{find_points.c}{3954}{3966},
   \csource{find_points.c}{4009}{4009}, \csource{find_points.c}{4042}{4052},
   \csource{find_points.c}{4059}{4059}, \csource{find_points.c}{4066}{4072},
@@ -366,17 +370,21 @@ type \verb|Id| with their contracts (Lemmas~\ref{lem:examinePrime_eq} and~\ref{l
   $b_{\mathrm{low}} \ge 1$ to $b_{\mathrm{high}} < 2^{63}$ and $H < 2^{63}$, as the test for common
   factors on the words of the C code needs (the denominators of every shape lie between
   $b_{\mathrm{low}}$ and $b_{\mathrm{high}}$, Lemma~\ref{lem:shape_dens}): from a delivery whose
-  flag is clear, the delivery after the run, for any cut points and any 2-adic words $\mathrm{nb}$
-  that the classes pack (Lemma~\ref{lem:numClasses}), is the delivery (Definition~\ref{def:deliver})
-  of the concatenation, over the denominators $b$ of the list of the shape that pass its test, of
-  the points of the check with the flags (Definition~\ref{def:checkNumWith}) of the numerators that
-  pass the class bit of $\mathrm{nb}[b \bmod 64]$ and survive the moduli of all three stages for
-  $b$; with the exact check on, these are what the brute-force reference finds over $b$ and these
+  flag is clear, the delivery after the run, for any cut points, any 2-adic words $\mathrm{nb}$ that
+  the classes pack (Lemma~\ref{lem:numClasses}) and any ranges of the numerators that the bounds of
+  the search intervals give for each denominator $b$ from $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$
+  (Definition~\ref{def:numeratorRanges}), quantified in the postcondition, is the delivery
+  (Definition~\ref{def:deliver}) of the concatenation, over the denominators $b$ of the list of the
+  shape that pass its test, of the points of the check with the flags
+  (Definition~\ref{def:checkNumWith}) of the numerators in one of the ranges of $b$ that pass the
+  class bit of $\mathrm{nb}[b \bmod 64]$ and survive the moduli of all three stages for $b$; with
+  the exact check on, these are what the brute-force reference finds over $b$ and these
   numerators, mapped by $\mathrm{swapPoint}$ (Definition~\ref{def:swapPoint}) when the flag of the
   reversal is set, those with $y < 0$ left out under $\mathrm{noY}$. The invariant of the loop over
-  the denominators has two cases: the flag clear and the delivery that of the denominators done, or
-  the return after a denominator at which the callback stopped the search, when the delivery is that
-  of all the denominators (Lemma~\ref{lem:deliver} on a prefix).
+  the denominators, which takes the bounds of the search intervals and the range of the
+  denominators, has two cases: the flag clear and the delivery that of the denominators done, or the
+  return after a denominator at which the callback stopped the search, when the delivery is that of
+  all the denominators (Lemma~\ref{lem:deliver} on a prefix).
 \end{definition}
 
 \begin{definition}[The points at infinity]\label{def:pointsAtInfinity}
@@ -497,30 +505,33 @@ stage~D, so that no input reaches it.
   with their tables of inverses and the row offsets of the classes with a pattern, whose bits are
   those of \verb|den_bits|, and a store of the tables of rows that fits them, and those from $s_2$
   on prime entries (Definition~\ref{def:stage3}), 2-adic words that the classes pack, denominators
-  from $b_{\mathrm{low}} \ge 1$ to $b_{\mathrm{high}} < 2^{63}$, $H < 2^{63}$, a delivery whose flag
-  is clear and a list $l$ of denominators such that the list of the shape is $l$ filtered by a test
-  $p$: the run delivers, over the denominators $b$ of $l$, in the order of $l$, the points of the
-  check with the flags of the numerators of $[-H, H]$ that pass the test of the sieve, $b$ passing
-  $p$ and the test of the shape, and the numerator the word of the class of $b$ and the sieve
-  entries.
+  from $b_{\mathrm{low}} \ge 1$ to $b_{\mathrm{high}} < 2^{63}$, $H < 2^{63}$, bounds of the search
+  intervals that give ranges of the numerators for each of these denominators
+  (Definition~\ref{def:numeratorRanges}), a delivery whose flag is clear and a list $l$ of
+  denominators such that the list of the shape is $l$ filtered by a test $p$: the run delivers, over
+  the denominators $b$ of $l$, in the order of $l$, the points of the check with the flags of the
+  numerators of $[-H, H]$ that pass the test of the sieve, $b$ passing $p$ and the test of the
+  shape, and the numerator lying in one of the ranges of $b$ and passing the word of the class of
+  $b$ and the sieve entries.
 \end{theorem}
 
 \begin{proof}
   \leanok
   By the contract of the denominators (Definition~\ref{def:sieveRun}) the run delivers the
   concatenation, over the denominators of the list of the shape that pass its test, of the points of
-  the check with the flags of the numerators that pass the word of the class of the denominator and
-  survive the sieve entries. With the list of the shape $l$ filtered by $p$, the test of the outer
-  list moves into the test of the numerators, a denominator that fails it giving no numerators.
+  the check with the flags of the numerators in its ranges that pass the word of the class of the
+  denominator and survive the sieve entries. With the list of the shape $l$ filtered by $p$, the
+  test of the outer list moves into the test of the numerators, a denominator that fails it giving
+  no numerators.
 \end{proof}
 
 When every denominator of $l$ over which the brute-force reference finds a point passes $p$ and the
 test of the shape, and every numerator of such a point passes the word of the class of its
 denominator and the sieve entries, these tests change nothing that the exact check finds
 (Lemma~\ref{lem:flatMap_sound}): with the exact check on, the run delivers the concatenation of what
-the reference finds over the denominators of $l$, in the order of $l$, mapped by
-$\mathrm{swapPoint}$ when the flag of the reversal is set, those with $y < 0$ left out under
-$\mathrm{noY}$, which is what the search needs of it.
+the reference finds over the denominators of $l$ and the numerators in their ranges, in the order of
+$l$, mapped by $\mathrm{swapPoint}$ when the flag of the reversal is set, those with $y < 0$ left
+out under $\mathrm{noY}$, which is what the search needs of it.
 
 \begin{theorem}[The points, each once]\label{thm:findPoints}
   \uses{def:findPoints, def:Params, def:Options, def:IsPoint, def:points}

@@ -5,6 +5,7 @@ Authors: Michael Stoll
 -/
 module
 
+public import Ratpoints.Model.FindPoints
 public import Ratpoints.Proof.Region
 
 import Mathlib.Data.Nat.Cast.Field
@@ -14,9 +15,12 @@ import Ratpoints.Proof.Double
 /-!
 # The bounds of the search intervals
 
-The bounds of the search intervals of a run (`Ratpoints.Sieve.exactBounds`), which give, for each
-denominator up to the largest, the ranges of the numerators `⌈b l⌉, …, ⌊b u⌋` of the intervals
-(`Ratpoints.Sieve.numeratorRanges`, `Ratpoints.Sieve.RangesFor`) to the sieve of one denominator.
+The default search interval `[-h, h]` of a search without search intervals
+(`Ratpoints.searchIntervals`), which holds `a / b` for every numerator `|a| ≤ H` and every
+denominator `b ≥ 1`; and the bounds of the search intervals of a run
+(`Ratpoints.Sieve.exactBounds`), which give, for each denominator up to the largest, the ranges of
+the numerators `⌈b l⌉, …, ⌊b u⌋` of the intervals (`Ratpoints.Sieve.numeratorRanges`,
+`Ratpoints.Sieve.RangesFor`) to the sieve of one denominator.
 
 The ends of the bounds are those of `exact_end`: `±m 2 ^ (-s)` with the value of the double, or
 capped for a tiny end or one beyond `2 ^ 63`, with the same numerators for every denominator
@@ -37,6 +41,8 @@ gives them too (`Ratpoints.Sieve.spec_intervalBits_of_fast`).
 
 ## Main statements
 
+* `Ratpoints.exists_run_searchIntervals_nil`: the default search interval, which is well formed and
+  holds every `a / b` of the search.
 * `Ratpoints.Sieve.toNat_exactScale`, `Ratpoints.Sieve.numerators_run_exactEnd`: `exact_scale` and
   the ends of `exact_end`.
 * `Ratpoints.Sieve.represents_intervalBoundsOf`: the bounds of one search interval give the range of
@@ -48,6 +54,72 @@ gives them too (`Ratpoints.Sieve.spec_intervalBits_of_fast`).
 @[expose] public section
 
 namespace Ratpoints
+
+/-- A double `0 ≤ x < 2 ^ 63` whose conversion to a `long` is not below `H` is at least `H`. -/
+theorem le_toRat_of_not_toInt64_lt {x : Double} (h0 : 0 ≤ x.toRat) (h63 : x.toRat < 2 ^ 63)
+    {H : ℕ} (hH63 : H < 2 ^ 63) (h : ¬x.toInt64 < H.toInt64) : (H : ℚ) ≤ x.toRat := by
+  rw [Int64.lt_iff_toInt_lt, Int64.toInt_ofNat_of_lt hH63, Double.toInt_toInt64 h0 h63,
+    not_lt] at h
+  exact (Nat.cast_le.mpr (mod_cast h)).trans (Nat.floor_le h0)
+
+/-- The bound `h` of the default interval `[-h, h]` of a search with the height bound
+`1 ≤ H < 2 ^ 63`: the double of `H`, moved up to the next double when it is below `2 ^ 63` and its
+truncation below `H`, is finite and at least `H`. -/
+theorem le_toRat_defaultBound {H : ℕ} (hH : 1 ≤ H) (hH63 : H < 2 ^ 63) :
+    let h := Double.ofInt64 H.toInt64
+    let h := if h.lt .twoPow63 && decide (h.toInt64 < H.toInt64) then h.nextUp else h
+    h.isFinite = true ∧ (H : ℚ) ≤ h.toRat := by
+  intro h0 h
+  obtain ⟨hf, hs, hf', hv⟩ := Double.spec_ofInt64_natCast hH hH63
+  have hlt := Double.lt_twoPow63_eq_true_iff_toRat hf
+  by_cases h1 : h0.lt .twoPow63 = true
+  · by_cases h2 : h0.toInt64 < H.toInt64
+    · simp only [h, h1, h2, decide_true, Bool.and_self, ↓reduceIte]
+      exact ⟨hf', hv.le⟩
+    · simp only [h, h1, h2, decide_false, Bool.and_false, Bool.false_eq_true, ↓reduceIte]
+      exact ⟨hf, le_toRat_of_not_toInt64_lt (Double.toRat_nonneg hs) (hlt.mp h1) hH63 h2⟩
+  · simp only [h, h1, Bool.false_and, Bool.false_eq_true, ↓reduceIte]
+    have : (2 : ℚ) ^ 63 ≤ h0.toRat := not_lt.mp (mt hlt.mpr h1)
+    have : (H : ℚ) < 2 ^ 63 := mod_cast hH63
+    exact ⟨hf, by linarith⟩
+
+theorem abs_intCast_div_natCast_le {a : ℤ} {b H : ℕ} (hb : 0 < b) (ha : a.natAbs ≤ H) :
+    |(a : ℚ) / b| ≤ H := by
+  rw [abs_div, Nat.abs_cast, div_le_iff₀ (mod_cast hb)]
+  have h1 : |(a : ℚ)| ≤ H := by rw [← Int.cast_abs, Int.abs_eq_natAbs]; exact_mod_cast ha
+  exact h1.trans (le_mul_of_one_le_right (by positivity) (mod_cast hb))
+
+/-- The interval `[-h, h]` for a finite double `h ≥ H ≥ 1` is well formed and holds `a / b` for
+every numerator `|a| ≤ H` and denominator `b ≥ 1`. -/
+theorem intervalsWF_and_inIntervals_neg {h : Double} {H : ℕ} (hH : 1 ≤ H)
+    (hf : h.isFinite = true) (hv : (H : ℚ) ≤ h.toRat) :
+    IntervalsWF (domainBits [(h.neg, h)]) ∧
+      ∀ (a : ℤ) (b : ℕ), 0 < b → a.natAbs ≤ H →
+        InIntervals (domainValues [(h.neg, h)]) (a / b) := by
+  have hn := Double.isNaN_eq_false_of_isFinite hf
+  have hH' : (1 : ℚ) ≤ H := mod_cast hH
+  simp only [domainValues, domainBits, List.map_cons, List.map_nil,
+    Double.doubleValue_eq_toRat hf, Double.doubleValue_eq_toRat (by rwa [Double.isFinite_neg]),
+    Double.toRat_neg]
+  refine ⟨⟨fun i hi ↦ ?_, fun i hi ↦ ?_, .singleton _⟩, fun a b hb ha ↦ ?_⟩
+  · simp only [List.mem_singleton] at hi
+    rw [hi, ← Double.isNaN_eq_false_iff, ← Double.isNaN_eq_false_iff, Double.isNaN_neg]
+    exact ⟨hn, hn⟩
+  · simp only [List.map_cons, List.map_nil, List.mem_singleton] at hi
+    rw [hi, Double.doubleValue_eq_toRat hf,
+      Double.doubleValue_eq_toRat (by rwa [Double.isFinite_neg]),
+      Double.toRat_neg, WithBotTop.coe_le_coe]
+    linarith
+  · refine ⟨_, List.mem_singleton_self _, ?_⟩
+    have hab := abs_intCast_div_natCast_le hb ha
+    simp only [WithBotTop.coe_le_coe]
+    constructor <;> linarith [abs_le.mp hab]
+
+theorem exists_run_searchIntervals_nil {H : ℕ} (hH : 1 ≤ H) (hH63 : H < 2 ^ 63) :
+    ∃ dom, Id.run (searchIntervals H []) = some dom ∧ IntervalsWF (domainBits dom) ∧
+      ∀ (a : ℤ) (b : ℕ), 0 < b → a.natAbs ≤ H → InIntervals (domainValues dom) (a / b) := by
+  obtain ⟨hf, hv⟩ := le_toRat_defaultBound hH hH63
+  exact ⟨_, rfl, intervalsWF_and_inIntervals_neg hH hf hv⟩
 
 namespace Sieve
 

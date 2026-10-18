@@ -5,10 +5,12 @@ Authors: Michael Stoll
 -/
 module
 
+public import Ratpoints.Model.Bounds
 public import Ratpoints.Model.Packing
 public import Ratpoints.Model.Setup
 
 -- The `#guard` examples run code of the imported modules at compile time.
+meta import Ratpoints.Model.Bounds
 meta import Ratpoints.Model.Packing
 meta import Ratpoints.Model.Setup
 
@@ -35,9 +37,10 @@ a denominator divided by the stride of its class (`Ratpoints.Sieve.fillBpList`, 
 `Ratpoints.Model.Packing`). Every class word lets every numerator of a point through, and so does
 its packing; no forbidden divisor excludes the denominator of a point, the primes examined for them
 being primes of the table; both Jacobi tests let it through, and so does every test of a shape, so
-that the run delivers the points of the denominators of its shape to the callback of the search, in
-the order of its loop: increasing, except for the divisors; it returns when the callback stops the
-search.
+that the run delivers the points of the denominators of its shape in the search intervals (with the
+bounds that `Ratpoints.Sieve.runSetup` makes, `Ratpoints.Sieve.exactBounds`) to the callback of the
+search, in the order of its loop: increasing, except for the divisors; it returns when the callback
+stops the search.
 
 ## Main definitions
 
@@ -64,9 +67,10 @@ search.
 * `Ratpoints.Sieve.wordBits`, `Ratpoints.Sieve.wordsDens`, `Ratpoints.Sieve.squaresDens`,
   `Ratpoints.Sieve.squares1Dens`: the denominators of the shapes.
 * `Ratpoints.Sieve.Shape`, `Ratpoints.Sieve.Shape.dens`, `Ratpoints.Sieve.Shape.keep`,
-  `Ratpoints.Sieve.runSetup`: the shapes, their denominators and tests, and the choice of the shape.
-* `Ratpoints.Sieve.sieveRun`: the points of the denominators of a shape, delivered to the callback
-  of the search.
+  `Ratpoints.Sieve.runSetup`: the shapes, their denominators and tests, and the choice of the shape
+  and the bounds of the search intervals of the run.
+* `Ratpoints.Sieve.sieveRun`: the points of the denominators of a shape from `bLow` to `bHigh` in
+  the search intervals, delivered to the callback of the search.
 -/
 
 @[expose] public section
@@ -776,9 +780,10 @@ option, for `ji`, `jtab` and `fast_jacobi`; with the words, the bit `RATPOINTS_U
 flags and the leading coefficient `args->cof[args->degree]`, which `run_block` reads through the
 field `args`, the run taking the rest of what it reads of the arguments as its own arguments
 (`Ratpoints.Sieve.sieveRun`); no copies of `use_c_long` and `lcf_long`, which only `jacobi1` reads
-(`Ratpoints.Sieve.jacobi`); no blocks and segments (stage I), no search intervals (stage H), no
-counters and decisions of the correction of the moduli (stage I); the classes with their row
-offsets and `den_bits` passed to the run apart (`Ratpoints.Sieve.sieveRun`). -/
+(`Ratpoints.Sieve.jacobi`); no blocks and segments (stage I), no counters and decisions of the
+correction of the moduli (stage I); the bounds of the search intervals (the struct `iv` of the run,
+`Ratpoints.Sieve.runSetup`), the classes with their row offsets and `den_bits` passed to the run
+apart (`Ratpoints.Sieve.sieveRun`). -/
 inductive Shape where
   /-- `RP_SHAPE_SQUARES`: the squares. -/
   | squares
@@ -835,32 +840,38 @@ def Shape.keep (s : Shape) (cls : Vector NumClass 64) (b : Nat) : Id Bool := do
   | .all => return cls[b % 64]!.bits != 0
 
 /-- The shape of the run (`Ratpoints.Sieve.Shape`), as `run_setup` chooses it from the flags of the
-search: the squares when `useSquares`; the divisors with their data when the divisor set-up has
-succeeded (`us1`, `Ratpoints.Setup.setupUs1`); the words when `checkDenom`, with the forbidden
-divisors `forb` and `forbVal`, the switch `useJacobi` of the Jacobi test, its tables when the test
-is on and they apply to the leading coefficient `lcf` and the largest denominator `bHigh`
-(`Ratpoints.Sieve.jacobiSetup`), and `lcf`; and every denominator otherwise.
+search, and the bounds of its search intervals: the squares when `useSquares`; the divisors with
+their data when the divisor set-up has succeeded (`us1`, `Ratpoints.Setup.setupUs1`); the words when
+`checkDenom`, with the forbidden divisors `forb` and `forbVal`, the switch `useJacobi` of the Jacobi
+test, its tables when the test is on and they apply to the leading coefficient `lcf` and the largest
+denominator `bHigh` (`Ratpoints.Sieve.jacobiSetup`), and `lcf`; and every denominator otherwise. The
+bounds of the search intervals `domain` for the height bound `H` and the denominators up to `bHigh`
+(`Ratpoints.Sieve.exactBounds`) are made after the shape, once for the run.
 
-C: `find_points.c:3778-3806`, `find_points.c:3876-3877`
+C: `find_points.c:3778-3806`, `find_points.c:3869-3870`, `find_points.c:3876-3877`
 
 Deviation: the shape returned with its data, for the fields of the run that `run_setup` fills, and
 Booleans and an option for the bits `RATPOINTS_USE_SQUARES`, `RATPOINTS_USE_SQUARES1`,
-`RATPOINTS_CHECK_DENOM` and `RATPOINTS_USE_JACOBI` of the flags; no count `nfb`, a list having its
-length; no copies of `use_c_long` and `lcf_long`, which only `jacobi1` reads
-(`Ratpoints.Sieve.jacobi`); no segments and blocks (stage I), no counters and decisions of the
-correction of the moduli (stage I), no search intervals (stage H), no failure for lack of memory. -/
+`RATPOINTS_CHECK_DENOM` and `RATPOINTS_USE_JACOBI` of the flags; the bounds of the search intervals
+returned as an array with the shape, for the struct `iv` of the run with its pointers `bd` and
+`end`; the search intervals, the height bound and the largest denominator as arguments, for the
+fields of the arguments that `exact_bounds` reads; no count `nfb`, a list having its length; no
+copies of `use_c_long` and `lcf_long`, which only `jacobi1` reads (`Ratpoints.Sieve.jacobi`); no
+segments and blocks (stage I), no counters and decisions of the correction of the moduli (stage I),
+no failure for lack of memory. -/
 def runSetup (useSquares : Bool) (us1 : Option (List Setup.DenInfo × List Nat))
     (checkDenom useJacobi : Bool) (forb : List ForbiddenEntry) (forbVal : List ForbiddenVal)
-        (lcf : Int) (bHigh : Nat) :
-    Id Shape := do
-  if useSquares then return .squares
-  match us1 with
-  | some (info, divisors) => return .squares1 info divisors
-  | none =>
-    if checkDenom then
-      let fast ← if useJacobi then jacobiSetup lcf bHigh else pure none
-      return .words forb forbVal useJacobi fast lcf
-    else return .all
+    (lcf : Int) (H bHigh : Nat) (domain : List (Double × Double)) :
+    Id (Shape × Array IntervalBounds) := do
+  let shape ← if useSquares then pure .squares
+    else match us1 with
+    | some (info, divisors) => pure (.squares1 info divisors)
+    | none =>
+      if checkDenom then
+        let fast ← if useJacobi then jacobiSetup lcf bHigh else pure none
+        pure (.words forb forbVal useJacobi fast lcf)
+      else pure .all
+  return (shape, ← exactBounds domain H.toInt64 bHigh.toInt64)
 
 /-- The points of the denominators from `bLow` to `bHigh` of the shape `shape`, for the polynomial
 of degree `d` with the coefficient list `c`, delivered to the callback `process` on the delivery
@@ -878,11 +889,12 @@ moduli of the first two stages (`Ratpoints.Sieve.fillBpList`), and the points th
 `Ratpoints.Sieve.sift` finds in the packing of that class with the row offsets `offsets` of the
 classes (`Ratpoints.Sieve.classOffsets`), with pieces of at most `A` bit arrays, for `A ≥ 1`, the
 first stage ending at `sp1`, the entries and the reciprocals of the first two stages, the entries of
-the third stage with their reciprocals, and the flags `fl`, delivered in turn, the store with the
-rows that `Ratpoints.Sieve.sift` builds going on to the next denominator; after each denominator
-the run returns if the callback has stopped the search.
+the third stage with their reciprocals, the bounds `iv` of the search intervals of the run
+(`Ratpoints.Sieve.runSetup`) and the flags `fl`, delivered in turn, the store with the rows that
+`Ratpoints.Sieve.sift` builds going on to the next denominator; after each denominator the run
+returns if the callback has stopped the search.
 
-C: `find_points.c:3861`, `find_points.c:3889-3904`, `find_points.c:3911`,
+C: `find_points.c:3861`, `find_points.c:3889-3904`, `find_points.c:3911`, `find_points.c:3913`,
 `find_points.c:3917-3918`, `find_points.c:3926-3936`, `find_points.c:3954-3966`,
 `find_points.c:4009`, `find_points.c:4042-4052`, `find_points.c:4059`, `find_points.c:4066-4072`,
 `find_points.c:4075-4078`, `find_points.c:5120`, `find_points.c:5152-5160`
@@ -902,19 +914,21 @@ which the threads share and which deliver their points in the same order; the cl
 array `offsets` of their row offsets as arguments, for the field `cls` of the run that `run_block`
 reads (line 3893), whose classes reach their rows of offsets through their pointers `offset`; the
 class `cls[b mod 64]` and the residues of `fill_bp_list` passed to `Ratpoints.Sieve.sift` as values,
-for the pointers `cl` and `bp_list`, and the residues a list of the length of the first two stages,
-for the array `bp_list` of `sp3_max` entries; the delivery `r` passed and returned, for the pointers
-`info` and `wk->quit` and the counts `total` that `run_block` and the loop over the blocks keep from
-zero and return, and one test of the flag after each denominator and one return, for the return of
-`run_block` in each shape (lines 3928, 3957, 4044, 4068) and the end of the loop over the blocks
-(line 5158); the store of the tables of rows passed from one denominator to the next, for the arrays
-`sieve` of the entries of the arguments, which the run reads and fills, its last state not returned,
-as nothing reads the tables of rows after the run; natural numbers for the `long`s; no correction of
-the moduli between the blocks (stage I); no output under `DEBUG`. -/
+for the pointers `cl` and `bp_list`, and the bounds of the search intervals of the run as an
+argument, for the pointer `iv` of the sieving thread that `run_block` sets to the bounds of the run
+(line 3913), and the residues a list of the length of the first two stages, for the array `bp_list`
+of `sp3_max` entries; the delivery `r` passed and returned, for the pointers `info` and `wk->quit`
+and the counts `total` that `run_block` and the loop over the blocks keep from zero and return, and
+one test of the flag after each denominator and one return, for the return of `run_block` in each
+shape (lines 3928, 3957, 4044, 4068) and the end of the loop over the blocks (line 5158); the store
+of the tables of rows passed from one denominator to the next, for the arrays `sieve` of the entries
+of the arguments, which the run reads and fills, its last state not returned, as nothing reads the
+tables of rows after the run; natural numbers for the `long`s; no correction of the moduli between
+the blocks (stage I); no output under `DEBUG`. -/
 def sieveRun {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : List Int) (d H A : Nat)
     (fl : CheckFlags) (sp1 sp2 : Nat) (entries : List SieveEntry) (magics : Array Nat)
     (cls : Vector NumClass 64) (offsets : Array Nat) (db : UInt64) (shape : Shape)
-    (bLow bHigh : Nat) (store : RowStore) (r : Delivery σ) :
+    (iv : Array IntervalBounds) (bLow bHigh : Nat) (store : RowStore) (r : Delivery σ) :
     Id (Delivery σ) := do
   let es := entries.take sp2
   let mgs := magics.toList.take sp2
@@ -927,7 +941,7 @@ def sieveRun {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c
     if ← shape.keep cls b then
       let cl := cls[b % 64]!
       let bp := fillBpList b cl.k es mgs
-      let (r', st) ← sift process c d H A b fl sp1 es mgs bp cl offsets es3 mgs3 store r
+      let (r', st) ← sift process c d H A b fl sp1 es mgs bp cl offsets es3 mgs3 iv store r
       r := r'
       store := st
       if r.quit then return r
@@ -1170,8 +1184,8 @@ prints. -/
         if d % 2 == 0 then Id.run (forbidden c d 30 F H ba val) else ([], [])
       | none => ([], [])
     let checkDenom := d % 2 == 0 && (!forb.isEmpty || !forbVal.isEmpty || useJacobi)
-    let shape := Id.run (runSetup (d % 2 == 1 && lcf.natAbs == 1) us1 checkDenom useJacobi forb
-      forbVal lcf H)
+    let shape := (Id.run (runSetup (d % 2 == 1 && lcf.natAbs == 1) us1 checkDenom useJacobi forb
+      forbVal lcf H H [])).1
     let code := match shape with | .squares => 0 | .squares1 .. => 1 | .words .. => 2 | .all => 3
     let cls := (Id.run (numClasses nb)).1
     (code, (Id.run (shape.dens (denBits nb) 1 H)).filter fun b ↦ Id.run (shape.keep cls b))
@@ -1196,8 +1210,9 @@ prints. -/
   let offsets := Array.replicate (Id.run (numPackings cls) * entries.length) 0
   let (cls, entries, offsets) := Id.run (classOffsets cls entries offsets)
   (Id.run (sieveRun appendPoint c 1 20 1 {} 11 22 entries (entries.toArray.map (·.magic)) cls
-      offsets db (.squares1 [⟨2, 1, 2⟩] [1, 2]) 1 20 (entries.foldl (fun s e ↦ e.addTables s) {})
-      ⟨#[], 0, false⟩)).info.toList ==
+      offsets db (.squares1 [⟨2, 1, 2⟩] [1, 2])
+      (Id.run (exactBounds [((Double.ofInt64 20).neg, Double.ofInt64 20)] 20 20)) 1 20
+      (entries.foldl (fun s e ↦ e.addTables s) {}) ⟨#[], 0, false⟩)).info.toList ==
     [(0, 1, 1), (0, -1, 1), (4, 3, 1), (4, -3, 1), (12, 5, 1), (12, -5, 1), (-4, 3, 9), (-4, -3, 9),
       (8, 15, 9), (8, -15, 9), (20, 21, 9), (20, -21, 9), (-1, 0, 2), (3, 4, 2), (3, -4, 2),
       (15, 8, 2), (15, -8, 2), (-3, 4, 8), (-3, -4, 8), (5, 12, 8), (5, -12, 8), (-5, 12, 18),

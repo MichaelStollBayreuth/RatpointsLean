@@ -6,6 +6,7 @@ Authors: Michael Stoll
 module
 
 public import Ratpoints.Model.Denominators
+public import Ratpoints.Proof.BitRange
 public import Ratpoints.Proof.Packing
 public import Ratpoints.Proof.RowStore
 public import Ratpoints.Proof.Stages
@@ -21,11 +22,12 @@ import Std.Tactic.Do
 
 The run of the sieve over the denominators of a shape (`Ratpoints.Sieve.sieveRun`) delivers to the
 callback, for each denominator of the shape's list that passes the tests of the shape, the points of
-the check with the flags of the search (`Ratpoints.Sieve.checkNumWith`) of its numerators that pass
-the word of its class modulo 64 and survive the sieve entries, and returns when the callback stops
-the search; when the shape's list is a list `l` filtered by a test, this is the delivery over `l`,
-in its order, of the points of the numerators that pass that test, the tests of the shape, the class
-word and the sieve entries.
+the check with the flags of the search (`Ratpoints.Sieve.checkNumWith`) of its numerators in the
+search intervals, those in the ranges that the bounds of the run give for it
+(`Ratpoints.Sieve.RangesFor`), that pass the word of its class modulo 64 and survive the sieve
+entries, and returns when the callback stops the search; when the shape's list is a list `l`
+filtered by a test, this is the delivery over `l`, in its order, of the points of the numerators
+that pass that test, the tests of the shape, the class word and the sieve entries.
 
 ## Main statements
 
@@ -39,9 +41,14 @@ word and the sieve entries.
   `2 ^ 63`, the run gives the delivery (`Ratpoints.Delivery.deliver`), for each denominator `b` of
   the list of the shape that passes its tests (`Ratpoints.Sieve.Shape.dens`,
   `Ratpoints.Sieve.Shape.keep`), of the points of the check with the flags of the numerators
-  `-H, …, H` that pass the class word `nb[b mod 64]` (`Ratpoints.Sieve.classBit`), for any words
-  `nb` that the classes pack (`Ratpoints.Sieve.NumClass.Packs`), and survive the sieve entries of
-  all three stages; `Ratpoints.Sieve.run_sieveRun` states this as an equation.
+  `-H, …, H` in one of the ranges `rs b` that the bounds of the search intervals give for `b`
+  (`Ratpoints.Sieve.RangesFor`), that pass the class word `nb[b mod 64]`
+  (`Ratpoints.Sieve.classBit`), for any words `nb` that the classes pack
+  (`Ratpoints.Sieve.NumClass.Packs`) and any such ranges, and survive the sieve entries of all three
+  stages; `Ratpoints.Sieve.run_sieveRun` states this as an equation.
+* `Ratpoints.Sieve.fst_run_runSetup`, `Ratpoints.Sieve.snd_run_runSetup`: the shape that
+  `Ratpoints.Sieve.runSetup` chooses from the flags of the search, and the bounds of the search
+  intervals that it makes.
 * `Ratpoints.Sieve.run_sieveRun_of_eq_filter`: when the list of the shape is a list `l` filtered by
   a test `p`, the run delivers, over the denominators `b` of `l`, the points of the numerators that
   pass `p b`, the tests of the shape on `b`, the class word and the sieve entries.
@@ -97,23 +104,26 @@ variable {σ : Type} (process : ℤ → ℤ → ℤ → σ → Answer σ)
 the delivery `r0`, after the denominators `pref`: the callback has not stopped the search, the store
 of the tables of rows fits the sieve entries of the first two stages, the first `sp2` of `entries`
 (`Ratpoints.Sieve.RowStore.Fits`), and for words `nb` of the classes modulo 64 that the classes
-`cls` pack, the delivery `r` is that of the points of the check with the flags `fl`
-(`Ratpoints.Sieve.checkNumWith`) over the denominators `b` of `pref` that pass the test `keep` and
-the numerators `-H, …, H` that pass the class word `nb[b mod 64]` (`Ratpoints.Sieve.classBit`) and
-survive the sieve entries `entries`. -/
+`cls` pack and ranges `rs b` of the numerators that the bounds `iv` of the search intervals give for
+the denominators `b` from `bLow` to `bHigh` (`Ratpoints.Sieve.RangesFor`), the delivery `r` is that
+of the points of the check with the flags `fl` (`Ratpoints.Sieve.checkNumWith`) over the
+denominators `b` of `pref` that pass the test `keep` and the numerators `-H, …, H` in one of the
+ranges `rs b` that pass the class word `nb[b mod 64]` (`Ratpoints.Sieve.classBit`) and survive the
+sieve entries `entries`. -/
 structure SieveRunInvariant (c : List ℤ) (d H : ℕ) (fl : CheckFlags) (entries : List SieveEntry)
-    (sp2 : ℕ) (cls : Vector NumClass 64) (keep : ℕ → Bool) (r0 : Delivery σ) (pref : List ℕ)
-    (r : Delivery σ) (store : RowStore) :
+    (sp2 : ℕ) (cls : Vector NumClass 64) (iv : Array IntervalBounds) (bLow bHigh : ℕ)
+    (keep : ℕ → Bool) (r0 : Delivery σ) (pref : List ℕ) (r : Delivery σ) (store : RowStore) :
     Prop where
   /-- The callback has not stopped the search. -/
   quit_eq_false : r.quit = false
   /-- The store fits the sieve entries of the first two stages. -/
   fits : store.Fits (entries.take sp2)
   /-- The delivery is that of the points of the denominators of `pref` that pass `keep` and the
-  numerators that pass their class words and survive the entries. -/
-  eq_deliver : ∀ nb : Vector UInt64 64, (∀ b < 64, cls[b]!.Packs nb[b]!) →
+  numerators in their ranges that pass their class words and survive the entries. -/
+  eq_deliver : ∀ (nb : Vector UInt64 64) (rs : ℕ → List (ℤ × ℤ)), (∀ b < 64, cls[b]!.Packs nb[b]!) →
+    (∀ b, bLow ≤ b → b ≤ bHigh → RangesFor iv b H (rs b)) →
     r = r0.deliver process ((pref.filter keep).flatMap fun b : ℕ ↦ ((numerators H).filter
-      fun a ↦ classBit nb[b % 64]! a && survives entries b a).flatMap
+      fun a ↦ inRanges (rs b) a && classBit nb[b % 64]! a && survives entries b a).flatMap
         (checkNumWith (scaledCoeffs c d b) (if d % 2 = 1 then b else 1) b fl))
 
 /-- The invariant of the loop of `Ratpoints.Sieve.sieveRun` over the list `dens` of the denominators
@@ -122,13 +132,16 @@ before a return, `Ratpoints.Sieve.SieveRunInvariant` after the denominators done
 at a stop, the value returned is the delivery of the points of all the denominators of `dens` that
 pass `keep`. -/
 def SieveRunLoopInvariant (c : List ℤ) (d H : ℕ) (fl : CheckFlags) (entries : List SieveEntry)
-    (sp2 : ℕ) (cls : Vector NumClass 64) (keep : ℕ → Bool) (r0 : Delivery σ) (dens : List ℕ) :
+    (sp2 : ℕ) (cls : Vector NumClass 64) (iv : Array IntervalBounds) (bLow bHigh : ℕ)
+    (keep : ℕ → Bool) (r0 : Delivery σ) (dens : List ℕ) :
     Std.WP.Invariant ℕ (Option (Delivery σ) × Delivery σ × RowStore) Prop :=
   Std.WP.Invariant.withEarlyReturnNewDo Prop
-    (fun pref _ s ↦ SieveRunInvariant process c d H fl entries sp2 cls keep r0 pref s.1 s.2)
-    (fun ret _ ↦ ∀ nb : Vector UInt64 64, (∀ b < 64, cls[b]!.Packs nb[b]!) →
+    (fun pref _ s ↦ SieveRunInvariant process c d H fl entries sp2 cls iv bLow bHigh keep r0 pref
+      s.1 s.2)
+    (fun ret _ ↦ ∀ (nb : Vector UInt64 64) (rs : ℕ → List (ℤ × ℤ)),
+      (∀ b < 64, cls[b]!.Packs nb[b]!) → (∀ b, bLow ≤ b → b ≤ bHigh → RangesFor iv b H (rs b)) →
       ret = r0.deliver process ((dens.filter keep).flatMap fun b : ℕ ↦ ((numerators H).filter
-        fun a ↦ classBit nb[b % 64]! a && survives entries b a).flatMap
+        fun a ↦ inRanges (rs b) a && classBit nb[b % 64]! a && survives entries b a).flatMap
           (checkNumWith (scaledCoeffs c d b) (if d % 2 = 1 then b else 1) b fl)))
 
 -- A denominator of the loop over the list of a shape is positive and below `2 ^ 63`.
@@ -179,105 +192,118 @@ private theorem fillBpList_eq_map_of_eq_append_cons {entries : List SieveEntry}
 section
 
 variable {process} {c : List ℤ} {d H : ℕ} {fl : CheckFlags} {entries : List SieveEntry}
-  {cls : Vector NumClass 64} {offsets : Array ℕ} {db : UInt64} {shape : Shape} {bLow bHigh : ℕ}
-  {pref suff : List ℕ} {r0 r r' : Delivery σ} {store st : RowStore} {cur sp2 : ℕ}
-  {o : Option (Delivery σ)}
+  {cls : Vector NumClass 64} {offsets : Array ℕ} {db : UInt64} {shape : Shape}
+  {iv : Array IntervalBounds} {bLow bHigh : ℕ} {pref suff : List ℕ} {r0 r r' : Delivery σ}
+  {store st : RowStore} {cur sp2 : ℕ} {o : Option (Delivery σ)}
 
 /-- The delivery after the denominator `cur` of the list of the shape that its tests let through,
-for words `nb` that the classes pack: by the contract of `Ratpoints.Sieve.sift`
-(`Ratpoints.Sieve.sift_spec`) with the class `cls[cur mod 64]`, which has a pattern
-(`Ratpoints.Sieve.Shape.bits_ne_zero_of_mem_dens`) and so the row of its offsets, the first `sp2`
-sieve entries in the first two stages and the others in the third, that of the points of the
-denominators of `pref ++ [cur]` that pass the tests. -/
+for words `nb` that the classes pack and ranges `rs b` of the numerators of the search intervals:
+by the contract of `Ratpoints.Sieve.sift` (`Ratpoints.Sieve.sift_spec`) with the class
+`cls[cur mod 64]`, which has a pattern (`Ratpoints.Sieve.Shape.bits_ne_zero_of_mem_dens`) and so
+the row of its offsets, the first `sp2` sieve entries in the first two stages and the others in the
+third, and the ranges of `cur`, which lies between `bLow ≥ 1` and `bHigh`
+(`Ratpoints.Sieve.Shape.le_and_le_of_mem_dens`), that of the points of the denominators of
+`pref ++ [cur]` that pass the tests. -/
 theorem SieveRunInvariant.eq_deliver_append (hoff : OffsetsFor cls (entries.take sp2) offsets)
-    (hdb : ∀ j < 64, db.toBitVec.getLsbD j = (cls[j]!.bits != 0))
+    (hdb : ∀ j < 64, db.toBitVec.getLsbD j = (cls[j]!.bits != 0)) (hbLow : 1 ≤ bLow)
     (hl : Id.run (shape.dens db bLow bHigh) = pref ++ cur :: suff)
-    (h : SieveRunInvariant process c d H fl entries sp2 cls (fun b ↦ Id.run (shape.keep cls b)) r0
-      pref r store)
+    (h : SieveRunInvariant process c d H fl entries sp2 cls iv bLow bHigh
+      (fun b ↦ Id.run (shape.keep cls b)) r0 pref r store)
     (hk : Id.run (shape.keep cls cur) = true)
-    (hpts : ∀ (w : UInt64) (pos : ℕ), cls[cur % 64]!.Packs w → cls[cur % 64]!.offset = some pos →
-      (∀ n (h : n < (entries.take sp2).length),
+    (hpts : ∀ (w : UInt64) (pos : ℕ) (rs : List (ℤ × ℤ)), cls[cur % 64]!.Packs w →
+      cls[cur % 64]!.offset = some pos → (∀ n (h : n < (entries.take sp2).length),
         (entries.take sp2)[n].PackedFor cls[cur % 64]! offsets[pos + n]!) →
-      r' = r.deliver process (((numerators H).filter fun a ↦ classBit w a &&
+      RangesFor iv cur H rs →
+      r' = r.deliver process (((numerators H).filter fun a ↦ inRanges rs a && classBit w a &&
         survives (entries.take sp2 ++ entries.drop sp2) cur a).flatMap
           (checkNumWith (scaledCoeffs c d cur) (if d % 2 = 1 then cur else 1) cur fl)))
-    (nb : Vector UInt64 64) (hnb : ∀ b < 64, cls[b]!.Packs nb[b]!) :
+    (nb : Vector UInt64 64) (rs : ℕ → List (ℤ × ℤ)) (hnb : ∀ b < 64, cls[b]!.Packs nb[b]!)
+    (hrs : ∀ b, bLow ≤ b → b ≤ bHigh → RangesFor iv b H (rs b)) :
     r' = r0.deliver process (((pref ++ [cur]).filter fun b ↦ Id.run (shape.keep cls b)).flatMap
-      fun b : ℕ ↦ ((numerators H).filter fun a ↦ classBit nb[b % 64]! a &&
+      fun b : ℕ ↦ ((numerators H).filter fun a ↦ inRanges (rs b) a && classBit nb[b % 64]! a &&
         survives entries b a).flatMap
           (checkNumWith (scaledCoeffs c d b) (if d % 2 = 1 then b else 1) b fl)) := by
   obtain ⟨pos, hpos, hpf⟩ := exists_packedFor_of_eq_append_cons hoff hdb hl hk
-  have := hpts nb[cur % 64]! pos (hnb _ (Nat.mod_lt _ (by decide))) hpos hpf
+  have hb :=
+    shape.le_and_le_of_mem_dens db hbLow (hl ▸ List.mem_append_right pref List.mem_cons_self)
+  have := hpts nb[cur % 64]! pos (rs cur) (hnb _ (Nat.mod_lt _ (by decide))) hpos hpf
+    (hrs cur hb.1 hb.2)
   rw [List.take_append_drop] at this
-  rw [this, h.eq_deliver nb hnb, ← Delivery.deliver_append]
+  rw [this, h.eq_deliver nb rs hnb hrs, ← Delivery.deliver_append]
   simp [List.filter_append, hk]
 
 /-- The denominator `cur` of the list of the shape that its tests let through, after which the
 callback has not stopped the search, keeps the invariant; the store after it fits the sieve entries
 of the first two stages. -/
 theorem SieveRunInvariant.append_of_keep (hoff : OffsetsFor cls (entries.take sp2) offsets)
-    (hdb : ∀ j < 64, db.toBitVec.getLsbD j = (cls[j]!.bits != 0))
+    (hdb : ∀ j < 64, db.toBitVec.getLsbD j = (cls[j]!.bits != 0)) (hbLow : 1 ≤ bLow)
     (hl : Id.run (shape.dens db bLow bHigh) = pref ++ cur :: suff)
-    (h : o = none ∧ SieveRunInvariant process c d H fl entries sp2 cls
+    (h : o = none ∧ SieveRunInvariant process c d H fl entries sp2 cls iv bLow bHigh
       (fun b ↦ Id.run (shape.keep cls b)) r0 pref r store)
     (hk : Id.run (shape.keep cls cur) = true)
-    (hpts : st.Fits (entries.take sp2) ∧ ∀ (w : UInt64) (pos : ℕ),
+    (hpts : st.Fits (entries.take sp2) ∧ ∀ (w : UInt64) (pos : ℕ) (rs : List (ℤ × ℤ)),
       cls[cur % 64]!.Packs w → cls[cur % 64]!.offset = some pos →
       (∀ n (h : n < (entries.take sp2).length),
         (entries.take sp2)[n].PackedFor cls[cur % 64]! offsets[pos + n]!) →
-      r' = r.deliver process (((numerators H).filter fun a ↦ classBit w a &&
+      RangesFor iv cur H rs →
+      r' = r.deliver process (((numerators H).filter fun a ↦ inRanges rs a && classBit w a &&
         survives (entries.take sp2 ++ entries.drop sp2) cur a).flatMap
           (checkNumWith (scaledCoeffs c d cur) (if d % 2 = 1 then cur else 1) cur fl)))
     (hq : ¬r'.quit = true) :
-    SieveRunInvariant process c d H fl entries sp2 cls (fun b ↦ Id.run (shape.keep cls b)) r0
-      (pref ++ [cur]) r' st :=
-  ⟨Bool.eq_false_iff.mpr hq, hpts.1, h.2.eq_deliver_append hoff hdb hl hk hpts.2⟩
+    SieveRunInvariant process c d H fl entries sp2 cls iv bLow bHigh
+      (fun b ↦ Id.run (shape.keep cls b)) r0 (pref ++ [cur]) r' st :=
+  ⟨Bool.eq_false_iff.mpr hq, hpts.1, h.2.eq_deliver_append hoff hdb hbLow hl hk hpts.2⟩
 
 /-- The denominator `cur` of the list of the shape that its tests let through, after which the
 callback has stopped the search: the delivery is that of the points of all the denominators of the
 list that pass the tests (`Ratpoints.Delivery.deliver_flatMap_eq_of_prefix`). -/
 theorem SieveRunInvariant.eq_deliver_of_quit (hoff : OffsetsFor cls (entries.take sp2) offsets)
-    (hdb : ∀ j < 64, db.toBitVec.getLsbD j = (cls[j]!.bits != 0))
+    (hdb : ∀ j < 64, db.toBitVec.getLsbD j = (cls[j]!.bits != 0)) (hbLow : 1 ≤ bLow)
     (hl : Id.run (shape.dens db bLow bHigh) = pref ++ cur :: suff)
-    (h : o = none ∧ SieveRunInvariant process c d H fl entries sp2 cls
+    (h : o = none ∧ SieveRunInvariant process c d H fl entries sp2 cls iv bLow bHigh
       (fun b ↦ Id.run (shape.keep cls b)) r0 pref r store)
     (hk : Id.run (shape.keep cls cur) = true)
-    (hpts : st.Fits (entries.take sp2) ∧ ∀ (w : UInt64) (pos : ℕ),
+    (hpts : st.Fits (entries.take sp2) ∧ ∀ (w : UInt64) (pos : ℕ) (rs : List (ℤ × ℤ)),
       cls[cur % 64]!.Packs w → cls[cur % 64]!.offset = some pos →
       (∀ n (h : n < (entries.take sp2).length),
         (entries.take sp2)[n].PackedFor cls[cur % 64]! offsets[pos + n]!) →
-      r' = r.deliver process (((numerators H).filter fun a ↦ classBit w a &&
+      RangesFor iv cur H rs →
+      r' = r.deliver process (((numerators H).filter fun a ↦ inRanges rs a && classBit w a &&
         survives (entries.take sp2 ++ entries.drop sp2) cur a).flatMap
           (checkNumWith (scaledCoeffs c d cur) (if d % 2 = 1 then cur else 1) cur fl)))
-    (hq : r'.quit = true) (nb : Vector UInt64 64) (hnb : ∀ b < 64, cls[b]!.Packs nb[b]!) :
+    (hq : r'.quit = true) (nb : Vector UInt64 64) (rs : ℕ → List (ℤ × ℤ))
+    (hnb : ∀ b < 64, cls[b]!.Packs nb[b]!)
+    (hrs : ∀ b, bLow ≤ b → b ≤ bHigh → RangesFor iv b H (rs b)) :
     r' = r0.deliver process (((Id.run (shape.dens db bLow bHigh)).filter
       fun b ↦ Id.run (shape.keep cls b)).flatMap fun b : ℕ ↦ ((numerators H).filter
-        fun a ↦ classBit nb[b % 64]! a && survives entries b a).flatMap
+        fun a ↦ inRanges (rs b) a && classBit nb[b % 64]! a && survives entries b a).flatMap
           (checkNumWith (scaledCoeffs c d b) (if d % 2 = 1 then b else 1) b fl)) := by
-  have he := h.2.eq_deliver_append hoff hdb hl hk hpts.2 nb hnb
+  have he := h.2.eq_deliver_append hoff hdb hbLow hl hk hpts.2 nb rs hnb hrs
   rw [he] at hq ⊢
   refine (Delivery.deliver_flatMap_eq_of_prefix process ?_ _ hq).symm
   rw [hl, List.append_cons pref cur suff]
   exact (List.prefix_append (pref ++ [cur]) suff).filter _
 
 theorem SieveRunInvariant.quit_eq_false_and_fits
-    (h : o = none ∧ SieveRunInvariant process c d H fl entries sp2 cls
+    (h : o = none ∧ SieveRunInvariant process c d H fl entries sp2 cls iv bLow bHigh
       (fun b ↦ Id.run (shape.keep cls b)) r0 pref r store) :
     r.quit = false ∧ store.Fits (entries.take sp2) :=
   ⟨h.2.quit_eq_false, h.2.fits⟩
 
 theorem sieveRunInvariant_nil (c : List ℤ) (d H : ℕ) (fl : CheckFlags) (cls : Vector NumClass 64)
     (keep : ℕ → Bool) (hr : r0.quit = false) (hs : store.Fits (entries.take sp2)) :
-    SieveRunInvariant process c d H fl entries sp2 cls keep r0 [] r0 store :=
-  ⟨hr, hs, fun _ _ ↦ by simp⟩
+    SieveRunInvariant process c d H fl entries sp2 cls iv bLow bHigh keep r0 [] r0 store :=
+  ⟨hr, hs, fun _ _ _ _ ↦ by simp⟩
 
 /-- A denominator that the tests of the shape reject delivers nothing. -/
 theorem SieveRunInvariant.append_of_not_keep {keep : ℕ → Bool}
-    (h : o = none ∧ SieveRunInvariant process c d H fl entries sp2 cls keep r0 pref r store)
+    (h : o = none ∧ SieveRunInvariant process c d H fl entries sp2 cls iv bLow bHigh keep r0 pref r
+      store)
     (hk : ¬keep cur = true) :
-    SieveRunInvariant process c d H fl entries sp2 cls keep r0 (pref ++ [cur]) r store :=
-  ⟨h.2.quit_eq_false, h.2.fits, fun nb hnb ↦ by
-    rw [h.2.eq_deliver nb hnb]
+    SieveRunInvariant process c d H fl entries sp2 cls iv bLow bHigh keep r0 (pref ++ [cur]) r
+      store :=
+  ⟨h.2.quit_eq_false, h.2.fits, fun nb rs hnb hrs ↦ by
+    rw [h.2.eq_deliver nb rs hnb hrs]
     simp [List.filter_append, hk]⟩
 
 end
@@ -291,27 +317,32 @@ whose bits are those of the word `db` of the word shape, the store of the tables
 stage, have the shape that it needs (`Ratpoints.Sieve.SieveEntry.IsPrimeEntry`); `magics` holds the
 reciprocals of the moduli in the order of the entries, as the stages read them; the test for common
 factors on the words of the C code needs the denominators, which lie between `bLow ≥ 1` and `bHigh`
-(`Ratpoints.Sieve.Shape.le_and_le_of_mem_dens`), and the height below `2 ^ 63`. The run returns
-when the callback stops the search, which the delivery of the whole list of points accounts for
+(`Ratpoints.Sieve.Shape.le_and_le_of_mem_dens`), and the height below `2 ^ 63`. Each denominator
+delivers the points of the numerators in the ranges that the bounds `iv` of the search intervals
+give for it (`Ratpoints.Sieve.RangesFor`, `Ratpoints.Sieve.sift_spec`). The run returns when the
+callback stops the search, which the delivery of the whole list of points accounts for
 (`Ratpoints.Delivery.deliver_flatMap_eq_of_prefix`). The words `nb` of the classes modulo 64 that
-the classes pack are quantified in the postcondition, since the program does not mention them. -/
+the classes pack and the ranges `rs b` of the numerators of each denominator are quantified in the
+postcondition, since the program does not mention them. -/
 @[spec]
 theorem sieveRun_spec (c : List ℤ) (d H A : ℕ) (fl : CheckFlags) (sp1 sp2 : ℕ)
     (entries : List SieveEntry) (magics : Array ℕ) (cls : Vector NumClass 64) (offsets : Array ℕ)
-    (db : UInt64) (shape : Shape) (bLow bHigh : ℕ) (store : RowStore) (r : Delivery σ) :
+    (db : UInt64) (shape : Shape) (iv : Array IntervalBounds) (bLow bHigh : ℕ) (store : RowStore)
+    (r : Delivery σ) :
     ⦃ r.quit = false ∧ 1 ≤ A ∧ (∀ e ∈ entries.drop sp2, e.IsPrimeEntry) ∧
         magics.toList = entries.map (fun e ↦ magic e.p) ∧ 1 ≤ bLow ∧ bHigh < 2 ^ 63 ∧ H < 2 ^ 63 ∧
         (∀ e ∈ entries.take sp2, ∀ f ∈ e.factors, f.HasInverses e.p) ∧
         OffsetsFor cls (entries.take sp2) offsets ∧
         (∀ j < 64, db.toBitVec.getLsbD j = (cls[j]!.bits != 0)) ∧ store.Fits (entries.take sp2) ⦄
-    sieveRun process c d H A fl sp1 sp2 entries magics cls offsets db shape bLow bHigh store r
-    ⦃ fun r' ↦ ∀ nb : Vector UInt64 64, (∀ b < 64, cls[b]!.Packs nb[b]!) →
+    sieveRun process c d H A fl sp1 sp2 entries magics cls offsets db shape iv bLow bHigh store r
+    ⦃ fun r' ↦ ∀ (nb : Vector UInt64 64) (rs : ℕ → List (ℤ × ℤ)), (∀ b < 64, cls[b]!.Packs nb[b]!) →
+        (∀ b, bLow ≤ b → b ≤ bHigh → RangesFor iv b H (rs b)) →
         r' = r.deliver process (((Id.run (shape.dens db bLow bHigh)).filter
           fun b ↦ Id.run (shape.keep cls b)).flatMap fun b : ℕ ↦ ((numerators H).filter
-            fun a ↦ classBit nb[b % 64]! a && survives entries b a).flatMap
+            fun a ↦ inRanges (rs b) a && classBit nb[b % 64]! a && survives entries b a).flatMap
               (checkNumWith (scaledCoeffs c d b) (if d % 2 = 1 then b else 1) b fl)) ⦄ := by
   vcgen [sieveRun, dens_value, keep_value] invariants
-  | inv1 => SieveRunLoopInvariant process c d H fl entries sp2 cls
+  | inv1 => SieveRunLoopInvariant process c d H fl entries sp2 cls iv bLow bHigh
       (fun b ↦ Id.run (shape.keep cls b)) r (Id.run (shape.dens db bLow bHigh))
   all_goals obtain ⟨hr, hA, hes, hmg, hb, hb63, hH, hinv, hoff, hdb, hs⟩ := ‹r.quit = false ∧ _›
   all_goals subst_vars
@@ -320,11 +351,11 @@ theorem sieveRun_spec (c : List ℤ) (d H A : ℕ) (fl : CheckFlags) (sp1 sp2 : 
     and_false, Option.some.injEq, exists_eq_left', exists_false, and_true] at *
   all_goals first
     | exact sieveRunInvariant_nil c d H fl cls _ hr hs
-    | (rename_i h; exact h _ ‹_›)
-    | exact SieveRunInvariant.eq_deliver ‹_› _ ‹_›
+    | (rename_i h; exact h _ _ ‹_› ‹_›)
+    | exact SieveRunInvariant.eq_deliver ‹_› _ _ ‹_› ‹_›
     | exact SieveRunInvariant.append_of_not_keep ‹_› ‹_›
-    | exact SieveRunInvariant.append_of_keep hoff hdb ‹_› ‹_› ‹_› ‹_› ‹_›
-    | exact SieveRunInvariant.eq_deliver_of_quit hoff hdb ‹_› ‹_› ‹_› ‹_› ‹_›
+    | exact SieveRunInvariant.append_of_keep hoff hdb hb ‹_› ‹_› ‹_› ‹_› ‹_›
+    | exact SieveRunInvariant.eq_deliver_of_quit hoff hdb hb ‹_› ‹_› ‹_› ‹_› ‹_›
     | have := pos_and_lt_of_eq_append_cons hb hb63 ‹_›
       have := SieveRunInvariant.quit_eq_false_and_fits ‹_›
       exact ⟨this.1, hA, ‹0 < _ ∧ _›.1, ‹0 < _ ∧ _›.2, hH, hes, by rw [hmg, List.map_drop],
@@ -339,43 +370,70 @@ theorem run_sieveRun (c : List ℤ) (d H : ℕ) (fl : CheckFlags) (sp1 sp2 : ℕ
     (hinv : ∀ e ∈ entries.take sp2, ∀ f ∈ e.factors, f.HasInverses e.p) {cls : Vector NumClass 64}
     {offsets : Array ℕ} (hoff : OffsetsFor cls (entries.take sp2) offsets) {db : UInt64}
     (hdb : ∀ j < 64, db.toBitVec.getLsbD j = (cls[j]!.bits != 0)) {nb : Vector UInt64 64}
-    (hnb : ∀ b < 64, cls[b]!.Packs nb[b]!) (shape : Shape) {bLow bHigh : ℕ} (hbLow : 1 ≤ bLow)
-    (hbHigh : bHigh < 2 ^ 63) (hH : H < 2 ^ 63) {store : RowStore}
+    (hnb : ∀ b < 64, cls[b]!.Packs nb[b]!) (shape : Shape) {iv : Array IntervalBounds}
+    {bLow bHigh : ℕ} {rs : ℕ → List (ℤ × ℤ)}
+    (hiv : ∀ b, bLow ≤ b → b ≤ bHigh → RangesFor iv b H (rs b))
+    (hbLow : 1 ≤ bLow) (hbHigh : bHigh < 2 ^ 63) (hH : H < 2 ^ 63) {store : RowStore}
     (hs : store.Fits (entries.take sp2)) {r : Delivery σ} (hr : r.quit = false) :
-    Id.run (sieveRun process c d H A fl sp1 sp2 entries magics cls offsets db shape bLow bHigh store
-      r) = r.deliver process (((Id.run (shape.dens db bLow bHigh)).filter
+    Id.run (sieveRun process c d H A fl sp1 sp2 entries magics cls offsets db shape iv bLow bHigh
+      store r) = r.deliver process (((Id.run (shape.dens db bLow bHigh)).filter
         fun b ↦ Id.run (shape.keep cls b)).flatMap fun b : ℕ ↦ ((numerators H).filter
-          fun a ↦ classBit nb[b % 64]! a && survives entries b a).flatMap
+          fun a ↦ inRanges (rs b) a && classBit nb[b % 64]! a && survives entries b a).flatMap
             (checkNumWith (scaledCoeffs c d b) (if d % 2 = 1 then b else 1) b fl)) :=
   Std.WP.Id.of_run_eq_wp rfl _ ((sieveRun_spec process c d H A fl sp1 sp2 entries magics cls offsets
-    db shape bLow bHigh store r).le_wp ⟨hr, hA, hes, hmg, hbLow, hbHigh, hH, hinv, hoff, hdb, hs⟩)
-      nb hnb
+    db shape iv bLow bHigh store r).le_wp
+      ⟨hr, hA, hes, hmg, hbLow, hbHigh, hH, hinv, hoff, hdb, hs⟩) nb rs hnb hiv
 
 /-- When the list of the denominators of the shape is a list `l` filtered by a test `p`, the run
 delivers, over the denominators `b` of `l`, the points of the check with the flags `fl`
 (`Ratpoints.Sieve.checkNumWith`) of the numerators `a` of `-H, …, H` that pass the test of the
-sieve: `b` passes `p` and the tests of the shape, and `a` passes the word of its class among the
-words `nb` that the classes `cls` pack and the sieve entries
+sieve: `b` passes `p` and the tests of the shape, and `a` lies in one of the ranges `rs b` that the
+bounds of the search intervals give for `b` (`Ratpoints.Sieve.RangesFor`), passes the word of its
+class among the words `nb` that the classes `cls` pack and survives the sieve entries
 (`Ratpoints.Sieve.run_sieveRun`). -/
 theorem run_sieveRun_of_eq_filter {c : List ℤ} {d H A : ℕ} {fl : CheckFlags} {sp1 sp2 : ℕ}
     {entries : List SieveEntry} {magics : Array ℕ} {cls : Vector NumClass 64} {offsets : Array ℕ}
-    {db : UInt64} {nb : Vector UInt64 64} {shape : Shape} {bLow bHigh : ℕ} {store : RowStore}
-    {l : List ℕ} {p : ℕ → Bool} (hA : 1 ≤ A) (hes : ∀ e ∈ entries.drop sp2, e.IsPrimeEntry)
+    {db : UInt64} {nb : Vector UInt64 64} {shape : Shape} {iv : Array IntervalBounds}
+    {bLow bHigh : ℕ} {rs : ℕ → List (ℤ × ℤ)} {store : RowStore} {l : List ℕ} {p : ℕ → Bool}
+    (hA : 1 ≤ A) (hes : ∀ e ∈ entries.drop sp2, e.IsPrimeEntry)
     (hmg : magics.toList = entries.map fun e ↦ magic e.p)
     (hinv : ∀ e ∈ entries.take sp2, ∀ f ∈ e.factors, f.HasInverses e.p)
     (hoff : OffsetsFor cls (entries.take sp2) offsets)
     (hdb : ∀ j < 64, db.toBitVec.getLsbD j = (cls[j]!.bits != 0))
-    (hnb : ∀ b < 64, cls[b]!.Packs nb[b]!) (hbLow : 1 ≤ bLow) (hbHigh : bHigh < 2 ^ 63)
-    (hH : H < 2 ^ 63) (hs : store.Fits (entries.take sp2))
+    (hnb : ∀ b < 64, cls[b]!.Packs nb[b]!)
+    (hiv : ∀ b, bLow ≤ b → b ≤ bHigh → RangesFor iv b H (rs b)) (hbLow : 1 ≤ bLow)
+    (hbHigh : bHigh < 2 ^ 63) (hH : H < 2 ^ 63) (hs : store.Fits (entries.take sp2))
     (hdens : Id.run (shape.dens db bLow bHigh) = l.filter p) {r : Delivery σ}
     (hr : r.quit = false) :
-    Id.run (sieveRun process c d H A fl sp1 sp2 entries magics cls offsets db shape bLow bHigh store
-      r) = r.deliver process (l.flatMap fun b : ℕ ↦ ((numerators H).filter fun a ↦
-        p b && Id.run (shape.keep cls b) && classBit nb[b % 64]! a && survives entries b a).flatMap
-          (checkNumWith (scaledCoeffs c d b) (if d % 2 = 1 then b else 1) b fl)) := by
-  rw [run_sieveRun process c d H fl sp1 sp2 hA hes hmg hinv hoff hdb hnb shape hbLow hbHigh hH hs
-    hr, hdens, List.filter_filter, List.flatMap_filter_flatMap_filter]
+    Id.run (sieveRun process c d H A fl sp1 sp2 entries magics cls offsets db shape iv bLow bHigh
+      store r) = r.deliver process (l.flatMap fun b : ℕ ↦ ((numerators H).filter fun a ↦
+        p b && Id.run (shape.keep cls b) && inRanges (rs b) a && classBit nb[b % 64]! a &&
+          survives entries b a).flatMap
+            (checkNumWith (scaledCoeffs c d b) (if d % 2 = 1 then b else 1) b fl)) := by
+  rw [run_sieveRun process c d H fl sp1 sp2 hA hes hmg hinv hoff hdb hnb shape hiv hbLow hbHigh hH
+    hs hr, hdens, List.filter_filter, List.flatMap_filter_flatMap_filter]
   simp only [Bool.and_comm (Id.run (shape.keep cls _)) (p _), Bool.and_assoc]
+
+/-- The shape that `Ratpoints.Sieve.runSetup` chooses from the flags of the search. -/
+theorem fst_run_runSetup (useSquares : Bool) (us1 : Option (List Setup.DenInfo × List ℕ))
+    (checkDenom useJacobi : Bool) (forb : List ForbiddenEntry) (forbVal : List ForbiddenVal)
+    (lcf : ℤ) (H bHigh : ℕ) (domain : List (Double × Double)) :
+    (Id.run (runSetup useSquares us1 checkDenom useJacobi forb forbVal lcf H bHigh domain)).1 =
+      if useSquares then .squares else match us1 with
+        | some (info, divisors) => .squares1 info divisors
+        | none => if checkDenom then .words forb forbVal useJacobi
+            (if useJacobi then Id.run (jacobiSetup lcf bHigh) else none) lcf else .all := by
+  cases useSquares <;> rcases us1 with _ | ⟨info, divisors⟩ <;> cases checkDenom <;>
+    cases useJacobi <;> rfl
+
+/-- The bounds of the search intervals of the run that `Ratpoints.Sieve.runSetup` makes. -/
+theorem snd_run_runSetup (useSquares : Bool) (us1 : Option (List Setup.DenInfo × List ℕ))
+    (checkDenom useJacobi : Bool) (forb : List ForbiddenEntry) (forbVal : List ForbiddenVal)
+    (lcf : ℤ) (H bHigh : ℕ) (domain : List (Double × Double)) :
+    (Id.run (runSetup useSquares us1 checkDenom useJacobi forb forbVal lcf H bHigh domain)).2 =
+      Id.run (exactBounds domain H.toInt64 bHigh.toInt64) := by
+  cases useSquares <;> rcases us1 with _ | ⟨info, divisors⟩ <;> cases checkDenom <;>
+    cases useJacobi <;> rfl
 
 end Sieve
 

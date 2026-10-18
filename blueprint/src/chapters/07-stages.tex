@@ -615,8 +615,8 @@ Each component of this chapter differs from the C code in a stated way, recorded
     of the bits, the bit arrays, the words and the denominators that the stages see, which ratpoints
     reads to correct the moduli between the blocks (stage~I), and no counts, stops, timings and
     output of the instrumentation of the stages; the arguments of the run passed explicitly, for the
-    pointer of the sieving thread to them, with no search intervals of the thread (stage~H) and no
-    pool, slot and stop flag of a thread of the pool (stage~I).
+    pointer of the sieving thread to them, with no pool, slot and stop flag of a thread of the pool
+    (stage~I).
 \end{itemize}
 The lines of this part of the C code that are neither modelled nor left to a later stage are
 excluded in \verb|correspondence/ratpoints.toml|: the instrumentation of \verb|sift.c| between
@@ -632,13 +632,13 @@ fail for lack of memory. The chunked first stage with the legs over the tail of 
 start pointers, which read \verb|small| and \verb|mod_mul| too, and the ends of the rows in the
 sieve specs, which only it reads, are modelled since stage~F4 (Chapter~\ref{chap:rows}), and the
 options of the output \verb|RATPOINTS_NO_Y| and \verb|RATPOINTS_NO_CHECK| of the search, which the
-search copies into the flags that the exact check reads, since stage~G (Chapter~\ref{chap:output});
-left to stage~H the search intervals of the sieving thread and the Sturm step; and left to stage~I
-the correction of the moduli between the blocks, with the counters and the decisions of the sieving
-thread, the choice of the cut points by cost (with the target \verb|RATPOINTS_SURVIVORS_PER_WORD|),
-the pool of threads, and, with the blocks, the reduction of the first word of a block modulo the
-forbidden divisors tested with words, which still divides (\verb|wordBits|), with the reciprocals of
-these divisors.
+search copies into the flags that the exact check reads, since stage~G (Chapter~\ref{chap:output}),
+and the search intervals of the sieving thread since stage~H (Chapter~\ref{chap:region}); left to
+stage~H the Sturm step; and left to stage~I the correction of the moduli between the blocks, with
+the counters and the decisions of the sieving thread, the choice of the cut points by cost (with the
+target \verb|RATPOINTS_SURVIVORS_PER_WORD|), the pool of threads, and, with the blocks, the
+reduction of the first word of a block modulo the forbidden divisors tested with words, which still
+divides (\verb|wordBits|), with the reciprocals of these divisors.
 
 \section{Files and names}\label{sec:stagesFiles}
 

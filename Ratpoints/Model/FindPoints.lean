@@ -39,18 +39,19 @@ denominators modulo 64 admits a numerator and there is no point at infinity, or 
 none modulo one of the primes examined for the parameters `P`, and otherwise the points of height at
 most `H` on `y ^ 2 = F(x, z)` to the callback (`Ratpoints.Delivery`), the points at infinity first
 and then those of the denominators in the order of the loop of the search (`Ratpoints.Sieve.Shape`),
-increasing unless it runs over the divisors of the leading coefficient, found by the sieve on the
-bit arrays of words with the moduli, primes, prime powers and products of them, and the array size
-of `P`, each mapped back to the caller's curve after a reversal, until a call of the callback stops
-the search, and returns the data of the callback, the count, the sum of the values that the calls
-returned, and the bits of the flags that the program reads after the search (`Ratpoints.Outcome`).
-Under the options of the output it delivers only the points with `y ≥ 0` (`RATPOINTS_NO_Y`), or,
-each with `y = 0`, the candidate at infinity and every numerator that passes the sieve, the test
-for common factors and the third stage (`RATPOINTS_NO_CHECK`). `Ratpoints.findPoints c H P o` is
-the list of what it delivers, by the callback that appends each point to an array
-(`Ratpoints.appendPoint`). What `sieving_info` computes for the search, the loop of the tables of
-the primes examined with the exit and the forbidden divisors, the further forbidden divisors and
-the sieve entries of the moduli with their reciprocals and the tables of their rows, is
+increasing unless it runs over the divisors of the leading coefficient, in the default search
+interval `[-h, h]` (`Ratpoints.searchIntervals`), which holds every `x = a / b` of the search, found
+by the sieve on the bit arrays of words with the moduli, primes, prime powers and products of them,
+and the array size of `P`, each mapped back to the caller's curve after a reversal, until a call of
+the callback stops the search, and returns the data of the callback, the count, the sum of the
+values that the calls returned, and the bits of the flags that the program reads after the search
+(`Ratpoints.Outcome`). Under the options of the output it delivers only the points with `y ≥ 0`
+(`RATPOINTS_NO_Y`), or, each with `y = 0`, the candidate at infinity and every numerator that passes
+the sieve, the test for common factors and the third stage (`RATPOINTS_NO_CHECK`).
+`Ratpoints.findPoints c H P o` is the list of what it delivers, by the callback that appends each
+point to an array (`Ratpoints.appendPoint`). What `sieving_info` computes for the search, the loop
+of the tables of the primes examined with the exit and the forbidden divisors, the further forbidden
+divisors and the sieve entries of the moduli with their reciprocals and the tables of their rows, is
 `Ratpoints.sievingInfo`.
 
 ## Main definitions
@@ -60,6 +61,7 @@ the sieve entries of the moduli with their reciprocals and the tables of their r
   the forbidden divisors and the sieve entries of the moduli of a search, with their reciprocals and
   the tables of their rows.
 * `Ratpoints.Outcome`: what a search returns and writes back.
+* `Ratpoints.searchIntervals`: the search intervals of a search, the default one for none.
 * `Ratpoints.sieving`, `Ratpoints.searchPoints`: the sieving of a search, and the search of the
   polynomial that the set-up hands on.
 * `Ratpoints.findPointsWith`: the search with a callback.
@@ -297,6 +299,29 @@ structure Outcome (σ : Type) where
   /-- `RATPOINTS_USE_SQUARES1`: the denominators are divisors of `c_d` times squares. -/
   useSquares1 : Bool
 
+/-- The search intervals of a search for the height bound `H ≥ 1` and the intervals `domain` of the
+caller, as `find_points_work_1` deals with them: for none given, the default interval `[-h, h]`, `h`
+the double of `H` (`Ratpoints.Double.ofInt64`), moved up to the next double
+(`Ratpoints.Double.nextUp`) when it is below `2 ^ 63` and below `H`, so that it holds every
+`x = a / b` of the search; otherwise the intervals given.
+
+C: `find_points.c:4829`, `find_points.c:4831-4841`
+
+Deviation: the intervals returned as a list, for the array `domain` and the number `num_inter` of
+the arguments, which the C code sets to the default interval in place; an option, for the code
+`RATPOINTS_BAD_ARGS` that the C code returns, never none before the test of the intervals given,
+which refuses an interval without `l ≤ u` or one that does not begin above the end of the one before
+it (lines 4842-4855), and comes with stage H: until then the intervals given are returned as they
+are, and only `Ratpoints.sieving` calls the function, for no intervals; the test of a null pointer
+`domain` (line 4830) excluded, the interface of the library. -/
+def searchIntervals (H : Nat) (domain : List (Double × Double)) :
+    Id (Option (List (Double × Double))) := do
+  if domain.isEmpty then
+    let h := Double.ofInt64 H.toInt64
+    let h := if h.lt .twoPow63 && h.toInt64 < H.toInt64 then h.nextUp else h
+    return some [(h.neg, h)]
+  return some domain
+
 open Sieve in
 /-- The sieving of the search of the polynomial with the coefficient list `c` of degree `d`, for the
 height `H`, the parameters `P` and the flags `fl`, delivered to the callback `process` on the
@@ -305,18 +330,23 @@ their reciprocals `magics`, the classes `cls` of the denominators modulo 64 with
 those that admit a numerator, and the store `store` of the tables of rows, from
 `Ratpoints.sievingInfo`: an array of `Ratpoints.Sieve.numPackings` rows of one offset for each sieve
 entry, and the row offsets of the classes in it, with the inverses of the strides in the entries
-(`Ratpoints.Sieve.classOffsets`); the shape of the run (`Ratpoints.Sieve.runSetup`, with the flags
-of the denominators `useSquares`, `us1`, `checkDenom` and `useJacobi` and the forbidden divisors
-`forb` and `forbVal`); and the points of the denominators `1, …, H` of the shape
-(`Ratpoints.Sieve.sieveRun`) with the cut points `P.sp1` and `P.sp2` and pieces of at most
-`Ratpoints.Params.arraySizeAt P H` bit arrays, which returns when the callback stops the search.
-This is the block that the C code introduces as "now do the sieving".
+(`Ratpoints.Sieve.classOffsets`); the shape of the run and the bounds of the search intervals, the
+default interval `[-h, h]` of a search without intervals (`Ratpoints.searchIntervals`), which holds
+every `x = a / b` of the search (`Ratpoints.Sieve.runSetup`, with the flags of the denominators
+`useSquares`, `us1`, `checkDenom` and `useJacobi`, the forbidden divisors `forb` and `forbVal` and
+the largest denominator `H`); and the points of the denominators `1, …, H` of the shape in the
+search interval (`Ratpoints.Sieve.sieveRun`) with the cut points `P.sp1` and `P.sp2` and pieces of
+at most `Ratpoints.Params.arraySizeAt P H` bit arrays, which returns when the callback stops the
+search. This is the block that the C code introduces as "now do the sieving".
 
 C: `find_points.c:4573`, `find_points.c:5116`, `find_points.c:5119`, `find_points.c:5132`,
 `find_points.c:5137-5139`, `find_points.c:5167`
 
 Deviation: a function of its own for the block of the sieving in `find_points_work_1`; the
-denominators from `1` to `H`, for the range `b_low, …, b_high` (stage H); the flags of the
+denominators from `1` to `H`, for the range `b_low, …, b_high` (stage H); the default search
+interval, for the intervals `domain` and their number `num_inter` of the arguments, which
+`run_setup` reads, made here, where `find_points_work_1` makes it before the Sturm step (the
+intervals of the caller, and the Sturm step that narrows them, come with stage H); the flags of the
 denominators as Booleans and an option, for the bits of `args->flags` and the arrays
 `args->den_info` and `args->divisors` that `run_setup` reads; the array of the row offsets made with
 zeros, for the array on the stack, whose entries the C code leaves unset until `class_offsets`
@@ -334,8 +364,10 @@ def sieving {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c 
     Id (Delivery σ) := do
   let offsets := Array.replicate ((← numPackings cls) * max entries.length 1) 0
   let (cls, entries, offsets) ← classOffsets cls entries offsets
-  let shape ← runSetup useSquares us1 checkDenom useJacobi forb forbVal (c.getD d 0) H
-  sieveRun process c d H (P.arraySizeAt H) fl P.sp1 P.sp2 entries magics cls offsets db shape 1 H
+  let domain := (← searchIntervals H []).getD []
+  let (shape, iv) ←
+    runSetup useSquares us1 checkDenom useJacobi forb forbVal (c.getD d 0) H H domain
+  sieveRun process c d H (P.arraySizeAt H) fl P.sp1 P.sp2 entries magics cls offsets db shape iv 1 H
     store r
 
 open Sieve in
@@ -736,6 +768,7 @@ height that is not a `long`, while `2 ^ 63 - 1` passes on to the test of the lea
     let (cls, entries, offsets) :=
       Id.run (Sieve.classOffsets cls entries (Array.replicate (np * entries.length) 0))
     let mgs := magics.toList
+    let iv := Id.run (Sieve.exactBounds ((Id.run (searchIntervals 300 [])).getD []) 300 300)
     (List.range' 1 40).all fun b ↦ cls[b % 64]!.bits == 0 || [1, 3].all fun A ↦
       let cl := cls[b % 64]!
       let bp := Sieve.fillBpList b cl.k (entries.take 7) (mgs.take 7)
@@ -745,7 +778,7 @@ height that is not a `long`, while `2 ^ 63 - 1` passes on to the test of the lea
       let ref := (Id.run (Sieve.checkDen c d 300 b surv)).toList
       [false, true].all fun rev ↦
         (Id.run (Sieve.sift appendPoint c d 300 A b { reversed := rev } 3 (entries.take 7)
-          (mgs.take 7) bp cl offsets (entries.drop 7) (mgs.drop 7) store
+          (mgs.take 7) bp cl offsets (entries.drop 7) (mgs.drop 7) iv store
           ⟨#[], 0, false⟩)).1.info.toList == if rev then ref.map Sieve.swapPoint else ref
   | none => false
 
@@ -778,7 +811,9 @@ height that is not a `long`, while `2 ^ 63 - 1` passes on to the test of the lea
             Sieve.survives entries b ((i.val : Int) - H)
         let ref := (Id.run (Sieve.checkDen c 3 H b surv)).toList
         (Id.run (Sieve.sift appendPoint c 3 H 1 b { reversed := rev } 3 (entries.take 7)
-          (mgs.take 7) bp cl offsets (entries.drop 7) (mgs.drop 7) store
+          (mgs.take 7) bp cl offsets (entries.drop 7) (mgs.drop 7)
+          (Id.run (Sieve.exactBounds ((Id.run (searchIntervals H [])).getD []) H.toInt64
+            H.toInt64)) store
           ⟨#[], 0, false⟩)).1.info.toList == if rev then ref.map Sieve.swapPoint else ref
   | none => false
 
