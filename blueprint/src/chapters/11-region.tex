@@ -892,19 +892,19 @@ and exponents of the C code, as \verb|Int64|, and makes the doubles of the ends 
 them.
 
 \begin{definition}[The signs and the counts of the chain]\label{def:evalSign}
-  Proposed names: \lname{Ratpoints.Sturm.evalSign}, \lname{Ratpoints.Sturm.signsAt},
-  \lname{Ratpoints.Sturm.countsAtInfinity}. The sign $-1$, $0$ or $1$ of the value at
-  $n/2^e$ of the polynomial of a row, as \verb|eval_sign| computes it by Horner's rule in integers:
-  from the leading coefficient $w$, for the coefficients $c_k$ below it in turn
-  $w \leftarrow w n + c_k 2^{e'}$ with $e' = e, 2e, \dots$, so that $w$ is $2^{\deg \cdot e}$ times
-  the value (\csource{sturm.c}{67}{84}). The signs $s_0$ and $s_1$ of $f$ and $f'$ at the midpoint
-  and the number of sign changes of the rows of the chain there, zeros skipped: the first two rows
-  count when their signs are opposite; then, from the sign of the last row that is not zero ($s_0$
-  when $s_1 = 0$), each further row counts when its sign is the opposite, and replaces it when it is
-  not zero (\csource{sturm.c}{252}{260}). And the numbers of sign changes of the rows at $+\infty$
-  and at $-\infty$, from the signs of their leading coefficients, two neighbouring rows counting at
-  $-\infty$ when their signs differ after the sign of each row of odd degree is flipped
-  (\csource{sturm.c}{165}{175}).
+  \lean{Ratpoints.Sturm.evalSign, Ratpoints.Sturm.signsAt, Ratpoints.Sturm.countsAtInfinity}
+  \leanok
+  The sign $-1$, $0$ or $1$ of the value at $n/2^e$ of the polynomial of a row, as \verb|eval_sign|
+  computes it by Horner's rule in integers: from the leading coefficient $w$, for the coefficients
+  $c_k$ below it in turn $w \leftarrow w n + c_k 2^{e'}$ with $e' = e, 2e, \dots$, so that $w$ is
+  $2^{\deg \cdot e}$ times the value (\csource{sturm.c}{67}{84}). The signs $s_0$ and $s_1$ of $f$
+  and $f'$ at the midpoint and the number of sign changes of the rows of the chain there, zeros
+  skipped: the first two rows count when their signs are opposite; then, from the sign of the last
+  row that is not zero ($s_0$ when $s_1 = 0$), each further row counts when its sign is the
+  opposite, and replaces it when it is not zero (\csource{sturm.c}{252}{260}). And the numbers of
+  sign changes of the rows at $+\infty$ and at $-\infty$, from the signs of their leading
+  coefficients, two neighbouring rows counting at $-\infty$ when their signs differ after the sign
+  of each row of odd degree is flipped (\csource{sturm.c}{165}{175}).
 \end{definition}
 
 \begin{definition}[The bisection]\label{def:iterate}
@@ -935,13 +935,14 @@ them.
 
 \begin{definition}[The intersection]\label{def:intersect}
   \uses{def:Double}
-  Proposed names: \lname{Ratpoints.Sturm.meet}, \lname{Ratpoints.Sturm.intersect}. One step of the
-  intersection of an interval $I = [l_I, u_I]$ that the bisection keeps with an interval
-  $J = [l_J, u_J]$ of the caller, both closed: the interval it notes, if any, and whether it goes on
-  with the next interval kept or the next of the caller, the one that ends first. If $l_I \le l_J$,
-  $I$ is forgotten when $u_I < l_J$; otherwise $[l_J, u_I]$ is noted with the next $I$ when
-  $u_I \le u_J$, and $J$ with the next $J$ otherwise. Symmetrically when $l_J < l_I$: $J$ is
-  forgotten when $u_J < l_I$, and otherwise $[l_I, u_J]$ is noted with the next $J$ when
+  \lean{Ratpoints.Sturm.meet, Ratpoints.Sturm.intersect}
+  \leanok
+  One step of the intersection of an interval $I = [l_I, u_I]$ that the bisection keeps with an
+  interval $J = [l_J, u_J]$ of the caller, both closed: the interval it notes, if any, and whether
+  it goes on with the next interval kept or the next of the caller, the one that ends first. If
+  $l_I \le l_J$, $I$ is forgotten when $u_I < l_J$; otherwise $[l_J, u_I]$ is noted with the next
+  $I$ when $u_I \le u_J$, and $J$ with the next $J$ otherwise. Symmetrically when $l_J < l_I$: $J$
+  is forgotten when $u_J < l_I$, and otherwise $[l_I, u_J]$ is noted with the next $J$ when
   $u_J \le u_I$, and $I$ with the next $I$ otherwise. The ends are compared as doubles and copied
   (\csource{sturm.c}{289}{322}). The intersection: from the first interval of each list, while both
   have one left, a step notes their intersection and goes on with the list whose interval ends first
@@ -967,22 +968,17 @@ them.
 
 \begin{lemma}[The signs and the counts]\label{lem:evalSign}
   \uses{def:evalSign}
-  Proposed names: \lname{Ratpoints.Sturm.hornerValue}, \lname{Ratpoints.Sturm.EvalSignInvariant},
-  \lname{Ratpoints.Sturm.evalSign\_spec}, \lname{Ratpoints.Sturm.run\_evalSign},
-  \lname{Ratpoints.Sturm.signCount}, \lname{Ratpoints.Sturm.SignsAtInvariant},
-  \lname{Ratpoints.Sturm.signsAt\_spec}, \lname{Ratpoints.Sturm.run\_signsAt},
-  \lname{Ratpoints.Sturm.signAtTop}, \lname{Ratpoints.Sturm.signAtBot},
-  \lname{Ratpoints.Sturm.CountsInvariant}, \lname{Ratpoints.Sturm.countsAtInfinity\_spec},
-  \lname{Ratpoints.Sturm.run\_countsAtInfinity}. For $0 \le e$ and $e$ times the size of the row
-  below $2^{63}$, so that the exponents are \verb|long|s, the sign that Horner's rule gives is the
-  sign of the value of Horner's rule in the integers after all the steps; the signs and the count at
-  the midpoint are the signs of the first two rows and the count of sign changes, zeros skipped, of
-  the signs of all the rows; and the counts at $\pm\infty$ are the numbers of neighbouring rows
-  whose signs at $+\infty$ and at $-\infty$ differ, each the sign of a leading coefficient, flipped
-  at $-\infty$ for odd degree.
+  \lean{Ratpoints.Sturm.hornerValue, Ratpoints.Sturm.EvalSignInvariant, Ratpoints.Sturm.evalSign_spec, Ratpoints.Sturm.run_evalSign, Ratpoints.Sturm.signCount, Ratpoints.Sturm.SignsAtInvariant, Ratpoints.Sturm.signsAt_spec, Ratpoints.Sturm.run_signsAt, Ratpoints.Sturm.signAtTop, Ratpoints.Sturm.signAtBot, Ratpoints.Sturm.CountsInvariant, Ratpoints.Sturm.countsAtInfinity_spec, Ratpoints.Sturm.run_countsAtInfinity}
+  \leanok
+  For $0 \le e$ and $e$ times the size of the row below $2^{63}$, so that the exponents are
+  \verb|long|s, the sign that Horner's rule gives is the sign of the value of Horner's rule in the
+  integers after all the steps; the signs and the count at the midpoint are the signs of the first
+  two rows and the count of sign changes, zeros skipped, of the signs of all the rows; and the
+  counts at $\pm\infty$ are the numbers of neighbouring rows whose signs at $+\infty$ and at
+  $-\infty$ differ, each the sign of a leading coefficient, flipped at $-\infty$ for odd degree.
 \end{lemma}
 
-\begin{proof}
+\begin{proof}\leanok
   Contracts with the program logic of Lean core, each with a named invariant of its loop,
   irreducible after its lemmas.
 \end{proof}

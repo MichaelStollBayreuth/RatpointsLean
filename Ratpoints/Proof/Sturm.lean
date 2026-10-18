@@ -8,16 +8,21 @@ module
 public import Ratpoints.Model.Sturm
 public import Std.WP
 
+import Ratpoints.Proof.Bits
 import Ratpoints.Proof.Containers
 import Std.Tactic.Do
 
 /-!
-# The contract of the remainder chain
+# The contracts of the Sturm step
 
 The steps of the remainder chain `Ratpoints.Sturm.chain` as plain functions, by well-founded
 recursion where the model has a loop, the predicate of a remainder chain, and the contract of the
 chain as a `@[spec]` theorem proved with `vcgen`, the program logic of Lean core, with loop
-invariants that are named definitions.
+invariants that are named definitions; the contracts of the evaluation of a row at a dyadic number
+(`Ratpoints.Sturm.evalSign`: the sign of the value of the Horner rule in integers), of the signs and
+the count of sign changes of the chain there (`Ratpoints.Sturm.signsAt`) and at `±∞`
+(`Ratpoints.Sturm.countsAtInfinity`); and the loop of the intersection with the caller's intervals
+(`Ratpoints.Sturm.intersect`) as a recursion on the two lists (`Ratpoints.Sturm.intersectList`).
 
 ## Main definitions
 
@@ -30,6 +35,13 @@ invariants that are named definitions.
 * `Ratpoints.Sturm.IsChain`: a remainder chain of a polynomial and its derivative.
 * `Ratpoints.Sturm.IsChainResult`: the result of the chain as its contract states it, a chain whose
   last row is constant, or `none` when a chain reduces to zero.
+* `Ratpoints.Sturm.hornerValue`: the value of a row at `n / 2 ^ e` times `2 ^ (e deg)`, by the
+  Horner rule of `Ratpoints.Sturm.evalSign`.
+* `Ratpoints.Sturm.signCount`: the sign changes that `Ratpoints.Sturm.signsAt` counts, zeros
+  skipped.
+* `Ratpoints.Sturm.signAtTop`, `Ratpoints.Sturm.signAtBot`: the signs of the rows at `±∞`.
+* `Ratpoints.Sturm.intersectList`: the intersection of two lists of intervals by the steps of
+  `Ratpoints.Sturm.intersect`.
 
 ## Main statements
 
@@ -37,13 +49,18 @@ invariants that are named definitions.
   `Ratpoints.Sturm.IsChainResult`; `Ratpoints.Sturm.isChainResult_run_chain` states this without
   the program logic.
 * `Ratpoints.Sturm.IsChain.size_le`: a chain of a polynomial of degree `d` has at most `d + 1` rows.
+* `Ratpoints.Sturm.evalSign_spec`, `Ratpoints.Sturm.signsAt_spec`,
+  `Ratpoints.Sturm.countsAtInfinity_spec`, `Ratpoints.Sturm.intersect_spec`: the contracts of the
+  evaluation, the signs at a midpoint, the counts at `±∞` and the intersection, with the plain
+  statements `Ratpoints.Sturm.run_evalSign`, `Ratpoints.Sturm.run_signsAt`,
+  `Ratpoints.Sturm.run_countsAtInfinity` and `Ratpoints.Sturm.toList_run_intersect`.
 
 ## Implementation notes
 
 The file uses Lean core and `Std` only, as `Ratpoints.Proof.Words` does; the lemmas on arrays,
-lists, ranges and integers that are not about the model are in `Ratpoints.Proof.Containers`. The
-plain statement `Ratpoints.Sturm.isChainResult_run_chain` lets the files with Mathlib use the
-contract without the program logic.
+lists, ranges and integers that are not about the model are in `Ratpoints.Proof.Containers`, those
+on `long`s in `Ratpoints.Proof.Bits`. The plain statements let the files with Mathlib use the
+contracts without the program logic.
 -/
 
 @[expose] public section
@@ -534,6 +551,350 @@ program logic. -/
 theorem isChainResult_run_chain {c : List Int} {d : Nat} (hd : 1 ≤ d) (hc : c.getD d 0 ≠ 0) :
     IsChainResult c d (Id.run (chain c d)) :=
   Std.WP.Id.of_run_eq_wp rfl _ ((chain_spec c d).le_wp ⟨hd, hc⟩)
+
+/-! ### The signs of the chain -/
+
+/-- The value of the polynomial with the coefficients `row`, constant term first, at `num / 2 ^ e`,
+times `2 ^ (e deg)`, `deg` the size of `row` less one, as the Horner rule of
+`Ratpoints.Sturm.evalSign` computes it in integers, after `j` of its steps: from the leading
+coefficient, `w ↦ w num + c_(deg - j - 1) 2 ^ (e (j + 1))` at the step `j`. -/
+def hornerValue (row : Array Int) (num : Int) (e : Nat) : Nat → Int
+  | 0 => row[row.size - 1]!
+  | j + 1 => hornerValue row num e j * num + row[row.size - 2 - j]! * 2 ^ (e * (j + 1))
+
+/-- The invariant of the loop of `Ratpoints.Sturm.evalSign` after the steps `pref`: the value of
+the Horner rule after as many steps, and the exponent of the next step. -/
+def EvalSignInvariant (row : Array Int) (num denexp : Int64) (pref : List Nat) (x : Int × Int64) :
+    Prop :=
+  x.1 = hornerValue row num.toInt denexp.toInt.toNat pref.length ∧
+    x.2.toInt = denexp.toInt * (pref.length + 1)
+
+theorem evalSignInvariant_nil (row : Array Int) (num denexp : Int64) :
+    EvalSignInvariant row num denexp [] (row[row.size - 1]!, denexp) := by
+  simp [EvalSignInvariant, hornerValue]
+
+theorem EvalSignInvariant.sign_eq {row : Array Int} {num denexp : Int64} {w : Int} {e : Int64}
+    (h : EvalSignInvariant row num denexp (ForIn.toList [:row.size - 1]) (w, e)) :
+    w.sign = (hornerValue row num.toInt denexp.toInt.toNat (row.size - 1)).sign := by
+  rw [show w = _ from h.1]
+  simp [Std.Internal.ForIn.toList_range]
+
+/-- A step of the loop of `Ratpoints.Sturm.evalSign`; the exponents `denexp (j + 1)` stay below
+`2 ^ 63`. -/
+theorem EvalSignInvariant.push {row : Array Int} {num denexp : Int64} {pref suff : List Nat}
+    {cur : Nat} (hd : 0 ≤ denexp.toInt ∧ denexp.toInt * row.size < 2 ^ 63)
+    (hl : ForIn.toList [:row.size - 1] = pref ++ cur :: suff) {w : Int} {e : Int64}
+    (h : EvalSignInvariant row num denexp pref (w, e)) :
+    EvalSignInvariant row num denexp (pref ++ [cur])
+      (w * num.toInt + row[row.size - 1 - 1 - cur]! * 2 ^ e.toInt.toNat, e + denexp) := by
+  have hc := Std.Legacy.Range.length_eq_of_toList_eq_append_cons hl
+  have hlt := Std.Legacy.Range.lt_of_toList_eq_append_cons hl
+  obtain ⟨h1, h2⟩ := h
+  have hb : denexp.toInt * (cur + 1 + 1) ≤ denexp.toInt * row.size :=
+    Int.mul_le_mul_of_nonneg_left (by lia) hd.1
+  refine ⟨?_, ?_⟩
+  · simp only [List.length_append, List.length_singleton, hornerValue, h2, hc]
+    congr 3
+    · lia
+    · rw [Int.toNat_mul (by lia) (by lia)]; simp
+  · rw [Int64.toInt_add_of_lt (by lia) (by lia), h2]
+    simp only [List.length_append, List.length_singleton]
+    push_cast
+    lia
+
+/-- The number of sign changes that the loop of `Ratpoints.Sturm.signsAt` counts in the signs `l`
+after the sign `s`: a sign `-s` counts and becomes the sign compared, another sign that is not `0`
+becomes the sign compared, and a `0` is skipped. For a sign `s ≠ 0` this is the number of sign
+changes of `s` followed by `l`, the zeros skipped. -/
+def signCount : Int → List Int → Nat
+  | _, [] => 0
+  | s, t :: ts => if t = -s then signCount t ts + 1 else if t ≠ 0 then signCount t ts else
+      signCount s ts
+
+/-- The invariant of the loop of `Ratpoints.Sturm.signsAt` with the indices `suff` still to come:
+the count so far and the count of the signs `σ n` still to come after the sign compared add up to
+`total`. -/
+def SignsAtInvariant (σ : Nat → Int) (total : Nat) (suff : List Nat) (x : Nat × Int) : Prop :=
+  x.1 + signCount x.2 (suff.map σ) = total
+
+theorem signsAtInvariant_init (σ : Nat → Int) (c : Nat) (s : Int) (l : List Nat) :
+    SignsAtInvariant σ (c + signCount s (l.map σ)) l (c, s) :=
+  rfl
+
+theorem SignsAtInvariant.of_cons {σ : Nat → Int} {total cur : Nat} {suff : List Nat} {cmid : Nat}
+    {s : Int} (h : SignsAtInvariant σ total (cur :: suff) (cmid, s)) :
+    SignsAtInvariant σ total suff
+      (if σ cur = -s then cmid + 1 else cmid, if σ cur = -s then σ cur else
+        if σ cur ≠ 0 then σ cur else s) := by
+  simp only [SignsAtInvariant, List.map_cons, signCount] at h ⊢
+  grind
+
+theorem SignsAtInvariant.of_cons_neg {σ : Nat → Int} {total cur : Nat} {suff : List Nat}
+    {cmid : Nat} {s s2 : Int} (h : SignsAtInvariant σ total (cur :: suff) (cmid, s))
+    (h2 : s2 = σ cur) (hn : s2 = -s) : SignsAtInvariant σ total suff (cmid + 1, s2) := by
+  subst h2
+  simpa [hn] using h.of_cons
+
+theorem SignsAtInvariant.of_cons_ne {σ : Nat → Int} {total cur : Nat} {suff : List Nat}
+    {cmid : Nat} {s s2 : Int} (h : SignsAtInvariant σ total (cur :: suff) (cmid, s))
+    (h2 : s2 = σ cur) (hn : ¬s2 = -s) (h0 : ¬s2 = 0) :
+    SignsAtInvariant σ total suff (cmid, s2) := by
+  subst h2
+  simpa [hn, h0] using h.of_cons
+
+theorem SignsAtInvariant.of_cons_zero {σ : Nat → Int} {total cur : Nat} {suff : List Nat}
+    {cmid : Nat} {s s2 : Int} (h : SignsAtInvariant σ total (cur :: suff) (cmid, s))
+    (h2 : s2 = σ cur) (hn : ¬s2 = -s) (h0 : ¬¬s2 = 0) :
+    SignsAtInvariant σ total suff (cmid, s) := by
+  subst h2
+  simpa [hn, h0] using h.of_cons
+
+theorem SignsAtInvariant.eq {σ : Nat → Int} {s0 s1 r0 r1 b : Int} {k cmid : Nat}
+    (h0 : s0 = r0) (h1 : s1 = r1)
+    (h : SignsAtInvariant σ ((if s0 * s1 = -1 then 1 else 0) +
+      signCount (if s1 = 0 then s0 else s1) ((ForIn.toList [2:k + 1]).map σ)) [] (cmid, b)) :
+    (s0, s1, cmid) = (r0, r1, (if r0 * r1 = -1 then 1 else 0) +
+      signCount (if r1 = 0 then r0 else r1) ((List.range' 2 (k - 1)).map σ)) := by
+  subst h0 h1
+  simp only [SignsAtInvariant, List.map_nil, signCount, Nat.add_zero] at h
+  simp [h, Std.Internal.ForIn.toList_range]
+
+/-- The sign of the leading coefficient of the row `n` of the chain `rows`, the sign of the row at
+`+∞`. -/
+def signAtTop (rows : Array (Array Int)) (n : Nat) : Int := rows[n]![rows[n]!.size - 1]!.sign
+
+/-- The sign of the row `n` of the chain `rows` at `-∞`: that of its leading coefficient, negated
+for odd degree. -/
+def signAtBot (rows : Array (Array Int)) (n : Nat) : Int :=
+  if (rows[n]!.size - 1) % 2 = 1 then -signAtTop rows n else signAtTop rows n
+
+/-- The invariant of the loop of `Ratpoints.Sturm.countsAtInfinity` after the indices `pref`: the
+numbers of the indices `n` among them where the signs of the rows `n` and `n + 1` differ at `+∞` and
+at `-∞`. -/
+def CountsInvariant (rows : Array (Array Int)) (pref : List Nat) (x : Nat × Nat) : Prop :=
+  x = (pref.countP fun n ↦ signAtTop rows n != signAtTop rows (n + 1),
+    pref.countP fun n ↦ signAtBot rows n != signAtBot rows (n + 1))
+
+theorem countsInvariant_nil (rows : Array (Array Int)) : CountsInvariant rows [] (0, 0) :=
+  rfl
+
+theorem CountsInvariant.push {rows : Array (Array Int)} {pref : List Nat} {cur c1 c2 : Nat}
+    (h : CountsInvariant rows pref (c1, c2)) {a b : Nat}
+    (ha : a = if signAtTop rows cur = signAtTop rows (cur + 1) then c1 else c1 + 1)
+    (hb : b = if signAtBot rows cur = signAtBot rows (cur + 1) then c2 else c2 + 1) :
+    CountsInvariant rows (pref ++ [cur]) (a, b) := by
+  simp only [CountsInvariant, Prod.mk.injEq] at h ⊢
+  rw [List.countP_append, List.countP_append, ← h.1, ← h.2, ha, hb]
+  constructor <;> split <;> simp_all
+
+theorem CountsInvariant.range {rows : Array (Array Int)} {k : Nat} {x : Nat × Nat}
+    (h : CountsInvariant rows (ForIn.toList [:k]) x) : CountsInvariant rows (List.range k) x := by
+  simpa [Std.Internal.ForIn.toList_range, List.range_eq_range'] using h
+
+attribute [local irreducible] EvalSignInvariant SignsAtInvariant CountsInvariant
+
+/-- The exponents `denexp (j + 1)` of the Horner rule stay below `2 ^ 63`, so that the `long` `e`
+does not overflow. -/
+@[spec]
+theorem evalSign_spec (row : Array Int) (num denexp : Int64) :
+    ⦃ 0 ≤ denexp.toInt ∧ denexp.toInt * row.size < 2 ^ 63 ⦄ evalSign row num denexp
+    ⦃ fun s ↦ s = (hornerValue row num.toInt denexp.toInt.toNat (row.size - 1)).sign ⦄ := by
+  vcgen [evalSign] invariants
+  | inv1 => fun pref _ x ↦ EvalSignInvariant row num denexp pref x
+  all_goals first
+    | exact evalSignInvariant_nil row num denexp
+    | exact ‹EvalSignInvariant _ _ _ _ _›.sign_eq
+    | exact ‹EvalSignInvariant _ _ _ _ _›.push ‹_› ‹_›
+
+/-- `Ratpoints.Sturm.evalSign_spec` as a plain statement. -/
+theorem run_evalSign {row : Array Int} (num : Int64) {denexp : Int64} (h0 : 0 ≤ denexp.toInt)
+    (h : denexp.toInt * row.size < 2 ^ 63) :
+    Id.run (evalSign row num denexp) =
+      (hornerValue row num.toInt denexp.toInt.toNat (row.size - 1)).sign :=
+  Std.WP.Id.of_run_eq_wp rfl _ ((evalSign_spec row num denexp).le_wp ⟨h0, h⟩)
+
+-- The sign of a row at the midpoint, as a value for the contract of `Ratpoints.Sturm.signsAt`.
+private theorem evalSign_value (row : Array Int) (num denexp : Int64) :
+    ⦃ True ⦄ evalSign row num denexp ⦃ fun r ↦ r = Id.run (evalSign row num denexp) ⦄ :=
+  ⟨fun _ ↦ rfl⟩
+
+@[spec]
+theorem signsAt_spec (rows : Array (Array Int)) (k : Nat) (nm dem : Int64) :
+    ⦃ True ⦄ signsAt rows k nm dem ⦃ fun r ↦ r = (Id.run (evalSign rows[0]! nm dem),
+      Id.run (evalSign rows[1]! nm dem),
+      (if Id.run (evalSign rows[0]! nm dem) * Id.run (evalSign rows[1]! nm dem) = -1 then 1 else 0)
+        + signCount (if Id.run (evalSign rows[1]! nm dem) = 0 then Id.run (evalSign rows[0]! nm dem)
+          else Id.run (evalSign rows[1]! nm dem))
+          ((List.range' 2 (k - 1)).map fun n ↦ Id.run (evalSign rows[n]! nm dem))) ⦄ := by
+  vcgen [signsAt, evalSign_value] invariants
+  | inv1 => fun _ suff x ↦ SignsAtInvariant (fun n ↦ Id.run (evalSign rows[n]! nm dem))
+    ((if s0 * s1 = -1 then 1 else 0) + signCount (if s1 = 0 then s0 else s1)
+      ((ForIn.toList [2:k + 1]).map fun n ↦ Id.run (evalSign rows[n]! nm dem))) suff x
+  all_goals first
+    | exact signsAtInvariant_init _ _ _ _
+    | exact SignsAtInvariant.eq ‹_› ‹_› ‹_›
+    | exact ‹SignsAtInvariant _ _ _ _›.of_cons_neg ‹_› ‹_›
+    | exact ‹SignsAtInvariant _ _ _ _›.of_cons_ne ‹_› ‹_› ‹_›
+    | exact ‹SignsAtInvariant _ _ _ _›.of_cons_zero ‹_› ‹_› ‹_›
+
+/-- `Ratpoints.Sturm.signsAt_spec` as a plain statement: the signs `σ 0` and `σ 1` of `f` and `f'`
+at the midpoint, and the number of sign changes of `σ 0, …, σ k`, the signs of the rows of the
+chain there, the zeros skipped (`Ratpoints.Sturm.signCount`). -/
+theorem run_signsAt (rows : Array (Array Int)) (k : Nat) (nm dem : Int64) :
+    Id.run (signsAt rows k nm dem) = (Id.run (evalSign rows[0]! nm dem),
+      Id.run (evalSign rows[1]! nm dem),
+      (if Id.run (evalSign rows[0]! nm dem) * Id.run (evalSign rows[1]! nm dem) = -1 then 1 else 0)
+        + signCount (if Id.run (evalSign rows[1]! nm dem) = 0 then Id.run (evalSign rows[0]! nm dem)
+          else Id.run (evalSign rows[1]! nm dem))
+          ((List.range' 2 (k - 1)).map fun n ↦ Id.run (evalSign rows[n]! nm dem))) :=
+  Std.WP.Id.of_run_eq_wp rfl _ ((signsAt_spec rows k nm dem).le_wp trivial)
+
+@[spec]
+theorem countsAtInfinity_spec (rows : Array (Array Int)) (k : Nat) :
+    ⦃ True ⦄ countsAtInfinity rows k ⦃ fun r ↦ CountsInvariant rows (List.range k) r ⦄ := by
+  vcgen [countsAtInfinity] invariants
+  | inv1 => fun pref _ x ↦ CountsInvariant rows pref x
+  all_goals first
+    | exact countsInvariant_nil rows
+    | exact ‹CountsInvariant _ _ _›.range
+    | refine ‹CountsInvariant _ _ _›.push ?_ ?_ <;> simp only [signAtTop, signAtBot] <;> grind
+
+/-- `Ratpoints.Sturm.countsAtInfinity_spec` as a plain statement: the numbers of the indices
+`n < k` where the signs of the rows `n` and `n + 1` of the chain differ at `+∞` and at `-∞`, the
+numbers of sign changes of a chain whose rows have nonzero leading coefficients. -/
+theorem run_countsAtInfinity (rows : Array (Array Int)) (k : Nat) :
+    Id.run (countsAtInfinity rows k) =
+      ((List.range k).countP fun n ↦ signAtTop rows n != signAtTop rows (n + 1),
+        (List.range k).countP fun n ↦ signAtBot rows n != signAtBot rows (n + 1)) := by
+  have h := Std.WP.Id.of_run_eq_wp rfl _ ((countsAtInfinity_spec rows k).le_wp trivial)
+  rw [CountsInvariant] at h
+  exact h
+
+/-! ### The intersection with the caller's intervals -/
+
+/-- The intersection of the intervals `loc` with the intervals `ivs`, by the steps of
+`Ratpoints.Sturm.intersect` (`Ratpoints.Sturm.meet`) as a recursion on the two lists: the interval
+that a step notes, followed by the intersection of the rest, without the interval of `loc` or of
+`ivs` that ends first. -/
+def intersectList : List (Double × Double) → List (Double × Double) → List (Double × Double)
+  | [], _ => []
+  | _ :: _, [] => []
+  | a :: as, b :: bs =>
+    (meet a b).1.toList ++
+      if (meet a b).2 then intersectList as (b :: bs) else intersectList (a :: as) bs
+termination_by l1 l2 => l1.length + l2.length
+
+theorem intersectList_cons_cons (a b : Double × Double) (as bs : List (Double × Double)) :
+    intersectList (a :: as) (b :: bs) = (meet a b).1.toList ++
+      if (meet a b).2 then intersectList as (b :: bs) else intersectList (a :: as) bs := by
+  rw [intersectList]
+
+@[simp]
+theorem intersectList_nil_left (bs : List (Double × Double)) : intersectList [] bs = [] := by
+  simp [intersectList]
+
+@[simp]
+theorem intersectList_nil_right (as : List (Double × Double)) : intersectList as [] = [] := by
+  cases as <;> simp [intersectList]
+
+/-- The invariant of the loop of `Ratpoints.Sturm.intersect` on the cursors `n1`, `n2` and the
+intervals noted: they followed by the intersection of the rest of the lists are the intersection of
+the lists, and at the exit the rest of one of the lists is empty. -/
+def IntersectInvariant (loc ivs : Array (Double × Double)) (exit : Bool)
+    (x : Nat × Nat × Array (Double × Double)) : Prop :=
+  x.2.2.toList ++ intersectList (loc.toList.drop x.1) (ivs.toList.drop x.2.1) =
+      intersectList loc.toList ivs.toList ∧
+    (exit = true → intersectList (loc.toList.drop x.1) (ivs.toList.drop x.2.1) = [])
+
+theorem intersectInvariant_zero (loc ivs : Array (Double × Double)) :
+    IntersectInvariant loc ivs false (0, 0, #[]) := by
+  simp [IntersectInvariant]
+
+theorem IntersectInvariant.exit {loc ivs : Array (Double × Double)} {n1 n2 : Nat}
+    {out : Array (Double × Double)} (h : IntersectInvariant loc ivs false (n1, n2, out))
+    (hx : ¬(n1 < loc.size ∧ n2 < ivs.size)) : IntersectInvariant loc ivs true (n1, n2, out) := by
+  refine ⟨h.1, fun _ ↦ ?_⟩
+  rcases Nat.lt_or_ge n1 loc.size with h1 | h1
+  · simp [List.drop_eq_nil_of_le (by simp; lia : ivs.toList.length ≤ n2)]
+  · simp [List.drop_eq_nil_of_le (by simp; lia : loc.toList.length ≤ n1)]
+
+theorem IntersectInvariant.eq {loc ivs : Array (Double × Double)} {n1 n2 : Nat}
+    {out : Array (Double × Double)} (h : IntersectInvariant loc ivs true (n1, n2, out)) :
+    out.toList = intersectList loc.toList ivs.toList := by
+  simpa [h.2 rfl] using h.1
+
+theorem IntersectInvariant.next {loc ivs : Array (Double × Double)} {n1 n2 : Nat}
+    {out : Array (Double × Double)} (h : IntersectInvariant loc ivs false (n1, n2, out))
+    (hx : n1 < loc.size ∧ n2 < ivs.size) :
+    IntersectInvariant loc ivs false
+      (if (meet loc[n1]! ivs[n2]!).2 then n1 + 1 else n1,
+        if (meet loc[n1]! ivs[n2]!).2 then n2 else n2 + 1,
+        match (meet loc[n1]! ivs[n2]!).1 with | some v => out.push v | none => out) := by
+  refine ⟨?_, nofun⟩
+  rw [← h.1, Array.drop_toList_eq_getElem!_cons hx.1, Array.drop_toList_eq_getElem!_cons hx.2,
+    intersectList_cons_cons]
+  rcases meet loc[n1]! ivs[n2]! with ⟨_ | v, _ | _⟩ <;>
+    simp [Array.drop_toList_eq_getElem!_cons hx.1, Array.drop_toList_eq_getElem!_cons hx.2]
+
+theorem IntersectInvariant.push_left {loc ivs : Array (Double × Double)} {n1 n2 : Nat}
+    {out : Array (Double × Double)} (h : IntersectInvariant loc ivs false (n1, n2, out))
+    (hx : n1 < loc.size ∧ n2 < ivs.size) {v : Double × Double}
+    (hm : (meet loc[n1]! ivs[n2]!).fst = some v) (hs : (meet loc[n1]! ivs[n2]!).snd = true) :
+    IntersectInvariant loc ivs false (n1 + 1, n2, out.push v) := by
+  simpa [hm, hs] using h.next hx
+
+theorem IntersectInvariant.push_right {loc ivs : Array (Double × Double)} {n1 n2 : Nat}
+    {out : Array (Double × Double)} (h : IntersectInvariant loc ivs false (n1, n2, out))
+    (hx : n1 < loc.size ∧ n2 < ivs.size) {v : Double × Double}
+    (hm : (meet loc[n1]! ivs[n2]!).fst = some v) (hs : ¬(meet loc[n1]! ivs[n2]!).snd = true) :
+    IntersectInvariant loc ivs false (n1, n2 + 1, out.push v) := by
+  simpa [hm, hs] using h.next hx
+
+theorem IntersectInvariant.skip_left {loc ivs : Array (Double × Double)} {n1 n2 : Nat}
+    {out : Array (Double × Double)} (h : IntersectInvariant loc ivs false (n1, n2, out))
+    (hx : n1 < loc.size ∧ n2 < ivs.size) {o : Option (Double × Double)}
+    (ho : ∀ v, o = some v → False) (hm : (meet loc[n1]! ivs[n2]!).fst = o)
+    (hs : (meet loc[n1]! ivs[n2]!).snd = true) :
+    IntersectInvariant loc ivs false (n1 + 1, n2, out) := by
+  cases o with
+  | none => simpa [hm, hs] using h.next hx
+  | some v => exact (ho v rfl).elim
+
+theorem IntersectInvariant.skip_right {loc ivs : Array (Double × Double)} {n1 n2 : Nat}
+    {out : Array (Double × Double)} (h : IntersectInvariant loc ivs false (n1, n2, out))
+    (hx : n1 < loc.size ∧ n2 < ivs.size) {o : Option (Double × Double)}
+    (ho : ∀ v, o = some v → False) (hm : (meet loc[n1]! ivs[n2]!).fst = o)
+    (hs : ¬(meet loc[n1]! ivs[n2]!).snd = true) :
+    IntersectInvariant loc ivs false (n1, n2 + 1, out) := by
+  cases o with
+  | none => simpa [hm, hs] using h.next hx
+  | some v => exact (ho v rfl).elim
+
+attribute [local irreducible] IntersectInvariant
+
+/-- The loop ends since every pass moves one of the cursors. -/
+@[spec]
+theorem intersect_spec (loc ivs : Array (Double × Double)) :
+    ⦃ True ⦄ intersect loc ivs ⦃ fun out ↦ out.toList = intersectList loc.toList ivs.toList ⦄ := by
+  vcgen [intersect] invariants
+  | inv1 => .mk (IntersectInvariant loc ivs)
+  | inv2 => .ofMeasure fun x ↦ loc.size + ivs.size - x.1 - x.2.1
+  all_goals try simp only [Std.WP.WhileInvariant.mk_apply, Std.WP.Variant.evalsTo_ofMeasure,
+    Std.WP.Variant.evalsBelow_ofMeasure_nat, Std.WP.Assertion.NondetFun.evalsTo_pure,
+    Lean.Order.meet_prop_eq_and, Lean.Order.ofProp_prop_eq] at *
+  all_goals first
+    | exact intersectInvariant_zero loc ivs
+    | exact ‹IntersectInvariant _ _ true _›.eq
+    | exact ‹_ ∧ IntersectInvariant _ _ false _›.2.exit ‹_›
+    | exact ⟨by lia, ‹_ ∧ IntersectInvariant _ _ false _›.2.push_left ‹_› ‹_› ‹_›⟩
+    | exact ⟨by lia, ‹_ ∧ IntersectInvariant _ _ false _›.2.push_right ‹_› ‹_› ‹_›⟩
+    | exact ⟨by lia, ‹_ ∧ IntersectInvariant _ _ false _›.2.skip_left ‹_› ‹_› ‹_› ‹_›⟩
+    | exact ⟨by lia, ‹_ ∧ IntersectInvariant _ _ false _›.2.skip_right ‹_› ‹_› ‹_› ‹_›⟩
+
+/-- `Ratpoints.Sturm.intersect_spec` as a plain statement. -/
+theorem toList_run_intersect (loc ivs : Array (Double × Double)) :
+    (Id.run (intersect loc ivs)).toList = intersectList loc.toList ivs.toList :=
+  Std.WP.Id.of_run_eq_wp rfl _ ((intersect_spec loc ivs).le_wp trivial)
 
 end Sturm
 

@@ -62,8 +62,9 @@ pass the first coming before those that pass the second, and the elements of an 
 integers in ranges that are increasing and strictly apart, range after range. For the numbers of the
 command line: the characters that `Char.toLower` takes to `x`. For the search intervals of the
 command line: an entry set twice, an entry after another is set, the entries and the members of the
-first `m` entries of an array as a list, and a bind of `Except` that succeeds. The lemmas on 64-bit
-words are in `Ratpoints.Proof.Bits`.
+first `m` entries of an array as a list, and a bind of `Except` that succeeds. For the intersection
+of the Sturm step: the list of an array from a position within it on. The lemmas on 64-bit words are
+in `Ratpoints.Proof.Bits`.
 
 ## Main statements
 
@@ -236,6 +237,12 @@ theorem getElem!_toVector {α : Type u} [Inhabited α] {xs : Array α} (i : Nat)
 theorem getElem!_map_range {α : Type u} [Inhabited α] (f : Nat → α) {n j : Nat} (hj : j < n) :
     ((Array.range n).map f)[j]! = f j := by
   simp [hj]
+
+/-- The list of an array from a position `n` within it on: its entry `n`, then the rest. -/
+theorem drop_toList_eq_getElem!_cons {α : Type u} [Inhabited α] {xs : Array α} {n : Nat}
+    (h : n < xs.size) : xs.toList.drop n = xs[n]! :: xs.toList.drop (n + 1) := by
+  rw [getElem!_pos xs n h]
+  simp [List.drop_eq_getElem_cons (by simp; lia : n < xs.toList.length)]
 
 theorem getElem!_append {α : Type u} [Inhabited α] {xs ys : Array α} (i : Nat) :
     (xs ++ ys)[i]! = if i < xs.size then xs[i]! else ys[i - xs.size]! := by

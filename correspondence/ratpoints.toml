@@ -499,6 +499,30 @@ kind = "instrumentation"
 reason = "the bit arrays of the piece printed under DEBUG after the first stage and the masks"
 
 [[excluded]]
+file = "sturm.c"
+lines = "29-32"
+kind = "other"
+reason = "the includes of math.h, stdlib.h and the header of the library; the model has no headers"
+
+[[excluded]]
+file = "sturm.c"
+lines = "274-275"
+kind = "memory"
+reason = "the copy of the caller's search intervals on the heap, from which the intersection is made; the model reads the caller's intervals and makes a new array (Ratpoints.Sturm.intersect)"
+
+[[excluded]]
+file = "sturm.c"
+lines = "278-284"
+kind = "memory"
+reason = "the failure for lack of memory for the copy of the caller's search intervals (RATPOINTS_NO_MEMORY), with the clears of the table of the chain before the return, which the model cannot meet"
+
+[[excluded]]
+file = "sturm.c"
+lines = "324"
+kind = "memory"
+reason = "the release of the copy of the caller's search intervals"
+
+[[excluded]]
 file = "main.c"
 lines = "29-37"
 kind = "other"

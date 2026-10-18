@@ -4092,6 +4092,78 @@
         "Ratpoints.Sieve.andRows"
       ]
     },
+    "sturm.c:165-175": {
+      "hash": "073e6e0ed29d289f36d0643ff4d15387ddf69a51c004b953c907494a6351aa2e",
+      "owners": [
+        "Ratpoints.Sturm.countsAtInfinity"
+      ]
+    },
+    "sturm.c:252-260": {
+      "hash": "82c49e1c399b0629039003ec2e110ebf88ee0d79f176eb629b46d6185050a151",
+      "owners": [
+        "Ratpoints.Sturm.signsAt"
+      ]
+    },
+    "sturm.c:274-275": {
+      "hash": "2a373f84177585f0fc712dbe0486167929ccd1d5949ec86912dfe559c3c442cf",
+      "owners": [
+        "excluded (memory)"
+      ]
+    },
+    "sturm.c:276-276": {
+      "hash": "0520298e6e899ac7b1b02650913a30d4beb87c7ec95548b8faea970d13653d8d",
+      "owners": [
+        "Ratpoints.Sturm.intersect"
+      ]
+    },
+    "sturm.c:278-284": {
+      "hash": "029239bf14cae6f7decb928bf8eb6fae3c421ead0dcaeaa85017c493a0c34c21",
+      "owners": [
+        "excluded (memory)"
+      ]
+    },
+    "sturm.c:285-288": {
+      "hash": "9149dbd438faefa22e10dd576d68b643f4dde91f8536c0360a3b90cc3a0843c8",
+      "owners": [
+        "Ratpoints.Sturm.intersect"
+      ]
+    },
+    "sturm.c:289-322": {
+      "hash": "eccf392530b4c44885056fd8b68212566802c6eca69d0ea1282119860e937050",
+      "owners": [
+        "Ratpoints.Sturm.meet"
+      ]
+    },
+    "sturm.c:29-32": {
+      "hash": "14525820a3f9912d148d2e954fab083f5831f7798625cecc4497606b3021d497",
+      "owners": [
+        "excluded (other)"
+      ]
+    },
+    "sturm.c:323-323": {
+      "hash": "c8e7630e41c7239108ebc0ea72e5bf27cf54ed21d872ec93925be045d0f0a222",
+      "owners": [
+        "Ratpoints.Sturm.intersect"
+      ]
+    },
+    "sturm.c:324-324": {
+      "hash": "14de518d55581dc2fa22041135cb36bb7a8f0060adc14bd8a0e43c3c37daf318",
+      "owners": [
+        "excluded (memory)"
+      ]
+    },
+    "sturm.c:325-325": {
+      "hash": "28d86778615f6af47bb1bc4f40face756749768e5111f114cfa234a5060c25af",
+      "owners": [
+        "Ratpoints.Sturm.intersect"
+      ]
+    },
+    "sturm.c:67-84": {
+      "hash": "83eab43c3b1d233b835f808a59b987378c006db1fdf1e68ba8cd331cc5983d7a",
+      "owners": [
+        "Ratpoints.Sturm.evalSign"
+      ]
+    },
     "sturm.c:99-163": {
       "hash": "416d0d047eb865d7138f565a6584ec2a89b4a6b2640b52861e710759a6790bde",
       "owners": [

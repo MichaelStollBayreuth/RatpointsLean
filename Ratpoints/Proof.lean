@@ -43,6 +43,7 @@ public import Ratpoints.Proof.Sieve
 public import Ratpoints.Proof.Sift
 public import Ratpoints.Proof.Stages
 public import Ratpoints.Proof.Sturm
+public import Ratpoints.Proof.SturmSigns
 public import Ratpoints.Proof.Tables
 public import Ratpoints.Proof.TwoAdic
 public import Ratpoints.Proof.Valuation

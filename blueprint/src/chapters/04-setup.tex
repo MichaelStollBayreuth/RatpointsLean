@@ -713,23 +713,24 @@ flags and of the return codes in \verb|ratpoints.h| (Chapter~\ref{chap:output}),
 \section{Files and names}
 
 The remainder chain is in \verb|Ratpoints/Model/Sturm.lean|, in the namespace
-\verb|Ratpoints.Sturm|, which stage~H extends by the rest of the Sturm step; the refusals, the
-reversal check and the coefficients as \verb|long|s are in \verb|Ratpoints/Model/Setup.lean|, the
-refusals and $\mathrm{fitsLong}$ in the namespace \verb|Ratpoints| and the rest in
-\verb|Ratpoints.Setup|, so that $\mathrm{findPoints}$ and the search can use them; the table of a
-prime takes the flag of the \verb|long|s as an argument, which the search computes with
-\verb|Setup.useCLong|. The helper \verb|mod| and the table with the exit are in
-\verb|Ratpoints/Model/Tables.lean|, and $\mathrm{swapPoint}$ in
+\verb|Ratpoints.Sturm|, followed by the components of the Sturm step that stage~H adds
+(Section~\ref{sec:sturmStep}); the refusals, the reversal check and the coefficients as \verb|long|s
+are in \verb|Ratpoints/Model/Setup.lean|, the refusals and $\mathrm{fitsLong}$ in the namespace
+\verb|Ratpoints| and the rest in \verb|Ratpoints.Setup|, so that $\mathrm{findPoints}$ and the
+search can use them; the table of a prime takes the flag of the \verb|long|s as an argument, which
+the search computes with \verb|Setup.useCLong|. The helper \verb|mod| and the table with the exit
+are in \verb|Ratpoints/Model/Tables.lean|, and $\mathrm{swapPoint}$ in
 \verb|Ratpoints/Model/Candidate.lean| (since stage~F3), before the components that use them;
 $\mathrm{defaultSturm}$ is in \verb|Ratpoints/Model/Constants.lean|; and the options,
 $\mathrm{searchPoints}$, $\mathrm{findPointsWith}$ (since stage~G) and $\mathrm{findPoints}$ are in
 \verb|Ratpoints/Model/FindPoints.lean|. The contract of the chain, without Mathlib, is in
-\verb|Ratpoints/Proof/Sturm.lean|, and the lemmas on arrays, on the gcd of the absolute values of a
-list as a left fold, on the cursor of a loop over a range and on exact quotients of integers that it
-needs and Lean core lacks are in \verb|Ratpoints/Proof/Containers.lean|, under their names in the
-namespaces of core. The flagged contracts are in \verb|Ratpoints/Proof/Words.lean|, those from the
-walk on since stage~F2 in \verb|Ratpoints/Proof/Scan.lean| (up to the scan of a piece, split off
-\verb|Sift.lean| in stage~G) and \verb|Ratpoints/Proof/Sift.lean|, that of the run since stage~E in
+\verb|Ratpoints/Proof/Sturm.lean|, with those of the components of the Sturm step since stage~H, and
+the lemmas on arrays, on the gcd of the absolute values of a list as a left fold, on the cursor of a
+loop over a range and on exact quotients of integers that it needs and Lean core lacks are in
+\verb|Ratpoints/Proof/Containers.lean|, under their names in the namespaces of core. The flagged
+contracts are in \verb|Ratpoints/Proof/Words.lean|, those from the walk on since stage~F2 in
+\verb|Ratpoints/Proof/Scan.lean| (up to the scan of a piece, split off \verb|Sift.lean| in stage~G)
+and \verb|Ratpoints/Proof/Sift.lean|, that of the run since stage~E in
 \verb|Ratpoints/Proof/Denominators.lean|; the lemma on \verb|mod| in
 \verb|Ratpoints/Proof/Reductions.lean|, without Mathlib, since stage~F3; the lemmas on the
 \verb|long|s and the table with the exit in \verb|Ratpoints/Proof/Tables.lean|; the polynomial of a

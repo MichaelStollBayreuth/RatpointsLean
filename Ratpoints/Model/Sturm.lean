@@ -5,21 +5,37 @@ Authors: Michael Stoll
 -/
 module
 
-/-!
-# The remainder chain of the Sturm step
+public import Ratpoints.Model.Double
 
-The test of the Sturm step of ratpoints for a repeated factor of the polynomial `f`: the remainder
-chain of `f` and its derivative `f'`, computed in integers as `sturm.c` computes it, row by row and
-with its loops (`Ratpoints.Sturm.chain`). A remainder is zero exactly when `f` has a repeated
-factor; the chain is `none` then, and ratpoints refuses the form as not squarefree, as
-`Ratpoints.findPoints` does with the Sturm step on. The rest of the Sturm step, which restricts the
-numerators to the intervals where `f ≥ 0`, is not modelled yet (stage H).
+-- The `#guard` examples run code of the imported module at compile time.
+meta import Ratpoints.Model.Double
+
+/-!
+# The Sturm step
+
+The Sturm step of ratpoints, `_ratpoints_compute_sturm` of `sturm.c`, which restricts the search to
+the intervals where the polynomial `f` may be `≥ 0`, computed in integers and on the doubles of the
+C code as `sturm.c` computes it. First the remainder chain of `f` and its derivative `f'`, row by
+row and with its loops (`Ratpoints.Sturm.chain`): a remainder is zero exactly when `f` has a
+repeated factor; the chain is `none` then, and ratpoints refuses the form as not squarefree, as
+`Ratpoints.findPoints` does with the Sturm step on. Then the numbers of sign changes of the chain at
+`-∞` and `+∞` from the leading coefficients (`Ratpoints.Sturm.countsAtInfinity`); the evaluation of
+the chain at a dyadic number (`Ratpoints.Sturm.evalSign`, `Ratpoints.Sturm.signsAt`), which the
+bisection of the real line makes at its midpoints; and the intersection of the intervals that the
+bisection keeps with the search intervals of the caller (`Ratpoints.Sturm.intersect`). The bisection
+and the whole step, which restricts the numerators to the intervals where `f ≥ 0`, come with
+stage H.
 
 ## Main definitions
 
 * `Ratpoints.Sturm.reduce`: one reduction of a remainder by the row before it, which cancels its
   leading coefficient.
 * `Ratpoints.Sturm.chain`: the remainder chain of `f` and `f'`, or `none` when a remainder is zero.
+* `Ratpoints.Sturm.evalSign`, `Ratpoints.Sturm.signsAt`: the sign of a row at a dyadic number, and
+  the signs of `f` and `f'` and the number of sign changes of the chain there.
+* `Ratpoints.Sturm.countsAtInfinity`: the numbers of sign changes of the chain at `±∞`.
+* `Ratpoints.Sturm.meet`, `Ratpoints.Sturm.intersect`: the intersection with the caller's
+  intervals.
 -/
 
 @[expose] public section
@@ -89,6 +105,122 @@ def chain (c : List Int) (d : Nat) : Id (Option (Array (Array Int))) := do
     if t.size = 1 then break
   return some rows
 
+/-- The sign `-1`, `0` or `1` of the value at `num / 2 ^ denexp` of the polynomial whose
+coefficients, constant term first, are the entries of `row`, as `eval_sign` computes it: by Horner's
+rule in integers, from the leading coefficient `w = c_deg`, for `n = deg - 1, …, 0` in turn
+`w = w num + c_n 2 ^ e` with `e = denexp, 2 denexp, …`, so that `w` is `2 ^ (deg denexp)` times the
+value, `deg` the size of `row` less one.
+
+C: `sturm.c:67-84`
+
+Deviation: the row as an array of integers, for the GMP integers `cofs` and the `long` `degree`,
+which is the size of the array less one; integers for the GMP integers `work[0]` and `work[1]`, the
+multiplication by a power of 2 for `mpz_mul_2exp`, and `Int.sign` for `mpz_sgn`; `Int64` for the
+`long`s `num`, `denexp` and `e`; the steps counted up from `0` to `deg - 1`, for the index `n` that
+counts down; no scratch integers of the arguments. -/
+def evalSign (row : Array Int) (num denexp : Int64) : Id Int := do
+  let deg := row.size - 1
+  let mut w := row[deg]!
+  let mut e := denexp
+  for i in [0:deg] do
+    w := w * num.toInt + row[deg - 1 - i]! * 2 ^ e.toInt.toNat
+    e := e + denexp
+  return w.sign
+
+/-- The numbers of sign changes of the rows `0, …, k` of the chain `rows` at `+∞` and at `-∞`, the
+pair `(count1, count2)`, from the signs of their leading coefficients: two neighbouring rows count
+at `+∞` when their leading coefficients have different signs, and at `-∞` when they do after the
+sign of each row of odd degree is flipped.
+
+C: `sturm.c:165-175`
+
+Deviation: natural numbers for the `long` counts, which stay at most `k`; the rows as arrays, their
+degrees the sizes less one, for the arrays `sturm` and `sturm_degs`, and `Int.sign` for `mpz_sgn`;
+the counts returned, for the locals of `_ratpoints_compute_sturm`. -/
+def countsAtInfinity (rows : Array (Array Int)) (k : Nat) : Id (Nat × Nat) := do
+  let mut count1 := 0
+  let mut count2 := 0
+  for n in [0:k] do
+    let d1 := rows[n]!.size - 1
+    let d2 := rows[n + 1]!.size - 1
+    let mut s1 := rows[n]![d1]!.sign
+    let mut s2 := rows[n + 1]![d2]!.sign
+    if s1 ≠ s2 then count1 := count1 + 1
+    if d1 % 2 = 1 then s1 := -s1
+    if d2 % 2 = 1 then s2 := -s2
+    if s1 ≠ s2 then count2 := count2 + 1
+  return (count1, count2)
+
+/-- The signs `s0` and `s1` of `f` and `f'` at `nm / 2 ^ dem` (`Ratpoints.Sturm.evalSign`) and the
+number `cmid` of sign changes of the rows `0, …, k` of the chain `rows` there, zeros skipped: the
+first two rows count when their signs are opposite; then the sign `s` of the last row that is not
+zero, `s0` when `s1 = 0`, and each further row counts when its sign is `-s`, and replaces `s` when
+it is not zero.
+
+C: `sturm.c:252-260`
+
+Deviation: a function of its own for the evaluation of the chain at the midpoint in `iterate`, the
+signs and the count returned, for its locals `s0`, `s1` and `cmid`; integers for the `long` signs
+and a natural number for the `long` count; the rows as arrays, for the arrays `sturm` and
+`sturm_degs`. -/
+def signsAt (rows : Array (Array Int)) (k : Nat) (nm dem : Int64) : Id (Int × Int × Nat) := do
+  let s0 ← evalSign rows[0]! nm dem
+  let s1 ← evalSign rows[1]! nm dem
+  let mut cmid := if s0 * s1 = -1 then 1 else 0
+  let mut s := if s1 = 0 then s0 else s1
+  for n in [2:k + 1] do
+    let s2 ← evalSign rows[n]! nm dem
+    if s2 = -s then
+      cmid := cmid + 1
+      s := s2
+    else if s2 ≠ 0 then s := s2
+  return (s0, s1, cmid)
+
+/-- One step of the intersection of the interval `a` that the bisection keeps with the interval `b`
+of the caller, both closed, as the loop of `_ratpoints_compute_sturm` makes it: the interval it
+notes, if any, and whether it goes on with the next interval kept (`true`) or the next interval of
+the caller (`false`), the one that ends first. If `a` begins first (`a.low ≤ b.low`): `a` is
+forgotten if it ends before `b` begins, and otherwise `[b.low, a.up]` is noted with the next `a` if
+`a.up ≤ b.up`, and `b` with the next `b` otherwise; symmetrically if `b` begins first. The ends are
+compared as doubles (`Ratpoints.Double.le`, `Ratpoints.Double.lt`) and copied, so that a `-0.0` of
+the caller can stay.
+
+C: `sturm.c:289-322`
+
+Deviation: a function of its own for the body of the loop, the interval noted and the cursor to
+move returned, for the write into `ivlist[n]` and the increments of `n`, `n1` and `n2`. -/
+def meet (a b : Double × Double) : Option (Double × Double) × Bool :=
+  if a.1.le b.1 then
+    if a.2.lt b.1 then (none, true)
+    else if a.2.le b.2 then (some (b.1, a.2), true)
+    else (some b, false)
+  else
+    if b.2.lt a.1 then (none, false)
+    else if b.2.le a.2 then (some (a.1, b.2), false)
+    else (some a, true)
+
+/-- The intersection of the intervals `loc` that the bisection keeps with the intervals `ivs` of the
+caller, both increasing and disjoint, by the loop of `_ratpoints_compute_sturm`: from the first of
+each, while both lists have one left, a step (`Ratpoints.Sturm.meet`) notes their intersection, if
+they meet, and goes on with the next interval of the list whose interval ends first. The noted
+intervals may be degenerate, `[a, a]`.
+
+C: `sturm.c:276`, `sturm.c:285-288`, `sturm.c:323`, `sturm.c:325`
+
+Deviation: the intervals of the caller read from the array it gives, where the C code reads them
+from a copy on the heap (lines 274-275, 286) and writes the intersection over them; the
+intersection returned as a new array, for the writes into `ivlist` and the number `num_inter` of the
+arguments that it sets; natural numbers for the `long` indices. -/
+def intersect (loc ivs : Array (Double × Double)) : Id (Array (Double × Double)) := do
+  let mut n1 := 0
+  let mut n2 := 0
+  let mut out := #[]
+  while n1 < loc.size ∧ n2 < ivs.size do
+    let (note, first) := meet loc[n1]! ivs[n2]!
+    if let some v := note then out := out.push v
+    if first then n1 := n1 + 1 else n2 := n2 + 1
+  return out
+
 /-! ### Examples -/
 
 -- The rows of the chain against those that the C code at the pinned commit computes, printed by a
@@ -133,6 +265,96 @@ def chain (c : List Int) (d : Nat) : Id (Option (Array (Array Int))) := do
 -- `(3x ^ 2 + x - 5) ^ 2 (2x ^ 3 - x + 7)`, whose remainder is zero after six rows.
 #guard (Id.run (chain [1, 2, 1] 2)).isNone
 #guard (Id.run (chain [175, -95, -193, 121, 37, -67, 12, 18] 7)).isNone
+
+-- The sign of a row at `num / 2 ^ denexp` against `eval_sign` of the C code at the pinned commit,
+-- called by a C program that includes `sturm.c`: for each row, constant term first, the points
+-- `(num, denexp)` with their signs; `x ^ 2 - 2` near `√2` and at the exponent 55,
+-- `(2 x - 1) (4 x + 3) (x - 5)` at its roots and elsewhere, `x ^ 4 - 5 x ^ 2 + 1`, a constant, and
+-- coefficients of 70 bits.
+#guard
+  ([([-2, 0, 1], [(3, 1, 1), (1, 0, -1), (-3, 1, 1), (0, 0, -1), (181, 7, -1), (363, 8, 1),
+      (-363, 8, 1), (9007199254740991, 55, -1)]),
+    ([15, -13, -38, 8], [(1, 1, 0), (-3, 2, 0), (5, 0, 0), (1, 0, -1), (-1, 0, -1), (0, 0, 1),
+      (-7, 3, -1), (41, 3, 1)]),
+    ([1, 0, -5, 0, 1], [(-9, 2, 1), (-1, 1, -1), (1, 1, -1), (9, 2, 1), (-4097, 12, -1)]),
+    ([-1], [(5, 3, -1)]),
+    ([123456789012345678901, -98765432109876543210, 5, 7, -1000000000000000000],
+      [(-5, 0, -1), (79, 6, -1), (-321, 6, -1), (1, 0, 1)])] :
+      List (List Int × List (Int64 × Int64 × Int))).all fun (row, pts) ↦
+    pts.all fun (num, denexp, s) ↦ Id.run (evalSign row.toArray num denexp) == s
+
+-- The numbers of sign changes of the chain at `+∞` and at `-∞` against those of the Sturm sequence
+-- of `f` and `f'`, computed exactly over the rationals, their difference the number of real roots
+-- of `f`: `x ^ 3 - 2`, `x ^ 4 - 5 x ^ 2 + 1`, `x ^ 2 + x + 1`, `-x ^ 4 - 1`,
+-- `(2 x - 1) (4 x + 3) (x - 5)`, `3 + 2 x` and the polynomial of degree 12 of the chain above.
+#guard
+  ([([-2, 0, 0, 1], (0, 1)), ([1, 0, -5, 0, 1], (0, 4)), ([1, 1, 1], (1, 1)),
+    ([-1, 0, 0, 0, -1], (1, 1)), ([15, -13, -38, 8], (0, 3)), ([3, 2], (0, 1)),
+    ([2, -1, 3, 0, -4, 1, 1, -2, 5, 0, 3, -1, 2], (6, 6))] : List (List Int × Nat × Nat)).all
+    fun (c, r) ↦ match Id.run (chain c (c.length - 1)) with
+      | some rows => Id.run (countsAtInfinity rows (rows.size - 1)) == r
+      | none => false
+
+-- The signs of `f` and `f'` and the count of the chain at `nm / 2 ^ dem` against the signs of `f`
+-- and `f'` and the number of sign changes of the Sturm sequence of `f` and `f'` there, zeros
+-- skipped, computed exactly over the rationals: for `(2 x - 1) (4 x + 3) (x - 5)` at `0`, `-1` and
+-- `6` and at its roots `1 / 2`, `-3 / 4` and `5`, and for `x ^ 3 - x` at its root `0`, at `1 / 2`
+-- and at `-3 / 2`.
+#guard
+  ([([15, -13, -38, 8], [(0, 0, (1, -1, 2)), (1, 1, (0, -1, 1)), (-1, 0, (-1, 1, 3)),
+      (6, 0, (1, 1, 0)), (-3, 2, (0, 1, 2)), (5, 0, (0, 1, 0))]),
+    ([0, -1, 0, 1], [(0, 0, (0, -1, 1)), (1, 1, (-1, -1, 1)), (-3, 1, (-1, 1, 3))])] :
+      List (List Int × List (Int64 × Int64 × Int × Int × Nat))).all fun (c, pts) ↦
+    match Id.run (chain c (c.length - 1)) with
+    | some rows => pts.all fun (nm, dem, r) ↦ Id.run (signsAt rows (rows.size - 1) nm dem) == r
+    | none => false
+
+-- The intersection against `_ratpoints_compute_sturm` of the pinned commit, called by a C program
+-- that prints with `%a` the intervals it leaves in `domain`, as bits: for each case the intervals
+-- that the bisection keeps, which the program leaves for the interval `[-∞, ∞]` of the caller, the
+-- intervals of the caller, and the intersection that the program leaves for them; `x ^ 3 - x` at
+-- the depth 10 with three intervals of the caller, among them `[-0.0, 0.0]`, which stays;
+-- `x - x ^ 3` with a degenerate interval of the caller; `x ^ 2 - 4` on `[-1, 1]`, an empty
+-- intersection; `x ^ 3 - 1` on `[2 ^ 62, ∞]` at the depth 5; and `(2 x - 1) (4 x + 3) (x - 5)` at
+-- the depth 10 with intervals of the caller that it forgets, holds, lies in, overlaps or only
+-- touches.
+#guard
+  ([([(0xbff0000000000000, 0x0000000000000000), (0x3ff0000000000000, 0x43e0000000000000)],
+      [(0xfff0000000000000, 0xbfe0000000000000), (0x8000000000000000, 0x0000000000000000),
+        (0x3fe8000000000000, 0x7ff0000000000000)],
+      [(0xbff0000000000000, 0xbfe0000000000000), (0x8000000000000000, 0x0000000000000000),
+        (0x3ff0000000000000, 0x43e0000000000000)]),
+    ([(0xc3e0000000000000, 0xbff0000000000000), (0x0000000000000000, 0x3ff0000000000000)],
+      [(0xc008000000000000, 0xc008000000000000), (0x3ff8000000000000, 0x4000000000000000)],
+      [(0xc008000000000000, 0xc008000000000000)]),
+    ([(0xc3e0000000000000, 0xc000000000000000), (0x4000000000000000, 0x43e0000000000000)],
+      [(0xbff0000000000000, 0x3ff0000000000000)], []),
+    ([(0x3ff0000000000000, 0x43e0000000000000)], [(0x43d0000000000000, 0x7ff0000000000000)],
+      [(0x43d0000000000000, 0x43e0000000000000)]),
+    ([(0xbfe8000000000000, 0x3fe0000000000000), (0x4014000000000000, 0x43e0000000000000)],
+      [(0xc08f400000000000, 0x408f400000000000)],
+      [(0xbfe8000000000000, 0x3fe0000000000000), (0x4014000000000000, 0x408f400000000000)]),
+    ([(0xbfe8000000000000, 0x3fe0000000000000), (0x4014000000000000, 0x43e0000000000000)],
+      [(0xc024000000000000, 0xc000000000000000), (0xbff0000000000000, 0xbfd0000000000000),
+        (0x3fd0000000000000, 0x3fe0000000000000), (0x4010000000000000, 0x4012000000000000)],
+      [(0xbfe8000000000000, 0xbfd0000000000000), (0x3fd0000000000000, 0x3fe0000000000000)]),
+    ([(0xbfe8000000000000, 0x3fe0000000000000), (0x4014000000000000, 0x43e0000000000000)],
+      [(0xbff0000000000000, 0x3ff0000000000000), (0x4010000000000000, 0x7ff0000000000000)],
+      [(0xbfe8000000000000, 0x3fe0000000000000), (0x4014000000000000, 0x43e0000000000000)]),
+    ([(0xbfe8000000000000, 0x3fe0000000000000), (0x4014000000000000, 0x43e0000000000000)],
+      [(0xfff0000000000000, 0xbfe8000000000000), (0x3fe0000000000000, 0x4014000000000000)],
+      [(0xbfe8000000000000, 0xbfe8000000000000), (0x3fe0000000000000, 0x3fe0000000000000),
+        (0x4014000000000000, 0x4014000000000000)]),
+    ([(0xbfe8000000000000, 0x3fe0000000000000), (0x4014000000000000, 0x43e0000000000000)],
+      [(0xbfe0000000000000, 0x3fd0000000000000), (0x3fe0000000000000, 0x3fe8000000000000),
+        (0x3ff0000000000000, 0x4202a05f20000000)],
+      [(0xbfe0000000000000, 0x3fd0000000000000), (0x3fe0000000000000, 0x3fe0000000000000),
+        (0x4014000000000000, 0x4202a05f20000000)])] :
+      List (List (UInt64 × UInt64) × List (UInt64 × UInt64) × List (UInt64 × UInt64))).all
+    fun (loc, ivs, out) ↦
+  let doubles (l : List (UInt64 × UInt64)) : Array (Double × Double) :=
+    (l.map fun (a, b) ↦ (⟨a⟩, ⟨b⟩)).toArray
+  (Id.run (intersect (doubles loc) (doubles ivs))).toList.map (fun (l, u) ↦ (l.bits, u.bits)) == out
 
 end Sturm
 
