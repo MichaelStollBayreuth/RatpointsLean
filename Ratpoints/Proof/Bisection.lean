@@ -23,10 +23,12 @@ and `0 ≤ e ≤ 55`, increasing, whose midpoints (`Ratpoints.Sturm.midpoint`) t
 without overflow strictly between the ends (`Ratpoints.Sturm.EndsWF.halves`); the doubles
 `ldexp((double)n, -e)` of the ends are exact, `±2 ^ 63` at infinity
 (`Ratpoints.Sturm.EndsWF.hasValue_left`), so that the intervals it keeps, joined where one ends at
-the beginning of the next (`Ratpoints.Sturm.addInterval_spec`), are closed, increasing and strictly
-apart (`Ratpoints.Sturm.iterate_wf`). Their intersection with well-formed intervals of the caller
-(`Ratpoints.Sturm.intersectList`, the loop of `Ratpoints.Sturm.intersect`) is well formed, inside
-both, and holds every value that lies in both (`Ratpoints.Sturm.intervalsWF_intersectList`,
+the beginning of the next
+(`Ratpoints.Sturm.forall_isInterval_and_pairwise_addInterval_and_back?_eq`), are closed, increasing
+and strictly apart (`Ratpoints.Sturm.iterate_wf`). Their intersection with well-formed intervals of
+the caller (`Ratpoints.Sturm.intersectList`, the loop of `Ratpoints.Sturm.intersect`) is well
+formed, inside both, and holds every value that lies in both
+(`Ratpoints.Sturm.intervalsWF_intersectList`,
 `Ratpoints.Sturm.inIntervals_of_inIntervals_intersectList`,
 `Ratpoints.Sturm.inIntervals_intersectList`); hence the Sturm step leaves well-formed intervals
 inside the caller's (`Ratpoints.Sturm.computeSturm_wf`).
@@ -652,7 +654,8 @@ theorem push_of_back?_lt {iv : Array (Double × Double)}
 /-- The intervals kept stay increasing and strictly apart when the bisection adds the interval from
 `l` to `u` (their values `L < U`) after kept intervals that end at `L` at the latest, joining it
 to the last of them when that ends at `L`; they end at `U` then. -/
-theorem addInterval_spec {iv : Array (Double × Double)} {nl nr del der : Int64} {L U : ℚ}
+theorem forall_isInterval_and_pairwise_addInterval_and_back?_eq {iv : Array (Double × Double)}
+    {nl nr del der : Int64} {L U : ℚ}
     (hiv : (∀ i ∈ iv.toList, IsInterval i) ∧ iv.toList.Pairwise EndsBefore)
     (hb : ∀ i ∈ iv.back?, doubleValue i.2.bits ≤ (L : WithBotTop ℚ))
     (hl : HasValue ((Double.ofInt64 nl).ldexp (-del.toInt)) L)
@@ -750,8 +753,8 @@ theorem iterate_wf {rows : Array (Array ℤ)} {k iter : ℕ} {nl nr del der : In
   fun_induction iterate rows k iter nl nr del der cleft cright sl sr depth acc with
   | case1 => exact ⟨hacc, fun i hi ↦ (hb i hi).trans (WithBotTop.coe_le_coe.mpr hE.lt.le)⟩
   | case2 =>
-    obtain ⟨h1, h2⟩ := addInterval_spec hacc hb (hE.hasValue_left (by lia))
-      (hE.hasValue_right (by lia)) hE.lt
+    obtain ⟨h1, h2⟩ := forall_isInterval_and_pairwise_addInterval_and_back?_eq hacc hb
+      (hE.hasValue_left (by lia)) (hE.hasValue_right (by lia)) hE.lt
     exact ⟨h1, fun i hi ↦ (h2 i hi).le⟩
   | case3 nl nr del der cleft cright sl sr depth acc _ hk nm dem hm ih2 ih1 =>
     have hd' : depth < iter := by lia

@@ -513,8 +513,9 @@ of the options, the default interval for none, refusing intervals that are not w
 error~9 (Definition~\ref{def:searchIntervals}), and runs the Sturm step of the search
 (Definition~\ref{def:sturmRegion}), which with the step on refuses the form when the remainder chain
 of the polynomial searched is $\mathrm{none}$, returns at once, with the count $0$ and no search
-interval, when that polynomial is negative on the search intervals and has no point at infinity, and
-otherwise narrows the search intervals; and it runs $\mathrm{searchPoints}$ on the polynomial that
+interval, when the step keeps no interval, so that that polynomial is negative on the search
+intervals within $\pm 2^{63}$, and it has no point at infinity, and otherwise narrows the search
+intervals to those that the step keeps; and it runs $\mathrm{searchPoints}$ on the polynomial that
 the check hands on, over the normalized range of the denominators and the search intervals that the
 Sturm step leaves, with its flag \verb|sturm_empty| and the flag of the reversal as the flags of the
 check, from the data of the caller, the count $0$ and the flag of the stop clear, and returns what

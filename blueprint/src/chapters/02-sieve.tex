@@ -435,9 +435,10 @@ and~\ref{lem:power_admits}).
   and refuses intervals that are not well formed with $\mathrm{badArgs}$, error~9
   (Definition~\ref{def:searchIntervals}); with the Sturm step on (Definition~\ref{def:sturmRegion}),
   it refuses the form when the remainder chain of the polynomial searched is $\mathrm{none}$
-  (Definition~\ref{def:sturmChain}), lists no point when that polynomial is negative on the search
-  intervals and has no point at infinity, and otherwise narrows the search intervals to those where
-  it may be $\ge 0$; and it lists the points of the search of the polynomial that the check hands on
+  (Definition~\ref{def:sturmChain}), lists no point when the step keeps no interval, so that that
+  polynomial is negative on the search intervals within $\pm 2^{63}$, and it has no point at
+  infinity, and otherwise narrows the search intervals to those that the step keeps; and it lists
+  the points of the search of the polynomial that the check hands on
   (Definition~\ref{def:searchPoints}), with its flag of the reversal, over the normalized range of
   the denominators and the search intervals that the Sturm step leaves: the 2-adic information, no
   points when no class of the denominators modulo $64$ admits a numerator and there is no point at
