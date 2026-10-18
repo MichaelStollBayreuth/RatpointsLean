@@ -1,15 +1,20 @@
-"""The command lines of the suites errors and fuzz of scripts/difftest.py.
+"""The command lines of the suites errors, fuzz and regions of scripts/difftest.py.
 
 CASES holds hand-written command lines for the checks that main.c makes on the coefficients, the
-height and the options, for the options of the search and of the output and for the refusals of a
-form that is not squarefree, each with a note; STOP_CASES holds searches at a large height that
-both programs stop at once; random_command_lines gives random ones, with words that the readers of
-numbers of main.c accept or refuse in many ways, and options of the output with formats and
-strings, and random_output_options random options of the output for a search. An argument is a
-str or, for a byte string that is not UTF-8, bytes. A height that a search could not finish (such
-as 2^63 - 1) is always followed by an option that fails, so that neither program searches, but in
+height and the options, for the options of the search, of the search region and of the output and
+for the refusals of a form that is not squarefree, each with a note; STOP_CASES holds searches at a
+large height that both programs stop at once; random_command_lines gives random ones, with words
+that the readers of numbers of main.c accept or refuse in many ways, the options of the search
+region among them, and options of the output with formats and strings, and random_output_options
+random options of the output for a search; and random_region_line gives a search with a random
+search region. An argument is a str or, for a byte string that is not UTF-8, bytes. A height that a
+search could not finish (such as 2^63 - 1) is always followed by an option that fails, so that
+neither program searches, or comes with a narrow search region (random_region_line), but in
 STOP_CASES, which the errors suite runs with a short timeout and a cap on the memory.
 """
+import math
+from decimal import Decimal
+from fractions import Fraction
 
 C102 = ' '.join(['1'] + ['0'] * 100 + ['1'])          # 102 coefficients
 C101 = ' '.join(['1'] + ['0'] * 99 + ['1'])           # 101 coefficients: degree 100
@@ -220,29 +225,88 @@ CASES = [
      'characters beyond ASCII after % and \\: as they are'),
     (['1 2 1', '5', '-q', '-x'], 'a form that is not squarefree and -x: error 8'),
     (['1 2 1', '5', '-x', '-fs', 'S'], 'error 8 without -q: no strings printed'),
-    # the options that ratpoints-lean does not support yet
-    (['1 0 1', '5', '-q', '-l', '0', '-u', '1'], '-l -u: unsupported'),
-    (['1 0 1', '5', '-q', '-u', '1'], '-u: unsupported'),
-    (['1 0 1', '5', '-q', '-dl', '2'], '-dl: unsupported'),
-    (['1 0 1', '5', '-q', '-du', '2'], '-du: unsupported'),
-    (['1 0 1', '5', '-q', '-dlx', '2'], '-dlx is -dl: unsupported'),
-    (['1 0 1', '5', '-q', '-lfoo', '0'], '-lfoo is -l: unsupported, named as written'),
-    (['1 0 1', '5', '-q', '-l'], '-l without its argument: C error 7, unsupported here'),
-    (['1 0 1', '5', '-q', '-l', 'x'], '-l x: C error 7, unsupported here'),
-    (['1 0 1', '5', '-q', '-dl'], '-dl without its argument: C error 6, unsupported here'),
-    (['1 0 1', '5', '-q', '-u', '1', '-p', 'x'], '-u before a malformed -p: unsupported first'),
-    (['1 0 1', '5', '-q', '-p', 'x', '-u', '1'], 'a malformed -p before -u: error 6 first'),
-    (['1 0 1', '5', '-q', '-g', '-u', '1'], 'an unknown option before -u: error 6 first'),
-    (['1 0 1', '5', '-q', '-u', '1', '-g'], '-u before an unknown option: unsupported first'),
-    (['1 0 1', '5', '-q', '-f', '-u', '-u', '1'], '-f takes -u as its format: -u unsupported'),
-    (['x', '5', '-u', '1'], 'bad coefficients before -u: error 11 first'),
-    (['1 0 1', '0', '-u', '1'], 'bad height before -u: error 4 first'),
-    (['1 0 1', '5', '-q', '-S', 'x', '-u', '1'], 'a malformed -S before -u: error 6 first'),
-    (['1 0 1', '5', '-q', '-S', '-u', '1'], '-S followed by -u: -u is not its argument'),
-    (['1 2 1', '5', '-q', '-u', '1'], 'a form that is not squarefree and -u: unsupported first'),
     (['1 0 1', '5', '-q', '-x', '-p', 'x'], '-x before a malformed -p: error 6'),
     (['1 0 1', '5', '-q', '-x', '-g'], '-x before an unknown option: error 6'),
     (['1 0 1', '0', '-x'], 'bad height before -x: error 4'),
+    # the search region: the intervals of -l and -u, the denominators of -dl and -du
+    (['1 0 126 0 441', '200', '-l', '0', '-u', '1'],
+     '-l -u: message 3, the points in [0, 1]'),
+    (['1 0 126 0 441', '200', '-q', '-l', '0', '-u', '1'], '-l -u with -q'),
+    (['-1 0 9', '10', '-q', '-u', '0.3333333333333333', '-l', '0.33333333333333337'],
+     'two intervals whose doubles meet: joined, (1 : 0 : 3) between them passed over'),
+    (['-1 0 9', '10', '-u', '0.3333333333333333', '-l', '0.33333333333333337'],
+     'the join in the report: two intervals in message 3'),
+    (['17 0 0 1', '300', '-q', '-dl', '4', '-du', '9'], '-dl -du: the denominators 4 to 9'),
+    (['36 0 -49 0 14 0 -1', '100', '-l', '-2.5', '-u', '-1.5', '-l', '1.5', '-u', '2.5'],
+     'two intervals in the report'),
+    (['1 0 1', '10', '-z', '-l', '-0', '-u', '1e400'], '-0.000000 and inf in message 3'),
+    (['1 0 1', '10', '-z', '-u', '-20'], 'a first -u below -H: [-inf, -20]'),
+    (['1 0 1', '10', '-z', '-l', '20'], 'a last -l above H: [20, inf]'),
+    (['1 0 1', '10', '-q', '-u', '1'], 'a first -u without -l'),
+    (['1 0 1', '10', '-q', '-l', '1'], 'a last -l without -u'),
+    (['1 0 1', '10', '-z', '-l', '1e400', '-u', '1e500'],
+     '[inf, inf]: only the points at infinity'),
+    (['1 0 1', '10', '-z', '-u', '-1e400'], '[-inf, -inf]: only the points at infinity'),
+    (['1 0 1', '10', '-z', '-u', '0.74999999999999999', '-l', '0.75', '-u', '1'],
+     'two intervals of the command line, one search interval'),
+    (['1 0 1', '10', '-q', '-l', '1', '-u', '1'], '[1, 1] is an interval'),
+    (['1 0 1', '10', '-q', '-l', '-1e-400', '-u', '1e-400'], 'ends that strtod reads as 0'),
+    (['1 0 1', '10', '-q', '-l', '-0x1p-1075', '-u', '0x1.8p-1074'], 'tiny hexadecimal ends'),
+    (['1 0 1', '10', '-q', '-l', ' 0x.8p1 ', '-u', '1.00000000000000000001\r'],
+     'white space around ends, a hexadecimal end, one that is no double'),
+    (['1 0 1', '10', '-q', '-l', '-inf', '-u', 'Infinity'], 'infinite ends'),
+    (['1 0 1', '10', '-q', '-l', '-1', '-u', '-0', '-l', '1e-300', '-u', '1'],
+     'intervals with -0 and a tiny end between them'),
+    (['1 0 1', '10', '-v', '-l', '0', '-u', '1'], 'message 3 under -v'),
+    (['1 0 1', '10', '-q', '-x', '-l', '0', '-u', '1', '-p', '30', '-N', '30'],
+     '-x with an interval, pinned'),
+    (['1 0 1', '10', '-q', '-x', '-l', '0', '-u', '1'], '-x with an interval'),
+    (['1 0 126 0 441', '200', '-q', '-1', '-i', '-l', '0.5'], '-1 -i: a point outside not counted'),
+    (['-1 0 9', '10', '-q', '-dl', '3', '-du', '3'], 'one denominator'),
+    (['-1 0 9', '10', '-q', '-dl', '5', '-du', '3'], 'an empty range of denominators'),
+    (['-1 0 9', '10', '-q', '-dl', '0', '-du', '0'], '-dl 0 -du 0: the defaults'),
+    (['-1 0 9', '10', '-q', '-dl', '-5', '-du', '50'], '-dl below 1, -du above H'),
+    (['-1 0 9', '10', '-q', '-du', '10'], '-du H: the reversal not suppressed'),
+    (['-1 0 9', '10', '-q', '-du', '9'], '-du below H: no reversal'),
+    (['0 1 0 2', '20', '-q', '-dl', '2'], '-dl 2: no reversal (case 3)'),
+    (['0 0 1', '5', '-q', '-s', '-dl', '2'], '-s -dl 2: no reversal, so no error 8'),
+    (['0 0 1', '5', '-q', '-s', '-l', '-1', '-u', '1'], '-s with an interval: no error 8'),
+    (['0 0 1', '5', '-q', '-dl', '2'], 'the Sturm step refuses x^2 | F: error 8'),
+    (['1 0 1', '5', '-q', '-dl', '2', '-dlx', '3', '-du', '4', '-du', '5'],
+     'the last -dl and -du win, -dlx is -dl'),
+    (['1 0 1', '5', '-q', '-dl', ' 2\r', '-du', '+4'], '-dl -du with white space and a sign'),
+    (['1 0 1', '5', '-q', '-dl'], '-dl without its argument: error 6'),
+    (['1 0 1', '5', '-q', '-du', 'x'], '-du x: error 6'),
+    (['1 0 1', '5', '-q', '-du', '1.5'], '-du 1.5: error 6'),
+    (['1 0 1', '5', '-q', '-dl', '9223372036854775808'], '-dl 2^63: error 6'),
+    (['1 0 1', '5', '-q', '-l'], '-l without its argument: error 7'),
+    (['1 0 1', '5', '-q', '-u'], '-u without its argument: error 7'),
+    (['1 0 1', '5', '-q', '-l', 'x'], '-l x: error 7'),
+    (['1 0 1', '5', '-q', '-u', 'nan'], '-u nan: error 7'),
+    (['1 0 1', '5', '-q', '-l', '1', '-l', '2'], '-l -l: error 7'),
+    (['1 0 1', '5', '-q', '-u', '1', '-u', '2'], '-u -u: error 7'),
+    (['1 0 1', '5', '-q', '-l', '2', '-u', '1'], 'not ordered: error 7'),
+    (['1 0 1', '5', '-q', '-u', '0.75', '-l', '0.75'], 'touching intervals: error 7'),
+    (['1 0 1', '5', '-q', '-l', '1', '-u', '2', '-l', '1.5', '-u', '3'], 'overlapping: error 7'),
+    (['1 0 1', '5', '-q', '-u', 'inf', '-l', 'inf'],
+     'two infinities of one sign are equal: error 7'),
+    (['1 0 1', '5', '-q', '-u', '1e-400', '-l', '1e-401'], 'two tiny ends count as equal: error 7'),
+    (['1 0 1', '5', '-q', '-lfoo', '0', '-ux', '1'], '-lfoo is -l, -ux is -u'),
+    (['1 0 1', '5', '-q', '-l', '1', '-u', '2', '-p', 'x'], 'an interval before a bad -p: error 6'),
+    (['1 0 1', '5', '-q', '-p', 'x', '-l', 'x'], 'a bad -p before a bad -l: error 6'),
+    (['1 0 1', '5', '-q', '-l', 'x', '-p', 'x'], 'a bad -l before a bad -p: error 7'),
+    (['1 0 1', '5', '-q', '-f', '-l', '-l', '1'], '-f takes -l as its format'),
+    (['1 0 1', '5', '-q', '-S', '-l', '1'], '-S followed by -l: -l is not its argument'),
+    (['1 0 1', '5', '-q', '-g', '-l', '1'], 'an unknown option before -l: error 6'),
+    (['1 0 1', '5', '-q', '-l', '1', '-u', '2', '-g'],
+     'an interval before an unknown option: error 6'),
+    (['1 0 1', '5', '-q', '-S', 'x', '-l', '1'], 'a malformed -S before -l: error 6'),
+    (['x', '5', '-l', 'x'], 'bad coefficients before -l x: error 11 first'),
+    (['1 0 1', '0', '-l', 'x'], 'bad height before -l x: error 4 first'),
+    (['1 2 1', '5', '-q', '-l', '0', '-u', '1'], 'a form that is not squarefree with an interval'),
+    *[(['1 0 1', '5', '-q', '-z'] + [w for i in range(n) for w in ['-l', str(2 * i), '-u',
+       str(2 * i + 1)]], f'{n} intervals' + (': error 7' if n > 100 else ''))
+      for n in (99, 100, 101)],
     # unknown options and other words
     (['1 0 1', '5', '-q', '-g'], '-g: error 6'),
     (['1 0 1', '5', '-q', '-w'], '-w: error 6'),
@@ -377,8 +441,10 @@ def random_options(rng):
         if rng.random() < 0.25:
             o += rng.choice(['s', 'm', 'e', 'l', 'u', 'x', 'q', 'uiet', '1'])
         opts.append(o)
-        if o[1] in LONG_OPTS and rng.random() < 0.9:
+        if (o[1] in LONG_OPTS or o[1] == 'd' and o[2:3] in ('l', 'u')) and rng.random() < 0.9:
             opts.append(random_long(rng))
+        elif o[1] in 'lu' and rng.random() < 0.9:
+            opts.append(random_double(rng))
         elif o[1] in DOUBLE_OPTS and rng.random() < 0.9:
             opts.append(random_double(rng))
         elif o[1] == 'S' and rng.random() < 0.5:
@@ -390,8 +456,9 @@ def random_options(rng):
 
 def random_output_options(rng):
     """Options of the output for a search: each of -x -X -y -Y -z -Z -1 -i -I at times, -q in most
-    cases and -v at times, a format and strings at times, and at times the parameters that pin the
-    moduli for -x (-p 30 -N 30)."""
+    cases and -v at times, a format and strings at times, at times the parameters that pin the
+    moduli for -x (-p 30 -N 30), and with -x at times -s, so that the survivors over the whole of
+    [-H, H] are compared, where the polynomial may be negative."""
     opts = [o for o in ['-x', '-X', '-y', '-Y', '-z', '-Z', '-1', '-i', '-I']
             if rng.random() < 0.15]
     rng.shuffle(opts)
@@ -404,6 +471,8 @@ def random_output_options(rng):
             opts += [o, rng.choice(FORMATS)]
     if rng.random() < 0.3:
         opts += ['-p', '30', '-N', '30']
+    if '-x' in opts and rng.random() < 0.3:
+        opts.append('-s')
     return opts
 
 
@@ -434,3 +503,197 @@ def random_command_lines(rng):
             [rng.choice(['1 0 1', '1 2 1']), '2', '-q', *random_options(rng)],
             [rng.choice(['1 0 1', '0 1 2', '1 0 126 0 441', '-2 0 0 1', '1 2 3 4']),
              str(rng.randint(1, 5)), *random_output_words(rng)]]
+
+
+# Search regions: words for the ends, sorted by their values (end_fraction), and the curves they are
+# tried on.
+INF = float('inf')
+NEAR_THIRD = ['0.3333333333333333', '0.33333333333333337', '0.33333333333333331',
+              '0.333333333333333314829616256247', '0.33333333333333334']
+POINT_RICH = ['1 0 126 0 441', '-2 0 0 1', '1 1 1 1 0', '1 2 3 4 5 6 7', '-1 0 9', '0 1 1',
+              '36 0 -49 0 14 0 -1', '17 0 0 1', '1 0 1', '0 1 0 2', '-4 0 5 0 -1', '1 0 0 6']
+
+
+def end_fraction(word):
+    """The value of an end word for sorting: a Fraction, or +-inf for an infinity."""
+    w = word.strip()
+    sign = -1 if w.startswith('-') else 1
+    v = w.lstrip('+-')
+    if v.lower() in ('inf', 'infinity'):
+        return sign * INF
+    if v.lower().startswith('0x'):
+        m, _, e = v[2:].lower().partition('p')
+        ip, _, fp = m.partition('.')
+        num = int((ip + fp) or '0', 16)
+        return sign * Fraction(num) * Fraction(2) ** (int(e or '0') - 4 * len(fp))
+    f = Fraction(v)
+    return sign * (INF if f >= 2 ** 1024 - 2 ** 970 else f)
+
+
+def random_end(rng, H):
+    """A word for an end of a search interval, for the height H: a small decimal, a fraction with
+    many digits, a hexadecimal constant, an integer near +-H, an infinity, a number beyond the
+    doubles, a tiny one, -0, a word near 1/3 whose doubles meet, or the repr of a quotient of small
+    integers; with white space at times."""
+    k = rng.random()
+    if k < 0.3:
+        w = str(round(rng.uniform(-12, 12), rng.choice([0, 1, 2, 3, 6])))
+    elif k < 0.4:
+        w = '%.20g' % rng.uniform(-3, 3)
+    elif k < 0.5:
+        w = rng.choice(['', '-']) + rng.choice(['0x1.8p-1', '0x.4p3', '0X1P-2', '0x3p0',
+                                                '0x1.fffffffffffffp1', '0x1p-1075',
+                                                '0x1.0000000000001p-1074'])
+    elif k < 0.6:
+        w = str(rng.choice([-1, 1]) * (H + rng.randint(-2, 2)))
+    elif k < 0.67:
+        w = rng.choice(['inf', '-inf', 'Infinity', '-INF', '1e400', '-1e400', '1e30', '-1e30'])
+    elif k < 0.75:
+        w = rng.choice(['1e-400', '-1e-400', '0', '-0', '0.0', '-0x0p0', '1e-300', '-2e-320'])
+    elif k < 0.85:
+        w = rng.choice(['', '-']) + rng.choice(NEAR_THIRD)
+    else:
+        w = repr(rng.randint(-20, 20) / rng.randint(1, 9))
+    if rng.random() < 0.05:
+        w = rng.choice([' ', '\t']) + w + rng.choice(['', '\r', ' '])
+    return w
+
+
+def random_intervals(rng, H):
+    """The options -l and -u of one to five random intervals: their ends sorted most of the time
+    (unsorted ones give error 7), at times the same word as the upper end of one interval and the
+    lower end of the next (error 7) or words whose doubles meet (joined); the first -l and the last
+    -u left out at times."""
+    k = rng.choice([1, 1, 1, 2, 2, 3, 5])
+    ends = [random_end(rng, H) for _ in range(2 * k)]
+    if rng.random() < 0.85:
+        ends.sort(key=end_fraction)
+    if k > 1 and rng.random() < 0.15:
+        j = rng.randrange(k - 1)
+        if rng.random() < 0.5:
+            ends[2 * j + 2] = ends[2 * j + 1]
+        else:
+            ends[2 * j + 1], ends[2 * j + 2] = '0.3333333333333333', '0.33333333333333337'
+            ends.sort(key=end_fraction)
+    opts = []
+    for j in range(k):
+        if not (j == 0 and rng.random() < 0.2):
+            opts += ['-l', ends[2 * j]]
+        if not (j == k - 1 and opts and rng.random() < 0.2):
+            opts += ['-u', ends[2 * j + 1]]
+    return opts
+
+
+def random_denominators(rng, H):
+    """Options -dl and -du of a random range of denominators: a lower bound, an upper one or both,
+    an empty range, one denominator, bounds beyond 1 and H and below 1."""
+    k = rng.random()
+    if k < 0.25:
+        return ['-dl', str(rng.randint(-2, H + 1))]
+    if k < 0.5:
+        return ['-du', str(rng.randint(-2, H + 2))]
+    if k < 0.65:
+        b = rng.randint(1, H)
+        return ['-dl', str(b), '-du', str(b)]
+    lo, hi = rng.randint(-1, H), rng.randint(-1, H + 3)
+    return ['-dl', str(lo), '-du', str(hi)]
+
+
+def random_search_options(rng):
+    """Options of the search and of the output for a search with a region: -q most of the time, the
+    report or -v at times, and at times -k, -s, -S with a depth, -x with or without the moduli
+    pinned, -1, -i, -y, -z."""
+    opts = ['-q'] if rng.random() < 0.7 else (['-v'] if rng.random() < 0.2 else [])
+    for o in ['-k', '-s', '-1', '-i', '-y', '-z']:
+        if rng.random() < 0.08:
+            opts.append(o)
+    if rng.random() < 0.1:
+        opts += ['-S', str(rng.choice([0, 1, 2, 5, 20, 55, 60]))]
+    if rng.random() < 0.1:
+        opts.append('-x')
+        if rng.random() < 0.6:
+            opts += ['-p', '30', '-N', '30']
+    return opts
+
+
+BIG_HEIGHTS = [10 ** 6, 10 ** 9, 10 ** 12, 2 ** 53 + 1, 2 ** 62, 2 ** 63 - 1]
+
+
+def exact_word(rng, v):
+    """A word that denotes the double v exactly: its hexadecimal form or its decimal expansion."""
+    return v.hex() if rng.random() < 0.5 else format(Decimal(v), 'f')
+
+
+def pythagorean_point(rng, H):
+    """A point (m^2 - n^2 : m^2 + n^2 : 2 m n) of y^2 = x^2 + 1 of height at most H, m > n coprime
+    and of opposite parity, with a denominator 2 m n between about H / 10 and H, as (x, z); None if
+    none is found."""
+    for _ in range(20):
+        n = rng.randint(max(1, math.isqrt(H // 20)), math.isqrt(H // 5))
+        m = n + 1 + 2 * rng.randint(0, n // 2)
+        while math.gcd(m, n) != 1:
+            m += 2
+        if 2 * m * n <= H and m * m - n * n <= H:
+            return m * m - n * n, 2 * m * n
+    return None
+
+
+def random_big_region(rng, c):
+    """A search of the polynomial with the coefficient list c at a large height in a narrow search
+    region, so that it sifts few numerators, without -1: a narrow range of denominators b, ...,
+    b + j and one interval, with -q and at times -x with the moduli pinned (-p 30 -N 30), so that
+    every survivor is compared. The interval lies around a random x = a / b, with the repr of
+    doubles as its ends, which are rarely exact; or has ends that are exact doubles L / 2^e whose
+    products with b are integers (2^e divides b), so that numerators at the ends lie in the search
+    region and a bound of the numerators computed too narrow shows; or lies at one end of the range
+    [-H, H] of the numerators at b, beyond it; or, on y^2 = x^2 + 1, its ends are the doubles next
+    but one to the x-coordinate of a point (m^2 - n^2 : m^2 + n^2 : 2 m n) of large height, at its
+    denominator."""
+    H = rng.choice(BIG_HEIGHTS)
+    k = rng.random()
+    point = pythagorean_point(rng, H) if k >= 0.75 else None
+    if point:
+        c, (a, b) = '1 0 1', point
+        v = float(Fraction(a, b))
+        lo = math.nextafter(math.nextafter(v, -math.inf), -math.inf)
+        hi = math.nextafter(math.nextafter(v, math.inf), math.inf)
+        ends = ['-l', exact_word(rng, lo), '-u', exact_word(rng, hi)]
+    elif 0.3 <= k < 0.55:
+        e = rng.randint(0, (H // 50).bit_length() - 1)
+        s = rng.randint(1, 50)
+        b, j = s << e, rng.randint(0, 40)
+        L = rng.randint(-min(2 ** 53 - 1, H // s), min(2 ** 53 - 1, H // s) - j)
+        ends = ['-l', exact_word(rng, L / 2 ** e), '-u', exact_word(rng, (L + j) / 2 ** e)]
+    elif 0.55 <= k < 0.75:
+        b = rng.randint(1, H)
+        lo = float(Fraction(H - rng.randint(0, 2000), b))
+        hi = float(Fraction(H + rng.randint(1, 2000), b))
+        if rng.random() < 0.5:
+            lo, hi = -hi, -lo
+        ends = ['-l', exact_word(rng, lo), '-u', exact_word(rng, hi)]
+    else:
+        b = rng.randint(1, H)
+        x = Fraction(rng.randint(-H, H), b)
+        w = Fraction(rng.randint(1, 2000), b + 20)
+        ends = ['-l', repr(float(x - w)), '-u', repr(float(x + w))]
+    x_opts = ['-x', '-p', '30', '-N', '30'] if rng.random() < 0.4 else []
+    return [c, str(H), '-q', '-dl', str(b), '-du', str(min(H, b + rng.randint(0, 20))), *ends,
+            *x_opts]
+
+
+def random_region_line(rng):
+    """A search with a random search region: a random polynomial or a point-rich curve at a small
+    height with random intervals, a random range of denominators or both, and random options; or,
+    one time in ten, a search at a large height in a narrow search region (random_big_region)."""
+    if rng.random() < 0.6:
+        c = ' '.join(str(rng.randint(-10, 10)) for _ in range(rng.randint(2, 9)))
+    else:
+        c = rng.choice(POINT_RICH)
+    if rng.random() < 0.1:
+        return random_big_region(rng, c)
+    H = rng.randint(1, 60)
+    k = rng.random()
+    region = (random_intervals(rng, H) if k < 0.45 else random_denominators(rng, H) if k < 0.7
+              else random_intervals(rng, H) + random_denominators(rng, H))
+    return [c, str(H), *region, *random_search_options(rng)]
+

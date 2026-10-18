@@ -12,17 +12,18 @@ and compares it with the recorded outputs and with the C program:
           against the lines of testbase, testbase-many and testbase-degrees restricted to
           |a| <= h and b <= h, which is what the C program prints at height h, in its order;
   random  random polynomials at small heights against the C program;
-  outputs random polynomials at small heights with random options of the output (-x -X -y -Y -z
-          -Z -1 -i -I -q -v, formats and strings), against the C program;
+  outputs random polynomials at small heights with random options of the output (-x -X -y -Y -z -Z
+          -1 -i -I -q -v, formats and strings, and -s with -x at times), against the C program;
   errors  the command lines of scripts/difftest_cases.py, for the checks that main.c makes on the
           coefficients, the height and the options, for the options of the search, -k -K -s -S, for
-          those of the output, -x -X -y -Y -z -Z -1 -i -I and the formats and strings of -f -fs -fm
-          -fe, for the report, and for the refusals of forms that are not squarefree, against the C
-          program; searches at a large height that both programs stop at once
-          (difftest_cases.STOP_CASES); the usage; and failed writes: a standard output whose reader
-          is gone, which ends the C program by SIGPIPE, where ratpoints-lean (the Lean runtime
-          ignores SIGPIPE) is to exit quietly with the status 141 that the shell reports for that,
-          and a full device, whose failed writes both programs ignore;
+          the search region, -l -u -dl -du (errors 7 and 6, the join, the filter of process, the
+          suppression of the reversal), for those of the output, -x -X -y -Y -z -Z -1 -i -I and the
+          formats and strings of -f -fs -fm -fe, for the report, and for the refusals of forms that
+          are not squarefree, against the C program; searches at a large height that both programs
+          stop at once (difftest_cases.STOP_CASES); the usage; and failed writes: a standard output
+          whose reader is gone, which ends the C program by SIGPIPE, where ratpoints-lean (the Lean
+          runtime ignores SIGPIPE) is to exit quietly with the status 141 that the shell reports for
+          that, and a full device, whose failed writes both programs ignore;
   fuzz    random command lines (scripts/difftest_cases.py) against the C program;
   params  the options that set the sieving parameters (-p -n -N -P -F -j), with values that
           give no moduli, all the primes of the default build, the cut points in several
@@ -30,8 +31,16 @@ and compares it with the recorded outputs and with the C program:
           the first, and the defaults, on point-rich and on random curves against the C program,
           whose points do not depend on them;
   high    point-rich curves at the heights 2000, 5000 and 30000 against the C program;
+  regions random search regions against the C program: intervals with ends of every kind (decimals,
+          hexadecimal constants, ends that are no doubles, infinities, numbers beyond the doubles,
+          tiny ones, -0, intervals that touch or whose doubles meet, a missing first -l or last -u),
+          ranges of denominators of every shape, with random options, at small heights, and at times
+          at a large height with a narrow region, whose ends are exact doubles at times, also around
+          points of large height and at the ends of the range [-H, H] of the numerators, at times
+          under -x with the moduli pinned (scripts/difftest_cases.py);
   test4high  the invocations of test4.sh that search with a height bound above --max-height and
-          at most --test4-max-height, a few minutes in all: run locally, not by default.
+          at most --test4-max-height that the suite test4 does not compare (those without a narrow
+          search region), a few minutes in all: run locally, not by default.
 
 ratpoints-lean prints the points and the report as ratpoints does; they are compared in their order,
 also where ratpoints visits the denominators divisor by divisor (a polynomial searched of odd degree
@@ -39,45 +48,55 @@ whose leading coefficient is not +-1), since the model visits them in the same o
 points in the default format with -q is compared as a list of points with a recorded output (test4,
 rptest), and exactly, byte for byte, with an output of the C program, as is an output with the
 options of the output (-x -y -f -fs -fm -fe), also where it does not end with a newline. A report (a
-command line without -q) is compared exactly, but for the banner, which is exchanged for that of the
-C program, and for the lines that ratpoints-lean does not print, which are dropped from the report
-of the C program only: the messages on the search region and the search intervals (stage H) and on
-the moduli used (stage I), as test4.sh's m() drops the latter. Under -v, where the C program prints
-the report of its library too, ratpoints-lean is compared with the report of the C program on the
-same command line without -v, whose height and messages 4, 7 and 8 are dropped, as main.c does under
--v; the lines of that text must be among the lines of the output of the C program with -v, in their
-order, with the same lines of points and pairs (with a format or a string, whose points need not end
-their lines, only its characters among those of that output, in their order). The outputs that
-test4.sh filters through grep found, grep 'Curve equation' and grep -c . are compared after the same
-filter, the banner exchanged first, with the exit status 0. Under -x (no exact check), where the
-lines printed are the survivors of the sieve, which depend on the moduli and on the search region:
-when the output of ratpoints-lean does not change with the moduli pinned (-p 30 -N 30 appended,
-which keeps the moduli of the model, the first 30 odd primes, but puts all of them into the first
-two stages, in both programs, with no third stage, where the model without options puts the last 8
-into its third stage), exactly with the output of the C program on the command line with -p 30 -N 30
--s appended, which then sieves with the same primes over the whole range of the height, without the
-region of its Sturm step, as the model does until stages H and I; and, without a format or a string,
-also by a weaker check against the output of the C program on the command line itself (the only
-check when the pin changes the output of ratpoints-lean, as with other -p and -N): every line (x :
-z) a normalized coprime pair in the range of the height, none repeated, the pairs that are points
-the same and in the same order in both outputs, the pairs common to both in the same order, the
-pairs in one block at the same place among the other lines, with -1 one line in each output when one
-of them is a point (the same if both are) and else at most one, and the other lines equal, a count
-line but for its number, which must be that of the pairs printed (unless -z); without -q on reports.
-Exit codes are compared exactly, and ratpoints-lean must write nothing to its standard error: it
-runs with LEAN_ABORT_ON_PANIC=1, so that a panic of the Lean runtime ends it by SIGABRT. Messages
-are compared exactly, but for the banner and the usage, which differ by design: in the outputs of
-errors 2 and 6 they are exchanged for those of the C program (the outputs of the two programs on an
-empty command line), and the errors suite checks the usage of ratpoints-lean against that of
-ratpoints. On a command line with an option that ratpoints-lean does not support yet (-l -u -dl
--du), also one whose output test4.sh filters, it must fail as the C program does if that fails
-before the option, and else exit with status 12 and a message that names the option. A few searches
-at a large height that both programs stop at a point at infinity before the sieve (-1) are run with
-a short timeout and a cap on the memory. Skipped: the outputs that test4.sh filters to look at the
-report of the library and those that test3.sh filters; searches under -x with a format or a string
-whose output the pin changes; and searches above --max-height, which the suites that run the C
-program compare when it prints nothing (a search with -q that finds no points, as when no class of
-the denominators modulo 64 admits a numerator).
+command line without -q) is compared exactly, with the message on the search region (message 3), but
+for the banner, which is exchanged for that of the C program, and for the lines that ratpoints-lean
+does not print, which are dropped from the report of the C program only: the messages on the moduli
+used (message 4, stage I), as test4.sh's m() drops it, and on the search intervals (message 8, with
+the line after it), which the model prints with the Sturm step of stage H. Under -v, where the C
+program prints the report of its library too, ratpoints-lean is compared with the report of the C
+program on the same command line without -v, whose height and messages 4, 7 and 8 are dropped, as
+main.c does under -v; the lines of that text must be among the lines of the output of the C program
+with -v, in their order, with the same lines of points and pairs (with a format or a string, whose
+points need not end their lines, only its characters among those of that output, in their order).
+The outputs that test4.sh filters through grep found, grep 'Curve equation' and grep -c . are
+compared after the same filter, the banner exchanged first, with the exit status 0. Under -x (no
+exact check), where the lines printed are the survivors of the sieve, which depend on the moduli and
+on the search region: when the output of ratpoints-lean does not change with the moduli pinned (-p
+30 -N 30 appended, which keeps the moduli of the model, the first 30 odd primes, but puts all of
+them into its first two stages, with no third stage, where the model without options puts the last 8
+into its third stage) and the C program on the command line with -p 30 -N 30 -s appended sieves with
+the same primes in its first two stages and no third stage, as its report under -v says (-q dropped,
+-v -z appended; it may choose other moduli from the curve, such as 9 in place of 3, which stage I
+models), or does not sieve at all, exactly with the output of the C program on that command line,
+which then sieves with the same primes over the search intervals of the command line, without the
+region of its Sturm step, as the model does until the Sturm step of stage H (the C program may split
+the primes differently between its first two stages, which leaves the survivors as they are, since
+all the rows are and-ed); and, without a format or a string, also by a weaker check against the
+output of the C program on the command line itself (the only check when the pin changes the output
+of ratpoints-lean, as with other -p and -N, or when the C program chooses other moduli under the
+pin, the reason counted): every line (x : z) a normalized coprime pair in the range of the height
+and, but for (1 : 0), with z in the range of the denominators and x / z in the exact search region
+of the command line, none repeated, the pairs that are points the same and in the same order in both
+outputs, the pairs common to both in the same order, the pairs in one block at the same place among
+the other lines, with -1 one line in each output when one of them is a point (the same if both are)
+and else at most one, and the other lines equal, a count line but for its number, which must be that
+of the pairs printed (unless -z); without -q on reports. Exit codes are compared exactly, and
+ratpoints-lean must write nothing to its standard error: it runs with LEAN_ABORT_ON_PANIC=1, so that
+a panic of the Lean runtime ends it by SIGABRT. Messages are compared exactly, but for the banner
+and the usage, which differ by design: in the outputs of errors 2 and 6 they are exchanged for those
+of the C program (the outputs of the two programs on an empty command line), and the errors suite
+checks the usage of ratpoints-lean against that of ratpoints. A few searches at a large height that
+both programs stop at a point at infinity before the sieve (-1) are run with a short timeout and a
+cap on the memory. A search above --max-height with a search region is compared, with a timeout and
+a cap on the memory, when the model lists at most 10^5 denominators for it (an upper bound that
+mirrors the divisor set-up of the model) and sifts at most 2 * 10^10 numerators (an upper bound from
+the widths of the intervals, and under -1 from the first point of the expected output, where the
+search stops): the searches of test4.sh at large heights in a narrow region. Skipped: the outputs
+that test4.sh filters to look at the report of the library and those that test3.sh filters; searches
+under -x with a format or a string that are not compared exactly; and the other searches above
+--max-height, which the suites that run the C program compare when they have no search region and it
+prints nothing (a search with -q that finds no points, as when no class of the denominators modulo
+64 admits a numerator).
 
 options:
   --lean PATH        the ratpoints-lean executable (default: .lake/build/bin/ratpoints-lean)
@@ -86,13 +105,14 @@ options:
   --repo PATH        a clone of ratpoints that contains the pinned commit (default: the
                      environment variable RATPOINTS_REPO); the test files are read at the pin
   --suites LIST      comma-separated suites (default: test4,test3,rptest,random,outputs,errors,
-                     fuzz,params,high)
+                     fuzz,params,high,regions)
   --max-height H     the largest height of a search (default: 30000)
   --test4-max-height H  the largest height of a search of the suite test4high (default: 100000)
   --rptest-height h  the reduced height of the rptest suites (default: 100)
   --random N         the number of random polynomials (default: 300)
   --outputs N        the number of random polynomials of the suite outputs (default: 300)
   --fuzz N           the number of rounds of random command lines, eight each (default: 100)
+  --regions N        the number of searches of the suite regions (default: 400)
   --seed S           the seed of the random suites (default: 1)
   -v                 print every comparison
 """
@@ -108,6 +128,7 @@ import subprocess
 import sys
 import tomllib
 from dataclasses import dataclass, field
+from fractions import Fraction
 from pathlib import Path
 
 import difftest_cases
@@ -115,15 +136,16 @@ import difftest_cases
 ROOT = Path(__file__).resolve().parent.parent
 RECORD = ROOT / 'correspondence' / 'ratpoints.toml'
 
-# main.c tells its options apart by their second character, and -f and -d by the third too.
-# ratpoints-lean reads the switches, the tuning options that take an argument, -S, whose argument
-# is optional: the next word, if there is one and it does not start with -, and -f, -fs, -fm and
-# -fe, which take the next word, whatever it is; the options of the search region and the range of
-# the denominators, -l -u -dl -du, it does not support yet; any other word is error 6.
+# main.c tells its options apart by their second character, and -f and -d by the third too: the
+# switches, the tuning options that take an argument, -S, whose argument is optional: the next
+# word, if there is one and it does not start with -, -f, -fs, -fm and -fe, which take the next
+# word, whatever it is, -dl and -du, which take a long, and -l and -u, which take an end of a
+# search interval (a missing one is error 7); any other word is error 6.
 ARG_OPTS = set('pFtnNRAPrUCQW')
 FLAGS = set('qvjJkKsxXyYzZ1iI')
-UNSUPPORTED = set('lu')
+REGION_OPTS = set('lu')
 STRING_OPTS = ('', 's', 'm', 'e')  # the third character of -f, -fs, -fm, -fe
+DEN_OPTS = ('l', 'u')  # the third character of -dl, -du
 POINT = re.compile(r'^\((-?\d+) : (-?\d+) : (\d+)\)$')
 PAIR = re.compile(r'^\((-?\d+) : (-?\d+)\)$')
 COUNT = re.compile(r'^-?\d+ rational point(?: pair)?s found\.$')
@@ -149,15 +171,36 @@ PARAM_CURVES = [('1 0 126 0 441', 200), ('-2 0 0 1', 130), ('1 1 1 1 0', 60),
 # The high suite: the first four of these curves at larger heights.
 HIGH_HEIGHTS = [2000, 5000, 30000]
 TIMEOUT = 600
+# A search above --max-height is compared when it has a search region (intervals or a range of
+# denominators) whose denominators, as the model lists them before it sifts them, are at most
+# BIG_DENOMINATORS, and whose numerators, an upper bound of the sum over these denominators, are at
+# most BIG_NUMERATORS, under -1 only those up to the stop at the first point of the expected output,
+# with BIG_PIECE more for the piece of bit arrays that holds it, which is sifted in full (the
+# default array size 256 plus one bit array of rbaLength = 256 bits, at the largest stride 64):
+# ratpoints-lean within BIG_TIMEOUT seconds, its address space capped at BIG_MEMORY bytes, and a
+# run that does not end in time is a failure.
+BIG_DENOMINATORS = 10 ** 5
+BIG_NUMERATORS = 2 * 10 ** 10
+BIG_PIECE = 257 * 256 * 64
+BIG_TIMEOUT = 600
+BIG_MEMORY = 4 * 10 ** 9
+# The odd primes of the table of ratpoints (primes.h, Ratpoints.primeTable) up to 1021, over which
+# the divisor set-up of the model factors the leading coefficient (Ratpoints.Setup.factorLcf), and
+# the bound on the number of the squarefree divisors (Ratpoints.maxDivisors).
+TABLE_PRIMES = [p for p in range(3, 1022, 2) if all(p % q for q in range(3, math.isqrt(p) + 1, 2))]
+MAX_DIVISORS = 512
 # The stop cases of the errors suite (difftest_cases.STOP_CASES), searches at a large height that
 # both programs stop at a point at infinity before the sieve: ratpoints-lean must end within
 # STOP_TIMEOUT seconds with its address space capped at STOP_MEMORY bytes.
 STOP_TIMEOUT = 30
 STOP_MEMORY = 4 * 10 ** 9
 # The parameters that pin the moduli for the exact comparison under -x: the first 30 odd primes,
-# the moduli of the model without options, put into the first two stages of both programs, with no
-# third stage (the model without options puts the last 8 into its third stage).
+# the moduli of the model without options, put into the first two stages of the model, with no third
+# stage (the model without options puts the last 8 into its third stage), and into those of the C
+# program unless it chooses other moduli from the curve, such as 9 in place of 3 (stage I), which
+# check_x reads from its report under -v (PINNED_MODULI).
 PIN = ['-p', '30', '-N', '30']
+PINNED_MODULI = TABLE_PRIMES[:30]
 # The environment of ratpoints-lean: LEAN_ABORT_ON_PANIC=1 turns a panic of the Lean runtime (an
 # index out of bounds, after which the program would go on with a default value) into SIGABRT,
 # which every comparison of the exit code catches.
@@ -178,19 +221,24 @@ class Run:
 class Tally:
     """What a suite compared, skipped and found: the number of comparisons, among them those of the
     output of a search in its order (`in_order`: a list of points, an exact output or a report),
-    and those of a search under -x, exactly against the C program with the moduli pinned and
-    without its Sturm step, and by the weaker check against the C program unless a format or a
-    string is given (`x_exact`), or by the weaker check only (`x_weak`); the skipped runs by their
-    reason; and the failures."""
+    and those of a search under -x, exactly against the C program with the moduli pinned, and by
+    the weaker check against the C program unless a format or a string is given (`x_exact`), or by
+    the weaker check only (`x_weak`, with the reasons in `weak`); the skipped runs by their reason;
+    and the failures."""
     compared: int = 0
     in_order: int = 0
     x_exact: int = 0
     x_weak: int = 0
+    weak: dict = field(default_factory=dict)
     skipped: dict = field(default_factory=dict)
     failures: list = field(default_factory=list)
 
     def skip(self, reason):
         self.skipped[reason] = self.skipped.get(reason, 0) + 1
+
+    def weak_only(self, reason):
+        self.x_weak += 1
+        self.weak[reason] = self.weak.get(reason, 0) + 1
 
 
 def git_show(repo, commit, path):
@@ -271,17 +319,17 @@ def special(cfg, tally, label, ok, detail):
 
 def option_words(opts):
     """The options among the words `opts` after the height, as ratpoints-lean reads them: the list
-    of (index, word, argument or None) up to the first option that it does not support yet or the
-    first word that is no option of ratpoints (or a missing argument), and the index of that word
-    (None if it reaches the end) and whether it is an option that it does not support yet."""
+    of (index, word, argument or None) up to the first word that is no option of ratpoints (or an
+    option whose argument is missing), and the index of that word (None if it reaches the end)."""
     words, i = [], 0
     while i < len(opts):
         o = as_bytes(opts[i]).decode('latin-1')
         if len(o) < 2 or o[0] != '-':
-            return words, i, False
-        if o[1] in ARG_OPTS or o[1] == 'f' and o[2:3] in STRING_OPTS:
+            return words, i
+        if (o[1] in ARG_OPTS or o[1] in REGION_OPTS or o[1] == 'f' and o[2:3] in STRING_OPTS or
+                o[1] == 'd' and o[2:3] in DEN_OPTS):
             if i + 1 >= len(opts):
-                return words, i, False
+                return words, i
             words.append((i, o, opts[i + 1]))
             i += 2
         elif o[1] == 'S':
@@ -291,24 +339,14 @@ def option_words(opts):
         elif o[1] in FLAGS:
             words.append((i, o, None))
             i += 1
-        elif o[1] in UNSUPPORTED or o[1] == 'd' and o[2:3] in ('l', 'u'):
-            return words, i, True
         else:
-            return words, i, False
-    return words, None, False
-
-
-def read_options(opts):
-    """How ratpoints-lean reads the options `opts`, the words after the height: the index of the
-    first that it does not support yet (None if it reaches the end or a word that is no option of
-    ratpoints first), and whether -q comes before it."""
-    words, stop, unsupported = option_words(opts)
-    quiet = any(o[1] == 'q' for _, o, _ in words)
-    return (stop if unsupported else None), quiet
+            return words, i
+    return words, None
 
 
 def as_long(arg):
-    """The C long that the argument of an option gives, or None (for the pins of -x)."""
+    """The C long that the argument of an option gives, or None (for the pins of -x and the range
+    of the denominators)."""
     try:
         return int(as_bytes(arg).decode('latin-1').strip())
     except ValueError:
@@ -319,7 +357,9 @@ def as_long(arg):
 class Settings:
     """The settings of a command line that decide how its output is compared: -q, -v (cancelled
     by -q), -x, -y, -z and -1, the last of each pair winning, whether a format or a string is given,
-    the last values of -p and -N, and the indices of the words -v among the options."""
+    the last values of -p and -N, the indices of the words -v among the options, and the search
+    region: the ends of the intervals of -l and -u in their order, as (letter, word), and the last
+    values of -dl and -du."""
     quiet: bool = False
     verbose: bool = False
     x: bool = False
@@ -330,18 +370,28 @@ class Settings:
     p: int | None = None
     N: int | None = None
     v_words: list = field(default_factory=list)
+    ends: list = field(default_factory=list)
+    dl: int | None = None
+    du: int | None = None
 
     @property
     def pinned(self):
-        """Whether the parameters pin the moduli: -p 30 -N 30, under which both programs sieve with
-        the first 30 odd primes in their first two stages and no third stage, so that the survivors
-        that -x prints are the same."""
+        """Whether the parameters pin the moduli: -p 30 -N 30, under which the model sieves with the
+        first 30 odd primes in its first two stages and no third stage, and so does the C program
+        unless it chooses other moduli from the curve (stage I), which check_x reads from its report
+        before it compares the survivors that -x prints."""
         return self.p == 30 and self.N == 30
 
     @property
     def plain(self):
         """Whether the output with -q is a list of points in the default format."""
         return not (self.x or self.y or self.strings)
+
+    @property
+    def region(self):
+        """Whether the command line gives a search region: intervals or a bound of the
+        denominators."""
+        return bool(self.ends) or self.dl is not None or self.du is not None
 
 
 def settings(opts):
@@ -369,23 +419,157 @@ def settings(opts):
             st.p = as_long(a)
         elif c == 'N':
             st.N = as_long(a)
+        elif c in 'lu':
+            st.ends.append((c, as_bytes(a).decode('latin-1')))
+        elif c == 'd':
+            if o[2] == 'l':
+                st.dl = as_long(a)
+            else:
+                st.du = as_long(a)
     st.verbose = st.verbose and not st.quiet
     return st
 
 
-def expected_unsupported(cfg, args, k):
-    """What ratpoints-lean is to print and return on the command line `args`, whose option
-    args[2 + k] is the first that it does not support yet: what the C program does if it fails
-    before that option, else the exit status 12 and a message that names the option."""
-    out, code = run(cfg.c, [*args[:2], '-g'])  # -g, an unknown option: nothing is searched
-    if code != 6:  # an error in the first two arguments
-        return out, code
-    out, code = run(cfg.c, [args[0], '1', *args[2:2 + k]])  # height 1: a short search
-    if code == 6:  # an option before args[2 + k] is malformed
-        return out, code
-    word = as_bytes(args[2 + k]).decode('utf-8', 'replace')
-    msg = f'\nOption {word} is not supported by ratpoints-lean yet.\n\n'
-    return msg.encode().decode('latin-1'), 12
+def end_value(word):
+    """The value of an end of a search interval as a float, an infinity of the sign of the word for
+    a number beyond the doubles (float() gives it for a decimal, float.fromhex raises OverflowError
+    for a hexadecimal constant), for the estimate of the numerators of a search; None if it is not
+    a number."""
+    w = word.strip()
+    try:
+        return float.fromhex(w) if re.match(r'^[+-]?0[xX]', w) else float(w)
+    except OverflowError:
+        return -math.inf if w.startswith('-') else math.inf
+    except ValueError:
+        return None
+
+
+def factor_lcf(w):
+    """The primes of w >= 1 and the cofactor as the divisor set-up of the model finds them
+    (Ratpoints.Setup.factorLcf): 2 divided off, then for the odd primes p of the table in turn,
+    while the cofactor is not 1, a cofactor below p^2, which has no prime factor below p and so is
+    a prime, taken as one (when it is a long) and leaving the cofactor 1, and otherwise p divided
+    off when it divides; the factorization is complete exactly when the cofactor is 1."""
+    ps = []
+    if w % 2 == 0:
+        ps.append(2)
+        while w % 2 == 0:
+            w //= 2
+    for p in TABLE_PRIMES:
+        if w == 1:
+            break
+        if w < p * p:
+            if w < 2 ** 63:
+                ps, w = ps + [w], 1
+            break
+        if w % p == 0:
+            ps.append(p)
+            while w % p == 0:
+                w //= p
+    return ps, w
+
+
+def den_shape(c, hi):
+    """The shape of the denominators that the model lists for the polynomial with the coefficient
+    list c (constant term first, not reversed) and the largest denominator hi, as an upper bound on
+    them: ('squares', None) for odd degree and |c_d| = 1; ('divisors', divs) for odd degree when
+    factor_lcf factors |c_d| completely and fewer than MAX_DIVISORS of its squarefree divisors are
+    at most hi (Ratpoints.Setup.setupUs1), divs those divisors; and ('all', None) otherwise, every
+    denominator, which bounds the shape of the words for even degree too. All but the divisors are
+    listed in increasing order."""
+    d = max((i for i, ci in enumerate(c) if ci), default=0)
+    lcf = abs(c[d])
+    if d % 2 == 0 or lcf == 0:
+        return 'all', None
+    if lcf == 1:
+        return 'squares', None
+    ps, w = factor_lcf(lcf)
+    if w != 1:
+        return 'all', None
+    divs = [1]
+    for p in ps:
+        divs += [s * p for s in divs if s <= hi // p][:MAX_DIVISORS - len(divs)]
+        if len(divs) >= MAX_DIVISORS:
+            return 'all', None
+    return 'divisors', divs
+
+
+def count_dens(shape, lo, hi):
+    """The number of the denominators from lo to hi of the shape `shape` (den_shape)."""
+    kind, divs = shape
+    if hi < lo:
+        return 0
+    if kind == 'squares':
+        return math.isqrt(hi) - math.isqrt(lo - 1)
+    if kind == 'divisors':
+        return sum(max(0, math.isqrt(hi // s) - math.isqrt((lo - 1) // s)) for s in divs)
+    return hi - lo + 1
+
+
+def denominators(c, lo, hi):
+    """An upper bound on the number of denominators that the model lists for the search of the
+    coefficient list c with the denominators from lo to hi (den_shape, count_dens), whether or not
+    the polynomial is reversed: case 1 of the reversal makes an even degree odd, for which every
+    denominator is counted; case 2 keeps an even degree; and case 3 makes |c_d| = 1, whose squares
+    are among the denominators counted for the polynomial before the reversal."""
+    return count_dens(den_shape(c, hi), lo, hi)
+
+
+def first_point(text):
+    """The first point (a : y : b) or pair (a : b) of an output, as (a, b), or None."""
+    for l in point_lines(text):
+        g = (POINT.match(l) or PAIR.match(l)).groups()
+        return int(g[0]), int(g[-1])
+    return None
+
+
+def big_search(args, st, out):
+    """Whether the search of the command line `args` with the settings `st`, above --max-height,
+    is compared (None) or why it is skipped, for the expected output `out`: it must have a search
+    region, and its denominators (denominators) and the numerators it sifts must be at most
+    BIG_DENOMINATORS and BIG_NUMERATORS: at most the number of the denominators times
+    min(2H + 1, hi W + k) for the largest denominator hi and the width W of the k intervals within
+    [-H, H]; under -1, when the region suppresses the reversal, so that the points are those of the
+    polynomial searched, for the first point (a : y : b) of `out`, where the search stops, none for
+    a point at infinity, which comes before the sieve, and else at most the numerators of the
+    denominators listed before b (all of them for the divisor shape), those of b up to a, and
+    BIG_PIECE more."""
+    H = height(as_bytes(args[1]).decode('latin-1')) or 0
+    if not st.region:
+        return 'height above the largest of the suite, without a search region'
+    lo = max(1, st.dl if st.dl is not None else 1)
+    hi = st.du if st.du is not None and 1 <= st.du <= H else H
+    c = coefficients(args[0])
+    shape = den_shape(c, hi)
+    n = count_dens(shape, lo, hi)
+    if n > BIG_DENOMINATORS:
+        return f'more than {BIG_DENOMINATORS} denominators above the largest height of the suite'
+    width, k, low = 0.0, 0, -math.inf
+    for kind, word in st.ends:
+        v = end_value(word)
+        if v is None:
+            return 'an end of a search interval that the harness cannot read'
+        if kind == 'l':
+            low = v
+        else:
+            width += max(0.0, min(v, H) - max(-math.inf if low is None else low, -H))
+            k, low = k + 1, None
+    if low is not None and st.ends:  # the last interval has no upper end
+        width += max(0.0, H - max(low, -H))
+        k += 1
+    per = min(2 * H + 1, hi * width + k) if st.ends else 2 * H + 1
+    numerators = n * per
+    # a search region suppresses the reversal unless it is the whole box (find_points.c:4686)
+    first = first_point(out) if st.one and (st.ends or lo > 1 or hi < H) else None
+    if first is not None and first[1] == 0:
+        numerators = 0
+    elif first is not None:
+        a, b = first
+        before = n if shape[0] == 'divisors' else count_dens(shape, lo, b - 1)
+        numerators = min(numerators, before * per + min(a + H + 1, per) + BIG_PIECE)
+    if numerators > BIG_NUMERATORS:
+        return f'more than {BIG_NUMERATORS} numerators above the largest height of the suite'
+    return None
 
 
 def as_recorded_by_e(raw):
@@ -433,9 +617,9 @@ def banner_of(usage):
 def report_text(cfg, text, lean=False):
     """A report as it is compared: the first line of the banner, which test4.sh's m() drops, left
     out, for ratpoints-lean (`lean`) after its banner is exchanged for that of the C program; and
-    of a report of the C program also the lines that ratpoints-lean does not print, which m() drops
-    in part: those on the moduli used (message 4, stage I), and the messages on the search region
-    (message 3) and the search intervals (message 8, stage H), each with the line after it."""
+    of a report of the C program also the lines that ratpoints-lean does not print: those on the
+    moduli used (message 4, stage I), which m() drops too, and the message on the search intervals
+    (message 8) with the line after it, which the model prints with the Sturm step of stage H."""
     if lean:
         text = text.replace(cfg.lean_banner, cfg.c_banner)
     out, skip = [], False
@@ -446,7 +630,7 @@ def report_text(cfg, text, lean=False):
             continue
         elif lean:
             out.append(l)
-        elif l in ('Search region:', 'Search intervals:'):
+        elif l == 'Search intervals:':
             skip = True
         elif not re.search('used for|further primes|primes used', l):
             out.append(l)
@@ -491,17 +675,56 @@ def is_point(c, a, b):
     return v >= 0 and math.isqrt(v) ** 2 == v
 
 
+def exact_region(st):
+    """The search intervals of the command line with the settings `st` as main.c reads them, with
+    their exact ends (difftest_cases.end_fraction), -inf for a missing first -l and +inf for a
+    missing last -u: a list of pairs, empty for none."""
+    ivs, low = [], -math.inf
+    for kind, word in st.ends:
+        if kind == 'l':
+            low = difftest_cases.end_fraction(word)
+        else:
+            ivs.append((low, difftest_cases.end_fraction(word)))
+            low = None
+    if low is not None and st.ends:
+        ivs.append((low, math.inf))
+    return ivs
+
+
+def in_region(x, ivs):
+    """Whether x lies in one of the increasing, disjoint closed intervals `ivs`, as in_region of
+    main.c decides it: the first interval that does not end below x, found by a binary search, must
+    hold it."""
+    lo, hi = 0, len(ivs)
+    while lo < hi:
+        mid = (lo + hi) // 2
+        if ivs[mid][1] < x:
+            lo = mid + 1
+        else:
+            hi = mid
+    return lo < len(ivs) and ivs[lo][0] <= x
+
+
 def weak_agrees(lean_text, exp_text, args, st):
     """The weaker check of an output under -x, whose lines (x : z) are the survivors of the sieve,
     which depend on the moduli and on the search region: every such line a normalized coprime pair
-    in the range of the height in both outputs, none repeated; the pairs that are points the same
-    and in the same order, and the pairs common to both outputs in the same order; under -1, when
-    one of the two lines (if any) is a point, one line in each output, the same if both are points
-    (a point survives every sieve), and else at most one line in each; the pairs in one block in
-    each output, at the same place among the other lines when both have pairs; the other lines
-    equal, the count lines among them with their numbers left out, and each count that of the pairs
-    printed (unless -z)."""
+    in the range of the height in both outputs and, but for (1 : 0), with z in the range of the
+    denominators (normalized as main.c and the library normalize it) and x / z in the exact search
+    region of the command line (exact_region, in_region), as process of main.c passes over every
+    other pair, none repeated; the pairs that are points the same and in the same order, and the
+    pairs common to both outputs in the same order; under -1, when one of the two lines (if any) is
+    a point, one line in each output, the same if both are points (a point survives every sieve),
+    and else at most one line in each; the pairs in one block in each output, at the same place
+    among the other lines when both have pairs; the other lines equal, the count lines among them
+    with their numbers left out, and each count that of the pairs printed (unless -z)."""
     c, H = coefficients(args[0]), height(as_bytes(args[1]).decode('latin-1'))
+    lo = max(1, st.dl if st.dl is not None else 1)
+    hi = st.du if st.du is not None and 1 <= st.du <= H else H
+    ivs = exact_region(st)
+
+    def in_search(a, b):
+        return (a, b) == (1, 0) or (b > 0 and math.gcd(a, b) == 1 and lo <= b <= hi and
+                                    (not ivs or in_region(Fraction(a, b), ivs)))
 
     def split(text):
         """The pairs of an output, its other lines (the number of a count line masked), the
@@ -523,10 +746,11 @@ def weak_agrees(lean_text, exp_text, args, st):
         return pairs, rest, before, block, counts
 
     (lp, lr, lb, lk, lc), (ep, er, eb, ek, ec) = split(lean_text), split(exp_text)
-    valid = all((b > 0 and math.gcd(a, b) == 1 or (a, b) == (1, 0)) and abs(a) <= H and b <= H
-                for a, b in lp + ep) and len(set(lp)) == len(lp) and len(set(ep)) == len(ep)
+    sl, se = set(lp), set(ep)
+    valid = (all(in_search(a, b) and abs(a) <= H and b <= H for a, b in lp + ep) and
+             len(sl) == len(lp) and len(se) == len(ep))
     blocks = lk and ek and (lb == eb or lb is None or eb is None)
-    common = [p for p in lp if p in set(ep)] == [p for p in ep if p in set(lp)]
+    common = [p for p in lp if p in se] == [p for p in ep if p in sl]
     counts = st.z or all(n == len(ps) for ns, ps in ((lc, lp), (ec, ep)) for n in ns)
     lpts, epts = [p for p in lp if is_point(c, *p)], [p for p in ep if is_point(c, *p)]
     if not st.one:
@@ -578,10 +802,27 @@ def failure_text(label, expected, lean):
             f'got exit {lean[1]} and {lean[0][:500]!r}{err}')
 
 
-def check(cfg, tally, label, args, expected, mode, st=None, lean=None):
-    """Run ratpoints-lean on `args` (unless its run `lean` is given) and compare it with `expected`
+def lean_or_timeout(cfg, tally, label, args, big):
+    """The run of ratpoints-lean on `args`, for a search above --max-height (`big`) within
+    BIG_TIMEOUT seconds and with its address space capped at BIG_MEMORY bytes; None, with a
+    failure recorded, when it does not end in time."""
+    if not big:
+        return run_lean(cfg, args)
+    try:
+        return run_lean(cfg, args, BIG_TIMEOUT, BIG_MEMORY)
+    except subprocess.TimeoutExpired:
+        tally.compared += 1
+        tally.failures.append(f'{label}: ratpoints-lean did not end within {BIG_TIMEOUT} s')
+        return None
+
+
+def check(cfg, tally, label, args, expected, mode, st=None, lean=None, big=False):
+    """Run ratpoints-lean on `args` (unless its run `lean` is given; for a search above
+    --max-height, `big`, with a timeout and a cap on the memory) and compare it with `expected`
     (see verdict)."""
-    lean = lean or run_lean(cfg, args)
+    lean = lean or lean_or_timeout(cfg, tally, label, args, big)
+    if lean is None:
+        return
     ok = verdict(cfg, lean, expected, mode, args, st)
     tally.compared += 1
     tally.in_order += mode in ('points', 'report', 'exact') and expected[1] == 0
@@ -608,12 +849,21 @@ def mode_of(st, code):
     return 'points' if st.plain else 'exact'
 
 
-def skips_height(cfg, args, out, code):
-    """Whether the comparison with the C program, which ended with the output `out` and the exit
-    code `code` on the command line `args`, is skipped: a search above --max-height on which the C
-    program prints something (one that prints nothing is quick for both and is compared)."""
-    return (code == 0 and bool(out) and
-            (height(as_bytes(args[1]).decode('latin-1')) or 0) > cfg.max_height)
+def above(cfg, args):
+    """Whether the command line `args` searches above --max-height."""
+    return (height(as_bytes(args[1]).decode('latin-1')) or 0) > cfg.max_height
+
+
+def skips_height(cfg, args, out, code, st):
+    """Why the comparison with the C program, which ended with the output `out` and the exit code
+    `code` on the command line `args` with the settings `st`, is skipped, or None: a search above
+    --max-height with a search region, or without one on which the C program prints something,
+    unless big_search admits it. A search without a search region on which the C program prints
+    nothing (an exit before the sieve) is quick for both and is compared; one with a search region
+    can sift many denominators and find nothing."""
+    if code == 0 and above(cfg, args) and (out or st.region):
+        return big_search(args, st, out)
+    return None
 
 
 def c_expected(cfg, args, st):
@@ -636,28 +886,53 @@ def live_mode(mode):
     return 'exact' if mode == 'points' else mode
 
 
-def check_x(cfg, tally, label, args, st, expected):
+def c_moduli(cfg, args):
+    """The moduli that the C program sieves with on the command line `args`, as its report under -v
+    names them (the command line with the words -q among its options dropped and -v -z appended):
+    the moduli of its first two stages, sorted, and the number of the primes of its third stage;
+    None when the report names none (the search ends before the sieve)."""
+    drop = {i + 2 for i, o, _ in option_words(args[2:])[0] if o[1] == 'q'}
+    out = run(cfg.c, [a for i, a in enumerate(args) if i not in drop] + ['-v', '-z'])[0]
+    first = re.search(r'use \d+ moduli for first stage:\n(.*)\n', out)
+    second = re.search(r'use \d+ moduli for second stage:\n(.*)\n', out)
+    third = re.search(r'use (\d+) primes for third stage:', out)
+    if not (first and second and third):
+        return None
+    return sorted(int(m) for m in (first[1] + ' ' + second[1]).split()), int(third[1])
+
+
+def check_x(cfg, tally, label, args, st, expected, big=False):
     """Compare ratpoints-lean with the C program on a search under -x (no exact check) on the
     command line `args` with the settings `st`, whose lines (x : z) are the survivors of the sieve,
     which depend on the moduli and on the search region, and whose output of the C program is
     `expected`: when the output of ratpoints-lean does not change with the moduli pinned (PIN
-    appended), so that they are those of the model, exactly against the C program on the command
-    line with PIN and -s appended, which then sieves with the same primes over the whole range of
-    the height, without the region of its Sturm step, as the model does until stages H and I; and,
+    appended), so that they are those of the model, and the C program on the command line with PIN
+    and -s appended sieves with the same primes, the first 30 odd primes in its first two stages and
+    no third stage (c_moduli; it may choose other moduli from the curve, such as 9 in place of 3,
+    which stage I models), or does not sieve at all, exactly against the C program on that command
+    line, which then sieves with the same primes over the search intervals of the command line,
+    without the region of its Sturm step, as the model does until the Sturm step of stage H; and,
     without a format or a string, whose lines it could not read, also by the weaker check against
-    `expected` (weak_agrees). A run with a format or a string whose output changes with the moduli
-    pinned is skipped."""
-    lean = run_lean(cfg, args)
-    exact = lean == run_lean(cfg, [*args, *PIN])
-    if not exact and st.strings:
-        tally.skip('-x with a format or a string and moduli other than those of the model')
+    `expected` (weak_agrees), the only check otherwise, its reason recorded. A run with a format or
+    a string that is not compared exactly is skipped."""
+    lean = lean_or_timeout(cfg, tally, label, args, big)
+    pinned = lean and lean_or_timeout(cfg, tally, label, [*args, *PIN], big)
+    if lean is None or pinned is None:
+        return
+    pargs = [*args, *PIN, '-s']
+    reason = None
+    if lean != pinned:
+        reason = 'the pin changes the output of ratpoints-lean'
+    elif c_moduli(cfg, pargs) not in (None, (PINNED_MODULI, 0)):
+        reason = 'the C program chose other moduli under the pin (stage I)'
+    if reason and st.strings:
+        tally.skip(f'-x with a format or a string, not compared exactly: {reason}')
         return
     fails = []
     if not st.strings and not verdict(cfg, lean, expected, 'weak', args, st):
         fails.append(failure_text(f'{label} (the weaker check)', expected, lean))
-    if exact:
+    if reason is None:
         tally.x_exact += 1
-        pargs = [*args, *PIN, '-s']
         pst = settings(pargs[2:])
         out, code, consistent = c_expected(cfg, pargs, pst)
         if not consistent:
@@ -666,7 +941,7 @@ def check_x(cfg, tally, label, args, st, expected):
         elif not verdict(cfg, lean, (out, code), live_mode(mode_of(pst, code)), pargs, pst):
             fails.append(failure_text(f'{label} (exactly against {pargs})', (out, code), lean))
     else:
-        tally.x_weak += 1
+        tally.weak_only(reason)
     tally.compared += 1
     if fails:
         tally.failures.append('; '.join(fails))
@@ -676,23 +951,22 @@ def check_x(cfg, tally, label, args, st, expected):
 
 def against_c(cfg, tally, label, args):
     """Compare ratpoints-lean with the C program on the command line `args`, a search under -x by
-    check_x."""
-    k, _ = read_options(args[2:])
-    if len(args) >= 2 and k is not None:
-        check(cfg, tally, label, args, expected_unsupported(cfg, args, k), 'exact')
-        return
+    check_x, and a search above --max-height that big_search admits with a timeout and a cap on
+    the memory."""
     st = settings(args[2:])
     out, code, consistent = c_expected(cfg, args, st)
-    if skips_height(cfg, args, out, code):
-        tally.skip(f'height above {cfg.max_height}')
+    skip = skips_height(cfg, args, out, code, st)
+    big = code == 0 and above(cfg, args)
+    if skip:
+        tally.skip(skip)
     elif not consistent:
         tally.compared += 1
         tally.failures.append(f'{label}: the report of the C program without -v is not consistent '
                               f'with its output with -v')
     elif st.x and code == 0:
-        check_x(cfg, tally, label, args, st, (out, code))
+        check_x(cfg, tally, label, args, st, (out, code), big)
     else:
-        check(cfg, tally, label, args, (out, code), live_mode(mode_of(st, code)), st)
+        check(cfg, tally, label, args, (out, code), live_mode(mode_of(st, code)), st, big=big)
 
 
 def stop_case(cfg, tally, label, args):
@@ -733,23 +1007,24 @@ def split_test4(text):
     return runs
 
 
-def compare_search(cfg, tally, label, args, text, st):
+def compare_search(cfg, tally, label, args, text, st, big=False):
     """Compare ratpoints-lean with the output `text` of a search that testbase4 records for the
-    command line `args` with the settings `st`: under -v with the C program (whose report of the
-    library test4.sh's v() filters), under -x by check_x with `text` as the output of the C program
-    on `args`, else with `text`."""
+    command line `args` with the settings `st` (above --max-height, `big`, with a timeout and a cap
+    on the memory): under -v with the C program (whose report of the library test4.sh's v()
+    filters), under -x by check_x with `text` as the output of the C program on `args`, else with
+    `text`."""
     if st.verbose:
         against_c(cfg, tally, label, args)
     elif st.x:
-        check_x(cfg, tally, label, args, st, (text, 0))
+        check_x(cfg, tally, label, args, st, (text, 0), big)
     else:
-        check(cfg, tally, label, args, (text, 0), mode_of(st, 0), st)
+        check(cfg, tally, label, args, (text, 0), mode_of(st, 0), st, big=big)
 
 
 def suite_test4(cfg, tally, window=None):
-    """The invocations of test4.sh, a search with a height bound above --max-height skipped; with
-    `window = (low, high)`, only the searches with a height bound in (low, high], the rest being
-    left to the plain call."""
+    """The invocations of test4.sh, a search with a height bound above --max-height skipped unless
+    big_search admits it; with `window = (low, high)`, only the searches with a height bound in
+    (low, high] that big_search does not admit, the rest being left to the plain call."""
     for r in split_test4(git_show(cfg.repo, cfg.commit, 'testbase4')):
         label = f'testbase4:{r.line} {r.args}'
         out, code = r.out, None
@@ -758,18 +1033,16 @@ def suite_test4(cfg, tally, window=None):
         text = '\n'.join(out) + ('' if r.nonl else '\n') if out else ''
         if code == 0:  # e() keeps one newline at the end, also of an empty output
             text = text.rstrip('\n') + '\n' if text.strip('\n') else ''
-        k, _ = read_options(r.args[2:])
         st = settings(r.args[2:])
-        unsupported = len(r.args) >= 2 and k is not None
+        searches = (r.filt is None and not code and 'Polynomial is not square-free.' not in text)
+        big = searches and len(r.args) >= 2 and above(cfg, r.args)
+        skip = big and big_search(r.args, st, text)
         if window is not None:
-            searches = (r.filt is None and not unsupported and not code and
-                        'Polynomial is not square-free.' not in text)
-            if searches and window[0] < (height(r.args[1]) or 0) <= window[1]:
+            if (searches and window[0] < (height(r.args[1]) or 0) <= window[1] and
+                    (skip or not big)):
                 compare_search(cfg, tally, label, r.args, text, st)
             continue
-        if unsupported:  # also when test4.sh filters the output
-            check(cfg, tally, label, r.args, expected_unsupported(cfg, r.args, k), 'exact')
-        elif r.filt is not None:
+        if r.filt is not None:
             if r.filt not in FILTERS:
                 tally.skip('output filtered')
             else:
@@ -783,10 +1056,10 @@ def suite_test4(cfg, tally, window=None):
                       'e' if code else 'exact' if st.quiet else 'report', st)
         elif code:
             check(cfg, tally, label, r.args, (text, code), 'e')
-        elif (height(r.args[1]) or 0) > cfg.max_height:
-            tally.skip(f'height above {cfg.max_height}')
+        elif skip:
+            tally.skip(skip)
         else:
-            compare_search(cfg, tally, label, r.args, text, st)
+            compare_search(cfg, tally, label, r.args, text, st, big)
 
 
 def suite_test3(cfg, tally):
@@ -902,6 +1175,15 @@ def suite_high(cfg, tally):
             against_c(cfg, tally, f'high {args}', args)
 
 
+def suite_regions(cfg, tally):
+    """Searches with random search regions (difftest_cases.random_region_line), against the C
+    program."""
+    rng = random.Random(cfg.seed)
+    for i in range(cfg.regions):
+        args = difftest_cases.random_region_line(rng)
+        against_c(cfg, tally, f'regions {i} {args}', args)
+
+
 def suite_test4high(cfg, tally):
     suite_test4(cfg, tally, (cfg.max_height, cfg.test4_max_height))
 
@@ -916,10 +1198,10 @@ def suite_fuzz(cfg, tally):
 SUITES = {'test4': suite_test4, 'test3': suite_test3, 'rptest': suite_rptest,
           'random': suite_random, 'outputs': suite_outputs, 'errors': suite_errors,
           'fuzz': suite_fuzz, 'params': suite_params, 'high': suite_high,
-          'test4high': suite_test4high}
+          'regions': suite_regions, 'test4high': suite_test4high}
 # The suites that run by default (in CI): all but test4high.
 DEFAULT_SUITES = ['test4', 'test3', 'rptest', 'random', 'outputs', 'errors', 'fuzz', 'params',
-                  'high']
+                  'high', 'regions']
 
 
 def main(argv=None):
@@ -935,6 +1217,7 @@ def main(argv=None):
     ap.add_argument('--random', type=int, default=300)
     ap.add_argument('--outputs', type=int, default=300)
     ap.add_argument('--fuzz', type=int, default=100)
+    ap.add_argument('--regions', type=int, default=400)
     ap.add_argument('--seed', type=int, default=1)
     ap.add_argument('-v', '--verbose', action='store_true')
     cfg = ap.parse_args(argv)
@@ -958,7 +1241,9 @@ def main(argv=None):
         skipped = ', '.join(f'{k} {v}' for k, v in sorted(tally.skipped.items()))
         parts = [f'{tally.in_order} outputs of searches in order'] if tally.in_order else []
         if tally.x_exact or tally.x_weak:
-            parts.append(f'-x: {tally.x_exact} exactly, {tally.x_weak} by the weaker check only')
+            why = ', '.join(f'{k} {v}' for k, v in sorted(tally.weak.items()))
+            parts.append(f'-x: {tally.x_exact} exactly, {tally.x_weak} by the weaker check only'
+                         + (f' ({why})' if why else ''))
         detail = f' ({"; ".join(parts)})' if parts else ''
         print(f'{name}: {tally.compared} compared{detail}, {len(tally.failures)} failed'
               + (f'; skipped: {skipped}' if skipped else ''))

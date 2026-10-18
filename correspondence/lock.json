@@ -2158,20 +2158,8 @@
         "Ratpoints.Cli.Message.text"
       ]
     },
-    "main.c:1036-1043": {
-      "hash": "f31091ab852d45657454a9dcae84f9f83bc6980b7ccbc787f38098c89d611761",
-      "owners": [
-        "Ratpoints.Cli.Failure.message"
-      ]
-    },
-    "main.c:1047-1047": {
-      "hash": "72d4547ba2106490cad2aa52e8d103971fe9064ba1aee3fc6ee7949a02703654",
-      "owners": [
-        "Ratpoints.Cli.Failure.message"
-      ]
-    },
-    "main.c:1048-1048": {
-      "hash": "680bf2945abd595c2c37612451af28b16f925cc521695727f7e0148e6f6060bc",
+    "main.c:1036-1048": {
+      "hash": "62d3adc8df4ab323fc6f130084d1d04a8e6454e9b4f61483c1717cc752ccc0f0",
       "owners": [
         "Ratpoints.Cli.Failure.message"
       ]
@@ -2218,8 +2206,8 @@
         "Ratpoints.Cli.process"
       ]
     },
-    "main.c:153-156": {
-      "hash": "a236210fae6fdeb95e00453871d9f62c80613568e768c3ffa32ab02fd4f15632",
+    "main.c:150-156": {
+      "hash": "88ce884e704c42e2fde6667dede5c9ad135cc2c0d274438e1c5388f98a305cd2",
       "owners": [
         "Ratpoints.Cli.process"
       ]
@@ -2284,6 +2272,12 @@
         "Ratpoints.sieveParams"
       ]
     },
+    "main.c:224-224": {
+      "hash": "523a3f9a5102b751c283d2b0169653923026afe2c023b09c0f1f522de832b72c",
+      "owners": [
+        "Ratpoints.Cli.preamble"
+      ]
+    },
     "main.c:232-234": {
       "hash": "dd8f7d7c8154258b910eca646469580c4cb5d3e432e90b527f305bb99e6170f4",
       "owners": [
@@ -2294,6 +2288,18 @@
       "hash": "17d850679375d4d467120195a53e4f2d5ccf00f3c64f8c696cf7f52768ef6d01",
       "owners": [
         "Ratpoints.Cli.Data.ofOutput"
+      ]
+    },
+    "main.c:246-247": {
+      "hash": "d1200d12b19c0f3b1cb227d5523f835a482f540f2f12f4cd519390058ac056fd",
+      "owners": [
+        "Ratpoints.Cli.Data.ofOutput"
+      ]
+    },
+    "main.c:248-248": {
+      "hash": "4714548dfcf8db0f52ccccb285cc57934d37cde46e680e876b3400b0e94baecd",
+      "owners": [
+        "Ratpoints.Cli.run"
       ]
     },
     "main.c:251-252": {
@@ -2368,16 +2374,34 @@
         "Ratpoints.Cli.input"
       ]
     },
+    "main.c:317-317": {
+      "hash": "74a15feea8d93a872653be724bddd525b815732d9bbe8c591e537c7dbde7417d",
+      "owners": [
+        "Ratpoints.Cli.Intervals"
+      ]
+    },
     "main.c:318-318": {
       "hash": "2f95b5a7afa05dc1484b3e68b658964f5aedbaa3eee091a1d9e179fd9da25c53",
       "owners": [
         "Ratpoints.Cli.coefficients"
       ]
     },
+    "main.c:319-319": {
+      "hash": "910eee63f1a5c4b37ec4b58ceb5fac9c8e19cf081b7886d9046d19e7fa7d7470",
+      "owners": [
+        "Ratpoints.Cli.Intervals"
+      ]
+    },
     "main.c:330-332": {
       "hash": "29a56c8f8477d1e06dcf3b468de13fcd41fd0d83b7f74aeb2912d5b6da2685c2",
       "owners": [
         "excluded (interface)"
+      ]
+    },
+    "main.c:333-336": {
+      "hash": "cca1096321a666c833d8ad6a4cc9dcde772405fd4caac809ca655ae363da7cc4",
+      "owners": [
+        "Ratpoints.Cli.input"
       ]
     },
     "main.c:337-338": {
@@ -2441,16 +2465,40 @@
         "Ratpoints.Cli.heightBound"
       ]
     },
+    "main.c:380-380": {
+      "hash": "edad5054e80253658f3dbaf12e9ea97a810fcacacda3addcefd91e58ecb3b31e",
+      "owners": [
+        "Ratpoints.Cli.input"
+      ]
+    },
     "main.c:383-390": {
       "hash": "09adeb70d095aea55954430d533a8cb0da890cee4aa2d6f9efa11e83f9876403",
       "owners": [
         "Ratpoints.Cli.Output"
       ]
     },
-    "main.c:393-397": {
-      "hash": "d192730a6c089c273e4f0a92f5d01f87710f4567b148bdfb77455ab52faf9976",
+    "main.c:393-400": {
+      "hash": "b79a013a22e94f496f410fdf60ff2b66b1ea8c38d18920788236be0e7af2d85d",
       "owners": [
         "Ratpoints.Cli.checkOptions"
+      ]
+    },
+    "main.c:401-413": {
+      "hash": "e3aea4662e3aa7cbdc59621dec11ec0f289f07893a9320dd674f8a8969719dca",
+      "owners": [
+        "Ratpoints.Cli.Intervals.lower"
+      ]
+    },
+    "main.c:414-416": {
+      "hash": "9b0cab0ca4ed55a3a3edd46f38e91a75b91c30ae6c6e251e8925c8f2e72ffd51",
+      "owners": [
+        "Ratpoints.Cli.checkOptions"
+      ]
+    },
+    "main.c:417-436": {
+      "hash": "73db1626a0747570fc122512af272e6df5cc9dd65da9e3846139a88444e2d90f",
+      "owners": [
+        "Ratpoints.Cli.Intervals.upper"
       ]
     },
     "main.c:43-48": {
@@ -2513,10 +2561,34 @@
         "Ratpoints.Cli.checkOptions"
       ]
     },
-    "main.c:667-668": {
-      "hash": "c5d6e99bb193cd4f3a6d044a42a7b645f58102c74a0ab416f91a77d65b40eb53",
+    "main.c:650-668": {
+      "hash": "a40b54e51711d9f9364dd49484586b8512de72fdd2845e16a9583b70d79017b4",
       "owners": [
         "Ratpoints.Cli.checkOptions"
+      ]
+    },
+    "main.c:66-66": {
+      "hash": "1c3e56f64f07058750359fc8cc5cd41c948cccfbc0be90e9ef03798b08596934",
+      "owners": [
+        "Ratpoints.Cli.Intervals"
+      ]
+    },
+    "main.c:669-669": {
+      "hash": "5a5e6b71fde4ef5233c8acdbb7a75ad66c38bac53a0b6420556872e51279325c",
+      "owners": [
+        "Ratpoints.Cli.Intervals.complete"
+      ]
+    },
+    "main.c:673-678": {
+      "hash": "79847f07e6623e72a3d0c8a0fe7af343bdfc0d89efa6882947a99fc06be4f5bc",
+      "owners": [
+        "Ratpoints.Cli.Intervals.complete"
+      ]
+    },
+    "main.c:679-679": {
+      "hash": "a7bd341d2f4ff576c44b3068a84c608489f354be50d11edcf802819194e35c95",
+      "owners": [
+        "Ratpoints.Cli.input"
       ]
     },
     "main.c:681-685": {
@@ -2559,6 +2631,12 @@
       "hash": "d82f8424b55fb0b8eb550c81819ab9fe17dd0e3aa63a570ea169d238459beb96",
       "owners": [
         "Ratpoints.Cli.onlyWord?"
+      ]
+    },
+    "main.c:73-73": {
+      "hash": "663ba6b3e46481c78e63e3bd3d9d33c71c8cfc000ba544831d6f383a86eb7ac1",
+      "owners": [
+        "Ratpoints.Cli.Intervals"
       ]
     },
     "main.c:733-740": {
@@ -2747,8 +2825,8 @@
         "excluded (other)"
       ]
     },
-    "main.c:979-983": {
-      "hash": "b23c8e56805abe1c90af02c9c64bc7c478bb45a6ca064dc257c34d3fcb72ecac",
+    "main.c:979-991": {
+      "hash": "f072865921e1fbe9c1001fca47d905c8be3afe9ffefe510c8bab46eafad8afa5",
       "owners": [
         "Ratpoints.Cli.Message.text"
       ]
@@ -4536,14 +4614,12 @@
     "main.c:972-976": "9e7e998917f2d3107a0540c568603026768692192431a961a14c128da6b9aec3",
     "main.c:972-1033": "86631035587e6606a5ade51af314c6ea8198160b809b2ac1b395a0a20c13949a",
     "main.c:977-978": "a242dcd882187e283fa6c1b81ea6ef99c74901ea77b4915ef8121438909686ff",
-    "main.c:979-983": "b23c8e56805abe1c90af02c9c64bc7c478bb45a6ca064dc257c34d3fcb72ecac",
     "main.c:979-991": "f072865921e1fbe9c1001fca47d905c8be3afe9ffefe510c8bab46eafad8afa5",
     "main.c:984-991": "7981a96eb3f878cd6378da8f58c2b5c43a114bba622eb3f7aee7cb72bd065e46",
     "main.c:999-1021": "f58cae7f2d3f47c56da19dc129b5218504574bd9ea2ef58962ab0f3fafe4d047",
     "main.c:999-1033": "54f47640f7e8d550c6906fd2bf013b6889d967685e4e2800d941eb864385e3f3",
     "main.c:1022-1030": "2573ce093fcaf32f978b19873cb80f3ddd77ebcf8f7cb1f3fe61159d638d7f90",
     "main.c:1031-1033": "47225afa2a4ac2f2f511615497764c742f6480248765b8f3b6c09e95c2b9b9fb",
-    "main.c:1036-1043": "f31091ab852d45657454a9dcae84f9f83bc6980b7ccbc787f38098c89d611761",
     "main.c:1036-1048": "62d3adc8df4ab323fc6f130084d1d04a8e6454e9b4f61483c1717cc752ccc0f0",
     "main.c:1036-1056": "87506efbe9563c86abde6ad188ff7ad82529533863cb59dc978f3d73fcc31406",
     "main.c:1044-1046": "938d046431e6c436e372ed1e0bd20f4b4af7e4f0d97fe18c525088621f3c97a8",

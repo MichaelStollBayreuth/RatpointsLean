@@ -21,10 +21,11 @@ is `2 ^ Ratpoints.rbaShift` with `Ratpoints.rbaShift < 32`
 (`Ratpoints.two_mul_rowBias_sub_one_le_mulModLimit`), that `Ratpoints.numStrides` is at least 1
 (`Ratpoints.one_le_numStrides`), that `Ratpoints.hornerSteps` is at least 1
 (`Ratpoints.one_le_hornerSteps`), that `Ratpoints.maxBitsInPrime` is at most 10
-(`Ratpoints.maxBitsInPrime_le_ten`) and that `Ratpoints.stage3Limit` is at most `2 ^ 32`
-(`Ratpoints.stage3Limit_le_two_pow_32`), and of the table the proofs use only that its entries are
-the odd primes below 1022, in increasing order (`Ratpoints.prime_of_mem_primeTable`, which checks
-them one by one, and `Ratpoints.lt_of_mem_primeTable`, `Ratpoints.mem_primeTable_of_prime` and
+(`Ratpoints.maxBitsInPrime_le_ten`), that `Ratpoints.stage3Limit` is at most `2 ^ 32`
+(`Ratpoints.stage3Limit_le_two_pow_32`) and that `Ratpoints.maxDegree` is positive
+(`Ratpoints.zero_lt_maxDegree`), and of the table the proofs use only that its entries are the odd
+primes below 1022, in increasing order (`Ratpoints.prime_of_mem_primeTable`, which checks them one
+by one, and `Ratpoints.lt_of_mem_primeTable`, `Ratpoints.mem_primeTable_of_prime` and
 `Ratpoints.pairwise_lt_toList_primeTable`, which `decide` checks).
 
 ## Main definitions
@@ -396,6 +397,10 @@ theorem two_mul_rowBias_sub_one_le_mulModLimit : 2 * rowBias - 1 ≤ mulModLimit
 
 /-- There is at least the stride `2 ^ 0`. -/
 theorem one_le_numStrides : 1 ≤ numStrides := by decide
+
+/-- There is room for one search interval of the command line, which `read_input` of `main.c`
+fills without a check when `-u` comes before any `-l` (`main.c:417-436`). -/
+theorem zero_lt_maxDegree : 0 < maxDegree := by decide
 
 /-! ### Examples -/
 

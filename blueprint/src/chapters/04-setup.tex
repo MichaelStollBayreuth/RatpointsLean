@@ -613,13 +613,13 @@ with \verb|-|, the last of them winning, into the options, as \verb|main.c| does
 (\csource{main.c}{594}{601}, \csource{main.c}{638}{649}), and it refuses a form that is not
 squarefree with error~8 (\csource{main.c}{256}{261}, \csource{main.c}{1047}{1047}), which the
 reading of the command line does not meet. The nodes of the failures and of the command line in
-Chapter~\ref{chap:spec} (Definitions~\ref{def:cliFailure} and~\ref{def:cliInput}) hold these
-ranges, the node of the program (Definition~\ref{def:cliRun}) the call of \verb|find_points| and
-the exit status~$0$ (\csource{main.c}{251}{251}, \csource{main.c}{284}{284}), and the order of the
-printed points is that of Theorem~\ref{thm:findPoints_order}. The options that it does not support
-yet are those of the search region and the denominator range (\verb|-l -u -dl -du|); those of the
-output it reads since stage~G (Section~\ref{sec:outputCli}). At the end of stage~D the
-differential tests:
+Chapter~\ref{chap:spec} (Definitions~\ref{def:cliFailure} and~\ref{def:cliInput}) hold these lines,
+the node of the program (Definition~\ref{def:cliRun}) the call of \verb|find_points| and the exit
+status~$0$ (\csource{main.c}{251}{251}, \csource{main.c}{284}{284}), and the order of the printed
+points is that of Theorem~\ref{thm:findPoints_order}. It reads the options of the output since
+stage~G (Section~\ref{sec:outputCli}) and those of the search region and the denominator range,
+\verb|-l -u -dl -du|, since stage~H (Section~\ref{sec:regionCli}), so that every option of ratpoints
+is read. At the end of stage~D the differential tests:
 \begin{itemize}
   \item compared in the suite \verb|test4| 548 of the 582 runs of \verb|test4.sh|, 261 of them by
     their points, each in its order: the runs whose only options of the search are \verb|-k|,

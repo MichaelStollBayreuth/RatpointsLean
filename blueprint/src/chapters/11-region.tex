@@ -1647,27 +1647,26 @@ of Definition~\ref{def:cliEnds}, which also gives the double that \verb|scan_dou
 
 \begin{definition}[The intervals of the command line]\label{def:cliIntervals}
   \uses{def:cliEnds, def:cliRegionTest, def:cliFailure, def:maxDegree, def:Options}
-  Proposed names: \lname{Ratpoints.Cli.Intervals}, \lname{Ratpoints.Cli.Intervals.lower},
-  \lname{Ratpoints.Cli.Intervals.upper}, \lname{Ratpoints.Cli.Intervals.complete},
-  \lname{Ratpoints.Cli.OptionArg.bound}, \lname{Ratpoints.Cli.Options.store}. The state of the
-  reading of the search intervals: whether the last end read is a lower one, the number of the
-  intervals read, and the arrays of the doubles and of the exact ends of $2\,\mathrm{maxDegree}$
-  entries (\csource{main.c}{66}{66}, \csource{main.c}{73}{73}, \csource{main.c}{317}{317},
-  \csource{main.c}{319}{319}). Reading a lower end (\verb|-l|): error~7 when the last end read is a
-  lower one too (\verb|-l -l|), when $\mathrm{maxDegree}$ intervals have been read, when the word is
-  not a number and when the end is not above the upper end before it, compared as numbers; otherwise
-  the lower end of the next interval (\csource{main.c}{401}{413}). Reading an upper end (\verb|-u|):
-  when the last end read is not a lower one, the first interval begins at $-\infty$ with the double
-  $-h$ of the height end, and a later one fails with error~7 (\verb|-u -u|); error~7 when the word
-  is not a number; the lower double $-\infty$ when the interval has no lower end and its upper
-  double lies below $-h$; error~7 when the lower end is above the upper end; otherwise the interval
-  is complete (\csource{main.c}{417}{436}). After the options, a pending lower end gets the upper
-  end $+\infty$ with the double $h$, or $+\infty$ when $h$ lies below the lower double
-  (\csource{main.c}{669}{669}, \csource{main.c}{673}{678}). The kind of argument of \verb|-l| and
-  \verb|-u|, an end, a missing or malformed one failing with error~7; and the options of the search
-  with the field that an option sets: the reversal for \verb|-k| and \verb|-K|, the depth for
-  \verb|-s| and \verb|-S|, the least and the largest denominator for \verb|-dl| and \verb|-du|, and
-  the options of the output for \verb|-x -X -y -Y|.
+  \lean{Ratpoints.Cli.Intervals, Ratpoints.Cli.Intervals.lower, Ratpoints.Cli.Intervals.upper, Ratpoints.Cli.Intervals.complete, Ratpoints.Cli.OptionArg.bound, Ratpoints.Cli.Options.store}
+  \leanok
+  The state of the reading of the search intervals: whether the last end read is a lower one, the
+  number of the intervals read, and the arrays of the doubles and of the exact ends of
+  $2\,\mathrm{maxDegree}$ entries (\csource{main.c}{66}{66}, \csource{main.c}{73}{73},
+  \csource{main.c}{317}{317}, \csource{main.c}{319}{319}). Reading a lower end (\verb|-l|): error~7
+  when the last end read is a lower one too (\verb|-l -l|), when $\mathrm{maxDegree}$ intervals have
+  been read, when the word is not a number and when the end is not above the upper end before it,
+  compared as numbers; otherwise the lower end of the next interval (\csource{main.c}{401}{413}).
+  Reading an upper end (\verb|-u|): when the last end read is not a lower one, the first interval
+  begins at $-\infty$ with the double $-h$ of the height end, and a later one fails with error~7
+  (\verb|-u -u|); error~7 when the word is not a number; the lower double $-\infty$ when the
+  interval has no lower end and its upper double lies below $-h$; error~7 when the lower end is
+  above the upper end; otherwise the interval is complete (\csource{main.c}{417}{436}). After the
+  options, a pending lower end gets the upper end $+\infty$ with the double $h$, or $+\infty$ when
+  $h$ lies below the lower double (\csource{main.c}{669}{669}, \csource{main.c}{673}{678}). The kind
+  of argument of \verb|-l| and \verb|-u|, an end, a missing or malformed one failing with error~7;
+  and the options of the search with the field that an option sets: the reversal for \verb|-k| and
+  \verb|-K|, the depth for \verb|-s| and \verb|-S|, the least and the largest denominator for
+  \verb|-dl| and \verb|-du|, and the options of the output for \verb|-x -X -y -Y|.
 \end{definition}
 
 The command line (Definition~\ref{def:cliInput}) reads \verb|-l| and \verb|-u| into the intervals,
@@ -1737,25 +1736,14 @@ of the ends with the C program, in messages~3 and~8.
 \begin{theorem}[The search region of the command line]\label{thm:cliRegion}
   \uses{def:cliIntervals, def:cliInput, lem:cliNumbers, def:cliProcess, thm:findPoints, thm:cliRun,
     def:regionSpec, lem:searchIntervals}
-  Proposed names: \lname{Ratpoints.Cli.IntervalOf}, \lname{Ratpoints.Cli.Intervals.ReadsWF},
-  \lname{Ratpoints.Cli.Intervals.LowerMax}, \lname{Ratpoints.Cli.checkOptions\_preserves},
-  \lname{Ratpoints.Cli.input\_eq\_ok}, \lname{Ratpoints.Cli.reads\_of\_input\_eq\_ok},
-  \lname{Ratpoints.Cli.joinsWell\_of\_reads}, \lname{Ratpoints.Cli.intervalsWF\_take\_of\_reads},
-  \lname{Ratpoints.Cli.keeps\_ofOutput\_iff}, \lname{Ratpoints.Cli.inRegion\_joinIntervals\_iff},
-  \lname{Ratpoints.Cli.inRegion\_iff\_of\_input\_eq\_ok},
-  \lname{Ratpoints.Cli.intervalsWF\_joinIntervals\_of\_input\_eq\_ok},
-  \lname{Ratpoints.Cli.inIntervals\_joinIntervals\_of\_inExactRegion},
-  \lname{Ratpoints.Cli.mem\_filter\_keeps\_iff\_of\_input\_eq\_ok},
-  \lname{Ratpoints.zero\_lt\_maxDegree}, \lname{Array.set!\_set!},
-  \lname{Array.getElem!\_set!\_eq\_or}, \lname{Array.getElem!\_take\_toList},
-  \lname{Array.mem\_take\_toList\_of\_lt}, \lname{Array.exists\_eq\_of\_mem\_take\_toList},
-  \lname{Except.bind\_eq\_ok}. For a command line that reads as $c$, $H$, the options $s$, $o$ and
-  the settings $u$: the exact ends of its intervals are increasing and disjoint, by the checks of
-  error~7, so that the test of the callback is membership in the exact intervals; the joined
-  intervals hold every $x$ of the exact region with $|x| \le H$, their ends being the doubles
-  outward of the exact ends, or $\mp h$ for a missing first lower or last upper end; when every word
-  has fewer than $2^{56}$ characters, the joined intervals are well formed, so that error~9 is
-  unreachable from the command line; and, assuming Sturm's theorem when the Sturm step is on,
+  \lean{Ratpoints.Cli.IntervalOf, Ratpoints.Cli.Intervals.ReadsWF, Ratpoints.Cli.Intervals.LowerMax, Ratpoints.Cli.checkOptions_preserves, Ratpoints.Cli.input_eq_ok, Ratpoints.Cli.reads_of_input_eq_ok, Ratpoints.Cli.joinsWell_of_reads, Ratpoints.Cli.intervalsWF_take_of_reads, Ratpoints.Cli.keeps_ofOutput_iff, Ratpoints.Cli.inRegion_joinIntervals_iff, Ratpoints.Cli.inRegion_iff_of_input_eq_ok, Ratpoints.Cli.intervalsWF_joinIntervals_of_input_eq_ok, Ratpoints.Cli.inIntervals_joinIntervals_of_inExactRegion, Ratpoints.Cli.mem_filter_keeps_iff_of_input_eq_ok, Ratpoints.zero_lt_maxDegree, Array.set!_set!, Array.getElem!_set!_eq_or, Array.getElem!_take_toList, Array.mem_take_toList_of_lt, Array.exists_eq_of_mem_take_toList, Except.bind_eq_ok}
+  \leanok
+  For a command line that reads as $c$, $H$, the options $s$, $o$ and the settings $u$: the exact
+  ends of its intervals are increasing and disjoint, by the checks of error~7, so that the test of
+  the callback is membership in the exact intervals; the joined intervals hold every $x$ of the
+  exact region with $|x| \le H$, their ends being the doubles outward of the exact ends, or $\mp h$
+  for a missing first lower or last upper end; when every word has fewer than $2^{56}$ characters,
+  the joined intervals are well formed, so that error~9 is unreachable from the command line; and,
   without \verb|-x|, if $\mathrm{findPoints}$ on the joined intervals returns $L$, the points of $L$
   that the callback keeps (Theorem~\ref{thm:cliRun}) are exactly the normalized points of height at
   most $H$ with $y \ge 0$ under \verb|-y|: the points at infinity unless \verb|-i|, and the affine
@@ -1765,6 +1753,7 @@ of the ends with the C program, in messages~3 and~8.
 \end{theorem}
 
 \begin{proof}
+  \leanok
   An invariant of the reading of the intervals, preserved by each option and by the completion: the
   exact ends increase and are disjoint, each complete interval of doubles holds its exact interval
   as far as the search goes, and the doubles of the lower ends after the first are the largest

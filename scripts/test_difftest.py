@@ -6,6 +6,7 @@ usage: python3 -m unittest discover -s scripts -p 'test_*.py'
 import random
 import sys
 import unittest
+from fractions import Fraction
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -79,12 +80,18 @@ class Outputs(unittest.TestCase):
         cfg = SimpleNamespace(lean_banner='This is ratpoints-lean-0.1\n\nLean\n\n',
                               c_banner='This is ratpoints-3.1.1\n\nC\n\n')
         head = '\n{}\n\nCurve equation is  y^2 = x^2 + 1\n\nmax. Height = 5\n\n'
-        lean = head.format(cfg.lean_banner) + '(1 : 1 : 0)\n\n\n\n2 rational points found.\n\n'
         c = (head.format(cfg.c_banner) + '(1 : 1 : 0)\n\n\n3 moduli used for first stage of '
              'sieving,\n4 moduli used for both stages of sieving together,\n0 further primes '
              'used in the third stage.\nSearch intervals:\n[-5.000000, 5.000000]\n\n'
              '2 rational points found.\n\n')
+        lean = head.format(cfg.lean_banner) + '(1 : 1 : 0)\n\n\n\n2 rational points found.\n\n'
         self.assertTrue(dt.agrees(cfg, (lean, 0), (c, 0), 'report'))
+        # message 3 is compared, message 8 dropped from the C program's report
+        self.assertTrue(dt.agrees(cfg, (lean, 0), (c.replace('[-5.000000', '[-4.000000'), 0),
+                                  'report'))
+        region = 'max. Height = 5\n\nSearch region:\n  [0.000000, 1.000000]\n'
+        self.assertFalse(dt.agrees(cfg, (lean, 0), (c.replace('max. Height = 5\n\n', region), 0),
+                                   'report'))
         self.assertFalse(dt.agrees(cfg, (lean, 0), (c.replace('2 rational', '3 rational'), 0),
                                    'report'))
         # as test4.sh's m() records it: the first line of the banner and message 4 left out
@@ -183,6 +190,34 @@ class Outputs(unittest.TestCase):
         self.assertTrue(dt.is_point([1, 0, 1], 1, 0) and dt.is_point([0, 1, 2], 0, 1) and
                         dt.is_point([-2, 0, 0, 1], 129, 100) and not dt.is_point([1, 0, 1], 2, 1))
 
+    def test_weak_region(self):
+        # the pairs must lie in the range of the denominators and in the exact search region
+        args = ['1 0 1', '20', '-q', '-x', '-p', '10', '-dl', '5', '-du', '9', '-l', '0', '-u', '1']
+        st = dt.settings(args[2:])
+        self.assertTrue(dt.weak_agrees('(1 : 0)\n(3 : 5)\n', '(1 : 0)\n', args, st))
+        for extra in ['(-7 : 3)\n', '(19 : 2)\n', '(7 : 5)\n', '(-1 : 9)\n']:
+            self.assertFalse(dt.weak_agrees('(1 : 0)\n(3 : 5)\n' + extra, '(1 : 0)\n', args, st))
+            self.assertFalse(dt.weak_agrees('(1 : 0)\n', '(1 : 0)\n(3 : 5)\n' + extra, args, st))
+        # the ends of the command line, exact: an end that is no double, and a missing first -l
+        st = dt.settings(['-u', '0.1', '-l', '0x1p-1', '-q'])
+        self.assertEqual(dt.exact_region(st),
+                         [(-float('inf'), Fraction(1, 10)), (Fraction(1, 2), float('inf'))])
+        ivs = dt.exact_region(st)
+        self.assertEqual([dt.in_region(Fraction(n, d), ivs) for n, d in
+                          [(-10 ** 18, 1), (1, 10), (1, 9), (1, 2), (10 ** 18, 3)]],
+                         [True, True, False, True, True])
+        self.assertEqual(dt.exact_region(dt.settings(['-q'])), [])
+        self.assertFalse(dt.in_region(Fraction(0), [(Fraction(1), Fraction(2))]))
+
+    def test_c_moduli(self):
+        cfg = SimpleNamespace(c='/bin/sh')
+        report = ("printf '  use 2 moduli for first stage:\\n    9 5\\n  use 1 moduli for second "
+                  "stage:\\n    7\\n  use 0 primes for third stage:\\n   \\n'")
+        self.assertEqual(dt.c_moduli(cfg, ['-c', report, '-q']), ([5, 7, 9], 0))
+        self.assertIsNone(dt.c_moduli(cfg, ['-c', 'echo; echo found', '-q']))
+        self.assertEqual(dt.PINNED_MODULI[0], 3)
+        self.assertEqual((len(dt.PINNED_MODULI), dt.PINNED_MODULI[-1]), (30, 127))
+
     def test_stderr(self):
         cfg = SimpleNamespace(lean_usage='U', c_usage='U')
         ok = ('(0 : 1 : 1)\n', 0, '')
@@ -196,29 +231,22 @@ class Outputs(unittest.TestCase):
         out, code, err = dt.run_lean(cfg, ['-c', 'printf %s "$LEAN_ABORT_ON_PANIC"; echo e >&2'])
         self.assertEqual((out, code, err), ('1', 0, 'e\n'))
 
-    def test_read_options(self):
-        self.assertEqual(dt.read_options(['-q', '-n', '5', '-j']), (None, True))
-        self.assertEqual(dt.read_options(['-n', '5']), (None, False))
-        self.assertEqual(dt.read_options(['-q', '-l', '0', '-u', '1']), (1, True))
-        self.assertEqual(dt.read_options(['-p', '-x', '-u']), (2, False))
-        self.assertEqual(dt.read_options(['-quiet', '-fs', 'x', '-dl']), (3, True))
-        self.assertEqual(dt.read_options(['-fx', '-u']), (None, False))
-        self.assertEqual(dt.read_options(['-f', '-u', '-q']), (None, True))
-        self.assertEqual(dt.read_options(['-x', '-y', '-z', '-1', '-i', '-l']), (5, False))
-        self.assertEqual(dt.read_options(['-d', '1', '-dl', '1']), (None, False))
-        self.assertEqual(dt.read_options(['-q', 'q', '-u']), (None, True))
-        self.assertEqual(dt.read_options([b'-\xff', '-u']), (None, False))
-        self.assertEqual(dt.read_options(['-fe']), (None, False))
-
-    def test_read_options_of_the_search(self):
-        self.assertEqual(dt.read_options(['-k', '-s', '-q']), (None, True))
-        self.assertEqual(dt.read_options(['-k', '-K']), (None, False))
-        self.assertEqual(dt.read_options(['-K', '-kfoo', '-u']), (2, False))
-        self.assertEqual(dt.read_options(['-S', '5', '-u']), (2, False))
-        self.assertEqual(dt.read_options(['-S', '-q', '-u']), (2, True))
-        self.assertEqual(dt.read_options(['-S', '', '-u']), (2, False))
-        self.assertEqual(dt.read_options(['-S', ' -1', '-k']), (None, False))
-        self.assertEqual(dt.read_options(['-q', '-S']), (None, True))
+    def test_option_words(self):
+        def stop(opts):
+            return dt.option_words(opts)[1]
+        self.assertEqual(stop(['-q', '-n', '5', '-j']), None)
+        self.assertEqual(stop(['-q', '-l', '0', '-u', '1']), None)
+        self.assertEqual(stop(['-p', '-x', '-u']), 2)  # -u without its argument
+        self.assertEqual(stop(['-quiet', '-fs', 'x', '-dl']), 3)
+        self.assertEqual(stop(['-fx', '-u']), 0)
+        self.assertEqual(stop(['-f', '-u', '-q']), None)
+        self.assertEqual(stop(['-d', '1', '-dl', '1']), 0)
+        self.assertEqual(stop(['-dlx', '1', '-du', '2', '-q', 'q']), 5)
+        self.assertEqual(stop([b'-\xff', '-u']), 0)
+        self.assertEqual(stop(['-S', '5', '-l', '-1']), None)
+        self.assertEqual(stop(['-S', '-q', '-u', '2']), None)
+        self.assertEqual(stop(['-S', ' -1', '-k']), None)
+        self.assertEqual(stop(['-lfoo', '1', '-ux', '2']), None)
 
     def test_settings(self):
         st = dt.settings(['-v', '-x', '-p', ' 30', '-N', '30', '-f', '-q', '-y', '-Y', '-zap'])
@@ -236,15 +264,75 @@ class Outputs(unittest.TestCase):
         self.assertEqual(dt.mode_of(dt.settings([]), 8), 'report')
         self.assertEqual(dt.mode_of(dt.settings(['-q']), 8), 'exact')
         self.assertEqual(dt.mode_of(dt.settings(['-x']), 6), 'exact')
+        st = dt.settings(['-l', '0', '-u', '0x1p-3', '-dl', '5', '-du', ' 9', '-q'])
+        self.assertEqual((st.ends, st.dl, st.du, st.region, st.quiet),
+                         ([('l', '0'), ('u', '0x1p-3')], 5, 9, True, True))
+        self.assertFalse(dt.settings(['-q', '-S', '3', '-k']).region)
+        self.assertTrue(dt.settings(['-du', '0']).region)
 
 
 class Skips(unittest.TestCase):
     def test_skips_height(self):
         cfg = SimpleNamespace(max_height=30000)
-        self.assertFalse(dt.skips_height(cfg, ['2 0 3', '40000', '-q'], '', 0))
-        self.assertTrue(dt.skips_height(cfg, ['1 0 1', '40000', '-q'], '(0 : 1 : 1)\n', 0))
-        self.assertFalse(dt.skips_height(cfg, ['1 0 1', '30000', '-q'], '(0 : 1 : 1)\n', 0))
-        self.assertFalse(dt.skips_height(cfg, ['0 0 1', '40000'], '\nerror\n', 1))
+
+        def skips(args, out, code):
+            return dt.skips_height(cfg, args, out, code, dt.settings(args[2:]))
+        self.assertFalse(skips(['2 0 3', '40000', '-q'], '', 0))
+        self.assertTrue(skips(['1 0 1', '40000', '-q'], '(0 : 1 : 1)\n', 0))
+        self.assertFalse(skips(['1 0 1', '30000', '-q'], '(0 : 1 : 1)\n', 0))
+        self.assertFalse(skips(['0 0 1', '40000'], '\nerror\n', 1))
+        # a narrow search region at a large height is compared
+        self.assertFalse(skips(['1 0 1', '4611686018427387904', '-q', '-dl', '4294967295', '-du',
+                                '4294967295', '-l', '9544371.76666664', '-u', '9544371.766689923'],
+                               '(1 : 1 : 0)\n', 0))
+        # too many denominators, too many numerators
+        self.assertTrue(skips(['1 0 1', '1000000', '-q', '-dl', '2'], '(1 : 1 : 0)\n', 0))
+        self.assertTrue(skips(['1 0 1', '10000000000000', '-q', '-du', '9000'], '(1 : 1 : 0)\n',
+                              0))
+        # a search region with an empty output is not exempt
+        self.assertTrue(skips(['1 0 1', '100000000', '-q', '-l', '0', '-u', '1'], '', 0))
+        # a hexadecimal end beyond the doubles is infinite
+        self.assertTrue(skips(['1 0 1', '1000000000', '-q', '-u', '0x1p2000', '-dl', '1', '-du',
+                               '1000'], '(1 : 1 : 0)\n', 0))
+        self.assertEqual((dt.end_value('0x1p2000'), dt.end_value('-0x1p2000 ')),
+                         (float('inf'), -float('inf')))
+        # under -1 the numerators up to the stop at the first point: none at a point at infinity,
+        # the first numerator of the first denominator, a later denominator; all of them without a
+        # point, and when the polynomial may be reversed (the search region is the whole box)
+        big = ['1 0 1', '10000000000000', '-q', '-du', '16', '-1']
+        self.assertFalse(skips(big, '(1 : 1 : 0)\n', 0))
+        self.assertFalse(skips(big, '(-10000000000000 : 5 : 1)\n', 0))
+        self.assertFalse(skips(big[:-1] + ['-x', '-1'], '(-10000000000000 : 1)\n', 0))
+        self.assertTrue(skips(big, '(-10000000000000 : 5 : 9)\n', 0))
+        self.assertTrue(skips(big, '', 0))
+        self.assertTrue(skips(['1 0 0 1', '1000000000', '-q', '-dl', '1', '-1'], '(1 : 0 : 0)\n',
+                              0))
+        self.assertFalse(skips(['1 0 0 1', '1000000000', '-q', '-dl', '2', '-1'], '(1 : 0 : 0)\n',
+                               0))
+
+    def test_denominators(self):
+        # every denominator; the squares (odd degree, |c_d| = 1); the divisors of c_d = 12 that are
+        # squarefree (1, 2, 3, 6) times squares
+        self.assertEqual(dt.denominators([1, 0, 1], 1, 100), 100)
+        self.assertEqual(dt.denominators([1, 0, 0, -1], 1, 100), 10)
+        self.assertEqual(dt.denominators([1, 0, 0, 1, 0], 10, 100), 7)
+        self.assertEqual(dt.denominators([5, 0, 0, 12], 1, 100), 10 + 7 + 5 + 4)
+        self.assertEqual(dt.denominators([1, 0, 1], 5, 3), 0)
+        self.assertEqual(dt.den_shape([5, 0, 0, 12], 100), ('divisors', [1, 2, 3, 6]))
+        self.assertEqual((dt.end_value('0x1p-3'), dt.end_value(' -1e400 '), dt.end_value('x')),
+                         (0.125, -float('inf'), None))
+        # a factorization over the table that is not complete (1052651 = 1021 * 1031) gives every
+        # denominator, as Ratpoints.Setup.setupUs1 fails then
+        self.assertEqual(dt.factor_lcf(1052651), ([1021], 1031))
+        self.assertEqual(dt.factor_lcf(2 ** 5 * 3 * 1031), ([2, 3, 1031], 1))
+        self.assertEqual(dt.denominators([1, 0, 0, 1052651], 1, 1000), 1000)
+        # 511 squarefree divisors at most 2066 give the divisor shape, 512 at most 2067 every
+        # denominator (the guard of Ratpoints.Setup.setupUs1 at the boundary of maxDivisors)
+        lcf = 2305567963945518424753102147331756070
+        kind, divs = dt.den_shape([1, 0, 0, lcf], 2066)
+        self.assertEqual((kind, len(divs)), ('divisors', 511))
+        self.assertEqual(dt.den_shape([1, 0, 0, lcf], 2067), ('all', None))
+        self.assertEqual(dt.denominators([1, 0, 0, lcf], 1, 2067), 2067)
 
 
 class StopCases(unittest.TestCase):
@@ -280,6 +368,12 @@ class Curves(unittest.TestCase):
         self.assertEqual(lines, difftest_cases.random_command_lines(random.Random(1)))
         self.assertEqual(difftest_cases.random_output_options(random.Random(2)),
                          difftest_cases.random_output_options(random.Random(2)))
+        self.assertEqual(difftest_cases.random_region_line(random.Random(3)),
+                         difftest_cases.random_region_line(random.Random(3)))
+        self.assertEqual([difftest_cases.end_fraction(w) for w in
+                          ['0x1.8p-1', '-0x.4p3', '1e-400', '-1e400', 'INF', '2.5']],
+                         [Fraction(3, 4), -2, Fraction(1, 10 ** 400), -float('inf'), float('inf'),
+                          Fraction(5, 2)])
 
     def test_reference(self):
         self.assertEqual(dt.reference_points('{[1,2,0],[1,-2,0],[-3,6,2]}'),

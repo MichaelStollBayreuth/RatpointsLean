@@ -274,12 +274,12 @@ scripts of the C repository can run it as \verb|RP=ratpoints-lean|:
 \begin{itemize}
   \item it prints what ratpoints prints: the points, through the callback \verb|process| of
     \verb|main.c|, by default one line \verb|(x : y : z)| per point, and without \verb|-q| the
-    report around them (Definition~\ref{def:cliReport}), the banner, the curve and the height bound
-    before the points and what the search did and the count of the points found after them, but for
-    the messages on the search region and the search intervals (messages 3 and 8, stage~H) and on
-    the moduli used (message 4, stage~I); under \verb|-v|, which \verb|-q| cancels in
-    \verb|main.c|, the report of \verb|-v|, without the report of the library that ratpoints prints
-    then;
+    report around them (Definition~\ref{def:cliReport}), the banner, the curve, the height bound and
+    the search region of the command line (message~3) before the points and what the search did and
+    the count of the points found after them, but for the messages on the search intervals that the
+    search gives back (message~8, stage~H) and on the moduli used (message~4, stage~I); under
+    \verb|-v|, which \verb|-q| cancels in \verb|main.c|, the report of \verb|-v|, without the report
+    of the library that ratpoints prints then;
   \item it reads the first two arguments as \verb|main.c| does: the coefficient list as one argument
     and the height, with its checks, messages and exit codes, in its order: fewer than two arguments
     (2, with the banner and the usage), a malformed coefficient (11), more than $\mathrm{maxDegree}
@@ -301,12 +301,13 @@ scripts of the C repository can run it as \verb|RP=ratpoints-lean|:
   \item it reads the options of the output as \verb|main.c| reads them, \verb|-x -X -y -Y| into
     the options of \verb|findPoints| and \verb|-z -Z -1 -i -I| and the formats and strings of
     \verb|-f -fs -fm -fe| into the settings of the output (Section~\ref{sec:outputCli});
-  \item it answers the other options of ratpoints, which it does not support yet, with the
-    message \verb|Option <opt> is not supported by ratpoints-lean yet.| and the exit status 12,
-    which \verb|main.c| does not use: those of the search region and the denominator range,
-    \verb|-l -u -dl -du| (an ignored search interval or denominator range on one of the runs with
-    heights up to $2^{63} - 1$ would otherwise turn into a search of the whole box that never
-    ends); and an unknown option with error~6, as \verb|main.c| does;
+  \item it reads the search region as \verb|main.c| reads it, the intervals of \verb|-l| and
+    \verb|-u| with their exact ends and the doubles outward of them, with error~7 for intervals that
+    are malformed, not alternating, too many or not ordered, and the range of the denominators of
+    \verb|-dl| and \verb|-du| into the options of \verb|findPoints|, runs the search on the
+    intervals joined where their doubles meet, and prints only the points of the search region of
+    its command line (Section~\ref{sec:regionCli}, Theorem~\ref{thm:cliRegion}); an unknown option
+    fails with error~6, as in \verb|main.c|;
   \item its banner starts with the line \verb|This is ratpoints-lean-0.1|, so that
     \verb|test4.sh| filters it as it does the C program's, and the differential tests exchange
     the banners and the usages of the two programs;
@@ -348,22 +349,22 @@ mirror:
   status of each. These are the errors of \verb|main.c| that the command line can cause, 2 (fewer
   than two arguments), 3 (more than $\mathrm{maxDegree} + 1$ coefficients), 4 (a height bound that
   is not a C \verb|long| of at least $1$), 5 (fewer than two coefficients), 6 (a malformed option),
-  8 (a binary form that is not squarefree) and 11 (a coefficient that is not an integer), and
-  error~9, which \verb|main.c| gives for the codes of the library other than
-  \verb|RATPOINTS_NON_SQUAREFREE| and \verb|RATPOINTS_NO_MEMORY| (error~10, which the model cannot
-  return), for the model the refusal $\mathrm{badArgs}$ of search intervals that are not well formed
+  7 (an end of a search interval that is missing or no number, two lower or two upper ends in a row,
+  more than $\mathrm{maxDegree}$ intervals, or ends that are not ordered), 8 (a binary form that is
+  not squarefree) and 11 (a coefficient that is not an integer), and error~9, which \verb|main.c|
+  gives for the codes of the library other than \verb|RATPOINTS_NON_SQUAREFREE| and
+  \verb|RATPOINTS_NO_MEMORY| (error~10, which the model cannot return), for the model the refusal
+  $\mathrm{badArgs}$ of search intervals that are not well formed
   (Definition~\ref{def:searchIntervals}), which the command line never passes; on each,
   \verb|main.c| prints a blank line, the message and a blank line, and exits with the number of the
-  error (\csource{main.c}{1036}{1043}, \csource{main.c}{1047}{1047}, \csource{main.c}{1048}{1048},
-  \csource{main.c}{1050}{1053}, \csource{main.c}{1054}{1056}); on error~2 it prints the banner
-  (\csource{main.c}{43}{48}) and the usage (\csource{main.c}{77}{88}) instead of a message, and on
-  error~6 both. The banner is that of \verb|ratpoints-lean| and the usage that of ratpoints, with
-  the name of the program changed. The last failure is an option of ratpoints that
-  \verb|ratpoints-lean| does not support yet, with the exit status 12. A refusal of
-  $\mathrm{findPointsWith}$ (Definition~\ref{def:findPointsWith}), whose refusals are those of
-  $\mathrm{findPoints}$ (Definition~\ref{def:reversal}), is the failure with the same number, as
-  \verb|main.c| turns the code that the library returns for a form that is not squarefree into
-  error~8 and its other codes but \verb|RATPOINTS_NO_MEMORY| into error~9
+  error (\csource{main.c}{1036}{1048}, \csource{main.c}{1050}{1053}, \csource{main.c}{1054}{1056});
+  on error~2 it prints the banner (\csource{main.c}{43}{48}) and the usage
+  (\csource{main.c}{77}{88}) instead of a message, and on error~6 both. The banner is that of
+  \verb|ratpoints-lean| and the usage that of ratpoints, with the name of the program changed. A
+  refusal of $\mathrm{findPointsWith}$ (Definition~\ref{def:findPointsWith}), whose refusals are
+  those of $\mathrm{findPoints}$ (Definition~\ref{def:reversal}), is the failure with the same
+  number, as \verb|main.c| turns the code that the library returns for a form that is not squarefree
+  into error~8 and its other codes but \verb|RATPOINTS_NO_MEMORY| into error~9
   (\csource{main.c}{256}{261}); the reading of the command line meets the other refusals first, and
   the command line gives no search intervals that the library refuses, so that only error~8 can come
   from $\mathrm{findPointsWith}$.
@@ -371,7 +372,7 @@ mirror:
 
 \begin{definition}[The command line]\label{def:cliInput}
   \uses{def:cliNumbers, def:cliEnds, def:cliFailure, def:maxDegree, def:sieveParams, def:Options,
-    def:cliOutput}
+    def:cliOutput, def:cliIntervals}
   \lean{Ratpoints.Cli.coefficients, Ratpoints.Cli.heightBound, Ratpoints.Cli.checkOptions, Ratpoints.Cli.input}
   \leanok
   The coefficient list, the height bound and the values of the options of a command line, those that
@@ -384,14 +385,15 @@ mirror:
   integers, then on fewer than two (\csource{main.c}{318}{318}, \csource{main.c}{362}{375}); the
   second gives the height bound, a C \verb|long| of at least $1$ (\csource{main.c}{378}{379}); and
   the options are read from left to right, each told by the character after its \verb|-| and, for
-  \verb|-f| and \verb|-d|, by the one after that (\csource{main.c}{393}{397},
-  \csource{main.c}{667}{668}). The tuning options, of which \verb|-p -F -t -n -N -R -A -P| take a C
-  \verb|long| and \verb|-r -U -C -Q -W| a real number, have their arguments checked
-  (\csource{main.c}{437}{532}); the switches \verb|-q| and \verb|-v| go into the settings of the
-  output, and the values of \verb|-p -n -N -P -F| and the switches \verb|-j| and \verb|-J| into the
-  values of the options of Definition~\ref{def:sieveParams} (\csource{main.c}{578}{593}), the last
-  one winning, and the other tuning options are ignored (until stage~I, but for \verb|-t| for
-  good); \verb|-k| and \verb|-K|
+  \verb|-f| and \verb|-d|, by the one after that (\csource{main.c}{393}{400},
+  \csource{main.c}{414}{416}), from the options of the search with the default search region and the
+  height bound as the largest denominator (\csource{main.c}{333}{336}, \csource{main.c}{380}{380}).
+  The tuning options, of which \verb|-p -F -t -n -N -R -A -P| take a C \verb|long| and
+  \verb|-r -U -C -Q -W| a real number, have their arguments checked (\csource{main.c}{437}{532});
+  the switches \verb|-q| and \verb|-v| go into the settings of the output, and the values of
+  \verb|-p -n -N -P -F| and the switches \verb|-j| and \verb|-J| into the values of the options of
+  Definition~\ref{def:sieveParams} (\csource{main.c}{578}{593}), the last one winning, and the other
+  tuning options are ignored (until stage~I, but for \verb|-t| for good); \verb|-k| and \verb|-K|
   (\csource{main.c}{594}{601}) and \verb|-s| and \verb|-S| (\csource{main.c}{638}{649}) go into the
   options of Definition~\ref{def:Options}, the last of each pair winning: the reversal forbidden or
   allowed, and the depth of the Sturm step, $-1$ for \verb|-s|, and for \verb|-S| the C \verb|long|
@@ -401,15 +403,21 @@ mirror:
   settings of the output (\csource{main.c}{602}{637}), of each pair the last one winning; \verb|-f|,
   \verb|-fs|, \verb|-fm| and \verb|-fe| take the next word, whatever it is, as the format or the
   string, and \verb|-f| followed by a character other than \verb|s|, \verb|m| and \verb|e|, and a
-  missing word, are error~6 (\csource{main.c}{533}{577}); after the options the format is the
-  default unless \verb|-f| gave one, and \verb|-q| cancels \verb|-v| (\csource{main.c}{688}{688});
-  an option of ratpoints that is not supported yet ends the reading, its arguments unchecked, and
-  any other word fails with error~6.
+  missing word, are error~6 (\csource{main.c}{533}{577}); \verb|-l| and \verb|-u| read the ends of
+  the search intervals (Definition~\ref{def:cliIntervals}), a missing end failing with error~7, and
+  \verb|-dl| and \verb|-du| the C \verb|long| that follows them as the least and the largest
+  denominator of the options of the search, the last one winning, with error~6 for a missing or
+  malformed argument and for a word \verb|-d| followed by another character
+  (\csource{main.c}{650}{668}); after the options a pending interval is completed, the search
+  intervals of the options are the doubles of the intervals read and the exact ends go into the
+  settings of the output (\csource{main.c}{679}{679}), the format is the default unless \verb|-f|
+  gave one, and \verb|-q| cancels \verb|-v| (\csource{main.c}{688}{688}); any other word fails with
+  error~6.
 \end{definition}
 
 \begin{definition}[The program]\label{def:cliRun}
   \uses{def:cliInput, def:cliFailure, def:findPointsWith, def:cliProcess, def:cliReport,
-    def:sieveParams, def:Options}
+    def:sieveParams, def:Options, def:cliRegionTest}
   \lean{Ratpoints.Cli.run, Ratpoints.Cli.main}
   \leanok
   \verb|ratpoints-lean| reads its command line (\csource{main.c}{195}{198}). On a failure it prints
@@ -417,24 +425,25 @@ mirror:
   set the sieving parameters, the options $o$ of the search (Definition~\ref{def:Options}) and the
   settings $u$ of the output, it prints the head of the report (Definition~\ref{def:cliReport}),
   nothing under \verb|-q|, and runs the search with a callback
-  $\mathrm{findPointsWith}(c, H, \mathrm{sieveParams}(s), o)$ with the callback of the program on
+  $\mathrm{findPointsWith}(c, H, \mathrm{sieveParams}(s), o')$ with the callback of the program on
   its data (Definition~\ref{def:cliProcess}) where ratpoints calls \verb|find_points|
-  (\csource{main.c}{251}{252}); on a refusal it prints the message of the failure after the head and
-  exits with its status, and otherwise it prints what the callback printed, the points in the order
-  in which the search delivers them, that of the list of $\mathrm{findPoints}$
-  (Theorem~\ref{thm:protocol}), which is that of Theorem~\ref{thm:findPoints_order}: the points at
-  infinity followed by the points of the brute-force reference of the polynomial searched over the
-  denominators of its search, in their order, mapped back after a reversal; then the string before
-  the points if it printed no point (\csource{main.c}{265}{265}), the string after them
-  (\csource{main.c}{267}{267}) and the end of the report, nothing under \verb|-q|; and it exits with
-  status~0 (\csource{main.c}{284}{285}). It writes its output once it is computed and, like
-  ratpoints, ignores a failed write, but for one case: when the reader of the output is gone, the
-  signal \verb|SIGPIPE| ends ratpoints, and the shell reports the status $141 = 128 + 13$; the Lean
-  runtime ignores that signal, so that the write of \verb|ratpoints-lean| fails instead, and it
-  exits quietly with status~141. Since ratpoints flushes its output after every point (line 187 of
-  \verb|main.c|), a reader that leaves early, like \verb|head|, ends it at the next point, while
-  \verb|ratpoints-lean| notices only a reader that is gone when it writes: an output that fits into
-  the pipe ends with status~0.
+  (\csource{main.c}{251}{252}), for the options $o'$ of $o$ with the search intervals joined where
+  their doubles meet (Definition~\ref{def:cliRegionTest}, \csource{main.c}{248}{248}), the data
+  holding the intervals of the command line before the join; on a refusal it prints the message of
+  the failure after the head and exits with its status, and otherwise it prints what the callback
+  printed, the points of the search region of its command line in the order in which the search
+  delivers them, that of the list of $\mathrm{findPoints}$ (Theorem~\ref{thm:protocol}), which is
+  that of Theorem~\ref{thm:order}, the callback passing over the points that lie outside the
+  intervals of the command line; then the string before the points if it printed no point
+  (\csource{main.c}{265}{265}), the string after them (\csource{main.c}{267}{267}) and the end of
+  the report, nothing under \verb|-q|; and it exits with status~0 (\csource{main.c}{284}{285}). It
+  writes its output once it is computed and, like ratpoints, ignores a failed write, but for one
+  case: when the reader of the output is gone, the signal \verb|SIGPIPE| ends ratpoints, and the
+  shell reports the status $141 = 128 + 13$; the Lean runtime ignores that signal, so that the write
+  of \verb|ratpoints-lean| fails instead, and it exits quietly with status~141. Since ratpoints
+  flushes its output after every point (line 187 of \verb|main.c|), a reader that leaves early, like
+  \verb|head|, ends it at the next point, while \verb|ratpoints-lean| notices only a reader that is
+  gone when it writes: an output that fits into the pipe ends with status~0.
 \end{definition}
 
 \section{The differential tests of stage~B}
@@ -444,17 +453,17 @@ pin and with its recorded outputs, in six suites in stage~B (stage~C1 adds two,
 Section~\ref{sec:sieveCli}, stage~C2 raises the largest height to $30000$ and adds the suite
 \verb|test4high|, run locally, Section~\ref{sec:wordsCli}, stage~D compares the refusals, the
 options of the search and the order, Section~\ref{sec:setupCli}, stage~E every point list in its
-order, Section~\ref{sec:denCli}, and stage~G the options of the output, the reports and the
-suite \verb|outputs|, Section~\ref{sec:outputTests}):
+order, Section~\ref{sec:denCli}, stage~G the options of the output, the reports and the suite
+\verb|outputs|, Section~\ref{sec:outputTests}, and stage~H the search region, the suite
+\verb|regions| and the runs of \verb|test4.sh| and \verb|test3.sh| with a search region,
+Section~\ref{sec:regionTests}):
 \begin{itemize}
   \item \verb|test4.sh| against \verb|testbase4|, split at the \verb|#| header lines (five of which
-    are glued to the end of the preceding output line): 565 of its 582 runs, among them the
-    outputs that the script filters through \verb|grep found|, \verb|grep 'Curve equation'| and
-    \verb|grep -c .|, compared after the same filter with the banner exchanged, and the two whose
-    output the script filters but which name \verb|-l| and fail as options that
-    \verb|ratpoints-lean| does not support yet; the others are the four whose filter looks at the
-    report of the library under \verb|-v| and 13 with heights from $40000$ to $100000$, which the
-    suite \verb|test4high| compares (Section~\ref{sec:wordsCli});
+    are glued to the end of the preceding output line): 565 of its 582 runs, among them the outputs
+    that the script filters through \verb|grep found|, \verb|grep 'Curve equation'| and
+    \verb|grep -c .|, compared after the same filter with the banner exchanged; the others are the
+    four whose filter looks at the report of the library under \verb|-v| and 13 with heights from
+    $40000$ to $100000$, which the suite \verb|test4high| compares (Section~\ref{sec:wordsCli});
   \item \verb|test3.sh| invocation by invocation against the C program, since it has no announce
     lines: 16 of its 21 runs (5 have filtered outputs; one, at a height above the largest height
     of the tests, $30000$, on which the C program prints nothing, is compared since stage~E);
@@ -487,18 +496,15 @@ suite \verb|outputs|, Section~\ref{sec:outputTests}):
     UTF-8, against the C program.
 \end{itemize}
 Point lists are compared in their order (Section~\ref{sec:denCli}); a report, the output of a run
-without \verb|-q|, exactly, with the banner exchanged for that of the C program and the messages 3,
-4 and 8 dropped from the report of the C program only, also the refusal of a form that is not
+without \verb|-q|, exactly, with the banner exchanged for that of the C program and the messages 4
+and 8 dropped from the report of the C program only, also the refusal of a form that is not
 squarefree without \verb|-q|, and the output under \verb|-v| by its lines; the outputs with the
-options of the output, under \verb|-x| as Section~\ref{sec:outputTests} says; messages and exit
-codes are compared exactly (but for a pipe without a reader, where the two programs end differently
-by design), with the banner and the usage of the two programs exchanged; and \verb|ratpoints-lean|
-must write nothing to its standard error (it runs with \verb|LEAN_ABORT_ON_PANIC=1|, so that a panic
-of the Lean runtime ends it). On a command line with an option that \verb|ratpoints-lean| does not
-support yet, \verb|-l|, \verb|-u|, \verb|-dl| or \verb|-du|, it must fail as the C program does if
-that fails before the option, and else exit with status~12, also under the filters of
-\verb|test4.sh|. CI builds the C program at the pin (\verb|make|, with \verb|libgmp-dev|) and the
-Lean program, and runs the script.
+options of the output, under \verb|-x| as Sections~\ref{sec:outputTests} and~\ref{sec:regionTests}
+say; messages and exit codes are compared exactly (but for a pipe without a reader, where the two
+programs end differently by design), with the banner and the usage of the two programs exchanged;
+and \verb|ratpoints-lean| must write nothing to its standard error (it runs with
+\verb|LEAN_ABORT_ON_PANIC=1|, so that a panic of the Lean runtime ends it). CI builds the C program
+at the pin (\verb|make|, with \verb|libgmp-dev|) and the Lean program, and runs the script.
 
 \section{Files and names}
 

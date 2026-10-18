@@ -60,8 +60,10 @@ multiples of a divisor of `N` at or below a number `≥ -N` and above a number `
 separator. For the search intervals: the elements of a list that pass one of two tests, those that
 pass the first coming before those that pass the second, and the elements of an increasing list of
 integers in ranges that are increasing and strictly apart, range after range. For the numbers of the
-command line: the characters that `Char.toLower` takes to `x`. The lemmas on 64-bit words are in
-`Ratpoints.Proof.Bits`.
+command line: the characters that `Char.toLower` takes to `x`. For the search intervals of the
+command line: an entry set twice, an entry after another is set, the entries and the members of the
+first `m` entries of an array as a list, and a bind of `Except` that succeeds. The lemmas on 64-bit
+words are in `Ratpoints.Proof.Bits`.
 
 ## Main statements
 
@@ -373,6 +375,36 @@ theorem getElem!_of_toList_eq_map {α : Type u} {β : Type v} [Inhabited β] {xs
   have hs : n < xs.size := by rwa [← Array.length_toList, h, List.length_map]
   rw [getElem!_pos xs n hs, ← Array.getElem_toList]
   simp only [h, List.getElem_map]
+
+/-- Setting an entry twice keeps the second value. -/
+theorem set!_set! {α : Type u} (xs : Array α) (i : Nat) (a b : α) :
+    (xs.set! i a).set! i b = xs.set! i b := by
+  simp only [set!_eq_setIfInBounds, setIfInBounds_setIfInBounds]
+
+theorem getElem!_set!_eq_or {α : Type u} [Inhabited α] (xs : Array α) (i j : Nat) (x : α) :
+    (xs.set! i x)[j]! = x ∨ (xs.set! i x)[j]! = xs[j]! := by
+  by_cases hij : i = j
+  · subst hij
+    by_cases hi : i < xs.size
+    · exact .inl (getElem!_set!_self _ _ _ hi)
+    · exact .inr (by rw [getElem!_neg _ i (by simpa using hi), getElem!_neg _ i hi])
+  · exact .inr (getElem!_set!_ne _ _ _ _ hij)
+
+theorem getElem!_take_toList {α : Type u} [Inhabited α] {xs : Array α} {m j : Nat} (hj : j < m)
+    (hm : m ≤ xs.size) : (xs.toList.take m)[j]! = xs[j]! := by
+  rw [getElem!_pos _ j (by simp; lia), List.getElem_take, getElem_toList,
+    getElem!_pos xs j (by lia)]
+
+theorem mem_take_toList_of_lt {α : Type u} [Inhabited α] {xs : Array α} {m j : Nat} (hj : j < m)
+    (hm : m ≤ xs.size) : xs[j]! ∈ xs.toList.take m := by
+  rw [← getElem!_take_toList hj hm, getElem!_pos _ j (by simp; lia)]
+  exact List.getElem_mem _
+
+theorem exists_eq_of_mem_take_toList {α : Type u} [Inhabited α] {xs : Array α} {m : Nat}
+    {p : α} (hp : p ∈ xs.toList.take m) : ∃ j < m, j < xs.size ∧ p = xs[j]! := by
+  obtain ⟨j, hj, rfl⟩ := List.getElem_of_mem hp
+  simp only [List.length_take, length_toList, Nat.lt_min] at hj
+  exact ⟨j, hj.1, hj.2, by rw [List.getElem_take, getElem_toList, getElem!_pos xs j hj.2]⟩
 
 end Array
 
@@ -1222,6 +1254,15 @@ theorem pow_mul_pow_sub (a : Int) {m n : Nat} (h : m ≤ n) : a ^ m * a ^ (n - m
   rw [← Int.pow_add, Nat.add_sub_cancel' h]
 
 end Int
+
+/-! ### Exceptions -/
+
+/-- A bind that succeeds succeeds at its first step. -/
+theorem Except.bind_eq_ok {ε α β : Type u} {m : Except ε α} {f : α → Except ε β} {b : β}
+    (h : m >>= f = .ok b) : ∃ a, m = .ok a ∧ f a = .ok b := by
+  cases m with
+  | error e => cases h
+  | ok a => exact ⟨a, rfl, h⟩
 
 /-! ### Characters -/
 

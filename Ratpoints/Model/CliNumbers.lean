@@ -15,16 +15,15 @@ meta import Ratpoints.Model.Double
 
 `ratpoints-lean` reads the numbers of its command line as `main.c` of ratpoints reads them: the
 integers of the coefficient list as `scan_mpz` reads them, the C `long`s of the height bound and of
-the options as `scan_long` reads them with `strtol`, and the real numbers of the options as
-`scan_double` reads them with `strtod`. The ends of the search intervals of `-l` and `-u` are read
-as `scan_end` reads them: the rational number that the word denotes, or an infinity, and the double
-that the library is given for it, outward of it. With these exact ends, whether a point that the
-search finds lies in the search region of the command line is decided as `process` of `main.c`
-decides it (`Ratpoints.Cli.inRegion`); intervals whose doubles meet are joined as `join_intervals`
-joins them before the library is called; and the doubles of the search intervals are printed as
-`printf` of glibc prints them under `%f` (`Ratpoints.Cli.printF`), for messages 3 and 8 of the
-report. The program uses the ends, the test of the region, the join and `Ratpoints.Cli.printF` with
-stage H.
+the options as `scan_long` reads them with `strtol`, the real numbers of the options as
+`scan_double` reads them with `strtod`, and the ends of the search intervals of `-l` and `-u` as
+`scan_end` reads them: the rational number that the word denotes, or an infinity, and the double
+that the library is given for it, outward of it. With these exact ends it decides, as `process` of
+`main.c` does, whether a point that the search finds lies in the search region of the command line
+(`Ratpoints.Cli.inRegion`); it joins intervals whose doubles meet, as `join_intervals` does before
+the library is called; and it prints the doubles of the search intervals as `printf` of glibc
+prints them under `%f` (`Ratpoints.Cli.printF`), in message 3 of the report and, with stage H, in
+message 8.
 
 ## Main definitions
 
