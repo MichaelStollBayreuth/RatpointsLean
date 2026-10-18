@@ -33,6 +33,7 @@ public import Ratpoints.Proof.Region
 public import Ratpoints.Proof.RowStore
 public import Ratpoints.Proof.Rows
 public import Ratpoints.Proof.Scan
+public import Ratpoints.Proof.SearchDens
 public import Ratpoints.Proof.SetBits
 public import Ratpoints.Proof.Setup
 public import Ratpoints.Proof.Shapes

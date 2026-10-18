@@ -432,45 +432,48 @@ Lemma~\ref{lem:sift_eq_checkDen} maps their side.
   \leanok
   For the coefficients $c$ of degree $d$ that the set-up hands on, the flags of the check, the
   height $H$, the parameters $P$, the callback and a delivery whose flag is clear, over the
-  denominators $b_{\mathrm{low}} = 1, \dots, b_{\mathrm{high}} = H$, in the order of
+  denominators $b_{\mathrm{low}}, \dots, b_{\mathrm{high}}$, in the order of
   \verb|find_points_work_1|: the flags of the tests on the denominators, the checked loop for even
   $d$, the Jacobi test for even $d$, $c_d$ not a square and the Jacobi switch of the parameters, the
   squares for odd $d$ and $|c_d| = 1$, and for odd $d$ otherwise the divisors of the leading
-  coefficient (Definition~\ref{def:setupUs1}; \csource{find_points.c}{4588}{4589},
-  \csource{find_points.c}{4595}{4596}, \csource{find_points.c}{4607}{4607},
-  \csource{find_points.c}{4900}{4943}, with the bits \verb|RATPOINTS_CHECK_DENOM| and
-  \verb|RATPOINTS_USE_JACOBI| that it sets, \csource{ratpoints.h}{415}{415} and
-  \csource{ratpoints.h}{418}{418}); the 2-adic information (Definition~\ref{def:twoAdic}) with the
-  packings of the classes and \verb|den_bits| (Definition~\ref{def:numClasses}), and nothing
-  delivered when no class of the denominators admits a numerator and there is no point at infinity
-  (\csource{find_points.c}{4603}{4604}, \csource{find_points.c}{4948}{4948},
-  \csource{find_points.c}{4954}{4963}); then what \verb|sieving_info| computes
-  (Definition~\ref{def:sievingInfo}), with the flag of the \verb|long|s: the tables of the examined
-  primes, the forbidden divisors for even $d$ (Definition~\ref{def:forbidden}), the sieve entries of
-  the moduli with their reciprocals and the store of the tables of rows of the run
-  (Definition~\ref{def:storeTables}), which the run takes, and nothing delivered when the curve has
-  no points modulo a prime examined on the way (\csource{find_points.c}{4602}{4602},
-  \csource{find_points.c}{4992}{5012}); the checked loop off when there are no forbidden divisors
-  and no Jacobi test (\csource{find_points.c}{2793}{2795}); the points at infinity
-  (Definition~\ref{def:pointsAtInfinity}), after which the search returns when the callback has
-  stopped it (\csource{find_points.c}{5100}{5106}, with the return when the Sturm step leaves
-  nothing to search, not met before stage~H); and the sieving (Definition~\ref{def:sieving}), the
-  block that sets up the run and runs the denominators: an array of rows of offsets, one for each
-  packing, of one offset for each sieve entry, and the rows of offsets of the classes in it, with
-  the inverses of the strides in the entries (Definition~\ref{def:classOffsets}); the shape that
-  \verb|run_setup| chooses (Definition~\ref{def:Shape}); and the points of the denominators of the
-  shape, with its tests, the classes and their offsets and \verb|den_bits|, the three stages that
-  the cut points $s_1$ and $s_2$ of the parameters give and pieces of at most
-  $\mathrm{arraySizeAt}(H)$ bit arrays, each mapped by $\mathrm{swapPoint}$ when the flag of the
-  reversal is set. Both exits return the delivery as it came. The search returns what a search gives
-  back (Definition~\ref{def:Outcome}): the data and the count of the delivery, with the flag of the
-  reversal, the squares and the success of the divisor set-up. A definition of type \verb|Id|, which
-  $\mathrm{findPointsWith}$ runs. What it delivers for well-formed parameters, $1 \le H < 2^{63}$,
-  as the refusals leave it, and $d$ the degree of $c$ is the subject of Lemma~\ref{lem:searchList}:
-  the points at infinity and, over the denominators of the search (Definition~\ref{def:searchDens}),
-  the points of the check with the flags of the numerators that a sound test of the sieve lets
-  through, up to the first call that stops the search, also when an exit fires, since the curve has
-  no points then (Lemmas~\ref{lem:sievingInfo} and~\ref{lem:twoAdic_exit}).
+  coefficient up to $b_{\mathrm{high}}$ (Definition~\ref{def:setupUs1};
+  \csource{find_points.c}{4588}{4589}, \csource{find_points.c}{4595}{4596},
+  \csource{find_points.c}{4607}{4607}, \csource{find_points.c}{4900}{4943}, with the bits
+  \verb|RATPOINTS_CHECK_DENOM| and \verb|RATPOINTS_USE_JACOBI| that it sets,
+  \csource{ratpoints.h}{415}{415} and \csource{ratpoints.h}{418}{418}); the 2-adic information
+  (Definition~\ref{def:twoAdic}) with the packings of the classes and \verb|den_bits|
+  (Definition~\ref{def:numClasses}), and nothing delivered when no class of the denominators admits
+  a numerator and there is no point at infinity (\csource{find_points.c}{4603}{4604},
+  \csource{find_points.c}{4948}{4948}, \csource{find_points.c}{4954}{4963}); then what
+  \verb|sieving_info| computes (Definition~\ref{def:sievingInfo}), with the flag of the
+  \verb|long|s: the tables of the examined primes, the forbidden divisors for even $d$
+  (Definition~\ref{def:forbidden}), the sieve entries of the moduli with their reciprocals and the
+  store of the tables of rows of the run (Definition~\ref{def:storeTables}), which the run takes,
+  and nothing delivered when the curve has no points modulo a prime examined on the way
+  (\csource{find_points.c}{4602}{4602}, \csource{find_points.c}{4992}{5012}); the checked loop off
+  when there are no forbidden divisors and no Jacobi test (\csource{find_points.c}{2793}{2795}); the
+  points at infinity (Definition~\ref{def:pointsAtInfinity}), after which the search returns when
+  the callback has stopped it (\csource{find_points.c}{5100}{5106}, with the return when the Sturm
+  step leaves nothing to search, not met before stage~H); and the sieving
+  (Definition~\ref{def:sieving}), the block that sets up the run and runs the denominators: an array
+  of rows of offsets, one for each packing, of one offset for each sieve entry, and the rows of
+  offsets of the classes in it, with the inverses of the strides in the entries
+  (Definition~\ref{def:classOffsets}); the shape that \verb|run_setup| chooses
+  (Definition~\ref{def:Shape}); and the points of the denominators of the shape from
+  $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$, with its tests, the classes and their offsets and
+  \verb|den_bits|, the three stages that the cut points $s_1$ and $s_2$ of the parameters give and
+  pieces of at most $\mathrm{arraySizeAt}(H)$ bit arrays, each mapped by $\mathrm{swapPoint}$ when
+  the flag of the reversal is set. Both exits return the delivery as it came. The search returns
+  what a search gives back (Definition~\ref{def:Outcome}): the data and the count of the delivery,
+  with the flag of the reversal, the squares and the success of the divisor set-up. A definition of
+  type \verb|Id|, which $\mathrm{findPointsWith}$ runs with $b_{\mathrm{low}} = 1$ and
+  $b_{\mathrm{high}} = H$. What it delivers for well-formed parameters, $1 \le H < 2^{63}$, as the
+  refusals leave it, $1 \le b_{\mathrm{low}}$, $b_{\mathrm{high}} \le H$ and $d$ the degree of $c$
+  is the subject of Lemma~\ref{lem:searchList}: the points at infinity and, over the denominators of
+  the search (Definition~\ref{def:searchDens}), the points of the check with the flags of the
+  numerators that a sound test of the sieve lets through, up to the first call that stops the
+  search, also when an exit fires, since the curve has no points then (Lemmas~\ref{lem:sievingInfo}
+  and~\ref{lem:twoAdic_exit}).
 \end{definition}
 
 The search with a callback, $\mathrm{findPointsWith}(c, H, P, o)$ with a callback and its data
@@ -480,16 +483,17 @@ is not a \verb|long| (errors 3, 5 and~4), and then, with error~8, a drop of $\lc
 the leading zeros; it runs the reversal check with the switch of the options, which may refuse with
 error~8 as well, and with the Sturm step on refuses the form when the remainder chain of the
 polynomial searched is $\mathrm{none}$; and it runs $\mathrm{searchPoints}$ on the polynomial that
-the check hands on, with the flag of the reversal as the flags of the check, from the data of the
-caller, the count $0$ and the flag of the stop clear, and returns what the search gives back.
-$\mathrm{findPoints}(c, H, P, o)$ (Definition~\ref{def:findPoints}) is its instance with the
-appending callback from the empty array, the list of the array, or its refusal. The C ranges of the
-search with a callback are the lines of \verb|find_points| and \verb|find_points_work| that make the
-three functions of the library one, the head and the locals of \verb|find_points_work_1| that the
-set-up uses, its reset of the flags and its end, the test of the leading zeros and of the height,
-the Sturm step, whose restriction of the search region is stage~H's, the height of the arguments of
-the library, a \verb|long|, the prototypes of the library with the callback, the codes of its
-refusals and the mask of the bits of the input that the reset of the flags keeps.
+the check hands on, over the denominators from $1$ to $H$, with the flag of the reversal as the
+flags of the check, from the data of the caller, the count $0$ and the flag of the stop clear, and
+returns what the search gives back. $\mathrm{findPoints}(c, H, P, o)$
+(Definition~\ref{def:findPoints}) is its instance with the appending callback from the empty array,
+the list of the array, or its refusal. The C ranges of the search with a callback are the lines of
+\verb|find_points| and \verb|find_points_work| that make the three functions of the library one, the
+head and the locals of \verb|find_points_work_1| that the set-up uses, its reset of the flags and
+its end, the test of the leading zeros and of the height, the Sturm step, whose restriction of the
+search region is stage~H's, the height of the arguments of the library, a \verb|long|, the
+prototypes of the library with the callback, the codes of its refusals and the mask of the bits of
+the input that the reset of the flags keeps.
 
 \begin{theorem}[A permutation of the reference]\label{thm:findPoints_perm}
   \uses{def:findPoints, thm:findPoints_order, lem:swapPoint_bijection}

@@ -166,6 +166,30 @@ theorem squares1Dens_one_eq_filter {divisors : List ℕ} (hpos : ∀ e ∈ divis
       Nat.mul_assoc e k k]⟩, hb⟩, by lia⟩
   · exact ⟨k, ⟨Nat.mul_pos (Nat.mul_pos (hpos e he) (by lia)) (by lia), by lia⟩, hb⟩
 
+-- The products `e k k` of a positive `e` over a range of `k` increase.
+private theorem pairwise_lt_map_range'_mul_mul {e : ℕ} (he : 0 < e) (lo n : ℕ) :
+    ((List.range' lo n).map fun k ↦ e * k * k).Pairwise (· < ·) :=
+  List.pairwise_map.mpr ((List.pairwise_lt_range').imp fun h ↦ by
+    rw [Nat.mul_assoc, Nat.mul_assoc]
+    exact Nat.mul_lt_mul_of_pos_left (Nat.mul_self_lt_mul_self h) he)
+
+/-- The divisor shape from the smallest denominator `bLow ≥ 1` is the one from `1` without the
+denominators below `bLow`, for positive divisors (`Ratpoints.Sieve.mem_range'_ceilSqrt_iff`). -/
+theorem squares1Dens_eq_filter {divisors : List ℕ} (hpos : ∀ e ∈ divisors, 0 < e) {bLow : ℕ}
+    (hbLow : 1 ≤ bLow) (bHigh : ℕ) :
+    squares1Dens divisors bLow bHigh = (squares1Dens divisors 1 bHigh).filter (bLow ≤ ·) := by
+  rw [squares1Dens, squares1Dens, List.filter_flatMap]
+  refine List.flatMap_congr fun e he ↦ List.Pairwise.eq_of_mem_iff (r := (· < ·))
+    (pairwise_lt_map_range'_mul_mul (hpos e he) _ _)
+    ((pairwise_lt_map_range'_mul_mul (hpos e he) _ _).filter _) fun b ↦ ?_
+  simp only [List.mem_map, List.mem_filter, mem_range'_ceilSqrt_iff (hpos e he) hbLow,
+    mem_range'_ceilSqrt_iff (hpos e he) le_rfl, decide_eq_true_eq]
+  constructor
+  · rintro ⟨k, ⟨h1, h2⟩, rfl⟩
+    exact ⟨⟨k, ⟨by lia, h2⟩, rfl⟩, h1⟩
+  · rintro ⟨⟨k, ⟨-, h2⟩, rfl⟩, h1⟩
+    exact ⟨k, ⟨h1, h2⟩, rfl⟩
+
 /-- The divisor shape lists each denominator once, for distinct squarefree divisors: `s k ^ 2`
 determines the squarefree `s` (`Nat.eq_of_mul_sq_eq_mul_sq`), and the segments start at `k ≥ 1`. -/
 theorem nodup_squares1Dens {divisors : List ℕ} (hnd : divisors.Nodup)

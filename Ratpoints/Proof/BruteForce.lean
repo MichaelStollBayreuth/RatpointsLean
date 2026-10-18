@@ -10,6 +10,7 @@ public import Ratpoints.Spec.Basic
 
 import Mathlib.Algebra.Order.Ring.Abs
 import Ratpoints.Mathlib.Data.List.Basic
+import Ratpoints.Proof.Containers
 
 /-!
 # The brute-force reference finds exactly the points
@@ -24,6 +25,11 @@ import Ratpoints.Mathlib.Data.List.Basic
   normalized point of height at most `H`.
 * `Ratpoints.nodup_bruteForce`: the list has no duplicates.
 * `Ratpoints.toFinset_bruteForce`: its set of elements is `Ratpoints.points c H`.
+* `Ratpoints.bruteForce_eq_append`, `Ratpoints.filter_bruteForce_eq_append`: the list is the
+  points at infinity followed by those of the denominators `1, …, H`, and its points at infinity and
+  those of the denominators `bLow, …, bHigh` are those of these candidates;
+  `Ratpoints.filter_bruteForce_eq_self`: its points at infinity and those of the denominators
+  `1, …, B` for `B ≥ H` are all its points.
 * `Ratpoints.ite_pointsAbove_eq_filter`: the points of one candidate are those that the
   specification of the order lists, `(x, y, z)` before `(x, -y, z)`.
 
@@ -223,6 +229,43 @@ theorem nodup_bruteForce (c : List ℤ) (H : ℕ) : (bruteForce c H).Nodup := by
 
 theorem toFinset_bruteForce (c : List ℤ) (H : ℕ) : (bruteForce c H).toFinset = points c H :=
   Finset.ext fun _ ↦ by simp [mem_bruteForce_iff]
+
+open BruteForce in
+/-- The reference with its points at infinity apart, for `H ≥ 1`. -/
+theorem bruteForce_eq_append (c : List ℤ) {H : ℕ} (hH : 1 ≤ H) :
+    bruteForce c H = pointsOfDen c (degree c) 0 [1] ++
+      (List.range' 1 H).flatMap fun b : ℕ ↦ pointsOfDen c (degree c) b (numerators H) := by
+  simp [bruteForce, hH, List.range'_eq_map_range, Nat.add_comm, List.flatMap_map,
+    BruteForce.degree_eq]
+
+open BruteForce in
+/-- The points of the reference with the denominators from `bLow ≥ 1` to `bHigh ≤ H`, and its points
+at infinity, are those of these denominators, in increasing order. -/
+theorem filter_bruteForce_eq_append (c : List ℤ) {H bLow bHigh : ℕ} (hH : 1 ≤ H) (hbLow : 1 ≤ bLow)
+    (hbH : bHigh ≤ H) :
+    (bruteForce c H).filter (fun p : ℤ × ℤ × ℤ ↦ p.2.2 = 0 ∨ bLow ≤ p.2.2 ∧ p.2.2 ≤ bHigh) =
+      pointsOfDen c (degree c) 0 [1] ++ (List.range' bLow (bHigh + 1 - bLow)).flatMap
+        fun b : ℕ ↦ pointsOfDen c (degree c) b (numerators H) := by
+  rw [bruteForce_eq_append c hH, List.filter_append, List.filter_flatMap,
+    ← List.filter_range'_le_and_le (a := 1) (n := H) hbLow (by lia), List.flatMap_filter]
+  refine congrArg₂ _ (List.filter_eq_self.mpr fun q hq ↦ by
+    simp [(mem_pointsOfDen_iff.mp hq).2.1]) (List.flatMap_congr fun b hb ↦ ?_)
+  have hb1 := (List.mem_range'_1.mp hb).1
+  split_ifs with h
+  · exact List.filter_eq_self.mpr fun q hq ↦ by simp_all [(mem_pointsOfDen_iff.mp hq).2.1]
+  · exact List.filter_eq_nil_iff.mpr fun q hq ↦ by
+      simp only [(mem_pointsOfDen_iff.mp hq).2.1]
+      simp_all
+      lia
+
+/-- The points of height at most `H` with a denominator of at most `B ≥ H` are all of them. -/
+theorem filter_bruteForce_eq_self (c : List ℤ) {H B : ℕ} (hB : H ≤ B) :
+    (bruteForce c H).filter (fun p : ℤ × ℤ × ℤ ↦ p.2.2 = 0 ∨ 1 ≤ p.2.2 ∧ p.2.2 ≤ B) =
+      bruteForce c H :=
+  List.filter_eq_self.mpr fun p hp ↦ by
+    have := (mem_bruteForce_iff.mp hp).2.2
+    simp only [decide_eq_true_eq]
+    lia
 
 /-! ### The points of one candidate, as the specification of the order lists them -/
 

@@ -39,7 +39,8 @@ $2^e$ into the bits of every $2^e$-th numerator, as ratpoints does (Chapter~\ref
 
 For the polynomial searched, of degree $d$ with the coefficients $c_0, \dots, c_d$ that the
 set-up of stage~D hands on, the form $F(x, z) = \sum_k c_k x^k z^{D - k}$ of even degree
-$D = d + (d \bmod 2)$, and the largest denominator $b_{\mathrm{high}}$, which is $H$ until stage~H,
+$D = d + (d \bmod 2)$, and the largest denominator $b_{\mathrm{high}}$ as \verb|find_points_work|
+normalizes it, $H$ unless the caller gives one from $1$ to $H$ (Section~\ref{sec:regionOptions}),
 \verb|find_points_work_1|:
 \begin{enumerate}
   \item sets the flag of the checked loop over the denominators, \verb|RATPOINTS_CHECK_DENOM|, for
@@ -647,22 +648,23 @@ Section~\ref{sec:denC} describes, in its order: the flags of the tests on the de
 divisors of the leading coefficient for odd degree, the 2-adic information and its exit, what
 \verb|sieving_info| computes (Definition~\ref{def:sievingInfo}), the tables of the examined primes
 with their exit, the forbidden divisors for even degree, the sieve entries of the moduli and the
-store of the tables of rows, the switch of the checked loop, the points at infinity, the return
-when the callback has stopped the search, and the sieving (Definition~\ref{def:sieving}): the shape
-and the run over the denominators from $1$ to $H$ with the cut points of the parameters and the
-store that \verb|sieving_info| returns. For well-formed parameters, $1 \le H < 2^{63}$ and $d$ the
-degree of $c$, there is a sound test of the sieve, one that lets the numerator of every point
-through, for which it delivers the points at infinity followed by the points of the check with the
-flags of the numerators that pass the test over the denominators of the search
-(Definition~\ref{def:searchDens}), in their order, up to the first call that stops the search, also
-at both exits; without the options of the output these are the points of the reference over the
-candidate $(1, 0)$ and these denominators, each mapped by $\mathrm{swapPoint}$ when the flag of the
-reversal is set (Lemma~\ref{lem:searchList}, which uses Definitions~\ref{def:Shape}
-and~\ref{def:searchDens}, Lemmas~\ref{lem:twoAdic_exit} and~\ref{lem:shape_dens} and the reduction
-of the run). The node of the search holds the C ranges of the flags and of the exits, the call of
-\verb|sieving_info| and the list of the sieve entries that it fills among them, and the return after
-the points at infinity with the return when the Sturm step leaves nothing to search
-(\csource{find_points.c}{2793}{2795}, \csource{find_points.c}{4588}{4589},
+store of the tables of rows, the switch of the checked loop, the points at infinity, the return when
+the callback has stopped the search, and the sieving (Definition~\ref{def:sieving}): the shape and
+the run over the denominators from $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$, which
+$\mathrm{findPoints}$ passes as $1$ and $H$, with the cut points of the parameters and the store
+that \verb|sieving_info| returns. For well-formed parameters, $1 \le H < 2^{63}$,
+$1 \le b_{\mathrm{low}}$, $b_{\mathrm{high}} \le H$ and $d$ the degree of $c$, there is a sound test
+of the sieve, one that lets the numerator of every point through, for which it delivers the points
+at infinity followed by the points of the check with the flags of the numerators that pass the test
+over the denominators of the search (Definition~\ref{def:searchDens}), in their order, up to the
+first call that stops the search, also at both exits; without the options of the output these are
+the points of the reference over the candidate $(1, 0)$ and these denominators, each mapped by
+$\mathrm{swapPoint}$ when the flag of the reversal is set (Lemma~\ref{lem:searchList}, which uses
+Definitions~\ref{def:Shape} and~\ref{def:searchDens}, Lemmas~\ref{lem:twoAdic_exit}
+and~\ref{lem:shape_dens} and the reduction of the run). The node of the search holds the C ranges of
+the flags and of the exits, the call of \verb|sieving_info| and the list of the sieve entries that
+it fills among them, and the return after the points at infinity with the return when the Sturm step
+leaves nothing to search (\csource{find_points.c}{2793}{2795}, \csource{find_points.c}{4588}{4589},
 \csource{find_points.c}{4595}{4596}, \csource{find_points.c}{4602}{4602},
 \csource{find_points.c}{4603}{4604}, \csource{find_points.c}{4607}{4607},
 \csource{find_points.c}{4900}{4943}, \csource{find_points.c}{4948}{4948},
@@ -677,31 +679,35 @@ and the rows of offsets of the classes (\csource{find_points.c}{4573}{4573},
   \uses{def:setupUs1, def:Shape}
   \lean{Ratpoints.searchDens, Ratpoints.searchDens_eq_range'}
   \leanok
-  The denominators from $1$ to $H$ in the order in which the search visits those that can carry a
-  point: for odd $d$ with $|c_d| \ne 1$ and divisors of the leading coefficient
-  (Definition~\ref{def:setupUs1}), the divisors times squares, divisor by divisor; and otherwise
-  $1, \dots, H$, since the other shapes visit increasing lists of these that contain every
-  denominator of a point.
+  The denominators from $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$ in the order in which the search
+  visits those that can carry a point: for odd $d$ with $|c_d| \ne 1$ and divisors of the leading
+  coefficient up to $b_{\mathrm{high}}$ (Definition~\ref{def:setupUs1}), the divisors times squares
+  from $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$, divisor by divisor; and otherwise
+  $b_{\mathrm{low}}, \dots, b_{\mathrm{high}}$, since the other shapes visit increasing lists of
+  these that contain every denominator of a point.
 \end{definition}
 
 \begin{theorem}[The output of the search]\label{thm:findPoints_order}
   \uses{def:findPoints, def:searchPoints, def:searchDens, lem:shape_dens, lem:twoAdic_exit,
     lem:examinePrime_none, lem:reversal_swap}
-  \lean{Ratpoints.exists_eq_of_findPoints_eq_ok, Ratpoints.perm_flatMap_squares1Dens, Ratpoints.perm_bruteForce_append_flatMap_searchDens, Ratpoints.append_flatMap_searchDens_eq_bruteForce, Ratpoints.eq_bruteForce_of_findPoints_eq_ok_of_reverse_eq_false, List.perm_flatMap_of_nodup}
+  \lean{Ratpoints.exists_eq_of_findPoints_eq_ok, Ratpoints.perm_flatMap_squares1Dens, Ratpoints.perm_filter_bruteForce_append_flatMap_searchDens, Ratpoints.append_flatMap_searchDens_eq_bruteForce, Ratpoints.eq_bruteForce_of_findPoints_eq_ok_of_reverse_eq_false, List.perm_flatMap_of_nodup}
   \leanok
   For well-formed parameters and options with $\mathrm{noCheck}$ false, if
   $\mathrm{findPoints}(c, H, P, o)$ returns the list $L$, and the reversal check hands on the
   polynomial $c'$ of degree $d'$ with the flag of the reversal: $L$ is the list of the points that
   the brute-force reference of $c'$ finds over the candidate $(1, 0)$, its points at infinity,
-  followed by those that it finds over the denominators of the search of $c'$
+  followed by those that it finds over the denominators of the search of $c'$ from $1$ to $H$
   (Definition~\ref{def:searchDens}), in their order, each mapped by $\mathrm{swapPoint}$ when the
   flag is set, without those with $y < 0$ under $\mathrm{noY}$. The points of the reference of $c'$
-  over the candidate $(1, 0)$ and over the denominators of its search are a permutation of
-  $\mathrm{bruteForce}(c', H)$, so that, with both options of the output off, $L$ is a permutation
-  of $\mathrm{bruteForce}(c, H)$ (Theorem~\ref{thm:findPoints_perm}), and $L$ is
-  $\mathrm{bruteForce}(c, H)$ when also the options forbid the reversal and the search of $c$ does
-  not take the divisors times squares. Theorem~\ref{thm:order} spells $L$ out in terms of $c$: the
-  points in the order of ratpoints (Definition~\ref{def:orderedPoints}), filtered by $\mathrm{noY}$.
+  over the candidate $(1, 0)$ and over the denominators of its search from $b_{\mathrm{low}} \ge 1$
+  to $b_{\mathrm{high}}$, for $1 \le b_{\mathrm{high}} \le H$, are a permutation of the points of
+  $\mathrm{bruteForce}(c', H)$ with $z = 0$ or $b_{\mathrm{low}} \le z \le b_{\mathrm{high}}$,
+  which for $b_{\mathrm{low}} = 1$ and $b_{\mathrm{high}} = H$ are all its points, so that, with
+  both options of the output off, $L$ is a permutation of $\mathrm{bruteForce}(c, H)$
+  (Theorem~\ref{thm:findPoints_perm}), and $L$ is $\mathrm{bruteForce}(c, H)$ when also the options
+  forbid the reversal and the search of $c$ does not take the divisors times squares.
+  Theorem~\ref{thm:order} spells $L$ out in terms of $c$: the points in the order of ratpoints
+  (Definition~\ref{def:orderedPoints}), filtered by $\mathrm{noY}$.
 \end{theorem}
 
 \begin{proof}
@@ -714,9 +720,12 @@ and the rows of offsets of the classes (\csource{find_points.c}{4573}{4573},
   which every denominator and every numerator of a point pass, changing nothing
   (Lemma~\ref{lem:flatMap_sound}); these are those over the denominators of the search, since a
   denominator that the one list has and the other lacks carries no point. The denominators of the
-  search have no duplicates, lie in $1, \dots, H$ and hold every denominator of a point
-  (Lemma~\ref{lem:shape_dens}; for the shapes other than the divisors they are $1, \dots, H$), so
-  the points over them are a permutation of those over $1, \dots, H$. The degree that the reversal
+  search from $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$ have no duplicates, lie in
+  $b_{\mathrm{low}}, \dots, b_{\mathrm{high}}$ and hold every denominator of a point there
+  (Lemmas~\ref{lem:shape_dens} and~\ref{lem:searchDensRange}; for the shapes other than the
+  divisors they are $b_{\mathrm{low}}, \dots, b_{\mathrm{high}}$), so the points over them are a
+  permutation of those over $b_{\mathrm{low}}, \dots, b_{\mathrm{high}}$, the points of the
+  reference with these denominators (Lemma~\ref{lem:searchDensRange}). The degree that the reversal
   check hands on is that of $c'$, and without a reversal $c' = c$ (Lemma~\ref{lem:reversal_swap}).
   When $\mathrm{findPoints}$ returns a list, its height bound is below $2^{63}$ by its refusals, as
   the search needs.
@@ -844,9 +853,10 @@ about the table of primes that the factorization uses, checked by \verb|decide|,
 \verb|Ratpoints/Proof/Bits.lean| and those on lists and ranges in
 \verb|Ratpoints/Proof/Containers.lean|, the binary form at $a = k b$, the squares modulo $p$ and the
 negation of the quarter of \verb|LONG_MIN| in \verb|Ratpoints/Proof/Tables.lean|, and the
-denominators of the search in \verb|Ratpoints/Proof/FindPoints.lean|, with the theorems, which
-stage~G moves to \verb|Ratpoints/Proof/Output.lean|. The lemmas of Mathlib's generality are in
-\verb|Ratpoints/Mathlib|, in the files that mirror their homes in Mathlib:
+denominators of the search, with the range of stage~H, in \verb|Ratpoints/Proof/SearchDens.lean|,
+which stage~H splits off \verb|Ratpoints/Proof/FindPoints.lean|, where they were with the theorems
+until stage~G moved these to \verb|Ratpoints/Proof/Output.lean|. The lemmas of Mathlib's generality
+are in \verb|Ratpoints/Mathlib|, in the files that mirror their homes in Mathlib:
 \verb|Algebra/BigOperators/Group/List/Basic|, \verb|Algebra/Group/Even|, \verb|Data/Int/GCD|,
 \verb|Data/List/Basic|, \verb|Data/List/Pairwise|, \verb|Data/Nat/Factors| (with the part of a
 number prime to another, \verb|Nat.coprimePart|, which is $b^*$), \verb|Data/Nat/PadicValNat|,

@@ -23,10 +23,10 @@ out, in the terms of the model: the reversal check hands on the polynomial of
 `Ratpoints.searchedPoly`; the denominators of `Ratpoints.searchDenominators` lie in `1, …, H`; and
 the points of the brute-force reference over a denominator, and over the candidate `(1, 0)`, are
 those of `Ratpoints.pointsWithDen`. That the denominators of the search are those of
-`Ratpoints.searchDenominators` (`Ratpoints.searchDens_eq_searchDenominators`), since the divisor
-set-up succeeds exactly when ratpoints factors `|c_d|` completely and finds fewer than
+`Ratpoints.searchDenominators` (`Ratpoints.searchDens_eq_filter_searchDenominators`), since the
+divisor set-up succeeds exactly when ratpoints factors `|c_d|` completely and finds fewer than
 `Ratpoints.maxDivisors` divisors (`Ratpoints.Setup.map_snd_run_setupUs1`), is in
-`Ratpoints.Proof.FindPoints`, and `Ratpoints.eq_orderedPoints_of_findPoints_eq_ok`, which puts the
+`Ratpoints.Proof.SearchDens`, and `Ratpoints.eq_orderedPoints_of_findPoints_eq_ok`, which puts the
 pieces together, in `Ratpoints.Proof.Output`.
 
 ## Main statements

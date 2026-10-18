@@ -458,15 +458,16 @@ the entries in their order, that the entries from $s_2$ on are prime entries, an
 (Chapter~\ref{chap:packing}), that the first $s_2$ entries have their tables of inverses and the row
 offsets of the classes, which pack the 2-adic words, and, for their rows, a store of the tables of
 rows that fits them (Chapter~\ref{chap:rows}). The search (Definition~\ref{def:searchPoints}), whose
-contract takes $H < 2^{63}$, which the refusal of \verb|findPoints| gives, passes
-$b_{\mathrm{low}} = 1$, $b_{\mathrm{high}} = H$, the cut points of its parameters, the reciprocals
-and the store of the tables of rows that \verb|sieving_info| returns and the classes with their row
-offsets (Lemma~\ref{lem:soundRun}); what \verb|sieving_info| computes (Lemma~\ref{lem:sievingInfo})
-gives the entries of the moduli in their order, each with the reciprocal of its modulus, a store of
-the tables of rows that fits them, and for one of the first $\mathrm{numPrimes}$ primes of the table
-the entry of that prime with the table of the reference as its only factor
-(Lemma~\ref{lem:sieveEntry_admits}), a prime entry (Lemma~\ref{lem:stage3}); the well-formedness
-makes the moduli of the third stage such primes (Definition~\ref{def:Params}).
+contract takes $H < 2^{63}$, which the refusal of \verb|findPoints| gives, and
+$1 \le b_{\mathrm{low}}$, $b_{\mathrm{high}} \le H$, passes its range of the denominators, the cut
+points of its parameters, the reciprocals and the store of the tables of rows that
+\verb|sieving_info| returns and the classes with their row offsets (Lemma~\ref{lem:soundRun}); what
+\verb|sieving_info| computes (Lemma~\ref{lem:sievingInfo}) gives the entries of the moduli in their
+order, each with the reciprocal of its modulus, a store of the tables of rows that fits them, and
+for one of the first $\mathrm{numPrimes}$ primes of the table the entry of that prime with the table
+of the reference as its only factor (Lemma~\ref{lem:sieveEntry_admits}), a prime entry
+(Lemma~\ref{lem:stage3}); the well-formedness makes the moduli of the third stage such primes
+(Definition~\ref{def:Params}).
 
 \section{The cut points of the command line}\label{sec:cuts}
 

@@ -81,7 +81,7 @@ words are in `Ratpoints.Proof.Bits`.
 * `List.flatMap_range'_map_filter`: the same for the natural numbers `64 w + t` of the blocks
   `w = w0, …, w0 + n - 1`: the denominators of the set bits of words.
 * `List.filter_range'_le_and_le`: of a range that covers `lo, …, hi`, the numbers from `lo` to
-  `hi`.
+  `hi`; `List.range'_eq_filter_range'`: the numbers `bLow, …, bHigh` among `1, …, bHigh`.
 * `List.filter_append_filter_of_pairwise`, `List.flatMap_filter_eq_filter_any`: the elements of
   a list that pass `p` followed by those that pass `q` are those that pass one of them, when those
   that pass `p` come first; the elements of an increasing list of integers in ranges that are
@@ -490,6 +490,14 @@ theorem filter_range'_le_and_le {a n lo hi : Nat} (ha : a ≤ lo) (hn : hi < a +
     (filter_eq_nil_iff (l := range' (a + (m + (hi + 1 - (a + m)))) k)).mpr fun b hb ↦ by
       simp at hb ⊢; lia,
     filter_eq_self.mpr fun b hb ↦ by simp at hb ⊢; lia, nil_append, append_nil]
+
+/-- The numbers `bLow, …, bHigh` are those of `1, …, bHigh` from `bLow ≥ 1` on. -/
+theorem range'_eq_filter_range' {bLow : Nat} (hbLow : 1 ≤ bLow) (bHigh : Nat) :
+    range' bLow (bHigh + 1 - bLow) = (range' 1 bHigh).filter (bLow ≤ ·) := by
+  rw [← filter_range'_le_and_le (a := 1) (n := bHigh) hbLow (by lia)]
+  exact filter_congr fun b hb ↦ by
+    simp only [mem_range'_1] at hb
+    simp [show b ≤ bHigh by lia]
 
 theorem flatMap_filter {α : Type u} {β : Type v} {l : List α} {p : α → Bool} {f : α → List β} :
     (l.filter p).flatMap f = l.flatMap fun a ↦ if p a then f a else [] := by

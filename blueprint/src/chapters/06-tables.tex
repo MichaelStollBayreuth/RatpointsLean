@@ -489,14 +489,16 @@ $q$ primes and take primes as moduli (Definition~\ref{def:sieveParams}).
     def:Params, def:stage3, lem:stage3, lem:classOffsets, lem:storeTables}
   \lean{Ratpoints.SievingInfoEntries, Ratpoints.SievingInfoInvariant, Ratpoints.refInit_push, Ratpoints.IsModulusEntry.isSound, Ratpoints.SievingInfoEntries.fits, Ratpoints.IsSievingInfo, Ratpoints.sievingInfo_spec}
   \leanok
-  For well-formed parameters and either value of the switch of the checked loop: if
-  \verb|sieving_info| gives a result, the sieve entries are those of the moduli, in their order,
-  every sieve entry is sound, packable, so that it holds the reciprocal of its modulus, and has
-  factors whose tables of inverses invert their units (Lemma~\ref{lem:sieveEntry_admits}), those of
-  the third stage, from the position $s_2$ on, are prime entries (Definition~\ref{def:stage3}), the
-  reciprocals returned are those of the entries in their order, the forbidden divisors are among
-  those that the two loops may record, and the store of the tables of rows fits the entries
-  (Lemma~\ref{lem:storeTables}); if it gives none, the curve has no points.
+  For well-formed parameters, either value of the switch of the checked loop and the largest
+  denominator $b_{\mathrm{high}}$: if \verb|sieving_info| gives a result, the sieve entries are
+  those of the moduli, in their order, every sieve entry is sound, packable, so that it holds the
+  reciprocal of its modulus, and has factors whose tables of inverses invert their units
+  (Lemma~\ref{lem:sieveEntry_admits}), those of the third stage, from the position $s_2$ on, are
+  prime entries (Definition~\ref{def:stage3}), the reciprocals returned are those of the entries in
+  their order, the forbidden divisors are among those that the two loops may record for
+  $b_{\mathrm{high}}$, and the store of the tables of rows fits the entries
+  (Lemma~\ref{lem:storeTables}); if it gives none, the curve has no points of any height, so that
+  the exit serves every range of the denominators.
 \end{lemma}
 
 \begin{proof}
@@ -505,7 +507,8 @@ $q$ primes and take primes as moduli (Definition~\ref{def:sieveParams}).
   Lemma~\ref{lem:sieveEntry_admits} needs, in an invariant of the loop over the moduli, and the
   conditions on a modulus that it takes come from the well-formedness; the forbidden divisors of the
   second loop are those of the contract of Definition~\ref{def:forbidden}. The exit is that of the
-  loop of the tables or of a modulus. The reciprocal of each entry is that of its modulus by
+  loop of the tables or of a modulus, where the curve has no points modulo a prime, whatever their
+  height. The reciprocal of each entry is that of its modulus by
   Lemma~\ref{lem:sieveEntry_admits}. A modulus of the third stage is one of the first
   $\mathrm{numPrimes}$ primes of the table (Definition~\ref{def:Params}), whose entry has that prime
   with the table of the reference as its only factor (Lemma~\ref{lem:sieveEntry_admits}) and its

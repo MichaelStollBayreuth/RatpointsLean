@@ -884,23 +884,23 @@ serves every range.
 \begin{lemma}[The denominators in a range]\label{lem:searchDensRange}
   \uses{def:searchDens, def:Shape, lem:shape_dens, def:bruteForce, def:binaryDivisors,
     lem:searchDenominators}
-  Proposed names: \lname{Ratpoints.le\_and\_le\_of\_mem\_searchDens},
-  \lname{Ratpoints.searchDens\_eq\_filter},
-  \lname{Ratpoints.searchDens\_one\_eq\_searchDenominators},
-  \lname{Ratpoints.bruteForce\_eq\_append}, \lname{Ratpoints.filter\_bruteForce\_eq\_append},
-  \lname{Ratpoints.filter\_bruteForce\_eq\_self}. For $1 \le b_{\mathrm{low}}$ the denominators of
-  the search lie in $b_{\mathrm{low}}, \dots, b_{\mathrm{high}}$, and for $1 \le b_{\mathrm{high}}$
-  they are those of the search from $1$ to $b_{\mathrm{high}}$ that are at least $b_{\mathrm{low}}$;
-  those from $1$ to $b_{\mathrm{high}}$ are the denominators of the search of the specification up
-  to $b_{\mathrm{high}}$ (Definition~\ref{def:binaryDivisors}, Lemma~\ref{lem:searchDenominators}).
-  The points of the brute-force reference with $z = 0$ or
-  $b_{\mathrm{low}} \le z \le b_{\mathrm{high}} \le H$ are its points over the candidate $(1, 0)$
-  followed by those over these denominators, and its points with $z = 0$ or $1 \le z \le B$ for
-  $B \ge H$ are all its points.
+  \lean{Ratpoints.le_and_le_of_mem_searchDens, Ratpoints.searchDens_eq_filter, Ratpoints.searchDens_one_eq_searchDenominators, Ratpoints.bruteForce_eq_append, Ratpoints.filter_bruteForce_eq_append, Ratpoints.filter_bruteForce_eq_self}
+  \leanok
+  For $1 \le b_{\mathrm{low}}$ the denominators of the search lie in
+  $b_{\mathrm{low}}, \dots, b_{\mathrm{high}}$, and for $1 \le b_{\mathrm{high}}$ they are those of
+  the search from $1$ to $b_{\mathrm{high}}$ that are at least $b_{\mathrm{low}}$; those from $1$ to
+  $b_{\mathrm{high}}$ are the denominators of the search of the specification up to
+  $b_{\mathrm{high}}$ (Definition~\ref{def:binaryDivisors}, Lemma~\ref{lem:searchDenominators}).
+  For $1 \le H$ the brute-force reference is its points over the candidate $(1, 0)$ followed by
+  those over $1, \dots, H$; its points with $z = 0$ or
+  $b_{\mathrm{low}} \le z \le b_{\mathrm{high}} \le H$, for $1 \le b_{\mathrm{low}}$, are its points
+  over the candidate $(1, 0)$ followed by those over $b_{\mathrm{low}}, \dots, b_{\mathrm{high}}$,
+  and its points with $z = 0$ or $1 \le z \le B$ for $B \ge H$ are all its points.
 \end{lemma}
 
 \begin{proof}
   \uses{thm:bruteForce}
+  \leanok
   From the lists of the shapes and the filter of a range, the divisors times squares in a range
   being those of Lemma~\ref{lem:searchDenominators}; every point of the reference has $z \le H$ by
   its membership (Theorem~\ref{thm:bruteForce}).
