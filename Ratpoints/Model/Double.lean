@@ -38,6 +38,8 @@ the program uses).
   the double nearest to a dyadic number.
 * `Ratpoints.Double.toRat`, `Ratpoints.Double.ofRatio`: the exact value of a finite double as a
   rational number, and the double nearest to a fraction.
+* `Ratpoints.Double.assemble`, `Ratpoints.Double.ofSignificand`: the double of a significand and
+  the exponent of its last place, the last step of both roundings.
 * `Ratpoints.Double.ofInt64`, `Ratpoints.Double.toInt64`, `Ratpoints.Double.toUInt64`: the
   conversions between `long`s and doubles.
 * `Ratpoints.Double.ldexp`, `Ratpoints.Double.frexp`, `Ratpoints.Double.nextUp`,
@@ -146,37 +148,50 @@ def roundShift (m : Nat) (k : Int) : Nat :=
     let half := 2 ^ (k.toNat - 1)
     if half < r ∨ r = half ∧ q % 2 = 1 then q + 1 else q
 
+/-- The double with the sign `-` for `neg` that IEEE 754 encodes by a significand `M < 2 ^ 53` and
+the exponent `q` of its last place: a subnormal or a zero with the fraction `M` for `M < 2 ^ 52`
+(whose last place is `2 ^ (-1074)`), an infinity when the exponent field `q + 1075` would reach
+`2047`, and otherwise a normal double with the exponent field `q + 1075` and the fraction
+`M - 2 ^ 52`. -/
+def assemble (neg : Bool) (M : Nat) (q : Int) : Double :=
+  let s : UInt64 := if neg then 0x8000000000000000 else 0
+  if M < 2 ^ 52 then ⟨s ||| M.toUInt64⟩
+  else if 2047 ≤ q + 1075 then ⟨s ||| 0x7ff0000000000000⟩
+  else ⟨s ||| ((q + 1075).toNat.toUInt64 <<< 52) ||| (M - 2 ^ 52).toUInt64⟩
+
+/-- The double with the sign `-` for `neg` of a rounded significand `M ≤ 2 ^ 53` and the exponent
+`q` of its last place, the last step of `Ratpoints.Double.ofDyadic` and `Ratpoints.Double.ofRatio`:
+the significand `2 ^ 53`, which rounding up can reach, carried into the next exponent as `2 ^ 52`,
+then the bits of `Ratpoints.Double.assemble`. -/
+def ofSignificand (neg : Bool) (M : Nat) (q : Int) : Double :=
+  let (M, q) := if M = 2 ^ 53 then (2 ^ 52, q + 1) else (M, q)
+  assemble neg M q
+
 /-- The double nearest to `±m 2 ^ e`, the sign `-` for `neg`, with ties to even, as the operations
 of IEEE 754 round their exact results in the rounding mode to nearest: a signed zero for `m = 0`;
 otherwise the last place `2 ^ q` of the result, `q = max (E - 52) (-1074)` for the exponent `E` with
 `2 ^ E ≤ m 2 ^ e < 2 ^ (E + 1)`; `M`, the value divided by `2 ^ q` and rounded, carried into the
 next exponent at `2 ^ 53`; a subnormal or a zero below `2 ^ 52`; and an infinity beyond the largest
-finite double. The proofs show only that a finite result for `m ≠ 0` is a faithful rounding: the
-value lies strictly between the neighbours of the result
+finite double (`Ratpoints.Double.ofSignificand`). The proofs show only that a finite result for
+`m ≠ 0` is a faithful rounding: the value lies strictly between the neighbours of the result
 (`Ratpoints.Double.lt_nextUp_and_nextDown_lt_ofDyadic`). -/
 def ofDyadic (neg : Bool) (m : Nat) (e : Int) : Double :=
-  let s : UInt64 := if neg then 0x8000000000000000 else 0
-  if m = 0 then ⟨s⟩
+  if m = 0 then ⟨if neg then 0x8000000000000000 else 0⟩
   else
     let q : Int := max (m.log2 + e - 52) (-1074)
-    let M := roundShift m (q - e)
-    let (M, q) := if M = 2 ^ 53 then (2 ^ 52, q + 1) else (M, q)
-    if M < 2 ^ 52 then ⟨s ||| M.toUInt64⟩
-    else if 2047 ≤ q + 1075 then ⟨s ||| 0x7ff0000000000000⟩
-    else ⟨s ||| ((q + 1075).toNat.toUInt64 <<< 52) ||| (M - 2 ^ 52).toUInt64⟩
+    ofSignificand neg (roundShift m (q - e)) q
 
 /-- The double nearest to `±n / d` for `d ≠ 0`, the sign `-` for `neg`, with ties to even, as IEEE
 754 rounds an exact result in the rounding mode to nearest: a signed zero for `n = 0`; otherwise the
 exponent `E` with `2 ^ E ≤ n / d < 2 ^ (E + 1)`, which the lengths of `n` and `d` in bits fix up to
 one, the last place `2 ^ q` of the result, `q = max (E - 52) (-1074)`, the quotient `n / (d 2 ^ q)`
 rounded to the nearest integer `M` (`r` the remainder), carried into the next exponent at `2 ^ 53`,
-a subnormal or a zero below `2 ^ 52`, and an infinity beyond the largest finite double. The proofs
-show only that a finite result for `n ≠ 0` and `d ≠ 0` is a faithful rounding: the value lies
-strictly between the neighbours of the result
+a subnormal or a zero below `2 ^ 52`, and an infinity beyond the largest finite double
+(`Ratpoints.Double.ofSignificand`). The proofs show only that a finite result for `n ≠ 0` and
+`d ≠ 0` is a faithful rounding: the value lies strictly between the neighbours of the result
 (`Ratpoints.Double.lt_nextUp_and_nextDown_lt_ofRatio`). -/
 def ofRatio (neg : Bool) (n d : Nat) : Double :=
-  let s : UInt64 := if neg then 0x8000000000000000 else 0
-  if n = 0 then ⟨s⟩
+  if n = 0 then ⟨if neg then 0x8000000000000000 else 0⟩
   else
     let e : Int := (n.log2 : Int) - d.log2
     let atLeast : Bool := if 0 ≤ e then d * 2 ^ e.toNat ≤ n else d ≤ n * 2 ^ (-e).toNat
@@ -184,10 +199,7 @@ def ofRatio (neg : Bool) (n d : Nat) : Double :=
     let (a, b) := if 0 ≤ q then (n, d * 2 ^ q.toNat) else (n * 2 ^ (-q).toNat, d)
     let r := a % b
     let M := if b < 2 * r ∨ 2 * r = b ∧ (a / b) % 2 = 1 then a / b + 1 else a / b
-    let (M, q) := if M = 2 ^ 53 then (2 ^ 52, q + 1) else (M, q)
-    if M < 2 ^ 52 then ⟨s ||| M.toUInt64⟩
-    else if 2047 ≤ q + 1075 then ⟨s ||| 0x7ff0000000000000⟩
-    else ⟨s ||| ((q + 1075).toNat.toUInt64 <<< 52) ||| (M - 2 ^ 52).toUInt64⟩
+    ofSignificand neg M q
 
 /-- The conversion `(double)n` of a `long` `n` to a double: the double nearest to `n`, ties to even,
 as gcc converts it on the platforms of ratpoints, exact for `|n| ≤ 2 ^ 53`, and `±2 ^ 63` for

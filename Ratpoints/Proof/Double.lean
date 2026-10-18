@@ -25,14 +25,17 @@ the order of the values (`Ratpoints.Double.lt_eq_true_iff`, `Ratpoints.Double.le
 (`Ratpoints.Double.orderValue_nextUp`, `Ratpoints.Double.nextUp_le_of_lt`,
 `Ratpoints.Double.orderValue_nextDown`); the value of a finite double is its exact value
 `Ratpoints.Double.toRat` (`Ratpoints.Double.doubleValue_eq_toRat`); the negation and `fabs` act on
-the sign of the value; the double `Ratpoints.Double.ofDyadic` nearest to `±m 2 ^ e` is exact when
-`0 < m < 2 ^ 53`, `e ≥ -1074` and `m 2 ^ e < 2 ^ 1024` (`Ratpoints.Double.ofDyadic_exact`, where the
-last hypothesis reads `Nat.log2 m + e ≤ 1023`), and in the normal range it is `±M 2 ^ q` with
-`2 ^ 52 ≤ M < 2 ^ 53` and `m 2 ^ e < (M + 1) 2 ^ q` (`Ratpoints.Double.spec_ofDyadic`); hence
-`(double)n` is exact for `|n| ≤ 2 ^ 53` (`Ratpoints.Double.ofInt64_exact`), `ldexp` and `frexp` are
-exact in the normal range (`Ratpoints.Double.ldexp_exact`, `Ratpoints.Double.frexp_spec`), and the
-conversions to `long` and `unsigned long` truncate (`Ratpoints.Double.toInt_toInt64`,
-`Ratpoints.Double.toNat_toUInt64`).
+the sign of the value; the double that `Ratpoints.Double.assemble` makes from a significand `M` and
+the exponent `q` of its last place has the fields of a subnormal, an infinity or a normal double
+(`Ratpoints.Double.fields_assemble`) and, in the range of the finite doubles, the value `±M 2 ^ q`
+(`Ratpoints.Double.toRat_assemble`); the double `Ratpoints.Double.ofDyadic` nearest to `±m 2 ^ e`,
+which ends with it, is exact when `0 < m < 2 ^ 53`, `e ≥ -1074` and `m 2 ^ e < 2 ^ 1024`
+(`Ratpoints.Double.ofDyadic_exact`, where the last hypothesis reads `Nat.log2 m + e ≤ 1023`), and in
+the normal range it is `±M 2 ^ q` with `2 ^ 52 ≤ M < 2 ^ 53` and `m 2 ^ e < (M + 1) 2 ^ q`
+(`Ratpoints.Double.spec_ofDyadic`); hence `(double)n` is exact for `|n| ≤ 2 ^ 53`
+(`Ratpoints.Double.ofInt64_exact`), `ldexp` and `frexp` are exact in the normal range
+(`Ratpoints.Double.ldexp_exact`, `Ratpoints.Double.frexp_spec`), and the conversions to `long` and
+`unsigned long` truncate (`Ratpoints.Double.toInt_toInt64`, `Ratpoints.Double.toNat_toUInt64`).
 
 ## Main definitions
 
@@ -48,6 +51,8 @@ conversions to `long` and `unsigned long` truncate (`Ratpoints.Double.toInt_toIn
 * `Ratpoints.Double.lt_eq_true_iff`, `Ratpoints.Double.le_eq_true_iff`,
   `Ratpoints.Double.beq_eq_true_iff`: the comparisons of the C language off NaN.
 * `Ratpoints.Double.doubleValue_eq_toRat`: the value of a finite double.
+* `Ratpoints.Double.fields_assemble`, `Ratpoints.Double.isFinite_assemble_iff`,
+  `Ratpoints.Double.toRat_assemble`: the bits of a significand and an exponent.
 * `Ratpoints.Double.ofDyadic_exact`, `Ratpoints.Double.spec_ofDyadic`,
   `Ratpoints.Double.ofInt64_exact`, `Ratpoints.Double.spec_ofInt64_natCast`: the rounding of a
   dyadic number and the conversion of a `long`.
@@ -491,34 +496,60 @@ theorem roundShift_of_nonpos {m : ℕ} {k : ℤ} (hk : k ≤ 0) :
     roundShift m k = m * 2 ^ (-k).toNat := by
   simp [roundShift, hk, Nat.shiftLeft_eq]
 
-/-- The double that the last lines of `Ratpoints.Double.ofDyadic` and `Ratpoints.Double.ofRatio`
-make from a significand `M < 2 ^ 53` and the exponent `q` of its last place, in the range of the
-finite doubles: a subnormal for `M < 2 ^ 52`, which needs `q = -1074`, and otherwise a normal double
-with the exponent field `q + 1075`; its value is `±M 2 ^ q`. -/
-theorem spec_ofSignificand {neg : Bool} {M : ℕ} {q : ℤ} {x : Double}
-    (hM : M < 2 ^ 53) (hsub : M < 2 ^ 52 → q = -1074) (hnorm : 2 ^ 52 ≤ M → -1074 ≤ q ∧ q ≤ 971)
-    (hx : x = if M < 2 ^ 52 then ⟨(if neg then 0x8000000000000000 else 0 : UInt64) ||| M.toUInt64⟩
-      else if 2047 ≤ q + 1075 then
-        ⟨(if neg then 0x8000000000000000 else 0 : UInt64) ||| 0x7ff0000000000000⟩
-      else ⟨(if neg then 0x8000000000000000 else 0 : UInt64) |||
-        (q + 1075).toNat.toUInt64 <<< 52 ||| (M - 2 ^ 52).toUInt64⟩) :
-    x.isFinite = true ∧ x.signBit = neg ∧ x.toRat = (if neg then -1 else 1) * ((M : ℚ) * 2 ^ q) ∧
-      (2 ^ 52 ≤ M → x.expField = (q + 1075).toNat) := by
+/-! ### The assembly of the bits -/
+
+theorem ofSignificand_of_ne {neg : Bool} {M : ℕ} (q : ℤ) (h : M ≠ 2 ^ 53) :
+    ofSignificand neg M q = assemble neg M q := by
+  simp only [ofSignificand, h, ↓reduceIte]
+
+theorem ofSignificand_two_pow (neg : Bool) (q : ℤ) :
+    ofSignificand neg (2 ^ 53) q = assemble neg (2 ^ 52) (q + 1) := by
+  simp only [ofSignificand, ↓reduceIte]
+
+/-- The sign bit, the exponent field and the fraction of the double that
+`Ratpoints.Double.assemble` makes from a significand `M < 2 ^ 53` and the exponent `q` of its last
+place: those of a subnormal or a zero for `M < 2 ^ 52`, of an infinity when the exponent field
+`q + 1075` would reach `2047`, and of a normal double otherwise. -/
+theorem fields_assemble (neg : Bool) {M : ℕ} (q : ℤ) (hM : M < 2 ^ 53) :
+    (assemble neg M q).signBit = neg ∧
+      (assemble neg M q).expField =
+        (if M < 2 ^ 52 then 0 else if 2047 ≤ q + 1075 then 2047 else (q + 1075).toNat) ∧
+      (assemble neg M q).fracField =
+        if M < 2 ^ 52 then M else if 2047 ≤ q + 1075 then 0 else M - 2 ^ 52 := by
   by_cases h1 : M < 2 ^ 52
-  · simp only [h1, ↓reduceIte] at hx
-    subst hx
-    obtain ⟨hf, hs, hr⟩ := toRat_of_toNat_eq (neg := neg) (E := 0) (F := M) (by decide) h1
-      (by rw [toNat_sign_or (neg := neg) (n := M) (by lia)]; simp)
-    exact ⟨hf, hs, by rw [hr, hsub h1]; simp, by lia⟩
-  have hq := hnorm (by lia)
-  simp only [h1, show ¬2047 ≤ q + 1075 by lia, ↓reduceIte] at hx
-  subst hx
-  have h := toNat_sign_or_or (neg := neg) (E := (q + 1075).toNat) (F := M - 2 ^ 52) (by lia)
-    (by lia)
-  obtain ⟨hf, hs, hr⟩ := toRat_of_toNat_eq (by lia) (by lia) h
-  refine ⟨hf, hs, ?_, fun _ ↦ (eq_of_fields (by lia) (by lia) h).2.1⟩
-  rw [hr]
-  simp only [show (q + 1075).toNat ≠ 0 by lia, ↓reduceIte]
+  · simp only [h1, ↓reduceIte]
+    refine eq_of_fields (by decide) h1 ?_
+    simp only [assemble, h1, ↓reduceIte]
+    rw [toNat_sign_or (by lia)]; simp
+  by_cases h2 : 2047 ≤ q + 1075
+  · simp only [h1, h2, ↓reduceIte]
+    refine eq_of_fields (by decide) (by decide) ?_
+    simp only [assemble, h1, h2, ↓reduceIte]
+    exact toNat_sign_or (n := 2047 * 2 ^ 52 + 0) (by norm_num)
+  · simp only [h1, h2, ↓reduceIte]
+    refine eq_of_fields (by lia) (by lia) ?_
+    simp only [assemble, h1, h2, ↓reduceIte]
+    exact toNat_sign_or_or (by lia) (by lia)
+
+theorem isFinite_assemble_iff {neg : Bool} {M : ℕ} {q : ℤ} (hM : M < 2 ^ 53) :
+    (assemble neg M q).isFinite = true ↔ M < 2 ^ 52 ∨ q + 1075 < 2047 := by
+  obtain ⟨-, he, -⟩ := fields_assemble neg q hM
+  simp only [isFinite, he]
+  split_ifs <;> simp <;> lia
+
+/-- The value `±M 2 ^ q` of the double that `Ratpoints.Double.assemble` makes from a significand
+`M < 2 ^ 53` and the exponent `q` of its last place in the range of the finite doubles: `q = -1074`
+for a subnormal or a zero (`M < 2 ^ 52`), and `-1074 ≤ q` with the exponent field `q + 1075` below
+`2047` for a normal double. -/
+theorem toRat_assemble {neg : Bool} {M : ℕ} {q : ℤ} (hM : M < 2 ^ 53)
+    (hsub : M < 2 ^ 52 → q = -1074) (hnorm : 2 ^ 52 ≤ M → -1074 ≤ q ∧ q + 1075 < 2047) :
+    (assemble neg M q).toRat = (if neg then -1 else 1) * ((M : ℚ) * 2 ^ q) := by
+  obtain ⟨hs, he, hf⟩ := fields_assemble neg q hM
+  rw [toRat_eq_fields, hs, he, hf]
+  by_cases h1 : M < 2 ^ 52
+  · simp only [h1, ↓reduceIte, hsub h1]
+  obtain ⟨hq1, hq2⟩ := hnorm (by lia)
+  simp only [h1, show ¬2047 ≤ q + 1075 by lia, ↓reduceIte, show (q + 1075).toNat ≠ 0 by lia]
   rw [Int.toNat_of_nonneg (by lia), Nat.cast_sub (by lia)]
   simp only [Nat.cast_pow, Nat.cast_ofNat, add_sub_cancel, add_sub_cancel_right]
 
@@ -550,13 +581,13 @@ theorem ofDyadic_exact {neg : Bool} {m : ℕ} {e : ℤ} (hm0 : m ≠ 0) (hm : m 
     (by lia : max ((m.log2 : ℤ) + e - 52) (-1074) - e ≤ 0), neg_sub]
   generalize max ((m.log2 : ℤ) + e - 52) (-1074) = q at hq1 hq2 hq3 ⊢
   have hM : m * 2 ^ (e - q).toNat < 2 ^ 53 := mul_two_pow_lt_two_pow_53 (by lia)
-  simp only [hM.ne, ↓reduceIte]
+  rw [ofSignificand_of_ne q hM.ne]
   have hsub (h : m * 2 ^ (e - q).toNat < 2 ^ 52) : q = -1074 := by
     by_contra hq
     have := two_pow_le_mul_two_pow hm0 (t := (e - q).toNat) (by lia)
     lia
-  obtain ⟨hf, hs, hr, -⟩ := spec_ofSignificand (neg := neg) hM hsub (fun _ ↦ ⟨hq2, by lia⟩) rfl
-  exact ⟨hf, hs, natCast_mul_two_pow_mul_zpow m (e := e) (q := q) (by lia) ▸ hr⟩
+  refine ⟨(isFinite_assemble_iff hM).mpr (.inr (by lia)), (fields_assemble neg q hM).1, ?_⟩
+  rw [toRat_assemble hM hsub fun _ ↦ ⟨hq2, by lia⟩, natCast_mul_two_pow_mul_zpow m (by lia)]
 
 /-! ### Rounding -/
 
@@ -613,6 +644,20 @@ theorem two_pow_53_add_one_mul_le (q : ℤ) :
   push_cast
   linarith [zpow_pos (two_pos (α := ℚ)) q]
 
+/-- `Ratpoints.Double.ofSignificand` of a significand `2 ^ 52 ≤ M ≤ 2 ^ 53` with the exponent `q` of
+its last place is, after the carry at `2 ^ 53`, `Ratpoints.Double.assemble` of a significand
+`2 ^ 52 ≤ M' < 2 ^ 53` with the exponent `q' = q` or `q + 1`, and `(M' + 1) 2 ^ q'` is at least
+`(M + 1) 2 ^ q`. -/
+theorem exists_ofSignificand_eq_assemble (neg : Bool) {M : ℕ} (q : ℤ) (h1 : 2 ^ 52 ≤ M)
+    (h2 : M ≤ 2 ^ 53) :
+    ∃ (M' : ℕ) (q' : ℤ), ofSignificand neg M q = assemble neg M' q' ∧ 2 ^ 52 ≤ M' ∧
+      M' < 2 ^ 53 ∧ q ≤ q' ∧ q' ≤ q + 1 ∧ ((M : ℚ) + 1) * 2 ^ q ≤ (M' + 1) * 2 ^ q' := by
+  by_cases hc : M = 2 ^ 53
+  · subst hc
+    exact ⟨2 ^ 52, q + 1, ofSignificand_two_pow neg q, le_rfl, by norm_num, by lia, le_rfl,
+      mod_cast two_pow_53_add_one_mul_le q⟩
+  · exact ⟨M, q, ofSignificand_of_ne q hc, h1, by lia, le_rfl, by lia, le_rfl⟩
+
 /-- `Ratpoints.Double.ofDyadic` in the normal range: a finite double `±M 2 ^ q` with
 `2 ^ 52 ≤ M < 2 ^ 53` and the exponent field `q + 1075`, the significand `M` the number rounded,
 so that the successor `(M + 1) 2 ^ q` of the double lies above the number. -/
@@ -626,20 +671,16 @@ theorem spec_ofDyadic {neg : Bool} {m : ℕ} {e : ℤ} (hm0 : m ≠ 0) (hlo : -1
   have h1 := two_pow_le_roundShift hm0
   have h2 := roundShift_le_two_pow m
   have hv := lt_roundShift_add_one_mul_zpow m e
+  push_cast at hv
   simp only [ofDyadic, hm0, ↓reduceIte, max_eq_left (show (-1074 : ℤ) ≤ m.log2 + e - 52 by lia),
     show (m.log2 : ℤ) + e - 52 - e = m.log2 - 52 by lia]
-  generalize roundShift m (m.log2 - 52) = M0 at h1 h2 hv ⊢
-  by_cases hc : M0 = 2 ^ 53
-  · simp only [hc, ↓reduceIte] at hv ⊢
-    obtain ⟨hf, hs, hr, he⟩ := spec_ofSignificand (neg := neg) (M := 2 ^ 52)
-      (q := m.log2 + e - 52 + 1) (by norm_num) (by lia) (fun _ ↦ ⟨by lia, by lia⟩) rfl
-    exact ⟨2 ^ 52, (m.log2 : ℤ) + e - 52 + 1, le_rfl, by norm_num, by lia, by lia, hf, hs,
-      mod_cast hr, he le_rfl, hv.trans_le (two_pow_53_add_one_mul_le _)⟩
-  · simp only [hc, ↓reduceIte]
-    obtain ⟨hf, hs, hr, he⟩ := spec_ofSignificand (neg := neg) (M := M0)
-      (q := m.log2 + e - 52) (by lia) (by lia) (fun _ ↦ ⟨by lia, by lia⟩) rfl
-    exact ⟨M0, (m.log2 : ℤ) + e - 52, h1, by lia, le_rfl, by lia, hf, hs, hr, he h1,
-      mod_cast hv⟩
+  obtain ⟨M, q, hx, hM1, hM2, hq1, hq2, hle⟩ :=
+    exists_ofSignificand_eq_assemble neg ((m.log2 : ℤ) + e - 52) h1 h2
+  obtain ⟨hs, he, -⟩ := fields_assemble neg q hM2
+  rw [hx]
+  refine ⟨M, q, hM1, hM2, hq1, by lia, (isFinite_assemble_iff hM2).mpr (.inr (by lia)), hs,
+    toRat_assemble hM2 (by lia) fun _ ↦ ⟨by lia, by lia⟩, ?_, hv.trans_le hle⟩
+  simp only [he, show ¬M < 2 ^ 52 by lia, show ¬2047 ≤ q + 1075 by lia, ↓reduceIte]
 
 /-! ### The neighbours -/
 
