@@ -2,13 +2,17 @@ module  -- shake: keep-all --deprecated_module: ignore
 
 public import Ratpoints.Mathlib.Algebra.BigOperators.Group.List.Basic
 public import Ratpoints.Mathlib.Algebra.Group.Even
+public import Ratpoints.Mathlib.Algebra.Polynomial.Eval.Coeff
 public import Ratpoints.Mathlib.Algebra.Polynomial.FieldDivision
 public import Ratpoints.Mathlib.Algebra.Polynomial.Homogenize
 public import Ratpoints.Mathlib.Algebra.Polynomial.Sturm.Sequence
 public import Ratpoints.Mathlib.Algebra.Squarefree.Basic
-public import Ratpoints.Mathlib.Analysis.Polynomial.Basic
+public import Ratpoints.Mathlib.Analysis.Polynomial.Order
+public import Ratpoints.Mathlib.Analysis.Polynomial.Sturm
+public import Ratpoints.Mathlib.Basic.Sign.Defs
 public import Ratpoints.Mathlib.Data.Int.GCD
 public import Ratpoints.Mathlib.Data.List.Basic
+public import Ratpoints.Mathlib.Data.List.Chain
 public import Ratpoints.Mathlib.Data.List.Nodup
 public import Ratpoints.Mathlib.Data.List.Pairwise
 public import Ratpoints.Mathlib.Data.List.Sort

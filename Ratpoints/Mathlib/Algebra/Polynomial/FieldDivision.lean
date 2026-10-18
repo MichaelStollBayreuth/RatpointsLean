@@ -8,10 +8,11 @@ module
 public import Mathlib.Algebra.Polynomial.FieldDivision
 
 /-!
-# Remainders by constant multiples
+# Remainders by constant multiples, and the quotient by `X - x` at `x`
 
-Candidates for `Mathlib.Algebra.Polynomial.FieldDivision`: over a field, the remainder of `p` by
-`q` is the polynomial `r` of degree below that of `q` with `q ∣ p - r`
+Candidates for `Mathlib.Algebra.Polynomial.FieldDivision`: over a commutative ring, the quotient of
+`p` by `X - x` takes the value `p'(x)` at `x` (`Polynomial.eval_divByMonic_X_sub_C`); over a field,
+the remainder of `p` by `q` is the polynomial `r` of degree below that of `q` with `q ∣ p - r`
 (`Polynomial.mod_eq_of_dvd_sub_of_degree_lt`); a constant factor of the dividend comes out of the
 remainder (`Polynomial.C_mul_mod`), and a nonzero constant factor of the divisor does not change it
 (`Polynomial.mod_C_mul`).
@@ -20,6 +21,12 @@ remainder (`Polynomial.C_mul_mod`), and a nonzero constant factor of the divisor
 @[expose] public section
 
 namespace Polynomial
+
+/-- The quotient of `p` by `X - x` takes the value `p'(x)` at `x`, so that at a root `x` of `p`,
+`p = (X - x) q` with `q(x) = p'(x)`. -/
+theorem eval_divByMonic_X_sub_C {R : Type*} [CommRing R] (p : R[X]) (x : R) :
+    (p /ₘ (X - C x)).eval x = p.derivative.eval x := by
+  simpa using congr(eval x $(divByMonic_add_X_sub_C_mul_derivative_divByMonic_eq_derivative p x))
 
 variable {K : Type*} [Field K]
 

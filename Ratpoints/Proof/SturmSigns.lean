@@ -10,7 +10,10 @@ public import Ratpoints.Proof.Setup
 public import Ratpoints.Proof.SturmCounts
 
 import Mathlib.Data.List.GetD
+import Ratpoints.Mathlib.Algebra.Polynomial.Eval.Coeff
 import Ratpoints.Mathlib.Algebra.Polynomial.FieldDivision
+import Ratpoints.Mathlib.Analysis.Polynomial.Sturm
+import Ratpoints.Mathlib.Basic.Sign.Defs
 import Ratpoints.Mathlib.FieldTheory.Perfect
 import Ratpoints.Proof.Containers
 
@@ -274,8 +277,8 @@ theorem IsChain.size_getElem!_le {c : List ℤ} {d : ℕ} {ch : Array (Array ℤ
 /-- The sign of the value of a rational polynomial at a rational point, over `ℝ`. -/
 theorem sign_eval_map_ratCastHom (p : ℚ[X]) (q : ℚ) :
     SignType.sign ((p.map (Rat.castHom ℝ)).eval (q : ℝ)) = SignType.sign (p.eval q) := by
-  rw [eval_map, show (q : ℝ) = Rat.castHom ℝ q from rfl, eval₂_at_apply]
-  simp only [sign_apply, Rat.coe_castHom, Rat.cast_pos, Rat.cast_lt_zero]
+  rw [eval_ratCast_map]
+  simp only [sign_apply, Rat.coe_castHom, Rat.cast_id, Rat.cast_pos, Rat.cast_lt_zero]
 
 /-- `Ratpoints.Sturm.evalSign` computes the sign of the real polynomial of a row of a chain of a
 polynomial of degree `d < 2 ^ 57` at `nm / 2 ^ dem` for `0 ≤ dem ≤ 55`, the depths of the Sturm
@@ -317,10 +320,6 @@ theorem IsChain.signVariations_run_evalSign {c : List ℤ} {d : ℕ} {ch : Array
   rw [signVariations_map_range_eq fun n hn ↦ h.run_evalSign_eq hd hn nm h0 h55]
   exact (signVariations_map_eval_eq_of_forall₂ (h.forall₂_posAssoc_sturmSeq_map h1) _).symm
 
--- A sign as an integer is `0` only for the sign `0`.
-private theorem coe_sign_ne_zero {x : ℝ} (h : x ≠ 0) : (SignType.sign x : ℤ) ≠ 0 := by
-  rcases h.lt_or_gt with h | h <;> simp [sign_neg, sign_pos, h]
-
 /-- At `m = nm / 2 ^ dem`, `0 ≤ dem ≤ 55`, `Ratpoints.Sturm.signsAt` on a chain whose last row is
 constant, of a polynomial of degree `d < 2 ^ 57` that is squarefree over `ℝ`, computes the signs of
 `f(m)` and `f'(m)` and the count `V(m)` of the Sturm sequence over `ℝ`. -/
@@ -340,7 +339,7 @@ theorem IsChain.run_signsAt_eq {c : List ℤ} {d : ℕ} {ch : Array (Array ℤ)}
   rw [run_signsAt_eq_signVariations (by lia) ?_, hσ0, hσ1, Nat.sub_add_cancel (by lia),
     h.signVariations_run_evalSign h1 hd nm h0 h55]
   rw [hσ0, hσ1]
-  exact (hsq.eval_ne_zero_or_eval_derivative_ne_zero _).imp coe_sign_ne_zero coe_sign_ne_zero
+  simpa using hsq.eval_ne_zero_or_eval_derivative_ne_zero _
 
 theorem leadingCoeff_poly_toList {a : Array ℤ} (h : a.back! ≠ 0) :
     (poly a.toList).leadingCoeff = a.back! := by

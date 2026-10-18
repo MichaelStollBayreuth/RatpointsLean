@@ -10,7 +10,7 @@ public import Ratpoints.Model.FindPoints
 public import Ratpoints.Proof.BitRange
 public import Ratpoints.Spec.Region
 
-import Ratpoints.Mathlib.Data.List.Pairwise
+import Ratpoints.Mathlib.Data.List.Chain
 
 /-!
 # The search region in the proofs

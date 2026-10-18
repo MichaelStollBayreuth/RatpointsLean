@@ -6,7 +6,6 @@ Authors: Michael Stoll
 module
 
 public import Mathlib.Algebra.Polynomial.Sturm.Sequence
-public import Mathlib.Data.List.SignVariations
 
 import Ratpoints.Mathlib.Algebra.Polynomial.FieldDivision
 
@@ -19,8 +18,7 @@ multiples are entrywise positive multiples (`Polynomial.forall₂_posAssoc_sturm
 nonzero polynomials, each from the third on a positive multiple of the negated remainder of the
 two before and the last a unit, is entrywise a list of positive multiples of the entries of the
 Sturm sequence of its first two (`Polynomial.forall₂_posAssoc_sturmSeq_of_getElem`): a generalized
-Sturm sequence, such as the remainder chain that integer arithmetic computes, has the same sign
-variations at every point (`Polynomial.signVariations_map_eval_eq_of_forall₂`).
+Sturm sequence, such as the remainder chain that integer arithmetic computes.
 
 ## Main definitions
 
@@ -31,10 +29,6 @@ variations at every point (`Polynomial.signVariations_map_eval_eq_of_forall₂`)
 * `Polynomial.sturmSeq_map`: the Sturm sequence of the images under a map of fields.
 * `Polynomial.forall₂_posAssoc_sturmSeq`: the Sturm sequences of positive multiples.
 * `Polynomial.forall₂_posAssoc_sturmSeq_of_getElem`: a generalized Sturm sequence.
-* `Polynomial.signVariations_map_eval_eq_of_forall₂`,
-  `Polynomial.signVariations_map_leadingCoeff_eq_of_forall₂`,
-  `Polynomial.signVariations_map_neg_one_pow_mul_leadingCoeff_eq_of_forall₂`: entrywise positive
-  multiples have the same sign variations at every point and at `±∞`.
 -/
 
 @[expose] public section
@@ -89,17 +83,6 @@ theorem forall₂_posAssoc_sturmSeq [DecidableEq K] {p p' q q' : K[X]} (hp : Pos
     rw [sturmSeq_cons hp0, sturmSeq_cons fun h ↦ hp0 (hp.eq_zero_iff.mpr h)]
     exact .cons hp (ih hq (hp.neg_mod hq))
 
-/-- Lists of polynomials that are entrywise positive multiples have the same sign variations under
-every map `g` to a linear order that keeps the signs of positive multiples, such as the evaluation
-at a point and the leading coefficient. -/
-theorem signVariations_map_eq_of_forall₂ {β : Type*} [Zero β] [LinearOrder β] {g : K[X] → β}
-    (hg : ∀ p q, PosAssoc p q → SignType.sign (g q) = SignType.sign (g p)) {l l' : List K[X]}
-    (h : List.Forall₂ PosAssoc l l') : (l'.map g).signVariations = (l.map g).signVariations := by
-  refine List.signVariations_congr ?_
-  induction h with
-  | nil => rfl
-  | cons hpq _ ih => simp only [List.map_cons, hg _ _ hpq, ih]
-
 variable [IsStrictOrderedRing K]
 
 theorem PosAssoc.refl (p : K[X]) : PosAssoc p p :=
@@ -113,38 +96,6 @@ theorem PosAssoc.trans {p q r : K[X]} (h : PosAssoc p q) (h' : PosAssoc q r) : P
   obtain ⟨c, hc, rfl⟩ := h
   obtain ⟨c', hc', rfl⟩ := h'
   exact ⟨c' * c, mul_pos hc' hc, by rw [C_mul, mul_assoc]⟩
-
-theorem PosAssoc.sign_eval {p q : K[X]} (h : PosAssoc p q) (x : K) :
-    SignType.sign (q.eval x) = SignType.sign (p.eval x) := by
-  obtain ⟨c, hc, rfl⟩ := h
-  rw [eval_mul, eval_C, sign_mul, sign_pos hc, one_mul]
-
-theorem PosAssoc.sign_leadingCoeff {p q : K[X]} (h : PosAssoc p q) :
-    SignType.sign q.leadingCoeff = SignType.sign p.leadingCoeff := by
-  obtain ⟨c, hc, rfl⟩ := h
-  rw [leadingCoeff_mul, leadingCoeff_C, sign_mul, sign_pos hc, one_mul]
-
-/-- Lists of polynomials that are entrywise positive multiples have the same sign variations at
-every point. -/
-theorem signVariations_map_eval_eq_of_forall₂ {l l' : List K[X]} (h : List.Forall₂ PosAssoc l l')
-    (x : K) : (l'.map (eval x)).signVariations = (l.map (eval x)).signVariations :=
-  signVariations_map_eq_of_forall₂ (fun _ _ hpq ↦ hpq.sign_eval x) h
-
-/-- Lists of polynomials that are entrywise positive multiples have the same sign variations of
-their leading coefficients, the count at `+∞`. -/
-theorem signVariations_map_leadingCoeff_eq_of_forall₂ {l l' : List K[X]}
-    (h : List.Forall₂ PosAssoc l l') :
-    (l'.map leadingCoeff).signVariations = (l.map leadingCoeff).signVariations :=
-  signVariations_map_eq_of_forall₂ (fun _ _ hpq ↦ hpq.sign_leadingCoeff) h
-
-/-- Lists of polynomials that are entrywise positive multiples have the same sign variations of
-their leading coefficients times `(-1) ^ deg`, the count at `-∞`. -/
-theorem signVariations_map_neg_one_pow_mul_leadingCoeff_eq_of_forall₂ {l l' : List K[X]}
-    (h : List.Forall₂ PosAssoc l l') :
-    (l'.map fun p ↦ (-1) ^ p.natDegree * p.leadingCoeff).signVariations =
-      (l.map fun p ↦ (-1) ^ p.natDegree * p.leadingCoeff).signVariations :=
-  signVariations_map_eq_of_forall₂ (fun _ _ hpq ↦ by
-    rw [sign_mul, sign_mul, hpq.natDegree_eq, hpq.sign_leadingCoeff]) h
 
 /-- Two lists of positive multiples of the entries of a third are entrywise positive multiples of
 each other. -/

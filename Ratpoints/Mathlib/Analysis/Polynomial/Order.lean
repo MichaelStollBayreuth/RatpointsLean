@@ -6,30 +6,37 @@ Authors: Michael Stoll
 module
 
 public import Mathlib.Algebra.Polynomial.Derivative
-public import Mathlib.Analysis.Polynomial.Basic
-public import Mathlib.Data.List.SignVariations
+public import Mathlib.Analysis.Polynomial.Order
 
 import Mathlib.Topology.Algebra.Polynomial
+import Ratpoints.Mathlib.Algebra.Polynomial.FieldDivision
 
 /-!
-# The signs of a real polynomial near a point and near infinity
+# The signs of a polynomial near a point and near infinity
 
-Candidates for `Mathlib.Analysis.Polynomial.Basic`: a nonzero real polynomial has, far right, the
-sign of its leading coefficient and, far left, that sign times `(-1) ^ deg`
-(`Polynomial.eventually_atTop_sign_eval`, `Polynomial.eventually_atBot_sign_eval`), so that the sign
-variations of a list of nonzero polynomials there are those of their leading coefficients
-(`Polynomial.eventually_atTop_signVariations`, `Polynomial.eventually_atBot_signVariations`); near a
-point it keeps a nonzero sign (`Polynomial.eventually_sign_eval_eq`), and just right of a point `x`
-where it or its derivative does not vanish it has the sign of `p(x)`, or of `p'(x)` when `p(x) = 0`,
-and just left of `x` that of `p(x)`, or of `-p'(x)` when `p(x) = 0`
-(`Polynomial.eventually_sign_eval_nhdsGT`, `Polynomial.eventually_sign_eval_nhdsLT`). By the
-intermediate value theorem, opposite signs at two points give a root between them
+Candidates for `Mathlib.Analysis.Polynomial.Order`: over a linearly ordered normed field with the
+order topology, such as `ℝ`, a nonzero polynomial has, far right, the sign of its leading
+coefficient and, far left, that sign times `(-1) ^ deg` (`Polynomial.eventually_atTop_sign_eval`,
+`Polynomial.eventually_atBot_sign_eval`); near a point it keeps a nonzero sign
+(`Polynomial.eventually_sign_eval_eq`), and just right of a point `x` where it or its derivative
+does not vanish it has the sign of `p(x)`, or of `p'(x)` when `p(x) = 0`, and just left of `x` that
+of `p(x)`, or of `-p'(x)` when `p(x) = 0` (`Polynomial.eventually_sign_eval_nhdsGT`,
+`Polynomial.eventually_sign_eval_nhdsLT`). By the intermediate value theorem, opposite signs of a
+real polynomial at two points give a root between them
 (`Polynomial.exists_isRoot_of_eval_mul_eval_neg`), a negative sign just right of the left end of an
 interval without a root holds on the whole interval (`Polynomial.eval_neg_of_forall_not_isRoot`),
-and a nonzero polynomial of degree `n` changes its sign at most `n` times along increasing points
-(`Polynomial.length_le_natDegree_add_one_of_isChain`).
+and a nonzero real polynomial of degree `n` changes its sign at most `n` times along increasing
+points (`Polynomial.length_le_natDegree_add_one_of_isChain`).
 
 ## Implementation notes
+
+The file imports its sibling `Mathlib.Analysis.Polynomial.Order`, the sibling's private import
+`Mathlib.Topology.Algebra.Polynomial` for the continuity of polynomials, and, publicly,
+`Mathlib.Algebra.Polynomial.Derivative`, which the statements just right and just left of a point
+name and the sibling's public imports lack.
+
+The lemmas that rest on the intermediate value theorem are stated over `ℝ`, as the sibling's are:
+they need a conditionally complete, densely ordered field.
 
 The signs just right and just left of a point are stated by the case distinction on `p(x) = 0`,
 without a definition of their own: Mathlib after the version that the project pins defines the sign
@@ -43,8 +50,23 @@ open Filter Topology
 
 namespace Polynomial
 
-/-- Far right, a nonzero real polynomial has the sign of its leading coefficient. -/
-theorem eventually_atTop_sign_eval {p : ℝ[X]} (hp : p ≠ 0) :
+section OrderTopology
+
+variable {𝕜 : Type*} [NormedField 𝕜] [LinearOrder 𝕜] [OrderTopology 𝕜]
+
+/-- Near a point where it does not vanish, a polynomial keeps its sign. -/
+theorem eventually_sign_eval_eq {p : 𝕜[X]} {x : 𝕜} (h : p.eval x ≠ 0) :
+    ∀ᶠ y in 𝓝 x, SignType.sign (p.eval y) = SignType.sign (p.eval x) := by
+  rcases h.lt_or_gt with hlt | hgt
+  · filter_upwards [p.continuous.continuousAt.eventually_lt continuousAt_const hlt] with y hy
+    rw [sign_neg hy, sign_neg hlt]
+  · filter_upwards [continuousAt_const.eventually_lt p.continuous.continuousAt hgt] with y hy
+    rw [sign_pos hy, sign_pos hgt]
+
+variable [IsStrictOrderedRing 𝕜]
+
+/-- Far right, a nonzero polynomial has the sign of its leading coefficient. -/
+theorem eventually_atTop_sign_eval {p : 𝕜[X]} (hp : p ≠ 0) :
     ∀ᶠ x in atTop, SignType.sign (p.eval x) = SignType.sign p.leadingCoeff := by
   by_cases hd : p.degree ≤ 0
   · rw [eq_C_of_degree_le_zero hd]
@@ -58,9 +80,8 @@ theorem eventually_atTop_sign_eval {p : ℝ[X]} (hp : p ≠ 0) :
       with x hx
     rw [sign_pos hx, sign_pos hgt]
 
-/-- Far left, a nonzero real polynomial has the sign of `(-1) ^ deg` times its leading
-coefficient. -/
-theorem eventually_atBot_sign_eval {p : ℝ[X]} (hp : p ≠ 0) :
+/-- Far left, a nonzero polynomial has the sign of `(-1) ^ deg` times its leading coefficient. -/
+theorem eventually_atBot_sign_eval {p : 𝕜[X]} (hp : p ≠ 0) :
     ∀ᶠ x in atBot, SignType.sign (p.eval x) =
       SignType.sign ((-1) ^ p.natDegree * p.leadingCoeff) := by
   have h := eventually_atTop_sign_eval (p := p.comp (-X)) (comp_neg_X_eq_zero_iff.not.mpr hp)
@@ -68,73 +89,37 @@ theorem eventually_atBot_sign_eval {p : ℝ[X]} (hp : p ≠ 0) :
   filter_upwards [tendsto_neg_atBot_atTop.eventually h] with x hx
   simpa [eval_comp] using hx
 
-/-- Far right, the sign variations of a list of nonzero real polynomials at a point are those of
-their leading coefficients. -/
-theorem eventually_atTop_signVariations {ps : List ℝ[X]} (h : ∀ p ∈ ps, p ≠ 0) :
-    ∀ᶠ x in atTop, (ps.map (eval x)).signVariations = (ps.map leadingCoeff).signVariations := by
-  have hall : ∀ᶠ x in atTop, ∀ p ∈ ps, SignType.sign (p.eval x) = SignType.sign p.leadingCoeff :=
-    (eventually_all_finite ps.finite_toSet).mpr fun p hp ↦ eventually_atTop_sign_eval (h p hp)
-  filter_upwards [hall] with x hx
-  refine List.signVariations_congr ?_
-  simpa only [List.map_map, Function.comp_def] using List.map_congr_left hx
-
-/-- Far left, the sign variations of a list of nonzero real polynomials at a point are those of
-their leading coefficients, each times `(-1) ^ deg`. -/
-theorem eventually_atBot_signVariations {ps : List ℝ[X]} (h : ∀ p ∈ ps, p ≠ 0) :
-    ∀ᶠ x in atBot, (ps.map (eval x)).signVariations =
-      (ps.map fun p ↦ (-1) ^ p.natDegree * p.leadingCoeff).signVariations := by
-  have hall : ∀ᶠ x in atBot, ∀ p ∈ ps, SignType.sign (p.eval x) =
-      SignType.sign ((-1) ^ p.natDegree * p.leadingCoeff) :=
-    (eventually_all_finite ps.finite_toSet).mpr fun p hp ↦ eventually_atBot_sign_eval (h p hp)
-  filter_upwards [hall] with x hx
-  refine List.signVariations_congr ?_
-  simpa only [List.map_map, Function.comp_def] using List.map_congr_left hx
-
-/-- Near a point where it does not vanish, a real polynomial keeps its sign. -/
-theorem eventually_sign_eval_eq {p : ℝ[X]} {x : ℝ} (h : p.eval x ≠ 0) :
-    ∀ᶠ y in 𝓝 x, SignType.sign (p.eval y) = SignType.sign (p.eval x) := by
-  rcases h.lt_or_gt with hlt | hgt
-  · filter_upwards [p.continuous.continuousAt.eventually_lt continuousAt_const hlt] with y hy
-    rw [sign_neg hy, sign_neg hlt]
-  · filter_upwards [continuousAt_const.eventually_lt p.continuous.continuousAt hgt] with y hy
-    rw [sign_pos hy, sign_pos hgt]
-
-/-- At a root `x` of `p`, `p = (X - x) q` with `q(x) = p'(x)`. -/
-theorem exists_eq_X_sub_C_mul_of_isRoot {K : Type*} [CommRing K] {p : K[X]} {x : K}
-    (h : p.IsRoot x) : ∃ q : K[X], p = (X - C x) * q ∧ q.eval x = p.derivative.eval x :=
-  ⟨p /ₘ (X - C x), (mul_divByMonic_eq_iff_isRoot.mpr h).symm, by
-    conv_rhs => rw [← mul_divByMonic_eq_iff_isRoot.mpr h]
-    simp [derivative_mul]⟩
-
-/-- Just right of a point `x` where `p(x) ≠ 0` or `p'(x) ≠ 0`, a real polynomial `p` has the sign of
+/-- Just right of a point `x` where `p(x) ≠ 0` or `p'(x) ≠ 0`, a polynomial `p` has the sign of
 `p(x)`, or of `p'(x)` when `p(x) = 0`. -/
-theorem eventually_sign_eval_nhdsGT {p : ℝ[X]} {x : ℝ}
+theorem eventually_sign_eval_nhdsGT {p : 𝕜[X]} {x : 𝕜}
     (h : p.eval x ≠ 0 ∨ p.derivative.eval x ≠ 0) :
     ∀ᶠ y in 𝓝[>] x, SignType.sign (p.eval y) =
       if p.eval x = 0 then SignType.sign (p.derivative.eval x) else SignType.sign (p.eval x) := by
   split_ifs with h0
-  · obtain ⟨q, hq, hqx⟩ := exists_eq_X_sub_C_mul_of_isRoot h0
-    have hq0 : q.eval x ≠ 0 := hqx ▸ h.resolve_left (not_not.mpr h0)
+  · have hq0 := eval_divByMonic_X_sub_C p x ▸ h.resolve_left (not_not.mpr h0)
     filter_upwards [nhdsWithin_le_nhds (eventually_sign_eval_eq hq0), self_mem_nhdsWithin]
       with y hy hyx
-    rw [← hqx, hq, eval_mul, sign_mul, hy]
-    simp [sign_pos (sub_pos.mpr (Set.mem_Ioi.mp hyx))]
+    rw [← eval_divByMonic_X_sub_C, ← hy]
+    nth_rw 1 [← mul_divByMonic_eq_iff_isRoot.mpr h0]
+    simp [sign_mul, sign_pos (sub_pos.mpr (Set.mem_Ioi.mp hyx))]
   · exact nhdsWithin_le_nhds (eventually_sign_eval_eq h0)
 
-/-- Just left of a point `x` where `p(x) ≠ 0` or `p'(x) ≠ 0`, a real polynomial `p` has the sign of
+/-- Just left of a point `x` where `p(x) ≠ 0` or `p'(x) ≠ 0`, a polynomial `p` has the sign of
 `p(x)`, or of `-p'(x)` when `p(x) = 0`. -/
-theorem eventually_sign_eval_nhdsLT {p : ℝ[X]} {x : ℝ}
+theorem eventually_sign_eval_nhdsLT {p : 𝕜[X]} {x : 𝕜}
     (h : p.eval x ≠ 0 ∨ p.derivative.eval x ≠ 0) :
     ∀ᶠ y in 𝓝[<] x, SignType.sign (p.eval y) =
       if p.eval x = 0 then -SignType.sign (p.derivative.eval x) else SignType.sign (p.eval x) := by
   split_ifs with h0
-  · obtain ⟨q, hq, hqx⟩ := exists_eq_X_sub_C_mul_of_isRoot h0
-    have hq0 : q.eval x ≠ 0 := hqx ▸ h.resolve_left (not_not.mpr h0)
+  · have hq0 := eval_divByMonic_X_sub_C p x ▸ h.resolve_left (not_not.mpr h0)
     filter_upwards [nhdsWithin_le_nhds (eventually_sign_eval_eq hq0), self_mem_nhdsWithin]
       with y hy hyx
-    rw [← hqx, hq, eval_mul, sign_mul, hy]
-    simp [sign_neg (sub_neg.mpr (Set.mem_Iio.mp hyx))]
+    rw [← eval_divByMonic_X_sub_C, ← hy]
+    nth_rw 1 [← mul_divByMonic_eq_iff_isRoot.mpr h0]
+    simp [sign_mul, sign_neg (sub_neg.mpr (Set.mem_Iio.mp hyx))]
   · exact nhdsWithin_le_nhds (eventually_sign_eval_eq h0)
+
+end OrderTopology
 
 /-- A real polynomial with values of opposite signs at `a < b` has a root strictly between. -/
 theorem exists_isRoot_of_eval_mul_eval_neg {p : ℝ[X]} {a b : ℝ} (hab : a < b)

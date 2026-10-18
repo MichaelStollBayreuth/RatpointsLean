@@ -8,7 +8,7 @@ module
 public import Ratpoints.Proof.Region
 public import Ratpoints.Proof.Sturm
 
-import Ratpoints.Mathlib.Data.List.Pairwise
+import Ratpoints.Mathlib.Data.List.Chain
 import Ratpoints.Proof.Bits
 import Ratpoints.Proof.Double
 

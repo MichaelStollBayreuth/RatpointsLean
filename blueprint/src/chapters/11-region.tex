@@ -743,7 +743,7 @@ range is the same for the bits and for the values.
   through $\lfloor b u_i \rfloor < \lceil b l_{i+1} \rceil$ for $u_i < l_{i+1}$, after the chain of
   the search intervals is turned into its pairwise form: a chain of intervals in which each ends
   below the next begins is pairwise so (\verb|List.pairwise_of_isChain_of_le|, a fact for Mathlib's
-  lists, in the mirror \verb|Data/List/Pairwise| and in no node).
+  lists, in the mirror \verb|Data/List/Chain| and in no node).
 \end{proof}
 
 \begin{lemma}[The bounds give the ranges]\label{lem:exactBounds}
@@ -1110,23 +1110,27 @@ numerators and the intersection, not the coverage.
 \end{proof}
 
 \begin{lemma}[The signs of a real polynomial]\label{lem:polySigns}
-  \lean{Polynomial.eventually_atTop_sign_eval, Polynomial.eventually_atBot_sign_eval, Polynomial.eventually_atTop_signVariations, Polynomial.eventually_atBot_signVariations, Polynomial.eventually_sign_eval_eq, Polynomial.exists_eq_X_sub_C_mul_of_isRoot, Polynomial.eventually_sign_eval_nhdsGT, Polynomial.eventually_sign_eval_nhdsLT, Polynomial.exists_isRoot_of_eval_mul_eval_neg, Polynomial.eval_neg_of_forall_not_isRoot, Polynomial.length_le_natDegree_add_one_of_isChain, Squarefree.eval_ne_zero_or_eval_derivative_ne_zero}
+  \lean{Polynomial.eventually_atTop_sign_eval, Polynomial.eventually_atBot_sign_eval, Polynomial.eventually_atTop_signVariations, Polynomial.eventually_atBot_signVariations, Polynomial.eventually_sign_eval_eq, Polynomial.eval_divByMonic_X_sub_C, Polynomial.eventually_sign_eval_nhdsGT, Polynomial.eventually_sign_eval_nhdsLT, Polynomial.exists_isRoot_of_eval_mul_eval_neg, Polynomial.eval_neg_of_forall_not_isRoot, Polynomial.length_le_natDegree_add_one_of_isChain, Squarefree.eval_ne_zero_or_eval_derivative_ne_zero, SignType.coe_eq_zero, Polynomial.eval_ratCast_map}
   \leanok
-  A nonzero real polynomial has, near $+\infty$, the sign of its leading coefficient and, near
-  $-\infty$, that sign times $(-1)^{\deg}$, and a list of nonzero polynomials the corresponding sign
-  changes; near a point where $p$ does not vanish $p$ keeps its sign; at a point $x$ with
-  $p(x) \ne 0$ or $p'(x) \ne 0$, the sign of $p$ just right of $x$ is that of $p(x)$, or of $p'(x)$
-  when $p(x) = 0$, and just left of $x$ that of $p(x)$, or of $-p'(x)$ when $p(x) = 0$, each lemma
-  stating the sign by this case distinction in its conclusion; values of opposite signs at $a < b$
+  Over a linearly ordered normed field with the order topology, such as $\mathbb{R}$, a nonzero
+  polynomial has, near $+\infty$, the sign of its leading coefficient and, near $-\infty$, that sign
+  times $(-1)^{\deg}$, and a list of nonzero polynomials the corresponding sign changes; near a
+  point where $p$ does not vanish $p$ keeps its sign; at a point $x$ with $p(x) \ne 0$ or
+  $p'(x) \ne 0$, the sign of $p$ just right of $x$ is that of $p(x)$, or of $p'(x)$ when $p(x) = 0$,
+  and just left of $x$ that of $p(x)$, or of $-p'(x)$ when $p(x) = 0$, each lemma stating the sign
+  by this case distinction in its conclusion; over a commutative ring, the quotient of $p$ by
+  $X - x$ takes the value $p'(x)$ at $x$. For a real polynomial, values of opposite signs at $a < b$
   give a root in between; a polynomial without a root in $(l, r)$ that is negative just right of $l$
   is negative on $(l, r)$; and a chain of points with values of alternating signs has at most
   $\deg p + 1$ members. A squarefree polynomial over a perfect field and its derivative never vanish
-  together.
+  together. The cast of a sign into a type with $1 \ne 0$, such as $\mathbb{Z}$, is $0$ only for the
+  sign $0$, and the image of a polynomial under a map of division rings takes at a rational number
+  the image of its value there.
 \end{lemma}
 
 \begin{proof}\leanok
   By the dominant term at $\pm\infty$, continuity, the factor $X - x$ at a root, the intermediate
-  value theorem, and the count of the roots between the points of a chain.
+  value theorem, which needs $\mathbb{R}$, and the count of the roots between the points of a chain.
 \end{proof}
 
 \begin{lemma}[The counts at the ends of an interval]\label{lem:sturmCounts}

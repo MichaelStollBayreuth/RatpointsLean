@@ -5,25 +5,19 @@ Authors: Michael Stoll
 -/
 module
 
-public import Batteries.Data.List.Basic
-public import Mathlib.Order.Defs.PartialOrder
-
-import Mathlib.Data.List.Chain
+import Mathlib.Data.List.Pairwise
 
 /-!
-# Pairwise related lists
+# A member of a list that is pairwise related, related to one of its entries
 
-Candidates for `Mathlib.Data.List.Pairwise`: in a list `l₁ ++ b :: l₂` that is pairwise related by
+A candidate for `Mathlib.Data.List.Pairwise`: in a list `l₁ ++ b :: l₂` that is pairwise related by
 an asymmetric relation `R`, as a strictly increasing list is by `<`, a member `a` with `R a b` lies
-in `l₁`; and a chain of intervals `[l, u]` with `l ≤ u`, each ending below the start of the next,
-is pairwise so.
+in `l₁`.
 
 ## Main statements
 
 * `List.mem_of_mem_append_cons_of_rel`: a member `a` of `l₁ ++ b :: l₂`, pairwise related by an
   asymmetric `R`, with `R a b` is a member of `l₁`.
-* `List.pairwise_of_isChain_of_le`: a chain of intervals, each ending below the start of the next,
-  is pairwise so.
 -/
 
 @[expose] public section
@@ -40,23 +34,6 @@ theorem mem_of_mem_append_cons_of_rel {α : Type*} {R : α → α → Prop} [Std
   · rcases mem_cons.mp ha with rfl | ha
     · exact absurd hab (Std.Irrefl.irrefl a)
     · exact absurd hab (Std.Asymm.asymm _ _ ((pairwise_cons.mp (pairwise_append.mp h).2.1).1 a ha))
-
-/-- A chain of intervals `[l, u]` with `l ≤ u`, each ending below the start of the next, is pairwise
-so: the relation is transitive on such intervals. -/
-theorem pairwise_of_isChain_of_le {α : Type*} [Preorder α] {l : List (α × α)}
-    (h1 : ∀ i ∈ l, i.1 ≤ i.2) (h2 : l.IsChain fun i j ↦ i.2 < j.1) :
-    l.Pairwise fun i j ↦ i.2 < j.1 := by
-  induction l with
-  | nil => exact .nil
-  | cons a l ih =>
-    rcases l with _ | ⟨b, l⟩
-    · exact pairwise_singleton _ _
-    · rw [isChain_cons_cons] at h2
-      have ih' := ih (fun i hi ↦ h1 i (mem_cons_of_mem _ hi)) h2.2
-      refine .cons (fun x hx ↦ ?_) ih'
-      rcases mem_cons.mp hx with rfl | hx
-      · exact h2.1
-      · exact h2.1.trans_le ((h1 b (by simp)).trans (rel_of_pairwise_cons ih' hx).le)
 
 end List
 

@@ -5,9 +5,10 @@ Authors: Michael Stoll
 -/
 module
 
-public import Ratpoints.Mathlib.Analysis.Polynomial.Basic
+public import Ratpoints.Mathlib.Analysis.Polynomial.Order
 public import Ratpoints.Spec.Sturm
 
+import Ratpoints.Mathlib.Analysis.Polynomial.Sturm
 import Ratpoints.Mathlib.FieldTheory.Perfect
 
 /-!

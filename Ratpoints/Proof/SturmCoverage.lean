@@ -8,6 +8,8 @@ module
 public import Ratpoints.Proof.Bisection
 public import Ratpoints.Proof.SturmSigns
 
+import Ratpoints.Mathlib.Algebra.Polynomial.Eval.Coeff
+import Ratpoints.Mathlib.Basic.Sign.Defs
 import Ratpoints.Mathlib.FieldTheory.Perfect
 import Ratpoints.Proof.Double
 
@@ -146,13 +148,6 @@ theorem HalvingInv.not_kept (hS : SturmTheorem) {F : ℝ[X]} (hF : Squarefree F)
   · lia [h.2.2]
   · lia [h.2.2]
 
--- The integer sign of a real number is `0` exactly at `0`.
-private theorem coe_sign_eq_zero_iff {x : ℝ} : (SignType.sign x : ℤ) = 0 ↔ x = 0 := by
-  rcases lt_trichotomy x 0 with h | rfl | h
-  · simp [sign_neg h, h.ne]
-  · simp
-  · simp [sign_pos h, h.ne']
-
 /-- The halves at the midpoint `m = nm / 2 ^ dem` of an interval of the bisection keep the
 invariant with the counts and signs that `Ratpoints.Sturm.iterate` hands them, when `s0`, `s1` and
 `cmid` are the signs of `F(m)` and `F'(m)` and the count `V(m)`. -/
@@ -171,8 +166,8 @@ theorem HalvingInv.halves {F : ℝ[X]} {depth : ℕ} {nl nr del der : Int64} {cl
   have hr : upperEnd nm dem = some (endValue nm dem : ℝ) := by simp [upperEnd, hR.left_ne]
   subst h0 h1 hc
   refine ⟨⟨hL, hI.cl_eq, ?_, hI.sl_eq, ?_⟩, ⟨hR, ?_, hI.cr_eq, ?_, hI.sr_eq⟩⟩ <;>
-    simp only [hl, hr, vLeft, vRight, sgnLeftEnd, sgnRightEnd, IsRoot.def,
-      coe_sign_eq_zero_iff] <;> split_ifs <;> simp
+    simp only [hl, hr, vLeft, vRight, sgnLeftEnd, sgnRightEnd, IsRoot.def, SignType.coe_eq_zero,
+      sign_eq_zero_iff] <;> split_ifs <;> simp
 
 /-- A value `x` with `F(x) ≥ 0` that the bisection of an interval keeps is kept by one of its
 halves at the midpoint `m`, with the signs that `Ratpoints.Sturm.iterate` hands them: at `m` itself
@@ -649,8 +644,7 @@ theorem binaryForm_eq_mul_eval {c : List ℤ} (a : ℤ) {b : ℤ} (hb : b ≠ 0)
 /-- The value of the real polynomial of the chain of `c` and its degree at a rational point. -/
 theorem eval_chainPoly_degree (c : List ℤ) (q : ℚ) :
     (chainPoly c (degree c)).eval (q : ℝ) = ((poly c).eval q : ℚ) := by
-  rw [chainPoly, poly_take_of_degree_lt (Nat.lt_succ_self _), eval_map,
-    show (q : ℝ) = Rat.castHom ℝ q from rfl, eval₂_at_apply]
+  rw [chainPoly, poly_take_of_degree_lt (Nat.lt_succ_self _), eval_ratCast_map]
   rfl
 
 /-- The real polynomial of the chain of `c` and its degree is not negative at `a / b`, `b > 0`,
