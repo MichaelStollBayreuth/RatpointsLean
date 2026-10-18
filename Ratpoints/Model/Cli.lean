@@ -183,7 +183,13 @@ which `Ratpoints.Cli.run` maps by it, only `Ratpoints.Refusal.notSquarefree` can
 
 C: `main.c:256-261`
 
-Deviation: no error 10, since the model has no failure for lack of memory; no `mpz_clear`. -/
+Deviation: no error 10, since the model has no failure for lack of memory; the refusals of the
+coefficients and of the height (`Ratpoints.Refusal.tooManyCoefficients`,
+`Ratpoints.Refusal.tooFewCoefficients`, `Ratpoints.Refusal.incorrectHeight`) mapped to the errors 3,
+5 and 4 with which `read_input` refuses those inputs before the library is called, where line 260
+gives error 9 for the code `RATPOINTS_BAD_ARGS` with which the library refuses those it can be given
+(lines 4557-4558, 4633 and 4658 of `find_points.c`); no command line reaches them; no
+`mpz_clear`. -/
 def Failure.ofRefusal : Refusal → Failure
   | .tooManyCoefficients => .tooManyCoefficients
   | .tooFewCoefficients => .tooFewCoefficients

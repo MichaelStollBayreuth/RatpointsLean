@@ -214,10 +214,12 @@ def nearestBinary (neg : Bool) (m : Nat) (t : Int) : Double :=
   else if m.log2 + 1 + t ≤ -1075 then .ofRatio neg 0 1
   else .ofDyadic neg m t
 
-/-- The double nearest to `±m 10 ^ t`, the sign `-` for `neg` (`Ratpoints.Double.ofRatio`), its
-size decided first by the length of `m` in bits and by `2 ^ (3 u) ≤ 10 ^ u`: an infinity when
-`m 10 ^ t ≥ 2 ^ 1024`, a zero when `m 10 ^ t < 2 ^ (-1075)`, and otherwise the power of 10
-expanded, its exponent then bounded by the length of `m` and the range of the doubles. -/
+/-- The double nearest to `±m 10 ^ t`, the sign `-` for `neg` (`Ratpoints.Double.ofRatio`), with two
+shortcuts by the bounds `2 ^ (log₂ m) ≤ m` and `2 ^ (3 u) ≤ 10 ^ u`: for `t ≥ 0` an infinity when
+they put `m 10 ^ t` at or above `2 ^ 1024`, for `t < 0` a zero when they put it below `2 ^ (-1075)`.
+Otherwise the power of 10 is expanded and the quotient rounded by `Ratpoints.Double.ofRatio`, which
+also gives the infinities and the zeros that the shortcuts miss; the exponent is then bounded by the
+length of `m` in bits and the range of the doubles. -/
 def nearestDecimal (neg : Bool) (m : Nat) (t : Int) : Double :=
   if m = 0 then .ofRatio neg 0 1
   else if 0 ≤ t then
@@ -228,13 +230,15 @@ def nearestDecimal (neg : Bool) (m : Nat) (t : Int) : Double :=
 
 /-- The double that `strtod` of glibc reads from the word `w` of `Ratpoints.Cli.isDoubleWord`, a
 floating constant or an infinity, in the C locale: `±∞` for an infinity, and otherwise the double
-nearest to the exact value `±m 10 ^ (ex - k)`, or `±m 2 ^ (ex - 4 k)` for a hexadecimal constant,
-of the digits `m` of its mantissa, the number `k` of them after the point and its exponent `ex`,
-with ties to even (`Ratpoints.Cli.nearestDecimal`, `Ratpoints.Cli.nearestBinary`): a zero of the
-sign of `w` for a value of size at most `2 ^ (-1075)`, and an infinity of its sign for one of size
-at least `2 ^ 1024 - 2 ^ 970`, as glibc rounds it, correctly. This is what glibc computes, not
-how: the size of the value is decided by bounds before a power is expanded, so that a word with a
-huge exponent costs no more than another. -/
+nearest to the exact value `±m 10 ^ (ex - k)`, or `±m 2 ^ (ex - 4 k)` for a hexadecimal constant, of
+the digits `m` of its mantissa, the number `k` of them after the point and its exponent `ex`, with
+ties to even (`Ratpoints.Cli.nearestDecimal`, `Ratpoints.Cli.nearestBinary`): a zero of the sign of
+`w` for a value of size at most `2 ^ (-1075)`, and an infinity of its sign for one of size at least
+`2 ^ 1024 - 2 ^ 970`, as glibc rounds it, correctly. This is what glibc computes, not how: the size
+of the value is decided by bounds before a power is expanded, so that a word with a huge exponent
+costs no more than another. The proofs show only half of a faithful rounding: for a word that is not
+an infinity and a finite nonzero result, the exact value of the word lies below the successor of the
+result (`Ratpoints.Cli.lt_nextUp_strtod`). -/
 def strtod (w : List Char) : Double :=
   if isInfWord (dropSign w) then (if w.head? = some '-' then Double.huge.neg else Double.huge)
   else

@@ -19,10 +19,12 @@ powers of 2 (`ldexp`), steps to the next double (`nextafter`), converts doubles 
 of the C language or the C library does to a double on the platforms of ratpoints (IEEE 754 binary64
 with rounding to nearest, ties to even, as gcc and glibc implement them): the comparisons, in which
 a NaN is unordered and `-0.0` equals `0.0`, the negation and `fabs`, which act on the sign bit, the
-conversions, `frexp`, `ldexp` and `nextafter` towards `±HUGE_VAL`. The exact value of a finite
-double is `m 2 ^ e` for the integers of `Ratpoints.Double.toDyadic`, and a dyadic number is rounded
-to a double, to nearest with ties to even, by `Ratpoints.Double.ofDyadic`, a fraction by
-`Ratpoints.Double.ofRatio` (for `strtod`, which the program uses).
+conversions, `frexp`, `ldexp` and `nextafter` towards `±HUGE_VAL`, but for a signalling NaN, which
+glibc's `frexp`, `ldexp` and `nextafter` return quieted and the model as it is (ratpoints passes
+them no NaN). The exact value of a finite double is `m 2 ^ e` for the integers of
+`Ratpoints.Double.toDyadic`, and a dyadic number is rounded to a double, to nearest with ties to
+even, by `Ratpoints.Double.ofDyadic`, a fraction by `Ratpoints.Double.ofRatio` (for `strtod`, which
+the program uses).
 
 ## Main definitions
 
@@ -146,10 +148,12 @@ def roundShift (m : Nat) (k : Int) : Nat :=
 
 /-- The double nearest to `±m 2 ^ e`, the sign `-` for `neg`, with ties to even, as the operations
 of IEEE 754 round their exact results in the rounding mode to nearest: a signed zero for `m = 0`;
-the last place `2 ^ q` of the result `2 ^ (E - 52)` for the exponent `E` with
-`2 ^ E ≤ m 2 ^ e < 2 ^ (E + 1)`, and `2 ^ (-1074)` in the subnormal range; `M`, the value divided
-by `2 ^ q` and rounded, carried into the next exponent at `2 ^ 53`; and an infinity beyond the
-largest finite double. -/
+otherwise the last place `2 ^ q` of the result, `q = max (E - 52) (-1074)` for the exponent `E` with
+`2 ^ E ≤ m 2 ^ e < 2 ^ (E + 1)`; `M`, the value divided by `2 ^ q` and rounded, carried into the
+next exponent at `2 ^ 53`; a subnormal or a zero below `2 ^ 52`; and an infinity beyond the largest
+finite double. The proofs show only that a finite result for `m ≠ 0` is a faithful rounding: the
+value lies strictly between the neighbours of the result
+(`Ratpoints.Double.lt_nextUp_and_nextDown_lt_ofDyadic`). -/
 def ofDyadic (neg : Bool) (m : Nat) (e : Int) : Double :=
   let s : UInt64 := if neg then 0x8000000000000000 else 0
   if m = 0 then ⟨s⟩
@@ -166,7 +170,10 @@ def ofDyadic (neg : Bool) (m : Nat) (e : Int) : Double :=
 exponent `E` with `2 ^ E ≤ n / d < 2 ^ (E + 1)`, which the lengths of `n` and `d` in bits fix up to
 one, the last place `2 ^ q` of the result, `q = max (E - 52) (-1074)`, the quotient `n / (d 2 ^ q)`
 rounded to the nearest integer `M` (`r` the remainder), carried into the next exponent at `2 ^ 53`,
-a subnormal or a zero below `2 ^ 52`, and an infinity beyond the largest finite double. -/
+a subnormal or a zero below `2 ^ 52`, and an infinity beyond the largest finite double. The proofs
+show only that a finite result for `n ≠ 0` and `d ≠ 0` is a faithful rounding: the value lies
+strictly between the neighbours of the result
+(`Ratpoints.Double.lt_nextUp_and_nextDown_lt_ofRatio`). -/
 def ofRatio (neg : Bool) (n d : Nat) : Double :=
   let s : UInt64 := if neg then 0x8000000000000000 else 0
   if n = 0 then ⟨s⟩
@@ -202,10 +209,11 @@ def toUInt64 (x : Double) : UInt64 :=
   let (m, e) := x.toDyadic
   (if 0 ≤ e then m.natAbs <<< e.toNat else m.natAbs >>> (-e).toNat).toUInt64
 
-/-- `ldexp(x, n)` of `math.h`, `x 2 ^ n`: a zero, an infinity and a NaN as they are, and otherwise
-the exact value of `x` times `2 ^ n` rounded to a double (`Ratpoints.Double.ofDyadic`), which is
-exact unless it leaves the normal range, an infinity on overflow and rounded to nearest in the
-subnormal range, as glibc computes it. -/
+/-- `ldexp(x, n)` of `math.h`, `x 2 ^ n`: a zero, an infinity and a NaN as they are, as glibc
+returns them, but for a signalling NaN, which glibc returns quieted (by `x + x`; ratpoints passes it
+no NaN); otherwise the exact value of `x` times `2 ^ n` rounded to a double
+(`Ratpoints.Double.ofDyadic`), which is exact unless it leaves the normal range, an infinity on
+overflow and rounded to nearest in the subnormal range, as glibc computes it. -/
 def ldexp (x : Double) (n : Int) : Double :=
   if x.isNaN || x.isInf || x.isZero then x
   else
@@ -214,7 +222,8 @@ def ldexp (x : Double) (n : Int) : Double :=
 
 /-- `frexp(x, &ex)` of `math.h`: the pair `(f, ex)` with `x = f 2 ^ ex` and `1/2 ≤ |f| < 1`, `f` of
 the sign of `x`, for a finite `x ≠ 0`, also a subnormal one; `(x, 0)` for a zero, an infinity and a
-NaN, as glibc returns them. -/
+NaN, as glibc returns them, but for a signalling NaN, which glibc returns quieted (by `x + x`;
+ratpoints passes it no NaN). -/
 def frexp (x : Double) : Double × Int :=
   if x.isNaN || x.isInf || x.isZero then (x, 0)
   else
@@ -223,8 +232,9 @@ def frexp (x : Double) : Double × Int :=
     (ofDyadic x.signBit m.natAbs (-l), l + e)
 
 /-- `nextafter(x, HUGE_VAL)` of `math.h`: the least double above `x`; the least subnormal for both
-zeros, `+∞` for `+∞` and the largest finite double, a NaN as it is, and for a negative `x` the
-double towards zero, `-0.0` above `-2 ^ (-1074)`. -/
+zeros, `+∞` for `+∞` and the largest finite double, a NaN as it is (glibc returns a signalling NaN
+quieted, by `x + y`; ratpoints passes it no NaN), and for a negative `x` the double towards zero,
+`-0.0` above `-2 ^ (-1074)`. -/
 def nextUp (x : Double) : Double :=
   if x.isNaN || x.bits == huge.bits then x
   else if x.isZero then ⟨1⟩
@@ -232,8 +242,9 @@ def nextUp (x : Double) : Double :=
   else ⟨x.bits + 1⟩
 
 /-- `nextafter(x, -HUGE_VAL)` of `math.h`: the greatest double below `x`; the least subnormal
-negated for both zeros, `-∞` for `-∞` and the least finite double, a NaN as it is, and for a
-positive `x` the double towards zero, `0.0` below `2 ^ (-1074)`. -/
+negated for both zeros, `-∞` for `-∞` and the least finite double, a NaN as it is (glibc returns a
+signalling NaN quieted, by `x + y`; ratpoints passes it no NaN), and for a positive `x` the double
+towards zero, `0.0` below `2 ^ (-1074)`. -/
 def nextDown (x : Double) : Double :=
   if x.isNaN || x.bits == huge.neg.bits then x
   else if x.isZero then ⟨0x8000000000000001⟩

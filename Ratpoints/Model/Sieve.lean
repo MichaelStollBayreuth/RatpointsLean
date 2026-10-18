@@ -139,11 +139,13 @@ residues of `b` divided by the stride of the class, and entries of the third sta
 `Ratpoints.Sieve.SieveEntry.IsPrimeEntry`, with the reciprocals of their moduli, the points that
 `Ratpoints.Sieve.sift` delivers in the packing of the class with the rows of the entries of its
 first two stages, from a store of the tables of rows that fits these entries
-(`Ratpoints.Sieve.RowStore.Fits`), with the bounds of the one search interval `[-h, h]`, `h ≥ H`,
-without `RATPOINTS_NO_CHECK`, are those that `Ratpoints.Sieve.checkDen` finds on the plain sieve
-with all these entries whose numerators pass the word, all of them for any word that admits the
-numerators of the points (such as the word `nb[b mod 64]` of `Ratpoints.Sieve.twoAdic`), each mapped
-by `Ratpoints.Sieve.swapPoint` when the flag of the reversal is set, and those with `y < 0` left out
+(`Ratpoints.Sieve.RowStore.Fits`), and bounds of the search intervals that give the ranges of the
+numerators at `b` (`Ratpoints.Sieve.RangesFor`; all of `-H, …, H` for the one search interval
+`[-h, h]`, `h ≥ H`), without `RATPOINTS_NO_CHECK`, are those that `Ratpoints.Sieve.checkDen` finds
+on the plain sieve with all these entries whose numerators lie in one of the ranges
+(`Ratpoints.Sieve.inRanges`) and pass the word, all of them for any word that admits the numerators
+of the points (such as the word `nb[b mod 64]` of `Ratpoints.Sieve.twoAdic`), each mapped by
+`Ratpoints.Sieve.swapPoint` when the flag of the reversal is set, and those with `y < 0` left out
 under `RATPOINTS_NO_Y` (`Ratpoints.Sieve.run_sift_eq_deliver_checkDen`). -/
 def sieveDen (H b : Nat) (entries : List SieveEntry) : Id (Vector Bool (2 * H + 1)) := do
   let mut surv := Vector.replicate (2 * H + 1) true
@@ -159,12 +161,13 @@ checked exactly, as the brute-force reference checks it (`Ratpoints.BruteForce.p
 for odd `d`, then `(a, y, b)` and, for `y ≠ 0`, `(a, -y, b)` when `F(a, b) = y ^ 2` with `y ≥ 0`.
 With the plain sieve `Ratpoints.Sieve.sieveDen` it is the reference of the bit arrays of words:
 under the hypotheses of `Ratpoints.Sieve.run_sift_eq_deliver_checkDen`, `Ratpoints.Sieve.sift` in
-the packing of a class of a word, with the one search interval `[-h, h]`, `h ≥ H`, delivers the
-points that it finds on the plain sieve with all the sieve entries whose numerators pass the word,
-all of them for any word that admits the numerators of the points (such as the word `nb[b mod 64]`
-of `Ratpoints.Sieve.twoAdic`), each mapped by `Ratpoints.Sieve.swapPoint` when the flag of the
-reversal is set, those with `y < 0` left out under `RATPOINTS_NO_Y`, without
-`RATPOINTS_NO_CHECK`. -/
+the packing of a class of a word, with bounds of the search intervals that give the ranges of the
+numerators at `b` (`Ratpoints.Sieve.RangesFor`; all of `-H, …, H` for the one search interval
+`[-h, h]`, `h ≥ H`), delivers the points that it finds on the plain sieve with all the sieve entries
+whose numerators lie in one of the ranges (`Ratpoints.Sieve.inRanges`) and pass the word, all of
+them for any word that admits the numerators of the points (such as the word `nb[b mod 64]` of
+`Ratpoints.Sieve.twoAdic`), each mapped by `Ratpoints.Sieve.swapPoint` when the flag of the reversal
+is set, those with `y < 0` left out under `RATPOINTS_NO_Y`, without `RATPOINTS_NO_CHECK`. -/
 def checkDen (c : List Int) (d H b : Nat) (surv : Vector Bool (2 * H + 1)) :
     Id (Array (Int × Int × Int)) := do
   let w := BruteForce.scaledCoeffs c d b

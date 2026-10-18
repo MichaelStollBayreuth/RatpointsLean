@@ -305,9 +305,11 @@ intervals may be degenerate, `[a, a]`.
 C: `sturm.c:276`, `sturm.c:285-288`, `sturm.c:323`, `sturm.c:325`
 
 Deviation: the intervals of the caller read from the array it gives, where the C code reads them
-from a copy on the heap (lines 274-275, 286) and writes the intersection over them; the
-intersection returned as a new array, for the writes into `ivlist` and the number `num_inter` of the
-arguments that it sets; natural numbers for the `long` indices. -/
+from a copy on the heap (lines 274-275, 286) and writes the intersection over them; the intersection
+returned as a new array, with no bound on its length, for the writes into `ivlist`, the caller's
+array, which must have room for `1 + ⌊degree / 2⌋` intervals more than it holds (lines 52-53), as
+the C code relies on, and for the number `num_inter` of the arguments that it sets; natural numbers
+for the `long` indices. -/
 def intersect (loc ivs : Array (Double × Double)) : Id (Array (Double × Double)) := do
   let mut n1 := 0
   let mut n2 := 0

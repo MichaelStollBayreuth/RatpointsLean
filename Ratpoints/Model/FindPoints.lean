@@ -37,27 +37,29 @@ the remainder chain (`Ratpoints.Sturm.chain`); between the last two it refuses m
 intervals (`Ratpoints.searchIntervals`). The options are normalized first
 (`Ratpoints.Options.normalize`), the search intervals are `[-h, h]` when none are given, and the
 Sturm step (`Ratpoints.sturmRegion`, `Ratpoints.Sturm.computeSturm`) narrows them to the intervals
-where the polynomial may be `≥ 0`, or returns at once when it is negative on all of them and there
-is no point at infinity. Otherwise it runs the search of the polynomial that the set-up hands on
-(`Ratpoints.searchPoints`), which delivers no points when no class of the denominators modulo 64
-admits a numerator and there is no point at infinity, or when the curve has none modulo one of the
-primes examined for the parameters `P`, and otherwise the points of height at most `H` on
-`y ^ 2 = F(x, z)` in the search region (the denominators in the range of the options and `x / z` in
-a search interval) to the callback (`Ratpoints.Delivery`), the points at infinity first and then,
-unless the Sturm step has left no interval, those of the denominators in the order of the loop of
-the search (`Ratpoints.Sieve.Shape`), increasing unless it runs over the divisors of the leading
-coefficient, found by the sieve on the bit arrays of words with the moduli, primes, prime powers and
-products of them, and the array size of `P`, each mapped back to the caller's curve after a
-reversal, until a call of the callback stops the search, and returns the data of the callback, the
-count, the sum of the values that the calls returned, the bits of the flags that the program reads
-after the search and the search intervals as the search leaves them (`Ratpoints.Outcome`). Under the
-options of the output it delivers only the points with `y ≥ 0` (`RATPOINTS_NO_Y`), or, each with
-`y = 0`, the candidate at infinity and every numerator that passes the sieve, the test for common
-factors and the third stage (`RATPOINTS_NO_CHECK`). `Ratpoints.findPoints c H P o` is the list of
-what it delivers, by the callback that appends each point to an array (`Ratpoints.appendPoint`).
-What `sieving_info` computes for the search, the loop of the tables of the primes examined with the
-exit and the forbidden divisors, the further forbidden divisors and the sieve entries of the moduli
-with their reciprocals and the tables of their rows, is `Ratpoints.sievingInfo`.
+that it keeps, where the polynomial may be `≥ 0`, or returns at once when it keeps no part of them,
+so that the polynomial is negative on them within `±2 ^ 63`, and there is no point at infinity (at
+the depth of the step it may also keep intervals on which the polynomial is negative). Otherwise it
+runs the search of the polynomial that the set-up hands on (`Ratpoints.searchPoints`), which
+delivers no points when no class of the denominators modulo 64 admits a numerator and there is no
+point at infinity, or when the curve has none modulo one of the primes examined for the parameters
+`P`, and otherwise the points of height at most `H` on `y ^ 2 = F(x, z)` in the search region (the
+denominators in the range of the options and `x / z` in a search interval) to the callback
+(`Ratpoints.Delivery`), the points at infinity first and then, unless the Sturm step has left no
+interval, those of the denominators in the order of the loop of the search
+(`Ratpoints.Sieve.Shape`), increasing unless it runs over the divisors of the leading coefficient,
+found by the sieve on the bit arrays of words with the moduli, primes, prime powers and products of
+them, and the array size of `P`, each mapped back to the caller's curve after a reversal, until a
+call of the callback stops the search, and returns the data of the callback, the count, the sum of
+the values that the calls returned, the bits of the flags that the program reads after the search
+and the search intervals as the search leaves them (`Ratpoints.Outcome`). Under the options of the
+output it delivers only the points with `y ≥ 0` (`RATPOINTS_NO_Y`), or, each with `y = 0`, the
+candidate at infinity and every numerator that passes the sieve, the test for common factors and the
+third stage (`RATPOINTS_NO_CHECK`). `Ratpoints.findPoints c H P o` is the list of what it delivers,
+by the callback that appends each point to an array (`Ratpoints.appendPoint`). What `sieving_info`
+computes for the search, the loop of the tables of the primes examined with the exit and the
+forbidden divisors, the further forbidden divisors and the sieve entries of the moduli with their
+reciprocals and the tables of their rows, is `Ratpoints.sievingInfo`.
 
 ## Main definitions
 
@@ -331,15 +333,15 @@ C: `ratpoints.h:377`, `ratpoints.h:414`, `ratpoints.h:416-417`
 Deviation: a structure for what the C code returns and writes back into the arguments: the data of
 the callback, which the caller has behind its pointer `info`, the count, which `find_points` returns
 as a `long` that also carries its error codes (`Ratpoints.findPointsWith` returns the refusals
-apart), and Booleans for three bits of `args->flags`; nothing else written back: neither the
-reversed coefficients and the degree (`args->cof`, `args->degree`), which nothing reads after the
-search; nor the other internal bits of the flags, `RATPOINTS_CHECK_DENOM`, `RATPOINTS_USE_JACOBI`
-and `RATPOINTS_NO_REVERSE_AUTO`, which the program does not read either, the bits of the input
-coming back as the caller set them (`find_points.c:4606`), which the program takes from its own
-options and settings (`Ratpoints.Options`, `Ratpoints.Params.jacobi`,
-`Ratpoints.Cli.Output.verbose`); nor the numbers of the moduli used (`sp1_used`, `sp2_used`,
-`sp3_used`; stage I); the search intervals as a list, for the array `args->domain` and the number
-`args->num_inter` that the search writes back and the program reads after it. -/
+apart), Booleans for three bits of `args->flags`, and the search intervals as a list, for the array
+`args->domain` and the number `args->num_inter` that the search writes back and the program reads
+after it; nothing else written back: neither the reversed coefficients and the degree (`args->cof`,
+`args->degree`), which nothing reads after the search; nor the other internal bits of the flags,
+`RATPOINTS_CHECK_DENOM`, `RATPOINTS_USE_JACOBI` and `RATPOINTS_NO_REVERSE_AUTO`, which the program
+does not read either, the bits of the input coming back as the caller set them
+(`find_points.c:4606`), which the program takes from its own options and settings
+(`Ratpoints.Options`, `Ratpoints.Params.jacobi`, `Ratpoints.Cli.Output.verbose`); nor the numbers of
+the moduli used (`sp1_used`, `sp2_used`, `sp3_used`; stage I). -/
 structure Outcome (σ : Type) where
   /-- The data of the callback after the search. -/
   info : σ
@@ -386,7 +388,7 @@ degree `d` that the reversal check hands on, with the depth `sturm`, for the sea
 (`Ratpoints.searchIntervals`): with the step off, `sturm < 0`, the intervals as they are; with it
 on, the refusal `Ratpoints.Refusal.notSquarefree` when the remainder chain of `f` is none
 (`Ratpoints.Sturm.computeSturm`), and otherwise the intervals that the step leaves, when there are
-some; when there are none, `f` negative on all of them, none for an even `d` whose leading
+some; when there are none, `f` negative on them within `±2 ^ 63`, none for an even `d` whose leading
 coefficient is not a square (`Ratpoints.Setup.isSquare`), when there is no point at infinity either,
 so that the search returns at once, and otherwise no intervals with the flag `sturm_empty` set, so
 that the search delivers the points at infinity only.
@@ -548,21 +550,24 @@ search intervals (`Ratpoints.searchIntervals`), `[-h, h]` for none, and the refu
 apart, or with a NaN end; then the Sturm step (`Ratpoints.sturmRegion`), which with `0 ≤ o.sturm`
 refuses the form when the remainder chain of the polynomial searched is none
 (`Ratpoints.Sturm.chain`), that is when that polynomial has a repeated factor, returns at once, with
-nothing delivered and no interval, when that polynomial is negative on the search intervals and has
-no point at infinity, and otherwise narrows the search intervals to those where it may be `≥ 0`.
-Otherwise the search of the polynomial that the reversal check hands on (`Ratpoints.searchPoints`),
-with the flag of the reversal and the options of the output `o.noCheck` and `o.noY`
-(`Ratpoints.CheckFlags`), the normalized range of the denominators and the search intervals that the
-Sturm step leaves, from the data `info`, the count `0` and the flag `quit` clear, delivers the
-points to `process` (under `o.noCheck` the candidate at infinity and the numerators that pass the
-sieve, the test for common factors and the third stage, each with `y = 0`), none when no class of
-the denominators modulo 64 admits a numerator and there is no point at infinity, or when the curve
-has no points modulo one of the primes examined, and else the points at infinity first, then, unless
-the Sturm step has left no interval, those of the denominators in the order of the loop of the
-search (`Ratpoints.Sieve.sieveRun`) whose `x / z` lies in a search interval, each mapped back to the
-caller's curve after a reversal, until a call of `process` stops the search; it returns the data
-that `process` leaves, the count, the bits of the flags that the program reads after the search and
-the search intervals as the search leaves them (`Ratpoints.Outcome`).
+nothing delivered and no interval, when it keeps no interval (at its exit for a polynomial without a
+real root and with a negative constant term, or when the intervals of its bisection miss the search
+intervals), so that that polynomial is negative on the search intervals within `±2 ^ 63`, and that
+polynomial has no point at infinity, and otherwise narrows the search intervals to the intervals
+that it keeps, where it may be `≥ 0`. Otherwise the search of the polynomial that the reversal check
+hands on (`Ratpoints.searchPoints`), with the flag of the reversal and the options of the output
+`o.noCheck` and `o.noY` (`Ratpoints.CheckFlags`), the normalized range of the denominators and the
+search intervals that the Sturm step leaves, from the data `info`, the count `0` and the flag `quit`
+clear, delivers the points to `process` (under `o.noCheck` the candidate at infinity and the
+numerators that pass the sieve, the test for common factors and the third stage, each with `y = 0`),
+none when no class of the denominators modulo 64 admits a numerator and there is no point at
+infinity, or when the curve has no points modulo one of the primes examined, and else the points at
+infinity first, then, unless the Sturm step has left no interval, those of the denominators in the
+order of the loop of the search (`Ratpoints.Sieve.sieveRun`) whose `x / z` lies in a search
+interval, each mapped back to the caller's curve after a reversal, until a call of `process` stops
+the search; it returns the data that `process` leaves, the count, the bits of the flags that the
+program reads after the search and the search intervals as the search leaves them
+(`Ratpoints.Outcome`).
 
 C: `find_points.c:4523-4528`, `find_points.c:4546`, `find_points.c:4557-4559`,
 `find_points.c:4564-4565`, `find_points.c:4567-4571`, `find_points.c:4578-4585`,
