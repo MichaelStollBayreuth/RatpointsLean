@@ -9,17 +9,20 @@ public import Mathlib.Algebra.Order.Field.Rat
 public import Mathlib.Order.WithBotTop
 
 /-!
-# The values of the doubles
+# The values of the doubles and the search intervals
 
 The ends of the search intervals of ratpoints are IEEE binary64 doubles, given here by their bits.
 A double has a value in `ℚ` extended by `⊥` and `⊤` (`WithBotTop ℚ`), the two infinities; a NaN has
-none (its value here is junk), and both zeros have the value `0`. The specification uses Mathlib
-and nothing of the model.
+none (its value here is junk), and both zeros have the value `0`; ratpoints refuses search intervals
+with a NaN end, with `l > u` or that are not increasing and strictly apart. The specification uses
+Mathlib and nothing of the model.
 
 ## Main definitions
 
 * `Ratpoints.IsNaN`, `Ratpoints.doubleValue`: whether the bits of a double are a NaN, and the value
   of a double.
+* `Ratpoints.AreSearchIntervals`, `Ratpoints.IntervalsWF`: closed intervals, increasing and
+  strictly apart, over values and over the bits of doubles.
 
 ## Implementation notes
 
@@ -45,7 +48,7 @@ instance instDecidableIsNaN (x : UInt64) : Decidable (IsNaN x) :=
 field `0` (the zeros and the subnormals, both zeros giving `0`), `±(2 ^ 52 + f) 2 ^ (e - 1075)` for
 an exponent field `e` from `1` to `2046`, and `⊥` and `⊤` for the infinities, where `f` is the
 fraction and the sign is that of the top bit. The value of a NaN (the exponent field `2047` with a
-nonzero fraction) is junk, an infinity: ratpoints refuses search intervals with a NaN end. -/
+nonzero fraction) is junk, an infinity: `Ratpoints.IntervalsWF` excludes NaNs. -/
 def doubleValue (x : UInt64) : WithBotTop ℚ :=
   let e : ℕ := (x.toNat / 2 ^ 52) % 2 ^ 11
   let f : ℕ := x.toNat % 2 ^ 52
@@ -53,6 +56,25 @@ def doubleValue (x : UInt64) : WithBotTop ℚ :=
   else
     let a : ℚ := if e = 0 then f * 2 ^ (-1074 : ℤ) else (2 ^ 52 + f) * 2 ^ ((e : ℤ) - 1075)
     ((if 2 ^ 63 ≤ x.toNat then -a else a : ℚ) : WithBotTop ℚ)
+
+/-- Closed intervals `[l, u]` with `l ≤ u`, increasing and strictly apart: the upper end of each
+below the lower end of the next. -/
+def AreSearchIntervals (dom : List (WithBotTop ℚ × WithBotTop ℚ)) : Prop :=
+  (∀ i ∈ dom, i.1 ≤ i.2) ∧ dom.IsChain fun i j ↦ i.2 < j.1
+
+instance instDecidableAreSearchIntervals (dom : List (WithBotTop ℚ × WithBotTop ℚ)) :
+    Decidable (AreSearchIntervals dom) :=
+  inferInstanceAs (Decidable (_ ∧ _))
+
+/-- The search intervals with the ends of the bits of doubles that ratpoints accepts, the test of
+`RATPOINTS_BAD_ARGS`: no end is a NaN, and the values are closed intervals, increasing and strictly
+apart (`Ratpoints.AreSearchIntervals`); `-0` and `0` have the same value. -/
+def IntervalsWF (dom : List (UInt64 × UInt64)) : Prop :=
+  (∀ i ∈ dom, ¬ IsNaN i.1 ∧ ¬ IsNaN i.2) ∧
+    AreSearchIntervals (dom.map fun i ↦ (doubleValue i.1, doubleValue i.2))
+
+instance instDecidableIntervalsWF (dom : List (UInt64 × UInt64)) : Decidable (IntervalsWF dom) :=
+  inferInstanceAs (Decidable (_ ∧ _))
 
 /-! ### Examples, checked by `decide` -/
 
@@ -63,6 +85,14 @@ example : doubleValue 0x3ff0000000000000 = ((1 : ℚ) : WithBotTop ℚ) ∧
     doubleValue 1 = (((2 : ℚ) ^ (-1074 : ℤ) : ℚ) : WithBotTop ℚ) ∧
     doubleValue 0x43e0000000000000 = (((2 : ℚ) ^ 63 : ℚ) : WithBotTop ℚ) ∧
     doubleValue 0xbff8000000000000 = ((-3 / 2 : ℚ) : WithBotTop ℚ) := by
+  decide +kernel
+
+-- `ratpoints` refuses a NaN end (`RATPOINTS_BAD_ARGS`), accepts `[-0.0, 0.0]` and `[0.0, -0.0]`,
+-- refuses `[-1, -0.0]` followed by `[0.0, 1]` (not strictly apart), and accepts `[-∞, -∞]`.
+example : ¬ IntervalsWF [(0x7ff8000000000000, 0x3ff0000000000000)] ∧
+    IntervalsWF [(0x8000000000000000, 0)] ∧ IntervalsWF [(0, 0x8000000000000000)] ∧
+    ¬ IntervalsWF [(0xbff0000000000000, 0x8000000000000000), (0, 0x3ff0000000000000)] ∧
+    IntervalsWF [(0xfff0000000000000, 0xfff0000000000000)] := by
   decide +kernel
 
 end Ratpoints

@@ -770,10 +770,82 @@
         "Ratpoints.primeTable"
       ]
     },
+    "find_points.c:3217-3218": {
+      "hash": "7b06b629932a3a40396b017be10ab2d7ceada36b4a0aef632bf78489bf5dcbb6",
+      "owners": [
+        "Ratpoints.Sieve.ExactEnd"
+      ]
+    },
+    "find_points.c:3219-3221": {
+      "hash": "b2e9bc3dc569f078252a6fc2859f7aa9e2b3ccc3fe3e7401adb0f7bf389d4e54",
+      "owners": [
+        "Ratpoints.Sieve.IntervalBounds"
+      ]
+    },
+    "find_points.c:3231-3238": {
+      "hash": "9d9aaae7ea7e37ed4ffeab43bc36df986a314a2db1adc145181f8c5fd66ae0be",
+      "owners": [
+        "Ratpoints.Sieve.exactScale"
+      ]
+    },
+    "find_points.c:3239-3256": {
+      "hash": "9e0cdf322ecfc9272ca563f7f0e5df0f44e81ef43f61965707655ad037f1d959",
+      "owners": [
+        "excluded (other)"
+      ]
+    },
+    "find_points.c:3257-3257": {
+      "hash": "d10b36aa74a59bcf4a88185837f658afaf3646eff2bb16c3928d0e9335e945d2",
+      "owners": [
+        "Ratpoints.Sieve.exactScale"
+      ]
+    },
+    "find_points.c:3264-3271": {
+      "hash": "a1d62bed1a8623646c8dcf5f327495a0e9b7ace4f4e8f82dede7bd0cf56199db",
+      "owners": [
+        "Ratpoints.Sieve.exactEnd"
+      ]
+    },
+    "find_points.c:3272-3291": {
+      "hash": "ee8030facd461a5b8eea5c4a23f75665709f543411a7bc5fd30b07a837c8c9b4",
+      "owners": [
+        "Ratpoints.Sieve.exactMantissa"
+      ]
+    },
+    "find_points.c:3292-3299": {
+      "hash": "54d1e0672e3a45c734b691771ade73c239c62c3188963cf0eebf3a10158a4613",
+      "owners": [
+        "Ratpoints.Sieve.exactEnd"
+      ]
+    },
+    "find_points.c:3304-3318": {
+      "hash": "1936b1230154d6a2d79e0547b8f9b50d4d0e011a73490390bd059374c287ec35",
+      "owners": [
+        "Ratpoints.Sieve.endForm"
+      ]
+    },
+    "find_points.c:3323-3340": {
+      "hash": "b91e27ac602eb598b6824816631345a87558679b14d2eaa7d247cac07faa9700",
+      "owners": [
+        "Ratpoints.Sieve.exactBounds"
+      ]
+    },
     "find_points.c:3355-3370": {
       "hash": "4fdcc4d1bc1a411dfad0b4eaa079d2a79e80ecae3d88f0fde35fb6dc1befd14c",
       "owners": [
         "Ratpoints.Sieve.numeratorsToBits"
+      ]
+    },
+    "find_points.c:3381-3406": {
+      "hash": "ed2dfc5528025041c6a4a59c504ab94ef3581b09f159aebb2f9d46f6303b2896",
+      "owners": [
+        "Ratpoints.Sieve.intervalBitsExact"
+      ]
+    },
+    "find_points.c:3410-3434": {
+      "hash": "736285c8549c3a850ed4e5705d5b07e6a4192f56bde7c30639498f3c647eeeaa",
+      "owners": [
+        "Ratpoints.Sieve.intervalBits"
       ]
     },
     "find_points.c:3442-3488": {

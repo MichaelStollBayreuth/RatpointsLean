@@ -20,6 +20,7 @@ public import Ratpoints.Mathlib.NumberTheory.SmoothNumbers
 public import Ratpoints.Mathlib.RingTheory.Coprime.Basic
 public import Ratpoints.Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import Ratpoints.Model
+public import Ratpoints.Model.Bounds
 public import Ratpoints.Model.BruteForce
 public import Ratpoints.Model.Candidate
 public import Ratpoints.Model.Cli
@@ -39,6 +40,7 @@ public import Ratpoints.Model.Tables
 public import Ratpoints.Proof
 public import Ratpoints.Proof.BitRange
 public import Ratpoints.Proof.Bits
+public import Ratpoints.Proof.Bounds
 public import Ratpoints.Proof.BruteForce
 public import Ratpoints.Proof.Cli
 public import Ratpoints.Proof.CompositeRows
@@ -60,6 +62,7 @@ public import Ratpoints.Proof.Packing
 public import Ratpoints.Proof.Params
 public import Ratpoints.Proof.PrimeRows
 public import Ratpoints.Proof.Reductions
+public import Ratpoints.Proof.Region
 public import Ratpoints.Proof.RowStore
 public import Ratpoints.Proof.Rows
 public import Ratpoints.Proof.Scan

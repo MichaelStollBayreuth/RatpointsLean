@@ -510,12 +510,13 @@ intervals through their values and their bits.
 
 \begin{definition}[The values and the bits of the intervals]\label{def:inIntervals}
   \uses{def:Double, def:regionSpec}
-  Proposed names: \lname{Ratpoints.domainValues}, \lname{Ratpoints.domainBits},
-  \lname{Ratpoints.InIntervals}, \lname{Ratpoints.instDecidablePredInIntervals}. The intervals of a
-  list of pairs of doubles over the values of their ends (Definition~\ref{def:regionSpec}) and over
-  their bits; and the predicate that a rational number lies in one of the intervals over the values.
-  The first two are abbreviations, so that the statements of the proofs read $\mathrm{doubleValue}$
-  and the bits of the doubles as the challenge does.
+  \lean{Ratpoints.domainValues, Ratpoints.domainBits, Ratpoints.InIntervals, Ratpoints.instDecidablePredInIntervals}
+  \leanok
+  The intervals of a list of pairs of doubles over the values of their ends
+  (Definition~\ref{def:regionSpec}) and over their bits; and the predicate that a rational number
+  lies in one of the intervals over the values. The first two are abbreviations, so that the
+  statements of the proofs read $\mathrm{doubleValue}$ and the bits of the doubles as the challenge
+  does.
 \end{definition}
 
 \begin{definition}[The normalized options]\label{def:normalize}
@@ -608,79 +609,83 @@ compute on the C code's words: \verb|UInt64| and \verb|Int64| for its \verb|unsi
 
 \begin{definition}[An end of a search interval]\label{def:exactEnd}
   \uses{def:Double, def:ctz}
-  Proposed names: \lname{Ratpoints.Sieve.ExactEnd}, \lname{Ratpoints.Sieve.exactMantissa},
-  \lname{Ratpoints.Sieve.exactEnd}. An end $x = \pm m\,2^{-s}$ of a search interval as
-  \verb|exact_end| makes it, the type \verb|rp_end| (\csource{find_points.c}{3217}{3218}): the
-  mantissa $m$, odd or $s = 0$, the rounding $r = r_h 2^{64} + r_l$ in two words, the exponent $s$
-  from $0$ to $127$, and whether $x < 0$. For a double $0 \le a < 2^{63}$, the absolute value of an
-  end, its mantissa and exponent: $a = g\,2^{\mathit{ex}}$ by \verb|frexp|, $m = g\,2^{53}$ by
-  \verb|ldexp| and the conversion to an \verb|unsigned long|, $s = 53 - \mathit{ex}$; $s = 0$ for
-  $m = 0$, and else, while $s > 0$, the trailing zero bits of $m$ dropped, at most $s$ of them (by
-  the loop of \verb|RP_CTZL|, Definition~\ref{def:ctz}); $m$ shifted up by $-s$ when $s < 0$; and
-  $s$ capped at $127$, which changes neither $\lfloor b m\,2^{-s} \rfloor = 0$ nor
-  $\lceil b m\,2^{-s} \rceil = 1$ for $b < 2^{63}$ (\csource{find_points.c}{3272}{3291}). The end
-  itself, at the lower or the upper end of its interval: the sign by the C language's $x < 0$, so
-  that $-0.0$ is not negative; $m = 2^{63}$ and $s = 0$ when $|x| < 2^{63}$ fails, an infinity
-  included, which lies beyond every numerator, and otherwise the mantissa and the exponent of $|x|$;
-  and the rounding $2^s - 1$, in two words for $s \ge 64$, when the end wants $b|x|$ rounded up,
-  which is when the end is lower and $x \ge 0$ or upper and $x < 0$, and $0$ otherwise
-  (\csource{find_points.c}{3264}{3271}, \csource{find_points.c}{3292}{3299}).
+  \lean{Ratpoints.Sieve.ExactEnd, Ratpoints.Sieve.exactMantissa, Ratpoints.Sieve.exactEnd}
+  \leanok
+  An end $x = \pm m\,2^{-s}$ of a search interval as \verb|exact_end| makes it, the type
+  \verb|rp_end| (\csource{find_points.c}{3217}{3218}): the mantissa $m$, odd or $s = 0$, the
+  rounding $r = r_h 2^{64} + r_l$ in two words, the exponent $s$ from $0$ to $127$, and whether
+  $x < 0$. For a double $0 \le a < 2^{63}$, the absolute value of an end, its mantissa and exponent:
+  $a = g\,2^{\mathit{ex}}$ by \verb|frexp|, $m = g\,2^{53}$ by \verb|ldexp| and the conversion to an
+  \verb|unsigned long|, $s = 53 - \mathit{ex}$; $s = 0$ for $m = 0$, and else, while $s > 0$, the
+  trailing zero bits of $m$ dropped, at most $s$ of them (by the loop of \verb|RP_CTZL|,
+  Definition~\ref{def:ctz}); $m$ shifted up by $-s$ when $s < 0$; and $s$ capped at $127$, which
+  changes neither $\lfloor b m\,2^{-s} \rfloor = 0$ nor $\lceil b m\,2^{-s} \rceil = 1$ for
+  $b < 2^{63}$ (\csource{find_points.c}{3272}{3291}). The end itself, at the lower or the upper end
+  of its interval: the sign by the C language's $x < 0$, so that $-0.0$ is not negative;
+  $m = 2^{63}$ and $s = 0$ when $|x| < 2^{63}$ fails, an infinity included, which lies beyond every
+  numerator, and otherwise the mantissa and the exponent of $|x|$; and the rounding $2^s - 1$, in
+  two words for $s \ge 64$, when the end wants $b|x|$ rounded up, which is when the end is lower and
+  $x \ge 0$ or upper and $x < 0$, and $0$ otherwise (\csource{find_points.c}{3264}{3271},
+  \csource{find_points.c}{3292}{3299}).
 \end{definition}
 
 \begin{definition}[The scaled end]\label{def:exactScale}
   \uses{def:exactEnd, def:mulHi}
-  Proposed name: \lname{Ratpoints.Sieve.exactScale}. For a denominator $b$ and an end $\pm
-  m\,2^{-s}$ with its rounding $r$: $\min(2^{64} - 1, \lfloor (b m + r)/2^s \rfloor)$, which is
-  $b|x|$ rounded as the end wants it unless that does not fit $64$ bits; the product $b m$ in two
-  words, the low one the product of the words and the high one by $\mathrm{mulHi}$
-  (Definition~\ref{def:mulHi}), $r$ added with the carry of the low word, the sum shifted right by
-  $s$ in its two words, and $2^{64} - 1$ when the high word of the quotient is not $0$, the arm of
-  \verb|unsigned __int128| that the builds of the model compile
-  (\csource{find_points.c}{3231}{3238}, \csource{find_points.c}{3257}{3257}). As $b m < 2^{126}$ and
-  $r < 2^{127}$, nothing is lost.
+  \lean{Ratpoints.Sieve.exactScale}
+  \leanok
+  For a denominator $b$ and an end $\pm m\,2^{-s}$ with its rounding $r$:
+  $\min(2^{64} - 1, \lfloor (b m + r)/2^s \rfloor)$, which is $b|x|$ rounded as the end wants it
+  unless that does not fit $64$ bits; the product $b m$ in two words, the low one the product of the
+  words and the high one by $\mathrm{mulHi}$ (Definition~\ref{def:mulHi}), $r$ added with the carry
+  of the low word, the sum shifted right by $s$ in its two words, and $2^{64} - 1$ when the high
+  word of the quotient is not $0$, the arm of \verb|unsigned __int128| that the builds of the model
+  compile (\csource{find_points.c}{3231}{3238}, \csource{find_points.c}{3257}{3257}). As
+  $b m < 2^{126}$ and $r < 2^{127}$, nothing is lost.
 \end{definition}
 
 \begin{definition}[The bounds of the search intervals]\label{def:exactBounds}
   \uses{def:exactEnd, def:exactScale}
-  Proposed names: \lname{Ratpoints.Sieve.IntervalBounds}, \lname{Ratpoints.Sieve.endForm},
-  \lname{Ratpoints.Sieve.exactBounds}. The bounds of an interval as the sieve of a denominator reads
-  them, the type \verb|rp_bounds| (\csource{find_points.c}{3219}{3221}): the forms $(b\,l_M + l_C)
-  \gg l_{\mathit{sh}}$ and $(b\,u_M + u_C) \gg u_{\mathit{sh}}$ of its ends, whether it is taken
-  inline, and both ends. The form of an end $e$, lower or upper, for the height bound $H$ and the
-  denominators up to $b_{\mathrm{high}} \ge 1$, or none, as \verb|end_form| makes it: for an end
-  that can lie beyond the bound on its side ($x < 0$ at the lower end, $x \ge 0$ at the upper end),
-  whose $|x|$ the scaled end at $b = 1$ shows to be at least $H$, the form $(0, -H, 0)$ at the lower
-  end and $(0, H, 0)$ at the upper end; and for $s < 64$ and $m \le \lfloor (2^{63} - 1 -
-  C)/b_{\mathrm{high}} \rfloor$ the form $(\pm m, C, s)$, the sign of $x$, with $C = 2^s - 1$ at the
-  lower end and $0$ at the upper end, for which $b M + C$ is a \verb|long| for every $b \le
-  b_{\mathrm{high}}$ (\csource{find_points.c}{3304}{3318}). The bounds of the search intervals,
-  increasing, disjoint and without a NaN, as \verb|exact_bounds| makes them: for each interval $[l,
-  u]$ in turn its two ends, $l$ as a lower end and $u$ as an upper end, and the interval taken
-  inline, with its forms, when $H \le 2^{63} - 65$, so that the conversion to bits needs no split
-  form, and both ends have a form; otherwise the forms of an empty interval, $0$ at the lower end
-  and $-2^{63}$ at the upper end (\csource{find_points.c}{3323}{3340}).
+  \lean{Ratpoints.Sieve.IntervalBounds, Ratpoints.Sieve.endForm, Ratpoints.Sieve.exactBounds}
+  \leanok
+  The bounds of an interval as the sieve of a denominator reads them, the type \verb|rp_bounds|
+  (\csource{find_points.c}{3219}{3221}): the forms $(b\,l_M + l_C) \gg l_{\mathit{sh}}$ and
+  $(b\,u_M + u_C) \gg u_{\mathit{sh}}$ of its ends, whether it is taken inline, and both ends. The
+  form of an end $e$, lower or upper, for the height bound $H$ and the denominators up to
+  $b_{\mathrm{high}} \ge 1$, or none, as \verb|end_form| makes it: for an end that can lie beyond
+  the bound on its side ($x < 0$ at the lower end, $x \ge 0$ at the upper end), whose $|x|$ the
+  scaled end at $b = 1$ shows to be at least $H$, the form $(0, -H, 0)$ at the lower end and
+  $(0, H, 0)$ at the upper end; and for $s < 64$ and
+  $m \le \lfloor (2^{63} - 1 - C)/b_{\mathrm{high}} \rfloor$ the form $(\pm m, C, s)$, the sign of
+  $x$, with $C = 2^s - 1$ at the lower end and $0$ at the upper end, for which $b M + C$ is a
+  \verb|long| for every $b \le b_{\mathrm{high}}$ (\csource{find_points.c}{3304}{3318}). The bounds
+  of the search intervals, increasing, disjoint and without a NaN, as \verb|exact_bounds| makes
+  them: for each interval $[l, u]$ in turn its two ends, $l$ as a lower end and $u$ as an upper end,
+  and the interval taken inline, with its forms, when $H \le 2^{63} - 65$, so that the conversion to
+  bits needs no split form, and both ends have a form; otherwise the forms of an empty interval, $0$
+  at the lower end and $-2^{63}$ at the upper end (\csource{find_points.c}{3323}{3340}).
 \end{definition}
 
 \begin{definition}[The bits of an interval]\label{def:intervalBits}
   \uses{def:exactBounds, def:numeratorsToBits, def:numClasses}
-  Proposed names: \lname{Ratpoints.Sieve.intervalBitsExact}, \lname{Ratpoints.Sieve.intervalBits}.
+  \lean{Ratpoints.Sieve.intervalBitsExact, Ratpoints.Sieve.intervalBits}
+  \leanok
   The bits of the numerators of the interval with the bounds $\mathit{bd}$ at the denominator $b$,
   for the height bound $H$ and the class of $b$ (Definition~\ref{def:numClasses}): a code and the
   bits of the first and the last numerator. From the products in 128 bits, as
-  \verb|interval_bits_exact| computes them for an interval that is not taken inline: $\lceil b l
-  \rceil$, which is $-\lfloor b|l| \rfloor$ for $l < 0$, clipped to $-H$, and the code $2$ when it
-  lies beyond $H$ for $l \ge 0$, so that neither this interval nor a later one holds a numerator
-  within the bound; then $\lfloor b u \rfloor$, and the code $1$ when it lies below $-H$, so that
-  this interval holds none, and otherwise clipped to $H$; and the code $0$ with the bits of $\lceil
-  b l \rceil, \dots, \lfloor b u \rfloor$ (Definition~\ref{def:numeratorsToBits}) in the form that
-  splits the ends for the heights above $2^{63} - 65$ (\csource{find_points.c}{3381}{3406}). From
-  the forms, as \verb|interval_bits| computes them: $\mathit{lo} = \lceil b l \rceil$ and
-  $\mathit{hi} = \lfloor b u \rfloor$ by the arithmetic shift of the forms; the code $2$ for
-  $\mathit{lo} > H$; for $\mathit{hi} < -H$ the code $1$ if the interval is taken inline and
-  otherwise what the products in 128 bits give, since the forms of an interval not taken inline are
-  those of an empty one; and otherwise the code $0$ with the bits of $\mathit{lo}, \dots,
-  \mathit{hi}$ clipped to $-H, \dots, H$, in the form that does not split the ends
-  (\csource{find_points.c}{3410}{3434}). The code $0$ comes also for an interval that holds no
+  \verb|interval_bits_exact| computes them for an interval that is not taken inline:
+  $\lceil b l \rceil$, which is $-\lfloor b|l| \rfloor$ for $l < 0$, clipped to $-H$, and the code
+  $2$ when it lies beyond $H$ for $l \ge 0$, so that neither this interval nor a later one holds a
+  numerator within the bound; then $\lfloor b u \rfloor$, and the code $1$ when it lies below $-H$,
+  so that this interval holds none, and otherwise clipped to $H$; and the code $0$ with the bits of
+  $\lceil b l \rceil, \dots, \lfloor b u \rfloor$ (Definition~\ref{def:numeratorsToBits}) in the
+  form that splits the ends for the heights above $2^{63} - 65$
+  (\csource{find_points.c}{3381}{3406}). From the forms, as \verb|interval_bits| computes them:
+  $\mathit{lo} = \lceil b l \rceil$ and $\mathit{hi} = \lfloor b u \rfloor$ by the arithmetic shift
+  of the forms; the code $2$ for $\mathit{lo} > H$; for $\mathit{hi} < -H$ the code $1$ if the
+  interval is taken inline and otherwise what the products in 128 bits give, since the forms of an
+  interval not taken inline are those of an empty one; and otherwise the code $0$ with the bits of
+  $\mathit{lo}, \dots, \mathit{hi}$ clipped to $-H, \dots, H$, in the form that does not split the
+  ends (\csource{find_points.c}{3410}{3434}). The code $0$ comes also for an interval that holds no
   numerator, when $\mathit{lo} > \mathit{hi}$.
 \end{definition}
 
@@ -689,37 +694,32 @@ range is the same for the bits and for the values.
 
 \begin{definition}[The ranges of the numerators]\label{def:numeratorRanges}
   \uses{def:intervalBits, def:numClasses}
-  Proposed names: \lname{Ratpoints.Sieve.lowNumerator}, \lname{Ratpoints.Sieve.highNumerator},
-  \lname{Ratpoints.Sieve.numeratorRanges}, \lname{Ratpoints.Sieve.IntervalBounds.Represents},
-  \lname{Ratpoints.Sieve.RangesFor}, \lname{Ratpoints.Sieve.inRanges}. The least numerator of the
-  denominator $b$ in an interval with the lower end $x$, $\lceil b x \rceil$ clamped to $-H, \dots,
-  H + 1$, with $-H$ for $\bot$ and $H + 1$ for $\top$; the largest in an interval with the upper end
-  $x$, $\lfloor b x \rfloor$ clamped to $-H - 1, \dots, H$, with $-H - 1$ for $\bot$ and $H$ for
-  $\top$; and the ranges of the numerators of $b$ in the intervals $D$ over the values, one for each
-  interval in turn. The clamps are asymmetric so that each range has $\mathit{lo} \le \mathit{hi} +
-  1$, the ranges stay strictly apart, and a range above $H$ is seen as such. The bounds of an
-  interval \emph{represent} the range $\mathit{lo}, \dots, \mathit{hi}$ at $b$ when, for every class
-  with $k \le 6$ and $a_0 < 2^k$, the code $2$ comes only when $\mathit{lo} > H$, the code $1$ only
-  when $\mathit{hi} < -H$, and any other code with the bits of the numerators from
-  $\max(\mathit{lo}, -H)$ to $\min(\mathit{hi}, H)$ in the packing of the class; the bounds of the
-  search intervals give the ranges $\mathit{rs}$ at $b$ when each represents its range, each range
-  has $\mathit{lo} \le \mathit{hi} + 1$, and the ranges increase and are strictly apart, which is
-  what the loop of \verb|sift| needs; and whether an integer lies in one of a list of ranges.
+  \lean{Ratpoints.Sieve.lowNumerator, Ratpoints.Sieve.highNumerator, Ratpoints.Sieve.numeratorRanges, Ratpoints.Sieve.IntervalBounds.Represents, Ratpoints.Sieve.RangesFor, Ratpoints.Sieve.inRanges}
+  \leanok
+  The least numerator of the denominator $b$ in an interval with the lower end $x$,
+  $\lceil b x \rceil$ clamped to $-H, \dots, H + 1$, with $-H$ for $\bot$ and $H + 1$ for $\top$;
+  the largest in an interval with the upper end $x$, $\lfloor b x \rfloor$ clamped to
+  $-H - 1, \dots, H$, with $-H - 1$ for $\bot$ and $H$ for $\top$; and the ranges of the numerators
+  of $b$ in the intervals $D$ over the values, one for each interval in turn. The clamps are
+  asymmetric so that each range has $\mathit{lo} \le \mathit{hi} + 1$, the ranges stay strictly
+  apart, and a range above $H$ is seen as such. The bounds of an interval \emph{represent} the range
+  $\mathit{lo}, \dots, \mathit{hi}$ at $b$ when, for every class with $k \le 6$ and $a_0 < 2^k$, the
+  code $2$ comes only when $\mathit{lo} > H$, the code $1$ only when $\mathit{hi} < -H$, and any
+  other code with the bits of the numerators from $\max(\mathit{lo}, -H)$ to $\min(\mathit{hi}, H)$
+  in the packing of the class; the bounds of the search intervals give the ranges $\mathit{rs}$ at
+  $b$ when each represents its range, each range has $\mathit{lo} \le \mathit{hi} + 1$, and the
+  ranges increase and are strictly apart, which is what the loop of \verb|sift| needs; and whether
+  an integer lies in one of a list of ranges.
 \end{definition}
 
 \begin{lemma}[The ends and the scaled ends]\label{lem:exactEnd}
   \uses{def:exactEnd, def:exactScale, lem:mulHi, lem:Double, def:numeratorRanges}
-  Proposed names: \lname{Ratpoints.Sieve.toNat\_exactScale},
-  \lname{Ratpoints.Sieve.toNat\_hi\_mul\_add\_lo},
-  \lname{Ratpoints.Sieve.toNat\_shift\_words\_of\_lt},
-  \lname{Ratpoints.Sieve.toNat\_shift\_words\_of\_le}, \lname{Ratpoints.Sieve.IsExactMantissa},
-  \lname{Ratpoints.Sieve.isExactMantissa\_run\_exactMantissa},
-  \lname{Ratpoints.Sieve.ExactEnd.value}, \lname{Ratpoints.Sieve.IsEnd},
-  \lname{Ratpoints.Sieve.isEnd\_run\_exactEnd}, \lname{Ratpoints.Sieve.numerators\_run\_exactEnd},
-  \lname{Ratpoints.Sieve.toNat\_exactScale\_of\_isEnd}. For $s \le 127$ and $b m + r < 2^{128}$, the
-  scaled end is $\min(2^{64} - 1, \lfloor (b m + r)/2^s \rfloor)$, from the two-word product and the
-  shift of two words. The mantissa and the exponent of a double $a > 0$ are exact, $a = m\,2^{-s}$
-  with $0 < m < 2^{63}$ and $s \le 127$, or, for a tiny $a < 2^{-75}$, capped at $s = 127$; what
+  \lean{Ratpoints.Sieve.toNat_exactScale, Ratpoints.Sieve.toNat_hi_mul_add_lo, Ratpoints.Sieve.toNat_shift_words_of_lt, Ratpoints.Sieve.toNat_shift_words_of_le, Ratpoints.Sieve.IsExactMantissa, Ratpoints.Sieve.isExactMantissa_run_exactMantissa, Ratpoints.Sieve.ExactEnd.value, Ratpoints.Sieve.IsEnd, Ratpoints.Sieve.isEnd_run_exactEnd, Ratpoints.Sieve.numerators_run_exactEnd, Ratpoints.Sieve.toNat_exactScale_of_isEnd}
+  \leanok
+  For $s \le 127$ and $b m + r < 2^{128}$, the scaled end is
+  $\min(2^{64} - 1, \lfloor (b m + r)/2^s \rfloor)$, from the two-word product and the shift of two
+  words. The mantissa and the exponent of a double $a > 0$ are exact, $a = m\,2^{-s}$ with
+  $0 < m < 2^{63}$ and $s \le 127$, or, for a tiny $a < 2^{-75}$, capped at $s = 127$; what
   $\mathrm{exactEnd}$ makes of every double is an \emph{end}, with $s \le 127$, $m \le 2^{63}$ and
   the rounding of its side, and its value $\pm m\,2^{-s}$ is the value of the double as far as the
   numerators go: for $1 \le b < 2^{63}$ and $H < 2^{63}$, the least and the largest numerators of
@@ -728,7 +728,7 @@ range is the same for the bits and for the values.
   $2^{63}$, whose numerators lie beyond the bound either way.
 \end{lemma}
 
-\begin{proof}
+\begin{proof}\leanok
   The two-word arithmetic by the lemma of the high word of a product
   (Lemma~\ref{lem:mulHi}) and the carry; the exactness of the mantissa from \verb|frexp| and
   \verb|ldexp| (Lemma~\ref{lem:Double}) and the dropped zero bits, $m\,2^{-s}$ unchanged; the
@@ -737,21 +737,18 @@ range is the same for the bits and for the values.
 
 \begin{lemma}[The bits of an interval]\label{lem:intervalBits}
   \uses{def:intervalBits, lem:exactEnd, lem:numeratorsToBits, def:numeratorRanges, def:exactBounds}
-  Proposed names: \lname{Ratpoints.Sieve.spec\_intervalBitsExact},
-  \lname{Ratpoints.Sieve.spec\_intervalBits\_of\_fast},
-  \lname{Ratpoints.Sieve.intervalBits\_eq\_intervalBitsExact},
-  \lname{Ratpoints.Sieve.lowNumerator\_of\_endForm},
-  \lname{Ratpoints.Sieve.highNumerator\_of\_endForm}. For the ends of an interval, $b \le H <
-  2^{63}$ and a class with $k \le 6$ and $a_0 < 2^k$: the bits from the products in 128 bits have
-  the code $2$ only when the least numerator lies above $H$, the code $1$ only when the largest lies
-  below $-H$, and otherwise the bits of the numerators from the least to the largest, clipped to
-  $[-H, H]$. For an interval taken inline and $H \le 2^{63} - 65$ the bits from the forms are the
-  same with the clamped values of the forms, and for one not taken inline they are those from the
-  products, the forms being those of an empty interval; the clamped value of a form is the least or
-  the largest numerator of its end.
+  \lean{Ratpoints.Sieve.spec_intervalBitsExact, Ratpoints.Sieve.spec_intervalBits_of_fast, Ratpoints.Sieve.intervalBits_eq_intervalBitsExact, Ratpoints.Sieve.lowNumerator_of_endForm, Ratpoints.Sieve.highNumerator_of_endForm}
+  \leanok
+  For the ends of an interval, $b \le H < 2^{63}$ and a class with $k \le 6$ and $a_0 < 2^k$: the
+  bits from the products in 128 bits have the code $2$ only when the least numerator lies above $H$,
+  the code $1$ only when the largest lies below $-H$, and otherwise the bits of the numerators from
+  the least to the largest, clipped to $[-H, H]$. For an interval taken inline and
+  $H \le 2^{63} - 65$ the bits from the forms are the same with the clamped values of the forms, and
+  for one not taken inline they are those from the products, the forms being those of an empty
+  interval; the clamped value of a form is the least or the largest numerator of its end.
 \end{lemma}
 
-\begin{proof}
+\begin{proof}\leanok
   The conversion to bits of an interval within $[-H, H]$ is Lemma~\ref{lem:numeratorsToBits}; the
   products give $\lfloor b|x| \rfloor$ and $\lceil b|x| \rceil$ by Lemma~\ref{lem:exactEnd}, and a
   form $(b M + C) \gg s$ gives $\lceil b m\,2^{-s} \rceil$ for $C = 2^s - 1$ and the floor for
@@ -760,20 +757,17 @@ range is the same for the bits and for the values.
 
 \begin{lemma}[The ranges of the numerators]\label{lem:numeratorRanges}
   \uses{def:numeratorRanges, def:regionSpec, def:inIntervals}
-  Proposed names: \lname{Ratpoints.Sieve.lowNumerator\_le\_iff},
-  \lname{Ratpoints.Sieve.le\_highNumerator\_iff}, \lname{Ratpoints.Sieve.inRanges\_numeratorRanges},
-  \lname{Ratpoints.Sieve.lowNumerator\_le\_highNumerator\_add\_one},
-  \lname{Ratpoints.Sieve.highNumerator\_lt\_lowNumerator},
-  \lname{Ratpoints.Sieve.le\_add\_one\_of\_mem\_numeratorRanges},
-  \lname{Ratpoints.Sieve.pairwise\_numeratorRanges}. For $b > 0$ and $|a| \le H$: $a$ is at least
-  the least numerator of a lower end $l$ exactly when $l \le a/b$, and at most the largest of an
-  upper end $u$ exactly when $a/b \le u$; so $a$ lies in one of the ranges of the numerators of the
-  intervals $D$ exactly when $a/b$ lies in one of the intervals. For search intervals
-  (Definition~\ref{def:regionSpec}) each range has $\mathit{lo} \le \mathit{hi} + 1$ and the ranges
-  are strictly apart, since the upper end of each interval lies below the lower end of the next.
+  \lean{Ratpoints.Sieve.lowNumerator_le_iff, Ratpoints.Sieve.le_highNumerator_iff, Ratpoints.Sieve.inRanges_numeratorRanges, Ratpoints.Sieve.lowNumerator_le_highNumerator_add_one, Ratpoints.Sieve.highNumerator_lt_lowNumerator, Ratpoints.Sieve.le_add_one_of_mem_numeratorRanges, Ratpoints.Sieve.pairwise_numeratorRanges}
+  \leanok
+  For $b > 0$ and $|a| \le H$: $a$ is at least the least numerator of a lower end $l$ exactly when
+  $l \le a/b$, and at most the largest of an upper end $u$ exactly when $a/b \le u$; so $a$ lies in
+  one of the ranges of the numerators of the intervals $D$ exactly when $a/b$ lies in one of the
+  intervals. For search intervals (Definition~\ref{def:regionSpec}) each range has
+  $\mathit{lo} \le \mathit{hi} + 1$ and the ranges are strictly apart, since the upper end of each
+  interval lies below the lower end of the next.
 \end{lemma}
 
-\begin{proof}
+\begin{proof}\leanok
   The ceiling and the floor of $b x$ against an integer, with the clamps; the strict separation
   through $\lfloor b u_i \rfloor < \lceil b l_{i+1} \rceil$ for $u_i < l_{i+1}$, after the chain of
   the search intervals is turned into its pairwise form: a chain of intervals in which each ends
@@ -784,19 +778,16 @@ range is the same for the bits and for the values.
 \begin{lemma}[The bounds give the ranges]\label{lem:exactBounds}
   \uses{def:exactBounds, lem:intervalBits, lem:numeratorRanges, lem:exactEnd, def:regionSpec,
     def:inIntervals}
-  Proposed names: \lname{Ratpoints.Sieve.intervalBoundsOf},
-  \lname{Ratpoints.Sieve.toList\_run\_exactBounds},
-  \lname{Ratpoints.Sieve.represents\_intervalBoundsOf},
-  \lname{Ratpoints.Sieve.areSearchIntervals\_domainValues},
-  \lname{Ratpoints.Sieve.rangesFor\_run\_exactBounds}. The bounds of the search intervals are the
-  bounds of each interval in turn; for well-formed intervals (Definition~\ref{def:regionSpec}),
-  $H < 2^{63}$, $b_{\mathrm{high}} \le H$ and $0 < b \le b_{\mathrm{high}}$, the bounds of each
-  represent at $b$ the range of the numerators of its values, the values are search intervals, and
-  so the bounds of the run give at $b$ the ranges of the numerators of the values of the intervals
-  (Definition~\ref{def:numeratorRanges}).
+  \lean{Ratpoints.Sieve.intervalBoundsOf, Ratpoints.Sieve.toList_run_exactBounds, Ratpoints.Sieve.represents_intervalBoundsOf, Ratpoints.Sieve.areSearchIntervals_domainValues, Ratpoints.Sieve.rangesFor_run_exactBounds}
+  \leanok
+  The bounds of the search intervals are the bounds of each interval in turn; for well-formed
+  intervals (Definition~\ref{def:regionSpec}), $H < 2^{63}$, $b_{\mathrm{high}} \le H$ and
+  $0 < b \le b_{\mathrm{high}}$, the bounds of each represent at $b$ the range of the numerators of
+  its values, the values are search intervals, and so the bounds of the run give at $b$ the ranges
+  of the numerators of the values of the intervals (Definition~\ref{def:numeratorRanges}).
 \end{lemma}
 
-\begin{proof}
+\begin{proof}\leanok
   The loop of \verb|exact_bounds| is a map; Lemma~\ref{lem:intervalBits} for each interval, with the
   numerators of the ends of Lemma~\ref{lem:exactEnd}, and Lemma~\ref{lem:numeratorRanges} for the
   order of the ranges.

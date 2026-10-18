@@ -5,6 +5,7 @@ Authors: Michael Stoll
 -/
 module
 
+public import Ratpoints.Model.Bounds
 public import Ratpoints.Model.BruteForce
 public import Ratpoints.Model.Candidate
 public import Ratpoints.Model.Constants
@@ -14,6 +15,7 @@ public import Ratpoints.Model.Rows
 public import Ratpoints.Model.Tables
 
 -- The `#guard` examples run code of the imported modules at compile time.
+meta import Ratpoints.Model.Bounds
 meta import Ratpoints.Model.BruteForce
 meta import Ratpoints.Model.Candidate
 meta import Ratpoints.Model.Constants
@@ -36,12 +38,15 @@ the second stage, one word at a time or on the whole bit array (`Ratpoints.Sieve
 `Ratpoints.Sieve.siftBitArrayByWords`, `Ratpoints.Sieve.siftBitArrayWhole`); one piece of bit arrays
 from the first stage, with the first moduli, in the arm that the chunk chooses, through the second,
 with the others, to the points of its numerators (`Ratpoints.Sieve.siftPiece`); the bits of an
-interval of numerators in the packing of a class (`Ratpoints.Sieve.numeratorsToBits`), the rows of
-the moduli for a denominator from the tables of rows of their entries with the row offsets of its
-class (`Ratpoints.Sieve.setRows`), the rows that are not built yet built into their tables of rows
-(`Ratpoints.Sieve.buildRows`), and the points of the bits of one interval in pieces
-(`Ratpoints.Sieve.siftBits`); and the numerators of one denominator, in the packing of its class,
-with the products of the check and what the third stage needs as thunks (`Ratpoints.Sieve.sift`).
+interval of numerators in the packing of a class (`Ratpoints.Sieve.numeratorsToBits`), the bits of
+the numerators of a search interval at a denominator, from the forms of its ends or from the
+products in 128 bits (`Ratpoints.Sieve.intervalBits`, `Ratpoints.Sieve.intervalBitsExact`, with the
+bounds of `Ratpoints.Model.Bounds`), the rows of the moduli for a denominator from the tables of
+rows of their entries with the row offsets of its class (`Ratpoints.Sieve.setRows`), the rows that
+are not built yet built into their tables of rows (`Ratpoints.Sieve.buildRows`), and the points of
+the bits of one interval in pieces (`Ratpoints.Sieve.siftBits`); and the numerators of one
+denominator, in the packing of its class, with the products of the check and what the third stage
+needs as thunks (`Ratpoints.Sieve.sift`).
 The components that take one numerator at a time, the test of a candidate that survives the first
 two stages, with the test for common factors and the third stage (`Ratpoints.Sieve.accepted`), the
 exact check (`Ratpoints.Sieve.checkPoint`) and its reference, the check of a numerator
@@ -102,6 +107,9 @@ built into it (`Ratpoints.Sieve.SieveEntry.fetchRow`) and the tables of rows of 
   two ends, through the second stage, to the points of its numerators.
 * `Ratpoints.Sieve.numeratorsToBits`: the bits of an interval of numerators in the packing of a
   class.
+* `Ratpoints.Sieve.intervalBitsExact`, `Ratpoints.Sieve.intervalBits`: the bits of the numerators
+  of a search interval at a denominator, from the products in 128 bits and from the forms of its
+  ends.
 * `Ratpoints.Sieve.setRows`, `Ratpoints.Sieve.buildRows`: the moduli of the first two stages with
   their rows from the tables of rows and their offsets for a denominator, the start `0` and the end
   `p`, and the rows that are not built yet built into their tables of rows.
@@ -610,6 +618,72 @@ def numeratorsToBits (low high : Int64) (cl : NumClass) (split : Bool) : Int64 �
       (high >>> k) + (((high &&& mask) - a0) >>> k))
   else (-((a0 - low) >>> k), (high - a0) >>> k)
 
+/-- The bits of the numerators of the search interval with the bounds `bd`
+(`Ratpoints.Sieve.IntervalBounds`) at the denominator `b`, for the height bound `height` and the
+class `cl`, from the products of `b` and the ends in 128 bits (`Ratpoints.Sieve.exactScale`), as
+`interval_bits_exact` computes them for an interval that is not taken inline: `⌈b l⌉`, which is
+`-⌊b |l|⌋` for `l < 0`, clipped to `-height`, and the code `2` when it is beyond `height` for
+`l ≥ 0`, so that neither this interval nor a later one holds a numerator within the bound; then
+`⌊b u⌋`, which is `-⌈b |u|⌉` for `u < 0`, and the code `1` when it is below `-height`, so that this
+interval holds none, and otherwise clipped to `height`; and the code `0` with the bits of
+`⌈b l⌉, …, ⌊b u⌋` (`Ratpoints.Sieve.numeratorsToBits`), in the form that splits the ends for the
+heights above `2 ^ 63 - 65`.
+
+C: `find_points.c:3381-3406`
+
+Deviation: the code and the bits returned as a triple, for the `int` and the pointers `low` and
+`high` through which the C code writes the bits, the bits `(0, 0)` with the codes `1` and `2`, for
+which the C code writes nothing; `Int64` for the `long`s, the `unsigned long` products compared
+with the height bound converted to a 64-bit word, as the C code compares them; no output under
+`DEBUG`. -/
+def intervalBitsExact (b : Int64) (bd : IntervalBounds) (height : Int64) (cl : NumClass) :
+    Nat × Int64 × Int64 :=
+  let t := exactScale b bd.low
+  let low? : Option Int64 :=
+    if bd.low.neg then some (if height.toUInt64 ≤ t then -height else -t.toInt64)
+    else if height.toUInt64 < t then none else some t.toInt64
+  match low? with
+  | none => (2, 0, 0)
+  | some low =>
+    let t := exactScale b bd.up
+    if bd.up.neg && height.toUInt64 < t then (1, 0, 0)
+    else
+      let high := if bd.up.neg then -t.toInt64 else if height.toUInt64 ≤ t then height
+        else t.toInt64
+      let (l, h) := numeratorsToBits low high cl (decide (9223372036854775807 - 64 < height))
+      (0, l, h)
+
+/-- The bits of the numerators of the search interval with the bounds `bd`
+(`Ratpoints.Sieve.IntervalBounds`) at the denominator `b`, for the height bound `height` and the
+class `cl`, as `interval_bits` computes them: `lo = ⌈b l⌉` and `hi = ⌊b u⌋` from the forms of the
+ends, `(b M + C) >> sh`, by arithmetic shifts; the code `2` for `lo > height`; for `hi < -height`
+the code `1` if the interval is taken inline, and otherwise what the products in 128 bits give
+(`Ratpoints.Sieve.intervalBitsExact`), the forms of an interval that is not taken inline being those
+of an empty one; and otherwise the code `0` with the bits of `lo, …, hi` clipped to
+`-height, …, height` (`Ratpoints.Sieve.numeratorsToBits`, in the form that does not split the ends).
+The code `0` comes also for an interval that holds no numerator, when `lo > hi`.
+
+C: `find_points.c:3410-3434`
+
+Deviation: the code and the bits returned as a triple, for the `int` and the pointers `low` and
+`high` through which the C code writes the bits, the bits `(0, 0)` with the codes `1` and `2`, for
+which the C code writes nothing; `Int64` for the `long`s, and `>>>` on `Int64` the arithmetic shift,
+for the `>>` of a negative `long`, which the C standard leaves to the implementation and gcc defines
+so; the arithmetic of `Int64` wrapping where that of the `long`s overflows, which it does not here,
+by the bound of `Ratpoints.Sieve.endForm` on the forms of an interval taken inline and the forms of
+an empty one otherwise; no output under `DEBUG`. -/
+def intervalBits (b : Int64) (bd : IntervalBounds) (height : Int64) (cl : NumClass) :
+    Nat × Int64 × Int64 :=
+  let lo := (b * bd.lM + bd.lC) >>> bd.lsh.toInt64
+  let hi := (b * bd.uM + bd.uC) >>> bd.ush.toInt64
+  if height < lo then (2, 0, 0)
+  else if hi < -height then
+    if bd.fast then (1, 0, 0) else intervalBitsExact b bd height cl
+  else
+    let (l, h) := numeratorsToBits (if lo < -height then -height else lo)
+      (if height < hi then height else hi) cl false
+    (0, l, h)
+
 /-- The moduli of the first two stages with their rows and offsets for the denominator at hand, as
 `set_rows` makes the sieve specs, and whether a row is missing: for the `n`-th sieve entry `e` of
 `es`, its modulus `p`, the offset of the row of the packing of the class `cl` for the `n`-th
@@ -1038,6 +1112,75 @@ def sift {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : L
         ((es.take sp2).map (·.magic)) ((es.take sp2).map (b % ·.p)) ⟨~~~0, 0, 0, some 0⟩ offsets es3
         (es3.map (·.magic)) (es.foldl (fun s e ↦ e.addTables s) {})
         ⟨#[], 0, false⟩)).1.info.toList == if rev then ref.map swapPoint else ref
+
+-- The numerator intervals of the search intervals, as the build of ratpoints with `DEBUG` at the
+-- pinned commit prints them (`sift: numerator interval [low, high]`) for each interval that `sift`
+-- takes, on `ratpoints '1 0 1' H -q -s -dl b0 -du b1` with the intervals given by `-l` and `-u` as
+-- hexadecimal doubles, which the program reads exactly: for each case the height bound, the largest
+-- denominator `b1`, the ends of the intervals as bits (both zeros, subnormals, infinities, `2 ^ 63`
+-- and its neighbours, fractions with long and short mantissas), and the intervals that the run
+-- takes at each denominator that it sifts, in the class of the stride 1 and the residue 0, whose
+-- bits are the numerators; both paths, the forms of the ends and the products in 128 bits, and the
+-- heights around `2 ^ 63 - 65`, where `exact_bounds` stops taking intervals inline.
+#guard
+  ([
+    (2147483648, 1, [(0xc08dd68a00000000, 0xc08dd68a00000000),
+        (0x3f64247e90f5380e, 0x40bf56d800000000), (0x43180796d1000000, 0x43e0000000000000)], [(1,
+          [(-954, -955), (1, 8022)])]),
+    (9223372036854775743, 9223372036854775743, [(0x4103e4eead322000, 0x4103e4eead322000)],
+      [(9223372036854775741, []), (9223372036854775743, [])]),
+    (9007199254740993, 801010271151204, [(0xc60ba1901eff0258, 0xc12531469ffd6a18),
+        (0x3b30000000000000, 0x3c824fdd9bdeb398)], [(801010271151203, [(1, 0)]), (801010271151204,
+          [(1, 0)])]),
+    (9223372036854775807, 9223372036854775807, [(0xc08d8dae00000000, 0xc08d8dae00000000),
+        (0x40fa37f200000000, 0x43dfffffffffffff)], [(9223372036854775807, [])]),
+    (10, 3, [(0xc06e9f3400000000, 0x3e3bcc40ceb0c71e), (0x3ea12858b6d3e879, 0x4098826000000000),
+        (0x40ecd17600000000, 0x41500368853a7037)], [(1, [(-10, 0), (1, 10)]), (3, [(-10, 0),
+            (1, 10)])]),
+    (10, 5, [(0xc12567b600000000, 0xbc3d1ea000000000)], [(4, [(-10, -1)]), (5, [(-10, -1)])]),
+    (1, 1, [(0xc37f860000000000, 0xc1adc95310ded65a)], [(1, [])]),
+    (1, 1, [(0xc0f3d79800000000, 0xc0f3d79800000000), (0xbe58400000000000, 0xbb98000000000000),
+        (0x410c7fb000000000, 0x44801fb744320000)], [(1, [(0, -1)])]),
+    (10, 9, [(0xc187a8a05c0ca7f4, 0xbb46b9046e19ce13), (0x3b80400000000000, 0x3dfb04330a76f50a)],
+      [(8, [(-10, -1), (1, 0)]), (9, [(-10, -1), (1, 0)])]),
+    (10, 9, [(0xc12316ec00000000, 0xc0e87cc37401a390), (0xbddd295800000000, 0x4049f5f3de1a7712),
+        (0x4081780000000000, 0x4085ea06b8fe90a6)], [(7, [(0, 10)]), (8, [(0, 10)]), (9,
+          [(0, 10)])]),
+    (10, 8, [(0xc4f1607000000000, 0xc0e8635d99de7a2f), (0xc0a16cc200000000, 0xc031060000000000),
+        (0xbee4425c30a5746d, 0x3e177f4000000000)], [(8, [(0, 0)])]),
+    (2147483648, 1, [(0xc3e0000000000000, 0xc2cf685da1901fe2),
+        (0xc09c8e6c00000000, 0x3da82f6a128ee3f5)], [(1, [(-1827, 0)])]),
+    (10, 10, [(0xc11ecf8000000000, 0xc0758a9000000000), (0x40d3f47c00000000, 0x4185084cc0000000)],
+      [(8, []), (9, [])]),
+    (10, 10, [(0xc190f77d8e000000, 0xc190f77d8e000000), (0x3c6cc97438a17111, 0x3dec7ce5cc0d9ea1),
+        (0x4092a35400000000, 0x411d959c00000000)], [(8, [(1, 0)]), (9, [(1, 0)])]),
+    (1, 1, [(0xbd96d3403f1e1c8d, 0x3b14d2270d8d8f28), (0x3f3a4c37c59d5725, 0x41bfcbdde6946000)],
+      [(1, [(0, 0), (1, 1)])]),
+    (10, 5, [(0xc2347d8db94a6f6b, 0xc2347d8db94a6f6b), (0xc08e3dbe00000000, 0x3cb2000000000000)],
+      [(5, [(-10, 0)])]),
+    (1, 1, [(0xfff0000000000000, 0xc1e2536ac56d7e23)], [(1, [])]),
+    (1000, 663, [(0xbefcd299ba18a1ca, 0xbe51d49b1b35069c), (0x3d99642ac9deb1ad, 0x3f30f4e09bcd793e),
+        (0x40b4d75000000000, 0x40d79cd000000000)], [(663, [(0, -1), (1, 0)])]),
+    (9223372036854775744, 9223372036854775743, [(0xc2f31ed81857c400, 0xc0e9003a00000000)],
+      [(9223372036854775743, [])]),
+    (9223372036854775743, 9223372036854775741, [(0xc0f873f600000000, 0xc0f873f600000000)],
+      [(9223372036854775741, [])]),
+    (1000, 1000, [(0xc3dfffffffffffff, 0xc378bedcca5d8da0),
+        (0xbdb0972ac5900000, 0x3f0ca7ca00000000), (0x42743dcd46dea5b3, 0x4315cae144d9e2a2)], [(1000,
+          [(0, 0)])]),
+    (9223372036854775807, 9223372036854775805, [(0x406de31e00000000, 0x406de31e00000000)],
+      [(9223372036854775805, [])])] :
+      List (Nat × Nat × List (UInt64 × UInt64) × List (Nat × List (Int × Int)))).all
+    fun (H, b1, ivs, dens) ↦
+  let iv := Id.run (exactBounds (ivs.map fun (l, u) ↦ (⟨l⟩, ⟨u⟩)) H.toInt64 b1.toInt64)
+  dens.all fun (b, exp) ↦ (Id.run do
+    let mut out : List (Int × Int) := []
+    for bd in iv do
+      let (e, lo, hi) := intervalBits b.toInt64 bd H.toInt64 ⟨~~~0, 0, 0, none⟩
+      if e = 2 then return out
+      if e = 1 then continue
+      out := out ++ [(lo.toInt, hi.toInt)]
+    return out) == exp
 
 -- The stop and the flags of the output through the sieve of one denominator, on `y ^ 2 = x ^ 2`,
 -- where every numerator prime to the denominator gives a point, with pieces of one bit array: a

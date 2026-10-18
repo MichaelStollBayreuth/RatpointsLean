@@ -27,7 +27,16 @@ between the two bits, and the numerators of these bits, in increasing order, are
 stay in range (`Ratpoints.fitsLong`): the offsets of the rows, the first and the last bit of the bit
 arrays of `-H, …, H`, the numerators of their bits, and the sums of a word number and an offset that
 the first two stages reduce outside the test `small`; the products of `fill_bp_list` and of
-`class_offsets` are bounded in `Ratpoints.Proof.Reductions`.
+`class_offsets` are bounded in `Ratpoints.Proof.Reductions`. The ranges of the numerators that the
+bounds of the search intervals give for a denominator are stated here too, on Lean core.
+
+## Main definitions
+
+* `Ratpoints.Sieve.IntervalBounds.Represents`, `Ratpoints.Sieve.RangesFor`,
+  `Ratpoints.Sieve.inRanges`: the range of the numerators that the bounds of a search interval give
+  for a denominator, the ranges of the search intervals of a run, and the membership in them, the
+  interface between the bounds of the search intervals (`Ratpoints.Proof.Bounds`) and the sieve of
+  one denominator, which reads the bounds with stage H.
 
 ## Main statements
 
@@ -319,6 +328,45 @@ theorem fitsLong_neg_sub_and_fitsLong_add {w : Int} {off : Nat} (hw : -2 ^ 63 �
   rcases Int.lt_or_le w 0 with h | h
   · constructor <;> constructor <;> lia [Int.mul_le_mul_of_nonpos_right hR (Int.le_of_lt h)]
   · constructor <;> constructor <;> lia [Int.mul_le_mul_of_nonneg_right hR h]
+
+/-! ### The numerator ranges of the search intervals -/
+
+/-- The bounds `bd` of a search interval give, for the denominator `b` and the height bound `H`, the
+range of the numerators `lo, …, hi` (empty when `hi < lo`), as `Ratpoints.Sieve.intervalBits`
+reads them for every class with `k ≤ 6` and `a₀ < 2 ^ k` (`Ratpoints.Sieve.NumClass.WF`): the code
+`2` only when the range lies above `H`, the code `1` only when it lies below `-H`, and otherwise the
+bits of the numerators from `max lo (-H)` to `min hi H` in the packing of the class
+(`Ratpoints.Sieve.toInt_numeratorsToBits`). For the bounds of a search interval `[l, u]` and a
+denominator up to the largest one, `lo = ⌈b l⌉` and `hi = ⌊b u⌋`. -/
+structure IntervalBounds.Represents (bd : IntervalBounds) (b H : Nat) (lo hi : Int) : Prop where
+  /-- The code `2` only for a range above `H`. -/
+  two : ∀ cl : NumClass, cl.WF → (intervalBits b.toInt64 bd H.toInt64 cl).1 = 2 → (H : Int) < lo
+  /-- The code `1` only for a range below `-H`. -/
+  one : ∀ cl : NumClass, cl.WF → (intervalBits b.toInt64 bd H.toInt64 cl).1 = 1 → hi < -H
+  /-- Otherwise the bits of the numerators of the range within `-H, …, H`. -/
+  bits : ∀ cl : NumClass, cl.WF → (intervalBits b.toInt64 bd H.toInt64 cl).1 ≠ 1 →
+    (intervalBits b.toInt64 bd H.toInt64 cl).1 ≠ 2 →
+    (intervalBits b.toInt64 bd H.toInt64 cl).2.1.toInt = -((cl.a0 - max lo (-H)) / 2 ^ cl.k) ∧
+      (intervalBits b.toInt64 bd H.toInt64 cl).2.2.toInt = (min hi H - cl.a0) / 2 ^ cl.k
+
+/-- The bounds `iv` of the search intervals of a run give, for the denominator `b` and the height
+bound `H`, the ranges of the numerators `rs`, one for each interval in turn
+(`Ratpoints.Sieve.IntervalBounds.Represents`), each with `lo ≤ hi + 1`, increasing and strictly
+apart: what the loop of `sift` over the intervals needs, which returns at the first interval above
+`H` (`Ratpoints.Sieve.sift`, with stage H). -/
+structure RangesFor (iv : Array IntervalBounds) (b H : Nat) (rs : List (Int × Int)) : Prop where
+  /-- One range for each interval. -/
+  length_eq : iv.size = rs.length
+  /-- Each interval gives its range. -/
+  represents : ∀ p ∈ iv.toList.zip rs, p.1.Represents b H p.2.1 p.2.2
+  /-- Each range is empty at most by one. -/
+  le_add_one : ∀ r ∈ rs, r.1 ≤ r.2 + 1
+  /-- The ranges are increasing and strictly apart. -/
+  pairwise : rs.Pairwise fun r s ↦ r.2 < s.1
+
+/-- Whether the integer `a` lies in one of the ranges `lo, …, hi` of `rs`. -/
+def inRanges (rs : List (Int × Int)) (a : Int) : Bool :=
+  rs.any fun r ↦ decide (r.1 ≤ a ∧ a ≤ r.2)
 
 end Sieve
 

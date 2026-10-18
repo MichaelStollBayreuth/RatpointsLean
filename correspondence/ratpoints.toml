@@ -230,6 +230,12 @@ reason = "the result of worker_init, whether the survivors array could be alloca
 
 [[excluded]]
 file = "find_points.c"
+lines = "3239-3256"
+kind = "other"
+reason = "the arm of exact_scale for a build without a 128-bit type or with RP_NO_INT128, which puts the 128-bit product together from 32-bit halves; the builds of the model compile the arm with unsigned __int128 (Ratpoints.Sieve.exactScale)"
+
+[[excluded]]
+file = "find_points.c"
 lines = "3807-3811"
 kind = "memory"
 reason = "the arrays of the segments of the run (their bounds and first blocks) in one allocation, which fails only for lack of memory, and before it the pointers to the other two arrays that run_clear frees set to NULL"
