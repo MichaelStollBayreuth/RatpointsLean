@@ -434,48 +434,29 @@ here.
 
 \begin{lemma}[The doubles and their values]\label{lem:Double}
   \uses{def:Double, def:regionSpec}
-  Proposed names: \lname{Ratpoints.Double.isNaN\_iff}, \lname{Ratpoints.Double.maxOrderValue},
-  \lname{Ratpoints.Double.magnitudeUnits}, \lname{Ratpoints.Double.orderValueUnits},
-  \lname{Ratpoints.Double.valueOfOrderValue},
-  \lname{Ratpoints.Double.strictMonoOn\_valueOfOrderValue},
-  \lname{Ratpoints.Double.doubleValue\_eq\_valueOfOrderValue},
-  \lname{Ratpoints.Double.lt\_eq\_true\_iff}, \lname{Ratpoints.Double.le\_eq\_true\_iff},
-  \lname{Ratpoints.Double.beq\_eq\_true\_iff}, \lname{Ratpoints.Double.lt\_eq\_true\_iff'},
-  \lname{Ratpoints.Double.le\_eq\_true\_iff'}, \lname{Ratpoints.Double.doubleValue\_eq\_toRat},
-  \lname{Ratpoints.Double.toRat\_eq}, \lname{Ratpoints.Double.toRat\_neg},
-  \lname{Ratpoints.Double.toRat\_fabs}, \lname{Ratpoints.Double.ofDyadic\_exact},
-  \lname{Ratpoints.Double.spec\_ofDyadic}, \lname{Ratpoints.Double.spec\_ofSignificand},
-  \lname{Ratpoints.Double.ofInt64\_exact}, \lname{Ratpoints.Double.ofInt64\_maxValue},
-  \lname{Ratpoints.Double.spec\_ofInt64\_natCast}, \lname{Ratpoints.Double.ldexp\_exact},
-  \lname{Ratpoints.Double.frexp\_spec}, \lname{Ratpoints.Double.toInt\_toInt64},
-  \lname{Ratpoints.Double.toNat\_toUInt64}, \lname{Ratpoints.Double.orderValue\_nextUp},
-  \lname{Ratpoints.Double.nextUp\_le\_of\_lt}, \lname{Ratpoints.Double.lt\_nextUp},
-  \lname{Ratpoints.Double.orderValue\_nextDown}, \lname{Ratpoints.Double.le\_nextDown\_of\_lt},
-  \lname{Ratpoints.Double.nextDown\_lt}, \lname{Ratpoints.Double.toRat\_nextUp\_of\_normal},
-  \lname{Ratpoints.Double.le\_doubleValue\_or\_of\_lt\_eq\_false},
-  \lname{Ratpoints.Double.isFinite\_and\_abs\_lt\_of\_lt},
-  \lname{Ratpoints.Double.lt\_zero\_eq\_true\_iff\_toRat},
-  \lname{Ratpoints.Double.lt\_twoPow63\_eq\_true\_iff\_toRat}. The test of the model is the NaN of
-  the specification, and the value of a double that is not a NaN is a strictly increasing function
-  of its key on the range of the keys, so that the comparisons of the C language are the order and
-  the equality of the values (Definition~\ref{def:regionSpec}), with or without the hypotheses that
-  the two sides are not NaNs; the value of a finite double is its exact value, and the negation and
-  \verb|fabs| negate it and take its absolute value. The double nearest to $\pm m\,2^k$ is exact
-  when $0 < m < 2^{53}$, $k \ge -1074$ and $m\,2^k < 2^{1024}$, and in the normal range it is
-  $\pm M 2^q$ with $2^{52} \le M < 2^{53}$ and $m\,2^k < (M + 1) 2^q$; the conversion of a
-  \verb|long| is exact for $|n| \le 2^{53}$ and gives $\pm 2^{63}$ for $\pm(2^{63} - 1)$, and the
-  next double above the conversion of $1 \le H < 2^{63}$ lies above $H$; \verb|ldexp| scales the
-  value exactly while it stays in the normal range, \verb|frexp| gives $x = g\,2^{\mathit{ex}}$ with
-  $1/2 \le |g| < 1$, and the conversions to \verb|long| and \verb|unsigned long| are the floor of a
-  value in their range. The neighbours of a double that is not a NaN and not at the end of the order
-  have the next keys, so that no double lies strictly between a double and its neighbour; the step
-  above a positive normal double of exponent field $e$ (Definition~\ref{def:regionSpec}) is
-  $2^{e - 1075}$. And the facts on the ends that the bounds and the default interval read: a
-  comparison that fails puts the values in the other order, a double below $2^{63}$ in absolute
-  value is finite, and the tests $x < 0$ and $x < 2^{63}$ are those of the exact value.
+  \lean{Ratpoints.Double.isNaN_iff, Ratpoints.Double.maxOrderValue, Ratpoints.Double.magnitudeUnits, Ratpoints.Double.orderValueUnits, Ratpoints.Double.valueOfOrderValue, Ratpoints.Double.strictMonoOn_valueOfOrderValue, Ratpoints.Double.doubleValue_eq_valueOfOrderValue, Ratpoints.Double.lt_eq_true_iff, Ratpoints.Double.le_eq_true_iff, Ratpoints.Double.beq_eq_true_iff, Ratpoints.Double.lt_eq_true_iff', Ratpoints.Double.le_eq_true_iff', Ratpoints.Double.doubleValue_eq_toRat, Ratpoints.Double.toRat_eq, Ratpoints.Double.toRat_neg, Ratpoints.Double.toRat_fabs, Ratpoints.Double.ofDyadic_exact, Ratpoints.Double.spec_ofDyadic, Ratpoints.Double.spec_ofSignificand, Ratpoints.Double.ofInt64_exact, Ratpoints.Double.ofInt64_maxValue, Ratpoints.Double.spec_ofInt64_natCast, Ratpoints.Double.ldexp_exact, Ratpoints.Double.frexp_spec, Ratpoints.Double.toInt_toInt64, Ratpoints.Double.toNat_toUInt64, Ratpoints.Double.orderValue_nextUp, Ratpoints.Double.nextUp_le_of_lt, Ratpoints.Double.lt_nextUp, Ratpoints.Double.orderValue_nextDown, Ratpoints.Double.le_nextDown_of_lt, Ratpoints.Double.nextDown_lt, Ratpoints.Double.toRat_nextUp_of_normal, Ratpoints.Double.le_doubleValue_or_of_lt_eq_false, Ratpoints.Double.isFinite_and_abs_lt_of_lt, Ratpoints.Double.lt_zero_eq_true_iff_toRat, Ratpoints.Double.lt_twoPow63_eq_true_iff_toRat}
+  \leanok
+  The test of the model is the NaN of the specification, and the value of a double that is not a NaN
+  is a strictly increasing function of its key on the range of the keys, so that the comparisons of
+  the C language are the order and the equality of the values (Definition~\ref{def:regionSpec}),
+  with or without the hypotheses that the two sides are not NaNs; the value of a finite double is
+  its exact value, and the negation and \verb|fabs| negate it and take its absolute value. The
+  double nearest to $\pm m\,2^k$ is exact when $0 < m < 2^{53}$, $k \ge -1074$ and
+  $m\,2^k < 2^{1024}$, and in the normal range it is $\pm M 2^q$ with $2^{52} \le M < 2^{53}$ and
+  $m\,2^k < (M + 1) 2^q$; the conversion of a \verb|long| is exact for $|n| \le 2^{53}$ and gives
+  $\pm 2^{63}$ for $\pm(2^{63} - 1)$, and the next double above the conversion of $1 \le H < 2^{63}$
+  lies above $H$; \verb|ldexp| scales the value exactly while it stays in the normal range,
+  \verb|frexp| gives $x = g\,2^{\mathit{ex}}$ with $1/2 \le |g| < 1$, and the conversions to
+  \verb|long| and \verb|unsigned long| are the floor of a value in their range. The neighbours of a
+  double that is not a NaN and not at the end of the order have the next keys, so that no double
+  lies strictly between a double and its neighbour; the step above a positive normal double of
+  exponent field $e$ (Definition~\ref{def:regionSpec}) is $2^{e - 1075}$. And the facts on the ends
+  that the bounds and the default interval read: a comparison that fails puts the values in the
+  other order, a double below $2^{63}$ in absolute value is finite, and the tests $x < 0$ and
+  $x < 2^{63}$ are those of the exact value.
 \end{lemma}
 
-\begin{proof}
+\begin{proof}\leanok
   From the fields: the key of a double is its number of steps from $0$ in the order of the values,
   the zeros and the subnormals first, and the value of a key is a sum of steps that grow with the
   exponent; the rounding by $\mathrm{roundShift}$ and the carry at $2^{53}$ have their bounds; the

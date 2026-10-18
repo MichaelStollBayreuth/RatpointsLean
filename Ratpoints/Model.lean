@@ -11,6 +11,7 @@ public import Ratpoints.Model.Cli
 public import Ratpoints.Model.Constants
 public import Ratpoints.Model.Delivery
 public import Ratpoints.Model.Denominators
+public import Ratpoints.Model.Double
 public import Ratpoints.Model.FindPoints
 public import Ratpoints.Model.FirstStage
 public import Ratpoints.Model.Packing

@@ -68,6 +68,18 @@ reason = "RP_VERIFY_MODULI, a debugging check, compiled only with -DRP_VERIFY_MO
 
 [[excluded]]
 file = "rp-private.h"
+lines = "30-35"
+kind = "other"
+reason = "the includes of the headers of the C library, among them float.h and math.h of the doubles of the search intervals; the model has no headers"
+
+[[excluded]]
+file = "rp-private.h"
+lines = "60"
+kind = "other"
+reason = "the include of the header of the library; the model has no headers"
+
+[[excluded]]
+file = "rp-private.h"
 lines = "86"
 kind = "other"
 reason = "FLOOR, which the C code uses nowhere: find_points.c names it only in a comment"
@@ -107,6 +119,12 @@ file = "rp-private.h"
 lines = "450-456"
 kind = "other"
 reason = "RP_ALWAYS_INLINE and RP_NOINLINE, the inlining attributes that sift.c and find_points.c rely on for speed, empty on a compiler without them; they carry no meaning"
+
+[[excluded]]
+file = "ratpoints.h"
+lines = "31"
+kind = "other"
+reason = "the include of gmp.h, the header of GMP; the model has no headers"
 
 [[excluded]]
 file = "ratpoints.h"

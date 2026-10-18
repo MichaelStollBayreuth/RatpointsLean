@@ -2489,6 +2489,12 @@
         "Ratpoints.primeTable"
       ]
     },
+    "ratpoints.h:31-31": {
+      "hash": "083e01ac1bfec58b1092cb95f9b64c7e9f4ccd6cbaa40c7c661811c04809cf7d",
+      "owners": [
+        "excluded (other)"
+      ]
+    },
     "ratpoints.h:33-33": {
       "hash": "7c0c1056fd978c2cc5cfac98013738ee70840ac04b212650bf64af69cc6239a5",
       "owners": [
@@ -3025,6 +3031,12 @@
         "Ratpoints.chunk"
       ]
     },
+    "rp-private.h:30-35": {
+      "hash": "9c582ed192493e84ccb7f4c03c8f189fcb6a3d33c711fdbabc6b0e5a572d61b5",
+      "owners": [
+        "excluded (other)"
+      ]
+    },
     "rp-private.h:300-300": {
       "hash": "bedaab0e6dfcd4e35e3bcf72bf9e5e703a67d4aaf48d1fa5730f63a012f3af47",
       "owners": [
@@ -3249,6 +3261,12 @@
       "hash": "de9a3ae3ebb0fedbe898f7657c8348bdbb28d99822b0342285a93bf6d234913a",
       "owners": [
         "Ratpoints.Sieve.checkPoint"
+      ]
+    },
+    "rp-private.h:60-60": {
+      "hash": "af50b1dbf23ebafa12f58c141bf2c4b3e203ffa1b66b80c5f89ab0e6edcd5d8f",
+      "owners": [
+        "excluded (other)"
       ]
     },
     "rp-private.h:610-614": {

@@ -558,7 +558,8 @@ the challenge restates $\Phi_c$ verbatim, as it restates $F_c$, takes the option
 and has the refusal theorem with the Sturm step off too, so that a $\mathrm{findPoints}$ that
 refused every input under \verb|-s| would not pass. Since the challenge needs \verb|Squarefree|, the
 specification imports \verb|Mathlib.Algebra.Squarefree.Basic|, so that the challenge still imports,
-besides the model, exactly the public imports of the specification. Stage~D left the structure
+besides the model, exactly the Mathlib modules among the public imports of the files of the
+specification that it restates. Stage~D left the structure
 \verb|Params| and its well-formedness as stage~C2 had them; stage~F1 adds the number of primes
 examined and the composite moduli (Chapter~\ref{chap:tables}).
 

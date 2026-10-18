@@ -13,14 +13,14 @@ file & lines of code & modelled & excluded & not yet recorded \\
 \texttt{sift.c} & 820 & 660 & 160 & 0 \\
 \texttt{init.c} & 302 & 238 & 64 & 0 \\
 \texttt{sturm.c} & 215 & 50 & 0 & 165 \\
-\texttt{rp-private.h} & 282 & 240 & 18 & 24 \\
-\texttt{ratpoints.h} & 128 & 41 & 3 & 84 \\
+\texttt{rp-private.h} & 282 & 240 & 25 & 17 \\
+\texttt{ratpoints.h} & 128 & 41 & 4 & 83 \\
 \texttt{primes.h} & 11 & 11 & 0 & 0 \\
 \texttt{gen\_find\_points\_h.c} & 76 & 60 & 16 & 0 \\
 \texttt{gen\_init\_sieve\_h.c} & 26 & 13 & 13 & 0 \\
 \texttt{main.c} & 779 & 502 & 44 & 233 \\
 \hline
-total & 5883 & 3522 & 778 & 1583 \\
+total & 5883 & 3522 & 786 & 1575 \\
 \end{tabular}
 \end{center}
 
@@ -820,7 +820,7 @@ total & 5883 & 3522 & 778 & 1583 \\
 
 \section*{\texttt{rp-private.h}}
 \begin{itemize}
-\item \csource{rp-private.h}{30}{35}: not yet recorded (6 lines of code)
+\item \csource{rp-private.h}{30}{35}: excluded (other): the includes of the headers of the C library, among them float.h and math.h of the doubles of the search intervals; the model has no headers
 \item \csource{rp-private.h}{41}{43}: modelled by \lname{Ratpoints.fitsLong}
   (deviation of \lname{Ratpoints.fitsLong}: the bounds of a \texttt{long} of 64 bits, fixed, where the C code does not compile unless an \texttt{unsigned long} has exactly 64 bits.)
 \item \csource{rp-private.h}{47}{47}: modelled by \lname{Ratpoints.fitsLong}
@@ -829,7 +829,8 @@ total & 5883 & 3522 & 778 & 1583 \\
   (deviation of \lname{Ratpoints.rbaLength}: computed from \texttt{Ratpoints.rbaPack}, where each build sets \texttt{RBA\_LENGTH} by a literal, and the build with 64-bit bit arrays by \texttt{LONG\_LENGTH}, and its logarithm \texttt{RBA\_SHIFT} likewise (\texttt{Ratpoints.rbaShift}); the shifts by \texttt{RBA\_SHIFT} and by \texttt{LONG\_SHIFT} are divisions by \texttt{rbaLength} and by 64, which round down also for a negative value, as the arithmetic shifts of gcc do, and the masks by \texttt{RBA\_LENGTH -{} 1} and by \texttt{LONG\_MASK} Euclidean remainders.)
 \item \csource{rp-private.h}{55}{58}: modelled by \lname{Ratpoints.rbaPack}
   (deviation of \lname{Ratpoints.rbaPack}: the value of the default build, set here, where the C code chooses the build by the macros that the compiler is given; the vector type of a bit array becomes \texttt{rbaPack} consecutive words of an array of \texttt{UInt64}.)
-\item \csource{rp-private.h}{60}{84}: not yet recorded (10 lines of code)
+\item \csource{rp-private.h}{60}{60}: excluded (other): the include of the header of the library; the model has no headers
+\item \csource{rp-private.h}{76}{84}: not yet recorded (9 lines of code)
 \item \csource{rp-private.h}{86}{86}: excluded (other): FLOOR, which the C code uses nowhere: find\_points.c names it only in a comment
 \item \csource{rp-private.h}{87}{87}: modelled by \lname{Ratpoints.Params.arraySizeAt}, \lname{Ratpoints.Setup.slope}
   (deviation of \lname{Ratpoints.Params.arraySizeAt}: a \texttt{Nat} for the \texttt{long} field, so that only \texttt{0} stands for the default, which the library takes for every value \texttt{≤ 0}; \texttt{64} for \texttt{LONG\_LENGTH}; and the macro \texttt{CEIL} of a natural number \texttt{x} by \texttt{d} as \texttt{(x + d -{} 1) / d}, which is its value for every \texttt{x ≥ 0}.)
@@ -1039,7 +1040,7 @@ total & 5883 & 3522 & 778 & 1583 \\
 
 \section*{\texttt{ratpoints.h}}
 \begin{itemize}
-\item \csource{ratpoints.h}{31}{31}: not yet recorded (1 lines of code)
+\item \csource{ratpoints.h}{31}{31}: excluded (other): the include of gmp.h, the header of GMP; the model has no headers
 \item \csource{ratpoints.h}{33}{33}: modelled by \lname{Ratpoints.maxDegree}
 \item \csource{ratpoints.h}{42}{42}: modelled by \lname{Ratpoints.defaultSp1}
   (deviation of \lname{Ratpoints.defaultSp1}: the parameters of the program take it for an absent \texttt{-{}n}, where ratpoints, which reads the macro nowhere, chooses the end of the first stage from the curve by its costs (\texttt{sieving\_info}, with the target \texttt{RATPOINTS\_SURVIVORS\_PER\_WORD} of \texttt{ratpoints.h:92-{}94}; stage I).)

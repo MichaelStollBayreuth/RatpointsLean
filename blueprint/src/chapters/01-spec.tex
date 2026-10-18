@@ -249,10 +249,10 @@ instance and the decidability instance of \verb|IsPoint|, restated verbatim, and
 imported from the model; for \verb|Squarefree| the challenge and the specification import
 \verb|Mathlib.Algebra.Squarefree.Basic|, and for the prime factors the challenge and the file of the
 order \verb|Mathlib.Data.Nat.Factors|, so that the challenge still imports exactly the Mathlib
-modules among the public imports of the specification. So the challenge has twelve statements
-(Section~\ref{sec:certifiedG}), which \verb|lake comparator --paranoid| accepted on 2026-10-17, with
-Lean's kernel and the five external checkers bundled with Lean; Section~\ref{sec:sieveTheorems}
-records the earlier acceptances.
+modules among the public imports of the files of the specification that it restates. So the
+challenge has twelve statements (Section~\ref{sec:certifiedG}), which
+\verb|lake comparator --paranoid| accepted on 2026-10-17, with Lean's kernel and the five external
+checkers bundled with Lean; Section~\ref{sec:sieveTheorems} records the earlier acceptances.
 
 \section{The command-line program}\label{sec:cli}
 
@@ -492,10 +492,11 @@ Mathlib (\verb|Ratpoints/Mathlib|), which carry their names in the namespaces of
 Mathlib, and for \verb|main| (\verb|Main.lean|) and the statements of \verb|comparator/|, which are
 at the root. The module says which part a declaration belongs to, and \verb|scripts/check_layout.py|
 keeps the parts' imports apart: the specification is \verb|Ratpoints/Spec/Basic.lean|, with examples
-by \verb|decide| taken from the output of the program, and \verb|Ratpoints/Spec/Order.lean| the
-order of the points in that output (Section~\ref{sec:order}), checked by \verb|decide +kernel| on
-outputs of the program too; the constants of the C code are in
-\verb|Ratpoints/Model/Constants.lean|; the brute-force reference is
+by \verb|decide| taken from the output of the program, \verb|Ratpoints/Spec/Order.lean| the order of
+the points in that output (Section~\ref{sec:order}), checked by \verb|decide +kernel| on outputs of
+the program too, and \verb|Ratpoints/Spec/Region.lean| the value of a double of the C code from its
+bits (Chapter~\ref{chap:region}), with examples by \verb|decide +kernel|; the constants of the C
+code are in \verb|Ratpoints/Model/Constants.lean|; the brute-force reference is
 \verb|Ratpoints/Model/BruteForce.lean|, with \verb|#guard| examples taken from the C program, and
 its theorems are in \verb|Ratpoints/Proof/BruteForce.lean|, each with a guard on its axioms
 (\verb|#print axioms| under \verb|#guard_msgs|); the program is \verb|Ratpoints/Model/Cli.lean| with

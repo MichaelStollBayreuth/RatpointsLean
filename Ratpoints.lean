@@ -26,6 +26,7 @@ public import Ratpoints.Model.Cli
 public import Ratpoints.Model.Constants
 public import Ratpoints.Model.Delivery
 public import Ratpoints.Model.Denominators
+public import Ratpoints.Model.Double
 public import Ratpoints.Model.FindPoints
 public import Ratpoints.Model.FirstStage
 public import Ratpoints.Model.Packing
@@ -46,6 +47,7 @@ public import Ratpoints.Proof.Delivery
 public import Ratpoints.Proof.DeliveryCount
 public import Ratpoints.Proof.Denominators
 public import Ratpoints.Proof.Divisors
+public import Ratpoints.Proof.Double
 public import Ratpoints.Proof.FindPoints
 public import Ratpoints.Proof.FirstStage
 public import Ratpoints.Proof.Forbidden
@@ -75,3 +77,4 @@ public import Ratpoints.Proof.Words
 public import Ratpoints.Spec
 public import Ratpoints.Spec.Basic
 public import Ratpoints.Spec.Order
+public import Ratpoints.Spec.Region
