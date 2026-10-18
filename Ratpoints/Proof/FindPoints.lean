@@ -1056,25 +1056,8 @@ private theorem sievingInfo_value (c : List ℤ) (d : ℕ) (u checkDenom : Bool)
     ⦃ fun r ↦ r = Id.run (sievingInfo c d u checkDenom P bHigh) ⦄ :=
   ⟨fun _ ↦ rfl⟩
 
-private theorem runSetup_value (useSquares : Bool) (us1 : Option (List Setup.DenInfo × List ℕ))
-    (checkDenom useJacobi : Bool) (forb : List ForbiddenEntry) (forbVal : List ForbiddenVal)
-    (lcf : ℤ) (H bHigh : ℕ) (domain : List (Double × Double)) :
-    ⦃ True ⦄ runSetup useSquares us1 checkDenom useJacobi forb forbVal lcf H bHigh domain
-    ⦃ fun r ↦ r = Id.run (runSetup useSquares us1 checkDenom useJacobi forb forbVal lcf H bHigh
-        domain) ⦄ :=
-  ⟨fun _ ↦ rfl⟩
-
 private theorem numClasses_value (nb : Vector UInt64 64) :
     ⦃ True ⦄ numClasses nb ⦃ fun r ↦ r = Id.run (numClasses nb) ⦄ :=
-  ⟨fun _ ↦ rfl⟩
-
-private theorem numPackings_value (cls : Vector NumClass 64) :
-    ⦃ True ⦄ numPackings cls ⦃ fun r ↦ r = Id.run (numPackings cls) ⦄ :=
-  ⟨fun _ ↦ rfl⟩
-
-private theorem classOffsets_value (cls : Vector NumClass 64) (es : List SieveEntry)
-    (offsets : Array ℕ) :
-    ⦃ True ⦄ classOffsets cls es offsets ⦃ fun r ↦ r = Id.run (classOffsets cls es offsets) ⦄ :=
   ⟨fun _ ↦ rfl⟩
 
 private theorem sieving_value {σ : Type} (process : ℤ → ℤ → ℤ → σ → Answer σ) (c : List ℤ)

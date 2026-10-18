@@ -81,7 +81,7 @@ theorem hasValue_ldexp_ofInt64 {n e : Int64} (hn : n.toInt.natAbs ≤ 2 ^ 53) (h
     HasValue ((Double.ofInt64 n).ldexp (-e.toInt)) (n.toInt * 2 ^ (-e.toInt)) := by
   obtain ⟨hf, hr⟩ := Double.ofInt64_exact hn
   rcases eq_or_ne n.toInt 0 with h0 | h0
-  · have hz : (Double.ofInt64 n).isZero = true := Double.isZero_of_toRat_eq_zero (by simp [hr, h0])
+  · have hz : (Double.ofInt64 n).isZero = true := Double.isZero_eq_true_iff.mpr (by simp [hr, h0])
     have hl : (Double.ofInt64 n).ldexp (-e.toInt) = Double.ofInt64 n := by
       simp [Double.ldexp, hz]
     rw [hl, h0]

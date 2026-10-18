@@ -421,7 +421,7 @@ here.
 
 \begin{lemma}[The doubles and their values]\label{lem:Double}
   \uses{def:Double, def:regionSpec}
-  \lean{Ratpoints.Double.isNaN_iff, Ratpoints.Double.maxOrderValue, Ratpoints.Double.magnitudeUnits, Ratpoints.Double.orderValueUnits, Ratpoints.Double.valueOfOrderValue, Ratpoints.Double.strictMonoOn_valueOfOrderValue, Ratpoints.Double.doubleValue_eq_valueOfOrderValue, Ratpoints.Double.lt_eq_true_iff, Ratpoints.Double.le_eq_true_iff, Ratpoints.Double.beq_eq_true_iff, Ratpoints.Double.lt_eq_true_iff', Ratpoints.Double.le_eq_true_iff', Ratpoints.Double.doubleValue_eq_toRat, Ratpoints.Double.toRat_eq, Ratpoints.Double.toRat_neg, Ratpoints.Double.toRat_fabs, Ratpoints.Double.ofDyadic_exact, Ratpoints.Double.spec_ofDyadic, Ratpoints.Double.fields_assemble, Ratpoints.Double.isFinite_assemble_iff, Ratpoints.Double.toRat_assemble, Ratpoints.Double.ofInt64_exact, Ratpoints.Double.ofInt64_maxValue, Ratpoints.Double.spec_ofInt64_natCast, Ratpoints.Double.ldexp_exact, Ratpoints.Double.frexp_spec, Ratpoints.Double.toInt_toInt64, Ratpoints.Double.toNat_toUInt64, Ratpoints.Double.orderValue_nextUp, Ratpoints.Double.nextUp_le_of_lt, Ratpoints.Double.lt_nextUp, Ratpoints.Double.orderValue_nextDown, Ratpoints.Double.le_nextDown_of_lt, Ratpoints.Double.nextDown_lt, Ratpoints.Double.toRat_nextUp_of_normal, Ratpoints.Double.le_doubleValue_or_of_lt_eq_false, Ratpoints.Double.isFinite_and_abs_lt_of_lt, Ratpoints.Double.lt_zero_eq_true_iff_toRat, Ratpoints.Double.lt_twoPow63_eq_true_iff_toRat, Ratpoints.Double.isFinite_and_le_toRat_ofInt64_nextUp}
+  \lean{Ratpoints.Double.isNaN_iff, Ratpoints.Double.maxOrderValue, Ratpoints.Double.magnitudeUnits, Ratpoints.Double.orderValueUnits, Ratpoints.Double.valueOfOrderValue, Ratpoints.Double.strictMonoOn_valueOfOrderValue, Ratpoints.Double.doubleValue_eq_valueOfOrderValue, Ratpoints.Double.lt_eq_true_iff, Ratpoints.Double.le_eq_true_iff, Ratpoints.Double.beq_eq_true_iff, Ratpoints.Double.lt_eq_true_iff', Ratpoints.Double.le_eq_true_iff', Ratpoints.Double.doubleValue_eq_toRat, Ratpoints.Double.toRat_eq, Ratpoints.Double.toRat_neg, Ratpoints.Double.toRat_fabs, Ratpoints.Double.ofDyadic_exact, Ratpoints.Double.spec_ofDyadic, Ratpoints.Double.fields_assemble, Ratpoints.Double.isFinite_assemble_iff, Ratpoints.Double.toRat_assemble, Ratpoints.Double.ofInt64_exact, Ratpoints.Double.spec_ofInt64_natCast, Ratpoints.Double.ldexp_exact, Ratpoints.Double.frexp_spec, Ratpoints.Double.toInt_toInt64, Ratpoints.Double.toNat_toUInt64, Ratpoints.Double.orderValue_nextUp, Ratpoints.Double.nextUp_le_of_lt, Ratpoints.Double.lt_nextUp, Ratpoints.Double.orderValue_nextDown, Ratpoints.Double.le_nextDown_of_lt, Ratpoints.Double.nextDown_lt, Ratpoints.Double.toRat_nextUp_of_normal, Ratpoints.Double.le_doubleValue_or_of_lt_eq_false, Ratpoints.Double.isFinite_and_abs_lt_of_lt, Ratpoints.Double.lt_zero_eq_true_iff_toRat, Ratpoints.Double.lt_twoPow63_eq_true_iff_toRat, Ratpoints.Double.isFinite_and_le_toRat_ofInt64_nextUp}
   \leanok
   The test of the model is the NaN of the specification, and the value of a double that is not a NaN
   is a strictly increasing function of its key on the range of the keys, so that the comparisons of
@@ -434,18 +434,17 @@ here.
   the finite doubles its value is $\pm M 2^q$. The double nearest to $\pm m\,2^k$ is exact when
   $0 < m < 2^{53}$, $k \ge -1074$ and $m\,2^k < 2^{1024}$, and in the normal range it is $\pm M 2^q$
   with $2^{52} \le M < 2^{53}$ and $m\,2^k < (M + 1) 2^q$; the conversion of a \verb|long| is exact
-  for $|n| \le 2^{53}$ and gives $\pm 2^{63}$ for $\pm(2^{63} - 1)$, and the next double above the
-  conversion of $1 \le H < 2^{63}$ lies above $H$; \verb|ldexp| scales the value exactly while it
-  stays in the normal range, \verb|frexp| gives $x = g\,2^{\mathit{ex}}$ with $1/2 \le |g| < 1$, and
-  the conversions to \verb|long| and \verb|unsigned long| are the floor of a value in their range.
-  The neighbours of a double that is not a NaN and not at the end of the order have the next keys,
-  so that no double lies strictly between a double and its neighbour; the step above a positive
-  normal double of exponent field $e$ (Definition~\ref{def:regionSpec}) is $2^{e - 1075}$. And the
-  facts on the ends that the bounds and the default interval read: a comparison that fails puts the
-  values in the other order, a double below $2^{63}$ in absolute value is finite, the tests $x < 0$
-  and $x < 2^{63}$ are those of the exact value, and the double of $1 \le H < 2^{63}$, moved up to
-  the next double when it is below $2^{63}$ and its conversion to a \verb|long| below $H$, is finite
-  and at least $H$.
+  for $|n| \le 2^{53}$, and the next double above the conversion of $1 \le H < 2^{63}$ lies above
+  $H$; \verb|ldexp| scales the value exactly while it stays in the normal range, \verb|frexp| gives
+  $x = g\,2^{\mathit{ex}}$ with $1/2 \le |g| < 1$, and the conversions to \verb|long| and
+  \verb|unsigned long| are the floor of a value in their range. The neighbours of a double that is
+  not a NaN and not at the end of the order have the next keys, so that no double lies strictly
+  between a double and its neighbour; the step above a positive normal double of exponent field $e$
+  (Definition~\ref{def:regionSpec}) is $2^{e - 1075}$. And the facts on the ends that the bounds and
+  the default interval read: a comparison that fails puts the values in the other order, a double
+  below $2^{63}$ in absolute value is finite, the tests $x < 0$ and $x < 2^{63}$ are those of the
+  exact value, and the double of $1 \le H < 2^{63}$, moved up to the next double when it is below
+  $2^{63}$ and its conversion to a \verb|long| below $H$, is finite and at least $H$.
 \end{lemma}
 
 \begin{proof}\leanok
@@ -457,7 +456,7 @@ here.
 
 \begin{lemma}[The roundings are faithful]\label{lem:rounding}
   \uses{def:Double, lem:Double}
-  \lean{Ratpoints.Double.lt_nextUp_and_nextDown_lt_ofRatio, Ratpoints.Double.lt_nextUp_and_nextDown_lt_ofDyadic, Ratpoints.Double.isNaN_ofRatio, Ratpoints.Double.isNaN_ofDyadic, Ratpoints.Double.ofRatio_eq, Ratpoints.Double.ofDyadic_eq, Ratpoints.Double.ofRatio_rounding, Ratpoints.Double.ofDyadic_rounding, Ratpoints.Double.roundDiv, Ratpoints.Double.ratioExponent, Ratpoints.Double.ratioLast, Ratpoints.Double.ratioPair, Ratpoints.Double.lt_nextUp_and_nextDown_lt, Ratpoints.Double.le_of_lt_nextUp, Ratpoints.Double.le_nextDown_of_doubleValue_lt, Ratpoints.Double.nextUp_isFinite_or, Ratpoints.Double.nextDown_isFinite_or, Ratpoints.Double.nextUp_of_beq_zero, Ratpoints.Double.doubleValue_one}
+  \lean{Ratpoints.Double.lt_nextUp_and_nextDown_lt_ofRatio, Ratpoints.Double.lt_nextUp_and_nextDown_lt_ofDyadic, Ratpoints.Double.isNaN_ofRatio, Ratpoints.Double.isNaN_ofDyadic, Ratpoints.Double.ofRatio_eq, Ratpoints.Double.ofDyadic_eq, Ratpoints.Double.ofRatio_rounding, Ratpoints.Double.ofDyadic_rounding, Ratpoints.Double.roundDiv, Ratpoints.Double.ratioExponent, Ratpoints.Double.ratioLast, Ratpoints.Double.ratioPair, Ratpoints.Double.lt_nextUp_and_nextDown_lt, Ratpoints.Double.le_of_lt_nextUp, Ratpoints.Double.le_nextDown_of_doubleValue_lt, Ratpoints.Double.isFinite_nextUp_or_doubleValue_eq_top, Ratpoints.Double.isFinite_nextDown_or_doubleValue_eq_bot, Ratpoints.Double.nextUp_of_beq_zero, Ratpoints.Double.doubleValue_one}
   \leanok
   The double nearest to $\pm n/d$, for $d \ne 0$, and the double nearest to $\pm m\,2^k$ are never a
   NaN. For $n \ne 0$ and $m \ne 0$, when the double is finite, it is a faithful rounding of the

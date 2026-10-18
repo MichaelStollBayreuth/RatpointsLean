@@ -568,7 +568,7 @@ theorem toInt_mul_of_lt {a b : Int64} (h1 : -2 ^ 63 ≤ a.toInt * b.toInt)
     (h2 : a.toInt * b.toInt < 2 ^ 63) : (a * b).toInt = a.toInt * b.toInt := by
   rw [toInt_mul, Int.bmod_eq_of_le (by lia) (by lia)]
 
-theorem toInt_two_mul {x : Int64} (h : x.toInt.natAbs ≤ 2 ^ 61) : (2 * x).toInt = 2 * x.toInt := by
+theorem toInt_two_mul {x : Int64} (h : x.toInt.natAbs < 2 ^ 62) : (2 * x).toInt = 2 * x.toInt := by
   rw [toInt_mul_of_lt (by rw [show (2 : Int64).toInt = 2 by decide]; lia)
     (by rw [show (2 : Int64).toInt = 2 by decide]; lia)]
   rfl

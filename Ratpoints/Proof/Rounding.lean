@@ -183,7 +183,7 @@ theorem isFinite_iff_natAbs_orderValue_lt {x : Double} (hx : x.isNaN = false) :
     split <;> lia
 
 /-- The predecessor of a finite double is finite or `-∞`. -/
-theorem nextDown_isFinite_or {x : Double} (hf : x.isFinite = true) :
+theorem isFinite_nextDown_or_doubleValue_eq_bot {x : Double} (hf : x.isFinite = true) :
     (nextDown x).isFinite = true ∨ doubleValue (nextDown x).bits = ⊥ := by
   have hx := isNaN_eq_false_of_isFinite hf
   obtain ⟨h1, h2⟩ := orderValue_nextDown hx (ne_huge_of_isFinite hf).2
@@ -196,7 +196,7 @@ theorem nextDown_isFinite_or {x : Double} (hf : x.isFinite = true) :
   · exact .inr (by rw [h, valueOfOrderValue_neg_maxOrderValue])
 
 /-- The successor of a finite double is finite or `+∞`. -/
-theorem nextUp_isFinite_or {x : Double} (hf : x.isFinite = true) :
+theorem isFinite_nextUp_or_doubleValue_eq_top {x : Double} (hf : x.isFinite = true) :
     (nextUp x).isFinite = true ∨ doubleValue (nextUp x).bits = ⊤ := by
   have hx := isNaN_eq_false_of_isFinite hf
   obtain ⟨h1, h2⟩ := orderValue_nextUp hx (ne_huge_of_isFinite hf).1
@@ -382,7 +382,9 @@ theorem lt_nextUp_and_nextDown_lt_ofSignificand_two_pow {neg : Bool} {q : ℤ} {
   · rw [ite_eq_left ⟨rfl, by lia⟩, add_sub_cancel_right, zpow_add_one₀ two_ne_zero]
     push_cast; linarith
 
-theorem eq_of_lt_of_two_zpow_le {M : ℕ} {q : ℤ} {v : ℚ} (h : M < 2 ^ 52)
+-- A significand `M < 2 ^ 52` with `v ≤ M 2 ^ q + 2 ^ (q - 1)`, where `2 ^ (q + 52) ≤ v` unless
+-- `q = -1074`, comes only with the least exponent `q = -1074`.
+private theorem eq_of_lt_of_two_zpow_le {M : ℕ} {q : ℤ} {v : ℚ} (h : M < 2 ^ 52)
     (hhi : v ≤ M * 2 ^ q + 2 ^ (q - 1)) (hnorm : -1074 < q → 2 ^ (q + 52) ≤ v)
     (hq : -1074 ≤ q) : q = -1074 := by
   by_contra hq'
@@ -477,10 +479,9 @@ theorem roundShift_bounds (m : ℕ) (k : ℤ) :
     have := roundDiv_bounds m (Nat.two_pow_pos k.toNat)
     rwa [Nat.cast_pow, Nat.cast_ofNat, ← zpow_natCast, Int.toNat_of_nonneg hk.le] at this
 
-/-- From the rounding `M - 1/2 ≤ v / 2 ^ q ≤ M + 1/2` of a number `v < 2 ^ (q + 53)`, the
-bounds that `Ratpoints.Double.lt_nextUp_and_nextDown_lt_ofSignificand` takes but for the
-exponent. -/
-theorem round_bounds {M : ℕ} {q : ℤ} {v : ℚ} (h1 : (M : ℚ) - 1 / 2 ≤ v / 2 ^ q)
+-- From the rounding `M - 1/2 ≤ v / 2 ^ q ≤ M + 1/2` of a number `v < 2 ^ (q + 53)`, the bounds
+-- that `Ratpoints.Double.lt_nextUp_and_nextDown_lt_ofSignificand` takes but for the exponent.
+private theorem round_bounds {M : ℕ} {q : ℤ} {v : ℚ} (h1 : (M : ℚ) - 1 / 2 ≤ v / 2 ^ q)
     (h2 : v / 2 ^ q ≤ M + 1 / 2) (hv : v < 2 ^ (q + 53)) :
     M ≤ 2 ^ 53 ∧ M * 2 ^ q - 2 ^ (q - 1) ≤ v ∧ v ≤ M * 2 ^ q + 2 ^ (q - 1) := by
   have ht : (0 : ℚ) < 2 ^ q := by positivity
@@ -673,10 +674,6 @@ theorem isNaN_ofDyadic (neg : Bool) (m : ℕ) (e : ℤ) : (ofDyadic neg m e).isN
 
 theorem beq_zero_ofRatio_zero (neg : Bool) (d : ℕ) : (ofRatio neg 0 d).beq .zero = true := by
   rw [ofRatio, ite_eq_left rfl]; cases neg <;> decide
-
-theorem isFinite_huge : huge.isFinite = false := by decide
-
-theorem isFinite_huge_neg : huge.neg.isFinite = false := by decide
 
 theorem isFinite_ite_huge (neg : Bool) :
     (if neg then Double.huge.neg else Double.huge).isFinite = false := by

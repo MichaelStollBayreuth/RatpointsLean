@@ -463,8 +463,8 @@ theorem inRegion_ite_swapPoint_of_mem_pointsOfDen_zero {o : Options} {H : ℕ} {
     obtain ⟨x, y, z⟩ := p
     obtain rfl : x = 1 := List.mem_singleton.mp h1
     obtain rfl : z = 0 := h0
-    exact inRegion_of_isFullBox (List.map_eq_nil_iff.mpr hf.1) (by simpa [IsFullBox] using hf)
-      (by simp [swapPoint]) (by simpa [swapPoint] using hH)
+    exact inRegion_of_isFullBox (by simpa [IsFullBox] using hf) (by simp [swapPoint])
+      (by simpa [swapPoint] using hH)
 
 /-- A triple `(a, y, b)` with `1 ≤ b ≤ bHigh` for the normalized `bHigh` and `|a| ≤ H`, mapped back
 by `Ratpoints.Sieve.swapPoint` after a reversal, which comes only for the whole box, lies in the
@@ -482,8 +482,8 @@ theorem inRegion_ite_swapPoint_iff {o : Options} {H : ℕ} {rev : Bool}
   · have hh := o.lt_one_or_le_bHigh_of_le (H := H) (z := b) (by lia) (by lia)
     simp [inRegion_iff, hz, ← hl, hh, show b ≠ 0 by lia]
   · obtain ⟨hd, h1, -⟩ := hb rfl
-    refine iff_of_true (inRegion_of_isFullBox (List.map_eq_nil_iff.mpr hd)
-      (by simpa [IsFullBox] using hb rfl) ?_ ?_) ⟨by lia, .inl hd⟩ <;>
+    refine iff_of_true (inRegion_of_isFullBox (by simpa [IsFullBox] using hb rfl) ?_ ?_)
+      ⟨by lia, .inl hd⟩ <;>
     · simp only [↓reduceIte, swapPoint]
       split_ifs <;> lia [abs_le.mp hx]
 
@@ -857,7 +857,7 @@ theorem exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck {c : List ℤ} {H : ℕ}
         o.lt_one_or_le_bHigh_of_le h2 hn.2.2.2, ?_⟩
       exact (searchRegion_subset hwf hreg _ h3).imp List.map_eq_nil_iff.mpr id
   · have hb := isFullBox_of_reversal_normalize_eq_ok hr
-    exact inRegion_of_isFullBox (by simp [hb.1]) (by simpa [IsFullBox] using hb)
+    exact inRegion_of_isFullBox (by simpa [IsFullBox] using hb)
       (by rcases hn.2.1 with h0 | h0 <;> lia) hn.2.2.2
 
 /-- Under `RATPOINTS_NO_CHECK`, for well-formed parameters, the list `L'` that

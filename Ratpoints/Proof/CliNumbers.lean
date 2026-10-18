@@ -151,14 +151,15 @@ theorem OutwardInvariant.step {x0 x : Double} {v : ℚ} {dir : ℤ} {k : ℕ}
   by_cases hd : dir < 0
   · simp only [hd, ↓reduceIte, not_le] at hc ⊢
     obtain ⟨h1, h2⟩ := orderValue_nextDown hx hi'
-    refine ⟨by rw [h1]; lia, h2, fun h ↦ ⟨fun _ ↦ (nextDown_isFinite_or hf).resolve_left
-      (by simp [h]), fun h' ↦ absurd hd h'⟩, nofun,
-      fun _ hv y hy hyv ↦ le_nextDown_of_doubleValue_lt hx hy hi' ?_⟩
+    refine ⟨by rw [h1]; lia, h2, fun h ↦ ⟨fun _ ↦
+      (isFinite_nextDown_or_doubleValue_eq_bot hf).resolve_left (by simp [h]),
+      fun h' ↦ absurd hd h'⟩, nofun, fun _ hv y hy hyv ↦ le_nextDown_of_doubleValue_lt hx hy hi' ?_⟩
     rw [doubleValue_eq_toRat hf]; exact hyv.trans_lt (WithBotTop.coe_lt_coe.mpr hc)
   · simp only [hd, ↓reduceIte] at hc ⊢
     obtain ⟨h1, h2⟩ := orderValue_nextUp hx hi
     exact ⟨by rw [h1]; lia, h2, fun h ↦ ⟨fun h' ↦ absurd h' hd,
-      fun _ ↦ (nextUp_isFinite_or hf).resolve_left (by simp [h])⟩, nofun, fun h ↦ absurd h hd⟩
+      fun _ ↦ (isFinite_nextUp_or_doubleValue_eq_top hf).resolve_left (by simp [h])⟩, nofun,
+      fun h ↦ absurd h hd⟩
 
 theorem OutwardInvariant.post {x0 x : Double} {v : ℚ} {dir : ℤ}
     (h : OutwardInvariant x0 v dir true x) :
@@ -175,6 +176,7 @@ theorem OutwardInvariant.post {x0 x : Double} {v : ℚ} {dir : ℤ}
   · have := hc rfl hf; simp only [hd, ↓reduceIte] at this
     rw [doubleValue_eq_toRat hf]; exact WithBotTop.coe_le_coe.mpr this
 
+attribute [local irreducible] OutwardInvariant in
 /-- `outward` moves the double `x` to the side of `v` that the direction asks, below `v` for a
 lower end (`dir < 0`) and above it otherwise, and for a lower end it lands on the largest double at
 most `v` when it starts from a double whose successor lies above `v`. -/
@@ -744,6 +746,7 @@ theorem InRegionInvariant.post {e : Array ExactEnd} {a b : ℤ} {n lo hi : ℕ}
   · exact absurd ((h4 lo le_rfl (by lia)).trans_lt ((hc.lt (by lia) (by lia) (by lia)).trans_le hl))
       (lt_irrefl _)
 
+attribute [local irreducible] InRegionInvariant in
 /-- The binary search of `in_region` over increasing and disjoint intervals decides whether
 `a / b` lies in one of them. -/
 @[spec]
@@ -786,25 +789,36 @@ def JoinsWell (dom : List (Double × Double)) : Prop :=
       doubleValue dom[i]!.1.bits ≤ doubleValue dom[j]!.1.bits
 
 /-- The invariant of the loop of `Ratpoints.Cli.joinIntervals` over the intervals `dom`, after the
-intervals up to the `k`-th, on its state `(iv, n)`: the intervals after the `k`-th are those of
-`dom`, the intervals kept, `iv[0]` to `iv[n]`, have no NaN and hold every interval up to the `k`-th,
-and for intervals that join well they have `l ≤ u` and are increasing and strictly apart, the lower
-end of the last one at most those of the intervals still to come, when it is not the first. -/
-def JoinInvariant (dom : List (Double × Double)) (k : ℕ) (s : Array (Double × Double) × ℕ) :
-    Prop :=
-  s.1.size = dom.length ∧ s.2 ≤ k ∧ k < dom.length ∧ (∀ j, k < j → s.1[j]! = dom[j]!) ∧
-    (∀ j ≤ s.2, s.1[j]!.1.isNaN = false ∧ s.1[j]!.2.isNaN = false) ∧
-    (∀ i ≤ k, ∀ x, InPair dom[i]! x → ∃ j ≤ s.2, InPair s.1[j]! x) ∧
-    (JoinsWell dom → (∀ j ≤ s.2, doubleValue s.1[j]!.1.bits ≤ doubleValue s.1[j]!.2.bits) ∧
-      (∀ j < s.2, doubleValue s.1[j]!.2.bits < doubleValue s.1[j + 1]!.1.bits) ∧
-      (s.2 ≠ 0 → ∀ i, k < i → i < dom.length →
-        doubleValue s.1[s.2]!.1.bits ≤ doubleValue dom[i]!.1.bits))
+intervals up to the `k`-th, on its state `(iv, n)`, the array of the intervals and the index of the
+last interval kept. -/
+structure JoinInvariant (dom : List (Double × Double)) (k : ℕ) (iv : Array (Double × Double))
+    (n : ℕ) : Prop where
+  /-- The array has the length of `dom`. -/
+  size_eq : iv.size = dom.length
+  /-- The last interval kept has an index at most `k`. -/
+  le_k : n ≤ k
+  /-- The intervals up to the `k`-th are among those of `dom`. -/
+  k_lt : k < dom.length
+  /-- The intervals after the `k`-th are those of `dom`. -/
+  tail_eq : ∀ j, k < j → iv[j]! = dom[j]!
+  /-- The intervals kept, `iv[0]` to `iv[n]`, have no NaN. -/
+  noNaN : ∀ j ≤ n, iv[j]!.1.isNaN = false ∧ iv[j]!.2.isNaN = false
+  /-- The intervals kept hold every interval of `dom` up to the `k`-th. -/
+  covers : ∀ i ≤ k, ∀ x, InPair dom[i]! x → ∃ j ≤ n, InPair iv[j]! x
+  /-- For intervals that join well, the intervals kept have `l ≤ u` and are increasing and strictly
+  apart, and the lower end of the last one, when it is not the first, is at most those of the
+  intervals of `dom` still to come. -/
+  wellJoined : JoinsWell dom →
+    (∀ j ≤ n, doubleValue iv[j]!.1.bits ≤ doubleValue iv[j]!.2.bits) ∧
+      (∀ j < n, doubleValue iv[j]!.2.bits < doubleValue iv[j + 1]!.1.bits) ∧
+      (n ≠ 0 → ∀ i, k < i → i < dom.length →
+        doubleValue iv[n]!.1.bits ≤ doubleValue dom[i]!.1.bits)
 
 theorem joinInvariant_zero {dom : List (Double × Double)} (hnan : NoNaN dom)
-    (h : ¬dom.isEmpty = true) : JoinInvariant dom 0 (dom.toArray, 0) := by
+    (h : ¬dom.isEmpty = true) : JoinInvariant dom 0 dom.toArray 0 := by
   have hl : 0 < dom.length := by cases dom <;> simp_all
   have hm := List.getElem!_mem hl
-  have e0 : (dom.toArray, 0).1[0]! = dom[0]! := by simp
+  have e0 : dom.toArray[0]! = dom[0]! := by simp
   refine ⟨rfl, le_rfl, hl, fun j _ ↦ by simp, fun j hj ↦ ?_, fun i hi x hx ↦ ⟨0, le_rfl, ?_⟩,
     fun hw ↦ ⟨fun j hj ↦ ?_, fun j hj ↦ absurd hj (by lia), fun h ↦ absurd rfl h⟩⟩
   · obtain rfl : j = 0 := by lia
@@ -855,12 +869,12 @@ theorem joinWF_merge {dom : List (Double × Double)} {k n : ℕ} {iv iv' : Array
 
 theorem JoinInvariant.merge {dom : List (Double × Double)} {k n : ℕ}
     {iv iv' : Array (Double × Double)} {p : Double × Double} (hk : k + 1 < dom.length)
-    (h : JoinInvariant dom k (iv, n))
+    (h : JoinInvariant dom k iv n)
     (hp1 : doubleValue p.1.bits = min (doubleValue iv[n]!.1.bits) (doubleValue iv[k + 1]!.1.bits))
     (hp2 : doubleValue p.2.bits = max (doubleValue iv[n]!.2.bits) (doubleValue iv[k + 1]!.2.bits))
     (hpn : p.1.isNaN = false ∧ p.2.isNaN = false) (hs : iv'.size = iv.size)
     (hn : iv'[n]! = p) (hne : ∀ j, j ≠ n → iv'[j]! = iv[j]!) :
-    JoinInvariant dom (k + 1) (iv', n) := by
+    JoinInvariant dom (k + 1) iv' n := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := h
   have hc : iv[k + 1]! = dom[k + 1]! := h4 _ (by lia)
   have hsub (q : Double × Double) (hq1 : doubleValue p.1.bits ≤ doubleValue q.1.bits)
@@ -908,9 +922,9 @@ theorem joinWF_push {dom : List (Double × Double)} {k n : ℕ} {iv : Array (Dou
 
 theorem JoinInvariant.push {dom : List (Double × Double)} {k n : ℕ}
     {iv : Array (Double × Double)} (hnan : NoNaN dom) (hk : k + 1 < dom.length)
-    (h : JoinInvariant dom k (iv, n))
+    (h : JoinInvariant dom k iv n)
     (hgt : doubleValue iv[n]!.2.bits < doubleValue iv[k + 1]!.1.bits) :
-    JoinInvariant dom (k + 1) (iv.set! (n + 1) iv[k + 1]!, n + 1) := by
+    JoinInvariant dom (k + 1) (iv.set! (n + 1) iv[k + 1]!) (n + 1) := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := h
   have hc : iv[k + 1]! = dom[k + 1]! := h4 _ (by lia)
   have hn : (iv.set! (n + 1) iv[k + 1]!)[n + 1]! = dom[k + 1]! := by
@@ -930,28 +944,27 @@ theorem JoinInvariant.push {dom : List (Double × Double)} {k n : ℕ}
 
 theorem JoinInvariant.lt_cur {dom : List (Double × Double)} {pref suff : List ℕ} {cur n : ℕ}
     {iv : Array (Double × Double)} (hh : ForIn.toList [1:dom.length] = pref ++ cur :: suff)
-    (h : JoinInvariant dom pref.length (iv, n)) :
+    (h : JoinInvariant dom pref.length iv n) :
     pref.length + 1 = cur ∧ cur < dom.length ∧ n < cur ∧ cur < iv.size := by
   have h1 := Std.Legacy.Range.add_length_eq_of_toList_eq_append_cons hh
   have h2 := Std.Legacy.Range.lt_of_toList_eq_append_cons hh
-  have := h.1; have := h.2.1
-  refine ⟨by lia, h2, by lia, by lia⟩
+  exact ⟨by lia, h2, by lia [h.le_k], by lia [h.size_eq]⟩
 
 /-- A step of the loop of `Ratpoints.Cli.joinIntervals` that joins the next interval to the last
 one kept: the slot of that one holds the least lower and the greatest upper end. -/
 theorem JoinInvariant.merge_pick {dom : List (Double × Double)} {pref suff : List ℕ} {cur n : ℕ}
     {iv iv' : Array (Double × Double)} (hnan : NoNaN dom)
     (hh : ForIn.toList [1:dom.length] = pref ++ cur :: suff)
-    (h : JoinInvariant dom pref.length (iv, n)) (hle : iv[cur]!.1.le iv[n]!.2 = true)
+    (h : JoinInvariant dom pref.length iv n) (hle : iv[cur]!.1.le iv[n]!.2 = true)
     (hs : iv'.size = iv.size)
     (hn : iv'[n]! = (if iv[cur]!.1.lt iv[n]!.1 then iv[cur]!.1 else iv[n]!.1,
       if iv[n]!.2.lt iv[cur]!.2 then iv[cur]!.2 else iv[n]!.2))
     (hne : ∀ j, j ≠ n → iv'[j]! = iv[j]!) :
-    JoinInvariant dom (pref ++ [cur]).length (iv', n) := by
+    JoinInvariant dom (pref ++ [cur]).length iv' n := by
   obtain ⟨hc, hcl, hnc, -⟩ := h.lt_cur hh
   subst hc
-  have hcd : iv[pref.length + 1]! = dom[pref.length + 1]! := h.2.2.2.1 _ (by lia)
-  obtain ⟨ha1, ha2⟩ := h.2.2.2.2.1 n le_rfl
+  have hcd : iv[pref.length + 1]! = dom[pref.length + 1]! := h.tail_eq _ (by lia)
+  obtain ⟨ha1, ha2⟩ := h.noNaN n le_rfl
   obtain ⟨hc1, hc2⟩ := hcd ▸ hnan _ (List.getElem!_mem hcl)
   rw [List.length_append, List.length_singleton]
   refine h.merge hcl ?_ ?_ ?_ hs hn hne
@@ -962,13 +975,13 @@ theorem JoinInvariant.merge_pick {dom : List (Double × Double)} {pref suff : Li
 theorem JoinInvariant.merge_lt_lt {dom : List (Double × Double)} {pref suff : List ℕ}
     {cur n : ℕ} {iv : Array (Double × Double)} (hnan : NoNaN dom)
     (hh : ForIn.toList [1:dom.length] = pref ++ cur :: suff)
-    (h : JoinInvariant dom pref.length (iv, n)) (h1 : iv[cur]!.1.le iv[n]!.2 = true)
+    (h : JoinInvariant dom pref.length iv n) (h1 : iv[cur]!.1.le iv[n]!.2 = true)
     (h2 : iv[cur]!.1.lt iv[n]!.1 = true)
     (h3 : (iv.set! n (iv[cur]!.1, iv[n]!.2))[n]!.2.lt (iv.set! n (iv[cur]!.1, iv[n]!.2))[cur]!.2 =
       true) :
     JoinInvariant dom (pref ++ [cur]).length ((iv.set! n (iv[cur]!.1, iv[n]!.2)).set! n
-      ((iv.set! n (iv[cur]!.1, iv[n]!.2))[n]!.1, (iv.set! n (iv[cur]!.1, iv[n]!.2))[cur]!.2),
-        n) := by
+      ((iv.set! n (iv[cur]!.1, iv[n]!.2))[n]!.1, (iv.set! n (iv[cur]!.1, iv[n]!.2))[cur]!.2))
+        n := by
   obtain ⟨-, -, hnc, hcs⟩ := h.lt_cur hh
   simp only [Array.getElem!_set!_self _ _ _ (show n < iv.size by lia),
     Array.getElem!_set!_ne _ _ _ _ (Nat.ne_of_lt hnc)] at h3 ⊢
@@ -979,11 +992,11 @@ theorem JoinInvariant.merge_lt_lt {dom : List (Double × Double)} {pref suff : L
 theorem JoinInvariant.merge_lt_ge {dom : List (Double × Double)} {pref suff : List ℕ}
     {cur n : ℕ} {iv : Array (Double × Double)} (hnan : NoNaN dom)
     (hh : ForIn.toList [1:dom.length] = pref ++ cur :: suff)
-    (h : JoinInvariant dom pref.length (iv, n)) (h1 : iv[cur]!.1.le iv[n]!.2 = true)
+    (h : JoinInvariant dom pref.length iv n) (h1 : iv[cur]!.1.le iv[n]!.2 = true)
     (h2 : iv[cur]!.1.lt iv[n]!.1 = true)
     (h3 : ¬(iv.set! n (iv[cur]!.1, iv[n]!.2))[n]!.2.lt (iv.set! n (iv[cur]!.1, iv[n]!.2))[cur]!.2 =
       true) :
-    JoinInvariant dom (pref ++ [cur]).length (iv.set! n (iv[cur]!.1, iv[n]!.2), n) := by
+    JoinInvariant dom (pref ++ [cur]).length (iv.set! n (iv[cur]!.1, iv[n]!.2)) n := by
   obtain ⟨-, -, hnc, hcs⟩ := h.lt_cur hh
   simp only [Array.getElem!_set!_self _ _ _ (show n < iv.size by lia),
     Array.getElem!_set!_ne _ _ _ _ (Nat.ne_of_lt hnc)] at h3
@@ -993,9 +1006,9 @@ theorem JoinInvariant.merge_lt_ge {dom : List (Double × Double)} {pref suff : L
 theorem JoinInvariant.merge_ge_lt {dom : List (Double × Double)} {pref suff : List ℕ}
     {cur n : ℕ} {iv : Array (Double × Double)} (hnan : NoNaN dom)
     (hh : ForIn.toList [1:dom.length] = pref ++ cur :: suff)
-    (h : JoinInvariant dom pref.length (iv, n)) (h1 : iv[cur]!.1.le iv[n]!.2 = true)
+    (h : JoinInvariant dom pref.length iv n) (h1 : iv[cur]!.1.le iv[n]!.2 = true)
     (h2 : ¬iv[cur]!.1.lt iv[n]!.1 = true) (h3 : iv[n]!.2.lt iv[cur]!.2 = true) :
-    JoinInvariant dom (pref ++ [cur]).length (iv.set! n (iv[n]!.1, iv[cur]!.2), n) := by
+    JoinInvariant dom (pref ++ [cur]).length (iv.set! n (iv[n]!.1, iv[cur]!.2)) n := by
   obtain ⟨-, -, hnc, hcs⟩ := h.lt_cur hh
   refine h.merge_pick hnan hh h1 (by simp) ?_ fun j hj ↦ Array.getElem!_set!_ne _ _ _ _ (Ne.symm hj)
   rw [Array.getElem!_set!_self _ _ _ (by lia)]; simp [h2, h3]
@@ -1003,20 +1016,20 @@ theorem JoinInvariant.merge_ge_lt {dom : List (Double × Double)} {pref suff : L
 theorem JoinInvariant.merge_ge_ge {dom : List (Double × Double)} {pref suff : List ℕ}
     {cur n : ℕ} {iv : Array (Double × Double)} (hnan : NoNaN dom)
     (hh : ForIn.toList [1:dom.length] = pref ++ cur :: suff)
-    (h : JoinInvariant dom pref.length (iv, n)) (h1 : iv[cur]!.1.le iv[n]!.2 = true)
+    (h : JoinInvariant dom pref.length iv n) (h1 : iv[cur]!.1.le iv[n]!.2 = true)
     (h2 : ¬iv[cur]!.1.lt iv[n]!.1 = true) (h3 : ¬iv[n]!.2.lt iv[cur]!.2 = true) :
-    JoinInvariant dom (pref ++ [cur]).length (iv, n) :=
+    JoinInvariant dom (pref ++ [cur]).length iv n :=
   h.merge_pick hnan hh h1 rfl (by simp [h2, h3]) fun _ _ ↦ rfl
 
 theorem JoinInvariant.push_cur {dom : List (Double × Double)} {pref suff : List ℕ}
     {cur n : ℕ} {iv : Array (Double × Double)} (hnan : NoNaN dom)
     (hh : ForIn.toList [1:dom.length] = pref ++ cur :: suff)
-    (h : JoinInvariant dom pref.length (iv, n)) (h1 : ¬iv[cur]!.1.le iv[n]!.2 = true) :
-    JoinInvariant dom (pref ++ [cur]).length (iv.set! (n + 1) iv[cur]!, n + 1) := by
+    (h : JoinInvariant dom pref.length iv n) (h1 : ¬iv[cur]!.1.le iv[n]!.2 = true) :
+    JoinInvariant dom (pref ++ [cur]).length (iv.set! (n + 1) iv[cur]!) (n + 1) := by
   obtain ⟨hc, hcl, -, -⟩ := h.lt_cur hh
   subst hc
-  have hcd : iv[pref.length + 1]! = dom[pref.length + 1]! := h.2.2.2.1 _ (by lia)
-  obtain ⟨ha1, ha2⟩ := h.2.2.2.2.1 n le_rfl
+  have hcd : iv[pref.length + 1]! = dom[pref.length + 1]! := h.tail_eq _ (by lia)
+  obtain ⟨ha1, ha2⟩ := h.noNaN n le_rfl
   obtain ⟨hc1, hc2⟩ := hcd ▸ hnan _ (List.getElem!_mem hcl)
   rw [List.length_append, List.length_singleton]
   exact h.push hnan hcl (not_le.mp fun h' ↦ h1 ((le_eq_true_iff hc1 ha2).mpr h'))
@@ -1030,7 +1043,7 @@ theorem joinIntervals_post_of_isEmpty {dom : List (Double × Double)} (hnan : No
   exact ⟨Iff.rfl, hnan, fun _ h ↦ h, fun _ ↦ ⟨nofun, List.IsChain.nil⟩⟩
 
 theorem JoinInvariant.post {dom : List (Double × Double)} {iv : Array (Double × Double)} {n : ℕ}
-    (h : JoinInvariant dom (ForIn.toList [1:dom.length]).length (iv, n)) :
+    (h : JoinInvariant dom (ForIn.toList [1:dom.length]).length iv n) :
     (iv.toList.take (n + 1) = [] ↔ dom = []) ∧ NoNaN (iv.toList.take (n + 1)) ∧
       (∀ x, (∃ p ∈ dom, InPair p x) → ∃ p ∈ iv.toList.take (n + 1), InPair p x) ∧
       (JoinsWell dom → AreSearchIntervals ((iv.toList.take (n + 1)).map
@@ -1065,7 +1078,7 @@ theorem joinIntervals_spec (dom : List (Double × Double)) :
       (JoinsWell dom →
         AreSearchIntervals (r.map fun p ↦ (doubleValue p.1.bits, doubleValue p.2.bits))) ⦄ := by
   vcgen [joinIntervals] invariants
-  | inv1 => fun pref _ s ↦ JoinInvariant dom pref.length s
+  | inv1 => fun pref _ s ↦ JoinInvariant dom pref.length s.1 s.2
   all_goals first
     | exact joinInvariant_zero ‹_› ‹_›
     | exact JoinInvariant.merge_lt_lt ‹_› ‹_› ‹_› ‹_› ‹_› ‹_›

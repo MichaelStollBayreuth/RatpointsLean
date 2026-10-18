@@ -273,8 +273,7 @@ theorem toNat_toUInt64_ldexp_mantDig {f : Double} (hf : f.isFinite = true)
   have hv := toRat_ldexp_mantDig hf hlo hhi
   have hg0 : 0 ≤ (f.ldexp (Double.mantDig : ℤ)).toRat := by rw [hv]; linarith
   have hg52 : 2 ^ 52 ≤ (f.ldexp (Double.mantDig : ℤ)).toRat := by rw [hv]; linarith
-  rw [Double.toNat_toUInt64 hg0 (by rw [hv]; linarith), ← Double.toRat_eq_natCast_floor hg0 hg52,
-    hv]
+  rw [Double.toNat_toUInt64 hg0 (by rw [hv]; linarith), ← Double.toRat_eq_natCast_floor hg52, hv]
 
 /-- The mantissa `m₀ = (unsigned long)ldexp(f, 53)` and the exponent `ex` of `frexp(ax) = (f, ex)`
 for a finite double `ax > 0`, as `exact_end` makes them: `m₀ 2 ^ (ex - 53) = ax` with
@@ -435,7 +434,7 @@ theorem rounding_run_exactEnd (x : Double) (lower : Bool)
 
 theorem run_exactMantissa_of_toRat_eq_zero {ax : Double} (h : ax.toRat = 0) :
     Id.run (exactMantissa ax) = (0, 0) := by
-  have hz := Double.isZero_of_toRat_eq_zero h
+  have hz := Double.isZero_eq_true_iff.mpr h
   have hm : (ax.frexp.1.ldexp (Double.mantDig : ℤ)).toUInt64 = 0 := by
     simp only [Double.frexp, Double.ldexp, hz, Bool.or_true, ↓reduceIte]
     apply UInt64.toNat_inj.mp

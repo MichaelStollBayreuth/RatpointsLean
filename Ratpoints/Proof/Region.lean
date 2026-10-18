@@ -71,9 +71,9 @@ theorem inRegion_iff {D : List (WithBotTop ℚ × WithBotTop ℚ)} {bLow bHigh :
 
 /-- A pair `(x, z)` of height at most `H` lies in the search region of the whole box. -/
 theorem inRegion_of_isFullBox {D : List (WithBotTop ℚ × WithBotTop ℚ)} {bLow bHigh : ℤ} {H : ℕ}
-    (hD : D = []) (hb : IsFullBox D bLow bHigh H) {p : ℤ × ℤ × ℤ} (hz : 0 ≤ p.2.2)
-    (hzH : p.2.2 ≤ H) : InRegion D bLow bHigh p := by
-  obtain ⟨-, h1, h2⟩ := hb
+    (hb : IsFullBox D bLow bHigh H) {p : ℤ × ℤ × ℤ} (hz : 0 ≤ p.2.2) (hzH : p.2.2 ≤ H) :
+    InRegion D bLow bHigh p := by
+  obtain ⟨hD, h1, h2⟩ := hb
   rcases eq_or_lt_of_le hz with h0 | h0
   · exact .inl h0.symm
   · exact .inr ⟨by lia, by lia, .inl hD⟩
