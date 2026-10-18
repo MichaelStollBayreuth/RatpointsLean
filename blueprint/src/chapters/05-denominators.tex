@@ -689,25 +689,27 @@ and the rows of offsets of the classes (\csource{find_points.c}{4573}{4573},
 
 \begin{theorem}[The output of the search]\label{thm:findPoints_order}
   \uses{def:findPoints, def:searchPoints, def:searchDens, lem:shape_dens, lem:twoAdic_exit,
-    lem:examinePrime_none, lem:reversal_swap}
-  \lean{Ratpoints.exists_eq_of_findPoints_eq_ok, Ratpoints.perm_flatMap_squares1Dens, Ratpoints.perm_filter_bruteForce_append_flatMap_searchDens, Ratpoints.append_flatMap_searchDens_eq_bruteForce, Ratpoints.eq_bruteForce_of_findPoints_eq_ok_of_reverse_eq_false, List.perm_flatMap_of_nodup}
+    lem:examinePrime_none, lem:reversal_swap, def:normalize, def:searchIntervals, def:inIntervals}
+  \lean{Ratpoints.exists_eq_of_findPoints_eq_ok, Ratpoints.perm_flatMap_squares1Dens, Ratpoints.perm_filter_bruteForce_append_flatMap_searchDens, Ratpoints.append_flatMap_searchDens_eq_bruteForce, List.perm_flatMap_of_nodup}
   \leanok
   For well-formed parameters and options with $\mathrm{noCheck}$ false, if
-  $\mathrm{findPoints}(c, H, P, o)$ returns the list $L$, and the reversal check hands on the
-  polynomial $c'$ of degree $d'$ with the flag of the reversal: $L$ is the list of the points that
-  the brute-force reference of $c'$ finds over the candidate $(1, 0)$, its points at infinity,
-  followed by those that it finds over the denominators of the search of $c'$ from $1$ to $H$
-  (Definition~\ref{def:searchDens}), in their order, each mapped by $\mathrm{swapPoint}$ when the
-  flag is set, without those with $y < 0$ under $\mathrm{noY}$. The points of the reference of $c'$
-  over the candidate $(1, 0)$ and over the denominators of its search from $b_{\mathrm{low}} \ge 1$
-  to $b_{\mathrm{high}}$, for $1 \le b_{\mathrm{high}} \le H$, are a permutation of the points of
-  $\mathrm{bruteForce}(c', H)$ with $z = 0$ or $b_{\mathrm{low}} \le z \le b_{\mathrm{high}}$,
-  which for $b_{\mathrm{low}} = 1$ and $b_{\mathrm{high}} = H$ are all its points, so that, with
-  both options of the output off, $L$ is a permutation of $\mathrm{bruteForce}(c, H)$
-  (Theorem~\ref{thm:findPoints_perm}), and $L$ is $\mathrm{bruteForce}(c, H)$ when also the options
-  forbid the reversal and the search of $c$ does not take the divisors times squares.
-  Theorem~\ref{thm:order} spells $L$ out in terms of $c$: the points in the order of ratpoints
-  (Definition~\ref{def:orderedPoints}), filtered by $\mathrm{noY}$.
+  $\mathrm{findPoints}(c, H, P, o)$ returns the list $L$, and the reversal check with the normalized
+  switch hands on the polynomial $c'$ of degree $d'$ with the flag of the reversal: $L$ is the list
+  of the points that the brute-force reference of $c'$ finds over the candidate $(1, 0)$, its points
+  at infinity, followed by those that it finds over the denominators of the search of $c'$ in the
+  normalized range (Definitions~\ref{def:searchDens} and~\ref{def:normalize}) with the numerators
+  $a$ with $a/b$ in the search intervals of the options, the default interval when there are none
+  (Definition~\ref{def:searchIntervals}), in their order, each mapped by $\mathrm{swapPoint}$ when
+  the flag is set, without those with $y < 0$ under $\mathrm{noY}$. The points of the reference of
+  $c'$ over the candidate $(1, 0)$ and over the denominators of its search from
+  $b_{\mathrm{low}} \ge 1$ to $b_{\mathrm{high}}$, for $1 \le b_{\mathrm{high}} \le H$, are a
+  permutation of the points of $\mathrm{bruteForce}(c', H)$ with $z = 0$ or
+  $b_{\mathrm{low}} \le z \le b_{\mathrm{high}}$, which for $b_{\mathrm{low}} = 1$ and
+  $b_{\mathrm{high}} = H$ are all its points, so that $L$ is a permutation of
+  $\mathrm{bruteForce}(c, H)$ filtered by $\mathrm{noY}$ and the search region
+  (Theorem~\ref{thm:findPoints_perm}). Theorem~\ref{thm:order} spells $L$ out in terms of $c$: the
+  points in the order of ratpoints (Definition~\ref{def:orderedPoints}), filtered by $\mathrm{noY}$
+  and the search region.
 \end{theorem}
 
 \begin{proof}
@@ -732,16 +734,17 @@ and the rows of offsets of the classes (\csource{find_points.c}{4573}{4573},
 \end{proof}
 
 Theorem~\ref{thm:findPoints_perm} states the permutation, and Theorem~\ref{thm:findPoints}
-membership with $\mathrm{noCheck}$ false, the set of elements with both options of the output off,
-and no duplicates for every option. The statements that comparator certifies are those of stage~D in
-their text, but for the refusal theorems, which refuse the heights of $2^{63}$ or more too since
-stage~F2 (Theorem~\ref{thm:refusals}), and the challenge's statement of membership, which has the
-options of the output since stage~G, with which five statements join them: the order theorem
-(Theorem~\ref{thm:order}), which spells out the list of Theorem~\ref{thm:findPoints_order} in terms
-of $c$, the three statements under $\mathrm{noCheck}$ and the protocol of the delivery
-(Section~\ref{sec:certifiedG}); the structure \verb|Params| and its well-formedness, which stage~E
-left as they were, gain the number of primes examined and the composite moduli with stage~F1, which
-changes what those statements quantify over (Chapter~\ref{chap:tables}).
+membership with $\mathrm{noCheck}$ false and the set of elements with both options of the output
+off, for the points in the search region, and no duplicates for every option. The statements that
+comparator certifies are those of stage~D in their text, but for the refusal theorems, which refuse
+the heights of $2^{63}$ or more too since stage~F2 (Theorem~\ref{thm:refusals}), and the challenge's
+statement of membership, which has the options of the output since stage~G, with which five
+statements join them: the order theorem (Theorem~\ref{thm:order}), which spells out the list of
+Theorem~\ref{thm:findPoints_order} in terms of $c$, the three statements under $\mathrm{noCheck}$
+and the protocol of the delivery (Section~\ref{sec:certifiedG}); the structure \verb|Params| and its
+well-formedness, which stage~E left as they were, gain the number of primes examined and the
+composite moduli with stage~F1, which changes what those statements quantify over
+(Chapter~\ref{chap:tables}).
 
 \section{The command-line program and the differential tests}\label{sec:denCli}
 
@@ -796,9 +799,8 @@ Each component of this chapter differs from the C code in a stated way, recorded
     \verb|int|s in the C code, as natural numbers, which they fit for coefficients below
     $2^{2^{31} - 1}$;
   \item the denominators of a shape listed, then tested and sifted one after the other; no blocks,
-    and no threads, which deliver the blocks in their order; no correction of the moduli between
-    the blocks (stage~I); no search intervals and no range of the denominators other than $1$ to $H$
-    (stage~H);
+    and no threads, which deliver the blocks in their order; no correction of the moduli between the
+    blocks (stage~I);
   \item no failure for lack of memory, where \verb|sieving_info| drops the primes beyond the table
     whose words it cannot store; no output under \verb|DEBUG| or \verb|RATPOINTS_VERBOSE|.
 \end{itemize}

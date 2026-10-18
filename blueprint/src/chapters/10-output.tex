@@ -467,22 +467,20 @@ search returns what a search gives back: the data and the count of the delivery 
 flags written back.
 
 \begin{definition}[The sieving]\label{def:sieving}
-  \uses{def:sieveRun, def:classOffsets, def:Shape, def:delivery, def:arraySize, def:searchIntervals}
+  \uses{def:sieveRun, def:classOffsets, def:Shape, def:delivery, def:arraySize}
   \lean{Ratpoints.sieving}
   \leanok
   The block that the C code introduces as ``now do the sieving'': an array of rows of offsets, one
   for each packing, of one offset for each sieve entry, and the row offsets of the classes in it,
   with the inverses of the strides in the entries (Definition~\ref{def:classOffsets}); the shape
   that \verb|run_setup| chooses for the largest denominator $b_{\mathrm{high}}$ and the bounds that
-  it makes of the default search interval $[-h, h]$ of a search without search intervals
-  (Definitions~\ref{def:Shape} and~\ref{def:searchIntervals}), which holds every $x = a/b$ of the
-  search; and the run over the denominators $b_{\mathrm{low}}, \dots, b_{\mathrm{high}}$ of the
-  shape in that interval with the cut points of the parameters, pieces of at most
-  $\mathrm{arraySizeAt}(H)$ bit arrays, the flags and the delivery (Definition~\ref{def:delivery}),
-  which returns when the callback stops the search (\csource{find_points.c}{4573}{4573},
-  \csource{find_points.c}{5116}{5116}, \csource{find_points.c}{5119}{5119},
-  \csource{find_points.c}{5132}{5132}, \csource{find_points.c}{5137}{5139},
-  \csource{find_points.c}{5167}{5167}).
+  it makes of the search intervals of the search (Definition~\ref{def:Shape}); and the run over the
+  denominators $b_{\mathrm{low}}, \dots, b_{\mathrm{high}}$ of the shape in these intervals with the
+  cut points of the parameters, pieces of at most $\mathrm{arraySizeAt}(H)$ bit arrays, the flags
+  and the delivery (Definition~\ref{def:delivery}), which returns when the callback stops the search
+  (\csource{find_points.c}{4573}{4573}, \csource{find_points.c}{5116}{5116},
+  \csource{find_points.c}{5119}{5119}, \csource{find_points.c}{5132}{5132},
+  \csource{find_points.c}{5137}{5139}, \csource{find_points.c}{5167}{5167}).
 \end{definition}
 
 \begin{definition}[What a search gives back]\label{def:Outcome}
@@ -507,18 +505,22 @@ flags written back.
 
 \begin{definition}[The search with a callback]\label{def:findPointsWith}
   \uses{def:Outcome, def:delivery, def:searchPoints, def:Options, def:reversal, def:sturmChain,
-    def:useCLong, def:maxDegree, def:Params}
+    def:useCLong, def:maxDegree, def:Params, def:normalize, def:searchIntervals}
   \lean{Ratpoints.findPointsWith}
   \leanok
   The library function \verb|find_points| with the callback and its data, as \verb|find_points|,
   \verb|find_points_work| and \verb|find_points_work_1| do it: the refusals of the search for the
   points in the order of the program, more than $\mathrm{maxDegree} + 1$ coefficients, fewer than
   two, $H = 0$ or $H \ge 2^{63}$, and a form whose leading zeros lower $\lceil n/2 \rceil$; the
-  reversal check with the switch of the options (Definition~\ref{def:reversal}), which may refuse
-  the form or reverse the polynomial; with the Sturm step on, the refusal when the remainder chain
-  of the polynomial searched is $\mathrm{none}$ (Definition~\ref{def:sturmChain}); and otherwise the
-  search of the polynomial handed on over the denominators from $1$ to $H$, with the flag of the
-  reversal and the options of the output of the options as its flags, from the data of the caller,
+  normalization of the options (Definition~\ref{def:normalize}); the reversal check with the
+  normalized switch (Definition~\ref{def:reversal}), which may refuse the form or reverse the
+  polynomial; the search intervals of the options, the default interval $[-h, h]$ for none, with the
+  refusal $\mathrm{badArgs}$ (error~9) of intervals that are not well formed
+  (Definition~\ref{def:searchIntervals}); with the Sturm step on, the refusal when the remainder
+  chain of the polynomial searched is $\mathrm{none}$ (Definition~\ref{def:sturmChain}); and
+  otherwise the search of the polynomial handed on over the normalized range of the denominators
+  and the search intervals, with the flag of the reversal and the options of the output of the
+  options as its flags, from the data of the caller,
   the count $0$ and the flag of the stop clear, which returns what the search gives back
   (\csource{find_points.c}{4523}{4528}, \csource{find_points.c}{4546}{4546},
   \csource{find_points.c}{4557}{4559}, \csource{find_points.c}{4564}{4565},
@@ -563,17 +565,19 @@ relates the output under \verb|RATPOINTS_NO_CHECK| to the points.
   \uses{def:searchList, def:sieving, def:searchPoints, def:Outcome, lem:sieveStops,
     thm:run_reference, lem:soundRun, lem:checkDelivery, lem:checkNumWith, lem:shape_dens,
     lem:twoAdic_exit, lem:sievingInfo, lem:examinePrime_none, lem:sift_eq_checkDen,
-    lem:exactBounds, lem:numeratorRanges, def:searchIntervals, lem:searchDensRange}
-  \lean{Ratpoints.exists_isSoundTest_run_searchPoints, Ratpoints.exists_isSoundTest_run_sieveRun, Ratpoints.run_searchPoints_eq_deliver, Ratpoints.run_searchPoints_flags, Ratpoints.searchList_of_noCheck_eq_false, Ratpoints.searchList_false, Ratpoints.isSoundTest_false_of_forall_not_isPoint, Ratpoints.pointsAtInfinityList_eq_nil_of_forall_not_isPoint, Ratpoints.Sieve.pointsAtInfinityList_eq_filter_map_pointsOfDen, Ratpoints.Sieve.pointsAtInfinityList_eq_nil_of_pointsOfDen_eq_nil, Ratpoints.BruteForce.pointsOfDen_zero_singleton_one, Ratpoints.BruteForce.pointsOfDen_ne_nil_of_mem}
+    lem:exactBounds, lem:numeratorRanges, def:regionSpec, def:inIntervals, lem:searchDensRange}
+  \lean{Ratpoints.exists_isSoundTest_run_searchPoints, Ratpoints.exists_isSoundTest_run_searchPoints_appendPoint, Ratpoints.exists_isSoundTest_run_sieveRun, Ratpoints.run_searchPoints_eq_deliver, Ratpoints.run_searchPoints_flags, Ratpoints.searchList_of_noCheck_eq_false, Ratpoints.searchList_false, Ratpoints.isSoundTest_false_of_forall_not_isPoint, Ratpoints.pointsAtInfinityList_eq_nil_of_forall_not_isPoint, Ratpoints.Sieve.pointsAtInfinityList_eq_filter_map_pointsOfDen, Ratpoints.Sieve.pointsAtInfinityList_eq_nil_of_pointsOfDen_eq_nil, Ratpoints.BruteForce.pointsOfDen_zero_singleton_one, Ratpoints.BruteForce.pointsOfDen_ne_nil_of_mem}
   \leanok
   For well-formed parameters, $1 \le H < 2^{63}$, the range of the denominators from
-  $b_{\mathrm{low}} \ge 1$ to $b_{\mathrm{high}} \le H$ and the default search interval $[-h, h]$
-  of a search without search intervals (Definition~\ref{def:searchIntervals}) there is a sound test
-  $S$ such that the search of $c$ of its degree over the range, with any callback, any flags and a
-  delivery whose flag is clear, gives the data and the count of the delivery of the list of the
-  points of Definition~\ref{def:searchList} for the range, the values of that interval, $S$ and
-  these flags; so it gives those of the delivery of the list that the search with the appending
-  callback gives, from the empty array, for the same flags. The run of the shape with the bounds of
+  $b_{\mathrm{low}} \ge 1$ to $b_{\mathrm{high}} \le H$ and well-formed search intervals
+  (Definition~\ref{def:regionSpec}) there is a sound test $S$ such that the search of $c$ of its
+  degree over the range and the intervals, with any callback, any flags and a delivery whose flag is
+  clear, gives the data and the count of the delivery of the list of the points of
+  Definition~\ref{def:searchList} for the range, the values of the intervals, $S$ and these flags;
+  so it gives those of the delivery of the list that the search with the appending callback gives,
+  from the empty array, for the same flags, and for such a test the search with the appending
+  callback from the empty array gives the list of Definition~\ref{def:searchList}, for every choice
+  of the flags. The run of the shape with the bounds of
   well-formed search intervals delivers the part over the denominators of the range for their values
   and a sound test, whatever the callback, the flags and the intervals. The bits of the flags that
   the search writes back are the flag of the reversal as it came, the squares for odd degree and
@@ -595,8 +599,8 @@ relates the output under \verb|RATPOINTS_NO_CHECK| to the points.
   denominators of the search lying in $1, \dots, H$ (Lemma~\ref{lem:searchDensRange}), and nothing
   is delivered; otherwise the points at infinity come first (Lemma~\ref{lem:checkDelivery}), the
   search returns after them at a stop, and the run delivers the points of the check with the flags
-  of the numerators in the ranges that the bounds of the default search interval, which is well
-  formed, give (Lemma~\ref{lem:exactBounds}), those with $a/b$ in the interval
+  of the numerators in the ranges that the bounds of the well-formed search intervals give
+  (Lemma~\ref{lem:exactBounds}), those with $a/b$ in the intervals
   (Lemma~\ref{lem:numeratorRanges}), that pass the test of the shape, the class words and the
   entries (the contract of the run, Definition~\ref{def:sieveRun}, and
   Theorem~\ref{thm:run_reference}), which let every point through, by what the search hands to the
@@ -623,10 +627,12 @@ relates the output under \verb|RATPOINTS_NO_CHECK| to the points.
 \end{theorem}
 
 \begin{proof}
+  \uses{lem:normalize, lem:searchIntervals}
   \leanok
   The refusals are the same tests on both sides; after them both searches run on the polynomial
-  handed on, with its degree, which the refusals leave positive, and Lemma~\ref{lem:searchList}
-  gives the data and the count. The data and the count need the well-formedness of the parameters,
+  handed on, with its degree, which the refusals leave positive, over the normalized range of the
+  denominators and the search intervals, which are well formed (Lemmas~\ref{lem:normalize}
+  and~\ref{lem:searchIntervals}), and Lemma~\ref{lem:searchList} gives the data and the count. The data and the count need the well-formedness of the parameters,
   since their equality comes from the contracts of the search, which need it, and not from an
   argument that the control flow depends on the callback only through the flag.
 \end{proof}
@@ -636,20 +642,23 @@ relates the output under \verb|RATPOINTS_NO_CHECK| to the points.
   \lean{Ratpoints.exists_searchList_of_findPoints_eq_ok}
   \leanok
   For well-formed parameters, if $\mathrm{findPoints}(c, H, P, o)$ returns the list $L$, then the
-  reversal check hands on a polynomial $c'$ of positive degree with the flag $\mathrm{rev}$ of the
-  reversal, $1 \le H$, and there are a sound test $S$ and intervals $D$ of values that hold $a/b$
-  for every $b > 0$ and $|a| \le H$, the values of the default search interval, such that $L$ is the
-  list of the points that the search of $c'$ delivers for the denominators from $1$ to $H$, $D$ and
-  $S$ (Definition~\ref{def:searchList}) with the flags $\mathrm{rev}$, $\mathrm{noCheck}$ and
-  $\mathrm{noY}$ of $o$, and such that, for every choice of the options of the output with the
+  reversal check with the normalized switch hands on a polynomial $c'$ of positive degree with the
+  flag $\mathrm{rev}$ of the reversal, $1 \le H < 2^{63}$, the search intervals of $o$ are well
+  formed, the chain of $c'$ is not $\mathrm{none}$ when the Sturm step is on, and there are a sound
+  test $S$ over the normalized range of the denominators and the search intervals $D$ of the search,
+  those of $o$ or the default interval for none (Definition~\ref{def:searchIntervals}), such that $L$
+  is the list of the points that the search of $c'$ delivers for the normalized range, the values of
+  $D$ and $S$ (Definition~\ref{def:searchList}) with the flags $\mathrm{rev}$, $\mathrm{noCheck}$
+  and $\mathrm{noY}$ of $o$, and such that, for every choice of the options of the output with the
   other options unchanged, $\mathrm{findPoints}$ returns the list for $D$ and $S$ with those
   flags.
 \end{lemma}
 
 \begin{proof}
-  \uses{def:searchIntervals}
+  \uses{lem:normalize, lem:searchIntervals}
   \leanok
-  Lemma~\ref{lem:searchList} for the polynomial handed on and the default search interval
+  Lemma~\ref{lem:searchList} for the polynomial handed on, the normalized range
+  (Lemma~\ref{lem:normalize}) and the search intervals, which are well formed
   (Lemma~\ref{lem:searchIntervals}), with the appending callback; the test does not depend on the
   flags.
 \end{proof}
@@ -665,15 +674,18 @@ with those of $y < 0$ left out under $\mathrm{noY}$, and under $\mathrm{noCheck}
 survivors with $y = 0$, which depends on the parameters. The main theorems
 (Theorem~\ref{thm:findPoints}) take them into account: for $\mathrm{noCheck}$ false, a triple lies
 in the list exactly when it is a normalized point of height at most $H$, with $y \ge 0$ under
-$\mathrm{noY}$ (\verb|Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok|); the list has no duplicates
-for every option (\verb|Ratpoints.nodup_of_findPoints_eq_ok|); and its set of elements is
-$\mathrm{points}(c, H)$ when both options of the output are off
-(\verb|Ratpoints.toFinset_eq_points_of_findPoints_eq_ok|). The theorem of the output of the search
-(Theorem~\ref{thm:findPoints_order}, \verb|Ratpoints.exists_eq_of_findPoints_eq_ok|) gives, for
-$\mathrm{noCheck}$ false, the reference of the polynomial searched filtered by $\mathrm{noY}$, and
-the reference itself and the permutation of it (Theorem~\ref{thm:findPoints_perm},
-\verb|Ratpoints.perm_bruteForce_of_findPoints_eq_ok|) take both options of the output off. The
-refusal theorems (Theorem~\ref{thm:refusals}) keep their statements. Under $\mathrm{noCheck}$ the
+$\mathrm{noY}$, in the search region (\verb|Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok|); the
+list has no duplicates for every option (\verb|Ratpoints.nodup_of_findPoints_eq_ok|); and its set of
+elements is $\mathrm{points}(c, H)$ filtered by the search region when both options of the output
+are off (\verb|Ratpoints.toFinset_eq_filter_points_of_findPoints_eq_ok|). The theorem of the output
+of the search (Theorem~\ref{thm:findPoints_order}, \verb|Ratpoints.exists_eq_of_findPoints_eq_ok|)
+gives, for $\mathrm{noCheck}$ false, the reference of the polynomial searched over the search
+intervals, filtered by $\mathrm{noY}$; the permutation of the reference
+(Theorem~\ref{thm:findPoints_perm}, \verb|Ratpoints.perm_filter_bruteForce_of_findPoints_eq_ok|)
+holds for either setting of $\mathrm{noY}$, filtered by $\mathrm{noY}$ and the search region, and
+only the reference itself takes $\mathrm{noY}$ off. The refusal theorems
+(Theorem~\ref{thm:refusals}) add the search intervals that are not well formed and refuse
+$c_0 = c_1 = 0$ without the Sturm step only for the whole box. Under $\mathrm{noCheck}$ the
 following lemma and theorem say what the list holds.
 
 \begin{lemma}[The survivors under NO\_CHECK]\label{lem:noCheckList}
@@ -706,13 +718,15 @@ following lemma and theorem say what the list holds.
 \end{proof}
 
 \begin{theorem}[The output under NO\_CHECK]\label{thm:noCheck}
-  \uses{lem:findPoints_searchList, lem:noCheckList, thm:findPoints, def:IsPoint}
+  \uses{lem:findPoints_searchList, lem:noCheckList, thm:findPoints, def:IsPoint, def:regionSpec,
+    lem:searchListRegion}
   \lean{Ratpoints.exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck, Ratpoints.mem_of_isPoint_of_findPoints_eq_ok_of_noCheck, Ratpoints.map_sublist_of_findPoints_eq_ok_of_noCheck}
   \leanok
   For well-formed parameters and options with $\mathrm{noCheck}$, if
   $\mathrm{findPoints}(c, H, P, o)$ returns the list $L$: every member of $L$ is $(x, 0, z)$ with
-  $\gcd(x, z) = 1$, $z > 0$ or ($z = 0$ and $x = 1$), $|x| \le H$ and $z \le H$; for every
-  normalized point $(x, y, z)$ of height at most $H$, $(x, 0, z)$ lies in $L$; and if the search
+  $\gcd(x, z) = 1$, $z > 0$ or ($z = 0$ and $x = 1$), $|x| \le H$ and $z \le H$, in the search
+  region of $o$ (Definition~\ref{def:regionSpec}); for every normalized point $(x, y, z)$ of height
+  at most $H$ in the search region, $(x, 0, z)$ lies in $L$; and if the search
   with $\mathrm{noCheck}$ cleared and $\mathrm{noY}$ set returns $L'$, then $L'$ with $y$ replaced
   by $0$ is a sublist of $L$, so that the points come in the order of the search among the
   survivors.
@@ -721,14 +735,16 @@ following lemma and theorem say what the list holds.
 \begin{proof}
   \leanok
   Lemma~\ref{lem:findPoints_searchList} gives $L$ and $L'$ as the lists that the search delivers for
-  one sound test, and Lemma~\ref{lem:noCheckList} the first and the third statement. For the second,
-  the point $(x, |y|, z)$ lies in $L'$ by Theorem~\ref{thm:findPoints}, and the sublist puts $(x, 0,
-  z)$ into $L$.
+  one sound test, and Lemma~\ref{lem:noCheckList} the first and the third statement, the members
+  lying in the search region by Lemma~\ref{lem:searchListRegion}, the search intervals being the
+  caller's or the default one, and after a reversal, which comes only for the whole box, by their
+  bounds. For the second, the point $(x, |y|, z)$ lies in $L'$ by Theorem~\ref{thm:findPoints}, and
+  the sublist puts $(x, 0, z)$ into $L$.
 \end{proof}
 
 No duplicates is the general statement of Theorem~\ref{thm:findPoints}, which holds for every
 option: without $\mathrm{noCheck}$ the list is a permutation of the reference, filtered under
-$\mathrm{noY}$, and under $\mathrm{noCheck}$ Lemma~\ref{lem:noCheckList} applies. These statements
+$\mathrm{noY}$ and by the search region, and under $\mathrm{noCheck}$ Lemma~\ref{lem:noCheckList} applies. These statements
 say nothing of the survivors of a given set of moduli beyond their being normalized pairs: which
 pairs pass the sieve is what the moduli decide, and the differential tests compare them with the C
 program where both sieve with the same primes over the same range (Section~\ref{sec:outputTests}).
@@ -791,9 +807,10 @@ multiplicity.
   and $(x, -y, z)$ that are normalized points of height at most $H$, in this order, one triple when
   $y = 0$; the denominator $0$ gives the points at infinity, whose numerator is $1$. The points in
   the order of ratpoints, for the bound $m$ of the number of divisors, the switch $r$ of the
-  reversal, $c$ and $H$: for $(c', \mathrm{rev}) = \mathrm{searchedPoly}(r, c)$, the concatenation
-  of the points of $c'$ with the denominators $0$ and then those of the search of $c'$ in their
-  order, each $(a, y, b)$ mapped to $(b, y, a)$ for $a \ge 0$ and to $(-b, y, -a)$ for $a < 0$ when
+  reversal, $c$, $H$ and the largest denominator $B$ of the search: for
+  $(c', \mathrm{rev}) = \mathrm{searchedPoly}(r, c)$, the concatenation of the points of $c'$ of
+  height at most $H$ with the denominators $0$ and then those of the search of $c'$ up to $B$ in
+  their order, each $(a, y, b)$ mapped to $(b, y, a)$ for $a \ge 0$ and to $(-b, y, -a)$ for $a < 0$ when
   $\mathrm{rev}$ is set, a point of the caller's curve.
 \end{definition}
 
@@ -897,20 +914,26 @@ has stopped at $\mathrm{maxDivisors}$ entries, that the list is a prefix of the 
 \end{proof}
 
 \begin{theorem}[The order of the points]\label{thm:order}
-  \uses{thm:findPoints_order, lem:searchDenominators, def:orderedPoints, def:findPoints}
+  \uses{thm:findPoints_order, lem:searchDenominators, def:orderedPoints, def:findPoints,
+    lem:regionFilter, def:regionSpec}
   \lean{Ratpoints.eq_orderedPoints_of_findPoints_eq_ok}
   \leanok
   For well-formed parameters and options with $\mathrm{noCheck}$ false, if
   $\mathrm{findPoints}(c, H, P, o)$ returns the list $L$, then $L$ is the list of the points in the
-  order of ratpoints for the bound $\mathrm{maxDivisors}$, the switch of the reversal of $o$, $c$
-  and $H$, without the points with $y < 0$ when $\mathrm{noY}$ is set.
+  order of ratpoints for the bound $\mathrm{maxDivisors}$, the switch of the reversal of $o$ and the
+  whole box, $c$, $H$ and the largest denominator of the search
+  (Definition~\ref{def:regionSpec}), without the points with $y < 0$ when $\mathrm{noY}$ is set,
+  filtered by the search region of $o$.
 \end{theorem}
 
 \begin{proof}
   \leanok
   Theorem~\ref{thm:findPoints_order} gives $L$ as what the reference of the polynomial searched
-  finds over the candidate $(1, 0)$ and the denominators of its search, mapped back after a reversal
-  and filtered by $\mathrm{noY}$, and Lemma~\ref{lem:searchDenominators} turns each part into its
+  finds over the candidate $(1, 0)$ and the denominators of its search in the normalized range with
+  the numerators in the search intervals, mapped back after a reversal and filtered by
+  $\mathrm{noY}$; this is what it finds over the candidate and the denominators of its search up to
+  the largest, mapped back and filtered by $\mathrm{noY}$ and the search region
+  (Lemma~\ref{lem:regionFilter}), and Lemma~\ref{lem:searchDenominators} turns each part into its
   form in the specification.
 \end{proof}
 
@@ -928,7 +951,8 @@ the order; from the model it takes \verb|bruteForce|, \verb|findPoints|, \verb|f
 \verb|maxDivisors|. The five statements of stage~G came in with their theorems, each checked by
 comparator then, and all of them, like membership and no duplicates, are for well-formed parameters;
 \verb|lake comparator --paranoid|, with Lean's kernel and the five external checkers bundled with
-Lean, accepted the twelve statements on 2026-10-17. They are, for all $c$, $H$, parameters $P$ and
+Lean, accepted the twelve statements on 2026-10-17; stage~H changes six of them, by the search
+region of the options (Section~\ref{sec:certifiedH}). They were, for all $c$, $H$, parameters $P$ and
 options $o$:
 \begin{enumerate}
   \item a triple lies in $\mathrm{bruteForce}(c, H)$ exactly when it is a normalized point of height
@@ -1256,8 +1280,8 @@ Each component of this chapter differs from the C code in a stated way, recorded
   \item no failure for lack of memory, which the model cannot meet: neither a failed allocation of
     the sieving and the search (\verb|RATPOINTS_NO_MEMORY|) nor error 10 of the copies of the
     strings of the output that \verb|main.c| allocates;
-  \item under \verb|RATPOINTS_NO_CHECK| the model delivers the survivors of all numerators $-H,
-    \dots, H$, where the C code delivers only those in the intervals that its Sturm step keeps, none
+  \item under \verb|RATPOINTS_NO_CHECK| the model delivers the survivors of all numerators of
+    $-H, \dots, H$ in the search intervals, where the C code delivers only those in the intervals that its Sturm step keeps, none
     when that region misses $[-H, H]$ (\verb|sturm_empty|, only the points at infinity), and nothing
     at all when the form is negative everywhere (line 4889, even degree, no point at infinity): the
     search region is stage~H's, so that only there the depth of the Sturm step changes what is

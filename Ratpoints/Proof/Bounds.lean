@@ -15,12 +15,13 @@ import Ratpoints.Proof.Double
 /-!
 # The bounds of the search intervals
 
-The default search interval `[-h, h]` of a search without search intervals
-(`Ratpoints.searchIntervals`), which holds `a / b` for every numerator `|a| ≤ H` and every
-denominator `b ≥ 1`; and the bounds of the search intervals of a run
-(`Ratpoints.Sieve.exactBounds`), which give, for each denominator up to the largest, the ranges of
-the numerators `⌈b l⌉, …, ⌊b u⌋` of the intervals (`Ratpoints.Sieve.numeratorRanges`,
-`Ratpoints.Sieve.RangesFor`) to the sieve of one denominator.
+What the library makes of the search intervals of the caller before the Sturm step
+(`Ratpoints.searchIntervals`): it refuses them exactly when the specification says
+(`Ratpoints.IntervalsWF`), keeps them as they are, and for none takes the default interval
+`[-h, h]`, which holds `a / b` for every numerator `|a| ≤ H` and every denominator `b ≥ 1`; and the
+bounds of the search intervals of a run (`Ratpoints.Sieve.exactBounds`), which give, for each
+denominator up to the largest, the ranges of the numerators `⌈b l⌉, …, ⌊b u⌋` of the intervals
+(`Ratpoints.Sieve.numeratorRanges`, `Ratpoints.Sieve.RangesFor`) to the sieve of one denominator.
 
 The ends of the bounds are those of `exact_end`: `±m 2 ^ (-s)` with the value of the double, or
 capped for a tiny end or one beyond `2 ^ 63`, with the same numerators for every denominator
@@ -41,8 +42,10 @@ gives them too (`Ratpoints.Sieve.spec_intervalBits_of_fast`).
 
 ## Main statements
 
-* `Ratpoints.exists_run_searchIntervals_nil`: the default search interval, which is well formed and
-  holds every `a / b` of the search.
+* `Ratpoints.run_searchIntervals_eq_none_iff`: the refusal of the search intervals is the negation
+  of `Ratpoints.IntervalsWF`.
+* `Ratpoints.run_searchIntervals_of_ne_nil`, `Ratpoints.exists_run_searchIntervals_nil`: the search
+  intervals of the caller, or the default interval, which holds every `a / b` of the search.
 * `Ratpoints.Sieve.toNat_exactScale`, `Ratpoints.Sieve.numerators_run_exactEnd`: `exact_scale` and
   the ends of `exact_end`.
 * `Ratpoints.Sieve.represents_intervalBoundsOf`: the bounds of one search interval give the range of
@@ -54,6 +57,81 @@ gives them too (`Ratpoints.Sieve.spec_intervalBits_of_fast`).
 @[expose] public section
 
 namespace Ratpoints
+
+-- A loop over a list that stops with `some r` at the first element satisfying `p`.
+private theorem forIn_list_done_eq {α β : Type} (l : List α) (p : α → Bool) (r : β) :
+    (forIn (m := Id) l ((none : Option β), ()) fun a _ ↦
+      if p a = true then pure (ForInStep.done (some r, ()))
+      else pure (ForInStep.yield (none, ()))) =
+      pure (if l.any p then some r else none, ()) := by
+  induction l with
+  | nil => rfl
+  | cons a l ih =>
+    rw [List.forIn_cons]
+    by_cases h : p a = true
+    · simp [h]
+    · simp [h, ih]
+
+theorem run_searchIntervals_eq {H : ℕ} {domain : List (Double × Double)} (h : domain ≠ []) :
+    Id.run (searchIntervals H domain) = if (List.range domain.length).any (fun n ↦
+      !domain[n]!.1.le domain[n]!.2 || decide (0 < n) && !domain[n - 1]!.2.lt domain[n]!.1)
+      then none else some domain := by
+  simp only [searchIntervals, List.isEmpty_iff, h, ↓reduceIte,
+    Std.Legacy.Range.forIn_eq_forIn_range', List.size_toArray, List.getElem!_toArray]
+  rw [Std.Legacy.Range.size, ← List.range_eq_range',
+    show ([:domain.length].stop - [:domain.length].start + [:domain.length].step - 1) /
+      [:domain.length].step = domain.length by simp, forIn_list_done_eq]
+  split <;> rfl
+
+theorem intervalsWF_domainBits_iff (domain : List (Double × Double)) :
+    IntervalsWF (domainBits domain) ↔ ∀ n (hn : n < domain.length),
+      domain[n].1.le domain[n].2 = true ∧
+        (∀ h : 0 < n, domain[n - 1].2.lt domain[n].1 = true) := by
+  simp only [IntervalsWF, AreSearchIntervals, List.isChain_iff_getElem, Double.le_eq_true_iff',
+    Double.lt_eq_true_iff', domainBits, List.map_map, List.forall_mem_iff_getElem,
+    List.getElem_map, List.length_map, Function.comp_apply]
+  constructor
+  · intro ⟨h1, h2, h3⟩ n hn
+    refine ⟨⟨(h1 n hn).1, (h1 n hn).2, h2 n hn⟩, fun h ↦ ?_⟩
+    have := h3 (n - 1) (by lia)
+    simp only [show n - 1 + 1 = n by lia] at this
+    exact ⟨(h1 (n - 1) (by lia)).2, (h1 n hn).1, this⟩
+  · intro h
+    refine ⟨fun n hn ↦ ⟨(h n hn).1.1, (h n hn).1.2.1⟩, fun n hn ↦ (h n hn).1.2.2, fun i hi ↦ ?_⟩
+    have := ((h (i + 1) hi).2 (by lia)).2.2
+    simpa using this
+
+-- The test of `Ratpoints.searchIntervals` on the `n`-th interval fails exactly when the
+-- characterization of `Ratpoints.IntervalsWF` by `Ratpoints.intervalsWF_domainBits_iff` fails at
+-- `n`.
+private theorem bad_eq_true_iff {domain : List (Double × Double)} {n : ℕ} (hn : n < domain.length) :
+    (!domain[n]!.1.le domain[n]!.2 || decide (0 < n) && !domain[n - 1]!.2.lt domain[n]!.1) = true ↔
+      ¬ (domain[n].1.le domain[n].2 = true ∧
+        ∀ h : 0 < n, domain[n - 1].2.lt domain[n].1 = true) := by
+  rw [getElem!_pos domain n hn]
+  by_cases h0 : 0 < n
+  · rw [getElem!_pos domain (n - 1) (by lia)]
+    cases domain[n].1.le domain[n].2 <;> simp [h0]
+  · simp [h0]
+
+theorem run_searchIntervals_eq_none_iff (H : ℕ) (domain : List (Double × Double)) :
+    Id.run (searchIntervals H domain) = none ↔ ¬ IntervalsWF (domainBits domain) := by
+  rcases eq_or_ne domain [] with rfl | h
+  · simp [searchIntervals, IntervalsWF, AreSearchIntervals]
+  rw [run_searchIntervals_eq h, intervalsWF_domainBits_iff]
+  simp only [ite_eq_left_iff, reduceCtorEq, imp_false, not_not, List.any_eq_true, List.mem_range,
+    not_forall]
+  exact exists_congr fun n ↦ ⟨fun ⟨hn, hb⟩ ↦ ⟨hn, (bad_eq_true_iff hn).mp hb⟩,
+    fun ⟨hn, hb⟩ ↦ ⟨hn, (bad_eq_true_iff hn).mpr hb⟩⟩
+
+theorem run_searchIntervals_of_ne_nil (H : ℕ) {domain : List (Double × Double)}
+    (h : domain ≠ []) (hwf : IntervalsWF (domainBits domain)) :
+    Id.run (searchIntervals H domain) = some domain := by
+  have hn := mt (run_searchIntervals_eq_none_iff H domain).mp (not_not.mpr hwf)
+  rw [run_searchIntervals_eq h] at hn ⊢
+  split_ifs at hn ⊢
+  · exact absurd rfl hn
+  · rfl
 
 /-- A double `0 ≤ x < 2 ^ 63` whose conversion to a `long` is not below `H` is at least `H`. -/
 theorem le_toRat_of_not_toInt64_lt {x : Double} (h0 : 0 ≤ x.toRat) (h63 : x.toRat < 2 ^ 63)
@@ -120,6 +198,27 @@ theorem exists_run_searchIntervals_nil {H : ℕ} (hH : 1 ≤ H) (hH63 : H < 2 ^ 
       ∀ (a : ℤ) (b : ℕ), 0 < b → a.natAbs ≤ H → InIntervals (domainValues dom) (a / b) := by
   obtain ⟨hf, hv⟩ := le_toRat_defaultBound hH hH63
   exact ⟨_, rfl, intervalsWF_and_inIntervals_neg hH hf hv⟩
+
+/-- The caller's search intervals are well formed when `Ratpoints.searchIntervals` does not refuse
+them. -/
+theorem intervalsWF_of_run_searchIntervals_eq_some {H : ℕ} {domain dom : List (Double × Double)}
+    (h : Id.run (searchIntervals H domain) = some dom) : IntervalsWF (domainBits domain) := by
+  by_contra hc
+  rw [(run_searchIntervals_eq_none_iff H domain).mpr hc] at h
+  simp at h
+
+/-- The search intervals that `Ratpoints.searchIntervals` returns for `1 ≤ H < 2 ^ 63` are well
+formed: the caller's, which it refuses otherwise, or the default interval. -/
+theorem wf_of_run_searchIntervals_eq_some {H : ℕ} (hH : 1 ≤ H) (hH63 : H < 2 ^ 63)
+    {domain dom : List (Double × Double)} (h : Id.run (searchIntervals H domain) = some dom) :
+    IntervalsWF (domainBits dom) := by
+  rcases eq_or_ne domain [] with rfl | hn
+  · obtain ⟨dom', h', hwf, -⟩ := exists_run_searchIntervals_nil hH hH63
+    rw [h, Option.some.injEq] at h'
+    exact h' ▸ hwf
+  · have hwf := intervalsWF_of_run_searchIntervals_eq_some h
+    rw [run_searchIntervals_of_ne_nil H hn hwf, Option.some.injEq] at h
+    exact h ▸ hwf
 
 namespace Sieve
 

@@ -9,13 +9,16 @@ public import Mathlib.Algebra.Order.Field.Rat
 public import Mathlib.Order.WithBotTop
 
 /-!
-# The values of the doubles and the search intervals
+# The search region
 
-The ends of the search intervals of ratpoints are IEEE binary64 doubles, given here by their bits.
-A double has a value in `ℚ` extended by `⊥` and `⊤` (`WithBotTop ℚ`), the two infinities; a NaN has
-none (its value here is junk), and both zeros have the value `0`; ratpoints refuses search intervals
-with a NaN end, with `l > u` or that are not increasing and strictly apart. The specification uses
-Mathlib and nothing of the model.
+The search region of ratpoints: search intervals `[l, u]` for `x / z`, whose ends are IEEE binary64
+doubles, given here by their bits, and a range of the denominators `z`. A double has a value in `ℚ`
+extended by `⊥` and `⊤` (`WithBotTop ℚ`), the two infinities; a NaN has none (its value here is
+junk), and both zeros have the value `0`; ratpoints refuses search intervals with a NaN end, with
+`l > u` or that are not increasing and strictly apart. A point lies in the region when it is at
+infinity, or its denominator is in the range and `x / z` lies in one of the intervals (in any, when
+there are none). The specification uses Mathlib and nothing of the model; the comparator challenge
+restates its definitions verbatim.
 
 ## Main definitions
 
@@ -23,6 +26,10 @@ Mathlib and nothing of the model.
   of a double.
 * `Ratpoints.AreSearchIntervals`, `Ratpoints.IntervalsWF`: closed intervals, increasing and
   strictly apart, over values and over the bits of doubles.
+* `Ratpoints.InRegion`: a point lies in the search region.
+* `Ratpoints.IsFullBox`: the search region is the whole box of height `H`, so that ratpoints may
+  reverse the polynomial.
+* `Ratpoints.denominatorBound`: the largest denominator of the search.
 
 ## Implementation notes
 
@@ -76,6 +83,36 @@ def IntervalsWF (dom : List (UInt64 × UInt64)) : Prop :=
 instance instDecidableIntervalsWF (dom : List (UInt64 × UInt64)) : Decidable (IntervalsWF dom) :=
   inferInstanceAs (Decidable (_ ∧ _))
 
+/-- The triple `p = (x, y, z)` lies in the search region of the intervals `dom` (over the values of
+their ends) and the range of the denominators from `bLow` to `bHigh`: `z = 0` (a point at
+infinity), or `bLow ≤ z`, `z ≤ bHigh` unless `bHigh < 1` (no bound beyond the height bound), and
+`x / z` in one of the intervals, or anywhere when there are none. -/
+def InRegion (dom : List (WithBotTop ℚ × WithBotTop ℚ)) (bLow bHigh : ℤ) (p : ℤ × ℤ × ℤ) :
+    Prop :=
+  p.2.2 = 0 ∨ bLow ≤ p.2.2 ∧ (bHigh < 1 ∨ p.2.2 ≤ bHigh) ∧
+    (dom = [] ∨ ∃ i ∈ dom, i.1 ≤ (((p.1 : ℚ) / p.2.2 : ℚ) : WithBotTop ℚ) ∧
+      (((p.1 : ℚ) / p.2.2 : ℚ) : WithBotTop ℚ) ≤ i.2)
+
+instance instDecidablePredInRegion (dom : List (WithBotTop ℚ × WithBotTop ℚ)) (bLow bHigh : ℤ) :
+    DecidablePred (InRegion dom bLow bHigh) :=
+  fun _ ↦ inferInstanceAs (Decidable (_ ∨ _))
+
+/-- The search region of the intervals `dom` and the range of the denominators from `bLow` to
+`bHigh` is the whole box of the height bound `H`: no intervals, `bLow ≤ 1` and no bound below `H`
+on the denominators (`bHigh < 1` or `H ≤ bHigh`). Only then may ratpoints reverse the polynomial
+(otherwise it sets `RATPOINTS_NO_REVERSE_AUTO`). -/
+def IsFullBox {α : Type*} (dom : List α) (bLow bHigh : ℤ) (H : ℕ) : Prop :=
+  dom = [] ∧ bLow ≤ 1 ∧ (bHigh < 1 ∨ H ≤ bHigh)
+
+instance instDecidableIsFullBox {α : Type*} (dom : List α) (bLow bHigh : ℤ) (H : ℕ) :
+    Decidable (IsFullBox dom bLow bHigh H) :=
+  inferInstanceAs (Decidable (_ ∧ _))
+
+/-- The largest denominator of the search for the bound `bHigh` and the height bound `H`: `bHigh`
+when `1 ≤ bHigh ≤ H`, and `H` otherwise. -/
+def denominatorBound (bHigh : ℤ) (H : ℕ) : ℕ :=
+  if 1 ≤ bHigh ∧ bHigh ≤ H then bHigh.toNat else H
+
 /-! ### Examples, checked by `decide` -/
 
 -- The values of `1`, `-0.0`, `-∞`, `+∞`, the least subnormal `2 ^ (-1074)`, `2 ^ 63` and `-1.5`.
@@ -93,6 +130,15 @@ example : ¬ IntervalsWF [(0x7ff8000000000000, 0x3ff0000000000000)] ∧
     IntervalsWF [(0x8000000000000000, 0)] ∧ IntervalsWF [(0, 0x8000000000000000)] ∧
     ¬ IntervalsWF [(0xbff0000000000000, 0x8000000000000000), (0, 0x3ff0000000000000)] ∧
     IntervalsWF [(0xfff0000000000000, 0xfff0000000000000)] := by
+  decide +kernel
+
+-- `1 / 3` lies in `[-0.5, 0.5]` and `2 / 3` does not; a point at infinity lies in every region;
+-- the denominators from `2` to `5`, and from `2` on.
+example :
+    InRegion [(doubleValue 0xbfe0000000000000, doubleValue 0x3fe0000000000000)] 1 0 (1, 7, 3) ∧
+    ¬ InRegion [(doubleValue 0xbfe0000000000000, doubleValue 0x3fe0000000000000)] 1 0 (2, 7, 3) ∧
+    InRegion [(⊤, ⊤)] 5 3 (1, 2, 0) ∧ ¬ InRegion [] 2 5 (0, 1, 1) ∧ InRegion [] 2 5 (7, 1, 5) ∧
+    ¬ InRegion [] 2 5 (7, 1, 6) ∧ InRegion [] 2 0 (7, 1, 6) := by
   decide +kernel
 
 end Ratpoints

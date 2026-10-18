@@ -425,17 +425,21 @@ type \verb|Id| with their contracts (Lemmas~\ref{lem:examinePrime_eq} and~\ref{l
   and the empty list as the degree $-1$, before it drops the leading zeros, and the degree $0$ and a
   height below $1$ after it, and cannot be given the last, its height being a C \verb|long|
   (\verb|ratpoints.h:362|), which the program refuses when it reads it; then, as not squarefree
-  (error~8), a form that loses $\lceil n/2 \rceil$ with the leading zeros. Then it runs the reversal
-  check with the switch of the options (Definition~\ref{def:reversal}), which may refuse the form as
-  not squarefree too or reverse the polynomial; with the Sturm step on, it refuses the form when the
+  (error~8), a form that loses $\lceil n/2 \rceil$ with the leading zeros. Then it normalizes the
+  options (Definition~\ref{def:normalize}) and runs the reversal check with the normalized switch
+  (Definition~\ref{def:reversal}), which may refuse the form as not squarefree too or reverse the
+  polynomial; it takes the search intervals of the options, the default interval $[-h, h]$ for none,
+  and refuses intervals that are not well formed with $\mathrm{badArgs}$, error~9
+  (Definition~\ref{def:searchIntervals}); with the Sturm step on, it refuses the form when the
   remainder chain of the polynomial searched is $\mathrm{none}$ (Definition~\ref{def:sturmChain},
   whose restriction of the search region is stage~H); and it lists the points of the search of the
   polynomial that the check hands on (Definition~\ref{def:searchPoints}), with its flag of the
-  reversal: the 2-adic information, no points when no class of the denominators modulo $64$ admits
-  a numerator and there is no point at infinity, the tables of the examined primes and the sieve
-  entry of each modulus (Definition~\ref{def:sievingInfo}), no points when the curve has none modulo
-  a prime examined on the way, and else the points at infinity followed by the points of the
-  denominators in the order of the loop of the search, found with pieces of at most
+  reversal, over the normalized range of the denominators and the search intervals: the 2-adic
+  information, no points when no class of the denominators modulo $64$ admits a numerator and there
+  is no point at infinity, the tables of the examined primes and the sieve entry of each modulus
+  (Definition~\ref{def:sievingInfo}), no points when the curve has none modulo a prime examined on
+  the way, and else the points at infinity followed by the points of the denominators in the order
+  of the loop of the search whose $x/z$ lies in a search interval, found with pieces of at most
   $\mathrm{arraySizeAt}(H)$ bit arrays, the array size of the parameters, each mapped back to the
   caller's curve after a reversal. It models no C code: the search with a callback holds the lines
   of \verb|find_points| that the search for the points held before stage~G.
@@ -534,25 +538,30 @@ $l$, mapped by $\mathrm{swapPoint}$ when the flag of the reversal is set, those 
 out under $\mathrm{noY}$, which is what the search needs of it.
 
 \begin{theorem}[The points, each once]\label{thm:findPoints}
-  \uses{def:findPoints, def:Params, def:Options, def:IsPoint, def:points}
-  \lean{Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok, Ratpoints.nodup_of_findPoints_eq_ok, Ratpoints.toFinset_eq_points_of_findPoints_eq_ok}
+  \uses{def:findPoints, def:Params, def:Options, def:IsPoint, def:points, def:regionSpec}
+  \lean{Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok, Ratpoints.nodup_of_findPoints_eq_ok, Ratpoints.toFinset_eq_filter_points_of_findPoints_eq_ok}
   \leanok
   For well-formed parameters, if $\mathrm{findPoints}(c, H, P, o)$ returns the list $L$: for
   $\mathrm{noCheck}$ false, a triple lies in $L$ if and only if it is a normalized point of height
-  at most $H$, with $y \ge 0$ under $\mathrm{noY}$; $L$ has no duplicates, for every option; and its
-  set of elements is $\mathrm{points}(c, H)$ when both options of the output are off.
+  at most $H$, with $y \ge 0$ under $\mathrm{noY}$, in the search region of $o$
+  (Definition~\ref{def:regionSpec}); $L$ has no duplicates, for every option; and its set of
+  elements is $\mathrm{points}(c, H)$ filtered by the search region when both options of the output
+  are off.
 \end{theorem}
 
 \begin{proof}
   \uses{thm:findPoints_perm, thm:bruteForce, thm:findPoints_order, lem:swapPoint_bijection,
-    lem:findPoints_searchList, lem:noCheckList}
+    lem:findPoints_searchList, lem:noCheckList, lem:regionFilter}
   \leanok
   Without $\mathrm{noCheck}$, $L$ is the list of the reference of the polynomial searched over the
-  denominators of its search, mapped back after a reversal and filtered by $\mathrm{noY}$
-  (Theorem~\ref{thm:findPoints_order}), and that list before the filter is a permutation of
-  $\mathrm{bruteForce}(c, H)$ (Lemma~\ref{lem:swapPoint_bijection}, as in
-  Theorem~\ref{thm:findPoints_perm}), so that Theorem~\ref{thm:bruteForce} gives membership, no
-  duplicates and, with both options of the output off, the set of elements. Under
+  candidate $(1, 0)$ and the denominators of its search up to the largest denominator, mapped back
+  after a reversal and filtered by $\mathrm{noY}$ and the search region
+  (Theorem~\ref{thm:findPoints_order}, Lemma~\ref{lem:regionFilter}), and that list before the
+  filters is a permutation of the points of $\mathrm{bruteForce}(c, H)$ at infinity or with a
+  denominator up to the largest, the only ones in the search region
+  (Lemma~\ref{lem:swapPoint_bijection}, as in Theorem~\ref{thm:findPoints_perm}), so that
+  Theorem~\ref{thm:bruteForce} gives membership, no duplicates and, with both options of the output
+  off, the set of elements. Under
   $\mathrm{noCheck}$, $L$ is the list that the search delivers for a sound test
   (Lemma~\ref{lem:findPoints_searchList}), whose survivors have no duplicates
   (Lemma~\ref{lem:noCheckList}).

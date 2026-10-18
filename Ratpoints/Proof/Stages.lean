@@ -87,6 +87,9 @@ with loop invariants that are named definitions.
   `Ratpoints.Sieve.map_checkNumWith_sublist`, `Ratpoints.Sieve.map_pointsAtInfinityList`: without
   `RATPOINTS_NO_CHECK` and with `RATPOINTS_NO_Y`, with `y` replaced by `0`, they are sublists of
   those under `RATPOINTS_NO_CHECK`.
+* `Ratpoints.Sieve.snd_snd_eq_zero_of_mem_pointsAtInfinityList`,
+  `Ratpoints.Sieve.fst_eq_and_snd_snd_eq_of_mem_checkNumWith`: without the flag of the reversal, the
+  points at infinity have `z = 0`, and the points of a numerator `a` over `b` are `(a, y, b)`.
 * `Ratpoints.Sieve.secondStage_spec`, `Ratpoints.Sieve.secondStageWord_spec`: the second stage on a
   bit array, or on one of its words, gives its words and-ed with the rows of all its moduli.
 
@@ -974,6 +977,22 @@ theorem secondStageWord_spec (specs : List SieveSpec) (mgs : List Nat) (small : 
     | exact SecondStageWordInvariant.of_eq_zero ‹_› ‹_› ‹_›
     | exact absurd ‹_› (SecondStageWordInvariant.next?_ne_none ‹_› ‹_› ‹_›)
     | exact SecondStageWordInvariant.and hκ ‹_› ‹_› ‹_› ‹_›
+
+/-- Without the flag of the reversal, the points at infinity that the search delivers have
+`z = 0`. -/
+theorem snd_snd_eq_zero_of_mem_pointsAtInfinityList {c : List Int} {d : Nat} {fl : CheckFlags}
+    (hr : fl.reversed = false) {q : Int × Int × Int} (hq : q ∈ pointsAtInfinityList c d fl) :
+    q.2.2 = 0 := by
+  simp only [pointsAtInfinityList, hr] at hq
+  grind
+
+/-- Without the flag of the reversal, the points of the check with the flags of the numerator `a`
+over `b` are `(a, y, b)`. -/
+theorem fst_eq_and_snd_snd_eq_of_mem_checkNumWith {w : List Int} {f b : Int} {fl : CheckFlags}
+    (hr : fl.reversed = false) {a : Int} {q : Int × Int × Int} (hq : q ∈ checkNumWith w f b fl a) :
+    q.1 = a ∧ q.2.2 = b := by
+  simp only [checkNumWith, checkPointList, hr, BruteForce.pointsAbove] at hq
+  grind
 
 end Sieve
 

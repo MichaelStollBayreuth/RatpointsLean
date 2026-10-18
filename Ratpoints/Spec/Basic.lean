@@ -48,7 +48,8 @@ fail for a list named `c` wherever all of Mathlib is imported.
 The file imports `Mathlib.Algebra.Squarefree.Basic`, which its definitions do not need, for the
 refusal theorems, which say that `Ratpoints.binaryFormPoly c` is not `Squarefree`: the comparator
 challenge imports, besides the model, which uses no Mathlib, exactly the Mathlib modules among the
-public imports of this file and of `Ratpoints.Spec.Order`, so that the definitions that it restates
+public imports of the files of the specification that it restates (this file,
+`Ratpoints.Spec.Order` and `Ratpoints.Spec.Region`), so that the definitions that it restates
 elaborate to the same terms as here.
 -/
 

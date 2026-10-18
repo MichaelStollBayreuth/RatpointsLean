@@ -6,9 +6,11 @@ Authors: Michael Stoll
 module
 
 public import Mathlib.Algebra.MvPolynomial.Eval
+public import Mathlib.Algebra.Order.Field.Rat
 public import Mathlib.Algebra.Squarefree.Basic
 public import Mathlib.Data.Fin.VecNotation
 public import Mathlib.Data.Nat.Factors
+public import Mathlib.Order.WithBotTop
 public import Ratpoints.Model
 
 /-!
@@ -28,31 +30,37 @@ since stage D for every option, and the well-formedness of every parameter set t
 the program give, which rules out a well-formedness that nothing satisfies; the refusal theorems of
 stage D, with the Sturm step on (`Ratpoints.findPoints` refuses exactly the inputs with fewer than
 two or more than `Ratpoints.maxDegree + 1` coefficients, the height bound `0` or one of `2 ^ 63` or
-more, which is not a `long`, and the binary forms `Ratpoints.binaryFormPoly c` that are not
-squarefree) and off (it refuses exactly what the program refuses under `-s`, and under `-s -k` when
-the reversal is off), which rule out a `Ratpoints.findPoints` that refuses every input, with or
-without the Sturm step; and the theorems of stage G, for well-formed parameters, on the options of
-the output, the order and the protocol of the delivery. Since stage G membership holds with the
-exact check on (`o.noCheck = false`): the list of `Ratpoints.findPoints` holds exactly the points,
-of each pair `(x, ±y, z)` only the one with `y ≥ 0` when `o.noY` is set, and it is the list of the
-points in the order of ratpoints (`Ratpoints.orderedPoints`, with the bound `Ratpoints.maxDivisors`
-of the model on the number of divisors), filtered by `o.noY`; no duplicates holds for every option,
-the options of the output among them. With the exact check off, every element of the list is
-`(x, 0, z)` for a normalized coprime pair of height at most `H`, every point `(x, y, z)` of height
-at most `H` gives the element `(x, 0, z)`, and the points with `y ≥ 0` of the same search with the
-exact check on, with `y` replaced by `0`, are a sublist of it, so that they come in the same order.
-The search with a callback (`Ratpoints.findPointsWith`) refuses what `Ratpoints.findPoints` refuses,
-and otherwise returns the data of the callback and the count of the delivery of the list of
-`Ratpoints.findPoints` to the callback (`Ratpoints.Delivery.deliver`): the calls of the callback for
-the points of the list in their order, up to and including the first that stops the search.
-`Ratpoints.bruteForce`, `Ratpoints.findPoints`, `Ratpoints.findPointsWith`, `Ratpoints.Outcome`,
-`Ratpoints.Answer`, `Ratpoints.Delivery`, `Ratpoints.Delivery.deliver`, `Ratpoints.Options`,
+more, which is not a `long`, the binary forms `Ratpoints.binaryFormPoly c` that are not
+squarefree, and since stage H search intervals that are not well formed, `Ratpoints.IntervalsWF`)
+and off (it refuses exactly what the program refuses under `-s`, and under `-s -k` when the
+reversal is off, or the search region is not the whole box, `Ratpoints.IsFullBox`), which rule out
+a `Ratpoints.findPoints` that refuses every input, with or without the Sturm step; and the theorems
+of stage G, for well-formed parameters, on the options of the output, the order and the protocol of
+the delivery. Since stage H the search region of the options enters: membership holds, with the
+exact check on (`o.noCheck = false`), for the points in the search region (`Ratpoints.InRegion`,
+over the values of the ends of the search intervals, `Ratpoints.doubleValue`): the list of
+`Ratpoints.findPoints` holds exactly these points, of each pair `(x, ±y, z)` only the one with
+`y ≥ 0` when `o.noY` is set, and it is the list of the points in the order of ratpoints
+(`Ratpoints.orderedPoints`, with the bound `Ratpoints.maxDivisors` of the model on the number of
+divisors, the reversal only for the whole box and the largest denominator
+`Ratpoints.denominatorBound`), filtered by `o.noY` and the search region; no duplicates holds for
+every option, the options of the output among them. With the exact check off, every element of the
+list is `(x, 0, z)` for a normalized coprime pair of height at most `H` in the search region, every
+point `(x, y, z)` of height at most `H` in the search region gives the element `(x, 0, z)`, and the
+points with `y ≥ 0` of the same search with the exact check on, with `y` replaced by `0`, are a
+sublist of it, so that they come in the same order. The search with a callback
+(`Ratpoints.findPointsWith`) refuses what `Ratpoints.findPoints` refuses, and otherwise returns the
+data of the callback and the count of the delivery of the list of `Ratpoints.findPoints` to the
+callback (`Ratpoints.Delivery.deliver`): the calls of the callback for the points of the list in
+their order, up to and including the first that stops the search. `Ratpoints.bruteForce`,
+`Ratpoints.findPoints`, `Ratpoints.findPointsWith`, `Ratpoints.Outcome`, `Ratpoints.Answer`,
+`Ratpoints.Delivery`, `Ratpoints.Delivery.deliver`, `Ratpoints.Options`, `Ratpoints.Double`,
 `Ratpoints.Params`, `Ratpoints.Params.WF`, `Ratpoints.SieveOptions`, `Ratpoints.sieveParams`,
 `Ratpoints.maxDegree` and `Ratpoints.maxDivisors` come from the model, never restated, since a
 definition of the model elaborates without Mathlib to other instance terms. Of Mathlib, the file
-imports exactly the public imports of `Ratpoints/Spec/Basic.lean` and of `Ratpoints/Spec/Order.lean`
-(`Mathlib.Data.Nat.Factors`, for the prime factors), so that the restated definitions elaborate to
-the same terms as there.
+imports exactly the public imports of the files of the specification (`Ratpoints/Spec/Basic.lean`,
+`Ratpoints/Spec/Order.lean` and `Ratpoints/Spec/Region.lean`), so that the restated definitions
+elaborate to the same terms as there.
 -/
 
 @[expose] public section
@@ -85,6 +93,75 @@ def IsPoint (c : List ℤ) (H : ℕ) (p : ℤ × ℤ × ℤ) : Prop :=
 
 instance instDecidablePredIsPoint (c : List ℤ) (H : ℕ) : DecidablePred (IsPoint c H) :=
   fun _ ↦ inferInstanceAs (Decidable (_ ∧ _))
+
+/-- Whether the IEEE binary64 bits `x` are a NaN: the exponent field all ones and the fraction
+nonzero. -/
+def IsNaN (x : UInt64) : Prop := (x.toNat / 2 ^ 52) % 2 ^ 11 = 2047 ∧ x.toNat % 2 ^ 52 ≠ 0
+
+instance instDecidableIsNaN (x : UInt64) : Decidable (IsNaN x) :=
+  inferInstanceAs (Decidable (_ ∧ _))
+
+/-- The value of the IEEE binary64 double with the bits `x`: `±f 2 ^ (-1074)` for the exponent
+field `0` (the zeros and the subnormals, both zeros giving `0`), `±(2 ^ 52 + f) 2 ^ (e - 1075)` for
+an exponent field `e` from `1` to `2046`, and `⊥` and `⊤` for the infinities, where `f` is the
+fraction and the sign is that of the top bit. The value of a NaN (the exponent field `2047` with a
+nonzero fraction) is junk, an infinity: `Ratpoints.IntervalsWF` excludes NaNs. -/
+def doubleValue (x : UInt64) : WithBotTop ℚ :=
+  let e : ℕ := (x.toNat / 2 ^ 52) % 2 ^ 11
+  let f : ℕ := x.toNat % 2 ^ 52
+  if e = 2047 then (if 2 ^ 63 ≤ x.toNat then ⊥ else ⊤)
+  else
+    let a : ℚ := if e = 0 then f * 2 ^ (-1074 : ℤ) else (2 ^ 52 + f) * 2 ^ ((e : ℤ) - 1075)
+    ((if 2 ^ 63 ≤ x.toNat then -a else a : ℚ) : WithBotTop ℚ)
+
+/-- Closed intervals `[l, u]` with `l ≤ u`, increasing and strictly apart: the upper end of each
+below the lower end of the next. -/
+def AreSearchIntervals (dom : List (WithBotTop ℚ × WithBotTop ℚ)) : Prop :=
+  (∀ i ∈ dom, i.1 ≤ i.2) ∧ dom.IsChain fun i j ↦ i.2 < j.1
+
+instance instDecidableAreSearchIntervals (dom : List (WithBotTop ℚ × WithBotTop ℚ)) :
+    Decidable (AreSearchIntervals dom) :=
+  inferInstanceAs (Decidable (_ ∧ _))
+
+/-- The search intervals with the ends of the bits of doubles that ratpoints accepts, the test of
+`RATPOINTS_BAD_ARGS`: no end is a NaN, and the values are closed intervals, increasing and strictly
+apart (`Ratpoints.AreSearchIntervals`); `-0` and `0` have the same value. -/
+def IntervalsWF (dom : List (UInt64 × UInt64)) : Prop :=
+  (∀ i ∈ dom, ¬ IsNaN i.1 ∧ ¬ IsNaN i.2) ∧
+    AreSearchIntervals (dom.map fun i ↦ (doubleValue i.1, doubleValue i.2))
+
+instance instDecidableIntervalsWF (dom : List (UInt64 × UInt64)) : Decidable (IntervalsWF dom) :=
+  inferInstanceAs (Decidable (_ ∧ _))
+
+/-- The triple `p = (x, y, z)` lies in the search region of the intervals `dom` (over the values of
+their ends) and the range of the denominators from `bLow` to `bHigh`: `z = 0` (a point at
+infinity), or `bLow ≤ z`, `z ≤ bHigh` unless `bHigh < 1` (no bound beyond the height bound), and
+`x / z` in one of the intervals, or anywhere when there are none. -/
+def InRegion (dom : List (WithBotTop ℚ × WithBotTop ℚ)) (bLow bHigh : ℤ) (p : ℤ × ℤ × ℤ) :
+    Prop :=
+  p.2.2 = 0 ∨ bLow ≤ p.2.2 ∧ (bHigh < 1 ∨ p.2.2 ≤ bHigh) ∧
+    (dom = [] ∨ ∃ i ∈ dom, i.1 ≤ (((p.1 : ℚ) / p.2.2 : ℚ) : WithBotTop ℚ) ∧
+      (((p.1 : ℚ) / p.2.2 : ℚ) : WithBotTop ℚ) ≤ i.2)
+
+instance instDecidablePredInRegion (dom : List (WithBotTop ℚ × WithBotTop ℚ)) (bLow bHigh : ℤ) :
+    DecidablePred (InRegion dom bLow bHigh) :=
+  fun _ ↦ inferInstanceAs (Decidable (_ ∨ _))
+
+/-- The search region of the intervals `dom` and the range of the denominators from `bLow` to
+`bHigh` is the whole box of the height bound `H`: no intervals, `bLow ≤ 1` and no bound below `H`
+on the denominators (`bHigh < 1` or `H ≤ bHigh`). Only then may ratpoints reverse the polynomial
+(otherwise it sets `RATPOINTS_NO_REVERSE_AUTO`). -/
+def IsFullBox {α : Type*} (dom : List α) (bLow bHigh : ℤ) (H : ℕ) : Prop :=
+  dom = [] ∧ bLow ≤ 1 ∧ (bHigh < 1 ∨ H ≤ bHigh)
+
+instance instDecidableIsFullBox {α : Type*} (dom : List α) (bLow bHigh : ℤ) (H : ℕ) :
+    Decidable (IsFullBox dom bLow bHigh H) :=
+  inferInstanceAs (Decidable (_ ∧ _))
+
+/-- The largest denominator of the search for the bound `bHigh` and the height bound `H`: `bHigh`
+when `1 ≤ bHigh ≤ H`, and `H` otherwise. -/
+def denominatorBound (bHigh : ℤ) (H : ℕ) : ℕ :=
+  if 1 ≤ bHigh ∧ bHigh ≤ H then bHigh.toNat else H
 
 /-- The polynomial that ratpoints searches for the coefficient list `c` of degree `d`, and whether
 it is reversed, when the switch `reverse` allows a reversal (the option `-k` of the program forbids
@@ -121,12 +198,13 @@ def binaryDivisors (n H : ℕ) : List ℕ :=
   (n.primeFactorsList.dedup.sublists.map List.prod).filter (· ≤ H)
 
 /-- The denominators of the search of the polynomial with the coefficient list `c` of degree `d`,
-for the height `H`: when `d` is odd, `|c_d| ≠ 1`, ratpoints factors `|c_d|` completely
-(`Ratpoints.FactorsByTrialDivision`) and it has fewer than `maxDiv` squarefree divisors at most
-`H` (`Ratpoints.binaryDivisors`), the numbers `e k ^ 2 ≤ H`, divisor `e` by divisor in that order
-and `k = 1, 2, …` for each; otherwise `1, …, H`. This is the order of the loop of the search, which
-visits those of them that its tests let through (for `d` odd and `|c_d| = 1` only the squares); the
-others carry no point. -/
+up to the largest denominator `H` of the search (the height bound, or the bound of the range of the
+denominators, `Ratpoints.denominatorBound`): when `d` is odd, `|c_d| ≠ 1`, ratpoints factors
+`|c_d|` completely (`Ratpoints.FactorsByTrialDivision`) and it has fewer than `maxDiv` squarefree
+divisors at most `H` (`Ratpoints.binaryDivisors`), the numbers `e k ^ 2 ≤ H`, divisor `e` by
+divisor in that order and `k = 1, 2, …` for each; otherwise `1, …, H`. This is the order of the
+loop of the search, which visits those of them that its tests let through (for `d` odd and
+`|c_d| = 1` only the squares); the others carry no point. -/
 def searchDenominators (maxDiv : ℕ) (c : List ℤ) (H : ℕ) : List ℕ :=
   let d := degree c
   let n := (c.getD d 0).natAbs
@@ -145,15 +223,16 @@ def pointsWithDen (c : List ℤ) (H z : ℕ) : List (ℤ × ℤ × ℤ) :=
     let y := Int.sqrt (binaryForm c x z)
     (if y = 0 then [(x, 0, (z : ℤ))] else [(x, y, z), (x, -y, z)]).filter (IsPoint c H)
 
-/-- The points of height at most `H` on `y ^ 2 = F(x, z)` for the coefficient list `c`, in the order
-in which ratpoints finds them, for the switch `reverse` of the reversal and the bound `maxDiv` of
-the number of divisors: for the polynomial searched (`Ratpoints.searchedPoly`), its points at
-infinity, then the points of its denominators (`Ratpoints.searchDenominators`) in turn
-(`Ratpoints.pointsWithDen`); after a reversal, each point `(a, y, b)` of that list becomes
-`(b, y, a)` for `a ≥ 0` and `(-b, y, -a)` for `a < 0`, a point of the caller's curve. -/
-def orderedPoints (maxDiv : ℕ) (reverse : Bool) (c : List ℤ) (H : ℕ) : List (ℤ × ℤ × ℤ) :=
+/-- The points of height at most `H` on `y ^ 2 = F(x, z)` for the coefficient list `c` with
+denominators at most `B`, in the order in which ratpoints finds them, for the switch `reverse` of
+the reversal and the bound `maxDiv` of the number of divisors: for the polynomial searched
+(`Ratpoints.searchedPoly`), its points at infinity, then the points of its denominators up to `B`
+(`Ratpoints.searchDenominators`) in turn (`Ratpoints.pointsWithDen`); after a reversal, each point
+`(a, y, b)` of that list becomes `(b, y, a)` for `a ≥ 0` and `(-b, y, -a)` for `a < 0`, a point of
+the caller's curve. -/
+def orderedPoints (maxDiv : ℕ) (reverse : Bool) (c : List ℤ) (H B : ℕ) : List (ℤ × ℤ × ℤ) :=
   let (c', rev) := searchedPoly reverse c
-  let L := (0 :: searchDenominators maxDiv c' H).flatMap (pointsWithDen c' H)
+  let L := (0 :: searchDenominators maxDiv c' B).flatMap (pointsWithDen c' H)
   if rev then L.map fun (a, y, b) ↦ if 0 ≤ a then (b, y, a) else (-b, y, -a) else L
 
 end Ratpoints
@@ -168,7 +247,10 @@ theorem challenge_nodup_bruteForce (c : List ℤ) (H : ℕ) : (Ratpoints.bruteFo
 theorem challenge_mem_iff_isPoint_of_findPoints_eq_ok (c : List ℤ) (H : ℕ) (P : Ratpoints.Params)
     (o : Ratpoints.Options) (L : List (ℤ × ℤ × ℤ)) (hP : P.WF) (hc : o.noCheck = false)
     (h : Ratpoints.findPoints c H P o = .ok L) (p : ℤ × ℤ × ℤ) :
-    p ∈ L ↔ Ratpoints.IsPoint c H p ∧ (o.noY = true → 0 ≤ p.2.1) :=
+    p ∈ L ↔ Ratpoints.IsPoint c H p ∧ (o.noY = true → 0 ≤ p.2.1) ∧
+      Ratpoints.InRegion
+        (o.domain.map fun i ↦ (Ratpoints.doubleValue i.1.bits, Ratpoints.doubleValue i.2.bits))
+        o.bLow o.bHigh p :=
   sorry
 
 theorem challenge_nodup_of_findPoints_eq_ok (c : List ℤ) (H : ℕ) (P : Ratpoints.Params)
@@ -180,7 +262,8 @@ theorem challenge_exists_findPoints_eq_error_iff_of_sturm_nonneg (c : List ℤ) 
     (P : Ratpoints.Params) (o : Ratpoints.Options) (hs : 0 ≤ o.sturm) :
     (∃ e, Ratpoints.findPoints c H P o = .error e) ↔
       c.length < 2 ∨ Ratpoints.maxDegree + 1 < c.length ∨ H = 0 ∨ 2 ^ 63 ≤ H ∨
-        ¬ Squarefree (Ratpoints.binaryFormPoly c) :=
+        ¬ Squarefree (Ratpoints.binaryFormPoly c) ∨
+        ¬ Ratpoints.IntervalsWF (o.domain.map fun i ↦ (i.1.bits, i.2.bits)) :=
   sorry
 
 theorem challenge_exists_findPoints_eq_error_iff_of_sturm_neg (c : List ℤ) (H : ℕ)
@@ -188,7 +271,9 @@ theorem challenge_exists_findPoints_eq_error_iff_of_sturm_neg (c : List ℤ) (H 
     (∃ e, Ratpoints.findPoints c H P o = .error e) ↔
       c.length < 2 ∨ Ratpoints.maxDegree + 1 < c.length ∨ H = 0 ∨ 2 ^ 63 ≤ H ∨
         Ratpoints.degree c + 2 ≤ 2 * (c.length / 2) ∨
-        o.reverse = true ∧ Ratpoints.degree c % 2 = 0 ∧ c.getD 0 0 = 0 ∧ c.getD 1 0 = 0 :=
+        o.reverse = true ∧ Ratpoints.IsFullBox o.domain o.bLow o.bHigh H ∧
+          Ratpoints.degree c % 2 = 0 ∧ c.getD 0 0 = 0 ∧ c.getD 1 0 = 0 ∨
+        ¬ Ratpoints.IntervalsWF (o.domain.map fun i ↦ (i.1.bits, i.2.bits)) :=
   sorry
 
 theorem challenge_wf_sieveParams (o : Ratpoints.SieveOptions) : (Ratpoints.sieveParams o).WF :=
@@ -197,21 +282,32 @@ theorem challenge_wf_sieveParams (o : Ratpoints.SieveOptions) : (Ratpoints.sieve
 theorem challenge_eq_orderedPoints_of_findPoints_eq_ok (c : List ℤ) (H : ℕ)
     (P : Ratpoints.Params) (o : Ratpoints.Options) (L : List (ℤ × ℤ × ℤ)) (hP : P.WF)
     (hc : o.noCheck = false) (h : Ratpoints.findPoints c H P o = .ok L) :
-    L = (Ratpoints.orderedPoints Ratpoints.maxDivisors o.reverse c H).filter
-      fun p ↦ !o.noY || 0 ≤ p.2.1 :=
+    L = (Ratpoints.orderedPoints Ratpoints.maxDivisors
+        (o.reverse && Ratpoints.IsFullBox o.domain o.bLow o.bHigh H) c H
+        (Ratpoints.denominatorBound o.bHigh H)).filter fun p ↦ (!o.noY || 0 ≤ p.2.1) &&
+      Ratpoints.InRegion
+        (o.domain.map fun i ↦ (Ratpoints.doubleValue i.1.bits, Ratpoints.doubleValue i.2.bits))
+        o.bLow o.bHigh p :=
   sorry
 
 theorem challenge_exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck (c : List ℤ) (H : ℕ)
     (P : Ratpoints.Params) (o : Ratpoints.Options) (L : List (ℤ × ℤ × ℤ)) (hP : P.WF)
     (hc : o.noCheck = true) (h : Ratpoints.findPoints c H P o = .ok L) (q : ℤ × ℤ × ℤ)
     (hq : q ∈ L) :
-    ∃ x z : ℤ, q = (x, 0, z) ∧ Int.gcd x z = 1 ∧ (0 < z ∨ z = 0 ∧ x = 1) ∧ |x| ≤ H ∧ z ≤ H :=
+    ∃ x z : ℤ, q = (x, 0, z) ∧ Int.gcd x z = 1 ∧ (0 < z ∨ z = 0 ∧ x = 1) ∧ |x| ≤ H ∧ z ≤ H ∧
+      Ratpoints.InRegion
+        (o.domain.map fun i ↦ (Ratpoints.doubleValue i.1.bits, Ratpoints.doubleValue i.2.bits))
+        o.bLow o.bHigh q :=
   sorry
 
 theorem challenge_mem_of_isPoint_of_findPoints_eq_ok_of_noCheck (c : List ℤ) (H : ℕ)
     (P : Ratpoints.Params) (o : Ratpoints.Options) (L : List (ℤ × ℤ × ℤ)) (hP : P.WF)
     (hc : o.noCheck = true) (h : Ratpoints.findPoints c H P o = .ok L) (p : ℤ × ℤ × ℤ)
-    (hp : Ratpoints.IsPoint c H p) : (p.1, 0, p.2.2) ∈ L :=
+    (hp : Ratpoints.IsPoint c H p)
+    (hr : Ratpoints.InRegion
+      (o.domain.map fun i ↦ (Ratpoints.doubleValue i.1.bits, Ratpoints.doubleValue i.2.bits))
+      o.bLow o.bHigh p) :
+    (p.1, 0, p.2.2) ∈ L :=
   sorry
 
 theorem challenge_map_sublist_of_findPoints_eq_ok_of_noCheck (c : List ℤ) (H : ℕ)

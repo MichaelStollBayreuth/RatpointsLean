@@ -578,12 +578,6 @@ reason = "the text of message 1, the banner and the usage, which main prints onl
 
 [[excluded]]
 file = "main.c"
-lines = "1048"
-kind = "interface"
-reason = "the message of error 9, which the program gives for a code of the library that only inputs it never passes can cause"
-
-[[excluded]]
-file = "main.c"
 lines = "1049"
 kind = "memory"
 reason = "the message of error 10, for lack of memory, which the model cannot meet"

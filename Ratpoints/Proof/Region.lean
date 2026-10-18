@@ -6,6 +6,7 @@ Authors: Michael Stoll
 module
 
 public import Mathlib.Data.Rat.Floor
+public import Ratpoints.Model.FindPoints
 public import Ratpoints.Proof.BitRange
 public import Ratpoints.Spec.Region
 
@@ -16,10 +17,12 @@ import Ratpoints.Mathlib.Data.List.Pairwise
 
 The search intervals of the model, pairs of doubles (`Ratpoints.Double`), over the values of their
 ends (`Ratpoints.domainValues`) and their bits (`Ratpoints.domainBits`); a rational number in one of
-a list of intervals over values (`Ratpoints.InIntervals`); and the ranges of the numerators of a
+a list of intervals over values (`Ratpoints.InIntervals`); the ranges of the numerators of a
 denominator `b` that a list of intervals gives within `-H, …, H`
 (`Ratpoints.Sieve.numeratorRanges`), with the ends `⌈b l⌉` and `⌊b u⌋` clamped, which the bounds of
-the search intervals of a run give to the sieve of one denominator (`Ratpoints.Sieve.RangesFor`).
+the search intervals of a run give to the sieve of one denominator (`Ratpoints.Sieve.RangesFor`);
+and the normalized options of a search (`Ratpoints.Options.normalize`) in the terms of the
+specification of the search region (`Ratpoints.IsFullBox`, `Ratpoints.denominatorBound`).
 
 ## Main definitions
 
@@ -36,6 +39,9 @@ the search intervals of a run give to the sieve of one denominator (`Ratpoints.S
   exactly when `a / b` lies in one of the intervals.
 * `Ratpoints.Sieve.pairwise_numeratorRanges`, `Ratpoints.Sieve.le_add_one_of_mem_numeratorRanges`:
   the ranges of search intervals are increasing and strictly apart, each empty at most by one.
+* `Ratpoints.Options.reverse_normalize`, `Ratpoints.Options.toNat_bHigh_normalize`,
+  `Ratpoints.Options.bLow_normalize_le_iff`: the normalized options in the terms of the
+  specification.
 -/
 
 @[expose] public section
@@ -57,6 +63,20 @@ def InIntervals (D : List (WithBotTop ℚ × WithBotTop ℚ)) (x : ℚ) : Prop :
 instance instDecidablePredInIntervals (D : List (WithBotTop ℚ × WithBotTop ℚ)) :
     DecidablePred (InIntervals D) :=
   fun _ ↦ inferInstanceAs (Decidable (∃ _ ∈ D, _))
+
+theorem inRegion_iff {D : List (WithBotTop ℚ × WithBotTop ℚ)} {bLow bHigh : ℤ} {p : ℤ × ℤ × ℤ} :
+    InRegion D bLow bHigh p ↔ p.2.2 = 0 ∨ bLow ≤ p.2.2 ∧ (bHigh < 1 ∨ p.2.2 ≤ bHigh) ∧
+      (D = [] ∨ InIntervals D (p.1 / p.2.2)) :=
+  Iff.rfl
+
+/-- A pair `(x, z)` of height at most `H` lies in the search region of the whole box. -/
+theorem inRegion_of_isFullBox {D : List (WithBotTop ℚ × WithBotTop ℚ)} {bLow bHigh : ℤ} {H : ℕ}
+    (hD : D = []) (hb : IsFullBox D bLow bHigh H) {p : ℤ × ℤ × ℤ} (hz : 0 ≤ p.2.2)
+    (hzH : p.2.2 ≤ H) : InRegion D bLow bHigh p := by
+  obtain ⟨-, h1, h2⟩ := hb
+  rcases eq_or_lt_of_le hz with h0 | h0
+  · exact .inl h0.symm
+  · exact .inr ⟨by lia, by lia, .inl hD⟩
 
 namespace Sieve
 
@@ -179,6 +199,82 @@ theorem pairwise_numeratorRanges {D : List (WithBotTop ℚ × WithBotTop ℚ)}
     fun h ↦ highNumerator_lt_lowNumerator h hb H)
 
 end Sieve
+
+/-! ### The normalized options -/
+
+namespace Options
+
+theorem reverse_normalize (o : Options) (H : ℕ) :
+    (o.normalize H).reverse = (o.reverse && decide (IsFullBox o.domain o.bLow o.bHigh H)) := by
+  simp only [normalize, IsFullBox]
+  by_cases h1 : o.bLow < 1 <;> by_cases h2 : o.bHigh < 1 <;> by_cases h3 : (H : ℤ) < o.bHigh <;>
+    simp [h1, h2, h3] <;> grind
+
+@[simp]
+theorem domain_normalize (o : Options) (H : ℕ) : (o.normalize H).domain = o.domain := rfl
+
+@[simp]
+theorem noCheck_normalize (o : Options) (H : ℕ) : (o.normalize H).noCheck = o.noCheck := rfl
+
+@[simp]
+theorem noY_normalize (o : Options) (H : ℕ) : (o.normalize H).noY = o.noY := rfl
+
+theorem toNat_bHigh_normalize (o : Options) (H : ℕ) :
+    (o.normalize H).bHigh.toNat = denominatorBound o.bHigh H := by
+  simp only [normalize, denominatorBound]
+  split_ifs <;> lia
+
+theorem one_le_toNat_bLow_normalize (o : Options) (H : ℕ) : 1 ≤ (o.normalize H).bLow.toNat := by
+  simp only [normalize]
+  split_ifs <;> lia
+
+theorem one_le_toNat_bHigh_normalize (o : Options) {H : ℕ} (hH : 1 ≤ H) :
+    1 ≤ (o.normalize H).bHigh.toNat := by
+  simp only [normalize]
+  split_ifs <;> lia
+
+theorem toNat_bHigh_normalize_le (o : Options) (H : ℕ) : (o.normalize H).bHigh.toNat ≤ H := by
+  simp only [normalize]
+  split_ifs <;> lia
+
+/-- A denominator `z ≤ H` up to the normalized largest denominator satisfies the bound of the
+search region of the specification (`Ratpoints.InRegion`). -/
+theorem lt_one_or_le_bHigh_of_le (o : Options) {H : ℕ} {z : ℤ}
+    (hz : z ≤ (o.normalize H).bHigh.toNat) (hzH : z ≤ H) : o.bHigh < 1 ∨ z ≤ o.bHigh := by
+  simp only [normalize] at hz
+  split_ifs at hz <;> lia
+
+/-- A denominator `z ≤ H` within the bound of the search region of the specification
+(`Ratpoints.InRegion`) lies below the normalized largest denominator. -/
+theorem le_toNat_bHigh_normalize_of_le (o : Options) {H : ℕ} {z : ℤ} (hzH : z ≤ H)
+    (h : o.bHigh < 1 ∨ z ≤ o.bHigh) : z ≤ (o.normalize H).bHigh.toNat := by
+  simp only [normalize]
+  split_ifs <;> lia
+
+/-- The normalized least denominator lies below a denominator `z ≥ 1` exactly when the given one
+does. -/
+theorem bLow_normalize_le_iff (o : Options) (H : ℕ) {z : ℤ} (hz : 1 ≤ z) :
+    ((o.normalize H).bLow.toNat : ℤ) ≤ z ↔ o.bLow ≤ z := by
+  simp only [normalize]
+  split_ifs <;> lia
+
+theorem sturm_normalize_nonneg_iff (o : Options) (H : ℕ) :
+    0 ≤ (o.normalize H).sturm ↔ 0 ≤ o.sturm := by
+  simp only [normalize, Double.mantDig]
+  split_ifs <;> lia
+
+/-- The depth of the Sturm step of the normalized options is at most `55`
+(`Ratpoints.Double.mantDig + 2`). -/
+theorem sturm_normalize_le (o : Options) (H : ℕ) : (o.normalize H).sturm ≤ 55 := by
+  simp only [normalize, Double.mantDig]
+  split_ifs <;> lia
+
+theorem sturm_normalize_neg_iff (o : Options) (H : ℕ) :
+    (o.normalize H).sturm < 0 ↔ o.sturm < 0 := by
+  simp only [normalize, Double.mantDig]
+  split_ifs <;> lia
+
+end Options
 
 end Ratpoints
 

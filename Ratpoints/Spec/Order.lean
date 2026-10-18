@@ -8,6 +8,8 @@ module
 public import Mathlib.Data.Nat.Factors
 public import Ratpoints.Spec.Basic
 
+import Ratpoints.Spec.Region
+
 /-!
 # The order of the points
 
@@ -19,8 +21,12 @@ let through (the others carry no point), by ascending numerator `x`, `(x, y, z)`
 `(x, -y, z)`, each point mapped back to the caller's curve after a reversal. The denominators of the
 polynomial searched ascend, except when it has odd degree `d` with `|c_d| ≠ 1` (its own degree and
 leading coefficient) and ratpoints factors `|c_d|` completely by trial division and finds fewer than
-`maxDiv` of its squarefree divisors up to `H`: then they are `e k ^ 2`, divisor `e` by divisor in
-the order of binary counting over the primes of `c_d`, and `k` ascending. The specification uses
+`maxDiv` of its squarefree divisors up to the largest denominator `B` of the search: then they are
+`e k ^ 2`, divisor `e` by divisor in the order of binary counting over the primes of `c_d`, and `k`
+ascending. The largest denominator is the height bound `H`, or the bound of the range of the
+denominators of a search region (`Ratpoints.denominatorBound`); the other parts of a search region
+(the search intervals, the lower bound of the denominators) only filter the list, and a search
+region other than the whole box (`Ratpoints.IsFullBox`) forbids the reversal. The specification uses
 Mathlib and nothing of the model; the comparator challenge restates its definitions verbatim.
 
 ## Main definitions
@@ -35,8 +41,9 @@ Mathlib and nothing of the model; the comparator challenge restates its definiti
 ## Implementation notes
 
 The file imports `Mathlib.Data.Nat.Factors` for the prime factors of a number
-(`Nat.primeFactorsList`, in increasing order with multiplicity); the comparator challenge imports
-the Mathlib modules among the public imports of this file and of `Ratpoints.Spec.Basic`.
+(`Nat.primeFactorsList`, in increasing order with multiplicity), and `Ratpoints.Spec.Region` for the
+examples with a search region; the comparator challenge imports the Mathlib modules among the public
+imports of the files of the specification that it restates.
 -/
 
 @[expose] public section
@@ -78,12 +85,13 @@ def binaryDivisors (n H : ℕ) : List ℕ :=
   (n.primeFactorsList.dedup.sublists.map List.prod).filter (· ≤ H)
 
 /-- The denominators of the search of the polynomial with the coefficient list `c` of degree `d`,
-for the height `H`: when `d` is odd, `|c_d| ≠ 1`, ratpoints factors `|c_d|` completely
-(`Ratpoints.FactorsByTrialDivision`) and it has fewer than `maxDiv` squarefree divisors at most
-`H` (`Ratpoints.binaryDivisors`), the numbers `e k ^ 2 ≤ H`, divisor `e` by divisor in that order
-and `k = 1, 2, …` for each; otherwise `1, …, H`. This is the order of the loop of the search, which
-visits those of them that its tests let through (for `d` odd and `|c_d| = 1` only the squares); the
-others carry no point. -/
+up to the largest denominator `H` of the search (the height bound, or the bound of the range of the
+denominators, `Ratpoints.denominatorBound`): when `d` is odd, `|c_d| ≠ 1`, ratpoints factors
+`|c_d|` completely (`Ratpoints.FactorsByTrialDivision`) and it has fewer than `maxDiv` squarefree
+divisors at most `H` (`Ratpoints.binaryDivisors`), the numbers `e k ^ 2 ≤ H`, divisor `e` by
+divisor in that order and `k = 1, 2, …` for each; otherwise `1, …, H`. This is the order of the
+loop of the search, which visits those of them that its tests let through (for `d` odd and
+`|c_d| = 1` only the squares); the others carry no point. -/
 def searchDenominators (maxDiv : ℕ) (c : List ℤ) (H : ℕ) : List ℕ :=
   let d := degree c
   let n := (c.getD d 0).natAbs
@@ -102,15 +110,16 @@ def pointsWithDen (c : List ℤ) (H z : ℕ) : List (ℤ × ℤ × ℤ) :=
     let y := Int.sqrt (binaryForm c x z)
     (if y = 0 then [(x, 0, (z : ℤ))] else [(x, y, z), (x, -y, z)]).filter (IsPoint c H)
 
-/-- The points of height at most `H` on `y ^ 2 = F(x, z)` for the coefficient list `c`, in the order
-in which ratpoints finds them, for the switch `reverse` of the reversal and the bound `maxDiv` of
-the number of divisors: for the polynomial searched (`Ratpoints.searchedPoly`), its points at
-infinity, then the points of its denominators (`Ratpoints.searchDenominators`) in turn
-(`Ratpoints.pointsWithDen`); after a reversal, each point `(a, y, b)` of that list becomes
-`(b, y, a)` for `a ≥ 0` and `(-b, y, -a)` for `a < 0`, a point of the caller's curve. -/
-def orderedPoints (maxDiv : ℕ) (reverse : Bool) (c : List ℤ) (H : ℕ) : List (ℤ × ℤ × ℤ) :=
+/-- The points of height at most `H` on `y ^ 2 = F(x, z)` for the coefficient list `c` with
+denominators at most `B`, in the order in which ratpoints finds them, for the switch `reverse` of
+the reversal and the bound `maxDiv` of the number of divisors: for the polynomial searched
+(`Ratpoints.searchedPoly`), its points at infinity, then the points of its denominators up to `B`
+(`Ratpoints.searchDenominators`) in turn (`Ratpoints.pointsWithDen`); after a reversal, each point
+`(a, y, b)` of that list becomes `(b, y, a)` for `a ≥ 0` and `(-b, y, -a)` for `a < 0`, a point of
+the caller's curve. -/
+def orderedPoints (maxDiv : ℕ) (reverse : Bool) (c : List ℤ) (H B : ℕ) : List (ℤ × ℤ × ℤ) :=
   let (c', rev) := searchedPoly reverse c
-  let L := (0 :: searchDenominators maxDiv c' H).flatMap (pointsWithDen c' H)
+  let L := (0 :: searchDenominators maxDiv c' B).flatMap (pointsWithDen c' H)
   if rev then L.map fun (a, y, b) ↦ if 0 ≤ a then (b, y, a) else (-b, y, -a) else L
 
 /-! ### Examples, checked by `decide` -/
@@ -118,17 +127,17 @@ def orderedPoints (maxDiv : ℕ) (reverse : Bool) (c : List ℤ) (H : ℕ) : Lis
 -- `ratpoints '-1 0 9' 10 -q` reverses the polynomial to `9 0 -1` and prints the points of
 -- `9 0 -1` in their order, mapped back: `(-3, 0, 1)` becomes `(-1, 0, 3)` and `(0, ±3, 1)` the
 -- points `(1, ±3, 0)` at infinity of the caller's curve.
-example : orderedPoints 512 true [-1, 0, 9] 10 = [(-1, 0, 3), (1, 3, 0), (1, -3, 0), (1, 0, 3),
+example : orderedPoints 512 true [-1, 0, 9] 10 10 = [(-1, 0, 3), (1, 3, 0), (1, -3, 0), (1, 0, 3),
     (-5, 12, 9), (-5, -12, 9), (5, 12, 9), (5, -12, 9)] := by
   decide +kernel
 
 -- `ratpoints '0 1 0 2' 10 -q` reverses the polynomial of odd degree to `0 2 0 1`.
-example : orderedPoints 512 true [0, 1, 0, 2] 10 = [(0, 0, 1), (1, 0, 0)] := by
+example : orderedPoints 512 true [0, 1, 0, 2] 10 10 = [(0, 0, 1), (1, 0, 0)] := by
   decide +kernel
 
 -- `ratpoints '-6 5 -3 30' 12 -q` visits the denominator `6` before `5`, in the order of the
 -- divisors of `30`: `1, 2, 3, 6, 5, 10, 15, 30`.
-example : orderedPoints 512 true [-6, 5, -3, 30] 12 =
+example : orderedPoints 512 true [-6, 5, -3, 30] 12 12 =
     [(1, 0, 0), (5, 132, 6), (5, -132, 6), (7, 220, 5), (7, -220, 5)] := by
   decide +kernel
 
@@ -138,11 +147,11 @@ example : binaryDivisors 30 100 = [1, 2, 3, 6, 5, 10, 15, 30] := by
 -- `ratpoints '0 1031 -11341 30930' 6 -q` factors `30930 = 2 · 3 · 5 · 1031` completely and visits
 -- the denominator `6` before `5`; the leading coefficient `30 · 1042451` of
 -- `0 1042451 -11466961 31273530` is not factored completely, and its denominators ascend.
-example : orderedPoints 512 true [0, 1031, -11341, 30930] 6 =
+example : orderedPoints 512 true [0, 1031, -11341, 30930] 6 6 =
     [(1, 0, 0), (0, 0, 1), (1, 0, 6), (1, 0, 5)] := by
   decide +kernel
 
-example : orderedPoints 512 true [0, 1042451, -11466961, 31273530] 6 =
+example : orderedPoints 512 true [0, 1042451, -11466961, 31273530] 6 6 =
     [(1, 0, 0), (0, 0, 1), (1, 0, 5), (1, 0, 6)] := by
   decide +kernel
 
@@ -150,6 +159,37 @@ example : orderedPoints 512 true [0, 1042451, -11466961, 31273530] 6 =
 -- `3 · 1042451` and `1021 · 1031` are not.
 example : FactorsByTrialDivision (3 * 1031) ∧ ¬FactorsByTrialDivision (3 * 1042451) ∧
     ¬FactorsByTrialDivision (1021 * 1031) := by
+  decide +kernel
+
+/-! ### Examples with a search region, checked by `decide` -/
+
+-- `ratpoints '-6 5 -3 30' 12 -q -dl 5 -du 6`: the divisor order, `6` before `5`, kept.
+example : (orderedPoints 512 (true && IsFullBox ([] : List Unit) 5 6 12) [-6, 5, -3, 30] 12
+    (denominatorBound 6 12)).filter (fun p ↦ InRegion [] 5 6 p) =
+    [(1, 0, 0), (5, 132, 6), (5, -132, 6), (7, 220, 5), (7, -220, 5)] := by
+  decide +kernel
+
+-- `ratpoints '-1 0 9' 10 -q -du 9`: no reversal, the range of the denominators not being the whole
+-- box.
+example : (orderedPoints 512 (true && IsFullBox ([] : List Unit) 1 9 10) [-1, 0, 9] 10
+    (denominatorBound 9 10)).filter (fun p ↦ InRegion [] 1 9 p) =
+    [(1, 3, 0), (1, -3, 0), (-1, 0, 3), (1, 0, 3), (-5, 12, 9), (-5, -12, 9), (5, 12, 9),
+      (5, -12, 9)] := by
+  decide +kernel
+
+-- `ratpoints '-1 0 9' 10 -q -dl 0 -du 11`: the whole box, and the reversal.
+example : (orderedPoints 512 (true && IsFullBox ([] : List Unit) 0 11 10) [-1, 0, 9] 10
+    (denominatorBound 11 10)).filter (fun p ↦ InRegion [] 0 11 p) =
+    [(-1, 0, 3), (1, 3, 0), (1, -3, 0), (1, 0, 3), (-5, 12, 9), (-5, -12, 9), (5, 12, 9),
+      (5, -12, 9)] := by
+  decide +kernel
+
+-- `ratpoints '-1 0 9' 10 -q -du 9 -l -0.2 -u 0.6`, with the doubles that the program passes the
+-- library: the double nearest to `-0.2`, which lies below it, and the least double above `0.6`.
+example : (orderedPoints 512 (true && IsFullBox [(0xbfc999999999999a, 0x3fe3333333333334)] 1 9 10)
+    [-1, 0, 9] 10 (denominatorBound 9 10)).filter (fun p ↦
+      InRegion [(doubleValue 0xbfc999999999999a, doubleValue 0x3fe3333333333334)] 1 9 p) =
+    [(1, 3, 0), (1, -3, 0), (1, 0, 3), (5, 12, 9), (5, -12, 9)] := by
   decide +kernel
 
 end Ratpoints

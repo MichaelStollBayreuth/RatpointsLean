@@ -21,10 +21,10 @@ cases, exchanging `x` and `z` in the binary form (`Ratpoints.Setup.reversal`); a
 the coefficients are C `long`s (`Ratpoints.fitsLong`, `Ratpoints.Setup.useCLong`), which chooses the
 path of the table of a prime (`Ratpoints.Sieve.examinePrime?`). `Ratpoints.findPointsWith`, the
 search with a callback, of which `Ratpoints.findPoints` is an instance, runs the reversal check
-after the test of the leading zeros, with the switch of its options, and the search that it runs on
-the polynomial handed on (`Ratpoints.searchPoints`) makes the test of the `long`s.
-For the tests on the denominators (`Ratpoints.Sieve.denInfoTest`, `Ratpoints.Sieve.wordsTest`), the
-C code computes the valuation of an integer at a prime, with its unit part, by repeated division
+after the test of the leading zeros, with the switch of its normalized options, and the search that
+it runs on the polynomial handed on (`Ratpoints.searchPoints`) makes the test of the `long`s. For
+the tests on the denominators (`Ratpoints.Sieve.denInfoTest`, `Ratpoints.Sieve.wordsTest`), the C
+code computes the valuation of an integer at a prime, with its unit part, by repeated division
 (`Ratpoints.Setup.valuation`), and for a polynomial of odd degree whose leading coefficient is not
 `±1` it factors that coefficient over `2` and the odd primes of the table and lists its squarefree
 divisors up to the largest denominator, with the slopes of a valuation test
@@ -54,7 +54,9 @@ refuses the input. The program itself refuses too many or too few coefficients, 
 and the heights that are not `long`s, before it calls the library; the library refuses a binary form
 that is not squarefree in the set-up of the search: when the leading zeros of `n + 1` coefficients
 lower `⌈n / 2⌉`, in the reversal check (`Ratpoints.Setup.reversal`) and with the remainder chain of
-the Sturm step (`Ratpoints.Sturm.chain`). -/
+the Sturm step (`Ratpoints.Sturm.chain`); and between the last two it refuses search intervals
+without `l ≤ u`, not increasing and strictly apart, or with a NaN end
+(`Ratpoints.searchIntervals`). -/
 inductive Refusal where
   /-- More than `Ratpoints.maxDegree + 1` coefficients: error 3. -/
   | tooManyCoefficients
@@ -64,6 +66,9 @@ inductive Refusal where
   | incorrectHeight
   /-- A binary form that is not squarefree: error 8. -/
   | notSquarefree
+  /-- Search intervals without `l ≤ u`, not increasing and strictly apart, or with a NaN end, which
+  the library refuses with `RATPOINTS_BAD_ARGS`: error 9. -/
+  | badArgs
   deriving DecidableEq, Repr
 
 /-- Whether the integer `a` is a C `long`, `-2 ^ 63 ≤ a < 2 ^ 63`, as `mpz_fits_slong_p` of GMP
@@ -96,9 +101,9 @@ C: `find_points.c:4732-4803`
 
 Deviation: a new list for the reversal in place, and nothing written back to the caller: the
 reversed coefficients, the degree and the flag `RATPOINTS_REVERSED` are returned instead; the
-switch for the test of the flags `RATPOINTS_NO_REVERSE` and `RATPOINTS_NO_REVERSE_AUTO`, so that
-the check runs whenever the switch allows it, without `RATPOINTS_NO_REVERSE_AUTO`, which a search
-region or a denominator range sets (stage H); the square test of `c_d` made here, where the C code
+switch for the test of the flags `RATPOINTS_NO_REVERSE` and `RATPOINTS_NO_REVERSE_AUTO`, which is
+on when neither is set, as the normalized options give it (`Ratpoints.Options.normalize`: off for a
+search region or a range of the denominators); the square test of `c_d` made here, where the C code
 reads the flag `lcfsq` that the set-up computes before (line 4634), and no flag `lcfsq` for the
 reversed list, which case 2 clears, since `Ratpoints.Sieve.pointsAtInfinity` tests the leading
 coefficient of the list it is given; integers and their absolute values for the GMP integers, with

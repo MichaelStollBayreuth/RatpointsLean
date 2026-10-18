@@ -316,17 +316,12 @@ sets (\verb|Mathlib.Algebra.Polynomial.Sturm.Sequence|, \verb|Mathlib.Data.List.
 \verb|Mathlib.Basic.Real.Basic| and \verb|Mathlib.Data.Set.Card|).
 
 \begin{definition}[The search region]\label{def:regionSpec}
-  Proposed names: \lname{Ratpoints.IsNaN}, \lname{Ratpoints.doubleValue},
-  \lname{Ratpoints.AreSearchIntervals}, \lname{Ratpoints.IntervalsWF}, \lname{Ratpoints.InRegion},
-  \lname{Ratpoints.IsFullBox}, \lname{Ratpoints.denominatorBound},
-  \lname{Ratpoints.instDecidableIsNaN}, \lname{Ratpoints.instDecidableAreSearchIntervals},
-  \lname{Ratpoints.instDecidableIntervalsWF}, \lname{Ratpoints.instDecidablePredInRegion},
-  \lname{Ratpoints.instDecidableIsFullBox}. For the bits $x < 2^{64}$ of an IEEE binary64 double,
-  with the exponent field $e = \lfloor x / 2^{52} \rfloor \bmod 2^{11}$, the fraction
-  $f = x \bmod 2^{52}$ and the sign $\sigma = -1$ for $x \ge 2^{63}$ and $\sigma = 1$ otherwise:
-  $x$ is a NaN when $e = 2047$ and $f \ne 0$, and the value of the double is
-  \[
-    \mathrm{doubleValue}(x) =
+  \lean{Ratpoints.IsNaN, Ratpoints.doubleValue, Ratpoints.AreSearchIntervals, Ratpoints.IntervalsWF, Ratpoints.InRegion, Ratpoints.IsFullBox, Ratpoints.denominatorBound, Ratpoints.instDecidableIsNaN, Ratpoints.instDecidableAreSearchIntervals, Ratpoints.instDecidableIntervalsWF, Ratpoints.instDecidablePredInRegion, Ratpoints.instDecidableIsFullBox}
+  \leanok
+  For the bits $x < 2^{64}$ of an IEEE binary64 double, with the exponent field
+  $e = \lfloor x / 2^{52} \rfloor \bmod 2^{11}$, the fraction $f = x \bmod 2^{52}$ and the sign
+  $\sigma = -1$ for $x \ge 2^{63}$ and $\sigma = 1$ otherwise: $x$ is a NaN when $e = 2047$ and
+  $f \ne 0$, and the value of the double is \[ \mathrm{doubleValue}(x) =
     \begin{cases}
       \sigma f\, 2^{-1074} & \text{if } e = 0 \text{ (the zeros and the subnormals)}, \\
       \sigma (2^{52} + f)\, 2^{e - 1075} & \text{if } 1 \le e \le 2046, \\
@@ -521,81 +516,68 @@ intervals through their values and their bits.
 
 \begin{definition}[The normalized options]\label{def:normalize}
   \uses{def:Options, def:Double}
-  Proposed name: \lname{Ratpoints.Options.normalize}. The options as \verb|find_points_work_1|
-  normalizes the fields that hold them, for the height bound $H$: the least denominator $1$ for one
-  below $1$, the largest denominator $H$ for one below $1$ or above $H$, the depth of the Sturm step
-  capped at $\mathrm{mantDig} + 2 = 55$, and the switch of the reversal cleared, for the bit
-  \verb|RATPOINTS_NO_REVERSE_AUTO|, when the caller gives search intervals or the range of the
-  denominators is not $1, \dots, H$ (\csource{find_points.c}{4640}{4641},
-  \csource{find_points.c}{4659}{4661}, \csource{find_points.c}{4678}{4689},
-  \csource{ratpoints.h}{421}{424}). The reversal check reads the normalized switch, which folds the
-  two bits of the flags that the C code tests (line 4739) into one, and the search the normalized
-  range and depth.
+  \lean{Ratpoints.Options.normalize}
+  \leanok
+  The options as \verb|find_points_work_1| normalizes the fields that hold them, for the height
+  bound $H$: the least denominator $1$ for one below $1$, the largest denominator $H$ for one below
+  $1$ or above $H$, the depth of the Sturm step capped at $\mathrm{mantDig} + 2 = 55$, and the
+  switch of the reversal cleared, for the bit \verb|RATPOINTS_NO_REVERSE_AUTO|, when the caller
+  gives search intervals or the range of the denominators is not $1, \dots, H$
+  (\csource{find_points.c}{4640}{4641}, \csource{find_points.c}{4659}{4661},
+  \csource{find_points.c}{4678}{4689}, \csource{ratpoints.h}{421}{424}). The reversal check reads
+  the normalized switch, which folds the two bits of the flags that the C code tests (line 4739)
+  into one, and the search the normalized range and depth.
 \end{definition}
 
 \begin{lemma}[The normalized options]\label{lem:normalize}
   \uses{def:normalize, def:regionSpec, def:inIntervals}
-  Proposed names: \lname{Ratpoints.Options.reverse\_normalize},
-  \lname{Ratpoints.Options.domain\_normalize}, \lname{Ratpoints.Options.noCheck\_normalize},
-  \lname{Ratpoints.Options.noY\_normalize}, \lname{Ratpoints.Options.toNat\_bHigh\_normalize},
-  \lname{Ratpoints.Options.one\_le\_toNat\_bLow\_normalize},
-  \lname{Ratpoints.Options.one\_le\_toNat\_bHigh\_normalize},
-  \lname{Ratpoints.Options.toNat\_bHigh\_normalize\_le},
-  \lname{Ratpoints.Options.lt\_one\_or\_le\_bHigh\_of\_le},
-  \lname{Ratpoints.Options.le\_toNat\_bHigh\_normalize\_of\_le},
-  \lname{Ratpoints.Options.bLow\_normalize\_le\_iff},
-  \lname{Ratpoints.Options.sturm\_normalize\_nonneg\_iff},
-  \lname{Ratpoints.Options.sturm\_normalize\_neg\_iff},
-  \lname{Ratpoints.Options.sturm\_normalize\_le}, \lname{Ratpoints.inRegion\_iff},
-  \lname{Ratpoints.inRegion\_of\_isFullBox}. The normalized switch of the reversal is the switch and
-  the whole box (Definition~\ref{def:regionSpec}); the normalization keeps the intervals and the
-  options of the output; the normalized largest denominator is the largest denominator of the
-  search, from $1$ to $H$ for $H \ge 1$, and the normalized least one is at least $1$; a
-  denominator $1 \le z \le H$ lies in the normalized range exactly when it lies in the range of the
-  caller as the search region reads it; the normalized depth is at most $55$ and has the sign of the
-  depth. The search region of intervals over the values is that of $\mathrm{InIntervals}$, and every
-  triple with $0 \le z \le H$ lies in the whole box.
+  \lean{Ratpoints.Options.reverse_normalize, Ratpoints.Options.domain_normalize, Ratpoints.Options.noCheck_normalize, Ratpoints.Options.noY_normalize, Ratpoints.Options.toNat_bHigh_normalize, Ratpoints.Options.one_le_toNat_bLow_normalize, Ratpoints.Options.one_le_toNat_bHigh_normalize, Ratpoints.Options.toNat_bHigh_normalize_le, Ratpoints.Options.lt_one_or_le_bHigh_of_le, Ratpoints.Options.le_toNat_bHigh_normalize_of_le, Ratpoints.Options.bLow_normalize_le_iff, Ratpoints.Options.sturm_normalize_nonneg_iff, Ratpoints.Options.sturm_normalize_neg_iff, Ratpoints.Options.sturm_normalize_le, Ratpoints.inRegion_iff, Ratpoints.inRegion_of_isFullBox}
+  \leanok
+  The normalized switch of the reversal is the switch and the whole box
+  (Definition~\ref{def:regionSpec}); the normalization keeps the intervals and the options of the
+  output; the normalized largest denominator is the largest denominator of the search, from $1$ to
+  $H$ for $H \ge 1$, and the normalized least one is at least $1$; a denominator $1 \le z \le H$
+  lies in the normalized range exactly when it lies in the range of the caller as the search region
+  reads it; the normalized depth is at most $55$ and has the sign of the depth. The search region of
+  intervals over the values is that of $\mathrm{InIntervals}$, and every triple with $0 \le z \le H$
+  lies in the whole box.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   From the definitions, by cases on the clamps.
 \end{proof}
 
 \begin{definition}[The search intervals of a search]\label{def:searchIntervals}
   \uses{def:Double, def:reversal}
-  \lean{Ratpoints.searchIntervals}
-  Proposed name: \lname{Ratpoints.Refusal.badArgs}. For the height bound $H \ge 1$ and the
-  intervals of the caller: for none, the default interval $[-h, h]$, where $h$ is the double of $H$,
-  moved up to the next double when $h < 2^{63}$ and $h < H$, so that it holds every $x = a/b$ of the
-  search (\csource{find_points.c}{4829}{4829}, \csource{find_points.c}{4831}{4841}); otherwise the
-  intervals given, or none, which the search turns into the refusal $\mathrm{badArgs}$, the code
-  \verb|RATPOINTS_BAD_ARGS|, when an interval has not $l \le u$ or does not begin above the end of
-  the one before it, compared as doubles, so that a NaN end is refused too (lines 4842-4855; the
-  test of a null pointer, line 4830, is excluded as the interface of the library). The program turns
-  the refusal into its error~9, which it gives for a code of the library other than
-  \verb|RATPOINTS_NON_SQUAREFREE| and \verb|RATPOINTS_NO_MEMORY|. Until H.5 the model has the
-  default interval only, which the sieving takes for a search without intervals, and returns the
-  intervals given as they are, never none.
+  \lean{Ratpoints.searchIntervals, Ratpoints.Refusal.badArgs}
+  \leanok
+  For the height bound $H \ge 1$ and the intervals of the caller: for none, the default interval
+  $[-h, h]$, where $h$ is the double of $H$, moved up to the next double when $h < 2^{63}$ and
+  $h < H$, so that it holds every $x = a/b$ of the search (\csource{find_points.c}{4829}{4829},
+  \csource{find_points.c}{4831}{4855}); otherwise the intervals given, or none, which the search
+  turns into the refusal $\mathrm{badArgs}$, the code \verb|RATPOINTS_BAD_ARGS|, when an interval
+  has not $l \le u$ or does not begin above the end of the one before it, compared as doubles, so
+  that a NaN end is refused too (lines 4842-4855; the test of a null pointer, line 4830, is excluded
+  as the interface of the library). The program turns the refusal into its error~9, which it gives
+  for a code of the library other than \verb|RATPOINTS_NON_SQUAREFREE| and
+  \verb|RATPOINTS_NO_MEMORY|.
 \end{definition}
 
 \begin{lemma}[The search intervals of a search]\label{lem:searchIntervals}
   \uses{def:searchIntervals, lem:Double, def:regionSpec, def:inIntervals}
-  Proposed names: \lname{Ratpoints.run\_searchIntervals\_eq},
-  \lname{Ratpoints.intervalsWF\_domainBits\_iff},
-  \lname{Ratpoints.run\_searchIntervals\_eq\_none\_iff},
-  \lname{Ratpoints.run\_searchIntervals\_of\_ne\_nil},
-  \lname{Ratpoints.intervalsWF\_of\_run\_searchIntervals\_eq\_some},
-  \lname{Ratpoints.wf\_of\_run\_searchIntervals\_eq\_some},
-  \lname{Ratpoints.le\_toRat\_defaultBound}, \lname{Ratpoints.intervalsWF\_and\_inIntervals\_neg},
-  \lname{Ratpoints.exists\_run\_searchIntervals\_nil}. The loop of the validation is a test of each
-  index; well-formedness (Definition~\ref{def:regionSpec}) is that test in the comparisons of the C
-  language; so the search intervals are none exactly when the caller's intervals are not well
-  formed, they are the caller's intervals when these are well formed and not empty, and the result
-  is well formed for $1 \le H < 2^{63}$. The end $h$ of the default interval is finite and at least
-  $H$, so that $[-h, h]$ is well formed and holds $a/b$ for every $b > 0$ and $|a| \le H$.
+  \lean{Ratpoints.run_searchIntervals_eq, Ratpoints.intervalsWF_domainBits_iff, Ratpoints.run_searchIntervals_eq_none_iff, Ratpoints.run_searchIntervals_of_ne_nil, Ratpoints.intervalsWF_of_run_searchIntervals_eq_some, Ratpoints.wf_of_run_searchIntervals_eq_some, Ratpoints.le_toRat_defaultBound, Ratpoints.intervalsWF_and_inIntervals_neg, Ratpoints.exists_run_searchIntervals_nil}
+  \leanok
+  The loop of the validation is a test of each index; well-formedness
+  (Definition~\ref{def:regionSpec}) is that test in the comparisons of the C language; so the search
+  intervals are none exactly when the caller's intervals are not well formed, they are the caller's
+  intervals when these are well formed and not empty, and the result is well formed for
+  $1 \le H < 2^{63}$. The end $h$ of the default interval is finite and at least $H$, so that
+  $[-h, h]$ is well formed and holds $a/b$ for every $b > 0$ and $|a| \le H$.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   Lemma~\ref{lem:Double} turns the comparisons into the order of the values, and the chain of the
   specification is read index by index (\verb|List.isChain_iff_getElem|), each index being the test
   of the loop; the end of the default interval by the conversion of $H$ and its next double.
@@ -1423,13 +1405,15 @@ Sturm step, and on the points the difference vanishes under Sturm's theorem.
 
 \begin{lemma}[The reversal and the search region]\label{lem:reversalRegion}
   \uses{def:reversal, lem:normalize, def:regionSpec, lem:reversal_swap}
-  Proposed names: \lname{Ratpoints.exists\_reversal\_normalize\_eq\_error\_iff},
-  \lname{Ratpoints.isFullBox\_of\_reversal\_normalize\_eq\_ok}. The reversal check with the
-  normalized switch refuses exactly when the reversal is allowed, the search region is the whole
-  box, $d$ is even and $c_0 = c_1 = 0$; and when it reverses, the search region is the whole box.
+  \lean{Ratpoints.exists_reversal_normalize_eq_error_iff, Ratpoints.isFullBox_of_reversal_normalize_eq_ok}
+  \leanok
+  The reversal check with the normalized switch refuses exactly when the reversal is allowed, the
+  search region is the whole box, $d$ is even and $c_0 = c_1 = 0$; and when it reverses, the search
+  region is the whole box.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   The normalized switch is the switch and the whole box (Lemma~\ref{lem:normalize}), and the check
   refuses and reverses only with the switch on.
 \end{proof}
@@ -1438,28 +1422,25 @@ Sturm step, and on the points the difference vanishes under Sturm's theorem.
   \uses{def:regionSpec, lem:normalize, def:swapPoint, lem:swapPoint_bijection, def:bruteForce,
     lem:searchDensRange, lem:reversalRegion, lem:sift_eq_checkDen, thm:findPoints_order,
     thm:bruteForce, lem:reversal_swap}
-  Proposed names: \lname{Ratpoints.inRegion\_ite\_swapPoint\_of\_mem\_pointsOfDen\_zero},
-  \lname{Ratpoints.inRegion\_ite\_swapPoint\_iff},
-  \lname{Ratpoints.map\_append\_flatMap\_filter\_eq\_filter\_inRegion},
-  \lname{Ratpoints.perm\_map\_append\_flatMap\_searchDens},
-  \lname{Ratpoints.eq\_zero\_or\_le\_toNat\_bHigh\_normalize\_of\_inRegion},
-  \lname{Ratpoints.filter\_filter\_bruteForce\_eq},
-  \lname{Ratpoints.nodup\_map\_bruteForce\_of\_reversal\_eq\_ok}. When a reversal implies the whole
-  box: the points at infinity, mapped, lie in the search region; a point over a denominator
-  $1 \le b \le B$, $B$ the largest denominator of the search, with $|x| \le H$, mapped, lies in the
-  search region exactly when $b$ is at least the normalized least denominator and $x/b$ lies in a
-  caller's interval, or there are none; so the points over the candidate $(1, 0)$ and over
-  denominators up to $B$ that are at least the least denominator, with the numerators filtered by
-  the caller's intervals, mapped, are those over all the denominators up to $B$ and all the
-  numerators, mapped and filtered by the search region. The points over the candidate $(1, 0)$ and
-  the denominators of the search up to $B$, mapped, are a permutation of the points of the reference
-  with $z = 0$ or $1 \le z \le B$; a point of height at most $H$ in the search region has $z = 0$ or
-  $1 \le z \le B$; the filter by $1 \le z \le B$ before the filter by the search region changes
-  nothing; and the reference of the polynomial that the reversal check hands on, mapped back after a
-  reversal, has no duplicates, being a permutation of the reference of $c$.
+  \lean{Ratpoints.inRegion_ite_swapPoint_of_mem_pointsOfDen_zero, Ratpoints.inRegion_ite_swapPoint_iff, Ratpoints.map_append_flatMap_filter_eq_filter_inRegion, Ratpoints.perm_map_append_flatMap_searchDens, Ratpoints.eq_zero_or_le_toNat_bHigh_normalize_of_inRegion, Ratpoints.filter_filter_bruteForce_eq, Ratpoints.nodup_map_bruteForce_of_reversal_eq_ok}
+  \leanok
+  When a reversal implies the whole box: the points at infinity, mapped, lie in the search region; a
+  point over a denominator $1 \le b \le B$, $B$ the largest denominator of the search, with
+  $|x| \le H$, mapped, lies in the search region exactly when $b$ is at least the normalized least
+  denominator and $x/b$ lies in a caller's interval, or there are none; so the points over the
+  candidate $(1, 0)$ and over denominators up to $B$ that are at least the least denominator, with
+  the numerators filtered by the caller's intervals, mapped, are those over all the denominators up
+  to $B$ and all the numerators, mapped and filtered by the search region. The points over the
+  candidate $(1, 0)$ and the denominators of the search up to $B$, mapped, are a permutation of the
+  points of the reference with $z = 0$ or $1 \le z \le B$; a point of height at most $H$ in the
+  search region has $z = 0$ or $1 \le z \le B$; the filter by $1 \le z \le B$ before the filter by
+  the search region changes nothing; and the reference of the polynomial that the reversal check
+  hands on, mapped back after a reversal, has no duplicates, being a permutation of the reference of
+  $c$.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   The search region of a mapped point: after a reversal the region is the whole box, which holds
   every point, and otherwise the map is the identity; the points of the reference over a denominator
   filtered by the numerators as in Lemma~\ref{lem:sift_eq_checkDen}; the permutation from that of

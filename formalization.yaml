@@ -364,7 +364,7 @@ fidelity:
     sieves the first one, all of them, also those after a stop, so that a stop in the sieve does not
     save the time and the memory of that listing, which grow with the height; and, the search region
     of the Sturm step being stage H, under RATPOINTS_NO_CHECK the model delivers the numerators of
-    -H, ..., H that pass the sieve, where the C code delivers only those in the region that its
+    -H, ..., H in the search intervals that pass the sieve, where the C code delivers only those in the region that its
     Sturm step keeps (the differential tests compare -x exactly against the C program with -s and
     the moduli pinned).
     Where the library function find_points and the command-line program differ (the order of the
@@ -411,11 +411,12 @@ alignment:
         builders of the C code and kept in the tables of rows of its entries), every well-formed
         choice of the sieving parameters, the array size of the pieces included, and every value of
         the options, the delivery to the callback of stage G included, membership with
-        RATPOINTS_NO_CHECK clear and y >= 0 under RATPOINTS_NO_Y
-        (Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok, Ratpoints.nodup_of_findPoints_eq_ok),
-        certified by comparator, through the reference of the polynomial searched
-        (Ratpoints.exists_eq_of_findPoints_eq_ok) and, with both options of the output off, the
-        permutation of the brute-force reference (Ratpoints.perm_bruteForce_of_findPoints_eq_ok);
+        RATPOINTS_NO_CHECK clear and y >= 0 under RATPOINTS_NO_Y, since stage H for the points in
+        the search region of the options (Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok,
+        Ratpoints.nodup_of_findPoints_eq_ok), certified by comparator, through the reference of the
+        polynomial searched (Ratpoints.exists_eq_of_findPoints_eq_ok) and the permutation of the
+        brute-force reference filtered by RATPOINTS_NO_Y and the search region
+        (Ratpoints.perm_filter_bruteForce_of_findPoints_eq_ok);
         the later stages bring Ratpoints.findPoints closer to the C code, and the theorems move with
         it
     - source: "the refusals: fewer than two or more than maxDegree + 1 = 101 coefficients, H = 0 or H >= 2^63, a binary form that is not squarefree"
@@ -426,7 +427,8 @@ alignment:
         for every choice of the sieving parameters, with the Sturm step on, as in a run without
         options (Ratpoints.exists_findPoints_eq_error_iff_of_sturm_nonneg), and without it, the
         refusals of the C program under -s
-        (Ratpoints.exists_findPoints_eq_error_iff_of_sturm_neg), both certified by comparator
+        (Ratpoints.exists_findPoints_eq_error_iff_of_sturm_neg), both certified by comparator, and
+        since stage H both with the search intervals that are not well formed
     - source: "the order of the output"
       lean: "Ratpoints.eq_orderedPoints_of_findPoints_eq_ok"
       module: "Ratpoints.Proof.Output"
@@ -436,10 +438,10 @@ alignment:
         (Ratpoints.Spec.Order: the points at infinity of the polynomial searched, then its
         denominators in the order of the loop of the search, ascending but for the divisors of the
         leading coefficient in the order of binary counting over its primes, the numerators
-        ascending and +y before -y, mapped back after a reversal), filtered by RATPOINTS_NO_Y,
-        certified by comparator, and the differential tests compare it with the order of the C
-        program on every point list; the search region of stage H, which the model does not have
-        yet, restricts the list
+        ascending and +y before -y, mapped back after a reversal, up to the largest denominator of
+        the search), filtered by RATPOINTS_NO_Y and the search region of the options, certified by
+        comparator, and the differential tests compare it with the order of the C program on every
+        point list
     - source: "the callback protocol of find_points: process, info, quit and the count"
       lean: "Ratpoints.map_findPointsWith_eq_map_findPoints"
       module: "Ratpoints.Proof.Output"
