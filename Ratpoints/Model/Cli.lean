@@ -427,7 +427,7 @@ for `-s`, and for `-S` the C `long` of `a`, or `Ratpoints.defaultSturm` if there
 `long` of `a` as the least denominator for `-dl` and as the largest for `-du`; the exact check off
 for `-x` and on for `-X`; one point of each pair for `-y` and both for `-Y`; `t` itself for every
 other option. -/
-def Options.store (t : Options) (o : String) (a : Option String) : Options :=
+def _root_.Ratpoints.Options.store (t : Options) (o : String) (a : Option String) : Options :=
   match o.toList, a.bind longOfString? with
   | '-' :: 'k' :: _, _ => { t with reverse := false }
   | '-' :: 'K' :: _, _ => { t with reverse := true }
@@ -494,12 +494,12 @@ def checkOptions (H : Nat) (s : SieveOptions × Options × Output × Intervals) 
 where
   /-- `s` with the field that the option `o` sets, with its argument `a` if it takes one: the C
   `long` of `a` for `-p -n -N -P -F`; the Jacobi test off for `-j` and on for `-J`; the options of
-  the search by `Ratpoints.Cli.Options.store` and the settings of the output by
+  the search by `Ratpoints.Options.store` and the settings of the output by
   `Ratpoints.Cli.Output.store`. -/
   store (s : SieveOptions × Options × Output × Intervals) (o : String) (a : Option String) :
       SieveOptions × Options × Output × Intervals :=
     let (s, t, u, iv) := s
-    let (t, u) := (Options.store t o a, u.store o a)
+    let (t, u) := (t.store o a, u.store o a)
     match o.toList, a.bind longOfString? with
     | '-' :: 'p' :: _, some v => ({ s with numPrimes := v }, t, u, iv)
     | '-' :: 'n' :: _, some v => ({ s with sp1 := v }, t, u, iv)
@@ -1031,8 +1031,8 @@ and, under `-v`, the report of the library, which `ratpoints-lean` leaves out. -
     (fun l ↦ l ≠ "" && l.front != 'S')).drop 7 == ls
 
 -- Error 7: an end missing or not a number, two lower or two upper ends in a row, ends not
--- ordered (also `-u 0.75 -l 0.75`, though `[1, 1]` is an interval), and a hundred and first
--- interval; error 6 for a missing or malformed bound of the denominators.
+-- ordered (also `-u 0.75 -l 0.75`, though `[1, 1]` is an interval), and more than
+-- `Ratpoints.maxDegree` intervals; error 6 for a missing or malformed bound of the denominators.
 #guard run ["1 0 1", "5", "-q", "-l"] == (Failure.intervals.message, 7) &&
   Failure.intervals.message ==
     "\nIncorrect interval arguments (not numbers, not alternating, too many, or not ordered).\n\n"
@@ -1041,9 +1041,10 @@ and, under `-v`, the report of the library, which `ratpoints-lean` leaves out. -
   fun os ↦ (run (["1 0 1", "5", "-q"] ++ os)).2 == 7
 #guard (run (["1 0 1", "5", "-q", "-z", "-l", "1", "-u", "1"])).2 == 0
 #guard
-  let os := (List.range 100).flatMap fun i ↦ ["-l", toString (2 * i), "-u", toString (2 * i + 1)]
+  let os := (List.range maxDegree).flatMap fun i ↦
+    ["-l", toString (2 * i), "-u", toString (2 * i + 1)]
   (run (["1 0 1", "5", "-q", "-z"] ++ os)).2 == 0 &&
-    (run (["1 0 1", "5", "-q", "-z"] ++ os ++ ["-l", "300"])).2 == 7
+    (run (["1 0 1", "5", "-q", "-z"] ++ os ++ ["-l", toString (2 * maxDegree + 100)])).2 == 7
 #guard [["-dl"], ["-dl", "x"], ["-du", "1.5"]].all fun os ↦
   (run (["1 0 1", "5", "-q"] ++ os)).2 == 6
 

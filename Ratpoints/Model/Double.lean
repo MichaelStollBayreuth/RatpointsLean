@@ -307,7 +307,23 @@ prints for them, as bits. -/
     (xs.zipIdx.filter fun (y, _) ↦ f ⟨x⟩ ⟨y⟩).foldl (fun m (_, j) ↦ m + 2 ^ j) 0
   (xs.zip masks).all fun (x, l, e, q) ↦ mask lt x == l && mask le x == e && mask beq x == q
 
--- `nextafter` towards `±HUGE_VAL`, `-x`, `fabs` and `frexp`.
+-- `-x` and `fabs(x)`.
+#guard ([(0x0000000000000000, 0x8000000000000000, 0x0000000000000000),
+    (0x8000000000000000, 0x0000000000000000, 0x0000000000000000),
+    (0x0000000000000001, 0x8000000000000001, 0x0000000000000001),
+    (0x8000000000000001, 0x0000000000000001, 0x0000000000000001),
+    (0x000fffffffffffff, 0x800fffffffffffff, 0x000fffffffffffff),
+    (0x7fefffffffffffff, 0xffefffffffffffff, 0x7fefffffffffffff),
+    (0xffefffffffffffff, 0x7fefffffffffffff, 0x7fefffffffffffff),
+    (0x7ff0000000000000, 0xfff0000000000000, 0x7ff0000000000000),
+    (0xfff0000000000000, 0x7ff0000000000000, 0x7ff0000000000000),
+    (0x43dfffffffffffff, 0xc3dfffffffffffff, 0x43dfffffffffffff),
+    (0xc3e0000000000000, 0x43e0000000000000, 0x43e0000000000000),
+    (0x7ff8000000000000, 0xfff8000000000000, 0x7ff8000000000000)] :
+    List (UInt64 × UInt64 × UInt64)).all fun (x, n, f) ↦
+  (neg ⟨x⟩).bits == n && (fabs ⟨x⟩).bits == f
+
+-- `nextafter` towards `±HUGE_VAL` and `frexp`.
 #guard ([(0x0000000000000000, 0x0000000000000001, 0x8000000000000001),
     (0x8000000000000000, 0x0000000000000001, 0x8000000000000001),
     (0x0000000000000001, 0x0000000000000002, 0x0000000000000000),
@@ -321,8 +337,7 @@ prints for them, as bits. -/
     (0xc3e0000000000000, 0xc3dfffffffffffff, 0xc3e0000000000001),
     (0x7ff8000000000000, 0x7ff8000000000000, 0x7ff8000000000000)] :
     List (UInt64 × UInt64 × UInt64)).all fun (x, u, d) ↦
-  (nextUp ⟨x⟩).bits == u && (nextDown ⟨x⟩).bits == d &&
-    (neg ⟨x⟩).bits == x ^^^ 0x8000000000000000 && (fabs ⟨x⟩).bits == x &&& 0x7fffffffffffffff
+  (nextUp ⟨x⟩).bits == u && (nextDown ⟨x⟩).bits == d
 #guard ([(0x0000000000000000, 0x0000000000000000, 0), (0x8000000000000000, 0x8000000000000000, 0),
     (0x0000000000000001, 0x3fe0000000000000, -1073),
     (0x8000000000000001, 0xbfe0000000000000, -1073),

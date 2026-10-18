@@ -411,7 +411,7 @@ def joinIntervals (dom : List (Double × Double)) : Id (List (Double × Double))
     else
       n := n + 1
       iv := iv.set! n iv[i]!
-  return (iv.toList.take (n + 1))
+  return iv.toList.take (n + 1)
 
 /-! ### Printing doubles -/
 
@@ -424,7 +424,8 @@ def printF (x : Double) : String :=
   if x.isNaN then sign ++ "nan"
   else if x.isInf then sign ++ "inf"
   else
-    let n := Double.roundShift (x.toDyadic.1.natAbs * 10 ^ 6) (-x.toDyadic.2)
+    let (m, e) := x.toDyadic
+    let n := Double.roundShift (m.natAbs * 10 ^ 6) (-e)
     let f := toString (n % 10 ^ 6)
     sign ++ toString (n / 10 ^ 6) ++ "." ++ "".pushn '0' (6 - f.length) ++ f
 
