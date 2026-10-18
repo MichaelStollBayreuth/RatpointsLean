@@ -359,8 +359,9 @@ and outside regions. The region of the specification reads the values of the cal
 their bits, so that $-0.0$ and $0.0$ give the same region.
 
 \begin{definition}[Sturm's theorem]\label{def:sturmTheorem}
-  Proposed name: \lname{Ratpoints.SturmTheorem}. The proposition that for every squarefree real
-  polynomial $p$ and all reals $a \le b$
+  \lean{Ratpoints.SturmTheorem}
+  \leanok
+  The proposition that for every squarefree real polynomial $p$ and all reals $a \le b$
   \[
     \#\{x \in \mathbb{R} : a < x \le b,\ p(x) = 0\} + V_p(b) = V_p(a),
   \]
@@ -1054,31 +1055,22 @@ mirror on chains of pairs (\verb|Data/List/Pairwise|) gains a fact that serves t
 numerators and the intersection, not the coverage.
 
 \begin{lemma}[Positive multiples and the Sturm sequence]\label{lem:posAssoc}
-  Proposed names: \lname{Polynomial.PosAssoc}, \lname{Polynomial.PosAssoc.refl},
-  \lname{Polynomial.PosAssoc.symm}, \lname{Polynomial.PosAssoc.trans},
-  \lname{Polynomial.PosAssoc.neg\_mod}, \lname{Polynomial.PosAssoc.sign\_eval},
-  \lname{Polynomial.PosAssoc.sign\_leadingCoeff}, \lname{Polynomial.sturmSeq\_map},
-  \lname{Polynomial.forall₂\_posAssoc\_sturmSeq},
-  \lname{Polynomial.forall₂\_posAssoc\_sturmSeq\_of\_getElem},
-  \lname{Polynomial.signVariations\_map\_eq\_of\_forall₂},
-  \lname{Polynomial.signVariations\_map\_eval\_eq\_of\_forall₂},
-  \lname{Polynomial.signVariations\_map\_leadingCoeff\_eq\_of\_forall₂},
-  \lname{Polynomial.signVariations\_map\_neg\_one\_pow\_mul\_leadingCoeff\_eq\_of\_forall₂},
-  \lname{Polynomial.mod\_eq\_of\_dvd\_sub\_of\_degree\_lt}, \lname{Polynomial.C\_mul\_mod},
-  \lname{Polynomial.mod\_C\_mul}. Over an ordered field, $q$ is a \emph{positive multiple} of $p$
-  when $q = c\,p$ for a constant $c > 0$, an equivalence relation that keeps the signs of the values
-  and of the leading coefficient, and the negated remainders: $-p \bmod q$ and $-p' \bmod q'$ are
-  positive multiples for positive multiples $p'$ of $p$ and $q'$ of $q$. The Sturm sequences of
-  positive multiples are, entry by entry, positive multiples; a list of nonzero polynomials whose
-  last entry is a unit and in which each entry from the third on is a positive multiple of the
-  negated remainder of the two before it is, entry by entry, a list of positive multiples of the
-  Sturm sequence of its first two entries; the Sturm sequence commutes with a map of fields; and
-  lists of positive multiples have the same sign changes of their values, of their leading
-  coefficients and of these times $(-1)^{\deg}$. The remainder by $q$ is $r$ when $q$ divides $p -
-  r$ and $\deg r < \deg q$, and a constant factor passes through it.
+  \lean{Polynomial.PosAssoc, Polynomial.PosAssoc.refl, Polynomial.PosAssoc.symm, Polynomial.PosAssoc.trans, Polynomial.PosAssoc.neg_mod, Polynomial.PosAssoc.sign_eval, Polynomial.PosAssoc.sign_leadingCoeff, Polynomial.sturmSeq_map, Polynomial.forall₂_posAssoc_sturmSeq, Polynomial.forall₂_posAssoc_sturmSeq_of_getElem, Polynomial.signVariations_map_eq_of_forall₂, Polynomial.signVariations_map_eval_eq_of_forall₂, Polynomial.signVariations_map_leadingCoeff_eq_of_forall₂, Polynomial.signVariations_map_neg_one_pow_mul_leadingCoeff_eq_of_forall₂, Polynomial.mod_eq_of_dvd_sub_of_degree_lt, Polynomial.C_mul_mod, Polynomial.mod_C_mul}
+  \leanok
+  Over an ordered field, $q$ is a \emph{positive multiple} of $p$ when $q = c\,p$ for a constant
+  $c > 0$, an equivalence relation that keeps the signs of the values and of the leading
+  coefficient, and the negated remainders: $-p \bmod q$ and $-p' \bmod q'$ are positive multiples
+  for positive multiples $p'$ of $p$ and $q'$ of $q$. The Sturm sequences of positive multiples are,
+  entry by entry, positive multiples; a list of nonzero polynomials whose last entry is a unit and
+  in which each entry from the third on is a positive multiple of the negated remainder of the two
+  before it is, entry by entry, a list of positive multiples of the Sturm sequence of its first two
+  entries; the Sturm sequence commutes with a map of fields; and lists of positive multiples have
+  the same sign changes of their values, of their leading coefficients and of these times
+  $(-1)^{\deg}$. The remainder by $q$ is $r$ when $q$ divides $p - r$ and $\deg r < \deg q$, and a
+  constant factor passes through it.
 \end{lemma}
 
-\begin{proof}
+\begin{proof}\leanok
   By the induction principle of the Sturm sequence, with the remainder of a scaled polynomial by a
   scaled one; the signs by the signs of the factors.
 \end{proof}
@@ -1086,33 +1078,26 @@ numerators and the intersection, not the coverage.
 \begin{lemma}[The chain is a Sturm sequence]\label{lem:chainSturm}
   \uses{lem:posAssoc, lem:evalSign, def:sturmChain, lem:sturmChain_squarefree,
     lem:squarefree_binaryFormPoly, lem:sturmCounts}
-  Proposed names: \lname{Ratpoints.Sturm.IsChain.posAssoc\_neg\_mod},
-  \lname{Ratpoints.Sturm.rowPolys}, \lname{Ratpoints.Sturm.chainPoly},
-  \lname{Ratpoints.Sturm.IsChain.forall₂\_posAssoc\_sturmSeq},
-  \lname{Ratpoints.Sturm.IsChain.forall₂\_posAssoc\_sturmSeq\_map},
-  \lname{Ratpoints.Sturm.hornerValue\_eq\_eval},
-  \lname{Ratpoints.Sturm.run\_evalSign\_eq\_sign\_eval},
-  \lname{Ratpoints.Sturm.signCount\_eq\_signVariations},
-  \lname{Ratpoints.Sturm.run\_signsAt\_eq\_signVariations},
-  \lname{Ratpoints.Sturm.run\_countsAtInfinity\_eq\_signVariations},
-  \lname{Ratpoints.Sturm.IsChain.run\_signsAt\_eq},
-  \lname{Ratpoints.Sturm.IsChain.run\_countsAtInfinity\_eq}. Each row from the third on of a chain
-  (Definition~\ref{def:sturmChain}) is a positive multiple of the negated remainder of the two rows
-  before it, so that the polynomials of the rows of a chain that ends with a constant are, entry by
-  entry, positive multiples of the Sturm sequence of $f$ and $f'$ over $\QQ$, and their images over
-  $\mathbb{R}$ of that of $f$, read over $\mathbb{R}$ (the real polynomial of the coefficients).
-  Horner's rule computes $2^{e \deg}$ times the value at $n/2^e$, so that its sign is that of the
-  value; the count at the midpoint is the number of sign changes of the values of the rows there
-  when $f$ or $f'$ does not vanish, which holds for a squarefree $f$; and the counts at $\pm\infty$
-  are those of the signs of the leading coefficients. So, for a chain that ends with a constant and
-  $d < 2^{57}$: for a squarefree $f$ and the depth of the midpoint at most $55$, the signs and the
-  count of the step at a midpoint $m$ are $\mathrm{sign}\,f(m)$, $\mathrm{sign}\,f'(m)$ and the
-  count $V_f(m)$ of the Sturm sequence of $f$ and $f'$ (Lemma~\ref{lem:sturmCounts}); and its counts
-  at $\pm\infty$ are those of the Sturm sequence at $\pm\infty$.
+  \lean{Ratpoints.Sturm.IsChain.posAssoc_neg_mod, Ratpoints.Sturm.rowPolys, Ratpoints.Sturm.chainPoly, Ratpoints.Sturm.IsChain.forall₂_posAssoc_sturmSeq, Ratpoints.Sturm.IsChain.forall₂_posAssoc_sturmSeq_map, Ratpoints.Sturm.hornerValue_eq_eval, Ratpoints.Sturm.run_evalSign_eq_sign_eval, Ratpoints.Sturm.signCount_eq_signVariations, Ratpoints.Sturm.run_signsAt_eq_signVariations, Ratpoints.Sturm.run_countsAtInfinity_eq_signVariations, Ratpoints.Sturm.IsChain.run_signsAt_eq, Ratpoints.Sturm.IsChain.run_countsAtInfinity_eq}
+  \leanok
+  Each row from the third on of a chain (Definition~\ref{def:sturmChain}) is a positive multiple of
+  the negated remainder of the two rows before it, so that the polynomials of the rows of a chain
+  that ends with a constant are, entry by entry, positive multiples of the Sturm sequence of $f$ and
+  $f'$ over $\QQ$, and their images over $\mathbb{R}$ of that of $f$, read over $\mathbb{R}$ (the
+  real polynomial of the coefficients). Horner's rule computes $2^{e \deg}$ times the value at
+  $n/2^e$, so that its sign is that of the value; the count at the midpoint is the number of sign
+  changes of the values of the rows there when $f$ or $f'$ does not vanish, which holds for a
+  squarefree $f$; and the counts at $\pm\infty$ are those of the signs of the leading coefficients.
+  So, for a chain that ends with a constant and $d < 2^{57}$: for a squarefree $f$ and the depth of
+  the midpoint at most $55$, the signs and the count of the step at a midpoint $m$ are
+  $\mathrm{sign}\,f(m)$, $\mathrm{sign}\,f'(m)$ and the count $V_f(m)$ of the Sturm sequence of $f$
+  and $f'$ (Lemma~\ref{lem:sturmCounts}); and its counts at $\pm\infty$ are those of the Sturm
+  sequence at $\pm\infty$.
 \end{lemma}
 
 \begin{proof}
   \uses{lem:polySigns}
+  \leanok
   The relation $A s_{k-2} = Q s_{k-1} - g s_k$ with $A, g \ge 1$ of the chain (stage~D) makes $s_k$
   a positive multiple of $-s_{k-2} \bmod s_{k-1}$; Lemma~\ref{lem:posAssoc} gives the rest. A
   squarefree $f$ and $f'$ do not vanish together (Lemma~\ref{lem:polySigns}). The bound $d < 2^{57}$
@@ -1120,54 +1105,42 @@ numerators and the intersection, not the coverage.
 \end{proof}
 
 \begin{lemma}[The signs of a real polynomial]\label{lem:polySigns}
-  Proposed names: \lname{Polynomial.eventually\_atTop\_sign\_eval},
-  \lname{Polynomial.eventually\_atBot\_sign\_eval},
-  \lname{Polynomial.eventually\_atTop\_signVariations},
-  \lname{Polynomial.eventually\_atBot\_signVariations},
-  \lname{Polynomial.eventually\_sign\_eval\_eq},
-  \lname{Polynomial.exists\_eq\_X\_sub\_C\_mul\_of\_isRoot},
-  \lname{Polynomial.eventually\_sign\_eval\_nhdsGT},
-  \lname{Polynomial.eventually\_sign\_eval\_nhdsLT},
-  \lname{Polynomial.exists\_isRoot\_of\_eval\_mul\_eval\_neg},
-  \lname{Polynomial.eval\_neg\_of\_forall\_not\_isRoot},
-  \lname{Polynomial.length\_le\_natDegree\_add\_one\_of\_isChain},
-  \lname{Squarefree.eval\_ne\_zero\_or\_eval\_derivative\_ne\_zero}. A nonzero real polynomial has,
-  near $+\infty$, the sign of its leading coefficient and, near $-\infty$, that sign times
-  $(-1)^{\deg}$, and a list of nonzero polynomials the corresponding sign changes; near a point
-  where $p$ does not vanish $p$ keeps its sign; at a point $x$ with $p(x) \ne 0$ or $p'(x) \ne 0$,
-  the sign of $p$ just right of $x$ is that of $p(x)$, or of $p'(x)$ when $p(x) = 0$, and just left
-  of $x$ that of $p(x)$, or of $-p'(x)$ when $p(x) = 0$, each lemma stating the sign by this case
-  distinction in its conclusion; values of opposite signs at $a < b$ give a root in between; a
-  polynomial without a root in $(l, r)$ that is negative just right of $l$ is negative on $(l, r)$;
-  and a chain of points with values of alternating signs has at most $\deg p + 1$ members. A
-  squarefree polynomial over a perfect field and its derivative never vanish together.
+  \lean{Polynomial.eventually_atTop_sign_eval, Polynomial.eventually_atBot_sign_eval, Polynomial.eventually_atTop_signVariations, Polynomial.eventually_atBot_signVariations, Polynomial.eventually_sign_eval_eq, Polynomial.exists_eq_X_sub_C_mul_of_isRoot, Polynomial.eventually_sign_eval_nhdsGT, Polynomial.eventually_sign_eval_nhdsLT, Polynomial.exists_isRoot_of_eval_mul_eval_neg, Polynomial.eval_neg_of_forall_not_isRoot, Polynomial.length_le_natDegree_add_one_of_isChain, Squarefree.eval_ne_zero_or_eval_derivative_ne_zero}
+  \leanok
+  A nonzero real polynomial has, near $+\infty$, the sign of its leading coefficient and, near
+  $-\infty$, that sign times $(-1)^{\deg}$, and a list of nonzero polynomials the corresponding sign
+  changes; near a point where $p$ does not vanish $p$ keeps its sign; at a point $x$ with
+  $p(x) \ne 0$ or $p'(x) \ne 0$, the sign of $p$ just right of $x$ is that of $p(x)$, or of $p'(x)$
+  when $p(x) = 0$, and just left of $x$ that of $p(x)$, or of $-p'(x)$ when $p(x) = 0$, each lemma
+  stating the sign by this case distinction in its conclusion; values of opposite signs at $a < b$
+  give a root in between; a polynomial without a root in $(l, r)$ that is negative just right of $l$
+  is negative on $(l, r)$; and a chain of points with values of alternating signs has at most
+  $\deg p + 1$ members. A squarefree polynomial over a perfect field and its derivative never vanish
+  together.
 \end{lemma}
 
-\begin{proof}
+\begin{proof}\leanok
   By the dominant term at $\pm\infty$, continuity, the factor $X - x$ at a root, the intermediate
   value theorem, and the count of the roots between the points of a chain.
 \end{proof}
 
 \begin{lemma}[The counts at the ends of an interval]\label{lem:sturmCounts}
   \uses{def:sturmTheorem, lem:polySigns}
-  Proposed names: \lname{Ratpoints.sturmV}, \lname{Ratpoints.vBot}, \lname{Ratpoints.vTop},
-  \lname{Ratpoints.vLeft}, \lname{Ratpoints.vRight}, \lname{Ratpoints.sgnLeftEnd},
-  \lname{Ratpoints.sgnRightEnd}, \lname{Ratpoints.Inside}, \lname{Ratpoints.sturmV\_eq\_iff},
-  \lname{Ratpoints.vLeft\_eq\_vRight\_iff}, \lname{Ratpoints.eval\_neg\_of\_vLeft\_eq\_vRight},
-  \lname{Ratpoints.exists\_inside\_eval\_pos}. For a real polynomial $p$: the count $V_p(x)$ of
-  Definition~\ref{def:sturmTheorem}, the counts at $\pm\infty$ from the leading coefficients, the
-  count at the lower end $l$ of an interval ($V_p(l)$, or that at $-\infty$) and at its upper end
-  $r$ ($V_p(r)$ plus $1$ at a root of $p$, or that at $+\infty$), the signs of $p$ just inside the
-  ends, at a finite end that of $p$ there or, at a root, of $p'$ (just right of $l$) or of $-p'$
-  (just left of $r$), the case distinction of Lemma~\ref{lem:polySigns}, and the points strictly
-  between the ends. Assuming Sturm's theorem, for a squarefree $p$: the counts at the ends of an
-  interval agree exactly when $p$ has no root strictly between them; when they agree and $p$ is
-  negative just inside the lower end, $p$ is negative between the ends and just inside the upper
-  end; and when they differ, or $p$ is positive just inside the lower end, $p$ is positive somewhere
-  between the ends.
+  \lean{Ratpoints.sturmV, Ratpoints.vBot, Ratpoints.vTop, Ratpoints.vLeft, Ratpoints.vRight, Ratpoints.sgnLeftEnd, Ratpoints.sgnRightEnd, Ratpoints.Inside, Ratpoints.sturmV_eq_iff, Ratpoints.vLeft_eq_vRight_iff, Ratpoints.eval_neg_of_vLeft_eq_vRight, Ratpoints.exists_inside_eval_pos}
+  \leanok
+  For a real polynomial $p$: the count $V_p(x)$ of Definition~\ref{def:sturmTheorem}, the counts at
+  $\pm\infty$ from the leading coefficients, the count at the lower end $l$ of an interval
+  ($V_p(l)$, or that at $-\infty$) and at its upper end $r$ ($V_p(r)$ plus $1$ at a root of $p$, or
+  that at $+\infty$), the signs of $p$ just inside the ends, at a finite end that of $p$ there or,
+  at a root, of $p'$ (just right of $l$) or of $-p'$ (just left of $r$), the case distinction of
+  Lemma~\ref{lem:polySigns}, and the points strictly between the ends. Assuming Sturm's theorem, for
+  a squarefree $p$: the counts at the ends of an interval agree exactly when $p$ has no root
+  strictly between them; when they agree and $p$ is negative just inside the lower end, $p$ is
+  negative between the ends and just inside the upper end; and when they differ, or $p$ is positive
+  just inside the lower end, $p$ is positive somewhere between the ends.
 \end{lemma}
 
-\begin{proof}
+\begin{proof}\leanok
   Sturm's theorem on $(l, r]$ counts the roots, the root at $r$ itself giving the $1$; the counts at
   $\pm\infty$ are those at points far enough out (Lemma~\ref{lem:polySigns}); the signs between the
   ends follow from the absence of roots, and a root between them gives a point of positive value by
@@ -1177,35 +1150,28 @@ numerators and the intersection, not the coverage.
 \begin{lemma}[The Sturm step keeps the points]\label{lem:coverage}
   \uses{lem:sturmCounts, lem:chainSturm, lem:bisection, lem:intersect, def:computeSturm,
     def:binaryForm}
-  Proposed names: \lname{Ratpoints.Sturm.lowerEnd}, \lname{Ratpoints.Sturm.upperEnd},
-  \lname{Ratpoints.Sturm.HalvingInv}, \lname{Ratpoints.Sturm.Kept}, \lname{Ratpoints.Sturm.SignsOf},
-  \lname{Ratpoints.Sturm.HalvingInv.not\_kept}, \lname{Ratpoints.Sturm.HalvingInv.halves},
-  \lname{Ratpoints.Sturm.kept\_halves}, \lname{Ratpoints.Sturm.covers\_addInterval},
-  \lname{Ratpoints.Sturm.covers\_iterate}, \lname{Ratpoints.Sturm.squarefree\_chainPoly},
-  \lname{Ratpoints.Sturm.halvingInv\_start}, \lname{Ratpoints.Sturm.kept\_top},
-  \lname{Ratpoints.Sturm.eval\_neg\_of\_vBot\_eq\_vTop}, \lname{Ratpoints.Sturm.IsChain.signsOf},
-  \lname{Ratpoints.Sturm.isChain\_of\_run\_chain\_eq\_some},
-  \lname{Ratpoints.Sturm.covers\_computeSturm}, \lname{Ratpoints.Sturm.binaryForm\_eq\_mul\_eval},
-  \lname{Ratpoints.Sturm.eval\_chainPoly\_nonneg}. The invariant of the bisection for $f$, read over
-  $\mathbb{R}$: a well-formed interval (Lemma~\ref{lem:bisection}) whose counts and signs are those
-  of $f$ at its ends (Lemma~\ref{lem:sturmCounts}); the values that the bisection of an interval
-  keeps, between the values of the doubles of its ends, at a finite end only when $f$ is positive
-  just inside it; and the agreement of the signs and the count of the step with those of $f$ at the
-  midpoints of depth at most $55$ (Lemma~\ref{lem:chainSturm}). Assuming Sturm's theorem and for a
-  squarefree $f$: a dropped interval keeps no $x$ with $f(x) \ge 0$; the halves of an interval with
-  the invariant have it, and keep what it keeps; so the bisection to a depth of at most $55$ keeps
-  what the intervals kept before hold and every $x$ with $f(x) \ge 0$ that the interval keeps. The
-  real polynomial of a chain that does not fail is squarefree, the interval $[-\infty, +\infty]$ has
-  the invariant and keeps every $|x| \le 2^{63}$, and at the exit of the step $f < 0$ everywhere.
-  So, assuming Sturm's theorem, the Sturm step at a depth of at most $55$ on a polynomial of degree
-  $1 \le d < 2^{57}$ with $c_d \ne 0$, for well-formed intervals of the caller, leaves intervals
-  that hold every $x \in \QQ$ with $|x| \le 2^{63}$ and $f(x) \ge 0$ that lies in the caller's
-  intervals. For $b > 0$, $F(a, b) = b^{d + (d \bmod 2)} f(a/b)$, so that a point gives
-  $f(a/b) \ge 0$.
+  \lean{Ratpoints.Sturm.lowerEnd, Ratpoints.Sturm.upperEnd, Ratpoints.Sturm.HalvingInv, Ratpoints.Sturm.Kept, Ratpoints.Sturm.SignsOf, Ratpoints.Sturm.HalvingInv.not_kept, Ratpoints.Sturm.HalvingInv.halves, Ratpoints.Sturm.kept_halves, Ratpoints.Sturm.covers_addInterval, Ratpoints.Sturm.covers_iterate, Ratpoints.Sturm.squarefree_chainPoly, Ratpoints.Sturm.halvingInv_start, Ratpoints.Sturm.kept_top, Ratpoints.Sturm.eval_neg_of_vBot_eq_vTop, Ratpoints.Sturm.IsChain.signsOf, Ratpoints.Sturm.isChain_of_run_chain_eq_some, Ratpoints.Sturm.covers_computeSturm, Ratpoints.Sturm.binaryForm_eq_mul_eval, Ratpoints.Sturm.eval_chainPoly_nonneg}
+  \leanok
+  The invariant of the bisection for $f$, read over $\mathbb{R}$: a well-formed interval
+  (Lemma~\ref{lem:bisection}) whose counts and signs are those of $f$ at its ends
+  (Lemma~\ref{lem:sturmCounts}); the values that the bisection of an interval keeps, between the
+  values of the doubles of its ends, at a finite end only when $f$ is positive just inside it; and
+  the agreement of the signs and the count of the step with those of $f$ at the midpoints of depth
+  at most $55$ (Lemma~\ref{lem:chainSturm}). Assuming Sturm's theorem and for a squarefree $f$: a
+  dropped interval keeps no $x$ with $f(x) \ge 0$; the halves of an interval with the invariant have
+  it, and keep what it keeps; so the bisection to a depth of at most $55$ keeps what the intervals
+  kept before hold and every $x$ with $f(x) \ge 0$ that the interval keeps. The real polynomial of a
+  chain that does not fail is squarefree, the interval $[-\infty, +\infty]$ has the invariant and
+  keeps every $|x| \le 2^{63}$, and at the exit of the step $f < 0$ everywhere. So, assuming Sturm's
+  theorem, the Sturm step at a depth of at most $55$ on a polynomial of degree $1 \le d < 2^{57}$
+  with $c_d \ne 0$, for well-formed intervals of the caller, leaves intervals that hold every
+  $x \in \QQ$ with $|x| \le 2^{63}$ and $f(x) \ge 0$ that lies in the caller's intervals. For
+  $b > 0$, $F(a, b) = b^{d + (d \bmod 2)} f(a/b)$, so that a point gives $f(a/b) \ge 0$.
 \end{lemma}
 
 \begin{proof}
   \uses{lem:polySigns}
+  \leanok
   The bisection by the induction principle of its recursion: a dropped interval by
   Lemma~\ref{lem:sturmCounts}; a split interval by the counts and the signs at the midpoint, which
   the step evaluates as those of $f$, the one-sided ones at a root of $f$ by

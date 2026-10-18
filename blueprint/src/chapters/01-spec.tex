@@ -516,16 +516,17 @@ at the root. The module says which part a declaration belongs to, and \verb|scri
 keeps the parts' imports apart: the specification is \verb|Ratpoints/Spec/Basic.lean|, with examples
 by \verb|decide| taken from the output of the program, \verb|Ratpoints/Spec/Order.lean| the order of
 the points in that output (Section~\ref{sec:order}), checked by \verb|decide +kernel| on outputs of
-the program too, and \verb|Ratpoints/Spec/Region.lean| the value of a double of the C code from its
-bits and the search intervals that ratpoints accepts (Chapter~\ref{chap:region}), with examples by
-\verb|decide +kernel|; the constants of the C code are in \verb|Ratpoints/Model/Constants.lean|; the
-brute-force reference is \verb|Ratpoints/Model/BruteForce.lean|, with \verb|#guard| examples taken
-from the C program, and its theorems are in \verb|Ratpoints/Proof/BruteForce.lean|, each with a
-guard on its axioms (\verb|#print axioms| under \verb|#guard_msgs|); the program is
-\verb|Ratpoints/Model/Cli.lean| with \verb|Main.lean|, and the numbers and the search intervals of
-its command line are read in \verb|Ratpoints/Model/CliNumbers.lean| (Chapter~\ref{chap:region}); the
-statements for comparator are in \verb|comparator/|, and the differential tests in
-\verb|scripts/difftest.py|.
+the program too, \verb|Ratpoints/Spec/Region.lean| the value of a double of the C code from its bits
+and the search intervals that ratpoints accepts (Chapter~\ref{chap:region}), with examples by
+\verb|decide +kernel|, and \verb|Ratpoints/Spec/Sturm.lean| Sturm's theorem as a proposition, a
+hypothesis of the theorems on the Sturm step (Section~\ref{sec:regionSpec}); the constants of the C
+code are in \verb|Ratpoints/Model/Constants.lean|; the brute-force reference is
+\verb|Ratpoints/Model/BruteForce.lean|, with \verb|#guard| examples taken from the C program, and
+its theorems are in \verb|Ratpoints/Proof/BruteForce.lean|, each with a guard on its axioms
+(\verb|#print axioms| under \verb|#guard_msgs|); the program is \verb|Ratpoints/Model/Cli.lean| with
+\verb|Main.lean|, and the numbers and the search intervals of its command line are read in
+\verb|Ratpoints/Model/CliNumbers.lean| (Chapter~\ref{chap:region}); the statements for comparator
+are in \verb|comparator/|, and the differential tests in \verb|scripts/difftest.py|.
 
 \section{The evidence}\label{sec:spec-evidence}
 

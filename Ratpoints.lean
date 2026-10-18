@@ -2,8 +2,11 @@ module  -- shake: keep-all --deprecated_module: ignore
 
 public import Ratpoints.Mathlib.Algebra.BigOperators.Group.List.Basic
 public import Ratpoints.Mathlib.Algebra.Group.Even
+public import Ratpoints.Mathlib.Algebra.Polynomial.FieldDivision
 public import Ratpoints.Mathlib.Algebra.Polynomial.Homogenize
+public import Ratpoints.Mathlib.Algebra.Polynomial.Sturm.Sequence
 public import Ratpoints.Mathlib.Algebra.Squarefree.Basic
+public import Ratpoints.Mathlib.Analysis.Polynomial.Basic
 public import Ratpoints.Mathlib.Data.Int.GCD
 public import Ratpoints.Mathlib.Data.List.Basic
 public import Ratpoints.Mathlib.Data.List.Nodup
@@ -14,6 +17,7 @@ public import Ratpoints.Mathlib.Data.Nat.PadicValNat
 public import Ratpoints.Mathlib.Data.Nat.Prime.Defs
 public import Ratpoints.Mathlib.Data.Nat.Squarefree
 public import Ratpoints.Mathlib.Data.ZMod.Basic
+public import Ratpoints.Mathlib.FieldTheory.Perfect
 public import Ratpoints.Mathlib.NumberTheory.LegendreSymbol.JacobiSymbol
 public import Ratpoints.Mathlib.NumberTheory.Padics.PadicVal.Basic
 public import Ratpoints.Mathlib.NumberTheory.SmoothNumbers
@@ -79,6 +83,8 @@ public import Ratpoints.Proof.Sieve
 public import Ratpoints.Proof.Sift
 public import Ratpoints.Proof.Stages
 public import Ratpoints.Proof.Sturm
+public import Ratpoints.Proof.SturmCounts
+public import Ratpoints.Proof.SturmCoverage
 public import Ratpoints.Proof.SturmSigns
 public import Ratpoints.Proof.Tables
 public import Ratpoints.Proof.TwoAdic
@@ -88,3 +94,4 @@ public import Ratpoints.Spec
 public import Ratpoints.Spec.Basic
 public import Ratpoints.Spec.Order
 public import Ratpoints.Spec.Region
+public import Ratpoints.Spec.Sturm

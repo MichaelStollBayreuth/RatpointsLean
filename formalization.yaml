@@ -476,9 +476,13 @@ alignment:
         (Ratpoints.Cli.total_eq_of_findPointsWith_eq_ok); under -q only the strings and the points
         (Ratpoints.Cli.run_eq_of_findPoints_eq_ok); not certified by comparator
     - source: "the Sturm step covers every real point where F >= 0"
-      lean: ""
-      module: ""
-      status: "not-formalized"
-      note: "stage H; Sturm's theorem is a hypothesis until Mathlib has it"
+      lean: "Ratpoints.Sturm.covers_computeSturm"
+      module: "Ratpoints.Proof.SturmCoverage"
+      status: "partially-formalized"
+      note: >
+        assuming Sturm's theorem (Ratpoints.SturmTheorem, a hypothesis until Mathlib has it), the
+        intervals that the Sturm step leaves at a depth of at most 55, for a polynomial of degree
+        1 <= d < 2^57, hold every rational x with |x| <= 2^63 and F(x) >= 0 in the caller's
+        intervals (Ratpoints.Sturm.covers_computeSturm); the search calls the step with stage H
 
 acknowledgements: ""
