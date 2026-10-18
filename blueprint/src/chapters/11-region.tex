@@ -1,8 +1,9 @@
-% Stage H: the search region: the search intervals of the caller with their default, the range of
-% the denominators, the Sturm step that narrows the intervals, RATPOINTS_NO_REVERSE_AUTO and
-% RATPOINTS_BAD_ARGS; the doubles of the C code and the exact bounds of the numerators; and the
-% options -l -u -dl -du of the command-line program with messages 3 and 8. Proposed names are set
-% with \lname and become \lean once the declarations exist.
+% Stage H: the search region: the search intervals of the caller with their default [-h, h], the
+% range of the denominators, the Sturm step that narrows the intervals, RATPOINTS_NO_REVERSE_AUTO
+% and RATPOINTS_BAD_ARGS; the doubles of the C code as their bits and the exact bounds of the
+% numerators; Sturm's theorem as a hypothesis and the coverage of the Sturm step; the six certified
+% statements restated for the search region; and the options -l -u -dl -du of the command-line
+% program with messages 3 and 8.
 \chapter{The search region}\label{chap:region}
 
 Stage~H models the search region of ratpoints. The caller of \verb|find_points| may give search
@@ -26,49 +27,55 @@ its command line, and prints the search region of its command line, when there i
 search and the search intervals as the library leaves them after it (messages 3 and~8).
 
 Stage~H models all of this as the C code has it. A double that holds an end of a search interval (or
-that the program reads with \verb|strtod|) is a value of the new type $\mathrm{Double}$ of the
-model, a structure over its IEEE~754 binary64 bits, with a model function for each operation that
-the code modelled here applies to such a double: the comparisons of the C language, in which a NaN
-is unordered and $-0.0$ equals $0.0$, the negation and \verb|fabs|, the conversions between
+that the program reads with \verb|strtod|) is a value of the type $\mathrm{Double}$ of the model, a
+structure over its IEEE~754 binary64 bits, with a model function for each operation that the code
+modelled here applies to such a double: the comparisons of the C language, in which a NaN is
+unordered and $-0.0$ equals $0.0$, the negation and \verb|fabs|, the conversions between
 \verb|long|s and doubles, \verb|frexp|, \verb|ldexp|, \verb|nextafter| towards $\pm$\verb|HUGE_VAL|,
 \verb|strtod| and \verb|printf| under \verb|%f|. Apart from the estimate of the work in the choice
 of the moduli (\verb|numerators_for| and \verb|run_shape|, which multiply the ends by $b$ and
 subtract them in floating-point arithmetic, and are stage~I's), ratpoints does no other arithmetic
 on the ends of its intervals, so that everything the model does with them is computed exactly, on
-integers and rational numbers. The options of the search (Definition~\ref{def:Options}) gain the
+integers and rational numbers. The options of the search (Definition~\ref{def:Options}) hold the
 search intervals as a list of pairs of doubles, empty by default, and the least and the largest
 denominator as integers, $1$ and $0$ by default, a largest denominator below $1$ meaning $H$, as for
 the library; the search with a callback normalizes them as \verb|find_points_work_1| does, refuses
-intervals that are not well formed with the new refusal $\mathrm{badArgs}$ (error~9 of the program,
+intervals that are not well formed with the refusal $\mathrm{badArgs}$ (error~9 of the program,
 which no command line whose words have fewer than $2^{56}$ characters reaches,
 Theorem~\ref{thm:cliRegion}), runs the Sturm step on the search intervals, and returns the intervals
-that it leaves, for message~8. The command-line program now reads \verb|-l|, \verb|-u|, \verb|-dl|
-and \verb|-du|, the last options of ratpoints that it did not read, so that the exit status~12 for
-an option not supported yet goes; as before, the arguments of \verb|-t|, the number of threads, and
-of the tuning options that stage~I models are checked and then ignored.
+that it leaves, for message~8. The command-line program reads \verb|-l|, \verb|-u|, \verb|-dl| and
+\verb|-du|, so that it reads every option of ratpoints, and the exit status~12 of the earlier
+stages, for an option not supported yet, is gone; the arguments of \verb|-t|, the number of threads,
+and of the tuning options that stage~I models are checked and then ignored.
 
-For the default options the output of $\mathrm{findPoints}$ does not change: the default interval
-gives exactly the numerators $-H, \dots, H$ for every denominator, and the Sturm step leaves out
-only numerators $a$ for which $F(a, b) < 0$, which give no point. Under \verb|RATPOINTS_NO_CHECK|,
-where the list holds the survivors of the sieve, the survivors now lie in the intervals that the
-Sturm step keeps, as in the C program, so that they depend on the depth of the step. \verb|Params|
-and \verb|Params.WF| do not change. The specification gains two files, which the challenge restates
-verbatim: \verb|Ratpoints/Spec/Region.lean|, with the value of a double, the search intervals that
-ratpoints accepts and the predicate that a point lies in the search region, and
+For the default options the output of $\mathrm{findPoints}$ is that of the earlier stages: the
+default interval gives exactly the numerators $-H, \dots, H$ for every denominator, and the Sturm
+step leaves out only numerators $a$ for which $F(a, b) < 0$, which give no point. Under
+\verb|RATPOINTS_NO_CHECK|, where the list holds the survivors of the sieve, the survivors lie in the
+intervals that the Sturm step keeps, as in the C program, so that they depend on the depth of the
+step. \verb|Params| and \verb|Params.WF| are those of the earlier stages. The specification has two
+files for the search region, which the challenge restates verbatim:
+\verb|Ratpoints/Spec/Region.lean|, with the value of a double, the search intervals that ratpoints
+accepts and the predicate that a point lies in the search region, and
 \verb|Ratpoints/Spec/Sturm.lean|, with Sturm's theorem as a proposition; and the points in the order
 of ratpoints (Definition~\ref{def:orderedPoints}) take the largest denominator of the search. Of the
-twelve statements that comparator certifies, six change: membership and the order theorem hold for
-the points in the search region, and so does the coverage under \verb|RATPOINTS_NO_CHECK|, all three
-assuming Sturm's theorem when the Sturm step is on; the range statement under
-\verb|RATPOINTS_NO_CHECK| adds that every member lies in the search region, without that assumption;
-and both refusal theorems add the search intervals that are not well formed, while in the one with
-the Sturm step off the refusal for an allowed reversal with $d$ even and $c_0 = c_1 = 0$ now also
-needs the search region to be the whole box: any other search region forbids the reversal
-(\verb|RATPOINTS_NO_REVERSE_AUTO|), and with it the check that makes this refusal. The other six
-keep their text: the two of the brute-force reference, no duplicates, which now covers the search
-region too, the well-formedness of the parameters of the program, the sublist under
+twelve statements that comparator certifies (Section~\ref{sec:certifiedH}), six are stated for the
+search region: membership and the order theorem hold for the points in the search region, the order
+with the largest denominator of the search, and so does the coverage under
+\verb|RATPOINTS_NO_CHECK|, all three assuming Sturm's theorem when the Sturm step is on; the range
+statement under \verb|RATPOINTS_NO_CHECK| says that every member lies in the search region, without
+that assumption; and both refusal theorems refuse the search intervals that are not well formed,
+while in the one with the Sturm step off the refusal for an allowed reversal with $d$ even and
+$c_0 = c_1 = 0$ also needs the search region to be the whole box: any other search region forbids
+the reversal (\verb|RATPOINTS_NO_REVERSE_AUTO|), and with it the check that makes this refusal. The
+other six keep their text: the two of the brute-force reference, no duplicates, which covers the
+search region too, the well-formedness of the parameters of the program, the sublist under
 \verb|RATPOINTS_NO_CHECK|, whose two searches share the search region and the intervals of the Sturm
-step, and the protocol of the delivery.
+step, and the protocol of the delivery. The six changes came in with the theorems that prove them,
+the search region first and the hypothesis of Sturm's theorem with the switch to the Sturm step;
+\verb|lake comparator --paranoid|, with Lean's kernel and the five external checkers bundled with
+Lean, accepted the twelve statements in their form of stage~H on 2026-10-18, the date that
+Chapters~\ref{chap:spec} and~\ref{chap:sieve} and \verb|comparator/README.md| record.
 
 The Sturm step keeps every point because of Sturm's theorem: the number of roots of a squarefree
 polynomial in an interval $(a, b]$ is the difference of the numbers of sign changes of its Sturm
@@ -76,12 +83,12 @@ sequence at $a$ and at $b$. Mathlib has the Sturm sequence (\verb|Polynomial.stu
 changes of a list (\verb|List.signVariations|), but not yet the theorem. The specification states it
 as a proposition, $\mathrm{SturmTheorem}$, and the three statements that need it take the hypothesis
 $0 \le \mathrm{sturm} \to \mathrm{SturmTheorem}$; it is not an axiom, and the proofs and comparator
-check that the standard axioms are the only ones. The hypothesis stays until Mathlib has the
-theorem; proving it in the project remains possible. Everything else that the step needs is proved:
-that the remainder chain of the C code is the Sturm sequence of $f$ and $f'$ up to positive factors,
-the counts at $\pm\infty$ and at the roots of $f$ that the C code reads, the coverage of the
-bisection and of the intersection, the exactness of the ends as doubles up to the depth $55$, and
-the bounds of the arrays of the step, which the C code relies on.
+check that the standard axioms are the only ones. A proof of the theorem, in Mathlib or in the
+project, would discharge the hypothesis without changing the statements. Everything else that the
+step needs is proved: that the remainder chain of the C code is the Sturm sequence of $f$ and $f'$
+up to positive factors, the counts at $\pm\infty$ and at the roots of $f$ that the C code reads, the
+coverage of the bisection and of the intersection, the exactness of the ends as doubles up to the
+depth $55$, and the bounds of the arrays of the step, which the C code relies on.
 
 As in the other stages, since the aim of the project is to verify the C code as far as that can be
 done, the model follows the C code where the C code has its data and its tests: the ends of the
@@ -222,15 +229,15 @@ or the code $2$ returns first, after which no later interval would give anything
 nor builds its rows. One with such an interval sets them up even when that interval holds no
 numerator, or none of the class, and within a denominator the numerators come in increasing order.
 
-\paragraph{The range of the denominators.} The model has carried the range since stages~E and~F,
-with $b_{\mathrm{low}} = 1$ and $b_{\mathrm{high}} = H$: the divisor set-up keeps the divisors up to
-$b_{\mathrm{high}}$ (lines 875-876), whose number decides the shape of the divisors, so that a
-smaller $b_{\mathrm{high}}$ can change the order; the Jacobi tables need
-$b_{\mathrm{high}} \le$ \verb|RP_MULMOD_LIMIT| (line 688); the forbidden divisors are the prime
-powers up to $b_{\mathrm{high}}$ (lines 2217, 2230, 2637, 2639, 2735); and the shapes list the
-denominators from $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$ (lines 3816-3830). The estimate of the
-work in the choice of the moduli reads the range and the intervals in floating-point arithmetic
-(\verb|numerators_for| and \verb|run_shape|, lines 1836-2106), which is stage~I's.
+\paragraph{The range of the denominators.} Besides the loop over the denominators, the range enters
+the set-up of the run: the divisor set-up keeps the divisors up to $b_{\mathrm{high}}$ (lines
+875-876), whose number decides the shape of the divisors, so that a smaller $b_{\mathrm{high}}$ can
+change the order; the Jacobi tables need $b_{\mathrm{high}} \le$ \verb|RP_MULMOD_LIMIT| (line 688);
+the forbidden divisors are the prime powers up to $b_{\mathrm{high}}$ (lines 2217, 2230, 2637, 2639,
+2735); and the shapes list the denominators from $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$ (lines
+3816-3830). The estimate of the work in the choice of the moduli reads the range and the intervals
+in floating-point arithmetic (\verb|numerators_for| and \verb|run_shape|, lines 1836-2106), which
+is stage~I's.
 
 \paragraph{The doubles.} Apart from that estimate, the C code does no floating-point arithmetic on
 the ends: it converts \verb|long|s to doubles, which rounds to nearest with ties to even (the
@@ -304,16 +311,17 @@ depend on its depth.
 
 \section{The specification of the search region}\label{sec:regionSpec}
 
-The specification gains two files, which use Mathlib and nothing of the model and which the
-challenge restates verbatim. \verb|Ratpoints/Spec/Region.lean| speaks about the doubles by their
-bits, $64$-bit words, and about their values in $\QQ$ extended by $\bot$ and $\top$, Mathlib's
-\verb|WithBotTop ℚ|: the bits serve the value of a double and the test of a NaN in well-formedness,
-and every other predicate reads the values; it imports \verb|Mathlib.Order.WithBotTop| and
-\verb|Mathlib.Algebra.Order.Field.Rat|. \verb|Ratpoints/Spec/Sturm.lean| imports the Sturm sequence,
-the sign changes of a list, the derivative, squarefreeness, the real numbers and the cardinality of
-sets (\verb|Mathlib.Algebra.Polynomial.Sturm.Sequence|, \verb|Mathlib.Data.List.SignVariations|,
-\verb|Mathlib.Algebra.Polynomial.Derivative|, \verb|Mathlib.Algebra.Squarefree.Basic|,
-\verb|Mathlib.Basic.Real.Basic| and \verb|Mathlib.Data.Set.Card|).
+The specification of the search region is in two files, which use Mathlib and nothing of the model
+and which the challenge restates verbatim. \verb|Ratpoints/Spec/Region.lean| speaks about the
+doubles by their bits, $64$-bit words, and about their values in $\QQ$ extended by $\bot$ and
+$\top$, Mathlib's \verb|WithBotTop ℚ|: the bits serve the value of a double and the test of a NaN in
+well-formedness, and every other predicate reads the values; it imports
+\verb|Mathlib.Order.WithBotTop| and \verb|Mathlib.Algebra.Order.Field.Rat|.
+\verb|Ratpoints/Spec/Sturm.lean| imports the Sturm sequence, which brings the derivative and the
+cardinality of sets (\verb|Set.ncard|) with it, the sign changes of a list, squarefreeness and the
+real numbers (\verb|Mathlib.Algebra.Polynomial.Sturm.Sequence|,
+\verb|Mathlib.Data.List.SignVariations|, \verb|Mathlib.Algebra.Squarefree.Basic| and
+\verb|Mathlib.Basic.Real.Basic|).
 
 \begin{definition}[The search region]\label{def:regionSpec}
   \lean{Ratpoints.IsNaN, Ratpoints.doubleValue, Ratpoints.AreSearchIntervals, Ratpoints.IntervalsWF, Ratpoints.InRegion, Ratpoints.IsFullBox, Ratpoints.denominatorBound, Ratpoints.instDecidableIsNaN, Ratpoints.instDecidableAreSearchIntervals, Ratpoints.instDecidableIntervalsWF, Ratpoints.instDecidablePredInRegion, Ratpoints.instDecidableIsFullBox}
@@ -374,7 +382,7 @@ their bits, so that $-0.0$ and $0.0$ give the same region.
 The form with $(a, b]$ and ends that may be roots is the one that the bisection needs, which
 evaluates the chain at midpoints that may be roots of $f$; the ends at $\pm\infty$ come from the
 asymptotics of polynomials, proved in the project (Section~\ref{sec:coverage}). The points in the
-order of ratpoints (Definition~\ref{def:orderedPoints}) gain the largest denominator $B$ of the
+order of ratpoints (Definition~\ref{def:orderedPoints}) take the largest denominator $B$ of the
 search: the denominators of the search of the specification are taken up to $B$, while the points
 keep the height bound $H$; $B$ is the height bound, or the bound of the range of the denominators
 ($\mathrm{denominatorBound}$), and the other parts of a search region, the intervals and the least
@@ -414,7 +422,8 @@ here.
   truncated, for the doubles for which the C language defines the conversion (for the others the
   value is of no meaning); \verb|ldexp| and \verb|frexp|, as glibc computes them, exact in the range
   that ratpoints uses; and \verb|nextafter| towards $+\infty$ and towards $-\infty$, the neighbours
-  of a double, with the least subnormals next to the zeros. These model the C language and the C
+  of a double, with the least subnormals next to the zeros; these three pass a signalling NaN as it
+  is, where glibc quiets it (ratpoints passes them no NaN). These model the C language and the C
   library on the platforms of ratpoints, IEEE~754 binary64 with rounding to nearest, as gcc and
   glibc implement them, and hold no C range.
 \end{definition}
@@ -438,7 +447,8 @@ here.
   conversion of a \verb|long| is exact for $|n| \le 2^{53}$, and the next double above the
   conversion of $1 \le H < 2^{63}$ lies above $H$; \verb|ldexp| scales the value exactly while it
   stays in the normal range, \verb|frexp| gives $x = g\,2^{\mathit{ex}}$ with $1/2 \le |g| < 1$, and
-  the conversions to \verb|long| and \verb|unsigned long| are the floor of a value in their range.
+  the conversions to \verb|long| and \verb|unsigned long| are the floor of a nonnegative value in
+  their range.
   The neighbours of a double that is not a NaN and not at the end of the order have the next keys,
   so that no double lies strictly between a double and its neighbour; the step above a positive
   normal double of exponent field $e$ (Definition~\ref{def:regionSpec}) is $2^{e - 1075}$. And the
@@ -460,11 +470,11 @@ here.
   \uses{def:Double, lem:Double}
   \lean{Ratpoints.Double.lt_nextUp_and_nextDown_lt_ofRatio, Ratpoints.Double.lt_nextUp_and_nextDown_lt_ofDyadic, Ratpoints.Double.isNaN_ofRatio, Ratpoints.Double.isNaN_ofDyadic, Ratpoints.Double.ofRatio_eq, Ratpoints.Double.ofDyadic_eq, Ratpoints.Double.ofRatio_rounding, Ratpoints.Double.ofDyadic_rounding, Ratpoints.Double.roundDiv, Ratpoints.Double.ratioExponent, Ratpoints.Double.ratioLast, Ratpoints.Double.ratioPair, Ratpoints.Double.lt_nextUp_and_nextDown_lt, Ratpoints.Double.le_of_lt_nextUp, Ratpoints.Double.le_nextDown_of_doubleValue_lt, Ratpoints.Double.isFinite_nextUp_or_doubleValue_eq_top, Ratpoints.Double.isFinite_nextDown_or_doubleValue_eq_bot, Ratpoints.Double.nextUp_of_beq_zero, Ratpoints.Double.doubleValue_one}
   \leanok
-  The double nearest to $\pm n/d$, for $d \ne 0$, and the double nearest to $\pm m\,2^k$ are never a
-  NaN. For $n \ne 0$ and $m \ne 0$, when the double is finite, it is a faithful rounding of the
-  value: the value lies strictly between the two neighbours of the double, which are finite or
-  infinite. A double whose next double lies above a value $v$ is at least every double at most $v$,
-  and dually.
+  The roundings of the model, $\mathrm{ofRatio}$ of $\pm n/d$ for $d \ne 0$ and $\mathrm{ofDyadic}$
+  of $\pm m\,2^k$ (Definition~\ref{def:Double}), are never a NaN. For $n \ne 0$ and $m \ne 0$, when
+  the result is finite, it is a faithful rounding of the value: the value lies strictly between the
+  two neighbours of the result, which are finite or infinite. A double whose next double lies above
+  a value $v$ is at least every double at most $v$, and dually.
 \end{lemma}
 
 \begin{proof}
@@ -476,21 +486,23 @@ here.
   across a change of the exponent.
 \end{proof}
 
-The model computes the nearest double with ties to even, as glibc's \verb|strtod| does; the proofs
-show only that the rounding is faithful, which is all that the theorems need, and the guards and the
+Both roundings of the model, $\mathrm{ofDyadic}$ and $\mathrm{ofRatio}$, which \verb|strtod| uses,
+compute the double nearest to the value with ties to even, as IEEE~754 and glibc's \verb|strtod|
+round; what the proofs show is a faithful rounding, never a NaN and, for a finite result, the value
+strictly between its neighbours, which is all that the theorems need, and the guards and the
 differential tests check the nearest double against glibc (Section~\ref{sec:regionTests}).
 
 \section{The options and the search intervals}\label{sec:regionOptions}
 
-The options of the search (Definition~\ref{def:Options}) gain the search intervals, a list of pairs
+The options of the search (Definition~\ref{def:Options}) hold the search intervals, a list of pairs
 of doubles, empty by default, for the array \verb|domain| with its number \verb|num_inter|, and the
 least and the largest denominator, integers like the \verb|long|s \verb|b_low| and \verb|b_high|,
 with the defaults $1$ and $0$, the latter meaning $H$, as for the library; the depth of the Sturm
-step keeps its type. The lines of \verb|ratpoints.h| that hold these fields hold fields of the
-parameters and of the choice of the moduli too, and the options own them with a deviation that names
-the others: \verb|sp1| and \verb|sp2| of the parameters, \verb|sp3| of stage~I, and
-\verb|num_primes| and \verb|max_forbidden| of the options of the program. The proofs read the
-intervals through their values and their bits.
+step is an integer, as in the earlier stages. The lines of \verb|ratpoints.h| that hold these
+fields hold fields of the parameters and of the choice of the moduli too, and the options own them
+with a deviation that names the others: \verb|sp1| and \verb|sp2| of the parameters, \verb|sp3| of
+stage~I, and \verb|num_primes| and \verb|max_forbidden| of the options of the program. The proofs
+read the intervals through their values and their bits.
 
 \begin{definition}[The values and the bits of the intervals]\label{def:inIntervals}
   \uses{def:Double, def:regionSpec}
@@ -574,7 +586,7 @@ intervals through their values and their bits.
 
 \section{The exact bounds of the numerators}\label{sec:bounds}
 
-The bounds of the search intervals are made once for the run, in the new model file
+The bounds of the search intervals are made once for the run, in the model file
 \verb|Ratpoints/Model/Bounds.lean|, and the two functions that turn the bounds of an interval into
 the bits of the numerators of a class sit in \verb|Ratpoints/Model/Sieve.lean|, next to the
 conversion of numerators to bits that they end with (Definition~\ref{def:numeratorsToBits}). They
@@ -769,8 +781,8 @@ range is the same for the bits and for the values.
 
 For the one interval $[-h, h]$ of a search without intervals the ranges are the one range
 $-H, \dots, H$ at every denominator, and the interval is taken inline exactly when
-$H \le 2^{63} - 65$: the bits and their form are those that \verb|sift| used before stage~H, so
-that the output of a search without intervals does not change.
+$H \le 2^{63} - 65$: the bits and their form are those of the whole line $-H, \dots, H$ of the
+earlier stages, so that the output of a search without intervals is the same.
 
 \section{The sieve over the search intervals}\label{sec:regionSieve}
 
@@ -781,30 +793,29 @@ interval, and at the first interval with the code $0$, also one without numerato
 are made and the rows that are missing built into the store (Definitions~\ref{def:siftBits}
 and~\ref{def:buildRows}), once for the denominator, the lazy set-up of the flag \verb|do_setup|;
 then the points of the bits of the interval (Definition~\ref{def:siftBits}), which returns when the
-callback stops the search. Its C ranges gain the struct \verb|rp_intervals|
+callback stops the search. Its C ranges include the struct \verb|rp_intervals|
 (\csource{find_points.c}{3435}{3440}), the field \verb|iv| of the sieving thread
-(\csource{rp-private.h}{574}{574}) and its clearing by \verb|worker_init|, line 3130, which joins
-the link of line 3129 (\csource{find_points.c}{3129}{3130}), and its deviation ``every numerator
-from $-H$ to $H$'' goes. \verb|run_setup| (Definition~\ref{def:Shape}) takes the search intervals,
-the height bound and the largest denominator and returns the bounds with the shape
-(\csource{find_points.c}{3869}{3870}), the Jacobi tables reading the largest denominator; the run
-(Definition~\ref{def:sieveRun}) takes the bounds and passes them to each denominator, for the field
-\verb|iv| that \verb|run_block| sets for each block (\csource{find_points.c}{3913}{3913}); the
-sieving (Definition~\ref{def:sieving}) runs the denominators from $b_{\mathrm{low}}$ to
-$b_{\mathrm{high}}$ of the shape over the intervals; and the search
-(Definition~\ref{def:searchPoints}) takes the range, the search intervals and the flag
+(\csource{rp-private.h}{574}{574}) and the lines of \verb|worker_init| that clear the flags of the
+thread and \verb|iv| (\csource{find_points.c}{3129}{3130}). \verb|run_setup|
+(Definition~\ref{def:Shape}) takes the search intervals, the height bound and the largest
+denominator and returns the bounds with the shape (\csource{find_points.c}{3869}{3870}), the Jacobi
+tables reading the largest denominator; the run (Definition~\ref{def:sieveRun}) takes the bounds and
+passes them to each denominator, for the field \verb|iv| that \verb|run_block| sets for each block
+(\csource{find_points.c}{3913}{3913}); the sieving (Definition~\ref{def:sieving}) runs the
+denominators from $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$ of the shape over the intervals; and the
+search (Definition~\ref{def:searchPoints}) takes the range, the search intervals and the flag
 \verb|sturm_empty| (Section~\ref{sec:regionSearch}).
 
-The contract of one denominator (\lname{Ratpoints.Sieve.sift\_spec}) keeps its hypotheses and adds
+The contract of one denominator (\verb|Ratpoints.Sieve.sift_spec|, Definition~\ref{def:sift}) takes
 the ranges $\mathit{rs}$ that the bounds give at $b$ (Definition~\ref{def:numeratorRanges}),
 quantified in the postcondition, since the program does not mention them: the store fits the entries
 before and after the denominator, also when no interval asks for the rows, and the delivery is that
 of the points of the check with the flags (Definition~\ref{def:checkNumWith}) of the numerators of
 $-H, \dots, H$ that lie in one of the ranges, pass the class bit of the word $w$ and survive the
 entries of all three stages, in increasing order. The contract of the run
-(\lname{Ratpoints.Sieve.sieveRun\_spec}) quantifies ranges for each denominator from
-$b_{\mathrm{low}}$ to $b_{\mathrm{high}}$, and its invariants
-(\lname{Ratpoints.Sieve.SieveRunInvariant}, \lname{Ratpoints.Sieve.SieveRunLoopInvariant}) take the
+(\verb|Ratpoints.Sieve.sieveRun_spec|, Definition~\ref{def:sieveRun}) quantifies ranges for each
+denominator from $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$, and its invariants
+(\verb|Ratpoints.Sieve.SieveRunInvariant|, \verb|Ratpoints.Sieve.SieveRunLoopInvariant|) take the
 bounds and the range. With the ranges of the values of well-formed intervals
 (Lemma~\ref{lem:exactBounds}), a numerator $|a| \le H$ lies in a range exactly when $a/b$ lies in an
 interval (Lemma~\ref{lem:numeratorRanges}), so that each denominator delivers the points of the
@@ -894,7 +905,7 @@ serves every range.
 
 \section{The Sturm step}\label{sec:sturmStep}
 
-The model of the Sturm step extends \verb|Ratpoints/Model/Sturm.lean|, in the namespace
+The model of the Sturm step is in \verb|Ratpoints/Model/Sturm.lean|, in the namespace
 \verb|Ratpoints.Sturm|, after the remainder chain of stage~D (Definition~\ref{def:sturmChain}),
 whose rows it reads as the C code reads its table. The bisection keeps the \verb|long| numerators
 and exponents of the C code, as \verb|Int64|, and makes the doubles of the ends as the C code makes
@@ -1049,18 +1060,26 @@ them.
 
 The coverage, that the intervals of the step hold every $x$ of the caller's intervals with
 $f(x) \ge 0$, is the place where Sturm's theorem enters. The general facts are proved at Mathlib's
-generality, in mirrors under \verb|Ratpoints/Mathlib| that are candidates for Mathlib: on the
-division of polynomials over a field (\verb|Algebra/Polynomial/FieldDivision|), on the Sturm
-sequence (\verb|Algebra/Polynomial/Sturm/Sequence|), on the signs of a real polynomial near a point
-and near $\pm\infty$ (\verb|Analysis/Polynomial/Basic|) and on squarefree polynomials over a perfect
-field (\verb|FieldTheory/Perfect|). Mathlib after the version that the project pins has
-\verb|Polynomial.signRight x p| (pull request \#44248,
-\verb|Mathlib/Analysis/Polynomial/SignRight.lean|), the sign of $p$ just right of $x$, defined as a
-limit for every $p$, which the project can take over at its next update of Mathlib; until then the
-mirror of the signs defines no sign of its own just right or just left of a point, and its lemmas
-state the sign there by the values of $p$ and $p'$ at the point (Lemma~\ref{lem:polySigns}). The
-mirror on chains of pairs (\verb|Data/List/Pairwise|) gains a fact that serves the ranges of the
-numerators and the intersection, not the coverage.
+generality, in mirrors under \verb|Ratpoints/Mathlib| that are candidates for Mathlib, each named
+after the Mathlib file that it extends and importing it: the quotient by $X - x$ at $x$ and the
+remainders by constant multiples (\verb|Algebra/Polynomial/FieldDivision|); the Sturm sequences of
+positive multiples and the generalized Sturm sequences (\verb|Algebra/Polynomial/Sturm/Sequence|);
+the signs of a polynomial near a point and near $\pm\infty$, over a linearly ordered normed field
+with the order topology, and the consequences of the intermediate value theorem over $\mathbb{R}$
+(\verb|Analysis/Polynomial/Order|); squarefree polynomials over a perfect field
+(\verb|FieldTheory/Perfect|); the cast of a sign (\verb|Basic/Sign/Defs|); and the value of the
+image of a polynomial at a rational number (\verb|Algebra/Polynomial/Eval/Coeff|). The sign
+variations of positive multiples and of polynomials near $\pm\infty$ are in
+\verb|Analysis/Polynomial/Sturm|, which has no Mathlib sibling: Mathlib has the Sturm sequence and
+the sign variations of a list, in files that do not import each other, but not yet Sturm's theorem,
+whose file will import both. Mathlib after the version that the project pins has
+\verb|Polynomial.signRight x p| (pull request \#44248), the sign of $p$ just right of $x$, defined
+as a limit for every $p$, which the project can take over at its next update of Mathlib; until then
+the mirror of the signs defines no sign of its own just right or just left of a point, and its
+lemmas state the sign there by the values of $p$ and $p'$ at the point (Lemma~\ref{lem:polySigns}).
+The fact that a chain of intervals, each ending below the start of the next, is pairwise so, in the
+mirror \verb|Data/List/Chain|, serves the ranges of the numerators and the intersection, not the
+coverage.
 
 \begin{lemma}[Positive multiples and the Sturm sequence]\label{lem:posAssoc}
   \lean{Polynomial.PosAssoc, Polynomial.PosAssoc.refl, Polynomial.PosAssoc.symm, Polynomial.PosAssoc.trans, Polynomial.PosAssoc.neg_mod, Polynomial.PosAssoc.sign_eval, Polynomial.PosAssoc.sign_leadingCoeff, Polynomial.sturmSeq_map, Polynomial.forall₂_posAssoc_sturmSeq, Polynomial.forall₂_posAssoc_sturmSeq_of_getElem, Polynomial.signVariations_map_eq_of_forall₂, Polynomial.signVariations_map_eval_eq_of_forall₂, Polynomial.signVariations_map_leadingCoeff_eq_of_forall₂, Polynomial.signVariations_map_neg_one_pow_mul_leadingCoeff_eq_of_forall₂, Polynomial.mod_eq_of_dvd_sub_of_degree_lt, Polynomial.C_mul_mod, Polynomial.mod_C_mul}
@@ -1096,11 +1115,11 @@ numerators and the intersection, not the coverage.
   $n/2^e$, so that its sign is that of the value; the count at the midpoint is the number of sign
   changes of the values of the rows there when $f$ or $f'$ does not vanish, which holds for a
   squarefree $f$; and the counts at $\pm\infty$ are those of the signs of the leading coefficients.
-  So, for a chain that ends with a constant and $d < 2^{57}$: for a squarefree $f$ and the depth of
+  So, for a chain that ends with a constant: its counts at $\pm\infty$ are those of the Sturm
+  sequence of $f$ and $f'$ at $\pm\infty$; and for $d < 2^{57}$, a squarefree $f$ and the depth of
   the midpoint at most $55$, the signs and the count of the step at a midpoint $m$ are
-  $\mathrm{sign}\,f(m)$, $\mathrm{sign}\,f'(m)$ and the count $V_f(m)$ of the Sturm sequence of $f$
-  and $f'$ (Lemma~\ref{lem:sturmCounts}); and its counts at $\pm\infty$ are those of the Sturm
-  sequence at $\pm\infty$.
+  $\mathrm{sign}\,f(m)$, $\mathrm{sign}\,f'(m)$ and the count $V_f(m)$ of the Sturm sequence
+  (Lemma~\ref{lem:sturmCounts}).
 \end{lemma}
 
 \begin{proof}
@@ -1143,13 +1162,15 @@ numerators and the intersection, not the coverage.
   For a real polynomial $p$: the count $V_p(x)$ of Definition~\ref{def:sturmTheorem}, the counts at
   $\pm\infty$ from the leading coefficients, the count at the lower end $l$ of an interval
   ($V_p(l)$, or that at $-\infty$) and at its upper end $r$ ($V_p(r)$ plus $1$ at a root of $p$, or
-  that at $+\infty$), the signs of $p$ just inside the ends, at a finite end that of $p$ there or,
-  at a root, of $p'$ (just right of $l$) or of $-p'$ (just left of $r$), the case distinction of
-  Lemma~\ref{lem:polySigns}, and the points strictly between the ends. Assuming Sturm's theorem, for
-  a squarefree $p$: the counts at the ends of an interval agree exactly when $p$ has no root
-  strictly between them; when they agree and $p$ is negative just inside the lower end, $p$ is
-  negative between the ends and just inside the upper end; and when they differ, or $p$ is positive
-  just inside the lower end, $p$ is positive somewhere between the ends.
+  that at $+\infty$), the signs at the ends, at $\mp\infty$ that of the leading coefficient, times
+  $(-1)^{\deg p}$ at $-\infty$, and at a finite end that of $p$ there or, at a root, of $p'$ (at
+  $l$) or of $-p'$ (at $r$), which are the signs of $p$ just inside the ends where $p$ and $p'$ do
+  not both vanish, as for a squarefree $p$, by the case distinction of Lemma~\ref{lem:polySigns},
+  and the points strictly between the ends. Assuming Sturm's theorem, for a squarefree $p$: the
+  counts at the ends of an interval agree exactly when $p$ has no root strictly between them; when
+  they agree and $p$ is negative just inside the lower end, $p$ is negative between the ends and
+  just inside the upper end; and when they differ, or $p$ is positive just inside the lower end, $p$
+  is positive somewhere between the ends.
 \end{lemma}
 
 \begin{proof}\leanok
@@ -1173,12 +1194,13 @@ numerators and the intersection, not the coverage.
   dropped interval keeps no $x$ with $f(x) \ge 0$; the halves of an interval with the invariant have
   it, and keep what it keeps; so the bisection to a depth of at most $55$ keeps what the intervals
   kept before hold and every $x$ with $f(x) \ge 0$ that the interval keeps. The real polynomial of a
-  chain that does not fail is squarefree, the interval $[-\infty, +\infty]$ has the invariant and
-  keeps every $|x| \le 2^{63}$, and at the exit of the step $f < 0$ everywhere. So, assuming Sturm's
-  theorem, the Sturm step at a depth of at most $55$ on a polynomial of degree $1 \le d < 2^{57}$
-  with $c_d \ne 0$, for well-formed intervals of the caller, leaves intervals that hold every
-  $x \in \QQ$ with $|x| \le 2^{63}$ and $f(x) \ge 0$ that lies in the caller's intervals. For
-  $b > 0$, $F(a, b) = b^{d + (d \bmod 2)} f(a/b)$, so that a point gives $f(a/b) \ge 0$.
+  chain that does not fail, of a polynomial of degree $d \ge 1$ with $c_d \ne 0$, is squarefree, the
+  interval $[-\infty, +\infty]$ has the invariant and keeps every $|x| \le 2^{63}$, and, assuming
+  Sturm's theorem, at the exit of the step $f < 0$ everywhere. So, assuming Sturm's theorem, the
+  Sturm step at a depth of at most $55$ on a polynomial of degree $1 \le d < 2^{57}$ with
+  $c_d \ne 0$, for well-formed intervals of the caller, leaves intervals that hold every $x \in \QQ$
+  with $|x| \le 2^{63}$ and $f(x) \ge 0$ that lies in the caller's intervals. For $b > 0$,
+  $F(a, b) = b^{d + (d \bmod 2)} f(a/b)$, so that a point gives $f(a/b) \ge 0$.
 \end{lemma}
 
 \begin{proof}
@@ -1223,22 +1245,21 @@ numerators and the intersection, not the coverage.
 \section{The search in the search region}\label{sec:regionSearch}
 
 The search with a callback (Definition~\ref{def:findPointsWith}) runs in the order of
-\verb|find_points_work_1|: the refusals of the length and the height and of the leading zeros, as
-before; the normalization of the options (Definition~\ref{def:normalize}); the reversal check with
-the normalized switch (Definition~\ref{def:reversal}), which may refuse the form or reverse the
+\verb|find_points_work_1|: the refusals of the length and the height and of the leading zeros; the
+normalization of the options (Definition~\ref{def:normalize}); the reversal check with the
+normalized switch (Definition~\ref{def:reversal}), which may refuse the form or reverse the
 polynomial; the search intervals (Definition~\ref{def:searchIntervals}), with the refusal
 $\mathrm{badArgs}$; the Sturm step (Definition~\ref{def:sturmRegion}), which, when it is on
 ($\mathrm{sturm} \ge 0$), may refuse the form, return at once, or narrow the search intervals; and
 the search of the polynomial handed on (Definition~\ref{def:searchPoints}) over the normalized range
 of the denominators and the intervals that the step leaves, with its flag \verb|sturm_empty|. The
 test of the \verb|long|s, which the C code makes between the reversal check and the search
-intervals, stays with the search, which uses it. The search returns after the points at infinity
+intervals, is made by the search, which uses it. The search returns after the points at infinity
 when the step has left no interval (line 5106, which Definition~\ref{def:searchPoints} owns), and
-what a search gives back (Definition~\ref{def:Outcome}) gains the search intervals as the search
+what a search gives back (Definition~\ref{def:Outcome}) holds the search intervals as the search
 leaves them, for message~8: $[-h, h]$ when the caller gives none, narrowed by the Sturm step, in the
-coordinates of the polynomial searched, and none after a return of the step. The search with a
-callback gives the C range of the Sturm step, \csource{find_points.c}{4857}{4892}, to the new
-component that models it.
+coordinates of the polynomial searched, and none after a return of the step. The C range of the
+Sturm step, \csource{find_points.c}{4857}{4892}, belongs to the component that models it.
 
 \begin{definition}[The Sturm step of the search]\label{def:sturmRegion}
   \uses{def:computeSturm, def:reversal, def:Double}
@@ -1248,14 +1269,16 @@ component that models it.
   check hands on, with the depth of the step, for the search intervals: with the step off, the
   intervals as they are; with it on, the refusal $\mathrm{notSquarefree}$ when the remainder chain
   of $f$ is none (Definition~\ref{def:computeSturm}), and otherwise the intervals that the step
-  leaves when there are some; when there are none, $f$ being negative on all the search intervals,
-  none for an even $d$ whose leading coefficient is not a square, when there is no point at infinity
-  either, so that the search returns at once with the count $0$ (the return of line 4889), and
-  otherwise no intervals with the flag \verb|sturm_empty| set, so that the search delivers the
-  points at infinity only (\csource{find_points.c}{4857}{4892}, from the search with a callback).
-  The square test is that of the reversal check (Definition~\ref{def:reversal}), made on the
-  polynomial searched, which gives the flag \verb|lcfsq| of the C code for an even degree, the only
-  one that reads it.
+  leaves when there are some. When it leaves none, at its exit for a polynomial without a real root
+  and with $c_0 < 0$ or because the intervals that its bisection keeps miss the search intervals, so
+  that $f$ is negative on the search intervals within $\pm 2^{63}$: none for an even $d$ whose
+  leading coefficient is not a square, when there is no point at infinity either, so that the search
+  returns at once with the count $0$ (the return of line 4889), and otherwise no intervals with the
+  flag \verb|sturm_empty| set, so that the search delivers the points at infinity only
+  (\csource{find_points.c}{4857}{4892}). At the depth of the step the intervals that it leaves may
+  hold points at which $f$ is negative. The square test is that of the reversal check
+  (Definition~\ref{def:reversal}), made on the polynomial searched, which gives the flag
+  \verb|lcfsq| of the C code for an even degree, the only one that reads it.
 \end{definition}
 
 \begin{lemma}[The Sturm step of the search]\label{lem:sturmRegion}
@@ -1314,23 +1337,24 @@ component that models it.
 \end{proof}
 
 The list of a successful search (Lemma~\ref{lem:findPoints_searchList},
-\lname{Ratpoints.exists\_searchList\_of\_findPoints\_eq\_ok}) takes the region: for well-formed
-parameters, if $\mathrm{findPoints}(c, H, P, o)$ returns $L$, then the reversal check with the
-normalized switch hands on a polynomial $c'$ of positive degree with the flag $\mathrm{rev}$,
-$1 \le H < 2^{63}$, the caller's intervals are well formed, the chain of $c'$ does not fail when the
-Sturm step is on, and there is a sound test $S$ over the normalized range such that $L$ is the list
-that the search delivers for $S$ over the region that the search uses, the empty list when that is
-none, and the same holds for every choice of the options of the output. The output of the search
-(Theorem~\ref{thm:findPoints_order}, \lname{Ratpoints.exists\_eq\_of\_findPoints\_eq\_ok}) gives,
-with the exact check on, $L$ as the points that the reference of $c'$ finds over the candidate
-$(1, 0)$ and over the denominators of its search in the normalized range with $a/b$ in the region
-that the search uses, mapped back after a reversal and filtered by $\mathrm{noY}$. Neither assumes
-Sturm's theorem, and from them, with Lemma~\ref{lem:searchRegion}, follow the three statements that
-keep their text or need no such assumption: no duplicates; every member under
-\verb|RATPOINTS_NO_CHECK| lies in the search region of the caller, since the region that the search
-uses lies in it; and the sublist under \verb|RATPOINTS_NO_CHECK|, since both searches use the same
-region. The search region of the caller and the region that the search uses differ only by the
-Sturm step, and on the points the difference vanishes under Sturm's theorem.
+\verb|Ratpoints.exists_searchList_of_findPoints_eq_ok|) is stated over the region that the search
+uses: for well-formed parameters, if $\mathrm{findPoints}(c, H, P, o)$ returns $L$, then the
+reversal check with the normalized switch hands on a polynomial $c'$ of positive degree with the
+flag $\mathrm{rev}$, $1 \le H < 2^{63}$, the caller's intervals are well formed, the chain of $c'$
+does not fail when the Sturm step is on, and there is a sound test $S$ over the normalized range
+such that $L$ is the list that the search delivers for $S$ over the region that the search uses, the
+empty list when that is none, and the same holds for every choice of the options of the output. The
+output of the search (Theorem~\ref{thm:findPoints_order},
+\verb|Ratpoints.exists_eq_of_findPoints_eq_ok|) gives, with the exact check on, $L$ as the points
+that the reference of $c'$ finds over the candidate $(1, 0)$ and over the denominators of its search
+in the normalized range with $a/b$ in the region that the search uses, mapped back after a reversal
+and filtered by $\mathrm{noY}$. Neither assumes Sturm's theorem, and from them, with
+Lemma~\ref{lem:searchRegion}, follow the three statements that keep their text or need no such
+assumption: no duplicates; every member under \verb|RATPOINTS_NO_CHECK| lies in the search region of
+the caller, since the region that the search uses lies in it; and the sublist under
+\verb|RATPOINTS_NO_CHECK|, since both searches use the same region. The search region of the caller
+and the region that the search uses differ only by the Sturm step, and on the points the difference
+vanishes under Sturm's theorem.
 
 \begin{lemma}[The reversal and the search region]\label{lem:reversalRegion}
   \uses{def:reversal, lem:normalize, def:regionSpec, lem:reversal_swap}
@@ -1409,36 +1433,35 @@ Sturm step, and on the points the difference vanishes under Sturm's theorem.
 \end{proof}
 
 From the last form come the theorems that assume Sturm's theorem: membership
-(\lname{Ratpoints.mem\_iff\_isPoint\_of\_findPoints\_eq\_ok}): for well-formed parameters, the exact
-check on and $\mathrm{findPoints}(c, H, P, o) = L$, a triple lies in $L$ exactly when it is a
-normalized point of height at most $H$, with $y \ge 0$ under $\mathrm{noY}$, in the search region of
-$o$; the set of elements (\lname{Ratpoints.toFinset\_eq\_filter\_points\_of\_findPoints\_eq\_ok},
-for \verb|toFinset_eq_points_of_findPoints_eq_ok|), with both options of the output off, is
-$\mathrm{points}(c, H)$ filtered by the search region; the permutation
-(\lname{Ratpoints.perm\_filter\_bruteForce\_of\_findPoints\_eq\_ok}, for
-\verb|perm_bruteForce_of_findPoints_eq_ok|), now for either setting of $\mathrm{noY}$, of the
-reference filtered by $\mathrm{noY}$ and the search region; the reference itself
-(\lname{Ratpoints.eq\_filter\_bruteForce\_of\_findPoints\_eq\_ok\_of\_reverse\_eq\_false}, for
-\verb|eq_bruteForce_of_findPoints_eq_ok_of_reverse_eq_false|, now in the node of the permutation,
-Theorem~\ref{thm:findPoints_perm}), filtered by the search region, when the reversal is forbidden
-and the denominators of the search are those of the range; the order theorem
-(\lname{Ratpoints.eq\_orderedPoints\_of\_findPoints\_eq\_ok}): $L$ is the list of the points in the
-order of ratpoints for $\mathrm{maxDivisors}$, the switch of the reversal and the whole box, $c$,
-$H$ and the largest denominator of the search, filtered by $\mathrm{noY}$ and the search region; and
-the coverage under \verb|RATPOINTS_NO_CHECK|
-(\lname{Ratpoints.mem\_of\_isPoint\_of\_findPoints\_eq\_ok\_of\_noCheck}): every normalized point of
-height at most $H$ in the search region gives the survivor $(x, 0, z)$. The range statement under
-\verb|RATPOINTS_NO_CHECK|
-(\lname{Ratpoints.exists\_eq\_of\_mem\_of\_findPoints\_eq\_ok\_of\_noCheck}) adds that every
-survivor lies in the search region, without the assumption. The refusal theorems
-(Theorem~\ref{thm:refusals}) add the refusal of the search intervals, from
-Lemmas~\ref{lem:searchIntervals}, \ref{lem:reversalRegion} and~\ref{lem:sturmRegion}: with the Sturm
-step on, $\mathrm{findPoints}$ refuses exactly when $c$ has fewer than two or more than
-$\mathrm{maxDegree} + 1$ entries, $H = 0$ or $H \ge 2^{63}$, $\Phi_c$ is not squarefree, or the
-caller's intervals are not well formed; with it off, exactly when $c$ has fewer than two or more
-than $\mathrm{maxDegree} + 1$ entries, $H = 0$ or $H \ge 2^{63}$, $d + 2 \le N$, the reversal is
-allowed, the search region is the whole box, $d$ is even and $c_0 = c_1 = 0$, or the caller's
-intervals are not well formed.
+(\verb|Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok|, Theorem~\ref{thm:findPoints}): for
+well-formed parameters, the exact check on and $\mathrm{findPoints}(c, H, P, o) = L$, a triple lies
+in $L$ exactly when it is a normalized point of height at most $H$, with $y \ge 0$ under
+$\mathrm{noY}$, in the search region of $o$; the set of elements
+(\verb|Ratpoints.toFinset_eq_filter_points_of_findPoints_eq_ok|, Theorem~\ref{thm:findPoints}), with
+both options of the output off, is $\mathrm{points}(c, H)$ filtered by the search region; the
+permutation (\verb|Ratpoints.perm_filter_bruteForce_of_findPoints_eq_ok|,
+Theorem~\ref{thm:findPoints_perm}), for either setting of $\mathrm{noY}$, of the reference filtered
+by $\mathrm{noY}$ and the search region; the reference itself
+(\verb|Ratpoints.eq_filter_bruteForce_of_findPoints_eq_ok_of_reverse_eq_false|, in the same node),
+filtered by the search region, when both options of the output are off, the options forbid the
+reversal and the denominators of the search are those of the range; the order theorem
+(\verb|Ratpoints.eq_orderedPoints_of_findPoints_eq_ok|, Theorem~\ref{thm:order}): $L$ is the list of
+the points in the order of ratpoints for $\mathrm{maxDivisors}$, the switch of the reversal and the
+whole box, $c$, $H$ and the largest denominator of the search, filtered by $\mathrm{noY}$ and the
+search region; and the coverage under \verb|RATPOINTS_NO_CHECK|
+(\verb|Ratpoints.mem_of_isPoint_of_findPoints_eq_ok_of_noCheck|, Theorem~\ref{thm:noCheck}): every
+normalized point of height at most $H$ in the search region gives the survivor $(x, 0, z)$. The
+range statement under \verb|RATPOINTS_NO_CHECK|
+(\verb|Ratpoints.exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck|, Theorem~\ref{thm:noCheck}) says,
+besides the form of the survivors, that every survivor lies in the search region, without the
+assumption. The refusal theorems (Theorem~\ref{thm:refusals}) include the refusal of the search
+intervals, from Lemmas~\ref{lem:searchIntervals}, \ref{lem:reversalRegion}
+and~\ref{lem:sturmRegion}: with the Sturm step on, $\mathrm{findPoints}$ refuses exactly when $c$
+has fewer than two or more than $\mathrm{maxDegree} + 1$ entries, $H = 0$ or $H \ge 2^{63}$,
+$\Phi_c$ is not squarefree, or the caller's intervals are not well formed; with it off, exactly when
+$c$ has fewer than two or more than $\mathrm{maxDegree} + 1$ entries, $H = 0$ or $H \ge 2^{63}$,
+$d + 2 \le N$, the reversal is allowed, the search region is the whole box, $d$ is even and
+$c_0 = c_1 = 0$, or the caller's intervals are not well formed.
 
 \begin{theorem}[The Sturm step changes only the speed]\label{thm:sturmSpeed}
   \uses{thm:order, thm:refusals, def:findPoints}
@@ -1458,20 +1481,29 @@ intervals are not well formed.
 \end{proof}
 
 This is the promise of Chapter~\ref{chap:setup}, that the depth of the Sturm step changes only the
-speed, now a theorem, with the exact check on; under \verb|RATPOINTS_NO_CHECK| the survivors depend
+speed, as a theorem, with the exact check on; under \verb|RATPOINTS_NO_CHECK| the survivors depend
 on the depth, as in the C program.
 
 \section{What comparator certifies}\label{sec:certifiedH}
 
-\verb|comparator/Challenge.lean| restates, besides the specification that it restated before, the
-definitions of \verb|Ratpoints/Spec/Region.lean| and \verb|Ratpoints/Spec/Sturm.lean| with their
-decidability instances, verbatim, and imports exactly the Mathlib modules among the public imports
-of the files of the specification: those of the file of the region with H.5 and those of the file
-of Sturm's theorem with H.11; from the model it takes, besides what it took before, the doubles
-($\mathrm{Double}$), whose bits the statements read through the search intervals of the options. The
-twelve statements, for all $c$, $H$, parameters $P$ and options $o$, with $D$ the values and $B_D$
-the bits of the intervals of $o$, the search region that of $D$, $o.\mathrm{bLow}$ and
-$o.\mathrm{bHigh}$, and $h_S$ the hypothesis $0 \le o.\mathrm{sturm} \to \mathrm{SturmTheorem}$:
+\verb|comparator/Challenge.lean| restates, verbatim, the definitions of
+\verb|Ratpoints/Spec/Basic.lean| that the statements read, those of
+\verb|Ratpoints/Spec/Order.lean|, and those of \verb|Ratpoints/Spec/Region.lean| and
+\verb|Ratpoints/Spec/Sturm.lean| with their decidability instances, and imports exactly the Mathlib
+modules among the public imports of these files of the specification,
+\verb|Mathlib.Order.WithBotTop| and \verb|Mathlib.Algebra.Order.Field.Rat| for the region,
+\verb|Mathlib.Algebra.Polynomial.Sturm.Sequence|, \verb|Mathlib.Data.List.SignVariations| and
+\verb|Mathlib.Basic.Real.Basic| for Sturm's theorem among them. From the model it takes
+\verb|bruteForce|, \verb|findPoints|, \verb|findPointsWith|, \verb|Outcome|, \verb|Answer|,
+\verb|Delivery|, \verb|Delivery.deliver|, \verb|Options|, \verb|Double|, the doubles of the search
+intervals, whose bits the statements read through the options, \verb|Params|, \verb|Params.WF|,
+\verb|SieveOptions|, \verb|sieveParams|, \verb|maxDegree| and \verb|maxDivisors|. Six of the
+statements are restated for the search region of the options, each with the theorem that proves it;
+\verb|lake comparator --paranoid|, with Lean's kernel and the five external checkers bundled
+with Lean, accepted the twelve statements in this form on 2026-10-18. They are, for all $c$, $H$,
+parameters $P$ and options $o$, with $D$ the values and $B_D$ the bits of the intervals of $o$, the
+search region that of $D$, $o.\mathrm{bLow}$ and $o.\mathrm{bHigh}$, and $h_S$ the hypothesis
+$0 \le o.\mathrm{sturm} \to \mathrm{SturmTheorem}$:
 \begin{enumerate}
   \item a triple lies in $\mathrm{bruteForce}(c, H)$ exactly when it is a normalized point of height
     at most $H$ (\verb|challenge_mem_bruteForce_iff|, unchanged);
@@ -1480,20 +1512,19 @@ $o.\mathrm{bHigh}$, and $h_S$ the hypothesis $0 \le o.\mathrm{sturm} \to \mathrm
   \item under $h_S$, for $P$ well formed, $\mathrm{noCheck}$ false and
     $\mathrm{findPoints}(c, H, P, o) = L$: $p \in L$ exactly when $p$ is a normalized point of
     height at most $H$, with $y \ge 0$ if $\mathrm{noY}$ is set, in the search region
-    (\verb|challenge_mem_iff_isPoint_of_findPoints_eq_ok|, with the search region from H.5 and with
-    $h_S$ from H.11);
+    (\verb|challenge_mem_iff_isPoint_of_findPoints_eq_ok|, with the search region and $h_S$ since
+    stage~H);
   \item for $P$ well formed and $\mathrm{findPoints}(c, H, P, o) = L$, $L$ has no duplicates
-    (\verb|challenge_nodup_of_findPoints_eq_ok|, its text unchanged, now over the search region
-    too);
+    (\verb|challenge_nodup_of_findPoints_eq_ok|, its text unchanged, over the search region too);
   \item with the Sturm step on, $\mathrm{findPoints}$ refuses exactly when $c$ has fewer than two or
     more than $\mathrm{maxDegree} + 1$ entries, $H = 0$, $H \ge 2^{63}$, $\Phi_c$ is not squarefree
     or $B_D$ is not well formed (\verb|challenge_exists_findPoints_eq_error_iff_of_sturm_nonneg|,
-    with the search intervals, H.5);
+    with the search intervals since stage~H);
   \item with the Sturm step off, exactly when $c$ has fewer than two or more than
     $\mathrm{maxDegree} + 1$ entries, $H = 0$, $H \ge 2^{63}$, $d + 2 \le N$, or the reversal is
     allowed, the search region is the whole box, $d$ is even and $c_0 = c_1 = 0$, or $B_D$ is not
     well formed (\verb|challenge_exists_findPoints_eq_error_iff_of_sturm_neg|, with the search
-    region, H.5);
+    region since stage~H);
   \item the parameters of every set of options of the program are well formed
     (\verb|challenge_wf_sieveParams|, unchanged);
   \item under $h_S$, for $P$ well formed, $\mathrm{noCheck}$ false and
@@ -1501,18 +1532,18 @@ $o.\mathrm{bHigh}$, and $h_S$ the hypothesis $0 \le o.\mathrm{sturm} \to \mathrm
     for $\mathrm{maxDivisors}$, the switch of the reversal of $o$ and the whole box, $c$, $H$ and
     the largest denominator $\mathrm{denominatorBound}(o.\mathrm{bHigh}, H)$, filtered by
     $\neg\mathrm{noY} \lor y \ge 0$ and the search region
-    (\verb|challenge_eq_orderedPoints_of_findPoints_eq_ok|, with the search region from H.5 and with
-    $h_S$ from H.11);
+    (\verb|challenge_eq_orderedPoints_of_findPoints_eq_ok|, with the search region, the largest
+    denominator and $h_S$ since stage~H);
   \item[9.] for $P$ well formed, $\mathrm{noCheck}$ set and $\mathrm{findPoints}(c, H, P, o) = L$:
     every member of $L$ is $(x, 0, z)$ with $\gcd(x, z) = 1$, $z > 0$ or ($z = 0$ and $x = 1$),
     $|x| \le H$ and $z \le H$, in the search region
-    (\verb|challenge_exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck|, strengthened by the search
-    region, H.5);
+    (\verb|challenge_exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck|, with the search region since
+    stage~H);
   \item[10.] under $h_S$, for $P$ well formed, $\mathrm{noCheck}$ set and
     $\mathrm{findPoints}(c, H, P, o) = L$: for every normalized point $(x, y, z)$ of height at most
     $H$ in the search region, $(x, 0, z) \in L$
-    (\verb|challenge_mem_of_isPoint_of_findPoints_eq_ok_of_noCheck|, with the search region from H.5
-    and with $h_S$ from H.11);
+    (\verb|challenge_mem_of_isPoint_of_findPoints_eq_ok_of_noCheck|, with the search region and
+    $h_S$ since stage~H);
   \item[11.] for $P$ well formed, $\mathrm{noCheck}$ set, $\mathrm{findPoints}(c, H, P, o) = L$ and
     the search with $\mathrm{noCheck}$ cleared and $\mathrm{noY}$ set returning $L'$: $L'$ with $y$
     replaced by $0$ is a sublist of $L$
@@ -1524,10 +1555,10 @@ $o.\mathrm{bHigh}$, and $h_S$ the hypothesis $0 \le o.\mathrm{sturm} \to \mathrm
     (\verb|challenge_map_findPointsWith_eq_map_findPoints|, unchanged).
 \end{enumerate}
 $\mathrm{SturmTheorem}$ is a hypothesis of statements 3, 8 and~10, which one reads with the
-specification. It holds trivially when the depth is negative, so for a search with the Sturm step
-off, the program's \verb|-s|, the three statements hold without it. For the default depth
-$\mathrm{defaultSturm}$ of the options and of the program without \verb|-s| or \verb|-S|
-(Definition~\ref{def:Options}), they assume Sturm's theorem, the textbook theorem of
+specification. The hypothesis $h_S$ holds trivially when the depth is negative, so for a search with
+the Sturm step off, the program's \verb|-s|, the three statements hold without Sturm's theorem. For
+the default depth $\mathrm{defaultSturm}$ of the options and of the program without \verb|-s| or
+\verb|-S| (Definition~\ref{def:Options}), they assume Sturm's theorem, the textbook theorem of
 Definition~\ref{def:sturmTheorem} that Mathlib does not have yet. With the exact check on,
 Theorem~\ref{thm:sturmSpeed} gives under it the same list as the search with the step off. The
 theorems of the library behind the twelve statements have guards on their axioms, which are the
@@ -1537,12 +1568,11 @@ leaves lie in the caller's; and statement 11 neither, since both searches use th
 
 \section{The program}\label{sec:regionCli}
 
-The program reads the ends of its intervals as \verb|main.c| reads them, in a new model file
-\verb|Ratpoints/Model/CliNumbers.lean|, which also takes the readers of the numbers of the command
-line from \verb|Ratpoints/Model/Cli.lean| (Definition~\ref{def:cliNumbers}): those of the integers,
-of the one word of an argument and of a \verb|long| unchanged, while \verb|Ratpoints.Cli.isDouble|,
-which only says whether an argument is a real number, gives way to \lname{Ratpoints.Cli.scanDouble?}
-of Definition~\ref{def:cliEnds}, which also gives the double that \verb|scan_double| reads.
+The program reads the ends of its intervals as \verb|main.c| reads them, in the model file
+\verb|Ratpoints/Model/CliNumbers.lean|, which also holds the readers of the numbers of the command
+line (Definition~\ref{def:cliNumbers}), those of the integers, of the one word of an argument and of
+a \verb|long|, and the reader of a real number, \verb|Ratpoints.Cli.scanDouble?|
+(Definition~\ref{def:cliEnds}), which gives the double that \verb|scan_double| reads.
 
 \begin{definition}[The ends of the command line]\label{def:cliEnds}
   \uses{def:cliNumbers, def:Double}
@@ -1555,8 +1585,9 @@ of Definition~\ref{def:cliEnds}, which also gives the double that \verb|scan_dou
   infinity, and otherwise the double nearest to the exact value $\pm m\,10^{e - k}$, or
   $\pm m\,2^{e - 4k}$ for a hexadecimal word, with ties to even (Definition~\ref{def:Double}), a
   zero of the sign of the word for a value of at most $2^{-1075}$ and an infinity of its sign for
-  one of at least $2^{1024} - 2^{970}$, the size of the value decided by bounds before a power is
-  expanded, so that a word with a huge exponent costs no more than another; the double that
+  one of at least $2^{1024} - 2^{970}$, with shortcuts by bounds on the size of the value before a
+  power is expanded, so that a word with a huge exponent costs no more than another, while the
+  rounding of the expanded value gives the infinities and the zeros that they miss; the double that
   \verb|scan_double| reads, a word with only white space around it, read by \verb|strtod|, none for
   anything else, among them a NaN (\csource{main.c}{746}{752}, from
   Definition~\ref{def:cliNumbers}). The end \verb|exact_end|, $\mathrm{inf} = -1$, $1$ or $0$ for
@@ -1625,28 +1656,25 @@ The command line (Definition~\ref{def:cliInput}) reads \verb|-l| and \verb|-u| i
 \verb|-dl| and \verb|-du| into the options of the search, starts from the options with the height
 bound as the largest denominator, completes a pending interval after the options, and gives the
 search intervals of the options as the doubles read and the exact ends in the settings of the output
-(\lname{Ratpoints.Cli.Output}, which gains them); its C ranges gain the cases of the four options
-and the completion (\csource{main.c}{393}{400}, \csource{main.c}{414}{416},
+(\verb|Ratpoints.Cli.Output|, Definition~\ref{def:cliOutput}); its C ranges include the cases of the
+four options and the completion (\csource{main.c}{393}{400}, \csource{main.c}{414}{416},
 \csource{main.c}{650}{668}, \csource{main.c}{333}{336}, \csource{main.c}{380}{380},
-\csource{main.c}{679}{679}). The failures (Definition~\ref{def:cliFailure}) gain error~7 for the
+\csource{main.c}{679}{679}). The failures (Definition~\ref{def:cliFailure}) include error~7 for the
 intervals and error~9 for the refusal $\mathrm{badArgs}$, with their messages
-(\csource{main.c}{1036}{1048} in place of the links of lines 1036-1043 and 1047, the exclusion of
-line 1048 going), and lose the option not supported yet with its exit status~12, as
-\verb|-l -u -dl -du|, the last options of ratpoints that the program did not read, are now read
-(\verb|-t|, the number of threads, as before checked and ignored). The data of the callback
-(Definition~\ref{def:cliProcess}) gain the number of the intervals of the command line, before the
-join, and their exact ends (\csource{main.c}{246}{247}), and the callback passes over an affine
-point whose $x/z$ lies in none of the exact intervals, with the weight $0$ and the flag clear
-(\csource{main.c}{150}{152}). The report (Definition~\ref{def:cliReport}) gains message~3, the
-search region of the command line before the join, printed only when the command line gives
+(\csource{main.c}{1036}{1048}); since the program reads \verb|-l -u -dl -du|, it has no failure for
+an option that it does not support (\verb|-t|, the number of threads, is checked and ignored). The
+data of the callback (Definition~\ref{def:cliProcess}) hold the number of the intervals of the
+command line, before the join, and their exact ends (\csource{main.c}{246}{247}), and the callback
+passes over an affine point whose $x/z$ lies in none of the exact intervals, with the weight $0$ and
+the flag clear (\csource{main.c}{150}{152}). The report (Definition~\ref{def:cliReport}) prints
+message~3, the search region of the command line before the join, only when the command line gives
 intervals, after the height bound, or after the curve equation under \verb|-v|
 (\csource{main.c}{224}{224}), and message~8, the search intervals that the search gives back, after
 message~7 and not under \verb|-v|, each interval printed as \verb|[%f, %f]| and the intervals joined
-by \verb| U | (\lname{Ratpoints.Cli.showIntervals}, which the node of the report names; the texts
-\csource{main.c}{979}{991} and \csource{main.c}{999}{1033} in place of the links of lines 979-983,
-999-1021 and 1031-1033). The program (Definition~\ref{def:cliRun}) builds the data of the callback
-from the intervals before the join and runs the search on the joined intervals
-(\csource{main.c}{248}{248}).
+by \verb| U | (\verb|Ratpoints.Cli.showIntervals|, which the node of the report names; the texts
+\csource{main.c}{979}{991} and \csource{main.c}{999}{1033}). The program
+(Definition~\ref{def:cliRun}) builds the data of the callback from the intervals before the join and
+runs the search on the joined intervals (\csource{main.c}{248}{248}).
 
 \begin{lemma}[The numbers of the command line]\label{lem:cliNumbers}
   \uses{def:cliEnds, def:cliRegionTest, lem:rounding, lem:Double, def:regionSpec}
@@ -1678,11 +1706,13 @@ from the intervals before the join and runs the search on the joined intervals
   logic of Lean core.
 \end{proof}
 
-From the double that \verb|strtod| reads, nearest to the value of the word, \verb|outward| lands on
-the largest double at most a lower end and on the smallest double at least an upper end, as in the C
-program; the proofs show the first for a faithful rounding, and of the second only that the double
-is at least the end, which is all that the theorems need; the differential tests compare the doubles
-of the ends with the C program, in messages~3 and~8.
+The model of \verb|strtod| computes the double nearest to the value of the word, with ties to even,
+as glibc does; the proofs show half of a faithful rounding, that the value lies below the next
+double above the result (Lemma~\ref{lem:cliNumbers}), which is all that the theorems need. From the
+double that \verb|strtod| reads, \verb|outward| lands on the largest double at most a lower end and
+on the smallest double at least an upper end, as in the C program; the proofs show the first, and of
+the second only that the double is at least the end; the differential tests compare the doubles of
+the ends with the C program, in messages~3 and~8.
 
 \begin{theorem}[The search region of the command line]\label{thm:cliRegion}
   \uses{def:cliIntervals, def:cliInput, lem:cliNumbers, def:cliProcess, thm:findPoints, thm:cliRun,
@@ -1719,18 +1749,19 @@ of the ends with the C program, in messages~3 and~8.
   command line holds, could give an exact end other than the value that \verb|strtod| rounds.
 \end{proof}
 
-The theorem on the program (Theorem~\ref{thm:cliRun}) keeps its statements with the joined
-intervals: the counted points are those of the list that the callback keeps, counting them
-(\lname{Ratpoints.Cli.Data.keeps}: a point at infinity unless \verb|-i|, and an affine point when
-the command line gives no intervals or its $x/z$ lies in one of them by \verb|in_region|; the
-theorem's node names it next to \lname{Ratpoints.Cli.countedPoints}, which takes this test in place
-of the switch of the points at infinity), and the program prints them, under \verb|-q| only them and
-the strings, under \verb|-1| the first; with Theorem~\ref{thm:cliRegion} it prints exactly the
-points of the search region of its command line. Theorem~\ref{thm:cliRun} takes no hypothesis of
-Sturm's theorem, since it is stated over the list of $\mathrm{findPoints}$. The last statement of
+The theorem on the program (Theorem~\ref{thm:cliRun}) is stated with the joined intervals: the
+counted points are those of the list that the callback keeps, counting them
+(\verb|Ratpoints.Cli.Data.keeps|: a point at infinity unless \verb|-i|, and an affine point when the
+command line gives no intervals or its $x/z$ lies in one of them by \verb|in_region|; the theorem's
+node names it next to \verb|Ratpoints.Cli.countedPoints|, which takes this test in place of the
+switch of the points at infinity), and the program prints them, under \verb|-q| only them and the
+strings, under \verb|-1| the first; with Theorem~\ref{thm:cliRegion} it prints exactly the points of
+the search region of its command line. Theorem~\ref{thm:cliRun} takes no hypothesis of Sturm's
+theorem, since it is stated over the list of $\mathrm{findPoints}$. The last statement of
 Theorem~\ref{thm:cliRegion}, and with it the statement that the program prints exactly the points of
-the search region of its command line, takes the hypothesis from H.11 on, as membership does: it is
-needed for the command lines without \verb|-s|, and under \verb|-s| the theorem holds without it.
+the search region of its command line, takes the hypothesis of Sturm's theorem when the Sturm step
+is on, as membership does: it is needed for the command lines without \verb|-s|, and under \verb|-s|
+the theorem holds without it.
 
 \section{The differential tests}\label{sec:regionTests}
 
@@ -1738,7 +1769,7 @@ The harness compares the search region and the Sturm step with the C program at 
 \begin{itemize}
   \item every run of \verb|test4.sh| with \verb|-l|, \verb|-u|, \verb|-dl| or \verb|-du|, $165$ of
     them, and the one of \verb|test3.sh| are compared, by their points in their order, their
-    reports and their errors; the option status~12 and its check go;
+    reports and their errors;
   \item a search above the largest height of the default suites, $30000$, is compared when it has
     a search region, the model lists at most $10^5$ denominators for it (by a bound that mirrors the
     divisor set-up of the model), and it sifts at most $2 \cdot 10^{10}$ numerators, from the widths
@@ -1746,87 +1777,105 @@ The harness compares the search region and the Sturm step with the C program at 
     search stops; such searches run with a timeout and a cap of $4$~GB on the memory: the searches
     of \verb|test4.sh| at large heights in a narrow region, among them three under \verb|-1| at the
     heights $10^{12}$ and $2^{63} - 1$ whose stop lies in the sieve;
-  \item messages~3 and~8 are compared byte for byte in every report: message~3 from H.7, message~8
-    from H.11 (until then dropped from the report of the C program, as the model does not narrow the
-    search intervals before H.11); only message~4, on the moduli used, stays dropped (stage~I);
+  \item messages~3 and~8 are compared byte for byte in every report; only message~4, on the moduli
+    used, is dropped from the report of the C program (stage~I);
   \item under \verb|-x| the lines are the survivors of the sieve over the intervals that the Sturm
-    step keeps. From H.7 on, the weaker check runs on every run under \verb|-x| without a format or
-    a string, now with the exact region of the command line and the range of the denominators, as
-    \verb|process| of \verb|main.c| tests them; it is the only check where the pin changes the
-    output of \verb|ratpoints-lean|, or where the C program, as its report under \verb|-v -z| says,
-    sieves with other moduli under the pin (a subset of the $30$ primes, or composite moduli such as
-    $9$ in place of $3$, or $55$ and $63$ in place of $3$, $5$, $7$ and $11$), which stage~I models,
-    and the reason is counted. Otherwise the outputs are also compared exactly with the C program on
-    the command line with the moduli pinned (\verb|-p 30 -N 30| appended), on which it sieves with
-    the first $30$ odd primes in its first two stages and no third stage: with \verb|-s| appended as
-    well until H.11, as in stage~G, and without \verb|-s| from H.11 on. The moduli are always read
-    from the command line that is compared, since the choice of the moduli of the C program reads
-    the search intervals;
-  \item a new default suite \verb|regions| runs $400$ random search regions against the C program:
+    step keeps, which depend on the moduli and on the search region. The outputs are compared
+    exactly with the C program on the command line with the moduli pinned (\verb|-p 30 -N 30|
+    appended, without \verb|-s|) when the pin does not change the output of \verb|ratpoints-lean|
+    and the C program on that command line sieves with the first $30$ odd primes in its first two
+    stages and no third stage, as its report under \verb|-v -z| says (the moduli are read from the
+    command line that is compared, since the choice of the moduli of the C program reads the search
+    intervals), or does not sieve at all. Without a format or a string, every run under \verb|-x| is
+    also compared by the weaker check against the C program on the command line itself, with the
+    exact search region of the command line and the range of the denominators, as \verb|process| of
+    \verb|main.c| tests them; it is the only check where the pin changes the output of
+    \verb|ratpoints-lean|, or where the C program sieves with other moduli under the pin (a subset
+    of the $30$ primes, or composite moduli such as $9$ in place of $3$, or $55$ and $63$ in place
+    of $3$, $5$, $7$ and $11$), which stage~I models, and the reason is counted;
+  \item the default suite \verb|regions| runs $400$ random search regions against the C program:
     intervals with ends of every kind (decimals, hexadecimal constants, ends that are no doubles,
     infinities, numbers beyond the range of the doubles, tiny ones, $-0$, intervals that touch or
     whose doubles meet, a missing first \verb|-l| or last \verb|-u|), ranges of the denominators of
     every shape and random options, at small heights, and in one run in ten at a large height with a
     narrow region, its ends exact doubles at times, also around points of large height and at the
     ends of the range $[-H, H]$ of the numerators, at times under \verb|-x| with the moduli pinned;
-  \item a new default suite \verb|depths| runs $300$ random depths of the Sturm step, \verb|-S 0| to
+  \item the default suite \verb|depths| runs $300$ random depths of the Sturm step, \verb|-S 0| to
     \verb|-S 60| and \verb|-s|, with \verb|-q| or the report (message~8), at times with intervals,
-    \verb|-k| or \verb|-x|;
+    \verb|-k| or \verb|-x| with the moduli pinned;
   \item the errors suite has the cases of the search region: errors~7 and~6, the join, the test of
     the callback, the suppression of the reversal, and the order with a range of the denominators;
     the fuzz draws ends for \verb|-l| and \verb|-u| and \verb|long|s for \verb|-dl| and \verb|-du|.
 \end{itemize}
-In the prototype the default suites compare $4530$ times with none failed: \verb|test4| $565$,
-\verb|test3| $16$, \verb|rptest| $1206$, \verb|random| $300$, \verb|outputs| $299$, the errors suite
-$360$, the fuzz $800$, the parameters $272$, the high suite $12$, \verb|regions| $400$ and
-\verb|depths| $300$; under \verb|-x| $142$ runs are compared exactly and $7$ by the weaker check
-alone, all for the C program's choice of other moduli under the pin: in six of them a subset of the
-$30$ primes, in one (of \verb|test4.sh|, with \verb|-n 15 -C 0|) the moduli $55$ and $63$; and
-\verb|test4high| compares $13$, none failed. Every point list is compared in its order.
+At the end of the stage the default suites compared $4530$ times with none failed: \verb|test4|
+$565$ (four outputs filtered, $13$ runs left to \verb|test4high| for their height), \verb|test3|
+$16$ (five outputs filtered), \verb|rptest| $1206$, \verb|random| $300$, \verb|outputs| $299$ (one
+search under \verb|-x| with a format not compared exactly), the errors suite $360$, the fuzz $800$,
+the parameters $272$, the high suite $12$, \verb|regions| $400$ and \verb|depths| $300$, with $142$
+runs under \verb|-x| compared exactly and $7$ by the weaker check alone, all for the moduli that the
+C program chose under the pinned options (stage~I); and \verb|test4high| compared $13$, none failed.
+Every point list is compared in its order.
 
 The \verb|#guard| examples of the model check the doubles against a driver of gcc and glibc (the
 conversions of \verb|long|s, the comparisons, \verb|nextafter|, the negation, \verb|fabs|,
 \verb|frexp|, \verb|ldexp| and the truncations), the ends, the scaled ends and the forms against the
 lines of the C code run verbatim, the bits of intervals against the build of ratpoints under
 \verb|DEBUG|, \verb|sift| over regions against the plain sieve, with the store of the rows built
-lazily, the Sturm step against a driver of \verb|_ratpoints_compute_sturm| (few real intervals, a
-form negative everywhere, a form that is not squarefree, dyadic roots met by midpoints, the depths
-$0$ to $55$, $-0.0$ kept, an empty intersection, coefficients of $70$ bits) and the bound $1 +
-\lfloor d/2 \rfloor$ of its array, the search with a callback with its outcome and its refusal
-$\mathrm{badArgs}$ against \verb|find_points| of the library, and, for the program, \verb|strtod|
-and \verb|%f| against glibc, the ends of \verb|scan_end|, the height end, \verb|in_region|, the
-join, and whole runs with regions, errors~6 and~7, $100$ intervals accepted and $101$ refused,
-against the C program.
+lazily, the Sturm step against a driver of \verb|_ratpoints_compute_sturm| and \verb|eval_sign| of
+the pinned commit (few real intervals, a form negative everywhere, a form that is not squarefree,
+dyadic roots met by midpoints, the depths $0$ to $55$, $-0.0$ kept, an empty intersection,
+coefficients of $70$ bits) and the bound $1 + \lfloor d/2 \rfloor$ of its array, the search with a
+callback with its outcome, the intervals that it leaves and its refusal $\mathrm{badArgs}$ against
+\verb|find_points| of the library, and, for the program, \verb|strtod| and \verb|%f| against glibc,
+the ends of \verb|scan_end|, the height end, \verb|in_region|, the join, and whole runs with
+regions, errors~6 and~7, $\mathrm{maxDegree}$ intervals accepted and one more refused, against the C
+program.
 
 \section{Deviations}\label{sec:regionDeviations}
 
-Each component differs from the C code in a stated way, recorded in its \verb|Deviation:| paragraph:
+The model of the platform is stated once, where it is defined: the doubles are a structure over
+their bits (\verb|Ratpoints.Double|, in \verb|Ratpoints/Model/Double.lean|), with functions of the
+model for the operations of the C language and of the C library on them, which model the platform
+(IEEE~754 binary64, rounding to nearest, gcc and glibc) and hold no C range, \verb|ldexp|,
+\verb|frexp| and \verb|nextafter| passing a NaN as it is, where glibc quiets a signalling NaN, which
+ratpoints never passes them; and \verb|strtod| and \verb|printf| under \verb|%f|
+(\verb|Ratpoints.Cli.strtod|, \verb|Ratpoints.Cli.printF|, in
+\verb|Ratpoints/Model/CliNumbers.lean|) are what glibc computes, not how it computes it: the double
+nearest to the exact value of the word, with ties to even, with shortcuts by bounds on its size
+before a power is expanded, and the exact decimal expansion rounded to six places. The proofs show
+that $\mathrm{ofRatio}$ and $\mathrm{ofDyadic}$ round faithfully (Lemma~\ref{lem:rounding}), and of
+\verb|strtod| the half of that which the theorems need, that the exact value of the word lies below
+the next double above the result (Lemma~\ref{lem:cliNumbers}). The components that use the model of
+the platform name it in their descriptions, and their \verb|Deviation:| paragraphs record how they
+differ from the C code beyond it:
 \begin{itemize}
-  \item the doubles as a structure over their bits, with functions of the model for the operations
-    of the C language and of the C library on them, which model the platform (IEEE~754 binary64,
-    rounding to nearest, gcc and glibc) and hold no C range; \verb|strtod| and \verb|printf| under
-    \verb|%f| as what glibc computes, not how it computes it: the nearest double to the exact value
-    of the word, its size decided by bounds before a power is expanded, and the exact decimal
-    expansion rounded to six places;
   \item the 128-bit product, sum and shift of the scaled end on two $64$-bit words, the high word of
     the product by $\mathrm{mulHi}$, for the \verb|unsigned __int128| of the arm that the builds of
     the model compile, which Lean core does not have, the other arm excluded; the \verb|long| $b$
     converted to a word, as the C code converts it to an \verb|unsigned long|;
-  \item natural numbers for the \verb|int| exponents and shifts of the ends and the forms, which are
-    from $0$ to $127$ and from $0$ to $63$, and Booleans for their \verb|int| flags; the mantissa
-    and the exponent of an end, the end, its form and the bounds of the run returned, the form as an
-    option, for the fields, the pointers and the \verb|int| through which the C code writes them,
-    and the array of the bounds that \verb|run_setup| allocates; the \verb|&&| of
+  \item for the ends, the forms and the bounds, natural numbers for the \verb|int| exponents and
+    shifts, which are from $0$ to $127$ and from $0$ to $63$, an integer for the exponent while
+    \verb|exact_end| computes it, and Booleans for the \verb|int| flags; the mantissa and the
+    exponent of an end, the end, its form and the bounds of the run returned, the form as an option,
+    for the fields, the pointers and the \verb|int| through which the C code writes them, and the
+    array of the bounds that \verb|run_setup| allocates; the lowest set bit of the mantissa by the
+    loop of \verb|RP_CTZL|, where gcc and clang take \verb|__builtin_ctzl|; the \verb|&&| of
     \verb|exact_bounds|, which makes the form of the upper end only when the lower end has one, as a
     bind of options; \verb|Int64| for the \verb|long|s, with the division of \verb|Int64|, which
-    truncates as C's does, and \verb|>>>| on \verb|Int64| the arithmetic shift, for the \verb|>>| of
-    a negative \verb|long|, which gcc defines so, the arithmetic of \verb|Int64| wrapping where that
-    of the \verb|long|s overflows, which it does not here, by the bound of the forms; the code and
-    the bits of an interval returned as a triple, the bits $(0, 0)$ with the codes $1$ and $2$, for
-    which the C code writes nothing; no output under \verb|DEBUG|;
-  \item the bounds of the search intervals an array passed from the run to each denominator, for the
-    struct \verb|rp_intervals| that \verb|sift| reaches through the field \verb|iv| of the sieving
-    thread, which \verb|worker_init| clears and \verb|run_block| sets for each block;
+    truncates as the C division does, on the non-negative \verb|long|s that \verb|end_form| divides;
+  \item for the bits of an interval, the code and the bits returned as a triple, the bits $(0, 0)$
+    with the codes $1$ and $2$, for which the C code writes nothing; \verb|Int64| for the
+    \verb|long|s, the \verb|unsigned long| products compared with the height bound converted to a
+    word, as the C code compares them, and \verb|>>>| on \verb|Int64| the arithmetic shift, for the
+    \verb|>>| of a negative \verb|long|, which the C standard leaves to the implementation and gcc
+    defines so, the arithmetic of \verb|Int64| wrapping where that of the \verb|long|s overflows,
+    which it does not here, by the bound of the forms; no output under \verb|DEBUG|;
+  \item the bounds of the search intervals an array, returned by \verb|run_setup| with the shape and
+    passed from the run to each denominator, for the struct \verb|rp_intervals| with its pointers
+    \verb|bd| and \verb|end|, which \verb|sift| reaches through the field \verb|iv| of the sieving
+    thread, which \verb|worker_init| clears and \verb|run_block| sets for each block; the search
+    intervals, the height bound and the largest denominator arguments of \verb|run_setup|, for the
+    fields of the arguments that \verb|exact_bounds| reads;
   \item the options of the search a structure: a list of pairs of doubles for the array
     \verb|domain| with its number \verb|num_inter|, the empty list for $\mathrm{num\_inter} = 0$, so
     that no number of intervals is negative and the room in the array for the intervals of the Sturm
@@ -1838,9 +1887,10 @@ Each component differs from the C code in a stated way, recorded in its \verb|De
     \verb|find_points_work| restores; no clamp of the number of the intervals, which a list cannot
     make negative; the bit \verb|RATPOINTS_NO_REVERSE_AUTO|, which the C code sets in the flags and
     the reversal check tests with \verb|RATPOINTS_NO_REVERSE|, as the switch of the reversal
-    cleared;
+    cleared, which the reversal check reads;
   \item the search intervals returned as a list, none for \verb|RATPOINTS_BAD_ARGS|, for the array
-    that the C code sets to the default interval in place; the test of a null pointer excluded;
+    that the C code sets to the default interval in place; the test of a null pointer excluded, the
+    interface of the library;
   \item the Sturm step of the search a function of its own, its result a refusal, none, or the
     intervals with the flag \verb|sturm_empty|, for the codes that the C code returns at lines 4879
     and 4889, the intervals that it leaves in \verb|domain| and its local flag; the square test made
@@ -1853,8 +1903,7 @@ Each component differs from the C code in a stated way, recorded in its \verb|De
     intervals and the flag \verb|sturm_empty| arguments of the search and of the sieving, for the
     fields of the arguments and the local flag of \verb|find_points_work_1|; the test of the
     \verb|long|s, which the C code makes between the reversal check and the search intervals
-    (\verb|find_points.c| lines 4814-4823), made by the search, after the search intervals and the
-    Sturm step, where it is used;
+    (\verb|find_points.c| lines 4814-4823), made by the search, where it is used;
   \item in the Sturm step, the rows as arrays and integers for the GMP integers, with
     \verb|Int.sign| for \verb|mpz_sgn| and no scratch integers; \verb|Int64| for the \verb|long|
     numerators and exponents, with the arithmetic shift, wrapping where the \verb|long|s overflow,
@@ -1869,11 +1918,13 @@ Each component differs from the C code in a stated way, recorded in its \verb|De
     $1 + \lfloor d/2 \rfloor$ intervals on the stack and its pointer, which the C code reaches from
     the nested function, with no bound on their number, which the C code relies on and the proofs
     show under Sturm's theorem (Lemma~\ref{lem:sturmBuffers}), and the chain, its last index and the
-    depth of the step as arguments; the doubles of the ends as bits;
+    depth of the step as arguments;
   \item the intersection read from the caller's array, where the C code reads it from a copy on the
     heap and writes over the caller's array, and returned as a new array, with no bound on its
-    length, which the manual asks the caller to provide for and the proofs show under Sturm's
-    theorem;
+    length, where the caller's array must have room for $1 + \lfloor d/2 \rfloor$ intervals more
+    than it holds (the comment at lines 52-53 of \verb|sturm.c|), as the C code relies on; the
+    proofs show, under Sturm's theorem, at most $\mathrm{num\_inter} + d$ intervals, the room that
+    the manual asks of the caller (Lemma~\ref{lem:sturmBuffers});
   \item the Sturm step with its arguments for the fields of the arguments, its result an option of
     an array for the \verb|long| it returns and the intervals it writes, the table of the chain made
     by the chain of stage~D and the array of the intervals kept by the bisection; no \verb|mpz_init|
@@ -1888,597 +1939,131 @@ Each component differs from the C code in a stated way, recorded in its \verb|De
     or $1$; lists and arrays for the arrays of \verb|main.c|, natural numbers for its \verb|long|
     indices; the NaN refused by the syntax of \verb|scan_double|, for its test \verb|isnan|; the
     largest denominator $-1$ of line 336, which line 380 replaces by the height bound, not set; the
-    loops of messages~3 and~8 one function, \verb|%lf| being \verb|%f|.
+    loops of messages~3 and~8 one function, \verb|%lf| being \verb|%f|; the refusals of the
+    coefficients and of the height mapped to the errors $3$, $5$ and $4$ with which
+    \verb|read_input| refuses those inputs before the library is called, where line 260 gives
+    error~9 for the code \verb|RATPOINTS_BAD_ARGS| with which the library refuses those that it can
+    be given; no command line reaches these refusals.
 \end{itemize}
-The deviations that stage~H retires: ``every numerator from $-H$ to $H$'' of one denominator
-(Chapter~\ref{chap:words}); the reversal check without \verb|RATPOINTS_NO_REVERSE_AUTO|, no error~9,
-and of the Sturm step only its test for a repeated factor, with the survivors outside the region
-that the step keeps under \verb|RATPOINTS_NO_CHECK| (Chapter~\ref{chap:setup}); no search intervals
-and no range of the denominators other than $1$ to $H$ (Chapter~\ref{chap:denominators}); no search
-intervals of the sieving thread (Chapter~\ref{chap:stages}); the form of the bits of the whole line
-decided in lines of the search intervals, and the sieve specs made before the bits of the interval
-(Chapter~\ref{chap:packing}); and the search intervals not written back, the survivors under
-\verb|RATPOINTS_NO_CHECK| outside the region of the Sturm step, the return of line 4889 and
-\verb|sturm_empty| not met, messages~3 and~8 left out, the test of the search region in
-\verb|process|, and \verb|-l -u -dl -du| answered with the exit status~12
-(Chapter~\ref{chap:output}).
-
 The lines of this part of the C code that are neither modelled nor left to a later stage are
-excluded in \verb|correspondence/ratpoints.toml|, each by the item named in parentheses: the
-includes of the headers of the C library and of the header of the library in \verb|rp-private.h|
-(\csource{rp-private.h}{30}{35}, \csource{rp-private.h}{60}{60}) and of \verb|gmp.h| in
-\verb|ratpoints.h| (\csource{ratpoints.h}{31}{31}), H.1, and the includes of \verb|sturm.c|
-(\csource{sturm.c}{29}{32}, H.8), other, since the model has no headers (\verb|float.h| and
-\verb|math.h| are the headers that stage~H needs); the arm of \verb|exact_scale| for a build without
-a 128-bit type or with \verb|RP_NO_INT128| defined (\csource{find_points.c}{3239}{3256}, H.2),
-other, since the builds of the model compile the arm with \verb|unsigned __int128|; the copy of the
-caller's intervals on the heap, the failure of its allocation with the clears of the table, and its
-release (\csource{sturm.c}{274}{275}, \csource{sturm.c}{278}{284}, \csource{sturm.c}{324}{324},
-H.8), memory; the prototype of \verb|_ratpoints_compute_sturm| (\csource{rp-private.h}{617}{617},
-H.9), interface; and in \verb|main.c| the initialization and release of the GMP rational of
-\verb|outward| and of the GMP integers of \verb|scan_end| and the allocation and release of its
-digits (\csource{main.c}{765}{765}, \csource{main.c}{774}{774}, \csource{main.c}{820}{821},
+excluded in \verb|correspondence/ratpoints.toml|, each with its kind: the includes of the headers of
+the C library and of the header of the library in \verb|rp-private.h|
+(\csource{rp-private.h}{30}{35}, \csource{rp-private.h}{60}{60}), of \verb|gmp.h| in
+\verb|ratpoints.h| (\csource{ratpoints.h}{31}{31}) and of \verb|sturm.c|
+(\csource{sturm.c}{29}{32}), other, since the model has no headers (\verb|float.h| and \verb|math.h|
+are those of the doubles); the arm of \verb|exact_scale| for a build without a 128-bit type or with
+\verb|RP_NO_INT128| defined (\csource{find_points.c}{3239}{3256}), other, since the builds of the
+model compile the arm with \verb|unsigned __int128|; the copy of the caller's intervals on the heap,
+the failure of its allocation with the clears of the table, and its release
+(\csource{sturm.c}{274}{275}, \csource{sturm.c}{278}{284}, \csource{sturm.c}{324}{324}), memory; the
+prototype of \verb|_ratpoints_compute_sturm| (\csource{rp-private.h}{617}{617}), interface; and in
+\verb|main.c| the initialization and release of the GMP rational of \verb|outward| and of the GMP
+integers of \verb|scan_end| and the allocation and release of its digits
+(\csource{main.c}{765}{765}, \csource{main.c}{774}{774}, \csource{main.c}{820}{821},
 \csource{main.c}{848}{848}, \csource{main.c}{850}{850}, \csource{main.c}{867}{867},
-\csource{main.c}{874}{874}, \csource{main.c}{877}{877}, H.6), memory. The exclusion of the message
-of error~9 (\verb|main.c:1048|) goes (H.5): the program gives that error for the refusal
-$\mathrm{badArgs}$. After stage~H every line of \verb|sturm.c| is recorded; the lines of
-\verb|main.c| left free are the defaults of the tuning options (lines 339-343 and 345-346) and
-message~4 (lines 992-998), and those of \verb|find_points.c| the estimate of the work and the choice
-of the moduli by the curve, the blocks and the threads; in \verb|ratpoints.h| the tuning macros
-(lines 92-94 and 120-331), the tuning fields and the number of threads of \verb|ratpoints_args|
-(lines 365-367 and 370), the numbers of the moduli used (line 378) and the private data of
-\verb|ratpoints_args| (lines 384-400), and in \verb|rp-private.h| the macros of the threads (lines
-76-84) and, in \verb|rp_worker|, the counters of the block with the decision of the correction
-(lines 579-582) and the fields of the pool with the name of the type (lines 584-585), all of them
-stage~I's.
+\csource{main.c}{874}{874}, \csource{main.c}{877}{877}), memory. The message of error~9
+(\verb|main.c:1048|) is modelled, as the program gives that error for the refusal
+$\mathrm{badArgs}$. Every line of \verb|sturm.c| is recorded. The lines left free after stage~H are
+stage~I's: in \verb|find_points.c| the estimate of the work and the choice of the moduli by the
+curve with its correction between the blocks, the blocks and the threads, and the numbers of the
+moduli used; in \verb|ratpoints.h| the tuning macros (lines 92-94 and 120-331), the tuning fields
+and the number of threads of \verb|ratpoints_args| (lines 365-367 and 370), and the numbers of the
+moduli used, the private data of \verb|ratpoints_args| and the end of the type (lines 378-400); in
+\verb|rp-private.h| the macros of the threads (lines 76-84) and, in \verb|rp_worker|, the counters
+of the block with the decision of the correction (lines 579-582) and the fields of the pool with the
+name of the type (lines 584-585); and in \verb|main.c| the defaults of the tuning options
+\verb|-r -R -U -C -A -Q -W| (lines 339-343 and 345-346), which the choice of the moduli by the curve
+and its correction read, and message~4, on the moduli used (lines 992-998).
 
-\section{What changes in the earlier chapters}\label{sec:regionEarlier}
+\section{Files and names}\label{sec:regionFiles}
 
-Each change is made by the item of Section~\ref{sec:regionFiles} named in parentheses, so that the
-blueprint stays true between the commits; the new uses are those that the dependency audit asks for
-once the names have moved as stated.
-\begin{itemize}
-  \item Chapter~\ref{chap:spec}: the paragraph after Definition~\ref{def:bruteForce} says that the
-    order and the membership hold for the points in the search region (H.5); the section on what
-    comparator certifies (Section~\ref{sec:comparator-ab}) states membership, the order and the
-    coverage under \verb|RATPOINTS_NO_CHECK| with the search region (H.5) and the hypothesis of
-    Sturm's theorem (H.11), the refusal theorems with the search intervals (H.5), the restated files
-    of the region (H.5) and of Sturm's theorem (H.11) with their public imports, and
-    $\mathrm{Double}$ among what the challenge takes from the model (H.5), the record with H.11; the
-    list of Section~\ref{sec:cli}: the program prints messages~3 (H.7) and~8 (H.11), leaving out
-    only message~4, reads \verb|-l -u -dl -du| (H.7), and the item on the options that it does not
-    support and the exit status~12 goes (H.7); the readers of numbers
-    (Definition~\ref{def:cliNumbers}) lose \verb|Ratpoints.Cli.isDouble|, whose range
-    \csource{main.c}{746}{752} goes with \lname{Ratpoints.Cli.scanDouble?} to
-    Definition~\ref{def:cliEnds}, and live in \verb|Ratpoints/Model/CliNumbers.lean| (H.6); the
-    failures (Definition~\ref{def:cliFailure}) gain error~9 for the refusal $\mathrm{badArgs}$, with
-    \csource{main.c}{1048}{1048}, their uses gaining Definition~\ref{def:searchIntervals} (H.5), and
-    error~7, their link of the messages becoming \csource{main.c}{1036}{1048}, as they lose the
-    option not supported yet with its status~12 (H.7); the command line
-    (Definition~\ref{def:cliInput}) reads \verb|-l -u -dl -du| as in Section~\ref{sec:regionCli},
-    its links \csource{main.c}{393}{400}, \csource{main.c}{414}{416}, \csource{main.c}{650}{668},
-    \csource{main.c}{333}{336}, \csource{main.c}{380}{380} and \csource{main.c}{679}{679} in place
-    of \csource{main.c}{393}{397} and \csource{main.c}{667}{668}, and uses
-    Definition~\ref{def:cliIntervals} (H.7); the program (Definition~\ref{def:cliRun}) runs the
-    search on the joined intervals, gains \csource{main.c}{248}{248}, prints the points of the
-    search region in the order of Theorem~\ref{thm:order}, and uses
-    Definition~\ref{def:cliRegionTest} (H.7); the section on the differential tests: its list of
-    what the later stages added gains stage~H, with the suites \verb|regions| and \verb|depths| and
-    the region runs of \verb|test4.sh| and \verb|test3.sh| (H.7, the depths with H.11), its closing
-    paragraph no options without support, the messages~3 (H.7) and~8 (H.11) compared, and the counts
-    of the last item (H.12); the files section names \verb|Ratpoints/Spec/Region.lean| (H.1),
-    \verb|Ratpoints/Spec/Sturm.lean| (H.10) and \verb|Ratpoints/Model/CliNumbers.lean| (H.6).
-  \item Chapter~\ref{chap:sieve}: the skeleton of a run refers to this chapter for the search region
-    (H.12); the sentence that only \verb|findPoints| runs a component with \verb|Id.run| also names
-    $\mathrm{findPointsWith}$, the program's run and its pure callback, \verb|Main.lean| and the
-    \verb|#guard| lines (H.12); the search for the points (Definition~\ref{def:findPoints}) searches
-    the search region of the options, normalized, with the search intervals and the refusal
-    $\mathrm{badArgs}$ (H.5), and the Sturm step narrows the intervals (H.11); the run
-    (Definition~\ref{def:sieveRun}) takes the bounds of the search intervals, gains
-    \csource{find_points.c}{3913}{3913}, its contract quantifying the ranges of each denominator and
-    its invariants taking the bounds (H.3) and the range (H.4), and uses
-    Definition~\ref{def:exactBounds}; the reduction of the run to the reference
-    (Theorem~\ref{thm:run_reference}) gives the points of the numerators in the ranges (H.3);
-    Theorem~\ref{thm:findPoints} names
-    \lname{Ratpoints.toFinset\_eq\_filter\_points\_of\_findPoints\_eq\_ok} for
-    \verb|toFinset_eq_points_of_findPoints_eq_ok|, states membership and the set of elements in the
-    search region, its uses gaining Definition~\ref{def:regionSpec} (H.5), under the hypothesis of
-    Sturm's theorem, its uses gaining Definition~\ref{def:sturmTheorem} (H.11), and its proof uses
-    Lemma~\ref{lem:regionFilter} (H.5) and Lemma~\ref{lem:elimSearchRegion} (H.11); the paragraph
-    after it gives the twelve statements with their changes and the record (H.12).
-  \item Chapter~\ref{chap:words}: one denominator (Definition~\ref{def:sift}) runs over the bounds
-    of the search intervals with the lazy set-up, its links gaining
-    \csource{find_points.c}{3129}{3130} (for \csource{find_points.c}{3129}{3129}),
-    \csource{find_points.c}{3435}{3440} and \csource{rp-private.h}{574}{574}, its contract on the
-    ranges, its \verb|\lean| list giving
-    \lname{Ratpoints.Sieve.flatMap\_acceptedPoints\_eq\_flatMap\_checkNumWith}, which only the bits
-    of one interval use now, to Lemma~\ref{lem:siftIntervals}, its uses gaining
-    Definitions~\ref{def:intervalBits} and~\ref{def:numeratorRanges} and
-    Lemma~\ref{lem:siftIntervals}, its uses of Lemmas~\ref{lem:accepted} and~\ref{lem:staged} going
-    with that lemma to Lemma~\ref{lem:siftIntervals}, and its deviation ``every numerator from $-H$
-    to $H$'' goes (H.3); Lemma~\ref{lem:sift_eq_checkDen}, whose equation names the numerators,
-    takes those in the ranges (H.3); the summary of the C code of Section~\ref{sec:wordsC} refers to
-    this chapter for the search intervals (H.12).
-  \item Chapter~\ref{chap:setup}: the introduction and the paragraphs after the options and after
-    Theorem~\ref{thm:refusals} say that the refusals add the search intervals, that membership and
-    the order hold in the search region (H.5), and that the depth of the Sturm step changes only the
-    speed by Theorem~\ref{thm:sturmSpeed} (H.11); the options (Definition~\ref{def:Options}) gain
-    the search intervals and the range of the denominators with \csource{ratpoints.h}{359}{359},
-    \csource{ratpoints.h}{363}{364} and \csource{ratpoints.h}{369}{369}, and use
-    Definition~\ref{def:Double} (H.5); the remark after the remainder chain says that stage~H reads
-    its signs (H.12); the reversal check (Definition~\ref{def:reversal}) takes the normalized
-    switch, which folds in \verb|RATPOINTS_NO_REVERSE_AUTO| (H.5); the reversal exchanging $x$ and
-    $z$ (Lemma~\ref{lem:reversal_swap}) takes
-    \lname{Ratpoints.Setup.exists\_reversal\_eq\_error\_iff} from the refusal theorems, its
-    statement gaining that the check refuses exactly when its switch is on, $d$ is even and
-    $c_0 = c_1 = 0$ (H.5); the refusal theorems (Theorem~\ref{thm:refusals}) add the search
-    intervals that are not well formed and restrict the refusal of $c_0 = c_1 = 0$ to the whole box,
-    and use Lemmas~\ref{lem:searchIntervals} and~\ref{lem:reversalRegion} (H.5) and
-    Lemma~\ref{lem:sturmRegion} (H.11); the permutation (Theorem~\ref{thm:findPoints_perm}) names
-    \lname{Ratpoints.perm\_filter\_bruteForce\_of\_findPoints\_eq\_ok} for
-    \verb|perm_bruteForce_of_findPoints_eq_ok|, a permutation of the reference filtered by
-    $\mathrm{noY}$ and the search region, and
-    \lname{Ratpoints.eq\_filter\_bruteForce\_of\_findPoints\_eq\_ok\_of\_reverse\_eq\_false} for
-    \verb|eq_bruteForce_of_findPoints_eq_ok_of_reverse_eq_false|, which moves to it from the output
-    of the search, its statement gaining that $L$ is the reference filtered by the search region
-    when also the options forbid the reversal and the search of $c$ does not take the divisors times
-    squares, and its uses gaining Lemmas~\ref{lem:regionFilter}, \ref{lem:searchDensRange}
-    and~\ref{lem:normalize} (H.5), and both theorems of the node hold under Sturm's theorem, its
-    uses gaining Lemma~\ref{lem:elimSearchRegion} (H.11); the search
-    (Definition~\ref{def:searchPoints}) takes the range (H.4), the search intervals (H.5) and the
-    flag \verb|sturm_empty| (H.11); the paragraph on the search with a callback describes its flow
-    with the normalization and the search intervals (H.5) and the Sturm step (H.11), the Sturm
-    step's range going to Definition~\ref{def:sturmRegion} (H.11); Section~\ref{sec:setupCli} lists
-    no option as not supported (H.7); the deviations lose the reversal check without
-    \verb|RATPOINTS_NO_REVERSE_AUTO| and ``no error~9'' (H.5) and the Sturm step with only its test
-    for a repeated factor (H.11); the sentence on the macros of \verb|ratpoints.h| records
-    \verb|RATPOINTS_NO_REVERSE_AUTO| (H.5); the files section names the Sturm step in
-    \verb|Ratpoints/Model/Sturm.lean| (H.8).
-  \item Chapter~\ref{chap:denominators}: the summary of the C code says that $b_{\mathrm{high}}$ is
-    the normalized largest denominator (H.4); the shapes (Definition~\ref{def:Shape}) are chosen by
-    \verb|run_setup|, which returns the bounds of the search intervals with the shape and gains
-    \csource{find_points.c}{3869}{3870}, the node naming \lname{Ratpoints.Sieve.fst\_run\_runSetup}
-    and \lname{Ratpoints.Sieve.snd\_run\_runSetup}, by which the shape that \verb|run_setup| chooses
-    and the bounds that it makes are those of the flags and of the search intervals, and using
-    Definition~\ref{def:exactBounds} (H.3), and reads the largest denominator for the Jacobi tables
-    (H.4); the denominators of the search (Definition~\ref{def:searchDens}) take the range, in
-    \verb|Ratpoints/Proof/SearchDens.lean| (H.4); the output of the search
-    (Theorem~\ref{thm:findPoints_order}) is stated over the region that the search uses (H.5 over
-    the search intervals, H.11 over the region of Definition~\ref{def:searchRegion}, which it then
-    uses), names \lname{Ratpoints.perm\_filter\_bruteForce\_append\_flatMap\_searchDens} for
-    \verb|perm_bruteForce_append_flatMap_searchDens| and uses Lemma~\ref{lem:searchDensRange} (H.4),
-    and gives \verb|eq_bruteForce_of_findPoints_eq_ok_of_reverse_eq_false| to the permutation
-    (Theorem~\ref{thm:findPoints_perm}), its statement losing the clause that $L$ is
-    $\mathrm{bruteForce}(c, H)$ when also the options forbid the reversal and the search of $c$ does
-    not take the divisors times squares (H.5); the deviations lose ``no search intervals and no
-    range of the denominators other than $1$ to $H$'' (H.5) and the exclusions leave the search
-    intervals to no later stage (H.3); the files section names
-    \verb|Ratpoints/Proof/SearchDens.lean| (H.4).
-  \item Chapter~\ref{chap:tables}: what \verb|sieving_info| computes is sound for every height and
-    takes the largest denominator (Lemma~\ref{lem:sievingInfo}, H.4).
-  \item Chapter~\ref{chap:stages}: the deviations lose the search intervals of the sieving thread,
-    and the exclusions leave the search intervals (H.3) and the Sturm step (H.11) to no later stage.
-  \item Chapter~\ref{chap:packing}: the summary of the C code and the deviation of the bits of an
-    interval say that the form of the conversion to bits is chosen by the bounds
-    (Definition~\ref{def:intervalBits}), and the deviation of the bits of one denominator
-    (Definition~\ref{def:siftBits}) that the sieve specs are made at the first interval with the
-    code $0$, as the C code makes them (H.3); the node of Definition~\ref{def:siftBits} says that
-    one denominator turns each interval into bits (H.3); the exclusions leave nothing to stage~H
-    (H.3).
-  \item Chapter~\ref{chap:rows}: the exclusions leave the lazy set-up to no later stage (H.3).
-  \item Chapter~\ref{chap:output}: the introduction says that the report prints the messages on the
-    search region (message~3, H.7) and on the search intervals (message~8, H.11) and leaves out only
-    that on the moduli used (message~4, stage~I); what a search gives back
-    (Definition~\ref{def:Outcome}) writes back the search intervals and uses
-    Definition~\ref{def:Double} (H.11); the search with a callback
-    (Definition~\ref{def:findPointsWith}) normalizes the options, validates the search intervals
-    (H.5) and runs the Sturm step of Definition~\ref{def:sturmRegion}, which takes
-    \csource{find_points.c}{4857}{4892} from it (H.11), its uses gaining
-    Definitions~\ref{def:normalize}, \ref{def:searchIntervals} and~\ref{def:sturmRegion}; the
-    sieving (Definition~\ref{def:sieving}) takes the range (H.4) and the search intervals (H.5); in
-    Section~\ref{sec:searchDelivery} the return when the Sturm step leaves nothing to search is met
-    (H.11); the sentence of the contracts of the sieve that attaches
-    \verb|Ratpoints.Sieve.flatMap_acceptedPoints_eq_flatMap_checkNumWith| to the contract of one
-    denominator says that it serves the bits of one search interval (H.3); the points that the
-    search delivers (Definition~\ref{def:searchList}) take the intervals, their uses gaining
-    Definition~\ref{def:inIntervals} (H.3), and the range (H.4); so does Lemma~\ref{lem:searchList},
-    which uses Lemmas~\ref{lem:sift_eq_checkDen}, \ref{lem:exactBounds}
-    and~\ref{lem:numeratorRanges} (H.3) and Lemma~\ref{lem:searchDensRange} (H.4), gains
-    \lname{Ratpoints.exists\_isSoundTest\_run\_searchPoints\_appendPoint}, with the sentence that
-    for a sound test of the sieve the search with the appending callback from the empty array gives
-    the list of Definition~\ref{def:searchList}, for every choice of the flags (H.5), that lemma
-    taking the argument \verb|sturm_empty| and the lemma using Lemma~\ref{lem:searchListRegion},
-    through \lname{Ratpoints.searchList\_nil}, at H.11; Lemma~\ref{lem:findPoints_searchList} is
-    stated over the search intervals, its proof using Lemmas~\ref{lem:normalize}
-    and~\ref{lem:searchIntervals} (H.5), and over the region of Definition~\ref{def:searchRegion},
-    which its statement uses, its proof using Lemmas~\ref{lem:searchRegion}
-    and~\ref{lem:sturmRegion} (H.11); the survivors under \verb|RATPOINTS_NO_CHECK|
-    (Lemma~\ref{lem:noCheckList}) hold for any intervals of the values, their uses gaining
-    Definition~\ref{def:inIntervals} (H.3), and for the range (H.4): the equation and the sublist
-    only gain the parameters, membership needs $1 \le b_{\mathrm{low}}$ and
-    $b_{\mathrm{high}} \le H$, no duplicates also $1 \le b_{\mathrm{high}}$, and the denominators of
-    the search have no duplicates for $1 \le b_{\mathrm{high}}$, with \verb|nodup_searchDens| moving
-    to \verb|Ratpoints/Proof/SearchDens.lean|, the proof using Lemma~\ref{lem:searchDensRange} for
-    the range of the denominators in place of $1, \dots, H$ (H.4); the protocol
-    (Theorem~\ref{thm:protocol}) keeps its statement, its proof using Lemmas~\ref{lem:normalize}
-    and~\ref{lem:searchIntervals} (H.5) and Lemma~\ref{lem:sturmRegion},
-    \verb|map_findPointsWith_flags| covering the search intervals written back (H.11); the
-    statements under \verb|RATPOINTS_NO_CHECK| (Theorem~\ref{thm:noCheck}) are those of
-    Section~\ref{sec:certifiedH} (H.5, H.11); the paragraph of Section~\ref{sec:outputOptions} on
-    the main theorems says that membership and the set of elements hold in the search region, names
-    \lname{Ratpoints.toFinset\_eq\_filter\_points\_of\_findPoints\_eq\_ok} and
-    \lname{Ratpoints.perm\_filter\_bruteForce\_of\_findPoints\_eq\_ok}, states the theorem of the
-    output of the search over the search intervals and the permutation for either setting of
-    $\mathrm{noY}$, filtered by $\mathrm{noY}$ and the search region, only the reference itself
-    taking $\mathrm{noY}$ off, and the refusal theorems with the search intervals and the whole box
-    (H.5), and adds the hypothesis of Sturm's theorem and the region of
-    Definition~\ref{def:searchRegion} (H.11); the points in the order of ratpoints
-    (Definition~\ref{def:orderedPoints}) take the largest denominator (H.5); the denominators and
-    the points of the search (Lemma~\ref{lem:searchDenominators}) name
-    \lname{Ratpoints.searchDens\_eq\_filter\_searchDenominators} for
-    \verb|searchDens_eq_searchDenominators|, by which the denominators of the search from
-    $b_{\mathrm{low}}$ on are those of the specification up to $b_{\mathrm{high}}$ that are at least
-    $b_{\mathrm{low}}$, and gain \lname{Ratpoints.Sieve.squares1Dens\_eq\_filter} and
-    \lname{List.range'\_eq\_filter\_range'}, by which the divisors times squares and the numbers
-    from $b_{\mathrm{low}} \ge 1$ on are those from $1$ without the denominators below
-    $b_{\mathrm{low}}$ (H.4); the order theorem (Theorem~\ref{thm:order}) takes the search region
-    (H.5) and Sturm's theorem (H.11) and uses Lemmas~\ref{lem:regionFilter}
-    and~\ref{lem:elimSearchRegion}; Section~\ref{sec:certifiedG} refers to
-    Section~\ref{sec:certifiedH} (H.12); the program: the paragraph after
-    Definition~\ref{def:cliOutput} loses the clause that \verb|-l -u -dl -du| keep the exit
-    status~12, and the settings of the output (Definition~\ref{def:cliOutput}) gain the exact ends,
-    their uses gaining Definition~\ref{def:cliEnds} (H.7); the callback of the program
-    (Definition~\ref{def:cliProcess}) tests the search region, with \csource{main.c}{150}{156} in
-    place of \csource{main.c}{153}{156}, its data gain \csource{main.c}{246}{247}, and it uses
-    Definition~\ref{def:cliRegionTest} (H.7); the report (Definition~\ref{def:cliReport}) gains
-    message~3, printed only when the command line gives intervals, after the height bound, or after
-    the curve equation under \verb|-v|, with \csource{main.c}{224}{224} and
-    \lname{Ratpoints.Cli.showIntervals} in its \verb|\lean| list, its uses gaining
-    Definitions~\ref{def:Double} and~\ref{def:cliRegionTest} (the doubles of messages~3 and~8, and
-    \verb|printF|) (H.7), and message~8 (H.11), with the texts \csource{main.c}{979}{991} and
-    \csource{main.c}{999}{1033}; the theorem on the program (Theorem~\ref{thm:cliRun}) counts the
-    points that the callback keeps, its \verb|\lean| list gaining \lname{Ratpoints.Cli.Data.keeps}
-    and \lname{Ratpoints.Cli.Data.keeps\_printPoint} and its statement saying which points the
-    callback keeps (H.7); the section on the differential tests refers to
-    Section~\ref{sec:regionTests}, its item on the report drops only messages~4 and~8 and compares
-    message~3 (H.7) and drops only message~4 (H.11), its item on \verb|-l -u -dl -du| and the exit
-    status~12 goes (H.7), and its two runs of \verb|test3.sh| that need messages~4 and~8 still need
-    message~4, of stage~I (H.11); the deviations lose those that stage~H retires
-    (Section~\ref{sec:regionDeviations}), each with its item, and the lines left free for stage~H
-    are recorded (H.12).
-  \item The stage list of the introduction refers to this chapter (Chapter~\ref{chap:region}),
-    which is input after Chapter~\ref{chap:output} (H.12). The generated table follows each item.
-\end{itemize}
+The model of the stage is in the folder \verb|Ratpoints/Model|, plain executable code without
+Mathlib, as in the earlier stages. The doubles are in \verb|Double.lean|, a file without imports
+($387$ lines with its guards), which \verb|Bounds.lean|, \verb|Sturm.lean| and
+\verb|CliNumbers.lean| import; the ends, the scaled ends, the forms and the bounds in
+\verb|Bounds.lean| ($418$ lines), which \verb|Sieve.lean| and \verb|Denominators.lean| import; the
+bits of an interval and the loop of one denominator over the intervals in \verb|Sieve.lean|;
+\verb|run_setup| and the run in \verb|Denominators.lean|; the Sturm step, after the remainder chain,
+in \verb|Sturm.lean|; the options with their normalization, the search intervals, the Sturm step of
+the search, what a search gives back, the sieving, the search and the search with a callback in
+\verb|FindPoints.lean|; the refusal $\mathrm{badArgs}$ in \verb|Setup.lean|; the decided facts
+$\mathrm{maxDegree} < 2^{57}$ and $0 < \mathrm{maxDegree}$ in \verb|Constants.lean|; the readers of
+the numbers of the command line, \verb|strtod|, the ends of the command line, the test of the
+region, the join and \verb|%f| in \verb|CliNumbers.lean| ($533$ lines), which \verb|Cli.lean|
+imports; and the reading of the intervals, the options of the search that an option of the command
+line sets (\verb|Ratpoints.Options.store|, declared there in the namespace of
+\verb|Ratpoints.Options|), the callback with the test of the region and messages~3 and~8 in
+\verb|Cli.lean|. The specification of the region is \verb|Ratpoints/Spec/Region.lean| ($146$ lines)
+and \verb|Ratpoints/Spec/Sturm.lean| ($53$ lines), with Mathlib and nothing of the model, the
+largest denominator of the search ($\mathrm{denominatorBound}$) among the definitions of the region;
+the order of the points, \verb|Ratpoints/Spec/Order.lean|, takes the largest denominator as an
+argument and imports the file of the region, privately, for its examples.
 
-\section{Files, names and order of work}\label{sec:regionFiles}
+The proofs of the sieve up to one denominator and of the loops of the Sturm step use Lean core and
+\verb|Std| only, as the contracts of the sieve of the earlier stages do:
+\verb|Ratpoints/Proof/BitRange.lean| has the range of the numerators that the bounds of an interval
+give, the ranges of a run and the loop over the ranges; \verb|Ratpoints/Proof/Sift.lean| the loop
+over the intervals and the contract of one denominator ($1268$ lines);
+\verb|Ratpoints/Proof/Stages.lean| the points at infinity and the points of a numerator that the
+search delivers; and \verb|Ratpoints/Proof/Sturm.lean| the contracts of the signs, the counts and
+the intersection and the failure of the step ($917$ lines). The general facts on the types of core,
+among them the facts on words of the bounds and the lemmas on \verb|Int64| of the bisection, are in
+\verb|Ratpoints/Proof/Containers.lean| and \verb|Ratpoints/Proof/Bits.lean|, under their names in
+the namespaces of Lean core.
 
-The model, in the folder \verb|Ratpoints/Model|: the doubles in a new file without imports
-\verb|Double.lean| (about $350$ lines with its guards); the ends, the scaled ends, the forms and the
-bounds in a new file \verb|Bounds.lean| (about $420$ lines); the bits of an interval and the loop of
-one denominator over the intervals in \verb|Sieve.lean| (about $1330$ lines); \verb|run_setup| and
-the run in \verb|Denominators.lean|; the Sturm step in \verb|Sturm.lean| (about $490$ lines); the
-options, their normalization, the search intervals, the Sturm step of the search, what a search
-gives back, the sieving, the search and the search with a callback in \verb|FindPoints.lean| (about
-$1170$ lines); the refusal $\mathrm{badArgs}$ in \verb|Setup.lean|; the decided facts
-$\mathrm{maxDegree} < 2^{57}$ and $0 < \mathrm{maxDegree}$ in \verb|Constants.lean|, which the build
-with other values of the constants checks at $\mathrm{maxDegree} = 30$ and $200$; the readers of the
-numbers, \verb|strtod|, the ends of the command line, the test of the region, the join and \verb|%f|
-in a new file \verb|CliNumbers.lean| (about $530$ lines); and the options of the region, the reading
-of the intervals, the callback with the test of the region and messages~3 and~8 in \verb|Cli.lean|
-(about $1060$ lines). The specification: \verb|Ratpoints/Spec/Region.lean| (about $140$ lines) and
-\verb|Ratpoints/Spec/Sturm.lean| (about $50$ lines), new, and the largest denominator in
-\verb|Ratpoints/Spec/Order.lean|. The proofs, in the folder \verb|Ratpoints/Proof|, the contracts of
-the sieve and of the loops of the Sturm step still in files without Mathlib: the doubles in a new
-file \verb|Double.lean| (about $1140$ lines) and the faithful roundings in a new file
-\verb|Rounding.lean| (about $770$ lines); the values and the bits of the intervals, the ranges of
-the numerators and the normalized options in a new file \verb|Region.lean| (about $280$ lines); the
-search intervals and the bounds in a new file \verb|Bounds.lean| (about $1380$ lines); the
-representation of a range by the bounds and the ranges of a run in the core file
-\verb|BitRange.lean|; the loop over the intervals and the contract of one denominator in the core
-file \verb|Sift.lean| (about $1270$ lines); the contract of the run and what \verb|run_setup|
-returns in \verb|Denominators.lean|; the denominators of the search in a new file
-\verb|SearchDens.lean|, split off \verb|FindPoints.lean| (about $240$ and $1310$ lines); the list of
-the brute-force reference split at the candidate $(1, 0)$ and filtered to a range of denominators in
-\verb|BruteForce.lean| (Lemma~\ref{lem:searchDensRange}), the divisors times squares in a range as a
-filter in \verb|Shapes.lean| (Lemma~\ref{lem:searchDenominators}), the points at infinity and the
-points of a numerator in the search intervals in \verb|Stages.lean|
-(Lemma~\ref{lem:searchListRegion}), and the degree after the reversal check in \verb|Setup.lean|
-(Lemma~\ref{lem:sturmRegion}); the contracts of the signs, the counts and the intersection, and the
-failure of the step, in the core file \verb|Sturm.lean| (about $920$ lines); the bisection in a new
-file \verb|Bisection.lean| (about $1060$ lines); the chain as a Sturm sequence in a new file
-\verb|SturmSigns.lean| (about $400$ lines); the counts at the ends of an interval in a new file
-\verb|SturmCounts.lean| (about $270$ lines); the coverage and the bound of the bisection in a new
-file \verb|SturmCoverage.lean| (about $670$ lines); the Sturm step of the search and the region that
-the search uses in a new file \verb|SturmRegion.lean| (about $300$ lines); the theorems with the
-search region in \verb|Output.lean| (about $1090$ lines); the numbers of the command line in a new
-file \verb|CliNumbers.lean| (about $1120$ lines) and the theorem on the region of the program in
-\verb|Cli.lean| (about $950$ lines); and the general facts on core types in \verb|Containers.lean|
-and \verb|Bits.lean|, under their names in the namespaces of core. The candidates for Mathlib in the
-mirrors \verb|Ratpoints/Mathlib/Algebra/Polynomial/FieldDivision.lean|,
-\verb|Ratpoints/Mathlib/Algebra/Polynomial/Sturm/Sequence.lean|,
-\verb|Ratpoints/Mathlib/Analysis/Polynomial/Basic.lean|,
-\verb|Ratpoints/Mathlib/FieldTheory/Perfect.lean| and
-\verb|Ratpoints/Mathlib/Order/WithBotTop.lean|, new, and
-\verb|Ratpoints/Mathlib/Data/List/Pairwise.lean|; Mathlib after the version that the project pins
-has \verb|Polynomial.signRight x p| (pull request \#44248,
-\verb|Mathlib/Analysis/Polynomial/SignRight.lean|), the sign just right of $x$ defined as a limit
-for every $p$, which the project can take over at its next update of Mathlib, so that the mirror
-\verb|Ratpoints/Mathlib/Analysis/Polynomial/Basic.lean| defines no sign of its own just right or
-just left of a point. Every Lean file stays below $1500$ lines (the largest,
-\verb|Ratpoints/Proof/Bounds.lean|, about $1380$). The new modules join their part roots and
-\verb|Ratpoints.lean|. One commit per item, each passing the project's checks, the build with other
-values of the constants and the differential tests, with the nodes and the passages of the earlier
-chapters that it changes, the C paragraphs of the model and the \verb|\csource| links of its nodes,
-locked, the C links moved from their old owners and the exclusions in the same commit, the
-\verb|\lname| of its declarations turned into \verb|\lean|, and the dependency audit of the
-blueprint after each item that changes nodes; a lemma of a node comes with the item that first uses
-it. The output of \verb|ratpoints-lean| does not change up to H.6, changes at H.7, where the options
-of the region take effect and message~3 enters the reports, and at H.11, where the Sturm step
-narrows the search intervals, which changes the survivors under \verb|-x|, and message~8 enters the
-reports. The certified statements change twice: at H.5, with the search region and without the
-hypothesis of Sturm's theorem, since the model does not narrow the intervals by the Sturm step
-before H.11, and at H.11, where statements 3, 8 and~10 take that hypothesis.
-\begin{enumerate}
-  \item[H.1] The doubles (Definition~\ref{def:Double}) in \verb|Ratpoints/Model/Double.lean|, with
-    \verb|#guard| examples against gcc and glibc, but for $\mathrm{ofRatio}$, which comes with H.6;
-    the beginning of \verb|Ratpoints/Spec/Region.lean|, $\mathrm{IsNaN}$ and $\mathrm{doubleValue}$
-    with their examples, not yet restated by the challenge; their lemmas (Lemma~\ref{lem:Double}) in
-    \verb|Ratpoints/Proof/Double.lean|; the includes \csource{rp-private.h}{30}{35},
-    \csource{rp-private.h}{60}{60} and \csource{ratpoints.h}{31}{31} excluded; the files section of
-    Chapter~\ref{chap:spec}; and the nodes and passages of the earlier chapters that
-    Section~\ref{sec:regionEarlier} assigns to it. Nothing uses them yet.
-  \item[H.2] The exact bounds: the ends, the scaled ends, the forms and the bounds
-    (Definitions~\ref{def:exactEnd}, \ref{def:exactScale} and~\ref{def:exactBounds}) in
-    \verb|Ratpoints/Model/Bounds.lean|, the bits of an interval (Definition~\ref{def:intervalBits})
-    in \verb|Ratpoints/Model/Sieve.lean|, with their guards against the C code run verbatim and the
-    build under \verb|DEBUG|; $\mathrm{AreSearchIntervals}$ and $\mathrm{IntervalsWF}$ of the
-    specification; the values and the bits of the intervals and the ranges
-    (Definitions~\ref{def:inIntervals} and~\ref{def:numeratorRanges}) in
-    \verb|Ratpoints/Proof/Region.lean| and \verb|Ratpoints/Proof/BitRange.lean|; the lemmas of the
-    ranges (Lemma~\ref{lem:numeratorRanges}) in \verb|Ratpoints/Proof/Region.lean|, with the mirror
-    lemma on chains of pairs in \verb|Ratpoints/Mathlib/Data/List/Pairwise.lean|; the lemmas of the
-    ends, the bits and the bounds (Lemmas~\ref{lem:exactEnd}, \ref{lem:intervalBits}
-    and~\ref{lem:exactBounds}) in \verb|Ratpoints/Proof/Bounds.lean|, without its part on the search
-    intervals; the links \csource{find_points.c}{3217}{3221}, \csource{find_points.c}{3231}{3238},
-    \csource{find_points.c}{3257}{3257}, \csource{find_points.c}{3264}{3340},
-    \csource{find_points.c}{3381}{3406} and \csource{find_points.c}{3410}{3434}, as the C paragraphs
-    of the components cut them, and the exclusion of \csource{find_points.c}{3239}{3256}; and the
-    nodes and passages of the earlier chapters that Section~\ref{sec:regionEarlier} assigns to it.
-    Nothing calls them yet.
-  \item[H.3] One denominator over the intervals with the lazy set-up, for the default interval only,
-    so that the output does not change: \verb|sift| over the bounds, \verb|run_setup| returning
-    them, with \lname{Ratpoints.Sieve.fst\_run\_runSetup} and
-    \lname{Ratpoints.Sieve.snd\_run\_runSetup}, the run taking them, with their links
-    (Section~\ref{sec:regionSieve}); $\mathrm{searchIntervals}$ with the default interval only
-    (\csource{find_points.c}{4829}{4829} and lines 4831-4841, the default interval, as the link of
-    Definition~\ref{def:searchIntervals} until H.5 extends it to 4831-4855), which the sieving calls
-    with no intervals, and its lemmas on the default interval (Lemma~\ref{lem:searchIntervals}, but
-    for those of the validation); the loop over the intervals (Lemma~\ref{lem:siftIntervals}, with
-    \lname{Ratpoints.Sieve.flatMap\_acceptedPoints\_eq\_flatMap\_checkNumWith} from the node of one
-    denominator) in \verb|Ratpoints/Proof/Sift.lean|, the contracts of one denominator and of the
-    run on the ranges, the lemmas on lists in \verb|Ratpoints/Proof/Containers.lean| and
-    \verb|Ratpoints/Proof/BitRange.lean|, and the points that the search delivers over the intervals
-    of its values, their statements kept by the default interval
-    (\lname{Ratpoints.exists\_run\_searchIntervals\_nil},
-    \lname{Ratpoints.intervalsWF\_and\_inIntervals\_neg}); comparator, since the proofs of the
-    certified statements change; the nodes of Definitions~\ref{def:sift}, \ref{def:sieveRun},
-    \ref{def:Shape}, \ref{def:siftBits} and~\ref{def:searchList}, Lemmas~\ref{lem:sift_eq_checkDen},
-    \ref{lem:searchList} and~\ref{lem:noCheckList} and Theorem~\ref{thm:run_reference}, the sentence
-    of Chapter~\ref{chap:output} on the contracts of the sieve, the summary of the C code of
-    Chapter~\ref{chap:packing}, and the deviations and exclusions of Chapters~\ref{chap:words},
-    \ref{chap:denominators}, \ref{chap:stages}, \ref{chap:packing} and~\ref{chap:rows} that leave
-    the search intervals or the lazy set-up to stage~H; and the nodes and passages of the earlier
-    chapters that Section~\ref{sec:regionEarlier} assigns to it.
-  \item[H.4] The range of the denominators through the search: the sieving and the search take
-    $b_{\mathrm{low}}$ and $b_{\mathrm{high}}$, \verb|run_setup| the largest denominator, and
-    $\mathrm{findPoints}$ passes $1$ and $H$; the denominators of the search with the range in a new
-    file \verb|Ratpoints/Proof/SearchDens.lean|, split off \verb|Proof/FindPoints.lean| with the
-    lemmas on them (Lemma~\ref{lem:searchDensRange}), the renames
-    \lname{Ratpoints.searchDens\_eq\_filter\_searchDenominators} and
-    \lname{Ratpoints.perm\_filter\_bruteForce\_append\_flatMap\_searchDens},
-    \lname{Ratpoints.Sieve.squares1Dens\_eq\_filter} and \lname{List.range'\_eq\_filter\_range'}
-    (Lemma~\ref{lem:searchDenominators}), and what \verb|sieving_info| computes sound for every
-    height (Lemma~\ref{lem:sievingInfo}); comparator, as in H.3; the nodes of
-    Definitions~\ref{def:searchDens}, \ref{def:sieving}, \ref{def:searchPoints}, \ref{def:sieveRun},
-    \ref{def:Shape} and~\ref{def:searchList}, Lemmas~\ref{lem:sievingInfo}, \ref{lem:searchList},
-    \ref{lem:searchDenominators} and~\ref{lem:noCheckList}, Theorem~\ref{thm:findPoints_order}, the
-    summary of the C code of Chapter~\ref{chap:denominators}, and the files sections of
-    Chapters~\ref{chap:denominators} and~\ref{chap:output}; and the nodes and passages of the
-    earlier chapters that Section~\ref{sec:regionEarlier} assigns to it.
-  \item[H.5] The search region of the options, without the Sturm step yet: the fields of the options
-    with \csource{ratpoints.h}{359}{359}, \csource{ratpoints.h}{363}{364} and
-    \csource{ratpoints.h}{369}{369}; their normalization (Definition~\ref{def:normalize}) and its
-    lemmas (Lemma~\ref{lem:normalize}); the validation of the search intervals with the refusal
-    $\mathrm{badArgs}$ (Definition~\ref{def:searchIntervals}, whose link becomes
-    \csource{find_points.c}{4831}{4855}), the rest of Lemma~\ref{lem:searchIntervals}, and error~9
-    of the program, with \csource{main.c}{1048}{1048} and its exclusion gone; the search with a
-    callback in the order of the C code, the reversal check with the normalized switch, the search
-    over the search intervals of the options; the rest of \verb|Ratpoints/Spec/Region.lean|
-    (Definition~\ref{def:regionSpec}) and the largest denominator of
-    \verb|Ratpoints/Spec/Order.lean|, with its examples, the example of the interval of
-    \verb|-l -0.2 -u 0.6| changed to the doubles that the program passes the library, the upper end
-    \verb|0x3fe3333333333334| in place of the double \verb|0x3fe3333333333333| nearest to $0.6$, in
-    the list of $\mathrm{IsFullBox}$ and in the filter by $\mathrm{InRegion}$, checked by
-    \verb|decide +kernel| as before; Lemmas~\ref{lem:reversalRegion} and~\ref{lem:regionFilter},
-    \lname{Ratpoints.Setup.exists\_reversal\_eq\_error\_iff} moving to
-    Lemma~\ref{lem:reversal_swap}, Lemma~\ref{lem:searchListRegion} but for
-    \lname{Ratpoints.searchList\_nil}, and
-    \lname{Ratpoints.exists\_isSoundTest\_run\_searchPoints\_appendPoint}
-    (Lemma~\ref{lem:searchList}), lifted out of the list of a successful search when that lemma is
-    restated with the region, without the argument \verb|sturm_empty| yet; statements 3, 5, 6, 8, 9
-    and~10 with the search region, without the hypothesis of Sturm's theorem, proved from the search
-    intervals of the options; the corollaries with the search region and their renames, the theorem
-    on the reference itself moving to the node of the permutation; the challenge restates the file
-    of the region and imports its Mathlib modules, takes $\mathrm{Double}$ from the model and states
-    the six statements as changed, \verb|Solution| proves them, and comparator; the nodes of
-    Definitions~\ref{def:Options}, \ref{def:reversal}, \ref{def:findPointsWith},
-    \ref{def:findPoints}, \ref{def:orderedPoints}, \ref{def:cliFailure}, \ref{def:sieving}
-    and~\ref{def:searchPoints}, Lemmas~\ref{lem:reversal_swap}, \ref{lem:searchList}
-    and~\ref{lem:findPoints_searchList}, Theorems~\ref{thm:findPoints}, \ref{thm:findPoints_perm},
-    \ref{thm:refusals}, \ref{thm:findPoints_order}, \ref{thm:order}, \ref{thm:noCheck}
-    and~\ref{thm:protocol}, Section~\ref{sec:comparator-ab}, the paragraph after
-    Definition~\ref{def:bruteForce}, the introduction of Chapter~\ref{chap:setup} with its
-    paragraphs after the options and after Theorem~\ref{thm:refusals}, its paragraph on the search
-    with a callback and its sentence on the macros of \verb|ratpoints.h|, the paragraph of
-    Section~\ref{sec:outputOptions} on the main theorems, and the deviations of
-    Chapters~\ref{chap:setup} and~\ref{chap:denominators} that H.5 retires; and the nodes and
-    passages of the earlier chapters that Section~\ref{sec:regionEarlier} assigns to it.
-  \item[H.6] The numbers of the program: $\mathrm{ofRatio}$ of the doubles, and
-    \verb|Ratpoints/Model/CliNumbers.lean| with the readers moved from \verb|Cli.lean|,
-    \verb|strtod|, the ends, the test of the region, the join and \verb|%f|
-    (Definitions~\ref{def:cliEnds} and~\ref{def:cliRegionTest}), with their links,
-    \csource{main.c}{746}{752} moving from \verb|isDouble| to $\mathrm{scanDouble?}$, and the
-    exclusions of the memory of \verb|outward| and \verb|scan_end|, and guards against glibc; the
-    faithful roundings (Lemma~\ref{lem:rounding}) in \verb|Ratpoints/Proof/Rounding.lean|, the
-    lemmas of the numbers (Lemma~\ref{lem:cliNumbers}) in \verb|Ratpoints/Proof/CliNumbers.lean|,
-    with \lname{Char.toLower\_eq\_x\_iff} in \verb|Ratpoints/Proof/Containers.lean| and the mirror
-    \verb|Order/WithBotTop|; the node of Definition~\ref{def:cliNumbers} and the files section of
-    Chapter~\ref{chap:spec}; and the nodes and passages of the earlier chapters that
-    Section~\ref{sec:regionEarlier} assigns to it. Nothing of the program calls them yet.
-  \item[H.7] The region of the program: \verb|-l -u -dl -du| read as \verb|main.c| reads them, the
-    intervals with the rules of error~7 (Definition~\ref{def:cliIntervals}), the callback that tests
-    the exact region, message~3 when the command line gives intervals, the search on the joined
-    intervals, and the exit status~12 and \verb|Ratpoints.Cli.Failure.unsupportedOption| deleted,
-    with their links (Section~\ref{sec:regionCli}); $0 < \mathrm{maxDegree}$; the theorem on the
-    region of the program (Theorem~\ref{thm:cliRegion}) in \verb|Ratpoints/Proof/Cli.lean|, its last
-    statement without the hypothesis of Sturm's theorem, and the theorem on the program with the
-    test of the callback (Theorem~\ref{thm:cliRun}, with \lname{Ratpoints.Cli.Data.keeps} and
-    \lname{Ratpoints.Cli.Data.keeps\_printPoint}); the harness compares the region runs of
-    \verb|test4.sh| and \verb|test3.sh|, admits large heights with a narrow region, has the suite
-    \verb|regions| and the cases of the region in the errors suite and the fuzz, compares message~3
-    and drops message~8 from the report of the C program, its option status~12 gone, and under
-    \verb|-x| the weaker check also tests $z$ against the range of the denominators and $x/z$
-    against the exact region of the command line, as \verb|process| of \verb|main.c| does, and the
-    exact comparison (still with \verb|-p 30 -N 30 -s| appended) runs only when the C program on
-    that same command line sieves with the first $30$ odd primes in its first two stages and no
-    third stage (or does not sieve), as its report under \verb|-v -z| says, otherwise the weaker
-    check alone running and its reason (stage~I) counted; the output changes; the nodes of
-    Definitions~\ref{def:cliInput}, \ref{def:cliFailure}, \ref{def:cliRun}, \ref{def:cliOutput},
-    \ref{def:cliProcess} and~\ref{def:cliReport}, Theorem~\ref{thm:cliRun}, Sections~\ref{sec:cli}
-    and~\ref{sec:setupCli}, the introduction of Chapter~\ref{chap:output} and its paragraph after
-    Definition~\ref{def:cliOutput}, the sections on the differential tests of
-    Chapters~\ref{chap:spec} and~\ref{chap:output}, and the deviations of Chapter~\ref{chap:output}
-    on the options of the region, the status~12, message~3 and the test of the callback; and the
-    nodes and passages of the earlier chapters that Section~\ref{sec:regionEarlier} assigns to it.
-  \item[H.8] The Sturm step, first part: the signs and the counts and the intersection
-    (Definitions~\ref{def:evalSign} and~\ref{def:intersect}) with their links, and the exclusions of
-    the includes of \verb|sturm.c| and of the copy on the heap; their contracts
-    (Lemma~\ref{lem:evalSign}, and of Lemma~\ref{lem:intersect} the recursion of the intersection,
-    its invariant and its contract) in \verb|Ratpoints/Proof/Sturm.lean|; the half of
-    \verb|Ratpoints/Proof/SturmSigns.lean| that relates the signs and the counts to Mathlib's sign
-    changes (Lemma~\ref{lem:chainSturm} but for the chain); the files section of
-    Chapter~\ref{chap:setup}; and the nodes and passages of the earlier chapters that
-    Section~\ref{sec:regionEarlier} assigns to it. Nothing calls them yet.
-  \item[H.9] The Sturm step, second part: $\mathrm{LONG\_MAX}$, the midpoint, the kept interval, the
-    bisection and the step (Definitions~\ref{def:iterate} and~\ref{def:computeSturm}) with their
-    links, the step not yet called, and the exclusion of its prototype
-    (\csource{rp-private.h}{617}{617}); the bisection and the rest of the intersection and the step
-    (Lemmas~\ref{lem:bisection} and~\ref{lem:intersect}) in \verb|Ratpoints/Proof/Bisection.lean|,
-    with the lemmas on \verb|Int64| of Lemma~\ref{lem:bisection} in \verb|Ratpoints/Proof/Bits.lean|
-    and \lname{Ratpoints.Sturm.run\_computeSturm\_eq\_none\_iff} in
-    \verb|Ratpoints/Proof/Sturm.lean|; and the nodes and passages of the earlier chapters that
-    Section~\ref{sec:regionEarlier} assigns to it.
-  \item[H.10] Sturm's theorem and the coverage: \verb|Ratpoints/Spec/Sturm.lean|
-    (Definition~\ref{def:sturmTheorem}), not yet restated by the challenge; the mirrors of
-    Lemmas~\ref{lem:posAssoc} and~\ref{lem:polySigns}, the latter, a change against the prototype,
-    without its definitions of the signs just right and just left of a point, its two lemmas on
-    these signs stating the sign by the case distinction on $p(x) = 0$ in their conclusions, and
-    $\mathrm{sgnLeftEnd}$ and $\mathrm{sgnRightEnd}$ of \verb|Ratpoints/Proof/SturmCounts.lean|
-    reading the same case distinction; the counts at the ends of an interval
-    (Lemma~\ref{lem:sturmCounts}) in \verb|Ratpoints/Proof/SturmCounts.lean|; the chain as a Sturm
-    sequence, the rest of Lemma~\ref{lem:chainSturm}; the coverage and the bound of the bisection
-    (Lemma~\ref{lem:coverage}, and of Lemma~\ref{lem:sturmBuffers} all but the two bounds of the
-    search) in \verb|Ratpoints/Proof/SturmCoverage.lean|; the files section of
-    Chapter~\ref{chap:spec}; and the nodes and passages of the earlier chapters that
-    Section~\ref{sec:regionEarlier} assigns to it.
-  \item[H.11] The switch: the Sturm step of the search (Definition~\ref{def:sturmRegion}) called by
-    the search with a callback, which gives it \csource{find_points.c}{4857}{4892}, with the return
-    of line 4889 and the flag \verb|sturm_empty| of the search; what a search gives back with the
-    search intervals; message~8 in the report; the lemmas of the step of the search, the region that
-    the search uses and the bounds of the arrays (Lemmas~\ref{lem:sturmRegion}
-    and~\ref{lem:searchRegion}, Definition~\ref{def:searchRegion}, the two bounds of
-    Lemma~\ref{lem:sturmBuffers}) in \verb|Ratpoints/Proof/SturmRegion.lean|, with the decided fact
-    $\mathrm{maxDegree} < 2^{57}$ in \verb|Ratpoints/Model/Constants.lean| and
-    \lname{Ratpoints.Setup.degree\_le\_of\_reversal\_eq\_ok} in \verb|Ratpoints/Proof/Setup.lean|;
-    the list of the search and its output over the region that the search uses, with the rest of
-    Lemma~\ref{lem:searchListRegion}, \lname{Ratpoints.searchList\_nil}, and the argument
-    \verb|sturm_empty| of \lname{Ratpoints.exists\_isSoundTest\_run\_searchPoints\_appendPoint};
-    Lemma~\ref{lem:elimSearchRegion}; statements 3, 8 and~10 with the hypothesis of Sturm's theorem,
-    and the corollaries with it; Theorem~\ref{thm:sturmSpeed}; the theorem on the region of the
-    program with the hypothesis; the challenge restates the file of Sturm's theorem and imports its
-    Mathlib modules, states the three statements with the hypothesis, \verb|Solution| proves them,
-    and comparator with \verb|--paranoid|; the harness compares \verb|-x| exactly without \verb|-s|
-    (the check of the moduli now on the command line without \verb|-s|), has the suite \verb|depths|
-    and compares message~8; the output changes; the nodes of Definitions~\ref{def:findPointsWith},
-    \ref{def:Outcome}, \ref{def:searchPoints}, \ref{def:findPoints} and~\ref{def:cliReport},
-    Lemmas~\ref{lem:searchList} and~\ref{lem:findPoints_searchList}, Theorems~\ref{thm:findPoints},
-    \ref{thm:findPoints_perm}, \ref{thm:order}, \ref{thm:noCheck}, \ref{thm:refusals},
-    \ref{thm:findPoints_order}, \ref{thm:protocol} and~\ref{thm:cliRegion},
-    Sections~\ref{sec:comparator-ab}, \ref{sec:cli} and~\ref{sec:searchDelivery}, the sections on
-    the differential tests of Chapters~\ref{chap:spec} and~\ref{chap:output}, the introduction of
-    Chapter~\ref{chap:output}, the paragraph of Section~\ref{sec:outputOptions} on the main
-    theorems, the introduction of Chapter~\ref{chap:setup} with its paragraphs and its paragraph on
-    the search with a callback, the exclusions of Chapter~\ref{chap:stages}, and the deviations of
-    Chapters~\ref{chap:setup} and~\ref{chap:output} on the Sturm step, the search intervals written
-    back and message~8; and the nodes and passages of the earlier chapters that
-    Section~\ref{sec:regionEarlier} assigns to it.
-  \item[H.12] The records and the texts: the description of the repository,
-    \verb|formalization.yaml| and \verb|comparator/README.md| with the twelve statements and the
-    record of comparator; the passages of the earlier chapters that stage~H makes untrue beyond
-    those of the items (Section~\ref{sec:regionEarlier}), among them the stage list of the
-    introduction, the skeleton of a run, the summaries of the C code, the remark after the remainder
-    chain of Chapter~\ref{chap:setup}, the paragraph after Theorem~\ref{thm:findPoints},
-    Section~\ref{sec:certifiedG}, the counts of the differential tests of Chapter~\ref{chap:spec}
-    and the record of the lines that Chapter~\ref{chap:output} left free for stage~H; the convention
-    that \verb|Id.run| appears only in $\mathrm{findPoints}$, $\mathrm{findPointsWith}$, the
-    program's run and its pure callback, \verb|Main.lean| and \verb|#guard| lines; and the generated
-    table.
-\end{enumerate}
-H.5 to H.10 keep the exact comparison of stage~G under \verb|-x|, with \verb|-s| appended (from H.7
-on with the weaker check on the exact region and the range of the denominators and with the check of
-the moduli of the C program), and drop message~8 from the report of the C program, since the model
-narrows the search intervals by the Sturm step only from H.11 on. The alternative order, the Sturm
-step before the search region of the options, would change the certified statements once, in one
-large item; the order above keeps the items of the region and of the step apart and brings each
-certified change with the theorem that proves it.
+The other proofs of the stage are in files with Mathlib. New are \verb|Ratpoints/Proof/Double.lean|
+($1194$ lines), above the doubles of the model and the file of the region of the specification, with
+the doubles and their values; \verb|Ratpoints/Proof/Rounding.lean| ($706$ lines), above it, with the
+faithful roundings; \verb|Ratpoints/Proof/Region.lean| ($281$ lines), above
+\verb|Ratpoints/Proof/BitRange.lean| and the search of the model, with the values and the bits of
+the intervals, the ranges of the numerators and the normalized options;
+\verb|Ratpoints/Proof/Bounds.lean| ($1254$ lines), above it, with the search intervals and the
+bounds; \verb|Ratpoints/Proof/SearchDens.lean| ($234$ lines), split off
+\verb|Ratpoints/Proof/FindPoints.lean| and above \verb|Ratpoints/Proof/Order.lean|, with the
+denominators of the search in a range; \verb|Ratpoints/Proof/Bisection.lean| ($1043$ lines), above
+\verb|Ratpoints/Proof/Region.lean| and \verb|Ratpoints/Proof/Sturm.lean|, with the bisection and the
+rest of the intersection and the step; \verb|Ratpoints/Proof/SturmCounts.lean| ($280$ lines), over
+Sturm's theorem of the specification and the mirrors, nothing of the model, with the counts at the
+ends of an interval; \verb|Ratpoints/Proof/SturmSigns.lean| ($388$ lines), above it, with the chain
+as a Sturm sequence; \verb|Ratpoints/Proof/SturmCoverage.lean| ($656$ lines), above
+\verb|Ratpoints/Proof/Bisection.lean| and \verb|Ratpoints/Proof/SturmSigns.lean|, with the coverage
+and the bound of the bisection; \verb|Ratpoints/Proof/SturmRegion.lean| ($298$ lines), above
+\verb|Ratpoints/Proof/Bounds.lean| and \verb|Ratpoints/Proof/SturmCoverage.lean|, with the Sturm
+step of the search, the region that the search uses and the bounds of the arrays; and
+\verb|Ratpoints/Proof/CliNumbers.lean| ($1118$ lines), above the roundings, with the numbers of the
+command line. Of the files of the earlier stages, \verb|Ratpoints/Proof/Denominators.lean| has the
+contract of the run on the bounds and what \verb|run_setup| returns;
+\verb|Ratpoints/Proof/FindPoints.lean| the points that the search delivers over the search
+intervals; \verb|Ratpoints/Proof/BruteForce.lean| the reference split at the candidate $(1, 0)$ and
+filtered to a range of denominators; \verb|Ratpoints/Proof/Shapes.lean| the divisors times squares
+in a range; \verb|Ratpoints/Proof/Setup.lean| the degree after the reversal check and the binary
+form as a value of the polynomial; \verb|Ratpoints/Proof/Output.lean| ($1091$ lines), above
+\verb|Ratpoints/Proof/FindPoints.lean| and \verb|Ratpoints/Proof/SturmRegion.lean|, the theorems
+with the search region; and \verb|Ratpoints/Proof/Cli.lean| ($944$ lines), above
+\verb|Ratpoints/Proof/CliNumbers.lean| and \verb|Ratpoints/Proof/Output.lean|, the theorem on the
+region of the program.
 
-Names that the prototype has and the audit of the stage is to review: the lemmas named \verb|spec_*|
-that are not contracts of the program logic (\lname{Ratpoints.Double.spec\_ofDyadic},
-\lname{Ratpoints.Sieve.spec\_intervalBitsExact} and their kin), \verb|m_run_exactEnd|,
-\verb|s_run_exactEnd|, \verb|toNat_rounding|, \verb|mod_add_carry|, \verb|gap_tail|,
-\verb|exists_left| and \verb|exists_right|, $\mathrm{PosAssoc}$, $\mathrm{Kept}$,
-$\mathrm{Witnessed}$, the step lemmas of the invariants of the program, and the two declarations
-named \verb|intervalsWF_domainBits_iff|, \lname{Ratpoints.intervalsWF\_domainBits\_iff} (the indexed
-form, in \verb|Proof/Bounds.lean|) and \lname{Ratpoints.Sturm.intervalsWF\_domainBits\_iff} (the
-form of the bisection, in \verb|Proof/Bisection.lean|); \lname{Ratpoints.Cli.Options.store}, which
-acts on $\mathrm{Options}$ but lives in the namespace \verb|Ratpoints.Cli|, so that dot notation
-does not reach it; and the general facts of \verb|Proof/Bisection.lean| and \verb|Proof/Output.lean|
-that may belong in a general file. \lname{Ratpoints.searchDens\_eq\_range'} and
-\lname{Ratpoints.append\_flatMap\_searchDens\_eq\_bruteForce} stay, since
-Chapter~\ref{chap:denominators} cites them. The names of this chapter are those of the prototype;
-the audit may rename them.
-
-The items also give the docstrings of the prototype the precision of this chapter: those of
-\verb|Ratpoints.Cli.Failure| and \verb|Ratpoints.Cli.Failure.ofRefusal| say that error~9 is for the
-codes of the library other than \verb|RATPOINTS_NON_SQUAREFREE| and \verb|RATPOINTS_NO_MEMORY|,
-error~10, which the model cannot return (H.5); the docstrings that say ``closed'' for $l \le u$ (in
-\verb|Ratpoints/Spec/Region.lean| and its restatement in the challenge,
-\verb|Ratpoints/Model/FindPoints.lean|, \verb|Ratpoints/Proof/Bisection.lean|,
-\verb|Ratpoints/Proof/Cli.lean| and \verb|Ratpoints/Proof/CliNumbers.lean|) say $l \le u$, the
-refusal of the search intervals reading ``without $l \le u$, not increasing and strictly apart, or
-with a NaN end'', with the item that brings each; the module docstring of
-\verb|Ratpoints/Proof/Double.lean| states the exactness of the nearest double with the hypotheses of
-Lemma~\ref{lem:Double} (H.1); the docstring of
-\verb|Ratpoints.Cli.mem_filter_keeps_iff_of_input_eq_ok| names the points at infinity unless
-\verb|-i| and the affine points in the range of \verb|-dl| and \verb|-du| and in the intervals of
-\verb|-l| and \verb|-u| when there are some (H.7); and the harness gives, beside the composite
-modulus $9$ for $3$, the subset of the $30$ primes and the moduli $55$ and $63$ as the cases where
-the C program chooses other moduli under the pin (H.7).
+The candidates for Mathlib of the stage are in mirrors under \verb|Ratpoints/Mathlib|, each
+importing the Mathlib file that it extends (Section~\ref{sec:coverage}):
+\verb|Algebra/Polynomial/FieldDivision|, \verb|Algebra/Polynomial/Sturm/Sequence|,
+\verb|Algebra/Polynomial/Eval/Coeff|, \verb|Analysis/Polynomial/Order|,
+\verb|Analysis/Polynomial/Sturm|, which has no sibling, \verb|Basic/Sign/Defs| and
+\verb|FieldTheory/Perfect| for the coverage; \verb|Data/List/Chain| for the ranges of the numerators
+and the intersection; \verb|Algebra/Order/Field/Basic|, with $|x/z| \le |x|$ for integers $x$ and
+$z$ in a linearly ordered field, for the bounds, the Sturm step of the search and the program; and
+\verb|Order/WithBotTop|, by which an element of \verb|WithBotTop ℚ| other than $\bot$ and $\top$
+lies strictly between them, for the doubles (Lemma~\ref{lem:Double}) and the numbers of the command
+line. Every Lean file stays below $1500$ lines, the largest that the stage changed being
+\verb|Ratpoints/Model/Sieve.lean| with $1333$. The new modules are in their part roots and in the
+listing \verb|Ratpoints.lean|; \verb|comparator/Challenge.lean| restates
+\verb|Ratpoints/Spec/Region.lean| and \verb|Ratpoints/Spec/Sturm.lean| verbatim
+(Section~\ref{sec:certifiedH}).
 
 \section{The evidence}\label{sec:region-evidence}
 
+Besides the proofs:
 \begin{itemize}
-  \item A reading of the C code of the search region, the Sturm step, the bounds of the numerators,
+  \item a reading of the C code of the search region, the Sturm step, the bounds of the numerators,
     the normalizations and the refusals, and of the options of the region, \verb|scan_end|,
     \verb|outward|, \verb|join_intervals|, \verb|in_region| and messages~3 and~8 of \verb|main.c|,
     at the pin, by three readers, each with a second reader who checked the findings, with Python
@@ -2492,7 +2077,7 @@ the C program chooses other moduli under the pin (H.7).
     asserted on all of them; the bits of intervals against the build under \verb|DEBUG| on $2823$
     denominators; the points in their order with regions against brute force on $2985$ runs and in
     the divisor order with \verb|-dl| and \verb|-du| on $1495$; and no defect of the C code. The
-    reading recorded the behaviours that the model follows: $-0$ printed as \verb|-0.000000|, an
+    reading records the behaviours that the model follows: $-0$ printed as \verb|-0.000000|, an
     interval beyond the height bound kept as \verb|[-inf, -20]|, \verb|[inf, inf]| accepted, the
     order of the refusals, the survivors under \verb|-x| depending on the depth, a form negative
     everywhere printing nothing, the suppression of the reversal by \verb|-dl| and \verb|-du|, the
@@ -2500,39 +2085,63 @@ the C program chooses other moduli under the pin (H.7).
     Lean side proved, before the stage, that the rows of the chain are positive multiples of
     Mathlib's Sturm sequence, checked the proposition of Sturm's theorem exactly on $30000$
     instances with ends at roots, and checked a model of the bisection and the intersection with
-    exact dyadic ends against a driver of \verb|_ratpoints_compute_sturm| on $500$ and $600$ runs.
-  \item Before the stage, a sketch of the model in Lean in two parts, the library and the program,
-    checked against the C program: the default suites with the new suites \verb|regions| and
-    \verb|depths|, $162$ of the $165$ region runs of \verb|test4.sh| and the one of \verb|test3.sh|,
-    the random suites on two more seeds, $11000$ whole outcomes of the search with a callback
-    against \verb|find_points| of the library, with the count, the flags, the points in their order
-    and the bits of the search intervals, $2000$ Sturm steps bit for bit, $4558$ comparisons of
-    message~8, $5998$ ends, scaled ends and forms of random doubles, $465$ denominators of
-    intervals, and \verb|strtod| and \verb|%f| against glibc on $46000$ lines, none failing. It
-    found a mismatch that stage~H did not cause and stage~I resolves: under \verb|-x -p 30 -N 30|
-    the C program can choose a composite modulus, so that the pin does not fix its moduli.
-  \item Four reviews of the sketch, of the library against the C code, of the program, of the
-    harness and of the specification, each finding checked by a second reader: $42$ findings, $37$
-    confirmed, $4$ in part and $1$ refuted, no defect of the behaviour of the model. They made the
-    Sturm step own the clears of its table, \verb|outward| and \verb|scan_end| own the lines of
-    their GMP numbers that carry meaning, the specification speak about the bits and the values of
-    the doubles, the theorems without Sturm's theorem a filter by the intervals that the step
-    leaves, and gave the harness the check of the moduli that the C program uses under the pin, the
-    exact region of the command line in the weaker check, the bound of the numerators under
-    \verb|-1| and the admission of large heights by the number of the denominators, by which the
-    three runs of \verb|test4.sh| under \verb|-1| at $10^{12}$ and $2^{63} - 1$ are compared.
-  \item A prototype of all the proofs on the sketch: the whole library, the program, the challenge
-    and the solution build, with no \verb|sorry| outside the challenge, every proof at most $20$
-    lines with no new exception of the style lint, standard axioms, $\mathrm{SturmTheorem}$ a
-    hypothesis; comparator with \verb|--paranoid| accepts the twelve statements with all six
-    kernels, all of them stated at once in the prototype, where the order of work brings each change
-    with its theorem; the build with other values of the constants passes its nine variants, the
-    decided facts on $\mathrm{maxDegree}$ among them; the differential tests compare $4530$ times
-    with none failed and $13$ times in \verb|test4high|; it adds $823$ public names to those of the
-    sketch. It changed the model of the sketch, as the reviews left it, only by the two decided
-    facts on $\mathrm{maxDegree}$, and it showed which hypotheses the statements need: the depth at
-    most $55$ for the intervals of the step, $d < 2^{57}$ and $|a| \le 2^{63}$ for its coverage,
-    $|x| \le H$ and words of fewer than $2^{56}$ characters for the program; it proved the roundings
-    of \verb|strtod| faithful, not nearest, and the doubles of upper ends at or above the end, not
-    the least such, which is all that the theorems need.
+    exact dyadic ends against a driver of \verb|_ratpoints_compute_sturm| on $500$ and $600$ runs;
+  \item before the stage, a sketch of the model and the program, checked against the C program at
+    the pinned commit, all without a mismatch: the default suites with the new suites \verb|regions|
+    and \verb|depths|, $4530$ comparisons after its fixes, $142$ of them under \verb|-x| compared
+    exactly, and $13$ in \verb|test4high|; $162$ of the $165$ runs of \verb|test4.sh| with a search
+    region and the one of \verb|test3.sh|, then the three runs under \verb|-1| at the heights
+    $10^{12}$ and $2^{63} - 1$, under a cap on the memory; larger runs with two other seeds; $11000$
+    whole outcomes of the search with a callback against \verb|find_points|; $2000$ runs of the
+    Sturm step against \verb|_ratpoints_compute_sturm|; $4558$ comparisons of message~8; and glibc's
+    \verb|strtod| and \verb|printf|'s \verb|%f| on $46000$ lines. Four reviews of the sketch, of the
+    library against the C code, of the program against \verb|main.c|, of the harness and of the
+    specification, each finding checked by a second reader: $42$ findings, $37$ confirmed, $4$ in
+    part and $1$ refuted, no defect of the model. Then a prototype of all the proofs on the sketch,
+    in which the whole library, the program, the challenge and the solution build, with no
+    \verb|sorry| outside the challenge and the standard axioms, \verb|lake comparator --paranoid|
+    accepts the twelve statements, the build with nine other sets of values of the constants passes,
+    and the differential tests pass. And a review of the plan of this chapter by five readers ($67$
+    findings, $59$ confirmed and $8$ in part), each finding checked by a second reader;
+  \item the twelve items of the stage drafted one after the other in a copy of the repository, each
+    passing the project's checks, the build with nine other sets of values of the constants and the
+    differential tests, comparator run after each item that changed the certified statements or the
+    proofs behind them, with \verb|--paranoid| after the switch to the Sturm step, and taken over
+    one commit each;
+  \item after the stage, independent reviews, each finding checked by a second reader: two of the C
+    ranges, the deviations and the exclusions against the C code ($10$ findings, $8$ confirmed), and
+    three of the code, the blueprint, the descriptions and the harness against the conventions of
+    the project ($65$ findings, $63$ confirmed), $75$ findings and $71$ confirmed in all, no defect
+    of the model, applied in nine rounds and a last one for their leftovers: the return of the Sturm
+    step stated as the C code makes it, when the step keeps no interval, and the deviations of what
+    a search gives back, of the intersection and of the errors of the program; the assembly of the
+    bits of a double shared by both roundings, in the model; the options of the search that an
+    option of the command line sets in the namespace of \verb|Ratpoints.Options|, and the guards of
+    the negation and \verb|fabs| against gcc and glibc; the mirrors at the generality of Mathlib,
+    each importing its sibling, the signs of polynomials over ordered normed fields; the general
+    facts out of the proof files, into the files of core facts and a mirror; the invariant of the
+    join a structure with named fields, hypotheses weakened and orphans deleted; the lemmas that are
+    not contracts named by their statements; the idioms, among them the congruence proofs as
+    quotations and the order of \verb|WithBotTop| through its mirror; and the descriptions, the
+    reflow and the imports of Sturm's theorem, which no longer name the modules that the Sturm
+    sequence brings;
+  \item the \verb|#guard| examples of Section~\ref{sec:regionTests}, against the C program, against
+    \verb|eval_sign| and \verb|_ratpoints_compute_sturm| of the pinned commit, against glibc's
+    \verb|strtod| and \verb|printf|, and against \verb|find_points| for the intervals that it
+    leaves;
+  \item the differential tests of Section~\ref{sec:regionTests}: on the final state $4530$
+    comparisons in the default suites, $142$ of them under \verb|-x| compared exactly and $7$ by
+    the weaker check alone (stage~I), and $13$ in \verb|test4high|, none failed, every point list
+    compared in its order;
+  \item \verb|lake comparator --paranoid| accepted the twelve statements in their form of stage~H on
+    2026-10-18, after the items and again on the final state after the audit, with Lean's kernel
+    and the five external checkers bundled with Lean;
+  \item the project builds, with all its proofs, for nine other sets of values of the constants of
+    the build, among them the two that change all the constants, with $\mathrm{maxDegree}$ $30$ and
+    $200$; so no proof depends on their values, the decided facts $\mathrm{maxDegree} < 2^{57}$ and
+    $0 < \mathrm{maxDegree}$ of stage~H among the facts that they keep;
+  \item every proof and every definition of the stage takes at most 20 lines; the only longer one in
+    the project is the set-up of the Jacobi test by tables (\verb|jacobiSetup|,
+    Definition~\ref{def:jacobiTables}), which follows the loop of \verb|jacobi_setup| since
+    sub-stage~F2.
 \end{itemize}
