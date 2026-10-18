@@ -600,8 +600,8 @@ theorem addInterval_eq (iv : Array (Double × Double)) (nl nr del der : Int64) :
       | none => iv.push ((Double.ofInt64 nl).ldexp (-del.toInt),
           (Double.ofInt64 nr).ldexp (-der.toInt)) := rfl
 
-theorem pairwise_append_singleton {l : List (Double × Double)} {x : Double × Double}
-    (hl : (∀ i ∈ l, IsInterval i) ∧ l.Pairwise EndsBefore) (hx : IsInterval x)
+theorem forall_isInterval_and_pairwise_append_singleton {l : List (Double × Double)}
+    {x : Double × Double} (hl : (∀ i ∈ l, IsInterval i) ∧ l.Pairwise EndsBefore) (hx : IsInterval x)
     (hlx : ∀ i ∈ l, EndsBefore i x) :
     (∀ i ∈ l ++ [x], IsInterval i) ∧ (l ++ [x]).Pairwise EndsBefore := by
   refine ⟨fun i hi ↦ ?_, List.pairwise_append.mpr ⟨hl.2, by simp, fun i hi j hj ↦ ?_⟩⟩
@@ -634,7 +634,7 @@ theorem addInterval_join {iv : Array (Double × Double)}
   rw [Array.toList_push] at hiv
   rw [Array.pop_push, Array.toList_push]
   have hlo := hiv.1 (lo, up) (by simp)
-  refine pairwise_append_singleton ⟨fun i hi ↦ hiv.1 i (by simp [hi]),
+  refine forall_isInterval_and_pairwise_append_singleton ⟨fun i hi ↦ hiv.1 i (by simp [hi]),
     (List.pairwise_append.mp hiv.2).1⟩ ⟨hlo.1, hu, hlo.2.2.trans hlt⟩ fun i hi ↦ ?_
   exact (List.pairwise_append.mp hiv.2).2.2 i hi (lo, up) (by simp)
 
@@ -646,7 +646,7 @@ theorem push_of_back?_lt {iv : Array (Double × Double)}
     (hlt : doubleValue y.2.bits < doubleValue x.1.bits) :
     (∀ i ∈ (iv.push x).toList, IsInterval i) ∧ (iv.push x).toList.Pairwise EndsBefore := by
   rw [Array.toList_push]
-  exact pairwise_append_singleton hiv hx fun i hi ↦
+  exact forall_isInterval_and_pairwise_append_singleton hiv hx fun i hi ↦
     (le_of_mem_of_back?_eq_some hiv hback hi).trans_lt hlt
 
 /-- The intervals kept stay increasing and strictly apart when the bisection adds the interval from
@@ -669,7 +669,7 @@ theorem addInterval_spec {iv : Array (Double × Double)} {nl nr del der : Int64}
   · obtain rfl : iv = #[] := by simpa using hback
     refine ⟨?_, by simp [hu.2]⟩
     rw [Array.toList_push]
-    exact pairwise_append_singleton (by simp) hx (by simp)
+    exact forall_isInterval_and_pairwise_append_singleton (by simp) hx (by simp)
   have hup : doubleValue up.bits ≤ L := hb (lo, up) (by simp [hback])
   have hlo := hiv.1 (lo, up) (Array.mem_toList_iff.mpr (Array.mem_of_back? hback))
   by_cases hbeq : up.beq ((Double.ofInt64 nl).ldexp (-del.toInt)) = true
@@ -762,7 +762,7 @@ theorem iterate_wf {rows : Array (Array ℤ)} {k iter : ℕ} {nl nr del der : In
     obtain ⟨h1, h2⟩ := ih2 s0 s1 cmid hL (by lia) hacc hb
     simpa only [dite_eq_ite] using ih1 s0 s1 cmid _ hR (by lia) h1 h2
 
-theorem intervalsWF_domainBits_iff (l : List (Double × Double)) :
+theorem intervalsWF_domainBits_iff_pairwise (l : List (Double × Double)) :
     IntervalsWF (domainBits l) ↔ (∀ i ∈ l, IsInterval i) ∧ l.Pairwise EndsBefore := by
   have h (h1 : ∀ i ∈ l, doubleValue i.1.bits ≤ doubleValue i.2.bits) :
       (domainValues l).IsChain (fun i j ↦ i.2 < j.1) ↔ l.Pairwise EndsBefore := by
@@ -815,10 +815,9 @@ theorem lt_of_meet_fst_eq_none {a b : Double × Double} (ha : IsInterval a) (hb 
   have := hb.2.2
   split_ifs at h <;> grind
 
-theorem of_meet_fst_eq_some {a b : Double × Double} (ha : IsInterval a) (hb : IsInterval b)
-    {i : Double × Double} (h : (meet a b).1 = some i) :
-    (i.1 = a.1 ∨ i.1 = b.1) ∧ (i.2 = a.2 ∨ i.2 = b.2) ∧
-      doubleValue i.1.bits = max (doubleValue a.1.bits) (doubleValue b.1.bits) ∧
+theorem doubleValue_eq_max_and_min_of_meet_fst_eq_some {a b : Double × Double} (ha : IsInterval a)
+    (hb : IsInterval b) {i : Double × Double} (h : (meet a b).1 = some i) :
+    doubleValue i.1.bits = max (doubleValue a.1.bits) (doubleValue b.1.bits) ∧
       doubleValue i.2.bits = min (doubleValue a.2.bits) (doubleValue b.2.bits) := by
   rw [meet_eq ha.1 ha.2.1 hb.1 hb.2.1] at h
   have := ha.2.2
@@ -827,14 +826,8 @@ theorem of_meet_fst_eq_some {a b : Double × Double} (ha : IsInterval a) (hb : I
 
 theorem isInterval_of_meet_fst_eq_some {a b : Double × Double} (ha : IsInterval a)
     (hb : IsInterval b) {i : Double × Double} (h : (meet a b).1 = some i) : IsInterval i := by
-  obtain ⟨h1, h2, h3, h4⟩ := of_meet_fst_eq_some ha hb h
-  refine ⟨by rcases h1 with h1 | h1 <;> rw [h1] <;> [exact ha.1; exact hb.1],
-    by rcases h2 with h2 | h2 <;> rw [h2] <;> [exact ha.2.1; exact hb.2.1], ?_⟩
-  rw [h3, h4]
   rw [meet_eq ha.1 ha.2.1 hb.1 hb.2.1] at h
-  have := ha.2.2
-  have := hb.2.2
-  split_ifs at h <;> grind
+  split_ifs at h <;> grind [IsInterval]
 
 /-- An interval of the intersection is that of an interval of each list, which it meets. -/
 theorem exists_of_mem_intersectList {as bs : List (Double × Double)}
@@ -861,7 +854,7 @@ theorem exists_le_of_mem_intersectList {as bs : List (Double × Double)}
     (∃ a ∈ as, doubleValue a.1.bits ≤ doubleValue j.1.bits) ∧
       ∃ b ∈ bs, doubleValue b.1.bits ≤ doubleValue j.1.bits := by
   obtain ⟨a, ha, b, hb, h⟩ := exists_of_mem_intersectList has hbs hj
-  have := (of_meet_fst_eq_some (has a ha) (hbs b hb) h).2.2.1
+  have := (doubleValue_eq_max_and_min_of_meet_fst_eq_some (has a ha) (hbs b hb) h).1
   exact ⟨⟨a, ha, this ▸ le_max_left _ _⟩, ⟨b, hb, this ▸ le_max_right _ _⟩⟩
 
 theorem pairwise_intersectList {as bs : List (Double × Double)} (has : ∀ a ∈ as, IsInterval a)
@@ -871,8 +864,9 @@ theorem pairwise_intersectList {as bs : List (Double × Double)} (has : ∀ a �
   | case1 => simp
   | case2 => simp
   | case3 a as b bs ih1 ih2 =>
-    have hi' {i} (hi : i ∈ (meet a b).1.toList) := (of_meet_fst_eq_some (has a (by simp))
-      (hbs b (by simp)) (Option.mem_toList.mp hi)).2.2.2
+    have hi' {i} (hi : i ∈ (meet a b).1.toList) :=
+      (doubleValue_eq_max_and_min_of_meet_fst_eq_some (has a (by simp)) (hbs b (by simp))
+        (Option.mem_toList.mp hi)).2
     rw [intersectList_cons_cons, List.pairwise_append]
     refine ⟨by cases (meet a b).1 <;> simp, ?_, fun i hi j hj ↦ ?_⟩
     · split_ifs
@@ -895,7 +889,7 @@ theorem exists_meet_fst_eq_some {a b : Double × Double} (ha : IsInterval a) (hb
   rcases hm : (meet a b).1 with _ | i
   · have := lt_of_meet_fst_eq_none ha hb hm
     grind
-  · have := of_meet_fst_eq_some ha hb hm
+  · have := doubleValue_eq_max_and_min_of_meet_fst_eq_some ha hb hm
     exact ⟨i, rfl, by grind⟩
 
 /-- A value in an interval `a` and an interval of `b :: bs` lies in the interval that
@@ -968,7 +962,7 @@ theorem length_intersectList_le (as bs : List (Double × Double)) :
 theorem intervalsWF_intersectList {loc ivs : List (Double × Double)}
     (hloc : IntervalsWF (domainBits loc)) (hivs : IntervalsWF (domainBits ivs)) :
     IntervalsWF (domainBits (intersectList loc ivs)) := by
-  rw [intervalsWF_domainBits_iff] at hloc hivs ⊢
+  rw [intervalsWF_domainBits_iff_pairwise] at hloc hivs ⊢
   refine ⟨fun i hi ↦ ?_, pairwise_intersectList hloc.1 hivs.1 hloc.2 hivs.2⟩
   obtain ⟨a, ha, b, hb, h⟩ := exists_of_mem_intersectList hloc.1 hivs.1 hi
   exact isInterval_of_meet_fst_eq_some (hloc.1 a ha) (hivs.1 b hb) h
@@ -982,19 +976,19 @@ theorem inIntervals_of_inIntervals_intersectList {loc ivs : List (Double × Doub
     (hloc : IntervalsWF (domainBits loc)) (hivs : IntervalsWF (domainBits ivs)) {x : ℚ}
     (hx : InIntervals (domainValues (intersectList loc ivs)) x) :
     InIntervals (domainValues loc) x ∧ InIntervals (domainValues ivs) x := by
-  rw [intervalsWF_domainBits_iff] at hloc hivs
+  rw [intervalsWF_domainBits_iff_pairwise] at hloc hivs
   rw [inIntervals_domainValues_iff] at hx ⊢
   rw [inIntervals_domainValues_iff]
   obtain ⟨i, hi, h1, h2⟩ := hx
   obtain ⟨a, ha, b, hb, h⟩ := exists_of_mem_intersectList hloc.1 hivs.1 hi
-  have := of_meet_fst_eq_some (hloc.1 a ha) (hivs.1 b hb) h
+  have := doubleValue_eq_max_and_min_of_meet_fst_eq_some (hloc.1 a ha) (hivs.1 b hb) h
   exact ⟨⟨a, ha, by grind, by grind⟩, ⟨b, hb, by grind, by grind⟩⟩
 
 theorem inIntervals_intersectList {loc ivs : List (Double × Double)}
     (hloc : IntervalsWF (domainBits loc)) (hivs : IntervalsWF (domainBits ivs)) {x : ℚ}
     (h1 : InIntervals (domainValues loc) x) (h2 : InIntervals (domainValues ivs) x) :
     InIntervals (domainValues (intersectList loc ivs)) x := by
-  rw [intervalsWF_domainBits_iff] at hloc hivs
+  rw [intervalsWF_domainBits_iff_pairwise] at hloc hivs
   rw [inIntervals_domainValues_iff] at h1 h2 ⊢
   exact exists_mem_intersectList hloc.1 hivs.1 hloc.2 hivs.2 h1 h2
 
@@ -1035,7 +1029,7 @@ theorem computeSturm_wf {c : List ℤ} {d iter : ℕ} {ivs iv' : Array (Double �
   have hloc := iterate_wf (rows := rows) (k := rows.size - 1) (cleft := cnt.2) (cright := cnt.1)
     (sl := if d % 2 = 1 then -(c.getD d 0).sign else (c.getD d 0).sign) (sr := (c.getD d 0).sign)
     (acc := #[]) endsWF_zero hit (by lia) (by simp) (by simp)
-  rw [← intervalsWF_domainBits_iff] at hloc
+  rw [← intervalsWF_domainBits_iff_pairwise] at hloc
   rw [toList_run_intersect]
   exact ⟨intervalsWF_intersectList hloc.1 hwf,
     fun x hx ↦ (inIntervals_of_inIntervals_intersectList hloc.1 hwf hx).2⟩

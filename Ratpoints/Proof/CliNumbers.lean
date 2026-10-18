@@ -23,14 +23,14 @@ The ends of the search intervals of the command line of `ratpoints-lean`, as
 (`Ratpoints.Cli.isNaN_strtod`); `outward` moves a double to the side of the end that its direction
 asks, and onto the largest double at most a lower end when it starts close enough to it
 (`Ratpoints.Cli.outward_spec`); so an end that `scan_end` reads has a double that is not a NaN,
-outward of the end (`Ratpoints.Cli.run_scanEnd_props`). For a word of fewer than `2 ^ 56`
-characters, the double of a lower end is the largest double at most the end
-(`Ratpoints.Cli.run_scanEnd_isMaxBelow`): the parts of the word give its exact value
-(`Ratpoints.Cli.floatParts_spec`, `Ratpoints.Cli.wordValue`), which `strtod` rounds faithfully
-(`Ratpoints.Cli.lt_nextUp_strtod`), and the exponent that `scan_end` accumulates, which stops at
-`LONG_MAX / 20`, is the exact one for the doubles that are finite and not zero
-(`Ratpoints.Cli.scanEndValue_eq_wordValue`). The ends of a missing `-l` and `-u` lie beyond the
-height bound (`Ratpoints.Cli.isFinite_heightEnd_and_le_toRat`). The comparisons `cmp_end` and
+outward of the end (`Ratpoints.Cli.inf_mem_and_isNaN_eq_false_and_le_of_run_scanEnd_eq_some`). For a
+word of fewer than `2 ^ 56` characters, the double of a lower end is the largest double at most the
+end (`Ratpoints.Cli.run_scanEnd_isMaxBelow`): the parts of the word give its exact value
+(`Ratpoints.Cli.floatParts_bounds_and_isDigit_exponentDigits`, `Ratpoints.Cli.wordValue`), which
+`strtod` rounds faithfully (`Ratpoints.Cli.lt_nextUp_strtod`), and the exponent that `scan_end`
+accumulates, which stops at `LONG_MAX / 20`, is the exact one for the doubles that are finite and
+not zero (`Ratpoints.Cli.scanEndValue_eq_wordValue`). The ends of a missing `-l` and `-u` lie beyond
+the height bound (`Ratpoints.Cli.isFinite_heightEnd_and_le_toRat`). The comparisons `cmp_end` and
 `cmp_end_x` compare the values (`Ratpoints.Cli.cmpEnd_neg_iff`, `Ratpoints.Cli.cmpEndX_neg_iff`), so
 that the binary search of `in_region` over increasing and disjoint intervals decides the membership
 of `x / z` (`Ratpoints.Cli.inRegion_spec`); and `join_intervals` keeps what the intervals hold and,
@@ -48,7 +48,8 @@ for intervals that join well, gives intervals that the library accepts
 
 ## Main statements
 
-* `Ratpoints.Cli.outward_spec`, `Ratpoints.Cli.run_scanEnd_props`,
+* `Ratpoints.Cli.outward_spec`,
+  `Ratpoints.Cli.inf_mem_and_isNaN_eq_false_and_le_of_run_scanEnd_eq_some`,
   `Ratpoints.Cli.run_scanEnd_isMaxBelow`, `Ratpoints.Cli.isFinite_heightEnd_and_le_toRat`: the
   doubles of the ends.
 * `Ratpoints.Cli.lt_nextUp_strtod`: the faithful rounding of `strtod`.
@@ -267,8 +268,8 @@ theorem value_inf_eq_doubleValue {x : Double} (hi : x.isInf = true) :
 
 /-- An end that `scan_end` reads: its `inf` is `-1`, `0` or `1`, its double is not a NaN, and it is
 outward of the end, below a lower end and above an upper one. -/
-theorem run_scanEnd_props {s : String} {dir : ℤ} {e : ExactEnd} {d : Double}
-    (h : Id.run (scanEnd s dir) = some (e, d)) :
+theorem inf_mem_and_isNaN_eq_false_and_le_of_run_scanEnd_eq_some {s : String} {dir : ℤ}
+    {e : ExactEnd} {d : Double} (h : Id.run (scanEnd s dir) = some (e, d)) :
     (e.inf = -1 ∨ e.inf = 0 ∨ e.inf = 1) ∧ d.isNaN = false ∧
       (dir < 0 → doubleValue d.bits ≤ e.value) ∧ (¬dir < 0 → e.value ≤ doubleValue d.bits) := by
   obtain ⟨w, -, -, ⟨hi, rfl, rfl⟩ | ⟨hi, rfl, rfl⟩⟩ := eq_of_run_scanEnd_eq_some h
@@ -287,7 +288,11 @@ theorem isFinite_heightEnd_and_le_toRat {H : ℕ} (hH : 1 ≤ H) (hH63 : H < 2 ^
 
 /-! ### The largest double below a lower end -/
 
-theorem mantissaDigits_spec (isDigit : Char → Bool) (point : Bool) (s : List Char) :
+/-- The digits that `Ratpoints.Cli.mantissaDigits` takes from `s`: as many after the point at most
+as in all, no more than the characters of `s`, all digits, and the rest of `s` without the digits
+and the points. -/
+theorem mantissaDigits_bounds_and_eq_dropWhile (isDigit : Char → Bool) (point : Bool)
+    (s : List Char) :
     (mantissaDigits isDigit point s).2.1 ≤ (mantissaDigits isDigit point s).1.length ∧
       (mantissaDigits isDigit point s).1.length ≤ s.length ∧
       (∀ ch ∈ (mantissaDigits isDigit point s).1, isDigit ch = true) ∧
@@ -490,19 +495,22 @@ theorem lt_nextUp_strtod {w : List Char} (hi : isInfWord (dropSign w) = false)
   · simp only [hx, Bool.false_eq_true, ↓reduceIte] at hf hz ⊢
     exact lt_nextUp_nearestDecimal hf hz
 
-/-- The digits of the mantissa of the part `s` of a floating constant, in the base `b` of the
-digits `isD`, and the decimal digits of its exponent when `s` is a floating constant. -/
-theorem mantissaDigits_props {isD : Char → Bool} {b : ℕ} (s : List Char) {exp : List Char}
+-- The digits of the mantissa of the part `s` of a floating constant, in the base `b` of the digits
+-- `isD`, and the decimal digits of its exponent when `s` is a floating constant.
+private theorem mantissaDigits_props {isD : Char → Bool} {b : ℕ} (s : List Char) {exp : List Char}
     (hd : ∀ ch, isD ch = true → digitValue ch < b) (hexp : ∀ x ∈ exp, "eEpP".contains x = true) :
     (mantissaDigits isD false s).2.1 ≤ (mantissaDigits isD false s).1.length ∧
       (mantissaDigits isD false s).1.length ≤ s.length ∧
       (∀ ch ∈ (mantissaDigits isD false s).1, digitValue ch < b) ∧
       (isFloatBody isD exp s = true →
         ∀ ch ∈ (exponentDigits (mantissaDigits isD false s).2.2).2, ch.isDigit = true) := by
-  obtain ⟨h1, h2, h3, h4⟩ := mantissaDigits_spec isD false s
+  obtain ⟨h1, h2, h3, h4⟩ := mantissaDigits_bounds_and_eq_dropWhile isD false s
   exact ⟨h1, h2, fun ch hch ↦ hd ch (h3 ch hch), fun hf ↦ h4 ▸ exponentDigits_snd_isDigit hexp hf⟩
 
-theorem floatParts_spec (w : List Char) :
+/-- The parts of the word `w` (`Ratpoints.Cli.floatParts`): as many digits after the point at most
+as in all, no more than the characters of `w`, all digits of the base, and the decimal digits of the
+exponent when `w` is a floating constant that is not an infinity. -/
+theorem floatParts_bounds_and_isDigit_exponentDigits (w : List Char) :
     (floatParts w).2.2.2.1 ≤ (floatParts w).2.2.1.length ∧
       (floatParts w).2.2.1.length ≤ w.length ∧
       (∀ ch ∈ (floatParts w).2.2.1, digitValue ch < if (floatParts w).2.1 then 16 else 10) ∧
@@ -534,7 +542,10 @@ theorem ite_natCast_mul_pow_eq (m b : ℕ) (t : ℤ) :
   · rw [Rat.mkRat_eq_div]; push_cast
     rw [← zpow_natCast, show ((t.natAbs : ℕ) : ℤ) = -t by lia, zpow_neg, div_eq_mul_inv, inv_inv]
 
-theorem natAbs_exponent_lt {E k len : ℕ} {l : ℕ} {eneg hex : Bool} (hk : k ≤ len)
+-- The exponent `E` of a floating constant of fewer than `2 ^ 56` characters lies below
+-- `LONG_MAX / 20` when it meets the bounds of `Ratpoints.Cli.nearestBinary_eq` (hexadecimal) or
+-- `Ratpoints.Cli.nearestDecimal_eq` (decimal) for a finite double that is not a zero.
+private theorem natAbs_exponent_lt {E k len : ℕ} {l : ℕ} {eneg hex : Bool} (hk : k ≤ len)
     (hlen : len < 2 ^ 56) (hl : l < 4 * len + 1)
     (hb : hex = true → (l : ℤ) + ((if eneg then -(E : ℤ) else E) - 4 * k) < 1024 ∧
       -1075 < (l : ℤ) + 1 + ((if eneg then -(E : ℤ) else E) - 4 * k))
@@ -548,7 +559,7 @@ theorem natAbs_exponent_lt {E k len : ℕ} {l : ℕ} {eneg hex : Bool} (hk : k �
 theorem log2_natOfDigitsIn_lt {w : List Char} :
     (natOfDigitsIn (if (floatParts w).2.1 then 16 else 10) (floatParts w).2.2.1).log2 <
       4 * (floatParts w).2.2.1.length + 1 := by
-  have hd := (floatParts_spec w).2.2.1
+  have hd := (floatParts_bounds_and_isDigit_exponentDigits w).2.2.1
   have h1 := natOfDigitsIn_lt _ hd
   have h2 : (if (floatParts w).2.1 then 16 else 10) ^ (floatParts w).2.2.1.length ≤
       2 ^ (4 * (floatParts w).2.2.1.length) := by
@@ -558,15 +569,15 @@ theorem log2_natOfDigitsIn_lt {w : List Char} :
   · rw [h]; simp
   · have := (Nat.log2_lt h.ne').mpr (h1.trans_le h2); lia
 
-/-- The exponent of a floating constant whose double is finite and not a zero, of fewer than
-`2 ^ 56` characters, lies below the bound `LONG_MAX / 20` at which `scan_end` stops taking digits,
-and the digits of its mantissa are not all `0`. -/
-theorem exponent_lt_of_strtod {w : List Char} (hi : isInfWord (dropSign w) = false)
+-- The exponent of a floating constant whose double is finite and not a zero, of fewer than `2 ^ 56`
+-- characters, lies below the bound `LONG_MAX / 20` at which `scan_end` stops taking digits, and the
+-- digits of its mantissa are not all `0`.
+private theorem exponent_lt_of_strtod {w : List Char} (hi : isInfWord (dropSign w) = false)
     (hf : (strtod w).isFinite = true) (hz : (strtod w).beq .zero = false)
     (hlen : w.length < 2 ^ 56) :
     (natOfDigitsIn 10 (exponentDigits (floatParts w).2.2.2.2).2 : ℤ) < (2 ^ 63 - 1) / 20 ∧
       natOfDigitsIn (if (floatParts w).2.1 then 16 else 10) (floatParts w).2.2.1 ≠ 0 := by
-  obtain ⟨hk, hds, -, -⟩ := floatParts_spec w
+  obtain ⟨hk, hds, -, -⟩ := floatParts_bounds_and_isDigit_exponentDigits w
   have hl := log2_natOfDigitsIn_lt (w := w)
   rw [strtod_eq hi] at hf hz
   by_cases hx : (floatParts w).2.1 = true
@@ -585,7 +596,7 @@ theorem scanEndValue_eq_wordValue {w : List Char} (hd : isDoubleWord w = true)
     (hz : (strtod w).beq .zero = false) (hlen : w.length < 2 ^ 56) :
     scanEndValue w (strtod w) = wordValue w := by
   obtain ⟨hE, hm⟩ := exponent_lt_of_strtod hi hf hz hlen
-  have heds := (floatParts_spec w).2.2.2 hd hi
+  have heds := (floatParts_bounds_and_isDigit_exponentDigits w).2.2.2 hd hi
   have hcap : (exponentDigits (floatParts w).2.2.2.2).2.foldl (fun ex ch ↦
       if ex < 461168601842738790 then 10 * ex + ((ch.toNat : ℤ) - 48) else ex) 0 =
       natOfDigitsIn 10 (exponentDigits (floatParts w).2.2.2.2).2 := by

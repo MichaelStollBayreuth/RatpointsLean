@@ -527,7 +527,7 @@ theorem Intervals.ReadsWF.lower {H : ℕ} {iv iv' : Intervals} {a : String}
     (hw : iv.ReadsWF H iv.numInter iv.lSeen) (h : iv.lower a = .ok iv') :
     iv'.ReadsWF H iv'.numInter iv'.lSeen := by
   obtain ⟨hl, hn, e, d, hs, hc, rfl⟩ := Intervals.lower_eq_ok h
-  obtain ⟨he1, hd1, hd2, -⟩ := run_scanEnd_props hs
+  obtain ⟨he1, hd1, hd2, -⟩ := inf_mem_and_isNaN_eq_false_and_le_of_run_scanEnd_eq_some hs
   rw [hl] at hw
   have hnm : iv.numInter < maxDegree := by have := hw.le_maxDegree; simp at this; lia
   have hes : 2 * iv.numInter < iv.ends.size := by rw [hw.size_ends]; lia
@@ -598,7 +598,7 @@ theorem Intervals.ReadsWF.upper_of_lSeen {H : ℕ} {iv iv' : Intervals} {a : Str
     (hw : iv.ReadsWF H iv.numInter iv.lSeen) (hl : iv.lSeen = true) (h : iv.upper H a = .ok iv') :
     iv'.ReadsWF H iv'.numInter iv'.lSeen := by
   obtain ⟨e, d, hs, hc, rfl⟩ := Intervals.upper_eq_ok_of_lSeen hl h
-  obtain ⟨he1, hd1, -, hd2⟩ := run_scanEnd_props hs
+  obtain ⟨he1, hd1, -, hd2⟩ := inf_mem_and_isNaN_eq_false_and_le_of_run_scanEnd_eq_some hs
   rw [hl] at hw
   have hnm : iv.numInter + 1 ≤ maxDegree := by simpa using hw.le_maxDegree
   have hes : 2 * iv.numInter + 1 < iv.ends.size := by rw [hw.size_ends]; lia
@@ -622,7 +622,7 @@ theorem Intervals.ReadsWF.upper_of_not_lSeen {H : ℕ} {iv iv' : Intervals} {a :
   have hm := zero_lt_maxDegree
   obtain ⟨hn0, e, d, hs, -, rfl⟩ := Intervals.upper_eq_ok_of_not_lSeen hl
     (by rw [hw.size_domain]; lia) (by rw [hw.size_ends]; lia) h
-  obtain ⟨he1, hd1, -, hd2⟩ := run_scanEnd_props hs
+  obtain ⟨he1, hd1, -, hd2⟩ := inf_mem_and_isNaN_eq_false_and_le_of_run_scanEnd_eq_some hs
   have e0 : (iv.ends.set! 0 { iv.ends[0]! with inf := -1 })[0]! = { iv.ends[0]! with inf := -1 } :=
     Array.getElem!_set!_self _ _ _ (by rw [hw.size_ends]; lia)
   have e1 : ((iv.ends.set! 0 { iv.ends[0]! with inf := -1 }).set! 1 e)[1]! = e :=
@@ -683,7 +683,8 @@ theorem Intervals.LowerMax.lower {H : ℕ} {iv iv' : Intervals} {a : String}
     exact hm j hj1 hj
   · rw [Array.getElem!_set!_self _ _ _ (by rw [hw.size_domain]; lia),
       Array.getElem!_set!_self _ _ _ (by rw [hw.size_ends]; lia)]
-    exact ⟨(run_scanEnd_props hs).2.2.1 (by decide), run_scanEnd_isMaxBelow hs hlen⟩
+    exact ⟨(inf_mem_and_isNaN_eq_false_and_le_of_run_scanEnd_eq_some hs).2.2.1 (by decide),
+      run_scanEnd_isMaxBelow hs hlen⟩
 
 theorem Intervals.LowerMax.upper {H : ℕ} {iv iv' : Intervals} {a : String}
     (hw : iv.ReadsWF H iv.numInter iv.lSeen) (hm : iv.LowerMax iv.numInter iv.lSeen)

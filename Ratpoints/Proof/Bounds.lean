@@ -26,13 +26,13 @@ denominator up to the largest, the ranges of the numerators `⌈b l⌉, …, ⌊
 
 The ends of the bounds are those of `exact_end`: `±m 2 ^ (-s)` with the value of the double, or
 capped for a tiny end or one beyond `2 ^ 63`, with the same numerators for every denominator
-`1 ≤ b < 2 ^ 63` (`Ratpoints.Sieve.numerators_run_exactEnd`); `exact_scale` computes
-`min (2 ^ 64 - 1) ⌊(b m + r) / 2 ^ s⌋` on two words (`Ratpoints.Sieve.toNat_exactScale`), so that
-`interval_bits_exact` gives the clamped numerators of the ends
-(`Ratpoints.Sieve.spec_intervalBitsExact`); and the forms `(b M + C) >> s` of `end_form` are exact
-on the `long`s (`Ratpoints.Sieve.lowNumerator_of_endForm`,
+`1 ≤ b < 2 ^ 63` (`Ratpoints.Sieve.lowNumerator_eq_and_highNumerator_eq_run_exactEnd`);
+`exact_scale` computes `min (2 ^ 64 - 1) ⌊(b m + r) / 2 ^ s⌋` on two words
+(`Ratpoints.Sieve.toNat_exactScale`), so that `interval_bits_exact` gives the clamped numerators of
+the ends (`Ratpoints.Sieve.toInt_intervalBitsExact`); and the forms `(b M + C) >> s` of `end_form`
+are exact on the `long`s (`Ratpoints.Sieve.lowNumerator_of_endForm`,
 `Ratpoints.Sieve.highNumerator_of_endForm`), so that `interval_bits` on an interval taken inline
-gives them too (`Ratpoints.Sieve.spec_intervalBits_of_fast`).
+gives them too (`Ratpoints.Sieve.IntervalBounds.represents_of_fast`).
 
 ## Main definitions
 
@@ -47,8 +47,9 @@ gives them too (`Ratpoints.Sieve.spec_intervalBits_of_fast`).
   of `Ratpoints.IntervalsWF`.
 * `Ratpoints.run_searchIntervals_of_ne_nil`, `Ratpoints.exists_run_searchIntervals_nil`: the search
   intervals of the caller, or the default interval, which holds every `a / b` of the search.
-* `Ratpoints.Sieve.toNat_exactScale`, `Ratpoints.Sieve.numerators_run_exactEnd`: `exact_scale` and
-  the ends of `exact_end`.
+* `Ratpoints.Sieve.toNat_exactScale`,
+  `Ratpoints.Sieve.lowNumerator_eq_and_highNumerator_eq_run_exactEnd`: `exact_scale` and the ends of
+  `exact_end`.
 * `Ratpoints.Sieve.represents_intervalBoundsOf`: the bounds of one search interval give the range of
   its numerators, on both paths of `interval_bits`.
 * `Ratpoints.Sieve.rangesFor_run_exactBounds`: the bounds of the search intervals give the ranges
@@ -84,7 +85,7 @@ theorem run_searchIntervals_eq {H : ℕ} {domain : List (Double × Double)} (h :
       [:domain.length].step = domain.length by simp, forIn_list_done_eq]
   split <;> rfl
 
-theorem intervalsWF_domainBits_iff (domain : List (Double × Double)) :
+theorem intervalsWF_domainBits_iff_getElem (domain : List (Double × Double)) :
     IntervalsWF (domainBits domain) ↔ ∀ n (hn : n < domain.length),
       domain[n].1.le domain[n].2 = true ∧
         (∀ h : 0 < n, domain[n - 1].2.lt domain[n].1 = true) := by
@@ -103,8 +104,8 @@ theorem intervalsWF_domainBits_iff (domain : List (Double × Double)) :
     simpa using this
 
 -- The test of `Ratpoints.searchIntervals` on the `n`-th interval fails exactly when the
--- characterization of `Ratpoints.IntervalsWF` by `Ratpoints.intervalsWF_domainBits_iff` fails at
--- `n`.
+-- characterization of `Ratpoints.IntervalsWF` by `Ratpoints.intervalsWF_domainBits_iff_getElem`
+-- fails at `n`.
 private theorem bad_eq_true_iff {domain : List (Double × Double)} {n : ℕ} (hn : n < domain.length) :
     (!domain[n]!.1.le domain[n]!.2 || decide (0 < n) && !domain[n - 1]!.2.lt domain[n]!.1) = true ↔
       ¬ (domain[n].1.le domain[n].2 = true ∧
@@ -119,7 +120,7 @@ theorem run_searchIntervals_eq_none_iff (H : ℕ) (domain : List (Double × Doub
     Id.run (searchIntervals H domain) = none ↔ ¬ IntervalsWF (domainBits domain) := by
   rcases eq_or_ne domain [] with rfl | h
   · simp [searchIntervals, IntervalsWF, AreSearchIntervals]
-  rw [run_searchIntervals_eq h, intervalsWF_domainBits_iff]
+  rw [run_searchIntervals_eq h, intervalsWF_domainBits_iff_getElem]
   simp only [ite_eq_left_iff, reduceCtorEq, imp_false, not_not, List.any_eq_true, List.mem_range,
     not_forall]
   exact exists_congr fun n ↦ ⟨fun ⟨hn, hb⟩ ↦ ⟨hn, (bad_eq_true_iff hn).mp hb⟩,
@@ -275,15 +276,15 @@ theorem toNat_toUInt64_ldexp_mantDig {f : Double} (hf : f.isFinite = true)
   have hg52 : 2 ^ 52 ≤ (f.ldexp (Double.mantDig : ℤ)).toRat := by rw [hv]; linarith
   rw [Double.toNat_toUInt64 hg0 (by rw [hv]; linarith), ← Double.toRat_eq_natCast_floor hg52, hv]
 
-/-- The mantissa `m₀ = (unsigned long)ldexp(f, 53)` and the exponent `ex` of `frexp(ax) = (f, ex)`
-for a finite double `ax > 0`, as `exact_end` makes them: `m₀ 2 ^ (ex - 53) = ax` with
-`2 ^ 52 ≤ m₀ < 2 ^ 53`. -/
-theorem spec_toUInt64_ldexp_frexp {ax : Double} (hf : ax.isFinite = true)
+-- The mantissa `m₀ = (unsigned long)ldexp(f, 53)` and the exponent `ex` of `frexp(ax) = (f, ex)`
+-- for a finite double `ax > 0`, as `exact_end` makes them: `m₀ 2 ^ (ex - 53) = ax` with
+-- `2 ^ 52 ≤ m₀ < 2 ^ 53`.
+private theorem spec_toUInt64_ldexp_frexp {ax : Double} (hf : ax.isFinite = true)
     (hs : ax.signBit = false) (h0 : ax.toRat ≠ 0) :
     ((ax.frexp.1.ldexp (Double.mantDig : ℤ)).toUInt64.toNat : ℚ) * 2 ^ (ax.frexp.2 - 53) =
         ax.toRat ∧ 2 ^ 52 ≤ (ax.frexp.1.ldexp (Double.mantDig : ℤ)).toUInt64.toNat ∧
       (ax.frexp.1.ldexp (Double.mantDig : ℤ)).toUInt64.toNat < 2 ^ 53 := by
-  obtain ⟨hf1, -, hv1, hlo, hhi⟩ := Double.frexp_spec hf h0
+  obtain ⟨hf1, -, hv1, hlo, hhi⟩ := Double.toRat_frexp_mul_zpow_eq_and_bounds hf h0
   have hax : 0 < ax.toRat := lt_of_le_of_ne (Double.toRat_nonneg hs) (Ne.symm h0)
   have hpos : 0 < ax.frexp.1.toRat :=
     (mul_pos_iff_of_pos_right (zpow_pos two_pos _)).mp (hv1 ▸ hax)
@@ -391,9 +392,9 @@ theorem isExactMantissa_run_exactMantissa {ax : Double} (hf : ax.isFinite = true
     · simp only [hs1, lt_irrefl, ↓reduceIte, show ¬(127 : ℤ) < 0 by decide]
       exact isExactMantissa_of_eq (by simp) (by lia) (by lia) (by simpa [hs1] using hv)
 
-/-- The rounding `rh 2 ^ 64 + rl` that `exact_end` writes: `2 ^ s - 1` when the end wants `b |x|`
-rounded up, and `0` otherwise. -/
-theorem toNat_rounding (up : Bool) {s : ℕ} (hs : s ≤ 127) :
+-- The rounding `rh 2 ^ 64 + rl` that `exact_end` writes: `2 ^ s - 1` when the end wants `b |x|`
+-- rounded up, and `0` otherwise.
+private theorem toNat_rounding (up : Bool) {s : ℕ} (hs : s ≤ 127) :
     (if up then (if s < 64 then (((1 : UInt64) <<< s.toUInt64) - 1, (0 : UInt64))
       else (~~~0, ((1 : UInt64) <<< (s - 64).toUInt64) - 1)) else (0, 0)).2.toNat * 2 ^ 64 +
       (if up then (if s < 64 then (((1 : UInt64) <<< s.toUInt64) - 1, (0 : UInt64))
@@ -445,14 +446,14 @@ theorem run_exactMantissa_of_toRat_eq_zero {ax : Double} (h : ax.toRat = 0) :
 /-- The value `±m 2 ^ (-s)` of an end of a search interval as `exact_end` makes it. -/
 def ExactEnd.value (e : ExactEnd) : ℚ := (if e.neg then -1 else 1) * ((e.m.toNat : ℚ) / 2 ^ e.s)
 
-theorem numerators_congr {b H : ℕ} {q q' : ℚ} (hc : ⌈(b : ℚ) * q⌉ = ⌈(b : ℚ) * q'⌉)
-    (hf : ⌊(b : ℚ) * q⌋ = ⌊(b : ℚ) * q'⌋) :
+theorem lowNumerator_eq_and_highNumerator_eq_of_ceil_eq_of_floor_eq {b H : ℕ} {q q' : ℚ}
+    (hc : ⌈(b : ℚ) * q⌉ = ⌈(b : ℚ) * q'⌉) (hf : ⌊(b : ℚ) * q⌋ = ⌊(b : ℚ) * q'⌋) :
     lowNumerator b H (q : WithBotTop ℚ) = lowNumerator b H (q' : WithBotTop ℚ) ∧
       highNumerator b H (q : WithBotTop ℚ) = highNumerator b H (q' : WithBotTop ℚ) := by
   simp only [lowNumerator, highNumerator, WithBotTop.rec_coe, hc, hf, and_self]
 
-theorem numerators_of_le {b H : ℕ} (hb : 1 ≤ b) (hH : H < 2 ^ 63) {x : WithBotTop ℚ}
-    (hx : (((2 ^ 63 : ℚ)) : WithBotTop ℚ) ≤ x) :
+theorem lowNumerator_eq_and_highNumerator_eq_of_two_pow_le {b H : ℕ} (hb : 1 ≤ b)
+    (hH : H < 2 ^ 63) {x : WithBotTop ℚ} (hx : (((2 ^ 63 : ℚ)) : WithBotTop ℚ) ≤ x) :
     lowNumerator b H x = H + 1 ∧ highNumerator b H x = H := by
   induction x using WithBotTop.rec with
   | bot => exact absurd hx (by simp)
@@ -468,8 +469,8 @@ theorem numerators_of_le {b H : ℕ} (hb : 1 ≤ b) (hH : H < 2 ^ 63) {x : WithB
     simp only [lowNumerator, highNumerator, WithBotTop.rec_coe]
     constructor <;> lia
 
-theorem numerators_of_le_neg {b H : ℕ} (hb : 1 ≤ b) (hH : H < 2 ^ 63) {x : WithBotTop ℚ}
-    (hx : x ≤ (((-2 ^ 63 : ℚ)) : WithBotTop ℚ)) :
+theorem lowNumerator_eq_and_highNumerator_eq_of_le_neg_two_pow {b H : ℕ} (hb : 1 ≤ b)
+    (hH : H < 2 ^ 63) {x : WithBotTop ℚ} (hx : x ≤ (((-2 ^ 63 : ℚ)) : WithBotTop ℚ)) :
     lowNumerator b H x = -H ∧ highNumerator b H x = -H - 1 := by
   induction x using WithBotTop.rec with
   | bot => simp [lowNumerator, highNumerator]
@@ -494,8 +495,9 @@ theorem value_run_exactEnd_of_lt_eq_false {x : Double} (lower : Bool)
 
 /-- The numerators of the end `x` of a search interval with `|x| ≥ 2 ^ 63` (an infinity included)
 are those of `exact_end`'s `±2 ^ 63`: beyond the height bound on the side of its sign. -/
-theorem numerators_run_exactEnd_of_lt_eq_false {x : Double} (hx : x.isNaN = false) (lower : Bool)
-    (ha : x.fabs.lt .twoPow63 = false) {b H : ℕ} (hb : 1 ≤ b) (hH : H < 2 ^ 63) :
+theorem lowNumerator_eq_and_highNumerator_eq_run_exactEnd_of_lt_eq_false {x : Double}
+    (hx : x.isNaN = false) (lower : Bool) (ha : x.fabs.lt .twoPow63 = false) {b H : ℕ} (hb : 1 ≤ b)
+    (hH : H < 2 ^ 63) :
     lowNumerator b H (doubleValue x.bits) =
         lowNumerator b H ((Id.run (exactEnd x lower)).value : WithBotTop ℚ) ∧
       highNumerator b H (doubleValue x.bits) =
@@ -503,12 +505,14 @@ theorem numerators_run_exactEnd_of_lt_eq_false {x : Double} (hx : x.isNaN = fals
   rw [value_run_exactEnd_of_lt_eq_false lower ha]
   rcases Double.le_doubleValue_or_of_lt_eq_false hx ha with ⟨h1, h2⟩ | ⟨h1, h2⟩
   · simp only [h1, Bool.false_eq_true, ↓reduceIte]
-    rw [(numerators_of_le hb hH h2).1, (numerators_of_le hb hH le_rfl).1,
-      (numerators_of_le hb hH h2).2, (numerators_of_le hb hH le_rfl).2]
+    obtain ⟨e1, e2⟩ := lowNumerator_eq_and_highNumerator_eq_of_two_pow_le hb hH h2
+    obtain ⟨e3, e4⟩ := lowNumerator_eq_and_highNumerator_eq_of_two_pow_le hb hH le_rfl
+    rw [e1, e2, e3, e4]
     exact ⟨rfl, rfl⟩
   · simp only [h1, ↓reduceIte]
-    rw [(numerators_of_le_neg hb hH h2).1, (numerators_of_le_neg hb hH le_rfl).1,
-      (numerators_of_le_neg hb hH h2).2, (numerators_of_le_neg hb hH le_rfl).2]
+    obtain ⟨e1, e2⟩ := lowNumerator_eq_and_highNumerator_eq_of_le_neg_two_pow hb hH h2
+    obtain ⟨e3, e4⟩ := lowNumerator_eq_and_highNumerator_eq_of_le_neg_two_pow hb hH le_rfl
+    rw [e1, e2, e3, e4]
     exact ⟨rfl, rfl⟩
 
 theorem ceil_eq_one_and_floor_eq_zero {p : ℚ} (hp : 0 < p) (hp1 : p < 1) :
@@ -538,9 +542,9 @@ theorem ceil_eq_and_floor_eq_of_abs_lt_one {p p' : ℚ} (hp : p ≠ 0) (hp1 : |p
 /-- A tiny end `0 < |q| < 2 ^ (-75)` has the numerators of `exact_end`'s `±m 2 ^ (-127)` with
 `0 < m < 2 ^ 53` and the same sign, for every denominator `1 ≤ b < 2 ^ 63`: `b |q|` and
 `b m 2 ^ (-127)` lie strictly between `0` and `1`. -/
-theorem numerators_eq_of_tiny {b H : ℕ} (hb : 1 ≤ b) (hb63 : b < 2 ^ 63) {q : ℚ} {neg : Bool}
-    {m : ℕ} (hq : q ≠ 0) (hq75 : |q| < 2 ^ (-75 : ℤ)) (hneg : neg = true ↔ q < 0) (hm0 : 0 < m)
-    (hm : m < 2 ^ 53) :
+theorem lowNumerator_eq_and_highNumerator_eq_of_abs_lt {b H : ℕ} (hb : 1 ≤ b) (hb63 : b < 2 ^ 63)
+    {q : ℚ} {neg : Bool} {m : ℕ} (hq : q ≠ 0) (hq75 : |q| < 2 ^ (-75 : ℤ))
+    (hneg : neg = true ↔ q < 0) (hm0 : 0 < m) (hm : m < 2 ^ 53) :
     lowNumerator b H (q : WithBotTop ℚ) =
         lowNumerator b H (((if neg then -1 else 1) * ((m : ℚ) / 2 ^ 127) : ℚ) : WithBotTop ℚ) ∧
       highNumerator b H (q : WithBotTop ℚ) =
@@ -563,7 +567,7 @@ theorem numerators_eq_of_tiny {b H : ℕ} (hb : 1 ≤ b) (hb63 : b < 2 ^ 63) {q 
     cases neg <;> simp [hb0, hv, hv.le, not_lt.mpr hb0.le]
   have h := ceil_eq_and_floor_eq_of_abs_lt_one (mul_ne_zero hb0.ne' hq) h1
     (mul_ne_zero hb0.ne' (by split_ifs <;> positivity)) h2 hs
-  exact numerators_congr h.1 h.2
+  exact lowNumerator_eq_and_highNumerator_eq_of_ceil_eq_of_floor_eq h.1 h.2
 
 theorem sign_mul_abs {q : ℚ} {neg : Bool} (h : neg = true ↔ q < 0) :
     (if neg then -1 else 1) * |q| = q := by
@@ -573,7 +577,7 @@ theorem sign_mul_abs {q : ℚ} {neg : Bool} (h : neg = true ↔ q < 0) :
 
 /-- The numerators of the end `x` of a search interval with `|x| < 2 ^ 63` are those of the value
 of `exact_end`, exact unless capped for a tiny `x`, for every denominator `1 ≤ b < 2 ^ 63`. -/
-theorem numerators_run_exactEnd_of_lt_eq_true {x : Double} (lower : Bool)
+theorem lowNumerator_eq_and_highNumerator_eq_run_exactEnd_of_lt_eq_true {x : Double} (lower : Bool)
     (ha : x.fabs.lt .twoPow63 = true) {b H : ℕ} (hb : 1 ≤ b) (hb63 : b < 2 ^ 63) :
     lowNumerator b H (doubleValue x.bits) =
         lowNumerator b H ((Id.run (exactEnd x lower)).value : WithBotTop ℚ) ∧
@@ -593,19 +597,19 @@ theorem numerators_run_exactEnd_of_lt_eq_true {x : Double} (lower : Bool)
   generalize Id.run (exactMantissa x.fabs) = ms at hm ⊢
   obtain ⟨-, hm0, -, hv | ⟨hs, hm53, h75⟩⟩ := hm
   · rw [hv, sign_mul_abs hneg]; exact ⟨rfl, rfl⟩
-  · rw [hs]; exact numerators_eq_of_tiny hb hb63 h0 h75 hneg hm0 hm53
+  · rw [hs]; exact lowNumerator_eq_and_highNumerator_eq_of_abs_lt hb hb63 h0 h75 hneg hm0 hm53
 
 /-- The numerators of the end `x` of a search interval, not a NaN, are those of the value of
 `exact_end`, for every denominator `1 ≤ b < 2 ^ 63` and height bound `H < 2 ^ 63`. -/
-theorem numerators_run_exactEnd {x : Double} (hx : x.isNaN = false) (lower : Bool) {b H : ℕ}
-    (hb : 1 ≤ b) (hb63 : b < 2 ^ 63) (hH : H < 2 ^ 63) :
+theorem lowNumerator_eq_and_highNumerator_eq_run_exactEnd {x : Double} (hx : x.isNaN = false)
+    (lower : Bool) {b H : ℕ} (hb : 1 ≤ b) (hb63 : b < 2 ^ 63) (hH : H < 2 ^ 63) :
     lowNumerator b H (doubleValue x.bits) =
         lowNumerator b H ((Id.run (exactEnd x lower)).value : WithBotTop ℚ) ∧
       highNumerator b H (doubleValue x.bits) =
         highNumerator b H ((Id.run (exactEnd x lower)).value : WithBotTop ℚ) := by
   cases ha : x.fabs.lt .twoPow63
-  · exact numerators_run_exactEnd_of_lt_eq_false hx lower ha hb hH
-  · exact numerators_run_exactEnd_of_lt_eq_true lower ha hb hb63
+  · exact lowNumerator_eq_and_highNumerator_eq_run_exactEnd_of_lt_eq_false hx lower ha hb hH
+  · exact lowNumerator_eq_and_highNumerator_eq_run_exactEnd_of_lt_eq_true lower ha hb hb63
 
 /-- The end `e` of a search interval, at its lower end if `lower`, is one that `exact_end` makes:
 `s ≤ 127`, `m ≤ 2 ^ 63`, and the rounding `2 ^ s - 1` when the end wants `b |x|` rounded up. -/
@@ -763,9 +767,9 @@ theorem highNumerator_exact_of_neg {e : ExactEnd} (he : IsEnd e false) (hn : e.n
     UInt64.toInt_toInt64_of_lt h', ht]
   lia
 
-/-- The lower end of `interval_bits_exact`: none (the code `2`) exactly when `⌈b l⌉ > h`, and
-otherwise `⌈b l⌉` clipped to `-h`. -/
-theorem lowerOpt_spec {e : ExactEnd} (he : IsEnd e true) {B H : ℕ} (hB : B < 2 ^ 63)
+-- The lower end of `interval_bits_exact`: none (the code `2`) exactly when `⌈b l⌉ > h`, and
+-- otherwise `⌈b l⌉` clipped to `-h`.
+private theorem lowerOpt_spec {e : ExactEnd} (he : IsEnd e true) {B H : ℕ} (hB : B < 2 ^ 63)
     (hH : H < 2 ^ 63) {o : Option Int64}
     (ho : o = if e.neg then some (if H.toInt64.toUInt64 ≤ exactScale B.toInt64 e then -H.toInt64
         else -(exactScale B.toInt64 e).toInt64)
@@ -784,9 +788,9 @@ theorem lowerOpt_spec {e : ExactEnd} (he : IsEnd e true) {B H : ℕ} (hB : B < 2
     have := lowNumerator_value_of_neg hn B H
     lia
 
-/-- The upper end of `interval_bits_exact`: the code `1` exactly when `⌊b u⌋ < -h`, and otherwise
-`⌊b u⌋` clipped to `h`. -/
-theorem upperBits_spec {e : ExactEnd} (he : IsEnd e false) {B H : ℕ} (hB : B < 2 ^ 63)
+-- The upper end of `interval_bits_exact`: the code `1` exactly when `⌊b u⌋ < -h`, and otherwise
+-- `⌊b u⌋` clipped to `h`.
+private theorem upperBits_spec {e : ExactEnd} (he : IsEnd e false) {B H : ℕ} (hB : B < 2 ^ 63)
     (hH : H < 2 ^ 63) :
     ((e.neg && decide (H.toInt64.toUInt64 < exactScale B.toInt64 e)) = true ↔
         highNumerator B H (e.value : WithBotTop ℚ) < -(H : ℤ)) ∧
@@ -821,7 +825,7 @@ theorem toInt_numeratorsToBits_of_range {l h : Int64} {cl : NumClass} (hcl : cl.
 
 /-- `interval_bits_exact` gives the range of the numerators of the ends: the code `2` only above
 `H`, the code `1` only below `-H`, and otherwise the bits of the range within `-H, …, H`. -/
-theorem spec_intervalBitsExact {bd : IntervalBounds} (hl : IsEnd bd.low true)
+theorem toInt_intervalBitsExact {bd : IntervalBounds} (hl : IsEnd bd.low true)
     (hu : IsEnd bd.up false) {B H : ℕ} (hBH : B ≤ H) (hH : H < 2 ^ 63) {cl : NumClass}
     (hcl : cl.WF) :
     ((intervalBitsExact B.toInt64 bd H.toInt64 cl).1 = 2 →
@@ -881,7 +885,7 @@ theorem floor_intCast_div_two_pow (n : ℤ) (s : ℕ) : ⌊(n : ℚ) / 2 ^ s⌋ 
   push_cast at this
   exact this
 
-theorem toInt_signed_mantissa {e : ExactEnd} (hm : e.m.toNat < 2 ^ 63) :
+theorem toInt_ite_neg_toInt64 {e : ExactEnd} (hm : e.m.toNat < 2 ^ 63) :
     (if e.neg then -e.m.toInt64 else e.m.toInt64).toInt =
       (if e.neg then -1 else 1) * (e.m.toNat : ℤ) := by
   have h := UInt64.toInt_toInt64_of_lt hm
@@ -889,7 +893,7 @@ theorem toInt_signed_mantissa {e : ExactEnd} (hm : e.m.toNat < 2 ^ 63) :
   · rw [Int64.toInt_neg_of_lt (by rw [h]; lia), h]; ring
   · rw [h]; ring
 
-theorem mul_value_eq {e : ExactEnd} (B : ℕ) :
+theorem natCast_mul_value {e : ExactEnd} (B : ℕ) :
     (B : ℚ) * e.value = (((B : ℤ) * ((if e.neg then -1 else 1) * (e.m.toNat : ℤ)) : ℤ) : ℚ) /
       2 ^ e.s := by
   simp only [ExactEnd.value]
@@ -912,8 +916,8 @@ theorem toInt_form_lower {e : ExactEnd} {B bHigh : ℕ} (hs : e.s < 64) (hB1 : 1
     rw [UInt64.toInt_toInt64_of_lt (by rw [UInt64.toNat_one_shiftLeft_sub_one hs]; lia),
       UInt64.toNat_one_shiftLeft_sub_one hs]
     have := Nat.one_le_two_pow (n := e.s); push_cast [Nat.cast_sub this]; rfl
-  have hM := toInt_signed_mantissa hm
-  rw [toInt_mul_add_shiftRight hB63 hs, hc, hM, mul_value_eq, ceil_intCast_div_two_pow]
+  have hM := toInt_ite_neg_toInt64 hm
+  rw [toInt_mul_add_shiftRight hB63 hs, hc, hM, natCast_mul_value, ceil_intCast_div_two_pow]
   · ring_nf
   all_goals rw [hM]; try rw [hc]
   all_goals split_ifs <;> lia
@@ -929,8 +933,8 @@ theorem toInt_form_upper {e : ExactEnd} {B bHigh : ℕ} (hs : e.s < 64) (hB1 : 1
   have hBm : (B : ℤ) * e.m.toNat ≤ e.m.toNat * bHigh := by
     rw [mul_comm]; exact_mod_cast Nat.mul_le_mul_left _ hB
   have hg' : (e.m.toNat : ℤ) * bHigh ≤ 2 ^ 63 - 1 := by lia
-  have hM := toInt_signed_mantissa hm
-  rw [toInt_mul_add_shiftRight hB63 hs, Int64.toInt_zero, add_zero, hM, mul_value_eq,
+  have hM := toInt_ite_neg_toInt64 hm
+  rw [toInt_mul_add_shiftRight hB63 hs, Int64.toInt_zero, add_zero, hM, natCast_mul_value,
     floor_intCast_div_two_pow]
   all_goals rw [hM]; try rw [Int64.toInt_zero]
   all_goals split_ifs <;> lia
@@ -1101,20 +1105,26 @@ theorem toInt_numeratorsToBits_clip {lo hi : Int64} {H : ℕ} (hH : H ≤ 2 ^ 63
   rw [e1, e2, hl, hh, max_eq_left (by lia), min_eq_left (by lia)]
   exact ⟨rfl, rfl⟩
 
-/-- `interval_bits` on an interval taken inline, from the forms of its ends clamped to the least
-numerator `L` and the largest numerator `U`: the code `2` only above `H`, the code `1` only below
-`-H`, and otherwise the bits of `L, …, U`. -/
-theorem spec_intervalBits_of_fast {bd : IntervalBounds} (hfast : bd.fast = true) {B H : ℕ}
+theorem IntervalBounds.Represents.of_forall {bd : IntervalBounds} {b H : ℕ} {lo hi : ℤ}
+    (h : ∀ cl : NumClass, cl.WF → ((intervalBits b.toInt64 bd H.toInt64 cl).1 = 2 → (H : ℤ) < lo) ∧
+      ((intervalBits b.toInt64 bd H.toInt64 cl).1 = 1 → hi < -H) ∧
+      ((intervalBits b.toInt64 bd H.toInt64 cl).1 ≠ 1 →
+        (intervalBits b.toInt64 bd H.toInt64 cl).1 ≠ 2 →
+        (intervalBits b.toInt64 bd H.toInt64 cl).2.1.toInt = -((cl.a0 - max lo (-H)) / 2 ^ cl.k) ∧
+          (intervalBits b.toInt64 bd H.toInt64 cl).2.2.toInt = (min hi H - cl.a0) / 2 ^ cl.k)) :
+    bd.Represents b H lo hi :=
+  ⟨fun cl hcl ↦ (h cl hcl).1, fun cl hcl ↦ (h cl hcl).2.1, fun cl hcl ↦ (h cl hcl).2.2⟩
+
+/-- The bounds `bd` of an interval taken inline give the range `L, …, U` of the numerators, from the
+forms of its ends clamped to the least numerator `L` and the largest numerator `U`: in
+`interval_bits`, the code `2` only above `H`, the code `1` only below `-H`, and otherwise the bits
+of `L, …, U`. -/
+theorem IntervalBounds.represents_of_fast {bd : IntervalBounds} (hfast : bd.fast = true) {B H : ℕ}
     (hH : H ≤ 2 ^ 63 - 65) {L U : ℤ}
     (hL : max (-(H : ℤ)) (min ((B.toInt64 * bd.lM + bd.lC) >>> bd.lsh.toInt64).toInt (H + 1)) = L)
-    (hU : max (-(H : ℤ) - 1) (min ((B.toInt64 * bd.uM + bd.uC) >>> bd.ush.toInt64).toInt H) = U)
-    {cl : NumClass} (hcl : cl.WF) :
-    ((intervalBits B.toInt64 bd H.toInt64 cl).1 = 2 → (H : ℤ) < L) ∧
-      ((intervalBits B.toInt64 bd H.toInt64 cl).1 = 1 → U < -H) ∧
-      ((intervalBits B.toInt64 bd H.toInt64 cl).1 ≠ 1 →
-        (intervalBits B.toInt64 bd H.toInt64 cl).1 ≠ 2 →
-        (intervalBits B.toInt64 bd H.toInt64 cl).2.1.toInt = -((cl.a0 - max L (-H)) / 2 ^ cl.k) ∧
-          (intervalBits B.toInt64 bd H.toInt64 cl).2.2.toInt = (min U H - cl.a0) / 2 ^ cl.k) := by
+    (hU : max (-(H : ℤ) - 1) (min ((B.toInt64 * bd.uM + bd.uC) >>> bd.ush.toInt64).toInt H) = U) :
+    bd.Represents B H L U := by
+  refine .of_forall fun cl hcl ↦ ?_
   have hHt : H.toInt64.toInt = H := Int64.toInt_ofNat_of_lt (by lia)
   have hHn : (-H.toInt64).toInt = -H := by rw [Int64.toInt_neg_of_lt (by lia), hHt]
   simp only [intervalBits, hfast, ↓reduceIte]
@@ -1170,16 +1180,6 @@ theorem intervalBits_eq_intervalBitsExact (low up : ExactEnd) {B H : ℕ} (hB : 
     lia
   simp only [intervalBits, h1, h2, ↓reduceIte, Bool.false_eq_true]
 
-theorem IntervalBounds.Represents.of_forall {bd : IntervalBounds} {b H : ℕ} {lo hi : ℤ}
-    (h : ∀ cl : NumClass, cl.WF → ((intervalBits b.toInt64 bd H.toInt64 cl).1 = 2 → (H : ℤ) < lo) ∧
-      ((intervalBits b.toInt64 bd H.toInt64 cl).1 = 1 → hi < -H) ∧
-      ((intervalBits b.toInt64 bd H.toInt64 cl).1 ≠ 1 →
-        (intervalBits b.toInt64 bd H.toInt64 cl).1 ≠ 2 →
-        (intervalBits b.toInt64 bd H.toInt64 cl).2.1.toInt = -((cl.a0 - max lo (-H)) / 2 ^ cl.k) ∧
-          (intervalBits b.toInt64 bd H.toInt64 cl).2.2.toInt = (min hi H - cl.a0) / 2 ^ cl.k)) :
-    bd.Represents b H lo hi :=
-  ⟨fun cl hcl ↦ (h cl hcl).1, fun cl hcl ↦ (h cl hcl).2.1, fun cl hcl ↦ (h cl hcl).2.2⟩
-
 /-- The forms of both ends of an interval taken inline, for a height bound `H ≤ 2 ^ 63 - 65`. -/
 theorem forms_of_eq_some {low up : ExactEnd} {H bHigh : ℕ} (hH : H < 2 ^ 63)
     {f : (Int64 × Int64 × ℕ) × Int64 × Int64 × ℕ}
@@ -1213,11 +1213,11 @@ theorem represents_intervalBoundsOf (l u : Double) {H bHigh B : ℕ} (hH : H < 2
     obtain ⟨hK, hfl, hfu⟩ := forms_of_eq_some hH hfs
     have hL := lowNumerator_of_endForm hl hH hbH hB1 hB hfl
     have hU := highNumerator_of_endForm hu hH hbH hB1 hB hfu
-    exact .of_forall fun cl hcl ↦ spec_intervalBits_of_fast
-      (bd := ⟨lM, lC, uM, uC, lsh, ush, true, low, up⟩) rfl hK hL hU hcl
+    exact IntervalBounds.represents_of_fast (bd := ⟨lM, lC, uM, uC, lsh, ush, true, low, up⟩) rfl hK
+      hL hU
   · exact .of_forall fun cl hcl ↦ by
       rw [intervalBits_eq_intervalBitsExact low up (by lia) hH cl]
-      exact spec_intervalBitsExact hl hu (by lia) hH hcl
+      exact toInt_intervalBitsExact hl hu (by lia) hH hcl
 
 theorem areSearchIntervals_domainValues {dom : List (Double × Double)}
     (hdom : IntervalsWF (domainBits dom)) : AreSearchIntervals (domainValues dom) := by
@@ -1241,8 +1241,8 @@ theorem rangesFor_run_exactBounds {dom : List (Double × Double)}
     rintro _ ⟨⟨l, u⟩, hi, rfl⟩
     have hn := hdom.1 (l.bits, u.bits) (List.mem_map_of_mem hi)
     rw [← Double.isNaN_eq_false_iff, ← Double.isNaN_eq_false_iff] at hn
-    have hlo := (numerators_run_exactEnd hn.1 true hb (by lia) hH).1
-    have hhi := (numerators_run_exactEnd hn.2 false hb (by lia) hH).2
+    have hlo := (lowNumerator_eq_and_highNumerator_eq_run_exactEnd hn.1 true hb (by lia) hH).1
+    have hhi := (lowNumerator_eq_and_highNumerator_eq_run_exactEnd hn.2 false hb (by lia) hH).2
     simp only [Function.comp_apply]
     rw [hlo, hhi]
     exact represents_intervalBoundsOf l u hH hbHigh hb hbb

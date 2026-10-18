@@ -50,7 +50,8 @@ signs of the real polynomial `f` and its derivative and the count `V` of Sturm's
 
 * `Ratpoints.Sturm.hornerValue_eq_eval`, `Ratpoints.Sturm.run_evalSign_eq_sign_eval`: the value and
   the sign of a row at a dyadic number.
-* `Ratpoints.Sturm.signCount_eq_signVariations`, `Ratpoints.Sturm.count_eq_signVariations`,
+* `Ratpoints.Sturm.signCount_eq_signVariations`,
+  `Ratpoints.Sturm.ite_add_signCount_eq_signVariations`,
   `Ratpoints.Sturm.run_signsAt_eq_signVariations`: the count of the signs at a midpoint.
 * `Ratpoints.Sturm.countP_ne_eq_signVariations`,
   `Ratpoints.Sturm.run_countsAtInfinity_eq_signVariations`: the counts at `±∞`.
@@ -121,7 +122,7 @@ theorem signCount_eq_signVariations {s : ℤ} (hs : s = -1 ∨ s = 1) {l : List 
 
 /-- The count of `Ratpoints.Sturm.signsAt` from the signs `s0` and `s1` of `f` and `f'`, not both
 zero, and the signs of the further rows: the sign variations of all of them. -/
-theorem count_eq_signVariations {s0 s1 : ℤ} (h0 : s0 = -1 ∨ s0 = 0 ∨ s0 = 1)
+theorem ite_add_signCount_eq_signVariations {s0 s1 : ℤ} (h0 : s0 = -1 ∨ s0 = 0 ∨ s0 = 1)
     (h1 : s1 = -1 ∨ s1 = 0 ∨ s1 = 1) (h01 : s0 ≠ 0 ∨ s1 ≠ 0) {l : List ℤ}
     (hl : ∀ t ∈ l, t = -1 ∨ t = 0 ∨ t = 1) :
     (if s0 * s1 = -1 then 1 else 0) + signCount (if s1 = 0 then s0 else s1) l =
@@ -188,7 +189,8 @@ theorem run_signsAt_eq_signVariations {rows : Array (Array ℤ)} {k : ℕ} (hk :
     rw [show k + 1 = k - 1 + 1 + 1 by lia, List.range_eq_range', List.range'_succ,
       List.range'_succ]
     rfl
-  rw [run_signsAt, hl, count_eq_signVariations (run_evalSign_eq_neg_one_or_eq_zero_or_eq_one ..)
+  rw [run_signsAt, hl, ite_add_signCount_eq_signVariations
+    (run_evalSign_eq_neg_one_or_eq_zero_or_eq_one ..)
     (run_evalSign_eq_neg_one_or_eq_zero_or_eq_one ..) h01 fun t ht ↦ ?_]
   obtain ⟨n, -, rfl⟩ := List.mem_map.mp ht
   exact run_evalSign_eq_neg_one_or_eq_zero_or_eq_one ..

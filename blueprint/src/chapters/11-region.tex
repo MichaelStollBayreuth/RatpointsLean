@@ -421,7 +421,7 @@ here.
 
 \begin{lemma}[The doubles and their values]\label{lem:Double}
   \uses{def:Double, def:regionSpec}
-  \lean{Ratpoints.Double.isNaN_iff, Ratpoints.Double.maxOrderValue, Ratpoints.Double.magnitudeUnits, Ratpoints.Double.orderValueUnits, Ratpoints.Double.valueOfOrderValue, Ratpoints.Double.strictMonoOn_valueOfOrderValue, Ratpoints.Double.doubleValue_eq_valueOfOrderValue, Ratpoints.Double.lt_eq_true_iff, Ratpoints.Double.le_eq_true_iff, Ratpoints.Double.beq_eq_true_iff, Ratpoints.Double.lt_eq_true_iff', Ratpoints.Double.le_eq_true_iff', Ratpoints.Double.doubleValue_eq_toRat, Ratpoints.Double.toRat_eq, Ratpoints.Double.toRat_neg, Ratpoints.Double.toRat_fabs, Ratpoints.Double.ofDyadic_exact, Ratpoints.Double.spec_ofDyadic, Ratpoints.Double.fields_assemble, Ratpoints.Double.isFinite_assemble_iff, Ratpoints.Double.toRat_assemble, Ratpoints.Double.ofInt64_exact, Ratpoints.Double.spec_ofInt64_natCast, Ratpoints.Double.ldexp_exact, Ratpoints.Double.frexp_spec, Ratpoints.Double.toInt_toInt64, Ratpoints.Double.toNat_toUInt64, Ratpoints.Double.orderValue_nextUp, Ratpoints.Double.nextUp_le_of_lt, Ratpoints.Double.lt_nextUp, Ratpoints.Double.orderValue_nextDown, Ratpoints.Double.le_nextDown_of_lt, Ratpoints.Double.nextDown_lt, Ratpoints.Double.toRat_nextUp_of_normal, Ratpoints.Double.le_doubleValue_or_of_lt_eq_false, Ratpoints.Double.isFinite_and_abs_lt_of_lt, Ratpoints.Double.lt_zero_eq_true_iff_toRat, Ratpoints.Double.lt_twoPow63_eq_true_iff_toRat, Ratpoints.Double.isFinite_and_le_toRat_ofInt64_nextUp}
+  \lean{Ratpoints.Double.isNaN_iff, Ratpoints.Double.maxOrderValue, Ratpoints.Double.magnitudeUnits, Ratpoints.Double.orderValueUnits, Ratpoints.Double.valueOfOrderValue, Ratpoints.Double.strictMonoOn_valueOfOrderValue, Ratpoints.Double.doubleValue_eq_valueOfOrderValue, Ratpoints.Double.lt_eq_true_iff, Ratpoints.Double.le_eq_true_iff, Ratpoints.Double.beq_eq_true_iff, Ratpoints.Double.lt_eq_true_iff', Ratpoints.Double.le_eq_true_iff', Ratpoints.Double.doubleValue_eq_toRat, Ratpoints.Double.toRat_eq, Ratpoints.Double.toRat_neg, Ratpoints.Double.toRat_fabs, Ratpoints.Double.ofDyadic_exact, Ratpoints.Double.exists_toRat_ofDyadic_eq, Ratpoints.Double.fields_assemble, Ratpoints.Double.isFinite_assemble_iff, Ratpoints.Double.toRat_assemble, Ratpoints.Double.ofInt64_exact, Ratpoints.Double.isFinite_ofInt64_and_lt_toRat_nextUp, Ratpoints.Double.ldexp_exact, Ratpoints.Double.toRat_frexp_mul_zpow_eq_and_bounds, Ratpoints.Double.toInt_toInt64, Ratpoints.Double.toNat_toUInt64, Ratpoints.Double.orderValue_nextUp, Ratpoints.Double.nextUp_le_of_lt, Ratpoints.Double.lt_nextUp, Ratpoints.Double.orderValue_nextDown, Ratpoints.Double.le_nextDown_of_lt, Ratpoints.Double.nextDown_lt, Ratpoints.Double.toRat_nextUp_of_normal, Ratpoints.Double.le_doubleValue_or_of_lt_eq_false, Ratpoints.Double.isFinite_and_abs_lt_of_lt, Ratpoints.Double.lt_zero_eq_true_iff_toRat, Ratpoints.Double.lt_twoPow63_eq_true_iff_toRat, Ratpoints.Double.isFinite_and_le_toRat_ofInt64_nextUp}
   \leanok
   The test of the model is the NaN of the specification, and the value of a double that is not a NaN
   is a strictly increasing function of its key on the range of the keys, so that the comparisons of
@@ -553,7 +553,7 @@ intervals through their values and their bits.
 
 \begin{lemma}[The search intervals of a search]\label{lem:searchIntervals}
   \uses{def:searchIntervals, lem:Double, def:regionSpec, def:inIntervals}
-  \lean{Ratpoints.run_searchIntervals_eq, Ratpoints.intervalsWF_domainBits_iff, Ratpoints.run_searchIntervals_eq_none_iff, Ratpoints.run_searchIntervals_of_ne_nil, Ratpoints.intervalsWF_of_run_searchIntervals_eq_some, Ratpoints.wf_of_run_searchIntervals_eq_some, Ratpoints.intervalsWF_and_inIntervals_neg, Ratpoints.exists_run_searchIntervals_nil}
+  \lean{Ratpoints.run_searchIntervals_eq, Ratpoints.intervalsWF_domainBits_iff_getElem, Ratpoints.run_searchIntervals_eq_none_iff, Ratpoints.run_searchIntervals_of_ne_nil, Ratpoints.intervalsWF_of_run_searchIntervals_eq_some, Ratpoints.wf_of_run_searchIntervals_eq_some, Ratpoints.intervalsWF_and_inIntervals_neg, Ratpoints.exists_run_searchIntervals_nil}
   \leanok
   The loop of the validation is a test of each index; well-formedness
   (Definition~\ref{def:regionSpec}) is that test in the comparisons of the C language; so the search
@@ -686,7 +686,7 @@ range is the same for the bits and for the values.
 
 \begin{lemma}[The ends and the scaled ends]\label{lem:exactEnd}
   \uses{def:exactEnd, def:exactScale, lem:mulHi, lem:Double, def:numeratorRanges}
-  \lean{Ratpoints.Sieve.toNat_exactScale, Ratpoints.Sieve.toNat_hi_mul_add_lo, UInt64.toNat_shift_words_of_lt, UInt64.toNat_shift_words_of_le, Ratpoints.Sieve.IsExactMantissa, Ratpoints.Sieve.isExactMantissa_run_exactMantissa, Ratpoints.Sieve.ExactEnd.value, Ratpoints.Sieve.IsEnd, Ratpoints.Sieve.isEnd_run_exactEnd, Ratpoints.Sieve.numerators_run_exactEnd, Ratpoints.Sieve.toNat_exactScale_of_isEnd}
+  \lean{Ratpoints.Sieve.toNat_exactScale, Ratpoints.Sieve.toNat_hi_mul_add_lo, UInt64.toNat_shift_words_of_lt, UInt64.toNat_shift_words_of_le, Ratpoints.Sieve.IsExactMantissa, Ratpoints.Sieve.isExactMantissa_run_exactMantissa, Ratpoints.Sieve.ExactEnd.value, Ratpoints.Sieve.IsEnd, Ratpoints.Sieve.isEnd_run_exactEnd, Ratpoints.Sieve.lowNumerator_eq_and_highNumerator_eq_run_exactEnd, Ratpoints.Sieve.toNat_exactScale_of_isEnd}
   \leanok
   For $s \le 127$ and $b m + r < 2^{128}$, the scaled end is
   $\min(2^{64} - 1, \lfloor (b m + r)/2^s \rfloor)$, from the two-word product and the shift of two
@@ -709,7 +709,7 @@ range is the same for the bits and for the values.
 
 \begin{lemma}[The bits of an interval]\label{lem:intervalBits}
   \uses{def:intervalBits, lem:exactEnd, lem:numeratorsToBits, def:numeratorRanges, def:exactBounds}
-  \lean{Ratpoints.Sieve.spec_intervalBitsExact, Ratpoints.Sieve.spec_intervalBits_of_fast, Ratpoints.Sieve.intervalBits_eq_intervalBitsExact, Ratpoints.Sieve.lowNumerator_of_endForm, Ratpoints.Sieve.highNumerator_of_endForm}
+  \lean{Ratpoints.Sieve.toInt_intervalBitsExact, Ratpoints.Sieve.IntervalBounds.represents_of_fast, Ratpoints.Sieve.intervalBits_eq_intervalBitsExact, Ratpoints.Sieve.lowNumerator_of_endForm, Ratpoints.Sieve.highNumerator_of_endForm}
   \leanok
   For the ends of an interval, $b \le H < 2^{63}$ and a class with $k \le 6$ and $a_0 < 2^k$: the
   bits from the products in 128 bits have the code $2$ only when the least numerator lies above $H$,
@@ -1024,7 +1024,7 @@ them.
 
 \begin{lemma}[The intersection and the step]\label{lem:intersect}
   \uses{def:intersect, def:computeSturm, lem:bisection, def:inIntervals}
-  \lean{Ratpoints.Sturm.intersectList, Ratpoints.Sturm.IntersectInvariant, Ratpoints.Sturm.intersect_spec, Ratpoints.Sturm.toList_run_intersect, Ratpoints.Sturm.meet_eq, Ratpoints.Sturm.intervalsWF_domainBits_iff, Ratpoints.Sturm.pairwise_intersectList, Ratpoints.Sturm.intervalsWF_intersectList, Ratpoints.Sturm.inIntervals_of_inIntervals_intersectList, Ratpoints.Sturm.inIntervals_intersectList, Ratpoints.Sturm.length_intersectList_le, Ratpoints.Sturm.inIntervals_domainValues_iff, Ratpoints.Sturm.run_computeSturm_eq_none_iff, Ratpoints.Sturm.run_computeSturm_of_chain_eq_some, Ratpoints.Sturm.computeSturm_wf, Array.drop_toList_eq_getElem!_cons}
+  \lean{Ratpoints.Sturm.intersectList, Ratpoints.Sturm.IntersectInvariant, Ratpoints.Sturm.intersect_spec, Ratpoints.Sturm.toList_run_intersect, Ratpoints.Sturm.meet_eq, Ratpoints.Sturm.intervalsWF_domainBits_iff_pairwise, Ratpoints.Sturm.pairwise_intersectList, Ratpoints.Sturm.intervalsWF_intersectList, Ratpoints.Sturm.inIntervals_of_inIntervals_intersectList, Ratpoints.Sturm.inIntervals_intersectList, Ratpoints.Sturm.length_intersectList_le, Ratpoints.Sturm.inIntervals_domainValues_iff, Ratpoints.Sturm.run_computeSturm_eq_none_iff, Ratpoints.Sturm.run_computeSturm_of_chain_eq_some, Ratpoints.Sturm.computeSturm_wf, Array.drop_toList_eq_getElem!_cons}
   \leanok
   The intersection is a recursion on the two lists, of which the loop computes the list; well-formed
   intervals are those without a NaN end, with $l \le u$ by the values, and pairwise strictly apart;
@@ -1160,7 +1160,7 @@ numerators and the intersection, not the coverage.
 \begin{lemma}[The Sturm step keeps the points]\label{lem:coverage}
   \uses{lem:sturmCounts, lem:chainSturm, lem:bisection, lem:intersect, def:computeSturm,
     def:binaryForm}
-  \lean{Ratpoints.Sturm.lowerEnd, Ratpoints.Sturm.upperEnd, Ratpoints.Sturm.HalvingInv, Ratpoints.Sturm.Kept, Ratpoints.Sturm.SignsOf, Ratpoints.Sturm.HalvingInv.not_kept, Ratpoints.Sturm.HalvingInv.halves, Ratpoints.Sturm.kept_halves, Ratpoints.Sturm.covers_addInterval, Ratpoints.Sturm.covers_iterate, Ratpoints.Sturm.squarefree_chainPoly, Ratpoints.Sturm.halvingInv_start, Ratpoints.Sturm.kept_top, Ratpoints.Sturm.eval_neg_of_vBot_eq_vTop, Ratpoints.Sturm.IsChain.signsOf, Ratpoints.Sturm.isChain_of_run_chain_eq_some, Ratpoints.Sturm.covers_computeSturm, Ratpoints.binaryForm_eq_mul_eval, Ratpoints.Sturm.eval_chainPoly_nonneg}
+  \lean{Ratpoints.Sturm.lowerEnd, Ratpoints.Sturm.upperEnd, Ratpoints.Sturm.HalvingInv, Ratpoints.Sturm.Kept, Ratpoints.Sturm.SignsOf, Ratpoints.Sturm.HalvingInv.not_kept, Ratpoints.Sturm.HalvingInv.halves, Ratpoints.Sturm.kept_halves, Ratpoints.Sturm.covers_addInterval, Ratpoints.Sturm.covers_iterate, Ratpoints.Sturm.squarefree_chainPoly, Ratpoints.Sturm.halvingInv_zero, Ratpoints.Sturm.kept_neg_longMax_longMax_of_abs_le, Ratpoints.Sturm.eval_neg_of_vBot_eq_vTop, Ratpoints.Sturm.IsChain.signsOf, Ratpoints.Sturm.isChain_of_run_chain_eq_some, Ratpoints.Sturm.covers_computeSturm, Ratpoints.binaryForm_eq_mul_eval, Ratpoints.Sturm.eval_chainPoly_nonneg}
   \leanok
   The invariant of the bisection for $f$, read over $\mathbb{R}$: a well-formed interval
   (Lemma~\ref{lem:bisection}) whose counts and signs are those of $f$ at its ends
@@ -1648,7 +1648,7 @@ from the intervals before the join and runs the search on the joined intervals
 
 \begin{lemma}[The numbers of the command line]\label{lem:cliNumbers}
   \uses{def:cliEnds, def:cliRegionTest, lem:rounding, lem:Double, def:regionSpec}
-  \lean{Ratpoints.Cli.ExactEnd.value, Ratpoints.Cli.InExactRegion, Ratpoints.Cli.isNaN_strtod, Ratpoints.Cli.lt_nextUp_strtod, Ratpoints.Cli.wordValue, Ratpoints.Cli.scanEndValue, Ratpoints.Cli.floatParts_spec, Ratpoints.Cli.mantissaDigits_spec, Ratpoints.Cli.OutwardInvariant, Ratpoints.Cli.outward_spec, Ratpoints.Cli.run_outward, Ratpoints.Cli.run_scanEnd_props, Ratpoints.Cli.run_scanEnd_isMaxBelow, Ratpoints.Cli.isFinite_heightEnd_and_le_toRat, Ratpoints.Cli.cmpEnd_neg_iff, Ratpoints.Cli.cmpEnd_pos_iff, Ratpoints.Cli.cmpEndX_neg_iff, Ratpoints.Cli.cmpEndX_nonpos_iff, Ratpoints.Cli.ChainEnds, Ratpoints.Cli.InRegionInvariant, Ratpoints.Cli.inRegion_spec, Ratpoints.Cli.run_inRegion, Ratpoints.Cli.NoNaN, Ratpoints.Cli.JoinsWell, Ratpoints.Cli.JoinInvariant, Ratpoints.Cli.joinIntervals_spec, Ratpoints.Cli.run_joinIntervals, Char.toLower_eq_x_iff, WithBotTop.bot_lt_coe, WithBotTop.coe_lt_top, List.getElem!_mem, Array.getElem_take_toList, Array.getElem!_take_toList, Array.mem_take_toList_of_lt, Array.exists_eq_of_mem_take_toList}
+  \lean{Ratpoints.Cli.ExactEnd.value, Ratpoints.Cli.InExactRegion, Ratpoints.Cli.isNaN_strtod, Ratpoints.Cli.lt_nextUp_strtod, Ratpoints.Cli.wordValue, Ratpoints.Cli.scanEndValue, Ratpoints.Cli.floatParts_bounds_and_isDigit_exponentDigits, Ratpoints.Cli.mantissaDigits_bounds_and_eq_dropWhile, Ratpoints.Cli.OutwardInvariant, Ratpoints.Cli.outward_spec, Ratpoints.Cli.run_outward, Ratpoints.Cli.inf_mem_and_isNaN_eq_false_and_le_of_run_scanEnd_eq_some, Ratpoints.Cli.run_scanEnd_isMaxBelow, Ratpoints.Cli.isFinite_heightEnd_and_le_toRat, Ratpoints.Cli.cmpEnd_neg_iff, Ratpoints.Cli.cmpEnd_pos_iff, Ratpoints.Cli.cmpEndX_neg_iff, Ratpoints.Cli.cmpEndX_nonpos_iff, Ratpoints.Cli.ChainEnds, Ratpoints.Cli.InRegionInvariant, Ratpoints.Cli.inRegion_spec, Ratpoints.Cli.run_inRegion, Ratpoints.Cli.NoNaN, Ratpoints.Cli.JoinsWell, Ratpoints.Cli.JoinInvariant, Ratpoints.Cli.joinIntervals_spec, Ratpoints.Cli.run_joinIntervals, Char.toLower_eq_x_iff, WithBotTop.bot_lt_coe, WithBotTop.coe_lt_top, List.getElem!_mem, Array.getElem_take_toList, Array.getElem!_take_toList, Array.mem_take_toList_of_lt, Array.exists_eq_of_mem_take_toList}
   \leanok
   The value of an exact end, $\bot$, $\top$ or its rational number, and the predicate that a
   rational number lies in one of the $n$ exact intervals; an element of \verb|WithBotTop ℚ| other

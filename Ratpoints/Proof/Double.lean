@@ -32,10 +32,11 @@ the exponent `q` of its last place has the fields of a subnormal, an infinity or
 which ends with it, is exact when `0 < m < 2 ^ 53`, `e ≥ -1074` and `m 2 ^ e < 2 ^ 1024`
 (`Ratpoints.Double.ofDyadic_exact`, where the last hypothesis reads `Nat.log2 m + e ≤ 1023`), and in
 the normal range it is `±M 2 ^ q` with `2 ^ 52 ≤ M < 2 ^ 53` and `m 2 ^ e < (M + 1) 2 ^ q`
-(`Ratpoints.Double.spec_ofDyadic`); hence `(double)n` is exact for `|n| ≤ 2 ^ 53`
+(`Ratpoints.Double.exists_toRat_ofDyadic_eq`); hence `(double)n` is exact for `|n| ≤ 2 ^ 53`
 (`Ratpoints.Double.ofInt64_exact`), `ldexp` and `frexp` are exact in the normal range
-(`Ratpoints.Double.ldexp_exact`, `Ratpoints.Double.frexp_spec`), and the conversions to `long` and
-`unsigned long` truncate (`Ratpoints.Double.toInt_toInt64`, `Ratpoints.Double.toNat_toUInt64`).
+(`Ratpoints.Double.ldexp_exact`, `Ratpoints.Double.toRat_frexp_mul_zpow_eq_and_bounds`), and the
+conversions to `long` and `unsigned long` truncate (`Ratpoints.Double.toInt_toInt64`,
+`Ratpoints.Double.toNat_toUInt64`).
 
 ## Main definitions
 
@@ -53,11 +54,12 @@ the normal range it is `±M 2 ^ q` with `2 ^ 52 ≤ M < 2 ^ 53` and `m 2 ^ e < (
 * `Ratpoints.Double.doubleValue_eq_toRat`: the value of a finite double.
 * `Ratpoints.Double.fields_assemble`, `Ratpoints.Double.isFinite_assemble_iff`,
   `Ratpoints.Double.toRat_assemble`: the bits of a significand and an exponent.
-* `Ratpoints.Double.ofDyadic_exact`, `Ratpoints.Double.spec_ofDyadic`,
-  `Ratpoints.Double.ofInt64_exact`, `Ratpoints.Double.spec_ofInt64_natCast`: the rounding of a
-  dyadic number and the conversion of a `long`.
-* `Ratpoints.Double.ldexp_exact`, `Ratpoints.Double.frexp_spec`, `Ratpoints.Double.toInt_toInt64`,
-  `Ratpoints.Double.toNat_toUInt64`: the functions of the C library and the conversions.
+* `Ratpoints.Double.ofDyadic_exact`, `Ratpoints.Double.exists_toRat_ofDyadic_eq`,
+  `Ratpoints.Double.ofInt64_exact`, `Ratpoints.Double.isFinite_ofInt64_and_lt_toRat_nextUp`: the
+  rounding of a dyadic number and the conversion of a `long`.
+* `Ratpoints.Double.ldexp_exact`, `Ratpoints.Double.toRat_frexp_mul_zpow_eq_and_bounds`,
+  `Ratpoints.Double.toInt_toInt64`, `Ratpoints.Double.toNat_toUInt64`: the functions of the C
+  library and the conversions.
 * `Ratpoints.Double.isFinite_and_le_toRat_ofInt64_nextUp`: the double of `1 ≤ H < 2 ^ 63`, moved
   up to the next double when it is below `2 ^ 63` and its conversion to a `long` below `H`, is
   finite and at least `H`.
@@ -659,8 +661,8 @@ theorem exists_ofSignificand_eq_assemble (neg : Bool) {M : ℕ} (q : ℤ) (h1 : 
 /-- `Ratpoints.Double.ofDyadic` in the normal range: a finite double `±M 2 ^ q` with
 `2 ^ 52 ≤ M < 2 ^ 53` and the exponent field `q + 1075`, the significand `M` the number rounded,
 so that the successor `(M + 1) 2 ^ q` of the double lies above the number. -/
-theorem spec_ofDyadic {neg : Bool} {m : ℕ} {e : ℤ} (hm0 : m ≠ 0) (hlo : -1022 ≤ (m.log2 : ℤ) + e)
-    (hhi : (m.log2 : ℤ) + e ≤ 1022) :
+theorem exists_toRat_ofDyadic_eq {neg : Bool} {m : ℕ} {e : ℤ} (hm0 : m ≠ 0)
+    (hlo : -1022 ≤ (m.log2 : ℤ) + e) (hhi : (m.log2 : ℤ) + e ≤ 1022) :
     ∃ (M : ℕ) (q : ℤ), 2 ^ 52 ≤ M ∧ M < 2 ^ 53 ∧ (m.log2 : ℤ) + e - 52 ≤ q ∧
       q ≤ (m.log2 : ℤ) + e - 51 ∧
       (ofDyadic neg m e).isFinite = true ∧ (ofDyadic neg m e).signBit = neg ∧
@@ -848,7 +850,9 @@ theorem toDyadic_bounds (x : Double) :
   rw [toDyadic_eq]
   refine ⟨?_, ?_, ?_⟩ <;> split_ifs <;> simp <;> lia
 
-theorem spec_ofInt64_natCast {H : ℕ} (hH : 1 ≤ H) (hH63 : H < 2 ^ 63) :
+/-- The double of `1 ≤ H < 2 ^ 63` is finite, with the sign bit clear, and the next double is finite
+and above `H`. -/
+theorem isFinite_ofInt64_and_lt_toRat_nextUp {H : ℕ} (hH : 1 ≤ H) (hH63 : H < 2 ^ 63) :
     (ofInt64 H.toInt64).isFinite = true ∧ (ofInt64 H.toInt64).signBit = false ∧
       (nextUp (ofInt64 H.toInt64)).isFinite = true ∧
       (H : ℚ) < (nextUp (ofInt64 H.toInt64)).toRat := by
@@ -857,7 +861,7 @@ theorem spec_ofInt64_natCast {H : ℕ} (hH : 1 ≤ H) (hH63 : H < 2 ^ 63) :
   rw [ofInt64, hH', show decide (H.toInt64 < 0) = false by simp [Int64.lt_iff_toInt_lt, hH'],
     Int.natAbs_natCast]
   obtain ⟨M, q, -, -, hq1, hq2, hf, hs, hr, he, hv⟩ :=
-    spec_ofDyadic (neg := false) (m := H) (e := 0) (by lia) (by lia) (by lia)
+    exists_toRat_ofDyadic_eq (neg := false) (m := H) (e := 0) (by lia) (by lia) (by lia)
   obtain ⟨hf', hr'⟩ := toRat_nextUp_of_normal hs (by lia) (by lia)
   refine ⟨hf, hs, hf', ?_⟩
   rw [hr', hr, he, Int.toNat_of_nonneg (by lia), show (q + 1075 : ℤ) - 1075 = q by ring]
@@ -1003,7 +1007,10 @@ theorem sign_mul_natAbs_mul_zpow (x : Double) (k : ℤ) :
   rw [Nat.cast_natAbs, Int.cast_abs]
   split_ifs <;> push_cast <;> ring
 
-theorem frexp_spec {x : Double} (hx : x.isFinite = true) (hx0 : x.toRat ≠ 0) :
+/-- `frexp` of a finite double `x ≠ 0`: a finite double `f` with the sign of `x`, `f 2 ^ e = x` and
+`1 / 2 ≤ |f| < 1`. -/
+theorem toRat_frexp_mul_zpow_eq_and_bounds {x : Double} (hx : x.isFinite = true)
+    (hx0 : x.toRat ≠ 0) :
     (frexp x).1.isFinite = true ∧ (frexp x).1.signBit = x.signBit ∧
       (frexp x).1.toRat * 2 ^ (frexp x).2 = x.toRat ∧ 1 / 2 ≤ |(frexp x).1.toRat| ∧
       |(frexp x).1.toRat| < 1 := by
@@ -1165,7 +1172,7 @@ theorem isFinite_and_le_toRat_ofInt64_nextUp {H : ℕ} (hH : 1 ≤ H) (hH63 : H 
     let h := if h.lt .twoPow63 && decide (h.toInt64 < H.toInt64) then h.nextUp else h
     h.isFinite = true ∧ (H : ℚ) ≤ h.toRat := by
   intro h0 h
-  obtain ⟨hf, hs, hf', hv⟩ := spec_ofInt64_natCast hH hH63
+  obtain ⟨hf, hs, hf', hv⟩ := isFinite_ofInt64_and_lt_toRat_nextUp hH hH63
   have hlt := lt_twoPow63_eq_true_iff_toRat hf
   by_cases h1 : h0.lt .twoPow63 = true
   · by_cases h2 : h0.toInt64 < H.toInt64

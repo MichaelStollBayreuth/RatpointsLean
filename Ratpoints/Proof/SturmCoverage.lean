@@ -266,7 +266,7 @@ theorem squarefree_chainPoly {c : List ℤ} {d : ℕ} (hd : 1 ≤ d) (hc : c.get
   exact (PerfectField.separable_iff_squarefree.mpr this).map.squarefree
 
 /-- The invariant of the bisection on the whole line, with the counts and signs of `F` at `∓∞`. -/
-theorem halvingInv_start (F : ℝ[X]) :
+theorem halvingInv_zero (F : ℝ[X]) :
     HalvingInv F 0 (-longMax) longMax 0 0 (vBot F) (vTop F) (sgnLeftEnd F none)
       (sgnRightEnd F none) :=
   ⟨endsWF_zero, by simp [lowerEnd, vLeft], by simp [upperEnd, vRight], by simp [lowerEnd],
@@ -274,7 +274,7 @@ theorem halvingInv_start (F : ℝ[X]) :
 
 /-- The bisection of the whole line keeps every value `x` with `|x| ≤ 2 ^ 63`, the values of the
 doubles of its ends `∓LONG_MAX`. -/
-theorem kept_top {sl sr : ℤ} {x : ℚ} (hx : |x| ≤ 2 ^ 63) :
+theorem kept_neg_longMax_longMax_of_abs_le {sl sr : ℤ} {x : ℚ} (hx : |x| ≤ 2 ^ 63) :
     Kept (-longMax) longMax 0 0 sl sr x := by
   have h1 : endValue (-longMax) 0 = -2 ^ 63 := by simp [endValue, show -longMax ≠ longMax by decide]
   have h2 : endValue longMax 0 = 2 ^ 63 := by simp [endValue]
@@ -358,9 +358,10 @@ theorem covers_computeSturm (hS : SturmTheorem) {c : List ℤ} {d iter : ℕ}
     (cright := vTop (chainPoly c d)) (sl := sgnLeftEnd (chainPoly c d) none)
     (sr := sgnRightEnd (chainPoly c d) none) (acc := #[]) endsWF_zero hit (by lia) (by simp)
     (by simp)).1
-  rw [← intervalsWF_domainBits_iff] at hloc
+  rw [← intervalsWF_domainBits_iff_pairwise] at hloc
   exact inIntervals_intersectList hloc hwf ((covers_iterate hS hF (hch.signsOf h1 hd57 hF) hit
-    (halvingInv_start _) (by lia) (by simp) (by simp)).2 x hx (kept_top hb)) hxi
+    (halvingInv_zero _) (by lia) (by simp) (by simp)).2 x hx
+      (kept_neg_longMax_longMax_of_abs_le hb)) hxi
 
 /-! ### The size of the intervals kept -/
 
@@ -376,8 +377,9 @@ theorem abs_endValue_le {n e : Int64} (hn : n.toInt.natAbs ≤ 2 ^ 53) (he : 0 �
 
 /-- The ends of an interval of the bisection up to the depth `55` have values in
 `[-2 ^ 63, 2 ^ 63]`. -/
-theorem EndsWF.endValue_mem {depth : ℕ} {nl nr del der : Int64} (h : EndsWF depth nl nr del der)
-    (hd : depth ≤ 55) : -2 ^ 63 ≤ endValue nl del ∧ endValue nr der ≤ 2 ^ 63 := by
+theorem EndsWF.neg_two_pow_le_endValue_and_endValue_le {depth : ℕ} {nl nr del der : Int64}
+    (h : EndsWF depth nl nr del der) (hd : depth ≤ 55) :
+    -2 ^ 63 ≤ endValue nl del ∧ endValue nr der ≤ 2 ^ 63 := by
   constructor
   · by_cases hl : nl = -longMax
     · simp [hl, endValue, show -longMax ≠ longMax by decide]
@@ -476,9 +478,9 @@ theorem witnessed_iterate (hS : SturmTheorem) {F : ℝ[X]} (hF : Squarefree F)
   fun_induction iterate rows k iter nl nr del der cl cr sl sr depth acc with
   | case1 => exact hw
   | case2 _ _ _ _ _ _ _ _ _ _ h1 =>
+    obtain ⟨hL, hU⟩ := hI.ends.neg_two_pow_le_endValue_and_endValue_le (by lia)
     exact witnessed_addInterval (fun i hi ↦ ⟨hacc.1 i hi, hw i hi⟩) (hI.ends.hasValue_left
-      (by lia)) (hI.ends.hasValue_right (by lia)) (hI.ends.endValue_mem (by lia)).1
-      (hI.ends.endValue_mem (by lia)).2 (mod_cast hI.exists_pos hS hF h1)
+      (by lia)) (hI.ends.hasValue_right (by lia)) hL hU (mod_cast hI.exists_pos hS hF h1)
   | case3 nl nr del der cl cr sl sr depth acc _ hk nm dem hm ih2 ih1 =>
     simp only [Id.run_bind]
     rcases hs : Id.run (signsAt rows k nm dem) with ⟨s0, s1, cmid⟩
@@ -506,7 +508,8 @@ theorem eval_neg_of_lt_of_lt {F : ℝ[X]} {i j : Double × Double} {l : List (Do
 
 /-- The values `x ≥ L_j` with `F(x) ≥ 0` held by intervals `i :: j :: l` increasing and strictly
 apart are held by `j :: l`, when the first interval begins at `A ≤ x` at the earliest. -/
-theorem gap_tail {F : ℝ[X]} {i j : Double × Double} {l : List (Double × Double)} {A : ℚ}
+theorem inIntervals_domainValues_cons_of_doubleValue_le {F : ℝ[X]} {i j : Double × Double}
+    {l : List (Double × Double)} {A : ℚ}
     (hiv : ∀ k ∈ i :: j :: l, IsInterval k) (hp : (i :: j :: l).Pairwise EndsBefore)
     (hA : (A : WithBotTop ℚ) ≤ doubleValue i.1.bits)
     (hgap : ∀ x : ℚ, A ≤ x → x ≤ 2 ^ 63 → 0 ≤ F.eval (x : ℝ) →
@@ -571,7 +574,8 @@ theorem exists_isChain_of_witnessed {F : ℝ[X]} {i : Double × Double} {l : Lis
     obtain ⟨Lj, -, hLj, -⟩ := hw j (by simp)
     obtain ⟨y, ys, hlen, hch, hy0, hyl⟩ := ih (A := Lj) (i := j) (fun k hk ↦ hw k (by simp [hk]))
       (fun k hk ↦ hiv k (by simp [hk])) hp.of_cons hLj.ge fun x h1 ↦
-        gap_tail hiv hp hA hgap x (hLj ▸ WithBotTop.coe_le_coe.mpr h1)
+        inIntervals_domainValues_cons_of_doubleValue_le hiv hp hA hgap x
+          (hLj ▸ WithBotTop.coe_le_coe.mpr h1)
     obtain ⟨y', q, hch', hy', hyl'⟩ := exists_isChain_cons_cons (hw i (by simp))
       (hw j (by simp)) hiv hp hA hgap hch hy0 hyl
     exact ⟨y', q :: y :: ys, by simp [hlen]; lia, hch', hy', hyl'⟩
@@ -622,9 +626,9 @@ theorem size_run_iterate_le_of_chain_eq_some (hS : SturmTheorem) {c : List ℤ} 
     (acc := #[]) endsWF_zero hit (by lia) (by simp) (by simp)
   have hsig := hch.signsOf h1 hd57 hF
   refine (length_le_of_witnessed hF.ne_zero (witnessed_iterate hS hF hsig hit
-    (halvingInv_start _) (by lia) (by simp) (by simp) (by simp)) hwf.1.1 hwf.1.2 fun x h1 h2 h3 ↦
-    (covers_iterate hS hF hsig hit (halvingInv_start _) (by lia) (by simp) (by simp)).2 x h3
-      (kept_top (abs_le.mpr ⟨h1, h2⟩))).trans ?_
+    (halvingInv_zero _) (by lia) (by simp) (by simp) (by simp)) hwf.1.1 hwf.1.2 fun x h1 h2 h3 ↦
+    (covers_iterate hS hF hsig hit (halvingInv_zero _) (by lia) (by simp) (by simp)).2 x h3
+      (kept_neg_longMax_longMax_of_abs_le (abs_le.mpr ⟨h1, h2⟩))).trans ?_
   rw [hch.natDegree_chainPoly]
 
 /-- The value of the real polynomial of the chain of `c` and its degree at a rational point. -/
