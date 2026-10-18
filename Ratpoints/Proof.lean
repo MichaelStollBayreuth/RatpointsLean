@@ -5,6 +5,7 @@ Authors: Michael Stoll
 -/
 module
 
+public import Ratpoints.Proof.Bisection
 public import Ratpoints.Proof.BitRange
 public import Ratpoints.Proof.Bits
 public import Ratpoints.Proof.Bounds

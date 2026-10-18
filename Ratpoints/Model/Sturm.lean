@@ -19,12 +19,16 @@ C code as `sturm.c` computes it. First the remainder chain of `f` and its deriva
 row and with its loops (`Ratpoints.Sturm.chain`): a remainder is zero exactly when `f` has a
 repeated factor; the chain is `none` then, and ratpoints refuses the form as not squarefree, as
 `Ratpoints.findPoints` does with the Sturm step on. Then the numbers of sign changes of the chain at
-`-∞` and `+∞` from the leading coefficients (`Ratpoints.Sturm.countsAtInfinity`); the evaluation of
-the chain at a dyadic number (`Ratpoints.Sturm.evalSign`, `Ratpoints.Sturm.signsAt`), which the
-bisection of the real line makes at its midpoints; and the intersection of the intervals that the
-bisection keeps with the search intervals of the caller (`Ratpoints.Sturm.intersect`). The bisection
-and the whole step, which restricts the numerators to the intervals where `f ≥ 0`, come with
-stage H.
+`-∞` and `+∞` from the leading coefficients (`Ratpoints.Sturm.countsAtInfinity`), with the exit
+when `f` has no real root and is negative; the bisection of the real line from `[-∞, +∞]`, which
+drops an interval without a root on which `f` is negative, keeps one without a root on which it is
+positive and one at the depth of the step, and splits the others at their midpoint
+(`Ratpoints.Sturm.midpoint`), where it evaluates the chain (`Ratpoints.Sturm.evalSign`,
+`Ratpoints.Sturm.signsAt`), the left half first (`Ratpoints.Sturm.iterate`); the kept intervals,
+with dyadic ends `n / 2 ^ e` converted to doubles and an interval that begins where the last one
+ends joined to it (`Ratpoints.Sturm.addInterval`); and their intersection with the search intervals
+of the caller (`Ratpoints.Sturm.intersect`). The whole step is `Ratpoints.Sturm.computeSturm`,
+which the search calls with stage H.
 
 ## Main definitions
 
@@ -34,8 +38,11 @@ stage H.
 * `Ratpoints.Sturm.evalSign`, `Ratpoints.Sturm.signsAt`: the sign of a row at a dyadic number, and
   the signs of `f` and `f'` and the number of sign changes of the chain there.
 * `Ratpoints.Sturm.countsAtInfinity`: the numbers of sign changes of the chain at `±∞`.
+* `Ratpoints.Sturm.midpoint`, `Ratpoints.Sturm.addInterval`, `Ratpoints.Sturm.iterate`: the
+  bisection.
 * `Ratpoints.Sturm.meet`, `Ratpoints.Sturm.intersect`: the intersection with the caller's
   intervals.
+* `Ratpoints.Sturm.computeSturm`: the Sturm step.
 -/
 
 @[expose] public section
@@ -79,11 +86,12 @@ GMP integers and the array of degrees, with no `mpz_init` and `mpz_clear` (a cha
 of its row, and a remainder that becomes zero is the empty array, where the degree in the C code
 reaches `-1`; a reduction step drops the leading coefficient, which it makes `0`, where the C code
 lowers the degree; the rows are handed back, and `none` for the return of `-1`, where
-`_ratpoints_compute_sturm` keeps them in its table for the rest of the Sturm step (stage H), and the
-index of the last row, which the C code leaves in `k` and sets to `d` after the loop for `d = 1`, is
-the size of the array less one; a list of integers for the array of GMP integers of the
-coefficients, local values for the scratch integers `work[0]`, `work[1]` and `work[2]`, and Lean's
-`/` for `mpz_fdiv_q`, which agree on the divisions of the chain, all exact. -/
+`_ratpoints_compute_sturm` keeps them in its table for the rest of the Sturm step
+(`Ratpoints.Sturm.computeSturm`), and the index of the last row, which the C code leaves in `k` and
+sets to `d` after the loop for `d = 1`, is the size of the array less one; a list of integers for
+the array of GMP integers of the coefficients, local values for the scratch integers `work[0]`,
+`work[1]` and `work[2]`, and Lean's `/` for `mpz_fdiv_q`, which agree on the divisions of the chain,
+all exact. -/
 def chain (c : List Int) (d : Nat) : Id (Option (Array (Array Int))) := do
   let f : Array Int := (Array.range (d + 1)).map (c.getD · 0)
   let df : Array Int := (Array.range d).map fun (n : Nat) ↦ (n + 1 : Int) * c.getD (n + 1) 0
@@ -151,6 +159,39 @@ def countsAtInfinity (rows : Array (Array Int)) (k : Nat) : Id (Nat × Nat) := d
     if s1 ≠ s2 then count2 := count2 + 1
   return (count1, count2)
 
+/-- `LONG_MAX = 2 ^ 63 - 1`, as `_ratpoints_compute_sturm` computes it, the `unsigned long` `-1`
+shifted right by one bit: the numerator of the end at `+∞` of the bisection, and its negation that
+of the end at `-∞`; converted to doubles, they become `±2 ^ 63`, beyond every `x = a / b` with
+`|a| ≤ LONG_MAX`.
+
+C: `sturm.c:191-192`
+
+Deviation: one constant for the two locals `max` and `min = -max`. -/
+def longMax : Int64 := ((~~~0 : UInt64) >>> 1).toInt64
+
+/-- The point `nm / 2 ^ dem` at which the bisection splits the interval from `nl / 2 ^ del` to
+`nr / 2 ^ der`: `0` for `[-∞, +∞]`; for `[-∞, nr]` the point `-1` if `nr = 0` and else `2 nr`, and
+for `[nl, +∞]` the point `1` if `nl = 0` and else `2 nl`, both with `dem = 0` (the ends at infinity
+are `∓Ratpoints.Sturm.longMax`, with the exponent `0`); for finite ends with `del = der`, which are
+then both `0`, the half of `nl + nr`, with `dem = 0` when the sum is even and `dem = 1` otherwise;
+and else the sum of the ends over the larger denominator, divided by `2`, so with the larger
+exponent plus `1`.
+
+C: `sturm.c:234-251`
+
+Deviation: the point returned as a pair, for the locals `nm` and `dem` of `iterate`; `Int64` for
+the `long`s, `>>>` on `Int64` the arithmetic shift of the C code; the arithmetic of `Int64`
+wrapping where that of the `long`s overflows, which it does not up to the depth `55` at which the
+search clamps the step, where every finite end is `n / 2 ^ e` with `|n| ≤ 2 ^ 53`. -/
+def midpoint (nl nr del der : Int64) : Int64 × Int64 :=
+  if nl == -longMax then
+    if nr == longMax then (0, 0) else (if nr == 0 then -1 else 2 * nr, 0)
+  else if nr == longMax then (if nl == 0 then 1 else 2 * nl, 0)
+  else if del == der then
+    if (nl + nr) &&& 1 == 0 then ((nl + nr) >>> 1, 0) else (nl + nr, 1)
+  else if der < del then (nl + nr * (1 <<< (del - der)), del + 1)
+  else (nl * (1 <<< (der - del)) + nr, der + 1)
+
 /-- The signs `s0` and `s1` of `f` and `f'` at `nm / 2 ^ dem` (`Ratpoints.Sturm.evalSign`) and the
 number `cmid` of sign changes of the rows `0, …, k` of the chain `rows` there, zeros skipped: the
 first two rows count when their signs are opposite; then the sign `s` of the last row that is not
@@ -175,6 +216,62 @@ def signsAt (rows : Array (Array Int)) (k : Nat) (nm dem : Int64) : Id (Int × I
       s := s2
     else if s2 ≠ 0 then s := s2
   return (s0, s1, cmid)
+
+/-- The interval from `nl / 2 ^ del` to `nr / 2 ^ der` added to the intervals `iv` that the
+bisection keeps: its ends converted to doubles, `ldexp((double)n, -e)` (`Ratpoints.Double.ofInt64`,
+`Ratpoints.Double.ldexp`), which is exact up to the depth `55` and gives `±2 ^ 63` for the ends at
+infinity; the interval appended, or, when the last interval kept ends at its lower end (`==` of the
+doubles, `Ratpoints.Double.beq`), that interval extended to its upper end.
+
+C: `sturm.c:209-227`
+
+Deviation: a function of its own for the branch of `iterate` that keeps an interval; the intervals
+kept as an array, passed and returned, for the array `ivlocal` on the stack and the pointer `iptr`
+of `_ratpoints_compute_sturm`, which `iterate` reaches as a nested function of gcc, with no bound
+`1 + ⌊degree / 2⌋` on their number, the size of `ivlocal`, which the C code relies on; the doubles
+as their bits (`Ratpoints.Double`); `Int64` for the `long`s, converted to integers for the `int`
+casts of the exponents. -/
+def addInterval (iv : Array (Double × Double)) (nl nr del der : Int64) : Array (Double × Double) :=
+  let l := (Double.ofInt64 nl).ldexp (-del.toInt)
+  let u := (Double.ofInt64 nr).ldexp (-der.toInt)
+  match iv.back? with
+  | some (lo, up) => if up.beq l then iv.pop.push (lo, u) else iv.push (l, u)
+  | none => iv.push (l, u)
+
+/-- The bisection of `_ratpoints_compute_sturm`, the nested function `iterate`, on the interval from
+`nl / 2 ^ del` to `nr / 2 ^ der`, an end at infinity `∓Ratpoints.Sturm.longMax` with the exponent
+`0`, with the numbers `cleft` and `cright` of sign changes of the chain `rows` (index of the last
+row `k`) at its ends, as the step hands them on, and the signs `sl` and `sr` of `f` just inside its
+ends, at the depth `depth`, adding the intervals it keeps to `iv`: an interval with `cleft = cright`
+and `sl < 0`, without a root of `f` and with `f < 0` on it, is dropped; one with `cleft = cright`
+and `sl > 0`, or at the depth `iter`, is kept (`Ratpoints.Sturm.addInterval`); and any other is
+split at its midpoint `m` (`Ratpoints.Sturm.midpoint`), where the chain is evaluated
+(`Ratpoints.Sturm.signsAt`), and its left half bisected before its right half, the count at `m` and
+the sign of `f` at `m` handed to both halves, and when `m` is a root of `f`, the count plus `1` and
+`-f'(m)` to the left half and the sign of `f'(m)` to the right half, the count and the sign just
+left and just right of the simple root `m`.
+
+C: `sturm.c:197-208`, `sturm.c:228-233`, `sturm.c:261-267`
+
+Deviation: a recursive function of its own, for the nested function of gcc, with the intervals kept
+passed and returned (`Ratpoints.Sturm.addInterval`), for the array `ivlocal` and the pointer `iptr`
+that it reaches, and the chain, the index of its last row and the depth of the step as arguments,
+for the arrays `sturm` and `sturm_degs`, `k` and `iter` that it reaches; natural numbers for the
+`long` counts, depths and the `long` `iter`, which is from `0` to `55` (the search clamps it,
+`find_points.c:4682`), integers for the `long` signs, and `Int64` for the other `long`s; the
+recursion ends since the depth grows towards `iter`. -/
+def iterate (rows : Array (Array Int)) (k iter : Nat) (nl nr del der : Int64) (cleft cright : Nat)
+    (sl sr : Int) (depth : Nat) (iv : Array (Double × Double)) : Id (Array (Double × Double)) :=
+  if cleft = cright ∧ sl < 0 then pure iv
+  else if _h : cleft = cright ∧ 0 < sl ∨ iter ≤ depth then pure (addInterval iv nl nr del der)
+  else do
+    let (nm, dem) := midpoint nl nr del der
+    let (s0, s1, cmid) ← signsAt rows k nm dem
+    let iv ← iterate rows k iter nl nm del dem cleft (if s0 = 0 then cmid + 1 else cmid) sl
+      (if s0 = 0 then -s1 else s0) (depth + 1) iv
+    iterate rows k iter nm nr dem der cmid cright (if s0 = 0 then s1 else s0) sr (depth + 1) iv
+termination_by iter - depth
+decreasing_by all_goals lia
 
 /-- One step of the intersection of the interval `a` that the bisection keeps with the interval `b`
 of the caller, both closed, as the loop of `_ratpoints_compute_sturm` makes it: the interval it
@@ -220,6 +317,42 @@ def intersect (loc ivs : Array (Double × Double)) : Id (Array (Double × Double
     if let some v := note then out := out.push v
     if first then n1 := n1 + 1 else n2 := n2 + 1
   return out
+
+/-- The Sturm step `_ratpoints_compute_sturm` on the polynomial `f` of degree `d ≥ 1` with the
+coefficients `c₀, …, c_d`, the entries of `c`, and `c_d ≠ 0`, to the depth `iter`, for the search
+intervals `ivlist` of the caller, increasing and disjoint: none when the remainder chain is none
+(`Ratpoints.Sturm.chain`), for a polynomial with a repeated factor; the empty array when the chain
+has as many sign changes at `-∞` as at `+∞` (`Ratpoints.Sturm.countsAtInfinity`), so that `f` has no
+real root, and `c₀ < 0`, so that `f < 0` everywhere; and otherwise the intervals that the bisection
+keeps from `[-∞, +∞]` (`Ratpoints.Sturm.iterate`, with the counts at `∓∞` at its ends and the sign
+of `c_d`, negated at `-∞` for odd `d`, as the signs just inside them) intersected with `ivlist`
+(`Ratpoints.Sturm.intersect`), which is empty when they do not meet.
+
+C: `sturm.c:86-97`, `sturm.c:177-190`, `sturm.c:193-194`, `sturm.c:269-273`, `sturm.c:326-332`
+
+Deviation: the coefficients, the degree, the depth and the search intervals as arguments, for the
+fields `cof`, `degree`, `sturm`, `domain` and `num_inter` of the arguments; natural numbers for the
+`long`s `degree` and `iter`, which is from `0` to `55` (the search clamps it,
+`find_points.c:4682`); the result as an option of an array, for the `long` that the C code returns
+and the intervals it writes into `domain` with their number `num_inter`: none for `-1`, the empty
+array for `0`, with `num_inter = 0`, and else the intervals, their number the return value; the
+table of the chain made by `Ratpoints.Sturm.chain`, whose rows the step reads, for the table on the
+stack with the degrees, which `_ratpoints_compute_sturm` fills itself, the index of the last row
+the size of the chain less one, for the `k` of line 163; the array of the intervals kept made by
+`Ratpoints.Sturm.iterate`, for the array `ivlocal` on the stack of `1 + ⌊degree / 2⌋` intervals;
+integers for the GMP integers and `Int.sign` for `mpz_sgn`; no `mpz_init` and `mpz_clear`, no copy
+of the caller's intervals on the heap and no failure for lack of memory (`RATPOINTS_NO_MEMORY`),
+which the model cannot meet. -/
+def computeSturm (c : List Int) (d iter : Nat) (ivlist : Array (Double × Double)) :
+    Id (Option (Array (Double × Double))) := do
+  let some rows ← chain c d | return none
+  let k := rows.size - 1
+  let (count1, count2) ← countsAtInfinity rows k
+  if count2 = count1 ∧ c.getD 0 0 < 0 then return some #[]
+  let slcf := (c.getD d 0).sign
+  let ivlocal ← iterate rows k iter (-longMax) longMax 0 0 count2 count1
+    (if d % 2 = 1 then -slcf else slcf) slcf 0 #[]
+  return some (← intersect ivlocal ivlist)
 
 /-! ### Examples -/
 
@@ -355,6 +488,86 @@ def intersect (loc ivs : Array (Double × Double)) : Id (Array (Double × Double
   let doubles (l : List (UInt64 × UInt64)) : Array (Double × Double) :=
     (l.map fun (a, b) ↦ (⟨a⟩, ⟨b⟩)).toArray
   (Id.run (intersect (doubles loc) (doubles ivs))).toList.map (fun (l, u) ↦ (l.bits, u.bits)) == out
+
+-- The Sturm step against a C program that calls `_ratpoints_compute_sturm` of the pinned commit and
+-- prints the intervals it leaves in `domain` with `%a`, as bits: for each case the depth, the
+-- intervals of the caller, the coefficients `c₀, …, c_d` and the intervals (none for the return of
+-- `-1`); `x ^ 3 - 2` and `x ^ 4 - 5 x ^ 2 + 1` with a few real intervals, the ends at infinity
+-- `±2 ^ 63`; `-x ^ 4 - 1`, negative everywhere (the exit, no interval); `(x + 1) ^ 2`, not
+-- squarefree; `(2 x - 1) (4 x + 3) (x - 5)`, whose roots the midpoints hit, at the depths 10, 0, 1,
+-- 2 and 55; `x ^ 2 - 2` at the depths 55 and 30; `x ^ 3 - x` with three intervals of the caller,
+-- among them `[-0.0, 0.0]`, which stays; `x ^ 2 - 4` on `[-1, 1]`, an empty intersection;
+-- `4 - x ^ 2`; `3 + 2 x`, of degree 1; `x ^ 2 + x + 1`, positive everywhere; two close roots;
+-- coefficients of 70 bits; `x ^ 3 - 1` on `[2 ^ 62, ∞]`; and a degenerate interval of the caller.
+#guard
+  ([
+    (10, [(0xc024000000000000, 0x4024000000000000)],
+      [-2, 0, 0, 1], some [(0x3ff4200000000000, 0x4024000000000000)]),
+    (10, [(0xfff0000000000000, 0x7ff0000000000000)],
+      [1, 0, -5, 0, 1], some [(0xc3e0000000000000, 0xc001800000000000),
+        (0xbfdd400000000000, 0x3fdd400000000000), (0x4001800000000000, 0x43e0000000000000)]),
+    (10, [(0xc024000000000000, 0x4024000000000000)], [-1, 0, 0, 0, -1], some []),
+    (10, [(0xc024000000000000, 0x4024000000000000)], [1, 2, 1], none),
+    (10, [(0xc08f400000000000, 0x408f400000000000)],
+      [15, -13, -38, 8], some [(0xbfe8000000000000, 0x3fe0000000000000),
+        (0x4014000000000000, 0x408f400000000000)]),
+    (0, [(0xc08f400000000000, 0x408f400000000000)],
+      [15, -13, -38, 8], some [(0xc08f400000000000, 0x408f400000000000)]),
+    (1, [(0xc08f400000000000, 0x408f400000000000)],
+      [15, -13, -38, 8], some [(0xc08f400000000000, 0x408f400000000000)]),
+    (2, [(0xc08f400000000000, 0x408f400000000000)],
+      [15, -13, -38, 8], some [(0xbff0000000000000, 0x408f400000000000)]),
+    (55, [(0xc08f400000000000, 0x408f400000000000)],
+      [15, -13, -38, 8], some [(0xbfe8000000000000, 0x3fe0000000000000),
+        (0x4014000000000000, 0x408f400000000000)]),
+    (55, [(0xc3e0000000000000, 0x43e0000000000000)],
+      [-2, 0, 1], some [(0xc3e0000000000000, 0xbff6a09e667f3bcc),
+        (0x3ff6a09e667f3bcc, 0x43e0000000000000)]),
+    (30, [(0xc024000000000000, 0x4024000000000000)],
+      [-2, 0, 1], some [(0xc024000000000000, 0xbff6a09e66000000),
+        (0x3ff6a09e66000000, 0x4024000000000000)]),
+    (10, [(0xfff0000000000000, 0xbfe0000000000000), (0x8000000000000000, 0x0000000000000000),
+        (0x3fe8000000000000, 0x7ff0000000000000)],
+      [0, -1, 0, 1], some [(0xbff0000000000000, 0xbfe0000000000000),
+        (0x8000000000000000, 0x0000000000000000), (0x3ff0000000000000, 0x43e0000000000000)]),
+    (10, [(0xbff0000000000000, 0x3ff0000000000000)], [-4, 0, 1], some []),
+    (10, [(0xc08f400000000000, 0x408f400000000000)],
+      [4, 0, -1], some [(0xc000000000000000, 0x4000000000000000)]),
+    (10, [(0xc024000000000000, 0x4024000000000000)],
+      [3, 2], some [(0xbff8000000000000, 0x4024000000000000)]),
+    (10, [(0xc1cdcd6500000000, 0x41cdcd6500000000)],
+      [1, 1, 1], some [(0xc1cdcd6500000000, 0x41cdcd6500000000)]),
+    (20, [(0xc12e848000000000, 0x412e848000000000)],
+      [2002000, -3001000, -1000, 1000000], some [(0xc000000000000000, 0x3ff0000000000000),
+        (0x3ff0041800000000, 0x412e848000000000)]),
+    (10, [(0xc024000000000000, 0x4024000000000000)],
+      [123456789012345678901, -98765432109876543210, 5, 7, -1000000000000000000],
+      some [(0xc014000000000000, 0x3ff3c00000000000)]),
+    (5, [(0x43d0000000000000, 0x7ff0000000000000)],
+      [-1, 0, 0, 1], some [(0x43d0000000000000, 0x43e0000000000000)]),
+    (10, [(0xc008000000000000, 0xc008000000000000), (0x3ff8000000000000, 0x4000000000000000)],
+      [0, 1, 0, -1], some [(0xc008000000000000, 0xc008000000000000)])] :
+      List (Nat × List (UInt64 × UInt64) × List Int × Option (List (UInt64 × UInt64)))).all
+    fun (iter, ivs, c, exp) ↦
+  (Id.run (computeSturm c (c.length - 1) iter (ivs.toArray.map fun (l, u) ↦ (⟨l⟩, ⟨u⟩)))).map
+    (·.toList.map fun (l, u) ↦ (l.bits, u.bits)) == exp
+
+-- The bisection keeps at most `1 + ⌊d / 2⌋` intervals, the size of the array `ivlocal` of the C
+-- code, at the depths from 0 to 55, here for three products of linear factors with rational roots
+-- (of degrees 3, 3 and 4), `x ^ 4 - 5 x ^ 2 + 1` with four irrational real roots, which reaches the
+-- bound, an irreducible quintic with one real root, and `x ^ 12 + (x - 1) (x - 2) (x - 3)`, which
+-- has two.
+#guard
+  let polys : List (List Int) := [[15, -13, -38, 8], [1, 0, -5, 0, 1], [0, -1, 0, 1],
+    [-24, 50, -35, 10, -1], [2, -3, -3, 2, 3, -2], [-6, 11, -6, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1]]
+  polys.all fun c ↦ (List.range 56).all fun iter ↦
+    match Id.run (chain c (c.length - 1)) with
+    | none => false
+    | some rows =>
+      let (c1, c2) := Id.run (countsAtInfinity rows (rows.size - 1))
+      let s := (c.getD (c.length - 1) 0).sign
+      (Id.run (iterate rows (rows.size - 1) iter (-longMax) longMax 0 0 c2 c1
+        (if (c.length - 1) % 2 = 1 then -s else s) s 0 #[])).size ≤ 1 + (c.length - 1) / 2
 
 end Sturm
 

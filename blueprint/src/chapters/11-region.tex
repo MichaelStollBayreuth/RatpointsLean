@@ -909,28 +909,28 @@ them.
 
 \begin{definition}[The bisection]\label{def:iterate}
   \uses{def:evalSign, def:Double}
-  Proposed names: \lname{Ratpoints.Sturm.longMax}, \lname{Ratpoints.Sturm.midpoint},
-  \lname{Ratpoints.Sturm.addInterval}, \lname{Ratpoints.Sturm.iterate}. $\mathrm{LONG\_MAX} = 2^{63}
-  - 1$, as the C code computes it, the numerator of the end at $+\infty$ of the bisection, and its
-  negation that of the end at $-\infty$ (\csource{sturm.c}{191}{192}). The point $n_m/2^{e_m}$ at
-  which the interval from $n_l/2^{e_l}$ to $n_r/2^{e_r}$ is split: $0$ for $[-\infty, +\infty]$;
-  $-1$ or $2 n_r$ for $[-\infty, n_r]$ and $1$ or $2 n_l$ for $[n_l, +\infty]$, as the finite end is
-  $0$ or not, with the exponent $0$; for equal exponents, which are then $0$, the half of $n_l +
-  n_r$, with the exponent $0$ when the sum is even and $1$ otherwise; and else the sum of the ends
-  over the larger denominator, with the larger exponent plus $1$ (\csource{sturm.c}{234}{251}). The
-  interval added to the intervals kept: its ends converted to doubles,
-  $\mathrm{ldexp}(\mathrm{double}(n), -e)$, and appended, or, when the last interval kept ends at
-  its lower end, compared by $\mathrm{beq}$, that interval extended to its upper end
-  (\csource{sturm.c}{209}{227}). And the bisection of the nested function \verb|iterate| on an
-  interval with the counts $c_l$ and $c_r$ of the chain at its ends, the signs $s_l$ and $s_r$ of
-  $f$ just inside them and the depth: dropped when $c_l = c_r$ and $s_l < 0$; kept when $c_l = c_r$
-  and $s_l > 0$, or at the depth of the step; and otherwise split at its midpoint, where the chain
-  is evaluated, the left half bisected before the right half, both with the count and the sign of
-  $f$ at the midpoint, and, when the midpoint is a root of $f$, with the count plus $1$ and
-  $-\mathrm{sign}\, f'$ for the left half and $\mathrm{sign}\, f'$ for the right half
-  (\csource{sturm.c}{197}{208}, \csource{sturm.c}{228}{233}, \csource{sturm.c}{261}{267}). It is a
-  recursion that ends since the depth grows towards the depth of the step, the first well-founded
-  recursion of the model, whose proofs go through its induction principle.
+  \lean{Ratpoints.Sturm.longMax, Ratpoints.Sturm.midpoint, Ratpoints.Sturm.addInterval, Ratpoints.Sturm.iterate}
+  \leanok
+  $\mathrm{LONG\_MAX} = 2^{63} - 1$, as the C code computes it, the numerator of the end at
+  $+\infty$ of the bisection, and its negation that of the end at $-\infty$
+  (\csource{sturm.c}{191}{192}). The point $n_m/2^{e_m}$ at which the interval from $n_l/2^{e_l}$ to
+  $n_r/2^{e_r}$ is split: $0$ for $[-\infty, +\infty]$; $-1$ or $2 n_r$ for $[-\infty, n_r]$ and $1$
+  or $2 n_l$ for $[n_l, +\infty]$, as the finite end is $0$ or not, with the exponent $0$; for equal
+  exponents, which are then $0$, the half of $n_l + n_r$, with the exponent $0$ when the sum is even
+  and $1$ otherwise; and else the sum of the ends over the larger denominator, with the larger
+  exponent plus $1$ (\csource{sturm.c}{234}{251}). The interval added to the intervals kept: its
+  ends converted to doubles, $\mathrm{ldexp}(\mathrm{double}(n), -e)$, and appended, or, when the
+  last interval kept ends at its lower end, compared by $\mathrm{beq}$, that interval extended to
+  its upper end (\csource{sturm.c}{209}{227}). And the bisection of the nested function
+  \verb|iterate| on an interval with the counts $c_l$ and $c_r$ of the chain at its ends, the signs
+  $s_l$ and $s_r$ of $f$ just inside them and the depth: dropped when $c_l = c_r$ and $s_l < 0$;
+  kept when $c_l = c_r$ and $s_l > 0$, or at the depth of the step; and otherwise split at its
+  midpoint, where the chain is evaluated, the left half bisected before the right half, both with
+  the count and the sign of $f$ at the midpoint, and, when the midpoint is a root of $f$, with the
+  count plus $1$ and $-\mathrm{sign}\, f'$ for the left half and $\mathrm{sign}\, f'$ for the right
+  half (\csource{sturm.c}{197}{208}, \csource{sturm.c}{228}{233}, \csource{sturm.c}{261}{267}). It
+  is a recursion that ends since the depth grows towards the depth of the step, the first
+  well-founded recursion of the model, whose proofs go through its induction principle.
 \end{definition}
 
 \begin{definition}[The intersection]\label{def:intersect}
@@ -952,18 +952,20 @@ them.
 
 \begin{definition}[The Sturm step]\label{def:computeSturm}
   \uses{def:sturmChain, def:evalSign, def:iterate, def:intersect}
-  Proposed name: \lname{Ratpoints.Sturm.computeSturm}. \verb|_ratpoints_compute_sturm| on the
-  polynomial $f$ of degree $d \ge 1$ with $c_d \ne 0$, to the depth of the step, for the search
-  intervals of the caller: none when the remainder chain is none (Definition~\ref{def:sturmChain}),
-  for a polynomial with a repeated factor; no interval when the counts at $-\infty$ and $+\infty$
-  agree, so that $f$ has no real root, and $c_0 < 0$, so that $f < 0$ everywhere; and otherwise the
-  intervals that the bisection keeps from $[-\infty, +\infty]$, with the counts at $\mp\infty$ at
-  its ends and the sign of $c_d$, negated at $-\infty$ for odd $d$, as the signs just inside them,
-  intersected with the caller's intervals, which may leave no interval (\csource{sturm.c}{86}{97},
-  \csource{sturm.c}{177}{190}, \csource{sturm.c}{193}{194}, \csource{sturm.c}{269}{273},
-  \csource{sturm.c}{326}{332}). It owns the clears of the table of the chain (lines 179-182 and
-  327-330) under its deviation, as the chain owns its loops, and the failure for lack of memory of
-  the copy of the caller's intervals with its clears (lines 278-284) is excluded.
+  \lean{Ratpoints.Sturm.computeSturm}
+  \leanok
+  \verb|_ratpoints_compute_sturm| on the polynomial $f$ of degree $d \ge 1$ with $c_d \ne 0$, to the
+  depth of the step, for the search intervals of the caller: none when the remainder chain is none
+  (Definition~\ref{def:sturmChain}), for a polynomial with a repeated factor; no interval when the
+  counts at $-\infty$ and $+\infty$ agree, so that $f$ has no real root, and $c_0 < 0$, so that
+  $f < 0$ everywhere; and otherwise the intervals that the bisection keeps from
+  $[-\infty, +\infty]$, with the counts at $\mp\infty$ at its ends and the sign of $c_d$, negated at
+  $-\infty$ for odd $d$, as the signs just inside them, intersected with the caller's intervals,
+  which may leave no interval (\csource{sturm.c}{86}{97}, \csource{sturm.c}{177}{190},
+  \csource{sturm.c}{193}{194}, \csource{sturm.c}{269}{273}, \csource{sturm.c}{326}{332}). It owns
+  the clears of the table of the chain (lines 179-182 and 327-330) under its deviation, as the chain
+  owns its loops, and the failure for lack of memory of the copy of the caller's intervals with its
+  clears (lines 278-284) is excluded.
 \end{definition}
 
 \begin{lemma}[The signs and the counts]\label{lem:evalSign}
@@ -985,41 +987,29 @@ them.
 
 \begin{lemma}[The bisection keeps exact intervals]\label{lem:bisection}
   \uses{def:iterate, lem:Double, def:regionSpec}
-  Proposed names: \lname{Ratpoints.Sturm.endValue}, \lname{Ratpoints.Sturm.HasValue},
-  \lname{Ratpoints.Sturm.hasValue\_ldexp\_ofInt64},
-  \lname{Ratpoints.Sturm.hasValue\_ldexp\_ofInt64\_longMax},
-  \lname{Ratpoints.Sturm.hasValue\_ldexp\_ofInt64\_neg\_longMax}, \lname{Ratpoints.Sturm.EndsWF},
-  \lname{Ratpoints.Sturm.endsWF\_zero}, \lname{Ratpoints.Sturm.EndsWF.hasValue\_left},
-  \lname{Ratpoints.Sturm.EndsWF.hasValue\_right}, \lname{Ratpoints.Sturm.endValue\_eq\_div},
-  \lname{Ratpoints.Sturm.EndsWF.halves},
-  \lname{Ratpoints.Sturm.EndsWF.lt\_midpoint\_and\_midpoint\_lt},
-  \lname{Ratpoints.Sturm.IsInterval}, \lname{Ratpoints.Sturm.EndsBefore},
-  \lname{Ratpoints.Sturm.addInterval\_spec}, \lname{Ratpoints.Sturm.exists\_mem\_addInterval},
-  \lname{Ratpoints.Sturm.exists\_mem\_addInterval\_of\_exists\_mem},
-  \lname{Ratpoints.Sturm.iterate\_wf}, \lname{Int64.toInt\_mul\_of\_lt},
-  \lname{Int64.toInt\_two\_mul}, \lname{Int64.toInt\_and\_one},
-  \lname{Int64.toInt\_shiftRight\_one}, \lname{Int64.toInt\_one\_shiftLeft},
-  \lname{Int64.toInt\_one\_shiftLeft\_ofNat}. The value of an end of the bisection is $n\,2^{-e}$,
-  and $\pm 2^{63}$ for $\pm\mathrm{LONG\_MAX}$; a double has the value $q$ when it is not a NaN and
-  $\mathrm{doubleValue}$ of its bits is $q$. An interval of the bisection at the depth
-  $\delta \le 55$ is \emph{well formed} when it has one of four shapes, the whole line, an infinite
-  interval whose finite end, with the exponent $0$, is $0$ or on its side of $0$, or two finite
-  ends, equal exponents being $0$; its exponents lie from $0$ to $\delta$; its finite ends, scaled
-  to the larger exponent, are at most $2^{\delta}/4$ in absolute value from the depth $1$ on; and
-  its ends increase. The interval $[-\infty, +\infty]$ at the depth $0$ is well formed; the doubles
-  of the ends of a well-formed interval have the values of the ends, the conversion of a \verb|long|
-  of at most $2^{53}$ and the scaling by \verb|ldexp| being exact and $\pm\mathrm{LONG\_MAX}$
-  becoming $\pm 2^{63}$; both halves of a well-formed interval at a depth below $55$ are well formed
-  at the next depth, the arithmetic of the \verb|long|s not overflowing, and the midpoint lies
-  strictly between the ends. Adding an interval with the values $L < U$ to kept intervals with
-  $l \le u$, increasing and strictly apart, that end at $L$ at the latest, keeps them so and makes
-  them end at $U$, keeps what they held and holds every value of $[L, U]$; and the bisection of a
-  well-formed interval at a depth $\delta \le \mathrm{iter} \le 55$, after kept intervals that end
-  at its lower end at the latest, gives intervals with $l \le u$, increasing and strictly apart,
-  that end at its upper end at the latest.
+  \lean{Ratpoints.Sturm.endValue, Ratpoints.Sturm.HasValue, Ratpoints.Sturm.hasValue_ldexp_ofInt64, Ratpoints.Sturm.hasValue_ldexp_ofInt64_longMax, Ratpoints.Sturm.hasValue_ldexp_ofInt64_neg_longMax, Ratpoints.Sturm.EndsWF, Ratpoints.Sturm.endsWF_zero, Ratpoints.Sturm.EndsWF.hasValue_left, Ratpoints.Sturm.EndsWF.hasValue_right, Ratpoints.Sturm.endValue_eq_div, Ratpoints.Sturm.EndsWF.halves, Ratpoints.Sturm.EndsWF.lt_midpoint_and_midpoint_lt, Ratpoints.Sturm.IsInterval, Ratpoints.Sturm.EndsBefore, Ratpoints.Sturm.addInterval_spec, Ratpoints.Sturm.exists_mem_addInterval, Ratpoints.Sturm.exists_mem_addInterval_of_exists_mem, Ratpoints.Sturm.iterate_wf, Int64.toInt_mul_of_lt, Int64.toInt_two_mul, Int64.toInt_and_one, Int64.toInt_shiftRight_one, Int64.toInt_one_shiftLeft, Int64.toInt_one_shiftLeft_ofNat}
+  \leanok
+  The value of an end of the bisection is $n\,2^{-e}$, and $\pm 2^{63}$ for $\pm\mathrm{LONG\_MAX}$;
+  a double has the value $q$ when it is not a NaN and $\mathrm{doubleValue}$ of its bits is $q$. An
+  interval of the bisection at the depth $\delta \le 55$ is \emph{well formed} when it has one of
+  four shapes, the whole line, an infinite interval whose finite end, with the exponent $0$, is $0$
+  or on its side of $0$, or two finite ends, equal exponents being $0$; its exponents lie from $0$
+  to $\delta$; its finite ends, scaled to the larger exponent, are at most $2^{\delta}/4$ in
+  absolute value from the depth $1$ on; and its ends increase. The interval $[-\infty, +\infty]$ at
+  the depth $0$ is well formed; the doubles of the ends of a well-formed interval have the values of
+  the ends, the conversion of a \verb|long| of at most $2^{53}$ and the scaling by \verb|ldexp|
+  being exact and $\pm\mathrm{LONG\_MAX}$ becoming $\pm 2^{63}$; both halves of a well-formed
+  interval at a depth below $55$ are well formed at the next depth, the arithmetic of the
+  \verb|long|s not overflowing, and the midpoint lies strictly between the ends. Adding an interval
+  with the values $L < U$ to kept intervals with $l \le u$, increasing and strictly apart, that end
+  at $L$ at the latest, keeps them so and makes them end at $U$, keeps what they held and holds
+  every value of $[L, U]$; and the bisection of a well-formed interval at a depth
+  $\delta \le \mathrm{iter} \le 55$, after kept intervals that end at its lower end at the latest,
+  gives intervals with $l \le u$, increasing and strictly apart, that end at its upper end at the
+  latest.
 \end{lemma}
 
-\begin{proof}
+\begin{proof}\leanok
   The six cases of the midpoint, each with the bounds of its numerators; the exactness of the
   doubles by Lemma~\ref{lem:Double}; the bisection by the induction principle of its recursion, the
   hypotheses on the kept intervals threaded through both halves.
@@ -1027,19 +1017,9 @@ them.
 
 \begin{lemma}[The intersection and the step]\label{lem:intersect}
   \uses{def:intersect, def:computeSturm, lem:bisection, def:inIntervals}
-  Proposed names: \lname{Ratpoints.Sturm.intersectList}, \lname{Ratpoints.Sturm.IntersectInvariant},
-  \lname{Ratpoints.Sturm.intersect\_spec}, \lname{Ratpoints.Sturm.toList\_run\_intersect},
-  \lname{Ratpoints.Sturm.meet\_eq}, \lname{Ratpoints.Sturm.intervalsWF\_domainBits\_iff},
-  \lname{Ratpoints.Sturm.pairwise\_intersectList},
-  \lname{Ratpoints.Sturm.intervalsWF\_intersectList},
-  \lname{Ratpoints.Sturm.inIntervals\_of\_inIntervals\_intersectList},
-  \lname{Ratpoints.Sturm.inIntervals\_intersectList},
-  \lname{Ratpoints.Sturm.length\_intersectList\_le},
-  \lname{Ratpoints.Sturm.inIntervals\_domainValues\_iff},
-  \lname{Ratpoints.Sturm.run\_computeSturm\_eq\_none\_iff},
-  \lname{Ratpoints.Sturm.run\_computeSturm\_of\_chain\_eq\_some},
-  \lname{Ratpoints.Sturm.computeSturm\_wf}, \lname{Array.drop\_toList\_eq\_getElem!\_cons}. The
-  intersection is a recursion on the two lists, of which the loop computes the list; well-formed
+  \lean{Ratpoints.Sturm.intersectList, Ratpoints.Sturm.IntersectInvariant, Ratpoints.Sturm.intersect_spec, Ratpoints.Sturm.toList_run_intersect, Ratpoints.Sturm.meet_eq, Ratpoints.Sturm.intervalsWF_domainBits_iff, Ratpoints.Sturm.pairwise_intersectList, Ratpoints.Sturm.intervalsWF_intersectList, Ratpoints.Sturm.inIntervals_of_inIntervals_intersectList, Ratpoints.Sturm.inIntervals_intersectList, Ratpoints.Sturm.length_intersectList_le, Ratpoints.Sturm.inIntervals_domainValues_iff, Ratpoints.Sturm.run_computeSturm_eq_none_iff, Ratpoints.Sturm.run_computeSturm_of_chain_eq_some, Ratpoints.Sturm.computeSturm_wf, Array.drop_toList_eq_getElem!_cons}
+  \leanok
+  The intersection is a recursion on the two lists, of which the loop computes the list; well-formed
   intervals are those without a NaN end, with $l \le u$ by the values, and pairwise strictly apart;
   for well-formed lists the intersection is well formed, a rational number lies in it exactly when
   it lies in both lists, and it has at most the sum of their lengths less one intervals. The step is
@@ -1048,7 +1028,7 @@ them.
   the caller, its intervals are well formed and lie in the caller's intervals.
 \end{lemma}
 
-\begin{proof}
+\begin{proof}\leanok
   The loop of the intersection by its named invariant; the order of the noted intervals from the
   four cases of a step, the chain of the caller's search intervals turned into its pairwise form
   (\verb|List.pairwise_of_isChain_of_le|); the step by unfolding it at the result of the remainder

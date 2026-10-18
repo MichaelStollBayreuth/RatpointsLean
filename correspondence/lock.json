@@ -3659,6 +3659,12 @@
         "Ratpoints.Sieve.siftPiece"
       ]
     },
+    "rp-private.h:617-617": {
+      "hash": "5edc162ee43f10ca27f4680583edd501323f7313b55d2613ea6722148f2b3675",
+      "owners": [
+        "excluded (interface)"
+      ]
+    },
     "rp-private.h:86-86": {
       "hash": "c42ac35b8c6c2f8460ef05d0e074751df7e24fc7db5acbef623df731ad868ce3",
       "owners": [
@@ -4098,10 +4104,64 @@
         "Ratpoints.Sturm.countsAtInfinity"
       ]
     },
+    "sturm.c:177-190": {
+      "hash": "57e8a66eb902a8f5645fc5bde775c798b8bdb10e8a7bf5e3cec974d6a6237dbf",
+      "owners": [
+        "Ratpoints.Sturm.computeSturm"
+      ]
+    },
+    "sturm.c:191-192": {
+      "hash": "7f7c0888052f576c8d1830e86f89d8bcc06da4364a13d9980851958e4e6400c3",
+      "owners": [
+        "Ratpoints.Sturm.longMax"
+      ]
+    },
+    "sturm.c:193-194": {
+      "hash": "a3322bb53f8dcb7d52da4d3cb3e03080846d627d6dac9768faea6cebb2874281",
+      "owners": [
+        "Ratpoints.Sturm.computeSturm"
+      ]
+    },
+    "sturm.c:197-208": {
+      "hash": "89eefbe749322eb534095a4bc39ecedde1e54348b7688854c2647ed17a3edda2",
+      "owners": [
+        "Ratpoints.Sturm.iterate"
+      ]
+    },
+    "sturm.c:209-227": {
+      "hash": "7d5865e7ba370d33f26bb0fb5ea4f04e63adaa019e5cbd345a240bd6697f0b35",
+      "owners": [
+        "Ratpoints.Sturm.addInterval"
+      ]
+    },
+    "sturm.c:228-233": {
+      "hash": "e47f421c35e0c167368f28d2110cd8235e2ca1f2109b4c7f6cd7ce22422b2e7a",
+      "owners": [
+        "Ratpoints.Sturm.iterate"
+      ]
+    },
+    "sturm.c:234-251": {
+      "hash": "6d8a1a91811d981e46ad8f4b4d1da687f7a7c597866b1925f35b4cde281878de",
+      "owners": [
+        "Ratpoints.Sturm.midpoint"
+      ]
+    },
     "sturm.c:252-260": {
       "hash": "82c49e1c399b0629039003ec2e110ebf88ee0d79f176eb629b46d6185050a151",
       "owners": [
         "Ratpoints.Sturm.signsAt"
+      ]
+    },
+    "sturm.c:261-267": {
+      "hash": "d73caaba9ad3c85f4867e64cce5524558f99e5b9a6f9b6918114b9aca16c205a",
+      "owners": [
+        "Ratpoints.Sturm.iterate"
+      ]
+    },
+    "sturm.c:269-273": {
+      "hash": "4356235b9ceb75510226c3cef70c2782d7e0cc6fa4bd9a315bfc29565599f82a",
+      "owners": [
+        "Ratpoints.Sturm.computeSturm"
       ]
     },
     "sturm.c:274-275": {
@@ -4158,10 +4218,22 @@
         "Ratpoints.Sturm.intersect"
       ]
     },
+    "sturm.c:326-332": {
+      "hash": "73794ed7c6807c48df6c45f50e9c2dc858423296e15026a58ce52081dcc0067f",
+      "owners": [
+        "Ratpoints.Sturm.computeSturm"
+      ]
+    },
     "sturm.c:67-84": {
       "hash": "83eab43c3b1d233b835f808a59b987378c006db1fdf1e68ba8cd331cc5983d7a",
       "owners": [
         "Ratpoints.Sturm.evalSign"
+      ]
+    },
+    "sturm.c:86-97": {
+      "hash": "2c6bad6940ae837ef8966c33216c7d815f75b6550b95309f95ee1ec5ef6367e3",
+      "owners": [
+        "Ratpoints.Sturm.computeSturm"
       ]
     },
     "sturm.c:99-163": {

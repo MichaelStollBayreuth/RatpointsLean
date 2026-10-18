@@ -121,6 +121,12 @@ kind = "other"
 reason = "RP_ALWAYS_INLINE and RP_NOINLINE, the inlining attributes that sift.c and find_points.c rely on for speed, empty on a compiler without them; they carry no meaning"
 
 [[excluded]]
+file = "rp-private.h"
+lines = "617"
+kind = "interface"
+reason = "the prototype of _ratpoints_compute_sturm, which find_points.c calls; the model has no headers (Ratpoints.Sturm.computeSturm)"
+
+[[excluded]]
 file = "ratpoints.h"
 lines = "31"
 kind = "other"

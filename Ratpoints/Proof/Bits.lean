@@ -56,8 +56,11 @@ an interval: the sums, differences and negations of `long`s that do not overflow
 * `Int64.toNatClampNeg_ite_neg`: the absolute value of a `long` other than `-2 ^ 63`.
 * `Int64.minValue_lt_ofInt`, `Int64.ofNat_pos`: the word of an integer `|a| < 2 ^ 63` is not
   `-2 ^ 63`, and that of a natural number `0 < n < 2 ^ 63` is positive.
-* `Int64.toInt_add_of_lt`, `Int64.toInt_sub_of_lt`, `Int64.toInt_neg_of_lt`: the sums, differences
-  and negations of `long`s that do not overflow.
+* `Int64.toInt_add_of_lt`, `Int64.toInt_sub_of_lt`, `Int64.toInt_neg_of_lt`,
+  `Int64.toInt_mul_of_lt`: the sums, differences, negations and products of `long`s that do not
+  overflow.
+* `Int64.toInt_and_one`, `Int64.toInt_shiftRight_one`, `Int64.toInt_one_shiftLeft`: the lowest bit,
+  the half and the powers of `2` of `long`s, for the midpoints of the bisection of the Sturm step.
 * `Int64.toInt_and_ofNat_two_pow_sub_one`: a `long` and-ed with the mask `2 ^ k - 1` is its
   Euclidean remainder modulo `2 ^ k`.
 
@@ -465,6 +468,39 @@ theorem toInt_ofNat_two_pow_sub_one {k : Nat} (hk : k < 63) :
   have h1 : ((2 ^ k - 1 : Nat) : Int) = ((2 ^ k : Nat) : Int) - 1 := by lia
   rw [h1, Int.natCast_pow]
   rfl
+
+/-- The product of two `long`s that does not overflow. -/
+theorem toInt_mul_of_lt {a b : Int64} (h1 : -2 ^ 63 ≤ a.toInt * b.toInt)
+    (h2 : a.toInt * b.toInt < 2 ^ 63) : (a * b).toInt = a.toInt * b.toInt := by
+  rw [toInt_mul, Int.bmod_eq_of_le (by lia) (by lia)]
+
+theorem toInt_two_mul {x : Int64} (h : x.toInt.natAbs ≤ 2 ^ 61) : (2 * x).toInt = 2 * x.toInt := by
+  rw [toInt_mul_of_lt (by rw [show (2 : Int64).toInt = 2 by decide]; lia)
+    (by rw [show (2 : Int64).toInt = 2 by decide]; lia)]
+  rfl
+
+/-- The lowest bit `x &&& 1` of a `long`, its remainder modulo `2`, also for a negative one. -/
+theorem toInt_and_one (x : Int64) : (x &&& 1).toInt = x.toInt % 2 :=
+  toInt_and_ofNat_two_pow_sub_one x (k := 1) (by decide)
+
+/-- The arithmetic shift `x >>> 1` of a `long`, the floor of its half. -/
+theorem toInt_shiftRight_one (x : Int64) : (x >>> 1).toInt = x.toInt / 2 := by
+  rw [show (1 : Int64) = ofNat 1 from rfl, toInt_shiftRight_ofNat x (by decide),
+    Int.shiftRight_eq_div_pow]
+  rfl
+
+/-- The power `1 <<< k` of `2` for a shift `k < 63`. -/
+theorem toInt_one_shiftLeft_ofNat {k : Nat} (hk : k < 63) :
+    ((1 : Int64) <<< ofNat k).toInt = 2 ^ k := by
+  have h : ∀ k < 63, ((1 : Int64) <<< ofNat k).toInt = 2 ^ k := by decide
+  exact h k hk
+
+/-- The power `1 <<< k` of `2` for a `long` shift `0 ≤ k < 63`. -/
+theorem toInt_one_shiftLeft {k : Int64} (h0 : 0 ≤ k.toInt) (h : k.toInt < 63) :
+    ((1 : Int64) <<< k).toInt = 2 ^ k.toInt.toNat := by
+  have hk : k = ofNat k.toInt.toNat := toInt_inj.mp (by rw [toInt_ofNat_of_lt (by lia)]; lia)
+  rw [hk, toInt_one_shiftLeft_ofNat (by lia), toInt_ofNat_of_lt (by lia)]
+  simp
 
 end Int64
 

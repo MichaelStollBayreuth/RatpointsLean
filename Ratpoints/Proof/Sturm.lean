@@ -21,8 +21,9 @@ chain as a `@[spec]` theorem proved with `vcgen`, the program logic of Lean core
 invariants that are named definitions; the contracts of the evaluation of a row at a dyadic number
 (`Ratpoints.Sturm.evalSign`: the sign of the value of the Horner rule in integers), of the signs and
 the count of sign changes of the chain there (`Ratpoints.Sturm.signsAt`) and at `±∞`
-(`Ratpoints.Sturm.countsAtInfinity`); and the loop of the intersection with the caller's intervals
-(`Ratpoints.Sturm.intersect`) as a recursion on the two lists (`Ratpoints.Sturm.intersectList`).
+(`Ratpoints.Sturm.countsAtInfinity`); the loop of the intersection with the caller's intervals
+(`Ratpoints.Sturm.intersect`) as a recursion on the two lists (`Ratpoints.Sturm.intersectList`); and
+the failure of the Sturm step (`Ratpoints.Sturm.computeSturm`) exactly when the chain fails.
 
 ## Main definitions
 
@@ -54,13 +55,15 @@ the count of sign changes of the chain there (`Ratpoints.Sturm.signsAt`) and at 
   evaluation, the signs at a midpoint, the counts at `±∞` and the intersection, with the plain
   statements `Ratpoints.Sturm.run_evalSign`, `Ratpoints.Sturm.run_signsAt`,
   `Ratpoints.Sturm.run_countsAtInfinity` and `Ratpoints.Sturm.toList_run_intersect`.
+* `Ratpoints.Sturm.run_computeSturm_eq_none_iff`: the Sturm step fails exactly when the chain does.
 
 ## Implementation notes
 
 The file uses Lean core and `Std` only, as `Ratpoints.Proof.Words` does; the lemmas on arrays,
 lists, ranges and integers that are not about the model are in `Ratpoints.Proof.Containers`, those
 on `long`s in `Ratpoints.Proof.Bits`. The plain statements let the files with Mathlib use the
-contracts without the program logic.
+contracts without the program logic; the values of the doubles of the intervals are in
+`Ratpoints.Proof.Bisection`.
 -/
 
 @[expose] public section
@@ -895,6 +898,18 @@ theorem intersect_spec (loc ivs : Array (Double × Double)) :
 theorem toList_run_intersect (loc ivs : Array (Double × Double)) :
     (Id.run (intersect loc ivs)).toList = intersectList loc.toList ivs.toList :=
   Std.WP.Id.of_run_eq_wp rfl _ ((intersect_spec loc ivs).le_wp trivial)
+
+/-! ### The Sturm step -/
+
+/-- The Sturm step fails exactly when the remainder chain does: after the chain, the counts at
+infinity, the bisection and the intersection always give intervals. -/
+theorem run_computeSturm_eq_none_iff (c : List Int) (d iter : Nat)
+    (ivlist : Array (Double × Double)) :
+    Id.run (computeSturm c d iter ivlist) = none ↔ Id.run (chain c d) = none := by
+  rcases h : Id.run (chain c d) with _ | rows
+  · simp only [computeSturm, Id.run_bind, h, Id.run_pure]
+  · simp only [computeSturm, Id.run_bind, h, reduceCtorEq, iff_false]
+    split <;> simp
 
 end Sturm
 
