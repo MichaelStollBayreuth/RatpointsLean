@@ -1,4 +1,4 @@
-"""The command lines of the suites errors, fuzz and regions of scripts/difftest.py.
+"""The command lines of the suites errors, fuzz, regions and depths of scripts/difftest.py.
 
 CASES holds hand-written command lines for the checks that main.c makes on the coefficients, the
 height and the options, for the options of the search, of the search region and of the output and
@@ -6,11 +6,12 @@ for the refusals of a form that is not squarefree, each with a note; STOP_CASES 
 large height that both programs stop at once; random_command_lines gives random ones, with words
 that the readers of numbers of main.c accept or refuse in many ways, the options of the search
 region among them, and options of the output with formats and strings, and random_output_options
-random options of the output for a search; and random_region_line gives a search with a random
-search region. An argument is a str or, for a byte string that is not UTF-8, bytes. A height that a
-search could not finish (such as 2^63 - 1) is always followed by an option that fails, so that
-neither program searches, or comes with a narrow search region (random_region_line), but in
-STOP_CASES, which the errors suite runs with a short timeout and a cap on the memory.
+random options of the output for a search; random_region_line gives a search with a random search
+region, and random_depth_line one with a random depth of the Sturm step. An argument is a str or,
+for a byte string that is not UTF-8, bytes. A height that a search could not finish (such as 2^63 -
+1) is always followed by an option that fails, so that neither program searches, or comes with a
+narrow search region (random_region_line), but in STOP_CASES, which the errors suite runs with a
+short timeout and a cap on the memory.
 """
 import math
 from decimal import Decimal
@@ -185,8 +186,8 @@ CASES = [
     (['-1 0 9', '10', '-q', '-x', '-n', '15', '-N', '30', '-p', '30'],
      '-x after a reversal: (1 : 0) second'),
     (['-110398115831658495200097132973216241257761844312575 0 0 0 1', '10', '-q', '-x', '-p', '30',
-      '-N', '30'], '-x where the Sturm step of the C program narrows its search region to the '
-     'point at infinity: compared exactly with the C program under -s'),
+      '-N', '30'], '-x where the Sturm step narrows the search region to nothing, so that only '
+     'the point at infinity is printed'),
     (['-1 0 9', '10', '-q', '-1', '-i'], '-1 -i after a reversal'),
     (['0 1 2', '40', '-q', '-1'], '-1: the point at infinity of the reversed polynomial'),
     (['1 0 1', '5', '-x', '-n', '15', '-N', '30', '-p', '30'], '-x in the report, pinned'),
@@ -230,16 +231,16 @@ CASES = [
     (['1 0 1', '0', '-x'], 'bad height before -x: error 4'),
     # the search region: the intervals of -l and -u, the denominators of -dl and -du
     (['1 0 126 0 441', '200', '-l', '0', '-u', '1'],
-     '-l -u: message 3, the points in [0, 1]'),
+     '-l -u: messages 3 and 8, the points in [0, 1]'),
     (['1 0 126 0 441', '200', '-q', '-l', '0', '-u', '1'], '-l -u with -q'),
     (['-1 0 9', '10', '-q', '-u', '0.3333333333333333', '-l', '0.33333333333333337'],
      'two intervals whose doubles meet: joined, (1 : 0 : 3) between them passed over'),
     (['-1 0 9', '10', '-u', '0.3333333333333333', '-l', '0.33333333333333337'],
-     'the join in the report: two intervals in message 3'),
+     'the join in the report: two intervals in message 3, one in message 8'),
     (['17 0 0 1', '300', '-q', '-dl', '4', '-du', '9'], '-dl -du: the denominators 4 to 9'),
     (['36 0 -49 0 14 0 -1', '100', '-l', '-2.5', '-u', '-1.5', '-l', '1.5', '-u', '2.5'],
-     'two intervals in the report'),
-    (['1 0 1', '10', '-z', '-l', '-0', '-u', '1e400'], '-0.000000 and inf in message 3'),
+     'two intervals narrowed by the Sturm step in message 8'),
+    (['1 0 1', '10', '-z', '-l', '-0', '-u', '1e400'], '-0.000000 and inf in message 3, 2^63 in 8'),
     (['1 0 1', '10', '-z', '-u', '-20'], 'a first -u below -H: [-inf, -20]'),
     (['1 0 1', '10', '-z', '-l', '20'], 'a last -l above H: [20, inf]'),
     (['1 0 1', '10', '-q', '-u', '1'], 'a first -u without -l'),
@@ -697,3 +698,24 @@ def random_region_line(rng):
               else random_intervals(rng, H) + random_denominators(rng, H))
     return [c, str(H), *region, *random_search_options(rng)]
 
+
+def random_depth_line(rng):
+    """A search with a random depth of the Sturm step, -S 0 to -S 60 or -s, on a random polynomial
+    or a point-rich curve at a small height, with -q or the report (message 8), and at times with
+    an interval, -k or -x with the moduli pinned, then at times with -s after it."""
+    if rng.random() < 0.6:
+        c = ' '.join(str(rng.randint(-30, 30)) for _ in range(rng.randint(2, 11)))
+    else:
+        c = rng.choice(POINT_RICH)
+    H = rng.randint(1, 100)
+    depth = ['-s'] if rng.random() < 0.1 else ['-S', str(rng.randint(0, 60))]
+    opts = depth + (['-q'] if rng.random() < 0.5 else ['-z'])
+    if rng.random() < 0.2:
+        opts += random_intervals(rng, H)
+    if rng.random() < 0.15:
+        opts.append('-k')
+    if rng.random() < 0.1:
+        opts += ['-x', '-p', '30', '-N', '30']
+        if rng.random() < 0.3:
+            opts.append('-s')
+    return [c, str(H), *opts]

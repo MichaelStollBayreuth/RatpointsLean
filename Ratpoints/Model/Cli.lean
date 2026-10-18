@@ -20,29 +20,29 @@ meta import Ratpoints.Model.FindPoints
 options. It reads them as `main.c` of ratpoints does, with its checks, messages and exit statuses,
 in its order, and prints what ratpoints prints: unless `-q` is given, the report, with the banner of
 `ratpoints-lean`, the curve, the height bound and the search region of the command line before the
-points, and after them what the search did and the count of the points found, but for message 4 on
-the moduli used (stage I), message 8 on the search intervals that the search gives back (stage H)
-and, under `-v`, the report of the library; under `-x`, the pairs that pass the sieve of the model,
-with the moduli of `Ratpoints.sieveParams` and over the numerators of the search intervals, which
-are those that ratpoints prints when it sieves with the same moduli without its Sturm step, as it
-does under `-p 30 -N 30 -s` unless it chooses other moduli from the curve (stage I models the choice
-of the moduli, and the Sturm step comes with stage H); and the points, through the callback
-`process` of `main.c` (`Ratpoints.Cli.process`), which the search calls for each point it finds
-(`Ratpoints.findPointsWith`), in the format of `-f` with the strings of `-fs`, `-fm` and `-fe`, the
-points at infinity passed over under `-i` (neither printed nor counted), none printed under `-z`,
-and the search stopped under `-1` at the first point that `process` does not pass over (the first
-point counted, printed or not). It reads `-p -n -N -P -F -j -J` into the sieving parameters and
-ignores the other options that tune the sieve of ratpoints (until stage I, but for `-t` for good);
-it reads `-k -K -s -S`, `-x -X -y -Y` and `-dl -du` into the options of the search
-(`Ratpoints.Options`): whether the polynomial may be reversed, the depth of the Sturm step, whether
-the points are checked exactly, whether both points of a pair are delivered, and the range of the
-denominators; and it reads the search intervals of `-l` and `-u` as `main.c` does, the ends as the
-numbers they are (`Ratpoints.Cli.ExactEnd`) and the doubles outward of them, which it gives the
-search, joined where they meet (`Ratpoints.Cli.joinIntervals`), and against whose exact ends
-`process` checks each point. It runs the search with the parameters `Ratpoints.sieveParams` of these
-options and these options of the search, so that it refuses a binary form that is not squarefree
-with error 8 and, after a reversal, prints the points of the reversed polynomial mapped back to the
-caller's curve, as ratpoints does with the same options.
+points, and after them what the search did, the search intervals that it searched and the count of
+the points found, but for message 4 on the moduli used (stage I) and, under `-v`, the report of the
+library; under `-x`, the pairs that pass the sieve of the model, with the moduli of
+`Ratpoints.sieveParams` and over the numerators of the search intervals that the Sturm step leaves,
+which are those that ratpoints prints when it sieves with the same moduli, as it does under
+`-p 30 -N 30` unless it chooses other moduli from the curve (stage I models the choice of the
+moduli); and the points, through the callback `process` of `main.c` (`Ratpoints.Cli.process`), which
+the search calls for each point it finds (`Ratpoints.findPointsWith`), in the format of `-f` with
+the strings of `-fs`, `-fm` and `-fe`, the points at infinity passed over under `-i` (neither
+printed nor counted), none printed under `-z`, and the search stopped under `-1` at the first point
+that `process` does not pass over (the first point counted, printed or not). It reads
+`-p -n -N -P -F -j -J` into the sieving parameters and ignores the other options that tune the sieve
+of ratpoints (until stage I, but for `-t` for good); it reads `-k -K -s -S`, `-x -X -y -Y` and
+`-dl -du` into the options of the search (`Ratpoints.Options`): whether the polynomial may be
+reversed, the depth of the Sturm step, whether the points are checked exactly, whether both points
+of a pair are delivered, and the range of the denominators; and it reads the search intervals of
+`-l` and `-u` as `main.c` does, the ends as the numbers they are (`Ratpoints.Cli.ExactEnd`) and the
+doubles outward of them, which it gives the search, joined where they meet
+(`Ratpoints.Cli.joinIntervals`), and against whose exact ends `process` checks each point. It runs
+the search with the parameters `Ratpoints.sieveParams` of these options and these options of the
+search, so that it refuses a binary form that is not squarefree with error 8 and, after a reversal,
+prints the points of the reversed polynomial mapped back to the caller's curve, as ratpoints does
+with the same options.
 
 ## Main definitions
 
@@ -715,10 +715,11 @@ def printPoly (c : List Int) : String :=
 /-- The messages of the report of `main.c` that `ratpoints-lean` prints, with the data they read:
 message 0, the banner; message 2, the count of the points found, of the pairs when the points are
 not checked exactly or only one point of each pair is delivered; message 3, the search region of
-the command line; message 5, the curve; message 6, the height bound; and message 7, what the search
-did: whether the polynomial was reversed, whether the denominators could be restricted to squares
+the command line; message 5, the curve; message 6, the height bound; message 7, what the search did:
+whether the polynomial was reversed, whether the denominators could be restricted to squares
 (`RATPOINTS_USE_SQUARES`) or essentially to squares (`RATPOINTS_USE_SQUARES1`), whether the Jacobi
-test was off, and whether the points were not checked exactly. -/
+test was off, and whether the points were not checked exactly; and message 8, the search intervals
+as the search leaves them. -/
 inductive Message where
   /-- Message 0: the banner. -/
   | banner
@@ -733,22 +734,23 @@ inductive Message where
   | height (H : Nat)
   /-- Message 7: the flags of the search. -/
   | flags (reversed useSquares useSquares1 noJacobi noCheck : Bool)
+  /-- Message 8: the search intervals `dom` as the search leaves them. -/
+  | intervals (dom : List (Double × Double))
 
-/-- The intervals `dom` as message 3 of `main.c` prints them: each as `[l, u]` with its ends printed
-under `%f` (`Ratpoints.Cli.printF`), the intervals separated by ` U `. -/
+/-- The intervals `dom` as messages 3 and 8 of `main.c` print them: each as `[l, u]` with its ends
+printed under `%f` (`Ratpoints.Cli.printF`), the intervals separated by ` U `. -/
 def showIntervals (dom : List (Double × Double)) : String :=
   " U ".intercalate (dom.map fun (l, u) ↦ s!"[{printF l}, {printF u}]")
 
 /-- The text of a message of the report, as `message` of `main.c` prints it.
 
-C: `main.c:972-976`, `main.c:979-991`, `main.c:999-1021`, `main.c:1031-1033`
+C: `main.c:972-976`, `main.c:979-991`, `main.c:999-1033`
 
 Deviation: the banner of `ratpoints-lean` (`Ratpoints.Cli.banner`); a constructor for each message
 that `ratpoints-lean` prints, with its data, for the number `n` and the arguments of the library:
-message 1, which the program prints when `read_input` fails, which it never does, is left out,
-message 8, on the search intervals that the search gives back, is stage H, and message 4, on the
-moduli used, is stage I; the loop over the intervals of message 3 as `Ratpoints.Cli.showIntervals`;
-no `fflush`. -/
+message 1, which the program prints when `read_input` fails, which it never does, is left out, and
+message 4, on the moduli used, is stage I; the loops over the intervals of messages 3 and 8 as
+`Ratpoints.Cli.showIntervals`, the conversion `%lf` of message 8 being `%f`; no `fflush`. -/
 def Message.text : Message → String
   | .banner => s!"\n{Cli.banner}\n"
   | .count total pairs =>
@@ -765,6 +767,7 @@ def Message.text : Message → String
     (if nj then "Jacobi symbol test was not used.\n" else "") ++
     (if nc then "Points were not checked exactly:\n" ++
       "   some of the printed x-coordinates may not give points.\n" else "")
+  | .intervals dom => s!"Search intervals:\n{showIntervals dom}\n"
 
 /-- What `main.c` prints before the search for the settings of the output `u`: nothing when the
 report is left out (`-q`); otherwise the banner, the curve of the coefficient list `c`, unless the
@@ -780,19 +783,19 @@ def preamble (c : List Int) (H : Nat) (u : Output) (dom : List (Double × Double
     if dom.isEmpty then "" else (Message.region dom).text
 
 /-- What `main.c` prints after the points for the settings of the output `u`: nothing when the
-report is left out (`-q`); otherwise, unless the report is that of `-v`, two line feeds and what
-the search did (message 7), from the flags that the search `r` writes back, the Jacobi switch of the
-options `s` and the switch of the exact check of the options `o`; then the count of the points
-found, the count `total` of the search, of the pairs under `-x` or `-y` (message 2).
+report is left out (`-q`); otherwise, unless the report is that of `-v`, two line feeds, what the
+search did (message 7), from the flags that the search `r` writes back, the Jacobi switch of the
+options `s` and the switch of the exact check of the options `o`, and the search intervals as the
+search leaves them (message 8, from `r.domain`); then the count of the points found, the count
+`total` of the search, of the pairs under `-x` or `-y` (message 2).
 
 C: `main.c:268-276`
 
-Deviation: messages 4 (the moduli used; stage I) and 8 (the search intervals that the search gives
-back; stage H) are left out. -/
+Deviation: message 4 (the moduli used; stage I) is left out. -/
 def report {σ : Type} (s : SieveOptions) (o : Options) (u : Output) (r : Outcome σ) : String :=
   let flags := Message.flags r.reversed r.useSquares r.useSquares1 (!s.jacobi) o.noCheck
   if u.quiet then ""
-  else (if u.verbose then "" else "\n\n" ++ flags.text) ++
+  else (if u.verbose then "" else "\n\n" ++ flags.text ++ (Message.intervals r.domain).text) ++
     (Message.count r.total (o.noCheck || o.noY)).text
 
 /-! ### The program -/
@@ -850,8 +853,8 @@ def main (args : List String) : IO UInt32 := do
 
 /-! ### Examples
 
-Each of them is what ratpoints 3.1.1 does, but for the banner; and for messages 4 and 8 of the
-report and, under `-v`, the report of the library, which `ratpoints-lean` leaves out. -/
+Each of them is what ratpoints 3.1.1 does, but for the banner; and for message 4 of the report
+and, under `-v`, the report of the library, which `ratpoints-lean` leaves out. -/
 
 #guard (coefficients " +1\t0  -1 ").toOption == some [1, 0, -1]
 
@@ -974,10 +977,10 @@ report and, under `-v`, the report of the library, which `ratpoints-lean` leaves
 #guard (run ["1 0 126 0 441", "30", "-q"]).1.startsWith "(1 : 21 : 0)\n(1 : -21 : 0)\n(0 : 1 : 1)\n"
 
 -- The report of `ratpoints '1 0 126 0 441' 30 -z` and of `ratpoints '1 0 126 0 441' 30 -v -1 -y`,
--- without messages 4 and 8 and without the report of the library under `-v`.
+-- without message 4 and without the report of the library under `-v`.
 #guard run ["1 0 126 0 441", "30", "-z"] ==
   (s!"\n{banner}\n\nCurve equation is  y^2 = 441 x^4 + 126 x^2 + 1\n\nmax. Height = 30\n\n" ++
-    "\n\n\n12 rational points found.\n\n", 0)
+    "\n\nSearch intervals:\n[-30.000000, 30.000000]\n\n12 rational points found.\n\n", 0)
 #guard run ["1 0 126 0 441", "30", "-v", "-1", "-y"] ==
   (s!"\n{banner}\n\nCurve equation is  y^2 = 441 x^4 + 126 x^2 + 1\n\n" ++
     "(1 : 0)\n\n1 rational point pairs found.\n\n", 0)
@@ -989,12 +992,12 @@ report and, under `-v`, the report of the library, which `ratpoints-lean` leaves
     "\n6 rational points found.\n\n", 0)
 
 -- `1 0 126 0 441` at the height 200 in the search interval `[0, 1]` (`-l 0 -u 1`): message 3 before
--- the points, the points with `x / z` in `[0, 1]` and the points at infinity.
+-- the points, the points with `x / z` in `[0, 1]` and the points at infinity, and message 8.
 #guard run ["1 0 126 0 441", "200", "-l", "0", "-u", "1"] ==
   (s!"\n{banner}\n\nCurve equation is  y^2 = 441 x^4 + 126 x^2 + 1\n\nmax. Height = 200\n\n" ++
     "Search region:\n  [0.000000, 1.000000]\n(1 : 21 : 0)\n(1 : -21 : 0)\n(0 : 1 : 1)\n" ++
     "(0 : -1 : 1)\n(1 : 31 : 2)\n(1 : -31 : 2)\n(2 : 651 : 21)\n(2 : -651 : 21)\n\n\n" ++
-    "\n8 rational points found.\n\n", 0)
+    "Search intervals:\n[0.000000, 1.000000]\n\n8 rational points found.\n\n", 0)
 
 -- Two intervals whose doubles meet, joined for the search (the double nearest to `1 / 3` lies
 -- outward of both ends), so that `process` passes over `(1 : 0 : 3)`, which the search finds
@@ -1006,13 +1009,17 @@ report and, under `-v`, the report of the library, which `ratpoints-lean` leaves
   ("(1 : 0 : 0)\n(1 : 66 : 4)\n(1 : -66 : 4)\n(-8 : 327 : 9)\n(-8 : -327 : 9)\n" ++
     "(106 : 3291 : 9)\n(106 : -3291 : 9)\n", 0)
 
--- Message 3: `-0.0` and an infinity; a first `-u` below `-H`, whose lower end is `-∞`; two
--- intervals of the command line, which are joined into one search interval; and an interval beyond
--- the doubles, where only the points at infinity are found.
-#guard [(["-l", "-0", "-u", "1e400"], ["  [-0.000000, inf]", "8 rational points found."]),
-    (["-u", "-20"], ["  [-inf, -20.000000]", "2 rational points found."]),
+-- Messages 3 and 8: `-0.0` and an infinity in message 3, the ends `±2 ^ 63` that the Sturm step
+-- leaves for the infinite ones in message 8; a first `-u` below `-H`, whose lower end is `-∞`;
+-- two intervals of the command line joined into one search interval; and an interval beyond the
+-- doubles, where message 8 has no interval and only the points at infinity are found.
+#guard [(["-l", "-0", "-u", "1e400"], ["  [-0.000000, inf]",
+      "[-0.000000, 9223372036854775808.000000]", "8 rational points found."]),
+    (["-u", "-20"], ["  [-inf, -20.000000]", "[-9223372036854775808.000000, -20.000000]",
+      "2 rational points found."]),
     (["-u", "0.74999999999999999", "-l", "0.75", "-u", "1"],
-      ["  [-10.000000, 0.750000] U [0.750000, 1.000000]", "10 rational points found."]),
+      ["  [-10.000000, 0.750000] U [0.750000, 1.000000]", "[-10.000000, 1.000000]",
+        "10 rational points found."]),
     (["-l", "1e400", "-u", "1e500"], ["  [inf, inf]", "2 rational points found."])].all
   fun (os, ls) ↦ (((run (["1 0 1", "10", "-z"] ++ os)).1.splitOn "\n").filter
     (fun l ↦ l ≠ "" && l.front != 'S')).drop 7 == ls
@@ -1047,10 +1054,11 @@ report and, under `-v`, the report of the library, which `ratpoints-lean` leaves
   ["Polynomial was reversed for better performance.",
     "(Reversed) polynomial is +-monic of odd degree:", "  could restrict denominators to squares.",
     "Jacobi symbol test was not used.", "Points were not checked exactly:",
-    "   some of the printed x-coordinates may not give points.", "26 rational point pairs found."]
+    "   some of the printed x-coordinates may not give points.", "Search intervals:",
+    "[-2.000000, 40.000000]", "26 rational point pairs found."]
 #guard (((run ["1 0 0 6", "200", "-y", "-z"]).1.splitOn "\n").filter (· ≠ "")).drop 7 ==
   ["(Reversed) polynomial has odd degree:", "  could restrict denominators essentially to squares.",
-    "8 rational point pairs found."]
+    "Search intervals:", "[-0.550781, 200.000000]", "8 rational point pairs found."]
 
 end Cli
 

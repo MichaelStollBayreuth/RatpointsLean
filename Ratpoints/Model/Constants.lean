@@ -22,10 +22,11 @@ is `2 ^ Ratpoints.rbaShift` with `Ratpoints.rbaShift < 32`
 (`Ratpoints.one_le_numStrides`), that `Ratpoints.hornerSteps` is at least 1
 (`Ratpoints.one_le_hornerSteps`), that `Ratpoints.maxBitsInPrime` is at most 10
 (`Ratpoints.maxBitsInPrime_le_ten`), that `Ratpoints.stage3Limit` is at most `2 ^ 32`
-(`Ratpoints.stage3Limit_le_two_pow_32`) and that `Ratpoints.maxDegree` is positive
-(`Ratpoints.zero_lt_maxDegree`), and of the table the proofs use only that its entries are the odd
-primes below 1022, in increasing order (`Ratpoints.prime_of_mem_primeTable`, which checks them one
-by one, and `Ratpoints.lt_of_mem_primeTable`, `Ratpoints.mem_primeTable_of_prime` and
+(`Ratpoints.stage3Limit_le_two_pow_32`) and that `Ratpoints.maxDegree` is positive and below
+`2 ^ 57` (`Ratpoints.zero_lt_maxDegree`, `Ratpoints.maxDegree_lt_two_pow_57`), and of the table
+the proofs use only that its entries are the odd primes below 1022, in increasing order
+(`Ratpoints.prime_of_mem_primeTable`, which checks them one by one, and
+`Ratpoints.lt_of_mem_primeTable`, `Ratpoints.mem_primeTable_of_prime` and
 `Ratpoints.pairwise_lt_toList_primeTable`, which `decide` checks).
 
 ## Main definitions
@@ -149,9 +150,9 @@ def defaultNumPrimes : Nat := 30
 
 /-- The depth of the Sturm step when the options do not say, `RATPOINTS_DEFAULT_STURM`: the default
 of `Ratpoints.Options.sturm` and the depth that the option `-S` of the program sets without an
-argument; `-s` sets `-1`, and `-S` with an argument the depth that it gives. Of the depth, the model
-reads only whether it is negative; the rest of the Sturm step, which reads the depth itself, is
-stage H.
+argument; `-s` sets `-1`, and `-S` with an argument the depth that it gives. The bisection of the
+Sturm step (`Ratpoints.Sturm.iterate`) splits the intervals that it cannot decide up to this depth,
+which the search caps at `55` (`Ratpoints.Options.normalize`).
 
 C: `ratpoints.h:341-343` -/
 def defaultSturm : Int := 10
@@ -397,6 +398,11 @@ theorem two_mul_rowBias_sub_one_le_mulModLimit : 2 * rowBias - 1 ≤ mulModLimit
 
 /-- There is at least the stride `2 ^ 0`. -/
 theorem one_le_numStrides : 1 ≤ numStrides := by decide
+
+/-- The degree is below `2 ^ 57`, so that the exponents `denexp (deg + 1)` of Horner's rule in
+`eval_sign` (`sturm.c:67-84`) stay within a `long` at the depths up to `55` of the Sturm step, as
+the C code assumes of `RATPOINTS_MAX_DEGREE` without a check. -/
+theorem maxDegree_lt_two_pow_57 : maxDegree < 2 ^ 57 := by decide
 
 /-- There is room for one search interval of the command line, which `read_input` of `main.c`
 fills without a check when `-u` comes before any `-l` (`main.c:417-436`). -/

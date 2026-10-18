@@ -7,9 +7,14 @@ module
 
 public import Mathlib.Algebra.MvPolynomial.Eval
 public import Mathlib.Algebra.Order.Field.Rat
+public import Mathlib.Algebra.Polynomial.Derivative
+public import Mathlib.Algebra.Polynomial.Sturm.Sequence
 public import Mathlib.Algebra.Squarefree.Basic
+public import Mathlib.Basic.Real.Basic
 public import Mathlib.Data.Fin.VecNotation
+public import Mathlib.Data.List.SignVariations
 public import Mathlib.Data.Nat.Factors
+public import Mathlib.Data.Set.Card
 public import Mathlib.Order.WithBotTop
 public import Ratpoints.Model
 
@@ -37,16 +42,17 @@ reversal is off, or the search region is not the whole box, `Ratpoints.IsFullBox
 a `Ratpoints.findPoints` that refuses every input, with or without the Sturm step; and the theorems
 of stage G, for well-formed parameters, on the options of the output, the order and the protocol of
 the delivery. Since stage H the search region of the options enters: membership holds, with the
-exact check on (`o.noCheck = false`), for the points in the search region (`Ratpoints.InRegion`,
-over the values of the ends of the search intervals, `Ratpoints.doubleValue`): the list of
-`Ratpoints.findPoints` holds exactly these points, of each pair `(x, ±y, z)` only the one with
-`y ≥ 0` when `o.noY` is set, and it is the list of the points in the order of ratpoints
-(`Ratpoints.orderedPoints`, with the bound `Ratpoints.maxDivisors` of the model on the number of
-divisors, the reversal only for the whole box and the largest denominator
-`Ratpoints.denominatorBound`), filtered by `o.noY` and the search region; no duplicates holds for
-every option, the options of the output among them. With the exact check off, every element of the
-list is `(x, 0, z)` for a normalized coprime pair of height at most `H` in the search region, every
-point `(x, y, z)` of height at most `H` in the search region gives the element `(x, 0, z)`, and the
+exact check on (`o.noCheck = false`) and assuming Sturm's theorem (`Ratpoints.SturmTheorem`) when
+the Sturm step is on, for the points in the search region (`Ratpoints.InRegion`, over the values of
+the ends of the search intervals, `Ratpoints.doubleValue`): the list of `Ratpoints.findPoints`
+holds exactly these points, of each pair `(x, ±y, z)` only the one with `y ≥ 0` when `o.noY` is
+set, and it is the list of the points in the order of ratpoints (`Ratpoints.orderedPoints`, with
+the bound `Ratpoints.maxDivisors` of the model on the number of divisors, the reversal only for the
+whole box and the largest denominator `Ratpoints.denominatorBound`), filtered by `o.noY` and the
+search region; no duplicates holds for every option, the options of the output among them. With the
+exact check off, every element of the list is `(x, 0, z)` for a normalized coprime pair of height
+at most `H` in the search region, every point `(x, y, z)` of height at most `H` in the search
+region gives the element `(x, 0, z)` (assuming Sturm's theorem when the Sturm step is on), and the
 points with `y ≥ 0` of the same search with the exact check on, with `y` replaced by `0`, are a
 sublist of it, so that they come in the same order. The search with a callback
 (`Ratpoints.findPointsWith`) refuses what `Ratpoints.findPoints` refuses, and otherwise returns the
@@ -59,8 +65,8 @@ their order, up to and including the first that stops the search. `Ratpoints.bru
 `Ratpoints.maxDegree` and `Ratpoints.maxDivisors` come from the model, never restated, since a
 definition of the model elaborates without Mathlib to other instance terms. Of Mathlib, the file
 imports exactly the public imports of the files of the specification (`Ratpoints/Spec/Basic.lean`,
-`Ratpoints/Spec/Order.lean` and `Ratpoints/Spec/Region.lean`), so that the restated definitions
-elaborate to the same terms as there.
+`Ratpoints/Spec/Order.lean`, `Ratpoints/Spec/Region.lean` and `Ratpoints/Spec/Sturm.lean`), so that
+the restated definitions elaborate to the same terms as there.
 -/
 
 @[expose] public section
@@ -163,6 +169,17 @@ when `1 ≤ bHigh ≤ H`, and `H` otherwise. -/
 def denominatorBound (bHigh : ℤ) (H : ℕ) : ℕ :=
   if 1 ≤ bHigh ∧ bHigh ≤ H then bHigh.toNat else H
 
+open Polynomial in
+/-- Sturm's theorem: for every squarefree real polynomial `p` and all reals `a ≤ b`, the number of
+roots of `p` in `(a, b]` plus the number of sign variations of the Sturm sequence of `p` and its
+derivative evaluated at `b` is that number at `a`. A hypothesis of the theorems on the Sturm step,
+not an axiom. -/
+def SturmTheorem : Prop :=
+  ∀ p : ℝ[X], Squarefree p → ∀ a b : ℝ, a ≤ b →
+    {x | a < x ∧ x ≤ b ∧ p.IsRoot x}.ncard +
+        ((sturmSeq p (derivative p)).map (eval b)).signVariations =
+      ((sturmSeq p (derivative p)).map (eval a)).signVariations
+
 /-- The polynomial that ratpoints searches for the coefficient list `c` of degree `d`, and whether
 it is reversed, when the switch `reverse` allows a reversal (the option `-k` of the program forbids
 it): for even `d`, the list `c_d, …, c₀` when `c₀ = 0` (then `c₁ ≠ 0`, or the binary form is not
@@ -245,8 +262,9 @@ theorem challenge_nodup_bruteForce (c : List ℤ) (H : ℕ) : (Ratpoints.bruteFo
   sorry
 
 theorem challenge_mem_iff_isPoint_of_findPoints_eq_ok (c : List ℤ) (H : ℕ) (P : Ratpoints.Params)
-    (o : Ratpoints.Options) (L : List (ℤ × ℤ × ℤ)) (hP : P.WF) (hc : o.noCheck = false)
-    (h : Ratpoints.findPoints c H P o = .ok L) (p : ℤ × ℤ × ℤ) :
+    (o : Ratpoints.Options) (L : List (ℤ × ℤ × ℤ)) (hS : 0 ≤ o.sturm → Ratpoints.SturmTheorem)
+    (hP : P.WF) (hc : o.noCheck = false) (h : Ratpoints.findPoints c H P o = .ok L)
+    (p : ℤ × ℤ × ℤ) :
     p ∈ L ↔ Ratpoints.IsPoint c H p ∧ (o.noY = true → 0 ≤ p.2.1) ∧
       Ratpoints.InRegion
         (o.domain.map fun i ↦ (Ratpoints.doubleValue i.1.bits, Ratpoints.doubleValue i.2.bits))
@@ -280,8 +298,9 @@ theorem challenge_wf_sieveParams (o : Ratpoints.SieveOptions) : (Ratpoints.sieve
   sorry
 
 theorem challenge_eq_orderedPoints_of_findPoints_eq_ok (c : List ℤ) (H : ℕ)
-    (P : Ratpoints.Params) (o : Ratpoints.Options) (L : List (ℤ × ℤ × ℤ)) (hP : P.WF)
-    (hc : o.noCheck = false) (h : Ratpoints.findPoints c H P o = .ok L) :
+    (P : Ratpoints.Params) (o : Ratpoints.Options) (L : List (ℤ × ℤ × ℤ))
+    (hS : 0 ≤ o.sturm → Ratpoints.SturmTheorem) (hP : P.WF) (hc : o.noCheck = false)
+    (h : Ratpoints.findPoints c H P o = .ok L) :
     L = (Ratpoints.orderedPoints Ratpoints.maxDivisors
         (o.reverse && Ratpoints.IsFullBox o.domain o.bLow o.bHigh H) c H
         (Ratpoints.denominatorBound o.bHigh H)).filter fun p ↦ (!o.noY || 0 ≤ p.2.1) &&
@@ -301,9 +320,9 @@ theorem challenge_exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck (c : List ℤ)
   sorry
 
 theorem challenge_mem_of_isPoint_of_findPoints_eq_ok_of_noCheck (c : List ℤ) (H : ℕ)
-    (P : Ratpoints.Params) (o : Ratpoints.Options) (L : List (ℤ × ℤ × ℤ)) (hP : P.WF)
-    (hc : o.noCheck = true) (h : Ratpoints.findPoints c H P o = .ok L) (p : ℤ × ℤ × ℤ)
-    (hp : Ratpoints.IsPoint c H p)
+    (P : Ratpoints.Params) (o : Ratpoints.Options) (L : List (ℤ × ℤ × ℤ))
+    (hS : 0 ≤ o.sturm → Ratpoints.SturmTheorem) (hP : P.WF) (hc : o.noCheck = true)
+    (h : Ratpoints.findPoints c H P o = .ok L) (p : ℤ × ℤ × ℤ) (hp : Ratpoints.IsPoint c H p)
     (hr : Ratpoints.InRegion
       (o.domain.map fun i ↦ (Ratpoints.doubleValue i.1.bits, Ratpoints.doubleValue i.2.bits))
       o.bLow o.bHigh p) :

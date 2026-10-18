@@ -362,11 +362,9 @@ fidelity:
     value, whether it stops the search, and the new data, for the C function with the pointers info
     and quit; until the blocks of stage I the model lists the denominators of a shape before it
     sieves the first one, all of them, also those after a stop, so that a stop in the sieve does not
-    save the time and the memory of that listing, which grow with the height; and, the search region
-    of the Sturm step being stage H, under RATPOINTS_NO_CHECK the model delivers the numerators of
-    -H, ..., H in the search intervals that pass the sieve, where the C code delivers only those in the region that its
-    Sturm step keeps (the differential tests compare -x exactly against the C program with -s and
-    the moduli pinned).
+    save the time and the memory of that listing, which grow with the height; and the theorems that
+    read the points with the Sturm step on assume Sturm's theorem, which Mathlib does not have yet
+    (Ratpoints.SturmTheorem, a hypothesis, not an axiom).
     Where the library function find_points and the command-line program differ (the order of the
     checks on the input), the model follows the program. Each deviation is recorded with its
     component in the correspondence record.
@@ -412,7 +410,8 @@ alignment:
         choice of the sieving parameters, the array size of the pieces included, and every value of
         the options, the delivery to the callback of stage G included, membership with
         RATPOINTS_NO_CHECK clear and y >= 0 under RATPOINTS_NO_Y, since stage H for the points in
-        the search region of the options (Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok,
+        the search region of the options, assuming Sturm's theorem when the Sturm step is on
+        (Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok,
         Ratpoints.nodup_of_findPoints_eq_ok), certified by comparator, through the reference of the
         polynomial searched (Ratpoints.exists_eq_of_findPoints_eq_ok) and the permutation of the
         brute-force reference filtered by RATPOINTS_NO_Y and the search region
@@ -439,9 +438,9 @@ alignment:
         denominators in the order of the loop of the search, ascending but for the divisors of the
         leading coefficient in the order of binary counting over its primes, the numerators
         ascending and +y before -y, mapped back after a reversal, up to the largest denominator of
-        the search), filtered by RATPOINTS_NO_Y and the search region of the options, certified by
-        comparator, and the differential tests compare it with the order of the C program on every
-        point list
+        the search), filtered by RATPOINTS_NO_Y and the search region of the options, assuming
+        Sturm's theorem when the Sturm step is on, certified by comparator, and the differential
+        tests compare it with the order of the C program on every point list
     - source: "the callback protocol of find_points: process, info, quit and the count"
       lean: "Ratpoints.map_findPointsWith_eq_map_findPoints"
       module: "Ratpoints.Proof.Output"
@@ -483,6 +482,8 @@ alignment:
         assuming Sturm's theorem (Ratpoints.SturmTheorem, a hypothesis until Mathlib has it), the
         intervals that the Sturm step leaves at a depth of at most 55, for a polynomial of degree
         1 <= d < 2^57, hold every rational x with |x| <= 2^63 and F(x) >= 0 in the caller's
-        intervals (Ratpoints.Sturm.covers_computeSturm); the search calls the step with stage H
+        intervals (Ratpoints.Sturm.covers_computeSturm), which the search keeps
+        (Ratpoints.searchRegion_covers), so that with the exact check on the Sturm step changes only
+        the speed (Ratpoints.findPoints_sturm_neg_eq_ok)
 
 acknowledgements: ""

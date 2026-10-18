@@ -21,7 +21,7 @@ number of sign variations of the Sturm sequence of `p` and `p'` at `a` less that
 the Sturm sequence (`Polynomial.sturmSeq`) and the sign variations of a list
 (`List.signVariations`), but not yet the theorem; it is a `Prop`-valued definition here, a
 hypothesis of the theorems that need it, until Mathlib has it. The specification uses Mathlib and
-nothing of the model; with stage H, the comparator challenge restates the definition verbatim.
+nothing of the model; the comparator challenge restates the definition verbatim.
 
 ## Main definitions
 

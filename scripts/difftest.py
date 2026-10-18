@@ -38,6 +38,9 @@ and compares it with the recorded outputs and with the C program:
           at a large height with a narrow region, whose ends are exact doubles at times, also around
           points of large height and at the ends of the range [-H, H] of the numerators, at times
           under -x with the moduli pinned (scripts/difftest_cases.py);
+  depths  random depths of the Sturm step, -S 0 to -S 60 and -s, against the C program, with -q or
+          the report (message 8), at times with intervals, -k or -x with the moduli pinned, then at
+          times -s;
   test4high  the invocations of test4.sh that search with a height bound above --max-height and
           at most --test4-max-height that the suite test4 does not compare (those without a narrow
           search region), a few minutes in all: run locally, not by default.
@@ -48,55 +51,53 @@ whose leading coefficient is not +-1), since the model visits them in the same o
 points in the default format with -q is compared as a list of points with a recorded output (test4,
 rptest), and exactly, byte for byte, with an output of the C program, as is an output with the
 options of the output (-x -y -f -fs -fm -fe), also where it does not end with a newline. A report (a
-command line without -q) is compared exactly, with the message on the search region (message 3), but
-for the banner, which is exchanged for that of the C program, and for the lines that ratpoints-lean
-does not print, which are dropped from the report of the C program only: the messages on the moduli
-used (message 4, stage I), as test4.sh's m() drops it, and on the search intervals (message 8, with
-the line after it), which the model prints with the Sturm step of stage H. Under -v, where the C
-program prints the report of its library too, ratpoints-lean is compared with the report of the C
-program on the same command line without -v, whose height and messages 4, 7 and 8 are dropped, as
-main.c does under -v; the lines of that text must be among the lines of the output of the C program
-with -v, in their order, with the same lines of points and pairs (with a format or a string, whose
-points need not end their lines, only its characters among those of that output, in their order).
-The outputs that test4.sh filters through grep found, grep 'Curve equation' and grep -c . are
-compared after the same filter, the banner exchanged first, with the exit status 0. Under -x (no
-exact check), where the lines printed are the survivors of the sieve, which depend on the moduli and
-on the search region: when the output of ratpoints-lean does not change with the moduli pinned (-p
-30 -N 30 appended, which keeps the moduli of the model, the first 30 odd primes, but puts all of
-them into its first two stages, with no third stage, where the model without options puts the last 8
-into its third stage) and the C program on the command line with -p 30 -N 30 -s appended sieves with
-the same primes in its first two stages and no third stage, as its report under -v says (-q dropped,
--v -z appended; it may choose other moduli from the curve, such as 9 in place of 3, which stage I
-models), or does not sieve at all, exactly with the output of the C program on that command line,
-which then sieves with the same primes over the search intervals of the command line, without the
-region of its Sturm step, as the model does until the Sturm step of stage H (the C program may split
-the primes differently between its first two stages, which leaves the survivors as they are, since
-all the rows are and-ed); and, without a format or a string, also by a weaker check against the
-output of the C program on the command line itself (the only check when the pin changes the output
-of ratpoints-lean, as with other -p and -N, or when the C program chooses other moduli under the
-pin, the reason counted): every line (x : z) a normalized coprime pair in the range of the height
-and, but for (1 : 0), with z in the range of the denominators and x / z in the exact search region
-of the command line, none repeated, the pairs that are points the same and in the same order in both
-outputs, the pairs common to both in the same order, the pairs in one block at the same place among
-the other lines, with -1 one line in each output when one of them is a point (the same if both are)
-and else at most one, and the other lines equal, a count line but for its number, which must be that
-of the pairs printed (unless -z); without -q on reports. Exit codes are compared exactly, and
-ratpoints-lean must write nothing to its standard error: it runs with LEAN_ABORT_ON_PANIC=1, so that
-a panic of the Lean runtime ends it by SIGABRT. Messages are compared exactly, but for the banner
-and the usage, which differ by design: in the outputs of errors 2 and 6 they are exchanged for those
-of the C program (the outputs of the two programs on an empty command line), and the errors suite
-checks the usage of ratpoints-lean against that of ratpoints. A few searches at a large height that
-both programs stop at a point at infinity before the sieve (-1) are run with a short timeout and a
-cap on the memory. A search above --max-height with a search region is compared, with a timeout and
-a cap on the memory, when the model lists at most 10^5 denominators for it (an upper bound that
-mirrors the divisor set-up of the model) and sifts at most 2 * 10^10 numerators (an upper bound from
-the widths of the intervals, and under -1 from the first point of the expected output, where the
-search stops): the searches of test4.sh at large heights in a narrow region. Skipped: the outputs
-that test4.sh filters to look at the report of the library and those that test3.sh filters; searches
-under -x with a format or a string that are not compared exactly; and the other searches above
---max-height, which the suites that run the C program compare when they have no search region and it
-prints nothing (a search with -q that finds no points, as when no class of the denominators modulo
-64 admits a numerator).
+command line without -q) is compared exactly, with the messages on the search region (message 3) and
+the search intervals (message 8), but for the banner, which is exchanged for that of the C program,
+and for the lines that ratpoints-lean does not print, which are dropped from the report of the C
+program only: the message on the moduli used (message 4, stage I), as test4.sh's m() drops it. Under
+-v, where the C program prints the report of its library too, ratpoints-lean is compared with the
+report of the C program on the same command line without -v, whose height and messages 4, 7 and 8
+are dropped, as main.c does under -v; the lines of that text must be among the lines of the output
+of the C program with -v, in their order, with the same lines of points and pairs (with a format or
+a string, whose points need not end their lines, only its characters among those of that output, in
+their order). The outputs that test4.sh filters through grep found, grep 'Curve equation' and grep
+-c . are compared after the same filter, the banner exchanged first, with the exit status 0. Under
+-x (no exact check), where the lines printed are the survivors of the sieve, which depend on the
+moduli and on the search region: when the output of ratpoints-lean does not change with the moduli
+pinned (-p 30 -N 30 appended, which keeps the moduli of the model, the first 30 odd primes, but puts
+all of them into its first two stages, with no third stage, where the model without options puts the
+last 8 into its third stage) and the C program on that command line sieves with the same primes in
+its first two stages and no third stage, as its report under -v says (-q dropped, -v -z appended; it
+may choose other moduli from the curve, such as 9 in place of 3, which stage I models), or does not
+sieve at all, exactly with the output of the C program on the command line with -p 30 -N 30
+appended, which then sieves with the same primes over the same search region, that of its Sturm
+step, as the model does (the C program may split the primes differently between its first two
+stages, which leaves the survivors as they are, since all the rows are and-ed); and, without a
+format or a string, also by a weaker check against the output of the C program on the command line
+itself (the only check when the pin changes the output of ratpoints-lean, as with other -p and -N,
+or when the C program chooses other moduli under the pin, the reason counted): every line (x : z) a
+normalized coprime pair in the range of the height and, but for (1 : 0), with z in the range of the
+denominators and x / z in the exact search region of the command line, none repeated, the pairs that
+are points the same and in the same order in both outputs, the pairs common to both in the same
+order, the pairs in one block at the same place among the other lines, with -1 one line in each
+output when one of them is a point (the same if both are) and else at most one, and the other lines
+equal, a count line but for its number, which must be that of the pairs printed (unless -z); without
+-q on reports. Exit codes are compared exactly, and ratpoints-lean must write nothing to its
+standard error: it runs with LEAN_ABORT_ON_PANIC=1, so that a panic of the Lean runtime ends it by
+SIGABRT. Messages are compared exactly, but for the banner and the usage, which differ by design: in
+the outputs of errors 2 and 6 they are exchanged for those of the C program (the outputs of the two
+programs on an empty command line), and the errors suite checks the usage of ratpoints-lean against
+that of ratpoints. A few searches at a large height that both programs stop at a point at infinity
+before the sieve (-1) are run with a short timeout and a cap on the memory. A search above
+--max-height with a search region is compared, with a timeout and a cap on the memory, when the
+model lists at most 10^5 denominators for it (an upper bound that mirrors the divisor set-up of the
+model) and sifts at most 2 * 10^10 numerators (an upper bound from the widths of the intervals, and
+under -1 from the first point of the expected output, where the search stops): the searches of
+test4.sh at large heights in a narrow region. Skipped: the outputs that test4.sh filters to look at
+the report of the library and those that test3.sh filters; searches under -x with a format or a
+string that are not compared exactly; and the other searches above --max-height, which the suites
+that run the C program compare when they have no search region and it prints nothing (a search with
+-q that finds no points, as when no class of the denominators modulo 64 admits a numerator).
 
 options:
   --lean PATH        the ratpoints-lean executable (default: .lake/build/bin/ratpoints-lean)
@@ -105,7 +106,7 @@ options:
   --repo PATH        a clone of ratpoints that contains the pinned commit (default: the
                      environment variable RATPOINTS_REPO); the test files are read at the pin
   --suites LIST      comma-separated suites (default: test4,test3,rptest,random,outputs,errors,
-                     fuzz,params,high,regions)
+                     fuzz,params,high,regions,depths)
   --max-height H     the largest height of a search (default: 30000)
   --test4-max-height H  the largest height of a search of the suite test4high (default: 100000)
   --rptest-height h  the reduced height of the rptest suites (default: 100)
@@ -113,6 +114,7 @@ options:
   --outputs N        the number of random polynomials of the suite outputs (default: 300)
   --fuzz N           the number of rounds of random command lines, eight each (default: 100)
   --regions N        the number of searches of the suite regions (default: 400)
+  --depths N         the number of searches of the suite depths (default: 300)
   --seed S           the seed of the random suites (default: 1)
   -v                 print every comparison
 """
@@ -617,22 +619,15 @@ def banner_of(usage):
 def report_text(cfg, text, lean=False):
     """A report as it is compared: the first line of the banner, which test4.sh's m() drops, left
     out, for ratpoints-lean (`lean`) after its banner is exchanged for that of the C program; and
-    of a report of the C program also the lines that ratpoints-lean does not print: those on the
-    moduli used (message 4, stage I), which m() drops too, and the message on the search intervals
-    (message 8) with the line after it, which the model prints with the Sturm step of stage H."""
+    of a report of the C program also the lines that ratpoints-lean does not print, which m() drops
+    too: those on the moduli used (message 4, stage I)."""
     if lean:
         text = text.replace(cfg.lean_banner, cfg.c_banner)
-    out, skip = [], False
+    out = []
     for l in text.split('\n'):
-        if skip:
-            skip = False
-        elif l.startswith('This is ratpoints-'):
+        if l.startswith('This is ratpoints-'):
             continue
-        elif lean:
-            out.append(l)
-        elif l == 'Search intervals:':
-            skip = True
-        elif not re.search('used for|further primes|primes used', l):
+        elif lean or not re.search('used for|further primes|primes used', l):
             out.append(l)
     return '\n'.join(out)
 
@@ -907,19 +902,18 @@ def check_x(cfg, tally, label, args, st, expected, big=False):
     which depend on the moduli and on the search region, and whose output of the C program is
     `expected`: when the output of ratpoints-lean does not change with the moduli pinned (PIN
     appended), so that they are those of the model, and the C program on the command line with PIN
-    and -s appended sieves with the same primes, the first 30 odd primes in its first two stages and
-    no third stage (c_moduli; it may choose other moduli from the curve, such as 9 in place of 3,
-    which stage I models), or does not sieve at all, exactly against the C program on that command
-    line, which then sieves with the same primes over the search intervals of the command line,
-    without the region of its Sturm step, as the model does until the Sturm step of stage H; and,
-    without a format or a string, whose lines it could not read, also by the weaker check against
-    `expected` (weak_agrees), the only check otherwise, its reason recorded. A run with a format or
-    a string that is not compared exactly is skipped."""
+    appended sieves with the same primes, the first 30 odd primes in its first two stages and no
+    third stage (c_moduli; it may choose other moduli from the curve, such as 9 in place of 3, which
+    stage I models), or does not sieve at all, exactly against the C program on that command line,
+    which then sieves with the same primes over the same search region, that of its Sturm step, as
+    the model does; and, without a format or a string, whose lines it could not read, also by the
+    weaker check against `expected` (weak_agrees), the only check otherwise, its reason recorded. A
+    run with a format or a string that is not compared exactly is skipped."""
     lean = lean_or_timeout(cfg, tally, label, args, big)
     pinned = lean and lean_or_timeout(cfg, tally, label, [*args, *PIN], big)
     if lean is None or pinned is None:
         return
-    pargs = [*args, *PIN, '-s']
+    pargs = [*args, *PIN]
     reason = None
     if lean != pinned:
         reason = 'the pin changes the output of ratpoints-lean'
@@ -1184,6 +1178,15 @@ def suite_regions(cfg, tally):
         against_c(cfg, tally, f'regions {i} {args}', args)
 
 
+def suite_depths(cfg, tally):
+    """Searches with random depths of the Sturm step, -S 0 to -S 60 and -s
+    (difftest_cases.random_depth_line), against the C program."""
+    rng = random.Random(cfg.seed)
+    for i in range(cfg.depths):
+        args = difftest_cases.random_depth_line(rng)
+        against_c(cfg, tally, f'depths {i} {args}', args)
+
+
 def suite_test4high(cfg, tally):
     suite_test4(cfg, tally, (cfg.max_height, cfg.test4_max_height))
 
@@ -1198,10 +1201,10 @@ def suite_fuzz(cfg, tally):
 SUITES = {'test4': suite_test4, 'test3': suite_test3, 'rptest': suite_rptest,
           'random': suite_random, 'outputs': suite_outputs, 'errors': suite_errors,
           'fuzz': suite_fuzz, 'params': suite_params, 'high': suite_high,
-          'regions': suite_regions, 'test4high': suite_test4high}
+          'regions': suite_regions, 'depths': suite_depths, 'test4high': suite_test4high}
 # The suites that run by default (in CI): all but test4high.
 DEFAULT_SUITES = ['test4', 'test3', 'rptest', 'random', 'outputs', 'errors', 'fuzz', 'params',
-                  'high', 'regions']
+                  'high', 'regions', 'depths']
 
 
 def main(argv=None):
@@ -1218,6 +1221,7 @@ def main(argv=None):
     ap.add_argument('--outputs', type=int, default=300)
     ap.add_argument('--fuzz', type=int, default=100)
     ap.add_argument('--regions', type=int, default=400)
+    ap.add_argument('--depths', type=int, default=300)
     ap.add_argument('--seed', type=int, default=1)
     ap.add_argument('-v', '--verbose', action='store_true')
     cfg = ap.parse_args(argv)

@@ -634,8 +634,8 @@ start pointers, which read \verb|small| and \verb|mod_mul| too, and the ends of 
 sieve specs, which only it reads, are modelled since stage~F4 (Chapter~\ref{chap:rows}), and the
 options of the output \verb|RATPOINTS_NO_Y| and \verb|RATPOINTS_NO_CHECK| of the search, which the
 search copies into the flags that the exact check reads, since stage~G (Chapter~\ref{chap:output}),
-and the search intervals of the sieving thread since stage~H (Chapter~\ref{chap:region}); left to
-stage~H the Sturm step; and left to stage~I the correction of the moduli between the blocks, with
+and the search intervals of the sieving thread and the Sturm step since stage~H
+(Chapter~\ref{chap:region}); left to stage~I the correction of the moduli between the blocks, with
 the counters and the decisions of the sieving thread, the choice of the cut points by cost (with the
 target \verb|RATPOINTS_SURVIVORS_PER_WORD|), the pool of threads, and, with the blocks, the
 reduction of the first word of a block modulo the forbidden divisors tested with words, which still

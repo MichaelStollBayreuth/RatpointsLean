@@ -9,6 +9,7 @@ public import Ratpoints.Model.Cli
 public import Ratpoints.Proof.CliNumbers
 public import Ratpoints.Proof.Region
 public import Ratpoints.Spec.Basic
+public import Ratpoints.Spec.Sturm
 
 import Ratpoints.Proof.Containers
 import Ratpoints.Proof.Delivery
@@ -73,8 +74,9 @@ never refuses them, and error 9 is unreachable from the command line.
   search region of the command line (`Ratpoints.Cli.InExactRegion`), and the joined search
   intervals hold it for `|x| ≤ H` and, for words of fewer than `2 ^ 56` characters, are well
   formed.
-* `Ratpoints.Cli.mem_filter_keeps_iff_of_input_eq_ok`: the points that the program prints are
-  exactly the points in the exact search region of its command line.
+* `Ratpoints.Cli.mem_filter_keeps_iff_of_input_eq_ok`: assuming Sturm's theorem when the Sturm step
+  is on, the points that the program prints are exactly the points in the exact search region of
+  its command line.
 -/
 
 @[expose] public section
@@ -916,22 +918,25 @@ theorem inRegion_joinIntervals_iff {args : List String} {c : List ℤ} {H : ℕ}
   · exact .inr (inIntervals_joinIntervals_of_inExactRegion hi
       (abs_intCast_div_intCast_le hp.2.2.2.1 hz') h0)
 
-/-- Without `-x`, the points of the list of `Ratpoints.findPoints` on the joined search intervals of
-a command line that the callback of the program keeps (`Ratpoints.Cli.Data.keeps`), which it prints
-under `-q` (`Ratpoints.Cli.run_eq_of_findPoints_eq_ok`), are exactly the points of height at most
-`H` in the exact search region of the command line, those with `y ≥ 0` under `-y`: the points at
-infinity unless `-i`, and the affine points with the denominator in the range of `-dl` and `-du` and
-`x / z` in one of the intervals of `-l` and `-u` when there are some. -/
+/-- Assuming Sturm's theorem when the Sturm step is on (`Ratpoints.SturmTheorem`, which a command
+line with `-s` does not need), without `-x`, the points of the list of `Ratpoints.findPoints` on
+the joined search intervals of a command line that the callback of the program keeps
+(`Ratpoints.Cli.Data.keeps`), which it prints under `-q`
+(`Ratpoints.Cli.run_eq_of_findPoints_eq_ok`), are exactly the points of height at most `H` in the
+exact search region of the command line, those with `y ≥ 0` under `-y`: the points at infinity
+unless `-i`, and the affine points with the denominator in the range of `-dl` and `-du` and `x / z`
+in one of the intervals of `-l` and `-u` when there are some. -/
 theorem mem_filter_keeps_iff_of_input_eq_ok {args : List String} {c : List ℤ} {H : ℕ}
     {s : SieveOptions} {o : Options} {u : Output} {L : List (ℤ × ℤ × ℤ)}
-    (hi : input args = .ok (c, H, s, o, u)) (hc : o.noCheck = false)
+    (hS : 0 ≤ o.sturm → SturmTheorem) (hi : input args = .ok (c, H, s, o, u))
+    (hc : o.noCheck = false)
     (hL : findPoints c H (sieveParams s) { o with domain := Id.run (joinIntervals o.domain) } =
       .ok L) {p : ℤ × ℤ × ℤ} :
     p ∈ L.filter (Data.ofOutput u o).keeps ↔ IsPoint c H p ∧ (o.noY = true → 0 ≤ p.2.1) ∧
       (u.pointsAtInfty = true ∨ p.2.2 ≠ 0) ∧ InRegion [] o.bLow o.bHigh p ∧
       (p.2.2 = 0 ∨ o.domain = [] ∨ InExactRegion u.ends o.domain.length (p.1 / p.2.2)) := by
   rw [List.mem_filter, mem_iff_isPoint_of_findPoints_eq_ok
-    (o := { o with domain := Id.run (joinIntervals o.domain) }) (wf_sieveParams s) hL hc,
+    (o := { o with domain := Id.run (joinIntervals o.domain) }) hS (wf_sieveParams s) hL hc,
     keeps_ofOutput_iff, inRegion_iff_of_input_eq_ok hi]
   constructor
   · intro ⟨⟨hp, hy, hr⟩, hk1, hx⟩

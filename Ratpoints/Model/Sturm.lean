@@ -28,7 +28,7 @@ positive and one at the depth of the step, and splits the others at their midpoi
 with dyadic ends `n / 2 ^ e` converted to doubles and an interval that begins where the last one
 ends joined to it (`Ratpoints.Sturm.addInterval`); and their intersection with the search intervals
 of the caller (`Ratpoints.Sturm.intersect`). The whole step is `Ratpoints.Sturm.computeSturm`,
-which the search calls with stage H.
+which the search calls through `Ratpoints.sturmRegion`.
 
 ## Main definitions
 

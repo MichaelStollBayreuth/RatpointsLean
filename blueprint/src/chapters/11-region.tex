@@ -870,16 +870,15 @@ serves every range.
 
 \begin{lemma}[The points in the search intervals]\label{lem:searchListRegion}
   \uses{def:searchList, def:inIntervals, lem:searchDensRange, def:checkNumWith}
-  Proposed names: \lname{Ratpoints.mem\_region\_of\_mem\_searchList},
-  \lname{Ratpoints.searchList\_nil},
-  \lname{Ratpoints.Sieve.snd\_snd\_eq\_zero\_of\_mem\_pointsAtInfinityList},
-  \lname{Ratpoints.Sieve.fst\_eq\_and\_snd\_snd\_eq\_of\_mem\_checkNumWith}. Without a reversal,
-  every member of the list that the search delivers for the intervals $D$ and the range
-  $b_{\mathrm{low}} \ge 1$ to $b_{\mathrm{high}}$ has $z = 0$, or $z$ in the range and $x/z$ in an
-  interval of $D$; and for no intervals the list is the points at infinity.
+  \lean{Ratpoints.mem_region_of_mem_searchList, Ratpoints.searchList_nil, Ratpoints.Sieve.snd_snd_eq_zero_of_mem_pointsAtInfinityList, Ratpoints.Sieve.fst_eq_and_snd_snd_eq_of_mem_checkNumWith}
+  \leanok
+  Without a reversal, every member of the list that the search delivers for the intervals $D$ and
+  the range $b_{\mathrm{low}} \ge 1$ to $b_{\mathrm{high}}$ has $z = 0$, or $z$ in the range and
+  $x/z$ in an interval of $D$; and for no intervals the list is the points at infinity.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   The points at infinity have $z = 0$, and the check of a numerator $a$ over $b$ gives triples with
   $x = a$ and $z = b$; the denominators lie in the range (Lemma~\ref{lem:searchDensRange}).
 \end{proof}
@@ -1183,11 +1182,9 @@ numerators and the intersection, not the coverage.
 
 \begin{lemma}[The arrays of the Sturm step]\label{lem:sturmBuffers}
   \uses{lem:coverage, lem:polySigns, lem:intersect}
-  Proposed names: \lname{Ratpoints.Sturm.Witnessed}, \lname{Ratpoints.Sturm.witnessed\_iterate},
-  \lname{Ratpoints.Sturm.length\_le\_of\_witnessed},
-  \lname{Ratpoints.Sturm.size\_run\_iterate\_le\_of\_chain\_eq\_some},
-  \lname{Ratpoints.size\_run\_iterate\_le}, \lname{Ratpoints.size\_run\_computeSturm\_le}. An
-  interval of doubles is \emph{witnessed} for a real polynomial $p$ when its ends have values in
+  \lean{Ratpoints.Sturm.Witnessed, Ratpoints.Sturm.witnessed_iterate, Ratpoints.Sturm.length_le_of_witnessed, Ratpoints.Sturm.size_run_iterate_le_of_chain_eq_some, Ratpoints.size_run_iterate_le, Ratpoints.size_run_computeSturm_le}
+  \leanok
+  An interval of doubles is \emph{witnessed} for a real polynomial $p$ when its ends have values in
   $[-2^{63}, 2^{63}]$ and $p$ is positive at a point that lies at or above the lower end unless that
   end has the value $-2^{63}$, and at or below the upper end unless it has the value $2^{63}$, the
   values of the ends at infinity of the bisection. Each interval that the bisection keeps is
@@ -1202,6 +1199,7 @@ numerators and the intersection, not the coverage.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   The witnesses by the induction principle of the bisection, a kept interval having a positive point
   by Lemma~\ref{lem:sturmCounts}; the count by
   \verb|Polynomial.length_le_natDegree_add_one_of_isChain| on the chain of the witnesses and the
@@ -1231,44 +1229,40 @@ component that models it.
 
 \begin{definition}[The Sturm step of the search]\label{def:sturmRegion}
   \uses{def:computeSturm, def:reversal, def:Double}
-  Proposed name: \lname{Ratpoints.sturmRegion}. The Sturm step of \verb|find_points_work_1| on the
-  polynomial $f$ of degree $d$ that the reversal check hands on, with the depth of the step, for the
-  search intervals: with the step off, the intervals as they are; with it on, the refusal
-  $\mathrm{notSquarefree}$ when the remainder chain of $f$ is none
-  (Definition~\ref{def:computeSturm}), and otherwise the intervals that the step leaves when there
-  are some; when there are none, $f$ being negative on all the search intervals, none for an even
-  $d$ whose leading coefficient is not a square, when there is no point at infinity either, so that
-  the search returns at once with the count $0$ (the return of line 4889), and otherwise no
-  intervals with the flag \verb|sturm_empty| set, so that the search delivers the points at infinity
-  only (\csource{find_points.c}{4857}{4892}, from the search with a callback). The square test is
-  that of the reversal check (Definition~\ref{def:reversal}), made on the polynomial searched, which
-  gives the flag \verb|lcfsq| of the C code for an even degree, the only one that reads it.
+  \lean{Ratpoints.sturmRegion}
+  \leanok
+  The Sturm step of \verb|find_points_work_1| on the polynomial $f$ of degree $d$ that the reversal
+  check hands on, with the depth of the step, for the search intervals: with the step off, the
+  intervals as they are; with it on, the refusal $\mathrm{notSquarefree}$ when the remainder chain
+  of $f$ is none (Definition~\ref{def:computeSturm}), and otherwise the intervals that the step
+  leaves when there are some; when there are none, $f$ being negative on all the search intervals,
+  none for an even $d$ whose leading coefficient is not a square, when there is no point at infinity
+  either, so that the search returns at once with the count $0$ (the return of line 4889), and
+  otherwise no intervals with the flag \verb|sturm_empty| set, so that the search delivers the
+  points at infinity only (\csource{find_points.c}{4857}{4892}, from the search with a callback).
+  The square test is that of the reversal check (Definition~\ref{def:reversal}), made on the
+  polynomial searched, which gives the flag \verb|lcfsq| of the C code for an even degree, the only
+  one that reads it.
 \end{definition}
 
 \begin{lemma}[The Sturm step of the search]\label{lem:sturmRegion}
   \uses{def:sturmRegion, lem:intersect, lem:coverage, lem:normalize, def:reversal, def:maxDegree}
-  Proposed names: \lname{Ratpoints.run\_sturmRegion\_of\_neg},
-  \lname{Ratpoints.run\_sturmRegion\_of\_nonneg},
-  \lname{Ratpoints.run\_sturmRegion\_eq\_error\_iff},
-  \lname{Ratpoints.run\_sturmRegion\_eq\_ok\_none}, \lname{Ratpoints.run\_sturmRegion\_subset},
-  \lname{Ratpoints.run\_sturmRegion\_covers},
-  \lname{Ratpoints.not\_nonneg\_and\_chain\_eq\_none\_of\_run\_sturmRegion\_eq\_ok},
-  \lname{Ratpoints.lt\_two\_pow\_57\_of\_reversal\_eq\_ok},
-  \lname{Ratpoints.Setup.degree\_le\_of\_reversal\_eq\_ok},
-  \lname{Ratpoints.maxDegree\_lt\_two\_pow\_57}. With the step off it gives the intervals as they
-  are; it refuses exactly when it is on and the chain is none, with $\mathrm{notSquarefree}$; it
-  returns at once only for an even degree whose leading coefficient is not a square; at a depth of
-  at most $55$, for well-formed intervals, the intervals that it leaves are well formed, none when
-  \verb|sturm_empty| is set, and lie in the given intervals; and, assuming Sturm's theorem when the
-  step is on, at a depth of at most $55$, for $1 \le d < 2^{57}$, $d$ the degree of $f$, and
-  well-formed intervals, every $a/b$ with $b > 0$, $|a| \le 2^{63}$, $F(a, b) \ge 0$ and $a/b$ in
-  the given intervals lies in the intervals that it leaves, the flag \verb|sturm_empty| clear. The
-  degree that the reversal check hands on is at most the degree, so below $2^{57}$ for at most
-  $\mathrm{maxDegree} + 1$ coefficients, the decided fact $\mathrm{maxDegree} < 2^{57}$ of
-  \verb|Ratpoints/Model/Constants.lean|.
+  \lean{Ratpoints.run_sturmRegion_of_neg, Ratpoints.run_sturmRegion_of_nonneg, Ratpoints.run_sturmRegion_eq_error_iff, Ratpoints.run_sturmRegion_eq_ok_none, Ratpoints.run_sturmRegion_subset, Ratpoints.run_sturmRegion_covers, Ratpoints.not_nonneg_and_chain_eq_none_of_run_sturmRegion_eq_ok, Ratpoints.lt_two_pow_57_of_reversal_eq_ok, Ratpoints.Setup.degree_le_of_reversal_eq_ok, Ratpoints.maxDegree_lt_two_pow_57}
+  \leanok
+  With the step off it gives the intervals as they are; it refuses exactly when it is on and the
+  chain is none, with $\mathrm{notSquarefree}$; it returns at once only for an even degree whose
+  leading coefficient is not a square; at a depth of at most $55$, for well-formed intervals, the
+  intervals that it leaves are well formed, none when \verb|sturm_empty| is set, and lie in the
+  given intervals; and, assuming Sturm's theorem when the step is on, at a depth of at most $55$,
+  for $1 \le d < 2^{57}$, $d$ the degree of $f$, and well-formed intervals, every $a/b$ with
+  $b > 0$, $|a| \le 2^{63}$, $F(a, b) \ge 0$ and $a/b$ in the given intervals lies in the intervals
+  that it leaves, the flag \verb|sturm_empty| clear. The degree that the reversal check hands on is
+  at most the degree, so below $2^{57}$ for at most $\mathrm{maxDegree} + 1$ coefficients, the
+  decided fact $\mathrm{maxDegree} < 2^{57}$ of \verb|Ratpoints/Model/Constants.lean|.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   The paths of the step, with Lemma~\ref{lem:intersect} for the intervals and
   Lemma~\ref{lem:coverage} for the coverage; the depth bound $55$ comes from the normalization
   (Lemma~\ref{lem:normalize}), and without it the ends would not all be doubles. At the return and
@@ -1278,29 +1272,30 @@ component that models it.
 
 \begin{definition}[The search region that the search uses]\label{def:searchRegion}
   \uses{def:searchIntervals, def:sturmRegion, def:normalize, def:inIntervals}
-  Proposed name: \lname{Ratpoints.searchRegion}. For the polynomial $f$ of degree $d$ that the
-  reversal check hands on, the height bound $H$ and the options: none when the search intervals
-  refuse the caller's intervals or the Sturm step, at the normalized depth, refuses or returns at
-  once; no interval when it sets \verb|sturm_empty|; and otherwise the values of the intervals that
-  it leaves. A definition of the proof files, not of the model; the theorems that do not assume
-  Sturm's theorem are stated in its terms.
+  \lean{Ratpoints.searchRegion}
+  \leanok
+  For the polynomial $f$ of degree $d$ that the reversal check hands on, the height bound $H$ and
+  the options: none when the search intervals refuse the caller's intervals or the Sturm step, at
+  the normalized depth, refuses or returns at once; no interval when it sets \verb|sturm_empty|; and
+  otherwise the values of the intervals that it leaves. A definition of the proof files, not of the
+  model; the theorems that do not assume Sturm's theorem are stated in its terms.
 \end{definition}
 
 \begin{lemma}[The search region that the search uses]\label{lem:searchRegion}
   \uses{def:searchRegion, lem:sturmRegion, lem:searchIntervals}
-  Proposed names: \lname{Ratpoints.searchRegion\_subset}, \lname{Ratpoints.searchRegion\_covers},
-  \lname{Ratpoints.searchRegion\_eq\_none},
-  \lname{Ratpoints.searchRegion\_eq\_of\_run\_sturmRegion\_eq}. For well-formed intervals of the
-  caller: every $x$ in the region that the search uses lies in the caller's intervals, or the caller
-  gives none; for a chain that does not fail when the step is on, the region is none only when the
-  Sturm step returns at once, for an even degree whose leading coefficient is not a square; and,
-  assuming Sturm's theorem when the step is on, for $1 \le d < 2^{57}$, $1 \le H < 2^{63}$ and a
-  chain that does not fail when the step is on, every $a/b$ with $b > 0$, $|a| \le H$ and $F(a, b)
-  \ge 0$ that lies in the caller's intervals, or for none at all, lies in the region that the search
-  uses, which is then not none.
+  \lean{Ratpoints.searchRegion_subset, Ratpoints.searchRegion_covers, Ratpoints.searchRegion_eq_none, Ratpoints.searchRegion_eq_of_run_sturmRegion_eq}
+  \leanok
+  For well-formed intervals of the caller: every $x$ in the region that the search uses lies in the
+  caller's intervals, or the caller gives none; for a chain that does not fail when the step is on,
+  the region is none only when the Sturm step returns at once, for an even degree whose leading
+  coefficient is not a square; and, assuming Sturm's theorem when the step is on, for
+  $1 \le d < 2^{57}$, $1 \le H < 2^{63}$ and a chain that does not fail when the step is on, every
+  $a/b$ with $b > 0$, $|a| \le H$ and $F(a, b) \ge 0$ that lies in the caller's intervals, or for
+  none at all, lies in the region that the search uses, which is then not none.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   Lemma~\ref{lem:sturmRegion} on the intervals of Lemma~\ref{lem:searchIntervals}, the default
   interval holding every $a/b$ with $|a| \le H$.
 \end{proof}
@@ -1375,25 +1370,25 @@ Sturm step, and on the points the difference vanishes under Sturm's theorem.
 \begin{lemma}[The region of the caller under Sturm's theorem]\label{lem:elimSearchRegion}
   \uses{lem:searchRegion, lem:findPoints_searchList, thm:findPoints_order, lem:regionFilter,
     def:sturmTheorem, def:regionSpec}
-  Proposed names: \lname{Ratpoints.elim\_searchRegion\_pointsOfDen\_zero},
-  \lname{Ratpoints.elim\_searchRegion\_pointsOfDen\_filter},
-  \lname{Ratpoints.exists\_eq\_filter\_inIntervals\_of\_findPoints\_eq\_ok},
-  \lname{Ratpoints.exists\_eq\_filter\_inRegion\_of\_findPoints\_eq\_ok}. For well-formed intervals
-  of the caller and a chain that does not fail when the step is on, the points at infinity over the
-  region that the search uses are the points at infinity; and assuming Sturm's theorem when the step
-  is on, for $0 < d < 2^{57}$, $d$ the degree of $c$, and $1 \le H < 2^{63}$, the points over a
-  denominator $b > 0$ of the numerators with $a/b$ in the region that the search uses are those of
-  the numerators with $a/b$ in the caller's intervals, or of all of them when there are none. So,
-  assuming Sturm's theorem when the step is on, for well-formed parameters, the exact check on and
-  $\mathrm{findPoints}(c, H, P, o) = L$: $L$ is the list of the points that the reference of $c'$
-  finds over the candidate $(1, 0)$ and over the denominators of its search in the normalized range
-  with the numerators in the caller's intervals, mapped back and filtered by $\mathrm{noY}$; and $L$
-  is the list of the points over the candidate $(1, 0)$ and over the denominators of the search of
-  $c'$ up to the largest denominator $B$, mapped back and filtered by $\mathrm{noY}$ and the search
-  region of the caller (Definition~\ref{def:regionSpec}).
+  \lean{Ratpoints.elim_searchRegion_pointsOfDen_zero, Ratpoints.elim_searchRegion_pointsOfDen_filter, Ratpoints.exists_eq_filter_inIntervals_of_findPoints_eq_ok, Ratpoints.exists_eq_filter_inRegion_of_findPoints_eq_ok}
+  \leanok
+  For well-formed intervals of the caller and a chain that does not fail when the step is on, the
+  points at infinity over the region that the search uses are the points at infinity; and assuming
+  Sturm's theorem when the step is on, for $0 < d < 2^{57}$, $d$ the degree of $c$, and
+  $1 \le H < 2^{63}$, the points over a denominator $b > 0$ of the numerators with $a/b$ in the
+  region that the search uses are those of the numerators with $a/b$ in the caller's intervals, or
+  of all of them when there are none. So, assuming Sturm's theorem when the step is on, for
+  well-formed parameters, the exact check on and $\mathrm{findPoints}(c, H, P, o) = L$: $L$ is the
+  list of the points that the reference of $c'$ finds over the candidate $(1, 0)$ and over the
+  denominators of its search in the normalized range with the numerators in the caller's intervals,
+  mapped back and filtered by $\mathrm{noY}$; and $L$ is the list of the points over the candidate
+  $(1, 0)$ and over the denominators of the search of $c'$ up to the largest denominator $B$, mapped
+  back and filtered by $\mathrm{noY}$ and the search region of the caller
+  (Definition~\ref{def:regionSpec}).
 \end{lemma}
 
 \begin{proof}
+  \leanok
   A point over $b$ has $F(a, b) \ge 0$, so that the coverage puts $a/b$ into the region that the
   search uses exactly when it lies in the caller's intervals (Lemma~\ref{lem:searchRegion}, with
   $d < 2^{57}$ from Lemma~\ref{lem:sturmRegion}); the output of the search
@@ -1434,13 +1429,15 @@ intervals are not well formed.
 
 \begin{theorem}[The Sturm step changes only the speed]\label{thm:sturmSpeed}
   \uses{thm:order, thm:refusals, def:findPoints}
-  Proposed name: \lname{Ratpoints.findPoints\_sturm\_neg\_eq\_ok}. Assuming Sturm's theorem when the
-  Sturm step is on, for well-formed parameters and options with the exact check on: if
-  $\mathrm{findPoints}(c, H, P, o)$ returns $L$, then the search with the Sturm step off returns $L$
-  too.
+  \lean{Ratpoints.findPoints_sturm_neg_eq_ok}
+  \leanok
+  Assuming Sturm's theorem when the Sturm step is on, for well-formed parameters and options with
+  the exact check on: if $\mathrm{findPoints}(c, H, P, o)$ returns $L$, then the search with the
+  Sturm step off returns $L$ too.
 \end{theorem}
 
 \begin{proof}
+  \leanok
   If the search with the step off refused, so would the search with $o$, its refusals being among
   those with the step on (Theorem~\ref{thm:refusals}). Otherwise both lists equal, by the order
   theorem (Theorem~\ref{thm:order}), the points in the order of ratpoints filtered by $\mathrm{noY}$
@@ -1677,7 +1674,7 @@ of the ends with the C program, in messages~3 and~8.
 
 \begin{theorem}[The search region of the command line]\label{thm:cliRegion}
   \uses{def:cliIntervals, def:cliInput, lem:cliNumbers, def:cliProcess, thm:findPoints, thm:cliRun,
-    def:regionSpec, lem:searchIntervals}
+    def:regionSpec, lem:searchIntervals, def:sturmTheorem}
   \lean{Ratpoints.Cli.IntervalOf, Ratpoints.Cli.Intervals.ReadsWF, Ratpoints.Cli.Intervals.LowerMax, Ratpoints.Cli.checkOptions_preserves, Ratpoints.Cli.input_eq_ok, Ratpoints.Cli.reads_of_input_eq_ok, Ratpoints.Cli.joinsWell_of_reads, Ratpoints.Cli.intervalsWF_take_of_reads, Ratpoints.Cli.keeps_ofOutput_iff, Ratpoints.Cli.inRegion_joinIntervals_iff, Ratpoints.Cli.inRegion_iff_of_input_eq_ok, Ratpoints.Cli.intervalsWF_joinIntervals_of_input_eq_ok, Ratpoints.Cli.inIntervals_joinIntervals_of_inExactRegion, Ratpoints.Cli.mem_filter_keeps_iff_of_input_eq_ok, Ratpoints.zero_lt_maxDegree, Array.set!_set!, Array.getElem!_set!_eq_or, Array.getElem!_take_toList, Array.mem_take_toList_of_lt, Array.exists_eq_of_mem_take_toList, Except.bind_eq_ok}
   \leanok
   For a command line that reads as $c$, $H$, the options $s$, $o$ and the settings $u$: the exact
@@ -1686,12 +1683,13 @@ of the ends with the C program, in messages~3 and~8.
   exact region with $|x| \le H$, their ends being the doubles outward of the exact ends, or $\mp h$
   for a missing first lower or last upper end; when every word has fewer than $2^{56}$ characters,
   the joined intervals are well formed, so that error~9 is unreachable from the command line; and,
-  without \verb|-x|, if $\mathrm{findPoints}$ on the joined intervals returns $L$, the points of $L$
-  that the callback keeps (Theorem~\ref{thm:cliRun}) are exactly the normalized points of height at
-  most $H$ with $y \ge 0$ under \verb|-y|: the points at infinity unless \verb|-i|, and the affine
-  points with $z$ in the range of \verb|-dl| and \verb|-du| and $x/z$ in the exact region of
-  \verb|-l| and \verb|-u| when there is one. Under \verb|-q| the program prints these points
-  (Theorem~\ref{thm:cliRun}), and under \verb|-1| the first of them.
+  without \verb|-x| and assuming Sturm's theorem when the Sturm step is on, if $\mathrm{findPoints}$
+  on the joined intervals returns $L$, the points of $L$ that the callback keeps
+  (Theorem~\ref{thm:cliRun}) are exactly the normalized points of height at most $H$ with $y \ge 0$
+  under \verb|-y|: the points at infinity unless \verb|-i|, and the affine points with $z$ in the
+  range of \verb|-dl| and \verb|-du| and $x/z$ in the exact region of \verb|-l| and \verb|-u| when
+  there is one. Under \verb|-q| the program prints these points (Theorem~\ref{thm:cliRun}), and
+  under \verb|-1| the first of them.
 \end{theorem}
 
 \begin{proof}

@@ -248,20 +248,25 @@ the three statements under $\mathrm{noCheck}$ (Theorem~\ref{thm:noCheck}), and t
 (Theorem~\ref{thm:order}), over the definitions of \verb|Ratpoints/Spec/Order.lean| with their
 instance and the decidability instance of \verb|IsPoint|, restated verbatim, and \verb|maxDivisors|,
 imported from the model; since stage~H membership, the order and the statements under
-$\mathrm{noCheck}$ on the elements hold for the points in the search region, and the refusal
-theorems add the search intervals that are not well formed and refuse $c_0 = c_1 = 0$ without the
-Sturm step only for the whole box (Section~\ref{sec:certifiedH}), over the definitions of
-\verb|Ratpoints/Spec/Region.lean| with their decidability instances, restated verbatim, and the
-doubles $\mathrm{Double}$ of the search intervals of the options, imported from the model; for
-\verb|Squarefree| the challenge and the specification import
+$\mathrm{noCheck}$ on the elements hold for the points in the search region, membership, the order
+and the coverage under $\mathrm{noCheck}$ assuming Sturm's theorem when the Sturm step is on
+(Definition~\ref{def:sturmTheorem}), and the refusal theorems add the search intervals that are not
+well formed and refuse $c_0 = c_1 = 0$ without the Sturm step only for the whole box
+(Section~\ref{sec:certifiedH}), over the definitions of \verb|Ratpoints/Spec/Region.lean| with
+their decidability instances and the definition of \verb|Ratpoints/Spec/Sturm.lean|, restated
+verbatim, and the doubles $\mathrm{Double}$ of the search intervals of the options, imported from
+the model; for \verb|Squarefree| the challenge and the specification import
 \verb|Mathlib.Algebra.Squarefree.Basic|, for the prime factors the challenge and the file of the
-order \verb|Mathlib.Data.Nat.Factors|, and for the values of the doubles the challenge and the file
-of the region \verb|Mathlib.Order.WithBotTop| and \verb|Mathlib.Algebra.Order.Field.Rat|, so that
-the challenge still imports exactly the Mathlib modules among the public imports of the files of the
-specification that it restates. So the challenge has twelve statements
-(Section~\ref{sec:certifiedG}), which \verb|lake comparator --paranoid| accepted on 2026-10-17, with
-Lean's kernel and the five external checkers bundled with Lean; Section~\ref{sec:sieveTheorems}
-records the earlier acceptances.
+order \verb|Mathlib.Data.Nat.Factors|, for the values of the doubles the challenge and the file of
+the region \verb|Mathlib.Order.WithBotTop| and \verb|Mathlib.Algebra.Order.Field.Rat|, and for
+Sturm's theorem the challenge and its file \verb|Mathlib.Algebra.Polynomial.Sturm.Sequence|,
+\verb|Mathlib.Data.List.SignVariations|, \verb|Mathlib.Algebra.Polynomial.Derivative|,
+\verb|Mathlib.Basic.Real.Basic| and \verb|Mathlib.Data.Set.Card|, so that the challenge still
+imports exactly the Mathlib modules among the public imports of the files of the specification that
+it restates. So the challenge has twelve statements (Section~\ref{sec:certifiedG}), which
+\verb|lake comparator --paranoid| accepted on 2026-10-17, with Lean's kernel and the five external
+checkers bundled with Lean, and in their form of stage~H (Section~\ref{sec:certifiedH}) on
+2026-10-18; Section~\ref{sec:sieveTheorems} records the earlier acceptances.
 
 \section{The command-line program}\label{sec:cli}
 
@@ -275,9 +280,9 @@ scripts of the C repository can run it as \verb|RP=ratpoints-lean|:
   \item it prints what ratpoints prints: the points, through the callback \verb|process| of
     \verb|main.c|, by default one line \verb|(x : y : z)| per point, and without \verb|-q| the
     report around them (Definition~\ref{def:cliReport}), the banner, the curve, the height bound and
-    the search region of the command line (message~3) before the points and what the search did and
-    the count of the points found after them, but for the messages on the search intervals that the
-    search gives back (message~8, stage~H) and on the moduli used (message~4, stage~I); under
+    the search region of the command line (message~3) before the points and what the search did,
+    the search intervals as the search leaves them (message~8) and the count of the points found
+    after them, but for the message on the moduli used (message~4, stage~I); under
     \verb|-v|, which \verb|-q| cancels in \verb|main.c|, the report of \verb|-v|, without the report
     of the library that ratpoints prints then;
   \item it reads the first two arguments as \verb|main.c| does: the coefficient list as one argument
@@ -454,9 +459,9 @@ Section~\ref{sec:sieveCli}, stage~C2 raises the largest height to $30000$ and ad
 \verb|test4high|, run locally, Section~\ref{sec:wordsCli}, stage~D compares the refusals, the
 options of the search and the order, Section~\ref{sec:setupCli}, stage~E every point list in its
 order, Section~\ref{sec:denCli}, stage~G the options of the output, the reports and the suite
-\verb|outputs|, Section~\ref{sec:outputTests}, and stage~H the search region, the suite
-\verb|regions| and the runs of \verb|test4.sh| and \verb|test3.sh| with a search region,
-Section~\ref{sec:regionTests}):
+\verb|outputs|, Section~\ref{sec:outputTests}, and stage~H the search region and the Sturm step,
+the suites \verb|regions| and \verb|depths| and the runs of \verb|test4.sh| and \verb|test3.sh|
+with a search region, Section~\ref{sec:regionTests}):
 \begin{itemize}
   \item \verb|test4.sh| against \verb|testbase4|, split at the \verb|#| header lines (five of which
     are glued to the end of the preceding output line): 565 of its 582 runs, among them the outputs
@@ -496,15 +501,15 @@ Section~\ref{sec:regionTests}):
     UTF-8, against the C program.
 \end{itemize}
 Point lists are compared in their order (Section~\ref{sec:denCli}); a report, the output of a run
-without \verb|-q|, exactly, with the banner exchanged for that of the C program and the messages 4
-and 8 dropped from the report of the C program only, also the refusal of a form that is not
-squarefree without \verb|-q|, and the output under \verb|-v| by its lines; the outputs with the
-options of the output, under \verb|-x| as Sections~\ref{sec:outputTests} and~\ref{sec:regionTests}
-say; messages and exit codes are compared exactly (but for a pipe without a reader, where the two
-programs end differently by design), with the banner and the usage of the two programs exchanged;
-and \verb|ratpoints-lean| must write nothing to its standard error (it runs with
-\verb|LEAN_ABORT_ON_PANIC=1|, so that a panic of the Lean runtime ends it). CI builds the C program
-at the pin (\verb|make|, with \verb|libgmp-dev|) and the Lean program, and runs the script.
+without \verb|-q|, exactly, with the banner exchanged for that of the C program and message~4
+dropped from the report of the C program only (messages~3 and~8 compared), also the refusal of a
+form that is not squarefree without \verb|-q|, and the output under \verb|-v| by its lines; the
+outputs with the options of the output, under \verb|-x| as Sections~\ref{sec:outputTests}
+and~\ref{sec:regionTests} say; messages and exit codes are compared exactly (but for a pipe without
+a reader, where the two programs end differently by design), with the banner and the usage of the
+two programs exchanged; and \verb|ratpoints-lean| must write nothing to its standard error (it runs
+with \verb|LEAN_ABORT_ON_PANIC=1|, so that a panic of the Lean runtime ends it). CI builds the C
+program at the pin (\verb|make|, with \verb|libgmp-dev|) and the Lean program, and runs the script.
 
 \section{Files and names}
 

@@ -33,8 +33,10 @@ the order of the output, and the program reads the options that set them: \verb|
 which forbid and allow the reversal, and \verb|-s| and \verb|-S|, which switch the Sturm step off
 and on; since stage~H they hold the search region too, the search intervals and the range of the
 denominators (Chapter~\ref{chap:region}). Of the Sturm step, stage~D models the test for a repeated
-factor, its first half; the rest, which restricts the numerators to the intervals where $f \ge 0$,
-is stage~H.
+factor, its first half; stage~H models the rest, which restricts the numerators to the intervals
+where $f$ may be $\ge 0$ (Section~\ref{sec:sturmStep}), and proves, assuming Sturm's theorem, that
+with the exact check on the depth of the step changes only the speed
+(Theorem~\ref{thm:sturmSpeed}).
 
 \section{What the C code does before the sieve}\label{sec:setupC}
 
@@ -121,10 +123,11 @@ output.
   and $0$, the latter meaning $H$ (\csource{ratpoints.h}{359}{359}, \csource{ratpoints.h}{363}{364},
   and the depth \csource{ratpoints.h}{369}{369}, lines that they share with fields of the
   parameters, of the choice of the moduli and of the options of the program, which the deviation
-  names). The model reads only whether the depth is negative, as the switch of the test for a
-  repeated factor; the Sturm step of stage~H reads the depth itself; stage~G added the options of
-  the output, which change what is delivered, as the reversal does too under $\mathrm{noCheck}$, and
-  stage~H the search region (Chapter~\ref{chap:region}).
+  names). The depth switches the test for a repeated factor on when it is not negative, and the
+  Sturm step of the search (Definition~\ref{def:sturmRegion}) reads it, capped at $55$
+  (Definition~\ref{def:normalize}); stage~G added the options of the output, which change what is
+  delivered, as the reversal does too under $\mathrm{noCheck}$, and stage~H the search region
+  (Chapter~\ref{chap:region}).
 \end{definition}
 
 The options are not parameters: the parameters are the free choices that change neither the points
@@ -134,8 +137,9 @@ denominator, which decides the shape of the divisors, and by the reversal, which
 refusals. $\mathrm{defaultSturm}$, an integer like the C \verb|long| that it stands for, which a
 build may make negative, is one of the constants of \verb|Ratpoints/Model/Constants.lean|, and no
 proof depends on its value or its sign. In ratpoints~3.1.1 the depth of the Sturm step changes only
-the speed: the intervals that it keeps hold every point of the box, which stage~H proves; so the
-model of stage~D gives the points of the program for every depth.
+the speed: the intervals that it keeps hold every point of the box, which stage~H proves assuming
+Sturm's theorem, so that with the exact check on the search with the step off gives the same list
+(Theorem~\ref{thm:sturmSpeed}).
 
 \section{The squarefree binary form}\label{sec:squarefree}
 
@@ -469,8 +473,8 @@ Lemma~\ref{lem:sift_eq_checkDen} maps their side.
   (\csource{find_points.c}{4602}{4602}, \csource{find_points.c}{4992}{5012}); the checked loop off
   when there are no forbidden divisors and no Jacobi test (\csource{find_points.c}{2793}{2795}); the
   points at infinity (Definition~\ref{def:pointsAtInfinity}), after which the search returns when
-  the callback has stopped it (\csource{find_points.c}{5100}{5106}, with the return when the Sturm
-  step leaves nothing to search, not met before stage~H); and the sieving
+  the callback has stopped it or the Sturm step has left nothing to search, the flag
+  \verb|sturm_empty| that the search takes (\csource{find_points.c}{5100}{5106}); and the sieving
   (Definition~\ref{def:sieving}), the block that sets up the run and runs the denominators: an array
   of rows of offsets, one for each packing, of one offset for each sieve entry, and the rows of
   offsets of the classes in it, with the inverses of the strides in the entries
@@ -482,15 +486,17 @@ Lemma~\ref{lem:sift_eq_checkDen} maps their side.
   arrays, each mapped by $\mathrm{swapPoint}$ when the flag of the reversal is set. Both exits
   return the delivery as it came. The search returns what a search gives back
   (Definition~\ref{def:Outcome}): the data and the count of the delivery, with the flag of the
-  reversal, the squares and the success of the divisor set-up. A definition of type \verb|Id|, which
-  $\mathrm{findPointsWith}$ runs with the normalized range of the denominators and the search
-  intervals of the options. What it delivers for well-formed parameters, $1 \le H < 2^{63}$, as the
-  refusals leave it, $1 \le b_{\mathrm{low}}$, $b_{\mathrm{high}} \le H$, well-formed search
-  intervals and $d$ the degree of $c$ is the subject of Lemma~\ref{lem:searchList}: the points at
-  infinity and, over the denominators of the search (Definition~\ref{def:searchDens}), the points of
-  the check with the flags of the numerators in the search intervals that a sound test of the sieve
-  lets through, up to the first call that stops the search, also when an exit fires, since the curve
-  has no points then (Lemmas~\ref{lem:sievingInfo} and~\ref{lem:twoAdic_exit}).
+  reversal, the squares, the success of the divisor set-up and the search intervals. A definition of
+  type \verb|Id|, which $\mathrm{findPointsWith}$ runs with the normalized range of the
+  denominators, the search intervals that the Sturm step leaves and its flag \verb|sturm_empty|
+  (Definition~\ref{def:sturmRegion}). What it delivers for well-formed parameters,
+  $1 \le H < 2^{63}$, as the refusals leave it, $1 \le b_{\mathrm{low}}$, $b_{\mathrm{high}} \le H$,
+  well-formed search intervals and $d$ the degree of $c$ is the subject of
+  Lemma~\ref{lem:searchList}: the points at infinity and, over the denominators of the search
+  (Definition~\ref{def:searchDens}), the points of the check with the flags of the numerators in the
+  search intervals, none when \verb|sturm_empty| is set, that a sound test of the sieve lets
+  through, up to the first call that stops the search, also when an exit fires, since the curve has
+  no points then (Lemmas~\ref{lem:sievingInfo} and~\ref{lem:twoAdic_exit}).
 \end{definition}
 
 The search with a callback, $\mathrm{findPointsWith}(c, H, P, o)$ with a callback and its data
@@ -500,26 +506,30 @@ is not a \verb|long| (errors 3, 5 and~4), and then, with error~8, a drop of $\lc
 the leading zeros; it normalizes the options (Definition~\ref{def:normalize}), runs the reversal
 check with the normalized switch, which may refuse with error~8 as well, takes the search intervals
 of the options, the default interval for none, refusing intervals that are not well formed with
-error~9 (Definition~\ref{def:searchIntervals}), and with the Sturm step on refuses the form when the
-remainder chain of the polynomial searched is $\mathrm{none}$; and it runs $\mathrm{searchPoints}$
-on the polynomial that the check hands on, over the normalized range of the denominators and the
-search intervals, with the flag of the reversal as the flags of the check, from the data of the
-caller, the count $0$ and the flag of the stop clear, and returns what the search gives back.
-$\mathrm{findPoints}(c, H, P, o)$ (Definition~\ref{def:findPoints}) is its instance with the
-appending callback from the empty array, the list of the array, or its refusal. The C ranges of the
-search with a callback are the lines of \verb|find_points| and \verb|find_points_work| that make the
-three functions of the library one, the head and the locals of \verb|find_points_work_1| that the
-set-up uses, its reset of the flags and its end, the test of the leading zeros and of the height,
-the Sturm step, whose restriction of the search region is stage~H's, the height of the arguments of
-the library, a \verb|long|, the prototypes of the library with the callback, the codes of its
-refusals and the mask of the bits of the input that the reset of the flags keeps.
+error~9 (Definition~\ref{def:searchIntervals}), and runs the Sturm step of the search
+(Definition~\ref{def:sturmRegion}), which with the step on refuses the form when the remainder chain
+of the polynomial searched is $\mathrm{none}$, returns at once, with the count $0$ and no search
+interval, when that polynomial is negative on the search intervals and has no point at infinity, and
+otherwise narrows the search intervals; and it runs $\mathrm{searchPoints}$ on the polynomial that
+the check hands on, over the normalized range of the denominators and the search intervals that the
+Sturm step leaves, with its flag \verb|sturm_empty| and the flag of the reversal as the flags of the
+check, from the data of the caller, the count $0$ and the flag of the stop clear, and returns what
+the search gives back. $\mathrm{findPoints}(c, H, P, o)$ (Definition~\ref{def:findPoints}) is its
+instance with the appending callback from the empty array, the list of the array, or its refusal.
+The C ranges of the search with a callback are the lines of \verb|find_points| and
+\verb|find_points_work| that make the three functions of the library one, the head and the locals of
+\verb|find_points_work_1| that the set-up uses, its reset of the flags and its end, the test of the
+leading zeros and of the height, the height of the arguments of the library, a \verb|long|, the
+prototypes of the library with the callback, the codes of its refusals and the mask of the bits of
+the input that the reset of the flags keeps.
 
 \begin{theorem}[A permutation of the reference]\label{thm:findPoints_perm}
   \uses{def:findPoints, thm:findPoints_order, lem:swapPoint_bijection, lem:regionFilter,
-    lem:searchDensRange, lem:normalize, def:regionSpec}
+    lem:searchDensRange, lem:normalize, def:regionSpec, lem:elimSearchRegion}
   \lean{Ratpoints.perm_filter_bruteForce_of_findPoints_eq_ok, Ratpoints.eq_filter_bruteForce_of_findPoints_eq_ok_of_reverse_eq_false}
   \leanok
-  For well-formed parameters and options with $\mathrm{noCheck}$ false, if
+  Assuming Sturm's theorem when the Sturm step is on (Definition~\ref{def:sturmTheorem}), for
+  well-formed parameters and options with $\mathrm{noCheck}$ false, if
   $\mathrm{findPoints}(c, H, P, o)$ returns the list $L$, then $L$ is a permutation of
   $\mathrm{bruteForce}(c, H)$ filtered by $\mathrm{noY}$ and the search region of $o$
   (Definition~\ref{def:regionSpec}); and when also $\mathrm{noY}$ is false, the options forbid the
@@ -532,21 +542,22 @@ refusals and the mask of the bits of the input that the reset of the flags keeps
   \leanok
   $L$ is the list of the search of the polynomial $c'$ that the reversal check hands on, over the
   candidate $(1, 0)$ and the denominators of its search up to the largest denominator, mapped back
-  after a reversal and filtered by $\mathrm{noY}$ and the search region
-  (Theorem~\ref{thm:findPoints_order}, Lemma~\ref{lem:regionFilter}); that list before the filters
-  is a permutation of the points of $\mathrm{bruteForce}(c', H)$ at infinity or with a denominator
-  up to the largest, the only ones in the search region; without a reversal $c' = c$, and after one,
-  which comes only for the whole box, where the largest denominator is $H$
-  (Lemma~\ref{lem:normalize}), Lemma~\ref{lem:swapPoint_bijection} gives the permutation of
-  $\mathrm{bruteForce}(c, H)$. Without a reversal and with the denominators of the normalized range,
-  the list is the reference itself over the candidate $(1, 0)$ and these denominators, in their
-  order, filtered (Lemma~\ref{lem:searchDensRange}).
+  after a reversal and filtered by $\mathrm{noY}$ and the search region, under Sturm's theorem
+  (Theorem~\ref{thm:findPoints_order}, Lemmas~\ref{lem:elimSearchRegion}
+  and~\ref{lem:regionFilter}); that list before the filters is a permutation of the points of
+  $\mathrm{bruteForce}(c', H)$ at infinity or with a denominator up to the largest, the only ones in
+  the search region; without a reversal $c' = c$, and after one, which comes only for the whole box,
+  where the largest denominator is $H$ (Lemma~\ref{lem:normalize}),
+  Lemma~\ref{lem:swapPoint_bijection} gives the permutation of $\mathrm{bruteForce}(c, H)$. Without
+  a reversal and with the denominators of the normalized range, the list is the reference itself
+  over the candidate $(1, 0)$ and these denominators, in their order, filtered
+  (Lemma~\ref{lem:searchDensRange}).
 \end{proof}
 
 \begin{theorem}[The refusals]\label{thm:refusals}
   \uses{def:findPoints, def:Options, def:reversal, def:useCLong, lem:sturmChain_squarefree,
     lem:reversal_squarefree, lem:squarefree_binaryFormPoly, thm:protocol, def:regionSpec,
-    lem:searchIntervals, lem:reversalRegion}
+    lem:searchIntervals, lem:reversalRegion, lem:sturmRegion}
   \lean{Ratpoints.exists_findPoints_eq_error_iff_of_sturm_nonneg, Ratpoints.exists_findPoints_eq_error_iff_of_sturm_neg, Ratpoints.Sturm.run_chain_eq_none_iff_of_reversal_eq_ok, Ratpoints.Setup.not_squarefree_binaryFormPoly_of_reversal_eq_error}
   \leanok
   For any parameters and options: with the Sturm step on ($\mathrm{sturm} \ge 0$),
@@ -569,8 +580,9 @@ refusals and the mask of the bits of the input that the reset of the flags keeps
   neither happens, $N \le d + 1$; since $c$ has at least two entries, $N \ge 2$ and so $d \ge 1$;
   case~1 lowers an even $d \ge 2$ to $d - 1 \ge 1$ with the leading coefficient $c_1 \ne 0$, and
   cases~2 and~3 keep $d$ with the leading coefficients $c_0 \ne 0$ and $c_1 = \pm 1$
-  (Lemma~\ref{lem:reversal_swap}); so the chain of the polynomial searched is $\mathrm{none}$
-  exactly when $\Phi_c$ is not squarefree (Lemmas~\ref{lem:sturmChain_squarefree}
+  (Lemma~\ref{lem:reversal_swap}); the Sturm step of the search refuses exactly when it is on and
+  the chain of the polynomial searched is $\mathrm{none}$ (Lemma~\ref{lem:sturmRegion}), which
+  happens exactly when $\Phi_c$ is not squarefree (Lemmas~\ref{lem:sturmChain_squarefree}
   and~\ref{lem:reversal_squarefree}, the latter also when the reversal is forbidden and the
   polynomial searched is $f$). Without the Sturm step only the first two remain, the reversal check
   with the normalized switch refusing only for the whole box (Lemma~\ref{lem:reversalRegion}). The
@@ -592,18 +604,20 @@ has membership with $\mathrm{noCheck}$ false and the set of elements with both o
 off, for the points in the search region of the options, from Theorem~\ref{thm:findPoints_order} and
 the permutation, and no duplicates for every option; Theorem~\ref{thm:refusals} has the refusals,
 which since stage~H add the search intervals that are not well formed; both have guards on their
-axioms. Comparator certifies the two main theorems with the options argument, membership since
-stage~G with $\mathrm{noCheck}$ false, both refusal theorems and \verb|wf_sieveParams|, and, since
-stage~G, the order theorem, the three statements under $\mathrm{noCheck}$ and the protocol, by which
-the search with a callback refuses exactly what $\mathrm{findPoints}$ refuses
-(Section~\ref{sec:certifiedG}); the challenge restates $\Phi_c$ verbatim, as it restates $F_c$,
-takes the options from the model, and has the refusal theorem with the Sturm step off too, so that a
-$\mathrm{findPoints}$ that refused every input under \verb|-s| would not pass. Since the challenge
-needs \verb|Squarefree|, the specification imports \verb|Mathlib.Algebra.Squarefree.Basic|, so that
-the challenge still imports, besides the model, exactly the Mathlib modules among the public imports
-of the files of the specification that it restates. Stage~D left the structure \verb|Params| and its
-well-formedness as stage~C2 had them; stage~F1 adds the number of primes examined and the composite
-moduli (Chapter~\ref{chap:tables}).
+axioms. Assuming Sturm's theorem, the depth of the Sturm step changes only the speed: with the exact
+check on, the search with the step off returns the same list (Theorem~\ref{thm:sturmSpeed}).
+Comparator certifies the two main theorems with the options argument, membership since stage~G with
+$\mathrm{noCheck}$ false, both refusal theorems and \verb|wf_sieveParams|, and, since stage~G, the
+order theorem, the three statements under $\mathrm{noCheck}$ and the protocol, by which the search
+with a callback refuses exactly what $\mathrm{findPoints}$ refuses (Section~\ref{sec:certifiedG});
+the challenge restates $\Phi_c$ verbatim, as it restates $F_c$, takes the options from the model,
+and has the refusal theorem with the Sturm step off too, so that a $\mathrm{findPoints}$ that
+refused every input under \verb|-s| would not pass. Since the challenge needs \verb|Squarefree|, the
+specification imports \verb|Mathlib.Algebra.Squarefree.Basic|, so that the challenge still imports,
+besides the model, exactly the Mathlib modules among the public imports of the files of the
+specification that it restates. Stage~D left the structure \verb|Params| and its well-formedness as
+stage~C2 had them; stage~F1 adds the number of primes examined and the composite moduli
+(Chapter~\ref{chap:tables}).
 
 \section{The command-line program and the differential tests}\label{sec:setupCli}
 
@@ -663,21 +677,18 @@ Each component of the set-up differs from the C code in a stated way, recorded i
     switch of the reversal of the normalized options cleared (Definition~\ref{def:normalize});
   \item a list of integers for the array of GMP integers of the coefficients, a new list for the
     reversal in place, and nothing written back to the caller but the three bits of the flags that
-    the program reads (Definition~\ref{def:Outcome}): the reversed coefficients and the degree stay
-    unwritten, so that there is no state between calls for the reset of the flags to clear;
-    the square test of $c_d$ made where it is used (\verb|Setup.reversal|,
-    \verb|Sieve.pointsAtInfinity|, \verb|searchPoints|), for the flag \verb|lcfsq|, which the C code
-    computes before the reversal check, and the test on \verb|point_at_infty| of the 2-adic exit
-    computed again;
+    the program reads and the search intervals (Definition~\ref{def:Outcome}): the reversed
+    coefficients and the degree stay unwritten, so that there is no state between calls for the
+    reset of the flags to clear; the square test of $c_d$ made where it is used
+    (\verb|Setup.reversal|, \verb|Sieve.pointsAtInfinity|, \verb|searchPoints|), for the flag
+    \verb|lcfsq|, which the C code computes before the reversal check, and the test on
+    \verb|point_at_infty| of the 2-adic exit computed again;
   \item the rows of the chain as arrays of their coefficients up to their degree, for the table of
     $(d + 1)^2$ GMP integers and the array of degrees, with no \verb|mpz_init| and \verb|mpz_clear|;
     the rows handed back, and $\mathrm{none}$ for the return of $-1$, where
     \verb|_ratpoints_compute_sturm| keeps its table for the rest of the Sturm step; local values for
     \verb|work[0]|, \verb|work[1]| and \verb|work[2]|; Lean's division for \verb|mpz_fdiv_q|, the
     divisions being exact;
-  \item of the Sturm step only its test for a repeated factor, the rest being stage~H, so that
-    under \verb|RATPOINTS_NO_CHECK| the model also delivers survivors outside the region that the
-    Sturm step keeps (Chapter~\ref{chap:output});
   \item no array \verb|c_long|, the flag of the \verb|long|s returned, and the loop that stops at
     the first coefficient that is not a \verb|long| as a test of all of them
     (\verb|Setup.useCLong|); Lean's truncating division for C's, and products for the shifts in the

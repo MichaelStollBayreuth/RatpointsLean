@@ -169,21 +169,20 @@ checks, messages and exit statuses, and prints the points of height at most `H` 
 `y² = a_n xⁿ + ⋯ + a_0` as ratpoints does, through the callback of its `main.c`: by default one line
 `(x : y : z)` per point, with the options of the output `-x -X -y -Y -z -Z -1 -i -I` and the formats
 and strings of `-f -fs -fm -fe`, and without `-q` the report that ratpoints prints around them, but
-for the messages on the search intervals that the search gives back and on the moduli used and,
-under `-v`, the report of the library; under `-x` (no exact check) it prints the pairs that pass its
-sieve, which are those of ratpoints when it sieves with the same moduli and the Sturm step is off,
-as it does under `-p 30 -N 30 -s` unless it chooses other moduli from the curve. It finds the points
-by the sieve on bit arrays of words in its three stages, the first in chunks of 16 bit arrays with
-the rows that the builders of ratpoints build, the numerators of each denominator packed by the
-stride of its class, with the parameters that the options `-p -n -N -P -F -j -J` set; `-k` and `-K`
-forbid and allow the reversal of the polynomial, and `-s` and `-S [depth]` switch the Sturm step off
-and on, of which the model has the test for a repeated factor so far; `-l` and `-u` give the search
-intervals, read as ratpoints reads them, the ends as the numbers they are and the doubles outward of
-them, and `-dl` and `-du` the range of the denominators; it accepts the other options that tune the
-sieve of ratpoints, checking their arguments, but ignores them (until stage I, but for `-t` for
-good). It refuses a binary form that is not squarefree with error 8 as ratpoints does with the same
-options, and prints the points of the search region of its command line in the order of
-ratpoints.
+for the message on the moduli used and, under `-v`, the report of the library; under `-x` (no exact
+check) it prints the pairs that pass its sieve, which are those of ratpoints when it sieves with the
+same moduli, as it does under `-p 30 -N 30` unless it chooses other moduli from the curve (stage I
+models the choice of the moduli). It finds the points by the sieve on bit arrays of words in its
+three stages, the first in chunks of 16 bit arrays with the rows that the builders of ratpoints
+build, the numerators of each denominator packed by the stride of its class, with the parameters
+that the options `-p -n -N -P -F -j -J` set; `-k` and `-K` forbid and allow the reversal of the
+polynomial, `-s` and `-S [depth]` switch the Sturm step off and on, which narrows the search
+intervals to those where the polynomial may be `≥ 0`; `-l` and `-u` give the search intervals,
+read as ratpoints reads them, the ends as the numbers they are and the doubles outward of them, and
+`-dl` and `-du` the range of the denominators; it accepts the other options that tune the sieve of
+ratpoints, checking their arguments, but ignores them (until stage I, but for `-t` for good). It
+refuses a binary form that is not squarefree with error 8 as ratpoints does with the same options,
+and prints the points of the search region of its command line in the order of ratpoints.
 
 ## Licence
 

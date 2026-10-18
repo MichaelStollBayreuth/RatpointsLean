@@ -84,11 +84,12 @@ class Outputs(unittest.TestCase):
              'sieving,\n4 moduli used for both stages of sieving together,\n0 further primes '
              'used in the third stage.\nSearch intervals:\n[-5.000000, 5.000000]\n\n'
              '2 rational points found.\n\n')
-        lean = head.format(cfg.lean_banner) + '(1 : 1 : 0)\n\n\n\n2 rational points found.\n\n'
+        lean = (head.format(cfg.lean_banner) + '(1 : 1 : 0)\n\n\nSearch intervals:\n'
+                '[-5.000000, 5.000000]\n\n2 rational points found.\n\n')
         self.assertTrue(dt.agrees(cfg, (lean, 0), (c, 0), 'report'))
-        # message 3 is compared, message 8 dropped from the C program's report
-        self.assertTrue(dt.agrees(cfg, (lean, 0), (c.replace('[-5.000000', '[-4.000000'), 0),
-                                  'report'))
+        # messages 3 and 8 are compared: another search interval, no search region
+        self.assertFalse(dt.agrees(cfg, (lean, 0), (c.replace('[-5.000000', '[-4.000000'), 0),
+                                   'report'))
         region = 'max. Height = 5\n\nSearch region:\n  [0.000000, 1.000000]\n'
         self.assertFalse(dt.agrees(cfg, (lean, 0), (c.replace('max. Height = 5\n\n', region), 0),
                                    'report'))
@@ -370,6 +371,8 @@ class Curves(unittest.TestCase):
                          difftest_cases.random_output_options(random.Random(2)))
         self.assertEqual(difftest_cases.random_region_line(random.Random(3)),
                          difftest_cases.random_region_line(random.Random(3)))
+        self.assertEqual(difftest_cases.random_depth_line(random.Random(4)),
+                         difftest_cases.random_depth_line(random.Random(4)))
         self.assertEqual([difftest_cases.end_fraction(w) for w in
                           ['0x1.8p-1', '-0x.4p3', '1e-400', '-1e400', 'INF', '2.5']],
                          [Fraction(3, 4), -2, Fraction(1, 10 ** 400), -float('inf'), float('inf'),

@@ -66,7 +66,8 @@ curve (`Ratpoints.Sieve.swapPoint`) is a bijection between the points of height 
 * `Ratpoints.Setup.degree_eq_of_reversal_eq_ok`, `Ratpoints.Setup.eq_of_reversal_eq_ok_false`: the
   degree that the check returns is that of the list it returns, and without a reversal these are
   `c` and its degree.
-* `Ratpoints.Setup.one_le_of_reversal_eq_ok`: the check keeps the degree at least `1`.
+* `Ratpoints.Setup.one_le_of_reversal_eq_ok`, `Ratpoints.Setup.degree_le_of_reversal_eq_ok`: the
+  check keeps the degree at least `1`, and does not raise it.
 * `Ratpoints.Setup.squarefree_binaryFormPoly_iff_of_reversal_eq_ok`: once the test of the leading
   zeros has passed, `Φ_c` is squarefree exactly when the polynomial that the check hands on is.
 * `Ratpoints.Setup.exists_reversal_eq_error_iff`,
@@ -484,6 +485,13 @@ theorem degree_eq_of_reversal_eq_ok {allow rev : Bool} {c c' : List ℤ} {d d' :
 even degree `d ≥ 2`, to `d - 1`, when `c₀ = 0`, and keeps it otherwise. -/
 theorem one_le_of_reversal_eq_ok {allow rev : Bool} {c c' : List ℤ} {d d' : ℕ}
     (h : reversal allow c d = .ok (c', d', rev)) (h1 : 1 ≤ d) : 1 ≤ d' := by
+  simp only [reversal] at h
+  split_ifs at h <;> simp only [Except.ok.injEq, Prod.mk.injEq] at h <;> lia
+
+/-- The reversal check `Ratpoints.Setup.reversal` does not raise the degree: it lowers only an even
+degree `d ≥ 2`, to `d - 1`, when `c₀ = 0`, and keeps it otherwise. -/
+theorem degree_le_of_reversal_eq_ok {allow rev : Bool} {c c' : List ℤ} {d d' : ℕ}
+    (h : reversal allow c d = .ok (c', d', rev)) : d' ≤ d := by
   simp only [reversal] at h
   split_ifs at h <;> simp only [Except.ok.injEq, Prod.mk.injEq] at h <;> lia
 

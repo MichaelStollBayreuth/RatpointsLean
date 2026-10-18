@@ -10,25 +10,29 @@ axioms (`propext`, `Quot.sound`, `Classical.choice`).
 - [`Challenge.lean`](Challenge.lean) may import only Mathlib and the model (`Ratpoints.Model`). It
   restates the specification verbatim: of `Ratpoints/Spec/Basic.lean` `degree`, `binaryForm`,
   `IsPoint` with its decidability, and `binaryFormPoly`, which the refusal theorems of stage D speak
-  about (`points` stays out, as the blueprint explains); and, since stage G, all of
+  about (`points` stays out, as the blueprint explains); since stage G, all of
   `Ratpoints/Spec/Order.lean`, the order of the points (`searchedPoly`, `FactorsByTrialDivision`
   with its decidability, `binaryDivisors`, `searchDenominators`, `pointsWithDen`, `orderedPoints`);
-  and, since stage H, all of `Ratpoints/Spec/Region.lean`, the search region (`IsNaN`,
-  `doubleValue`, `AreSearchIntervals`, `IntervalsWF`, `InRegion`, `IsFullBox` with their
-  decidability, and `denominatorBound`). It states the main theorems with `sorry`. The main theorems
-  speak about the model's `findPoints` and, since stage G, `findPointsWith` (and, in stage B, the
-  brute-force reference), which the challenge imports with `Options`, the doubles `Double` of its
-  search intervals, `Params`, `Params.WF`, `SieveOptions`, `sieveParams`, `maxDegree`,
-  `maxDivisors`, the result `Outcome` of `findPointsWith` (whose fields `info` and `total` the
-  protocol reads), and the callback's `Answer` and `Delivery` with the reference of the delivery
-  `Delivery.deliver`: the model is trusted in the sense that it is the code the executable runs, and
-  nothing else, and a definition of the model, which elaborates without Mathlib, is never restated.
-  The specification, by contrast, is reproduced in the challenge, so a solution whose library
-  changed it is rejected. Of Mathlib, the challenge imports exactly the Mathlib modules among the
-  public imports of the specification (`Ratpoints/Spec/Basic.lean`, `Ratpoints/Spec/Order.lean` and
-  `Ratpoints/Spec/Region.lean`), among them `Mathlib.Algebra.Squarefree.Basic` for `Squarefree`,
-  `Mathlib.Data.Nat.Factors` for the prime factors and `Mathlib.Order.WithBotTop` for the values of
-  the doubles, so that the restated definitions elaborate to the same terms as there.
+  and since stage H all of `Ratpoints/Spec/Region.lean`, the search region (`IsNaN`, `doubleValue`,
+  `AreSearchIntervals`, `IntervalsWF`, `InRegion`, `IsFullBox` with their decidability, and
+  `denominatorBound`), and `Ratpoints/Spec/Sturm.lean`, Sturm's theorem as a proposition
+  (`SturmTheorem`), which the statements with the Sturm step on assume. It states the main
+  theorems with `sorry`. The main theorems speak about the model's `findPoints` and, since stage G,
+  `findPointsWith` (and, in stage B, the brute-force reference), which the challenge imports with
+  `Options`, the doubles `Double` of its search intervals, `Params`, `Params.WF`, `SieveOptions`,
+  `sieveParams`, `maxDegree`, `maxDivisors`, the result `Outcome` of `findPointsWith` (whose fields
+  `info` and `total` the protocol reads), and the callback's `Answer` and `Delivery` with the
+  reference of the delivery `Delivery.deliver`: the model is trusted in the sense that it is the
+  code the executable runs, and nothing else, and a definition of the model, which elaborates
+  without Mathlib, is never restated. The specification, by contrast, is reproduced in the
+  challenge, so a solution whose library changed it is rejected. Of Mathlib, the challenge imports
+  exactly the Mathlib modules among the public imports of the files of the specification
+  (`Ratpoints/Spec/Basic.lean`, `Ratpoints/Spec/Order.lean`, `Ratpoints/Spec/Region.lean` and
+  `Ratpoints/Spec/Sturm.lean`), among them `Mathlib.Algebra.Squarefree.Basic` for `Squarefree`,
+  `Mathlib.Data.Nat.Factors` for the prime factors, `Mathlib.Order.WithBotTop` for the values of
+  the doubles, and `Mathlib.Algebra.Polynomial.Sturm.Sequence` and
+  `Mathlib.Data.List.SignVariations` for Sturm's theorem, so that the restated definitions elaborate
+  to the same terms as there.
 - [`Solution.lean`](Solution.lean) imports the library and proves the same statements by its
   theorems.
 
@@ -91,12 +95,17 @@ ratpoints, with the model's bound `maxDivisors` on the number of divisors, filte
 membership and no-duplicates theorems, are for well-formed parameters (`P.WF`). On 2026-10-17
 `lake comparator --paranoid` accepted all twelve, with Lean's kernel and the five external checkers.
 
-Stage H brings the search region of the options into six of the statements: membership, the order
-theorem (with the reversal only for the whole box, `IsFullBox`, and the largest denominator
-`denominatorBound`) and the two statements on the elements under `RATPOINTS_NO_CHECK` hold for the
-points in the search region (`InRegion`), and both refusal theorems add the search intervals that
-are not well formed (`IntervalsWF`), the one with the Sturm step off refusing `c₀ = c₁ = 0` for an
-even degree only for the whole box.
+Stage H restates six statements for the search region of the options, the search intervals over
+the values of their ends (`doubleValue`) and the range of the denominators: membership holds for the
+points in the search region (`InRegion`), the order theorem filters `orderedPoints` by it, with the
+reversal only for the whole box (`IsFullBox`) and the largest denominator `denominatorBound`, both
+assuming Sturm's theorem when the Sturm step is on (`0 ≤ o.sturm → SturmTheorem`); under the
+exact check off, every element lies in the search region, and every point in it gives its element,
+the latter assuming Sturm's theorem when the Sturm step is on; and both refusal theorems add the
+refusal of search intervals that are not well formed (`IntervalsWF`), the refusal of the reversal
+check without the Sturm step only for the whole box. No duplicates, the sublist under the exact
+check off, the protocol, the brute-force reference and the well-formedness of the parameters of the
+program keep their text.
 
 ## Running
 

@@ -22,8 +22,7 @@ that the library is given for it, outward of it. With these exact ends it decide
 `main.c` does, whether a point that the search finds lies in the search region of the command line
 (`Ratpoints.Cli.inRegion`); it joins intervals whose doubles meet, as `join_intervals` does before
 the library is called; and it prints the doubles of the search intervals as `printf` of glibc
-prints them under `%f` (`Ratpoints.Cli.printF`), in message 3 of the report and, with stage H, in
-message 8.
+prints them under `%f` (`Ratpoints.Cli.printF`), in messages 3 and 8 of the report.
 
 ## Main definitions
 

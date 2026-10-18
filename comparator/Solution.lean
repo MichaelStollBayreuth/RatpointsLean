@@ -24,13 +24,14 @@ theorem challenge_nodup_bruteForce (c : List ℤ) (H : ℕ) : (Ratpoints.bruteFo
   Ratpoints.nodup_bruteForce c H
 
 theorem challenge_mem_iff_isPoint_of_findPoints_eq_ok (c : List ℤ) (H : ℕ) (P : Ratpoints.Params)
-    (o : Ratpoints.Options) (L : List (ℤ × ℤ × ℤ)) (hP : P.WF) (hc : o.noCheck = false)
-    (h : Ratpoints.findPoints c H P o = .ok L) (p : ℤ × ℤ × ℤ) :
+    (o : Ratpoints.Options) (L : List (ℤ × ℤ × ℤ)) (hS : 0 ≤ o.sturm → Ratpoints.SturmTheorem)
+    (hP : P.WF) (hc : o.noCheck = false) (h : Ratpoints.findPoints c H P o = .ok L)
+    (p : ℤ × ℤ × ℤ) :
     p ∈ L ↔ Ratpoints.IsPoint c H p ∧ (o.noY = true → 0 ≤ p.2.1) ∧
       Ratpoints.InRegion
         (o.domain.map fun i ↦ (Ratpoints.doubleValue i.1.bits, Ratpoints.doubleValue i.2.bits))
         o.bLow o.bHigh p :=
-  Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok hP h hc
+  Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok hS hP h hc
 
 theorem challenge_nodup_of_findPoints_eq_ok (c : List ℤ) (H : ℕ) (P : Ratpoints.Params)
     (o : Ratpoints.Options) (L : List (ℤ × ℤ × ℤ)) (hP : P.WF)
@@ -59,15 +60,16 @@ theorem challenge_wf_sieveParams (o : Ratpoints.SieveOptions) : (Ratpoints.sieve
   Ratpoints.wf_sieveParams o
 
 theorem challenge_eq_orderedPoints_of_findPoints_eq_ok (c : List ℤ) (H : ℕ)
-    (P : Ratpoints.Params) (o : Ratpoints.Options) (L : List (ℤ × ℤ × ℤ)) (hP : P.WF)
-    (hc : o.noCheck = false) (h : Ratpoints.findPoints c H P o = .ok L) :
+    (P : Ratpoints.Params) (o : Ratpoints.Options) (L : List (ℤ × ℤ × ℤ))
+    (hS : 0 ≤ o.sturm → Ratpoints.SturmTheorem) (hP : P.WF) (hc : o.noCheck = false)
+    (h : Ratpoints.findPoints c H P o = .ok L) :
     L = (Ratpoints.orderedPoints Ratpoints.maxDivisors
         (o.reverse && Ratpoints.IsFullBox o.domain o.bLow o.bHigh H) c H
         (Ratpoints.denominatorBound o.bHigh H)).filter fun p ↦ (!o.noY || 0 ≤ p.2.1) &&
       Ratpoints.InRegion
         (o.domain.map fun i ↦ (Ratpoints.doubleValue i.1.bits, Ratpoints.doubleValue i.2.bits))
         o.bLow o.bHigh p :=
-  Ratpoints.eq_orderedPoints_of_findPoints_eq_ok hP h hc
+  Ratpoints.eq_orderedPoints_of_findPoints_eq_ok hS hP h hc
 
 theorem challenge_exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck (c : List ℤ) (H : ℕ)
     (P : Ratpoints.Params) (o : Ratpoints.Options) (L : List (ℤ × ℤ × ℤ)) (hP : P.WF)
@@ -80,14 +82,14 @@ theorem challenge_exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck (c : List ℤ)
   Ratpoints.exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck hP h hc hq
 
 theorem challenge_mem_of_isPoint_of_findPoints_eq_ok_of_noCheck (c : List ℤ) (H : ℕ)
-    (P : Ratpoints.Params) (o : Ratpoints.Options) (L : List (ℤ × ℤ × ℤ)) (hP : P.WF)
-    (hc : o.noCheck = true) (h : Ratpoints.findPoints c H P o = .ok L) (p : ℤ × ℤ × ℤ)
-    (hp : Ratpoints.IsPoint c H p)
+    (P : Ratpoints.Params) (o : Ratpoints.Options) (L : List (ℤ × ℤ × ℤ))
+    (hS : 0 ≤ o.sturm → Ratpoints.SturmTheorem) (hP : P.WF) (hc : o.noCheck = true)
+    (h : Ratpoints.findPoints c H P o = .ok L) (p : ℤ × ℤ × ℤ) (hp : Ratpoints.IsPoint c H p)
     (hr : Ratpoints.InRegion
       (o.domain.map fun i ↦ (Ratpoints.doubleValue i.1.bits, Ratpoints.doubleValue i.2.bits))
       o.bLow o.bHigh p) :
     (p.1, 0, p.2.2) ∈ L :=
-  Ratpoints.mem_of_isPoint_of_findPoints_eq_ok_of_noCheck hP h hc hp hr
+  Ratpoints.mem_of_isPoint_of_findPoints_eq_ok_of_noCheck hS hP h hc hp hr
 
 theorem challenge_map_sublist_of_findPoints_eq_ok_of_noCheck (c : List ℤ) (H : ℕ)
     (P : Ratpoints.Params) (o : Ratpoints.Options) (L L' : List (ℤ × ℤ × ℤ)) (hP : P.WF)

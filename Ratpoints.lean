@@ -85,6 +85,7 @@ public import Ratpoints.Proof.Stages
 public import Ratpoints.Proof.Sturm
 public import Ratpoints.Proof.SturmCounts
 public import Ratpoints.Proof.SturmCoverage
+public import Ratpoints.Proof.SturmRegion
 public import Ratpoints.Proof.SturmSigns
 public import Ratpoints.Proof.Tables
 public import Ratpoints.Proof.TwoAdic

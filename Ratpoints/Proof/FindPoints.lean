@@ -34,23 +34,22 @@ parameters, the points at infinity followed, for the denominators from `bLow` to
 loop of its shape visits in its order (`Ratpoints.searchDens`), by the points of the check with the
 flags of the search of the numerators `a` with `a / b` in the search intervals over the values of
 their ends (`Ratpoints.InIntervals`) that a test of the sieve lets through (`Ratpoints.searchList`),
-and it returns when the callback stops the search; the test does not depend on the callback, the
-flags or the search intervals, and it lets the numerator of every point through
-(`Ratpoints.IsSoundTest`), also when the search takes one of its exits, where the curve has no
-points (`Ratpoints.exists_isSoundTest_run_searchPoints`), for well-formed search intervals. So the
-search with a callback delivers the list that
-the search with the appending callback returns (`Ratpoints.run_searchPoints_eq_deliver`), and
-without `RATPOINTS_NO_CHECK` that list is the brute-force reference over the candidate `(1, 0)` and
-the denominators of the search with the numerators in the search intervals, mapped by
+none when the Sturm step has left no interval, and it returns when the callback stops the search;
+the test does not depend on the callback, the flags or the search intervals, and it lets the
+numerator of every point through (`Ratpoints.IsSoundTest`), also when the search takes one of its
+exits, where the curve has no points (`Ratpoints.exists_isSoundTest_run_searchPoints`), for
+well-formed search intervals. So the search with a callback delivers the list that the search with
+the appending callback returns (`Ratpoints.run_searchPoints_eq_deliver`), and without
+`RATPOINTS_NO_CHECK` that list is the brute-force reference over the candidate `(1, 0)` and the
+denominators of the search with the numerators in the search intervals, mapped by
 `Ratpoints.Sieve.swapPoint` when the flag of the reversal is set, without the points with `y < 0`
 under `RATPOINTS_NO_Y` (`Ratpoints.searchList_of_noCheck_eq_false`): the points of the reference
 with the denominators from `bLow` to `bHigh` in another order, except where the shape visits the
 denominators in increasing order, every shape but that of the divisors of the leading coefficient
 times squares (`Ratpoints.perm_filter_bruteForce_append_flatMap_searchDens`), filtered by the search
 intervals; without the flag of the reversal they lie in the search region
-(`Ratpoints.mem_region_of_mem_searchList`).
-What `Ratpoints.findPoints` and `Ratpoints.findPointsWith` return, and their refusals, are in
-`Ratpoints.Proof.Output`.
+(`Ratpoints.mem_region_of_mem_searchList`). What `Ratpoints.findPoints` and
+`Ratpoints.findPointsWith` return, and their refusals, are in `Ratpoints.Proof.Output`.
 
 ## Main definitions
 
@@ -73,8 +72,9 @@ What `Ratpoints.findPoints` and `Ratpoints.findPointsWith` return, and their ref
   `(x, z)` of height at most `H` (`Ratpoints.IsNormalizedPair`), whatever the test;
   `Ratpoints.map_searchList_sublist`: the points that it delivers without `RATPOINTS_NO_CHECK` and
   with `RATPOINTS_NO_Y`, with `y` replaced by `0`, are a sublist of them, for the same test.
-* `Ratpoints.mem_region_of_mem_searchList`: without the flag of the reversal, the points that the
-  search delivers lie in the search region.
+* `Ratpoints.mem_region_of_mem_searchList`, `Ratpoints.searchList_nil`: without the flag of the
+  reversal, the points that the search delivers lie in the search region; for no search interval
+  they are the points at infinity.
 * `Ratpoints.exists_isSoundTest_run_sieveRun`: the run of the shape that the search chooses, with
   sound arguments and the bounds of well-formed search intervals, delivers the points of the
   numerators in the search intervals that a sound test lets through.
@@ -86,13 +86,13 @@ What `Ratpoints.findPoints` and `Ratpoints.findPointsWith` return, and their ref
   those that the loops of the tables and of the further primes may record, and the store of the
   tables of rows that it returns fits the entries (`Ratpoints.Sieve.RowStore.Fits`); when it returns
   none, the curve has no points.
-* `Ratpoints.run_searchPoints_flags`: the bits of the flags that the search writes back do not
-  depend on the callback.
+* `Ratpoints.run_searchPoints_flags`: the bits of the flags and the search intervals that the
+  search writes back do not depend on the callback.
 * `Ratpoints.exists_isSoundTest_run_searchPoints`: for well-formed parameters, `1 ≤ H < 2 ^ 63` and
   the degree of the polynomial, there is a sound test for which the search, with any callback, flags
   and delivery whose flag of the stop is clear, gives the data and the count of the delivery of the
   points of `Ratpoints.searchList` for the denominators from `bLow ≥ 1` to `bHigh ≤ H` and the
-  values of well-formed search intervals.
+  values of well-formed search intervals, none when the Sturm step has left no interval.
 * `Ratpoints.run_searchPoints_eq_deliver`: the search with a callback gives the data and the count
   of the delivery of the list of the search with the appending callback;
   `Ratpoints.exists_isSoundTest_run_searchPoints_appendPoint`: the search with the appending
@@ -371,6 +371,11 @@ theorem mem_region_of_mem_searchList {c : List ℤ} {H bLow bHigh : ℕ}
     refine .inr ⟨by lia, by lia, ?_⟩
     rw [h1, h2]
     exact_mod_cast ha
+
+/-- Without search intervals, the search delivers its points at infinity only. -/
+theorem searchList_nil (c : List ℤ) (H bLow bHigh : ℕ) (S : ℕ → ℤ → Bool) (fl : CheckFlags) :
+    searchList c H bLow bHigh [] S fl = pointsAtInfinityList c (degree c) fl := by
+  simp [searchList, InIntervals]
 
 -- Under `RATPOINTS_NO_CHECK` and without the flag of the reversal, the survivors `(a, 0, b)` that
 -- the search delivers are distinct pairs over distinct denominators `b ≥ 1`
@@ -1087,22 +1092,24 @@ private theorem sieving_value {σ : Type} (process : ℤ → ℤ → ℤ → σ 
 -- The data and the count of the search along its paths, for the classes and the word of the 2-adic
 -- information, the 2-adic exit `ex` and the result of `Ratpoints.sievingInfo`: the delivery as it
 -- came after the 2-adic exit and the exit of `Ratpoints.sievingInfo`, else that of the points at
--- infinity, followed, unless the callback has stopped the search, by the sieving.
+-- infinity, followed, unless the callback has stopped the search or the Sturm step has left no
+-- interval, by the sieving.
 private theorem searchPoints_spec_paths {σ : Type} (process : ℤ → ℤ → ℤ → σ → Answer σ)
     (c : List ℤ) (d H : ℕ) (P : Params) (fl : CheckFlags) (bLow bHigh : ℕ)
-    (dom : List (Double × Double)) (r : Delivery σ) {cls : Vector NumClass 64} {db : UInt64}
-    (ex : Bool)
+    (dom : List (Double × Double)) (sturmEmpty : Bool) (r : Delivery σ) {cls : Vector NumClass 64}
+    {db : UInt64} (ex : Bool)
     (si : Option (List SieveEntry × Array ℕ × List ForbiddenEntry × List ForbiddenVal × RowStore))
     (hcd : Id.run (numClasses (Id.run (twoAdic c d))) = (cls, db))
     (hex : (db == 0 && !(d % 2 == 1 || Setup.isSquare (c.getD d 0))) = ex)
     (hsi : Id.run (sievingInfo c d (Setup.useCLong c d) (d % 2 == 0) P bHigh) = si) :
-    ⦃ True ⦄ searchPoints process c d H P fl bLow bHigh dom r
+    ⦃ True ⦄ searchPoints process c d H P fl bLow bHigh dom sturmEmpty r
     ⦃ fun out ↦ (out.info, out.total) = (fun r' : Delivery σ ↦ (r'.info, r'.total))
         (if ex then r else
         match (generalizing := false) si with
         | none => r
         | some (entries, magics, forb, forbVal, store) =>
-          if (pointsAtInfinity process c d fl r).quit then pointsAtInfinity process c d fl r else
+          if (pointsAtInfinity process c d fl r).quit || sturmEmpty then
+            pointsAtInfinity process c d fl r else
           Id.run (sieving process c d H P fl (d % 2 == 1 && (c.getD d 0).natAbs == 1)
             (if (d % 2 == 1 && (c.getD d 0).natAbs != 1) = true then
               Id.run (Setup.setupUs1 c d bHigh) else none)
@@ -1119,25 +1126,26 @@ private theorem searchPoints_spec_paths {σ : Type} (process : ℤ → ℤ → �
     all_goals subst_vars
     all_goals first
       | (rename_i h; exact (h _ _ _ _ _ ⟨rfl, rfl, rfl, rfl, rfl⟩).elim)
-      | simp_all only [↓reduceIte, Bool.false_eq_true, and_self]
+      | simp_all only [↓reduceIte, Bool.false_eq_true, and_self, Bool.true_or, Bool.false_or]
 
 -- `Ratpoints.searchPoints_spec_paths` as an equation.
 private theorem run_searchPoints_paths {σ : Type} (process : ℤ → ℤ → ℤ → σ → Answer σ)
     (c : List ℤ) (d H : ℕ) (P : Params) (fl : CheckFlags) (bLow bHigh : ℕ)
-    (dom : List (Double × Double)) (r : Delivery σ) {cls : Vector NumClass 64} {db : UInt64}
-    (ex : Bool)
+    (dom : List (Double × Double)) (sturmEmpty : Bool) (r : Delivery σ) {cls : Vector NumClass 64}
+    {db : UInt64} (ex : Bool)
     (si : Option (List SieveEntry × Array ℕ × List ForbiddenEntry × List ForbiddenVal × RowStore))
     (hcd : Id.run (numClasses (Id.run (twoAdic c d))) = (cls, db))
     (hex : (db == 0 && !(d % 2 == 1 || Setup.isSquare (c.getD d 0))) = ex)
     (hsi : Id.run (sievingInfo c d (Setup.useCLong c d) (d % 2 == 0) P bHigh) = si) :
-    ((Id.run (searchPoints process c d H P fl bLow bHigh dom r)).info,
-      (Id.run (searchPoints process c d H P fl bLow bHigh dom r)).total) =
+    ((Id.run (searchPoints process c d H P fl bLow bHigh dom sturmEmpty r)).info,
+      (Id.run (searchPoints process c d H P fl bLow bHigh dom sturmEmpty r)).total) =
       (fun r' : Delivery σ ↦ (r'.info, r'.total))
         (if ex then r else
         match (generalizing := false) si with
         | none => r
         | some (entries, magics, forb, forbVal, store) =>
-          if (pointsAtInfinity process c d fl r).quit then pointsAtInfinity process c d fl r else
+          if (pointsAtInfinity process c d fl r).quit || sturmEmpty then
+            pointsAtInfinity process c d fl r else
           Id.run (sieving process c d H P fl (d % 2 == 1 && (c.getD d 0).natAbs == 1)
             (if (d % 2 == 1 && (c.getD d 0).natAbs != 1) = true then
               Id.run (Setup.setupUs1 c d bHigh) else none)
@@ -1146,26 +1154,30 @@ private theorem run_searchPoints_paths {σ : Type} (process : ℤ → ℤ → �
             (d % 2 == 0 && !Setup.isSquare (c.getD d 0) && P.jacobi) forb forbVal entries magics cls
             db store bLow bHigh dom (pointsAtInfinity process c d fl r))) :=
   Std.WP.Id.of_run_eq_wp rfl (fun out : Outcome σ ↦ (out.info, out.total) = _)
-    ((searchPoints_spec_paths process c d H P fl bLow bHigh dom r ex si hcd hex hsi).le_wp trivial)
+    ((searchPoints_spec_paths process c d H P fl bLow bHigh dom sturmEmpty r ex si hcd hex
+      hsi).le_wp trivial)
 
 /-- The bits of the flags of the search that the program reads after it, which do not depend on the
 callback: the flag of the reversal as it came, the squares for odd degree and `|c_d| = 1`, and the
 success of the divisor set-up up to the largest denominator `bHigh` for odd degree and
-`|c_d| ≠ 1`. -/
+`|c_d| ≠ 1`; and the search intervals as they came, those that the Sturm step leaves. -/
 theorem run_searchPoints_flags {σ : Type} (process : ℤ → ℤ → ℤ → σ → Answer σ) (c : List ℤ)
     (d H : ℕ) (P : Params) (fl : CheckFlags) (bLow bHigh : ℕ) (domain : List (Double × Double))
-    (r : Delivery σ) :
-    (Id.run (searchPoints process c d H P fl bLow bHigh domain r)).reversed = fl.reversed ∧
-      (Id.run (searchPoints process c d H P fl bLow bHigh domain r)).useSquares =
+    (sturmEmpty : Bool) (r : Delivery σ) :
+    (Id.run (searchPoints process c d H P fl bLow bHigh domain sturmEmpty r)).reversed =
+        fl.reversed ∧
+      (Id.run (searchPoints process c d H P fl bLow bHigh domain sturmEmpty r)).useSquares =
         (d % 2 == 1 && (c.getD d 0).natAbs == 1) ∧
-      (Id.run (searchPoints process c d H P fl bLow bHigh domain r)).useSquares1 =
+      (Id.run (searchPoints process c d H P fl bLow bHigh domain sturmEmpty r)).useSquares1 =
         (if (d % 2 == 1 && (c.getD d 0).natAbs != 1) = true then
-          Id.run (Setup.setupUs1 c d bHigh) else none).isSome := by
+          Id.run (Setup.setupUs1 c d bHigh) else none).isSome ∧
+      (Id.run (searchPoints process c d H P fl bLow bHigh domain sturmEmpty r)).domain =
+        domain := by
   refine Std.WP.Id.of_run_eq_wp rfl _ ((?_ : ⦃ True ⦄ searchPoints process c d H P fl bLow bHigh
-    domain r ⦃ fun out ↦ out.reversed = fl.reversed ∧ out.useSquares = (d % 2 == 1 &&
+    domain sturmEmpty r ⦃ fun out ↦ out.reversed = fl.reversed ∧ out.useSquares = (d % 2 == 1 &&
       (c.getD d 0).natAbs == 1) ∧ out.useSquares1 = (if (d % 2 == 1 &&
-        (c.getD d 0).natAbs != 1) = true then Id.run (Setup.setupUs1 c d bHigh) else none).isSome ⦄
-          ).le_wp trivial)
+        (c.getD d 0).natAbs != 1) = true then Id.run (Setup.setupUs1 c d bHigh) else none).isSome ∧
+      out.domain = domain ⦄).le_wp trivial)
   vcgen [searchPoints, setupUs1_value, twoAdic_value, numClasses_value, sievingInfo_value,
     sieving_value]
   all_goals simp_all
@@ -1201,16 +1213,16 @@ private theorem exists_isSoundTest_run_sieving {c : List ℤ} {H : ℕ} {P : Par
 -- At an exit of the search, on a curve without points, the test that lets no numerator through.
 private theorem exists_isSoundTest_of_forall_not_isPoint {c : List ℤ} {H : ℕ} {P : Params}
     (hH : 1 ≤ H) {bLow bHigh : ℕ} (hbLow : 1 ≤ bLow) (hbH : bHigh ≤ H)
-    {dom : List (Double × Double)} {D : List (WithBotTop ℚ × WithBotTop ℚ)}
+    {dom : List (Double × Double)} {sturmEmpty : Bool} {D : List (WithBotTop ℚ × WithBotTop ℚ)}
     (hno : ∀ q, ¬IsPoint c H q)
     (h : ∀ {σ : Type} (process : ℤ → ℤ → ℤ → σ → Answer σ) (fl : CheckFlags) (r : Delivery σ),
-      ((Id.run (searchPoints process c (degree c) H P fl bLow bHigh dom r)).info,
-        (Id.run (searchPoints process c (degree c) H P fl bLow bHigh dom r)).total) =
+      ((Id.run (searchPoints process c (degree c) H P fl bLow bHigh dom sturmEmpty r)).info,
+        (Id.run (searchPoints process c (degree c) H P fl bLow bHigh dom sturmEmpty r)).total) =
         (r.info, r.total)) :
     ∃ S, IsSoundTest c H bLow bHigh S ∧ ∀ {σ : Type} (process : ℤ → ℤ → ℤ → σ → Answer σ)
       (fl : CheckFlags) (r : Delivery σ), r.quit = false →
-        ((Id.run (searchPoints process c (degree c) H P fl bLow bHigh dom r)).info,
-          (Id.run (searchPoints process c (degree c) H P fl bLow bHigh dom r)).total) =
+        ((Id.run (searchPoints process c (degree c) H P fl bLow bHigh dom sturmEmpty r)).info,
+          (Id.run (searchPoints process c (degree c) H P fl bLow bHigh dom sturmEmpty r)).total) =
         ((r.deliver process (searchList c H bLow bHigh D S fl)).info,
           (r.deliver process (searchList c H bLow bHigh D S fl)).total) :=
   ⟨_, isSoundTest_false_of_forall_not_isPoint hH hbLow hbH hno, fun process fl r _ ↦ by
@@ -1222,39 +1234,45 @@ denominator `bHigh ≤ H` and well-formed search intervals `dom`, there is a sou
 numerators (`Ratpoints.IsSoundTest`) for which the search of the polynomial with the coefficient
 list `c`, of its degree, with any callback, flags of the check and delivery whose flag is clear,
 gives the data and the count of the delivery of the points of `Ratpoints.searchList` for the values
-of `dom`: the test is that of the sieve, which
-does not depend on the callback, the flags or the search intervals
+of `dom`, or for no interval when the Sturm step has left none (`sturmEmpty`): the test is that of
+the sieve, which does not depend on the callback, the flags or the search intervals
 (`Ratpoints.exists_isSoundTest_run_sieveRun`), the points at infinity come first
 (`Ratpoints.Sieve.pointsAtInfinity_eq_deliver`), and the search returns after them when the callback
-has stopped it; when the search takes the 2-adic exit or the exit of `Ratpoints.sievingInfo`, the
-curve has no points (`Ratpoints.Sieve.not_isPoint_of_denBits_eq_zero`,
-`Ratpoints.sievingInfo_spec`), so that the test that lets no numerator through is sound and there is
-no point at infinity. -/
+has stopped it or the Sturm step has left no interval (`Ratpoints.searchList_nil`); when the search
+takes the 2-adic exit or the exit of `Ratpoints.sievingInfo`, the curve has no points
+(`Ratpoints.Sieve.not_isPoint_of_denBits_eq_zero`, `Ratpoints.sievingInfo_spec`), so that the test
+that lets no numerator through is sound and there is no point at infinity. -/
 theorem exists_isSoundTest_run_searchPoints {c : List ℤ} {H : ℕ} {P : Params} (hP : P.WF)
     (hH : 1 ≤ H) (hH63 : H < 2 ^ 63) {bLow bHigh : ℕ} (hbLow : 1 ≤ bLow) (hbH : bHigh ≤ H)
-    {dom : List (Double × Double)} (hdom : IntervalsWF (domainBits dom)) :
+    {dom : List (Double × Double)} (hdom : IntervalsWF (domainBits dom)) (sturmEmpty : Bool) :
     ∃ S, IsSoundTest c H bLow bHigh S ∧ ∀ {σ : Type} (process : ℤ → ℤ → ℤ → σ → Answer σ)
       (fl : CheckFlags) (r : Delivery σ), r.quit = false →
-        ((Id.run (searchPoints process c (degree c) H P fl bLow bHigh dom r)).info,
-          (Id.run (searchPoints process c (degree c) H P fl bLow bHigh dom r)).total) =
-        ((r.deliver process (searchList c H bLow bHigh (domainValues dom) S fl)).info,
-          (r.deliver process (searchList c H bLow bHigh (domainValues dom) S fl)).total) := by
+        ((Id.run (searchPoints process c (degree c) H P fl bLow bHigh dom sturmEmpty r)).info,
+          (Id.run (searchPoints process c (degree c) H P fl bLow bHigh dom sturmEmpty r)).total) =
+        ((r.deliver process (searchList c H bLow bHigh
+            (if sturmEmpty then [] else domainValues dom) S fl)).info,
+          (r.deliver process (searchList c H bLow bHigh
+            (if sturmEmpty then [] else domainValues dom) S fl)).total) := by
   rcases hcd : Id.run (numClasses (Id.run (twoAdic c (degree c)))) with ⟨cls, db⟩
   rcases hex : (db == 0 && !(degree c % 2 == 1 || Setup.isSquare (c.getD (degree c) 0)))
   · rcases hsi : Id.run (sievingInfo c (degree c) (Setup.useCLong c (degree c))
       (degree c % 2 == 0) P bHigh) with _ | ⟨entries, magics, forb, forbVal, store⟩
     · exact exists_isSoundTest_of_forall_not_isPoint hH hbLow hbH
         ((run_sievingInfo_spec hP).2 hsi H) fun process fl r ↦
-          run_searchPoints_paths process c _ H P fl bLow bHigh dom r _ _ hcd hex hsi
+          run_searchPoints_paths process c _ H P fl bLow bHigh dom sturmEmpty r _ _ hcd hex hsi
     obtain ⟨S, hS, hrun⟩ := exists_isSoundTest_run_sieving hP hH hH63 hbLow hbH hdom hcd hsi _
     refine ⟨S, hS, fun process fl r hr ↦ ?_⟩
-    rw [searchList, ← Delivery.ite_quit_eq_deliver_append process
-      (pointsAtInfinity_eq_deliver process _ _ fl hr) (hrun process fl _)]
-    exact run_searchPoints_paths process c _ H P fl bLow bHigh dom r _ _ hcd hex hsi
+    rw [run_searchPoints_paths process c _ H P fl bLow bHigh dom sturmEmpty r _ _ hcd hex hsi]
+    cases sturmEmpty
+    · simp only [Bool.false_eq_true, ↓reduceIte, Bool.or_false]
+      rw [searchList, ← Delivery.ite_quit_eq_deliver_append process
+        (pointsAtInfinity_eq_deliver process _ _ fl hr) (hrun process fl _)]
+    · simp [searchList_nil, ← pointsAtInfinity_eq_deliver process _ _ fl hr]
   have hdb : denBits (Id.run (twoAdic c (degree c))) = 0 := by
     rw [← snd_run_numClasses, hcd]; simpa using (Bool.and_eq_true _ _).mp hex |>.1
   exact exists_isSoundTest_of_forall_not_isPoint hH hbLow hbH (not_isPoint_of_denBits_eq_zero hdb H)
-    fun process fl r ↦ run_searchPoints_paths process c _ H P fl bLow bHigh dom r _ _ hcd hex rfl
+    fun process fl r ↦ run_searchPoints_paths process c _ H P fl bLow bHigh dom sturmEmpty r _ _
+      hcd hex rfl
 
 /-! ### The protocol of the search -/
 
@@ -1267,15 +1285,16 @@ flags from the empty array: both deliver the points of `Ratpoints.searchList` fo
 sieve (`Ratpoints.exists_isSoundTest_run_searchPoints`). -/
 theorem run_searchPoints_eq_deliver {c : List ℤ} {H : ℕ} {P : Params} (hP : P.WF) (hH : 1 ≤ H)
     (hH63 : H < 2 ^ 63) {bLow bHigh : ℕ} (hbLow : 1 ≤ bLow) (hbH : bHigh ≤ H)
-    {dom : List (Double × Double)} (hdom : IntervalsWF (domainBits dom)) {σ : Type}
-    (process : ℤ → ℤ → ℤ → σ → Answer σ) (fl : CheckFlags) {r : Delivery σ}
+    {dom : List (Double × Double)} (hdom : IntervalsWF (domainBits dom)) (sturmEmpty : Bool)
+    {σ : Type} (process : ℤ → ℤ → ℤ → σ → Answer σ) (fl : CheckFlags) {r : Delivery σ}
     (hr : r.quit = false) :
-    ((Id.run (searchPoints process c (degree c) H P fl bLow bHigh dom r)).info,
-      (Id.run (searchPoints process c (degree c) H P fl bLow bHigh dom r)).total) =
+    ((Id.run (searchPoints process c (degree c) H P fl bLow bHigh dom sturmEmpty r)).info,
+      (Id.run (searchPoints process c (degree c) H P fl bLow bHigh dom sturmEmpty r)).total) =
       let r' := r.deliver process (Id.run (searchPoints appendPoint c (degree c) H P fl bLow bHigh
-        dom ⟨#[], 0, false⟩)).info.toList
+        dom sturmEmpty ⟨#[], 0, false⟩)).info.toList
       (r'.info, r'.total) := by
-  obtain ⟨S, -, hS⟩ := exists_isSoundTest_run_searchPoints (c := c) hP hH hH63 hbLow hbH hdom
+  obtain ⟨S, -, hS⟩ :=
+    exists_isSoundTest_run_searchPoints (c := c) hP hH hH63 hbLow hbH hdom sturmEmpty
   have h := congr(Prod.fst $(hS appendPoint fl ⟨#[], 0, false⟩ rfl))
   simp only [Delivery.deliver_appendPoint, List.toArray] at h
   rw [hS process fl r hr, h]
@@ -1283,15 +1302,19 @@ theorem run_searchPoints_eq_deliver {c : List ℤ} {H : ℕ} {P : Params} (hP : 
 
 /-- For well-formed parameters, `1 ≤ H < 2 ^ 63`, the denominators from `bLow ≥ 1` to
 `bHigh ≤ H` and well-formed search intervals `dom`, the search with the appending callback gives
-the list of `Ratpoints.searchList` for the values of `dom` and a sound test of the sieve, for every
-choice of the flags (`Ratpoints.exists_isSoundTest_run_searchPoints`). -/
+the list of `Ratpoints.searchList` for the values of `dom`, or for no interval when the Sturm step
+has left none (`sturmEmpty`), and a sound test of the sieve, for every choice of the flags
+(`Ratpoints.exists_isSoundTest_run_searchPoints`). -/
 theorem exists_isSoundTest_run_searchPoints_appendPoint {c : List ℤ} {H : ℕ} {P : Params}
     (hP : P.WF) (hH : 1 ≤ H) (hH63 : H < 2 ^ 63) {bLow bHigh : ℕ} (hbLow : 1 ≤ bLow)
-    (hbH : bHigh ≤ H) {dom : List (Double × Double)} (hdom : IntervalsWF (domainBits dom)) :
+    (hbH : bHigh ≤ H) {dom : List (Double × Double)} (hdom : IntervalsWF (domainBits dom))
+    (sturmEmpty : Bool) :
     ∃ S, IsSoundTest c H bLow bHigh S ∧ ∀ fl : CheckFlags,
-      (Id.run (searchPoints appendPoint c (degree c) H P fl bLow bHigh dom
-        ⟨#[], 0, false⟩)).info.toList = searchList c H bLow bHigh (domainValues dom) S fl := by
-  obtain ⟨S, hS, hrun⟩ := exists_isSoundTest_run_searchPoints (c := c) hP hH hH63 hbLow hbH hdom
+      (Id.run (searchPoints appendPoint c (degree c) H P fl bLow bHigh dom sturmEmpty
+        ⟨#[], 0, false⟩)).info.toList =
+      searchList c H bLow bHigh (if sturmEmpty then [] else domainValues dom) S fl := by
+  obtain ⟨S, hS, hrun⟩ :=
+    exists_isSoundTest_run_searchPoints (c := c) hP hH hH63 hbLow hbH hdom sturmEmpty
   refine ⟨S, hS, fun fl ↦ ?_⟩
   simpa [Delivery.deliver_appendPoint] using
     congr(($(hrun appendPoint fl ⟨#[], 0, false⟩ rfl)).1.toList)
