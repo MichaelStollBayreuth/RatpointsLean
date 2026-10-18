@@ -21,7 +21,8 @@ with rounding to nearest, ties to even, as gcc and glibc implement them): the co
 a NaN is unordered and `-0.0` equals `0.0`, the negation and `fabs`, which act on the sign bit, the
 conversions, `frexp`, `ldexp` and `nextafter` towards `±HUGE_VAL`. The exact value of a finite
 double is `m 2 ^ e` for the integers of `Ratpoints.Double.toDyadic`, and a dyadic number is rounded
-to a double, to nearest with ties to even, by `Ratpoints.Double.ofDyadic`.
+to a double, to nearest with ties to even, by `Ratpoints.Double.ofDyadic`, a fraction by
+`Ratpoints.Double.ofRatio` (for `strtod`, which the program uses).
 
 ## Main definitions
 
@@ -33,7 +34,8 @@ to a double, to nearest with ties to even, by `Ratpoints.Double.ofDyadic`.
 * `Ratpoints.Double.neg`, `Ratpoints.Double.fabs`: the negation and the absolute value.
 * `Ratpoints.Double.toDyadic`, `Ratpoints.Double.ofDyadic`: the exact value of a finite double, and
   the double nearest to a dyadic number.
-* `Ratpoints.Double.toRat`: the exact value of a finite double as a rational number.
+* `Ratpoints.Double.toRat`, `Ratpoints.Double.ofRatio`: the exact value of a finite double as a
+  rational number, and the double nearest to a fraction.
 * `Ratpoints.Double.ofInt64`, `Ratpoints.Double.toInt64`, `Ratpoints.Double.toUInt64`: the
   conversions between `long`s and doubles.
 * `Ratpoints.Double.ldexp`, `Ratpoints.Double.frexp`, `Ratpoints.Double.nextUp`,
@@ -154,6 +156,27 @@ def ofDyadic (neg : Bool) (m : Nat) (e : Int) : Double :=
   else
     let q : Int := max (m.log2 + e - 52) (-1074)
     let M := roundShift m (q - e)
+    let (M, q) := if M = 2 ^ 53 then (2 ^ 52, q + 1) else (M, q)
+    if M < 2 ^ 52 then ⟨s ||| M.toUInt64⟩
+    else if 2047 ≤ q + 1075 then ⟨s ||| 0x7ff0000000000000⟩
+    else ⟨s ||| ((q + 1075).toNat.toUInt64 <<< 52) ||| (M - 2 ^ 52).toUInt64⟩
+
+/-- The double nearest to `±n / d` for `d ≠ 0`, the sign `-` for `neg`, with ties to even, as IEEE
+754 rounds an exact result in the rounding mode to nearest: a signed zero for `n = 0`; otherwise the
+exponent `E` with `2 ^ E ≤ n / d < 2 ^ (E + 1)`, which the lengths of `n` and `d` in bits fix up to
+one, the last place `2 ^ q` of the result, `q = max (E - 52) (-1074)`, the quotient `n / (d 2 ^ q)`
+rounded to the nearest integer `M` (`r` the remainder), carried into the next exponent at `2 ^ 53`,
+a subnormal or a zero below `2 ^ 52`, and an infinity beyond the largest finite double. -/
+def ofRatio (neg : Bool) (n d : Nat) : Double :=
+  let s : UInt64 := if neg then 0x8000000000000000 else 0
+  if n = 0 then ⟨s⟩
+  else
+    let e : Int := (n.log2 : Int) - d.log2
+    let atLeast : Bool := if 0 ≤ e then d * 2 ^ e.toNat ≤ n else d ≤ n * 2 ^ (-e).toNat
+    let q : Int := max ((if atLeast then e else e - 1) - 52) (-1074)
+    let (a, b) := if 0 ≤ q then (n, d * 2 ^ q.toNat) else (n * 2 ^ (-q).toNat, d)
+    let r := a % b
+    let M := if b < 2 * r ∨ 2 * r = b ∧ (a / b) % 2 = 1 then a / b + 1 else a / b
     let (M, q) := if M = 2 ^ 53 then (2 ^ 52, q + 1) else (M, q)
     if M < 2 ^ 52 then ⟨s ||| M.toUInt64⟩
     else if 2047 ≤ q + 1075 then ⟨s ||| 0x7ff0000000000000⟩

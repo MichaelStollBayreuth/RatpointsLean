@@ -18,9 +18,9 @@ file & lines of code & modelled & excluded & not yet recorded \\
 \texttt{primes.h} & 11 & 11 & 0 & 0 \\
 \texttt{gen\_find\_points\_h.c} & 76 & 60 & 16 & 0 \\
 \texttt{gen\_init\_sieve\_h.c} & 26 & 13 & 13 & 0 \\
-\texttt{main.c} & 779 & 503 & 43 & 233 \\
+\texttt{main.c} & 779 & 619 & 52 & 108 \\
 \hline
-total & 5883 & 3668 & 801 & 1414 \\
+total & 5883 & 3784 & 810 & 1289 \\
 \end{tabular}
 \end{center}
 
@@ -1173,13 +1173,19 @@ total & 5883 & 3668 & 801 & 1414 \\
 \item \csource{main.c}{55}{55}: excluded (memory): the GMP integers tmp and tmp2 for intermediate results, which the program initializes and releases and the model does not need
 \item \csource{main.c}{57}{64}: modelled by \lname{Ratpoints.Cli.Output}
   (deviation of \lname{Ratpoints.Cli.Output}: a structure for the global variables; \texttt{Option String} for the strings and the format, \texttt{none} for the null pointer, and Lean strings for the C strings of the command line, which the Lean runtime decodes as UTF-8 (bytes that do not form UTF-8 are read as U+FFFD, one for each malformed sequence as the Lean runtime cuts them, where \texttt{main.c} copies the bytes); the bit \texttt{RATPOINTS\_VERBOSE} of \texttt{args-{}>flags} a field here, since the library of the model prints no report of its own.)
-\item \csource{main.c}{66}{73}: not yet recorded (3 lines of code)
+\item \csource{main.c}{66}{66}: not yet recorded (1 lines of code)
+\item \csource{main.c}{71}{71}: modelled by \lname{Ratpoints.Cli.ExactEnd}
+  (deviation of \lname{Ratpoints.Cli.ExactEnd}: an \texttt{Int} for the \texttt{int} \texttt{inf}, and a rational number of core for the \texttt{mpq\_t} \texttt{q}, \texttt{0} by default as \texttt{mpq\_init} sets it.)
+\item \csource{main.c}{73}{73}: not yet recorded (1 lines of code)
 \item \csource{main.c}{77}{88}: modelled by \lname{Ratpoints.Cli.usage}
   (deviation of \lname{Ratpoints.Cli.usage}: the program is called \texttt{ratpoints-{}lean}, and the lines below the first are indented to match.)
 \item \csource{main.c}{94}{103}: excluded (other): the prototypes of the functions of the program; the model has no forward declarations
 \item \csource{main.c}{110}{113}: modelled by \lname{Ratpoints.Cli.Data}
   (deviation of \lname{Ratpoints.Cli.Data}: no intervals of the search region (\texttt{num\_inter}, \texttt{ends}; stage H); the text printed so far, for the standard output, to which \texttt{process} prints.)
-\item \csource{main.c}{116}{137}: not yet recorded (15 lines of code)
+\item \csource{main.c}{116}{120}: modelled by \lname{Ratpoints.Cli.cmpEndX}
+  (deviation of \lname{Ratpoints.Cli.cmpEndX}: the sign as \texttt{-{}1}, \texttt{0} or \texttt{1}, for the value of \texttt{mpq\_cmp\_si}, of which \texttt{main.c} reads only the sign; integers for the \texttt{long}s.)
+\item \csource{main.c}{126}{137}: modelled by \lname{Ratpoints.Cli.inRegion}
+  (deviation of \lname{Ratpoints.Cli.inRegion}: natural numbers for the \texttt{long} indices, an array for the pointer \texttt{e}.)
 \item \csource{main.c}{139}{142}: modelled by \lname{Ratpoints.Cli.process}
   (deviation of \lname{Ratpoints.Cli.process}: the test of the search region (lines 150-152) is stage H; the data a value, for the pointer \texttt{info}, and returned with the weight and the flag, for the \texttt{int *quit} that the library passes, which is clear at every call; the text appended to that of the data, for the standard output, and no \texttt{fflush}.)
 \item \csource{main.c}{150}{152}: not yet recorded (3 lines of code)
@@ -1222,7 +1228,10 @@ total & 5883 & 3668 & 801 & 1414 \\
 \item \csource{main.c}{279}{283}: excluded (memory): the release of tmp and tmp2, of the GMP integers of the coefficients and of the rational ends of the intervals at the end of main
 \item \csource{main.c}{284}{285}: modelled by \lname{Ratpoints.Cli.run}
   (deviation of \lname{Ratpoints.Cli.run}: the text written once at the end (\texttt{Ratpoints.Cli.main}), where \texttt{main.c} prints as it goes; the intervals with \texttt{join\_intervals} (line 248) are stage H.)
-\item \csource{main.c}{299}{313}: not yet recorded (11 lines of code)
+\item \csource{main.c}{299}{305}: modelled by \lname{Ratpoints.Cli.heightEnd}
+  (deviation of \lname{Ratpoints.Cli.heightEnd}: a natural number for the \texttt{long} \texttt{height}, at most \texttt{2 \textasciicircum{} 63 -{} 1}.)
+\item \csource{main.c}{309}{313}: modelled by \lname{Ratpoints.Cli.cmpEnd}
+  (deviation of \lname{Ratpoints.Cli.cmpEnd}: the sign as \texttt{-{}1}, \texttt{0} or \texttt{1}, for the value of \texttt{mpq\_cmp}, of which \texttt{main.c} reads only the sign.)
 \item \csource{main.c}{315}{316}: modelled by \lname{Ratpoints.Cli.input}
   (deviation of \lname{Ratpoints.Cli.input}: \texttt{read\_input} never returns a value other than 0, so the usage that \texttt{main.c} prints then (lines 212 and 213) has no counterpart.)
 \item \csource{main.c}{317}{317}: not yet recorded (1 lines of code)
@@ -1283,9 +1292,42 @@ total & 5883 & 3668 & 801 & 1414 \\
 \item \csource{main.c}{724}{728}: modelled by \lname{Ratpoints.Cli.onlyWord?}
 \item \csource{main.c}{733}{740}: modelled by \lname{Ratpoints.Cli.longOfString?}
   (deviation of \lname{Ratpoints.Cli.longOfString?}: an \texttt{Int} for a \texttt{long}.)
-\item \csource{main.c}{746}{752}: modelled by \lname{Ratpoints.Cli.isDouble}
-  (deviation of \lname{Ratpoints.Cli.isDouble}: only whether \texttt{s} is a number, not the double it denotes, which the options that take a real number do not need, since they are ignored.)
-\item \csource{main.c}{761}{905}: not yet recorded (98 lines of code)
+\item \csource{main.c}{746}{752}: modelled by \lname{Ratpoints.Cli.scanDouble?}
+  (deviation of \lname{Ratpoints.Cli.scanDouble?}: the NaN refused by its syntax, which \texttt{Ratpoints.Cli.isDoubleWord} does not accept, for the test \texttt{isnan} of the double that \texttt{strtod} reads.)
+\item \csource{main.c}{761}{763}: modelled by \lname{Ratpoints.Cli.outward}
+  (deviation of \lname{Ratpoints.Cli.outward}: the exact value of \texttt{x} (\texttt{Ratpoints.Double.toRat}) compared with \texttt{v} as rational numbers of core, for the GMP rational \texttt{t}, \texttt{mpq\_set\_d} and \texttt{mpq\_cmp}; no \texttt{mpq\_init} and \texttt{mpq\_clear}.)
+\item \csource{main.c}{765}{765}: excluded (memory): the initialization of the GMP rational t of outward
+\item \csource{main.c}{766}{773}: modelled by \lname{Ratpoints.Cli.outward}
+  (deviation of \lname{Ratpoints.Cli.outward}: the exact value of \texttt{x} (\texttt{Ratpoints.Double.toRat}) compared with \texttt{v} as rational numbers of core, for the GMP rational \texttt{t}, \texttt{mpq\_set\_d} and \texttt{mpq\_cmp}; no \texttt{mpq\_init} and \texttt{mpq\_clear}.)
+\item \csource{main.c}{774}{774}: excluded (memory): the release of the GMP rational t of outward
+\item \csource{main.c}{775}{776}: modelled by \lname{Ratpoints.Cli.outward}
+  (deviation of \lname{Ratpoints.Cli.outward}: the exact value of \texttt{x} (\texttt{Ratpoints.Double.toRat}) compared with \texttt{v} as rational numbers of core, for the GMP rational \texttt{t}, \texttt{mpq\_set\_d} and \texttt{mpq\_cmp}; no \texttt{mpq\_init} and \texttt{mpq\_clear}.)
+\item \csource{main.c}{798}{806}: modelled by \lname{Ratpoints.Cli.scanEnd}
+  (deviation of \lname{Ratpoints.Cli.scanEnd}: the end and the double returned, or none, for the \texttt{exact\_end} and the double that \texttt{scan\_end} writes through pointers with its return value, the end of an infinity with \texttt{q = 0}, which \texttt{scan\_end} leaves as it is (it is not read); the parts of the word read by \texttt{Ratpoints.Cli.floatParts} from the word of \texttt{Ratpoints.Cli.onlyWord?}, which is \texttt{s} without its white space; rational numbers of core for the GMP integers and rationals \texttt{m}, \texttt{p} and \texttt{e-{}>q}, without \texttt{mpz\_init}, \texttt{mpz\_clear}, \texttt{malloc} and \texttt{free} (and the error 10 when \texttt{malloc} fails, which the model cannot meet).)
+\item \csource{main.c}{808}{819}: modelled by \lname{Ratpoints.Cli.scanEnd}
+  (deviation of \lname{Ratpoints.Cli.scanEnd}: the end and the double returned, or none, for the \texttt{exact\_end} and the double that \texttt{scan\_end} writes through pointers with its return value, the end of an infinity with \texttt{q = 0}, which \texttt{scan\_end} leaves as it is (it is not read); the parts of the word read by \texttt{Ratpoints.Cli.floatParts} from the word of \texttt{Ratpoints.Cli.onlyWord?}, which is \texttt{s} without its white space; rational numbers of core for the GMP integers and rationals \texttt{m}, \texttt{p} and \texttt{e-{}>q}, without \texttt{mpz\_init}, \texttt{mpz\_clear}, \texttt{malloc} and \texttt{free} (and the error 10 when \texttt{malloc} fails, which the model cannot meet).)
+\item \csource{main.c}{820}{821}: excluded (memory): the allocation of the string of the digits of scan\_end, and error 10 when it fails, which the model cannot meet
+\item \csource{main.c}{822}{834}: modelled by \lname{Ratpoints.Cli.mantissaDigits}
+  (deviation of \lname{Ratpoints.Cli.mantissaDigits}: a recursion over the characters, for the loop over the C string and the array \texttt{digits}, whose length is the number \texttt{n} of the digits.)
+\item \csource{main.c}{835}{847}: modelled by \lname{Ratpoints.Cli.scanEnd}
+  (deviation of \lname{Ratpoints.Cli.scanEnd}: the end and the double returned, or none, for the \texttt{exact\_end} and the double that \texttt{scan\_end} writes through pointers with its return value, the end of an infinity with \texttt{q = 0}, which \texttt{scan\_end} leaves as it is (it is not read); the parts of the word read by \texttt{Ratpoints.Cli.floatParts} from the word of \texttt{Ratpoints.Cli.onlyWord?}, which is \texttt{s} without its white space; rational numbers of core for the GMP integers and rationals \texttt{m}, \texttt{p} and \texttt{e-{}>q}, without \texttt{mpz\_init}, \texttt{mpz\_clear}, \texttt{malloc} and \texttt{free} (and the error 10 when \texttt{malloc} fails, which the model cannot meet).)
+\item \csource{main.c}{848}{848}: excluded (memory): the initialization of the GMP integer m of scan\_end
+\item \csource{main.c}{849}{849}: modelled by \lname{Ratpoints.Cli.scanEnd}
+  (deviation of \lname{Ratpoints.Cli.scanEnd}: the end and the double returned, or none, for the \texttt{exact\_end} and the double that \texttt{scan\_end} writes through pointers with its return value, the end of an infinity with \texttt{q = 0}, which \texttt{scan\_end} leaves as it is (it is not read); the parts of the word read by \texttt{Ratpoints.Cli.floatParts} from the word of \texttt{Ratpoints.Cli.onlyWord?}, which is \texttt{s} without its white space; rational numbers of core for the GMP integers and rationals \texttt{m}, \texttt{p} and \texttt{e-{}>q}, without \texttt{mpz\_init}, \texttt{mpz\_clear}, \texttt{malloc} and \texttt{free} (and the error 10 when \texttt{malloc} fails, which the model cannot meet).)
+\item \csource{main.c}{850}{850}: excluded (memory): the release of the string of the digits of scan\_end
+\item \csource{main.c}{851}{865}: modelled by \lname{Ratpoints.Cli.scanEnd}
+  (deviation of \lname{Ratpoints.Cli.scanEnd}: the end and the double returned, or none, for the \texttt{exact\_end} and the double that \texttt{scan\_end} writes through pointers with its return value, the end of an infinity with \texttt{q = 0}, which \texttt{scan\_end} leaves as it is (it is not read); the parts of the word read by \texttt{Ratpoints.Cli.floatParts} from the word of \texttt{Ratpoints.Cli.onlyWord?}, which is \texttt{s} without its white space; rational numbers of core for the GMP integers and rationals \texttt{m}, \texttt{p} and \texttt{e-{}>q}, without \texttt{mpz\_init}, \texttt{mpz\_clear}, \texttt{malloc} and \texttt{free} (and the error 10 when \texttt{malloc} fails, which the model cannot meet).)
+\item \csource{main.c}{867}{867}: excluded (memory): the initialization of the GMP integer p of scan\_end
+\item \csource{main.c}{868}{873}: modelled by \lname{Ratpoints.Cli.scanEnd}
+  (deviation of \lname{Ratpoints.Cli.scanEnd}: the end and the double returned, or none, for the \texttt{exact\_end} and the double that \texttt{scan\_end} writes through pointers with its return value, the end of an infinity with \texttt{q = 0}, which \texttt{scan\_end} leaves as it is (it is not read); the parts of the word read by \texttt{Ratpoints.Cli.floatParts} from the word of \texttt{Ratpoints.Cli.onlyWord?}, which is \texttt{s} without its white space; rational numbers of core for the GMP integers and rationals \texttt{m}, \texttt{p} and \texttt{e-{}>q}, without \texttt{mpz\_init}, \texttt{mpz\_clear}, \texttt{malloc} and \texttt{free} (and the error 10 when \texttt{malloc} fails, which the model cannot meet).)
+\item \csource{main.c}{874}{874}: excluded (memory): the release of the GMP integer p of scan\_end
+\item \csource{main.c}{875}{876}: modelled by \lname{Ratpoints.Cli.scanEnd}
+  (deviation of \lname{Ratpoints.Cli.scanEnd}: the end and the double returned, or none, for the \texttt{exact\_end} and the double that \texttt{scan\_end} writes through pointers with its return value, the end of an infinity with \texttt{q = 0}, which \texttt{scan\_end} leaves as it is (it is not read); the parts of the word read by \texttt{Ratpoints.Cli.floatParts} from the word of \texttt{Ratpoints.Cli.onlyWord?}, which is \texttt{s} without its white space; rational numbers of core for the GMP integers and rationals \texttt{m}, \texttt{p} and \texttt{e-{}>q}, without \texttt{mpz\_init}, \texttt{mpz\_clear}, \texttt{malloc} and \texttt{free} (and the error 10 when \texttt{malloc} fails, which the model cannot meet).)
+\item \csource{main.c}{877}{877}: excluded (memory): the release of the GMP integer m of scan\_end
+\item \csource{main.c}{878}{880}: modelled by \lname{Ratpoints.Cli.scanEnd}
+  (deviation of \lname{Ratpoints.Cli.scanEnd}: the end and the double returned, or none, for the \texttt{exact\_end} and the double that \texttt{scan\_end} writes through pointers with its return value, the end of an infinity with \texttt{q = 0}, which \texttt{scan\_end} leaves as it is (it is not read); the parts of the word read by \texttt{Ratpoints.Cli.floatParts} from the word of \texttt{Ratpoints.Cli.onlyWord?}, which is \texttt{s} without its white space; rational numbers of core for the GMP integers and rationals \texttt{m}, \texttt{p} and \texttt{e-{}>q}, without \texttt{mpz\_init}, \texttt{mpz\_clear}, \texttt{malloc} and \texttt{free} (and the error 10 when \texttt{malloc} fails, which the model cannot meet).)
+\item \csource{main.c}{891}{905}: modelled by \lname{Ratpoints.Cli.joinIntervals}
+  (deviation of \lname{Ratpoints.Cli.joinIntervals}: a list for the array \texttt{args-{}>domain} and the number \texttt{args-{}>num\_inter} of its intervals, written back in place by \texttt{join\_intervals}, and natural numbers for the \texttt{long} indices.)
 \item \csource{main.c}{913}{949}: modelled by \lname{Ratpoints.Cli.printPoly}
   (deviation of \lname{Ratpoints.Cli.printPoly}: a fold over the coefficients, for the loop; no \texttt{fflush}.)
 \item \csource{main.c}{952}{960}: modelled by \lname{Ratpoints.Cli.printString}

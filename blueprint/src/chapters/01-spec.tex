@@ -320,24 +320,24 @@ The numbers need a reader of their own that mirrors \verb|scan_mpz| and \verb|sc
 around and between the numbers (\verb|test4.sh| has a tab-separated list and a height ending in
 a carriage return), which core's \verb|String.toInt?| does not; and core's \verb|String.toNat?|
 accepts the digit separator \verb|_|, which \verb|main.c| refuses. The program lives in the model
-library, in \verb|Ratpoints/Model/Cli.lean|, with a \verb|Main.lean| that imports only the model,
-as the \verb|lean_exe| target \verb|ratpoints-lean|. Its parts, with the lines of \verb|main.c|
-that they mirror:
+library, in \verb|Ratpoints/Model/Cli.lean|, its readers of the numbers in
+\verb|Ratpoints/Model/CliNumbers.lean|, with a \verb|Main.lean| that imports only the model, as the
+\verb|lean_exe| target \verb|ratpoints-lean|. Its parts, with the lines of \verb|main.c| that they
+mirror:
 
 \begin{definition}[Reading numbers]\label{def:cliNumbers}
-  \lean{Ratpoints.Cli.intOfWord?, Ratpoints.Cli.onlyWord?, Ratpoints.Cli.longOfString?, Ratpoints.Cli.isDouble}
+  \lean{Ratpoints.Cli.intOfWord?, Ratpoints.Cli.onlyWord?, Ratpoints.Cli.longOfString?}
   \leanok
-  The readers of the numbers of the command line, on the words of an argument, its maximal runs
-  of characters other than C white space (the space and the characters from tab to carriage
-  return): an integer of the coefficient list as \verb|scan_mpz| reads it, an optional sign
-  \verb|+| or \verb|-| and at least one decimal digit, of any size
-  (\csource{main.c}{700}{717}); the one word of an argument with only white space around it,
-  which \verb|strtol| and \verb|strtod| skip before a number and \verb|only_space_after| checks
-  after it (\csource{main.c}{724}{728}); a C \verb|long| as \verb|scan_long| reads it, an
-  integer from $-2^{63}$ to $2^{63} - 1$ (\csource{main.c}{733}{740}); and whether an argument
-  is a real number as \verb|scan_double| reads it with \verb|strtod| in the C locale: a decimal
-  or hexadecimal floating constant or an infinity, a value beyond the range of the doubles
-  included, but no NaN (\csource{main.c}{746}{752}).
+  The readers of the numbers of the command line, in \verb|Ratpoints/Model/CliNumbers.lean|, on the
+  words of an argument, its maximal runs of characters other than C white space (the space and the
+  characters from tab to carriage return): an integer of the coefficient list as \verb|scan_mpz|
+  reads it, an optional sign \verb|+| or \verb|-| and at least one decimal digit, of any size
+  (\csource{main.c}{700}{717}); the one word of an argument with only white space around it, which
+  \verb|strtol| and \verb|strtod| skip before a number and \verb|only_space_after| checks after it
+  (\csource{main.c}{724}{728}); and a C \verb|long| as \verb|scan_long| reads it, an integer from
+  $-2^{63}$ to $2^{63} - 1$ (\csource{main.c}{733}{740}). A real number is read as
+  \verb|scan_double| reads it, with the double that \verb|strtod| gives in the C locale
+  (Definition~\ref{def:cliEnds}).
 \end{definition}
 
 \begin{definition}[The failures]\label{def:cliFailure}
@@ -370,7 +370,7 @@ that they mirror:
 \end{definition}
 
 \begin{definition}[The command line]\label{def:cliInput}
-  \uses{def:cliNumbers, def:cliFailure, def:maxDegree, def:sieveParams, def:Options,
+  \uses{def:cliNumbers, def:cliEnds, def:cliFailure, def:maxDegree, def:sieveParams, def:Options,
     def:cliOutput}
   \lean{Ratpoints.Cli.coefficients, Ratpoints.Cli.heightBound, Ratpoints.Cli.checkOptions, Ratpoints.Cli.input}
   \leanok
@@ -516,8 +516,10 @@ bits and the search intervals that ratpoints accepts (Chapter~\ref{chap:region})
 brute-force reference is \verb|Ratpoints/Model/BruteForce.lean|, with \verb|#guard| examples taken
 from the C program, and its theorems are in \verb|Ratpoints/Proof/BruteForce.lean|, each with a
 guard on its axioms (\verb|#print axioms| under \verb|#guard_msgs|); the program is
-\verb|Ratpoints/Model/Cli.lean| with \verb|Main.lean|; the statements for comparator are in
-\verb|comparator/|, and the differential tests in \verb|scripts/difftest.py|.
+\verb|Ratpoints/Model/Cli.lean| with \verb|Main.lean|, and the numbers and the search intervals of
+its command line are read in \verb|Ratpoints/Model/CliNumbers.lean| (Chapter~\ref{chap:region}); the
+statements for comparator are in \verb|comparator/|, and the differential tests in
+\verb|scripts/difftest.py|.
 
 \section{The evidence}\label{sec:spec-evidence}
 

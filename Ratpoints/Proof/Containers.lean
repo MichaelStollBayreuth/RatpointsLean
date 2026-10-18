@@ -10,11 +10,11 @@ import Std.Internal.ForIn.Lemmas
 /-!
 # Lemmas on vectors, arrays, lists, ranges and numbers for the contracts
 
-Lemmas on vectors, arrays, lists, ranges, natural numbers, integers and strings that the contracts
-of the model and the theorem on the output of the program need and Lean core lacks, under their
-names in the namespaces of Lean core: the entries of a vector after `Vector.set!` and after a fold
-of `Vector.set!` over consecutive positions, the entries of `Vector.ofFn f` and of the array of a
-vector, the entries of an array made by a map over a range and of the vector of an array, the last
+Lemmas on vectors, arrays, lists, ranges, natural numbers, integers, characters and strings that the
+contracts of the model and the theorem on the output of the program need and Lean core lacks, under
+their names in the namespaces of Lean core: the entries of a vector after `Vector.set!` and after a
+fold of `Vector.set!` over consecutive positions, the entries of `Vector.ofFn f` and of the array of
+a vector, the entries of an array made by a map over a range and of the vector of an array, the last
 entry and the entries of an array after `Array.set!`, `Array.push`, `Array.pop` and `Array.map`, the
 order of the images of its members after `Array.push`, the entries of the concatenation of two
 arrays and of an array written `k` times one after the other, the entries of a list after
@@ -59,8 +59,9 @@ multiples of a divisor of `N` at or below a number `≥ -N` and above a number `
 `[-N, N]`, the product `a ^ m a ^ (n - m) = a ^ n` of integers, and the strings joined by a
 separator. For the search intervals: the elements of a list that pass one of two tests, those that
 pass the first coming before those that pass the second, and the elements of an increasing list of
-integers in ranges that are increasing and strictly apart, range after range. The lemmas on 64-bit
-words are in `Ratpoints.Proof.Bits`.
+integers in ranges that are increasing and strictly apart, range after range. For the numbers of the
+command line: the characters that `Char.toLower` takes to `x`. The lemmas on 64-bit words are in
+`Ratpoints.Proof.Bits`.
 
 ## Main statements
 
@@ -1221,6 +1222,24 @@ theorem pow_mul_pow_sub (a : Int) {m n : Nat} (h : m ≤ n) : a ^ m * a ^ (n - m
   rw [← Int.pow_add, Nat.add_sub_cancel' h]
 
 end Int
+
+/-! ### Characters -/
+
+/-- The characters that `Char.toLower` takes to `x` are `x` and `X`. -/
+theorem Char.toLower_eq_x_iff (c : Char) : c.toLower = 'x' ↔ c = 'x' ∨ c = 'X' := by
+  simp only [Char.ext_iff, ← UInt32.toNat_inj]
+  have h1 : 'A'.val.toNat = 65 := rfl
+  have h2 : 'Z'.val.toNat = 90 := rfl
+  have h3 : 'a'.val.toNat = 97 := rfl
+  have h4 : 'x'.val.toNat = 120 := rfl
+  have h5 : 'X'.val.toNat = 88 := rfl
+  by_cases h : c.val ≥ 'A'.val ∧ c.val ≤ 'Z'.val
+  · simp only [Char.toLower, h, h4, h5]
+    simp only [ge_iff_le, UInt32.le_iff_toNat_le, h1, h2] at h
+    lia
+  · simp only [Char.toLower, h, ↓reduceDIte, h4, h5]
+    simp only [ge_iff_le, UInt32.le_iff_toNat_le, h1, h2] at h
+    lia
 
 /-! ### Strings -/
 

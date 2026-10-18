@@ -10,6 +10,7 @@ public import Ratpoints.Proof.Bits
 public import Ratpoints.Proof.Bounds
 public import Ratpoints.Proof.BruteForce
 public import Ratpoints.Proof.Cli
+public import Ratpoints.Proof.CliNumbers
 public import Ratpoints.Proof.CompositeRows
 public import Ratpoints.Proof.Containers
 public import Ratpoints.Proof.Delivery
@@ -30,6 +31,7 @@ public import Ratpoints.Proof.Params
 public import Ratpoints.Proof.PrimeRows
 public import Ratpoints.Proof.Reductions
 public import Ratpoints.Proof.Region
+public import Ratpoints.Proof.Rounding
 public import Ratpoints.Proof.RowStore
 public import Ratpoints.Proof.Rows
 public import Ratpoints.Proof.Scan

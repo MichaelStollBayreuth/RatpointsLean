@@ -391,40 +391,29 @@ here.
 \section{The doubles}\label{sec:doubles}
 
 \begin{definition}[The doubles of the C code]\label{def:Double}
-  Proposed names: \lname{Ratpoints.Double}, \lname{Ratpoints.Double.mantDig},
-  \lname{Ratpoints.Double.zero}, \lname{Ratpoints.Double.huge}, \lname{Ratpoints.Double.twoPow63},
-  \lname{Ratpoints.Double.signBit}, \lname{Ratpoints.Double.expField},
-  \lname{Ratpoints.Double.fracField}, \lname{Ratpoints.Double.isNaN},
-  \lname{Ratpoints.Double.isInf}, \lname{Ratpoints.Double.isZero},
-  \lname{Ratpoints.Double.isFinite}, \lname{Ratpoints.Double.orderValue},
-  \lname{Ratpoints.Double.lt}, \lname{Ratpoints.Double.le}, \lname{Ratpoints.Double.beq},
-  \lname{Ratpoints.Double.neg}, \lname{Ratpoints.Double.fabs}, \lname{Ratpoints.Double.toDyadic},
-  \lname{Ratpoints.Double.toRat}, \lname{Ratpoints.Double.roundShift},
-  \lname{Ratpoints.Double.ofDyadic}, \lname{Ratpoints.Double.ofRatio},
-  \lname{Ratpoints.Double.ofInt64}, \lname{Ratpoints.Double.toInt64},
-  \lname{Ratpoints.Double.toUInt64}, \lname{Ratpoints.Double.ldexp}, \lname{Ratpoints.Double.frexp},
-  \lname{Ratpoints.Double.nextUp}, \lname{Ratpoints.Double.nextDown}. A C \verb|double| by its $64$
-  bits, a structure with no equality of its own, so that \verb|==| never means equality of the bits:
-  the C language's \verb|==| is $\mathrm{beq}$. Its fields (the sign bit, the exponent field, the
-  fraction) and its kinds, as \verb|isnan|, \verb|isinf| and \verb|isfinite| of \verb|math.h| decide
-  them, and the zeros; \verb|DBL_MANT_DIG| $= 53$, a fact of the format, not a parameter of
-  ratpoints; $0.0$, \verb|HUGE_VAL| $= +\infty$ and the literal $2^{63}$ of the C code. The
-  comparisons \verb|<|, \verb|<=| and \verb|==| of the C language, false when either side is a NaN
-  and otherwise the order of the values, by a key of each double that is not a NaN, the bits without
-  the sign bit, negated when it is set, which increases with the value and is $0$ for both zeros;
-  the negation and \verb|fabs|, which flip and clear the sign bit, also of a zero, an infinity and a
-  NaN. The exact value of a finite double, $m\,2^k$ as a pair of integers and as a rational number,
-  as \verb|mpq_set_d| of GMP gives it; the double nearest to $\pm m\,2^k$ and to $\pm n/d$, with
-  ties to even, as IEEE~754 rounds an exact result to nearest, with a signed zero, the subnormal
-  range and an infinity beyond the largest finite double; the conversion of a \verb|long| to a
-  double, the double nearest to it, exact for $|n| \le 2^{53}$ and $\pm 2^{63}$ for
-  $\pm(2^{63} - 1)$, and of a finite double to a \verb|long| and to an \verb|unsigned long|,
-  truncated, for the doubles for which the C language defines the conversion (for the others the
-  value is of no meaning); \verb|ldexp| and \verb|frexp|, as glibc computes them, exact in the range
-  that ratpoints uses; and \verb|nextafter| towards $+\infty$ and towards $-\infty$, the neighbours
-  of a double, with the least subnormals next to the zeros. These model the C language and the C
-  library on the platforms of ratpoints, IEEE~754 binary64 with rounding to nearest, as gcc and
-  glibc implement them, and hold no C range.
+  \lean{Ratpoints.Double, Ratpoints.Double.mantDig, Ratpoints.Double.zero, Ratpoints.Double.huge, Ratpoints.Double.twoPow63, Ratpoints.Double.signBit, Ratpoints.Double.expField, Ratpoints.Double.fracField, Ratpoints.Double.isNaN, Ratpoints.Double.isInf, Ratpoints.Double.isZero, Ratpoints.Double.isFinite, Ratpoints.Double.orderValue, Ratpoints.Double.lt, Ratpoints.Double.le, Ratpoints.Double.beq, Ratpoints.Double.neg, Ratpoints.Double.fabs, Ratpoints.Double.toDyadic, Ratpoints.Double.toRat, Ratpoints.Double.roundShift, Ratpoints.Double.ofDyadic, Ratpoints.Double.ofRatio, Ratpoints.Double.ofInt64, Ratpoints.Double.toInt64, Ratpoints.Double.toUInt64, Ratpoints.Double.ldexp, Ratpoints.Double.frexp, Ratpoints.Double.nextUp, Ratpoints.Double.nextDown}
+  \leanok
+  A C \verb|double| by its $64$ bits, a structure with no equality of its own, so that \verb|==|
+  never means equality of the bits: the C language's \verb|==| is $\mathrm{beq}$. Its fields (the
+  sign bit, the exponent field, the fraction) and its kinds, as \verb|isnan|, \verb|isinf| and
+  \verb|isfinite| of \verb|math.h| decide them, and the zeros; \verb|DBL_MANT_DIG| $= 53$, a fact of
+  the format, not a parameter of ratpoints; $0.0$, \verb|HUGE_VAL| $= +\infty$ and the literal
+  $2^{63}$ of the C code. The comparisons \verb|<|, \verb|<=| and \verb|==| of the C language, false
+  when either side is a NaN and otherwise the order of the values, by a key of each double that is
+  not a NaN, the bits without the sign bit, negated when it is set, which increases with the value
+  and is $0$ for both zeros; the negation and \verb|fabs|, which flip and clear the sign bit, also
+  of a zero, an infinity and a NaN. The exact value of a finite double, $m\,2^k$ as a pair of
+  integers and as a rational number, as \verb|mpq_set_d| of GMP gives it; the double nearest to
+  $\pm m\,2^k$ and to $\pm n/d$, with ties to even, as IEEE~754 rounds an exact result to nearest,
+  with a signed zero, the subnormal range and an infinity beyond the largest finite double; the
+  conversion of a \verb|long| to a double, the double nearest to it, exact for $|n| \le 2^{53}$ and
+  $\pm 2^{63}$ for $\pm(2^{63} - 1)$, and of a finite double to a \verb|long| and to an
+  \verb|unsigned long|, truncated, for the doubles for which the C language defines the conversion
+  (for the others the value is of no meaning); \verb|ldexp| and \verb|frexp|, as glibc computes
+  them, exact in the range that ratpoints uses; and \verb|nextafter| towards $+\infty$ and towards
+  $-\infty$, the neighbours of a double, with the least subnormals next to the zeros. These model
+  the C language and the C library on the platforms of ratpoints, IEEE~754 binary64 with rounding to
+  nearest, as gcc and glibc implement them, and hold no C range.
 \end{definition}
 
 \begin{lemma}[The doubles and their values]\label{lem:Double}
@@ -460,20 +449,9 @@ here.
 
 \begin{lemma}[The roundings are faithful]\label{lem:rounding}
   \uses{def:Double, lem:Double}
-  Proposed names: \lname{Ratpoints.Double.lt\_nextUp\_and\_nextDown\_lt\_ofRatio},
-  \lname{Ratpoints.Double.lt\_nextUp\_and\_nextDown\_lt\_ofDyadic},
-  \lname{Ratpoints.Double.isNaN\_ofRatio}, \lname{Ratpoints.Double.isNaN\_ofDyadic},
-  \lname{Ratpoints.Double.ofRatio\_eq}, \lname{Ratpoints.Double.ofDyadic\_eq},
-  \lname{Ratpoints.Double.ofRatio\_rounding}, \lname{Ratpoints.Double.ofDyadic\_rounding},
-  \lname{Ratpoints.Double.assemble}, \lname{Ratpoints.Double.ofSignificand},
-  \lname{Ratpoints.Double.roundDiv}, \lname{Ratpoints.Double.ratioExponent},
-  \lname{Ratpoints.Double.ratioLast}, \lname{Ratpoints.Double.ratioPair},
-  \lname{Ratpoints.Double.lt\_nextUp\_and\_nextDown\_lt},
-  \lname{Ratpoints.Double.le\_of\_lt\_nextUp},
-  \lname{Ratpoints.Double.le\_nextDown\_of\_doubleValue\_lt},
-  \lname{Ratpoints.Double.nextUp\_isFinite\_or}, \lname{Ratpoints.Double.nextDown\_isFinite\_or},
-  \lname{Ratpoints.Double.nextUp\_of\_beq\_zero}, \lname{Ratpoints.Double.doubleValue\_one}. The
-  double nearest to $\pm n/d$, for $d \ne 0$, and the double nearest to $\pm m\,2^k$ are never a
+  \lean{Ratpoints.Double.lt_nextUp_and_nextDown_lt_ofRatio, Ratpoints.Double.lt_nextUp_and_nextDown_lt_ofDyadic, Ratpoints.Double.isNaN_ofRatio, Ratpoints.Double.isNaN_ofDyadic, Ratpoints.Double.ofRatio_eq, Ratpoints.Double.ofDyadic_eq, Ratpoints.Double.ofRatio_rounding, Ratpoints.Double.ofDyadic_rounding, Ratpoints.Double.assemble, Ratpoints.Double.ofSignificand, Ratpoints.Double.roundDiv, Ratpoints.Double.ratioExponent, Ratpoints.Double.ratioLast, Ratpoints.Double.ratioPair, Ratpoints.Double.lt_nextUp_and_nextDown_lt, Ratpoints.Double.le_of_lt_nextUp, Ratpoints.Double.le_nextDown_of_doubleValue_lt, Ratpoints.Double.nextUp_isFinite_or, Ratpoints.Double.nextDown_isFinite_or, Ratpoints.Double.nextUp_of_beq_zero, Ratpoints.Double.doubleValue_one}
+  \leanok
+  The double nearest to $\pm n/d$, for $d \ne 0$, and the double nearest to $\pm m\,2^k$ are never a
   NaN. For $n \ne 0$ and $m \ne 0$, when the double is finite, it is a faithful rounding of the
   value: the value lies strictly between the two neighbours of the double, which are finite or
   infinite. A double whose next double lies above a value $v$ is at least every double at most $v$,
@@ -481,6 +459,7 @@ here.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   The last steps of both roundings, the exponent, the quotient rounded to the nearest integer and
   the assembly of the bits, are restated in the proofs with an equation by \verb|rfl|; the rounded
   quotient lies within one unit of the exact quotient, and the neighbours of the result are one unit
@@ -1615,45 +1594,41 @@ of Definition~\ref{def:cliEnds}, which also gives the double that \verb|scan_dou
 
 \begin{definition}[The ends of the command line]\label{def:cliEnds}
   \uses{def:cliNumbers, def:Double}
-  Proposed names: \lname{Ratpoints.Cli.isInfWord}, \lname{Ratpoints.Cli.digitValue},
-  \lname{Ratpoints.Cli.natOfDigitsIn}, \lname{Ratpoints.Cli.mantissaDigits},
-  \lname{Ratpoints.Cli.floatParts}, \lname{Ratpoints.Cli.exponentDigits},
-  \lname{Ratpoints.Cli.nearestBinary}, \lname{Ratpoints.Cli.nearestDecimal},
-  \lname{Ratpoints.Cli.strtod}, \lname{Ratpoints.Cli.scanDouble?}, \lname{Ratpoints.Cli.ExactEnd},
-  \lname{Ratpoints.Cli.outward}, \lname{Ratpoints.Cli.scanEnd}, \lname{Ratpoints.Cli.heightEnd}. The
-  parts of a floating constant as \verb|scan_end| and \verb|strtod| read them: the sign, whether it
-  is hexadecimal, the digits of the mantissa without the point and the number of them after it, as
-  the loop of \verb|scan_end| reads them (\csource{main.c}{822}{834}), and the exponent; the double
-  that \verb|strtod| of glibc reads from a word, in the C locale: $\pm\infty$ for an infinity, and
-  otherwise the double nearest to the exact value $\pm m\,10^{e - k}$, or $\pm m\,2^{e - 4k}$ for a
-  hexadecimal word, with ties to even (Definition~\ref{def:Double}), a zero of the sign of the word
-  for a value of at most $2^{-1075}$ and an infinity of its sign for one of at least $2^{1024} -
-  2^{970}$, the size of the value decided by bounds before a power is expanded, so that a word with
-  a huge exponent costs no more than another; the double that \verb|scan_double| reads, a word with
-  only white space around it, read by \verb|strtod|, none for anything else, among them a NaN
-  (\csource{main.c}{746}{752}, from Definition~\ref{def:cliNumbers}). The end \verb|exact_end|,
-  $\mathrm{inf} = -1$, $1$ or $0$ for the rational number $q$ (\csource{main.c}{71}{71}); the double
-  that \verb|outward| gives for an end $v$ from the double $x$ nearest to it: while $x$ is finite
-  and lies above $v$ (a lower end) or below it (an upper end), the next double outward
-  (\csource{main.c}{761}{763}, \csource{main.c}{766}{773}, \csource{main.c}{775}{776}); the end that
-  \verb|scan_end| reads and its double, or none when the word is not a number: for an infinite
-  double of \verb|strtod|, the infinite end of its sign and the double itself; otherwise the number
-  of the word, $0$ when its digits are $0$, $\pm 2^{-1075}$ when \verb|strtod| reads $0$ although
-  they are not, and else $m\,2^{e - 4k}$ or $m\,10^{e - k}$ with the exponent $e$ accumulated as
-  \verb|scan_end| accumulates it, up to \verb|LONG_MAX / 20|, with its sign, and the double of
-  \verb|outward| from the double of \verb|strtod| towards it (\csource{main.c}{798}{806},
-  \csource{main.c}{808}{819}, \csource{main.c}{835}{847}, \csource{main.c}{849}{849},
-  \csource{main.c}{851}{865}, \csource{main.c}{868}{873}, \csource{main.c}{875}{876},
-  \csource{main.c}{878}{880}); and the end that \verb|height_end| gives for a missing first
-  \verb|-l| (negated) and a missing last \verb|-u|, the double of $H$ moved up to the next double
-  when it is below $2^{63}$ and below $H$, as the default interval of the library has it
-  (\csource{main.c}{299}{305}).
+  \lean{Ratpoints.Cli.isInfWord, Ratpoints.Cli.digitValue, Ratpoints.Cli.natOfDigitsIn, Ratpoints.Cli.mantissaDigits, Ratpoints.Cli.floatParts, Ratpoints.Cli.exponentDigits, Ratpoints.Cli.nearestBinary, Ratpoints.Cli.nearestDecimal, Ratpoints.Cli.strtod, Ratpoints.Cli.scanDouble?, Ratpoints.Cli.ExactEnd, Ratpoints.Cli.outward, Ratpoints.Cli.scanEnd, Ratpoints.Cli.heightEnd}
+  \leanok
+  The parts of a floating constant as \verb|scan_end| and \verb|strtod| read them: the sign, whether
+  it is hexadecimal, the digits of the mantissa without the point and the number of them after it,
+  as the loop of \verb|scan_end| reads them (\csource{main.c}{822}{834}), and the exponent; the
+  double that \verb|strtod| of glibc reads from a word, in the C locale: $\pm\infty$ for an
+  infinity, and otherwise the double nearest to the exact value $\pm m\,10^{e - k}$, or
+  $\pm m\,2^{e - 4k}$ for a hexadecimal word, with ties to even (Definition~\ref{def:Double}), a
+  zero of the sign of the word for a value of at most $2^{-1075}$ and an infinity of its sign for
+  one of at least $2^{1024} - 2^{970}$, the size of the value decided by bounds before a power is
+  expanded, so that a word with a huge exponent costs no more than another; the double that
+  \verb|scan_double| reads, a word with only white space around it, read by \verb|strtod|, none for
+  anything else, among them a NaN (\csource{main.c}{746}{752}, from
+  Definition~\ref{def:cliNumbers}). The end \verb|exact_end|, $\mathrm{inf} = -1$, $1$ or $0$ for
+  the rational number $q$ (\csource{main.c}{71}{71}); the double that \verb|outward| gives for an
+  end $v$ from the double $x$ nearest to it: while $x$ is finite and lies above $v$ (a lower end) or
+  below it (an upper end), the next double outward (\csource{main.c}{761}{763},
+  \csource{main.c}{766}{773}, \csource{main.c}{775}{776}); the end that \verb|scan_end| reads and
+  its double, or none when the word is not a number: for an infinite double of \verb|strtod|, the
+  infinite end of its sign and the double itself; otherwise the number of the word, $0$ when its
+  digits are $0$, $\pm 2^{-1075}$ when \verb|strtod| reads $0$ although they are not, and else
+  $m\,2^{e - 4k}$ or $m\,10^{e - k}$ with the exponent $e$ accumulated as \verb|scan_end|
+  accumulates it, up to \verb|LONG_MAX / 20|, with its sign, and the double of \verb|outward| from
+  the double of \verb|strtod| towards it (\csource{main.c}{798}{806}, \csource{main.c}{808}{819},
+  \csource{main.c}{835}{847}, \csource{main.c}{849}{849}, \csource{main.c}{851}{865},
+  \csource{main.c}{868}{873}, \csource{main.c}{875}{876}, \csource{main.c}{878}{880}); and the end
+  that \verb|height_end| gives for a missing first \verb|-l| (negated) and a missing last \verb|-u|,
+  the double of $H$ moved up to the next double when it is below $2^{63}$ and below $H$, as the
+  default interval of the library has it (\csource{main.c}{299}{305}).
 \end{definition}
 
 \begin{definition}[The test of the region and the join]\label{def:cliRegionTest}
   \uses{def:cliEnds, def:Double}
-  Proposed names: \lname{Ratpoints.Cli.cmpEnd}, \lname{Ratpoints.Cli.cmpEndX},
-  \lname{Ratpoints.Cli.inRegion}, \lname{Ratpoints.Cli.joinIntervals}, \lname{Ratpoints.Cli.printF}.
+  \lean{Ratpoints.Cli.cmpEnd, Ratpoints.Cli.cmpEndX, Ratpoints.Cli.inRegion, Ratpoints.Cli.joinIntervals, Ratpoints.Cli.printF}
+  \leanok
   The sign of one end minus another, as \verb|cmp_end| computes it,
   $\mathrm{inf}_e - \mathrm{inf}_f$ when one of them is infinite, so that two infinities of one sign
   are equal (\csource{main.c}{309}{313}); the sign of an end minus $a/b$, $b > 0$, as
@@ -1724,41 +1699,29 @@ from the intervals before the join and runs the search on the joined intervals
 
 \begin{lemma}[The numbers of the command line]\label{lem:cliNumbers}
   \uses{def:cliEnds, def:cliRegionTest, lem:rounding, lem:Double, def:regionSpec}
-  Proposed names: \lname{Ratpoints.Cli.ExactEnd.value}, \lname{Ratpoints.Cli.InExactRegion},
-  \lname{Ratpoints.Cli.isNaN\_strtod}, \lname{Ratpoints.Cli.lt\_nextUp\_strtod},
-  \lname{Ratpoints.Cli.wordValue}, \lname{Ratpoints.Cli.scanEndValue},
-  \lname{Ratpoints.Cli.floatParts\_spec}, \lname{Ratpoints.Cli.mantissaDigits\_spec},
-  \lname{Ratpoints.Cli.OutwardInvariant}, \lname{Ratpoints.Cli.outward\_spec},
-  \lname{Ratpoints.Cli.run\_outward}, \lname{Ratpoints.Cli.run\_scanEnd\_props},
-  \lname{Ratpoints.Cli.run\_scanEnd\_isMaxBelow}, \lname{Ratpoints.Cli.heightEnd\_props},
-  \lname{Ratpoints.Cli.cmpEnd\_neg\_iff}, \lname{Ratpoints.Cli.cmpEnd\_pos\_iff},
-  \lname{Ratpoints.Cli.cmpEndX\_neg\_iff}, \lname{Ratpoints.Cli.cmpEndX\_nonpos\_iff},
-  \lname{Ratpoints.Cli.ChainEnds}, \lname{Ratpoints.Cli.InRegionInvariant},
-  \lname{Ratpoints.Cli.inRegion\_spec}, \lname{Ratpoints.Cli.run\_inRegion},
-  \lname{Ratpoints.Cli.NoNaN}, \lname{Ratpoints.Cli.JoinsWell}, \lname{Ratpoints.Cli.JoinInvariant},
-  \lname{Ratpoints.Cli.joinIntervals\_spec}, \lname{Ratpoints.Cli.run\_joinIntervals},
-  \lname{Char.toLower\_eq\_x\_iff}, \lname{WithBotTop.bot\_lt\_coe},
-  \lname{WithBotTop.coe\_lt\_top}. The value of an exact end, $\bot$, $\top$ or its rational number,
-  and the predicate that a rational number lies in one of the $n$ exact intervals; an element of
-  \verb|WithBotTop ℚ| other than $\bot$ and $\top$ lies strictly between them (the mirror
-  \verb|Order/WithBotTop|), and the characters whose lower case is \verb|x| are \verb|x| and
-  \verb|X| (for the prefix \verb|0x| of a hexadecimal word). \verb|strtod| gives no NaN, and the
-  value of a floating constant from which it reads a finite double other than a zero lies below the
-  next double above that double: the double lies above the value or less than one step below it, the
-  half of the faithful rounding of Lemma~\ref{lem:rounding} that the lower ends need. \verb|outward|
-  moves a double to the side of the end that the direction asks, and for a lower end, from a double
-  whose next double lies above the end, it lands on the largest double at most the end; so the
-  double that \verb|scan_end| gives for a lower end of a word of fewer than $2^{56}$ characters is
-  the largest double at most the end, and for an upper end a double at least the end. The height end
-  is finite and at least $H$, for $1 \le H < 2^{63}$. The signs of \verb|cmp_end| and
-  \verb|cmp_end_x| are those of the differences of the values; the binary search decides membership
-  in increasing and disjoint exact intervals; and \verb|join_intervals| gives none exactly when
-  there are none, its intervals hold the values of the intervals it joins, and for intervals without
-  a NaN, with $l \le u$, whose lower ends increase from the second on, its intervals have $l \le u$
-  and are increasing and strictly apart.
+  \lean{Ratpoints.Cli.ExactEnd.value, Ratpoints.Cli.InExactRegion, Ratpoints.Cli.isNaN_strtod, Ratpoints.Cli.lt_nextUp_strtod, Ratpoints.Cli.wordValue, Ratpoints.Cli.scanEndValue, Ratpoints.Cli.floatParts_spec, Ratpoints.Cli.mantissaDigits_spec, Ratpoints.Cli.OutwardInvariant, Ratpoints.Cli.outward_spec, Ratpoints.Cli.run_outward, Ratpoints.Cli.run_scanEnd_props, Ratpoints.Cli.run_scanEnd_isMaxBelow, Ratpoints.Cli.heightEnd_props, Ratpoints.Cli.cmpEnd_neg_iff, Ratpoints.Cli.cmpEnd_pos_iff, Ratpoints.Cli.cmpEndX_neg_iff, Ratpoints.Cli.cmpEndX_nonpos_iff, Ratpoints.Cli.ChainEnds, Ratpoints.Cli.InRegionInvariant, Ratpoints.Cli.inRegion_spec, Ratpoints.Cli.run_inRegion, Ratpoints.Cli.NoNaN, Ratpoints.Cli.JoinsWell, Ratpoints.Cli.JoinInvariant, Ratpoints.Cli.joinIntervals_spec, Ratpoints.Cli.run_joinIntervals, Char.toLower_eq_x_iff, WithBotTop.bot_lt_coe, WithBotTop.coe_lt_top}
+  \leanok
+  The value of an exact end, $\bot$, $\top$ or its rational number, and the predicate that a
+  rational number lies in one of the $n$ exact intervals; an element of \verb|WithBotTop ℚ| other
+  than $\bot$ and $\top$ lies strictly between them (the mirror \verb|Order/WithBotTop|), and the
+  characters whose lower case is \verb|x| are \verb|x| and \verb|X| (for the prefix \verb|0x| of a
+  hexadecimal word). \verb|strtod| gives no NaN, and the value of a floating constant from which it
+  reads a finite double other than a zero lies below the next double above that double: the double
+  lies above the value or less than one step below it, the half of the faithful rounding of
+  Lemma~\ref{lem:rounding} that the lower ends need. \verb|outward| moves a double to the side of
+  the end that the direction asks, and for a lower end, from a double whose next double lies above
+  the end, it lands on the largest double at most the end; so the double that \verb|scan_end| gives
+  for a lower end of a word of fewer than $2^{56}$ characters is the largest double at most the end,
+  and for an upper end a double at least the end. The height end is finite and at least $H$, for
+  $1 \le H < 2^{63}$. The signs of \verb|cmp_end| and \verb|cmp_end_x| are those of the differences
+  of the values; the binary search decides membership in increasing and disjoint exact intervals;
+  and \verb|join_intervals| gives none exactly when there are none, its intervals hold the values of
+  the intervals it joins, and for intervals without a NaN, with $l \le u$, whose lower ends increase
+  from the second on, its intervals have $l \le u$ and are increasing and strictly apart.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   The parts of the word and its value, with the capped exponent equal to the true one below
   $2^{56}$ characters; the rounding of \verb|strtod| by Lemma~\ref{lem:rounding}; the loops of
   \verb|outward|, \verb|in_region| and \verb|join_intervals| by named invariants with the program

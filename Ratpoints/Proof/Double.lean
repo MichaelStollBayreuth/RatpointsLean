@@ -491,10 +491,10 @@ theorem roundShift_of_nonpos {m : ℕ} {k : ℤ} (hk : k ≤ 0) :
     roundShift m k = m * 2 ^ (-k).toNat := by
   simp [roundShift, hk, Nat.shiftLeft_eq]
 
-/-- The double that the last lines of `Ratpoints.Double.ofDyadic` make from a significand
-`M < 2 ^ 53` and the exponent `q` of its last place, in the range of the finite doubles: a subnormal
-for `M < 2 ^ 52`, which needs `q = -1074`, and otherwise a normal double with the exponent field
-`q + 1075`; its value is `±M 2 ^ q`. -/
+/-- The double that the last lines of `Ratpoints.Double.ofDyadic` and `Ratpoints.Double.ofRatio`
+make from a significand `M < 2 ^ 53` and the exponent `q` of its last place, in the range of the
+finite doubles: a subnormal for `M < 2 ^ 52`, which needs `q = -1074`, and otherwise a normal double
+with the exponent field `q + 1075`; its value is `±M 2 ^ q`. -/
 theorem spec_ofSignificand {neg : Bool} {M : ℕ} {q : ℤ} {x : Double}
     (hM : M < 2 ^ 53) (hsub : M < 2 ^ 52 → q = -1074) (hnorm : 2 ^ 52 ≤ M → -1074 ≤ q ∧ q ≤ 971)
     (hx : x = if M < 2 ^ 52 then ⟨(if neg then 0x8000000000000000 else 0 : UInt64) ||| M.toUInt64⟩

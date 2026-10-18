@@ -5,9 +5,11 @@ Authors: Michael Stoll
 -/
 module
 
+public import Ratpoints.Model.CliNumbers
 public import Ratpoints.Model.FindPoints
 
 -- The `#guard` examples run the sieve at compile time.
+meta import Ratpoints.Model.CliNumbers
 meta import Ratpoints.Model.FindPoints
 
 /-!
@@ -47,10 +49,8 @@ reversed polynomial mapped back to the caller's curve, as ratpoints does with th
 
 ## Implementation notes
 
-The numbers are read as `main.c` reads them, by readers of their own: core's `String.toInt?` takes
-neither a leading `+` nor white space around the number, and core's `String.toNat?` takes the digit
-separator `_`, which `main.c` refuses. The text that `main.c` prints as it goes is collected and
-written once at the end.
+The numbers are read as `main.c` reads them, in `Ratpoints.Model.CliNumbers`. The text that `main.c`
+prints as it goes is collected and written once at the end.
 -/
 
 @[expose] public section
@@ -58,96 +58,6 @@ written once at the end.
 namespace Ratpoints
 
 namespace Cli
-
-/-! ### Reading numbers -/
-
-/-- Whether `ch` is white space for `isspace` in the C locale, in which `main.c` runs: a space,
-or a character from the tab `\t` to the carriage return `\r` (tab, line feed, vertical tab, form
-feed, carriage return). Core's `Char.isWhitespace` leaves out the vertical tab and the form
-feed. -/
-def isSpace (ch : Char) : Bool := ch == ' ' || '\t' ≤ ch && ch ≤ '\r'
-
-/-- The words of `s`: its maximal runs of characters that are not C white space
-(`Ratpoints.Cli.isSpace`), in order. `List.splitBy` cuts `s` into the maximal runs of white space
-and of other characters, and the words are the latter. -/
-def words (s : List Char) : List (List Char) :=
-  (s.splitBy fun a b ↦ isSpace a == isSpace b).filter fun w ↦ !w.any isSpace
-
-/-- Whether `s` is a nonempty list of decimal digits. -/
-def isDigits (s : List Char) : Bool := !s.isEmpty && s.all Char.isDigit
-
-/-- The natural number that `ds` denotes, if it is a nonempty list of decimal digits. -/
-def natOfDigits? (ds : List Char) : Option Nat :=
-  if isDigits ds then some (ds.foldl (fun n ch ↦ 10 * n + (ch.toNat - '0'.toNat)) 0) else none
-
-/-- The characters of `s` after an optional sign `-` or `+`. -/
-def dropSign : List Char → List Char
-  | '-' :: s | '+' :: s => s
-  | s => s
-
-/-- The integer that the word `w` is, as `scan_mpz` of `main.c` reads it: an optional sign `-` or
-`+`, then at least one decimal digit and nothing else. There is no bound on its size. `scan_mpz`
-also checks that white space or the end of the argument follows the digits, which a word of
-`Ratpoints.Cli.words` satisfies.
-
-C: `main.c:700-717` -/
-def intOfWord? (w : List Char) : Option Int :=
-  (natOfDigits? (dropSign w)).map fun n ↦ if w.head? = some '-' then -(n : Int) else n
-
-/-- The one word of `s`, if `s` has exactly one word (`Ratpoints.Cli.words`): `strtol` and
-`strtod` skip the white space before a number, and `only_space_after` of `main.c` checks that
-nothing but white space follows it.
-
-C: `main.c:724-728` -/
-def onlyWord? (s : String) : Option (List Char) :=
-  match words s.toList with
-  | [w] => some w
-  | _ => none
-
-/-- The C `long` that `s` is, as `scan_long` of `main.c` reads it with `strtol` in base 10: an
-integer as `Ratpoints.Cli.intOfWord?` reads it, with nothing but C white space before and after
-it (`Ratpoints.Cli.onlyWord?`), from `-2⁶³` to `2⁶³ - 1`; for a value beyond these bounds
-`strtol` reports the error `ERANGE`.
-
-C: `main.c:733-740`
-
-Deviation: an `Int` for a `long`. -/
-def longOfString? (s : String) : Option Int :=
-  ((onlyWord? s).bind intOfWord?).filter fun n ↦ -2 ^ 63 ≤ n && n < 2 ^ 63
-
-/-- Whether `s` is a floating constant as `strtod` reads it, without its sign and, for a
-hexadecimal one, without its prefix `0x`, and nothing else: the mantissa, a maximal run of digits
-(those that satisfy `isDigit`) and points with at most one point and at least one digit, and then
-optionally the exponent, a character of `exp`, an optional sign and at least one decimal digit. -/
-def isFloatBody (isDigit : Char → Bool) (exp : List Char) (s : List Char) : Bool :=
-  let (m, e) := s.span fun ch ↦ isDigit ch || ch == '.'
-  m.count '.' ≤ 1 && m.any isDigit && match e with
-    | [] => true
-    | x :: t => exp.contains x && isDigits (dropSign t)
-
-/-- Whether the word `w` is a number for `strtod` in the C locale, other than a NaN: an optional
-sign, then `inf` or `infinity` in any case, or a decimal floating constant with the exponent `e`
-or `E` (`Ratpoints.Cli.isFloatBody`), or `0x` or `0X` and a hexadecimal one with the exponent `p`
-or `P`. -/
-def isDoubleWord (w : List Char) : Bool :=
-  let v := dropSign w
-  ["inf".toList, "infinity".toList].contains (v.map Char.toLower) ||
-    match v with
-    | '0' :: x :: t =>
-      if x.toLower == 'x' then isFloatBody Char.isHexDigit ['p', 'P'] t
-      else isFloatBody Char.isDigit ['e', 'E'] v
-    | _ => isFloatBody Char.isDigit ['e', 'E'] v
-
-/-- Whether `s` is a real number as `scan_double` of `main.c` reads it with `strtod`: a word of
-`Ratpoints.Cli.isDoubleWord`, with nothing but C white space before and after it
-(`Ratpoints.Cli.onlyWord?`). A number beyond the range of the doubles is accepted, as an infinity
-or as zero, and a NaN is refused.
-
-C: `main.c:746-752`
-
-Deviation: only whether `s` is a number, not the double it denotes, which the options that take a
-real number do not need, since they are ignored. -/
-def isDouble (s : String) : Bool := (onlyWord? s).any isDoubleWord
 
 /-! ### Messages -/
 
@@ -309,7 +219,7 @@ def heightBound (s : String) : Except Failure Nat :=
 inductive OptionArg where
   /-- A C `long`, as `Ratpoints.Cli.longOfString?` reads it. -/
   | long
-  /-- A C `double`, as `Ratpoints.Cli.isDouble` reads it. -/
+  /-- A C `double`, as `Ratpoints.Cli.scanDouble?` reads it. -/
   | double
   /-- An optional C `long`: the next word, if there is one and it does not start with `-`, which is
   then a C `long` as `Ratpoints.Cli.longOfString?` reads it. -/
@@ -321,7 +231,7 @@ inductive OptionArg where
 def OptionArg.accepts (arg : OptionArg) (a : String) : Bool :=
   match arg with
   | .long | .optionalLong => (longOfString? a).isSome
-  | .double => isDouble a
+  | .double => (scanDouble? a).isSome
   | .word => true
 
 /-- The kind of argument that the option `o` takes, or `none` if it takes none, for an option that
@@ -794,19 +704,6 @@ Each of them is what ratpoints 3.1.1 does, but for the banner; for messages 4 an
 and, under `-v`, the report of the library, which `ratpoints-lean` leaves out; and for the exit
 status 12 on `-lfoo` (that is, `-l`), an option that ratpoints has and `ratpoints-lean` does not
 support yet. -/
-
-#guard words " 1\t-2\x0b+3\r".toList == ["1".toList, "-2".toList, "+3".toList]
-
-#guard longOfString? " +7\r" == some 7 && longOfString? "-0" == some 0
-
-#guard longOfString? "9223372036854775807" == some (2 ^ 63 - 1) &&
-  longOfString? "-9223372036854775808" == some (-2 ^ 63)
-
-#guard longOfString? "9223372036854775808" == none && longOfString? "1_000" == none
-
-#guard [" 1.5e3 ", "-0x1.8p3", ".5", "1.", "INFINITY", "-inf", "1e400"].all isDouble
-
-#guard !(["nan", "1e", "0x", ".", "1e+", "0x1p", "1,5", "1 2", "infinit", ""].any isDouble)
 
 #guard (coefficients " +1\t0  -1 ").toOption == some [1, 0, -1]
 

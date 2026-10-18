@@ -572,6 +572,54 @@ reason = "the release of the GMP integer fff at the end of read_input"
 
 [[excluded]]
 file = "main.c"
+lines = "765"
+kind = "memory"
+reason = "the initialization of the GMP rational t of outward"
+
+[[excluded]]
+file = "main.c"
+lines = "774"
+kind = "memory"
+reason = "the release of the GMP rational t of outward"
+
+[[excluded]]
+file = "main.c"
+lines = "820-821"
+kind = "memory"
+reason = "the allocation of the string of the digits of scan_end, and error 10 when it fails, which the model cannot meet"
+
+[[excluded]]
+file = "main.c"
+lines = "848"
+kind = "memory"
+reason = "the initialization of the GMP integer m of scan_end"
+
+[[excluded]]
+file = "main.c"
+lines = "850"
+kind = "memory"
+reason = "the release of the string of the digits of scan_end"
+
+[[excluded]]
+file = "main.c"
+lines = "867"
+kind = "memory"
+reason = "the initialization of the GMP integer p of scan_end"
+
+[[excluded]]
+file = "main.c"
+lines = "874"
+kind = "memory"
+reason = "the release of the GMP integer p of scan_end"
+
+[[excluded]]
+file = "main.c"
+lines = "877"
+kind = "memory"
+reason = "the release of the GMP integer m of scan_end"
+
+[[excluded]]
+file = "main.c"
 lines = "977-978"
 kind = "other"
 reason = "the text of message 1, the banner and the usage, which main prints only when read_input returns a value other than 0, which it never does: its only return is at line 691, and every other failure exits through error"

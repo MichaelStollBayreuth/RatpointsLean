@@ -9,6 +9,7 @@ public import Ratpoints.Model.Bounds
 public import Ratpoints.Model.BruteForce
 public import Ratpoints.Model.Candidate
 public import Ratpoints.Model.Cli
+public import Ratpoints.Model.CliNumbers
 public import Ratpoints.Model.Constants
 public import Ratpoints.Model.Delivery
 public import Ratpoints.Model.Denominators
