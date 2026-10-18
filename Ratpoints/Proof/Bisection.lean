@@ -400,7 +400,7 @@ theorem EndsWF.midpoint_eq {depth : ℕ} {nl nr del : Int64} (h : EndsWF depth n
     (by lia [h.natAbs_left_le (by lia) hl, h.natAbs_right_le (by lia) hr])
   rw [midpoint_of_eq 0 hl hr]
   by_cases hev : (nl + nr) &&& 1 = 0
-  · have := congrArg Int64.toInt hev
+  · have := congr(Int64.toInt $hev)
     rw [Int64.toInt_and_one, hs, Int64.toInt_zero] at this
     simpa only [hev, ↓reduceIte] using endsWF_halves_of_even hd h1 hA hB hlt
       (by rw [Int64.toInt_shiftRight_one, hs]; lia)
@@ -432,9 +432,9 @@ theorem endsWF_halves_of_lt {depth k : ℕ} {nl nr m del der dem : Int64} (hd : 
   have hbX : |nr.toInt * 2 ^ (k + 1)| = |nr.toInt| * 2 ^ (k + 1) := by rw [abs_mul, abs_of_pos hX0]
   have hab := lt_and_lt_of_lt_mul (Q := 2 ^ der.toInt.toNat) (by positivity) hX0 hlt
   refine ⟨endsWF_finite (by lia) (by lia) ⟨by lia, by lia⟩ ⟨by lia, by lia⟩
-    (fun h' ↦ absurd (congrArg Int64.toInt h') (by lia)) ?_ ?_ ?_,
+    (fun h' ↦ absurd congr(Int64.toInt $h') (by lia)) ?_ ?_ ?_,
     endsWF_finite (by lia) (by lia) ⟨by lia, by lia⟩ ⟨hq, by lia⟩
-    (fun h' ↦ absurd (congrArg Int64.toInt h') (by lia)) ?_ ?_ ?_⟩ <;>
+    (fun h' ↦ absurd congr(Int64.toInt $h') (by lia)) ?_ ?_ ?_⟩ <;>
   simp only [hm, hP1, hP, show (dem.toInt - del.toInt).toNat = 1 by lia,
     show (del.toInt - dem.toInt).toNat = 0 by lia, show (der.toInt - dem.toInt).toNat = 0 by lia,
     show (dem.toInt - der.toInt).toNat = k + 2 by lia, pow_zero, pow_one, mul_one] <;>
@@ -507,9 +507,9 @@ theorem endsWF_halves_of_gt {depth k : ℕ} {nl nr m del der dem : Int64} (hd : 
   have haX : |nl.toInt * 2 ^ (k + 1)| = |nl.toInt| * 2 ^ (k + 1) := by rw [abs_mul, abs_of_pos hX0]
   have hab := lt_and_lt_of_mul_lt (P := 2 ^ del.toInt.toNat) (by positivity) hX0 hlt
   refine ⟨endsWF_finite (by lia) (by lia) ⟨hp, by lia⟩ ⟨by lia, by lia⟩
-    (fun h' ↦ absurd (congrArg Int64.toInt h') (by lia)) ?_ ?_ ?_,
+    (fun h' ↦ absurd congr(Int64.toInt $h') (by lia)) ?_ ?_ ?_,
     endsWF_finite (by lia) (by lia) ⟨by lia, by lia⟩ ⟨by lia, by lia⟩
-    (fun h' ↦ absurd (congrArg Int64.toInt h') (by lia)) ?_ ?_ ?_⟩ <;>
+    (fun h' ↦ absurd congr(Int64.toInt $h') (by lia)) ?_ ?_ ?_⟩ <;>
   simp only [hm, hP1, hP, show (dem.toInt - der.toInt).toNat = 1 by lia,
     show (der.toInt - dem.toInt).toNat = 0 by lia, show (del.toInt - dem.toInt).toNat = 0 by lia,
     show (dem.toInt - del.toInt).toNat = k + 2 by lia, pow_zero, pow_one, mul_one] <;>
@@ -977,8 +977,7 @@ theorem inIntervals_of_inIntervals_intersectList {loc ivs : List (Double × Doub
     (hx : InIntervals (domainValues (intersectList loc ivs)) x) :
     InIntervals (domainValues loc) x ∧ InIntervals (domainValues ivs) x := by
   rw [intervalsWF_domainBits_iff_pairwise] at hloc hivs
-  rw [inIntervals_domainValues_iff] at hx ⊢
-  rw [inIntervals_domainValues_iff]
+  simp only [inIntervals_domainValues_iff] at hx ⊢
   obtain ⟨i, hi, h1, h2⟩ := hx
   obtain ⟨a, ha, b, hb, h⟩ := exists_of_mem_intersectList hloc.1 hivs.1 hi
   have := doubleValue_eq_max_and_min_of_meet_fst_eq_some (hloc.1 a ha) (hivs.1 b hb) h

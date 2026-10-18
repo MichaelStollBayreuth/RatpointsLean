@@ -8,6 +8,7 @@ module
 public import Ratpoints.Proof.Double
 
 import Mathlib.Algebra.Order.Field.Power
+import Ratpoints.Mathlib.Order.WithBotTop
 
 /-!
 # The rounding of the doubles of the model
@@ -114,7 +115,7 @@ theorem lt_valueOfOrderValue_add_one {k : ℕ} {v : ℚ} (hk : k < maxOrderValue
   · rwa [show (k : ℤ) + 1 = ((k + 1 : ℕ) : ℤ) by push_cast; ring,
       valueOfOrderValue_natCast h', WithBotTop.coe_lt_coe]
   · rw [show (k : ℤ) + 1 = (maxOrderValue : ℤ) by lia, valueOfOrderValue_maxOrderValue]
-    exact WithBot.coe_lt_coe.mpr (WithTop.coe_lt_top _)
+    exact WithBotTop.coe_lt_top _
 
 theorem valueOfOrderValue_neg_sub_one_lt {k : ℕ} {v : ℚ} (hk : k < maxOrderValue)
     (h : v < (magnitudeUnits (k + 1) : ℚ) * 2 ^ (-1074 : ℤ)) :
@@ -123,7 +124,7 @@ theorem valueOfOrderValue_neg_sub_one_lt {k : ℕ} {v : ℚ} (hk : k < maxOrderV
   · rwa [show -(k : ℤ) - 1 = -((k + 1 : ℕ) : ℤ) by push_cast; ring,
       valueOfOrderValue_neg_natCast h', WithBotTop.coe_lt_coe, neg_lt_neg_iff]
   · rw [show -(k : ℤ) - 1 = -(maxOrderValue : ℤ) by lia, valueOfOrderValue_neg_maxOrderValue]
-    exact WithBot.bot_lt_coe _
+    exact WithBotTop.bot_lt_coe _
 
 theorem valueOfOrderValue_sub_one_lt {k : ℕ} {v : ℚ} (hk : k < maxOrderValue) (hv : 0 < v)
     (h : k ≠ 0 → (magnitudeUnits (k - 1) : ℚ) * 2 ^ (-1074 : ℤ) < v) :

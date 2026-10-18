@@ -421,30 +421,32 @@ here.
 
 \begin{lemma}[The doubles and their values]\label{lem:Double}
   \uses{def:Double, def:regionSpec}
-  \lean{Ratpoints.Double.isNaN_iff, Ratpoints.Double.maxOrderValue, Ratpoints.Double.magnitudeUnits, Ratpoints.Double.orderValueUnits, Ratpoints.Double.valueOfOrderValue, Ratpoints.Double.strictMonoOn_valueOfOrderValue, Ratpoints.Double.doubleValue_eq_valueOfOrderValue, Ratpoints.Double.lt_eq_true_iff, Ratpoints.Double.le_eq_true_iff, Ratpoints.Double.beq_eq_true_iff, Ratpoints.Double.lt_eq_true_iff', Ratpoints.Double.le_eq_true_iff', Ratpoints.Double.doubleValue_eq_toRat, Ratpoints.Double.toRat_eq, Ratpoints.Double.toRat_neg, Ratpoints.Double.toRat_fabs, Ratpoints.Double.ofDyadic_exact, Ratpoints.Double.exists_toRat_ofDyadic_eq, Ratpoints.Double.fields_assemble, Ratpoints.Double.isFinite_assemble_iff, Ratpoints.Double.toRat_assemble, Ratpoints.Double.ofInt64_exact, Ratpoints.Double.isFinite_ofInt64_and_lt_toRat_nextUp, Ratpoints.Double.ldexp_exact, Ratpoints.Double.toRat_frexp_mul_zpow_eq_and_bounds, Ratpoints.Double.toInt_toInt64, Ratpoints.Double.toNat_toUInt64, Ratpoints.Double.orderValue_nextUp, Ratpoints.Double.nextUp_le_of_lt, Ratpoints.Double.lt_nextUp, Ratpoints.Double.orderValue_nextDown, Ratpoints.Double.le_nextDown_of_lt, Ratpoints.Double.nextDown_lt, Ratpoints.Double.toRat_nextUp_of_normal, Ratpoints.Double.le_doubleValue_or_of_lt_eq_false, Ratpoints.Double.isFinite_and_abs_lt_of_lt, Ratpoints.Double.lt_zero_eq_true_iff_toRat, Ratpoints.Double.lt_twoPow63_eq_true_iff_toRat, Ratpoints.Double.isFinite_and_le_toRat_ofInt64_nextUp}
+  \lean{Ratpoints.Double.isNaN_iff, Ratpoints.Double.maxOrderValue, Ratpoints.Double.magnitudeUnits, Ratpoints.Double.orderValueUnits, Ratpoints.Double.valueOfOrderValue, Ratpoints.Double.strictMonoOn_valueOfOrderValue, Ratpoints.Double.doubleValue_eq_valueOfOrderValue, Ratpoints.Double.lt_eq_true_iff, Ratpoints.Double.le_eq_true_iff, Ratpoints.Double.beq_eq_true_iff, Ratpoints.Double.lt_eq_true_iff', Ratpoints.Double.le_eq_true_iff', Ratpoints.Double.doubleValue_eq_toRat, Ratpoints.Double.toRat_eq, Ratpoints.Double.toRat_neg, Ratpoints.Double.toRat_fabs, Ratpoints.Double.ofDyadic_exact, Ratpoints.Double.exists_toRat_ofDyadic_eq, Ratpoints.Double.fields_assemble, Ratpoints.Double.isFinite_assemble_iff, Ratpoints.Double.toRat_assemble, Ratpoints.Double.ofInt64_exact, Ratpoints.Double.isFinite_ofInt64_and_lt_toRat_nextUp, Ratpoints.Double.ldexp_exact, Ratpoints.Double.toRat_frexp_mul_zpow_eq_and_bounds, Ratpoints.Double.toInt_toInt64, Ratpoints.Double.toNat_toUInt64, Ratpoints.Double.orderValue_nextUp, Ratpoints.Double.nextUp_le_of_lt, Ratpoints.Double.lt_nextUp, Ratpoints.Double.orderValue_nextDown, Ratpoints.Double.le_nextDown_of_lt, Ratpoints.Double.nextDown_lt, Ratpoints.Double.toRat_nextUp_of_normal, Ratpoints.Double.le_doubleValue_or_of_lt_eq_false, Ratpoints.Double.isFinite_and_abs_lt_of_lt, Ratpoints.Double.lt_zero_eq_true_iff_toRat, Ratpoints.Double.lt_twoPow63_eq_true_iff_toRat, Ratpoints.Double.isFinite_and_le_toRat_ofInt64_nextUp, WithBotTop.bot_lt_coe, WithBotTop.coe_lt_top}
   \leanok
   The test of the model is the NaN of the specification, and the value of a double that is not a NaN
-  is a strictly increasing function of its key on the range of the keys, so that the comparisons of
-  the C language are the order and the equality of the values (Definition~\ref{def:regionSpec}),
-  with or without the hypotheses that the two sides are not NaNs; the value of a finite double is
-  its exact value, and the negation and \verb|fabs| negate it and take its absolute value. The
-  double of a significand $M < 2^{53}$ and the exponent $q$ of its last place has the sign, the
-  exponent field and the fraction of a subnormal or a zero ($M < 2^{52}$), of an infinity or of a
-  normal double, it is finite exactly when $M < 2^{52}$ or $q + 1075 < 2047$, and in the range of
-  the finite doubles its value is $\pm M 2^q$. The double nearest to $\pm m\,2^k$ is exact when
-  $0 < m < 2^{53}$, $k \ge -1074$ and $m\,2^k < 2^{1024}$, and in the normal range it is $\pm M 2^q$
-  with $2^{52} \le M < 2^{53}$ and $m\,2^k < (M + 1) 2^q$; the conversion of a \verb|long| is exact
-  for $|n| \le 2^{53}$, and the next double above the conversion of $1 \le H < 2^{63}$ lies above
-  $H$; \verb|ldexp| scales the value exactly while it stays in the normal range, \verb|frexp| gives
-  $x = g\,2^{\mathit{ex}}$ with $1/2 \le |g| < 1$, and the conversions to \verb|long| and
-  \verb|unsigned long| are the floor of a value in their range. The neighbours of a double that is
-  not a NaN and not at the end of the order have the next keys, so that no double lies strictly
-  between a double and its neighbour; the step above a positive normal double of exponent field $e$
-  (Definition~\ref{def:regionSpec}) is $2^{e - 1075}$. And the facts on the ends that the bounds and
-  the default interval read: a comparison that fails puts the values in the other order, a double
-  below $2^{63}$ in absolute value is finite, the tests $x < 0$ and $x < 2^{63}$ are those of the
-  exact value, and the double of $1 \le H < 2^{63}$, moved up to the next double when it is below
-  $2^{63}$ and its conversion to a \verb|long| below $H$, is finite and at least $H$.
+  is a strictly increasing function of its key on the range of the keys (an element of
+  \verb|WithBotTop ℚ| other than $\bot$ and $\top$ lies strictly between them: the mirror
+  \verb|Order/WithBotTop|), so that the comparisons of the C language are the order and the equality
+  of the values (Definition~\ref{def:regionSpec}), with or without the hypotheses that the two sides
+  are not NaNs; the value of a finite double is its exact value, and the negation and \verb|fabs|
+  negate it and take its absolute value. The double of a significand $M < 2^{53}$ and the exponent
+  $q$ of its last place has the sign, the exponent field and the fraction of a subnormal or a zero
+  ($M < 2^{52}$), of an infinity or of a normal double, it is finite exactly when $M < 2^{52}$ or
+  $q + 1075 < 2047$, and in the range of the finite doubles its value is $\pm M 2^q$. The double
+  nearest to $\pm m\,2^k$ is exact when $0 < m < 2^{53}$, $k \ge -1074$ and $m\,2^k < 2^{1024}$, and
+  in the normal range it is $\pm M 2^q$ with $2^{52} \le M < 2^{53}$ and $m\,2^k < (M + 1) 2^q$; the
+  conversion of a \verb|long| is exact for $|n| \le 2^{53}$, and the next double above the
+  conversion of $1 \le H < 2^{63}$ lies above $H$; \verb|ldexp| scales the value exactly while it
+  stays in the normal range, \verb|frexp| gives $x = g\,2^{\mathit{ex}}$ with $1/2 \le |g| < 1$, and
+  the conversions to \verb|long| and \verb|unsigned long| are the floor of a value in their range.
+  The neighbours of a double that is not a NaN and not at the end of the order have the next keys,
+  so that no double lies strictly between a double and its neighbour; the step above a positive
+  normal double of exponent field $e$ (Definition~\ref{def:regionSpec}) is $2^{e - 1075}$. And the
+  facts on the ends that the bounds and the default interval read: a comparison that fails puts the
+  values in the other order, a double below $2^{63}$ in absolute value is finite, the tests $x < 0$
+  and $x < 2^{63}$ are those of the exact value, and the double of $1 \le H < 2^{63}$, moved up to
+  the next double when it is below $2^{63}$ and its conversion to a \verb|long| below $H$, is finite
+  and at least $H$.
 \end{lemma}
 
 \begin{proof}\leanok
@@ -1648,25 +1650,24 @@ from the intervals before the join and runs the search on the joined intervals
 
 \begin{lemma}[The numbers of the command line]\label{lem:cliNumbers}
   \uses{def:cliEnds, def:cliRegionTest, lem:rounding, lem:Double, def:regionSpec}
-  \lean{Ratpoints.Cli.ExactEnd.value, Ratpoints.Cli.InExactRegion, Ratpoints.Cli.isNaN_strtod, Ratpoints.Cli.lt_nextUp_strtod, Ratpoints.Cli.wordValue, Ratpoints.Cli.scanEndValue, Ratpoints.Cli.floatParts_bounds_and_isDigit_exponentDigits, Ratpoints.Cli.mantissaDigits_bounds_and_eq_dropWhile, Ratpoints.Cli.OutwardInvariant, Ratpoints.Cli.outward_spec, Ratpoints.Cli.run_outward, Ratpoints.Cli.inf_mem_and_isNaN_eq_false_and_le_of_run_scanEnd_eq_some, Ratpoints.Cli.run_scanEnd_isMaxBelow, Ratpoints.Cli.isFinite_heightEnd_and_le_toRat, Ratpoints.Cli.cmpEnd_neg_iff, Ratpoints.Cli.cmpEnd_pos_iff, Ratpoints.Cli.cmpEndX_neg_iff, Ratpoints.Cli.cmpEndX_nonpos_iff, Ratpoints.Cli.ChainEnds, Ratpoints.Cli.InRegionInvariant, Ratpoints.Cli.inRegion_spec, Ratpoints.Cli.run_inRegion, Ratpoints.Cli.NoNaN, Ratpoints.Cli.JoinsWell, Ratpoints.Cli.JoinInvariant, Ratpoints.Cli.joinIntervals_spec, Ratpoints.Cli.run_joinIntervals, Char.toLower_eq_x_iff, WithBotTop.bot_lt_coe, WithBotTop.coe_lt_top, List.getElem!_mem, Array.getElem_take_toList, Array.getElem!_take_toList, Array.mem_take_toList_of_lt, Array.exists_eq_of_mem_take_toList}
+  \lean{Ratpoints.Cli.ExactEnd.value, Ratpoints.Cli.InExactRegion, Ratpoints.Cli.isNaN_strtod, Ratpoints.Cli.lt_nextUp_strtod, Ratpoints.Cli.wordValue, Ratpoints.Cli.scanEndValue, Ratpoints.Cli.floatParts_bounds_and_isDigit_exponentDigits, Ratpoints.Cli.mantissaDigits_bounds_and_eq_dropWhile, Ratpoints.Cli.OutwardInvariant, Ratpoints.Cli.outward_spec, Ratpoints.Cli.run_outward, Ratpoints.Cli.inf_mem_and_isNaN_eq_false_and_le_of_run_scanEnd_eq_some, Ratpoints.Cli.run_scanEnd_isMaxBelow, Ratpoints.Cli.isFinite_heightEnd_and_le_toRat, Ratpoints.Cli.cmpEnd_neg_iff, Ratpoints.Cli.cmpEnd_pos_iff, Ratpoints.Cli.cmpEndX_neg_iff, Ratpoints.Cli.cmpEndX_nonpos_iff, Ratpoints.Cli.ChainEnds, Ratpoints.Cli.InRegionInvariant, Ratpoints.Cli.inRegion_spec, Ratpoints.Cli.run_inRegion, Ratpoints.Cli.NoNaN, Ratpoints.Cli.JoinsWell, Ratpoints.Cli.JoinInvariant, Ratpoints.Cli.joinIntervals_spec, Ratpoints.Cli.run_joinIntervals, Char.toLower_eq_x_iff, List.getElem!_mem, Array.getElem_take_toList, Array.getElem!_take_toList, Array.mem_take_toList_of_lt, Array.exists_eq_of_mem_take_toList}
   \leanok
   The value of an exact end, $\bot$, $\top$ or its rational number, and the predicate that a
-  rational number lies in one of the $n$ exact intervals; an element of \verb|WithBotTop ℚ| other
-  than $\bot$ and $\top$ lies strictly between them (the mirror \verb|Order/WithBotTop|), and the
-  characters whose lower case is \verb|x| are \verb|x| and \verb|X| (for the prefix \verb|0x| of a
-  hexadecimal word). \verb|strtod| gives no NaN, and the value of a floating constant from which it
-  reads a finite double other than a zero lies below the next double above that double: the double
-  lies above the value or less than one step below it, the half of the faithful rounding of
-  Lemma~\ref{lem:rounding} that the lower ends need. \verb|outward| moves a double to the side of
-  the end that the direction asks, and for a lower end, from a double whose next double lies above
-  the end, it lands on the largest double at most the end; so the double that \verb|scan_end| gives
-  for a lower end of a word of fewer than $2^{56}$ characters is the largest double at most the end,
-  and for an upper end a double at least the end. The height end is finite and at least $H$, for
-  $1 \le H < 2^{63}$. The signs of \verb|cmp_end| and \verb|cmp_end_x| are those of the differences
-  of the values; the binary search decides membership in increasing and disjoint exact intervals;
-  and \verb|join_intervals| gives none exactly when there are none, its intervals hold the values of
-  the intervals it joins, and for intervals without a NaN, with $l \le u$, whose lower ends increase
-  from the second on, its intervals have $l \le u$ and are increasing and strictly apart.
+  rational number lies in one of the $n$ exact intervals; the characters whose lower case is
+  \verb|x| are \verb|x| and \verb|X| (for the prefix \verb|0x| of a hexadecimal word). \verb|strtod|
+  gives no NaN, and the value of a floating constant from which it reads a finite double other than
+  a zero lies below the next double above that double: the double lies above the value or less than
+  one step below it, the half of the faithful rounding of Lemma~\ref{lem:rounding} that the lower
+  ends need. \verb|outward| moves a double to the side of the end that the direction asks, and for a
+  lower end, from a double whose next double lies above the end, it lands on the largest double at
+  most the end; so the double that \verb|scan_end| gives for a lower end of a word of fewer than
+  $2^{56}$ characters is the largest double at most the end, and for an upper end a double at least
+  the end. The height end is finite and at least $H$, for $1 \le H < 2^{63}$. The signs of
+  \verb|cmp_end| and \verb|cmp_end_x| are those of the differences of the values; the binary search
+  decides membership in increasing and disjoint exact intervals; and \verb|join_intervals| gives
+  none exactly when there are none, its intervals hold the values of the intervals it joins, and for
+  intervals without a NaN, with $l \le u$, whose lower ends increase from the second on, its
+  intervals have $l \le u$ and are increasing and strictly apart.
 \end{lemma}
 
 \begin{proof}

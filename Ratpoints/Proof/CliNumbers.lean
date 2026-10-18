@@ -648,7 +648,7 @@ theorem length_le_of_onlyWord?_eq_some {s : String} {w : List Char} (h : onlyWor
     simp only [words, List.mem_filter] at hm
     rw [← String.length_toList]
     exact (List.sublist_flatten_of_mem hm.1).length_le.trans_eq
-      (congrArg List.length (List.flatten_splitBy _ _))
+      congr(List.length $(List.flatten_splitBy _ _))
   · cases h
 
 /-- The double that `scan_end` gives for a lower end of fewer than `2 ^ 56` characters is the

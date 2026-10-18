@@ -10,6 +10,7 @@ public import Ratpoints.Model.Double
 public import Ratpoints.Spec.Region
 
 import Mathlib.Algebra.Order.Floor.Semifield
+import Ratpoints.Mathlib.Order.WithBotTop
 
 /-!
 # The values of the doubles of the model
@@ -191,8 +192,9 @@ theorem strictMonoOn_valueOfOrderValue :
   simp only [valueOfOrderValue]
   split_ifs <;> try lia
   all_goals first
-    | exact WithBot.bot_lt_coe _
-    | exact WithBot.coe_lt_coe.mpr (WithTop.coe_lt_top _)
+    | exact WithBotTop.bot_lt_coe _
+    | exact WithBotTop.coe_lt_top _
+    | exact bot_lt_top
     | exact WithBotTop.coe_lt_coe.mpr (mul_lt_mul_of_pos_right hs (zpow_pos two_pos _))
 
 theorem toNat_bits_and (x : Double) :
@@ -809,7 +811,7 @@ theorem toNat_nextUp_of_signBit_eq_false {x : Double} (hs : x.signBit = false)
   have hb := toNat_bits x
   have hx : x.isNaN = false := by simp [isNaN]; lia
   have hi : x.bits ≠ huge.bits := fun h ↦ by
-    have := congrArg UInt64.toNat h; rw [toNat_huge, maxOrderValue] at this; simp [hs] at hb; lia
+    have := congr(UInt64.toNat $h); rw [toNat_huge, maxOrderValue] at this; simp [hs] at hb; lia
   have hn := toNat_nextUp hx hi
   rw [← expField_mul_add_fracField, hs] at hn
   simp only [show x.expField * 2 ^ 52 + x.fracField ≠ 0 by lia, ↓reduceIte,

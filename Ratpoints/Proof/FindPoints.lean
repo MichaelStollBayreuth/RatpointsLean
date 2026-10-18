@@ -968,8 +968,8 @@ theorem exists_isSoundTest_run_sieveRun {c : List ℤ} {H A sp1 sp2 bLow bHigh :
     hrun.offsetsFor (fun _ ↦ hrun.getLsbD_db) hrun.packs (rs := fun b ↦ numeratorRanges b H
       (domainValues dom)) (fun b hb1 hb2 ↦ rangesFor_run_exactBounds hdom hH63 hbH (by lia) hb2)
     hbLow (by lia) hH63 hrun.fits hdens hr]
-  refine congrArg _ (List.flatMap_congr fun b hb ↦ congrArg (List.flatMap _)
-    (List.filter_congr fun a ha ↦ ?_))
+  refine congr(r.deliver process $(List.flatMap_congr fun b hb ↦ ?_))
+  refine congr(List.flatMap _ $(List.filter_congr fun a ha ↦ ?_))
   rw [inRanges_numeratorRanges (by lia [(le_and_le_of_mem_searchDens hbLow hb).1])
     (natAbs_le_of_mem_numerators ha)]
   dsimp only

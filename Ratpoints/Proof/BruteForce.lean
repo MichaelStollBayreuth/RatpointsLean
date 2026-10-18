@@ -248,8 +248,8 @@ theorem filter_bruteForce_eq_append (c : List ℤ) {H bLow bHigh : ℕ} (hH : 1 
         fun b : ℕ ↦ pointsOfDen c (degree c) b (numerators H) := by
   rw [bruteForce_eq_append c hH, List.filter_append, List.filter_flatMap,
     ← List.filter_range'_le_and_le (a := 1) (n := H) hbLow (by lia), List.flatMap_filter]
-  refine congrArg₂ _ (List.filter_eq_self.mpr fun q hq ↦ by
-    simp [(mem_pointsOfDen_iff.mp hq).2.1]) (List.flatMap_congr fun b hb ↦ ?_)
+  refine congr($(List.filter_eq_self.mpr fun q hq ↦ by simp [(mem_pointsOfDen_iff.mp hq).2.1]) ++
+    $(List.flatMap_congr fun b hb ↦ ?_))
   have hb1 := (List.mem_range'_1.mp hb).1
   split_ifs with h
   · exact List.filter_eq_self.mpr fun q hq ↦ by simp_all [(mem_pointsOfDen_iff.mp hq).2.1]

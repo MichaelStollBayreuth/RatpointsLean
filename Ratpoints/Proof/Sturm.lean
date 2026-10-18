@@ -770,8 +770,7 @@ theorem run_countsAtInfinity (rows : Array (Array Int)) (k : Nat) :
       ((List.range k).countP fun n ↦ signAtTop rows n != signAtTop rows (n + 1),
         (List.range k).countP fun n ↦ signAtBot rows n != signAtBot rows (n + 1)) := by
   have h := Std.WP.Id.of_run_eq_wp rfl _ ((countsAtInfinity_spec rows k).le_wp trivial)
-  rw [CountsInvariant] at h
-  exact h
+  rwa [CountsInvariant] at h
 
 /-! ### The intersection with the caller's intervals -/
 
