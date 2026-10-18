@@ -164,7 +164,10 @@ refuses, besides the coefficient count, $H = 0$ and $H \ge 2^{63}$, exactly the 
 $N - d \ge 2$ and, when the reversal check runs (no \verb|-k|, no search intervals, the full range
 of denominators), those with even $d$ and $c_0 = c_1 = 0$; under \verb|-s -k| only those with
 $N - d \ge 2$. This is the predicate of the refusal theorem with the Sturm step off
-(Theorem~\ref{thm:refusals}).
+(Theorem~\ref{thm:refusals}). Since stage~H both refusal theorems also refuse search intervals of
+the options that are not well formed (Definition~\ref{def:regionSpec}), which the program never
+passes, and the one with the Sturm step off refuses $c_0 = c_1 = 0$ only for the whole box, no
+search intervals and the full range of the denominators, as above (Section~\ref{sec:certifiedH}).
 
 \section{The brute-force reference}\label{sec:bruteForce}
 
@@ -466,9 +469,11 @@ with a search region, Section~\ref{sec:regionTests}):
   \item \verb|test4.sh| against \verb|testbase4|, split at the \verb|#| header lines (five of which
     are glued to the end of the preceding output line): 565 of its 582 runs, among them the outputs
     that the script filters through \verb|grep found|, \verb|grep 'Curve equation'| and
-    \verb|grep -c .|, compared after the same filter with the banner exchanged; the others are the
-    four whose filter looks at the report of the library under \verb|-v| and 13 with heights from
-    $40000$ to $100000$, which the suite \verb|test4high| compares (Section~\ref{sec:wordsCli});
+    \verb|grep -c .|, compared after the same filter with the banner exchanged, and its 165 runs
+    with \verb|-l|, \verb|-u|, \verb|-dl| or \verb|-du|, those at heights above $30000$ in a narrow
+    search region among them (since stage~H); the others are the four whose filter looks at the
+    report of the library under \verb|-v| and 13 with heights from $40000$ to $100000$ and no search
+    region, which the suite \verb|test4high| compares (Section~\ref{sec:wordsCli});
   \item \verb|test3.sh| invocation by invocation against the C program, since it has no announce
     lines: 16 of its 21 runs (5 have filtered outputs; one, at a height above the largest height
     of the tests, $30000$, on which the C program prints nothing, is compared since stage~E);
@@ -481,10 +486,12 @@ with a search region, Section~\ref{sec:regionTests}):
     up to 30, against the C program (from stage~C1 on, when \verb|ratpoints-lean| runs the sieve,
     a theorem relates the list of the sieve to that of the brute force, since stage~E
     Theorem~\ref{thm:findPoints_order}, so that the brute force needs no test of its own);
-  \item 303 hand-written command lines (\verb|scripts/difftest_cases.py|) for the checks that
+  \item 350 hand-written command lines (\verb|scripts/difftest_cases.py|) for the checks that
     \verb|main.c| makes on the coefficients, the height and the options: white space and signs, the
     bounds of a \verb|long|, the grammar of \verb|strtod|, every option with a missing or malformed
-    argument, the options of the search, the options of the output, the formats and the strings of
+    argument, the options of the search, the search region (errors~7 and~6 of \verb|-l -u -dl -du|,
+    the join, the test of the callback, the suppression of the reversal and the order with a range
+    of the denominators, since stage~H), the options of the output, the formats and the strings of
     \verb|-f -fs -fm -fe|, the report, the refusals of forms that are not squarefree with and
     without \verb|-s| and \verb|-k|, and the order of the checks; the two searches at the height
     $10^{12}$ that both programs stop at a point at infinity, \verb|'1 0 1'| and \verb|'3 2 -1 12'|
@@ -496,9 +503,16 @@ with a search region, Section~\ref{sec:regionTests}):
   \item 300 random polynomials at small heights with random options of the output, \verb|-q| or
     \verb|-v|, formats and strings, the moduli pinned at times, against the C program (the suite
     \verb|outputs|, since stage~G);
+  \item 400 random search regions, with ends of every kind and ranges of the denominators of every
+    shape, with random options at small heights and, in one run in ten, at a large height with a
+    narrow region, against the C program (the suite \verb|regions|, since stage~H);
+  \item 300 random depths of the Sturm step, \verb|-S 0| to \verb|-S 60| and \verb|-s|, with
+    \verb|-q| or the report, at times with intervals, \verb|-k| or \verb|-x|, against the C program
+    (the suite \verb|depths|, since stage~H);
   \item 800 random command lines, eight in each round, with words that the readers of numbers of
-    \verb|main.c| accept or refuse in many ways, and options of the output with format words in
-    UTF-8, against the C program.
+    \verb|main.c| accept or refuse in many ways, the ends of \verb|-l| and \verb|-u| and the
+    \verb|long|s of \verb|-dl| and \verb|-du| among them (since stage~H), and options of the output
+    with format words in UTF-8, against the C program.
 \end{itemize}
 Point lists are compared in their order (Section~\ref{sec:denCli}); a report, the output of a run
 without \verb|-q|, exactly, with the banner exchanged for that of the C program and message~4

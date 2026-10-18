@@ -57,20 +57,20 @@ denominator $b$, \verb|sift| (\csource{find_points.c}{3442}{3617}):
     (\csource{find_points.c}{1142}{1183});
   \item for each interval $[l, u]$ of the search region (the intervals that the Sturm step keeps
     within the domain, which is $[-h, h]$ with $h \ge H$ when the caller gives none:
-    \csource{find_points.c}{4829}{4892}; stage~H), takes the numerators
+    \csource{find_points.c}{4829}{4892}; stage~H, Chapter~\ref{chap:region}), takes the numerators
     $\lceil b l \rceil, \dots, \lfloor b u \rfloor$ within $[-H, H]$ as the bits
     $[\mathit{low}, \mathit{high}]$ of the packing of the class of $b$ (\verb|interval_bits|,
     \csource{find_points.c}{3410}{3434}; \verb|numerators_to_bits|,
-    \csource{find_points.c}{3342}{3370}), returning at the first interval beyond $H$ and skipping
-    an empty one (\csource{find_points.c}{3471}{3488}, \csource{find_points.c}{3568}{3568}); turns
+    \csource{find_points.c}{3342}{3370}), returning at the first interval beyond $H$ and skipping an
+    empty one (\csource{find_points.c}{3471}{3488}, \csource{find_points.c}{3568}{3568}); turns
     $[\mathit{low}, \mathit{high}]$ into the word numbers
     $w_{\mathrm{low}} = \lfloor \mathit{low}/R \rfloor$ and
     $w_{\mathrm{high}} = \lfloor \mathit{high}/R \rfloor + 1$, and cuts these into pieces of at most
     \verb|array_size| bit arrays, the first with the mask $\mathit{low} \bmod R$ on its first bit
     array and the last with the mask $R - 1 - (\mathit{high} \bmod R)$ on its last one
-    (\csource{find_points.c}{3563}{3612}); for a class of stride $1$ and the search region
-    $[-H, H]$ (no Sturm step, as under \verb|-s|, or one that keeps the whole domain),
-    $\mathit{low} = -H$ and $\mathit{high} = H$;
+    (\csource{find_points.c}{3563}{3612}); for a class of stride $1$ and the search region $[-H, H]$
+    (no Sturm step, as under \verb|-s|, or one that keeps the whole domain), $\mathit{low} = -H$ and
+    $\mathit{high} = H$;
   \item calls \verb|_ratpoints_sift0| (\csource{sift.c}{498}{1305}) on each piece, which and-s the
     rows of the moduli of the first stage into the bit arrays of the piece, in the builds with one
     register per chunk after writing the 2-adic pattern of the class into them

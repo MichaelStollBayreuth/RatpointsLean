@@ -32,7 +32,9 @@ function: the same loops, tables, bit arrays of 64-bit words and index arithmeti
 executable code on Lean core and `Std`: no Mathlib, no contracts, no experimental options
 (`scripts/check_layout.py` checks the imports and the options). The contracts and their proofs
 are in `Ratpoints.Proof`. A component with a loop is a definition of type `Id α` that its
-callers bind with `←`.
+callers bind with `←`; `Id.run` appears only in `Ratpoints.findPointsWith` and
+`Ratpoints.findPoints`, in the run of the program `Ratpoints.Cli.run` and its pure callback
+`Ratpoints.Cli.process`, in `Main.lean` and in `#guard` lines.
 
 The docstring of every public declaration that models C code names that code in a paragraph of
 the form ``C: `find_points.c:812-845` `` (lines at the ratpoints commit the project pins), which

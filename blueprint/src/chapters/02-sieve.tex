@@ -40,8 +40,9 @@ calls
     stage~D);
   \item computes the remainder chain of $f$ and $f'$ of the Sturm step, refusing the form as not
     squarefree when a remainder is zero (\csource{sturm.c}{99}{163},
-    \csource{find_points.c}{4857}{4892}; stage~D), and from it the search region (stage~H), and
-    decides whether there are points at infinity (\csource{find_points.c}{4894}{4899});
+    \csource{find_points.c}{4857}{4892}; stage~D), and from it the search intervals of the search
+    region where $f$ may be $\ge 0$ (stage~H, Chapter~\ref{chap:region}), and decides whether there
+    are points at infinity (\csource{find_points.c}{4894}{4899});
   \item sets up the tests on the denominators (squares or divisors times squares, Jacobi symbols)
     and the 2-adic information, with an exit when no class of denominators modulo $64$ admits a
     numerator (stage~E);
@@ -296,10 +297,12 @@ by \verb|#guard| examples; the row of $0$ is the closed form of its admission te
 (Lemma~\ref{lem:sieves0}). Each loop of the sieve is a definition of type \verb|Id α| that its
 callers bind with \verb|←|, so that its contract, an \verb|@[spec]| theorem proved with the program
 logic of Lean core and with loop invariants that are named definitions, applies at the call; only
-\verb|findPoints| runs a component with \verb|Id.run|. The reference table of a prime
-(Definition~\ref{def:examinePrime}) is made of folds and maps, specified by ordinary lemmas; the
-table with the exit and the tables of a prime power, which loop over the residues, are components of
-type \verb|Id| with their contracts (Lemmas~\ref{lem:examinePrime_eq} and~\ref{lem:power_admits}).
+$\mathrm{findPoints}$ and $\mathrm{findPointsWith}$, the program's run and its pure callback,
+\verb|Main.lean| and the \verb|#guard| lines may run a component with \verb|Id.run|. The reference
+table of a prime (Definition~\ref{def:examinePrime}) is made of folds and maps, specified by
+ordinary lemmas; the table with the exit and the tables of a prime power, which loop over the
+residues, are components of type \verb|Id| with their contracts (Lemmas~\ref{lem:examinePrime_eq}
+and~\ref{lem:power_admits}).
 
 \begin{definition}[The sieve of one denominator]\label{def:sieveDen}
   \uses{def:SieveEntry}
@@ -452,10 +455,8 @@ Each component differs from the C code in a stated way, recorded in the \verb|De
 paragraph of the component whose range holds it:
 \begin{itemize}
   \item the denominators of a shape listed, then tested and sifted one after the other, each in the
-    packing of its class modulo $64$, from $1$ to $H$, for the denominator range (H), the blocks
-    (I), and the threads, which deliver the blocks in the same order;
-  \item every numerator from $-H$ to $H$ in the packing of the class of the denominator, for the
-    search region (H);
+    packing of its class modulo $64$, for the blocks (I), and the threads, which deliver the blocks
+    in the same order;
   \item the cut points of the three stages fixed for the run, for their correction between the
     blocks of the run from the counts of the survivors (I);
   \item the flags of the check as an argument of the points at infinity, for the bits
@@ -466,12 +467,12 @@ paragraph of the component whose range holds it:
 \end{itemize}
 $\mathrm{findPoints}$ searches every input that it does not refuse (Theorem~\ref{thm:refusals}):
 with the Sturm step off, forms that are not squarefree among them, which ratpoints searches under
-\verb|-s|, and without $\mathrm{noCheck}$ it returns their points, those with $y < 0$ left out under
-$\mathrm{noY}$, as Theorem~\ref{thm:findPoints} says; under $\mathrm{noCheck}$ it returns the
-survivors of the sieve, each with $y = 0$, as Theorem~\ref{thm:noCheck} says. The points at infinity
-deliver $(1, 0, 0)$ twice for $c_d = 0$ and even $d$, as the C code would, which only the zero
-polynomial meets: ratpoints refuses it before it gets there, and so does $\mathrm{findPoints}$ since
-stage~D, so that no input reaches it.
+\verb|-s|, and without $\mathrm{noCheck}$ it returns their points in the search region of the
+options, those with $y < 0$ left out under $\mathrm{noY}$, as Theorem~\ref{thm:findPoints} says;
+under $\mathrm{noCheck}$ it returns the survivors of the sieve, each with $y = 0$, as
+Theorem~\ref{thm:noCheck} says. The points at infinity deliver $(1, 0, 0)$ twice for $c_d = 0$ and
+even $d$, as the C code would, which only the zero polynomial meets: ratpoints refuses it before it
+gets there, and so does $\mathrm{findPoints}$ since stage~D, so that no input reaches it.
 
 \section{The theorems}\label{sec:sieveTheorems}
 
@@ -573,35 +574,43 @@ out under $\mathrm{noY}$, which is what the search needs of it.
 
 \verb|mem_iff_isPoint_of_findPoints_eq_ok| and \verb|nodup_of_findPoints_eq_ok| are the main
 theorems of the project; since stage~D they take the options of \verb|findPoints| as an argument,
-membership since stage~G with $\mathrm{noCheck}$ false, and from stage~H on membership takes the
-hypothesis of Sturm's theorem when the Sturm step is on. The reversal of stage~D and the divisor
-order of stage~E change the order of the output, so that, with $\mathrm{noCheck}$ false, the list is
-that of the reference of the polynomial searched over the denominators of its search, in their
-order, mapped back and filtered by $\mathrm{noY}$ (Theorem~\ref{thm:findPoints_order}), with both
-options of the output off a permutation of the reference (Theorem~\ref{thm:findPoints_perm}), and
+membership since stage~G with $\mathrm{noCheck}$ false, and from stage~H on membership holds for the
+points in the search region of the options and takes the hypothesis of Sturm's theorem when the
+Sturm step is on. The reversal of stage~D and the divisor order of stage~E change the order of the
+output, so that, with $\mathrm{noCheck}$ false, the list is that of the reference of the polynomial
+searched over the denominators of its search with the numerators in the region that the search uses,
+in their order, mapped back and filtered by $\mathrm{noY}$ (Theorem~\ref{thm:findPoints_order}),
+with both options of the output off and assuming Sturm's theorem when the Sturm step is on a
+permutation of the reference filtered by the search region (Theorem~\ref{thm:findPoints_perm}), and
 the refusals are those of Theorem~\ref{thm:refusals}. Comparator certifies twelve statements
-(Section~\ref{sec:certifiedG}): the two of the brute-force reference
+(Sections~\ref{sec:certifiedG} and~\ref{sec:certifiedH}): the two of the brute-force reference
 (Section~\ref{sec:comparator-ab}), the two main theorems, the refusal theorems of stage~D, which
 rule out a \verb|findPoints| that refuses every input, with or without the Sturm step,
 \verb|wf_sieveParams|, which rules out a well-formedness that nothing satisfies, and, since stage~G,
 the order theorem (Theorem~\ref{thm:order}), the three statements under $\mathrm{noCheck}$
 (Theorem~\ref{thm:noCheck}) and the protocol of the delivery (Theorem~\ref{thm:protocol}), which
 ties $\mathrm{findPointsWith}$, the search that the program runs with its callback, to
-$\mathrm{findPoints}$. It accepted the seven statements before stage~G on 2026-10-11, again on the
-model of stage E on 2026-10-12, with the parameters of sub-stage F1 on 2026-10-13, with the refusal
-of the heights that are not \verb|long|s and the cut points of sub-stage F2 on 2026-10-14, with the
-packing of sub-stage F3 on 2026-10-15, and with the chunked first stage and the rows of sub-stage F4
-on 2026-10-16, when, on Lean and Mathlib v4.35.0, Lake's \verb|lake comparator --paranoid|, which
-builds and exports the project in a sandbox, accepted them too, with Lean's kernel and the five
-external checkers bundled with Lean; and \verb|lake comparator --paranoid| accepted the twelve
-statements of stage~G on 2026-10-17. The challenge states them with \verb|sorry| over
+$\mathrm{findPoints}$; stage~H restates six of them for the search region of the options:
+membership, the order theorem and the first two statements under $\mathrm{noCheck}$ hold for the
+points in the search region, membership, the order and the coverage under $\mathrm{noCheck}$
+assuming Sturm's theorem when the Sturm step is on (Definition~\ref{def:sturmTheorem}), and both
+refusal theorems add the search intervals that are not well formed, the refusal of $c_0 = c_1 = 0$
+without the Sturm step only for the whole box. It accepted the seven statements before stage~G on
+2026-10-11, again on the model of stage E on 2026-10-12, with the parameters of sub-stage F1 on
+2026-10-13, with the refusal of the heights that are not \verb|long|s and the cut points of
+sub-stage F2 on 2026-10-14, with the packing of sub-stage F3 on 2026-10-15, and with the chunked
+first stage and the rows of sub-stage F4 on 2026-10-16, when, on Lean and Mathlib v4.35.0, Lake's
+\verb|lake comparator --paranoid|, which builds and exports the project in a sandbox, accepted them
+too, with Lean's kernel and the five external checkers bundled with Lean; and
+\verb|lake comparator --paranoid| accepted the twelve statements of stage~G on 2026-10-17 and in
+their form of stage~H on 2026-10-18. The challenge states them with \verb|sorry| over
 \verb|findPoints|, \verb|findPointsWith|, \verb|Outcome|, \verb|Answer|, \verb|Delivery|,
-\verb|Delivery.deliver|, \verb|Options|, \verb|Params|, \verb|Params.WF|, \verb|SieveOptions|,
-\verb|sieveParams|, \verb|maxDegree| and \verb|maxDivisors|, imported from the model, never
-restated, since a definition of the model elaborates without Mathlib to other instance terms. Each
-theorem of the library behind them has a guard on its axioms, which are the standard ones. The
-contracts of the sieve of stages C1 to D need only the program logic of Lean core and stay in files
-without Mathlib, so that their \verb|grind| calls see only the lemmas of core, untouched by
+\verb|Delivery.deliver|, \verb|Options|, \verb|Double|, \verb|Params|, \verb|Params.WF|,
+\verb|SieveOptions|, \verb|sieveParams|, \verb|maxDegree| and \verb|maxDivisors|, imported from the
+model, never restated, since a definition of the model elaborates without Mathlib to other instance
+terms. Each theorem of the library behind them has a guard on its axioms, which are the standard
+ones. The contracts of the sieve of stages C1 to D need only the program logic of Lean core and stay
+in files without Mathlib, so that their \verb|grind| calls see only the lemmas of core, untouched by
 Mathlib's updates; the contract of the run over the denominators of a shape, with its plain equation
 \verb|run_sieveRun|, is in the file of the run, with Mathlib, like the other contracts of stage~E
 (Chapter~\ref{chap:denominators}) and those of the tables and the moduli of stage~F1, which sit next

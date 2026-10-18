@@ -54,7 +54,9 @@ list of \verb|findPoints|, up to the first stop; and three statements on the out
 parameters. So comparator certifies twelve statements (Section~\ref{sec:certifiedG}); the five new
 ones came in with their theorems, and \verb|lake comparator --paranoid|, with Lean's kernel and the
 five external checkers bundled with Lean, accepted all twelve on 2026-10-17, the date that
-Chapters~\ref{chap:spec} and~\ref{chap:sieve} and \verb|comparator/README.md| record.
+Chapters~\ref{chap:spec} and~\ref{chap:sieve} and \verb|comparator/README.md| record; stage~H
+changes six of them, for the search region of the options, and comparator accepted the twelve in
+their form of stage~H on 2026-10-18 (Section~\ref{sec:certifiedH}).
 
 As in the other stages, since the aim of the project is to verify the C code as far as that can be
 done, the model follows the C code where the C code has its data and its tests, at its interface
@@ -142,13 +144,13 @@ the values that these calls return.
 reversal check and \verb|RATPOINTS_USE_SQUARES| and \verb|RATPOINTS_USE_SQUARES1|
 (\csource{find_points.c}{4910}{4943}) before both exits and before the points at infinity, so that
 they are written back on every path that does not refuse the input; the return of the Sturm step at
-line 4889 (stage~H) comes for even degree only, where both are clear. The program reads them after
-the search, with \verb|RATPOINTS_NO_JACOBI| and \verb|RATPOINTS_NO_CHECK|, which it set itself
-(message 7). The numbers of the moduli used, \verb|sp1_used|, \verb|sp2_used| and \verb|sp3_used|
-(\csource{ratpoints.h}{378}{378}), which message 4 reads, belong to the correction of the moduli
-(stage~I). The search intervals, \verb|num_inter| and \verb|domain|, which the search leaves as it
-made them (lines 4831-4841 and the Sturm step) and message 8 reads, belong to the search region
-(stage~H).
+line 4889 (stage~H, Definition~\ref{def:sturmRegion}) comes for even degree only, where both are
+clear. The program reads them after the search, with \verb|RATPOINTS_NO_JACOBI| and
+\verb|RATPOINTS_NO_CHECK|, which it set itself (message 7). The numbers of the moduli used,
+\verb|sp1_used|, \verb|sp2_used| and \verb|sp3_used| (\csource{ratpoints.h}{378}{378}), which
+message 4 reads, belong to the correction of the moduli (stage~I). The search intervals,
+\verb|num_inter| and \verb|domain|, which the search leaves as it made them (lines 4831-4841 and the
+Sturm step) and message 8 reads, belong to the search region (stage~H, Chapter~\ref{chap:region}).
 
 \paragraph{The program.} \verb|main.c| keeps the settings of the output in global variables
 (\csource{main.c}{57}{64}), with the defaults of a command line without options
@@ -167,21 +169,21 @@ whatever it is, as the format of a point and the strings before, between and aft
 printed, the settings it reads, and \verb|no_y|, set under either option of the output.
 \verb|process| (\csource{main.c}{139}{189}) passes a point at infinity over under \verb|-i| with the
 weight $0$, leaving \verb|quit| clear; it passes a point outside the search region over in the same
-way (lines 150-152, stage~H); otherwise it sets \verb|*quit| to the setting of \verb|-1|, returns
-$1$ under \verb|-z|, and else prints the string before the points if it printed no point yet and the
-string between them otherwise, then the format character by character, \verb|%x|, \verb|%y| and
-\verb|%z| as the coordinates (\verb|%y| as it stands under \verb|no_y|), a backslash with \verb|t|,
-\verb|n|, a backslash or \verb|%| as a tab, a line feed, a backslash or a percent sign, a trailing
-\verb|%| or backslash as itself, every other pair of characters as it is, and returns $1$. After the
-search \verb|main.c| prints the string before the points if \verb|process| printed none, then the
-string after them (\csource{main.c}{265}{265}, \csource{main.c}{267}{267}); unless \verb|-q| it
-prints the report: before the search the banner, the curve (\verb|print_poly|,
-\csource{main.c}{913}{949}) and, unless \verb|-v|, the height bound and a blank line
-(\csource{main.c}{215}{220}), with the search region of the command line (line 224, stage~H); after
-it, unless \verb|-v|, two line feeds and the messages 4 on the moduli used, 7 on what the search did
-and 8 on the search intervals, then message 2 with the count, ``rational points found'' or, under
-either option of the output, ``rational point pairs found'' (\csource{main.c}{268}{276}, the
-messages \csource{main.c}{972}{1033}).
+way (lines 150-152, stage~H, Definition~\ref{def:cliProcess}); otherwise it sets \verb|*quit| to the
+setting of \verb|-1|, returns $1$ under \verb|-z|, and else prints the string before the points if
+it printed no point yet and the string between them otherwise, then the format character by
+character, \verb|%x|, \verb|%y| and \verb|%z| as the coordinates (\verb|%y| as it stands under
+\verb|no_y|), a backslash with \verb|t|, \verb|n|, a backslash or \verb|%| as a tab, a line feed, a
+backslash or a percent sign, a trailing \verb|%| or backslash as itself, every other pair of
+characters as it is, and returns $1$. After the search \verb|main.c| prints the string before the
+points if \verb|process| printed none, then the string after them (\csource{main.c}{265}{265},
+\csource{main.c}{267}{267}); unless \verb|-q| it prints the report: before the search the banner,
+the curve (\verb|print_poly|, \csource{main.c}{913}{949}) and, unless \verb|-v|, the height bound
+and a blank line (\csource{main.c}{215}{220}), with the search region of the command line (line 224,
+stage~H, Definition~\ref{def:cliReport}); after it, unless \verb|-v|, two line feeds and the
+messages 4 on the moduli used, 7 on what the search did and 8 on the search intervals, then message
+2 with the count, ``rational points found'' or, under either option of the output, ``rational point
+pairs found'' (\csource{main.c}{268}{276}, the messages \csource{main.c}{972}{1033}).
 
 \paragraph{The order.} The calls of a search that no call stops come in this order, for the
 polynomial that the reversal check hands on: the points at infinity, then, for the denominators in
@@ -194,8 +196,9 @@ squarefree divisors up to $b_{\mathrm{high}}$, made by appending $x p$ for each 
 every divisor $x \le \lfloor b_{\mathrm{high}}/p \rfloor$ made so far, are fewer than
 \verb|MAX_DIVISORS| (\csource{find_points.c}{864}{880}, the test at
 \csource{find_points.c}{881}{881}, which sets the flag \verb|RATPOINTS_USE_SQUARES1| at
-\csource{find_points.c}{885}{885}). Then the denominators are $e k^2 \le H$, divisor $e$ by divisor
-in the order of binary counting over the primes of $c_d$, ascending, and $k$ ascending for each
+\csource{find_points.c}{885}{885}). Then the denominators are
+$b_{\mathrm{low}} \le e k^2 \le b_{\mathrm{high}}$, divisor $e$ by divisor in the order of binary
+counting over the primes of $c_d$, ascending, and $k$ ascending for each
 (\csource{find_points.c}{3937}{3940}). Stage~E proved this order through the definitions of the
 model (Theorem~\ref{thm:findPoints_order}); Theorem~\ref{thm:order} states it in terms of the
 polynomial.
@@ -822,16 +825,16 @@ multiplicity.
   \uses{def:searchedPoly, def:binaryDivisors, def:IsPoint}
   \lean{Ratpoints.pointsWithDen, Ratpoints.orderedPoints}
   \leanok
-  The points of height at most $H$ with the denominator $z$: for $x = -H, \dots, H$ in turn, with $y
-  = \lfloor \sqrt{F_c(x, z)} \rfloor$, which is $0$ when $F_c(x, z) < 0$, those among $(x, y, z)$
+  The points of height at most $H$ with the denominator $z$: for $x = -H, \dots, H$ in turn, with
+  $y = \lfloor \sqrt{F_c(x, z)} \rfloor$, which is $0$ when $F_c(x, z) < 0$, those among $(x, y, z)$
   and $(x, -y, z)$ that are normalized points of height at most $H$, in this order, one triple when
   $y = 0$; the denominator $0$ gives the points at infinity, whose numerator is $1$. The points in
   the order of ratpoints, for the bound $m$ of the number of divisors, the switch $r$ of the
   reversal, $c$, $H$ and the largest denominator $B$ of the search: for
   $(c', \mathrm{rev}) = \mathrm{searchedPoly}(r, c)$, the concatenation of the points of $c'$ of
   height at most $H$ with the denominators $0$ and then those of the search of $c'$ up to $B$ in
-  their order, each $(a, y, b)$ mapped to $(b, y, a)$ for $a \ge 0$ and to $(-b, y, -a)$ for $a < 0$ when
-  $\mathrm{rev}$ is set, a point of the caller's curve.
+  their order, each $(a, y, b)$ mapped to $(b, y, a)$ for $a \ge 0$ and to $(-b, y, -a)$ for $a < 0$
+  when $\mathrm{rev}$ is set, a point of the caller's curve.
 \end{definition}
 
 The file checks its definitions on outputs of the C program by \verb|decide +kernel|, which the
@@ -973,8 +976,8 @@ the order; from the model it takes \verb|bruteForce|, \verb|findPoints|, \verb|f
 comparator then, and all of them, like membership and no duplicates, are for well-formed parameters;
 \verb|lake comparator --paranoid|, with Lean's kernel and the five external checkers bundled with
 Lean, accepted the twelve statements on 2026-10-17; stage~H changes six of them, by the search
-region of the options (Section~\ref{sec:certifiedH}). They were, for all $c$, $H$, parameters $P$ and
-options $o$:
+region of the options (Section~\ref{sec:certifiedH}). They were, for all $c$, $H$, parameters $P$
+and options $o$:
 \begin{enumerate}
   \item a triple lies in $\mathrm{bruteForce}(c, H)$ exactly when it is a normalized point of height
     at most $H$ (\verb|challenge_mem_bruteForce_iff|, since stage~B);
@@ -1221,13 +1224,14 @@ look at the report of the library under \verb|-v|; the two runs of \verb|test3.s
 \verb|sed -n '/moduli used/,$p'| keeps the report from message 4 on, which needs message 4
 (stage~I); searches under \verb|-x| with a format or a string that are not compared exactly; and
 searches above the largest height of the tests, $30000$, which \verb|test4high| compares (since
-stage~H, those without a narrow search region). At the end of the stage the default suites compare
+stage~H, those without a narrow search region). At the end of the stage the default suites compared
 $3784$ times with none failed: \verb|test4| $565$ (four outputs filtered, $13$ runs left to
 \verb|test4high| for their height), \verb|test3| $16$ (five outputs filtered), \verb|rptest| $1206$,
 \verb|random| $300$, \verb|outputs| $300$, the errors suite $313$ (the searches stopped at $10^{12}$
 among them), the fuzz $800$, the parameters $272$ and the high suite $12$, with $67$ runs under
-\verb|-x| compared exactly, none by the weaker check alone; and \verb|test4high| compares $13$, none
-failed. Every point list is compared in its order.
+\verb|-x| compared exactly, none by the weaker check alone; and \verb|test4high| compared $13$, none
+failed. Every point list is compared in its order. Section~\ref{sec:regionTests} gives the counts
+after stage~H.
 
 The \verb|#guard| examples of the model check the delivery against outputs of the C program and
 against the reference: a callback that stops at its $k$-th call, with the weight $2$, for every $k$
@@ -1350,22 +1354,23 @@ has no counterpart for (\csource{main.c}{330}{332}: the pointer to the array of 
 whose entries \verb|read_input| fills later, and the degree and the height, which it sets later and
 the model passes as values), interface; and the text of message 1 (\csource{main.c}{977}{978}),
 other, which \verb|main| prints only when \verb|read_input| returns a value other than $0$, which it
-never does: its only return is at line 691, and every other failure exits through \verb|error|. Left
-free for stage~H are the lines of the search region of \verb|main.c|, among them the test of
-\verb|process| (lines 150-152), the messages 3 and 8 and the fields of \verb|args| that
-\verb|read_input| sets for it, and in \verb|ratpoints.h| the flag \verb|RATPOINTS_NO_REVERSE_AUTO|
-(line 421), which only line 4687 of the search region sets, and the fields of \verb|ratpoints_args|
-for the search region and the range of the denominators (line 363, and \verb|b_low| and
-\verb|b_high| of line 364) with the type of the intervals (line 359); for stage~I message 4 and the
+never does: its only return is at line 691, and every other failure exits through \verb|error|. The
+lines that stage~G left free for stage~H are recorded since stage~H (Chapter~\ref{chap:region}): the
+lines of the search region of \verb|main.c|, among them the test of \verb|process| (lines 150-152),
+the messages 3 and 8 and the fields of \verb|args| that \verb|read_input| sets for it, and in
+\verb|ratpoints.h| the flag \verb|RATPOINTS_NO_REVERSE_AUTO| (line 421), which only line 4687 of the
+search region sets, and the fields of \verb|ratpoints_args| for the search region and the range of
+the denominators (lines 363 and 364) with the type of the intervals (line 359) and the depth of the
+Sturm step (line 369), the lines 364 and 369, which mix these fields with those of the parameters,
+with the deviation of the options that names the others. Left free for stage~I are message 4 and the
 numbers of the moduli used, their fields (line 378), zeroed on entry with \verb|sp3|
 (\csource{find_points.c}{4551}{4552}) and set after the sieve from the moduli of the last block
 (\csource{find_points.c}{5163}{5163}, which sets \verb|sp2| and \verb|sp3|, and
 \csource{find_points.c}{5212}{5213}, which copies \verb|sp1|, \verb|sp2| and \verb|sp3|), the tuning
 fields and the number of threads of \verb|ratpoints_args| (lines 365-367 and 370), and the defaults
 of the tuning options \verb|-r -R -U -C -A -Q -W| in \verb|main.c| (\csource{main.c}{339}{343},
-\csource{main.c}{345}{346}), which the choice of the moduli by the curve and its correction read.
-Lines 364 and 369 of \verb|ratpoints.h|, which mix fields of the parameters and the options with
-those of stage~H, and the private data of the library (lines 384-400) stay free too.
+\csource{main.c}{345}{346}), which the choice of the moduli by the curve and its correction read;
+the private data of the library (lines 384-400) stays free too.
 
 \section{Files and names}\label{sec:outputFiles}
 
@@ -1417,7 +1422,9 @@ the main theorems, the theorems of the output of stage~E and the refusal theorem
 on their axioms, in \verb|Ratpoints/Proof/Output.lean|, new, above
 \verb|Ratpoints/Proof/FindPoints.lean| ($552$ lines); and the theorem on the program in
 \verb|Ratpoints/Proof/Cli.lean|, new, above \verb|Ratpoints/Proof/Output.lean| and
-\verb|Ratpoints/Model/Cli.lean| ($298$ lines). Every Lean file stays below $1500$ lines.
+\verb|Ratpoints/Model/Cli.lean| ($298$ lines). Every Lean file stays below $1500$ lines. These are
+the sizes at the end of stage~G; stage~H, which adds to several of these files, gives the sizes of
+its files in Section~\ref{sec:regionFiles}.
 
 The general facts of the stage are under their names in the namespaces of Lean core, in
 \verb|Ratpoints/Proof/Containers.lean|: \verb|List.range_prefix_range|,

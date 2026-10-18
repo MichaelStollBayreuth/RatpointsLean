@@ -54,14 +54,14 @@ coefficients and the height before it calls the library (\csource{main.c}{362}{3
     (\csource{find_points.c}{4634}{4634}), caps the parameters and refuses $H < 1$, which the
     program never passes;
   \item unless the caller forbids it (\verb|RATPOINTS_NO_REVERSE|, the program's \verb|-k|) or gives
-    search intervals or bounds for the denominators (\csource{find_points.c}{4686}{4687}, stage~H),
-    checks whether to reverse the polynomial (\csource{find_points.c}{4732}{4803}): in case~1, $d$
-    even and $c_0 = 0$, it refuses the form as not squarefree if also $c_1 = 0$, since then
-    $X^2 \mid \Phi_c$, and otherwise reverses $c_0, \dots, c_d$ and lowers the degree to $d - 1$; in
-    case~2, $d$ even, $c_d$ a square and $c_0$ not, it reverses $c_0, \dots, c_d$; in case~3, $d$
-    odd, $|c_d| \ne 1$, $c_0 = 0$ and $|c_1| = 1$, it reverses $c_1, \dots, c_d$; in each case the
-    binary form $F'$ of the new list has the degree $D$ of $F$ and $F'(x, z) = F(z, x)$, and the new
-    leading coefficient is not zero;
+    search intervals or bounds for the denominators (\csource{find_points.c}{4686}{4687}, stage~H,
+    Chapter~\ref{chap:region}), checks whether to reverse the polynomial
+    (\csource{find_points.c}{4732}{4803}): in case~1, $d$ even and $c_0 = 0$, it refuses the form as
+    not squarefree if also $c_1 = 0$, since then $X^2 \mid \Phi_c$, and otherwise reverses
+    $c_0, \dots, c_d$ and lowers the degree to $d - 1$; in case~2, $d$ even, $c_d$ a square and
+    $c_0$ not, it reverses $c_0, \dots, c_d$; in case~3, $d$ odd, $|c_d| \ne 1$, $c_0 = 0$ and
+    $|c_1| = 1$, it reverses $c_1, \dots, c_d$; in each case the binary form $F'$ of the new list
+    has the degree $D$ of $F$ and $F'(x, z) = F(z, x)$, and the new leading coefficient is not zero;
   \item records whether the coefficients fit into \verb|long|s
     (\csource{find_points.c}{4814}{4823}), so that \verb|examine_prime| reduces them modulo $p$ with
     the helper \verb|mod| (\csource{find_points.c}{477}{492}) rather than with GMP;
@@ -69,9 +69,10 @@ coefficients and the height before it calls the library (\csource{main.c}{362}{3
     sets $-1$, and \verb|-S| the default or a depth), computes the remainder chain of $f$ and $f'$
     (\csource{sturm.c}{99}{163}) and refuses the form as not squarefree when a remainder is zero
     (\csource{find_points.c}{4857}{4863}, \csource{find_points.c}{4879}{4879}); the rest of the step
-    is stage~H, and so is its exit when $f$ is negative on the whole search region, which changes no
-    output, since the box has no affine point then, and the return after the points at infinity
-    when the step leaves nothing to search (\csource{find_points.c}{5106}{5106});
+    is stage~H (Section~\ref{sec:sturmStep}), and so is its exit when $f$ is negative on the whole
+    search region, which changes no output, since the box has no affine point then, and the return
+    after the points at infinity when the step leaves nothing to search
+    (\csource{find_points.c}{5106}{5106});
   \item decides whether there are points at infinity (\csource{find_points.c}{4894}{4899}) and sets
     up the tests on the denominators and the 2-adic information, with an exit of its own that
     changes no output either (stage~E);
@@ -252,9 +253,11 @@ that is not refused.
   $\mathrm{none}$.
 \end{proof}
 
-The relation with positive $A$ and $g$ and the decreasing degrees is also what stage~H needs of the
-chain, whose signs Sturm's theorem reads; so the chain is computed as the C code computes it, row
-by row, and not only its verdict.
+The relation with positive $A$ and $g$ and the decreasing degrees is also what stage~H reads off the
+chain: its rows are positive multiples of the Sturm sequence of $f$ and $f'$
+(Lemma~\ref{lem:chainSturm}), whose signs Sturm's theorem reads, and the Sturm step counts their
+sign changes; so the chain is computed as the C code computes it, row by row, and not only its
+verdict.
 
 \section{The reversal}\label{sec:reversal}
 
@@ -609,15 +612,16 @@ check on, the search with the step off returns the same list (Theorem~\ref{thm:s
 Comparator certifies the two main theorems with the options argument, membership since stage~G with
 $\mathrm{noCheck}$ false, both refusal theorems and \verb|wf_sieveParams|, and, since stage~G, the
 order theorem, the three statements under $\mathrm{noCheck}$ and the protocol, by which the search
-with a callback refuses exactly what $\mathrm{findPoints}$ refuses (Section~\ref{sec:certifiedG});
-the challenge restates $\Phi_c$ verbatim, as it restates $F_c$, takes the options from the model,
-and has the refusal theorem with the Sturm step off too, so that a $\mathrm{findPoints}$ that
-refused every input under \verb|-s| would not pass. Since the challenge needs \verb|Squarefree|, the
-specification imports \verb|Mathlib.Algebra.Squarefree.Basic|, so that the challenge still imports,
-besides the model, exactly the Mathlib modules among the public imports of the files of the
-specification that it restates. Stage~D left the structure \verb|Params| and its well-formedness as
-stage~C2 had them; stage~F1 adds the number of primes examined and the composite moduli
-(Chapter~\ref{chap:tables}).
+with a callback refuses exactly what $\mathrm{findPoints}$ refuses (Section~\ref{sec:certifiedG}),
+since stage~H six of them restated for the search region of the options
+(Section~\ref{sec:certifiedH}); the challenge restates $\Phi_c$ verbatim, as it restates $F_c$,
+takes the options from the model, and has the refusal theorem with the Sturm step off too, so that a
+$\mathrm{findPoints}$ that refused every input under \verb|-s| would not pass. Since the challenge
+needs \verb|Squarefree|, the specification imports \verb|Mathlib.Algebra.Squarefree.Basic|, so that
+the challenge still imports, besides the model, exactly the Mathlib modules among the public imports
+of the files of the specification that it restates. Stage~D left the structure \verb|Params| and its
+well-formedness as stage~C2 had them; stage~F1 adds the number of primes examined and the composite
+moduli (Chapter~\ref{chap:tables}).
 
 \section{The command-line program and the differential tests}\label{sec:setupCli}
 
@@ -655,7 +659,7 @@ is read. At the end of stage~D the differential tests:
   \item compared every point list in its order, also where ratpoints visits the denominators
     divisor by divisor (Section~\ref{sec:denCli}).
 \end{itemize}
-Section~\ref{sec:outputTests} gives the counts after stage~G.
+Sections~\ref{sec:outputTests} and~\ref{sec:regionTests} give the counts after stages~G and~H.
 
 \section{Deviations}\label{sec:setupDeviations}
 
@@ -714,12 +718,13 @@ The lines of the set-up that are neither modelled nor left to a later stage are 
 the instrumentation of the development, the management of memory and its failures, the input fields
 that \verb|find_points_work| saves and puts back, the checks of arguments that only a caller of the
 library can fail, and the threads; so the record of \verb|find_points_work_1| up to the run lacks
-only what belongs to stages~H and~I, now that stages~E, F1, F2, F3 and~F4 have recorded their lines
-(Chapters~\ref{chap:denominators}, \ref{chap:tables}, \ref{chap:stages}, \ref{chap:packing}
-and~\ref{chap:rows}, the last with the exclusions of the buffers of the tables and of the functions
-that set them up and free them, Section~\ref{sec:rowsDeviations}). Stage~G records the macros of the
-flags and of the return codes in \verb|ratpoints.h| (Chapter~\ref{chap:output}), and stage~H
-\verb|RATPOINTS_NO_REVERSE_AUTO|, with the normalized options (Definition~\ref{def:normalize}).
+only what belongs to stage~I, now that stages~E, F1, F2, F3, F4 and~H have recorded their lines
+(Chapters~\ref{chap:denominators}, \ref{chap:tables}, \ref{chap:stages}, \ref{chap:packing},
+\ref{chap:rows} and~\ref{chap:region}, the fifth with the exclusions of the buffers of the tables
+and of the functions that set them up and free them, Section~\ref{sec:rowsDeviations}). Stage~G
+records the macros of the flags and of the return codes in \verb|ratpoints.h|
+(Chapter~\ref{chap:output}), and stage~H \verb|RATPOINTS_NO_REVERSE_AUTO|, with the normalized
+options (Definition~\ref{def:normalize}).
 
 \section{Files and names}
 

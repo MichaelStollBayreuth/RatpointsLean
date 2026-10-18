@@ -6,8 +6,9 @@ $y^2 = F(x, z)$, where $F$ is a binary form of even degree with integer coeffici
 This blueprint describes a Lean~4 development that verifies it in four parts:
 \begin{enumerate}
   \item a \emph{specification}, short enough to read in full: the binary form of the polynomial,
-    the predicate ``is a normalized point of height at most $H$'' and the list of these points in
-    the order in which ratpoints finds them;
+    the predicate ``is a normalized point of height at most $H$'', the list of these points in the
+    order in which ratpoints finds them, and the search region that the caller may give, its
+    intervals bounded by the values of doubles;
   \item an \emph{executable model} of ratpoints in Lean, which mirrors the hardware-independent
     structure of the C code function by function: the same loops, tables, bit arrays of 64-bit
     words and index arithmetic; it uses only Lean core and \verb|Std|, not Mathlib, so that the
@@ -73,7 +74,11 @@ that lists the components of the stage with their contracts and proposed names:
     the output and the flags written back; the order of the output in terms of the polynomial; and
     the callback, the formats and the report of the command-line program
     (Chapter~\ref{chap:output});
-  \item[H] the search region and the Sturm step, with Sturm's theorem as a hypothesis;
+  \item[H] the search region of the caller: the search intervals, whose ends are the doubles of the
+    C code, with the exact bounds of the numerators, and the range of the denominators; the Sturm
+    step that narrows the intervals to those where the polynomial may be $\ge 0$, with Sturm's
+    theorem as a hypothesis; and the options of the region and the messages on it of the
+    command-line program (Chapter~\ref{chap:region});
   \item[I] the blocks of the loop over the denominators, with the threads and the correction of the
     moduli between them, and the C program's choice of the sieving parameters by the curve.
 \end{itemize}

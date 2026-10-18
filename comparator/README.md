@@ -95,17 +95,20 @@ ratpoints, with the model's bound `maxDivisors` on the number of divisors, filte
 membership and no-duplicates theorems, are for well-formed parameters (`P.WF`). On 2026-10-17
 `lake comparator --paranoid` accepted all twelve, with Lean's kernel and the five external checkers.
 
-Stage H restates six statements for the search region of the options, the search intervals over
-the values of their ends (`doubleValue`) and the range of the denominators: membership holds for the
+Stage H restates six statements for the search region of the options, the search intervals over the
+values of their ends (`doubleValue`) and the range of the denominators: membership holds for the
 points in the search region (`InRegion`), the order theorem filters `orderedPoints` by it, with the
 reversal only for the whole box (`IsFullBox`) and the largest denominator `denominatorBound`, both
-assuming Sturm's theorem when the Sturm step is on (`0 ≤ o.sturm → SturmTheorem`); under the
-exact check off, every element lies in the search region, and every point in it gives its element,
-the latter assuming Sturm's theorem when the Sturm step is on; and both refusal theorems add the
-refusal of search intervals that are not well formed (`IntervalsWF`), the refusal of the reversal
-check without the Sturm step only for the whole box. No duplicates, the sublist under the exact
-check off, the protocol, the brute-force reference and the well-formedness of the parameters of the
-program keep their text.
+assuming Sturm's theorem when the Sturm step is on (`0 ≤ o.sturm → SturmTheorem`); under the exact
+check off, every element lies in the search region, and every point in it gives its element, the
+latter assuming Sturm's theorem when the Sturm step is on; and both refusal theorems add the refusal
+of search intervals that are not well formed (`IntervalsWF`), the refusal of the reversal check
+without the Sturm step only for the whole box. No duplicates, the sublist under the exact check off,
+the protocol, the brute-force reference and the well-formedness of the parameters of the program
+keep their text. So `challenges.json` lists the same twelve statements; the six changes came in with
+the theorems that prove them, each checked by Comparator then, and on 2026-10-18
+`lake comparator --paranoid` accepted all twelve in their form of stage H, with Lean's kernel and
+the five external checkers.
 
 ## Running
 

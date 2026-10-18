@@ -13,11 +13,13 @@ project:
     The model mirrors the hardware-independent structure of the C code function by function (the
     same loops, tables, bit arrays of 64-bit words and index arithmetic); the proofs are to show
     that, for every well-formed choice of the sieving parameters, it returns exactly the normalized
-    points of height at most H, without duplicates, in the order of the C program, delivered to the
+    points of height at most H in the search region that the caller gives (assuming Sturm's theorem
+    when the Sturm step is on), without duplicates, in the order of the C program, delivered to the
     callback of the caller as the C code delivers them, and refuses exactly the inputs that the C
-    program refuses in a default run (fewer than two or more than maxDegree + 1 = 101
+    program refuses (in a default run fewer than two or more than maxDegree + 1 = 101
     coefficients, H = 0 or H >= 2^63, a height that is not a C long, and a binary form that is not
-    squarefree); a correspondence record and differential tests link the model to the C code.
+    squarefree, and search intervals that are not well formed); a correspondence record and
+    differential tests link the model to the C code.
   authors: ["Michael Stoll"]
   responsible_maintainers: ["Michael Stoll"]
   license: "Apache-2.0"
@@ -58,8 +60,8 @@ classification:
 # project status
 status:
   scope: >
-    Stages A, B, C1, C2, D, E, F, in its four sub-stages F1 to F4, and G. Stage A set up the
-    Lake project with the libraries of the model (Lean core and Std only), the specification and the
+    Stages A, B, C1, C2, D, E, F, in its four sub-stages F1 to F4, G and H. Stage A set up the Lake
+    project with the libraries of the model (Lean core and Std only), the specification and the
     proofs, the CI, the blueprint, the correspondence record with its checking script, and the
     comparator harness, and settled the specification in the blueprint. Stage B: the specification
     in Lean (the binary form, the normalized points of height at most H, the finite set of them, and
@@ -237,10 +239,43 @@ status:
     in particular that -1 prints the first point of the list that -i keeps; and the differential
     tests compare the reports exactly, with the banner exchanged, -x exactly against the C program
     with the moduli pinned, and the searches that a stop ends at the height 10^12 (3784 comparisons
-    in the default suites and 13 in the suite run locally). Next: the later stages that the
-    introduction of the blueprint lists (the search region and the Sturm step, the blocks of the
-    loop over the denominators with the threads and the correction of the moduli, and the choice of
-    the sieving parameters by the curve).
+    in the default suites and 13 in the suite run locally). Stage H: the search region of the caller
+    as the C code has it: the doubles of the C code as their IEEE bits, with a model function for
+    each operation that ratpoints applies to them (the conversions, the comparisons, nextafter,
+    fabs, frexp, ldexp and the truncations), checked against gcc and glibc, and proved to compute on
+    their values; the exact bounds of the numerators of the search intervals as exact_bounds makes
+    them, with the high word of the 128-bit product, and the bits of an interval of numerators; the
+    sieve of a denominator over the intervals, set up at the first interval that interval_bits does
+    not report empty, as the C code sets it up; the range of the denominators b_low to b_high; the
+    search intervals and the range in the options, their normalization with
+    RATPOINTS_NO_REVERSE_AUTO, and the refusal RATPOINTS_BAD_ARGS of search intervals that are not
+    well formed; and the Sturm step as sturm.c has it: the signs of the rows of the remainder chain
+    at dyadic points by Horner's rule, the counts at +-infinity, the bisection as a well-founded
+    recursion on long numerators and exponents, the intersection with the caller's intervals, and
+    the search intervals that it leaves written back; the contracts of the sieve and of the loops of
+    the Sturm step proved with the program logic of Lean core in files without Mathlib. The
+    specification gains a file with the values of the doubles, the search intervals that ratpoints
+    accepts and the points in the search region, and a file with Sturm's theorem as a proposition
+    over Mathlib's Sturm sequence and sign variations, which Mathlib does not have yet: the rows of
+    the remainder chain are positive multiples of the Sturm sequence, and under Sturm's theorem the
+    intervals that the Sturm step leaves at a depth of at most 55 hold every point of the box, so
+    that with the exact check on the search with the step off gives the same list; the bounds of the
+    arrays of the Sturm step of the C code hold under it too. The statements for comparator stay
+    twelve, the challenge restating both files: membership, the order theorem and two of the
+    statements under RATPOINTS_NO_CHECK hold for the points in the search region, membership, the
+    order and the coverage under RATPOINTS_NO_CHECK assuming Sturm's theorem when the Sturm step is
+    on, a hypothesis, not an axiom; both refusal theorems add the search intervals that are not well
+    formed, the refusal of c_0 = c_1 = 0 without the Sturm step only for the whole box; comparator
+    accepted all twelve on 2026-10-18. ratpoints-lean reads -l -u -dl -du as main.c reads them, the
+    ends by strtod with its rounding proved faithful, the doubles outward of them, joins the
+    intervals, tests the search region in its callback and prints the messages on the search region
+    and on the search intervals; a theorem says which points it prints; and the differential tests
+    compare the runs of test4.sh and test3.sh with a search region, random search regions and depths
+    of the Sturm step, and -x exactly against the C program with the moduli pinned (4530 comparisons
+    in the default suites and 13 in the suite run locally). Next: the later stage that the
+    introduction of the blueprint lists (the blocks of the loop over the denominators with the
+    threads and the correction of the moduli, and the choice of the sieving parameters by the
+    curve).
   sorry_count: 0
   sorry_in_definitions: 0
   axioms: ["propext", "Classical.choice", "Quot.sound"]
@@ -337,9 +372,9 @@ automation:
         specification, the history of the bugs, a survey of the Lean tooling, prototypes). Each
         stage begins with a blueprint chapter (components, contracts, proposed names), drafted from
         research and a prototype in a separate copy and reviewed by the author before the Lean code
-        of the stage enters the repository; for sub-stage F4 and stage G, at the author's leave,
-        the code was drafted and committed while he reviewed the chapter, and it is pushed only
-        after his review.
+        of the stage enters the repository; for sub-stage F4 and stages G and H, at the author's
+        leave, the code was drafted and committed while he reviewed the chapter, and it is pushed
+        only after his review.
   spend_usd: "subscription-based usage (no metered API spend)"
   notes: >
     The C defects found while this project was planned were fixed first, in ratpoints 3.1.1, so
@@ -357,17 +392,18 @@ fidelity:
     threads are replaced by the sequential order of the blocks; the heuristics that choose the
     sieving parameters by the curve are not modelled yet (stage I), since the theorems quantify over
     every well-formed choice; the parameters of the command line follow the counting rules of
-    ratpoints where these do not depend on the curve; the search intervals have exact rational ends;
-    the callback is a Lean function that takes the coordinates and the caller's data and returns its
-    value, whether it stops the search, and the new data, for the C function with the pointers info
-    and quit; until the blocks of stage I the model lists the denominators of a shape before it
-    sieves the first one, all of them, also those after a stop, so that a stop in the sieve does not
-    save the time and the memory of that listing, which grow with the height; and the theorems that
-    read the points with the Sturm step on assume Sturm's theorem, which Mathlib does not have yet
-    (Ratpoints.SturmTheorem, a hypothesis, not an axiom).
-    Where the library function find_points and the command-line program differ (the order of the
-    checks on the input), the model follows the program. Each deviation is recorded with its
-    component in the correspondence record.
+    ratpoints where these do not depend on the curve; the doubles of the search intervals are their
+    IEEE bits, with a model function for each operation on them, and the specification reads their
+    values as extended rationals; the callback is a Lean function that takes the coordinates and the
+    caller's data and returns its value, whether it stops the search, and the new data, for the C
+    function with the pointers info and quit; until the blocks of stage I the model lists the
+    denominators of a shape before it sieves the first one, all of them, also those after a stop, so
+    that a stop in the sieve does not save the time and the memory of that listing, which grow with
+    the height; and the theorems that read the points with the Sturm step on assume Sturm's theorem,
+    which Mathlib does not have yet (Ratpoints.SturmTheorem, a hypothesis, not an axiom). Where the
+    library function find_points and the command-line program differ (the order of the checks on the
+    input), the model follows the program. Each deviation is recorded with its component in the
+    correspondence record.
 
 # review status
 review:
@@ -418,7 +454,7 @@ alignment:
         (Ratpoints.perm_filter_bruteForce_of_findPoints_eq_ok);
         the later stages bring Ratpoints.findPoints closer to the C code, and the theorems move with
         it
-    - source: "the refusals: fewer than two or more than maxDegree + 1 = 101 coefficients, H = 0 or H >= 2^63, a binary form that is not squarefree"
+    - source: "the refusals: fewer than two or more than maxDegree + 1 = 101 coefficients, H = 0 or H >= 2^63, a binary form that is not squarefree, search intervals that are not well formed"
       lean: "Ratpoints.exists_findPoints_eq_error_iff_of_sturm_nonneg"
       module: "Ratpoints.Proof.Output"
       status: "formalized"
@@ -474,6 +510,16 @@ alignment:
         with their number as its count
         (Ratpoints.Cli.total_eq_of_findPointsWith_eq_ok); under -q only the strings and the points
         (Ratpoints.Cli.run_eq_of_findPoints_eq_ok); not certified by comparator
+    - source: "the points that the program prints with -l -u -dl -du: those of the search region of its command line"
+      lean: "Ratpoints.Cli.mem_filter_keeps_iff_of_input_eq_ok"
+      module: "Ratpoints.Proof.Cli"
+      status: "formalized"
+      note: >
+        assuming Sturm's theorem when the Sturm step is on, without -x, the points of the list of
+        Ratpoints.findPoints on the joined intervals of a command line that the callback of the
+        program keeps are exactly the points of height at most H in the exact search region of the
+        command line (the ends as the numbers they are, not their doubles), those with y >= 0 under
+        -y, and the points at infinity unless -i; not certified by comparator
     - source: "the Sturm step covers every real point where F >= 0"
       lean: "Ratpoints.Sturm.covers_computeSturm"
       module: "Ratpoints.Proof.SturmCoverage"
