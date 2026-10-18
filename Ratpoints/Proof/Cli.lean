@@ -11,6 +11,7 @@ public import Ratpoints.Proof.Region
 public import Ratpoints.Spec.Basic
 public import Ratpoints.Spec.Sturm
 
+import Ratpoints.Mathlib.Algebra.Order.Field.Basic
 import Ratpoints.Proof.Containers
 import Ratpoints.Proof.Delivery
 import Ratpoints.Proof.Output
@@ -548,17 +549,18 @@ theorem intervalOf_of_le {H : ℕ} {l d : Double} {el eu : ExactEnd} (hl : l.isN
 
 theorem doubleValue_neg_heightEnd {H : ℕ} (hH : 1 ≤ H) (hH63 : H < 2 ^ 63) :
     doubleValue (heightEnd H).neg.bits = ((-(heightEnd H).toRat : ℚ) : WithBotTop ℚ) := by
-  rw [doubleValue_eq_toRat (by rw [isFinite_neg]; exact (heightEnd_props hH hH63).1), toRat_neg]
+  rw [doubleValue_eq_toRat
+    (by rw [isFinite_neg]; exact (isFinite_heightEnd_and_le_toRat hH hH63).1), toRat_neg]
 
 theorem doubleValue_neg_heightEnd_le {H : ℕ} (hH : 1 ≤ H) (hH63 : H < 2 ^ 63) {x : ℚ}
     (hx : |x| ≤ H) : doubleValue (heightEnd H).neg.bits ≤ (x : WithBotTop ℚ) := by
   rw [doubleValue_neg_heightEnd hH hH63, WithBotTop.coe_le_coe]
-  linarith [(heightEnd_props hH hH63).2, neg_abs_le x]
+  linarith [(isFinite_heightEnd_and_le_toRat hH hH63).2, neg_abs_le x]
 
 theorem le_doubleValue_heightEnd {H : ℕ} (hH : 1 ≤ H) (hH63 : H < 2 ^ 63) {x : ℚ}
     (hx : |x| ≤ H) : (x : WithBotTop ℚ) ≤ doubleValue (heightEnd H).bits := by
-  rw [doubleValue_eq_toRat (heightEnd_props hH hH63).1, WithBotTop.coe_le_coe]
-  linarith [(heightEnd_props hH hH63).2, le_abs_self x]
+  rw [doubleValue_eq_toRat (isFinite_heightEnd_and_le_toRat hH hH63).1, WithBotTop.coe_le_coe]
+  linarith [(isFinite_heightEnd_and_le_toRat hH hH63).2, le_abs_self x]
 
 /-- The first interval of an upper end without a lower one, `[-∞, e]` of the command line, and its
 doubles `[-h, d]`, or `[-∞, d]` when `d` lies below `-h`. -/
@@ -567,7 +569,7 @@ theorem intervalOf_heightEnd_neg {H : ℕ} (hH : 1 ≤ H) (hH63 : H < 2 ^ 63) {d
     IntervalOf H (if d.lt (heightEnd H).neg then Double.huge.neg else (heightEnd H).neg, d)
       { e0 with inf := -1 } e := by
   have hh : (heightEnd H).neg.isNaN = false := by
-    rw [isNaN_neg]; exact isNaN_eq_false_of_isFinite (heightEnd_props hH hH63).1
+    rw [isNaN_neg]; exact isNaN_eq_false_of_isFinite (isFinite_heightEnd_and_le_toRat hH hH63).1
   refine ⟨by split <;> simp [isNaN_huge_neg, hh], hd, ?_, fun x hx _ hx2 ↦ ⟨?_, hx2.trans he⟩⟩
   · split_ifs with hc
     · rw [show doubleValue Double.huge.neg.bits = ⊥ by decide]; exact bot_le
@@ -582,7 +584,8 @@ theorem intervalOf_heightEnd {H : ℕ} (hH : 1 ≤ H) (hH63 : H < 2 ^ 63) {l : D
     {el e1 : ExactEnd} (hl : l.isNaN = false) (hle : doubleValue l.bits ≤ el.value) :
     IntervalOf H (l, if (heightEnd H).lt l then Double.huge else heightEnd H) el
       { e1 with inf := 1 } := by
-  have hh : (heightEnd H).isNaN = false := isNaN_eq_false_of_isFinite (heightEnd_props hH hH63).1
+  have hh : (heightEnd H).isNaN = false :=
+    isNaN_eq_false_of_isFinite (isFinite_heightEnd_and_le_toRat hH hH63).1
   refine ⟨hl, by split <;> simp [isNaN_huge, hh], ?_, fun x hx hx1 _ ↦ ⟨hle.trans hx1, ?_⟩⟩
   · split_ifs with hc
     · rw [show doubleValue Double.huge.bits = ⊤ by decide]; exact le_top
@@ -869,12 +872,6 @@ theorem keeps_ofOutput_iff (u : Output) (o : Options) (p : ℤ × ℤ × ℤ) :
       (p.2.2 = 0 ∨ o.domain = [] ∨ Id.run (inRegion p.1 p.2.2 u.ends o.domain.length) = true) := by
   simp [Data.keeps, Data.ofOutput, or_assoc]
 
-theorem abs_intCast_div_intCast_le {x z : ℤ} {H : ℕ} (hx : |x| ≤ H) (hz : 0 < z) :
-    |(x : ℚ) / z| ≤ H := by
-  rw [abs_div, abs_of_pos (mod_cast hz : (0 : ℚ) < z), div_le_iff₀ (mod_cast hz)]
-  have h1 : |(x : ℚ)| ≤ H := mod_cast hx
-  exact h1.trans (le_mul_of_one_le_right (by positivity) (mod_cast hz))
-
 /-- The search intervals that the program gives the library for a command line that it accepts,
 whose words have fewer than `2 ^ 56` characters, are well formed, so that the library never
 refuses them (error 9 is unreachable): the doubles of the lower ends after the first are the
@@ -909,14 +906,13 @@ theorem inRegion_joinIntervals_iff {args : List String} {c : List ℤ} {H : ℕ}
       InRegion [] o.bLow o.bHigh p := by
   by_cases hz : p.2.2 = 0
   · simp [inRegion_iff, hz]
-  have hz' : 0 < p.2.2 := by have := hp.2.2.1; lia
   simp only [inRegion_iff, hz, false_or, true_or, and_true]
   refine ⟨fun h ↦ ⟨h.1, h.2.1⟩, fun h ↦ ⟨h.1, h.2, ?_⟩⟩
   rcases hx with h0 | h0 | h0
   · exact absurd h0 hz
   · exact .inl (by simp [h0, joinIntervals])
   · exact .inr (inIntervals_joinIntervals_of_inExactRegion hi
-      (abs_intCast_div_intCast_le hp.2.2.2.1 hz') h0)
+      ((abs_intCast_div_intCast_le_abs p.1 p.2.2).trans (mod_cast hp.2.2.2.1)) h0)
 
 /-- Assuming Sturm's theorem when the Sturm step is on (`Ratpoints.SturmTheorem`, which a command
 line with `-s` does not need), without `-x`, the points of the list of `Ratpoints.findPoints` on

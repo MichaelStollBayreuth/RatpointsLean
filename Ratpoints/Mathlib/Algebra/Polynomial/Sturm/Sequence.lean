@@ -130,7 +130,7 @@ theorem forall₂_posAssoc_sturmSeq_cons {a b c : K[X]} {l : List K[X]} (ha : a 
 /-- A list `s₀, s₁, …, s_m` of nonzero polynomials whose last entry is a unit and in which each
 `s_(k+2)` is a positive multiple of `-s_k % s_(k+1)` is, entrywise, a list of positive multiples of
 the entries of `sturmSeq s₀ s₁`: a generalized (scaled) Sturm sequence. -/
-theorem forall₂_posAssoc_sturmSeq_of_getElem (L : List K[X]) (hlen : 2 ≤ L.length)
+theorem forall₂_posAssoc_sturmSeq_of_getElem {L : List K[X]} (hlen : 2 ≤ L.length)
     (h0 : ∀ p ∈ L, p ≠ 0)
     (hrem : ∀ k (hk : k + 2 < L.length), PosAssoc (-L[k] % L[k + 1]) L[k + 2])
     (hu : IsUnit (L.getLast (List.ne_nil_of_length_pos (by lia)))) :

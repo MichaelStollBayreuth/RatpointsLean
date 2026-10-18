@@ -62,9 +62,9 @@ pass the first coming before those that pass the second, and the elements of an 
 integers in ranges that are increasing and strictly apart, range after range. For the numbers of the
 command line: the characters that `Char.toLower` takes to `x`. For the search intervals of the
 command line: an entry set twice, an entry after another is set, the entries and the members of the
-first `m` entries of an array as a list, and a bind of `Except` that succeeds. For the intersection
-of the Sturm step: the list of an array from a position within it on. The lemmas on 64-bit words are
-in `Ratpoints.Proof.Bits`.
+first `m` entries of an array as a list, the entry `l[i]!` of a list as one of its members, and a
+bind of `Except` that succeeds. For the intersection of the Sturm step: the list of an array from a
+position within it on. The lemmas on 64-bit words are in `Ratpoints.Proof.Bits`.
 
 ## Main statements
 
@@ -402,6 +402,11 @@ theorem getElem!_take_toList {α : Type u} [Inhabited α] {xs : Array α} {m j :
   rw [getElem!_pos _ j (by simp; lia), List.getElem_take, getElem_toList,
     getElem!_pos xs j (by lia)]
 
+theorem getElem_take_toList {α : Type u} [Inhabited α] {xs : Array α} {m j : Nat}
+    (hj : j < (xs.toList.take m).length) : (xs.toList.take m)[j] = xs[j]! := by
+  simp only [List.length_take, length_toList, Nat.lt_min] at hj
+  rw [List.getElem_take, getElem_toList, getElem!_pos xs j hj.2]
+
 theorem mem_take_toList_of_lt {α : Type u} [Inhabited α] {xs : Array α} {m j : Nat} (hj : j < m)
     (hm : m ≤ xs.size) : xs[j]! ∈ xs.toList.take m := by
   rw [← getElem!_take_toList hj hm, getElem!_pos _ j (by simp; lia)]
@@ -422,6 +427,10 @@ namespace List
 theorem getElem!_set {α : Type u} [Inhabited α] {l : List α} {i j : Nat} (h : j < l.length)
     (x : α) : (l.set i x)[j]! = if i = j then x else l[j]! := by
   rw [getElem!_pos _ j (by simpa using h), getElem_set, getElem!_pos l j h]
+
+theorem getElem!_mem {α : Type u} [Inhabited α] {l : List α} {i : Nat} (h : i < l.length) :
+    l[i]! ∈ l :=
+  (getElem!_pos l i h).symm ▸ getElem_mem h
 
 /-- The numbers below `k ≤ m` come first among those below `m`. -/
 theorem range_prefix_range {k m : Nat} (h : k ≤ m) : range k <+: range m := by

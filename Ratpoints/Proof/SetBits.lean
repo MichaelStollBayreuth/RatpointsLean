@@ -30,8 +30,8 @@ classes, of the 2-adic information and of the word shape share.
 
 ## Main statements
 
-* `Ratpoints.Sieve.ctz_spec`: for a word other than `0`, the loop of `Ratpoints.Sieve.ctz` ends with
-  the number of its trailing zeros.
+* `Ratpoints.Sieve.ctz_spec`, `Ratpoints.Sieve.run_ctz`: for a word other than `0`, the loop of
+  `Ratpoints.Sieve.ctz` ends with the number of its trailing zeros.
 * `Ratpoints.Sieve.ClearedBelow.filter_range_succ_ctz`,
   `Ratpoints.Sieve.ClearedBelow.exists_lt_succ_iff`: the set bits of the word up to the lowest set
   bit of the word with the bits below `k` cleared.
@@ -90,6 +90,9 @@ theorem ctz_spec (w : UInt64) : ⦃ w ≠ 0 ⦄ ctz w ⦃ fun t ↦ t = w.toBitV
   all_goals simp [CtzInvariant] at *
   all_goals grind [UInt64.ne_ctz_of_and_one_eq_zero, UInt64.eq_ctz_of_and_one_ne_zero,
     UInt64.toNat_ctz_lt, BitVec.shiftRight_add]
+
+theorem run_ctz {w : UInt64} (hw : w ≠ 0) : Id.run (ctz w) = w.toBitVec.ctz.toNat :=
+  Std.WP.Id.of_run_eq_wp rfl _ ((ctz_spec w).le_wp hw)
 
 /-! ### The walks through the set bits of a word -/
 

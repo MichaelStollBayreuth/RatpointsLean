@@ -30,11 +30,11 @@ characters, the double of a lower end is the largest double at most the end
 (`Ratpoints.Cli.lt_nextUp_strtod`), and the exponent that `scan_end` accumulates, which stops at
 `LONG_MAX / 20`, is the exact one for the doubles that are finite and not zero
 (`Ratpoints.Cli.scanEndValue_eq_wordValue`). The ends of a missing `-l` and `-u` lie beyond the
-height bound (`Ratpoints.Cli.heightEnd_props`). The comparisons `cmp_end` and `cmp_end_x` compare
-the values (`Ratpoints.Cli.cmpEnd_neg_iff`, `Ratpoints.Cli.cmpEndX_neg_iff`), so that the binary
-search of `in_region` over increasing and disjoint intervals decides the membership of `x / z`
-(`Ratpoints.Cli.inRegion_spec`); and `join_intervals` keeps what the intervals hold and, for
-intervals that join well, gives intervals that the library accepts
+height bound (`Ratpoints.Cli.isFinite_heightEnd_and_le_toRat`). The comparisons `cmp_end` and
+`cmp_end_x` compare the values (`Ratpoints.Cli.cmpEnd_neg_iff`, `Ratpoints.Cli.cmpEndX_neg_iff`), so
+that the binary search of `in_region` over increasing and disjoint intervals decides the membership
+of `x / z` (`Ratpoints.Cli.inRegion_spec`); and `join_intervals` keeps what the intervals hold and,
+for intervals that join well, gives intervals that the library accepts
 (`Ratpoints.Cli.joinIntervals_spec`).
 
 ## Main definitions
@@ -49,7 +49,8 @@ intervals that join well, gives intervals that the library accepts
 ## Main statements
 
 * `Ratpoints.Cli.outward_spec`, `Ratpoints.Cli.run_scanEnd_props`,
-  `Ratpoints.Cli.run_scanEnd_isMaxBelow`, `Ratpoints.Cli.heightEnd_props`: the doubles of the ends.
+  `Ratpoints.Cli.run_scanEnd_isMaxBelow`, `Ratpoints.Cli.isFinite_heightEnd_and_le_toRat`: the
+  doubles of the ends.
 * `Ratpoints.Cli.lt_nextUp_strtod`: the faithful rounding of `strtod`.
 * `Ratpoints.Cli.inRegion_spec`: the binary search.
 * `Ratpoints.Cli.joinIntervals_spec`: the intervals that the library is given.
@@ -278,22 +279,9 @@ theorem run_scanEnd_props {s : String} {dir : ℤ} {e : ExactEnd} {d : Double}
 
 /-- The end of a missing first `-l` (negated) and of a missing last `-u` for a height bound
 `1 ≤ H < 2 ^ 63` is a finite double of a value at least `H`. -/
-theorem heightEnd_props {H : ℕ} (hH : 1 ≤ H) (hH63 : H < 2 ^ 63) :
-    (heightEnd H).isFinite = true ∧ (H : ℚ) ≤ (heightEnd H).toRat := by
-  obtain ⟨hf, hs, hf', hv⟩ := spec_ofInt64_natCast hH hH63
-  simp only [heightEnd]
-  split_ifs with hc
-  · exact ⟨hf', hv.le⟩
-  refine ⟨hf, ?_⟩
-  simp only [Bool.and_eq_true, decide_eq_true_eq, not_and] at hc
-  by_cases h63 : (ofInt64 H.toInt64).lt .twoPow63 = true
-  · have h := hc h63
-    rw [lt_twoPow63_eq_true_iff_toRat hf] at h63
-    rw [Int64.lt_iff_toInt_lt, not_lt, toInt_toInt64 (toRat_nonneg hs) h63,
-      Int64.toInt_ofNat_of_lt hH63] at h
-    exact (Nat.cast_le.mpr (mod_cast h)).trans (Nat.floor_le (toRat_nonneg hs))
-  · rw [lt_twoPow63_eq_true_iff_toRat hf, not_lt] at h63
-    exact le_trans (mod_cast hH63.le) h63
+theorem isFinite_heightEnd_and_le_toRat {H : ℕ} (hH : 1 ≤ H) (hH63 : H < 2 ^ 63) :
+    (heightEnd H).isFinite = true ∧ (H : ℚ) ≤ (heightEnd H).toRat :=
+  isFinite_and_le_toRat_ofInt64_nextUp hH hH63
 
 /-! ### The largest double below a lower end -/
 
@@ -812,14 +800,10 @@ def JoinInvariant (dom : List (Double × Double)) (k : ℕ) (s : Array (Double �
       (s.2 ≠ 0 → ∀ i, k < i → i < dom.length →
         doubleValue s.1[s.2]!.1.bits ≤ doubleValue dom[i]!.1.bits))
 
-theorem getElem!_mem {dom : List (Double × Double)} {i : ℕ} (h : i < dom.length) :
-    dom[i]! ∈ dom := by
-  rw [getElem!_pos dom i h]; exact List.getElem_mem h
-
 theorem joinInvariant_zero {dom : List (Double × Double)} (hnan : NoNaN dom)
     (h : ¬dom.isEmpty = true) : JoinInvariant dom 0 (dom.toArray, 0) := by
   have hl : 0 < dom.length := by cases dom <;> simp_all
-  have hm := getElem!_mem hl
+  have hm := List.getElem!_mem hl
   have e0 : (dom.toArray, 0).1[0]! = dom[0]! := by simp
   refine ⟨rfl, le_rfl, hl, fun j _ ↦ by simp, fun j hj ↦ ?_, fun i hi x hx ↦ ⟨0, le_rfl, ?_⟩,
     fun hw ↦ ⟨fun j hj ↦ ?_, fun j hj ↦ absurd hj (by lia), fun h ↦ absurd rfl h⟩⟩
@@ -915,7 +899,7 @@ theorem joinWF_push {dom : List (Double × Double)} {k n : ℕ} {iv : Array (Dou
     Array.getElem!_set!_ne _ _ _ _ (Ne.symm hj)
   refine ⟨fun j hj ↦ ?_, fun j hj ↦ ?_, fun _ i hi hil ↦ ?_⟩
   · rcases eq_or_ne j (n + 1) with rfl | hjn
-    · rw [hn]; exact hw.1 _ (getElem!_mem hk)
+    · rw [hn]; exact hw.1 _ (List.getElem!_mem hk)
     · rw [hne j hjn]; exact w1 j (by lia)
   · rcases (show j < n ∨ j = n by lia) with hj' | rfl
     · rw [hne j (by lia), hne (j + 1) (by lia)]; exact w2 j hj'
@@ -937,7 +921,7 @@ theorem JoinInvariant.push {dom : List (Double × Double)} {k n : ℕ}
     fun j hj ↦ ?_, fun i hi x hx ↦ ?_, fun hw ↦ joinWF_push hw hk hc (by lia) hgt (h7 hw).1
       (h7 hw).2.1⟩
   · rcases eq_or_ne j (n + 1) with rfl | hjn
-    · rw [hn]; exact hnan _ (getElem!_mem hk)
+    · rw [hn]; exact hnan _ (List.getElem!_mem hk)
     · rw [hne j hjn]; exact h5 j (by lia)
   · rcases (show i ≤ k ∨ i = k + 1 by lia) with hi | rfl
     · obtain ⟨j, hj, hjx⟩ := h6 i hi x hx
@@ -968,7 +952,7 @@ theorem JoinInvariant.merge_pick {dom : List (Double × Double)} {pref suff : Li
   subst hc
   have hcd : iv[pref.length + 1]! = dom[pref.length + 1]! := h.2.2.2.1 _ (by lia)
   obtain ⟨ha1, ha2⟩ := h.2.2.2.2.1 n le_rfl
-  obtain ⟨hc1, hc2⟩ := hcd ▸ hnan _ (getElem!_mem hcl)
+  obtain ⟨hc1, hc2⟩ := hcd ▸ hnan _ (List.getElem!_mem hcl)
   rw [List.length_append, List.length_singleton]
   refine h.merge hcl ?_ ?_ ?_ hs hn hne
   · exact doubleValue_pick_lt ha1 hc1
@@ -1033,7 +1017,7 @@ theorem JoinInvariant.push_cur {dom : List (Double × Double)} {pref suff : List
   subst hc
   have hcd : iv[pref.length + 1]! = dom[pref.length + 1]! := h.2.2.2.1 _ (by lia)
   obtain ⟨ha1, ha2⟩ := h.2.2.2.2.1 n le_rfl
-  obtain ⟨hc1, hc2⟩ := hcd ▸ hnan _ (getElem!_mem hcl)
+  obtain ⟨hc1, hc2⟩ := hcd ▸ hnan _ (List.getElem!_mem hcl)
   rw [List.length_append, List.length_singleton]
   exact h.push hnan hcl (not_le.mp fun h' ↦ h1 ((le_eq_true_iff hc1 ha2).mpr h'))
 
@@ -1045,18 +1029,6 @@ theorem joinIntervals_post_of_isEmpty {dom : List (Double × Double)} (hnan : No
   obtain rfl := List.isEmpty_iff.mp h
   exact ⟨Iff.rfl, hnan, fun _ h ↦ h, fun _ ↦ ⟨nofun, List.IsChain.nil⟩⟩
 
-theorem getElem_take_toList {iv : Array (Double × Double)} {m j : ℕ}
-    (hj : j < (iv.toList.take m).length) : (iv.toList.take m)[j] = iv[j]! := by
-  simp only [List.length_take, Array.length_toList, lt_min_iff] at hj
-  rw [List.getElem_take, Array.getElem_toList, getElem!_pos iv j hj.2]
-
-theorem mem_take_toList {iv : Array (Double × Double)} {m : ℕ} {p : Double × Double}
-    (hp : p ∈ iv.toList.take m) : ∃ j < m, p = iv[j]! := by
-  obtain ⟨j, hj, rfl⟩ := List.getElem_of_mem hp
-  refine ⟨j, ?_, getElem_take_toList hj⟩
-  simp only [List.length_take, lt_min_iff] at hj
-  exact hj.1
-
 theorem JoinInvariant.post {dom : List (Double × Double)} {iv : Array (Double × Double)} {n : ℕ}
     (h : JoinInvariant dom (ForIn.toList [1:dom.length]).length (iv, n)) :
     (iv.toList.take (n + 1) = [] ↔ dom = []) ∧ NoNaN (iv.toList.take (n + 1)) ∧
@@ -1066,19 +1038,19 @@ theorem JoinInvariant.post {dom : List (Double × Double)} {iv : Array (Double �
   obtain ⟨h1, h2, h3, -, h5, h6, h7⟩ := h
   rw [Std.Legacy.Range.length_toList] at h2 h3 h6 h7
   have hl : (iv.toList.take (n + 1)).length = n + 1 := by simp; lia
-  have hmem (j : ℕ) (hj : j ≤ n) : iv[j]! ∈ iv.toList.take (n + 1) := by
-    rw [← getElem_take_toList (m := n + 1) (j := j) (by lia)]; exact List.getElem_mem _
+  have hmem (j : ℕ) (hj : j ≤ n) : iv[j]! ∈ iv.toList.take (n + 1) :=
+    Array.mem_take_toList_of_lt (by lia) (by lia)
   refine ⟨⟨fun h ↦ absurd hl (by simp [h]), fun h ↦ by simp [h] at h3⟩, fun p hp ↦ ?_,
     fun x ⟨p, hp, hx⟩ ↦ ?_, fun hw ↦ ⟨fun q hq ↦ ?_, ?_⟩⟩
-  · obtain ⟨j, hj, rfl⟩ := mem_take_toList hp; exact h5 j (by lia)
+  · obtain ⟨j, hj, -, rfl⟩ := Array.exists_eq_of_mem_take_toList hp; exact h5 j (by lia)
   · obtain ⟨i, hi, rfl⟩ := List.getElem_of_mem hp
     obtain ⟨j, hj, hjx⟩ := h6 i (by lia) x (by rwa [getElem!_pos dom i hi])
     exact ⟨_, hmem j hj, hjx⟩
   · obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hq
-    obtain ⟨j, hj, rfl⟩ := mem_take_toList hp; exact (h7 hw).1 j (by lia)
+    obtain ⟨j, hj, -, rfl⟩ := Array.exists_eq_of_mem_take_toList hp; exact (h7 hw).1 j (by lia)
   · refine List.isChain_iff_getElem.mpr fun i hi ↦ ?_
     simp only [List.length_map] at hi
-    simp only [List.getElem_map, getElem_take_toList]
+    simp only [List.getElem_map, Array.getElem_take_toList]
     exact (h7 hw).2.1 i (by lia)
 
 /-- `join_intervals` keeps the search intervals of the command line, without NaN: it gives none

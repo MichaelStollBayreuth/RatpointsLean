@@ -131,13 +131,13 @@ theorem count_eq_signVariations {s0 s1 : ℤ} (h0 : s0 = -1 ∨ s0 = 0 ∨ s0 = 
 
 /-- The number of neighbours that differ in a sequence of nonzero signs is its number of sign
 variations. -/
-theorem countP_ne_eq_signVariations (s : ℕ → ℤ) {k : ℕ} (hs : ∀ n ≤ k, s n = -1 ∨ s n = 1) :
+theorem countP_ne_eq_signVariations {s : ℕ → ℤ} {k : ℕ} (hs : ∀ n ≤ k, s n = -1 ∨ s n = 1) :
     (List.range k).countP (fun n ↦ s n != s (n + 1)) =
       ((List.range (k + 1)).map s).signVariations := by
   induction k generalizing s with
   | zero => simp
   | succ k ih =>
-    have ih' := ih (fun n ↦ s (n + 1)) fun n hn ↦ hs (n + 1) (by lia)
+    have ih' := ih (s := fun n ↦ s (n + 1)) fun n hn ↦ hs (n + 1) (by lia)
     have hR (t : ℕ → ℤ) (m : ℕ) : (List.range (m + 1)).map t =
         t 0 :: (List.range m).map fun n ↦ t (n + 1) := by
       rw [List.range_succ_eq_map, List.map_cons, List.map_map]; rfl
@@ -165,7 +165,7 @@ theorem run_countsAtInfinity_eq_signVariations {rows : Array (Array ℤ)} {k : �
     · exact .inr (Int.sign_eq_one_of_pos h')
   have hb (n : ℕ) (hn : n ≤ k) : signAtBot rows n = -1 ∨ signAtBot rows n = 1 := by
     simp only [signAtBot]; rcases ht n hn with h' | h' <;> split_ifs <;> simp [h']
-  rw [run_countsAtInfinity, countP_ne_eq_signVariations _ ht, countP_ne_eq_signVariations _ hb]
+  rw [run_countsAtInfinity, countP_ne_eq_signVariations ht, countP_ne_eq_signVariations hb]
 
 /-- `Ratpoints.Sturm.evalSign` returns a sign. -/
 theorem run_evalSign_eq_neg_one_or_eq_zero_or_eq_one (row : Array ℤ) (num denexp : Int64) :
@@ -237,7 +237,7 @@ theorem IsChain.forall₂_posAssoc_sturmSeq {c : List ℤ} {d : ℕ} {ch : Array
   have h2 := h.two_le_size
   rw [← h.poly_toList_getElem!_zero, ← h.poly_toList_getElem!_one,
     ← getElem_rowPolys ch (i := 0) (by simp; lia), ← getElem_rowPolys ch (i := 1) (by simp; lia)]
-  refine forall₂_posAssoc_sturmSeq_of_getElem _ (by simpa using h2) (fun p hp ↦ ?_)
+  refine forall₂_posAssoc_sturmSeq_of_getElem (by simpa using h2) (fun p hp ↦ ?_)
     (fun k hk ↦ ?_) ?_
   · obtain ⟨i, hi, rfl⟩ := List.getElem_of_mem hp
     exact getElem_rowPolys ch hi ▸ h.poly_toList_ne_zero (by simpa using hi)
@@ -340,10 +340,6 @@ theorem IsChain.run_signsAt_eq {c : List ℤ} {d : ℕ} {ch : Array (Array ℤ)}
     h.signVariations_run_evalSign h1 hd nm h0 h55]
   rw [hσ0, hσ1]
   simpa using hsq.eval_ne_zero_or_eval_derivative_ne_zero _
-
-theorem leadingCoeff_poly_toList {a : Array ℤ} (h : a.back! ≠ 0) :
-    (poly a.toList).leadingCoeff = a.back! := by
-  rw [leadingCoeff, natDegree_poly_toList h, coeff_poly_toList, Array.back!_eq_getElem!]
 
 /-- The sign of the leading coefficient of the real polynomial of a row of a chain is the sign of
 the row at `+∞` of `Ratpoints.Sturm.countsAtInfinity`. -/

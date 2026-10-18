@@ -2,6 +2,7 @@ module  -- shake: keep-all --deprecated_module: ignore
 
 public import Ratpoints.Mathlib.Algebra.BigOperators.Group.List.Basic
 public import Ratpoints.Mathlib.Algebra.Group.Even
+public import Ratpoints.Mathlib.Algebra.Order.Field.Basic
 public import Ratpoints.Mathlib.Algebra.Polynomial.Eval.Coeff
 public import Ratpoints.Mathlib.Algebra.Polynomial.FieldDivision
 public import Ratpoints.Mathlib.Algebra.Polynomial.Homogenize

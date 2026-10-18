@@ -25,8 +25,13 @@ shifted, `x ||| x <<< s`, which doubles a pattern of period `P ∣ s`. For the r
 bit `(x >>> j) &&& 1` of a word, and the 128 bits of two words after one bit is set. For the bits of
 an interval: the sums, differences and negations of `long`s that do not overflow, the mask
 `(1 <<< k) - 1` and the and with it, the Euclidean remainder modulo `2 ^ k` also of a negative
-`long`. The lemmas on vectors, arrays, lists, ranges, natural numbers and integers are in
-`Ratpoints.Proof.Containers`.
+`long`. For the bounds of the search intervals: the low word of the sum of two numbers below
+`2 ^ 64` and its carry, the two words of a 128-bit number shifted right, the power of `2` at the
+lowest set bit of a word, which divides the word, the mask `(1 <<< s) - 1` of a word, also read as
+a `long`, a word below `2 ^ 63` read as a `long`, the word of the `long` of a natural number below
+`2 ^ 63`, the quotient of a non-negative `long` by a natural number, and the word of a non-negative
+`long` read as unsigned; for the bisection of the Sturm step, the successor of a `long`. The lemmas
+on vectors, arrays, lists, ranges, natural numbers and integers are in `Ratpoints.Proof.Containers`.
 
 ## Main statements
 
@@ -63,6 +68,8 @@ an interval: the sums, differences and negations of `long`s that do not overflow
   the half and the powers of `2` of `long`s, for the midpoints of the bisection of the Sturm step.
 * `Int64.toInt_and_ofNat_two_pow_sub_one`: a `long` and-ed with the mask `2 ^ k - 1` is its
   Euclidean remainder modulo `2 ^ k`.
+* `UInt64.toNat_shift_words_of_lt`, `UInt64.toNat_shift_words_of_le`: the two words of a 128-bit
+  number shifted right by `0 < s < 64` and by `64 ≤ s ≤ 127`.
 
 ## Implementation notes
 
@@ -75,6 +82,19 @@ untouched by the updates of Mathlib.
 universe u
 
 /-! ### Words -/
+
+namespace Nat
+
+/-- The sum `x + y` of two numbers below `2 ^ 64`, its low word `(x + y) % 2 ^ 64` and the carry
+`1` exactly when the low word is below `y`. -/
+theorem mod_add_carry {x y : Nat} (hx : x < 2 ^ 64) (hy : y < 2 ^ 64) :
+    (x + y) % 2 ^ 64 + (if (x + y) % 2 ^ 64 < y then 1 else 0) * 2 ^ 64 = x + y := by
+  rcases Nat.lt_or_ge (x + y) (2 ^ 64) with h | h
+  · rw [Nat.mod_eq_of_lt h]; simp only [show ¬x + y < y by lia, ↓reduceIte]; lia
+  · rw [Nat.mod_eq_sub_mod h, Nat.mod_eq_of_lt (by lia)]
+    simp only [show x + y - 2 ^ 64 < y by lia, ↓reduceIte]; lia
+
+end Nat
 
 namespace UInt64
 
@@ -293,9 +313,83 @@ theorem getLsbD_getElem!_set!_or_one_shiftLeft {seen : Array UInt64} (hs : seen.
   · rw [Array.getElem!_set!_ne _ _ _ _ h]
     grind
 
+theorem toNat_shiftRight_toUInt64 (x : UInt64) {s : Nat} (hs : s < 64) :
+    (x >>> s.toUInt64).toNat = x.toNat / 2 ^ s := by
+  rw [UInt64.toNat_shiftRight, Nat.toUInt64_eq, UInt64.toNat_ofNat',
+    Nat.mod_eq_of_lt (show s < 2 ^ 64 by lia), Nat.mod_eq_of_lt hs, Nat.shiftRight_eq_div_pow]
+
+/-- The two words of a 128-bit number `hi 2 ^ 64 + lo` shifted right by `0 < s < 64`. -/
+theorem toNat_shift_words_of_lt (hi lo : UInt64) {s : Nat} (hs0 : 0 < s) (hs : s < 64) :
+    (hi >>> s.toUInt64).toNat * 2 ^ 64 +
+        ((lo >>> s.toUInt64) ||| (hi <<< (64 - s).toUInt64)).toNat =
+      (hi.toNat * 2 ^ 64 + lo.toNat) / 2 ^ s := by
+  have h64 : (2 : Nat) ^ 64 = 2 ^ (64 - s) * 2 ^ s := by rw [← Nat.pow_add]; congr 1; lia
+  have hl : lo.toNat / 2 ^ s < 2 ^ (64 - s) :=
+    Nat.div_lt_of_lt_mul (by rw [Nat.mul_comm, ← h64]; exact lo.toNat_lt)
+  have hsh : (hi <<< (64 - s).toUInt64).toNat = 2 ^ (64 - s) * (hi.toNat % 2 ^ s) := by
+    rw [UInt64.toNat_shiftLeft, Nat.toUInt64_eq, UInt64.toNat_ofNat',
+      Nat.mod_eq_of_lt (show 64 - s < 2 ^ 64 by lia), Nat.mod_eq_of_lt (show 64 - s < 64 by lia),
+      Nat.shiftLeft_eq, h64, Nat.mul_comm (2 ^ (64 - s)) (2 ^ s), Nat.mul_mod_mul_right,
+      Nat.mul_comm]
+  rw [UInt64.toNat_or, toNat_shiftRight_toUInt64 _ hs, toNat_shiftRight_toUInt64 _ hs, hsh,
+    Nat.or_comm, ← Nat.two_pow_add_eq_or_of_lt hl]
+  have hd := Nat.div_add_mod hi.toNat (2 ^ s)
+  rw [show hi.toNat * 2 ^ 64 + lo.toNat =
+    2 ^ s * (hi.toNat / 2 ^ s * 2 ^ 64 + 2 ^ (64 - s) * (hi.toNat % 2 ^ s)) + lo.toNat by grind,
+    Nat.mul_add_div (Nat.two_pow_pos s)]
+  lia
+
+/-- The two words of a 128-bit number `hi 2 ^ 64 + lo` shifted right by `64 ≤ s ≤ 127`. -/
+theorem toNat_shift_words_of_le (hi lo : UInt64) {s : Nat} (hs0 : 64 ≤ s) (hs : s ≤ 127) :
+    (hi >>> (s - 64).toUInt64).toNat = (hi.toNat * 2 ^ 64 + lo.toNat) / 2 ^ s := by
+  obtain ⟨t, rfl⟩ : ∃ t, s = 64 + t := ⟨s - 64, by lia⟩
+  rw [toNat_shiftRight_toUInt64 _ (by lia), Nat.add_sub_cancel_left, Nat.pow_add,
+    ← Nat.div_div_eq_div_mul, Nat.mul_comm hi.toNat, Nat.mul_add_div (Nat.two_pow_pos 64),
+    Nat.div_eq_of_lt lo.toNat_lt, Nat.add_zero]
+
+/-- A word is divisible by `2 ^ t` for the position `t` of its lowest set bit (`t = 64` for the
+word `0`). -/
+theorem two_pow_ctz_dvd {w : UInt64} : 2 ^ w.toBitVec.ctz.toNat ∣ w.toNat := by
+  rcases Decidable.em (w = 0) with rfl | hw
+  · simp
+  have := two_pow_ctz_mul_shiftRight_ofNat (b := w.toNat)
+    (Nat.pos_of_ne_zero fun h ↦ hw (UInt64.toNat_inj.mp h)) w.toNat_lt
+  rw [UInt64.ofNat_toNat] at this
+  exact ⟨_, this.symm⟩
+
+/-- The mask `(1 <<< s) - 1` of the low `s < 64` bits of a word, `2 ^ s - 1`. -/
+theorem toNat_one_shiftLeft_sub_one {s : Nat} (hs : s < 64) :
+    (((1 : UInt64) <<< s.toUInt64) - 1).toNat = 2 ^ s - 1 := by
+  have h1 : ((1 : UInt64) <<< s.toUInt64).toNat = 2 ^ s := by
+    rw [UInt64.toNat_shiftLeft, Nat.toUInt64_eq, UInt64.toNat_ofNat',
+      Nat.mod_eq_of_lt (show s < 2 ^ 64 by lia), Nat.mod_eq_of_lt hs, UInt64.toNat_one,
+      Nat.shiftLeft_eq, Nat.one_mul, Nat.mod_eq_of_lt (Nat.pow_lt_pow_right (by decide) hs)]
+  rw [UInt64.toNat_sub_of_le _ _
+      (UInt64.le_iff_toNat_le.mpr (by rw [h1]; exact Nat.one_le_two_pow)),
+    h1, UInt64.toNat_one]
+
+theorem toInt_toInt64_of_lt {t : UInt64} (ht : t.toNat < 2 ^ 63) : t.toInt64.toInt = t.toNat := by
+  rw [← UInt64.ofNat_toNat (x := t), UInt64.toInt64_ofNat', Int64.toInt_ofNat_of_lt ht,
+    UInt64.toNat_ofNat_of_lt' (by lia)]
+
+/-- The mask `(1 <<< s) - 1` of the low `s < 64` bits of a word read as a `long`, `2 ^ s - 1`. -/
+theorem toInt_toInt64_one_shiftLeft_sub_one {s : Nat} (hs : s < 64) :
+    ((((1 : UInt64) <<< s.toUInt64) - 1).toInt64).toInt = 2 ^ s - 1 := by
+  have h1 := toNat_one_shiftLeft_sub_one hs
+  have h2 : 2 ^ s ≤ 2 ^ 63 := Nat.pow_le_pow_right (by decide) (by lia)
+  have h3 := Nat.one_le_two_pow (n := s)
+  rw [toInt_toInt64_of_lt (by lia), h1]; lia
+
 end UInt64
 
 /-! ### Signed words -/
+
+namespace Nat
+
+theorem toNat_toUInt64_toInt64 {B : Nat} (hB : B < 2 ^ 63) : B.toInt64.toUInt64.toNat = B := by
+  rw [Nat.toInt64, Int64.toUInt64_ofNat', UInt64.toNat_ofNat', Nat.mod_eq_of_lt (by lia)]
+
+end Nat
 
 namespace Int64
 
@@ -501,6 +595,24 @@ theorem toInt_one_shiftLeft {k : Int64} (h0 : 0 ≤ k.toInt) (h : k.toInt < 63) 
   have hk : k = ofNat k.toInt.toNat := toInt_inj.mp (by rw [toInt_ofNat_of_lt (by lia)]; lia)
   rw [hk, toInt_one_shiftLeft_ofNat (by lia), toInt_ofNat_of_lt (by lia)]
   simp
+
+/-- The quotient of a non-negative `long` by a natural number `0 < n < 2 ^ 63`, the floor of the
+quotient of the values. -/
+theorem toInt_div_ofNat {a : Int64} (ha : 0 ≤ a.toInt) {n : Nat} (hn : 0 < n)
+    (hn63 : n < 2 ^ 63) : (a / n.toInt64).toInt = a.toInt / n := by
+  have h2 : a.toInt / (n : Int) ≤ a.toInt := Int.ediv_le_self _ ha
+  have := a.toInt_lt
+  rw [Int64.toInt_div, Nat.toInt64, Int64.toInt_ofNat_of_lt hn63, Int.tdiv_eq_ediv_of_nonneg ha,
+    Int.bmod_eq_of_le (by have := Int.ediv_nonneg ha (show (0 : Int) ≤ n by lia); lia) (by lia)]
+
+theorem natCast_toNat_toUInt64 {x : Int64} (hx : 0 ≤ x.toInt) :
+    (x.toUInt64.toNat : Int) = x.toInt := by
+  rw [Int64.toNat_toUInt64_of_le (by rw [Int64.le_iff_toInt_le, Int64.toInt_zero]; exact hx),
+    show x.toNatClampNeg = x.toInt.toNat from rfl, Int.toNat_of_nonneg hx]
+
+theorem toInt_add_one_of_lt {e : Int64} (h : e.toInt < 2 ^ 63 - 1) :
+    (e + 1).toInt = e.toInt + 1 :=
+  toInt_add_of_lt (by simp; lia) (by simp; lia)
 
 end Int64
 

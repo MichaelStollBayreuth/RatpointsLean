@@ -664,7 +664,8 @@ theorem exists_eq_filter_inIntervals_of_findPoints_eq_ok {c : List ℤ} {H : ℕ
   rw [elim_nil_filter_map_append_flatMap, elim_searchRegion_pointsOfDen_zero hwf hst]
   refine congr(List.filter _ (List.map _ (_ ++ $(List.flatMap_congr fun b hb ↦ ?_))))
   exact elim_searchRegion_pointsOfDen_filter hS hwf rfl (Setup.one_le_of_reversal_eq_ok hr hd)
-    (lt_two_pow_57_of_reversal_eq_ok h1 hr) hH hH63 hst
+    (by lia [Setup.degree_le_of_reversal_eq_ok hr, degree_le_length_sub_one c,
+      maxDegree_lt_two_pow_57]) hH hH63 hst
     (by lia [o.one_le_toNat_bLow_normalize H,
       le_and_le_of_mem_searchDens (o.one_le_toNat_bLow_normalize H) hb])
 

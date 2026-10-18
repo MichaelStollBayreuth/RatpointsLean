@@ -58,6 +58,9 @@ the normal range it is `±M 2 ^ q` with `2 ^ 52 ≤ M < 2 ^ 53` and `m 2 ^ e < (
   dyadic number and the conversion of a `long`.
 * `Ratpoints.Double.ldexp_exact`, `Ratpoints.Double.frexp_spec`, `Ratpoints.Double.toInt_toInt64`,
   `Ratpoints.Double.toNat_toUInt64`: the functions of the C library and the conversions.
+* `Ratpoints.Double.isFinite_and_le_toRat_ofInt64_nextUp`: the double of `1 ≤ H < 2 ^ 63`, moved
+  up to the next double when it is below `2 ^ 63` and its conversion to a `long` below `H`, is
+  finite and at least `H`.
 * `Ratpoints.Double.orderValue_nextUp`, `Ratpoints.Double.nextUp_le_of_lt`,
   `Ratpoints.Double.toRat_nextUp_of_normal`, `Ratpoints.Double.orderValue_nextDown`,
   `Ratpoints.Double.le_nextDown_of_lt`: `nextafter` towards `±HUGE_VAL`.
@@ -1164,6 +1167,33 @@ theorem lt_zero_eq_true_iff_toRat {x : Double} (hf : x.isFinite = true) :
   rw [lt_eq_true_iff (isNaN_eq_false_of_isFinite hf) (by decide), doubleValue_eq_toRat hf,
     doubleValue_eq_toRat (by decide), toRat_eq_zero_of_isZero (show zero.isZero = true by decide),
     WithBotTop.coe_lt_coe]
+
+/-- A double `0 ≤ x < 2 ^ 63` whose conversion to a `long` is not below `H` is at least `H`. -/
+theorem le_toRat_of_not_toInt64_lt {x : Double} (h0 : 0 ≤ x.toRat) (h63 : x.toRat < 2 ^ 63)
+    {H : ℕ} (hH63 : H < 2 ^ 63) (h : ¬x.toInt64 < H.toInt64) : (H : ℚ) ≤ x.toRat := by
+  rw [Int64.lt_iff_toInt_lt, Int64.toInt_ofNat_of_lt hH63, toInt_toInt64 h0 h63, not_lt] at h
+  exact (Nat.cast_le.mpr (mod_cast h)).trans (Nat.floor_le h0)
+
+/-- The double of `1 ≤ H < 2 ^ 63`, moved up to the next double when it is below `2 ^ 63` and its
+conversion to a `long` is below `H`, is finite and at least `H`: the bound `h` of the default
+search interval `[-h, h]` of `Ratpoints.searchIntervals`, and `Ratpoints.Cli.heightEnd`. -/
+theorem isFinite_and_le_toRat_ofInt64_nextUp {H : ℕ} (hH : 1 ≤ H) (hH63 : H < 2 ^ 63) :
+    let h := ofInt64 H.toInt64
+    let h := if h.lt .twoPow63 && decide (h.toInt64 < H.toInt64) then h.nextUp else h
+    h.isFinite = true ∧ (H : ℚ) ≤ h.toRat := by
+  intro h0 h
+  obtain ⟨hf, hs, hf', hv⟩ := spec_ofInt64_natCast hH hH63
+  have hlt := lt_twoPow63_eq_true_iff_toRat hf
+  by_cases h1 : h0.lt .twoPow63 = true
+  · by_cases h2 : h0.toInt64 < H.toInt64
+    · simp only [h, h1, h2, decide_true, Bool.and_self, ↓reduceIte]
+      exact ⟨hf', hv.le⟩
+    · simp only [h, h1, h2, decide_false, Bool.and_false, Bool.false_eq_true, ↓reduceIte]
+      exact ⟨hf, le_toRat_of_not_toInt64_lt (toRat_nonneg hs) (hlt.mp h1) hH63 h2⟩
+  · simp only [h, h1, Bool.false_and, Bool.false_eq_true, ↓reduceIte]
+    have : (2 : ℚ) ^ 63 ≤ h0.toRat := not_lt.mp (mt hlt.mpr h1)
+    have : (H : ℚ) < 2 ^ 63 := mod_cast hH63
+    exact ⟨hf, by linarith⟩
 
 end Double
 

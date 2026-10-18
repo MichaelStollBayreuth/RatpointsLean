@@ -9,6 +9,7 @@ public import Ratpoints.Model.FindPoints
 public import Ratpoints.Proof.Region
 
 import Mathlib.Data.Nat.Cast.Field
+import Ratpoints.Mathlib.Algebra.Order.Field.Basic
 import Ratpoints.Proof.Bits
 import Ratpoints.Proof.Double
 
@@ -133,49 +134,14 @@ theorem run_searchIntervals_of_ne_nil (H : ℕ) {domain : List (Double × Double
   · exact absurd rfl hn
   · rfl
 
-/-- A double `0 ≤ x < 2 ^ 63` whose conversion to a `long` is not below `H` is at least `H`. -/
-theorem le_toRat_of_not_toInt64_lt {x : Double} (h0 : 0 ≤ x.toRat) (h63 : x.toRat < 2 ^ 63)
-    {H : ℕ} (hH63 : H < 2 ^ 63) (h : ¬x.toInt64 < H.toInt64) : (H : ℚ) ≤ x.toRat := by
-  rw [Int64.lt_iff_toInt_lt, Int64.toInt_ofNat_of_lt hH63, Double.toInt_toInt64 h0 h63,
-    not_lt] at h
-  exact (Nat.cast_le.mpr (mod_cast h)).trans (Nat.floor_le h0)
-
-/-- The bound `h` of the default interval `[-h, h]` of a search with the height bound
-`1 ≤ H < 2 ^ 63`: the double of `H`, moved up to the next double when it is below `2 ^ 63` and its
-truncation below `H`, is finite and at least `H`. -/
-theorem le_toRat_defaultBound {H : ℕ} (hH : 1 ≤ H) (hH63 : H < 2 ^ 63) :
-    let h := Double.ofInt64 H.toInt64
-    let h := if h.lt .twoPow63 && decide (h.toInt64 < H.toInt64) then h.nextUp else h
-    h.isFinite = true ∧ (H : ℚ) ≤ h.toRat := by
-  intro h0 h
-  obtain ⟨hf, hs, hf', hv⟩ := Double.spec_ofInt64_natCast hH hH63
-  have hlt := Double.lt_twoPow63_eq_true_iff_toRat hf
-  by_cases h1 : h0.lt .twoPow63 = true
-  · by_cases h2 : h0.toInt64 < H.toInt64
-    · simp only [h, h1, h2, decide_true, Bool.and_self, ↓reduceIte]
-      exact ⟨hf', hv.le⟩
-    · simp only [h, h1, h2, decide_false, Bool.and_false, Bool.false_eq_true, ↓reduceIte]
-      exact ⟨hf, le_toRat_of_not_toInt64_lt (Double.toRat_nonneg hs) (hlt.mp h1) hH63 h2⟩
-  · simp only [h, h1, Bool.false_and, Bool.false_eq_true, ↓reduceIte]
-    have : (2 : ℚ) ^ 63 ≤ h0.toRat := not_lt.mp (mt hlt.mpr h1)
-    have : (H : ℚ) < 2 ^ 63 := mod_cast hH63
-    exact ⟨hf, by linarith⟩
-
-theorem abs_intCast_div_natCast_le {a : ℤ} {b H : ℕ} (hb : 0 < b) (ha : a.natAbs ≤ H) :
-    |(a : ℚ) / b| ≤ H := by
-  rw [abs_div, Nat.abs_cast, div_le_iff₀ (mod_cast hb)]
-  have h1 : |(a : ℚ)| ≤ H := by rw [← Int.cast_abs, Int.abs_eq_natAbs]; exact_mod_cast ha
-  exact h1.trans (le_mul_of_one_le_right (by positivity) (mod_cast hb))
-
-/-- The interval `[-h, h]` for a finite double `h ≥ H ≥ 1` is well formed and holds `a / b` for
-every numerator `|a| ≤ H` and denominator `b ≥ 1`. -/
-theorem intervalsWF_and_inIntervals_neg {h : Double} {H : ℕ} (hH : 1 ≤ H)
-    (hf : h.isFinite = true) (hv : (H : ℚ) ≤ h.toRat) :
+/-- The interval `[-h, h]` for a finite double `h ≥ H` is well formed and holds `a / b` for every
+numerator `|a| ≤ H` and denominator `b ≥ 1`. -/
+theorem intervalsWF_and_inIntervals_neg {h : Double} {H : ℕ} (hf : h.isFinite = true)
+    (hv : (H : ℚ) ≤ h.toRat) :
     IntervalsWF (domainBits [(h.neg, h)]) ∧
       ∀ (a : ℤ) (b : ℕ), 0 < b → a.natAbs ≤ H →
         InIntervals (domainValues [(h.neg, h)]) (a / b) := by
   have hn := Double.isNaN_eq_false_of_isFinite hf
-  have hH' : (1 : ℚ) ≤ H := mod_cast hH
   simp only [domainValues, domainBits, List.map_cons, List.map_nil,
     Double.doubleValue_eq_toRat hf, Double.doubleValue_eq_toRat (by rwa [Double.isFinite_neg]),
     Double.toRat_neg]
@@ -187,17 +153,19 @@ theorem intervalsWF_and_inIntervals_neg {h : Double} {H : ℕ} (hH : 1 ≤ H)
     rw [hi, Double.doubleValue_eq_toRat hf,
       Double.doubleValue_eq_toRat (by rwa [Double.isFinite_neg]),
       Double.toRat_neg, WithBotTop.coe_le_coe]
-    linarith
+    linarith [Nat.cast_nonneg (α := ℚ) H]
   · refine ⟨_, List.mem_singleton_self _, ?_⟩
-    have hab := abs_intCast_div_natCast_le hb ha
+    have ha' : |(a : ℚ)| ≤ H := by rw [← Int.cast_abs, Int.abs_eq_natAbs]; exact_mod_cast ha
+    have hab : |(a : ℚ) / b| ≤ H := by
+      simpa using (abs_intCast_div_intCast_le_abs (α := ℚ) a b).trans ha'
     simp only [WithBotTop.coe_le_coe]
     constructor <;> linarith [abs_le.mp hab]
 
 theorem exists_run_searchIntervals_nil {H : ℕ} (hH : 1 ≤ H) (hH63 : H < 2 ^ 63) :
     ∃ dom, Id.run (searchIntervals H []) = some dom ∧ IntervalsWF (domainBits dom) ∧
       ∀ (a : ℤ) (b : ℕ), 0 < b → a.natAbs ≤ H → InIntervals (domainValues dom) (a / b) := by
-  obtain ⟨hf, hv⟩ := le_toRat_defaultBound hH hH63
-  exact ⟨_, rfl, intervalsWF_and_inIntervals_neg hH hf hv⟩
+  obtain ⟨hf, hv⟩ := Double.isFinite_and_le_toRat_ofInt64_nextUp hH hH63
+  exact ⟨_, rfl, intervalsWF_and_inIntervals_neg hf hv⟩
 
 /-- The caller's search intervals are well formed when `Ratpoints.searchIntervals` does not refuse
 them. -/
@@ -222,21 +190,12 @@ theorem wf_of_run_searchIntervals_eq_some {H : ℕ} (hH : 1 ≤ H) (hH63 : H < 2
 
 namespace Sieve
 
-/-- The sum `x + y` of two words, its low word `(x + y) % 2 ^ 64` and the carry `1` exactly when
-the low word is below `y`. -/
-theorem mod_add_carry {x y : ℕ} (hx : x < 2 ^ 64) (hy : y < 2 ^ 64) :
-    (x + y) % 2 ^ 64 + (if (x + y) % 2 ^ 64 < y then 1 else 0) * 2 ^ 64 = x + y := by
-  rcases Nat.lt_or_ge (x + y) (2 ^ 64) with h | h
-  · rw [Nat.mod_eq_of_lt h]; simp only [show ¬x + y < y by lia, ↓reduceIte]; lia
-  · rw [Nat.mod_eq_sub_mod h, Nat.mod_eq_of_lt (by lia)]
-    simp only [show x + y - 2 ^ 64 < y by lia, ↓reduceIte]; lia
-
 /-- The 128-bit sum `b m + r` of `Ratpoints.Sieve.exactScale` in its two words. -/
 theorem toNat_hi_mul_add_lo (a m rl rh : UInt64)
     (h : a.toNat * m.toNat + (rh.toNat * 2 ^ 64 + rl.toNat) < 2 ^ 128) :
     (mulHi a m + rh + (if a * m + rl < rl then 1 else 0)).toNat * 2 ^ 64 + (a * m + rl).toNat =
       a.toNat * m.toNat + (rh.toNat * 2 ^ 64 + rl.toNat) := by
-  have hc := mod_add_carry (Nat.mod_lt (a.toNat * m.toNat) (Nat.two_pow_pos 64)) rl.toNat_lt
+  have hc := Nat.mod_add_carry (Nat.mod_lt (a.toNat * m.toNat) (Nat.two_pow_pos 64)) rl.toNat_lt
   have hd := Nat.div_add_mod (a.toNat * m.toNat) (2 ^ 64)
   have hlt : (a * m + rl < rl) ↔ (a.toNat * m.toNat % 2 ^ 64 + rl.toNat) % 2 ^ 64 < rl.toNat := by
     rw [UInt64.lt_iff_toNat_lt, UInt64.toNat_add, UInt64.toNat_mul]
@@ -255,41 +214,6 @@ theorem toNat_hi_mul_add_lo (a m rl rh : UInt64)
   rw [hhi, hlo, Nat.mod_eq_of_lt (b := 2 ^ 64)]
   · rw [hcn]; lia
   · rw [hcn]; lia
-
-theorem toNat_shiftRight_toUInt64 (x : UInt64) {s : ℕ} (hs : s < 64) :
-    (x >>> s.toUInt64).toNat = x.toNat / 2 ^ s := by
-  rw [UInt64.toNat_shiftRight, Nat.toUInt64_eq, UInt64.toNat_ofNat',
-    Nat.mod_eq_of_lt (show s < 2 ^ 64 by lia), Nat.mod_eq_of_lt hs, Nat.shiftRight_eq_div_pow]
-
-/-- The two words of a 128-bit number `hi 2 ^ 64 + lo` shifted right by `0 < s < 64`. -/
-theorem toNat_shift_words_of_lt (hi lo : UInt64) {s : ℕ} (hs0 : 0 < s) (hs : s < 64) :
-    (hi >>> s.toUInt64).toNat * 2 ^ 64 +
-        ((lo >>> s.toUInt64) ||| (hi <<< (64 - s).toUInt64)).toNat =
-      (hi.toNat * 2 ^ 64 + lo.toNat) / 2 ^ s := by
-  have h64 : (2 : ℕ) ^ 64 = 2 ^ (64 - s) * 2 ^ s := by rw [← Nat.pow_add]; congr 1; lia
-  have hl : lo.toNat / 2 ^ s < 2 ^ (64 - s) :=
-    Nat.div_lt_of_lt_mul (by rw [Nat.mul_comm, ← h64]; exact lo.toNat_lt)
-  have hsh : (hi <<< (64 - s).toUInt64).toNat = 2 ^ (64 - s) * (hi.toNat % 2 ^ s) := by
-    rw [UInt64.toNat_shiftLeft, Nat.toUInt64_eq, UInt64.toNat_ofNat',
-      Nat.mod_eq_of_lt (show 64 - s < 2 ^ 64 by lia), Nat.mod_eq_of_lt (show 64 - s < 64 by lia),
-      Nat.shiftLeft_eq, h64, Nat.mul_comm (2 ^ (64 - s)) (2 ^ s), Nat.mul_mod_mul_right,
-      Nat.mul_comm]
-  rw [UInt64.toNat_or, toNat_shiftRight_toUInt64 _ hs, toNat_shiftRight_toUInt64 _ hs, hsh,
-    Nat.or_comm, ← Nat.two_pow_add_eq_or_of_lt hl]
-  have hd := Nat.div_add_mod hi.toNat (2 ^ s)
-  rw [show hi.toNat * 2 ^ 64 + lo.toNat =
-    2 ^ s * (hi.toNat / 2 ^ s * 2 ^ 64 + 2 ^ (64 - s) * (hi.toNat % 2 ^ s)) + lo.toNat by
-      rw [h64]; conv_lhs => rw [← hd]
-      ring, Nat.mul_add_div (Nat.two_pow_pos s)]
-  lia
-
-/-- The two words of a 128-bit number `hi 2 ^ 64 + lo` shifted right by `64 ≤ s ≤ 127`. -/
-theorem toNat_shift_words_of_le (hi lo : UInt64) {s : ℕ} (hs0 : 64 ≤ s) (hs : s ≤ 127) :
-    (hi >>> (s - 64).toUInt64).toNat = (hi.toNat * 2 ^ 64 + lo.toNat) / 2 ^ s := by
-  obtain ⟨t, rfl⟩ : ∃ t, s = 64 + t := ⟨s - 64, by lia⟩
-  rw [toNat_shiftRight_toUInt64 _ (by lia), Nat.add_sub_cancel_left, Nat.pow_add,
-    ← Nat.div_div_eq_div_mul, Nat.mul_comm hi.toNat, Nat.mul_add_div (Nat.two_pow_pos 64),
-    Nat.div_eq_of_lt lo.toNat_lt, Nat.add_zero]
 
 /-- The result of `Ratpoints.Sieve.exactScale` from the two words of its quotient: `2 ^ 64 - 1` when
 the high word is not `0`. -/
@@ -321,10 +245,10 @@ theorem toNat_exactScale (b : Int64) (e : ExactEnd) (hs : e.s ≤ 127)
     exact toNat_ite_bne_zero (by simp)
   by_cases h64 : e.s < 64
   · simp only [h0.ne', h64, ↓reduceIte]
-    exact toNat_ite_bne_zero (toNat_shift_words_of_lt hi lo h0 h64)
+    exact toNat_ite_bne_zero (UInt64.toNat_shift_words_of_lt hi lo h0 h64)
   · simp only [h0.ne', h64, ↓reduceIte]
     exact toNat_ite_bne_zero (by rw [UInt64.toNat_zero, Nat.zero_mul, Nat.zero_add,
-      toNat_shift_words_of_le hi lo (by lia) hs])
+      UInt64.toNat_shift_words_of_le hi lo (by lia) hs])
 
 /-- `ldexp(f, 53)` of a double `1/2 ≤ f < 1`, the fraction of `frexp`, is exact. -/
 theorem toRat_ldexp_mantDig {f : Double} (hf : f.isFinite = true) (hlo : 1 / 2 ≤ f.toRat)
@@ -394,18 +318,6 @@ theorem isExactMantissa_cap {v : ℚ} {m : UInt64} {s : ℤ} (hs : 127 < s) (h0 
     _ = 2 ^ (53 : ℤ) := rfl
     _ ≤ 2 ^ (-75 + s) := zpow_le_zpow_right₀ (by norm_num) (by lia)
 
-open scoped Std.WP in
-theorem run_ctz {w : UInt64} (hw : w ≠ 0) : Id.run (ctz w) = w.toBitVec.ctz.toNat :=
-  Std.WP.Id.of_run_eq_wp rfl _ ((ctz_spec w).le_wp hw)
-
-theorem two_pow_ctz_dvd {w : UInt64} : 2 ^ w.toBitVec.ctz.toNat ∣ w.toNat := by
-  rcases eq_or_ne w 0 with rfl | hw
-  · simp
-  have := UInt64.two_pow_ctz_mul_shiftRight_ofNat (b := w.toNat)
-    (Nat.pos_of_ne_zero fun h ↦ hw (UInt64.toNat_inj.mp h)) w.toNat_lt
-  rw [UInt64.ofNat_toNat] at this
-  exact ⟨_, this.symm⟩
-
 theorem natCast_div_two_pow_div_zpow {m z : ℕ} (hdvd : 2 ^ z ∣ m) (s : ℤ) :
     ((m / 2 ^ z : ℕ) : ℚ) / 2 ^ (s - z) = m / 2 ^ s := by
   rw [Nat.cast_div hdvd (by positivity), div_div, Nat.cast_pow, Nat.cast_ofNat, ← zpow_natCast,
@@ -423,13 +335,13 @@ private theorem isExactMantissa_shiftRight {m0 : UInt64} {s0 : ℤ} {v : ℚ}
   have hc : m0.toBitVec.ctz.toNat < 64 :=
     UInt64.toNat_ctz_lt fun h ↦ by rw [h] at h52; simp at h52
   have hdvd := (Nat.pow_dvd_pow 2 (show (min (m0.toBitVec.ctz.toNat : ℤ) s0).toNat ≤
-    m0.toBitVec.ctz.toNat by lia)).trans two_pow_ctz_dvd
+    m0.toBitVec.ctz.toNat by lia)).trans UInt64.two_pow_ctz_dvd
   have hz0 : 0 ≤ min (m0.toBitVec.ctz.toNat : ℤ) s0 := by lia
   have hzc : min (m0.toBitVec.ctz.toNat : ℤ) s0 ≤ m0.toBitVec.ctz.toNat := min_le_left _ _
   have hzs : min (m0.toBitVec.ctz.toNat : ℤ) s0 ≤ s0 := min_le_right _ _
   generalize min (m0.toBitVec.ctz.toNat : ℤ) s0 = z at hdvd hz0 hzc hzs ⊢
   have hm1 : (m0 >>> z.toNat.toUInt64).toNat = m0.toNat / 2 ^ z.toNat :=
-    toNat_shiftRight_toUInt64 _ (by lia)
+    UInt64.toNat_shiftRight_toUInt64 _ (by lia)
   have hpos : 0 < m0.toNat / 2 ^ z.toNat := Nat.div_pos (Nat.le_of_dvd (by lia) hdvd)
     (Nat.two_pow_pos _)
   have hle : m0.toNat / 2 ^ z.toNat ≤ m0.toNat := Nat.div_le_self _ _
@@ -480,16 +392,6 @@ theorem isExactMantissa_run_exactMantissa {ax : Double} (hf : ax.isFinite = true
     · simp only [hs1, lt_irrefl, ↓reduceIte, show ¬(127 : ℤ) < 0 by decide]
       exact isExactMantissa_of_eq (by simp) (by lia) (by lia) (by simpa [hs1] using hv)
 
-theorem toNat_one_shiftLeft_sub_one {s : ℕ} (hs : s < 64) :
-    (((1 : UInt64) <<< s.toUInt64) - 1).toNat = 2 ^ s - 1 := by
-  have h1 : ((1 : UInt64) <<< s.toUInt64).toNat = 2 ^ s := by
-    rw [UInt64.toNat_shiftLeft, Nat.toUInt64_eq, UInt64.toNat_ofNat',
-      Nat.mod_eq_of_lt (show s < 2 ^ 64 by lia), Nat.mod_eq_of_lt hs, UInt64.toNat_one,
-      Nat.shiftLeft_eq, Nat.one_mul, Nat.mod_eq_of_lt (Nat.pow_lt_pow_right (by decide) hs)]
-  rw [UInt64.toNat_sub_of_le _ _
-      (UInt64.le_iff_toNat_le.mpr (by rw [h1]; exact Nat.one_le_two_pow)),
-    h1, UInt64.toNat_one]
-
 /-- The rounding `rh 2 ^ 64 + rl` that `exact_end` writes: `2 ^ s - 1` when the end wants `b |x|`
 rounded up, and `0` otherwise. -/
 theorem toNat_rounding (up : Bool) {s : ℕ} (hs : s ≤ 127) :
@@ -501,9 +403,9 @@ theorem toNat_rounding (up : Bool) {s : ℕ} (hs : s ≤ 127) :
   cases up
   · simp
   by_cases h64 : s < 64
-  · simp only [↓reduceIte, h64, toNat_one_shiftLeft_sub_one h64, UInt64.toNat_zero, Nat.zero_mul,
-      Nat.zero_add]
-  · simp only [↓reduceIte, h64, toNat_one_shiftLeft_sub_one (show s - 64 < 64 by lia),
+  · simp only [↓reduceIte, h64, UInt64.toNat_one_shiftLeft_sub_one h64, UInt64.toNat_zero,
+      Nat.zero_mul, Nat.zero_add]
+  · simp only [↓reduceIte, h64, UInt64.toNat_one_shiftLeft_sub_one (show s - 64 < 64 by lia),
       UInt64.toNat_not, UInt64.toNat_zero]
     have : 2 ^ s = 2 ^ (s - 64) * 2 ^ 64 := by rw [← Nat.pow_add]; congr 1; lia
     have := Nat.one_le_two_pow (n := s - 64)
@@ -731,13 +633,6 @@ theorem isEnd_run_exactEnd (x : Double) (lower : Bool) :
   obtain ⟨hs, hm⟩ := bounds_run_exactEnd x lower
   exact ⟨hs, hm, by rw [rounding_run_exactEnd x lower hs, neg_run_exactEnd]⟩
 
-theorem toNat_toUInt64_toInt64 {B : ℕ} (hB : B < 2 ^ 63) : B.toInt64.toUInt64.toNat = B := by
-  rw [Nat.toInt64, Int64.toUInt64_ofNat', UInt64.toNat_ofNat', Nat.mod_eq_of_lt (by lia)]
-
-theorem toInt_toInt64_of_lt {t : UInt64} (ht : t.toNat < 2 ^ 63) : t.toInt64.toInt = t.toNat := by
-  rw [← UInt64.ofNat_toNat (x := t), UInt64.toInt64_ofNat', Int64.toInt_ofNat_of_lt ht,
-    UInt64.toNat_ofNat_of_lt' (by lia)]
-
 theorem ceil_mul_div_two_pow (B m s : ℕ) :
     ⌈(B : ℚ) * ((m : ℚ) / 2 ^ s)⌉ = (((B * m + (2 ^ s - 1)) / 2 ^ s : ℕ) : ℤ) := by
   have hd := Nat.div_add_mod (B * m + (2 ^ s - 1)) (2 ^ s)
@@ -766,7 +661,7 @@ theorem toNat_exactScale_of_isEnd {e : ExactEnd} {lower : Bool} (he : IsEnd e lo
       (if lower != e.neg then (B * e.m.toNat + (2 ^ e.s - 1)) / 2 ^ e.s
         else B * e.m.toNat / 2 ^ e.s) := by
   obtain ⟨hs, hm, hr⟩ := he
-  have hB' := toNat_toUInt64_toInt64 hB
+  have hB' := Nat.toNat_toUInt64_toInt64 hB
   have h127 : 2 ^ e.s ≤ 2 ^ 127 := Nat.pow_le_pow_right (by decide) hs
   rw [toNat_exactScale _ _ hs, hB', hr]
   · split <;> simp
@@ -809,10 +704,10 @@ theorem lowNumerator_exact_of_not_neg {e : ExactEnd} (he : IsEnd e true) (hn : e
   have ht := toNat_exactScale_of_isEnd he hB
   simp only [hn, Bool.bne_false, ↓reduceIte] at ht
   rw [lowNumerator_value_of_not_neg hn, UInt64.lt_iff_toNat_lt, UInt64.le_iff_toNat_le,
-    toNat_toUInt64_toInt64 hH, ht]
+    Nat.toNat_toUInt64_toInt64 hH, ht]
   generalize (B * e.m.toNat + (2 ^ e.s - 1)) / 2 ^ e.s = Q at ht ⊢
   refine ⟨by lia, fun h ↦ ?_⟩
-  rw [toInt_toInt64_of_lt (by rw [ht]; lia), ht]; lia
+  rw [UInt64.toInt_toInt64_of_lt (by rw [ht]; lia), ht]; lia
 
 /-- `interval_bits_exact` at a lower end `x < 0`: `⌈b x⌉ = -⌊b |x|⌋`, clipped to `-h`. -/
 theorem lowNumerator_exact_of_neg {e : ExactEnd} (he : IsEnd e true) (hn : e.neg = true)
@@ -823,12 +718,13 @@ theorem lowNumerator_exact_of_neg {e : ExactEnd} (he : IsEnd e true) (hn : e.neg
   have ht := toNat_exactScale_of_isEnd he hB
   simp only [hn, bne_self_eq_false, Bool.false_eq_true, ↓reduceIte] at ht
   rw [lowNumerator_value_of_neg hn]
-  split_ifs with h <;> rw [UInt64.le_iff_toNat_le, toNat_toUInt64_toInt64 hH, ht] at h
+  split_ifs with h <;> rw [UInt64.le_iff_toNat_le, Nat.toNat_toUInt64_toInt64 hH, ht] at h
   · generalize B * e.m.toNat / 2 ^ e.s = Q at ht h ⊢
     rw [Int64.toInt_neg_of_lt (by rw [Int64.toInt_ofNat_of_lt hH]; lia),
       Int64.toInt_ofNat_of_lt hH]; lia
   · have h' : (exactScale B.toInt64 e).toNat < 2 ^ 63 := by rw [ht]; lia
-    rw [Int64.toInt_neg_of_lt (by rw [toInt_toInt64_of_lt h']; lia), toInt_toInt64_of_lt h', ht]
+    rw [Int64.toInt_neg_of_lt (by rw [UInt64.toInt_toInt64_of_lt h']; lia),
+      UInt64.toInt_toInt64_of_lt h', ht]
     generalize B * e.m.toNat / 2 ^ e.s = Q at ht h ⊢
     lia
 
@@ -841,10 +737,10 @@ theorem highNumerator_exact_of_not_neg {e : ExactEnd} (he : IsEnd e false) (hn :
   have ht := toNat_exactScale_of_isEnd he hB
   simp only [hn, bne_self_eq_false, Bool.false_eq_true, ↓reduceIte] at ht
   rw [highNumerator_value_of_not_neg hn]
-  split_ifs with h <;> rw [UInt64.le_iff_toNat_le, toNat_toUInt64_toInt64 hH, ht] at h
+  split_ifs with h <;> rw [UInt64.le_iff_toNat_le, Nat.toNat_toUInt64_toInt64 hH, ht] at h
   · generalize B * e.m.toNat / 2 ^ e.s = Q at ht h ⊢
     rw [Int64.toInt_ofNat_of_lt hH]; lia
-  · rw [toInt_toInt64_of_lt (by rw [ht]; lia), ht]
+  · rw [UInt64.toInt_toInt64_of_lt (by rw [ht]; lia), ht]
     generalize B * e.m.toNat / 2 ^ e.s = Q at ht h ⊢
     lia
 
@@ -860,11 +756,12 @@ theorem highNumerator_exact_of_neg {e : ExactEnd} (he : IsEnd e false) (hn : e.n
   have ht := toNat_exactScale_of_isEnd he hB
   simp only [hn, Bool.false_bne, ↓reduceIte] at ht
   rw [highNumerator_value_of_neg hn, UInt64.lt_iff_toNat_lt, UInt64.le_iff_toNat_le,
-    toNat_toUInt64_toInt64 hH, ht]
+    Nat.toNat_toUInt64_toInt64 hH, ht]
   generalize (B * e.m.toNat + (2 ^ e.s - 1)) / 2 ^ e.s = Q at ht ⊢
   refine ⟨by lia, fun h ↦ ?_⟩
   have h' : (exactScale B.toInt64 e).toNat < 2 ^ 63 := by rw [ht]; lia
-  rw [Int64.toInt_neg_of_lt (by rw [toInt_toInt64_of_lt h']; lia), toInt_toInt64_of_lt h', ht]
+  rw [Int64.toInt_neg_of_lt (by rw [UInt64.toInt_toInt64_of_lt h']; lia),
+    UInt64.toInt_toInt64_of_lt h', ht]
   lia
 
 /-- The lower end of `interval_bits_exact`: none (the code `2`) exactly when `⌈b l⌉ > h`, and
@@ -960,9 +857,9 @@ theorem toInt_mul_add_shiftRight {B : ℕ} (hB : B < 2 ^ 63) {M C : Int64} {s : 
     (h1 : -2 ^ 63 ≤ B * M.toInt) (h2 : B * M.toInt < 2 ^ 63)
     (h3 : -2 ^ 63 ≤ B * M.toInt + C.toInt) (h4 : B * M.toInt + C.toInt < 2 ^ 63) :
     ((B.toInt64 * M + C) >>> s.toInt64).toInt = (B * M.toInt + C.toInt) / 2 ^ s := by
+  have hB' : B.toInt64.toInt = B := Int64.toInt_ofNat_of_lt hB
   have hm : (B.toInt64 * M).toInt = B * M.toInt := by
-    rw [Int64.toInt_mul, Nat.toInt64, Int64.toInt_ofNat_of_lt hB,
-      Int.bmod_eq_of_le (by lia) (by lia)]
+    rw [Int64.toInt_mul_of_lt (by rw [hB']; lia) (by rw [hB']; lia), hB']
   rw [Nat.toInt64, Int64.toInt_shiftRight_ofNat _ hs,
     Int64.toInt_add_of_lt (by rw [hm]; lia) (by rw [hm]; lia), hm, Int.shiftRight_eq_div_pow]
   push_cast; rfl
@@ -988,7 +885,7 @@ theorem floor_intCast_div_two_pow (n : ℤ) (s : ℕ) : ⌊(n : ℚ) / 2 ^ s⌋ 
 theorem toInt_signed_mantissa {e : ExactEnd} (hm : e.m.toNat < 2 ^ 63) :
     (if e.neg then -e.m.toInt64 else e.m.toInt64).toInt =
       (if e.neg then -1 else 1) * (e.m.toNat : ℤ) := by
-  have h := toInt_toInt64_of_lt hm
+  have h := UInt64.toInt_toInt64_of_lt hm
   split_ifs
   · rw [Int64.toInt_neg_of_lt (by rw [h]; lia), h]; ring
   · rw [h]; ring
@@ -1013,8 +910,8 @@ theorem toInt_form_lower {e : ExactEnd} {B bHigh : ℕ} (hs : e.s < 64) (hB1 : 1
   have hg' : (e.m.toNat : ℤ) * bHigh + (2 ^ e.s - 1) ≤ 2 ^ 63 - 1 := by
     have := Nat.one_le_two_pow (n := e.s); lia
   have hc : ((((1 : UInt64) <<< e.s.toUInt64) - 1).toInt64).toInt = 2 ^ e.s - 1 := by
-    rw [toInt_toInt64_of_lt (by rw [toNat_one_shiftLeft_sub_one hs]; lia),
-      toNat_one_shiftLeft_sub_one hs]
+    rw [UInt64.toInt_toInt64_of_lt (by rw [UInt64.toNat_one_shiftLeft_sub_one hs]; lia),
+      UInt64.toNat_one_shiftLeft_sub_one hs]
     have := Nat.one_le_two_pow (n := e.s); push_cast [Nat.cast_sub this]; rfl
   have hM := toInt_signed_mantissa hm
   rw [toInt_mul_add_shiftRight hB63 hs, hc, hM, mul_value_eq, ceil_intCast_div_two_pow]
@@ -1039,18 +936,6 @@ theorem toInt_form_upper {e : ExactEnd} {B bHigh : ℕ} (hs : e.s < 64) (hB1 : 1
   all_goals rw [hM]; try rw [Int64.toInt_zero]
   all_goals split_ifs <;> lia
 
-theorem toInt_div_ofNat {a : Int64} (ha : 0 ≤ a.toInt) {n : ℕ} (hn : 0 < n) (hn63 : n < 2 ^ 63) :
-    (a / n.toInt64).toInt = a.toInt / n := by
-  have h2 : a.toInt / (n : ℤ) ≤ a.toInt := Int.ediv_le_self _ ha
-  have := a.toInt_lt
-  rw [Int64.toInt_div, Nat.toInt64, Int64.toInt_ofNat_of_lt hn63, Int.tdiv_eq_ediv_of_nonneg ha,
-    Int.bmod_eq_of_le (by have := Int.ediv_nonneg ha (show (0 : ℤ) ≤ n by lia); lia) (by lia)]
-
-theorem natCast_toNat_toUInt64 {x : Int64} (hx : 0 ≤ x.toInt) :
-    (x.toUInt64.toNat : ℤ) = x.toInt := by
-  rw [Int64.toNat_toUInt64_of_le (by rw [Int64.le_iff_toInt_le, Int64.toInt_zero]; exact hx),
-    show x.toNatClampNeg = x.toInt.toNat from rfl, Int.toNat_of_nonneg hx]
-
 /-- The guard `m ≤ (LONG_MAX - c) / b_high` of `end_form` on the `long`s: `m b_high + c` is a
 `long`. -/
 theorem mul_add_le_of_le_toUInt64_div {m : UInt64} {c : Int64} {bHigh : ℕ} (hc0 : 0 ≤ c.toInt)
@@ -1061,21 +946,14 @@ theorem mul_add_le_of_le_toUInt64_div {m : UInt64} {c : Int64} {bHigh : ℕ} (hc
   have hK : (9223372036854775807 : Int64).toInt = 2 ^ 63 - 1 := by decide
   have hs : (9223372036854775807 - c).toInt = 2 ^ 63 - 1 - c.toInt := by
     rw [Int64.toInt_sub_of_lt (by rw [hK]; lia) (by rw [hK]; lia), hK]
-  have hd := toInt_div_ofNat (a := 9223372036854775807 - c) (by rw [hs]; lia) hb hb63
+  have hd := Int64.toInt_div_ofNat (a := 9223372036854775807 - c) (by rw [hs]; lia) hb hb63
   rw [hs] at hd
   have h1 : 0 ≤ (2 ^ 63 - 1 - c.toInt) / (bHigh : ℤ) := Int.ediv_nonneg (by lia) (by lia)
   rw [UInt64.le_iff_toNat_le] at h
   have h' : (m.toNat : ℤ) ≤ (2 ^ 63 - 1 - c.toInt) / bHigh := by
-    rw [← hd, ← natCast_toNat_toUInt64 (by rw [hd]; exact h1)]; exact_mod_cast h
+    rw [← hd, ← Int64.natCast_toNat_toUInt64 (by rw [hd]; exact h1)]; exact_mod_cast h
   have := (Int.le_ediv_iff_mul_le (by lia)).mp h'
   lia
-
-theorem toInt_one_shiftLeft_sub_one {s : ℕ} (hs : s < 64) :
-    ((((1 : UInt64) <<< s.toUInt64) - 1).toInt64).toInt = 2 ^ s - 1 := by
-  have h1 := toNat_one_shiftLeft_sub_one hs
-  have h2 : 2 ^ s ≤ 2 ^ 63 := Nat.pow_le_pow_right (by decide) (by lia)
-  have h3 := Nat.one_le_two_pow (n := s)
-  rw [toInt_toInt64_of_lt (by lia), h1]; lia
 
 /-- The form `(b (±m) + 2 ^ s - 1) >> s` of a lower end with `s < 64` and the guard of `end_form`,
 clamped to `-H, …, H + 1`, is the least numerator of the end. -/
@@ -1086,7 +964,7 @@ theorem lowNumerator_of_form {e : ExactEnd} {H bHigh B : ℕ} (hH : H < 2 ^ 63) 
     max (-(H : ℤ)) (min ((B.toInt64 * (if e.neg then -e.m.toInt64 else e.m.toInt64) +
         (((1 : UInt64) <<< e.s.toUInt64) - 1).toInt64) >>> e.s.toInt64).toInt (H + 1)) =
       lowNumerator B H (e.value : WithBotTop ℚ) := by
-  have hc := toInt_one_shiftLeft_sub_one hs
+  have hc := UInt64.toInt_toInt64_one_shiftLeft_sub_one hs
   have hg' := mul_add_le_of_le_toUInt64_div (by rw [hc]; have := Nat.one_le_two_pow (n := e.s); lia)
     (by lia) (by lia) hg
   rw [hc] at hg'
@@ -1106,7 +984,7 @@ theorem le_mul_div_of_le_exactScale_one {e : ExactEnd} {lower : Bool} (he : IsEn
   have h1 := toNat_exactScale_of_isEnd he (B := 1) (by decide)
   simp only [hr, Bool.false_eq_true, ↓reduceIte, Nat.one_mul] at h1
   rw [show (1 : Int64) = (1 : ℕ).toInt64 from rfl, UInt64.le_iff_toNat_le,
-    toNat_toUInt64_toInt64 hH, h1] at ht
+    Nat.toNat_toUInt64_toInt64 hH, h1] at ht
   have : e.m.toNat / 2 ^ e.s ≤ B * e.m.toNat / 2 ^ e.s :=
     Nat.div_le_div_right (Nat.le_mul_of_pos_left _ hB1)
   lia

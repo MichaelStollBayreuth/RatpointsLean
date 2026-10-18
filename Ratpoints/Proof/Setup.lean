@@ -49,6 +49,8 @@ curve (`Ratpoints.Sieve.swapPoint`) is a bijection between the points of height 
 * `Ratpoints.getD_degree_ne_zero_of_pos`, `Ratpoints.natDegree_poly`: the entry of `c` at a
   positive degree is not zero, and the degree of `f` is `Ratpoints.degree c`.
 * `Ratpoints.poly_take_of_degree_lt`: the entries of `c` above its degree do not change `f`.
+* `Ratpoints.binaryForm_eq_mul_eval`: `F(a, b) = b ^ D f(a / b)` for `b ≠ 0`, with the even degree
+  `D = d + d % 2`.
 * `Ratpoints.binaryFormPoly_eq_homogenize`: `Φ_c` is the homogenization of `f` of degree `N`.
 * `Ratpoints.squarefree_binaryFormPoly_iff`: `Φ_c` is squarefree if and only if `f` is squarefree
   and `N ≤ d + 1`.
@@ -134,6 +136,19 @@ theorem poly_take_of_degree_lt {c : List ℤ} {n : ℕ} (h : degree c < n) :
   · rw [← List.getD_eq_getElem?_getD, getD_eq_zero_of_degree_lt (by lia)]
     simp
 
+/-- The binary form of `c` at `(a, b)`, `b ≠ 0`, is `b ^ D` times the value of the polynomial of
+`c` at `a / b`, `D = d + d % 2` its even degree. -/
+theorem binaryForm_eq_mul_eval {c : List ℤ} (a : ℤ) {b : ℤ} (hb : b ≠ 0) :
+    (binaryForm c a b : ℚ) =
+      (b : ℚ) ^ (degree c + degree c % 2) * (poly c).eval ((a : ℚ) / b) := by
+  have hb' : (b : ℚ) ≠ 0 := Int.cast_ne_zero.mpr hb
+  rw [binaryForm, eval_eq_sum_range, natDegree_poly, Finset.mul_sum]
+  push_cast
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  rw [coeff_poly, show degree c + degree c % 2 = degree c + degree c % 2 - i + i by
+    simp at hi; lia, pow_add, Nat.add_sub_cancel, div_pow]
+  field
+
 theorem binaryFormPoly_eq_homogenize (c : List ℤ) :
     binaryFormPoly c = (poly c).homogenize (2 * (c.length / 2)) := by
   rw [binaryFormPoly, poly, homogenize_finsetSum]
@@ -180,6 +195,10 @@ theorem natDegree_poly_toList {a : Array ℤ} (h : a.back! ≠ 0) :
     simp
   · rw [coeff_poly_toList, ← Array.back!_eq_getElem!]
     exact Int.cast_ne_zero.mpr h
+
+theorem leadingCoeff_poly_toList {a : Array ℤ} (h : a.back! ≠ 0) :
+    (poly a.toList).leadingCoeff = a.back! := by
+  rw [leadingCoeff, natDegree_poly_toList h, coeff_poly_toList, Array.back!_eq_getElem!]
 
 private theorem poly_toList_eq_zero_of_size_eq_zero {a : Array ℤ} (h : a.size = 0) :
     poly a.toList = 0 := by

@@ -55,7 +55,6 @@ at most `d` times (`Ratpoints.Sturm.length_le_of_witnessed`).
   caller's intervals.
 * `Ratpoints.Sturm.size_run_iterate_le_of_chain_eq_some`: the bisection keeps at most
   `1 + ⌊d / 2⌋` intervals.
-* `Ratpoints.Sturm.binaryForm_eq_mul_eval`: `F(a, b) = b ^ D f(a / b)`.
 -/
 
 @[expose] public section
@@ -627,19 +626,6 @@ theorem size_run_iterate_le_of_chain_eq_some (hS : SturmTheorem) {c : List ℤ} 
     (covers_iterate hS hF hsig hit (halvingInv_start _) (by lia) (by simp) (by simp)).2 x h3
       (kept_top (abs_le.mpr ⟨h1, h2⟩))).trans ?_
   rw [hch.natDegree_chainPoly]
-
-/-- The binary form of `c` at `(a, b)`, `b ≠ 0`, is `b ^ D` times the value of the polynomial of
-`c` at `a / b`, `D = d + d % 2` its even degree. -/
-theorem binaryForm_eq_mul_eval {c : List ℤ} (a : ℤ) {b : ℤ} (hb : b ≠ 0) :
-    (binaryForm c a b : ℚ) =
-      (b : ℚ) ^ (degree c + degree c % 2) * (poly c).eval ((a : ℚ) / b) := by
-  have hb' : (b : ℚ) ≠ 0 := Int.cast_ne_zero.mpr hb
-  rw [binaryForm, eval_eq_sum_range, natDegree_poly, Finset.mul_sum]
-  push_cast
-  refine Finset.sum_congr rfl fun i hi ↦ ?_
-  rw [coeff_poly, show degree c + degree c % 2 = degree c + degree c % 2 - i + i by
-    simp at hi; lia, pow_add, Nat.add_sub_cancel, div_pow]
-  field
 
 /-- The value of the real polynomial of the chain of `c` and its degree at a rational point. -/
 theorem eval_chainPoly_degree (c : List ℤ) (q : ℚ) :

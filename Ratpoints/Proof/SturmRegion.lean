@@ -9,6 +9,7 @@ public import Ratpoints.Proof.Bounds
 public import Ratpoints.Spec.Basic
 public import Ratpoints.Spec.Sturm
 
+import Ratpoints.Mathlib.Algebra.Order.Field.Basic
 import Ratpoints.Proof.SturmCoverage
 
 /-!
@@ -146,9 +147,11 @@ theorem run_sturmRegion_covers {c : List ℤ} {d : ℕ} {s : ℤ} {dom : List (D
   rcases hc : Id.run (Sturm.computeSturm c d s.toNat dom.toArray) with _ | iv
   · simp [hc] at h
   subst hd
+  have ha' : |(a : ℚ)| ≤ 2 ^ 63 := by rw [← Int.cast_abs, Int.abs_eq_natAbs]; exact_mod_cast ha
   have hin := Sturm.covers_computeSturm (hS hs0) hd0 (getD_degree_ne_zero_of_pos hd0) hd57
     (by lia) (by simpa using hdom) hc (Sturm.eval_chainPoly_nonneg hb hF)
-    ((abs_intCast_div_natCast_le hb ha).trans_eq (by norm_num)) (by simpa using hx)
+    (by simpa using (abs_intCast_div_intCast_le_abs (α := ℚ) a b).trans ha')
+    (by simpa using hx)
   have hiv : iv ≠ #[] := by rintro rfl; simp [InIntervals] at hin
   simp only [hc, hiv, ↓reduceIte] at h
   exact ⟨iv.toList, (Except.ok.inj h).symm, hin⟩
@@ -196,14 +199,6 @@ theorem size_run_computeSturm_le (hS : SturmTheorem) {c : List ℤ} {d : ℕ} (h
     #[])).toList iv.toList
   simp only [Array.length_toList] at this hk ⊢
   lia
-
-/-- The polynomial that the reversal check hands on for at most `Ratpoints.maxDegree + 1`
-coefficients has a degree below `2 ^ 57` (`Ratpoints.maxDegree_lt_two_pow_57`), the bound of the
-coverage of the Sturm step (`Ratpoints.run_sturmRegion_covers`). -/
-theorem lt_two_pow_57_of_reversal_eq_ok {allow rev : Bool} {c c' : List ℤ} {d' : ℕ}
-    (h1 : c.length ≤ maxDegree + 1) (h : Setup.reversal allow c (degree c) = .ok (c', d', rev)) :
-    d' < 2 ^ 57 := by
-  lia [Setup.degree_le_of_reversal_eq_ok h, degree_le_length_sub_one c, maxDegree_lt_two_pow_57]
 
 /-! ### The search region of the search -/
 
