@@ -7,14 +7,12 @@ module
 
 public import Mathlib.Algebra.MvPolynomial.Eval
 public import Mathlib.Algebra.Order.Field.Rat
-public import Mathlib.Algebra.Polynomial.Derivative
 public import Mathlib.Algebra.Polynomial.Sturm.Sequence
 public import Mathlib.Algebra.Squarefree.Basic
 public import Mathlib.Basic.Real.Basic
 public import Mathlib.Data.Fin.VecNotation
 public import Mathlib.Data.List.SignVariations
 public import Mathlib.Data.Nat.Factors
-public import Mathlib.Data.Set.Card
 public import Mathlib.Order.WithBotTop
 public import Ratpoints.Model
 

@@ -925,10 +925,10 @@ denominators from `bLow ≥ 1` to `bHigh ≤ H` and well-formed search intervals
 any callback, flags of the check and delivery whose flag is clear, the points of the check with the
 flags of the numerators in the search intervals that pass a test of the sieve over the denominators
 of the search (`Ratpoints.Sieve.run_sieveRun_of_eq_filter`,
-`Ratpoints.Sieve.rangesFor_run_exactBounds`, `Ratpoints.Sieve.inRanges_numeratorRanges`); the
-test, which does not depend on the callback, the
-flags or the search intervals, is sound (`Ratpoints.IsSoundTest`): the shape lets every denominator
-of a point through, and the class words and the sound entries every numerator of a point
+`Ratpoints.Sieve.rangesFor_run_exactBounds`, `Ratpoints.Sieve.inRanges_numeratorRanges`); the test,
+which does not depend on the callback, the flags or the search intervals, is sound
+(`Ratpoints.IsSoundTest`): the shape lets every denominator of a point through, and the class words
+and the sound entries every numerator of a point
 (`Ratpoints.Sieve.classBit_and_survives_of_ne_nil`). -/
 theorem exists_isSoundTest_run_sieveRun {c : List ℤ} {H A sp1 sp2 bLow bHigh : ℕ}
     {entries : List SieveEntry} {magics : Array ℕ} {cls : Vector NumClass 64} {offsets : Array ℕ}

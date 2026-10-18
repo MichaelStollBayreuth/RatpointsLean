@@ -70,8 +70,9 @@ coefficients and the height before it calls the library (\csource{main.c}{362}{3
     (\csource{sturm.c}{99}{163}) and refuses the form as not squarefree when a remainder is zero
     (\csource{find_points.c}{4857}{4863}, \csource{find_points.c}{4879}{4879}); the rest of the step
     is stage~H (Section~\ref{sec:sturmStep}), and so is its exit when $f$ is negative on the whole
-    search region, which changes no output, since the box has no affine point then, and the return
-    after the points at infinity when the step leaves nothing to search
+    search region, which changes no output, since the search region holds no affine point then and
+    the exit comes only for an even degree whose leading coefficient is not a square, without points
+    at infinity, and the return after the points at infinity when the step leaves nothing to search
     (\csource{find_points.c}{5106}{5106});
   \item decides whether there are points at infinity (\csource{find_points.c}{4894}{4899}) and sets
     up the tests on the denominators and the 2-adic information, with an exit of its own that
@@ -138,9 +139,9 @@ denominator, which decides the shape of the divisors, and by the reversal, which
 refusals. $\mathrm{defaultSturm}$, an integer like the C \verb|long| that it stands for, which a
 build may make negative, is one of the constants of \verb|Ratpoints/Model/Constants.lean|, and no
 proof depends on its value or its sign. In ratpoints~3.1.1 the depth of the Sturm step changes only
-the speed: the intervals that it keeps hold every point of the box, which stage~H proves assuming
-Sturm's theorem, so that with the exact check on the search with the step off gives the same list
-(Theorem~\ref{thm:sturmSpeed}).
+the speed: the intervals that it keeps hold every point of the box in the search intervals of the
+caller, which stage~H proves assuming Sturm's theorem, so that with the exact check on the search
+with the step off gives the same list (Theorem~\ref{thm:sturmSpeed}).
 
 \section{The squarefree binary form}\label{sec:squarefree}
 

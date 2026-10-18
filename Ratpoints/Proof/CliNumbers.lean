@@ -23,17 +23,18 @@ The ends of the search intervals of the command line of `ratpoints-lean`, as
 (`Ratpoints.Cli.isNaN_strtod`); `outward` moves a double to the side of the end that its direction
 asks, and onto the largest double at most a lower end when it starts close enough to it
 (`Ratpoints.Cli.outward_spec`); so an end that `scan_end` reads has a double that is not a NaN,
-outward of the end (`Ratpoints.Cli.inf_mem_and_isNaN_eq_false_and_le_of_run_scanEnd_eq_some`). For a
-word of fewer than `2 ^ 56` characters, the double of a lower end is the largest double at most the
-end (`Ratpoints.Cli.run_scanEnd_isMaxBelow`): the parts of the word give its exact value
+outward of the end (`Ratpoints.Cli.inf_mem_and_isNaN_eq_false_and_le_of_run_scanEnd_eq_some`). For
+a word of fewer than `2 ^ 56` characters, the double of a lower end is the largest double at most
+the end (`Ratpoints.Cli.run_scanEnd_isMaxBelow`): the parts of the word give its exact value
 (`Ratpoints.Cli.floatParts_bounds_and_isDigit_exponentDigits`, `Ratpoints.Cli.wordValue`), which
-`strtod` rounds faithfully (`Ratpoints.Cli.lt_nextUp_strtod`), and the exponent that `scan_end`
-accumulates, which stops at `LONG_MAX / 20`, is the exact one for the doubles that are finite and
-not zero (`Ratpoints.Cli.scanEndValue_eq_wordValue`). The ends of a missing `-l` and `-u` lie beyond
-the height bound (`Ratpoints.Cli.isFinite_heightEnd_and_le_toRat`). The comparisons `cmp_end` and
-`cmp_end_x` compare the values (`Ratpoints.Cli.cmpEnd_neg_iff`, `Ratpoints.Cli.cmpEndX_neg_iff`), so
-that the binary search of `in_region` over increasing and disjoint intervals decides the membership
-of `x / z` (`Ratpoints.Cli.inRegion_spec`); and `join_intervals` keeps what the intervals hold and,
+lies below the successor of the double that `strtod` reads (`Ratpoints.Cli.lt_nextUp_strtod`), and
+the exponent that `scan_end` accumulates, which stops at `LONG_MAX / 20`, is the exact one for the
+doubles that are finite and not zero (`Ratpoints.Cli.scanEndValue_eq_wordValue`). The ends of a
+missing `-l` and `-u` lie beyond the height bound
+(`Ratpoints.Cli.isFinite_heightEnd_and_le_toRat`). The comparisons `cmp_end` and `cmp_end_x`
+compare the values (`Ratpoints.Cli.cmpEnd_neg_iff`, `Ratpoints.Cli.cmpEndX_neg_iff`), so that the
+binary search of `in_region` over increasing and disjoint intervals decides the membership of
+`x / z` (`Ratpoints.Cli.inRegion_spec`); and `join_intervals` keeps what the intervals hold and,
 for intervals that join well, gives intervals that the library accepts
 (`Ratpoints.Cli.joinIntervals_spec`).
 
@@ -52,7 +53,7 @@ for intervals that join well, gives intervals that the library accepts
   `Ratpoints.Cli.inf_mem_and_isNaN_eq_false_and_le_of_run_scanEnd_eq_some`,
   `Ratpoints.Cli.run_scanEnd_isMaxBelow`, `Ratpoints.Cli.isFinite_heightEnd_and_le_toRat`: the
   doubles of the ends.
-* `Ratpoints.Cli.lt_nextUp_strtod`: the faithful rounding of `strtod`.
+* `Ratpoints.Cli.lt_nextUp_strtod`: the exact value below the successor of the double of `strtod`.
 * `Ratpoints.Cli.inRegion_spec`: the binary search.
 * `Ratpoints.Cli.joinIntervals_spec`: the intervals that the library is given.
 
@@ -482,8 +483,11 @@ theorem strtod_eq {w : List Char} (hi : isInfWord (dropSign w) = false) :
             (floatParts w).2.2.2.1) := by
   rw [strtod, ite_eq_right (by simp [hi])]
 
-/-- A finite double other than a zero that `strtod` reads from a floating constant is a faithful
-rounding of its exact value: the value lies below the successor of the double. -/
+/-- The exact value of a floating constant lies below the successor of the finite double other
+than a zero that `strtod` reads from it: the upper half of the faithful rounding of
+`Ratpoints.Double.ofRatio` and `Ratpoints.Double.ofDyadic`
+(`Ratpoints.Double.lt_nextUp_and_nextDown_lt_ofRatio`,
+`Ratpoints.Double.lt_nextUp_and_nextDown_lt_ofDyadic`). -/
 theorem lt_nextUp_strtod {w : List Char} (hi : isInfWord (dropSign w) = false)
     (hf : (strtod w).isFinite) (hz : (strtod w).beq .zero = false) :
     (wordValue w : WithBotTop ℚ) < doubleValue (nextUp (strtod w)).bits := by

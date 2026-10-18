@@ -258,24 +258,24 @@ status:
     accepts and the points in the search region, and a file with Sturm's theorem as a proposition
     over Mathlib's Sturm sequence and sign variations, which Mathlib does not have yet: the rows of
     the remainder chain are positive multiples of the Sturm sequence, and under Sturm's theorem the
-    intervals that the Sturm step leaves at a depth of at most 55 hold every point of the box, so
-    that with the exact check on the search with the step off gives the same list; the bounds of the
-    arrays of the Sturm step of the C code hold under it too. The statements for comparator stay
-    twelve, the challenge restating both files: membership, the order theorem and two of the
-    statements under RATPOINTS_NO_CHECK hold for the points in the search region, membership, the
-    order and the coverage under RATPOINTS_NO_CHECK assuming Sturm's theorem when the Sturm step is
-    on, a hypothesis, not an axiom; both refusal theorems add the search intervals that are not well
-    formed, the refusal of c_0 = c_1 = 0 without the Sturm step only for the whole box; comparator
-    accepted all twelve on 2026-10-18. ratpoints-lean reads -l -u -dl -du as main.c reads them, the
-    ends by strtod with its rounding proved faithful, the doubles outward of them, joins the
-    intervals, tests the search region in its callback and prints the messages on the search region
-    and on the search intervals; a theorem says which points it prints; and the differential tests
-    compare the runs of test4.sh and test3.sh with a search region, random search regions and depths
-    of the Sturm step, and -x exactly against the C program with the moduli pinned (4530 comparisons
-    in the default suites and 13 in the suite run locally). Next: the later stage that the
-    introduction of the blueprint lists (the blocks of the loop over the denominators with the
-    threads and the correction of the moduli, and the choice of the sieving parameters by the
-    curve).
+    intervals that the Sturm step leaves at a depth of at most 55 hold every point of the box in the
+    caller's search intervals, so that with the exact check on the search with the step off gives
+    the same list; the bounds of the arrays of the Sturm step of the C code hold under it too. The
+    statements for comparator stay twelve, the challenge restating both files: membership, the order
+    theorem and two of the statements under RATPOINTS_NO_CHECK hold for the points in the search
+    region, membership, the order and the coverage under RATPOINTS_NO_CHECK assuming Sturm's theorem
+    when the Sturm step is on, a hypothesis, not an axiom; both refusal theorems add the search
+    intervals that are not well formed, the refusal of c_0 = c_1 = 0 without the Sturm step only for
+    the whole box; comparator accepted all twelve on 2026-10-18. ratpoints-lean reads -l -u -dl -du
+    as main.c reads them, the ends by strtod with the upper half of its faithful rounding proved,
+    the doubles outward of them, joins the intervals, tests the search region in its callback and
+    prints the messages on the search region and on the search intervals; a theorem says which
+    points it prints; and the differential tests compare the runs of test4.sh and test3.sh with a
+    search region, random search regions and depths of the Sturm step, and -x exactly against the C
+    program with the moduli pinned (4530 comparisons in the default suites and 13 in the suite run
+    locally). Next: the later stage that the introduction of the blueprint lists (the blocks of the
+    loop over the denominators with the threads and the correction of the moduli, and the choice of
+    the sieving parameters by the curve).
   sorry_count: 0
   sorry_in_definitions: 0
   axioms: ["propext", "Classical.choice", "Quot.sound"]
@@ -447,13 +447,12 @@ alignment:
         the options, the delivery to the callback of stage G included, membership with
         RATPOINTS_NO_CHECK clear and y >= 0 under RATPOINTS_NO_Y, since stage H for the points in
         the search region of the options, assuming Sturm's theorem when the Sturm step is on
-        (Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok,
-        Ratpoints.nodup_of_findPoints_eq_ok), certified by comparator, through the reference of the
-        polynomial searched (Ratpoints.exists_eq_of_findPoints_eq_ok) and the permutation of the
-        brute-force reference filtered by RATPOINTS_NO_Y and the search region
-        (Ratpoints.perm_filter_bruteForce_of_findPoints_eq_ok);
-        the later stages bring Ratpoints.findPoints closer to the C code, and the theorems move with
-        it
+        (Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok, Ratpoints.nodup_of_findPoints_eq_ok),
+        certified by comparator, through the reference of the polynomial searched
+        (Ratpoints.exists_eq_of_findPoints_eq_ok) and the permutation of the brute-force reference
+        filtered by RATPOINTS_NO_Y and the search region
+        (Ratpoints.perm_filter_bruteForce_of_findPoints_eq_ok); the later stages bring
+        Ratpoints.findPoints closer to the C code, and the theorems move with it
     - source: "the refusals: fewer than two or more than maxDegree + 1 = 101 coefficients, H = 0 or H >= 2^63, a binary form that is not squarefree, search intervals that are not well formed"
       lean: "Ratpoints.exists_findPoints_eq_error_iff_of_sturm_nonneg"
       module: "Ratpoints.Proof.Output"

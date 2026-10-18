@@ -944,10 +944,10 @@ theorem exists_reversal_normalize_eq_error_iff {o : Options} {H : ℕ} {c : List
 refuses, besides the coefficient lists of fewer than two or more than `Ratpoints.maxDegree + 1`
 entries and the height bound `0` or one of `2 ^ 63` or more, which is not a `long`
 (`Ratpoints.fitsLong_natCast`), exactly the forms whose leading zeros lower `⌈n / 2⌉`, for `n + 1`
-coefficients, that is `d + 2 ≤ 2 ⌈n / 2⌉` for the degree `d`, those of even degree with
+coefficients, that is `d + 2 ≤ 2 ⌈n / 2⌉` for the degree `d`, and those of even degree with
 `c₀ = c₁ = 0` when the reversal is allowed and the search region is the whole box
-(`Ratpoints.IsFullBox`), forms that are not squarefree, but not all of them, and search intervals
-that are not well formed (`Ratpoints.IntervalsWF`); comparator certifies this
+(`Ratpoints.IsFullBox`), all of them forms that are not squarefree, but not all such forms; and the
+search intervals that are not well formed (`Ratpoints.IntervalsWF`); comparator certifies this
 (`comparator/Challenge.lean`), so that a `Ratpoints.findPoints` that refused every input under `-s`
 would not pass. -/
 theorem exists_findPoints_eq_error_iff_of_sturm_neg {c : List ℤ} {H : ℕ} {P : Params}

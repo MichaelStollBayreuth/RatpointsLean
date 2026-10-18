@@ -5,12 +5,10 @@ Authors: Michael Stoll
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.Derivative
 public import Mathlib.Algebra.Polynomial.Sturm.Sequence
 public import Mathlib.Algebra.Squarefree.Basic
 public import Mathlib.Basic.Real.Basic
 public import Mathlib.Data.List.SignVariations
-public import Mathlib.Data.Set.Card
 
 /-!
 # Sturm's theorem
@@ -29,9 +27,10 @@ nothing of the model; the comparator challenge restates the definition verbatim.
 
 ## Implementation notes
 
-The file imports the Sturm sequence, the sign variations, the derivative, the real numbers and the
-cardinality of sets (`Set.ncard`); the comparator challenge imports the Mathlib modules among the
-public imports of the files of the specification.
+The file imports `Mathlib.Algebra.Polynomial.Sturm.Sequence`, which brings the derivative and the
+cardinality of sets (`Set.ncard`) with it, `Mathlib.Data.List.SignVariations`,
+`Mathlib.Algebra.Squarefree.Basic` and `Mathlib.Basic.Real.Basic`; the comparator challenge imports
+the Mathlib modules among the public imports of the files of the specification.
 -/
 
 @[expose] public section

@@ -262,14 +262,14 @@ the model; for \verb|Squarefree| the challenge and the specification import
 \verb|Mathlib.Algebra.Squarefree.Basic|, for the prime factors the challenge and the file of the
 order \verb|Mathlib.Data.Nat.Factors|, for the values of the doubles the challenge and the file of
 the region \verb|Mathlib.Order.WithBotTop| and \verb|Mathlib.Algebra.Order.Field.Rat|, and for
-Sturm's theorem the challenge and its file \verb|Mathlib.Algebra.Polynomial.Sturm.Sequence|,
-\verb|Mathlib.Data.List.SignVariations|, \verb|Mathlib.Algebra.Polynomial.Derivative|,
-\verb|Mathlib.Basic.Real.Basic| and \verb|Mathlib.Data.Set.Card|, so that the challenge still
-imports exactly the Mathlib modules among the public imports of the files of the specification that
-it restates. So the challenge has twelve statements (Section~\ref{sec:certifiedG}), which
-\verb|lake comparator --paranoid| accepted on 2026-10-17, with Lean's kernel and the five external
-checkers bundled with Lean, and in their form of stage~H (Section~\ref{sec:certifiedH}) on
-2026-10-18; Section~\ref{sec:sieveTheorems} records the earlier acceptances.
+Sturm's theorem the challenge and its file \verb|Mathlib.Algebra.Polynomial.Sturm.Sequence|, which
+brings the derivative and \verb|Set.ncard| with it, \verb|Mathlib.Data.List.SignVariations| and
+\verb|Mathlib.Basic.Real.Basic|, so that the challenge still imports exactly the Mathlib modules
+among the public imports of the files of the specification that it restates. So the challenge has
+twelve statements (Section~\ref{sec:certifiedG}), which \verb|lake comparator --paranoid| accepted
+on 2026-10-17, with Lean's kernel and the five external checkers bundled with Lean, and in their
+form of stage~H (Section~\ref{sec:certifiedH}) on 2026-10-18; Section~\ref{sec:sieveTheorems}
+records the earlier acceptances.
 
 \section{The command-line program}\label{sec:cli}
 

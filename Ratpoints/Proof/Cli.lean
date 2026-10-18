@@ -26,19 +26,19 @@ What the program `ratpoints-lean` prints for the points of a successful search. 
 search, counts the points of `L` that it keeps (`Ratpoints.Cli.Data.keeps`: all but those at
 infinity under `-i` and the affine ones outside the search intervals of the command line), of these
 only the first under `-1`, at which it stops the search (`Ratpoints.Cli.countedPoints`), and prints
-them unless
-`-z`, each after the string before the points (`-fs`) if it is the first and else after the string
-between them (`-fm`), in the format of `-f`: so the text printed, with the string before the points
-when no point was printed, is the string before the points followed by the formatted points with
-the string between them in between (`Ratpoints.Cli.out_append_deliver_process_ofOutput`), and the
-count is their number (`Ratpoints.Cli.total_deliver_process`). By the protocol of the delivery
+them unless `-z`, each after the string before the points (`-fs`) if it is the first and else after
+the string between them (`-fm`), in the format of `-f`: so the text printed, with the string before
+the points when no point was printed, is the string before the points followed by the formatted
+points with the string between them in between
+(`Ratpoints.Cli.out_append_deliver_process_ofOutput`), and the count is their number
+(`Ratpoints.Cli.total_deliver_process`). By the protocol of the delivery
 (`Ratpoints.map_findPointsWith_eq_map_findPoints`), which says that for well-formed parameters, as
 the program's are (`Ratpoints.wf_sieveParams`), the search delivers to a callback the points of
-`Ratpoints.findPoints` in their order until a call stops it, this is what
-`Ratpoints.Cli.run` prints between the head of the report and its end; under `-q` it is all that
-it prints, with the string after the points (`-fe`) at the end, and under `-1` the one point
-printed is the first point of the list of `Ratpoints.findPoints` that the callback keeps. The
-search runs on the search intervals of the command line joined (`Ratpoints.Cli.joinIntervals`).
+`Ratpoints.findPoints` in their order until a call stops it, this is what `Ratpoints.Cli.run`
+prints between the head of the report and its end; under `-q` it is all that it prints, with the
+string after the points (`-fe`) at the end, and under `-1` the one point printed is the first point
+of the list of `Ratpoints.findPoints` that the callback keeps. The search runs on the search
+intervals of the command line joined (`Ratpoints.Cli.joinIntervals`).
 
 The search region of the command line: the reading of `-l` and `-u` keeps an invariant
 (`Ratpoints.Cli.Intervals.ReadsWF`: the exact ends are those of increasing and disjoint intervals
@@ -252,7 +252,6 @@ theorem deliver_process (d : Data) (t : ℤ) (L : List (ℤ × ℤ × ℤ)) :
       · simp only [Delivery.deliver_of_quit (r := ⟨_, _, true⟩) process rfl]
         simp [hk]
 
-
 theorem total_deliver_process (d : Data) (t : ℤ) (L : List (ℤ × ℤ × ℤ)) :
     ((⟨d, t, false⟩ : Delivery Data).deliver process L).total =
       t + (countedPoints d.keeps d.onePoint L).length := by
@@ -436,7 +435,6 @@ theorem Intervals.upper_eq_ok_of_not_lSeen {iv iv' : Intervals} {H : ℕ} {a : S
     simp only [hc, ↓reduceIte, Bool.false_eq_true] at h ⊢
     split at h <;> (try cases h)
     exact ⟨by simpa using ‹¬0 < cmpEnd _ _›, rfl⟩
-
 
 /-- The interval `d` of doubles holds the exact interval from `el` to `eu` of the command line as
 far as the search goes: neither end of `d` is a NaN, the lower end of `d` is at most its upper end,

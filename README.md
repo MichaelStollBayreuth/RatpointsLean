@@ -138,19 +138,19 @@ remainder chain at dyadic points, to those where the polynomial may be `≥ 0`. 
 specification gives the values of the doubles, the search intervals that ratpoints accepts and the
 points in the search region, and another states Sturm's theorem as a proposition, which Mathlib does
 not have yet: the rows of the remainder chain are positive multiples of Mathlib's Sturm sequence,
-and under Sturm's theorem the intervals that the Sturm step leaves hold every point of the box, so
-that with the exact check on the depth of the step changes only the speed. The challenge of
-Comparator restates both files, and six of its twelve statements change: membership, the order
-theorem and two of the statements under `RATPOINTS_NO_CHECK` hold for the points in the search
-region, membership, the order and the coverage under `RATPOINTS_NO_CHECK` assuming Sturm's theorem
-when the Sturm step is on (a hypothesis, not an axiom), and both refusal theorems add the search
-intervals that are not well formed; `lake comparator --paranoid` accepted the twelve on 2026-10-18.
-`ratpoints-lean` reads `-l -u -dl -du` as ratpoints reads them, prints the points of its search
-region and the messages on the search region and on the search intervals, and a theorem says which
-points it prints; the differential tests compare search regions and depths of the Sturm step too:
-4530 comparisons in the default suites and 13 in the suite run locally. The blueprint and the API
-documentation will be at <https://michaelstollbayreuth.github.io/RatpointsLean/> once the repository
-is public.
+and under Sturm's theorem the intervals that the Sturm step leaves hold every point of the box in
+the caller's search intervals, so that with the exact check on the depth of the step changes only
+the speed. The challenge of Comparator restates both files, and six of its twelve statements change:
+membership, the order theorem and two of the statements under `RATPOINTS_NO_CHECK` hold for the
+points in the search region, membership, the order and the coverage under `RATPOINTS_NO_CHECK`
+assuming Sturm's theorem when the Sturm step is on (a hypothesis, not an axiom), and both refusal
+theorems add the search intervals that are not well formed; `lake comparator --paranoid` accepted
+the twelve on 2026-10-18. `ratpoints-lean` reads `-l -u -dl -du` as ratpoints reads them, prints the
+points of its search region and the messages on the search region and on the search intervals, and a
+theorem says which points it prints; the differential tests compare search regions and depths of the
+Sturm step too: 4530 comparisons in the default suites and 13 in the suite run locally. The
+blueprint and the API documentation will be at
+<https://michaelstollbayreuth.github.io/RatpointsLean/> once the repository is public.
 
 ## Layout
 

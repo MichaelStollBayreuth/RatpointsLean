@@ -31,7 +31,7 @@ and the signs are those at infinity (`Ratpoints.eventually_atBot_sturm`,
 * `Ratpoints.sturmV`, `Ratpoints.vBot`, `Ratpoints.vTop`: the counts of the Sturm sequence at a
   point and at `∓∞`.
 * `Ratpoints.vLeft`, `Ratpoints.vRight`, `Ratpoints.sgnLeftEnd`, `Ratpoints.sgnRightEnd`: the
-  counts at the ends of an interval and the signs of `F` just inside them.
+  counts at the ends of an interval and, for a squarefree `F`, the signs of `F` just inside them.
 * `Ratpoints.Inside`: a point strictly between the ends.
 
 ## Main statements
@@ -76,15 +76,19 @@ noncomputable def vRight (F : ℝ[X]) : Option ℝ → ℕ
   | none => vTop F
   | some b => sturmV F b + if F.IsRoot b then 1 else 0
 
-/-- The sign of `F` just inside the lower end `l` of an interval, `none` for `-∞`: at a finite
-end `a`, that of `F(a)`, or of `F'(a)` when `F(a) = 0`. -/
+/-- At the lower end `l` of an interval, `none` for `-∞`: the sign of `(-1) ^ deg F` times the
+leading coefficient of `F` at `-∞`, and at a finite end `a` that of `F(a)`, or of `F'(a)` when
+`F(a) = 0`. This is the sign of `F` just inside the end when `F(a)` and `F'(a)` do not both vanish,
+as for a squarefree `F`, where it is not zero (`Ratpoints.sgnLeftEnd_ne_zero`). -/
 noncomputable def sgnLeftEnd (F : ℝ[X]) : Option ℝ → SignType
   | none => SignType.sign ((-1) ^ F.natDegree * F.leadingCoeff)
   | some a =>
     if F.eval a = 0 then SignType.sign (F.derivative.eval a) else SignType.sign (F.eval a)
 
-/-- The sign of `F` just inside the upper end `r` of an interval, `none` for `+∞`: at a finite
-end `b`, that of `F(b)`, or of `-F'(b)` when `F(b) = 0`. -/
+/-- At the upper end `r` of an interval, `none` for `+∞`: the sign of the leading coefficient of
+`F` at `+∞`, and at a finite end `b` that of `F(b)`, or of `-F'(b)` when `F(b) = 0`. This is the
+sign of `F` just inside the end when `F(b)` and `F'(b)` do not both vanish, as for a squarefree
+`F`. -/
 noncomputable def sgnRightEnd (F : ℝ[X]) : Option ℝ → SignType
   | none => SignType.sign F.leadingCoeff
   | some b =>
