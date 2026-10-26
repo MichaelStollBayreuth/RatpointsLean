@@ -186,24 +186,27 @@ extended Euclidean algorithm (`Ratpoints.Sieve.modinv`); its inverses of the str
 the row offsets of the packing of the numerators (`Ratpoints.Sieve.classOffsets`); and it holds the
 count of its factors, `0` for a prime, `1` for a prime power and their number for a product.
 
-C: `find_points.c:2350-2354`, `find_points.c:2358-2359`, `find_points.c:2387-2395`,
-`find_points.c:2414-2426`, `find_points.c:2428-2429`, `find_points.c:2434-2470`,
-`find_points.c:2472-2475`, `find_points.c:2546`, `find_points.c:2548`, `find_points.c:2976-2978`,
-`find_points.c:2994-2998`
+C: `find_points.c:2546`, `find_points.c:2548`
 
-Deviation: the entry of every modulus made here, by its factors computed again from `m`
-(`Ratpoints.modulusFactors`), where `make_modulus` reads the codes `fac` of the factors and their
-number `nf` that `add_moduli` stores with the candidate (lines 2405-2406), and where `sieving_info`
-takes the entry of a prime from the loop of the tables (`prec[n].ssp`) and makes those of the prime
-powers and the products by `make_modulus`; the primes and prime powers as factors of the entry, for
-the fields `pw` and `factor` and the entries of the prime powers that `make_power` makes; the tables
-of a prime power (`Ratpoints.Sieve.Factor.power`) computed for each modulus that needs them, where
-`add_moduli` examines a prime power once, when the factorization of the first candidate that reaches
-it needs it (the power itself), whether or not that candidate is then offered, and keeps its tables
-in its buffer `pws` by its index (`pw_idx`, lines 2350-2354, 2358-2359 and 2387-2394, with the count
-`npw` of line 2548), and `make_modulus` makes the entry of a prime power once and keeps it by its
-index (`power_se`), whose table of rows the model makes once too, for the prime power by its prime
-and its exponent, as the C code keeps the index of its entry in `pw_idx[pn][e]`
+Deviation: the lines of `add_moduli` that examine the prime powers and keep their tables, those of
+`make_power` and `make_modulus`, and those of the primes examined for the third stage are modelled
+by the components of the choice of the moduli (`Ratpoints.powerIndex`, `Ratpoints.takeFactor`,
+`Ratpoints.makeModulus`, `Ratpoints.lookFurther`), which the search does not call yet (stage I), and
+of them this entry keeps the array `power_se` of the entries of the prime powers (line 2546) and the
+count `npw` of the prime powers examined (line 2548), in the ways that follow; the entry of every
+modulus made here, by its factors computed again from `m` (`Ratpoints.modulusFactors`), where
+`make_modulus` reads the codes `fac` of the factors and their number `nf` that `add_moduli` stores
+with the candidate (lines 2405-2406), and where `sieving_info` takes the entry of a prime from the
+loop of the tables (`prec[n].ssp`) and makes those of the prime powers and the products by
+`make_modulus`; the primes and prime powers as factors of the entry, for the fields `pw` and
+`factor` and the entries of the prime powers that `make_power` makes; the tables of a prime power
+(`Ratpoints.Sieve.Factor.power`) computed for each modulus that needs them, where `add_moduli`
+examines a prime power once, when the factorization of the first candidate that reaches it needs it
+(the power itself), whether or not that candidate is then offered, and keeps its tables in its
+buffer `pws` by its index (`pw_idx`, lines 2350-2354, 2358-2359 and 2387-2394, with the count `npw`
+of line 2548), and `make_modulus` makes the entry of a prime power once and keeps it by its index
+(`power_se`), whose table of rows the model makes once too, for the prime power by its prime and its
+exponent, as the C code keeps the index of its entry in `pw_idx[pn][e]`
 (`Ratpoints.Sieve.EntryRef.power`, `Ratpoints.Sieve.SieveEntry.addTables`); the tables of a prime
 power computed also when they say nothing, where `add_moduli` refuses a modulus with such a factor
 (line 2395), and a prime factor whose prime says nothing (`examine_prime` returns `0`, and
@@ -285,13 +288,15 @@ of the moduli, their reciprocals in their order (`Ratpoints.Sieve.SieveEntry.mag
 divisors tested with words and by their valuations, and the store of the tables of rows that the
 loop of the tables and the entries of the moduli make (`Ratpoints.Sieve.RowStore`).
 
-C: `find_points.c:2522-2532`, `find_points.c:2892-2900`, `find_points.c:3064-3070`,
-`find_points.c:3102-3103`
+C: `find_points.c:2522-2532`, `find_points.c:3064-3070`, `find_points.c:3102-3103`
 
 Deviation: the arguments that serve the choice of the moduli (the mean number of bits per word,
 whether the number of primes was left to the library, the word `den_bits` and the classes `cls`) are
 not modelled, nor that choice (stage I): the moduli and their stages are those of the parameters,
-and the primes examined in the loop of the tables their first `P.examined`, beyond which
+the loop over the moduli here standing for the loop that puts the moduli of the first two stages
+into `sieve_list` and makes the entries of the composite ones (lines 2894-2900), which the
+components of the choice model (`Ratpoints.stageEntries`) and the search does not call yet, and the
+primes examined in the loop of the tables their first `P.examined`, beyond which
 `Ratpoints.makeModulus?` examines a prime when a modulus needs it; the sieve entries of every
 modulus made here, those of the third stage included, which `sieving_info` puts into `sieve_list` in
 the choice of the third stage (line 3014), and again, sorted by density with the reserve of

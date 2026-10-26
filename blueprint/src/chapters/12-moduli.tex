@@ -523,44 +523,42 @@ not read.
 
 \begin{definition}[The composite moduli]\label{def:compositeModuli}
   \uses{def:costModel, def:densities, def:SieveEntry, def:mulMod, def:modinv, def:packingConstants}
-  Proposed names: \lname{Ratpoints.primeEntry}, \lname{Ratpoints.ModulusCandidate.ofPrime},
-  \lname{Ratpoints.PowerTable}, \lname{Ratpoints.powerIndex}, \lname{Ratpoints.FacState},
-  \lname{Ratpoints.takeFactor}, \lname{Ratpoints.factorCandidate}, \lname{Ratpoints.offerModulus},
-  \lname{Ratpoints.addModuli}, \lname{Ratpoints.makeModulus}. The sieve entry of a prime, as
-  \verb|examine_prime| makes it, a value with no C code of its own, and the candidate of a prime,
-  its count $-1$ for the code $2$ (\csource{find_points.c}{1782}{1785}). The prime powers examined
-  so far, by the position of the prime and the exponent, with the records of the useful ones
-  (\csource{find_points.c}{2350}{2350}, \csource{find_points.c}{2352}{2354},
-  \csource{find_points.c}{2358}{2359}), and the index of a prime power, examined the first time
-  (\csource{find_points.c}{2387}{2394}). The state of the factorization of a candidate
-  (\csource{find_points.c}{2362}{2362}, \csource{find_points.c}{2364}{2365}); a factor $p^e$ taken,
-  refused as the factor too many or a prime beyond the first $64$, with the density of the prime
-  from the loop of the tables or of the useful prime power (\csource{find_points.c}{2381}{2386},
-  \csource{find_points.c}{2395}{2398}); the factorization over the primes looked at, a cofactor
-  below $p^2$ looked up among them (\csource{find_points.c}{2370}{2380},
-  \csource{find_points.c}{2399}{2399}); the candidate of an odd composite, none when its table is
-  too dear, it does not factor, it is a prime or its density is not below $1$
-  (\csource{find_points.c}{2363}{2363}, \csource{find_points.c}{2368}{2368},
+  \lean{Ratpoints.primeEntry, Ratpoints.ModulusCandidate.ofPrime, Ratpoints.PowerTable, Ratpoints.powerIndex, Ratpoints.FacState, Ratpoints.takeFactor, Ratpoints.factorCandidate, Ratpoints.offerModulus, Ratpoints.addModuli, Ratpoints.makeModulus}
+  \leanok
+  The sieve entry of a prime, as \verb|examine_prime| makes it, a value with no C code of its own,
+  and the candidate of a prime, its count $-1$ for the code $2$
+  (\csource{find_points.c}{1782}{1785}). The prime powers examined so far, by the position of the
+  prime and the exponent, with the records of the useful ones (\csource{find_points.c}{2350}{2350},
+  \csource{find_points.c}{2352}{2354}, \csource{find_points.c}{2358}{2359}), and the index of a
+  prime power, examined the first time (\csource{find_points.c}{2387}{2394}). The state of the
+  factorization of a candidate (\csource{find_points.c}{2362}{2362},
+  \csource{find_points.c}{2364}{2365}); a factor $p^e$ taken, refused as the factor too many or a
+  prime beyond the first $64$, with the density of the prime from the loop of the tables or of the
+  useful prime power (\csource{find_points.c}{2381}{2386}, \csource{find_points.c}{2395}{2398}); the
+  factorization over the primes looked at, a cofactor below $p^2$ looked up among them
+  (\csource{find_points.c}{2370}{2380}, \csource{find_points.c}{2399}{2399}); the candidate of an
+  odd composite, none when its table is too dear, it does not factor, it is a prime or its density
+  is not below $1$ (\csource{find_points.c}{2363}{2363}, \csource{find_points.c}{2368}{2368},
   \csource{find_points.c}{2400}{2402}, \csource{find_points.c}{2404}{2406}); the candidates offered,
   each keyed for the first stage, until the pool is full (\csource{find_points.c}{2346}{2349},
   \csource{find_points.c}{2351}{2351}, \csource{find_points.c}{2355}{2356},
   \csource{find_points.c}{2361}{2361}, \csource{find_points.c}{2403}{2403},
   \csource{find_points.c}{2407}{2411}); and the sieve entry of a composite modulus taken, from the
   codes of its factors: their tables, the product of their moduli, its reciprocal, bias and inverse
-  of $\mathrm{rbaLength}$, the inverses of the strides, its reference and its builder
+  of $\mathrm{rbaLength}$, the inverses of the strides empty, its reference and its builder
   (\csource{find_points.c}{2414}{2426}, \csource{find_points.c}{2428}{2429},
   \csource{find_points.c}{2434}{2470}, \csource{find_points.c}{2472}{2475}; the lines of the tables
   of the rows, 2427 and 2471, stay with Definition~\ref{def:storeTables}).
 \end{definition}
 
 \begin{definition}[The first two stages]\label{def:firstStages}
-  \uses{def:costModel, def:compositeModuli, def:sieveOptions, def:runShape}
-  Proposed names: \lname{Ratpoints.dropUsed}, \lname{Ratpoints.takeEntries},
-  \lname{Ratpoints.rankSecond}, \lname{Ratpoints.dropComposites}, \lname{Ratpoints.stageEntries},
-  \lname{Ratpoints.firstStages}. The candidates whose mask meets the primes taken dropped from a
-  position on (\csource{find_points.c}{2509}{2518}); the candidates that one stage takes, in the
-  order they are in, a given number or while the rule of the first stage wants the next, with the
-  mask of the primes taken and the product of the densities (\csource{find_points.c}{2490}{2508},
+  \uses{def:costModel, def:compositeModuli, def:sieveParams, def:runShape}
+  \lean{Ratpoints.dropUsed, Ratpoints.takeEntries, Ratpoints.rankSecond, Ratpoints.dropComposites, Ratpoints.stageEntries, Ratpoints.firstStages}
+  \leanok
+  The candidates whose mask meets the primes taken dropped from a position on
+  (\csource{find_points.c}{2509}{2518}); the candidates that one stage takes, in the order they are
+  in, a given number or while the rule of the first stage wants the next, with the mask of the
+  primes taken and the product of the densities (\csource{find_points.c}{2490}{2508},
   \csource{find_points.c}{2519}{2520}); the pool keyed again for the second stage and sorted from
   the end of the first (\csource{find_points.c}{2853}{2863}); the candidates after the second stage
   that are not primes saying more than coprimality dropped (\csource{find_points.c}{2879}{2890});
@@ -595,21 +593,20 @@ not read.
 \end{definition}
 
 \begin{definition}[The third stage]\label{def:thirdStage}
-  \uses{def:costModel, def:sieveOptions, def:runShape, def:examinePrimeExit, def:compositeModuli}
-  Proposed names: \lname{Ratpoints.bestByR}, \lname{Ratpoints.rTyp}, \lname{Ratpoints.ThirdState},
-  \lname{Ratpoints.lookFurther}, \lname{Ratpoints.thirdStage}, \lname{Ratpoints.survivorsAtThird},
-  \lname{Ratpoints.thirdOf}. The candidate of least density from a position on, the first on ties
-  (\csource{find_points.c}{2955}{2961}); the mean density of the candidates that say more than
-  coprimality, $1$ for none (\csource{find_points.c}{2982}{2991}); the state of the stage
-  (\csource{find_points.c}{2922}{2922}, \csource{find_points.c}{2933}{2933}); one more prime looked
-  at, with the exit when the curve has no points modulo it (\csource{find_points.c}{2976}{2978},
-  \csource{find_points.c}{2994}{3008}); the loop of the stage, the candidate taken moved to its end
-  (\csource{find_points.c}{2949}{2950}, \csource{find_points.c}{2973}{2975},
-  \csource{find_points.c}{2980}{2981}, \csource{find_points.c}{2992}{2993},
-  \csource{find_points.c}{3009}{3016}); the survivors per denominator expected at its start
-  (\csource{find_points.c}{2941}{2947}); and the stage after the first two, with the number of
-  primes it wants and its costs per survivor and per denominator
-  (\csource{find_points.c}{2926}{2932}).
+  \uses{def:costModel, def:runShape, def:examinePrimeExit, def:compositeModuli}
+  \lean{Ratpoints.bestByR, Ratpoints.rTyp, Ratpoints.ThirdState, Ratpoints.lookFurther, Ratpoints.thirdStage, Ratpoints.survivorsAtThird}
+  Proposed name, with I.8: \lname{Ratpoints.thirdOf}. The candidate of least density from a position
+  on, the first on ties (\csource{find_points.c}{2955}{2961}); the mean density of the candidates
+  that say more than coprimality, $1$ for none (\csource{find_points.c}{2982}{2991}); the state of
+  the stage (\csource{find_points.c}{2922}{2922}, \csource{find_points.c}{2933}{2933}); one more
+  prime looked at, with the exit when the curve has no points modulo it
+  (\csource{find_points.c}{2976}{2978}, \csource{find_points.c}{2994}{3008}); the loop of the stage,
+  the candidate taken moved to its end (\csource{find_points.c}{2949}{2950},
+  \csource{find_points.c}{2973}{2975}, \csource{find_points.c}{2980}{2981},
+  \csource{find_points.c}{2992}{2993}, \csource{find_points.c}{3009}{3016}); the survivors per
+  denominator expected at its start (\csource{find_points.c}{2941}{2947}); and the stage after the
+  first two, with the number of primes it wants and its costs per survivor and per denominator (with
+  I.8, \verb|find_points.c:2926-2932|).
 \end{definition}
 
 \begin{definition}[The choice of the moduli]\label{def:choice}
@@ -663,31 +660,20 @@ the search and to the program. The comment lines among them (2369, 2793, 2892-28
 declaration. Nothing of the explicit route models C code after I.10.
 
 \begin{lemma}[The pool of the candidates]\label{lem:choicePool}
-  \uses{def:costModel, def:firstStages, def:thirdStage}
-  Proposed names: \lname{Ratpoints.AllQ}, \lname{Ratpoints.AllQ.push},
-  \lname{Ratpoints.AllQ.eraseIdxIfInBounds}, \lname{Ratpoints.AllQ.sortFrom},
-  \lname{Ratpoints.AllQ.mapIdx\_key}, \lname{Ratpoints.AllQ.rankSecond}, \lname{Ratpoints.TailNf},
-  \lname{Ratpoints.DropUsedInvariant}, \lname{Ratpoints.TakeEntriesInvariant},
-  \lname{Ratpoints.DropCompositesInvariant}, \lname{Ratpoints.dropUsed\_spec},
-  \lname{Ratpoints.takeEntries\_spec}, \lname{Ratpoints.dropComposites\_spec},
-  \lname{Ratpoints.bestByR\_spec}, \lname{Ratpoints.firstStages\_spec},
-  \lname{Ratpoints.firstStages\_run}, \lname{Ratpoints.size\_sortFrom},
-  \lname{Ratpoints.getElem\_sortFrom\_of\_lt}, \lname{Ratpoints.exists\_getElem\_sortFrom\_eq},
-  \lname{Ratpoints.size\_rankSecond}, \lname{Ratpoints.map\_some\_filterMap\_ssp},
-  \lname{Ratpoints.length\_filterMap\_ssp\_and\_forall}, \lname{Array.Extends},
-  \lname{Array.Extends.refl}, \lname{Array.Extends.trans}, \lname{Array.extends\_push},
-  \lname{Array.extends\_ite\_push}, \lname{Array.getElem!\_eq\_of\_getElem?\_eq\_some},
-  \lname{Option.eq\_none\_of\_forall\_prod4}. For a property $Q$ of the candidates that does not
-  read their key and cost, every candidate of the pool has $Q$ after a push, a deletion, a swap, a
-  sort and a keying again; the loops of the stages keep it, the first stage ends at most at the size
-  of the pool and the second after it; after the deletion of the composite moduli not taken every
-  candidate from the end of the second stage on counts no factor; the candidate of least density
-  lies from the end of the third stage on; and the first two stages give $s_1 \le s_2 \le$ the size
-  of the pool, whatever the keys are. A sort keeps the size and moves the candidates only among
-  themselves.
+  \uses{def:costModel, def:firstStages, def:thirdStage, def:sieveParams}
+  \lean{Ratpoints.AllQ, Ratpoints.AllQ.push, Ratpoints.AllQ.eraseIdxIfInBounds, Ratpoints.AllQ.sortFrom, Ratpoints.AllQ.mapIdx_key, Ratpoints.AllQ.rankSecond, Ratpoints.TailNf, Ratpoints.DropUsedInvariant, Ratpoints.TakeEntriesInvariant, Ratpoints.DropCompositesInvariant, Ratpoints.dropUsed_spec, Ratpoints.takeEntries_spec, Ratpoints.dropComposites_spec, Ratpoints.bestByR_spec, Ratpoints.firstStages_spec, Ratpoints.firstStages_run, Ratpoints.size_sortFrom, Ratpoints.getElem_sortFrom_of_lt, Ratpoints.exists_getElem_sortFrom_eq, Ratpoints.size_rankSecond, Ratpoints.map_some_filterMap_ssp, Ratpoints.length_filterMap_ssp_and_forall, Array.Extends, Array.Extends.refl, Array.Extends.trans, Array.extends_push, Array.extends_ite_push, Array.getElem!_eq_of_getElem?_eq_some, Option.eq_none_of_forall_prod4}
+  \leanok
+  For a property $Q$ of the candidates that does not read their key and cost, every candidate of the
+  pool has $Q$ after a push, a deletion, a sort and a keying again; the loops of the stages keep it,
+  the first stage ends at most at the size of the pool and the second after it; after the deletion
+  of the composite moduli not taken every candidate from the end of the second stage on counts no
+  factor; the candidate of least density lies from the end of the third stage on; and the first two
+  stages give $s_1 \le s_2 \le$ the size of the pool, whatever the keys are. A sort keeps the size
+  and moves the candidates only among themselves.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   The loops of the stages delete and keep candidates only; their invariants are that every candidate
   has $Q$ and the position is within the pool, with the measures the size of the pool less the
   position. The sorts are permutations (Lean's merge sort), which keep every property of the
@@ -696,38 +682,26 @@ declaration. Nothing of the explicit route models C code after I.10.
 
 \begin{lemma}[The composite moduli are sound]\label{lem:compositeModuli}
   \uses{def:compositeModuli, def:thirdStage, lem:densities, lem:choicePool, def:IsPoint}
-  Proposed names: \lname{Ratpoints.factorOfCode}, \lname{Ratpoints.PrimeSeOK},
-  \lname{Ratpoints.PowerOK}, \lname{Ratpoints.CodeOK}, \lname{Ratpoints.CodeOK.isSound},
-  \lname{Ratpoints.CodeOK.extend}, \lname{Ratpoints.CodeOK.factorOfCode\_extend},
-  \lname{Ratpoints.ModulusCandidate.IsPrime}, \lname{Ratpoints.ModulusCandidate.IsComposite},
-  \lname{Ratpoints.ModulusCandidate.IsComposite.isSound}, \lname{Ratpoints.CandOK},
-  \lname{Ratpoints.CandOK.of\_eq}, \lname{Ratpoints.isPrime\_ofPrime},
-  \lname{Ratpoints.PowerTable.OK}, \lname{Ratpoints.FacState.OK},
-  \lname{Ratpoints.powerIndex\_spec}, \lname{Ratpoints.takeFactor\_spec},
-  \lname{Ratpoints.factorCandidate\_spec}, \lname{Ratpoints.offerModulus\_spec},
-  \lname{Ratpoints.AddModuliInvariant}, \lname{Ratpoints.addModuli\_spec},
-  \lname{Ratpoints.EntryOK}, \lname{Ratpoints.entryOK\_primeEntry},
-  \lname{Ratpoints.makeModulus\_spec}, \lname{Ratpoints.ChoicePoolOK},
-  \lname{Ratpoints.StageEntriesInvariant}, \lname{Ratpoints.stageEntries\_spec},
-  \lname{Ratpoints.ThirdState.OK}, \lname{Ratpoints.ThirdStageInvariant},
-  \lname{Ratpoints.lookFurther\_spec}, \lname{Ratpoints.thirdStage\_spec}. A code of a factor is
-  valid when it is the position of a prime of the table whose table the loop of the tables has, with
-  its entry, or $\mathrm{numPrimes}$ plus the index of a useful prime power examined with its
-  records; the factor that it names is then sound for every modulus $0 < m < \mathrm{maxPrimeEven}$
-  that the modulus of the factor divides. A candidate is a prime of the table at its position with
-  its prime entry, or a composite: odd, $1 < m < \mathrm{maxPrimeEven}$, with valid codes whose
-  primes are at increasing positions and whose moduli multiply to $m$, no entry and as many factors
-  counted as codes; this does not depend on the key, the cost, the density or the mask. The
-  factorization, the offer and the loop of the composite moduli keep the pool of such candidates,
-  and the table of the prime powers only grows, which keeps the codes valid; the entry of a
-  composite modulus made from its codes is a sound modulus entry, with the reference of its position
-  and a prime entry when it counts no factor; the entries of the first two stages are so made; and
-  the third stage keeps the pool so, every candidate from the end of the second stage on a prime,
-  and its exit at a further prime means that the curve has no points.
+  \lean{Ratpoints.factorOfCode, Ratpoints.PrimeSeOK, Ratpoints.PowerOK, Ratpoints.CodeOK, Ratpoints.CodeOK.isSound, Ratpoints.CodeOK.extend, Ratpoints.CodeOK.factorOfCode_extend, Ratpoints.ModulusCandidate.IsPrime, Ratpoints.ModulusCandidate.IsComposite, Ratpoints.ModulusCandidate.IsComposite.isSound, Ratpoints.CandOK, Ratpoints.CandOK.of_eq, Ratpoints.isPrime_ofPrime, Ratpoints.PowerTable.OK, Ratpoints.FacState.OK, Ratpoints.powerIndex_spec, Ratpoints.takeFactor_spec, Ratpoints.factorCandidate_spec, Ratpoints.offerModulus_spec, Ratpoints.AddModuliInvariant, Ratpoints.addModuli_spec, Ratpoints.EntryOK, Ratpoints.entryOK_primeEntry, Ratpoints.makeModulus_spec, Ratpoints.ChoicePoolOK, Ratpoints.StageEntriesInvariant, Ratpoints.stageEntries_spec, Ratpoints.ThirdState.OK, Ratpoints.ThirdStageInvariant, Ratpoints.lookFurther_spec, Ratpoints.thirdStage_spec}
+  \leanok
+  A code of a factor is valid when it is the position of a prime of the table whose table the loop
+  of the tables has, with its entry, or $\mathrm{numPrimes}$ plus the index of a useful prime power
+  examined with its records; the factor that it names is then sound for every modulus
+  $0 < m < \mathrm{maxPrimeEven}$ that the modulus of the factor divides. A candidate is a prime of
+  the table at its position with its prime entry, or a composite: odd,
+  $1 < m < \mathrm{maxPrimeEven}$, with valid codes whose moduli multiply to $m$, no entry and as
+  many factors counted as codes; this does not depend on the key, the cost, the density or the mask.
+  The factorization, the offer and the loop of the composite moduli keep the pool of such
+  candidates, and the table of the prime powers only grows, which keeps the codes valid; the entry
+  of a composite modulus made from its codes is a sound modulus entry, with the reference of its
+  position and a prime entry when it counts no factor; the entries of the first two stages are so
+  made; and the third stage keeps the pool so, every candidate from the end of the second stage on a
+  prime, and its exit at a further prime means that the curve has no points.
 \end{lemma}
 
 \begin{proof}
   \uses{lem:examinePrime_eq, lem:examinePrime_none, def:stage3, lem:stage3}
+  \leanok
   The contracts follow the loops of \verb|add_moduli| (three nested, with the measures
   $2(\mathrm{pnLim} - \mathrm{pn}) + \mathrm{ok}$, $\mathrm{pnLim} - \mathrm{pn}$ and the cofactor)
   and of the third stage (with the measure

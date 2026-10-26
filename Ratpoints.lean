@@ -34,6 +34,7 @@ public import Ratpoints.Model.Blocks
 public import Ratpoints.Model.Bounds
 public import Ratpoints.Model.BruteForce
 public import Ratpoints.Model.Candidate
+public import Ratpoints.Model.Choice
 public import Ratpoints.Model.Cli
 public import Ratpoints.Model.CliNumbers
 public import Ratpoints.Model.Constants
@@ -59,6 +60,8 @@ public import Ratpoints.Proof.BlockPlan
 public import Ratpoints.Proof.Blocks
 public import Ratpoints.Proof.Bounds
 public import Ratpoints.Proof.BruteForce
+public import Ratpoints.Proof.ChoiceModuli
+public import Ratpoints.Proof.ChoicePool
 public import Ratpoints.Proof.Cli
 public import Ratpoints.Proof.CliNumbers
 public import Ratpoints.Proof.CompositeRows

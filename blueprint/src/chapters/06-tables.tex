@@ -314,12 +314,13 @@ which $\mathrm{maxPrimeEven} \le 2^{32}$ gives.
   finds them: for the primes $p$ in turn while the cofactor is above $1$, a cofactor below $p^2$,
   which has no odd prime factor below $p$ and so, for odd $m$, is a prime, is looked up among the
   primes from $p$ on and taken with the exponent $1$ when it is one of them; else $p$ is divided off
-  as often as it divides. The result is the list of the positions and exponents, in the order of
-  the table, and the cofactor that is left (\csource{find_points.c}{2362}{2362},
-  \csource{find_points.c}{2365}{2365}, \csource{find_points.c}{2369}{2386},
-  \csource{find_points.c}{2396}{2400}). The factorization is complete exactly when the cofactor is
+  as often as it divides. The result is the list of the positions and exponents, in the order of the
+  table, and the cofactor that is left. The factorization is complete exactly when the cofactor is
   $1$; an even modulus never factors completely, as the table holds no $2$, and \verb|add_moduli|
-  offers odd moduli only.
+  offers odd moduli only. It models no C code of its own: the explicit sieve entry of a modulus uses
+  it (Definition~\ref{def:makeModulus}), while the choice of the moduli factors a candidate as
+  \verb|add_moduli| does, with the codes of the factors, their densities and the mask of their
+  primes (Definition~\ref{def:compositeModuli}).
 \end{definition}
 
 \begin{lemma}[The factors of a modulus]\label{lem:modulusFactors}
@@ -394,15 +395,16 @@ which $\mathrm{maxPrimeEven} \le 2^{32}$ gives.
   inverses $\mathrm{dinv}$ empty for the rows of offsets (Definition~\ref{def:classOffsets}) to
   fill, the count of its factors and the density $0$, which nothing reads before the choice of the
   moduli (stage~I), and it holds the reference and the kind of builder of the position $n$ of $m$
-  among the moduli with its factors, as Definition~\ref{def:SieveEntry} gives them
-  (\csource{find_points.c}{2414}{2426}, \csource{find_points.c}{2428}{2429},
-  \csource{find_points.c}{2434}{2470}, \csource{find_points.c}{2472}{2475},
-  \csource{find_points.c}{2546}{2546}; its tables of rows, which lines 2427 and 2471 clear, are made
-  by Definition~\ref{def:storeTables}; the tables of a prime power that \verb|add_moduli| examines
-  when a candidate first needs it and keeps by its index, \csource{find_points.c}{2350}{2354},
-  \csource{find_points.c}{2358}{2359}, \csource{find_points.c}{2387}{2395}, with their count,
-  \csource{find_points.c}{2548}{2548}; the primes examined for the third stage,
-  \csource{find_points.c}{2976}{2978}, \csource{find_points.c}{2994}{2998}).
+  among the moduli with its factors, as Definition~\ref{def:SieveEntry} gives them: the entries of
+  the prime powers, which it makes for each modulus that needs them
+  (\csource{find_points.c}{2546}{2546}), and the count of the prime powers examined, whose tables it
+  computes for each modulus that needs them (\csource{find_points.c}{2548}{2548}); its tables of
+  rows, which lines 2427 and 2471 clear, are made by Definition~\ref{def:storeTables}. The lines of
+  \verb|make_power| and \verb|make_modulus|, of the tables of a prime power that \verb|add_moduli|
+  examines when a candidate first needs it and keeps by its index, and of the primes examined for
+  the third stage are those of the components of the choice of the moduli
+  (Definitions~\ref{def:compositeModuli} and~\ref{def:thirdStage}), which the search does not call
+  yet.
 \end{definition}
 
 \begin{lemma}[The rows of a modulus let every point through]\label{lem:sieveEntry_admits}
@@ -496,7 +498,9 @@ $q$ primes and take primes as moduli (Definition~\ref{def:sieveParams}).
   (Definition~\ref{def:storeTables}); the array of the reciprocals of the entries, in their order
   (\csource{find_points.c}{3064}{3070}); and the store; none when the curve has no points modulo a
   prime examined on the way (\csource{find_points.c}{2522}{2532},
-  \csource{find_points.c}{2892}{2900}, \csource{find_points.c}{3102}{3103}).
+  \csource{find_points.c}{3102}{3103}); the loop over the moduli stands for the loop that makes the
+  entries of the composite moduli of the first two stages, a component of the choice of the moduli
+  (Definition~\ref{def:firstStages}), which the search does not call yet.
 \end{definition}
 
 \begin{lemma}[What \texttt{sieving\_info} computes is sound]\label{lem:sievingInfo}
@@ -591,13 +595,14 @@ Each component of this chapter differs from the C code in a stated way, recorded
     Chapter~\ref{chap:rows}, with their deviations (Section~\ref{sec:rowsDeviations}): the rows of
     the factors of a product read plainly, for the acquire load, and every row stored plainly, for
     the release store (stage~I);
-  \item the ranking, the choice of the moduli and their stages are not modelled (stage~I), and
-    nothing reads the densities: the moduli, their stages and the number of primes examined are
-    those of the parameters, and the parameters may hold moduli that ratpoints never offers
-    (composites above $\mathrm{RATPOINTS\_COMPOSITE\_MAX}$, with a factor beyond the examined
-    primes, or with a factor that says nothing), all sound; the parameters of the command line
-    without \verb|-p| take primes after the first $q$ when the counts of their stages ask for more,
-    primes that ratpoints then may examine too, and the model makes their entries with the others;
+  \item the ranking and the choice of the moduli are not modelled (stage~I), their composite moduli
+    and their stages being modelled but called by nothing yet (Section~\ref{sec:choice}), and the
+    search reads no densities: the moduli, their stages and the number of primes examined are those
+    of the parameters, and the parameters may hold moduli that ratpoints never offers (composites
+    above $\mathrm{RATPOINTS\_COMPOSITE\_MAX}$, with a factor beyond the examined primes, or with a
+    factor that says nothing), all sound; the parameters of the command line without \verb|-p| take
+    primes after the first $q$ when the counts of their stages ask for more, primes that ratpoints
+    then may examine too, and the model makes their entries with the others;
   \item the reciprocal, the bias and the inverse of $\mathrm{rbaLength}$ of a sieve entry are set
     with the entry for every kind of modulus, with the formulas of the C code
     (Definition~\ref{def:makeModulus}), the inverse of a prime read from its table; the inverses
@@ -615,9 +620,9 @@ of their sieve entries, which \verb|sieving_info| collects at its end
 (\csource{find_points.c}{3064}{3070}; Definition~\ref{def:sievingInfo}); the third stage reads them
 (Definition~\ref{def:stage3}), and so do the first two stages, stepping them with the sieve specs
 (Definitions~\ref{def:chunkStarts} or~\ref{def:andRows}, by the arm, and~\ref{def:secondStage});
-left to stage~I are the use of the densities of the primes and the powers, \verb|add_moduli|
-beyond the factorization, the ranking and the choice of the moduli with the rule for looking at
-further primes.
+left to stage~I are the use of the densities of the primes and the powers, of \verb|add_moduli| and
+of the stages, which Section~\ref{sec:choice} models, and the ranking and the choice of the moduli
+with the rule for looking at further primes.
 
 \section{Files and names}\label{sec:tablesFiles}
 
@@ -635,13 +640,14 @@ earlier stages and, since stage~F4, the bits of a bit array of words, the refere
 and the kinds of the builders of the rows, the builders themselves and the tables of rows being in
 \verb|Ratpoints/Model/Rows.lean| (Chapter~\ref{chap:rows}); the factors of a modulus are in
 \verb|Ratpoints/Model/Params.lean|; the loop of the tables and the second loop of the forbidden
-divisors in \verb|Ratpoints/Model/Denominators.lean|; and the sieve entry of a modulus and
-\verb|sieving_info| in \verb|Ratpoints/Model/FindPoints.lean|. The contracts are next to the lemmas
-they serve: the Barrett reduction, Horner's rule and the table with the exit in
-\verb|Ratpoints/Proof/Tables.lean|; \verb|modinv|, the prime powers with the bounds of their
-inverses, and the sieve entry of a modulus in \verb|Ratpoints/Proof/Moduli.lean|, with what the
-packing reads of it in \verb|Ratpoints/Proof/Packing.lean|, without Mathlib, and, since stage~F4,
-the bits of a bit array of words, which the tables of a prime power are, in
+divisors in \verb|Ratpoints/Model/Denominators.lean|; the sieve entry of a modulus and
+\verb|sieving_info| in \verb|Ratpoints/Model/FindPoints.lean|; and, since stage~I, the composite
+moduli and the stages of the choice of the moduli in \verb|Ratpoints/Model/Choice.lean|. The
+contracts are next to the lemmas they serve: the Barrett reduction, Horner's rule and the table with
+the exit in \verb|Ratpoints/Proof/Tables.lean|; \verb|modinv|, the prime powers with the bounds of
+their inverses, and the sieve entry of a modulus in \verb|Ratpoints/Proof/Moduli.lean|, with what
+the packing reads of it in \verb|Ratpoints/Proof/Packing.lean|, without Mathlib, and, since
+stage~F4, the bits of a bit array of words, which the tables of a prime power are, in
 \verb|Ratpoints/Proof/Rows.lean| and the builders of the rows of a prime power and of a product,
 through the tables of rows, in \verb|Ratpoints/Proof/CompositeRows.lean| and
 \verb|Ratpoints/Proof/RowStore.lean|, without Mathlib; the facts on the table of primes, the other
@@ -649,10 +655,13 @@ range lemmas of \verb|examine_power|, the factors of a modulus and the well-form
 \verb|Ratpoints/Proof/Params.lean|; the loop of the tables and the forbidden divisors, with the
 store of the loop of the tables, in \verb|Ratpoints/Proof/Forbidden.lean|; the sieve entries in the
 contracts of \verb|Ratpoints/Proof/Sieve.lean|, \verb|Words.lean|, \verb|Stages.lean| (the prime
-entries of the third stage), \verb|Sift.lean| and \verb|Denominators.lean|; and the soundness of the
-sieve entries, \verb|sieving_info| and the search in \verb|Ratpoints/Proof/FindPoints.lean|. The
-lemmas on words in core's namespaces are in \verb|Ratpoints/Proof/Bits.lean|, those on arrays and
-integers in \verb|Ratpoints/Proof/Containers.lean|, and the lemma on sorted lists in the mirror
+entries of the third stage), \verb|Sift.lean| and \verb|Denominators.lean|; the soundness of the
+sieve entries, \verb|sieving_info| and the search in \verb|Ratpoints/Proof/FindPoints.lean|; and,
+since stage~I, the composite moduli and the stages of the choice in
+\verb|Ratpoints/Proof/ChoiceModuli.lean|, with the pool of the candidates in
+\verb|Ratpoints/Proof/ChoicePool.lean|, which needs no Mathlib. The lemmas on words in core's
+namespaces are in \verb|Ratpoints/Proof/Bits.lean|, those on arrays and integers in
+\verb|Ratpoints/Proof/Containers.lean|, and the lemma on sorted lists in the mirror
 \verb|Ratpoints/Mathlib/Data/List/Sort.lean|, as a lemma on \verb|List.SortedLE|.
 
 \section{The evidence}\label{sec:tables-evidence}

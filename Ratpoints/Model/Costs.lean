@@ -23,8 +23,9 @@ denominators they are carried through. This module holds the arithmetic of that 
 expression by expression as the C code computes them: the record of a candidate and its two orders,
 the costs and keys, the cost of the exact check, the rule that ends the first stage, the offset of
 the second, and the estimate of the run (the denominators, the words and the calls of the sieve)
-with the mean number of bits per word of the bit arrays. Nothing calls them yet: the choice of the
-moduli that does comes with stage I.
+with the mean number of bits per word of the bit arrays. The composite moduli and the stages of the
+choice call them (`Ratpoints.addModuli`, `Ratpoints.takeEntries`, `Ratpoints.rankSecond`); the
+search calls neither yet, the choice of the moduli that it runs coming with stage I.
 
 The doubles are Lean's `Float`, IEEE 754 binary64 with the arithmetic of the platform: `+`, `-`,
 `*`, `/` and `sqrt` correctly rounded, as the C code compiled without fused multiply-adds and

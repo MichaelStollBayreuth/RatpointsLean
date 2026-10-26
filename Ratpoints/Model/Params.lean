@@ -55,22 +55,16 @@ it is; else `p` is divided off as often as it divides, giving the factor `(pn, e
 cofactor is `1`; the factors are in the order of the table. The table holds no `2`, so an even
 modulus never factors completely, as `add_moduli` offers odd `m` only.
 
-C: `find_points.c:2362`, `find_points.c:2365`, `find_points.c:2369-2386`,
-`find_points.c:2396-2400`
-
-Deviation: the positions in the table and the exponents as a list of pairs, for the codes `fac` of
-the factors and their count `nf`, with no bound `RP_MAX_FACTORS` on their number and no bound 64 on
-the positions (no mask of the primes involved, which serves the choice of the moduli), and with the
-position of the prime for a prime power, where the code of a prime power is that of its entry
-`pws[idx]`, which `add_moduli` examines when it first needs it (lines 2387-2395, modelled by
-`Ratpoints.makeModulus?`); no densities `r` of the factors (lines 2384 and 2396) and no refusal of a
-prime factor whose prime says nothing (line 2383), which serve the choice of the moduli (stage I),
-`Ratpoints.makeModulus?` taking the table of such a factor from the loop of the tables; the cofactor
-returned, for the flag `ok` and the test that the factorization is complete (line 2400), which it is
-for the moduli of well-formed parameters (`Ratpoints.Params.WF`,
-`Ratpoints.snd_run_modulusFactors_eq_one`); the prime below `p ^ 2` looked up by `List.find?`, for
-the loop that steps over the primes below it; the first `Ratpoints.numPrimes` primes of the table,
-for the primes looked at, `prime[0]` to `prime[pn_lim - 1]`; natural numbers for the `long`s. -/
+It models no C code of its own: the explicit sieve entry of a modulus given by its value
+(`Ratpoints.makeModulus?`) uses it, while the choice of the moduli factors a candidate as
+`add_moduli` does (`Ratpoints.factorCandidate`, `Ratpoints.takeFactor`): over the primes looked at,
+refusing a modulus with more than `Ratpoints.maxFactors` factors, a prime factor whose prime says
+nothing, a prime-power factor whose tables say nothing or a prime beyond the first 64, with the
+densities of the factors and the mask of their primes, and recording the codes of the factors, the
+position of the prime for a prime factor and the index of the tables of a prime power for a
+prime-power factor, where this function returns the positions and the exponents. The factorization
+is complete for the moduli of well-formed parameters (`Ratpoints.Params.WF`,
+`Ratpoints.snd_run_modulusFactors_eq_one`). -/
 def modulusFactors (m : Nat) : Id (List (Nat × Nat) × Nat) := do
   let mut rest := m
   let mut fac : Array (Nat × Nat) := #[]
@@ -216,37 +210,39 @@ test runs unless `-j` is the last of `-j` and `-J`; and a piece of the numerator
 arguments and again before the search. In the default build, a run without options has 11 moduli in
 the first stage, 22 in the first two and 30 in all (`Ratpoints.defaultParams`).
 
-C: `find_points.c:2503`, `find_points.c:2566`, `find_points.c:2571-2572`, `find_points.c:2599`,
-`find_points.c:2693-2705`, `find_points.c:2808`, `find_points.c:2815`, `find_points.c:2845-2846`,
-`find_points.c:2864-2869`, `find_points.c:2922`, `find_points.c:2926-2928`, `find_points.c:2949`,
-`find_points.c:2973-2975`, `find_points.c:2980`, `find_points.c:3015`, `find_points.c:3017`,
+C: `find_points.c:2566`, `find_points.c:2571-2572`, `find_points.c:2599`, `find_points.c:2693-2705`,
+`find_points.c:2808`, `find_points.c:2815`, `find_points.c:2926-2928`, `find_points.c:3017`,
 `find_points.c:4577`, `find_points.c:4643-4649`, `find_points.c:4655-4656`,
 `find_points.c:4662-4665`, `main.c:221-222`, `main.c:347`
 
-Deviation: the moduli are the first primes of the table, in increasing order, where ratpoints ranks
-the primes by what they say about the curve and adds composite moduli (`sieving_info`; stage I), and
-takes the entries of its stages from that ranking, skipping a modulus that shares a prime with one
-taken (`take_entries`); it leaves the primes that say nothing out of its pool (lines 1764-1765 and
-2613-2622), and those that say only that the numerator is prime to the denominator stay in the pool
-of the first two stages without counting toward the primes that it looks for (`n_weak`, line 2704)
-and leave the pool of the third stage with the composite moduli not taken (lines 2873-2890 and
-2999-3000); so the counts that the options fix, of the first stage under `-n`, of the first two
-stages under `-n` and `-N` (or `-n` and `-U 0` without `-R`) and of all the moduli under `-n`, `-N`
-and `-P`, bound those of ratpoints, which can be smaller, while where an option is absent ratpoints
-can take more moduli in a stage or fewer (no bound on a stage for `-N` without `-n`, nor for `-P`
-alone); without `-n`, the first stage ends at `Ratpoints.defaultSp1`, the fixed choice of the
-header, where ratpoints chooses the end from the curve by its costs (stage I); without `-N`, the
-second stage adds the flat offset `Ratpoints.sp2Extra`, as ratpoints does under `-U 0`
-(`phase_2_offset` for `u0 = 0`, `Ratpoints.phase2Offset`), where it otherwise scales the offset by
-the length of the run (stage I), and the model ignores `-R`, whose value ratpoints takes in place of
-`RATPOINTS_SP2_EXTRA` (lines 2571-2572 and 2808) and which comes with the scaled offset (stage I);
-without `-P`, the third stage is the rest of the first `q` primes, where ratpoints takes the primes
-of its pool in increasing order of their density `r`, the most selective first, stops by its cost
-rule (lines 2949-2992; stage I) and may look past the first `q` when `-p` is absent; the primes
-examined are the first `q`, where ratpoints, when `-p` is absent, looks at further primes while its
-pool is short of the moduli that its first two stages want, and later for its third stage, `-p`
-being a hard limit of the first two stages (line 2693) as of the third (line 2980), and the model
-examines the primes of its moduli beyond the first `q` when it makes their entries
+Deviation: the counts of the stages by these rules, for the stages that ratpoints takes from the
+pool of its candidates, whose lines (among them 2503, 2845-2846, 2864-2869, 2922, 2949, 2973-2975,
+2980 and 3015) the first two stages and the third stage of the choice of the moduli model
+(`Ratpoints.takeEntries`, `Ratpoints.firstStages`, `Ratpoints.thirdStage`), which the search does
+not call yet (stage I); the moduli are the first primes of the table, in increasing order, where
+ratpoints ranks the primes by what they say about the curve and adds composite moduli
+(`sieving_info`; stage I), and takes the entries of its stages from that ranking, skipping a modulus
+that shares a prime with one taken (`Ratpoints.takeEntries`); it leaves the primes that say nothing
+out of its pool (lines 1764-1765 and 2613-2622), and those that say only that the numerator is prime
+to the denominator stay in the pool of the first two stages without counting toward the primes that
+it looks for (`n_weak`, line 2704) and leave the pool of the third stage with the composite moduli
+not taken (lines 2873-2890 and 2999-3000); so the counts that the options fix, of the first stage
+under `-n`, of the first two stages under `-n` and `-N` (or `-n` and `-U 0` without `-R`) and of all
+the moduli under `-n`, `-N` and `-P`, bound those of ratpoints, which can be smaller, while where an
+option is absent ratpoints can take more moduli in a stage or fewer (no bound on a stage for `-N`
+without `-n`, nor for `-P` alone); without `-n`, the first stage ends at `Ratpoints.defaultSp1`, the
+fixed choice of the header, where ratpoints chooses the end from the curve by its costs (stage I);
+without `-N`, the second stage adds the flat offset `Ratpoints.sp2Extra`, as ratpoints does under
+`-U 0` (`phase_2_offset` for `u0 = 0`, `Ratpoints.phase2Offset`), where it otherwise scales the
+offset by the length of the run (stage I), and the model ignores `-R`, whose value ratpoints takes
+in place of `RATPOINTS_SP2_EXTRA` (lines 2571-2572 and 2808) and which comes with the scaled offset
+(stage I); without `-P`, the third stage is the rest of the first `q` primes, where ratpoints takes
+the primes of its pool in increasing order of their density `r`, the most selective first, stops by
+its cost rule (`Ratpoints.thirdStage`; stage I) and may look past the first `q` when `-p` is absent;
+the primes examined are the first `q`, where ratpoints, when `-p` is absent, looks at further primes
+while its pool is short of the moduli that its first two stages want, and later for its third stage,
+`-p` being a hard limit of the first two stages (line 2693) as of the third (line 2980), and the
+model examines the primes of its moduli beyond the first `q` when it makes their entries
 (`Ratpoints.makeModulus?`); no correction of the moduli during the run (`adapt_primes`, stage I);
 natural numbers for the `long`s, so that the sums of the counts cannot overflow. -/
 def sieveParams (o : SieveOptions) : Params :=

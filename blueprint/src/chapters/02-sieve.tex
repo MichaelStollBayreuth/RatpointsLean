@@ -119,27 +119,26 @@ are no points modulo $p$ (D) and the options of the output (G) come in their sta
   number \verb|pn_lim| with which \verb|sieving_info| starts (\csource{find_points.c}{2566}{2566});
   the moduli are the first primes of the table, at most the first $L$, where $L = q$ under
   \verb|-p|, a hard limit for every stage (\csource{find_points.c}{4577}{4577},
-  \csource{find_points.c}{2693}{2705}, \csource{find_points.c}{2980}{2980}), and
-  $L = \mathrm{numPrimes}$ without it. For the values $n$, $N$ and $P$ of \verb|-n|, \verb|-N| and
-  \verb|-P|, each absent when negative, and $N$ capped at $q$: the first stage ends at
-  $s_1 = \min(n, N)$, or at $\min(n, L)$ without \verb|-N|, or at $\min(\mathrm{defaultSp1}, L)$
-  without \verb|-n|, for $\mathrm{defaultSp1} = 11$ (\csource{ratpoints.h}{42}{42},
-  \csource{find_points.c}{2503}{2503}, \csource{find_points.c}{2845}{2846}); the second at
-  $s_2 = \max(s_1, N)$, the first two stages topped up to $N$, or without \verb|-N| at
-  $\min(s_1 + \mathrm{sp2Extra}, L)$, for the offset $\mathrm{sp2Extra} = 11$
-  (Definition~\ref{def:choiceConstants}) that ratpoints adds as it is under \verb|-U 0| (the offset
-  of the second stage, Definition~\ref{def:costModel}; \csource{find_points.c}{2571}{2572},
-  \csource{find_points.c}{2599}{2599}, \csource{find_points.c}{2808}{2808},
-  \csource{find_points.c}{2815}{2815}, \csource{find_points.c}{2864}{2869}); and the moduli are the
-  first $\min(s_2 + P, L)$ primes of the table, or without \verb|-P| the first $\max(s_2, q)$, the
-  third stage holding the rest of the first $q$ (\csource{find_points.c}{2922}{2922},
-  \csource{find_points.c}{2926}{2928}, \csource{find_points.c}{2949}{2949},
-  \csource{find_points.c}{2973}{2975}, \csource{find_points.c}{3015}{3015},
-  \csource{find_points.c}{3017}{3017}). At most $\min(F, 171)$ forbidden divisors are tested, for
-  the value $F \ge 0$ of \verb|-F| or else $F = \mathrm{defaultMaxForbidden} = 64$; the Jacobi test
-  runs unless \verb|-j| is the last of \verb|-j| and \verb|-J|; and a piece of the numerators has at
-  most $\mathrm{defaultArraySize} = 256$ bit arrays, the array size that the program sets when it
-  reads the arguments and again before the search (\csource{main.c}{347}{347},
+  \csource{find_points.c}{2693}{2705}; for the third stage of the choice,
+  Definition~\ref{def:thirdStage}), and $L = \mathrm{numPrimes}$ without it. For the values $n$, $N$
+  and $P$ of \verb|-n|, \verb|-N| and \verb|-P|, each absent when negative, and $N$ capped at $q$:
+  the first stage ends at $s_1 = \min(n, N)$, or at $\min(n, L)$ without \verb|-N|, or at
+  $\min(\mathrm{defaultSp1}, L)$ without \verb|-n|, for $\mathrm{defaultSp1} = 11$
+  (\csource{ratpoints.h}{42}{42}; the first two stages of the choice,
+  Definition~\ref{def:firstStages}); the second at $s_2 = \max(s_1, N)$, the first two stages topped
+  up to $N$, or without \verb|-N| at $\min(s_1 + \mathrm{sp2Extra}, L)$, for the offset
+  $\mathrm{sp2Extra} = 11$ (Definition~\ref{def:choiceConstants}) that ratpoints adds as it is under
+  \verb|-U 0| (the offset of the second stage, Definition~\ref{def:costModel};
+  \csource{find_points.c}{2571}{2572}, \csource{find_points.c}{2599}{2599},
+  \csource{find_points.c}{2808}{2808}, \csource{find_points.c}{2815}{2815};
+  Definition~\ref{def:firstStages}); and the moduli are the first $\min(s_2 + P, L)$ primes of the
+  table, or without \verb|-P| the first $\max(s_2, q)$, the third stage holding the rest of the
+  first $q$ (\csource{find_points.c}{2926}{2928}, \csource{find_points.c}{3017}{3017};
+  Definition~\ref{def:thirdStage}). At most $\min(F, 171)$ forbidden divisors are tested, for the
+  value $F \ge 0$ of \verb|-F| or else $F = \mathrm{defaultMaxForbidden} = 64$; the Jacobi test runs
+  unless \verb|-j| is the last of \verb|-j| and \verb|-J|; and a piece of the numerators has at most
+  $\mathrm{defaultArraySize} = 256$ bit arrays, the array size that the program sets when it reads
+  the arguments and again before the search (\csource{main.c}{347}{347},
   \csource{main.c}{221}{222}). The default parameters are those of no options: $11$ moduli in the
   first stage, $11$ more in the second and $8$ in the third, the first $30$ primes in all. Every
   parameter set made this way is well-formed.

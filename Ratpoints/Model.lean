@@ -9,6 +9,7 @@ public import Ratpoints.Model.Blocks
 public import Ratpoints.Model.Bounds
 public import Ratpoints.Model.BruteForce
 public import Ratpoints.Model.Candidate
+public import Ratpoints.Model.Choice
 public import Ratpoints.Model.Cli
 public import Ratpoints.Model.CliNumbers
 public import Ratpoints.Model.Constants

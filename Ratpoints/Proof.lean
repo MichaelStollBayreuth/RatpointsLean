@@ -13,6 +13,8 @@ public import Ratpoints.Proof.BlockPlan
 public import Ratpoints.Proof.Blocks
 public import Ratpoints.Proof.Bounds
 public import Ratpoints.Proof.BruteForce
+public import Ratpoints.Proof.ChoiceModuli
+public import Ratpoints.Proof.ChoicePool
 public import Ratpoints.Proof.Cli
 public import Ratpoints.Proof.CliNumbers
 public import Ratpoints.Proof.CompositeRows

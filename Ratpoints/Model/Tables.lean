@@ -274,23 +274,25 @@ entry, the coefficients and the density, as natural numbers, the entry made and 
 code `0` too, where `examine_prime` makes none, the moduli being an input of the model, and the
 density `0.0` for that code, which `examine_prime` does not compute; the fields `p`, `mask` and `nf`
 of the record `prec_entry` of the ranking, which `examine_prime` sets with the density (lines
-1782-1784), not set, the ranking of the moduli being left to stage I; the entry is a fresh value,
-for the space that `examine_prime` takes from the buffer of the sieve entries (`se_next`), and
-returned, where `examine_prime` stores it in the field `ssp` of `prec_entry`; it keeps only `p`, the
-table and the inverses (`Ratpoints.Sieve.Entry`), and no rows: the table of rows of the prime, with
-the row of `0` from the build and the others absent (lines 1820-1821, `Ratpoints.Sieve.primeRows`),
-is made in the store of the run by the loop of the tables when the prime says something
-(`Ratpoints.Sieve.examinePrimes`), and for a prime that a modulus needs, one beyond the loop of the
-tables, which `Ratpoints.makeModulus?` examines, or one that says nothing, by
-`Ratpoints.Sieve.SieveEntry.addTables` in the loop of `Ratpoints.sievingInfo` over the moduli, right
-after the entry; the fields `init`, `nf` and `pw` that `examine_prime` sets (lines 1800 and 1817)
-and its reciprocal `magic` (line 1808) are those of the sieve entry of the prime
+1782-1785), made from the table, the position of the prime and the code by the candidate of the
+prime (`Ratpoints.ModulusCandidate.ofPrime`), which the search does not call yet (stage I); the
+entry is a fresh value, for the space that `examine_prime` takes from the buffer of the sieve
+entries (`se_next`), and returned, where `examine_prime` stores it in the field `ssp` of
+`prec_entry`; it keeps only `p`, the table and the inverses (`Ratpoints.Sieve.Entry`), and no rows:
+the table of rows of the prime, with the row of `0` from the build and the others absent (lines
+1820-1821, `Ratpoints.Sieve.primeRows`), is made in the store of the run by the loop of the tables
+when the prime says something (`Ratpoints.Sieve.examinePrimes`), and for a prime that a modulus
+needs, one beyond the loop of the tables, which `Ratpoints.makeModulus?` examines, or one that says
+nothing, by `Ratpoints.Sieve.SieveEntry.addTables` in the loop of `Ratpoints.sievingInfo` over the
+moduli, right after the entry; the fields `init`, `nf` and `pw` that `examine_prime` sets (lines
+1800 and 1817) and its reciprocal `magic` (line 1808) are those of the sieve entry of the prime
 (`Ratpoints.Sieve.SieveEntry`), of which the prime is the single factor, made by
 `Ratpoints.makeModulus?`, which sets the reciprocal and the count of factors there, and so are the
 bias `bias` and the inverse `rbainv` of `Ratpoints.rbaLength` (lines 1815 and 1816), which
 `Ratpoints.makeModulus?` sets there with the formulas of these lines, and the density `r` (line
-1811), which `Ratpoints.makeModulus?` sets to `0.0`, the density of the entry being set with the
-choice of the moduli (stage I). -/
+1811), which `Ratpoints.makeModulus?` sets to `0.0`; the sieve entry of a prime of the choice of the
+moduli (`Ratpoints.primeEntry`), which the search does not call yet (stage I), sets all of these
+with the density. -/
 def examinePrime? (c : List Int) (d p : Nat) (useCLong : Bool) :
     Id (Option (Entry × Array Nat × Nat × Float)) := do
   let cm := (Array.range (d + 1)).map fun n ↦
@@ -742,7 +744,8 @@ Deviation: the kinds of modulus as the list of the factors: one prime factor for
 entry has `nf = 0` and the tables `is_f_square` and `inverses` of its own; one prime-power factor
 for a prime power, whose entry has `nf = 1` and its tables `pw`; and two or more for a product,
 whose entry has `nf ≥ 2` and points to the entries `factor` of its factors; no bound
-`RP_MAX_FACTORS` on the number of factors; the rows of the residues, which ratpoints keeps in the
+`RP_MAX_FACTORS` on the number of factors, which the choice of the moduli keeps when it offers a
+composite modulus (`Ratpoints.takeFactor`); the rows of the residues, which ratpoints keeps in the
 array `sieve` of the entry, kept in the store of the run (`Ratpoints.Sieve.RowStore`) in the table
 of rows of the reference `ref`; the reference `ref` to the entry whose table of rows holds its rows
 (`Ratpoints.Sieve.EntryRef`), for the pointer to the entry: a prime or a prime power that of its one

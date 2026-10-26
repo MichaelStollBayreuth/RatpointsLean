@@ -369,20 +369,20 @@ def sp3PerDenom : Float := 0.013
 
 /-- The share of the survivors of the first two stages that the test for common factors leaves,
 `RATPOINTS_SP3_COPRIME`, in the estimate of the survivors that reach the third stage
-(`sieving_info`; stage I).
+(`Ratpoints.survivorsAtThird`).
 
 C: `ratpoints.h:164-166` -/
 def sp3Coprime : Float := 0.7
 
 /-- What building one row of a sieve table costs, in units of one and of the first stage per word,
-`RATPOINTS_COST_TABLE`, unless the option `-C` gives a value `≥ 0` (`Ratpoints.primeCost`, and
-`add_moduli`; stage I).
+`RATPOINTS_COST_TABLE`, unless the option `-C` gives a value `≥ 0` (`Ratpoints.primeCost`,
+`Ratpoints.addModuli`).
 
 C: `ratpoints.h:192-194` -/
 def costTable : Float := 38.0
 
 /-- The largest composite modulus that ratpoints offers, `RATPOINTS_COMPOSITE_MAX`: the odd
-composites from 9 up to it and below `Ratpoints.maxPrimeEven` (`add_moduli`; stage I).
+composites from 9 up to it and below `Ratpoints.maxPrimeEven` (`Ratpoints.addModuli`).
 
 C: `ratpoints.h:210-212` -/
 def compositeMax : Nat := 64
@@ -461,19 +461,19 @@ def checkReference : Float := 306.0
 
 /-- A bound on the number of composite moduli offered, `RP_MAX_MODULI`: half of
 `Ratpoints.maxPrimeEven`; the pool of the candidates holds at most `Ratpoints.numPrimes` primes and
-this many composites (`Ratpoints.phase2Offset`, and `add_moduli`; stage I).
+this many composites (`Ratpoints.phase2Offset`, `Ratpoints.addModuli`).
 
 C: `find_points.c:153` -/
 def maxModuli : Nat := maxPrimeEven / 2
 
-/-- The largest number of prime-power factors of a modulus, `RP_MAX_FACTORS` (`add_moduli`;
-stage I).
+/-- The largest number of prime-power factors of a modulus, `RP_MAX_FACTORS`
+(`Ratpoints.takeFactor`).
 
 C: `rp-private.h:520` -/
 def maxFactors : Nat := 3
 
 /-- The largest cost of the table of a composite modulus per numerator word at which it is offered,
-`RP_MODULUS_TABLE_MAX` (`add_moduli`; stage I).
+`RP_MODULUS_TABLE_MAX` (`Ratpoints.offerModulus`).
 
 C: `find_points.c:2337` -/
 def modulusTableMax : Float := 2.0

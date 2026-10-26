@@ -332,6 +332,12 @@
         "Ratpoints.Sieve.examinePrime?"
       ]
     },
+    "find_points.c:1782-1785": {
+      "hash": "9cdbf71551559be37ea3480d2446be4173af66b37610f8f9bae1870e5c20cd5e",
+      "owners": [
+        "Ratpoints.ModulusCandidate.ofPrime"
+      ]
+    },
     "find_points.c:1795-1819": {
       "hash": "3f207af15e8b541e7dee0afd37b1d1e0a973596f0ba9328c7cca89a11c8c5001",
       "owners": [
@@ -668,52 +674,130 @@
         "Ratpoints.modulusTableMax"
       ]
     },
-    "find_points.c:2350-2354": {
-      "hash": "dbff1845cb82ede1e56499091f20a1f82c0e3747ffb30dfcddc33289d674e1c4",
+    "find_points.c:2346-2349": {
+      "hash": "48fff093ab76125da59db8d16d5605cf712525341e30e5d3a21dacfb96c1b749",
       "owners": [
-        "Ratpoints.makeModulus?"
+        "Ratpoints.addModuli"
+      ]
+    },
+    "find_points.c:2350-2350": {
+      "hash": "d5e73c1fdee8f1abd34921e361cf5f13de5d2472c99ab27bb29d55f32d790d32",
+      "owners": [
+        "Ratpoints.PowerTable"
+      ]
+    },
+    "find_points.c:2351-2351": {
+      "hash": "1b72689dcfe8bf57bc2fa74da4552966ae323c2a0ee26b801405113d79dbcaab",
+      "owners": [
+        "Ratpoints.addModuli"
+      ]
+    },
+    "find_points.c:2352-2354": {
+      "hash": "ef9437a16b580282eabec5c054bfeb2ebb80543d881daa2b55a4f839884e6cf2",
+      "owners": [
+        "Ratpoints.PowerTable"
+      ]
+    },
+    "find_points.c:2355-2356": {
+      "hash": "d9d5f72cdcc1ed5e89a271838dfa7956bec48c8efc01fd3b985f176329573dab",
+      "owners": [
+        "Ratpoints.addModuli"
       ]
     },
     "find_points.c:2358-2359": {
       "hash": "ef045e5dc1ebe00e01877ee0a97d8020b68fd78a118fb4d31ba0ef2a21ae71e8",
       "owners": [
-        "Ratpoints.makeModulus?"
+        "Ratpoints.PowerTable"
+      ]
+    },
+    "find_points.c:2361-2361": {
+      "hash": "0af98e24023863aae4bf069a26ed40f05d13740617d6775a5b01c0cf1521ac35",
+      "owners": [
+        "Ratpoints.addModuli"
       ]
     },
     "find_points.c:2362-2362": {
       "hash": "7024eb87abc50e4e1b2f5e5f264f8f159d1c59702d3a28387ddb7cab7c863261",
       "owners": [
-        "Ratpoints.modulusFactors"
+        "Ratpoints.FacState"
       ]
     },
-    "find_points.c:2365-2365": {
-      "hash": "949fb38d8b31e0ab08e2a3aa61eef17a9a97b44f471da410d2229a0091631632",
+    "find_points.c:2363-2363": {
+      "hash": "cf1839d7427d684be615ee8b5f87247e40d3ca34d4949c12f73f224262429da4",
       "owners": [
-        "Ratpoints.modulusFactors"
+        "Ratpoints.offerModulus"
       ]
     },
-    "find_points.c:2369-2386": {
-      "hash": "e69c4b67b08e1010f59644657cf46bf71656e5a737ce04b79f5f6269f9938971",
+    "find_points.c:2364-2365": {
+      "hash": "2129b0eef8df84bb8f7258e814d6adefa3cae999c417c72887a551dd4293bed4",
       "owners": [
-        "Ratpoints.modulusFactors"
+        "Ratpoints.FacState"
       ]
     },
-    "find_points.c:2387-2395": {
-      "hash": "6f397f575a16a90e12c19e176981d29ee426e79b62719fc7752a347ae8416609",
+    "find_points.c:2368-2368": {
+      "hash": "971409cd710d9466345fa6453612cfacdefd8b6c7bb5c45b6ee5ad8df6ffefcf",
       "owners": [
-        "Ratpoints.makeModulus?"
+        "Ratpoints.offerModulus"
       ]
     },
-    "find_points.c:2396-2400": {
-      "hash": "09cbeb4fa6a29d22be112c4b51039a546394a5571d687768995256c9ae2dc365",
+    "find_points.c:2370-2380": {
+      "hash": "545a35f4d32f01710350fc11595a358fcce8ed34e5a88ceb83c25ff3becb02c9",
       "owners": [
-        "Ratpoints.modulusFactors"
+        "Ratpoints.factorCandidate"
+      ]
+    },
+    "find_points.c:2381-2386": {
+      "hash": "980d3ce6afcf301d8ec4f649525785e45a3244c813dfd62bdf54c026c1e1a260",
+      "owners": [
+        "Ratpoints.takeFactor"
+      ]
+    },
+    "find_points.c:2387-2394": {
+      "hash": "ea9b645bc74e7462fe1f98f97b01adf02c07fdb8f05f99203760dd58f8ee55b5",
+      "owners": [
+        "Ratpoints.powerIndex"
+      ]
+    },
+    "find_points.c:2395-2398": {
+      "hash": "93bafd8ba29844f61034502617919065308c4495695aab09025c46e7bbec272c",
+      "owners": [
+        "Ratpoints.takeFactor"
+      ]
+    },
+    "find_points.c:2399-2399": {
+      "hash": "28d86778615f6af47bb1bc4f40face756749768e5111f114cfa234a5060c25af",
+      "owners": [
+        "Ratpoints.factorCandidate"
+      ]
+    },
+    "find_points.c:2400-2402": {
+      "hash": "d82d17266b16d0220e2c52e15bda137eff782e28d61e94220d9549d78b378d80",
+      "owners": [
+        "Ratpoints.offerModulus"
+      ]
+    },
+    "find_points.c:2403-2403": {
+      "hash": "05dab7ae87829f754641ccbc38d4ba3fe99dd3dc32e6993e11c8eb02eba75087",
+      "owners": [
+        "Ratpoints.addModuli"
+      ]
+    },
+    "find_points.c:2404-2406": {
+      "hash": "73680d4098fd0c2efee6c71f4f914c1df48e4026b82e7ec4d3457665268d6cf4",
+      "owners": [
+        "Ratpoints.offerModulus"
+      ]
+    },
+    "find_points.c:2407-2411": {
+      "hash": "c5f1365bccef4e5e02f715db617f51d0e93405eb1da5e5db0f5c1ab4eb993417",
+      "owners": [
+        "Ratpoints.addModuli"
       ]
     },
     "find_points.c:2414-2426": {
       "hash": "6b465f0eab7c74b2c9addff5c30a71e0995f272ce09c99af8d7531f93cd01d51",
       "owners": [
-        "Ratpoints.makeModulus?"
+        "Ratpoints.makeModulus"
       ]
     },
     "find_points.c:2427-2427": {
@@ -725,13 +809,13 @@
     "find_points.c:2428-2429": {
       "hash": "ddceb79ccd6561d39b8259cc95694e236454545285ebed4c70fceb0972dcbfb0",
       "owners": [
-        "Ratpoints.makeModulus?"
+        "Ratpoints.makeModulus"
       ]
     },
     "find_points.c:2434-2470": {
       "hash": "eb98f9be5a0fad2bcbd16c05dea924060e948e9e736dc32df9b678e7247722c8",
       "owners": [
-        "Ratpoints.makeModulus?"
+        "Ratpoints.makeModulus"
       ]
     },
     "find_points.c:2471-2471": {
@@ -743,13 +827,25 @@
     "find_points.c:2472-2475": {
       "hash": "c5db6589ffa8066b04daf1485a5b2158c241525ecc362c83732a9e1ebf2c35e3",
       "owners": [
-        "Ratpoints.makeModulus?"
+        "Ratpoints.makeModulus"
       ]
     },
-    "find_points.c:2503-2503": {
-      "hash": "380b2eb401fecd6d66761e6401f6539bf474f7e7a9d42a26b82c62be5c334d22",
+    "find_points.c:2490-2508": {
+      "hash": "5ef449768c9042cfbb8b6ccb34de23296b05211290fea1796d9427e506c301b0",
       "owners": [
-        "Ratpoints.sieveParams"
+        "Ratpoints.takeEntries"
+      ]
+    },
+    "find_points.c:2509-2518": {
+      "hash": "7798e40a66fabad051dc15669279f1583d4754282c51675be2e5f89a5cce9d92",
+      "owners": [
+        "Ratpoints.dropUsed"
+      ]
+    },
+    "find_points.c:2519-2520": {
+      "hash": "2bda67785163c82d0fb188d2339224fce71b9e23386412fceb87e87bb84f9114",
+      "owners": [
+        "Ratpoints.takeEntries"
       ]
     },
     "find_points.c:2522-2532": {
@@ -932,28 +1028,40 @@
         "Ratpoints.sieveParams"
       ]
     },
-    "find_points.c:2845-2846": {
-      "hash": "20658777b7e66ba286ce027fdaec13c5906ef175fe18952d25b63d0b887ab9ed",
+    "find_points.c:2843-2846": {
+      "hash": "e0d6d631d729b27192ea2fb4382672bf76747974526478db1d48d416a78568f9",
       "owners": [
-        "Ratpoints.sieveParams"
+        "Ratpoints.firstStages"
       ]
     },
-    "find_points.c:2864-2869": {
-      "hash": "e6e191e2bf5beb74bd4bf1c57628604fed61aeb16b7f7b1f3cbf323b15a131f8",
+    "find_points.c:2853-2863": {
+      "hash": "b109757d9d7dd2026bd36acc67bcc339fa8b453ce190c8fa64d089087bf657ac",
       "owners": [
-        "Ratpoints.sieveParams"
+        "Ratpoints.rankSecond"
       ]
     },
-    "find_points.c:2892-2900": {
-      "hash": "e1ed4ada244a6cc958ab2b1c6958b9c6a66c5d53e14bd53fa936e59f81052496",
+    "find_points.c:2864-2871": {
+      "hash": "82f15fd541563dbca961e07fa48ed4065f971a8e0cda99e97d9d14a9fef9ff6d",
       "owners": [
-        "Ratpoints.sievingInfo"
+        "Ratpoints.firstStages"
+      ]
+    },
+    "find_points.c:2879-2890": {
+      "hash": "2e79304f9ff853f492f66b61a4e55e326ef734db54c9657648777c6625577d64",
+      "owners": [
+        "Ratpoints.dropComposites"
+      ]
+    },
+    "find_points.c:2894-2900": {
+      "hash": "fb748702e30c6b4563f29d49b2fd2359ece221154be8abbfb334f8d285c0254e",
+      "owners": [
+        "Ratpoints.stageEntries"
       ]
     },
     "find_points.c:2922-2922": {
       "hash": "561992c030af875097224ebba94ce43daf902bb4f251feeb40a899dd2392d074",
       "owners": [
-        "Ratpoints.sieveParams"
+        "Ratpoints.ThirdState"
       ]
     },
     "find_points.c:2926-2928": {
@@ -962,34 +1070,64 @@
         "Ratpoints.sieveParams"
       ]
     },
-    "find_points.c:2949-2949": {
-      "hash": "e2f2f86de5508635e2bef4b5b4508b1ba7b358f98f86bcd607f56b78b55955d5",
+    "find_points.c:2933-2933": {
+      "hash": "be1f82e0f6a26a516b51e6bd7628a4ce4481b5ed5bdfc82bfd84f0f302578799",
       "owners": [
-        "Ratpoints.sieveParams"
+        "Ratpoints.ThirdState"
+      ]
+    },
+    "find_points.c:2941-2947": {
+      "hash": "ee40ebc2b21684eb2f41cc8e09aa7baeea579dca9627d20256651cf8a17a2e66",
+      "owners": [
+        "Ratpoints.survivorsAtThird"
+      ]
+    },
+    "find_points.c:2949-2950": {
+      "hash": "e8e7e54ad47e9f458b25223bf61354fa82b9ac48d153b2143cda8c81cb00b6b9",
+      "owners": [
+        "Ratpoints.thirdStage"
+      ]
+    },
+    "find_points.c:2955-2961": {
+      "hash": "0acdd6780b68b6bcd1e50a85dd566180a403877c29a61655bdf6bdb8c98fca36",
+      "owners": [
+        "Ratpoints.bestByR"
       ]
     },
     "find_points.c:2973-2975": {
       "hash": "7760e1a12c288f81de38bc9081790836df6c1d601dc54552c1f4a725ede30f27",
       "owners": [
-        "Ratpoints.sieveParams"
+        "Ratpoints.thirdStage"
       ]
     },
     "find_points.c:2976-2978": {
       "hash": "1d761fd226aebfaa36b88c1200f653fc0a1ed7e39cc926b8f2b70ca90cd45875",
       "owners": [
-        "Ratpoints.makeModulus?"
+        "Ratpoints.lookFurther"
       ]
     },
-    "find_points.c:2980-2980": {
-      "hash": "786e2b2cae305186239fe34d820de9428076db05792445b0b7630fa366dc8e8b",
+    "find_points.c:2980-2981": {
+      "hash": "294ab8ebfe10fb5fd2e67552a82b2b94b462279e0365ca6b6e904710a7dbbf19",
       "owners": [
-        "Ratpoints.sieveParams"
+        "Ratpoints.thirdStage"
       ]
     },
-    "find_points.c:2994-2998": {
-      "hash": "db8811b45b30f5c2f1ced84510bd3306ade9f4eeaad18bc639b848b24e916576",
+    "find_points.c:2982-2991": {
+      "hash": "7ccd312772442d6e054ac0bea659b6c8106e46c5f8d54e4249cdc85dac33b1f6",
       "owners": [
-        "Ratpoints.makeModulus?"
+        "Ratpoints.rTyp"
+      ]
+    },
+    "find_points.c:2992-2993": {
+      "hash": "e9ab4958da51c511dcd4cbfe74ad41c23c226d3aa4218d6574557406c3b54633",
+      "owners": [
+        "Ratpoints.thirdStage"
+      ]
+    },
+    "find_points.c:2994-3008": {
+      "hash": "59b608466bbd44ca2fececcc03fbf0e5978159119c72b8b69f07b589090cadea",
+      "owners": [
+        "Ratpoints.lookFurther"
       ]
     },
     "find_points.c:30-30": {
@@ -998,10 +1136,10 @@
         "excluded (other)"
       ]
     },
-    "find_points.c:3015-3015": {
-      "hash": "dd8487ae9a52859499603316cbf2efa68c54bc50adabc8c9875189c4e3daa42b",
+    "find_points.c:3009-3016": {
+      "hash": "503147af9c9bbd1937f7a81509a6a433624fb9563418214566e5b27ae44e7682",
       "owners": [
-        "Ratpoints.sieveParams"
+        "Ratpoints.thirdStage"
       ]
     },
     "find_points.c:3017-3017": {
@@ -4963,7 +5101,6 @@
     "find_points.c:2346-2349": "48fff093ab76125da59db8d16d5605cf712525341e30e5d3a21dacfb96c1b749",
     "find_points.c:2346-2411": "88dcc48de9092efed114bbe4415fde0440f47ef3fbee2dc6b0c954b9c3fcca54",
     "find_points.c:2350-2350": "d5e73c1fdee8f1abd34921e361cf5f13de5d2472c99ab27bb29d55f32d790d32",
-    "find_points.c:2350-2354": "dbff1845cb82ede1e56499091f20a1f82c0e3747ffb30dfcddc33289d674e1c4",
     "find_points.c:2351-2351": "1b72689dcfe8bf57bc2fa74da4552966ae323c2a0ee26b801405113d79dbcaab",
     "find_points.c:2352-2354": "ef9437a16b580282eabec5c054bfeb2ebb80543d881daa2b55a4f839884e6cf2",
     "find_points.c:2355-2356": "d9d5f72cdcc1ed5e89a271838dfa7956bec48c8efc01fd3b985f176329573dab",
@@ -4972,15 +5109,11 @@
     "find_points.c:2362-2362": "7024eb87abc50e4e1b2f5e5f264f8f159d1c59702d3a28387ddb7cab7c863261",
     "find_points.c:2363-2363": "cf1839d7427d684be615ee8b5f87247e40d3ca34d4949c12f73f224262429da4",
     "find_points.c:2364-2365": "2129b0eef8df84bb8f7258e814d6adefa3cae999c417c72887a551dd4293bed4",
-    "find_points.c:2365-2365": "949fb38d8b31e0ab08e2a3aa61eef17a9a97b44f471da410d2229a0091631632",
     "find_points.c:2368-2368": "971409cd710d9466345fa6453612cfacdefd8b6c7bb5c45b6ee5ad8df6ffefcf",
-    "find_points.c:2369-2386": "e69c4b67b08e1010f59644657cf46bf71656e5a737ce04b79f5f6269f9938971",
     "find_points.c:2370-2380": "545a35f4d32f01710350fc11595a358fcce8ed34e5a88ceb83c25ff3becb02c9",
     "find_points.c:2381-2386": "980d3ce6afcf301d8ec4f649525785e45a3244c813dfd62bdf54c026c1e1a260",
     "find_points.c:2387-2394": "ea9b645bc74e7462fe1f98f97b01adf02c07fdb8f05f99203760dd58f8ee55b5",
-    "find_points.c:2387-2395": "6f397f575a16a90e12c19e176981d29ee426e79b62719fc7752a347ae8416609",
     "find_points.c:2395-2398": "93bafd8ba29844f61034502617919065308c4495695aab09025c46e7bbec272c",
-    "find_points.c:2396-2400": "09cbeb4fa6a29d22be112c4b51039a546394a5571d687768995256c9ae2dc365",
     "find_points.c:2399-2399": "28d86778615f6af47bb1bc4f40face756749768e5111f114cfa234a5060c25af",
     "find_points.c:2400-2402": "d82d17266b16d0220e2c52e15bda137eff782e28d61e94220d9549d78b378d80",
     "find_points.c:2403-2403": "05dab7ae87829f754641ccbc38d4ba3fe99dd3dc32e6993e11c8eb02eba75087",
@@ -5064,12 +5197,10 @@
     "find_points.c:2864-2869": "e6e191e2bf5beb74bd4bf1c57628604fed61aeb16b7f7b1f3cbf323b15a131f8",
     "find_points.c:2864-2871": "82f15fd541563dbca961e07fa48ed4065f971a8e0cda99e97d9d14a9fef9ff6d",
     "find_points.c:2879-2890": "2e79304f9ff853f492f66b61a4e55e326ef734db54c9657648777c6625577d64",
-    "find_points.c:2892-2900": "e1ed4ada244a6cc958ab2b1c6958b9c6a66c5d53e14bd53fa936e59f81052496",
     "find_points.c:2894-2900": "fb748702e30c6b4563f29d49b2fd2359ece221154be8abbfb334f8d285c0254e",
     "find_points.c:2922-2922": "561992c030af875097224ebba94ce43daf902bb4f251feeb40a899dd2392d074",
     "find_points.c:2922-3016": "dfea650b51f8e979be99fa900fe04e61ea821e0beda74b4ec7a7e6a0049e1679",
     "find_points.c:2926-2928": "59053808fe938e36f51a8cf8ec581c2210321629f4347fba2fa0dfb655515b71",
-    "find_points.c:2926-2932": "cba2555dd888b1b86c70a7233b59d6a934af96c66ba69943bd832f1b22d422dd",
     "find_points.c:2933-2933": "be1f82e0f6a26a516b51e6bd7628a4ce4481b5ed5bdfc82bfd84f0f302578799",
     "find_points.c:2941-2947": "ee40ebc2b21684eb2f41cc8e09aa7baeea579dca9627d20256651cf8a17a2e66",
     "find_points.c:2949-2949": "e2f2f86de5508635e2bef4b5b4508b1ba7b358f98f86bcd607f56b78b55955d5",
