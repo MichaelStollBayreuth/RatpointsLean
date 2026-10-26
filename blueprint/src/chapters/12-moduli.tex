@@ -1,8 +1,9 @@
-% Stage I: the C program's choice of the sieving moduli and the cut points of its stages by the
-% curve, the blocks of the run with the correction of the moduli between them, the numbers of the
-% moduli used (message 4), the report of the library under -v, the tuning options -r -R -U -C -A -Q
-% -W of the command-line program, and the block and lag lemmas. Proposed names are set with \lname
-% and become \lean once the declarations exist.
+% Stage I: the C program's choice of the sieving moduli and of the cut points of its three stages
+% by the curve, with the cost model of the C code in doubles; the counters of the sieve; the blocks
+% of the run with the correction of the moduli between them; the threads left out, with the block
+% lemma, the lag lemma and the blocks sifted apart; the search on the options of the sieve, its
+% parameters internal to it, and the eleven certified statements; the numbers of the moduli used
+% (message 4), the report of the library under -v, and the tuning options -r -R -U -C -A -Q -W.
 \chapter{The choice of the moduli and the blocks}\label{chap:moduli}
 
 Stage~I models what is left of the C code of ratpoints 3.1.1 apart from its threads: how the library
@@ -25,64 +26,77 @@ normalizes them to the moduli chosen and the forbidden divisors. The command-lin
 tuning options \verb|-r|, \verb|-R|, \verb|-U|, \verb|-C|, \verb|-A|, \verb|-Q| and \verb|-W| into
 the arguments of the library.
 
-Stage~I models all of this as the C code has it, on the sequential path, to which the pool of
-threads is equivalent (Theorem~\ref{thm:threads}): the doubles of the cost model are values of Lean
-core's \verb|Float|, IEEE~754 binary64 with the arithmetic of the platform, and every expression
-keeps the order of the operations of the C code; the sorts are stable merge sorts with the
-comparisons of the C code; the blocks, the counters, the decisions, the folds and the correction are
-those of the C code, with the counters as $64$-bit words that wrap as the C code's
+Stage~I models all of this as the C code has it, on the sequential path, whose output the pool of
+threads gives, but for a failure for lack of memory that only the pool can meet
+(Theorem~\ref{thm:threads}, Section~\ref{sec:moduliC}): the doubles of the cost model are values of
+Lean core's \verb|Float|, IEEE~754 binary64 with the arithmetic of the platform, and every
+expression keeps the order of the operations of the C code; the sorts are stable merge sorts with
+the comparisons of the C code; the blocks, the counters, the decisions, the folds and the correction
+are those of the C code, with the counters as $64$-bit words that wrap as the C code's
 \verb|unsigned long|s do. The listing of the denominators of a shape, which the model had in place
-of the blocks since stage~E, goes from the model; the proofs keep it as a definition of their own.
-The choice and the run produce exactly the moduli, the cut points, the decisions and the counters of
-the C program on the machine on which both run. After stage~I every line of code of the C files at
-the pin is modelled by a declaration of the model or left out with a reason recorded in the
-correspondence, stage~I adding the threads, a probe of the development, a macro that the C code
-reads nowhere and the buffers of memory of the arguments.
+of the blocks from stage~E until stage~I, is a definition of the proofs
+(\verb|Ratpoints/Proof/Shapes.lean|), the reference of the loops of the blocks. The choice and the
+run produce exactly the moduli, the cut points, the decisions and the counters of the C program on
+the machine on which both run. With stage~I every line of code of the C files at the pin is modelled
+by a declaration of the model or left out with a reason recorded in the correspondence, stage~I
+adding the threads, a probe of the development, a macro that the C code reads nowhere and the
+buffers of memory of the arguments (Section~\ref{sec:moduliDeviations}); the check of the
+correspondence asks for that in CI and in the checks of every commit.
 
-For every input the points that $\mathrm{findPoints}$ returns do not change: a modulus removes only
-candidates that are not points, whatever moduli the choice takes and whatever decisions the run
-makes, and the blocks visit the denominators of the shape in the order of its loop. What changes is
-what depends on the choice: the survivors under \verb|RATPOINTS_NO_CHECK| (\verb|-x|), message~4 and
-the report under \verb|-v|, which are now those of ratpoints, byte for byte. The interface of the
-search changes with them. $\mathrm{findPoints}$ and $\mathrm{findPointsWith}$ take the options of
-the sieve as the caller of the library gives them, the fields of \verb|ratpoints_args| that tune the
-sieve (Definition~\ref{def:sieveOptions}), now with the values of the tuning options and the array
-size, in place of explicit parameters and their well-formedness; the result of the choice,
-$\mathrm{Params}$ (Definition~\ref{def:Params}), is internal to the search. So the statements that
-comparator certifies drop the parameters $P$ and the hypothesis $P.\mathrm{WF}$: the six on the
-points and the one on the protocol of the delivery take the options $s$ of the sieve with no
-hypothesis on them, the two refusal theorems take $s$ in place of $P$, and the theorem that the
-parameters of the program are well-formed goes, since nothing is left for it to say. Eleven
-statements remain: the two on the brute-force reference unchanged, and the nine on the search each
-stronger than before, since they cover the program's own choice of the moduli, whatever the values
-of the doubles of its cost model, and every option of the sieve. The specification that the
-challenge restates does not change.
+For every input the points that $\mathrm{findPoints}$ returns are those of the earlier stages: a
+modulus removes only candidates that are not points, whatever moduli the choice takes and whatever
+decisions the run makes, and the blocks visit the denominators of the shape in the order of its
+loop. What depends on the choice is now that of ratpoints, byte for byte: the survivors under
+\verb|RATPOINTS_NO_CHECK| (\verb|-x|), message~4 and the report under \verb|-v|. The interface of
+the search follows the C code too. $\mathrm{findPoints}$ and $\mathrm{findPointsWith}$ take the
+options of the sieve as the caller of the library gives them, the fields of \verb|ratpoints_args|
+that tune the sieve (Definition~\ref{def:sieveOptions}), with the values of the tuning options and
+the array size, in place of the explicit parameters and their well-formedness of the earlier stages;
+the result of the choice, $\mathrm{Params}$ (Definition~\ref{def:Params}), is internal to the
+search, and the explicit route of the earlier stages, the parameters of the executable with their
+well-formedness and the sieve entries of given moduli of stage~F1, is gone. The report under
+\verb|-v| goes through a print channel of the search, a function that prints into the data of the
+callback ($\mathrm{findPointsVerbose}$, Definition~\ref{def:findPointsVerbose});
+$\mathrm{findPointsWith}$ takes the channel as its last argument, by default the channel that prints
+nothing, which the certified statements use. So the statements that comparator certifies
+(Section~\ref{sec:certifiedI}) take the options $s$ of the sieve with no hypothesis on them, in
+place of the parameters $P$ and the hypothesis $P.\mathrm{WF}$: the six on the points and the one on
+the protocol of the delivery take $s$, the two refusal theorems take $s$ in place of $P$, and the
+theorem that the parameters of the program are well formed is gone, since nothing is left for it to
+say. Eleven statements remain: the two on the brute-force reference unchanged, and the nine on the
+search, which cover the program's own choice of the moduli, whatever the values of the doubles of
+its cost model, and every option of the sieve, the seven that had $P.\mathrm{WF}$ each stronger than
+in stage~H. The specification that the challenge restates does not change.
 
-The theorems say nothing about the values of the doubles, and need not (Section~\ref{sec:costs}):
-every contract of the choice, of the blocks and of the correction holds for any values that the cost
-model computes, so that the cut points and the decisions are, for the proofs, arbitrary within the
-caps that the natural numbers of the C code impose. What the proofs show is that the choice is what
-the run needs (every modulus sound, the tables and the store complete, the entries from the end of
-the second stage on primes of the table, the forbidden divisors sound), that the correction keeps
-every decision so, and that the run of blocks delivers, in the order of the loop of the shape, the
-points of each denominator with the moduli of the decision of its block. Since the counters are
-counted before the exact check (Section~\ref{sec:moduliC}), the decisions depend neither on the
-callback nor on the flags of the output; the proofs give the state of the correction in closed form,
-as a fold of the reports of the blocks, and with it a sound test of the numerators that the
-certified statements need, the same for every callback. Three further theorems are stated and proved
-in this chapter but not certified: the block lemma, that the run delivers the points of its blocks
-in order, each a function of its block and the decision of the block (Theorem~\ref{thm:blocks}); the
-lag lemma, that the decision of a block reads only the folds of the blocks at least
-$\mathrm{RP\_ADAPT\_LAG} + 1$ before it (Theorem~\ref{thm:lag}); and, from both, that blocks sifted
-apart and delivered in order give what the run delivers (Theorem~\ref{thm:threads}), the property by
-which the threaded path of the C code, which sieves blocks apart and delivers them in order, gives
-the output of the sequential path.
+The theorems say nothing about the values of the doubles, and need not (Section~\ref{sec:costs}): no
+proof reads the value of a \verb|Float|, and every contract of the choice, of the blocks and of the
+correction holds for any values that the cost model computes, so that the cut points and the
+decisions are, for the proofs, arbitrary within the caps that the natural numbers of the C code
+impose, and the theorems hold for every choice that the search makes. What the proofs show is that
+the choice is what the run needs (every modulus sound, the tables and the store complete, the
+entries from the end of the second stage on primes of the table, the forbidden divisors sound), that
+the correction keeps every decision so, and that the run of blocks delivers, in the order of the
+loop of the shape, the points of each denominator with the moduli of the decision of its block.
+Since the counters are counted before the exact check (Section~\ref{sec:moduliC}), the decisions
+depend neither on the callback nor on the flags of the output; the proofs give the state of the
+correction in closed form, as a fold of the reports of the blocks, and with it a sound test of the
+numerators that the certified statements need, the same for every callback. Three further theorems
+are proved in this chapter and not certified: the block lemma, that the run delivers the points of
+its blocks in order, each a function of its block and the decision of the block
+(Theorem~\ref{thm:blocks}); the lag lemma, that the decision of a block reads only the folds of the
+blocks at least $\mathrm{RP\_ADAPT\_LAG} + 1$ before it (Theorem~\ref{thm:lag}); and, from both,
+that blocks sifted apart, in any order, each with the decisions of any state of the correction that
+has folded the blocks at least $\mathrm{RP\_ADAPT\_LAG} + 1$ before it and with a store of its own,
+and delivered in their order, give what the run of the model, which sifts the blocks in turn,
+delivers (Theorem~\ref{thm:threads}): the property by which the threaded path of the C code, which
+sieves blocks apart and delivers them in order, gives the output of the sequential path.
 
 The doubles bring one dependence on the machine: glibc's \verb|log| and \verb|pow| are not correctly
 rounded, and glibc chooses their variant by the processor (Section~\ref{sec:costs}), so that the
-choice of ratpoints depends on the machine it runs on, and the model, which calls the same functions
-of the platform's C library, is exact relative to that library; the differential tests compare the
-two programs on one machine. As in the other stages, since the aim of the project is to verify the C
+choice of ratpoints depends on the machine it runs on, and the model, which calls the platform's
+\verb|log| and \verb|pow| (on glibc an older symbol version, with the same values on every argument
+that occurs here), is exact relative to that library; the differential tests compare the two
+programs on one machine. As in the other stages, since the aim of the project is to verify the C
 code as far as that can be done, the model follows the data, the loops and the tests of the C code
 where the C code has them, also in two points of the choice that look unintended: the sort of the
 third stage by density starts at the end of the second stage, not of the third, so that the third
@@ -154,11 +168,12 @@ first word of each class kept by its share of the numerators.
 estimates the run without forbidden divisors and derives the cost of the calls per word, the bits
 per word swept and the offset of the second stage; then it examines the primes of the table in turn
 (\csource{find_points.c}{2601}{2707}): at the code $-1$ it returns the prime, and the search returns
-with no point; a prime that says something becomes a candidate with its key for the first stage; the
-forbidden divisor of the prime is made as before. When the caller left the number of primes to the
-library and the last prime to look at has been looked at, it sorts the candidates by key, computes
-how many the first stage would take and the second after it, and looks at one more prime while the
-candidates that say more than coprimality are fewer (\csource{find_points.c}{2693}{2705}), at most
+with no point; a prime that says something becomes a candidate with its key for the first stage; and
+its forbidden divisor for the checked loop is made while fewer than the bound are found
+(Definition~\ref{def:forbidden}). When the caller left the number of primes to the library and the
+last prime to look at has been looked at, it sorts the candidates by key, computes how many the
+first stage would take and the second after it, and looks at one more prime while the candidates
+that say more than coprimality are fewer (\csource{find_points.c}{2693}{2705}), at most
 $\mathrm{numPrimes}$. After the further forbidden divisors and the switch of the checked loop it
 estimates the run again, with the forbidden divisors, and keys the candidates again.
 
@@ -240,12 +255,16 @@ each block in turn, and the ends $s_2$ and $s_3$ of the last block folded are wr
 (\csource{find_points.c}{5163}{5163}).
 
 \paragraph{The threads.} With threads (\verb|-t|) a pool sieves the blocks apart
-(\csource{find_points.c}{4129}{4519}): a block starts only when the fold of the block
-$\mathrm{RP\_ADAPT\_LAG} + 1$ before it is done, so that every decision for it is published, each
-block is sifted by one thread with the decision in force, and the calling thread delivers the points
-of the blocks in their order and stops at the first stop of the callback, as the sequential loop
-does. The tables of rows are built under a lock and depend only on their residue. So the output is
-that of the sequential loop for every number of threads.
+(\csource{find_points.c}{4129}{4519}): a thread starts block $i$ only once the blocks before block
+$i - \mathrm{RP\_ADAPT\_LAG}$ are folded (lines 4292-4296), so that every decision for block $i$ is
+published, each block is sifted by one thread with the decision in force, and the calling thread
+delivers the points of the blocks in their order and stops at the first stop of the callback, as the
+sequential loop does. The tables of rows are built under a lock, depend only on their residue, and
+are published only when complete (\verb|RP_PUBLISH| at lines 180, 241, 391 and 443 of \verb|init.c|,
+read by acquire loads at lines 3160 and 3533-3535 of \verb|find_points.c|). So the output is that of
+the sequential loop for every number of threads, but for one failure that only the pool can meet:
+\verb|RATPOINTS_NO_MEMORY| when a thread of the pool cannot store a point of its block (lines
+4245-4250, 4482 and 4501).
 
 \paragraph{What the search writes back, and message 4.} \verb|find_points_work| zeroes the numbers
 of the moduli used (\csource{find_points.c}{4551}{4552}); after the run the search writes the end
@@ -272,19 +291,20 @@ the correctly rounded IEEE~754 binary64 operation in the order of the source; \v
 instruction, correctly rounded, and \verb|ceil| and \verb|floor| are exact instructions; a
 \verb|long| converts to a double by \verb|vcvtsi2sd| and an \verb|unsigned long| counter by the
 correctly rounded sequence of gcc, both rounding to nearest with ties to even and exact below
-$2^{53}$, and the one conversion of a double to a \verb|long|, \verb|(long)(e + 0.5)| in
-\verb|phase_2_offset| (line 1625), truncates a value in range; gcc folds \verb|log(2.0)| at compile
-time (line 1289) into the value of glibc; \verb|log| and \verb|pow| are glibc's, which are not
-correctly rounded (on the machine of the tests $21$ of $62230$ arguments of \verb|log| and $24$ of
-$30000$ of \verb|pow| gave a result one unit in the last place away from the correctly rounded one,
-among them arguments that occur, such as the density $111/127$ and $H + 1$ for some heights) and of
-which glibc chooses a variant by the processor. The keys are finite or $+\infty$, never a NaN, since
-\verb|run_shape| floors $D$ and $U$ at $1$; on such keys the comparison of the sort is a total
-preorder, and glibc's \verb|qsort|, a stable merge sort when it can allocate its buffer, gives the
-order of every stable sort. Ties occur at finite keys, under \verb|-C 0| or a subnormal \verb|-C|,
-where two moduli of equal density get equal keys (such as $15$ and $45$, or $7$ and $49$), and at
-$+\infty$ under huge values of \verb|-C|; on all of them a stable merge sort gives the order of
-glibc's \verb|qsort|, since each sort takes its input in the order of the C code.
+$2^{53}$, and the one conversion of a double of the cost model to a \verb|long|,
+\verb|(long)(e + 0.5)| in \verb|phase_2_offset| (line 1625), truncates a value in range; gcc folds
+\verb|log(2.0)| at compile time (line 1289) into the value of glibc; \verb|log| and \verb|pow| are
+glibc's, which are not correctly rounded (on the machine of the tests $21$ of $62230$ arguments of
+\verb|log| and $24$ of $30000$ of \verb|pow| gave a result one unit in the last place away from the
+correctly rounded one, among them arguments that occur, such as the density $111/127$ and $H + 1$
+for some heights) and of which glibc chooses a variant by the processor. The keys are finite or
+$+\infty$, never a NaN, since \verb|run_shape| floors $D$ and $U$ at $1$; on such keys the
+comparison of the sort is a total preorder, and glibc's \verb|qsort|, a stable merge sort when it
+can allocate its buffer, gives the order of every stable sort. Ties occur at finite keys, under
+\verb|-C 0| or a subnormal \verb|-C|, where two moduli of equal density get equal keys (such as $15$
+and $45$, or $7$ and $49$), and at $+\infty$ under huge values of \verb|-C|; on all of them a stable
+merge sort gives the order of glibc's \verb|qsort|, since each sort takes its input in the order of
+the C code.
 
 \section{The constants}\label{sec:moduliConstants}
 
@@ -323,20 +343,20 @@ glibc's \verb|qsort|, since each sort takes its input in the order of the C code
   of a block, $16$ (\csource{find_points.c}{3729}{3731}, \csource{find_points.c}{3732}{3734}). The
   length of the blocks that a build may fix, \verb|RP_BLOCK_LEN|, is a constant of type
   \verb|Option Nat|, none in the default build, with the decided fact that a length it fixes is
-  positive, which the loops over the steps of a block need to end. The offset and the two defaults
-  are the constants of the parameters of the executable (Definition~\verb|def:sieveParams|), which
-  move here with their links at I.1, so that the options of the sieve
-  (Definition~\ref{def:sieveOptions}) read them from this node.
+  positive, which the loops over the steps of a block need to end. The offset and the two defaults,
+  the constants of the parameters of the executable until stage~I, are read by the tuning and the
+  normalization of the options of the sieve (Definition~\ref{def:sieveOptions}).
 \end{definition}
 
 As for the constants of the earlier stages, no proof depends on their values: every proof holds for
 any values of the doubles, and of the new natural numbers the proofs use only that a fixed block
-length is positive. The build with other values of the constants learns \verb|Float| constants and
-the option, and its variants include the lag $0$ and $1$, the block lengths $1$ and $3$ and one
-block wanted, never a block length $0$. A \verb|#guard| checks the bits of every \verb|Float|
+length is positive. The build with other values of the constants varies the \verb|Float| constants
+and the option too, and its variants include the lag $0$ and $1$, the block lengths $1$ and $3$ and
+one block wanted, never a block length $0$. A \verb|#guard| checks the bits of every \verb|Float|
 literal against those that gcc compiles for the macro. \verb|RATPOINTS_DEFAULT_SP1|
 (\csource{ratpoints.h}{42}{42}), which the model had as $\mathrm{defaultSp1}$ for the parameters of
-the executable, goes with them at I.12: the C code reads it nowhere.
+the executable until stage~I, is excluded: the C code reads it nowhere
+(Section~\ref{sec:moduliDeviations}).
 
 \section{The densities and the entries}\label{sec:densities}
 
@@ -349,19 +369,17 @@ the executable, goes with them at I.12: the C code reads it nowhere.
   the C code (\csource{find_points.c}{2306}{2329}); and the loop that sets the bits of \verb|gsq|,
   the multiples $t$ of $p$ below $p^e$ at which the reversed form $\tilde f(t)$ is a square modulo
   $p^e$, split off (\csource{find_points.c}{2294}{2300}). With them the components of the earlier
-  chapters gain the densities and the fields that the choice and the correction read. The
+  chapters have the densities and the fields that the choice and the correction read. The
   examination of a prime (Definition~\ref{def:examinePrimeExit}) returns, beside the table and the
   coefficients modulo $p$, the C code's code ($0$, $1$ or $2$; at the code $-1$, the exit, it
-  returns none, as before) and the density, counting $n_p$ in its loop over the residues; its link
-  becomes \verb|find_points.c:1761-1781|. The examination of a prime power
+  returns none) and the density, counting $n_p$ in its loop over the residues (its range is
+  \verb|find_points.c:1761-1781|). The examination of a prime power
   (Definition~\ref{def:examinePower}) takes whether denominators divisible by $p$ occur and returns
   the density with its tables, and the power is useful when its density is below $1 - 10^{-9}$
-  (\lname{Ratpoints.Sieve.Power.useful}, line 2330, which joins that node); its links become
-  \verb|find_points.c:2267-2282|, \verb|find_points.c:2285-2293|, \verb|find_points.c:2301|,
-  \verb|find_points.c:2330| and \verb|find_points.c:2331|. A sieve entry
-  (Definition~\ref{def:SieveEntry}) gains its density $r$ and the count \verb|nf| of its factors
-  ($0$ for a prime, $1$ for a prime power, the number of factors of a product), which the correction
-  reads; a forbidden divisor tested with words (Definition~\ref{def:forbidden}) gains the reciprocal
+  (\verb|Ratpoints.Sieve.Power.useful|, line 2330, in that node). A sieve entry
+  (Definition~\ref{def:SieveEntry}) has its density $r$ and the count \verb|nf| of its factors ($0$
+  for a prime, $1$ for a prime power, the number of factors of a product), which the correction
+  reads; a forbidden divisor tested with words (Definition~\ref{def:forbidden}) has the reciprocal
   of its prime, with which each block starts its words.
 \end{definition}
 
@@ -374,11 +392,13 @@ the executable, goes with them at I.12: the C code reads it nowhere.
   as part of the invariant; the rows of a prime power, which do not depend on whether denominators
   divisible by $p$ occur. A forbidden divisor tested with words has the reciprocal of its prime. The
   soundness of a factor of a modulus holds for every modulus that the factor divides: a prime factor
-  for $p \mid m$, a prime power factor for $p^e \mid m$, with $1 \le e$; and an odd modulus
-  $1 < m < \mathrm{maxPrimeEven}$ whose factors are sound and multiply to $m$ has a sound sieve
-  entry, whatever its density, count, reference and builder, with the inverse of
-  $\mathrm{rbaLength}$ modulo a prime read from its table of inverses at the remainder by the
-  reciprocal, and the products of the packing within $64$ bits.
+  for $p \mid m$, a prime power factor for $p^e \mid m$, with $1 \le e$ and
+  $0 < m < \mathrm{maxPrimeEven}$, for either path of the reduction and whether denominators
+  divisible by $p$ occur or not; an odd modulus $1 < m < \mathrm{maxPrimeEven}$ whose factors are
+  sound and multiply to $m$ has, with an inverse of $\mathrm{rbaLength}$ modulo $m$, a sound sieve
+  entry, whatever its density, count, reference and builder; the inverse of $\mathrm{rbaLength}$
+  modulo a prime is read from its table of inverses at the remainder by the reciprocal; and the
+  products of the packing stay within $64$ bits.
 \end{lemma}
 
 \begin{proof}
@@ -388,8 +408,8 @@ the executable, goes with them at I.12: the C code reads it nowhere.
   The contracts of the examinations take the new parts as values: the density is a \verb|Float| that
   no proof reads, and the count of the residues is the number of true entries of the table, a
   conjunct of the invariant of the loop. The soundness of the entries of composite moduli is that of
-  Lemma~\ref{lem:sieveEntry_admits}, freed from the factorization of the explicit route: it reads
-  only the divisibility of the modulus by each factor and their product.
+  Lemma~\ref{lem:sieveEntry_admits}, for any factors whose moduli divide the modulus and multiply to
+  it: it reads only the divisibility of the modulus by each factor and their product.
 \end{proof}
 
 \section{The cost model}\label{sec:costs}
@@ -464,21 +484,21 @@ and \verb|pow| are not correctly rounded, and glibc chooses their variant by the
 (Section~\ref{sec:moduliC}), so that the choice depends on the machine and the model agrees with
 ratpoints on one machine. On glibc the Lean runtime binds an older symbol version of \verb|log| and
 \verb|pow| than ratpoints does, the two versions giving the same values on every argument that
-occurs here ($x \ge 0$ for \verb|log|, a base in $(0, 1]$ and a positive exponent for \verb|pow|)
-and differing only in \verb|errno| and in the sign of the NaN of the logarithm of a negative number;
-$\log 2$, which gcc folds into the value of glibc at compile time, the model computes at run time,
-with the same value; \verb|ceil| and \verb|floor|, exact, are calls of the library where gcc
-compiles instructions. Every expression keeps the order of the operations of the C code, and every
-comparison is the C code's, also where a NaN can arise (\verb|-W inf| with \verb|-A 2| makes
-$0 \cdot \infty$ in the correction). The cost model has no contracts: no proof reads a value of a
-\verb|Float|, so that every theorem holds for whatever values the model computes, and the choice is
-free, for the proofs, among the values that satisfy the caps of the natural numbers of the C code. A
-double that the caller gives (a tuning value, an end of a search interval) enters the arithmetic by
-its bits (\lname{Ratpoints.Double.toFloat}, which joins Definition~\ref{def:Double} with I.3); a
-double of the cost model that the report prints leaves it so (\lname{Ratpoints.Double.ofFloat},
-which joins that node with I.15). No \verb|#guard| pins a value of \verb|log| or \verb|pow|, nor an
-output that depends on the choice of the moduli, since the guards run on whatever machine builds the
-project.
+occurs here ($x \ge 0$ for \verb|log|, a base in $[0, 1]$ and a positive exponent for \verb|pow|,
+with $\mathrm{pow}(+0, y) = +0$ for $y > 0$ in both versions) and differing only in \verb|errno| and
+in the sign of the NaN of the logarithm of a negative number; $\log 2$, which gcc folds into the
+value of glibc at compile time, the model computes at run time, with the same value; \verb|ceil| and
+\verb|floor|, exact, are calls of the library where gcc compiles instructions. Every expression
+keeps the order of the operations of the C code, and every comparison is the C code's, also where a
+NaN can arise (\verb|-W inf| with \verb|-A 2| makes $0 \cdot \infty$ in the correction). The cost
+model has no contracts: no proof reads a value of a \verb|Float|, so that every theorem holds for
+whatever values the model computes, and the choice is free, for the proofs, among the values that
+satisfy the caps of the natural numbers of the C code. A double that the caller gives (a tuning
+value, an end of a search interval) enters the arithmetic by its bits
+(\verb|Ratpoints.Double.toFloat|, in Definition~\ref{def:Double}); a double of the cost model that
+the report prints leaves it so (\verb|Ratpoints.Double.ofFloat|, in the same node). No \verb|#guard|
+pins a value of \verb|log| or \verb|pow|, nor an output that depends on the choice of the moduli,
+since the guards run on whatever machine builds the project.
 
 \section{The choice of the moduli}\label{sec:choice}
 
@@ -486,19 +506,18 @@ project.
   \uses{def:Double, def:choiceConstants}
   \lean{Ratpoints.SieveOptions, Ratpoints.SieveOptions.normalize, Ratpoints.SieveOptions.tuning}
   \leanok
-  The fields of the arguments of the library that tune the
-  sieve, as the caller gives them: the number of primes to look at, the cut points and the number of
-  primes of the third stage, the bound of the forbidden divisors and the values of \verb|-R| and
-  \verb|-A|, as integers for the C \verb|long|s, $-1$ when absent; the values of \verb|-r|,
-  \verb|-U|, \verb|-C|, \verb|-Q| and \verb|-W|, doubles by their bits
-  (Definition~\ref{def:Double}), $-1.0$ when absent (\lname{Ratpoints.Double.minusOne}, which joins
-  that node with I.8); the array size, an integer, $\mathrm{defaultArraySize}$ by default, any value
-  at most $0$ standing for it; and the Jacobi switch, a Boolean for the bit
-  \verb|RATPOINTS_NO_JACOBI| (\csource{main.c}{337}{347}, \csource{main.c}{349}{350},
-  \csource{main.c}{352}{352}, \csource{ratpoints.h}{365}{367}). Their normalization by the search:
-  the number of primes $\mathrm{defaultNumPrimes}$ for a negative one and at most
-  $\mathrm{numPrimes}$, the end of the second stage at most that number and the end of the first at
-  most that of the second when the second is given, the bound of the forbidden divisors
+  The fields of the arguments of the library that tune the sieve, as the caller gives them: the
+  number of primes to look at, the cut points and the number of primes of the third stage, the bound
+  of the forbidden divisors and the values of \verb|-R| and \verb|-A|, as integers for the C
+  \verb|long|s, $-1$ when absent; the values of \verb|-r|, \verb|-U|, \verb|-C|, \verb|-Q| and
+  \verb|-W|, doubles by their bits (Definition~\ref{def:Double}), $-1.0$ when absent
+  (\verb|Ratpoints.Double.minusOne|, in that node); the array size, an integer,
+  $\mathrm{defaultArraySize}$ by default, any value at most $0$ standing for it; and the Jacobi
+  switch, a Boolean for the bit \verb|RATPOINTS_NO_JACOBI| (\csource{main.c}{337}{347},
+  \csource{main.c}{349}{350}, \csource{main.c}{352}{352}, \csource{ratpoints.h}{365}{367}). Their
+  normalization by the search: the number of primes $\mathrm{defaultNumPrimes}$ for a negative one
+  and at most $\mathrm{numPrimes}$, the end of the second stage at most that number and the end of
+  the first at most that of the second when the second is given, the bound of the forbidden divisors
   $\mathrm{defaultMaxForbidden}$ for a negative one and at most the size of the table
   (\csource{find_points.c}{4643}{4649}, \csource{find_points.c}{4655}{4656},
   \csource{find_points.c}{4662}{4665}), the array size normalized with the height bound where it is
@@ -509,18 +528,17 @@ project.
   where the C code reads them (Section~\ref{sec:moduliC}).
 \end{definition}
 
-The result of the choice, $\mathrm{Params}$ (Definition~\ref{def:Params}), becomes internal to the
-search: the moduli in the order of the stages with the reserve last, how many primes the loop of the
-tables examined ($\mathrm{examined}$, which bounds the first forbidden divisors and the factors of
-the composite moduli) and how many were looked at in all ($\mathrm{lookedAt}$, which the report
-prints), the cut points $s_1 \le s_2 \le s_3$, the bound of the forbidden divisors, the Jacobi
-switch, the array size, and the estimates that the correction reads, the words and the denominators
-of the run, the cost of a check relative to the reference and the words of the first correction, a
-\verb|UInt64| (\csource{ratpoints.h}{368}{368}, \csource{ratpoints.h}{395}{397},
-\csource{ratpoints.h}{406}{406}). The fields $s_3$, $\mathrm{lookedAt}$, the estimates, the cost of
-a check and the words of the first correction come with the choice (I.8), and the parameters of the
-executable fill them, until I.12 deletes those, with values that the run of the explicit route does
-not read.
+The result of the choice, $\mathrm{Params}$ (Definition~\ref{def:Params}), is internal to the
+search: the cut points $s_1 \le s_2 \le s_3$, positions in the sieve entries of the choice, the rest
+of which is the reserve of the correction; how many primes were looked at in all
+($\mathrm{lookedAt}$, which the report prints); the bound of the forbidden divisors, the Jacobi
+switch and the array size; and the estimates that the correction reads, the words and the
+denominators of the run, the cost of a check relative to the reference and the words of the first
+correction, a \verb|UInt64| (\csource{ratpoints.h}{368}{368}, \csource{ratpoints.h}{395}{397},
+\csource{ratpoints.h}{406}{406}). The moduli come to the run as their sieve entries
+(Definition~\ref{def:choice}); how many primes the loop of the tables examined before the third
+stage stays inside the choice, and the final \verb|pn_lim| of \verb|sieving_info| is
+$\mathrm{lookedAt}$.
 
 \begin{definition}[The composite moduli]\label{def:compositeModuli}
   \uses{def:costModel, def:densities, def:SieveEntry, def:mulMod, def:modinv, def:packingConstants}
@@ -574,15 +592,14 @@ not read.
     def:sieveOptions, def:compositeModuli, def:examinePrimeExit}
   \lean{Ratpoints.TableLoop, Ratpoints.examineInLoop, Ratpoints.raiseLimit, Ratpoints.tablesLoop, Ratpoints.choiceEstimate, Ratpoints.checkRelOf, Ratpoints.adaptStart}
   \leanok
-  The state of the loop: the pool of the
-  candidates, the number of primes to look at, the primes that say only coprimality, the table and
-  the density of each prime that says something, whether denominators divisible by each prime occur,
-  the forbidden divisors and the store (\csource{find_points.c}{2537}{2539},
-  \csource{find_points.c}{2545}{2545}, \csource{find_points.c}{2547}{2547},
-  \csource{find_points.c}{2566}{2567}); one prime examined in the loop, with the exit, its candidate
-  keyed for the first stage when it says something and its forbidden divisor
-  (\csource{find_points.c}{2606}{2626}, \csource{find_points.c}{2677}{2677}); the decision to look
-  at one more prime, after the in-place sort of the pool by key
+  The state of the loop: the pool of the candidates, the number of primes to look at, the primes
+  that say only coprimality, the table and the density of each prime that says something, whether
+  denominators divisible by each prime occur, the forbidden divisors and the store
+  (\csource{find_points.c}{2537}{2539}, \csource{find_points.c}{2545}{2545},
+  \csource{find_points.c}{2547}{2547}, \csource{find_points.c}{2566}{2567}); one prime examined in
+  the loop, with the exit, its candidate keyed for the first stage when it says something and its
+  forbidden divisor (\csource{find_points.c}{2606}{2626}, \csource{find_points.c}{2677}{2677}); the
+  decision to look at one more prime, after the in-place sort of the pool by key
   (\csource{find_points.c}{2694}{2705}); the loop over the positions of the table that ends when the
   position reaches the number to look at, which the body raises, at most $\mathrm{numPrimes}$
   (\csource{find_points.c}{2601}{2605}, \csource{find_points.c}{2693}{2693},
@@ -597,17 +614,17 @@ not read.
   \uses{def:costModel, def:runShape, def:examinePrimeExit, def:compositeModuli, def:sieveOptions}
   \lean{Ratpoints.bestByR, Ratpoints.rTyp, Ratpoints.ThirdState, Ratpoints.lookFurther, Ratpoints.thirdStage, Ratpoints.survivorsAtThird, Ratpoints.thirdOf}
   \leanok
-  The candidate of least density from a position
-  on, the first on ties (\csource{find_points.c}{2955}{2961}); the mean density of the candidates
-  that say more than coprimality, $1$ for none (\csource{find_points.c}{2982}{2991}); the state of
-  the stage (\csource{find_points.c}{2922}{2922}, \csource{find_points.c}{2933}{2933}); one more
-  prime looked at, with the exit when the curve has no points modulo it
-  (\csource{find_points.c}{2976}{2978}, \csource{find_points.c}{2994}{3008}); the loop of the stage,
-  the candidate taken moved to its end (\csource{find_points.c}{2949}{2950},
-  \csource{find_points.c}{2973}{2975}, \csource{find_points.c}{2980}{2981},
-  \csource{find_points.c}{2992}{2993}, \csource{find_points.c}{3009}{3016}); the survivors per
-  denominator expected at its start (\csource{find_points.c}{2941}{2947}); and the stage after the
-  first two, with the number of primes it wants and its costs per survivor and per denominator
+  The candidate of least density from a position on, the first on ties
+  (\csource{find_points.c}{2955}{2961}); the mean density of the candidates that say more than
+  coprimality, $1$ for none (\csource{find_points.c}{2982}{2991}); the state of the stage
+  (\csource{find_points.c}{2922}{2922}, \csource{find_points.c}{2933}{2933}); one more prime looked
+  at, with the exit when the curve has no points modulo it (\csource{find_points.c}{2976}{2978},
+  \csource{find_points.c}{2994}{3008}); the loop of the stage, the candidate taken moved to its end
+  (\csource{find_points.c}{2949}{2950}, \csource{find_points.c}{2973}{2975},
+  \csource{find_points.c}{2980}{2981}, \csource{find_points.c}{2992}{2993},
+  \csource{find_points.c}{3009}{3016}); the survivors per denominator expected at its start
+  (\csource{find_points.c}{2941}{2947}); and the stage after the first two, with the number of
+  primes it wants and its costs per survivor and per denominator
   (\csource{find_points.c}{2926}{2932}).
 \end{definition}
 
@@ -616,13 +633,12 @@ not read.
     def:forbidden, def:Params, def:sieveOptions, def:storeTables}
   \lean{Ratpoints.SievingInfo, Ratpoints.choiceEnd, Ratpoints.choiceTail, Ratpoints.sievingInfo}
   \leanok
-  What the choice gives the search: the
-  result of the choice, the sieve entries of all its moduli, the reserve included, their
-  reciprocals, the forbidden divisors tested with words and by their valuations, the store of the
-  tables of rows and the switch of the checked loop (\csource{ratpoints.h}{389}{389},
-  \csource{ratpoints.h}{391}{391}); the end of the choice: the third stage and the reserve sorted by
-  density from the end of the second stage on, the entries of all the candidates in their order,
-  their reciprocals and the store with the tables of all of them
+  What the choice gives the search: the result of the choice, the sieve entries of all its moduli,
+  the reserve included, their reciprocals, the forbidden divisors tested with words and by their
+  valuations, the store of the tables of rows and the switch of the checked loop
+  (\csource{ratpoints.h}{389}{389}, \csource{ratpoints.h}{391}{391}); the end of the choice: the
+  third stage and the reserve sorted by density from the end of the second stage on, the entries of
+  all the candidates in their order, their reciprocals and the store with the tables of all of them
   (\csource{find_points.c}{3017}{3017}, \csource{find_points.c}{3024}{3034},
   \csource{find_points.c}{3064}{3070}); the choice after the loop of the tables: the estimate again
   with the forbidden divisors, the keys again, the composite moduli offered, the sort by key, the
@@ -635,33 +651,6 @@ not read.
   \csource{find_points.c}{2595}{2596}, \csource{find_points.c}{2794}{2795},
   \csource{find_points.c}{3102}{3103}).
 \end{definition}
-
-The function keeps the name of the explicit $\mathrm{sievingInfo}$ of stage~F1
-(Definition~\verb|def:sievingInfo|), which made the entries of given moduli, and its contract the
-names of the contract of that one (\verb|IsSievingInfo|, \verb|sievingInfo_spec|,
-Lemma~\verb|lem:sievingInfo|): I.8 renames the explicit function and its contract to
-\lname{Ratpoints.sievingInfoOf}, \lname{Ratpoints.IsSievingInfoOf} and
-\lname{Ratpoints.sievingInfoOf\_spec}, which then no longer model C code and which
-Definition~\verb|def:sievingInfo| and Lemma~\verb|lem:sievingInfo| carry until I.12 deletes them
-with the explicit route. The C ranges move to the components above from the definitions of the
-explicit route, each with the item that brings its new owner. With I.3 the lines 1619-1623 of
-\verb|find_points.c| go from the parameters of the executable (Definition~\verb|def:sieveParams|) to
-the offset of the second stage (Definition~\ref{def:costModel}). With I.7: from the parameters of
-the executable the lines 2503, 2845-2846, 2864-2869, 2922, 2949, 2973-2975, 2980 and 3015; from the
-factors of a modulus (Definition~\verb|def:modulusFactors|) its lines 2362, 2365, 2370-2386 and
-2396-2400; from the sieve entry of a modulus (Definition~\verb|def:makeModulus|) its lines
-2350-2354, 2358-2359, 2387-2395, 2414-2426, 2428-2429, 2434-2470, 2472-2475, 2976-2978 and
-2994-2998; and from the explicit $\mathrm{sievingInfo}$ its lines 2894-2900. With I.8: from the
-parameters of the executable the lines 2566, 2571-2572, 2599, 2693-2705, 2808, 2815, 2926-2928 and
-3017, and 4643-4649, 4655-4656, 4662-4665 and \verb|main.c:347| to
-Definition~\ref{def:sieveOptions}; from the loop of the tables of stage~F1
-(Definition~\verb|def:examinePrimes|) its lines 2537, 2545, 2601-2602, 2605-2614, 2616, 2619, 2622,
-2624-2626, 2677 and 2707; from the sieve entry of a modulus its lines 2546 and 2548; from the
-explicit $\mathrm{sievingInfo}$ its lines 2522-2532, 3064-3070 and 3102-3103; and from the search of
-the polynomial (Definition~\ref{def:searchPoints}) its lines 2794-2795, the switch of the checked
-loop. The line 4577 and \verb|main.c:221-222| go with I.10 to the search and to the program. The
-comment lines among them (2369, 2793, 2892-2893) are left to no declaration. Nothing of the explicit
-route models C code after I.10.
 
 \begin{lemma}[The pool of the candidates]\label{lem:choicePool}
   \uses{def:costModel, def:firstStages, def:thirdStage, def:sieveOptions}
@@ -706,9 +695,11 @@ route models C code after I.10.
 \begin{proof}
   \uses{lem:examinePrime_eq, lem:examinePrime_none, def:stage3, lem:stage3}
   \leanok
-  The contracts follow the loops of \verb|add_moduli| (three nested, with the measures
-  $2(\mathrm{pnLim} - \mathrm{pn}) + \mathrm{ok}$, $\mathrm{pnLim} - \mathrm{pn}$ and the cofactor)
-  and of the third stage (with the measure
+  The contracts follow the loops of \verb|add_moduli|, the loop over the odd $m$ with the measure
+  $\mathrm{maxPrimeEven} - m$ and, in the factorization of a candidate, the loop over the primes,
+  the search for the prime of the cofactor and the division, with the measures
+  $2(\mathrm{pnLim} - \mathrm{pn}) + \mathrm{ok}$, $\mathrm{pnLim} - \mathrm{pn}$ and the cofactor,
+  and the loop of the third stage (with the measure
   $(\mathrm{numPrimes} - \mathrm{pnLim}) + (\mathrm{want} - s_3)$). The soundness of a composite
   entry is that of Lemma~\ref{lem:densities}, for the factors named by the codes, whose moduli
   divide $m$ and multiply to it; the soundness of a factor reads only the divisibility. The exit of
@@ -720,38 +711,36 @@ route models C code after I.10.
     lem:examinePrime_none, lem:storeTables, def:decisionWF}
   \lean{Ratpoints.IsSievingInfo, Ratpoints.sievingInfo_spec, Ratpoints.TableLoop.WF, Ratpoints.TableLoop.wf_init, Ratpoints.TablesLoopInvariant, Ratpoints.examineInLoop_spec, Ratpoints.raiseLimit_spec, Ratpoints.tablesLoop_spec, Ratpoints.IsChoiceEntries, Ratpoints.isChoiceEntries_choiceEnd, Ratpoints.isSievingInfo_choiceEnd, Ratpoints.ChoicePoolWF.sortFrom, Ratpoints.ChoicePoolWF.exists_isChoiceEntry, Ratpoints.firstStages_post, Ratpoints.thirdOf_spec, Ratpoints.choiceTail_spec, Ratpoints.Sieve.RowStore.MadeFor.foldl_addTables, Ratpoints.SieveOptions.numPrimes_normalize_le, Ratpoints.SieveOptions.maxForbidden_normalize_nonneg}
   \leanok
-  For options that look at no more
-  than $\mathrm{numPrimes}$ primes and test a nonnegative number of forbidden divisors, as the
-  normalized options do, the checked loop only for even degree, and any values of the doubles: an
-  exit of the choice, at a prime of the loop of the tables or of the third stage without points
-  modulo it, means that the curve has no points of any height; and otherwise the result is what the
-  run needs ($\mathrm{IsSievingInfo}$): every sieve entry sound, with the fields that the packing
-  reads and the tables of inverses of its factors; an entry that counts no factor a prime entry of
-  the table; the reciprocals those of the moduli of the entries, in their order; the first decision
-  $(0, s_2, s_3)$ well formed (Definition~\ref{def:decisionWF}: $s_1 \le s_2 \le s_3 \le$ the number
-  of the entries, and every entry from $s_2$ on counting no factor); the forbidden divisors sound;
-  the store with the tables of all the entries, the reserve included; and the checked loop only for
-  even degree.
+  For options that look at no more than $\mathrm{numPrimes}$ primes and test a nonnegative number of
+  forbidden divisors, as the normalized options do, the checked loop only for even degree, and any
+  values of the doubles: an exit of the choice, at a prime of the loop of the tables or of the third
+  stage without points modulo it, means that the curve has no points of any height; and otherwise
+  the result is what the run needs ($\mathrm{IsSievingInfo}$): every sieve entry sound, with the
+  fields that the packing reads and the tables of inverses of its factors; an entry that counts no
+  factor a prime entry of the table; the reciprocals those of the moduli of the entries, in their
+  order; the first decision $(0, s_2, s_3)$ well formed (Definition~\ref{def:decisionWF}:
+  $s_1 \le s_2 \le s_3 \le$ the number of the entries, and every entry from $s_2$ on counting no
+  factor); the forbidden divisors sound; the store with the tables of all the entries, the reserve
+  included; and the checked loop only for even degree.
 \end{lemma}
 
 \begin{proof}
   \leanok
   The loop of the tables keeps at most $\mathrm{numPrimes}$ primes to look at, the tables of the
-  primes those of the reference at their positions, every candidate a prime, the forbidden divisors
-  sound and the store that of the primes examined (the invariant of the loop,
-  \lname{Ratpoints.TablesLoopInvariant}, that of the loop of stage~F1 with the candidates); the
-  composite moduli and the stages keep the pool of Lemma~\ref{lem:compositeModuli}, and at the end
-  of the choice every candidate has its entry, so that the entries line up with the candidates and
-  the cut points with both. The doubles enter only through values that no conjunct reads.
+  primes those of \verb|Ratpoints.Sieve.examinePrime| at their positions, every candidate a prime,
+  the forbidden divisors sound and the store that of the primes examined (the invariant of the loop,
+  \verb|Ratpoints.TablesLoopInvariant|, on the state \verb|Ratpoints.TableLoop.WF|); the composite
+  moduli and the stages keep the pool of Lemma~\ref{lem:compositeModuli}, and at the end of the
+  choice every candidate has its entry, so that the entries line up with the candidates and the cut
+  points with both. The doubles enter only through values that no conjunct reads.
 \end{proof}
 
-The proofs need no well-formedness of $\mathrm{Params}$ any more: $\mathrm{Params.WF}$, a hypothesis
-of every theorem since stage~C1, is replaced by $\mathrm{IsSievingInfo}$ for the result of the
-choice and by the well-formedness of each decision of the correction (Lemma~\ref{lem:correctionWF}),
-so that the route of the proofs is the contract of the run for every result of the choice that has
-$\mathrm{IsSievingInfo}$ and every decision that is well formed. I.12 deletes $\mathrm{Params.WF}$,
-its decidability instance and its lemmas, with \lname{Ratpoints.getElem!\_primeTable\_inj}, which no
-proof uses then, and rewords the docstrings of the model that name it.
+The proofs need no well-formedness of $\mathrm{Params}$: the hypothesis $\mathrm{Params.WF}$ of the
+theorems of stages~C1 to~H is gone, with its decidability instance and its lemmas, replaced by
+$\mathrm{IsSievingInfo}$ for the result of the choice and by the well-formedness of each decision of
+the correction (Lemma~\ref{lem:correctionWF}), so that the route of the proofs is the contract of
+the run for every result of the choice that has $\mathrm{IsSievingInfo}$ and every decision that is
+well formed.
 
 \section{The counters}\label{sec:counters}
 
@@ -764,16 +753,16 @@ proof uses then, and rewords the docstrings of the model that name it.
   \verb|unsigned long|s of the C code do (\csource{rp-private.h}{579}{581}): a record of its own,
   passed beside the delivery and returned with it, so that the delivery of stage~G, and with it the
   initial delivery $\langle \mathrm{info}, 0, \mathrm{false}\rangle$ of the protocol statement, does
-  not change. The components count where the C code counts, within the lines that they model
-  already: the test of a candidate (Definition~\ref{def:accepted}) the coprime numerators after the
-  test for common factors and the checks after the third stage, returning the counters with its
-  verdict; the walk through the set bits of a word (Definition~\ref{def:walkWord}) each numerator
-  extracted, in both arms of the extraction (Definition~\ref{def:siftBitArray}); the scan of a piece
+  not change. The components count where the C code counts, within the lines that they model: the
+  test of a candidate (Definition~\ref{def:accepted}) the coprime numerators after the test for
+  common factors and the checks after the third stage, returning the counters with its verdict; the
+  walk through the set bits of a word (Definition~\ref{def:walkWord}) each numerator extracted, in
+  both arms of the extraction (Definition~\ref{def:siftBitArray}); the scan of a piece
   (Definition~\ref{def:scanPiece}) each bit array that is not zero after the first stage; one piece
   (Definition~\ref{def:siftPiece}) its $n\,\mathrm{rbaPack}$ words, multiplied as \verb|UInt64|s as
   the C code multiplies the \verb|unsigned long| by \verb|RBA_PACK|; the bits of an interval
   (Definition~\ref{def:siftBits}) passes them through its pieces; and one denominator
-  (Definition~\ref{def:sift}) its call, gaining the link \verb|rp-private.h:585|, the fields of the
+  (Definition~\ref{def:sift}) its call, with the link \verb|rp-private.h:585|, the fields of the
   sieving thread that it keeps.
 \end{definition}
 
@@ -789,14 +778,14 @@ proof uses then, and rewords the docstrings of the model that name it.
   numerators of a denominator $b$, their number, those coprime to $b$ and those that pass the test
   for common factors and the third stage, which for $|a| \le H < 2^{63}$, $0 < b < 2^{63}$ and prime
   entries of the third stage are the numerators with $\gcd(a, b) = 1$ and those of them that survive
-  the entries; for a bit array, the test of the numerators of its set bits; for a piece, its words,
-  the bit arrays that hold a bit that passes the class test, the first stage and the masks, and the
-  test of the numerators that pass all the stages; for the bits of an interval, the words of all its
-  bit arrays, the bit arrays holding a bit in the interval that passes the first stage, and the test
-  of the numerators in the interval that pass all the stages; and for one denominator, one call plus
-  the counts of its intervals up to the first that ends the denominator. The contract of one
-  denominator (Definition~\ref{def:sift}) gains this as a third conjunct, beside the store and the
-  delivery.
+  the entries, each count a $64$-bit word; for a bit array, the test of the numerators of its set
+  bits; for a piece, its words, the bit arrays that hold a bit that passes the class test, the first
+  stage and the masks, and the test of the numerators that pass all the stages; for the bits of an
+  interval, the words of all its bit arrays, the bit arrays holding a bit in the interval that
+  passes the first stage, and the test of the numerators in the interval that pass all the stages;
+  and for one denominator, one call plus the counts of its intervals before the first at which its
+  sieve returns. The contract of one denominator (Definition~\ref{def:sift}) has this as a third
+  conjunct, beside the store and the delivery.
 \end{lemma}
 
 \begin{proof}
@@ -946,10 +935,10 @@ proof uses then, and rewords the docstrings of the model that name it.
   The denominators of the steps of block $i$, before the tests of the shape, concatenated over the
   blocks of the run in order, are the denominators of the shape from $b_{\mathrm{low}}$ to
   $b_{\mathrm{high}}$ in the order of its loop, the listing of stage~E (Definition~\ref{def:Shape}),
-  a definition of the proofs since the run sifts the blocks;
-  lists made block by block that agree on each block with lists of the denominators give those lists
-  over the listing filtered by the test of the shape; and when the listing has no duplicates, a
-  denominator lies in at most one block.
+  a definition of the proofs (\verb|Ratpoints/Proof/Shapes.lean|); lists made block by block that
+  agree on each block with lists of the denominators give those lists over the listing filtered by
+  the test of the shape; and when the listing has no duplicates, a denominator lies in at most one
+  block.
 \end{lemma}
 
 \begin{proof}
@@ -1032,7 +1021,7 @@ proof uses then, and rewords the docstrings of the model that name it.
   \csource{find_points.c}{4114}{4127}).
 \end{definition}
 
-The run (Definition~\ref{def:sieveRun}) becomes the loop over the blocks: from the start of the
+The run (Definition~\ref{def:sieveRun}) is the loop over the blocks: from the start of the
 correction, for each block in turn, one block (Definition~\ref{def:runBlock}) with the decisions so
 far, the fold of its report, and a return after the block in which the callback stopped the search;
 it returns the delivery with the ends $s_2$ and $s_3$ of the last block folded, which the search
@@ -1100,20 +1089,20 @@ writes back (\csource{find_points.c}{5120}{5120}, \csource{find_points.c}{5152}{
   \uses{def:sieveRun, lem:correctionAfter, lem:runBlock, lem:blockDens, lem:deliver}
   \lean{Ratpoints.Sieve.blockPoints, Ratpoints.Sieve.SieveRunLoopInvariant, Ratpoints.Sieve.sieveRunLoopInvariant_nil, Ratpoints.Sieve.SieveRunLoopInvariant.pre, Ratpoints.Sieve.SieveRunLoopInvariant.quit, Ratpoints.Sieve.SieveRunLoopInvariant.append, Ratpoints.Sieve.SieveRunLoopInvariant.post, Ratpoints.Sieve.sieveRun_spec, Ratpoints.Sieve.fst_run_sieveRun, Ratpoints.Sieve.exists_run_sieveRun_eq_deliver}
   \leanok
-  For sieve entries whose factors have
-  their tables of inverses and whose entries that count no factor are prime entries, the reciprocals
-  of their moduli, the row offsets of the classes, the word of the classes that admit a numerator, a
-  well-formed decision of the choice, forbidden divisors with their reciprocals, $A \ge 1$,
-  $1 \le b_{\mathrm{low}}$, $b_{\mathrm{high}} < 2^{63}$ and $H < 2^{63}$, the run, with a callback
-  that has not stopped the search and a store that fits all the entries, delivers the points of its
-  blocks in order, each the points of the denominators of the block that pass the test of the shape
-  with the first $s_3$ entries of the decision of the block, a function of the block and its
-  decision, for every choice of the words of the classes and the ranges of the numerators. When the
-  listing of the shape has no duplicates there is, for each denominator $b$, a number $s_3(b)$ of
-  entries, the end of the third stage of the decision of its block, which depends neither on the
-  callback nor on the flags of the output, such that the run delivers, over the denominators of the
-  listing that pass the test of the shape, in order, the points of the check of the numerators in
-  the ranges of $b$ that pass its class word and survive the first $s_3(b)$ entries.
+  For sieve entries whose factors have their tables of inverses and whose entries that count no
+  factor are prime entries, the reciprocals of their moduli, the row offsets of the classes, the
+  word of the classes that admit a numerator, a well-formed decision of the choice, forbidden
+  divisors with their reciprocals, $A \ge 1$, $1 \le b_{\mathrm{low}}$, $b_{\mathrm{high}} < 2^{63}$
+  and $H < 2^{63}$, the run, with a callback that has not stopped the search and a store that fits
+  all the entries, delivers the points of its blocks in order, each the points of the denominators
+  of the block that pass the test of the shape with the first $s_3$ entries of the decision of the
+  block, a function of the block and its decision, for every choice of the words of the classes and
+  the ranges of the numerators. When the listing of the shape has no duplicates there is, for each
+  denominator $b$, a number $s_3(b)$ of entries, the end of the third stage of the decision of its
+  block, which depends neither on the callback nor on the flags of the output, such that the run
+  delivers, over the denominators of the listing that pass the test of the shape, in order, the
+  points of the check of the numerators in the ranges of $b$ that pass its class word and survive
+  the first $s_3(b)$ entries.
 \end{theorem}
 
 \begin{proof}
@@ -1130,12 +1119,12 @@ writes back (\csource{find_points.c}{5120}{5120}, \csource{find_points.c}{5152}{
   \uses{thm:blocks, thm:lag, lem:runBlock, lem:deliver}
   \lean{Ratpoints.Sieve.deliverSlots, Ratpoints.Sieve.DeliverSlotsInvariant, Ratpoints.Sieve.DeliverSlotsInvariant.quit, Ratpoints.Sieve.DeliverSlotsInvariant.append, Ratpoints.Sieve.deliverSlots_spec, Ratpoints.Sieve.toList_info_run_runBlock_appendPoint, Ratpoints.Sieve.run_deliverSlots_eq_fst_run_sieveRun}
   \leanok
-  The property that the pool of
-  threads of the C code preserves, which the model leaves out: block $i$ sifted alone into a slot
-  from the empty list, with the decisions after the folds of any $k_i \ge i - \mathrm{adaptLag}$
-  blocks and a store of its own that fits all the entries, gives exactly the points of block $i$;
-  and delivering the slots of the blocks in order to the callback, stopping at its first stop, gives
-  what the run delivers.
+  The property that the pool of threads of the C code preserves, which the model leaves out: under
+  the hypotheses of Theorem~\ref{thm:blocks}, block $i$ sifted alone into a slot from the empty
+  list, with the decisions after the folds of any $k_i \ge i - \mathrm{adaptLag}$ blocks and a store
+  of its own that fits all the entries, gives exactly the points of block $i$; and delivering the
+  slots of the blocks in order to a callback that has not stopped the search, stopping at its first
+  stop, gives what the run delivers.
 \end{theorem}
 
 \begin{proof}
@@ -1145,6 +1134,15 @@ writes back (\csource{find_points.c}{5120}{5120}, \csource{find_points.c}{5152}{
   is the delivery of the concatenation (Lemma~\ref{lem:deliver}).
 \end{proof}
 
+The pool of threads of the C code meets the hypotheses of Theorem~\ref{thm:threads}: a thread starts
+block $i$ only once the blocks before block $i - \mathrm{RP\_ADAPT\_LAG}$ are folded (lines
+4292-4296 of \verb|find_points.c|), so that the decisions for block $i$ come from a state of the
+correction that has folded every block at least $\mathrm{adaptLag} + 1$ before it; and the tables of
+rows that the threads share only gain complete rows, published once built (lines 180, 241, 391 and
+443 of \verb|init.c|), so that they fit all the entries whenever a thread reads them (lines 3160 and
+3533-3535 of \verb|find_points.c|). The theorem is proved but not certified, and the threads stay
+left out of the model (Section~\ref{sec:moduliDeviations}).
+
 \section{The search with the choice}\label{sec:choiceSearch}
 
 \begin{definition}[The search with the choice of the moduli]\label{def:chooseAndSearch}
@@ -1153,12 +1151,12 @@ writes back (\csource{find_points.c}{5120}{5120}, \csource{find_points.c}{5152}{
   \leanok
   The choice and the search after it, which the search of the polynomial
   (Definition~\ref{def:searchPoints}) calls after the 2-adic information: the choice of the moduli
-  (Definition~\ref{def:choice}) and nothing delivered at its exit, with the message of the exit
-  (I.15); the report of the choice and of its moduli (I.15); the points at infinity, after which the
-  search returns when the callback has stopped it; the lines before the sieve (I.15), after which it
-  returns when the Sturm step left no interval; and the sieving with the result of the choice
+  (Definition~\ref{def:choice}) and nothing delivered at its exit, with the message of the exit; the
+  report of the choice and of its moduli; the points at infinity, after which the search returns
+  when the callback has stopped it; the lines before the sieve, after which it returns when the
+  Sturm step left no interval; and the sieving with the result of the choice
   (Definition~\ref{def:sieving}), whose ends $s_2$ and $s_3$ of the last block, with $s_1$ of the
-  choice, give the numbers of the moduli used (I.13) (\csource{find_points.c}{4996}{5006},
+  choice, give the numbers of the moduli used (\csource{find_points.c}{4996}{5006},
   \csource{find_points.c}{5010}{5012}, \csource{find_points.c}{5100}{5103},
   \csource{find_points.c}{5105}{5106}, \csource{find_points.c}{5210}{5213}).
 \end{definition}
@@ -1169,10 +1167,10 @@ writes back (\csource{find_points.c}{5120}{5120}, \csource{find_points.c}{5152}{
     def:report}
   \lean{Ratpoints.findPointsWork, Ratpoints.findPointsVerbose}
   \leanok
-  The search of \verb|find_points_work_1| after the test of the leading zeros, with the report
-  (I.15): of the arguments, the reversal check, the search intervals, the Sturm step and the search,
-  with whether the caller left the number of primes to the library, a refusal coming with the data
-  of the callback as the report has left it (\csource{find_points.c}{4577}{4585}); and the search of
+  The search of \verb|find_points_work_1| after the test of the leading zeros, with the report: of
+  the arguments, the reversal check, the search intervals, the Sturm step and the search, with
+  whether the caller left the number of primes to the library, a refusal coming with the data of the
+  callback as the report has left it (\csource{find_points.c}{4577}{4585}); and the search of
   \verb|find_points| with the callback and the print channel, the refusals of the program in its
   order and then that search, a refusal coming with the data of the callback
   (\csource{find_points.c}{4523}{4528}, \csource{find_points.c}{4546}{4546},
@@ -1189,23 +1187,22 @@ writes back (\csource{find_points.c}{5120}{5120}, \csource{find_points.c}{5152}{
 The interface keeps its shape. A text is printed through the print channel of a search, a function
 that prints into the data of the callback, which holds the standard output of the caller, so that
 the report comes between the points as on the standard output of the C program
-(\lname{Ratpoints.Delivery.print}, which joins the delivery, Definition~\ref{def:delivery}, and
+(\verb|Ratpoints.Delivery.print|, in the node of the delivery, Definition~\ref{def:delivery}, which
 models no C code of its own). $\mathrm{findPointsWith}$ (Definition~\ref{def:findPointsWith}) takes
-the options $s$ of the sieve for the parameters and a trailing print channel, by default the channel
-that prints nothing, as without \verb|RATPOINTS_VERBOSE|, and is $\mathrm{findPointsVerbose}$ with
-the data of the callback dropped from a refusal; it models no C code of its own, its links going to
-$\mathrm{findPointsVerbose}$ and, the lines 4578-4585, to $\mathrm{findPointsWork}$.
-$\mathrm{findPoints}$ (Definition~\ref{def:findPoints}) takes $s$, by default the options of a run
-without options, and the appending callback, as before. The search of the polynomial
+the options $s$ of the sieve and a trailing print channel, by default the channel that prints
+nothing, as without \verb|RATPOINTS_VERBOSE|, and is $\mathrm{findPointsVerbose}$ with the data of
+the callback dropped from a refusal; it models no C code of its own, the lines of \verb|find_points|
+being those of $\mathrm{findPointsVerbose}$ and $\mathrm{findPointsWork}$. $\mathrm{findPoints}$
+(Definition~\ref{def:findPoints}) takes $s$, by default the options of a run without options, and
+the appending callback, as in the earlier stages. The search of the polynomial
 (Definition~\ref{def:searchPoints}) takes the normalized options, whether the caller left the number
 of primes to the library and the print channel, and calls $\mathrm{chooseAndSearch}$ after the
-2-adic information, its links of the choice and the sieve going there and its lines of the report to
-the report (Definition~\ref{def:report}). The sieving (Definition~\ref{def:sieving}) takes the
-options and the result of the choice and returns the ends $s_2$ and $s_3$ of the last block with the
-delivery. The outcome (Definition~\ref{def:Outcome}) gains the numbers of the moduli used, $0$ by
-default, its link \csource{ratpoints.h}{377}{383} in place of \csource{ratpoints.h}{377}{377}. The
-certified statements use $\mathrm{findPointsWith}$ with the print channel at its default, so that
-their text does not mention it.
+2-adic information, which holds the lines of the choice and the sieve, the lines of the report being
+those of the report (Definition~\ref{def:report}). The sieving (Definition~\ref{def:sieving}) takes
+the options and the result of the choice and returns the ends $s_2$ and $s_3$ of the last block with
+the delivery. The outcome (Definition~\ref{def:Outcome}) holds the numbers of the moduli used, $0$
+by default. The certified statements use $\mathrm{findPointsWith}$ with the print channel at its
+default, so that their text does not mention it.
 
 \begin{lemma}[The search with the default print channel]\label{lem:choiceSearch}
   \uses{def:findPointsVerbose, def:findPointsWith}
@@ -1222,13 +1219,13 @@ their text does not mention it.
   a refusal is the first component of its pair.
 \end{proof}
 
-The lemmas of the search are restated on the choice (I.11). A sound run (Lemma~\ref{lem:soundRun})
-no longer reads the end of the second stage: its sieve entries are sound, those that count no factor
-are prime entries, with the reciprocals, the tables of inverses, the row offsets of the classes for
-all the entries, the packings of the classes, the word of the classes and a store that fits all the
-entries; a result of the choice that has $\mathrm{IsSievingInfo}$ gives one after the row offsets,
-with a well-formed first decision (Lemma~\ref{lem:choice}, Definition~\ref{def:decisionWF}). The
-contract of the run of the search (\verb|Ratpoints.exists_isSoundTest_run_sieveRun|,
+The lemmas of the search speak about the choice. A sound run (Lemma~\ref{lem:soundRun}) does not
+read the end of the second stage: its sieve entries are sound, those that count no factor are prime
+entries, with the reciprocals, the tables of inverses, the row offsets of the classes for all the
+entries, the packings of the classes, the word of the classes and a store that fits all the entries;
+a result of the choice that has $\mathrm{IsSievingInfo}$ gives one after the row offsets, with a
+well-formed first decision (Lemma~\ref{lem:choice}, Definition~\ref{def:decisionWF}). The contract
+of the run of the search (\verb|Ratpoints.exists_isSoundTest_run_sieveRun|,
 Lemma~\ref{lem:searchList}) gives a sound test of the numerators block by block, $S(b, a)$ the test
 of the sieve with the first $s_3(b)$ entries of the decision of the block of $b$
 (Theorem~\ref{thm:blocks}), with the words that the packing gives, the ranges of the bounds, the
@@ -1244,21 +1241,27 @@ search (Definition~\ref{def:searchList}) for that test; an exit of the choice
 (Lemma~\ref{lem:choice}) or the 2-adic exit gives a curve without points, for which the test that
 lets nothing through is sound. The test depends on the search intervals, which the estimate of the
 run reads and with it the choice and the decisions; the contract quantifies the test after them, as
-in stage~H, and I.11 corrects the docstrings of both contracts, which still say otherwise. The
-theorems downstream keep their statements but for the parameters: the reduction to the list of the
-search under the exact check, where the survival of the entries drops out since the exact check
-decides, the theorems of stage~D on the reversal, the order of stage~E, which goes through the
-block-listing lemma (Lemma~\ref{lem:blockDens}), the protocol and the statements under
-\verb|RATPOINTS_NO_CHECK| of stage~G and those of the search region of stage~H, now for every $s$
-with no hypothesis on it.
+in stage~H. The theorems downstream have the statements of stage~H but for the parameters: the
+reduction to the list of the search under the exact check, where the survival of the entries drops
+out since the exact check decides, the theorems of stage~D on the reversal, the order of stage~E,
+which goes through the block-listing lemma (Lemma~\ref{lem:blockDens}), the protocol and the
+statements under \verb|RATPOINTS_NO_CHECK| of stage~G and those of the search region of stage~H, now
+for every $s$ with no hypothesis on it.
 
 \section{What comparator certifies}\label{sec:certifiedI}
 
-\verb|comparator/Challenge.lean| keeps the specification that it restates and its imports; from the
-model it no longer takes \verb|Params|, \verb|Params.WF| and \verb|sieveParams|. The eleven
-statements, for all $c$, $H$, options $s$ of the sieve and options $o$, with $D$ the values and
-$B_D$ the bits of the intervals of $o$, the search region that of $D$, $o.\mathrm{bLow}$ and
-$o.\mathrm{bHigh}$, and $h_S$ the hypothesis $0 \le o.\mathrm{sturm} \to \mathrm{SturmTheorem}$:
+\verb|comparator/Challenge.lean| restates, verbatim, the specification, which stage~I does not
+change: the definitions of \verb|Ratpoints/Spec/Basic.lean| that the statements read and those of
+\verb|Ratpoints/Spec/Order.lean|, \verb|Ratpoints/Spec/Region.lean| and
+\verb|Ratpoints/Spec/Sturm.lean|, with exactly the Mathlib modules among the public imports of these
+files (Section~\ref{sec:certifiedH}). From the model it takes \verb|bruteForce|, \verb|findPoints|,
+\verb|findPointsWith|, \verb|Outcome|, \verb|Answer|, \verb|Delivery|, \verb|Delivery.deliver|,
+\verb|Options|, \verb|Double|, \verb|SieveOptions|, \verb|maxDegree| and \verb|maxDivisors|, and no
+longer \verb|Params|, which is internal to the search, nor \verb|Params.WF| and \verb|sieveParams|,
+which are gone. The eleven statements, for all $c$, $H$, options $s$ of the sieve and options $o$,
+with $D$ the values and $B_D$ the bits of the intervals of $o$, the search region that of $D$,
+$o.\mathrm{bLow}$ and $o.\mathrm{bHigh}$, and $h_S$ the hypothesis
+$0 \le o.\mathrm{sturm} \to \mathrm{SturmTheorem}$:
 \begin{enumerate}
   \item a triple lies in $\mathrm{bruteForce}(c, H)$ exactly when it is a normalized point of height
     at most $H$ (\verb|challenge_mem_bruteForce_iff|, unchanged);
@@ -1297,23 +1300,35 @@ $o.\mathrm{bHigh}$, and $h_S$ the hypothesis $0 \le o.\mathrm{sturm} \to \mathrm
     to the callback gives, and the same refusal, with the same error, exactly where
     $\mathrm{findPoints}$ refuses (\verb|challenge_map_findPointsWith_eq_map_findPoints|).
 \end{enumerate}
-Statements 3 to 11 are those of stage~H with $s$ in place of $P$ and without $P.\mathrm{WF}$;
-\verb|challenge_wf_sieveParams| goes. Each is stronger than before: it holds for the program's own
-choice of the moduli and its corrections, for every value of the options of the sieve, the tuning
-values included, and whatever values the doubles of the cost model take. Statement~10 compares two
+Statements 3 to 11 are those of stage~H with $s$ in place of $P$, and without $P.\mathrm{WF}$ where
+they had it, in all but the refusals 5 and~6, which held for every $P$;
+\verb|challenge_wf_sieveParams| is gone with \verb|sieveParams| and $\mathrm{Params.WF}$. All nine
+hold for the program's own choice of the moduli and its corrections, for every value of the options
+of the sieve, the tuning values included, and whatever values the doubles of the cost model take;
+the seven that had $P.\mathrm{WF}$ are each stronger than in stage~H. Statement~10 compares two
 searches with the same options $s$, which choose the same moduli and make the same decisions, since
 the decisions depend neither on the callback nor on the flags of the output, so that the survivors
 under $\mathrm{noCheck}$ are those of the same test. Statement~11 holds for the default print
-channel; the report under \verb|-v| is not proved (Section~\ref{sec:moduliReport}). The challenge's
-module docstring and \verb|comparator/README.md| record the change by stage, with the earlier
-acceptances as history (I.10).
+channel, the channel that prints nothing; the report under \verb|-v| is not proved
+(Section~\ref{sec:moduliReport}). As in stage~H, $\mathrm{SturmTheorem}$ is a hypothesis of
+statements 3, 7 and~9, which one reads with the specification, and the theorems of the library
+behind the eleven statements have guards on their axioms, which are the standard ones.
+\verb|lake comparator --paranoid|, with Lean's kernel and the five external checkers bundled with
+Lean, accepted the eleven statements on 2026-10-25, when they came in with the interface on the
+options of the sieve, and again on 2026-10-26 on the final state after the audit;
+\verb|lake comparator| accepted them again on 2026-10-25 with the choice of the moduli and the run
+over the blocks, on 2026-10-25 with the numbers of the moduli used in what a search gives back and
+on 2026-10-26 with the report of the library under \verb|-v|, which change their proofs or the
+definitions that the challenge imports and not their text. The module docstring of the challenge
+describes the eleven statements as they are, and \verb|comparator/README.md| records the change by
+stage, with the earlier acceptances as history.
 
 \section{The numbers of the moduli used and the report under -v}\label{sec:moduliReport}
 
 The numbers of the moduli used are a field of the outcome (Definition~\ref{def:Outcome}), written as
 Section~\ref{sec:moduliC} says; the difference $s_3 - s_2$ that message~4 prints is an integer, for
-the \verb|long|. The report of the program (Definition~\ref{def:cliReport}) prints message~4, its
-link becoming \csource{main.c}{979}{1033} in place of the two links around the lines of message~4.
+the \verb|long|. The report of the program (Definition~\ref{def:cliReport},
+\csource{main.c}{979}{1033}) prints message~4 after the points, before messages~7 and~8.
 
 \begin{definition}[The report of the library]\label{def:report}
   \uses{def:Double, def:reversal, def:setupUs1, def:numClasses, def:choice, def:forbidden}
@@ -1341,25 +1356,28 @@ link becoming \csource{main.c}{979}{1033} in place of the two links around the l
   \csource{find_points.c}{5064}{5066}); the points at infinity
   (\csource{find_points.c}{5075}{5077}); and the sieve (\csource{find_points.c}{5104}{5104},
   \csource{find_points.c}{5111}{5113}). The doubles are printed as \verb|printf| of glibc prints
-  them under \verb|%.pf|, by \lname{Ratpoints.Double.printFixed}, which joins
-  Definition~\ref{def:Double}, since the \verb|%f| of the program prints with it too: the exact
-  value rounded to $p$ places, ties to even, in full, without the point for $p = 0$, after a
-  \verb|-| whenever the sign bit is set.
+  them under \verb|%.pf|, by \verb|Ratpoints.Double.printFixed|, in Definition~\ref{def:Double},
+  with which the \verb|%f| of the program prints too: the exact value rounded to $p$ places, ties to
+  even, in full, without the point for $p = 0$, after a \verb|-| whenever the sign bit is set.
 \end{definition}
 
-The ranges that these texts take were excluded as instrumentation, or cut out of the components that
-run around them: the reversal check (Definition~\ref{def:reversal}) keeps
+These texts, until stage~I excluded as instrumentation or within the ranges of the components that
+run around them, are printed where the C code prints them, and their ranges are cut out of those
+components: the reversal check (Definition~\ref{def:reversal}) keeps
 \csource{find_points.c}{4732}{4739}, \csource{find_points.c}{4744}{4756},
 \csource{find_points.c}{4759}{4770}, \csource{find_points.c}{4775}{4790} and
 \csource{find_points.c}{4802}{4803}; the Sturm step of the search (Definition~\ref{def:sturmRegion})
 \csource{find_points.c}{4857}{4859}, \csource{find_points.c}{4862}{4863} and
-\csource{find_points.c}{4879}{4892}; the points at infinity (Definition~\ref{def:pointsAtInfinity})
-\csource{find_points.c}{4894}{4896}, \csource{find_points.c}{4899}{4899},
-\csource{find_points.c}{5068}{5074} and \csource{find_points.c}{5078}{5099}. The parts of the
-excluded ranges under \verb|DEBUG| stay excluded: 4727-4730, 4809-4812, 4965-4968, 5014-5026 and
-5108-5110 of \verb|find_points.c|. The report is tested byte for byte, not proved: with the print
-channel that prints nothing every text vanishes (Lemma~\ref{lem:choiceSearch}), and the theorems
-speak about that channel.
+\csource{find_points.c}{4879}{4892}; the search of the polynomial
+(Definition~\ref{def:searchPoints}) the lines 4900-4914, 4919-4920, 4927, 4942-4943, 4948,
+4954-4959, 4962-4963 and 4992-4995 of \verb|find_points.c|, and the search with the choice
+(Definition~\ref{def:chooseAndSearch}) the lines 4996-5006, 5010-5012, 5100-5103 and 5105-5106; the
+points at infinity (Definition~\ref{def:pointsAtInfinity}) \csource{find_points.c}{4894}{4896},
+\csource{find_points.c}{4899}{4899}, \csource{find_points.c}{5068}{5074} and
+\csource{find_points.c}{5078}{5099}. The parts of the excluded ranges under \verb|DEBUG| stay
+excluded: 4727-4730, 4809-4812, 4965-4968, 5014-5026 and 5108-5110 of \verb|find_points.c|. The
+report is tested byte for byte, not proved: with the print channel that prints nothing every text
+vanishes (Lemma~\ref{lem:choiceSearch}), and the theorems speak about that channel.
 
 \section{The program}\label{sec:moduliCli}
 
@@ -1378,11 +1396,12 @@ speak about that channel.
 
 The program (Definition~\ref{def:cliRun}) runs $\mathrm{findPointsVerbose}$ with its options of the
 sieve, the array size $\mathrm{defaultArraySize}$ that it sets before the search
-(\csource{main.c}{221}{222}, from the parameters of the executable with I.10), and the print channel
-of \verb|-v| when the setting is on, which \verb|-q| clears; on a refusal it prints the head of the
-report, the text that the report of the library has printed and the message of the error. The
-options \verb|-r -R -U -C -A -Q -W| no longer go unread: they set the options of the sieve, with the
-validation of \verb|main.c| as before; only \verb|-t| is checked and ignored, for good.
+(\csource{main.c}{221}{222}), and the print channel of \verb|-v| when the setting is on, which
+\verb|-q| clears; on a refusal it prints the head of the report, the text that the report of the
+library has printed and the message of the error. The options \verb|-r -R -U -C -A -Q -W|, which the
+program checked and left unread until stage~I, set the options of the sieve, with the validation of
+\verb|main.c|; only \verb|-t| is checked and ignored, since the model sieves on one thread, which
+gives the output of every number of threads.
 
 \begin{lemma}[The program without -v]\label{lem:cliVerbose}
   \uses{def:cliTuning, def:findPointsWith, def:cliInput, def:cliFailure}
@@ -1396,18 +1415,19 @@ validation of \verb|main.c| as before; only \verb|-t| is checked and ignored, fo
 \begin{proof}
   \uses{thm:cliRegion}
   \leanok
-  By the definition of $\mathrm{findPointsWith}$ on the two cases of the result, and by the last
-  conjunct that the reading of a command line gains, that \verb|-q| cancels \verb|-v|.
+  By the definition of $\mathrm{findPointsWith}$ on the two cases of the result, and by the conjunct
+  of the reading of a command line that \verb|-q| cancels \verb|-v|.
 \end{proof}
 
-The theorem on the program (Theorem~\ref{thm:cliRun}) gains the hypothesis that the setting of
+The theorem on the program (Theorem~\ref{thm:cliRun}) has the hypothesis that the setting of
 \verb|-v| is clear, and speaks about $\mathrm{findPointsWith}$ and $\mathrm{findPoints}$ with the
 options of the sieve of the command line and the program's array size, with no hypothesis of
 well-formedness; its corollaries under \verb|-q| get the hypothesis from Lemma~\ref{lem:cliVerbose}.
 Message~4 comes in the report over the outcome, as messages~7 and~8 do. The reading of a command
-line (Theorem~\ref{thm:cliRegion}) gains that \verb|-q| cancels \verb|-v|, and its proof covers the
-branches of the tuning options. The report under \verb|-v| is not proved
-(Section~\ref{sec:moduliReport}), and the program theorem is not certified, as before.
+line (Theorem~\ref{thm:cliRegion}) states also that \verb|-q| cancels \verb|-v|, and its proof
+covers the branches of the tuning options. The report under \verb|-v| is not proved
+(Section~\ref{sec:moduliReport}), and the program theorem is not certified, as in the earlier
+stages.
 
 \section{The differential tests}\label{sec:moduliTests}
 
@@ -1416,719 +1436,353 @@ default build at the pin, without a \verb|tuning.mk|, the file of machine-depend
 that \verb|make tune| writes and the Makefile includes (the harness refuses a build directory that
 has one), and without flags that tune the choice of the moduli. The comparisons that depend on the
 choice, the pairs under \verb|-x|, message~4 and the report under \verb|-v|, hold on one machine
-(Section~\ref{sec:costs}); CI compares them on its runner. The items of
-Section~\ref{sec:moduliFiles} bring these comparisons in stages, each on the runs whose output it
-makes those of ratpoints; in the end:
+(Section~\ref{sec:costs}); CI compares them on its runner. The harness, since stage~I:
 \begin{itemize}
   \item under \verb|-x| the pairs are compared exactly with the C program on the same command line,
-    on every run, in place of the comparison with the moduli pinned and the weaker check alone where
-    the C program chose other moduli; the weaker check of the survivors stays as an extra check,
-    except under \verb|-v|, where the report stands between the pairs; the generators append
-    \verb|-p 30 -N 30| to a run under \verb|-x| at times;
+    on every run, where until stage~I they were compared with the moduli pinned, and by the weaker
+    check alone where the C program chose other moduli; the weaker check of the survivors stays as
+    an extra check, except under \verb|-v|, where the report stands between the pairs; the
+    generators append \verb|-p 30 -N 30| to a run under \verb|-x| at times;
   \item message~4 is compared in every report; the runs of \verb|test4.sh| whose record drops it are
     compared with the live C program, a disagreement of the C program with its record reported
     apart;
   \item the report under \verb|-v| is compared byte for byte, the runs \verb|v()| of \verb|test4.sh|
     with the live C program, its filters of the bits per word and of the iterations and the piped
     lines of \verb|test3.sh| on the whole output before the pipe;
-  \item a new default suite \verb|tuning| runs $300$ random values of \verb|-r -R -U -C -A -Q -W|,
+  \item the default suite \verb|tuning| runs $300$ random values of \verb|-r -R -U -C -A -Q -W|,
     among them $\infty$, $0$, the least subnormal and huge values, at times with the cut points and
     the numbers of primes given, at heights up to $3000$;
-  \item a new default suite \verb|threads| runs the C program with \verb|-t 4| and \verb|-t 7|
-    against \verb|ratpoints-lean|, and a new default suite \verb|verbose| $300$ random runs under
-    \verb|-v|; the errors suite gains the cases of the report: each exit, error~8 after the report,
-    the three cases of the reversal, the divisors and the failed factorization, the valuations
-    excluded and the tuning options;
-  \item the high suite gains runs at $16383$ where the correction takes effect, under \verb|-x|
+  \item the default suite \verb|threads| runs the C program with \verb|-t 4| and \verb|-t 7| against
+    \verb|ratpoints-lean|, and the default suite \verb|verbose| $300$ random runs under \verb|-v|;
+    the errors suite has the cases of the report: each exit, error~8 after the report, the three
+    cases of the reversal, the divisors and the failed factorization, the valuations excluded and
+    the tuning options;
+  \item the high suite has runs at $16383$ where the correction takes effect, under \verb|-x|
     without \verb|-A|, with \verb|-A 1| and with \verb|-A 2|, and one with \verb|-z| (message~4); a
-    run at $16383$ with \verb|-t 4| under \verb|-x| joins the suite \verb|threads|;
+    run at $16383$ with \verb|-t 4| under \verb|-x| is in the suite \verb|threads|;
   \item a local suite \verb|adapt| runs $23$ command lines without \verb|-A| and with \verb|-A 0|,
     \verb|-A 1| and \verb|-A 2| under \verb|-x|, also above the largest height of the default
-    suites, where the correction may take effect; and a local pair compares a build of the C program
-    with \verb|-DRP_BLOCK_LEN=3| against the model with $\mathrm{blockLen} = 3$, on the suites that
-    do not compare with recorded outputs.
+    suites, where the correction may take effect (in the C program $18$ of the $23$ command lines
+    change their pairs with \verb|-A|, the others are controls); and a local pair compares a build
+    of the C program with \verb|-DRP_BLOCK_LEN=3| against the model with $\mathrm{blockLen} = 3$, on
+    the suites that do not compare with recorded outputs.
 \end{itemize}
-In the prototype the default suites compare $5397$ times with none failed: \verb|test4| $590$,
-\verb|test3| $21$, \verb|rptest| $1206$, \verb|random| $300$, \verb|outputs| $300$, the errors suite
-$384$, the fuzz $800$, the parameters $272$, the high suite $19$, \verb|regions| $400$,
-\verb|depths| $300$, \verb|tuning| $300$, \verb|threads| $205$ and \verb|verbose| $300$; $462$ runs
-under \verb|-x| are compared exactly ($17$ of them where the C program may correct its moduli),
-$445$ reports carry message~4 and $414$ runs are under \verb|-v| with the report of the library.
-\verb|test4high| compares $13$, the suite \verb|adapt| $92$ under \verb|-x| ($69$ where a correction
-is possible; in the C program $18$ of the $23$ command lines change their pairs with \verb|-A|), and
-the pair with the block length $3$ compares $3601$ times in twelve default suites and $92$ times in
-\verb|adapt|, none failed. Every point list is compared in its order.
+Every point list is compared in its order; the counts of the comparisons on the final state are in
+Section~\ref{sec:moduli-evidence}.
 
 The \verb|#guard| examples check the bits of the \verb|Float| constants against gcc, \verb|%.pf|
-against glibc, and the parts of the choice that do not depend on the platform's \verb|log| and
-\verb|pow| on small pools: the candidates that the stages take and drop, the composite moduli
-offered and refused (an example is $15$ refused while $45 = 9 \cdot 5$ is offered, since the prime
-power $9$ says something), the ties of the least density, the exit of the third stage and the stable
-sort of the end of the choice. No guard pins an output that depends on the choice of the moduli:
-under \verb|-x| the guards check that the pairs contain those of the points and are normalized pairs
-in the region, message~4 is masked, and of the report under \verb|-v| only the text before the
-moduli and after the cost of a check is compared.
+against glibc, the forbidden divisors against a dump of a build of ratpoints at the pin, and the
+parts of the choice that do not depend on the platform's \verb|log| and \verb|pow| on small pools:
+the candidates that the stages take and drop, the composite moduli offered and refused (an example
+is $15$ refused while $45 = 9 \cdot 5$ is offered, since the prime power $9$ says something), the
+ties of the least density, the exit of the third stage and the stable sort of the end of the choice.
+No guard pins an output that depends on the choice of the moduli: under \verb|-x| the guards check
+that the pairs contain those of the points and are normalized pairs in the region, message~4 is
+masked, and of the report under \verb|-v| only the text before the moduli and after the cost of a
+check is compared.
 
 \section{Deviations and exclusions}\label{sec:moduliDeviations}
 
-Each component differs from the C code in a stated way, recorded in its \verb|Deviation:| paragraph:
+The model of the platform is stated once, in the module docstring of
+\verb|Ratpoints/Model/Costs.lean| (Section~\ref{sec:costs}): the doubles of the cost model are
+Lean's \verb|Float|, with the arithmetic of the platform, and \verb|log| and \verb|pow| the
+functions of the platform's C library that the Lean runtime binds, on glibc an older symbol version
+of the routines that ratpoints binds, which give the same values on every argument that occurs here.
+The components that compute with the doubles name it in their \verb|Deviation:| paragraphs, which
+record how each differs from the C code beyond it:
 \begin{itemize}
-  \item the doubles of the cost model as Lean's \verb|Float| with the arithmetic of the platform,
-    \verb|log| and \verb|pow| the functions of the platform's C library that the Lean runtime binds,
-    the same routines as ratpoints' on every argument that occurs (Section~\ref{sec:costs});
-    $\log 2$ computed at run time, where gcc folds \verb|log(2.0)|; \verb|ceil| and \verb|floor|
-    calls of the library where gcc compiles exact instructions, and the number of set bits of a word
-    a loop, both recorded from I.3 in the \verb|Deviation:| paragraphs of the components that use
-    them; the tuning values and the ends of the intervals entering by their bits;
-  \item the sorts by \verb|qsort| as Lean's stable merge sort with the test whether the comparison
-    of the C code is at most $0$, which gives the order of glibc's \verb|qsort| on keys that are
-    finite or $+\infty$;
+  \item in the cost model, $\log 2$ computed at run time, where gcc folds \verb|log(2.0)| into the
+    same double (\verb|checkCost|); \verb|ceil| and \verb|floor| calls of the platform's C library,
+    which are exact, where gcc compiles instructions (\verb|checkCost|, \verb|shapeSquares|,
+    \verb|sampleDivisor|, \verb|shapeEstimate|); the number of the set bits of a word a loop over
+    its bits (\verb|Ratpoints.popcount|), for gcc's \verb|__builtin_popcountl| (\verb|bpwAdd|); the
+    conversion of $e + 0.5$ to a \verb|long|, which truncates, by \verb|Float.toUInt64|
+    (\verb|phase2Offset|); the table of the reciprocals of the strides an array of the seven doubles
+    of the C code read with $0.0$ beyond them, the value of the entries beyond the seven
+    initializers when \verb|RP_NUM_STRIDES| is larger (\verb|Ratpoints.invStride|); the doubles that
+    the caller gives, the tuning values and the ends of the search intervals, entering by their bits
+    (\verb|Ratpoints.Double.toFloat|); records, sums and estimates returned for the pointers of the
+    C code, and natural numbers for the \verb|long|s that are not negative;
+  \item the sorts by \verb|qsort| as Lean's stable merge sort (\verb|Ratpoints.sortFrom|) with the
+    test whether the comparison of the C code is at most $0$ (\verb|keyLe|, \verb|rLe|), which gives
+    the order of glibc's \verb|qsort|, stable when it can allocate its buffer, as always in the
+    model, also on ties, since the keys are finite or $+\infty$;
   \item the examination of a prime returning the code and the density with its table, the exit as
-    none and the density $0.0$ for the code $0$, where the C code leaves it unset; the candidates as
-    records returned, their key and cost $0.0$ until the caller sets them; the entry of a prime
-    power made for each composite modulus that needs it, where \verb|make_modulus| keeps it by its
-    index; no test of room for the prime powers, which never fails; the loop of the tables a loop
-    over the positions that ends at the number to look at, which the body raises;
-  \item the table of rows of a prime of the third stage made after the choice, and none for a prime
-    that the third stage examines and passes over (lines 2994-3000), where \verb|examine_prime|
-    makes it with the entry;
-  \item the counters a record of their own passed beside the delivery and the store, for the six
-    fields of the sieving thread, \verb|UInt64| for the \verb|unsigned long|s; the report of a block
-    returned with the delivery and the store, for \verb|worker_stat|; the counters zeroed by
-    \verb|worker_init| (\csource{find_points.c}{3127}{3128}) part of the block, which zeroes them
-    again;
-  \item the decisions one array of records for three arrays; the fields $s_2$, $s_3$ and the words
-    of the next correction kept in the state of the correction, where \verb|adapt_primes| writes
-    them into the arguments, since only the run reads them; \verb|RP_PUBLISH| and \verb|RP_ACQUIRE|
-    a plain store and a plain read; the entries and the reciprocals of each block cut as lists;
-  \item \verb|RP_BLOCK_LEN| an optional constant of the model; the shapes' loops taking the
-    denominator's step as an argument, for the two calls of each shape;
+    none and the density $0.0$ for the code $0$, where the C code leaves it unset
+    (\verb|examinePrime?|); the candidates as records returned, their key and cost $0.0$ until the
+    caller sets them (\verb|ModulusCandidate.ofPrime|, \verb|offerModulus|); the prime powers
+    examined a table of their records with a list of the pairs examined, for the buffer \verb|pws|,
+    its count and the array \verb|pw_idx| with its markers, and no test of room in the buffer and no
+    bound \verb|npw_max|, which never bind (\verb|PowerTable|, \verb|powerIndex|, \verb|addModuli|);
+    the entry of a prime power made for each composite modulus that needs it, where
+    \verb|make_modulus| makes it once and keeps it by its index (\verb|makeModulus|); the candidates
+    dropped and swapped by the operations of arrays, for the loops that move them
+    (\verb|takeEntries|, \verb|thirdStage|); the loop of the tables a loop over the first
+    $\mathrm{numPrimes}$ positions that ends when the position reaches the number to look at, which
+    the body raises, with no clearing of the arrays that its state starts empty (\verb|tablesLoop|);
+  \item the tables of rows of the composite moduli and of the primes of the third stage made in the
+    store of the run after the choice, each only when its reference is absent, where
+    \verb|make_power| and \verb|make_modulus| make them, empty, with the entry (lines 2427 and 2471)
+    and \verb|examine_prime| with the entry of a prime of the third stage (lines 2994-2995), and
+    none for a prime that the third stage examines and passes over, whose table nothing reads; the
+    table of rows of a prime of the loop of the tables made in that loop, as \verb|examine_prime|
+    makes it with the entry (\verb|makeModulus|, \verb|SieveEntry.addTables|, \verb|examineInLoop|,
+    \verb|choiceEnd|);
+  \item the result of the choice a structure for what \verb|sieving_info| writes into the arguments,
+    with no field for \verb|stage3_list|, the buffer of the table of the third stage that the
+    sieving thread fills for each denominator, which the model replaces by the thunk of the checks
+    (\verb|SievingInfo|); \verb|sp3_max| the length of the list of the entries and no enlargement of
+    the buffer of the rows (\verb|choiceEnd|); the exit as the error of the result, no failure for
+    lack of memory, and the report at the end of \verb|sieving_info| printed by the search after it
+    returns (\verb|sievingInfo|); the parameters a structure of their own, the final \verb|pn_lim|
+    as $\mathrm{lookedAt}$ and the array size a natural number with $0$ for the default
+    (\verb|Params|), and the options of the sieve integers for the \verb|long|s, doubles by their
+    bits and a Boolean for \verb|RATPOINTS_NO_JACOBI|, normalized into a value returned, where the C
+    code normalizes the arguments in place and restores them (\verb|SieveOptions|,
+    \verb|SieveOptions.normalize|);
+  \item the counters a record of their own passed beside the delivery and the store, \verb|UInt64|
+    for the \verb|unsigned long|s, wrapping as they wrap (\verb|Counters|), each component counting
+    where the C code counts; the report of a block returned with the delivery and the store, for
+    \verb|worker_stat|; the counters and the index of the decision, which \verb|worker_init| clears
+    before the run, set only by the block, before they are read; the entries and the reciprocals of
+    each block cut as lists, for the numbers $s_2$ and $s_3$ of the sieving thread
+    (\verb|runBlock|);
+  \item the decisions one array of records for three arrays (\verb|findDecision|,
+    \verb|Correction|); the fields \verb|sp2|, \verb|sp3| and \verb|adapt_at| of the arguments,
+    which \verb|adapt_primes| writes and \verb|run_fold| reads, kept in the state of the correction,
+    since only the run reads them (\verb|Correction|); \verb|RP_PUBLISH| and \verb|RP_ACQUIRE| a
+    plain store and a plain read (\verb|runFold|, \verb|findDecision|); the parts of
+    \verb|adapt_primes| functions of their own, the doubles in the order of the C code and the
+    counters converted to \verb|Float| as the C code converts them, with no output under
+    \verb|RP_PRIME_STATS| (\verb|adaptRates|, \verb|adaptUp|, \verb|adaptDown|, \verb|adaptSecond|,
+    \verb|adaptThird|, \verb|adaptPrimes|);
+  \item \verb|RP_BLOCK_LEN| an optional constant of the model (\verb|blockLength|); the segments an
+    array of pairs and the first blocks with the number of the blocks at their end
+    (\verb|BlockPlan|); the loops of the shapes taking the sieve of one denominator as an argument,
+    for the two calls of each shape (\verb|siftDen|, \verb|squaresBlock|, \verb|squares1Block|,
+    \verb|walkDens|, \verb|wordsBlock|, \verb|allBlock|), and their dispatch a function of its own
+    (\verb|Shape.blockLoop|); the positions of the forbidden divisors as indices, for the pointers
+    \verb|cur| (\verb|forbStarts|, \verb|denWord|);
+  \item the blocks sifted on the calling thread alone, without the pool of threads, which sifts them
+    apart and delivers them in the same order, the store of the tables of rows passed from one block
+    to the next (\verb|sieveRun|); no sieving thread made and no pool (\verb|sieving|); the argument
+    of \verb|-t| checked and then ignored (\verb|checkOptions|);
   \item \verb|RATPOINTS_VERBOSE| as the print channel of the search, which prints into the data of
-    the callback, a text printed where the C code prints it or right after a pure computation; a
-    refusal of $\mathrm{findPointsVerbose}$ returning the data of the callback with its error;
-  \item the outcome writing back the numbers of the moduli used, the flags and the search intervals
-    and nothing else: not \verb|args->sp3|, which \verb|find_points_work| zeroes and does not
-    restore and the last block sets (lines 4551, 4561 and 5163), nor the private fields
-    \verb|adapt_at|, \verb|run_words|, \verb|run_denoms|, \verb|sp3_max| and \verb|check_rel|;
-  \item the difference $s_3 - s_2$ of message~4 an integer.
+    the callback, a text printed where the C code prints it or right after a pure computation, one
+    text from the result of a check where the C code prints in its course (\verb|findPointsVerbose|,
+    \verb|findPointsWork|, \verb|searchPoints|, \verb|chooseAndSearch|, the texts of
+    \verb|Ratpoints.Report|); the doubles of the report values of \verb|Float|
+    (\verb|Ratpoints.Double.ofFloat|); a refusal of $\mathrm{findPointsVerbose}$ returning the data
+    of the callback with its error (\verb|findPointsVerbose|, \verb|findPointsWork|);
+  \item what a search gives back writing back the data of the callback, the count, three bits of the
+    flags, the search intervals and the numbers of the moduli used, and nothing else: not
+    \verb|args->sp3|, which \verb|find_points_work| zeroes and does not restore and the last block
+    sets (lines 4551, 4561 and 5163), nor the private fields \verb|adapt_at|, \verb|run_words|,
+    \verb|run_denoms|, \verb|sp3_max| and \verb|check_rel| (\verb|Outcome|); the difference
+    $s_3 - s_2$ of message~4 an integer, for the difference of the \verb|long|s
+    (\verb|Message.text|, \verb|Report.choice|, \verb|Report.moduli|).
 \end{itemize}
-Left out, with their reasons in the record of the correspondence: the threads (kind threads), the
-pool, its workers, the collection of the points of a block and \verb|run_threaded| with their stubs
-(\csource{find_points.c}{4129}{4519}), the declarations of the lock of the tables and of the
+Left out, with their reasons in \verb|correspondence/ratpoints.toml|: the threads (kind threads),
+the pool, its workers, the collection of the points of a block and \verb|run_threaded| with their
+stubs (\csource{find_points.c}{4129}{4519}), the declarations of the lock of the tables and of the
 destruction of the pool (\csource{find_points.c}{41}{43}), the atomic loads and stores
 (\csource{rp-private.h}{76}{84}), the pool, slot and stop of a thread
 (\csource{rp-private.h}{584}{584}) and the fields of the number of threads and of the pool of the
 arguments (\csource{ratpoints.h}{370}{376}, \csource{ratpoints.h}{398}{398}), since the pool gives
-the output of the sequential loop (Theorem~\ref{thm:threads}); \verb|RP_PRIME_STATS| in
-\verb|adapt_primes|, a probe that prints each correction to the standard error
-(\csource{find_points.c}{1510}{1514}, kind instrumentation); \verb|RATPOINTS_DEFAULT_SP1|
-(\csource{ratpoints.h}{42}{42}, kind other), read nowhere; and the private fields of the arguments
-that hold memory, the scratch integers and the buffers of the entries, rows, integers, forbidden
-words and prime powers (\csource{ratpoints.h}{385}{388}, \csource{ratpoints.h}{392}{394}, kind
-memory). The private fields that hold data of the model go to their owners: the sieve entries, the
-reciprocals and the forbidden divisors to the result of the choice, together with
-\verb|stage3_list|, the buffer of the table of the third stage, which the model replaces by the
-thunk of the checks (\csource{ratpoints.h}{389}{389}, \csource{ratpoints.h}{391}{391}); the
-valuation records and the divisors to the divisor set-up (\csource{ratpoints.h}{390}{390},
-Definition~\ref{def:setupUs1}); the estimates and the reserve to $\mathrm{Params}$
-(\csource{ratpoints.h}{395}{397}); the end of the arguments to the search
-(\csource{ratpoints.h}{399}{400}); the numbers of the moduli used to the outcome
-(\csource{ratpoints.h}{377}{383}); the counters to their record (\csource{rp-private.h}{579}{581});
-the decision of a block to the block (\csource{rp-private.h}{582}{582}); and the type of the sieving
-thread to one denominator (\csource{rp-private.h}{585}{585}). With them every line of code of the C
-files at the pin is recorded.
+the output of the sequential loop (Theorem~\ref{thm:threads}), but for the failure
+\verb|RATPOINTS_NO_MEMORY| when a thread of the pool cannot store a point of its block, which the
+model, allocating nothing, cannot meet; the private fields of the arguments that hold memory, the
+scratch integers and the buffers of the entries, rows, integers, forbidden words and prime powers
+(\csource{ratpoints.h}{385}{388}, \csource{ratpoints.h}{392}{394}, kind memory);
+\verb|RP_PRIME_STATS| in \verb|adapt_primes|, a probe of the development that prints each correction
+to the standard error (\csource{find_points.c}{1510}{1514}, kind instrumentation); and
+\verb|RATPOINTS_DEFAULT_SP1| (\csource{ratpoints.h}{42}{42}, kind other), read nowhere. The ranges
+of the report under \verb|-v| that were excluded as instrumentation until stage~I are modelled
+(Section~\ref{sec:moduliReport}), but for their parts under \verb|DEBUG|, which stay excluded: lines
+4727-4730, 4809-4812, 4965-4968, 5014-5026 and 5108-5110 of \verb|find_points.c|. The private fields
+that hold data of the model go to their owners: the sieve entries, the reciprocals and the forbidden
+divisors to the result of the choice, together with \verb|stage3_list|
+(\csource{ratpoints.h}{389}{389}, \csource{ratpoints.h}{391}{391}); the valuation records and the
+divisors to the divisor set-up (\csource{ratpoints.h}{390}{390}, Definition~\ref{def:setupUs1}); the
+estimates and the reserve to $\mathrm{Params}$ (\csource{ratpoints.h}{395}{397}); the end of the
+arguments to the search (\csource{ratpoints.h}{399}{400}); the numbers of the moduli used to the
+outcome (\csource{ratpoints.h}{377}{383}); the counters to their record
+(\csource{rp-private.h}{579}{581}); the decision of a block to the block
+(\csource{rp-private.h}{582}{582}); and the type of the sieving thread to one denominator
+(\csource{rp-private.h}{585}{585}). With them no line of code is left free: all $5883$ lines of code
+of the C files at the pin are recorded, and the check of the correspondence with \verb|--complete|,
+which asks for that, runs in CI and in the checks of every commit.
 
-\section{What changes in the earlier chapters}\label{sec:moduliEarlier}
+\section{Files}\label{sec:moduliFiles}
 
-Each change is made by the item of Section~\ref{sec:moduliFiles} named in parentheses, the item that
-makes the old text untrue, so that the blueprint stays true between the commits; a node that loses
-names keeps its label, a node enters with the uses of the declarations that it holds at its item and
-gains the others with the items that bring them, and the uses and the references of a deleted node
-go to the node that takes its place, in the item that deletes it. The references to the labels that
-I.12 deletes, Definitions~\verb|def:sieveParams|, \verb|def:examinePrimes|,
-\verb|def:modulusFactors|, \verb|def:makeModulus| and~\verb|def:sievingInfo| and
-Lemmas~\verb|lem:examinePrimes|, \verb|lem:modulusFactors| and~\verb|lem:sievingInfo|, are listed
-below with the item that retargets or drops each; by the lines of the chapters as they stand before
-stage~I, they are: in \verb|01-spec.tex| lines 300, 382, 403 and 428; in \verb|02-sieve.tex| lines
-87, 97 and 446; in \verb|03-words.tex| lines 137 and 496; in \verb|04-setup.tex| lines 452, 472 and
-503; in \verb|05-denominators.tex| lines 378 and 649; in \verb|06-tables.tex| lines 35, 395, 429,
-435, 438, 464, 465, 471, 565, 588 and 600, besides the deleted nodes themselves; in
-\verb|07-stages.tex| lines 32, 113, 465 and 474; in \verb|08-packing.tex| lines 524 and 644; in
-\verb|09-rows.tex| lines 695, 697, 699, 704, 713 and 893; in \verb|10-output.tex| lines 577, 1102
-and 1139; in \verb|11-region.tex| line 863; and in this chapter the paragraph after
-Definition~\ref{def:choice}, the proof of Lemma~\ref{lem:choice} and this section.
-\begin{itemize}
-  \item The introduction of the blueprint: the proofs show that the model meets the specification
-    for every value of the options of the sieve, whatever moduli the search chooses, no longer for
-    every well-formed choice of the sieving parameters (I.10); the item of stage~I in the list of
-    the stages names the choice of the moduli and the cut points by the curve, the blocks with the
-    correction between them, the numbers of the moduli used, the report under \verb|-v| and the
-    tuning options, the threads left out with the property that they preserve proved
-    (Chapter~\ref{chap:moduli}) (I.16).
-  \item Chapter~\ref{chap:spec}: the section on what comparator certifies
-    (Section~\ref{sec:comparator-ab}) says that since stage~I the statements take the options of the
-    sieve with no hypothesis on them, that \verb|wf_sieveParams| is gone and eleven statements
-    remain, and that \verb|Params|, \verb|Params.WF| and \verb|sieveParams| are no longer taken from
-    the model (I.10), with the record of each acceptance in the item that runs comparator (I.10,
-    I.11, I.13 and I.15); the list of Section~\ref{sec:cli}: the program prints message~4 (I.13) and
-    under \verb|-v| the report of the library between the points (I.15), and its item on the tuning
-    options refers to the options of the sieve (Definition~\ref{def:sieveOptions}) for
-    Definition~\verb|def:sieveParams| (I.12) and reads \verb|-r -R -U -C -A -Q -W| into the options
-    of the sieve, only \verb|-t| being checked and ignored (I.14); the command line
-    (Definition~\ref{def:cliInput}) refers to Definition~\ref{def:sieveOptions} for
-    Definition~\verb|def:sieveParams|, its uses likewise (I.12), and sets the options of the sieve
-    of the tuning options through \lname{Ratpoints.SieveOptions.store}, its uses gaining
-    Definition~\ref{def:cliTuning} (I.14); the program (Definition~\ref{def:cliRun}) runs
-    $\mathrm{findPointsVerbose}$ with the options of the sieve and the array size that it sets, its
-    link \csource{main.c}{221}{222} added and its uses gaining
-    Definition~\ref{def:findPointsVerbose} for Definitions~\ref{def:findPointsWith}
-    and~\verb|def:sieveParams| (I.10), with the print channel of \verb|-v| (I.15); the section on
-    the differential tests: its list of what the later stages added gains stage~I, the suite
-    \verb|adapt| and the pair with the block length $3$ (I.11), the suites \verb|tuning| and
-    \verb|threads| (I.14) and \verb|verbose| (I.15); the runs left out, the four of \verb|test4.sh|
-    whose filter looks at the report of the library and those of \verb|test3.sh| with a filtered
-    output, compared with message~4 (I.13) and the report (I.15); its closing paragraph: the pairs
-    under \verb|-x| compared exactly (I.11), message~4 no longer dropped (I.13), the output under
-    \verb|-v| byte for byte (I.15); and the counts, with the items that change them.
-  \item Chapter~\ref{chap:sieve}: the introduction says that the theorems hold for every choice of
-    the moduli that the search makes (I.16); the primes of the sieve
-    (Definition~\ref{def:primeTable}) gain \lname{Ratpoints.getElem!\_primeTable\_le\_of\_le}
-    (I.12); the parameters (Definition~\ref{def:Params}) gain $s_3$, the primes looked at, the
-    estimates of the run, the cost of a check and the words of the first correction, their link
-    \csource{ratpoints.h}{395}{397} added (I.8), are internal to the search (I.10) and the result of
-    the choice (I.11), and lose $\mathrm{Params.WF}$, its instance and its three lemmas, with the
-    references to Definitions~\verb|def:examinePrimes| and~\verb|def:modulusFactors| and
-    Lemma~\verb|lem:modulusFactors|, the loop of the tables becoming
-    Definition~\ref{def:tablesLoop}, and their uses of Definitions~\ref{def:barrett}
-    and~\ref{def:primeTable}, which only the well-formedness read (I.12); the parameters of the
-    executable (Definition~\verb|def:sieveParams|) give $\mathrm{sp2Extra}$,
-    $\mathrm{defaultNumPrimes}$ and $\mathrm{defaultMaxForbidden}$ with their links
-    \csource{ratpoints.h}{95}{97}, \csource{ratpoints.h}{333}{340} and
-    \csource{ratpoints.h}{345}{352} to Definition~\ref{def:choiceConstants}, their uses gaining it
-    (I.1), give their lines of the choice to its components (I.3, I.7, I.8, as the paragraph after
-    Definition~\ref{def:choice} lists them), give $\mathrm{SieveOptions}$ with its links
-    \csource{main.c}{337}{338}, \csource{main.c}{344}{344}, \csource{main.c}{347}{347},
-    \csource{main.c}{349}{350} and \csource{main.c}{352}{352} to Definition~\ref{def:sieveOptions},
-    where they become \csource{main.c}{337}{347}, \csource{main.c}{349}{350} and
-    \csource{main.c}{352}{352}, their uses gaining it (I.8), give
-    \csource{find_points.c}{4577}{4577} and \csource{main.c}{221}{222} to the search and the program
-    (I.10), and go (I.12): $\mathrm{sieveParams}$, $\mathrm{defaultParams}$, $\mathrm{defaultSp1}$,
-    \verb|wf_sieveParams| and \verb|wf_defaultParams| are deleted, with the exclusion of
-    \csource{ratpoints.h}{42}{42}; the paragraph after it gives way to one on the choice made inside
-    the search, as in the C code, and the theorems for every choice it makes: its sentences on the
-    statements, on the quantification over $\mathrm{Params.WF}$ and on \verb|wf_sieveParams| (I.10),
-    the rest, the model taking the choice as an input and the stages of ratpoints and of the
-    parameters of the executable (I.11); the sentence of Section~\ref{sec:sieve} on the components
-    that may run \verb|Id.run| names $\mathrm{findPointsVerbose}$ too (I.10); the run
-    (Definition~\ref{def:sieveRun}) gives the links \csource{find_points.c}{3900}{3904} to the plan
-    of the blocks and \csource{find_points.c}{3917}{3918}, \csource{find_points.c}{3926}{3936},
-    \csource{find_points.c}{3954}{3966}, \csource{find_points.c}{4009}{4009},
-    \csource{find_points.c}{4042}{4052}, \csource{find_points.c}{4059}{4059},
-    \csource{find_points.c}{4066}{4072} and lines 4075-4076 to the loops of the shapes (I.5), lines
-    3889-3898, 3911, 3913 and 4077-4078 to one block, line 3899 to no declaration (I.6), and line
-    3861 to the correction (I.9); it is the loop over the blocks with the correction, its
-    \verb|\lean| list $\mathrm{sieveRun}$ alone, its contract going to Theorem~\ref{thm:blocks}, its
-    links \csource{find_points.c}{5120}{5120}, \csource{find_points.c}{5152}{5160} and
-    \csource{find_points.c}{5163}{5163}, and its uses Definitions~\ref{def:runBlock}
-    and~\ref{def:correction} (I.11); the points at infinity (Definition~\ref{def:pointsAtInfinity})
-    give their lines of the report to Definition~\ref{def:report}, their links becoming
-    \csource{find_points.c}{4894}{4896}, \csource{find_points.c}{4899}{4899},
-    \csource{find_points.c}{5068}{5074} and \csource{find_points.c}{5078}{5099} (I.15); the search
-    for the points (Definition~\ref{def:findPoints}) takes the options of the sieve (I.10) and, in
-    place of the tables and the sieve entries of Definition~\verb|def:sievingInfo|, the choice of
-    the moduli (Definition~\ref{def:choice}) and the run over the blocks (I.11); the list of the
-    deviations after it: the listing of the denominators and the cut points fixed for the run
-    (I.11), no output under \verb|VERBOSE| (I.15); the reduction of the run to the reference
-    (Lemma~\ref{lem:flatMapFilter}) loses \verb|Ratpoints.Sieve.run_sieveRun_of_eq_filter| and
-    keeps \verb|List.flatMap_filter_flatMap_filter|, by which the contract of the run of the search
-    moves the test of a filtered list into the test of the numerators: its statement becomes that
-    fact on lists and its uses go (I.11); the theorem on the points (Theorem~\ref{thm:findPoints})
-    takes the options of the sieve, its uses losing Definition~\ref{def:Params} and gaining
-    Definition~\ref{def:sieveOptions} (I.10), its proof going through Lemma~\ref{lem:choice} (I.11);
-    the paragraph after it: the statements take $s$, the eleven of them, \verb|wf_sieveParams| gone,
-    the names that the challenge takes from the model and the record of the acceptances (I.10, the
-    records with the items that run comparator), the contract of the run named in the file of the
-    run (I.11); and the files section: the well-formedness in \verb|Ratpoints/Proof/Params.lean|
-    (I.12), the run in \verb|Ratpoints/Model/Blocks.lean| and its contract in
-    \verb|Ratpoints/Proof/Correction.lean| (I.11).
-  \item Chapter~\ref{chap:words}: the array size (Definition~\ref{def:arraySize}) is a field of the
-    options of the sieve, normalized by \lname{Ratpoints.arraySizeAt} with
-    \lname{Ratpoints.one\_le\_arraySizeAt}, which take the links of $\mathrm{Params.arraySizeAt}$
-    (I.8); the passage after it, on $\mathrm{sieveParams}$, the quantification over the field and
-    the challenge, gives way to one on the field of the options of the sieve (I.10); the walk
-    (Definition~\ref{def:walkWord}), the scan of a piece (Definition~\ref{def:scanPiece}), one piece
-    (Definition~\ref{def:siftPiece}) and one denominator (Definition~\ref{def:sift}) take and return
-    the counters, one denominator with the link \csource{rp-private.h}{585}{585} and the third
-    conjunct of its contract, Lemma~\ref{lem:sift_eq_checkDen} takes the counters, the uses of the
-    four definitions and of the lemma gaining Definition~\ref{def:counters}, and those of one
-    denominator and of the proof of the lemma Lemma~\ref{lem:counters} too, and the deviation that
-    leaves the counts to stage~I is reworded (I.4); the passage after the run on what the search
-    hands it, the entries of Definition~\verb|def:sievingInfo|, is on the choice and the blocks
-    (I.11); and the files section: \verb|Ratpoints/Proof/Sift.lean| split (I.4), the run and its
-    contract (I.11).
-  \item Chapter~\ref{chap:setup}: the examination of a prime with the exit
-    (Definition~\ref{def:examinePrimeExit}) returns the code and the density, its link
-    \csource{find_points.c}{1761}{1781} in place of \csource{find_points.c}{1761}{1765} (I.2); the
-    reversal check (Definition~\ref{def:reversal}) gives its lines of the report to
-    Definition~\ref{def:report}, its link becoming \csource{find_points.c}{4732}{4739},
-    \csource{find_points.c}{4744}{4756}, \csource{find_points.c}{4759}{4770},
-    \csource{find_points.c}{4775}{4790} and \csource{find_points.c}{4802}{4803} (I.15); the search
-    of the polynomial (Definition~\ref{def:searchPoints}) gives up its link
-    \csource{find_points.c}{2793}{2795}, lines 2794-2795 going to Definition~\ref{def:choice} and
-    line 2793 to no declaration (I.8), takes the normalized options of the sieve, whether the caller
-    left the number of primes to the library and the print channel, its uses following (I.10), calls
-    the search with the choice, its links of the choice and the sieve (lines 4996-5006, 5010-5012,
-    5100-5103 and 5105-5106) going to Definition~\ref{def:chooseAndSearch}, its text on
-    Definition~\verb|def:sievingInfo| and Lemma~\verb|lem:sievingInfo| rewritten for the choice and
-    Lemma~\ref{lem:choice} and its uses Definition~\ref{def:chooseAndSearch} for
-    Definitions~\ref{def:Params}, \verb|def:sievingInfo| and~\ref{def:sieving} (I.11), and gives its
-    lines of the report (4915-4918, 4921-4926, 4928-4941, 4960-4961, 5007-5009 and 5104) to
-    Definition~\ref{def:report} (I.15); the paragraph after it on
-    $\mathrm{findPointsWith}(c, H, P, o)$ takes $s$ (I.10); Theorems~\ref{thm:findPoints_perm}
-    and~\ref{thm:refusals} take $s$, the proof of the refusal theorems using
-    Lemma~\ref{lem:choiceSearch} (I.10); the deviation that leaves the codes of \verb|examine_prime|
-    to the choice goes (I.2), the one on the arguments of \verb|sieving_info| that serve the choice
-    goes (I.11), and the one on \verb|RATPOINTS_VERBOSE| is reworded (I.15); the deviation that
-    names \verb|makeModulus?| and the closing passage on what belongs to stage~I are reworded
-    (I.16); and the files section: the flagged contracts in \verb|Ratpoints/Proof/Sift.lean| (I.4),
-    that of the run (I.11).
-  \item Chapter~\ref{chap:denominators}: the introduction, which leaves the blocks to stage~I, says
-    that the model has them (I.11); the forbidden divisors (Definition~\ref{def:forbidden}) keep the
-    reciprocal of their prime, their uses gaining Definition~\ref{def:mulMod} (I.2), their reference
-    to Definition~\verb|def:examinePrimes| going to Definition~\ref{def:tablesLoop} (I.12); the
-    divisor set-up (Definition~\ref{def:setupUs1}) gains the link \csource{ratpoints.h}{390}{390}
-    (I.8); the shapes (Definition~\ref{def:Shape}) give the lines 3750-3754 to the blocks and the
-    lines of the listing (3812-3837, 3919-3925, 3937-3943, 3967-3991, 3993-4008, 4012, 4053-4058,
-    4060-4065 and 4073-4074) to the plan of the blocks and the loops of the shapes (I.5), and the
-    lines 3755-3762 to the correction (I.9), their link \csource{find_points.c}{3736}{3763} becoming
-    \csource{find_points.c}{3736}{3749} and \csource{find_points.c}{3763}{3763}; the listing of the
-    denominators of a shape and its test ($\mathrm{squaresDens}$, $\mathrm{squares1Dens}$,
-    $\mathrm{wordBits}$, $\mathrm{wordsDens}$, $\mathrm{Shape.dens}$, $\mathrm{Shape.keep}$) becomes
-    a definition of the proofs, the node saying that the model has the blocks and no listing (I.11);
-    the passage after Lemma~\ref{lem:shape_dens} on the run with its links, its contract and its
-    plain equation is on the run over the blocks (I.11); Section~\ref{sec:denSearch}: what the
-    search does, with Definition~\verb|def:sievingInfo| and the cut points of the parameters (I.11),
-    for well-formed parameters (I.10), and the list of the C ranges of the node of the search, which
-    loses lines 2793-2795 (I.8), the lines of the choice and the sieve (I.11) and those of the
-    report (I.15); Theorem~\ref{thm:findPoints_order} takes $s$ (I.10) and its proof goes through
-    the block-listing lemma (I.11); the deviations that leave the final \verb|pn_lim|, the blocks,
-    the reciprocal of the first word of a block and the correction to stage~I (I.11) and the one on
-    \verb|RATPOINTS_VERBOSE| (I.15) are reworded, and the closing passage, which leaves the blocks
-    with the correction and the number of primes examined to stage~I (I.11); and the files section:
-    the shapes and the run in \verb|Ratpoints/Model/Denominators.lean|, the run over a shape in
-    \verb|Ratpoints/Proof/Denominators.lean| (I.11) and the contracts from one piece on in
-    \verb|Ratpoints/Proof/Sift.lean| (I.4).
-  \item Chapter~\ref{chap:tables}: the introduction refers to the options of the sieve for
-    Definition~\verb|def:sieveParams| (I.12) and speaks about the choice of the search (I.16); the
-    tables of a prime power (Definition~\ref{def:examinePower}) take whether denominators divisible
-    by $p$ occur and give the density, with \lname{Ratpoints.Sieve.Power.useful}, their links
-    becoming \csource{find_points.c}{2267}{2282}, \csource{find_points.c}{2285}{2293},
-    \csource{find_points.c}{2301}{2301}, \csource{find_points.c}{2330}{2330} and
-    \csource{find_points.c}{2331}{2331}, their uses gaining Definition~\ref{def:densities}, and
-    Lemmas~\ref{lem:power_admits} and~\ref{lem:examinePrime_eq} the forms with the new results, the
-    second with \lname{Array.any\_push\_id\_eq\_false\_iff}, the fact on arrays that its contract
-    uses (I.2); the sieve entry (Definition~\ref{def:SieveEntry}) has its density and the count of
-    its factors (I.2); the loop of the tables of stage~F1 (Definition~\verb|def:examinePrimes| and
-    Lemma~\verb|lem:examinePrimes|), the factors of a modulus (Definition~\verb|def:modulusFactors|
-    and Lemma~\verb|lem:modulusFactors|), the explicit sieve entry of a modulus
-    (Definition~\verb|def:makeModulus|, \verb|makeModulus?|) and the explicit $\mathrm{sievingInfo}$
-    (Definition~\verb|def:sievingInfo| and Lemma~\verb|lem:sievingInfo|, renamed with their contract
-    at I.8) give their links to the components of the choice (I.3, I.7, I.8) and are deleted (I.12),
-    \lname{Ratpoints.getElem!\_primeTable\_le\_of\_le} going to Definition~\ref{def:primeTable},
-    \lname{Ratpoints.IsModulusEntry.isSound} to Lemma~\ref{lem:sieveEntry_admits}, and their uses
-    and references going to Definitions~\ref{def:tablesLoop}, \ref{def:compositeModuli}
-    and~\ref{def:choice} and Lemmas~\ref{lem:compositeModuli} and~\ref{lem:choice}; the rows of a
-    modulus (Lemma~\ref{lem:sieveEntry_admits}) keep the factors' soundness and the entries' facts,
-    without the invariants of \verb|makeModulus?|, their statement and proof rewritten without
-    Lemma~\verb|lem:modulusFactors|, and their uses those that the Lean then implies,
-    Definitions~\ref{def:SieveEntry}, \ref{def:examinePrime}, \ref{def:squaresMod}, \ref{def:mulMod}
-    and~\ref{def:packingConstants} and Lemma~\ref{lem:mulMod}, the proof
-    Lemma~\ref{lem:classOffsets} (I.12); Section~\ref{sec:tablesSearch}, on $\mathrm{Params.WF}$,
-    the divisor form and the parameters of the command line, and the paragraph after
-    Lemma~\verb|lem:sievingInfo|, on the search for every well-formed choice, speak about the choice
-    of the search (I.12); the program and its differential tests (Section~\ref{sec:tablesCli}): the
-    program chooses composite moduli itself (I.11); the deviations: the count of the residues (I.2),
-    the density, the ranking and the choice not modelled (I.11), those of the explicit route, with
-    their references to Definition~\verb|def:makeModulus| (I.12), and the closing passage that
-    leaves the density, \verb|add_moduli|, the ranking and the choice to stage~I (I.11), its
-    reference to Definition~\verb|def:sievingInfo| going to Definition~\ref{def:choice} (I.12); and
-    the files section: the choice in \verb|Ratpoints/Model/Choice.lean| and its contracts in
-    \verb|Ratpoints/Proof/Choice.lean| and \verb|Ratpoints/Proof/ChoiceModuli.lean| (I.7, I.8), the
-    factors, the explicit entry, the loop of the tables and the well-formedness gone (I.12).
-  \item Chapter~\ref{chap:stages}: the introduction's sentence on \verb|wf_sieveParams|, which the
-    challenge imports, says that stage~I drops it (I.10); the reductions by a multiplication
-    (Definition~\ref{def:mulMod}) refer to Definition~\ref{def:choice} for the array \verb|magics|
-    (I.12); the test of a candidate and the extraction (Definitions~\ref{def:accepted}
-    and~\ref{def:siftBitArray}, Lemmas~\ref{lem:accepted} and~\ref{lem:siftBitArray}) count, their
-    uses gaining Definition~\ref{def:counters}, and the test gains
-    \lname{Ratpoints.Sieve.fst\_run\_accepted}, that its verdict does not depend on the counters
-    (I.4); the passage after the staged sieve, on the run with the cut points of the parameters and
-    what \verb|sieving_info| gives (Lemma~\verb|lem:sievingInfo|), is on the decisions of the blocks
-    and the choice (I.11); the section on the cut points (Section~\ref{sec:cuts}) describes the cut
-    points of the choice and their correction, not the counting rules of the parameters of the
-    executable (I.11); the program and its differential tests (Section~\ref{sec:stagesCli}): the
-    program runs the stages of the choice (I.11), and the guards on the stage sizes of the
-    parameters go with them (I.12); the deviations that leave the reciprocals of the forbidden
-    divisors (I.2), the counts (I.4), the reserve of the reciprocals, the cut points of each block,
-    the counting rules and \verb|-R| (I.11) to stage~I are reworded, and the one on the pool of
-    threads says that the model has none (I.16); the closing passage that leaves the correction, the
-    counters, the choice of the cut points, the pool of threads and the first word of a block to
-    stage~I (I.11); and the files section: the run, the parameters of the command line and the
-    reciprocals of \verb|sieving_info| (I.11, I.12), the contracts of one piece and one denominator
-    (I.4), \verb|wf_sieveParams| (I.12).
-  \item Chapter~\ref{chap:packing}: the introduction, on $\mathrm{Params.WF}$ and what the packing
-    needs of the parameters (I.12); the passage on the sieve in the packing, the store fitting the
-    entries of the first two stages and what \verb|sieving_info| gives
-    (Lemma~\verb|lem:sievingInfo|), is on the choice (I.11); what the run needs of the search
-    (Lemma~\ref{lem:soundRun}) no longer reads $s_2$, with the entries that count no factor prime
-    entries and the store fitting all the entries (I.11); the row offsets of the classes
-    (Lemma~\ref{lem:classOffsets}) are made for all the entries, the reserve included (I.11); the
-    bits of an interval (Definition~\ref{def:siftBits}, Lemma~\ref{lem:siftBits}) count, their uses
-    gaining Definition~\ref{def:counters} (I.4); the deviations: the reserve of the offsets (I.11)
-    and the reference to Definition~\verb|def:makeModulus|, which goes to
-    Definition~\ref{def:compositeModuli} (I.12); the closing passage that leaves the cost model of
-    the packing (I.3) and the reserve of the offsets (I.11) to stage~I; and the files section: the
-    run (I.11), the contracts from one piece on (I.4).
-  \item Chapter~\ref{chap:rows}: the introduction, on $\mathrm{Params.WF}$ (I.12); the tables of the
-    store (Definition~\ref{def:storeTables}) are made as the choice makes them, at its end for all
-    the entries, those of the third stage among them (I.11), and refer to
-    Definitions~\ref{def:tablesLoop}, \ref{def:choice} and~\ref{def:compositeModuli} for the deleted
-    nodes (I.12); the store fits the sieve entries (Lemma~\ref{lem:storeTables}) with the forms with
-    the flag of the prime powers, its proof using Lemma~\ref{lem:densities} (I.2), its use of
-    Definition~\verb|def:makeModulus| dropped and its references going to
-    Definition~\ref{def:compositeModuli} and Lemma~\ref{lem:choice}, its statement about the store
-    of the choice (I.12); the passage after Lemma~\ref{lem:buildRows} on the run, the store of
-    \verb|sieving_info| and the fit of the first $s_2$ entries is on the blocks and the store of the
-    choice, which fits all the entries (I.11); the deviations that leave the acquire loads and the
-    threads to stage~I say that the model has no threads (I.16), and their reference to
-    Definition~\verb|def:makeModulus| goes (I.12); the closing passage that leaves the lock of the
-    tables, the pool of threads and the orderings to stage~I (I.11); and the files section: the
-    entries and \verb|sieving_info| in \verb|Ratpoints/Model/FindPoints.lean| (I.8, I.12), the run
-    and its contract (I.11), the contracts of one piece and one denominator (I.4).
-  \item Chapter~\ref{chap:output}: the introduction: message~4 is printed (I.13), and the paragraph
-    on the listing of the denominators, which made a stop pay for the listing until the blocks of
-    stage~I, goes (I.11); what the C code does: the numbers of the moduli used, left to stage~I
-    (I.13); the delivery (Definition~\ref{def:delivery}) gains \lname{Ratpoints.Delivery.print}
-    (I.10); the delivery of the check and the stops of the sieve (Lemmas~\ref{lem:checkDelivery}
-    and~\ref{lem:sieveStops}) take the counters and the general list lemmas, the uses of the first
-    gaining Definition~\ref{def:counters} and its proof Lemma~\ref{lem:accepted} (I.4); the sieving
-    (Definition~\ref{def:sieving}) takes the options and the result of the choice and returns the
-    ends $s_2$ and $s_3$ of the last block (I.11); the outcome (Definition~\ref{def:Outcome}) has
-    the numbers of the moduli used, its link \csource{ratpoints.h}{377}{383} in place of
-    \csource{ratpoints.h}{377}{377} (I.13); the search with a callback
-    (Definition~\ref{def:findPointsWith}) takes $s$ and the print channel, its links going to
-    Definition~\ref{def:findPointsVerbose}, its uses gaining that node and losing
-    Definition~\ref{def:Params} (I.10); the list of the search (Lemmas~\ref{lem:searchList}
-    and~\ref{lem:findPoints_searchList}) on the choice, the uses of Lemma~\ref{lem:searchList} going
-    to Lemma~\ref{lem:choice} for Lemma~\verb|lem:sievingInfo| and those of its proof gaining
-    Theorem~\ref{thm:blocks} and Lemma~\ref{lem:noCheckList}, for the denominators of the search
-    without duplicates (I.11), for every $s$ with no hypothesis (I.10); Theorems~\ref{thm:protocol},
-    \ref{thm:noCheck} and~\ref{thm:order} take $s$ (I.10), and the order goes through the
-    block-listing lemma (I.11); Section~\ref{sec:certifiedG} records the change (I.10); the report
-    (Definition~\ref{def:cliReport}) prints message~4, its link \csource{main.c}{979}{1033} in place
-    of \csource{main.c}{979}{991} and \csource{main.c}{999}{1033} (I.13), and its uses go to
-    Definition~\ref{def:sieveOptions} for Definition~\verb|def:sieveParams| (I.12); the paragraph
-    after it, on $\mathrm{sieveParams}(s)$, and the program theorem (Theorem~\ref{thm:cliRun}) take
-    the options of the sieve, its uses losing Definition~\verb|def:sieveParams| (I.10), and the
-    hypothesis on \verb|-v|, its proof using Lemma~\ref{lem:cliVerbose}, and its
-    \lname{Ratpoints.Cli.Data.keeps}, the points that the callback keeps, goes to the callback of
-    the program (Definition~\ref{def:cliProcess}) (I.15); the section on the differential tests:
-    message~4 compared (I.13), the report under \verb|-v| (I.15), the pairs under \verb|-x| (I.11),
-    and the runs skipped for message~4 (I.13) and for the report (I.15); the deviations that leave
-    the stop of a thread of the pool, the sieving thread and the blocks to stage~I (I.11), the
-    numbers of the moduli used and message~4 (I.13), the report of the library (I.15) and the tuning
-    options (I.14) are reworded; the record of the lines left free for stage~I: the tuning fields,
-    the defaults of \verb|main.c| and the private data (I.8), the number of threads and line 5163
-    (I.11), and the numbers of the moduli used with their lines and message~4 (I.13); and the files
-    section: the listing and the run in \verb|Ratpoints/Model/Denominators.lean| and the run on the
-    delivery in \verb|Ratpoints/Proof/Denominators.lean| (I.11), \verb|Ratpoints/Proof/Sift.lean|
-    (I.4).
-  \item Chapter~\ref{chap:region}: the introduction and the description of the C code no longer
-    leave the estimate of the run to stage~I (I.3), and the introduction no longer leaves the tuning
-    options unread (I.14); the doubles (Definition~\ref{def:Double}) gain
-    \lname{Ratpoints.Double.toFloat} (I.3), \lname{Ratpoints.Double.minusOne} (I.8), and
-    \lname{Ratpoints.Double.ofFloat} and \lname{Ratpoints.Double.printFixed} (I.15); the passage on
-    the options of the search and the deviation that call \verb|sp3| stage~I's give it to
-    $\mathrm{Params}$ (I.8); the loop over the intervals (Lemma~\ref{lem:siftIntervals}) counts, its
-    uses gaining Definition~\ref{def:counters} (I.4); the passage on what \verb|sieving_info|
-    computes for every height refers to Lemma~\ref{lem:choice} for Lemma~\verb|lem:sievingInfo|
-    (I.12); the passages of Section~\ref{sec:regionSearch} for well-formed parameters,
-    Lemma~\ref{lem:elimSearchRegion} and Theorem~\ref{thm:sturmSpeed} take $s$ (I.10);
-    Section~\ref{sec:certifiedH} records the change (I.10); the Sturm step of the search
-    (Definition~\ref{def:sturmRegion}) gives its lines of the report to Definition~\ref{def:report},
-    its link becoming \csource{find_points.c}{4857}{4859}, \csource{find_points.c}{4862}{4863} and
-    \csource{find_points.c}{4879}{4892} (I.15); Theorem~\ref{thm:cliRegion} gains that \verb|-q|
-    cancels \verb|-v|, and its uses lose Theorem~\ref{thm:cliRun}, which they reached only for the
-    points that the callback keeps (I.15); the section on the differential tests: message~4 compared
-    (I.13), the pairs under \verb|-x| compared exactly and the counts of the weaker check (I.11);
-    the record of the lines left free after stage~H, each line leaving it with the item that records
-    it: the tuning macros (I.1), the estimate (I.3), the counters and the decision of the sieving
-    thread (I.4, I.6), the blocks (I.5), the choice, the tuning fields, the private data and the
-    defaults of \verb|main.c| (I.8), the correction (I.9), the threads (I.11), and the numbers of
-    the moduli used and message~4 (I.13); and the files section: the run (I.11).
-  \item The appendix: the generated table follows each item.
-\end{itemize}
-Outside the blueprint: the description of the repository states the eleven statements (I.10), the
-pairs under \verb|-x| compared exactly (I.11) and the tuning options read (I.14);
-\verb|formalization.yaml| its statements and their count (I.10) and drops the entry of
-\verb|Ratpoints.wf_sieveParams| (I.12); \verb|comparator/README.md| the statements and the names
-taken from the model (I.10) with the record of each acceptance (I.10, I.11, I.13, I.15); and the
-challenge its module docstring (I.10).
+The model of the stage is in the folder \verb|Ratpoints/Model|, plain executable code without
+Mathlib, as in the earlier stages. The constants of the choice and of the blocks are in
+\verb|Constants.lean|, a file without imports ($664$ lines with its guards); the doubles as
+\verb|Float|s (\verb|Ratpoints.Double.toFloat|, \verb|Ratpoints.Double.ofFloat|), the double $-1.0$
+and \verb|%.pf| in \verb|Double.lean| ($439$ lines), also without imports; the options of the sieve
+with their normalization, and the parameters, the result of the choice, in \verb|Params.lean| ($223$
+lines), which imports only these two files; the densities and the fields of the entries in
+\verb|Tables.lean|; the tables of rows that the end of the choice adds to the store
+(\verb|Ratpoints.Sieve.SieveEntry.addTables|) in \verb|Rows.lean|; the counters in
+\verb|Candidate.lean|, which counts in the test of a candidate, and in \verb|Sieve.lean|, whose
+components count; the print channel of a delivery in \verb|Delivery.lean|; and the reciprocal of a
+forbidden divisor in \verb|Denominators.lean| ($881$ lines), which has the shapes and
+\verb|run_setup|, no longer the listing of the denominators and the run. New are \verb|Costs.lean|
+($701$ lines), above \verb|Denominators.lean|, with the cost model and the estimate of the run;
+\verb|Choice.lean| ($935$ lines), above \verb|Costs.lean| and \verb|Params.lean|, with the composite
+moduli, the stages, the loop of the tables and the choice; \verb|Blocks.lean| ($1041$ lines), above
+the same two, with the plan of the blocks, the loops of the shapes over a block, one block, the
+correction of the moduli and the run; and \verb|Report.lean| ($334$ lines), above
+\verb|Choice.lean|, with the report of the library. \verb|FindPoints.lean| ($1187$ lines) imports
+\verb|Blocks.lean|, \verb|Report.lean| and \verb|Sturm.lean|, with the search with the choice, the
+search of the polynomial, the sieving and the searches with a callback and with a print channel;
+\verb|Cli.lean| ($1235$ lines) imports it and \verb|CliNumbers.lean| ($526$ lines), with the tuning
+options, message~4 and the print channel of \verb|-v|.
 
-\section{Files and order of work}\label{sec:moduliFiles}
+The proofs of the pool of the candidates, of the counters and of the plan of the blocks use Lean
+core and \verb|Std| only, as the contracts of the sieve of the earlier stages do:
+\verb|Ratpoints/Proof/ChoicePool.lean| ($247$ lines), new, above the choice of the model, has the
+contracts of the stages on the pool for every property of the candidates that they keep;
+\verb|Ratpoints/Proof/ScanCounts.lean| ($670$ lines), new, above \verb|Ratpoints/Proof/Scan.lean|,
+the counters of the walk through the set bits of a word, the extraction and the scan of a piece;
+\verb|Ratpoints/Proof/Stages.lean| the arithmetic of the counters and the counts of the test of a
+candidate; \verb|Ratpoints/Proof/SiftBits.lean| ($1014$ lines), split off
+\verb|Ratpoints/Proof/Sift.lean|, the masks and the contracts of one piece and of the bits of an
+interval, with their counters, and \verb|Ratpoints/Proof/Sift.lean| ($1078$ lines), above it, the
+contract of one denominator; \verb|Ratpoints/Proof/BlockPlan.lean| ($473$ lines), new, above the
+blocks of the model, the plan of the blocks and the well-formed decisions;
+\verb|Ratpoints/Proof/RowStore.lean| ($1468$ lines) the frame of the store, that building rows
+removes none; and \verb|Ratpoints/Proof/Denominators.lean| ($54$ lines) only what \verb|run_setup|
+returns. The general facts of the stage on arrays, lists and natural numbers are in
+\verb|Ratpoints/Proof/Containers.lean| ($1479$ lines), under their names in the namespaces of Lean
+core.
 
-The model, in the folder \verb|Ratpoints/Model|: the constants in \verb|Constants.lean| (about $650$
-lines); the cost model in a new file \verb|Costs.lean| (about $700$ lines); the choice in a new file
-\verb|Choice.lean| (about $930$ lines); the blocks, the correction and the run in a new file
-\verb|Blocks.lean| (about $1010$ lines); the report of the library in a new file \verb|Report.lean|
-(about $340$ lines); the densities and the fields of the sieve entries in \verb|Tables.lean|; the
-reciprocal of a forbidden divisor in \verb|Denominators.lean|, which loses the listing and the run
-(about $880$ lines); the counters in \verb|Candidate.lean| and \verb|Sieve.lean|; the options of the
-sieve and $\mathrm{Params}$ in \verb|Params.lean| (about $270$ lines); the search with the choice in
-\verb|FindPoints.lean|; the doubles as \verb|Float|s and \verb|%.pf| in \verb|Double.lean|; the
-print channel in \verb|Delivery.lean|; and the tuning options, message~4 and the report under
-\verb|-v| in \verb|Cli.lean| (about $1230$ lines). The proofs, in the folder \verb|Ratpoints/Proof|,
-use Lean core and \verb|Std| only in these files: the pool of the candidates in a new file
-\verb|ChoicePool.lean| (about $310$ lines); the counters of the walk, the extraction and the scan in
-a new file \verb|ScanCounts.lean| (about $670$ lines); the arithmetic of the counters and the test
-of a candidate in \verb|Stages.lean|; \verb|Sift.lean| split into \verb|SiftBits.lean| (the masks,
-one piece and the bits of an interval, about $1020$ lines) and \verb|Sift.lean| (one denominator,
-about $1090$ lines); the plan of the blocks in a new file \verb|BlockPlan.lean| (about $460$ lines);
-the frame of the store in \verb|RowStore.lean| (about $1450$ lines); and \verb|Denominators.lean|,
-which keeps only what \verb|run_setup| returns (about $50$ lines). They use Mathlib in these: the
-composite moduli and the stages in a new file \verb|ChoiceModuli.lean| (about $780$ lines); the
-contract of the choice in a new file \verb|Choice.lean| (about $550$ lines); the loops of the shapes
-in a new file \verb|BlockLoops.lean| (about $1100$ lines); one block and the block-listing lemma in
-a new file \verb|Blocks.lean| (about $430$ lines); the correction, the run and the block and lag
-lemmas in a new file \verb|Correction.lean| (about $1020$ lines); the listing of the denominators as
-a definition of the proofs in \verb|Shapes.lean|; the search with the choice in
-\verb|FindPoints.lean|, the theorems in \verb|Output.lean| and the program in \verb|Cli.lean|; and
-\verb|Moduli.lean|, \verb|Forbidden.lean| and \verb|Params.lean|, which lose the explicit route (to
-about $910$, $960$ and $240$ lines). Every Lean file stays below $1500$ lines. The new modules join
-their part roots and \verb|Ratpoints.lean|.
-
-One commit per item, each passing the project's checks, the build with other values of the constants
-and the differential tests, with the nodes and the passages of the earlier chapters that it changes,
-the C paragraphs of the model and the \verb|\csource| links of its nodes, locked, the C links moved
-from their old owners and the exclusions in the same commit, the \verb|\lname| of its declarations
-turned into \verb|\lean|, and the dependency audit of the blueprint after each item that changes
-nodes. The record of the correspondence admits no overlapping ranges, so that a C link moves in the
-item that brings its new owner: the lines of the explicit route with I.3, I.7 and I.8 (the paragraph
-after Definition~\ref{def:choice}), the lines of the run with I.5, I.6 and I.9, and those of the
-search with I.8, I.11 and I.15. The output of \verb|ratpoints-lean| does not change up to I.10; it
-changes at I.11, where the pairs under \verb|-x| become those of ratpoints on the runs without
-tuning options, at I.13 with message~4, at I.14 with the tuning options and at I.15 with the report
-under \verb|-v|; the harness compares each part of the output from the item that makes it that of
-ratpoints, on the runs for which it does. The certified statements change once, at I.10, and keep
-their text from then on, I.11 changing their proofs; comparator runs with \verb|--paranoid| at I.10,
-and plainly at I.11 and at I.13 and I.15, which change definitions that the challenge imports (the
-outcome, and the search with a callback through the report).
-\begin{enumerate}
-  \item[I.1] The constants (Definition~\ref{def:choiceConstants}), \verb|Float|-valued and the
-    option, with $\mathrm{blockLen\_pos}$ and the guards of their bits, and $\mathrm{sp2Extra}$,
-    $\mathrm{defaultNumPrimes}$ and $\mathrm{defaultMaxForbidden}$ with their links from the
-    parameters of the executable; the build with other values of the constants learns \verb|Float|
-    constants and the option, with the variants of the lag, the block length and the blocks wanted;
-    and the nodes and passages of the earlier chapters that Section~\ref{sec:moduliEarlier} assigns
-    to it. Nothing uses the new constants yet.
-  \item[I.2] The fields of the entries (Definition~\ref{def:densities}): the code and the density of
-    the examination of a prime, the flag and the density of a prime power with its parts and
-    $\mathrm{Power.useful}$, the density and the count of a sieve entry, the reciprocal of a
-    forbidden divisor, with Lemma~\ref{lem:densities}; the explicit route fills the new fields,
-    which nothing reads yet; and the nodes and passages of the earlier chapters that
-    Section~\ref{sec:moduliEarlier} assigns to it.
-  \item[I.3] The cost model in \verb|Ratpoints/Model/Costs.lean| (Definitions~\ref{def:costModel}
-    and~\ref{def:runShape}), with no proofs, and $\mathrm{Double.toFloat}$, which joins
-    Definition~\ref{def:Double}; the lines 1619-1623 of the offset of the second stage from the
-    parameters of the executable; \verb|ceil|, \verb|floor| and the count of the set bits of a word
-    recorded in the \verb|Deviation:| paragraphs of the components that use them; and the nodes and
-    passages of the earlier chapters that Section~\ref{sec:moduliEarlier} assigns to it. Nothing
-    calls the cost model yet.
-  \item[I.4] The counters through the sieve (Definition~\ref{def:counters}) with their closed forms
-    (Lemma~\ref{lem:counters}), \verb|Ratpoints/Proof/Sift.lean| split and
-    \verb|Ratpoints/Proof/ScanCounts.lean| new; and the nodes and passages of the earlier chapters
-    that Section~\ref{sec:moduliEarlier} assigns to it. The run of stage~H discards the counters.
-  \item[I.5] The plan of the blocks and the four loops (Definitions~\ref{def:blockPlan}
-    and~\ref{def:blockLoops}), with Lemmas~\ref{lem:blockPlan} and~\ref{lem:blockLoops}, the links
-    taken from the listing and the run; and the nodes and passages of the earlier chapters that
-    Section~\ref{sec:moduliEarlier} assigns to it. Nothing calls them yet.
-  \item[I.6] One block (Definitions~\ref{def:runBlock} and~\ref{def:decisionWF},
-    Lemma~\ref{lem:runBlock}, with the search for the decision in force), the block-listing lemma
-    (Lemma~\ref{lem:blockDens}), stated over the listing of the model, and the frame of the store,
-    all of \verb|Ratpoints/Proof/Blocks.lean|, with no unfolding lemma of one block; the links
-    3889-3898, 3911, 3913 and 4077-4078 of one block from the run; and the nodes and passages of the
-    earlier chapters that Section~\ref{sec:moduliEarlier} assigns to it. Nothing calls them yet.
-  \item[I.7] The pool, the composite moduli, the first two stages and the third stage
-    (Definitions~\ref{def:compositeModuli}, \ref{def:firstStages} and~\ref{def:thirdStage}, but for
-    $\mathrm{thirdOf}$; Lemmas~\ref{lem:choicePool} and~\ref{lem:compositeModuli}), with the C links
-    that the paragraph after Definition~\ref{def:choice} gives to I.7; and the nodes and passages of
-    the earlier chapters that Section~\ref{sec:moduliEarlier} assigns to it. Nothing calls them yet.
-  \item[I.8] The choice (Definitions~\ref{def:tablesLoop} and~\ref{def:choice},
-    Lemma~\ref{lem:choice}), $\mathrm{thirdOf}$ with $\mathrm{thirdOf\_spec}$, the new fields of
-    $\mathrm{Params}$, and the options of the sieve with their normalization, their tuning and their
-    defaults (Definition~\ref{def:sieveOptions}), with $\mathrm{arraySizeAt}$ and
-    $\mathrm{Double.minusOne}$; the explicit $\mathrm{sievingInfo}$, \verb|IsSievingInfo| and
-    \verb|sievingInfo_spec| renamed to \verb|sievingInfoOf|, \verb|IsSievingInfoOf| and
-    \verb|sievingInfoOf_spec|, and the parameters of the executable filling the new fields of
-    $\mathrm{Params}$, their docstring naming the fields that the explicit run does not read; the C
-    links of the choice from the explicit route and from the search (lines 2794-2795), the private
-    fields of the arguments to their owners and the exclusions of those that hold memory; the
-    \verb|Deviation:| of the result of the choice corrected: \verb|stage3_list| is read, as the
-    buffer of the table of the third stage, which the model replaces by the thunk of the checks; and
-    the nodes and passages of the earlier chapters that Section~\ref{sec:moduliEarlier} assigns to
-    it. Nothing calls the choice yet.
-  \item[I.9] The correction (Definition~\ref{def:correction}), with Lemmas~\ref{lem:correctionWF}
-    and~\ref{lem:correctionAfter} and the lag lemma (Theorem~\ref{thm:lag}), which do not need the
-    run; the lines 3755-3762 from the shapes and line 3861 from the run; the exclusion of
-    \verb|RP_PRIME_STATS|; and the nodes and passages of the earlier chapters that
-    Section~\ref{sec:moduliEarlier} assigns to it. Nothing calls the correction yet.
-  \item[I.10] The interface with the behaviour unchanged: $\mathrm{findPoints}$ and
-    $\mathrm{findPointsWith}$ on $s$ through the parameters of the executable and the explicit
-    route, the print channel with $\mathrm{findPointsWork}$ and $\mathrm{findPointsVerbose}$
-    (Definition~\ref{def:findPointsVerbose}), $\mathrm{Delivery.print}$ and
-    Lemma~\ref{lem:choiceSearch}; the links of the search with a callback and of the program; the
-    eleven statements of Section~\ref{sec:certifiedI}, the solution and comparator with
-    \verb|--paranoid|, its acceptance recorded; the statements in the description of the repository,
-    \verb|formalization.yaml|, \verb|comparator/README.md| and the docstring of the challenge; and
-    the nodes and passages of the earlier chapters that Section~\ref{sec:moduliEarlier} assigns to
-    it.
-  \item[I.11] The switch of the choice and of the run: $\mathrm{chooseAndSearch}$ with the choice
-    (Definition~\ref{def:chooseAndSearch}), the run over the blocks with the correction
-    (Definition~\ref{def:sieveRun}), the listing moved to the proofs, the block lemma
-    (Theorem~\ref{thm:blocks}) and the form with the blocks sifted apart
-    (Theorem~\ref{thm:threads}), the order through the block-listing lemma; the route of the proofs
-    through $\mathrm{IsSievingInfo}$ and the well-formed decisions, the statements unchanged, and
-    the docstrings of the contracts of the search and of its run, which say that the test does not
-    depend on the search intervals, corrected; comparator, its acceptance recorded; the exclusions
-    of the threads; the sentence of the description of the repository on \verb|-x|; the harness: the
-    pairs under \verb|-x| compared exactly on the runs without \verb|-r -R -U -C -A -Q -W|, the
-    suite \verb|adapt| on its $20$ command lines without tuning options, without \verb|-A| and with
-    \verb|-A 1|, the new runs of the high suite, those with \verb|-A 2| compared exactly from I.14,
-    and the pair with the block length $3$ on the runs without tuning options; and the nodes and
-    passages of the earlier chapters that Section~\ref{sec:moduliEarlier} assigns to it.
-  \item[I.12] The deletion of the explicit route and its proofs: the parameters of the executable,
-    the loop of the tables of stage~F1, the factors of a modulus, \verb|makeModulus?|, the explicit
-    $\mathrm{sievingInfo}$ with its contract, and $\mathrm{Params.WF}$ with its instance, its lemmas
-    and \verb|getElem!_primeTable_inj|; \verb|getElem!_primeTable_le_of_le| and
-    \verb|IsModulusEntry.isSound| moved; the docstrings of the model that name $\mathrm{Params.WF}$,
-    in \verb|Ratpoints/Model/Candidate.lean| and \verb|Ratpoints/Model/Params.lean|, reworded; the
-    nodes that describe these, and every reference and use of a deleted label in
-    Chapters~\ref{chap:spec} to~\ref{chap:moduli} retargeted or dropped, as
-    Section~\ref{sec:moduliEarlier} lists them, the references of this chapter turned into plain
-    names; the entry of \verb|wf_sieveParams| in \verb|formalization.yaml|; and the nodes and
-    passages of the earlier chapters that Section~\ref{sec:moduliEarlier} assigns to it.
-  \item[I.13] The numbers of the moduli used in the outcome and message~4 in the program, with their
-    links; comparator, its acceptance recorded; the harness compares message~4 on the runs without
-    tuning options; and the nodes and passages of the earlier chapters that
-    Section~\ref{sec:moduliEarlier} assigns to it.
-  \item[I.14] The tuning options of the program (Definition~\ref{def:cliTuning}, the reading of the
-    options and its lemmas extended to their branches); the pairs under \verb|-x| and message~4
-    compared on every run, the whole suite \verb|adapt|, the runs of the high suite with \verb|-A 2|
-    compared exactly, the suites \verb|tuning| and \verb|threads|, and the pair with the block
-    length $3$ on every run; the sentence of the description of the repository on the options that
-    the program ignored; and the nodes and passages of the earlier chapters that
-    Section~\ref{sec:moduliEarlier} assigns to it.
-  \item[I.15] The report of the library (Definition~\ref{def:report}) in
-    \verb|Ratpoints/Model/Report.lean|, with \verb|%.pf|, $\mathrm{Double.ofFloat}$, the print
-    channel of the program and the links of the report from the components that run around it, and
-    the program theorem with the hypothesis on \verb|-v| (Lemma~\ref{lem:cliVerbose}); comparator,
-    its acceptance recorded; the harness compares the report under \verb|-v| byte for byte and has
-    the suite \verb|verbose|; and the nodes and passages of the earlier chapters that
-    Section~\ref{sec:moduliEarlier} assigns to it.
-  \item[I.16] The texts: the description of the repository, \verb|formalization.yaml| and
-    \verb|comparator/README.md| beyond the items, the introduction of the blueprint, and the
-    passages of the earlier chapters that stage~I makes untrue beyond those of the items, which
-    Section~\ref{sec:moduliEarlier} assigns to it; the check of the correspondence switched to
-    \verb|--complete| in CI and in the checks of each commit, and \verb|correspondence/README.md|
-    reworded; the generated table.
-\end{enumerate}
-The blocks come before the choice, since the contract of the choice states that its first decision
-is well formed (Definition~\ref{def:decisionWF}, I.6); the correction comes after the choice, since
-it reads the fields of the options and of the parameters that the choice brings; and the cost model
-comes before both. The switch of the run and the switch of the choice are one item: a run over the
-blocks with the explicit choice would need the contract of the choice for the explicit route, a
-proof that I.12 would delete again.
-
-Names that the prototype has and the audit of the stage is to review: the two definitions named
-$\mathrm{ForbFits}$, \lname{Ratpoints.Sieve.ForbFits} (on lists) and
-\lname{Ratpoints.Sieve.Shape.ForbFits}; the names in the style of abbreviations
-\lname{Ratpoints.AllQ}, \lname{Ratpoints.TailNf}, \lname{Ratpoints.CandOK},
-\lname{Ratpoints.PrimeSeOK}, \lname{Ratpoints.CodeOK}, \lname{Ratpoints.EntryOK},
-\lname{Ratpoints.EntriesOK} and the structures named \verb|OK|; the general fact
-\lname{Ratpoints.Sieve.Nat.ite\_mod\_add\_one\_eq\_add\_one\_mod}, which landed in the namespace
-\verb|Ratpoints.Sieve|, and \lname{Ratpoints.Sieve.take\_append\_take\_drop}; the names
-\lname{Ratpoints.Sieve.pre\_siftBits\_counters}, \lname{Ratpoints.Sieve.ite\_lt\_rbaLength\_and} and
-\lname{Ratpoints.Cli.input\_eq\_ok}, which do not say what they state; the general facts on arrays,
-options and lists of the new proof files that may belong in \verb|Ratpoints/Proof/Containers.lean|
-(\lname{Array.Extends}, \lname{Option.eq\_none\_of\_forall\_prod4},
-\lname{List.forall\_mem\_drop\_of\_forall\_getElem!} and their kin); the ten to twelve fixed
-arguments of \lname{Ratpoints.Sieve.blockReport} and \lname{Ratpoints.Sieve.correctionAfter}, which
-a structure could bundle; and whether \verb|Ratpoints/Model/Blocks.lean| splits off the correction
-as a file of its own. The names of this chapter are those of the prototype; the audit may rename
-them.
+The other proofs of the stage are in files with Mathlib. New are
+\verb|Ratpoints/Proof/ChoiceModuli.lean| ($805$ lines), above
+\verb|Ratpoints/Proof/ChoicePool.lean|, \verb|Ratpoints/Proof/Moduli.lean| and
+\verb|Ratpoints/Proof/Stages.lean|, with the composite moduli, the entries of the first two stages
+and the third stage; \verb|Ratpoints/Proof/Choice.lean| ($531$ lines), above it,
+\verb|Ratpoints/Proof/BlockPlan.lean| and \verb|Ratpoints/Proof/Forbidden.lean|, with the loop of
+the tables and the contract of the choice; \verb|Ratpoints/Proof/BlockLoops.lean| ($1050$ lines),
+above the blocks of the model, \verb|Ratpoints/Proof/Shapes.lean| and
+\verb|Ratpoints/Proof/Stages.lean|, with the loops of the shapes over a block and the search for the
+decision in force; \verb|Ratpoints/Proof/Blocks.lean| ($421$ lines), above it,
+\verb|Ratpoints/Proof/BlockPlan.lean| and \verb|Ratpoints/Proof/Sift.lean|, with one block and the
+block-listing lemma; and \verb|Ratpoints/Proof/Correction.lean| ($968$ lines), above it, with the
+correction, the run, the block lemma, the lag lemma and the blocks sifted apart. Of the files of the
+earlier stages, \verb|Ratpoints/Proof/Shapes.lean| has the listing of the denominators of the
+shapes, a definition of the proofs; \verb|Ratpoints/Proof/FindPoints.lean| ($1063$ lines), above
+\verb|Ratpoints/Proof/Choice.lean| and, privately, \verb|Ratpoints/Proof/Correction.lean|, the
+contracts of the run and of the search with the choice; \verb|Ratpoints/Proof/Output.lean| ($1120$
+lines) the theorems on the options of the sieve and the search with the default print channel;
+\verb|Ratpoints/Proof/Cli.lean| ($973$ lines) the theorems on the program without \verb|-v|; and
+\verb|Ratpoints/Proof/Moduli.lean|, \verb|Ratpoints/Proof/Forbidden.lean| and
+\verb|Ratpoints/Proof/Params.lean|, which lost the explicit route and the well-formedness of the
+parameters ($900$, $961$ and $203$ lines). The specification and the mirrors under
+\verb|Ratpoints/Mathlib| do not change. Every Lean file stays below $1500$ lines, the largest being
+\verb|Ratpoints/Proof/Containers.lean|. The new modules are in their part roots and in the listing
+\verb|Ratpoints.lean|.
 
 \section{The evidence}\label{sec:moduli-evidence}
 
+Besides the proofs:
 \begin{itemize}
-  \item A reading of the C code of the choice, of \verb|run_shape| and its helpers, of the blocks,
+  \item a reading of the C code of the choice, of \verb|run_shape| and its helpers, of the blocks,
     the counters, \verb|run_fold| and \verb|adapt_primes|, of the threads, of the floating-point
     environment of the build, of the numbers of the moduli used, message~4 and the report under
     \verb|-v|, at the pin, by three readers, each with a second reader who checked the findings: a
     model of the choice in plain IEEE doubles in the order of the C code, with glibc's \verb|log|
-    and \verb|pow|, reproduced, from the estimates, the densities and the candidates that a traced
-    build of the C program printed, the costs, the keys, the numbers of the moduli of the stages and
-    the primes of the third stage on $5901$ runs, the suites, the moduli pinned, the curves of
-    \verb|rptest| at the heights $200$, $16383$ and $50000$ and sweeps of the tuning options, and,
-    from the traced counters, the decisions of all $2636$ calls of \verb|adapt_primes| (the sketch
-    below reproduced the whole choice); the C program with \verb|-t 4|, \verb|-t 0| and \verb|-t 2|
-    printed the output of the sequential run on $2351$ sieved runs of the suites and $450$ runs of
-    stress, also in its traced decisions and the numbers of the moduli used; glibc's \verb|qsort|
-    was stable in $50000$ random trials with ties; \verb|log| and \verb|pow| were measured against
-    the correctly rounded values; the build compiles no fused multiply-add. The reading found no
-    defect of the behaviour of the C code, and three cosmetic points, recorded with the C code for a
-    release after 3.1.1: the sort by density from the end of the second stage,
+    and \verb|pow|, reproduced bit for bit, from the estimates, the densities and the candidates
+    that a traced build of the C program printed, the costs, the keys, the numbers of the moduli of
+    the stages and the primes of the third stage on $5901$ runs (the suites, the moduli pinned, the
+    curves of \verb|rptest| at the heights $200$, $16383$ and $50000$ and sweeps of the tuning
+    options), and, from the traced counters, the decisions of all $2636$ calls of
+    \verb|adapt_primes|; the C program with \verb|-t 4|, \verb|-t 0| and \verb|-t 2| printed the
+    output of the sequential run on $2351$ sieved runs of the suites and $450$ runs of stress, also
+    in its traced decisions and the numbers of the moduli used; glibc's \verb|qsort| was stable in
+    $50000$ random trials with ties; \verb|log| and \verb|pow| were measured against the correctly
+    rounded values, which they are not always, and glibc chooses their variant by the processor, so
+    that the choice is compared on one machine; the build compiles no fused multiply-add. A reading
+    of the Lean side checked that Lean's \verb|Float| computes the doubles of the cost model as the
+    C program does on the machine of the tests, with the same C library, on $6000$ inputs, $16$
+    doubles of the cost model each, compiled and interpreted, and proved, before the stage, that a
+    choice driven by \verb|Float| keys is well formed without any fact about \verb|Float|, that the
+    cut points of each block keep a sound test, and the block lemma with its threaded form. The
+    reading found no defect of the behaviour of the C code, and three cosmetic points, recorded with
+    the C code for a release after 3.1.1: the sort by density from the end of the second stage,
     \verb|RATPOINTS_DEFAULT_SP1| read nowhere, and two comments that say that \verb|fill_bp_list|
-    makes the correction, which \verb|run_fold| makes. A reading of the Lean side checked that
-    Lean's \verb|Float| computes the doubles of the cost model as the C program does on $6000$
-    inputs, $16$ doubles of the cost model each, compiled and interpreted, and proved, before the
-    stage, that a choice driven by \verb|Float| keys is well formed without any fact about
-    \verb|Float|, that the cut points of each block keep a sound test, and the block lemma with its
-    threaded form.
-  \item Before the stage, a sketch of the model in Lean in three parts, the choice, the blocks and
+    makes the correction, which \verb|run_fold| makes;
+  \item before the stage, a sketch of the model in Lean in three parts, the choice, the blocks and
     the report, checked against an instrumented build of the C program that prints every double of
-    the choice in hexadecimal: $2349$ command lines of the suites that reach the choice gave
-    $144919$ identical lines of the trace, with $2463$ steps of the loop of the tables that look at
-    one more prime, $6$ exits in that loop and $1$ in the third stage, composite moduli in $48$ runs
-    and a reserve in $2077$, and the $398$ runs of a file of vectors; $8000$ runs with random tuning
-    options over three seeds, byte for byte; every fold of the blocks of the runs of \verb|test4.sh|
-    at $30000$ to $100000$ ($13201$ lines of the trace, $15$ decisions, $5$ of them taking effect)
-    and of $2356$ runs of \verb|rptest| at $16383$ and $50000$ ($188558$ lines, $149$ decisions, in
-    $37$ runs taking effect); the reports under \verb|-v| of the $33$ runs \verb|v()| of
-    \verb|test4.sh|, $14$ larger runs and $2000$ random runs; and \verb|%.pf| against glibc on
-    $3546$ doubles; none failing.
-  \item Reviews of the sketch, of the choice against the C code, of the blocks, the counters and the
-    report against the C code, of the harness and of the specification, each finding checked by a
-    second reader: $50$ findings, $38$ confirmed and $12$ in part, none refuted, no defect of the
-    behaviour of the model. They made the C links exact without overlaps, the explicit
-    implementations that the sketch kept beside the faithful ones go from the model, the guards
-    independent of the platform's \verb|log| and \verb|pow|, the dispatch of the shapes a function
-    of its own, the correction of the third stage compute its costs itself as the C code does, and
-    gave the harness the runs at $16383$ where the correction takes effect, the comparison of the
-    pairs of \verb|test4.sh| with the live C program and the refusal of a \verb|tuning.mk|; the
-    sketch with these fixes compared $5397$ times in the default suites, $13$ in \verb|test4high|
-    and $92$ in \verb|adapt|, and the pair with the block length $3$ compared $3601$ times in twelve
-    default suites and $92$ times in \verb|adapt|, none failing.
-  \item A prototype of all the proofs on the sketch: the whole library, the program, the challenge
-    and the solution build, with no \verb|sorry| outside the challenge, every proof at most $20$
-    lines with no exception of the style lint, standard axioms; comparator with \verb|--paranoid|
-    accepts the eleven statements with all six kernels (2026-10-25); the build with other values of
-    the constants passes its eleven variants, among them the lag $1$ with the block length $3$ and
-    one block wanted; the environment linters pass; the differential tests compare as in
-    Section~\ref{sec:moduliTests}; every Lean file is below $1500$ lines; it adds $566$ public names
-    and removes $92$. It changed the model of the sketch not at all, and it showed which hypotheses
-    the contracts need: the listing of the search without duplicates and the forbidden divisors with
-    their reciprocals for the contract of the run per denominator, normalized options for the
-    choice, and $\mathrm{IsSievingInfo}$ and the well-formed decisions in place of
-    $\mathrm{Params.WF}$.
+    the choice in hexadecimal, all without a mismatch: $2349$ command lines of the suites that reach
+    the choice gave $144919$ identical lines of the trace, with $2463$ steps of the loop of the
+    tables that look at one more prime, $6$ exits in that loop and $1$ in the third stage, composite
+    moduli in $48$ runs and a reserve in $2077$, and the $398$ runs of a file of vectors were
+    identical too; $8000$ runs with random tuning options over three seeds, byte for byte; every
+    fold of the blocks of the runs of \verb|test4.sh| at $30000$ to $100000$ ($13201$ lines of the
+    trace, $15$ decisions, $5$ of them taking effect) and of $2356$ runs of \verb|rptest| at $16383$
+    and $50000$ ($188558$ lines, $149$ decisions, in $37$ runs taking effect); the reports under
+    \verb|-v| of the $33$ runs \verb|v()| of \verb|test4.sh|, $14$ larger runs and $2000$ random
+    runs; and \verb|%.pf| against glibc on $3546$ doubles. Reviews of the sketch, of the choice, the
+    blocks, the counters and the report against the C code, of the harness and of the specification,
+    each finding checked by a second reader: $50$ findings, $38$ confirmed and $12$ in part, none
+    refuted, no defect of the behaviour of the model; they made the C links exact without overlaps,
+    the guards independent of the platform's \verb|log| and \verb|pow| and the correction of the
+    third stage compute its costs itself as the C code does, and gave the harness the runs at
+    $16383$ where the correction takes effect, the comparison of the pairs of \verb|test4.sh| with
+    the live C program and the refusal of a \verb|tuning.mk|. Then a prototype of all the proofs on
+    the sketch, in which the whole library, the program, the challenge and the solution build, with
+    no \verb|sorry| outside the challenge and the standard axioms, \verb|lake comparator --paranoid|
+    accepts the eleven statements, the build with eleven other sets of values of the constants
+    passes and the differential tests pass; it changed the model of the sketch not at all, and it
+    showed which hypotheses the contracts need: the listing of the search without duplicates and the
+    forbidden divisors with their reciprocals for the contract of the run per denominator,
+    normalized options for the choice, and $\mathrm{IsSievingInfo}$ and the well-formed decisions in
+    place of $\mathrm{Params.WF}$. And a review of the plan of this chapter ($63$ findings, $50$
+    confirmed, $12$ in part and $1$ refuted), each finding checked by a second reader;
+  \item the sixteen items of the stage drafted one after the other in a copy of the repository, each
+    passing the project's checks, the differential tests and the build with eleven other sets of
+    values of the constants (A, B, C2, C3, C5, C12, P8, P2, P1C5, L1 with the lag $1$ and the block
+    length $3$, and W1 with one block wanted), and taken over one commit each;
+    \verb|lake comparator| ran at five of them, plain with the choice of the moduli, still on the
+    statements of stage~H, with \verb|--paranoid| at the switch of the interface to the options of
+    the sieve, and plain at the switch to the choice and the blocks, with the numbers of the moduli
+    used and with the report under \verb|-v|;
+  \item after the stage, independent reviews, each finding checked by a second reader: two of the
+    record of the C code, the deviations and the exclusions against the C code ($8$ findings, all
+    confirmed), and three of the code, the model, the blueprint and the descriptions against the
+    conventions of the project ($75$ findings, $68$ confirmed), $83$ findings and $76$ confirmed in
+    all, some of them in part, none a defect of behaviour, applied in nine rounds: the record of the
+    C code and the docstrings of the model; the orphans of the deletion of the explicit route, among
+    them the fields of $\mathrm{Params}$ that nothing read; the general facts in their natural
+    homes, the files of core facts and the frame of the store; the invariants as structures with
+    named fields and the report of a block in closed form stated once; the names from the
+    statements; the idioms and the missing API of the proofs, no proof naming a verification
+    condition by its number; the docstrings of the proofs, among them how the pool of the C code
+    meets the hypotheses of the statements on the threads; the blueprint and the descriptions; and
+    the imports of the files of the model;
+  \item the \verb|#guard| examples of Section~\ref{sec:moduliTests}: none pins a value that depends
+    on \verb|log| or \verb|pow|;
+  \item the differential tests of Section~\ref{sec:moduliTests}: $5397$ comparisons in the default
+    suites, among them $462$ searches under \verb|-x| compared exactly with the C program, $17$ of
+    them where the C program may correct its moduli, $445$ reports with message~4 and $414$ searches
+    under \verb|-v| compared byte for byte with the report of the library, and $13$ in
+    \verb|test4high| and $92$ in \verb|adapt|, $69$ of them where the C program may correct its
+    moduli, none failed, both programs on one machine;
+  \item the pair with the block length $3$, a build of the model with $\mathrm{blockLen} = 3$
+    against a build of the C program with \verb|-DRP_BLOCK_LEN=3|, which tests the boundaries of the
+    blocks: compared $3601$ times in twelve default suites and $92$ times in \verb|adapt|, none
+    failed;
+  \item \verb|lake comparator --paranoid| accepted the eleven statements in their form of stage~I on
+    2026-10-25, at the switch of the interface to the options of the sieve, and again on 2026-10-26
+    on the final state after the audit, with Lean's kernel and the five external checkers bundled
+    with Lean;
+  \item the project builds, with all its proofs, on the final state for the eleven other sets of
+    values of the constants, among them A and B, which change all the constants, the lags $0$, $1$
+    and $1000$, the block lengths $1$ and $3$ and one block wanted; so no proof depends on their
+    values, the decided fact \verb|Ratpoints.blockLen_pos| among the facts that they keep;
+  \item every proof and every definition of the stage takes at most 20 lines; the only longer one in
+    the project is the set-up of the Jacobi test by tables (\verb|jacobiSetup|,
+    Definition~\ref{def:jacobiTables}), which follows the loop of \verb|jacobi_setup| since
+    sub-stage~F2.
 \end{itemize}
-

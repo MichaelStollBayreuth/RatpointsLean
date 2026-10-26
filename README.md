@@ -166,16 +166,17 @@ has eleven statements, the well-formedness of the parameters of the program no l
 `lake comparator --paranoid` accepted the eleven on 2026-10-25, and `lake comparator` again with the
 choice of the moduli and the run over the blocks on 2026-10-25, with the numbers of the moduli used
 in the outcome of the search on 2026-10-25, and with the report of the library under `-v` on
-2026-10-26. `ratpoints-lean` prints the numbers of the moduli used in its report (message 4) and
-under `-v` the report of the library between the points, as ratpoints does, and reads the tuning
-options `-r -R -U -C -A -Q -W` into the options of the sieve. Since the choice of the moduli
-computes with the `log` and `pow` of the platform, the differential tests run the C program on the
-same machine and compare what depends on the choice exactly: the pairs under `-x`, message 4 and the
-output under `-v`, byte for byte, also for random values of the tuning options and against the C
-program sieving on several threads (`-t 4`, `-t 7`): 5397 comparisons in the default suites, 13 in
-the suite of the runs of `test4.sh` above height 30000 and 92 in the suite of the searches in which
-ratpoints corrects its moduli, both run locally. Every line of code of the C files is now recorded,
-and the check of the correspondence requires it. The blueprint and the API documentation will be at
+2026-10-26, and `lake comparator --paranoid` again on the final state of the stage on 2026-10-26.
+`ratpoints-lean` prints the numbers of the moduli used in its report (message 4) and under `-v` the
+report of the library between the points, as ratpoints does, and reads the tuning options
+`-r -R -U -C -A -Q -W` into the options of the sieve. Since the choice of the moduli computes with
+the `log` and `pow` of the platform, the differential tests run the C program on the same machine
+and compare what depends on the choice exactly: the pairs under `-x`, message 4 and the output under
+`-v`, byte for byte, also for random values of the tuning options and against the C program sieving
+on several threads (`-t 4`, `-t 7`): 5397 comparisons in the default suites, 13 in the suite of the
+runs of `test4.sh` above height 30000 and 92 in the suite of the searches in which ratpoints
+corrects its moduli, both run locally. Every line of code of the C files is now recorded, and the
+check of the correspondence requires it. The blueprint and the API documentation will be at
 <https://michaelstollbayreuth.github.io/RatpointsLean/> once the repository is public.
 
 ## Layout

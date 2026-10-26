@@ -525,16 +525,17 @@ sandbox, accepted them too, with Lean's kernel and the five external checkers bu
 their form of stage~H on 2026-10-18, and the eleven of stage~I on 2026-10-25, and
 \verb|lake comparator| accepted them again with the choice of the moduli and the run over the blocks
 of stage~I on 2026-10-25, with the numbers of the moduli used in what a search gives back on
-2026-10-25 and with the report of the library under \verb|-v| on 2026-10-26. The challenge states
-them with \verb|sorry| over \verb|findPoints|, \verb|findPointsWith|, \verb|Outcome|, \verb|Answer|,
-\verb|Delivery|, \verb|Delivery.deliver|, \verb|Options|, \verb|Double|, \verb|SieveOptions|,
-\verb|maxDegree| and \verb|maxDivisors|, imported from the model (until stage~I also \verb|Params|,
-\verb|Params.WF| and \verb|sieveParams|), never restated, since a definition of the model elaborates
-without Mathlib to other instance terms. Each theorem of the library behind them has a guard on its
-axioms, which are the standard ones. The contracts of the sieve of stages C1 to D need only the
-program logic of Lean core and stay in files without Mathlib, so that their \verb|grind| calls see
-only the lemmas of core, untouched by Mathlib's updates; the contract of the run over the blocks,
-since stage~I, is in the file of the correction of the moduli, with Mathlib
+2026-10-25 and with the report of the library under \verb|-v| on 2026-10-26, and
+\verb|lake comparator --paranoid| again on the final state of stage~I on 2026-10-26. The challenge
+states them with \verb|sorry| over \verb|findPoints|, \verb|findPointsWith|, \verb|Outcome|,
+\verb|Answer|, \verb|Delivery|, \verb|Delivery.deliver|, \verb|Options|, \verb|Double|,
+\verb|SieveOptions|, \verb|maxDegree| and \verb|maxDivisors|, imported from the model (until stage~I
+also \verb|Params|, \verb|Params.WF| and \verb|sieveParams|), never restated, since a definition of
+the model elaborates without Mathlib to other instance terms. Each theorem of the library behind
+them has a guard on its axioms, which are the standard ones. The contracts of the sieve of stages C1
+to D need only the program logic of Lean core and stay in files without Mathlib, so that their
+\verb|grind| calls see only the lemmas of core, untouched by Mathlib's updates; the contract of the
+run over the blocks, since stage~I, is in the file of the correction of the moduli, with Mathlib
 (Chapter~\ref{chap:moduli}), like the other contracts of stage~E (Chapter~\ref{chap:denominators})
 and those of the tables and the moduli of stage~F1, which sit next to the lemmas they serve
 (Chapter~\ref{chap:tables}); those of the stages of sub-stage~F2, of the packing of sub-stage~F3 and

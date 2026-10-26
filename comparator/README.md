@@ -126,7 +126,8 @@ not their text, on 2026-10-25 with the numbers of the moduli used in the result 
 `findPointsWith`, which changes a definition that the challenge imports and not their text, and on
 2026-10-26 with the report of the library under `-v` through the print channel of the search, which
 changes the search that `findPointsWith` runs, with its print channel at its default, and not their
-text.
+text. On 2026-10-26 `lake comparator --paranoid` accepted all eleven again, on the final state of
+the stage after its audit.
 
 ## Running
 

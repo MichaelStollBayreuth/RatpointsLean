@@ -299,7 +299,8 @@ status:
     eleven, the well-formedness of the parameters of the program no longer among them; comparator
     --paranoid accepted all eleven on 2026-10-25, and comparator accepted them again with the choice
     of the moduli and the run over the blocks on 2026-10-25, with the numbers of the moduli used in
-    the outcome on 2026-10-25 and with the report under -v on 2026-10-26. ratpoints-lean prints the
+    the outcome on 2026-10-25 and with the report under -v on 2026-10-26, and comparator --paranoid
+    again on the final state of the stage on 2026-10-26. ratpoints-lean prints the
     numbers of the moduli used (message 4) and under -v the report of the library between the
     points, reads the tuning options -r -R -U -C -A -Q -W into the options of the sieve, and checks
     and ignores -t, the number of threads, since the model sieves the blocks in turn on one thread;
