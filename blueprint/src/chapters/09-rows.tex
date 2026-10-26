@@ -904,20 +904,21 @@ Each component of this chapter differs from the C code in a stated way, recorded
     among them those of the factors that the builder of a product reaches through the pointers
     \verb|factor|; the row stored plainly, for the release store of \verb|RP_PUBLISH| in a build
     with threads, and read plainly by the builder of a product, for the acquire load
-    \verb|RP_ACQUIRE| (stage~I); a fresh vector for each row, for the space that the builders take
-    from the buffer of the tables (\verb|ba_next|); fresh arrays of zeros, which the loops of the
-    builders clear, for \verb|help| and for the pattern of a prime power, whose words the C code
-    leaves unset until those loops clear them, and for \verb|rep|, of which \verb|lay_out_pattern|
-    clears the first \verb|words| words and leaves the others unset and never reads them; the forms
-    of the production builds, where \verb|RP_INIT_BRANCH| and \verb|RP_INIT_ONEWAY| are not set; the
-    variables that the macros declare, or read and write, in their callers passed and returned, and
-    the words and the rows of the functions passed and returned; Booleans for the \verb|int| entries
-    of \verb|is_f_square|; the steps \verb|ab += d; if (ab >= p) ab -= p;| and the like as
-    conditional values; no copy \verb|pattern| of \verb|help0|; the variables \verb|ldp|, \verb|p1|,
-    \verb|diff_shift| and \verb|diff| at the head of the functions of a prime computed by the part
-    that rotates the row, and \verb|wp| where it is used; the shifts by \verb|LONG_SHIFT| and the
-    masks by \verb|LONG_MASK| as divisions and remainders by $64$; the loops that step by $m$ or by
-    $q$ as \verb|while| loops; the number of the factors the length of their list, for \verb|nf|;
+    \verb|RP_ACQUIRE|, the model having no threads; a fresh vector for each row, for the space that
+    the builders take from the buffer of the tables (\verb|ba_next|); fresh arrays of zeros, which
+    the loops of the builders clear, for \verb|help| and for the pattern of a prime power, whose
+    words the C code leaves unset until those loops clear them, and for \verb|rep|, of which
+    \verb|lay_out_pattern| clears the first \verb|words| words and leaves the others unset and never
+    reads them; the forms of the production builds, where \verb|RP_INIT_BRANCH| and
+    \verb|RP_INIT_ONEWAY| are not set; the variables that the macros declare, or read and write, in
+    their callers passed and returned, and the words and the rows of the functions passed and
+    returned; Booleans for the \verb|int| entries of \verb|is_f_square|; the steps
+    \verb|ab += d; if (ab >= p) ab -= p;| and the like as conditional values; no copy \verb|pattern|
+    of \verb|help0|; the variables \verb|ldp|, \verb|p1|, \verb|diff_shift| and \verb|diff| at the
+    head of the functions of a prime computed by the part that rotates the row, and \verb|wp| where
+    it is used; the shifts by \verb|LONG_SHIFT| and the masks by \verb|LONG_MASK| as divisions and
+    remainders by $64$; the loops that step by $m$ or by $q$ as \verb|while| loops; the number of
+    the factors the length of their list, for \verb|nf|;
   \item the row of $0$ of a prime a function of $p$, computed when it is called, its first $(p +
     \mathrm{chunk} - 1)\,\mathrm{rbaPack}$ words, for the row of the generated table, whose other
     words are $0$ and never read; the words of a forbidden divisor one function for the array
@@ -951,17 +952,17 @@ Each component of this chapter differs from the C code in a stated way, recorded
     $0$, where the C code leaves the field as it is until the first stage sets it; the end $p$ also
     for a row not built yet, where the C code adds $p$ to the null pointer; the row read plainly,
     for the acquire load that the flag \verb|shared| chooses, and one call, for the two calls with
-    the flag a constant, between which the pool of threads chooses (stage~I); in the loop that
-    builds the missing rows, the specs and the store passed and returned, no lock of the tables
-    (\verb|rp_tables_lock|, \verb|rp_tables_unlock|) and the pointer read again plainly, for the
-    acquire load, both for the threads that share the tables of rows (stage~I); no measurement of
-    the construction (\verb|RP_INIT_TIC|, \verb|RP_INIT_TOC|) and no output under \verb|DEBUG|. The
-    reading again itself is modelled: with one thread it finds a row that an earlier spec of the
-    same denominator built into the same table of rows, when a prime or a prime power occurs twice
-    among the moduli of the first two stages or comes after a product among them that has it as a
-    factor, cases that the contracts of the model admit and ratpoints never has
-    (Section~\ref{sec:rowsC}); a product that occurs twice has a table of rows of its own at each
-    position, so that its reading again finds nothing;
+    the flag a constant, between which the pool of threads chooses, which the model does not have;
+    in the loop that builds the missing rows, the specs and the store passed and returned, no lock
+    of the tables (\verb|rp_tables_lock|, \verb|rp_tables_unlock|) and the pointer read again
+    plainly, for the acquire load, both for the threads that share the tables of rows, which the
+    model does not have; no measurement of the construction (\verb|RP_INIT_TIC|, \verb|RP_INIT_TOC|)
+    and no output under \verb|DEBUG|. The reading again itself is modelled: with one thread it finds
+    a row that an earlier spec of the same denominator built into the same table of rows, when a
+    prime or a prime power occurs twice among the moduli of the first two stages or comes after a
+    product among them that has it as a factor, cases that the contracts of the model admit and
+    ratpoints never has (Section~\ref{sec:rowsC}); a product that occurs twice has a table of rows
+    of its own at each position, so that its reading again finds nothing;
   \item the bit arrays \verb|sq|, \verb|fsq| and \verb|gsq| of \verb|examine_power| fresh arrays of
     $\mathrm{modWords}$ words, with $64$ for \verb|LONG_LENGTH| in $\mathrm{modWords}$, which the
     loop at line 2282 clears, for the local array that the function leaves unset and the arrays of

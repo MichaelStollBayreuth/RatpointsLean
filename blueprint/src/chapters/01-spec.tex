@@ -281,11 +281,13 @@ earlier acceptances.
 \section{The command-line program}\label{sec:cli}
 
 The Lean program is a program of its own, the executable \verb|ratpoints-lean|, with the command
-line of ratpoints. Eventually it offers the full functionality of ratpoints except the threads and
-the other hardware-dependent features. It prints the points of the sieve of
-Chapters~\ref{chap:sieve} and~\ref{chap:words} with the set-up of Chapter~\ref{chap:setup} (in
-stage~B those of the brute-force reference, in stage~C1 those of the plain sieve), so that the test
-scripts of the C repository can run it as \verb|RP=ratpoints-lean|:
+line of ratpoints. Since stage~I it offers the full functionality of ratpoints except the threads
+and the other hardware-dependent features: it reads every option of ratpoints, the number of threads
+among them, which it checks and ignores. It prints the points of the sieve of
+Chapters~\ref{chap:sieve} and~\ref{chap:words} with the set-up of Chapter~\ref{chap:setup} and the
+moduli that the search chooses from the curve (Chapter~\ref{chap:moduli}) (in stage~B those of the
+brute-force reference, in stage~C1 those of the plain sieve), so that the test scripts of the C
+repository can run it as \verb|RP=ratpoints-lean|:
 \begin{itemize}
   \item it prints what ratpoints prints: the points, through the callback \verb|process| of
     \verb|main.c|, by default one line \verb|(x : y : z)| per point, and without \verb|-q| the

@@ -41,22 +41,25 @@ particular that \verb|-1| prints the first point of the list that the callback k
 
 With the appending callback the delivery of a list is that list, so \verb|findPoints| returns the
 list of the earlier stages whenever neither option of the output is set, and neither \verb|Params|
-nor \verb|Params.WF| changes. Of the statements that comparator certifies, membership has the
-hypothesis that the exact check is on and, under \verb|RATPOINTS_NO_Y|, the conclusion $y \ge 0$,
-since under \verb|RATPOINTS_NO_CHECK| the list holds survivors that are no points and under
-\verb|RATPOINTS_NO_Y| only one point of each pair; no duplicates keeps its text, which quantifies
-over the options of the output too; the two theorems of the reference, both refusal theorems and the
-well-formedness of the parameters of the program keep their text. Five statements are new: the order
-theorem, over the file of the order, which the challenge restates verbatim; the protocol of the
-delivery, by which the search with any callback gives the data and the count of the delivery of the
-list of \verb|findPoints|, up to the first stop; and three statements on the output under
-\verb|RATPOINTS_NO_CHECK|; like membership and no duplicates, all five are for well-formed
+nor \verb|Params.WF| changes (stage~I makes the parameters internal to the search and drops their
+well-formedness, Chapter~\ref{chap:moduli}). Of the statements that comparator certifies, membership
+has the hypothesis that the exact check is on and, under \verb|RATPOINTS_NO_Y|, the conclusion
+$y \ge 0$, since under \verb|RATPOINTS_NO_CHECK| the list holds survivors that are no points and
+under \verb|RATPOINTS_NO_Y| only one point of each pair; no duplicates keeps its text, which
+quantifies over the options of the output too; the two theorems of the reference, both refusal
+theorems and the well-formedness of the parameters of the program keep their text. Five statements
+are new: the order theorem, over the file of the order, which the challenge restates verbatim; the
+protocol of the delivery, by which the search with any callback gives the data and the count of the
+delivery of the list of \verb|findPoints|, up to the first stop; and three statements on the output
+under \verb|RATPOINTS_NO_CHECK|; like membership and no duplicates, all five are for well-formed
 parameters. So comparator certifies twelve statements (Section~\ref{sec:certifiedG}); the five new
 ones came in with their theorems, and \verb|lake comparator --paranoid|, with Lean's kernel and the
 five external checkers bundled with Lean, accepted all twelve on 2026-10-17, the date that
 Chapters~\ref{chap:spec} and~\ref{chap:sieve} and \verb|comparator/README.md| record; stage~H
 changes six of them, for the search region of the options, and comparator accepted the twelve in
-their form of stage~H on 2026-10-18 (Section~\ref{sec:certifiedH}).
+their form of stage~H on 2026-10-18 (Section~\ref{sec:certifiedH}); stage~I takes the options of the
+sieve in place of the parameters and drops the well-formedness of the parameters of the program,
+leaving eleven (Section~\ref{sec:certifiedI}).
 
 As in the other stages, since the aim of the project is to verify the C code as far as that can be
 done, the model follows the C code where the C code has its data and its tests, at its interface

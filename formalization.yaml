@@ -11,8 +11,9 @@ project:
     A Lean 4 model of ratpoints, the C program that finds the rational points of bounded height on
     the curves y^2 = F(x, z), F a binary form of even degree with integer coefficients, by sieving.
     The model mirrors the hardware-independent structure of the C code function by function (the
-    same loops, tables, bit arrays of 64-bit words and index arithmetic); the proofs are to show
-    that, for every value of the options of the sieve, it returns exactly the normalized
+    same loops, tables, bit arrays of 64-bit words and index arithmetic); the proofs show that, for
+    every value of the options of the sieve, whatever moduli the search chooses, it returns exactly
+    the normalized
     points of height at most H in the search region that the caller gives (assuming Sturm's theorem
     when the Sturm step is on), without duplicates, in the order of the C program, delivered to the
     callback of the caller as the C code delivers them, and refuses exactly the inputs that the C
@@ -60,8 +61,8 @@ classification:
 # project status
 status:
   scope: >
-    Stages A, B, C1, C2, D, E, F, in its four sub-stages F1 to F4, G and H. Stage A set up the Lake
-    project with the libraries of the model (Lean core and Std only), the specification and the
+    Stages A, B, C1, C2, D, E, F, in its four sub-stages F1 to F4, G, H and I. Stage A set up the
+    Lake project with the libraries of the model (Lean core and Std only), the specification and the
     proofs, the CI, the blueprint, the correspondence record with its checking script, and the
     comparator harness, and settled the specification in the blueprint. Stage B: the specification
     in Lean (the binary form, the normalized points of height at most H, the finite set of them, and
@@ -273,24 +274,43 @@ status:
     points it prints; and the differential tests compare the runs of test4.sh and test3.sh with a
     search region, random search regions and depths of the Sturm step, and -x exactly against the C
     program with the moduli pinned (4530 comparisons in the default suites and 13 in the suite run
-    locally). Stage I, under way: the choice of the moduli and of the cut points by the curve, the
-    blocks of the run with the correction of the moduli, the numbers of the moduli used and the
-    report under -v; so far the theorems and the statements for comparator take the options of the
-    sieve with no hypothesis on them, in place of the sieving parameters, which are internal to the
-    search and have no well-formedness of their own any more; the statements for comparator are
-    eleven, the well-formedness of the parameters of the program no longer among them, and
-    comparator accepted all eleven on 2026-10-25; the search chooses its moduli and cut points from
-    the curve as ratpoints does and runs the denominators in blocks with the correction of the
-    moduli between them, the threads left out with the property that they preserve proved,
-    comparator accepting the eleven again on 2026-10-25, and the differential tests compare -x
-    exactly against the C program on the same command line; the search gives back the numbers of
-    the moduli used, which ratpoints-lean prints in its report as ratpoints does, comparator
-    accepting the eleven again on 2026-10-25, and the differential tests compare that message too;
-    ratpoints-lean reads the tuning options -r -R -U -C -A -Q -W into the options of the sieve, and
-    the differential tests compare random values of them and the C program sieving on several
-    threads; and under -v the library prints its report between the points as ratpoints does,
-    comparator accepting the eleven again on 2026-10-26, and the differential tests compare that
-    report byte for byte. Next: the rest of stage I, which the blueprint plans.
+    locally). Stage I: the choice of the moduli and of the cut points of the three stages by the
+    curve, as sieving_info makes it: the tuning macros of ratpoints.h and the other constants of the
+    choice as definitions; the doubles of the C code as Lean core's Float, with the log and pow of
+    the C library of the platform, as the C code calls glibc's, so that the choice agrees with that
+    of ratpoints on a machine with the same library; the densities of the moduli from the tables of
+    examine_prime and examine_power; the cost model of the C code (prime_cost, phase_1_key,
+    check_cost, downstream_factor and the rules of the first two stages) and the estimate of the run
+    (run_shape with its samples, and the mean bits per word); the pool of the candidates with the
+    composite moduli of add_moduli and make_modulus, the first two stages by take_entries, the third
+    stage and the reserve, the loop of the tables with its exit and the forbidden divisors, and the
+    final sort; the counters of the sieve as 64-bit words beside the delivery, with their closed
+    forms; the blocks of the loop over the denominators with their plan, the four loops of the
+    shapes over a block, one block with the decision in force, and the correction of the moduli
+    between the blocks (run_fold with its lag, and adapt_primes), with the block lemma and the lag
+    lemma; the threads left out, with the theorem on what they preserve, that each block sifted
+    apart gives its points and that its points delivered block by block in order give what the run
+    delivers (not certified); the numbers of the moduli used in the outcome; and the report of the
+    library under -v through a print channel of the search with a callback. The contracts are proved
+    with the program logic of Lean core, those of the pool of the candidates, the counters and the
+    plan of the blocks in files without Mathlib, and no proof reads the value of a double. The
+    theorems and the statements for comparator take the options of the sieve with no hypothesis on
+    them, in place of the sieving parameters, which are internal to the search, the result of its
+    choice of the moduli, with no well-formedness of their own; the statements for comparator are
+    eleven, the well-formedness of the parameters of the program no longer among them; comparator
+    --paranoid accepted all eleven on 2026-10-25, and comparator accepted them again with the choice
+    of the moduli and the run over the blocks on 2026-10-25, with the numbers of the moduli used in
+    the outcome on 2026-10-25 and with the report under -v on 2026-10-26. ratpoints-lean prints the
+    numbers of the moduli used (message 4) and under -v the report of the library between the
+    points, reads the tuning options -r -R -U -C -A -Q -W into the options of the sieve, and checks
+    and ignores -t, the number of threads, since the model sieves the blocks in turn on one thread;
+    every line of code of the C files is recorded, and the check of the correspondence requires it;
+    and the differential tests compare on one machine, with the C program built there, the pairs
+    under -x exactly, message 4 and the output under -v byte for byte, random values of the tuning
+    options, and the C program on four and seven threads (5397 comparisons in the default suites, 13
+    in the suite run locally above height 30000 and 92 in the local suite of the searches in which
+    ratpoints corrects its moduli). Next: a review of the whole development, and the blueprint
+    consolidated into a description of its final state.
   sorry_count: 0
   sorry_in_definitions: 0
   axioms: ["propext", "Classical.choice", "Quot.sound"]
@@ -382,7 +402,7 @@ automation:
         specification, the history of the bugs, a survey of the Lean tooling, prototypes). Each
         stage begins with a blueprint chapter (components, contracts, proposed names), drafted from
         research and a prototype in a separate copy and reviewed by the author before the Lean code
-        of the stage enters the repository; for sub-stage F4 and stages G and H, at the author's
+        of the stage enters the repository; for sub-stage F4 and stages G, H and I, at the author's
         leave, the code was drafted and committed while he reviewed the chapter, and it is pushed
         only after his review.
   spend_usd: "subscription-based usage (no metered API spend)"
@@ -402,7 +422,11 @@ fidelity:
     threads are replaced by the sequential order of the blocks, which gives the same output; the
     heuristics that choose the sieving parameters by the curve are modelled and run in the search, as
     in ratpoints, and the theorems hold for every value of the options of the sieve, whatever moduli
-    the search chooses; the doubles of the search intervals are their
+    the search chooses; the doubles of these heuristics are Lean core's Float, whose arithmetic and
+    log and pow are those of the platform, as in ratpoints, so that the choice, and what depends on
+    it (the survivors under RATPOINTS_NO_CHECK, the numbers of the moduli used and the report under
+    RATPOINTS_VERBOSE), agrees with that of ratpoints on the same machine, and no proof reads their
+    values; the doubles of the search intervals are their
     IEEE bits, with a model function for each operation on them, and the specification reads their
     values as extended rationals; the callback is a Lean function that takes the coordinates and the
     caller's data and returns its value, whether it stops the search, and the new data, for the C
@@ -449,17 +473,20 @@ alignment:
         residues of a denominator divided by its stride, the bits of the heights, the row indices of
         the first two stages with the test small) and the chunked first stage and the rows of stage
         F4 (both arms of the first stage with the chunk of the default build, the rows built by the
-        builders of the C code and kept in the tables of rows of its entries), every value of the
-        options of the sieve, from which the search takes its sieving parameters, the array size of
-        the pieces included, and every value of the options, the delivery to the callback of stage G
+        builders of the C code and kept in the tables of rows of its entries) and the choice of the
+        moduli and the cut points by the curve and the blocks of the run with the correction of the
+        moduli between them of stage I, every value of the options of the sieve, whatever moduli the
+        search chooses, the array size of the pieces included, and every value of the options, the
+        delivery to the callback of stage G
         included, membership with RATPOINTS_NO_CHECK clear and y >= 0 under RATPOINTS_NO_Y, since
         stage H for the points in the search region of the options, assuming Sturm's theorem when
         the Sturm step is on (Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok,
         Ratpoints.nodup_of_findPoints_eq_ok), certified by comparator, through the reference of the
         polynomial searched (Ratpoints.exists_eq_of_findPoints_eq_ok) and the permutation of the
         brute-force reference filtered by RATPOINTS_NO_Y and the search region
-        (Ratpoints.perm_filter_bruteForce_of_findPoints_eq_ok); the later stages bring
-        Ratpoints.findPoints closer to the C code, and the theorems move with it
+        (Ratpoints.perm_filter_bruteForce_of_findPoints_eq_ok); the threads, which the model leaves
+        out, deliver the blocks in their order
+        (Ratpoints.Sieve.run_deliverSlots_eq_fst_run_sieveRun, not certified by comparator)
     - source: "the refusals: fewer than two or more than maxDegree + 1 = 101 coefficients, H = 0 or H >= 2^63, a binary form that is not squarefree, search intervals that are not well formed"
       lean: "Ratpoints.exists_findPoints_eq_error_iff_of_sturm_nonneg"
       module: "Ratpoints.Proof.Output"

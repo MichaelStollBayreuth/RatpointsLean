@@ -148,23 +148,34 @@ intervals that are not well formed; `lake comparator --paranoid` accepted the tw
 `ratpoints-lean` reads `-l -u -dl -du` as ratpoints reads them, prints the points of its search
 region and the messages on the search region and on the search intervals, and a theorem says which
 points it prints; the differential tests compare search regions and depths of the Sturm step too:
-4530 comparisons in the default suites and 13 in the suite run locally. Stage I, the choice of the
-moduli by the curve, the blocks of the run with the correction of the moduli, the numbers of the
-moduli used and the report under `-v`, is under way: the theorems and the challenge of Comparator
+4530 comparisons in the default suites and 13 in the suite run locally. Stage I is done: the choice
+of the moduli by the curve, as the C code makes it. The model computes the costs of the choice in
+doubles, as ratpoints does, as Lean's `Float`, with the `log` and `pow` of the C library of the
+platform, which ratpoints calls in glibc: the densities of the moduli, the estimate of the run and
+the cost model of the C code rank the primes and the composite moduli of `add_moduli` and choose the
+moduli and the cut points of the three stages; the loop over the denominators runs in blocks, as
+ratpoints runs it, with the correction of the moduli between them by the counters of the sieve
+(`run_fold`, `adapt_primes`). No proof reads the value of a double: the theorems hold for every
+choice of the moduli that the search makes. The threads of ratpoints are left out, with the theorem
+on what they preserve: each block sifted apart gives its points, and its points delivered block by
+block in order give what the run delivers; so the model, which sifts the blocks in turn on one
+thread, gives the output of every number of threads. The theorems and the challenge of Comparator
 take the options of the sieve with no hypothesis on them, in place of the sieving parameters, which
 are internal to the search and have no well-formedness of their own any more, so that the challenge
 has eleven statements, the well-formedness of the parameters of the program no longer among them;
-`lake comparator --paranoid` accepted the eleven on 2026-10-25. The search chooses its moduli from
-the curve as ratpoints does and runs the denominators in blocks with the correction of the moduli
-between them, `lake comparator` accepting the eleven again on 2026-10-25, and the differential tests
-compare the pairs under `-x` exactly with the C program on the same command line; the search gives
-back the numbers of the moduli used, which `ratpoints-lean` prints in its report as ratpoints does
-(`lake comparator` accepting the eleven again on 2026-10-25), and the differential tests compare
-that message too; `ratpoints-lean` reads the tuning options `-r -R -U -C -A -Q -W` into the options
-of the sieve, and the differential tests compare random values of them and the C program sieving on
-several threads (`-t 4`, `-t 7`) as well; and under `-v` the library prints its report between the
-points as ratpoints does (`lake comparator` accepting the eleven again on 2026-10-26), which the
-differential tests compare byte for byte. The blueprint and the API documentation will be at
+`lake comparator --paranoid` accepted the eleven on 2026-10-25, and `lake comparator` again with the
+choice of the moduli and the run over the blocks on 2026-10-25, with the numbers of the moduli used
+in the outcome of the search on 2026-10-25, and with the report of the library under `-v` on
+2026-10-26. `ratpoints-lean` prints the numbers of the moduli used in its report (message 4) and
+under `-v` the report of the library between the points, as ratpoints does, and reads the tuning
+options `-r -R -U -C -A -Q -W` into the options of the sieve. Since the choice of the moduli
+computes with the `log` and `pow` of the platform, the differential tests run the C program on the
+same machine and compare what depends on the choice exactly: the pairs under `-x`, message 4 and the
+output under `-v`, byte for byte, also for random values of the tuning options and against the C
+program sieving on several threads (`-t 4`, `-t 7`): 5397 comparisons in the default suites, 13 in
+the suite of the runs of `test4.sh` above height 30000 and 92 in the suite of the searches in which
+ratpoints corrects its moduli, both run locally. Every line of code of the C files is now recorded,
+and the check of the correspondence requires it. The blueprint and the API documentation will be at
 <https://michaelstollbayreuth.github.io/RatpointsLean/> once the repository is public.
 
 ## Layout
@@ -189,18 +200,20 @@ lake exe cache get
 lake build                                   # the model, the library and ratpoints-lean
 lake exe ratpoints-lean '-2 0 0 1' 130       # the points of height at most 130 on y² = x³ - 2
 python3 scripts/check_layout.py              # imports, the restrictions on the model, axioms
-python3 scripts/correspondence.py check      # the correspondence with the C code at the pin
+python3 scripts/correspondence.py check --complete   # the record of the C code at the pin
 python3 scripts/difftest.py                  # ratpoints-lean against the C program
 python3 scripts/difftest.py --suites test4high   # the runs of test4.sh above height 30000
+python3 scripts/difftest.py --suites adapt       # searches where ratpoints corrects its moduli
 ```
 
 `scripts/correspondence.py` and `scripts/difftest.py` read the C code and the test suites from a
 clone of ratpoints that contains the pinned commit, given by `--repo PATH` or the environment
 variable `RATPOINTS_REPO`; `scripts/difftest.py` also runs the C program built there (or the one
 that `--c PATH` or `RATPOINTS_BIN` names), which must be the default build at the pin, without a
-`tuning.mk`, which the harness refuses. CI runs these checks and more
-(`.github/workflows/build-project.yml`). `scripts/run-comparator.sh --paranoid` runs Comparator,
-built into Lake as `lake comparator` (`comparator/README.md`).
+`tuning.mk`, which the harness refuses, on the same machine as `ratpoints-lean`, since the choice of
+the moduli computes with the `log` and `pow` of the C library of the platform. CI runs these checks
+and more (`.github/workflows/build-project.yml`). `scripts/run-comparator.sh --paranoid` runs
+Comparator, built into Lake as `lake comparator` (`comparator/README.md`).
 
 ## The program `ratpoints-lean`
 

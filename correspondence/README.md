@@ -15,8 +15,8 @@ repository may be at any commit.
 ## The ranges
 
 The record covers the files listed in `ratpoints.toml`: the library and `main.c`. Every line of
-code of them (a line that is not blank and not only a comment) is to lie in exactly one recorded
-range, which is either
+code of them (a line that is not blank and not only a comment) lies in exactly one recorded range,
+which is either
 
 - **modelled**: the docstring of a public declaration of the model names it in a paragraph of its
   own,
@@ -47,8 +47,8 @@ C code, it cites the lines around that part, not the whole function.
 
 ## The checks
 
-`scripts/correspondence.py check` (run in CI) builds the model, reads the docstrings of its
-declarations with `scripts/Correspondence.lean`, and checks
+`scripts/correspondence.py check --complete` (run in CI and in the checks of each commit) builds
+the model, reads the docstrings of its declarations with `scripts/Correspondence.lean`, and checks
 
 - that the pinned commit exists (and the tag, where the repository has it, points to it), and
   that every range lies in a listed file and within its lines;
@@ -69,11 +69,11 @@ declarations with `scripts/Correspondence.lean`, and checks
   definition, lemma, proposition, theorem and corollary) that names declarations with
   `\lean{…}` are exactly the ranges of the model declarations it names, and that every model
   declaration with a range is named by such a node. Prose and other environments, such as
-  remarks, may link to any range.
-
-With `--complete` it also fails when a line of code lies in no range; that is the state the
-project reaches at its end. Until then `scripts/correspondence.py coverage` lists the stretches
-not yet recorded.
+  remarks, may link to any range;
+- with `--complete`, that every line of code lies in a range: every line of code of the files is
+  recorded, and a line that no declaration models and no exclusion covers fails the check.
+  `scripts/correspondence.py coverage` lists the stretches not recorded, as after a move of the pin
+  to a release with new code; without `--complete` the check ignores them.
 
 The script needs a clone of ratpoints that contains the pin, given by `--repo PATH` or the
 environment variable `RATPOINTS_REPO`.
@@ -91,7 +91,8 @@ When the project moves to a new ratpoints release, the line numbers move with th
    commit, `check` accepts a range whose text and owners some locked range has (it moved but did
    not change) and a link whose text some locked link has, and reports exactly the others, which
    are new or changed;
-4. review those against their Lean counterparts (and fix the model where the C code changed), then
-   run `scripts/correspondence.py lock`.
+4. review those against their Lean counterparts (and fix the model where the C code changed),
+   record the new lines of code, which `scripts/correspondence.py coverage` lists, in the model or
+   as exclusions, and then run `scripts/correspondence.py lock`.
 
 Until the last step `check` fails, naming the lock's old commit.

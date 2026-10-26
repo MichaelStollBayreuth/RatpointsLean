@@ -67,8 +67,8 @@ public import Ratpoints.Proof.Words
 
 The contract of each component of the model as a theorem, the link to the mathematics, and the
 main theorems, which say that the model finds exactly the points of the specification in the search
-region of the caller for every well-formed choice of the sieving parameters (assuming Sturm's
-theorem, `Ratpoints.SturmTheorem`, when the Sturm step is on), in the order in which ratpoints finds
-them, that the search with a callback delivers them to it as the C code does, and what the program
-prints.
+region of the caller for every value of the options of the sieve, whatever moduli the search
+chooses (assuming Sturm's theorem, `Ratpoints.SturmTheorem`, when the Sturm step is on), in the
+order in which ratpoints finds them, that the search with a callback delivers them to it as the C
+code does, and what the program prints.
 -/

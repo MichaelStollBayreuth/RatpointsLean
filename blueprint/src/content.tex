@@ -79,8 +79,12 @@ that lists the components of the stage with their contracts and proposed names:
     step that narrows the intervals to those where the polynomial may be $\ge 0$, with Sturm's
     theorem as a hypothesis; and the options of the region and the messages on it of the
     command-line program (Chapter~\ref{chap:region});
-  \item[I] the blocks of the loop over the denominators, with the threads and the correction of the
-    moduli between them, and the C program's choice of the sieving parameters by the curve.
+  \item[I] the choice of the moduli and of the cut points of the stages by the curve, with the cost
+    model of the C code; the blocks of the loop over the denominators, with the correction of the
+    moduli between them; the numbers of the moduli used, the report of the library under \verb|-v|
+    and the tuning options of the command-line program; and the threads left out, with the property
+    that they preserve proved: the blocks sifted apart and delivered in their order give what the
+    run delivers (Chapter~\ref{chap:moduli}).
 \end{itemize}
 
 \input{chapters/01-spec}

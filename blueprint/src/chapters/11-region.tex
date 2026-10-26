@@ -54,8 +54,9 @@ default interval gives exactly the numerators $-H, \dots, H$ for every denominat
 step leaves out only numerators $a$ for which $F(a, b) < 0$, which give no point. Under
 \verb|RATPOINTS_NO_CHECK|, where the list holds the survivors of the sieve, the survivors lie in the
 intervals that the Sturm step keeps, as in the C program, so that they depend on the depth of the
-step. \verb|Params| and \verb|Params.WF| are those of the earlier stages. The specification has two
-files for the search region, which the challenge restates verbatim:
+step. \verb|Params| and \verb|Params.WF| are those of the earlier stages (stage~I makes the
+parameters internal to the search and drops their well-formedness, Chapter~\ref{chap:moduli}). The
+specification has two files for the search region, which the challenge restates verbatim:
 \verb|Ratpoints/Spec/Region.lean|, with the value of a double, the search intervals that ratpoints
 accepts and the predicate that a point lies in the search region, and
 \verb|Ratpoints/Spec/Sturm.lean|, with Sturm's theorem as a proposition; and the points in the order
@@ -76,7 +77,9 @@ step, and the protocol of the delivery. The six changes came in with the theorem
 the search region first and the hypothesis of Sturm's theorem with the switch to the Sturm step;
 \verb|lake comparator --paranoid|, with Lean's kernel and the five external checkers bundled with
 Lean, accepted the twelve statements in their form of stage~H on 2026-10-18, the date that
-Chapters~\ref{chap:spec} and~\ref{chap:sieve} and \verb|comparator/README.md| record.
+Chapters~\ref{chap:spec} and~\ref{chap:sieve} and \verb|comparator/README.md| record; stage~I takes
+the options of the sieve in place of the parameters and drops the well-formedness of the parameters
+of the program, leaving eleven (Section~\ref{sec:certifiedI}).
 
 The Sturm step keeps every point because of Sturm's theorem: the number of roots of a squarefree
 polynomial in an interval $(a, b]$ is the difference of the numbers of sign changes of its Sturm

@@ -88,8 +88,9 @@ jobs:
           git -C "$RUNNER_TEMP/ratpoints" checkout --quiet --detach \
             "$(python3 scripts/correspondence.py pin --field commit)"
 
+      # Every line of code of the C files is recorded: --complete fails on a line in no range.
       - name: Check the correspondence with the C code
-        run: python3 scripts/correspondence.py check --repo "$RUNNER_TEMP/ratpoints"
+        run: python3 scripts/correspondence.py check --complete --repo "$RUNNER_TEMP/ratpoints"
 
       - name: Build the C program at the pinned commit
         run: |

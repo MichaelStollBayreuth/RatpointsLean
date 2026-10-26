@@ -589,8 +589,9 @@ Each component of this chapter differs from the C code in a stated way, recorded
     block by block for the correction (Definition~\ref{def:correction}), and no counts, stops,
     timings and
     output of the instrumentation of the stages; the arguments of the run passed explicitly, for the
-    pointer of the sieving thread to them, with no pool, slot and stop flag of a thread of the pool
-    (stage~I).
+    pointer of the sieving thread to them, with no pool, slot and stop flag of a thread of the pool:
+    the model has no threads, and the blocks sifted apart, as the pool sifts them, and delivered in
+    their order give what the run delivers (Theorem~\ref{thm:threads}).
 \end{itemize}
 The lines of this part of the C code that are neither modelled nor left to a later stage are
 excluded in \verb|correspondence/ratpoints.toml|: the instrumentation of \verb|sift.c| between

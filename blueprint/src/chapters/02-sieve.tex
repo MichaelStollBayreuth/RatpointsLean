@@ -24,7 +24,10 @@ shapes of stage~E. From the reversal on, and with the divisor order of stage~E, 
 that the output is a permutation of the reference, which still gives membership and no duplicates;
 since stage~E a theorem also gives its order, that of the reference over the denominators in the
 order of the loop of the search (Theorem~\ref{thm:findPoints_order}), which stage~G spells out in
-terms of the polynomial (Theorem~\ref{thm:order}).
+terms of the polynomial (Theorem~\ref{thm:order}). Since stage~I the search chooses its moduli and
+the cut points of its stages from the curve and corrects them between the blocks of the run, as
+ratpoints does (Chapter~\ref{chap:moduli}); the rows of every modulus that it may choose are sound,
+so the theorems hold for every choice of the moduli that the search makes.
 
 \section{What a default run of the C code does}\label{sec:skeleton}
 
@@ -120,12 +123,13 @@ theorems quantified over the well-formed parameters, the comparator challenge im
 the command line produces is well-formed, which ruled out a well-formedness that nothing satisfies.
 C1 reads only the moduli and treats all stages alike, and C2 reads the array size too
 (Definition~\ref{def:arraySize}); the bound on the forbidden divisors and the Jacobi switch are read
-since stage~E, the number of primes examined since stage~F1 (Chapter~\ref{chap:tables}), and the cut
-points from stage~F2 on, and further choices (the block length) join \verb|Params| with the
-components that use them. The constants of the build that the table, the parameters and the options
-of the sieve read, the size in bits of the moduli and the defaults of \verb|-p| and \verb|-F|, are
-definitions of the model like $\mathrm{maxDegree}$ (Definition~\ref{def:maxDegree}), and no proof
-depends on their values (Definition~\ref{def:choiceConstants}).
+since stage~E, the number of primes examined since stage~F1 (Chapter~\ref{chap:tables}), the cut
+points from stage~F2 on, and the end of the third stage, the estimates of the run, the cost of a
+check and the words of the first correction, which the correction of the moduli reads, since
+stage~I. The constants of the build that the table, the parameters and the options of the sieve
+read, the size in bits of the moduli and the defaults of \verb|-p| and \verb|-F|, are definitions of
+the model like $\mathrm{maxDegree}$ (Definition~\ref{def:maxDegree}), and no proof depends on their
+values (Definition~\ref{def:choiceConstants}).
 
 \section{The table of a prime}\label{sec:primeTables}
 
