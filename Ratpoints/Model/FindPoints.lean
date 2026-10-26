@@ -11,14 +11,7 @@ public import Ratpoints.Model.Sturm
 
 -- The `#guard` examples run code of the imported modules at compile time.
 meta import Ratpoints.Model.Blocks
-meta import Ratpoints.Model.Choice
-meta import Ratpoints.Model.Delivery
-meta import Ratpoints.Model.Denominators
-meta import Ratpoints.Model.Packing
-meta import Ratpoints.Model.Params
 meta import Ratpoints.Model.Report
-meta import Ratpoints.Model.Setup
-meta import Ratpoints.Model.Sieve
 meta import Ratpoints.Model.Sturm
 
 /-!

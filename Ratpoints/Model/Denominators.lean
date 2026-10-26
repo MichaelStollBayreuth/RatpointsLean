@@ -5,14 +5,10 @@ Authors: Michael Stoll
 -/
 module
 
-public import Ratpoints.Model.Bounds
 public import Ratpoints.Model.Packing
-public import Ratpoints.Model.Setup
 
 -- The `#guard` examples run code of the imported modules at compile time.
-meta import Ratpoints.Model.Bounds
 meta import Ratpoints.Model.Packing
-meta import Ratpoints.Model.Setup
 
 /-!
 # The denominators
