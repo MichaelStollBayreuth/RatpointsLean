@@ -59,13 +59,13 @@ denominator, are in `Ratpoints.Model.Tables`; the classes of the denominators mo
 packings, the row offsets of the packings and the residues of a denominator divided by the stride of
 its class (`Ratpoints.Sieve.numClasses`, `Ratpoints.Sieve.classOffsets`,
 `Ratpoints.Sieve.fillBpList`) are in `Ratpoints.Model.Packing`; the 2-adic information that gives
-the words of the classes is in `Ratpoints.Model.Denominators`, and the loop over the denominators in
-blocks, with the correction of the moduli from the counters of the sieve
-(`Ratpoints.Sieve.Counters`, `Ratpoints.Sieve.sieveRun`), in `Ratpoints.Model.Blocks`. The plain
-sieve of one denominator, one Boolean per numerator (`Ratpoints.Sieve.sieveDen`), and the test for
-common factors and the exact check of its survivors (`Ratpoints.Sieve.checkDen`) are not part of the
-run: they are the reference of the bit arrays of words
-(`Ratpoints.Sieve.run_sift_eq_deliver_checkDen`). Every row, and the word of the class of a
+the words of the classes is in `Ratpoints.Model.Denominators`; the counters of the sieve
+(`Ratpoints.Sieve.Counters`) are in `Ratpoints.Model.Candidate`, and the loop over the denominators
+in blocks, with the correction of the moduli from those counters (`Ratpoints.Sieve.sieveRun`), in
+`Ratpoints.Model.Blocks`. The plain sieve of one denominator, one Boolean per numerator
+(`Ratpoints.Sieve.sieveDen`), and the test for common factors and the exact check of its survivors
+(`Ratpoints.Sieve.checkDen`) are not part of the run: they are the reference of the bit arrays of
+words (`Ratpoints.Sieve.run_sift_eq_deliver_checkDen`). Every row, and the word of the class of a
 denominator in the 2-adic information, let every point through, and the packing keeps every
 numerator that the word admits, the rows of the residue of the denominator divided by the stride,
 read at the row offsets of the class, admitting the numerators of the class that the rows of the
@@ -791,8 +791,8 @@ staying `long`s for the bits of a height bound below `2 ^ 63`
 the pointers `info` and `wk->quit` and the count `total` that `sift` keeps from zero and returns,
 and the counters `cnt` passed and returned, for those of the sieving thread; no test of the flag
 `stop` of a thread of the pool after a piece (line 3610), which is null on the calling thread (line
-5129, with the pool excluded with the threads), and no measurement
-(`RP_SIFT_TOC`) on the return at a stop. -/
+5129, with the pool excluded with the threads), and no measurement (`RP_SIFT_TOC`) on the return at
+a stop. -/
 def siftBits {σ : Type} (process : Int → Int → Int → σ → Answer σ) (w : Thunk (List Int))
     (d b A : Nat) (fl : CheckFlags) (sp1 : Nat) (specs : List SieveSpec) (mgs : List Nat)
     (checks : Thunk (List CheckSpec)) (cl : NumClass) (low high : Int) (r : Delivery σ)

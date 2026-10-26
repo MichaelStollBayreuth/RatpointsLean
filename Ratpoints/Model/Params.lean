@@ -48,11 +48,11 @@ denominators read the bound on the forbidden divisors and the switch of the Jaco
 namespace Ratpoints
 
 /-- The sieving parameters: the free choices of the sieve, internal to the search, as the choice of
-the moduli gives them to the run (`Ratpoints.sievingInfo`): the moduli, cut into stages,
-the first `sp1` of them, then those up to `sp2`, then those up to `sp3`, the rest being the reserve
-from which the correction of the moduli may take further primes; how many primes the loop of the
-tables examined and how many were looked at in all; at most how many forbidden divisors are tested,
-whether the Jacobi test may run, at most how many bit arrays a piece of the numerators has; and the
+the moduli gives them to the run (`Ratpoints.sievingInfo`): the moduli, cut into stages, the first
+`sp1` of them, then those up to `sp2`, then those up to `sp3`, the rest being the reserve from which
+the correction of the moduli may take further primes; how many primes the loop of the tables
+examined and how many were looked at in all; at most how many forbidden divisors are tested, whether
+the Jacobi test may run, at most how many bit arrays a piece of the numerators has; and the
 estimates of the run, the cost of one exact check and the number of words at which the first
 correction of the moduli is made. The run of the search reads the cut points of the stages and the
 array size, and the correction of the moduli between its blocks the estimates of the run, the cost

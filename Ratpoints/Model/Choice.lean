@@ -146,10 +146,10 @@ structure FacState where
   tab : PowerTable
 
 /-- The state `st` of the factorization with the factor `p ^ e`, `p` at the position `st.pn`:
-refused when it would be the `Ratpoints.maxFactors`-th factor or more, or `p` is beyond the first 64
-primes; for `e = 1` the density of the prime from the loop of the tables (`primeSe`), refused when
-the prime says nothing; for `e > 1` that of the prime power (`Ratpoints.powerIndex`), refused when
-it says nothing; the code of the factor and the bit of its prime.
+refused when `Ratpoints.maxFactors` factors are taken already, or `p` is beyond the first 64 primes;
+for `e = 1` the density of the prime from the loop of the tables (`primeSe`), refused when the prime
+says nothing; for `e > 1` that of the prime power (`Ratpoints.powerIndex`), refused when it says
+nothing; the code of the factor and the bit of its prime.
 
 C: `find_points.c:2381-2386`, `find_points.c:2395-2398`
 
@@ -661,9 +661,9 @@ def survivorsAtThird (est : RunEstimate) (bpw : Float) (pool : Array ModulusCand
 
 /-- The third stage of the choice after the first two, which end at `sp2`, for the options `s`, the
 cost `checkRel` of a check, the estimate `est` and the bits per word `bpw`: it wants `sp2 + P`
-primes for the value `P` of `-P` when that is given and fewer than the primes of the table not yet
-taken, and `Ratpoints.numPrimes` otherwise; its costs per denominator, the value of `-Q` when `≥ 0`
-and `Ratpoints.sp3PerDenom` otherwise, and per survivor `Ratpoints.sp3PerSurvivor`, each divided by
+primes for the value `P` of `-P` when that is given and below `Ratpoints.numPrimes - sp2`, and
+`Ratpoints.numPrimes` otherwise; its costs per denominator, the value of `-Q` when `≥ 0` and
+`Ratpoints.sp3PerDenom` otherwise, and per survivor `Ratpoints.sp3PerSurvivor`, each divided by
 `checkRel`; the survivors at its start (`Ratpoints.survivorsAtThird`); then the stage
 (`Ratpoints.thirdStage`).
 
@@ -837,7 +837,11 @@ def sievingInfo (c : List Int) (d : Nat) (useCLong checkDenom mayExtend : Bool) 
     let checkDenom := checkDenom && !(forb.isEmpty && forbVal.isEmpty && !a.useJacobi)
     choiceTail c d useCLong mayExtend s a bpw checkRel checkDenom forb forbVal st
 
-/-! ### Examples -/
+/-! ### Examples
+
+The forbidden divisors against those that a build of ratpoints at the pinned commit prints with a
+dump of the side of the denominators on the standard error (the dump), and against their rule; the
+stages, the composite moduli, the third stage and the end of the choice against their rule. -/
 
 -- The forbidden divisors of the dump, for the first 30 primes of the table as the examined primes
 -- (the loop of the tables under `-p 30`, which does not look further, `Ratpoints.tablesLoop`, then

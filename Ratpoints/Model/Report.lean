@@ -249,7 +249,7 @@ excluded at each prime of `forbVal`, tested by its valuations
 (`Ratpoints.Report.excludedValuations`, with the largest denominator `bHigh`); ` (lcf/b) = -1` when
 the Jacobi test runs (`useJacobi`); and a line feed.
 
-C: `find_points.c:5042-5048`, `find_points.c:5059-5063`
+C: `find_points.c:5043-5048`, `find_points.c:5059-5063`
 
 Deviation: loops over the lists, for the loops over the zero-terminated arrays `forb_ba` and
 `forbidden`; the switch of the Jacobi test as a Boolean, for the bit `RATPOINTS_USE_JACOBI` of the
@@ -272,7 +272,7 @@ the number of its moduli and its moduli, each under ` %ld`; the cost of one exac
 (`Ratpoints.Report.excluded`, with the switch `useJacobi` of the Jacobi test and the largest
 denominator `bHigh`); and a blank line.
 
-C: `find_points.c:5027-5041`, `find_points.c:5064-5066`
+C: `find_points.c:5027-5042`, `find_points.c:5064-5066`
 
 Deviation: the moduli of the stages as the moduli of the sieve entries in their order, for the
 fields `p` of the entries of `sieve_list`; the doubles as values of Lean's `Float`

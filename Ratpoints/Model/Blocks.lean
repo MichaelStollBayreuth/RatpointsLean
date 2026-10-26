@@ -622,9 +622,9 @@ word against the product of the densities, the product `r2` of the densities of 
 stages, the cost `checkRel` of one exact check, the cost `ct` of a row and the estimates `U` and `D`
 of the run: the cost of a survivor, `Ratpoints.costSurvivor` plus the share of the survivors that
 reach the exact check times `Ratpoints.costCheck (checkRel - 1)`; the walk up
-(`Ratpoints.Sieve.adaptUp`), and when it takes nothing, the walk down
-(`Ratpoints.Sieve.adaptDown`) from `c.sp2`, never below the end `sp1` of the first stage. Returns
-the new end of the second stage and the survivors per word with it.
+(`Ratpoints.Sieve.adaptUp`), and when it takes nothing, the walk down (`Ratpoints.Sieve.adaptDown`)
+from `c.sp2`, never below the end `sp1` of the first stage. Returns the new end of the second stage
+and the survivors per word with it.
 
 C: `find_points.c:1439-1448`, `find_points.c:1458-1459`, `find_points.c:1473-1476`
 
@@ -826,7 +826,13 @@ def sieveRun {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c
     if r.quit then break
   return (r, corr.lastSp2, corr.lastSp3)
 
-/-! ### Examples -/
+/-! ### Examples
+
+The blocks, the decision in force, the fold of the counters, the correction and the denominators
+that the blocks visit against their rule; the shape and the denominators that the run sifts against
+those that a build of ratpoints at the pinned commit prints with a dump of the side of the
+denominators on the standard error (the dump); and the blocks and the run of the divisor shape
+against the points that ratpoints prints. -/
 
 -- The block length: at least 16 steps, about 1024 blocks for a long run.
 #guard [0, 1, 16000, 16383, 16384, 1048576].map blockLength == [16, 16, 16, 16, 17, 1025]
@@ -873,6 +879,9 @@ def sieveRun {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c
     { moduli := es.toList.map (·.p), examined := 0, lookedAt := 0, sp1 := 2, sp2 := 4, sp3 := 6,
       maxForbidden := 64, jacobi := true, adaptAt := 0 }
   (Id.run (adaptRates es c 2)).isNone &&
+    (Id.run (adaptRates es { c with arrays := 1000, words := 0 } 2)).isNone &&
+    (Id.run (adaptRates es { c with arrays := 1000, bits := 199 } 2)).isNone &&
+    (Id.run (adaptRates es { c with arrays := 1000, words2 := 2000000 } 2)).isNone &&
     (Id.run (adaptRates es { c with arrays := 1000 } 4)).isNone &&
     (Id.run (adaptRates es { c with arrays := 1000 } 2)).isSome &&
     Id.run (adaptPrimes {} P es c 4 6) == (4, 6, 4000000) &&

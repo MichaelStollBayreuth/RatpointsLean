@@ -534,13 +534,13 @@ def defaultFormat (o : Options) : String :=
   if o.noCheck || o.noY then "(%x : %z)\n" else "(%x : %y : %z)\n"
 
 /-- What a command line (the words after the name of the program) gives: the coefficient list, the
-height bound and the values of the options, those that set the sieving parameters, the options of
-the search and the settings of the output, or the first failure, in the order of `main.c`: fewer
-than two words fail with error 2; then come the coefficients (`Ratpoints.Cli.coefficients`), the
-height bound (`Ratpoints.Cli.heightBound`) and the options (`Ratpoints.Cli.checkOptions`), read from
-the defaults of `Ratpoints.SieveOptions`, `Ratpoints.Options` with the height bound as the largest
-denominator, `Ratpoints.Cli.Output` and `Ratpoints.Cli.Intervals`, the values of a command line
-without options; then an interval with a lower end and no upper one is completed
+height bound, the options of the sieve (`Ratpoints.SieveOptions`), the options of the search and the
+settings of the output, or the first failure, in the order of `main.c`: fewer than two words fail
+with error 2; then come the coefficients (`Ratpoints.Cli.coefficients`), the height bound
+(`Ratpoints.Cli.heightBound`) and the options (`Ratpoints.Cli.checkOptions`), read from the defaults
+of `Ratpoints.SieveOptions`, `Ratpoints.Options` with the height bound as the largest denominator,
+`Ratpoints.Cli.Output` and `Ratpoints.Cli.Intervals`, the values of a command line without options;
+then an interval with a lower end and no upper one is completed
 (`Ratpoints.Cli.Intervals.complete`), the search intervals of the options are those read, their
 doubles, and the exact ends those of the settings of the output, the format is the default
 (`Ratpoints.Cli.defaultFormat`) unless an option `-f` gave one, and `-q` cancels `-v`.

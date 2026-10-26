@@ -202,10 +202,12 @@ does not read either, the bits of the input coming back as the caller set them
 `args->sp3`, which `find_points_work` zeroes on entry (line 4551) and leaves as the search leaves
 it, unlike `sp2`, which it restores (line 4561): the end of the third stage of the last block sifted
 (line 5163), that of the choice after the returns between the choice and the sieve, where `sp3_used`
-stays `0`, and `0` after the returns before the choice; nor the private fields that `sieving_info`
-and `adapt_primes` write, `adapt_at`, `run_words`, `run_denoms`, `sp3_max` and `check_rel`, which
-nothing reads before `sieving_info` sets them again in the next search; natural numbers for the
-`long`s `sp1_used`, `sp2_used` and `sp3_used`. -/
+stays `0`, and `0` after the returns before the choice and after the exits of the choice when the
+curve has no points modulo a prime (`find_points.c:2614`, `find_points.c:2998`), which come before
+line 3017 sets it; nor the private fields that `sieving_info` and `adapt_primes` write, `adapt_at`,
+`run_words`, `run_denoms`, `sp3_max` and `check_rel`, which nothing reads before `sieving_info` sets
+them again in the next search; natural numbers for the `long`s `sp1_used`, `sp2_used` and
+`sp3_used`. -/
 structure Outcome (σ : Type) where
   /-- The data of the callback after the search. -/
   info : σ
@@ -403,19 +405,18 @@ nothing delivered when no class admits a numerator and there is no point at infi
 for odd degree or `c_d` a square, after the message of the exit (`Ratpoints.Report.noClasses`). Then
 the report of the packing (`Ratpoints.Report.packing`) and the choice of the moduli and the search
 after it (`Ratpoints.chooseAndSearch`), with the mean bits per word of the bit arrays of the run
-(`Ratpoints.meanBitsPerWord`) and the shape of the run (`Ratpoints.ShapeArgs`), each point mapped
-by `Ratpoints.Sieve.swapPoint` when `fl.reversed` is set.
-It returns the data and the count of the delivery with the bits of the flags of the search that the
-program reads, the search intervals and the numbers of the moduli used (`Ratpoints.Outcome`):
-`fl.reversed`, the squares, the success of the divisor set-up, `domain`, and the numbers that the
-search after the choice returns, `0` for each after the 2-adic exit. For `1 ≤ H < 2 ^ 63`,
-`1 ≤ bLow`, `bHigh ≤ H`, `d` the degree of `c` and `1 ≤ d`, the flags of the output clear, a
-callback that does not stop the search, well-formed search intervals and `sturmEmpty` false, the
-calls are those of the points at infinity followed by the points of the brute-force reference over
-the denominators of the search from `bLow` to `bHigh` (`Ratpoints.searchDens`) whose `x / z` lies in
-a search interval, in the order of its loop, increasing unless the shape is that of the divisors,
-each mapped when `fl.reversed` is set, also when an exit is taken; with `sturmEmpty` set, only the
-points at infinity.
+(`Ratpoints.meanBitsPerWord`) and the shape of the run (`Ratpoints.ShapeArgs`), each point mapped by
+`Ratpoints.Sieve.swapPoint` when `fl.reversed` is set. It returns the data and the count of the
+delivery with the bits of the flags of the search that the program reads, the search intervals and
+the numbers of the moduli used (`Ratpoints.Outcome`): `fl.reversed`, the squares, the success of the
+divisor set-up, `domain`, and the numbers that the search after the choice returns, `0` for each
+after the 2-adic exit. For `1 ≤ H < 2 ^ 63`, `1 ≤ bLow`, `bHigh ≤ H`, `d` the degree of `c` and
+`1 ≤ d`, the flags of the output clear, a callback that does not stop the search, well-formed search
+intervals and `sturmEmpty` false, the calls are those of the points at infinity followed by the
+points of the brute-force reference over the denominators of the search from `bLow` to `bHigh`
+(`Ratpoints.searchDens`) whose `x / z` lies in a search interval, in the order of its loop,
+increasing unless the shape is that of the divisors, each mapped when `fl.reversed` is set, also
+when an exit is taken; with `sturmEmpty` set, only the points at infinity.
 
 C: `find_points.c:4588-4589`, `find_points.c:4595-4596`, `find_points.c:4602`,
 `find_points.c:4603-4604`, `find_points.c:4607`, `find_points.c:4900-4914`,
@@ -490,14 +491,13 @@ zeros; the refusals returned apart from the outcome, with the data of the callba
 codes that the C code returns, the caller keeping its data behind the pointer `info`; the outcome of
 the return of line 4889, which leaves the flags of the squares clear and no interval, with the data
 `info`, the count `0`, the flag of the reversal, no interval and no moduli used, the flag being in
-fact clear there
-(the cases 1 and 3 of the reversal check leave an odd degree, and in case 2 the reversed polynomial
-takes the value `c_d > 0` at `0`, in the default interval, which the Sturm step keeps); the test of
-the `long`s (`Ratpoints.Setup.useCLong`), which the C code makes between the reversal check and the
-search intervals, made by the search, where it is used; the report under `RATPOINTS_VERBOSE`
-printed through the print channel, that of the reversal check and of the Sturm step after them,
-from their results, where the C code prints in their course; no failure for lack of memory, which
-the model cannot meet. -/
+fact clear there (the cases 1 and 3 of the reversal check leave an odd degree, and in case 2 the
+reversed polynomial takes the value `c_d > 0` at `0`, in the default interval, which the Sturm step
+keeps); the test of the `long`s (`Ratpoints.Setup.useCLong`), which the C code makes between the
+reversal check and the search intervals, made by the search, where it is used; the report under
+`RATPOINTS_VERBOSE` printed through the print channel, that of the reversal check and of the Sturm
+step after them, from their results, where the C code prints in their course; no failure for lack of
+memory, which the model cannot meet. -/
 def findPointsWork {σ : Type} (c : List Int) (d H : Nat) (s : SieveOptions) (o : Options)
     (process : Int → Int → Int → σ → Answer σ) (info : σ) (print : String → σ → σ) :
     Id (Except (Refusal × σ) (Outcome σ)) := do
@@ -592,13 +592,13 @@ there is no state between calls and the reset of the flags clears nothing; the c
 that returns what the call gives (`Ratpoints.Answer`), and its data a value, for the pointer `info`;
 the bit `RATPOINTS_VERBOSE` of the flags as the print channel `print`, a function that prints a text
 into the data of the callback, which holds the standard output of the caller, so that the text comes
-between the points as on the standard output of the C program, and which prints nothing when the
-bit is clear; the options of the output as fields of the options
-(`Ratpoints.Options`), copied into the flags of the check (`Ratpoints.CheckFlags`) with the flag of
-the reversal, for the bits of `args->flags` that the mask of line 4606 keeps; the points at infinity
-and the square test of the leading coefficient are decided where they are used
-(`Ratpoints.Sieve.pointsAtInfinity`, `Ratpoints.Setup.reversal`, `Ratpoints.sturmRegion`,
-`Ratpoints.searchPoints`); no failure for lack of memory, which the model cannot meet. -/
+between the points as on the standard output of the C program, and which prints nothing when the bit
+is clear; the options of the output as fields of the options (`Ratpoints.Options`), copied into the
+flags of the check (`Ratpoints.CheckFlags`) with the flag of the reversal, for the bits of
+`args->flags` that the mask of line 4606 keeps; the points at infinity and the square test of the
+leading coefficient are decided where they are used (`Ratpoints.Sieve.pointsAtInfinity`,
+`Ratpoints.Setup.reversal`, `Ratpoints.sturmRegion`, `Ratpoints.searchPoints`); no failure for lack
+of memory, which the model cannot meet. -/
 def findPointsVerbose {σ : Type} (c : List Int) (H : Nat) (s : SieveOptions) (o : Options)
     (process : Int → Int → Int → σ → Answer σ) (info : σ) (print : String → σ → σ) :
     Except (Refusal × σ) (Outcome σ) :=

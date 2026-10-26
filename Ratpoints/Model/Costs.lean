@@ -34,12 +34,13 @@ of the platform, where ratpoints computes them inline (gcc's `roundsd` under `-m
 and `pow` the functions of the C library of the platform that the Lean runtime binds, on glibc an
 older symbol version of the routines that ratpoints binds (`log@GLIBC_2.2.5` and `pow@GLIBC_2.2.5`,
 where ratpoints binds `log@GLIBC_2.29` and `pow@GLIBC_2.29`), which give the same values on every
-argument that occurs here (`x ≥ 0` for `log`, and for `pow` a base in `(0, 1]` and a positive
-exponent) and differ only in `errno` and in the sign of the NaN of the logarithm of a negative
-number. glibc's `log` and `pow` are not correctly rounded and choose between variants by the
-processor, so that the choice of ratpoints and that of the model depend on the machine, and agree on
-one machine. Every expression keeps the order of the operations of the C code, and every comparison
-is the C code's; no fact about the values is needed by the theorems, which hold for every choice.
+argument that occurs here (`x ≥ 0` for `log`, and for `pow` a base in `[0, 1]` and a positive
+exponent, `pow(+0, y) = +0` for `y > 0` in both) and differ only in `errno` and in the sign of the
+NaN of the logarithm of a negative number. glibc's `log` and `pow` are not correctly rounded and
+choose between variants by the processor, so that the choice of ratpoints and that of the model
+depend on the machine, and agree on one machine. Every expression keeps the order of the operations
+of the C code, and every comparison is the C code's; no fact about the values is needed by the
+theorems, which hold for every choice.
 
 ## Main definitions
 

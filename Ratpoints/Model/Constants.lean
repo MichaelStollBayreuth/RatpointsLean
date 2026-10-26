@@ -24,8 +24,8 @@ is `2 ^ Ratpoints.rbaShift` with `Ratpoints.rbaShift < 32`
 (`Ratpoints.maxBitsInPrime_le_ten`), that `Ratpoints.stage3Limit` is at most `2 ^ 32`
 (`Ratpoints.stage3Limit_le_two_pow_32`), that `Ratpoints.maxDegree` is positive and below `2 ^ 57`
 (`Ratpoints.zero_lt_maxDegree`, `Ratpoints.maxDegree_lt_two_pow_57`) and that a block length that
-`Ratpoints.blockLen` fixes is positive (`Ratpoints.blockLen_pos`), and of the table
-the proofs use only that its entries are the odd primes below 1022, in increasing order
+`Ratpoints.blockLen` fixes is positive (`Ratpoints.blockLen_pos`), and of the table the proofs use
+only that its entries are the odd primes below 1022, in increasing order
 (`Ratpoints.prime_of_mem_primeTable`, which checks them one by one, and
 `Ratpoints.lt_of_mem_primeTable`, `Ratpoints.mem_primeTable_of_prime` and
 `Ratpoints.pairwise_lt_toList_primeTable`, which `decide` checks).

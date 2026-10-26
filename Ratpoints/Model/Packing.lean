@@ -230,11 +230,10 @@ Deviation: the classes, the entries and the array of the offsets returned, for t
 `class_offsets` writes through its pointer arguments; the number `np` of the moduli the number of
 the sieve entries `es`, for the run all `sp3_max` of them (`Ratpoints.sieving`), with the reserve of
 further primes that the correction of the moduli may take into the second stage during the run
-(`Ratpoints.Sieve.adaptPrimes`); the inverses of
-`2 ^ k` an array of `kmax + 1` entries, for the array `dinv` of `RP_NUM_STRIDES` `long`s of the
-sieve entry, whose entries beyond `kmax` stay unset and unread; the inverses `rinv` an array of
-arrays, for the array on the stack; the loop over the classes by a function of its own
-(`Ratpoints.Sieve.classRows`); natural numbers for the `long`s. -/
+(`Ratpoints.Sieve.adaptPrimes`); the inverses of `2 ^ k` an array of `kmax + 1` entries, for the
+array `dinv` of `RP_NUM_STRIDES` `long`s of the sieve entry, whose entries beyond `kmax` stay unset
+and unread; the inverses `rinv` an array of arrays, for the array on the stack; the loop over the
+classes by a function of its own (`Ratpoints.Sieve.classRows`); natural numbers for the `long`s. -/
 def classOffsets (cls : Vector NumClass 64) (es : List SieveEntry) (offsets : Array Nat) :
     Id (Vector NumClass 64 × List SieveEntry × Array Nat) := do
   let mut kmax := 0

@@ -731,7 +731,7 @@ row offsets are computed, and the inverses of the strides `2 ^ k` modulo `p` for
 with which `fill_bp_list` divides the denominator by the stride (`Ratpoints.Sieve.fillBpList`). Its
 row for a denominator is the and of the rows of its factors (`Ratpoints.Sieve.SieveEntry.admits`).
 
-C: `rp-private.h:520`, `rp-private.h:542-555`
+C: `rp-private.h:542-555`
 
 Deviation: the kinds of modulus as the list of the factors: one prime factor for a prime, whose
 entry has `nf = 0` and the tables `is_f_square` and `inverses` of its own; one prime-power factor

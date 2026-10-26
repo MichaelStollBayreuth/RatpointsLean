@@ -322,7 +322,7 @@ reason = "run_clear, which releases the arrays of the run"
 file = "find_points.c"
 lines = "4129-4519"
 kind = "threads"
-reason = "the pool of threads (the lock of the tables of rows, the workers, the collection of the points of a block, run_threaded) and its stubs for a build without threads; the pool sieves the blocks apart and delivers them in their order, a block not starting before the block RP_ADAPT_LAG + 1 before it is folded, so that the decision of each block and the output are those of the blocks sifted in turn on one thread, which the model does"
+reason = "the pool of threads (the lock of the tables of rows, the workers, the collection of the points of a block, run_threaded) and its stubs for a build without threads; the pool sieves the blocks apart and delivers them in their order, a block not starting before the block RP_ADAPT_LAG + 1 before it is folded, so that the decision of each block and the output are those of the blocks sifted in turn on one thread, which the model does, but for the failure of the search (RATPOINTS_NO_MEMORY) when a thread of the pool has no memory to store a point of its block before the delivery reaches it (lines 4245-4250, 4482, 4501), a failure that the model, allocating nothing, cannot meet"
 
 [[excluded]]
 file = "find_points.c"

@@ -422,8 +422,8 @@ call with `(a : -s : b)`. For odd `d` or `c_d ≠ 0`, with the flags of the outp
 callback that does not stop the search, the calls are those of the points of the candidate `(1, 0)`
 of the brute-force reference (`Ratpoints.BruteForce.pointsOfDen`) with `fl.reversed` clear, and with
 it set of the same points mapped by `Ratpoints.Sieve.swapPoint`: after a reversal, the points
-`(0 : y : 1)` of the caller's curve. The search tests the flag `quit` after it and returns when it
-is set (`Ratpoints.searchPoints`).
+`(0 : y : 1)` of the caller's curve. The caller tests the flag `quit` after it and returns when it
+is set (`Ratpoints.chooseAndSearch`).
 
 C: `find_points.c:4634`, `find_points.c:4894-4896`, `find_points.c:4899`,
 `find_points.c:5068-5074`, `find_points.c:5078-5099`

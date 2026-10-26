@@ -276,22 +276,21 @@ which $\mathrm{maxPrimeEven} \le 2^{32}$ gives.
   and the kind of its builder (Definitions~\ref{def:entryRef} and~\ref{def:rowInit}); and its
   density, a \verb|Float|, and the count of its factors, $0$ for a prime, $1$ for a prime power and
   their number for a product, which the correction of the moduli reads
-  (Definition~\ref{def:correction}) (\csource{rp-private.h}{520}{520},
-  \csource{rp-private.h}{542}{555}). The reference of a factor, to which the field \verb|factor| of
-  the entry of a product points, is that of its prime or of its prime power; the kind of the builder
-  of the entry of a factor is, for a prime, the kind of the builder of the prime of its table, which
-  \verb|examine_prime| sets (line 1800), and for a prime power the builder of a prime power, which
-  \verb|make_power| sets (line 2420); and the reference and the kind of the builder of the modulus
-  at the position $n$ with its factors are, for one factor (a prime or a prime power), those of the
-  entry of that factor, whose entry the modulus shares, as \verb|sieve_list[n]| is
-  \verb|prime_se[pn]| or \verb|power_se[idx]|, and for a product the reference to its own entry, by
-  the position $n$, and the builder of a product. Its row of $b$ admits $a$ when the row of every
-  factor admits $a$, each factor reading $b$ and $a$ modulo its own modulus, which divides $m$, the
-  admission test, which the builder of the rows of a product reads off the rows of its factors
-  (Definition~\ref{def:sieveInitProduct}); a numerator \emph{survives} a list of sieve entries for
-  $b$ when the row of $b$ of every entry admits it, the test that Definition~\ref{def:admits} gave
-  for the tables of primes. A sieve entry is \emph{sound} when its modulus is positive and its row
-  of $b$ admits $a$ for every $\gcd(a, b) = 1$ and $y^2 = F(a, b)$.
+  (Definition~\ref{def:correction}) (\csource{rp-private.h}{542}{555}). The reference of a factor,
+  to which the field \verb|factor| of the entry of a product points, is that of its prime or of its
+  prime power; the kind of the builder of the entry of a factor is, for a prime, the kind of the
+  builder of the prime of its table, which \verb|examine_prime| sets (line 1800), and for a prime
+  power the builder of a prime power, which \verb|make_power| sets (line 2420); and the reference
+  and the kind of the builder of the modulus at the position $n$ with its factors are, for one
+  factor (a prime or a prime power), those of the entry of that factor, whose entry the modulus
+  shares, as \verb|sieve_list[n]| is \verb|prime_se[pn]| or \verb|power_se[idx]|, and for a product
+  the reference to its own entry, by the position $n$, and the builder of a product. Its row of $b$
+  admits $a$ when the row of every factor admits $a$, each factor reading $b$ and $a$ modulo its own
+  modulus, which divides $m$, the admission test, which the builder of the rows of a product reads
+  off the rows of its factors (Definition~\ref{def:sieveInitProduct}); a numerator \emph{survives} a
+  list of sieve entries for $b$ when the row of $b$ of every entry admits it, the test that
+  Definition~\ref{def:admits} gave for the tables of primes. A sieve entry is \emph{sound} when its
+  modulus is positive and its row of $b$ admits $a$ for every $\gcd(a, b) = 1$ and $y^2 = F(a, b)$.
 \end{definition}
 
 \begin{lemma}[The rows of a modulus let every point through]\label{lem:sieveEntry_admits}
