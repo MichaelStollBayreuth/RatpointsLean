@@ -48,7 +48,7 @@ the closed forms of the rows of the table of each prime and the tables of each p
 `Ratpoints.Sieve.examinePrime` and `Ratpoints.Sieve.examinePower` compute them, and of the entries
 of the products at their positions (`Ratpoints.Sieve.runRows`), which every sieve entry made by
 `Ratpoints.makeModulus?` fits (`Ratpoints.Sieve.SieveEntry.rowsFit_runRows`), and which the store
-that the loop over the moduli of `Ratpoints.sievingInfo` makes holds
+that the loop over the moduli of `Ratpoints.sievingInfoOf` makes holds
 (`Ratpoints.Sieve.RowStore.MadeFor`).
 
 ## Main definitions
@@ -94,7 +94,7 @@ that the loop over the moduli of `Ratpoints.sievingInfo` makes holds
   fits the rows of the references of the run.
 * `Ratpoints.Sieve.RowStore.madeFor_nil`, `Ratpoints.Sieve.RowStore.MadeFor.addTables`,
   `Ratpoints.Sieve.RowStore.MadeFor.storeHolds`: the store of the loop over the moduli of
-  `Ratpoints.sievingInfo` holds the rows of the references of the run.
+  `Ratpoints.sievingInfoOf` holds the rows of the references of the run.
 * `Ratpoints.Sieve.StoreHolds.of_factors`, `Ratpoints.Sieve.SieveEntry.RowsFit.of_eq`,
   `Ratpoints.Sieve.RowStore.Fits.take`, `Ratpoints.Sieve.RowStore.Fits.map_dinv`: the invariant and
   the fit carry over to the first entries, those of the first two stages, and to the entries with
@@ -1248,9 +1248,10 @@ theorem SieveEntry.rowsFit_runRows {c : List Int} {d : Nat} {es : List SieveEntr
 /-! ### The store of a run and its entries -/
 
 /-- The store `s` as the loop of the tables and the tables of the sieve entries `es` of the first
-moduli of a run make it (`Ratpoints.sievingInfo`): it holds the rows of the references of every run
-whose entries begin with `es` (`Ratpoints.Sieve.runRows`), every table of rows of a prime in it has
-its row of `0`, and so has the table of rows of every prime factor of `es`. -/
+moduli of a run make it (`Ratpoints.sievingInfoOf`, `Ratpoints.choiceEnd`): it holds the rows of
+the references of every run whose entries begin with `es` (`Ratpoints.Sieve.runRows`), every table
+of rows of a prime in it has its row of `0`, and so has the table of rows of every prime factor of
+`es`. -/
 structure RowStore.MadeFor (s : RowStore) (c : List Int) (d : Nat) (es : List SieveEntry) :
     Prop where
   /-- The store holds the rows of the references of every run whose entries begin with `es`. -/

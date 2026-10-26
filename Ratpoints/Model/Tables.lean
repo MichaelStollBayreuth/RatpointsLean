@@ -283,7 +283,7 @@ the table of rows of the prime, with the row of `0` from the build and the other
 1820-1821, `Ratpoints.Sieve.primeRows`), is made in the store of the run by the loop of the tables
 when the prime says something (`Ratpoints.Sieve.examinePrimes`), and for a prime that a modulus
 needs, one beyond the loop of the tables, which `Ratpoints.makeModulus?` examines, or one that says
-nothing, by `Ratpoints.Sieve.SieveEntry.addTables` in the loop of `Ratpoints.sievingInfo` over the
+nothing, by `Ratpoints.Sieve.SieveEntry.addTables` in the loop of `Ratpoints.sievingInfoOf` over the
 moduli, right after the entry; the fields `init`, `nf` and `pw` that `examine_prime` sets (lines
 1800 and 1817) and its reciprocal `magic` (line 1808) are those of the sieve entry of the prime
 (`Ratpoints.Sieve.SieveEntry`), of which the prime is the single factor, made by

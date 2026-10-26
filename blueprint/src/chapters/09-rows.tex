@@ -694,10 +694,10 @@ contract does not depend on the arm: the first stage of either arm gives the sam
   \verb|make_modulus| clear the arrays \verb|sieve| (\csource{find_points.c}{2427}{2427},
   \csource{find_points.c}{2471}{2471}). The loop of the tables (Definition~\ref{def:examinePrimes})
   makes the table of rows of each examined prime that says something, as \verb|examine_prime| makes
-  its entry, and returns the store; \verb|sieving_info| (Definition~\ref{def:sievingInfo}) makes
-  each sieve entry at the position $n$, the number of the entries made before it
-  (Definition~\ref{def:makeModulus}), and right after it the tables of rows of that entry, and
-  returns the store with the entries.
+  its entry, and returns the store; the function of the sieve entries of given moduli
+  (Definition~\ref{def:sievingInfo}) makes each sieve entry at the position $n$, the number of the
+  entries made before it (Definition~\ref{def:makeModulus}), and right after it the tables of rows
+  of that entry, and returns the store with the entries.
 \end{definition}
 
 \begin{lemma}[The store fits the sieve entries]\label{lem:storeTables}
@@ -1017,10 +1017,11 @@ and \verb|Ratpoints/Model/Sieve.lean|, above both, \verb|set_rows|, the missing 
 denominator and \verb|sift|, with the choice of the arm in one piece. The loop of the tables, which
 makes the tables of rows of the primes, the forbidden divisors, which read \verb|sieves0|, and the
 run, which hands the store on from one denominator to the next, are in
-\verb|Ratpoints/Model/Denominators.lean|, and the sieve entry of a modulus, \verb|sieving_info| and
-the search in \verb|Ratpoints/Model/FindPoints.lean|. So each file of the model stays below $1500$
-lines (\verb|Ratpoints/Model/FirstStage.lean| has $476$, \verb|Ratpoints/Model/Rows.lean| $909$ and
-\verb|Ratpoints/Model/Sieve.lean| $1009$).
+\verb|Ratpoints/Model/Denominators.lean|, the sieve entry of a modulus, the sieve entries of given
+moduli and the search in \verb|Ratpoints/Model/FindPoints.lean|, and, since stage~I,
+\verb|sieving_info| in \verb|Ratpoints/Model/Choice.lean|. So each file of the model stays below
+$1500$ lines (\verb|Ratpoints/Model/FirstStage.lean| has $476$, \verb|Ratpoints/Model/Rows.lean|
+$909$ and \verb|Ratpoints/Model/Sieve.lean| $1009$).
 
 The proofs of the sub-stage use Lean core and \verb|Std| only, but for those of the bit arrays of a
 prime power and of the entries of the moduli (\verb|Ratpoints/Proof/Moduli.lean|), of the loop of
@@ -1067,8 +1068,8 @@ sieve entry of a modulus with its reference, its kind of builder and its buildab
 \verb|Ratpoints/Proof/Sift.lean| one piece through either arm (in
 \verb|Ratpoints/Proof/SiftBits.lean| since stage~I) and one denominator on the store;
 \verb|Ratpoints/Proof/Denominators.lean| the run with the store; and
-\verb|Ratpoints/Proof/FindPoints.lean| the store of \verb|sieving_info| and what the run needs of
-the search. Every file stays below $1500$ lines, the largest new one,
+\verb|Ratpoints/Proof/FindPoints.lean| the store of the sieve entries of given moduli and what the
+run needs of the search. Every file stays below $1500$ lines, the largest new one,
 \verb|Ratpoints/Proof/RowStore.lean|, with $1358$ (\verb|Ratpoints/Proof/PrimeRows.lean| has $1078$,
 \verb|Ratpoints/Proof/CompositeRows.lean| $1040$, \verb|Ratpoints/Proof/FirstStage.lean| $949$ and
 \verb|Ratpoints/Proof/Rows.lean| $345$). The eight new modules are in their part roots and in the

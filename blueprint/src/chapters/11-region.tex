@@ -401,33 +401,34 @@ here.
 \section{The doubles}\label{sec:doubles}
 
 \begin{definition}[The doubles of the C code]\label{def:Double}
-  \lean{Ratpoints.Double, Ratpoints.Double.mantDig, Ratpoints.Double.zero, Ratpoints.Double.huge, Ratpoints.Double.twoPow63, Ratpoints.Double.signBit, Ratpoints.Double.expField, Ratpoints.Double.fracField, Ratpoints.Double.isNaN, Ratpoints.Double.isInf, Ratpoints.Double.isZero, Ratpoints.Double.isFinite, Ratpoints.Double.orderValue, Ratpoints.Double.lt, Ratpoints.Double.le, Ratpoints.Double.beq, Ratpoints.Double.neg, Ratpoints.Double.fabs, Ratpoints.Double.toDyadic, Ratpoints.Double.toRat, Ratpoints.Double.roundShift, Ratpoints.Double.assemble, Ratpoints.Double.ofSignificand, Ratpoints.Double.ofDyadic, Ratpoints.Double.ofRatio, Ratpoints.Double.ofInt64, Ratpoints.Double.toInt64, Ratpoints.Double.toUInt64, Ratpoints.Double.ldexp, Ratpoints.Double.frexp, Ratpoints.Double.nextUp, Ratpoints.Double.nextDown, Ratpoints.Double.toFloat}
+  \lean{Ratpoints.Double, Ratpoints.Double.mantDig, Ratpoints.Double.zero, Ratpoints.Double.huge, Ratpoints.Double.twoPow63, Ratpoints.Double.minusOne, Ratpoints.Double.signBit, Ratpoints.Double.expField, Ratpoints.Double.fracField, Ratpoints.Double.isNaN, Ratpoints.Double.isInf, Ratpoints.Double.isZero, Ratpoints.Double.isFinite, Ratpoints.Double.orderValue, Ratpoints.Double.lt, Ratpoints.Double.le, Ratpoints.Double.beq, Ratpoints.Double.neg, Ratpoints.Double.fabs, Ratpoints.Double.toDyadic, Ratpoints.Double.toRat, Ratpoints.Double.roundShift, Ratpoints.Double.assemble, Ratpoints.Double.ofSignificand, Ratpoints.Double.ofDyadic, Ratpoints.Double.ofRatio, Ratpoints.Double.ofInt64, Ratpoints.Double.toInt64, Ratpoints.Double.toUInt64, Ratpoints.Double.ldexp, Ratpoints.Double.frexp, Ratpoints.Double.nextUp, Ratpoints.Double.nextDown, Ratpoints.Double.toFloat}
   \leanok
   A C \verb|double| by its $64$ bits, a structure with no equality of its own, so that \verb|==|
   never means equality of the bits: the C language's \verb|==| is $\mathrm{beq}$. Its fields (the
   sign bit, the exponent field, the fraction) and its kinds, as \verb|isnan|, \verb|isinf| and
   \verb|isfinite| of \verb|math.h| decide them, and the zeros; \verb|DBL_MANT_DIG| $= 53$, a fact of
-  the format, not a parameter of ratpoints; $0.0$, \verb|HUGE_VAL| $= +\infty$ and the literal
-  $2^{63}$ of the C code. The comparisons \verb|<|, \verb|<=| and \verb|==| of the C language, false
-  when either side is a NaN and otherwise the order of the values, by a key of each double that is
-  not a NaN, the bits without the sign bit, negated when it is set, which increases with the value
-  and is $0$ for both zeros; the negation and \verb|fabs|, which flip and clear the sign bit, also
-  of a zero, an infinity and a NaN. The exact value of a finite double, $m\,2^k$ as a pair of
-  integers and as a rational number, as \verb|mpq_set_d| of GMP gives it; the double nearest to
-  $\pm m\,2^k$ and to $\pm n/d$, with ties to even, as IEEE~754 rounds an exact result to nearest,
-  with a signed zero, the subnormal range and an infinity beyond the largest finite double, both
-  ending with the double of the rounded significand and the exponent of its last place, the carry at
-  $2^{53}$ and the bits of a subnormal, an infinity or a normal double; the conversion of a
-  \verb|long| to a double, the double nearest to it, exact for $|n| \le 2^{53}$ and $\pm 2^{63}$ for
-  $\pm(2^{63} - 1)$, and of a finite double to a \verb|long| and to an \verb|unsigned long|,
-  truncated, for the doubles for which the C language defines the conversion (for the others the
-  value is of no meaning); \verb|ldexp| and \verb|frexp|, as glibc computes them, exact in the range
-  that ratpoints uses; and \verb|nextafter| towards $+\infty$ and towards $-\infty$, the neighbours
-  of a double, with the least subnormals next to the zeros; these three pass a signalling NaN as it
-  is, where glibc quiets it (ratpoints passes them no NaN). These model the C language and the C
-  library on the platforms of ratpoints, IEEE~754 binary64 with rounding to nearest, as gcc and
-  glibc implement them, and hold no C range. A double enters the arithmetic of Lean's \verb|Float|,
-  the doubles of the cost model of the choice of the moduli (Section~\ref{sec:costs}), by its bits.
+  the format, not a parameter of ratpoints; $0.0$, \verb|HUGE_VAL| $= +\infty$, the literal $2^{63}$
+  of the C code and the literal $-1.0$ with which \verb|main.c| sets the tuning fields that are
+  doubles. The comparisons \verb|<|, \verb|<=| and \verb|==| of the C language, false when either
+  side is a NaN and otherwise the order of the values, by a key of each double that is not a NaN,
+  the bits without the sign bit, negated when it is set, which increases with the value and is $0$
+  for both zeros; the negation and \verb|fabs|, which flip and clear the sign bit, also of a zero,
+  an infinity and a NaN. The exact value of a finite double, $m\,2^k$ as a pair of integers and as a
+  rational number, as \verb|mpq_set_d| of GMP gives it; the double nearest to $\pm m\,2^k$ and to
+  $\pm n/d$, with ties to even, as IEEE~754 rounds an exact result to nearest, with a signed zero,
+  the subnormal range and an infinity beyond the largest finite double, both ending with the double
+  of the rounded significand and the exponent of its last place, the carry at $2^{53}$ and the bits
+  of a subnormal, an infinity or a normal double; the conversion of a \verb|long| to a double, the
+  double nearest to it, exact for $|n| \le 2^{53}$ and $\pm 2^{63}$ for $\pm(2^{63} - 1)$, and of a
+  finite double to a \verb|long| and to an \verb|unsigned long|, truncated, for the doubles for
+  which the C language defines the conversion (for the others the value is of no meaning);
+  \verb|ldexp| and \verb|frexp|, as glibc computes them, exact in the range that ratpoints uses; and
+  \verb|nextafter| towards $+\infty$ and towards $-\infty$, the neighbours of a double, with the
+  least subnormals next to the zeros; these three pass a signalling NaN as it is, where glibc quiets
+  it (ratpoints passes them no NaN). These model the C language and the C library on the platforms
+  of ratpoints, IEEE~754 binary64 with rounding to nearest, as gcc and glibc implement them, and
+  hold no C range. A double enters the arithmetic of Lean's \verb|Float|, the doubles of the cost
+  model of the choice of the moduli (Section~\ref{sec:costs}), by its bits.
 \end{definition}
 
 \begin{lemma}[The doubles and their values]\label{lem:Double}
@@ -502,8 +503,8 @@ least and the largest denominator, integers like the \verb|long|s \verb|b_low| a
 with the defaults $1$ and $0$, the latter meaning $H$, as for the library; the depth of the Sturm
 step is an integer, as in the earlier stages. The lines of \verb|ratpoints.h| that hold these
 fields hold fields of the parameters and of the choice of the moduli too, and the options own them
-with a deviation that names the others: \verb|sp1| and \verb|sp2| of the parameters, \verb|sp3| of
-stage~I, and \verb|num_primes| and \verb|max_forbidden| of the options of the program. The proofs
+with a deviation that names the others: \verb|sp1|, \verb|sp2| and \verb|sp3| of the parameters,
+and \verb|num_primes| and \verb|max_forbidden| of the options of the program. The proofs
 read the intervals through their values and their bits.
 
 \begin{definition}[The values and the bits of the intervals]\label{def:inIntervals}
@@ -1883,9 +1884,9 @@ differ from the C code beyond it:
     \verb|domain| with its number \verb|num_inter|, the empty list for $\mathrm{num\_inter} = 0$, so
     that no number of intervals is negative and the room in the array for the intervals of the Sturm
     step is no concern of the caller, and integers for the \verb|long|s \verb|b_low| and
-    \verb|b_high|; of the fields that share their lines in \verb|ratpoints.h|, \verb|sp1| and
-    \verb|sp2| are the parameters', \verb|sp3| is stage~I's, \verb|num_primes| and
-    \verb|max_forbidden| are the options of the program's;
+    \verb|b_high|; of the fields that share their lines in \verb|ratpoints.h|, \verb|sp1|,
+    \verb|sp2| and \verb|sp3| are the parameters', \verb|num_primes| and \verb|max_forbidden| are
+    the options of the program's;
   \item the normalized options returned, for the fields that the C code normalizes in place and
     \verb|find_points_work| restores; no clamp of the number of the intervals, which a list cannot
     make negative; the bit \verb|RATPOINTS_NO_REVERSE_AUTO|, which the C code sets in the flags and
@@ -1967,21 +1968,20 @@ integers of \verb|scan_end| and the allocation and release of its digits
 \csource{main.c}{874}{874}, \csource{main.c}{877}{877}), memory. The message of error~9
 (\verb|main.c:1048|) is modelled, as the program gives that error for the refusal
 $\mathrm{badArgs}$. Every line of \verb|sturm.c| is recorded. The lines left free after stage~H are
-stage~I's: in \verb|find_points.c| the choice of the moduli by the curve, but for its cost model and
-the estimate of the work (Section~\ref{sec:costs}), its composite moduli and its first two stages
-(Definitions~\ref{def:compositeModuli} and~\ref{def:firstStages}) and its third stage but for the
-number of primes that it wants and its costs (Definition~\ref{def:thirdStage}), with its correction
-between the blocks (the plan of the blocks, the loops of the shapes over a block and one block
-having been recorded with Section~\ref{sec:blocks}) and the threads, and the numbers of the moduli
-used; in \verb|ratpoints.h| the tuning fields and the number of threads of \verb|ratpoints_args|
-(lines 365-367 and 370), and the numbers of the moduli used, the private data of
-\verb|ratpoints_args| and the end of the type (lines 378-400); in \verb|rp-private.h| the macros of
-the threads (lines 76-84) and, in \verb|rp_worker|, the fields of the pool (line 584), the counters
-of the block having left it with Definition~\ref{def:counters}, the decision of the correction with
-one block (Definition~\ref{def:runBlock}) and the name of the type with one denominator
-(Definition~\ref{def:sift}); and in \verb|main.c| the defaults of the tuning options
-\verb|-r -R -U -C -A -Q -W| (lines 339-343 and 345-346), which the choice of the moduli by the curve
-and its correction read, and message~4, on the moduli used (lines 992-998).
+stage~I's: in \verb|find_points.c| the correction of the moduli between the blocks (the choice of
+the moduli by the curve having been recorded with Section~\ref{sec:choice}, the plan of the blocks,
+the loops of the shapes over a block and one block with Section~\ref{sec:blocks}) and the threads,
+and the numbers of the moduli used; in \verb|ratpoints.h| the number of threads of
+\verb|ratpoints_args| (line 370), the numbers of the moduli used (line 378), and the pool of
+threads and the end of the type (lines 398-400), the tuning fields (lines 365-367) having left it
+with the options of the sieve (Definition~\ref{def:sieveOptions}) and the other private data with
+what holds their data or as memory that the model does not allocate; in \verb|rp-private.h| the
+macros of the threads (lines 76-84) and, in \verb|rp_worker|, the fields of the pool (line 584), the
+counters of the block having left it with Definition~\ref{def:counters}, the decision of the
+correction with one block (Definition~\ref{def:runBlock}) and the name of the type with one
+denominator (Definition~\ref{def:sift}); and in \verb|main.c| message~4, on the moduli used (lines
+992-998), the defaults of the tuning options \verb|-r -R -U -C -A -Q -W| (lines 339-343 and
+345-346) having left it with the options of the sieve.
 
 \section{Files and names}\label{sec:regionFiles}
 

@@ -267,13 +267,14 @@ odd primes of the table is not complete (`Ratpoints.Setup.factorLcf`) or there a
 times squares, which the divisor shape of the loop over the denominators visits divisor by divisor
 (`Ratpoints.Sieve.squares1Dens`).
 
-C: `find_points.c:766-776`, `find_points.c:863`, `find_points.c:881-893`, `find_points.c:914-935`
+C: `find_points.c:766-776`, `find_points.c:863`, `find_points.c:881-893`, `find_points.c:914-935`,
+`ratpoints.h:390`
 
 Deviation: the leading coefficient read from the list, for the integer `work[0]` that the caller
 sets to `|c_d|` (lines 4911-4912); lists, for the arrays `den_info` and `divisors` of the arguments
-with their terminating zeros; `none` for a factorization that is not complete or too many divisors,
-where `setup_us1` leaves the flag `RATPOINTS_USE_SQUARES1` clear, and the lists returned, where it
-sets the flag; no output under `DEBUG`. -/
+(`ratpoints.h:390`) with their terminating zeros; `none` for a factorization that is not complete or
+too many divisors, where `setup_us1` leaves the flag `RATPOINTS_USE_SQUARES1` clear, and the lists
+returned, where it sets the flag; no output under `DEBUG`. -/
 def setupUs1 (c : List Int) (d bHigh : Nat) : Id (Option (List DenInfo × List Nat)) := do
   let (fac, w) ← factorLcf (c.getD d 0).natAbs
   if w != 1 then return none

@@ -5,12 +5,10 @@ Authors: Michael Stoll
 -/
 module
 
-public import Ratpoints.Proof.Forbidden
-public import Ratpoints.Proof.Moduli
+public import Ratpoints.Proof.Choice
 public import Ratpoints.Proof.Region
 public import Ratpoints.Proof.SearchDens
 public import Ratpoints.Proof.Setup
-public import Ratpoints.Proof.Stages
 
 import Ratpoints.Mathlib.Data.List.Nodup
 import Ratpoints.Proof.Bounds
@@ -53,14 +51,12 @@ intervals; without the flag of the reversal they lie in the search region
 
 ## Main definitions
 
-* `Ratpoints.Sieve.SieveEntry.IsSound`: a sieve entry with a positive modulus that admits the
-  numerator of every point.
 * `Ratpoints.searchList`, `Ratpoints.IsSoundTest`: the points that the search delivers for a test of
   the numerators, and a test that lets the numerator of every point through.
 * `Ratpoints.Sieve.IsSoundRun`: what the run of the search needs of its arguments.
 * `Ratpoints.SievingInfoEntries`, `Ratpoints.SievingInfoInvariant`: what the loop over the moduli of
-  `Ratpoints.sievingInfo` has made before a return, and its invariant.
-* `Ratpoints.IsSievingInfo`: what the search needs of the result of `Ratpoints.sievingInfo`.
+  `Ratpoints.sievingInfoOf` has made before a return, and its invariant.
+* `Ratpoints.IsSievingInfoOf`: what the search needs of the result of `Ratpoints.sievingInfoOf`.
 
 ## Main statements
 
@@ -78,14 +74,14 @@ intervals; without the flag of the reversal they lie in the search region
 * `Ratpoints.exists_isSoundTest_run_sieveRun`: the run of the shape that the search chooses, with
   sound arguments and the bounds of well-formed search intervals, delivers the points of the
   numerators in the search intervals that a sound test lets through.
-* `Ratpoints.sievingInfo_spec`: for well-formed parameters, the sieve entries that
-  `Ratpoints.sievingInfo` makes are those of the moduli, in their order, are sound, have the fields
-  that the packing reads and the tables of inverses of their factors, and hold the reciprocals of
-  their moduli, which it returns in the order of the entries, those of the third stage having the
-  shape that it needs (`Ratpoints.Sieve.SieveEntry.IsPrimeEntry`), its forbidden divisors are among
-  those that the loops of the tables and of the further primes may record, and the store of the
-  tables of rows that it returns fits the entries (`Ratpoints.Sieve.RowStore.Fits`); when it returns
-  none, the curve has no points.
+* `Ratpoints.sievingInfoOf_spec`: for well-formed parameters, the sieve entries that
+  `Ratpoints.sievingInfoOf` makes are those of the moduli, in their order, are sound, have the
+  fields that the packing reads and the tables of inverses of their factors, and hold the
+  reciprocals of their moduli, which it returns in the order of the entries, those of the third
+  stage having the shape that it needs (`Ratpoints.Sieve.SieveEntry.IsPrimeEntry`), its forbidden
+  divisors are among those that the loops of the tables and of the further primes may record, and
+  the store of the tables of rows that it returns fits the entries
+  (`Ratpoints.Sieve.RowStore.Fits`); when it returns none, the curve has no points.
 * `Ratpoints.run_searchPoints_flags`: the bits of the flags and the search intervals that the
   search writes back do not depend on the callback.
 * `Ratpoints.exists_isSoundTest_run_searchPoints`: for well-formed parameters, `1 ≤ H < 2 ^ 63` and
@@ -163,7 +159,7 @@ numerator through is sound, and there is no point at infinity to deliver, whatev
 ## Implementation notes
 
 The search is proved by cases on the values of its components, the classes and the word of the
-2-adic information, the 2-adic exit and the result of `Ratpoints.sievingInfo`, which do not depend
+2-adic information, the 2-adic exit and the result of `Ratpoints.sievingInfoOf`, which do not depend
 on the callback or the flags, so that the test of the sieve is chosen before them; the data and the
 count of the search along its paths, for these values, are proved with `vcgen`, which reads the
 components through private specifications `⦃True⦄ x ⦃fun r ↦ r = Id.run x⦄`, so that its
@@ -171,7 +167,7 @@ verification conditions speak of their values. The run of the shape that `Ratpoi
 chooses is handled by cases in one lemma. The exits use only that the denominators of the search lie
 in `bLow, …, bHigh`, within `1, …, H`, so that the contract of the search does not rest on the
 permutation of the reference (`Ratpoints.perm_filter_bruteForce_append_flatMap_searchDens`), which
-the theorems on `Ratpoints.findPoints` use. The contract of `Ratpoints.sievingInfo` is proved with
+the theorems on `Ratpoints.findPoints` use. The contract of `Ratpoints.sievingInfoOf` is proved with
 `vcgen` as well, with the loop invariant `Ratpoints.SievingInfoInvariant`, reading the loop of the
 tables through such a private specification and the further primes and the sieve entries of the
 moduli through their contracts.
@@ -206,17 +202,6 @@ theorem pointsOfDen_zero_singleton_one (c : List ℤ) (d : ℕ) :
 end BruteForce
 
 namespace Sieve
-
-/-- A sieve entry that lets the numerator of every point of the curve `y ^ 2 = F(x, z)` with the
-coefficient list `c` through: its modulus is positive, and its row of the denominator `b` admits the
-numerator `a` of every triple `(a, y, b)` with `gcd(a, b) = 1` and `y ^ 2 = F(a, b)`. For
-well-formed parameters, the search makes only such entries (`Ratpoints.sievingInfo_spec`). -/
-structure SieveEntry.IsSound (c : List ℤ) (e : SieveEntry) : Prop where
-  /-- The modulus is positive. -/
-  pos : 0 < e.p
-  /-- The row of the denominator of every point admits its numerator. -/
-  admits_of_sq_eq {a y : ℤ} {b : ℕ} (hab : Int.gcd a b = 1) (hy : y ^ 2 = binaryForm c a b) :
-    e.admits b a = true
 
 theorem survives_of_mem_pointsOfDen {c : List ℤ} {entries : List SieveEntry}
     (hent : ∀ e ∈ entries, e.IsSound c) {b : ℕ} {xs : List ℤ} {q : ℤ × ℤ × ℤ}
@@ -579,9 +564,9 @@ private theorem exists_dens_eq_filter_words {c : List ℤ} {H sp2 : ℕ} {entrie
 
 end Sieve
 
-/-! ### What `Ratpoints.sievingInfo` computes -/
+/-! ### What `Ratpoints.sievingInfoOf` computes -/
 
-/-- What the loop of `Ratpoints.sievingInfo` over the moduli has made after the moduli `pref`,
+/-- What the loop of `Ratpoints.sievingInfoOf` over the moduli has made after the moduli `pref`,
 before a return: the sieve entries `entries` of the moduli `pref`, in their order, each made by
 `Ratpoints.makeModulus?` (`Ratpoints.IsModulusEntry`) with the reference to its table of rows and
 the kind of its builder of its position (`Ratpoints.Sieve.SieveEntry.refInit`), that of one of the
@@ -604,7 +589,7 @@ structure SievingInfoEntries (c : List ℤ) (pref : List ℕ) (entries : Array S
   /-- The store is made for the entries. -/
   madeFor : store.MadeFor c (degree c) entries.toList
 
-/-- The invariant of the loop of `Ratpoints.sievingInfo` over the moduli, after the moduli `pref`
+/-- The invariant of the loop of `Ratpoints.sievingInfoOf` over the moduli, after the moduli `pref`
 and with the moduli `suff` still to come, on the result of an early return, the sieve entries made
 and the store of the tables of rows: before a return, what the loop has made
 (`Ratpoints.SievingInfoEntries`); a result, which is `none` and comes when the curve has no points
@@ -615,8 +600,8 @@ def SievingInfoInvariant (c : List ℤ) (pref suff : List ℕ)
   st.1.elim (SievingInfoEntries c pref st.2.1 st.2.2) fun r ↦ suff = [] ∧ r = none ∧
     ∀ H q, ¬IsPoint c H q
 
-/-- The loop of `Ratpoints.sievingInfo` starts with the store of the loop of the tables, which holds
-the rows of `0` of the primes and no others (`Ratpoints.Sieve.PrimeStore`). -/
+/-- The loop of `Ratpoints.sievingInfoOf` starts with the store of the loop of the tables, which
+holds the rows of `0` of the primes and no others (`Ratpoints.Sieve.PrimeStore`). -/
 theorem sievingInfoInvariant_empty (c : List ℤ) (suff : List ℕ) {store : RowStore}
     (h : PrimeStore store) : SievingInfoInvariant c [] suff (none, #[], store) :=
   ⟨rfl, nofun, nofun, nofun, RowStore.madeFor_nil c (degree c) h.1 h.2⟩
@@ -631,11 +616,6 @@ private theorem isPrimeEntry_of_factors_eq {c : List ℤ} {e : SieveEntry} {pn :
   isPrimeEntry_examinePrime c (degree c)
     (hm ▸ prime_getElem!_primeTable (hpn.trans_le numPrimes_le_size_primeTable))
     (hm ▸ (getElem!_primeTable_lt_maxPrimeEven hpn).le.trans maxPrimeEven_le_two_pow_32) h rfl hmg
-
-/-- A sieve entry made by `Ratpoints.makeModulus?` is sound. -/
-theorem IsModulusEntry.isSound {c : List ℤ} {m : ℕ} {s : SieveEntry} (h : IsModulusEntry c m s) :
-    s.IsSound c :=
-  ⟨Nat.zero_lt_of_lt h.packable.one_lt, fun hab hy ↦ h.admits_of_sq_eq hab hy⟩
 
 -- The prime factors of a sieve entry made by `Ratpoints.makeModulus?` are positive.
 private theorem IsModulusEntry.pos_of_prime_mem {c : List ℤ} {m : ℕ} {s : SieveEntry}
@@ -655,7 +635,7 @@ theorem refInit_push {entries : Array SieveEntry}
   Array.forall_getElem_push
     (P := fun n (s : SieveEntry) ↦ (s.ref, s.init) = SieveEntry.refInit n s.factors) h he
 
-/-- The step of the loop of `Ratpoints.sievingInfo` at a modulus `m`, whose sieve entry
+/-- The step of the loop of `Ratpoints.sievingInfoOf` at a modulus `m`, whose sieve entry
 `Ratpoints.makeModulus?` makes at the position `entries.size` (`Ratpoints.makeModulus?_spec`), with
 its tables of rows and those of its factors added to the store
 (`Ratpoints.Sieve.SieveEntry.addTables`): the entry of one of the first `Ratpoints.numPrimes` primes
@@ -685,8 +665,8 @@ theorem SievingInfoInvariant.push {c : List ℤ} {m : ℕ} {pref suff : List ℕ
         isPrimeEntry_of_factors_eq hpn hm (hf pn hpn hm) hme.packable.magic_eq, h.isPrimeEntry⟩, ?_⟩
     rwa [Array.toList_push]
 
-/-- What the search needs of the result of `Ratpoints.sievingInfo` for the parameters `P`: the sieve
-entries `entries` are those of the moduli, in their order, sound
+/-- What the search needs of the result of `Ratpoints.sievingInfoOf` for the parameters `P`: the
+sieve entries `entries` are those of the moduli, in their order, sound
 (`Ratpoints.Sieve.SieveEntry.IsSound`), with the fields that the packing reads
 (`Ratpoints.Sieve.SieveEntry.Packable`) and the tables of inverses of their factors
 (`Ratpoints.Sieve.Factor.HasInverses`), those of the third stage of the shape that it needs
@@ -694,7 +674,7 @@ entries `entries` are those of the moduli, in their order, sound
 their order; the forbidden divisors are among those that the loops of the tables and of the further
 primes may record (`Ratpoints.Sieve.IsForbiddenEntry`, `Ratpoints.Sieve.IsForbiddenVal`); and the
 store of the tables of rows fits the entries (`Ratpoints.Sieve.RowStore.Fits`). -/
-structure IsSievingInfo (c : List ℤ) (H : ℕ) (P : Params) (entries : List SieveEntry)
+structure IsSievingInfoOf (c : List ℤ) (H : ℕ) (P : Params) (entries : List SieveEntry)
     (magics : Array ℕ) (forb : List ForbiddenEntry) (forbVal : List ForbiddenVal)
     (store : RowStore) : Prop where
   /-- The sieve entries are sound, with the fields that the packing reads and the tables of inverses
@@ -713,8 +693,8 @@ structure IsSievingInfo (c : List ℤ) (H : ℕ) (P : Params) (entries : List Si
   /-- The store of the tables of rows fits the entries. -/
   fits : store.Fits entries
 
-/-- The early return of the loop of `Ratpoints.sievingInfo` at a modulus whose sieve entry is none:
-the curve has no points. -/
+/-- The early return of the loop of `Ratpoints.sievingInfoOf` at a modulus whose sieve entry is
+none: the curve has no points. -/
 theorem sievingInfoInvariant_some_none {c : List ℤ} {m : ℕ} {pref : List ℕ}
     {entries : Array SieveEntry} {store : RowStore} {r x : Option SieveEntry} {n : ℕ}
     (hr : (∀ s, r = some s → IsModulusEntry c m s ∧
@@ -725,7 +705,7 @@ theorem sievingInfoInvariant_some_none {c : List ℤ} {m : ℕ} {pref : List ℕ
     SievingInfoInvariant c pref [] (some none, entries, store) :=
   ⟨rfl, rfl, hr.2 (he.trans (Option.eq_none_iff_forall_ne_some.mpr hx))⟩
 
-/-- The end of the loop of `Ratpoints.sievingInfo` after an early return. -/
+/-- The end of the loop of `Ratpoints.sievingInfoOf` after an early return. -/
 theorem SievingInfoInvariant.post_some {c : List ℤ} {H : ℕ} {P : Params} {pref : List ℕ}
     {o : Option (Option (List SieveEntry × Array ℕ × List ForbiddenEntry × List ForbiddenVal ×
       RowStore))}
@@ -733,7 +713,7 @@ theorem SievingInfoInvariant.post_some {c : List ℤ} {H : ℕ} {P : Params} {pr
     {r : Option (List SieveEntry × Array ℕ × List ForbiddenEntry × List ForbiddenVal × RowStore)}
     (h : SievingInfoInvariant c pref [] (o, entries, store)) (ho : o = some r) :
     (∀ entries magics forb forbVal store, r = some (entries, magics, forb, forbVal, store) →
-        IsSievingInfo c H P entries magics forb forbVal store) ∧
+        IsSievingInfoOf c H P entries magics forb forbVal store) ∧
       (r = none → ∀ H q, ¬IsPoint c H q) := by
   subst ho
   obtain ⟨-, rfl, h⟩ := h
@@ -761,7 +741,7 @@ theorem SievingInfoEntries.fits {c : List ℤ} {pref : List ℕ} {entries : Arra
     exact (h.isModulusEntry _ (Array.getElem_mem hn')).rowsFit_runRows (h.refInit n hn')
       (by simp [hn'])⟩
 
-/-- The end of the loop of `Ratpoints.sievingInfo` over all the moduli of well-formed parameters,
+/-- The end of the loop of `Ratpoints.sievingInfoOf` over all the moduli of well-formed parameters,
 with forbidden divisors that the loops of the tables and of the further primes may record: the
 reciprocals of the sieve entries are those of their moduli, the entries of the moduli of the third
 stage are among those of the first `Ratpoints.numPrimes` primes of the table
@@ -778,7 +758,7 @@ theorem SievingInfoInvariant.post_none {c : List ℤ} {H : ℕ} {P : Params}
     (∀ entries' magics forb' forbVal' store',
         some (entries.toList, entries.map (·.magic), forb, forbVal, store) =
           some (entries', magics, forb', forbVal', store') →
-        IsSievingInfo c H P entries' magics forb' forbVal' store') ∧
+        IsSievingInfoOf c H P entries' magics forb' forbVal' store') ∧
       (some (entries.toList, entries.map (·.magic), forb, forbVal, store) = none →
         ∀ H q, ¬IsPoint c H q) := by
   subst ho
@@ -793,7 +773,7 @@ theorem SievingInfoInvariant.post_none {c : List ℤ} {H : ℕ} {P : Params}
   rw [Array.toList_map]
   exact List.map_congr_left fun e he ↦ (hent e he).packable.magic_eq
 
--- The exit of the loop of the tables in `Ratpoints.sievingInfo`: the curve has no points.
+-- The exit of the loop of the tables in `Ratpoints.sievingInfoOf`: the curve has no points.
 private theorem post_of_run_examinePrimes_eq {c : List ℤ} {u checkDenom : Bool} {P : Params}
     {H : ℕ} {x : Option (Array Entry × Array ForbiddenEntry × Array ForbiddenVal × RowStore)}
     (hn : P.examined ≤ numPrimes)
@@ -802,7 +782,7 @@ private theorem post_of_run_examinePrimes_eq {c : List ℤ} {u checkDenom : Bool
     (∀ entries magics forb forbVal store,
         (none : Option (List SieveEntry × Array ℕ × List ForbiddenEntry × List ForbiddenVal ×
           RowStore)) = some (entries, magics, forb, forbVal, store) →
-        IsSievingInfo c H P entries magics forb forbVal store) ∧
+        IsSievingInfoOf c H P entries magics forb forbVal store) ∧
       ((none : Option (List SieveEntry × Array ℕ × List ForbiddenEntry × List ForbiddenVal ×
         RowStore)) = none → ∀ H q, ¬IsPoint c H q) :=
   ⟨nofun, fun _ ↦ not_isPoint_of_run_examinePrimes_eq_none
@@ -818,7 +798,7 @@ private theorem forall_mem_toList_isForbiddenEntry_and_isForbiddenVal {c : List 
   ⟨fun _ he ↦ isForbiddenEntry_of_run_examinePrimes_eq_some h hn (Array.mem_toList_iff.mp he),
     fun _ he ↦ isForbiddenVal_of_run_examinePrimes_eq_some h hn (Array.mem_toList_iff.mp he)⟩
 
--- The loop of the tables, as a value for the contract of `Ratpoints.sievingInfo`.
+-- The loop of the tables, as a value for the contract of `Ratpoints.sievingInfoOf`.
 private theorem examinePrimes_value (c : List ℤ) (d : ℕ) (u checkDenom : Bool)
     (n maxForbidden bHigh : ℕ) :
     ⦃ True ⦄ examinePrimes c d u checkDenom n maxForbidden bHigh
@@ -826,8 +806,8 @@ private theorem examinePrimes_value (c : List ℤ) (d : ℕ) (u checkDenom : Boo
   ⟨fun _ ↦ rfl⟩
 
 attribute [local irreducible] SievingInfoInvariant in
-/-- For well-formed parameters, what `Ratpoints.sievingInfo` computes serves the search
-(`Ratpoints.IsSievingInfo`): the sieve entries are those of the moduli, in their order, and are
+/-- For well-formed parameters, what `Ratpoints.sievingInfoOf` computes serves the search
+(`Ratpoints.IsSievingInfoOf`): the sieve entries are those of the moduli, in their order, and are
 sound (`Ratpoints.SievingInfoInvariant.push`, the tables of the loop of the tables being those of
 the reference, `Ratpoints.makeModulus?_spec`), have the fields that the packing reads
 (`Ratpoints.Sieve.SieveEntry.Packable`) and the tables of inverses of their factors
@@ -843,13 +823,13 @@ no points of any height, none modulo a prime of the loop of the tables
 (`Ratpoints.Sieve.not_isPoint_of_run_examinePrimes_eq_none`) or modulo a prime examined for a
 modulus. -/
 @[spec]
-theorem sievingInfo_spec (c : List ℤ) (u checkDenom : Bool) (P : Params) (bHigh : ℕ) :
-    ⦃ P.WF ⦄ sievingInfo c (degree c) u checkDenom P bHigh
+theorem sievingInfoOf_spec (c : List ℤ) (u checkDenom : Bool) (P : Params) (bHigh : ℕ) :
+    ⦃ P.WF ⦄ sievingInfoOf c (degree c) u checkDenom P bHigh
     ⦃ fun r ↦ (∀ entries magics forb forbVal store,
         r = some (entries, magics, forb, forbVal, store) →
-          IsSievingInfo c bHigh P entries magics forb forbVal store) ∧
+          IsSievingInfoOf c bHigh P entries magics forb forbVal store) ∧
       (r = none → ∀ H q, ¬IsPoint c H q) ⦄ := by
-  vcgen [sievingInfo, examinePrimes_value] invariants
+  vcgen [sievingInfoOf, examinePrimes_value] invariants
   · fun pref suff st ↦ SievingInfoInvariant c pref suff st
   · fun pref suff st ↦ SievingInfoInvariant c pref suff st
   all_goals try dsimp only at *
@@ -870,14 +850,14 @@ theorem sievingInfo_spec (c : List ℤ) (u checkDenom : Bool) (P : Params) (bHig
         fun _ ↦ isForbiddenVal_of_run_examinePrimes_eq_some ‹_› hP.examined_le⟩
     | exact post_of_run_examinePrimes_eq hP.examined_le ‹_› ‹_›
 
--- `Ratpoints.sievingInfo_spec` as a plain statement.
+-- `Ratpoints.sievingInfoOf_spec` as a plain statement.
 private theorem run_sievingInfo_spec {c : List ℤ} {u checkDenom : Bool} {P : Params} {bHigh : ℕ}
     (hP : P.WF) :
-    (∀ entries magics forb forbVal store, Id.run (sievingInfo c (degree c) u checkDenom P bHigh) =
+    (∀ entries magics forb forbVal store, Id.run (sievingInfoOf c (degree c) u checkDenom P bHigh) =
         some (entries, magics, forb, forbVal, store) →
-          IsSievingInfo c bHigh P entries magics forb forbVal store) ∧
-      (Id.run (sievingInfo c (degree c) u checkDenom P bHigh) = none → ∀ H q, ¬IsPoint c H q) :=
-  Std.WP.Id.of_run_eq_wp rfl _ ((sievingInfo_spec c u checkDenom P bHigh).le_wp hP)
+          IsSievingInfoOf c bHigh P entries magics forb forbVal store) ∧
+      (Id.run (sievingInfoOf c (degree c) u checkDenom P bHigh) = none → ∀ H q, ¬IsPoint c H q) :=
+  Std.WP.Id.of_run_eq_wp rfl _ ((sievingInfoOf_spec c u checkDenom P bHigh).le_wp hP)
 
 /-! ### The search -/
 
@@ -1004,7 +984,7 @@ private theorem isSoundRun_of_map {c : List ℤ} {sp2 : ℕ} {entries : List Sie
     exact (hent e' (List.mem_of_mem_take he')).2.2
 
 -- The classes, the entries and the row offsets of the search after `class_offsets`, in the array
--- of `num_packings` rows, make a sound run (`Ratpoints.sievingInfo_spec`,
+-- of `num_packings` rows, make a sound run (`Ratpoints.sievingInfoOf_spec`,
 -- `Ratpoints.Sieve.numClasses_spec`, `Ratpoints.Sieve.numPackings_spec`,
 -- `Ratpoints.Sieve.classOffsets_spec`).
 private theorem isSoundRun_of_run_classOffsets {c : List ℤ} {H : ℕ} {P : Params} (hP : P.WF)
@@ -1012,7 +992,7 @@ private theorem isSoundRun_of_run_classOffsets {c : List ℤ} {H : ℕ} {P : Par
     {r : Option (List SieveEntry × Array ℕ × List ForbiddenEntry × List ForbiddenVal × RowStore)}
     {entries : List SieveEntry} {magics : Array ℕ} {forb : List ForbiddenEntry}
     {forbVal : List ForbiddenVal} {store : RowStore}
-    (hr : r = Id.run (sievingInfo c (degree c) u cd P H))
+    (hr : r = Id.run (sievingInfoOf c (degree c) u cd P H))
     (hs : r = some (entries, magics, forb, forbVal, store)) {nb : Vector UInt64 64}
     (hnb : nb = Id.run (twoAdic c (degree c))) {cls : Vector NumClass 64} {db : UInt64}
     (hnc : (cls, db) = Id.run (numClasses nb)) {n : ℕ} (hn : n = Id.run (numPackings cls))
@@ -1052,8 +1032,8 @@ private theorem twoAdic_value (c : List ℤ) (d : ℕ) :
 
 private theorem sievingInfo_value (c : List ℤ) (d : ℕ) (u checkDenom : Bool) (P : Params)
     (bHigh : ℕ) :
-    ⦃ True ⦄ sievingInfo c d u checkDenom P bHigh
-    ⦃ fun r ↦ r = Id.run (sievingInfo c d u checkDenom P bHigh) ⦄ :=
+    ⦃ True ⦄ sievingInfoOf c d u checkDenom P bHigh
+    ⦃ fun r ↦ r = Id.run (sievingInfoOf c d u checkDenom P bHigh) ⦄ :=
   ⟨fun _ ↦ rfl⟩
 
 private theorem numClasses_value (nb : Vector UInt64 64) :
@@ -1073,8 +1053,8 @@ private theorem sieving_value {σ : Type} (process : ℤ → ℤ → ℤ → σ 
   ⟨fun _ ↦ rfl⟩
 
 -- The data and the count of the search along its paths, for the classes and the word of the 2-adic
--- information, the 2-adic exit `ex` and the result of `Ratpoints.sievingInfo`: the delivery as it
--- came after the 2-adic exit and the exit of `Ratpoints.sievingInfo`, else that of the points at
+-- information, the 2-adic exit `ex` and the result of `Ratpoints.sievingInfoOf`: the delivery as it
+-- came after the 2-adic exit and the exit of `Ratpoints.sievingInfoOf`, else that of the points at
 -- infinity, followed, unless the callback has stopped the search or the Sturm step has left no
 -- interval, by the sieving.
 private theorem searchPoints_spec_paths {σ : Type} (process : ℤ → ℤ → ℤ → σ → Answer σ)
@@ -1084,7 +1064,7 @@ private theorem searchPoints_spec_paths {σ : Type} (process : ℤ → ℤ → �
     (si : Option (List SieveEntry × Array ℕ × List ForbiddenEntry × List ForbiddenVal × RowStore))
     (hcd : Id.run (numClasses (Id.run (twoAdic c d))) = (cls, db))
     (hex : (db == 0 && !(d % 2 == 1 || Setup.isSquare (c.getD d 0))) = ex)
-    (hsi : Id.run (sievingInfo c d (Setup.useCLong c d) (d % 2 == 0) P bHigh) = si) :
+    (hsi : Id.run (sievingInfoOf c d (Setup.useCLong c d) (d % 2 == 0) P bHigh) = si) :
     ⦃ True ⦄ searchPoints process c d H P fl bLow bHigh dom sturmEmpty r
     ⦃ fun out ↦ (out.info, out.total) = (fun r' : Delivery σ ↦ (r'.info, r'.total))
         (if ex then r else
@@ -1119,7 +1099,7 @@ private theorem run_searchPoints_paths {σ : Type} (process : ℤ → ℤ → �
     (si : Option (List SieveEntry × Array ℕ × List ForbiddenEntry × List ForbiddenVal × RowStore))
     (hcd : Id.run (numClasses (Id.run (twoAdic c d))) = (cls, db))
     (hex : (db == 0 && !(d % 2 == 1 || Setup.isSquare (c.getD d 0))) = ex)
-    (hsi : Id.run (sievingInfo c d (Setup.useCLong c d) (d % 2 == 0) P bHigh) = si) :
+    (hsi : Id.run (sievingInfoOf c d (Setup.useCLong c d) (d % 2 == 0) P bHigh) = si) :
     ((Id.run (searchPoints process c d H P fl bLow bHigh dom sturmEmpty r)).info,
       (Id.run (searchPoints process c d H P fl bLow bHigh dom sturmEmpty r)).total) =
       (fun r' : Delivery σ ↦ (r'.info, r'.total))
@@ -1175,7 +1155,7 @@ private theorem exists_isSoundTest_run_sieving {c : List ℤ} {H : ℕ} {P : Par
     (hcd : Id.run (numClasses (Id.run (twoAdic c (degree c)))) = (cls, db))
     {entries : List SieveEntry} {magics : Array ℕ} {forb : List ForbiddenEntry}
     {forbVal : List ForbiddenVal} {store : RowStore}
-    (hsi : Id.run (sievingInfo c (degree c) (Setup.useCLong c (degree c)) (degree c % 2 == 0) P
+    (hsi : Id.run (sievingInfoOf c (degree c) (Setup.useCLong c (degree c)) (degree c % 2 == 0) P
       bHigh) = some (entries, magics, forb, forbVal, store)) (useJacobi : Bool) :
     ∃ S, IsSoundTest c H bLow bHigh S ∧ ∀ {σ : Type} (process : ℤ → ℤ → ℤ → σ → Answer σ)
       (fl : CheckFlags) (r : Delivery σ), r.quit = false → Id.run (sieving process c (degree c) H
@@ -1226,8 +1206,8 @@ the sieve, which does not depend on the callback, the flags or the search interv
 (`Ratpoints.exists_isSoundTest_run_sieveRun`), the points at infinity come first
 (`Ratpoints.Sieve.pointsAtInfinity_eq_deliver`), and the search returns after them when the callback
 has stopped it or the Sturm step has left no interval (`Ratpoints.searchList_nil`); when the search
-takes the 2-adic exit or the exit of `Ratpoints.sievingInfo`, the curve has no points
-(`Ratpoints.Sieve.not_isPoint_of_denBits_eq_zero`, `Ratpoints.sievingInfo_spec`), so that the test
+takes the 2-adic exit or the exit of `Ratpoints.sievingInfoOf`, the curve has no points
+(`Ratpoints.Sieve.not_isPoint_of_denBits_eq_zero`, `Ratpoints.sievingInfoOf_spec`), so that the test
 that lets no numerator through is sound and there is no point at infinity. -/
 theorem exists_isSoundTest_run_searchPoints {c : List ℤ} {H : ℕ} {P : Params} (hP : P.WF)
     (hH : 1 ≤ H) (hH63 : H < 2 ^ 63) {bLow bHigh : ℕ} (hbLow : 1 ≤ bLow) (hbH : bHigh ≤ H)
@@ -1242,7 +1222,7 @@ theorem exists_isSoundTest_run_searchPoints {c : List ℤ} {H : ℕ} {P : Params
             (if sturmEmpty then [] else domainValues dom) S fl)).total) := by
   rcases hcd : Id.run (numClasses (Id.run (twoAdic c (degree c)))) with ⟨cls, db⟩
   rcases hex : (db == 0 && !(degree c % 2 == 1 || Setup.isSquare (c.getD (degree c) 0)))
-  · rcases hsi : Id.run (sievingInfo c (degree c) (Setup.useCLong c (degree c))
+  · rcases hsi : Id.run (sievingInfoOf c (degree c) (Setup.useCLong c (degree c))
       (degree c % 2 == 0) P bHigh) with _ | ⟨entries, magics, forb, forbVal, store⟩
     · exact exists_isSoundTest_of_forall_not_isPoint hH hbLow hbH
         ((run_sievingInfo_spec hP).2 hsi H) fun process fl r ↦

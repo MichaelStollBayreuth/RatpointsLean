@@ -76,8 +76,8 @@ least one bit array.
   well-formed; comparator certifies this (`comparator/Challenge.lean`), which also rules out a
   well-formedness that nothing satisfies.
 * `Ratpoints.wf_defaultParams`: the parameters of a run without options are well-formed.
-* `Ratpoints.Params.one_le_arraySizeAt`: for a height bound `H ≥ 1` a piece of the numerators has
-  at least one bit array.
+* `Ratpoints.one_le_arraySizeAt`, `Ratpoints.Params.one_le_arraySizeAt`: for a height bound
+  `H ≥ 1` a piece of the numerators has at least one bit array.
 
 ## Implementation notes
 
@@ -593,10 +593,13 @@ theorem wf_defaultParams : defaultParams.WF := wf_sieveParams {}
 advances; this reads off only that `Ratpoints.defaultArraySize`, `Ratpoints.maxArraySize` and the
 chunk `Ratpoints.chunk` are positive, the rounding up to a multiple of the chunk keeping the size at
 least `1`. -/
-theorem Params.one_le_arraySizeAt (P : Params) {H : ℕ} (hH : 1 ≤ H) : 1 ≤ P.arraySizeAt H := by
+theorem one_le_arraySizeAt (a : ℕ) {H : ℕ} (hH : 1 ≤ H) : 1 ≤ arraySizeAt a H := by
   rw [arraySizeAt, Nat.mul_comm]
   refine Nat.le_trans ?_ (Nat.le_mul_add_sub_one_div _ chunk_pos)
   split <;> lia [defaultArraySize_pos, maxArraySize_pos]
+
+theorem Params.one_le_arraySizeAt (P : Params) {H : ℕ} (hH : 1 ≤ H) : 1 ≤ P.arraySizeAt H :=
+  Ratpoints.one_le_arraySizeAt P.arraySize hH
 
 /-! ### The axioms of the certified theorem -/
 

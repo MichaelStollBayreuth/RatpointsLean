@@ -14,18 +14,18 @@ meta import Ratpoints.Model.Denominators
 # The cost model of the choice of the moduli
 
 ratpoints chooses the moduli of its sieve and the cut points of its stages from the curve, by a
-model of what each modulus costs and what it says (`sieving_info`, which the model has with stage
-I): the candidates are ranked by their keys, what a modulus costs per word swept divided by what it
-says, `-log r` for its density `r`; the first stage takes them while the survivors per word that the
-next one removes are worth its cost; the second adds an offset that grows with the length of the
-run; and the third stage takes further primes while the survivors they remove are worth the
-denominators they are carried through. This module holds the arithmetic of that model, in doubles,
-expression by expression as the C code computes them: the record of a candidate and its two orders,
-the costs and keys, the cost of the exact check, the rule that ends the first stage, the offset of
-the second, and the estimate of the run (the denominators, the words and the calls of the sieve)
-with the mean number of bits per word of the bit arrays. The composite moduli and the stages of the
-choice call them (`Ratpoints.addModuli`, `Ratpoints.takeEntries`, `Ratpoints.rankSecond`); the
-search calls neither yet, the choice of the moduli that it runs coming with stage I.
+model of what each modulus costs and what it says (`sieving_info`, `Ratpoints.sievingInfo`): the
+candidates are ranked by their keys, what a modulus costs per word swept divided by what it says,
+`-log r` for its density `r`; the first stage takes them while the survivors per word that the next
+one removes are worth its cost; the second adds an offset that grows with the length of the run; and
+the third stage takes further primes while the survivors they remove are worth the denominators they
+are carried through. This module holds the arithmetic of that model, in doubles, expression by
+expression as the C code computes them: the record of a candidate and its two orders, the costs and
+keys, the cost of the exact check, the rule that ends the first stage, the offset of the second, and
+the estimate of the run (the denominators, the words and the calls of the sieve) with the mean
+number of bits per word of the bit arrays. The composite moduli and the stages of the choice call
+them (`Ratpoints.addModuli`, `Ratpoints.takeEntries`, `Ratpoints.rankSecond`), and so does the
+choice (`Ratpoints.sievingInfo`), which the search does not call yet (stage I).
 
 The doubles are Lean's `Float`, IEEE 754 binary64 with the arithmetic of the platform: `+`, `-`,
 `*`, `/` and `sqrt` correctly rounded, as the C code compiled without fused multiply-adds and
@@ -359,7 +359,7 @@ It models no C code of its own: a structure for the fields of the arguments and 
 `find_points.c:2134-2136`), the bits `RATPOINTS_USE_SQUARES`, `RATPOINTS_USE_SQUARES1` (with
 `args->divisors`) and `RATPOINTS_USE_JACOBI` of the flags as Booleans and an option, natural
 numbers for the `long`s, and the array size normalized for the height bound
-(`Ratpoints.Params.arraySizeAt`). -/
+(`Ratpoints.arraySizeAt`). -/
 structure ShapeArgs where
   /-- Whether the denominators are the squares. -/
   useSquares : Bool

@@ -483,9 +483,10 @@ project.
 \section{The choice of the moduli}\label{sec:choice}
 
 \begin{definition}[The options of the sieve]\label{def:sieveOptions}
-  \uses{def:Double, def:arraySize, def:choiceConstants}
-  Proposed names: \lname{Ratpoints.SieveOptions}, \lname{Ratpoints.SieveOptions.normalize},
-  \lname{Ratpoints.SieveOptions.tuning}. The fields of the arguments of the library that tune the
+  \uses{def:Double, def:choiceConstants}
+  \lean{Ratpoints.SieveOptions, Ratpoints.SieveOptions.normalize, Ratpoints.SieveOptions.tuning}
+  \leanok
+  The fields of the arguments of the library that tune the
   sieve, as the caller gives them: the number of primes to look at, the cut points and the number of
   primes of the third stage, the bound of the forbidden divisors and the values of \verb|-R| and
   \verb|-A|, as integers for the C \verb|long|s, $-1$ when absent; the values of \verb|-r|,
@@ -552,7 +553,7 @@ not read.
 \end{definition}
 
 \begin{definition}[The first two stages]\label{def:firstStages}
-  \uses{def:costModel, def:compositeModuli, def:sieveParams, def:runShape}
+  \uses{def:costModel, def:compositeModuli, def:sieveOptions, def:runShape}
   \lean{Ratpoints.dropUsed, Ratpoints.takeEntries, Ratpoints.rankSecond, Ratpoints.dropComposites, Ratpoints.stageEntries, Ratpoints.firstStages}
   \leanok
   The candidates whose mask meets the primes taken dropped from a position on
@@ -571,9 +572,9 @@ not read.
 \begin{definition}[The loop of the tables]\label{def:tablesLoop}
   \uses{def:densities, def:costModel, def:runShape, def:forbidden, def:storeTables,
     def:sieveOptions, def:compositeModuli, def:examinePrimeExit}
-  Proposed names: \lname{Ratpoints.TableLoop}, \lname{Ratpoints.examineInLoop},
-  \lname{Ratpoints.raiseLimit}, \lname{Ratpoints.tablesLoop}, \lname{Ratpoints.choiceEstimate},
-  \lname{Ratpoints.checkRelOf}, \lname{Ratpoints.adaptStart}. The state of the loop: the pool of the
+  \lean{Ratpoints.TableLoop, Ratpoints.examineInLoop, Ratpoints.raiseLimit, Ratpoints.tablesLoop, Ratpoints.choiceEstimate, Ratpoints.checkRelOf, Ratpoints.adaptStart}
+  \leanok
+  The state of the loop: the pool of the
   candidates, the number of primes to look at, the primes that say only coprimality, the table and
   the density of each prime that says something, whether denominators divisible by each prime occur,
   the forbidden divisors and the store (\csource{find_points.c}{2537}{2539},
@@ -593,9 +594,10 @@ not read.
 \end{definition}
 
 \begin{definition}[The third stage]\label{def:thirdStage}
-  \uses{def:costModel, def:runShape, def:examinePrimeExit, def:compositeModuli}
-  \lean{Ratpoints.bestByR, Ratpoints.rTyp, Ratpoints.ThirdState, Ratpoints.lookFurther, Ratpoints.thirdStage, Ratpoints.survivorsAtThird}
-  Proposed name, with I.8: \lname{Ratpoints.thirdOf}. The candidate of least density from a position
+  \uses{def:costModel, def:runShape, def:examinePrimeExit, def:compositeModuli, def:sieveOptions}
+  \lean{Ratpoints.bestByR, Ratpoints.rTyp, Ratpoints.ThirdState, Ratpoints.lookFurther, Ratpoints.thirdStage, Ratpoints.survivorsAtThird, Ratpoints.thirdOf}
+  \leanok
+  The candidate of least density from a position
   on, the first on ties (\csource{find_points.c}{2955}{2961}); the mean density of the candidates
   that say more than coprimality, $1$ for none (\csource{find_points.c}{2982}{2991}); the state of
   the stage (\csource{find_points.c}{2922}{2922}, \csource{find_points.c}{2933}{2933}); one more
@@ -605,15 +607,16 @@ not read.
   \csource{find_points.c}{2973}{2975}, \csource{find_points.c}{2980}{2981},
   \csource{find_points.c}{2992}{2993}, \csource{find_points.c}{3009}{3016}); the survivors per
   denominator expected at its start (\csource{find_points.c}{2941}{2947}); and the stage after the
-  first two, with the number of primes it wants and its costs per survivor and per denominator (with
-  I.8, \verb|find_points.c:2926-2932|).
+  first two, with the number of primes it wants and its costs per survivor and per denominator
+  (\csource{find_points.c}{2926}{2932}).
 \end{definition}
 
 \begin{definition}[The choice of the moduli]\label{def:choice}
   \uses{def:tablesLoop, def:compositeModuli, def:firstStages, def:thirdStage, def:runShape,
     def:forbidden, def:Params, def:sieveOptions, def:storeTables}
-  Proposed names: \lname{Ratpoints.SievingInfo}, \lname{Ratpoints.choiceEnd},
-  \lname{Ratpoints.choiceTail}, \lname{Ratpoints.sievingInfo}. What the choice gives the search: the
+  \lean{Ratpoints.SievingInfo, Ratpoints.choiceEnd, Ratpoints.choiceTail, Ratpoints.sievingInfo}
+  \leanok
+  What the choice gives the search: the
   result of the choice, the sieve entries of all its moduli, the reserve included, their
   reciprocals, the forbidden divisors tested with words and by their valuations, the store of the
   tables of rows and the switch of the checked loop (\csource{ratpoints.h}{389}{389},
@@ -660,7 +663,7 @@ the search and to the program. The comment lines among them (2369, 2793, 2892-28
 declaration. Nothing of the explicit route models C code after I.10.
 
 \begin{lemma}[The pool of the candidates]\label{lem:choicePool}
-  \uses{def:costModel, def:firstStages, def:thirdStage, def:sieveParams}
+  \uses{def:costModel, def:firstStages, def:thirdStage, def:sieveOptions}
   \lean{Ratpoints.AllQ, Ratpoints.AllQ.push, Ratpoints.AllQ.eraseIdxIfInBounds, Ratpoints.AllQ.sortFrom, Ratpoints.AllQ.mapIdx_key, Ratpoints.AllQ.rankSecond, Ratpoints.TailNf, Ratpoints.DropUsedInvariant, Ratpoints.TakeEntriesInvariant, Ratpoints.DropCompositesInvariant, Ratpoints.dropUsed_spec, Ratpoints.takeEntries_spec, Ratpoints.dropComposites_spec, Ratpoints.bestByR_spec, Ratpoints.firstStages_spec, Ratpoints.firstStages_run, Ratpoints.size_sortFrom, Ratpoints.getElem_sortFrom_of_lt, Ratpoints.exists_getElem_sortFrom_eq, Ratpoints.size_rankSecond, Ratpoints.map_some_filterMap_ssp, Ratpoints.length_filterMap_ssp_and_forall, Array.Extends, Array.Extends.refl, Array.Extends.trans, Array.extends_push, Array.extends_ite_push, Array.getElem!_eq_of_getElem?_eq_some, Option.eq_none_of_forall_prod4}
   \leanok
   For a property $Q$ of the candidates that does not read their key and cost, every candidate of the
@@ -714,17 +717,9 @@ declaration. Nothing of the explicit route models C code after I.10.
 \begin{lemma}[The choice is what the run needs]\label{lem:choice}
   \uses{def:choice, lem:choicePool, lem:compositeModuli, lem:densities, lem:forbidden,
     lem:examinePrime_none, lem:storeTables, def:decisionWF}
-  Proposed names: \lname{Ratpoints.IsSievingInfo}, \lname{Ratpoints.sievingInfo\_spec},
-  \lname{Ratpoints.TableLoop.OK}, \lname{Ratpoints.TableLoop.ok\_init},
-  \lname{Ratpoints.TablesLoopInvariant}, \lname{Ratpoints.examineInLoop\_spec},
-  \lname{Ratpoints.raiseLimit\_spec}, \lname{Ratpoints.tablesLoop\_spec},
-  \lname{Ratpoints.EntriesOK}, \lname{Ratpoints.entriesOK\_choiceEnd},
-  \lname{Ratpoints.isSievingInfo\_choiceEnd}, \lname{Ratpoints.ChoicePoolOK.sortFrom},
-  \lname{Ratpoints.ChoicePoolOK.exists\_entryOK}, \lname{Ratpoints.firstStages\_post},
-  \lname{Ratpoints.thirdOf\_spec}, \lname{Ratpoints.choiceTail\_spec},
-  \lname{Ratpoints.Sieve.RowStore.MadeFor.foldl\_addTables},
-  \lname{Ratpoints.SieveOptions.numPrimes\_normalize\_le},
-  \lname{Ratpoints.SieveOptions.maxForbidden\_normalize\_nonneg}. For options that look at no more
+  \lean{Ratpoints.IsSievingInfo, Ratpoints.sievingInfo_spec, Ratpoints.TableLoop.OK, Ratpoints.TableLoop.ok_init, Ratpoints.TablesLoopInvariant, Ratpoints.examineInLoop_spec, Ratpoints.raiseLimit_spec, Ratpoints.tablesLoop_spec, Ratpoints.EntriesOK, Ratpoints.entriesOK_choiceEnd, Ratpoints.isSievingInfo_choiceEnd, Ratpoints.ChoicePoolOK.sortFrom, Ratpoints.ChoicePoolOK.exists_entryOK, Ratpoints.firstStages_post, Ratpoints.thirdOf_spec, Ratpoints.choiceTail_spec, Ratpoints.Sieve.RowStore.MadeFor.foldl_addTables, Ratpoints.SieveOptions.numPrimes_normalize_le, Ratpoints.SieveOptions.maxForbidden_normalize_nonneg}
+  \leanok
+  For options that look at no more
   than $\mathrm{numPrimes}$ primes and test a nonnegative number of forbidden divisors, as the
   normalized options do, the checked loop only for even degree, and any values of the doubles: an
   exit of the choice, at a prime of the loop of the tables or of the third stage without points
@@ -739,6 +734,7 @@ declaration. Nothing of the explicit route models C code after I.10.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   The loop of the tables keeps at most $\mathrm{numPrimes}$ primes to look at, the tables of the
   primes those of the reference at their positions, every candidate a prime, the forbidden divisors
   sound and the store that of the primes examined (the invariant of the loop,

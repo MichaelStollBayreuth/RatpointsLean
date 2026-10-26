@@ -481,13 +481,14 @@ Lemma~\ref{lem:sift_eq_checkDen} maps their side.
   store of the tables of rows of the run (Definition~\ref{def:storeTables}), which the run takes,
   and nothing delivered when the curve has no points modulo a prime examined on the way
   (\csource{find_points.c}{4602}{4602}, \csource{find_points.c}{4992}{5012}); the checked loop off
-  when there are no forbidden divisors and no Jacobi test (\csource{find_points.c}{2793}{2795}); the
-  points at infinity (Definition~\ref{def:pointsAtInfinity}), after which the search returns when
-  the callback has stopped it or the Sturm step has left nothing to search, the flag
-  \verb|sturm_empty| that the search takes (\csource{find_points.c}{5100}{5106}); and the sieving
-  (Definition~\ref{def:sieving}), the block that sets up the run and runs the denominators: an array
-  of rows of offsets, one for each packing, of one offset for each sieve entry, and the rows of
-  offsets of the classes in it, with the inverses of the strides in the entries
+  when there are no forbidden divisors and no Jacobi test, which \verb|sieving_info| switches off
+  (lines 2794-2795, those of the choice of the moduli, Definition~\ref{def:choice}, which the search
+  does not call yet); the points at infinity (Definition~\ref{def:pointsAtInfinity}), after which
+  the search returns when the callback has stopped it or the Sturm step has left nothing to search,
+  the flag \verb|sturm_empty| that the search takes (\csource{find_points.c}{5100}{5106}); and the
+  sieving (Definition~\ref{def:sieving}), the block that sets up the run and runs the denominators:
+  an array of rows of offsets, one for each packing, of one offset for each sieve entry, and the
+  rows of offsets of the classes in it, with the inverses of the strides in the entries
   (Definition~\ref{def:classOffsets}); the shape that \verb|run_setup| chooses
   (Definition~\ref{def:Shape}), with the bounds of the search intervals; and the points of the
   denominators of the shape from $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$ in the search intervals,

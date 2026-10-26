@@ -197,7 +197,7 @@ array `magics` holds at the position of the entry (`Ratpoints.Sieve.CheckSpec`):
 (`Ratpoints.Sieve.mulMod`) for `b ≤ Ratpoints.mulModLimit` and by `%` above, or `0` for `r = 0`;
 the bias `p H` when `2 p H < Ratpoints.stage3Limit` and `0` otherwise; the reciprocal of the entry;
 and the table of `t`. With the reciprocal `Ratpoints.Sieve.magic p` for `mg`, as the array of
-`Ratpoints.sievingInfo` holds it, the residue is `b mod p` for `p ≤ 2 ^ 32`
+`Ratpoints.sievingInfoOf` holds it, the residue is `b mod p` for `p ≤ 2 ^ 32`
 (`Ratpoints.Sieve.binv_checkOf`). An entry of another shape, which the third stage of well-formed
 parameters never holds (`Ratpoints.Params.WF`), gets the inverse `0`, so that the stage skips it, as
 it skips a prime that divides `b`.

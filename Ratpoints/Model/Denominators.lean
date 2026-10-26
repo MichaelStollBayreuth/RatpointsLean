@@ -24,23 +24,24 @@ The side of the denominators of the sieve, each component in its place in `find_
 (`Ratpoints.Sieve.numClasses`, in `Ratpoints.Model.Packing`); the forbidden divisors of the
 denominators of a polynomial of even degree, primes tested with words of 64 denominators or by their
 valuations, that an examined prime gives from what its table hands back in the loop of the tables of
-`sieving_info`, which also takes the exit (`Ratpoints.Sieve.examinePrimes`,
-`Ratpoints.Sieve.forbiddenOfPrime`), and that the further primes give (`Ratpoints.Sieve.forbidden`);
-the Jacobi test, by the binary algorithm (`Ratpoints.Sieve.jacobi`) or by tables
-(`Ratpoints.Sieve.jacobiSetup`, `Ratpoints.Sieve.jacobiTest`); and the loop over the denominators in
-its four shapes, as `run_setup` chooses them (`Ratpoints.Sieve.Shape`, `Ratpoints.Sieve.runSetup`):
-the squares, the divisors of the leading coefficient times squares (`Ratpoints.Setup.setupUs1`), the
-words of 64 denominators, and every denominator, each with the list of its denominators in the order
-of its loop and its tests on a single denominator (`Ratpoints.Sieve.Shape.dens`,
-`Ratpoints.Sieve.Shape.keep`), and the run itself (`Ratpoints.Sieve.sieveRun`), with the residues of
-a denominator divided by the stride of its class (`Ratpoints.Sieve.fillBpList`, in
-`Ratpoints.Model.Packing`). Every class word lets every numerator of a point through, and so does
-its packing; no forbidden divisor excludes the denominator of a point, the primes examined for them
-being primes of the table; both Jacobi tests let it through, and so does every test of a shape, so
-that the run delivers the points of the denominators of its shape in the search intervals (with the
-bounds that `Ratpoints.Sieve.runSetup` makes, `Ratpoints.Sieve.exactBounds`) to the callback of the
-search, in the order of its loop: increasing, except for the divisors; it returns when the callback
-stops the search.
+`sieving_info`, which also takes the exit (`Ratpoints.Sieve.forbiddenOfPrime`, which the loop of the
+tables of the choice of the moduli, `Ratpoints.examineInLoop`, calls, and the loop of the explicit
+route, `Ratpoints.Sieve.examinePrimes`), and that the further primes give
+(`Ratpoints.Sieve.forbidden`); the Jacobi test, by the binary algorithm (`Ratpoints.Sieve.jacobi`)
+or by tables (`Ratpoints.Sieve.jacobiSetup`, `Ratpoints.Sieve.jacobiTest`); and the loop over the
+denominators in its four shapes, as `run_setup` chooses them (`Ratpoints.Sieve.Shape`,
+`Ratpoints.Sieve.runSetup`): the squares, the divisors of the leading coefficient times squares
+(`Ratpoints.Setup.setupUs1`), the words of 64 denominators, and every denominator, each with the
+list of its denominators in the order of its loop and its tests on a single denominator
+(`Ratpoints.Sieve.Shape.dens`, `Ratpoints.Sieve.Shape.keep`), and the run itself
+(`Ratpoints.Sieve.sieveRun`), with the residues of a denominator divided by the stride of its class
+(`Ratpoints.Sieve.fillBpList`, in `Ratpoints.Model.Packing`). Every class word lets every numerator
+of a point through, and so does its packing; no forbidden divisor excludes the denominator of a
+point, the primes examined for them being primes of the table; both Jacobi tests let it through, and
+so does every test of a shape, so that the run delivers the points of the denominators of its shape
+in the search intervals (with the bounds that `Ratpoints.Sieve.runSetup` makes,
+`Ratpoints.Sieve.exactBounds`) to the callback of the search, in the order of its loop: increasing,
+except for the divisors; it returns when the callback stops the search.
 
 ## Main definitions
 
@@ -355,23 +356,20 @@ largest denominator `bHigh`, from the coefficients modulo the prime and the entr
 its table hands back (`Ratpoints.Sieve.forbiddenOfPrime`); the forbidden divisors tested with words
 and those tested by their valuations each in the order found, and the store.
 
-C: `find_points.c:2537`, `find_points.c:2545`, `find_points.c:2601-2602`,
-`find_points.c:2605-2614`, `find_points.c:2616`, `find_points.c:2619`, `find_points.c:2622`,
-`find_points.c:2624-2626`, `find_points.c:2677`, `find_points.c:2707`
-
-Deviation: the number `n` of the primes examined as an argument (`Ratpoints.Params.examined`), for
-`pn_lim`, which is `num_primes` at the start and which the loop raises when the number of primes was
-left to the library and the choice of the moduli needs more (stage I); the table of every prime
-kept, also when `examine_prime` returns `0` and `prime_se` stays `NULL`, where the store gets no
-table of rows of the prime, as the C code makes no entry; an array of the tables, for `prime_se`,
-and the store of the tables of rows, for the arrays `sieve` of the entries that `examine_prime`
-makes, by the reference to the prime (`Ratpoints.Sieve.EntryRef.prime`), the test whether the prime
-says something made here on its table, where `examine_prime` makes it (line 1764) before it makes
-the entry; the exit as `none`, for the prime that `sieving_info` returns; no `pinf`, no keys, counts
-`pnp` and `n_weak` and entries `prec`, which serve the choice of the moduli (stage I); no cache
-`power_se` of the entries of prime powers (`Ratpoints.makeModulus?`); the switch `checkDenom` for
-the flag `RATPOINTS_CHECK_DENOM`; the arrays of the forbidden divisors returned, for the arrays of
-the arguments and their counts `fba` and `fdc`. -/
+It models no C code of its own: the explicit route of the search uses it
+(`Ratpoints.sievingInfoOf`), while the loop of the tables of `sieving_info` is that of the choice of
+the moduli (`Ratpoints.TableLoop`, `Ratpoints.examineInLoop`, `Ratpoints.raiseLimit`,
+`Ratpoints.tablesLoop`), which the search does not call yet (stage I) and from which this loop
+differs: it examines the given number `n` of primes (`Ratpoints.Params.examined`), where
+`sieving_info` raises `pn_lim` when the number of primes was left to the library and its first two
+stages want more; it keeps the table of every prime, also when `examine_prime` returns `0` and
+`prime_se` stays `NULL`, where the store gets no table of rows of the prime, as the C code makes no
+entry, in an array by the position of the prime, the test whether the prime says something made here
+on its table, where `examine_prime` makes it (line 1764) before it makes the entry; it keeps no
+`pinf`, no keys, counts `pnp` and `n_weak` and entries `prec` and no densities, which serve the
+choice of the moduli; and it returns the exit as `none`, for the prime that `sieving_info` returns,
+and the arrays of the forbidden divisors, for the arrays of the arguments and their counts `fba` and
+`fdc`. -/
 def examinePrimes (c : List Int) (d : Nat) (useCLong checkDenom : Bool)
     (n maxForbidden bHigh : Nat) :
     Id (Option (Array Entry × Array ForbiddenEntry × Array ForbiddenVal × RowStore)) := do
@@ -410,8 +408,8 @@ C: `find_points.c:2533-2536`, `find_points.c:2561-2562`, `find_points.c:2709-277
 Deviation: the position `examined` as an argument, for the final `pn_lim` of the loop of the tables;
 the Kronecker symbol by the table of the squares modulo `p`, which marks `0` as a square, for
 `mpz_kronecker_si`; the flag `RATPOINTS_CHECK_DENOM` not tested, since the search computes the
-forbidden divisors only when the flag is set, for even degree (`Ratpoints.sievingInfo`); lists, for
-the two arrays of the arguments with their terminating zeros; the words of one of the first
+forbidden divisors only when the flag is set, for even degree (`Ratpoints.sievingInfoOf`); lists,
+for the two arrays of the arguments with their terminating zeros; the words of one of the first
 `Ratpoints.numPrimes` primes an array of the first `p` words of the pattern `sieves0`, for the
 pointers `start` and `end` into it, and those of a prime beyond them made with its entry, for the
 words that `sieving_info` makes after this loop in the buffer `forb_words`, with no failure for lack
@@ -879,7 +877,7 @@ of degree `d` with the coefficient list `c`, delivered to the callback `process`
 `r`, whose flag `quit` is clear: the sieve entries `entries` of the moduli are cut into the three
 stages of the sieve, the first `sp1`, then those up to `sp2`, then the rest, the third stage, with
 the reciprocals of `magics` in their order, those of their moduli when `magics` holds the
-reciprocals of the moduli in the order of the entries (`Ratpoints.sievingInfo`); the rows of the
+reciprocals of the moduli in the order of the entries (`Ratpoints.sievingInfoOf`); the rows of the
 moduli of the first two stages come from the tables of rows of their entries in the store `store`
 (`Ratpoints.Sieve.RowStore`), each built into its table of rows when a denominator first needs it
 and kept for the rest of the run, and the moduli of the third stage need none; for each denominator

@@ -354,14 +354,14 @@ C: `ratpoints.h:120-122` -/
 def sp2U0 : Float := 1.6e6
 
 /-- What one prime of the third stage costs per survivor, as a fraction of one exact check,
-`RATPOINTS_SP3_PER_SURVIVOR`, in the rule that chooses the third stage (`sieving_info` and
+`RATPOINTS_SP3_PER_SURVIVOR`, in the rule that chooses the third stage (`Ratpoints.thirdOf`, and
 `adapt_primes`; stage I).
 
 C: `ratpoints.h:150-152` -/
 def sp3PerSurvivor : Float := 0.055
 
 /-- What one prime of the third stage costs per denominator, as a fraction of one exact check,
-`RATPOINTS_SP3_PER_DENOM`, in the rule that chooses the third stage (`sieving_info` and
+`RATPOINTS_SP3_PER_DENOM`, in the rule that chooses the third stage (`Ratpoints.thirdOf`, and
 `adapt_primes`; stage I), unless the option `-Q` gives a value `≥ 0`.
 
 C: `ratpoints.h:153-155` -/
@@ -399,7 +399,7 @@ C: `ratpoints.h:224-226` -/
 def costSetup : Float := 30.0
 
 /-- What one call of the sieve costs a modulus of the first stage, `RATPOINTS_COST_CALL`
-(`sieving_info`; stage I).
+(`Ratpoints.choiceEstimate`).
 
 C: `ratpoints.h:241-243` -/
 def costCall : Float := 50.0
@@ -454,7 +454,7 @@ def checkRoot : Float := 170.0
 
 /-- The cost of one exact check on the curves on which the third stage was tuned,
 `RATPOINTS_CHECK_REFERENCE`, which the cost of the check of the curve is divided by
-(`sieving_info`; stage I).
+(`Ratpoints.checkRelOf`).
 
 C: `ratpoints.h:329-331` -/
 def checkReference : Float := 306.0
@@ -497,7 +497,7 @@ def invStride : Array Float := #[1.0, 0.5, 0.25, 0.125, 0.0625, 0.03125, 0.01562
 
 /-- How many numerator words the run sweeps before the first correction of the moduli,
 `RP_ADAPT_WORDS`: the field `adapt_at` of the arguments, when the search may correct its choice
-(`sieving_info`; stage I).
+(`Ratpoints.adaptStart`).
 
 C: `find_points.c:1354` -/
 def adaptWords : Nat := 1000000

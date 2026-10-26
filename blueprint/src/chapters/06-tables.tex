@@ -178,23 +178,21 @@ that a point makes some entry of the reference true.
   \lean{Ratpoints.Sieve.examinePrimes}
   \leanok
   For the first $n$ primes of the table in turn: the table of the prime with the exit, and none when
-  the curve has no points modulo it (\csource{find_points.c}{2605}{2614}); the table of every
-  examined prime kept by its position, where \verb|sieving_info| keeps by its index the sieve entry
-  of each prime that says something, with the codes $1$ and $2$
-  (\csource{find_points.c}{2537}{2537}, \csource{find_points.c}{2545}{2545},
-  \csource{find_points.c}{2601}{2602}, \csource{find_points.c}{2616}{2616},
-  \csource{find_points.c}{2619}{2619}, \csource{find_points.c}{2622}{2622},
-  \csource{find_points.c}{2707}{2707}); the table of rows of each examined prime that says
-  something, in the store that it returns, as \verb|examine_prime| makes the entry of the prime
+  the curve has no points modulo it; the table of every examined prime kept by its position, where
+  \verb|sieving_info| keeps by its index the sieve entry of each prime that says something, with the
+  codes $1$ and $2$; the table of rows of each examined prime that says something, in the store that
+  it returns, as \verb|examine_prime| makes the entry of the prime
   (Definition~\ref{def:storeTables}); and, while the checked loop is on and fewer than
   $\mathrm{maxForbidden}$ forbidden divisors have been found, the forbidden divisor of the prime
-  from the coefficients modulo $p$ and the entry at infinity that its table hands back
-  (\csource{find_points.c}{2624}{2626}, \csource{find_points.c}{2677}{2677}). The unit parts, the
-  forbidden valuations and the forbidden divisor of a prime
+  from the coefficients modulo $p$ and the entry at infinity that its table hands back. The unit
+  parts, the forbidden valuations and the forbidden divisor of a prime
   (Definitions~\ref{def:forbiddenValuations} and~\ref{def:forbidden}) take these as arguments; the
   forbidden divisors of the further primes, the second loop of Definition~\ref{def:forbidden}, start
   from the lists of this loop at the position $n$, which stands for the final value of
-  \verb|pn_lim|.
+  \verb|pn_lim|. It models no C code of its own: the lines of the loop of the tables of
+  \verb|sieving_info| are those of the loop of the tables of the choice of the moduli
+  (Definition~\ref{def:tablesLoop}), which the search does not call yet, and this loop is that of
+  the explicit route of the search (Definition~\ref{def:sievingInfo}).
 \end{definition}
 
 \begin{lemma}[The loop of the tables]\label{lem:examinePrimes}
@@ -395,23 +393,22 @@ which $\mathrm{maxPrimeEven} \le 2^{32}$ gives.
   inverses $\mathrm{dinv}$ empty for the rows of offsets (Definition~\ref{def:classOffsets}) to
   fill, the count of its factors and the density $0$, which nothing reads before the choice of the
   moduli (stage~I), and it holds the reference and the kind of builder of the position $n$ of $m$
-  among the moduli with its factors, as Definition~\ref{def:SieveEntry} gives them: the entries of
-  the prime powers, which it makes for each modulus that needs them
-  (\csource{find_points.c}{2546}{2546}), and the count of the prime powers examined, whose tables it
-  computes for each modulus that needs them (\csource{find_points.c}{2548}{2548}); its tables of
-  rows, which lines 2427 and 2471 clear, are made by Definition~\ref{def:storeTables}. The lines of
-  \verb|make_power| and \verb|make_modulus|, of the tables of a prime power that \verb|add_moduli|
-  examines when a candidate first needs it and keeps by its index, and of the primes examined for
-  the third stage are those of the components of the choice of the moduli
-  (Definitions~\ref{def:compositeModuli} and~\ref{def:thirdStage}), which the search does not call
-  yet.
+  among the moduli with its factors, as Definition~\ref{def:SieveEntry} gives them; it makes the
+  entries of the prime powers, and their tables, for each modulus that needs them; its tables of
+  rows, which lines 2427 and 2471 clear, are made by Definition~\ref{def:storeTables}. It models no
+  C code of its own: the lines of \verb|make_power| and \verb|make_modulus|, of the tables of a
+  prime power that \verb|add_moduli| examines when a candidate first needs it and keeps by its
+  index, and of the primes examined for the third stage are those of the components of the choice of
+  the moduli (Definitions~\ref{def:compositeModuli} and~\ref{def:thirdStage}), and the entries of
+  the prime powers and their count, lines 2546 and 2548, those of the choice itself
+  (Definition~\ref{def:choice}), which the search does not call yet.
 \end{definition}
 
 \begin{lemma}[The rows of a modulus let every point through]\label{lem:sieveEntry_admits}
   \uses{def:makeModulus, lem:modulusFactors, lem:admits_examinePrime, lem:power_admits,
     lem:examinePrime_eq, lem:examinePrime_none, def:mulMod, lem:admits_mul, lem:modinv, lem:mulMod,
     def:packingConstants, lem:fetchRow}
-  \lean{Ratpoints.Sieve.Factor.IsSound, Ratpoints.Sieve.Factor.IsSound.inverses_eq, Ratpoints.Sieve.mod_sixty_four_ne_zero_of_prime, Ratpoints.MakeModulusInvariant, Ratpoints.IsModulusEntry, Ratpoints.IsModulusEntry.factors_ne_nil, Ratpoints.IsModulusEntry.p_eq_modulus, Ratpoints.mod_two_eq_one_of_forall_dvd, Ratpoints.coprime_rbaLength_of_mod_two_eq_one, Ratpoints.factors_eq_of_run_makeModulus?_eq_some, Ratpoints.makeModulus?_spec}
+  \lean{Ratpoints.Sieve.Factor.IsSound, Ratpoints.Sieve.Factor.IsSound.inverses_eq, Ratpoints.Sieve.mod_sixty_four_ne_zero_of_prime, Ratpoints.MakeModulusInvariant, Ratpoints.IsModulusEntry, Ratpoints.IsModulusEntry.isSound, Ratpoints.IsModulusEntry.factors_ne_nil, Ratpoints.IsModulusEntry.p_eq_modulus, Ratpoints.mod_two_eq_one_of_forall_dvd, Ratpoints.coprime_rbaLength_of_mod_two_eq_one, Ratpoints.factors_eq_of_run_makeModulus?_eq_some, Ratpoints.makeModulus?_spec}
   \leanok
   For tables of the loop that are those of the reference and a modulus
   $1 < m < \mathrm{maxPrimeEven}$ each of whose divisors $q > 1$ is divisible by one of the first
@@ -427,8 +424,9 @@ which $\mathrm{maxPrimeEven} \le 2^{32}$ gives.
   $\mathrm{rbainv} \cdot \mathrm{rbaLength} \equiv 1 \pmod m$, and the bias is a multiple of $m$ in
   $[\mathrm{rowBias}, \mathrm{rowBias} + m)$; and for one of the first $\mathrm{numPrimes}$ primes
   of the table its only factor is that prime with the table of the reference; it holds the reference
-  and the kind of builder of its position $n$ with its factors (Definition~\ref{def:SieveEntry}); if
-  it is not made, the curve has no points.
+  and the kind of builder of its position $n$ with its factors (Definition~\ref{def:SieveEntry}),
+  and every entry of a modulus with these properties, as the choice of the moduli makes them too, is
+  sound (Definition~\ref{def:SieveEntry}); if it is not made, the curve has no points.
 \end{lemma}
 
 \begin{proof}
@@ -487,35 +485,36 @@ the table, what a modulus says about the curve and the number of candidates are 
 of the moduli, which soundness does not need. The parameters of the command line examine the first
 $q$ primes and take primes as moduli (Definition~\ref{def:sieveParams}).
 
-\begin{definition}[What \texttt{sieving\_info} computes]\label{def:sievingInfo}
+\begin{definition}[The sieve entries of given moduli]\label{def:sievingInfo}
   \uses{def:examinePrimes, def:forbidden, def:makeModulus, def:Params, def:storeTables}
-  \lean{Ratpoints.sievingInfo}
+  \lean{Ratpoints.sievingInfoOf}
   \leanok
-  The loop of the tables over the examined primes (Definition~\ref{def:examinePrimes}); for the
-  checked loop on, the forbidden divisors of the further primes; the sieve entries of the moduli, in
-  a loop over them in their order (Definition~\ref{def:makeModulus}), each with its tables of rows
-  and those of its factors made in the store of the loop of the tables right after it
-  (Definition~\ref{def:storeTables}); the array of the reciprocals of the entries, in their order
-  (\csource{find_points.c}{3064}{3070}); and the store; none when the curve has no points modulo a
-  prime examined on the way (\csource{find_points.c}{2522}{2532},
-  \csource{find_points.c}{3102}{3103}); the loop over the moduli stands for the loop that makes the
-  entries of the composite moduli of the first two stages, a component of the choice of the moduli
-  (Definition~\ref{def:firstStages}), which the search does not call yet.
+  What \verb|sieving_info| computes, for the moduli of the parameters: the loop of the tables over
+  the examined primes (Definition~\ref{def:examinePrimes}); for the checked loop on, the forbidden
+  divisors of the further primes; the sieve entries of the moduli, in a loop over them in their
+  order (Definition~\ref{def:makeModulus}), each with its tables of rows and those of its factors
+  made in the store of the loop of the tables right after it (Definition~\ref{def:storeTables}); the
+  array of the reciprocals of the entries, in their order; and the store; none when the curve has no
+  points modulo a prime examined on the way. It models no C code of its own: \verb|sieving_info|,
+  its lines 2522-2532, 3064-3070 and 3102-3103 among them, is the choice of the moduli
+  (Definition~\ref{def:choice}), which the search does not call yet, and this function stands for it
+  in the search; the loop over the moduli stands for the loop that makes the entries of the
+  composite moduli of the first two stages (Definition~\ref{def:firstStages}).
 \end{definition}
 
-\begin{lemma}[What \texttt{sieving\_info} computes is sound]\label{lem:sievingInfo}
+\begin{lemma}[The sieve entries of given moduli are sound]\label{lem:sievingInfo}
   \uses{def:sievingInfo, lem:examinePrimes, lem:sieveEntry_admits, def:forbidden, def:mulMod,
     def:Params, def:stage3, lem:stage3, lem:classOffsets, lem:storeTables}
-  \lean{Ratpoints.SievingInfoEntries, Ratpoints.SievingInfoInvariant, Ratpoints.refInit_push, Ratpoints.IsModulusEntry.isSound, Ratpoints.SievingInfoEntries.fits, Ratpoints.IsSievingInfo, Ratpoints.sievingInfo_spec}
+  \lean{Ratpoints.SievingInfoEntries, Ratpoints.SievingInfoInvariant, Ratpoints.refInit_push, Ratpoints.SievingInfoEntries.fits, Ratpoints.IsSievingInfoOf, Ratpoints.sievingInfoOf_spec}
   \leanok
   For well-formed parameters, either value of the switch of the checked loop and the largest
-  denominator $b_{\mathrm{high}}$: if \verb|sieving_info| gives a result, the sieve entries are
-  those of the moduli, in their order, every sieve entry is sound, packable, so that it holds the
-  reciprocal of its modulus, and has factors whose tables of inverses invert their units
-  (Lemma~\ref{lem:sieveEntry_admits}), those of the third stage, from the position $s_2$ on, are
-  prime entries (Definition~\ref{def:stage3}), the reciprocals returned are those of the entries in
-  their order, the forbidden divisors are among those that the two loops may record for
-  $b_{\mathrm{high}}$, and the store of the tables of rows fits the entries
+  denominator $b_{\mathrm{high}}$: if the function of Definition~\ref{def:sievingInfo} gives a
+  result, the sieve entries are those of the moduli, in their order, every sieve entry is sound,
+  packable, so that it holds the reciprocal of its modulus, and has factors whose tables of inverses
+  invert their units (Lemma~\ref{lem:sieveEntry_admits}), those of the third stage, from the
+  position $s_2$ on, are prime entries (Definition~\ref{def:stage3}), the reciprocals returned are
+  those of the entries in their order, the forbidden divisors are among those that the two loops may
+  record for $b_{\mathrm{high}}$, and the store of the tables of rows fits the entries
   (Lemma~\ref{lem:storeTables}); if it gives none, the curve has no points of any height, so that
   the exit serves every range of the denominators.
 \end{lemma}
@@ -595,9 +594,9 @@ Each component of this chapter differs from the C code in a stated way, recorded
     Chapter~\ref{chap:rows}, with their deviations (Section~\ref{sec:rowsDeviations}): the rows of
     the factors of a product read plainly, for the acquire load, and every row stored plainly, for
     the release store (stage~I);
-  \item the ranking and the choice of the moduli are not modelled (stage~I), their composite moduli
-    and their stages being modelled but called by nothing yet (Section~\ref{sec:choice}), and the
-    search reads no densities: the moduli, their stages and the number of primes examined are those
+  \item the choice of the moduli, with its ranking, its composite moduli and its stages, is
+    modelled but called by nothing yet (Section~\ref{sec:choice}, stage~I), and the search reads no
+    densities: the moduli, their stages and the number of primes examined are those
     of the parameters, and the parameters may hold moduli that ratpoints never offers (composites
     above $\mathrm{RATPOINTS\_COMPOSITE\_MAX}$, with a factor beyond the examined primes, or with a
     factor that says nothing), all sound; the parameters of the command line without \verb|-p| take
@@ -617,12 +616,13 @@ whose deviation says so; and the enlargement of the buffer of the tables for eve
 those of the third stage among them, and for the composite moduli of the first two stages with their
 prime-power factors, which fails only for lack of memory. The reciprocals of the moduli are fields
 of their sieve entries, which \verb|sieving_info| collects at its end
-(\csource{find_points.c}{3064}{3070}; Definition~\ref{def:sievingInfo}); the third stage reads them
+(\csource{find_points.c}{3064}{3070}; Definitions~\ref{def:choice} and~\ref{def:sievingInfo}); the
+third stage reads them
 (Definition~\ref{def:stage3}), and so do the first two stages, stepping them with the sieve specs
 (Definitions~\ref{def:chunkStarts} or~\ref{def:andRows}, by the arm, and~\ref{def:secondStage});
-left to stage~I are the use of the densities of the primes and the powers, of \verb|add_moduli| and
-of the stages, which Section~\ref{sec:choice} models, and the ranking and the choice of the moduli
-with the rule for looking at further primes.
+left to stage~I is the use of the choice of the moduli, with the densities of the primes and the
+powers, \verb|add_moduli|, the stages, the ranking and the rule for looking at further primes, which
+Section~\ref{sec:choice} models.
 
 \section{Files and names}\label{sec:tablesFiles}
 
@@ -641,8 +641,8 @@ and the kinds of the builders of the rows, the builders themselves and the table
 \verb|Ratpoints/Model/Rows.lean| (Chapter~\ref{chap:rows}); the factors of a modulus are in
 \verb|Ratpoints/Model/Params.lean|; the loop of the tables and the second loop of the forbidden
 divisors in \verb|Ratpoints/Model/Denominators.lean|; the sieve entry of a modulus and
-\verb|sieving_info| in \verb|Ratpoints/Model/FindPoints.lean|; and, since stage~I, the composite
-moduli and the stages of the choice of the moduli in \verb|Ratpoints/Model/Choice.lean|. The
+the sieve entries of given moduli in \verb|Ratpoints/Model/FindPoints.lean|; and, since stage~I,
+the choice of the moduli in \verb|Ratpoints/Model/Choice.lean|. The
 contracts are next to the lemmas they serve: the Barrett reduction, Horner's rule and the table with
 the exit in \verb|Ratpoints/Proof/Tables.lean|; \verb|modinv|, the prime powers with the bounds of
 their inverses, and the sieve entry of a modulus in \verb|Ratpoints/Proof/Moduli.lean|, with what
@@ -656,10 +656,11 @@ range lemmas of \verb|examine_power|, the factors of a modulus and the well-form
 store of the loop of the tables, in \verb|Ratpoints/Proof/Forbidden.lean|; the sieve entries in the
 contracts of \verb|Ratpoints/Proof/Sieve.lean|, \verb|Words.lean|, \verb|Stages.lean| (the prime
 entries of the third stage), \verb|Sift.lean| and \verb|Denominators.lean|; the soundness of the
-sieve entries, \verb|sieving_info| and the search in \verb|Ratpoints/Proof/FindPoints.lean|; and,
-since stage~I, the composite moduli and the stages of the choice in
+sieve entries of given moduli and the search in \verb|Ratpoints/Proof/FindPoints.lean|; and, since
+stage~I, the composite moduli and the stages of the choice in
 \verb|Ratpoints/Proof/ChoiceModuli.lean|, with the pool of the candidates in
-\verb|Ratpoints/Proof/ChoicePool.lean|, which needs no Mathlib. The lemmas on words in core's
+\verb|Ratpoints/Proof/ChoicePool.lean|, which needs no Mathlib, and the contract of the choice, with
+the soundness of a sieve entry, in \verb|Ratpoints/Proof/Choice.lean|. The lemmas on words in core's
 namespaces are in \verb|Ratpoints/Proof/Bits.lean|, those on arrays and integers in
 \verb|Ratpoints/Proof/Containers.lean|, and the lemma on sorted lists in the mirror
 \verb|Ratpoints/Mathlib/Data/List/Sort.lean|, as a lemma on \verb|List.SortedLE|.

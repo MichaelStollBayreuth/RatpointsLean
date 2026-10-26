@@ -43,9 +43,9 @@ rows of a prime starts with its row of `0` (`Ratpoints.Sieve.primeRows`), the ot
 table of rows of its entry (`Ratpoints.Sieve.RowStore.publish`); the row of a sieve entry is read
 from its table of rows or built into it by the builder of its kind
 (`Ratpoints.Sieve.SieveEntry.fetchRow`, `Ratpoints.Sieve.SieveEntry.initRow`,
-`Ratpoints.Sieve.initFactorRow`). The loop of the tables and `Ratpoints.sievingInfo` make the tables
-of rows of a run, and the run reads the rows of each denominator from them and builds those that are
-missing into them (`Ratpoints.Sieve.setRows`, `Ratpoints.Sieve.buildRows`).
+`Ratpoints.Sieve.initFactorRow`). The loop of the tables and `Ratpoints.sievingInfoOf` make the
+tables of rows of a run, and the run reads the rows of each denominator from them and builds those
+that are missing into them (`Ratpoints.Sieve.setRows`, `Ratpoints.Sieve.buildRows`).
 
 ## Main definitions
 
@@ -182,8 +182,8 @@ C: `find_points.c:2427`, `find_points.c:2471`
 
 Deviation: the tables of rows made in the store of the run, by the reference to the entry
 (`Ratpoints.Sieve.EntryRef`), for the arrays `sieve` of the entries, by the loop over the moduli
-after the entry of the modulus (`Ratpoints.sievingInfo`), where `make_power` and `make_modulus` make
-them with the entry; a table of rows made only when its reference is absent, for the test of
+after the entry of the modulus (`Ratpoints.sievingInfoOf`), where `make_power` and `make_modulus`
+make them with the entry; a table of rows made only when its reference is absent, for the test of
 `power_se` (lines 2444 and 2466) by which the entry of a prime power is made once, and for the entry
 of a prime, which `examine_prime` makes once; the table of rows of a prime made also for one that
 says nothing, for which `examine_prime` makes no entry (lines 1764-1765) and which `add_moduli`
@@ -836,7 +836,7 @@ def SieveEntry.fetchRow (e : SieveEntry) (b : Nat) (store : RowStore) :
 -- (`Ratpoints.Sieve.SieveEntry.admits`): `(m + chunk - 1) rbaPack` words, the first `m` of them,
 -- one period of the bits, word for word, and word `x` of the others equal to word `x mod m`, as in
 -- the closed form; from a store with the tables of rows of its entry and of its factors and no rows
--- but those of `0` of the primes, made as `Ratpoints.sievingInfo` makes them
+-- but those of `0` of the primes, made as `Ratpoints.sievingInfoOf` makes them
 -- (`Ratpoints.Sieve.SieveEntry.addTables`): the rows of its factors are built into the tables of
 -- rows of their entries, each the closed form of the row of the residue modulo the modulus `q` of
 -- the factor, checked in the same way on its first `q` words, and the builder stores the row of the

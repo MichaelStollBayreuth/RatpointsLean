@@ -241,7 +241,9 @@ $\gcd(b, G(a, b)) = \gcd(b, c_d)$. This restricts the denominators of the points
   (\csource{find_points.c}{894}{912}, \csource{rp-private.h}{87}{87}); none when the factorization
   is not complete or there are $512$ divisors (\csource{find_points.c}{766}{776},
   \csource{find_points.c}{863}{863}, \csource{find_points.c}{881}{893},
-  \csource{find_points.c}{914}{935}). The primes come in increasing order, so the divisors are the
+  \csource{find_points.c}{914}{935}), returned as the lists of the records and the divisors, for the
+  arrays \verb|den_info| and \verb|divisors| of the arguments (\csource{ratpoints.h}{390}{390}).
+  The primes come in increasing order, so the divisors are the
   products of the subsets of the primes that are at most $b_{\mathrm{high}}$, in the order of their
   bit masks, each once (Lemma~\ref{lem:binaryDivisors}). The contracts: the factorization ends with
   the cofactor $1$ exactly when $|c_d|$ is factored by trial division, and then it lists the primes
@@ -659,16 +661,15 @@ Definitions~\ref{def:Shape} and~\ref{def:searchDens}, Lemmas~\ref{lem:twoAdic_ex
 and~\ref{lem:shape_dens} and the reduction of the run). The node of the search holds the C ranges of
 the flags and of the exits, the call of \verb|sieving_info| and the list of the sieve entries that
 it fills among them, and the return after the points at infinity with the return when the Sturm step
-leaves nothing to search (\csource{find_points.c}{2793}{2795}, \csource{find_points.c}{4588}{4589},
-\csource{find_points.c}{4595}{4596}, \csource{find_points.c}{4602}{4602},
-\csource{find_points.c}{4603}{4604}, \csource{find_points.c}{4607}{4607},
-\csource{find_points.c}{4900}{4943}, \csource{find_points.c}{4948}{4948},
-\csource{find_points.c}{4954}{4963}, \csource{find_points.c}{4992}{5012},
-\csource{find_points.c}{5100}{5106}); the sieving holds the frame of the block that sets up the run
-and the rows of offsets of the classes (\csource{find_points.c}{4573}{4573},
-\csource{find_points.c}{5116}{5116}, \csource{find_points.c}{5119}{5119},
-\csource{find_points.c}{5132}{5132}, \csource{find_points.c}{5137}{5139},
-\csource{find_points.c}{5167}{5167}).
+leaves nothing to search (\csource{find_points.c}{4588}{4589}, \csource{find_points.c}{4595}{4596},
+\csource{find_points.c}{4602}{4602}, \csource{find_points.c}{4603}{4604},
+\csource{find_points.c}{4607}{4607}, \csource{find_points.c}{4900}{4943},
+\csource{find_points.c}{4948}{4948}, \csource{find_points.c}{4954}{4963},
+\csource{find_points.c}{4992}{5012}, \csource{find_points.c}{5100}{5106}); the sieving holds the
+frame of the block that sets up the run and the rows of offsets of the classes
+(\csource{find_points.c}{4573}{4573}, \csource{find_points.c}{5116}{5116},
+\csource{find_points.c}{5119}{5119}, \csource{find_points.c}{5132}{5132},
+\csource{find_points.c}{5137}{5139}, \csource{find_points.c}{5167}{5167}).
 
 \begin{definition}[The denominators of the search]\label{def:searchDens}
   \uses{def:setupUs1, def:Shape}

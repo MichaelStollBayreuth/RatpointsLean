@@ -76,10 +76,14 @@ def huge : Double := ⟨0x7ff0000000000000⟩
 /-- The double `2 ^ 63`, the literal `9223372036854775808.0` of the C code. -/
 def twoPow63 : Double := ⟨0x43e0000000000000⟩
 
+/-- The double `-1.0`, the literal `-1.0` with which `main.c` sets the tuning fields of the
+arguments that are doubles, meaning "the default" (`Ratpoints.SieveOptions`). -/
+def minusOne : Double := ⟨0xbff0000000000000⟩
+
 /-- The double `x` as a value of Lean's `Float`, the IEEE 754 binary64 type with the arithmetic of
 the platform, by its bits: the doubles that the caller gives the cost model of the choice of the
-moduli enter its arithmetic so, the ends of the search intervals (`Ratpoints.numeratorsFor`) and,
-with stage I, the tuning values of the options of the sieve. -/
+moduli enter its arithmetic so, the tuning values of the options of the sieve
+(`Ratpoints.SieveOptions`) and the ends of the search intervals (`Ratpoints.numeratorsFor`). -/
 def toFloat (x : Double) : Float := Float.ofBits x.bits
 
 /-- The sign bit. -/

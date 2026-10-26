@@ -390,8 +390,8 @@ fidelity:
     pointer is an index; the SIMD operations are the word operations they implement, and the arm of
     the first stage that the build compiles is chosen by a test on the constant of the chunk; the
     threads are replaced by the sequential order of the blocks; the heuristics that choose the
-    sieving parameters by the curve are not modelled yet but for their cost model, their composite
-    moduli and their stages, which nothing calls yet (stage I), since the theorems quantify over every well-formed choice; the parameters of the command line follow the counting rules of
+    sieving parameters by the curve are modelled, but nothing calls them yet (stage I), since the
+    theorems quantify over every well-formed choice; the parameters of the command line follow the counting rules of
     ratpoints where these do not depend on the curve; the doubles of the search intervals are their
     IEEE bits, with a model function for each operation on them, and the specification reads their
     values as extended rationals; the callback is a Lean function that takes the coordinates and the

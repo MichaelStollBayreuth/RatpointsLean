@@ -151,6 +151,18 @@ kind = "memory"
 reason = "the prototype of find_points_clear, which frees what find_points_init allocated and whose definition (find_points.c:377-416) is excluded as memory: the model allocates nothing"
 
 [[excluded]]
+file = "ratpoints.h"
+lines = "385-388"
+kind = "memory"
+reason = "the private fields of the arguments that hold memory: the scratch integers of the search with their number (work, work_length), and the buffers of the sieve entries, of the bit arrays of the rows and of the integers of the tables of the primes, each with the pointer to its free space (se_buffer, se_next, ba_buffer, ba_next, int_buffer, int_next), which find_points_init allocates (find_points.c:272-375, excluded as interface); the model computes with Lean's integers and makes the entries, the rows and the tables as fresh values"
+
+[[excluded]]
+file = "ratpoints.h"
+lines = "392-394"
+kind = "memory"
+reason = "the private fields of the arguments that hold memory: the buffer of the words of the forbidden divisors beyond the table with its length (forb_words, forb_words_len), the buffer of the rows as allocated, with the primes and the bit arrays it has room for (ba_buffer_na, ba_buffer_primes, ba_buffer_arrays), and the buffer of the prime powers (pw_buffer); the model makes the words, the rows and the records of the prime powers as fresh values (Ratpoints.Sieve.forbiddenRow, Ratpoints.Sieve.examinePower)"
+
+[[excluded]]
 file = "find_points.c"
 lines = "30"
 kind = "other"
