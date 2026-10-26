@@ -576,18 +576,7 @@ instance : Add Counters where
   add c k := ⟨c.words + k.words, c.arrays + k.arrays, c.bits + k.bits, c.coprime + k.coprime,
     c.checks + k.checks, c.sifts + k.sifts⟩
 
-theorem Counters.ext {c k : Counters} (h1 : c.words = k.words) (h2 : c.arrays = k.arrays)
-    (h3 : c.bits = k.bits) (h4 : c.coprime = k.coprime) (h5 : c.checks = k.checks)
-    (h6 : c.sifts = k.sifts) : c = k := by
-  cases c
-  cases k
-  simp_all
-
-theorem Counters.ext_iff {c k : Counters} :
-    c = k ↔ c.words = k.words ∧ c.arrays = k.arrays ∧ c.bits = k.bits ∧ c.coprime = k.coprime ∧
-      c.checks = k.checks ∧ c.sifts = k.sifts :=
-  ⟨fun h ↦ h ▸ ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩,
-    fun ⟨h1, h2, h3, h4, h5, h6⟩ ↦ Counters.ext h1 h2 h3 h4 h5 h6⟩
+attribute [ext] Counters
 
 @[simp]
 theorem Counters.words_add (c k : Counters) : (c + k).words = c.words + k.words := rfl

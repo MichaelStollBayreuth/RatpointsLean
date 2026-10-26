@@ -254,9 +254,10 @@ theorem examineInLoop_spec (c : List ℤ) (u checkDenom : Bool) (maxForbidden bH
   all_goals simp only [reduceCtorEq, false_implies, implies_true, true_and, and_true,
     Option.some.injEq, forall_eq'] at *
   all_goals obtain ⟨h, hs, hpn⟩ := ‹TableLoop.WF c bHigh st ∧ _›
-  case vc9 =>
+  all_goals try -- the exit: `examinePrime?` returns none
     exact fun _ ↦ not_isPoint_of_lt_numPrimes_of_run_examinePrime?_eq_none hpn
-      (‹_ = Id.run _›.symm.trans (‹_ = _›.trans (Option.eq_none_of_forall_prod4 ‹_›)))
+      (‹_ = Id.run _›.symm.trans (‹_ = _›.trans (Option.eq_none_iff_forall_ne_some.mpr
+        fun ⟨t, cm, k, r⟩ ↦ ‹∀ t cm k r, _ = some (t, cm, k, r) → False› t cm k r)))
   all_goals subst ‹_ = some (_, _, _, _)›
   all_goals have he := ‹some (_, _, _, _) = _›.symm
   all_goals refine ⟨?_, by simp [hs]⟩

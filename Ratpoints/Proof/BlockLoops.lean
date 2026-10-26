@@ -97,21 +97,11 @@ def BlockInv {ι : Type} (P : ι → Prop) (L : ι → Nat → List (Int × Int 
 section
 
 variable {process} {ι : Type} {P : ι → Prop} {L : ι → Nat → List (Int × Int × Int)}
-  {κ : Nat → Counters} {Q : RowStore → Prop}
-  {st0 st st' : BlockState σ} {M M' : List Nat} {b : Nat}
+  {κ : Nat → Counters} {Q : RowStore → Prop} {st0 st st' : BlockState σ} {M M' : List Nat}
 
 theorem blockInv_nil (hq : st0.1.quit = false) (hQ : Q st0.2.1) :
     BlockInv process P L κ Q st0 [] st0 :=
   ⟨hq, fun _ _ ↦ by simp, hQ, fun _ ↦ rfl⟩
-
-/-- The step at the denominator `b` after the denominators `M`. -/
-theorem BlockInv.append (h : BlockInv process P L κ Q st0 M st)
-    (hs : BlockPost process P L κ Q [b] st st') : BlockPost process P L κ Q (M ++ [b]) st0 st' := by
-  obtain ⟨h0, h1, -, h3⟩ := h
-  obtain ⟨hs1, hs2, hs3⟩ := hs
-  refine ⟨fun x hx ↦ by rw [hs1 x hx, h1 x hx, List.flatMap_append, Delivery.deliver_append], hs2,
-    fun hq ↦ ?_⟩
-  rw [hs3 hq, h3 h0, List.map_append, List.foldl_append]
 
 /-- The denominators `N` after the denominators `M`. -/
 theorem BlockInv.append_list {N : List Nat} (h : BlockInv process P L κ Q st0 M st)
@@ -282,7 +272,7 @@ theorem BlockInv.post_of_quit_map (hl : ForIn.toList [a:e + 1] = pref ++ cur :: 
     (h : o = none ∧ BlockInv process P L κ Q st0 ((pref.map f).filter keep) st)
     (hs : BlockPost process P L κ Q [f cur] st st') (hq : st'.1.quit = true) :
     BlockPost process P L κ Q (((List.range' a (e + 1 - a)).map f).filter keep) st0 st' := by
-  refine (h.2.append hs).of_prefix ?_ hq
+  refine (h.2.append_list hs).of_prefix ?_ hq
   rw [← List.filter_map_append_singleton_of_pos hk]
   refine (List.IsPrefix.map f ?_).filter keep
   rw [show List.range' a (e + 1 - a) = ForIn.toList [a:e + 1] by simp, hl]
@@ -294,7 +284,7 @@ theorem BlockInv.append_map (hk : keep (f cur) = true)
     (hs : BlockPost process P L κ Q [f cur] st st') (hq : ¬st'.1.quit = true) :
     BlockInv process P L κ Q st0 (((pref ++ [cur]).map f).filter keep) st' := by
   rw [List.filter_map_append_singleton_of_pos hk]
-  exact (h.2.append hs).blockInv hq
+  exact (h.2.append_list hs).blockInv hq
 
 /-- A step whose denominator the test rejects. -/
 theorem BlockInv.append_map_of_not_keep (hk : ¬keep (f cur) = true)
@@ -339,9 +329,8 @@ theorem squaresBlock_spec (step : Nat → BlockState σ → Id (BlockState σ)) 
   | inv1 => MapBlockInvariant process P L κ Q (fun k ↦ k * k) (fun b ↦ cls[b % 64]!.bits != 0) st a
       e
   all_goals simp only [MapBlockInvariant, meet_prop_eq_and, join_prop_eq_or, iSup_prop_eq_exists,
-    ofProp_prop_eq,
-    reduceCtorEq, false_and, or_false, false_or, true_and, and_false, Option.some.injEq,
-    exists_eq_left', exists_false, and_true] at *
+    ofProp_prop_eq, reduceCtorEq, false_and, or_false, false_or, true_and, and_false,
+    Option.some.injEq, exists_eq_left', exists_false, and_true] at *
   all_goals obtain ⟨hq0, hQ0, hD⟩ := ‹st.1.quit = false ∧ _›
   all_goals first
     | exact blockInv_map_nil hq0 hQ0
@@ -392,9 +381,8 @@ theorem squares1Block_spec (step : Nat → BlockState σ → Id (BlockState σ))
   | inv1 => MapBlockInvariant process P L κ Q (fun k ↦ dv * k * k)
       (fun b ↦ cls[b % 64]!.bits != 0 && Id.run (denInfoTest info b)) st a e
   all_goals simp only [MapBlockInvariant, meet_prop_eq_and, join_prop_eq_or, iSup_prop_eq_exists,
-    ofProp_prop_eq,
-    reduceCtorEq, false_and, or_false, false_or, true_and, and_false, Option.some.injEq,
-    exists_eq_left', exists_false, and_true] at *
+    ofProp_prop_eq, reduceCtorEq, false_and, or_false, false_or, true_and, and_false,
+    Option.some.injEq, exists_eq_left', exists_false, and_true] at *
   all_goals obtain ⟨hq0, hQ0, hD⟩ := ‹st.1.quit = false ∧ _›
   all_goals first
     | exact blockInv_map_nil hq0 hQ0
@@ -981,8 +969,7 @@ shape (`Ratpoints.Sieve.Shape.keep`), in order; for the word shape, with the fir
 the run as the first segment of the blocks and forbidden divisors that have what the loop needs. -/
 theorem Shape.blockLoop_spec (shape : Shape) (step : Nat → BlockState σ → Id (BlockState σ))
     (D : Nat → Prop) {ι : Type} (P : ι → Prop) (L : ι → Nat → List (Int × Int × Int))
-    (κ : Nat → Counters)
-    (Q : RowStore → Prop)
+    (κ : Nat → Counters) (Q : RowStore → Prop)
     (hstep : ∀ b st, ⦃ D b ∧ st.1.quit = false ∧ Q st.2.1 ⦄ step b st
       ⦃ fun st' ↦ BlockPost process P L κ Q [b] st st' ⦄)
     (cls : Vector NumClass 64) (db : UInt64) (plan : BlockPlan) (seg a e bLow bHigh : Nat)

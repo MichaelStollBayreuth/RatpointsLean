@@ -46,12 +46,6 @@ namespace Ratpoints
 
 open Sieve
 
-/-! ### Options -/
-
-theorem _root_.Option.eq_none_of_forall_prod4 {α β γ δ : Type _} {x : Option (α × β × γ × δ)}
-    (h : ∀ a b c d, x = some (a, b, c, d) → False) : x = none :=
-  Option.eq_none_iff_forall_ne_some.mpr fun ⟨a, b, c, d⟩ h' ↦ h a b c d h'
-
 /-! ### The pool -/
 
 -- The rule of the first stage, as a value: no contract reads it.

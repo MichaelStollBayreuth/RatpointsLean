@@ -172,10 +172,8 @@ theorem ModulusCandidate.IsComposite.extend {c : List ℤ}
   refine ⟨h.nf_eq, h.fac_ne_nil, h.ssp_eq, h.one_lt, h.lt_maxPrimeEven, h.odd,
     fun code hc ↦ (h.isFactorCode code hc).extend hx, ?_⟩
   rw [← h.prod_eq]
-  -- not `congr 1`: its closing `rfl` evaluates `numPrimes` in `factorOfCode`, beyond the maximum
-  -- recursion depth for larger values of `maxBitsInPrime`
-  refine congrArg List.prod (List.map_congr_left fun code hc ↦ ?_)
-  rw [(h.isFactorCode code hc).factorOfCode_extend hx]
+  exact congr(List.prod $(List.map_congr_left fun code hc ↦ by
+    rw [(h.isFactorCode code hc).factorOfCode_extend hx]))
 
 /-- A candidate of the pool before the stages: a prime (`Ratpoints.ModulusCandidate.IsPrime`) or a
 composite modulus (`Ratpoints.ModulusCandidate.IsComposite`). -/
@@ -696,6 +694,7 @@ theorem StageEntriesInvariant.post {c : List ℤ} {primeSe : Array (Option (Entr
   have := hc.nf_eq.symm.trans (hpre.2.1 n hn' hk)
   simp [hc.fac_ne_nil] at this
 
+attribute [local irreducible] StageEntriesInvariant in
 /-- The contract of `Ratpoints.stageEntries`: after the stages, which leave composite moduli only
 before `sp2`, every candidate before `sp2` has its sieve entry, made for its position, and those
 from `sp2` on are primes (`Ratpoints.ChoicePoolWF`). -/

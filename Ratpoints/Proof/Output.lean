@@ -212,22 +212,20 @@ theorem findPointsWith_eq_ok_iff {c : List ℤ} {H : ℕ} {s : SieveOptions} {o 
           out = Id.run (searchPoints process c' d' H s.normalize (decide (s.numPrimes < 0))
             ⟨rev, o.noCheck, o.noY⟩ (o.normalize H).bLow.toNat (o.normalize H).bHigh.toNat dom'
             empty (fun _ s ↦ s) ⟨info, 0, false⟩)) := by
-  rw [findPointsWith, findPointsVerbose, ← BruteForce.degree_eq]
+  rw [findPointsWith_eq, ← BruteForce.degree_eq]
   simp only [fitsLong_natCast, Bool.not_eq_true', decide_eq_false_iff_not, not_lt]
   split_ifs with h1 h2 h3 h4
-  any_goals (simp only [Except.mapError]; lia)
-  simp only [findPointsWork]
+  any_goals lia
   split <;> rename_i hr
-  · simp [hr, Except.mapError]
+  · simp [hr]
   rename_i c' d' rev
-  rcases hsi : Id.run (searchIntervals H o.domain) with _ | dom
-  · simp [hr, hsi, Except.mapError]
-  simp only [Id.run_bind, hsi]
+  rcases Id.run (searchIntervals H o.domain) with _ | dom
+  · simp [hr]
   rcases hst : Id.run (sturmRegion c' d' (o.normalize H).sturm dom) with e | _ | ⟨dom', empty⟩
-  · simp [hr, hst, Except.mapError]
+  · simp [hr, hst]
   all_goals have h5 : 1 ≤ H ∧ H < 9223372036854775808 := by lia
-  all_goals simp [-Bool.exists_bool, Except.mapError, hr, hst, Nat.le_of_not_lt h1,
-    Nat.le_of_not_lt h2, h5, Nat.le_of_not_lt h4, eq_comm]
+  all_goals simp [-Bool.exists_bool, hr, hst, Nat.le_of_not_lt h1, Nat.le_of_not_lt h2, h5,
+    Nat.le_of_not_lt h4, eq_comm]
 
 /-- The refusals of `Ratpoints.findPointsWith` do not depend on the callback or its data. -/
 theorem findPointsWith_eq_error_iff {c : List ℤ} {H : ℕ} {s : SieveOptions} {o : Options}
@@ -236,15 +234,14 @@ theorem findPointsWith_eq_error_iff {c : List ℤ} {H : ℕ} {s : SieveOptions} 
     {info' : σ'} {e : Refusal} :
     findPointsWith c H s o process info = .error e ↔
       findPointsWith c H s o process' info' = .error e := by
-  simp only [findPointsWith, findPointsVerbose]
-  split_ifs <;> try (simp [Except.mapError]; done)
-  simp only [findPointsWork]
+  rw [findPointsWith_eq, findPointsWith_eq]
+  split_ifs <;> try simp
   rcases Setup.reversal (o.normalize H).reverse c (BruteForce.degree c) with _ | ⟨c', d', rev⟩
-  · simp [Except.mapError]
-  rcases hsi : Id.run (searchIntervals H o.domain) with _ | dom
-  · simp [hsi, Except.mapError]
+  · simp
+  rcases Id.run (searchIntervals H o.domain) with _ | dom
+  · simp
   rcases hst : Id.run (sturmRegion c' d' (o.normalize H).sturm dom) with e | _ | ⟨dom', empty⟩ <;>
-    simp [hsi, hst, Except.mapError]
+    simp [hst]
 
 /-- `Ratpoints.findPoints` refuses an input exactly when `Ratpoints.findPointsWith` with the
 appending callback does. -/
@@ -293,15 +290,14 @@ theorem map_findPointsWith_flags (c : List ℤ) (H : ℕ) (s : SieveOptions) (o 
       (out.reversed, out.useSquares, out.useSquares1, out.domain)) =
       (findPointsWith c H s o process' info').map (fun out ↦
         (out.reversed, out.useSquares, out.useSquares1, out.domain)) := by
-  simp only [findPointsWith, findPointsVerbose]
+  rw [findPointsWith_eq, findPointsWith_eq]
   split_ifs <;> try rfl
-  simp only [findPointsWork]
   rcases Setup.reversal (o.normalize H).reverse c (BruteForce.degree c) with _ | ⟨c', d', rev⟩
   · rfl
-  rcases hsi : Id.run (searchIntervals H o.domain) with _ | dom
-  · simp [hsi, Except.mapError, Except.map]
+  rcases Id.run (searchIntervals H o.domain) with _ | dom
+  · rfl
   rcases hst : Id.run (sturmRegion c' d' (o.normalize H).sturm dom) with e | _ | ⟨dom', empty⟩ <;>
-    simp [hsi, hst, Except.mapError, Except.map, run_searchPoints_flags]
+    simp [hst, Except.map, run_searchPoints_flags]
 
 /-- For every value of the options of the sieve, the data and the count of a successful search with
 a callback are those of the delivery of the points of `Ratpoints.findPoints` to it, by the protocol
