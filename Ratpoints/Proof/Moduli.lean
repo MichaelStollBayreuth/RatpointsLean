@@ -30,25 +30,25 @@ tables or examined for `m`, and a prime power `p ^ e` with the tables of `examin
 which `f`, and of the multiples of `p` at which the reversed polynomial, take square values, read
 from the bit array of the squares (`Ratpoints.Sieve.setSquareBits_spec`), and the inverses of the
 units, from the extended Euclidean algorithm (`Ratpoints.Sieve.modinv`) in a loop over the residues
-(`Ratpoints.Sieve.unitInverses_spec`), all in `Ratpoints.Sieve.examinePower_spec`. The tables of a
-prime power within the words of its bit arrays compute what they claim, and its rows let every point
-through (`Ratpoints.Sieve.admits_run_examinePower_of_sq_eq`): for `p ∤ b`, since `f(a / b)` is a
-square modulo `p ^ e`, and for `p ∣ b`, since then `p ∤ a` and the reversed polynomial takes a
-square value at `b / a`, both from the lemmas of `Ratpoints.Proof.Tables` for any commutative ring,
-here `ZMod (p ^ e)`; the prime powers below `Ratpoints.maxPrimeEven`, the moduli of the parameters,
-fit the words (`Ratpoints.Sieve.maxPrimeEven_le_sixty_four_mul_modWords`). The values of
-`examine_power` stay in the range of their C types for the prime powers below
-`Ratpoints.maxPrimeEven`: the cofactors of the extended Euclidean algorithm
-(`Ratpoints.Sieve.ModinvInvariant.natAbs_add_mul_le`), the steps of Horner's rule and the squares
-(`Ratpoints.mul_add_lt_two_pow_64_of_lt_maxPrimeEven`,
+(`Ratpoints.Sieve.unitInverses_spec`), all in `Ratpoints.Sieve.examinePower_spec`, for either value
+of the flag `pinf`, which only the density reads. The tables of a prime power within the words of
+its bit arrays compute what they claim, and its rows let every point through
+(`Ratpoints.Sieve.admits_run_examinePower_of_sq_eq`): for `p ∤ b`, since `f(a / b)` is a square
+modulo `p ^ e`, and for `p ∣ b`, since then `p ∤ a` and the reversed polynomial takes a square value
+at `b / a`, both from the lemmas of `Ratpoints.Proof.Tables` for any commutative ring, here
+`ZMod (p ^ e)`; the prime powers below `Ratpoints.maxPrimeEven`, the moduli of the parameters, fit
+the words (`Ratpoints.Sieve.maxPrimeEven_le_sixty_four_mul_modWords`). The values of `examine_power`
+stay in the range of their C types for the prime powers below `Ratpoints.maxPrimeEven`: the
+cofactors of the extended Euclidean algorithm (`Ratpoints.Sieve.ModinvInvariant.natAbs_add_mul_le`),
+the steps of Horner's rule and the squares (`Ratpoints.mul_add_lt_two_pow_64_of_lt_maxPrimeEven`,
 `Ratpoints.mul_self_lt_two_pow_63_of_lt_maxPrimeEven`), and the inverses
-(`Ratpoints.Sieve.getElem!_inv_run_examinePower_lt_two_pow_16`). Each factor divides `m`, so that
-its row reads the residues modulo `m` as those of the numbers
-(`Ratpoints.Sieve.Entry.admits_mod_of_dvd`, `Ratpoints.Sieve.Power.admits_mod_of_dvd`, in
-`Ratpoints.Proof.Words`), and the entry of `m`, which holds the reciprocal of `m`, lets every point
-through when the tables of the loop of the tables are those of the reference
-(`Ratpoints.makeModulus?_spec`); no Chinese remainder theorem is needed. The tables of inverses of
-its factors serve the scaling of the rows by a unit modulo `m`
+(`Ratpoints.Sieve.getElem!_inv_run_examinePower_lt_two_pow_16`). Each factor of the entry that
+`Ratpoints.makeModulus?` makes divides `m`, so that its row reads the residues modulo `m` as those
+of the numbers (`Ratpoints.Sieve.Entry.admits_mod_of_dvd`,
+`Ratpoints.Sieve.Power.admits_mod_of_dvd`, in `Ratpoints.Proof.Words`), and the entry of `m`, which
+holds the reciprocal of `m`, lets every point through when the tables of the loop of the tables are
+those of the reference (`Ratpoints.makeModulus?_spec`); no Chinese remainder theorem is needed. The
+tables of inverses of its factors serve the scaling of the rows by a unit modulo `m`
 (`Ratpoints.Sieve.Factor.HasInverses`). For a modulus of well-formed parameters, which factors
 completely over the table, the moduli of the factors multiply to `m`, so that the entry of a prime
 reads the inverse of `Ratpoints.rbaLength` modulo `m` from its table, as `examine_prime` does, and
@@ -59,7 +59,15 @@ and the tables that `Ratpoints.Sieve.examinePrime` and `Ratpoints.Sieve.examineP
 it holds the reference to its table of rows and the kind of its builder that
 `Ratpoints.Sieve.SieveEntry.refInit` gives at its position, so that it fits the rows of the
 references of the run (`Ratpoints.IsModulusEntry.rowsFit_runRows`). When the entry is none, a prime
-examined for it has no points modulo it, and the curve has none.
+examined for it has no points modulo it, and the curve has none. The same holds for a factor of any
+modulus that it divides (`Ratpoints.Sieve.isSound_prime_examinePrime`,
+`Ratpoints.Sieve.isSound_power_run_examinePower`), and an entry of an odd modulus whose factors are
+sound and multiply to `m`, with the bias of `m` and an inverse of `Ratpoints.rbaLength` modulo `m`,
+read from the table of a prime as `examine_prime` reads it
+(`Ratpoints.inverses_mulMod_rbaLength_of_isSound`) or computed with `Ratpoints.Sieve.modinv`, has
+what the soundness of the run needs, whatever its density and its count of factors
+(`Ratpoints.isModulusEntry_of_forall_isSound`), for the entries that the choice of the moduli makes
+(stage I).
 
 ## Main definitions
 
@@ -67,7 +75,8 @@ examined for it has no points modulo it, and the curve has none.
   `Ratpoints.Sieve.UnitInversesInvariant`, `Ratpoints.Sieve.FsqInvariant`,
   `Ratpoints.Sieve.GsqInvariant`: the invariants of the loop of `Ratpoints.Sieve.modinv`, of the
   loops over the residues of `Ratpoints.Sieve.setSquareBits` and `Ratpoints.Sieve.unitInverses`,
-  and of the loops of `Ratpoints.Sieve.examinePower` that set the bits of `fsq` and `gsq`.
+  and of the loops of `Ratpoints.Sieve.examinePower` and `Ratpoints.Sieve.setRevBits` that set the
+  bits of `fsq` and `gsq`.
 * `Ratpoints.Sieve.Factor.IsSound`: a factor whose rows admit every point modulo `m`, whose tables
   of inverses serve the scaling, whose builder has what it needs and whose tables are those that
   `Ratpoints.Sieve.examinePrime` and `Ratpoints.Sieve.examinePower` compute.
@@ -95,6 +104,12 @@ examined for it has no points modulo it, and the curve has none.
   `Ratpoints.maxPrimeEven` are below `2 ^ 16`, the range of their C type.
 * `Ratpoints.Sieve.admits_run_examinePower_of_sq_eq`: the rows of a prime power let every point
   through.
+* `Ratpoints.Sieve.isSound_prime_examinePrime`, `Ratpoints.Sieve.isSound_power_run_examinePower`:
+  a prime of the table, or a power of one, that divides `m` is a sound factor for `m`.
+* `Ratpoints.isModulusEntry_of_forall_isSound`: an entry of an odd modulus with sound factors that
+  multiply to it, its reciprocal, bias and an inverse of `Ratpoints.rbaLength` is
+  `Ratpoints.IsModulusEntry`; `Ratpoints.inverses_mulMod_rbaLength_of_isSound`: the inverse that a
+  prime reads from its table.
 * `Ratpoints.makeModulus?_spec`: the sieve entry of a modulus of well-formed parameters has the
   modulus, lets every point through, has the tables of inverses of its factors, the fields that the
   packing reads and factors whose moduli multiply to `m`, with builders that have what they need and
@@ -115,7 +130,8 @@ The contracts of `Ratpoints.Sieve.modinv`, `Ratpoints.Sieve.setSquareBits`,
 `Ratpoints.Sieve.unitInverses`, `Ratpoints.Sieve.examinePower` and `Ratpoints.makeModulus?` are
 proved with `vcgen`, the program logic of Lean core, with loop invariants that are named
 definitions, in a file with Mathlib, next to the soundness of the rows that they serve; the contract
-of `Ratpoints.makeModulus?` reads its components through private specifications
+of `Ratpoints.makeModulus?` reads its components, and that of `Ratpoints.Sieve.examinePower` the
+density of a prime power (`Ratpoints.Sieve.powerDensity`), through private specifications
 `⦃True⦄ x ⦃fun r ↦ r = Id.run x⦄`, so that its verification conditions speak of the values of the
 components.
 -/
@@ -299,9 +315,11 @@ theorem bitAt_of_isSquare {m v : ℕ} {sq : Array UInt64}
 
 /-- The path through `long`s, with the helper `mod` of the C code, and the path through GMP
 integers give the same tables of a prime power. -/
-theorem examinePower_eq_examinePower_false (c : List ℤ) (d p e : ℕ) (u : Bool) :
-    examinePower c d p e u = examinePower c d p e false := by
-  simp [examinePower, modLong_eq_emod]
+theorem examinePower_eq_examinePower_false (c : List ℤ) (d p e : ℕ) (u pinf : Bool) :
+    examinePower c d p e u pinf = examinePower c d p e false pinf := by
+  have h (a : ℤ) : modLong a ((p : ℤ) ^ e) = a % (p : ℤ) ^ e :=
+    modLong_eq_emod a (pow_nonneg (Int.natCast_nonneg p) e)
+  simp [examinePower, h]
 
 /-- The invariant of the loop of `Ratpoints.Sieve.unitInverses` over the residues `1, …, k` modulo
 `m`, on the inverses `inv`: `k + 1` entries, each below `m`, that of a residue not divisible by `p`
@@ -562,6 +580,12 @@ theorem examinePower_post {c : List ℤ} {d p m : ℕ} {fsq gsq : Array UInt64} 
   ⟨hinv, fun x hx ↦ hf.2 x (Std.Legacy.Range.mem_toList_of_lt hx),
     fun t' ht' ↦ hg.2.2.1 t' (ht'.trans_le (hg.2.2.2 rfl))⟩
 
+-- The density of a prime power, as a value for the contract of its tables: no contract reads it.
+private theorem powerDensity_value (p e m np : ℕ) (gsq : Array UInt64) (pinf : Bool) :
+    ⦃ True ⦄ powerDensity p e m np gsq pinf
+    ⦃ fun r ↦ r = Id.run (powerDensity p e m np gsq pinf) ⦄ :=
+  ⟨fun _ ↦ rfl⟩
+
 attribute [local irreducible] FsqInvariant GsqInvariant in
 open Std.WP Std.WP.Assertion Lean.Order in
 /-- The contract of `Ratpoints.Sieve.examinePower` for a prime `p`, `e ≥ 1` and `p ^ e` within the
@@ -571,17 +595,17 @@ when `f(x)` is a square modulo `p ^ e`, and bit `t` of `gsq`, for `p ∣ t`, whe
 polynomial of the even degree `D = d + d % 2` takes a square value at `t`, read from the bits of the
 squares (`Ratpoints.Sieve.setSquareBits_spec`). -/
 @[spec]
-theorem examinePower_spec (c : List ℤ) (d p e : ℕ) (u : Bool) :
-    ⦃ p.Prime ∧ 1 ≤ e ∧ p ^ e ≤ 64 * modWords ⦄ examinePower c d p e u
+theorem examinePower_spec (c : List ℤ) (d p e : ℕ) (u pinf : Bool) :
+    ⦃ p.Prime ∧ 1 ≤ e ∧ p ^ e ≤ 64 * modWords ⦄ examinePower c d p e u pinf
     ⦃ fun pw ↦ (∀ x, pw.inv[x]! < p ^ e ∧ (x < p ^ e → x % p ≠ 0 → x * pw.inv[x]! % p ^ e = 1)) ∧
       (∀ x < p ^ e, IsSquare (∑ k ∈ Finset.range (d + 1), (c.getD k 0 : ZMod (p ^ e)) * x ^ k) →
         bitAt pw.fsq x = true) ∧
       ∀ t < p ^ e, t % p = 0 → IsSquare (∑ k ∈ Finset.range (d + 1),
         (c.getD k 0 : ZMod (p ^ e)) * t ^ (d + d % 2 - k)) → bitAt pw.gsq t = true ⦄ := by
   rw [examinePower_eq_examinePower_false]
-  vcgen [examinePower] invariants
+  vcgen [examinePower, setRevBits, powerDensity_value] invariants
   | inv1 => fun _ _ st ↦ st = (.replicate modWords 0, .replicate modWords 0, .replicate modWords 0)
-  | inv2 => fun pref _ fsq ↦ FsqInvariant c d (p ^ e) pref fsq
+  | inv2 => fun pref _ s ↦ FsqInvariant c d (p ^ e) pref s.1
   | inv3 => GsqInvariant c d p (p ^ e)
   | inv4 => .ofMeasure fun s : Array UInt64 × ℕ ↦ p ^ e - s.2
   all_goals try simp only [Variant.evalsTo_ofMeasure, Variant.evalsBelow_ofMeasure_nat,
@@ -599,15 +623,16 @@ theorem examinePower_spec (c : List ℤ) (d p e : ℕ) (u : Bool) :
     | exact GsqInvariant.push_of_not ‹_› ‹_› ‹_› ‹_› ‹_›
     | exact GsqInvariant.exit ‹_› ‹_›
 
-theorem getElem!_inv_run_examinePower_lt {c : List ℤ} {d p e : ℕ} (u : Bool) (hp : p.Prime)
-    (he : 1 ≤ e) (x : ℕ) : (Id.run (examinePower c d p e u)).inv[x]! < p ^ e :=
+theorem getElem!_inv_run_examinePower_lt {c : List ℤ} {d p e : ℕ} (u pinf : Bool) (hp : p.Prime)
+    (he : 1 ≤ e) (x : ℕ) : (Id.run (examinePower c d p e u pinf)).inv[x]! < p ^ e :=
   (Std.WP.Id.of_run_eq_wp rfl _ ((unitInverses_spec p e).le_wp ⟨hp, he⟩) x).1
 
 /-- Entry `x` of the inverses of the prime power `p ^ e`, for a unit `x`, is its inverse modulo
 `p ^ e`, by `Ratpoints.Sieve.modinv`. -/
-theorem mul_getElem!_inv_run_examinePower_mod {c : List ℤ} {d p e : ℕ} (u : Bool) (hp : p.Prime)
+theorem mul_getElem!_inv_run_examinePower_mod {c : List ℤ} {d p e : ℕ} (u pinf : Bool)
+    (hp : p.Prime)
     (he : 1 ≤ e) {x : ℕ} (hx : x < p ^ e) (hpx : x % p ≠ 0) :
-    x * (Id.run (examinePower c d p e u)).inv[x]! % p ^ e = 1 :=
+    x * (Id.run (examinePower c d p e u pinf)).inv[x]! % p ^ e = 1 :=
   (Std.WP.Id.of_run_eq_wp rfl _ ((unitInverses_spec p e).le_wp ⟨hp, he⟩) x).2 hx hpx
 
 /-- The range obligation of the inverses of `examine_power` (`find_points.c:2303`), which it casts
@@ -615,77 +640,81 @@ to the `unsigned short` entries of `inv` (`rp-private.h:533`): for a prime power
 `p ^ e < maxPrimeEven`, they are below `p ^ e` (`Ratpoints.Sieve.getElem!_inv_run_examinePower_lt`),
 so below `2 ^ 10` (`Ratpoints.maxPrimeEven_le_two_pow_10`) and below `2 ^ 16`: the cast keeps
 them. -/
-theorem getElem!_inv_run_examinePower_lt_two_pow_16 {c : List ℤ} {d p e : ℕ} (u : Bool)
+theorem getElem!_inv_run_examinePower_lt_two_pow_16 {c : List ℤ} {d p e : ℕ} (u pinf : Bool)
     (hp : p.Prime) (he : 1 ≤ e) (hm : p ^ e < maxPrimeEven) (x : ℕ) :
-    (Id.run (examinePower c d p e u)).inv[x]! < 2 ^ 16 :=
-  (getElem!_inv_run_examinePower_lt u hp he x).trans
+    (Id.run (examinePower c d p e u pinf)).inv[x]! < 2 ^ 16 :=
+  (getElem!_inv_run_examinePower_lt u pinf hp he x).trans
     (hm.trans_le (maxPrimeEven_le_two_pow_10.trans (by norm_num)))
 
 /-- Bit `x` of the table `Ratpoints.Sieve.Power.fsq` of `m = p ^ e`
 (`Ratpoints.Sieve.examinePower`), for `m` within the words of its bit arrays, is set when `f(x)` is
 a square modulo `m`. -/
-theorem bitAt_fsq_run_examinePower_of_isSquare {c : List ℤ} {d p e : ℕ} (u : Bool) (hp : p.Prime)
+theorem bitAt_fsq_run_examinePower_of_isSquare {c : List ℤ} {d p e : ℕ} (u pinf : Bool)
+    (hp : p.Prime)
     (he : 1 ≤ e) (hm : p ^ e ≤ 64 * modWords) {x : ℕ} (hx : x < p ^ e)
     (h : IsSquare (∑ k ∈ Finset.range (d + 1), (c.getD k 0 : ZMod (p ^ e)) * x ^ k)) :
-    bitAt (Id.run (examinePower c d p e u)).fsq x = true :=
-  (Std.WP.Id.of_run_eq_wp rfl _ ((examinePower_spec c d p e u).le_wp ⟨hp, he, hm⟩)).2.1 x hx h
+    bitAt (Id.run (examinePower c d p e u pinf)).fsq x = true :=
+  (Std.WP.Id.of_run_eq_wp rfl _ ((examinePower_spec c d p e u pinf).le_wp ⟨hp, he, hm⟩)).2.1 x hx h
 
 /-- Bit `t` of the table `Ratpoints.Sieve.Power.gsq` of `m = p ^ e`
 (`Ratpoints.Sieve.examinePower`), for `m` within the words of its bit arrays and `p ∣ t`, is set
 when the reversed polynomial `∑ cₖ t ^ (D - k)` of the even degree `D = d + d % 2` takes a square
 value modulo `m` at `t`. -/
-theorem bitAt_gsq_run_examinePower_of_isSquare {c : List ℤ} {d p e : ℕ} (u : Bool) (hp : p.Prime)
+theorem bitAt_gsq_run_examinePower_of_isSquare {c : List ℤ} {d p e : ℕ} (u pinf : Bool)
+    (hp : p.Prime)
     (he : 1 ≤ e) (hm : p ^ e ≤ 64 * modWords) {t : ℕ} (ht : t < p ^ e) (htp : t % p = 0)
     (h : IsSquare (∑ k ∈ Finset.range (d + 1),
       (c.getD k 0 : ZMod (p ^ e)) * t ^ (d + d % 2 - k))) :
-    bitAt (Id.run (examinePower c d p e u)).gsq t = true :=
-  (Std.WP.Id.of_run_eq_wp rfl _ ((examinePower_spec c d p e u).le_wp ⟨hp, he, hm⟩)).2.2 t ht htp h
+    bitAt (Id.run (examinePower c d p e u pinf)).gsq t = true :=
+  (Std.WP.Id.of_run_eq_wp rfl _ ((examinePower_spec c d p e u pinf).le_wp ⟨hp, he, hm⟩)).2.2 t ht
+    htp h
 
 /-! ### The rows of a prime power let every point through -/
 
 -- The cast of the product of a residue and its inverse in the table of a prime power.
-private theorem natCast_mul_getElem!_inv_run_examinePower {c : List ℤ} {d p e : ℕ} (u : Bool)
+private theorem natCast_mul_getElem!_inv_run_examinePower {c : List ℤ} {d p e : ℕ} (u pinf : Bool)
     (hp : p.Prime) (he : 1 ≤ e) {x : ℕ} (hx : x < p ^ e) (hpx : x % p ≠ 0) :
-    (x : ZMod (p ^ e)) * (Id.run (examinePower c d p e u)).inv[x]! = 1 := by
-  rw [← Nat.cast_mul, ← ZMod.natCast_mod, mul_getElem!_inv_run_examinePower_mod u hp he hx hpx,
+    (x : ZMod (p ^ e)) * (Id.run (examinePower c d p e u pinf)).inv[x]! = 1 := by
+  rw [← Nat.cast_mul, ← ZMod.natCast_mod, mul_getElem!_inv_run_examinePower_mod u pinf hp he hx hpx,
     Nat.cast_one]
 
 -- The row of a denominator `b` prime to `p` for the prime power `p ^ e`: the bit of `fsq` at
 -- `a b⁻¹`.
-private theorem bitAt_fsq_run_examinePower_of_sq_eq {c : List ℤ} {p e : ℕ} (u : Bool)
+private theorem bitAt_fsq_run_examinePower_of_sq_eq {c : List ℤ} {p e : ℕ} (u pinf : Bool)
     (hp : p.Prime) (he : 1 ≤ e) (hm : p ^ e ≤ 64 * modWords) {a y : ℤ} {b : ℕ}
     (hy : y ^ 2 = binaryForm c a b) (hb : b % p ≠ 0) :
-    bitAt (Id.run (examinePower c (degree c) p e u)).fsq ((a % ((p ^ e : ℕ) : ℤ)).toNat *
-      (Id.run (examinePower c (degree c) p e u)).inv[b % p ^ e]! % p ^ e) = true := by
+    bitAt (Id.run (examinePower c (degree c) p e u pinf)).fsq ((a % ((p ^ e : ℕ) : ℤ)).toNat *
+      (Id.run (examinePower c (degree c) p e u pinf)).inv[b % p ^ e]! % p ^ e) = true := by
   have hm0 : 0 < p ^ e := pow_pos hp.pos e
   have : NeZero (p ^ e) := ⟨hm0.ne'⟩
-  have hw := natCast_mul_getElem!_inv_run_examinePower (c := c) (d := degree c) u hp he
+  have hw := natCast_mul_getElem!_inv_run_examinePower (c := c) (d := degree c) u pinf hp he
     (Nat.mod_lt b hm0) (by rwa [Nat.mod_mod_of_dvd b (dvd_pow_self p (by lia))])
   rw [ZMod.natCast_mod] at hw
-  refine bitAt_fsq_run_examinePower_of_isSquare u hp he hm (Nat.mod_lt _ hm0) ?_
+  refine bitAt_fsq_run_examinePower_of_isSquare u pinf hp he hm (Nat.mod_lt _ hm0) ?_
   rw [ZMod.natCast_mod, Nat.cast_mul, ZMod.natCast_toNat_emod]
   exact isSquare_sum_mul_pow_of_sq_eq_binaryForm (IsUnit.of_mul_eq_one _ hw)
     (by rw [mul_assoc, mul_comm _ (b : ZMod (p ^ e)), hw, mul_one]) hy
 
 -- The row of a denominator `b` divisible by `p` for the prime power `p ^ e`: `p ∤ a`, and the bit
 -- of `gsq` at `b a⁻¹`.
-private theorem bitAt_gsq_run_examinePower_of_sq_eq {c : List ℤ} {p e : ℕ} (u : Bool)
+private theorem bitAt_gsq_run_examinePower_of_sq_eq {c : List ℤ} {p e : ℕ} (u pinf : Bool)
     (hp : p.Prime) (he : 1 ≤ e) (hm : p ^ e ≤ 64 * modWords) {a y : ℤ} {b : ℕ}
     (hab : Int.gcd a b = 1) (hy : y ^ 2 = binaryForm c a b) (hb : b % p = 0) :
     ((a % ((p ^ e : ℕ) : ℤ)).toNat % p != 0 &&
-      bitAt (Id.run (examinePower c (degree c) p e u)).gsq (b % p ^ e *
-        (Id.run (examinePower c (degree c) p e u)).inv[(a % ((p ^ e : ℕ) : ℤ)).toNat]! % p ^ e)) =
+      bitAt (Id.run (examinePower c (degree c) p e u pinf)).gsq (b % p ^ e *
+        (Id.run (examinePower c (degree c) p e u pinf)).inv[(a % ((p ^ e : ℕ) : ℤ)).toNat]! %
+          p ^ e)) =
         true := by
   have hm0 : 0 < p ^ e := pow_pos hp.pos e
   have : NeZero (p ^ e) := ⟨hm0.ne'⟩
   have hpm : p ∣ p ^ e := dvd_pow_self p (by lia)
   have hx := Int.toNat_emod_ne_zero_of_gcd_eq_one hp.one_lt hab hb
   rw [← Int.toNat_emod_mod_of_dvd a hm0 hpm] at hx
-  have hw := natCast_mul_getElem!_inv_run_examinePower (c := c) (d := degree c) u hp he
+  have hw := natCast_mul_getElem!_inv_run_examinePower (c := c) (d := degree c) u pinf hp he
     (Int.toNat_emod_lt a hm0) hx
   rw [ZMod.natCast_toNat_emod] at hw
-  refine Bool.and_eq_true_iff.mpr ⟨by simpa using hx, bitAt_gsq_run_examinePower_of_isSquare u hp
-    he hm (Nat.mod_lt _ hm0) (Nat.mod_eq_zero_of_dvd ((Nat.dvd_mod_iff hpm).mpr
+  refine Bool.and_eq_true_iff.mpr ⟨by simpa using hx, bitAt_gsq_run_examinePower_of_isSquare u pinf
+    hp he hm (Nat.mod_lt _ hm0) (Nat.mod_eq_zero_of_dvd ((Nat.dvd_mod_iff hpm).mpr
       (((Nat.dvd_mod_iff hpm).mpr (Nat.dvd_of_mod_eq_zero hb)).mul_right _))) ?_⟩
   rw [ZMod.natCast_mod, Nat.cast_mul, ZMod.natCast_mod]
   exact isSquare_sum_mul_pow_sub_of_sq_eq_binaryForm (IsUnit.of_mul_eq_one _ hw)
@@ -696,15 +725,15 @@ bit arrays, admits the numerator `a` of every point `(a, y, b)` with `gcd(a, b) 
 since `f(a / b)` is a square modulo `p ^ e`, and for `p ∣ b`, since `p ∤ a` and the reversed
 polynomial takes a square value at `b / a`
 (`Ratpoints.isSquare_sum_mul_pow_sub_of_sq_eq_binaryForm`). -/
-theorem admits_run_examinePower_of_sq_eq {c : List ℤ} {p e : ℕ} (u : Bool) (hp : p.Prime)
+theorem admits_run_examinePower_of_sq_eq {c : List ℤ} {p e : ℕ} (u pinf : Bool) (hp : p.Prime)
     (he : 1 ≤ e) (hm : p ^ e ≤ 64 * modWords) {a y : ℤ} {b : ℕ} (hab : Int.gcd a b = 1)
     (hy : y ^ 2 = binaryForm c a b) :
-    (Id.run (examinePower c (degree c) p e u)).admits b a = true := by
+    (Id.run (examinePower c (degree c) p e u pinf)).admits b a = true := by
   simp only [Power.admits, p_run_examinePower, m_run_examinePower,
     Nat.mod_mod_of_dvd b (dvd_pow_self p (by lia : e ≠ 0))]
   split
-  · exact bitAt_fsq_run_examinePower_of_sq_eq u hp he hm hy ‹_›
-  · exact bitAt_gsq_run_examinePower_of_sq_eq u hp he hm hab hy (not_not.mp ‹_›)
+  · exact bitAt_fsq_run_examinePower_of_sq_eq u pinf hp he hm hy ‹_›
+  · exact bitAt_gsq_run_examinePower_of_sq_eq u pinf hp he hm hab hy (not_not.mp ‹_›)
 
 /-! ### The sieve entry of a modulus -/
 
@@ -715,7 +744,8 @@ modulo `m` (`Ratpoints.Sieve.Factor.HasInverses`), its builder has what it needs
 (`Ratpoints.Sieve.Factor.Buildable`), and its table or tables are those that
 `Ratpoints.Sieve.examinePrime` computes for a prime and `Ratpoints.Sieve.examinePower` on the path
 of GMP integers for a prime power, which both paths give
-(`Ratpoints.Sieve.examinePower_eq_examinePower_false`). -/
+(`Ratpoints.Sieve.examinePower_eq_examinePower_false`), with either value of the flag `pinf`, which
+only the density reads. -/
 structure Factor.IsSound (c : List ℤ) (m : ℕ) (f : Factor) : Prop where
   /-- The factor admits every point at the residues modulo `m`. -/
   admits_of_sq_eq ⦃a y : ℤ⦄ ⦃b : ℕ⦄ (hab : Int.gcd a b = 1) (hy : y ^ 2 = binaryForm c a b) :
@@ -728,7 +758,7 @@ structure Factor.IsSound (c : List ℤ) (m : ℕ) (f : Factor) : Prop where
   prime_eq (t : Entry) (h : f = .prime t) : t = examinePrime c (degree c) t.p
   /-- A prime power has the tables that `Ratpoints.Sieve.examinePower` computes. -/
   power_eq (pw : Power) (h : f = .power pw) :
-    pw = Id.run (examinePower c (degree c) pw.p pw.e false)
+    ∃ pinf, pw = Id.run (examinePower c (degree c) pw.p pw.e false pinf)
 
 /-- A prime factor has the inverses that `Ratpoints.Sieve.inversesMod` computes. -/
 theorem Factor.IsSound.inverses_eq {c : List ℤ} {m : ℕ} {f : Factor} (hf : f.IsSound c m)
@@ -740,40 +770,37 @@ theorem mod_sixty_four_ne_zero_of_prime {p : ℕ} (hp : p.Prime) : p % 64 ≠ 0 
   lia [(Nat.prime_dvd_prime_iff_eq Nat.prime_two hp).mp
     (Nat.dvd_trans (by decide : 2 ∣ 64) (Nat.dvd_of_mod_eq_zero h0))]
 
--- The factor of a prime `p = primeTable[pn]` of `m` over the table, with its table.
-private theorem isSound_prime_examinePrime {c : List ℤ} {m pn : ℕ}
-    (hpe : (pn, 1) ∈ (Id.run (modulusFactors m)).1) :
+/-- The factor of a prime `p = primeTable[pn]` of the table that divides `m`, with its table. -/
+theorem isSound_prime_examinePrime {c : List ℤ} {m pn : ℕ} (hpn : pn < numPrimes)
+    (hd : primeTable[pn]! ∣ m) :
     (Factor.prime (examinePrime c (degree c) primeTable[pn]!)).IsSound c m := by
-  have hpn := lt_numPrimes_of_mem_run_modulusFactors hpe
   have hp := prime_getElem!_primeTable (hpn.trans_le numPrimes_le_size_primeTable)
-  have hd := pow_dvd_of_mem_run_modulusFactors hpe
-  rw [pow_one] at hd
   refine ⟨fun a y b hab hy ↦ ?_, ⟨hd, fun r hr hr0 ↦ getElem!_inversesMod_mul_mod hp hr hr0⟩,
     ⟨hp.pos, fun _ ↦ mod_sixty_four_ne_zero_of_prime hp, fun r hr ↦ getElem!_inversesMod_lt hr⟩,
     fun _ ht ↦ by obtain rfl := Factor.prime.inj ht; rfl, nofun⟩
   rw [Factor.admits, Entry.admits_mod_of_dvd (examinePrime c (degree c) primeTable[pn]!) hd]
   exact admits_examinePrime_of_sq_eq hp hab hy
 
--- The factor of a prime power `primeTable[pn] ^ e` of a modulus `0 < m < maxPrimeEven` over the
--- table, with its tables.
-private theorem isSound_power_run_examinePower {c : List ℤ} {m pn e : ℕ} (u : Bool)
-    (hm0 : 0 < m) (hm : m < maxPrimeEven) (hpe : (pn, e) ∈ (Id.run (modulusFactors m)).1) :
-    (Factor.power (Id.run (examinePower c (degree c) primeTable[pn]! e u))).IsSound c m := by
-  have hpn := lt_numPrimes_of_mem_run_modulusFactors hpe
+/-- The factor of a prime power `primeTable[pn] ^ e`, `e ≥ 1`, of the table that divides a modulus
+`0 < m < maxPrimeEven`, with its tables, for either path of the reduction and either value of the
+flag `pinf`. -/
+theorem isSound_power_run_examinePower {c : List ℤ} {m pn e : ℕ} (u pinf : Bool)
+    (hm0 : 0 < m) (hm : m < maxPrimeEven) (hpn : pn < numPrimes) (he : 1 ≤ e)
+    (hd : primeTable[pn]! ^ e ∣ m) :
+    (Factor.power (Id.run (examinePower c (degree c) primeTable[pn]! e u pinf))).IsSound c m := by
   have hp := prime_getElem!_primeTable (hpn.trans_le numPrimes_le_size_primeTable)
-  have he := one_le_of_mem_run_modulusFactors hpe
-  have hd := pow_dvd_of_mem_run_modulusFactors hpe
   have hle : primeTable[pn]! ^ e ≤ 64 * modWords :=
     ((Nat.le_of_dvd hm0 hd).trans hm.le).trans maxPrimeEven_le_sixty_four_mul_modWords
   refine ⟨fun a y b hab hy ↦ ?_, ⟨?_, by simpa using hd, fun x hx hpx ↦ ?_⟩,
     ⟨by simpa using pow_pos hp.pos e, by simpa using hle,
-      fun x _ ↦ by simpa using getElem!_inv_run_examinePower_lt u hp he x⟩, nofun,
-    fun _ hpw ↦ by rw [← Factor.power.inj hpw, examinePower_eq_examinePower_false]; rfl⟩
+      fun x _ ↦ by simpa using getElem!_inv_run_examinePower_lt u pinf hp he x⟩, nofun,
+    fun _ hpw ↦ ⟨pinf, by rw [← Factor.power.inj hpw, examinePower_eq_examinePower_false]; rfl⟩⟩
   · rw [Factor.admits, Power.admits_mod_of_dvd _ hd]
-    exact admits_run_examinePower_of_sq_eq u hp he hle hab hy
+    exact admits_run_examinePower_of_sq_eq u pinf hp he hle hab hy
   · simpa using dvd_pow_self primeTable[pn]! (by lia : e ≠ 0)
   · rw [Nat.mul_comm]
-    exact mul_getElem!_inv_run_examinePower_mod u hp he (by simpa using hx) (by simpa using hpx)
+    exact mul_getElem!_inv_run_examinePower_mod u pinf hp he (by simpa using hx)
+      (by simpa using hpx)
 
 end Sieve
 
@@ -817,6 +844,43 @@ private theorem mem_run_modulusFactors_of_eq {m r : ℕ} {fac pref suff : List (
   rw [← hfac, hl]
   simp
 
+-- The factor of a prime `p = primeTable[pn]` of `m` over the table, with its table, as
+-- `Ratpoints.makeModulus?` makes it.
+private theorem isSound_prime_of_mem_run_modulusFactors {c : List ℤ} {m pn : ℕ}
+    (hpe : (pn, 1) ∈ (Id.run (modulusFactors m)).1) :
+    (Factor.prime (examinePrime c (degree c) primeTable[pn]!)).IsSound c m := by
+  have hpn := lt_numPrimes_of_mem_run_modulusFactors hpe
+  have hp := prime_getElem!_primeTable (hpn.trans_le numPrimes_le_size_primeTable)
+  have hd := pow_dvd_of_mem_run_modulusFactors hpe
+  rw [pow_one] at hd
+  refine ⟨fun a y b hab hy ↦ ?_, ⟨hd, fun r hr hr0 ↦ getElem!_inversesMod_mul_mod hp hr hr0⟩,
+    ⟨hp.pos, fun _ ↦ mod_sixty_four_ne_zero_of_prime hp, fun r hr ↦ getElem!_inversesMod_lt hr⟩,
+    fun _ ht ↦ by obtain rfl := Factor.prime.inj ht; rfl, nofun⟩
+  rw [Factor.admits, Entry.admits_mod_of_dvd (examinePrime c (degree c) primeTable[pn]!) hd]
+  exact admits_examinePrime_of_sq_eq hp hab hy
+
+-- The factor of a prime power `primeTable[pn] ^ e` of a modulus `0 < m < maxPrimeEven` over the
+-- table, with its tables, as `Ratpoints.makeModulus?` makes it.
+private theorem isSound_power_of_mem_run_modulusFactors {c : List ℤ} {m pn e : ℕ} (u pinf : Bool)
+    (hm0 : 0 < m) (hm : m < maxPrimeEven) (hpe : (pn, e) ∈ (Id.run (modulusFactors m)).1) :
+    (Factor.power (Id.run (examinePower c (degree c) primeTable[pn]! e u pinf))).IsSound c m := by
+  have hpn := lt_numPrimes_of_mem_run_modulusFactors hpe
+  have hp := prime_getElem!_primeTable (hpn.trans_le numPrimes_le_size_primeTable)
+  have he := one_le_of_mem_run_modulusFactors hpe
+  have hd := pow_dvd_of_mem_run_modulusFactors hpe
+  have hle : primeTable[pn]! ^ e ≤ 64 * modWords :=
+    ((Nat.le_of_dvd hm0 hd).trans hm.le).trans maxPrimeEven_le_sixty_four_mul_modWords
+  refine ⟨fun a y b hab hy ↦ ?_, ⟨?_, by simpa using hd, fun x hx hpx ↦ ?_⟩,
+    ⟨by simpa using pow_pos hp.pos e, by simpa using hle,
+      fun x _ ↦ by simpa using getElem!_inv_run_examinePower_lt u pinf hp he x⟩, nofun,
+    fun _ hpw ↦ ⟨pinf, by rw [← Factor.power.inj hpw, examinePower_eq_examinePower_false]; rfl⟩⟩
+  · rw [Factor.admits, Power.admits_mod_of_dvd _ hd]
+    exact admits_run_examinePower_of_sq_eq u pinf hp he hle hab hy
+  · simpa using dvd_pow_self primeTable[pn]! (by lia : e ≠ 0)
+  · rw [Nat.mul_comm]
+    exact mul_getElem!_inv_run_examinePower_mod u pinf hp he (by simpa using hx)
+      (by simpa using hpx)
+
 /-- The step of the loop of `Ratpoints.makeModulus?` at a prime factor whose table the loop of the
 tables has kept, the table of the reference. -/
 theorem MakeModulusInvariant.push_getElem? {c : List ℤ} {tables : Array Entry} {m r pn e : ℕ}
@@ -830,40 +894,43 @@ theorem MakeModulusInvariant.push_getElem? {c : List ℤ} {tables : Array Entry}
   obtain ⟨hi, rfl⟩ := Array.getElem?_eq_some_iff.mp ht
   subst he
   rw [htab pn hi]
-  exact h.push (isSound_prime_examinePrime (c := c) (mem_run_modulusFactors_of_eq hfac hl))
-    (pow_one _).symm
+  exact h.push (isSound_prime_of_mem_run_modulusFactors (c := c)
+    (mem_run_modulusFactors_of_eq hfac hl)) (pow_one _).symm
 
 /-- The step of the loop of `Ratpoints.makeModulus?` at a prime factor whose examination
 (`Ratpoints.Sieve.examinePrime?`) gives a table, that of the reference. -/
 theorem MakeModulusInvariant.push_run_examinePrime? {c : List ℤ} {u : Bool} {m r pn e : ℕ}
     {fac pref suff : List (ℕ × ℕ)} {o : Option (Option SieveEntry)} {factors : Array Factor}
-    {t : Entry} {cm : Array ℕ}
+    {t : Entry} {cm : Array ℕ} {code : ℕ} {dens : Float}
     (hfac : (fac, r) = Id.run (modulusFactors m)) (hl : fac = pref ++ (pn, e) :: suff)
     (h : MakeModulusInvariant c m pref ((pn, e) :: suff) (o, factors)) (he : e = 1)
-    (ht : Id.run (examinePrime? c (degree c) primeTable[pn]! u) = some (t, cm)) :
+    (ht : Id.run (examinePrime? c (degree c) primeTable[pn]! u) = some (t, cm, code, dens)) :
     MakeModulusInvariant c m (pref ++ [(pn, e)]) suff (none, factors.push (.prime t)) := by
   subst he
   have hpe := mem_run_modulusFactors_of_eq hfac hl
   rw [eq_examinePrime_of_lt_numPrimes_of_run_examinePrime?_eq_some
     (lt_numPrimes_of_mem_run_modulusFactors hpe) ht]
-  exact h.push (isSound_prime_examinePrime (c := c) hpe) (pow_one _).symm
+  exact h.push (isSound_prime_of_mem_run_modulusFactors (c := c) hpe) (pow_one _).symm
 
 /-- The step of the loop of `Ratpoints.makeModulus?` at a factor that is a prime power, for a
-modulus `0 < m < Ratpoints.maxPrimeEven`. -/
-theorem MakeModulusInvariant.push_run_examinePower {c : List ℤ} {u : Bool} {m r pn e : ℕ}
+modulus `0 < m < Ratpoints.maxPrimeEven`, with either value of the flag `pinf`. -/
+theorem MakeModulusInvariant.push_run_examinePower {c : List ℤ} {u pinf : Bool} {m r pn e : ℕ}
     {fac pref suff : List (ℕ × ℕ)} {o : Option (Option SieveEntry)} {factors : Array Factor}
     (hm0 : 0 < m) (hm : m < maxPrimeEven) (hfac : (fac, r) = Id.run (modulusFactors m))
     (hl : fac = pref ++ (pn, e) :: suff)
     (h : MakeModulusInvariant c m pref ((pn, e) :: suff) (o, factors)) :
     MakeModulusInvariant c m (pref ++ [(pn, e)]) suff
-      (none, factors.push (.power (Id.run (examinePower c (degree c) primeTable[pn]! e u)))) :=
-  h.push (isSound_power_run_examinePower u hm0 hm (mem_run_modulusFactors_of_eq hfac hl)) rfl
+      (none, factors.push
+        (.power (Id.run (examinePower c (degree c) primeTable[pn]! e u pinf)))) := by
+  exact h.push (isSound_power_of_mem_run_modulusFactors u pinf hm0 hm
+    (mem_run_modulusFactors_of_eq hfac hl)) (m_run_examinePower ..)
 
 /-- The early return of the loop of `Ratpoints.makeModulus?` at a prime factor whose examination
 (`Ratpoints.Sieve.examinePrime?`) gives none: the curve has no points modulo the prime, so none at
 all. -/
 theorem makeModulusInvariant_some_none {c : List ℤ} {u : Bool} {m r pn e : ℕ}
-    {fac pref suff : List (ℕ × ℕ)} {factors : Array Factor} {x : Option (Entry × Array ℕ)}
+    {fac pref suff : List (ℕ × ℕ)} {factors : Array Factor}
+    {x : Option (Entry × Array ℕ × ℕ × Float)}
     (hfac : (fac, r) = Id.run (modulusFactors m)) (hl : fac = pref ++ (pn, e) :: suff)
     (hx : ∀ t cm, x = some (t, cm) → False)
     (he : Id.run (examinePrime? c (degree c) primeTable[pn]! u) = x) (l : List (ℕ × ℕ)) :
@@ -898,7 +965,7 @@ structure IsModulusEntry (c : List ℤ) (m : ℕ) (s : SieveEntry) : Prop where
   prime_eq : ∀ t : Entry, .prime t ∈ s.factors → t = examinePrime c (degree c) t.p
   /-- Each prime-power factor has the tables that `Ratpoints.Sieve.examinePower` computes. -/
   power_eq : ∀ pw : Power, .power pw ∈ s.factors →
-    pw = Id.run (examinePower c (degree c) pw.p pw.e false)
+    ∃ pinf, pw = Id.run (examinePower c (degree c) pw.p pw.e false pinf)
 
 /-- The end of the loop of `Ratpoints.makeModulus?` after an early return. -/
 theorem MakeModulusInvariant.post_some {c : List ℤ} {m n : ℕ} {fac : List (ℕ × ℕ)}
@@ -919,6 +986,25 @@ theorem mod_two_eq_one_of_forall_dvd {m : ℕ}
   lia [getElem!_primeTable_le_of_le (Nat.zero_le pn) (hpn.trans_le numPrimes_le_size_primeTable),
     Nat.le_of_dvd (by decide) hd, (by decide +kernel : primeTable[0]! = 3)]
 
+/-- The sieve entry of an odd modulus `1 < m < maxPrimeEven` with factors that are sound for `m`
+(`Ratpoints.Sieve.Factor.IsSound`) and whose moduli multiply to `m`, the reciprocal and the bias of
+`m`, an inverse `x < m` of `Ratpoints.rbaLength` modulo `m` and any reference, kind of builder,
+density and count of factors admits every point, has the fields that the packing reads and factors
+whose moduli multiply to `m`, with builders that have what they need and the tables that
+`Ratpoints.Sieve.examinePrime` and `Ratpoints.Sieve.examinePower` compute. -/
+theorem isModulusEntry_of_forall_isSound {c : List ℤ} {m : ℕ} {factors : List Factor} {x : ℕ}
+    (hm : 1 < m ∧ m < maxPrimeEven ∧ m % 2 = 1) (hs : ∀ f ∈ factors, f.IsSound c m)
+    (hp : (factors.map Factor.modulus).prod = m) (hx : x * rbaLength % m = 1 ∧ x < m)
+    (ref : EntryRef) (init : RowInit) (r : Float) (nf : ℤ) :
+    IsModulusEntry c m
+      ⟨m, factors, magic m, m * ((rowBias + m - 1) / m), x, #[], ref, init, r, nf⟩ :=
+  ⟨rfl, fun _ _ _ hab hy ↦ List.all_eq_true.mpr fun f hf ↦ (hs f hf).admits_of_sq_eq hab hy,
+    fun f hf ↦ (hs f hf).hasInverses,
+    ⟨hm.1, hm.2.2, hm.2.1.le, rfl, hx.1, hx.2, Nat.mul_mod_right _ _,
+      Nat.le_mul_add_sub_one_div _ (Nat.zero_lt_of_lt hm.1),
+      Nat.mul_add_sub_one_div_lt _ (Nat.zero_lt_of_lt hm.1)⟩, hp, fun f hf ↦ (hs f hf).buildable,
+    fun t ht ↦ (hs _ ht).prime_eq t rfl, fun pw hpw ↦ (hs _ hpw).power_eq pw rfl⟩
+
 /-- The moduli of the factors of `m` over the table multiply to `m` when its factorization is
 complete. -/
 private theorem prod_modulus_eq {c : List ℤ} {m r : ℕ} {fac : List (ℕ × ℕ)}
@@ -935,17 +1021,18 @@ private theorem prod_modulus_eq {c : List ℤ} {m r : ℕ} {fac : List (ℕ × �
 
 /-- After the loop of `Ratpoints.makeModulus?` over all the factors, with an inverse `x < m` of
 `Ratpoints.rbaLength` modulo `m`: the sieve entry of `m` with the factors made, the reciprocal and
-the bias of `m`, the inverse `x` and any reference and kind of builder admits every point, has the
-fields that the packing reads and factors whose moduli multiply to `m`, with builders that have what
-they need and the tables that `Ratpoints.Sieve.examinePrime` and `Ratpoints.Sieve.examinePower`
-compute. -/
+the bias of `m`, the inverse `x` and any reference, kind of builder, density and count of factors
+admits every point, has the fields that the packing reads and factors whose moduli multiply to `m`,
+with builders that have what they need and the tables that `Ratpoints.Sieve.examinePrime` and
+`Ratpoints.Sieve.examinePower` compute. -/
 theorem MakeModulusInvariant.isModulusEntry {c : List ℤ} {m r : ℕ} {fac : List (ℕ × ℕ)}
     {o : Option (Option SieveEntry)} {factors : Array Factor} {x : ℕ}
     (hm : 1 < m ∧ m < maxPrimeEven ∧ ∀ q > 1, q ∣ m → ∃ pn < numPrimes, primeTable[pn]! ∣ q)
     (hfac : (fac, r) = Id.run (modulusFactors m)) (h : MakeModulusInvariant c m fac [] (o, factors))
-    (ho : o = none) (hx : x * rbaLength % m = 1 ∧ x < m) (ref : EntryRef) (init : RowInit) :
+    (ho : o = none) (hx : x * rbaLength % m = 1 ∧ x < m) (ref : EntryRef) (init : RowInit)
+    (dens : Float) (nf : ℤ) :
     IsModulusEntry c m
-      ⟨m, factors.toList, magic m, m * ((rowBias + m - 1) / m), x, #[], ref, init⟩ := by
+      ⟨m, factors.toList, magic m, m * ((rowBias + m - 1) / m), x, #[], ref, init, dens, nf⟩ := by
   have hp := prod_modulus_eq hm hfac h ho
   subst ho
   have hs (f : Factor) (hf : f ∈ factors.toList) : f.IsSound c m :=
@@ -962,20 +1049,20 @@ of `Ratpoints.rbaLength` modulo `m`: the sieve entry of `m` at the position `n`,
 and the kind of builder of `Ratpoints.Sieve.SieveEntry.refInit`
 (`Ratpoints.MakeModulusInvariant.isModulusEntry`). -/
 theorem MakeModulusInvariant.post_none {c : List ℤ} {m n r : ℕ} {fac : List (ℕ × ℕ)}
-    {o : Option (Option SieveEntry)} {factors : Array Factor} {x : ℕ}
+    {o : Option (Option SieveEntry)} {factors : Array Factor} {x : ℕ} {dens : Float} {nf : ℤ}
     (hm : 1 < m ∧ m < maxPrimeEven ∧ ∀ q > 1, q ∣ m → ∃ pn < numPrimes, primeTable[pn]! ∣ q)
     (hfac : (fac, r) = Id.run (modulusFactors m)) (h : MakeModulusInvariant c m fac [] (o, factors))
     (ho : o = none) (hx : x * rbaLength % m = 1 ∧ x < m) :
     (∀ s, some (⟨m, factors.toList, magic m, m * ((rowBias + m - 1) / m), x, #[],
-          (SieveEntry.refInit n factors.toList).1, (SieveEntry.refInit n factors.toList).2⟩ :
-          SieveEntry) = some s →
+          (SieveEntry.refInit n factors.toList).1, (SieveEntry.refInit n factors.toList).2, dens,
+          nf⟩ : SieveEntry) = some s →
         IsModulusEntry c m s ∧ (s.ref, s.init) = SieveEntry.refInit n s.factors) ∧
       (some (⟨m, factors.toList, magic m, m * ((rowBias + m - 1) / m), x, #[],
-          (SieveEntry.refInit n factors.toList).1, (SieveEntry.refInit n factors.toList).2⟩ :
-          SieveEntry) = none → ∀ H q, ¬IsPoint c H q) := by
+          (SieveEntry.refInit n factors.toList).1, (SieveEntry.refInit n factors.toList).2, dens,
+          nf⟩ : SieveEntry) = none → ∀ H q, ¬IsPoint c H q) := by
   refine ⟨fun _ hs ↦ ?_, nofun⟩
   obtain rfl := Option.some.inj hs
-  exact ⟨h.isModulusEntry hm hfac ho hx _ _, rfl⟩
+  exact ⟨h.isModulusEntry hm hfac ho hx _ _ _ _, rfl⟩
 
 /-- `Ratpoints.rbaLength`, a power of 2 (`Ratpoints.rbaLength_eq_two_pow_rbaShift`), is prime to
 every odd modulus. -/
@@ -984,13 +1071,40 @@ theorem coprime_rbaLength_of_mod_two_eq_one {m : ℕ} (hm : m % 2 = 1) :
   rw [rbaLength_eq_two_pow_rbaShift]
   exact (Nat.coprime_two_left.mpr (Nat.odd_iff.mpr hm)).pow_left _
 
--- The product of `Ratpoints.rbaLength < 2 ^ 32` (`Ratpoints.rbaShift_lt_thirty_two`) and a
--- modulus `m ≤ 2 ^ 32` is below `2 ^ 64`, so that the remainder of `Ratpoints.rbaLength` by the
--- reciprocal of `m` is exact.
-private theorem rbaLength_mul_lt_two_pow_64 {m : ℕ} (hm : m ≤ 2 ^ 32) : rbaLength * m < 2 ^ 64 := by
+/-- The product of `Ratpoints.rbaLength < 2 ^ 32` (`Ratpoints.rbaShift_lt_thirty_two`) and a
+modulus `m ≤ 2 ^ 32` is below `2 ^ 64`, so that the remainder of `Ratpoints.rbaLength` by the
+reciprocal of `m` is exact. -/
+theorem rbaLength_mul_lt_two_pow_64 {m : ℕ} (hm : m ≤ 2 ^ 32) : rbaLength * m < 2 ^ 64 := by
   have h := Nat.pow_lt_pow_right (by decide : 1 < 2) rbaShift_lt_thirty_two
   rw [← rbaLength_eq_two_pow_rbaShift] at h
   calc rbaLength * m < 2 ^ 32 * 2 ^ 32 := Nat.mul_lt_mul_of_lt_of_le h hm (by decide)
+    _ = 2 ^ 64 := by norm_num
+
+/-- The inverse of `Ratpoints.rbaLength` modulo an odd prime modulus `1 < m < maxPrimeEven`, read
+from its table, sound for `m`, with the remainder of `rbaLength` by the reciprocal of `m`, as
+`examine_prime` reads it. -/
+theorem inverses_mulMod_rbaLength_of_isSound {c : List ℤ} {m : ℕ} {t : Entry}
+    (hm : 1 < m ∧ m < maxPrimeEven ∧ m % 2 = 1) (hs : (Factor.prime t).IsSound c m)
+    (hp : t.p = m) :
+    t.inverses[mulMod rbaLength m (magic m)]! * rbaLength % m = 1 ∧
+      t.inverses[mulMod rbaLength m (magic m)]! < m := by
+  have hc := coprime_rbaLength_of_mod_two_eq_one hm.2.2
+  have hr0 : rbaLength % m ≠ 0 := fun h0 ↦ absurd (Nat.Coprime.eq_one_of_dvd hc.symm
+    (Nat.dvd_of_mod_eq_zero h0)) hm.1.ne'
+  rw [mulMod_magic (by lia) (rbaLength_mul_lt_two_pow_64
+    (hm.2.1.le.trans maxPrimeEven_le_two_pow_32)), hs.inverses_eq t rfl, ← Nat.mul_mod_mod, ← hp]
+  exact ⟨hs.inverses_eq t rfl ▸ hs.hasInverses.2 _ (Nat.mod_lt _ (by lia)) (hp ▸ hr0),
+    getElem!_inversesMod_lt (Nat.mod_lt _ (by lia))⟩
+
+-- The product of `Ratpoints.rbaLength < 2 ^ 32` (`Ratpoints.rbaShift_lt_thirty_two`) and a
+-- modulus below `Ratpoints.maxPrimeEven` is below `2 ^ 64`, for the inverse of
+-- `Ratpoints.rbaLength` that `Ratpoints.makeModulus?` reads from the table of a prime.
+private theorem rbaLength_mul_lt_two_pow_64_of_lt_maxPrimeEven {m : ℕ} (hm : m < maxPrimeEven) :
+    rbaLength * m < 2 ^ 64 := by
+  have h := Nat.pow_lt_pow_right (by decide : 1 < 2) rbaShift_lt_thirty_two
+  rw [← rbaLength_eq_two_pow_rbaShift] at h
+  calc rbaLength * m < 2 ^ 32 * 2 ^ 32 :=
+      Nat.mul_lt_mul_of_lt_of_le h (hm.le.trans maxPrimeEven_le_two_pow_32) (by decide)
     _ = 2 ^ 64 := by norm_num
 
 /-- The inverse of `Ratpoints.rbaLength` modulo a prime modulus `m`, read from its table with the
@@ -1012,24 +1126,36 @@ theorem MakeModulusInvariant.rbainv_prime {c : List ℤ} {m r : ℕ} {fac : List
   have hc := coprime_rbaLength_of_mod_two_eq_one (mod_two_eq_one_of_forall_dvd hm.2.2)
   have hr0 : rbaLength % m ≠ 0 := fun h0 ↦ absurd (Nat.Coprime.eq_one_of_dvd hc.symm
     (Nat.dvd_of_mod_eq_zero h0)) hm.1.ne'
-  rw [mulMod_magic (by lia) (rbaLength_mul_lt_two_pow_64
-    (hm.2.1.le.trans maxPrimeEven_le_two_pow_32)), hs.inverses_eq t rfl, ← Nat.mul_mod_mod, ← hp]
+  rw [mulMod_magic (by lia) (rbaLength_mul_lt_two_pow_64_of_lt_maxPrimeEven hm.2.1),
+    hs.inverses_eq t rfl, ← Nat.mul_mod_mod, ← hp]
   exact ⟨hs.inverses_eq t rfl ▸ hs.hasInverses.2 _ (Nat.mod_lt _ (by lia)) (hp ▸ hr0),
     getElem!_inversesMod_lt (Nat.mod_lt _ (by lia))⟩
 
+/-- The precondition of `Ratpoints.Sieve.modinv` for the inverse of `Ratpoints.rbaLength` modulo an
+odd modulus `m > 1`. -/
+theorem one_lt_and_coprime_rbaLength_mod {m : ℕ} (hm : 1 < m) (hm2 : m % 2 = 1) :
+    1 < m ∧ Nat.Coprime (rbaLength % m) m :=
+  ⟨hm, (ZMod.coprime_mod_iff_coprime _ _).mpr (coprime_rbaLength_of_mod_two_eq_one hm2)⟩
+
+/-- The inverse of `Ratpoints.rbaLength` that `Ratpoints.Sieve.modinv` gives, in the form of
+`Ratpoints.Sieve.SieveEntry.Packable`. -/
+theorem mul_rbaLength_mod_and_lt {m r : ℕ} (h : r < m ∧ rbaLength % m * r % m = 1) :
+    r * rbaLength % m = 1 ∧ r < m :=
+  ⟨by rw [Nat.mul_comm, ← Nat.mod_mul_mod]; exact h.2, h.1⟩
+
 -- The precondition of `Ratpoints.Sieve.modinv` for the inverse of `Ratpoints.rbaLength` modulo a
 -- modulus `m > 1` all of whose divisors above `1` are divisible by primes of the table, an odd
--- modulus (`Ratpoints.mod_two_eq_one_of_forall_dvd`).
-private theorem one_lt_and_coprime_rbaLength_mod {m : ℕ}
+-- modulus (`Ratpoints.mod_two_eq_one_of_forall_dvd`), for `Ratpoints.makeModulus?`.
+private theorem one_lt_and_coprime_rbaLength_mod_of_forall_dvd {m : ℕ}
     (hm : 1 < m ∧ m < maxPrimeEven ∧ ∀ q > 1, q ∣ m → ∃ pn < numPrimes, primeTable[pn]! ∣ q) :
     1 < m ∧ Nat.Coprime (rbaLength % m) m :=
   ⟨hm.1, (ZMod.coprime_mod_iff_coprime _ _).mpr
     (coprime_rbaLength_of_mod_two_eq_one (mod_two_eq_one_of_forall_dvd hm.2.2))⟩
 
--- The inverse of `Ratpoints.rbaLength` that `Ratpoints.Sieve.modinv` gives, in the form of
--- `Ratpoints.Sieve.SieveEntry.Packable`.
-private theorem mul_rbaLength_mod_and_lt {m r : ℕ} (h : r < m ∧ rbaLength % m * r % m = 1) :
-    r * rbaLength % m = 1 ∧ r < m :=
+-- The inverse of `Ratpoints.rbaLength` that `Ratpoints.Sieve.modinv` gives for
+-- `Ratpoints.makeModulus?`, in the form of `Ratpoints.Sieve.SieveEntry.Packable`.
+private theorem mul_rbaLength_mod_and_lt_of_modinv {m r : ℕ}
+    (h : r < m ∧ rbaLength % m * r % m = 1) : r * rbaLength % m = 1 ∧ r < m :=
   ⟨by rw [Nat.mul_comm, ← Nat.mod_mul_mod]; exact h.2, h.1⟩
 
 -- The factors of a modulus, the table of a prime and the tables of a prime power, as values for
@@ -1042,8 +1168,8 @@ private theorem examinePrime?_value (c : List ℤ) (d p : ℕ) (u : Bool) :
     ⦃ True ⦄ examinePrime? c d p u ⦃ fun r ↦ r = Id.run (examinePrime? c d p u) ⦄ :=
   ⟨fun _ ↦ rfl⟩
 
-private theorem examinePower_value (c : List ℤ) (d p e : ℕ) (u : Bool) :
-    ⦃ True ⦄ examinePower c d p e u ⦃ fun r ↦ r = Id.run (examinePower c d p e u) ⦄ :=
+private theorem examinePower_value (c : List ℤ) (d p e : ℕ) (u pinf : Bool) :
+    ⦃ True ⦄ examinePower c d p e u pinf ⦃ fun r ↦ r = Id.run (examinePower c d p e u pinf) ⦄ :=
   ⟨fun _ ↦ rfl⟩
 
 attribute [local irreducible] MakeModulusInvariant mulMod in
@@ -1060,17 +1186,17 @@ private theorem makeModulus?_isModulusEntry_spec (c : List ℤ) (u : Bool) (tabl
   · fun pref suff st ↦ MakeModulusInvariant c m pref suff st
   all_goals try dsimp only at *
   all_goals try obtain rfl := ‹_ = Id.run (examinePrime? _ _ _ _)›
-  all_goals try obtain rfl := ‹_ = Id.run (examinePower _ _ _ _ _)›
+  all_goals try obtain rfl := ‹_ = Id.run (examinePower _ _ _ _ _ _)›
   all_goals obtain ⟨htab, hm⟩ := ‹(∀ (i : ℕ) (hi : i < tables.size), _) ∧ _›
   all_goals first
-    | exact one_lt_and_coprime_rbaLength_mod hm
+    | exact one_lt_and_coprime_rbaLength_mod_of_forall_dvd hm
     | exact makeModulusInvariant_empty c m _
     | exact MakeModulusInvariant.post_some ‹_› ‹_›
     | exact MakeModulusInvariant.push_getElem? htab ‹_› ‹_› ‹_› ‹_› ‹_›
     | exact MakeModulusInvariant.push_run_examinePrime? ‹_› ‹_› ‹_› ‹_› ‹_›
     | exact MakeModulusInvariant.push_run_examinePower (Nat.zero_lt_of_lt hm.1) hm.2.1 ‹_› ‹_› ‹_›
     | exact makeModulusInvariant_some_none ‹_› ‹_› ‹_› ‹_› _
-    | exact MakeModulusInvariant.post_none hm ‹_› ‹_› ‹_› (mul_rbaLength_mod_and_lt ‹_›)
+    | exact MakeModulusInvariant.post_none hm ‹_› ‹_› ‹_› (mul_rbaLength_mod_and_lt_of_modinv ‹_›)
     | exact MakeModulusInvariant.post_none hm ‹_› ‹_› ‹_›
         (MakeModulusInvariant.rbainv_prime hm ‹_› ‹_› ‹_› ‹_›)
 

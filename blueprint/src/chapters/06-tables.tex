@@ -142,7 +142,7 @@ chosen, of which kinds and in which stages, changes neither the points nor their
 
 \begin{lemma}[The table with the exit is the table]\label{lem:examinePrime_eq}
   \uses{lem:barrett, def:examinePrimeExit, def:examinePrime}
-  \lean{Ratpoints.Sieve.ExaminePrimeInvariant, Ratpoints.Sieve.examinePrime?_spec, Ratpoints.Sieve.run_examinePrime?, Ratpoints.Sieve.eq_examinePrime_of_run_examinePrime?_eq_some, Ratpoints.Sieve.eq_examinePrime_of_lt_numPrimes_of_run_examinePrime?_eq_some, Ratpoints.Sieve.eq_map_range_of_run_examinePrime?_eq_some, Ratpoints.Sieve.run_examinePrime?_eq_none_iff}
+  \lean{Ratpoints.Sieve.ExaminePrimeInvariant, Array.any_push_id_eq_false_iff, Ratpoints.Sieve.examinePrime?_spec, Ratpoints.Sieve.run_examinePrime?, Ratpoints.Sieve.eq_examinePrime_of_run_examinePrime?_eq_some, Ratpoints.Sieve.eq_examinePrime_of_lt_numPrimes_of_run_examinePrime?_eq_some, Ratpoints.Sieve.eq_map_range_of_run_examinePrime?_eq_some, Ratpoints.Sieve.run_examinePrime?_eq_none_iff}
   \leanok
   The table of a prime with the exit (Definition~\ref{def:examinePrimeExit}) is a component of type
   \verb|Id| with the loop of \verb|examine_prime| over the residues: the entry $0$ from the squares
@@ -153,13 +153,17 @@ chosen, of which kinds and in which stages, changes neither the points nor their
   for even $d$ whether $c_d$ is a square modulo $p$, and true for odd $d$. For
   $0 < p < \mathrm{maxPrimeEven}$, in particular for the primes of the table at the positions below
   $\mathrm{numPrimes}$: the table with the exit is none exactly when no entry of the reference is
-  true, and otherwise it is the reference, with the coefficients reduced modulo $p$.
+  true, and otherwise it is the reference, with the coefficients reduced modulo $p$, beside the code
+  and the density, which no contract reads; the count of the residues with a square value is the
+  count of the true entries of the table, so that the exit, which tests the count and the entry at
+  infinity, is the test whether one entry is true.
 \end{lemma}
 
 \begin{proof}
   \leanok
   Lemma~\ref{lem:barrett} for each entry $1, \dots, p - 1$, in an invariant of the loop over the
-  residues; the entry $0$ and the entry at infinity read the same squares in both.
+  residues, which holds the count of the true entries too; the entry $0$ and the entry at infinity
+  read the same squares in both.
 \end{proof}
 
 The lemmas on the rows and the exit (Lemmas~\ref{lem:admits_examinePrime}
@@ -242,19 +246,24 @@ that a point makes some entry of the reference true.
 \end{proof}
 
 \begin{definition}[The tables of a prime power]\label{def:examinePower}
-  \uses{def:modinv, def:useCLong, def:examinePrime, def:powerWords}
-  \lean{Ratpoints.Sieve.Power, Ratpoints.Sieve.examinePower, Ratpoints.Sieve.Power.admits}
+  \uses{def:modinv, def:useCLong, def:examinePrime, def:powerWords, def:densities}
+  \lean{Ratpoints.Sieve.Power, Ratpoints.Sieve.examinePower, Ratpoints.Sieve.Power.admits, Ratpoints.Sieve.Power.useful}
   \leanok
-  For a prime $p$ and $e \ge 2$, $q = p^e$, a component of type \verb|Id|: the coefficients reduced
-  modulo $q$ on the path of the flag of the \verb|long|s, with $c_D = 0$ for odd $d$; the bit arrays
-  \verb|sq|, \verb|fsq| and \verb|gsq| of $\mathrm{modWords}$ words cleared in one loop, and the
-  bits of the squares modulo $q$ set in \verb|sq| (Definition~\ref{def:powerWords}); for each
-  residue $x$, bit $x$ of \verb|fsq| set when $f(x)$ is a square modulo $q$, by Horner's rule
-  reduced at every step; for each multiple $t < q$ of $p$, bit $t$ of \verb|gsq| set when
-  $\tilde f(t)$ is a square modulo $q$, the squares read from \verb|sq|; and, in a loop over the
-  residues, the inverses of the units modulo $q$ by Definition~\ref{def:modinv}
-  (Definition~\ref{def:powerWords}; \csource{find_points.c}{2267}{2282},
-  \csource{find_points.c}{2285}{2301}; \csource{rp-private.h}{531}{534}). The row of $b$ admits $a$
+  For a prime $p$ and $e \ge 2$, $q = p^e$, and whether denominators divisible by $p$ occur, a
+  component of type \verb|Id|: the coefficients reduced modulo $q$ on the path of the flag of the
+  \verb|long|s, with $c_D = 0$ for odd $d$; the bit arrays \verb|sq|, \verb|fsq| and \verb|gsq|
+  of $\mathrm{modWords}$ words cleared in one loop, and the bits of the squares modulo $q$ set in
+  \verb|sq| (Definition~\ref{def:powerWords}); for each residue $x$, bit $x$ of \verb|fsq| set
+  when $f(x)$ is a square modulo $q$, by Horner's rule reduced at every step, these residues
+  counted; for each multiple $t < q$ of $p$, bit $t$ of \verb|gsq| set when $\tilde f(t)$ is a
+  square modulo $q$, the squares read from \verb|sq| (Definition~\ref{def:densities}); in a loop
+  over the residues, the inverses of the units modulo $q$ by Definition~\ref{def:modinv}
+  (Definition~\ref{def:powerWords}); and the density of the prime power from the count and the
+  switch (Definition~\ref{def:densities}; \csource{find_points.c}{2267}{2282},
+  \csource{find_points.c}{2285}{2293}, \csource{find_points.c}{2301}{2301},
+  \csource{find_points.c}{2331}{2331}; \csource{rp-private.h}{531}{534}). The prime power is
+  \emph{useful}, the code $1$ that \verb|examine_power| returns, when its density is below
+  $1 - 10^{-9}$ (\csource{find_points.c}{2330}{2330}). The row of $b$ admits $a$
   when, for $r = b \bmod q$ and $x = a \bmod q$, bit $x r^{-1}$ of \verb|fsq| is set, that is
   $f(x r^{-1})$ is a square modulo $q$, if $p \nmid r$, and $p \nmid x$ and bit $r x^{-1}$ of
   \verb|gsq| is set, that is $\tilde f(r x^{-1})$ is a square modulo $q$, if $p \mid r$: the
@@ -268,8 +277,9 @@ that a point makes some entry of the reference true.
   \lean{Ratpoints.Sieve.examinePower_spec, Ratpoints.Sieve.examinePower_eq_examinePower_false, Ratpoints.Sieve.bitAt_fsq_run_examinePower_of_isSquare, Ratpoints.Sieve.bitAt_gsq_run_examinePower_of_isSquare, Ratpoints.Sieve.mul_getElem!_inv_run_examinePower_mod, Ratpoints.Sieve.natCast_evalMod_reverse, Ratpoints.Sieve.admits_run_examinePower_of_sq_eq, Ratpoints.mul_add_lt_two_pow_64_of_lt_maxPrimeEven, Ratpoints.mul_self_lt_two_pow_63_of_lt_maxPrimeEven, Ratpoints.Sieve.getElem!_inv_run_examinePower_lt, Ratpoints.Sieve.getElem!_inv_run_examinePower_lt_two_pow_16}
   \leanok
   The two paths of the coefficients give the same tables; for $q \le 64\,\mathrm{modWords}$, within
-  the words of the bit arrays, the bits of the tables mark what they claim: $f(x)$ a square modulo
-  $q$, $\tilde f(t)$ a square modulo $q$ for $p \mid t$, and, by the contract of the loop of the
+  the words of the bit arrays, and whether or not denominators divisible by $p$ occur, which only
+  the density reads, the bits of the tables mark what they claim: $f(x)$ a square modulo $q$,
+  $\tilde f(t)$ a square modulo $q$ for $p \mid t$, and, by the contract of the loop of the
   inverses, the inverses of the units. For a prime $p$, $e \ge 1$ with
   $p^e \le 64\,\mathrm{modWords}$, $\gcd(a, b) = 1$ and $y^2 = F(a, b)$, the row of $b$ in the
   tables of $p^e$ admits $a$. The values of \verb|examine_power| and of the row stay in their C
@@ -345,10 +355,12 @@ which $\mathrm{maxPrimeEven} \le 2^{32}$ gives.
   (Chapter~\ref{chap:packing}): the bias, the least multiple of $m$ from $\mathrm{rowBias}$ on, the
   inverse $\mathrm{rbainv}$ of $\mathrm{rbaLength}$ modulo $m$, and the inverses $\mathrm{dinv}$ of
   the strides $2^k$ modulo $m$ up to the largest stride in use, which the rows of offsets fill
-  (Definition~\ref{def:classOffsets}); and the reference to the entry whose table of rows holds its
-  rows and the kind of its builder (Definitions~\ref{def:entryRef} and~\ref{def:rowInit};
-  \csource{rp-private.h}{520}{520}, \csource{rp-private.h}{542}{555}). The reference of a factor, to
-  which the field \verb|factor| of the entry of a product points, is that of its prime or of its
+  (Definition~\ref{def:classOffsets}); the reference to the entry whose table of rows holds its rows
+  and the kind of its builder (Definitions~\ref{def:entryRef} and~\ref{def:rowInit}); and its
+  density, a \verb|Float|, and the count of its factors, $0$ for a prime, $1$ for a prime power and
+  their number for a product, which the correction of the moduli reads (stage~I)
+  (\csource{rp-private.h}{520}{520}, \csource{rp-private.h}{542}{555}). The reference of a factor,
+  to which the field \verb|factor| of the entry of a product points, is that of its prime or of its
   prime power; the kind of the builder of the entry of a factor is, for a prime, the kind of the
   builder of the prime of its table, which \verb|examine_prime| sets (line 1800), and for a prime
   power the builder of a prime power, which \verb|make_power| sets (line 2420); and the reference
@@ -372,23 +384,25 @@ which $\mathrm{maxPrimeEven} \le 2^{32}$ gives.
   A component of type \verb|Id|: by the factors of $m$, a factor with the exponent $1$ takes the
   table of its prime from the loop of the tables when its position is below the number examined, and
   is examined now, with the exit, otherwise; a factor with the exponent $e \ge 2$ gets the tables of
-  its prime power; the entry holds the reciprocal of $m$, the bias
-  $m \lceil \mathrm{rowBias} / m \rceil$ and the inverse $\mathrm{rbainv}$ of $\mathrm{rbaLength}$
-  modulo $m$, with the formulas by which \verb|examine_prime| sets them for a prime, reading
-  $\mathrm{rbainv}$ from the table of inverses at the remainder of $\mathrm{rbaLength}$ by the
-  reciprocal, \verb|make_power| for a prime power and \verb|make_modulus| for a product, computing
-  it by Definition~\ref{def:modinv}, and leaves the inverses $\mathrm{dinv}$ empty for the rows of
-  offsets (Definition~\ref{def:classOffsets}) to fill, and it holds the reference and the kind of
-  builder of the position $n$ of $m$ among the moduli with its factors, as
-  Definition~\ref{def:SieveEntry} gives them (\csource{find_points.c}{2414}{2426},
-  \csource{find_points.c}{2428}{2429}, \csource{find_points.c}{2434}{2470},
-  \csource{find_points.c}{2472}{2475}, \csource{find_points.c}{2546}{2546}; its tables of rows,
-  which lines 2427 and 2471 clear, are made by Definition~\ref{def:storeTables}; the tables of a
-  prime power that \verb|add_moduli| examines when a candidate first needs it and keeps by its
-  index, \csource{find_points.c}{2350}{2354}, \csource{find_points.c}{2358}{2359},
-  \csource{find_points.c}{2387}{2395}, with their count, \csource{find_points.c}{2548}{2548}; the
-  primes examined for the third stage, \csource{find_points.c}{2976}{2978},
-  \csource{find_points.c}{2994}{2998}).
+  its prime power, with the entry at infinity of the table of its prime from the loop of the tables
+  as the switch whether denominators divisible by $p$ occur, on for a prime beyond that loop; the
+  entry holds the reciprocal of $m$, the bias $m \lceil \mathrm{rowBias} / m \rceil$ and the inverse
+  $\mathrm{rbainv}$ of $\mathrm{rbaLength}$ modulo $m$, with the formulas by which
+  \verb|examine_prime| sets them for a prime, reading $\mathrm{rbainv}$ from the table of inverses
+  at the remainder of $\mathrm{rbaLength}$ by the reciprocal, \verb|make_power| for a prime power
+  and \verb|make_modulus| for a product, computing it by Definition~\ref{def:modinv}, and leaves the
+  inverses $\mathrm{dinv}$ empty for the rows of offsets (Definition~\ref{def:classOffsets}) to
+  fill, the count of its factors and the density $0$, which nothing reads before the choice of the
+  moduli (stage~I), and it holds the reference and the kind of builder of the position $n$ of $m$
+  among the moduli with its factors, as Definition~\ref{def:SieveEntry} gives them
+  (\csource{find_points.c}{2414}{2426}, \csource{find_points.c}{2428}{2429},
+  \csource{find_points.c}{2434}{2470}, \csource{find_points.c}{2472}{2475},
+  \csource{find_points.c}{2546}{2546}; its tables of rows, which lines 2427 and 2471 clear, are made
+  by Definition~\ref{def:storeTables}; the tables of a prime power that \verb|add_moduli| examines
+  when a candidate first needs it and keeps by its index, \csource{find_points.c}{2350}{2354},
+  \csource{find_points.c}{2358}{2359}, \csource{find_points.c}{2387}{2395}, with their count,
+  \csource{find_points.c}{2548}{2548}; the primes examined for the third stage,
+  \csource{find_points.c}{2976}{2978}, \csource{find_points.c}{2994}{2998}).
 \end{definition}
 
 \begin{lemma}[The rows of a modulus let every point through]\label{lem:sieveEntry_admits}
@@ -404,14 +418,15 @@ which $\mathrm{maxPrimeEven} \le 2^{32}$ gives.
   $\gcd(a, b) = 1$ with $y^2 = F(a, b)$, whose factors have moduli that divide $m$, multiply to $m$
   and have tables of inverses that invert their units (Lemma~\ref{lem:admits_mul}), whose factors
   are buildable (Lemma~\ref{lem:fetchRow}) and have the tables of the reference, those of
-  \verb|examinePrime| and of \verb|examinePower| on the path of GMP integers, so that it has a
-  factor and a single factor has the modulus $m$, and which is \emph{packable}
-  (Lemma~\ref{lem:classOffsets}): $m$ is odd, the entry holds the reciprocal of $m$,
-  $\mathrm{rbainv} < m$ with $\mathrm{rbainv} \cdot \mathrm{rbaLength} \equiv 1 \pmod m$, and the
-  bias is a multiple of $m$ in $[\mathrm{rowBias}, \mathrm{rowBias} + m)$; and for one of the first
-  $\mathrm{numPrimes}$ primes of the table its only factor is that prime with the table of the
-  reference; it holds the reference and the kind of builder of its position $n$ with its factors
-  (Definition~\ref{def:SieveEntry}); if it is not made, the curve has no points.
+  \verb|examinePrime| and of \verb|examinePower| on the path of GMP integers, the latter with some
+  value of the switch whether denominators divisible by $p$ occur, so that it has a factor and a
+  single factor has the modulus $m$, and which is \emph{packable} (Lemma~\ref{lem:classOffsets}):
+  $m$ is odd, the entry holds the reciprocal of $m$, $\mathrm{rbainv} < m$ with
+  $\mathrm{rbainv} \cdot \mathrm{rbaLength} \equiv 1 \pmod m$, and the bias is a multiple of $m$ in
+  $[\mathrm{rowBias}, \mathrm{rowBias} + m)$; and for one of the first $\mathrm{numPrimes}$ primes
+  of the table its only factor is that prime with the table of the reference; it holds the reference
+  and the kind of builder of its position $n$ with its factors (Definition~\ref{def:SieveEntry}); if
+  it is not made, the curve has no points.
 \end{lemma}
 
 \begin{proof}
@@ -550,13 +565,13 @@ Each component of this chapter differs from the C code in a stated way, recorded
     correction of a negative $x \bmod m$ then has no counterpart, and for the \verb|long|s of
     \verb|examine_power| and of the rows of prime powers, integers for the cofactors of
     \verb|modinv|, with their bounds lemmas (Lemmas~\ref{lem:modinv} and~\ref{lem:power_admits});
-  \item \verb|examine_prime| counts the residues with a square value; the model asks whether an
-    entry of the table is set, which is the same test. Its code $0$, every residue a square and no
-    point at infinity, makes no sieve entry in ratpoints and an entry in the model, which the
-    parameters may use as a modulus: its rows let every numerator through for a unit $b$. The fields
-    of the sieve entry of a prime, the reciprocal, the bias and the inverse of $\mathrm{rbaLength}$
-    among them, are those of a sieve entry with the prime as its single factor, set where the model
-    makes the entry of a modulus;
+  \item \verb|examine_prime| returns its codes, its density and its entry together, as natural
+    numbers and a \verb|Float|. Its code $0$, every residue a square and no point at infinity, makes
+    no sieve entry in ratpoints and an entry in the model, which the parameters may use as a
+    modulus: its rows let every numerator through for a unit $b$. The fields of the sieve entry of a
+    prime, the reciprocal, the bias and the inverse of $\mathrm{rbaLength}$ among them, are those of
+    a sieve entry with the prime as its single factor, set where the model makes the entry of a
+    modulus, and its density $0$ there until the choice of the moduli (stage~I);
   \item the coefficients and the tables are fresh arrays, where the C code fills arrays of its
     caller and buffers; the tables of a prime power are computed for each modulus that needs them,
     where \verb|add_moduli| examines each prime power once and keeps it, and \verb|make_modulus|
@@ -576,13 +591,13 @@ Each component of this chapter differs from the C code in a stated way, recorded
     Chapter~\ref{chap:rows}, with their deviations (Section~\ref{sec:rowsDeviations}): the rows of
     the factors of a product read plainly, for the acquire load, and every row stored plainly, for
     the release store (stage~I);
-  \item the density, the ranking, the choice of the moduli and their stages are not modelled
-    (stage~I): the moduli, their stages and the number of primes examined are those of the
-    parameters, and the parameters may hold moduli that ratpoints never offers (composites above
-    $\mathrm{RATPOINTS\_COMPOSITE\_MAX}$, with a factor beyond the examined primes, or with a factor
-    that says nothing), all sound; the parameters of the command line without \verb|-p| take
-    primes after the first $q$ when the counts of their stages ask for more, primes that ratpoints
-    then may examine too, and the model makes their entries with the others;
+  \item the ranking, the choice of the moduli and their stages are not modelled (stage~I), and
+    nothing reads the densities: the moduli, their stages and the number of primes examined are
+    those of the parameters, and the parameters may hold moduli that ratpoints never offers
+    (composites above $\mathrm{RATPOINTS\_COMPOSITE\_MAX}$, with a factor beyond the examined
+    primes, or with a factor that says nothing), all sound; the parameters of the command line
+    without \verb|-p| take primes after the first $q$ when the counts of their stages ask for more,
+    primes that ratpoints then may examine too, and the model makes their entries with the others;
   \item the reciprocal, the bias and the inverse of $\mathrm{rbaLength}$ of a sieve entry are set
     with the entry for every kind of modulus, with the formulas of the C code
     (Definition~\ref{def:makeModulus}), the inverse of a prime read from its table; the inverses
@@ -600,8 +615,9 @@ of their sieve entries, which \verb|sieving_info| collects at its end
 (\csource{find_points.c}{3064}{3070}; Definition~\ref{def:sievingInfo}); the third stage reads them
 (Definition~\ref{def:stage3}), and so do the first two stages, stepping them with the sieve specs
 (Definitions~\ref{def:chunkStarts} or~\ref{def:andRows}, by the arm, and~\ref{def:secondStage});
-left to stage~I are the density of a prime and of a power, \verb|add_moduli| beyond the
-factorization, the ranking and the choice of the moduli with the rule for looking at further primes.
+left to stage~I are the use of the densities of the primes and the powers, \verb|add_moduli|
+beyond the factorization, the ranking and the choice of the moduli with the rule for looking at
+further primes.
 
 \section{Files and names}\label{sec:tablesFiles}
 

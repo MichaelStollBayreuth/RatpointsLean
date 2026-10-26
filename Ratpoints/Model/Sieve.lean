@@ -901,7 +901,7 @@ def sift {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : L
 #guard
   let es := [3, 5, 7].map fun p ↦
     let t := examinePrime [1, 2, 3, 4, 5, 6, 7] 6 p
-    (⟨p, [.prime t], magic p, 0, 0, #[], .prime p, sieveInit p⟩ : SieveEntry)
+    (⟨p, [.prime t], magic p, 0, 0, #[], .prime p, sieveInit p, 0.0, 0⟩ : SieveEntry)
   (Id.run (sieveDen 20 7 es)).toList ==
     (List.range 41).map fun i : Nat ↦ survives es 7 ((i : Int) - 20)
 
@@ -910,7 +910,7 @@ def sift {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : L
 #guard
   let es := [3, 5, 7, 11, 13].map fun p ↦
     let t := examinePrime [-2, 0, 0, 1] 3 p
-    (⟨p, [.prime t], magic p, 0, 0, #[], .prime p, sieveInit p⟩ : SieveEntry)
+    (⟨p, [.prime t], magic p, 0, 0, #[], .prime p, sieveInit p, 0.0, 0⟩ : SieveEntry)
   (Id.run (checkDen [-2, 0, 0, 1] 3 130 100 (Id.run (sieveDen 130 100 es)))).toList ==
     [(129, 3830, 100), (129, -3830, 100)] &&
   (Id.run (checkDen [-2, 0, 0, 1] 3 130 100 (Vector.replicate _ true))).toList ==
@@ -943,7 +943,7 @@ def sift {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : L
 #guard
   let es := [3, 5, 7, 11, 13].map fun p ↦
     let t := examinePrime [1, 2, 3, 4, 5, 6, 7] 6 p
-    (⟨p, [.prime t], magic p, 0, 0, #[], .prime p, sieveInit p⟩ : SieveEntry)
+    (⟨p, [.prime t], magic p, 0, 0, #[], .prime p, sieveInit p, 0.0, 0⟩ : SieveEntry)
   let row (e : SieveEntry) (b : Nat) : Array UInt64 :=
     (Id.run (e.fetchRow (b % e.p) (e.addTables {}))).1
   let bias (p : Nat) : Nat := p * ((rowBias + p - 1) / p)
@@ -972,7 +972,7 @@ def sift {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : L
 #guard
   let es := [3, 5, 7].map fun p ↦
     let t := examinePrime [1, 2, 3, 4, 5, 6, 7] 6 p
-    (⟨p, [.prime t], magic p, 0, 0, #[], .prime p, sieveInit p⟩ : SieveEntry)
+    (⟨p, [.prime t], magic p, 0, 0, #[], .prime p, sieveInit p, 0.0, 0⟩ : SieveEntry)
   let row (e : SieveEntry) (b : Nat) : Array UInt64 :=
     (Id.run (e.fetchRow (b % e.p) (e.addTables {}))).1
   let bias (p : Nat) : Nat := p * ((rowBias + p - 1) / p)
@@ -999,7 +999,7 @@ def sift {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : L
   let c := [-2, 0, 0, 1]
   let es := [3, 5, 7, 11, 13].map fun p ↦
     let t := examinePrime c 3 p
-    (⟨p, [.prime t], magic p, 0, 0, #[], .prime p, sieveInit p⟩ : SieveEntry)
+    (⟨p, [.prime t], magic p, 0, 0, #[], .prime p, sieveInit p, 0.0, 0⟩ : SieveEntry)
   let row (e : SieveEntry) (b : Nat) : Array UInt64 :=
     (Id.run (e.fetchRow (b % e.p) (e.addTables {}))).1
   let bias (p : Nat) : Nat := p * ((rowBias + p - 1) / p)
@@ -1080,7 +1080,7 @@ def sift {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : L
   let c := [-2, 0, 0, 1]
   let es := [3, 5, 7, 11, 13].map fun p ↦
     let t := examinePrime c 3 p
-    (⟨p, [.prime t], magic p, 0, 0, #[], .prime p, sieveInit p⟩ : SieveEntry)
+    (⟨p, [.prime t], magic p, 0, 0, #[], .prime p, sieveInit p, 0.0, 0⟩ : SieveEntry)
   let row (e : SieveEntry) (b : Nat) : Array UInt64 :=
     (Id.run (e.fetchRow (b % e.p) (e.addTables {}))).1
   let piece (sp1 sp2 b : Nat) (w0 : Int) (n mL mH : Nat) : List (Int × Int × Int) :=
@@ -1113,7 +1113,7 @@ def sift {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : L
   let c := [-2, 0, 0, 1]
   let es := [3, 5, 7, 11, 13].map fun p ↦
     let t := examinePrime c 3 p
-    (⟨p, [.prime t], magic p, 0, 0, #[], .prime p, sieveInit p⟩ : SieveEntry)
+    (⟨p, [.prime t], magic p, 0, 0, #[], .prime p, sieveInit p, 0.0, 0⟩ : SieveEntry)
   let offsets := (es.map fun e ↦ e.p * ((rowBias + e.p - 1) / e.p)).toArray
   let cuts := (List.range 6).flatMap fun sp2 ↦ (List.range (sp2 + 1)).map (·, sp2)
   let iv := Id.run (exactBounds [((Double.ofInt64 300).neg, Double.ofInt64 300)] 300 300)
@@ -1205,7 +1205,8 @@ def sift {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : L
 #guard
   let c := [-2, 0, 0, 1]
   let es := [3, 5, 7, 11, 13].map fun p ↦
-    (⟨p, [.prime (examinePrime c 3 p)], magic p, 0, 0, #[], .prime p, sieveInit p⟩ : SieveEntry)
+    (⟨p, [.prime (examinePrime c 3 p)], magic p, 0, 0, #[], .prime p, sieveInit p, 0.0, 0⟩ :
+      SieveEntry)
   let offsets := (es.map fun e ↦ e.p * ((rowBias + e.p - 1) / e.p)).toArray
   let dy (n : Int) (e : Int) : Double := Double.ofDyadic (n < 0) n.natAbs e
   let inf := Double.huge
@@ -1242,7 +1243,8 @@ def sift {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : L
 #guard
   let c := [0, 0, 1]
   let es := [3, 5, 7, 11, 13].map fun p ↦
-    (⟨p, [.prime (examinePrime c 2 p)], magic p, 0, 0, #[], .prime p, sieveInit p⟩ : SieveEntry)
+    (⟨p, [.prime (examinePrime c 2 p)], magic p, 0, 0, #[], .prime p, sieveInit p, 0.0, 0⟩ :
+      SieveEntry)
   let offsets := (es.map fun e ↦ e.p * ((rowBias + e.p - 1) / e.p)).toArray
   let stopAt (k : Nat) (x z y : Int) (pts : Array (Int × Int × Int)) :
       Answer (Array (Int × Int × Int)) := ⟨1, pts.size + 1 == k, pts.push (x, y, z)⟩
@@ -1276,11 +1278,11 @@ def sift {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : L
   let closed (adm : Nat → Bool) (n : Nat) : Array UInt64 := (Array.range n).map fun j ↦
     (List.range 64).foldl (fun w t ↦ if adm (64 * j + t) then w ||| 1 <<< t.toUInt64 else w) 0
   let pr (p : Nat) : SieveEntry :=
-    ⟨p, [.prime (examinePrime c 3 p)], magic p, 0, 0, #[], .prime p, sieveInit p⟩
-  let pw9 := Id.run (examinePower c 3 3 2 true)
+    ⟨p, [.prime (examinePrime c 3 p)], magic p, 0, 0, #[], .prime p, sieveInit p, 0.0, 0⟩
+  let pw9 := Id.run (examinePower c 3 3 2 true true)
   let e15 : SieveEntry := ⟨15, [.prime (examinePrime c 3 3), .prime (examinePrime c 3 5)],
-    magic 15, 0, 0, #[], .product 2, .product⟩
-  let e9 : SieveEntry := ⟨9, [.power pw9], magic 9, 0, 0, #[], .power 3 2, .power⟩
+    magic 15, 0, 0, #[], .product 2, .product, 0.0, 2⟩
+  let e9 : SieveEntry := ⟨9, [.power pw9], magic 9, 0, 0, #[], .power 3 2, .power, 0.0, 1⟩
   let es := [pr 3, e9, e15, pr 5, pr 7, pr 11]
   let offsets := (es.map fun e ↦ e.p * ((rowBias + e.p - 1) / e.p)).toArray
   let es2 := es.take 5

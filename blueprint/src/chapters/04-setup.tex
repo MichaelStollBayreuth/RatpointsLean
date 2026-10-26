@@ -412,12 +412,18 @@ Lemma~\ref{lem:sift_eq_checkDen} maps their side.
   whether $c_0$ is a square modulo $p$, then, in the loop over the residues $a = 1, \dots, p - 1$,
   whether $f(a)$ is a square modulo $p$, with $f(a)$ by Horner's rule with the Barrett reduction on
   the schedule of Definition~\ref{def:barrett}, and the last entry, the entry $p$, whether there is
-  a point at infinity modulo $p$, $p + 1$ entries as \verb|examine_prime| keeps them; and no table
-  when no entry is true, so that the curve has no points modulo $p$, the exit
+  a point at infinity modulo $p$, $p + 1$ entries as \verb|examine_prime| keeps them, the residues
+  $n_p$ with a square value counted in the loop; no table when no entry is true, so that the curve
+  has no points modulo $p$, the exit; and otherwise, beside the table and the coefficients, the code
+  of \verb|examine_prime| and the density of the prime: the code $0$ when $n_p = p$ and there is no
+  point at infinity modulo $p$, so that the prime says nothing, with the density $0$, which
+  \verb|examine_prime| does not compute; else the density $(n_p + 1)(p - 1)/p^2$ with a point at
+  infinity modulo $p$ and $n_p/p$ without, in doubles, and the code $2$ for $n_p = p$, when the
+  prime says only that numerator and denominator are coprime, and $1$ otherwise
   (\csource{find_points.c}{1683}{1697}, \csource{find_points.c}{1703}{1723},
   \csource{find_points.c}{1725}{1725}, \csource{find_points.c}{1732}{1734},
   \csource{find_points.c}{1736}{1736}, \csource{find_points.c}{1745}{1749},
-  \csource{find_points.c}{1761}{1765}, \csource{find_points.c}{1795}{1819},
+  \csource{find_points.c}{1761}{1781}, \csource{find_points.c}{1795}{1819},
   \csource{find_points.c}{1822}{1826}; the table of rows of the prime that \verb|examine_prime| puts
   into its entry, lines 1820-1821, is that of Definition~\ref{def:storeTables}). Otherwise its table
   is that of Definition~\ref{def:examinePrime} for $0 < p < \mathrm{maxPrimeEven}$
@@ -700,13 +706,12 @@ Each component of the set-up differs from the C code in a stated way, recorded i
     (\verb|Setup.useCLong|); Lean's truncating division for C's, and products for the shifts in the
     helper \verb|mod| (\verb|Sieve.modLong|);
   \item of \verb|examine_prime| what the table, its last entry, the coefficients modulo $p$ that it
-    hands back and the exit need: its entry of the prime and its codes $0$, $1$ and $2$ serve the
-    choice of the moduli (stage~I), and its reciprocal \verb|magic|, its bias and its inverse
-    \verb|rbainv| are set, with its formulas, in the sieve entry of the prime that the model makes
-    (\verb|makeModulus?|); one loop over the residues, where the C code has one for each branch of
-    the schedule of Horner's rule; the table and the coefficients fresh arrays and the entry a fresh
-    value, returned, for the buffers that the C code takes them from and the entry and the array of
-    its caller where it stores them;
+    hands back, the exit, its codes and the density need: its reciprocal \verb|magic|, its bias and
+    its inverse \verb|rbainv| are set, with its formulas, in the sieve entry of the prime that the
+    model makes (\verb|makeModulus?|); one loop over the residues, where the C code has one for each
+    branch of the schedule of Horner's rule; the table and the coefficients fresh arrays and the
+    entry a fresh value, returned, for the buffers that the C code takes them from and the entry and
+    the array of its caller where it stores them;
   \item the arguments of \verb|sieving_info| that serve the choice of the moduli (the mean number of
     bits per word, whether the number of primes was left to the library, the 2-adic classes) are not
     modelled; the exits return the delivery as it came, where \verb|sieving_info| returns the prime

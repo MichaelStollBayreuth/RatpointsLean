@@ -360,20 +360,22 @@ $w_j = v_p(c_{d - j})$.
 
 \begin{definition}[The forbidden divisors]\label{def:forbidden}
   \uses{def:forbiddenValuations, def:squaresMod, def:primeTable, def:reversal, def:examinePrime,
-    def:sieves0, lem:sieves0}
+    def:sieves0, lem:sieves0, def:mulMod}
   \lean{Ratpoints.Sieve.ForbiddenEntry, Ratpoints.Sieve.ForbiddenVal, Ratpoints.Sieve.forbiddenOfPrime, Ratpoints.Sieve.forbidden, Ratpoints.Sieve.IsForbiddenEntry, Ratpoints.Sieve.IsForbiddenVal, Ratpoints.Sieve.forbidden_spec}
   \leanok
   A prime tested with words, with its $p$ words, bit $j$ of word $r$ clear exactly when
-  $p \mid 64 r + j$ (\csource{find_points.c}{157}{161}): for one of the first $\mathrm{numPrimes}$
-  primes of the table, whose rows of $0$ the build generates in the pattern \verb|sieves0|, the
-  first $p$ words of its row of $0$, and for a prime beyond them the words that \verb|sieving_info|
-  makes after its loop over the further primes (Definition~\ref{def:sieves0}); and a prime with the
-  mask of its excluded valuations (\csource{find_points.c}{166}{166}); for even $d$, the forbidden
-  divisor of a prime $p$ from the coefficients modulo $p$ and the entry at infinity that its table
-  hands back: for $p \mid c_d$, the coefficient $c_d$ being $0$ modulo $p$, with a nonzero mask, $p$
-  with its words when the mask holds every valuation that a denominator can have, and $p$ with its
-  mask otherwise; for $p \nmid c_d$, $p$ with its words when there is no point at infinity modulo
-  $p$, that is when $c_d$ is not a square modulo $p$ (\csource{find_points.c}{2627}{2631},
+  $p \mid 64 r + j$, and its reciprocal (Definition~\ref{def:mulMod}), with which ratpoints reduces
+  the word number of the first word of a block (\csource{find_points.c}{157}{161}): for one of the
+  first $\mathrm{numPrimes}$ primes of the table, whose rows of $0$ the build generates in the
+  pattern \verb|sieves0|, the first $p$ words of its row of $0$, and for a prime beyond them the
+  words that \verb|sieving_info| makes after its loop over the further primes
+  (Definition~\ref{def:sieves0}); and a prime with the mask of its excluded valuations
+  (\csource{find_points.c}{166}{166}); for even $d$, the forbidden divisor of a prime $p$ from the
+  coefficients modulo $p$ and the entry at infinity that its table hands back: for $p \mid c_d$, the
+  coefficient $c_d$ being $0$ modulo $p$, with a nonzero mask, $p$ with its words when the mask
+  holds every valuation that a denominator can have, and $p$ with its mask otherwise; for
+  $p \nmid c_d$, $p$ with its words when there is no point at infinity modulo $p$, that is when
+  $c_d$ is not a square modulo $p$ (\csource{find_points.c}{2627}{2631},
   \csource{find_points.c}{2642}{2676}), which the loop of the tables records for each examined prime
   while fewer than $\mathrm{maxForbidden}$ have been found (Definition~\ref{def:examinePrimes});
   then, from the lists of that loop and unless $c_d$ is a square, the primes of the table from the
@@ -383,11 +385,11 @@ $w_j = v_p(c_{d - j})$.
   \csource{find_points.c}{2709}{2772}, \csource{find_points.c}{2778}{2789}). The contract: each
   entry tested with words that the two loops may record is the forbidden divisor of a prime of the
   table, from the residues of the coefficients and the entry at infinity of its reference table, or
-  a prime of the table at which $c_d$ is not a square, with its words, those of the forbidden
-  divisor $p$ also when they are the first $p$ words of its row of $0$ (Lemma~\ref{lem:sieves0});
-  each valuation entry is the forbidden divisor of a prime of the table; from lists of such entries,
-  the further primes add only such entries. It holds whatever the cap, the order of the entries and
-  the primes of the table examined.
+  a prime of the table at which $c_d$ is not a square, with its words and its reciprocal, those of
+  the forbidden divisor $p$ also when they are the first $p$ words of its row of $0$
+  (Lemma~\ref{lem:sieves0}); each valuation entry is the forbidden divisor of a prime of the table;
+  from lists of such entries, the further primes add only such entries. It holds whatever the cap,
+  the order of the entries and the primes of the table examined.
 \end{definition}
 
 \begin{lemma}[The forbidden divisors are sound]\label{lem:forbidden}

@@ -16,7 +16,8 @@ their names in the namespaces of Lean core: the entries of a vector after `Vecto
 fold of `Vector.set!` over consecutive positions, the entries of `Vector.ofFn f` and of the array of
 a vector, the entries of an array made by a map over a range and of the vector of an array, the last
 entry and the entries of an array after `Array.set!`, `Array.push`, `Array.pop` and `Array.map`, the
-order of the images of its members after `Array.push`, the entries of the concatenation of two
+order of the images of its members after `Array.push`, whether an array of Booleans with an entry
+pushed has a true entry, by the count of its true entries, the entries of the concatenation of two
 arrays and of an array written `k` times one after the other, the entries of a list after
 `List.set`, the elements of `List.range n` that pass a test which fails from some position on, the
 range below `k ≤ m` as the first part of the range below `m`, `List.flatMap` over a filtered list,
@@ -417,6 +418,13 @@ theorem exists_eq_of_mem_take_toList {α : Type u} [Inhabited α] {xs : Array α
   obtain ⟨j, hj, rfl⟩ := List.getElem_of_mem hp
   simp only [List.length_take, length_toList, Nat.lt_min] at hj
   exact ⟨j, hj.1, hj.2, by rw [List.getElem_take, getElem_toList, getElem!_pos xs j hj.2]⟩
+
+/-- A table with an entry pushed at its end has no true entry exactly when the table counts no true
+entry and the entry pushed is false. -/
+theorem any_push_id_eq_false_iff {t : Array Bool} {a : Bool} :
+    (t.push a).any id = false ↔ t.toList.count true = 0 ∧ a = false := by
+  rcases t with ⟨l⟩
+  simp [List.count_eq_zero, List.any_eq_false]
 
 end Array
 

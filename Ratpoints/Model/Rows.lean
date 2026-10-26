@@ -825,7 +825,7 @@ def SieveEntry.fetchRow (e : SieveEntry) (b : Nat) (store : RowStore) :
         (List.range 64).foldl (fun w t ↦ if adm (64 * x + t) then w ||| 1 <<< t.toUInt64 else w) 0
       else row[x % m]!
   ([(3, 2), (3, 3), (5, 2), (7, 2), (11, 2), (3, 5)] : List (Nat × Nat)).all fun (p, k) ↦
-    let pw := Id.run (examinePower [1, 2, 3, 4, 5, 6, 7] 6 p k true)
+    let pw := Id.run (examinePower [1, 2, 3, 4, 5, 6, 7] 6 p k true true)
     let s0 : RowStore := ({} : RowStore).insert (.power p k) (.replicate pw.m none)
     (if pw.m < 200 then List.range pw.m else [0, 1, 3, 5, 9, 242]).all fun b ↦
       let (row, s) := Id.run (initFactorRow (Factor.power pw).init (.power p k) (.power pw) b s0)
@@ -850,11 +850,11 @@ def SieveEntry.fetchRow (e : SieveEntry) (b : Nat) (store : RowStore) :
       else row[x % m]!
   let c : List Int := [1, 2, 3, 4, 5, 6, 7]
   let pr (p : Nat) : Factor := .prime (examinePrime c 6 p)
-  let pp (p k : Nat) : Factor := .power (Id.run (examinePower c 6 p k true))
+  let pp (p k : Nat) : Factor := .power (Id.run (examinePower c 6 p k true true))
   ([(15, [pr 3, pr 5]), (21, [pr 3, pr 7]), (45, [pp 3 2, pr 5]), (63, [pp 3 2, pr 7]),
       (105, [pr 3, pr 5, pr 7]), (225, [pp 3 2, pp 5 2]), (255, [pr 3, pr 5, pr 17])] :
       List (Nat × List Factor)).all fun (m, fs) ↦
-    let e : SieveEntry := ⟨m, fs, magic m, 0, 0, #[], .product 0, .product⟩
+    let e : SieveEntry := ⟨m, fs, magic m, 0, 0, #[], .product 0, .product, 0.0, 2⟩
     let s0 := e.addTables {}
     (if m ≤ 45 then List.range m else [0, 1, 2, 7, 15, m - 1]).all fun b ↦
       let (row, s) := Id.run (sieveInitProduct e b s0)
@@ -879,14 +879,14 @@ def SieveEntry.fetchRow (e : SieveEntry) (b : Nat) (store : RowStore) :
     (List.range 64).foldl (fun w t ↦ if adm (64 * j + t) then w ||| 1 <<< t.toUInt64 else w) 0
   let c : List Int := [1, 2, 3, 4, 5, 6, 7]
   let t3 := examinePrime c 6 3
-  let pw9 := Id.run (examinePower c 6 3 2 true)
+  let pw9 := Id.run (examinePower c 6 3 2 true true)
   let f5 : Factor := .prime (examinePrime c 6 5)
-  let e3 : SieveEntry := ⟨3, [.prime t3], magic 3, 0, 0, #[], .prime 3, sieveInit 3⟩
+  let e3 : SieveEntry := ⟨3, [.prime t3], magic 3, 0, 0, #[], .prime 3, sieveInit 3, 0.0, 0⟩
   let e67 : SieveEntry :=
-    ⟨67, [.prime (examinePrime c 6 67)], magic 67, 0, 0, #[], .prime 67, sieveInit 67⟩
-  let e9 : SieveEntry := ⟨9, [.power pw9], magic 9, 0, 0, #[], .power 3 2, .power⟩
-  let e15 : SieveEntry := ⟨15, [.prime t3, f5], magic 15, 0, 0, #[], .product 3, .product⟩
-  let e45 : SieveEntry := ⟨45, [.power pw9, f5], magic 45, 0, 0, #[], .product 4, .product⟩
+    ⟨67, [.prime (examinePrime c 6 67)], magic 67, 0, 0, #[], .prime 67, sieveInit 67, 0.0, 0⟩
+  let e9 : SieveEntry := ⟨9, [.power pw9], magic 9, 0, 0, #[], .power 3 2, .power, 0.0, 1⟩
+  let e15 : SieveEntry := ⟨15, [.prime t3, f5], magic 15, 0, 0, #[], .product 3, .product, 0.0, 2⟩
+  let e45 : SieveEntry := ⟨45, [.power pw9, f5], magic 45, 0, 0, #[], .product 4, .product, 0.0, 2⟩
   let s0 := [e3, e67, e9, e15, e45].foldl (fun s e ↦ e.addTables s) {}
   let wants : List (SieveEntry × Nat) :=
     [(e15, 7), (e45, 12), (e45, 30), (e3, 1), (e3, 2), (e3, 0), (e9, 3), (e67, 0), (e67, 66)]

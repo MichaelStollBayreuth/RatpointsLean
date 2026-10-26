@@ -572,92 +572,102 @@ theorem ExaminePrimeInvariant.push_eq {c : List ℤ} {d p : ℕ} {t : Array Bool
   simp [List.getD_eq_getElem?_getD]
 
 /-- The exit of `Ratpoints.Sieve.examinePrime?`: no entry of the table is true. -/
-theorem ExaminePrimeInvariant.none_eq {c : List ℤ} {d p : ℕ} {t : Array Bool}
-    (h : ExaminePrimeInvariant c d p (ForIn.toList [1:p]).length t) (hp : 0 < p)
-    (hn : (!(t.push (d % 2 == 1 || (squaresMod p)[((Array.range (d + 1)).map fun n ↦
-      (c.getD n 0 % (p : ℤ)).toNat)[d]!]!)).any id) = true) :
-    none = if (examinePrime c d p).isFSquare.any id then
+theorem ExaminePrimeInvariant.none_eq {c : List ℤ} {d p np : ℕ} {t : Array Bool} {α : Type}
+    (f : Entry × Array ℕ × α → Entry × Array ℕ)
+    (h : ExaminePrimeInvariant c d p (ForIn.toList [1:p]).length t ∧ np = t.toList.count true)
+    (hp : 0 < p) (hn : (np == 0 && !(d % 2 == 1 || (squaresMod p)[((Array.range (d + 1)).map
+      fun n ↦ (c.getD n 0 % (p : ℤ)).toNat)[d]!]!)) = true) :
+    Option.map f none = if (examinePrime c d p).isFSquare.any id then
       some (examinePrime c d p, (Array.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat)
     else none := by
-  rw [h.push_eq hp] at hn
-  exact (ite_eq_right (by simpa using hn)).symm
+  rw [← h.1.push_eq hp, Array.any_push_id_eq_false_iff.mpr (by simpa [h.2] using hn)]
+  rfl
 
 /-- The entry that `Ratpoints.Sieve.examinePrime?` returns when an entry of the table is true. -/
-theorem ExaminePrimeInvariant.some_eq {c : List ℤ} {d p : ℕ} {t : Array Bool}
-    (h : ExaminePrimeInvariant c d p (ForIn.toList [1:p]).length t) (hp : 0 < p)
-    (hn : ¬(!(t.push (d % 2 == 1 || (squaresMod p)[((Array.range (d + 1)).map fun n ↦
-      (c.getD n 0 % (p : ℤ)).toNat)[d]!]!)).any id) = true) :
-    some ({ p, isFSquare := t.push (d % 2 == 1 || (squaresMod p)[((Array.range (d + 1)).map
-      fun n ↦ (c.getD n 0 % (p : ℤ)).toNat)[d]!]!), inverses := inversesMod p },
-      (Array.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat) =
+theorem ExaminePrimeInvariant.some_eq {c : List ℤ} {d p np : ℕ} {t : Array Bool} {α : Type}
+    (h : ExaminePrimeInvariant c d p (ForIn.toList [1:p]).length t ∧ np = t.toList.count true)
+    (hp : 0 < p) (hn : ¬(np == 0 && !(d % 2 == 1 || (squaresMod p)[((Array.range (d + 1)).map
+      fun n ↦ (c.getD n 0 % (p : ℤ)).toNat)[d]!]!)) = true) (x : α) :
+    Option.map (fun x ↦ (x.1, x.2.1)) (some (⟨p, t.push (d % 2 == 1 || (squaresMod p)[((Array.range
+      (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat)[d]!]!), inversesMod p⟩, (Array.range
+      (d + 1)).map (fun n ↦ (c.getD n 0 % (p : ℤ)).toNat), x)) =
       if (examinePrime c d p).isFSquare.any id then
         some (examinePrime c d p, (Array.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat)
       else none := by
-  rw [h.push_eq hp] at hn ⊢
-  exact (ite_eq_left (by simpa using hn)).symm
+  have ha : (examinePrime c d p).isFSquare.any id = true := by
+    by_contra hc
+    rw [Bool.not_eq_true, ← h.1.push_eq hp, Array.any_push_id_eq_false_iff] at hc
+    simp_all
+  simp only [ha, ↓reduceIte, h.1.push_eq hp]
+  rfl
 
 attribute [local irreducible] ExaminePrimeInvariant in
 /-- The contract of `Ratpoints.Sieve.examinePrime?`: for `0 < p < maxPrimeEven`, on both paths of
 the reduction of the coefficients, the table with the exit is that of the reference
 `Ratpoints.Sieve.examinePrime`, handed back with the `d + 1` coefficients reduced modulo `p`, when
-one of its entries is true, and none otherwise. Horner's rule with Barrett's reduction on its
+one of its entries is true, and none otherwise; the count of the residues that are squares, kept
+beside the table, is the count of its true entries. Horner's rule with Barrett's reduction on its
 schedule gives the values of Horner's rule reduced at every step
 (`Ratpoints.Sieve.hornerBarrett_spec`). -/
 @[spec]
 theorem examinePrime?_spec (c : List ℤ) (d p : ℕ) (u : Bool) :
     ⦃ 0 < p ∧ p < maxPrimeEven ⦄ examinePrime? c d p u
-    ⦃ fun r ↦ r = if (examinePrime c d p).isFSquare.any id then
+    ⦃ fun r ↦ r.map (fun x ↦ (x.1, x.2.1)) = if (examinePrime c d p).isFSquare.any id then
         some (examinePrime c d p, (Array.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat)
       else none ⦄ := by
   vcgen [examinePrime?] invariants
-  · fun pref _ t ↦ ExaminePrimeInvariant c d p pref.length t
+  · fun pref _ s ↦ ExaminePrimeInvariant c d p pref.length s.2 ∧ s.1 = s.2.toList.count true
   all_goals try rw [map_range_toNat_ite_modLong] at *
   all_goals obtain ⟨hp0, hp⟩ := ‹0 < p ∧ p < maxPrimeEven›
   all_goals first
-    | exact examinePrimeInvariant_zero c d hp0
-    | exact ‹ExaminePrimeInvariant _ _ _ _ _›.push ‹_› ‹_›
+    | exact ⟨examinePrimeInvariant_zero c d hp0, by split <;> simp_all⟩
+    | exact ⟨(‹_ ∧ _› : ExaminePrimeInvariant _ _ _ _ _ ∧ _).1.push ‹_› ‹_›, by simp_all⟩
     | exact ⟨by simp, hp, Std.Legacy.Range.lt_of_toList_eq_append_cons ‹_›,
         getElem!_map_range_emod_lt c d hp0⟩
-    | exact ‹ExaminePrimeInvariant _ _ _ _ _›.none_eq hp0 ‹_›
-    | exact ‹ExaminePrimeInvariant _ _ _ _ _›.some_eq hp0 ‹_›
+    | exact ExaminePrimeInvariant.none_eq _ ‹_› hp0 ‹_›
+    | exact ExaminePrimeInvariant.some_eq ‹_› hp0 ‹_› _
 
 theorem run_examinePrime? {c : List ℤ} {d p : ℕ} (u : Bool) (hp0 : 0 < p)
     (hp : p < maxPrimeEven) :
-    Id.run (examinePrime? c d p u) = if (examinePrime c d p).isFSquare.any id then
-      some (examinePrime c d p, (Array.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat)
-    else none :=
+    (Id.run (examinePrime? c d p u)).map (fun x ↦ (x.1, x.2.1)) =
+      if (examinePrime c d p).isFSquare.any id then
+        some (examinePrime c d p, (Array.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat)
+      else none :=
   Std.WP.Id.of_run_eq_wp rfl _ ((examinePrime?_spec c d p u).le_wp ⟨hp0, hp⟩)
 
 theorem eq_examinePrime_of_run_examinePrime?_eq_some {c : List ℤ} {d p : ℕ} {u : Bool}
-    {e : Entry} {cm : Array ℕ} (h : Id.run (examinePrime? c d p u) = some (e, cm)) (hp0 : 0 < p)
+    {e : Entry} {cm : Array ℕ} {k : ℕ} {r : Float}
+    (h : Id.run (examinePrime? c d p u) = some (e, cm, k, r)) (hp0 : 0 < p)
     (hp : p < maxPrimeEven) : e = examinePrime c d p := by
-  rw [run_examinePrime? u hp0 hp] at h
-  split at h <;> grind
+  have h' := run_examinePrime? (c := c) (d := d) u hp0 hp
+  rw [h] at h'
+  split at h' <;> grind
 
 theorem eq_examinePrime_of_lt_numPrimes_of_run_examinePrime?_eq_some {c : List ℤ} {d k : ℕ}
-    {u : Bool} {e : Entry} {cm : Array ℕ} (hk : k < numPrimes)
-    (h : Id.run (examinePrime? c d primeTable[k]! u) = some (e, cm)) :
+    {u : Bool} {e : Entry} {cm : Array ℕ} {code : ℕ} {r : Float} (hk : k < numPrimes)
+    (h : Id.run (examinePrime? c d primeTable[k]! u) = some (e, cm, code, r)) :
     e = examinePrime c d primeTable[k]! :=
   eq_examinePrime_of_run_examinePrime?_eq_some h (Nat.zero_lt_of_lt (one_lt_getElem!_primeTable hk))
     (getElem!_primeTable_lt_maxPrimeEven hk)
 
 /-- The coefficients that the table hands back are those of `f` reduced modulo `p`. -/
 theorem eq_map_range_of_run_examinePrime?_eq_some {c : List ℤ} {d p : ℕ} {u : Bool} {e : Entry}
-    {cm : Array ℕ} (h : Id.run (examinePrime? c d p u) = some (e, cm)) :
+    {cm : Array ℕ} {k : ℕ} {r : Float} (h : Id.run (examinePrime? c d p u) = some (e, cm, k, r)) :
     cm = (Array.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat := by
-  rw [examinePrime?_eq_examinePrime?_false] at h
-  simp only [examinePrime?, Bool.false_eq_true, ↓reduceIte, Id.run_bind] at h
-  split at h
-  · simp at h
-  · simp only [Id.run_pure, Option.some.injEq, Prod.mk.injEq] at h
-    exact h.2.symm
+  have h2 := congrArg (Option.map (·.2.1)) h
+  rw [examinePrime?_eq_examinePrime?_false] at h2
+  simp only [examinePrime?, Bool.false_eq_true, ↓reduceIte, Id.run_bind] at h2
+  repeat' split at h2
+  all_goals simp only [Id.run_pure, Option.map_some, Option.map_none, Option.some.injEq,
+    reduceCtorEq] at h2
+  all_goals exact h2.symm
 
 /-- The exit of `examine_prime`, for `0 < p < maxPrimeEven`: no entry of the table of the reference
 is true. -/
 theorem run_examinePrime?_eq_none_iff {c : List ℤ} {d p : ℕ} {u : Bool} (hp0 : 0 < p)
     (hp : p < maxPrimeEven) :
     Id.run (examinePrime? c d p u) = none ↔ (examinePrime c d p).isFSquare.any id = false := by
-  rw [run_examinePrime? u hp0 hp]
+  rw [← Option.map_eq_none_iff (f := fun x ↦ (x.1, x.2.1)), run_examinePrime? u hp0 hp]
   split <;> simp_all
 
 /-! ### The exit -/

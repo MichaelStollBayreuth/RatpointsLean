@@ -719,26 +719,29 @@ contract does not depend on the arm: the first stage of either arm gives the sam
   $d$ and the sieve entries $\mathrm{es}$, the rows of the references are: for a prime $p$ the
   closed forms of the rows of its table \verb|examinePrime c d p|
   (Definition~\ref{def:examinePrime}), for a prime power $p^e$ those of its tables
-  \verb|examinePower c d p e false| (Definition~\ref{def:examinePower}), and for a product those of
-  the entry at its position. The store that the loop of \verb|sieving_info| makes from a store of
-  the primes, with each entry made at its position, holds the rows of the references of every run
-  whose entries begin with the entries made, and every entry that \verb|makeModulus?| makes at the
-  position $n$ fits them.
+  \verb|examinePower c d p e false false| (Definition~\ref{def:examinePower}), whose rows do not
+  depend on the switch whether denominators divisible by $p$ occur (Lemma~\ref{lem:densities}), and
+  for a product those of the entry at its position. The store that the loop of \verb|sieving_info|
+  makes from a store of the primes, with each entry made at its position, holds the rows of the
+  references of every run whose entries begin with the entries made, and every entry that
+  \verb|makeModulus?| makes at the position $n$ fits them.
 \end{lemma}
 
 \begin{proof}
+  \uses{lem:densities}
   \leanok
   The coherence of the shared tables of rows is in $R$, a function of the reference: two factors
-  with one reference have the same table of the prime or tables of the prime power, both
-  \verb|examinePrime c d p| or both \verb|examinePower c d p e false|, which the contract of the
-  sieve entry of a modulus gives, so they have one closed form. A store of the primes holds no row
-  but rows of $0$ of primes, which are \verb|sieves0| and the closed forms for every table of the
-  prime (Lemma~\ref{lem:sieves0}); the tables of rows made with an entry are made only when absent
-  and hold no row but the rows of $0$ of primes. No sizes of the tables of rows are needed: a row
-  read or built is the closed form even where the table of rows is missing
-  (Lemma~\ref{lem:fetchRow}). The fit of an entry needs only its modulus, its factors, its reference
-  and its kind, so it survives the filling of the inverses of the strides $\mathrm{dinv}$ by the
-  rows of offsets (Definition~\ref{def:classOffsets}).
+  with one reference have the same table of the prime or the same rows of the prime power, both
+  \verb|examinePrime c d p| or both those of \verb|examinePower c d p e false|, whatever the switch
+  of the denominators divisible by $p$ (Lemma~\ref{lem:densities}), which the contract of the sieve
+  entry of a modulus gives, so they have one closed form. A store of the primes holds no row but
+  rows of $0$ of primes, which are \verb|sieves0| and the closed forms for every table of the prime
+  (Lemma~\ref{lem:sieves0}); the tables of rows made with an entry are made only when absent and
+  hold no row but the rows of $0$ of primes. No sizes of the tables of rows are needed: a row read
+  or built is the closed form even where the table of rows is missing (Lemma~\ref{lem:fetchRow}).
+  The fit of an entry needs only its modulus, its factors, its reference and its kind, so it
+  survives the filling of the inverses of the strides $\mathrm{dinv}$ by the rows of offsets
+  (Definition~\ref{def:classOffsets}).
 \end{proof}
 
 \begin{definition}[The missing rows of a denominator]\label{def:buildRows}

@@ -356,7 +356,7 @@ examples of `Ratpoints.Model.FindPoints`. -/
 #guard
   let es : List SieveEntry := ([3, 5, 7, 9, 15, 45, 77, 251, 255] : List Nat).map fun p ↦
     ⟨p, [], magic p, 0, 0, (Array.range 7).map fun k ↦ (List.range k).foldl (fun x _ ↦ halve x p) 1,
-      .product 0, .product⟩
+      .product 0, .product, 0.0, 2⟩
   ([1, 2, 1000, mulModLimit / maxPrimeEven, mulModLimit / maxPrimeEven + 1, mulModLimit - 1,
       mulModLimit, mulModLimit + 1, 10 ^ 12, 2 ^ 62 + 3, 2 ^ 63 - 1] : List Nat).all fun b ↦
     (List.range 7).all fun k ↦

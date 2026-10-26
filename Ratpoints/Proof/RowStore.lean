@@ -1170,13 +1170,19 @@ theorem buildRows_setRows_map_spec (R : EntryRef → Nat → Array UInt64) (stor
 /-! ### The rows of the references of a run -/
 
 @[simp]
-theorem p_run_examinePower (c : List Int) (d p e : Nat) (u : Bool) :
-    (Id.run (examinePower c d p e u)).p = p :=
+theorem p_run_examinePower (c : List Int) (d p e : Nat) (u pinf : Bool) :
+    (Id.run (examinePower c d p e u pinf)).p = p :=
   rfl
 
 @[simp]
-theorem m_run_examinePower (c : List Int) (d p e : Nat) (u : Bool) :
-    (Id.run (examinePower c d p e u)).m = p ^ e :=
+theorem m_run_examinePower (c : List Int) (d p e : Nat) (u pinf : Bool) :
+    (Id.run (examinePower c d p e u pinf)).m = p ^ e :=
+  rfl
+
+/-- The rows of a prime power do not depend on the flag `pinf`, which only the density reads. -/
+theorem admits_run_examinePower (c : List Int) (d p e : Nat) (u pinf : Bool) :
+    (Id.run (examinePower c d p e u pinf)).admits =
+      (Id.run (examinePower c d p e u false)).admits :=
   rfl
 
 /-- The rows of the references of a run for the polynomial of degree `d` with the coefficient list
@@ -1185,7 +1191,7 @@ the rows of its table (`Ratpoints.Sieve.examinePrime`); for a prime power `p ^ e
 tables (`Ratpoints.Sieve.examinePower`); for a product, those of the entry at its position. -/
 def runRows (c : List Int) (d : Nat) (es : List SieveEntry) : EntryRef → Nat → Array UInt64
   | .prime p => closedRow (examinePrime c d p).admits p
-  | .power p e => closedRow (Id.run (examinePower c d p e false)).admits (p ^ e)
+  | .power p e => closedRow (Id.run (examinePower c d p e false false)).admits (p ^ e)
   | .product n => closedRow es[n]!.admits es[n]!.p
 
 theorem runRows_prime_zero (c : List Int) (d : Nat) (es : List SieveEntry) {p : Nat} (hp : 0 < p) :
@@ -1197,17 +1203,19 @@ theorem runRows_prime_zero (c : List Int) (d : Nat) (es : List SieveEntry) {p : 
 the rows of the factor. -/
 theorem runRows_ref (c : List Int) (d : Nat) (es : List SieveEntry) {f : Factor}
     (hprime : ∀ t : Entry, f = .prime t → t = examinePrime c d t.p)
-    (hpower : ∀ pw : Power, f = .power pw → pw = Id.run (examinePower c d pw.p pw.e false)) :
+    (hpower : ∀ pw : Power, f = .power pw →
+      ∃ pinf, pw = Id.run (examinePower c d pw.p pw.e false pinf)) :
     runRows c d es f.ref = closedRow f.admits f.modulus := by
   cases f with
   | prime t =>
     change closedRow (examinePrime c d t.p).admits t.p = closedRow t.admits t.p
     rw [← hprime t rfl]
   | power pw =>
-    have hm : pw.m = pw.p ^ pw.e := (congrArg Power.m (hpower pw rfl)).trans (m_run_examinePower ..)
-    change closedRow (Id.run (examinePower c d pw.p pw.e false)).admits (pw.p ^ pw.e) =
+    obtain ⟨pinf, h⟩ := hpower pw rfl
+    have hm : pw.m = pw.p ^ pw.e := (congrArg Power.m h).trans (m_run_examinePower ..)
+    change closedRow (Id.run (examinePower c d pw.p pw.e false false)).admits (pw.p ^ pw.e) =
       closedRow pw.admits pw.m
-    rw [← hpower pw rfl, hm]
+    rw [← admits_run_examinePower c d pw.p pw.e false pinf, ← h, hm]
 
 /-- A sieve entry at the position `n` of the entries `es` of a run, with the reference and the kind
 that `Ratpoints.makeModulus?` sets, a positive modulus, at least one factor, the moduli of the
@@ -1220,7 +1228,7 @@ theorem SieveEntry.rowsFit_runRows {c : List Int} {d : Nat} {es : List SieveEntr
     (hb : ∀ f ∈ e.factors, f.Buildable)
     (hprime : ∀ t : Entry, .prime t ∈ e.factors → t = examinePrime c d t.p)
     (hpower : ∀ pw : Power, .power pw ∈ e.factors →
-      pw = Id.run (examinePower c d pw.p pw.e false)) :
+      ∃ pinf, pw = Id.run (examinePower c d pw.p pw.e false pinf)) :
     e.RowsFit (runRows c d es) n := by
   have hf (f : Factor) (hf : f ∈ e.factors) : runRows c d es f.ref = closedRow f.admits f.modulus :=
     runRows_ref c d es (fun t ht ↦ hprime t (ht ▸ hf)) fun pw hpw ↦ hpower pw (hpw ▸ hf)

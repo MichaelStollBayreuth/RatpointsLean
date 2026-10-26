@@ -342,11 +342,12 @@ the executable, goes with them at I.12: the C code reads it nowhere.
 
 \begin{definition}[The densities]\label{def:densities}
   \uses{def:powerWords, def:examinePrime}
-  Proposed names: \lname{Ratpoints.Sieve.powerDensity}, \lname{Ratpoints.Sieve.setRevBits}. The
-  density of a prime power $p^e$ from its tables: the density of the residues and, when denominators
-  divisible by $p$ occur, of the multiples of $p$ by their valuations, in the order of the C code
-  (\csource{find_points.c}{2306}{2329}); and the loop that sets the bits of \verb|gsq|, the
-  multiples $t$ of $p$ below $p^e$ at which the reversed form $\tilde f(t)$ is a square modulo
+  \lean{Ratpoints.Sieve.powerDensity, Ratpoints.Sieve.setRevBits}
+  \leanok
+  The density of a prime power $p^e$ from its tables: the density of the residues and, when
+  denominators divisible by $p$ occur, of the multiples of $p$ by their valuations, in the order of
+  the C code (\csource{find_points.c}{2306}{2329}); and the loop that sets the bits of \verb|gsq|,
+  the multiples $t$ of $p$ below $p^e$ at which the reversed form $\tilde f(t)$ is a square modulo
   $p^e$, split off (\csource{find_points.c}{2294}{2300}). With them the components of the earlier
   chapters gain the densities and the fields that the choice and the correction read. The
   examination of a prime (Definition~\ref{def:examinePrimeExit}) returns, beside the table and the
@@ -366,29 +367,24 @@ the executable, goes with them at I.12: the C code reads it nowhere.
 
 \begin{lemma}[The entries with their densities]\label{lem:densities}
   \uses{def:densities, lem:power_admits, lem:sieveEntry_admits, def:forbidden}
-  Proposed names: \lname{Ratpoints.Sieve.admits\_run\_examinePower},
-  \lname{Ratpoints.Sieve.IsForbiddenEntry.magic\_eq},
-  \lname{Ratpoints.Sieve.isSound\_prime\_examinePrime},
-  \lname{Ratpoints.Sieve.isSound\_power\_run\_examinePower},
-  \lname{Ratpoints.isModulusEntry\_of\_forall\_isSound},
-  \lname{Ratpoints.inverses\_mulMod\_rbaLength\_of\_isSound},
-  \lname{Ratpoints.one\_lt\_and\_coprime\_rbaLength\_mod},
-  \lname{Ratpoints.mul\_rbaLength\_mod\_and\_lt},
-  \lname{Ratpoints.rbaLength\_mul\_lt\_two\_pow\_64}. The contracts of the examinations keep what
-  they said, on the parts of the results that they read: the table and the coefficients of a prime,
-  with the count $n_p$ of the true entries of the table as part of the invariant; the rows of a
-  prime power, which do not depend on whether denominators divisible by $p$ occur. A forbidden
-  divisor tested with words has the reciprocal of its prime. The soundness of a factor of a modulus
-  holds for every modulus that the factor divides: a prime factor for $p \mid m$, a prime power
-  factor for $p^e \mid m$, with $1 \le e$; and an odd modulus $1 < m < \mathrm{maxPrimeEven}$ whose
-  factors are sound and multiply to $m$ has a sound sieve entry, whatever its density, count,
-  reference and builder, with the inverse of $\mathrm{rbaLength}$ modulo a prime read from its table
-  of inverses at the remainder by the reciprocal, and the products of the packing within $64$ bits.
+  \lean{Ratpoints.Sieve.admits_run_examinePower, Ratpoints.Sieve.IsForbiddenEntry.magic_eq, Ratpoints.Sieve.isSound_prime_examinePrime, Ratpoints.Sieve.isSound_power_run_examinePower, Ratpoints.isModulusEntry_of_forall_isSound, Ratpoints.inverses_mulMod_rbaLength_of_isSound, Ratpoints.one_lt_and_coprime_rbaLength_mod, Ratpoints.mul_rbaLength_mod_and_lt, Ratpoints.rbaLength_mul_lt_two_pow_64}
+  \leanok
+  The contracts of the examinations keep what they said, on the parts of the results that they read:
+  the table and the coefficients of a prime, with the count $n_p$ of the true entries of the table
+  as part of the invariant; the rows of a prime power, which do not depend on whether denominators
+  divisible by $p$ occur. A forbidden divisor tested with words has the reciprocal of its prime. The
+  soundness of a factor of a modulus holds for every modulus that the factor divides: a prime factor
+  for $p \mid m$, a prime power factor for $p^e \mid m$, with $1 \le e$; and an odd modulus
+  $1 < m < \mathrm{maxPrimeEven}$ whose factors are sound and multiply to $m$ has a sound sieve
+  entry, whatever its density, count, reference and builder, with the inverse of
+  $\mathrm{rbaLength}$ modulo a prime read from its table of inverses at the remainder by the
+  reciprocal, and the products of the packing within $64$ bits.
 \end{lemma}
 
 \begin{proof}
   \uses{def:forbiddenValuations, def:sieves0, lem:admits_examinePrime, lem:admits_mul, lem:fetchRow,
     lem:sieves0, lem:stage3}
+  \leanok
   The contracts of the examinations take the new parts as values: the density is a \verb|Float| that
   no proof reads, and the count of the residues is the number of true entries of the table, a
   conjunct of the invariant of the loop. The soundness of the entries of composite moduli is that of

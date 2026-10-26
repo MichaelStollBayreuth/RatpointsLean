@@ -180,19 +180,23 @@ def denBits (nb : Vector UInt64 64) : UInt64 :=
 its `p` words, word `r` with bit `j` clear exactly when `p ∣ 64 r + j`
 (`Ratpoints.Sieve.forbiddenRow`; for one of the first `Ratpoints.numPrimes` primes of the table
 the first `p` words of its row of `0`, `Ratpoints.Sieve.sieves0`), so that word `w mod p` says which
-of the 64 denominators `64 w + j` the prime leaves.
+of the 64 denominators `64 w + j` the prime leaves; and the reciprocal of `p`
+(`Ratpoints.Sieve.magic`), with which the C code reduces the word number of the first word of a
+block by a multiplication (with the blocks, stage I).
 
 C: `find_points.c:157-161`
 
 Deviation: the words as an array, for the pointers `start` and `end` into the pattern `sieves0` of
-the build or into the buffer of the arguments, and no reciprocal `magic`, with which the C code
-reduces the word number of the first word of a block by a multiplication (with the blocks, stage I);
-a natural number for the `long` `p`. -/
+the build or into the buffer of the arguments; a natural number for the `long` `p` and for the
+`unsigned long` reciprocal `magic`. -/
 structure ForbiddenEntry where
   /-- The prime. -/
   p : Nat
   /-- Its `p` words. -/
   words : Array UInt64
+  /-- The reciprocal of the prime (`Ratpoints.Sieve.magic`), with which the C code reduces the
+  word number of the first word of a block by a multiplication. -/
+  magic : Nat
 
 /-- A forbidden divisor tested by its valuation: a prime `p` and the mask of the valuations that no
 denominator of a point has at `p`, bit `m` of `mask` set when `v_p(b) = m` is excluded
@@ -325,18 +329,17 @@ C: `find_points.c:2627-2631`, `find_points.c:2642-2676`
 
 Deviation: the entry returned, for the entries that the C code writes into the arrays
 `args->forb_ba` and `args->forbidden` and counts; the words of the prime an array of the first `p`
-words of the pattern `sieves0` of the build, for the pointers `start` and `end` into it; no
-reciprocal `magic`, which ratpoints reads only for the first word of a block (stage I); natural
-numbers for the `long`s; no output under `DEBUG`. -/
+words of the pattern `sieves0` of the build, for the pointers `start` and `end` into it; natural
+numbers for the `long`s and the reciprocal; no output under `DEBUG`. -/
 def forbiddenOfPrime (c : List Int) (d p bHigh : Nat) (cm : Array Nat) (atInf : Bool) :
     Id (Option (ForbiddenEntry ⊕ ForbiddenVal)) := do
   if cm[d]! = 0 then
     let mask ← forbiddenValuations c d p bHigh cm
     if mask == 0 then return none
     let all ← allValuations p bHigh
-    if mask &&& all == all then return some (.inl ⟨p, (sieves0 p).extract 0 p⟩)
+    if mask &&& all == all then return some (.inl ⟨p, (sieves0 p).extract 0 p, magic p⟩)
     return some (.inr ⟨p, mask⟩)
-  if !atInf then return some (.inl ⟨p, (sieves0 p).extract 0 p⟩)
+  if !atInf then return some (.inl ⟨p, (sieves0 p).extract 0 p, magic p⟩)
   return none
 
 /-- The loop of the tables over the first `n` primes of `Ratpoints.primeTable`, in the order of the
@@ -377,7 +380,7 @@ def examinePrimes (c : List Int) (d : Nat) (useCLong checkDenom : Bool)
   let mut store : RowStore := {}
   for pn in [0:n] do
     let p := primeTable[pn]!
-    let some (e, cm) ← examinePrime? c d p useCLong | return none
+    let some (e, cm, _, _) ← examinePrime? c d p useCLong | return none
     tables := tables.push e
     if e.isFSquare[p]! || (e.isFSquare.extract 0 p).any (· == false) then
       store := store.insertIfNew (.prime p) (primeRows p)
@@ -411,9 +414,8 @@ the two arrays of the arguments with their terminating zeros; the words of one o
 `Ratpoints.numPrimes` primes an array of the first `p` words of the pattern `sieves0`, for the
 pointers `start` and `end` into it, and those of a prime beyond them made with its entry, for the
 words that `sieving_info` makes after this loop in the buffer `forb_words`, with no failure for lack
-of memory, where `sieving_info` drops those whose words it cannot store; no reciprocals `magic`,
-which ratpoints reads only for the first word of a block (stage I); natural numbers for the `long`s;
-no output under `DEBUG`. -/
+of memory, where `sieving_info` drops those whose words it cannot store; natural numbers for the
+`long`s and the reciprocals; no output under `DEBUG`. -/
 def forbidden (c : List Int) (d examined maxForbidden bHigh : Nat) (ba : Array ForbiddenEntry)
     (val : Array ForbiddenVal) :
     Id (List ForbiddenEntry × List ForbiddenVal) := do
@@ -425,7 +427,8 @@ def forbidden (c : List Int) (d examined maxForbidden bHigh : Nat) (ba : Array F
       let p := primeTable[n]!
       if bHigh < p * p then break
       if !(squaresMod p)[(lcf % (p : Int)).toNat]! then
-        ba := ba.push ⟨p, if n < numPrimes then (sieves0 p).extract 0 p else forbiddenRow p⟩
+        ba := ba.push ⟨p, if n < numPrimes then (sieves0 p).extract 0 p else forbiddenRow p,
+          magic p⟩
   return (ba.toList, val.toList)
 
 /-! ### The Jacobi test -/
@@ -1000,7 +1003,7 @@ prints. -/
   let c : List Int := [6, -3, 5, 2, 75]
   let tab (p : Nat) : Array Nat × Bool :=
     match Id.run (examinePrime? c 4 p true) with
-    | some (e, cm) => (cm, e.isFSquare[p]!)
+    | some (e, cm, _, _) => (cm, e.isFSquare[p]!)
     | none => (#[], true)
   let us := Id.run (unitParts c 4 3 (tab 3).1)
   us == #[some (1, 1), some (0, 2), some (0, 2), some (1, 2), some (1, 2)] &&
@@ -1206,7 +1209,7 @@ prints. -/
   let entries := (primeTable.toList.take 30).filterMap fun p ↦
     (Id.run (examinePrime? c 1 p true)).map fun (e, _) ↦ (⟨p, [.prime e], magic p,
       p * ((rowBias + p - 1) / p), e.inverses[mulMod rbaLength p (magic p)]!, #[], .prime p,
-      sieveInit p⟩ : SieveEntry)
+      sieveInit p, 0.0, 0⟩ : SieveEntry)
   let offsets := Array.replicate (Id.run (numPackings cls) * entries.length) 0
   let (cls, entries, offsets) := Id.run (classOffsets cls entries offsets)
   (Id.run (sieveRun appendPoint c 1 20 1 {} 11 22 entries (entries.toArray.map (·.magic)) cls
