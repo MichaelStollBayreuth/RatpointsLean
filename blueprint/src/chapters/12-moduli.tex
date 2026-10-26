@@ -843,11 +843,10 @@ proof uses then, and rewords the docstrings of the model that name it.
 
 \begin{definition}[The blocks of a run]\label{def:blockPlan}
   \uses{def:Shape, def:choiceConstants}
-  Proposed names: \lname{Ratpoints.Sieve.Shape.segments}, \lname{Ratpoints.Sieve.BlockPlan},
-  \lname{Ratpoints.Sieve.BlockPlan.nblocks}, \lname{Ratpoints.Sieve.blockLength},
-  \lname{Ratpoints.Sieve.Shape.blockPlan}, \lname{Ratpoints.Sieve.BlockPlan.steps}. The segments of
-  steps of a shape from $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$, each from its first step to its
-  last, and the number of steps of all of them: the $k$ with
+  \lean{Ratpoints.Sieve.Shape.segments, Ratpoints.Sieve.BlockPlan, Ratpoints.Sieve.BlockPlan.nblocks, Ratpoints.Sieve.blockLength, Ratpoints.Sieve.Shape.blockPlan, Ratpoints.Sieve.BlockPlan.steps}
+  \leanok
+  The segments of steps of a shape from $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$, each from its
+  first step to its last, and the number of steps of all of them: the $k$ with
   $b_{\mathrm{low}} \le k^2 \le b_{\mathrm{high}}$ for the squares, for each divisor $s$ of the
   divisor shape in turn a segment of the $k$ with
   $b_{\mathrm{low}} \le s k^2 \le b_{\mathrm{high}}$, the words from
@@ -867,15 +866,12 @@ proof uses then, and rewords the docstrings of the model that name it.
 \begin{definition}[The loops of the shapes over a block]\label{def:blockLoops}
   \uses{def:blockPlan, def:sift, def:fillBpList, def:Shape, def:mulMod, def:useCLong, def:ctz,
     def:counters, def:forbidden}
-  Proposed names: \lname{Ratpoints.Sieve.BlockState}, \lname{Ratpoints.Sieve.siftDen},
-  \lname{Ratpoints.Sieve.squaresBlock}, \lname{Ratpoints.Sieve.squares1Block},
-  \lname{Ratpoints.Sieve.forbStarts}, \lname{Ratpoints.Sieve.denWord},
-  \lname{Ratpoints.Sieve.walkDens}, \lname{Ratpoints.Sieve.wordsBlock},
-  \lname{Ratpoints.Sieve.allBlock}, \lname{Ratpoints.Sieve.Shape.blockLoop}. What a block carries
-  from one denominator to the next, the delivery, the store and the counters; one denominator of a
-  block, the residues of the first two stages (Definition~\ref{def:fillBpList}) and its points
-  (Definition~\ref{def:sift}), with the entries and the reciprocals of the decision of the block
-  (\csource{find_points.c}{3926}{3927}, \csource{find_points.c}{3955}{3956},
+  \lean{Ratpoints.Sieve.BlockState, Ratpoints.Sieve.siftDen, Ratpoints.Sieve.squaresBlock, Ratpoints.Sieve.squares1Block, Ratpoints.Sieve.forbStarts, Ratpoints.Sieve.denWord, Ratpoints.Sieve.walkDens, Ratpoints.Sieve.wordsBlock, Ratpoints.Sieve.allBlock, Ratpoints.Sieve.Shape.blockLoop}
+  \leanok
+  What a block carries from one denominator to the next, the delivery, the store and the counters;
+  one denominator of a block, the residues of the first two stages (Definition~\ref{def:fillBpList})
+  and its points (Definition~\ref{def:sift}), with the entries and the reciprocals of the decision
+  of the block (\csource{find_points.c}{3926}{3927}, \csource{find_points.c}{3955}{3956},
   \csource{find_points.c}{4042}{4043}, \csource{find_points.c}{4066}{4067}); the steps of a block of
   the squares, of a segment of the divisor shape with its valuation test, and of every denominator,
   each denominator with a pattern handed to the step, returning when the callback has stopped the
@@ -927,30 +923,19 @@ proof uses then, and rewords the docstrings of the model that name it.
 
 \begin{lemma}[The plan of the blocks]\label{lem:blockPlan}
   \uses{def:blockPlan}
-  Proposed names: \lname{Ratpoints.Sieve.numBlocks}, \lname{Ratpoints.Sieve.blockRange},
-  \lname{Ratpoints.Sieve.blockRange\_succ}, \lname{Ratpoints.Sieve.blockRange\_le},
-  \lname{Ratpoints.Sieve.numBlocks\_of\_le}, \lname{Ratpoints.Sieve.flatMap\_blockRange},
-  \lname{Ratpoints.Sieve.Shape.numSegs}, \lname{Ratpoints.Sieve.Shape.segment},
-  \lname{Ratpoints.Sieve.Shape.segments\_spec},
-  \lname{Ratpoints.Sieve.Shape.toList\_fst\_run\_segments}, \lname{Ratpoints.Sieve.BlockPlan.WF},
-  \lname{Ratpoints.Sieve.Shape.blockPlan\_spec}, \lname{Ratpoints.Sieve.BlockPlan.WF.nblocks\_eq},
-  \lname{Ratpoints.Sieve.BlockPlan.WF.segBlock\_mono},
-  \lname{Ratpoints.Sieve.SegmentSearchInvariant}, \lname{Ratpoints.Sieve.BlockPlan.WF.steps\_spec},
-  \lname{Ratpoints.Sieve.BlockPlan.WF.run\_steps},
-  \lname{Ratpoints.Sieve.BlockPlan.WF.run\_steps\_eq},
-  \lname{Ratpoints.Sieve.BlockPlan.WF.run\_steps\_le}, \lname{Ratpoints.Sieve.BlockPlan.blockSteps},
-  \lname{Ratpoints.Sieve.BlockPlan.blockSeg},
-  \lname{Ratpoints.Sieve.BlockPlan.WF.flatMap\_blockSteps},
-  \lname{Ratpoints.Sieve.one\_le\_blockLength}. The length of the blocks is at least $1$; the blocks
-  of a segment from $\mathrm{lo}$ to $\mathrm{hi}$ have steps within it and, in order, cover its
-  steps in order; the plan of a shape is well formed, its first blocks the sums of the numbers of
-  the blocks of the segments before, increasing, with the number of the blocks at the end; for
-  $i < \mathrm{nblocks}$ the steps of block $i$ are those of its segment by the blocks of that
-  segment, with $a \le e$, which the loops over the steps need to end; and the blocks in order, each
-  mapped by a function of its segment, give the steps of the segments in order.
+  \lean{Ratpoints.Sieve.numBlocks, Ratpoints.Sieve.blockRange, Ratpoints.Sieve.blockRange_succ, Ratpoints.Sieve.blockRange_le, Ratpoints.Sieve.numBlocks_of_le, Ratpoints.Sieve.flatMap_blockRange, Ratpoints.Sieve.Shape.numSegs, Ratpoints.Sieve.Shape.segment, Ratpoints.Sieve.Shape.segments_spec, Ratpoints.Sieve.Shape.toList_fst_run_segments, Ratpoints.Sieve.BlockPlan.WF, Ratpoints.Sieve.Shape.blockPlan_spec, Ratpoints.Sieve.BlockPlan.WF.nblocks_eq, Ratpoints.Sieve.BlockPlan.WF.segBlock_mono, Ratpoints.Sieve.SegmentSearchInvariant, Ratpoints.Sieve.BlockPlan.WF.steps_spec, Ratpoints.Sieve.BlockPlan.WF.run_steps, Ratpoints.Sieve.BlockPlan.WF.run_steps_eq, Ratpoints.Sieve.BlockPlan.WF.run_steps_le, Ratpoints.Sieve.BlockPlan.blockSteps, Ratpoints.Sieve.BlockPlan.blockSeg, Ratpoints.Sieve.BlockPlan.WF.flatMap_blockSteps, Ratpoints.Sieve.one_le_blockLength}
+  \leanok
+  The length of the blocks is at least $1$; the blocks of a segment from $\mathrm{lo}$ to
+  $\mathrm{hi}$ have steps within it and, in order, cover its steps in order; the plan of a shape is
+  well formed, its first blocks the sums of the numbers of the blocks of the segments before,
+  increasing, with the number of the blocks at the end; for $i < \mathrm{nblocks}$ the steps of
+  block $i$ are those of its segment by the blocks of that segment, with $a \le e$, which the loops
+  over the steps need to end; and the blocks in order, each mapped by a function of its segment,
+  give the steps of the segments in order.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   The search for the segment of a block ends by the measure of the segments left; the rest is
   arithmetic of the quotients by the length, which is positive by the decided fact on the fixed
   length.
@@ -958,32 +943,24 @@ proof uses then, and rewords the docstrings of the model that name it.
 
 \begin{lemma}[The loops of the shapes]\label{lem:blockLoops}
   \uses{def:blockLoops, lem:mulMod, lem:forbidden}
-  Proposed names: \lname{Ratpoints.Sieve.BlockPost}, \lname{Ratpoints.Sieve.BlockInv},
-  \lname{Ratpoints.Sieve.MapBlockInvariant}, \lname{Ratpoints.Sieve.AllBlockInvariant},
-  \lname{Ratpoints.Sieve.WalkDensWhileInvariant}, \lname{Ratpoints.Sieve.WordsBlockInvariant},
-  \lname{Ratpoints.Sieve.squaresBlock\_spec}, \lname{Ratpoints.Sieve.squares1Block\_spec},
-  \lname{Ratpoints.Sieve.allBlock\_spec}, \lname{Ratpoints.Sieve.walkDens\_spec},
-  \lname{Ratpoints.Sieve.ForbFits}, \lname{Ratpoints.Sieve.PosAt},
-  \lname{Ratpoints.Sieve.posAt\_forbStarts}, \lname{Ratpoints.Sieve.denWord\_spec},
-  \lname{Ratpoints.Sieve.wordDens}, \lname{Ratpoints.Sieve.wordBits\_eq\_foldl},
-  \lname{Ratpoints.Sieve.wordsBlock\_spec}, \lname{Ratpoints.Sieve.Shape.stepDens},
-  \lname{Ratpoints.Sieve.Shape.ForbFits}, \lname{Ratpoints.Sieve.Shape.LoopFits},
-  \lname{Ratpoints.Sieve.Shape.blockLoop\_spec}. For a step with a contract on each denominator with
-  a given property (for every member of a family of lists it delivers that member's list of the
-  denominator, keeps a property of the store and adds the counts of the denominator), the loop of
-  each shape over the steps $a \le e$ of a block, when the denominators of those steps that pass the
-  test of the shape have the property, delivers the concatenation of the lists of these
-  denominators, in order, keeps the property and adds the counts in the same order, returning after
-  a step at which the callback stopped the search. In the shape of the words, for forbidden divisors
-  with $0 < p \le 2^{32}$ and their reciprocals, the positions at the first word of the block are
-  $a \bmod p$, and the word of the denominators of the word $w$ that the class test and those
-  divisors leave, with the first and the last word of the run masked, is that of the listing of
-  stage~E, and the positions are then those at $w + 1$, so that the words of a block give the
-  denominators of the listing in those words.
+  \lean{Ratpoints.Sieve.BlockPost, Ratpoints.Sieve.BlockInv, Ratpoints.Sieve.MapBlockInvariant, Ratpoints.Sieve.AllBlockInvariant, Ratpoints.Sieve.WalkDensWhileInvariant, Ratpoints.Sieve.WordsBlockInvariant, Ratpoints.Sieve.squaresBlock_spec, Ratpoints.Sieve.squares1Block_spec, Ratpoints.Sieve.allBlock_spec, Ratpoints.Sieve.walkDens_spec, Ratpoints.Sieve.ForbFits, Ratpoints.Sieve.PosAt, Ratpoints.Sieve.posAt_forbStarts, Ratpoints.Sieve.denWord_spec, Ratpoints.Sieve.wordDens, Ratpoints.Sieve.wordBits_eq_foldl, Ratpoints.Sieve.wordsBlock_spec, Ratpoints.Sieve.Shape.stepDens, Ratpoints.Sieve.Shape.ForbFits, Ratpoints.Sieve.Shape.LoopFits, Ratpoints.Sieve.Shape.blockLoop_spec}
+  \leanok
+  For a step with a contract on each denominator with a given property (for every member of a family
+  of lists it delivers that member's list of the denominator, keeps a property of the store and adds
+  the counts of the denominator), the loop of each shape over the steps $a \le e$ of a block, when
+  the denominators of those steps that pass the test of the shape have the property, delivers the
+  concatenation of the lists of these denominators, in order, keeps the property and adds the counts
+  in the same order, returning after a step at which the callback stopped the search. In the shape
+  of the words, for forbidden divisors with $0 < p \le 2^{32}$ and their reciprocals, the positions
+  at the first word of the block are $a \bmod p$, and the word of the denominators of the word $w$
+  that the class test and those divisors leave, with the first and the last word of the run masked,
+  is that of the listing of stage~E, and the positions are then those at $w + 1$, so that the words
+  of a block give the denominators of the listing in those words.
 \end{lemma}
 
 \begin{proof}
   \uses{lem:counters}
+  \leanok
   The invariants say that the delivery is that of the prefix of the steps done and the counts their
   sum, for every member of the family, which need not have one, and the property of the store; the
   stop of the callback ends the loop with the delivery of a prefix, which is that of the whole list

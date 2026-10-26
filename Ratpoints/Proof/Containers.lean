@@ -126,7 +126,8 @@ Sturm step: the list of an array from a position within it on. The lemmas on 64-
 * `Nat.and_two_ne_zero_iff`, `Nat.and_and_two_ne_zero_iff`: bit 1 of odd numbers says whether they
   are `3 (mod 4)`; `Nat.gcd_div_two_of_mod_two`: halving an even number keeps its gcd with an odd
   one; `Nat.mod_eq_ite_of_lt_two_mul`: a residue below `2 q` modulo `q` by one subtraction, and
-  `Nat.ite_eq_add_one_mod_add_one`: the position after `a` in a ring of `n + 1` positions.
+  `Nat.ite_eq_add_one_mod_add_one`, `Nat.ite_mod_add_one_eq_add_one_mod`: the position after `a`
+  in a ring of `n + 1` positions, and after `w mod p` in a ring of `p` positions.
 * `Nat.mul_sub_one_div_div_mul_le`, `Nat.lt_mul_sub_one_div_div_add_two_mul`: Barrett's estimate
   `⌊u ⌊(N - 1) / p⌋ / N⌋` of `⌊u / p⌋` for `u < N` is the quotient or one less.
 * `Nat.mul_add_lt_mul_of_lt`, `Nat.pow_lt_two_pow_of_lt`: a step of Horner's rule multiplies a bound
@@ -814,6 +815,15 @@ theorem ite_eq_add_one_mod_add_one {a n : Nat} (h : a ≤ n) :
   · subst a
     simp
   · exact (Nat.mod_eq_of_lt (by lia)).symm
+
+/-- The position `w mod p` stepped on by one, back to `0` at `p`, is `(w + 1) mod p`. -/
+theorem ite_mod_add_one_eq_add_one_mod {w p : Nat} (hp : 0 < p) :
+    (if w % p + 1 = p then 0 else w % p + 1) = (w + 1) % p := by
+  have h := Nat.mod_lt w hp
+  rw [← Nat.mod_add_mod]
+  split <;> rename_i he
+  · rw [he, Nat.mod_self]
+  · rw [Nat.mod_eq_of_lt (a := w % p + 1) (by lia)]
 
 /-- The bits of `x &&& k` for `k < 2 ^ n` are those of the residue of `x` modulo `2 ^ n`. -/
 theorem and_eq_mod_two_pow_and {x k n : Nat} (hk : k < 2 ^ n) : x &&& k = x % 2 ^ n &&& k := by

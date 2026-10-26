@@ -5,6 +5,7 @@ Authors: Michael Stoll
 -/
 module
 
+public import Ratpoints.Model.Blocks
 public import Ratpoints.Model.Bounds
 public import Ratpoints.Model.BruteForce
 public import Ratpoints.Model.Candidate

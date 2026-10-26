@@ -531,9 +531,9 @@ up: with it, the remainder (`Ratpoints.Sieve.mulMod`) and the quotient (`Ratpoin
 here `Ratpoints.makeModulus?`), in the tables of the Jacobi test (line 700; here
 `Ratpoints.Sieve.jacobiSetup`), and in the entries of the forbidden divisors tested with words
 (lines 2648, 2668 and 2738; here `Ratpoints.Sieve.ForbiddenEntry.magic`), with which the C code
-reduces the word number of the first word of a block (with the blocks, stage I). For `p = 1`, which
-is no modulus, it is `2 ^ 64`, where `ULONG_MAX / 1 + 1` wraps to `0` in the C code; the reductions,
-which read it as a 64-bit word, read `0` too. -/
+reduces the word number of the first word of a block (`Ratpoints.Sieve.forbStarts`). For `p = 1`,
+which is no modulus, it is `2 ^ 64`, where `ULONG_MAX / 1 + 1` wraps to `0` in the C code; the
+reductions, which read it as a 64-bit word, read `0` too. -/
 def magic (p : Nat) : Nat := (2 ^ 64 - 1) / p + 1
 
 /-- The high 64 bits of the 128-bit product of the 64-bit words `a` and `b`, `⌊a b / 2 ^ 64⌋`, from

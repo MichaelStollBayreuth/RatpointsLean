@@ -8,6 +8,8 @@ module
 public import Ratpoints.Proof.Bisection
 public import Ratpoints.Proof.BitRange
 public import Ratpoints.Proof.Bits
+public import Ratpoints.Proof.BlockLoops
+public import Ratpoints.Proof.BlockPlan
 public import Ratpoints.Proof.Bounds
 public import Ratpoints.Proof.BruteForce
 public import Ratpoints.Proof.Cli

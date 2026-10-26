@@ -523,22 +523,22 @@ threads.
 C: `find_points.c:1379-1381` -/
 def adaptLag : Nat := 32
 
-/-- About how many blocks the steps of a run are cut into, `RP_BLOCKS_WANTED` (`run_setup`;
-stage I).
+/-- About how many blocks the steps of a run are cut into, `RP_BLOCKS_WANTED`
+(`Ratpoints.Sieve.blockLength`).
 
 C: `find_points.c:3729-3731` -/
 def blocksWanted : Nat := 1024
 
-/-- The least number of steps of a block, `RP_BLOCK_MIN` (`run_setup`; stage I).
+/-- The least number of steps of a block, `RP_BLOCK_MIN` (`Ratpoints.Sieve.blockLength`).
 
 C: `find_points.c:3732-3734` -/
 def blockMin : Nat := 16
 
 /-- The fixed length of the blocks that a build of ratpoints may set, `RP_BLOCK_LEN`, to test the
 boundaries of the blocks: none, as in the default build, which does not define the macro, and
-`some n` for a build with `-DRP_BLOCK_LEN=n`. It models no line of the C code: the macro is
-defined only on the command line of the compiler, and the lines of `run_setup` that read it
-(`find_points.c:3840-3842`) belong to the length of the blocks of a run (stage I). -/
+`some n` for a build with `-DRP_BLOCK_LEN=n` (`Ratpoints.Sieve.blockLength`). It models no line of
+the C code: the macro is defined only on the command line of the compiler, and the conditional
+compilation that reads it is part of `Ratpoints.Sieve.blockLength`. -/
 def blockLen : Option Nat := none
 
 /-- The lower bound of the multiple of a modulus `p` that the offset of a row of the sieve carries,
@@ -574,7 +574,8 @@ theorem maxArraySize_pos : 0 < maxArraySize := by decide
 
 /-- The fixed length of the blocks, when a build sets one (`Ratpoints.blockLen`), is positive, as
 the C code assumes when it divides by it (`find_points.c:3847`): so the length of the blocks of a
-run is at least 1, and the loops of the shapes over the steps of a block end (stage I). -/
+run is at least 1 (`Ratpoints.Sieve.blockLength`), and the loops of the shapes over the steps of a
+block end. -/
 theorem blockLen_pos : ∀ n ∈ blockLen, 0 < n := by decide
 
 /-- The chunk is positive, which the C code assumes without a check: the largest number of bit

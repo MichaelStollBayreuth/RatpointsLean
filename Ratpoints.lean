@@ -30,6 +30,7 @@ public import Ratpoints.Mathlib.Order.WithBotTop
 public import Ratpoints.Mathlib.RingTheory.Coprime.Basic
 public import Ratpoints.Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import Ratpoints.Model
+public import Ratpoints.Model.Blocks
 public import Ratpoints.Model.Bounds
 public import Ratpoints.Model.BruteForce
 public import Ratpoints.Model.Candidate
@@ -53,6 +54,8 @@ public import Ratpoints.Proof
 public import Ratpoints.Proof.Bisection
 public import Ratpoints.Proof.BitRange
 public import Ratpoints.Proof.Bits
+public import Ratpoints.Proof.BlockLoops
+public import Ratpoints.Proof.BlockPlan
 public import Ratpoints.Proof.Bounds
 public import Ratpoints.Proof.BruteForce
 public import Ratpoints.Proof.Cli

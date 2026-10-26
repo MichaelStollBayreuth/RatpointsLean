@@ -1246,8 +1246,20 @@
         "Ratpoints.blockMin"
       ]
     },
-    "find_points.c:3736-3763": {
-      "hash": "22e347eb8e8d0964420e6940efda17131cda09a4c397f1b253a7372dbf65fd67",
+    "find_points.c:3736-3749": {
+      "hash": "585067247b5d965e368e9105d4aba98a96788aaf93002f51721261cb850916b1",
+      "owners": [
+        "Ratpoints.Sieve.Shape"
+      ]
+    },
+    "find_points.c:3750-3754": {
+      "hash": "bbaa58f791b7565642ab22e34aa9fe34bb3befc1b0273e9a018c8134ced3d6cf",
+      "owners": [
+        "Ratpoints.Sieve.BlockPlan"
+      ]
+    },
+    "find_points.c:3755-3763": {
+      "hash": "ba7bab48e42e42768a85c3b19e966948dba6e985e47a801dff2ae75be191160b",
       "owners": [
         "Ratpoints.Sieve.Shape"
       ]
@@ -1276,34 +1288,22 @@
         "excluded (memory)"
       ]
     },
-    "find_points.c:3812-3815": {
-      "hash": "e4da3485341eb123833258a92d75956d0e4f9cae93c70949af8d0e91dd6a0568",
+    "find_points.c:3812-3837": {
+      "hash": "fc7542ebf70587f928eafab4dcfef2f024e134b2061fc4933925fe90a0c7a847",
       "owners": [
-        "Ratpoints.Sieve.Shape.dens"
+        "Ratpoints.Sieve.Shape.segments"
       ]
     },
-    "find_points.c:3816-3818": {
-      "hash": "83c05ac41c7df19e0f20c5c0a01b16c8b89d8a5da1789017a3eac1b86e090ed3",
+    "find_points.c:3838-3842": {
+      "hash": "1f7c6567e130ea64ee125d3fb53a0be57ee8a62ef02c5eeb68619079b5ee861b",
       "owners": [
-        "Ratpoints.Sieve.squaresDens"
+        "Ratpoints.Sieve.blockLength"
       ]
     },
-    "find_points.c:3819-3825": {
-      "hash": "0ea63784e1d6b2848cc155d58adb871889023721d147416fea84bf0aa694f01b",
+    "find_points.c:3843-3850": {
+      "hash": "b0d4b70c781f0c705afa0074c2900e8a97b3732cebff9e16d63e82a5d292c4c4",
       "owners": [
-        "Ratpoints.Sieve.squares1Dens"
-      ]
-    },
-    "find_points.c:3826-3828": {
-      "hash": "2bfcf9383c03cac795ad8b64a0a59740590edbb19c4177709662a2928bc8a3a4",
-      "owners": [
-        "Ratpoints.Sieve.wordsDens"
-      ]
-    },
-    "find_points.c:3829-3837": {
-      "hash": "528236c5de669925f384a81d1e70dd1029607ee9107bc5f1f56081b3c089a121",
-      "owners": [
-        "Ratpoints.Sieve.Shape.dens"
+        "Ratpoints.Sieve.Shape.blockPlan"
       ]
     },
     "find_points.c:3857-3860": {
@@ -1348,10 +1348,16 @@
         "excluded (memory)"
       ]
     },
-    "find_points.c:3889-3904": {
-      "hash": "29cd4d589b42c1d5287fa18ba407df64a3b9f33dadf326916ed0eefe929cc4a0",
+    "find_points.c:3889-3899": {
+      "hash": "f5efc68047b4e0863a535f62d84289847b77c37fc696148e5be1cfdc81eeacb3",
       "owners": [
         "Ratpoints.Sieve.sieveRun"
+      ]
+    },
+    "find_points.c:3900-3904": {
+      "hash": "7d63b8ae4709affa95015cbbb493f7895ebeb6a093c5b611fe5168217c29b5f2",
+      "owners": [
+        "Ratpoints.Sieve.BlockPlan.steps"
       ]
     },
     "find_points.c:3911-3911": {
@@ -1369,37 +1375,37 @@
     "find_points.c:3917-3918": {
       "hash": "a8ad2ed917c2ec11572095fbceffecbb429db2a5be9a3458fbc373f6f3fe8ef1",
       "owners": [
-        "Ratpoints.Sieve.sieveRun"
+        "Ratpoints.Sieve.Shape.blockLoop"
       ]
     },
-    "find_points.c:3919-3922": {
-      "hash": "7299dcd3f7a0124b734cb31711b28c9ecd708d95654a405334057349a6f632ab",
+    "find_points.c:3919-3925": {
+      "hash": "4f4a99e057154cfd4dce2ac5ed75764f607c77431bdd504780c14c3e01998ff9",
       "owners": [
-        "Ratpoints.Sieve.squaresDens"
+        "Ratpoints.Sieve.squaresBlock"
       ]
     },
-    "find_points.c:3923-3925": {
-      "hash": "c385843a940ace59afe45ea777050dfa795d929fb5a5cf5745089f5f20526e30",
+    "find_points.c:3926-3927": {
+      "hash": "b2e0817ca3a1354437065c3dd00ddd857b5aeb17a5e3937235bf7d445cfac496",
       "owners": [
-        "Ratpoints.Sieve.Shape.keep"
+        "Ratpoints.Sieve.siftDen"
       ]
     },
-    "find_points.c:3926-3936": {
-      "hash": "bc9f59dbe69976059790e6883f4808e3a2d15083d807767f5b306dc0059f7a7d",
+    "find_points.c:3928-3935": {
+      "hash": "bc8da81ee3fea6a15c555bba6b5d26b081224e4ed7b01763c841727ba5638274",
       "owners": [
-        "Ratpoints.Sieve.sieveRun"
+        "Ratpoints.Sieve.squaresBlock"
       ]
     },
-    "find_points.c:3937-3940": {
-      "hash": "a67eda1fa9ca0028bf76e0ef93f30bdc8c6ff631496efe518fb355752e2eb1c9",
+    "find_points.c:3936-3936": {
+      "hash": "f6a90c89b26ab465650db6ca9fa985d59f27d935e4180adf161ad56c95d5362f",
       "owners": [
-        "Ratpoints.Sieve.squares1Dens"
+        "Ratpoints.Sieve.Shape.blockLoop"
       ]
     },
-    "find_points.c:3941-3943": {
-      "hash": "c385843a940ace59afe45ea777050dfa795d929fb5a5cf5745089f5f20526e30",
+    "find_points.c:3937-3943": {
+      "hash": "c1dd6544337eb9fe4bdd774d71faf0ece4bca5fe3fc94d823f3baf3de561946c",
       "owners": [
-        "Ratpoints.Sieve.Shape.keep"
+        "Ratpoints.Sieve.squares1Block"
       ]
     },
     "find_points.c:3944-3953": {
@@ -1408,58 +1414,82 @@
         "Ratpoints.Sieve.denInfoTest"
       ]
     },
-    "find_points.c:3954-3966": {
-      "hash": "359b275f5dc6429eb01a39b93a63a97ecd7fe0efd4048ad51d6b30d236a3e156",
+    "find_points.c:3954-3954": {
+      "hash": "c4158df202b10d32f29ec05acf46bf259a768405040f0ec351cd362a59a1bc4c",
       "owners": [
-        "Ratpoints.Sieve.sieveRun"
+        "Ratpoints.Sieve.squares1Block"
+      ]
+    },
+    "find_points.c:3955-3956": {
+      "hash": "e9d12f3745e8375d1a34e7c82b370023b1712f4660bc77223ad5618f3b94428b",
+      "owners": [
+        "Ratpoints.Sieve.siftDen"
+      ]
+    },
+    "find_points.c:3957-3965": {
+      "hash": "fa4a0c688f91ee70d7a4661c2b2a616c18c017180f9de4bc72470521c1505a6d",
+      "owners": [
+        "Ratpoints.Sieve.squares1Block"
+      ]
+    },
+    "find_points.c:3966-3966": {
+      "hash": "5d01978410887b8a1ac86fdb39442e01879b0b6521f052180b209de587728fa0",
+      "owners": [
+        "Ratpoints.Sieve.Shape.blockLoop"
       ]
     },
     "find_points.c:3967-3980": {
       "hash": "c9d0ea1ef3440997e54c9bac9a72c0f71adaae0a4ff55eebde4abfb0487c8b47",
       "owners": [
-        "Ratpoints.Sieve.wordsDens"
+        "Ratpoints.Sieve.wordsBlock"
       ]
     },
-    "find_points.c:3981-3988": {
-      "hash": "2b1ce8dbce94028543ead4664f5de6ec9531bb0e41d33a0bfb685a7e0b0ede94",
+    "find_points.c:3981-3981": {
+      "hash": "e1b2c4b252922f08a845c824369065e5983917ac4622d1fba0dfb7df34bcb5dc",
       "owners": [
-        "Ratpoints.Sieve.wordBits"
+        "Ratpoints.Sieve.forbStarts"
+      ]
+    },
+    "find_points.c:3982-3982": {
+      "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "owners": [
+        "Ratpoints.Sieve.wordsBlock"
+      ]
+    },
+    "find_points.c:3983-3988": {
+      "hash": "f985c37f42da826fa7fd1572f857e5c6fec075c43de965db4396a3ce38ecfe12",
+      "owners": [
+        "Ratpoints.Sieve.forbStarts"
       ]
     },
     "find_points.c:3989-3989": {
       "hash": "6206832b3e5f15f1476e6f1be27f72250ff4ed013ff93679a4edbd38e52f893a",
       "owners": [
-        "Ratpoints.Sieve.wordsDens"
+        "Ratpoints.Sieve.wordsBlock"
       ]
     },
     "find_points.c:3990-3990": {
       "hash": "51cf27bc3c4aa3a4c9724eb9549cddf1af07926d62dba0d0aa74005476fcb12a",
       "owners": [
-        "Ratpoints.Sieve.wordBits"
+        "Ratpoints.Sieve.denWord"
       ]
     },
-    "find_points.c:3991-3991": {
-      "hash": "aa7047e555e869832ef004fe5edff1f03b2c42ec52fc8348545dff73fe4ef207",
+    "find_points.c:3991-3992": {
+      "hash": "daca29c81d4373c742eebcd99e46d5aaae88b5d4c1e5c9b2c2867be98f165870",
       "owners": [
-        "Ratpoints.Sieve.wordsDens"
+        "Ratpoints.Sieve.wordsBlock"
       ]
     },
     "find_points.c:3993-4006": {
       "hash": "4cb780d1f9a4cd6b74c32aaf510c355fc3861b914820074ddf99574b60c964a4",
       "owners": [
-        "Ratpoints.Sieve.wordBits"
+        "Ratpoints.Sieve.denWord"
       ]
     },
-    "find_points.c:4007-4008": {
-      "hash": "34188300bdc75f220be023ea14050e9fbd6fa426ae65096f3f192ce823dbea2a",
+    "find_points.c:4007-4009": {
+      "hash": "59d9c4f4dca74e07738d7234f5917f4216565184367e136f20193d36ea9db79b",
       "owners": [
-        "Ratpoints.Sieve.wordsDens"
-      ]
-    },
-    "find_points.c:4009-4009": {
-      "hash": "8674bb26166bdffed194cda7b1025038ef4b1328a7a478c613cc6d445caa7667",
-      "owners": [
-        "Ratpoints.Sieve.sieveRun"
+        "Ratpoints.Sieve.walkDens"
       ]
     },
     "find_points.c:4010-4011": {
@@ -1471,7 +1501,7 @@
     "find_points.c:4012-4012": {
       "hash": "c66a79f40dac0cc554f68d1b82227051bebf3965143b10f1dc81d840ac6a3c1d",
       "owners": [
-        "Ratpoints.Sieve.wordsDens"
+        "Ratpoints.Sieve.walkDens"
       ]
     },
     "find_points.c:4013-4041": {
@@ -1480,50 +1510,56 @@
         "Ratpoints.Sieve.wordsTest"
       ]
     },
-    "find_points.c:4042-4052": {
-      "hash": "f42ae9fb1e9213dcd81ac8e3deb35131cb144238c71249ad072066d8d570436c",
+    "find_points.c:4042-4043": {
+      "hash": "dad588cdf55e242c3e02922b3c441014bc7d19bbd9f2f173bc9d690eb548d917",
       "owners": [
-        "Ratpoints.Sieve.sieveRun"
+        "Ratpoints.Sieve.siftDen"
       ]
     },
-    "find_points.c:4053-4058": {
-      "hash": "43f8bb02fdcc857b3905524ca2b99b98a0bdb385614b07c5076074a8f9488a89",
+    "find_points.c:4044-4053": {
+      "hash": "2ed93dbb3dd9c01064f29f19bcf69e8cd0164dbdad070106b5055c52f2ffe1fb",
       "owners": [
-        "Ratpoints.Sieve.wordsDens"
+        "Ratpoints.Sieve.walkDens"
+      ]
+    },
+    "find_points.c:4054-4058": {
+      "hash": "069b6bfd5e443011d2035c2427305935686e8b81139b8d898857e22e7c64293d",
+      "owners": [
+        "Ratpoints.Sieve.wordsBlock"
       ]
     },
     "find_points.c:4059-4059": {
       "hash": "8bb5c033bef31c97295a061db6c06b15e1963a2967b3045c3239c19e75030aa3",
       "owners": [
-        "Ratpoints.Sieve.sieveRun"
+        "Ratpoints.Sieve.Shape.blockLoop"
       ]
     },
-    "find_points.c:4060-4062": {
-      "hash": "d1bc3b31626964be4e1402f5bd983cb5a448aa809766bb4b466bc0699456f8db",
+    "find_points.c:4060-4065": {
+      "hash": "c1a94abeb64947b277ff59391316ca6de4e9ffe70d5d132fe7a12b4bdfbfdd5a",
       "owners": [
-        "Ratpoints.Sieve.Shape.dens"
+        "Ratpoints.Sieve.allBlock"
       ]
     },
-    "find_points.c:4063-4065": {
-      "hash": "ecb11bb51ae4bbc7c69f424f8f2e416eb5b4283f19fc0e8f7265d0da5d5700c8",
+    "find_points.c:4066-4067": {
+      "hash": "bf212e1bafa5528566fb897a394e525f94476c4bd579a7f389a84d40df422928",
       "owners": [
-        "Ratpoints.Sieve.Shape.keep"
+        "Ratpoints.Sieve.siftDen"
       ]
     },
-    "find_points.c:4066-4072": {
-      "hash": "694b6c4798a615784715c92ecd323418519bb37c421179679172b95c19ca84c3",
+    "find_points.c:4068-4074": {
+      "hash": "f43d8440ceb3bf02b5b5903b817122975de576751200e934584b07c90161fb55",
       "owners": [
-        "Ratpoints.Sieve.sieveRun"
+        "Ratpoints.Sieve.allBlock"
       ]
     },
-    "find_points.c:4073-4074": {
-      "hash": "36b13db7f397f2c060fa2d9a473fb7fd8ca9594535ac19a8740e7258c4a3e11c",
+    "find_points.c:4075-4076": {
+      "hash": "531290f57cbd4dc640349830b0162664b9e84b465fbe1892d5554e80f4785ee1",
       "owners": [
-        "Ratpoints.Sieve.Shape.dens"
+        "Ratpoints.Sieve.Shape.blockLoop"
       ]
     },
-    "find_points.c:4075-4078": {
-      "hash": "6f4d1335d215aec310e1acd32532ed5b37fb8fd17840c9531e7a1b7bf7dc2024",
+    "find_points.c:4077-4078": {
+      "hash": "2abfc2c2c1104c8850749087b8d77897891f4884fd5eb59339b43f24d8236272",
       "owners": [
         "Ratpoints.Sieve.sieveRun"
       ]
@@ -5066,16 +5102,12 @@
     "find_points.c:3736-3763": "22e347eb8e8d0964420e6940efda17131cda09a4c397f1b253a7372dbf65fd67",
     "find_points.c:3750-3754": "bbaa58f791b7565642ab22e34aa9fe34bb3befc1b0273e9a018c8134ced3d6cf",
     "find_points.c:3755-3762": "276dccea22e942d624354ed249c1023495f19be043d2626fdefd2ff01abc2d29",
+    "find_points.c:3755-3763": "ba7bab48e42e42768a85c3b19e966948dba6e985e47a801dff2ae75be191160b",
     "find_points.c:3763-3763": "a11ac65c079f444ca449e49d32cc75abab37e3ac703784a8f8a5afa31e3b66f4",
     "find_points.c:3766-3774": "1fec3e2e59a7eb3daf5c05a12510d2a9aebc085ca36a1d8556d461d71e302a64",
     "find_points.c:3778-3806": "28332e221f46c87d6b756fdc775daed525b5b0b9b908333b17f9fa9b99ce7bcd",
     "find_points.c:3778-3877": "513e11e8e9050c96cb195e0469d569a7a3c93cc6f666c432d12c9455e39e0d50",
-    "find_points.c:3812-3815": "e4da3485341eb123833258a92d75956d0e4f9cae93c70949af8d0e91dd6a0568",
     "find_points.c:3812-3837": "fc7542ebf70587f928eafab4dcfef2f024e134b2061fc4933925fe90a0c7a847",
-    "find_points.c:3816-3818": "83c05ac41c7df19e0f20c5c0a01b16c8b89d8a5da1789017a3eac1b86e090ed3",
-    "find_points.c:3819-3825": "0ea63784e1d6b2848cc155d58adb871889023721d147416fea84bf0aa694f01b",
-    "find_points.c:3826-3828": "2bfcf9383c03cac795ad8b64a0a59740590edbb19c4177709662a2928bc8a3a4",
-    "find_points.c:3829-3837": "528236c5de669925f384a81d1e70dd1029607ee9107bc5f1f56081b3c089a121",
     "find_points.c:3838-3842": "1f7c6567e130ea64ee125d3fb53a0be57ee8a62ef02c5eeb68619079b5ee861b",
     "find_points.c:3838-3850": "b3d21ece7667596407bb7d8407d3cd3465a6c9c6a8ed9bbec259cefcf4c57bfa",
     "find_points.c:3843-3850": "b0d4b70c781f0c705afa0074c2900e8a97b3732cebff9e16d63e82a5d292c4c4",
@@ -5087,6 +5119,7 @@
     "find_points.c:3869-3870": "f69ace1aa3cb8afee9036a4a318878a8d389bb9e57d206898e1d375d15ee9add",
     "find_points.c:3876-3877": "cf59e19191baf9570ccc08f61a843962cef3446f9e6f1934cf2469a2fdd1447c",
     "find_points.c:3889-3898": "fbb19802f65ac17837a44ceda1ac8c445d1b4e43e655d46ef482b63fd1c72ca3",
+    "find_points.c:3889-3899": "f5efc68047b4e0863a535f62d84289847b77c37fc696148e5be1cfdc81eeacb3",
     "find_points.c:3889-3904": "29cd4d589b42c1d5287fa18ba407df64a3b9f33dadf326916ed0eefe929cc4a0",
     "find_points.c:3889-4078": "b75ce9c63cceb0439dfe6a26d4e706f1678bcb415a4dae840386a3bd1d76282f",
     "find_points.c:3900-3904": "7d63b8ae4709affa95015cbbb493f7895ebeb6a093c5b611fe5168217c29b5f2",
@@ -5096,9 +5129,7 @@
     "find_points.c:3913-3913": "a8e83bf2bc4348d51f771677089ed7bc048f433ccb3a428cb9f41872637abde3",
     "find_points.c:3913-3915": "1a909557fed11c2c28ca9f5cda79cd7c5c4e7b5029446254777d814a4e4b0982",
     "find_points.c:3917-3918": "a8ad2ed917c2ec11572095fbceffecbb429db2a5be9a3458fbc373f6f3fe8ef1",
-    "find_points.c:3919-3922": "7299dcd3f7a0124b734cb31711b28c9ecd708d95654a405334057349a6f632ab",
     "find_points.c:3919-3925": "4f4a99e057154cfd4dce2ac5ed75764f607c77431bdd504780c14c3e01998ff9",
-    "find_points.c:3923-3925": "c385843a940ace59afe45ea777050dfa795d929fb5a5cf5745089f5f20526e30",
     "find_points.c:3926-3927": "b2e0817ca3a1354437065c3dd00ddd857b5aeb17a5e3937235bf7d445cfac496",
     "find_points.c:3926-3936": "bc9f59dbe69976059790e6883f4808e3a2d15083d807767f5b306dc0059f7a7d",
     "find_points.c:3928-3928": "f055214f519b48f314242adf22acc034219662581f663de3f96fe5cdcce4ed8e",
@@ -5106,7 +5137,6 @@
     "find_points.c:3936-3936": "f6a90c89b26ab465650db6ca9fa985d59f27d935e4180adf161ad56c95d5362f",
     "find_points.c:3937-3940": "a67eda1fa9ca0028bf76e0ef93f30bdc8c6ff631496efe518fb355752e2eb1c9",
     "find_points.c:3937-3943": "c1dd6544337eb9fe4bdd774d71faf0ece4bca5fe3fc94d823f3baf3de561946c",
-    "find_points.c:3941-3943": "c385843a940ace59afe45ea777050dfa795d929fb5a5cf5745089f5f20526e30",
     "find_points.c:3944-3953": "c6d0828832781c8811676a2fd65f1ee9c29585d28782bd0afe4f84052dd41790",
     "find_points.c:3954-3954": "c4158df202b10d32f29ec05acf46bf259a768405040f0ec351cd362a59a1bc4c",
     "find_points.c:3954-3966": "359b275f5dc6429eb01a39b93a63a97ecd7fe0efd4048ad51d6b30d236a3e156",
@@ -5117,15 +5147,12 @@
     "find_points.c:3967-3980": "c9d0ea1ef3440997e54c9bac9a72c0f71adaae0a4ff55eebde4abfb0487c8b47",
     "find_points.c:3975-3988": "020f853e27860b80958b9a51eb0878b21cb6d243a822379191847d65c11c48bc",
     "find_points.c:3981-3981": "e1b2c4b252922f08a845c824369065e5983917ac4622d1fba0dfb7df34bcb5dc",
-    "find_points.c:3981-3988": "2b1ce8dbce94028543ead4664f5de6ec9531bb0e41d33a0bfb685a7e0b0ede94",
     "find_points.c:3982-3982": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "find_points.c:3983-3988": "f985c37f42da826fa7fd1572f857e5c6fec075c43de965db4396a3ce38ecfe12",
     "find_points.c:3989-3989": "6206832b3e5f15f1476e6f1be27f72250ff4ed013ff93679a4edbd38e52f893a",
     "find_points.c:3990-3990": "51cf27bc3c4aa3a4c9724eb9549cddf1af07926d62dba0d0aa74005476fcb12a",
-    "find_points.c:3991-3991": "aa7047e555e869832ef004fe5edff1f03b2c42ec52fc8348545dff73fe4ef207",
     "find_points.c:3991-3992": "daca29c81d4373c742eebcd99e46d5aaae88b5d4c1e5c9b2c2867be98f165870",
     "find_points.c:3993-4006": "4cb780d1f9a4cd6b74c32aaf510c355fc3861b914820074ddf99574b60c964a4",
-    "find_points.c:4007-4008": "34188300bdc75f220be023ea14050e9fbd6fa426ae65096f3f192ce823dbea2a",
     "find_points.c:4007-4009": "59d9c4f4dca74e07738d7234f5917f4216565184367e136f20193d36ea9db79b",
     "find_points.c:4009-4009": "8674bb26166bdffed194cda7b1025038ef4b1328a7a478c613cc6d445caa7667",
     "find_points.c:4010-4011": "bd3e32d02c975b5787f304dbb7ee362c5a76ef4333d807aa01b3ee0ae7c4a748",
@@ -5135,17 +5162,13 @@
     "find_points.c:4042-4052": "f42ae9fb1e9213dcd81ac8e3deb35131cb144238c71249ad072066d8d570436c",
     "find_points.c:4044-4044": "d7d4f164c35a029187dcef2830ffbd6c443b0e42605f26284b207d59c6a0e29a",
     "find_points.c:4044-4053": "2ed93dbb3dd9c01064f29f19bcf69e8cd0164dbdad070106b5055c52f2ffe1fb",
-    "find_points.c:4053-4058": "43f8bb02fdcc857b3905524ca2b99b98a0bdb385614b07c5076074a8f9488a89",
     "find_points.c:4054-4058": "069b6bfd5e443011d2035c2427305935686e8b81139b8d898857e22e7c64293d",
     "find_points.c:4059-4059": "8bb5c033bef31c97295a061db6c06b15e1963a2967b3045c3239c19e75030aa3",
-    "find_points.c:4060-4062": "d1bc3b31626964be4e1402f5bd983cb5a448aa809766bb4b466bc0699456f8db",
     "find_points.c:4060-4065": "c1a94abeb64947b277ff59391316ca6de4e9ffe70d5d132fe7a12b4bdfbfdd5a",
-    "find_points.c:4063-4065": "ecb11bb51ae4bbc7c69f424f8f2e416eb5b4283f19fc0e8f7265d0da5d5700c8",
     "find_points.c:4066-4067": "bf212e1bafa5528566fb897a394e525f94476c4bd579a7f389a84d40df422928",
     "find_points.c:4066-4072": "694b6c4798a615784715c92ecd323418519bb37c421179679172b95c19ca84c3",
     "find_points.c:4068-4068": "f055214f519b48f314242adf22acc034219662581f663de3f96fe5cdcce4ed8e",
     "find_points.c:4068-4074": "f43d8440ceb3bf02b5b5903b817122975de576751200e934584b07c90161fb55",
-    "find_points.c:4073-4074": "36b13db7f397f2c060fa2d9a473fb7fd8ca9594535ac19a8740e7258c4a3e11c",
     "find_points.c:4075-4076": "531290f57cbd4dc640349830b0162664b9e84b465fbe1892d5554e80f4785ee1",
     "find_points.c:4075-4078": "6f4d1335d215aec310e1acd32532ed5b37fb8fd17840c9531e7a1b7bf7dc2024",
     "find_points.c:4077-4078": "2abfc2c2c1104c8850749087b8d77897891f4884fd5eb59339b43f24d8236272",

@@ -524,52 +524,45 @@ $(c_d / q) = -1$, which these do not reach.
   \lean{Ratpoints.Sieve.Shape, Ratpoints.Sieve.runSetup, Ratpoints.Sieve.fst_run_runSetup, Ratpoints.Sieve.snd_run_runSetup, Ratpoints.Sieve.ceilSqrt, Ratpoints.Sieve.floorSqrt, Ratpoints.Sieve.squaresDens, Ratpoints.Sieve.squares1Dens, Ratpoints.Sieve.denInfoTest, Ratpoints.Sieve.wordBits, Ratpoints.Sieve.wordsDens, Ratpoints.Sieve.wordsTest, Ratpoints.Sieve.Shape.dens, Ratpoints.Sieve.Shape.keep, Ratpoints.Sieve.ceilSqrt_le_iff, Ratpoints.Sieve.le_floorSqrt_iff, Ratpoints.Sieve.getLsbD_wordBits, Ratpoints.Sieve.wordsDens_spec, Ratpoints.Sieve.run_denInfoTest_eq_true, Ratpoints.Sieve.run_wordsTest_eq_true, Ratpoints.Sieve.fitsLong_of_mem_squaresDens, Ratpoints.Sieve.fitsLong_of_mem_squares1Dens, Ratpoints.Sieve.fitsLong_of_mem_wordsDens}
   \leanok
   The four shapes, with their data (\csource{find_points.c}{3725}{3728},
-  \csource{find_points.c}{3736}{3763}), as \verb|run_setup| chooses them from the flags of the
-  search (\csource{find_points.c}{3778}{3806}, \csource{find_points.c}{3876}{3877}), returning with
-  the shape the bounds of the search intervals for the height bound and the largest denominator,
-  which it makes once for the run after the shape (Definition~\ref{def:exactBounds};
-  \csource{find_points.c}{3869}{3870}), each shape with the list of its denominators from
-  $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$ in the order of its loop and its test of a single
-  denominator:
+  \csource{find_points.c}{3736}{3749}, \csource{find_points.c}{3755}{3763}), as \verb|run_setup|
+  chooses them from the flags of the search (\csource{find_points.c}{3778}{3806},
+  \csource{find_points.c}{3876}{3877}), returning with the shape the bounds of the search intervals
+  for the height bound and the largest denominator, which it makes once for the run after the shape
+  (Definition~\ref{def:exactBounds}; \csource{find_points.c}{3869}{3870}), each shape with the list
+  of its denominators from $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$ in the order of its loop and
+  its test of a single denominator:
   \begin{itemize}
     \item the squares: $k^2$ for $k$ from $\lceil \sqrt{b_{\mathrm{low}}} \rceil$ to
       $\lfloor \sqrt{b_{\mathrm{high}}} \rfloor$ (\csource{find_points.c}{464}{471},
-      \csource{find_points.c}{3766}{3774}, \csource{find_points.c}{3816}{3818},
-      \csource{find_points.c}{3919}{3922}), with the class test;
+      \csource{find_points.c}{3766}{3774}), with the class test;
     \item the divisors times squares: for each divisor $s$ in turn, $s k^2$ for the $k$ with
-      $b_{\mathrm{low}} \le s k^2 \le b_{\mathrm{high}}$ (\csource{find_points.c}{3819}{3825},
-      \csource{find_points.c}{3937}{3940}), with the class test and then the valuation test: $b$
-      fails when for some prime $p$ of $c_d$ with its slope $n$, $v_p(b) \ge n$ and
+      $b_{\mathrm{low}} \le s k^2 \le b_{\mathrm{high}}$, with the class test and then the valuation
+      test: $b$ fails when for some prime $p$ of $c_d$ with its slope $n$, $v_p(b) \ge n$ and
       $v_p(b) + v_p(c_d)$ is odd (\csource{find_points.c}{3944}{3953});
     \item the words: for each word $w$ from $\lfloor b_{\mathrm{low}} / 64 \rfloor$ to
       $\lfloor b_{\mathrm{high}} / 64 \rfloor$, $\mathrm{den\_bits}$ and-ed with word $w \bmod p$ of
       each prime tested with words, the bits below $b_{\mathrm{low}}$ and above $b_{\mathrm{high}}$
-      cleared in the first and the last word (\csource{find_points.c}{3981}{3988},
-      \csource{find_points.c}{3990}{3990}, \csource{find_points.c}{3993}{4006}), and its set bits
-      $j$, lowest first, giving $64 w + j$ (\csource{find_points.c}{3826}{3828},
-      \csource{find_points.c}{3967}{3980}, \csource{find_points.c}{3989}{3989},
-      \csource{find_points.c}{3991}{3991}, \csource{find_points.c}{4007}{4008},
-      \csource{find_points.c}{4012}{4012}, \csource{find_points.c}{4053}{4058}), each tested by the
-      Jacobi test by tables, the valuation entries, and, with the Jacobi switch on and no tables,
-      the binary algorithm (\csource{find_points.c}{4010}{4011},
+      cleared in the first and the last word, and its set bits $j$, lowest first, giving $64 w + j$,
+      each tested by the Jacobi test by tables, the valuation entries, and, with the Jacobi switch
+      on and no tables, the binary algorithm (\csource{find_points.c}{4010}{4011},
       \csource{find_points.c}{4013}{4041});
-    \item every denominator from $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$, with the class test
-      (\csource{find_points.c}{3812}{3815}, \csource{find_points.c}{3829}{3837},
-      \csource{find_points.c}{4060}{4062}, \csource{find_points.c}{4073}{4074}).
+    \item every denominator from $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$, with the class test.
   \end{itemize}
   The class test is that the pattern of the class of $b \bmod 64$ (Definition~\ref{def:numClasses})
-  is not zero, which it is exactly when the word $\mathrm{nb}[b \bmod 64]$ is not
-  (\csource{find_points.c}{3923}{3925}, \csource{find_points.c}{3941}{3943},
-  \csource{find_points.c}{4063}{4065}); for the words it is made by $\mathrm{den\_bits}$. The model
-  lists the denominators of a shape and then tests and sifts them one after the other, where
-  \verb|run_block| tests and sifts each as its loop reaches it, and has no blocks. The words of a
-  forbidden divisor, the word of $64$ denominators and the walk over its set bits are exact, so that
-  the list of the words is the range filtered by the class bit and the primes tested with words; the
-  tests of a denominator pass it when no entry of the valuation test excludes it, the Jacobi tests
-  pass it and no valuation entry excludes it. The bounds of the square shapes are the exact integer
-  square roots, and the denominators of the shapes are at most $b_{\mathrm{high}}$, so \verb|long|s
-  for a \verb|long| $b_{\mathrm{high}}$. The shape that \verb|run_setup| chooses and the bounds that
-  it makes are those of the flags and of the search intervals.
+  is not zero, which it is exactly when the word $\mathrm{nb}[b \bmod 64]$ is not; for the words it
+  is made by $\mathrm{den\_bits}$. The run of the model lists the denominators of a shape and then
+  tests and sifts them one after the other, where \verb|run_block| tests and sifts each as its loop
+  reaches it, and has no blocks until the run over the blocks of stage~I: the lines of the C code
+  that the lists and the tests of the shapes replace are those of the plan of the blocks and of the
+  loops of the shapes over a block (Definitions~\ref{def:blockPlan} and~\ref{def:blockLoops}), and
+  the lists and the tests have none of their own. The words of a forbidden divisor, the word of $64$
+  denominators and the walk over its set bits are exact, so that the list of the words is the range
+  filtered by the class bit and the primes tested with words; the tests of a denominator pass it
+  when no entry of the valuation test excludes it, the Jacobi tests pass it and no valuation entry
+  excludes it. The bounds of the square shapes are the exact integer square roots, and the
+  denominators of the shapes are at most $b_{\mathrm{high}}$, so \verb|long|s for a \verb|long|
+  $b_{\mathrm{high}}$. The shape that \verb|run_setup| chooses and the bounds that it makes are
+  those of the flags and of the search intervals.
 \end{definition}
 
 \begin{lemma}[The lists of the shapes]\label{lem:shape_dens}

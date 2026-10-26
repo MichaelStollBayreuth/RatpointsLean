@@ -357,16 +357,15 @@ and~\ref{lem:power_admits}).
   (Definition~\ref{def:exactBounds}), which \verb|run_block| hands to the sieving thread for each
   block, with pieces of at most $A$ bit arrays and the flags of the check, in turn, the run
   returning after a denominator at which the callback stopped the search
-  (\csource{find_points.c}{3861}{3861}, \csource{find_points.c}{3889}{3904},
+  (\csource{find_points.c}{3861}{3861}, \csource{find_points.c}{3889}{3899},
   \csource{find_points.c}{3911}{3911}, \csource{find_points.c}{3913}{3913},
-  \csource{find_points.c}{3917}{3918},
-  \csource{find_points.c}{3926}{3936}, \csource{find_points.c}{3954}{3966},
-  \csource{find_points.c}{4009}{4009}, \csource{find_points.c}{4042}{4052},
-  \csource{find_points.c}{4059}{4059}, \csource{find_points.c}{4066}{4072},
-  \csource{find_points.c}{4075}{4078}, \csource{find_points.c}{5120}{5120},
-  \csource{find_points.c}{5152}{5160}). Its contract, for an array size $A \ge 1$, sieve entries
-  whose reciprocals the array of the reciprocals holds in their order, the first $s_2$ with their
-  tables of inverses (Lemma~\ref{lem:admits_mul}) and the row offsets of the classes with a pattern
+  \csource{find_points.c}{4077}{4078}, \csource{find_points.c}{5120}{5120},
+  \csource{find_points.c}{5152}{5160}); the steps of a block and the loops of the shapes over them,
+  whose lines of \verb|run_block| the listing of the shape replaces, are
+  Definitions~\ref{def:blockPlan} and~\ref{def:blockLoops}, which the run does not call yet
+  (stage~I). Its contract, for an array size $A \ge 1$, sieve entries whose reciprocals the array of
+  the reciprocals holds in their order, the first $s_2$ with their tables of inverses
+  (Lemma~\ref{lem:admits_mul}) and the row offsets of the classes with a pattern
   (Lemma~\ref{lem:classOffsets}), whose bits are those of the word \verb|den_bits|, and a store of
   the tables of rows that fits them (Lemma~\ref{lem:storeTables}), and those from $s_2$ on prime
   entries (Definition~\ref{def:stage3}), as the third stage needs, denominators from
@@ -381,13 +380,13 @@ and~\ref{lem:power_admits}).
   shape that pass its test, of the points of the check with the flags
   (Definition~\ref{def:checkNumWith}) of the numerators in one of the ranges of $b$ that pass the
   class bit of $\mathrm{nb}[b \bmod 64]$ and survive the moduli of all three stages for $b$; with
-  the exact check on, these are what the brute-force reference finds over $b$ and these
-  numerators, mapped by $\mathrm{swapPoint}$ (Definition~\ref{def:swapPoint}) when the flag of the
-  reversal is set, those with $y < 0$ left out under $\mathrm{noY}$. The invariant of the loop over
-  the denominators, which takes the bounds of the search intervals and the range of the
-  denominators, has two cases: the flag clear and the delivery that of the denominators done, or the
-  return after a denominator at which the callback stopped the search, when the delivery is that of
-  all the denominators (Lemma~\ref{lem:deliver} on a prefix).
+  the exact check on, these are what the brute-force reference finds over $b$ and these numerators,
+  mapped by $\mathrm{swapPoint}$ (Definition~\ref{def:swapPoint}) when the flag of the reversal is
+  set, those with $y < 0$ left out under $\mathrm{noY}$. The invariant of the loop over the
+  denominators, which takes the bounds of the search intervals and the range of the denominators,
+  has two cases: the flag clear and the delivery that of the denominators done, or the return after
+  a denominator at which the callback stopped the search, when the delivery is that of all the
+  denominators (Lemma~\ref{lem:deliver} on a prefix).
 \end{definition}
 
 \begin{definition}[The points at infinity]\label{def:pointsAtInfinity}
