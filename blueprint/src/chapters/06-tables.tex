@@ -417,18 +417,18 @@ Each component of this chapter differs from the C code in a stated way, recorded
 The lines of this part of the C code that are neither modelled nor left to a later stage are
 excluded in \verb|correspondence/ratpoints.toml|: the check \verb|RP_VERIFY_MODULI| of the rows of
 the moduli against the form, compiled only on request (\verb|init.c|); the output of
-\verb|sieving_info| under \verb|RP_PRIME_STATS|, \verb|RATPOINTS_VERBOSE| and \verb|DEBUG| between
-statements that are not modelled, where the output inside a modelled block goes with the block,
-whose deviation says so; and the enlargement of the buffer of the tables for every prime looked at,
-those of the third stage among them, and for the composite moduli of the first two stages with their
-prime-power factors, which fails only for lack of memory. The reciprocals of the moduli are fields
-of their sieve entries, which \verb|sieving_info| collects at its end
-(\csource{find_points.c}{3064}{3070}; Definition~\ref{def:choice}); the third stage reads them
-(Definition~\ref{def:stage3}), and so do the first two stages, stepping them with the sieve specs
-(Definitions~\ref{def:chunkStarts} or~\ref{def:andRows}, by the arm, and~\ref{def:secondStage}); the
-search makes the choice of the moduli, with the densities of the primes and the powers,
-\verb|add_moduli|, the stages, the ranking and the rule for looking at further primes
-(Section~\ref{sec:choice}).
+\verb|sieving_info| under \verb|RP_PRIME_STATS| and \verb|DEBUG| between statements that are not
+modelled, where the output inside a modelled block goes with the block, whose deviation says so, its
+report under \verb|RATPOINTS_VERBOSE| being that of Definition~\ref{def:report}; and the enlargement
+of the buffer of the tables for every prime looked at, those of the third stage among them, and for
+the composite moduli of the first two stages with their prime-power factors, which fails only for
+lack of memory. The reciprocals of the moduli are fields of their sieve entries, which
+\verb|sieving_info| collects at its end (\csource{find_points.c}{3064}{3070};
+Definition~\ref{def:choice}); the third stage reads them (Definition~\ref{def:stage3}), and so do
+the first two stages, stepping them with the sieve specs (Definitions~\ref{def:chunkStarts}
+or~\ref{def:andRows}, by the arm, and~\ref{def:secondStage}); the search makes the choice of the
+moduli, with the densities of the primes and the powers, \verb|add_moduli|, the stages, the ranking
+and the rule for looking at further primes (Section~\ref{sec:choice}).
 
 \section{Files and names}\label{sec:tablesFiles}
 

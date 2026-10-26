@@ -659,9 +659,12 @@ and~\ref{def:searchDens}, Lemmas~\ref{lem:twoAdic_exit} and~\ref{lem:shape_dens}
 the run). The node of the search holds the C ranges of the flags and of the 2-adic exit and the list
 of the sieve entries (\csource{find_points.c}{4588}{4589}, \csource{find_points.c}{4595}{4596},
 \csource{find_points.c}{4602}{4602}, \csource{find_points.c}{4603}{4604},
-\csource{find_points.c}{4607}{4607}, \csource{find_points.c}{4900}{4943},
-\csource{find_points.c}{4948}{4948}, \csource{find_points.c}{4954}{4963},
-\csource{find_points.c}{4992}{4995}, with lines 5007-5009 and 5104 of the report); the search with
+\csource{find_points.c}{4607}{4607}, \csource{find_points.c}{4900}{4914},
+\csource{find_points.c}{4919}{4920}, \csource{find_points.c}{4927}{4927},
+\csource{find_points.c}{4942}{4943}, \csource{find_points.c}{4948}{4948},
+\csource{find_points.c}{4954}{4959}, \csource{find_points.c}{4962}{4963},
+\csource{find_points.c}{4992}{4995}; the lines of the report under \verb|RATPOINTS_VERBOSE| are
+those of Definition~\ref{def:report}); the search with
 the choice holds the call of \verb|sieving_info| and the returns after it, after the points at
 infinity and when the Sturm step leaves nothing to search (Definition~\ref{def:chooseAndSearch});
 the sieving holds the frame of the block that sets up the run and the rows of offsets of the classes
@@ -797,15 +800,18 @@ Each component of this chapter differs from the C code in a stated way, recorded
   \item the blocks on the calling thread alone, without the pool of threads, which delivers the
     blocks in their order (Theorem~\ref{thm:threads});
   \item no failure for lack of memory, where \verb|sieving_info| drops the primes beyond the table
-    whose words it cannot store; no output under \verb|DEBUG| or \verb|RATPOINTS_VERBOSE|.
+    whose words it cannot store; no output under \verb|DEBUG|; the report under
+    \verb|RATPOINTS_VERBOSE| printed through the print channel of the search
+    (Definition~\ref{def:report}).
 \end{itemize}
 The lines of this part of the C code that are neither modelled nor left to a later stage are
 excluded in \verb|correspondence/ratpoints.toml|: the output under \verb|DEBUG| that stands between
 statements that are not modelled, the management of memory (the arrays of the run and the worker
 with the failures of their allocation, the release of the run and of the worker, the enlargement of
 the buffer of the tables when \verb|sieving_info| has looked at more primes), and the pool of
-threads with the threaded run; the output under \verb|RATPOINTS_VERBOSE| and \verb|DEBUG| inside a
-modelled block goes with the block, whose deviation says so. The blocks with the correction of the
+threads with the threaded run; the output under \verb|DEBUG| inside a modelled block goes with the
+block, whose deviation says so, and the report under \verb|RATPOINTS_VERBOSE| is that of
+Definition~\ref{def:report}. The blocks with the correction of the
 moduli between them and the choice of the number of primes examined are those of
 Chapter~\ref{chap:moduli}.
 

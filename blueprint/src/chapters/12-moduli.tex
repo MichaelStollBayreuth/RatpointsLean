@@ -1150,7 +1150,7 @@ writes back (\csource{find_points.c}{5120}{5120}, \csource{find_points.c}{5152}{
 \section{The search with the choice}\label{sec:choiceSearch}
 
 \begin{definition}[The search with the choice of the moduli]\label{def:chooseAndSearch}
-  \uses{def:choice, def:sieving, def:pointsAtInfinity, def:delivery, def:sieveOptions}
+  \uses{def:choice, def:sieving, def:pointsAtInfinity, def:delivery, def:sieveOptions, def:report}
   \lean{Ratpoints.chooseAndSearch}
   \leanok
   The choice and the search after it, which the search of the polynomial
@@ -1167,7 +1167,8 @@ writes back (\csource{find_points.c}{5120}{5120}, \csource{find_points.c}{5152}{
 
 \begin{definition}[The search with the print channel]\label{def:findPointsVerbose}
   \uses{def:searchPoints, def:reversal, def:sturmRegion, def:Outcome, def:delivery,
-    def:Options, def:sieveOptions, def:normalize, def:searchIntervals, def:useCLong, def:maxDegree}
+    def:Options, def:sieveOptions, def:normalize, def:searchIntervals, def:useCLong, def:maxDegree,
+    def:report}
   \lean{Ratpoints.findPointsWork, Ratpoints.findPointsVerbose}
   \leanok
   The search of \verb|find_points_work_1| after the test of the leading zeros, with the report
@@ -1318,23 +1319,18 @@ link becoming \csource{main.c}{979}{1033} in place of the two links around the l
 
 \begin{definition}[The report of the library]\label{def:report}
   \uses{def:Double, def:reversal, def:setupUs1, def:numClasses, def:choice, def:forbidden}
-  Proposed names: \lname{Ratpoints.Report.width3}, \lname{Ratpoints.Report.longs},
-  \lname{Ratpoints.Report.arguments}, \lname{Ratpoints.Report.reversal},
-  \lname{Ratpoints.Report.sturmStep}, \lname{Ratpoints.Report.setup},
-  \lname{Ratpoints.Report.noClasses}, \lname{Ratpoints.Report.packing},
-  \lname{Ratpoints.Report.noPoints}, \lname{Ratpoints.Report.choice},
-  \lname{Ratpoints.Report.excludedValuations}, \lname{Ratpoints.Report.excluded},
-  \lname{Ratpoints.Report.moduli}, \lname{Ratpoints.Report.atInfinity},
-  \lname{Ratpoints.Report.sieving}. The texts of the report that the library prints under
-  \verb|RATPOINTS_VERBOSE|, each printed through the print channel where the C code prints it, or
-  right after a pure computation when nothing else prints in between: the conversions \verb|%3ld|
-  and \verb| %ld| in loops; the arguments as the search normalizes them
-  (\csource{find_points.c}{4691}{4725}); the outcome of the reversal check, its case read from the
-  degree and $c_0$ as the check decides (\csource{find_points.c}{4740}{4743},
-  \csource{find_points.c}{4757}{4758}, \csource{find_points.c}{4771}{4774},
-  \csource{find_points.c}{4791}{4801}, \csource{find_points.c}{4804}{4807}); the Sturm step
-  (\csource{find_points.c}{4860}{4861}, \csource{find_points.c}{4864}{4878}); the set-up of the
-  denominators (\csource{find_points.c}{4897}{4898}, \csource{find_points.c}{4915}{4918},
+  \lean{Ratpoints.Report.width3, Ratpoints.Report.longs, Ratpoints.Report.arguments, Ratpoints.Report.reversal, Ratpoints.Report.sturmStep, Ratpoints.Report.setup, Ratpoints.Report.noClasses, Ratpoints.Report.packing, Ratpoints.Report.noPoints, Ratpoints.Report.choice, Ratpoints.Report.excludedValuations, Ratpoints.Report.excluded, Ratpoints.Report.moduli, Ratpoints.Report.atInfinity, Ratpoints.Report.sieving}
+  \leanok
+  The texts of the report that the library prints under \verb|RATPOINTS_VERBOSE|, each printed
+  through the print channel where the C code prints it, or right after a pure computation when
+  nothing else prints in between: the conversions \verb|%3ld| and \verb| %ld| in loops; the
+  arguments as the search normalizes them (\csource{find_points.c}{4691}{4725}); the outcome of the
+  reversal check, its case read from the degree and $c_0$ as the check decides
+  (\csource{find_points.c}{4740}{4743}, \csource{find_points.c}{4757}{4758},
+  \csource{find_points.c}{4771}{4774}, \csource{find_points.c}{4791}{4801},
+  \csource{find_points.c}{4804}{4807}); the Sturm step (\csource{find_points.c}{4860}{4861},
+  \csource{find_points.c}{4864}{4878}); the set-up of the denominators
+  (\csource{find_points.c}{4897}{4898}, \csource{find_points.c}{4915}{4918},
   \csource{find_points.c}{4921}{4926}, \csource{find_points.c}{4928}{4941},
   \csource{find_points.c}{4946}{4947}); the 2-adic exit (\csource{find_points.c}{4960}{4961}); the
   packing of the classes and the number of primes to look at (\csource{find_points.c}{4969}{4985},
@@ -1370,15 +1366,16 @@ speak about that channel.
 \section{The program}\label{sec:moduliCli}
 
 \begin{definition}[The tuning options and the report in the program]\label{def:cliTuning}
-  \uses{def:sieveOptions, def:cliNumbers, def:cliEnds}
-  \lean{Ratpoints.SieveOptions.store}
-  Proposed name, with I.15: \lname{Ratpoints.Cli.Data.print}. The options of the sieve with the
-  field that an option of the command line sets: the C \verb|long| of its argument for
-  \verb|-p -n -N -R -A -P -F| and its double for \verb|-r -U -C -Q -W|, as \verb|main.c| reads them,
-  the Jacobi test off for \verb|-j| and on for \verb|-J|; it models no C code of its own, being the
-  part of the reading of the options (Definition~\ref{def:cliInput}) that sets the fields of the
-  options of the sieve. And the print channel of the program under \verb|-v|: the text appended to
-  the output held in the data of the callback, for the calls of \verb|printf| in the library.
+  \uses{def:sieveOptions, def:cliNumbers, def:cliEnds, def:cliProcess}
+  \lean{Ratpoints.SieveOptions.store, Ratpoints.Cli.Data.print}
+  \leanok
+  The options of the sieve with the field that an option of the command line sets: the C \verb|long|
+  of its argument for \verb|-p -n -N -R -A -P -F| and its double for \verb|-r -U -C -Q -W|, as
+  \verb|main.c| reads them, the Jacobi test off for \verb|-j| and on for \verb|-J|; it models no C
+  code of its own, being the part of the reading of the options (Definition~\ref{def:cliInput}) that
+  sets the fields of the options of the sieve. And the print channel of the program under \verb|-v|:
+  the text appended to the output held in the data of the callback, for the calls of \verb|printf|
+  in the library.
 \end{definition}
 
 The program (Definition~\ref{def:cliRun}) runs $\mathrm{findPointsVerbose}$ with its options of the
@@ -1391,15 +1388,16 @@ validation of \verb|main.c| as before; only \verb|-t| is checked and ignored, fo
 
 \begin{lemma}[The program without -v]\label{lem:cliVerbose}
   \uses{def:cliTuning, def:findPointsWith, def:cliInput, def:cliFailure}
-  Proposed names: \lname{Ratpoints.Cli.findPointsVerbose\_eq\_ok\_of\_findPointsWith\_eq\_ok},
-  \lname{Ratpoints.Cli.verbose\_eq\_false\_of\_input\_eq\_ok}. A search with the print channel that
-  prints nothing that gives an outcome gives the same outcome as $\mathrm{findPointsVerbose}$ with
-  that channel; and a command line that the program reads with \verb|-q| has the setting of
-  \verb|-v| clear.
+  \lean{Ratpoints.Cli.findPointsVerbose_eq_ok_of_findPointsWith_eq_ok, Ratpoints.Cli.verbose_eq_false_of_input_eq_ok}
+  \leanok
+  A search with the print channel that prints nothing that gives an outcome gives the same outcome
+  as $\mathrm{findPointsVerbose}$ with that channel; and a command line that the program reads with
+  \verb|-q| has the setting of \verb|-v| clear.
 \end{lemma}
 
 \begin{proof}
   \uses{thm:cliRegion}
+  \leanok
   By the definition of $\mathrm{findPointsWith}$ on the two cases of the result, and by the last
   conjunct that the reading of a command line gains, that \verb|-q| cancels \verb|-v|.
 \end{proof}

@@ -122,8 +122,11 @@ of the brute-force reference keep their text. On 2026-10-25 `lake comparator --p
 all eleven in their form of stage I, with Lean's kernel and the five external checkers, and on
 2026-10-25 `lake comparator` accepted them again with the choice of the moduli by the curve and the
 run over the blocks with the correction of the moduli between them, which change their proofs and
-not their text, and on 2026-10-25 with the numbers of the moduli used in the result `Outcome` of
-`findPointsWith`, which changes a definition that the challenge imports and not their text.
+not their text, on 2026-10-25 with the numbers of the moduli used in the result `Outcome` of
+`findPointsWith`, which changes a definition that the challenge imports and not their text, and on
+2026-10-26 with the report of the library under `-v` through the print channel of the search, which
+changes the search that `findPointsWith` runs, with its print channel at its default, and not their
+text.
 
 ## Running
 

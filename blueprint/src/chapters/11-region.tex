@@ -401,7 +401,7 @@ here.
 \section{The doubles}\label{sec:doubles}
 
 \begin{definition}[The doubles of the C code]\label{def:Double}
-  \lean{Ratpoints.Double, Ratpoints.Double.mantDig, Ratpoints.Double.zero, Ratpoints.Double.huge, Ratpoints.Double.twoPow63, Ratpoints.Double.minusOne, Ratpoints.Double.signBit, Ratpoints.Double.expField, Ratpoints.Double.fracField, Ratpoints.Double.isNaN, Ratpoints.Double.isInf, Ratpoints.Double.isZero, Ratpoints.Double.isFinite, Ratpoints.Double.orderValue, Ratpoints.Double.lt, Ratpoints.Double.le, Ratpoints.Double.beq, Ratpoints.Double.neg, Ratpoints.Double.fabs, Ratpoints.Double.toDyadic, Ratpoints.Double.toRat, Ratpoints.Double.roundShift, Ratpoints.Double.assemble, Ratpoints.Double.ofSignificand, Ratpoints.Double.ofDyadic, Ratpoints.Double.ofRatio, Ratpoints.Double.ofInt64, Ratpoints.Double.toInt64, Ratpoints.Double.toUInt64, Ratpoints.Double.ldexp, Ratpoints.Double.frexp, Ratpoints.Double.nextUp, Ratpoints.Double.nextDown, Ratpoints.Double.toFloat}
+  \lean{Ratpoints.Double, Ratpoints.Double.mantDig, Ratpoints.Double.zero, Ratpoints.Double.huge, Ratpoints.Double.twoPow63, Ratpoints.Double.minusOne, Ratpoints.Double.signBit, Ratpoints.Double.expField, Ratpoints.Double.fracField, Ratpoints.Double.isNaN, Ratpoints.Double.isInf, Ratpoints.Double.isZero, Ratpoints.Double.isFinite, Ratpoints.Double.orderValue, Ratpoints.Double.lt, Ratpoints.Double.le, Ratpoints.Double.beq, Ratpoints.Double.neg, Ratpoints.Double.fabs, Ratpoints.Double.toDyadic, Ratpoints.Double.toRat, Ratpoints.Double.roundShift, Ratpoints.Double.assemble, Ratpoints.Double.ofSignificand, Ratpoints.Double.ofDyadic, Ratpoints.Double.ofRatio, Ratpoints.Double.ofInt64, Ratpoints.Double.toInt64, Ratpoints.Double.toUInt64, Ratpoints.Double.ldexp, Ratpoints.Double.frexp, Ratpoints.Double.nextUp, Ratpoints.Double.nextDown, Ratpoints.Double.toFloat, Ratpoints.Double.ofFloat, Ratpoints.Double.printFixed}
   \leanok
   A C \verb|double| by its $64$ bits, a structure with no equality of its own, so that \verb|==|
   never means equality of the bits: the C language's \verb|==| is $\mathrm{beq}$. Its fields (the
@@ -428,7 +428,12 @@ here.
   it (ratpoints passes them no NaN). These model the C language and the C library on the platforms
   of ratpoints, IEEE~754 binary64 with rounding to nearest, as gcc and glibc implement them, and
   hold no C range. A double enters the arithmetic of Lean's \verb|Float|, the doubles of the cost
-  model of the choice of the moduli (Section~\ref{sec:costs}), by its bits.
+  model of the choice of the moduli (Section~\ref{sec:costs}), by its bits, and a double of the cost
+  model that the report of the library prints leaves it so. What \verb|printf| of glibc prints for a
+  double under \verb|%.pf|, of which \verb|%f| and \verb|%lf| are \verb|%.6f|: the exact value
+  rounded to $p$ places, ties to even, in full however large it is, without the point for $p = 0$,
+  after a \verb|-| whenever the sign bit is set, \verb|inf| and \verb|nan| for an infinity and a
+  NaN.
 \end{definition}
 
 \begin{lemma}[The doubles and their values]\label{lem:Double}
@@ -1263,7 +1268,9 @@ when the step has left no interval (line 5106, which Definition~\ref{def:searchP
 what a search gives back (Definition~\ref{def:Outcome}) holds the search intervals as the search
 leaves them, for message~8: $[-h, h]$ when the caller gives none, narrowed by the Sturm step, in the
 coordinates of the polynomial searched, and none after a return of the step. The C range of the
-Sturm step, \csource{find_points.c}{4857}{4892}, belongs to the component that models it.
+Sturm step, \csource{find_points.c}{4857}{4892}, belongs to the component that models it, but for
+the lines of its report under \verb|RATPOINTS_VERBOSE|, which belong to the report of the library
+(Definition~\ref{def:report}).
 
 \begin{definition}[The Sturm step of the search]\label{def:sturmRegion}
   \uses{def:computeSturm, def:reversal, def:Double}
@@ -1279,7 +1286,8 @@ Sturm step, \csource{find_points.c}{4857}{4892}, belongs to the component that m
   leading coefficient is not a square, when there is no point at infinity either, so that the search
   returns at once with the count $0$ (the return of line 4889), and otherwise no intervals with the
   flag \verb|sturm_empty| set, so that the search delivers the points at infinity only
-  (\csource{find_points.c}{4857}{4892}). At the depth of the step the intervals that it leaves may
+  (\csource{find_points.c}{4857}{4859}, \csource{find_points.c}{4862}{4863},
+  \csource{find_points.c}{4879}{4892}). At the depth of the step the intervals that it leaves may
   hold points at which $f$ is negative. The square test is that of the reversal check
   (Definition~\ref{def:reversal}), made on the polynomial searched, which gives the flag
   \verb|lcfsq| of the C code for an even degree, the only one that reads it.
@@ -1722,22 +1730,23 @@ the second only that the double is at least the end; the differential tests comp
 the ends with the C program, in messages~3 and~8.
 
 \begin{theorem}[The search region of the command line]\label{thm:cliRegion}
-  \uses{def:cliIntervals, def:cliInput, lem:cliNumbers, def:cliProcess, thm:findPoints, thm:cliRun,
+  \uses{def:cliIntervals, def:cliInput, lem:cliNumbers, def:cliProcess, thm:findPoints,
     def:regionSpec, lem:searchIntervals, def:sturmTheorem}
   \lean{Ratpoints.Cli.IntervalOf, Ratpoints.Cli.Intervals.ReadsWF, Ratpoints.Cli.Intervals.LowerMax, Ratpoints.Cli.checkOptions_preserves, Ratpoints.Cli.input_eq_ok, Ratpoints.Cli.reads_of_input_eq_ok, Ratpoints.Cli.joinsWell_of_reads, Ratpoints.Cli.intervalsWF_take_of_reads, Ratpoints.Cli.keeps_ofOutput_iff, Ratpoints.Cli.inRegion_joinIntervals_iff, Ratpoints.Cli.inRegion_iff_of_input_eq_ok, Ratpoints.Cli.intervalsWF_joinIntervals_of_input_eq_ok, Ratpoints.Cli.inIntervals_joinIntervals_of_inExactRegion, Ratpoints.Cli.mem_filter_keeps_iff_of_input_eq_ok, Ratpoints.zero_lt_maxDegree, Array.set!_set!, Array.getElem!_set!_eq_or, Except.bind_eq_ok}
   \leanok
-  For a command line that reads as $c$, $H$, the options $s$, $o$ and the settings $u$: the exact
-  ends of its intervals are increasing and disjoint, by the checks of error~7, so that the test of
-  the callback is membership in the exact intervals; the joined intervals hold every $x$ of the
-  exact region with $|x| \le H$, their ends being the doubles outward of the exact ends, or $\mp h$
-  for a missing first lower or last upper end; when every word has fewer than $2^{56}$ characters,
-  the joined intervals are well formed, so that error~9 is unreachable from the command line; and,
+  For a command line that reads as $c$, $H$, the options $s$, $o$ and the settings $u$: \verb|-q|
+  cancels \verb|-v|, so that under \verb|-q| the setting of \verb|-v| is clear; the exact ends of
+  its intervals are increasing and disjoint, by the checks of error~7, so that the test of the
+  callback is membership in the exact intervals; the joined intervals hold every $x$ of the exact
+  region with $|x| \le H$, their ends being the doubles outward of the exact ends, or $\mp h$ for a
+  missing first lower or last upper end; when every word has fewer than $2^{56}$ characters, the
+  joined intervals are well formed, so that error~9 is unreachable from the command line; and,
   without \verb|-x| and assuming Sturm's theorem when the Sturm step is on, if $\mathrm{findPoints}$
   on the joined intervals returns $L$, the points of $L$ that the callback keeps
-  (Theorem~\ref{thm:cliRun}) are exactly the normalized points of height at most $H$ with $y \ge 0$
-  under \verb|-y|: the points at infinity unless \verb|-i|, and the affine points with $z$ in the
-  range of \verb|-dl| and \verb|-du| and $x/z$ in the exact region of \verb|-l| and \verb|-u| when
-  there is one. Under \verb|-q| the program prints these points (Theorem~\ref{thm:cliRun}), and
+  (Definition~\ref{def:cliProcess}) are exactly the normalized points of height at most $H$ with
+  $y \ge 0$ under \verb|-y|: the points at infinity unless \verb|-i|, and the affine points with $z$
+  in the range of \verb|-dl| and \verb|-du| and $x/z$ in the exact region of \verb|-l| and \verb|-u|
+  when there is one. Under \verb|-q| the program prints these points (Theorem~\ref{thm:cliRun}), and
   under \verb|-1| the first of them.
 \end{theorem}
 
@@ -1759,16 +1768,18 @@ the ends with the C program, in messages~3 and~8.
 The theorem on the program (Theorem~\ref{thm:cliRun}) is stated with the joined intervals: the
 counted points are those of the list that the callback keeps, counting them
 (\verb|Ratpoints.Cli.Data.keeps|: a point at infinity unless \verb|-i|, and an affine point when the
-command line gives no intervals or its $x/z$ lies in one of them by \verb|in_region|; the theorem's
-node names it next to \verb|Ratpoints.Cli.countedPoints|, which takes this test in place of the
-switch of the points at infinity), and the program prints them, under \verb|-q| only them and the
-strings, under \verb|-1| the first; with Theorem~\ref{thm:cliRegion} it prints exactly the points of
-the search region of its command line. Theorem~\ref{thm:cliRun} takes no hypothesis of Sturm's
-theorem, since it is stated over the list of $\mathrm{findPoints}$. The last statement of
-Theorem~\ref{thm:cliRegion}, and with it the statement that the program prints exactly the points of
-the search region of its command line, takes the hypothesis of Sturm's theorem when the Sturm step
-is on, as membership does: it is needed for the command lines without \verb|-s|, and under \verb|-s|
-the theorem holds without it.
+command line gives no intervals or its $x/z$ lies in one of them by \verb|in_region|, which the node
+of the callback names since stage~I, Definition~\ref{def:cliProcess}, and the theorem's node
+\verb|Ratpoints.Cli.countedPoints|, which takes this test in place of the switch of the points at
+infinity), and the program prints them, under \verb|-q| only them and the strings, under \verb|-1|
+the first; with Theorem~\ref{thm:cliRegion} it prints exactly the points of the search region of its
+command line. Theorem~\ref{thm:cliRun} takes no hypothesis of Sturm's theorem, since it is stated
+over the list of $\mathrm{findPoints}$; since stage~I it takes the setting of \verb|-v| clear, which
+\verb|-q| gives (Theorem~\ref{thm:cliRegion}). The last statement of Theorem~\ref{thm:cliRegion},
+and with it the statement that the program prints exactly the points of the search region of its
+command line, takes the hypothesis of Sturm's theorem when the Sturm step is on, as membership does:
+it is needed for the command lines without \verb|-s|, and under \verb|-s| the theorem holds without
+it.
 
 \section{The differential tests}\label{sec:regionTests}
 
@@ -1904,7 +1915,8 @@ differ from the C code beyond it:
     on the polynomial searched, which gives the C code's \verb|lcfsq| for an even degree, the only
     one that reads it; at the return of line 4889 the outcome with the data, the count $0$, the flag
     of the reversal and no interval, the flag being in fact clear there; no failure for lack of
-    memory; no output under \verb|RATPOINTS_VERBOSE|;
+    memory; its report under \verb|RATPOINTS_VERBOSE| printed by the search from its result
+    (Definition~\ref{def:report});
   \item what a search gives back with the search intervals as a list, for \verb|args->domain| and
     \verb|args->num_inter|, which the search writes back and message~8 reads; the range, the
     intervals and the flag \verb|sturm_empty| arguments of the search and of the sieving, for the

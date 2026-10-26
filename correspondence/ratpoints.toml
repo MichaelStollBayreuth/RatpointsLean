@@ -272,12 +272,6 @@ reason = "RP_PRIME_STATS, development instrumentation that prints on stderr one 
 
 [[excluded]]
 file = "find_points.c"
-lines = "3089-3095"
-kind = "instrumentation"
-reason = "the report under RATPOINTS_VERBOSE at the end of sieving_info: the mean number of bits per word, the number of primes looked at and the numbers of moduli of the three stages"
-
-[[excluded]]
-file = "find_points.c"
 lines = "3098-3100"
 kind = "instrumentation"
 reason = "the message under DEBUG at the end of sieving_info"
@@ -380,15 +374,15 @@ reason = "the enlargement of ba_buffer for more primes than find_points_init siz
 
 [[excluded]]
 file = "find_points.c"
-lines = "4691-4730"
+lines = "4727-4730"
 kind = "instrumentation"
-reason = "the report of the arguments under RATPOINTS_VERBOSE and the message under DEBUG before the reversal check"
+reason = "the message under DEBUG before the reversal check"
 
 [[excluded]]
 file = "find_points.c"
-lines = "4804-4812"
+lines = "4809-4812"
 kind = "instrumentation"
-reason = "the messages after the reversal check, under RATPOINTS_VERBOSE when it does not reverse and under DEBUG when it does"
+reason = "the message under DEBUG after the reversal check when it reverses"
 
 [[excluded]]
 file = "find_points.c"
@@ -404,27 +398,21 @@ reason = "the check of the array of search intervals, which only a caller of the
 
 [[excluded]]
 file = "find_points.c"
-lines = "4946-4947"
+lines = "4965-4968"
 kind = "instrumentation"
-reason = "the message under RATPOINTS_VERBOSE before the 2-adic information"
+reason = "the denominators of the 2-adic information under DEBUG, where the report under RATPOINTS_VERBOSE has the packing of the numerators"
 
 [[excluded]]
 file = "find_points.c"
-lines = "4965-4991"
+lines = "5014-5026"
 kind = "instrumentation"
-reason = "the report of the 2-adic information (the denominators under DEBUG, the packing of the numerators under RATPOINTS_VERBOSE) and the message under RATPOINTS_VERBOSE before the primes are examined"
+reason = "the moduli of the first two stages under DEBUG, where the report under RATPOINTS_VERBOSE has those of the three stages, the cost of a check and the forbidden divisors"
 
 [[excluded]]
 file = "find_points.c"
-lines = "5014-5066"
+lines = "5108-5110"
 kind = "instrumentation"
-reason = "the report of the moduli of the three stages, of the estimated cost of a check and of the forbidden divisors, under DEBUG and RATPOINTS_VERBOSE"
-
-[[excluded]]
-file = "find_points.c"
-lines = "5108-5113"
-kind = "instrumentation"
-reason = "the message before the sieve, under DEBUG and RATPOINTS_VERBOSE"
+reason = "the message before the sieve under DEBUG"
 
 [[excluded]]
 file = "find_points.c"

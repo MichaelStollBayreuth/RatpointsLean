@@ -321,13 +321,16 @@ which loop over the residues, are components of type \verb|Id| with their contra
   the call with $(a : s : b)$ for $s = \lfloor \sqrt{c_d} \rfloor$ and then, unless that call
   stopped the search or $\mathrm{noY}$, the call with $(a : -s : b)$, with no test $s \ne 0$, as the
   C code has none; nothing when $d$ is even and $c_d$ is not a square
-  (\csource{find_points.c}{4634}{4634}, \csource{find_points.c}{4894}{4899},
-  \csource{find_points.c}{5068}{5099}); the return after a stop at infinity is made by the search
-  (Definition~\ref{def:searchPoints}). For odd $d$ or $c_d \ne 0$, with the flags of the output
-  clear and a callback that does not stop the search, the calls are those of the points of the
-  candidate $(1, 0)$ of the brute-force reference, mapped by $\mathrm{swapPoint}$
-  (Definition~\ref{def:swapPoint}) when the flag of the reversal is set: after a reversal the points
-  $(0, y, 1)$ of the caller's curve (Lemma~\ref{lem:checkNumWith}).
+  (\csource{find_points.c}{4634}{4634}, \csource{find_points.c}{4894}{4896},
+  \csource{find_points.c}{4899}{4899}, \csource{find_points.c}{5068}{5074},
+  \csource{find_points.c}{5078}{5099}); the return after a stop at infinity is made by the search
+  after the choice of the moduli (Definition~\ref{def:chooseAndSearch}), which also prints the line
+  before the points under \verb|-v|, the line that there are points at infinity coming with the
+  report of the tests on the denominators (Definition~\ref{def:report}). For odd $d$ or $c_d \ne 0$,
+  with the flags of the output clear and a callback that does not stop the search, the calls are
+  those of the points of the candidate $(1, 0)$ of the brute-force reference, mapped by
+  $\mathrm{swapPoint}$ (Definition~\ref{def:swapPoint}) when the flag of the reversal is set: after
+  a reversal the points $(0, y, 1)$ of the caller's curve (Lemma~\ref{lem:checkNumWith}).
 \end{definition}
 
 \begin{definition}[The search for the points]\label{def:findPoints}
@@ -379,7 +382,8 @@ paragraph of the component whose range holds it:
   \item the flags of the check as an argument of the points at infinity, for the bits
     \verb|RATPOINTS_REVERSED|, \verb|RATPOINTS_NO_CHECK| and \verb|RATPOINTS_NO_Y| of the flags,
     which the search hands on, the flag of the reversal from the reversal check; the square root of
-    $c_d$ by \verb|Nat.sqrt|, for \verb|mpz_sqrt|; and no output under \verb|VERBOSE|;
+    $c_d$ by \verb|Nat.sqrt|, for \verb|mpz_sqrt|; and the lines of the report under
+    \verb|RATPOINTS_VERBOSE| around them printed by the search (Definition~\ref{def:report});
   \item no failure for lack of memory, which the model cannot meet.
 \end{itemize}
 $\mathrm{findPoints}$ searches every input that it does not refuse (Theorem~\ref{thm:refusals}):
@@ -515,26 +519,27 @@ sandbox, accepted them too, with Lean's kernel and the five external checkers bu
 \verb|lake comparator --paranoid| accepted the twelve statements of stage~G on 2026-10-17 and in
 their form of stage~H on 2026-10-18, and the eleven of stage~I on 2026-10-25, and
 \verb|lake comparator| accepted them again with the choice of the moduli and the run over the blocks
-of stage~I on 2026-10-25 and with the numbers of the moduli used in what a search gives back on
-2026-10-25. The challenge states them with \verb|sorry| over \verb|findPoints|,
-\verb|findPointsWith|, \verb|Outcome|, \verb|Answer|, \verb|Delivery|, \verb|Delivery.deliver|,
-\verb|Options|, \verb|Double|, \verb|SieveOptions|, \verb|maxDegree| and \verb|maxDivisors|,
-imported from the model (until stage~H also \verb|Params|, \verb|Params.WF| and \verb|sieveParams|),
-never restated, since a definition of the model elaborates without Mathlib to other instance terms.
-Each theorem of the library behind them has a guard on its axioms, which are the standard ones. The
-contracts of the sieve of stages C1 to D need only the program logic of Lean core and stay in files
-without Mathlib, so that their \verb|grind| calls see only the lemmas of core, untouched by
-Mathlib's updates; the contract of the run over the blocks, since stage~I, is in the file of the
-correction of the moduli, with Mathlib (Chapter~\ref{chap:moduli}), like the other contracts of
-stage~E (Chapter~\ref{chap:denominators}) and those of the tables and the moduli of stage~F1, which
-sit next to the lemmas they serve (Chapter~\ref{chap:tables}); those of the stages of sub-stage~F2,
-of the packing of sub-stage~F3 and of the chunked first stage, the builders of the rows and the
-tables of rows of sub-stage~F4 are in files without Mathlib again (Chapters~\ref{chap:stages},
-\ref{chap:packing} and~\ref{chap:rows}), the store of the tables of rows in the contracts of the
-entries of the moduli, of the loop of the tables, of the run and of the search staying in the files
-of those contracts, with Mathlib; the contracts on the delivery of stage~G replace those of before
-in their files, and the reference of the delivery has its lemmas in a file without Mathlib
-(Chapter~\ref{chap:output}). The soundness of the rows needs Mathlib, through $\ZZ/p\ZZ$.
+of stage~I on 2026-10-25, with the numbers of the moduli used in what a search gives back on
+2026-10-25 and with the report of the library under \verb|-v| on 2026-10-26. The challenge states
+them with \verb|sorry| over \verb|findPoints|, \verb|findPointsWith|, \verb|Outcome|, \verb|Answer|,
+\verb|Delivery|, \verb|Delivery.deliver|, \verb|Options|, \verb|Double|, \verb|SieveOptions|,
+\verb|maxDegree| and \verb|maxDivisors|, imported from the model (until stage~H also \verb|Params|,
+\verb|Params.WF| and \verb|sieveParams|), never restated, since a definition of the model elaborates
+without Mathlib to other instance terms. Each theorem of the library behind them has a guard on its
+axioms, which are the standard ones. The contracts of the sieve of stages C1 to D need only the
+program logic of Lean core and stay in files without Mathlib, so that their \verb|grind| calls see
+only the lemmas of core, untouched by Mathlib's updates; the contract of the run over the blocks,
+since stage~I, is in the file of the correction of the moduli, with Mathlib
+(Chapter~\ref{chap:moduli}), like the other contracts of stage~E (Chapter~\ref{chap:denominators})
+and those of the tables and the moduli of stage~F1, which sit next to the lemmas they serve
+(Chapter~\ref{chap:tables}); those of the stages of sub-stage~F2, of the packing of sub-stage~F3 and
+of the chunked first stage, the builders of the rows and the tables of rows of sub-stage~F4 are in
+files without Mathlib again (Chapters~\ref{chap:stages}, \ref{chap:packing} and~\ref{chap:rows}),
+the store of the tables of rows in the contracts of the entries of the moduli, of the loop of the
+tables, of the run and of the search staying in the files of those contracts, with Mathlib; the
+contracts on the delivery of stage~G replace those of before in their files, and the reference of
+the delivery has its lemmas in a file without Mathlib (Chapter~\ref{chap:output}). The soundness of
+the rows needs Mathlib, through $\ZZ/p\ZZ$.
 
 \section{The command-line program and the differential tests}\label{sec:sieveCli}
 

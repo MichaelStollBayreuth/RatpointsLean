@@ -162,7 +162,9 @@ back the numbers of the moduli used, which `ratpoints-lean` prints in its report
 (`lake comparator` accepting the eleven again on 2026-10-25), and the differential tests compare
 that message too; `ratpoints-lean` reads the tuning options `-r -R -U -C -A -Q -W` into the options
 of the sieve, and the differential tests compare random values of them and the C program sieving on
-several threads (`-t 4`, `-t 7`) as well. The blueprint and the API documentation will be at
+several threads (`-t 4`, `-t 7`) as well; and under `-v` the library prints its report between the
+points as ratpoints does (`lake comparator` accepting the eleven again on 2026-10-26), which the
+differential tests compare byte for byte. The blueprint and the API documentation will be at
 <https://michaelstollbayreuth.github.io/RatpointsLean/> once the repository is public.
 
 ## Layout
@@ -207,13 +209,13 @@ coefficients (constant term first), the height bound and the options as ratpoint
 checks, messages and exit statuses, and prints the points of height at most `H` on
 `y² = a_n xⁿ + ⋯ + a_0` as ratpoints does, through the callback of its `main.c`: by default one line
 `(x : y : z)` per point, with the options of the output `-x -X -y -Y -z -Z -1 -i -I` and the formats
-and strings of `-f -fs -fm -fe`, and without `-q` the report that ratpoints prints around them, but,
-under `-v`, for the report of the library; under `-x` (no exact
-check) it prints the pairs that pass its sieve, with the moduli that it chooses from the curve and
-corrects between the blocks of the run as ratpoints does, which are those that ratpoints prints. It
-finds the points by the sieve on bit arrays of words in its three stages, the first in chunks of 16
-bit arrays with the rows that the builders of ratpoints build, the numerators of each denominator
-packed by the stride of its class, with the moduli that it chooses from the curve and the options
+and strings of `-f -fs -fm -fe`, and without `-q` the report that ratpoints prints around them,
+under `-v` with the report of the library between them; under `-x` (no exact check) it prints the
+pairs that pass its sieve, with the moduli that it chooses from the curve and corrects between the
+blocks of the run as ratpoints does, which are those that ratpoints prints. It finds the points by
+the sieve on bit arrays of words in its three stages, the first in chunks of 16 bit arrays with the
+rows that the builders of ratpoints build, the numerators of each denominator packed by the stride
+of its class, with the moduli that it chooses from the curve and the options
 `-p -n -N -r -R -U -C -A -P -Q -W -F -j -J`; `-k` and `-K` forbid and allow the reversal of the
 polynomial, `-s` and `-S [depth]` switch the Sturm step off and on, which narrows the search
 intervals to those where the polynomial may be `≥ 0`; `-l` and `-u` give the search intervals, read
@@ -221,8 +223,8 @@ as ratpoints reads them, the ends as the numbers they are and the doubles outwar
 and `-du` the range of the denominators; it accepts `-t`, the number of threads of ratpoints,
 checking its argument, but ignores it, sieving the blocks in turn on one thread, which gives the
 output of every number of threads. It refuses a binary form that is not squarefree with error 8 as
-ratpoints does with the same options, and prints the points of the search region of its command
-line in the order of ratpoints.
+ratpoints does with the same options, and prints the points of the search region of its command line
+in the order of ratpoints.
 
 ## Licence
 

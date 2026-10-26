@@ -96,8 +96,8 @@ def Delivery.call (process : Int → Int → Int → σ → Answer σ) (r : Deli
 /-- The text `t` printed through the print channel `print` of a search on the delivery `r`: the data
 of the callback as `print` leaves it, the count and the flag as they are. It models no C code of its
 own: the standard output, to which the library prints its report under `RATPOINTS_VERBOSE`
-(stage I), is held in the data of the callback, which `print` writes, so that the text comes between
-the points that the callback prints, as on the standard output of a C program. -/
+(`Ratpoints.Report`), is held in the data of the callback, which `print` writes, so that the text
+comes between the points that the callback prints, as on the standard output of a C program. -/
 def Delivery.print (print : String → σ → σ) (t : String) (r : Delivery σ) : Delivery σ :=
   { r with info := print t r.info }
 

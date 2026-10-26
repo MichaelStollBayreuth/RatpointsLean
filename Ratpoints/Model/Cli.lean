@@ -21,12 +21,14 @@ options. It reads them as `main.c` of ratpoints does, with its checks, messages 
 in its order, and prints what ratpoints prints: unless `-q` is given, the report, with the banner of
 `ratpoints-lean`, the curve, the height bound and the search region of the command line before the
 points, and after them the numbers of the moduli used, what the search did, the search intervals
-that it searched and the count of the points found, but, under `-v`, for the report of the library;
-under `-x`, the pairs that pass the sieve of the model, with the moduli that the search chooses from
-the curve as ratpoints chooses them (`Ratpoints.sievingInfo`) and corrects between the blocks of the
-run (`Ratpoints.Sieve.adaptPrimes`), and over the numerators of the search intervals that the Sturm
-step leaves, which are those that ratpoints prints; and the points, through the callback `process`
-of `main.c` (`Ratpoints.Cli.process`), which the search calls for each point it finds
+that it searched and the count of the points found, and, under `-v`, in place of the height bound
+and the messages after the points but the count, the report of the library (`Ratpoints.Report`),
+between the points as ratpoints prints it; under `-x`, the pairs that pass the sieve of the model,
+with the moduli that the search chooses from the curve as ratpoints chooses them
+(`Ratpoints.sievingInfo`) and corrects between the blocks of the run
+(`Ratpoints.Sieve.adaptPrimes`), and over the numerators of the search intervals that the Sturm step
+leaves, which are those that ratpoints prints; and the points, through the callback `process` of
+`main.c` (`Ratpoints.Cli.process`), which the search calls for each point it finds
 (`Ratpoints.findPointsVerbose`), in the format of `-f` with the strings of `-fs`, `-fm` and `-fe`,
 the points at infinity passed over under `-i` (neither printed nor counted), none printed under
 `-z`, and the search stopped under `-1` at the first point that `process` does not pass over (the
@@ -286,8 +288,8 @@ Deviation: a structure for the global variables; `Option String` for the strings
 `none` for the null pointer, and Lean strings for the C strings of the command line, which the Lean
 runtime decodes as UTF-8 (bytes that do not form UTF-8 are read as U+FFFD, one for each malformed
 sequence as the Lean runtime cuts them, where `main.c` copies the bytes); the bit
-`RATPOINTS_VERBOSE` of `args->flags` a field here, since the library of the model prints no report
-of its own. -/
+`RATPOINTS_VERBOSE` of `args->flags` a field here, from which the program makes the print channel
+of the library (`Ratpoints.Cli.run`). -/
 structure Output where
   /-- `quiet`: whether the report is left out. -/
   quiet : Bool := false
@@ -705,6 +707,12 @@ def process (x z y : Int) (info : Data) : Answer Data :=
       printBetween := true
       out := info.out ++ s ++ formatPoint info.noY x z y info.pf.toList }⟩
 
+/-- The text `t` printed on the standard output, as the library prints its report under
+`RATPOINTS_VERBOSE`: appended to the text printed so far in the data `info` of `process`. It models
+no C code of its own: the print channel that `Ratpoints.Cli.run` passes the search under `-v`
+(`Ratpoints.findPointsVerbose`), for the calls of `printf` in the library. -/
+def Data.print (t : String) (info : Data) : Data := { info with out := info.out ++ t }
+
 /-! ### The report -/
 
 /-- The polynomial with the coefficient list `c`, constant term first, as `print_poly` of `main.c`
@@ -830,27 +838,29 @@ def report {σ : Type} (s : SieveOptions) (o : Options) (u : Output) (r : Outcom
 
 /-- What `ratpoints-lean` does on the command line `args` (the words after the name of the program):
 the text it prints on the standard output and its exit status. On the coefficient list `c`, the
-height bound `H`, the values `s` of the options that set the sieving parameters, the options `o` of
-the search and the settings `u` of the output, as `Ratpoints.Cli.input` reads them, it prints the
-head of the report (`Ratpoints.Cli.preamble`, nothing under `-q`), and then runs the search
+height bound `H`, the options `s` of the sieve, the options `o` of the search and the settings `u`
+of the output, as `Ratpoints.Cli.input` reads them, it prints the head of the report
+(`Ratpoints.Cli.preamble`, nothing under `-q`), and then runs the search
 `Ratpoints.findPointsVerbose` with the options `s` of the sieve, with the array size that the
 program sets, `Ratpoints.defaultArraySize`, the options `o` with the search intervals joined
 (`Ratpoints.Cli.joinIntervals`), the callback `Ratpoints.Cli.process` on its data
-(`Ratpoints.Cli.Data.ofOutput`, with the intervals of the command line before they are joined), and
-the print channel that prints nothing: on a refusal it prints what the library printed and the
-message of the failure (`Ratpoints.Cli.Failure.ofRefusal`) and exits with its status; otherwise it
-prints what the callback and the library printed, the string before the points if the callback
-printed no point, the string after the points and the end of the report
-(`Ratpoints.Cli.report`, nothing under `-q`), and exits with status 0; on a failure `f` of the
-command line it prints `f.message` and exits with `f.status` (`Ratpoints.Cli.Failure.message`,
+(`Ratpoints.Cli.Data.ofOutput`, with the intervals of the command line before they are joined), and,
+under `-v`, the print channel `Ratpoints.Cli.Data.print`, through which the library prints its
+report between the points, and otherwise the print channel that prints nothing: on a refusal it
+prints what the library printed and the message of the failure (`Ratpoints.Cli.Failure.ofRefusal`)
+and exits with its status; otherwise it prints what the callback and the library printed, the string
+before the points if the callback printed no point, the string after the points and the end of the
+report (`Ratpoints.Cli.report`, nothing under `-q`), and exits with status 0; on a failure `f` of
+the command line it prints `f.message` and exits with `f.status` (`Ratpoints.Cli.Failure.message`,
 `Ratpoints.Cli.Failure.status`).
 
 C: `main.c:195-198`, `main.c:221-222`, `main.c:248`, `main.c:251-252`, `main.c:265`, `main.c:267`,
 `main.c:284-285`
 
 Deviation: the text written once at the end (`Ratpoints.Cli.main`), where `main.c` prints as it
-goes; the print channel that prints nothing passed for the bit `RATPOINTS_VERBOSE` of the flags,
-which the program sets under `-v`, the report of the library under it coming with stage I. -/
+goes; the bit `RATPOINTS_VERBOSE` of the flags, which the program sets under `-v` and leaves clear
+under `-q` (`Ratpoints.Cli.input`), as the print channel that it passes the library, and one that
+prints nothing otherwise. -/
 def run (args : List String) : String × UInt32 :=
   match input args with
   | .error f => (f.message, f.status)
@@ -858,8 +868,8 @@ def run (args : List String) : String × UInt32 :=
     let pre := preamble c H u o.domain
     let info := Data.ofOutput u o
     let o := { o with domain := Id.run (joinIntervals o.domain) }
-    match findPointsVerbose c H { s with arraySize := defaultArraySize } o process info
-        (fun _ d ↦ d) with
+    let print := if u.verbose then Data.print else fun _ d ↦ d
+    match findPointsVerbose c H { s with arraySize := defaultArraySize } o process info print with
     | .error (e, d) => let f := Failure.ofRefusal e; (pre ++ d.out ++ f.message, f.status)
     | .ok r =>
       let before := if r.info.printBetween then "" else printString u.stringBefore
@@ -886,8 +896,8 @@ def main (args : List String) : IO UInt32 := do
 
 /-! ### Examples
 
-Each of them is what ratpoints 3.1.1 does, but for the banner; and, under `-v`, for the report of
-the library, which `ratpoints-lean` leaves out. -/
+Each of them is what ratpoints 3.1.1 does, but for the banner, also under `-v`, with the report of
+the library. -/
 
 #guard (coefficients " +1\t0  -1 ").toOption == some [1, 0, -1]
 
@@ -912,6 +922,32 @@ the library, which `ratpoints-lean` leaves out. -/
   run [c, "5", "-q"] == ("\nPolynomial is not square-free.\n\n", 8)
 #guard run ["1 2 1", "5"] == (s!"\n{banner}\n\nCurve equation is  y^2 = x^2 + 2 x + 1\n\n" ++
   "max. Height = 5\n\n\nPolynomial is not square-free.\n\n", 8)
+
+-- Error 8 under `-v`: after the report of the library up to the Sturm step, which refuses `1 2 1`,
+-- and up to the first line of the reversal check, which refuses `0 0 1 1 1`.
+#guard run ["1 2 1", "5", "-v"] ==
+  (s!"\n{banner}\n" ++
+    "\nCurve equation is  y^2 = x^2 + 2 x + 1\n\n\nfind_points:\n  degree:       2\n" ++
+    "  coefficients: 1 2 1\n  height bound: 5\n  denominators from 1 to 5\n" ++
+    "  number of primes to consider:      30\n" ++
+    "  number of moduli for sieving:     (chosen from the curve)\n" ++
+    "  number of moduli for first stage: (chosen from the curve)\n" ++
+    "  maximal number of `forbidden divisors': 64\n" ++
+    "  iterations for isolations of connected components: 10\n\n" ++
+    "Check if polynomial should be reversed for better performance:\n" ++
+    "  criteria are not met ==> don't reverse\n\nIsolate the connected components:\n" ++
+    "  polynomial is not squarefree ==> stop\n\n\nPolynomial is not square-free.\n\n", 8)
+#guard run ["0 0 1 1 1", "5", "-v"] ==
+  (s!"\n{banner}\n" ++
+    "\nCurve equation is  y^2 = x^4 + x^3 + x^2\n\n\nfind_points:\n  degree:       4\n" ++
+    "  coefficients: 0 0 1 1 1\n  height bound: 5\n  denominators from 1 to 5\n" ++
+    "  number of primes to consider:      30\n" ++
+    "  number of moduli for sieving:     (chosen from the curve)\n" ++
+    "  number of moduli for first stage: (chosen from the curve)\n" ++
+    "  maximal number of `forbidden divisors': 64\n" ++
+    "  iterations for isolations of connected components: 10\n\n" ++
+    "Check if polynomial should be reversed for better performance:\n\n" ++
+    "Polynomial is not square-free.\n\n", 8)
 
 -- Error 9, for the refusal of malformed search intervals, with the message of `main.c`.
 #guard (Failure.ofRefusal .badArgs).message == "\nBug no. 1 - please report!\n\n" &&
@@ -1043,22 +1079,56 @@ private def maskReport (r : String × UInt32) : String × UInt32 :=
   ("\n".intercalate ((r.1.splitOn "\n").map maskModuli), r.2)
 
 -- The report of `ratpoints '1 0 126 0 441' 30 -z`, with message 4 on the moduli used, its numbers
--- masked (`maskReport`), and that of `ratpoints '1 0 126 0 441' 30 -v -1 -y`, without the report of
--- the library under `-v`.
+-- masked (`maskReport`), and of `ratpoints '1 0 126 0 441' 30 -v -1 -y`, with the report of the
+-- library, which the search interleaves with the point at infinity at which `-1` stops it, but for
+-- the lines of the choice of the moduli and of the cost of an exact check
+-- (`Ratpoints.Report.choice`, `Ratpoints.Report.moduli`).
 #guard maskReport (run ["1 0 126 0 441", "30", "-z"]) == maskReport
   (s!"\n{banner}\n\nCurve equation is  y^2 = 441 x^4 + 126 x^2 + 1\n\nmax. Height = 30\n\n" ++
     "\n\n" ++ "7 moduli used for first stage of sieving,\n7 moduli used for both stages of " ++
     "sieving together,\n3 further primes used in the third stage.\n" ++
     "Search intervals:\n[-30.000000, 30.000000]\n\n12 rational points found.\n\n", 0)
-#guard run ["1 0 126 0 441", "30", "-v", "-1", "-y"] ==
-  (s!"\n{banner}\n\nCurve equation is  y^2 = 441 x^4 + 126 x^2 + 1\n\n" ++
-    "(1 : 0)\n\n1 rational point pairs found.\n\n", 0)
+#guard
+  let (out, code) := run ["1 0 126 0 441", "30", "-v", "-1", "-y"]
+  code == 0 && out.startsWith (s!"\n{banner}\n" ++
+    "\nCurve equation is  y^2 = 441 x^4 + 126 x^2 + 1\n\n\nfind_points:\n  degree:       4\n" ++
+    "  coefficients: 1 0 126 0 441\n  height bound: 30\n  denominators from 1 to 30\n" ++
+    "  number of primes to consider:      30\n" ++
+    "  number of moduli for sieving:     (chosen from the curve)\n" ++
+    "  number of moduli for first stage: (chosen from the curve)\n" ++
+    "  maximal number of `forbidden divisors': 64\n" ++
+    "  iterations for isolations of connected components: 10\n\n" ++
+    "Check if polynomial should be reversed for better performance:\n" ++
+    "  criteria are not met ==> don't reverse\n\nIsolate the connected components:\n" ++
+    "  can restrict to the following intervals:\n  [-30.000000, 30.000000] \n\n" ++
+    "There are points at infinity\n\nObtain information from the polynomial mod 64:\n" ++
+    "  the bit arrays hold one numerator in (for b odd, 2 mod 4, 4 mod 8, ..., 32 mod 64, 0 mod" ++
+    " 64; - = none admissible): 2 2 2 2 2 2 2\n\n" ++
+        "Find the points mod p for the first 30 odd primes p:\n") &&
+    out.endsWith ("    on the curves the third stage was tuned on\n\nPoints at infinity:\n" ++
+      "(1 : 0)\n\n1 rational point pairs found.\n\n")
 
 -- Message 3 under `-v`, as `ratpoints '1 0 1' 10 -v -z -l 0 -u 1` prints it: after the curve, with
--- no height line before it, and neither messages 7 nor 8 after the points.
-#guard run ["1 0 1", "10", "-v", "-z", "-l", "0", "-u", "1"] ==
-  (s!"\n{banner}\n\nCurve equation is  y^2 = x^2 + 1\n\nSearch region:\n  [0.000000, 1.000000]\n" ++
-    "\n6 rational points found.\n\n", 0)
+-- no height line before it, then the report of the library, but for the lines of the choice of the
+-- moduli and of the cost of an exact check, and neither messages 7 nor 8 after the points.
+#guard
+  let (out, code) := run ["1 0 1", "10", "-v", "-z", "-l", "0", "-u", "1"]
+  code == 0 && out.startsWith (s!"\n{banner}\n" ++
+    "\nCurve equation is  y^2 = x^2 + 1\n\nSearch region:\n  [0.000000, 1.000000]\n\n" ++
+    "find_points:\n  degree:       2\n  coefficients: 1 0 1\n  height bound: 10\n" ++
+    "  denominators from 1 to 10\n  number of primes to consider:      30\n" ++
+    "  number of moduli for sieving:     (chosen from the curve)\n" ++
+    "  number of moduli for first stage: (chosen from the curve)\n" ++
+    "  maximal number of `forbidden divisors': 64\n" ++
+    "  iterations for isolations of connected components: 10\n  do not reverse the polynomial\n" ++
+    "\n  criteria are not met ==> don't reverse\n\nIsolate the connected components:\n" ++
+    "  can restrict to the following intervals:\n  [0.000000, 1.000000] \n\n" ++
+    "There are points at infinity\n\nObtain information from the polynomial mod 64:\n" ++
+    "  the bit arrays hold one numerator in (for b odd, 2 mod 4, 4 mod 8, ..., 32 mod 64, 0 mod" ++
+    " 64; - = none admissible): 4 - 2 2 2 2 2\n\n" ++
+        "Find the points mod p for the first 30 odd primes p:\n") &&
+    out.endsWith ("    on the curves the third stage was tuned on\n\nPoints at infinity:\n\n" ++
+      "Now start the sieving procedure...\n\n\n6 rational points found.\n\n")
 
 -- `1 0 126 0 441` at the height 200 in the search interval `[0, 1]` (`-l 0 -u 1`): message 3 before
 -- the points, the points with `x / z` in `[0, 1]` and the points at infinity, message 4 with its

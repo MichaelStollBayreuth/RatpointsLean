@@ -425,19 +425,22 @@ it set of the same points mapped by `Ratpoints.Sieve.swapPoint`: after a reversa
 `(0 : y : 1)` of the caller's curve. The search tests the flag `quit` after it and returns when it
 is set (`Ratpoints.searchPoints`).
 
-C: `find_points.c:4634`, `find_points.c:4894-4899`, `find_points.c:5068-5099`
+C: `find_points.c:4634`, `find_points.c:4894-4896`, `find_points.c:4899`,
+`find_points.c:5068-5074`, `find_points.c:5078-5099`
 
 Deviation: the flags `fl` as an argument, for the bits `RATPOINTS_REVERSED`, `RATPOINTS_NO_CHECK`
 and `RATPOINTS_NO_Y` of the flags of the search (`args->flags`); the delivery `r` passed and
 returned, for the pointer `info`, the local flag `quit` and the count `total` of
 `find_points_work_1`; the return when the callback stops the search (lines 5100-5103) made by the
-caller (`Ratpoints.searchPoints`); no output under `RATPOINTS_VERBOSE` or `DEBUG`; the square test
-of `c_d` and the decision whether there are points at infinity are made on the list that it is
-given, after the reversal check, when the points are delivered, where the C code computes `lcfsq`
-before the check (line 4634), which clears it in case 2 (line 4770), the only reversal after which
-the degree is even, and leaves it, unread, with the odd degree that cases 1 and 3 leave, and sets
-`point_at_infty` before the exits of the search (lines 4894-4899); the square root by `Nat.sqrt`,
-for `mpz_sqrt`. -/
+caller (`Ratpoints.chooseAndSearch`), which also prints the line before them under
+`RATPOINTS_VERBOSE` (`Ratpoints.Report.atInfinity`), the line that there are points at infinity
+coming with the report of the tests on the denominators (`Ratpoints.Report.setup`); no output under
+`DEBUG`; the square test of `c_d` and the decision whether there are points at infinity are made on
+the list that it is given, after the reversal check, when the points are delivered, where the C code
+computes `lcfsq` before the check (line 4634), which clears it in case 2 (line 4770), the only
+reversal after which the degree is even, and leaves it, unread, with the odd degree that cases 1 and
+3 leave, and sets `point_at_infty` before the exits of the search (lines 4894-4899); the square root
+by `Nat.sqrt`, for `mpz_sqrt`. -/
 def pointsAtInfinity {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : List Int) (d : Nat)
     (fl : CheckFlags) (r : Delivery σ) :
     Delivery σ :=

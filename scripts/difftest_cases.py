@@ -1,18 +1,21 @@
-"""The command lines of the suites errors, fuzz, regions, depths and tuning of scripts/difftest.py.
+"""The command lines of the suites errors, fuzz, regions, depths, tuning and verbose of
+scripts/difftest.py.
 
 CASES holds hand-written command lines for the checks that main.c makes on the coefficients, the
-height and the options, for the options of the search, of the search region and of the output and
-for the refusals of a form that is not squarefree, each with a note; STOP_CASES holds searches at a
-large height that both programs stop at once; random_command_lines gives random ones, with words
-that the readers of numbers of main.c accept or refuse in many ways, the options of the search
-region among them, and options of the output with formats and strings, and random_output_options
-random options of the output for a search; random_region_line gives a search with a random search
-region, random_depth_line one with a random depth of the Sturm step, and random_tuning_line one with
-random values of the tuning options, drawn from TUNING_DOUBLES and TUNING_LONGS. An argument is a
-str or, for a byte string that is not UTF-8, bytes. A height that a search could not finish (such as
-2^63 - 1) is always followed by an option that fails, so that neither program searches, or comes
-with a narrow search region (random_region_line), but in STOP_CASES, which the errors suite runs
-with a short timeout and a cap on the memory.
+height and the options, for the options of the search, of the search region and of the output, for
+the refusals of a form that is not squarefree and for the report of the library under -v (its exits,
+the refusals after its first lines, the reversal, the divisors), each with a note; STOP_CASES holds
+searches at a large height that both programs stop at once; random_command_lines gives random ones,
+with words that the readers of numbers of main.c accept or refuse in many ways, the options of the
+search region among them, and options of the output with formats and strings, and
+random_output_options random options of the output for a search; random_region_line gives a search
+with a random search region, random_depth_line one with a random depth of the Sturm step,
+random_tuning_line one with random values of the tuning options, drawn from TUNING_DOUBLES and
+TUNING_LONGS, and random_verbose_line one under -v. An argument is a str or, for a byte string that
+is not UTF-8, bytes. A height that a search could not finish (such as 2^63 - 1) is always followed
+by an option that fails, so that neither program searches, or comes with a narrow search region
+(random_region_line), but in STOP_CASES, which the errors suite runs with a short timeout and a cap
+on the memory.
 """
 import math
 from decimal import Decimal
@@ -120,7 +123,7 @@ CASES = [
     (['1 0 1', '5', '-q', '-pfoo', '5'], '-pfoo 5 is -p 5'),
     (['1 0 1', '5', '-q', '-rfoo', '0.5'], '-rfoo 0.5 is -r 0.5'),
     (['1 0 1', '5'], 'no -q: the report'),
-    (['1 0 1', '5', '-v'], '-v: the report of -v (that of the library left out)'),
+    (['1 0 1', '5', '-v'], '-v: the report of -v, with that of the library'),
     (['1 0 1', '5', '-v', '-q'], '-v -q: -q cancels -v'),
     (['1 0 1', '5', '-q', '-v'], '-q -v: -q cancels -v'),
     (['1 0 1', '5', '-verbose', '-z'], '-verbose is -v'),
@@ -153,6 +156,36 @@ CASES = [
     (['1 2 0 0', '5', '-q', '-s', '-k'], 'two leading zeros that lower the degree: error 8'),
     (['1 2 1', '5'], 'error 8 without -q: the message after the report of ratpoints'),
     (['0 0 1', '5', '-v'], 'error 8 under -v: the message after the report of the library'),
+    # the report of the library under -v: its exits, the refusals after its first lines, the
+    # reversal in each case, the denominators of each kind, the switches it reports
+    (['1 2 1', '5', '-v'], 'error 8 by the Sturm step under -v, after its report'),
+    (['0 0 1 1 1', '5', '-v'], 'error 8 by the reversal check under -v, after its first line'),
+    (['1 2 1', '5', '-v', '-s', '-k'], '-v -s -k on a form that is not squarefree: searched'),
+    (['2 0 3', '200', '-v'], 'the 2-adic exit under -v'),
+    (['20 6 -14 12 -10', '30', '-v'], 'the exit of the choice (no points mod 3) under -v'),
+    (['-2 -20 7 15 2', '30', '-v'], 'the exit of the choice (no points mod 5) under -v'),
+    (['-1 0 -1', '50', '-v'], 'the Sturm step keeps no interval under -v: no points'),
+    (['1 0 1', '10', '-v', '-l', '1e400', '-u', '1e500'],
+     'the Sturm step keeps no interval, points at infinity left, under -v'),
+    (['0 1 0 0 4', '10', '-v'], 'the reversal in case 1 under -v'),
+    (['-1 0 9', '10', '-v'], 'the reversal in case 2 under -v'),
+    (['0 1 0 2', '10', '-v'], 'the reversal in case 3 under -v, with the coefficients'),
+    (['0 1 0 2', '10', '-v', '-k'], '-k under -v'),
+    (['1 0 0 6', '200', '-v'], 'odd degree, the divisors of the leading coefficient under -v'),
+    (['1 0 0 0 0 1009', '50', '-v'],
+     'odd degree, the factorization of the leading coefficient not complete, under -v'),
+    (['1 0 0 1', '50', '-v', '-dl', '5', '-du', '8'], 'the range of the denominators under -v'),
+    (['1 0 126 0 441', '100', '-v', '-p', '0'], 'no moduli under -v'),
+    (['1 0 126 0 441', '100', '-v', '-p', '100', '-n', '200'], 'a first stage of -n beyond -p'),
+    (['1 0 126 0 441', '100', '-v', '-F', '0', '-j'], 'no forbidden divisors, no Jacobi test'),
+    (['1 0 126 0 441', '100', '-v', '-x', '-s', '-S', '3'], '-x -s -S 3 under -v'),
+    (['1 0 126 0 441', '100', '-v', '-1'], '-1 under -v: the search stops at infinity'),
+    (['1 0 126 0 441', '100', '-v', '-1', '-i'], '-1 -i under -v: it stops in the sieve'),
+    (['1 0 126 0 441', '100', '-v', '-fs', 'S', '-fm', 'M', '-fe', 'E', '-f', '%x'],
+     'strings and a format under -v, the report between the points'),
+    (['-1000000000000 0 0 0 1', '100', '-v'], 'forbidden divisors by their valuations under -v'),
+    (['10 10 5 -7 0 3 -2', '300', '-v', '-r', '1e-5', '-C', '1e306', '-W', '1e6', '-Q', '0'],
+     'tuning options under -v: the cost of a check'),
     (['1 2 1', '3', '-q', '-s'], '-s: a repeated factor is searched'),
     (['1 0 -2 0 1', '3', '-q', '-s'], '-s: a repeated factor of degree 2 is searched'),
     (['0 0 1 1 1', '3', '-q', '-s'], '-s: even degree and c0 = c1 = 0 still refused'),
@@ -746,13 +779,55 @@ TUNING_LONGS = {
 }
 
 
+def random_verbose_line(rng):
+    """A search under -v, the report of the library compared: a random polynomial of degree 1 to 10,
+    with small coefficients, at times large ones (forbidden divisors by their valuations, an odd
+    degree whose leading coefficient has a large prime factor), or a point-rich curve, at a height
+    of at most 2000; with, each at times, -k, -s, -S with a depth, -x, -y, -z, -1, -i, a format and
+    strings, -p, -n, -N, -P, -F, -j, the tuning options, a search region (intervals, a range of
+    denominators), and rarely -q, which cancels -v."""
+    if rng.random() < 0.3:
+        c = rng.choice(POINT_RICH)
+    else:
+        big = rng.random() < 0.25
+        cs = [rng.randint(-10 ** 12, 10 ** 12) if big and rng.random() < 0.3
+              else rng.randint(-12, 12) for _ in range(rng.randint(2, 11))]
+        if cs[-1] == 0:
+            cs[-1] = rng.choice([1, -1, 2, 3, 1009, -36])
+        c = ' '.join(map(str, cs))
+    H = rng.choice([1, 5, 20, 50, 100, 300, 1000, 2000])
+    opts = ['-v']
+    for o in ['-k', '-s', '-x', '-y', '-z', '-1', '-i', '-j']:
+        if rng.random() < 0.1:
+            opts.append(o)
+    if rng.random() < 0.1:
+        opts += ['-S', str(rng.choice([0, 1, 3, 20, 60]))]
+    for o in ['-f', '-fs', '-fm', '-fe']:
+        if rng.random() < 0.05:
+            opts += [o, rng.choice(FORMATS)]
+    for o, vals in list(TUNING_DOUBLES.items()) + list(TUNING_LONGS.items()):
+        if rng.random() < 0.08:
+            opts += [o, rng.choice(vals)]
+    if rng.random() < 0.08:
+        opts += ['-F', rng.choice(['0', '1', '5', '200', '-1'])]
+    k = rng.random()
+    if k < 0.1:
+        opts += random_intervals(rng, H)
+    elif k < 0.2:
+        opts += random_denominators(rng, H)
+    if rng.random() < 0.03:
+        opts.append('-q')
+    return [c, str(H), *opts]
+
+
 def random_tuning_line(rng):
     """A search with random values of the tuning options (-r -R -U -C -A -Q -W) and at times of the
     cut points (-p -n -N -P), each option given with probability 0.35, on a random polynomial of
     degree 1 to 8, at times with a square constant term, at a height of at most 3000, with -q four
     times in five and else with the report, whose message 4 gives the numbers of the moduli used,
-    at times -x, and at times -k, -s or -j. -A takes effect only at the larger heights of the suites
-    high and adapt, where the C program corrects its moduli."""
+    at times -x, and at times -k, -s or -j. The numbers of the moduli under the tuning options are
+    also in the report of the library that the suite verbose compares; -A takes effect only at the
+    larger heights of the suites high and adapt, where the C program corrects its moduli."""
     c = [rng.randint(-60, 60) for _ in range(rng.randint(2, 9))]
     if c[-1] == 0:
         c[-1] = rng.choice([1, -1, 2, 3])

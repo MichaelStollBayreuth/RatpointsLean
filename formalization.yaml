@@ -285,8 +285,12 @@ status:
     comparator accepting the eleven again on 2026-10-25, and the differential tests compare -x
     exactly against the C program on the same command line; the search gives back the numbers of
     the moduli used, which ratpoints-lean prints in its report as ratpoints does, comparator
-    accepting the eleven again on 2026-10-25, and the differential tests compare that message too.
-    Next: the rest of stage I, which the blueprint plans.
+    accepting the eleven again on 2026-10-25, and the differential tests compare that message too;
+    ratpoints-lean reads the tuning options -r -R -U -C -A -Q -W into the options of the sieve, and
+    the differential tests compare random values of them and the C program sieving on several
+    threads; and under -v the library prints its report between the points as ratpoints does,
+    comparator accepting the eleven again on 2026-10-26, and the differential tests compare that
+    report byte for byte. Next: the rest of stage I, which the blueprint plans.
   sorry_count: 0
   sorry_in_definitions: 0
   axioms: ["propext", "Classical.choice", "Quot.sound"]
@@ -505,8 +509,10 @@ alignment:
       module: "Ratpoints.Proof.Cli"
       status: "formalized"
       note: >
-        the head of the report, the string before the points, the points that the callback of the
-        program counts (all but those at infinity under -i and the affine ones outside the search
+        without -v, which -q cancels (Ratpoints.Cli.verbose_eq_false_of_input_eq_ok), and whose
+        report of the library between the points is tested, not proved: the head of the report, the
+        string before the points, the points that the callback of the program counts (all but those
+        at infinity under -i and the affine ones outside the search
         intervals of the command line, and of these only the first under -1) in the format, joined
         by the string between them, none under -z, the string after them and the end of the report
         with their number as its count

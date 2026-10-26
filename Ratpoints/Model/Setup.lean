@@ -97,7 +97,8 @@ In each case the reversed list is the reflection of `c` in the even degree `d + 
 form, so that its binary form is that of `c` with `x` and `z` exchanged
 (`Ratpoints.Setup.binaryForm_eq_of_reversal_eq_ok`).
 
-C: `find_points.c:4732-4803`
+C: `find_points.c:4732-4739`, `find_points.c:4744-4756`, `find_points.c:4759-4770`,
+`find_points.c:4775-4790`, `find_points.c:4802-4803`
 
 Deviation: a new list for the reversal in place, and nothing written back to the caller: the
 reversed coefficients, the degree and the flag `RATPOINTS_REVERSED` are returned instead; the
@@ -107,7 +108,8 @@ search region or a range of the denominators); the square test of `c_d` made her
 reads the flag `lcfsq` that the set-up computes before (line 4634), and no flag `lcfsq` for the
 reversed list, which case 2 clears, since `Ratpoints.Sieve.pointsAtInfinity` tests the leading
 coefficient of the list it is given; integers and their absolute values for the GMP integers, with
-no scratch integers `work[0]` and `work[1]`; no output under `RATPOINTS_VERBOSE`. -/
+no scratch integers `work[0]` and `work[1]`; the report under `RATPOINTS_VERBOSE` printed by the
+caller from the result (`Ratpoints.Report.reversal`). -/
 def reversal (allow : Bool) (c : List Int) (d : Nat) : Except Refusal (List Int × Nat × Bool) :=
   if !allow then .ok (c, d, false)
   else if d % 2 = 0 then

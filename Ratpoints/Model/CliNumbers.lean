@@ -418,16 +418,9 @@ def joinIntervals (dom : List (Double × Double)) : Id (List (Double × Double))
 /-- What `printf` of glibc prints for the double `x` under the conversion `%f`, which `%lf` is too:
 the exact value of `x` rounded to six places after the point, ties to even, in full however large it
 is, after a `-` whenever the sign bit is set, also for `-0.0` and for a negative value that rounds
-to `0`; `inf` for an infinity and `nan` for a NaN, after a `-` when the sign bit is set. -/
-def printF (x : Double) : String :=
-  let sign := if x.signBit then "-" else ""
-  if x.isNaN then sign ++ "nan"
-  else if x.isInf then sign ++ "inf"
-  else
-    let (m, e) := x.toDyadic
-    let n := Double.roundShift (m.natAbs * 10 ^ 6) (-e)
-    let f := toString (n % 10 ^ 6)
-    sign ++ toString (n / 10 ^ 6) ++ "." ++ "".pushn '0' (6 - f.length) ++ f
+to `0`; `inf` for an infinity and `nan` for a NaN, after a `-` when the sign bit is set
+(`Ratpoints.Double.printFixed` with `p = 6`). -/
+def printF (x : Double) : String := x.printFixed 6
 
 /-! ### Examples -/
 

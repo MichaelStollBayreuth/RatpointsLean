@@ -46,6 +46,7 @@ public import Ratpoints.Model.FindPoints
 public import Ratpoints.Model.FirstStage
 public import Ratpoints.Model.Packing
 public import Ratpoints.Model.Params
+public import Ratpoints.Model.Report
 public import Ratpoints.Model.Rows
 public import Ratpoints.Model.Setup
 public import Ratpoints.Model.Sieve

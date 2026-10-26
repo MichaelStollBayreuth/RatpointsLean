@@ -34,11 +34,11 @@ points with the string between them in between
 (`Ratpoints.Cli.total_deliver_process`). By the protocol of the delivery
 (`Ratpoints.map_findPointsWith_eq_map_findPoints`), which says that for every value of the options
 of the sieve the search delivers to a callback the points of `Ratpoints.findPoints` in their order
-until a call stops it, this is what `Ratpoints.Cli.run`
-prints between the head of the report and its end; under `-q` it is all that it prints, with the
-string after the points (`-fe`) at the end, and under `-1` the one point printed is the first point
-of the list of `Ratpoints.findPoints` that the callback keeps. The search runs on the search
-intervals of the command line joined (`Ratpoints.Cli.joinIntervals`).
+until a call stops it, this is what `Ratpoints.Cli.run` prints between the head of the report and
+its end, without `-v`, whose report of the library comes between the points; under `-q` it is all
+that it prints, with the string after the points (`-fe`) at the end, and under `-1` the one point
+printed is the first point of the list of `Ratpoints.findPoints` that the callback keeps. The search
+runs on the search intervals of the command line joined (`Ratpoints.Cli.joinIntervals`).
 
 The search region of the command line: the reading of `-l` and `-u` keeps an invariant
 (`Ratpoints.Cli.Intervals.ReadsWF`: the exact ends are those of increasing and disjoint intervals
@@ -64,7 +64,11 @@ never refuses them, and error 9 is unreachable from the command line.
 * `Ratpoints.Cli.out_append_deliver_process_ofOutput`, `Ratpoints.Cli.total_deliver_process`: the
   text that the callback prints and the count.
 * `Ratpoints.Cli.run_eq_of_findPointsWith_eq_ok`, `Ratpoints.Cli.total_eq_of_findPointsWith_eq_ok`:
-  what the program prints for a successful search, and the count that its report gives.
+  what the program prints for a successful search without `-v`, and the count that its report
+  gives.
+* `Ratpoints.Cli.findPointsVerbose_eq_ok_of_findPointsWith_eq_ok`,
+  `Ratpoints.Cli.verbose_eq_false_of_input_eq_ok`: the search with the print channel that prints
+  nothing, which the program runs without `-v`, and `-q` cancels `-v`.
 * `Ratpoints.Cli.run_eq_of_findPoints_eq_ok`: what the program prints under `-q`.
 * `Ratpoints.Cli.run_eq_of_onePoint`: under `-q -1`, the first point that the callback keeps.
 * `Ratpoints.Cli.reads_of_input_eq_ok`: the search intervals of a command line that the program
@@ -285,19 +289,29 @@ theorem report_eq_empty_of_quiet {σ : Type} (s : SieveOptions) (o : Options) {u
     report s o u r = "" := by
   simp [report, hq]
 
+/-- A search with the print channel that prints nothing returns the outcome of
+`Ratpoints.findPointsVerbose` with that channel. -/
+theorem findPointsVerbose_eq_ok_of_findPointsWith_eq_ok {c : List ℤ} {H : ℕ} {s : SieveOptions}
+    {o : Options} {σ : Type} {process : ℤ → ℤ → ℤ → σ → Answer σ} {info : σ} {r : Outcome σ}
+    (hr : findPointsWith c H s o process info = .ok r) :
+    findPointsVerbose c H s o process info (fun _ s ↦ s) = .ok r := by
+  revert hr
+  rw [findPointsWith]
+  cases findPointsVerbose c H s o process info (fun _ s ↦ s) <;> simp [Except.mapError]
+
 /-- What the program prints for a command line that it reads as the coefficients `c`, the height
 bound `H`, the options `s` of the sieve, the options `o` of the search and the settings `u` of the
-output, when the search `Ratpoints.findPoints` with the program's array size on the search
-intervals of the command line joined (`Ratpoints.Cli.joinIntervals`) returns the list `L` and the
-search with the callback of the program the outcome `r`: the head of the report, the string before
-the points, the points of `L` that the callback counts (`Ratpoints.Cli.countedPoints`: those that it
-keeps, `Ratpoints.Cli.Data.keeps`, only the first of these under `-1`) in the format, with the
-string between them in between, none under `-z`, the string after the points and the end of the
+output, without `-v`, when the search `Ratpoints.findPoints` with the program's array size on the
+search intervals of the command line joined (`Ratpoints.Cli.joinIntervals`) returns the list `L` and
+the search with the callback of the program the outcome `r`: the head of the report, the string
+before the points, the points of `L` that the callback counts (`Ratpoints.Cli.countedPoints`: those
+that it keeps, `Ratpoints.Cli.Data.keeps`, only the first of these under `-1`) in the format, with
+the string between them in between, none under `-z`, the string after the points and the end of the
 report; the protocol of the delivery holds for every value of the options
 (`Ratpoints.map_findPointsWith_eq_map_findPoints`). -/
 theorem run_eq_of_findPointsWith_eq_ok {args : List String} {c : List ℤ} {H : ℕ}
     {s : SieveOptions} {o : Options} {u : Output} {r : Outcome Data} {L : List (ℤ × ℤ × ℤ)}
-    (hi : input args = .ok (c, H, s, o, u))
+    (hi : input args = .ok (c, H, s, o, u)) (hv : u.verbose = false)
     (hr : findPointsWith c H { s with arraySize := defaultArraySize }
       { o with domain := Id.run (joinIntervals o.domain) } process (.ofOutput u o) = .ok r)
     (hL : findPoints c H { s with arraySize := defaultArraySize }
@@ -309,13 +323,8 @@ theorem run_eq_of_findPointsWith_eq_ok {args : List String} {c : List ℤ} {H : 
             (u.printFormat.getD "").toList) ++
       printString u.stringAfter ++
         report s { o with domain := Id.run (joinIntervals o.domain) } u r, 0) := by
-  have hv : findPointsVerbose c H { s with arraySize := defaultArraySize }
-      { o with domain := Id.run (joinIntervals o.domain) } process (.ofOutput u o) (fun _ d ↦ d) =
-      .ok r := by
-    revert hr
-    rw [findPointsWith]
-    cases findPointsVerbose c H _ _ process (.ofOutput u o) (fun _ d ↦ d) <;> simp [Except.mapError]
-  simp only [run, hi, hv]
+  simp only [run, hi, hv, Bool.false_eq_true, ↓reduceIte,
+    findPointsVerbose_eq_ok_of_findPointsWith_eq_ok hr]
   rw [(info_total_eq_of_findPointsWith_eq_ok hr hL).1,
     String.append_assoc (s₁ := preamble c H u o.domain), out_append_deliver_process_ofOutput,
     ← String.append_assoc]
@@ -330,6 +339,49 @@ theorem total_eq_of_findPointsWith_eq_ok {c : List ℤ} {H : ℕ} {s : SieveOpti
     r.total = (countedPoints (Data.ofOutput u o).keeps u.onePoint L).length := by
   rw [(info_total_eq_of_findPointsWith_eq_ok hr hL).2, total_deliver_process, Int.zero_add]
   rfl
+
+theorem le_and_lt_of_heightBound_eq_ok {h : String} {H : ℕ} (hH : heightBound h = .ok H) :
+    1 ≤ H ∧ H < 2 ^ 63 := by
+  simp only [heightBound] at hH
+  split at hH
+  · rename_i n hn
+    obtain rfl := Except.ok.inj hH
+    simp only [longOfString?, Option.filter_eq_some_iff, Bool.and_eq_true, decide_eq_true_eq] at hn
+    lia
+  · cases hH
+
+/-- What a command line that the program accepts gives: the options are words of the command line,
+the height bound is a positive `long`, the reading of the options from the defaults succeeds, the
+search intervals of the options and the exact ends of the settings of the output are those of the
+intervals read and completed (`Ratpoints.Cli.Intervals.complete`), and `-q` cancels `-v`. -/
+theorem input_eq_ok {args : List String} {c : List ℤ} {H : ℕ} {s : SieveOptions} {o : Options}
+    {u : Output} (hi : input args = .ok (c, H, s, o, u)) :
+    ∃ os iv, (∀ a ∈ os, a ∈ args) ∧ 1 ≤ H ∧ H < 2 ^ 63 ∧
+      (∃ s' o' u', checkOptions H ({}, { bHigh := H }, {}, {}) os = .ok (s', o', u', iv)) ∧
+      o.domain = (iv.complete H).domain.toList.take (iv.complete H).numInter ∧
+      u.ends = (iv.complete H).ends ∧ (u.quiet = true → u.verbose = false) := by
+  match args, hi with
+  | s0 :: h :: os, hi =>
+    simp only [input] at hi
+    rcases hc : coefficients s0 with _ | c0
+    · rw [hc] at hi; cases hi
+    rcases hH : heightBound h with _ | H0
+    · rw [hc, hH] at hi; cases hi
+    rcases hk : checkOptions H0 ({}, { bHigh := H0 }, {}, {}) os with _ | ⟨s1, o1, u1, iv⟩
+    · rw [hc, hH] at hi; simp only [bind, Except.bind] at hi; rw [hk] at hi; cases hi
+    rw [hc, hH] at hi
+    simp only [bind, Except.bind, hk, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hi
+    obtain ⟨-, rfl, -, rfl, rfl⟩ := hi
+    exact ⟨os, iv, fun a ha ↦ .tail _ (.tail _ ha), (le_and_lt_of_heightBound_eq_ok hH).1,
+      (le_and_lt_of_heightBound_eq_ok hH).2, ⟨s1, o1, u1, hk⟩, rfl, rfl, fun hq ↦ by simp_all⟩
+
+/-- The program reads `-v` only without `-q`: under `-q` the settings of the output have the flag of
+the report of the library clear. -/
+theorem verbose_eq_false_of_input_eq_ok {args : List String} {c : List ℤ} {H : ℕ}
+    {s : SieveOptions} {o : Options} {u : Output} (hi : input args = .ok (c, H, s, o, u))
+    (hq : u.quiet = true) : u.verbose = false := by
+  obtain ⟨_, _, -, -, -, -, -, -, h⟩ := input_eq_ok hi
+  exact h hq
 
 /-- What the program prints under `-q` for a command line on which the search
 `Ratpoints.findPoints` on the search intervals of the command line joined returns the list `L`: the
@@ -348,7 +400,8 @@ theorem run_eq_of_findPoints_eq_ok {args : List String} {c : List ℤ} {H : ℕ}
             (u.printFormat.getD "").toList) ++
       printString u.stringAfter, 0) := by
   obtain ⟨r, hr⟩ := exists_findPointsWith_eq_ok_of_findPoints_eq_ok process (.ofOutput u o) hL
-  rw [run_eq_of_findPointsWith_eq_ok hi hr hL, preamble_eq_empty_of_quiet c H hq,
+  rw [run_eq_of_findPointsWith_eq_ok hi (verbose_eq_false_of_input_eq_ok hi hq) hr hL,
+    preamble_eq_empty_of_quiet c H hq,
     report_eq_empty_of_quiet s _ hq, String.empty_append, String.append_empty]
 
 /-- Under `-q -1`, without `-z`, the program prints the first point `p` of the list of
@@ -757,37 +810,6 @@ theorem checkOptions_preserves {H : ℕ} {P : Intervals → Prop} {Q : String �
   | case9 => cases h
   | case10 => cases h
 
-theorem le_and_lt_of_heightBound_eq_ok {h : String} {H : ℕ} (hH : heightBound h = .ok H) :
-    1 ≤ H ∧ H < 2 ^ 63 := by
-  simp only [heightBound] at hH
-  split at hH
-  · rename_i n hn
-    obtain rfl := Except.ok.inj hH
-    simp only [longOfString?, Option.filter_eq_some_iff, Bool.and_eq_true, decide_eq_true_eq] at hn
-    lia
-  · cases hH
-
-theorem input_eq_ok {args : List String} {c : List ℤ} {H : ℕ} {s : SieveOptions} {o : Options}
-    {u : Output} (hi : input args = .ok (c, H, s, o, u)) :
-    ∃ os iv, (∀ a ∈ os, a ∈ args) ∧ 1 ≤ H ∧ H < 2 ^ 63 ∧
-      (∃ s' o' u', checkOptions H ({}, { bHigh := H }, {}, {}) os = .ok (s', o', u', iv)) ∧
-      o.domain = (iv.complete H).domain.toList.take (iv.complete H).numInter ∧
-      u.ends = (iv.complete H).ends := by
-  match args, hi with
-  | s0 :: h :: os, hi =>
-    simp only [input] at hi
-    rcases hc : coefficients s0 with _ | c0
-    · rw [hc] at hi; cases hi
-    rcases hH : heightBound h with _ | H0
-    · rw [hc, hH] at hi; cases hi
-    rcases hk : checkOptions H0 ({}, { bHigh := H0 }, {}, {}) os with _ | ⟨s1, o1, u1, iv⟩
-    · rw [hc, hH] at hi; simp only [bind, Except.bind] at hi; rw [hk] at hi; cases hi
-    rw [hc, hH] at hi
-    simp only [bind, Except.bind, hk, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hi
-    obtain ⟨-, rfl, -, rfl, rfl⟩ := hi
-    exact ⟨os, iv, fun a ha ↦ .tail _ (.tail _ ha), (le_and_lt_of_heightBound_eq_ok hH).1,
-      (le_and_lt_of_heightBound_eq_ok hH).2, ⟨s1, o1, u1, hk⟩, rfl, rfl⟩
-
 /-- What a command line that the program accepts gives for its search intervals: the height bound
 is a positive `long`, and the reading of the intervals ends with complete intervals that keep the
 invariant, the search intervals of the options being their doubles and the exact ends of the
@@ -796,7 +818,7 @@ theorem reads_of_input_eq_ok {args : List String} {c : List ℤ} {H : ℕ} {s : 
     {o : Options} {u : Output} (hi : input args = .ok (c, H, s, o, u)) :
     1 ≤ H ∧ H < 2 ^ 63 ∧ ∃ iv : Intervals, iv.ReadsWF H iv.numInter false ∧
       o.domain = iv.domain.toList.take iv.numInter ∧ u.ends = iv.ends := by
-  obtain ⟨os, iv, -, hH, hH63, ⟨s', o', u', hk⟩, hdom, hends⟩ := input_eq_ok hi
+  obtain ⟨os, iv, -, hH, hH63, ⟨s', o', u', hk⟩, hdom, hends, -⟩ := input_eq_ok hi
   refine ⟨hH, hH63, iv.complete H, ?_, hdom, hends⟩
   have hw := checkOptions_preserves (P := fun iv : Intervals ↦ iv.ReadsWF H iv.numInter iv.lSeen)
     (Q := fun _ ↦ True) (fun iv a iv' _ hw h ↦ hw.lower h) (fun iv a iv' _ hw h ↦ ?_)
@@ -887,7 +909,7 @@ theorem intervalsWF_joinIntervals_of_input_eq_ok {args : List String} {c : List 
     {s : SieveOptions} {o : Options} {u : Output} (hlen : ∀ a ∈ args, a.length < 2 ^ 56)
     (hi : input args = .ok (c, H, s, o, u)) :
     IntervalsWF (domainBits (Id.run (joinIntervals o.domain))) := by
-  obtain ⟨os, iv, hos, hH, hH63, ⟨_, _, _, hk⟩, hdom, -⟩ := input_eq_ok hi
+  obtain ⟨os, iv, hos, hH, hH63, ⟨_, _, _, hk⟩, hdom, -, -⟩ := input_eq_ok hi
   have hP := checkOptions_preserves
     (P := fun iv : Intervals ↦ iv.ReadsWF H iv.numInter iv.lSeen ∧ iv.LowerMax iv.numInter iv.lSeen)
     (Q := fun a ↦ a.length < 2 ^ 56) (fun iv a iv' ha hw h ↦ ⟨hw.1.lower h, hw.2.lower hw.1 ha h⟩)

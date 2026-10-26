@@ -274,8 +274,9 @@ well-formedness, \verb|wf_sieveParams| is gone, and \verb|Params|, \verb|Params.
 \verb|sieveParams| are no longer taken from the model: eleven statements remain
 (Section~\ref{sec:certifiedI}), which \verb|lake comparator --paranoid| accepted on 2026-10-25, and
 \verb|lake comparator| again, with the choice of the moduli and the run over the blocks, on
-2026-10-25, and with the numbers of the moduli used in what a search gives back on 2026-10-25;
-Section~\ref{sec:sieveTheorems} records the earlier acceptances.
+2026-10-25, with the numbers of the moduli used in what a search gives back on 2026-10-25, and with
+the report of the library under \verb|-v| on 2026-10-26; Section~\ref{sec:sieveTheorems} records the
+earlier acceptances.
 
 \section{The command-line program}\label{sec:cli}
 
@@ -292,8 +293,8 @@ scripts of the C repository can run it as \verb|RP=ratpoints-lean|:
     the search region of the command line (message~3) before the points and the numbers of the
     moduli used (message~4, since stage~I), what the search did, the search intervals as the search
     leaves them (message~8) and the count of the points found after them; under
-    \verb|-v|, which \verb|-q| cancels in \verb|main.c|, the report of \verb|-v|, without the report
-    of the library that ratpoints prints then;
+    \verb|-v|, which \verb|-q| cancels in \verb|main.c|, the report of \verb|-v|, with the report of
+    the library between the points (since stage~I, Definition~\ref{def:report});
   \item it reads the first two arguments as \verb|main.c| does: the coefficient list as one argument
     and the height, with its checks, messages and exit codes, in its order: fewer than two arguments
     (2, with the banner and the usage), a malformed coefficient (11), more than $\mathrm{maxDegree}
@@ -433,7 +434,7 @@ mirror:
 
 \begin{definition}[The program]\label{def:cliRun}
   \uses{def:cliInput, def:cliFailure, def:findPointsVerbose, def:cliProcess, def:cliReport,
-    def:Options, def:cliRegionTest}
+    def:Options, def:cliRegionTest, def:cliTuning}
   \lean{Ratpoints.Cli.run, Ratpoints.Cli.main}
   \leanok
   \verb|ratpoints-lean| reads its command line (\csource{main.c}{195}{198}). On a failure it prints
@@ -446,8 +447,10 @@ mirror:
   (Definition~\ref{def:cliProcess}) where ratpoints calls \verb|find_points|
   (\csource{main.c}{251}{252}), for the options $o'$ of $o$ with the search intervals joined where
   their doubles meet (Definition~\ref{def:cliRegionTest}, \csource{main.c}{248}{248}), the data
-  holding the intervals of the command line before the join, and the print channel that prints
-  nothing, the report of the library under \verb|-v| being left to stage~I; on a refusal it prints
+  holding the intervals of the command line before the join, and, under \verb|-v|, the print channel
+  of the program (Definition~\ref{def:cliTuning}), through which the library prints its report
+  between the points (Definition~\ref{def:report}), and otherwise the print channel that prints
+  nothing; on a refusal it prints
   what the library printed and the message of the failure after the head and exits with its status,
   and otherwise it prints what the callback and the library printed, the points of the search region
   of its command line in the order in which the search delivers them, that of the list of
@@ -478,23 +481,24 @@ the suites \verb|regions| and \verb|depths| and the runs of \verb|test4.sh| and 
 with a search region, Section~\ref{sec:regionTests}, and stage~I the pairs under \verb|-x| compared
 exactly with the C program, the runs of the high suite where the C program corrects its moduli, the
 local suite \verb|adapt|, the pair of a build of the C program with the block length $3$ against
-the model with that block length and the suites \verb|tuning| and \verb|threads|,
-Section~\ref{sec:moduliTests}):
+the model with that block length, the suites \verb|tuning|, \verb|threads| and \verb|verbose| and
+the output under \verb|-v| with the report of the library, Section~\ref{sec:moduliTests}):
 \begin{itemize}
   \item \verb|test4.sh| against \verb|testbase4|, split at the \verb|#| header lines (five of which
-    are glued to the end of the preceding output line): 565 of its 582 runs, among them the outputs
+    are glued to the end of the preceding output line): 569 of its 582 runs, among them the outputs
     that the script filters through \verb|grep found|, \verb|grep 'Curve equation'| and
-    \verb|grep -c .|, compared after the same filter with the banner exchanged, and its 165 runs
-    with \verb|-l|, \verb|-u|, \verb|-dl| or \verb|-du|, those at heights above $30000$ in a narrow
-    search region among them (since stage~H); the others are the four whose filter looks at the
-    report of the library under \verb|-v| and 13 with heights from $40000$ to $100000$ and no search
-    region, which the suite \verb|test4high| compares (Section~\ref{sec:wordsCli});
+    \verb|grep -c .| and, since stage~I, the four whose filter looks at the report of the library
+    under \verb|-v|, compared after the same filter with the banner exchanged and, since stage~I,
+    also as a whole with the C program on their command line, and its 165 runs with \verb|-l|,
+    \verb|-u|, \verb|-dl| or \verb|-du|, those at heights above $30000$ in a narrow search region
+    among them (since stage~H); the others are 13 with heights from $40000$ to $100000$ and no
+    search region, which the suite \verb|test4high| compares (Section~\ref{sec:wordsCli});
   \item \verb|test3.sh| invocation by invocation against the C program, since it has no announce
-    lines: 18 of its 21 runs (3 have outputs filtered to look at the report of the library under
-    \verb|-v|; the two whose filter keeps the report from message~4 on are compared on the whole
-    output of the command before the filter since stage~I; one, at a height above the largest
-    height of the tests, $30000$, on which the C program prints nothing, is compared since
-    stage~E);
+    lines: its 21 runs (the five whose filter looks at the report, the three under \verb|-v| that
+    look at the report of the library and the two that keep the report from message~4 on, are
+    compared on the whole output of the command before the filter since stage~I; one, at a height
+    above the largest height of the tests, $30000$, on which the C program prints nothing, is
+    compared since stage~E);
   \item the curves of \verb|testdata.h|, \verb|testdata-many.h| and \verb|testdata-degrees.h|,
     read from the pinned checkout, at a reduced height $h$ ($100$ by default): the C program run
     at height $h$ prints exactly the reference lines of \verb|testbase*| restricted to
@@ -504,20 +508,22 @@ Section~\ref{sec:moduliTests}):
     up to 30, against the C program (from stage~C1 on, when \verb|ratpoints-lean| runs the sieve,
     a theorem relates the list of the sieve to that of the brute force, since stage~E
     Theorem~\ref{thm:findPoints_order}, so that the brute force needs no test of its own);
-  \item 350 hand-written command lines (\verb|scripts/difftest_cases.py|) for the checks that
+  \item 374 hand-written command lines (\verb|scripts/difftest_cases.py|) for the checks that
     \verb|main.c| makes on the coefficients, the height and the options: white space and signs, the
     bounds of a \verb|long|, the grammar of \verb|strtod|, every option with a missing or malformed
     argument, the options of the search, the search region (errors~7 and~6 of \verb|-l -u -dl -du|,
     the join, the test of the callback, the suppression of the reversal and the order with a range
     of the denominators, since stage~H), the options of the output, the formats and the strings of
     \verb|-f -fs -fm -fe|, the report, the refusals of forms that are not squarefree with and
-    without \verb|-s| and \verb|-k|, and the order of the checks; the two searches at the height
-    $10^{12}$ that both programs stop at a point at infinity, \verb|'1 0 1'| and \verb|'3 2 -1 12'|
-    with \verb|-q -1|, run with a timeout of $30$ seconds and a cap of $4$~GB on the memory; besides
-    these, the usage of \verb|ratpoints-lean|, and failed writes: a standard output that is a pipe
-    without a reader, where \verb|SIGPIPE| must end the C program and \verb|ratpoints-lean| must
-    exit with status~141, both without a message (unless nothing is written), and a full device,
-    where both must ignore the failure;
+    without \verb|-s| and \verb|-k|, the order of the checks, and, since stage~I, the report of the
+    library under \verb|-v| with its exits, the refusals after its first lines, the three cases of
+    the reversal, the divisors, the forbidden divisors and the tuning options; the two searches at
+    the height $10^{12}$ that both programs stop at a point at infinity, \verb|'1 0 1'| and
+    \verb|'3 2 -1 12'| with \verb|-q -1|, run with a timeout of $30$ seconds and a cap of $4$~GB on
+    the memory; besides these, the usage of \verb|ratpoints-lean|, and failed writes: a standard
+    output that is a pipe without a reader, where \verb|SIGPIPE| must end the C program and
+    \verb|ratpoints-lean| must exit with status~141, both without a message (unless nothing is
+    written), and a full device, where both must ignore the failure;
   \item 300 random polynomials at small heights with random options of the output, \verb|-q| or
     \verb|-v|, formats and strings, at times with \verb|-p 30 -N 30|, against the C program (the
     suite \verb|outputs|, since stage~G);
@@ -538,21 +544,25 @@ Section~\ref{sec:moduliTests}):
   \item the C program with \verb|-t 4| and \verb|-t 7| against \verb|ratpoints-lean|, on 100
     random polynomials at small heights, at times under \verb|-x|, and with \verb|-t 4| on the
     point-rich curves at $30000$ and a curve at $16383$ where the C program corrects its moduli,
-    under \verb|-x| (the suite \verb|threads|, since stage~I).
+    under \verb|-x| (the suite \verb|threads|, since stage~I);
+  \item 300 random searches under \verb|-v|, with the report of the library, on random polynomials
+    with small and at times large coefficients and on point-rich curves at heights up to $2000$,
+    with random options of the search, the output, the sieve and the tuning and at times a search
+    region, against the C program (the suite \verb|verbose|, since stage~I).
 \end{itemize}
 Point lists are compared in their order (Section~\ref{sec:denCli}); a report, the output of a run
 without \verb|-q|, exactly, with the banner exchanged for that of the C program (messages~3 and~8
 compared, and since stage~I message~4, which was dropped from the report of the C program until
 then, a report of \verb|test4.sh| with the C program on its command line), also the refusal of a
-form that is not squarefree without \verb|-q|, and the output under \verb|-v| by its lines; the
-outputs with the options of the output, under \verb|-x| exactly with the C program on the same
-command line and by the weaker check of Sections~\ref{sec:outputTests} and~\ref{sec:regionTests}
-(exactly since stage~I, Section~\ref{sec:moduliTests}); messages and exit codes are compared exactly
-(but for a pipe without a reader, where the two programs end differently by design), with the banner
-and the usage of the two programs exchanged; and \verb|ratpoints-lean| must write nothing to its
-standard error (it runs with \verb|LEAN_ABORT_ON_PANIC=1|, so that a panic of the Lean runtime ends
-it). CI builds the C program at the pin (\verb|make|, with \verb|libgmp-dev|) and the Lean program,
-and runs the script.
+form that is not squarefree without \verb|-q|, and the output under \verb|-v|, by its lines until
+stage~I and since then byte for byte, with the report of the library; the outputs with the options
+of the output, under \verb|-x| exactly with the C program on the same command line and by the weaker
+check of Sections~\ref{sec:outputTests} and~\ref{sec:regionTests} (exactly since stage~I,
+Section~\ref{sec:moduliTests}); messages and exit codes are compared exactly (but for a pipe without
+a reader, where the two programs end differently by design), with the banner and the usage of the
+two programs exchanged; and \verb|ratpoints-lean| must write nothing to its standard error (it runs
+with \verb|LEAN_ABORT_ON_PANIC=1|, so that a panic of the Lean runtime ends it). CI builds the C
+program at the pin (\verb|make|, with \verb|libgmp-dev|) and the Lean program, and runs the script.
 
 \section{Files and names}
 

@@ -118,25 +118,16 @@ class Outputs(unittest.TestCase):
                                    'report'))
 
     def test_verbose(self):
-        c = ('\nB\n\nCurve equation is  y^2 = x^2 + 1\n\nmax. Height = 5\n\nSE\n\n'
-             '7 moduli used for first stage of sieving,\nx\nPolynomial was reversed for better '
-             'performance.\nSearch intervals:\n[-5.000000, 5.000000]\n\n4 rational points '
-             'found.\n\n')
-        v = '\nB\n\nCurve equation is  y^2 = x^2 + 1\n\nSE\n4 rational points found.\n\n'
-        self.assertEqual(dt.as_verbose(c), v)
-        out = ('\nB\n\nCurve equation is  y^2 = x^2 + 1\n\nlib\n(1 : 1 : 0)\nSE\n'
-               '4 rational points found.\n\n')
-        exp = ('\nB\n\nCurve equation is  y^2 = x^2 + 1\n\n(1 : 1 : 0)\nSE\n'
-               '4 rational points found.\n\n')
-        self.assertTrue(dt.verbose_consistent(exp, out))
-        # a point dropped, a count changed, lines out of order
-        self.assertFalse(dt.verbose_consistent(exp.replace('(1 : 1 : 0)\n', ''), out))
-        self.assertFalse(dt.verbose_consistent(exp.replace('4 rational', '1 rational'), out))
-        self.assertFalse(dt.verbose_consistent('SE\nlib\n', out))
-        # with a format, the library may write into a line of points
-        exp, out = 'B\n-x-x-x\n4 found\n', 'B\n-x\nlib\n-x-x\n4 found\n'
-        self.assertTrue(dt.verbose_consistent(exp, out, True))
-        self.assertFalse(dt.verbose_consistent(exp, out))
+        # under -v the report of the library is compared exactly, as a report, between the points
+        cfg = SimpleNamespace(lean_usage='', c_usage='', lean_banner='L\n\nl\n',
+                              c_banner='C\n\nc\nd\n')
+        head = '\n{}\nCurve equation is  y^2 = x^2 + 1\n\n\nfind_points:\n  degree:       2\n'
+        tail = 'Points at infinity:\n(1 : 1 : 0)\n\nNow start the sieving procedure...\n\n'
+        lean = head.format(cfg.lean_banner) + tail
+        self.assertTrue(dt.agrees(cfg, (lean, 0), (head.format(cfg.c_banner) + tail, 0), 'report'))
+        self.assertFalse(dt.agrees(cfg, (lean, 0), (head.format(cfg.c_banner) +
+                                                    tail.replace('\n\nNow', '\nNow'), 0),
+                                   'report'))
 
     def test_filters(self):
         cfg = SimpleNamespace(lean_usage='', c_usage='', lean_banner='L\n\nl\n',
@@ -149,6 +140,10 @@ class Outputs(unittest.TestCase):
         self.assertTrue(dt.agrees(cfg, ('(0 : 1 : 1)\n(0 : -1 : 1)', 0), ('2\n', 0),
                                   'filter:grep -c .'))
         self.assertTrue(dt.agrees(cfg, ('', 0), ('', 0), 'filter:grep found'))
+        bpw = ('Find the points mod p for the first 30 odd primes p:\n  64.0 bits set per word, 30 '
+               'primes looked at ==> use 7 moduli in the first stage, 7 altogether,\n')
+        self.assertTrue(dt.agrees(cfg, (bpw, 0), ('  64.0 bits set per word\n', 0),
+                                  "filter:grep 'bits set per word' | sed 's/,.*//'"))
         # the exit code: every filtered run is a search, which exits with 0
         self.assertFalse(dt.agrees(cfg, (out, -11), ('2 rational points found.\n', 0),
                                    'filter:grep found'))
@@ -266,7 +261,6 @@ class Outputs(unittest.TestCase):
         # -f takes -q as its format
         self.assertEqual((st.quiet, st.verbose, st.x, st.y, st.z, st.strings, st.N),
                          (False, True, True, False, True, True, 30))
-        self.assertEqual(st.v_words, [0])
         st = dt.settings(['-v', '-xfoo', '-X', '-q', '-1', '-p', '30', '-n', '4', '-A', '0'])
         self.assertEqual((st.quiet, st.verbose, st.x, st.one, st.n, st.A, st.plain),
                          (True, False, False, True, 4, 0, True))

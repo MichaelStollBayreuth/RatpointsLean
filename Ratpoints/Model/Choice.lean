@@ -820,8 +820,9 @@ it, the error of the result, and as a structure (`Ratpoints.SievingInfo`) otherw
 `0` that it returns and the fields of the arguments that it sets; the arrays `prime_se`, `power_se`
 and `pinf` of the loop of the tables in its state (`Ratpoints.TableLoop`), the entries of the prime
 powers made where a modulus needs them (`Ratpoints.makeModulus`); no failure for lack of memory
-(lines 2801 and 3061), which the model cannot meet; no output under `RP_PRIME_STATS`,
-`RATPOINTS_VERBOSE` or `DEBUG`. -/
+(lines 2801 and 3061), which the model cannot meet; no output under `RP_PRIME_STATS` or `DEBUG`, and
+the report under `RATPOINTS_VERBOSE` at its end (lines 3089-3095) printed by the search after it
+returns (`Ratpoints.Report.choice`). -/
 def sievingInfo (c : List Int) (d : Nat) (useCLong checkDenom mayExtend : Bool) (s : SieveOptions)
     (a : ShapeArgs) (bpw : Float) : Id (Except Nat SievingInfo) := do
   let (target, e, u0, ct) := s.tuning

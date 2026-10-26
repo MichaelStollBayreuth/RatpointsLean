@@ -689,6 +689,11 @@ private theorem isSoundRun_of_run_classOffsets {c : List ℤ} {bHigh : ℕ} {si 
   exact ⟨isSoundRun_of_map hi.isSound hi.isPrimeEntry_of_nf hi.magics_eq hcls hbits hoff hi.fits,
     hi.decisionWF.map_dinv f⟩
 
+-- The print channel that prints nothing leaves the delivery as it is.
+@[local simp] private theorem Delivery.print_fun_id {σ : Type} (t : String) (r : Delivery σ) :
+    r.print (fun _ s ↦ s) t = r :=
+  rfl
+
 -- The shape of the run that `Ratpoints.searchPoints` hands to the choice of the moduli, for the
 -- classes `cls` and the word `db` of the 2-adic information.
 private def searchShapeArgs (c : List ℤ) (d H : ℕ) (s : SieveOptions) (bLow bHigh : ℕ)
@@ -728,6 +733,11 @@ private theorem sievingInfo_value (c : List ℤ) (d : ℕ) (u checkDenom mayExte
     ⦃ fun r ↦ r = Id.run (sievingInfo c d u checkDenom mayExtend s a bpw) ⦄ :=
   ⟨fun _ ↦ rfl⟩
 
+private theorem moduli_value (si : SievingInfo) (useJacobi : Bool) (bHigh : ℕ) :
+    ⦃ True ⦄ Report.moduli si useJacobi bHigh
+    ⦃ fun r ↦ r = Id.run (Report.moduli si useJacobi bHigh) ⦄ :=
+  ⟨fun _ ↦ rfl⟩
+
 private theorem sieving_value {σ : Type} (process : ℤ → ℤ → ℤ → σ → Answer σ) (c : List ℤ)
     (d H : ℕ) (s : SieveOptions) (P : Params) (fl : CheckFlags) (useSquares : Bool)
     (us1 : Option (List Setup.DenInfo × List ℕ)) (checkDenom useJacobi : Bool)
@@ -743,22 +753,22 @@ private theorem sieving_value {σ : Type} (process : ℤ → ℤ → ℤ → σ 
 private theorem chooseAndSearch_value {σ : Type} (process : ℤ → ℤ → ℤ → σ → Answer σ)
     (c : List ℤ) (d : ℕ) (s : SieveOptions) (mayExtend : Bool) (fl : CheckFlags)
     (us1 : Option (List Setup.DenInfo × List ℕ)) (a : ShapeArgs) (bpw : Float) (sturmEmpty : Bool)
-    (r : Delivery σ) :
-    ⦃ True ⦄ chooseAndSearch process c d s mayExtend fl us1 a bpw sturmEmpty r
+    (print : String → σ → σ) (r : Delivery σ) :
+    ⦃ True ⦄ chooseAndSearch process c d s mayExtend fl us1 a bpw sturmEmpty print r
     ⦃ fun r' ↦ r'.1 = (Id.run (chooseAndSearch process c d s mayExtend fl us1 a bpw sturmEmpty
-        r)).1 ⦄ :=
+        print r)).1 ⦄ :=
   ⟨fun _ ↦ rfl⟩
 
--- The delivery after the choice of the moduli and the search after it, along its paths for the
--- result `si` of the choice: the delivery as it came after the exit of the choice, else that of the
--- points at infinity, followed, unless the callback has stopped the search or the Sturm step has
--- left no interval, by the sieving.
+-- The delivery after the choice of the moduli and the search after it, with the print channel that
+-- prints nothing, along its paths for the result `si` of the choice: the delivery as it came after
+-- the exit of the choice, else that of the points at infinity, followed, unless the callback has
+-- stopped the search or the Sturm step has left no interval, by the sieving.
 private theorem chooseAndSearch_spec_paths {σ : Type} (process : ℤ → ℤ → ℤ → σ → Answer σ)
     (c : List ℤ) (d : ℕ) (s : SieveOptions) (mayExtend : Bool) (fl : CheckFlags)
     (us1 : Option (List Setup.DenInfo × List ℕ)) (a : ShapeArgs) (bpw : Float) (sturmEmpty : Bool)
     (r : Delivery σ) (si : Except ℕ SievingInfo)
     (hsi : Id.run (sievingInfo c d (Setup.useCLong c d) (d % 2 == 0) mayExtend s a bpw) = si) :
-    ⦃ True ⦄ chooseAndSearch process c d s mayExtend fl us1 a bpw sturmEmpty r
+    ⦃ True ⦄ chooseAndSearch process c d s mayExtend fl us1 a bpw sturmEmpty (fun _ s ↦ s) r
     ⦃ fun out ↦ out.1 = match (generalizing := false) si with
         | .error _ => r
         | .ok si => if (pointsAtInfinity process c d fl r).quit || sturmEmpty then
@@ -767,13 +777,12 @@ private theorem chooseAndSearch_spec_paths {σ : Type} (process : ℤ → ℤ �
               a.useJacobi si.forb si.forbVal si.entries si.magics a.cls a.db si.store a.bLow a.bHigh
               a.domain (pointsAtInfinity process c d fl r))).1 ⦄ := by
   rcases si with p | si <;>
-  · vcgen [chooseAndSearch, sievingInfo_value, sieving_value]
+  · vcgen [chooseAndSearch, sievingInfo_value, moduli_value, sieving_value]
     all_goals subst_vars
     all_goals simp_all
 
--- The data and the count of the search, with the print channel that prints nothing, which it does
--- not read, along its paths, for the classes and the word of the 2-adic information and the 2-adic
--- exit `ex`: the
+-- The data and the count of the search, with the print channel that prints nothing, along its
+-- paths, for the classes and the word of the 2-adic information and the 2-adic exit `ex`: the
 -- delivery as it came after the 2-adic exit, else that of the choice of the moduli and the search
 -- after it (`Ratpoints.chooseAndSearch`) with the shape of the run of the search.
 private theorem searchPoints_spec_paths {σ : Type} (process : ℤ → ℤ → ℤ → σ → Answer σ)
@@ -789,13 +798,13 @@ private theorem searchPoints_spec_paths {σ : Type} (process : ℤ → ℤ → �
             Id.run (Setup.setupUs1 c d bHigh) else none)
           (searchShapeArgs c d H s bLow bHigh dom cls db)
           (Id.run (meanBitsPerWord (searchShapeArgs c d H s bLow bHigh dom cls db))) sturmEmpty
-          r)).1) ⦄ := by
+          (fun _ s ↦ s) r)).1) ⦄ := by
   vcgen [searchPoints, setupUs1_value, twoAdic_value, numClasses_value, meanBitsPerWord_value,
     chooseAndSearch_value]
   all_goals subst_vars
   all_goals obtain ⟨rfl, rfl⟩ :=
     Prod.mk.inj (‹((_ : Vector NumClass 64), (_ : UInt64)) = _›.trans hcd)
-  all_goals simp only [searchShapeArgs] at *
+  all_goals simp only [Delivery.print_fun_id, searchShapeArgs] at *
   all_goals split_ifs <;> rfl
 
 -- `Ratpoints.searchPoints_spec_paths` with `Ratpoints.chooseAndSearch_spec_paths`, as an equation,

@@ -15,7 +15,9 @@ that the Sturm step keeps. Apart from the estimate of the work in the choice of 
 by their bits, `Ratpoints.Double.toFloat`), it does no floating-point arithmetic on them: it
 converts `long`s to doubles, compares doubles, takes them apart into mantissa and exponent
 (`frexp`), scales them by powers of 2 (`ldexp`), steps to the next double (`nextafter`), converts
-doubles to `long`s and `unsigned long`s, and prints them. The model holds a double as its IEEE 754
+doubles to `long`s and `unsigned long`s, and prints them, as `printf` of glibc does under the
+conversions `%f` and `%.pf` (`Ratpoints.Double.printFixed`); the report of the library prints
+doubles of its cost model too (`Ratpoints.Double.ofFloat`). The model holds a double as its IEEE 754
 binary64 bits (`Ratpoints.Double`), with these operations as functions on the bits, each doing what
 the operation of the C language or the C library does to a double on the platforms of ratpoints
 (IEEE 754 binary64 with rounding to nearest, ties to even, as gcc and glibc implement them): the
@@ -45,8 +47,9 @@ the program uses).
   conversions between `long`s and doubles.
 * `Ratpoints.Double.ldexp`, `Ratpoints.Double.frexp`, `Ratpoints.Double.nextUp`,
   `Ratpoints.Double.nextDown`: the functions of the C library.
-* `Ratpoints.Double.toFloat`: a double as a value of Lean's `Float`, for the cost model of the
-  choice of the moduli.
+* `Ratpoints.Double.toFloat`, `Ratpoints.Double.ofFloat`: a double as a value of Lean's `Float`,
+  for the cost model of the choice of the moduli, and back, for the report of the library.
+* `Ratpoints.Double.printFixed`: a double as `printf` prints it under `%.pf`.
 -/
 
 @[expose] public section
@@ -85,6 +88,11 @@ the platform, by its bits: the doubles that the caller gives the cost model of t
 moduli enter its arithmetic so, the tuning values of the options of the sieve
 (`Ratpoints.SieveOptions`) and the ends of the search intervals (`Ratpoints.numeratorsFor`). -/
 def toFloat (x : Double) : Float := Float.ofBits x.bits
+
+/-- The value `x` of Lean's `Float` as a double, by its bits: the doubles of the cost model of the
+choice of the moduli that the report of the library prints (`Ratpoints.Report.choice`,
+`Ratpoints.Report.moduli`). -/
+def ofFloat (x : Float) : Double := ⟨x.toBits⟩
 
 /-- The sign bit. -/
 def signBit (x : Double) : Bool := x.bits >>> 63 == 1
@@ -276,6 +284,21 @@ def nextDown (x : Double) : Double :=
   else if x.signBit then ⟨x.bits + 1⟩
   else ⟨x.bits - 1⟩
 
+/-- What `printf` of glibc prints for the double `x` under the conversion `%.pf`, of which `%f` and
+`%lf` are `%.6f`: the exact value of `x` rounded to `p` places after the point, ties to even, in
+full however large it is, without the point for `p = 0`, after a `-` whenever the sign bit is set,
+also for `-0.0` and for a negative value that rounds to `0`; `inf` for an infinity and `nan` for a
+NaN, after a `-` when the sign bit is set. -/
+def printFixed (p : Nat) (x : Double) : String :=
+  let sign := if x.signBit then "-" else ""
+  if x.isNaN then sign ++ "nan"
+  else if x.isInf then sign ++ "inf"
+  else
+    let (m, e) := x.toDyadic
+    let n := roundShift (m.natAbs * 10 ^ p) (-e)
+    let f := toString (n % 10 ^ p)
+    sign ++ toString (n / 10 ^ p) ++ if p = 0 then "" else "." ++ "".pushn '0' (p - f.length) ++ f
+
 /-! ### Examples
 
 The operations on the edge cases that matter (both zeros, the subnormals, the largest finite
@@ -392,6 +415,22 @@ prints for them, as bits. -/
     (0x43efffffffffffff, 18446744073709549568), (0x3fefffffffffffff, 0),
     (0x4330000000000000, 4503599627370496)] :
     List (UInt64 × Nat)).all fun (x, n) ↦ (toUInt64 ⟨x⟩).toNat == n
+
+-- `printf` of glibc under `%.0f`, `%.1f` and `%.2f`: ties to even at the last place (`0.5`, `1.5`,
+-- `2.5`, `0.25`, `0.75`, `0.125`, `0.375`), `-` on the sign bit also for `-0.0` and for negative
+-- values that round to `0`, the double nearest to `0.715` and to `1.005`, which lie below the ties,
+-- a large value in full, and no point for `%.0f`.
+#guard ([(0x3fe0000000000000, "0", "0.5", "0.50"), (0x3ff8000000000000, "2", "1.5", "1.50"),
+    (0x4004000000000000, "2", "2.5", "2.50"), (0xbfe0000000000000, "-0", "-0.5", "-0.50"),
+    (0x3fd0000000000000, "0", "0.2", "0.25"), (0x3fe8000000000000, "1", "0.8", "0.75"),
+    (0x3fc0000000000000, "0", "0.1", "0.12"), (0x3fd8000000000000, "0", "0.4", "0.38"),
+    (0xbfa47ae147ae147b, "-0", "-0.0", "-0.04"), (0x3fe6e147ae147ae1, "1", "0.7", "0.71"),
+    (0x3ff0147ae147ae14, "1", "1.0", "1.00"), (0x4050000000000000, "64", "64.0", "64.00"),
+    (0x4450000000000000, "1180591620717411303424", "1180591620717411303424.0",
+      "1180591620717411303424.00"), (0xfff0000000000000, "-inf", "-inf", "-inf")] :
+    List (UInt64 × String × String × String)).all fun (x, s0, s1, s2) ↦
+  (Double.mk x).printFixed 0 == s0 && (Double.mk x).printFixed 1 == s1 &&
+    (Double.mk x).printFixed 2 == s2
 
 end Double
 

@@ -271,7 +271,11 @@ verdict.
   even $d$ with $c_d$ a square and $c_0$ not, the list $c_d, \dots, c_0$ (case~2); for odd $d$ with
   $|c_d| \ne 1$, $c_0 = 0$ and $|c_1| = 1$, the list $c_0, c_d, \dots, c_1$ (case~3); and otherwise
   $c$ itself; with a flag that says whether the list is reversed
-  (\csource{find_points.c}{4732}{4803}). The squares are those of \verb|mpz_perfect_square_p|: $0$
+  (\csource{find_points.c}{4732}{4739}, \csource{find_points.c}{4744}{4756},
+  \csource{find_points.c}{4759}{4770}, \csource{find_points.c}{4775}{4790},
+  \csource{find_points.c}{4802}{4803}; the lines of the report under \verb|RATPOINTS_VERBOSE| in its
+  course are those of Definition~\ref{def:report}, which the search prints from its result). The
+  squares are those of \verb|mpz_perfect_square_p|: $0$
   and the squares of the positive integers. The switch is the test of the flags that guards the C
   block, the two bits of which, the caller's \verb|RATPOINTS_NO_REVERSE| and
   \verb|RATPOINTS_NO_REVERSE_AUTO|, which a search region or a range of the denominators sets, the
@@ -456,44 +460,46 @@ Lemma~\ref{lem:sift_eq_checkDen} maps their side.
 
 \begin{definition}[The search of the polynomial handed on]\label{def:searchPoints}
   \uses{def:chooseAndSearch, def:arraySize, def:runShape, def:twoAdic, def:setupUs1,
-    def:numClasses, def:Outcome, def:delivery, def:sieveOptions}
+    def:numClasses, def:Outcome, def:delivery, def:sieveOptions, def:report}
   \lean{Ratpoints.searchPoints}
   \leanok
   For the coefficients $c$ of degree $d$ that the set-up hands on, the flags of the check, the
   height $H$, the normalized options of the sieve (Definition~\ref{def:sieveOptions}), whether the
   caller left the number of primes to the library, the callback, a delivery whose flag is clear and
-  the print channel, through which it prints nothing yet (the report of the library, stage~I), over
-  the denominators $b_{\mathrm{low}}, \dots, b_{\mathrm{high}}$ and the search intervals, in the
-  order of \verb|find_points_work_1|: the flags of the tests on the denominators, the checked loop
-  for even $d$, which the choice of the moduli switches off when nothing comes of it, the Jacobi
-  test for even $d$, $c_d$ not a square and the Jacobi switch of the options, the squares for odd
-  $d$ and $|c_d| = 1$, and for odd $d$ otherwise the divisors of the leading coefficient up to
+  the print channel, through which it prints its report (Definition~\ref{def:report}), over the
+  denominators $b_{\mathrm{low}}, \dots, b_{\mathrm{high}}$ and the search intervals, in the order
+  of \verb|find_points_work_1|: the flags of the tests on the denominators, the checked loop for
+  even $d$, which the choice of the moduli switches off when nothing comes of it, the Jacobi test
+  for even $d$, $c_d$ not a square and the Jacobi switch of the options, the squares for odd $d$ and
+  $|c_d| = 1$, and for odd $d$ otherwise the divisors of the leading coefficient up to
   $b_{\mathrm{high}}$ (Definition~\ref{def:setupUs1}; \csource{find_points.c}{4588}{4589},
   \csource{find_points.c}{4595}{4596}, \csource{find_points.c}{4607}{4607},
-  \csource{find_points.c}{4900}{4943}, with the bits \verb|RATPOINTS_CHECK_DENOM| and
-  \verb|RATPOINTS_USE_JACOBI| that it sets, \csource{ratpoints.h}{415}{415} and
-  \csource{ratpoints.h}{418}{418}); the 2-adic information (Definition~\ref{def:twoAdic}) with the
-  packings of the classes and \verb|den_bits| (Definition~\ref{def:numClasses}), and nothing
-  delivered when no class of the denominators admits a numerator and there is no point at infinity
-  (\csource{find_points.c}{4603}{4604}, \csource{find_points.c}{4948}{4948},
-  \csource{find_points.c}{4954}{4963}); then the mean number of bits per word of the bit arrays of
-  the run (Definition~\ref{def:runShape}; \csource{find_points.c}{4992}{4995}) and the choice of the
-  moduli and the search after it (Definition~\ref{def:chooseAndSearch}; the array of the sieve
-  entries, \csource{find_points.c}{4602}{4602}), with the shape of the run (the flags of the
-  denominators, the height, the range of the denominators, the search intervals, the classes,
-  \verb|den_bits| and the array size of the options normalized for $H$), each point mapped by
-  $\mathrm{swapPoint}$ when the flag of the reversal is set; the lines of the report under
-  \verb|RATPOINTS_VERBOSE| in the part of the search after the choice are recorded here, with
-  nothing printed yet (\csource{find_points.c}{5007}{5009}, \csource{find_points.c}{5104}{5104};
-  stage~I). The 2-adic exit returns the delivery as it came. The search returns what a search gives
-  back (Definition~\ref{def:Outcome}): the data and the count of the delivery, with the flag of the
-  reversal, the squares, the success of the divisor set-up, the search intervals and the numbers of
-  the moduli used that the search after the choice returns, $0$ for each after the 2-adic exit. A
-  definition of type \verb|Id|, which the search of \verb|find_points_work_1| runs
-  (Definition~\ref{def:findPointsVerbose}) with the normalized range of the denominators, the search
-  intervals that the Sturm step leaves and its flag \verb|sturm_empty|
-  (Definition~\ref{def:sturmRegion}). What it delivers for normalized options, with the print
-  channel that prints nothing, $1 \le H < 2^{63}$, as the refusals leave it,
+  \csource{find_points.c}{4900}{4914}, \csource{find_points.c}{4919}{4920},
+  \csource{find_points.c}{4927}{4927}, \csource{find_points.c}{4942}{4943}, with the bits
+  \verb|RATPOINTS_CHECK_DENOM| and \verb|RATPOINTS_USE_JACOBI| that it sets,
+  \csource{ratpoints.h}{415}{415} and \csource{ratpoints.h}{418}{418}), with their report, printed
+  after the divisor set-up, which prints nothing; the 2-adic information
+  (Definition~\ref{def:twoAdic}) with the packings of the classes and \verb|den_bits|
+  (Definition~\ref{def:numClasses}), and nothing delivered when no class of the denominators admits
+  a numerator and there is no point at infinity (\csource{find_points.c}{4603}{4604},
+  \csource{find_points.c}{4948}{4948}, \csource{find_points.c}{4954}{4959},
+  \csource{find_points.c}{4962}{4963}), after the message of that exit; then the report of the
+  packing and the mean number of bits per word of the bit arrays of the run
+  (Definition~\ref{def:runShape}; \csource{find_points.c}{4992}{4995}) and the choice of the moduli
+  and the search after it (Definition~\ref{def:chooseAndSearch}; the array of the sieve entries,
+  \csource{find_points.c}{4602}{4602}), with the shape of the run (the flags of the denominators,
+  the height, the range of the denominators, the search intervals, the classes, \verb|den_bits| and
+  the array size of the options normalized for $H$), each point mapped by $\mathrm{swapPoint}$ when
+  the flag of the reversal is set; the lines of the report under \verb|RATPOINTS_VERBOSE| are those
+  of Definition~\ref{def:report}. The 2-adic exit returns the delivery as it came, but for its
+  message. The search returns what a search gives back (Definition~\ref{def:Outcome}): the data and
+  the count of the delivery, with the flag of the reversal, the squares, the success of the divisor
+  set-up, the search intervals and the numbers of the moduli used that the search after the choice
+  returns, $0$ for each after the 2-adic exit. A definition of type \verb|Id|, which the search of
+  \verb|find_points_work_1| runs (Definition~\ref{def:findPointsVerbose}) with the normalized range
+  of the denominators, the search intervals that the Sturm step leaves and its flag
+  \verb|sturm_empty| (Definition~\ref{def:sturmRegion}). What it delivers for normalized options,
+  with the print channel that prints nothing, $1 \le H < 2^{63}$, as the refusals leave it,
   $1 \le b_{\mathrm{low}}$, $b_{\mathrm{high}} \le H$, well-formed search intervals and $d$ the
   degree of $c$ is the subject of Lemma~\ref{lem:searchList}: the points at infinity and, over the
   denominators of the search (Definition~\ref{def:searchDens}), the points of the check with the
@@ -713,16 +719,19 @@ Each component of the set-up differs from the C code in a stated way, recorded i
     branch of the schedule of Horner's rule; the table and the coefficients fresh arrays and the
     entry a fresh value, returned, for the buffers that the C code takes them from and the entry and
     the array of its caller where it stores them;
-  \item the exits return the delivery as it came, where \verb|sieving_info| returns the prime and
+  \item the exits return the delivery as it came, but for the message of the exit under
+    \verb|RATPOINTS_VERBOSE|, where \verb|sieving_info| returns the prime and
     \verb|find_points_work_1| the count $0$;
   \item integers for the \verb|long|s, with the range obligations of the helper \verb|mod| and of
-    the negations of the map stated as lemmas; no failure for lack of memory; no output under
-    \verb|RATPOINTS_VERBOSE| or \verb|DEBUG|.
+    the negations of the map stated as lemmas; no failure for lack of memory; the report under
+    \verb|RATPOINTS_VERBOSE| printed through the print channel of the search
+    (Definition~\ref{def:report}), that of the reversal check and of the Sturm step from their
+    results, after them, where the C code prints in their course; no output under \verb|DEBUG|.
 \end{itemize}
 The lines of the set-up that are neither modelled nor left to a later stage are excluded in
-\verb|correspondence/ratpoints.toml|: the output under \verb|RATPOINTS_VERBOSE| and \verb|DEBUG| and
-the instrumentation of the development, the management of memory and its failures, the input fields
-that \verb|find_points_work| saves and puts back, the checks of arguments that only a caller of the
+\verb|correspondence/ratpoints.toml|: the output under \verb|DEBUG| and the instrumentation of the
+development, the management of memory and its failures, the input fields that
+\verb|find_points_work| saves and puts back, the checks of arguments that only a caller of the
 library can fail, and the threads; so the record of \verb|find_points_work_1| up to the run lacks
 only what belongs to stage~I, now that stages~E, F1, F2, F3, F4 and~H have recorded their lines
 (Chapters~\ref{chap:denominators}, \ref{chap:tables}, \ref{chap:stages}, \ref{chap:packing},

@@ -53,6 +53,10 @@ and compares it with the recorded outputs and with the C program:
           30000 under -x, on one of which the C program decides a correction of the moduli without
           an effect on the output, and a curve at 16383 under -x where the correction changes the
           survivors;
+  verbose random searches under -v, with the report of the library, against the C program: random
+          polynomials with small and at times large coefficients and point-rich curves at heights
+          of at most 2000, with random options of the search, the output, the sieve and the tuning
+          and at times a search region (scripts/difftest_cases.py);
   test4high  the invocations of test4.sh that search with a height bound above --max-height and
           at most --test4-max-height that the suite test4 does not compare (those without a narrow
           search region), a few minutes in all: run locally, not by default;
@@ -73,14 +77,14 @@ search region (message 3) and the search intervals (message 8), but for the bann
 exchanged for that of the C program. A report of test4.sh, whose m() drops message 4 from the
 reports that it records, is compared with the C program on its command line, a disagreement of the C
 program with the record (both without the lines that m() drops) being noted apart, not counted as a
-failure. Under -v, where the C program prints the report of its library too, ratpoints-lean is
-compared with the report of the C program on the same command line without -v, whose height and
-messages 4, 7 and 8 are dropped, as main.c does under -v; the lines of that text must be among the
-lines of the output of the C program with -v, in their order, with the same lines of points and
-pairs (with a format or a string, whose points need not end their lines, only its characters among
-those of that output, in their order). The outputs that test4.sh filters through grep found, grep
-'Curve equation' and grep -c . are compared after the same filter, the banner exchanged first, with
-the exit status 0. Under -x (no exact check), where the lines printed are the survivors of the
+failure. Under -v, where the library prints its report between the points, the output is compared
+exactly in the same way, byte for byte but for the banner, with the output of the C program on the
+same command line, also for the runs of test4.sh's v(), which records the report without the lines
+that depend on the build, and for the runs of test3.sh that filter the report, by the whole output
+of the command before the filter. The outputs that test4.sh filters through grep found, grep 'Curve
+equation', grep -c ., grep 'bits set per word' | sed 's/,.*//' and grep 'iterations for' are
+compared after the same filter, the banner exchanged first, with the exit status 0, and also as a
+whole with the C program on their command line. Under -x (no exact check), where the lines printed are the survivors of the
 sieve, which depend on the moduli and on the search region: exactly with the output of the C program
 on the same command line, since the model chooses its moduli from the curve and corrects them during
 the run as the C program does, also on the runs of test4.sh under -x, which are compared with the C
@@ -89,7 +93,8 @@ not counted as a failure, the choice of the moduli computing with the log and po
 (the runs where the C program may correct its choice are counted: neither -n nor -N gives a value >=
 0, -A does not give 0, and the run can pass RP_ADAPT_WORDS = 10^6 numerator words, by an upper bound
 from the denominators, the search intervals and the height bound); and, without a format or a
-string, also by a weaker check against the output of the C program: every line (x : z) a normalized
+string and without -v, whose report of the library comes between the pairs, also by a weaker check
+against the output of the C program: every line (x : z) a normalized
 coprime pair in the range of the height and, but for (1 : 0), with z in the range of the
 denominators and x / z in the exact search region of the command line, none repeated, the pairs that
 are points the same and in the same order in both outputs, the pairs common to both in the same
@@ -108,11 +113,10 @@ model sifts at most 10^5 denominators for it (an upper bound that mirrors the di
 model) and sifts at most 2 * 10^10 numerators (an upper bound from the widths of the intervals, and
 under -1 from the first point of the expected output, where the search stops): the searches of
 test4.sh at large heights in a narrow region. The runs of test3.sh whose output a pipe filters are
-compared with the C program on the whole output of the command before the pipe, but for those under
--v. Skipped: the outputs that test4.sh and test3.sh filter to look at the report of the library
-under -v; and the other searches above --max-height, which the suites that run the C program compare
-when they have no search region and it prints nothing (a search with -q that finds no points, as
-when no class of the denominators modulo 64 admits a numerator).
+compared with the C program on the whole output of the command before the pipe. Skipped: the other
+searches above --max-height, which the suites that run the C program compare when they have no
+search region and it prints nothing (a search with -q that finds no points, as when no class of the
+denominators modulo 64 admits a numerator).
 
 options:
   --lean PATH        the ratpoints-lean executable (default: .lake/build/bin/ratpoints-lean)
@@ -122,7 +126,7 @@ options:
   --repo PATH        a clone of ratpoints that contains the pinned commit (default: the
                      environment variable RATPOINTS_REPO); the test files are read at the pin
   --suites LIST      comma-separated suites (default: test4,test3,rptest,random,outputs,errors,
-                     fuzz,params,high,regions,depths,tuning,threads)
+                     fuzz,params,high,regions,depths,tuning,threads,verbose)
   --max-height H     the largest height of a search (default: 30000)
   --test4-max-height H  the largest height of a search of the suite test4high (default: 100000)
   --rptest-height h  the reduced height of the rptest suites (default: 100)
@@ -134,6 +138,7 @@ options:
   --tuning N         the number of searches of the suite tuning (default: 300)
   --threads N        the number of random polynomials of the suite threads, run with -t 4 and -t 7
                      (default: 100)
+  --verbose-runs N   the number of searches of the suite verbose (default: 300)
   --seed S           the seed of the random suites (default: 1)
   -v                 print every comparison
 """
@@ -170,11 +175,13 @@ DEN_OPTS = ('l', 'u')  # the third character of -dl, -du
 POINT = re.compile(r'^\((-?\d+) : (-?\d+) : (\d+)\)$')
 PAIR = re.compile(r'^\((-?\d+) : (-?\d+)\)$')
 COUNT = re.compile(r'^-?\d+ rational point(?: pair)?s found\.$')
-# The filters of test4.sh that ratpoints-lean is compared under; the others look at the report of
-# the library, which it does not print.
+# The filters of test4.sh, under which ratpoints-lean is compared with the outputs that it records.
 FILTERS = {'grep found': lambda ls: [l for l in ls if 'found' in l],
            "grep 'Curve equation'": lambda ls: [l for l in ls if 'Curve equation' in l],
-           'grep -c .': lambda ls: [str(sum(1 for l in ls if l))]}
+           'grep -c .': lambda ls: [str(sum(1 for l in ls if l))],
+           "grep 'bits set per word' | sed 's/,.*//'":
+               lambda ls: [l.split(',', 1)[0] for l in ls if 'bits set per word' in l],
+           "grep 'iterations for'": lambda ls: [l for l in ls if 'iterations for' in l]}
 # The params suite: the options that set the sieving parameters, with values that give no
 # moduli, all the primes of the default build and a cap above them, the cut points in several
 # positions, a third stage, the second and the third stage after few moduli or none in the first
@@ -278,16 +285,18 @@ class Tally:
     """What a suite compared, skipped and found: the number of comparisons, among them those of the
     output of a search in its order (`in_order`: a list of points, an exact output or a report),
     and those of a search under -x, exactly against the C program on the same command line, and by
-    the weaker check unless a format or a string is given (`x_exact`), of these the number where the
-    C program may correct its moduli during the run (`x_adapt`); the reports compared with message 4
-    (`msg4`); the skipped runs by their reason; the failures; and the disagreements of the C program
-    with the outputs that testbase4 records for its searches compared with the C program, which are
-    no failures (`notes`)."""
+    the weaker check unless a format or a string is given or -v (`x_exact`), of these the number
+    where the C program may correct its moduli during the run (`x_adapt`); the reports compared with
+    message 4 (`msg4`); the outputs compared under -v, with the report of the library (`verbose`);
+    the skipped runs by their reason; the failures; and the disagreements of the C program with the
+    outputs that testbase4 records for its searches compared with the C program, which are no
+    failures (`notes`)."""
     compared: int = 0
     in_order: int = 0
     x_exact: int = 0
     x_adapt: int = 0
     msg4: int = 0
+    verbose: int = 0
     skipped: dict = field(default_factory=dict)
     failures: list = field(default_factory=list)
     notes: list = field(default_factory=list)
@@ -412,9 +421,8 @@ def as_long(arg):
 class Settings:
     """The settings of a command line that decide how its output is compared: -q, -v (cancelled
     by -q), -x, -y, -z and -1, the last of each pair winning, whether a format or a string is given,
-    the last values of -n, -N and -A, the indices of the words -v among the options, and the search
-    region: the ends of the intervals of -l and -u in their order, as (letter, word), and the last
-    values of -dl and -du."""
+    the last values of -n, -N and -A, and the search region: the ends of the intervals of -l and -u
+    in their order, as (letter, word), and the last values of -dl and -du."""
     quiet: bool = False
     verbose: bool = False
     x: bool = False
@@ -425,7 +433,6 @@ class Settings:
     n: int | None = None
     N: int | None = None
     A: int | None = None
-    v_words: list = field(default_factory=list)
     ends: list = field(default_factory=list)
     dl: int | None = None
     du: int | None = None
@@ -446,13 +453,12 @@ def settings(opts):
     """The settings of the options `opts`, the words after the height, as far as ratpoints-lean
     reads them."""
     st = Settings()
-    for i, o, a in option_words(opts)[0]:
+    for _, o, a in option_words(opts)[0]:
         c = o[1]
         if c == 'q':
             st.quiet = True
         elif c == 'v':
             st.verbose = True
-            st.v_words.append(i)
         elif c in 'xX':
             st.x = c == 'x'
         elif c in 'yY':
@@ -684,31 +690,6 @@ def as_recorded_by_m(text):
                      if not l.startswith('This is ratpoints-') and not MODULI_LINES.search(l))
 
 
-def as_verbose(text):
-    """What main.c prints under -v, but for the report of the library, from its report `text` on
-    the same command line without -v: the height bound and the blank line after it, and after the
-    points the two newlines and the messages on the moduli used, what the search did and the search
-    intervals, left out."""
-    text = re.sub(r'max\. Height = \d+\n\n', '', text, count=1)
-    return re.sub(r'\n\n-?\d+ moduli used for first stage of sieving,\n.*?'
-                  r'(?=\n-?\d+ rational point(?: pair)?s found\.\n\n\Z)', '', text, count=1,
-                  flags=re.S)
-
-
-def verbose_consistent(exp, out, strings=False):
-    """Whether the text `exp` that ratpoints-lean is to print under -v is consistent with the output
-    `out` of the C program with -v, which holds the report of its library too: the lines of `exp`
-    are among the lines of `out`, in their order, and the lines of points and pairs of the two are
-    the same, in the same order; with a format or a string (`strings`), whose points need not end
-    their lines, so that the library may write into a line of points, only the characters of `exp`
-    among those of `out`, in their order."""
-    if strings:
-        it = iter(out)
-        return all(ch in it for ch in exp)
-    it = iter(lines_of(out))
-    return all(l in it for l in lines_of(exp)) and point_lines(exp) == point_lines(out)
-
-
 def coefficients(arg):
     """The coefficient list of a command line that the C program accepted, constant term first."""
     return [int(w) for w in as_bytes(arg).decode('latin-1').split()]
@@ -874,6 +855,7 @@ def check(cfg, tally, label, args, expected, mode, st=None, lean=None, big=False
     tally.compared += 1
     tally.in_order += mode in ('points', 'report', 'exact') and expected[1] == 0
     tally.msg4 += mode == 'report' and MODULI_LINES.search(expected[0]) is not None
+    tally.verbose += st is not None and st.verbose and not mode.startswith('filter:')
     if not ok:
         tally.failures.append(failure_text(label, expected, lean))
     if cfg.verbose:
@@ -911,20 +893,6 @@ def skips_height(cfg, args, out, code, st):
     return None
 
 
-def c_expected(cfg, args, st):
-    """The output and the exit code of the C program that ratpoints-lean is compared with on the
-    command line `args` with the settings `st`, and whether they are consistent: under -v, its
-    report on the command line without the options -v as main.c prints it under -v (as_verbose),
-    which must be consistent with its output with -v, which has the report of the library too
-    (verbose_consistent)."""
-    out, code = run(cfg.c, args)
-    if not st.verbose or code not in (0, 8):
-        return out, code, True
-    plain, plain_code = run(cfg.c, [a for i, a in enumerate(args) if i - 2 not in st.v_words])
-    exp = as_verbose(plain)
-    return exp, plain_code, plain_code == code and verbose_consistent(exp, out, st.strings)
-
-
 def live_mode(mode):
     """The mode of a comparison with a live output of the C program: a list of points exactly, also
     its final newline (a recorded output of test4.sh or rptest may lack it)."""
@@ -951,23 +919,24 @@ def check_x(cfg, tally, label, args, st, expected, big=False):
     """Compare ratpoints-lean with the C program on a search under -x (no exact check) on the
     command line `args` with the settings `st`, whose lines (x : z) are the survivors of the sieve,
     which depend on the moduli and on the search region, and whose output of the C program is
-    `expected` (under -v its report without the report of the library, c_expected): exactly, since
-    the model chooses its moduli from the curve and corrects them during the run as the C program
-    does, counting the runs where the C program may correct them (correction_possible); and,
-    without a format or a string, whose lines it could not read, also by the weaker check against
-    `expected` (weak_agrees)."""
+    `expected`: exactly, since the model chooses its moduli from the curve and corrects them during
+    the run as the C program does, counting the runs where the C program may correct them
+    (correction_possible); and, without a format or a string, whose lines it could not read, and
+    without -v, whose report of the library comes between the pairs, also by the weaker check
+    against `expected` (weak_agrees)."""
     lean = lean_or_timeout(cfg, tally, label, args, big)
     if lean is None:
         return
     fails = []
     if not verdict(cfg, lean, expected, live_mode(mode_of(st, expected[1])), args, st):
         fails.append(failure_text(f'{label} (exactly)', expected, lean))
-    if not st.strings and not verdict(cfg, lean, expected, 'weak', args, st):
+    if not st.strings and not st.verbose and not verdict(cfg, lean, expected, 'weak', args, st):
         fails.append(failure_text(f'{label} (the weaker check)', expected, lean))
     tally.compared += 1
     tally.x_exact += 1
     tally.x_adapt += correction_possible(args, st)
     tally.msg4 += not st.quiet and MODULI_LINES.search(expected[0]) is not None
+    tally.verbose += st.verbose
     if fails:
         tally.failures.append('; '.join(fails))
     if cfg.verbose:
@@ -979,15 +948,11 @@ def against_c(cfg, tally, label, args):
     check_x, and a search above --max-height that big_search admits with a timeout and a cap on
     the memory."""
     st = settings(args[2:])
-    out, code, consistent = c_expected(cfg, args, st)
+    out, code = run(cfg.c, args)
     skip = skips_height(cfg, args, out, code, st)
     big = code == 0 and above(cfg, args)
     if skip:
         tally.skip(skip)
-    elif not consistent:
-        tally.compared += 1
-        tally.failures.append(f'{label}: the report of the C program without -v is not consistent '
-                              f'with its output with -v')
     elif st.x and code == 0:
         check_x(cfg, tally, label, args, st, (out, code), big)
     else:
@@ -1035,8 +1000,8 @@ def split_test4(text):
 def compare_search(cfg, tally, label, args, text, st, big=False):
     """Compare ratpoints-lean with the output `text` of a search that testbase4 records for the
     command line `args` with the settings `st` (above --max-height, `big`, with a timeout and a cap
-    on the memory): under -v with the C program (whose report of the library test4.sh's v()
-    filters); under -x by check_x with the output of the C program on `args`, and without -q, a
+    on the memory): under -v with the C program, whose report of the library test4.sh's v()
+    records without the lines that depend on the build; under -x by check_x with the output of the C program on `args`, and without -q, a
     report, with that output too (whose message 4 test4.sh's m() drops), a disagreement of that
     output with `text` noted apart from the failures (the lines that m() drops dropped from both);
     else with `text`."""
@@ -1078,10 +1043,10 @@ def suite_test4(cfg, tally, window=None):
             continue
         if r.filt is not None:
             if r.filt not in FILTERS:
-                tally.skip('output filtered to look at the report of the library under -v '
-                           '(stage I)')
+                tally.skip('output filtered')
             else:
                 check(cfg, tally, label, r.args, (text, 0), 'filter:' + r.filt, st)
+                against_c(cfg, tally, f'{label} (the whole output)', r.args)
         elif code == 8 or 'Polynomial is not square-free.' in text:
             # error 8, recorded by e() with -q, and without -q at the end of a report
             if st.verbose:
@@ -1098,18 +1063,15 @@ def suite_test4(cfg, tally, window=None):
 
 
 def suite_test3(cfg, tally):
-    """The invocations of test3.sh against the C program; one whose output test3.sh filters with
-    its whole output, that of the command before the filter, its redirections dropped, but for those
-    under -v, whose filters look at the report of the library (stage I)."""
+    """The invocations of test3.sh against the C program; one whose output test3.sh filters (lines
+    of the report, of the report of the library under -v among them) with its whole output, that of
+    the command before the filter, its redirections dropped."""
     script = git_show(cfg.repo, cfg.commit, 'test3.sh')
     for no, line in enumerate(script.split('\n'), 1):
         if not line.startswith('rp '):
             continue
         cmd = line.split('|', 1)[0]
         args = [w for w in shlex.split(cmd)[1:] if not re.fullmatch(r'\d*>&\d+', w)]
-        if '|' in line and settings(args[2:]).verbose:
-            tally.skip('output filtered to look at the report of the library under -v (stage I)')
-            continue
         against_c(cfg, tally, f'test3.sh:{no} {args}' + (' (unfiltered)' if '|' in line else ''),
                   args)
 
@@ -1243,6 +1205,15 @@ def suite_depths(cfg, tally):
         against_c(cfg, tally, f'depths {i} {args}', args)
 
 
+def suite_verbose(cfg, tally):
+    """Searches under -v, with the report of the library (difftest_cases.random_verbose_line),
+    against the C program."""
+    rng = random.Random(cfg.seed)
+    for i in range(cfg.verbose_runs):
+        args = difftest_cases.random_verbose_line(rng)
+        against_c(cfg, tally, f'verbose {i} {args}', args)
+
+
 def suite_test4high(cfg, tally):
     suite_test4(cfg, tally, (cfg.max_height, cfg.test4_max_height))
 
@@ -1298,10 +1269,11 @@ SUITES = {'test4': suite_test4, 'test3': suite_test3, 'rptest': suite_rptest,
           'random': suite_random, 'outputs': suite_outputs, 'errors': suite_errors,
           'fuzz': suite_fuzz, 'params': suite_params, 'high': suite_high,
           'regions': suite_regions, 'depths': suite_depths, 'tuning': suite_tuning,
-          'threads': suite_threads, 'test4high': suite_test4high, 'adapt': suite_adapt}
+          'threads': suite_threads, 'verbose': suite_verbose, 'test4high': suite_test4high,
+          'adapt': suite_adapt}
 # The suites that run by default (in CI): all but test4high and adapt.
 DEFAULT_SUITES = ['test4', 'test3', 'rptest', 'random', 'outputs', 'errors', 'fuzz', 'params',
-                  'high', 'regions', 'depths', 'tuning', 'threads']
+                  'high', 'regions', 'depths', 'tuning', 'threads', 'verbose']
 
 
 def main(argv=None):
@@ -1321,6 +1293,7 @@ def main(argv=None):
     ap.add_argument('--depths', type=int, default=300)
     ap.add_argument('--tuning', type=int, default=300)
     ap.add_argument('--threads', type=int, default=100)
+    ap.add_argument('--verbose-runs', type=int, default=300)
     ap.add_argument('--seed', type=int, default=1)
     ap.add_argument('-v', '--verbose', action='store_true')
     cfg = ap.parse_args(argv)
@@ -1352,6 +1325,8 @@ def main(argv=None):
                          f'program may correct its moduli)')
         if tally.msg4:
             parts.append(f'{tally.msg4} reports with message 4')
+        if tally.verbose:
+            parts.append(f'{tally.verbose} under -v with the report of the library')
         if tally.notes:
             parts.append(f'{len(tally.notes)} where the C program disagrees with its record')
         detail = f' ({"; ".join(parts)})' if parts else ''

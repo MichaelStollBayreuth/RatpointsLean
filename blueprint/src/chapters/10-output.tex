@@ -228,21 +228,21 @@ protocol theorem (Theorem~\ref{thm:protocol}) carries them over to the search wi
   \verb|total += process(x, z, y, info, &quit)| on a delivery adds the weight to the count and takes
   the flag and the data that the call leaves. A text printed through the print channel of a search,
   a function that prints into the data of the callback, which holds the standard output of the
-  caller, so that the report of the library under \verb|RATPOINTS_VERBOSE| (stage~I) comes between
-  the points: the data as the channel leaves it, the count and the flag as they are; it models no C
-  code of its own. The bits of the flags that the exact check and the
-  points at infinity read, \verb|RATPOINTS_REVERSED|, \verb|RATPOINTS_NO_CHECK| and
-  \verb|RATPOINTS_NO_Y|, as three Booleans, all clear by default (\csource{ratpoints.h}{414}{414},
-  which Definition~\ref{def:Outcome} shares). One call with the point $(a : y : b)$ of the
-  polynomial searched, mapped back to the caller's curve when the flag of the reversal is set: with
-  $(b : y : a)$ for $a \ge 0$ and $(-b : y : -a)$ for $a < 0$, as $\mathrm{swapPoint}$ maps the
-  point (Definition~\ref{def:swapPoint}), the three branches that the exact check writes at each of
-  its calls (lines 5312-5316, 5321-5325 and 5331-5335) as one definition. And the callback of the
-  model that appends each point $(x, y, z)$ to an array, with the weight $1$, and never stops the
-  search. The delivery, the call and the mapped call have no C ranges of their own: the lines they
-  stand for (lines 4570-4571 and 3129 for the count and the two flags of the stop, \verb|quit| and
-  \verb|wk->quit|, and the branches of the map) belong to their callers; the appending callback
-  models no C code.
+  caller, so that the report of the library under \verb|RATPOINTS_VERBOSE|
+  (Definition~\ref{def:report}) comes between the points: the data as the channel leaves it, the
+  count and the flag as they are; it models no C code of its own. The bits of the flags that the
+  exact check and the points at infinity read, \verb|RATPOINTS_REVERSED|, \verb|RATPOINTS_NO_CHECK|
+  and \verb|RATPOINTS_NO_Y|, as three Booleans, all clear by default
+  (\csource{ratpoints.h}{414}{414}, which Definition~\ref{def:Outcome} shares). One call with the
+  point $(a : y : b)$ of the polynomial searched, mapped back to the caller's curve when the flag of
+  the reversal is set: with $(b : y : a)$ for $a \ge 0$ and $(-b : y : -a)$ for $a < 0$, as
+  $\mathrm{swapPoint}$ maps the point (Definition~\ref{def:swapPoint}), the three branches that the
+  exact check writes at each of its calls (lines 5312-5316, 5321-5325 and 5331-5335) as one
+  definition. And the callback of the model that appends each point $(x, y, z)$ to an array, with
+  the weight $1$, and never stops the search. The delivery, the call and the mapped call have no C
+  ranges of their own: the lines they stand for (lines 4570-4571 and 3129 for the count and the two
+  flags of the stop, \verb|quit| and \verb|wk->quit|, and the branches of the map) belong to their
+  callers; the appending callback models no C code.
 \end{definition}
 
 \begin{definition}[The reference of the delivery]\label{def:deliver}
@@ -1101,7 +1101,7 @@ the array of the coefficients (\csource{main.c}{54}{54}) to \verb|Ratpoints.Cli.
 
 \begin{definition}[The callback of the program]\label{def:cliProcess}
   \uses{def:delivery, def:formatPoint, def:cliOutput, def:cliRegionTest}
-  \lean{Ratpoints.Cli.Data, Ratpoints.Cli.Data.ofOutput, Ratpoints.Cli.process}
+  \lean{Ratpoints.Cli.Data, Ratpoints.Cli.Data.ofOutput, Ratpoints.Cli.process, Ratpoints.Cli.Data.keeps}
   \leanok
   The data that \verb|main.c| passes to \verb|process| through \verb|info|: whether a point was
   printed, whether no point is printed, whether one point is enough, whether the points at infinity
@@ -1117,7 +1117,9 @@ the array of the coefficients (\csource{main.c}{54}{54}) to \verb|Ratpoints.Cli.
   point has the weight $1$ and stops the search when one point is enough; it is printed unless no
   point is printed, after the string before the points if it is the first point printed and after
   the string between them otherwise, in the format (\csource{main.c}{139}{142},
-  \csource{main.c}{150}{156}, \csource{main.c}{187}{189}).
+  \csource{main.c}{150}{156}, \csource{main.c}{187}{189}). The points that the callback keeps: the
+  points at infinity unless \verb|-i|, and an affine point when the command line gives no search
+  intervals or its $x/z$ lies in one of them, by \verb|in_region|.
 \end{definition}
 
 \begin{definition}[The report]\label{def:cliReport}
@@ -1153,41 +1155,44 @@ the head of the report, and runs $\mathrm{findPointsVerbose}$ with the options $
 the array size that it sets, $\mathrm{defaultArraySize}$ (\csource{main.c}{221}{222}), the options
 of the search with the search intervals joined where their doubles meet, the callback of the program
 on its data, which holds the intervals of the command line before the join
-(\csource{main.c}{248}{248}), and the print channel that prints nothing; on a refusal it prints what
-the library printed and the message of the failure after the head of the report and exits with its
-status, and otherwise it prints what the callback and the library printed, the string before the
-points if it printed no point, the string after them and the end of the report, and exits with
-status~$0$ (\csource{main.c}{195}{198}, \csource{main.c}{251}{252}, \csource{main.c}{265}{265},
+(\csource{main.c}{248}{248}), and, under \verb|-v|, the print channel of the program
+(Definition~\ref{def:cliTuning}), through which the library prints its report between the points,
+and otherwise the print channel that prints nothing; on a refusal it prints what the library printed
+and the message of the failure after the head of the report and exits with its status, and otherwise
+it prints what the callback and the library printed, the string before the points if it printed no
+point, the string after them and the end of the report, and exits with status~$0$
+(\csource{main.c}{195}{198}, \csource{main.c}{251}{252}, \csource{main.c}{265}{265},
 \csource{main.c}{267}{267}, \csource{main.c}{284}{285}, the head and the end of \verb|main| among
 them). The text is written once, at the end.
 
 \begin{theorem}[What the program prints]\label{thm:cliRun}
   \uses{def:cliProcess, def:cliReport, thm:protocol, def:cliRun, def:cliInput}
-  \lean{Ratpoints.Cli.Data.keeps, Ratpoints.Cli.Data.keeps_printPoint, Ratpoints.Cli.countedPoints, Ratpoints.Cli.Data.printPoint, Ratpoints.Cli.call_process_of_keep, Ratpoints.Cli.call_process_of_not_keep, Ratpoints.Cli.deliver_process, Ratpoints.Cli.total_deliver_process, Ratpoints.Cli.out_append_deliver_process_ofOutput, Ratpoints.Cli.run_eq_of_findPointsWith_eq_ok, Ratpoints.Cli.run_eq_of_findPoints_eq_ok, Ratpoints.Cli.run_eq_of_onePoint, Ratpoints.Cli.total_eq_of_findPointsWith_eq_ok, Ratpoints.Cli.preamble_eq_empty_of_quiet, Ratpoints.Cli.report_eq_empty_of_quiet, String.intercalate_cons_eq_append_join}
+  \lean{Ratpoints.Cli.Data.keeps_printPoint, Ratpoints.Cli.countedPoints, Ratpoints.Cli.Data.printPoint, Ratpoints.Cli.call_process_of_keep, Ratpoints.Cli.call_process_of_not_keep, Ratpoints.Cli.deliver_process, Ratpoints.Cli.total_deliver_process, Ratpoints.Cli.out_append_deliver_process_ofOutput, Ratpoints.Cli.run_eq_of_findPointsWith_eq_ok, Ratpoints.Cli.run_eq_of_findPoints_eq_ok, Ratpoints.Cli.run_eq_of_onePoint, Ratpoints.Cli.total_eq_of_findPointsWith_eq_ok, Ratpoints.Cli.preamble_eq_empty_of_quiet, Ratpoints.Cli.report_eq_empty_of_quiet, String.intercalate_cons_eq_append_join}
   \leanok
-  The points that the callback keeps: the points at infinity unless \verb|-i|, and an affine point
-  when the command line gives no search intervals or its $x/z$ lies in one of them, by
-  \verb|in_region|; the points of a list that the callback counts: those that it keeps, and of them
-  only the first under \verb|-1|. If the command line reads as the coefficients $c$, the height $H$,
-  the options $s$ of the sieve, the options $o$ of the search and the settings $u$ of the output,
-  and $\mathrm{findPoints}(c, H, s', o')$ returns $L$ for the options $s'$ of $s$ with the array
-  size $\mathrm{defaultArraySize}$ and $o'$ of $o$ with the search intervals joined, the program
-  exits with status~$0$ and prints the head of the report, the string before the points, the formats
-  of the counted points of $L$ joined by the string between them (none under \verb|-z|), the string
+  The points of a list that the callback counts: those that it keeps
+  (Definition~\ref{def:cliProcess}), and of them only the first under \verb|-1|. If the command line
+  reads as the coefficients $c$, the height $H$, the options $s$ of the sieve, the options $o$ of
+  the search and the settings $u$ of the output with the setting of \verb|-v| clear, and
+  $\mathrm{findPoints}(c, H, s', o')$ returns $L$ for the options $s'$ of $s$ with the array size
+  $\mathrm{defaultArraySize}$ and $o'$ of $o$ with the search intervals joined, the program exits
+  with status~$0$ and prints the head of the report, the string before the points, the formats of
+  the counted points of $L$ joined by the string between them (none under \verb|-z|), the string
   after them, and the end of the report, whose count is the number of the counted points; under
-  \verb|-q| only the strings and the points; and under \verb|-q| and \verb|-1| without \verb|-z|,
-  when $p$ is the first point of $L$ that the callback keeps, the string before the points, the
-  format of $p$ and the string after them: \verb|-1| prints the first point of the list that the
-  callback keeps.
+  \verb|-q|, which clears the setting of \verb|-v| (Lemma~\ref{lem:cliVerbose}), only the strings
+  and the points; and under \verb|-q| and \verb|-1| without \verb|-z|, when $p$ is the first point
+  of $L$ that the callback keeps, the string before the points, the format of $p$ and the string
+  after them: \verb|-1| prints the first point of the list that the callback keeps.
 \end{theorem}
 
 \begin{proof}
+  \uses{lem:cliVerbose}
   \leanok
   The delivery of any list to the callback of the program prints the counted points of the list in
   turn, counts them, and sets the flag exactly under \verb|-1| when a point is kept; by the protocol
   of the delivery (Theorem~\ref{thm:protocol}), for every value of the options of the sieve, the
   search with the callback gives the data and the count of the delivery of the list of
-  $\mathrm{findPoints}$.
+  $\mathrm{findPoints}$; without \verb|-v| the program runs the search with the print channel that
+  prints nothing, whose outcome is that of the search with a callback (Lemma~\ref{lem:cliVerbose}).
 \end{proof}
 
 \section{The differential tests}\label{sec:outputTests}
@@ -1207,15 +1212,18 @@ what stage~H adds):
     \verb|test4.sh| with the C program on its command line (Section~\ref{sec:moduliTests}); the
     messages on the search region (message 3) and on the search intervals that the search gives back
     (message 8) are compared since stage~H;
-  \item under \verb|-v|, where the C program prints the report of its library too,
-    \verb|ratpoints-lean| is compared with the report of the C program on the same command line
+  \item under \verb|-v|, where the C program prints the report of its library too, until stage~I
+    \verb|ratpoints-lean| was compared with the report of the C program on the same command line
     without \verb|-v|, its height and its messages 4, 7 and 8 dropped, as \verb|main.c| does under
-    \verb|-v|, and the lines of that text must be among those of the output of the C program with
+    \verb|-v|, and the lines of that text had to be among those of the output of the C program with
     \verb|-v|, in their order, with the same lines of points and pairs (with a format or a string,
-    whose points need not end their lines, by characters);
+    whose points need not end their lines, by characters); since stage~I, which prints the report of
+    the library, the output under \verb|-v| is compared byte for byte with that of the C program on
+    the same command line (Section~\ref{sec:moduliTests});
   \item the outputs that \verb|test4.sh| filters through \verb|grep found|,
     \verb|grep 'Curve equation'| and \verb|grep -c .| are compared after the same filter, the banner
-    exchanged first, with the exit status~$0$;
+    exchanged first, with the exit status~$0$ (since stage~I also the two filters that look at the
+    report of the library, and each filtered output also as a whole with the C program);
   \item under \verb|-x|, whose lines are the survivors of the sieve, which depend on the moduli and
     on the search region: until stage~I, when pinning the moduli (\verb|-p 30 -N 30| appended) did
     not change the output of \verb|ratpoints-lean| and the C program on that command line sieved
@@ -1245,20 +1253,20 @@ what stage~H adds):
     error~6, as in the C program; and the fuzz draws the options of the output and format words,
     kept in UTF-8, on an eighth line of each round.
 \end{itemize}
-Skipped are the outputs that \verb|test4.sh| (four runs) and \verb|test3.sh| (three runs) filter to
-look at the report of the library under \verb|-v|; until stage~I, the two runs of \verb|test3.sh|
-whose filter \verb|sed -n '/moduli used/,$p'| keeps the report from message 4 on, which needs
-message 4 (since stage~I they are compared on the whole output of the command before the filter);
-until stage~I, searches under \verb|-x| with a format or a string that are not compared exactly; and
-searches above the largest height of the tests, $30000$, which \verb|test4high| compares (since
-stage~H, those without a narrow search region). At the end of the stage the default suites compared
-$3784$ times with none failed: \verb|test4| $565$ (four outputs filtered, $13$ runs left to
-\verb|test4high| for their height), \verb|test3| $16$ (five outputs filtered), \verb|rptest| $1206$,
-\verb|random| $300$, \verb|outputs| $300$, the errors suite $313$ (the searches stopped at $10^{12}$
-among them), the fuzz $800$, the parameters $272$ and the high suite $12$, with $67$ runs under
-\verb|-x| compared exactly, none by the weaker check alone; and \verb|test4high| compared $13$, none
-failed. Every point list is compared in its order. Section~\ref{sec:regionTests} gives the counts
-after stage~H.
+Until stage~I, skipped were the outputs that \verb|test4.sh| (four runs) and \verb|test3.sh| (three
+runs) filter to look at the report of the library under \verb|-v|, which stage~I compares
+(Section~\ref{sec:moduliTests}); until stage~I, the two runs of \verb|test3.sh| whose filter
+\verb|sed -n '/moduli used/,$p'| keeps the report from message 4 on, which needs message 4 (since
+stage~I they are compared on the whole output of the command before the filter); until stage~I,
+searches under \verb|-x| with a format or a string that are not compared exactly; and searches above
+the largest height of the tests, $30000$, which \verb|test4high| compares (since stage~H, those
+without a narrow search region). At the end of the stage the default suites compared $3784$ times
+with none failed: \verb|test4| $565$ (four outputs filtered, $13$ runs left to \verb|test4high| for
+their height), \verb|test3| $16$ (five outputs filtered), \verb|rptest| $1206$, \verb|random| $300$,
+\verb|outputs| $300$, the errors suite $313$ (the searches stopped at $10^{12}$ among them), the
+fuzz $800$, the parameters $272$ and the high suite $12$, with $67$ runs under \verb|-x| compared
+exactly, none by the weaker check alone; and \verb|test4high| compared $13$, none failed. Every
+point list is compared in its order. Section~\ref{sec:regionTests} gives the counts after stage~H.
 
 The \verb|#guard| examples of the model check the delivery against outputs of the C program and
 against the reference: a callback that stops at its $k$-th call, with the weight $2$, for every $k$
@@ -1301,7 +1309,8 @@ Each component of this chapter differs from the C code in a stated way, recorded
     search, as the switch of the reversal is, each a Boolean whose default is that of the cleared
     flags; of the other bits of the input, \verb|RATPOINTS_NO_JACOBI| the Jacobi switch of the
     parameters, a Boolean, and \verb|RATPOINTS_VERBOSE| a field of the settings of the output of the
-    program, the report of the library under it being instrumentation; and the field
+    program, from which the program makes the print channel of the search, through which the
+    library prints its report (Definition~\ref{def:report}); and the field
     \verb|array_size| of the arguments a natural number of the parameters, $0$ for the default,
     which the library takes for every value $\le 0$;
   \item the walk returns after a call that stops the search, and its callers test the flag after it
@@ -1314,7 +1323,8 @@ Each component of this chapter differs from the C code in a stated way, recorded
     run after each block, as the C code does (lines 3928, 3957, 4044, 4068 and 5158);
   \item the two arms of the second stage functions of their own, \verb|siftBitArray| choosing
     between them by its argument;
-  \item at infinity, the return after a stop (lines 5100-5103) made by the search; the square test
+  \item at infinity, the return after a stop (lines 5100-5103) made by the search, which also prints
+    the line before the points under \verb|-v|; the square test
     of $c_d$ and the decision whether there are points at infinity made on the list after the
     reversal check, when the points are delivered, where the C code computes \verb|lcfsq| before the
     check, which clears it in case 2, the only reversal after which the degree is even; the square
@@ -1346,7 +1356,8 @@ Each component of this chapter differs from the C code in a stated way, recorded
     the output written once at the end, where \verb|main.c| prints and flushes after each point; the
     loops over the intervals of messages 3 and 8 one function, \verb|%lf| being \verb|%f|, and the
     difference of the numbers of the moduli of message 4 an integer, for the \verb|long|; the report
-    of the library under \verb|-v|, its instrumentation, not printed; the strings of \verb|-f|,
+    of the library under \verb|-v| printed through the print channel of the program into the text
+    printed so far (Definition~\ref{def:cliTuning}); the strings of \verb|-f|,
     \verb|-fs|, \verb|-fm| and \verb|-fe| kept as values, for the copies that \verb|main.c|
     allocates;
   \item in the output, one function for the two switches of the escapes of \verb|process| and
