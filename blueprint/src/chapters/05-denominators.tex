@@ -629,7 +629,7 @@ denominators of the list in its order (Lemma~\ref{lem:blockDens}); with the exac
 are what the brute-force reference finds over these numerators, mapped by $\mathrm{swapPoint}$ when
 the flag of the reversal is set, those with $y < 0$ left out under $\mathrm{noY}$. When the list of
 the shape is a list $l$ filtered by a test, the test moves into the test of the numerators
-(Theorem~\ref{thm:run_reference}). For sound sieve entries (Definition~\ref{def:SieveEntry}) and the
+(Lemma~\ref{lem:flatMapFilter}). For sound sieve entries (Definition~\ref{def:SieveEntry}) and the
 shapes of Lemma~\ref{lem:shape_dens}, every denominator of $l$ that carries a point passes that test
 and the test of the shape, and every numerator that gives a point passes the word of its class and
 survives the sieve entries, so that the filters change nothing that the exact check finds and the
@@ -828,36 +828,35 @@ reciprocal are exact (Lemma~\ref{lem:mulMod}). The valuation and the divisors of
 coefficient are in \verb|Ratpoints/Model/Setup.lean|, in the namespace \verb|Ratpoints.Setup|; the
 2-adic information, the forbidden divisors, the Jacobi test and the shapes in
 \verb|Ratpoints/Model/Denominators.lean|, in the namespace \verb|Ratpoints.Sieve| (the run, since
-stage~I, in \verb|Ratpoints/Model/Blocks.lean|), and, since
-stage~F3, the classes with $\mathrm{den\_bits}$ in \verb|Ratpoints/Model/Packing.lean|, and since
-stage~F4 the words of a forbidden divisor in \verb|Ratpoints/Model/Rows.lean|, with their bit lemma
-in \verb|Ratpoints/Proof/Rows.lean|; the class of a denominator in
-\verb|Ratpoints/Model/Sieve.lean|, whose components that make a piece and the numerators of one
-denominator take it; and the steps of the search in \verb|Ratpoints/Model/FindPoints.lean|. The
-contracts and the lemmas are in the files of \verb|Ratpoints/Proof| that the stage adds: the
-valuation in \verb|Valuation.lean|; the 2-adic information in \verb|TwoAdic.lean|; the denominators
-of odd degree, the factorization and the divisors with their slopes in \verb|Divisors.lean|; the
-forbidden valuations and divisors in \verb|Forbidden.lean|; the Jacobi test by the binary algorithm
-in \verb|Jacobi.lean| and by tables in \verb|JacobiTables.lean|; the lists and the tests of the
-shapes in \verb|Shapes.lean|, since stage~I with the lists themselves; and what the set-up of the
-run returns in \verb|Denominators.lean| (the contract of the run, since stage~I, in
-\verb|Correction.lean|, Chapter~\ref{chap:moduli}). Unlike those of
-stages C1 to D, the contracts of this stage are proved in files with Mathlib, next to the lemmas
-they serve, since several of them speak of notions of Mathlib (the primes and their valuations, the
-squares modulo a prime, the Jacobi symbol). The class bit is in the contracts of
-\verb|Ratpoints/Proof/Words.lean| and, since stage~F2, of \verb|Ratpoints/Proof/Sift.lean|, which
-holds that of one denominator (those of the walk and the scan are in
-\verb|Ratpoints/Proof/Scan.lean| since stage~G, those of one piece and of the bits of one interval
-in \verb|Ratpoints/Proof/SiftBits.lean| since stage~I), and the classes with their packings are in
-\verb|Ratpoints/Proof/Packing.lean| since stage~F3, without Mathlib, with \verb|den_bits| of the
-classes in \verb|Ratpoints/Proof/TwoAdic.lean|; \verb|Ratpoints/Proof/SetBits.lean| holds, since
-stage~F3, the class bit and the invariant of a loop over the set bits of a word that the walk of the
-check, the 2-adic information and the words of the shapes share; the filter of the reference by a
-test on the numerators is in \verb|Ratpoints/Proof/Sieve.lean|, the denominators of a point and the
-filter of the reference by the denominators in \verb|Ratpoints/Proof/BruteForce.lean|, the facts
-about the table of primes that the factorization uses, checked by \verb|decide|, in
-\verb|Ratpoints/Proof/Params.lean|, the lemmas on words in core's namespaces in
-\verb|Ratpoints/Proof/Bits.lean| and those on lists and ranges in
+stage~I, in \verb|Ratpoints/Model/Blocks.lean|), and, since stage~F3, the classes with
+$\mathrm{den\_bits}$ in \verb|Ratpoints/Model/Packing.lean|, and since stage~F4 the words of a
+forbidden divisor in \verb|Ratpoints/Model/Rows.lean|, with their bit lemma in
+\verb|Ratpoints/Proof/Rows.lean|; the class of a denominator in \verb|Ratpoints/Model/Sieve.lean|,
+whose components that make a piece and the numerators of one denominator take it; and the steps of
+the search in \verb|Ratpoints/Model/FindPoints.lean|. The contracts and the lemmas are in the files
+of \verb|Ratpoints/Proof| that the stage adds: the valuation in \verb|Valuation.lean|; the 2-adic
+information in \verb|TwoAdic.lean|; the denominators of odd degree, the factorization and the
+divisors with their slopes in \verb|Divisors.lean|; the forbidden valuations and divisors in
+\verb|Forbidden.lean|; the Jacobi test by the binary algorithm in \verb|Jacobi.lean| and by tables
+in \verb|JacobiTables.lean|; the lists and the tests of the shapes in \verb|Shapes.lean|, since
+stage~I with the lists themselves; and what the set-up of the run returns in
+\verb|Denominators.lean| (the contract of the run, since stage~I, in \verb|Correction.lean|,
+Chapter~\ref{chap:moduli}). Unlike those of stages C1 to D, the contracts of this stage are proved
+in files with Mathlib, next to the lemmas they serve, since several of them speak of notions of
+Mathlib (the primes and their valuations, the squares modulo a prime, the Jacobi symbol). The class
+bit is in the contracts of \verb|Ratpoints/Proof/Words.lean| and, since stage~F2, of
+\verb|Ratpoints/Proof/Sift.lean|, which holds that of one denominator (those of the walk and the
+scan are in \verb|Ratpoints/Proof/Scan.lean| since stage~G, those of one piece and of the bits of
+one interval in \verb|Ratpoints/Proof/SiftBits.lean| since stage~I), and the classes with their
+packings are in \verb|Ratpoints/Proof/Packing.lean| since stage~F3, without Mathlib, with
+\verb|den_bits| of the classes in \verb|Ratpoints/Proof/TwoAdic.lean|;
+\verb|Ratpoints/Proof/SetBits.lean| holds, since stage~F3, the class bit and the invariant of a loop
+over the set bits of a word that the walk of the check, the 2-adic information and the words of the
+shapes share; the filter of the reference by a test on the numerators is in
+\verb|Ratpoints/Proof/Sieve.lean|, the denominators of a point and the filter of the reference by
+the denominators in \verb|Ratpoints/Proof/BruteForce.lean|, the facts about the table of primes that
+the factorization uses, checked by \verb|decide|, in \verb|Ratpoints/Proof/Params.lean|, the lemmas
+on words in core's namespaces in \verb|Ratpoints/Proof/Bits.lean| and those on lists and ranges in
 \verb|Ratpoints/Proof/Containers.lean|, the binary form at $a = k b$, the squares modulo $p$ and the
 negation of the quarter of \verb|LONG_MIN| in \verb|Ratpoints/Proof/Tables.lean|, and the
 denominators of the search, with the range of stage~H, in \verb|Ratpoints/Proof/SearchDens.lean|,

@@ -642,10 +642,10 @@ Each component of this chapter differs from the C code in a stated way, recorded
     \verb|RP_MULMOD| converts, with the reciprocal and the bias read from the sieve entry;
   \item the rows of offsets with an offset for each of the $\mathrm{sp3\_max}$ sieve entries of the
     run, the reserve of further primes that the correction of the moduli may take included; the
-    array of the offsets
-    made with zeros, where the C code leaves its entries unset until \verb|class_offsets| writes
-    them; $\mathrm{dinv}$ an array of the strides up to the largest in use, where the C code has
-    \verb|RP_NUM_STRIDES| entries and leaves those above the largest unset and unread;
+    array of the offsets made with zeros, where the C code leaves its entries unset until
+    \verb|class_offsets| writes them; $\mathrm{dinv}$ an array of the strides up to the largest in
+    use, where the C code has \verb|RP_NUM_STRIDES| entries and leaves those above the largest unset
+    and unread;
   \item the reciprocal, the bias and $\mathrm{rbainv}$ of every kind of modulus set where the model
     makes the sieve entry of a modulus (Definition~\ref{def:compositeModuli}), with the formulas of
     the C code, where \verb|examine_prime|, \verb|make_power| and \verb|make_modulus| set them, the

@@ -20,13 +20,13 @@ The reversal is the transformation of Chapter~\ref{chap:sieve}: it exchanges $x$
 binary form, and the map that the C code applies to every point it finds of the reversed polynomial
 is a bijection onto the points of the caller's curve that preserves the box. So after a reversal the
 output is that of the search of the reversed polynomial with each point mapped back, a permutation
-of the reference; the reduction of the run to the reference (Theorem~\ref{thm:run_reference}) holds
-for any polynomial and its degree, membership holds with $\mathrm{noCheck}$ false, the set of
-elements with both options of the output off, and no duplicates for every option, since stage~H
-membership, the set of elements and the order for the points in the search region of the options.
-The set-up has been the most error-prone part of ratpoints: the fixes of 2.2.2 include a reversal
-that marked a cubic reversed and left it as it was, and those of 2.2.4 a search that returned before
-the points at infinity when the Sturm step found no real point in the search region.
+of the reference; the reduction of the run to the reference (Lemma~\ref{lem:searchList}) holds for
+any polynomial and its degree, membership holds with $\mathrm{noCheck}$ false, the set of elements
+with both options of the output off, and no duplicates for every option, since stage~H membership,
+the set of elements and the order for the points in the search region of the options. The set-up has
+been the most error-prone part of ratpoints: the fixes of 2.2.2 include a reversal that marked a
+cubic reversed and left it as it was, and those of 2.2.4 a search that returned before the points at
+infinity when the Sturm step found no real point in the search region.
 
 $\mathrm{findPoints}$ takes an argument for the options of the library that change the refusals or
 the order of the output, and the program reads the options that set them: \verb|-k| and \verb|-K|,
@@ -607,13 +607,14 @@ the input that the reset of the flags keeps.
   (Definition~\ref{def:useCLong}).
 \end{proof}
 
-Theorem~\ref{thm:run_reference} reduces the run of any polynomial with its degree to the reference:
-for an array size at least $1$, sieve entries with their reciprocals, those of the first two stages
-with their tables of inverses, the row offsets of the classes, which pack the 2-adic words, and a
-store of the tables of rows that fits them, and those of the third stage prime entries, denominators
-and a height below $2^{63}$, and filters that let every point through, it gives the points of the
-reference over its denominators, mapped by $\mathrm{swapPoint}$ when the flag of the reversal is
-set; Lemma~\ref{lem:searchList} rests on it, with what the search hands to the run
+The contract of the run (Theorem~\ref{thm:blocks}, with Lemma~\ref{lem:flatMapFilter}) reduces
+the run of any polynomial with its degree to the reference: for an array size at least $1$, sieve
+entries with their reciprocals, those of the first two stages with their tables of inverses, the row
+offsets of the classes, which pack the 2-adic words, and a store of the tables of rows that fits
+them, and those of the third stage prime entries, a well-formed first decision of the cut points,
+denominators and a height below $2^{63}$, and filters that let every point through, it gives the
+points of the reference over its denominators, mapped by $\mathrm{swapPoint}$ when the flag of the
+reversal is set; Lemma~\ref{lem:searchList} rests on it, with what the search hands to the run
 (Lemma~\ref{lem:soundRun}), the lists and the tests of the shapes (Lemma~\ref{lem:shape_dens}), the
 2-adic exit (Lemma~\ref{lem:twoAdic_exit}) and the exit of the tables. Theorem~\ref{thm:findPoints}
 has membership with $\mathrm{noCheck}$ false and the set of elements with both options of the output
@@ -623,7 +624,7 @@ which since stage~H add the search intervals that are not well formed; both have
 axioms. Assuming Sturm's theorem, the depth of the Sturm step changes only the speed: with the exact
 check on, the search with the step off returns the same list (Theorem~\ref{thm:sturmSpeed}).
 Comparator certifies the two main theorems with the options argument, membership since stage~G with
-$\mathrm{noCheck}$ false, both refusal theorems and, until stage~H, \verb|wf_sieveParams|, and,
+$\mathrm{noCheck}$ false, both refusal theorems and, until stage~I, \verb|wf_sieveParams|, and,
 since stage~G, the order theorem, the three statements under $\mathrm{noCheck}$ and the protocol, by
 which the search with a callback refuses exactly what $\mathrm{findPoints}$ refuses
 (Section~\ref{sec:certifiedG}), since stage~H six of them restated for the search region of the

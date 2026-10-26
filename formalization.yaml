@@ -13,13 +13,12 @@ project:
     The model mirrors the hardware-independent structure of the C code function by function (the
     same loops, tables, bit arrays of 64-bit words and index arithmetic); the proofs show that, for
     every value of the options of the sieve, whatever moduli the search chooses, it returns exactly
-    the normalized
-    points of height at most H in the search region that the caller gives (assuming Sturm's theorem
-    when the Sturm step is on), without duplicates, in the order of the C program, delivered to the
-    callback of the caller as the C code delivers them, and refuses exactly the inputs that the C
-    program refuses (in a default run fewer than two or more than maxDegree + 1 = 101
-    coefficients, H = 0 or H >= 2^63, a height that is not a C long, and a binary form that is not
-    squarefree, and search intervals that are not well formed); a correspondence record and
+    the normalized points of height at most H in the search region that the caller gives (assuming
+    Sturm's theorem when the Sturm step is on), without duplicates, in the order of the C program,
+    delivered to the callback of the caller as the C code delivers them, and refuses exactly the
+    inputs that the C program refuses (in a default run fewer than two or more than maxDegree + 1 =
+    101 coefficients, H = 0 or H >= 2^63, a height that is not a C long, and a binary form that is
+    not squarefree, and search intervals that are not well formed); a correspondence record and
     differential tests link the model to the C code.
   authors: ["Michael Stoll"]
   responsible_maintainers: ["Michael Stoll"]
@@ -420,21 +419,21 @@ fidelity:
     pointer is an index; the SIMD operations are the word operations they implement, and the arm of
     the first stage that the build compiles is chosen by a test on the constant of the chunk; the
     threads are replaced by the sequential order of the blocks, which gives the same output; the
-    heuristics that choose the sieving parameters by the curve are modelled and run in the search, as
-    in ratpoints, and the theorems hold for every value of the options of the sieve, whatever moduli
-    the search chooses; the doubles of these heuristics are Lean core's Float, whose arithmetic and
-    log and pow are those of the platform, as in ratpoints, so that the choice, and what depends on
-    it (the survivors under RATPOINTS_NO_CHECK, the numbers of the moduli used and the report under
-    RATPOINTS_VERBOSE), agrees with that of ratpoints on the same machine, and no proof reads their
-    values; the doubles of the search intervals are their
-    IEEE bits, with a model function for each operation on them, and the specification reads their
-    values as extended rationals; the callback is a Lean function that takes the coordinates and the
-    caller's data and returns its value, whether it stops the search, and the new data, for the C
-    function with the pointers info and quit; and the theorems that read the points with the Sturm step on assume Sturm's theorem,
-    which Mathlib does not have yet (Ratpoints.SturmTheorem, a hypothesis, not an axiom). Where the
-    library function find_points and the command-line program differ (the order of the checks on the
-    input), the model follows the program. Each deviation is recorded with its component in the
-    correspondence record.
+    heuristics that choose the sieving parameters by the curve are modelled and run in the search,
+    as in ratpoints, and the theorems hold for every value of the options of the sieve, whatever
+    moduli the search chooses; the doubles of these heuristics are Lean core's Float, whose
+    arithmetic and log and pow are those of the platform, as in ratpoints, so that the choice, and
+    what depends on it (the survivors under RATPOINTS_NO_CHECK, the numbers of the moduli used and
+    the report under RATPOINTS_VERBOSE), agrees with that of ratpoints on the same machine, and no
+    proof reads their values; the doubles of the search intervals are their IEEE bits, with a model
+    function for each operation on them, and the specification reads their values as extended
+    rationals; the callback is a Lean function that takes the coordinates and the caller's data and
+    returns its value, whether it stops the search, and the new data, for the C function with the
+    pointers info and quit; and the theorems that read the points with the Sturm step on assume
+    Sturm's theorem, which Mathlib does not have yet (Ratpoints.SturmTheorem, a hypothesis, not an
+    axiom). Where the library function find_points and the command-line program differ (the order of
+    the checks on the input), the model follows the program. Each deviation is recorded with its
+    component in the correspondence record.
 
 # review status
 review:
@@ -477,13 +476,13 @@ alignment:
         moduli and the cut points by the curve and the blocks of the run with the correction of the
         moduli between them of stage I, every value of the options of the sieve, whatever moduli the
         search chooses, the array size of the pieces included, and every value of the options, the
-        delivery to the callback of stage G
-        included, membership with RATPOINTS_NO_CHECK clear and y >= 0 under RATPOINTS_NO_Y, since
-        stage H for the points in the search region of the options, assuming Sturm's theorem when
-        the Sturm step is on (Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok,
-        Ratpoints.nodup_of_findPoints_eq_ok), certified by comparator, through the reference of the
-        polynomial searched (Ratpoints.exists_eq_of_findPoints_eq_ok) and the permutation of the
-        brute-force reference filtered by RATPOINTS_NO_Y and the search region
+        delivery to the callback of stage G included, membership with RATPOINTS_NO_CHECK clear and y
+        >= 0 under RATPOINTS_NO_Y, since stage H for the points in the search region of the options,
+        assuming Sturm's theorem when the Sturm step is on
+        (Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok, Ratpoints.nodup_of_findPoints_eq_ok),
+        certified by comparator, through the reference of the polynomial searched
+        (Ratpoints.exists_eq_of_findPoints_eq_ok) and the permutation of the brute-force reference
+        filtered by RATPOINTS_NO_Y and the search region
         (Ratpoints.perm_filter_bruteForce_of_findPoints_eq_ok); the threads, which the model leaves
         out, deliver the blocks in their order
         (Ratpoints.Sieve.run_deliverSlots_eq_fst_run_sieveRun, not certified by comparator)
@@ -539,10 +538,9 @@ alignment:
         without -v, which -q cancels (Ratpoints.Cli.verbose_eq_false_of_input_eq_ok), and whose
         report of the library between the points is tested, not proved: the head of the report, the
         string before the points, the points that the callback of the program counts (all but those
-        at infinity under -i and the affine ones outside the search
-        intervals of the command line, and of these only the first under -1) in the format, joined
-        by the string between them, none under -z, the string after them and the end of the report
-        with their number as its count
+        at infinity under -i and the affine ones outside the search intervals of the command line,
+        and of these only the first under -1) in the format, joined by the string between them, none
+        under -z, the string after them and the end of the report with their number as its count
         (Ratpoints.Cli.total_eq_of_findPointsWith_eq_ok); under -q only the strings and the points
         (Ratpoints.Cli.run_eq_of_findPoints_eq_ok); not certified by comparator
     - source: "the points that the program prints with -l -u -dl -du: those of the search region of its command line"

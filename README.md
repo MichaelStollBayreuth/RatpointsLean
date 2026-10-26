@@ -49,12 +49,12 @@ prime modulo which the curve has no points; the moduli may be prime powers, with
 `examine_power` and the inverses by the extended Euclidean algorithm, and products of prime powers,
 whose rows are those of their factors, combined, so that the rows of every modulus let every point
 through without the Chinese remainder theorem; the range obligations of the C `long`s of these
-computations are lemmas. The parameters gain the number of primes examined, and their
-well-formedness, which the challenge of Comparator imports from the model, now admits the moduli
-below `2^maxBitsInPrime` that factor over the first `numPrimes` primes of the table, composite ones
+computations are lemmas. The parameters gained the number of primes examined, and their
+well-formedness, which the challenge of Comparator imported until stage I, admitted the moduli below
+`2^maxBitsInPrime` that factor over the first `numPrimes` primes of the table, composite ones
 included, and no longer the primes of the table from `2^maxBitsInPrime` on; the main theorems, the
-refusal theorems and the challenge keep their text, and change only through the parameters they
-quantify over. F2 models the stages of the sieve and the check as the C code has them: the first
+refusal theorems and the challenge kept their text, and changed only through the parameters they
+quantified over. F2 models the stages of the sieve and the check as the C code has them: the first
 stage with the first moduli of the parameters, the second on each bit array that the first leaves
 nonzero, in both arms of the build (the whole bit array, or one word at a time), and for each
 numerator that survives, the test for common factors by the binary algorithm of the C code on its
@@ -85,7 +85,7 @@ the range obligations of its `long`s as lemmas; the reductions by a reciprocal c
 words, the high half of the 128-bit product from the 32-bit halves. A row is unchanged when the
 residue and the numerator are multiplied by the same unit, so the packed sieve keeps exactly the
 numerators that the unpacked one keeps, in the same order: the output, the main theorems, the
-refusal theorems, the challenge of Comparator, the parameters and their well-formedness do not
+refusal theorems, the challenge of Comparator, the parameters and their well-formedness did not
 change. F4 models the first stage as the default build of the C code compiles it, with the chunk
 `RATPOINTS_CHUNK` = 16 as a constant: the chunked arm, which takes 16 bit arrays at a time in
 registers, and-s the rows of the moduli into them from starts that it steps through each row, and
@@ -101,8 +101,8 @@ are handed on through the run; the tables of a prime power are bit arrays of wor
 `examine_power` fills them, and the forbidden divisors among the first `numPrimes` primes of the
 table read their words from `sieves0`. The rows that the builders build are the closed forms of the
 admission tests, proved for every value of the chunk, so the output, the main theorems, the refusal
-theorems, the challenge of Comparator, the parameters and their well-formedness do not change. Stage
-G is done: the delivery of the points as the C code has it. The search hands each point to a
+theorems, the challenge of Comparator, the parameters and their well-formedness did not change.
+Stage G is done: the delivery of the points as the C code has it. The search hands each point to a
 callback of the caller with the caller's data, adds up the values that the calls return and stops
 when a call asks it to: the callback and the delivery are threaded through the components that the C
 code passes `process` and `info` through, and the stop is tested where the C code tests `quit`, so

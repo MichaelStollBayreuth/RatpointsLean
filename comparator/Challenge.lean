@@ -26,47 +26,48 @@ checks this): the main theorems speak about the model's `findPoints` and `findPo
 are trusted in the sense that they are the code the executable runs, while the specification is
 reproduced here, so that a solution that changed it would be rejected.
 
-The statements come in stage by stage, as `comparator/README.md` lists them: the two theorems of
-stage B (the brute-force reference finds exactly the points, without duplicates); from stage C1 on,
-the membership and no-duplicates theorems for `Ratpoints.findPoints` for well-formed parameters,
-since stage D for every option, and the well-formedness of every parameter set that the options of
-the program give, which rules out a well-formedness that nothing satisfies; the refusal theorems of
-stage D, with the Sturm step on (`Ratpoints.findPoints` refuses exactly the inputs with fewer than
-two or more than `Ratpoints.maxDegree + 1` coefficients, the height bound `0` or one of `2 ^ 63` or
-more, which is not a `long`, the binary forms `Ratpoints.binaryFormPoly c` that are not squarefree,
-and since stage H search intervals that are not well formed, `Ratpoints.IntervalsWF`) and off (it
-refuses exactly what the program refuses under `-s`, and under `-s -k` when the reversal is off, or
-the search region is not the whole box, `Ratpoints.IsFullBox`), which rule out a
-`Ratpoints.findPoints` that refuses every input, with or without the Sturm step; and the theorems of
-stage G, for well-formed parameters, on the options of the output, the order and the protocol of the
-delivery. Since stage H the search region of the options enters: membership holds, with the exact
-check on (`o.noCheck = false`) and assuming Sturm's theorem (`Ratpoints.SturmTheorem`) when the
-Sturm step is on, for the points in the search region (`Ratpoints.InRegion`, over the values of the
-ends of the search intervals, `Ratpoints.doubleValue`): the list of `Ratpoints.findPoints` holds
-exactly these points, of each pair `(x, ±y, z)` only the one with `y ≥ 0` when `o.noY` is set, and
-it is the list of the points in the order of ratpoints (`Ratpoints.orderedPoints`, with the bound
-`Ratpoints.maxDivisors` of the model on the number of divisors, the reversal only for the whole box
-and the largest denominator `Ratpoints.denominatorBound`), filtered by `o.noY` and the search
-region; no duplicates holds for every option, the options of the output among them. With the exact
-check off, every element of the list is `(x, 0, z)` for a normalized coprime pair of height at most
-`H` in the search region, every point `(x, y, z)` of height at most `H` in the search region gives
-the element `(x, 0, z)` (assuming Sturm's theorem when the Sturm step is on), and the points with
-`y ≥ 0` of the same search with the exact check on, with `y` replaced by `0`, are a sublist of it,
-so that they come in the same order. The search with a callback (`Ratpoints.findPointsWith`) refuses
-what `Ratpoints.findPoints` refuses, and otherwise returns the data of the callback and the count of
-the delivery of the list of `Ratpoints.findPoints` to the callback (`Ratpoints.Delivery.deliver`):
-the calls of the callback for the points of the list in their order, up to and including the first
-that stops the search. Since stage I the statements take the options of the sieve
-(`s : Ratpoints.SieveOptions`) with no hypothesis, in place of parameters and their well-formedness:
-the search chooses its moduli from the curve with these options; the theorem on the well-formedness
-of the parameters that the options gave is gone, and eleven statements remain;
-`Ratpoints.findPointsWith` keeps its trailing print argument at its default, the channel that prints
-nothing. `Ratpoints.bruteForce`, `Ratpoints.findPoints`, `Ratpoints.findPointsWith`,
-`Ratpoints.Outcome`, `Ratpoints.Answer`, `Ratpoints.Delivery`, `Ratpoints.Delivery.deliver`,
-`Ratpoints.Options`, `Ratpoints.Double`, `Ratpoints.SieveOptions`, `Ratpoints.maxDegree` and
-`Ratpoints.maxDivisors` come from the model, never restated, since a definition of the model
-elaborates without Mathlib to other instance terms. Of Mathlib, the file imports exactly the public
-imports of the files of the specification (`Ratpoints/Spec/Basic.lean`, `Ratpoints/Spec/Order.lean`,
+The file has eleven statements; `comparator/README.md` records how they came in, stage by stage,
+and when Comparator accepted them. Two are about the brute-force reference: `Ratpoints.bruteForce`
+finds exactly the points (`Ratpoints.IsPoint`), without duplicates. The other nine hold for every
+coefficient list `c`, height bound `H`, options of the search `o : Ratpoints.Options` and options of
+the sieve `s : Ratpoints.SieveOptions`, with no hypothesis on `s`, with which the search chooses its
+moduli from the curve:
+
+* membership: with the exact check on (`o.noCheck = false`) and assuming Sturm's theorem
+  (`Ratpoints.SturmTheorem`) when the Sturm step is on, the list of `Ratpoints.findPoints` holds
+  exactly the points of height at most `H` in the search region (`Ratpoints.InRegion`, over the
+  values of the ends of the search intervals, `Ratpoints.doubleValue`), of each pair `(x, ±y, z)`
+  only the one with `y ≥ 0` when `o.noY` is set;
+* no duplicates, for every option, the options of the output among them;
+* the refusals: with the Sturm step on, `Ratpoints.findPoints` refuses exactly the inputs with fewer
+  than two or more than `Ratpoints.maxDegree + 1` coefficients, the height bound `0` or one of
+  `2 ^ 63` or more, which is not a `long`, the binary forms `Ratpoints.binaryFormPoly c` that are
+  not squarefree, and search intervals that are not well formed (`Ratpoints.IntervalsWF`); with it
+  off, it refuses exactly what the program refuses under `-s`, and under `-s -k` when the reversal
+  is off, or the search region is not the whole box (`Ratpoints.IsFullBox`); so a
+  `Ratpoints.findPoints` that refuses every input, with or without the Sturm step, is ruled out;
+* the order: under the hypotheses of membership, the list is that of the points in the order of
+  ratpoints (`Ratpoints.orderedPoints`, with the bound `Ratpoints.maxDivisors` of the model on the
+  number of divisors, the reversal only for the whole box and the largest denominator
+  `Ratpoints.denominatorBound`), filtered by `o.noY` and the search region;
+* with the exact check off (`o.noCheck = true`): every element of the list is `(x, 0, z)` for a
+  normalized coprime pair of height at most `H` in the search region; every point `(x, y, z)` of
+  height at most `H` in the search region gives the element `(x, 0, z)` (assuming Sturm's theorem
+  when the Sturm step is on); and the points with `y ≥ 0` of the same search with the exact check
+  on, with `y` replaced by `0`, are a sublist of the list, so that they come in the same order;
+* the protocol: the search with a callback (`Ratpoints.findPointsWith`, with its trailing print
+  argument at its default, the channel that prints nothing) refuses what `Ratpoints.findPoints`
+  refuses, and otherwise returns the data of the callback and the count of the delivery of the list
+  of `Ratpoints.findPoints` to the callback (`Ratpoints.Delivery.deliver`): the calls of the
+  callback for the points of the list in their order, up to and including the first that stops the
+  search.
+
+`Ratpoints.bruteForce`, `Ratpoints.findPoints`, `Ratpoints.findPointsWith`, `Ratpoints.Outcome`,
+`Ratpoints.Answer`, `Ratpoints.Delivery`, `Ratpoints.Delivery.deliver`, `Ratpoints.Options`,
+`Ratpoints.Double`, `Ratpoints.SieveOptions`, `Ratpoints.maxDegree` and `Ratpoints.maxDivisors` come
+from the model, never restated, since a definition of the model elaborates without Mathlib to other
+instance terms. Of Mathlib, the file imports exactly the public imports of the files of the
+specification (`Ratpoints/Spec/Basic.lean`, `Ratpoints/Spec/Order.lean`,
 `Ratpoints/Spec/Region.lean` and `Ratpoints/Spec/Sturm.lean`), so that the restated definitions
 elaborate to the same terms as there.
 -/

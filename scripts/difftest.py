@@ -81,48 +81,51 @@ failure. Under -v, where the library prints its report between the points, the o
 exactly in the same way, byte for byte but for the banner, with the output of the C program on the
 same command line, also for the runs of test4.sh's v(), which records the report without the lines
 that depend on the build, and for the runs of test3.sh that filter the report, by the whole output
-of the command before the filter. The outputs that test4.sh filters through grep found, grep 'Curve
-equation', grep -c ., grep 'bits set per word' | sed 's/,.*//' and grep 'iterations for' are
+of the command before the filter. The outputs that test4.sh filters through grep found, grep
+'Curve equation', grep -c ., grep 'bits set per word' | sed 's/,.*//' and grep 'iterations for' are
 compared after the same filter, the banner exchanged first, with the exit status 0, and also as a
-whole with the C program on their command line. Under -x (no exact check), where the lines printed are the survivors of the
-sieve, which depend on the moduli and on the search region: exactly with the output of the C program
-on the same command line, since the model chooses its moduli from the curve and corrects them during
-the run as the C program does, also on the runs of test4.sh under -x, which are compared with the C
-program, a disagreement of the C program with the output that testbase4 records being noted apart,
-not counted as a failure, the choice of the moduli computing with the log and pow of the platform
-(the runs where the C program may correct its choice are counted: neither -n nor -N gives a value >=
-0, -A does not give 0, and the run can pass RP_ADAPT_WORDS = 10^6 numerator words, by an upper bound
-from the denominators, the search intervals and the height bound); and, without a format or a
-string and without -v, whose report of the library comes between the pairs, also by a weaker check
-against the output of the C program: every line (x : z) a normalized
-coprime pair in the range of the height and, but for (1 : 0), with z in the range of the
-denominators and x / z in the exact search region of the command line, none repeated, the pairs that
-are points the same and in the same order in both outputs, the pairs common to both in the same
-order, the pairs in one block at the same place among the other lines, with -1 one line in each
-output when one of them is a point (the same if both are) and else at most one, and the other lines
-equal, a count line but for its number, which must be that of the pairs printed (unless -z); without
--q on reports. Exit codes are compared exactly, and ratpoints-lean must write nothing to its
-standard error: it runs with LEAN_ABORT_ON_PANIC=1, so that a panic of the Lean runtime ends it by
-SIGABRT. Messages are compared exactly, but for the banner and the usage, which differ by design: in
-the outputs of errors 2 and 6 they are exchanged for those of the C program (the outputs of the two
-programs on an empty command line), and the errors suite checks the usage of ratpoints-lean against
-that of ratpoints. A few searches at a large height that both programs stop at a point at infinity
-before the sieve (-1) are run with a short timeout and a cap on the memory. A search above
---max-height with a search region is compared, with a timeout and a cap on the memory, when the
-model sifts at most 10^5 denominators for it (an upper bound that mirrors the divisor set-up of the
-model) and sifts at most 2 * 10^10 numerators (an upper bound from the widths of the intervals, and
-under -1 from the first point of the expected output, where the search stops): the searches of
-test4.sh at large heights in a narrow region. The runs of test3.sh whose output a pipe filters are
-compared with the C program on the whole output of the command before the pipe. Skipped: the other
-searches above --max-height, which the suites that run the C program compare when they have no
-search region and it prints nothing (a search with -q that finds no points, as when no class of the
-denominators modulo 64 admits a numerator).
+whole with the C program on their command line. Under -x (no exact check), where the lines printed
+are the survivors of the sieve, which depend on the moduli and on the search region: exactly with
+the output of the C program on the same command line, since the model chooses its moduli from the
+curve and corrects them during the run as the C program does, also on the runs of test4.sh under -x,
+which are compared with the C program, a disagreement of the C program with the output that
+testbase4 records being noted apart, not counted as a failure, the choice of the moduli computing
+with the log and pow of the platform (the runs where the C program may correct its choice are
+counted: neither -n nor -N gives a value >= 0, -A does not give 0, and the run can pass
+RP_ADAPT_WORDS = 10^6 numerator words, by an upper bound from the denominators, the search intervals
+and the height bound); and, without a format or a string and without -v, whose report of the library
+comes between the pairs, also by a weaker check against the output of the C program: every line
+(x : z) a normalized coprime pair in the range of the height and, but for (1 : 0), with z in the
+range of the denominators and x / z in the exact search region of the command line, none repeated,
+the pairs that are points the same and in the same order in both outputs, the pairs common to both
+in the same order, the pairs in one block at the same place among the other lines, with -1 one line
+in each output when one of them is a point (the same if both are) and else at most one, and the
+other lines equal, a count line but for its number, which must be that of the pairs printed (unless
+-z); without -q on reports. Exit codes are compared exactly, and ratpoints-lean must write nothing
+to its standard error: it runs with LEAN_ABORT_ON_PANIC=1, so that a panic of the Lean runtime ends
+it by SIGABRT. Messages are compared exactly, but for the banner and the usage, which differ by
+design: in the outputs of errors 2 and 6 they are exchanged for those of the C program (the outputs
+of the two programs on an empty command line), and the errors suite checks the usage of
+ratpoints-lean against that of ratpoints. A few searches at a large height that both programs stop
+at a point at infinity before the sieve (-1) are run with a short timeout and a cap on the memory. A
+search above --max-height with a search region is compared, with a timeout and a cap on the memory,
+when the model sifts at most 10^5 denominators for it (an upper bound that mirrors the divisor
+set-up of the model) and sifts at most 2 * 10^10 numerators (an upper bound from the widths of the
+intervals, and under -1 from the first point of the expected output, where the search stops): the
+searches of test4.sh at large heights in a narrow region. The runs of test3.sh whose output a pipe
+filters are compared with the C program on the whole output of the command before the pipe. Skipped:
+the other searches above --max-height, which the suites that run the C program compare when they
+have no search region and it prints nothing (a search with -q that finds no points, as when no class
+of the denominators modulo 64 admits a numerator).
 
 options:
   --lean PATH        the ratpoints-lean executable (default: .lake/build/bin/ratpoints-lean)
   --c PATH           the C program, built at the pinned commit without a tuning.mk, which the
                      harness refuses (default: the environment variable RATPOINTS_BIN, else the
-                     program ratpoints in the clone of --repo)
+                     program ratpoints in the clone of --repo); a build that fixes the block
+                     length (-DRP_BLOCK_LEN=3), run against a ratpoints-lean built with
+                     Ratpoints.blockLen := some 3 (--lean), tests the boundaries of the blocks
+                     (locally, not by default)
   --repo PATH        a clone of ratpoints that contains the pinned commit (default: the
                      environment variable RATPOINTS_REPO); the test files are read at the pin
   --suites LIST      comma-separated suites (default: test4,test3,rptest,random,outputs,errors,
@@ -1000,11 +1003,11 @@ def split_test4(text):
 def compare_search(cfg, tally, label, args, text, st, big=False):
     """Compare ratpoints-lean with the output `text` of a search that testbase4 records for the
     command line `args` with the settings `st` (above --max-height, `big`, with a timeout and a cap
-    on the memory): under -v with the C program, whose report of the library test4.sh's v()
-    records without the lines that depend on the build; under -x by check_x with the output of the C program on `args`, and without -q, a
-    report, with that output too (whose message 4 test4.sh's m() drops), a disagreement of that
-    output with `text` noted apart from the failures (the lines that m() drops dropped from both);
-    else with `text`."""
+    on the memory): under -v with the C program, whose report of the library test4.sh's v() records
+    without the lines that depend on the build; under -x by check_x with the output of the C program
+    on `args`, and without -q, a report, with that output too (whose message 4 test4.sh's m()
+    drops), a disagreement of that output with `text` noted apart from the failures (the lines that
+    m() drops dropped from both); else with `text`."""
     if st.verbose:
         against_c(cfg, tally, label, args)
     elif st.x or not st.quiet:

@@ -485,14 +485,14 @@ when its stages want more (Definition~\ref{def:tablesLoop}), the first stage tak
 that the next one removes are worth its cost (with the target \verb|RATPOINTS_SURVIVORS_PER_WORD|),
 the second the value of \verb|-N| less the first or else an offset that grows with the length of the
 run, whose base is $\mathrm{sp2Extra} = 11$ (\verb|RATPOINTS_SP2_EXTRA|) or the value of \verb|-R|
-(Definitions~\ref{def:costModel} and~\ref{def:firstStages}), and the third, under \verb|-P| its
-value, the primes of the pool in increasing order of their densities while the survivors that they
-remove are worth the denominators they are carried through (Definition~\ref{def:thirdStage}); the
-primes after the third stage are the reserve. The correction of the moduli moves the end of the
-third stage between the blocks, and with \verb|-A 2| also that of the second, when neither \verb|-n|
-nor \verb|-N| fixes the cut points (Definition~\ref{def:correction}). \verb|RATPOINTS_DEFAULT_SP1|,
-the fixed end of the first stage of the versions 2.x, is read nowhere. The cut points change neither
-the points nor their order.
+(Definitions~\ref{def:costModel} and~\ref{def:firstStages}), and the third the primes of the pool in
+increasing order of their densities, under \verb|-P| as many as its value, and else while the
+survivors that they remove are worth the denominators they are carried through
+(Definition~\ref{def:thirdStage}); the primes after the third stage are the reserve. The correction
+of the moduli moves the end of the third stage between the blocks, and with \verb|-A 2| also that of
+the second, when \verb|-A| is not $0$ and neither \verb|-n| nor \verb|-N| fixes the cut points
+(Definition~\ref{def:correction}). \verb|RATPOINTS_DEFAULT_SP1|, the fixed end of the first stage of
+the versions 2.x, is read nowhere. The cut points change neither the points nor their order.
 
 \section{The command-line program and the differential tests}\label{sec:stagesCli}
 
@@ -587,11 +587,10 @@ Each component of this chapter differs from the C code in a stated way, recorded
     reads to correct the moduli between the blocks, in a record of their own
     (Definition~\ref{def:counters}) passed and returned beside the delivery, which the run adds up
     block by block for the correction (Definition~\ref{def:correction}), and no counts, stops,
-    timings and
-    output of the instrumentation of the stages; the arguments of the run passed explicitly, for the
-    pointer of the sieving thread to them, with no pool, slot and stop flag of a thread of the pool:
-    the model has no threads, and the blocks sifted apart, as the pool sifts them, and delivered in
-    their order give what the run delivers (Theorem~\ref{thm:threads}).
+    timings and output of the instrumentation of the stages; the arguments of the run passed
+    explicitly, for the pointer of the sieving thread to them, with no pool, slot and stop flag of a
+    thread of the pool: the model has no threads, and the blocks sifted apart, as the pool sifts
+    them, and delivered in their order give what the run delivers (Theorem~\ref{thm:threads}).
 \end{itemize}
 The lines of this part of the C code that are neither modelled nor left to a later stage are
 excluded in \verb|correspondence/ratpoints.toml|: the instrumentation of \verb|sift.c| between

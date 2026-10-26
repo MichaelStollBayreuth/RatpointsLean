@@ -452,22 +452,21 @@ mirror:
   holding the intervals of the command line before the join, and, under \verb|-v|, the print channel
   of the program (Definition~\ref{def:cliTuning}), through which the library prints its report
   between the points (Definition~\ref{def:report}), and otherwise the print channel that prints
-  nothing; on a refusal it prints
-  what the library printed and the message of the failure after the head and exits with its status,
-  and otherwise it prints what the callback and the library printed, the points of the search region
-  of its command line in the order in which the search delivers them, that of the list of
-  $\mathrm{findPoints}$ (Theorem~\ref{thm:protocol}), which is that of Theorem~\ref{thm:order}, the
-  callback passing over the points that lie outside the intervals of the command line; then the
-  string before the points if it printed no point (\csource{main.c}{265}{265}), the string after
-  them (\csource{main.c}{267}{267}) and the end of the report, nothing under \verb|-q|; and it exits
-  with status~0 (\csource{main.c}{284}{285}). It writes its output once it is computed and, like
-  ratpoints, ignores a failed write, but for one case: when the reader of the output is gone, the
-  signal \verb|SIGPIPE| ends ratpoints, and the shell reports the status $141 = 128 + 13$; the Lean
-  runtime ignores that signal, so that the write of \verb|ratpoints-lean| fails instead, and it
-  exits quietly with status~141. Since ratpoints flushes its output after every point (line 187 of
-  \verb|main.c|), a reader that leaves early, like \verb|head|, ends it at the next point, while
-  \verb|ratpoints-lean| notices only a reader that is gone when it writes: an output that fits into
-  the pipe ends with status~0.
+  nothing; on a refusal it prints what the library printed and the message of the failure after the
+  head and exits with its status, and otherwise it prints what the callback and the library printed,
+  the points of the search region of its command line in the order in which the search delivers
+  them, that of the list of $\mathrm{findPoints}$ (Theorem~\ref{thm:protocol}), which is that of
+  Theorem~\ref{thm:order}, the callback passing over the points that lie outside the intervals of
+  the command line; then the string before the points if it printed no point
+  (\csource{main.c}{265}{265}), the string after them (\csource{main.c}{267}{267}) and the end of
+  the report, nothing under \verb|-q|; and it exits with status~0 (\csource{main.c}{284}{285}). It
+  writes its output once it is computed and, like ratpoints, ignores a failed write, but for one
+  case: when the reader of the output is gone, the signal \verb|SIGPIPE| ends ratpoints, and the
+  shell reports the status $141 = 128 + 13$; the Lean runtime ignores that signal, so that the write
+  of \verb|ratpoints-lean| fails instead, and it exits quietly with status~141. Since ratpoints
+  flushes its output after every point (line 187 of \verb|main.c|), a reader that leaves early, like
+  \verb|head|, ends it at the next point, while \verb|ratpoints-lean| notices only a reader that is
+  gone when it writes: an output that fits into the pipe ends with status~0.
 \end{definition}
 
 \section{The differential tests of stage~B}

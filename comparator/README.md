@@ -23,7 +23,7 @@ axioms (`propext`, `Quot.sound`, `Classical.choice`).
   `Options`, the doubles `Double` of its search intervals, `SieveOptions`, `maxDegree`,
   `maxDivisors`, the result `Outcome` of `findPointsWith` (whose fields `info` and `total` the
   protocol reads), and the callback's `Answer` and `Delivery` with the reference of the delivery
-  `Delivery.deliver` (until stage H also `Params`, `Params.WF` and `sieveParams`, which the
+  `Delivery.deliver` (until stage I also `Params`, `Params.WF` and `sieveParams`, which the
   statements of stage I no longer mention): the model is trusted in the sense that it is the
   code the executable runs, and nothing else, and a definition of the model, which elaborates
   without Mathlib, is never restated. The specification, by contrast, is reproduced in the
@@ -52,16 +52,16 @@ solution
    Lean (`leanchecker-paranoid`, `lean4lean`, `nanoda`, `con-leche`, `con-ron`).
 
 The statements come in stage by stage, as the blueprint describes them: the theorems of stage B (the
-brute-force reference finds exactly the points, without duplicates); from stage C1 on, the
-membership and no-duplicates theorems for `findPoints` for well-formed parameters, since stage D for
-every value of the options of `findPoints`, and the well-formedness of every parameter set that the
-options of the program give, which rules out a `P.WF` that nothing satisfies; and, since stage D,
-the two refusal theorems: with the Sturm step on, `findPoints` refuses exactly the inputs with fewer
-than two or more than `maxDegree + 1` coefficients, the height bound `0` or one of `2 ^ 63` or more,
-which is not a `long`, and the binary forms that are not squarefree, and with it off exactly what
-the program refuses under `-s`, so that a `findPoints` that refuses every input, with or without the
-Sturm step, is ruled out. They replace the refusal theorem of stage C1, which had only the first
-three disjuncts. `challenges.json` lists `challenge_mem_bruteForce_iff` and
+brute-force reference finds exactly the points, without duplicates); from stage C1 until stage I,
+the membership and no-duplicates theorems for `findPoints` for well-formed parameters, since stage D
+for every value of the options of `findPoints`, and the well-formedness of every parameter set that
+the options of the program gave, which ruled out a `P.WF` that nothing satisfies; and, since
+stage D, the two refusal theorems: with the Sturm step on, `findPoints` refuses exactly the inputs
+with fewer than two or more than `maxDegree + 1` coefficients, the height bound `0` or one of
+`2 ^ 63` or more, which is not a `long`, and the binary forms that are not squarefree, and with it
+off exactly what the program refuses under `-s`, so that a `findPoints` that refuses every input,
+with or without the Sturm step, is ruled out. They replace the refusal theorem of stage C1, which
+had only the first three disjuncts. `challenges.json` listed `challenge_mem_bruteForce_iff` and
 `challenge_nodup_bruteForce`, which Comparator accepted on 2026-10-09;
 `challenge_mem_iff_isPoint_of_findPoints_eq_ok` and `challenge_nodup_of_findPoints_eq_ok`, which
 Comparator accepted on 2026-10-10 in their form of stage C1, without the options, and
@@ -69,11 +69,11 @@ Comparator accepted on 2026-10-10 in their form of stage C1, without the options
 `challenge_exists_findPoints_eq_error_iff_of_sturm_nonneg` and
 `challenge_exists_findPoints_eq_error_iff_of_sturm_neg`, the refusal theorems of stage D. Comparator
 accepted all seven, the two main theorems with the options among them, on 2026-10-11, again on the
-model of stage E on 2026-10-12, with the parameters of sub-stage F1, whose well-formedness
-admits composite moduli, on 2026-10-13, with the refusal of the heights that are not `long`s, which
-the refusal theorems state as `2 ^ 63 ≤ H`, and the cut points of sub-stage F2, on 2026-10-14, with
-the packing of the numerators of sub-stage F3 on 2026-10-15, and with the chunked first stage and
-the rows of sub-stage F4 on 2026-10-16; on Lean and Mathlib v4.35.0, `lake comparator --paranoid`
+model of stage E on 2026-10-12, with the parameters of sub-stage F1, whose well-formedness admitted
+composite moduli, on 2026-10-13, with the refusal of the heights that are not `long`s, which the
+refusal theorems state as `2 ^ 63 ≤ H`, and the cut points of sub-stage F2, on 2026-10-14, with the
+packing of the numerators of sub-stage F3 on 2026-10-15, and with the chunked first stage and the
+rows of sub-stage F4 on 2026-10-16; on Lean and Mathlib v4.35.0, `lake comparator --paranoid`
 accepted all seven on the same day, with Lean's kernel and the five external checkers.
 
 Stage G restates the membership theorem for the options of the output: with the exact check on
@@ -93,8 +93,8 @@ points in their order up to and including the first that stops the search. And i
 theorem, `challenge_eq_orderedPoints_of_findPoints_eq_ok`, which `challenges.json` lists too: with
 the exact check on, the list of `findPoints` is that of `orderedPoints`, the points in the order of
 ratpoints, with the model's bound `maxDivisors` on the number of divisors, filtered by `o.noY`. So
-`challenges.json` lists twelve statements, five of them new with stage G. All five, like the
-membership and no-duplicates theorems, are for well-formed parameters (`P.WF`). On 2026-10-17
+`challenges.json` listed twelve statements, five of them new with stage G. All five, like the
+membership and no-duplicates theorems, were for well-formed parameters (`P.WF`). On 2026-10-17
 `lake comparator --paranoid` accepted all twelve, with Lean's kernel and the five external checkers.
 
 Stage H restates six statements for the search region of the options, the search intervals over the
@@ -107,8 +107,8 @@ latter assuming Sturm's theorem when the Sturm step is on; and both refusal theo
 of search intervals that are not well formed (`IntervalsWF`), the refusal of the reversal check
 without the Sturm step only for the whole box. No duplicates, the sublist under the exact check off,
 the protocol, the brute-force reference and the well-formedness of the parameters of the program
-keep their text. So `challenges.json` lists the same twelve statements; the six changes came in with
-the theorems that prove them, each checked by Comparator then, and on 2026-10-18
+keep their text. So `challenges.json` listed the same twelve statements; the six changes came in
+with the theorems that prove them, each checked by Comparator then, and on 2026-10-18
 `lake comparator --paranoid` accepted all twelve in their form of stage H, with Lean's kernel and
 the five external checkers.
 

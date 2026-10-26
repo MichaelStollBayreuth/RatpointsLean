@@ -129,12 +129,11 @@ the others, and \csource{sift.c}{1168}{1169} in the arm of \verb|USE_LONG_IN_PHA
 under \verb|DEBUG|, lines 1240-1241 and 1279-1280, are the same walk without their output,
 Definition~\ref{def:walkWord}); \verb|sift| after each call of \verb|_ratpoints_sift0|
 (\csource{find_points.c}{3611}{3611}; line 3610 is the stop of a thread of the pool, excluded with
-the threads);
-\verb|run_block| after each \verb|sift|, in each shape (\csource{find_points.c}{3928}{3928},
-\csource{find_points.c}{3957}{3957}, \csource{find_points.c}{4044}{4044},
-\csource{find_points.c}{4068}{4068}); and the loop over the blocks after each block
-(\csource{find_points.c}{5158}{5158}). The points at infinity use a local flag
-(\csource{find_points.c}{4571}{4571}), the sieve the flag of the sieving thread, which
+the threads); \verb|run_block| after each \verb|sift|, in each shape
+(\csource{find_points.c}{3928}{3928}, \csource{find_points.c}{3957}{3957},
+\csource{find_points.c}{4044}{4044}, \csource{find_points.c}{4068}{4068}); and the loop over the
+blocks after each block (\csource{find_points.c}{5158}{5158}). The points at infinity use a local
+flag (\csource{find_points.c}{4571}{4571}), the sieve the flag of the sieving thread, which
 \verb|worker_init| clears (\csource{find_points.c}{3129}{3129}); the first is clear when the sieve
 starts, since a stop at infinity returns before it. So the calls made are those of the search that
 no call stops, up to and including the first call that sets \verb|quit|, and the count is the sum of
@@ -149,11 +148,11 @@ clear. The program reads them after the search, with \verb|RATPOINTS_NO_JACOBI| 
 \verb|RATPOINTS_NO_CHECK|, which it set itself (message 7). The numbers of the moduli used,
 \verb|sp1_used|, \verb|sp2_used| and \verb|sp3_used| (\csource{ratpoints.h}{378}{378}), which
 message 4 reads, are zeroed by \verb|find_points_work| on entry and set after the sieve, from the
-first stage of the choice of the moduli and the second and third stages of the last block of the
-run (stage~I, Definition~\ref{def:chooseAndSearch}), so that they are $0$ when the search returns
-before the sieve. The search intervals,
-\verb|num_inter| and \verb|domain|, which the search leaves as it made them (lines 4831-4841 and the
-Sturm step) and message 8 reads, belong to the search region (stage~H, Chapter~\ref{chap:region}).
+first stage of the choice of the moduli and the second and third stages of the last block of the run
+(stage~I, Definition~\ref{def:chooseAndSearch}), so that they are $0$ when the search returns before
+the sieve. The search intervals, \verb|num_inter| and \verb|domain|, which the search leaves as it
+made them (lines 4831-4841 and the Sturm step) and message 8 reads, belong to the search region
+(stage~H, Chapter~\ref{chap:region}).
 
 \paragraph{The program.} \verb|main.c| keeps the settings of the output in global variables
 (\csource{main.c}{57}{64}), with the defaults of a command line without options
@@ -411,22 +410,23 @@ give at the denominator (Definition~\ref{def:numeratorRanges}) that pass the cla
 $w$ that the class packs and survive the entries of all three stages, each with the points of its
 check with the flags, which the bits of one search interval give
 (\verb|Ratpoints.Sieve.flatMap_acceptedPoints_eq_flatMap_checkNumWith|), and the store after the
-denominator fits the entries again; for the run (\verb|Ratpoints.Sieve.sieveRun_spec|, with its
-equation \verb|Ratpoints.Sieve.run_sieveRun| and the form
-\verb|Ratpoints.Sieve.run_sieveRun_of_eq_filter| for a list of the shape that is a list $l$ filtered
-by a test, which delivers over $l$) it is the concatenation of these lists over the denominators of
-the shape that pass its test. Without $\mathrm{noCheck}$ the words still compute the Booleans
-(Lemma~\ref{lem:sift_eq_checkDen}, \verb|Ratpoints.Sieve.run_sift_eq_deliver_checkDen|): one
-denominator delivers the points of the check of stage~C1 on the sieve of stage~C1 whose numerators
-pass the class bit, mapped after a reversal and filtered by $\mathrm{noY}$.
+denominator fits the entries again; for the run over the blocks
+(\verb|Ratpoints.Sieve.sieveRun_spec| and its plain form \verb|Ratpoints.Sieve.fst_run_sieveRun|,
+the points of the blocks in order, and \verb|Ratpoints.Sieve.exists_run_sieveRun_eq_deliver| per
+denominator, Theorem~\ref{thm:blocks}) it is the concatenation of these lists over the denominators
+of the shape that pass its test, each with the entries of the decision of its block. Without
+$\mathrm{noCheck}$ the words still compute the Booleans (Lemma~\ref{lem:sift_eq_checkDen},
+\verb|Ratpoints.Sieve.run_sift_eq_deliver_checkDen|): one denominator delivers the points of the
+check of stage~C1 on the sieve of stage~C1 whose numerators pass the class bit, mapped after a
+reversal and filtered by $\mathrm{noY}$.
 
 The loops that may return early carry invariants of their own, each in the node of the contract that
 uses it. Each loop of the sieve that delivers points, over the set bits of a word, the words of a
-bit array, the bit arrays of a piece, the pieces of an interval and the denominators of a run, keeps
-an invariant with two cases: the flag is clear and the delivery is that of the points of the steps
-done so far, or the loop has returned at a stop, with the flag set, and the delivery is that of the
-points of the steps up to the one that stopped it, which is that of the points of all the steps
-(Lemma~\ref{lem:deliver} on a prefix). These are, for the walk,
+bit array, the bit arrays of a piece, the pieces of an interval, the denominators of a block and the
+blocks of a run, keeps an invariant with two cases: the flag is clear and the delivery is that of
+the points of the steps done so far, or the loop has returned at a stop, with the flag set, and the
+delivery is that of the points of the steps up to the one that stopped it, which is that of the
+points of all the steps (Lemma~\ref{lem:deliver} on a prefix). These are, for the walk,
 \verb|Ratpoints.Sieve.WalkDeliveryInvariant| and \verb|Ratpoints.Sieve.WalkDeliveryWhileInvariant|
 (Definition~\ref{def:walkWord}); for the words of a bit array,
 \verb|Ratpoints.Sieve.SiftBitArrayLoopInvariant| and
@@ -438,9 +438,11 @@ for the bit arrays of a piece, \verb|Ratpoints.Sieve.ScanPieceInvariant.eq_deliv
 (Definition~\ref{def:scanPiece}); for the masked bits of one piece,
 \verb|Ratpoints.Sieve.IsMasked.eq_deliver| (Definition~\ref{def:siftPiece}); for the pieces of an
 interval, \verb|Ratpoints.Sieve.SiftInvariant.eq_deliver_of_quit| (Lemma~\ref{lem:siftBits}); and
-for the denominators of a run, \verb|Ratpoints.Sieve.SieveRunLoopInvariant| and
-\verb|Ratpoints.Sieve.SieveRunInvariant.eq_deliver_of_quit| (Definition~\ref{def:sieveRun}). What
-they share is the following lemma.
+for the denominators of a block, \verb|Ratpoints.Sieve.MapBlockInvariant|,
+\verb|Ratpoints.Sieve.AllBlockInvariant|, \verb|Ratpoints.Sieve.WalkDensWhileInvariant| and
+\verb|Ratpoints.Sieve.WordsBlockInvariant| (Lemma~\ref{lem:blockLoops}), and for the blocks of a run
+\verb|Ratpoints.Sieve.SieveRunLoopInvariant| (Theorem~\ref{thm:blocks}). What they share is the
+following lemma.
 
 \begin{lemma}[The steps done come first]\label{lem:sieveStops}
   \uses{lem:numClasses, def:andRows, def:rbaPack}
@@ -589,7 +591,7 @@ relates the output under \verb|RATPOINTS_NO_CHECK| to the points.
 
 \begin{lemma}[The search delivers the points of a sound test]\label{lem:searchList}
   \uses{def:searchList, def:sieving, def:searchPoints, def:Outcome, lem:sieveStops,
-    thm:run_reference, lem:soundRun, lem:checkDelivery, lem:checkNumWith, lem:shape_dens,
+    lem:flatMapFilter, lem:soundRun, lem:checkDelivery, lem:checkNumWith, lem:shape_dens,
     lem:twoAdic_exit, lem:choice, lem:sift_eq_checkDen,
     lem:exactBounds, lem:numeratorRanges, def:regionSpec, def:inIntervals, lem:searchDensRange,
     lem:searchListRegion, def:sieveOptions}
@@ -637,7 +639,7 @@ relates the output under \verb|RATPOINTS_NO_CHECK| to the points.
   (Lemma~\ref{lem:numeratorRanges}), that pass the test of the shape, the class words and the
   entries of the decision of the block of the denominator (the block lemma,
   Theorem~\ref{thm:blocks}, for the denominators of the search, which have no duplicates,
-  Lemma~\ref{lem:noCheckList}, and Theorem~\ref{thm:run_reference}), which let every point through,
+  Lemma~\ref{lem:noCheckList}, and Lemma~\ref{lem:flatMapFilter}), which let every point through,
   by what the search hands to the run (Lemma~\ref{lem:soundRun}) and by Lemma~\ref{lem:shape_dens}.
   The case analysis is on the values of the components that decide the test, which depend neither on
   the callback nor on the flags, so that one test serves them all.
@@ -663,17 +665,19 @@ relates the output under \verb|RATPOINTS_NO_CHECK| to the points.
 \end{theorem}
 
 \begin{proof}
-  \uses{lem:normalize, lem:searchIntervals, lem:sturmRegion}
+  \uses{lem:choiceSearch, lem:normalize, lem:searchIntervals, lem:sturmRegion}
   \leanok
-  The refusals are the same tests on both sides; after them both searches run on the polynomial
-  handed on, with its degree, which the refusals leave positive, over the normalized range of the
-  denominators and the search intervals that the Sturm step leaves, which are well formed
-  (Lemmas~\ref{lem:normalize}, \ref{lem:searchIntervals} and~\ref{lem:sturmRegion}), or both return
-  at once after the Sturm step, and Lemma~\ref{lem:searchList} gives the data and the count. The
-  data and the count need what the run needs of the result of the choice of the moduli, which it has
-  (Lemma~\ref{lem:choice}), since their equality comes from the contracts of the search, which need
-  it, and not from an argument that the control flow depends on
-  the callback only through the flag.
+  With its print channel at its default, the search with a callback is the refusals followed by the
+  reversal check, the search intervals, the Sturm step and the search
+  (Lemma~\ref{lem:choiceSearch}). The refusals are the same tests on both sides; after them both
+  searches run on the polynomial handed on, with its degree, which the refusals leave positive, over
+  the normalized range of the denominators and the search intervals that the Sturm step leaves,
+  which are well formed (Lemmas~\ref{lem:normalize}, \ref{lem:searchIntervals}
+  and~\ref{lem:sturmRegion}), or both return at once after the Sturm step, and
+  Lemma~\ref{lem:searchList} gives the data and the count. The data and the count need what the run
+  needs of the result of the choice of the moduli, which it has (Lemma~\ref{lem:choice}), since
+  their equality comes from the contracts of the search, which need it, and not from an argument
+  that the control flow depends on the callback only through the flag.
 \end{proof}
 
 \begin{lemma}[The list of the search]\label{lem:findPoints_searchList}
@@ -1046,8 +1050,9 @@ The protocol speaks about the reference of the delivery of the model, a fold of 
 one reads with the challenge as one reads the specification; \verb|findPointsWith| is the code that
 the executable runs, with the callback of \verb|main.c|; \verb|findPoints|, of which statements 3 to
 6 and 8 to 11 speak, is its instance with the appending callback (Definition~\ref{def:findPoints}),
-and statement 12 links the two. The theorems of the library behind the twelve statements have guards
-on their axioms, which are the standard ones.
+and statement 12 links the two. The theorems of the library behind the twelve statements had guards
+on their axioms, which were the standard ones, as those behind the eleven statements of stage~I have
+(Section~\ref{sec:certifiedI}).
 
 \section{The program}\label{sec:outputCli}
 
@@ -1250,11 +1255,10 @@ what stage~H adds):
     $30$ seconds and a cap of $4$~GB on the memory;
   \item a default suite \verb|outputs| runs $300$ random polynomials at small heights with random
     options of the output, \verb|-q| or \verb|-v|, formats and strings, at times with
-    \verb|-p 30 -N 30|, against the
-    C program; the errors suite has the cases of the options of the output; the four runs of
-    \verb|test4.sh| whose \verb|-f|, \verb|-fs|, \verb|-fm| or \verb|-fe| lacks its word fail with
-    error~6, as in the C program; and the fuzz draws the options of the output and format words,
-    kept in UTF-8, on an eighth line of each round.
+    \verb|-p 30 -N 30|, against the C program; the errors suite has the cases of the options of the
+    output; the four runs of \verb|test4.sh| whose \verb|-f|, \verb|-fs|, \verb|-fm| or \verb|-fe|
+    lacks its word fail with error~6, as in the C program; and the fuzz draws the options of the
+    output and format words, kept in UTF-8, on an eighth line of each round.
 \end{itemize}
 Until stage~I, skipped were the outputs that \verb|test4.sh| (four runs) and \verb|test3.sh| (three
 runs) filter to look at the report of the library under \verb|-v|, which stage~I compares

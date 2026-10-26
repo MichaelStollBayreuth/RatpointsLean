@@ -825,12 +825,12 @@ of the points of the check with the flags (Definition~\ref{def:checkNumWith}) of
 $-H, \dots, H$ that lie in one of the ranges, pass the class bit of the word $w$ and survive the
 entries of all three stages, in increasing order. The contract of the run
 (\verb|Ratpoints.Sieve.sieveRun_spec|, Definition~\ref{def:sieveRun}) quantifies ranges for each
-denominator from $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$, and its invariants
-(\verb|Ratpoints.Sieve.SieveRunInvariant|, \verb|Ratpoints.Sieve.SieveRunLoopInvariant|) take the
-bounds and the range. With the ranges of the values of well-formed intervals
-(Lemma~\ref{lem:exactBounds}), a numerator $|a| \le H$ lies in a range exactly when $a/b$ lies in an
-interval (Lemma~\ref{lem:numeratorRanges}), so that each denominator delivers the points of the
-numerators with $a/b$ in one of the search intervals.
+denominator from $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$ through \verb|Ratpoints.Sieve.RunWords|,
+and its invariant over the blocks (\verb|Ratpoints.Sieve.SieveRunLoopInvariant|) states the delivery
+of the blocks done for every such choice of the words of the classes and the ranges. With the ranges
+of the values of well-formed intervals (Lemma~\ref{lem:exactBounds}), a numerator $|a| \le H$ lies
+in a range exactly when $a/b$ lies in an interval (Lemma~\ref{lem:numeratorRanges}), so that each
+denominator delivers the points of the numerators with $a/b$ in one of the search intervals.
 
 \begin{lemma}[The loop over the intervals]\label{lem:siftIntervals}
   \uses{def:intervalBits, def:numeratorRanges, lem:numeratorsToBits, def:siftBits, lem:siftBits,
@@ -2064,16 +2064,18 @@ step of the search, the region that the search uses and the bounds of the arrays
 \verb|Ratpoints/Proof/CliNumbers.lean| ($1118$ lines), above the roundings, with the numbers of the
 command line. Of the files of the earlier stages, \verb|Ratpoints/Proof/Denominators.lean| has what
 \verb|run_setup| returns (and had the contract of the run on the bounds until stage~I, in
-\verb|Ratpoints/Proof/Correction.lean| since then);
-\verb|Ratpoints/Proof/FindPoints.lean| the points that the search delivers over the search
-intervals; \verb|Ratpoints/Proof/BruteForce.lean| the reference split at the candidate $(1, 0)$ and
-filtered to a range of denominators; \verb|Ratpoints/Proof/Shapes.lean| the divisors times squares
-in a range; \verb|Ratpoints/Proof/Setup.lean| the degree after the reversal check and the binary
-form as a value of the polynomial; \verb|Ratpoints/Proof/Output.lean| ($1091$ lines), above
+\verb|Ratpoints/Proof/Correction.lean| since then); \verb|Ratpoints/Proof/FindPoints.lean| the
+points that the search delivers over the search intervals; \verb|Ratpoints/Proof/BruteForce.lean|
+the reference split at the candidate $(1, 0)$ and filtered to a range of denominators;
+\verb|Ratpoints/Proof/Shapes.lean| the divisors times squares in a range;
+\verb|Ratpoints/Proof/Setup.lean| the degree after the reversal check and the binary form as a value
+of the polynomial; \verb|Ratpoints/Proof/Output.lean| ($1091$ lines), above
 \verb|Ratpoints/Proof/FindPoints.lean| and \verb|Ratpoints/Proof/SturmRegion.lean|, the theorems
 with the search region; and \verb|Ratpoints/Proof/Cli.lean| ($944$ lines), above
 \verb|Ratpoints/Proof/CliNumbers.lean| and \verb|Ratpoints/Proof/Output.lean|, the theorem on the
-region of the program.
+region of the program. These are the sizes at the end of stage~H; stage~I, which splits
+\verb|Ratpoints/Proof/SiftBits.lean| off \verb|Ratpoints/Proof/Sift.lean| and changes several of
+these files, gives the sizes of its files in Section~\ref{sec:moduliFiles}.
 
 The candidates for Mathlib of the stage are in mirrors under \verb|Ratpoints/Mathlib|, each
 importing the Mathlib file that it extends (Section~\ref{sec:coverage}):
