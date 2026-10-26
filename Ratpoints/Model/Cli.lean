@@ -22,28 +22,26 @@ in its order, and prints what ratpoints prints: unless `-q` is given, the report
 `ratpoints-lean`, the curve, the height bound and the search region of the command line before the
 points, and after them the numbers of the moduli used, what the search did, the search intervals
 that it searched and the count of the points found, but, under `-v`, for the report of the library;
-under `-x`, the pairs that pass the sieve of the model, with the moduli that the search
-chooses from the curve as ratpoints chooses them (`Ratpoints.sievingInfo`) and corrects between the
-blocks of the run (`Ratpoints.Sieve.adaptPrimes`), and over the numerators of the search intervals
-that the Sturm step leaves, which are those that ratpoints prints when none of the tuning options
-`-r -R -U -C -Q -W`, which the program ignores, is given, and `-A`, which it ignores too, is absent
-or gives `1` or a negative value, the default of the correction; and the points, through the
-callback `process` of `main.c` (`Ratpoints.Cli.process`), which the search calls for each point it
-finds (`Ratpoints.findPointsVerbose`), in the format of `-f` with the strings of `-fs`, `-fm` and
-`-fe`, the points at infinity passed over under `-i` (neither printed nor counted), none printed
-under `-z`, and the search stopped under `-1` at the first point that `process` does not pass over
-(the first point counted, printed or not). It reads `-p -n -N -P -F -j -J` into the options of the
-sieve and ignores the other options that tune the sieve of ratpoints (until stage I, but for `-t`
-for good); it reads `-k -K -s -S`, `-x -X -y -Y` and `-dl -du` into the options of the search
-(`Ratpoints.Options`): whether the polynomial may be reversed, the depth of the Sturm step, whether
-the points are checked exactly, whether both points of a pair are delivered, and the range of the
-denominators; and it reads the search intervals of `-l` and `-u` as `main.c` does, the ends as the
-numbers they are (`Ratpoints.Cli.ExactEnd`) and the doubles outward of them, which it gives the
-search, joined where they meet (`Ratpoints.Cli.joinIntervals`), and against whose exact ends
-`process` checks each point. It runs the search with these options of the sieve, its array size set
-to `Ratpoints.defaultArraySize`, and these options of the search, so that it refuses a binary form
-that is not squarefree with error 8 and, after a reversal, prints the points of the reversed
-polynomial mapped back to the caller's curve, as ratpoints does with the same options.
+under `-x`, the pairs that pass the sieve of the model, with the moduli that the search chooses from
+the curve as ratpoints chooses them (`Ratpoints.sievingInfo`) and corrects between the blocks of the
+run (`Ratpoints.Sieve.adaptPrimes`), and over the numerators of the search intervals that the Sturm
+step leaves, which are those that ratpoints prints; and the points, through the callback `process`
+of `main.c` (`Ratpoints.Cli.process`), which the search calls for each point it finds
+(`Ratpoints.findPointsVerbose`), in the format of `-f` with the strings of `-fs`, `-fm` and `-fe`,
+the points at infinity passed over under `-i` (neither printed nor counted), none printed under
+`-z`, and the search stopped under `-1` at the first point that `process` does not pass over (the
+first point counted, printed or not). It reads `-p -n -N -r -R -U -C -A -P -Q -W -F -j -J` into the
+options of the sieve (`Ratpoints.SieveOptions`) and ignores `-t`, the number of threads; it reads
+`-k -K -s -S`, `-x -X -y -Y` and `-dl -du` into the options of the search (`Ratpoints.Options`):
+whether the polynomial may be reversed, the depth of the Sturm step, whether the points are checked
+exactly, whether both points of a pair are delivered, and the range of the denominators; and it
+reads the search intervals of `-l` and `-u` as `main.c` does, the ends as the numbers they are
+(`Ratpoints.Cli.ExactEnd`) and the doubles outward of them, which it gives the search, joined where
+they meet (`Ratpoints.Cli.joinIntervals`), and against whose exact ends `process` checks each point.
+It runs the search with these options of the sieve, its array size set to
+`Ratpoints.defaultArraySize`, and these options of the search, so that it refuses a binary form that
+is not squarefree with error 8 and, after a reversal, prints the points of the reversed polynomial
+mapped back to the caller's curve, as ratpoints does with the same options.
 
 ## Main definitions
 
@@ -442,35 +440,59 @@ def _root_.Ratpoints.Options.store (t : Options) (o : String) (a : Option String
   | '-' :: 'Y' :: _, _ => { t with noY := false }
   | _, _ => t
 
-/-- The values of the options of the command line for the height bound `H`, those that set the
-sieving parameters, the options of the search (`Ratpoints.Options`), the settings of the output
-(`Ratpoints.Cli.Output`) and the reading of the search intervals (`Ratpoints.Cli.Intervals`),
-starting from `s`, or the first failure among the options, the words that follow the coefficients
-and the height bound on the command line, read from left to right as `main.c` reads them: an option
-that fails by `Ratpoints.Cli.optionArg`, or one whose argument is missing or malformed (error 6, and
-error 7 for `-l` and `-u`), fails; `-p`, `-n`, `-N`, `-P` and `-F` set the fields of
-`Ratpoints.SieveOptions` to the C `long` that follows them, the last one winning, and `-j` switches
-the Jacobi test off and `-J` on again, as `main.c` sets the fields and the flags of its
-`ratpoints_args`; `-k` forbids the reversal of the polynomial and `-K` allows it again, `-s` sets
-the depth of the Sturm step to `-1`, which switches the step off, and `-S` to the C `long` that the
-next word gives if there is one and it does not start with `-`, and else to
+/-- The options of the sieve `s` with the field that the option `o` sets, with its argument `a`: the
+C `long` of `a` for `-p -n -N -R -A -P -F` and its double for `-r -U -C -Q -W`, as `main.c` reads
+them (`Ratpoints.Cli.longOfString?`, `Ratpoints.Cli.scanDouble?`); the Jacobi test off for `-j` and
+on for `-J`. It models no C code of its own: it is the part of `Ratpoints.Cli.checkOptions` that
+sets the fields of `Ratpoints.SieveOptions`. -/
+def _root_.Ratpoints.SieveOptions.store (s : SieveOptions) (o : String) (a : Option String) :
+    SieveOptions :=
+  match o.toList, a.bind longOfString?, a.bind scanDouble? with
+  | '-' :: 'p' :: _, some v, _ => { s with numPrimes := v }
+  | '-' :: 'n' :: _, some v, _ => { s with sp1 := v }
+  | '-' :: 'N' :: _, some v, _ => { s with sp2 := v }
+  | '-' :: 'R' :: _, some v, _ => { s with sp2Extra := v }
+  | '-' :: 'A' :: _, some v, _ => { s with adapt := v }
+  | '-' :: 'P' :: _, some v, _ => { s with sp3Extra := v }
+  | '-' :: 'F' :: _, some v, _ => { s with maxForbidden := v }
+  | '-' :: 'r' :: _, _, some x => { s with survivorsPerWord := x }
+  | '-' :: 'U' :: _, _, some x => { s with sp2U0 := x }
+  | '-' :: 'C' :: _, _, some x => { s with costTable := x }
+  | '-' :: 'Q' :: _, _, some x => { s with sp3PerDenom := x }
+  | '-' :: 'W' :: _, _, some x => { s with checkCost := x }
+  | '-' :: 'j' :: _, _, _ => { s with jacobi := false }
+  | '-' :: 'J' :: _, _, _ => { s with jacobi := true }
+  | _, _, _ => s
+
+/-- The values of the options of the command line for the height bound `H`, the options of the
+sieve (`Ratpoints.SieveOptions`), the options of the search (`Ratpoints.Options`), the settings of
+the output (`Ratpoints.Cli.Output`) and the reading of the search intervals
+(`Ratpoints.Cli.Intervals`), starting from `s`, or the first failure among the options, the words
+that follow the coefficients and the height bound on the command line, read from left to right as
+`main.c` reads them: an option that fails by `Ratpoints.Cli.optionArg`, or one whose argument is
+missing or malformed (error 6, and error 7 for `-l` and `-u`), fails; `-p`, `-n`, `-N`, `-R`, `-A`,
+`-P` and `-F` set the fields of `Ratpoints.SieveOptions` to the C `long` that follows them and `-r`,
+`-U`, `-C`, `-Q` and `-W` to the double, the last one winning, and `-j` switches the Jacobi test off
+and `-J` on again, as `main.c` sets the fields and the flags of its `ratpoints_args`
+(`Ratpoints.SieveOptions.store`); `-k` forbids the reversal of the polynomial and `-K` allows it
+again, `-s` sets the depth of the Sturm step to `-1`, which switches the step off, and `-S` to the C
+`long` that the next word gives if there is one and it does not start with `-`, and else to
 `Ratpoints.defaultSturm`, so that the step is on unless that depth is negative; `-dl` and `-du` set
 the least and the largest denominator to the C `long` that follows them; `-l` and `-u` read a lower
 and an upper end of a search interval (`Ratpoints.Cli.Intervals.lower`,
 `Ratpoints.Cli.Intervals.upper`); `-x` switches the exact check off and `-X` on again, `-y` makes
 the search deliver one point of each pair and `-Y` both; `-f`, `-fs`, `-fm` and `-fe` take the next
 word, whatever it is, as the format or the string, and `-q -v -z -Z -1 -i -I` set the settings of
-the output (`Ratpoints.Cli.Output.store`); of each setting the last one wins. It ignores the other
-tuning options, which tune only the heuristics of the C program (until stage I) and its threads.
+the output (`Ratpoints.Cli.Output.store`); of each setting the last one wins. It ignores `-t`, the
+number of threads of the C program.
 
 C: `main.c:393-400`, `main.c:414-416`, `main.c:437-532`, `main.c:533-577`, `main.c:578-593`,
 `main.c:594-601`, `main.c:602-637`, `main.c:638-649`, `main.c:650-668`
 
-Deviation: the arguments of the tuning options other than `-p -n -N -P -F` are checked and then
-ignored: those of `-r -R -U -C -A -Q -W` until stage I, which models the choice of the moduli by the
-curve and its correction, and that of `-t`, the number of threads, for good; the strings of `-f`,
-`-fs`, `-fm` and `-fe` kept as values, for the copies that `main.c` allocates, with error 10 when
-the allocation fails, which the model cannot meet. -/
+Deviation: the argument of `-t`, the number of threads, checked and then ignored, since the model
+sieves the blocks of the run in turn on one thread, which gives the output of every number of
+threads; the strings of `-f`, `-fs`, `-fm` and `-fe` kept as values, for the copies that `main.c`
+allocates, with error 10 when the allocation fails, which the model cannot meet. -/
 def checkOptions (H : Nat) (s : SieveOptions × Options × Output × Intervals) :
     List String → Except Failure (SieveOptions × Options × Output × Intervals)
   | [] => return s
@@ -493,23 +515,13 @@ def checkOptions (H : Nat) (s : SieveOptions × Options × Output × Intervals) 
           else throw .optionSyntax
         | [] => throw .optionSyntax
 where
-  /-- `s` with the field that the option `o` sets, with its argument `a` if it takes one: the C
-  `long` of `a` for `-p -n -N -P -F`; the Jacobi test off for `-j` and on for `-J`; the options of
-  the search by `Ratpoints.Options.store` and the settings of the output by
-  `Ratpoints.Cli.Output.store`. -/
+  /-- `s` with the field that the option `o` sets, with its argument `a` if it takes one: the
+  options of the sieve by `Ratpoints.SieveOptions.store`, the options of the search by
+  `Ratpoints.Options.store` and the settings of the output by `Ratpoints.Cli.Output.store`. -/
   store (s : SieveOptions × Options × Output × Intervals) (o : String) (a : Option String) :
       SieveOptions × Options × Output × Intervals :=
     let (s, t, u, iv) := s
-    let (t, u) := (t.store o a, u.store o a)
-    match o.toList, a.bind longOfString? with
-    | '-' :: 'p' :: _, some v => ({ s with numPrimes := v }, t, u, iv)
-    | '-' :: 'n' :: _, some v => ({ s with sp1 := v }, t, u, iv)
-    | '-' :: 'N' :: _, some v => ({ s with sp2 := v }, t, u, iv)
-    | '-' :: 'P' :: _, some v => ({ s with sp3Extra := v }, t, u, iv)
-    | '-' :: 'F' :: _, some v => ({ s with maxForbidden := v }, t, u, iv)
-    | '-' :: 'j' :: _, _ => ({ s with jacobi := false }, t, u, iv)
-    | '-' :: 'J' :: _, _ => ({ s with jacobi := true }, t, u, iv)
-    | _, _ => (s, t, u, iv)
+    (s.store o a, t.store o a, u.store o a, iv)
 
 /-- The format of a point that `main.c` takes when the command line gives none: `(%x : %z)` and a
 line feed when the points are not checked exactly or only one point of each pair is delivered
@@ -911,6 +923,14 @@ the library, which `ratpoints-lean` leaves out. -/
 #guard (checkOptions 5 ({}, {}, {}, {}) ["-p", "10", "-n", "4", "-N", "7", "-P", "3", "-j", "-F",
     "200", "-t", "2", "-p", "12"]).toOption.map (fun (o, _) ↦ (o.numPrimes, o.sp1, o.sp2,
     o.sp3Extra, o.maxForbidden, o.jacobi)) == some (12, 4, 7, 3, 200, false)
+
+-- The tuning options `-R 11 -A 2 -r 0.5 -U 1e3 -C 0 -Q inf -W -306 -A 0`: the `long`s and the bits
+-- of the doubles, the last `-A` winning; the fields of the options not given keep their defaults.
+#guard (checkOptions 5 ({}, {}, {}, {}) ["-R", "11", "-A", "2", "-r", "0.5", "-U", "1e3", "-C",
+    "0", "-Q", "inf", "-W", "-306", "-A", "0"]).toOption.map (fun (o, _) ↦ (o.sp2Extra, o.adapt,
+    o.survivorsPerWord.bits, o.sp2U0.bits, o.costTable.bits, o.sp3PerDenom.bits, o.checkCost.bits,
+    o.numPrimes, o.sp3Extra)) == some (11, 0, 0x3FE0000000000000, 0x408F400000000000, 0,
+    0x7FF0000000000000, 0xC073200000000000, -1, -1)
 
 -- `-j` and `-J`: the last one wins.
 #guard [(["-j", "-J"], true), (["-J", "-j"], false)].all fun (os, b) ↦

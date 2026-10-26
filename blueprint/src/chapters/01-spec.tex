@@ -303,10 +303,11 @@ scripts of the C repository can run it as \verb|RP=ratpoints-lean|:
   \item it reads the tuning options \verb|-n -N -P -p -F -j -J -r -R -U -A -C -Q -W -t| with the
     validation of \verb|main.c| (error~6 and the usage for a missing or malformed argument of the
     thirteen that take one, \csource{main.c}{437}{532}; \verb|-j| and \verb|-J| take none):
-    \verb|-n -N -P -p -F -j -J| go into the options of the sieve
-    (Definition~\ref{def:sieveOptions}), and the others, which tune only the heuristics of the C
-    program and its threads, are ignored (until stage~I, but for \verb|-t| for good; in 373 runs of
-    the C program they did not change the \verb|-q| output);
+    \verb|-n -N -P -p -F -j -J| and, since stage~I, \verb|-r -R -U -A -C -Q -W| go into the options
+    of the sieve (Definitions~\ref{def:sieveOptions} and~\ref{def:cliTuning}), and \verb|-t|, the
+    number of threads of the C program, is ignored, since the model sieves the blocks of the run in
+    turn on one thread, which gives the output of every number of threads
+    (Theorem~\ref{thm:threads});
   \item it reads \verb|-k| and \verb|-K|, which forbid and allow the reversal of the polynomial,
     and \verb|-s| and \verb|-S|, which switch the Sturm step off and on, \verb|-S| with the depth
     that the next word gives when there is one and it does not start with \verb|-|, the last of
@@ -386,7 +387,7 @@ mirror:
 
 \begin{definition}[The command line]\label{def:cliInput}
   \uses{def:cliNumbers, def:cliEnds, def:cliFailure, def:maxDegree, def:sieveOptions, def:arraySize,
-    def:Options, def:cliOutput, def:cliIntervals}
+    def:Options, def:cliOutput, def:cliIntervals, def:cliTuning}
   \lean{Ratpoints.Cli.coefficients, Ratpoints.Cli.heightBound, Ratpoints.Cli.checkOptions, Ratpoints.Cli.input}
   \leanok
   The coefficient list, the height bound and the values of the options of a command line, those of
@@ -405,28 +406,29 @@ mirror:
   The tuning options, of which \verb|-p -F -t -n -N -R -A -P| take a C \verb|long| and
   \verb|-r -U -C -Q -W| a real number, have their arguments checked (\csource{main.c}{437}{532});
   the switches \verb|-q| and \verb|-v| go into the settings of the output, and the values of
-  \verb|-p -n -N -P -F| and the switches \verb|-j| and \verb|-J| into the values of the options of
-  Definition~\ref{def:sieveOptions} (\csource{main.c}{578}{593}), the last one winning, and the
-  other tuning options are ignored (until stage~I, but for \verb|-t| for good); \verb|-k| and
-  \verb|-K| (\csource{main.c}{594}{601}) and \verb|-s| and \verb|-S| (\csource{main.c}{638}{649}) go
-  into the options of Definition~\ref{def:Options}, the last of each pair winning: the reversal
-  forbidden or allowed, and the depth of the Sturm step, $-1$ for \verb|-s|, and for \verb|-S| the C
-  \verb|long| that the next word gives when there is one and it does not start with \verb|-|
-  (error~6 if it is malformed), and else $\mathrm{defaultSturm}$; \verb|-x| and \verb|-X|, \verb|-y|
-  and \verb|-Y| go into $\mathrm{noCheck}$ and $\mathrm{noY}$ of the options, and
-  \verb|-z -Z -1 -i -I| into the settings of the output (\csource{main.c}{602}{637}), of each pair
-  the last one winning; \verb|-f|, \verb|-fs|, \verb|-fm| and \verb|-fe| take the next word,
-  whatever it is, as the format or the string, and \verb|-f| followed by a character other than
-  \verb|s|, \verb|m| and \verb|e|, and a missing word, are error~6 (\csource{main.c}{533}{577});
-  \verb|-l| and \verb|-u| read the ends of the search intervals (Definition~\ref{def:cliIntervals}),
-  a missing end failing with error~7, and \verb|-dl| and \verb|-du| the C \verb|long| that follows
-  them as the least and the largest denominator of the options of the search, the last one winning,
-  with error~6 for a missing or malformed argument and for a word \verb|-d| followed by another
-  character (\csource{main.c}{650}{668}); after the options a pending interval is completed, the
-  search intervals of the options are the doubles of the intervals read and the exact ends go into
-  the settings of the output (\csource{main.c}{679}{679}), the format is the default unless
-  \verb|-f| gave one, and \verb|-q| cancels \verb|-v| (\csource{main.c}{688}{688}); any other word
-  fails with error~6.
+  \verb|-p -n -N -R -A -P -F| and \verb|-r -U -C -Q -W| and the switches \verb|-j| and \verb|-J|
+  into the values of the options of Definition~\ref{def:sieveOptions}, as
+  Definition~\ref{def:cliTuning} sets them (\csource{main.c}{578}{593}), the last one winning, and
+  \verb|-t| is ignored; \verb|-k| and \verb|-K| (\csource{main.c}{594}{601}) and \verb|-s| and
+  \verb|-S| (\csource{main.c}{638}{649}) go into the options of Definition~\ref{def:Options}, the
+  last of each pair winning: the reversal forbidden or allowed, and the depth of the Sturm step,
+  $-1$ for \verb|-s|, and for \verb|-S| the C \verb|long| that the next word gives when there is one
+  and it does not start with \verb|-| (error~6 if it is malformed), and else
+  $\mathrm{defaultSturm}$; \verb|-x| and \verb|-X|, \verb|-y| and \verb|-Y| go into
+  $\mathrm{noCheck}$ and $\mathrm{noY}$ of the options, and \verb|-z -Z -1 -i -I| into the settings
+  of the output (\csource{main.c}{602}{637}), of each pair the last one winning; \verb|-f|,
+  \verb|-fs|, \verb|-fm| and \verb|-fe| take the next word, whatever it is, as the format or the
+  string, and \verb|-f| followed by a character other than \verb|s|, \verb|m| and \verb|e|, and a
+  missing word, are error~6 (\csource{main.c}{533}{577}); \verb|-l| and \verb|-u| read the ends of
+  the search intervals (Definition~\ref{def:cliIntervals}), a missing end failing with error~7, and
+  \verb|-dl| and \verb|-du| the C \verb|long| that follows them as the least and the largest
+  denominator of the options of the search, the last one winning, with error~6 for a missing or
+  malformed argument and for a word \verb|-d| followed by another character
+  (\csource{main.c}{650}{668}); after the options a pending interval is completed, the search
+  intervals of the options are the doubles of the intervals read and the exact ends go into the
+  settings of the output (\csource{main.c}{679}{679}), the format is the default unless \verb|-f|
+  gave one, and \verb|-q| cancels \verb|-v| (\csource{main.c}{688}{688}); any other word fails with
+  error~6.
 \end{definition}
 
 \begin{definition}[The program]\label{def:cliRun}
@@ -475,8 +477,9 @@ order, Section~\ref{sec:denCli}, stage~G the options of the output, the reports 
 the suites \verb|regions| and \verb|depths| and the runs of \verb|test4.sh| and \verb|test3.sh|
 with a search region, Section~\ref{sec:regionTests}, and stage~I the pairs under \verb|-x| compared
 exactly with the C program, the runs of the high suite where the C program corrects its moduli, the
-local suite \verb|adapt| and the pair of a build of the C program with the block length $3$ against
-the model with that block length, Section~\ref{sec:moduliTests}):
+local suite \verb|adapt|, the pair of a build of the C program with the block length $3$ against
+the model with that block length and the suites \verb|tuning| and \verb|threads|,
+Section~\ref{sec:moduliTests}):
 \begin{itemize}
   \item \verb|test4.sh| against \verb|testbase4|, split at the \verb|#| header lines (five of which
     are glued to the end of the preceding output line): 565 of its 582 runs, among them the outputs
@@ -527,7 +530,15 @@ the model with that block length, Section~\ref{sec:moduliTests}):
   \item 800 random command lines, eight in each round, with words that the readers of numbers of
     \verb|main.c| accept or refuse in many ways, the ends of \verb|-l| and \verb|-u| and the
     \verb|long|s of \verb|-dl| and \verb|-du| among them (since stage~H), and options of the output
-    with format words in UTF-8, against the C program.
+    with format words in UTF-8, against the C program;
+  \item 300 searches with random values of the tuning options \verb|-r -R -U -C -A -Q -W|, among
+    them infinities, zeros, the least subnormal and huge values, at times with the cut points and
+    the numbers of primes given, at heights up to $3000$, with \verb|-q| or the report and at times
+    under \verb|-x|, against the C program (the suite \verb|tuning|, since stage~I);
+  \item the C program with \verb|-t 4| and \verb|-t 7| against \verb|ratpoints-lean|, on 100
+    random polynomials at small heights, at times under \verb|-x|, and with \verb|-t 4| on the
+    point-rich curves at $30000$ and a curve at $16383$ where the C program corrects its moduli,
+    under \verb|-x| (the suite \verb|threads|, since stage~I).
 \end{itemize}
 Point lists are compared in their order (Section~\ref{sec:denCli}); a report, the output of a run
 without \verb|-q|, exactly, with the banner exchanged for that of the C program (messages~3 and~8
@@ -536,12 +547,12 @@ then, a report of \verb|test4.sh| with the C program on its command line), also 
 form that is not squarefree without \verb|-q|, and the output under \verb|-v| by its lines; the
 outputs with the options of the output, under \verb|-x| exactly with the C program on the same
 command line and by the weaker check of Sections~\ref{sec:outputTests} and~\ref{sec:regionTests}
-(since stage~I, Section~\ref{sec:moduliTests}, which also says which runs only the weaker check
-compares); messages and exit codes are compared exactly (but for a pipe without
-a reader, where the two programs end differently by design), with the banner and the usage of the
-two programs exchanged; and \verb|ratpoints-lean| must write nothing to its standard error (it runs
-with \verb|LEAN_ABORT_ON_PANIC=1|, so that a panic of the Lean runtime ends it). CI builds the C
-program at the pin (\verb|make|, with \verb|libgmp-dev|) and the Lean program, and runs the script.
+(exactly since stage~I, Section~\ref{sec:moduliTests}); messages and exit codes are compared exactly
+(but for a pipe without a reader, where the two programs end differently by design), with the banner
+and the usage of the two programs exchanged; and \verb|ratpoints-lean| must write nothing to its
+standard error (it runs with \verb|LEAN_ABORT_ON_PANIC=1|, so that a panic of the Lean runtime ends
+it). CI builds the C program at the pin (\verb|make|, with \verb|libgmp-dev|) and the Lean program,
+and runs the script.
 
 \section{Files and names}
 

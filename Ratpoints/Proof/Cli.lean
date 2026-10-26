@@ -732,7 +732,6 @@ theorem checkOptions_store_intervals (s : SieveOptions × Options × Output × I
     (a : Option String) : (checkOptions.store s o a).2.2.2 = s.2.2.2 := by
   obtain ⟨s, t, u, iv⟩ := s
   simp only [checkOptions.store]
-  split <;> rfl
 
 theorem checkOptions_preserves {H : ℕ} {P : Intervals → Prop} {Q : String → Prop}
     (hl : ∀ iv a iv', Q a → P iv → iv.lower a = .ok iv' → P iv')

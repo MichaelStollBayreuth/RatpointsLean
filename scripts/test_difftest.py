@@ -92,12 +92,9 @@ class Outputs(unittest.TestCase):
         # message 4 is compared: other numbers of moduli, or no message 4
         self.assertFalse(dt.agrees(cfg, (lean, 0), (c.replace('3 moduli', '5 moduli'), 0),
                                    'report'))
-        # but for a command line with a tuning option that ratpoints-lean ignores, where it is
-        # dropped from both reports
-        tuned = dt.settings(['-r', '0.5'])
-        self.assertTrue(dt.agrees(cfg, (lean, 0), (c.replace('3 moduli', '5 moduli'), 0),
-                                  'report', st=tuned))
-        self.assertFalse(dt.agrees(cfg, (lean, 0), (c.replace('[-5.000000', '[-4.000000'), 0),
+        # also on a command line with tuning options, which ratpoints-lean reads
+        tuned = dt.settings(['-r', '0.5', '-A', '2'])
+        self.assertFalse(dt.agrees(cfg, (lean, 0), (c.replace('3 moduli', '5 moduli'), 0),
                                    'report', st=tuned))
         # messages 3 and 8 are compared: another search interval, no search region
         self.assertFalse(dt.agrees(cfg, (lean, 0), (c.replace('[-5.000000', '[-4.000000'), 0),
@@ -233,17 +230,6 @@ class Outputs(unittest.TestCase):
         self.assertFalse(cp(['1 0 1', '30000', '-q', '-x', '-A', '0']))
         self.assertTrue(cp(['1 0 1', '30000', '-q', '-x', '-A', '2']))
         self.assertFalse(cp(['1 0 1', '30000', '-q', '-x', '-dl', '1', '-du', '100']))
-
-    def test_tuned(self):
-        def tuned(opts):
-            return dt.settings(opts).tuned
-        self.assertFalse(tuned(['-q', '-x', '-p', '30', '-N', '30', '-F', '5', '-t', '4']))
-        self.assertFalse(tuned(['-q', '-x', '-A', '1']))
-        self.assertFalse(tuned(['-q', '-x', '-A', '-3']))
-        self.assertTrue(tuned(['-q', '-x', '-A', '0']))
-        self.assertTrue(tuned(['-q', '-x', '-A', '2']))
-        self.assertTrue(tuned(['-q', '-x', '-r', '0.5']))
-        self.assertTrue(tuned(['-q', '-x', '-W', '1e6', '-A', '1']))
 
     def test_stderr(self):
         cfg = SimpleNamespace(lean_usage='U', c_usage='U')
@@ -400,6 +386,10 @@ class Curves(unittest.TestCase):
                          difftest_cases.random_region_line(random.Random(3)))
         self.assertEqual(difftest_cases.random_depth_line(random.Random(4)),
                          difftest_cases.random_depth_line(random.Random(4)))
+        line = difftest_cases.random_tuning_line(random.Random(5))
+        self.assertEqual(line, difftest_cases.random_tuning_line(random.Random(5)))
+        quiet = [difftest_cases.random_tuning_line(random.Random(s))[2] == '-q' for s in range(40)]
+        self.assertTrue(any(quiet) and not all(quiet))  # -q four times in five
         self.assertEqual([difftest_cases.end_fraction(w) for w in
                           ['0x1.8p-1', '-0x.4p3', '1e-400', '-1e400', 'INF', '2.5']],
                          [Fraction(3, 4), -2, Fraction(1, 10 ** 400), -float('inf'), float('inf'),

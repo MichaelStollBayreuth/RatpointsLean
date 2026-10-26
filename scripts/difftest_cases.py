@@ -1,4 +1,4 @@
-"""The command lines of the suites errors, fuzz, regions and depths of scripts/difftest.py.
+"""The command lines of the suites errors, fuzz, regions, depths and tuning of scripts/difftest.py.
 
 CASES holds hand-written command lines for the checks that main.c makes on the coefficients, the
 height and the options, for the options of the search, of the search region and of the output and
@@ -7,11 +7,12 @@ large height that both programs stop at once; random_command_lines gives random 
 that the readers of numbers of main.c accept or refuse in many ways, the options of the search
 region among them, and options of the output with formats and strings, and random_output_options
 random options of the output for a search; random_region_line gives a search with a random search
-region, and random_depth_line one with a random depth of the Sturm step. An argument is a str or,
-for a byte string that is not UTF-8, bytes. A height that a search could not finish (such as 2^63 -
-1) is always followed by an option that fails, so that neither program searches, or comes with a
-narrow search region (random_region_line), but in STOP_CASES, which the errors suite runs with a
-short timeout and a cap on the memory.
+region, random_depth_line one with a random depth of the Sturm step, and random_tuning_line one with
+random values of the tuning options, drawn from TUNING_DOUBLES and TUNING_LONGS. An argument is a
+str or, for a byte string that is not UTF-8, bytes. A height that a search could not finish (such as
+2^63 - 1) is always followed by an option that fails, so that neither program searches, or comes
+with a narrow search region (random_region_line), but in STOP_CASES, which the errors suite runs
+with a short timeout and a cap on the memory.
 """
 import math
 from decimal import Decimal
@@ -722,3 +723,47 @@ def random_depth_line(rng):
         if rng.random() < 0.3:
             opts.append('-s')
     return [c, str(H), *opts]
+
+
+# The values of the tuning options that random_tuning_line draws from: the doubles with zeros, the
+# smallest double, huge values, infinities and negative values (the defaults); the longs with
+# zero, small and huge values and negative ones (the defaults).
+TUNING_DOUBLES = {
+    '-r': ['0', '-1', '4.9e-324', '1e-300', '1e-5', '0.002', '0.5', '10', '1e300', '1.79e308',
+           'inf', '-inf'],
+    '-U': ['0', '-0', '4.9e-324', '1', '1e3', '1.6e6', '1e300', 'inf', '-5'],
+    '-C': ['0', '-0', '4.9e-324', '1', '38', '1e3', '1e306', '1e308', 'inf', '-1'],
+    '-Q': ['0', '4.9e-324', '0.013', '1', '1e300', 'inf', '-2'],
+    '-W': ['0', '-1', '4.9e-324', '1', '306', '1e6', '1e300', 'inf'],
+}
+TUNING_LONGS = {
+    '-R': ['0', '1', '11', '100', str(2 ** 62), '9223372036854775807', '-1'],
+    '-A': ['0', '1', '2', '5', '-3'],
+    '-P': ['0', '1', '5', '100', '-1'],
+    '-n': ['0', '1', '5', '30', '100', '-1'],
+    '-N': ['0', '3', '30', '60', '-1'],
+    '-p': ['0', '1', '5', '30', '53', '100', '-1'],
+}
+
+
+def random_tuning_line(rng):
+    """A search with random values of the tuning options (-r -R -U -C -A -Q -W) and at times of the
+    cut points (-p -n -N -P), each option given with probability 0.35, on a random polynomial of
+    degree 1 to 8, at times with a square constant term, at a height of at most 3000, with -q four
+    times in five and else with the report, whose message 4 gives the numbers of the moduli used,
+    at times -x, and at times -k, -s or -j. -A takes effect only at the larger heights of the suites
+    high and adapt, where the C program corrects its moduli."""
+    c = [rng.randint(-60, 60) for _ in range(rng.randint(2, 9))]
+    if c[-1] == 0:
+        c[-1] = rng.choice([1, -1, 2, 3])
+    if rng.random() < 0.3:
+        c[0] = rng.choice([1, 4, 9, 25])
+    opts = ['-q'] if rng.random() < 0.8 else []
+    for o, vals in list(TUNING_DOUBLES.items()) + list(TUNING_LONGS.items()):
+        if rng.random() < 0.35:
+            opts += [o, rng.choice(vals)]
+    if rng.random() < 0.6:
+        opts.append('-x')
+    if rng.random() < 0.2:
+        opts.append(rng.choice(['-k', '-s', '-j']))
+    return [' '.join(map(str, c)), str(rng.choice([10, 50, 200, 500, 1000, 2000, 3000])), *opts]

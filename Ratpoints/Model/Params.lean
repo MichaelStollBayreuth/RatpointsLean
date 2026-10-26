@@ -128,11 +128,10 @@ field `arraySize` of the parameters `P` (`Ratpoints.arraySizeAt`); at least 1 fo
 def Params.arraySizeAt (P : Params) (H : Nat) : Nat := Ratpoints.arraySizeAt P.arraySize H
 
 /-- The values of the options of ratpoints that tune the sieve, as the program reads them into the
-fields of its `ratpoints_args`: `-p`, `-n`, `-N`, `-R`, `-A`, `-P` and `-F` give C `long`s, which
-are `-1`, as in `main.c`, when the option is absent; `-r`, `-U`, `-C`, `-Q` and `-W` give doubles,
-`-1.0` when absent; `-j` switches the Jacobi test off and `-J` on again; and the array size is
-`Ratpoints.defaultArraySize`, which the program sets. The program reads `-r -R -U -C -A -Q -W`
-with stage I, and leaves those fields at their defaults until then.
+fields of its `ratpoints_args` (`Ratpoints.SieveOptions.store`): `-p`, `-n`, `-N`, `-R`, `-A`, `-P`
+and `-F` give C `long`s, which are `-1`, as in `main.c`, when the option is absent; `-r`, `-U`,
+`-C`, `-Q` and `-W` give doubles, `-1.0` when absent; `-j` switches the Jacobi test off and `-J` on
+again; and the array size is `Ratpoints.defaultArraySize`, which the program sets.
 
 C: `main.c:337-347`, `main.c:349-350`, `main.c:352`, `ratpoints.h:365-367`
 

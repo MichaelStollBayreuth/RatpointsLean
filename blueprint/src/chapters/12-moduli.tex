@@ -1370,15 +1370,15 @@ speak about that channel.
 \section{The program}\label{sec:moduliCli}
 
 \begin{definition}[The tuning options and the report in the program]\label{def:cliTuning}
-  \uses{def:sieveOptions, def:cliNumbers, def:cliEnds, def:cliProcess}
-  Proposed names: \lname{Ratpoints.SieveOptions.store}, \lname{Ratpoints.Cli.Data.print}. The
-  options of the sieve with the field that an option of the command line sets: the C \verb|long| of
-  its argument for \verb|-p -n -N -R -A -P -F| and its double for \verb|-r -U -C -Q -W|, as
-  \verb|main.c| reads them, the Jacobi test off for \verb|-j| and on for \verb|-J|; it models no C
-  code of its own, being the part of the reading of the options (Definition~\ref{def:cliInput}) that
-  sets the fields of the options of the sieve. And the print channel of the program under \verb|-v|:
-  the text appended to the output held in the data of the callback, for the calls of \verb|printf|
-  in the library.
+  \uses{def:sieveOptions, def:cliNumbers, def:cliEnds}
+  \lean{Ratpoints.SieveOptions.store}
+  Proposed name, with I.15: \lname{Ratpoints.Cli.Data.print}. The options of the sieve with the
+  field that an option of the command line sets: the C \verb|long| of its argument for
+  \verb|-p -n -N -R -A -P -F| and its double for \verb|-r -U -C -Q -W|, as \verb|main.c| reads them,
+  the Jacobi test off for \verb|-j| and on for \verb|-J|; it models no C code of its own, being the
+  part of the reading of the options (Definition~\ref{def:cliInput}) that sets the fields of the
+  options of the sieve. And the print channel of the program under \verb|-v|: the text appended to
+  the output held in the data of the callback, for the calls of \verb|printf| in the library.
 \end{definition}
 
 The program (Definition~\ref{def:cliRun}) runs $\mathrm{findPointsVerbose}$ with its options of the

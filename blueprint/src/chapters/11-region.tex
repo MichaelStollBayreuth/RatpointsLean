@@ -46,8 +46,8 @@ line whose words have fewer than $2^{56}$ characters reaches, Theorem~\ref{thm:c
 Sturm step on the search intervals, and returns the intervals that it leaves, for message~8. The
 command-line program reads \verb|-l|, \verb|-u|, \verb|-dl| and \verb|-du|, so that it reads every
 option of ratpoints, and the exit status~12 of the earlier stages, for an option not supported yet,
-is gone; the arguments of \verb|-t|, the number of threads, and of the tuning options that stage~I
-models are checked and then ignored.
+is gone; the argument of \verb|-t|, the number of threads, is checked and then ignored, and since
+stage~I the other tuning options set the options of the sieve (Definition~\ref{def:cliTuning}).
 
 For the default options the output of $\mathrm{findPoints}$ is that of the earlier stages: the
 default interval gives exactly the numerators $-H, \dots, H$ for every denominator, and the Sturm
@@ -1821,8 +1821,7 @@ the parameters $272$, the high suite $12$, \verb|regions| $400$ and \verb|depths
 runs under \verb|-x| compared exactly and $7$ by the weaker check alone, all for the moduli that the
 C program chose under the pinned options; and \verb|test4high| compared $13$, none failed. Every
 point list is compared in its order. Since stage~I the runs under \verb|-x| are compared exactly
-with the C program on the same command line, but for those with a tuning option that the program
-does not read yet, which only the weaker check compares (Section~\ref{sec:moduliTests}).
+with the C program on the same command line (Section~\ref{sec:moduliTests}).
 
 The \verb|#guard| examples of the model check the doubles against a driver of gcc and glibc (the
 conversions of \verb|long|s, the comparisons, \verb|nextafter|, the negation, \verb|fabs|,

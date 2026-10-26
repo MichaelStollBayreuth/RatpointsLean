@@ -160,7 +160,9 @@ between them, `lake comparator` accepting the eleven again on 2026-10-25, and th
 compare the pairs under `-x` exactly with the C program on the same command line; the search gives
 back the numbers of the moduli used, which `ratpoints-lean` prints in its report as ratpoints does
 (`lake comparator` accepting the eleven again on 2026-10-25), and the differential tests compare
-that message too. The blueprint and the API documentation will be at
+that message too; `ratpoints-lean` reads the tuning options `-r -R -U -C -A -Q -W` into the options
+of the sieve, and the differential tests compare random values of them and the C program sieving on
+several threads (`-t 4`, `-t 7`) as well. The blueprint and the API documentation will be at
 <https://michaelstollbayreuth.github.io/RatpointsLean/> once the repository is public.
 
 ## Layout
@@ -193,7 +195,8 @@ python3 scripts/difftest.py --suites test4high   # the runs of test4.sh above he
 `scripts/correspondence.py` and `scripts/difftest.py` read the C code and the test suites from a
 clone of ratpoints that contains the pinned commit, given by `--repo PATH` or the environment
 variable `RATPOINTS_REPO`; `scripts/difftest.py` also runs the C program built there (or the one
-that `--c PATH` or `RATPOINTS_BIN` names). CI runs these checks and more
+that `--c PATH` or `RATPOINTS_BIN` names), which must be the default build at the pin, without a
+`tuning.mk`, which the harness refuses. CI runs these checks and more
 (`.github/workflows/build-project.yml`). `scripts/run-comparator.sh --paranoid` runs Comparator,
 built into Lake as `lake comparator` (`comparator/README.md`).
 
@@ -207,19 +210,19 @@ checks, messages and exit statuses, and prints the points of height at most `H` 
 and strings of `-f -fs -fm -fe`, and without `-q` the report that ratpoints prints around them, but,
 under `-v`, for the report of the library; under `-x` (no exact
 check) it prints the pairs that pass its sieve, with the moduli that it chooses from the curve and
-corrects between the blocks of the run as ratpoints does, which are those that ratpoints prints
-unless one of the tuning options `-r -R -U -C -A -Q -W` that it ignores changes them. It finds the
-points by the sieve on bit arrays of words in its three stages, the first in chunks of 16 bit arrays
-with the rows that the builders of ratpoints build, the numerators of each denominator packed by the
-stride of its class, with the moduli that it chooses from the curve and the options
-`-p -n -N -P -F -j -J`; `-k` and `-K` forbid and allow the reversal of the polynomial, `-s` and
-`-S [depth]` switch the Sturm step off and on, which narrows the search intervals to those where the
-polynomial may be `≥ 0`; `-l` and `-u` give the search intervals, read as ratpoints reads them, the
-ends as the numbers they are and the doubles outward of them, and `-dl` and `-du` the range of the
-denominators; it accepts the other options that tune the sieve of ratpoints, checking their
-arguments, but ignores them (until stage I, but for `-t` for good). It refuses a binary form that is
-not squarefree with error 8 as ratpoints does with the same options, and prints the points of the
-search region of its command line in the order of ratpoints.
+corrects between the blocks of the run as ratpoints does, which are those that ratpoints prints. It
+finds the points by the sieve on bit arrays of words in its three stages, the first in chunks of 16
+bit arrays with the rows that the builders of ratpoints build, the numerators of each denominator
+packed by the stride of its class, with the moduli that it chooses from the curve and the options
+`-p -n -N -r -R -U -C -A -P -Q -W -F -j -J`; `-k` and `-K` forbid and allow the reversal of the
+polynomial, `-s` and `-S [depth]` switch the Sturm step off and on, which narrows the search
+intervals to those where the polynomial may be `≥ 0`; `-l` and `-u` give the search intervals, read
+as ratpoints reads them, the ends as the numbers they are and the doubles outward of them, and `-dl`
+and `-du` the range of the denominators; it accepts `-t`, the number of threads of ratpoints,
+checking its argument, but ignores it, sieving the blocks in turn on one thread, which gives the
+output of every number of threads. It refuses a binary form that is not squarefree with error 8 as
+ratpoints does with the same options, and prints the points of the search region of its command
+line in the order of ratpoints.
 
 ## Licence
 
