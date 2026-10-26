@@ -115,24 +115,23 @@ private theorem flatMap_blockRange_of_lt {lo hi len : Nat} (hlen : 1 ≤ len) (h
   · simp [numBlocks, hle, show hi + 1 - lo = 0 by lia]
 
 /-- The blocks of a segment, in order, cover its steps in order. -/
-theorem flatMap_blockRange {len : Nat} (hlen : 1 ≤ len) {β : Type} (g : Nat → List β) (hi k : Nat) :
-    ∀ lo, hi + 1 - lo = k →
-      (List.range (numBlocks lo hi len)).flatMap (fun j ↦
-        (List.range' (blockRange lo hi len j).1
-          ((blockRange lo hi len j).2 + 1 - (blockRange lo hi len j).1)).flatMap g) =
-        (List.range' lo (hi + 1 - lo)).flatMap g := by
-  induction k using Nat.strongRecOn with
-  | ind k ih =>
-    intro lo h
-    by_cases hlt : hi < lo + len
-    · exact flatMap_blockRange_of_lt hlen hlt g
-    rw [numBlocks_of_le hlen (by lia), List.range_succ_eq_map, List.flatMap_cons, List.flatMap_map]
-    simp only [Nat.succ_eq_add_one, blockRange_succ]
-    rw [ih (hi + 1 - (lo + len)) (by lia) (lo + len) rfl]
-    simp only [blockRange, Nat.zero_mul, Nat.add_zero, show ¬hi - lo < len by lia, ↓reduceIte]
-    rw [← List.flatMap_append, show lo + len - 1 + 1 - lo = len by lia, List.range'_append_1]
-    congr 2
-    lia
+theorem flatMap_blockRange {len : Nat} (hlen : 1 ≤ len) {β : Type} (g : Nat → List β)
+    (lo hi : Nat) :
+    (List.range (numBlocks lo hi len)).flatMap (fun j ↦
+      (List.range' (blockRange lo hi len j).1
+        ((blockRange lo hi len j).2 + 1 - (blockRange lo hi len j).1)).flatMap g) =
+      (List.range' lo (hi + 1 - lo)).flatMap g := by
+  by_cases hlt : hi < lo + len
+  · exact flatMap_blockRange_of_lt hlen hlt g
+  rw [numBlocks_of_le hlen (by lia), List.range_succ_eq_map, List.flatMap_cons, List.flatMap_map]
+  simp only [Nat.succ_eq_add_one, blockRange_succ]
+  rw [flatMap_blockRange hlen g (lo + len) hi]
+  simp only [blockRange, Nat.zero_mul, Nat.add_zero, show ¬hi - lo < len by lia, ↓reduceIte]
+  rw [← List.flatMap_append, show lo + len - 1 + 1 - lo = len by lia, List.range'_append_1]
+  congr 2
+  lia
+termination_by hi + 1 - lo
+decreasing_by lia
 
 /-! ### The plan of the blocks -/
 
@@ -407,7 +406,7 @@ private theorem BlockPlan.WF.flatMap_range'_segBlock {plan : BlockPlan} (h : pla
           (fun i ↦ (plan.blockSteps i).flatMap (g (plan.blockSeg i))) =
       (List.range' plan.segs[seg]!.1 (plan.segs[seg]!.2 + 1 - plan.segs[seg]!.1)).flatMap
         (g seg) := by
-  rw [← flatMap_blockRange h.1 (g seg) _ _ _ rfl, List.range'_eq_map_range, List.flatMap_map]
+  rw [← flatMap_blockRange h.1 (g seg), List.range'_eq_map_range, List.flatMap_map]
   refine flatMap_congr_mem fun j hj ↦ ?_
   have := h.run_steps_eq hs (Nat.le_add_right _ j)
     (by rw [h.segBlock_succ hs]; exact Nat.add_lt_add_left (List.mem_range.mp hj) _)
@@ -441,24 +440,31 @@ run and the end `sp1` of the first stage: `sp1 ≤ d.sp2 ≤ d.sp3 ≤ |es|`, an
 position `d.sp2` on, those of the third stage and the reserve, counts no factor
 (`Ratpoints.Sieve.SieveEntry.nf` zero), so that, for the entries of the choice of the moduli, it is
 a prime of the table, as the third stage needs. -/
-def DecisionWF (es : List SieveEntry) (sp1 : Nat) (d : Decision) : Prop :=
-  sp1 ≤ d.sp2 ∧ d.sp2 ≤ d.sp3 ∧ d.sp3 ≤ es.length ∧ ∀ e ∈ es.drop d.sp2, e.nf = 0
+structure DecisionWF (es : List SieveEntry) (sp1 : Nat) (d : Decision) : Prop where
+  /-- The end of the second stage is at least that of the first. -/
+  sp1_le_sp2 : sp1 ≤ d.sp2
+  /-- The end of the third stage is at least that of the second. -/
+  sp2_le_sp3 : d.sp2 ≤ d.sp3
+  /-- The end of the third stage is at most the number of the entries. -/
+  sp3_le_length : d.sp3 ≤ es.length
+  /-- Every entry from the end of the second stage on counts no factor. -/
+  nf_eq_zero : ∀ e ∈ es.drop d.sp2, e.nf = 0
 
 /-- A well-formed decision gives a well-formed decision with its end of the second stage and no
 third stage, for any first block. -/
 theorem DecisionWF.mk_sp2 {l : List SieveEntry} {sp1 : Nat} {d : Decision}
     (h : DecisionWF l sp1 d) (b : Nat) : DecisionWF l sp1 ⟨b, d.sp2, d.sp2⟩ :=
-  ⟨h.1, Nat.le_refl _, by lia [h.2.1, h.2.2.1], h.2.2.2⟩
+  ⟨h.sp1_le_sp2, Nat.le_refl _, by lia [h.sp2_le_sp3, h.sp3_le_length], h.nf_eq_zero⟩
 
 /-- A well-formed decision stays well-formed for the sieve entries with the inverses of the strides
 that `Ratpoints.Sieve.classOffsets` sets. -/
 theorem DecisionWF.map_dinv {es : List SieveEntry} {sp1 : Nat} {d : Decision}
     (h : DecisionWF es sp1 d) (dinv : SieveEntry → Array Nat) :
     DecisionWF (es.map fun e ↦ { e with dinv := dinv e }) sp1 d := by
-  refine ⟨h.1, h.2.1, by simpa using h.2.2.1, fun e he ↦ ?_⟩
+  refine ⟨h.sp1_le_sp2, h.sp2_le_sp3, by simpa using h.sp3_le_length, fun e he ↦ ?_⟩
   rw [← List.map_drop] at he
   obtain ⟨e', he', rfl⟩ := List.mem_map.mp he
-  exact h.2.2.2 e' he'
+  exact h.nf_eq_zero e' he'
 
 end Sieve
 

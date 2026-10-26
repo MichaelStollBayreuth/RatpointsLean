@@ -33,9 +33,10 @@ blocks at least `Ratpoints.adaptLag + 1` blocks before it.
 ## Main definitions
 
 * `Ratpoints.Sieve.Correction.WF`: a well-formed state of the correction.
-* `Ratpoints.Sieve.blockReport`, `Ratpoints.Sieve.correctionAfter`, `Ratpoints.Sieve.blockDecision`:
-  the report of a block in closed form, the state of the correction after the folds of the first
-  blocks with these reports, and the decision of a block, all free of the callback and the flags.
+* `Ratpoints.Sieve.correctionAfter`, `Ratpoints.Sieve.blockDecision`: the state of the correction
+  after the folds of the first blocks with their reports in closed form
+  (`Ratpoints.Sieve.blockReport`), and the decision of a block, both free of the callback and the
+  flags.
 * `Ratpoints.Sieve.blockPoints`: the points that a block delivers.
 * `Ratpoints.Sieve.deliverSlots`: the calling thread of a run with threads, which delivers the
   slots of the blocks in their order.
@@ -220,7 +221,8 @@ private theorem DecisionWF.of_third {es : Array SieveEntry} {sp1 b b' x z : Nat}
 private theorem DecisionWF.ite_lt {l : List SieveEntry} {sp1 b b' b'' x y z : Nat}
     (h : DecisionWF l sp1 ⟨b, x, x⟩) (h' : DecisionWF l sp1 ⟨b'', y, z⟩) :
     DecisionWF l sp1 ⟨b', x, if z < x then x else z⟩ := by
-  refine ⟨h.1, ?_, ?_, h.2.2.2⟩ <;> split <;> lia [h.2.2.1, h'.2.2.1]
+  refine ⟨h.sp1_le_sp2, ?_, ?_, h.nf_eq_zero⟩ <;> split <;>
+    lia [h.sp3_le_length, h'.sp3_le_length]
 
 open Std.WP Lean.Order in
 /-- The correction of the end of the second stage keeps it well-formed. -/
@@ -335,7 +337,7 @@ private theorem Correction.WF.fold_adapt {es : List SieveEntry} {sp1 : Nat} {st 
         ← getElem!_pos _ 0 h.size_pos, h.block_zero]
     · rcases Array.mem_push.mp hd with hd | rfl
       · exact h.decisionWF d hd
-      · exact ha
+      · exact ⟨ha.sp1_le_sp2, ha.sp2_le_sp3, ha.sp3_le_length, ha.nf_eq_zero⟩
   · exact ⟨⟨h.size_pos, h.block_zero, h.decisionWF, ha, h.fold hb⟩, [], by simp, by simp⟩
 
 open Std.WP Lean.Order in
@@ -382,24 +384,6 @@ theorem runFold_decisions_spec (s : SieveOptions) (P : Params) (es : Array Sieve
     | exact ⟨[], (List.append_nil _).symm, fun _ h ↦ absurd h List.not_mem_nil⟩
 
 /-! ### The correction of the run in closed form -/
-
-/-- The report of block `i` of the run with the decisions `decs`, in closed form: the counts of the
-sieve of its denominators that pass the tests of the shape (`Ratpoints.Sieve.denCounts`), with the
-ends of the second and the third stage of the decision in force for it
-(`Ratpoints.Sieve.findDecision`), the index of that decision and its ends; what
-`Ratpoints.Sieve.runBlock` reports when the callback does not stop the search
-(`Ratpoints.Sieve.runBlock_spec`), for the height `H`, the end `sp1` of the first stage, the sieve
-entries `entries` with the reciprocals `magics` of their moduli, the classes `cls`, the word `db`
-of the classes that admit a numerator, the shape `shape`, the bounds `iv` of the search intervals
-and the denominators from `bLow` to `bHigh`. -/
-def blockReport (H sp1 : Nat) (entries : List SieveEntry) (magics : Array Nat)
-    (cls : Vector NumClass 64) (db : UInt64) (shape : Shape) (iv : Array IntervalBounds)
-    (bLow bHigh : Nat) (decs : Array Decision) (i : Nat) : BlockStat :=
-  let dd := Id.run (findDecision decs i)
-  ⟨(((blockDens shape db (Id.run (shape.blockPlan bLow bHigh)) bLow bHigh i).filter
-      fun b ↦ Id.run (shape.keep cls b)).map
-        (denCounts H sp1 entries magics cls iv decs[dd]!.sp2 decs[dd]!.sp3)).foldl (· + ·) {},
-    dd, decs[dd]!.sp2, decs[dd]!.sp3⟩
 
 /-- The state of the correction of the moduli after the folds of the first `k` blocks of the run
 (`Ratpoints.Sieve.runFold`), each with its report in closed form (`Ratpoints.Sieve.blockReport`),
@@ -492,26 +476,6 @@ theorem wf_correctionAfter (hdec : DecisionWF entries P.sp1 ⟨0, P.sp2, P.sp3�
 
 end
 
-/-- A report of block `i` with the index and the ends of the decision in force for it among `decs`
-and the sum of the counts of the denominators of the block that pass the tests of the shape is the
-report in closed form: what `Ratpoints.Sieve.runBlock_spec` gives for a block on which the callback
-does not stop the search. -/
-theorem eq_blockReport {H sp1 : Nat} {entries : List SieveEntry} {magics : Array Nat}
-    {cls : Vector NumClass 64} {db : UInt64} {shape : Shape} {iv : Array IntervalBounds}
-    {bLow bHigh : Nat} {decs : Array Decision} {i : Nat} {b : BlockStat}
-    (hdec : b.dec = Id.run (findDecision decs i))
-    (h2 : b.sp2 = decs[Id.run (findDecision decs i)]!.sp2)
-    (h3 : b.sp3 = decs[Id.run (findDecision decs i)]!.sp3)
-    (hc : b.cnt = ((((blockDens shape db (Id.run (shape.blockPlan bLow bHigh)) bLow bHigh i).filter
-      fun b ↦ Id.run (shape.keep cls b)).map (denCounts H sp1 entries magics cls iv
-        decs[Id.run (findDecision decs i)]!.sp2 decs[Id.run (findDecision decs i)]!.sp3)).foldl
-          (· + ·) {})) :
-    b = blockReport H sp1 entries magics cls db shape iv bLow bHigh decs i := by
-  obtain ⟨cnt, dec, sp2, sp3⟩ := b
-  dsimp only at hdec h2 h3 hc
-  subst hdec h2 h3 hc
-  rfl
-
 /-! ### The decision in force for a block: the lag -/
 
 -- The entries of the decisions extended by `L` at the positions of the decisions.
@@ -531,10 +495,8 @@ private theorem getElem!_mem_of_toList_eq_append {decs decs' : Array Decision} {
   exact List.getElem_mem _
 
 /-- The decision in force for block `i` is unique: the last whose first block is at most `i`. -/
-theorem eq_of_lt_and_block_le {decs : Array Decision} {i dd dd' : Nat}
-    (h : dd < decs.size ∧ decs[dd]!.block ≤ i ∧ ∀ j, dd < j → j < decs.size → i < decs[j]!.block)
-    (h' : dd' < decs.size ∧ decs[dd']!.block ≤ i ∧
-      ∀ j, dd' < j → j < decs.size → i < decs[j]!.block) : dd = dd' := by
+theorem Decision.InForce.unique {decs : Array Decision} {i dd dd' : Nat}
+    (h : InForce decs i dd) (h' : InForce decs i dd') : dd = dd' := by
   by_contra hne
   rcases Nat.lt_or_gt_of_ne hne with hlt | hlt
   · exact absurd (h.2.2 dd' hlt h'.1) (Nat.not_lt.mpr h'.2.1)
@@ -542,17 +504,16 @@ theorem eq_of_lt_and_block_le {decs : Array Decision} {i dd dd' : Nat}
 
 /-- The index of the decision in force for block `i` among decisions of which the first is for
 block `0` is also that among these decisions followed by decisions for blocks after block `i`: the
-decision in force is unique (`Ratpoints.Sieve.eq_of_lt_and_block_le`). -/
+decision in force is unique (`Ratpoints.Sieve.Decision.InForce.unique`). -/
 theorem findDecision_eq_of_toList_eq_append {decs decs' : Array Decision} {L : List Decision}
     {i : Nat} (h0 : 0 < decs.size) (hb : decs[0]!.block = 0) (h : decs'.toList = decs.toList ++ L)
     (hL : ∀ d ∈ L, i < d.block) :
     Id.run (findDecision decs' i) = Id.run (findDecision decs i) := by
   have hs : decs'.size = decs.size + L.length := by simpa using congrArg List.length h
   obtain ⟨h1, h2, h3⟩ := (findDecision_spec decs i).le_wp ⟨h0, hb⟩
-  refine (eq_of_lt_and_block_le ((findDecision_spec decs' i).le_wp ⟨by lia,
+  refine Decision.InForce.unique ((findDecision_spec decs' i).le_wp ⟨by lia,
     (congrArg Decision.block (getElem!_eq_of_toList_eq_append h h0)).trans hb⟩)
-    ⟨by rw [hs]; exact Nat.lt_add_right _ h1, ?_,
-      fun j hj hj' ↦ ?_⟩)
+    ⟨by rw [hs]; exact Nat.lt_add_right _ h1, ?_, fun j hj hj' ↦ ?_⟩
   · exact (congrArg Decision.block (getElem!_eq_of_toList_eq_append h h1)).trans_le h2
   · rcases Nat.lt_or_ge j decs.size with hjs | hjs
     · rw [getElem!_eq_of_toList_eq_append h hjs]
@@ -712,25 +673,20 @@ theorem SieveRunLoopInvariant.quit (hl : ForIn.toList [:n] = pref ++ cur :: suff
 theorem SieveRunLoopInvariant.append (hl : ForIn.toList [:n] = pref ++ cur :: suff)
     (h : SieveRunLoopInvariant process c d H fl s P entries magics cls db shape iv bLow bHigh r0
       pref (cur :: suff) (corr, r1, st))
-    (hs : st'.Fits entries) (hdec : b.dec = Id.run (findDecision corr.decisions cur))
-    (h2 : b.sp2 = corr.decisions[Id.run (findDecision corr.decisions cur)]!.sp2)
-    (h3 : b.sp3 = corr.decisions[Id.run (findDecision corr.decisions cur)]!.sp3)
+    (hs : st'.Fits entries)
     (hb : ∀ x, RunWords cls iv H bLow bHigh x → r' = r1.deliver process
       (((blockDens shape db (Id.run (shape.blockPlan bLow bHigh)) bLow bHigh cur).filter
         fun b ↦ Id.run (shape.keep cls b)).flatMap (denPoints c d H fl
           (entries.take corr.decisions[Id.run (findDecision corr.decisions cur)]!.sp3) x)))
-    (hc : r'.quit = false → b.cnt =
-      ((((blockDens shape db (Id.run (shape.blockPlan bLow bHigh)) bLow bHigh cur).filter
-        fun b ↦ Id.run (shape.keep cls b)).map (denCounts H P.sp1 entries magics cls iv
-          corr.decisions[Id.run (findDecision corr.decisions cur)]!.sp2
-          corr.decisions[Id.run (findDecision corr.decisions cur)]!.sp3)).foldl (· + ·) {}))
+    (hc : r'.quit = false →
+      b = blockReport H P.sp1 entries magics cls db shape iv bLow bHigh corr.decisions cur)
     (hcorr : corr' = Id.run (runFold s P entries.toArray corr b)) (hq : ¬r'.quit = true) :
     SieveRunLoopInvariant process c d H fl s P entries magics cls db shape iv bLow bHigh r0
       (pref ++ [cur]) suff (corr', r', st') := by
   have hq' := Bool.eq_false_iff.mpr hq
   refine ⟨deliver_append_blockPoints hl h hb, fun _ ↦ ⟨?_, hs⟩, .inr hq'⟩
   obtain ⟨rfl, -⟩ := h.2.1 (h.2.2.resolve_left nofun)
-  rw [hcorr, eq_blockReport hdec h2 h3 (hc hq'), List.length_append, List.length_singleton,
+  rw [hcorr, hc hq', List.length_append, List.length_singleton,
     Std.Legacy.Range.length_eq_of_toList_eq_append_cons hl]
   rfl
 
@@ -784,10 +740,10 @@ theorem sieveRun_spec (c : List Int) (d H A : Nat) (fl : CheckFlags) (s : SieveO
     | (obtain ⟨hq, hd, hs⟩ := SieveRunLoopInvariant.pre hdec ‹_›
        exact ⟨hq, hA, hent, hmg, hoff, hdb, hd, rfl, hforb,
          Std.Legacy.Range.lt_of_toList_eq_append_cons ‹_›, hbLow, hbHigh, hH, hs⟩)
-    | (obtain ⟨hs, hd, h2, h3, hb, hc⟩ := ‹RowStore.Fits _ _ ∧ _›
+    | (obtain ⟨hs, hb, hc⟩ := ‹RowStore.Fits _ _ ∧ _›
        first
          | exact SieveRunLoopInvariant.quit ‹_› ‹_› hb ‹_›
-         | exact SieveRunLoopInvariant.append ‹_› ‹_› hs hd h2 h3 hb hc ‹_› ‹_›)
+         | exact SieveRunLoopInvariant.append ‹_› ‹_› hs hb hc ‹_› ‹_›)
 
 /-- `Ratpoints.Sieve.sieveRun_spec` as a plain statement. -/
 theorem fst_run_sieveRun (c : List Int) (d H A : Nat) (fl : CheckFlags) (s : SieveOptions)
@@ -962,7 +918,7 @@ theorem toList_info_run_runBlock_appendPoint (c : List Int) (d H A : Nat) (fl : 
     magics cls offsets db shape iv bLow bHigh _ _ i store ⟨#[], 0, false⟩).le_wp ⟨rfl, hA, hent,
       hmg, hoff, hdb, decisionWF_getElem!_findDecision hwf.size_pos hwf.block_zero hwf.decisionWF i,
       rfl, hforb, hi, hbLow, hbHigh, hH, hs⟩)
-  rw [h.2.2.2.2.1 x hx, Delivery.deliver_appendPoint, getElem!_findDecision_correctionAfter hk]
+  rw [h.2.1 x hx, Delivery.deliver_appendPoint, getElem!_findDecision_correctionAfter hk]
   simp [blockPoints]
 
 /-- The threads preserve the output of the run: the blocks of the run, each sifted with the

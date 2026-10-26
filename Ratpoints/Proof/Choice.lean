@@ -92,9 +92,12 @@ those that the loops of the tables and of the further primes may record
 rows that fits all the entries, the reserve included (`Ratpoints.Sieve.RowStore.Fits`); and the test
 of the denominators only for even degree. -/
 structure IsSievingInfo (c : List ℤ) (bHigh : ℕ) (si : SievingInfo) : Prop where
-  /-- The sieve entries are sound, with the fields that the packing reads and the tables of inverses
-  of their factors. -/
-  isSound : ∀ e ∈ si.entries, e.IsSound c ∧ e.Packable ∧ ∀ f ∈ e.factors, f.HasInverses e.p
+  /-- The sieve entries are sound. -/
+  isSound : ∀ e ∈ si.entries, e.IsSound c
+  /-- The sieve entries have the fields that the packing reads. -/
+  packable : ∀ e ∈ si.entries, e.Packable
+  /-- The factors of the sieve entries have their tables of inverses. -/
+  hasInverses : ∀ e ∈ si.entries, ∀ f ∈ e.factors, f.HasInverses e.p
   /-- An entry with no factors counted is a prime entry of the table. -/
   isPrimeEntry_of_nf : ∀ e ∈ si.entries, e.nf = 0 → e.IsPrimeEntry
   /-- The reciprocals of the moduli, in the order of the entries. -/
@@ -108,7 +111,7 @@ structure IsSievingInfo (c : List ℤ) (bHigh : ℕ) (si : SievingInfo) : Prop w
   /-- The store of the tables of rows fits all the entries. -/
   fits : si.store.Fits si.entries
   /-- The denominators are tested only for even degree. -/
-  checkDenom_eq : si.checkDenom = true → degree c % 2 = 0
+  degree_mod_two_eq_zero_of_checkDenom : si.checkDenom = true → degree c % 2 = 0
 
 /-- The normalized options look at most `Ratpoints.numPrimes` primes. -/
 theorem SieveOptions.numPrimes_normalize_le (s : SieveOptions) :
@@ -409,16 +412,15 @@ theorem isSievingInfo_choiceEnd {c : List ℤ} {bHigh sp1 sp2 : ℕ} {t : ThirdS
         forb, forbVal, store := (choiceEnd t sp2 store).2.2, checkDenom } := by
   obtain ⟨hE, hl⟩ := entriesOK_choiceEnd ht store
   subst h1 h2
-  refine ⟨fun e he ↦ ?_, fun e he ↦ ?_, ?_, ⟨h12, h3 ▸ ht.2.1, h3 ▸ hl ▸ ht.2.2,
-    fun _ he ↦ hE.nf_eq_zero_of_mem_drop he⟩, hforb, hval, hE.fits_foldl_addTables hs, hcd⟩
-  · obtain ⟨n, h⟩ := hE.entryOK_of_mem he
-    exact ⟨h.isModulusEntry.isSound, h.isModulusEntry.packable, h.isModulusEntry.hasInverses⟩
-  · obtain ⟨n, h⟩ := hE.entryOK_of_mem he
-    exact h.isPrimeEntry
-  · simp only [choiceEnd, List.toList_toArray]
-    exact List.map_congr_left fun e he ↦
-      have ⟨_, h⟩ := hE.entryOK_of_mem he
-      h.isModulusEntry.packable.magic_eq
+  refine ⟨fun e he ↦ (hE.entryOK_of_mem he).elim fun _ h ↦ h.isModulusEntry.isSound,
+    fun e he ↦ (hE.entryOK_of_mem he).elim fun _ h ↦ h.isModulusEntry.packable,
+    fun e he ↦ (hE.entryOK_of_mem he).elim fun _ h ↦ h.isModulusEntry.hasInverses,
+    fun e he ↦ (hE.entryOK_of_mem he).elim fun _ h ↦ h.isPrimeEntry, ?_,
+    ⟨h12, h3 ▸ ht.2.1, h3 ▸ hl ▸ ht.2.2, fun _ he ↦ hE.nf_eq_zero_of_mem_drop he⟩, hforb, hval,
+    hE.fits_foldl_addTables hs, hcd⟩
+  simp only [choiceEnd, List.toList_toArray]
+  exact List.map_congr_left fun e he ↦
+    (hE.entryOK_of_mem he).elim fun _ h ↦ h.isModulusEntry.packable.magic_eq
 
 /-- The contract of `Ratpoints.thirdOf`: `Ratpoints.thirdStage_spec` from the end `sp2` of the
 second stage. -/
@@ -438,10 +440,8 @@ theorem firstStages_post {c : List ℤ} {primeSe : Array (Option (Entry × Float
     {pool : Array ModulusCandidate} {sp1 sp2 : ℕ}
     (he : (pool, sp1, sp2) =
       Id.run (firstStages (sortFrom pool₀ 0 ModulusCandidate.keyLe) s target ct est bpws sp2e)) :
-    AllQ (CandOK c primeSe pws) pool ∧ TailNf pool sp2 ∧ sp1 ≤ sp2 ∧ sp2 ≤ pool.size := by
-  have := firstStages_run (fun e he k ↦ he.of_eq rfl rfl rfl rfl)
-    (h.sortFrom 0 ModulusCandidate.keyLe) s target ct est bpws sp2e
-  rwa [← he] at this
+    AllQ (CandOK c primeSe pws) pool ∧ TailNf pool sp2 ∧ sp1 ≤ sp2 ∧ sp2 ≤ pool.size :=
+  firstStages_run (fun _ he _ ↦ he.of_eq rfl rfl rfl rfl) (h.sortFrom 0 ModulusCandidate.keyLe) he
 
 theorem AllQ.candOK_map_phase1Key {c : List ℤ} {pool : Array ModulusCandidate}
     (h : AllQ (·.IsPrime c) pool) (primeSe : Array (Option (Entry × Float))) (pws : Array Power)

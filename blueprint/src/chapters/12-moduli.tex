@@ -963,7 +963,7 @@ proof uses then, and rewords the docstrings of the model that name it.
 \begin{lemma}[One block]\label{lem:runBlock}
   \uses{def:runBlock, def:decisionWF, lem:blockLoops, lem:blockDens, lem:counters, lem:buildRows,
     lem:fetchRow, lem:forbidden, lem:fillBpList}
-  \lean{Ratpoints.Sieve.RunWords, Ratpoints.Sieve.denPoints, Ratpoints.Sieve.denCounts, List.take_append_take_drop, Ratpoints.Sieve.siftDen_spec, Ratpoints.Sieve.runBlock_spec, Ratpoints.Sieve.decisionWF_getElem!_findDecision, Ratpoints.Sieve.IsForbiddenEntry.mem_primeTable, Ratpoints.Sieve.forbFits_of_forall_isForbiddenEntry, Ratpoints.Sieve.forbFits_fst_run_runSetup, Ratpoints.Sieve.Shape.loopFits_run_blockPlan, Ratpoints.Sieve.RowStore.Keeps, Ratpoints.Sieve.RowStore.Keeps.refl, Ratpoints.Sieve.RowStore.Keeps.trans, Ratpoints.Sieve.RowStore.keeps_of_fetchRow, Ratpoints.Sieve.buildRows_keeps, Ratpoints.Sieve.StoreHolds.buildRows_setRows_take, Ratpoints.Sieve.RowStore.Fits.fits_run_sift, Ratpoints.Sieve.sift_storeHolds, Ratpoints.Sieve.DecisionSearchInvariant, Ratpoints.Sieve.findDecision_spec}
+  \lean{Ratpoints.Sieve.RunWords, Ratpoints.Sieve.denPoints, Ratpoints.Sieve.denCounts, List.take_append_take_drop, Ratpoints.Sieve.siftDen_spec, Ratpoints.Sieve.blockReport, Ratpoints.Sieve.runBlock_spec, Ratpoints.Sieve.decisionWF_getElem!_findDecision, Ratpoints.Sieve.IsForbiddenEntry.mem_primeTable, Ratpoints.Sieve.forbFits_of_forall_isForbiddenEntry, Ratpoints.Sieve.forbFits_fst_run_runSetup, Ratpoints.Sieve.Shape.loopFits_run_blockPlan, Ratpoints.Sieve.RowStore.Keeps, Ratpoints.Sieve.RowStore.Keeps.refl, Ratpoints.Sieve.RowStore.Keeps.trans, Ratpoints.Sieve.RowStore.keeps_of_fetchRow, Ratpoints.Sieve.buildRows_keeps, Ratpoints.Sieve.StoreHolds.buildRows_setRows_take, Ratpoints.Sieve.RowStore.Fits.fits_run_sift, Ratpoints.Sieve.sift_storeHolds, Ratpoints.Sieve.Decision.InForce, Ratpoints.Sieve.DecisionSearchInvariant, Ratpoints.Sieve.findDecision_spec}
   \leanok
   Building rows never removes a row, so that a store that fits all the entries, the reserve
   included, still fits them after any denominator, whose sieve reads and builds the rows of its
@@ -973,14 +973,15 @@ proof uses then, and rewords the docstrings of the model that name it.
   entries, the word of the classes that admit a numerator, a well-formed decision in force for block
   $i$ among the decisions, the plan of the shape, forbidden divisors with their reciprocals,
   $i < \mathrm{nblocks}$, $1 \le b_{\mathrm{low}}$, $b_{\mathrm{high}} < 2^{63}$, $H < 2^{63}$ and a
-  store that fits all the entries: block $i$ keeps the store so, reports the decision in force with
-  its ends $s_2$ and $s_3$, delivers the points of the denominators of its steps that pass the test
-  of the shape, in order, each with the first $s_3$ entries of that decision, for every choice of
-  the words of the classes and the ranges of the numerators that the packing and the bounds give,
-  and, while the callback does not stop the search, reports the sum of the counts of those
-  denominators with the ends $s_2$ and $s_3$ of the decision. The decision in force for block $i$,
-  among decisions of which the first is for block $0$, is one whose first block is at most $i$ while
-  every later one is for a block after $i$, and it is well formed when every decision is.
+  store that fits all the entries: block $i$ keeps the store so, delivers the points of the
+  denominators of its steps that pass the test of the shape, in order, each with the first $s_3$
+  entries of the decision in force, for every choice of the words of the classes and the ranges of
+  the numerators that the packing and the bounds give, and, while the callback does not stop the
+  search, reports in closed form the sum of the counts of those denominators with the decision in
+  force and its ends $s_2$ and $s_3$, a function of the arguments of the run that reads neither the
+  callback nor the flags of the output. The decision in force for block $i$, among decisions of
+  which the first is for block $0$, is one whose first block is at most $i$ while every later one is
+  for a block after $i$, and it is well formed when every decision is.
 \end{lemma}
 
 \begin{proof}
@@ -1062,28 +1063,25 @@ writes back (\csource{find_points.c}{5120}{5120}, \csource{find_points.c}{5152}{
 
 \begin{lemma}[The correction in closed form]\label{lem:correctionAfter}
   \uses{lem:correctionWF, lem:runBlock, lem:counters}
-  \lean{Ratpoints.Sieve.blockReport, Ratpoints.Sieve.correctionAfter, Ratpoints.Sieve.blockDecision, Ratpoints.Sieve.folded_correctionAfter, Ratpoints.Sieve.exists_toList_decisions_correctionAfter, Ratpoints.Sieve.size_pos_and_block_zero_correctionAfter, Ratpoints.Sieve.wf_correctionAfter, Ratpoints.Sieve.eq_blockReport}
+  \lean{Ratpoints.Sieve.correctionAfter, Ratpoints.Sieve.blockDecision, Ratpoints.Sieve.folded_correctionAfter, Ratpoints.Sieve.exists_toList_decisions_correctionAfter, Ratpoints.Sieve.size_pos_and_block_zero_correctionAfter, Ratpoints.Sieve.wf_correctionAfter}
   \leanok
-  The report of block $i$ with the decisions so far, in closed form: the sum of the counts of the
-  denominators of the block that pass the test of the shape (Lemma~\ref{lem:counters}), with the
-  decision in force and its ends $s_2$ and $s_3$; the state of the correction after the folds of the
-  first $k$ blocks with these reports, from the start; and the decision of block $i$, the decision
-  in force for it after the folds of the blocks before it. They are functions of the arguments of
-  the run that read neither the callback nor the flags of the output. After $k$ folds, $k$ blocks
-  are folded, the decisions are those after $m \le k$ folds followed by decisions for blocks from
-  $m + \mathrm{adaptLag} + 1$ on, and the state is well formed when the decision of the choice is; a
-  block on which the callback does not stop the search reports what the closed form says.
+  The state of the correction after the folds of the first $k$ blocks, each with its report in
+  closed form (Lemma~\ref{lem:runBlock}), from the start; and the decision of block $i$, the
+  decision in force for it after the folds of the blocks before it. They are functions of the
+  arguments of the run that read neither the callback nor the flags of the output. After $k$ folds,
+  $k$ blocks are folded, the decisions are those after $m \le k$ folds followed by decisions for
+  blocks from $m + \mathrm{adaptLag} + 1$ on, and the state is well formed when the decision of the
+  choice is.
 \end{lemma}
 
 \begin{proof}
   \leanok
-  By induction on the number of folds, from Lemma~\ref{lem:correctionWF}; the report of a block from
-  the contract of one block (Lemma~\ref{lem:runBlock}).
+  By induction on the number of folds, from Lemma~\ref{lem:correctionWF}.
 \end{proof}
 
 \begin{theorem}[The lag lemma]\label{thm:lag}
   \uses{lem:correctionAfter, lem:runBlock}
-  \lean{Ratpoints.Sieve.eq_of_lt_and_block_le, Ratpoints.Sieve.findDecision_eq_of_toList_eq_append, Ratpoints.Sieve.getElem!_findDecision_eq_of_toList_eq_append, Ratpoints.Sieve.getElem!_findDecision_correctionAfter}
+  \lean{Ratpoints.Sieve.Decision.InForce.unique, Ratpoints.Sieve.findDecision_eq_of_toList_eq_append, Ratpoints.Sieve.getElem!_findDecision_eq_of_toList_eq_append, Ratpoints.Sieve.getElem!_findDecision_correctionAfter}
   \leanok
   The decision in force for block $i$ among the decisions after the folds of the first $k$ blocks is
   the decision of block $i$ for every $k \ge i - \mathrm{adaptLag}$: block $i$ reads only the

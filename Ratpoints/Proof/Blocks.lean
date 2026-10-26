@@ -26,8 +26,9 @@ of the shape (`Ratpoints.Sieve.Shape.dens`) in its order
 (`Ratpoints.Sieve.Shape.flatMap_blockDens`), and a block delivers the points of its denominators
 (`Ratpoints.Sieve.blockDens`) that pass the tests of the shape, each with the entries of the first
 three stages of its decision (`Ratpoints.Sieve.denPoints`), keeps a store of the tables of rows that
-fits all the entries, and counts closed forms of its denominators (`Ratpoints.Sieve.denCounts`),
-which depend neither on the callback nor on the flags of the output
+fits all the entries, and, when the callback does not stop the search, reports the sum of the counts
+of its denominators (`Ratpoints.Sieve.denCounts`) with its decision, a closed form
+(`Ratpoints.Sieve.blockReport`) that depends neither on the callback nor on the flags of the output
 (`Ratpoints.Sieve.runBlock_spec`).
 
 ## Main definitions
@@ -36,6 +37,7 @@ which depend neither on the callback nor on the flags of the output
   the classes and the ranges of the numerators that the deliveries are stated for, the points of a
   denominator, and the counts of its sieve.
 * `Ratpoints.Sieve.blockDens`: the denominators of a block, before the tests of the shape.
+* `Ratpoints.Sieve.blockReport`: the report of a block in closed form.
 
 ## Main statements
 
@@ -345,19 +347,38 @@ private theorem le_and_le_and_bits_ne_zero_of_mem {shape : Shape} {db : UInt64}
   exact ⟨(shape.le_and_le_of_mem_dens db hbLow hd).1, (shape.le_and_le_of_mem_dens db hbLow hd).2,
     shape.bits_ne_zero_of_mem_dens hdb hd hk⟩
 
+/-- The report of block `i` of the run with the decisions `decs`, in closed form: the counts of the
+sieve of its denominators that pass the tests of the shape (`Ratpoints.Sieve.denCounts`), with the
+ends of the second and the third stage of the decision in force for it
+(`Ratpoints.Sieve.findDecision`), the index of that decision and its ends; what
+`Ratpoints.Sieve.runBlock` reports when the callback does not stop the search
+(`Ratpoints.Sieve.runBlock_spec`), for the height `H`, the end `sp1` of the first stage, the sieve
+entries `entries` with the reciprocals `magics` of their moduli, the classes `cls`, the word `db`
+of the classes that admit a numerator, the shape `shape`, the bounds `iv` of the search intervals
+and the denominators from `bLow` to `bHigh`. -/
+def blockReport (H sp1 : Nat) (entries : List SieveEntry) (magics : Array Nat)
+    (cls : Vector NumClass 64) (db : UInt64) (shape : Shape) (iv : Array IntervalBounds)
+    (bLow bHigh : Nat) (decs : Array Decision) (i : Nat) : BlockStat :=
+  let dd := Id.run (findDecision decs i)
+  ⟨(((blockDens shape db (Id.run (shape.blockPlan bLow bHigh)) bLow bHigh i).filter
+      fun b ↦ Id.run (shape.keep cls b)).map
+        (denCounts H sp1 entries magics cls iv decs[dd]!.sp2 decs[dd]!.sp3)).foldl (· + ·) {},
+    dd, decs[dd]!.sp2, decs[dd]!.sp3⟩
+
 open Std.WP Lean.Order in
 /-- Block `i` of the run of a shape, with the decision in force for it, delivers the points of the
 denominators of the block (`Ratpoints.Sieve.blockDens`) that pass the tests of the shape, in order,
 each with the first `sp3` entries of the decision (`Ratpoints.Sieve.denPoints`), for every choice of
 the words of the classes and the ranges of the numerators of `Ratpoints.Sieve.RunWords`; it keeps a
-store of the tables of rows that fits all the entries, counts the counts of these denominators from
-zero when the callback does not stop the search (`Ratpoints.Sieve.denCounts`), and reports the
-decision. The block needs a well-formed decision (`Ratpoints.Sieve.DecisionWF`), entries with the
-tables of inverses of their factors, prime entries where no factor is counted, the reciprocals of
-the moduli, the offsets of the packings of the classes with a pattern, whose bits the word `db` has,
-the blocks of the shape (`Ratpoints.Sieve.Shape.blockPlan`) with `i` one of them, forbidden divisors
-of the word shape that have what its loop needs (`Ratpoints.Sieve.Shape.ForbFits`), the denominators
-from `bLow ≥ 1` to `bHigh < 2 ^ 63` and the height below `2 ^ 63`. -/
+store of the tables of rows that fits all the entries and, when the callback does not stop the
+search, reports the sum of the counts of these denominators (`Ratpoints.Sieve.denCounts`) with the
+decision, its report in closed form (`Ratpoints.Sieve.blockReport`). The block needs a well-formed
+decision (`Ratpoints.Sieve.DecisionWF`), entries with the tables of inverses of their factors, prime
+entries where no factor is counted, the reciprocals of the moduli, the offsets of the packings of
+the classes with a pattern, whose bits the word `db` has, the blocks of the shape
+(`Ratpoints.Sieve.Shape.blockPlan`) with `i` one of them, forbidden divisors of the word shape that
+have what its loop needs (`Ratpoints.Sieve.Shape.ForbFits`), the denominators from `bLow ≥ 1` to
+`bHigh < 2 ^ 63` and the height below `2 ^ 63`. -/
 @[spec]
 theorem runBlock_spec {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : List Int)
     (d H A : Nat) (fl : CheckFlags) (sp1 : Nat) (entries : List SieveEntry) (magics : Array Nat)
@@ -373,16 +394,12 @@ theorem runBlock_spec {σ : Type} (process : Int → Int → Int → σ → Answ
         1 ≤ bLow ∧ bHigh < 2 ^ 63 ∧ H < 2 ^ 63 ∧ store.Fits entries ⦄
     runBlock process c d H A fl sp1 entries magics cls offsets db shape iv bLow bHigh plan decs i
       store r
-    ⦃ fun res ↦ res.2.1.Fits entries ∧ res.2.2.dec = Id.run (findDecision decs i) ∧
-        res.2.2.sp2 = decs[Id.run (findDecision decs i)]!.sp2 ∧
-        res.2.2.sp3 = decs[Id.run (findDecision decs i)]!.sp3 ∧
+    ⦃ fun res ↦ res.2.1.Fits entries ∧
         (∀ x, RunWords cls iv H bLow bHigh x → res.1 = r.deliver process
           (((blockDens shape db plan bLow bHigh i).filter fun b ↦ Id.run (shape.keep cls b)).flatMap
             (denPoints c d H fl (entries.take decs[Id.run (findDecision decs i)]!.sp3) x))) ∧
-        (res.1.quit = false → res.2.2.cnt =
-          ((((blockDens shape db plan bLow bHigh i).filter fun b ↦ Id.run (shape.keep cls b)).map
-            (denCounts H sp1 entries magics cls iv decs[Id.run (findDecision decs i)]!.sp2
-              decs[Id.run (findDecision decs i)]!.sp3)).foldl (· + ·) {})) ⦄ :=
+        (res.1.quit = false →
+          res.2.2 = blockReport H sp1 entries magics cls db shape iv bLow bHigh decs i) ⦄ :=
   ⟨fun ⟨hr, hA, hent, hmg, hoff, hdb, hdec, hplan, hforb, hi, hbLow, hbHigh, hH, hs⟩ ↦ by
     subst hplan
     have hwf := (Std.WP.Id.of_run_eq_wp rfl _ ((shape.blockPlan_spec bLow bHigh).le_wp trivial)).1
@@ -391,10 +408,11 @@ theorem runBlock_spec {σ : Type} (process : Int → Int → Int → σ → Answ
       (denCounts H sp1 entries magics cls iv decs[Id.run (findDecision decs i)]!.sp2
         decs[Id.run (findDecision decs i)]!.sp3) (·.Fits entries)
       (siftDen_spec process c d H A fl sp1 entries magics _ _ cls offsets iv bLow bHigh hA hent hmg
-        hoff hdec.2.1 hdec.2.2.2 hbLow hbHigh hH) cls db _ _ _ _ bLow bHigh (r, store, {})).le_wp
+        hoff hdec.sp2_le_sp3 hdec.nf_eq_zero hbLow hbHigh hH) cls db _ _ _ _ bLow bHigh
+        (r, store, {})).le_wp
       ⟨hr, hs, hwf.run_steps_le hi, Shape.loopFits_run_blockPlan hforb bLow bHigh,
         fun b hb ↦ le_and_le_and_bits_ne_zero_of_mem hdb hbLow hi hb⟩
-    exact ⟨h.2.1, rfl, rfl, rfl, h.1, h.2.2⟩⟩
+    exact ⟨h.2.1, h.1, fun hq ↦ congr(BlockStat.mk $(h.2.2 hq) _ _ _)⟩⟩
 
 end Sieve
 

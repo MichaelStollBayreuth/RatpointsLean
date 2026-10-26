@@ -27,8 +27,8 @@ denominator `b`, for every `x` with `P x`, keeps a property `Q` of the store of 
 and adds the counts `κ b` to the counters when the callback does not stop the search, the loop
 delivers the lists of the denominators of its steps that pass the tests of the shape, in order,
 keeps `Q`, and adds their counts (`Ratpoints.Sieve.BlockPost`). The search for the decision in
-force for a block ends at the last decision whose first block is at most the block
-(`Ratpoints.Sieve.findDecision_spec`).
+force for a block ends at the decision in force for it (`Ratpoints.Sieve.Decision.InForce`), the
+last whose first block is at most the block (`Ratpoints.Sieve.findDecision_spec`).
 
 ## Main definitions
 
@@ -41,6 +41,7 @@ force for a block ends at the last decision whose first block is at most the blo
 * `Ratpoints.Sieve.Shape.stepDens`, `Ratpoints.Sieve.Shape.ForbFits`,
   `Ratpoints.Sieve.Shape.LoopFits`: the denominators of a step of a shape, and what the loops of the
   shapes need.
+* `Ratpoints.Sieve.Decision.InForce`: the decision in force for a block.
 
 ## Main statements
 
@@ -1008,6 +1009,11 @@ theorem Shape.blockLoop_spec (shape : Shape) (step : Nat → BlockState σ → I
 
 /-! ### The decision in force for a block -/
 
+/-- Decision `dd` of `decs` is the one in force for block `i`: it exists, its first block is at most
+`i`, and every later decision is for a block after `i`. -/
+def Decision.InForce (decs : Array Decision) (i dd : Nat) : Prop :=
+  dd < decs.size ∧ decs[dd]!.block ≤ i ∧ ∀ j, dd < j → j < decs.size → i < decs[j]!.block
+
 -- The search for the decision in force for block `i` goes back while the first block of the
 -- decision is above `i`, which is then not the first decision.
 private theorem findDecision_back {decs : Array Decision} {i dd : Nat} (h0 : decs[0]!.block = 0)
@@ -1021,11 +1027,12 @@ private theorem findDecision_back {decs : Array Decision} {i dd : Nat} (h0 : dec
   · rwa [show j = dd by lia]
 
 /-- The invariant of the search of `Ratpoints.Sieve.findDecision` for the decision in force for
-block `i`, whose state is the index `dd` of a decision: every later decision is for a block after
-`i`, and at the exit the decision `dd` is for a block at most `i`. -/
+block `i`, whose state is the index `dd` of a decision: while the search goes on, every later
+decision is for a block after `i`, and at the exit the decision `dd` is the one in force for block
+`i` (`Ratpoints.Sieve.Decision.InForce`). -/
 def DecisionSearchInvariant (decs : Array Decision) (i : Nat) : Std.WP.WhileInvariant Nat Prop :=
-  .mk fun exit dd ↦ dd < decs.size ∧ (∀ j, dd < j → j < decs.size → i < decs[j]!.block) ∧
-    (exit = true → decs[dd]!.block ≤ i)
+  .mk fun exit dd ↦ if exit then Decision.InForce decs i dd else
+    dd < decs.size ∧ ∀ j, dd < j → j < decs.size → i < decs[j]!.block
 
 open Std.WP Lean.Order in
 /-- For decisions of which the first is for block `0`, the decision in force for block `i` is the
@@ -1033,22 +1040,21 @@ last whose first block is at most `i`: the search from the last decision back en
 first decision at the latest. -/
 theorem findDecision_spec (decs : Array Decision) (i : Nat) :
     ⦃ 0 < decs.size ∧ decs[0]!.block = 0 ⦄ findDecision decs i
-    ⦃ fun dd ↦ dd < decs.size ∧ decs[dd]!.block ≤ i ∧
-        ∀ j, dd < j → j < decs.size → i < decs[j]!.block ⦄ := by
+    ⦃ fun dd ↦ Decision.InForce decs i dd ⦄ := by
   vcgen [findDecision] invariants
   | inv1 => DecisionSearchInvariant decs i
   | inv2 => .ofMeasure fun dd ↦ dd
   all_goals simp only [DecisionSearchInvariant, WhileInvariant.mk_apply, Variant.evalsTo_ofMeasure,
     Variant.evalsBelow_ofMeasure_nat, Assertion.NondetFun.evalsTo_pure, meet_prop_eq_and,
-    ofProp_prop_eq, true_implies, false_implies, Bool.false_eq_true, and_true] at *
+    ofProp_prop_eq, Bool.false_eq_true, ↓reduceIte] at *
   all_goals first
+    | assumption
     | exact ⟨by lia, fun j h1 h2 ↦ absurd h2 (by lia)⟩
-    | exact ⟨‹_ ∧ _ ∧ _›.1, ‹_ ∧ _ ∧ _›.2.2, ‹_ ∧ _ ∧ _›.2.1⟩
     | (rename_i hi h
        obtain ⟨rfl, h⟩ := h
        exact findDecision_back ‹_ ∧ _›.2 hi h)
     | (rename_i hi h
-       exact ⟨h.2.1, h.2.2, Nat.le_of_not_lt hi⟩)
+       exact ⟨h.2.1, Nat.le_of_not_lt hi, h.2.2⟩)
 
 end Sieve
 

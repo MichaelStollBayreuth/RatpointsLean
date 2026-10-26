@@ -230,19 +230,16 @@ theorem exists_getElem_sortFrom_eq {pool : Array ModulusCandidate} {s : Nat}
     (Array.mem_toList_iff.mp (List.mem_mergeSort.mp hm))
   exact ⟨s + i, by simp at hi; lia, Nat.le_add_right _ _, he.symm⟩
 
-/-- `Ratpoints.firstStages_spec` for the result of the first two stages. -/
+/-- `Ratpoints.firstStages_spec` for a result `(pool', sp1, sp2)` of the first two stages. -/
 theorem firstStages_run {Q : ModulusCandidate → Prop}
     (hQ : ∀ e, Q e → ∀ k, Q { e with key := k }) {pool : Array ModulusCandidate}
-    (h : AllQ Q pool) (s : SieveOptions) (target ct : Float) (est : RunEstimate) (bpws : Float)
-    (sp2e : Nat) :
-    AllQ Q (Id.run (firstStages pool s target ct est bpws sp2e)).1 ∧
-      TailNf (Id.run (firstStages pool s target ct est bpws sp2e)).1
-        (Id.run (firstStages pool s target ct est bpws sp2e)).2.2 ∧
-      (Id.run (firstStages pool s target ct est bpws sp2e)).2.1 ≤
-        (Id.run (firstStages pool s target ct est bpws sp2e)).2.2 ∧
-      (Id.run (firstStages pool s target ct est bpws sp2e)).2.2 ≤
-        (Id.run (firstStages pool s target ct est bpws sp2e)).1.size :=
-  Std.WP.Id.of_run_eq_wp rfl _ ((firstStages_spec Q hQ pool s target ct est bpws sp2e).le_wp h)
+    (h : AllQ Q pool) {s : SieveOptions} {target ct : Float} {est : RunEstimate} {bpws : Float}
+    {sp2e : Nat} {pool' : Array ModulusCandidate} {sp1 sp2 : Nat}
+    (he : (pool', sp1, sp2) = Id.run (firstStages pool s target ct est bpws sp2e)) :
+    AllQ Q pool' ∧ TailNf pool' sp2 ∧ sp1 ≤ sp2 ∧ sp2 ≤ pool'.size := by
+  have := Std.WP.Id.of_run_eq_wp rfl _
+    ((firstStages_spec Q hQ pool s target ct est bpws sp2e).le_wp h)
+  rwa [← he] at this
 
 /-- The sieve entries of an array of candidates each with its sieve entry (`(·.ssp)`) with a
 property at its position: one for each candidate, each with the property at its position. -/

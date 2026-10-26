@@ -639,7 +639,8 @@ theorem exists_isSoundTest_run_sieveRun {c : List ℤ} {H A bLow bHigh : ℕ} {s
 private theorem isSoundRun_of_map {c : List ℤ} {entries : List SieveEntry}
     {magics : Array ℕ} {cls cls' : Vector NumClass 64} {offsets : Array ℕ} {store : RowStore}
     {dinv : SieveEntry → Array ℕ}
-    (hent : ∀ e ∈ entries, e.IsSound c ∧ e.Packable ∧ ∀ f ∈ e.factors, f.HasInverses e.p)
+    (hsound : ∀ e ∈ entries, e.IsSound c)
+    (hinv : ∀ e ∈ entries, ∀ f ∈ e.factors, f.HasInverses e.p)
     (hnf : ∀ e ∈ entries, e.nf = 0 → e.IsPrimeEntry)
     (hmg : magics.toList = entries.map fun e ↦ magic e.p)
     (hcls : ∀ b < 64, cls[b]!.Packs (Id.run (twoAdic c (degree c)))[b]!)
@@ -652,9 +653,9 @@ private theorem isSoundRun_of_map {c : List ℤ} {entries : List SieveEntry}
   refine ⟨fun e he ↦ ?_, fun e he ↦ ?_, by simp [hmg], fun e he ↦ ?_, hoff,
     fun b hb ↦ (hcls b hb).congr (hbits b hb).1 (hbits b hb).2.1 (hbits b hb).2.2, rfl,
     hs.map_dinv dinv⟩ <;> obtain ⟨e', he', rfl⟩ := List.mem_map.mp he
-  · exact ⟨(hent e' he').1.pos, (hent e' he').1.admits_of_sq_eq⟩
+  · exact ⟨(hsound e' he').pos, (hsound e' he').admits_of_sq_eq⟩
   · exact hnf e' he'
-  · exact (hent e' he').2.2
+  · exact hinv e' he'
 
 -- The classes, the entries and the row offsets of the search after `class_offsets`, in the array
 -- of `num_packings` rows, make a sound run with a well-formed first decision, for a result of the
@@ -680,14 +681,13 @@ private theorem isSoundRun_of_run_classOffsets {c : List ℤ} {bHigh : ℕ} {si 
     rw [Array.size_replicate, hn']
     exact Nat.mul_le_mul (Nat.le_max_right _ _) (Nat.le_max_left _ _)
   obtain ⟨hbits, ⟨f, hf⟩, hoff⟩ := Std.WP.Id.of_run_eq_wp rfl _
-    ((classOffsets_spec _ si.entries _).le_wp ⟨fun e he ↦ (hi.isSound e he).2.1,
-      fun b hb ↦ (hcls b hb).1, hsize⟩)
+    ((classOffsets_spec _ si.entries _).le_wp ⟨hi.packable, fun b hb ↦ (hcls b hb).1, hsize⟩)
   rw [← hco] at hbits hf hoff
   simp only at hbits hf hoff
   subst hf
   rw [snd_run_numClasses]
-  exact ⟨isSoundRun_of_map hi.isSound hi.isPrimeEntry_of_nf hi.magics_eq hcls hbits hoff hi.fits,
-    hi.decisionWF.map_dinv f⟩
+  exact ⟨isSoundRun_of_map hi.isSound hi.hasInverses hi.isPrimeEntry_of_nf hi.magics_eq hcls hbits
+    hoff hi.fits, hi.decisionWF.map_dinv f⟩
 
 -- The print channel that prints nothing leaves the delivery as it is.
 @[local simp] private theorem Delivery.print_fun_id {σ : Type} (t : String) (r : Delivery σ) :
@@ -903,7 +903,7 @@ private theorem exists_isSoundTest_run_sieving {c : List ℤ} {H : ℕ} (s : Sie
               (if degree c % 2 = 1 then b else 1) b fl)) :=
   have h := isSoundRun_of_run_classOffsets hi hcd.symm rfl rfl
   exists_isSoundTest_run_sieveRun h.1 h.2 hH63 (si.params.one_le_arraySizeAt hH) hbLow hbH rfl
-    hi.isForbiddenEntry hi.isForbiddenVal hi.checkDenom_eq dom hdom
+    hi.isForbiddenEntry hi.isForbiddenVal hi.degree_mod_two_eq_zero_of_checkDenom dom hdom
 
 -- At an exit of the search, on a curve without points, the test that lets no numerator through.
 private theorem exists_isSoundTest_of_forall_not_isPoint {c : List ℤ} {H : ℕ} {s : SieveOptions}
