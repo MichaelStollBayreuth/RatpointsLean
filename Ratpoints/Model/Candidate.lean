@@ -290,8 +290,9 @@ def stage3 (a : Int) (checks : List CheckSpec) : Id Bool := do
 /-! ### The test of a candidate and the exact check -/
 
 /-- The counters of the sieving thread for the block that it sieves, what the sieve did, from which
-the search of ratpoints corrects its choice of the moduli between the blocks of the run (with the
-blocks and the correction, stage I): the words of the bit arrays that the first stage sweeps
+the search of ratpoints corrects its choice of the moduli between the blocks of the run
+(`Ratpoints.Sieve.RunCounts.fold`, `Ratpoints.Sieve.adaptPrimes`, which the run of the model does
+not call yet): the words of the bit arrays that the first stage sweeps
 (`n_words`), the bit arrays that are nonzero after it (`n_arrays`), the numerators that survive the
 second stage (`n_bits`), those of them that are prime to the denominator (`n_coprime`) and that pass
 the third stage too (`n_checks`), and the denominators sifted (`n_sifts`). The components of the

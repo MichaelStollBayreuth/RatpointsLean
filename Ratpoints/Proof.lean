@@ -20,6 +20,7 @@ public import Ratpoints.Proof.Cli
 public import Ratpoints.Proof.CliNumbers
 public import Ratpoints.Proof.CompositeRows
 public import Ratpoints.Proof.Containers
+public import Ratpoints.Proof.Correction
 public import Ratpoints.Proof.Delivery
 public import Ratpoints.Proof.DeliveryCount
 public import Ratpoints.Proof.Denominators

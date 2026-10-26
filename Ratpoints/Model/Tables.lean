@@ -756,7 +756,8 @@ read one entry in the C code, and a product its own; the kind of its builder `in
 inverses `dinv` an array, for the array of `RP_NUM_STRIDES` `long`s, which the row offsets of the
 packing fill (`Ratpoints.Sieve.classOffsets`) with an entry for each stride up to the largest in
 use, where the entries of the C code beyond it stay unset and unread; the density `r`, which the
-correction of the moduli during the run reads (stage I), a `Float` for the `double`, and the count
+correction of the moduli during the run reads (`Ratpoints.Sieve.adaptPrimes`, which the run of the
+model does not call yet), a `Float` for the `double`, and the count
 `nf` of the factors, an integer for the `long`, `0` for a prime, `1` for a prime power and the
 number of factors for a product, kept with the list of the factors. -/
 structure SieveEntry where

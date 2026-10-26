@@ -997,13 +997,10 @@ proof uses then, and rewords the docstrings of the model that name it.
 
 \begin{definition}[The correction of the moduli]\label{def:correction}
   \uses{def:runBlock, def:counters, def:costModel, def:sieveOptions, def:Params}
-  Proposed names: \lname{Ratpoints.Sieve.RunCounts}, \lname{Ratpoints.Sieve.RunCounts.fold},
-  \lname{Ratpoints.Sieve.adaptRates}, \lname{Ratpoints.Sieve.adaptUp},
-  \lname{Ratpoints.Sieve.adaptDown}, \lname{Ratpoints.Sieve.adaptSecond},
-  \lname{Ratpoints.Sieve.adaptThird}, \lname{Ratpoints.Sieve.adaptPrimes},
-  \lname{Ratpoints.Sieve.Correction}, \lname{Ratpoints.Sieve.Correction.start},
-  \lname{Ratpoints.Sieve.runFold}. The counters of the run, with the words swept when those from the
-  extracted numerators on were last restarted and the end $s_2$ that they were counted under
+  \lean{Ratpoints.Sieve.RunCounts, Ratpoints.Sieve.RunCounts.fold, Ratpoints.Sieve.adaptRates, Ratpoints.Sieve.adaptUp, Ratpoints.Sieve.adaptDown, Ratpoints.Sieve.adaptSecond, Ratpoints.Sieve.adaptThird, Ratpoints.Sieve.adaptPrimes, Ratpoints.Sieve.Correction, Ratpoints.Sieve.Correction.start, Ratpoints.Sieve.runFold}
+  \leanok
+  The counters of the run, with the words swept when those from the extracted numerators on were
+  last restarted and the end $s_2$ that they were counted under
   (\csource{find_points.c}{1363}{1367}), and their fold with a block, restarting those counters when
   the block was sifted with another $s_2$ (\csource{find_points.c}{4107}{4113}); the rates that the
   run has shown, the bit arrays per word after the first stage and the numerators per word after the
@@ -1042,25 +1039,21 @@ writes back (\csource{find_points.c}{5120}{5120}, \csource{find_points.c}{5152}{
 
 \begin{lemma}[The correction keeps the decisions well formed]\label{lem:correctionWF}
   \uses{def:correction, def:decisionWF}
-  Proposed names: \lname{Ratpoints.Sieve.AdaptUpInvariant},
-  \lname{Ratpoints.Sieve.AdaptDownInvariant}, \lname{Ratpoints.Sieve.AdaptThirdInvariant},
-  \lname{Ratpoints.Sieve.adaptUp\_spec}, \lname{Ratpoints.Sieve.adaptDown\_spec},
-  \lname{Ratpoints.Sieve.adaptThird\_spec}, \lname{Ratpoints.Sieve.adaptSecond\_spec},
-  \lname{Ratpoints.Sieve.adaptPrimes\_spec}, \lname{Ratpoints.Sieve.RunCounts.sp2\_fold},
-  \lname{Ratpoints.Sieve.Correction.WF}, \lname{Ratpoints.Sieve.Correction.wf\_start},
-  \lname{Ratpoints.Sieve.runFold\_spec}, \lname{Ratpoints.Sieve.runFold\_decisions\_spec},
-  \lname{List.forall\_mem\_drop\_of\_forall\_getElem!}. For any values of the doubles: the walk up
-  ends between its start and the number of the entries; the walk down ends at most at $s_2$, at
-  least at $s_1$ when $s_1 \le s_2$, with every entry between counting no factor; the third stage
-  ends between the new $s_2$ and the number of the entries; so the correction of a well-formed
-  latest decision is well formed. A state of the correction is well formed when it has a decision,
-  the first for block $0$, every decision well formed, and the latest decision and the end $s_2$ of
-  the counters too; the start is well formed and the fold of a block whose decision is one of the
-  state keeps it so. The fold adds one block folded and appends decisions only for the blocks from
-  $\mathrm{folded} + \mathrm{adaptLag} + 1$ on.
+  \lean{Ratpoints.Sieve.AdaptUpInvariant, Ratpoints.Sieve.AdaptDownInvariant, Ratpoints.Sieve.AdaptThirdInvariant, Ratpoints.Sieve.adaptUp_spec, Ratpoints.Sieve.adaptDown_spec, Ratpoints.Sieve.adaptThird_spec, Ratpoints.Sieve.adaptSecond_spec, Ratpoints.Sieve.adaptPrimes_spec, Ratpoints.Sieve.RunCounts.sp2_fold, Ratpoints.Sieve.Correction.WF, Ratpoints.Sieve.Correction.wf_start, Ratpoints.Sieve.runFold_spec, Ratpoints.Sieve.runFold_decisions_spec, List.forall_mem_drop_of_forall_getElem!}
+  \leanok
+  For any values of the doubles: the walk up ends between its start and the number of the entries;
+  the walk down ends at most at $s_2$, at least at $s_1$ when $s_1 \le s_2$, with every entry
+  between counting no factor; the third stage ends between the new $s_2$ and the number of the
+  entries; so the correction of a well-formed latest decision is well formed. A state of the
+  correction is well formed when it has a decision, the first for block $0$, every decision well
+  formed, and the latest decision and the end $s_2$ of the counters too; the start is well formed
+  and the fold of a block whose decision is one of the state keeps it so. The fold adds one block
+  folded and appends decisions only for the blocks from $\mathrm{folded} + \mathrm{adaptLag} + 1$
+  on.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   The contracts of the loops state only what the natural numbers do, with the measures the entries
   left above and the position below; no proof reads a value of a double, also where the walks
   compare costs that may be NaN.
@@ -1068,40 +1061,37 @@ writes back (\csource{find_points.c}{5120}{5120}, \csource{find_points.c}{5152}{
 
 \begin{lemma}[The correction in closed form]\label{lem:correctionAfter}
   \uses{lem:correctionWF, lem:runBlock, lem:counters}
-  Proposed names: \lname{Ratpoints.Sieve.blockReport}, \lname{Ratpoints.Sieve.correctionAfter},
-  \lname{Ratpoints.Sieve.blockDecision}, \lname{Ratpoints.Sieve.folded\_correctionAfter},
-  \lname{Ratpoints.Sieve.exists\_toList\_decisions\_correctionAfter},
-  \lname{Ratpoints.Sieve.size\_pos\_and\_block\_zero\_correctionAfter},
-  \lname{Ratpoints.Sieve.wf\_correctionAfter}, \lname{Ratpoints.Sieve.eq\_blockReport}. The report
-  of block $i$ with the decisions so far, in closed form: the sum of the counts of the denominators
-  of the block that pass the test of the shape (Lemma~\ref{lem:counters}), with the decision in
-  force and its ends $s_2$ and $s_3$; the state of the correction after the folds of the first $k$
-  blocks with these reports, from the start; and the decision of block $i$, the decision in force
-  for it after the folds of the blocks before it. They are functions of the arguments of the run
-  that read neither the callback nor the flags of the output. After $k$ folds, $k$ blocks are
-  folded, the decisions are those after $m \le k$ folds followed by decisions for blocks from
+  \lean{Ratpoints.Sieve.blockReport, Ratpoints.Sieve.correctionAfter, Ratpoints.Sieve.blockDecision, Ratpoints.Sieve.folded_correctionAfter, Ratpoints.Sieve.exists_toList_decisions_correctionAfter, Ratpoints.Sieve.size_pos_and_block_zero_correctionAfter, Ratpoints.Sieve.wf_correctionAfter, Ratpoints.Sieve.eq_blockReport}
+  \leanok
+  The report of block $i$ with the decisions so far, in closed form: the sum of the counts of the
+  denominators of the block that pass the test of the shape (Lemma~\ref{lem:counters}), with the
+  decision in force and its ends $s_2$ and $s_3$; the state of the correction after the folds of the
+  first $k$ blocks with these reports, from the start; and the decision of block $i$, the decision
+  in force for it after the folds of the blocks before it. They are functions of the arguments of
+  the run that read neither the callback nor the flags of the output. After $k$ folds, $k$ blocks
+  are folded, the decisions are those after $m \le k$ folds followed by decisions for blocks from
   $m + \mathrm{adaptLag} + 1$ on, and the state is well formed when the decision of the choice is; a
   block on which the callback does not stop the search reports what the closed form says.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   By induction on the number of folds, from Lemma~\ref{lem:correctionWF}; the report of a block from
   the contract of one block (Lemma~\ref{lem:runBlock}).
 \end{proof}
 
 \begin{theorem}[The lag lemma]\label{thm:lag}
   \uses{lem:correctionAfter, lem:runBlock}
-  Proposed names: \lname{Ratpoints.Sieve.eq\_of\_lt\_and\_block\_le},
-  \lname{Ratpoints.Sieve.findDecision\_eq\_of\_toList\_eq\_append},
-  \lname{Ratpoints.Sieve.getElem!\_findDecision\_eq\_of\_toList\_eq\_append},
-  \lname{Ratpoints.Sieve.getElem!\_findDecision\_correctionAfter}. The decision in force for block
-  $i$ among the decisions after the folds of the first $k$ blocks is the decision of block $i$ for
-  every $k \ge i - \mathrm{adaptLag}$: block $i$ reads only the decisions made at the folds of the
-  blocks before block $i - \mathrm{adaptLag}$, that is of the blocks at least
-  $\mathrm{adaptLag} + 1$ before it.
+  \lean{Ratpoints.Sieve.eq_of_lt_and_block_le, Ratpoints.Sieve.findDecision_eq_of_toList_eq_append, Ratpoints.Sieve.getElem!_findDecision_eq_of_toList_eq_append, Ratpoints.Sieve.getElem!_findDecision_correctionAfter}
+  \leanok
+  The decision in force for block $i$ among the decisions after the folds of the first $k$ blocks is
+  the decision of block $i$ for every $k \ge i - \mathrm{adaptLag}$: block $i$ reads only the
+  decisions made at the folds of the blocks before block $i - \mathrm{adaptLag}$, that is of the
+  blocks at least $\mathrm{adaptLag} + 1$ before it.
 \end{theorem}
 
 \begin{proof}
+  \leanok
   The decision in force is unique; decisions appended for blocks after $i$ change neither its index
   nor itself; and the decisions after $k$ folds are those after $i - \mathrm{adaptLag}$ folds
   followed by decisions for blocks from $i + 1$ on (Lemma~\ref{lem:correctionAfter}).

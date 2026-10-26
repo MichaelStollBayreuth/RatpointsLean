@@ -5,13 +5,15 @@ Authors: Michael Stoll
 -/
 module
 
-public import Ratpoints.Model.Denominators
+public import Ratpoints.Model.Costs
+public import Ratpoints.Model.Params
 
 -- The `#guard` examples run code of the imported modules at compile time.
 meta import Ratpoints.Model.Denominators
+meta import Ratpoints.Model.Params
 
 /-!
-# The blocks of the run
+# The blocks of the run and the correction of the moduli
 
 The loop over the denominators of `find_points_work_1`, in blocks: the steps of the shape of the
 run (`Ratpoints.Sieve.Shape`), the `k` of the squares `k ^ 2`, the `k` of each divisor `s` of the
@@ -25,10 +27,15 @@ each that passes the tests of the shape handed to a step, which sifts it
 (`Ratpoints.Sieve.siftDen`), and returns when the callback has stopped the search; each block is
 sifted as a whole, with the moduli of the decision of the correction of the moduli in force for it
 (`Ratpoints.Sieve.findDecision`), its counters from zero, and reports its counters and that
-decision (`Ratpoints.Sieve.runBlock`). The run of the model (`Ratpoints.Sieve.sieveRun`) does not
-call them yet: until the run over the blocks of stage I, with one block sifted at a time and the
-correction of the moduli between the blocks, it lists the denominators of its shape
-(`Ratpoints.Sieve.Shape.dens`) and sifts them one after the other.
+decision (`Ratpoints.Sieve.runBlock`). The counters of the blocks are added to those of the run
+(`Ratpoints.Sieve.RunCounts`, `Ratpoints.Sieve.runFold`), from which the search corrects its choice
+of the end of the second stage and of the third stage once the run has swept enough words
+(`Ratpoints.Sieve.adaptPrimes`): a decision made at the fold of block `j` is for the blocks from
+`j + Ratpoints.adaptLag + 1` on (`Ratpoints.Sieve.Decision`, `Ratpoints.Sieve.Correction`). The run
+of the model (`Ratpoints.Sieve.sieveRun`) does not call them yet: until the run over the blocks of
+stage I, with one block sifted at a time and the correction of the moduli between the blocks, it
+lists the denominators of its shape (`Ratpoints.Sieve.Shape.dens`) and sifts them one after the
+other.
 
 ## Main definitions
 
@@ -44,6 +51,12 @@ correction of the moduli between the blocks, it lists the denominators of its sh
 * `Ratpoints.Sieve.Decision`, `Ratpoints.Sieve.findDecision`, `Ratpoints.Sieve.BlockStat`,
   `Ratpoints.Sieve.runBlock`: the decisions of the correction, the one in force for a block, and
   the sieve of one block with what it reports.
+* `Ratpoints.Sieve.adaptRates`, `Ratpoints.Sieve.adaptUp`, `Ratpoints.Sieve.adaptDown`,
+  `Ratpoints.Sieve.adaptSecond`, `Ratpoints.Sieve.adaptThird`, `Ratpoints.Sieve.adaptPrimes`: the
+  correction of the end of the second stage and of the third stage from the counters of the run.
+* `Ratpoints.Sieve.RunCounts`, `Ratpoints.Sieve.Correction`, `Ratpoints.Sieve.RunCounts.fold`,
+  `Ratpoints.Sieve.Correction.start`, `Ratpoints.Sieve.runFold`: the counters of the run, the state
+  of the correction, its start, and the fold of a block into them.
 -/
 
 @[expose] public section
@@ -381,11 +394,12 @@ def Shape.blockLoop {σ : Type} (shape : Shape) (step : Nat → BlockState σ �
 
 /-- A decision of the correction of the moduli: the first block `block` that it is for, and the ends
 `sp2` and `sp3` of the second and the third stage that the blocks from it on are sifted with, up to
-the next decision. The first is that of the choice, for block `0`.
+the next decision. The first is that of the choice, for block `0`
+(`Ratpoints.Sieve.Correction.start`).
 
 It models no C code of its own: a structure for the entries of the arrays `dec_block`, `dec_sp2`
-and `dec_sp3` of the run (`find_points.c:3761`), which the correction of the moduli fills (stage I),
-with natural numbers for the `long`s. -/
+and `dec_sp3` of the run (`find_points.c:3761`, `Ratpoints.Sieve.Correction`), with natural numbers
+for the `long`s. -/
 structure Decision where
   /-- The first block that the decision is for. -/
   block : Nat
@@ -410,9 +424,9 @@ def findDecision (decs : Array Decision) (i : Nat) : Id Nat := do
     dd := dd - 1
   return dd
 
-/-- What the sieve of one block reports to the fold of the run (`run_fold`; stage I): its counters
-(`Ratpoints.Sieve.Counters`), the index `dec` of the decision that it was sifted with and the ends
-`sp2` and `sp3` of the second and the third stage of that decision.
+/-- What the sieve of one block reports to the fold of the run (`Ratpoints.Sieve.runFold`): its
+counters (`Ratpoints.Sieve.Counters`), the index `dec` of the decision that it was sifted with and
+the ends `sp2` and `sp3` of the second and the third stage of that decision.
 
 C: `find_points.c:4082-4086`
 
@@ -470,6 +484,303 @@ def runBlock {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c
   let (r, store, cnt) ← shape.blockLoop step cls db plan seg a e bLow bHigh (r, store, {})
   return (r, store, ⟨cnt, dec, sp2, sp3⟩)
 
+/-! ### The correction of the moduli -/
+
+/-- The counters of the run, the sums of those of the blocks folded so far in the order of the
+blocks (`Ratpoints.Sieve.RunCounts.fold`), with the words swept when the counters of the second
+stage on were last restarted, `words2`, and the end `sp2` of the second stage that those were
+counted under: they restart when a block sifted with another `sp2` is folded.
+
+C: `find_points.c:1363-1367`
+
+Deviation: the six counters of the sieving thread extended (`Ratpoints.Sieve.Counters`), for the
+six fields; a `UInt64` for the `unsigned long` `n_words_2` and a natural number for the `long`
+`sp2`. -/
+structure RunCounts extends Counters where
+  /-- `n_words_2`: the words swept when the counters of the second stage on last restarted. -/
+  words2 : UInt64 := 0
+  /-- The end of the second stage that those counters were counted under. -/
+  sp2 : Nat
+
+/-- The counters of the run `c` after the fold of a block that was sifted with the end `sp2` of the
+second stage and counted `k`: when `sp2` is not the end that the counters of the run were counted
+under, those of the second stage on (`bits`, `coprime`, `checks`, `sifts`) restart from zero, with
+the words swept so far as `words2` and `sp2` as the end; then the counters of the block are added.
+
+C: `find_points.c:4107-4113`
+
+Deviation: a function of its own for this part of `run_fold`; the end `sp2` passed, for the entry
+`dec_sp2[st->dec]` that `run_fold` reads; the sums of `UInt64`s, wrapping as the `unsigned long`s
+do. -/
+def RunCounts.fold (c : RunCounts) (sp2 : Nat) (k : Counters) : RunCounts :=
+  let c := if sp2 != c.sp2 then
+      { c with bits := 0, coprime := 0, checks := 0, sifts := 0, words2 := c.words, sp2 }
+    else c
+  { c with words := c.words + k.words, arrays := c.arrays + k.arrays, bits := c.bits + k.bits,
+           coprime := c.coprime + k.coprime, checks := c.checks + k.checks,
+           sifts := c.sifts + k.sifts }
+
+/-- The rates that the run has shown, from its counters `c` with the end `c.sp2` of the second stage
+that they were counted under, the densities of the sieve entries `es` and the end `sp1` of the first
+stage, or none when there is too little data: none unless the run swept words, `sp1 ≥ 1`,
+`sp1 < c.sp2`, the run counted `Ratpoints.adaptArrays` bit arrays that survived the first stage and
+`Ratpoints.adaptBits` numerators that survived the second, and words since the counters of the
+second stage restarted; and otherwise the survivors of the first stage per word `s1`, those of the
+second per word since the restart `s2`, the product `r1` of the densities of the first stage and
+the product `r2` of those of the first two, none unless `r2 < r1` and `s2 < s1`.
+
+C: `find_points.c:1389`, `find_points.c:1400-1420`
+
+Deviation: a function of its own for this part of `adapt_primes`, its returns the result none;
+`Float`s for the doubles, in the order of the C code, the conversions of the `UInt64` counters to
+`Float` as the C code converts the `unsigned long`s to doubles, and the words since the restart the
+difference of the `UInt64`s, wrapping, converted, as the C code computes it; the densities read from
+the entries, for `sieve_list[n]->r`; natural numbers for the `long`s, so that `sp1 ≤ 0` is
+`sp1 = 0`. -/
+def adaptRates (es : Array SieveEntry) (c : RunCounts) (sp1 : Nat) :
+    Id (Option (Float × Float × Float × Float)) := do
+  let words := c.words.toFloat
+  if words ≤ 0.0 || c.sp2 ≤ sp1 || sp1 = 0 then return none
+  if c.arrays < adaptArrays.toUInt64 || c.bits < adaptBits.toUInt64 then return none
+  let words2 := (c.words - c.words2).toFloat
+  if words2 ≤ 0.0 then return none
+  let s1 := c.arrays.toFloat / words
+  let s2 := c.bits.toFloat / words2
+  let mut r1 := 1.0
+  for n in [0:sp1] do
+    r1 := r1 * es[n]!.r
+  let mut r2 := r1
+  for n in [sp1:c.sp2] do
+    r2 := r2 * es[n]!.r
+  if r1 - r2 ≤ 0.0 || s1 ≤ s2 then return none
+  return some (s1, s2, r1, r2)
+
+/-- The walk of the correction up from the end `start` of the second stage: for each further sieve
+entry of `es` in turn, of the modulus `p` and the density `r`, the survivors per word `next` with
+it, `level + chance rate r`, and its cost (`Ratpoints.primeCost` with `Ratpoints.costPhase2 s` per
+word, the cost `ct` of a row and the estimates `U` and `D` of the run); the walk stops at the first
+entry whose survivors removed, `s - next`, times the cost `costSurv` of a survivor, are not above
+its cost, and otherwise takes it: `rate` times `r`, `s` the new survivors per word. Returns the new
+end of the second stage, the rate and the survivors per word.
+
+C: `find_points.c:1449-1457`
+
+Deviation: a function of its own for this loop of `adapt_primes`; the entries an array, for
+`sieve_list` up to `sp3_max`, its size; `Float`s for the doubles, in the order of the C code;
+natural numbers for the `long`s. -/
+def adaptUp (es : Array SieveEntry) (start : Nat) (level chance rate s costSurv ct U D : Float) :
+    Id (Nat × Float × Float) := do
+  let mut want := start
+  let mut rate := rate
+  let mut s := s
+  for n in [start:es.size] do
+    let r := es[n]!.r
+    let next := level + chance * rate * r
+    let cost := primeCost es[n]!.p (costPhase2 * s) true ct U D
+    if (s - next) * costSurv ≤ cost then break
+    rate := rate * r
+    s := next
+    want := want + 1
+  return (want, rate, s)
+
+/-- The walk of the correction down from the end `sp2` of the second stage, when it takes nothing
+more: for the entries of `es` below `sp2` in turn, from the last down, while the position is above
+`sp1` and the entry is a prime (its count `nf` of factors `0`), the survivors per word `prev`
+without it, `level + chance rate / r`, and its cost (`Ratpoints.primeCost` with
+`Ratpoints.costPhase2 prev` per word); the walk stops at the first entry whose survivors removed,
+`prev - s`, times the cost `costSurv` of a survivor, are above its cost, and otherwise drops it:
+`rate` divided by `r`, `s` the survivors per word without it. Returns the new end of the second
+stage and the survivors per word.
+
+C: `find_points.c:1460-1472`
+
+Deviation: a function of its own for this loop of `adapt_primes`; the entries an array, for
+`sieve_list`; `Float`s for the doubles, in the order of the C code; natural numbers for the
+`long`s, `n` stepping down from `sp2 - 1` while it is above `sp1`. -/
+def adaptDown (es : Array SieveEntry) (sp1 sp2 : Nat)
+    (level chance rate s costSurv ct U D : Float) : Id (Nat × Float) := do
+  let mut want := sp2
+  let mut rate := rate
+  let mut s := s
+  let mut n := sp2 - 1
+  while sp1 < n && es[n]!.nf == 0 do
+    let r := es[n]!.r
+    let prev := level + chance * rate / r
+    let cost := primeCost es[n]!.p (costPhase2 * prev) true ct U D
+    if (prev - s) * costSurv > cost then break
+    rate := rate / r
+    s := prev
+    want := want - 1
+    n := n - 1
+  return (want, s)
+
+/-- The correction of the end of the second stage, from the counters `c` of the run with the end
+`c.sp2` that they were counted under, the floor `level` and the slope `chance` of the survivors per
+word against the product of the densities, the product `r2` of the densities of the first two
+stages, the cost `checkRel` of one exact check, the cost `ct` of a row and the estimates `U` and `D`
+of the run: the cost of a survivor, `Ratpoints.costSurvivor` plus the share of the survivors that
+reach the exact check times `Ratpoints.costCheck (checkRel - 1)`; the walk up
+(`Ratpoints.Sieve.adaptUp`), and when it takes nothing, the walk down
+(`Ratpoints.Sieve.adaptDown`) from `c.sp2`, never below the end `sp1` of the first stage. Returns
+the new end of the second stage and the survivors per word with it.
+
+C: `find_points.c:1439-1448`, `find_points.c:1458-1459`, `find_points.c:1473-1476`
+
+Deviation: a function of its own for this part of `adapt_primes`; `Float`s for the doubles, in the
+order of the C code; natural numbers for the `long`s. -/
+def adaptSecond (es : Array SieveEntry) (c : RunCounts) (sp1 : Nat)
+    (level chance r2 checkRel ct U D : Float) : Id (Nat × Float) := do
+  let costSurv := costSurvivor + c.checks.toFloat / c.bits.toFloat * costCheck * (checkRel - 1.0)
+  let s := level + chance * r2
+  let (want, rate, s) ← adaptUp es c.sp2 level chance r2 s costSurv ct U D
+  if want == c.sp2 then adaptDown es sp1 c.sp2 level chance rate s costSurv ct U D
+  else return (want, s)
+
+/-- The correction of the third stage, which starts at the end `sp2` of the second, for the value
+`q` of `-Q`, the cost `checkRel` of one exact check, the floor `level` and the slope `chance` of the
+survivors per word against the product of the densities, the product `r2` of the densities of the
+first two stages and the survivors per word `s` with the new second stage: the costs of a prime of
+the stage per denominator, `q` when `q ≥ 0` and `Ratpoints.sp3PerDenom` otherwise, and per survivor,
+`Ratpoints.sp3PerSurvivor`, each divided by `checkRel`; the survivors that a denominator brings to
+the stage, `S`, the share of the run's survivors that pass the test for common factors per
+denominator sifted, carried over to the new second stage by the ratio of `s` to the survivors per
+word with the old one, `old = level + chance r2` (when `old > 0`); for the entries of `es` from
+`sp2` on in turn, the stage stops at the first of density `r` with `S (1 - perSurv - r) ≤ perDenom`,
+and otherwise takes it, `S` times `r`. Returns the end of the third stage.
+
+C: `find_points.c:1487-1505`
+
+Deviation: a function of its own for this part of `adapt_primes`, the fields `sp3_per_denom` (its
+double read by its bits by the caller) and `check_rel` of the arguments that it reads and the local
+variables `level`, `chance`, `r2` and `s` of `adapt_primes` passed as arguments; the end of the
+third stage returned, for the field `sp3` of the arguments that it writes; `Float`s for the doubles,
+in the order of the C code; natural numbers for the `long`s. -/
+def adaptThird (es : Array SieveEntry) (c : RunCounts) (sp2 : Nat)
+    (q checkRel level chance r2 s : Float) : Id Nat := do
+  let perDenom := (if 0.0 ≤ q then q else sp3PerDenom) / checkRel
+  let perSurv := sp3PerSurvivor / checkRel
+  let mut S := c.coprime.toFloat / c.sifts.toFloat
+  let old := level + chance * r2
+  if old > 0.0 then S := S * (s / old)
+  let mut sp3 := sp2
+  while sp3 < es.size do
+    let r := es[sp3]!.r
+    if S * (1.0 - perSurv - r) ≤ perDenom then break
+    S := S * r
+    sp3 := sp3 + 1
+  return sp3
+
+/-- The correction of the choice of the moduli from the counters `c` of the run, with the options
+`s` (`Ratpoints.SieveOptions`), the result `P` of the choice (`Ratpoints.Params`: its end `sp1` of
+the first stage, its estimates of the run and its cost of a check) and the sieve entries `es`, its
+reserve included, when the ends of the second and the third stage are `sp2` and `sp3`, the latest
+decision: the next correction when twice the words swept so far have been swept, wrapping as the
+`unsigned long` does; nothing more when the rates of the run do not tell
+(`Ratpoints.Sieve.adaptRates`); otherwise the floor and the slope of the survivors per word, then
+with `-A 2` or more the end of the second stage corrected (`Ratpoints.Sieve.adaptSecond`), and
+unless `-P` gives the third stage, when the run sifted denominators, the end of the third stage
+(`Ratpoints.Sieve.adaptThird`, with the value of `-Q` and the cost of a check), and otherwise the
+end of the third stage at least that of the second. Returns the ends of the second and the third
+stage and the words of the next correction.
+
+C: `find_points.c:1383-1388`, `find_points.c:1390-1398`, `find_points.c:1421-1438`,
+`find_points.c:1477-1486`, `find_points.c:1506-1509`, `find_points.c:1515`
+
+Deviation: the fields of the arguments that `adapt_primes` reads passed as the options, the result
+of the choice and the entries, and those that it writes, `sp2`, `sp3` and `adapt_at`, returned; the
+doubles of the options by their bits; `Float`s for the doubles, in the order of the C code; integers
+for the `long`s `adapt` and `sp3_extra` and natural numbers for the others; no output under
+`RP_PRIME_STATS`. -/
+def adaptPrimes (s : SieveOptions) (P : Params) (es : Array SieveEntry) (c : RunCounts)
+    (sp2 sp3 : Nat) : Id (Nat × Nat × UInt64) := do
+  let adaptAt := c.words + c.words
+  let some (s1, s2, r1, r2) ← adaptRates es c P.sp1 | return (sp2, sp3, adaptAt)
+  let ct := s.costTable.toFloat
+  let ct := if 0.0 ≤ ct then ct else costTable
+  let chance := (s1 - s2) / (r1 - r2)
+  let level := s1 - chance * r1
+  let level := if level < 0.0 then 0.0 else level
+  let mode : Int := if s.adapt < 0 then 1 else s.adapt
+  let (sp2, sv) ← if 2 ≤ mode then
+      adaptSecond es c P.sp1 level chance r2 P.checkRel ct P.runWords P.runDenoms
+    else pure (sp2, level + chance * r2)
+  if s.sp3Extra < 0 && c.sifts > 0 then
+    let sp3 ← adaptThird es c sp2 s.sp3PerDenom.toFloat P.checkRel level chance r2 sv
+    return (sp2, sp3, adaptAt)
+  return (sp2, if sp3 < sp2 then sp2 else sp3, adaptAt)
+
+/-- The state of the correction of the moduli during the run: the counters of the run
+(`Ratpoints.Sieve.RunCounts`), the number of the blocks folded, the decisions made
+(`Ratpoints.Sieve.Decision`), the ends of the second and the third stage of the last block folded,
+and the latest decision of the correction with the words of the next one, which the C code keeps in
+the arguments.
+
+C: `find_points.c:3755-3762`
+
+Deviation: the decisions an array of structures, for the three arrays `dec_block`, `dec_sp2` and
+`dec_sp3` and their count `ndec`; the fields `sp2`, `sp3` and `adapt_at` of the arguments, which
+`adapt_primes` writes and `run_fold` reads, kept here, since they are read only within the run, by
+`run_fold` and `adapt_primes`, after which line 5163 overwrites `sp2` and `sp3` with the ends of the
+last block folded; natural numbers for the `long`s and a `UInt64` for the `unsigned long`. -/
+structure Correction where
+  /-- The counters of the run. -/
+  cnt : RunCounts
+  /-- `nfolded`: the number of the blocks folded. -/
+  folded : Nat
+  /-- The decisions, the first for block `0`. -/
+  decisions : Array Decision
+  /-- `last_sp2`: the end of the second stage of the last block folded. -/
+  lastSp2 : Nat
+  /-- `last_sp3`: the end of the third stage of the last block folded. -/
+  lastSp3 : Nat
+  /-- `args->sp2`: the end of the second stage of the latest decision. -/
+  sp2 : Nat
+  /-- `args->sp3`: the end of the third stage of the latest decision. -/
+  sp3 : Nat
+  /-- `args->adapt_at`: the words swept at which the next correction is made. -/
+  adaptAt : UInt64
+
+/-- The correction at the start of the run, for the ends `sp2` and `sp3` of the second and the third
+stage of the choice and the words `adaptAt` of the first correction: nothing counted, the counters
+of the second stage on counted under `sp2`, no block folded, one decision, that of the choice for
+block `0`, and the ends of the choice as those of the last block folded. The run of the model
+(`Ratpoints.Sieve.sieveRun`) does not call it yet (stage I).
+
+C: `find_points.c:3853-3856`, `find_points.c:3861-3863`
+
+Deviation: the state returned, for the fields of the run that `run_setup` sets. -/
+def Correction.start (sp2 sp3 : Nat) (adaptAt : UInt64) : Correction :=
+  { cnt := { sp2 }, folded := 0, decisions := #[⟨0, sp2, sp3⟩], lastSp2 := sp2, lastSp3 := sp3,
+    sp2, sp3, adaptAt }
+
+/-- The fold of the next block of the run, with the report `b` (`Ratpoints.Sieve.BlockStat`), into
+the state `st` of the correction, with the options `s`, the result `P` of the choice and the sieve
+entries `es`: the block is the `j`-th folded; its counters added to those of the run
+(`Ratpoints.Sieve.RunCounts.fold`, with the end of the second stage of its decision); its ends as
+those of the last block folded; and when the run has swept the words of the next correction, the
+correction (`Ratpoints.Sieve.adaptPrimes`), whose result, when it changes an end, is a decision for
+the blocks from `j + Ratpoints.adaptLag + 1` on. The run of the model (`Ratpoints.Sieve.sieveRun`)
+does not call it yet (stage I).
+
+C: `find_points.c:4102-4106`, `find_points.c:4114-4127`
+
+Deviation: the state of the correction passed and returned (`Ratpoints.Sieve.Correction`), for the
+fields of the run and of the arguments; the decision appended to the array, for the store into the
+three arrays and the release store of their count (`RP_PUBLISH`), for the threads that read them,
+here a plain store; natural numbers for the `long`s. -/
+def runFold (s : SieveOptions) (P : Params) (es : Array SieveEntry) (st : Correction)
+    (b : BlockStat) : Id Correction := do
+  let j := st.folded
+  let cnt := st.cnt.fold st.decisions[b.dec]!.sp2 b.cnt
+  let st := { st with folded := j + 1, cnt, lastSp2 := b.sp2, lastSp3 := b.sp3 }
+  if cnt.words < st.adaptAt then return st
+  let (sp2, sp3, adaptAt) ← adaptPrimes s P es cnt st.sp2 st.sp3
+  let decisions := if sp2 != st.sp2 || sp3 != st.sp3 then
+      st.decisions.push ⟨j + adaptLag + 1, sp2, sp3⟩
+    else st.decisions
+  return { st with sp2, sp3, adaptAt, decisions }
+
+
 /-! ### Examples -/
 
 -- The block length: at least 16 steps, about 1024 blocks for a long run.
@@ -492,6 +803,35 @@ def runBlock {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c
 #guard
   let decs : Array Decision := #[⟨0, 5, 7⟩, ⟨40, 6, 9⟩, ⟨45, 4, 4⟩]
   [0, 39, 40, 44, 45, 1000].map (fun i ↦ Id.run (findDecision decs i)) == [0, 0, 1, 1, 2, 2]
+
+-- The fold of the counters: those of the second stage on restart under a new end of the second
+-- stage, with the words swept so far kept.
+#guard
+  let c : RunCounts :=
+    { words := 100, arrays := 10, bits := 5, coprime := 4, checks := 3, sifts := 2, words2 := 7,
+      sp2 := 12 }
+  let k : Counters := { words := 1, arrays := 1, bits := 1, coprime := 1, checks := 1, sifts := 1 }
+  let same := c.fold 12 k
+  let other := c.fold 13 k
+  same.words == 101 && same.bits == 6 && same.words2 == 7 && same.sp2 == 12 &&
+    other.words == 101 && other.arrays == 11 && other.bits == 1 && other.sifts == 1 &&
+    other.words2 == 100 && other.sp2 == 13
+
+-- No correction while the rates do not tell: too few words, arrays or numerators, or `sp2 ≤ sp1`;
+-- the next correction at twice the words, wrapping.
+#guard
+  let es : Array SieveEntry := (Array.range 8).map fun n ↦
+    { p := 3 + 2 * n, factors := [], magic := 0, bias := 0, rbainv := 0, dinv := #[],
+      ref := .prime 0, init := .sieve1, r := 0.5, nf := 0 }
+  let c : RunCounts := { words := 2000000, arrays := 999, bits := 300, sp2 := 4 }
+  let P : Params :=
+    { moduli := es.toList.map (·.p), examined := 0, lookedAt := 0, sp1 := 2, sp2 := 4, sp3 := 6,
+      maxForbidden := 64, jacobi := true, adaptAt := 0 }
+  (Id.run (adaptRates es c 2)).isNone &&
+    (Id.run (adaptRates es { c with arrays := 1000 } 4)).isNone &&
+    (Id.run (adaptRates es { c with arrays := 1000 } 2)).isSome &&
+    Id.run (adaptPrimes {} P es c 4 6) == (4, 6, 4000000) &&
+    (Id.run (adaptPrimes {} P es { c with words := 2 ^ 63 } 4 6)).2.2 == 0
 
 -- The denominators that the blocks visit, with a step that records them: the squares from 5 to 100
 -- whose class admits a numerator, in blocks of 16 steps.

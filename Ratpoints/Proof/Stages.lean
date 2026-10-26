@@ -570,8 +570,8 @@ theorem run_accepted {es : List SieveEntry} (hes : ∀ e ∈ es, e.IsPrimeEntry)
 /-! ### The counters -/
 
 /-- The counters `c` and `k` (`Ratpoints.Sieve.Counters`) added field by field, wrapping as the
-`UInt64`s do: the counts of two pieces of work of the sieve, one after the other, as the run of
-ratpoints adds those of a block to its own (with the blocks and the correction, stage I). -/
+`UInt64`s do: the counts of two pieces of work of the sieve, one after the other, as
+`Ratpoints.Sieve.RunCounts.fold` adds those of a block to those of the run. -/
 instance : Add Counters where
   add c k := ⟨c.words + k.words, c.arrays + k.arrays, c.bits + k.bits, c.coprime + k.coprime,
     c.checks + k.checks, c.sifts + k.sifts⟩

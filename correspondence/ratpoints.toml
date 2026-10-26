@@ -194,6 +194,12 @@ reason = "find_points_clear, which destroys the pool of threads, clears the scra
 
 [[excluded]]
 file = "find_points.c"
+lines = "1510-1514"
+kind = "instrumentation"
+reason = "RP_PRIME_STATS in adapt_primes, a development probe that prints each correction of the moduli on stderr"
+
+[[excluded]]
+file = "find_points.c"
 lines = "1698-1701"
 kind = "instrumentation"
 reason = "the message under DEBUG at the start of examine_prime"

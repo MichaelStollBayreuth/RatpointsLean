@@ -354,15 +354,16 @@ C: `ratpoints.h:120-122` -/
 def sp2U0 : Float := 1.6e6
 
 /-- What one prime of the third stage costs per survivor, as a fraction of one exact check,
-`RATPOINTS_SP3_PER_SURVIVOR`, in the rule that chooses the third stage (`Ratpoints.thirdOf`, and
-`adapt_primes`; stage I).
+`RATPOINTS_SP3_PER_SURVIVOR`, in the rule that chooses the third stage (`Ratpoints.thirdOf`) and in
+its correction during the run (`Ratpoints.Sieve.adaptThird`).
 
 C: `ratpoints.h:150-152` -/
 def sp3PerSurvivor : Float := 0.055
 
 /-- What one prime of the third stage costs per denominator, as a fraction of one exact check,
-`RATPOINTS_SP3_PER_DENOM`, in the rule that chooses the third stage (`Ratpoints.thirdOf`, and
-`adapt_primes`; stage I), unless the option `-Q` gives a value `≥ 0`.
+`RATPOINTS_SP3_PER_DENOM`, in the rule that chooses the third stage (`Ratpoints.thirdOf`) and in
+its correction during the run (`Ratpoints.Sieve.adaptThird`), unless the option `-Q` gives a value
+`≥ 0`.
 
 C: `ratpoints.h:153-155` -/
 def sp3PerDenom : Float := 0.013
@@ -411,19 +412,20 @@ C: `ratpoints.h:258-260` -/
 def costLine : Float := 4.5
 
 /-- What one and on a surviving bit array of the second stage costs, `RATPOINTS_COST_PHASE2`
-(`Ratpoints.downstreamFactor`, and the keys of the second stage; stage I).
+(`Ratpoints.downstreamFactor`, the keys of the second stage, `Ratpoints.rankSecond`, and the walks
+of its correction during the run, `Ratpoints.Sieve.adaptUp` and `Ratpoints.Sieve.adaptDown`).
 
 C: `ratpoints.h:261-263` -/
 def costPhase2 : Float := 110.0
 
 /-- What one survivor of the second stage costs to extract and test, `RATPOINTS_COST_SURVIVOR`
-(`Ratpoints.downstreamFactor`, and `adapt_primes`; stage I).
+(`Ratpoints.downstreamFactor`, `Ratpoints.Sieve.adaptSecond`).
 
 C: `ratpoints.h:270-272` -/
 def costSurvivor : Float := 1400.0
 
 /-- What one exact check costs relative to the cost of an and, `RATPOINTS_COST_CHECK`, read by the
-correction of the second stage during the run (`adapt_primes`; stage I).
+correction of the second stage during the run (`Ratpoints.Sieve.adaptSecond`).
 
 C: `ratpoints.h:280-282` -/
 def costCheck : Float := 1600.0
@@ -503,20 +505,20 @@ C: `find_points.c:1354` -/
 def adaptWords : Nat := 1000000
 
 /-- How many bit arrays that survive the first stage the run must have counted before it corrects
-the moduli, `RP_ADAPT_ARRAYS` (`adapt_primes`; stage I).
+the moduli, `RP_ADAPT_ARRAYS` (`Ratpoints.Sieve.adaptRates`).
 
 C: `find_points.c:1355` -/
 def adaptArrays : Nat := 1000
 
 /-- How many numerators that survive the second stage the run must have counted before it corrects
-the moduli, `RP_ADAPT_BITS` (`adapt_primes`; stage I).
+the moduli, `RP_ADAPT_BITS` (`Ratpoints.Sieve.adaptRates`).
 
 C: `find_points.c:1356` -/
 def adaptBits : Nat := 200
 
 /-- How many blocks after the block at whose fold a correction of the moduli is decided the
 correction takes effect, less one, `RP_ADAPT_LAG`: a decision made at the fold of block `j` is for
-the blocks from `j + adaptLag + 1` on (`run_fold`; stage I), so that the decision of a block
+the blocks from `j + adaptLag + 1` on (`Ratpoints.Sieve.runFold`), so that the decision of a block
 depends only on the folds of the blocks at least `adaptLag + 1` before it, whatever the number of
 threads.
 

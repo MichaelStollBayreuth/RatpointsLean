@@ -343,8 +343,9 @@ primes examined are the first `q`, where ratpoints, when `-p` is absent, looks a
 while its pool is short of the moduli that its first two stages want, and later for its third stage,
 `-p` being a hard limit of the first two stages (line 2693) as of the third (line 2980), and the
 model examines the primes of its moduli beyond the first `q` when it makes their entries
-(`Ratpoints.makeModulus?`); no correction of the moduli during the run (`adapt_primes`, stage I);
-natural numbers for the `long`s, so that the sums of the counts cannot overflow. -/
+(`Ratpoints.makeModulus?`); no correction of the moduli during the run
+(`Ratpoints.Sieve.adaptPrimes`, stage I); natural numbers for the `long`s, so that the sums of the
+counts cannot overflow. -/
 def sieveParams (o : SieveOptions) : Params :=
   let q := min (if o.numPrimes < 0 then defaultNumPrimes else o.numPrimes.toNat) numPrimes
   let lim := if o.numPrimes < 0 then numPrimes else q
