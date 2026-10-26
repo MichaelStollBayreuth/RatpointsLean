@@ -449,83 +449,58 @@ third stage. It rests on the following.
   The survivor test of a list of entries is the conjunction of the tests of its entries.
 \end{proof}
 
-The run over the denominators (Definition~\ref{def:sieveRun}) takes the cut points $s_1$ and $s_2$:
-it reads the rows of the first $s_2$ sieve entries from the store of the tables of rows or builds
-them into it, passing the store from one denominator to the next, ends the first stage at $s_1$ and
-hands the rest to \verb|sift| for the third stage, with the reciprocals that the array of the
-reciprocals holds from the position $s_2$ on; $s_2$ and the end of the list of the entries stand for
-the ends of the second and the third stage, which ratpoints takes from the arguments as the first
-decision of the run (\csource{find_points.c}{3861}{3861}) and \verb|run_block| sets for each block
-(\csource{find_points.c}{3911}{3911}). Its contract (Definition~\ref{def:sieveRun},
-Theorem~\ref{thm:run_reference}) holds for any cut points and needs $b_{\mathrm{low}} \ge 1$,
-$b_{\mathrm{high}} < 2^{63}$ and $H < 2^{63}$, since the test for common factors computes on words
-and does not end for $b = 0$ and an odd numerator, that the array of the reciprocals holds those of
-the entries in their order, that the entries from $s_2$ on are prime entries, and, for the packing
-(Chapter~\ref{chap:packing}), that the first $s_2$ entries have their tables of inverses and the row
-offsets of the classes, which pack the 2-adic words, and, for their rows, a store of the tables of
-rows that fits them (Chapter~\ref{chap:rows}). The search (Definition~\ref{def:searchPoints}), whose
-contract takes $H < 2^{63}$, which the refusal of \verb|findPoints| gives, and
-$1 \le b_{\mathrm{low}}$, $b_{\mathrm{high}} \le H$, passes its range of the denominators, the cut
-points of its parameters, the reciprocals and the store of the tables of rows that
-\verb|sieving_info| returns and the classes with their row offsets (Lemma~\ref{lem:soundRun}); what
-\verb|sieving_info| computes (Lemma~\ref{lem:sievingInfo}) gives the entries of the moduli in their
-order, each with the reciprocal of its modulus, a store of the tables of rows that fits them, and
-for one of the first $\mathrm{numPrimes}$ primes of the table the entry of that prime with the table
-of the reference as its only factor (Lemma~\ref{lem:sieveEntry_admits}), a prime entry
-(Lemma~\ref{lem:stage3}); the well-formedness makes the moduli of the third stage such primes
-(Definition~\ref{def:Params}).
+The run over the blocks (Definition~\ref{def:sieveRun}) takes the cut points of the choice of the
+moduli as the decision of its first block (\csource{find_points.c}{3861}{3861}), and each block the
+ends $s_2$ and $s_3$ of the second and the third stage of the decision of the correction in force
+for it (\csource{find_points.c}{3911}{3911}; Definition~\ref{def:runBlock}): it reads the rows of
+the entries of the first two stages from the store of the tables of rows or builds them into it,
+passing the store from one denominator and one block to the next, ends the first stage at $s_1$ and
+hands the entries from $s_2$ to $s_3$ to \verb|sift| for the third stage, with the reciprocals that
+the array of the reciprocals holds at their positions. Its contract (Theorem~\ref{thm:blocks})
+needs $b_{\mathrm{low}} \ge 1$, $b_{\mathrm{high}} < 2^{63}$ and $H < 2^{63}$, since the test for
+common factors computes on words and does not end for $b = 0$ and an odd numerator, that the array
+of the reciprocals holds those of the entries in their order, that the entries that count no factor
+are prime entries, since a correction may take further primes into the third stage, a well-formed
+first decision (Definition~\ref{def:decisionWF}), and, for the packing (Chapter~\ref{chap:packing}),
+that the entries have their tables of inverses and the row offsets of the classes, which pack the
+2-adic words, and, for their rows, a store of the tables of rows that fits all of them
+(Chapter~\ref{chap:rows}). The search (Definition~\ref{def:searchPoints}), whose contract takes
+$H < 2^{63}$, which the refusal of \verb|findPoints| gives, and $1 \le b_{\mathrm{low}}$,
+$b_{\mathrm{high}} \le H$, passes its range of the denominators, the result of the choice of the
+moduli, its reciprocals and its store of the tables of rows, and the classes with their row offsets
+(Lemma~\ref{lem:soundRun}); the contract of the choice (Lemma~\ref{lem:choice}) gives the entries of
+the moduli in their order, each with the reciprocal of its modulus, a store of the tables of rows
+that fits them, the entries that count no factor prime entries (Lemma~\ref{lem:stage3}), and a
+well-formed first decision.
 
 \section{The cut points of the command line}\label{sec:cuts}
 
-The parameters of the executable (Definition~\ref{def:sieveParams}) take the cut points by the
-counting rules of ratpoints, where they do not depend on the curve. For the number
-$q = \min(k, \mathrm{numPrimes})$ of primes examined, with the value $k \ge 0$ of \verb|-p| or else
-$\mathrm{defaultNumPrimes}$, the bound $L$ on the moduli is $q$ under \verb|-p|, which is a hard
-limit for every stage (\csource{find_points.c}{4577}{4577}), and $\mathrm{numPrimes}$ without it,
-since ratpoints then looks at further primes when its stages want more
-(\csource{find_points.c}{2693}{2705}, \csource{find_points.c}{2980}{2980}). With the values $n$, $N$
-and $P$ of \verb|-n|, \verb|-N| and \verb|-P|, each absent when negative, and the constants
-$\mathrm{defaultSp1} = 11$ (\verb|RATPOINTS_DEFAULT_SP1|), in the node of the parameters of the
-executable, and $\mathrm{sp2Extra} = 11$ (\verb|RATPOINTS_SP2_EXTRA|), among the constants of the
-choice (Definition~\ref{def:choiceConstants}):
-\begin{itemize}
-  \item $N$ is capped at $q$, and the first stage takes $s_1 = \min(n, N)$ moduli, or
-    $\min(n, L)$ without \verb|-N|, or $\min(\mathrm{defaultSp1}, L)$ without \verb|-n|, a count
-    that an option gives being taken as it is (\csource{ratpoints.h}{42}{42},
-    \csource{find_points.c}{2503}{2503}, \csource{find_points.c}{2845}{2846},
-    \csource{find_points.c}{4655}{4656});
-  \item the second stage ends at $s_2 = \max(s_1, N)$, the first two stages topped up to $N$, or
-    without \verb|-N| at $\min(s_1 + \mathrm{sp2Extra}, L)$, the offset that ratpoints adds unscaled
-    under \verb|-U 0| (\csource{ratpoints.h}{95}{97}, \csource{find_points.c}{1619}{1623},
-    \csource{find_points.c}{2571}{2572}, \csource{find_points.c}{2599}{2599},
-    \csource{find_points.c}{2808}{2808}, \csource{find_points.c}{2815}{2815},
-    \csource{find_points.c}{2864}{2869});
-  \item the moduli are the first $\min(s_2 + P, L)$ primes of the table, or without \verb|-P| the
-    first $\max(s_2, q)$, so that the third stage holds the rest of the first $q$
-    (\csource{find_points.c}{2922}{2922}, \csource{find_points.c}{2926}{2928},
-    \csource{find_points.c}{2949}{2949}, \csource{find_points.c}{2973}{2975},
-    \csource{find_points.c}{3015}{3015}, \csource{find_points.c}{3017}{3017}).
-\end{itemize}
-A run without options has $11$ moduli in the first stage, $11$ more in the second and $8$ in the
-third, the first $30$ primes in all, and uses all three stages. The parameters are well-formed
-(\verb|wf_sieveParams|): the moduli are a prefix of the first $\mathrm{numPrimes}$ primes of the
-table, and $s_1 \le s_2 \le$ their number. Where ratpoints decides by the curve, it may take fewer
-moduli in a stage: the primes that say nothing leave its pool, those that say only that the
-numerator is prime to the denominator stay in the pool of the first two stages without counting
-toward the primes it looks for and leave that of the third, and its composite moduli take several
-primes of the pool. So the counts that the options fix bound those of ratpoints: its first stage
-under \verb|-n|, its first two stages under \verb|-n| and \verb|-N| (or \verb|-n| and \verb|-U 0|
-without \verb|-R|), and all its moduli under \verb|-n|, \verb|-N| and \verb|-P|. Where an option is
-absent, ratpoints chooses $s_1$, the offset of the second stage and the length of the third by their
-costs, its third stage taking the primes of its pool in increasing order of their densities, which
-may give more moduli in a stage or fewer; there is no bound on a stage for \verb|-N| without
-\verb|-n|, nor for \verb|-P| alone. The cut points change neither the points nor their order, so the
-model takes the counts that the options give and states the rest as a deviation.
+The choice of the moduli (Definition~\ref{def:choice}) takes the cut points as ratpoints takes them
+from the curve: for the number of the primes looked at, the value $k \ge 0$ of \verb|-p| or else
+$\mathrm{defaultNumPrimes}$, at most $\mathrm{numPrimes}$, a hard limit for every stage under
+\verb|-p| (\csource{find_points.c}{4577}{4577}), while without it ratpoints looks at further primes
+when its stages want more (Definition~\ref{def:tablesLoop}), the first stage takes the value of
+\verb|-n| as it is or else the candidates in the order of their keys while the survivors per word
+that the next one removes are worth its cost (with the target \verb|RATPOINTS_SURVIVORS_PER_WORD|),
+the second the value of \verb|-N| less the first or else an offset that grows with the length of the
+run, whose base is $\mathrm{sp2Extra} = 11$ (\verb|RATPOINTS_SP2_EXTRA|) or the value of \verb|-R|
+(Definitions~\ref{def:costModel} and~\ref{def:firstStages}), and the third, under \verb|-P| its
+value, the primes of the pool in increasing order of their densities while the survivors that they
+remove are worth the denominators they are carried through (Definition~\ref{def:thirdStage}); the
+primes after the third stage are the reserve. The correction of the moduli moves the end of the
+third stage between the blocks, and with \verb|-A 2| also that of the second, when neither \verb|-n|
+nor \verb|-N| fixes the cut points (Definition~\ref{def:correction}). The parameters of the
+executable (Definition~\ref{def:sieveParams}), which the search does not call, take the cut points
+by the counting rules of ratpoints where they do not depend on the curve, with $\mathrm{defaultSp1}
+= 11$ (\verb|RATPOINTS_DEFAULT_SP1|, which the C code reads nowhere) for an absent \verb|-n| and the
+flat offset $\mathrm{sp2Extra}$ for an absent \verb|-N|. The cut points change neither the points
+nor their order.
 
 \section{The command-line program and the differential tests}\label{sec:stagesCli}
 
-The program runs the three stages with the cut points of its parameters; without options, the moduli
-of the first $30$ primes are split $11$, $11$ and $8$. The differential tests compare every point
+The program runs the three stages with the cut points of the choice of the moduli and their
+correction between the blocks, as ratpoints does (Definitions~\ref{def:choice}
+and~\ref{def:correction}). The differential tests compare every point
 list in its order; the suite of the sieving parameters (Section~\ref{sec:sieveCli}) has six option
 sets of \verb|-n|, \verb|-N| and \verb|-P| that run the second and the third stage after few moduli
 or none in the first, at the small heights of the suite: then most numerators reach the test of a
@@ -609,21 +584,18 @@ Each component of this chapter differs from the C code in a stated way, recorded
     of the C code, since $k q \le b$ where the multiplication gives the quotient; the reciprocal of
     every kind of modulus set where the model makes its sieve entry, where \verb|examine_prime|,
     \verb|make_power| and \verb|make_modulus| set it; the reciprocals that \verb|sieving_info|
-    returns those of the moduli of the parameters, where it also collects those of the primes after
-    them that the correction of the moduli may take (stage~I); and the reciprocals in the entries of
-    the forbidden divisors tested with words, which ratpoints reads only for the first word of a
-    block, kept but read nowhere before the blocks (stage~I);
-  \item the cut points of the parameters for the whole run, where \verb|run_block| sets the ends of
-    the second and the third stage for each block from the correction of the moduli (stage~I); the
-    parameters of the command line by the counts that the options give, with
-    $\mathrm{defaultSp1}$ for an absent \verb|-n|, which ratpoints reads nowhere, and the flat
-    offset $\mathrm{sp2Extra}$ for an absent \verb|-N|, for the choices by cost, the scaled offset
-    and \verb|-R|, which the model ignores (stage~I);
+    returns those of all the sieve entries, the reserve of the correction included
+    (Definition~\ref{def:choice});
+  \item the parameters of the executable, which the search does not call, by the counts that the
+    options give, with $\mathrm{defaultSp1}$ for an absent \verb|-n|, which ratpoints reads
+    nowhere, and the flat offset $\mathrm{sp2Extra}$ for an absent \verb|-N|, for the choices by
+    cost, the scaled offset and \verb|-R|;
   \item the counts of the numerators that reach the test for common factors and the third stage and
     of the bits, the bit arrays, the words and the denominators that the stages see, which ratpoints
     reads to correct the moduli between the blocks, in a record of their own
-    (Definition~\ref{def:counters}) passed and returned beside the delivery, which the run of the
-    model discards until the correction of stage~I reads them, and no counts, stops, timings and
+    (Definition~\ref{def:counters}) passed and returned beside the delivery, which the run adds up
+    block by block for the correction (Definition~\ref{def:correction}), and no counts, stops,
+    timings and
     output of the instrumentation of the stages; the arguments of the run passed explicitly, for the
     pointer of the sieving thread to them, with no pool, slot and stop flag of a thread of the pool
     (stage~I).
@@ -644,12 +616,11 @@ sieve specs, which only it reads, are modelled since stage~F4 (Chapter~\ref{chap
 options of the output \verb|RATPOINTS_NO_Y| and \verb|RATPOINTS_NO_CHECK| of the search, which the
 search copies into the flags that the exact check reads, since stage~G (Chapter~\ref{chap:output}),
 and the search intervals of the sieving thread and the Sturm step since stage~H
-(Chapter~\ref{chap:region}); left to stage~I the correction of the moduli between the blocks, with
-the decisions of the sieving thread and its reading of the counters (Definition~\ref{def:counters}),
-the choice of the cut points by cost (with the target \verb|RATPOINTS_SURVIVORS_PER_WORD|), the pool
-of threads, and, with the blocks, the reduction of the first word of a block modulo the forbidden
-divisors tested with words, which still divides (\verb|wordBits|), with the reciprocals of these
-divisors.
+(Chapter~\ref{chap:region}); and the correction of the moduli between the blocks, with the decisions
+of the sieving thread and its reading of the counters (Definition~\ref{def:counters}), the choice of
+the cut points by cost (with the target \verb|RATPOINTS_SURVIVORS_PER_WORD|), and, with the blocks,
+the reduction of the first word of a block modulo the forbidden divisors tested with words by their
+reciprocals, since stage~I (Chapter~\ref{chap:moduli}), which leaves out the pool of threads.
 
 \section{Files and names}\label{sec:stagesFiles}
 
@@ -665,12 +636,12 @@ for common factors, the third stage, the test of a candidate and the exact check
 reference; the second stage in both arms, a bit array through the second stage and the extraction,
 and the walk, the scan, one piece and one denominator that run the stages in
 \verb|Ratpoints/Model/Sieve.lean|, in the namespace \verb|Ratpoints.Sieve|; the run with the cut
-points and the Jacobi test with the reciprocals of its tables in
+points in \verb|Ratpoints/Model/Blocks.lean| (in \verb|Ratpoints/Model/Denominators.lean| until
+stage~I) and the Jacobi test with the reciprocals of its tables in
 \verb|Ratpoints/Model/Denominators.lean|; the parameters of the command line in
-\verb|Ratpoints/Model/Params.lean|; the refusal of the heights from $2^{63}$ on, the reciprocal of
-the sieve entry of a modulus, the reciprocals that \verb|sieving_info| returns and the search with
-the cut points of its parameters in \verb|Ratpoints/Model/FindPoints.lean|; and the description of
-error~4 in \verb|Ratpoints/Model/Setup.lean|.
+\verb|Ratpoints/Model/Params.lean|; the refusal of the heights from $2^{63}$ on and the search in
+\verb|Ratpoints/Model/FindPoints.lean|, with the reciprocals of the sieve entries of given moduli;
+and the description of error~4 in \verb|Ratpoints/Model/Setup.lean|.
 
 The contracts of the test for common factors, of the third stage with the test of a candidate, with
 the points that the extraction delivers for a numerator, and of the second stage are in
@@ -697,7 +668,8 @@ lists and vectors that the scan and the sieve of one denominator use (\verb|List
 non-negative, the residue of $(a \bmod p)\, b$ and its shift by $p H$, the bound
 $|a b| + H \le p H$, and a divisor $p > 1$ of $b$ that divides no numerator prime to $b$). The
 Jacobi test with the reciprocals of its tables is in \verb|Ratpoints/Proof/JacobiTables.lean|; the
-run with the cut points in \verb|Ratpoints/Proof/Denominators.lean|, with the bounds of the
+run with the cut points in \verb|Ratpoints/Proof/Correction.lean| since stage~I (in
+\verb|Ratpoints/Proof/Denominators.lean| before), with the bounds of the
 denominators of the shapes, between $b_{\mathrm{low}}$ and $b_{\mathrm{high}}$, in
 \verb|Ratpoints/Proof/Shapes.lean|; the reciprocal and the shape of the sieve entry of a modulus in
 \verb|Ratpoints/Proof/Moduli.lean|; the entries and the reciprocals of \verb|sieving_info|, the

@@ -1778,7 +1778,7 @@ The harness compares the search region and the Sturm step with the C program at 
     them, and the one of \verb|test3.sh| are compared, by their points in their order, their
     reports and their errors;
   \item a search above the largest height of the default suites, $30000$, is compared when it has
-    a search region, the model lists at most $10^5$ denominators for it (by a bound that mirrors the
+    a search region, the model sifts at most $10^5$ denominators for it (by a bound that mirrors the
     divisor set-up of the model), and it sifts at most $2 \cdot 10^{10}$ numerators, from the widths
     of the intervals and, under \verb|-1|, from the first point of the expected output, where the
     search stops; such searches run with a timeout and a cap of $4$~GB on the memory: the searches
@@ -1787,29 +1787,27 @@ The harness compares the search region and the Sturm step with the C program at 
   \item messages~3 and~8 are compared byte for byte in every report; only message~4, on the moduli
     used, is dropped from the report of the C program (stage~I);
   \item under \verb|-x| the lines are the survivors of the sieve over the intervals that the Sturm
-    step keeps, which depend on the moduli and on the search region. The outputs are compared
-    exactly with the C program on the command line with the moduli pinned (\verb|-p 30 -N 30|
-    appended, without \verb|-s|) when the pin does not change the output of \verb|ratpoints-lean|
-    and the C program on that command line sieves with the first $30$ odd primes in its first two
-    stages and no third stage, as its report under \verb|-v -z| says (the moduli are read from the
-    command line that is compared, since the choice of the moduli of the C program reads the search
-    intervals), or does not sieve at all. Without a format or a string, every run under \verb|-x| is
-    also compared by the weaker check against the C program on the command line itself, with the
-    exact search region of the command line and the range of the denominators, as \verb|process| of
-    \verb|main.c| tests them; it is the only check where the pin changes the output of
-    \verb|ratpoints-lean|, or where the C program sieves with other moduli under the pin (a subset
-    of the $30$ primes, or composite moduli such as $9$ in place of $3$, or $55$ and $63$ in place
-    of $3$, $5$, $7$ and $11$), which stage~I models, and the reason is counted;
+    step keeps, which depend on the moduli and on the search region. Until stage~I the outputs were
+    compared exactly with the C program on the command line with the moduli pinned
+    (\verb|-p 30 -N 30| appended) when the pin did not change the output of \verb|ratpoints-lean|
+    and the C program on that command line sieved with the first $30$ odd primes in its first two
+    stages and no third stage; since stage~I, which chooses the moduli from the curve, the search
+    intervals among what the choice reads, they are compared exactly with the C program on the same
+    command line (Section~\ref{sec:moduliTests}). Without a format or a string, every run under
+    \verb|-x| is also compared by the weaker check against the C program on the command line itself,
+    with the exact search region of the command line and the range of the denominators, as
+    \verb|process| of \verb|main.c| tests them;
   \item the default suite \verb|regions| runs $400$ random search regions against the C program:
     intervals with ends of every kind (decimals, hexadecimal constants, ends that are no doubles,
     infinities, numbers beyond the range of the doubles, tiny ones, $-0$, intervals that touch or
     whose doubles meet, a missing first \verb|-l| or last \verb|-u|), ranges of the denominators of
     every shape and random options, at small heights, and in one run in ten at a large height with a
     narrow region, its ends exact doubles at times, also around points of large height and at the
-    ends of the range $[-H, H]$ of the numerators, at times under \verb|-x| with the moduli pinned;
+    ends of the range $[-H, H]$ of the numerators, at times under \verb|-x| (since stage~I at times
+    with \verb|-p 30 -N 30|, before always);
   \item the default suite \verb|depths| runs $300$ random depths of the Sturm step, \verb|-S 0| to
     \verb|-S 60| and \verb|-s|, with \verb|-q| or the report (message~8), at times with intervals,
-    \verb|-k| or \verb|-x| with the moduli pinned;
+    \verb|-k| or \verb|-x| (since stage~I at times with \verb|-p 30 -N 30|, before always);
   \item the errors suite has the cases of the search region: errors~7 and~6, the join, the test of
     the callback, the suppression of the reversal, and the order with a range of the denominators;
     the fuzz draws ends for \verb|-l| and \verb|-u| and \verb|long|s for \verb|-dl| and \verb|-du|.
@@ -1820,8 +1818,10 @@ $16$ (five outputs filtered), \verb|rptest| $1206$, \verb|random| $300$, \verb|o
 search under \verb|-x| with a format not compared exactly), the errors suite $360$, the fuzz $800$,
 the parameters $272$, the high suite $12$, \verb|regions| $400$ and \verb|depths| $300$, with $142$
 runs under \verb|-x| compared exactly and $7$ by the weaker check alone, all for the moduli that the
-C program chose under the pinned options (stage~I); and \verb|test4high| compared $13$, none failed.
-Every point list is compared in its order.
+C program chose under the pinned options; and \verb|test4high| compared $13$, none failed. Every
+point list is compared in its order. Since stage~I the runs under \verb|-x| are compared exactly
+with the C program on the same command line, but for those with a tuning option that the program
+does not read yet, which only the weaker check compares (Section~\ref{sec:moduliTests}).
 
 The \verb|#guard| examples of the model check the doubles against a driver of gcc and glibc (the
 conversions of \verb|long|s, the comparisons, \verb|nextafter|, the negation, \verb|fabs|,
@@ -1971,18 +1971,19 @@ integers of \verb|scan_end| and the allocation and release of its digits
 \csource{main.c}{874}{874}, \csource{main.c}{877}{877}), memory. The message of error~9
 (\verb|main.c:1048|) is modelled, as the program gives that error for the refusal
 $\mathrm{badArgs}$. Every line of \verb|sturm.c| is recorded. The lines left free after stage~H are
-stage~I's: in \verb|find_points.c| the threads and the numbers of the moduli used (the choice of
-the moduli by the curve having been recorded with Section~\ref{sec:choice}, the plan of the blocks,
-the loops of the shapes over a block and one block with Section~\ref{sec:blocks}, and the
-correction of the moduli between the blocks with Section~\ref{sec:correction}); in
-\verb|ratpoints.h| the number of threads of \verb|ratpoints_args| (line 370), the numbers of the
-moduli used (line 378), and the pool of threads (line 398), the tuning fields (lines 365-367)
-having left it with the options of the sieve (Definition~\ref{def:sieveOptions}), the end of the
-type (lines 399-400) with the search with a callback and a print channel
-(Definition~\ref{def:findPointsVerbose}) and the other private data with what holds their data or as
-memory that the model does not allocate; in \verb|rp-private.h| the macros of the threads (lines
-76-84) and, in \verb|rp_worker|, the fields of the pool (line 584), the counters of the block having
-left it with Definition~\ref{def:counters}, the decision of the correction with one block
+stage~I's: in \verb|find_points.c| the numbers of the moduli used (the choice of the moduli by the
+curve having been recorded with Section~\ref{sec:choice}, the plan of the blocks, the loops of the
+shapes over a block and one block with Section~\ref{sec:blocks}, the correction of the moduli
+between the blocks and the run with Section~\ref{sec:correction}, and the threads excluded); in
+\verb|ratpoints.h| the numbers of the moduli used (line 378), the number of threads of
+\verb|ratpoints_args| (lines 370-376) and the pool of threads (line 398) excluded with the threads,
+the tuning fields (lines 365-367) having left it with the options of the sieve
+(Definition~\ref{def:sieveOptions}), the end of the type (lines 399-400) with the search with a
+callback and a print channel (Definition~\ref{def:findPointsVerbose}) and the other private data
+with what holds their data or as memory that the model does not allocate; in \verb|rp-private.h|
+nothing, the macros of the threads (lines 76-84) and, in \verb|rp_worker|, the fields of the pool
+(line 584) excluded with the threads, the counters of the block having left it with
+Definition~\ref{def:counters}, the decision of the correction with one block
 (Definition~\ref{def:runBlock}) and the name of the type with one denominator
 (Definition~\ref{def:sift}); and in \verb|main.c| message~4, on the moduli used (lines 992-998), the
 defaults of the tuning options \verb|-r -R -U -C -A -Q -W| (lines 339-343 and 345-346) having left
@@ -2044,8 +2045,9 @@ and the bound of the bisection; \verb|Ratpoints/Proof/SturmRegion.lean| ($298$ l
 \verb|Ratpoints/Proof/Bounds.lean| and \verb|Ratpoints/Proof/SturmCoverage.lean|, with the Sturm
 step of the search, the region that the search uses and the bounds of the arrays; and
 \verb|Ratpoints/Proof/CliNumbers.lean| ($1118$ lines), above the roundings, with the numbers of the
-command line. Of the files of the earlier stages, \verb|Ratpoints/Proof/Denominators.lean| has the
-contract of the run on the bounds and what \verb|run_setup| returns;
+command line. Of the files of the earlier stages, \verb|Ratpoints/Proof/Denominators.lean| has what
+\verb|run_setup| returns (and had the contract of the run on the bounds until stage~I, in
+\verb|Ratpoints/Proof/Correction.lean| since then);
 \verb|Ratpoints/Proof/FindPoints.lean| the points that the search delivers over the search
 intervals; \verb|Ratpoints/Proof/BruteForce.lean| the reference split at the candidate $(1, 0)$ and
 filtered to a range of denominators; \verb|Ratpoints/Proof/Shapes.lean| the divisors times squares

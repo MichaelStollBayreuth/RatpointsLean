@@ -279,7 +279,11 @@ status:
     sieve with no hypothesis on them, in place of the sieving parameters and their well-formedness,
     which are internal to the search; the statements for comparator are eleven, the
     well-formedness of the parameters of the program no longer among them, and comparator accepted
-    all eleven on 2026-10-25. Next: the rest of stage I, which the blueprint plans.
+    all eleven on 2026-10-25; the search chooses its moduli and cut points from the curve as
+    ratpoints does and runs the denominators in blocks with the correction of the moduli between
+    them, the threads left out with the property that they preserve proved, comparator accepting the
+    eleven again on 2026-10-25, and the differential tests compare -x exactly against the C program
+    on the same command line. Next: the rest of stage I, which the blueprint plans.
   sorry_count: 0
   sorry_in_definitions: 0
   axioms: ["propext", "Classical.choice", "Quot.sound"]
@@ -388,18 +392,14 @@ fidelity:
     high half of the 128-bit product, for which Lean core has no type, from the 32-bit halves; a
     pointer is an index; the SIMD operations are the word operations they implement, and the arm of
     the first stage that the build compiles is chosen by a test on the constant of the chunk; the
-    threads are replaced by the sequential order of the blocks; the heuristics that choose the
-    sieving parameters by the curve are modelled, but nothing calls them yet (stage I), since the
-    proofs hold for every well-formed choice and the theorems for every value of the options of the
-    sieve; the search takes the parameters of its options by the counting rules of ratpoints where
-    these do not depend on the curve; the doubles of the search intervals are their
+    threads are replaced by the sequential order of the blocks, which gives the same output; the
+    heuristics that choose the sieving parameters by the curve are modelled and run in the search, as
+    in ratpoints, and the theorems hold for every value of the options of the sieve, whatever moduli
+    the search chooses; the doubles of the search intervals are their
     IEEE bits, with a model function for each operation on them, and the specification reads their
     values as extended rationals; the callback is a Lean function that takes the coordinates and the
     caller's data and returns its value, whether it stops the search, and the new data, for the C
-    function with the pointers info and quit; until the blocks of stage I the model lists the
-    denominators of a shape before it sieves the first one, all of them, also those after a stop, so
-    that a stop in the sieve does not save the time and the memory of that listing, which grow with
-    the height; and the theorems that read the points with the Sturm step on assume Sturm's theorem,
+    function with the pointers info and quit; and the theorems that read the points with the Sturm step on assume Sturm's theorem,
     which Mathlib does not have yet (Ratpoints.SturmTheorem, a hypothesis, not an axiom). Where the
     library function find_points and the command-line program differ (the order of the checks on the
     input), the model follows the program. Each deviation is recorded with its component in the

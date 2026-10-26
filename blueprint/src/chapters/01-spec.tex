@@ -272,8 +272,9 @@ form of stage~H (Section~\ref{sec:certifiedH}) on 2026-10-18. Since stage~I the 
 options of the sieve with no hypothesis on them, in place of the parameters and their
 well-formedness, \verb|wf_sieveParams| is gone, and \verb|Params|, \verb|Params.WF| and
 \verb|sieveParams| are no longer taken from the model: eleven statements remain
-(Section~\ref{sec:certifiedI}), which \verb|lake comparator --paranoid| accepted on 2026-10-25;
-Section~\ref{sec:sieveTheorems} records the earlier acceptances.
+(Section~\ref{sec:certifiedI}), which \verb|lake comparator --paranoid| accepted on 2026-10-25, and
+\verb|lake comparator| again, with the choice of the moduli and the run over the blocks, on
+2026-10-25; Section~\ref{sec:sieveTheorems} records the earlier acceptances.
 
 \section{The command-line program}\label{sec:cli}
 
@@ -469,9 +470,12 @@ Section~\ref{sec:sieveCli}, stage~C2 raises the largest height to $30000$ and ad
 \verb|test4high|, run locally, Section~\ref{sec:wordsCli}, stage~D compares the refusals, the
 options of the search and the order, Section~\ref{sec:setupCli}, stage~E every point list in its
 order, Section~\ref{sec:denCli}, stage~G the options of the output, the reports and the suite
-\verb|outputs|, Section~\ref{sec:outputTests}, and stage~H the search region and the Sturm step,
+\verb|outputs|, Section~\ref{sec:outputTests}, stage~H the search region and the Sturm step,
 the suites \verb|regions| and \verb|depths| and the runs of \verb|test4.sh| and \verb|test3.sh|
-with a search region, Section~\ref{sec:regionTests}):
+with a search region, Section~\ref{sec:regionTests}, and stage~I the pairs under \verb|-x| compared
+exactly with the C program, the runs of the high suite where the C program corrects its moduli, the
+local suite \verb|adapt| and the pair of a build of the C program with the block length $3$ against
+the model with that block length, Section~\ref{sec:moduliTests}):
 \begin{itemize}
   \item \verb|test4.sh| against \verb|testbase4|, split at the \verb|#| header lines (five of which
     are glued to the end of the preceding output line): 565 of its 582 runs, among them the outputs
@@ -508,8 +512,8 @@ with a search region, Section~\ref{sec:regionTests}):
     exit with status~141, both without a message (unless nothing is written), and a full device,
     where both must ignore the failure;
   \item 300 random polynomials at small heights with random options of the output, \verb|-q| or
-    \verb|-v|, formats and strings, the moduli pinned at times, against the C program (the suite
-    \verb|outputs|, since stage~G);
+    \verb|-v|, formats and strings, at times with \verb|-p 30 -N 30|, against the C program (the
+    suite \verb|outputs|, since stage~G);
   \item 400 random search regions, with ends of every kind and ranges of the denominators of every
     shape, with random options at small heights and, in one run in ten, at a large height with a
     narrow region, against the C program (the suite \verb|regions|, since stage~H);
@@ -525,8 +529,10 @@ Point lists are compared in their order (Section~\ref{sec:denCli}); a report, th
 without \verb|-q|, exactly, with the banner exchanged for that of the C program and message~4
 dropped from the report of the C program only (messages~3 and~8 compared), also the refusal of a
 form that is not squarefree without \verb|-q|, and the output under \verb|-v| by its lines; the
-outputs with the options of the output, under \verb|-x| as Sections~\ref{sec:outputTests}
-and~\ref{sec:regionTests} say; messages and exit codes are compared exactly (but for a pipe without
+outputs with the options of the output, under \verb|-x| exactly with the C program on the same
+command line and by the weaker check of Sections~\ref{sec:outputTests} and~\ref{sec:regionTests}
+(since stage~I, Section~\ref{sec:moduliTests}, which also says which runs only the weaker check
+compares); messages and exit codes are compared exactly (but for a pipe without
 a reader, where the two programs end differently by design), with the banner and the usage of the
 two programs exchanged; and \verb|ratpoints-lean| must write nothing to its standard error (it runs
 with \verb|LEAN_ABORT_ON_PANIC=1|, so that a panic of the Lean runtime ends it). CI builds the C

@@ -495,31 +495,33 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
 
 The sieve of one denominator and the check of stage~C1 are the reference of the words, with this
 lemma, and hold no C ranges: the components of this chapter model those lines, with the cuts above.
-The run over the denominators (Definition~\ref{def:sieveRun}) passes the store of the tables of rows
-from one denominator to the next, the rows of the first $s_2$ sieve entries, those of the first two
-stages, read from it or built into it, hands the sieve entries from $s_2$ on and their reciprocals
-to the third stage, and delivers to the callback, for each denominator of its shape that passes the
-test of the shape, the points that \verb|sift| delivers in the packing of its class with the first
-stage ending at $s_1$, returning after a denominator at which the callback stopped the search, with
-the residues of $b / 2^k$ modulo the moduli of the first two stages, which the run computes before
-each call of \verb|sift|, as \verb|fill_bp_list| computes them (Definition~\ref{def:fillBpList});
-its contract holds for any cut points, $A \ge 1$, sieve entries with their reciprocals, the first
-$s_2$ with their tables of inverses, the row offsets of the classes and a store of the tables of
-rows that fits them, those from $s_2$ on prime entries (Definition~\ref{def:stage3}), classes that
-pack the 2-adic words and whose patterns give the bits of \verb|den_bits|, the denominators from
-$b_{\mathrm{low}} \ge 1$ to $b_{\mathrm{high}} < 2^{63}$ and $H < 2^{63}$. The search of the
-polynomial (Definition~\ref{def:searchPoints}), which \verb|findPoints|
-(Definition~\ref{def:findPoints}) runs on the polynomial that the reversal check hands on, runs it
-with $A = \mathrm{arraySizeAt}(H)$ of its parameters, the sieve entries that \verb|sieving_info|
-makes of its moduli (Definition~\ref{def:sievingInfo}), primes, prime powers and products of them,
-the store of the tables of rows that it returns, and the classes with their row offsets
-(Lemma~\ref{lem:soundRun}). So the equation of the search needs the lower bound of the array size, a
-fact that stage~C1 did not need, and the reduction of the run to the reference
-(Theorem~\ref{thm:run_reference}), which needed the positivity of the moduli in stage~C2, needs
-since stage~F3 the tables of inverses and the row offsets of the entries of the first two stages and
-the classes that pack the 2-adic words, and since stage~F4 a store of the tables of rows that fits
-these entries; neither stage~C2 nor stage~F3 nor stage~F4 changed the statements of the main
-theorems or of the comparator challenge.
+The run over the blocks (Definition~\ref{def:sieveRun}) passes the store of the tables of rows from
+one block to the next, and one block from one denominator to the next
+(Definition~\ref{def:runBlock}), the rows of the sieve entries of the first two stages of the
+decision of the block read from it or built into it, hands the sieve entries of its third stage and
+their reciprocals to the third stage, and delivers to the callback, for each denominator of the
+block that passes the test of the shape, the points that \verb|sift| delivers in the packing of its
+class with the first stage ending at $s_1$, returning after a block in which the callback stopped
+the search, with the residues of $b / 2^k$ modulo the moduli of the first two stages, which the
+block computes before each call of \verb|sift|, as \verb|fill_bp_list| computes them
+(Definition~\ref{def:fillBpList}); its contract (Theorem~\ref{thm:blocks}) holds for $A \ge 1$,
+sieve entries with their reciprocals, their tables of inverses, the row offsets of the classes and a
+store of the tables of rows that fits all of them, since a correction may move the cut points, those
+that count no factor prime entries (Definition~\ref{def:stage3}), a well-formed first decision
+(Definition~\ref{def:decisionWF}), classes that pack the 2-adic words and whose patterns give the
+bits of \verb|den_bits|, the denominators from $b_{\mathrm{low}} \ge 1$ to
+$b_{\mathrm{high}} < 2^{63}$ and $H < 2^{63}$. The search of the polynomial
+(Definition~\ref{def:searchPoints}), which \verb|findPoints| (Definition~\ref{def:findPoints}) runs
+on the polynomial that the reversal check hands on, runs it with $A = \mathrm{arraySizeAt}(H)$ of
+the result of the choice of the moduli, its sieve entries, primes, prime powers and products of
+them, the reserve of the correction included, the store of the tables of rows that the choice
+returns, and the classes with their row offsets (Definition~\ref{def:choice},
+Lemmas~\ref{lem:choice} and~\ref{lem:soundRun}). So the equation of the search needs the lower
+bound of the array size, a fact that stage~C1 did not need, and the contract of the run, which
+needed the positivity of the moduli in stage~C2, needs since stage~F3 the tables of inverses and the
+row offsets of the entries and the classes that pack the 2-adic words, and since stage~F4 a store of
+the tables of rows that fits these entries; neither stage~C2 nor stage~F3 nor stage~F4 changed the
+statements of the main theorems or of the comparator challenge.
 
 Each component of this chapter differs from the C code in a stated way, recorded in its
 \verb|Deviation:| paragraph:
@@ -551,8 +553,9 @@ Each component of this chapter differs from the C code in a stated way, recorded
   \item the counts of the denominators sieved, of the words swept and of the bit arrays and
     numerators that reach each stage, which ratpoints reads to correct the moduli between the blocks
     of the run, in a record of their own (Definition~\ref{def:counters}) passed and returned beside
-    the delivery, for the fields of the sieving thread, which the run of the model discards until
-    the blocks and the correction of stage~I read them; no threads, and natural numbers and integers
+    the delivery, for the fields of the sieving thread, which the run adds up block by block for
+    the correction of the moduli (Definition~\ref{def:correction}); no threads, and natural numbers
+    and integers
     for the \verb|long|s, with a \verb|Nat| for \verb|array_size| so that only $0$ stands for the
     default.
 \end{itemize}
@@ -589,7 +592,7 @@ of stage~C1, each with \verb|#guard| examples, but for the lowest set bit, which
 uses it, and the sieve specs, the operations on bit arrays of the first stage and both arms of the
 first stage, which are in \verb|Ratpoints/Model/FirstStage.lean| since stage~F4, and the rows with
 their builders and the tables of rows, in \verb|Ratpoints/Model/Rows.lean| since stage~F4; the run,
-which stage~C2 put below them, is in \verb|Ratpoints/Model/Denominators.lean| since stage~E. The
+which stage~C2 put below them, is in \verb|Ratpoints/Model/Blocks.lean| since stage~I. The
 lower bound of the array size is in \verb|Ratpoints/Proof/Params.lean|. The contracts, without
 Mathlib, are in \verb|Ratpoints/Proof/Words.lean| for the bit arrays, the rows and the first stage
 one row at a time, with the closed form of the rows in \verb|Ratpoints/Proof/Rows.lean| and the
@@ -602,8 +605,8 @@ word up to the scan of a piece, since stage~G, which split it off \verb|Ratpoint
 with the contracts of their counters in \verb|Ratpoints/Proof/ScanCounts.lean| since stage~I, in
 \verb|Ratpoints/Proof/SiftBits.lean| for one piece and the bits of one interval, since stage~I,
 which split it off \verb|Ratpoints/Proof/Sift.lean|, and in \verb|Ratpoints/Proof/Sift.lean| for one
-denominator, on which the contract of the run rests (since stage~E in
-\verb|Ratpoints/Proof/Denominators.lean|, with Mathlib); the lemmas on vectors, arrays, lists,
+denominator, on which the contract of the run rests (since stage~I in
+\verb|Ratpoints/Proof/Correction.lean|, with Mathlib); the lemmas on vectors, arrays, lists,
 ranges, natural numbers and integers that are not about the model are in
 \verb|Ratpoints/Proof/Containers.lean| and those on words in \verb|Ratpoints/Proof/Bits.lean|, under
 their names in the namespaces of Lean core.

@@ -210,14 +210,28 @@ class Outputs(unittest.TestCase):
         self.assertEqual(dt.exact_region(dt.settings(['-q'])), [])
         self.assertFalse(dt.in_region(Fraction(0), [(Fraction(1), Fraction(2))]))
 
-    def test_c_moduli(self):
-        cfg = SimpleNamespace(c='/bin/sh')
-        report = ("printf '  use 2 moduli for first stage:\\n    9 5\\n  use 1 moduli for second "
-                  "stage:\\n    7\\n  use 0 primes for third stage:\\n   \\n'")
-        self.assertEqual(dt.c_moduli(cfg, ['-c', report, '-q']), ([5, 7, 9], 0))
-        self.assertIsNone(dt.c_moduli(cfg, ['-c', 'echo; echo found', '-q']))
-        self.assertEqual(dt.PINNED_MODULI[0], 3)
-        self.assertEqual((len(dt.PINNED_MODULI), dt.PINNED_MODULI[-1]), (30, 127))
+    def test_correction_possible(self):
+        def cp(args):
+            return dt.correction_possible(args, dt.settings(args[2:]))
+        self.assertTrue(cp(['1 0 1', '30000', '-q', '-x']))
+        self.assertFalse(cp(['1 0 1', '1000', '-q', '-x']))  # 1000 * 9 * 4 words at most
+        self.assertFalse(cp(['1 0 1', '30000', '-q', '-x', '-n', '5']))
+        self.assertFalse(cp(['1 0 1', '30000', '-q', '-x', '-N', '0']))
+        self.assertTrue(cp(['1 0 1', '30000', '-q', '-x', '-n', '-1']))
+        self.assertFalse(cp(['1 0 1', '30000', '-q', '-x', '-A', '0']))
+        self.assertTrue(cp(['1 0 1', '30000', '-q', '-x', '-A', '2']))
+        self.assertFalse(cp(['1 0 1', '30000', '-q', '-x', '-dl', '1', '-du', '100']))
+
+    def test_tuned(self):
+        def tuned(opts):
+            return dt.settings(opts).tuned
+        self.assertFalse(tuned(['-q', '-x', '-p', '30', '-N', '30', '-F', '5', '-t', '4']))
+        self.assertFalse(tuned(['-q', '-x', '-A', '1']))
+        self.assertFalse(tuned(['-q', '-x', '-A', '-3']))
+        self.assertTrue(tuned(['-q', '-x', '-A', '0']))
+        self.assertTrue(tuned(['-q', '-x', '-A', '2']))
+        self.assertTrue(tuned(['-q', '-x', '-r', '0.5']))
+        self.assertTrue(tuned(['-q', '-x', '-W', '1e6', '-A', '1']))
 
     def test_stderr(self):
         cfg = SimpleNamespace(lean_usage='U', c_usage='U')
@@ -251,16 +265,17 @@ class Outputs(unittest.TestCase):
 
     def test_settings(self):
         st = dt.settings(['-v', '-x', '-p', ' 30', '-N', '30', '-f', '-q', '-y', '-Y', '-zap'])
-        self.assertEqual((st.quiet, st.verbose, st.x, st.y, st.z, st.strings, st.pinned),
-                         (False, True, True, False, True, True, True))  # -f takes -q as its format
+        # -f takes -q as its format
+        self.assertEqual((st.quiet, st.verbose, st.x, st.y, st.z, st.strings, st.N),
+                         (False, True, True, False, True, True, 30))
         self.assertEqual(st.v_words, [0])
-        st = dt.settings(['-v', '-xfoo', '-X', '-q', '-1', '-p', '30'])
-        self.assertEqual((st.quiet, st.verbose, st.x, st.one, st.pinned, st.plain),
-                         (True, False, False, True, False, True))
+        st = dt.settings(['-v', '-xfoo', '-X', '-q', '-1', '-p', '30', '-n', '4', '-A', '0'])
+        self.assertEqual((st.quiet, st.verbose, st.x, st.one, st.n, st.A, st.plain),
+                         (True, False, False, True, 4, 0, True))
         self.assertEqual(dt.mode_of(dt.settings(['-q', '-y']), 0), 'exact')
         self.assertEqual(dt.mode_of(dt.settings(['-q', '-i', '-1']), 0), 'points')
-        self.assertEqual(dt.mode_of(dt.settings(['-x']), 0), 'weak')
-        self.assertEqual(dt.mode_of(dt.settings(['-x', '-N', '30', '-p', '30']), 0), 'report')
+        self.assertEqual(dt.mode_of(dt.settings(['-x']), 0), 'report')
+        self.assertEqual(dt.mode_of(dt.settings(['-x', '-q']), 0), 'exact')
         self.assertEqual(dt.live_mode(dt.mode_of(dt.settings(['-q']), 0)), 'exact')
         self.assertEqual(dt.mode_of(dt.settings([]), 8), 'report')
         self.assertEqual(dt.mode_of(dt.settings(['-q']), 8), 'exact')

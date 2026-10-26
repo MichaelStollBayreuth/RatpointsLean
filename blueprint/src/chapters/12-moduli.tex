@@ -945,7 +945,7 @@ proof uses then, and rewords the docstrings of the model that name it.
   The denominators of the steps of block $i$, before the tests of the shape, concatenated over the
   blocks of the run in order, are the denominators of the shape from $b_{\mathrm{low}}$ to
   $b_{\mathrm{high}}$ in the order of its loop, the listing of stage~E (Definition~\ref{def:Shape}),
-  a definition of the model until the run sifts the blocks (I.11) and of the proofs from then on;
+  a definition of the proofs since the run sifts the blocks;
   lists made block by block that agree on each block with lists of the denominators give those lists
   over the listing filtered by the test of the shape; and when the listing has no duplicates, a
   denominator lies in at most one block.
@@ -1099,14 +1099,9 @@ writes back (\csource{find_points.c}{5120}{5120}, \csource{find_points.c}{5152}{
 
 \begin{theorem}[The block lemma]\label{thm:blocks}
   \uses{def:sieveRun, lem:correctionAfter, lem:runBlock, lem:blockDens, lem:deliver}
-  Proposed names: \lname{Ratpoints.Sieve.blockPoints},
-  \lname{Ratpoints.Sieve.SieveRunLoopInvariant}, \lname{Ratpoints.Sieve.sieveRunLoopInvariant\_nil},
-  \lname{Ratpoints.Sieve.SieveRunLoopInvariant.pre},
-  \lname{Ratpoints.Sieve.SieveRunLoopInvariant.quit},
-  \lname{Ratpoints.Sieve.SieveRunLoopInvariant.append},
-  \lname{Ratpoints.Sieve.SieveRunLoopInvariant.post}, \lname{Ratpoints.Sieve.sieveRun\_spec},
-  \lname{Ratpoints.Sieve.fst\_run\_sieveRun},
-  \lname{Ratpoints.Sieve.exists\_run\_sieveRun\_eq\_deliver}. For sieve entries whose factors have
+  \lean{Ratpoints.Sieve.blockPoints, Ratpoints.Sieve.SieveRunLoopInvariant, Ratpoints.Sieve.sieveRunLoopInvariant_nil, Ratpoints.Sieve.SieveRunLoopInvariant.pre, Ratpoints.Sieve.SieveRunLoopInvariant.quit, Ratpoints.Sieve.SieveRunLoopInvariant.append, Ratpoints.Sieve.SieveRunLoopInvariant.post, Ratpoints.Sieve.sieveRun_spec, Ratpoints.Sieve.fst_run_sieveRun, Ratpoints.Sieve.exists_run_sieveRun_eq_deliver}
+  \leanok
+  For sieve entries whose factors have
   their tables of inverses and whose entries that count no factor are prime entries, the reciprocals
   of their moduli, the row offsets of the classes, the word of the classes that admit a numerator, a
   well-formed decision of the choice, forbidden divisors with their reciprocals, $A \ge 1$,
@@ -1123,6 +1118,7 @@ writes back (\csource{find_points.c}{5120}{5120}, \csource{find_points.c}{5152}{
 \end{theorem}
 
 \begin{proof}
+  \leanok
   The invariant of the loop over the blocks: the delivery is that of the points of the blocks done;
   while the callback has not stopped the search, the state of the correction is that in closed form
   after the folds of the blocks done and the store fits all the entries. A stop in a block ends the
@@ -1133,11 +1129,9 @@ writes back (\csource{find_points.c}{5120}{5120}, \csource{find_points.c}{5152}{
 
 \begin{theorem}[The blocks sifted apart]\label{thm:threads}
   \uses{thm:blocks, thm:lag, lem:runBlock, lem:deliver}
-  Proposed names: \lname{Ratpoints.Sieve.deliverSlots},
-  \lname{Ratpoints.Sieve.DeliverSlotsInvariant}, \lname{Ratpoints.Sieve.DeliverSlotsInvariant.quit},
-  \lname{Ratpoints.Sieve.DeliverSlotsInvariant.append}, \lname{Ratpoints.Sieve.deliverSlots\_spec},
-  \lname{Ratpoints.Sieve.toList\_info\_run\_runBlock\_appendPoint},
-  \lname{Ratpoints.Sieve.run\_deliverSlots\_eq\_fst\_run\_sieveRun}. The property that the pool of
+  \lean{Ratpoints.Sieve.deliverSlots, Ratpoints.Sieve.DeliverSlotsInvariant, Ratpoints.Sieve.DeliverSlotsInvariant.quit, Ratpoints.Sieve.DeliverSlotsInvariant.append, Ratpoints.Sieve.deliverSlots_spec, Ratpoints.Sieve.toList_info_run_runBlock_appendPoint, Ratpoints.Sieve.run_deliverSlots_eq_fst_run_sieveRun}
+  \leanok
+  The property that the pool of
   threads of the C code preserves, which the model leaves out: block $i$ sifted alone into a slot
   from the empty list, with the decisions after the folds of any $k_i \ge i - \mathrm{adaptLag}$
   blocks and a store of its own that fits all the entries, gives exactly the points of block $i$;
@@ -1146,6 +1140,7 @@ writes back (\csource{find_points.c}{5120}{5120}, \csource{find_points.c}{5152}{
 \end{theorem}
 
 \begin{proof}
+  \leanok
   From the lag lemma, the decision of each slot is that of its block, and the points of a block do
   not depend on the store that it starts from as long as it fits; the delivery of the slots in order
   is the delivery of the concatenation (Lemma~\ref{lem:deliver}).
@@ -1154,18 +1149,19 @@ writes back (\csource{find_points.c}{5120}{5120}, \csource{find_points.c}{5152}{
 \section{The search with the choice}\label{sec:choiceSearch}
 
 \begin{definition}[The search with the choice of the moduli]\label{def:chooseAndSearch}
-  \uses{def:choice, def:sieving, def:pointsAtInfinity, def:delivery, def:report, def:sieveOptions}
-  Proposed name: \lname{Ratpoints.chooseAndSearch}. The choice and the search after it, which the
-  search of the polynomial (Definition~\ref{def:searchPoints}) calls after the 2-adic information:
-  the choice of the moduli (Definition~\ref{def:choice}) and nothing delivered at its exit, after
-  the message of the exit; the report of the choice and of its moduli; the points at infinity, after
-  which the search returns when the callback has stopped it; the lines before the sieve, after which
-  it returns when the Sturm step left no interval; and the sieving with the result of the choice
-  (Definition~\ref{def:sieving}), returning the numbers of the moduli used, $s_1$ of the choice and
-  the ends $s_2$ and $s_3$ of the last block, and $0$ for each after the returns before the sieve
-  (\csource{find_points.c}{4996}{5006}, \csource{find_points.c}{5010}{5012},
-  \csource{find_points.c}{5100}{5103}, \csource{find_points.c}{5105}{5106},
-  \csource{find_points.c}{5210}{5213}).
+  \uses{def:choice, def:sieving, def:pointsAtInfinity, def:delivery, def:sieveOptions}
+  \lean{Ratpoints.chooseAndSearch}
+  \leanok
+  The choice and the search after it, which the search of the polynomial
+  (Definition~\ref{def:searchPoints}) calls after the 2-adic information: the choice of the moduli
+  (Definition~\ref{def:choice}) and nothing delivered at its exit, with the message of the exit
+  (I.15); the report of the choice and of its moduli (I.15); the points at infinity, after which the
+  search returns when the callback has stopped it; the lines before the sieve (I.15), after which it
+  returns when the Sturm step left no interval; and the sieving with the result of the choice
+  (Definition~\ref{def:sieving}), whose ends $s_2$ and $s_3$ of the last block, with $s_1$ of the
+  choice, give the numbers of the moduli used (I.13) (\csource{find_points.c}{4996}{5006},
+  \csource{find_points.c}{5010}{5012}, \csource{find_points.c}{5100}{5103},
+  \csource{find_points.c}{5105}{5106}, with I.13 \verb|find_points.c:5210-5213|).
 \end{definition}
 
 \begin{definition}[The search with the print channel]\label{def:findPointsVerbose}

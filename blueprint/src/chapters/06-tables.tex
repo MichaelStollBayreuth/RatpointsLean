@@ -191,8 +191,8 @@ that a point makes some entry of the reference true.
   from the lists of this loop at the position $n$, which stands for the final value of
   \verb|pn_lim|. It models no C code of its own: the lines of the loop of the tables of
   \verb|sieving_info| are those of the loop of the tables of the choice of the moduli
-  (Definition~\ref{def:tablesLoop}), which the search does not call yet, and this loop is that of
-  the explicit route of the search (Definition~\ref{def:sievingInfo}).
+  (Definition~\ref{def:tablesLoop}), which the search calls, and this loop is that of the sieve
+  entries of given moduli (Definition~\ref{def:sievingInfo}), which the search does not call.
 \end{definition}
 
 \begin{lemma}[The loop of the tables]\label{lem:examinePrimes}
@@ -357,22 +357,23 @@ which $\mathrm{maxPrimeEven} \le 2^{32}$ gives.
   (Definition~\ref{def:classOffsets}); the reference to the entry whose table of rows holds its rows
   and the kind of its builder (Definitions~\ref{def:entryRef} and~\ref{def:rowInit}); and its
   density, a \verb|Float|, and the count of its factors, $0$ for a prime, $1$ for a prime power and
-  their number for a product, which the correction of the moduli reads (stage~I)
-  (\csource{rp-private.h}{520}{520}, \csource{rp-private.h}{542}{555}). The reference of a factor,
-  to which the field \verb|factor| of the entry of a product points, is that of its prime or of its
-  prime power; the kind of the builder of the entry of a factor is, for a prime, the kind of the
-  builder of the prime of its table, which \verb|examine_prime| sets (line 1800), and for a prime
-  power the builder of a prime power, which \verb|make_power| sets (line 2420); and the reference
-  and the kind of the builder of the modulus at the position $n$ with its factors are, for one
-  factor (a prime or a prime power), those of the entry of that factor, whose entry the modulus
-  shares, as \verb|sieve_list[n]| is \verb|prime_se[pn]| or \verb|power_se[idx]|, and for a product
-  the reference to its own entry, by the position $n$, and the builder of a product. Its row of $b$
-  admits $a$ when the row of every factor admits $a$, each factor reading $b$ and $a$ modulo its own
-  modulus, which divides $m$, the admission test, which the builder of the rows of a product reads
-  off the rows of its factors (Definition~\ref{def:sieveInitProduct}); a numerator \emph{survives} a
-  list of sieve entries for $b$ when the row of $b$ of every entry admits it, the test that
-  Definition~\ref{def:admits} gave for the tables of primes. A sieve entry is \emph{sound} when its
-  modulus is positive and its row of $b$ admits $a$ for every $\gcd(a, b) = 1$ and $y^2 = F(a, b)$.
+  their number for a product, which the correction of the moduli reads
+  (Definition~\ref{def:correction}) (\csource{rp-private.h}{520}{520},
+  \csource{rp-private.h}{542}{555}). The reference of a factor, to which the field \verb|factor| of
+  the entry of a product points, is that of its prime or of its prime power; the kind of the builder
+  of the entry of a factor is, for a prime, the kind of the builder of the prime of its table, which
+  \verb|examine_prime| sets (line 1800), and for a prime power the builder of a prime power, which
+  \verb|make_power| sets (line 2420); and the reference and the kind of the builder of the modulus
+  at the position $n$ with its factors are, for one factor (a prime or a prime power), those of the
+  entry of that factor, whose entry the modulus shares, as \verb|sieve_list[n]| is
+  \verb|prime_se[pn]| or \verb|power_se[idx]|, and for a product the reference to its own entry, by
+  the position $n$, and the builder of a product. Its row of $b$ admits $a$ when the row of every
+  factor admits $a$, each factor reading $b$ and $a$ modulo its own modulus, which divides $m$, the
+  admission test, which the builder of the rows of a product reads off the rows of its factors
+  (Definition~\ref{def:sieveInitProduct}); a numerator \emph{survives} a list of sieve entries for
+  $b$ when the row of $b$ of every entry admits it, the test that Definition~\ref{def:admits} gave
+  for the tables of primes. A sieve entry is \emph{sound} when its modulus is positive and its row
+  of $b$ admits $a$ for every $\gcd(a, b) = 1$ and $y^2 = F(a, b)$.
 \end{definition}
 
 \begin{definition}[The sieve entry of a modulus]\label{def:makeModulus}
@@ -391,17 +392,18 @@ which $\mathrm{maxPrimeEven} \le 2^{32}$ gives.
   at the remainder of $\mathrm{rbaLength}$ by the reciprocal, \verb|make_power| for a prime power
   and \verb|make_modulus| for a product, computing it by Definition~\ref{def:modinv}, and leaves the
   inverses $\mathrm{dinv}$ empty for the rows of offsets (Definition~\ref{def:classOffsets}) to
-  fill, the count of its factors and the density $0$, which nothing reads before the choice of the
-  moduli (stage~I), and it holds the reference and the kind of builder of the position $n$ of $m$
-  among the moduli with its factors, as Definition~\ref{def:SieveEntry} gives them; it makes the
-  entries of the prime powers, and their tables, for each modulus that needs them; its tables of
-  rows, which lines 2427 and 2471 clear, are made by Definition~\ref{def:storeTables}. It models no
-  C code of its own: the lines of \verb|make_power| and \verb|make_modulus|, of the tables of a
-  prime power that \verb|add_moduli| examines when a candidate first needs it and keeps by its
-  index, and of the primes examined for the third stage are those of the components of the choice of
-  the moduli (Definitions~\ref{def:compositeModuli} and~\ref{def:thirdStage}), and the entries of
-  the prime powers and their count, lines 2546 and 2548, those of the choice itself
-  (Definition~\ref{def:choice}), which the search does not call yet.
+  fill, the count of its factors and the density $0$, which nothing reads, the search making the
+  choice of the moduli (Definition~\ref{def:choice}), and it holds the reference and the kind of
+  builder of the position $n$ of $m$ among the moduli with its factors, as
+  Definition~\ref{def:SieveEntry} gives them; it makes the entries of the prime powers, and their
+  tables, for each modulus that needs them; its tables of rows, which lines 2427 and 2471 clear, are
+  made by Definition~\ref{def:storeTables}. It models no C code of its own: the lines of
+  \verb|make_power| and \verb|make_modulus|, of the tables of a prime power that \verb|add_moduli|
+  examines when a candidate first needs it and keeps by its index, and of the primes examined for
+  the third stage are those of the components of the choice of the moduli
+  (Definitions~\ref{def:compositeModuli} and~\ref{def:thirdStage}), and the entries of the prime
+  powers and their count, lines 2546 and 2548, those of the choice itself
+  (Definition~\ref{def:choice}), which the search calls in place of this function.
 \end{definition}
 
 \begin{lemma}[The rows of a modulus let every point through]\label{lem:sieveEntry_admits}
@@ -497,9 +499,9 @@ $q$ primes and take primes as moduli (Definition~\ref{def:sieveParams}).
   array of the reciprocals of the entries, in their order; and the store; none when the curve has no
   points modulo a prime examined on the way. It models no C code of its own: \verb|sieving_info|,
   its lines 2522-2532, 3064-3070 and 3102-3103 among them, is the choice of the moduli
-  (Definition~\ref{def:choice}), which the search does not call yet, and this function stands for it
-  in the search; the loop over the moduli stands for the loop that makes the entries of the
-  composite moduli of the first two stages (Definition~\ref{def:firstStages}).
+  (Definition~\ref{def:choice}), which the search calls, and this function, which the search does
+  not call, stands for it; the loop over the moduli stands for the loop that makes the entries of
+  the composite moduli of the first two stages (Definition~\ref{def:firstStages}).
 \end{definition}
 
 \begin{lemma}[The sieve entries of given moduli are sound]\label{lem:sievingInfo}
@@ -551,10 +553,10 @@ The program is that of stage~E: its parameters examine the first $q$ primes and 
 moduli. F1 makes no further invocation of the test scripts comparable, since the options that it
 concerns have been read since stage~C1 and the output does not change; the differential tests stay
 as they are, every point list compared in its order. Composite moduli, which ratpoints chooses from
-the curve, reach the model through the parameters of the theorems; \verb|#guard| examples run the
-search with composite moduli in the stages, with the number of primes examined below and above the
-primes of the moduli, and compare the output with the brute-force reference, and with the reference
-of the reversed polynomial mapped back when the search reverses.
+the curve, the program chooses too since stage~I, as ratpoints does
+(Definition~\ref{def:compositeModuli}); \verb|#guard| examples run the search with composite moduli
+in the stages, made as the choice makes them, and compare the output with the brute-force reference,
+and with the reference of the reversed polynomial mapped back when the search reverses.
 
 \section{Deviations}\label{sec:tablesDeviations}
 
@@ -574,7 +576,7 @@ Each component of this chapter differs from the C code in a stated way, recorded
     modulus: its rows let every numerator through for a unit $b$. The fields of the sieve entry of a
     prime, the reciprocal, the bias and the inverse of $\mathrm{rbaLength}$ among them, are those of
     a sieve entry with the prime as its single factor, set where the model makes the entry of a
-    modulus, and its density $0$ there until the choice of the moduli (stage~I);
+    modulus, with its density, which the choice of the moduli sets (Section~\ref{sec:choice});
   \item the coefficients and the tables are fresh arrays, where the C code fills arrays of its
     caller and buffers; the tables of a prime power are computed for each modulus that needs them,
     where \verb|add_moduli| examines each prime power once and keeps it, and \verb|make_modulus|
@@ -594,14 +596,14 @@ Each component of this chapter differs from the C code in a stated way, recorded
     Chapter~\ref{chap:rows}, with their deviations (Section~\ref{sec:rowsDeviations}): the rows of
     the factors of a product read plainly, for the acquire load, and every row stored plainly, for
     the release store (stage~I);
-  \item the choice of the moduli, with its ranking, its composite moduli and its stages, is
-    modelled but called by nothing yet (Section~\ref{sec:choice}, stage~I), and the search reads no
-    densities: the moduli, their stages and the number of primes examined are those
-    of the parameters, and the parameters may hold moduli that ratpoints never offers (composites
-    above $\mathrm{RATPOINTS\_COMPOSITE\_MAX}$, with a factor beyond the examined primes, or with a
-    factor that says nothing), all sound; the parameters of the command line without \verb|-p| take
-    primes after the first $q$ when the counts of their stages ask for more, primes that ratpoints
-    then may examine too, and the model makes their entries with the others;
+  \item the search makes the choice of the moduli, with its ranking, its composite moduli and its
+    stages (Section~\ref{sec:choice}), whose deviations its components state; the sieve entries of
+    given moduli (Definition~\ref{def:sievingInfo}), which the search does not call, take the
+    moduli, their stages and the number of primes examined of the parameters, which may hold moduli
+    that ratpoints never offers (composites above $\mathrm{RATPOINTS\_COMPOSITE\_MAX}$, with a
+    factor beyond the examined primes, or with a factor that says nothing), all sound, and the
+    parameters of the executable without \verb|-p| take primes after the first $q$ when the counts
+    of their stages ask for more, whose entries they make with the others;
   \item the reciprocal, the bias and the inverse of $\mathrm{rbaLength}$ of a sieve entry are set
     with the entry for every kind of modulus, with the formulas of the C code
     (Definition~\ref{def:makeModulus}), the inverse of a prime read from its table; the inverses
@@ -620,9 +622,9 @@ of their sieve entries, which \verb|sieving_info| collects at its end
 third stage reads them
 (Definition~\ref{def:stage3}), and so do the first two stages, stepping them with the sieve specs
 (Definitions~\ref{def:chunkStarts} or~\ref{def:andRows}, by the arm, and~\ref{def:secondStage});
-left to stage~I is the use of the choice of the moduli, with the densities of the primes and the
-powers, \verb|add_moduli|, the stages, the ranking and the rule for looking at further primes, which
-Section~\ref{sec:choice} models.
+the search makes the choice of the moduli, with the densities of the primes and the powers,
+\verb|add_moduli|, the stages, the ranking and the rule for looking at further primes
+(Section~\ref{sec:choice}).
 
 \section{Files and names}\label{sec:tablesFiles}
 

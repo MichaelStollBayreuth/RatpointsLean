@@ -5,15 +5,13 @@ Authors: Michael Stoll
 -/
 module
 
-public import Ratpoints.Model.Denominators
-public import Ratpoints.Spec.Order
+public import Ratpoints.Proof.Shapes
 
 import Ratpoints.Mathlib.Data.List.Basic
 import Ratpoints.Proof.BruteForce
 import Ratpoints.Proof.Containers
 import Ratpoints.Proof.Order
 import Ratpoints.Proof.Setup
-import Ratpoints.Proof.Shapes
 
 /-!
 # The denominators of the search

@@ -164,7 +164,7 @@ CASES = [
     # the options of the output: -x and -X (the exact check), -y and -Y (the pairs), -z and -Z (no
     # points printed), -1 (one point), -i and -I (the points at infinity); the last one wins
     (['1 0 1', '5', '-q', '-x'], '-x: the survivors of the sieve, (x : z)'),
-    (['1 0 1', '5', '-q', '-x', '-n', '15', '-N', '30', '-p', '30'], '-x with the moduli pinned'),
+    (['1 0 1', '5', '-q', '-x', '-n', '15', '-N', '30', '-p', '30'], '-x with -n 15 -N 30 -p 30'),
     (['1 0 1', '5', '-q', '-x', '-X'], '-x -X: the last one wins, the points checked'),
     (['1 0 1', '5', '-q', '-xfoo', '-p', '30', '-N', '30'], '-xfoo is -x'),
     (['1 0 1', '5', '-q', '-y'], '-y: one point of each pair'),
@@ -190,7 +190,8 @@ CASES = [
      'the point at infinity is printed'),
     (['-1 0 9', '10', '-q', '-1', '-i'], '-1 -i after a reversal'),
     (['0 1 2', '40', '-q', '-1'], '-1: the point at infinity of the reversed polynomial'),
-    (['1 0 1', '5', '-x', '-n', '15', '-N', '30', '-p', '30'], '-x in the report, pinned'),
+    (['1 0 1', '5', '-x', '-n', '15', '-N', '30', '-p', '30'],
+     '-x in the report, with -n 15 -N 30 -p 30'),
     (['1 0 1', '5', '-y', '-j'], '-y -j in the report'),
     (['0 1 2', '40', '-z', '-y'], 'the report of a reversed polynomial'),
     (['1 0 0 6', '200', '-z'], 'the report: the divisors of the leading coefficient'),
@@ -260,7 +261,7 @@ CASES = [
      'intervals with -0 and a tiny end between them'),
     (['1 0 1', '10', '-v', '-l', '0', '-u', '1'], 'message 3 under -v'),
     (['1 0 1', '10', '-q', '-x', '-l', '0', '-u', '1', '-p', '30', '-N', '30'],
-     '-x with an interval, pinned'),
+     '-x with an interval and -p 30 -N 30'),
     (['1 0 1', '10', '-q', '-x', '-l', '0', '-u', '1'], '-x with an interval'),
     (['1 0 126 0 441', '200', '-q', '-1', '-i', '-l', '0.5'], '-1 -i: a point outside not counted'),
     (['-1 0 9', '10', '-q', '-dl', '3', '-du', '3'], 'one denominator'),
@@ -329,7 +330,7 @@ CASES = [
 # Searches at a large height that both programs stop at once (-1): the polynomial is not reversed
 # and has a point at infinity (odd degree, or a leading coefficient that is a square), which the
 # search delivers before the sieve; chosen by hand, since a stop inside the sieve at such a height
-# would not end in ratpoints-lean, which lists the denominators of a search up front.
+# would sift the denominators up to the stop.
 STOP_CASES = [
     (['1 0 1', '1000000000000', '-q', '-1'], '-1 at a large height: (1 : 1 : 0) at once'),
     (['3 2 -1 12', '1000000000000', '-q', '-1'], '-1 at a large height, odd degree: (1 : 0 : 0)'),
@@ -457,9 +458,9 @@ def random_options(rng):
 
 def random_output_options(rng):
     """Options of the output for a search: each of -x -X -y -Y -z -Z -1 -i -I at times, -q in most
-    cases and -v at times, a format and strings at times, at times the parameters that pin the
-    moduli for -x (-p 30 -N 30), and with -x at times -s, so that the survivors over the whole of
-    [-H, H] are compared, where the polynomial may be negative."""
+    cases and -v at times, a format and strings at times, at times -p 30 -N 30, and with -x at times
+    -s, so that the survivors over the whole of [-H, H] are compared, where the polynomial may be
+    negative."""
     opts = [o for o in ['-x', '-X', '-y', '-Y', '-z', '-Z', '-1', '-i', '-I']
             if rng.random() < 0.15]
     rng.shuffle(opts)
@@ -602,8 +603,8 @@ def random_denominators(rng, H):
 
 def random_search_options(rng):
     """Options of the search and of the output for a search with a region: -q most of the time, the
-    report or -v at times, and at times -k, -s, -S with a depth, -x with or without the moduli
-    pinned, -1, -i, -y, -z."""
+    report or -v at times, and at times -k, -s, -S with a depth, -x, at times with -p 30 -N 30, -1,
+    -i, -y, -z."""
     opts = ['-q'] if rng.random() < 0.7 else (['-v'] if rng.random() < 0.2 else [])
     for o in ['-k', '-s', '-1', '-i', '-y', '-z']:
         if rng.random() < 0.08:
@@ -612,7 +613,7 @@ def random_search_options(rng):
         opts += ['-S', str(rng.choice([0, 1, 2, 5, 20, 55, 60]))]
     if rng.random() < 0.1:
         opts.append('-x')
-        if rng.random() < 0.6:
+        if rng.random() < 0.3:
             opts += ['-p', '30', '-N', '30']
     return opts
 
@@ -642,14 +643,13 @@ def pythagorean_point(rng, H):
 def random_big_region(rng, c):
     """A search of the polynomial with the coefficient list c at a large height in a narrow search
     region, so that it sifts few numerators, without -1: a narrow range of denominators b, ...,
-    b + j and one interval, with -q and at times -x with the moduli pinned (-p 30 -N 30), so that
-    every survivor is compared. The interval lies around a random x = a / b, with the repr of
-    doubles as its ends, which are rarely exact; or has ends that are exact doubles L / 2^e whose
-    products with b are integers (2^e divides b), so that numerators at the ends lie in the search
-    region and a bound of the numerators computed too narrow shows; or lies at one end of the range
-    [-H, H] of the numerators at b, beyond it; or, on y^2 = x^2 + 1, its ends are the doubles next
-    but one to the x-coordinate of a point (m^2 - n^2 : m^2 + n^2 : 2 m n) of large height, at its
-    denominator."""
+    b + j and one interval, with -q and at times -x, at times with -p 30 -N 30. The interval lies
+    around a random x = a / b, with the repr of doubles as its ends, which are rarely exact; or has
+    ends that are exact doubles L / 2^e whose products with b are integers (2^e divides b), so that
+    numerators at the ends lie in the search region and a bound of the numerators computed too
+    narrow shows; or lies at one end of the range [-H, H] of the numerators at b, beyond it; or, on
+    y^2 = x^2 + 1, its ends are the doubles next but one to the x-coordinate of a point
+    (m^2 - n^2 : m^2 + n^2 : 2 m n) of large height, at its denominator."""
     H = rng.choice(BIG_HEIGHTS)
     k = rng.random()
     point = pythagorean_point(rng, H) if k >= 0.75 else None
@@ -677,7 +677,8 @@ def random_big_region(rng, c):
         x = Fraction(rng.randint(-H, H), b)
         w = Fraction(rng.randint(1, 2000), b + 20)
         ends = ['-l', repr(float(x - w)), '-u', repr(float(x + w))]
-    x_opts = ['-x', '-p', '30', '-N', '30'] if rng.random() < 0.4 else []
+    x_opts = (['-x'] + (['-p', '30', '-N', '30'] if rng.random() < 0.3 else [])
+              if rng.random() < 0.4 else [])
     return [c, str(H), '-q', '-dl', str(b), '-du', str(min(H, b + rng.randint(0, 20))), *ends,
             *x_opts]
 
@@ -702,7 +703,7 @@ def random_region_line(rng):
 def random_depth_line(rng):
     """A search with a random depth of the Sturm step, -S 0 to -S 60 or -s, on a random polynomial
     or a point-rich curve at a small height, with -q or the report (message 8), and at times with
-    an interval, -k or -x with the moduli pinned, then at times with -s after it."""
+    an interval, -k or -x, at times with -p 30 -N 30, then at times with -s after it."""
     if rng.random() < 0.6:
         c = ' '.join(str(rng.randint(-30, 30)) for _ in range(rng.randint(2, 11)))
     else:
@@ -715,7 +716,9 @@ def random_depth_line(rng):
     if rng.random() < 0.15:
         opts.append('-k')
     if rng.random() < 0.1:
-        opts += ['-x', '-p', '30', '-N', '30']
+        opts.append('-x')
+        if rng.random() < 0.3:
+            opts += ['-p', '30', '-N', '30']
         if rng.random() < 0.3:
             opts.append('-s')
     return [c, str(H), *opts]

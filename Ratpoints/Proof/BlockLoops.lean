@@ -6,9 +6,9 @@ Authors: Michael Stoll
 module
 
 public import Ratpoints.Model.Blocks
+public import Ratpoints.Proof.Shapes
 public import Ratpoints.Proof.Stages
 
-import Mathlib.Tactic.SplitIfs
 import Ratpoints.Proof.Bits
 import Ratpoints.Proof.Containers
 import Ratpoints.Proof.Delivery

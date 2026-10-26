@@ -53,8 +53,8 @@ primes and the sieve entries of the moduli, with the rows of a denominator, are 
 * `Ratpoints.Sieve.CheckSpec`, `Ratpoints.Sieve.checkOf`, `Ratpoints.Sieve.fillChecks`,
   `Ratpoints.Sieve.CheckSpec.index`, `Ratpoints.Sieve.stage3`: the third stage, what it needs of
   its primes for a denominator, and its test of one numerator.
-* `Ratpoints.Sieve.Counters`: the counters of what the sieve did, from which the search of
-  ratpoints corrects its moduli between the blocks of the run (stage I).
+* `Ratpoints.Sieve.Counters`: the counters of what the sieve did, from which the search corrects
+  its moduli between the blocks of the run.
 * `Ratpoints.Sieve.accepted`, `Ratpoints.Sieve.checkPoint`: the test of a candidate, the test for
   common factors and the third stage, counted, and the exact check of one numerator, its points
   delivered to the callback of the search as the flags of the search say.
@@ -197,7 +197,7 @@ array `magics` holds at the position of the entry (`Ratpoints.Sieve.CheckSpec`):
 (`Ratpoints.Sieve.mulMod`) for `b ≤ Ratpoints.mulModLimit` and by `%` above, or `0` for `r = 0`;
 the bias `p H` when `2 p H < Ratpoints.stage3Limit` and `0` otherwise; the reciprocal of the entry;
 and the table of `t`. With the reciprocal `Ratpoints.Sieve.magic p` for `mg`, as the array of
-`Ratpoints.sievingInfoOf` holds it, the residue is `b mod p` for `p ≤ 2 ^ 32`
+`Ratpoints.sievingInfo` holds it, the residue is `b mod p` for `p ≤ 2 ^ 32`
 (`Ratpoints.Sieve.binv_checkOf`). An entry of another shape, which the third stage of well-formed
 parameters never holds (`Ratpoints.Params.WF`), gets the inverse `0`, so that the stage skips it, as
 it skips a prime that divides `b`.
@@ -290,22 +290,20 @@ def stage3 (a : Int) (checks : List CheckSpec) : Id Bool := do
 /-! ### The test of a candidate and the exact check -/
 
 /-- The counters of the sieving thread for the block that it sieves, what the sieve did, from which
-the search of ratpoints corrects its choice of the moduli between the blocks of the run
-(`Ratpoints.Sieve.RunCounts.fold`, `Ratpoints.Sieve.adaptPrimes`, which the run of the model does
-not call yet): the words of the bit arrays that the first stage sweeps
-(`n_words`), the bit arrays that are nonzero after it (`n_arrays`), the numerators that survive the
-second stage (`n_bits`), those of them that are prime to the denominator (`n_coprime`) and that pass
-the third stage too (`n_checks`), and the denominators sifted (`n_sifts`). The components of the
-sieve count where the C code counts, before the exact check, so that the counts depend neither on
-the callback nor on the flags of the output, but for the block in which the callback stops the
-search.
+the search corrects its choice of the moduli between the blocks of the run
+(`Ratpoints.Sieve.RunCounts.fold`, `Ratpoints.Sieve.adaptPrimes`): the words of the bit arrays that
+the first stage sweeps (`n_words`), the bit arrays that are nonzero after it (`n_arrays`), the
+numerators that survive the second stage (`n_bits`), those of them that are prime to the denominator
+(`n_coprime`) and that pass the third stage too (`n_checks`), and the denominators sifted
+(`n_sifts`). The components of the sieve count where the C code counts, before the exact check, so
+that the counts depend neither on the callback nor on the flags of the output, but for the block in
+which the callback stops the search.
 
 C: `rp-private.h:579-581`
 
 Deviation: a structure of its own, which the components of the sieve that count pass and return
 beside the delivery, for the fields of the sieving thread `rp_worker`, which `run_block` clears for
-each block (`find_points.c:3914-3915`, `Ratpoints.Sieve.runBlock`, which the run of the model does
-not call yet: it discards the counters, `Ratpoints.Sieve.sieveRun`); `UInt64` for the
+each block (`find_points.c:3914-3915`, `Ratpoints.Sieve.runBlock`); `UInt64` for the
 `unsigned long`s, wrapping as they wrap. -/
 structure Counters where
   /-- `n_words`: the words of the bit arrays that the first stage swept. -/

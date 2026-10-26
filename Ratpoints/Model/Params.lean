@@ -24,20 +24,17 @@ points found or their order, since a modulus only removes candidates that are no
 of the numerators follow one another in increasing order, a test on the denominators removes only
 denominators without points, and the two shapes of the loop over the denominators between which
 these choices decide, the words of 64 denominators and every denominator, both run in increasing
-order. So the model takes the choice as an input, the proofs hold for every well-formed choice, and
-the theorems for every value of the options of the sieve, from which the search takes its
-parameters. The sieve reads the moduli, the cut points of its stages and the array size, the loop of
-the tables reads the number of primes examined, which give the exit and the first forbidden
-divisors, and the tests on the denominators read the bound on the forbidden divisors and the switch
-of the Jacobi test.
+order. The model makes the choice inside the search, as `find_points` does, and the theorems hold
+for every value of the options of the sieve, whatever moduli the search chooses.
 
-The parameters are also the result of the choice of the moduli from the curve
-(`Ratpoints.sievingInfo`), with the end of the third stage, the number of primes looked at in all
-and the estimates of the run that the correction of the moduli reads, from the options of the sieve
-that the caller gives (`Ratpoints.SieveOptions`) as the search normalizes them
-(`Ratpoints.SieveOptions.normalize`); the search does not make that choice yet (stage I): it takes
-the parameters of the executable of its options (`Ratpoints.sieveParams`), which fill those fields
-with values that the run does not read.
+The parameters are the result of the choice of the moduli from the curve (`Ratpoints.sievingInfo`),
+from the options of the sieve that the caller gives (`Ratpoints.SieveOptions`) as the search
+normalizes them (`Ratpoints.SieveOptions.normalize`), with the end of the third stage, the number of
+primes looked at in all and the estimates of the run that the correction of the moduli reads. The
+sieve reads the moduli, the cut points of its stages and the array size, and the tests on the
+denominators read the bound on the forbidden divisors and the switch of the Jacobi test. The
+parameters of the executable of the options (`Ratpoints.sieveParams`), which take the first primes
+of the table by the counting rules of the options, are not called by the search.
 
 ## Main definitions
 
@@ -103,11 +100,10 @@ from which the correction of the moduli may take further primes; how many primes
 tables examined and how many were looked at in all; at most how many forbidden divisors are tested,
 whether the Jacobi test may run, at most how many bit arrays a piece of the numerators has; and the
 estimates of the run, the cost of one exact check and the number of words at which the first
-correction of the moduli is made. The run of the search reads the moduli, the number examined, the
-first two cut points, the bound, the switch and the array size, with the moduli from `sp2` on as
-its third stage; the other fields come with the choice and the correction of the moduli (stage I).
-The search takes the parameters of the executable of its options (`Ratpoints.sieveParams`) until it
-calls the choice (stage I).
+correction of the moduli is made. The run of the search reads the cut points of the stages and the
+array size, and the correction of the moduli between its blocks the estimates of the run, the cost
+of a check and the words of the first correction; the moduli come to the run as their sieve entries
+(`Ratpoints.SievingInfo`).
 
 C: `ratpoints.h:368`, `ratpoints.h:395-397`, `ratpoints.h:406`
 
@@ -269,9 +265,8 @@ the number of the primes looked at `Ratpoints.defaultNumPrimes` for a negative o
 most that of the second when the second is given (`≥ 0`); at most `Ratpoints.defaultMaxForbidden`
 forbidden divisors for a negative bound and at most the size of the table. Whether the caller left
 the number of primes to the search (`np_is_default`) is read from `s` before this normalization.
-The search normalizes the options so (`Ratpoints.findPointsWork`) and, until it calls the choice of
-the moduli (stage I), takes the parameters of the executable of the normalized options
-(`Ratpoints.sieveParams`), which apply these rules again.
+The search normalizes the options so (`Ratpoints.findPointsWork`) and makes the choice of the moduli
+with the normalized options (`Ratpoints.sievingInfo`).
 
 C: `find_points.c:4643-4649`, `find_points.c:4655-4656`, `find_points.c:4662-4665`
 
@@ -308,28 +303,25 @@ the run of the search does not read are fixed values: the end of the third stage
 moduli, the primes looked at those examined, the estimates of the run and the cost of a check `1.0`,
 and the words of the first correction `2 ^ 64 - 1`, no correction; and none of the tuning fields of
 the options (`-r -R -U -C -A -Q -W`) is read, which the choice of the moduli reads
-(`Ratpoints.SieveOptions.tuning`, `Ratpoints.checkRelOf`, `Ratpoints.adaptStart`; stage I).
+(`Ratpoints.SieveOptions.tuning`, `Ratpoints.checkRelOf`, `Ratpoints.adaptStart`).
 In the default build, a run without options has 11 moduli in the first stage, 22 in the first two
 and 30 in all (`Ratpoints.defaultParams`).
 
-It models no C code of its own: the search of the polynomial (`Ratpoints.searchPoints`) takes these
-parameters of its normalized options, with the number of primes `-1` when the caller left it to the
-library, which give the parameters of the options as the caller gave them, until it calls the
-choice of the moduli (stage I); they stand for the choice of the moduli in these ways: the defaults
-and caps of the options applied here again, which the search applies before (lines 4643-4649,
-4655-4656 and 4662-4665, `Ratpoints.SieveOptions.normalize`, in `Ratpoints.findPointsWork`) and
-which leave normalized options as they are, and the counts of the stages by these rules, for the
-choice of the moduli, whose lines the search does not call yet: the number of the primes to look at
-and its raise (lines 2566
-and 2693-2705, `Ratpoints.TableLoop`, `Ratpoints.raiseLimit`), the offset of the second stage (lines
-2571-2572, 2599, 2808 and 2815, `Ratpoints.SieveOptions.tuning`, `Ratpoints.choiceEstimate`), the
-stages that ratpoints takes from the pool of its candidates (among them lines 2503, 2845-2846,
-2864-2869, 2922, 2949, 2973-2975, 2980 and 3015, `Ratpoints.takeEntries`, `Ratpoints.firstStages`,
+It models no C code of its own: the search makes the choice of the moduli (`Ratpoints.sievingInfo`)
+and does not call it; these parameters stand for that choice in these ways: the defaults and caps of
+the options applied here again, which the search applies before (lines 4643-4649, 4655-4656 and
+4662-4665, `Ratpoints.SieveOptions.normalize`, in `Ratpoints.findPointsWork`) and which leave
+normalized options as they are, and the counts of the stages by these rules, for the choice of the
+moduli: the number of the primes to look at and its raise (lines 2566 and 2693-2705,
+`Ratpoints.TableLoop`, `Ratpoints.raiseLimit`), the offset of the second stage (lines 2571-2572,
+2599, 2808 and 2815, `Ratpoints.SieveOptions.tuning`, `Ratpoints.choiceEstimate`), the stages that
+ratpoints takes from the pool of its candidates (among them lines 2503, 2845-2846, 2864-2869, 2922,
+2949, 2973-2975, 2980 and 3015, `Ratpoints.takeEntries`, `Ratpoints.firstStages`,
 `Ratpoints.thirdStage`), the number of primes that its third stage wants (lines 2926-2928,
 `Ratpoints.thirdOf`) and the end of the third stage (line 3017, `Ratpoints.choiceEnd`); the moduli
 are the first primes of the table, in increasing order, where ratpoints ranks the primes by what
-they say about the curve and adds composite moduli (`Ratpoints.sievingInfo`; stage I), and takes the
-entries of its stages from that ranking, skipping a modulus that shares a prime with one taken
+they say about the curve and adds composite moduli (`Ratpoints.sievingInfo`), and takes the entries
+of its stages from that ranking, skipping a modulus that shares a prime with one taken
 (`Ratpoints.takeEntries`); it leaves the primes that say nothing out of its pool (lines 1764-1765
 and 2613-2622), and those that say only that the numerator is prime to the denominator stay in the
 pool of the first two stages without counting toward the primes that it looks for (`n_weak`, line
@@ -339,21 +331,20 @@ stages under `-n` and `-N` (or `-n` and `-U 0` without `-R`) and of all the modu
 and `-P`, bound those of ratpoints, which can be smaller, while where an option is absent ratpoints
 can take more moduli in a stage or fewer (no bound on a stage for `-N` without `-n`, nor for `-P`
 alone); without `-n`, the first stage ends at `Ratpoints.defaultSp1`, the fixed choice of the
-header, where ratpoints chooses the end from the curve by its costs (stage I); without `-N`, the
-second stage adds the flat offset `Ratpoints.sp2Extra`, as ratpoints does under `-U 0`
-(`phase_2_offset` for `u0 = 0`, `Ratpoints.phase2Offset`), where it otherwise scales the offset by
-the length of the run (stage I), and the model ignores `-R`, whose value ratpoints takes in place of
-`RATPOINTS_SP2_EXTRA` (lines 2571-2572 and 2808) and which comes with the scaled offset (stage I);
-without `-P`, the third stage is the rest of the first `q` primes, where ratpoints takes the primes
-of its pool in increasing order of their density `r`, the most selective first, stops by its cost
-rule (`Ratpoints.thirdStage`; stage I) and may look past the first `q` when `-p` is absent; the
-primes examined are the first `q`, where ratpoints, when `-p` is absent, looks at further primes
-while its pool is short of the moduli that its first two stages want, and later for its third stage,
-`-p` being a hard limit of the first two stages (line 2693) as of the third (line 2980), and the
-model examines the primes of its moduli beyond the first `q` when it makes their entries
-(`Ratpoints.makeModulus?`); no correction of the moduli during the run
-(`Ratpoints.Sieve.adaptPrimes`, stage I); natural numbers for the `long`s, so that the sums of the
-counts cannot overflow. -/
+header, where ratpoints chooses the end from the curve by its costs (`Ratpoints.takeEntries`);
+without `-N`, the second stage adds the flat offset `Ratpoints.sp2Extra`, as ratpoints does under
+`-U 0` (`phase_2_offset` for `u0 = 0`, `Ratpoints.phase2Offset`), where it otherwise scales the
+offset by the length of the run, and these parameters ignore `-R`, whose value ratpoints takes in
+place of `RATPOINTS_SP2_EXTRA` (lines 2571-2572 and 2808, `Ratpoints.SieveOptions.tuning`); without
+`-P`, the third stage is the rest of the first `q` primes, where ratpoints takes the primes of its
+pool in increasing order of their density `r`, the most selective first, stops by its cost rule
+(`Ratpoints.thirdStage`) and may look past the first `q` when `-p` is absent; the primes examined
+are the first `q`, where ratpoints, when `-p` is absent, looks at further primes while its pool is
+short of the moduli that its first two stages want, and later for its third stage, `-p` being a hard
+limit of the first two stages (line 2693) as of the third (line 2980), and the entries of given
+moduli examine the primes of their moduli beyond the first `q` (`Ratpoints.makeModulus?`); no
+correction of the moduli during the run, which ratpoints makes (`Ratpoints.Sieve.adaptPrimes`);
+natural numbers for the `long`s, so that the sums of the counts cannot overflow. -/
 def sieveParams (o : SieveOptions) : Params :=
   let q := min (if o.numPrimes < 0 then defaultNumPrimes else o.numPrimes.toNat) numPrimes
   let lim := if o.numPrimes < 0 then numPrimes else q

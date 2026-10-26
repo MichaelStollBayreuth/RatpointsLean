@@ -43,9 +43,10 @@ rows of a prime starts with its row of `0` (`Ratpoints.Sieve.primeRows`), the ot
 table of rows of its entry (`Ratpoints.Sieve.RowStore.publish`); the row of a sieve entry is read
 from its table of rows or built into it by the builder of its kind
 (`Ratpoints.Sieve.SieveEntry.fetchRow`, `Ratpoints.Sieve.SieveEntry.initRow`,
-`Ratpoints.Sieve.initFactorRow`). The loop of the tables and `Ratpoints.sievingInfoOf` make the
-tables of rows of a run, and the run reads the rows of each denominator from them and builds those
-that are missing into them (`Ratpoints.Sieve.setRows`, `Ratpoints.Sieve.buildRows`).
+`Ratpoints.Sieve.initFactorRow`). The loop of the tables and the end of the choice of the moduli
+make the tables of rows of a run (`Ratpoints.examineInLoop`, `Ratpoints.choiceEnd`), and the run
+reads the rows of each denominator from them and builds those that are missing into them
+(`Ratpoints.Sieve.setRows`, `Ratpoints.Sieve.buildRows`).
 
 ## Main definitions
 
@@ -133,12 +134,11 @@ modulus, `m` of them for the modulus `m`, each `none` until it is built. These a
 `sieve` of the sieve entries of ratpoints, which the C code reaches through the pointers to the
 entries (`sieve_list[n]`, and the field `factor` of the entry of a product), with `none` for `NULL`.
 A table of rows is made, with the row of `0` of a prime from the build and the others absent, where
-the C code makes the entry (`Ratpoints.Sieve.examinePrimes`,
-`Ratpoints.Sieve.SieveEntry.addTables`), and the builders store the rows that they build into the
-table of their entry (`Ratpoints.Sieve.RowStore.publish`); the run reads the rows of a denominator
-from the tables of rows and builds the missing ones into them (`Ratpoints.Sieve.setRows`,
-`Ratpoints.Sieve.buildRows`), and hands the store on from one denominator to the next
-(`Ratpoints.Sieve.sieveRun`). -/
+the C code makes the entry (`Ratpoints.examineInLoop`, `Ratpoints.Sieve.SieveEntry.addTables`), and
+the builders store the rows that they build into the table of their entry
+(`Ratpoints.Sieve.RowStore.publish`); the run reads the rows of a denominator from the tables of
+rows and builds the missing ones into them (`Ratpoints.Sieve.setRows`, `Ratpoints.Sieve.buildRows`),
+and hands the store on from one denominator to the next (`Ratpoints.Sieve.sieveRun`). -/
 abbrev RowStore := Std.HashMap EntryRef (Array (Option (Array UInt64)))
 
 /-- The row of the residue `r` in the table of rows of the entry `ref`, the pointer `se->sieve[r]`:
@@ -181,16 +181,14 @@ makes them.
 C: `find_points.c:2427`, `find_points.c:2471`
 
 Deviation: the tables of rows made in the store of the run, by the reference to the entry
-(`Ratpoints.Sieve.EntryRef`), for the arrays `sieve` of the entries, by the loop over the moduli
-after the entry of the modulus (`Ratpoints.sievingInfoOf`), where `make_power` and `make_modulus`
-make them with the entry; a table of rows made only when its reference is absent, for the test of
-`power_se` (lines 2444 and 2466) by which the entry of a prime power is made once, and for the entry
-of a prime, which `examine_prime` makes once; the table of rows of a prime made also for one that
-says nothing, for which `examine_prime` makes no entry (lines 1764-1765) and which `add_moduli`
-takes as no factor (line 2383), and for a prime beyond those of the loop of the tables, which
-`add_moduli` takes as no factor either (line 2370) and whose entry, with its row of `0`,
-`examine_prime` makes only when the third stage examines it (lines 2994-2995), where the model makes
-it for every modulus that has the prime as a factor (`Ratpoints.makeModulus?`). -/
+(`Ratpoints.Sieve.EntryRef`), for the arrays `sieve` of the entries, after the choice for every
+entry, the reserve included (`Ratpoints.choiceEnd`), where `make_power` and `make_modulus` make them
+with the entry; a table of rows made only when its reference is absent, for the test of `power_se`
+(lines 2444 and 2466) by which the entry of a prime power is made once, and for the entry of a
+prime, which `examine_prime` makes once, with its table of rows, in the loop of the tables
+(`Ratpoints.examineInLoop`) or in the third stage (lines 2994-2995), where the model makes the table
+of a prime of the third stage after the choice, and none for a prime that the third stage examines
+and passes over, whose table nothing reads. -/
 def SieveEntry.addTables (e : SieveEntry) (s : RowStore) : RowStore :=
   let s := e.factors.foldl (fun s f ↦ s.insertIfNew f.ref f.newRows) s
   if e.init = .product then s.insertIfNew e.ref (.replicate e.p none) else s
@@ -342,8 +340,8 @@ that the build generates for each prime with the prime a constant (`init_sieve.h
 the prime and the reference to its entry (`Ratpoints.Sieve.EntryRef`) as arguments, for the sieve
 entry `se` from which the C code reads them and into which it stores the row, and the store of the
 tables of the rows of the run passed and returned, for the arrays `sieve` of the entries; the row
-stored plainly, for the release store of `RP_PUBLISH` in a build with threads (stage I); no copy
-`pattern` of `help0`, which the C code shifts for `help1`. -/
+stored plainly, for the release store of `RP_PUBLISH` in a build with threads, which the model does
+not have; no copy `pattern` of `help0`, which the C code shifts for `help1`. -/
 def sieveInit1 (t : Entry) (ref : EntryRef) (b : Nat) (store : RowStore) :
     Id (Vector UInt64 ((t.p + chunk - 1) * rbaPack) × RowStore) := do
   let lmp := 64 % t.p
@@ -454,7 +452,7 @@ entry `se` from which the C code reads them and into which it stores the row, an
 tables of the rows of the run passed and returned, for the arrays `sieve` of the entries; the words
 `help` a fresh vector, which the loop clears from the last, for the array whose words the function
 leaves unset until it clears them; the row stored plainly, for the release store of `RP_PUBLISH` in
-a build with threads (stage I). -/
+a build with threads, which the model does not have. -/
 def sieveInit2 (t : Entry) (ref : EntryRef) (b : Nat) (store : RowStore) :
     Id (Vector UInt64 ((t.p + chunk - 1) * rbaPack) × RowStore) := do
   let mut help : Vector UInt64 (t.p / 64 + 2) := .replicate _ 0
@@ -584,12 +582,12 @@ out as a row of `m + chunk - 1` bit arrays (`Ratpoints.Sieve.layOutPattern`).
 
 C: `init.c:359-368`, `init.c:376-377`, `init.c:386-387`, `init.c:391-393`, `rp-private.h:592`
 
-Deviation: the tables of the prime power and the reference to its entry
-(`Ratpoints.Sieve.EntryRef`) as arguments, for the sieve entry `se` whose field `pw` points to the
-tables and into which the C code stores the row, and the store of the tables of rows of the run
-passed and returned, for the arrays `sieve` of the entries; the pattern a fresh array, which the
-loop clears, for the array whose words the function leaves unset until it clears them; the row
-stored plainly, for the release store of `RP_PUBLISH` in a build with threads (stage I). -/
+Deviation: the tables of the prime power and the reference to its entry (`Ratpoints.Sieve.EntryRef`)
+as arguments, for the sieve entry `se` whose field `pw` points to the tables and into which the C
+code stores the row, and the store of the tables of rows of the run passed and returned, for the
+arrays `sieve` of the entries; the pattern a fresh array, which the loop clears, for the array whose
+words the function leaves unset until it clears them; the row stored plainly, for the release store
+of `RP_PUBLISH` in a build with threads, which the model does not have. -/
 def sieveInitPower (pw : Power) (ref : EntryRef) (b : Nat) (store : RowStore) :
     Id (Vector UInt64 ((pw.m + chunk - 1) * rbaPack) × RowStore) := do
   let mut pat : Array UInt64 := .replicate modWords 0
@@ -639,8 +637,8 @@ C: `init.c:407-414`
 
 Deviation: the rows of the factors an array returned with the store, for the array `frow` of the
 function and the tables of rows in the entries of the factors; the row read plainly, for the acquire
-load `RP_ACQUIRE` of a build with threads (stage I); the number of the factors the length of their
-list, for the count `nf`. -/
+load `RP_ACQUIRE` of a build with threads, which the model does not have; the number of the factors
+the length of their list, for the count `nf`. -/
 def factorRows (e : SieveEntry) (b : Nat) (store : RowStore) :
     Id (Array (Array UInt64) × RowStore) := do
   let mut store := store
@@ -710,12 +708,12 @@ the factors divide `m`, bit array `y < m + chunk - 1` of the row is the and of t
 
 C: `init.c:399-406`, `init.c:415-418`, `init.c:430`, `init.c:443-445`, `rp-private.h:593`
 
-Deviation: the store of the tables of rows passed and returned, for the entries of the factors
-that the C code reaches through the pointers `factor` and for the entry `se` into which it stores
-the row; a fresh vector of `(m + chunk - 1) rbaPack` words, for the space that the builder takes
-from the buffer of the tables (`ba_next`) after the rows of the factors; the row stored plainly, for
-the release store of `RP_PUBLISH` in a build with threads (stage I); the number of the factors the
-length of their list, for the count `nf`. -/
+Deviation: the store of the tables of rows passed and returned, for the entries of the factors that
+the C code reaches through the pointers `factor` and for the entry `se` into which it stores the
+row; a fresh vector of `(m + chunk - 1) rbaPack` words, for the space that the builder takes from
+the buffer of the tables (`ba_next`) after the rows of the factors; the row stored plainly, for the
+release store of `RP_PUBLISH` in a build with threads, which the model does not have; the number of
+the factors the length of their list, for the count `nf`. -/
 def sieveInitProduct (e : SieveEntry) (b : Nat) (store : RowStore) :
     Id (Vector UInt64 ((e.p + chunk - 1) * rbaPack) × RowStore) := do
   let (frows, store) ← factorRows e b store
@@ -836,7 +834,7 @@ def SieveEntry.fetchRow (e : SieveEntry) (b : Nat) (store : RowStore) :
 -- (`Ratpoints.Sieve.SieveEntry.admits`): `(m + chunk - 1) rbaPack` words, the first `m` of them,
 -- one period of the bits, word for word, and word `x` of the others equal to word `x mod m`, as in
 -- the closed form; from a store with the tables of rows of its entry and of its factors and no rows
--- but those of `0` of the primes, made as `Ratpoints.sievingInfoOf` makes them
+-- but those of `0` of the primes, made as `Ratpoints.sievingInfo` makes them
 -- (`Ratpoints.Sieve.SieveEntry.addTables`): the rows of its factors are built into the tables of
 -- rows of their entries, each the closed form of the row of the residue modulo the modulus `q` of
 -- the factor, checked in the same way on its first `q` words, and the builder stores the row of the

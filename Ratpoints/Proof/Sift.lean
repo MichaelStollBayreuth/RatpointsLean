@@ -91,8 +91,8 @@ both branches, which a contract of its own also states without the class word an
 counters have a contract of their own too (the contracts of the counters of the components it calls
 are in `Ratpoints.Proof.ScanCounts` and `Ratpoints.Proof.SiftBits`), which needs neither the class
 word nor the ranges, and `Ratpoints.Sieve.sift_spec` states the three. The contracts of one block
-and of the run over the denominators, which call `Ratpoints.Sieve.sift` with the class of each
-denominator, are in `Ratpoints.Proof.Blocks` and `Ratpoints.Proof.Denominators`.
+and of the run over the blocks, which call `Ratpoints.Sieve.sift` with the class of each
+denominator, are in `Ratpoints.Proof.Blocks` and `Ratpoints.Proof.Correction`.
 -/
 
 @[expose] public section

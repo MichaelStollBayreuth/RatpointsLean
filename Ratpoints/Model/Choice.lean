@@ -30,7 +30,7 @@ primes left, sorted with the third stage by their densities. It returns the firs
 modulo which the curve has no points, if there is one, and otherwise the result of the choice
 (`Ratpoints.Params`) with the sieve entries of all the moduli, their reciprocals, the forbidden
 divisors, the store of the tables of rows and the switch of the checked loop of the denominators.
-The search does not call it yet: it takes the moduli of its parameters (stage I).
+The search makes the choice after the 2-adic information (`Ratpoints.chooseAndSearch`).
 
 ## Main definitions
 
@@ -810,8 +810,7 @@ estimate of the run, without the forbidden divisors (`Ratpoints.runShape`); the 
 (`Ratpoints.tablesLoop`), with an exit that returns the prime when the curve has no points modulo a
 prime looked at; for the checked loop, the further forbidden divisors (`Ratpoints.Sieve.forbidden`);
 the switch of the checked loop cleared when there is no forbidden divisor and no Jacobi test; and
-the rest of the choice (`Ratpoints.choiceTail`). The search does not call it yet: it takes the
-moduli of its parameters, whose entries `Ratpoints.sievingInfoOf` makes (stage I).
+the rest of the choice (`Ratpoints.choiceTail`).
 
 C: `find_points.c:2522-2532`, `find_points.c:2546`, `find_points.c:2548-2559`,
 `find_points.c:2595-2596`, `find_points.c:2794-2795`, `find_points.c:3102-3103`

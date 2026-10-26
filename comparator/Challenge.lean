@@ -58,8 +58,8 @@ the delivery of the list of `Ratpoints.findPoints` to the callback (`Ratpoints.D
 the calls of the callback for the points of the list in their order, up to and including the first
 that stops the search. Since stage I the statements take the options of the sieve
 (`s : Ratpoints.SieveOptions`) with no hypothesis, in place of parameters and their well-formedness:
-the search takes its sieving parameters from these options; the theorem on the well-formedness of
-the parameters that the options gave is gone, and eleven statements remain;
+the search chooses its moduli from the curve with these options; the theorem on the well-formedness
+of the parameters that the options gave is gone, and eleven statements remain;
 `Ratpoints.findPointsWith` keeps its trailing print argument at its default, the channel that prints
 nothing. `Ratpoints.bruteForce`, `Ratpoints.findPoints`, `Ratpoints.findPointsWith`,
 `Ratpoints.Outcome`, `Ratpoints.Answer`, `Ratpoints.Delivery`, `Ratpoints.Delivery.deliver`,

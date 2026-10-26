@@ -228,9 +228,9 @@ C: `find_points.c:1142-1158`, `find_points.c:1161-1162`, `find_points.c:1183`
 
 Deviation: the classes, the entries and the array of the offsets returned, for the arrays that
 `class_offsets` writes through its pointer arguments; the number `np` of the moduli the number of
-the sieve entries `es`, for the run those of its three stages (`Ratpoints.sieving`), where
-`find_points_work_1` passes `sp3_max`, the number with the reserve of further primes that the
-correction of the moduli may take into the second stage during the run (stage I); the inverses of
+the sieve entries `es`, for the run all `sp3_max` of them (`Ratpoints.sieving`), with the reserve of
+further primes that the correction of the moduli may take into the second stage during the run
+(`Ratpoints.Sieve.adaptPrimes`); the inverses of
 `2 ^ k` an array of `kmax + 1` entries, for the array `dinv` of `RP_NUM_STRIDES` `long`s of the
 sieve entry, whose entries beyond `kmax` stay unset and unread; the inverses `rinv` an array of
 arrays, for the array on the stack; the loop over the classes by a function of its own

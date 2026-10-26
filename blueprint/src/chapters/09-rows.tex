@@ -697,7 +697,10 @@ contract does not depend on the arm: the first stage of either arm gives the sam
   its entry, and returns the store; the function of the sieve entries of given moduli
   (Definition~\ref{def:sievingInfo}) makes each sieve entry at the position $n$, the number of the
   entries made before it (Definition~\ref{def:makeModulus}), and right after it the tables of rows
-  of that entry, and returns the store with the entries.
+  of that entry, and returns the store with the entries. The choice of the moduli, which the search
+  makes (Definition~\ref{def:choice}), makes the tables of rows of the primes that say something in
+  its loop of the tables, as \verb|examine_prime| makes their entries, and at its end those of all
+  its sieve entries, those of the third stage and of the reserve among them, and returns the store.
 \end{definition}
 
 \begin{lemma}[The store fits the sieve entries]\label{lem:storeTables}
@@ -788,12 +791,14 @@ entries, their reciprocals, their residues $b\,\mathrm{dinv}[k] \bmod p$, their 
 and a store that fits them, as hypotheses on its arguments; it gives the store back fitting them;
 the class word, the position of the row offsets of the class, and the packing of the entries at
 those offsets remain hypotheses of the points equation, which is unchanged. The run
-(Definition~\ref{def:sieveRun}) passes the store from one denominator to the next, the store fitting
-the first $s_2$ entries in the invariant of its loop, and does not return it, nothing reading the
-tables of rows after the run; the search (Definition~\ref{def:searchPoints}) hands the store of
-\verb|sieving_info| to the run; and what the run needs of the search (Lemma~\ref{lem:soundRun}) has
-the store, with the field that it fits the entries of the first two stages, which the store of
-\verb|sieving_info| gives, the entries changing after it only in the inverses of the strides.
+(Definition~\ref{def:sieveRun}) passes the store from one denominator and one block to the next,
+the store fitting all the entries in the invariants of its loops, since a correction may move the
+cut points (Lemma~\ref{lem:runBlock}, Theorem~\ref{thm:blocks}), and does not return it, nothing
+reading the tables of rows after the run; the search (Definition~\ref{def:searchPoints}) hands the
+store of the choice of the moduli to the run; and what the run needs of the search
+(Lemma~\ref{lem:soundRun}) has the store, with the field that it fits all the entries, which the
+store of the choice gives (Lemma~\ref{lem:choice}), the entries changing after it only in the
+inverses of the strides.
 
 \section{The command-line program and the differential tests}\label{sec:rowsCli}
 
@@ -990,12 +995,12 @@ exclusion of lines 4618-4623 says the same); and \verb|find_points_clear|
 (\csource{find_points.c}{377}{416}), which frees them; the model allocates nothing. The set-up of a
 denominator by \verb|sift| at the first of its search intervals that \verb|interval_bits| does not
 report empty (also one without numerators), so that it reads or builds its rows only then (the flag
-\verb|do_setup|), is modelled since stage~H (Chapter~\ref{chap:region}). Left to stage~I are the
-lock of the tables and the pool of threads (among them the declarations at
-\csource{find_points.c}{41}{43}), the orderings of the acquire loads and the release stores, and the
-choice of the moduli by its cost model (Section~\ref{sec:costs}), which reads the array size rounded
-to the chunk, so that ratpoints chooses its moduli by the chunk too: the moduli of the model are
-those of the parameters.
+\verb|do_setup|), is modelled since stage~H (Chapter~\ref{chap:region}). The lock of the tables and
+the pool of threads (among them the declarations at \csource{find_points.c}{41}{43}), with the
+orderings of the acquire loads and the release stores, are excluded with the threads since stage~I,
+which models the choice of the moduli by its cost model (Section~\ref{sec:costs}), which reads the
+array size rounded to the chunk, so that ratpoints and the model choose their moduli by the chunk
+too (Chapter~\ref{chap:moduli}).
 
 \section{Files and names}\label{sec:rowsFiles}
 
@@ -1014,11 +1019,12 @@ arms of the first stage; \verb|Ratpoints/Model/Rows.lean|, new and above
 forbidden divisor and the row of $0$, the store of the tables of rows with the tables made with the
 entries, the macros and the builders of \verb|init.c|, and the row of a sieve entry read or built;
 and \verb|Ratpoints/Model/Sieve.lean|, above both, \verb|set_rows|, the missing rows of a
-denominator and \verb|sift|, with the choice of the arm in one piece. The loop of the tables, which
-makes the tables of rows of the primes, the forbidden divisors, which read \verb|sieves0|, and the
-run, which hands the store on from one denominator to the next, are in
-\verb|Ratpoints/Model/Denominators.lean|, the sieve entry of a modulus, the sieve entries of given
-moduli and the search in \verb|Ratpoints/Model/FindPoints.lean|, and, since stage~I,
+denominator and \verb|sift|, with the choice of the arm in one piece. The loop of the tables of the
+sieve entries of given moduli, which makes the tables of rows of the primes, and the forbidden
+divisors, which read \verb|sieves0|, are in \verb|Ratpoints/Model/Denominators.lean|, the run, which
+hands the store on from one denominator and one block to the next, in
+\verb|Ratpoints/Model/Blocks.lean| since stage~I, the sieve entry of a modulus, the sieve entries of
+given moduli and the search in \verb|Ratpoints/Model/FindPoints.lean|, and, since stage~I,
 \verb|sieving_info| in \verb|Ratpoints/Model/Choice.lean|. So each file of the model stays below
 $1500$ lines (\verb|Ratpoints/Model/FirstStage.lean| has $476$, \verb|Ratpoints/Model/Rows.lean|
 $909$ and \verb|Ratpoints/Model/Sieve.lean| $1009$).
@@ -1026,7 +1032,7 @@ $909$ and \verb|Ratpoints/Model/Sieve.lean| $1009$).
 The proofs of the sub-stage use Lean core and \verb|Std| only, but for those of the bit arrays of a
 prime power and of the entries of the moduli (\verb|Ratpoints/Proof/Moduli.lean|), of the loop of
 the tables (\verb|Ratpoints/Proof/Forbidden.lean|), of the run
-(\verb|Ratpoints/Proof/Denominators.lean|) and of the search
+(\verb|Ratpoints/Proof/Correction.lean| since stage~I) and of the search
 (\verb|Ratpoints/Proof/FindPoints.lean|), which are in files with Mathlib.
 \verb|Ratpoints/Proof/Containers.lean|, new, has the general facts on vectors, arrays, lists, ranges
 and the natural numbers and integers that index them, split off \verb|Ratpoints/Proof/Bits.lean|,
@@ -1067,7 +1073,8 @@ sieve entry of a modulus with its reference, its kind of builder and its buildab
 \verb|Ratpoints/Proof/Forbidden.lean| the store of the loop of the tables;
 \verb|Ratpoints/Proof/Sift.lean| one piece through either arm (in
 \verb|Ratpoints/Proof/SiftBits.lean| since stage~I) and one denominator on the store;
-\verb|Ratpoints/Proof/Denominators.lean| the run with the store; and
+\verb|Ratpoints/Proof/Correction.lean| the run with the store, since stage~I (in
+\verb|Ratpoints/Proof/Denominators.lean| before); and
 \verb|Ratpoints/Proof/FindPoints.lean| the store of the sieve entries of given moduli and what the
 run needs of the search. Every file stays below $1500$ lines, the largest new one,
 \verb|Ratpoints/Proof/RowStore.lean|, with $1358$ (\verb|Ratpoints/Proof/PrimeRows.lean| has $1078$,

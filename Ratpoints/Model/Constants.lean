@@ -324,9 +324,10 @@ def useLongInPhase2 : Bool := false
 
 C: `ratpoints.h:42`
 
-Deviation: the parameters of the program take it for an absent `-n`, where ratpoints, which reads
-the macro nowhere, chooses the end of the first stage from the curve by its costs (`sieving_info`,
-with the target `Ratpoints.survivorsPerWord`; stage I). -/
+Deviation: the parameters of the executable, which the search does not call, take it for an absent
+`-n`; ratpoints reads the macro nowhere and chooses the end of the first stage from the curve by its
+costs, as the search of the model does (`Ratpoints.takeEntries`, with the target
+`Ratpoints.survivorsPerWord`). -/
 def defaultSp1 : Nat := 11
 
 /-- How many moduli the second stage of the sieve adds to the first when neither the option `-N` nor

@@ -16,7 +16,7 @@ import Ratpoints.Proof.Params
 /-!
 # The blocks of the run
 
-The run of ratpoints sifts the denominators of its shape in blocks
+The run sifts the denominators of its shape in blocks
 (`Ratpoints.Sieve.Shape.blockPlan`, `Ratpoints.Sieve.BlockPlan.steps`), each with the cut points of
 the decision in force for it (`Ratpoints.Sieve.findDecision`, `Ratpoints.Sieve.runBlock`), the loop
 of the shape over the steps of the block (`Ratpoints.Sieve.Shape.blockLoop`) handing each
@@ -59,9 +59,9 @@ which depend neither on the callback nor on the flags of the output
 The store frame of the sieve of one denominator (`Ratpoints.Sieve.RowStore.Fits.fits_run_sift`) is
 in `Ratpoints.Proof.Sift`, the loops of the shapes in `Ratpoints.Proof.BlockLoops`, the plan of the
 blocks and the well-formed decisions (`Ratpoints.Sieve.DecisionWF`) in
-`Ratpoints.Proof.BlockPlan`. The listing of the shape is that of the model
-(`Ratpoints.Sieve.Shape.dens`), which the run of the model sifts until the run over the blocks of
-stage I; the block-listing lemma states that the blocks visit its denominators.
+`Ratpoints.Proof.BlockPlan`, and the listing of the shape, a definition of the proofs, in
+`Ratpoints.Proof.Shapes`; the contract of the run over the blocks with the correction of the moduli
+is in `Ratpoints.Proof.Correction`.
 -/
 
 @[expose] public section

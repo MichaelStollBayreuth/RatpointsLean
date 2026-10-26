@@ -271,28 +271,23 @@ array `coeffs_mod_p` of its caller, which it fills; one loop over the residues, 
 the two branches of the schedule of Horner's rule, between which `Ratpoints.Sieve.hornerBarrett`
 chooses for each residue; the exit `-1` as `none`, and the codes `0`, `1` and `2` returned with the
 entry, the coefficients and the density, as natural numbers, the entry made and returned for the
-code `0` too, where `examine_prime` makes none, the moduli being an input of the model, and the
-density `0.0` for that code, which `examine_prime` does not compute; the fields `p`, `mask` and `nf`
-of the record `prec_entry` of the ranking, which `examine_prime` sets with the density (lines
-1782-1785), made from the table, the position of the prime and the code by the candidate of the
-prime (`Ratpoints.ModulusCandidate.ofPrime`), which the search does not call yet (stage I); the
-entry is a fresh value, for the space that `examine_prime` takes from the buffer of the sieve
-entries (`se_next`), and returned, where `examine_prime` stores it in the field `ssp` of
-`prec_entry`; it keeps only `p`, the table and the inverses (`Ratpoints.Sieve.Entry`), and no rows:
-the table of rows of the prime, with the row of `0` from the build and the others absent (lines
-1820-1821, `Ratpoints.Sieve.primeRows`), is made in the store of the run by the loop of the tables
-when the prime says something (`Ratpoints.Sieve.examinePrimes`), and for a prime that a modulus
-needs, one beyond the loop of the tables, which `Ratpoints.makeModulus?` examines, or one that says
-nothing, by `Ratpoints.Sieve.SieveEntry.addTables` in the loop of `Ratpoints.sievingInfoOf` over the
-moduli, right after the entry; the fields `init`, `nf` and `pw` that `examine_prime` sets (lines
-1800 and 1817) and its reciprocal `magic` (line 1808) are those of the sieve entry of the prime
-(`Ratpoints.Sieve.SieveEntry`), of which the prime is the single factor, made by
-`Ratpoints.makeModulus?`, which sets the reciprocal and the count of factors there, and so are the
-bias `bias` and the inverse `rbainv` of `Ratpoints.rbaLength` (lines 1815 and 1816), which
-`Ratpoints.makeModulus?` sets there with the formulas of these lines, and the density `r` (line
-1811), which `Ratpoints.makeModulus?` sets to `0.0`; the sieve entry of a prime of the choice of the
-moduli (`Ratpoints.primeEntry`), which the search does not call yet (stage I), sets all of these
-with the density. -/
+code `0` too, where `examine_prime` makes none, and the density `0.0` for that code, which
+`examine_prime` does not compute; the fields `p`, `mask` and `nf` of the record `prec_entry` of the
+ranking, which `examine_prime` sets with the density (lines 1782-1785), made by the caller from the
+table, the position of the prime and the code (`Ratpoints.ModulusCandidate.ofPrime`); the entry is a
+fresh value, for the space that `examine_prime` takes from the buffer of the sieve entries
+(`se_next`), and returned, where `examine_prime` stores it in the field `ssp` of `prec_entry`; it
+keeps only `p`, the table and the inverses (`Ratpoints.Sieve.Entry`), and no rows: the table of rows
+of the prime, with the row of `0` from the build and the others absent (lines 1820-1821,
+`Ratpoints.Sieve.primeRows`), is made in the store of the run by the loop of the tables when the
+prime says something (`Ratpoints.examineInLoop`), and for a prime that the third stage takes into
+the pool by the end of the choice (`Ratpoints.choiceEnd`, with
+`Ratpoints.Sieve.SieveEntry.addTables`); the fields `init`, `nf` and `pw` that `examine_prime` sets
+(lines 1800 and 1817) and its reciprocal `magic` (line 1808) are those of the sieve entry of the
+prime (`Ratpoints.Sieve.SieveEntry`), of which the prime is the single factor, made by the entries
+that the choice of the moduli makes (`Ratpoints.primeEntry`), which set the reciprocal there, and so
+are the bias `bias`, the inverse `rbainv` of `Ratpoints.rbaLength`, the density and the count of
+factors (lines 1811 and 1815-1817), which they set there with the formulas of these lines. -/
 def examinePrime? (c : List Int) (d p : Nat) (useCLong : Bool) :
     Id (Option (Entry × Array Nat × Nat × Float)) := do
   let cm := (Array.range (d + 1)).map fun n ↦
@@ -530,12 +525,12 @@ up: with it, the remainder (`Ratpoints.Sieve.mulMod`) and the quotient (`Ratpoin
 `p` of every `u` with `u p < 2 ^ 64` are computed by multiplications. The C code computes it as
 `ULONG_MAX/p + 1` where it sets a field `magic`: in the sieve entries of the moduli, which
 `examine_prime`, `make_power` and `make_modulus` make (lines 1808, 2422 and 2454 of `find_points.c`;
-here `Ratpoints.makeModulus?`), in the tables of the Jacobi test (line 700; here
-`Ratpoints.Sieve.jacobiSetup`), and in the entries of the forbidden divisors tested with words
-(lines 2648, 2668 and 2738; here `Ratpoints.Sieve.ForbiddenEntry.magic`), with which the C code
-reduces the word number of the first word of a block (`Ratpoints.Sieve.forbStarts`). For `p = 1`,
-which is no modulus, it is `2 ^ 64`, where `ULONG_MAX / 1 + 1` wraps to `0` in the C code; the
-reductions, which read it as a 64-bit word, read `0` too. -/
+here `Ratpoints.primeEntry` and `Ratpoints.makeModulus`), in the tables of the Jacobi test (line
+700; here `Ratpoints.Sieve.jacobiSetup`), and in the entries of the forbidden divisors tested with
+words (lines 2648, 2668 and 2738; here `Ratpoints.Sieve.ForbiddenEntry.magic`), with which the C
+code reduces the word number of the first word of a block (`Ratpoints.Sieve.forbStarts`). For
+`p = 1`, which is no modulus, it is `2 ^ 64`, where `ULONG_MAX / 1 + 1` wraps to `0` in the C code;
+the reductions, which read it as a 64-bit word, read `0` too. -/
 def magic (p : Nat) : Nat := (2 ^ 64 - 1) / p + 1
 
 /-- The high 64 bits of the 128-bit product of the 64-bit words `a` and `b`, `⌊a b / 2 ^ 64⌋`, from
@@ -756,10 +751,9 @@ read one entry in the C code, and a product its own; the kind of its builder `in
 inverses `dinv` an array, for the array of `RP_NUM_STRIDES` `long`s, which the row offsets of the
 packing fill (`Ratpoints.Sieve.classOffsets`) with an entry for each stride up to the largest in
 use, where the entries of the C code beyond it stay unset and unread; the density `r`, which the
-correction of the moduli during the run reads (`Ratpoints.Sieve.adaptPrimes`, which the run of the
-model does not call yet), a `Float` for the `double`, and the count
-`nf` of the factors, an integer for the `long`, `0` for a prime, `1` for a prime power and the
-number of factors for a product, kept with the list of the factors. -/
+correction of the moduli during the run reads (`Ratpoints.Sieve.adaptPrimes`), a `Float` for the
+`double`, and the count `nf` of the factors, an integer for the `long`, `0` for a prime, `1` for a
+prime power and the number of factors for a product, kept with the list of the factors. -/
 structure SieveEntry where
   /-- The modulus. -/
   p : Nat

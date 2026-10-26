@@ -142,7 +142,7 @@ def Delivery.callMapped (process : Int → Int → Int → σ → Answer σ) (r 
 and never stops the search: with it, the data of a search is the list of the points it delivers, in
 their order, and its count their number (`Ratpoints.findPoints`). It is a callback of the model:
 the program `ratpoints` prints the points in its callback (`Ratpoints.Cli`), and the collector of
-the threads of the library is another (`collect`, stage I). -/
+the threads of the library is another (`collect`, excluded with the threads). -/
 def appendPoint (x z y : Int) (pts : Array (Int × Int × Int)) : Answer (Array (Int × Int × Int)) :=
   ⟨1, false, pts.push (x, y, z)⟩
 

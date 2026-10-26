@@ -15,10 +15,10 @@ meta import Ratpoints.Model.Params
 /-!
 # The blocks of the run and the correction of the moduli
 
-The loop over the denominators of `find_points_work_1`, in blocks: the steps of the shape of the
-run (`Ratpoints.Sieve.Shape`), the `k` of the squares `k ^ 2`, the `k` of each divisor `s` of the
-divisor shape, one segment of steps per divisor, the words of 64 denominators, or the denominators
-themselves, are cut into blocks of consecutive steps of one length
+The loop over the denominators of `find_points_work_1`, in blocks, on the calling thread: the steps
+of the shape of the run (`Ratpoints.Sieve.Shape`), the `k` of the squares `k ^ 2`, the `k` of each
+divisor `s` of the divisor shape, one segment of steps per divisor, the words of 64 denominators, or
+the denominators themselves, are cut into blocks of consecutive steps of one length
 (`Ratpoints.Sieve.Shape.segments`, `Ratpoints.Sieve.Shape.blockPlan`), about
 `Ratpoints.blocksWanted` blocks of at least `Ratpoints.blockMin` steps, the steps of a block found
 from the segment that holds it (`Ratpoints.Sieve.BlockPlan.steps`); the loop of each shape goes over
@@ -26,16 +26,17 @@ the steps of a block (`Ratpoints.Sieve.Shape.blockLoop`), its denominators in th
 each that passes the tests of the shape handed to a step, which sifts it
 (`Ratpoints.Sieve.siftDen`), and returns when the callback has stopped the search; each block is
 sifted as a whole, with the moduli of the decision of the correction of the moduli in force for it
-(`Ratpoints.Sieve.findDecision`), its counters from zero, and reports its counters and that
-decision (`Ratpoints.Sieve.runBlock`). The counters of the blocks are added to those of the run
+(`Ratpoints.Sieve.findDecision`), its counters from zero, and reports its counters and that decision
+(`Ratpoints.Sieve.runBlock`). The counters of the blocks are added to those of the run
 (`Ratpoints.Sieve.RunCounts`, `Ratpoints.Sieve.runFold`), from which the search corrects its choice
 of the end of the second stage and of the third stage once the run has swept enough words
 (`Ratpoints.Sieve.adaptPrimes`): a decision made at the fold of block `j` is for the blocks from
 `j + Ratpoints.adaptLag + 1` on (`Ratpoints.Sieve.Decision`, `Ratpoints.Sieve.Correction`). The run
-of the model (`Ratpoints.Sieve.sieveRun`) does not call them yet: until the run over the blocks of
-stage I, with one block sifted at a time and the correction of the moduli between the blocks, it
-lists the denominators of its shape (`Ratpoints.Sieve.Shape.dens`) and sifts them one after the
-other.
+sifts the blocks in turn, each folded after it, and returns the ends of the second and the third
+stage of the last block folded, which the search reports as used (`Ratpoints.Sieve.sieveRun`). The
+pool of threads that ratpoints may sieve the blocks with is not modelled: with it, the blocks are
+sifted apart and delivered in their order, and the decision of a block is the same, since it depends
+only on the folds of the blocks at least `Ratpoints.adaptLag + 1` before it.
 
 ## Main definitions
 
@@ -57,6 +58,8 @@ other.
 * `Ratpoints.Sieve.RunCounts`, `Ratpoints.Sieve.Correction`, `Ratpoints.Sieve.RunCounts.fold`,
   `Ratpoints.Sieve.Correction.start`, `Ratpoints.Sieve.runFold`: the counters of the run, the state
   of the correction, its start, and the fold of a block into them.
+* `Ratpoints.Sieve.sieveRun`: the blocks of the run, sifted in turn, each folded after it, and the
+  ends of the second and the third stage of the last block folded.
 -/
 
 @[expose] public section
@@ -452,8 +455,7 @@ stage; the counters from zero; and the loop of the shape over the steps
 range `bLow, …, bHigh` of the denominators), each denominator sifted by `Ratpoints.Sieve.siftDen`
 with the classes `cls`, the row offsets `offsets`, the bounds `iv` of the search intervals, the
 height `H`, pieces of at most `A` bit arrays and the flags `fl`. Returns the delivery, the store and
-the report of the block (`Ratpoints.Sieve.BlockStat`). The run of the model
-(`Ratpoints.Sieve.sieveRun`) does not call it yet (stage I).
+the report of the block (`Ratpoints.Sieve.BlockStat`).
 
 C: `find_points.c:3127-3128`, `find_points.c:3889-3898`, `find_points.c:3911`,
 `find_points.c:3913-3915`, `find_points.c:4077-4078`, `find_points.c:4088-4093`, `rp-private.h:582`
@@ -743,8 +745,7 @@ structure Correction where
 /-- The correction at the start of the run, for the ends `sp2` and `sp3` of the second and the third
 stage of the choice and the words `adaptAt` of the first correction: nothing counted, the counters
 of the second stage on counted under `sp2`, no block folded, one decision, that of the choice for
-block `0`, and the ends of the choice as those of the last block folded. The run of the model
-(`Ratpoints.Sieve.sieveRun`) does not call it yet (stage I).
+block `0`, and the ends of the choice as those of the last block folded.
 
 C: `find_points.c:3853-3856`, `find_points.c:3861-3863`
 
@@ -759,8 +760,7 @@ entries `es`: the block is the `j`-th folded; its counters added to those of the
 (`Ratpoints.Sieve.RunCounts.fold`, with the end of the second stage of its decision); its ends as
 those of the last block folded; and when the run has swept the words of the next correction, the
 correction (`Ratpoints.Sieve.adaptPrimes`), whose result, when it changes an end, is a decision for
-the blocks from `j + Ratpoints.adaptLag + 1` on. The run of the model (`Ratpoints.Sieve.sieveRun`)
-does not call it yet (stage I).
+the blocks from `j + Ratpoints.adaptLag + 1` on.
 
 C: `find_points.c:4102-4106`, `find_points.c:4114-4127`
 
@@ -780,6 +780,51 @@ def runFold (s : SieveOptions) (P : Params) (es : Array SieveEntry) (st : Correc
     else st.decisions
   return { st with sp2, sp3, adaptAt, decisions }
 
+/-! ### The run -/
+
+/-- The points of the denominators from `bLow` to `bHigh` of the shape `shape`, for the polynomial
+of degree `d` with the coefficient list `c`, delivered to the callback `process` on the delivery
+`r`, whose flag `quit` is clear, with the sieve entries `entries` of the moduli, the reserve of the
+correction included, and the reciprocals `magics` of their moduli in their order, as the result `P`
+of the choice (`Ratpoints.sievingInfo`) gives them for the options `s`: the blocks of the run
+(`Ratpoints.Sieve.Shape.blockPlan`); the correction from the choice
+(`Ratpoints.Sieve.Correction.start`, with the ends `P.sp2` and `P.sp3` and the words `P.adaptAt`);
+then for each block in turn its points (`Ratpoints.Sieve.runBlock`, with the decision in force for
+it, the end `P.sp1` of the first stage, the classes `cls` with their row offsets `offsets`, the word
+`db` of the classes that admit a numerator, the bounds `iv` of the search intervals and pieces of at
+most `A` bit arrays), the rows that it builds into the store `store` going on to the next block, and
+the fold of its report (`Ratpoints.Sieve.runFold`), after which the run returns if the callback has
+stopped the search. Returns the delivery and the ends of the second and the third stage of the last
+block folded, which the search reports as used.
+
+C: `find_points.c:5120`, `find_points.c:5152-5160`, `find_points.c:5163`
+
+Deviation: the blocks on the calling thread alone, without the pool of threads, which sifts them
+apart and delivers them in the same order, the decision of each block depending only on the folds of
+the blocks at least `Ratpoints.adaptLag + 1` before it (excluded with the threads); the ends of the
+last block returned, for the fields `sp2` and `sp3` of the arguments that line 5163 writes; the
+store of the tables of rows passed from one block to the next, for the arrays `sieve` of the entries
+of the arguments, its last state not returned, as nothing reads the tables of rows after the run;
+the delivery `r` passed and returned, for the pointers `info` and `wk.quit` and the count `total`;
+natural numbers for the `long`s. -/
+def sieveRun {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : List Int) (d H A : Nat)
+    (fl : CheckFlags) (s : SieveOptions) (P : Params) (entries : List SieveEntry)
+    (magics : Array Nat) (cls : Vector NumClass 64) (offsets : Array Nat) (db : UInt64)
+    (shape : Shape) (iv : Array IntervalBounds) (bLow bHigh : Nat) (store : RowStore)
+    (r : Delivery σ) : Id (Delivery σ × Nat × Nat) := do
+  let plan ← shape.blockPlan bLow bHigh
+  let es := entries.toArray
+  let mut corr := Correction.start P.sp2 P.sp3 P.adaptAt
+  let mut r := r
+  let mut store := store
+  for i in [0:plan.nblocks] do
+    let (r', st, b) ← runBlock process c d H A fl P.sp1 entries magics cls offsets db shape iv bLow
+      bHigh plan corr.decisions i store r
+    r := r'
+    store := st
+    corr ← runFold s P es corr b
+    if r.quit then break
+  return (r, corr.lastSp2, corr.lastSp3)
 
 /-! ### Examples -/
 
@@ -953,6 +998,32 @@ private def visited (s : Shape) (cls : Vector NumClass 64) (db : UInt64) (bLow b
         (-4, -3, 9), (8, 15, 9), (8, -15, 9), (20, 21, 9), (20, -21, 9), (-1, 0, 2), (3, 4, 2),
         (3, -4, 2), (15, 8, 2), (15, -8, 2), (-3, 4, 8), (-3, -4, 8), (5, 12, 8), (5, -12, 8),
         (-5, 12, 18), (-5, -12, 18), (7, 24, 18), (7, -24, 18)]
+
+-- The run of `1 2` at 20 in the divisor shape, its two blocks sifted in turn: the affine points
+-- that `ratpoints '1 2' 20 -q` prints, by the divisors `1` and `2`, so with the denominator 9
+-- before 2; and the cut points of the choice, which the short run does not correct, as those of the
+-- last block folded.
+#guard
+  let c : List Int := [1, 2]
+  let (cls, db) := Id.run (numClasses (Id.run (twoAdic c 1)))
+  let entries := (primeTable.toList.take 30).filterMap fun p ↦
+    (Id.run (examinePrime? c 1 p true)).map fun (e, _) ↦ (⟨p, [.prime e], magic p,
+      p * ((rowBias + p - 1) / p), e.inverses[mulMod rbaLength p (magic p)]!, #[], .prime p,
+      sieveInit p, 0.0, 0⟩ : SieveEntry)
+  let offsets := Array.replicate (Id.run (numPackings cls) * entries.length) 0
+  let (cls, entries, offsets) := Id.run (classOffsets cls entries offsets)
+  let P : Params :=
+    { moduli := entries.map (·.p), examined := 30, lookedAt := 30, sp1 := 11, sp2 := 22,
+      sp3 := entries.length, maxForbidden := 64, jacobi := true, adaptAt := ~~~0 }
+  let (r, sp2, sp3) := Id.run (sieveRun appendPoint c 1 20 1 {} {} P entries
+      (entries.toArray.map (·.magic)) cls offsets db (.squares1 [⟨2, 1, 2⟩] [1, 2])
+      (Id.run (exactBounds [((Double.ofInt64 20).neg, Double.ofInt64 20)] 20 20)) 1 20
+      (entries.foldl (fun s e ↦ e.addTables s) {}) ⟨#[], 0, false⟩)
+  sp2 == 22 && sp3 == entries.length && r.info.toList ==
+    [(0, 1, 1), (0, -1, 1), (4, 3, 1), (4, -3, 1), (12, 5, 1), (12, -5, 1), (-4, 3, 9), (-4, -3, 9),
+      (8, 15, 9), (8, -15, 9), (20, 21, 9), (20, -21, 9), (-1, 0, 2), (3, 4, 2), (3, -4, 2),
+      (15, 8, 2), (15, -8, 2), (-3, 4, 8), (-3, -4, 8), (5, 12, 8), (5, -12, 8), (-5, 12, 18),
+      (-5, -12, 18), (7, 24, 18), (7, -24, 18)]
 
 end Sieve
 

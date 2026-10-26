@@ -24,8 +24,8 @@ expression as the C code computes them: the record of a candidate and its two or
 keys, the cost of the exact check, the rule that ends the first stage, the offset of the second, and
 the estimate of the run (the denominators, the words and the calls of the sieve) with the mean
 number of bits per word of the bit arrays. The composite moduli and the stages of the choice call
-them (`Ratpoints.addModuli`, `Ratpoints.takeEntries`, `Ratpoints.rankSecond`), and so does the
-choice (`Ratpoints.sievingInfo`), which the search does not call yet (stage I).
+them (`Ratpoints.addModuli`, `Ratpoints.takeEntries`, `Ratpoints.rankSecond`), and so do the choice
+(`Ratpoints.sievingInfo`) and the search (`Ratpoints.searchPoints`).
 
 The doubles are Lean's `Float`, IEEE 754 binary64 with the arithmetic of the platform: `+`, `-`,
 `*`, `/` and `sqrt` correctly rounded, as the C code compiled without fused multiply-adds and

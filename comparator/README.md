@@ -119,7 +119,10 @@ of `(P : Params) (hP : P.WF)`, and the two refusal theorems `s` in place of `P`;
 well-formedness of the parameters that the options of the program give, `challenge_wf_sieveParams`,
 is gone, with the parameters it spoke about. So `challenges.json` lists eleven statements; the two
 of the brute-force reference keep their text. On 2026-10-25 `lake comparator --paranoid` accepted
-all eleven in their form of stage I, with Lean's kernel and the five external checkers.
+all eleven in their form of stage I, with Lean's kernel and the five external checkers, and on
+2026-10-25 `lake comparator` accepted them again with the choice of the moduli by the curve and the
+run over the blocks with the correction of the moduli between them, which change their proofs and
+not their text.
 
 ## Running
 

@@ -27,13 +27,14 @@ is a permutation of the reference, as in stage~D, so that the main theorems, the
 and the statements that comparator certifies do not change; and it is the reference itself, without
 a reversal, wherever the loop visits the denominators in increasing order, in particular for every
 shape but the divisors times squares. Besides the deviations of Section~\ref{sec:denDeviations},
-which name their stages, the model of this chapter keeps one simplification of the loop, the subject
-of a later stage: the loop visits the denominators of each segment in order, where ratpoints cuts
-the segments into blocks for its threads and for the correction of the moduli between blocks
-(stage~I), which changes neither the points nor their order. In stage~E every class of the
-denominators packed its numerators with the stride~$1$, its word a pattern of the plain layout of
-the model; since stage~F3 the run packs the numerators of a class that are all congruent modulo
-$2^e$ into the bits of every $2^e$-th numerator, as ratpoints does (Chapter~\ref{chap:packing}).
+which name their stages, the model of this chapter visited the denominators of each segment in
+order; since stage~I the run cuts the segments into blocks, as ratpoints does, with the correction
+of the moduli between them, and leaves out the threads, which deliver the blocks in their order
+(Chapter~\ref{chap:moduli}), neither of which changes the points or their order. In stage~E every
+class of the denominators packed its numerators with the stride~$1$, its word a pattern of the plain
+layout of the model; since stage~F3 the run packs the numerators of a class that are all congruent
+modulo $2^e$ into the bits of every $2^e$-th numerator, as ratpoints does
+(Chapter~\ref{chap:packing}).
 
 \section{What the C code does on the side of the denominators}\label{sec:denC}
 
@@ -552,19 +553,20 @@ $(c_d / q) = -1$, which these do not reach.
   \end{itemize}
   The class test is that the pattern of the class of $b \bmod 64$ (Definition~\ref{def:numClasses})
   is not zero, which it is exactly when the word $\mathrm{nb}[b \bmod 64]$ is not; for the words it
-  is made by $\mathrm{den\_bits}$. The run of the model lists the denominators of a shape and then
-  tests and sifts them one after the other, where \verb|run_block| tests and sifts each as its loop
-  reaches it, and has no blocks until the run over the blocks of stage~I: the lines of the C code
-  that the lists and the tests of the shapes replace are those of the plan of the blocks and of the
-  loops of the shapes over a block (Definitions~\ref{def:blockPlan} and~\ref{def:blockLoops}), and
-  the lists and the tests have none of their own. The words of a forbidden divisor, the word of $64$
-  denominators and the walk over its set bits are exact, so that the list of the words is the range
-  filtered by the class bit and the primes tested with words; the tests of a denominator pass it
-  when no entry of the valuation test excludes it, the Jacobi tests pass it and no valuation entry
-  excludes it. The bounds of the square shapes are the exact integer square roots, and the
-  denominators of the shapes are at most $b_{\mathrm{high}}$, so \verb|long|s for a \verb|long|
-  $b_{\mathrm{high}}$. The shape that \verb|run_setup| chooses and the bounds that it makes are
-  those of the flags and of the search intervals.
+  is made by $\mathrm{den\_bits}$. The model has the blocks and no listing: the loops of the shapes
+  over the steps of a block (Definitions~\ref{def:blockPlan} and~\ref{def:blockLoops}) test and sift
+  each denominator as they reach it, as \verb|run_block| does; the lists of the denominators of the
+  shapes and their tests on a single denominator ($\mathrm{squaresDens}$, $\mathrm{squares1Dens}$,
+  $\mathrm{wordBits}$, $\mathrm{wordsDens}$, $\mathrm{Shape.dens}$ and $\mathrm{Shape.keep}$) are
+  definitions of the proofs, the reference of the loops (Lemma~\ref{lem:blockDens}), with no lines
+  of the C code of their own. The words of a forbidden divisor, the word of $64$ denominators and
+  the walk over its set bits are exact, so that the list of the words is the range filtered by the
+  class bit and the primes tested with words; the tests of a denominator pass it when no entry of
+  the valuation test excludes it, the Jacobi tests pass it and no valuation entry excludes it. The
+  bounds of the square shapes are the exact integer square roots, and the denominators of the shapes
+  are at most $b_{\mathrm{high}}$, so \verb|long|s for a \verb|long| $b_{\mathrm{high}}$. The shape
+  that \verb|run_setup| chooses and the bounds that it makes are those of the flags and of the
+  search intervals.
 \end{definition}
 
 \begin{lemma}[The lists of the shapes]\label{lem:shape_dens}
@@ -603,71 +605,66 @@ $(c_d / q) = -1$, which these do not reach.
 \end{proof}
 
 The run (Definition~\ref{def:sieveRun}) takes the shape, the classes of the denominators with their
-row offsets and the word $\mathrm{den\_bits}$, the range
-$b_{\mathrm{low}}, \dots, b_{\mathrm{high}}$ and the cut points $s_1$ and $s_2$ of the stages, and
-lives in the model file of this chapter: for each denominator of the list of the shape that passes
-its test, the residues of $b$ divided by the stride of its class (Definition~\ref{def:fillBpList})
-and the points that \verb|sift| delivers to the callback in the packing of its class, with the first
-$s_2$ sieve entries in the first two stages, their rows read from the store of the tables of rows or
-built into it (Definition~\ref{def:buildRows}), and the others in the third stage, in turn, the run
-returning after a denominator at which the callback stopped the search, the store passed from one
-denominator to the next (\csource{find_points.c}{3861}{3861}, \csource{find_points.c}{3889}{3904},
-\csource{find_points.c}{3911}{3911}, \csource{find_points.c}{3917}{3918},
-\csource{find_points.c}{3926}{3936}, \csource{find_points.c}{3954}{3966},
-\csource{find_points.c}{4009}{4009}, \csource{find_points.c}{4042}{4052},
-\csource{find_points.c}{4059}{4059}, \csource{find_points.c}{4066}{4072},
-\csource{find_points.c}{4075}{4078}, \csource{find_points.c}{5120}{5120},
-\csource{find_points.c}{5152}{5160}). Its contract, for an array size $A \ge 1$, sieve entries with
-their reciprocals, the first $s_2$ with their tables of inverses, the row offsets of the classes and
-a store of the tables of rows that fits them (Lemma~\ref{lem:storeTables}), those from $s_2$ on
-prime entries (Definition~\ref{def:stage3}), the bits of $\mathrm{den\_bits}$ those of the classes
-with a pattern, the denominators from $b_{\mathrm{low}} \ge 1$ to $b_{\mathrm{high}} < 2^{63}$ and
-$H < 2^{63}$, from a delivery whose flag is clear, is the delivery of the concatenation, over the
+row offsets and the word $\mathrm{den\_bits}$, the range $b_{\mathrm{low}}, \dots,
+b_{\mathrm{high}}$ and the result of the choice of the moduli, and lives in the model file of the
+blocks: for each block in turn, with the decision of the correction of the moduli in force for it,
+the loop of the shape over its steps, which hands each denominator that passes the test of the
+shape, with the residues of $b$ divided by the stride of its class
+(Definition~\ref{def:fillBpList}), to \verb|sift| in the packing of its class, with the sieve
+entries of the first two stages of the decision, their rows read from the store of the tables of
+rows or built into it (Definition~\ref{def:buildRows}), and those of its third stage, the run
+returning after a block in which the callback stopped the search, the store passed from one block to
+the next. Its contract, the block lemma (Theorem~\ref{thm:blocks}), for an array size $A \ge 1$,
+sieve entries with their reciprocals, their tables of inverses, the row offsets of the classes and a
+store of the tables of rows that fits all of them, those that count no factor prime entries
+(Definition~\ref{def:stage3}), a well-formed first decision, the bits of $\mathrm{den\_bits}$ those
+of the classes with a pattern, the denominators from $b_{\mathrm{low}} \ge 1$ to $b_{\mathrm{high}}
+< 2^{63}$ and $H < 2^{63}$, from a delivery whose flag is clear and when the list of the shape
+(Lemma~\ref{lem:shape_dens}) has no duplicates, is the delivery of the concatenation, over the
 denominators of the list that pass the test, of the points of the check with the flags
 (Definition~\ref{def:checkNumWith}) of the numerators that pass the word $\mathrm{nb}[b \bmod 64]$
 of the class, for any 2-adic words $\mathrm{nb}$ that the classes pack, and survive the sieve
-entries (\verb|Ratpoints.Sieve.sieveRun_spec|, with its equation
-\verb|Ratpoints.Sieve.run_sieveRun|); with the exact check on, these are what the brute-force
-reference finds over these numerators, mapped by $\mathrm{swapPoint}$ when the flag of the reversal
-is set, those with $y < 0$ left out under $\mathrm{noY}$. When the list of the shape is a list $l$
-filtered by a test, the run delivers over $l$, the test moved into the test of the numerators
-(Theorem~\ref{thm:run_reference}, \verb|Ratpoints.Sieve.run_sieveRun_of_eq_filter|). For sound sieve
-entries (Definition~\ref{def:SieveEntry}) and the shapes of Lemma~\ref{lem:shape_dens}, every
-denominator of $l$ that carries a point passes that test and the test of the shape, and every
-numerator that gives a point passes the word of its class and survives the sieve entries, so that
-the filters change nothing that the exact check finds and the run delivers the reference over $l$;
-the points at infinity come from the search.
+entries of the first three stages of the decision of the block of $b$, the blocks visiting the
+denominators of the list in its order (Lemma~\ref{lem:blockDens}); with the exact check on, these
+are what the brute-force reference finds over these numerators, mapped by $\mathrm{swapPoint}$ when
+the flag of the reversal is set, those with $y < 0$ left out under $\mathrm{noY}$. When the list of
+the shape is a list $l$ filtered by a test, the test moves into the test of the numerators
+(Theorem~\ref{thm:run_reference}). For sound sieve entries (Definition~\ref{def:SieveEntry}) and the
+shapes of Lemma~\ref{lem:shape_dens}, every denominator of $l$ that carries a point passes that test
+and the test of the shape, and every numerator that gives a point passes the word of its class and
+survives the sieve entries, so that the filters change nothing that the exact check finds and the
+run delivers the reference over $l$; the points at infinity come from the search.
 
 \section{The search and the theorems}\label{sec:denSearch}
 
 The search of the polynomial handed on (Definition~\ref{def:searchPoints}) does what
 Section~\ref{sec:denC} describes, in its order: the flags of the tests on the denominators, the
-divisors of the leading coefficient for odd degree, the 2-adic information and its exit, what
-\verb|sieving_info| computes (Definition~\ref{def:sievingInfo}), the tables of the examined primes
-with their exit, the forbidden divisors for even degree, the sieve entries of the moduli and the
-store of the tables of rows, the switch of the checked loop, the points at infinity, the return when
-the callback has stopped the search, and the sieving (Definition~\ref{def:sieving}): the shape and
-the run over the denominators from $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$, which
-$\mathrm{findPoints}$ passes as $1$ and $H$, with the cut points of the parameters and the store
-that \verb|sieving_info| returns. For normalized options of the sieve, whose parameters are
-well-formed, $1 \le H < 2^{63}$, $1 \le b_{\mathrm{low}}$, $b_{\mathrm{high}} \le H$ and $d$ the
-degree of $c$, there is a sound test of the sieve, one that lets the numerator of every point
-through, for which it delivers the points at infinity followed by the points of the check with the
-flags of the numerators that pass the test over the denominators of the search
-(Definition~\ref{def:searchDens}), in their order, up to the first call that stops the search, also
-at both exits; without the options of the output these are the points of the reference over the
-candidate $(1, 0)$ and these denominators, each mapped by $\mathrm{swapPoint}$ when the flag of the
-reversal is set (Lemma~\ref{lem:searchList}, which uses Definitions~\ref{def:Shape}
-and~\ref{def:searchDens}, Lemmas~\ref{lem:twoAdic_exit} and~\ref{lem:shape_dens} and the reduction
-of the run). The node of the search holds the C ranges of the flags and of the exits, the call of
-\verb|sieving_info| and the list of the sieve entries that it fills among them, and the return after
-the points at infinity with the return when the Sturm step leaves nothing to search
-(\csource{find_points.c}{4588}{4589}, \csource{find_points.c}{4595}{4596},
+divisors of the leading coefficient for odd degree, the 2-adic information and its exit, and the
+choice of the moduli with the search after it (Definition~\ref{def:chooseAndSearch}): the choice
+(Definition~\ref{def:choice}), the tables of the primes looked at with their exit, the forbidden
+divisors for even degree, the sieve entries of the moduli and the store of the tables of rows, the
+switch of the checked loop, the points at infinity, the return when the callback has stopped the
+search, and the sieving (Definition~\ref{def:sieving}): the shape and the run over the blocks of the
+denominators from $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$, which $\mathrm{findPoints}$ passes as
+$1$ and $H$, with the cut points of the choice as the first decision and the store that the choice
+returns. For normalized options of the sieve, $1 \le H < 2^{63}$, $1 \le b_{\mathrm{low}}$,
+$b_{\mathrm{high}} \le H$ and $d$ the degree of $c$, there is a sound test of the sieve, one that
+lets the numerator of every point through, for which it delivers the points at infinity followed by
+the points of the check with the flags of the numerators that pass the test over the denominators of
+the search (Definition~\ref{def:searchDens}), in their order, up to the first call that stops the
+search, also at both exits; without the options of the output these are the points of the reference
+over the candidate $(1, 0)$ and these denominators, each mapped by $\mathrm{swapPoint}$ when the
+flag of the reversal is set (Lemma~\ref{lem:searchList}, which uses Definitions~\ref{def:Shape}
+and~\ref{def:searchDens}, Lemmas~\ref{lem:twoAdic_exit} and~\ref{lem:shape_dens} and the contract of
+the run). The node of the search holds the C ranges of the flags and of the 2-adic exit and the list
+of the sieve entries (\csource{find_points.c}{4588}{4589}, \csource{find_points.c}{4595}{4596},
 \csource{find_points.c}{4602}{4602}, \csource{find_points.c}{4603}{4604},
 \csource{find_points.c}{4607}{4607}, \csource{find_points.c}{4900}{4943},
 \csource{find_points.c}{4948}{4948}, \csource{find_points.c}{4954}{4963},
-\csource{find_points.c}{4992}{5012}, \csource{find_points.c}{5100}{5106}); the sieving holds the
-frame of the block that sets up the run and the rows of offsets of the classes
+\csource{find_points.c}{4992}{4995}, with lines 5007-5009 and 5104 of the report); the search with
+the choice holds the call of \verb|sieving_info| and the returns after it, after the points at
+infinity and when the Sturm step leaves nothing to search (Definition~\ref{def:chooseAndSearch});
+the sieving holds the frame of the block that sets up the run and the rows of offsets of the classes
 (\csource{find_points.c}{4573}{4573}, \csource{find_points.c}{5116}{5116},
 \csource{find_points.c}{5119}{5119}, \csource{find_points.c}{5132}{5132},
 \csource{find_points.c}{5137}{5139}, \csource{find_points.c}{5167}{5167}).
@@ -711,12 +708,13 @@ frame of the block that sets up the run and the rows of offsets of the classes
 \end{theorem}
 
 \begin{proof}
-  \uses{lem:findPoints_searchList, lem:flatMap_sound, lem:searchDenominators}
+  \uses{lem:findPoints_searchList, lem:flatMap_sound, lem:searchDenominators, lem:blockDens}
   \leanok
   $L$ is the list of the search of $c'$ for a sound test of the sieve
   (Lemma~\ref{lem:findPoints_searchList}), which takes an exit only when the curve has no points
   (Lemmas~\ref{lem:twoAdic_exit} and~\ref{lem:examinePrime_none}), and otherwise gives the points of
-  the reference over the list of its shape (Lemma~\ref{lem:shape_dens}), the tests of the sieve,
+  the reference over the list of its shape (Lemma~\ref{lem:shape_dens}), which the blocks of the run
+  visit in its order (Lemma~\ref{lem:blockDens}), the tests of the sieve,
   which every denominator and every numerator of a point pass, changing nothing
   (Lemma~\ref{lem:flatMap_sound}); these are those over the denominators of the search, since a
   denominator that the one list has and the other lacks carries no point. The denominators of the
@@ -772,10 +770,9 @@ Each component of this chapter differs from the C code in a stated way, recorded
     function, for the loops of divisions of the C code; the bounds of the square shapes by the exact
     integer square root, for the square root in \verb|double| corrected by a step either way, with
     the same values for the arguments $n \ge 1$ that the C code passes;
-  \item the examined primes of the forbidden divisors are the first primes of the table up to the
-    number that the parameters examine, and the further primes start at that position, for the final
-    \verb|pn_lim| of \verb|sieving_info|, which it raises when the number of primes was left to the
-    library and the choice of the moduli needs more (stage~I);
+  \item the forbidden divisors of the primes examined in the loop of the tables of the choice of
+    the moduli and of the further primes, from the final \verb|pn_lim| of \verb|sieving_info| on,
+    are made where the choice makes them (Definition~\ref{def:tablesLoop});
   \item the Kronecker symbol $(c_d / p) = -1$ by the table of the squares modulo $p$, which marks
     $0$ as a square; the square tests of the leading coefficient, for the Jacobi switch and for the
     point at infinity of the 2-adic exit, made on the polynomial searched, where the C code reads
@@ -785,9 +782,7 @@ Each component of this chapter differs from the C code in a stated way, recorded
     C code, which never binds for a \verb|long| $b_{\mathrm{high}}$ and an odd prime ($3^{40} >
     2^{63}$), so that the model stays sound for every height;
   \item lists for the arrays with their terminating zeros, natural numbers for the \verb|long|s and
-    \verb|int|s, divisions for the multiplications by reciprocals (\verb|RP_MULMOD|) of the first
-    word of a block modulo the forbidden divisors tested with words, which come with the blocks
-    (stage~I), fresh arrays for the buffers of the run and of the arguments; the values
+    \verb|int|s, fresh arrays for the buffers of the run and of the arguments; the values
     that could leave their C types are proved to stay in them for a \verb|long| $b_{\mathrm{high}}$,
     by lemmas that the nodes of their components name: the denominators $k^2$, $s k^2$ and
     $64 w + j$ of the shapes, the products $x p$ of the divisors and $p^m$ of the masks, the square
@@ -799,9 +794,8 @@ Each component of this chapter differs from the C code in a stated way, recorded
     where \verb|RP_MULDIV| is exact; the valuations and the slopes of the records of the divisors,
     \verb|int|s in the C code, as natural numbers, which they fit for coefficients below
     $2^{2^{31} - 1}$;
-  \item the denominators of a shape listed, then tested and sifted one after the other; no blocks,
-    and no threads, which deliver the blocks in their order; no correction of the moduli between the
-    blocks (stage~I);
+  \item the blocks on the calling thread alone, without the pool of threads, which delivers the
+    blocks in their order (Theorem~\ref{thm:threads});
   \item no failure for lack of memory, where \verb|sieving_info| drops the primes beyond the table
     whose words it cannot store; no output under \verb|DEBUG| or \verb|RATPOINTS_VERBOSE|.
 \end{itemize}
@@ -811,9 +805,9 @@ statements that are not modelled, the management of memory (the arrays of the ru
 with the failures of their allocation, the release of the run and of the worker, the enlargement of
 the buffer of the tables when \verb|sieving_info| has looked at more primes), and the pool of
 threads with the threaded run; the output under \verb|RATPOINTS_VERBOSE| and \verb|DEBUG| inside a
-modelled block goes with the block, whose deviation says so. Left to a later stage are the blocks
-with the correction of the moduli between them and the choice of the number of primes examined
-(stage~I).
+modelled block goes with the block, whose deviation says so. The blocks with the correction of the
+moduli between them and the choice of the number of primes examined are those of
+Chapter~\ref{chap:moduli}.
 
 \section{Files and names}
 
@@ -826,8 +820,9 @@ constant), so that a denominator of the Jacobi test by tables is a word, and a v
 $\mathrm{mulModLimit}$ times a modulus $p \le 2^{32}$ is below $2^{64}$, where the reductions by a
 reciprocal are exact (Lemma~\ref{lem:mulMod}). The valuation and the divisors of the leading
 coefficient are in \verb|Ratpoints/Model/Setup.lean|, in the namespace \verb|Ratpoints.Setup|; the
-2-adic information, the forbidden divisors, the Jacobi test, the shapes and the run in
-\verb|Ratpoints/Model/Denominators.lean|, in the namespace \verb|Ratpoints.Sieve|, and, since
+2-adic information, the forbidden divisors, the Jacobi test and the shapes in
+\verb|Ratpoints/Model/Denominators.lean|, in the namespace \verb|Ratpoints.Sieve| (the run, since
+stage~I, in \verb|Ratpoints/Model/Blocks.lean|), and, since
 stage~F3, the classes with $\mathrm{den\_bits}$ in \verb|Ratpoints/Model/Packing.lean|, and since
 stage~F4 the words of a forbidden divisor in \verb|Ratpoints/Model/Rows.lean|, with their bit lemma
 in \verb|Ratpoints/Proof/Rows.lean|; the class of a denominator in
@@ -838,7 +833,9 @@ valuation in \verb|Valuation.lean|; the 2-adic information in \verb|TwoAdic.lean
 of odd degree, the factorization and the divisors with their slopes in \verb|Divisors.lean|; the
 forbidden valuations and divisors in \verb|Forbidden.lean|; the Jacobi test by the binary algorithm
 in \verb|Jacobi.lean| and by tables in \verb|JacobiTables.lean|; the lists and the tests of the
-shapes in \verb|Shapes.lean|; and the run over a shape in \verb|Denominators.lean|. Unlike those of
+shapes in \verb|Shapes.lean|, since stage~I with the lists themselves; and what the set-up of the
+run returns in \verb|Denominators.lean| (the contract of the run, since stage~I, in
+\verb|Correction.lean|, Chapter~\ref{chap:moduli}). Unlike those of
 stages C1 to D, the contracts of this stage are proved in files with Mathlib, next to the lemmas
 they serve, since several of them speak of notions of Mathlib (the primes and their valuations, the
 squares modulo a prime, the Jacobi symbol). The class bit is in the contracts of

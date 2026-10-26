@@ -455,65 +455,50 @@ Lemma~\ref{lem:sift_eq_checkDen} maps their side.
 \section{The search and the theorems}\label{sec:setupSearch}
 
 \begin{definition}[The search of the polynomial handed on]\label{def:searchPoints}
-  \uses{def:Params, def:arraySize, def:sievingInfo, def:useCLong, def:pointsAtInfinity,
-    def:sieving, def:twoAdic, def:setupUs1, def:forbidden, def:numClasses, def:Outcome,
-    def:delivery, def:sieveOptions, def:sieveParams}
+  \uses{def:chooseAndSearch, def:arraySize, def:runShape, def:twoAdic, def:setupUs1,
+    def:numClasses, def:Outcome, def:delivery, def:sieveOptions}
   \lean{Ratpoints.searchPoints}
   \leanok
   For the coefficients $c$ of degree $d$ that the set-up hands on, the flags of the check, the
   height $H$, the normalized options of the sieve (Definition~\ref{def:sieveOptions}), whether the
   caller left the number of primes to the library, the callback, a delivery whose flag is clear and
   the print channel, through which it prints nothing yet (the report of the library, stage~I), over
-  the denominators $b_{\mathrm{low}}, \dots, b_{\mathrm{high}}$ and the search intervals, with the
-  parameters that it takes from its options (Definition~\ref{def:sieveParams}, with the number of
-  primes $-1$ when the caller left it to the library, which are those of the options as the caller
-  gave them), in the order of \verb|find_points_work_1|: the flags of the tests on the denominators,
-  the checked loop for even $d$, the Jacobi test for even $d$, $c_d$ not a square and the Jacobi
-  switch of the options, the squares for odd $d$ and $|c_d| = 1$, and for odd $d$ otherwise the
-  divisors of the leading coefficient up to $b_{\mathrm{high}}$ (Definition~\ref{def:setupUs1};
-  \csource{find_points.c}{4588}{4589}, \csource{find_points.c}{4595}{4596},
-  \csource{find_points.c}{4607}{4607}, \csource{find_points.c}{4900}{4943}, with the bits
-  \verb|RATPOINTS_CHECK_DENOM| and \verb|RATPOINTS_USE_JACOBI| that it sets,
-  \csource{ratpoints.h}{415}{415} and \csource{ratpoints.h}{418}{418}); the 2-adic information
-  (Definition~\ref{def:twoAdic}) with the packings of the classes and \verb|den_bits|
-  (Definition~\ref{def:numClasses}), and nothing delivered when no class of the denominators admits
-  a numerator and there is no point at infinity (\csource{find_points.c}{4603}{4604},
-  \csource{find_points.c}{4948}{4948}, \csource{find_points.c}{4954}{4963}); then what
-  \verb|sieving_info| computes (Definition~\ref{def:sievingInfo}), with the flag of the
-  \verb|long|s: the tables of the examined primes, the forbidden divisors for even $d$
-  (Definition~\ref{def:forbidden}), the sieve entries of the moduli with their reciprocals and the
-  store of the tables of rows of the run (Definition~\ref{def:storeTables}), which the run takes,
-  and nothing delivered when the curve has no points modulo a prime examined on the way
-  (\csource{find_points.c}{4602}{4602}, \csource{find_points.c}{4992}{5012}); the checked loop off
-  when there are no forbidden divisors and no Jacobi test, which \verb|sieving_info| switches off
-  (lines 2794-2795, those of the choice of the moduli, Definition~\ref{def:choice}, which the search
-  does not call yet); the points at infinity (Definition~\ref{def:pointsAtInfinity}), after which
-  the search returns when the callback has stopped it or the Sturm step has left nothing to search,
-  the flag \verb|sturm_empty| that the search takes (\csource{find_points.c}{5100}{5106}); and the
-  sieving (Definition~\ref{def:sieving}), the block that sets up the run and runs the denominators:
-  an array of rows of offsets, one for each packing, of one offset for each sieve entry, and the
-  rows of offsets of the classes in it, with the inverses of the strides in the entries
-  (Definition~\ref{def:classOffsets}); the shape that \verb|run_setup| chooses
-  (Definition~\ref{def:Shape}), with the bounds of the search intervals; and the points of the
-  denominators of the shape from $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$ in the search intervals,
-  with its tests, the classes and their offsets and \verb|den_bits|, the three stages that the cut
-  points $s_1$ and $s_2$ of the parameters give and pieces of at most $\mathrm{arraySizeAt}(H)$ bit
-  arrays, each mapped by $\mathrm{swapPoint}$ when the flag of the reversal is set. Both exits
-  return the delivery as it came. The search returns what a search gives back
-  (Definition~\ref{def:Outcome}): the data and the count of the delivery, with the flag of the
+  the denominators $b_{\mathrm{low}}, \dots, b_{\mathrm{high}}$ and the search intervals, in the
+  order of \verb|find_points_work_1|: the flags of the tests on the denominators, the checked loop
+  for even $d$, which the choice of the moduli switches off when nothing comes of it, the Jacobi
+  test for even $d$, $c_d$ not a square and the Jacobi switch of the options, the squares for odd
+  $d$ and $|c_d| = 1$, and for odd $d$ otherwise the divisors of the leading coefficient up to
+  $b_{\mathrm{high}}$ (Definition~\ref{def:setupUs1}; \csource{find_points.c}{4588}{4589},
+  \csource{find_points.c}{4595}{4596}, \csource{find_points.c}{4607}{4607},
+  \csource{find_points.c}{4900}{4943}, with the bits \verb|RATPOINTS_CHECK_DENOM| and
+  \verb|RATPOINTS_USE_JACOBI| that it sets, \csource{ratpoints.h}{415}{415} and
+  \csource{ratpoints.h}{418}{418}); the 2-adic information (Definition~\ref{def:twoAdic}) with the
+  packings of the classes and \verb|den_bits| (Definition~\ref{def:numClasses}), and nothing
+  delivered when no class of the denominators admits a numerator and there is no point at infinity
+  (\csource{find_points.c}{4603}{4604}, \csource{find_points.c}{4948}{4948},
+  \csource{find_points.c}{4954}{4963}); then the mean number of bits per word of the bit arrays of
+  the run (Definition~\ref{def:runShape}; \csource{find_points.c}{4992}{4995}) and the choice of the
+  moduli and the search after it (Definition~\ref{def:chooseAndSearch}; the array of the sieve
+  entries, \csource{find_points.c}{4602}{4602}), with the shape of the run (the flags of the
+  denominators, the height, the range of the denominators, the search intervals, the classes,
+  \verb|den_bits| and the array size of the options normalized for $H$), each point mapped by
+  $\mathrm{swapPoint}$ when the flag of the reversal is set; the lines of the report under
+  \verb|RATPOINTS_VERBOSE| in the part of the search after the choice are recorded here, with
+  nothing printed yet (\csource{find_points.c}{5007}{5009}, \csource{find_points.c}{5104}{5104};
+  stage~I). The 2-adic exit returns the delivery as it came. The search returns what a search gives
+  back (Definition~\ref{def:Outcome}): the data and the count of the delivery, with the flag of the
   reversal, the squares, the success of the divisor set-up and the search intervals. A definition of
   type \verb|Id|, which the search of \verb|find_points_work_1| runs
   (Definition~\ref{def:findPointsVerbose}) with the normalized range of the denominators, the search
   intervals that the Sturm step leaves and its flag \verb|sturm_empty|
   (Definition~\ref{def:sturmRegion}). What it delivers for normalized options, with the print
-  channel that prints nothing, $1 \le H < 2^{63}$, as the refusals leave it,
-  $1 \le b_{\mathrm{low}}$, $b_{\mathrm{high}} \le H$, well-formed search intervals and $d$ the
-  degree of $c$ is the subject of Lemma~\ref{lem:searchList}: the points at infinity and, over the
+  channel that prints nothing, $1 \le H < 2^{63}$, as the refusals leave it, $1 \le
+  b_{\mathrm{low}}$, $b_{\mathrm{high}} \le H$, well-formed search intervals and $d$ the degree of
+  $c$ is the subject of Lemma~\ref{lem:searchList}: the points at infinity and, over the
   denominators of the search (Definition~\ref{def:searchDens}), the points of the check with the
   flags of the numerators in the search intervals, none when \verb|sturm_empty| is set, that a sound
   test of the sieve lets through, up to the first call that stops the search, also when an exit
-  fires, since the curve has no points then (Lemmas~\ref{lem:sievingInfo}
-  and~\ref{lem:twoAdic_exit}).
+  fires, since the curve has no points then (Lemmas~\ref{lem:choice} and~\ref{lem:twoAdic_exit}).
 \end{definition}
 
 The search with a callback, $\mathrm{findPointsWith}(c, H, s, o)$ with the options $s$ of the sieve,
@@ -726,10 +711,8 @@ Each component of the set-up differs from the C code in a stated way, recorded i
     branch of the schedule of Horner's rule; the table and the coefficients fresh arrays and the
     entry a fresh value, returned, for the buffers that the C code takes them from and the entry and
     the array of its caller where it stores them;
-  \item the arguments of \verb|sieving_info| that serve the choice of the moduli (the mean number of
-    bits per word, whether the number of primes was left to the library, the 2-adic classes) are not
-    modelled; the exits return the delivery as it came, where \verb|sieving_info| returns the prime
-    and \verb|find_points_work_1| the count $0$;
+  \item the exits return the delivery as it came, where \verb|sieving_info| returns the prime and
+    \verb|find_points_work_1| the count $0$;
   \item integers for the \verb|long|s, with the range obligations of the helper \verb|mod| and of
     the negations of the map stated as lemmas; no failure for lack of memory; no output under
     \verb|RATPOINTS_VERBOSE| or \verb|DEBUG|.
@@ -768,8 +751,8 @@ loop over a range and on exact quotients of integers that it needs and Lean core
 contracts are in \verb|Ratpoints/Proof/Words.lean|, those from the walk on since stage~F2 in
 \verb|Ratpoints/Proof/Scan.lean| (up to the scan of a piece, split off \verb|Sift.lean| in stage~G),
 \verb|Ratpoints/Proof/SiftBits.lean| (one piece and the bits of one interval, split off
-\verb|Sift.lean| in stage~I) and \verb|Ratpoints/Proof/Sift.lean|, that of the run since stage~E in
-\verb|Ratpoints/Proof/Denominators.lean|; the lemma on \verb|mod| in
+\verb|Sift.lean| in stage~I) and \verb|Ratpoints/Proof/Sift.lean|, that of the run since stage~I in
+\verb|Ratpoints/Proof/Correction.lean|; the lemma on \verb|mod| in
 \verb|Ratpoints/Proof/Reductions.lean|, without Mathlib, since stage~F3; the lemmas on the
 \verb|long|s and the table with the exit in \verb|Ratpoints/Proof/Tables.lean|; the polynomial of a
 coefficient list, the squarefreeness of the chain and of the reversal, the reflection and the

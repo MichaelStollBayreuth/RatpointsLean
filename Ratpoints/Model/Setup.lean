@@ -265,7 +265,7 @@ largest denominator `bHigh`: the primes of `|c_d|` with their valuations and slo
 odd primes of the table is not complete (`Ratpoints.Setup.factorLcf`) or there are
 `Ratpoints.maxDivisors` divisors or more. The denominators of the points are then these divisors
 times squares, which the divisor shape of the loop over the denominators visits divisor by divisor
-(`Ratpoints.Sieve.squares1Dens`).
+(`Ratpoints.Sieve.squares1Block`).
 
 C: `find_points.c:766-776`, `find_points.c:863`, `find_points.c:881-893`, `find_points.c:914-935`,
 `ratpoints.h:390`

@@ -67,7 +67,7 @@ read from the table of a prime as `examine_prime` reads it
 (`Ratpoints.inverses_mulMod_rbaLength_of_isSound`) or computed with `Ratpoints.Sieve.modinv`, has
 what the soundness of the run needs, whatever its density and its count of factors
 (`Ratpoints.isModulusEntry_of_forall_isSound`), for the entries that the choice of the moduli makes
-(stage I).
+(`Ratpoints.sievingInfo`).
 
 ## Main definitions
 

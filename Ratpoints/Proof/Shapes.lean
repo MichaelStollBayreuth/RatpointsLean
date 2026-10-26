@@ -22,7 +22,9 @@ import Std.Tactic.Do
 # The shapes of the loop over the denominators
 
 The lists of the denominators of the shapes of the loop (`Ratpoints.Sieve.Shape.dens`) and their
-tests on a single denominator (`Ratpoints.Sieve.Shape.keep`). The square shape lists the squares of
+tests on a single denominator (`Ratpoints.Sieve.Shape.keep`), definitions of the proofs: the
+denominators of each shape in the order in which the blocks of the run visit them, the reference of
+the loops of the blocks (`Ratpoints.Sieve.Shape.blockLoop`). The square shape lists the squares of
 a range, in increasing order, by the exact integer square roots (`Ratpoints.Sieve.ceilSqrt`,
 `Ratpoints.Sieve.floorSqrt`); the divisor shape lists the products `s k ^ 2` of a range, each once
 for distinct squarefree divisors `s`, since `s k ^ 2` determines the squarefree `s` and `k`; and the
@@ -39,6 +41,12 @@ of the word shape, the forbidden divisors and both Jacobi tests
 denominators that the C code computes as `long`s are at most the largest denominator, those of
 every shape lie between the smallest and the largest, and those that pass the tests of the shape
 have a class with a pattern, which the packing of the numerators needs.
+
+## Main definitions
+
+* `Ratpoints.Sieve.wordBits`, `Ratpoints.Sieve.wordsDens`, `Ratpoints.Sieve.squaresDens`,
+  `Ratpoints.Sieve.squares1Dens`, `Ratpoints.Sieve.Shape.dens`, `Ratpoints.Sieve.Shape.keep`: the
+  listing of the denominators of the shapes and their tests on a single denominator.
 
 ## Main statements
 
@@ -85,6 +93,79 @@ open scoped Std.WP
 namespace Ratpoints
 
 namespace Sieve
+
+/-! ### The listing of the denominators
+
+The denominators of each shape in the order in which the blocks of the run visit them
+(`Ratpoints.Sieve.Shape.blockLoop`), listed, and the tests of a shape on a single denominator: the
+reference of the loops over the denominators, which no longer list them. -/
+
+/-- The word of the 64 denominators `64 w + j` that pass the class test and the forbidden divisors
+tested with words: the word `db` of the classes that admit a numerator (`Ratpoints.Sieve.denBits`),
+and-ed with word `w mod p` of each entry of `forb` (`Ratpoints.Sieve.ForbiddenEntry`); in the word
+of `bLow` the bits below `bLow mod 64` are cleared, and in the word of `bHigh` those above
+`bHigh mod 64`; the word that the loop of the word shape computes
+(`Ratpoints.Sieve.denWord`). -/
+def wordBits (db : UInt64) (forb : List ForbiddenEntry) (bLow bHigh w : ℕ) : UInt64 :=
+  let x := forb.foldl (fun x e ↦ x &&& e.words[w % e.p]!) db
+  let x := if w = bLow / 64 then x &&& ~~~0 <<< (bLow % 64).toUInt64 else x
+  if w = bHigh / 64 then x &&& ~~~0 >>> (63 - bHigh % 64).toUInt64 else x
+
+/-- The denominators of the word shape that their words leave, in increasing order: for each word
+`w` from `⌊bLow / 64⌋` to `⌊bHigh / 64⌋`, the set bits `j` of its word (`Ratpoints.Sieve.wordBits`),
+lowest first (`Ratpoints.Sieve.ctz`), each giving the denominator `64 w + j`. -/
+def wordsDens (db : UInt64) (forb : List ForbiddenEntry) (bLow bHigh : ℕ) : Id (Array ℕ) := do
+  let mut out := #[]
+  for w in [bLow / 64:bHigh / 64 + 1] do
+    let mut x := wordBits db forb bLow bHigh w
+    while x != 0 do
+      let t ← ctz x
+      out := out.push (64 * w + t)
+      x := x &&& (x - 1)
+  return out
+
+/-- The denominators of the square shape, `k ^ 2` for `k` from `⌈√bLow⌉` to `⌊√bHigh⌋`
+(`Ratpoints.Sieve.ceilSqrt`, `Ratpoints.Sieve.floorSqrt`), in increasing order; for odd degree
+and `|c_d| = 1` the denominator of every point is a square. -/
+def squaresDens (bLow bHigh : ℕ) : List ℕ :=
+  let lo := ceilSqrt bLow
+  let hi := floorSqrt bHigh
+  (List.range' lo (hi + 1 - lo)).map fun k ↦ k * k
+
+/-- The denominators of the divisor shape: for each divisor `s` in turn
+(`Ratpoints.Setup.setupUs1`), `s k ^ 2` for `k` from `⌈√(⌊(bLow - 1) / s⌋ + 1)⌉` to `⌊√⌊bHigh / s⌋⌋`
+(`Ratpoints.Sieve.ceilSqrt`, `Ratpoints.Sieve.floorSqrt`), that is for the `k` with
+`bLow ≤ s k ^ 2 ≤ bHigh`, in increasing order of `k`; in increasing order for each divisor, not as a
+whole. -/
+def squares1Dens (divisors : List ℕ) (bLow bHigh : ℕ) : List ℕ :=
+  divisors.flatMap fun s ↦
+    let lo := ceilSqrt ((bLow - 1) / s + 1)
+    let hi := floorSqrt (bHigh / s)
+    (List.range' lo (hi + 1 - lo)).map fun k ↦ s * k * k
+
+/-- The denominators of the shape `s` from `bLow` to `bHigh`, in the order of its loop, before its
+tests on a single denominator: for the squares and the divisors those of
+`Ratpoints.Sieve.squaresDens` and `Ratpoints.Sieve.squares1Dens`, for the words those that their
+words leave (`Ratpoints.Sieve.wordsDens`, with the class test and the forbidden divisors tested with
+words, for the word `db` of the classes that admit a numerator), and otherwise `bLow, …, bHigh`. -/
+def Shape.dens (s : Shape) (db : UInt64) (bLow bHigh : ℕ) : Id (List ℕ) := do
+  match s with
+  | .squares => return squaresDens bLow bHigh
+  | .squares1 _ divisors => return squares1Dens divisors bLow bHigh
+  | .words forb .. => return (← wordsDens db forb bLow bHigh).toList
+  | .all => return List.range' bLow (bHigh + 1 - bLow)
+
+/-- The tests of the shape `s` on a single denominator `b`: the class test, that the pattern of the
+class of `b` modulo 64 among the classes `cls` (`Ratpoints.Sieve.numClasses`) is not `0`, that is,
+that the class admits a numerator, and for the divisors then the valuation test
+(`Ratpoints.Sieve.denInfoTest`); for the words the tests of `Ratpoints.Sieve.wordsTest`, the class
+test being made by the words, with `den_bits`. -/
+def Shape.keep (s : Shape) (cls : Vector NumClass 64) (b : ℕ) : Id Bool := do
+  match s with
+  | .squares => return cls[b % 64]!.bits != 0
+  | .squares1 info _ => if cls[b % 64]!.bits != 0 then denInfoTest info b else return false
+  | .words _ forbVal useJacobi fast lcf => wordsTest forbVal useJacobi fast lcf b
+  | .all => return cls[b % 64]!.bits != 0
 
 /-! ### The square shapes -/
 
@@ -404,7 +485,7 @@ theorem le_and_le_of_mem_squares1Dens {divisors : List ℕ} {bLow bHigh b : ℕ}
   · exact (mem_range'_ceilSqrt_iff hs hbLow).mp hk
 
 /-- The denominators of every shape lie between `bLow ≥ 1` and `bHigh`, as the test for common
-factors on the words of the C code needs (`Ratpoints.Sieve.sieveRun_spec`). -/
+factors on the words of the C code needs (`Ratpoints.Sieve.sift_spec`). -/
 theorem Shape.le_and_le_of_mem_dens (s : Shape) (db : UInt64) {bLow bHigh b : ℕ} (hbLow : 1 ≤ bLow)
     (hb : b ∈ Id.run (s.dens db bLow bHigh)) : bLow ≤ b ∧ b ≤ bHigh := by
   cases s with

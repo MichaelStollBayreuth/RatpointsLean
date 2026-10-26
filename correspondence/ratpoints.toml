@@ -80,6 +80,12 @@ reason = "the include of the header of the library; the model has no headers"
 
 [[excluded]]
 file = "rp-private.h"
+lines = "76-84"
+kind = "threads"
+reason = "the atomic loads and stores of the fields that the threads of a pool share (RP_ACQUIRE, RP_RELAXED, RP_PUBLISH), and their plain forms for a build without threads; on one thread an atomic load or store is a plain read or write, which the model makes"
+
+[[excluded]]
+file = "rp-private.h"
 lines = "86"
 kind = "other"
 reason = "FLOOR, which the C code uses nowhere: find_points.c names it only in a comment"
@@ -122,6 +128,12 @@ reason = "RP_ALWAYS_INLINE and RP_NOINLINE, the inlining attributes that sift.c 
 
 [[excluded]]
 file = "rp-private.h"
+lines = "584"
+kind = "threads"
+reason = "the pool, the slot of its block and the flag to abandon it of a thread of the pool; the calling thread, which the model is, has none"
+
+[[excluded]]
+file = "rp-private.h"
 lines = "617"
 kind = "interface"
 reason = "the prototype of _ratpoints_compute_sturm, which find_points.c calls; the model has no headers (Ratpoints.Sturm.computeSturm)"
@@ -152,6 +164,18 @@ reason = "the prototype of find_points_clear, which frees what find_points_init 
 
 [[excluded]]
 file = "ratpoints.h"
+lines = "370-376"
+kind = "threads"
+reason = "the number of threads that sieve; the model sieves on the calling thread, with the same output for every number of threads"
+
+[[excluded]]
+file = "ratpoints.h"
+lines = "398"
+kind = "threads"
+reason = "the pool of threads of the arguments; the model has no threads"
+
+[[excluded]]
+file = "ratpoints.h"
 lines = "385-388"
 kind = "memory"
 reason = "the private fields of the arguments that hold memory: the scratch integers of the search with their number (work, work_length), and the buffers of the sieve entries, of the bit arrays of the rows and of the integers of the tables of the primes, each with the pointer to its free space (se_buffer, se_next, ba_buffer, ba_next, int_buffer, int_next), which find_points_init allocates (find_points.c:272-375, excluded as interface); the model computes with Lean's integers and makes the entries, the rows and the tables as fresh values"
@@ -167,6 +191,12 @@ file = "find_points.c"
 lines = "30"
 kind = "other"
 reason = "the include of the private header; the model has no headers"
+
+[[excluded]]
+file = "find_points.c"
+lines = "41-43"
+kind = "threads"
+reason = "the declarations of the lock of the tables of rows and of the destruction of the pool of threads; the model sieves the blocks in turn on one thread"
 
 [[excluded]]
 file = "find_points.c"
@@ -287,6 +317,12 @@ file = "find_points.c"
 lines = "3879-3883"
 kind = "memory"
 reason = "run_clear, which releases the arrays of the run"
+
+[[excluded]]
+file = "find_points.c"
+lines = "4129-4519"
+kind = "threads"
+reason = "the pool of threads (the lock of the tables of rows, the workers, the collection of the points of a block, run_threaded) and its stubs for a build without threads; the pool sieves the blocks apart and delivers them in their order, a block not starting before the block RP_ADAPT_LAG + 1 before it is folded, so that the decision of each block and the output are those of the blocks sifted in turn on one thread, which the model does"
 
 [[excluded]]
 file = "find_points.c"

@@ -69,12 +69,12 @@ least one bit array.
   well-formed parameters are, factors completely over the table;
   `Ratpoints.fst_run_modulusFactors_getElem!_primeTable`: one of these primes is its only factor.
 * `Ratpoints.Params.WF.one_lt_of_mem`, `Ratpoints.Params.WF.prime_of_mem_drop`,
-  `Ratpoints.Params.WF.exists_getElem!_primeTable_eq_of_mem_drop`: what the search reads off
-  well-formed parameters, beyond their fields, the last that the moduli of the third stage are among
-  the first `Ratpoints.numPrimes` primes of the table.
-* `Ratpoints.wf_sieveParams`: every parameter set that the options of the sieve give is
-  well-formed, so that the search, which takes its parameters from its options, runs with
-  well-formed parameters.
+  `Ratpoints.Params.WF.exists_getElem!_primeTable_eq_of_mem_drop`: what the sieve entries of given
+  moduli (`Ratpoints.sievingInfoOf`) read off well-formed parameters, beyond their fields, the last
+  that the moduli of the third stage are among the first `Ratpoints.numPrimes` primes of the
+  table.
+* `Ratpoints.wf_sieveParams`: every parameter set that the parameters of the executable give for
+  options of the sieve is well-formed.
 * `Ratpoints.wf_defaultParams`: the parameters of a run without options are well-formed.
 * `Ratpoints.one_le_arraySizeAt`, `Ratpoints.Params.one_le_arraySizeAt`: for a height bound
   `H ≥ 1` a piece of the numerators has at least one bit array.
@@ -567,9 +567,9 @@ private theorem exists_lt_numPrimes_of_mem_moduli_sieveParams {o : SieveOptions}
   obtain ⟨i, hi, rfl⟩ := List.mem_take_iff_getElem.mp (he ▸ hm)
   exact ⟨i, (lt_min_iff.mp hi).1.trans_le hk, by rw [Array.getElem_toList, getElem!_pos]⟩
 
-/-- Every parameter set that the options of the sieve give is well-formed, so that the search, which
-takes its parameters from its options (`Ratpoints.searchPoints`), runs with well-formed parameters:
-its moduli are the first primes of the table, which are below `Ratpoints.maxPrimeEven`
+/-- Every parameter set that the parameters of the executable give for options of the sieve
+(`Ratpoints.sieveParams`, which the search does not call) is well-formed: its moduli are the first
+primes of the table, which are below `Ratpoints.maxPrimeEven`
 (`Ratpoints.getElem!_primeTable_lt_maxPrimeEven`), and the only divisor above `1` of such a prime is
 the prime itself. -/
 theorem wf_sieveParams (o : SieveOptions) : (sieveParams o).WF where

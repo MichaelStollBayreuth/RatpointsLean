@@ -515,16 +515,17 @@ at the position $\mathrm{pos}$, the store of the tables of rows fits the entries
 (Lemma~\ref{lem:storeTables}), the reciprocals are those of their moduli, the residues
 $b\,\mathrm{dinv}[k] \bmod p$, the tables of inverses invert, and each entry is packed for the class
 at its offset; the store after the denominator fits the entries again. The run
-(Definition~\ref{def:sieveRun}) takes the classes, the array of offsets and the store, calls
-\verb|fill_bp_list| before each denominator, passes the store from one denominator to the next, and
-concludes with the delivery, the 2-adic words a ghost argument packed by the classes, under the
-tables of inverses of the first $s_2$ entries, their offsets, a store that fits them, and
-\verb|den_bits| matching the classes (the shape of the forbidden divisors tested with words reads
-\verb|den_bits|, the others the class's pattern, Definition~\ref{def:Shape}). The search
-(Definition~\ref{def:searchPoints}) makes the classes after the 2-adic information, sizes the array
-of offsets and computes them after \verb|sieving_info|, which gives packable entries with their
-tables of inverses and a store of the tables of rows that fits them (Lemma~\ref{lem:sievingInfo}),
-and hands that store on to the run.
+(Definition~\ref{def:sieveRun}) takes the classes, the array of offsets and the store, and each
+block calls \verb|fill_bp_list| before each denominator, passes the store from one denominator and
+one block to the next, and concludes with the delivery, the 2-adic words a ghost argument packed by
+the classes, under the tables of inverses of all the entries, their offsets, a store that fits all
+of them, since a correction may move the cut points, and \verb|den_bits| matching the classes (the
+shape of the forbidden divisors tested with words reads \verb|den_bits|, the others the class's
+pattern, Definition~\ref{def:Shape}). The search (Definition~\ref{def:searchPoints}) makes the
+classes after the 2-adic information, and the sieving (Definition~\ref{def:sieving}) sizes the array
+of offsets for all the entries of the choice of the moduli, the reserve included, and computes them,
+the choice giving packable entries with their tables of inverses and a store of the tables of rows
+that fits them (Lemma~\ref{lem:choice}), and hands that store on to the run.
 
 \begin{lemma}[What the run needs of the search]\label{lem:soundRun}
   \uses{lem:classOffsets, lem:numClasses, lem:admits_mul, def:stage3, def:twoAdic, lem:storeTables}
@@ -532,10 +533,11 @@ and hands that store on to the run.
   \leanok
   The sieve entries, reciprocals, classes, offsets, \verb|den_bits| and store of the tables of rows
   that the search hands to the run are sound, a structure whose constructor takes the conditions as
-  its fields: sound rows, prime entries in the third stage, the reciprocals in their order, tables
-  of inverses and the offsets of the classes for the first two stages, classes that pack the 2-adic
-  words, \verb|den_bits| the word of Definition~\ref{def:twoAdic}, and a store that fits the entries
-  of the first two stages (Lemma~\ref{lem:storeTables}); so a pattern is nonzero exactly when the
+  its fields: sound rows, prime entries wherever no factor is counted, as the third stage needs, the
+  reciprocals in their order, tables of inverses and the offsets of the classes for all the entries,
+  since a correction may move the cut points, classes that pack the 2-adic words, \verb|den_bits|
+  the word of Definition~\ref{def:twoAdic}, and a store that fits all the entries
+  (Lemma~\ref{lem:storeTables}); so a pattern is nonzero exactly when the
   word of its class is, and \verb|den_bits| has the bits of the classes with a pattern.
 \end{lemma}
 
@@ -636,9 +638,9 @@ Each component of this chapter differs from the C code in a stated way, recorded
     the offsets returned, for the writes through the pointer arguments; the products
     $a_0\, (2^k\,\mathrm{rbaLength})^{-1}$ natural numbers below $2^{63}$, for the \verb|long|s that
     \verb|RP_MULMOD| converts, with the reciprocal and the bias read from the sieve entry;
-  \item the rows of offsets with an offset for each sieve entry of the run, those of its three
-    stages, where ratpoints sizes them for the $\mathrm{sp3\_max}$ entries with the reserve of
-    further primes that the correction of the moduli may take (stage~I); the array of the offsets
+  \item the rows of offsets with an offset for each of the $\mathrm{sp3\_max}$ sieve entries of the
+    run, the reserve of further primes that the correction of the moduli may take included; the
+    array of the offsets
     made with zeros, where the C code leaves its entries unset until \verb|class_offsets| writes
     them; $\mathrm{dinv}$ an array of the strides up to the largest in use, where the C code has
     \verb|RP_NUM_STRIDES| entries and leaves those above the largest unset and unread;
@@ -699,8 +701,8 @@ pointers of the chunked first stage (\csource{sift.c}{596}{606}), which read \ve
 (Chapter~\ref{chap:rows}), and the search intervals, among them the choice of the form of
 \verb|numerators_to_bits| and the clipping of an interval to the height bound, since stage~H
 (Chapter~\ref{chap:region}), and the cost model of the packing (\verb|clipped_padding|) since
-stage~I, in the estimate of the run (Definition~\ref{def:runShape}). Left to stage~I is the reserve
-of the offsets for the correction of the moduli.
+stage~I, in the estimate of the run (Definition~\ref{def:runShape}), as is, since stage~I, the
+reserve of the offsets for the correction of the moduli (Definition~\ref{def:sieving}).
 
 \section{Files and names}\label{sec:packingFiles}
 
@@ -747,7 +749,8 @@ off \verb|Sift.lean| in stage~G, the contracts of the sieve on the bit numbers u
 piece, \verb|Ratpoints/Proof/SiftBits.lean|, split off \verb|Sift.lean| in stage~I, those of one
 piece and of the bits of one interval, and \verb|Ratpoints/Proof/Sift.lean| that of one denominator;
 \verb|Ratpoints/Proof/Moduli.lean| the packable entry of a modulus with its tables of inverses;
-\verb|Ratpoints/Proof/Denominators.lean| the run with the classes, the residues and the offsets;
+\verb|Ratpoints/Proof/Correction.lean| the run over the blocks with the classes, the residues and
+the offsets (in \verb|Ratpoints/Proof/Denominators.lean| until stage~I);
 \verb|Ratpoints/Proof/Shapes.lean| the shapes on the patterns of the classes;
 \verb|Ratpoints/Proof/TwoAdic.lean| the word \verb|den_bits| of the classes and the 2-adic exit with
 it; and \verb|Ratpoints/Proof/FindPoints.lean| what the run needs of the search and the search with

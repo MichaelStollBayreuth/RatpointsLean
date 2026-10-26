@@ -8,24 +8,27 @@ module
 public import Ratpoints.Proof.Blocks
 
 import Ratpoints.Proof.Containers
+import Ratpoints.Proof.Delivery
 import Std.Tactic.Do
 
 /-!
-# The correction of the moduli
+# The correction of the moduli and the run
 
-The run of ratpoints sifts its blocks in order, each with the cut points of the decision in force
-for it (`Ratpoints.Sieve.findDecision`, `Ratpoints.Sieve.runBlock`), and folds the counters of each
-block into the state of the correction (`Ratpoints.Sieve.runFold`), which may push a decision for
-the blocks from `Ratpoints.adaptLag + 1` blocks later on (`Ratpoints.Sieve.adaptPrimes`). The
-correction keeps the decisions well-formed (`Ratpoints.Sieve.DecisionWF`) for any values of the
-doubles of its cost model. The counters are counted before the exact check, so that the reports of
-the blocks on which the callback does not stop the search have a closed form, which depends neither
-on the callback nor on the flags of the output (`Ratpoints.Sieve.blockReport`), and so does the
-state of the correction after the folds of the first blocks with these reports
-(`Ratpoints.Sieve.correctionAfter`); the decision of a block (`Ratpoints.Sieve.blockDecision`)
-reads only the folds of the blocks at least `Ratpoints.adaptLag + 1` blocks before it, the lag of
-the correction. The run of the model (`Ratpoints.Sieve.sieveRun`) does not call the correction yet:
-the run over the blocks with the correction comes with stage I.
+The run sifts its blocks in order (`Ratpoints.Sieve.sieveRun`), each with the cut points of the
+decision for it (`Ratpoints.Sieve.findDecision`), and folds the counters of each block into the
+state of the correction (`Ratpoints.Sieve.runFold`), which may push a decision for the blocks from
+`Ratpoints.adaptLag + 1` blocks later on (`Ratpoints.Sieve.adaptPrimes`). The counters are counted
+before the exact check, so that the decisions depend neither on the callback nor on the flags of the
+output: while the callback does not stop the search, the state of the correction is a fold of the
+reports of the blocks in closed form (`Ratpoints.Sieve.correctionAfter`), and a stop of the callback
+in a block ends the run before any decision that the fold of that block pushes is read. So the run
+delivers the points of its blocks in order, each with the decision of the block
+(`Ratpoints.Sieve.blockDecision`), and, over the denominators of its shape in the order of its
+loops, the points of the numerators that pass the class word and survive the entries of the first
+three stages of the decision of the block of the denominator, a decision that is a function of the
+denominator alone. The correction keeps the decisions well-formed (`Ratpoints.Sieve.DecisionWF`) for
+any values of the doubles of its cost model, and the decision of a block reads only the folds of the
+blocks at least `Ratpoints.adaptLag + 1` blocks before it.
 
 ## Main definitions
 
@@ -33,6 +36,9 @@ the run over the blocks with the correction comes with stage I.
 * `Ratpoints.Sieve.blockReport`, `Ratpoints.Sieve.correctionAfter`, `Ratpoints.Sieve.blockDecision`:
   the report of a block in closed form, the state of the correction after the folds of the first
   blocks with these reports, and the decision of a block, all free of the callback and the flags.
+* `Ratpoints.Sieve.blockPoints`: the points that a block delivers.
+* `Ratpoints.Sieve.deliverSlots`: the calling thread of a run with threads, which delivers the
+  slots of the blocks in their order.
 
 ## Main statements
 
@@ -40,13 +46,20 @@ the run over the blocks with the correction comes with stage I.
   `Ratpoints.Sieve.wf_correctionAfter`: the correction keeps the decisions well-formed.
 * `Ratpoints.Sieve.getElem!_findDecision_correctionAfter`: the lag of the correction, the decision
   in force for block `i` is the same after the folds of any `k ≥ i - adaptLag` blocks.
+* `Ratpoints.Sieve.sieveRun_spec`, `Ratpoints.Sieve.fst_run_sieveRun`: the block lemma, the run
+  delivers the points of its blocks in order, each with its decision.
+* `Ratpoints.Sieve.exists_run_sieveRun_eq_deliver`: the contract of the run per denominator.
+* `Ratpoints.Sieve.run_deliverSlots_eq_fst_run_sieveRun`: the property that the threads, which the
+  model leaves out, preserve: the blocks sifted apart into slots with the decisions after enough
+  folds, each with a store of its own, and delivered in their order give the output of the run.
 
 ## Implementation notes
 
 The contracts of the loops of the correction state only what the natural numbers of the C code do:
 no proof reads a value of the doubles, so every statement holds for whatever values the cost model
-computes. The report of a block in closed form is that of `Ratpoints.Sieve.runBlock_spec` when the
-callback does not stop the search in the block.
+computes. The run's invariant (`Ratpoints.Sieve.SieveRunLoopInvariant`) states the delivery for
+every choice of the words of the classes and the ranges of the numerators
+(`Ratpoints.Sieve.RunWords`), as the contract of one block does (`Ratpoints.Sieve.runBlock_spec`).
 -/
 
 @[expose] public section
@@ -58,6 +71,8 @@ open scoped Std.WP
 namespace Ratpoints
 
 namespace Sieve
+
+open BruteForce
 
 /-! ### The correction keeps the decisions well-formed -/
 
@@ -595,6 +610,402 @@ theorem getElem!_findDecision_correctionAfter {i k : Nat} (hk : i - adaptLag ≤
     (getElem!_findDecision_correctionAfter_eq (Nat.sub_le i adaptLag)).symm
 
 end
+
+/-! ### The run -/
+
+-- The plan of the blocks and the fold of a block, as values for the contract of the run.
+private theorem blockPlan_value (shape : Shape) (bLow bHigh : Nat) :
+    ⦃ True ⦄ shape.blockPlan bLow bHigh ⦃ fun p ↦ p = Id.run (shape.blockPlan bLow bHigh) ⦄ :=
+  ⟨fun _ ↦ rfl⟩
+
+private theorem runFold_value (s : SieveOptions) (P : Params) (es : Array SieveEntry)
+    (st : Correction) (b : BlockStat) :
+    ⦃ True ⦄ runFold s P es st b ⦃ fun st' ↦ st' = Id.run (runFold s P es st b) ⦄ :=
+  ⟨fun _ ↦ rfl⟩
+
+variable {σ : Type} (process : Int → Int → Int → σ → Answer σ)
+
+/-- The points that block `i` of the run delivers, for the polynomial of degree `d` with the
+coefficient list `c`, the height `H`, the flags `fl` and the words `x.1` of the classes and the
+ranges `x.2` of the numerators of `Ratpoints.Sieve.RunWords`: those of its denominators
+(`Ratpoints.Sieve.blockDens`) that pass the tests of the shape, in order, each with the first `sp3`
+sieve entries of the decision of the block (`Ratpoints.Sieve.blockDecision`,
+`Ratpoints.Sieve.denPoints`). -/
+def blockPoints (c : List Int) (d H : Nat) (fl : CheckFlags) (s : SieveOptions) (P : Params)
+    (entries : List SieveEntry) (magics : Array Nat) (cls : Vector NumClass 64) (db : UInt64)
+    (shape : Shape) (iv : Array IntervalBounds) (bLow bHigh : Nat)
+    (x : Vector UInt64 64 × (Nat → List (Int × Int))) (i : Nat) : List (Int × Int × Int) :=
+  ((blockDens shape db (Id.run (shape.blockPlan bLow bHigh)) bLow bHigh i).filter
+    fun b ↦ Id.run (shape.keep cls b)).flatMap (denPoints c d H fl
+      (entries.take (blockDecision H s P entries magics cls db shape iv bLow bHigh i).sp3) x)
+
+/-- The invariant of the loop of `Ratpoints.Sieve.sieveRun` over the blocks, whose state is the
+correction, the delivery and the store of the tables of rows, from the delivery `r0`: the delivery
+is that of the points of the blocks done (`Ratpoints.Sieve.blockPoints`), for every choice of the
+words of the classes and the ranges of the numerators of `Ratpoints.Sieve.RunWords`; while the
+callback has not stopped the search, the correction is that after the folds of the blocks done in
+closed form (`Ratpoints.Sieve.correctionAfter`) and the store fits all the entries; and the callback
+has not stopped the search before the loop is done. -/
+def SieveRunLoopInvariant (c : List Int) (d H : Nat) (fl : CheckFlags) (s : SieveOptions)
+    (P : Params) (entries : List SieveEntry) (magics : Array Nat) (cls : Vector NumClass 64)
+    (db : UInt64) (shape : Shape) (iv : Array IntervalBounds) (bLow bHigh : Nat)
+    (r0 : Delivery σ) : Std.WP.Invariant Nat (Correction × Delivery σ × RowStore) Prop :=
+  fun pref suff st ↦ (∀ x, RunWords cls iv H bLow bHigh x → st.2.1 = r0.deliver process
+      (pref.flatMap (blockPoints c d H fl s P entries magics cls db shape iv bLow bHigh x))) ∧
+    (st.2.1.quit = false →
+      st.1 = correctionAfter H s P entries magics cls db shape iv bLow bHigh pref.length ∧
+        st.2.2.Fits entries) ∧
+    (suff = [] ∨ st.2.1.quit = false)
+
+section
+
+variable {process} {c : List Int} {d H : Nat} {fl : CheckFlags} {s : SieveOptions} {P : Params}
+  {entries : List SieveEntry} {magics : Array Nat} {cls : Vector NumClass 64} {db : UInt64}
+  {shape : Shape} {iv : Array IntervalBounds} {bLow bHigh : Nat} {r0 r1 r' : Delivery σ}
+  {corr corr' : Correction} {st st' : RowStore} {pref suff : List Nat} {cur n : Nat}
+  {b : BlockStat}
+
+theorem sieveRunLoopInvariant_nil (hr : r0.quit = false) (hs : st.Fits entries) (l : List Nat) :
+    SieveRunLoopInvariant process c d H fl s P entries magics cls db shape iv bLow bHigh r0 [] l
+      (Correction.start P.sp2 P.sp3 P.adaptAt, r0, st) :=
+  ⟨fun _ _ ↦ by simp, fun _ ↦ ⟨rfl, hs⟩, .inr hr⟩
+
+/-- What the block at the cursor `cur` needs. -/
+theorem SieveRunLoopInvariant.pre (hdec : DecisionWF entries P.sp1 ⟨0, P.sp2, P.sp3⟩)
+    (h : SieveRunLoopInvariant process c d H fl s P entries magics cls db shape iv bLow bHigh r0
+      pref (cur :: suff) (corr, r1, st)) :
+    r1.quit = false ∧ DecisionWF entries P.sp1 corr.decisions[Id.run (findDecision corr.decisions
+      cur)]! ∧ st.Fits entries := by
+  have hq := h.2.2.resolve_left nofun
+  obtain ⟨rfl, hs⟩ := h.2.1 hq
+  have hwf := wf_correctionAfter (H := H) (s := s) (magics := magics) (cls := cls) (db := db)
+    (shape := shape) (iv := iv) (bLow := bLow) (bHigh := bHigh) hdec pref.length
+  exact ⟨hq, decisionWF_getElem!_findDecision hwf.size_pos hwf.block_zero hwf.decisionWF cur, hs⟩
+
+-- The delivery after the block at the cursor `cur`, with the decision of the block.
+private theorem deliver_append_blockPoints (hl : ForIn.toList [:n] = pref ++ cur :: suff)
+    (h : SieveRunLoopInvariant process c d H fl s P entries magics cls db shape iv bLow bHigh r0
+      pref (cur :: suff) (corr, r1, st))
+    (hb : ∀ x, RunWords cls iv H bLow bHigh x → r' = r1.deliver process
+      (((blockDens shape db (Id.run (shape.blockPlan bLow bHigh)) bLow bHigh cur).filter
+        fun b ↦ Id.run (shape.keep cls b)).flatMap (denPoints c d H fl
+          (entries.take corr.decisions[Id.run (findDecision corr.decisions cur)]!.sp3) x)))
+    (x : Vector UInt64 64 × (Nat → List (Int × Int))) (hx : RunWords cls iv H bLow bHigh x) :
+    r' = r0.deliver process ((pref ++ [cur]).flatMap
+      (blockPoints c d H fl s P entries magics cls db shape iv bLow bHigh x)) := by
+  obtain ⟨hd, hc, hq⟩ := h
+  dsimp only at hd hc hq
+  obtain ⟨rfl, -⟩ := hc (hq.resolve_left nofun)
+  rw [hb x hx, hd x hx, List.flatMap_append, Delivery.deliver_append, List.flatMap_singleton,
+    ← Std.Legacy.Range.length_eq_of_toList_eq_append_cons hl]
+  rfl
+
+/-- The block at the cursor `cur` after which the callback stops the search. -/
+theorem SieveRunLoopInvariant.quit (hl : ForIn.toList [:n] = pref ++ cur :: suff)
+    (h : SieveRunLoopInvariant process c d H fl s P entries magics cls db shape iv bLow bHigh r0
+      pref (cur :: suff) (corr, r1, st))
+    (hb : ∀ x, RunWords cls iv H bLow bHigh x → r' = r1.deliver process
+      (((blockDens shape db (Id.run (shape.blockPlan bLow bHigh)) bLow bHigh cur).filter
+        fun b ↦ Id.run (shape.keep cls b)).flatMap (denPoints c d H fl
+          (entries.take corr.decisions[Id.run (findDecision corr.decisions cur)]!.sp3) x)))
+    (hq : r'.quit = true) :
+    SieveRunLoopInvariant process c d H fl s P entries magics cls db shape iv bLow bHigh r0
+      (ForIn.toList [:n]) [] (corr', r', st') := by
+  refine ⟨fun x hx ↦ ?_, fun h' ↦ absurd (hq.symm.trans h') Bool.true_eq_false.mp, .inl rfl⟩
+  have hd := deliver_append_blockPoints hl h hb x hx
+  rw [hd]
+  exact (Delivery.deliver_flatMap_eq_of_prefix process (l₂ := ForIn.toList [:n])
+    ⟨suff, by rw [hl]; simp⟩ _ (hd ▸ hq)).symm
+
+/-- The block at the cursor `cur` after which the callback has not stopped the search. -/
+theorem SieveRunLoopInvariant.append (hl : ForIn.toList [:n] = pref ++ cur :: suff)
+    (h : SieveRunLoopInvariant process c d H fl s P entries magics cls db shape iv bLow bHigh r0
+      pref (cur :: suff) (corr, r1, st))
+    (hs : st'.Fits entries) (hdec : b.dec = Id.run (findDecision corr.decisions cur))
+    (h2 : b.sp2 = corr.decisions[Id.run (findDecision corr.decisions cur)]!.sp2)
+    (h3 : b.sp3 = corr.decisions[Id.run (findDecision corr.decisions cur)]!.sp3)
+    (hb : ∀ x, RunWords cls iv H bLow bHigh x → r' = r1.deliver process
+      (((blockDens shape db (Id.run (shape.blockPlan bLow bHigh)) bLow bHigh cur).filter
+        fun b ↦ Id.run (shape.keep cls b)).flatMap (denPoints c d H fl
+          (entries.take corr.decisions[Id.run (findDecision corr.decisions cur)]!.sp3) x)))
+    (hc : r'.quit = false → b.cnt =
+      ((((blockDens shape db (Id.run (shape.blockPlan bLow bHigh)) bLow bHigh cur).filter
+        fun b ↦ Id.run (shape.keep cls b)).map (denCounts H P.sp1 entries magics cls iv
+          corr.decisions[Id.run (findDecision corr.decisions cur)]!.sp2
+          corr.decisions[Id.run (findDecision corr.decisions cur)]!.sp3)).foldl (· + ·) {}))
+    (hcorr : corr' = Id.run (runFold s P entries.toArray corr b)) (hq : ¬r'.quit = true) :
+    SieveRunLoopInvariant process c d H fl s P entries magics cls db shape iv bLow bHigh r0
+      (pref ++ [cur]) suff (corr', r', st') := by
+  have hq' := Bool.eq_false_iff.mpr hq
+  refine ⟨deliver_append_blockPoints hl h hb, fun _ ↦ ⟨?_, hs⟩, .inr hq'⟩
+  obtain ⟨rfl, -⟩ := h.2.1 (h.2.2.resolve_left nofun)
+  rw [hcorr, eq_blockReport hdec h2 h3 (hc hq'), List.length_append, List.length_singleton,
+    Std.Legacy.Range.length_eq_of_toList_eq_append_cons hl]
+  rfl
+
+/-- At the end of the loop, the points of all the blocks. -/
+theorem SieveRunLoopInvariant.post {stt : Correction × Delivery σ × RowStore}
+    (h : SieveRunLoopInvariant process c d H fl s P entries magics cls db shape iv bLow bHigh r0
+      (ForIn.toList [:n]) [] stt) (x : Vector UInt64 64 × (Nat → List (Int × Int)))
+    (hx : RunWords cls iv H bLow bHigh x) :
+    stt.2.1 = r0.deliver process ((List.range n).flatMap
+      (blockPoints c d H fl s P entries magics cls db shape iv bLow bHigh x)) := by
+  rw [List.range_eq_range']
+  simpa using h.1 x hx
+
+end
+
+attribute [local irreducible] SieveRunLoopInvariant in
+open Std.WP Lean.Order in
+/-- The contract of the run over the blocks with the correction of the moduli, the block lemma: for
+sieve entries with the tables of inverses of their factors, prime entries wherever no factor is
+counted, the reciprocals of their moduli, the row offsets of the packings of the classes `cls` with
+a pattern, whose bits are those of the word `db`, a well-formed decision of the choice
+(`Ratpoints.Sieve.DecisionWF`), forbidden divisors of the word shape that have what its loop needs,
+pieces of at least one bit array, the denominators from `bLow ≥ 1` to `bHigh < 2 ^ 63` and the
+height below `2 ^ 63`, the run, with a delivery whose flag of the stop is clear and a store of the
+tables of rows that fits all the entries, delivers the points of its blocks in order
+(`Ratpoints.Sieve.blockPoints`), each a function of the block and of its decision
+(`Ratpoints.Sieve.blockDecision`), which depends neither on the callback nor on the flags of the
+output, for every choice of the words of the classes and the ranges of the numerators of
+`Ratpoints.Sieve.RunWords`. -/
+theorem sieveRun_spec (c : List Int) (d H A : Nat) (fl : CheckFlags) (s : SieveOptions)
+    (P : Params) (entries : List SieveEntry) (magics : Array Nat) (cls : Vector NumClass 64)
+    (offsets : Array Nat) (db : UInt64) (shape : Shape) (iv : Array IntervalBounds)
+    (bLow bHigh : Nat) (store : RowStore) (r : Delivery σ) (hA : 1 ≤ A)
+    (hent : ∀ e ∈ entries, (e.nf = 0 → e.IsPrimeEntry) ∧ ∀ f ∈ e.factors, f.HasInverses e.p)
+    (hmg : magics.toList = entries.map fun e ↦ magic e.p) (hoff : OffsetsFor cls entries offsets)
+    (hdb : ∀ j < 64, db.toBitVec.getLsbD j = (cls[j]!.bits != 0))
+    (hdec : DecisionWF entries P.sp1 ⟨0, P.sp2, P.sp3⟩) (hforb : shape.ForbFits) (hbLow : 1 ≤ bLow)
+    (hbHigh : bHigh < 2 ^ 63) (hH : H < 2 ^ 63) :
+    ⦃ r.quit = false ∧ store.Fits entries ⦄
+    sieveRun process c d H A fl s P entries magics cls offsets db shape iv bLow bHigh store r
+    ⦃ fun res ↦ ∀ x, RunWords cls iv H bLow bHigh x → res.1 = r.deliver process
+        ((List.range (Id.run (shape.blockPlan bLow bHigh)).nblocks).flatMap
+          (blockPoints c d H fl s P entries magics cls db shape iv bLow bHigh x)) ⦄ := by
+  vcgen [sieveRun, blockPlan_value, runFold_value] invariants
+  | inv1 => SieveRunLoopInvariant process c d H fl s P entries magics cls db shape iv bLow bHigh r
+  all_goals subst plan
+  all_goals try dsimp only at *
+  all_goals first
+    | exact sieveRunLoopInvariant_nil ‹_ ∧ _›.1 ‹_ ∧ _›.2 _
+    | exact SieveRunLoopInvariant.post ‹_› _ ‹_›
+    | (obtain ⟨hq, hd, hs⟩ := SieveRunLoopInvariant.pre hdec ‹_›
+       exact ⟨hq, hA, hent, hmg, hoff, hdb, hd, rfl, hforb,
+         Std.Legacy.Range.lt_of_toList_eq_append_cons ‹_›, hbLow, hbHigh, hH, hs⟩)
+    | (obtain ⟨hs, hd, h2, h3, hb, hc⟩ := ‹RowStore.Fits _ _ ∧ _›
+       first
+         | exact SieveRunLoopInvariant.quit ‹_› ‹_› hb ‹_›
+         | exact SieveRunLoopInvariant.append ‹_› ‹_› hs hd h2 h3 hb hc ‹_› ‹_›)
+
+/-- `Ratpoints.Sieve.sieveRun_spec` as a plain statement. -/
+theorem fst_run_sieveRun (c : List Int) (d H A : Nat) (fl : CheckFlags) (s : SieveOptions)
+    (P : Params) (entries : List SieveEntry) (magics : Array Nat) (cls : Vector NumClass 64)
+    (offsets : Array Nat) (db : UInt64) (shape : Shape) (iv : Array IntervalBounds)
+    (bLow bHigh : Nat) (store : RowStore) {r : Delivery σ} (hA : 1 ≤ A)
+    (hent : ∀ e ∈ entries, (e.nf = 0 → e.IsPrimeEntry) ∧ ∀ f ∈ e.factors, f.HasInverses e.p)
+    (hmg : magics.toList = entries.map fun e ↦ magic e.p) (hoff : OffsetsFor cls entries offsets)
+    (hdb : ∀ j < 64, db.toBitVec.getLsbD j = (cls[j]!.bits != 0))
+    (hdec : DecisionWF entries P.sp1 ⟨0, P.sp2, P.sp3⟩) (hforb : shape.ForbFits) (hbLow : 1 ≤ bLow)
+    (hbHigh : bHigh < 2 ^ 63) (hH : H < 2 ^ 63) (hr : r.quit = false) (hs : store.Fits entries)
+    {x : Vector UInt64 64 × (Nat → List (Int × Int))} (hx : RunWords cls iv H bLow bHigh x) :
+    (Id.run (sieveRun process c d H A fl s P entries magics cls offsets db shape iv bLow bHigh
+      store r)).1 = r.deliver process
+        ((List.range (Id.run (shape.blockPlan bLow bHigh)).nblocks).flatMap
+          (blockPoints c d H fl s P entries magics cls db shape iv bLow bHigh x)) :=
+  (sieveRun_spec process c d H A fl s P entries magics cls offsets db shape iv bLow bHigh store r hA
+    hent hmg hoff hdb hdec hforb hbLow hbHigh hH).le_wp ⟨hr, hs⟩ x hx
+
+/-- The contract of the run over the blocks with the correction of the moduli, per denominator: for
+sieve entries with the tables of inverses of their factors, prime entries wherever no factor is
+counted, the row offsets of the packings of the classes `cls` with a pattern
+(`Ratpoints.Sieve.OffsetsFor`), whose bits are those of the word `db`, the reciprocals of the moduli
+in their order, a store of the tables of rows that fits all the entries, a first decision of the
+parameters that is well-formed (`Ratpoints.Sieve.DecisionWF`), forbidden divisors of the word shape
+that have what its loop needs (`Ratpoints.Sieve.Shape.ForbFits`), a listing of the shape with no
+denominator twice, so that each lies in one block (`Ratpoints.Sieve.Shape.eq_of_mem_blockDens`),
+pieces of at least one bit array, the denominators from `bLow ≥ 1` to `bHigh < 2 ^ 63` and the
+height below `2 ^ 63`, there is a number `sp3At b` of the entries of the first three stages for each
+denominator `b`, the end of the third stage of the decision of its block
+(`Ratpoints.Sieve.blockDecision`), which depends neither on the callback nor on the flags of the
+output, such that the run, with any callback, flags and delivery whose flag of the stop is clear,
+delivers for each denominator `b` of the listing of the shape that passes its tests
+(`Ratpoints.Sieve.Shape.dens`, `Ratpoints.Sieve.Shape.keep`), in order, the points of the check with
+the flags of the numerators `-H, …, H` in one of the ranges `rs b` that the bounds of the search
+intervals give for `b` (`Ratpoints.Sieve.RangesFor`), that pass the class word `nb[b mod 64]` for
+words `nb` that the classes pack, and survive the first `sp3At b` entries: the blocks in order
+(`Ratpoints.Sieve.sieveRun_spec`) visit the denominators of the listing in its order
+(`Ratpoints.Sieve.Shape.flatMap_filter_blockDens`). -/
+theorem exists_run_sieveRun_eq_deliver (c : List ℤ) (d H A : ℕ) (s : SieveOptions) (P : Params)
+    (entries : List SieveEntry) (magics : Array ℕ) (cls : Vector NumClass 64) (offsets : Array ℕ)
+    (db : UInt64) (shape : Shape) (iv : Array IntervalBounds) (bLow bHigh : ℕ) (store : RowStore)
+    (hA : 1 ≤ A)
+    (hent : ∀ e ∈ entries, (e.nf = 0 → e.IsPrimeEntry) ∧ ∀ f ∈ e.factors, f.HasInverses e.p)
+    (hmg : magics.toList = entries.map fun e ↦ magic e.p) (hoff : OffsetsFor cls entries offsets)
+    (hdb : ∀ j < 64, db.toBitVec.getLsbD j = (cls[j]!.bits != 0))
+    (hdec : DecisionWF entries P.sp1 ⟨0, P.sp2, P.sp3⟩) (hforb : shape.ForbFits)
+    (hnd : (Id.run (shape.dens db bLow bHigh)).Nodup) (hbLow : 1 ≤ bLow)
+    (hbHigh : bHigh < 2 ^ 63) (hH : H < 2 ^ 63) (hs : store.Fits entries) :
+    ∃ sp3At : ℕ → ℕ, ∀ {σ : Type} (process : ℤ → ℤ → ℤ → σ → Answer σ) (fl : CheckFlags)
+      (r : Delivery σ), r.quit = false → ∀ (nb : Vector UInt64 64) (rs : ℕ → List (ℤ × ℤ)),
+      (∀ b < 64, cls[b]!.Packs nb[b]!) → (∀ b, bLow ≤ b → b ≤ bHigh → RangesFor iv b H (rs b)) →
+      (Id.run (sieveRun process c d H A fl s P entries magics cls offsets db shape iv bLow bHigh
+        store r)).1 = r.deliver process (((Id.run (shape.dens db bLow bHigh)).filter
+          fun b ↦ Id.run (shape.keep cls b)).flatMap fun b : ℕ ↦ ((numerators H).filter
+            fun a ↦ inRanges (rs b) a && classBit nb[b % 64]! a &&
+              survives (entries.take (sp3At b)) b a).flatMap
+                (checkNumWith (scaledCoeffs c d b) (if d % 2 = 1 then b else 1) b fl)) := by
+  classical
+  refine ⟨fun b ↦ if h : ∃ i < (Id.run (shape.blockPlan bLow bHigh)).nblocks,
+      b ∈ blockDens shape db (Id.run (shape.blockPlan bLow bHigh)) bLow bHigh i then
+      (blockDecision H s P entries magics cls db shape iv bLow bHigh h.choose).sp3 else 0,
+    fun process fl r hr nb rs hnb hrs ↦ ?_⟩
+  rw [fst_run_sieveRun process c d H A fl s P entries magics cls offsets db shape iv bLow bHigh
+    store hA hent hmg hoff hdb hdec hforb hbLow hbHigh hH hr hs (x := (nb, rs)) ⟨hnb, hrs⟩]
+  refine congrArg (r.deliver process) (shape.flatMap_filter_blockDens db cls bLow bHigh
+    fun i hi b hb ↦ ?_)
+  have h : ∃ i < (Id.run (shape.blockPlan bLow bHigh)).nblocks,
+      b ∈ blockDens shape db (Id.run (shape.blockPlan bLow bHigh)) bLow bHigh i := ⟨i, hi, hb⟩
+  dsimp only
+  rw [dite_eq_left h, Shape.eq_of_mem_blockDens hnd h.choose_spec.1 hi
+    h.choose_spec.2 hb]
+  rfl
+
+/-! ### The threads -/
+
+/-- The calling thread of a run whose blocks are sifted by threads, which the model leaves out with
+the threads: the slots `slot i` of the blocks `i < n`, the points that each block delivered to the
+appending callback (`Ratpoints.appendPoint`), delivered to the callback `process` on the delivery
+`r` in the order of the blocks, the loop ending when the callback has stopped the search. -/
+def deliverSlots (slot : Nat → Array (Int × Int × Int)) (n : Nat) (r : Delivery σ) :
+    Id (Delivery σ) := do
+  let mut r := r
+  for i in [0:n] do
+    r := r.deliver process (slot i).toList
+    if r.quit then break
+  return r
+
+/-- The invariant of the loop of `Ratpoints.Sieve.deliverSlots`, whose state is the delivery, from
+the delivery `r0`: that of the points of the slots done, and the callback has not stopped the search
+before the loop is done. -/
+def DeliverSlotsInvariant (slot : Nat → Array (Int × Int × Int)) (r0 : Delivery σ) :
+    Std.WP.Invariant Nat (Delivery σ) Prop :=
+  fun pref suff r ↦ r = r0.deliver process (pref.flatMap fun i ↦ (slot i).toList) ∧
+    (suff = [] ∨ r.quit = false)
+
+section
+
+variable {process} {slot : Nat → Array (Int × Int × Int)} {r0 r : Delivery σ} {n cur : Nat}
+  {pref suff : List Nat}
+
+/-- The slot at the cursor `cur` after which the callback stops the search. -/
+theorem DeliverSlotsInvariant.quit (hl : ForIn.toList [:n] = pref ++ cur :: suff)
+    (h : r = r0.deliver process (pref.flatMap fun i ↦ (slot i).toList) ∧
+      (cur :: suff = [] ∨ r.quit = false))
+    (hq : (r.deliver process (slot cur).toList).quit = true) :
+    r.deliver process (slot cur).toList =
+        r0.deliver process ((ForIn.toList [:n]).flatMap fun i ↦ (slot i).toList) ∧
+      (True ∨ (r.deliver process (slot cur).toList).quit = false) := by
+  obtain ⟨rfl, -⟩ := h
+  refine ⟨?_, .inl trivial⟩
+  rw [← Delivery.deliver_append, ← List.flatMap_singleton (fun i ↦ (slot i).toList) cur,
+    ← List.flatMap_append] at hq ⊢
+  exact (Delivery.deliver_flatMap_eq_of_prefix process (l₂ := ForIn.toList [:n])
+    ⟨suff, by rw [hl]; simp⟩ _ hq).symm
+
+/-- The slot at the cursor `cur` after which the callback has not stopped the search. -/
+theorem DeliverSlotsInvariant.append
+    (h : r = r0.deliver process (pref.flatMap fun i ↦ (slot i).toList) ∧
+      (cur :: suff = [] ∨ r.quit = false))
+    (hq : ¬(r.deliver process (slot cur).toList).quit = true) :
+    r.deliver process (slot cur).toList =
+        r0.deliver process ((pref ++ [cur]).flatMap fun i ↦ (slot i).toList) ∧
+      (suff = [] ∨ (r.deliver process (slot cur).toList).quit = false) := by
+  obtain ⟨rfl, -⟩ := h
+  refine ⟨?_, .inr (Bool.eq_false_iff.mpr hq)⟩
+  rw [List.flatMap_append, Delivery.deliver_append, List.flatMap_singleton]
+
+end
+
+open Std.WP Lean.Order in
+/-- The calling thread delivers the points of the slots in the order of the blocks. -/
+theorem deliverSlots_spec (slot : Nat → Array (Int × Int × Int)) (n : Nat) (r : Delivery σ) :
+    ⦃ r.quit = false ⦄ deliverSlots process slot n r
+    ⦃ fun r' ↦ r' = r.deliver process ((List.range n).flatMap fun i ↦ (slot i).toList) ⦄ := by
+  vcgen [deliverSlots] invariants
+  | inv1 => DeliverSlotsInvariant process slot r
+  all_goals simp only [DeliverSlotsInvariant] at *
+  all_goals first
+    | exact ⟨(Delivery.deliver_nil process r).symm, .inr ‹_›⟩
+    | exact DeliverSlotsInvariant.quit ‹_› ‹_› ‹_›
+    | exact DeliverSlotsInvariant.append ‹_› ‹_›
+    | (rename_i h
+       rw [List.range_eq_range']
+       simpa using h.1)
+
+/-- Block `i` of the run, sifted with the decisions after the folds of the first `k` blocks, for
+`k ≥ i - Ratpoints.adaptLag`, with a store of its own that fits all the entries, delivers to the
+appending callback (`Ratpoints.appendPoint`) from an empty array the points of the block with its
+decision (`Ratpoints.Sieve.blockPoints`): the contract of one block
+(`Ratpoints.Sieve.runBlock_spec`) and the lag of the correction
+(`Ratpoints.Sieve.getElem!_findDecision_correctionAfter`). -/
+theorem toList_info_run_runBlock_appendPoint (c : List Int) (d H A : Nat) (fl : CheckFlags)
+    (s : SieveOptions) (P : Params) (entries : List SieveEntry) (magics : Array Nat)
+    (cls : Vector NumClass 64) (offsets : Array Nat) (db : UInt64) (shape : Shape)
+    (iv : Array IntervalBounds) (bLow bHigh : Nat) {i k : Nat} {store : RowStore} (hA : 1 ≤ A)
+    (hent : ∀ e ∈ entries, (e.nf = 0 → e.IsPrimeEntry) ∧ ∀ f ∈ e.factors, f.HasInverses e.p)
+    (hmg : magics.toList = entries.map fun e ↦ magic e.p) (hoff : OffsetsFor cls entries offsets)
+    (hdb : ∀ j < 64, db.toBitVec.getLsbD j = (cls[j]!.bits != 0))
+    (hdec : DecisionWF entries P.sp1 ⟨0, P.sp2, P.sp3⟩) (hforb : shape.ForbFits) (hbLow : 1 ≤ bLow)
+    (hbHigh : bHigh < 2 ^ 63) (hH : H < 2 ^ 63) (hk : i - adaptLag ≤ k)
+    (hi : i < (Id.run (shape.blockPlan bLow bHigh)).nblocks) (hs : store.Fits entries)
+    {x : Vector UInt64 64 × (Nat → List (Int × Int))} (hx : RunWords cls iv H bLow bHigh x) :
+    (Id.run (runBlock appendPoint c d H A fl P.sp1 entries magics cls offsets db shape iv bLow
+      bHigh (Id.run (shape.blockPlan bLow bHigh))
+      (correctionAfter H s P entries magics cls db shape iv bLow bHigh k).decisions i store
+      ⟨#[], 0, false⟩)).1.info.toList =
+      blockPoints c d H fl s P entries magics cls db shape iv bLow bHigh x i := by
+  have hwf := wf_correctionAfter (H := H) (s := s) (magics := magics) (cls := cls) (db := db)
+    (shape := shape) (iv := iv) (bLow := bLow) (bHigh := bHigh) hdec k
+  have h := Std.WP.Id.of_run_eq_wp rfl _ ((runBlock_spec appendPoint c d H A fl P.sp1 entries
+    magics cls offsets db shape iv bLow bHigh _ _ i store ⟨#[], 0, false⟩).le_wp ⟨rfl, hA, hent,
+      hmg, hoff, hdb, decisionWF_getElem!_findDecision hwf.size_pos hwf.block_zero hwf.decisionWF i,
+      rfl, hforb, hi, hbLow, hbHigh, hH, hs⟩)
+  rw [h.2.2.2.2.1 x hx, Delivery.deliver_appendPoint, getElem!_findDecision_correctionAfter hk]
+  simp [blockPoints]
+
+/-- The threads preserve the output of the run: the blocks of the run, each sifted with the
+decisions after the folds of the first `k i ≥ i - Ratpoints.adaptLag` blocks and a store of its own
+that fits all the entries, into a slot by the appending callback, their slots delivered in the
+order of the blocks by the calling thread (`Ratpoints.Sieve.deliverSlots`), give what the run on
+the calling thread gives (`Ratpoints.Sieve.sieveRun`), for the hypotheses of
+`Ratpoints.Sieve.sieveRun_spec` and words of the classes and ranges of the numerators of
+`Ratpoints.Sieve.RunWords`. -/
+theorem run_deliverSlots_eq_fst_run_sieveRun (c : List Int) (d H A : Nat) (fl : CheckFlags)
+    (s : SieveOptions) (P : Params) (entries : List SieveEntry) (magics : Array Nat)
+    (cls : Vector NumClass 64) (offsets : Array Nat) (db : UInt64) (shape : Shape)
+    (iv : Array IntervalBounds) (bLow bHigh : Nat) {store : RowStore} {r : Delivery σ}
+    {k : Nat → Nat} {stores : Nat → RowStore} (hA : 1 ≤ A)
+    (hent : ∀ e ∈ entries, (e.nf = 0 → e.IsPrimeEntry) ∧ ∀ f ∈ e.factors, f.HasInverses e.p)
+    (hmg : magics.toList = entries.map fun e ↦ magic e.p) (hoff : OffsetsFor cls entries offsets)
+    (hdb : ∀ j < 64, db.toBitVec.getLsbD j = (cls[j]!.bits != 0))
+    (hdec : DecisionWF entries P.sp1 ⟨0, P.sp2, P.sp3⟩) (hforb : shape.ForbFits) (hbLow : 1 ≤ bLow)
+    (hbHigh : bHigh < 2 ^ 63) (hH : H < 2 ^ 63) (hk : ∀ i, i - adaptLag ≤ k i)
+    (hst : ∀ i, (stores i).Fits entries) (hr : r.quit = false) (hs : store.Fits entries)
+    {x : Vector UInt64 64 × (Nat → List (Int × Int))} (hx : RunWords cls iv H bLow bHigh x) :
+    Id.run (deliverSlots process (fun i ↦ (Id.run (runBlock appendPoint c d H A fl P.sp1 entries
+      magics cls offsets db shape iv bLow bHigh (Id.run (shape.blockPlan bLow bHigh))
+      (correctionAfter H s P entries magics cls db shape iv bLow bHigh (k i)).decisions i
+      (stores i) ⟨#[], 0, false⟩)).1.info) (Id.run (shape.blockPlan bLow bHigh)).nblocks r) =
+      (Id.run (sieveRun process c d H A fl s P entries magics cls offsets db shape iv bLow bHigh
+        store r)).1 := by
+  rw [fst_run_sieveRun process c d H A fl s P entries magics cls offsets db shape iv bLow bHigh
+    store hA hent hmg hoff hdb hdec hforb hbLow hbHigh hH hr hs hx,
+    (deliverSlots_spec process _ _ r).le_wp hr]
+  exact congrArg (r.deliver process) (List.flatMap_congr fun i hi ↦
+    toList_info_run_runBlock_appendPoint c d H A fl s P entries magics cls offsets db shape iv bLow
+      bHigh hA hent hmg hoff hdb hdec hforb hbLow hbHigh hH (hk i) (List.mem_range.mp hi) (hst i)
+      hx)
 
 end Sieve
 

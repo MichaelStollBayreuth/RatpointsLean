@@ -95,19 +95,22 @@ are no points modulo $p$ (D) and the options of the output (G) come in their sta
   the moduli after it being the reserve of the correction of the moduli, the number of primes looked
   at in all, the estimates of the words and the denominators of the run, the cost of a check
   relative to the reference and the number of words at which the first correction is made
-  (\csource{ratpoints.h}{395}{397}), which the run of the search does not read: it takes the moduli
-  from $s_2$ on as its third stage (stage~I). The parameters are \emph{well-formed} when every
-  modulus $m$ has $1 < m < \mathrm{maxPrimeEven}$ (Definition~\ref{def:barrett}) and every divisor
-  $q > 1$ of $m$ is divisible by one of the first $\mathrm{numPrimes}$ primes of the table, so that
-  the factorization of $m$ over the table is complete (Definition~\ref{def:modulusFactors},
-  Lemma~\ref{lem:modulusFactors}); when the moduli of the third stage, from the position $s_2$ on,
-  are primes of the table; when at most $\mathrm{numPrimes}$ primes are examined; and when
-  $s_1 \le s_2 \le$ the number of moduli. So the moduli of well-formed parameters are above $1$, and
-  those of the third stage are primes, each one of the first $\mathrm{numPrimes}$ primes of the
-  table, the one that divides it. The table holds no $2$, so an even modulus is never well-formed,
-  as ratpoints offers odd moduli only. The parameters are internal to the search, which takes them
-  from the options of the sieve (Definition~\ref{def:sieveParams}) until it makes the choice of the
-  moduli (stage~I).
+  (\csource{ratpoints.h}{395}{397}), which the run of the search reads: the end of the third stage
+  as that of the first decision, and the estimates, the cost and the words for the correction of the
+  moduli between its blocks (Definition~\ref{def:correction}). The parameters are \emph{well-formed}
+  when every modulus $m$ has $1 < m < \mathrm{maxPrimeEven}$ (Definition~\ref{def:barrett}) and
+  every divisor $q > 1$ of $m$ is divisible by one of the first $\mathrm{numPrimes}$ primes of the
+  table, so that the factorization of $m$ over the table is complete
+  (Definition~\ref{def:modulusFactors}, Lemma~\ref{lem:modulusFactors}); when the moduli of the
+  third stage, from the position $s_2$ on, are primes of the table; when at most
+  $\mathrm{numPrimes}$ primes are examined; and when $s_1 \le s_2 \le$ the number of moduli. So the
+  moduli of well-formed parameters are above $1$, and those of the third stage are primes, each one
+  of the first $\mathrm{numPrimes}$ primes of the table, the one that divides it. The table holds no
+  $2$, so an even modulus is never well-formed, as ratpoints offers odd moduli only. The parameters
+  are internal to the search, the result of the choice of the moduli that it makes from the curve
+  with the options of the sieve (Definition~\ref{def:choice}), whose contract states what the run
+  needs of them (Lemma~\ref{lem:choice}); the parameters of the executable
+  (Definition~\ref{def:sieveParams}) are well-formed.
 \end{definition}
 
 \begin{definition}[The parameters of the executable]\label{def:sieveParams}
@@ -153,33 +156,28 @@ are no points modulo $p$ (D) and the options of the output (G) come in their sta
   the estimates and the cost, and $2^{64} - 1$, no correction; the tuning fields of the options are
   not read. The default parameters are those of no options: $11$ moduli in the first stage, $11$
   more in the second and $8$ in the third, the first $30$ primes in all. Every parameter set made
-  this way is well-formed. It models no C code of its own: the search of the polynomial
-  (Definition~\ref{def:searchPoints}) takes the parameters of its normalized options, with the
-  number of primes $-1$ when the caller left it to the library, which are those of the options as
-  the caller gave them, until it makes the choice of the moduli (stage~I).
+  this way is well-formed. It models no C code of its own, and the search does not call it: it
+  makes the choice of the moduli (Definition~\ref{def:choice}).
 \end{definition}
 
 \verb|Params| holds the choices of the sieve: which moduli the sieve uses, in which order and in
 which stage, and how many primes are examined. ratpoints makes them from the curve
 (\verb|sieving_info|, which ranks the primes and may look past the first $q$ when \verb|-p| is
 absent), and moves the end of the third stage during the run (\verb|adapt_primes|; with \verb|-A 2|
-also $s_2$); where it decides by the curve, for an absent \verb|-n|, \verb|-N| or \verb|-P|, its
-stages may be longer or shorter than those of the parameters of the executable, and where the
-options fix their counts, they are at most as long, unless \verb|-R| raises the offset of the second
-stage (Section~\ref{sec:cuts}). None of this changes the points found or their order, since a
-modulus only removes candidates that are not points, a test on the denominators (the forbidden
-divisors among the examined primes and beyond them, at most the bound of them, and the Jacobi test
-that the switch lets run) removes only denominators without points, and the two shapes of the loop
-between which these choices decide, the words of 64 denominators and every denominator, both run in
+also $s_2$), and so does the search of the model, with the choice and the correction of
+Chapter~\ref{chap:moduli}. None of this changes the points found or their order, since a modulus
+only removes candidates that are not points, a test on the denominators (the forbidden divisors
+among the examined primes and beyond them, at most the bound of them, and the Jacobi test that the
+switch lets run) removes only denominators without points, and the two shapes of the loop between
+which these choices decide, the words of 64 denominators and every denominator, both run in
 increasing order (\verb|-q| suppresses the report of the moduli used, which does depend on the
-choice). So the model takes the choice as an input, and the proofs hold for every well-formed
-choice, the parameters that \verb|Params.WF| admits, a definition of a few lines in the model; since
-stage~I the theorems hold for every value of the options of the sieve, from which the search takes
-its parameters, which are well-formed (\verb|wf_sieveParams|). Until stage~H the theorems quantified
-over the well-formed parameters, the comparator challenge importing \verb|Params.WF|, and
-\verb|wf_sieveParams|, certified with them, showed that every parameter set the command line
-produces is well-formed, which ruled out a well-formedness that nothing satisfies. C1 reads only the
-moduli and treats all stages alike, and C2 reads the array size too
+choice). So the model makes the choice inside the search, as the C code does, and the theorems hold
+for every value of the options of the sieve, whatever moduli the search chooses: the proofs read of
+the result of the choice only what its contract states (Lemma~\ref{lem:choice}). Until stage~H the
+theorems quantified over the well-formed parameters, the comparator challenge importing
+\verb|Params.WF|, and \verb|wf_sieveParams|, certified with them, showed that every parameter set
+the command line produces is well-formed, which ruled out a well-formedness that nothing satisfies.
+C1 reads only the moduli and treats all stages alike, and C2 reads the array size too
 (Definition~\ref{def:arraySize}); the bound on the forbidden divisors and the Jacobi switch are read
 since stage~E, the number of primes examined since stage~F1 (Chapter~\ref{chap:tables}), and the cut
 points from stage~F2 on, and further choices (the block length) join \verb|Params| with the
@@ -350,59 +348,28 @@ which loop over the residues, are components of type \verb|Id| with their contra
 \end{definition}
 
 \begin{definition}[The denominators]\label{def:sieveRun}
-  \uses{def:sift, def:Shape, lem:shape_dens, def:stage3, def:fillBpList, lem:fillBpList,
-    lem:admits_mul, lem:classOffsets, lem:numClasses, lem:buildRows, def:deliver, lem:deliver,
-    def:exactBounds}
-  \lean{Ratpoints.Sieve.sieveRun, Ratpoints.Sieve.SieveRunInvariant, Ratpoints.Sieve.SieveRunInvariant.quit_eq_false, Ratpoints.Sieve.SieveRunInvariant.eq_deliver, Ratpoints.Sieve.SieveRunInvariant.eq_deliver_append, Ratpoints.Sieve.SieveRunInvariant.append_of_keep, Ratpoints.Sieve.SieveRunInvariant.quit_eq_false_and_fits, Ratpoints.Sieve.sieveRunInvariant_nil, Ratpoints.Sieve.SieveRunInvariant.append_of_not_keep, Ratpoints.Sieve.SieveRunLoopInvariant, Ratpoints.Sieve.SieveRunInvariant.eq_deliver_of_quit, Ratpoints.Sieve.sieveRun_spec, Ratpoints.Sieve.run_sieveRun}
+  \uses{def:runBlock, def:correction}
+  \lean{Ratpoints.Sieve.sieveRun}
   \leanok
-  The sieve entries of the moduli cut into the three stages at the cut points $s_1 \le s_2$, the
-  same for the whole run (\verb|run_block| takes the ends of the second and the third stage for each
-  block from the correction of the moduli, whose first decision is that of the arguments; stage~I):
-  the sieve entries of the first two stages, the first $s_2$, whose rows the run reads from the
-  store of the tables of rows (Definition~\ref{def:entryRef}) or builds into it, the store passed
-  from one denominator to the next, the first stage ending at $s_1$, with the reciprocals that the
-  array of the reciprocals holds up to the position $s_2$, and the entries from $s_2$ on, the third
-  stage, with the reciprocals that it holds from the position $s_2$ on; and the denominators of a
-  shape of the loop (Definition~\ref{def:Shape}) from $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$, in
-  the order of its loop: for each that passes the test of the shape, the residues of $b$ divided by
-  the stride of its class modulo the moduli of the first two stages
-  (Definition~\ref{def:fillBpList}) and the points that \verb|sift| (Definition~\ref{def:sift})
-  delivers to the callback in the packing of its class $\mathrm{cls}[b \bmod 64]$ with the row
-  offsets of the classes and the bounds of the search intervals of the run
-  (Definition~\ref{def:exactBounds}), which \verb|run_block| hands to the sieving thread for each
-  block, with pieces of at most $A$ bit arrays and the flags of the check, in turn, the run
-  returning after a denominator at which the callback stopped the search
-  (\csource{find_points.c}{5120}{5120}, \csource{find_points.c}{5152}{5160}); the steps of a block
-  and the loops of the shapes over them, whose lines of \verb|run_block| the listing of the shape
-  replaces, are Definitions~\ref{def:blockPlan} and~\ref{def:blockLoops}, one block, with the
-  decision of the correction in force for it, its counters from zero and its report, is
-  Definition~\ref{def:runBlock}, and the start of the correction of the moduli, with the decision of
-  the arguments for block $0$, and the fold of a block into it are Definition~\ref{def:correction};
-  the run calls none of them yet (stage~I). Its contract, for an array size $A \ge 1$, sieve entries
-  whose reciprocals the array of the reciprocals holds in their order, the first $s_2$ with their
-  tables of inverses (Lemma~\ref{lem:admits_mul}) and the row
-  offsets of the classes with a pattern (Lemma~\ref{lem:classOffsets}), whose bits are those of the
-  word \verb|den_bits|, and a store of the tables of rows that fits them
-  (Lemma~\ref{lem:storeTables}), and those from $s_2$ on prime entries
-  (Definition~\ref{def:stage3}), as the third stage needs, denominators from
-  $b_{\mathrm{low}} \ge 1$ to $b_{\mathrm{high}} < 2^{63}$ and $H < 2^{63}$, as the test for common
-  factors on the words of the C code needs (the denominators of every shape lie between
-  $b_{\mathrm{low}}$ and $b_{\mathrm{high}}$, Lemma~\ref{lem:shape_dens}): from a delivery whose
-  flag is clear, the delivery after the run, for any cut points, any 2-adic words $\mathrm{nb}$ that
-  the classes pack (Lemma~\ref{lem:numClasses}) and any ranges of the numerators that the bounds of
-  the search intervals give for each denominator $b$ from $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$
-  (Definition~\ref{def:numeratorRanges}), quantified in the postcondition, is the delivery
-  (Definition~\ref{def:deliver}) of the concatenation, over the denominators $b$ of the list of the
-  shape that pass its test, of the points of the check with the flags
-  (Definition~\ref{def:checkNumWith}) of the numerators in one of the ranges of $b$ that pass the
-  class bit of $\mathrm{nb}[b \bmod 64]$ and survive the moduli of all three stages for $b$; with
-  the exact check on, these are what the brute-force reference finds over $b$ and these numerators,
-  mapped by $\mathrm{swapPoint}$ (Definition~\ref{def:swapPoint}) when the flag of the reversal is
-  set, those with $y < 0$ left out under $\mathrm{noY}$. The invariant of the loop over the
-  denominators, which takes the bounds of the search intervals and the range of the denominators,
-  has two cases: the flag clear and the delivery that of the denominators done, or the return after
-  a denominator at which the callback stopped the search, when the delivery is that of all the
-  denominators (Lemma~\ref{lem:deliver} on a prefix).
+  The run over the blocks of the shape of the loop (Definition~\ref{def:Shape}) from
+  $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$ (Definition~\ref{def:blockPlan}): from the start of the
+  correction of the moduli, with the cut points of the result of the choice as the first decision
+  and the words of the first correction (Definition~\ref{def:correction}), for each block in turn
+  one block (Definition~\ref{def:runBlock}), with the decision of the correction in force for it,
+  the end $s_1$ of the first stage, the sieve entries of the moduli with their reciprocals, the row
+  offsets of the classes, the word \verb|den_bits|, the bounds of the search intervals of the run
+  (Definition~\ref{def:exactBounds}) and pieces of at most $A$ bit arrays, the store of the tables
+  of rows (Definition~\ref{def:entryRef}) passed from one block to the next, and the fold of its
+  report into the correction, the run returning after a block in which the callback stopped the
+  search; it returns the delivery with the ends $s_2$ and $s_3$ of the last block folded, which the
+  search writes back (\csource{find_points.c}{5120}{5120}, \csource{find_points.c}{5152}{5160},
+  \csource{find_points.c}{5163}{5163}). Its contract, the block lemma, is Theorem~\ref{thm:blocks}:
+  the run delivers the points of its blocks in order, each sifted with the moduli of its decision, a
+  function of the block that depends neither on the callback nor on the flags of the output; per
+  denominator, the points of the check with the flags of the numerators in its ranges that pass the
+  word of its class and survive the moduli of the three stages of the decision of its block. The
+  pool of threads with which ratpoints may sift the blocks, which the model leaves out, gives the
+  same output (Theorem~\ref{thm:threads}).
 \end{definition}
 
 \begin{definition}[The points at infinity]\label{def:pointsAtInfinity}
@@ -436,10 +403,10 @@ which loop over the residues, are components of type \verb|Id| with their contra
   the library function \verb|find_points| with its parts \verb|find_points_work| and
   \verb|find_points_work_1|, delivers to the callback of the model that appends each point to an
   array and never stops the search (Definition~\ref{def:delivery}), from the empty array, or its
-  refusal. So it refuses more than $\mathrm{maxDegree} + 1$ coefficients, fewer than two, and
-  $H = 0$ or $H \ge 2^{63}$, a height that is not a C \verb|long| (Definition~\ref{def:useCLong}),
-  in the order of the program, with its errors 3, 5 and~4 (Section~\ref{sec:refusals}; the refusals
-  of Definition~\ref{def:reversal}), where the library refuses the first three as bad arguments: a
+  refusal. So it refuses more than $\mathrm{maxDegree} + 1$ coefficients, fewer than two, and $H =
+  0$ or $H \ge 2^{63}$, a height that is not a C \verb|long| (Definition~\ref{def:useCLong}), in the
+  order of the program, with its errors 3, 5 and~4 (Section~\ref{sec:refusals}; the refusals of
+  Definition~\ref{def:reversal}), where the library refuses the first three as bad arguments: a
   degree above $\mathrm{maxDegree}$, and the empty list as the degree $-1$, before it drops the
   leading zeros, and the degree $0$ and a height below $1$ after it, and cannot be given the last,
   its height being a C \verb|long| (\verb|ratpoints.h:362|), which the program refuses when it reads
@@ -457,24 +424,21 @@ which loop over the residues, are components of type \verb|Id| with their contra
   (Definition~\ref{def:searchPoints}), with its flag of the reversal, over the normalized range of
   the denominators and the search intervals that the Sturm step leaves: the 2-adic information, no
   points when no class of the denominators modulo $64$ admits a numerator and there is no point at
-  infinity, the tables of the examined primes and the sieve entry of each modulus
-  (Definition~\ref{def:sievingInfo}), no points when the curve has none modulo a prime examined on
-  the way, and else the points at infinity followed, unless the Sturm step has left no interval, by
-  the points of the denominators in the order of the loop of the search whose $x/z$ lies in a search
-  interval, found with pieces of at most $\mathrm{arraySizeAt}(H)$ bit arrays, the array size of the
-  parameters that the search takes from $s$ (Definition~\ref{def:sieveParams}), each mapped back to
-  the caller's curve after a reversal. It models no C code: the search with a callback holds the
-  lines of \verb|find_points| that the search for the points held before stage~G.
+  infinity, the choice of the moduli from the curve (Definition~\ref{def:choice}), no points when
+  the curve has none modulo a prime looked at on the way, and else the points at infinity followed,
+  unless the Sturm step has left no interval, by the points of the denominators in the order of the
+  loop of the search whose $x/z$ lies in a search interval, found in the run over the blocks with
+  the correction of the moduli between them (Definition~\ref{def:sieveRun}) with pieces of at most
+  $\mathrm{arraySizeAt}(H)$ bit arrays, the array size of $s$ (Definition~\ref{def:arraySize}), each
+  mapped back to the caller's curve after a reversal. It models no C code: the search with a
+  callback holds the lines of \verb|find_points| that the search for the points held before stage~G.
 \end{definition}
 
 Each component differs from the C code in a stated way, recorded in the \verb|Deviation:|
 paragraph of the component whose range holds it:
 \begin{itemize}
-  \item the denominators of a shape listed, then tested and sifted one after the other, each in the
-    packing of its class modulo $64$, for the blocks (I), and the threads, which deliver the blocks
-    in the same order;
-  \item the cut points of the three stages fixed for the run, for their correction between the
-    blocks of the run from the counts of the survivors (I);
+  \item the blocks of the run sifted in turn on the calling thread, without the pool of threads,
+    which sifts them apart and delivers them in the same order (Theorem~\ref{thm:threads});
   \item the flags of the check as an argument of the points at infinity, for the bits
     \verb|RATPOINTS_REVERSED|, \verb|RATPOINTS_NO_CHECK| and \verb|RATPOINTS_NO_Y| of the flags,
     which the search hands on, the flag of the reversal from the reversal check; the square root of
@@ -521,41 +485,29 @@ gets there, and so does $\mathrm{findPoints}$ since stage~D, so that no input re
 \end{proof}
 
 \begin{theorem}[The run and the reference]\label{thm:run_reference}
-  \uses{def:sieveRun, def:deliver, def:bruteForce, def:stage3, lem:admits_mul, lem:classOffsets,
-    lem:numClasses}
-  \lean{Ratpoints.Sieve.run_sieveRun_of_eq_filter, List.flatMap_filter_flatMap_filter}
+  \lean{List.flatMap_filter_flatMap_filter}
   \leanok
-  For an array size $A \ge 1$, any cut points, sieve entries with their reciprocals, the first $s_2$
-  with their tables of inverses and the row offsets of the classes with a pattern, whose bits are
-  those of \verb|den_bits|, and a store of the tables of rows that fits them, and those from $s_2$
-  on prime entries (Definition~\ref{def:stage3}), 2-adic words that the classes pack, denominators
-  from $b_{\mathrm{low}} \ge 1$ to $b_{\mathrm{high}} < 2^{63}$, $H < 2^{63}$, bounds of the search
-  intervals that give ranges of the numerators for each of these denominators
-  (Definition~\ref{def:numeratorRanges}), a delivery whose flag is clear and a list $l$ of
-  denominators such that the list of the shape is $l$ filtered by a test $p$: the run delivers, over
-  the denominators $b$ of $l$, in the order of $l$, the points of the check with the flags of the
-  numerators of $[-H, H]$ that pass the test of the sieve, $b$ passing $p$ and the test of the
-  shape, and the numerator lying in one of the ranges of $b$ and passing the word of the class of
-  $b$ and the sieve entries.
+  For a list $l$, a test $p$ of its elements and a test $T$ of the pairs: the concatenation over the
+  elements $b$ of $l$ filtered by $p$ of the elements of a list $g(b)$ that pass $T(b, \cdot)$ is
+  the concatenation over the elements $b$ of $l$ of the elements of $g(b)$ that pass
+  $p(b) \wedge T(b, \cdot)$.
 \end{theorem}
 
 \begin{proof}
   \leanok
-  By the contract of the denominators (Definition~\ref{def:sieveRun}) the run delivers the
-  concatenation, over the denominators of the list of the shape that pass its test, of the points of
-  the check with the flags of the numerators in its ranges that pass the word of the class of the
-  denominator and survive the sieve entries. With the list of the shape $l$ filtered by $p$, the
-  test of the outer list moves into the test of the numerators, a denominator that fails it giving
-  no numerators.
+  An element of $l$ that fails $p$ gives no elements on the right.
 \end{proof}
 
-When every denominator of $l$ over which the brute-force reference finds a point passes $p$ and the
-test of the shape, and every numerator of such a point passes the word of the class of its
-denominator and the sieve entries, these tests change nothing that the exact check finds
+By this fact on lists the contract of the run of the search (Lemma~\ref{lem:searchList}) moves the
+test of the denominators of the listing of a shape, which is the list of the denominators of the
+search filtered by a test, into the test of the numerators, a denominator that fails it giving no
+numerators. When every denominator over which the brute-force reference finds a point passes these
+tests, and every numerator of such a point passes the word of the class of its denominator and the
+sieve entries of its block, these tests change nothing that the exact check finds
 (Lemma~\ref{lem:flatMap_sound}): with the exact check on, the run delivers the concatenation of what
-the reference finds over the denominators of $l$ and the numerators in their ranges, in the order of
-$l$, mapped by $\mathrm{swapPoint}$ when the flag of the reversal is set, those with $y < 0$ left
-out under $\mathrm{noY}$, which is what the search needs of it.
+the reference finds over the denominators of the search and the numerators in their ranges, in the
+order of the search, mapped by $\mathrm{swapPoint}$ when the flag of the reversal is set, those with
+$y < 0$ left out under $\mathrm{noY}$, which is what the search needs of it.
 
 \begin{theorem}[The points, each once]\label{thm:findPoints}
   \uses{def:findPoints, def:sieveOptions, def:Options, def:IsPoint, def:points, def:regionSpec,
@@ -573,19 +525,21 @@ out under $\mathrm{noY}$, which is what the search needs of it.
 
 \begin{proof}
   \uses{thm:findPoints_perm, thm:bruteForce, thm:findPoints_order, lem:swapPoint_bijection,
-    lem:findPoints_searchList, lem:noCheckList, lem:regionFilter, lem:elimSearchRegion}
+    lem:findPoints_searchList, lem:noCheckList, lem:regionFilter, lem:elimSearchRegion, lem:choice}
   \leanok
-  Without $\mathrm{noCheck}$ and assuming Sturm's theorem, $L$ is the list of the reference of the
-  polynomial searched over the candidate $(1, 0)$ and the denominators of its search up to the
-  largest denominator, mapped back after a reversal and filtered by $\mathrm{noY}$ and the search
-  region (Theorem~\ref{thm:findPoints_order}, Lemmas~\ref{lem:elimSearchRegion}
-  and~\ref{lem:regionFilter}), and that list before the filters is a permutation of the points of
-  $\mathrm{bruteForce}(c, H)$ at infinity or with a denominator up to the largest, the only ones in
-  the search region (Lemma~\ref{lem:swapPoint_bijection}, as in Theorem~\ref{thm:findPoints_perm}),
-  so that Theorem~\ref{thm:bruteForce} gives membership, no duplicates and, with both options of the
-  output off, the set of elements. Under $\mathrm{noCheck}$, $L$ is the list that the search
-  delivers for a sound test (Lemma~\ref{lem:findPoints_searchList}), whose survivors have no
-  duplicates (Lemma~\ref{lem:noCheckList}).
+  The search runs with the result of the choice of the moduli, which has what the run needs
+  (Lemma~\ref{lem:choice}), whatever moduli it chooses. Without $\mathrm{noCheck}$ and assuming
+  Sturm's theorem, $L$ is the list of the reference of the polynomial searched over the candidate
+  $(1, 0)$ and the denominators of its search up to the largest denominator, mapped back after a
+  reversal and filtered by $\mathrm{noY}$ and the search region (Theorem~\ref{thm:findPoints_order},
+  Lemmas~\ref{lem:elimSearchRegion} and~\ref{lem:regionFilter}), and that list before the filters is
+  a permutation of the points of $\mathrm{bruteForce}(c, H)$ at infinity or with a denominator up to
+  the largest, the only ones in the search region (Lemma~\ref{lem:swapPoint_bijection}, as in
+  Theorem~\ref{thm:findPoints_perm}), so that Theorem~\ref{thm:bruteForce} gives membership, no
+  duplicates and, with both options of the output off, the set of elements. Under
+  $\mathrm{noCheck}$, $L$ is the list that the search delivers for a sound test
+  (Lemma~\ref{lem:findPoints_searchList}), whose survivors have no duplicates
+  (Lemma~\ref{lem:noCheckList}).
 \end{proof}
 
 \verb|mem_iff_isPoint_of_findPoints_eq_ok| and \verb|nodup_of_findPoints_eq_ok| are the main
@@ -622,33 +576,34 @@ and with the chunked first stage and the rows of sub-stage F4 on 2026-10-16, whe
 Mathlib v4.35.0, Lake's \verb|lake comparator --paranoid|, which builds and exports the project in a
 sandbox, accepted them too, with Lean's kernel and the five external checkers bundled with Lean; and
 \verb|lake comparator --paranoid| accepted the twelve statements of stage~G on 2026-10-17 and in
-their form of stage~H on 2026-10-18, and the eleven of stage~I on 2026-10-25. The challenge states
-them with \verb|sorry| over \verb|findPoints|, \verb|findPointsWith|, \verb|Outcome|, \verb|Answer|,
-\verb|Delivery|, \verb|Delivery.deliver|, \verb|Options|, \verb|Double|, \verb|SieveOptions|,
-\verb|maxDegree| and \verb|maxDivisors|, imported from the model (until stage~H also \verb|Params|,
-\verb|Params.WF| and \verb|sieveParams|), never restated, since a definition of the model elaborates
-without Mathlib to other instance terms. Each theorem of the library behind them has a guard on its
-axioms, which are the standard ones. The contracts of the sieve of stages C1 to D need only the
-program logic of Lean core and stay in files without Mathlib, so that their \verb|grind| calls see
-only the lemmas of core, untouched by Mathlib's updates; the contract of the run over the
-denominators of a shape, with its plain equation \verb|run_sieveRun|, is in the file of the run,
-with Mathlib, like the other contracts of stage~E (Chapter~\ref{chap:denominators}) and those of the
-tables and the moduli of stage~F1, which sit next to the lemmas they serve
-(Chapter~\ref{chap:tables}); those of the stages of sub-stage~F2, of the packing of sub-stage~F3 and
-of the chunked first stage, the builders of the rows and the tables of rows of sub-stage~F4 are in
-files without Mathlib again (Chapters~\ref{chap:stages}, \ref{chap:packing} and~\ref{chap:rows}),
-the store of the tables of rows in the contracts of the entries of the moduli, of the loop of the
-tables, of the run and of the search staying in the files of those contracts, with Mathlib; the
-contracts on the delivery of stage~G replace those of before in their files, and the reference of
-the delivery has its lemmas in a file without Mathlib (Chapter~\ref{chap:output}). The soundness of
-the rows needs Mathlib, through $\ZZ/p\ZZ$.
+their form of stage~H on 2026-10-18, and the eleven of stage~I on 2026-10-25, and
+\verb|lake comparator| accepted them again with the choice of the moduli and the run over the blocks
+of stage~I on 2026-10-25. The challenge states them with \verb|sorry| over \verb|findPoints|,
+\verb|findPointsWith|, \verb|Outcome|, \verb|Answer|, \verb|Delivery|, \verb|Delivery.deliver|,
+\verb|Options|, \verb|Double|, \verb|SieveOptions|, \verb|maxDegree| and \verb|maxDivisors|,
+imported from the model (until stage~H also \verb|Params|, \verb|Params.WF| and \verb|sieveParams|),
+never restated, since a definition of the model elaborates without Mathlib to other instance terms.
+Each theorem of the library behind them has a guard on its axioms, which are the standard ones. The
+contracts of the sieve of stages C1 to D need only the program logic of Lean core and stay in files
+without Mathlib, so that their \verb|grind| calls see only the lemmas of core, untouched by
+Mathlib's updates; the contract of the run over the blocks, since stage~I, is in the file of the
+correction of the moduli, with Mathlib (Chapter~\ref{chap:moduli}), like the other contracts of
+stage~E (Chapter~\ref{chap:denominators}) and those of the tables and the moduli of stage~F1, which
+sit next to the lemmas they serve (Chapter~\ref{chap:tables}); those of the stages of sub-stage~F2,
+of the packing of sub-stage~F3 and of the chunked first stage, the builders of the rows and the
+tables of rows of sub-stage~F4 are in files without Mathlib again (Chapters~\ref{chap:stages},
+\ref{chap:packing} and~\ref{chap:rows}), the store of the tables of rows in the contracts of the
+entries of the moduli, of the loop of the tables, of the run and of the search staying in the files
+of those contracts, with Mathlib; the contracts on the delivery of stage~G replace those of before
+in their files, and the reference of the delivery has its lemmas in a file without Mathlib
+(Chapter~\ref{chap:output}). The soundness of the rows needs Mathlib, through $\ZZ/p\ZZ$.
 
 \section{The command-line program and the differential tests}\label{sec:sieveCli}
 
 \verb|ratpoints-lean| reads the values of \verb|-p|, \verb|-n|, \verb|-N|, \verb|-P|, \verb|-F| and
 \verb|-j|/\verb|-J| into \verb|SieveOptions|, with the checks of \verb|main.c| unchanged, and runs
-\verb|findPoints| with \verb|sieveParams| of them (since stage~I with them, the search taking its
-parameters from them); the other options stay as in stage~B, until
+\verb|findPoints| with \verb|sieveParams| of them (since stage~I with them, the search choosing its
+moduli from the curve with them); the other options stay as in stage~B, until
 stage~D reads \verb|-k|, \verb|-K|, \verb|-s| and \verb|-S| (Section~\ref{sec:setupCli}). So the
 reading of the options (Definition~\ref{def:cliInput}) returns these values from now on, and the
 program (Definition~\ref{def:cliRun}) prints the points of the sieve. Since these are those of the
@@ -680,16 +635,15 @@ tests; since stage~F4 the rows as words, with their builders and the tables of r
 \verb|Ratpoints/Model/Rows.lean|), \verb|Ratpoints/Model/Sieve.lean| (the check of a numerator and
 the points at infinity, since stage~F3, in \verb|Ratpoints/Model/Candidate.lean|) and
 \verb|Ratpoints/Model/FindPoints.lean| (the refusals, since stage~D, in
-\verb|Ratpoints/Model/Setup.lean|, and the run, since stage~E, in
-\verb|Ratpoints/Model/Denominators.lean|), each with \verb|#guard| examples taken from the tables
-and the output of ratpoints; the contracts, without Mathlib, are in
-\verb|Ratpoints/Proof/Sieve.lean|, and that of the run, since stage~E, in
-\verb|Ratpoints/Proof/Denominators.lean|, with Mathlib; the primes of the table and the
-well-formedness in \verb|Ratpoints/Proof/Params.lean|, the tables and the soundness of the rows in
-\verb|Ratpoints/Proof/Tables.lean| (since stage~F1 those of the prime powers and the sieve entry of
-a modulus in \verb|Ratpoints/Proof/Moduli.lean|), and the main theorems in
-\verb|Ratpoints/Proof/FindPoints.lean| (since stage~G in \verb|Ratpoints/Proof/Output.lean|), with
-the guards on their axioms.
+\verb|Ratpoints/Model/Setup.lean|, and the run, since stage~I, in
+\verb|Ratpoints/Model/Blocks.lean|), each with \verb|#guard| examples taken from the tables and the
+output of ratpoints; the contracts, without Mathlib, are in \verb|Ratpoints/Proof/Sieve.lean|, and
+that of the run, since stage~I, in \verb|Ratpoints/Proof/Correction.lean|, with Mathlib; the primes
+of the table and the well-formedness in \verb|Ratpoints/Proof/Params.lean|, the tables and the
+soundness of the rows in \verb|Ratpoints/Proof/Tables.lean| (since stage~F1 those of the prime
+powers and the sieve entry of a modulus in \verb|Ratpoints/Proof/Moduli.lean|), and the main
+theorems in \verb|Ratpoints/Proof/FindPoints.lean| (since stage~G in
+\verb|Ratpoints/Proof/Output.lean|), with the guards on their axioms.
 
 \section{The evidence}\label{sec:sieve-evidence}
 
