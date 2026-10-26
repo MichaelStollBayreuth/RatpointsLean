@@ -18,11 +18,13 @@ axioms (`propext`, `Quot.sound`, `Classical.choice`).
   `denominatorBound`), and `Ratpoints/Spec/Sturm.lean`, Sturm's theorem as a proposition
   (`SturmTheorem`), which the statements with the Sturm step on assume. It states the main
   theorems with `sorry`. The main theorems speak about the model's `findPoints` and, since stage G,
-  `findPointsWith` (and, in stage B, the brute-force reference), which the challenge imports with
-  `Options`, the doubles `Double` of its search intervals, `Params`, `Params.WF`, `SieveOptions`,
-  `sieveParams`, `maxDegree`, `maxDivisors`, the result `Outcome` of `findPointsWith` (whose fields
-  `info` and `total` the protocol reads), and the callback's `Answer` and `Delivery` with the
-  reference of the delivery `Delivery.deliver`: the model is trusted in the sense that it is the
+  `findPointsWith`, since stage I with its trailing print argument at its default, the channel that
+  prints nothing (and, in stage B, the brute-force reference), which the challenge imports with
+  `Options`, the doubles `Double` of its search intervals, `SieveOptions`, `maxDegree`,
+  `maxDivisors`, the result `Outcome` of `findPointsWith` (whose fields `info` and `total` the
+  protocol reads), and the callback's `Answer` and `Delivery` with the reference of the delivery
+  `Delivery.deliver` (until stage H also `Params`, `Params.WF` and `sieveParams`, which the
+  statements of stage I no longer mention): the model is trusted in the sense that it is the
   code the executable runs, and nothing else, and a definition of the model, which elaborates
   without Mathlib, is never restated. The specification, by contrast, is reproduced in the
   challenge, so a solution whose library changed it is rejected. Of Mathlib, the challenge imports
@@ -109,6 +111,15 @@ keep their text. So `challenges.json` lists the same twelve statements; the six 
 the theorems that prove them, each checked by Comparator then, and on 2026-10-18
 `lake comparator --paranoid` accepted all twelve in their form of stage H, with Lean's kernel and
 the five external checkers.
+
+Stage I takes the options of the sieve with no hypothesis, in place of parameters and their
+well-formedness, which are internal to the search: the membership, no-duplicates and order theorems,
+the three statements under the exact check off and the protocol take `(s : SieveOptions)` in place
+of `(P : Params) (hP : P.WF)`, and the two refusal theorems `s` in place of `P`; the theorem on the
+well-formedness of the parameters that the options of the program give, `challenge_wf_sieveParams`,
+is gone, with the parameters it spoke about. So `challenges.json` lists eleven statements; the two
+of the brute-force reference keep their text. On 2026-10-25 `lake comparator --paranoid` accepted
+all eleven in their form of stage I, with Lean's kernel and the five external checkers.
 
 ## Running
 

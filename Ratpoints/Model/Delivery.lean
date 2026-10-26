@@ -19,13 +19,16 @@ threads a delivery (`Ratpoints.Delivery`), the data, the count and the flag, thr
 that the C code passes `process` and `info` through, and each component tests the flag where the C
 code tests `*quit`. What the exact check and the points at infinity read of the flags of the search
 to decide what they deliver, the bits `RATPOINTS_REVERSED`, `RATPOINTS_NO_CHECK` and
-`RATPOINTS_NO_Y`, is `Ratpoints.CheckFlags`.
+`RATPOINTS_NO_Y`, is `Ratpoints.CheckFlags`. The report that the library prints on the standard
+output under `RATPOINTS_VERBOSE` goes into the data too, through the print channel of the search
+(`Ratpoints.Delivery.print`), so that it comes between the points that the callback prints there.
 
 ## Main definitions
 
 * `Ratpoints.Answer`: what one call of the callback gives.
 * `Ratpoints.Delivery`, `Ratpoints.Delivery.call`: the data, the count and the flag of the stop of
   a search, and one call of the callback.
+* `Ratpoints.Delivery.print`: a text printed through the print channel of a search.
 * `Ratpoints.CheckFlags`, `Ratpoints.Delivery.callMapped`: the bits of the flags that decide what
   the exact check and the points at infinity deliver, and one call of the callback with a point of
   the polynomial searched, mapped back to the caller's curve after a reversal.
@@ -89,6 +92,14 @@ def Delivery.call (process : Int → Int → Int → σ → Answer σ) (r : Deli
     Delivery σ :=
   let a := process x z y r.info
   { info := a.info, total := r.total + a.weight, quit := a.quit }
+
+/-- The text `t` printed through the print channel `print` of a search on the delivery `r`: the data
+of the callback as `print` leaves it, the count and the flag as they are. It models no C code of its
+own: the standard output, to which the library prints its report under `RATPOINTS_VERBOSE`
+(stage I), is held in the data of the callback, which `print` writes, so that the text comes between
+the points that the callback prints, as on the standard output of a C program. -/
+def Delivery.print (print : String → σ → σ) (t : String) (r : Delivery σ) : Delivery σ :=
+  { r with info := print t r.info }
 
 /-- The bits of the flags of a search (`args->flags`) that decide what the exact check and the
 points at infinity deliver: `RATPOINTS_REVERSED`, which the reversal check sets when it reverses the

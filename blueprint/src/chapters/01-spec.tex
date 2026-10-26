@@ -265,11 +265,15 @@ the region \verb|Mathlib.Order.WithBotTop| and \verb|Mathlib.Algebra.Order.Field
 Sturm's theorem the challenge and its file \verb|Mathlib.Algebra.Polynomial.Sturm.Sequence|, which
 brings the derivative and \verb|Set.ncard| with it, \verb|Mathlib.Data.List.SignVariations| and
 \verb|Mathlib.Basic.Real.Basic|, so that the challenge still imports exactly the Mathlib modules
-among the public imports of the files of the specification that it restates. So the challenge has
+among the public imports of the files of the specification that it restates. So the challenge had
 twelve statements (Section~\ref{sec:certifiedG}), which \verb|lake comparator --paranoid| accepted
 on 2026-10-17, with Lean's kernel and the five external checkers bundled with Lean, and in their
-form of stage~H (Section~\ref{sec:certifiedH}) on 2026-10-18; Section~\ref{sec:sieveTheorems}
-records the earlier acceptances.
+form of stage~H (Section~\ref{sec:certifiedH}) on 2026-10-18. Since stage~I the statements take the
+options of the sieve with no hypothesis on them, in place of the parameters and their
+well-formedness, \verb|wf_sieveParams| is gone, and \verb|Params|, \verb|Params.WF| and
+\verb|sieveParams| are no longer taken from the model: eleven statements remain
+(Section~\ref{sec:certifiedI}), which \verb|lake comparator --paranoid| accepted on 2026-10-25;
+Section~\ref{sec:sieveTheorems} records the earlier acceptances.
 
 \section{The command-line program}\label{sec:cli}
 
@@ -424,34 +428,37 @@ mirror:
 \end{definition}
 
 \begin{definition}[The program]\label{def:cliRun}
-  \uses{def:cliInput, def:cliFailure, def:findPointsWith, def:cliProcess, def:cliReport,
-    def:sieveParams, def:Options, def:cliRegionTest}
+  \uses{def:cliInput, def:cliFailure, def:findPointsVerbose, def:cliProcess, def:cliReport,
+    def:Options, def:cliRegionTest}
   \lean{Ratpoints.Cli.run, Ratpoints.Cli.main}
   \leanok
   \verb|ratpoints-lean| reads its command line (\csource{main.c}{195}{198}). On a failure it prints
-  the failure's message and exits with its status; otherwise, for the values $s$ of the options that
-  set the sieving parameters, the options $o$ of the search (Definition~\ref{def:Options}) and the
-  settings $u$ of the output, it prints the head of the report (Definition~\ref{def:cliReport}),
-  nothing under \verb|-q|, and runs the search with a callback
-  $\mathrm{findPointsWith}(c, H, \mathrm{sieveParams}(s), o')$ with the callback of the program on
-  its data (Definition~\ref{def:cliProcess}) where ratpoints calls \verb|find_points|
+  the failure's message and exits with its status; otherwise, for the options $s$ of the sieve, the
+  options $o$ of the search (Definition~\ref{def:Options}) and the settings $u$ of the output, it
+  prints the head of the report (Definition~\ref{def:cliReport}), nothing under \verb|-q|, sets the
+  array size of $s$ to $\mathrm{defaultArraySize}$ (\csource{main.c}{221}{222}), and runs the search
+  with a callback and a print channel $\mathrm{findPointsVerbose}(c, H, s, o')$
+  (Definition~\ref{def:findPointsVerbose}) with the callback of the program on its data
+  (Definition~\ref{def:cliProcess}) where ratpoints calls \verb|find_points|
   (\csource{main.c}{251}{252}), for the options $o'$ of $o$ with the search intervals joined where
   their doubles meet (Definition~\ref{def:cliRegionTest}, \csource{main.c}{248}{248}), the data
-  holding the intervals of the command line before the join; on a refusal it prints the message of
-  the failure after the head and exits with its status, and otherwise it prints what the callback
-  printed, the points of the search region of its command line in the order in which the search
-  delivers them, that of the list of $\mathrm{findPoints}$ (Theorem~\ref{thm:protocol}), which is
-  that of Theorem~\ref{thm:order}, the callback passing over the points that lie outside the
-  intervals of the command line; then the string before the points if it printed no point
-  (\csource{main.c}{265}{265}), the string after them (\csource{main.c}{267}{267}) and the end of
-  the report, nothing under \verb|-q|; and it exits with status~0 (\csource{main.c}{284}{285}). It
-  writes its output once it is computed and, like ratpoints, ignores a failed write, but for one
-  case: when the reader of the output is gone, the signal \verb|SIGPIPE| ends ratpoints, and the
-  shell reports the status $141 = 128 + 13$; the Lean runtime ignores that signal, so that the write
-  of \verb|ratpoints-lean| fails instead, and it exits quietly with status~141. Since ratpoints
-  flushes its output after every point (line 187 of \verb|main.c|), a reader that leaves early, like
-  \verb|head|, ends it at the next point, while \verb|ratpoints-lean| notices only a reader that is
-  gone when it writes: an output that fits into the pipe ends with status~0.
+  holding the intervals of the command line before the join, and the print channel that prints
+  nothing, the report of the library under \verb|-v| being left to stage~I; on a refusal it prints
+  what the library printed and the message of the failure after the head and exits with its status,
+  and otherwise it prints what the callback and the library printed, the points of the search region
+  of its command line in the order in which the search delivers them, that of the list of
+  $\mathrm{findPoints}$ (Theorem~\ref{thm:protocol}), which is that of Theorem~\ref{thm:order}, the
+  callback passing over the points that lie outside the intervals of the command line; then the
+  string before the points if it printed no point (\csource{main.c}{265}{265}), the string after
+  them (\csource{main.c}{267}{267}) and the end of the report, nothing under \verb|-q|; and it exits
+  with status~0 (\csource{main.c}{284}{285}). It writes its output once it is computed and, like
+  ratpoints, ignores a failed write, but for one case: when the reader of the output is gone, the
+  signal \verb|SIGPIPE| ends ratpoints, and the shell reports the status $141 = 128 + 13$; the Lean
+  runtime ignores that signal, so that the write of \verb|ratpoints-lean| fails instead, and it
+  exits quietly with status~141. Since ratpoints flushes its output after every point (line 187 of
+  \verb|main.c|), a reader that leaves early, like \verb|head|, ends it at the next point, while
+  \verb|ratpoints-lean| notices only a reader that is gone when it writes: an output that fits into
+  the pipe ends with status~0.
 \end{definition}
 
 \section{The differential tests of stage~B}

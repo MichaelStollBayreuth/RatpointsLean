@@ -30,8 +30,10 @@ take $H < 2^{63}$. The membership and no-duplicates theorems (Theorem~\ref{thm:f
 their text, which speaks only of the searches that return points; the refusal theorems
 (Theorem~\ref{thm:refusals}) gain $2^{63} \le H$ next to $H = 0$; and \verb|wf_sieveParams|
 (Definition~\ref{def:sieveParams}) keeps its text, while what it states changes through
-\verb|sieveParams|, which the challenge imports from the model: the parameters of the command line
-take their three stages by the counting rules of ratpoints. The well-formedness of the parameters
+\verb|sieveParams|, which the challenge imported from the model: the parameters of the command line
+take their three stages by the counting rules of ratpoints. Stage~I drops \verb|wf_sieveParams| from
+the challenge, whose statements then take the options of the sieve with no hypothesis on them
+(Section~\ref{sec:certifiedI}). The well-formedness of the parameters
 (Definition~\ref{def:Params}) has required the moduli of the third stage to be primes of the table
 since stage~F1, which is what the third stage needs. Comparator accepted the seven statements on
 2026-10-14, once with the refusal of the heights from $2^{63}$ on and again with the cut points of

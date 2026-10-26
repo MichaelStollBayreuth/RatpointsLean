@@ -27,7 +27,7 @@ library; under `-x`, the pairs that pass the sieve of the model, with the moduli
 which are those that ratpoints prints when it sieves with the same moduli, as it does under
 `-p 30 -N 30` unless it chooses other moduli from the curve (stage I models the choice of the
 moduli); and the points, through the callback `process` of `main.c` (`Ratpoints.Cli.process`), which
-the search calls for each point it finds (`Ratpoints.findPointsWith`), in the format of `-f` with
+the search calls for each point it finds (`Ratpoints.findPointsVerbose`), in the format of `-f` with
 the strings of `-fs`, `-fm` and `-fe`, the points at infinity passed over under `-i` (neither
 printed nor counted), none printed under `-z`, and the search stopped under `-1` at the first point
 that `process` does not pass over (the first point counted, printed or not). It reads
@@ -39,10 +39,10 @@ of a pair are delivered, and the range of the denominators; and it reads the sea
 `-l` and `-u` as `main.c` does, the ends as the numbers they are (`Ratpoints.Cli.ExactEnd`) and the
 doubles outward of them, which it gives the search, joined where they meet
 (`Ratpoints.Cli.joinIntervals`), and against whose exact ends `process` checks each point. It runs
-the search with the parameters `Ratpoints.sieveParams` of these options and these options of the
-search, so that it refuses a binary form that is not squarefree with error 8 and, after a reversal,
-prints the points of the reversed polynomial mapped back to the caller's curve, as ratpoints does
-with the same options.
+the search with these options of the sieve, its array size set to `Ratpoints.defaultArraySize`, and
+these options of the search, so that it refuses a binary form that is not squarefree with error 8
+and, after a reversal, prints the points of the reversed polynomial mapped back to the caller's
+curve, as ratpoints does with the same options.
 
 ## Main definitions
 
@@ -811,20 +811,24 @@ the text it prints on the standard output and its exit status. On the coefficien
 height bound `H`, the values `s` of the options that set the sieving parameters, the options `o` of
 the search and the settings `u` of the output, as `Ratpoints.Cli.input` reads them, it prints the
 head of the report (`Ratpoints.Cli.preamble`, nothing under `-q`), and then runs the search
-`Ratpoints.findPointsWith` with the parameters `Ratpoints.sieveParams s`, the options `o` with the
-search intervals joined (`Ratpoints.Cli.joinIntervals`), and the callback `Ratpoints.Cli.process` on
-its data (`Ratpoints.Cli.Data.ofOutput`, with the intervals of the command line before they are
-joined): on a refusal it prints the message of the failure (`Ratpoints.Cli.Failure.ofRefusal`) and
-exits with its status; otherwise it prints what the callback printed, the string before the points
-if it printed no point, the string after the points and the end of the report
+`Ratpoints.findPointsVerbose` with the options `s` of the sieve, with the array size that the
+program sets, `Ratpoints.defaultArraySize`, the options `o` with the search intervals joined
+(`Ratpoints.Cli.joinIntervals`), the callback `Ratpoints.Cli.process` on its data
+(`Ratpoints.Cli.Data.ofOutput`, with the intervals of the command line before they are joined), and
+the print channel that prints nothing: on a refusal it prints what the library printed and the
+message of the failure (`Ratpoints.Cli.Failure.ofRefusal`) and exits with its status; otherwise it
+prints what the callback and the library printed, the string before the points if the callback
+printed no point, the string after the points and the end of the report
 (`Ratpoints.Cli.report`, nothing under `-q`), and exits with status 0; on a failure `f` of the
 command line it prints `f.message` and exits with `f.status` (`Ratpoints.Cli.Failure.message`,
 `Ratpoints.Cli.Failure.status`).
 
-C: `main.c:195-198`, `main.c:248`, `main.c:251-252`, `main.c:265`, `main.c:267`, `main.c:284-285`
+C: `main.c:195-198`, `main.c:221-222`, `main.c:248`, `main.c:251-252`, `main.c:265`, `main.c:267`,
+`main.c:284-285`
 
 Deviation: the text written once at the end (`Ratpoints.Cli.main`), where `main.c` prints as it
-goes. -/
+goes; the print channel that prints nothing passed for the bit `RATPOINTS_VERBOSE` of the flags,
+which the program sets under `-v`, the report of the library under it coming with stage I. -/
 def run (args : List String) : String × UInt32 :=
   match input args with
   | .error f => (f.message, f.status)
@@ -832,8 +836,9 @@ def run (args : List String) : String × UInt32 :=
     let pre := preamble c H u o.domain
     let info := Data.ofOutput u o
     let o := { o with domain := Id.run (joinIntervals o.domain) }
-    match findPointsWith c H (sieveParams s) o process info with
-    | .error e => let f := Failure.ofRefusal e; (pre ++ f.message, f.status)
+    match findPointsVerbose c H { s with arraySize := defaultArraySize } o process info
+        (fun _ d ↦ d) with
+    | .error (e, d) => let f := Failure.ofRefusal e; (pre ++ d.out ++ f.message, f.status)
     | .ok r =>
       let before := if r.info.printBetween then "" else printString u.stringBefore
       (pre ++ r.info.out ++ before ++ printString u.stringAfter ++ report s o u r, 0)

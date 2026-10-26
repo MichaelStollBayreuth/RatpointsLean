@@ -12,7 +12,7 @@ project:
     the curves y^2 = F(x, z), F a binary form of even degree with integer coefficients, by sieving.
     The model mirrors the hardware-independent structure of the C code function by function (the
     same loops, tables, bit arrays of 64-bit words and index arithmetic); the proofs are to show
-    that, for every well-formed choice of the sieving parameters, it returns exactly the normalized
+    that, for every value of the options of the sieve, it returns exactly the normalized
     points of height at most H in the search region that the caller gives (assuming Sturm's theorem
     when the Sturm step is on), without duplicates, in the order of the C program, delivered to the
     callback of the caller as the C code delivers them, and refuses exactly the inputs that the C
@@ -273,9 +273,13 @@ status:
     points it prints; and the differential tests compare the runs of test4.sh and test3.sh with a
     search region, random search regions and depths of the Sturm step, and -x exactly against the C
     program with the moduli pinned (4530 comparisons in the default suites and 13 in the suite run
-    locally). Next: the later stage that the introduction of the blueprint lists (the blocks of the
-    loop over the denominators with the threads and the correction of the moduli, and the choice of
-    the sieving parameters by the curve).
+    locally). Stage I, under way: the choice of the moduli and of the cut points by the curve, the
+    blocks of the run with the correction of the moduli, the numbers of the moduli used and the
+    report under -v; so far the theorems and the statements for comparator take the options of the
+    sieve with no hypothesis on them, in place of the sieving parameters and their well-formedness,
+    which are internal to the search; the statements for comparator are eleven, the
+    well-formedness of the parameters of the program no longer among them, and comparator accepted
+    all eleven on 2026-10-25. Next: the rest of stage I, which the blueprint plans.
   sorry_count: 0
   sorry_in_definitions: 0
   axioms: ["propext", "Classical.choice", "Quot.sound"]
@@ -307,11 +311,6 @@ status:
       comparator_config: "comparator/challenges.json"
     - declaration: "Ratpoints.exists_findPoints_eq_error_iff_of_sturm_neg"
       file: "Ratpoints/Proof/Output.lean"
-      sorry_count: 0
-      axioms: ["propext", "Classical.choice", "Quot.sound"]
-      comparator_config: "comparator/challenges.json"
-    - declaration: "Ratpoints.wf_sieveParams"
-      file: "Ratpoints/Proof/Params.lean"
       sorry_count: 0
       axioms: ["propext", "Classical.choice", "Quot.sound"]
       comparator_config: "comparator/challenges.json"
@@ -391,8 +390,9 @@ fidelity:
     the first stage that the build compiles is chosen by a test on the constant of the chunk; the
     threads are replaced by the sequential order of the blocks; the heuristics that choose the
     sieving parameters by the curve are modelled, but nothing calls them yet (stage I), since the
-    theorems quantify over every well-formed choice; the parameters of the command line follow the counting rules of
-    ratpoints where these do not depend on the curve; the doubles of the search intervals are their
+    proofs hold for every well-formed choice and the theorems for every value of the options of the
+    sieve; the search takes the parameters of its options by the counting rules of ratpoints where
+    these do not depend on the curve; the doubles of the search intervals are their
     IEEE bits, with a model function for each operation on them, and the specification reads their
     values as extended rationals; the callback is a Lean function that takes the coordinates and the
     caller's data and returns its value, whether it stops the search, and the new data, for the C
@@ -442,15 +442,15 @@ alignment:
         residues of a denominator divided by its stride, the bits of the heights, the row indices of
         the first two stages with the test small) and the chunked first stage and the rows of stage
         F4 (both arms of the first stage with the chunk of the default build, the rows built by the
-        builders of the C code and kept in the tables of rows of its entries), every well-formed
-        choice of the sieving parameters, the array size of the pieces included, and every value of
-        the options, the delivery to the callback of stage G included, membership with
-        RATPOINTS_NO_CHECK clear and y >= 0 under RATPOINTS_NO_Y, since stage H for the points in
-        the search region of the options, assuming Sturm's theorem when the Sturm step is on
-        (Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok, Ratpoints.nodup_of_findPoints_eq_ok),
-        certified by comparator, through the reference of the polynomial searched
-        (Ratpoints.exists_eq_of_findPoints_eq_ok) and the permutation of the brute-force reference
-        filtered by RATPOINTS_NO_Y and the search region
+        builders of the C code and kept in the tables of rows of its entries), every value of the
+        options of the sieve, from which the search takes its sieving parameters, the array size of
+        the pieces included, and every value of the options, the delivery to the callback of stage G
+        included, membership with RATPOINTS_NO_CHECK clear and y >= 0 under RATPOINTS_NO_Y, since
+        stage H for the points in the search region of the options, assuming Sturm's theorem when
+        the Sturm step is on (Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok,
+        Ratpoints.nodup_of_findPoints_eq_ok), certified by comparator, through the reference of the
+        polynomial searched (Ratpoints.exists_eq_of_findPoints_eq_ok) and the permutation of the
+        brute-force reference filtered by RATPOINTS_NO_Y and the search region
         (Ratpoints.perm_filter_bruteForce_of_findPoints_eq_ok); the later stages bring
         Ratpoints.findPoints closer to the C code, and the theorems move with it
     - source: "the refusals: fewer than two or more than maxDegree + 1 = 101 coefficients, H = 0 or H >= 2^63, a binary form that is not squarefree, search intervals that are not well formed"
@@ -458,7 +458,7 @@ alignment:
       module: "Ratpoints.Proof.Output"
       status: "formalized"
       note: >
-        for every choice of the sieving parameters, with the Sturm step on, as in a run without
+        for every value of the options of the sieve, with the Sturm step on, as in a run without
         options (Ratpoints.exists_findPoints_eq_error_iff_of_sturm_nonneg), and without it, the
         refusals of the C program under -s
         (Ratpoints.exists_findPoints_eq_error_iff_of_sturm_neg), both certified by comparator, and
@@ -481,11 +481,11 @@ alignment:
       module: "Ratpoints.Proof.Output"
       status: "formalized"
       note: >
-        for well-formed parameters and every option, Ratpoints.findPointsWith with any callback and
-        its data gives the data and the count of Ratpoints.Delivery.deliver, the calls of the
-        callback for the points of the list of Ratpoints.findPoints in their order up to and
-        including the first that stops the search, and refuses exactly what Ratpoints.findPoints
-        refuses, with the same errors; certified by comparator
+        for every value of the options of the sieve and every option, Ratpoints.findPointsWith with
+        any callback and its data gives the data and the count of Ratpoints.Delivery.deliver, the
+        calls of the callback for the points of the list of Ratpoints.findPoints in their order up
+        to and including the first that stops the search, and refuses exactly what
+        Ratpoints.findPoints refuses, with the same errors; certified by comparator
     - source: "RATPOINTS_NO_CHECK: the survivors of the sieve, delivered with y = 0"
       lean: "Ratpoints.exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck"
       module: "Ratpoints.Proof.Output"

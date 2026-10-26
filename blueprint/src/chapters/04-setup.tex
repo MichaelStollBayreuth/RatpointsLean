@@ -457,16 +457,20 @@ Lemma~\ref{lem:sift_eq_checkDen} maps their side.
 \begin{definition}[The search of the polynomial handed on]\label{def:searchPoints}
   \uses{def:Params, def:arraySize, def:sievingInfo, def:useCLong, def:pointsAtInfinity,
     def:sieving, def:twoAdic, def:setupUs1, def:forbidden, def:numClasses, def:Outcome,
-    def:delivery}
+    def:delivery, def:sieveOptions, def:sieveParams}
   \lean{Ratpoints.searchPoints}
   \leanok
   For the coefficients $c$ of degree $d$ that the set-up hands on, the flags of the check, the
-  height $H$, the parameters $P$, the callback and a delivery whose flag is clear, over the
-  denominators $b_{\mathrm{low}}, \dots, b_{\mathrm{high}}$ and the search intervals, in the order
-  of \verb|find_points_work_1|: the flags of the tests on the denominators, the checked loop for
-  even $d$, the Jacobi test for even $d$, $c_d$ not a square and the Jacobi switch of the
-  parameters, the squares for odd $d$ and $|c_d| = 1$, and for odd $d$ otherwise the divisors of the
-  leading coefficient up to $b_{\mathrm{high}}$ (Definition~\ref{def:setupUs1};
+  height $H$, the normalized options of the sieve (Definition~\ref{def:sieveOptions}), whether the
+  caller left the number of primes to the library, the callback, a delivery whose flag is clear and
+  the print channel, through which it prints nothing yet (the report of the library, stage~I), over
+  the denominators $b_{\mathrm{low}}, \dots, b_{\mathrm{high}}$ and the search intervals, with the
+  parameters that it takes from its options (Definition~\ref{def:sieveParams}, with the number of
+  primes $-1$ when the caller left it to the library, which are those of the options as the caller
+  gave them), in the order of \verb|find_points_work_1|: the flags of the tests on the denominators,
+  the checked loop for even $d$, the Jacobi test for even $d$, $c_d$ not a square and the Jacobi
+  switch of the options, the squares for odd $d$ and $|c_d| = 1$, and for odd $d$ otherwise the
+  divisors of the leading coefficient up to $b_{\mathrm{high}}$ (Definition~\ref{def:setupUs1};
   \csource{find_points.c}{4588}{4589}, \csource{find_points.c}{4595}{4596},
   \csource{find_points.c}{4607}{4607}, \csource{find_points.c}{4900}{4943}, with the bits
   \verb|RATPOINTS_CHECK_DENOM| and \verb|RATPOINTS_USE_JACOBI| that it sets,
@@ -498,37 +502,44 @@ Lemma~\ref{lem:sift_eq_checkDen} maps their side.
   return the delivery as it came. The search returns what a search gives back
   (Definition~\ref{def:Outcome}): the data and the count of the delivery, with the flag of the
   reversal, the squares, the success of the divisor set-up and the search intervals. A definition of
-  type \verb|Id|, which $\mathrm{findPointsWith}$ runs with the normalized range of the
-  denominators, the search intervals that the Sturm step leaves and its flag \verb|sturm_empty|
-  (Definition~\ref{def:sturmRegion}). What it delivers for well-formed parameters,
-  $1 \le H < 2^{63}$, as the refusals leave it, $1 \le b_{\mathrm{low}}$, $b_{\mathrm{high}} \le H$,
-  well-formed search intervals and $d$ the degree of $c$ is the subject of
-  Lemma~\ref{lem:searchList}: the points at infinity and, over the denominators of the search
-  (Definition~\ref{def:searchDens}), the points of the check with the flags of the numerators in the
-  search intervals, none when \verb|sturm_empty| is set, that a sound test of the sieve lets
-  through, up to the first call that stops the search, also when an exit fires, since the curve has
-  no points then (Lemmas~\ref{lem:sievingInfo} and~\ref{lem:twoAdic_exit}).
+  type \verb|Id|, which the search of \verb|find_points_work_1| runs
+  (Definition~\ref{def:findPointsVerbose}) with the normalized range of the denominators, the search
+  intervals that the Sturm step leaves and its flag \verb|sturm_empty|
+  (Definition~\ref{def:sturmRegion}). What it delivers for normalized options, with the print
+  channel that prints nothing, $1 \le H < 2^{63}$, as the refusals leave it,
+  $1 \le b_{\mathrm{low}}$, $b_{\mathrm{high}} \le H$, well-formed search intervals and $d$ the
+  degree of $c$ is the subject of Lemma~\ref{lem:searchList}: the points at infinity and, over the
+  denominators of the search (Definition~\ref{def:searchDens}), the points of the check with the
+  flags of the numerators in the search intervals, none when \verb|sturm_empty| is set, that a sound
+  test of the sieve lets through, up to the first call that stops the search, also when an exit
+  fires, since the curve has no points then (Lemmas~\ref{lem:sievingInfo}
+  and~\ref{lem:twoAdic_exit}).
 \end{definition}
 
-The search with a callback, $\mathrm{findPointsWith}(c, H, P, o)$ with a callback and its data
-(Definition~\ref{def:findPointsWith}), refuses, in the order of the program, more than
-$\mathrm{maxDegree} + 1$ coefficients, fewer than two, and $H = 0$ or $H \ge 2^{63}$, a height that
-is not a \verb|long| (errors 3, 5 and~4), and then, with error~8, a drop of $\lceil n/2 \rceil$ by
-the leading zeros; it normalizes the options (Definition~\ref{def:normalize}), runs the reversal
-check with the normalized switch, which may refuse with error~8 as well, takes the search intervals
-of the options, the default interval for none, refusing intervals that are not well formed with
-error~9 (Definition~\ref{def:searchIntervals}), and runs the Sturm step of the search
+The search with a callback, $\mathrm{findPointsWith}(c, H, s, o)$ with the options $s$ of the sieve,
+a callback and its data (Definition~\ref{def:findPointsWith}), the search with a callback and a
+print channel of Definition~\ref{def:findPointsVerbose} with the channel that prints nothing and a
+refusal without the data of the callback (Lemma~\ref{lem:choiceSearch}), refuses, in the order of
+the program, more than $\mathrm{maxDegree} + 1$ coefficients, fewer than two, and $H = 0$ or
+$H \ge 2^{63}$, a height that is not a \verb|long| (errors 3, 5 and~4), and then, with error~8, a
+drop of $\lceil n/2 \rceil$ by the leading zeros; it normalizes the options
+(Definition~\ref{def:normalize}), runs the reversal check with the normalized switch, which may
+refuse with error~8 as well, takes the search intervals of the options, the default interval for
+none, refusing intervals that are not well formed with error~9
+(Definition~\ref{def:searchIntervals}), and runs the Sturm step of the search
 (Definition~\ref{def:sturmRegion}), which with the step on refuses the form when the remainder chain
 of the polynomial searched is $\mathrm{none}$, returns at once, with the count $0$ and no search
 interval, when the step keeps no interval, so that that polynomial is negative on the search
 intervals within $\pm 2^{63}$, and it has no point at infinity, and otherwise narrows the search
 intervals to those that the step keeps; and it runs $\mathrm{searchPoints}$ on the polynomial that
-the check hands on, over the normalized range of the denominators and the search intervals that the
-Sturm step leaves, with its flag \verb|sturm_empty| and the flag of the reversal as the flags of the
-check, from the data of the caller, the count $0$ and the flag of the stop clear, and returns what
-the search gives back. $\mathrm{findPoints}(c, H, P, o)$ (Definition~\ref{def:findPoints}) is its
-instance with the appending callback from the empty array, the list of the array, or its refusal.
-The C ranges of the search with a callback are the lines of \verb|find_points| and
+the check hands on, with the normalized options of the sieve and whether the caller left the number
+of primes to the library (the number of primes of $s$ negative, \verb|np_is_default|), over the
+normalized range of the denominators and the search intervals that the Sturm step leaves, with its
+flag \verb|sturm_empty| and the flag of the reversal as the flags of the check, from the data of the
+caller, the count $0$ and the flag of the stop clear, and returns what the search gives back.
+$\mathrm{findPoints}(c, H, s, o)$ (Definition~\ref{def:findPoints}) is its instance with the
+appending callback from the empty array, the list of the array, or its refusal. The C ranges of the
+search with a callback and a print channel are the lines of \verb|find_points| and
 \verb|find_points_work| that make the three functions of the library one, the head and the locals of
 \verb|find_points_work_1| that the set-up uses, its reset of the flags and its end, the test of the
 leading zeros and of the height, the height of the arguments of the library, a \verb|long|, the
@@ -540,9 +551,9 @@ the input that the reset of the flags keeps.
     lem:searchDensRange, lem:normalize, def:regionSpec, lem:elimSearchRegion}
   \lean{Ratpoints.perm_filter_bruteForce_of_findPoints_eq_ok, Ratpoints.eq_filter_bruteForce_of_findPoints_eq_ok_of_reverse_eq_false}
   \leanok
-  Assuming Sturm's theorem when the Sturm step is on (Definition~\ref{def:sturmTheorem}), for
-  well-formed parameters and options with $\mathrm{noCheck}$ false, if
-  $\mathrm{findPoints}(c, H, P, o)$ returns the list $L$, then $L$ is a permutation of
+  Assuming Sturm's theorem when the Sturm step is on (Definition~\ref{def:sturmTheorem}), for the
+  options $s$ of the sieve and options $o$ with $\mathrm{noCheck}$ false, if
+  $\mathrm{findPoints}(c, H, s, o)$ returns the list $L$, then $L$ is a permutation of
   $\mathrm{bruteForce}(c, H)$ filtered by $\mathrm{noY}$ and the search region of $o$
   (Definition~\ref{def:regionSpec}); and when also $\mathrm{noY}$ is false, the options forbid the
   reversal and the denominators of the search of $c$ are those of the normalized range, as they are
@@ -572,8 +583,8 @@ the input that the reset of the flags keeps.
     lem:searchIntervals, lem:reversalRegion, lem:sturmRegion}
   \lean{Ratpoints.exists_findPoints_eq_error_iff_of_sturm_nonneg, Ratpoints.exists_findPoints_eq_error_iff_of_sturm_neg, Ratpoints.Sturm.run_chain_eq_none_iff_of_reversal_eq_ok, Ratpoints.Setup.not_squarefree_binaryFormPoly_of_reversal_eq_error}
   \leanok
-  For any parameters and options: with the Sturm step on ($\mathrm{sturm} \ge 0$),
-  $\mathrm{findPoints}(c, H, P, o)$ refuses the input exactly when $c$ has fewer than two or more
+  For any options of the sieve and options: with the Sturm step on ($\mathrm{sturm} \ge 0$),
+  $\mathrm{findPoints}(c, H, s, o)$ refuses the input exactly when $c$ has fewer than two or more
   than $\mathrm{maxDegree} + 1$ entries, $H = 0$ or $H \ge 2^{63}$, $\Phi_c$ is not squarefree, or
   the search intervals of $o$ are not well formed (Definition~\ref{def:regionSpec}). With the Sturm
   step off, it refuses exactly when $c$ has fewer than two or more than $\mathrm{maxDegree} + 1$
@@ -583,10 +594,11 @@ the input that the reset of the flags keeps.
 \end{theorem}
 
 \begin{proof}
-  \uses{lem:reversal_swap}
+  \uses{lem:reversal_swap, lem:choiceSearch}
   \leanok
   $\mathrm{findPoints}$ refuses exactly the inputs that the search with a callback refuses, with the
-  appending callback (Theorem~\ref{thm:protocol}), so that the refusals are its tests. The refusals
+  appending callback (Theorem~\ref{thm:protocol}), so that the refusals are its tests, those of the
+  search with the print channel that prints nothing (Lemma~\ref{lem:choiceSearch}). The refusals
   of the leading zeros and of the reversal check stand for $Z^2 \mid \Phi_c$ and $X^2 \mid \Phi_c$,
   each of which makes $\Phi_c$ not squarefree (Lemma~\ref{lem:squarefree_binaryFormPoly}). When
   neither happens, $N \le d + 1$; since $c$ has at least two entries, $N \ge 2$ and so $d \ge 1$;
@@ -619,18 +631,19 @@ which since stage~H add the search intervals that are not well formed; both have
 axioms. Assuming Sturm's theorem, the depth of the Sturm step changes only the speed: with the exact
 check on, the search with the step off returns the same list (Theorem~\ref{thm:sturmSpeed}).
 Comparator certifies the two main theorems with the options argument, membership since stage~G with
-$\mathrm{noCheck}$ false, both refusal theorems and \verb|wf_sieveParams|, and, since stage~G, the
-order theorem, the three statements under $\mathrm{noCheck}$ and the protocol, by which the search
-with a callback refuses exactly what $\mathrm{findPoints}$ refuses (Section~\ref{sec:certifiedG}),
-since stage~H six of them restated for the search region of the options
-(Section~\ref{sec:certifiedH}); the challenge restates $\Phi_c$ verbatim, as it restates $F_c$,
-takes the options from the model, and has the refusal theorem with the Sturm step off too, so that a
-$\mathrm{findPoints}$ that refused every input under \verb|-s| would not pass. Since the challenge
-needs \verb|Squarefree|, the specification imports \verb|Mathlib.Algebra.Squarefree.Basic|, so that
-the challenge still imports, besides the model, exactly the Mathlib modules among the public imports
-of the files of the specification that it restates. Stage~D left the structure \verb|Params| and its
-well-formedness as stage~C2 had them; stage~F1 adds the number of primes examined and the composite
-moduli (Chapter~\ref{chap:tables}).
+$\mathrm{noCheck}$ false, both refusal theorems and, until stage~H, \verb|wf_sieveParams|, and,
+since stage~G, the order theorem, the three statements under $\mathrm{noCheck}$ and the protocol, by
+which the search with a callback refuses exactly what $\mathrm{findPoints}$ refuses
+(Section~\ref{sec:certifiedG}), since stage~H six of them restated for the search region of the
+options (Section~\ref{sec:certifiedH}), and since stage~I all of them for the options of the sieve
+with no hypothesis on them (Section~\ref{sec:certifiedI}); the challenge restates $\Phi_c$ verbatim,
+as it restates $F_c$, takes the options from the model, and has the refusal theorem with the Sturm
+step off too, so that a $\mathrm{findPoints}$ that refused every input under \verb|-s| would not
+pass. Since the challenge needs \verb|Squarefree|, the specification imports
+\verb|Mathlib.Algebra.Squarefree.Basic|, so that the challenge still imports, besides the model,
+exactly the Mathlib modules among the public imports of the files of the specification that it
+restates. Stage~D left the structure \verb|Params| and its well-formedness as stage~C2 had them;
+stage~F1 adds the number of primes examined and the composite moduli (Chapter~\ref{chap:tables}).
 
 \section{The command-line program and the differential tests}\label{sec:setupCli}
 

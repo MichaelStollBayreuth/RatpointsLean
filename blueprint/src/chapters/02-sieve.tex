@@ -105,7 +105,9 @@ are no points modulo $p$ (D) and the options of the output (G) come in their sta
   $s_1 \le s_2 \le$ the number of moduli. So the moduli of well-formed parameters are above $1$, and
   those of the third stage are primes, each one of the first $\mathrm{numPrimes}$ primes of the
   table, the one that divides it. The table holds no $2$, so an even modulus is never well-formed,
-  as ratpoints offers odd moduli only.
+  as ratpoints offers odd moduli only. The parameters are internal to the search, which takes them
+  from the options of the sieve (Definition~\ref{def:sieveParams}) until it makes the choice of the
+  moduli (stage~I).
 \end{definition}
 
 \begin{definition}[The parameters of the executable]\label{def:sieveParams}
@@ -124,8 +126,9 @@ are no points modulo $p$ (D) and the options of the output (G) come in their sta
   $k = \mathrm{defaultNumPrimes} = 30$, and the first $q$ primes of the table are examined, the
   number \verb|pn_lim| with which \verb|sieving_info| starts (the loop of the tables,
   Definition~\ref{def:tablesLoop}); the moduli are the first primes of the table, at most the first
-  $L$, where $L = q$ under \verb|-p|, a hard limit for every stage
-  (\csource{find_points.c}{4577}{4577}; for the loop of the tables and the third stage of the
+  $L$, where $L = q$ under \verb|-p|, a hard limit for every stage (whether the caller left the
+  number of primes to the library, line 4577 of \verb|find_points.c|, is read by the search,
+  Definition~\ref{def:findPointsVerbose}; for the loop of the tables and the third stage of the
   choice, Definitions~\ref{def:tablesLoop} and~\ref{def:thirdStage}), and $L = \mathrm{numPrimes}$
   without it. For the values $n$, $N$ and $P$ of \verb|-n|, \verb|-N| and \verb|-P|, each absent
   when negative, and $N$ capped at $q$: the first stage ends at $s_1 = \min(n, N)$, or at
@@ -141,21 +144,24 @@ are no points modulo $p$ (D) and the options of the output (G) come in their sta
   first $q$ (Definitions~\ref{def:thirdStage} and~\ref{def:choice}). At most $\min(F, 171)$
   forbidden divisors are tested, for the value $F \ge 0$ of \verb|-F| or else
   $F = \mathrm{defaultMaxForbidden} = 64$; the Jacobi test runs unless \verb|-j| is the last of
-  \verb|-j| and \verb|-J|; and a piece of the numerators has at most
-  $\mathrm{defaultArraySize} = 256$ bit arrays, the array size that the program sets when it reads
-  the arguments, the default of the field of the options of the sieve, and again before the search
-  (\csource{main.c}{221}{222}). The fields that the run of the search does not read, the end $s_3$
+  \verb|-j| and \verb|-J|; and a piece of the numerators has at most as many bit arrays as the
+  array size of the options of the sieve (Definition~\ref{def:arraySize}), the default
+  $\mathrm{defaultArraySize} = 256$ for one at most $0$, which the program sets before the search
+  (Definition~\ref{def:cliRun}). The fields that the run of the search does not read, the end $s_3$
   of the third stage, the number of primes looked at, the estimates of the run, the cost of a check
   and the words of the first correction, get fixed values: the number of the moduli, $q$, $1$ for
   the estimates and the cost, and $2^{64} - 1$, no correction; the tuning fields of the options are
   not read. The default parameters are those of no options: $11$ moduli in the first stage, $11$
   more in the second and $8$ in the third, the first $30$ primes in all. Every parameter set made
-  this way is well-formed.
+  this way is well-formed. It models no C code of its own: the search of the polynomial
+  (Definition~\ref{def:searchPoints}) takes the parameters of its normalized options, with the
+  number of primes $-1$ when the caller left it to the library, which are those of the options as
+  the caller gave them, until it makes the choice of the moduli (stage~I).
 \end{definition}
 
-\verb|Params| holds the choices that the theorems quantify over: which moduli the sieve uses, in
-which order and in which stage, and how many primes are examined. ratpoints makes them from the
-curve (\verb|sieving_info|, which ranks the primes and may look past the first $q$ when \verb|-p| is
+\verb|Params| holds the choices of the sieve: which moduli the sieve uses, in which order and in
+which stage, and how many primes are examined. ratpoints makes them from the curve
+(\verb|sieving_info|, which ranks the primes and may look past the first $q$ when \verb|-p| is
 absent), and moves the end of the third stage during the run (\verb|adapt_primes|; with \verb|-A 2|
 also $s_2$); where it decides by the curve, for an absent \verb|-n|, \verb|-N| or \verb|-P|, its
 stages may be longer or shorter than those of the parameters of the executable, and where the
@@ -166,24 +172,25 @@ divisors among the examined primes and beyond them, at most the bound of them, a
 that the switch lets run) removes only denominators without points, and the two shapes of the loop
 between which these choices decide, the words of 64 denominators and every denominator, both run in
 increasing order (\verb|-q| suppresses the report of the moduli used, which does depend on the
-choice). So the model takes the choice as an input, and the theorems hold for every well-formed
-choice. They quantify over the parameters that \verb|Params.WF| admits, a definition of a few lines
-in the model, which has no Mathlib, so the comparator challenge imports it; the runs of the
-executable need no such reading, since \verb|wf_sieveParams|, certified with the main theorems,
-shows that every parameter set the command line produces is well-formed, which also rules out a
-well-formedness that nothing satisfies. C1 reads only the moduli and treats all stages alike, and C2
-reads the array size too (Definition~\ref{def:arraySize}); the bound on the forbidden divisors and
-the Jacobi switch are read since stage~E, the number of primes examined since stage~F1
-(Chapter~\ref{chap:tables}), and the cut points from stage~F2 on, and further choices (the block
-length) join \verb|Params| with the components that use them. Well-formedness constrains a field
-only as far as its component needs it to be meaningful. The constants of the build that these
-definitions read, the size in bits of the moduli, the defaults of \verb|-p| and \verb|-F| and those
-of the cut points, are definitions of the model like $\mathrm{maxDegree}$
-(Definition~\ref{def:maxDegree}), and no proof depends on their values: \verb|wf_sieveParams| needs
-only that $\mathrm{numPrimes}$, the number of primes of the table below $\mathrm{maxPrimeEven}$, is
-at most its size, and that these primes come first in the table, which is sorted
-(Definition~\ref{def:barrett}): the moduli that the options give are among them, each a prime whose
-only divisor above $1$ is itself.
+choice). So the model takes the choice as an input, and the proofs hold for every well-formed
+choice, the parameters that \verb|Params.WF| admits, a definition of a few lines in the model; since
+stage~I the theorems hold for every value of the options of the sieve, from which the search takes
+its parameters, which are well-formed (\verb|wf_sieveParams|). Until stage~H the theorems quantified
+over the well-formed parameters, the comparator challenge importing \verb|Params.WF|, and
+\verb|wf_sieveParams|, certified with them, showed that every parameter set the command line
+produces is well-formed, which ruled out a well-formedness that nothing satisfies. C1 reads only the
+moduli and treats all stages alike, and C2 reads the array size too
+(Definition~\ref{def:arraySize}); the bound on the forbidden divisors and the Jacobi switch are read
+since stage~E, the number of primes examined since stage~F1 (Chapter~\ref{chap:tables}), and the cut
+points from stage~F2 on, and further choices (the block length) join \verb|Params| with the
+components that use them. Well-formedness constrains a field only as far as its component needs it
+to be meaningful. The constants of the build that these definitions read, the size in bits of the
+moduli, the defaults of \verb|-p| and \verb|-F| and those of the cut points, are definitions of the
+model like $\mathrm{maxDegree}$ (Definition~\ref{def:maxDegree}), and no proof depends on their
+values: \verb|wf_sieveParams| needs only that $\mathrm{numPrimes}$, the number of primes of the
+table below $\mathrm{maxPrimeEven}$, is at most its size, and that these primes come first in the
+table, which is sorted (Definition~\ref{def:barrett}): the moduli that the options give are among
+them, each a prime whose only divisor above $1$ is itself.
 
 \section{The table of a prime}\label{sec:primeTables}
 
@@ -305,12 +312,12 @@ by \verb|#guard| examples; the row of $0$ is the closed form of its admission te
 (Lemma~\ref{lem:sieves0}). Each loop of the sieve is a definition of type \verb|Id α| that its
 callers bind with \verb|←|, so that its contract, an \verb|@[spec]| theorem proved with the program
 logic of Lean core and with loop invariants that are named definitions, applies at the call; only
-$\mathrm{findPoints}$ and $\mathrm{findPointsWith}$, the program's run and its pure callback,
-\verb|Main.lean| and the \verb|#guard| lines may run a component with \verb|Id.run|. The reference
-table of a prime (Definition~\ref{def:examinePrime}) is made of folds and maps, specified by
-ordinary lemmas; the table with the exit and the tables of a prime power, which loop over the
-residues, are components of type \verb|Id| with their contracts (Lemmas~\ref{lem:examinePrime_eq}
-and~\ref{lem:power_admits}).
+$\mathrm{findPoints}$, $\mathrm{findPointsWith}$ and $\mathrm{findPointsVerbose}$, the program's run
+and its pure callback, \verb|Main.lean| and the \verb|#guard| lines may run a component with
+\verb|Id.run|. The reference table of a prime (Definition~\ref{def:examinePrime}) is made of folds
+and maps, specified by ordinary lemmas; the table with the exit and the tables of a prime power,
+which loop over the residues, are components of type \verb|Id| with their contracts
+(Lemmas~\ref{lem:examinePrime_eq} and~\ref{lem:power_admits}).
 
 \begin{definition}[The sieve of one denominator]\label{def:sieveDen}
   \uses{def:SieveEntry}
@@ -423,41 +430,41 @@ and~\ref{lem:power_admits}).
   \uses{def:findPointsWith, def:delivery}
   \lean{Ratpoints.findPoints}
   \leanok
-  For the parameters $P$ and the options $o$ (Definition~\ref{def:Options}), by default those of a
-  run of the program without options, the list of the points that the search with a callback
-  (Definition~\ref{def:findPointsWith}), the model of the library function \verb|find_points| with
-  its parts \verb|find_points_work| and \verb|find_points_work_1|, delivers to the callback of the
-  model that appends each point to an array and never stops the search
-  (Definition~\ref{def:delivery}), from the empty array, or its refusal. So it refuses more than
-  $\mathrm{maxDegree} + 1$ coefficients, fewer than two, and $H = 0$ or $H \ge 2^{63}$, a height
-  that is not a C \verb|long| (Definition~\ref{def:useCLong}), in the order of the program, with its
-  errors 3, 5 and~4 (Section~\ref{sec:refusals}; the refusals of Definition~\ref{def:reversal}),
-  where the library refuses the first three as bad arguments: a degree above $\mathrm{maxDegree}$,
-  and the empty list as the degree $-1$, before it drops the leading zeros, and the degree $0$ and a
-  height below $1$ after it, and cannot be given the last, its height being a C \verb|long|
-  (\verb|ratpoints.h:362|), which the program refuses when it reads it; then, as not squarefree
-  (error~8), a form that loses $\lceil n/2 \rceil$ with the leading zeros. Then it normalizes the
-  options (Definition~\ref{def:normalize}) and runs the reversal check with the normalized switch
-  (Definition~\ref{def:reversal}), which may refuse the form as not squarefree too or reverse the
-  polynomial; it takes the search intervals of the options, the default interval $[-h, h]$ for none,
-  and refuses intervals that are not well formed with $\mathrm{badArgs}$, error~9
-  (Definition~\ref{def:searchIntervals}); with the Sturm step on (Definition~\ref{def:sturmRegion}),
-  it refuses the form when the remainder chain of the polynomial searched is $\mathrm{none}$
-  (Definition~\ref{def:sturmChain}), lists no point when the step keeps no interval, so that that
-  polynomial is negative on the search intervals within $\pm 2^{63}$, and it has no point at
-  infinity, and otherwise narrows the search intervals to those that the step keeps; and it lists
-  the points of the search of the polynomial that the check hands on
+  For the options $s$ of the sieve (Definition~\ref{def:sieveOptions}) and the options $o$
+  (Definition~\ref{def:Options}), by default those of a run of the program without options, the list
+  of the points that the search with a callback (Definition~\ref{def:findPointsWith}), the model of
+  the library function \verb|find_points| with its parts \verb|find_points_work| and
+  \verb|find_points_work_1|, delivers to the callback of the model that appends each point to an
+  array and never stops the search (Definition~\ref{def:delivery}), from the empty array, or its
+  refusal. So it refuses more than $\mathrm{maxDegree} + 1$ coefficients, fewer than two, and
+  $H = 0$ or $H \ge 2^{63}$, a height that is not a C \verb|long| (Definition~\ref{def:useCLong}),
+  in the order of the program, with its errors 3, 5 and~4 (Section~\ref{sec:refusals}; the refusals
+  of Definition~\ref{def:reversal}), where the library refuses the first three as bad arguments: a
+  degree above $\mathrm{maxDegree}$, and the empty list as the degree $-1$, before it drops the
+  leading zeros, and the degree $0$ and a height below $1$ after it, and cannot be given the last,
+  its height being a C \verb|long| (\verb|ratpoints.h:362|), which the program refuses when it reads
+  it; then, as not squarefree (error~8), a form that loses $\lceil n/2 \rceil$ with the leading
+  zeros. Then it normalizes the options (Definition~\ref{def:normalize}) and runs the reversal check
+  with the normalized switch (Definition~\ref{def:reversal}), which may refuse the form as not
+  squarefree too or reverse the polynomial; it takes the search intervals of the options, the
+  default interval $[-h, h]$ for none, and refuses intervals that are not well formed with
+  $\mathrm{badArgs}$, error~9 (Definition~\ref{def:searchIntervals}); with the Sturm step on
+  (Definition~\ref{def:sturmRegion}), it refuses the form when the remainder chain of the polynomial
+  searched is $\mathrm{none}$ (Definition~\ref{def:sturmChain}), lists no point when the step keeps
+  no interval, so that that polynomial is negative on the search intervals within $\pm 2^{63}$, and
+  it has no point at infinity, and otherwise narrows the search intervals to those that the step
+  keeps; and it lists the points of the search of the polynomial that the check hands on
   (Definition~\ref{def:searchPoints}), with its flag of the reversal, over the normalized range of
   the denominators and the search intervals that the Sturm step leaves: the 2-adic information, no
   points when no class of the denominators modulo $64$ admits a numerator and there is no point at
   infinity, the tables of the examined primes and the sieve entry of each modulus
   (Definition~\ref{def:sievingInfo}), no points when the curve has none modulo a prime examined on
   the way, and else the points at infinity followed, unless the Sturm step has left no interval, by
-  the points of the denominators in the order of the loop of the search whose $x/z$ lies in a
-  search interval, found with pieces of at most
-  $\mathrm{arraySizeAt}(H)$ bit arrays, the array size of the parameters, each mapped back to the
-  caller's curve after a reversal. It models no C code: the search with a callback holds the lines
-  of \verb|find_points| that the search for the points held before stage~G.
+  the points of the denominators in the order of the loop of the search whose $x/z$ lies in a search
+  interval, found with pieces of at most $\mathrm{arraySizeAt}(H)$ bit arrays, the array size of the
+  parameters that the search takes from $s$ (Definition~\ref{def:sieveParams}), each mapped back to
+  the caller's curve after a reversal. It models no C code: the search with a callback holds the
+  lines of \verb|find_points| that the search for the points held before stage~G.
 \end{definition}
 
 Each component differs from the C code in a stated way, recorded in the \verb|Deviation:|
@@ -551,12 +558,12 @@ $l$, mapped by $\mathrm{swapPoint}$ when the flag of the reversal is set, those 
 out under $\mathrm{noY}$, which is what the search needs of it.
 
 \begin{theorem}[The points, each once]\label{thm:findPoints}
-  \uses{def:findPoints, def:Params, def:Options, def:IsPoint, def:points, def:regionSpec,
+  \uses{def:findPoints, def:sieveOptions, def:Options, def:IsPoint, def:points, def:regionSpec,
     def:sturmTheorem}
   \lean{Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok, Ratpoints.nodup_of_findPoints_eq_ok, Ratpoints.toFinset_eq_filter_points_of_findPoints_eq_ok}
   \leanok
-  For well-formed parameters, if $\mathrm{findPoints}(c, H, P, o)$ returns the list $L$: assuming
-  Sturm's theorem when the Sturm step is on (Definition~\ref{def:sturmTheorem}), for
+  For the options $s$ of the sieve and $o$, if $\mathrm{findPoints}(c, H, s, o)$ returns the list
+  $L$: assuming Sturm's theorem when the Sturm step is on (Definition~\ref{def:sturmTheorem}), for
   $\mathrm{noCheck}$ false, a triple lies in $L$ if and only if it is a normalized point of height
   at most $H$, with $y \ge 0$ under $\mathrm{noY}$, in the search region of $o$
   (Definition~\ref{def:regionSpec}), and its set of elements is $\mathrm{points}(c, H)$ filtered by
@@ -583,60 +590,65 @@ out under $\mathrm{noY}$, which is what the search needs of it.
 
 \verb|mem_iff_isPoint_of_findPoints_eq_ok| and \verb|nodup_of_findPoints_eq_ok| are the main
 theorems of the project; since stage~D they take the options of \verb|findPoints| as an argument,
-membership since stage~G with $\mathrm{noCheck}$ false, and from stage~H on membership holds for the
-points in the search region of the options and takes the hypothesis of Sturm's theorem when the
-Sturm step is on. The reversal of stage~D and the divisor order of stage~E change the order of the
-output, so that, with $\mathrm{noCheck}$ false, the list is that of the reference of the polynomial
-searched over the denominators of its search with the numerators in the region that the search uses,
-in their order, mapped back and filtered by $\mathrm{noY}$ (Theorem~\ref{thm:findPoints_order}),
-with both options of the output off and assuming Sturm's theorem when the Sturm step is on a
-permutation of the reference filtered by the search region (Theorem~\ref{thm:findPoints_perm}), and
-the refusals are those of Theorem~\ref{thm:refusals}. Comparator certifies twelve statements
-(Sections~\ref{sec:certifiedG} and~\ref{sec:certifiedH}): the two of the brute-force reference
-(Section~\ref{sec:comparator-ab}), the two main theorems, the refusal theorems of stage~D, which
-rule out a \verb|findPoints| that refuses every input, with or without the Sturm step,
-\verb|wf_sieveParams|, which rules out a well-formedness that nothing satisfies, and, since stage~G,
-the order theorem (Theorem~\ref{thm:order}), the three statements under $\mathrm{noCheck}$
-(Theorem~\ref{thm:noCheck}) and the protocol of the delivery (Theorem~\ref{thm:protocol}), which
-ties $\mathrm{findPointsWith}$, the search that the program runs with its callback, to
-$\mathrm{findPoints}$; stage~H restates six of them for the search region of the options:
-membership, the order theorem and the first two statements under $\mathrm{noCheck}$ hold for the
-points in the search region, membership, the order and the coverage under $\mathrm{noCheck}$
-assuming Sturm's theorem when the Sturm step is on (Definition~\ref{def:sturmTheorem}), and both
-refusal theorems add the search intervals that are not well formed, the refusal of $c_0 = c_1 = 0$
-without the Sturm step only for the whole box. It accepted the seven statements before stage~G on
-2026-10-11, again on the model of stage E on 2026-10-12, with the parameters of sub-stage F1 on
-2026-10-13, with the refusal of the heights that are not \verb|long|s and the cut points of
-sub-stage F2 on 2026-10-14, with the packing of sub-stage F3 on 2026-10-15, and with the chunked
-first stage and the rows of sub-stage F4 on 2026-10-16, when, on Lean and Mathlib v4.35.0, Lake's
-\verb|lake comparator --paranoid|, which builds and exports the project in a sandbox, accepted them
-too, with Lean's kernel and the five external checkers bundled with Lean; and
+since stage~I the options of the sieve in place of the well-formed parameters, membership since
+stage~G with $\mathrm{noCheck}$ false, and from stage~H on membership holds for the points in the
+search region of the options and takes the hypothesis of Sturm's theorem when the Sturm step is on.
+The reversal of stage~D and the divisor order of stage~E change the order of the output, so that,
+with $\mathrm{noCheck}$ false, the list is that of the reference of the polynomial searched over the
+denominators of its search with the numerators in the region that the search uses, in their order,
+mapped back and filtered by $\mathrm{noY}$ (Theorem~\ref{thm:findPoints_order}), with both options
+of the output off and assuming Sturm's theorem when the Sturm step is on a permutation of the
+reference filtered by the search region (Theorem~\ref{thm:findPoints_perm}), and the refusals are
+those of Theorem~\ref{thm:refusals}. Comparator certifies eleven statements
+(Sections~\ref{sec:certifiedG}, \ref{sec:certifiedH} and~\ref{sec:certifiedI}): the two of the
+brute-force reference (Section~\ref{sec:comparator-ab}), the two main theorems, the refusal theorems
+of stage~D, which rule out a \verb|findPoints| that refuses every input, with or without the Sturm
+step, until stage~H \verb|wf_sieveParams|, which ruled out a well-formedness that nothing satisfies,
+and, since stage~G, the order theorem (Theorem~\ref{thm:order}), the three statements under
+$\mathrm{noCheck}$ (Theorem~\ref{thm:noCheck}) and the protocol of the delivery
+(Theorem~\ref{thm:protocol}), which ties $\mathrm{findPointsWith}$, the search that the program runs
+with its callback, to $\mathrm{findPoints}$; stage~H restates six of them for the search region of
+the options: membership, the order theorem and the first two statements under $\mathrm{noCheck}$
+hold for the points in the search region, membership, the order and the coverage under
+$\mathrm{noCheck}$ assuming Sturm's theorem when the Sturm step is on
+(Definition~\ref{def:sturmTheorem}), and both refusal theorems add the search intervals that are not
+well formed, the refusal of $c_0 = c_1 = 0$ without the Sturm step only for the whole box; and since
+stage~I the statements take the options of the sieve with no hypothesis on them, in place of the
+parameters and their well-formedness, and \verb|wf_sieveParams| is gone. It accepted the seven
+statements before stage~G on 2026-10-11, again on the model of stage E on 2026-10-12, with the
+parameters of sub-stage F1 on 2026-10-13, with the refusal of the heights that are not \verb|long|s
+and the cut points of sub-stage F2 on 2026-10-14, with the packing of sub-stage F3 on 2026-10-15,
+and with the chunked first stage and the rows of sub-stage F4 on 2026-10-16, when, on Lean and
+Mathlib v4.35.0, Lake's \verb|lake comparator --paranoid|, which builds and exports the project in a
+sandbox, accepted them too, with Lean's kernel and the five external checkers bundled with Lean; and
 \verb|lake comparator --paranoid| accepted the twelve statements of stage~G on 2026-10-17 and in
-their form of stage~H on 2026-10-18. The challenge states them with \verb|sorry| over
-\verb|findPoints|, \verb|findPointsWith|, \verb|Outcome|, \verb|Answer|, \verb|Delivery|,
-\verb|Delivery.deliver|, \verb|Options|, \verb|Double|, \verb|Params|, \verb|Params.WF|,
-\verb|SieveOptions|, \verb|sieveParams|, \verb|maxDegree| and \verb|maxDivisors|, imported from the
-model, never restated, since a definition of the model elaborates without Mathlib to other instance
-terms. Each theorem of the library behind them has a guard on its axioms, which are the standard
-ones. The contracts of the sieve of stages C1 to D need only the program logic of Lean core and stay
-in files without Mathlib, so that their \verb|grind| calls see only the lemmas of core, untouched by
-Mathlib's updates; the contract of the run over the denominators of a shape, with its plain equation
-\verb|run_sieveRun|, is in the file of the run, with Mathlib, like the other contracts of stage~E
-(Chapter~\ref{chap:denominators}) and those of the tables and the moduli of stage~F1, which sit next
-to the lemmas they serve (Chapter~\ref{chap:tables}); those of the stages of sub-stage~F2, of the
-packing of sub-stage~F3 and of the chunked first stage, the builders of the rows and the tables of
-rows of sub-stage~F4 are in files without Mathlib again (Chapters~\ref{chap:stages},
-\ref{chap:packing} and~\ref{chap:rows}), the store of the tables of rows in the contracts of the
-entries of the moduli, of the loop of the tables, of the run and of the search staying in the files
-of those contracts, with Mathlib; the contracts on the delivery of stage~G replace those of before
-in their files, and the reference of the delivery has its lemmas in a file without Mathlib
-(Chapter~\ref{chap:output}). The soundness of the rows needs Mathlib, through $\ZZ/p\ZZ$.
+their form of stage~H on 2026-10-18, and the eleven of stage~I on 2026-10-25. The challenge states
+them with \verb|sorry| over \verb|findPoints|, \verb|findPointsWith|, \verb|Outcome|, \verb|Answer|,
+\verb|Delivery|, \verb|Delivery.deliver|, \verb|Options|, \verb|Double|, \verb|SieveOptions|,
+\verb|maxDegree| and \verb|maxDivisors|, imported from the model (until stage~H also \verb|Params|,
+\verb|Params.WF| and \verb|sieveParams|), never restated, since a definition of the model elaborates
+without Mathlib to other instance terms. Each theorem of the library behind them has a guard on its
+axioms, which are the standard ones. The contracts of the sieve of stages C1 to D need only the
+program logic of Lean core and stay in files without Mathlib, so that their \verb|grind| calls see
+only the lemmas of core, untouched by Mathlib's updates; the contract of the run over the
+denominators of a shape, with its plain equation \verb|run_sieveRun|, is in the file of the run,
+with Mathlib, like the other contracts of stage~E (Chapter~\ref{chap:denominators}) and those of the
+tables and the moduli of stage~F1, which sit next to the lemmas they serve
+(Chapter~\ref{chap:tables}); those of the stages of sub-stage~F2, of the packing of sub-stage~F3 and
+of the chunked first stage, the builders of the rows and the tables of rows of sub-stage~F4 are in
+files without Mathlib again (Chapters~\ref{chap:stages}, \ref{chap:packing} and~\ref{chap:rows}),
+the store of the tables of rows in the contracts of the entries of the moduli, of the loop of the
+tables, of the run and of the search staying in the files of those contracts, with Mathlib; the
+contracts on the delivery of stage~G replace those of before in their files, and the reference of
+the delivery has its lemmas in a file without Mathlib (Chapter~\ref{chap:output}). The soundness of
+the rows needs Mathlib, through $\ZZ/p\ZZ$.
 
 \section{The command-line program and the differential tests}\label{sec:sieveCli}
 
 \verb|ratpoints-lean| reads the values of \verb|-p|, \verb|-n|, \verb|-N|, \verb|-P|, \verb|-F| and
 \verb|-j|/\verb|-J| into \verb|SieveOptions|, with the checks of \verb|main.c| unchanged, and runs
-\verb|findPoints| with \verb|sieveParams| of them; the other options stay as in stage~B, until
+\verb|findPoints| with \verb|sieveParams| of them (since stage~I with them, the search taking its
+parameters from them); the other options stay as in stage~B, until
 stage~D reads \verb|-k|, \verb|-K|, \verb|-s| and \verb|-S| (Section~\ref{sec:setupCli}). So the
 reading of the options (Definition~\ref{def:cliInput}) returns these values from now on, and the
 program (Definition~\ref{def:cliRun}) prints the points of the sieve. Since these are those of the

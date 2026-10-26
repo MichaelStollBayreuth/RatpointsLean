@@ -136,17 +136,19 @@ to $2^{20}$, and rounds it up to a multiple of the chunk (\csource{find_points.c
   and $0 < \mathrm{chunk}$, three facts about the constants checked once.
 \end{definition}
 
-The parameters of the executable take the default, as the program does: \verb|sieveParams|
-(Definition~\ref{def:sieveParams}) gives the field the value $\mathrm{defaultArraySize}$, as the C
-lines of the program that set it (\csource{main.c}{347}{347}, \csource{main.c}{221}{222}). The field
-is a free choice of the library that changes neither the points found nor their order, so the
-theorems quantify over it as over the other parameters, and \verb|Params.WF| does not constrain it:
-every value gives pieces of at least one bit array. The comparator challenge imports \verb|Params|,
-so its structure has this field, and stage~C2 changed neither the statements of the challenge nor
-\verb|Params.WF|. The number of registers of a chunk, \verb|RATPOINTS_CHUNK|, is the constant
-$\mathrm{chunk}$ of Definition~\ref{def:chunk}, $16$ as in the default build; it decides, since
-stage~F4, the arm of the first stage, the copies at the end of the rows and the rounding of the
-array size (Chapter~\ref{chap:rows}).
+The array size is a field of the options of the sieve, which the program sets to the default
+$\mathrm{defaultArraySize}$ (Definition~\ref{def:cliRun}), as the C lines of the program that set it
+(\csource{main.c}{347}{347}, \csource{main.c}{221}{222}), and which the search hands on to its
+parameters (Definition~\ref{def:sieveParams}). The field is a free choice of the library that
+changes neither the points found nor their order, so the theorems hold for every value of it, as for
+the other options of the sieve, and \verb|Params.WF| does not constrain it: every value gives pieces
+of at least one bit array. Until stage~H the comparator challenge imported \verb|Params|, whose
+structure has this field, and stage~C2 changed neither the statements of the challenge nor
+\verb|Params.WF|; since stage~I the statements take the options of the sieve. The number of
+registers of a chunk, \verb|RATPOINTS_CHUNK|, is the constant $\mathrm{chunk}$ of
+Definition~\ref{def:chunk}, $16$ as in the default build; it decides, since stage~F4, the arm of the
+first stage, the copies at the end of the rows and the rounding of the array size
+(Chapter~\ref{chap:rows}).
 
 \section{The rows as words}\label{sec:wordRows}
 

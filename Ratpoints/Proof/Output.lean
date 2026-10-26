@@ -19,21 +19,21 @@ import Ratpoints.Proof.Tables
 
 `Ratpoints.findPointsWith` searches the polynomial that the reversal check of the normalized options
 hands on, on the search intervals that the Sturm step leaves of those of
-`Ratpoints.searchIntervals`, unless it refuses the input or the Sturm step returns before the
-search (`Ratpoints.findPointsWith_eq_ok_iff`); its refusals and the bits of the flags and the search
-intervals that it writes back do not depend on the callback, and for well-formed parameters it gives
-the data and the count of the delivery (`Ratpoints.Delivery.deliver`) of the list that
-`Ratpoints.findPoints`, its instance with the appending callback, returns: the protocol of the
+`Ratpoints.searchIntervals`, unless it refuses the input or the Sturm step returns before the search
+(`Ratpoints.findPointsWith_eq_ok_iff`); its refusals and the bits of the flags and the search
+intervals that it writes back do not depend on the callback, and for every value of the options of
+the sieve it gives the data and the count of the delivery (`Ratpoints.Delivery.deliver`) of the list
+that `Ratpoints.findPoints`, its instance with the appending callback, returns: the protocol of the
 delivery (`Ratpoints.map_findPointsWith_eq_map_findPoints`). That list is the list of the points
 that the search of the polynomial searched delivers on its search region after the Sturm step
 (`Ratpoints.searchRegion`) for a sound test of the sieve, which does not depend on the options of
 the output (`Ratpoints.exists_searchList_of_findPoints_eq_ok`); without `RATPOINTS_NO_CHECK` it is
 the brute-force reference of the polynomial searched, over the candidate `(1, 0)` and the
 denominators of the search with the numerators in that region, mapped back after a reversal, without
-the points with `y < 0` under `RATPOINTS_NO_Y` (`Ratpoints.exists_eq_of_findPoints_eq_ok`).
-Assuming Sturm's theorem (`Ratpoints.SturmTheorem`) when the Sturm step is on, the region holds the
-`x / z` of every point in the search region of the options, and lies inside it: the list is that of
-the points of the specification in the search region (`Ratpoints.InRegion`) in the order of
+the points with `y < 0` under `RATPOINTS_NO_Y` (`Ratpoints.exists_eq_of_findPoints_eq_ok`). Assuming
+Sturm's theorem (`Ratpoints.SturmTheorem`) when the Sturm step is on, the region holds the `x / z`
+of every point in the search region of the options, and lies inside it: the list is that of the
+points of the specification in the search region (`Ratpoints.InRegion`) in the order of
 `Ratpoints.orderedPoints`, so that it holds exactly these points, those with `y ≥ 0` under
 `RATPOINTS_NO_Y`, each once. Under `RATPOINTS_NO_CHECK` it holds triples `(x, 0, z)` of normalized
 pairs `(x, z)` of height at most `H` in the search region, each once, among them those of all the
@@ -50,17 +50,19 @@ duplicates, the three statements under `RATPOINTS_NO_CHECK` and both refusal the
 
 ## Main statements
 
+* `Ratpoints.findPointsWith_eq`: the search with a callback and the print channel that prints
+  nothing, as the refusals in the order of the program followed by the search.
 * `Ratpoints.findPointsWith_eq_ok_iff`, `Ratpoints.findPointsWith_eq_error_iff`,
   `Ratpoints.exists_findPoints_eq_error_iff`: what `Ratpoints.findPointsWith` returns, and its
   refusals, which do not depend on the callback.
-* `Ratpoints.map_findPointsWith_eq_map_findPoints`: for well-formed parameters, the data and the
-  count of `Ratpoints.findPointsWith` are those of the delivery of the list of
+* `Ratpoints.map_findPointsWith_eq_map_findPoints`: for every value of the options of the sieve, the
+  data and the count of `Ratpoints.findPointsWith` are those of the delivery of the list of
   `Ratpoints.findPoints`; `Ratpoints.map_findPointsWith_flags`: the bits of the flags and the search
   intervals written back do not depend on the callback.
-* `Ratpoints.info_total_eq_of_findPointsWith_eq_ok`: for well-formed parameters, the data and the
-  count of a successful search with a callback are those of the delivery of the list of
-  `Ratpoints.findPoints`; `Ratpoints.exists_findPointsWith_eq_ok_of_findPoints_eq_ok`: the search
-  with a callback succeeds when `Ratpoints.findPoints` does.
+* `Ratpoints.info_total_eq_of_findPointsWith_eq_ok`: for every value of the options of the sieve,
+  the data and the count of a successful search with a callback are those of the delivery of the
+  list of `Ratpoints.findPoints`; `Ratpoints.exists_findPointsWith_eq_ok_of_findPoints_eq_ok`: the
+  search with a callback succeeds when `Ratpoints.findPoints` does.
 * `Ratpoints.exists_searchList_of_findPoints_eq_ok`: the list of `Ratpoints.findPoints` is that of
   the search on its search region with a sound test of the sieve, the same for every choice of the
   options of the output.
@@ -159,6 +161,36 @@ open BruteForce Sieve
 
 /-! ### The search with a callback -/
 
+/-- `Ratpoints.findPointsWith` with the print channel that prints nothing, as the refusals in the
+order of the program followed by the search: the report of the library prints nothing, and a refusal
+gives back its error alone. -/
+theorem findPointsWith_eq (c : List ℤ) (H : ℕ) (s : SieveOptions) (o : Options) {σ : Type}
+    (process : ℤ → ℤ → ℤ → σ → Answer σ) (info : σ) :
+    findPointsWith c H s o process info =
+      if maxDegree + 1 < c.length then .error .tooManyCoefficients
+      else if c.length < 2 then .error .tooFewCoefficients
+      else if H = 0 ∨ !fitsLong H then .error .incorrectHeight
+      else if (BruteForce.degree c + 1) / 2 < c.length / 2 then .error .notSquarefree
+      else match Setup.reversal (o.normalize H).reverse c (BruteForce.degree c) with
+        | .error e => .error e
+        | .ok (c', d', rev) => match Id.run (searchIntervals H o.domain) with
+          | none => .error .badArgs
+          | some dom => match Id.run (sturmRegion c' d' (o.normalize H).sturm dom) with
+            | .error e => .error e
+            | .ok none => .ok ⟨info, 0, rev, false, false, []⟩
+            | .ok (some (dom', empty)) => .ok (Id.run (searchPoints process c' d' H s.normalize
+                (decide (s.numPrimes < 0)) ⟨rev, o.noCheck, o.noY⟩ (o.normalize H).bLow.toNat
+                (o.normalize H).bHigh.toNat dom' empty (fun _ s ↦ s) ⟨info, 0, false⟩)) := by
+  simp only [findPointsWith, findPointsVerbose]
+  split_ifs <;> try rfl
+  simp only [findPointsWork]
+  rcases Setup.reversal (o.normalize H).reverse c (BruteForce.degree c) with _ | ⟨c', d', rev⟩
+  · rfl
+  rcases hsi : Id.run (searchIntervals H o.domain) with _ | dom
+  · simp [hsi, Except.mapError]
+  rcases hst : Id.run (sturmRegion c' d' (o.normalize H).sturm dom) with e | _ | ⟨dom', empty⟩ <;>
+    simp [hsi, hst, Except.mapError]
+
 /-- `Ratpoints.findPointsWith` returns the outcome `out` exactly when it refuses none of its inputs,
 in the order of the program, and `out` is either, when the Sturm step returns before the search
 (`find_points.c:4889`), the data `info` with the count `0`, the flag of the reversal and no search
@@ -167,9 +199,9 @@ check of the normalized options hands on, with the flag of the reversal and the 
 output, the normalized range of the denominators and the search intervals that the Sturm step
 leaves of those of `Ratpoints.searchIntervals`, from the data `info`, the count `0` and the flag of
 the stop clear. -/
-theorem findPointsWith_eq_ok_iff {c : List ℤ} {H : ℕ} {P : Params} {o : Options} {σ : Type}
+theorem findPointsWith_eq_ok_iff {c : List ℤ} {H : ℕ} {s : SieveOptions} {o : Options} {σ : Type}
     {process : ℤ → ℤ → ℤ → σ → Answer σ} {info : σ} {out : Outcome σ} :
-    findPointsWith c H P o process info = .ok out ↔ ∃ c' d' rev dom, c.length ≤ maxDegree + 1 ∧
+    findPointsWith c H s o process info = .ok out ↔ ∃ c' d' rev dom, c.length ≤ maxDegree + 1 ∧
       2 ≤ c.length ∧ 1 ≤ H ∧ H < 2 ^ 63 ∧ c.length / 2 ≤ (degree c + 1) / 2 ∧
       Setup.reversal (o.normalize H).reverse c (degree c) = .ok (c', d', rev) ∧
       Id.run (searchIntervals H o.domain) = some dom ∧
@@ -177,53 +209,52 @@ theorem findPointsWith_eq_ok_iff {c : List ℤ} {H : ℕ} {P : Params} {o : Opti
           out = ⟨info, 0, rev, false, false, []⟩ ∨
         ∃ dom' empty, Id.run (sturmRegion c' d' (o.normalize H).sturm dom) =
           .ok (some (dom', empty)) ∧
-          out = Id.run (searchPoints process c' d' H P ⟨rev, o.noCheck, o.noY⟩
-            (o.normalize H).bLow.toNat (o.normalize H).bHigh.toNat dom' empty
-            ⟨info, 0, false⟩)) := by
-  rw [findPointsWith, ← BruteForce.degree_eq]
+          out = Id.run (searchPoints process c' d' H s.normalize (decide (s.numPrimes < 0))
+            ⟨rev, o.noCheck, o.noY⟩ (o.normalize H).bLow.toNat (o.normalize H).bHigh.toNat dom'
+            empty (fun _ s ↦ s) ⟨info, 0, false⟩)) := by
+  rw [findPointsWith, findPointsVerbose, ← BruteForce.degree_eq]
   simp only [fitsLong_natCast, Bool.not_eq_true', decide_eq_false_iff_not, not_lt]
   split_ifs with h1 h2 h3 h4
-  any_goals (simp only [false_iff]; lia)
+  any_goals (simp only [Except.mapError]; lia)
+  simp only [findPointsWork]
   split <;> rename_i hr
-  · simp [hr]
+  · simp [hr, Except.mapError]
   rename_i c' d' rev
-  split <;> rename_i hsi
-  · simp [hr, hsi]
-  rename_i dom
-  refine ⟨fun h ↦ ⟨c', d', rev, dom, by lia, by lia, by lia, by lia, by lia, hr, hsi, ?_⟩,
-    fun ⟨c'', d'', rev'', dom'', _, _, _, _, _, hr', hsi', h⟩ ↦ ?_⟩
-  · revert h
-    rcases Id.run (sturmRegion c' d' (o.normalize H).sturm dom) with _ | _ | ⟨dom', empty⟩
-    exacts [nofun, fun h ↦ .inl ⟨rfl, (Except.ok.inj h).symm⟩,
-      fun h ↦ .inr ⟨dom', empty, rfl, (Except.ok.inj h).symm⟩]
-  · obtain ⟨rfl, rfl, rfl⟩ : c'' = c' ∧ d'' = d' ∧ rev'' = rev := by simpa [hr] using hr'.symm
-    obtain rfl : dom'' = dom := by simpa [hsi] using hsi'.symm
-    rcases h with ⟨h, rfl⟩ | ⟨dom', empty, h, rfl⟩ <;> simp [h]
+  rcases hsi : Id.run (searchIntervals H o.domain) with _ | dom
+  · simp [hr, hsi, Except.mapError]
+  simp only [Id.run_bind, hsi]
+  rcases hst : Id.run (sturmRegion c' d' (o.normalize H).sturm dom) with e | _ | ⟨dom', empty⟩
+  · simp [hr, hst, Except.mapError]
+  all_goals have h5 : 1 ≤ H ∧ H < 9223372036854775808 := by lia
+  all_goals simp [-Bool.exists_bool, Except.mapError, hr, hst, Nat.le_of_not_lt h1,
+    Nat.le_of_not_lt h2, h5, Nat.le_of_not_lt h4, eq_comm]
 
 /-- The refusals of `Ratpoints.findPointsWith` do not depend on the callback or its data. -/
-theorem findPointsWith_eq_error_iff {c : List ℤ} {H : ℕ} {P : Params} {o : Options} {σ σ' : Type}
-    {process : ℤ → ℤ → ℤ → σ → Answer σ} {info : σ} {process' : ℤ → ℤ → ℤ → σ' → Answer σ'}
+theorem findPointsWith_eq_error_iff {c : List ℤ} {H : ℕ} {s : SieveOptions} {o : Options}
+    {σ σ' : Type} {process : ℤ → ℤ → ℤ → σ → Answer σ} {info : σ}
+    {process' : ℤ → ℤ → ℤ → σ' → Answer σ'}
     {info' : σ'} {e : Refusal} :
-    findPointsWith c H P o process info = .error e ↔
-      findPointsWith c H P o process' info' = .error e := by
-  simp only [findPointsWith]
-  split_ifs
-  any_goals simp
-  split
-  · simp
-  split
-  · simp
-  split <;> simp
+    findPointsWith c H s o process info = .error e ↔
+      findPointsWith c H s o process' info' = .error e := by
+  simp only [findPointsWith, findPointsVerbose]
+  split_ifs <;> try (simp [Except.mapError]; done)
+  simp only [findPointsWork]
+  rcases Setup.reversal (o.normalize H).reverse c (BruteForce.degree c) with _ | ⟨c', d', rev⟩
+  · simp [Except.mapError]
+  rcases hsi : Id.run (searchIntervals H o.domain) with _ | dom
+  · simp [hsi, Except.mapError]
+  rcases hst : Id.run (sturmRegion c' d' (o.normalize H).sturm dom) with e | _ | ⟨dom', empty⟩ <;>
+    simp [hsi, hst, Except.mapError]
 
 /-- `Ratpoints.findPoints` refuses an input exactly when `Ratpoints.findPointsWith` with the
 appending callback does. -/
-theorem exists_findPoints_eq_error_iff {c : List ℤ} {H : ℕ} {P : Params} {o : Options} :
-    (∃ e, findPoints c H P o = .error e) ↔
-      ∃ e, findPointsWith c H P o appendPoint #[] = .error e := by
+theorem exists_findPoints_eq_error_iff {c : List ℤ} {H : ℕ} {s : SieveOptions} {o : Options} :
+    (∃ e, findPoints c H s o = .error e) ↔
+      ∃ e, findPointsWith c H s o appendPoint #[] = .error e := by
   rw [findPoints]
-  rcases findPointsWith c H P o appendPoint #[] <;> simp [Except.map]
+  rcases findPointsWith c H s o appendPoint #[] <;> simp [Except.map]
 
-/-- For well-formed parameters and every option, `Ratpoints.findPointsWith` with a callback and its
+/-- For every option, `Ratpoints.findPointsWith` with a callback and its
 data gives, besides the bits of the flags and the search intervals written back, the data and the
 count of the delivery (`Ratpoints.Delivery.deliver`) of the list that `Ratpoints.findPoints`
 returns, from the data, the count `0` and the flag of the stop clear, and it refuses the same inputs
@@ -231,13 +262,13 @@ with the same errors: the calls of the callback are those of the points of that 
 up to and including the first that stops the search (`Ratpoints.run_searchPoints_eq_deliver`); when
 the Sturm step returns before the search, there are no calls and no points; comparator certifies
 this (`comparator/Challenge.lean`). -/
-theorem map_findPointsWith_eq_map_findPoints {P : Params} (hP : P.WF) (c : List ℤ) (H : ℕ)
+theorem map_findPointsWith_eq_map_findPoints (c : List ℤ) (H : ℕ) (s : SieveOptions)
     (o : Options) {σ : Type} (process : ℤ → ℤ → ℤ → σ → Answer σ) (info : σ) :
-    (findPointsWith c H P o process info).map (fun out ↦ (out.info, out.total)) =
-      (findPoints c H P o).map (fun L ↦
+    (findPointsWith c H s o process info).map (fun out ↦ (out.info, out.total)) =
+      (findPoints c H s o).map (fun L ↦
         let r := Delivery.deliver process ⟨info, 0, false⟩ L
         (r.info, r.total)) := by
-  rcases h : findPointsWith c H P o appendPoint #[] with e | out
+  rcases h : findPointsWith c H s o appendPoint #[] with e | out
   · rw [findPoints, h, findPointsWith_eq_error_iff.mpr h]
     rfl
   obtain ⟨c', d', rev, dom, h1, h2, hH, hH63, hl, hr, hsi, hst⟩ := findPointsWith_eq_ok_iff.mp h
@@ -250,49 +281,47 @@ theorem map_findPointsWith_eq_map_findPoints {P : Params} (hP : P.WF) (c : List 
       (wf_of_run_searchIntervals_eq_some hH hH63 hsi) hst).1
     rw [findPoints, h, findPointsWith_eq_ok_iff.mpr
       ⟨c', _, rev, dom, h1, h2, hH, hH63, hl, hr, hsi, .inr ⟨dom', empty, hst, rfl⟩⟩]
-    exact congr(Except.ok $(run_searchPoints_eq_deliver hP hH hH63
+    exact congr(Except.ok $(run_searchPoints_eq_deliver s (decide (s.numPrimes < 0)) hH hH63
       (o.one_le_toNat_bLow_normalize H) (o.toNat_bHigh_normalize_le H) hwf empty process _ rfl))
 
 /-- The bits of the flags and the search intervals that `Ratpoints.findPointsWith` writes back do
 not depend on the callback or its data (`Ratpoints.run_searchPoints_flags`). -/
-theorem map_findPointsWith_flags (c : List ℤ) (H : ℕ) (P : Params) (o : Options) {σ σ' : Type}
+theorem map_findPointsWith_flags (c : List ℤ) (H : ℕ) (s : SieveOptions) (o : Options) {σ σ' : Type}
     (process : ℤ → ℤ → ℤ → σ → Answer σ) (info : σ) (process' : ℤ → ℤ → ℤ → σ' → Answer σ')
     (info' : σ') :
-    (findPointsWith c H P o process info).map (fun out ↦
+    (findPointsWith c H s o process info).map (fun out ↦
       (out.reversed, out.useSquares, out.useSquares1, out.domain)) =
-      (findPointsWith c H P o process' info').map (fun out ↦
+      (findPointsWith c H s o process' info').map (fun out ↦
         (out.reversed, out.useSquares, out.useSquares1, out.domain)) := by
-  simp only [findPointsWith]
-  split_ifs
-  any_goals rfl
-  split
+  simp only [findPointsWith, findPointsVerbose]
+  split_ifs <;> try rfl
+  simp only [findPointsWork]
+  rcases Setup.reversal (o.normalize H).reverse c (BruteForce.degree c) with _ | ⟨c', d', rev⟩
   · rfl
-  split
-  · rfl
-  split
-  · rfl
-  · rfl
-  simp only [Except.map, run_searchPoints_flags]
+  rcases hsi : Id.run (searchIntervals H o.domain) with _ | dom
+  · simp [hsi, Except.mapError, Except.map]
+  rcases hst : Id.run (sturmRegion c' d' (o.normalize H).sturm dom) with e | _ | ⟨dom', empty⟩ <;>
+    simp [hsi, hst, Except.mapError, Except.map, run_searchPoints_flags]
 
-/-- For well-formed parameters, the data and the count of a successful search with a callback are
-those of the delivery of the points of `Ratpoints.findPoints` to it, by the protocol of the
-delivery (`Ratpoints.map_findPointsWith_eq_map_findPoints`). -/
-theorem info_total_eq_of_findPointsWith_eq_ok {σ : Type} {c : List ℤ} {H : ℕ} {P : Params}
+/-- For every value of the options of the sieve, the data and the count of a successful search with
+a callback are those of the delivery of the points of `Ratpoints.findPoints` to it, by the protocol
+of the delivery (`Ratpoints.map_findPointsWith_eq_map_findPoints`). -/
+theorem info_total_eq_of_findPointsWith_eq_ok {σ : Type} {c : List ℤ} {H : ℕ} {s : SieveOptions}
     {o : Options} {process : ℤ → ℤ → ℤ → σ → Answer σ} {info : σ} {r : Outcome σ}
-    {L : List (ℤ × ℤ × ℤ)} (hP : P.WF) (hr : findPointsWith c H P o process info = .ok r)
-    (hL : findPoints c H P o = .ok L) :
+    {L : List (ℤ × ℤ × ℤ)} (hr : findPointsWith c H s o process info = .ok r)
+    (hL : findPoints c H s o = .ok L) :
     r.info = (Delivery.deliver process ⟨info, 0, false⟩ L).info ∧
       r.total = (Delivery.deliver process ⟨info, 0, false⟩ L).total := by
-  simpa [hr, hL, Except.map] using map_findPointsWith_eq_map_findPoints hP c H o process info
+  simpa [hr, hL, Except.map] using map_findPointsWith_eq_map_findPoints c H s o process info
 
 /-- The search with a callback succeeds when `Ratpoints.findPoints` does: the refusals of
 `Ratpoints.findPointsWith` do not depend on the callback
 (`Ratpoints.findPointsWith_eq_error_iff`). -/
 theorem exists_findPointsWith_eq_ok_of_findPoints_eq_ok {σ : Type} {c : List ℤ} {H : ℕ}
-    {P : Params} {o : Options} (process : ℤ → ℤ → ℤ → σ → Answer σ) (info : σ)
-    {L : List (ℤ × ℤ × ℤ)} (hL : findPoints c H P o = .ok L) :
-    ∃ r, findPointsWith c H P o process info = .ok r := by
-  rcases h : findPointsWith c H P o process info with _ | r
+    {s : SieveOptions} {o : Options} (process : ℤ → ℤ → ℤ → σ → Answer σ) (info : σ)
+    {L : List (ℤ × ℤ × ℤ)} (hL : findPoints c H s o = .ok L) :
+    ∃ r, findPointsWith c H s o process info = .ok r := by
+  rcases h : findPointsWith c H s o process info with _ | r
   · rw [findPoints, findPointsWith_eq_error_iff.mp h] at hL
     simp [Except.map] at hL
   · exact ⟨r, rfl⟩
@@ -301,15 +330,16 @@ theorem exists_findPointsWith_eq_ok_of_findPoints_eq_ok {σ : Type} {c : List �
 
 -- The list of `Ratpoints.findPoints` for the outcome of a successful search with the appending
 -- callback: none when the Sturm step returns before the search, else the list of the search.
-private theorem findPoints_eq_ok_of_findPointsWith {c : List ℤ} {H : ℕ} {P : Params} {o : Options}
-    {out : Outcome (Array (ℤ × ℤ × ℤ))} (h : findPointsWith c H P o appendPoint #[] = .ok out) :
-    findPoints c H P o = .ok out.info.toList := by
+private theorem findPoints_eq_ok_of_findPointsWith {c : List ℤ} {H : ℕ} {s : SieveOptions}
+    {o : Options}
+    {out : Outcome (Array (ℤ × ℤ × ℤ))} (h : findPointsWith c H s o appendPoint #[] = .ok out) :
+    findPoints c H s o = .ok out.info.toList := by
   simp [findPoints, h, Except.map]
 
 -- After the refusals, the list of `Ratpoints.findPoints` for every choice of the options of the
 -- output, by the result `r` of the Sturm step: none when it returns before the search, else the
 -- list of the search with the appending callback.
-private theorem findPoints_eq_ok_elim {c : List ℤ} {H : ℕ} {P : Params} {o : Options}
+private theorem findPoints_eq_ok_elim {c : List ℤ} {H : ℕ} {s : SieveOptions} {o : Options}
     {c' : List ℤ} {rev : Bool} {dom : List (Double × Double)} (h1 : c.length ≤ maxDegree + 1)
     (h2 : 2 ≤ c.length) (hH : 1 ≤ H) (hH63 : H < 2 ^ 63) (hl : c.length / 2 ≤ (degree c + 1) / 2)
     (hr : Setup.reversal (o.normalize H).reverse c (degree c) = .ok (c', degree c', rev))
@@ -317,10 +347,10 @@ private theorem findPoints_eq_ok_elim {c : List ℤ} {H : ℕ} {P : Params} {o :
     {r : Option (List (Double × Double) × Bool)}
     (hst : Id.run (sturmRegion c' (degree c') (o.normalize H).sturm dom) = .ok r)
     (noCheck noY : Bool) :
-    findPoints c H P { o with noCheck, noY } = .ok (r.elim [] fun x ↦
-      (Id.run (searchPoints appendPoint c' (degree c') H P ⟨rev, noCheck, noY⟩
-        (o.normalize H).bLow.toNat (o.normalize H).bHigh.toNat x.1 x.2
-          ⟨#[], 0, false⟩)).info.toList) := by
+    findPoints c H s { o with noCheck, noY } = .ok (r.elim [] fun x ↦
+      (Id.run (searchPoints appendPoint c' (degree c') H s.normalize (decide (s.numPrimes < 0))
+        ⟨rev, noCheck, noY⟩ (o.normalize H).bLow.toNat (o.normalize H).bHigh.toNat x.1 x.2
+          (fun _ s ↦ s) ⟨#[], 0, false⟩)).info.toList) := by
   rcases r with _ | ⟨dom', empty⟩
   · exact findPoints_eq_ok_of_findPointsWith (out := ⟨#[], 0, rev, false, false, []⟩)
       (findPointsWith_eq_ok_iff.mpr ⟨c', _, rev, dom, h1, h2, hH, hH63, hl, hr, hsi,
@@ -348,7 +378,7 @@ private theorem exists_run_sturmRegion_eq_ok {c : List ℤ} {d H : ℕ} {o : Opt
 -- After the refusals, the list of `Ratpoints.findPoints` for every choice of the options of the
 -- output is that of `Ratpoints.searchList` on the search region, for a test `S` for which the
 -- search on the intervals on which it runs gives the list of `Ratpoints.searchList`.
-private theorem findPoints_eq_ok_searchList {c : List ℤ} {H : ℕ} {P : Params} {o : Options}
+private theorem findPoints_eq_ok_searchList {c : List ℤ} {H : ℕ} {s : SieveOptions} {o : Options}
     {c' : List ℤ} {rev : Bool} {dom : List (Double × Double)} (h1 : c.length ≤ maxDegree + 1)
     (h2 : 2 ≤ c.length) (hH : 1 ≤ H) (hH63 : H < 2 ^ 63) (hl : c.length / 2 ≤ (degree c + 1) / 2)
     (hr : Setup.reversal (o.normalize H).reverse c (degree c) = .ok (c', degree c', rev))
@@ -357,11 +387,12 @@ private theorem findPoints_eq_ok_searchList {c : List ℤ} {H : ℕ} {P : Params
     (hst : Id.run (sturmRegion c' (degree c') (o.normalize H).sturm dom) = .ok r)
     {dom₀ : List (Double × Double)} {empty₀ : Bool} (hr₀ : ∀ x ∈ r, x = (dom₀, empty₀))
     {S : ℕ → ℤ → Bool} (hS : ∀ fl : CheckFlags, (Id.run (searchPoints appendPoint c' (degree c')
-      H P fl (o.normalize H).bLow.toNat (o.normalize H).bHigh.toNat dom₀ empty₀
-        ⟨#[], 0, false⟩)).info.toList = searchList c' H (o.normalize H).bLow.toNat
+      H s.normalize (decide (s.numPrimes < 0)) fl (o.normalize H).bLow.toNat
+        (o.normalize H).bHigh.toNat dom₀ empty₀ (fun _ s ↦ s) ⟨#[], 0, false⟩)).info.toList =
+        searchList c' H (o.normalize H).bLow.toNat
           (o.normalize H).bHigh.toNat (if empty₀ then [] else domainValues dom₀) S fl)
     (noCheck noY : Bool) :
-    findPoints c H P { o with noCheck, noY } =
+    findPoints c H s { o with noCheck, noY } =
       .ok ((searchRegion c' (degree c') H o).elim [] fun D ↦ searchList c' H
         (o.normalize H).bLow.toNat (o.normalize H).bHigh.toNat D S ⟨rev, noCheck, noY⟩) := by
   rw [findPoints_eq_ok_elim h1 h2 hH hH63 hl hr hsi hst,
@@ -371,10 +402,10 @@ private theorem findPoints_eq_ok_searchList {c : List ℤ} {H : ℕ} {P : Params
   · obtain rfl := hr₀ x rfl
     exact congr(Except.ok $(hS _))
 
-/-- For well-formed parameters, the list that `Ratpoints.findPoints` returns is that of the points
-that the search of the polynomial `c'` that the reversal check of the normalized options hands on
-delivers (`Ratpoints.searchList`), with its flag of the reversal and the options of the output, the
-normalized range of the denominators and the search region after the Sturm step
+/-- For every value of the options of the sieve, the list that `Ratpoints.findPoints` returns is
+that of the points that the search of the polynomial `c'` that the reversal check of the normalized
+options hands on delivers (`Ratpoints.searchList`), with its flag of the reversal and the options of
+the output, the normalized range of the denominators and the search region after the Sturm step
 (`Ratpoints.searchRegion`), none at all when the Sturm step returns before the search, for a sound
 test of the sieve (`Ratpoints.IsSoundTest`) that does not depend on the options of the output: with
 the other options unchanged, `Ratpoints.findPoints` returns the list of the search with this test
@@ -382,42 +413,42 @@ for every choice of them (`Ratpoints.exists_isSoundTest_run_searchPoints`). The 
 has a positive degree, since the refusals leave a degree `d ≥ 1`
 (`Ratpoints.Setup.one_le_of_reversal_eq_ok`); the search intervals of the caller are well formed,
 and the Sturm step does not refuse. -/
-theorem exists_searchList_of_findPoints_eq_ok {c : List ℤ} {H : ℕ} {P : Params} {o : Options}
-    {L : List (ℤ × ℤ × ℤ)} (hP : P.WF) (h : findPoints c H P o = .ok L) :
+theorem exists_searchList_of_findPoints_eq_ok {c : List ℤ} {H : ℕ} {s : SieveOptions} {o : Options}
+    {L : List (ℤ × ℤ × ℤ)} (h : findPoints c H s o = .ok L) :
     ∃ c' rev S, Setup.reversal (o.normalize H).reverse c (degree c) = .ok (c', degree c', rev) ∧
       0 < degree c' ∧ 1 ≤ H ∧ H < 2 ^ 63 ∧ IntervalsWF (domainBits o.domain) ∧
       ¬(0 ≤ o.sturm ∧ Id.run (Sturm.chain c' (degree c')) = none) ∧
       IsSoundTest c' H (o.normalize H).bLow.toNat (o.normalize H).bHigh.toNat S ∧
       L = (searchRegion c' (degree c') H o).elim [] (fun D ↦ searchList c' H
         (o.normalize H).bLow.toNat (o.normalize H).bHigh.toNat D S ⟨rev, o.noCheck, o.noY⟩) ∧
-      ∀ noCheck noY : Bool, findPoints c H P { o with noCheck, noY } =
+      ∀ noCheck noY : Bool, findPoints c H s { o with noCheck, noY } =
         .ok ((searchRegion c' (degree c') H o).elim [] fun D ↦ searchList c' H
           (o.normalize H).bLow.toNat (o.normalize H).bHigh.toNat D S ⟨rev, noCheck, noY⟩) := by
-  obtain ⟨out, hout, rfl⟩ : ∃ out, findPointsWith c H P o appendPoint #[] = .ok out ∧
+  obtain ⟨out, hout, rfl⟩ : ∃ out, findPointsWith c H s o appendPoint #[] = .ok out ∧
       L = out.info.toList := by
-    rcases h' : findPointsWith c H P o appendPoint #[] <;> simp_all [findPoints, Except.map]
+    rcases h' : findPointsWith c H s o appendPoint #[] <;> simp_all [findPoints, Except.map]
   obtain ⟨c', d', rev, dom, h1, h2, hH, hH63, hl, hr, hsi, hst⟩ := findPointsWith_eq_ok_iff.mp hout
   obtain rfl := Setup.degree_eq_of_reversal_eq_ok rfl hr
   obtain ⟨r, hst, dom₀, empty₀, hwf, hr₀⟩ := exists_run_sturmRegion_eq_ok hH hH63 hsi hst
-  obtain ⟨S, hS, hS'⟩ := exists_isSoundTest_run_searchPoints_appendPoint (c := c') hP hH hH63
+  obtain ⟨S, hS, hS'⟩ := exists_isSoundTest_run_searchPoints_appendPoint (c := c') s
+    (decide (s.numPrimes < 0)) hH hH63
     (o.one_le_toNat_bLow_normalize H) (o.toNat_bHigh_normalize_le H) hwf empty₀
-  have key := findPoints_eq_ok_searchList (P := P) h1 h2 hH hH63 hl hr hsi hst hr₀ hS'
+  have key := findPoints_eq_ok_searchList (s := s) h1 h2 hH hH63 hl hr hsi hst hr₀ hS'
   exact ⟨c', rev, S, hr, Setup.one_le_of_reversal_eq_ok hr (by lia), hH, hH63,
     intervalsWF_of_run_searchIntervals_eq_some hsi,
     not_nonneg_and_chain_eq_none_of_run_sturmRegion_eq_ok hst, hS,
     Except.ok.inj ((findPoints_eq_ok_of_findPointsWith hout).symm.trans (key o.noCheck o.noY)),
     key⟩
 
-/-- Without `RATPOINTS_NO_CHECK`, for well-formed parameters, the list that `Ratpoints.findPoints`
-returns is that of the brute-force reference of the polynomial `c'` that the reversal check of the
-normalized options hands on, over the candidate `(1, 0)` and the denominators of its search
-(`Ratpoints.searchDens`) with the numerators `a` with `a / b` in the search region after the Sturm
-step (`Ratpoints.searchRegion`), in this order, mapped back by `Ratpoints.Sieve.swapPoint` after a
-reversal, without the points with `y < 0` under `RATPOINTS_NO_Y`
-(`Ratpoints.searchList_of_noCheck_eq_false`); none when the Sturm step returns before the
-search. -/
-theorem exists_eq_of_findPoints_eq_ok {c : List ℤ} {H : ℕ} {P : Params} {o : Options}
-    {L : List (ℤ × ℤ × ℤ)} (hP : P.WF) (h : findPoints c H P o = .ok L)
+/-- Without `RATPOINTS_NO_CHECK`, for every value of the options of the sieve, the list that
+`Ratpoints.findPoints` returns is that of the brute-force reference of the polynomial `c'` that the
+reversal check of the normalized options hands on, over the candidate `(1, 0)` and the denominators
+of its search (`Ratpoints.searchDens`) with the numerators `a` with `a / b` in the search region
+after the Sturm step (`Ratpoints.searchRegion`), in this order, mapped back by
+`Ratpoints.Sieve.swapPoint` after a reversal, without the points with `y < 0` under `RATPOINTS_NO_Y`
+(`Ratpoints.searchList_of_noCheck_eq_false`); none when the Sturm step returns before the search. -/
+theorem exists_eq_of_findPoints_eq_ok {c : List ℤ} {H : ℕ} {s : SieveOptions} {o : Options}
+    {L : List (ℤ × ℤ × ℤ)} (h : findPoints c H s o = .ok L)
     (hc : o.noCheck = false) :
     ∃ c' rev, Setup.reversal (o.normalize H).reverse c (degree c) = .ok (c', degree c', rev) ∧
       1 ≤ H ∧ H < 2 ^ 63 ∧ IntervalsWF (domainBits o.domain) ∧
@@ -429,7 +460,7 @@ theorem exists_eq_of_findPoints_eq_ok {c : List ℤ} {H : ℕ} {P : Params} {o :
               ((numerators H).filter fun a : ℤ ↦ decide (InIntervals D (a / b)))).map
           (if rev then swapPoint else id)).filter fun p ↦ !o.noY || 0 ≤ p.2.1 := by
   obtain ⟨c', rev, S, hr, hd, hH, hH63, hwf, hst, hS, rfl, -⟩ :=
-    exists_searchList_of_findPoints_eq_ok hP h
+    exists_searchList_of_findPoints_eq_ok h
   refine ⟨c', rev, hr, hH, hH63, hwf, hst, ?_⟩
   rcases searchRegion c' (degree c') H o with _ | D
   · rfl
@@ -632,26 +663,27 @@ theorem elim_searchRegion_pointsOfDen_filter {c : List ℤ} {d H : ℕ} {o : Opt
 
 -- The coefficient list of a successful search has at most `maxDegree + 1` entries and a positive
 -- degree.
-private theorem length_le_and_one_le_degree_of_findPoints_eq_ok {c : List ℤ} {H : ℕ} {P : Params}
-    {o : Options} {L : List (ℤ × ℤ × ℤ)} (h : findPoints c H P o = .ok L) :
+private theorem length_le_and_one_le_degree_of_findPoints_eq_ok {c : List ℤ} {H : ℕ}
+    {s : SieveOptions}
+    {o : Options} {L : List (ℤ × ℤ × ℤ)} (h : findPoints c H s o = .ok L) :
     c.length ≤ maxDegree + 1 ∧ 1 ≤ degree c := by
-  obtain ⟨out, hout⟩ : ∃ out, findPointsWith c H P o appendPoint #[] = .ok out := by
-    rcases h' : findPointsWith c H P o appendPoint #[] <;> simp_all [findPoints, Except.map]
+  obtain ⟨out, hout⟩ : ∃ out, findPointsWith c H s o appendPoint #[] = .ok out := by
+    rcases h' : findPointsWith c H s o appendPoint #[] <;> simp_all [findPoints, Except.map]
   obtain ⟨-, -, -, -, h1, h2, -, -, hl, -⟩ := findPointsWith_eq_ok_iff.mp hout
   exact ⟨h1, by lia⟩
 
-/-- Assuming Sturm's theorem when the Sturm step is on, without `RATPOINTS_NO_CHECK`, for
-well-formed parameters, the list that `Ratpoints.findPoints` returns is the brute-force reference
-of the polynomial `c'` that the reversal check of the normalized options hands on, over the
-candidate `(1, 0)` and the denominators of its search with the numerators `a` with `a / b` in the
-caller's search intervals, when there are some, in this order, mapped back after a reversal,
-without the points with `y < 0` under `RATPOINTS_NO_Y`: the search region after the Sturm step
-holds exactly these numerators of the points (`Ratpoints.exists_eq_of_findPoints_eq_ok`,
+/-- Assuming Sturm's theorem when the Sturm step is on, without `RATPOINTS_NO_CHECK`, for every
+value of the options of the sieve, the list that `Ratpoints.findPoints` returns is the brute-force
+reference of the polynomial `c'` that the reversal check of the normalized options hands
+on, over the candidate `(1, 0)` and the denominators of its search with the numerators `a` with
+`a / b` in the caller's search intervals, when there are some, in this order, mapped back after a
+reversal, without the points with `y < 0` under `RATPOINTS_NO_Y`: the search region after the Sturm
+step holds exactly these numerators of the points (`Ratpoints.exists_eq_of_findPoints_eq_ok`,
 `Ratpoints.elim_searchRegion_pointsOfDen_zero`,
 `Ratpoints.elim_searchRegion_pointsOfDen_filter`). -/
-theorem exists_eq_filter_inIntervals_of_findPoints_eq_ok {c : List ℤ} {H : ℕ} {P : Params}
-    {o : Options} {L : List (ℤ × ℤ × ℤ)} (hS : 0 ≤ o.sturm → SturmTheorem) (hP : P.WF)
-    (h : findPoints c H P o = .ok L) (hc : o.noCheck = false) :
+theorem exists_eq_filter_inIntervals_of_findPoints_eq_ok {c : List ℤ} {H : ℕ} {s : SieveOptions}
+    {o : Options} {L : List (ℤ × ℤ × ℤ)} (hS : 0 ≤ o.sturm → SturmTheorem)
+    (h : findPoints c H s o = .ok L) (hc : o.noCheck = false) :
     ∃ c' rev, Setup.reversal (o.normalize H).reverse c (degree c) = .ok (c', degree c', rev) ∧
       1 ≤ H ∧ L = ((pointsOfDen c' (degree c') 0 [1] ++
         (searchDens c' (degree c') (o.normalize H).bLow.toNat (o.normalize H).bHigh.toNat).flatMap
@@ -659,7 +691,7 @@ theorem exists_eq_filter_inIntervals_of_findPoints_eq_ok {c : List ℤ} {H : ℕ
             decide (o.domain = [] ∨ InIntervals (domainValues o.domain) (a / b)))).map
         (if rev then swapPoint else id)).filter fun p ↦ !o.noY || 0 ≤ p.2.1 := by
   obtain ⟨h1, hd⟩ := length_le_and_one_le_degree_of_findPoints_eq_ok h
-  obtain ⟨c', rev, hr, hH, hH63, hwf, hst, rfl⟩ := exists_eq_of_findPoints_eq_ok hP h hc
+  obtain ⟨c', rev, hr, hH, hH63, hwf, hst, rfl⟩ := exists_eq_of_findPoints_eq_ok h hc
   refine ⟨c', rev, hr, hH, ?_⟩
   rw [elim_nil_filter_map_append_flatMap, elim_searchRegion_pointsOfDen_zero hwf hst]
   refine congr(List.filter _ (List.map _ (_ ++ $(List.flatMap_congr fun b hb ↦ ?_))))
@@ -669,22 +701,22 @@ theorem exists_eq_filter_inIntervals_of_findPoints_eq_ok {c : List ℤ} {H : ℕ
     (by lia [o.one_le_toNat_bLow_normalize H,
       le_and_le_of_mem_searchDens (o.one_le_toNat_bLow_normalize H) hb])
 
-/-- Assuming Sturm's theorem when the Sturm step is on, without `RATPOINTS_NO_CHECK`, for
-well-formed parameters, the list that `Ratpoints.findPoints` returns is the brute-force reference
-of the polynomial `c'` that the reversal check of the normalized options hands on, over the
-candidate `(1, 0)` and the denominators of its search from `1` to the normalized largest
-denominator, in this order, mapped back after a reversal, filtered by the search region of the
-options (`Ratpoints.InRegion`) and under `RATPOINTS_NO_Y` by `y ≥ 0`
+/-- Assuming Sturm's theorem when the Sturm step is on, without `RATPOINTS_NO_CHECK`, for every
+value of the options of the sieve, the list that `Ratpoints.findPoints` returns is the brute-force
+reference of the polynomial `c'` that the reversal check of the normalized options hands
+on, over the candidate `(1, 0)` and the denominators of its search from `1` to the normalized
+largest denominator, in this order, mapped back after a reversal, filtered by the search region of
+the options (`Ratpoints.InRegion`) and under `RATPOINTS_NO_Y` by `y ≥ 0`
 (`Ratpoints.map_append_flatMap_filter_eq_filter_inRegion`). -/
-theorem exists_eq_filter_inRegion_of_findPoints_eq_ok {c : List ℤ} {H : ℕ} {P : Params}
-    {o : Options} {L : List (ℤ × ℤ × ℤ)} (hS : 0 ≤ o.sturm → SturmTheorem) (hP : P.WF)
-    (h : findPoints c H P o = .ok L) (hc : o.noCheck = false) :
+theorem exists_eq_filter_inRegion_of_findPoints_eq_ok {c : List ℤ} {H : ℕ} {s : SieveOptions}
+    {o : Options} {L : List (ℤ × ℤ × ℤ)} (hS : 0 ≤ o.sturm → SturmTheorem)
+    (h : findPoints c H s o = .ok L) (hc : o.noCheck = false) :
     ∃ c' rev, Setup.reversal (o.normalize H).reverse c (degree c) = .ok (c', degree c', rev) ∧
       1 ≤ H ∧ L = ((pointsOfDen c' (degree c') 0 [1] ++
         (searchDens c' (degree c') 1 (o.normalize H).bHigh.toNat).flatMap fun b : ℕ ↦
           pointsOfDen c' (degree c') b (numerators H)).map (if rev then swapPoint else id)).filter
         fun p ↦ (!o.noY || 0 ≤ p.2.1) && InRegion (domainValues o.domain) o.bLow o.bHigh p := by
-  obtain ⟨c', rev, hr, hH, rfl⟩ := exists_eq_filter_inIntervals_of_findPoints_eq_ok hS hP h hc
+  obtain ⟨c', rev, hr, hH, rfl⟩ := exists_eq_filter_inIntervals_of_findPoints_eq_ok hS h hc
   have hb : rev = true → IsFullBox o.domain o.bLow o.bHigh H := by
     rintro rfl
     exact isFullBox_of_reversal_normalize_eq_ok hr
@@ -699,8 +731,8 @@ normalized range (`Ratpoints.searchDens_eq_range'`: even degree, `|c_d| = 1`, or
 fails), the list that `Ratpoints.findPoints` returns is the brute-force reference in the search
 region of the options. -/
 theorem eq_filter_bruteForce_of_findPoints_eq_ok_of_reverse_eq_false {c : List ℤ} {H : ℕ}
-    {P : Params} {o : Options} {L : List (ℤ × ℤ × ℤ)} (hS : 0 ≤ o.sturm → SturmTheorem)
-    (hP : P.WF) (h : findPoints c H P o = .ok L) (hc : o.noCheck = false) (hy : o.noY = false)
+    {s : SieveOptions} {o : Options} {L : List (ℤ × ℤ × ℤ)} (hS : 0 ≤ o.sturm → SturmTheorem)
+    (h : findPoints c H s o = .ok L) (hc : o.noCheck = false) (hy : o.noY = false)
     (ho : o.reverse = false)
     (hs : searchDens c (degree c) (o.normalize H).bLow.toNat (o.normalize H).bHigh.toNat =
       List.range' (o.normalize H).bLow.toNat
@@ -708,7 +740,7 @@ theorem eq_filter_bruteForce_of_findPoints_eq_ok_of_reverse_eq_false {c : List �
     L = (bruteForce c H).filter
       (InRegion (o.domain.map fun i ↦ (doubleValue i.1.bits, doubleValue i.2.bits)) o.bLow
         o.bHigh) := by
-  obtain ⟨c', rev, hr, hH, rfl⟩ := exists_eq_filter_inIntervals_of_findPoints_eq_ok hS hP h hc
+  obtain ⟨c', rev, hr, hH, rfl⟩ := exists_eq_filter_inIntervals_of_findPoints_eq_ok hS h hc
   rw [o.reverse_normalize H, ho, Bool.false_and, Setup.reversal_false] at hr
   obtain ⟨rfl, -, rfl⟩ := by simpa using hr.symm
   have hB := o.toNat_bHigh_normalize_le H
@@ -719,37 +751,37 @@ theorem eq_filter_bruteForce_of_findPoints_eq_ok_of_reverse_eq_false {c : List �
     ← filter_bruteForce_eq_append c' hH le_rfl hB]
   simpa [hy] using filter_filter_bruteForce_eq (o := o) _ c' H fun _ ↦ true
 
-/-- Assuming Sturm's theorem when the Sturm step is on, without `RATPOINTS_NO_CHECK`, for
-well-formed parameters, the list that `Ratpoints.findPoints` returns is a permutation of the
-brute-force reference in the search region of the options (`Ratpoints.InRegion`), without the points
-with `y < 0` under `RATPOINTS_NO_Y`: the search region holds the points at infinity and those with a
-denominator up to the largest of the search
+/-- Assuming Sturm's theorem when the Sturm step is on, without `RATPOINTS_NO_CHECK`, for every
+value of the options of the sieve, the list that `Ratpoints.findPoints` returns is a permutation of
+the brute-force reference in the search region of the options (`Ratpoints.InRegion`),
+without the points with `y < 0` under `RATPOINTS_NO_Y`: the search region holds the points at
+infinity and those with a denominator up to the largest of the search
 (`Ratpoints.eq_zero_or_le_toNat_bHigh_normalize_of_inRegion`), whose points the search gives
 (`Ratpoints.perm_map_append_flatMap_searchDens`). -/
-theorem perm_filter_bruteForce_of_findPoints_eq_ok {c : List ℤ} {H : ℕ} {P : Params}
-    {o : Options} {L : List (ℤ × ℤ × ℤ)} (hS : 0 ≤ o.sturm → SturmTheorem) (hP : P.WF)
-    (h : findPoints c H P o = .ok L) (hc : o.noCheck = false) :
+theorem perm_filter_bruteForce_of_findPoints_eq_ok {c : List ℤ} {H : ℕ} {s : SieveOptions}
+    {o : Options} {L : List (ℤ × ℤ × ℤ)} (hS : 0 ≤ o.sturm → SturmTheorem)
+    (h : findPoints c H s o = .ok L) (hc : o.noCheck = false) :
     L.Perm ((bruteForce c H).filter fun p ↦ (!o.noY || 0 ≤ p.2.1) &&
       InRegion (o.domain.map fun i ↦ (doubleValue i.1.bits, doubleValue i.2.bits)) o.bLow o.bHigh
         p) := by
-  obtain ⟨c', rev, hr, hH, rfl⟩ := exists_eq_filter_inRegion_of_findPoints_eq_ok hS hP h hc
+  obtain ⟨c', rev, hr, hH, rfl⟩ := exists_eq_filter_inRegion_of_findPoints_eq_ok hS h hc
   exact ((perm_map_append_flatMap_searchDens hr hH).filter _).trans
     (.of_eq (filter_filter_bruteForce_eq _ c H _))
 
-/-- Assuming Sturm's theorem when the Sturm step is on, without `RATPOINTS_NO_CHECK`, for
-well-formed parameters, the list that `Ratpoints.findPoints` returns is `Ratpoints.orderedPoints`
-for the switch of the reversal of the normalized options and the largest denominator of the search
-(`Ratpoints.denominatorBound`), the points in the order of the specification, those in the search
-region of the options (`Ratpoints.InRegion`), without those with `y < 0` under `RATPOINTS_NO_Y`;
-comparator certifies this (`comparator/Challenge.lean`). -/
-theorem eq_orderedPoints_of_findPoints_eq_ok {c : List ℤ} {H : ℕ} {P : Params} {o : Options}
-    {L : List (ℤ × ℤ × ℤ)} (hS : 0 ≤ o.sturm → SturmTheorem) (hP : P.WF)
-    (h : findPoints c H P o = .ok L) (hc : o.noCheck = false) :
+/-- Assuming Sturm's theorem when the Sturm step is on, without `RATPOINTS_NO_CHECK`, for every
+value of the options of the sieve, the list that `Ratpoints.findPoints` returns is
+`Ratpoints.orderedPoints` for the switch of the reversal of the normalized options and the
+largest denominator of the search (`Ratpoints.denominatorBound`), the points in the order of the
+specification, those in the search region of the options (`Ratpoints.InRegion`), without those with
+`y < 0` under `RATPOINTS_NO_Y`; comparator certifies this (`comparator/Challenge.lean`). -/
+theorem eq_orderedPoints_of_findPoints_eq_ok {c : List ℤ} {H : ℕ} {s : SieveOptions} {o : Options}
+    {L : List (ℤ × ℤ × ℤ)} (hS : 0 ≤ o.sturm → SturmTheorem)
+    (h : findPoints c H s o = .ok L) (hc : o.noCheck = false) :
     L = (orderedPoints maxDivisors (o.reverse && IsFullBox o.domain o.bLow o.bHigh H) c H
         (denominatorBound o.bHigh H)).filter fun p ↦ (!o.noY || 0 ≤ p.2.1) &&
       InRegion (o.domain.map fun i ↦ (doubleValue i.1.bits, doubleValue i.2.bits)) o.bLow o.bHigh
         p := by
-  obtain ⟨c', rev, hr, hH, rfl⟩ := exists_eq_filter_inRegion_of_findPoints_eq_ok hS hP h hc
+  obtain ⟨c', rev, hr, hH, rfl⟩ := exists_eq_filter_inRegion_of_findPoints_eq_ok hS h hc
   have hB := o.toNat_bHigh_normalize_le H
   rw [orderedPoints, searchedPoly_eq_of_reversal_eq_ok (o.reverse_normalize H ▸ hr),
     ← o.toNat_bHigh_normalize H]
@@ -775,30 +807,30 @@ theorem nodup_map_bruteForce_of_reversal_eq_ok {allow rev : Bool} {c c' : List �
 
 /-! ### The main theorems -/
 
-/-- Assuming Sturm's theorem when the Sturm step is on, without `RATPOINTS_NO_CHECK`, for
-well-formed parameters and the other options, a triple lies in the list that `Ratpoints.findPoints`
-returns exactly when it is a normalized point of height at most `H` in the search region of the
-options (`Ratpoints.InRegion`), with `y ≥ 0` under `RATPOINTS_NO_Y`; comparator certifies this
-(`comparator/Challenge.lean`). -/
-theorem mem_iff_isPoint_of_findPoints_eq_ok {c : List ℤ} {H : ℕ} {P : Params} {o : Options}
-    {L : List (ℤ × ℤ × ℤ)} (hS : 0 ≤ o.sturm → SturmTheorem) (hP : P.WF)
-    (h : findPoints c H P o = .ok L) (hc : o.noCheck = false) {p : ℤ × ℤ × ℤ} :
+/-- Assuming Sturm's theorem when the Sturm step is on, without `RATPOINTS_NO_CHECK`, for every
+value of the options of the sieve and the other options, a triple lies in the list that
+`Ratpoints.findPoints` returns exactly when it is a normalized point of height at most `H`
+in the search region of the options (`Ratpoints.InRegion`), with `y ≥ 0` under `RATPOINTS_NO_Y`;
+comparator certifies this (`comparator/Challenge.lean`). -/
+theorem mem_iff_isPoint_of_findPoints_eq_ok {c : List ℤ} {H : ℕ} {s : SieveOptions} {o : Options}
+    {L : List (ℤ × ℤ × ℤ)} (hS : 0 ≤ o.sturm → SturmTheorem)
+    (h : findPoints c H s o = .ok L) (hc : o.noCheck = false) {p : ℤ × ℤ × ℤ} :
     p ∈ L ↔ IsPoint c H p ∧ (o.noY = true → 0 ≤ p.2.1) ∧
       InRegion (o.domain.map fun i ↦ (doubleValue i.1.bits, doubleValue i.2.bits)) o.bLow o.bHigh
         p := by
-  rw [(perm_filter_bruteForce_of_findPoints_eq_ok hS hP h hc).mem_iff, List.mem_filter,
+  rw [(perm_filter_bruteForce_of_findPoints_eq_ok hS h hc).mem_iff, List.mem_filter,
     mem_bruteForce_iff]
   cases o.noY <;> simp
 
-/-- For well-formed parameters and every option, the list that `Ratpoints.findPoints` returns has
+/-- For every option, the list that `Ratpoints.findPoints` returns has
 no duplicates: without `RATPOINTS_NO_CHECK` it is a sublist of a permutation of the brute-force
 reference, filtered under `RATPOINTS_NO_Y` and by the search region, and under
 `RATPOINTS_NO_CHECK` the survivors are distinct (`Ratpoints.nodup_searchList_of_noCheck`);
 comparator certifies this (`comparator/Challenge.lean`). -/
-theorem nodup_of_findPoints_eq_ok {c : List ℤ} {H : ℕ} {P : Params} {o : Options}
-    {L : List (ℤ × ℤ × ℤ)} (hP : P.WF) (h : findPoints c H P o = .ok L) :
+theorem nodup_of_findPoints_eq_ok {c : List ℤ} {H : ℕ} {s : SieveOptions} {o : Options}
+    {L : List (ℤ × ℤ × ℤ)} (h : findPoints c H s o = .ok L) :
     L.Nodup := by
-  obtain ⟨c', rev, S, hr, hd, hH, -, -, -, hS, rfl, -⟩ := exists_searchList_of_findPoints_eq_ok hP h
+  obtain ⟨c', rev, S, hr, hd, hH, -, -, -, hS, rfl, -⟩ := exists_searchList_of_findPoints_eq_ok h
   have hbL := o.one_le_toNat_bLow_normalize H
   have hbH := o.one_le_toNat_bHigh_normalize (H := H) hH
   rcases searchRegion c' (degree c') H o with _ | D
@@ -818,31 +850,32 @@ theorem nodup_of_findPoints_eq_ok {c : List ℤ} {H : ℕ} {P : Params} {o : Opt
 /-- Assuming Sturm's theorem when the Sturm step is on, without the options of the output, the set
 of the elements of the list that `Ratpoints.findPoints` returns is the set of the points in the
 search region of the options. -/
-theorem toFinset_eq_filter_points_of_findPoints_eq_ok {c : List ℤ} {H : ℕ} {P : Params}
-    {o : Options} {L : List (ℤ × ℤ × ℤ)} (hS : 0 ≤ o.sturm → SturmTheorem) (hP : P.WF)
-    (h : findPoints c H P o = .ok L) (hc : o.noCheck = false) (hy : o.noY = false) :
+theorem toFinset_eq_filter_points_of_findPoints_eq_ok {c : List ℤ} {H : ℕ} {s : SieveOptions}
+    {o : Options} {L : List (ℤ × ℤ × ℤ)} (hS : 0 ≤ o.sturm → SturmTheorem)
+    (h : findPoints c H s o = .ok L) (hc : o.noCheck = false) (hy : o.noY = false) :
     L.toFinset = (points c H).filter
       (InRegion (o.domain.map fun i ↦ (doubleValue i.1.bits, doubleValue i.2.bits)) o.bLow
         o.bHigh) := by
-  rw [List.toFinset_eq_of_perm _ _ (perm_filter_bruteForce_of_findPoints_eq_ok hS hP h hc),
+  rw [List.toFinset_eq_of_perm _ _ (perm_filter_bruteForce_of_findPoints_eq_ok hS h hc),
     List.toFinset_filter, toFinset_bruteForce]
   simp [hy]
 
 /-! ### `RATPOINTS_NO_CHECK` -/
 
-/-- Under `RATPOINTS_NO_CHECK`, for well-formed parameters, every triple of the list that
-`Ratpoints.findPoints` returns is `(x, 0, z)` for the pair `(x, z)` of a normalized point of height
-at most `H` in the search region of the options, whether it is a point or not: `x` prime to `z`,
-`z > 0` or `(x, z) = (1, 0)`, `|x| ≤ H`, `z ≤ H` and `(x, 0, z)` in the search region
-(`Ratpoints.exists_eq_of_mem_searchList_of_noCheck`, `Ratpoints.mem_region_of_mem_searchList`,
-`Ratpoints.searchRegion_subset`); comparator certifies this (`comparator/Challenge.lean`). -/
-theorem exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck {c : List ℤ} {H : ℕ} {P : Params}
-    {o : Options} {L : List (ℤ × ℤ × ℤ)} (hP : P.WF) (h : findPoints c H P o = .ok L)
+/-- Under `RATPOINTS_NO_CHECK`, for every value of the options of the sieve, every triple of the
+list that `Ratpoints.findPoints` returns is `(x, 0, z)` for the pair `(x, z)` of a
+normalized point of height at most `H` in the search region of the options, whether it is a point or
+not: `x` prime to `z`, `z > 0` or `(x, z) = (1, 0)`, `|x| ≤ H`, `z ≤ H` and `(x, 0, z)` in the
+search region (`Ratpoints.exists_eq_of_mem_searchList_of_noCheck`,
+`Ratpoints.mem_region_of_mem_searchList`, `Ratpoints.searchRegion_subset`); comparator certifies
+this (`comparator/Challenge.lean`). -/
+theorem exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck {c : List ℤ} {H : ℕ} {s : SieveOptions}
+    {o : Options} {L : List (ℤ × ℤ × ℤ)} (h : findPoints c H s o = .ok L)
     (hc : o.noCheck = true) {q : ℤ × ℤ × ℤ} (hq : q ∈ L) :
     ∃ x z : ℤ, q = (x, 0, z) ∧ Int.gcd x z = 1 ∧ (0 < z ∨ z = 0 ∧ x = 1) ∧ |x| ≤ H ∧ z ≤ H ∧
       InRegion (o.domain.map fun i ↦ (doubleValue i.1.bits, doubleValue i.2.bits)) o.bLow o.bHigh
         q := by
-  obtain ⟨c', rev, S, hr, -, hH, -, hwf, -, -, rfl, -⟩ := exists_searchList_of_findPoints_eq_ok hP h
+  obtain ⟨c', rev, S, hr, -, hH, -, hwf, -, -, rfl, -⟩ := exists_searchList_of_findPoints_eq_ok h
   rcases hreg : searchRegion c' (degree c') H o with _ | D
   · simp [hreg] at hq
   rw [hreg, Option.elim_some] at hq
@@ -860,18 +893,18 @@ theorem exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck {c : List ℤ} {H : ℕ}
     exact inRegion_of_isFullBox (by simpa [IsFullBox] using hb)
       (by rcases hn.2.1 with h0 | h0 <;> lia) hn.2.2.2
 
-/-- Under `RATPOINTS_NO_CHECK`, for well-formed parameters, the list `L'` that
+/-- Under `RATPOINTS_NO_CHECK`, for every value of the options of the sieve, the list `L'` that
 `Ratpoints.findPoints` returns for the same input with `RATPOINTS_NO_CHECK` cleared and
 `RATPOINTS_NO_Y` set, with `y` replaced by `0`, is a sublist of the list `L` that it returns: both
 searches run with the same test of the sieve and the same search region, so that the points come in
 the same order among the survivors (`Ratpoints.map_searchList_sublist`); comparator certifies this
 (`comparator/Challenge.lean`). -/
-theorem map_sublist_of_findPoints_eq_ok_of_noCheck {c : List ℤ} {H : ℕ} {P : Params}
-    {o : Options} {L L' : List (ℤ × ℤ × ℤ)} (hP : P.WF) (h : findPoints c H P o = .ok L)
+theorem map_sublist_of_findPoints_eq_ok_of_noCheck {c : List ℤ} {H : ℕ} {s : SieveOptions}
+    {o : Options} {L L' : List (ℤ × ℤ × ℤ)} (h : findPoints c H s o = .ok L)
     (hc : o.noCheck = true)
-    (h' : findPoints c H P { o with noCheck := false, noY := true } = .ok L') :
+    (h' : findPoints c H s { o with noCheck := false, noY := true } = .ok L') :
     (L'.map fun q ↦ (q.1, 0, q.2.2)).Sublist L := by
-  obtain ⟨c', rev, S, -, -, -, -, -, -, -, rfl, hall⟩ := exists_searchList_of_findPoints_eq_ok hP h
+  obtain ⟨c', rev, S, -, -, -, -, -, -, -, rfl, hall⟩ := exists_searchList_of_findPoints_eq_ok h
   obtain rfl := Except.ok.inj (h'.symm.trans (hall false true))
   rw [hc]
   rcases searchRegion c' (degree c') H o with _ | D
@@ -884,18 +917,18 @@ normalized point `(x, y, z)` of height at most `H` in the search region of the o
 `(x, |y|, z)` is in the list of the search with `RATPOINTS_NO_CHECK` cleared and `RATPOINTS_NO_Y`
 set (`Ratpoints.map_sublist_of_findPoints_eq_ok_of_noCheck`); comparator certifies this
 (`comparator/Challenge.lean`). -/
-theorem mem_of_isPoint_of_findPoints_eq_ok_of_noCheck {c : List ℤ} {H : ℕ} {P : Params}
-    {o : Options} {L : List (ℤ × ℤ × ℤ)} (hS : 0 ≤ o.sturm → SturmTheorem) (hP : P.WF)
-    (h : findPoints c H P o = .ok L) (hc : o.noCheck = true) {p : ℤ × ℤ × ℤ}
+theorem mem_of_isPoint_of_findPoints_eq_ok_of_noCheck {c : List ℤ} {H : ℕ} {s : SieveOptions}
+    {o : Options} {L : List (ℤ × ℤ × ℤ)} (hS : 0 ≤ o.sturm → SturmTheorem)
+    (h : findPoints c H s o = .ok L) (hc : o.noCheck = true) {p : ℤ × ℤ × ℤ}
     (hp : IsPoint c H p)
     (hr : InRegion (o.domain.map fun i ↦ (doubleValue i.1.bits, doubleValue i.2.bits)) o.bLow
       o.bHigh p) :
     (p.1, 0, p.2.2) ∈ L := by
-  obtain ⟨c', rev, S, -, -, -, -, -, -, -, -, hall⟩ := exists_searchList_of_findPoints_eq_ok hP h
+  obtain ⟨c', rev, S, -, -, -, -, -, -, -, -, hall⟩ := exists_searchList_of_findPoints_eq_ok h
   have hp' := (mem_iff_isPoint_of_findPoints_eq_ok (o := { o with noCheck := false, noY := true })
-    hS hP (hall false true) rfl (p := (p.1, |p.2.1|, p.2.2))).mpr
+    hS (hall false true) rfl (p := (p.1, |p.2.1|, p.2.2))).mpr
       ⟨by simpa [IsPoint, sq_abs] using hp, fun _ ↦ abs_nonneg _, hr⟩
-  exact (map_sublist_of_findPoints_eq_ok_of_noCheck hP h hc (hall false true)).subset
+  exact (map_sublist_of_findPoints_eq_ok_of_noCheck h hc (hall false true)).subset
     (List.mem_map.mpr ⟨_, hp', rfl⟩)
 
 /-! ### The refusals -/
@@ -907,13 +940,13 @@ not a `long` (`Ratpoints.fitsLong_natCast`), the binary forms `Ratpoints.binaryF
 not squarefree, and search intervals that are not well formed (`Ratpoints.IntervalsWF`), for all
 parameters, whether the reversal is allowed or not; comparator certifies this
 (`comparator/Challenge.lean`). -/
-theorem exists_findPoints_eq_error_iff_of_sturm_nonneg {c : List ℤ} {H : ℕ} {P : Params}
+theorem exists_findPoints_eq_error_iff_of_sturm_nonneg {c : List ℤ} {H : ℕ} {s : SieveOptions}
     {o : Options} (hs : 0 ≤ o.sturm) :
-    (∃ e, findPoints c H P o = .error e) ↔
+    (∃ e, findPoints c H s o = .error e) ↔
       c.length < 2 ∨ maxDegree + 1 < c.length ∨ H = 0 ∨ 2 ^ 63 ≤ H ∨
         ¬ Squarefree (binaryFormPoly c) ∨
         ¬ IntervalsWF (o.domain.map fun i ↦ (i.1.bits, i.2.bits)) := by
-  rw [exists_findPoints_eq_error_iff, findPointsWith, BruteForce.degree_eq]
+  rw [exists_findPoints_eq_error_iff, findPointsWith_eq, BruteForce.degree_eq]
   simp only [fitsLong_natCast, Bool.not_eq_true', decide_eq_false_iff_not, not_lt]
   split_ifs with h1 h2 h3 h4
   · simp [h1]
@@ -950,15 +983,15 @@ coefficients, that is `d + 2 ≤ 2 ⌈n / 2⌉` for the degree `d`, and those of
 search intervals that are not well formed (`Ratpoints.IntervalsWF`); comparator certifies this
 (`comparator/Challenge.lean`), so that a `Ratpoints.findPoints` that refused every input under `-s`
 would not pass. -/
-theorem exists_findPoints_eq_error_iff_of_sturm_neg {c : List ℤ} {H : ℕ} {P : Params}
+theorem exists_findPoints_eq_error_iff_of_sturm_neg {c : List ℤ} {H : ℕ} {s : SieveOptions}
     {o : Options} (hs : o.sturm < 0) :
-    (∃ e, findPoints c H P o = .error e) ↔
+    (∃ e, findPoints c H s o = .error e) ↔
       c.length < 2 ∨ maxDegree + 1 < c.length ∨ H = 0 ∨ 2 ^ 63 ≤ H ∨
         degree c + 2 ≤ 2 * (c.length / 2) ∨
         o.reverse = true ∧ IsFullBox o.domain o.bLow o.bHigh H ∧ degree c % 2 = 0 ∧
           c.getD 0 0 = 0 ∧ c.getD 1 0 = 0 ∨
         ¬ IntervalsWF (o.domain.map fun i ↦ (i.1.bits, i.2.bits)) := by
-  rw [exists_findPoints_eq_error_iff, findPointsWith, BruteForce.degree_eq]
+  rw [exists_findPoints_eq_error_iff, findPointsWith_eq, BruteForce.degree_eq]
   simp only [fitsLong_natCast, Bool.not_eq_true', decide_eq_false_iff_not, not_lt]
   split_ifs with h1 h2 h3 h4
   · simp [h1]
@@ -983,9 +1016,9 @@ theorem exists_findPoints_eq_error_iff_of_sturm_neg {c : List ℤ} {H : ℕ} {P 
 -- refuses: its refusals other than those of `o` are forms that are not squarefree
 -- (`Ratpoints.not_squarefree_binaryFormPoly_of_lt`,
 -- `Ratpoints.not_squarefree_binaryFormPoly_of_getD_zero`).
-private theorem exists_findPoints_eq_error_of_sturm_neg {c : List ℤ} {H : ℕ} {P : Params}
-    {o : Options} (he : ∃ e, findPoints c H P { o with sturm := -1 } = .error e) :
-    ∃ e, findPoints c H P o = .error e := by
+private theorem exists_findPoints_eq_error_of_sturm_neg {c : List ℤ} {H : ℕ} {s : SieveOptions}
+    {o : Options} (he : ∃ e, findPoints c H s { o with sturm := -1 } = .error e) :
+    ∃ e, findPoints c H s o = .error e := by
   have hd := (exists_findPoints_eq_error_iff_of_sturm_neg (o := { o with sturm := -1 })
     (by simp)).mp he
   rcases lt_or_ge o.sturm 0 with hs | hs
@@ -997,15 +1030,15 @@ private theorem exists_findPoints_eq_error_of_sturm_neg {c : List ℤ} {H : ℕ}
 
 /-- Assuming Sturm's theorem when the Sturm step is on, without `RATPOINTS_NO_CHECK`, the Sturm step
 changes only the speed of the search: the search without it returns the same list. -/
-theorem findPoints_sturm_neg_eq_ok {c : List ℤ} {H : ℕ} {P : Params} {o : Options}
-    {L : List (ℤ × ℤ × ℤ)} (hS : 0 ≤ o.sturm → SturmTheorem) (hP : P.WF)
-    (hc : o.noCheck = false) (h : findPoints c H P o = .ok L) :
-    findPoints c H P { o with sturm := -1 } = .ok L := by
-  rcases h' : findPoints c H P { o with sturm := -1 } with e | L'
+theorem findPoints_sturm_neg_eq_ok {c : List ℤ} {H : ℕ} {s : SieveOptions} {o : Options}
+    {L : List (ℤ × ℤ × ℤ)} (hS : 0 ≤ o.sturm → SturmTheorem)
+    (hc : o.noCheck = false) (h : findPoints c H s o = .ok L) :
+    findPoints c H s { o with sturm := -1 } = .ok L := by
+  rcases h' : findPoints c H s { o with sturm := -1 } with e | L'
   · obtain ⟨e', he'⟩ := exists_findPoints_eq_error_of_sturm_neg ⟨e, h'⟩
     simp [he'] at h
-  · rw [eq_orderedPoints_of_findPoints_eq_ok (fun h ↦ absurd h (by simp)) hP h' hc,
-      eq_orderedPoints_of_findPoints_eq_ok hS hP h hc]
+  · rw [eq_orderedPoints_of_findPoints_eq_ok (fun h ↦ absurd h (by simp)) h' hc,
+      eq_orderedPoints_of_findPoints_eq_ok hS h hc]
 
 /-! ### The axioms of the main theorems -/
 

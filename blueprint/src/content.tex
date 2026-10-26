@@ -13,8 +13,8 @@ This blueprint describes a Lean~4 development that verifies it in four parts:
     structure of the C code function by function: the same loops, tables, bit arrays of 64-bit
     words and index arithmetic; it uses only Lean core and \verb|Std|, not Mathlib, so that the
     executable and the differential tests do not depend on the proofs;
-  \item \emph{proofs} that the model meets the specification, for every well-formed choice of the
-    sieving parameters;
+  \item \emph{proofs} that the model meets the specification, for every value of the options of
+    the sieve, from which the search takes its sieving parameters;
   \item the \emph{link to the C code}: a record of which Lean definition models which lines of C,
     and differential tests that run the model and the C program on the same inputs.
 \end{enumerate}

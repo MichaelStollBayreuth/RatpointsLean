@@ -1342,7 +1342,7 @@ Sturm step, \csource{find_points.c}{4857}{4892}, belongs to the component that m
 
 The list of a successful search (Lemma~\ref{lem:findPoints_searchList},
 \verb|Ratpoints.exists_searchList_of_findPoints_eq_ok|) is stated over the region that the search
-uses: for well-formed parameters, if $\mathrm{findPoints}(c, H, P, o)$ returns $L$, then the
+uses: for the options $s$ of the sieve, if $\mathrm{findPoints}(c, H, s, o)$ returns $L$, then the
 reversal check with the normalized switch hands on a polynomial $c'$ of positive degree with the
 flag $\mathrm{rev}$, $1 \le H < 2^{63}$, the caller's intervals are well formed, the chain of $c'$
 does not fail when the Sturm step is on, and there is a sound test $S$ over the normalized range
@@ -1418,8 +1418,8 @@ vanishes under Sturm's theorem.
   Sturm's theorem when the step is on, for $0 < d < 2^{57}$, $d$ the degree of $c$, and
   $1 \le H < 2^{63}$, the points over a denominator $b > 0$ of the numerators with $a/b$ in the
   region that the search uses are those of the numerators with $a/b$ in the caller's intervals, or
-  of all of them when there are none. So, assuming Sturm's theorem when the step is on, for
-  well-formed parameters, the exact check on and $\mathrm{findPoints}(c, H, P, o) = L$: $L$ is the
+  of all of them when there are none. So, assuming Sturm's theorem when the step is on, for the
+  options $s$ of the sieve, the exact check on and $\mathrm{findPoints}(c, H, s, o) = L$: $L$ is the
   list of the points that the reference of $c'$ finds over the candidate $(1, 0)$ and over the
   denominators of its search in the normalized range with the numerators in the caller's intervals,
   mapped back and filtered by $\mathrm{noY}$; and $L$ is the list of the points over the candidate
@@ -1437,9 +1437,9 @@ vanishes under Sturm's theorem.
 \end{proof}
 
 From the last form come the theorems that assume Sturm's theorem: membership
-(\verb|Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok|, Theorem~\ref{thm:findPoints}): for
-well-formed parameters, the exact check on and $\mathrm{findPoints}(c, H, P, o) = L$, a triple lies
-in $L$ exactly when it is a normalized point of height at most $H$, with $y \ge 0$ under
+(\verb|Ratpoints.mem_iff_isPoint_of_findPoints_eq_ok|, Theorem~\ref{thm:findPoints}): for the
+options $s$ of the sieve, the exact check on and $\mathrm{findPoints}(c, H, s, o) = L$, a triple
+lies in $L$ exactly when it is a normalized point of height at most $H$, with $y \ge 0$ under
 $\mathrm{noY}$, in the search region of $o$; the set of elements
 (\verb|Ratpoints.toFinset_eq_filter_points_of_findPoints_eq_ok|, Theorem~\ref{thm:findPoints}), with
 both options of the output off, is $\mathrm{points}(c, H)$ filtered by the search region; the
@@ -1471,9 +1471,9 @@ $c_0 = c_1 = 0$, or the caller's intervals are not well formed.
   \uses{thm:order, thm:refusals, def:findPoints}
   \lean{Ratpoints.findPoints_sturm_neg_eq_ok}
   \leanok
-  Assuming Sturm's theorem when the Sturm step is on, for well-formed parameters and options with
-  the exact check on: if $\mathrm{findPoints}(c, H, P, o)$ returns $L$, then the search with the
-  Sturm step off returns $L$ too.
+  Assuming Sturm's theorem when the Sturm step is on, for the options $s$ of the sieve and options
+  with the exact check on: if $\mathrm{findPoints}(c, H, s, o)$ returns $L$, then the search with
+  the Sturm step off returns $L$ too.
 \end{theorem}
 
 \begin{proof}
@@ -1504,7 +1504,10 @@ intervals, whose bits the statements read through the options, \verb|Params|, \v
 \verb|SieveOptions|, \verb|sieveParams|, \verb|maxDegree| and \verb|maxDivisors|. Six of the
 statements are restated for the search region of the options, each with the theorem that proves it;
 \verb|lake comparator --paranoid|, with Lean's kernel and the five external checkers bundled
-with Lean, accepted the twelve statements in this form on 2026-10-18. They are, for all $c$, $H$,
+with Lean, accepted the twelve statements in this form on 2026-10-18; stage~I takes the options of
+the sieve with no hypothesis on them in place of $P$ and its well-formedness in statements 3 to 12
+and drops statement~7, leaving eleven, and no longer takes \verb|Params|, \verb|Params.WF| and
+\verb|sieveParams| from the model (Section~\ref{sec:certifiedI}). They were, for all $c$, $H$,
 parameters $P$ and options $o$, with $D$ the values and $B_D$ the bits of the intervals of $o$, the
 search region that of $D$, $o.\mathrm{bLow}$ and $o.\mathrm{bHigh}$, and $h_S$ the hypothesis
 $0 \le o.\mathrm{sturm} \to \mathrm{SturmTheorem}$:
@@ -1973,9 +1976,10 @@ the moduli by the curve having been recorded with Section~\ref{sec:choice}, the 
 the loops of the shapes over a block and one block with Section~\ref{sec:blocks}, and the
 correction of the moduli between the blocks with Section~\ref{sec:correction}); in
 \verb|ratpoints.h| the number of threads of \verb|ratpoints_args| (line 370), the numbers of the
-moduli used (line 378), and the pool of threads and the end of the type (lines 398-400), the tuning
-fields (lines 365-367) having left it with the options of the sieve
-(Definition~\ref{def:sieveOptions}) and the other private data with what holds their data or as
+moduli used (line 378), and the pool of threads (line 398), the tuning fields (lines 365-367)
+having left it with the options of the sieve (Definition~\ref{def:sieveOptions}), the end of the
+type (lines 399-400) with the search with a callback and a print channel
+(Definition~\ref{def:findPointsVerbose}) and the other private data with what holds their data or as
 memory that the model does not allocate; in \verb|rp-private.h| the macros of the threads (lines
 76-84) and, in \verb|rp_worker|, the fields of the pool (line 584), the counters of the block having
 left it with Definition~\ref{def:counters}, the decision of the correction with one block

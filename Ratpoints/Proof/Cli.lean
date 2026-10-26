@@ -32,9 +32,9 @@ the points when no point was printed, is the string before the points followed b
 points with the string between them in between
 (`Ratpoints.Cli.out_append_deliver_process_ofOutput`), and the count is their number
 (`Ratpoints.Cli.total_deliver_process`). By the protocol of the delivery
-(`Ratpoints.map_findPointsWith_eq_map_findPoints`), which says that for well-formed parameters, as
-the program's are (`Ratpoints.wf_sieveParams`), the search delivers to a callback the points of
-`Ratpoints.findPoints` in their order until a call stops it, this is what `Ratpoints.Cli.run`
+(`Ratpoints.map_findPointsWith_eq_map_findPoints`), which says that for every value of the options
+of the sieve the search delivers to a callback the points of `Ratpoints.findPoints` in their order
+until a call stops it, this is what `Ratpoints.Cli.run`
 prints between the head of the report and its end; under `-q` it is all that it prints, with the
 string after the points (`-fe`) at the end, and under `-1` the one point printed is the first point
 of the list of `Ratpoints.findPoints` that the callback keeps. The search runs on the search
@@ -286,22 +286,22 @@ theorem report_eq_empty_of_quiet {σ : Type} (s : SieveOptions) (o : Options) {u
   simp [report, hq]
 
 /-- What the program prints for a command line that it reads as the coefficients `c`, the height
-bound `H`, the options `s` of the sieving parameters, the options `o` of the search and the
-settings `u` of the output, when the search `Ratpoints.findPoints` on the search intervals of the
-command line joined (`Ratpoints.Cli.joinIntervals`) returns the list `L` and the search with the
-callback of the program the outcome `r`: the head of the report, the string before the points, the
-points of `L` that the callback counts (`Ratpoints.Cli.countedPoints`: those that it keeps,
-`Ratpoints.Cli.Data.keeps`, only the first of these under `-1`) in the format, with the string
-between them in between, none under `-z`, the string after the points and the end of the report.
-The sieving parameters of the program are well formed (`Ratpoints.wf_sieveParams`), so that the
-protocol of the delivery holds (`Ratpoints.map_findPointsWith_eq_map_findPoints`). -/
+bound `H`, the options `s` of the sieve, the options `o` of the search and the settings `u` of the
+output, when the search `Ratpoints.findPoints` with the program's array size on the search
+intervals of the command line joined (`Ratpoints.Cli.joinIntervals`) returns the list `L` and the
+search with the callback of the program the outcome `r`: the head of the report, the string before
+the points, the points of `L` that the callback counts (`Ratpoints.Cli.countedPoints`: those that it
+keeps, `Ratpoints.Cli.Data.keeps`, only the first of these under `-1`) in the format, with the
+string between them in between, none under `-z`, the string after the points and the end of the
+report; the protocol of the delivery holds for every value of the options
+(`Ratpoints.map_findPointsWith_eq_map_findPoints`). -/
 theorem run_eq_of_findPointsWith_eq_ok {args : List String} {c : List ℤ} {H : ℕ}
     {s : SieveOptions} {o : Options} {u : Output} {r : Outcome Data} {L : List (ℤ × ℤ × ℤ)}
     (hi : input args = .ok (c, H, s, o, u))
-    (hr : findPointsWith c H (sieveParams s) { o with domain := Id.run (joinIntervals o.domain) }
-      process (.ofOutput u o) = .ok r)
-    (hL : findPoints c H (sieveParams s) { o with domain := Id.run (joinIntervals o.domain) } =
-      .ok L) :
+    (hr : findPointsWith c H { s with arraySize := defaultArraySize }
+      { o with domain := Id.run (joinIntervals o.domain) } process (.ofOutput u o) = .ok r)
+    (hL : findPoints c H { s with arraySize := defaultArraySize }
+      { o with domain := Id.run (joinIntervals o.domain) } = .ok L) :
     run args = (preamble c H u o.domain ++ printString u.stringBefore ++
       (printString u.stringBetween).intercalate
         ((if u.noOutput then [] else countedPoints (Data.ofOutput u o).keeps u.onePoint L).map
@@ -309,20 +309,26 @@ theorem run_eq_of_findPointsWith_eq_ok {args : List String} {c : List ℤ} {H : 
             (u.printFormat.getD "").toList) ++
       printString u.stringAfter ++
         report s { o with domain := Id.run (joinIntervals o.domain) } u r, 0) := by
-  simp only [run, hi, hr]
-  rw [(info_total_eq_of_findPointsWith_eq_ok (wf_sieveParams s) hr hL).1,
+  have hv : findPointsVerbose c H { s with arraySize := defaultArraySize }
+      { o with domain := Id.run (joinIntervals o.domain) } process (.ofOutput u o) (fun _ d ↦ d) =
+      .ok r := by
+    revert hr
+    rw [findPointsWith]
+    cases findPointsVerbose c H _ _ process (.ofOutput u o) (fun _ d ↦ d) <;> simp [Except.mapError]
+  simp only [run, hi, hv]
+  rw [(info_total_eq_of_findPointsWith_eq_ok hr hL).1,
     String.append_assoc (s₁ := preamble c H u o.domain), out_append_deliver_process_ofOutput,
     ← String.append_assoc]
 
 /-- The count of the points that the report of the program gives: the number of the points of the
 list of `Ratpoints.findPoints` that the callback of the program counts
-(`Ratpoints.Cli.countedPoints`), for well-formed parameters. -/
-theorem total_eq_of_findPointsWith_eq_ok {c : List ℤ} {H : ℕ} {P : Params} {o o' : Options}
-    {u : Output} {r : Outcome Data} {L : List (ℤ × ℤ × ℤ)} (hP : P.WF)
-    (hr : findPointsWith c H P o' process (.ofOutput u o) = .ok r)
-    (hL : findPoints c H P o' = .ok L) :
+(`Ratpoints.Cli.countedPoints`), for every value of the options of the sieve. -/
+theorem total_eq_of_findPointsWith_eq_ok {c : List ℤ} {H : ℕ} {s : SieveOptions} {o o' : Options}
+    {u : Output} {r : Outcome Data} {L : List (ℤ × ℤ × ℤ)}
+    (hr : findPointsWith c H s o' process (.ofOutput u o) = .ok r)
+    (hL : findPoints c H s o' = .ok L) :
     r.total = (countedPoints (Data.ofOutput u o).keeps u.onePoint L).length := by
-  rw [(info_total_eq_of_findPointsWith_eq_ok hP hr hL).2, total_deliver_process, Int.zero_add]
+  rw [(info_total_eq_of_findPointsWith_eq_ok hr hL).2, total_deliver_process, Int.zero_add]
   rfl
 
 /-- What the program prints under `-q` for a command line on which the search
@@ -334,8 +340,8 @@ string after the points; it exits with the status `0`. -/
 theorem run_eq_of_findPoints_eq_ok {args : List String} {c : List ℤ} {H : ℕ}
     {s : SieveOptions} {o : Options} {u : Output} {L : List (ℤ × ℤ × ℤ)}
     (hi : input args = .ok (c, H, s, o, u)) (hq : u.quiet = true)
-    (hL : findPoints c H (sieveParams s) { o with domain := Id.run (joinIntervals o.domain) } =
-      .ok L) :
+    (hL : findPoints c H { s with arraySize := defaultArraySize }
+      { o with domain := Id.run (joinIntervals o.domain) } = .ok L) :
     run args = (printString u.stringBefore ++ (printString u.stringBetween).intercalate
         ((if u.noOutput then [] else countedPoints (Data.ofOutput u o).keeps u.onePoint L).map
           fun p ↦ formatPoint (o.noCheck || o.noY) p.1 p.2.2 p.2.1
@@ -354,8 +360,8 @@ theorem run_eq_of_onePoint {args : List String} {c : List ℤ} {H : ℕ} {s : Si
     {o : Options} {u : Output} {L : List (ℤ × ℤ × ℤ)} {p : ℤ × ℤ × ℤ}
     (hi : input args = .ok (c, H, s, o, u)) (hq : u.quiet = true) (h1 : u.onePoint = true)
     (hz : u.noOutput = false)
-    (hL : findPoints c H (sieveParams s) { o with domain := Id.run (joinIntervals o.domain) } =
-      .ok L)
+    (hL : findPoints c H { s with arraySize := defaultArraySize }
+      { o with domain := Id.run (joinIntervals o.domain) } = .ok L)
     (hK : (L.filter (Data.ofOutput u o).keeps).head? = some p) :
     run args = (printString u.stringBefore ++
       formatPoint (o.noCheck || o.noY) p.1 p.2.2 p.2.1 (u.printFormat.getD "").toList ++
@@ -925,13 +931,13 @@ theorem mem_filter_keeps_iff_of_input_eq_ok {args : List String} {c : List ℤ} 
     {s : SieveOptions} {o : Options} {u : Output} {L : List (ℤ × ℤ × ℤ)}
     (hS : 0 ≤ o.sturm → SturmTheorem) (hi : input args = .ok (c, H, s, o, u))
     (hc : o.noCheck = false)
-    (hL : findPoints c H (sieveParams s) { o with domain := Id.run (joinIntervals o.domain) } =
-      .ok L) {p : ℤ × ℤ × ℤ} :
+    (hL : findPoints c H { s with arraySize := defaultArraySize }
+      { o with domain := Id.run (joinIntervals o.domain) } = .ok L) {p : ℤ × ℤ × ℤ} :
     p ∈ L.filter (Data.ofOutput u o).keeps ↔ IsPoint c H p ∧ (o.noY = true → 0 ≤ p.2.1) ∧
       (u.pointsAtInfty = true ∨ p.2.2 ≠ 0) ∧ InRegion [] o.bLow o.bHigh p ∧
       (p.2.2 = 0 ∨ o.domain = [] ∨ InExactRegion u.ends o.domain.length (p.1 / p.2.2)) := by
   rw [List.mem_filter, mem_iff_isPoint_of_findPoints_eq_ok
-    (o := { o with domain := Id.run (joinIntervals o.domain) }) hS (wf_sieveParams s) hL hc,
+    (o := { o with domain := Id.run (joinIntervals o.domain) }) hS hL hc,
     keeps_ofOutput_iff, inRegion_iff_of_input_eq_ok hi]
   constructor
   · intro ⟨⟨hp, hy, hr⟩, hk1, hx⟩

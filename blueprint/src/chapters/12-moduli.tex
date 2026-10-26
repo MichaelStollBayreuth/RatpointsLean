@@ -1169,17 +1169,18 @@ writes back (\csource{find_points.c}{5120}{5120}, \csource{find_points.c}{5152}{
 \end{definition}
 
 \begin{definition}[The search with the print channel]\label{def:findPointsVerbose}
-  \uses{def:searchPoints, def:reversal, def:report, def:sturmRegion, def:Outcome, def:delivery,
+  \uses{def:searchPoints, def:reversal, def:sturmRegion, def:Outcome, def:delivery,
     def:Options, def:sieveOptions, def:normalize, def:searchIntervals, def:useCLong, def:maxDegree}
-  Proposed names: \lname{Ratpoints.findPointsWork}, \lname{Ratpoints.findPointsVerbose}. The search
-  of \verb|find_points_work_1| after the test of the leading zeros, with the report: of the
-  arguments, the reversal check, the search intervals, the Sturm step and the search, with whether
-  the caller left the number of primes to the library, a refusal coming with the data of the
-  callback as the report has left it (\csource{find_points.c}{4577}{4585}); and the search of
+  \lean{Ratpoints.findPointsWork, Ratpoints.findPointsVerbose}
+  \leanok
+  The search of \verb|find_points_work_1| after the test of the leading zeros, with the report
+  (I.15): of the arguments, the reversal check, the search intervals, the Sturm step and the search,
+  with whether the caller left the number of primes to the library, a refusal coming with the data
+  of the callback as the report has left it (\csource{find_points.c}{4577}{4585}); and the search of
   \verb|find_points| with the callback and the print channel, the refusals of the program in its
   order and then that search, a refusal coming with the data of the callback
-  (\csource{find_points.c}{4523}{4528}, \csource{find_points.c}{4546}{4546},
-  \csource{find_points.c}{4551}{4552}, \csource{find_points.c}{4557}{4559},
+  (\csource{find_points.c}{4523}{4528}, \csource{find_points.c}{4546}{4546}, with I.13
+  \verb|find_points.c:4551-4552|, \csource{find_points.c}{4557}{4559},
   \csource{find_points.c}{4564}{4565}, \csource{find_points.c}{4567}{4571},
   \csource{find_points.c}{4606}{4606}, \csource{find_points.c}{4624}{4633},
   \csource{find_points.c}{4658}{4658}, \csource{find_points.c}{5219}{5220},
@@ -1212,13 +1213,15 @@ their text does not mention it.
 
 \begin{lemma}[The search with the default print channel]\label{lem:choiceSearch}
   \uses{def:findPointsVerbose, def:findPointsWith}
-  Proposed name: \lname{Ratpoints.findPointsWith\_eq}. With the print channel that prints nothing,
-  the search with a callback is the refusals in the order of the program followed by the reversal
-  check, the search intervals, the Sturm step and the search of the polynomial: the report prints
-  nothing, and a refusal gives back its error alone.
+  \lean{Ratpoints.findPointsWith_eq}
+  \leanok
+  With the print channel that prints nothing, the search with a callback is the refusals in the
+  order of the program followed by the reversal check, the search intervals, the Sturm step and the
+  search of the polynomial: the report prints nothing, and a refusal gives back its error alone.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   The print channel that prints nothing leaves a delivery as it is, by \verb|rfl|, and the error of
   a refusal is the first component of its pair.
 \end{proof}

@@ -3,8 +3,8 @@
 A Lean 4 model of [ratpoints](https://github.com/MichaelStollBayreuth/ratpoints), the C program that
 finds the rational points of bounded height on the curves `y² = F(x, z)`, where `F` is a binary form
 of even degree with integer coefficients, by sieving; with proofs that the model meets a short
-specification for every well-formed choice of the sieving parameters, and a record, checked in CI,
-of which Lean definition models which lines of C.
+specification for every value of the options of the sieve, and a record, checked in CI, of which
+Lean definition models which lines of C.
 
 The C code is that of ratpoints 3.1.1; the project moves to each new release of ratpoints, and a
 new optimization of the C code comes, as far as possible, with its soundness proof here.
@@ -148,9 +148,15 @@ theorems add the search intervals that are not well formed; `lake comparator --p
 the twelve on 2026-10-18. `ratpoints-lean` reads `-l -u -dl -du` as ratpoints reads them, prints the
 points of its search region and the messages on the search region and on the search intervals, and a
 theorem says which points it prints; the differential tests compare search regions and depths of the
-Sturm step too: 4530 comparisons in the default suites and 13 in the suite run locally. The
-blueprint and the API documentation will be at
-<https://michaelstollbayreuth.github.io/RatpointsLean/> once the repository is public.
+Sturm step too: 4530 comparisons in the default suites and 13 in the suite run locally. Stage I,
+the choice of the moduli by the curve, the blocks of the run with the correction of the moduli, the
+numbers of the moduli used and the report under `-v`, is under way: the theorems and the challenge
+of Comparator take the options of the sieve with no hypothesis on them, in place of the sieving
+parameters and their well-formedness, which are internal to the search, so that the challenge has
+eleven statements, the well-formedness of the parameters of the program no longer among them;
+`lake comparator --paranoid` accepted the eleven on 2026-10-25. The blueprint and the API
+documentation will be at <https://michaelstollbayreuth.github.io/RatpointsLean/> once the repository
+is public.
 
 ## Layout
 

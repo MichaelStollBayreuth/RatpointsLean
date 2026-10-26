@@ -649,19 +649,20 @@ store of the tables of rows, the switch of the checked loop, the points at infin
 the callback has stopped the search, and the sieving (Definition~\ref{def:sieving}): the shape and
 the run over the denominators from $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$, which
 $\mathrm{findPoints}$ passes as $1$ and $H$, with the cut points of the parameters and the store
-that \verb|sieving_info| returns. For well-formed parameters, $1 \le H < 2^{63}$,
-$1 \le b_{\mathrm{low}}$, $b_{\mathrm{high}} \le H$ and $d$ the degree of $c$, there is a sound test
-of the sieve, one that lets the numerator of every point through, for which it delivers the points
-at infinity followed by the points of the check with the flags of the numerators that pass the test
-over the denominators of the search (Definition~\ref{def:searchDens}), in their order, up to the
-first call that stops the search, also at both exits; without the options of the output these are
-the points of the reference over the candidate $(1, 0)$ and these denominators, each mapped by
-$\mathrm{swapPoint}$ when the flag of the reversal is set (Lemma~\ref{lem:searchList}, which uses
-Definitions~\ref{def:Shape} and~\ref{def:searchDens}, Lemmas~\ref{lem:twoAdic_exit}
-and~\ref{lem:shape_dens} and the reduction of the run). The node of the search holds the C ranges of
-the flags and of the exits, the call of \verb|sieving_info| and the list of the sieve entries that
-it fills among them, and the return after the points at infinity with the return when the Sturm step
-leaves nothing to search (\csource{find_points.c}{4588}{4589}, \csource{find_points.c}{4595}{4596},
+that \verb|sieving_info| returns. For normalized options of the sieve, whose parameters are
+well-formed, $1 \le H < 2^{63}$, $1 \le b_{\mathrm{low}}$, $b_{\mathrm{high}} \le H$ and $d$ the
+degree of $c$, there is a sound test of the sieve, one that lets the numerator of every point
+through, for which it delivers the points at infinity followed by the points of the check with the
+flags of the numerators that pass the test over the denominators of the search
+(Definition~\ref{def:searchDens}), in their order, up to the first call that stops the search, also
+at both exits; without the options of the output these are the points of the reference over the
+candidate $(1, 0)$ and these denominators, each mapped by $\mathrm{swapPoint}$ when the flag of the
+reversal is set (Lemma~\ref{lem:searchList}, which uses Definitions~\ref{def:Shape}
+and~\ref{def:searchDens}, Lemmas~\ref{lem:twoAdic_exit} and~\ref{lem:shape_dens} and the reduction
+of the run). The node of the search holds the C ranges of the flags and of the exits, the call of
+\verb|sieving_info| and the list of the sieve entries that it fills among them, and the return after
+the points at infinity with the return when the Sturm step leaves nothing to search
+(\csource{find_points.c}{4588}{4589}, \csource{find_points.c}{4595}{4596},
 \csource{find_points.c}{4602}{4602}, \csource{find_points.c}{4603}{4604},
 \csource{find_points.c}{4607}{4607}, \csource{find_points.c}{4900}{4943},
 \csource{find_points.c}{4948}{4948}, \csource{find_points.c}{4954}{4963},
@@ -688,8 +689,8 @@ frame of the block that sets up the run and the rows of offsets of the classes
     lem:examinePrime_none, lem:reversal_swap, def:normalize, def:searchRegion, def:inIntervals}
   \lean{Ratpoints.exists_eq_of_findPoints_eq_ok, Ratpoints.perm_flatMap_squares1Dens, Ratpoints.perm_filter_bruteForce_append_flatMap_searchDens, Ratpoints.append_flatMap_searchDens_eq_bruteForce, List.perm_flatMap_of_nodup}
   \leanok
-  For well-formed parameters and options with $\mathrm{noCheck}$ false, if
-  $\mathrm{findPoints}(c, H, P, o)$ returns the list $L$, and the reversal check with the normalized
+  For the options $s$ of the sieve and options $o$ with $\mathrm{noCheck}$ false, if
+  $\mathrm{findPoints}(c, H, s, o)$ returns the list $L$, and the reversal check with the normalized
   switch hands on the polynomial $c'$ of degree $d'$ with the flag of the reversal: $L$ is the list
   of the points that the brute-force reference of $c'$ finds over the candidate $(1, 0)$, its points
   at infinity, followed by those that it finds over the denominators of the search of $c'$ in the
@@ -742,8 +743,9 @@ and the protocol of the delivery (Section~\ref{sec:certifiedG}); since stage~H s
 change with the search region of the options, three of them taking the hypothesis of Sturm's theorem
 when the Sturm step is on (Section~\ref{sec:certifiedH}); the structure \verb|Params| and its
 well-formedness, which stage~E left as they were, gain the number of primes examined and the
-composite moduli with stage~F1, which changes what those statements quantify over
-(Chapter~\ref{chap:tables}).
+composite moduli with stage~F1, which changed what those statements quantified over
+(Chapter~\ref{chap:tables}), until stage~I, whose statements take the options of the sieve with no
+hypothesis on them (Section~\ref{sec:certifiedI}).
 
 \section{The command-line program and the differential tests}\label{sec:denCli}
 

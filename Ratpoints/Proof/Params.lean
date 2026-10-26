@@ -72,9 +72,9 @@ least one bit array.
   `Ratpoints.Params.WF.exists_getElem!_primeTable_eq_of_mem_drop`: what the search reads off
   well-formed parameters, beyond their fields, the last that the moduli of the third stage are among
   the first `Ratpoints.numPrimes` primes of the table.
-* `Ratpoints.wf_sieveParams`: every parameter set that the options of the program give is
-  well-formed; comparator certifies this (`comparator/Challenge.lean`), which also rules out a
-  well-formedness that nothing satisfies.
+* `Ratpoints.wf_sieveParams`: every parameter set that the options of the sieve give is
+  well-formed, so that the search, which takes its parameters from its options, runs with
+  well-formed parameters.
 * `Ratpoints.wf_defaultParams`: the parameters of a run without options are well-formed.
 * `Ratpoints.one_le_arraySizeAt`, `Ratpoints.Params.one_le_arraySizeAt`: for a height bound
   `H ≥ 1` a piece of the numerators has at least one bit array.
@@ -567,10 +567,11 @@ private theorem exists_lt_numPrimes_of_mem_moduli_sieveParams {o : SieveOptions}
   obtain ⟨i, hi, rfl⟩ := List.mem_take_iff_getElem.mp (he ▸ hm)
   exact ⟨i, (lt_min_iff.mp hi).1.trans_le hk, by rw [Array.getElem_toList, getElem!_pos]⟩
 
-/-- Every parameter set that the options of the program give is well-formed; comparator certifies
-this (`comparator/Challenge.lean`): its moduli are the first primes of the table, which are below
-`Ratpoints.maxPrimeEven` (`Ratpoints.getElem!_primeTable_lt_maxPrimeEven`), and the only divisor
-above `1` of such a prime is the prime itself. -/
+/-- Every parameter set that the options of the sieve give is well-formed, so that the search, which
+takes its parameters from its options (`Ratpoints.searchPoints`), runs with well-formed parameters:
+its moduli are the first primes of the table, which are below `Ratpoints.maxPrimeEven`
+(`Ratpoints.getElem!_primeTable_lt_maxPrimeEven`), and the only divisor above `1` of such a prime is
+the prime itself. -/
 theorem wf_sieveParams (o : SieveOptions) : (sieveParams o).WF where
   modulus m hm := by
     obtain ⟨pn, hpn, rfl⟩ := exists_lt_numPrimes_of_mem_moduli_sieveParams hm
@@ -600,14 +601,6 @@ theorem one_le_arraySizeAt (a : ℕ) {H : ℕ} (hH : 1 ≤ H) : 1 ≤ arraySizeA
 
 theorem Params.one_le_arraySizeAt (P : Params) {H : ℕ} (hH : 1 ≤ H) : 1 ≤ P.arraySizeAt H :=
   Ratpoints.one_le_arraySizeAt P.arraySize hH
-
-/-! ### The axioms of the certified theorem -/
-
-/--
-info: 'Ratpoints.wf_sieveParams' depends on axioms: [propext, Classical.choice, Quot.sound]
--/
-#guard_msgs in
-#print axioms wf_sieveParams
 
 end Ratpoints
 
