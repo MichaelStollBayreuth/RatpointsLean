@@ -751,7 +751,7 @@ with the thunk `checks` of the third stage: none if `high < low`, and otherwise 
 `words`, the number of these bit arrays that hold one of the bits that passes the pattern of the
 class (`Ratpoints.Sieve.classBit`) and `keep1`, in `arrays`, and the counts of the tests of a
 candidate (`Ratpoints.Sieve.testedCounts`) of the numerators of the bits that pass the pattern of
-the class and `keep`. -/
+the class and `keep`, each as a `UInt64`, wrapping. -/
 def bitsCounts (b : Nat) (checks : Thunk (List CheckSpec)) (cl : NumClass)
     (keep1 keep : Int → Bool) (low high : Int) : Counters :=
   if low ≤ high then

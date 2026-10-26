@@ -334,8 +334,6 @@ private theorem firstStages_value (pool : Array ModulusCandidate) (s : SieveOpti
     ⦃ fun r ↦ r = Id.run (firstStages pool s target ct est bpws sp2e) ⦄ :=
   ⟨fun _ ↦ rfl⟩
 
-/-! ### The end of the choice -/
-
 theorem ChoicePoolWF.sortFrom {c : List ℤ} {sp2 : ℕ} {pool : Array ModulusCandidate}
     (h : ChoicePoolWF c sp2 pool) (hs : sp2 ≤ pool.size)
     (le : ModulusCandidate → ModulusCandidate → Bool) :

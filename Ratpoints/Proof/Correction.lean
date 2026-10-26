@@ -428,7 +428,7 @@ theorem folded_correctionAfter (k : Nat) :
     exact ((runFold_decisions_spec s P _ _ _).le_wp trivial).1.trans (congrArg (· + 1) ih)
 
 /-- The decisions after the folds of the first `k` blocks are those after the first `m ≤ k`
-followed by decisions for blocks after the first `m + Ratpoints.adaptLag` blocks. -/
+followed by decisions for the blocks from `m + Ratpoints.adaptLag + 1` on. -/
 theorem exists_toList_decisions_correctionAfter {m k : Nat} (hmk : m ≤ k) :
     ∃ L, (correctionAfter H s P entries magics cls db shape iv bLow bHigh k).decisions.toList =
       (correctionAfter H s P entries magics cls db shape iv bLow bHigh m).decisions.toList ++ L ∧
@@ -895,7 +895,10 @@ theorem deliverSlots_spec (slot : Nat → Array (Int × Int × Int)) (n : Nat) (
 appending callback (`Ratpoints.appendPoint`) from an empty array the points of the block with its
 decision (`Ratpoints.Sieve.blockPoints`): the contract of one block
 (`Ratpoints.Sieve.runBlock_spec`) and the lag of the correction
-(`Ratpoints.Sieve.getElem!_findDecision_correctionAfter`). -/
+(`Ratpoints.Sieve.getElem!_findDecision_correctionAfter`). The pool of threads of the C code meets
+these hypotheses: it starts block `i` only once the blocks before block `i - RP_ADAPT_LAG` are
+folded (`find_points.c:4292-4296`), and the tables of rows that its threads share only gain complete
+rows (`init.c:180`, `init.c:241`, `init.c:391`, `init.c:443`). -/
 theorem toList_info_run_runBlock_appendPoint (c : List Int) (d H A : Nat) (fl : CheckFlags)
     (s : SieveOptions) (P : Params) (entries : List SieveEntry) (magics : Array Nat)
     (cls : Vector NumClass 64) (offsets : Array Nat) (db : UInt64) (shape : Shape)
@@ -923,11 +926,15 @@ theorem toList_info_run_runBlock_appendPoint (c : List Int) (d H A : Nat) (fl : 
 
 /-- The threads preserve the output of the run: the blocks of the run, each sifted with the
 decisions after the folds of the first `k i ≥ i - Ratpoints.adaptLag` blocks and a store of its own
-that fits all the entries, into a slot by the appending callback, their slots delivered in the
-order of the blocks by the calling thread (`Ratpoints.Sieve.deliverSlots`), give what the run on
-the calling thread gives (`Ratpoints.Sieve.sieveRun`), for the hypotheses of
+that fits all the entries, into a slot by the appending callback, their slots delivered in the order
+of the blocks by the calling thread (`Ratpoints.Sieve.deliverSlots`), give what the run on the
+calling thread gives (`Ratpoints.Sieve.sieveRun`), for the hypotheses of
 `Ratpoints.Sieve.sieveRun_spec` and words of the classes and ranges of the numerators of
-`Ratpoints.Sieve.RunWords`. -/
+`Ratpoints.Sieve.RunWords`. The pool of threads of the C code meets these hypotheses: a thread
+starts block `i` only once the blocks before block `i - RP_ADAPT_LAG` are folded
+(`find_points.c:4292-4296`), and the tables of rows that the threads share only gain complete rows,
+published once built (`init.c:180`, `init.c:241`, `init.c:391`, `init.c:443`), so that they fit all
+the entries whenever a thread reads them (`find_points.c:3160`, `find_points.c:3533-3535`). -/
 theorem run_deliverSlots_eq_fst_run_sieveRun (c : List Int) (d H A : Nat) (fl : CheckFlags)
     (s : SieveOptions) (P : Params) (entries : List SieveEntry) (magics : Array Nat)
     (cls : Vector NumClass 64) (offsets : Array Nat) (db : UInt64) (shape : Shape)

@@ -603,12 +603,11 @@ theorem ExaminePrimeInvariant.some_eq {c : List ℤ} {d p np : ℕ} {t : Array B
 
 attribute [local irreducible] ExaminePrimeInvariant in
 /-- The contract of `Ratpoints.Sieve.examinePrime?`: for `0 < p < maxPrimeEven`, on both paths of
-the reduction of the coefficients, the table with the exit is that of the reference
-`Ratpoints.Sieve.examinePrime`, handed back with the `d + 1` coefficients reduced modulo `p`, when
-one of its entries is true, and none otherwise; the count of the residues that are squares, kept
-beside the table, is the count of its true entries. Horner's rule with Barrett's reduction on its
-schedule gives the values of Horner's rule reduced at every step
-(`Ratpoints.Sieve.hornerBarrett_spec`). -/
+the reduction of the coefficients, the table with the exit is that of
+`Ratpoints.Sieve.examinePrime`, handed back with the `d + 1` coefficients reduced modulo `p` (the
+code and the density of the prime projected away: no contract reads them), when one of its entries
+is true, and none otherwise. Horner's rule with Barrett's reduction on its schedule gives the values
+of Horner's rule reduced at every step (`Ratpoints.Sieve.hornerBarrett_spec`). -/
 @[spec]
 theorem examinePrime?_spec (c : List ℤ) (d p : ℕ) (u : Bool) :
     ⦃ 0 < p ∧ p < maxPrimeEven ⦄ examinePrime? c d p u
@@ -616,6 +615,8 @@ theorem examinePrime?_spec (c : List ℤ) (d p : ℕ) (u : Bool) :
         some (examinePrime c d p, (Array.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat)
       else none ⦄ := by
   vcgen [examinePrime?] invariants
+  -- the count of the residues with a square value, kept beside the table, is the count of its
+  -- true entries
   · fun pref _ s ↦ ExaminePrimeInvariant c d p pref.length s.2 ∧ s.1 = s.2.toList.count true
   all_goals try rw [map_range_toNat_ite_modLong] at *
   all_goals obtain ⟨hp0, hp⟩ := ‹0 < p ∧ p < maxPrimeEven›

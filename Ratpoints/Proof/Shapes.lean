@@ -98,7 +98,7 @@ namespace Sieve
 
 The denominators of each shape in the order in which the blocks of the run visit them
 (`Ratpoints.Sieve.Shape.blockLoop`), listed, and the tests of a shape on a single denominator: the
-reference of the loops over the denominators, which no longer list them. -/
+reference of the loops of the blocks over the denominators, which do not list them. -/
 
 /-- The word of the 64 denominators `64 w + j` that pass the class test and the forbidden divisors
 tested with words: the word `db` of the classes that admit a numerator (`Ratpoints.Sieve.denBits`),
