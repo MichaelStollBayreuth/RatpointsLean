@@ -785,18 +785,19 @@ proof uses then, and rewords the docstrings of the model that name it.
 \section{The counters}\label{sec:counters}
 
 \begin{definition}[The counters of the sieve]\label{def:counters}
-  Proposed name: \lname{Ratpoints.Sieve.Counters}. The six counters of the sieving thread, the words
-  swept by the first stage, the bit arrays that survive it, the numerators extracted, those coprime
-  to the denominator and those that pass the third stage, and the calls of the sieve of one
-  denominator, as $64$-bit words that wrap as the \verb|unsigned long|s of the C code do
-  (\csource{rp-private.h}{579}{581}): a record of its own, passed beside the delivery and returned
-  with it, so that the delivery of stage~G, and with it the initial delivery
-  $\langle \mathrm{info}, 0, \mathrm{false}\rangle$ of the protocol statement, does not change. The
-  components count where the C code counts, within the lines that they model already: the test of a
-  candidate (Definition~\ref{def:accepted}) the coprime numerators after the test for common factors
-  and the checks after the third stage, returning the counters with its verdict; the walk through
-  the set bits of a word (Definition~\ref{def:walkWord}) each numerator extracted, in both arms of
-  the extraction (Definition~\ref{def:siftBitArray}); the scan of a piece
+  \lean{Ratpoints.Sieve.Counters}
+  \leanok
+  The six counters of the sieving thread, the words swept by the first stage, the bit arrays that
+  survive it, the numerators extracted, those coprime to the denominator and those that pass the
+  third stage, and the calls of the sieve of one denominator, as $64$-bit words that wrap as the
+  \verb|unsigned long|s of the C code do (\csource{rp-private.h}{579}{581}): a record of its own,
+  passed beside the delivery and returned with it, so that the delivery of stage~G, and with it the
+  initial delivery $\langle \mathrm{info}, 0, \mathrm{false}\rangle$ of the protocol statement, does
+  not change. The components count where the C code counts, within the lines that they model
+  already: the test of a candidate (Definition~\ref{def:accepted}) the coprime numerators after the
+  test for common factors and the checks after the third stage, returning the counters with its
+  verdict; the walk through the set bits of a word (Definition~\ref{def:walkWord}) each numerator
+  extracted, in both arms of the extraction (Definition~\ref{def:siftBitArray}); the scan of a piece
   (Definition~\ref{def:scanPiece}) each bit array that is not zero after the first stage; one piece
   (Definition~\ref{def:siftPiece}) its $n\,\mathrm{rbaPack}$ words, multiplied as \verb|UInt64|s as
   the C code multiplies the \verb|unsigned long| by \verb|RBA_PACK|; the bits of an interval
@@ -808,41 +809,28 @@ proof uses then, and rewords the docstrings of the model that name it.
 \begin{lemma}[The counters in closed form]\label{lem:counters}
   \uses{def:counters, lem:accepted, lem:siftBitArray, lem:relprime, lem:stage3, def:exactBounds,
     def:scanPiece, def:siftBits, def:siftPiece, lem:reads_row}
-  Proposed names: \lname{Ratpoints.Sieve.instAddCounters}, \lname{Ratpoints.Sieve.Counters.ext},
-  \lname{Ratpoints.Sieve.Counters.add\_assoc}, \lname{Ratpoints.Sieve.Counters.add\_comm},
-  \lname{Ratpoints.Sieve.Counters.add\_empty}, \lname{Ratpoints.Sieve.Counters.empty\_add},
-  \lname{Ratpoints.Sieve.testedCounts}, \lname{Ratpoints.Sieve.testedCounts\_nil},
-  \lname{Ratpoints.Sieve.testedCounts\_append}, \lname{Ratpoints.Sieve.testedCounts\_eq},
-  \lname{Ratpoints.Sieve.snd\_run\_accepted}, \lname{Ratpoints.Sieve.run\_relprime\_toInt64},
-  \lname{Ratpoints.Sieve.walkWord\_counters\_spec},
-  \lname{Ratpoints.Sieve.siftBitArrayByWords\_counters\_spec},
-  \lname{Ratpoints.Sieve.siftBitArrayWhole\_counters\_spec},
-  \lname{Ratpoints.Sieve.siftBitArray\_counters\_spec},
-  \lname{Ratpoints.Sieve.isZeroAt\_eq\_not\_any}, \lname{Ratpoints.Sieve.scanPiece\_counters\_spec},
-  \lname{Ratpoints.Sieve.arraysWith}, \lname{Ratpoints.Sieve.siftPiece\_counters\_spec},
-  \lname{Ratpoints.Sieve.bitsCounts}, \lname{Ratpoints.Sieve.siftBits\_counters\_spec},
-  \lname{Ratpoints.Sieve.intervalCounts}, \lname{Ratpoints.Sieve.siftCounts},
-  \lname{Ratpoints.Sieve.SiftIntervalsCounts}, \lname{Ratpoints.Sieve.WalkCountsInvariant},
-  \lname{Ratpoints.Sieve.SiftBitArrayCounts}, \lname{Ratpoints.Sieve.ScanPieceCounts},
-  \lname{Ratpoints.Sieve.SiftCounts}. The counters add field by field, wrapping, a commutative and
-  associative operation with the empty record as zero. While the callback has not stopped the
-  search, each counting component returns its counters plus a function of its arguments that reads
-  neither the callback, nor the delivery, nor the flags of the output, nor the store, nor the size
-  of the pieces: for the test of a list of numerators of a denominator $b$, their number, those
-  coprime to $b$ and those that pass the test for common factors and the third stage, which for
-  $|a| \le H < 2^{63}$, $0 < b < 2^{63}$ and prime entries of the third stage are the numerators
-  with $\gcd(a, b) = 1$ and those of them that survive the entries; for a bit array, the test of the
-  numerators of its set bits; for a piece, its words, the bit arrays that hold a bit that passes the
-  class test, the first stage and the masks, and the test of the numerators that pass all the
-  stages; for the bits of an interval, the words of all its bit arrays, the bit arrays holding a bit
-  in the interval that passes the first stage, and the test of the numerators in the interval that
-  pass all the stages; and for one denominator, one call plus the counts of its intervals up to the
-  first that ends the denominator. The contract of one denominator (Definition~\ref{def:sift}) gains
-  this as a third conjunct, beside the store and the delivery.
+  \lean{Ratpoints.Sieve.instAddCounters, Ratpoints.Sieve.Counters.ext, Ratpoints.Sieve.Counters.add_assoc, Ratpoints.Sieve.Counters.add_comm, Ratpoints.Sieve.Counters.add_empty, Ratpoints.Sieve.Counters.empty_add, Ratpoints.Sieve.testedCounts, Ratpoints.Sieve.testedCounts_nil, Ratpoints.Sieve.testedCounts_append, Ratpoints.Sieve.testedCounts_eq, Ratpoints.Sieve.snd_run_accepted, Ratpoints.Sieve.run_relprime_toInt64, Ratpoints.Sieve.walkWord_counters_spec, Ratpoints.Sieve.siftBitArrayByWords_counters_spec, Ratpoints.Sieve.siftBitArrayWhole_counters_spec, Ratpoints.Sieve.siftBitArray_counters_spec, Ratpoints.Sieve.isZeroAt_eq_not_any, Ratpoints.Sieve.scanPiece_counters_spec, Ratpoints.Sieve.arraysWith, Ratpoints.Sieve.siftPiece_counters_spec, Ratpoints.Sieve.bitsCounts, Ratpoints.Sieve.siftBits_counters_spec, Ratpoints.Sieve.intervalCounts, Ratpoints.Sieve.siftCounts, Ratpoints.Sieve.SiftIntervalsCounts, Ratpoints.Sieve.WalkCountsInvariant, Ratpoints.Sieve.SiftBitArrayCounts, Ratpoints.Sieve.ScanPieceCounts, Ratpoints.Sieve.SiftCounts}
+  \leanok
+  The counters add field by field, wrapping, a commutative and associative operation with the empty
+  record as zero. While the callback has not stopped the search, each counting component returns its
+  counters plus a function of its arguments that reads neither the callback, nor the delivery, nor
+  the flags of the output, nor the store, nor the size of the pieces: for the test of a list of
+  numerators of a denominator $b$, their number, those coprime to $b$ and those that pass the test
+  for common factors and the third stage, which for $|a| \le H < 2^{63}$, $0 < b < 2^{63}$ and prime
+  entries of the third stage are the numerators with $\gcd(a, b) = 1$ and those of them that survive
+  the entries; for a bit array, the test of the numerators of its set bits; for a piece, its words,
+  the bit arrays that hold a bit that passes the class test, the first stage and the masks, and the
+  test of the numerators that pass all the stages; for the bits of an interval, the words of all its
+  bit arrays, the bit arrays holding a bit in the interval that passes the first stage, and the test
+  of the numerators in the interval that pass all the stages; and for one denominator, one call plus
+  the counts of its intervals up to the first that ends the denominator. The contract of one
+  denominator (Definition~\ref{def:sift}) gains this as a third conjunct, beside the store and the
+  delivery.
 \end{lemma}
 
 \begin{proof}
   \uses{def:andRowsChunked, def:intervalBits, lem:andRowsChunked}
+  \leanok
   Each counting component has a contract of its own for its counters, with named invariants that
   carry the counts of the part of the loop done, so that the contracts of the delivery keep their
   proofs; the contract of one denominator passes those of its callees to the program logic. The

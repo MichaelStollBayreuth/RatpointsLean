@@ -926,8 +926,11 @@ one test of the flag after each denominator and one return, for the return of `r
 shape (lines 3928, 3957, 4044, 4068) and the end of the loop over the blocks (line 5158); the store
 of the tables of rows passed from one denominator to the next, for the arrays `sieve` of the entries
 of the arguments, which the run reads and fills, its last state not returned, as nothing reads the
-tables of rows after the run; natural numbers for the `long`s; no correction of the moduli between
-the blocks (stage I); no output under `DEBUG`. -/
+tables of rows after the run; the counters of the sieve (`Ratpoints.Sieve.Counters`) started empty
+for each denominator and discarded, for the counters of the sieving thread, which `worker_init` and
+`run_block` clear and from which ratpoints corrects the moduli between the blocks (stage I); natural
+numbers for the `long`s; no correction of the moduli between the blocks (stage I); no output under
+`DEBUG`. -/
 def sieveRun {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : List Int) (d H A : Nat)
     (fl : CheckFlags) (sp1 sp2 : Nat) (entries : List SieveEntry) (magics : Array Nat)
     (cls : Vector NumClass 64) (offsets : Array Nat) (db : UInt64) (shape : Shape)
@@ -944,7 +947,7 @@ def sieveRun {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c
     if ← shape.keep cls b then
       let cl := cls[b % 64]!
       let bp := fillBpList b cl.k es mgs
-      let (r', st) ← sift process c d H A b fl sp1 es mgs bp cl offsets es3 mgs3 iv store r
+      let (r', st, _) ← sift process c d H A b fl sp1 es mgs bp cl offsets es3 mgs3 iv store r {}
       r := r'
       store := st
       if r.quit then return r

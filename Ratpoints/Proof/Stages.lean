@@ -52,6 +52,9 @@ with loop invariants that are named definitions.
   and the third stage.
 * `Ratpoints.Sieve.pointsAtInfinityList`: the points at infinity that the search delivers with the
   flags of the search.
+* `Ratpoints.Sieve.testedCounts`: the counts of the tests of a candidate of a list of numerators,
+  the closed form of what the components of the sieve add to the counters
+  (`Ratpoints.Sieve.Counters`, added field by field).
 * `Ratpoints.Sieve.SecondStageInvariant`, `Ratpoints.Sieve.SecondStageWordInvariant`: the
   invariants of the loops of the second stage on a bit array and on a word, over the moduli with
   their reciprocals.
@@ -73,6 +76,8 @@ with loop invariants that are named definitions.
   `|a| ≤ H < 2 ^ 63` and a denominator `0 < b < 2 ^ 63`, the test with the exact check gives the
   points of the check with the flags (`Ratpoints.Sieve.checkNumWith`) when `a` survives the entries
   of the third stage, and none otherwise.
+* `Ratpoints.Sieve.snd_run_accepted`: the test of a candidate with the count of the numerator before
+  it adds the counts of `Ratpoints.Sieve.testedCounts` to the counters.
 * `Ratpoints.Sieve.checkPoint_eq_deliver`, `Ratpoints.Sieve.pointsAtInfinity_eq_deliver`: the exact
   check and the points at infinity deliver their lists to the callback, the second call left out
   after a call that stops the search.
@@ -530,28 +535,188 @@ theorem run_stage3_fillChecks {es : List SieveEntry} (hes : ∀ e ∈ es, e.IsPr
 `0 < b < 2 ^ 63` is the test on the integers, and the thunk of the third stage is forced only when
 the numerator is prime to `b`. -/
 @[spec]
-theorem accepted_spec (a : Int) (b : Nat) (checks : Thunk (List CheckSpec)) :
-    ⦃ 0 < b ∧ a.natAbs < 2 ^ 63 ∧ b < 2 ^ 63 ⦄ accepted a b checks
-    ⦃ fun r ↦ r = (decide (Int.gcd a b = 1) && checks.get.all (·.admits a)) ⦄ := by
+theorem accepted_spec (a : Int) (b : Nat) (checks : Thunk (List CheckSpec)) (cnt : Counters) :
+    ⦃ 0 < b ∧ a.natAbs < 2 ^ 63 ∧ b < 2 ^ 63 ⦄ accepted a b checks cnt
+    ⦃ fun r ↦ r.1 = (decide (Int.gcd a b = 1) && checks.get.all (·.admits a)) ⦄ := by
   vcgen [accepted]
   all_goals obtain ⟨hb0, ha, hb⟩ := ‹0 < b ∧ a.natAbs < 2 ^ 63 ∧ b < 2 ^ 63›
   all_goals first
     | exact ⟨Int64.minValue_lt_ofInt ha, Int64.ofNat_pos hb0 hb⟩
     | simp_all [Int64.toInt_ofInt_of_le (n := a) (by lia) (by lia), Int64.toInt_ofNat_of_lt hb]
 
+/-- Whether a numerator passes the test of a candidate does not depend on the counters. -/
+theorem fst_run_accepted (a : Int) (b : Nat) (checks : Thunk (List CheckSpec))
+    (cnt cnt' : Counters) :
+    (Id.run (accepted a b checks cnt)).1 = (Id.run (accepted a b checks cnt')).1 := by
+  simp only [accepted]
+  generalize relprime a.toInt64 b.toInt64 = x
+  generalize stage3 a checks.get = y
+  cases x <;> cases y <;> rfl
+
 /-- For `|a| ≤ H < 2 ^ 63`, a denominator `0 < b < 2 ^ 63` and the thunk of what the third stage
 needs of the sieve entries `es` of the shape of `Ratpoints.Sieve.SieveEntry.IsPrimeEntry`, with the
 reciprocals of their moduli, for `b` and `H`, a numerator goes on to the exact check when it is
 prime to `b` and survives these entries. -/
 theorem run_accepted {es : List SieveEntry} (hes : ∀ e ∈ es, e.IsPrimeEntry) {a : Int}
-    {b H : Nat} {checks : Thunk (List CheckSpec)}
+    {b H : Nat} {checks : Thunk (List CheckSpec)} (cnt : Counters)
     (hc : checks.get = fillChecks b H es (es.map fun e ↦ magic e.p)) (hb : 0 < b)
     (hb63 : b < 2 ^ 63) (ha : a.natAbs ≤ H) (hH : H < 2 ^ 63) :
-    Id.run (accepted a b checks) = (decide (Int.gcd a b = 1) && survives es b a) := by
-  rw [Std.WP.Id.of_run_eq_wp rfl _ ((accepted_spec a b checks).le_wp ⟨hb, by lia, hb63⟩), hc]
+    (Id.run (accepted a b checks cnt)).1 = (decide (Int.gcd a b = 1) && survives es b a) := by
+  rw [Std.WP.Id.of_run_eq_wp rfl _ ((accepted_spec a b checks cnt).le_wp ⟨hb, by lia, hb63⟩), hc]
   by_cases hab : Int.gcd a b = 1
   · rw [all_admits_fillChecks hes hab ha]
   · simp [hab]
+
+/-! ### The counters -/
+
+/-- The counters `c` and `k` (`Ratpoints.Sieve.Counters`) added field by field, wrapping as the
+`UInt64`s do: the counts of two pieces of work of the sieve, one after the other, as the run of
+ratpoints adds those of a block to its own (with the blocks and the correction, stage I). -/
+instance : Add Counters where
+  add c k := ⟨c.words + k.words, c.arrays + k.arrays, c.bits + k.bits, c.coprime + k.coprime,
+    c.checks + k.checks, c.sifts + k.sifts⟩
+
+theorem Counters.ext {c k : Counters} (h1 : c.words = k.words) (h2 : c.arrays = k.arrays)
+    (h3 : c.bits = k.bits) (h4 : c.coprime = k.coprime) (h5 : c.checks = k.checks)
+    (h6 : c.sifts = k.sifts) : c = k := by
+  cases c
+  cases k
+  simp_all
+
+theorem Counters.ext_iff {c k : Counters} :
+    c = k ↔ c.words = k.words ∧ c.arrays = k.arrays ∧ c.bits = k.bits ∧ c.coprime = k.coprime ∧
+      c.checks = k.checks ∧ c.sifts = k.sifts :=
+  ⟨fun h ↦ h ▸ ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩,
+    fun ⟨h1, h2, h3, h4, h5, h6⟩ ↦ Counters.ext h1 h2 h3 h4 h5 h6⟩
+
+@[simp]
+theorem Counters.words_add (c k : Counters) : (c + k).words = c.words + k.words := rfl
+
+@[simp]
+theorem Counters.arrays_add (c k : Counters) : (c + k).arrays = c.arrays + k.arrays := rfl
+
+@[simp]
+theorem Counters.bits_add (c k : Counters) : (c + k).bits = c.bits + k.bits := rfl
+
+@[simp]
+theorem Counters.coprime_add (c k : Counters) : (c + k).coprime = c.coprime + k.coprime := rfl
+
+@[simp]
+theorem Counters.checks_add (c k : Counters) : (c + k).checks = c.checks + k.checks := rfl
+
+@[simp]
+theorem Counters.sifts_add (c k : Counters) : (c + k).sifts = c.sifts + k.sifts := rfl
+
+theorem Counters.add_assoc (a b c : Counters) : a + b + c = a + (b + c) :=
+  Counters.ext (UInt64.add_assoc ..) (UInt64.add_assoc ..) (UInt64.add_assoc ..)
+    (UInt64.add_assoc ..) (UInt64.add_assoc ..) (UInt64.add_assoc ..)
+
+theorem Counters.add_comm (a b : Counters) : a + b = b + a :=
+  Counters.ext (UInt64.add_comm ..) (UInt64.add_comm ..) (UInt64.add_comm ..)
+    (UInt64.add_comm ..) (UInt64.add_comm ..) (UInt64.add_comm ..)
+
+instance : Std.Associative (α := Counters) (· + ·) := ⟨Counters.add_assoc⟩
+
+instance : Std.Commutative (α := Counters) (· + ·) := ⟨Counters.add_comm⟩
+
+@[simp]
+theorem Counters.add_empty (c : Counters) : c + {} = c :=
+  Counters.ext (UInt64.add_zero _) (UInt64.add_zero _) (UInt64.add_zero _) (UInt64.add_zero _)
+    (UInt64.add_zero _) (UInt64.add_zero _)
+
+@[simp]
+theorem Counters.empty_add (c : Counters) : {} + c = c := by
+  rw [Counters.add_comm, Counters.add_empty]
+
+/-- The counters with the count `arrays` one up. -/
+theorem Counters.arrays_add_one (c : Counters) :
+    { c with arrays := c.arrays + 1 } = c + { arrays := 1 } :=
+  Counters.ext (UInt64.add_zero _).symm rfl (UInt64.add_zero _).symm (UInt64.add_zero _).symm
+    (UInt64.add_zero _).symm (UInt64.add_zero _).symm
+
+/-- The counters with the count `words` up by `x`. -/
+theorem Counters.words_add_eq (c : Counters) (x : UInt64) :
+    { c with words := c.words + x } = c + { words := x } :=
+  Counters.ext rfl (UInt64.add_zero _).symm (UInt64.add_zero _).symm (UInt64.add_zero _).symm
+    (UInt64.add_zero _).symm (UInt64.add_zero _).symm
+
+theorem Counters.words_mk_add (x y : UInt64) :
+    ({ words := x + y } : Counters) = { words := x } + { words := y } :=
+  Counters.ext rfl (UInt64.add_zero 0).symm (UInt64.add_zero 0).symm (UInt64.add_zero 0).symm
+    (UInt64.add_zero 0).symm (UInt64.add_zero 0).symm
+
+theorem Counters.arrays_mk_add (x y : UInt64) :
+    ({ arrays := x + y } : Counters) = { arrays := x } + { arrays := y } :=
+  Counters.ext (UInt64.add_zero 0).symm rfl (UInt64.add_zero 0).symm (UInt64.add_zero 0).symm
+    (UInt64.add_zero 0).symm (UInt64.add_zero 0).symm
+
+/-- The counts of the tests of a candidate (`Ratpoints.Sieve.accepted`) of the numerators `as` over
+the denominator `b`, with the thunk `checks` of the third stage, each numerator counted in `bits`
+before its test, as the walk through the set bits of a word counts them
+(`Ratpoints.Sieve.walkWord`): `bits` the number of the numerators, `coprime` the number of those
+prime to `b` on the words of the C code (`Ratpoints.Sieve.relprime`), and `checks` the number of
+those that pass the third stage too, each as a `UInt64`, wrapping. -/
+def testedCounts (b : Nat) (checks : Thunk (List CheckSpec)) (as : List Int) : Counters where
+  bits := as.length.toUInt64
+  coprime := (as.countP fun a ↦ Id.run (relprime a.toInt64 b.toInt64)).toUInt64
+  checks := (as.countP fun a ↦ (Id.run (accepted a b checks {})).1).toUInt64
+
+@[simp]
+theorem testedCounts_nil (b : Nat) (checks : Thunk (List CheckSpec)) :
+    testedCounts b checks [] = {} :=
+  rfl
+
+theorem testedCounts_append (b : Nat) (checks : Thunk (List CheckSpec)) (as bs : List Int) :
+    testedCounts b checks (as ++ bs) = testedCounts b checks as + testedCounts b checks bs :=
+  Counters.ext rfl rfl (by simp [testedCounts, UInt64.ofNat_add])
+    (by simp [testedCounts, List.countP_append, UInt64.ofNat_add])
+    (by simp [testedCounts, List.countP_append, UInt64.ofNat_add]) rfl
+
+/-- The test for common factors on the words of the numerator `|a| < 2 ^ 63` and the denominator
+`0 < b < 2 ^ 63` is the test on the integers. -/
+theorem run_relprime_toInt64 {a : Int} {b : Nat} (hb0 : 0 < b) (ha : a.natAbs < 2 ^ 63)
+    (hb : b < 2 ^ 63) :
+    Id.run (relprime a.toInt64 b.toInt64) = decide (Int.gcd a b = 1) := by
+  rw [Std.WP.Id.of_run_eq_wp rfl _ ((relprime_spec _ _).le_wp
+    ⟨Int64.minValue_lt_ofInt ha, Int64.ofNat_pos hb0 hb⟩)]
+  simp [Int64.toInt_ofInt_of_le (n := a) (by lia) (by lia), Int64.toInt_ofNat_of_lt hb]
+
+/-- The counts of the tests of a candidate of numerators `|a| ≤ H < 2 ^ 63` over a denominator
+`0 < b < 2 ^ 63`, with the thunk of what the third stage needs of the sieve entries `es` of the
+shape of `Ratpoints.Sieve.SieveEntry.IsPrimeEntry` with the reciprocals of their moduli: the
+numerators, those prime to `b`, and those that survive the entries too. -/
+theorem testedCounts_eq {es : List SieveEntry} (hes : ∀ e ∈ es, e.IsPrimeEntry) {b H : Nat}
+    {checks : Thunk (List CheckSpec)}
+    (hc : checks.get = fillChecks b H es (es.map fun e ↦ magic e.p)) (hb : 0 < b)
+    (hb63 : b < 2 ^ 63) (hH : H < 2 ^ 63) {as : List Int}
+    (has : ∀ a ∈ as, a.natAbs ≤ H) :
+    testedCounts b checks as =
+      { bits := as.length.toUInt64
+        coprime := (as.countP fun a ↦ decide (Int.gcd a b = 1)).toUInt64
+        checks := (as.countP fun a ↦ decide (Int.gcd a b = 1) && survives es b a).toUInt64 } := by
+  refine Counters.ext rfl rfl rfl ?_ ?_ rfl
+  · exact congrArg UInt64.ofNat (List.countP_congr fun a ha ↦ by
+      rw [run_relprime_toInt64 hb (by lia [has a ha]) hb63])
+  · exact congrArg UInt64.ofNat (List.countP_congr fun a ha ↦ by
+      rw [run_accepted hes {} hc hb hb63 (has a ha) hH])
+
+/-- The counts of the test of a candidate, with the count of the numerator in `bits` before it as
+the walk through the set bits of a word counts it (`Ratpoints.Sieve.walkWord`). -/
+theorem snd_run_accepted (a : Int) (b : Nat) (checks : Thunk (List CheckSpec)) (cnt : Counters) :
+    (Id.run (accepted a b checks { cnt with bits := cnt.bits + 1 })).2 =
+      cnt + testedCounts b checks [a] := by
+  simp only [testedCounts, List.countP_cons, List.countP_nil, List.length_singleton, accepted]
+  generalize relprime a.toInt64 b.toInt64 = x
+  generalize stage3 a checks.get = y
+  cases x <;> cases y <;> simp [Counters.ext_iff, Id.run, bind, pure]
+
+/-- The counters `c'` after the test of a candidate of `a`, with its count in `bits` before it, in
+the shape of the verification conditions of the walk through the set bits of a word. -/
+theorem eq_add_testedCounts_of_eq_run_accepted {a : Int} {b : Nat}
+    {checks : Thunk (List CheckSpec)} {ok : Bool} {c c' : Counters}
+    (h : (ok, c') = Id.run (accepted a b checks { c with bits := c.bits + 1 })) :
+    c' = c + testedCounts b checks [a] :=
+  (congrArg Prod.snd h).trans (snd_run_accepted ..)
 
 /-- The map of the reversal keeps the `y`-coordinate. -/
 @[simp]
@@ -700,7 +865,8 @@ the thunk `checks` of the third stage), and none otherwise. -/
 def acceptedPoints (w : Thunk (List Int)) (d b : Nat) (fl : CheckFlags)
     (checks : Thunk (List CheckSpec)) (a : Int) :
     List (Int × Int × Int) :=
-  if Id.run (accepted a b checks) then checkPointList w.get (if d % 2 = 1 then b else 1) b fl a
+  if (Id.run (accepted a b checks {})).1 then
+    checkPointList w.get (if d % 2 = 1 then b else 1) b fl a
   else []
 
 /-- The points of `Ratpoints.Sieve.acceptedPoints`, the test of `Ratpoints.Sieve.accepted` followed
@@ -715,24 +881,26 @@ theorem acceptedPoints_eq_ite {es : List SieveEntry} (hes : ∀ e ∈ es, e.IsPr
     (hH : H < 2 ^ 63) :
     acceptedPoints w d b fl checks a =
       if survives es b a then checkNumWith w.get (if d % 2 = 1 then b else 1) b fl a else [] := by
-  rw [acceptedPoints, run_accepted hes hc hb hb63 ha hH]
+  rw [acceptedPoints, run_accepted hes {} hc hb hb63 ha hH]
   by_cases hab : Int.gcd a b = 1 <;> simp [hab, checkNumWith]
 
 /-- The exact check of a numerator that passes the test of a candidate, on a delivery whose flag is
 clear, delivers the points of `Ratpoints.Sieve.acceptedPoints`. -/
 theorem checkPoint_eq_deliver_acceptedPoints {σ : Type} (process : Int → Int → Int → σ → Answer σ)
     (w : Thunk (List Int)) (d b : Nat) (fl : CheckFlags) {checks : Thunk (List CheckSpec)}
-    {a : Int} (h : Id.run (accepted a b checks) = true) {r : Delivery σ} (hr : r.quit = false) :
+    {a : Int} {cnt : Counters} (h : (Id.run (accepted a b checks cnt)).1 = true) {r : Delivery σ}
+    (hr : r.quit = false) :
     checkPoint process w d b fl a r = r.deliver process (acceptedPoints w d b fl checks a) := by
-  simp only [acceptedPoints, h, ↓reduceIte, checkPoint_eq_deliver process w d b fl a hr]
+  simp only [acceptedPoints, fst_run_accepted a b checks {} cnt, h, ↓reduceIte,
+    checkPoint_eq_deliver process w d b fl a hr]
 
 /-- A numerator that does not pass the test of a candidate has no points to deliver. -/
 theorem deliver_acceptedPoints_of_not_accepted {σ : Type}
     (process : Int → Int → Int → σ → Answer σ) (w : Thunk (List Int)) (d b : Nat)
     (fl : CheckFlags) {checks : Thunk (List CheckSpec)} {a : Int}
-    (h : ¬Id.run (accepted a b checks) = true) (r : Delivery σ) :
+    {cnt : Counters} (h : ¬(Id.run (accepted a b checks cnt)).1 = true) (r : Delivery σ) :
     r.deliver process (acceptedPoints w d b fl checks a) = r := by
-  simp [acceptedPoints, h]
+  simp [acceptedPoints, fst_run_accepted a b checks {} cnt, h]
 
 /-- Without `RATPOINTS_NO_CHECK`, the checks with the flags of the numerators `xs` over `b` give the
 points of the brute-force reference, mapped by `Ratpoints.Sieve.swapPoint` after a reversal,

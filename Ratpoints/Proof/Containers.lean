@@ -60,12 +60,14 @@ multiples of a divisor of `N` at or below a number `≥ -N` and above a number `
 `[-N, N]`, the product `a ^ m a ^ (n - m) = a ^ n` of integers, and the strings joined by a
 separator. For the search intervals: the elements of a list that pass one of two tests, those that
 pass the first coming before those that pass the second, and the elements of an increasing list of
-integers in ranges that are increasing and strictly apart, range after range. For the numbers of the
-command line: the characters that `Char.toLower` takes to `x`. For the search intervals of the
-command line: an entry set twice, an entry after another is set, the entries and the members of the
-first `m` entries of an array as a list, the entry `l[i]!` of a list as one of its members, and a
-bind of `Except` that succeeds. For the intersection of the Sturm step: the list of an array from a
-position within it on. The lemmas on 64-bit words are in `Ratpoints.Proof.Bits`.
+integers in ranges that are increasing and strictly apart, range after range. For the counters of
+the loop over the search intervals: a list whose elements all pass a test as its own longest prefix
+that passes it. For the numbers of the command line: the characters that `Char.toLower` takes to
+`x`. For the search intervals of the command line: an entry set twice, an entry after another is
+set, the entries and the members of the first `m` entries of an array as a list, the entry `l[i]!`
+of a list as one of its members, and a bind of `Except` that succeeds. For the intersection of the
+Sturm step: the list of an array from a position within it on. The lemmas on 64-bit words are in
+`Ratpoints.Proof.Bits`.
 
 ## Main statements
 
@@ -677,6 +679,11 @@ theorem flatMap_filter_eq_filter_any {l : List Int} (hl : l.Pairwise (· < ·))
     · simp only [Bool.and_eq_true, decide_eq_true_eq, any_eq_true] at ha hb
       obtain ⟨⟨s, hs, hs'⟩, -⟩ := hb
       lia [hrs.1 s hs]
+
+/-- A list whose elements all pass `p` is its own longest prefix that passes `p`. -/
+theorem takeWhile_eq_self_of_forall {α : Type} {p : α → Bool} {l : List α}
+    (h : ∀ a ∈ l, p a = true) : l.takeWhile p = l := by
+  simpa using takeWhile_append_of_pos (l₂ := []) h
 
 end List
 

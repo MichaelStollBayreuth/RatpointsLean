@@ -344,17 +344,18 @@ contracts.
 \end{proof}
 
 \begin{lemma}[The check and the points at infinity deliver their lists]\label{lem:checkDelivery}
-  \uses{def:checkNumWith, lem:deliver, def:accepted, def:pointsAtInfinity}
+  \uses{def:checkNumWith, lem:deliver, def:accepted, def:pointsAtInfinity, def:counters}
   \lean{Ratpoints.Delivery.callMapped_eq_deliver, Ratpoints.Sieve.checkPoint_eq_deliver, Ratpoints.Sieve.checkPoint_eq_deliver_acceptedPoints, Ratpoints.Sieve.deliver_acceptedPoints_of_not_accepted, Ratpoints.Sieve.pointsAtInfinity_eq_deliver}
   \leanok
   On a delivery whose flag is clear: the mapped call is the delivery of the one mapped point; the
   exact check delivers its points (\verb|checkPointList|), the call with $-y$ after a call that
   stops the search being the delivery that passes over the rest; a numerator that passes the test of
-  a candidate delivers the points of the extraction, one that does not delivers nothing; and the
-  points at infinity deliver their list with the flags.
+  a candidate, with any counters, delivers the points of the extraction, one that does not delivers
+  nothing; and the points at infinity deliver their list with the flags.
 \end{lemma}
 
 \begin{proof}
+  \uses{lem:accepted}
   \leanok
   Each call is the delivery of a singleton (Lemma~\ref{lem:deliver}), and the test of the flag
   between the two calls of a pair is the delivery of the concatenation.
@@ -438,13 +439,14 @@ they share is the following lemma.
   \uses{lem:numClasses, def:andRows, def:rbaPack}
   \lean{Ratpoints.Sieve.flatMap_numerator_range_prefix, Ratpoints.Sieve.flatMap_range_rbaPack_mul_prefix, Ratpoints.Sieve.flatMap_filter_range_prefix, List.range_prefix_range}
   \leanok
-  The points of the first steps of a loop of the sieve are a prefix of the points of all its steps:
-  the points of the numerators of the set bits of the first $k \le m$ words of a bit array among
-  those of the first $m$, those of the bits of the first $\mathrm{pos} \le n$ bit arrays of a piece
-  among those of the first $n$, those of the bits up to the word number $w_0$ among those up to the
-  word number $w_0' \ge w_0$, and the numbers below $k \le m$ among those below $m$. So in both
-  cases of an invariant the delivery at the end is that of the points of all the steps, and each
-  contract concludes with the delivery of its whole list.
+  The points of the first steps of a loop of the sieve are a prefix of the points of all its steps,
+  and so are the lists of any other kind that the steps make, such as the numerators that the
+  counters count: the points of the numerators of the set bits of the first $k \le m$ words of a bit
+  array among those of the first $m$, those of the bits of the first $\mathrm{pos} \le n$ bit arrays
+  of a piece among those of the first $n$, those of the bits up to the word number $w_0$ among those
+  up to the word number $w_0' \ge w_0$, and the numbers below $k \le m$ among those below $m$. So in
+  both cases of an invariant the delivery at the end is that of the points of all the steps, and
+  each contract concludes with the delivery of its whole list.
 \end{lemma}
 
 \begin{proof}
@@ -1398,10 +1400,11 @@ flags and the lemmas of the exact check and of the points at infinity on the del
 \verb|Ratpoints/Proof/Stages.lean| and \verb|Ratpoints/Proof/Packing.lean|, has the contracts of the
 walk, of the arms of the second stage and of the scan with their invariants ($974$ lines); and
 \verb|Ratpoints/Proof/Sift.lean|, which imports it for its proofs only, those of one piece, of the
-bits of one denominator and of one denominator ($820$ lines, $1100$ before the split). The count of
-a delivery as the sum of the weights needs Mathlib's sums over \verb|Fin| and is in
-\verb|Ratpoints/Proof/DeliveryCount.lean|, new, above \verb|Ratpoints/Proof/Delivery.lean|; no proof
-file imports it.
+bits of one denominator and of one denominator ($820$ lines, $1100$ before the split; since stage~I
+those of one piece and of the bits of one denominator are in \verb|Ratpoints/Proof/SiftBits.lean|,
+split off it). The count of a delivery as the sum of the weights needs Mathlib's sums over
+\verb|Fin| and is in \verb|Ratpoints/Proof/DeliveryCount.lean|, new, above
+\verb|Ratpoints/Proof/Delivery.lean|; no proof file imports it.
 
 The other proofs of the stage are in files with Mathlib: the run on the delivery in
 \verb|Ratpoints/Proof/Denominators.lean|; the factorization of the leading coefficient in increasing

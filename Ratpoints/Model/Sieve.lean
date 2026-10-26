@@ -329,13 +329,15 @@ def secondStageWord (specs : List SieveSpec) (mgs : List Nat) (small : Bool) (i 
 /-- The set bits of the word `x`, lowest first, bit `t` standing for the numerator
 `a = a0 + step t`: while `x ≠ 0`, for the lowest set bit `t` of `x` (`Ratpoints.Sieve.ctz`), the
 numerator `a` goes to the test for common factors with the denominator `b` and the third stage
-(`Ratpoints.Sieve.accepted`, with the thunk `checks` of what that stage needs), and if it passes,
-to the exact check (`Ratpoints.Sieve.checkPoint`, with the thunk `w` of the products, the degree
-`d` and the flags `fl`), which delivers its points to the callback `process` on the delivery `r`,
-after which the walk returns if the callback has stopped the search; then that bit is cleared by
-`x &&& (x - 1)`. This is the loop `RP_EACH_SET_BIT` of the C code with the body that the extraction
-runs for each set bit; the step is the stride `2 ^ k` of the packing of the class of `b`. The
-callers call it only while the flag `quit` of `r` is clear, and return when it is set after it.
+(`Ratpoints.Sieve.accepted`, with the thunk `checks` of what that stage needs), and if it passes, to
+the exact check (`Ratpoints.Sieve.checkPoint`, with the thunk `w` of the products, the degree `d`
+and the flags `fl`), which delivers its points to the callback `process` on the delivery `r`, after
+which the walk returns if the callback has stopped the search; then that bit is cleared by
+`x &&& (x - 1)`. Each numerator counts one up the count `bits` of the counters `cnt`
+(`Ratpoints.Sieve.Counters`), and the test of a candidate counts its own. This is the loop
+`RP_EACH_SET_BIT` of the C code with the body that the extraction runs for each set bit; the step is
+the stride `2 ^ k` of the packing of the class of `b`. The callers call it only while the flag
+`quit` of `r` is clear, and return when it is set after it.
 
 C: `sift.c:262-264`, `sift.c:1161-1171`, `sift.c:1227-1255`, `sift.c:1265-1292`
 
@@ -348,23 +350,27 @@ pointers `info` and `wk->quit` and the count `total` of `_ratpoints_sift0`, to w
 a stop (lines 1169, 1241, 1251, 1280, 1288) a return from the walk, which its callers pass on,
 testing the flag after it (`Ratpoints.Sieve.siftBitArrayByWords`,
 `Ratpoints.Sieve.siftBitArrayWhole`, then `Ratpoints.Sieve.scanPiece` after the bit array), where
-the C code returns from `_ratpoints_sift0`; no count of the numerators that reach the test for
-common factors (`n_bits`), which ratpoints reads to correct the moduli between the blocks of the run
-(stage I), and no counts under `RP_PHASE_COUNTS`; no output under `DEBUG`. -/
+the C code returns from `_ratpoints_sift0`; the counters passed and returned, for the field
+`n_bits` of the sieving thread (lines 1166, 1233, 1271); no counts under `RP_PHASE_COUNTS`; no
+output under `DEBUG`. -/
 def walkWord {σ : Type} (process : Int → Int → Int → σ → Answer σ) (w : Thunk (List Int))
     (d b : Nat) (fl : CheckFlags) (checks : Thunk (List CheckSpec)) (x : UInt64) (a0 : Int)
-    (step : Nat) (r : Delivery σ) :
-    Id (Delivery σ) := do
+    (step : Nat) (r : Delivery σ) (cnt : Counters) :
+    Id (Delivery σ × Counters) := do
   let mut x := x
   let mut r := r
+  let mut cnt := cnt
   while x != 0 do
     let t ← ctz x
     let a := a0 + step * t
-    if ← accepted a b checks then
+    cnt := { cnt with bits := cnt.bits + 1 }
+    let (ok, c') ← accepted a b checks cnt
+    cnt := c'
+    if ok then
       r := checkPoint process w d b fl a r
-      if r.quit then return r
+      if r.quit then return (r, cnt)
     x := x &&& (x - 1)
-  return r
+  return (r, cnt)
 
 /-- The arm of the second stage one word at a time, for the bit array that the first stage left
 nonzero with the word number `i`, from a copy `nums` of it, the points of its numerators delivered
@@ -398,17 +404,18 @@ from `_ratpoints_sift0` within the walk (`Ratpoints.Sieve.walkWord`); no counts 
 def siftBitArrayByWords {σ : Type} (process : Int → Int → Int → σ → Answer σ)
     (w : Thunk (List Int)) (d b : Nat) (fl : CheckFlags) (specs : List SieveSpec) (mgs : List Nat)
     (small : Bool) (checks : Thunk (List CheckSpec)) (cl : NumClass) (i : Int)
-    (nums : Vector UInt64 rbaPack) (r : Delivery σ) :
-    Id (Delivery σ) := do
+    (nums : Vector UInt64 rbaPack) (r : Delivery σ) (cnt : Counters) :
+    Id (Delivery σ × Counters) := do
   let a0 := cl.a0 + i * (rbaLength * 2 ^ cl.k)
   let da := 64 * 2 ^ cl.k
   let mut r := r
+  let mut cnt := cnt
   for κ in [0:rbaPack] do
     if nums[κ]! != 0 then
       let x ← secondStageWord specs mgs small i κ nums[κ]!
-      r ← walkWord process w d b fl checks x (a0 + κ * da) (2 ^ cl.k) r
-      if r.quit then return r
-  return r
+      (r, cnt) ← walkWord process w d b fl checks x (a0 + κ * da) (2 ^ cl.k) r cnt
+      if r.quit then return (r, cnt)
+  return (r, cnt)
 
 /-- The arm of the second stage on the whole bit array, for the bit array that the first stage left
 nonzero with the word number `i`, from a copy `nums` of it, the points of its numerators delivered
@@ -445,20 +452,21 @@ array left at a stop, where the C code returns from `_ratpoints_sift0` within th
 def siftBitArrayWhole {σ : Type} (process : Int → Int → Int → σ → Answer σ)
     (w : Thunk (List Int)) (d b : Nat) (fl : CheckFlags) (specs : List SieveSpec) (mgs : List Nat)
     (small : Bool) (checks : Thunk (List CheckSpec)) (cl : NumClass) (i : Int)
-    (nums : Vector UInt64 rbaPack) (r : Delivery σ) :
-    Id (Delivery σ) := do
+    (nums : Vector UInt64 rbaPack) (r : Delivery σ) (cnt : Counters) :
+    Id (Delivery σ × Counters) := do
   let nums ← secondStage specs mgs small i nums
   let mut r := r
+  let mut cnt := cnt
   if !isZeroAt nums 0 then
     let mut a0 := cl.a0 + i * (rbaLength * 2 ^ cl.k)
     let da := 64 * 2 ^ cl.k
-    r ← walkWord process w d b fl checks nums[0]! a0 (2 ^ cl.k) r
-    if r.quit then return r
+    (r, cnt) ← walkWord process w d b fl checks nums[0]! a0 (2 ^ cl.k) r cnt
+    if r.quit then return (r, cnt)
     for κ in [1:rbaPack] do
       a0 := a0 + da
-      r ← walkWord process w d b fl checks nums[κ]! a0 (2 ^ cl.k) r
-      if r.quit then return r
-  return r
+      (r, cnt) ← walkWord process w d b fl checks nums[κ]! a0 (2 ^ cl.k) r cnt
+      if r.quit then return (r, cnt)
+  return (r, cnt)
 
 /-- One bit array that the first stage left nonzero, with the word number `i`, from a copy `nums` of
 it, the points of its numerators delivered to the callback `process` on the delivery `r`, in the arm
@@ -481,10 +489,10 @@ a function of its own for the body of the loop of the scan over one bit array; n
 def siftBitArray {σ : Type} (process : Int → Int → Int → σ → Answer σ) (useLong : Bool)
     (w : Thunk (List Int)) (d b : Nat) (fl : CheckFlags) (specs : List SieveSpec) (mgs : List Nat)
     (small : Bool) (checks : Thunk (List CheckSpec)) (cl : NumClass) (i : Int)
-    (nums : Vector UInt64 rbaPack) (r : Delivery σ) :
-    Id (Delivery σ) :=
-  if useLong then siftBitArrayByWords process w d b fl specs mgs small checks cl i nums r
-  else siftBitArrayWhole process w d b fl specs mgs small checks cl i nums r
+    (nums : Vector UInt64 rbaPack) (r : Delivery σ) (cnt : Counters) :
+    Id (Delivery σ × Counters) :=
+  if useLong then siftBitArrayByWords process w d b fl specs mgs small checks cl i nums r cnt
+  else siftBitArrayWhole process w d b fl specs mgs small checks cl i nums r cnt
 
 /-- The scan over a piece, the bit arrays with the word numbers `w0, …, w0 + n - 1`, which are the
 first `n` bit arrays of `surv`, and the second stage and the extraction of the points of their
@@ -505,30 +513,33 @@ Deviation: indices for the pointers into the survivors, and a scan that holds it
 index, where ratpoints recovers the word number from a pointer difference; the copy `nums` of the
 bit array a vector of `Ratpoints.rbaPack` words; the sentinel `~zero` of every build as
 `Ratpoints.rbaPack` words `~~~0`, written one at a time; natural numbers and integers for the
-`long`s; no count of the bit arrays that survive the first stage (`n_arrays`), which ratpoints reads
-to correct the moduli between the blocks of the run (stage I); the delivery `r` passed and returned,
-for the pointers `info` and `wk->quit` and the count `total` of `_ratpoints_sift0`, and the flag
-`quit` tested after each bit array, where the C code returns from `_ratpoints_sift0` within the walk
-through the set bits of a word (`Ratpoints.Sieve.walkWord`). -/
+`long`s; the counters `cnt` passed and returned, for the field `n_arrays` of the sieving thread,
+which counts one up for each bit array that is not zero (line 1092); the delivery `r` passed and
+returned, for the pointers `info` and `wk->quit` and the count `total` of `_ratpoints_sift0`, and
+the flag `quit` tested after each bit array, where the C code returns from `_ratpoints_sift0` within
+the walk through the set bits of a word (`Ratpoints.Sieve.walkWord`). -/
 def scanPiece {σ : Type} (process : Int → Int → Int → σ → Answer σ) (w : Thunk (List Int))
     (d b : Nat) (fl : CheckFlags) (specs : List SieveSpec) (mgs : List Nat) (small : Bool)
     (checks : Thunk (List CheckSpec)) (cl : NumClass) (w0 : Int) (n : Nat)
-    (surv : Vector UInt64 ((n + 1) * rbaPack)) (r : Delivery σ) :
-    Id (Delivery σ) := do
+    (surv : Vector UInt64 ((n + 1) * rbaPack)) (r : Delivery σ) (cnt : Counters) :
+    Id (Delivery σ × Counters) := do
   let mut surv := surv
   for κ in [0:rbaPack] do
     surv := surv.set! (rbaPack * n + κ) (~~~0)
   let mut pos := 0
   let mut r := r
+  let mut cnt := cnt
   repeat
     while isZeroAt surv pos do
       pos := pos + 1
     if n ≤ pos then break
     let nums : Vector UInt64 rbaPack := .ofFn fun κ ↦ surv[rbaPack * pos + κ]!
-    r ← siftBitArray process useLongInPhase2 w d b fl specs mgs small checks cl (w0 + pos) nums r
-    if r.quit then return r
+    cnt := { cnt with arrays := cnt.arrays + 1 }
+    (r, cnt) ← siftBitArray process useLongInPhase2 w d b fl specs mgs small checks cl (w0 + pos)
+      nums r cnt
+    if r.quit then return (r, cnt)
     pos := pos + 1
-  return r
+  return (r, cnt)
 
 /-- One piece, the bit arrays with the word numbers `w0, …, w0 + n - 1`, and the points of its
 numerators: whether the reductions of the row indices modulo the moduli of the first two stages can
@@ -566,27 +577,29 @@ specs `sieves` and the number `sp1` that the sieving thread keeps, the reciproca
 as the list `mgs`, for the array `magics` of the arguments, and the thunk `checks`, for the table
 `checks` of the third stage and its length `nchecks = sp3 - sp2`; the class `cl` as a value, for the
 pointer `cls`; integers for the `long`s of the test `small`, which stay `long`s, and a Boolean for
-its `int`; no count of the words of the piece (`n_words`), which ratpoints reads to correct the
-moduli between the blocks of the run (stage I); the thunk `w` of the products of the check as an
-argument, where `_ratpoints_check_point` computes the products when the first survivor of `b`
+its `int`; the counters `cnt` passed and returned, for the field `n_words` of the sieving thread,
+which counts the `n Ratpoints.rbaPack` words of the piece (line 548), the product of `UInt64`s as
+the C code multiplies the `unsigned long` by `RBA_PACK`; the thunk `w` of the products of the check
+as an argument, where `_ratpoints_check_point` computes the products when the first survivor of `b`
 reaches it; the delivery `r` passed and returned, for the pointers `info` and `wk->quit` and the
 count `total` that `_ratpoints_sift0` keeps from zero and returns, and its returns at a stop within
-the walk through the set bits of a word passed on by the scan (`Ratpoints.Sieve.scanPiece`);
-natural numbers and integers for the `long`s; no measurements of the phases (`RP_TIC`, `RP_TOC`,
+the walk through the set bits of a word passed on by the scan (`Ratpoints.Sieve.scanPiece`); natural
+numbers and integers for the `long`s; no measurements of the phases (`RP_TIC`, `RP_TOC`,
 `RP_PHASE_TIMING`) and no stop after one of them (`RP_STOP_AFTER`). -/
 def siftPiece {σ : Type} (process : Int → Int → Int → σ → Answer σ) (w : Thunk (List Int))
     (d b : Nat) (fl : CheckFlags) (sp1 : Nat) (specs : List SieveSpec) (mgs : List Nat)
     (checks : Thunk (List CheckSpec)) (cl : NumClass) (w0 : Int) (n maskLow maskHigh : Nat)
-    (r : Delivery σ) :
-    Id (Delivery σ) := do
+    (r : Delivery σ) (cnt : Counters) :
+    Id (Delivery σ × Counters) := do
   let small := decide (-rowBias ≤ w0 ∧ w0 + n ≤ rowBias - 2 * maxPrimeEven)
+  let cnt := { cnt with words := cnt.words + n.toUInt64 * rbaPack.toUInt64 }
   let zeros := Vector.replicate ((n + 1) * rbaPack) 0
   let mut surv ← if 1 < chunk ∧ chunk ≤ 16 then
       andRowsChunked (specs.take sp1) (mgs.take sp1) small cl.bits w0 n zeros
     else andRows (specs.take sp1) (mgs.take sp1) small cl.bits w0 n zeros
   if maskLow ≠ 0 then surv := clearLowBits surv maskLow
   if maskHigh ≠ 0 then surv := clearHighBits surv (n - 1) maskHigh
-  scanPiece process w d b fl (specs.drop sp1) (mgs.drop sp1) small checks cl w0 n surv r
+  scanPiece process w d b fl (specs.drop sp1) (mgs.drop sp1) small checks cl w0 n surv r cnt
 
 /-! ### One denominator -/
 
@@ -773,14 +786,17 @@ division and the Euclidean remainder on a negative `long` too, the first bits of
 staying `long`s for the bits of a height bound below `2 ^ 63`
 (`Ratpoints.Sieve.neg_two_pow_le_rbaLength_mul_ediv`,
 `Ratpoints.Sieve.rbaLength_mul_ediv_add_one_le_two_pow`); the delivery `r` passed and returned, for
-the pointers `info` and `wk->quit` and the count `total` that `sift` keeps from zero and returns; no
-test of the flag `stop` of a thread of the pool after a piece (line 3610, stage I), and no
-measurement (`RP_SIFT_TOC`) on the return at a stop. -/
+the pointers `info` and `wk->quit` and the count `total` that `sift` keeps from zero and returns,
+and the counters `cnt` passed and returned, for those of the sieving thread; no test of the flag
+`stop` of a thread of the pool after a piece (line 3610, stage I), and no measurement
+(`RP_SIFT_TOC`) on the return at a stop. -/
 def siftBits {σ : Type} (process : Int → Int → Int → σ → Answer σ) (w : Thunk (List Int))
     (d b A : Nat) (fl : CheckFlags) (sp1 : Nat) (specs : List SieveSpec) (mgs : List Nat)
-    (checks : Thunk (List CheckSpec)) (cl : NumClass) (low high : Int) (r : Delivery σ) :
-    Id (Delivery σ) := do
+    (checks : Thunk (List CheckSpec)) (cl : NumClass) (low high : Int) (r : Delivery σ)
+    (cnt : Counters) :
+    Id (Delivery σ × Counters) := do
   let mut r := r
+  let mut cnt := cnt
   if low ≤ high then
     let wLow := low / rbaLength
     let wHigh := high / rbaLength + 1
@@ -793,11 +809,11 @@ def siftBits {σ : Type} (process : Int → Int → Int → σ → Answer σ) (w
         range := (w1 - w0).toNat
       let maskLow := if w0 = wLow then (low - rbaLength * wLow).toNat else 0
       let maskHigh := if w1 = wHigh then rbaLength - 1 - (high % rbaLength).toNat else 0
-      r ← siftPiece process w d b fl sp1 specs mgs checks cl w0 range maskLow maskHigh r
-      if r.quit then return r
+      (r, cnt) ← siftPiece process w d b fl sp1 specs mgs checks cl w0 range maskLow maskHigh r cnt
+      if r.quit then return (r, cnt)
       w0 := w1
       w1 := w1 + range
-  return r
+  return (r, cnt)
 
 /-- The points of the denominator `b`, for `H < 2 ^ 63`, its numerators in the search intervals with
 the bounds `iv` (`Ratpoints.Sieve.exactBounds`, increasing and disjoint), delivered to the callback
@@ -823,14 +839,14 @@ without search intervals, for `h ≥ H`, the numerators are `-H, …, H`.
 C: `find_points.c:3112-3114`, `find_points.c:3123-3124`, `find_points.c:3129-3130`,
 `find_points.c:3435-3440`, `find_points.c:3442-3488`, `find_points.c:3490-3521`,
 `find_points.c:3555-3561`, `find_points.c:3613-3617`, `rp-private.h:574`, `rp-private.h:577-578`,
-`rp-private.h:583`
+`rp-private.h:583`, `rp-private.h:585`
 
 Deviation: the height bound converted to `Int64`, which is exact for `H < 2 ^ 63`, and the
-denominator too, and the bits back to integers; the bounds of the search intervals an array, for
-the struct `rp_intervals` with its pointers `bd` and `end`, which `sift` reaches through the field
-`iv` of the sieving thread, which `worker_init` clears (line 3130) and `run_block` sets for each
-block (line 3913; here `Ratpoints.Sieve.sieveRun`, which passes the array of the run on); one call
-of `Ratpoints.Sieve.setRows`, for the two calls with the flag `shared` a constant, between which the
+denominator too, and the bits back to integers; the bounds of the search intervals an array, for the
+struct `rp_intervals` with its pointers `bd` and `end`, which `sift` reaches through the field `iv`
+of the sieving thread, which `worker_init` clears (line 3130) and `run_block` sets for each block
+(line 3913; here `Ratpoints.Sieve.sieveRun`, which passes the array of the run on); one call of
+`Ratpoints.Sieve.setRows`, for the two calls with the flag `shared` a constant, between which the
 pool of threads chooses (stage I); the store of the tables of rows passed and returned, for the
 arrays `sieve` of the entries of the arguments, which `sift` reaches through `sieve_list` and which
 keep the rows built for the rest of the run; the end `sp1` of the first stage, the entries `es` and
@@ -845,37 +861,38 @@ the row offsets of the run as an argument, which the C code reaches through the 
 the class; the thunk of `Ratpoints.Sieve.fillChecks`, for the table `checks` of the sieving thread,
 which `fill_checks` fills, and its flag `stage3_filled`, which `sift` clears; the thunk of the
 products `w`, for the flag `compute_bc`, which `sift` sets and `_ratpoints_check_point` clears when
-it computes the products; no count of the denominators sieved (`n_sifts`), which ratpoints reads to
-correct the moduli between the blocks of the run (stage I); the delivery `r` passed and returned,
-for the pointers `info` and `wk->quit`, which `worker_init` clears, and the count `total` that
-`sift` keeps from zero and returns; the arguments of the run passed explicitly, for the pointer
-`args` of the sieving thread (`rp-private.h:574`), which `worker_init` sets and through which `sift`
-reads them; no pool, slot and stop flag of a thread of the pool, the flag by which the pool of
-threads tells it to abandon its block (`pool`, `slot`, `stop`, `rp-private.h:584-585`; stage I);
-natural numbers and integers for the `long`s; no measurements of the phases (`RP_SIFT_TIC`,
-`RP_SETUP_TIC` and their `TOC`) and no output under `DEBUG`. -/
+it computes the products; the counters `cnt` passed and returned, for those of the sieving thread,
+the count `sifts` one up at the start (line 3461); the delivery `r` passed and returned, for the
+pointers `info` and `wk->quit`, which `worker_init` clears, and the count `total` that `sift` keeps
+from zero and returns; the arguments of the run passed explicitly, for the pointer `args` of the
+sieving thread (`rp-private.h:574`), which `worker_init` sets and through which `sift` reads them;
+no pool, slot and stop flag of a thread of the pool, the flag by which the pool of threads tells it
+to abandon its block (`pool`, `slot`, `stop`, `rp-private.h:584`; stage I); natural numbers and
+integers for the `long`s; no measurements of the phases (`RP_SIFT_TIC`, `RP_SETUP_TIC` and their
+`TOC`) and no output under `DEBUG`. -/
 def sift {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : List Int) (d H A b : Nat)
     (fl : CheckFlags) (sp1 : Nat) (es : List SieveEntry) (mgs bp : List Nat) (cl : NumClass)
     (offsets : Array Nat) (es3 : List SieveEntry) (mgs3 : List Nat) (iv : Array IntervalBounds)
-    (store : RowStore) (r : Delivery σ) :
-    Id (Delivery σ × RowStore) := do
+    (store : RowStore) (r : Delivery σ) (cnt : Counters) :
+    Id (Delivery σ × RowStore × Counters) := do
   let w : Thunk (List Int) := .mk fun _ ↦ BruteForce.scaledCoeffs c d b
   let checks : Thunk (List CheckSpec) := .mk fun _ ↦ fillChecks b H es3 mgs3
   let mut r := r
   let mut store := store
+  let mut cnt := { cnt with sifts := cnt.sifts + 1 }
   let mut doSetup := true
   let mut specs : List SieveSpec := []
   for bd in iv do
     let (empty, low, high) := intervalBits b.toInt64 bd H.toInt64 cl
-    if empty = 2 then return (r, store)
+    if empty = 2 then return (r, store, cnt)
     if empty = 1 then continue
     if doSetup then
       doSetup := false
       let (sp, missing) := setRows store es bp cl offsets
       (specs, store) ← buildRows missing es bp sp store
-    r ← siftBits process w d b A fl sp1 specs mgs checks cl low.toInt high.toInt r
-    if r.quit then return (r, store)
-  return (r, store)
+    (r, cnt) ← siftBits process w d b A fl sp1 specs mgs checks cl low.toInt high.toInt r cnt
+    if r.quit then return (r, store, cnt)
+  return (r, store, cnt)
 
 /-! ### Examples -/
 
@@ -1015,7 +1032,7 @@ def sift {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : L
         a0 * inv (2 ^ k * rbaLength) e.p % e.p + bias e.p, row e (b * inv (2 ^ k) e.p), 0, e.p⟩
       let run (useLong small : Bool) := (Id.run (siftBitArray appendPoint useLong (.pure w) 3 b {}
         specs (specs.map (magic ·.p)) small (.pure checks) ⟨~~~0, k, a0, none⟩ i nums
-        ⟨#[], 0, false⟩)).info.toList
+        ⟨#[], 0, false⟩ {})).1.info.toList
       let ref := (((List.range rbaLength).filter fun t ↦
           nums[t / 64]!.toBitVec.getLsbD (t % 64)).map fun t : Nat ↦
             a0 + 2 ^ k * (i * rbaLength + t)).flatMap
@@ -1029,7 +1046,7 @@ def sift {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : L
   ([0, 1, 0x8000000000000000, 0xf0f0f0f0f0f0f0f0, 0x123456789abcdef1] : List UInt64).all fun x ↦
     [1, 2, 64].all fun step ↦
     let pts := (Id.run (walkWord appendPoint (.pure [0, 0, 1]) 2 1 {} (.pure []) x (-37) step
-      ⟨#[(5, 5, 5)], 1, false⟩)).info.toList
+      ⟨#[(5, 5, 5)], 1, false⟩ {})).1.info.toList
     pts == (5, 5, 5) :: ((List.range 64).filter x.toBitVec.getLsbD).flatMap
       (fun t : Nat ↦ checkNum [0, 0, 1] 1 1 false (-37 + step * t)) &&
     ((pts.drop 1).map (·.1)).eraseDups ==
@@ -1050,7 +1067,7 @@ def sift {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : L
       if zeros.contains (y / rbaPack) then 0
       else if y % 2 = 0 then 0x8000000000000001 else 1 <<< (y * 7 % 64).toUInt64
     (Id.run (scanPiece appendPoint (.pure [0, 0, 1]) 2 1 {} [] [] false (.pure [])
-        ⟨~~~0, k, a0, none⟩ w0 n v ⟨#[], 0, false⟩)).info.toList ==
+        ⟨~~~0, k, a0, none⟩ w0 n v ⟨#[], 0, false⟩ {})).1.info.toList ==
       ((List.range (n * rbaPack)).flatMap fun y : Nat ↦
         ((List.range 64).filter v[y]!.toBitVec.getLsbD).map fun t : Nat ↦
           a0 + 2 ^ k * (rbaLength * w0 + 64 * y + t)).flatMap (checkNum [0, 0, 1] 1 1 false)
@@ -1064,7 +1081,7 @@ def sift {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : L
       (List.range 64).foldl (fun x (t : Nat) ↦
         if keep (rbaLength * w0 + 64 * (y : Int) + t) then x ||| 1 <<< t.toUInt64 else x) 0
     (Id.run (scanPiece appendPoint (.pure [0, 0, 1]) 2 1 {} [] [] false (.pure [])
-        ⟨~~~0, 0, 0, none⟩ w0 n v ⟨#[], 0, false⟩)).info.toList ==
+        ⟨~~~0, 0, 0, none⟩ w0 n v ⟨#[], 0, false⟩ {})).1.info.toList ==
       (((List.range (n * rbaLength)).map fun k : Nat ↦ rbaLength * w0 + k).filter keep).flatMap
         (checkNum [0, 0, 1] 1 1 false)
 
@@ -1089,7 +1106,7 @@ def sift {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : L
       (es.take sp2).map fun e ↦ ⟨e.p, e.p * ((rowBias + e.p - 1) / e.p), row e b, 0, e.p⟩
     (Id.run (siftPiece appendPoint (.pure (BruteForce.scaledCoeffs c 3 b)) 3 b {} sp1 specs
       (specs.map (magic ·.p)) (.pure (fillChecks b 1000 es3 (es3.map (·.magic))))
-      ⟨~~~0, 0, 0, none⟩ w0 n mL mH ⟨#[], 0, false⟩)).info.toList
+      ⟨~~~0, 0, 0, none⟩ w0 n mL mH ⟨#[], 0, false⟩ {})).1.info.toList
   piece 5 5 100 0 1 129 0 == [(129, 3830, 100), (129, -3830, 100)] &&
     piece 2 3 100 0 1 130 0 == [] &&
     piece 1 4 100 0 1 0 (rbaLength - 130) == [(129, 3830, 100), (129, -3830, 100)] &&
@@ -1124,7 +1141,7 @@ def sift {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : L
       (Id.run (sift appendPoint c 3 300 A b { reversed := rev } sp1 (es.take sp2)
         ((es.take sp2).map (·.magic)) ((es.take sp2).map (b % ·.p)) ⟨~~~0, 0, 0, some 0⟩ offsets es3
         (es3.map (·.magic)) iv (es.foldl (fun s e ↦ e.addTables s) {})
-        ⟨#[], 0, false⟩)).1.info.toList == if rev then ref.map swapPoint else ref
+        ⟨#[], 0, false⟩ {})).1.info.toList == if rev then ref.map swapPoint else ref
 
 -- The numerator intervals of the search intervals, as the build of ratpoints with `DEBUG` at the
 -- pinned commit prints them (`sift: numerator interval [low, high]`) for each interval that `sift`
@@ -1227,10 +1244,10 @@ def sift {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : L
     [1, 7, 100].all fun b ↦
       let ref := (Id.run (checkDen c 3 300 b (Id.run (sieveDen 300 b es)))).toList.filter
         fun (x, _, _) ↦ dom.any fun (l, u) ↦ le l x b && ge u x b
-      let (r, s) := Id.run (sift appendPoint c 3 300 2 b {} 2 (es.take 4)
+      let (r, s, _) := Id.run (sift appendPoint c 3 300 2 b {} 2 (es.take 4)
         ((es.take 4).map (·.magic)) ((es.take 4).map (b % ·.p)) ⟨~~~0, 0, 0, some 0⟩ offsets
         (es.drop 4) [magic 13] iv
-        (es.foldl (fun s e ↦ e.addTables s) {}) ⟨#[], 0, false⟩)
+        (es.foldl (fun s e ↦ e.addTables s) {}) ⟨#[], 0, false⟩ {})
       r.info.toList == ref &&
         (s.row? (.prime 3) (b % 3) |>.isSome) == (built || b % 3 == 0)
 
@@ -1252,7 +1269,7 @@ def sift {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : L
   let run (k b : Nat) (fl : CheckFlags) : Delivery (Array (Int × Int × Int)) :=
     (Id.run (sift (stopAt k) c 2 300 1 b fl 2 (es.take 4) ((es.take 4).map (·.magic))
       ((es.take 4).map (b % ·.p)) ⟨~~~0, 0, 0, some 0⟩ offsets (es.drop 4) [magic 13] iv
-      (es.foldl (fun s e ↦ e.addTables s) {}) ⟨#[], 0, false⟩)).1
+      (es.foldl (fun s e ↦ e.addTables s) {}) ⟨#[], 0, false⟩ {})).1
   [1, 7].all fun b ↦
     let full := (run 0 b {}).info.toList
     let surv := (BruteForce.numerators 300).filter fun a ↦ Int.gcd a b == 1 && survives es b a
@@ -1289,8 +1306,8 @@ def sift {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : L
   let iv := Id.run (exactBounds [((Double.ofInt64 300).neg, Double.ofInt64 300)] 300 300)
   let (ok, s) := [1, 7, 100].foldl (fun (ok, s) b ↦
     let ref := (Id.run (checkDen c 3 300 b (Id.run (sieveDen 300 b es)))).toList
-    let (r, s) := Id.run (sift appendPoint c 3 300 2 b {} 2 es2 (es2.map (·.magic))
-      (es2.map (b % ·.p)) ⟨~~~0, 0, 0, some 0⟩ offsets [pr 11] [magic 11] iv s ⟨#[], 0, false⟩)
+    let (r, s, _) := Id.run (sift appendPoint c 3 300 2 b {} 2 es2 (es2.map (·.magic))
+      (es2.map (b % ·.p)) ⟨~~~0, 0, 0, some 0⟩ offsets [pr 11] [magic 11] iv s ⟨#[], 0, false⟩ {})
     (ok && r.info.toList == ref, s)) (true, es.foldl (fun s e ↦ e.addTables s) {})
   let present (k : EntryRef) : List Nat :=
     (List.range (s.getD k #[]).size).filter fun r ↦ (s.row? k r).isSome

@@ -903,7 +903,7 @@ before the leading zeros, for the height bound `0` and for `2 ^ 63`, the least h
       [false, true].all fun rev ↦
         (Id.run (Sieve.sift appendPoint c d 300 A b { reversed := rev } 3 (entries.take 7)
           (mgs.take 7) bp cl offsets (entries.drop 7) (mgs.drop 7) iv store
-          ⟨#[], 0, false⟩)).1.info.toList == if rev then ref.map Sieve.swapPoint else ref
+          ⟨#[], 0, false⟩ {})).1.info.toList == if rev then ref.map Sieve.swapPoint else ref
   | none => false
 
 -- The sieve of one denominator in the packings of words that are not those of a curve, against the
@@ -938,7 +938,7 @@ before the leading zeros, for the height bound `0` and for `2 ^ 63`, the least h
           (mgs.take 7) bp cl offsets (entries.drop 7) (mgs.drop 7)
           (Id.run (Sieve.exactBounds ((Id.run (searchIntervals H [])).getD []) H.toInt64
             H.toInt64)) store
-          ⟨#[], 0, false⟩)).1.info.toList == if rev then ref.map Sieve.swapPoint else ref
+          ⟨#[], 0, false⟩ {})).1.info.toList == if rev then ref.map Sieve.swapPoint else ref
   | none => false
 
 -- The array size 1, which `arraySizeAt` rounds up to the chunk 16, at heights around the multiples

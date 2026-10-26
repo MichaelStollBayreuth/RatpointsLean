@@ -53,9 +53,11 @@ primes and the sieve entries of the moduli, with the rows of a denominator, are 
 * `Ratpoints.Sieve.CheckSpec`, `Ratpoints.Sieve.checkOf`, `Ratpoints.Sieve.fillChecks`,
   `Ratpoints.Sieve.CheckSpec.index`, `Ratpoints.Sieve.stage3`: the third stage, what it needs of
   its primes for a denominator, and its test of one numerator.
+* `Ratpoints.Sieve.Counters`: the counters of what the sieve did, from which the search of
+  ratpoints corrects its moduli between the blocks of the run (stage I).
 * `Ratpoints.Sieve.accepted`, `Ratpoints.Sieve.checkPoint`: the test of a candidate, the test for
-  common factors and the third stage, and the exact check of one numerator, its points delivered to
-  the callback of the search as the flags of the search say.
+  common factors and the third stage, counted, and the exact check of one numerator, its points
+  delivered to the callback of the search as the flags of the search say.
 * `Ratpoints.Sieve.checkNum`: the check of the reference, the test for common factors by the gcd
   and the exact check of one numerator, its points mapped by `Ratpoints.Sieve.swapPoint` when the
   flag of the reversal is set.
@@ -287,11 +289,44 @@ def stage3 (a : Int) (checks : List CheckSpec) : Id Bool := do
 
 /-! ### The test of a candidate and the exact check -/
 
+/-- The counters of the sieving thread for the block that it sieves, what the sieve did, from which
+the search of ratpoints corrects its choice of the moduli between the blocks of the run (with the
+blocks and the correction, stage I): the words of the bit arrays that the first stage sweeps
+(`n_words`), the bit arrays that are nonzero after it (`n_arrays`), the numerators that survive the
+second stage (`n_bits`), those of them that are prime to the denominator (`n_coprime`) and that pass
+the third stage too (`n_checks`), and the denominators sifted (`n_sifts`). The components of the
+sieve count where the C code counts, before the exact check, so that the counts depend neither on
+the callback nor on the flags of the output, but for the block in which the callback stops the
+search.
+
+C: `rp-private.h:579-581`
+
+Deviation: a structure of its own, which the components of the sieve that count pass and return
+beside the delivery, for the fields of the sieving thread `rp_worker`, which `run_block` clears for
+each block (with the blocks, stage I; the run of the model discards the counters,
+`Ratpoints.Sieve.sieveRun`); `UInt64` for the `unsigned long`s, wrapping as they wrap. -/
+structure Counters where
+  /-- `n_words`: the words of the bit arrays that the first stage swept. -/
+  words : UInt64 := 0
+  /-- `n_arrays`: the bit arrays that were nonzero after the first stage. -/
+  arrays : UInt64 := 0
+  /-- `n_bits`: the numerators that survived the second stage. -/
+  bits : UInt64 := 0
+  /-- `n_coprime`: those of them prime to the denominator. -/
+  coprime : UInt64 := 0
+  /-- `n_checks`: those of them that passed the third stage too. -/
+  checks : UInt64 := 0
+  /-- `n_sifts`: the denominators sifted. -/
+  sifts : UInt64 := 0
+  deriving Inhabited, BEq, Repr
+
 /-- Whether the numerator `a` goes on to the exact check for the denominator `b ≥ 1`: it is prime to
 `b` (`Ratpoints.Sieve.relprime`, on the words of `a` and `b`) and passes the third stage
 (`Ratpoints.Sieve.stage3`) with `checks`, the thunk of what that stage needs for `b`
-(`Ratpoints.Sieve.fillChecks`), which is forced when the first numerator of `b` gets this far. The
-walk through the set bits of a word calls it (`Ratpoints.Sieve.walkWord`).
+(`Ratpoints.Sieve.fillChecks`), which is forced when the first numerator of `b` gets this far; with
+the counters `cnt` (`Ratpoints.Sieve.Counters`), the count `coprime` one up when `a` is prime to `b`
+and the count `checks` one up when it passes the third stage too. The walk through the set bits of a
+word calls it (`Ratpoints.Sieve.walkWord`).
 
 C: `sift.c:438-446`
 
@@ -301,12 +336,14 @@ Deviation: the integer `a` and the natural number `b` of the loops of the model 
 bound below `2 ^ 63` are (`Ratpoints.findPoints`); the thunk `checks`, which the sieve of one
 denominator makes for each denominator (`Ratpoints.Sieve.sift`), for the array of the sieving thread
 and its flag `stage3_filled`, which `accepted` tests before it fills the array when the stage has
-primes (`n ≠ 0`); no counts of the numerators that pass the test for common factors and the third
-stage (`n_coprime`, `n_checks`), which ratpoints reads to correct the moduli between the blocks of
-the run (stage I); a Boolean for the `int`. -/
-def accepted (a : Int) (b : Nat) (checks : Thunk (List CheckSpec)) : Id Bool := do
-  if !(← relprime a.toInt64 b.toInt64) then return false
-  stage3 a checks.get
+primes (`n ≠ 0`); the counters passed and returned, for the fields `n_coprime` and `n_checks` of the
+sieving thread; a Boolean for the `int`. -/
+def accepted (a : Int) (b : Nat) (checks : Thunk (List CheckSpec)) (cnt : Counters) :
+    Id (Bool × Counters) := do
+  if !(← relprime a.toInt64 b.toInt64) then return (false, cnt)
+  let cnt := { cnt with coprime := cnt.coprime + 1 }
+  if !(← stage3 a checks.get) then return (false, cnt)
+  return (true, { cnt with checks := cnt.checks + 1 })
 
 /-- The exact check of the numerator `a` over the denominator `b`, its points delivered to the
 callback `process` on the delivery `r`, each mapped back to the caller's curve when the flag
@@ -473,7 +510,7 @@ def pointsAtInfinity {σ : Type} (process : Int → Int → Int → σ → Answe
       ((List.range 61).map (fun i : Nat ↦ (i : Int) - 30) ++
           [-(H : Int), -(H : Int) + 1, (H : Int) - 1, H]).all fun a ↦
         (Int.gcd a b != 1 || Id.run (stage3 a checks) == survives es b a) &&
-        Id.run (accepted a b (.pure checks)) == (Int.gcd a b == 1 && survives es b a)
+        (Id.run (accepted a b (.pure checks) {})).1 == (Int.gcd a b == 1 && survives es b a)
 
 -- The third stage skips an entry of another shape than a prime with its table: the prime power 9.
 #guard

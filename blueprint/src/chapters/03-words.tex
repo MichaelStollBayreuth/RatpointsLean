@@ -311,7 +311,8 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
 \end{definition}
 
 \begin{definition}[The set bits of a word]\label{def:walkWord}
-  \uses{def:ctz, def:accepted, def:deliver, lem:checkDelivery, lem:deliver, lem:sieveStops}
+  \uses{def:ctz, def:accepted, def:deliver, lem:checkDelivery, lem:deliver, lem:sieveStops,
+    def:counters}
   \lean{Ratpoints.Sieve.walkWord, Ratpoints.Sieve.walkWord_spec, Ratpoints.Sieve.WalkDeliveryInvariant, Ratpoints.Sieve.WalkDeliveryWhileInvariant}
   \leanok
   For a word $x$ whose bit $t$ stands for the numerator $a_0 + s t$, with the step $s$, the stride
@@ -319,7 +320,9 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
   $a_0 + s\,\mathrm{ctz}(x)$ goes to the test of a candidate and, if it passes, to the exact check
   (Definition~\ref{def:accepted}), with the thunks of the third stage and of the products and the
   flags of the check that the walk hands on, the check delivering its points to the callback, and
-  $x \mathbin{\&} (x - 1)$ for $x$; the walk returns after a check at which the callback stopped the
+  $x \mathbin{\&} (x - 1)$ for $x$; each numerator counted in the counters of the sieve
+  (Definition~\ref{def:counters}), which the walk takes and returns with the delivery, and the test
+  of a candidate counting its own; the walk returns after a check at which the callback stopped the
   search: the loop of the C code with its body at the three places of the extraction
   (\csource{sift.c}{262}{264}, \csource{sift.c}{1161}{1171}, \csource{sift.c}{1227}{1255},
   \csource{sift.c}{1265}{1292}). Its contract, from a delivery whose flag is clear: the delivery
@@ -333,7 +336,7 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
 \begin{definition}[The scan]\label{def:scanPiece}
   \uses{def:siftBitArray, def:bitArrayOps, def:secondStage, lem:secondStage, lem:siftBitArray,
     def:andRows, def:numClasses, lem:numClasses, lem:rowIndices, def:deliver, lem:deliver,
-    lem:sieveStops}
+    lem:sieveStops, def:counters}
   \lean{Ratpoints.Sieve.scanPiece, Ratpoints.Sieve.scanPiece_spec, Ratpoints.Sieve.ScanPieceInvariant.eq_deliver_of_quit}
   \leanok
   A sentinel, a bit array of ones, just past the piece; then from the first bit array on: step over
@@ -344,20 +347,23 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
   (Definition~\ref{def:siftBitArray}; \csource{sift.c}{1061}{1082}, \csource{sift.c}{1088}{1092},
   \csource{sift.c}{1298}{1299}; with \verb|zero|, \csource{rp-private.h}{133}{133},
   \csource{rp-private.h}{205}{205}, \csource{rp-private.h}{236}{236},
-  \csource{rp-private.h}{262}{262}, \csource{rp-private.h}{286}{286}), returning after a bit array
-  at which the callback stopped the search. Its contract, for a delivery whose flag is clear, sieve
-  specs that fit (Lemma~\ref{lem:rowIndices}), the reciprocals of their moduli and the bounds of
-  \verb|small|: if bit $t$ of word $y$ and-ed with the rows of the moduli of the second stage is
-  $t < 64$ and $k(R w_0 + 64 y + t)$, for a test $k$ of the bits and every
-  $y < n \cdot \mathrm{rbaPack}$, the delivery after the scan is that of the concatenation of the
-  points of the numerators $a_0 + 2^k j$ of the class of the bits $j = R w_0, \dots, R(w_0 + n) - 1$
-  that pass $k$ and the test of a candidate, in increasing order, also after a stop, when the
-  delivery of the points of the bit arrays done is that of all of them.
+  \csource{rp-private.h}{262}{262}, \csource{rp-private.h}{286}{286}), each bit array that is not
+  zero counted in the counters of the sieve (Definition~\ref{def:counters}), which the scan takes
+  and returns with the delivery, returning after a bit array at which the callback stopped the
+  search. Its contract, for a delivery whose flag is clear, sieve specs that fit
+  (Lemma~\ref{lem:rowIndices}), the reciprocals of their moduli and the bounds of \verb|small|: if
+  bit $t$ of word $y$ and-ed with the rows of the moduli of the second stage is $t < 64$ and
+  $k(R w_0 + 64 y + t)$, for a test $k$ of the bits and every $y < n \cdot \mathrm{rbaPack}$, the
+  delivery after the scan is that of the concatenation of the points of the numerators $a_0 + 2^k j$
+  of the class of the bits $j = R w_0, \dots, R(w_0 + n) - 1$ that pass $k$ and the test of a
+  candidate, in increasing order, also after a stop, when the delivery of the points of the bit
+  arrays done is that of all of them.
 \end{definition}
 
 \begin{definition}[One piece]\label{def:siftPiece}
   \uses{def:andRows, def:andRowsChunked, lem:andRowsChunked, def:scanPiece, def:numClasses,
-    lem:numClasses, lem:reads_row, lem:rowIndices, def:barrett, def:packingConstants, def:deliver}
+    lem:numClasses, lem:reads_row, lem:rowIndices, def:barrett, def:packingConstants, def:deliver,
+    def:counters}
   \lean{Ratpoints.Sieve.siftPiece, Ratpoints.Sieve.siftPiece_spec, Ratpoints.Sieve.IsMasked.eq_deliver}
   \leanok
   A fresh array of $n + 1$ bit arrays, as the worker's array of \verb|array_size| bit arrays and two
@@ -371,10 +377,12 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
   a time (Definition~\ref{def:andRows}) for a chunk of $1$ or above $16$; the low mask $m_l$ on the
   first bit array if $m_l \ne 0$ and the high mask $m_h$ on the last if $m_h \ne 0$
   (\csource{sift.c}{1030}{1041}); and the scan with the other moduli, those of the second stage,
-  with their reciprocals, the thunks of the check, the flags of the check and the delivery, the
-  piece returning the delivery that the scan returns; the first stage starts from the pattern of the
-  class of the denominator, an argument of the piece. The piece also has the prototype and the head
-  of \verb|_ratpoints_sift0| with the test \verb|small| (\csource{rp-private.h}{610}{614},
+  with their reciprocals, the thunks of the check, the flags of the check, the delivery and the
+  counters of the sieve (Definition~\ref{def:counters}), to which the piece adds its
+  $n\,\mathrm{rbaPack}$ words, multiplied as \verb|UInt64|s, the piece returning the delivery and
+  the counters that the scan returns; the first stage starts from the pattern of the class of the
+  denominator, an argument of the piece. The piece also has the prototype and the head of
+  \verb|_ratpoints_sift0| with the test \verb|small| (\csource{rp-private.h}{610}{614},
   \csource{sift.c}{498}{531}), the count of its words (\csource{sift.c}{548}{548}), the timer and
   the test before its second stage (\csource{sift.c}{1056}{1058}) and its end
   (\csource{sift.c}{1300}{1305}). Its contract, for a delivery whose flag is clear, $m_h < R$, sieve
@@ -392,7 +400,7 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
   \uses{def:siftPiece, def:stage3, def:deliver, def:siftBits, def:numeratorsToBits, lem:admits_mul,
     lem:classOffsets, lem:numClasses, lem:numeratorsToBits, lem:reads_row, lem:rowIndices,
     lem:siftBits, def:buildRows, lem:buildRows, def:intervalBits, def:numeratorRanges,
-    lem:siftIntervals}
+    lem:siftIntervals, def:counters, lem:counters}
   \lean{Ratpoints.Sieve.sift, Ratpoints.Sieve.sift_spec}
   \leanok
   For the denominator $b$ in the packing of its class (Definition~\ref{def:numClasses}), the bounds
@@ -421,31 +429,36 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
   flags \verb|stage3_filled| and \verb|compute_bc| of the sieving thread, which \verb|worker_init|
   clears with its field \verb|iv| (\csource{find_points.c}{3129}{3130},
   \csource{rp-private.h}{583}{583}); the degree $d$ and the flags of the check, which the check
-  reads; the delivery returned with the store, which keeps the rows built for the rest of the run.
-  For the one interval $[-h, h]$, $h \ge H$, of a search without search intervals the numerators are
-  $-H, \dots, H$, in the form of their bits that splits the ends for $H > 2^{63} - 65$. Its
-  contract, for a delivery whose flag is clear, $A \ge 1$, a denominator $0 < b < 2^{63}$,
-  $H < 2^{63}$, a class that packs a word $w$ (Lemma~\ref{lem:numClasses}) and has a row of offsets,
-  sieve entries in the first two stages whose tables of inverses invert, with the reciprocals of
-  their moduli, the residues $b\,\mathrm{dinv}[k] \bmod p$ and the offsets of the class
-  (Lemma~\ref{lem:classOffsets}), a store of the tables of rows that fits them
-  (Lemma~\ref{lem:storeTables}), prime entries with their reciprocals in the third
-  (Definition~\ref{def:stage3}), and the ranges of the numerators that the bounds give at $b$
-  (Definition~\ref{def:numeratorRanges}), quantified in the postcondition, since the program does
-  not mention them: the store after the denominator fits the entries again, also when no interval
-  asks for the rows (Lemma~\ref{lem:buildRows}), and the delivery is that of the points of the check
-  with the flags (Definition~\ref{def:checkNumWith}) of the numerators $-H, \dots, H$ that lie in
-  one of the ranges, pass the class bit of $w$ and survive the sieve entries of all three stages, in
-  increasing order (Lemma~\ref{lem:siftIntervals}); with the exact check on, these are what the
-  brute-force reference finds over $b$ and these numerators, the points of the sieve of $b$ followed
-  by its check in stage~C1 whose numerators lie in the ranges and pass the class bit, mapped by
-  $\mathrm{swapPoint}$ when the flag of the reversal is set, those with $y < 0$ left out under
-  $\mathrm{noY}$ (Lemma~\ref{lem:sift_eq_checkDen}).
+  reads; the counters of the sieve (Definition~\ref{def:counters}), the fields of the sieving thread
+  that it keeps (\csource{rp-private.h}{585}{585}), the count of the denominators sieved one up at
+  the start and the counts of the pieces added; the delivery returned with the store, which keeps
+  the rows built for the rest of the run, and the counters. For the one interval $[-h, h]$,
+  $h \ge H$, of a search without search intervals the numerators are $-H, \dots, H$, in the form of
+  their bits that splits the ends for $H > 2^{63} - 65$. Its contract, for a delivery whose flag is
+  clear, $A \ge 1$, a denominator $0 < b < 2^{63}$, $H < 2^{63}$, a class that packs a word $w$
+  (Lemma~\ref{lem:numClasses}) and has a row of offsets, sieve entries in the first two stages whose
+  tables of inverses invert, with the reciprocals of their moduli, the residues
+  $b\,\mathrm{dinv}[k] \bmod p$ and the offsets of the class (Lemma~\ref{lem:classOffsets}), a store
+  of the tables of rows that fits them (Lemma~\ref{lem:storeTables}), prime entries with their
+  reciprocals in the third (Definition~\ref{def:stage3}), and the ranges of the numerators that the
+  bounds give at $b$ (Definition~\ref{def:numeratorRanges}), quantified in the postcondition, since
+  the program does not mention them: the store after the denominator fits the entries again, also
+  when no interval asks for the rows (Lemma~\ref{lem:buildRows}), and the delivery is that of the
+  points of the check with the flags (Definition~\ref{def:checkNumWith}) of the numerators
+  $-H, \dots, H$ that lie in one of the ranges, pass the class bit of $w$ and survive the sieve
+  entries of all three stages, in increasing order (Lemma~\ref{lem:siftIntervals}); with the exact
+  check on, these are what the brute-force reference finds over $b$ and these numerators, the points
+  of the sieve of $b$ followed by its check in stage~C1 whose numerators lie in the ranges and pass
+  the class bit, mapped by $\mathrm{swapPoint}$ when the flag of the reversal is set, those with
+  $y < 0$ left out under $\mathrm{noY}$ (Lemma~\ref{lem:sift_eq_checkDen}); and, when the callback
+  does not stop the search, the counters are those given plus the counts of the denominator, which
+  depend neither on the callback, the delivery and the flags of the output nor on the store
+  (Lemma~\ref{lem:counters}).
 \end{definition}
 
 \begin{lemma}[The words compute the Booleans]\label{lem:sift_eq_checkDen}
   \uses{def:sift, def:sieveDen, def:checkDen, def:deliver, lem:admits_mul, lem:classOffsets,
-    lem:numClasses}
+    lem:numClasses, def:counters}
   \lean{Ratpoints.Sieve.run_sift_eq_deliver_checkDen, Ratpoints.BruteForce.pointsOfDen_filter}
   \leanok
   For $A \ge 1$, a denominator $0 < b < 2^{63}$, $H < 2^{63}$, a class that packs a word $w$ and has
@@ -453,17 +466,17 @@ contract of the check of stage~C1 quantifies over the test of the numerators.
   are packed for the class at its offsets, a store of the tables of rows that fits them
   (Lemma~\ref{lem:storeTables}), prime entries with their reciprocals in the third, bounds of the
   search intervals that give the ranges of the numerators at $b$
-  (Definition~\ref{def:numeratorRanges}), the exact check on and a delivery whose flag is clear, the
-  delivery after the denominator $b$ that \verb|sift| makes in the packing of the class, with the
-  residues of $b$ divided by the stride, is that of the points that the check of stage~C1 returns on
-  the sieve of stage~C1 with all these entries whose numerators lie in one of the ranges and pass
-  the class bit of $w$, mapped by $\mathrm{swapPoint}$ when the flag of the reversal is set, those
-  with $y < 0$ left out under $\mathrm{noY}$.
+  (Definition~\ref{def:numeratorRanges}), the exact check on, a delivery whose flag is clear and any
+  counters, the delivery after the denominator $b$ that \verb|sift| makes in the packing of the
+  class, with the residues of $b$ divided by the stride, is that of the points that the check of
+  stage~C1 returns on the sieve of stage~C1 with all these entries whose numerators lie in one of
+  the ranges and pass the class bit of $w$, mapped by $\mathrm{swapPoint}$ when the flag of the
+  reversal is set, those with $y < 0$ left out under $\mathrm{noY}$.
 \end{lemma}
 
 \begin{proof}
   \uses{lem:staged, lem:numeratorsToBits, lem:reads_row, lem:rowIndices, lem:siftBits,
-    lem:checkNumWith}
+    lem:checkNumWith, lem:counters}
   \leanok
   The check of stage~C1 on the sieve of stage~C1 gives what the brute-force reference finds over $b$
   and the numerators $-H, \dots, H$ that survive the sieve entries, by the contracts of
@@ -530,10 +543,13 @@ Each component of this chapter differs from the C code in a stated way, recorded
     \verb|_ratpoints_sift0| within the walk, and the flags of the check as an argument, which the
     components from the run down to it hand on, for the bits \verb|RATPOINTS_REVERSED|,
     \verb|RATPOINTS_NO_CHECK| and \verb|RATPOINTS_NO_Y| of the flags that the check reads;
-  \item no counts of the denominators sieved, of the words swept and of the bit arrays, bits and
+  \item the counts of the denominators sieved, of the words swept and of the bit arrays and
     numerators that reach each stage, which ratpoints reads to correct the moduli between the blocks
-    of the run (I), no threads, and natural numbers and integers for the \verb|long|s, with a
-    \verb|Nat| for \verb|array_size| so that only $0$ stands for the default.
+    of the run, in a record of their own (Definition~\ref{def:counters}) passed and returned beside
+    the delivery, for the fields of the sieving thread, which the run of the model discards until
+    the blocks and the correction of stage~I read them; no threads, and natural numbers and integers
+    for the \verb|long|s, with a \verb|Nat| for \verb|array_size| so that only $0$ stands for the
+    default.
 \end{itemize}
 
 \section{The command-line program and the differential tests}\label{sec:wordsCli}
@@ -578,9 +594,12 @@ rows and the tables of rows in \verb|Ratpoints/Proof/PrimeRows.lean|,
 Chapter~\ref{chap:rows}), in \verb|Ratpoints/Proof/SetBits.lean| since stage~F3 for the lowest set
 bit and the class bit, in \verb|Ratpoints/Proof/Scan.lean| from the walk through the set bits of a
 word up to the scan of a piece, since stage~G, which split it off \verb|Ratpoints/Proof/Sift.lean|,
-and in \verb|Ratpoints/Proof/Sift.lean| from one piece on, since stage~F2, on which the contract of
-the run rests (since stage~E in \verb|Ratpoints/Proof/Denominators.lean|, with Mathlib); the lemmas
-on vectors, arrays, lists, ranges, natural numbers and integers that are not about the model are in
+with the contracts of their counters in \verb|Ratpoints/Proof/ScanCounts.lean| since stage~I, in
+\verb|Ratpoints/Proof/SiftBits.lean| for one piece and the bits of one interval, since stage~I,
+which split it off \verb|Ratpoints/Proof/Sift.lean|, and in \verb|Ratpoints/Proof/Sift.lean| for one
+denominator, on which the contract of the run rests (since stage~E in
+\verb|Ratpoints/Proof/Denominators.lean|, with Mathlib); the lemmas on vectors, arrays, lists,
+ranges, natural numbers and integers that are not about the model are in
 \verb|Ratpoints/Proof/Containers.lean| and those on words in \verb|Ratpoints/Proof/Bits.lean|, under
 their names in the namespaces of Lean core.
 

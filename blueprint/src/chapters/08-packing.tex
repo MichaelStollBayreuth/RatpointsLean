@@ -448,7 +448,7 @@ fitting specs and the reciprocals of their moduli.
 \end{proof}
 
 \begin{definition}[The bits of one denominator]\label{def:siftBits}
-  \uses{def:siftPiece, def:rows, def:numClasses, def:rbaPack, def:entryRef}
+  \uses{def:siftPiece, def:rows, def:numClasses, def:rbaPack, def:entryRef, def:counters}
   \lean{Ratpoints.Sieve.setRows, Ratpoints.Sieve.siftBits}
   \leanok
   The sieve specs of a denominator: for each sieve entry of the first two stages, its modulus, the
@@ -461,17 +461,19 @@ fitting specs and the reciprocals of their moduli.
   $\lfloor \mathrm{high}/\mathrm{rbaLength}\rfloor$ with the masks
   $\mathrm{low} - \mathrm{rbaLength}\, w_{\mathrm{low}}$ and
   $\mathrm{rbaLength} - 1 - (\mathrm{high} \bmod \mathrm{rbaLength})$, each piece delivering its
-  points to the callback and the loop returning after a piece at which the callback stopped the
-  search, as \verb|sift| does at line 3611 (\csource{find_points.c}{3563}{3612}). One denominator
-  (Definition~\ref{def:sift}) takes the class, the residues, the array of offsets, the bounds of the
-  search intervals and the store, turns each interval into bits (Definition~\ref{def:intervalBits}),
-  makes the specs and builds the missing rows (Definition~\ref{def:buildRows}) at the first interval
-  with the code~$0$, and sifts the bits of each interval with the code~$0$.
+  points to the callback and counting in the counters of the sieve (Definition~\ref{def:counters}),
+  which the bits take and return with the delivery, and the loop returning after a piece at which
+  the callback stopped the search, as \verb|sift| does at line 3611
+  (\csource{find_points.c}{3563}{3612}). One denominator (Definition~\ref{def:sift}) takes the
+  class, the residues, the array of offsets, the bounds of the search intervals and the store, turns
+  each interval into bits (Definition~\ref{def:intervalBits}), makes the specs and builds the
+  missing rows (Definition~\ref{def:buildRows}) at the first interval with the code~$0$, and sifts
+  the bits of each interval with the code~$0$.
 \end{definition}
 
 \begin{lemma}[The bits of one denominator]\label{lem:siftBits}
   \uses{def:siftBits, lem:reads_row, lem:numeratorsToBits, lem:classOffsets, def:siftPiece,
-    lem:numClasses, lem:rowIndices, def:deliver}
+    lem:numClasses, lem:rowIndices, def:deliver, def:counters}
   \lean{Ratpoints.Sieve.siftBits_spec, Ratpoints.Sieve.SiftInvariant.eq_deliver_of_quit, Ratpoints.Sieve.packedReads, Ratpoints.Sieve.flatMap_filter_bits_eq, Ratpoints.Sieve.reads_of_mem_packedReads, Ratpoints.Sieve.SieveEntry.PackedFor.fits, Ratpoints.Sieve.NumClass.Packs.filter_filter_emod}
   \leanok
   The bits of an interval, in pieces of at least one bit array, with fitting specs and the
@@ -742,7 +744,8 @@ ranges of the numerators that the bounds of the search intervals represent, so t
 $1500$ lines ($1279$ and $438$, $327$ before stage~H); \verb|Ratpoints/Proof/Stages.lean| the second
 stage with its cursors and the prime entries field by field; \verb|Ratpoints/Proof/Scan.lean|, split
 off \verb|Sift.lean| in stage~G, the contracts of the sieve on the bit numbers up to the scan of a
-piece, and \verb|Ratpoints/Proof/Sift.lean| those from one piece on and that of one denominator;
+piece, \verb|Ratpoints/Proof/SiftBits.lean|, split off \verb|Sift.lean| in stage~I, those of one
+piece and of the bits of one interval, and \verb|Ratpoints/Proof/Sift.lean| that of one denominator;
 \verb|Ratpoints/Proof/Moduli.lean| the packable entry of a modulus with its tables of inverses;
 \verb|Ratpoints/Proof/Denominators.lean| the run with the classes, the residues and the offsets;
 \verb|Ratpoints/Proof/Shapes.lean| the shapes on the patterns of the classes;

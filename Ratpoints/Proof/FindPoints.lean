@@ -1189,9 +1189,13 @@ private theorem exists_isSoundTest_run_sieving {c : List ℤ} {H : ℕ} {P : Par
             S b a).flatMap (checkNumWith (scaledCoeffs c (degree c) b)
               (if degree c % 2 = 1 then b else 1) b fl)) := by
   have hi := (run_sievingInfo_spec hP).1 _ _ _ _ _ hsi
-  exact exists_isSoundTest_run_sieveRun (isSoundRun_of_run_classOffsets hP rfl hsi rfl hcd.symm rfl
-    rfl) hH63 (P.one_le_arraySizeAt hH) hbLow hbH rfl hi.isForbiddenEntry hi.isForbiddenVal
-    (by split <;> simp) dom hdom
+  -- the arguments that only the goal fixes are given: unifying `sieving` with the run for them
+  -- unfolds the run beyond the limit of the elaborator
+  exact exists_isSoundTest_run_sieveRun (sp1 := P.sp1) (useJacobi := useJacobi)
+    (checkDenom := if forb.isEmpty && forbVal.isEmpty && !useJacobi then false
+      else degree c % 2 == 0)
+    (isSoundRun_of_run_classOffsets hP rfl hsi rfl hcd.symm rfl rfl) hH63 (P.one_le_arraySizeAt hH)
+    hbLow hbH rfl hi.isForbiddenEntry hi.isForbiddenVal (by split <;> simp) dom hdom
 
 -- At an exit of the search, on a curve without points, the test that lets no numerator through.
 private theorem exists_isSoundTest_of_forall_not_isPoint {c : List ℤ} {H : ℕ} {P : Params}

@@ -825,7 +825,7 @@ numerators with $a/b$ in one of the search intervals.
 
 \begin{lemma}[The loop over the intervals]\label{lem:siftIntervals}
   \uses{def:intervalBits, def:numeratorRanges, lem:numeratorsToBits, def:siftBits, lem:siftBits,
-    def:checkNumWith, lem:deliver, lem:accepted, lem:staged, lem:storeTables}
+    def:checkNumWith, lem:deliver, lem:accepted, lem:staged, lem:storeTables, def:counters}
   \lean{Ratpoints.Sieve.SiftIntervalsInvariant, Ratpoints.Sieve.SiftIntervalsLoopInvariant, Ratpoints.Sieve.IsSiftArgs, Ratpoints.Sieve.flatMap_filter_intervalBits_eq, Ratpoints.Sieve.flatMap_acceptedPoints_eq_flatMap_checkNumWith, Ratpoints.Sieve.flatMap_flatMap_filter_eq_flatMap_filter_inRanges, Ratpoints.Sieve.NumClass.map_range_eq_filter_map_range, Ratpoints.Sieve.RangesFor.represents_of_eq_append_cons, Ratpoints.Sieve.RangesFor.lt_fst_of_mem_drop, Ratpoints.Sieve.filter_numerators_eq_nil_of_lt, Ratpoints.Sieve.filter_numerators_eq_nil_of_lt_neg, Ratpoints.BruteForce.pairwise_lt_numerators, List.filter_append_filter_of_pairwise, List.flatMap_filter_eq_filter_any}
   \leanok
   Over an increasing list of integers and ranges that increase and are strictly apart, the
@@ -842,7 +842,8 @@ numerators with $a/b$ in one of the search intervals.
   delivery is that of the points of the first ranges; after the return at a stop or at an interval
   above $H$, the store fits the entries and the delivery is that of the points of all the ranges;
   with a structure of what the contract needs of its arguments, through which the steps of the loop
-  read them.
+  read them. The loop takes and returns the counters of the sieve (Definition~\ref{def:counters}),
+  which this invariant does not read.
 \end{lemma}
 
 \begin{proof}
@@ -1971,9 +1972,10 @@ the estimate of the work (Section~\ref{sec:costs}), with its correction between 
 blocks and the threads, and the numbers of the moduli used; in \verb|ratpoints.h| the tuning fields
 and the number of threads of \verb|ratpoints_args| (lines 365-367 and 370), and the numbers of the
 moduli used, the private data of \verb|ratpoints_args| and the end of the type (lines 378-400); in
-\verb|rp-private.h| the macros of the threads (lines 76-84) and, in \verb|rp_worker|, the counters
-of the block with the decision of the correction (lines 579-582) and the fields of the pool with the
-name of the type (lines 584-585); and in \verb|main.c| the defaults of the tuning options
+\verb|rp-private.h| the macros of the threads (lines 76-84) and, in \verb|rp_worker|, the decision
+of the correction (line 582) and the fields of the pool (line 584), the counters of the block having
+left it with Definition~\ref{def:counters} and the name of the type with one denominator
+(Definition~\ref{def:sift}); and in \verb|main.c| the defaults of the tuning options
 \verb|-r -R -U -C -A -Q -W| (lines 339-343 and 345-346), which the choice of the moduli by the curve
 and its correction read, and message~4, on the moduli used (lines 992-998).
 

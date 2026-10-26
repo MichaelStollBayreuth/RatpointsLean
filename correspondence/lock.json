@@ -4068,8 +4068,20 @@
         "Ratpoints.Sieve.sift"
       ]
     },
+    "rp-private.h:579-581": {
+      "hash": "fda370d2584563894fd260ffc4402fcefc6d2737996b0b50941d19c1b4a5e20c",
+      "owners": [
+        "Ratpoints.Sieve.Counters"
+      ]
+    },
     "rp-private.h:583-583": {
       "hash": "f60584924f2f49fac245e83826a139a29422a9a6952dd5715d63e186c83aabbe",
+      "owners": [
+        "Ratpoints.Sieve.sift"
+      ]
+    },
+    "rp-private.h:585-585": {
+      "hash": "0dc52e72c21140cf41f7ffe8dfef093ace91fb2e59803eeb7ac674b8e7ee5821",
       "owners": [
         "Ratpoints.Sieve.sift"
       ]

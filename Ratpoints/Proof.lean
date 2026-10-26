@@ -36,12 +36,14 @@ public import Ratpoints.Proof.Rounding
 public import Ratpoints.Proof.RowStore
 public import Ratpoints.Proof.Rows
 public import Ratpoints.Proof.Scan
+public import Ratpoints.Proof.ScanCounts
 public import Ratpoints.Proof.SearchDens
 public import Ratpoints.Proof.SetBits
 public import Ratpoints.Proof.Setup
 public import Ratpoints.Proof.Shapes
 public import Ratpoints.Proof.Sieve
 public import Ratpoints.Proof.Sift
+public import Ratpoints.Proof.SiftBits
 public import Ratpoints.Proof.Stages
 public import Ratpoints.Proof.Sturm
 public import Ratpoints.Proof.SturmCounts

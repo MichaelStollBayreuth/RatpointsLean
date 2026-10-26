@@ -262,15 +262,18 @@ reciprocals, and the test of the denominators up to $b_{\mathrm{high}} \le \math
 \end{proof}
 
 \begin{definition}[The test of a candidate and the exact check]\label{def:accepted}
-  \uses{def:relprime, def:stage3, def:bruteForce, def:swapPoint, def:delivery, def:checkNumWith}
+  \uses{def:relprime, def:stage3, def:bruteForce, def:swapPoint, def:delivery, def:checkNumWith,
+    def:counters}
   \lean{Ratpoints.Sieve.accepted, Ratpoints.Sieve.checkPoint, Ratpoints.Sieve.acceptedPoints}
   \leanok
   A numerator $a$ goes on to the exact check for the denominator $b$ when it is prime to $b$
   (Definition~\ref{def:relprime}, on the words of $a$ and $b$) and passes the third stage, whose
   list is a thunk made once per denominator and forced when the first numerator of $b$ gets that
-  far, for \verb|stage3_filled| (\csource{sift.c}{438}{446}). The exact check of $a$ from the
-  products $c_k b^{d - k}$, a thunk made once per denominator for \verb|compute_bc|, and the degree
-  $d$, with one more factor $b$ for odd $d$, delivers to the callback with the flags of the check
+  far, for \verb|stage3_filled| (\csource{sift.c}{438}{446}); the test takes the counters of the
+  sieve (Definition~\ref{def:counters}) and returns them with its verdict, those prime to $b$ and
+  those that pass the third stage too counted. The exact check of $a$ from the products
+  $c_k b^{d - k}$, a thunk made once per denominator for \verb|compute_bc|, and the degree $d$, with
+  one more factor $b$ for odd $d$, delivers to the callback with the flags of the check
   (Definition~\ref{def:delivery}): unless $\mathrm{noCheck}$, for the value $v$ and
   $y = \lfloor \sqrt{v} \rfloor$, when $v \ge 0$ and $v = y^2$, the mapped call with $(a : y : b)$
   and then, unless that call stopped the search, $y = 0$ or $\mathrm{noY}$, the mapped call with
@@ -286,17 +289,17 @@ reciprocals, and the test of the denominators up to $b_{\mathrm{high}} \le \math
 \end{definition}
 
 \begin{lemma}[The test of a candidate]\label{lem:accepted}
-  \uses{def:accepted, lem:relprime, lem:stage3, def:checkNumWith}
-  \lean{Ratpoints.Sieve.accepted_spec, Ratpoints.Sieve.run_accepted, Ratpoints.Sieve.acceptedPoints_eq_ite, Int64.minValue_lt_ofInt, Int64.ofNat_pos}
+  \uses{def:accepted, lem:relprime, lem:stage3, def:checkNumWith, def:counters}
+  \lean{Ratpoints.Sieve.accepted_spec, Ratpoints.Sieve.fst_run_accepted, Ratpoints.Sieve.run_accepted, Ratpoints.Sieve.acceptedPoints_eq_ite, Int64.minValue_lt_ofInt, Int64.ofNat_pos}
   \leanok
   For $1 \le b < 2^{63}$ and $|a| < 2^{63}$, the test of a candidate is the test of $\gcd(a, b) = 1$
-  followed by the third stage. For $1 \le b < 2^{63}$, $|a| \le H < 2^{63}$ and prime entries in the
-  third stage with their reciprocals, with no hypothesis on $\gcd(a, b)$, a numerator passes the
-  test exactly when it is prime to $b$ and every entry's row of $b$ admits it. So the points that
-  the extraction delivers for a numerator $a$ are those of the check with the flags
-  (Definition~\ref{def:checkNumWith}), with the factor $b$ for odd $d$ and $1$ for even $d$, when
-  $a$ survives the prime entries of the third stage, and none otherwise; that the exact check
-  delivers them is Lemma~\ref{lem:checkDelivery}.
+  followed by the third stage; its verdict does not depend on the counters. For $1 \le b < 2^{63}$,
+  $|a| \le H < 2^{63}$ and prime entries in the third stage with their reciprocals, with no
+  hypothesis on $\gcd(a, b)$, a numerator passes the test exactly when it is prime to $b$ and every
+  entry's row of $b$ admits it. So the points that the extraction delivers for a numerator $a$ are
+  those of the check with the flags (Definition~\ref{def:checkNumWith}), with the factor $b$ for odd
+  $d$ and $1$ for even $d$, when $a$ survives the prime entries of the third stage, and none
+  otherwise; that the exact check delivers them is Lemma~\ref{lem:checkDelivery}.
 \end{lemma}
 
 \begin{proof}
@@ -349,7 +352,7 @@ reciprocals, and the test of the denominators up to $b_{\mathrm{high}} \le \math
 \end{proof}
 
 \begin{definition}[A bit array through the second stage and the extraction]\label{def:siftBitArray}
-  \uses{def:secondStage, def:walkWord, def:accepted, def:numClasses}
+  \uses{def:secondStage, def:walkWord, def:accepted, def:numClasses, def:counters}
   \lean{Ratpoints.Sieve.siftBitArray, Ratpoints.Sieve.siftBitArrayByWords, Ratpoints.Sieve.siftBitArrayWhole}
   \leanok
   For a bit array that the first stage leaves nonzero, with the word number $i$, from a copy of it:
@@ -369,13 +372,14 @@ reciprocals, and the test of the denominators up to $b_{\mathrm{high}} \le \math
   before its loop over the words and walks word $\kappa$ from $a_0 + 2^k R i + 64 \cdot 2^k \kappa$
   (\csource{sift.c}{1126}{1134}, \csource{sift.c}{1137}{1139}, \csource{sift.c}{1154}{1159},
   \csource{sift.c}{1172}{1173}); each numerator goes to the test of a candidate and, if it passes,
-  to the exact check, which delivers its points to the callback, and each arm returns after a walk
-  at which the callback stopped the search.
+  to the exact check, which delivers its points to the callback, the walks counting in the counters
+  of the sieve (Definition~\ref{def:counters}), which each arm takes and returns with the delivery,
+  and each arm returns after a walk at which the callback stopped the search.
 \end{definition}
 
 \begin{lemma}[A bit array through the second stage and the extraction]\label{lem:siftBitArray}
   \uses{def:siftBitArray, lem:secondStage, def:walkWord, def:andRows, def:numClasses,
-    lem:numClasses, lem:rowIndices, def:deliver}
+    lem:numClasses, lem:rowIndices, def:deliver, def:counters}
   \lean{Ratpoints.Sieve.SiftBitArrayInvariant, Ratpoints.Sieve.SiftBitArrayWalkInvariant, Ratpoints.Sieve.SiftBitArrayLoopInvariant, Ratpoints.Sieve.SiftBitArrayWalkLoopInvariant, Ratpoints.Sieve.SiftBitArrayInvariant.eq_deliver_of_quit, Ratpoints.Sieve.SiftBitArrayWalkInvariant.eq_deliver_of_quit, Ratpoints.Sieve.eq_deliver_of_quit_of_forall_eq, Ratpoints.Sieve.siftBitArrayByWords_spec, Ratpoints.Sieve.siftBitArrayWhole_spec, Ratpoints.Sieve.siftBitArray_spec}
   \leanok
   For sieve specs that fit (Lemma~\ref{lem:rowIndices}), the reciprocals of their moduli and the
@@ -613,9 +617,11 @@ Each component of this chapter differs from the C code in a stated way, recorded
     $\mathrm{defaultSp1}$ for an absent \verb|-n|, which ratpoints reads nowhere, and the flat
     offset $\mathrm{sp2Extra}$ for an absent \verb|-N|, for the choices by cost, the scaled offset
     and \verb|-R|, which the model ignores (stage~I);
-  \item no counts of the numerators that reach the test for common factors and the third stage, nor
+  \item the counts of the numerators that reach the test for common factors and the third stage and
     of the bits, the bit arrays, the words and the denominators that the stages see, which ratpoints
-    reads to correct the moduli between the blocks (stage~I), and no counts, stops, timings and
+    reads to correct the moduli between the blocks, in a record of their own
+    (Definition~\ref{def:counters}) passed and returned beside the delivery, which the run of the
+    model discards until the correction of stage~I reads them, and no counts, stops, timings and
     output of the instrumentation of the stages; the arguments of the run passed explicitly, for the
     pointer of the sieving thread to them, with no pool, slot and stop flag of a thread of the pool
     (stage~I).
@@ -637,10 +643,11 @@ options of the output \verb|RATPOINTS_NO_Y| and \verb|RATPOINTS_NO_CHECK| of the
 search copies into the flags that the exact check reads, since stage~G (Chapter~\ref{chap:output}),
 and the search intervals of the sieving thread and the Sturm step since stage~H
 (Chapter~\ref{chap:region}); left to stage~I the correction of the moduli between the blocks, with
-the counters and the decisions of the sieving thread, the choice of the cut points by cost (with the
-target \verb|RATPOINTS_SURVIVORS_PER_WORD|), the pool of threads, and, with the blocks, the
-reduction of the first word of a block modulo the forbidden divisors tested with words, which still
-divides (\verb|wordBits|), with the reciprocals of these divisors.
+the decisions of the sieving thread and its reading of the counters (Definition~\ref{def:counters}),
+the choice of the cut points by cost (with the target \verb|RATPOINTS_SURVIVORS_PER_WORD|), the pool
+of threads, and, with the blocks, the reduction of the first word of a block modulo the forbidden
+divisors tested with words, which still divides (\verb|wordBits|), with the reciprocals of these
+divisors.
 
 \section{Files and names}\label{sec:stagesFiles}
 
@@ -669,15 +676,18 @@ the points that the extraction delivers for a numerator, and of the second stage
 it: those of the walk, of a bit array through the second stage and the extraction, and of the scan
 in \verb|Ratpoints/Proof/Scan.lean|, and those of one piece and one denominator, with the lemma that
 the words compute the Booleans, in \verb|Ratpoints/Proof/Sift.lean|, from which stage~G split off
-\verb|Scan.lean|. \verb|Stages.lean| and \verb|Sift.lean| are new with this sub-stage; the three
-files use Lean core and \verb|Std| only, like \verb|Ratpoints/Proof/Words.lean|, which keeps the
-contract of the first stage one row at a time (that of the chunked arm is in
-\verb|Ratpoints/Proof/FirstStage.lean| since stage~F4) and holds the lemmas on the words of the rows
-that both stages use, and like \verb|Ratpoints/Proof/Reductions.lean|, which holds the contracts of
-the reductions since stage~F3. The lemmas in core's namespaces that the sub-stage adds are the facts
-on the signed 64-bit words (the arithmetic shift, the mask $x \gg 63$ with the smaller and the
-distance of two words that it gives without a branch, the odd part of a positive word by the lowest
-set bit, the absolute value, and the words of an integer and of a natural number below $2^{63}$), in
+\verb|Scan.lean| and stage~I \verb|Ratpoints/Proof/SiftBits.lean|, which holds that of one piece
+(the contracts of the counters, since stage~I, are in \verb|Ratpoints/Proof/ScanCounts.lean| for the
+walk, the extraction and the scan, and beside those of the delivery from one piece on).
+\verb|Stages.lean| and \verb|Sift.lean| are new with this sub-stage; these files use Lean core and
+\verb|Std| only, like \verb|Ratpoints/Proof/Words.lean|, which keeps the contract of the first stage
+one row at a time (that of the chunked arm is in \verb|Ratpoints/Proof/FirstStage.lean| since
+stage~F4) and holds the lemmas on the words of the rows that both stages use, and like
+\verb|Ratpoints/Proof/Reductions.lean|, which holds the contracts of the reductions since stage~F3.
+The lemmas in core's namespaces that the sub-stage adds are the facts on the signed 64-bit words
+(the arithmetic shift, the mask $x \gg 63$ with the smaller and the distance of two words that it
+gives without a branch, the odd part of a positive word by the lowest set bit, the absolute value,
+and the words of an integer and of a natural number below $2^{63}$), in
 \verb|Ratpoints/Proof/Bits.lean|, and, in \verb|Ratpoints/Proof/Containers.lean| since stage~F4, the
 steps of the binary algorithm and of the reductions by a reciprocal on natural numbers, two facts on
 lists and vectors that the scan and the sieve of one denominator use (\verb|List.flatMap_filter|,

@@ -57,8 +57,9 @@ denominator. The loops return at a stop: their invariants hold the delivery of t
 far with the flag clear before a return, and the value returned after it, the delivery of all the
 points, since the reference passes over the points after the first call that sets the flag
 (`Ratpoints.Delivery.deliver_eq_of_prefix`); their verification conditions are closed by lemmas in
-their shape. The contracts of the pieces, of the bits of one interval and of the sieve of one
-denominator are in `Ratpoints.Proof.Sift`.
+their shape. The contracts of the counters of these components are in `Ratpoints.Proof.ScanCounts`;
+those of the pieces and of the bits of one interval are in `Ratpoints.Proof.SiftBits`, and that of
+the sieve of one denominator in `Ratpoints.Proof.Sift`.
 -/
 
 @[expose] public section
@@ -77,9 +78,16 @@ variable {σ : Type} (process : Int → Int → Int → σ → Answer σ)
 
 -- The test of a candidate, as a value for the contract of the walk: the walk's contract speaks of
 -- its result, without the hypotheses of `Ratpoints.Sieve.accepted_spec`.
-private theorem accepted_value (a : Int) (b : Nat) (checks : Thunk (List CheckSpec)) :
-    ⦃ True ⦄ accepted a b checks ⦃ fun r ↦ r = Id.run (accepted a b checks) ⦄ :=
+private theorem accepted_value (a : Int) (b : Nat) (checks : Thunk (List CheckSpec))
+    (cnt : Counters) :
+    ⦃ True ⦄ accepted a b checks cnt ⦃ fun r ↦ r = Id.run (accepted a b checks cnt) ⦄ :=
   ⟨fun _ ↦ rfl⟩
+
+/-- A pair whose first component is not `true` has no first component `true`, in the form of the
+verification conditions of a component that returns a Boolean with its counters. -/
+theorem _root_.Bool.not_fst_eq_true_of_eq {α : Type} {ok : Bool} {c : α} {p : Bool × α}
+    (h : (ok, c) = p) (hok : ¬ok = true) : ¬p.1 = true :=
+  h ▸ hok
 
 /-- The property of the delivery `r` of a walk through the set bits of the word `x0`, lowest first,
 bit `t` standing for the numerator `a0 + step t`, that delivers the list `g a` of the numerator `a`
@@ -100,16 +108,16 @@ delivery of the lists of the numerators of all the set bits of `x0`, since those
 passed over. -/
 def WalkDeliveryWhileInvariant (g : Int → List (Int × Int × Int)) (x0 : UInt64) (a0 : Int)
     (step : Nat) (r0 : Delivery σ) :
-    Std.WP.WhileInvariant (Option (Delivery σ) × UInt64 × Delivery σ) Prop :=
+    Std.WP.WhileInvariant (Option (Delivery σ × Counters) × UInt64 × Delivery σ × Counters) Prop :=
   .mk fun exit s ↦ s.1 = none ∧
-    WalkWhileInvariant x0 (WalkDeliveryInvariant process g x0 a0 step r0) exit (s.2.2, s.2.1) ∨
-      exit = true ∧ s.1 = some (r0.deliver process ((((List.range 64).filter
+    WalkWhileInvariant x0 (WalkDeliveryInvariant process g x0 a0 step r0) exit (s.2.2.1, s.2.1) ∨
+      exit = true ∧ s.1.map Prod.fst = some (r0.deliver process ((((List.range 64).filter
         (x0.toBitVec.getLsbD ·)).map fun t : Nat ↦ a0 + step * t).flatMap g))
 
 section
 
 variable {process} {g : Int → List (Int × Int × Int)} {x0 x : UInt64} {a0 : Int} {step : Nat}
-  {r0 r r' : Delivery σ} {o : Option (Delivery σ)} {mb : Nat}
+  {r0 r r' : Delivery σ} {o : Option (Delivery σ × Counters)} {mb : Nat}
 
 theorem walkDeliveryInvariant_zero (g : Int → List (Int × Int × Int)) (x0 : UInt64) (a0 : Int)
     (step : Nat) (h : r0.quit = false) :
@@ -175,6 +183,7 @@ theorem WalkDeliveryInvariant.eq_deliver_of_exit
   rw [hk.2, hcl.filter_range_of_eq_zero]
 
 variable {w : Thunk (List Int)} {d b : Nat} {fl : CheckFlags} {checks : Thunk (List CheckSpec)}
+  {cnt : Counters}
 
 /-- A step of the walk at a numerator that passes the test of a candidate and whose exact check does
 not stop the search. -/
@@ -183,7 +192,7 @@ theorem WalkDeliveryInvariant.and_sub_one_of_accepted
       (WalkDeliveryInvariant process (acceptedPoints w d b fl checks) x0 a0 step r0) false (r, x))
     (hx : (x != 0) = true)
     (hq : ¬(checkPoint process w d b fl (a0 + step * x.toBitVec.ctz.toNat) r).quit = true)
-    (ha : true = Id.run (accepted (a0 + step * x.toBitVec.ctz.toNat) b checks)) :
+    (ha : true = (Id.run (accepted (a0 + step * x.toBitVec.ctz.toNat) b checks cnt)).1) :
     (x &&& x - 1).toNat < mb ∧ WalkWhileInvariant x0
       (WalkDeliveryInvariant process (acceptedPoints w d b fl checks) x0 a0 step r0) false
         (checkPoint process w d b fl (a0 + step * x.toBitVec.ctz.toNat) r, x &&& x - 1) :=
@@ -196,7 +205,7 @@ theorem WalkDeliveryInvariant.and_sub_one_of_not_accepted
     (h : x.toNat = mb ∧ o = none ∧ WalkWhileInvariant x0
       (WalkDeliveryInvariant process (acceptedPoints w d b fl checks) x0 a0 step r0) false (r, x))
     (hx : (x != 0) = true)
-    (ha : ¬Id.run (accepted (a0 + step * x.toBitVec.ctz.toNat) b checks) = true) :
+    (ha : ¬(Id.run (accepted (a0 + step * x.toBitVec.ctz.toNat) b checks cnt)).1 = true) :
     (x &&& x - 1).toNat < mb ∧ WalkWhileInvariant x0
       (WalkDeliveryInvariant process (acceptedPoints w d b fl checks) x0 a0 step r0) false
         (r, x &&& x - 1) :=
@@ -210,7 +219,7 @@ theorem WalkDeliveryInvariant.eq_deliver_of_accepted_of_quit
       (WalkDeliveryInvariant process (acceptedPoints w d b fl checks) x0 a0 step r0) false (r, x))
     (hx : (x != 0) = true)
     (hq : (checkPoint process w d b fl (a0 + step * x.toBitVec.ctz.toNat) r).quit = true)
-    (ha : true = Id.run (accepted (a0 + step * x.toBitVec.ctz.toNat) b checks)) :
+    (ha : true = (Id.run (accepted (a0 + step * x.toBitVec.ctz.toNat) b checks cnt)).1) :
     checkPoint process w d b fl (a0 + step * x.toBitVec.ctz.toNat) r =
       r0.deliver process ((((List.range 64).filter (x0.toBitVec.getLsbD ·)).map
         fun t : Nat ↦ a0 + step * t).flatMap (acceptedPoints w d b fl checks)) :=
@@ -228,25 +237,29 @@ open Std.WP Lean.Order in
 stop; the test of a candidate is read as its value, `Ratpoints.Sieve.acceptedPoints`. -/
 @[spec]
 theorem walkWord_spec (w : Thunk (List Int)) (d b : Nat) (fl : CheckFlags)
-    (checks : Thunk (List CheckSpec)) (x : UInt64) (a0 : Int) (step : Nat) (r : Delivery σ) :
-    ⦃ r.quit = false ⦄ walkWord process w d b fl checks x a0 step r
-    ⦃ fun r' ↦ r' = r.deliver process ((((List.range 64).filter (x.toBitVec.getLsbD ·)).map
+    (checks : Thunk (List CheckSpec)) (x : UInt64) (a0 : Int) (step : Nat) (r : Delivery σ)
+    (cnt : Counters) :
+    ⦃ r.quit = false ⦄ walkWord process w d b fl checks x a0 step r cnt
+    ⦃ fun r' ↦ r'.1 = r.deliver process ((((List.range 64).filter (x.toBitVec.getLsbD ·)).map
         fun t : Nat ↦ a0 + step * t).flatMap (acceptedPoints w d b fl checks)) ⦄ := by
   vcgen [walkWord, accepted_value] invariants
   · WalkDeliveryWhileInvariant process (acceptedPoints w d b fl checks) x a0 step r
-  · Variant.ofMeasure fun s : Option (Delivery σ) × UInt64 × Delivery σ ↦ s.2.1.toNat
+  · Variant.ofMeasure fun s : Option (Delivery σ × Counters) × UInt64 × Delivery σ × Counters ↦
+      s.2.1.toNat
   all_goals subst_vars
   all_goals simp only [WalkDeliveryWhileInvariant, WhileInvariant.mk_apply,
     Variant.evalsTo_ofMeasure, Variant.evalsBelow_ofMeasure_nat, Assertion.NondetFun.evalsTo_pure,
     meet_prop_eq_and, ofProp_prop_eq, reduceCtorEq, false_and, or_false, false_or, true_and,
-    Option.some.injEq] at *
+    Option.some.injEq, Option.map_some, Option.map_none] at *
   all_goals first
     | exact walkWhileInvariant_self (walkDeliveryInvariant_zero _ _ _ _ ‹_›)
     | exact bne_iff_ne.mp ‹_›
     | exact WalkDeliveryInvariant.exit ‹_› ‹_›
-    | exact WalkDeliveryInvariant.and_sub_one_of_accepted ‹_› ‹_› ‹_› ‹_›
-    | exact WalkDeliveryInvariant.and_sub_one_of_not_accepted ‹_› ‹_› ‹_›
-    | exact WalkDeliveryInvariant.eq_deliver_of_accepted_of_quit ‹_› ‹_› ‹_› ‹_›
+    | exact WalkDeliveryInvariant.and_sub_one_of_accepted ‹_› ‹_› ‹_› (congrArg Prod.fst ‹_›)
+    | exact WalkDeliveryInvariant.eq_deliver_of_accepted_of_quit ‹_› ‹_› ‹_›
+        (congrArg Prod.fst ‹_›)
+    | exact WalkDeliveryInvariant.and_sub_one_of_not_accepted ‹_› ‹_›
+        (Bool.not_fst_eq_true_of_eq ‹_› ‹_›)
     | exact WalkDeliveryInvariant.eq_deliver_of_exit ‹_›
     | exact ‹_›
 
@@ -283,10 +296,10 @@ returned is the delivery of the points of the numerators of the set bits of all 
 bit array. -/
 def SiftBitArrayLoopInvariant (words : Nat → UInt64) (g : Int → List (Int × Int × Int))
     (cl : NumClass) (i : Int) (r0 : Delivery σ) :
-    Std.WP.Invariant Nat (Option (Delivery σ) × Delivery σ) Prop :=
+    Std.WP.Invariant Nat (Option (Delivery σ × Counters) × Delivery σ × Counters) Prop :=
   Std.WP.Invariant.withEarlyReturnNewDo Prop
-    (fun done _ r ↦ SiftBitArrayInvariant process words g cl i r0 done.length r)
-    (fun ret _ ↦ ret = r0.deliver process (((List.range rbaPack).flatMap fun κ ↦
+    (fun done _ s ↦ SiftBitArrayInvariant process words g cl i r0 done.length s.1)
+    (fun ret _ ↦ ret.1 = r0.deliver process (((List.range rbaPack).flatMap fun κ ↦
       ((List.range 64).filter ((words κ).toBitVec.getLsbD ·)).map fun t : Nat ↦
         i * rbaLength + 64 * κ + t).flatMap fun j ↦ g (cl.numerator j)))
 
@@ -297,10 +310,10 @@ return at a stop the delivery of the points of the numerators of the set bits of
 the bit array as the value returned. -/
 def SiftBitArrayWalkLoopInvariant (words : Nat → UInt64) (g : Int → List (Int × Int × Int))
     (cl : NumClass) (i : Int) (r0 : Delivery σ) :
-    Std.WP.Invariant Nat (Option (Delivery σ) × Delivery σ × Int) Prop :=
+    Std.WP.Invariant Nat (Option (Delivery σ × Counters) × Delivery σ × Counters × Int) Prop :=
   Std.WP.Invariant.withEarlyReturnNewDo Prop
-    (fun done _ s ↦ SiftBitArrayWalkInvariant process words g cl i r0 done.length s)
-    (fun ret _ ↦ ret = r0.deliver process (((List.range rbaPack).flatMap fun κ ↦
+    (fun done _ s ↦ SiftBitArrayWalkInvariant process words g cl i r0 done.length (s.1, s.2.2))
+    (fun ret _ ↦ ret.1 = r0.deliver process (((List.range rbaPack).flatMap fun κ ↦
       ((List.range 64).filter ((words κ).toBitVec.getLsbD ·)).map fun t : Nat ↦
         i * rbaLength + 64 * κ + t).flatMap fun j ↦ g (cl.numerator j)))
 
@@ -315,7 +328,7 @@ private theorem numerator_rbaLength_mul_add (cl : NumClass) (i : Int) (κ t : Na
 /-- The points of the numerators of the set bits of the words `0, …, k` are those of the words
 `0, …, k - 1` followed by those of word `k`, whose numerators the walk through it computes from the
 numerator `a₀ + i (rbaLength 2 ^ cl.k) + k (64 2 ^ cl.k)` of its bit `0`. -/
-theorem flatMap_numerator_range_succ (words : Nat → UInt64) (g : Int → List (Int × Int × Int))
+theorem flatMap_numerator_range_succ (words : Nat → UInt64) {β : Type} (g : Int → List β)
     (cl : NumClass) (i : Int) (k : Nat) :
     ((List.range (k + 1)).flatMap fun κ ↦
       ((List.range 64).filter ((words κ).toBitVec.getLsbD ·)).map
@@ -331,7 +344,7 @@ theorem flatMap_numerator_range_succ (words : Nat → UInt64) (g : Int → List 
 
 /-- The points of the numerators of the set bits of the first `k ≤ m` words come first among those
 of the first `m`. -/
-theorem flatMap_numerator_range_prefix (words : Nat → UInt64) (g : Int → List (Int × Int × Int))
+theorem flatMap_numerator_range_prefix (words : Nat → UInt64) {β : Type} (g : Int → List β)
     (cl : NumClass) (i : Int) {k m : Nat} (h : k ≤ m) :
     ((List.range k).flatMap fun κ ↦ ((List.range 64).filter ((words κ).toBitVec.getLsbD ·)).map
       fun t : Nat ↦ i * rbaLength + 64 * κ + t).flatMap (fun j ↦ g (cl.numerator j)) <+:
@@ -345,7 +358,7 @@ section
 variable {process} {words : Nat → UInt64} {g : Int → List (Int × Int × Int)} {cl : NumClass}
   {i : Int} {r0 r : Delivery σ}
 
-theorem SiftBitArrayInvariant.quit_eq_false {k : Nat} {o : Option (Delivery σ)}
+theorem SiftBitArrayInvariant.quit_eq_false {k : Nat} {o : Option (Delivery σ × Counters)}
     (h : o = none ∧ SiftBitArrayInvariant process words g cl i r0 k r) :
     r.quit = false :=
   h.2.1
@@ -387,7 +400,8 @@ theorem SiftBitArrayInvariant.eq_deliver_of_quit {k : Nat}
 
 /-- The walk through word `cur` of the loop over `[0:rbaPack]`, when the callback does not stop the
 search in it. -/
-theorem SiftBitArrayInvariant.append {done suff : List Nat} {cur : Nat} {o : Option (Delivery σ)}
+theorem SiftBitArrayInvariant.append {done suff : List Nat} {cur : Nat}
+    {o : Option (Delivery σ × Counters)}
     (h : o = none ∧ SiftBitArrayInvariant process words g cl i r0 done.length r)
     (hl : ForIn.toList [0:rbaPack] = done ++ cur :: suff)
     (hq : ¬(r.deliver process ((((List.range 64).filter ((words cur).toBitVec.getLsbD ·)).map
@@ -403,7 +417,7 @@ theorem SiftBitArrayInvariant.append {done suff : List Nat} {cur : Nat} {o : Opt
 
 /-- A word that is zero adds nothing. -/
 theorem SiftBitArrayInvariant.append_of_eq_zero {done suff : List Nat} {cur : Nat}
-    {o : Option (Delivery σ)}
+    {o : Option (Delivery σ × Counters)}
     (h' : o = none ∧ SiftBitArrayInvariant process words g cl i r0 done.length r)
     (hl : ForIn.toList [0:rbaPack] = done ++ cur :: suff) (hz : words cur = 0) :
     SiftBitArrayInvariant process words g cl i r0 (done ++ [cur]).length r := by
@@ -419,7 +433,7 @@ theorem SiftBitArrayInvariant.append_of_eq_zero {done suff : List Nat} {cur : Na
 /-- The walk through word `cur` of the loop over `[0:rbaPack]`, when the callback stops the search
 in it: the delivery is that of all the words of the bit array. -/
 theorem SiftBitArrayInvariant.eq_deliver_of_quit_append {done suff : List Nat} {cur : Nat}
-    {o : Option (Delivery σ)}
+    {o : Option (Delivery σ × Counters)}
     (h : o = none ∧ SiftBitArrayInvariant process words g cl i r0 done.length r)
     (hl : ForIn.toList [0:rbaPack] = done ++ cur :: suff)
     (hq : (r.deliver process ((((List.range 64).filter ((words cur).toBitVec.getLsbD ·)).map
@@ -445,7 +459,7 @@ theorem SiftBitArrayInvariant.eq_deliver
 
 /-- The points of the numerators of the set bits of words that agree. -/
 theorem flatMap_numerator_range_congr {words words' : Nat → UInt64} {m : Nat}
-    (hw : ∀ κ < m, words κ = words' κ) (g : Int → List (Int × Int × Int)) (cl : NumClass)
+    (hw : ∀ κ < m, words κ = words' κ) {β : Type} (g : Int → List β) (cl : NumClass)
     (i : Int) :
     ((List.range m).flatMap fun κ ↦ ((List.range 64).filter ((words κ).toBitVec.getLsbD ·)).map
       fun t : Nat ↦ i * rbaLength + 64 * κ + t).flatMap (fun j ↦ g (cl.numerator j)) =
@@ -467,8 +481,9 @@ theorem siftBitArrayWalkInvariant_zero (hr : r0.quit = false)
         cl.a0 + i * (rbaLength * 2 ^ cl.k)) :=
   ⟨by simp, by simpa using (siftBitArrayInvariant_zero words g cl i hr).succ (by simpa using hq)⟩
 
--- The numerator of bit `0` of word `k + 1`, stepped by `64 2 ^ cl.k` from that of word `k`.
-private theorem add_eq_numerator_succ {cl : NumClass} {i a : Int} {k : Nat}
+/-- The numerator of bit `0` of word `k + 1`, stepped by `64 2 ^ cl.k` from that of word `k`, as the
+walk through the words of a bit array computes it. -/
+theorem add_eq_numerator_succ {cl : NumClass} {i a : Int} {k : Nat}
     (ha : a = cl.a0 + i * (rbaLength * 2 ^ cl.k) + k * (64 * 2 ^ cl.k)) :
     a + (64 * 2 ^ cl.k : Nat) =
       cl.a0 + i * (rbaLength * 2 ^ cl.k) + (k + 1 : Nat) * (64 * 2 ^ cl.k) := by
@@ -477,7 +492,7 @@ private theorem add_eq_numerator_succ {cl : NumClass} {i a : Int} {k : Nat}
   grind
 
 theorem SiftBitArrayWalkInvariant.quit_eq_false {k : Nat} {s : Delivery σ × Int}
-    {o : Option (Delivery σ)}
+    {o : Option (Delivery σ × Counters)}
     (h : o = none ∧ SiftBitArrayWalkInvariant process words g cl i r0 k s) :
     s.1.quit = false :=
   h.2.2.1
@@ -485,7 +500,7 @@ theorem SiftBitArrayWalkInvariant.quit_eq_false {k : Nat} {s : Delivery σ × In
 /-- The step `64 2 ^ cl.k` to the first numerator of word `cur` of the loop over `[1:rbaPack]`, and
 the walk through it from there, when the callback does not stop the search in it. -/
 theorem SiftBitArrayWalkInvariant.append {done suff : List Nat} {cur : Nat} {s : Delivery σ × Int}
-    {o : Option (Delivery σ)}
+    {o : Option (Delivery σ × Counters)}
     (h' : o = none ∧ SiftBitArrayWalkInvariant process words g cl i r0 done.length s)
     (hl : ForIn.toList [1:rbaPack] = done ++ cur :: suff)
     (hq : ¬(s.1.deliver process ((((List.range 64).filter ((words cur).toBitVec.getLsbD ·)).map
@@ -504,7 +519,7 @@ theorem SiftBitArrayWalkInvariant.append {done suff : List Nat} {cur : Nat} {s :
 /-- The walk through word `cur` of the loop over `[1:rbaPack]`, when the callback stops the search
 in it: the delivery is that of all the words of the bit array. -/
 theorem SiftBitArrayWalkInvariant.eq_deliver_of_quit {done suff : List Nat} {cur : Nat}
-    {s : Delivery σ × Int} {o : Option (Delivery σ)}
+    {s : Delivery σ × Int} {o : Option (Delivery σ × Counters)}
     (h' : o = none ∧ SiftBitArrayWalkInvariant process words g cl i r0 done.length s)
     (hl : ForIn.toList [1:rbaPack] = done ++ cur :: suff)
     (hq : (s.1.deliver process ((((List.range 64).filter ((words cur).toBitVec.getLsbD ·)).map
@@ -580,11 +595,11 @@ it returns at a stop. -/
 @[spec]
 theorem siftBitArrayByWords_spec (w : Thunk (List Int)) (d b : Nat) (fl : CheckFlags)
     (specs : List SieveSpec) (mgs : List Nat) (small : Bool) (checks : Thunk (List CheckSpec))
-    (cl : NumClass) (i : Int) (nums : Vector UInt64 rbaPack) (r : Delivery σ) :
+    (cl : NumClass) (i : Int) (nums : Vector UInt64 rbaPack) (r : Delivery σ) (cnt : Counters) :
     ⦃ r.quit = false ∧ (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p) ∧
         SmallFits small i (i + 1) ⦄
-    siftBitArrayByWords process w d b fl specs mgs small checks cl i nums r
-    ⦃ fun r' ↦ r' = r.deliver process (((List.range rbaPack).flatMap fun κ ↦
+    siftBitArrayByWords process w d b fl specs mgs small checks cl i nums r cnt
+    ⦃ fun r' ↦ r'.1 = r.deliver process (((List.range rbaPack).flatMap fun κ ↦
         ((List.range 64).filter ((andWords specs nums[κ]! i κ).toBitVec.getLsbD ·)).map
           fun t : Nat ↦ i * rbaLength + 64 * κ + t).flatMap
             fun j ↦ acceptedPoints w d b fl checks (cl.numerator j)) ⦄ := by
@@ -614,17 +629,17 @@ stage leaves the bit array zero, which loses nothing; it returns at a stop. -/
 @[spec]
 theorem siftBitArrayWhole_spec (w : Thunk (List Int)) (d b : Nat) (fl : CheckFlags)
     (specs : List SieveSpec) (mgs : List Nat) (small : Bool) (checks : Thunk (List CheckSpec))
-    (cl : NumClass) (i : Int) (nums : Vector UInt64 rbaPack) (r : Delivery σ) :
-    ⦃ r.quit = false ∧ (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p) ∧
+    (cl : NumClass) (i : Int) (nums : Vector UInt64 rbaPack) (r0 : Delivery σ) (cnt : Counters) :
+    ⦃ r0.quit = false ∧ (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p) ∧
         SmallFits small i (i + 1) ⦄
-    siftBitArrayWhole process w d b fl specs mgs small checks cl i nums r
-    ⦃ fun r' ↦ r' = r.deliver process (((List.range rbaPack).flatMap fun κ ↦
+    siftBitArrayWhole process w d b fl specs mgs small checks cl i nums r0 cnt
+    ⦃ fun r' ↦ r'.1 = r0.deliver process (((List.range rbaPack).flatMap fun κ ↦
         ((List.range 64).filter ((andWords specs nums[κ]! i κ).toBitVec.getLsbD ·)).map
           fun t : Nat ↦ i * rbaLength + 64 * κ + t).flatMap
             fun j ↦ acceptedPoints w d b fl checks (cl.numerator j)) ⦄ := by
   vcgen [siftBitArrayWhole] invariants
   | inv1 => SiftBitArrayWalkLoopInvariant process (fun κ ↦ nums[κ]!)
-      (acceptedPoints w d b fl checks) cl i r
+      (acceptedPoints w d b fl checks) cl i r0
   all_goals subst_vars
   all_goals try simp only [SiftBitArrayWalkLoopInvariant, meet_prop_eq_and, join_prop_eq_or,
     iSup_prop_eq_exists, ofProp_prop_eq, reduceCtorEq, false_and, or_false, false_or, true_and,
@@ -634,12 +649,12 @@ theorem siftBitArrayWhole_spec (w : Thunk (List Int)) (d b : Nat) (fl : CheckFla
     | exact ‹_ ∧ _›.1
     | exact eq_deliver_of_quit_of_forall_eq ‹_ ∧ _›.1 ‹_› ‹_›
     | exact siftBitArrayWalkInvariant_zero ‹_ ∧ _›.1 ‹_›
-    | exact ‹_ = _›.trans (congrArg (r.deliver process) (flatMap_numerator_range_congr ‹_› _ _ _))
+    | exact ‹_ = _›.trans (congrArg (r0.deliver process) (flatMap_numerator_range_congr ‹_› _ _ _))
     | exact SiftBitArrayWalkInvariant.eq_deliver ‹_› ‹_›
     | exact SiftBitArrayWalkInvariant.quit_eq_false ‹_›
     | exact SiftBitArrayWalkInvariant.eq_deliver_of_quit ‹_› ‹_› ‹_›
     | exact SiftBitArrayWalkInvariant.append ‹_› ‹_› ‹_›
-    | exact eq_deliver_of_isZeroAt ‹_› ‹_› r
+    | exact eq_deliver_of_isZeroAt ‹_› ‹_› r0
 
 /-- Both arms deliver the points of the numerators of the set bits of the same words, the words of
 `nums` and-ed with the rows of the moduli of `specs`
@@ -647,17 +662,17 @@ theorem siftBitArrayWhole_spec (w : Thunk (List Int)) (d b : Nat) (fl : CheckFla
 @[spec]
 theorem siftBitArray_spec (useLong : Bool) (w : Thunk (List Int)) (d b : Nat) (fl : CheckFlags)
     (specs : List SieveSpec) (mgs : List Nat) (small : Bool) (checks : Thunk (List CheckSpec))
-    (cl : NumClass) (i : Int) (nums : Vector UInt64 rbaPack) (r : Delivery σ) :
+    (cl : NumClass) (i : Int) (nums : Vector UInt64 rbaPack) (r : Delivery σ) (cnt : Counters) :
     ⦃ r.quit = false ∧ (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p) ∧
         SmallFits small i (i + 1) ⦄
-    siftBitArray process useLong w d b fl specs mgs small checks cl i nums r
-    ⦃ fun r' ↦ r' = r.deliver process (((List.range rbaPack).flatMap fun κ ↦
+    siftBitArray process useLong w d b fl specs mgs small checks cl i nums r cnt
+    ⦃ fun r' ↦ r'.1 = r.deliver process (((List.range rbaPack).flatMap fun κ ↦
         ((List.range 64).filter ((andWords specs nums[κ]! i κ).toBitVec.getLsbD ·)).map
           fun t : Nat ↦ i * rbaLength + 64 * κ + t).flatMap
             fun j ↦ acceptedPoints w d b fl checks (cl.numerator j)) ⦄ := by
   cases useLong
-  · exact siftBitArrayWhole_spec process w d b fl specs mgs small checks cl i nums r
-  · exact siftBitArrayByWords_spec process w d b fl specs mgs small checks cl i nums r
+  · exact siftBitArrayWhole_spec process w d b fl specs mgs small checks cl i nums r cnt
+  · exact siftBitArrayByWords_spec process w d b fl specs mgs small checks cl i nums r cnt
 
 /-! ### The scan of a piece -/
 
@@ -689,9 +704,9 @@ with all `n` bit arrays done at the exit; after the return at a stop, the value 
 delivery of the points of all the bit arrays of the piece. -/
 def ScanPieceWhileInvariant {m : Nat} (sv : Vector UInt64 m) (specs : List SieveSpec)
     (g : Int → List (Int × Int × Int)) (cl : NumClass) (w0 : Int) (n : Nat) (r0 : Delivery σ) :
-    Std.WP.WhileInvariant (Option (Delivery σ) × Nat × Delivery σ) Prop :=
-  .mk fun exit s ↦ s.1 = none ∧ ScanPieceInvariant process sv specs g cl w0 n r0 s.2.1 s.2.2 ∧
-    (exit = true → s.2.1 = n) ∨ exit = true ∧ s.1 = some (r0.deliver process
+    Std.WP.WhileInvariant (Option (Delivery σ × Counters) × Nat × Delivery σ × Counters) Prop :=
+  .mk fun exit s ↦ s.1 = none ∧ ScanPieceInvariant process sv specs g cl w0 n r0 s.2.1 s.2.2.1 ∧
+    (exit = true → s.2.1 = n) ∨ exit = true ∧ s.1.map Prod.fst = some (r0.deliver process
       (((List.range (rbaPack * n)).flatMap fun y : Nat ↦
         ((List.range 64).filter ((andWords specs sv[y]! w0 y).toBitVec.getLsbD ·)).map
           fun t : Nat ↦ rbaLength * w0 + 64 * y + t).flatMap fun j ↦ g (cl.numerator j)))
@@ -751,7 +766,7 @@ theorem ScanPieceSentinelInvariant.ne_of_isZeroAt {m n : Nat} {surv sv : Vector 
 `surv`, since the sentinel was written past them. -/
 theorem ScanPieceSentinelInvariant.flatMap_eq {m n : Nat} {surv sv : Vector UInt64 m}
     (hs : ScanPieceSentinelInvariant n surv (ForIn.toList [0:rbaPack]).length sv)
-    (specs : List SieveSpec) (g : Int → List (Int × Int × Int)) (w0 : Int) :
+    (specs : List SieveSpec) {β : Type} (g : Int → List β) (w0 : Int) :
     ((List.range (rbaPack * n)).flatMap fun y : Nat ↦
       ((List.range 64).filter ((andWords specs sv[y]! w0 y).toBitVec.getLsbD ·)).map
         fun t : Nat ↦ rbaLength * w0 + 64 * y + t).flatMap g =
@@ -762,11 +777,21 @@ theorem ScanPieceSentinelInvariant.flatMap_eq {m n : Nat} {surv sv : Vector UInt
   exact congrArg (List.flatMap _) <| congrArg List.flatten <| List.map_congr_left fun y hy ↦ by
     rw [hs.1 y (List.mem_range.mp hy)]
 
+/-- The bit arrays of a piece before the sentinel are those of `surv`, since the sentinel was
+written past them. -/
+theorem ScanPieceSentinelInvariant.isZeroAt_eq {m n : Nat} {surv sv : Vector UInt64 m}
+    (hs : ScanPieceSentinelInvariant n surv (ForIn.toList [0:rbaPack]).length sv) {p : Nat}
+    (hp : p < n) : isZeroAt sv p = isZeroAt surv p := by
+  refine Bool.eq_iff_iff.mpr ?_
+  rw [isZeroAt_eq_true_iff, isZeroAt_eq_true_iff]
+  refine forall₂_congr fun κ hκ ↦ ?_
+  rw [hs.1 _ (Nat.mul_add_lt_mul_of_lt_of_lt' hp hκ)]
+
 /-- The points of the bits of the first `pos + 1` bit arrays of a piece are those of the first
 `pos` followed by those of bit array `pos`, copied and passed through
 `Ratpoints.Sieve.siftBitArray` with its word number `w0 + pos`. -/
 theorem flatMap_range_rbaPack_mul_succ {m : Nat} (sv : Vector UInt64 m) (specs : List SieveSpec)
-    (g : Int → List (Int × Int × Int)) (w0 : Int) (pos : Nat) :
+    {β : Type} (g : Int → List β) (w0 : Int) (pos : Nat) :
     ((List.range (rbaPack * (pos + 1))).flatMap fun y : Nat ↦
       ((List.range 64).filter ((andWords specs sv[y]! w0 y).toBitVec.getLsbD ·)).map
         fun t : Nat ↦ rbaLength * w0 + 64 * y + t).flatMap g =
@@ -790,7 +815,7 @@ theorem flatMap_range_rbaPack_mul_succ {m : Nat} (sv : Vector UInt64 m) (specs :
 /-- The points of the bits of the first `pos ≤ n` bit arrays of a piece come first among those of
 the first `n`. -/
 theorem flatMap_range_rbaPack_mul_prefix {m : Nat} (sv : Vector UInt64 m) (specs : List SieveSpec)
-    (g : Int → List (Int × Int × Int)) (w0 : Int) {pos n : Nat} (h : pos ≤ n) :
+    {β : Type} (g : Int → List β) (w0 : Int) {pos n : Nat} (h : pos ≤ n) :
     ((List.range (rbaPack * pos)).flatMap fun y : Nat ↦
       ((List.range 64).filter ((andWords specs sv[y]! w0 y).toBitVec.getLsbD ·)).map
         fun t : Nat ↦ rbaLength * w0 + 64 * y + t).flatMap g <+:
@@ -816,7 +841,8 @@ theorem scanPieceInvariant_zero (sv : Vector UInt64 m) (specs : List SieveSpec)
 
 /-- Bit array `pos`, copied and passed through `Ratpoints.Sieve.siftBitArray` with its word number
 `w0 + pos`, when the callback does not stop the search in it. -/
-theorem ScanPieceInvariant.add_one_of_siftBitArray {pos0 mb : Nat} {o : Option (Delivery σ)}
+theorem ScanPieceInvariant.add_one_of_siftBitArray {pos0 mb : Nat}
+    {o : Option (Delivery σ × Counters)}
     {r' : Delivery σ} (hm : n - pos0 = mb ∧ o = none ∧
       ScanPieceInvariant process sv specs g cl w0 n r0 pos0 r' ∧ (False → pos0 = n))
     (h' : pos0 ≤ pos ∧ ScanPieceInvariant process sv specs g cl w0 n r0 pos r) (hlt : ¬n ≤ pos)
@@ -917,25 +943,25 @@ open Std.WP Lean.Order in
 private theorem scanPiece_spec_getLsbD (w : Thunk (List Int)) (d b : Nat) (fl : CheckFlags)
     (specs : List SieveSpec) (mgs : List Nat) (small : Bool) (checks : Thunk (List CheckSpec))
     (cl : NumClass) (w0 : Int) (n : Nat) (surv : Vector UInt64 ((n + 1) * rbaPack))
-    (r : Delivery σ) :
+    (r : Delivery σ) (cnt : Counters) :
     ⦃ r.quit = false ∧ (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p) ∧
         SmallFits small w0 (w0 + n) ⦄
-    scanPiece process w d b fl specs mgs small checks cl w0 n surv r
-    ⦃ fun r' ↦ r' = r.deliver process (((List.range (n * rbaPack)).flatMap fun y : Nat ↦
+    scanPiece process w d b fl specs mgs small checks cl w0 n surv r cnt
+    ⦃ fun r' ↦ r'.1 = r.deliver process (((List.range (n * rbaPack)).flatMap fun y : Nat ↦
         ((List.range 64).filter ((andWords specs surv[y]! w0 y).toBitVec.getLsbD ·)).map
           fun t : Nat ↦ rbaLength * w0 + 64 * y + t).flatMap
             fun j ↦ acceptedPoints w d b fl checks (cl.numerator j)) ⦄ := by
   vcgen [scanPiece] invariants
   | inv1 => fun done _ ↦ ScanPieceSentinelInvariant n surv done.length
   | inv2 sv _ => ScanPieceWhileInvariant process sv specs (acceptedPoints w d b fl checks) cl w0 n r
-  | inv3 => Variant.ofMeasure fun s : Option (Delivery σ) × Nat × Delivery σ ↦ n - s.2.1
-  | inv4 sv _ _ pos0 r' _ _ => ScanPieceZeroInvariant process sv specs
+  | inv3 => Variant.ofMeasure fun s ↦ n - s.2.1
+  | inv4 sv _ _ pos0 r' _ _ _ => ScanPieceZeroInvariant process sv specs
       (acceptedPoints w d b fl checks) cl w0 n r pos0 r'
   | inv5 => Variant.ofMeasure fun s : Nat ↦ n - s
   all_goals (subst_vars; try simp only [ScanPieceWhileInvariant, ScanPieceZeroInvariant,
     WhileInvariant.mk_apply, Variant.evalsTo_ofMeasure, Variant.evalsBelow_ofMeasure_nat,
     Assertion.NondetFun.evalsTo_pure, meet_prop_eq_and, ofProp_prop_eq, reduceCtorEq, false_and,
-    or_false, false_or, true_and, and_false, Option.some.injEq] at *)
+    or_false, false_or, true_and, and_false, Option.some.injEq, Option.map] at *)
   all_goals first
     | exact ScanPieceSentinelInvariant.append_set! ‹_› ‹_›
     | exact ScanPieceSentinelInvariant.eq_deliver_of_eq ‹_› ‹_›
@@ -953,18 +979,19 @@ program does not mention it. -/
 theorem scanPiece_spec (w : Thunk (List Int)) (d b : Nat) (fl : CheckFlags)
     (specs : List SieveSpec) (mgs : List Nat) (small : Bool) (checks : Thunk (List CheckSpec))
     (cl : NumClass) (w0 : Int) (n : Nat) (surv : Vector UInt64 ((n + 1) * rbaPack))
-    (r : Delivery σ) :
+    (r : Delivery σ) (cnt : Counters) :
     ⦃ r.quit = false ∧ (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p) ∧
         SmallFits small w0 (w0 + n) ⦄
-    scanPiece process w d b fl specs mgs small checks cl w0 n surv r
+    scanPiece process w d b fl specs mgs small checks cl w0 n surv r cnt
     ⦃ fun r' ↦ ∀ keep : Int → Bool, (∀ y < n * rbaPack, ∀ t : Nat,
         (andWords specs surv[y]! w0 y).toBitVec.getLsbD t =
           (decide (t < 64) && keep (rbaLength * w0 + 64 * y + t))) →
-      r' = r.deliver process ((((List.range (n * rbaLength)).map fun k : Nat ↦
+      r'.1 = r.deliver process ((((List.range (n * rbaLength)).map fun k : Nat ↦
         rbaLength * w0 + k).filter keep).flatMap
           fun j ↦ acceptedPoints w d b fl checks (cl.numerator j)) ⦄ :=
   ⟨fun pre keep hkeep ↦ by
-    rw [(scanPiece_spec_getLsbD process w d b fl specs mgs small checks cl w0 n surv r).le_wp pre,
+    rw [(scanPiece_spec_getLsbD process w d b fl specs mgs small checks cl w0 n surv r cnt).le_wp
+      pre,
       List.flatMap_range_map_filter hkeep, rbaLength_eq, Nat.mul_left_comm]⟩
 
 end Sieve
