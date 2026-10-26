@@ -34,7 +34,7 @@ The invariant of the store of a run: its rows are those of a function `R` of the
 residue (`Ratpoints.Sieve.RowStore.Holds`), and the table of rows of every prime factor of the sieve
 entries has its row of `0` (`Ratpoints.Sieve.StoreHolds`), at which the builders of a prime are
 wrong; the entries fit `R` at their positions when their references and the kinds of their builders
-are those that `Ratpoints.makeModulus?` sets and the closed forms of the rows of the entries and
+are those that `Ratpoints.makeModulus` sets and the closed forms of the rows of the entries and
 their factors are the rows of their references (`Ratpoints.Sieve.SieveEntry.RowsFit`), and the store
 fits the entries when it holds rows that they fit (`Ratpoints.Sieve.RowStore.Fits`). Every row
 fetched keeps the invariant (`Ratpoints.Sieve.StoreHolds.of_fetchRow`), and the sieve specs that
@@ -47,8 +47,8 @@ invariant (`Ratpoints.Sieve.RowStore.Holds.addTables`) and the rows of `0` of th
 the closed forms of the rows of the table of each prime and the tables of each prime power as
 `Ratpoints.Sieve.examinePrime` and `Ratpoints.Sieve.examinePower` compute them, and of the entries
 of the products at their positions (`Ratpoints.Sieve.runRows`), which every sieve entry made by
-`Ratpoints.makeModulus?` fits (`Ratpoints.Sieve.SieveEntry.rowsFit_runRows`), and which the store
-that the loop over the moduli of `Ratpoints.sievingInfoOf` makes holds
+`Ratpoints.makeModulus` fits (`Ratpoints.Sieve.SieveEntry.rowsFit_runRows`), and which the store
+that the loop over the moduli of `Ratpoints.sievingInfo` makes holds
 (`Ratpoints.Sieve.RowStore.MadeFor`).
 
 ## Main definitions
@@ -90,11 +90,11 @@ that the loop over the moduli of `Ratpoints.sievingInfoOf` makes holds
   forms of the rows of their entries.
 * `Ratpoints.Sieve.RowStore.Holds.addTables`, `Ratpoints.Sieve.RowStore.PrimeZeroRows.addTables`:
   the tables of rows of a sieve entry keep the invariant of the store.
-* `Ratpoints.Sieve.SieveEntry.rowsFit_runRows`: a sieve entry as `Ratpoints.makeModulus?` makes it
+* `Ratpoints.Sieve.SieveEntry.rowsFit_runRows`: a sieve entry as `Ratpoints.makeModulus` makes it
   fits the rows of the references of the run.
 * `Ratpoints.Sieve.RowStore.madeFor_nil`, `Ratpoints.Sieve.RowStore.MadeFor.addTables`,
   `Ratpoints.Sieve.RowStore.MadeFor.storeHolds`: the store of the loop over the moduli of
-  `Ratpoints.sievingInfoOf` holds the rows of the references of the run.
+  `Ratpoints.sievingInfo` holds the rows of the references of the run.
 * `Ratpoints.Sieve.StoreHolds.of_factors`, `Ratpoints.Sieve.SieveEntry.RowsFit.of_eq`,
   `Ratpoints.Sieve.RowStore.Fits.take`, `Ratpoints.Sieve.RowStore.Fits.map_dinv`: the invariant and
   the fit carry over to the first entries, those of the first two stages, and to the entries with
@@ -603,7 +603,7 @@ structure StoreHolds (R : EntryRef → Nat → Array UInt64) (es : List SieveEnt
   zero : ∀ e ∈ es, ∀ t : Entry, .prime t ∈ e.factors → s.row? (.prime t.p) 0 ≠ none
 
 /-- The sieve entry `e` at the position `n` of the moduli holds the reference to its table of rows
-and the kind of its builder as `Ratpoints.makeModulus?` sets them
+and the kind of its builder as `Ratpoints.makeModulus` sets them
 (`Ratpoints.Sieve.SieveEntry.refInit`): for one factor, the modulus, the reference and the kind of
 the factor; otherwise the product's own table of rows, by its position, and the builder of the rows
 of a product. -/
@@ -613,7 +613,7 @@ def SieveEntry.RefFits (e : SieveEntry) (n : Nat) : Prop :=
   | _ => e.ref = .product n ∧ e.init = .product
 
 /-- A sieve entry whose reference and kind of builder are those that
-`Ratpoints.Sieve.SieveEntry.refInit` gives at the position `n`, as `Ratpoints.makeModulus?` sets
+`Ratpoints.Sieve.SieveEntry.refInit` gives at the position `n`, as `Ratpoints.makeModulus` sets
 them, and whose modulus is that of its factor when it has one, fits them. -/
 theorem SieveEntry.refFits_of_refInit_eq {e : SieveEntry} {n : Nat}
     (h : (e.ref, e.init) = SieveEntry.refInit n e.factors)
@@ -636,7 +636,7 @@ factors dividing the modulus, builders of the factors that have what they need
 factors the closed forms of their rows (`Ratpoints.Sieve.closedRow`). -/
 structure SieveEntry.RowsFit (e : SieveEntry) (R : EntryRef → Nat → Array UInt64) (n : Nat) :
     Prop where
-  /-- The reference and the kind of the builder are those that `Ratpoints.makeModulus?` sets. -/
+  /-- The reference and the kind of the builder are those that `Ratpoints.makeModulus` sets. -/
   refFits : e.RefFits n
   /-- The modulus is positive. -/
   pos : 0 < e.p
@@ -1221,7 +1221,7 @@ theorem runRows_ref (c : List Int) (d : Nat) (es : List SieveEntry) {f : Factor}
     rw [← admits_run_examinePower c d pw.p pw.e false pinf, ← h, hm]
 
 /-- A sieve entry at the position `n` of the entries `es` of a run, with the reference and the kind
-that `Ratpoints.makeModulus?` sets, a positive modulus, at least one factor, the moduli of the
+that `Ratpoints.makeModulus` sets, a positive modulus, at least one factor, the moduli of the
 factors dividing the modulus, builders that have what they need and the tables that
 `Ratpoints.Sieve.examinePrime` and `Ratpoints.Sieve.examinePower` compute, fits the rows of the
 references of the run (`Ratpoints.Sieve.runRows`). -/
@@ -1248,10 +1248,9 @@ theorem SieveEntry.rowsFit_runRows {c : List Int} {d : Nat} {es : List SieveEntr
 /-! ### The store of a run and its entries -/
 
 /-- The store `s` as the loop of the tables and the tables of the sieve entries `es` of the first
-moduli of a run make it (`Ratpoints.sievingInfoOf`, `Ratpoints.choiceEnd`): it holds the rows of
-the references of every run whose entries begin with `es` (`Ratpoints.Sieve.runRows`), every table
-of rows of a prime in it has its row of `0`, and so has the table of rows of every prime factor of
-`es`. -/
+moduli of a run make it (`Ratpoints.choiceEnd`): it holds the rows of the references of every run
+whose entries begin with `es` (`Ratpoints.Sieve.runRows`), every table of rows of a prime in it has
+its row of `0`, and so has the table of rows of every prime factor of `es`. -/
 structure RowStore.MadeFor (s : RowStore) (c : List Int) (d : Nat) (es : List SieveEntry) :
     Prop where
   /-- The store holds the rows of the references of every run whose entries begin with `es`. -/

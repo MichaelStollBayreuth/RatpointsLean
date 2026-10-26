@@ -146,6 +146,12 @@ reason = "the include of gmp.h, the header of GMP; the model has no headers"
 
 [[excluded]]
 file = "ratpoints.h"
+lines = "42"
+kind = "other"
+reason = "RATPOINTS_DEFAULT_SP1, the fixed end of the first stage of the versions 2.x, which the C code reads nowhere: the library chooses the end of the first stage from the curve (sieving_info)"
+
+[[excluded]]
+file = "ratpoints.h"
 lines = "43"
 kind = "other"
 reason = "RATPOINTS_DEFAULT_SP2, the fixed end of the second stage of the versions 2.x, which the C code reads nowhere"

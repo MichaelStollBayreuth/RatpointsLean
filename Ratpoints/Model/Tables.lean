@@ -35,12 +35,11 @@ computed here: the squares and the inverses by `Ratpoints.Sieve.squaresMod` and
 `Ratpoints.Sieve.inversesMod`, and the table `sieve_init` of the builders of the rows of the primes
 by `Ratpoints.Sieve.sieveInit`; the row of `0` of a prime, `Ratpoints.Sieve.sieves0`, and the
 builders of the rows are in `Ratpoints.Model.Rows`, and the admission tests here are their
-reference. The loop of the tables (`Ratpoints.Sieve.examinePrimes`) is in
-`Ratpoints.Model.Denominators`, the factors of a modulus (`Ratpoints.modulusFactors`) in
-`Ratpoints.Model.Params`, and the construction of the sieve entry of a modulus
-(`Ratpoints.makeModulus?`) in `Ratpoints.Model.FindPoints`; the sieve that reads the rows from the
-tables of rows of the run, and has the missing ones built (`Ratpoints.Sieve.buildRows`), is in
-`Ratpoints.Model.Sieve`.
+reference. The loop of the tables (`Ratpoints.tablesLoop`, `Ratpoints.examineInLoop`), the sieve
+entries of the primes and of the composite moduli (`Ratpoints.primeEntry`, `Ratpoints.makeModulus`)
+and the prime powers that the composite moduli are made of (`Ratpoints.powerIndex`) are in
+`Ratpoints.Model.Choice`; the sieve that reads the rows from the tables of rows of the run, and has
+the missing ones built (`Ratpoints.Sieve.buildRows`), is in `Ratpoints.Model.Sieve`.
 
 ## Main definitions
 
@@ -488,13 +487,12 @@ power from the count of the residues `x` with `f(x)` a square modulo `m` and the
 C: `find_points.c:2267-2282`, `find_points.c:2285-2293`, `find_points.c:2301`, `find_points.c:2331`
 
 Deviation: the tables returned as a fresh value, for the entry `pw` of the buffer of the prime
-powers that `examine_power` fills, and computed when the sieve entry of a modulus needs them
-(`Ratpoints.makeModulus?`); `m` as `p ^ e`, for the product of `e` factors `p`; the bit arrays
-`sq`, `fsq` and `gsq` fresh arrays of `Ratpoints.modWords` words, which the loop at line 2282
-clears, for the local array that the function leaves unset and the arrays of the entry `pw`;
-natural numbers for the `long`s and `unsigned long`s, the variable `t` for the multiples of `p`,
-where the C code reuses `x`, and the steps `v x + c` of Horner's rule, with `v`, `x` and `c` below
-`m`, staying below `m ^ 2`, with the obligation stated as a lemma
+powers that `examine_power` fills; `m` as `p ^ e`, for the product of `e` factors `p`; the bit
+arrays `sq`, `fsq` and `gsq` fresh arrays of `Ratpoints.modWords` words, which the loop at line 2282
+clears, for the local array that the function leaves unset and the arrays of the entry `pw`; natural
+numbers for the `long`s and `unsigned long`s, the variable `t` for the multiples of `p`, where the C
+code reuses `x`, and the steps `v x + c` of Horner's rule, with `v`, `x` and `c` below `m`, staying
+below `m ^ 2`, with the obligation stated as a lemma
 (`Ratpoints.mul_add_lt_two_pow_64_of_lt_maxPrimeEven`); the code that `examine_power` returns read
 from the density by `Ratpoints.Sieve.Power.useful`. -/
 def examinePower (c : List Int) (d p e : Nat) (useCLong pinf : Bool) : Id Power := do

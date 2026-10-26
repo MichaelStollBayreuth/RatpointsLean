@@ -707,7 +707,7 @@ Each component of the set-up differs from the C code in a stated way, recorded i
   \item of \verb|examine_prime| what the table, its last entry, the coefficients modulo $p$ that it
     hands back, the exit, its codes and the density need: its reciprocal \verb|magic|, its bias and
     its inverse \verb|rbainv| are set, with its formulas, in the sieve entry of the prime that the
-    model makes (\verb|makeModulus?|); one loop over the residues, where the C code has one for each
+    model makes (\verb|primeEntry|); one loop over the residues, where the C code has one for each
     branch of the schedule of Horner's rule; the table and the coefficients fresh arrays and the
     entry a fresh value, returned, for the buffers that the C code takes them from and the entry and
     the array of its caller where it stores them;

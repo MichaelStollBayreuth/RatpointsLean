@@ -63,8 +63,7 @@ namespace Sieve
 /-- A sieve entry that lets the numerator of every point of the curve `y ^ 2 = F(x, z)` with the
 coefficient list `c` through: its modulus is positive, and its row of the denominator `b` admits the
 numerator `a` of every triple `(a, y, b)` with `gcd(a, b) = 1` and `y ^ 2 = F(a, b)`. The choice of
-the moduli makes only such entries (`Ratpoints.sievingInfo_spec`), and so does the explicit route
-for well-formed parameters (`Ratpoints.sievingInfoOf_spec`). -/
+the moduli makes only such entries (`Ratpoints.sievingInfo_spec`). -/
 structure SieveEntry.IsSound (c : List ℤ) (e : SieveEntry) : Prop where
   /-- The modulus is positive. -/
   pos : 0 < e.p
@@ -76,7 +75,7 @@ end Sieve
 
 open Sieve
 
-/-- A sieve entry of a modulus as the choice and the explicit route make it is sound. -/
+/-- A sieve entry of a modulus as the choice makes it is sound. -/
 theorem IsModulusEntry.isSound {c : List ℤ} {m : ℕ} {s : SieveEntry} (h : IsModulusEntry c m s) :
     s.IsSound c :=
   ⟨Nat.zero_lt_of_lt h.packable.one_lt, fun hab hy ↦ h.admits_of_sq_eq hab hy⟩

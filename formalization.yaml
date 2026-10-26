@@ -276,14 +276,15 @@ status:
     locally). Stage I, under way: the choice of the moduli and of the cut points by the curve, the
     blocks of the run with the correction of the moduli, the numbers of the moduli used and the
     report under -v; so far the theorems and the statements for comparator take the options of the
-    sieve with no hypothesis on them, in place of the sieving parameters and their well-formedness,
-    which are internal to the search; the statements for comparator are eleven, the
-    well-formedness of the parameters of the program no longer among them, and comparator accepted
-    all eleven on 2026-10-25; the search chooses its moduli and cut points from the curve as
-    ratpoints does and runs the denominators in blocks with the correction of the moduli between
-    them, the threads left out with the property that they preserve proved, comparator accepting the
-    eleven again on 2026-10-25, and the differential tests compare -x exactly against the C program
-    on the same command line. Next: the rest of stage I, which the blueprint plans.
+    sieve with no hypothesis on them, in place of the sieving parameters, which are internal to the
+    search and have no well-formedness of their own any more; the statements for comparator are
+    eleven, the well-formedness of the parameters of the program no longer among them, and
+    comparator accepted all eleven on 2026-10-25; the search chooses its moduli and cut points from
+    the curve as ratpoints does and runs the denominators in blocks with the correction of the
+    moduli between them, the threads left out with the property that they preserve proved,
+    comparator accepting the eleven again on 2026-10-25, and the differential tests compare -x
+    exactly against the C program on the same command line. Next: the rest of stage I, which the
+    blueprint plans.
   sorry_count: 0
   sorry_in_definitions: 0
   axioms: ["propext", "Classical.choice", "Quot.sound"]

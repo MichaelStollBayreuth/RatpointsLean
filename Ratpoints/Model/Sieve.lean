@@ -277,7 +277,7 @@ Deviation: the moduli of the stage with their rows and their reciprocals as two 
 pointers `ssp` and `mg` that step through the sieve specs and the array `magics` from position `sp1`
 on and the count `sp2 - sp1`, with no bound `2 RATPOINTS_NUM_PRIMES` on their number (the length of
 `magics`, `find_points.c:347`), which ratpoints never reaches since each entry of `sieve_list` owns
-its own prime (`find_points.c:329-331`), where well-formed parameters may repeat a modulus; one bit
+its own prime (`find_points.c:329-331`), where the model takes any moduli, which may repeat; one bit
 array of `Ratpoints.rbaPack` words, for the vector `nums`; natural numbers and integers for the
 `long`s, and the sum `v` a natural number for the `long` that `RP_MULMOD` converts to an
 `unsigned long`, which is not negative under `small`, and which stays a `long` where the helper
@@ -309,8 +309,8 @@ Deviation: the moduli of the stage with their rows and their reciprocals as two 
 pointers `sspk` and `mg` that step through the sieve specs and the array `magics` from position
 `sp1` on and the count `sp2 - sp1`, with no bound `2 RATPOINTS_NUM_PRIMES` on their number (the
 length of `magics`, `find_points.c:347`), which ratpoints never reaches since each entry of
-`sieve_list` owns its own prime (`find_points.c:329-331`), where well-formed parameters may repeat a
-modulus; natural numbers and integers for the `long`s, and the sum `v` a natural number for the
+`sieve_list` owns its own prime (`find_points.c:329-331`), where the model takes any moduli, which
+may repeat; natural numbers and integers for the `long`s, and the sum `v` a natural number for the
 `long` that `RP_MULMOD` converts to an `unsigned long`, which is not negative under `small`, and
 which stays a `long` where the helper `mod` reduces it outside `small`
 (`Ratpoints.Sieve.fitsLong_neg_sub_and_fitsLong_add`); a Boolean for the `int` `small`; no count of

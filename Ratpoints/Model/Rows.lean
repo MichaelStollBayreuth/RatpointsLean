@@ -608,10 +608,10 @@ of that entry: the call `(*(se->init))(se, b, args)` for the entry of a prime or
 function that the build generates for a prime below 64 (`Ratpoints.Sieve.sieveInit1`) or above 64
 (`Ratpoints.Sieve.sieveInit2`), and the builder of the rows of a prime power
 (`Ratpoints.Sieve.sieveInitPower`). A kind that does not fit the factor, which the entries of the
-model never have (`Ratpoints.Sieve.SieveEntry.refInit`, `Ratpoints.makeModulus?`), gives the empty
-row and the store as it is. The row of `0` of a prime is never built: it is in the table of rows of
-the prime from the start, the pattern `sieves0` that `examine_prime` installs
-(`Ratpoints.Sieve.sieves0`). -/
+model never have (`Ratpoints.Sieve.SieveEntry.refInit`, `Ratpoints.primeEntry`,
+`Ratpoints.makeModulus`), gives the empty row and the store as it is. The row of `0` of a prime is
+never built: it is in the table of rows of the prime from the start, the pattern `sieves0` that
+`examine_prime` installs (`Ratpoints.Sieve.sieves0`). -/
 def initFactorRow (init : RowInit) (ref : EntryRef) (f : Factor) (b : Nat) (store : RowStore) :
     Id (Array UInt64 × RowStore) := do
   match init, f with

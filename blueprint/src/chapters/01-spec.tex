@@ -302,10 +302,10 @@ scripts of the C repository can run it as \verb|RP=ratpoints-lean|:
   \item it reads the tuning options \verb|-n -N -P -p -F -j -J -r -R -U -A -C -Q -W -t| with the
     validation of \verb|main.c| (error~6 and the usage for a missing or malformed argument of the
     thirteen that take one, \csource{main.c}{437}{532}; \verb|-j| and \verb|-J| take none):
-    \verb|-n -N -P -p -F -j -J| go into the sieving parameters (Definition~\ref{def:sieveParams}),
-    and the others, which tune only the heuristics of the C program and its threads, are ignored
-    (until stage~I, but for \verb|-t| for good; in 373 runs of the C program they did not change the
-    \verb|-q| output);
+    \verb|-n -N -P -p -F -j -J| go into the options of the sieve
+    (Definition~\ref{def:sieveOptions}), and the others, which tune only the heuristics of the C
+    program and its threads, are ignored (until stage~I, but for \verb|-t| for good; in 373 runs of
+    the C program they did not change the \verb|-q| output);
   \item it reads \verb|-k| and \verb|-K|, which forbid and allow the reversal of the polynomial,
     and \verb|-s| and \verb|-S|, which switch the Sturm step off and on, \verb|-S| with the depth
     that the next word gives when there is one and it does not start with \verb|-|, the last of
@@ -384,12 +384,12 @@ mirror:
 \end{definition}
 
 \begin{definition}[The command line]\label{def:cliInput}
-  \uses{def:cliNumbers, def:cliEnds, def:cliFailure, def:maxDegree, def:sieveParams, def:Options,
-    def:cliOutput, def:cliIntervals}
+  \uses{def:cliNumbers, def:cliEnds, def:cliFailure, def:maxDegree, def:sieveOptions, def:arraySize,
+    def:Options, def:cliOutput, def:cliIntervals}
   \lean{Ratpoints.Cli.coefficients, Ratpoints.Cli.heightBound, Ratpoints.Cli.checkOptions, Ratpoints.Cli.input}
   \leanok
-  The coefficient list, the height bound and the values of the options of a command line, those that
-  set the sieving parameters, the options of the search and the settings of the output
+  The coefficient list, the height bound and the values of the options of a command line, those of
+  the options of the sieve, the options of the search and the settings of the output
   (Definition~\ref{def:cliOutput}), or its first failure, in the order of \verb|main.c|: fewer than
   two arguments fail (\csource{main.c}{210}{214}); \verb|read_input| (\csource{main.c}{315}{316},
   \csource{main.c}{691}{692}) reads the first argument into the array of the coefficients
@@ -405,27 +405,27 @@ mirror:
   \verb|-r -U -C -Q -W| a real number, have their arguments checked (\csource{main.c}{437}{532});
   the switches \verb|-q| and \verb|-v| go into the settings of the output, and the values of
   \verb|-p -n -N -P -F| and the switches \verb|-j| and \verb|-J| into the values of the options of
-  Definition~\ref{def:sieveParams} (\csource{main.c}{578}{593}), the last one winning, and the other
-  tuning options are ignored (until stage~I, but for \verb|-t| for good); \verb|-k| and \verb|-K|
-  (\csource{main.c}{594}{601}) and \verb|-s| and \verb|-S| (\csource{main.c}{638}{649}) go into the
-  options of Definition~\ref{def:Options}, the last of each pair winning: the reversal forbidden or
-  allowed, and the depth of the Sturm step, $-1$ for \verb|-s|, and for \verb|-S| the C \verb|long|
-  that the next word gives when there is one and it does not start with \verb|-| (error~6 if it is
-  malformed), and else $\mathrm{defaultSturm}$; \verb|-x| and \verb|-X|, \verb|-y| and \verb|-Y| go
-  into $\mathrm{noCheck}$ and $\mathrm{noY}$ of the options, and \verb|-z -Z -1 -i -I| into the
-  settings of the output (\csource{main.c}{602}{637}), of each pair the last one winning; \verb|-f|,
-  \verb|-fs|, \verb|-fm| and \verb|-fe| take the next word, whatever it is, as the format or the
-  string, and \verb|-f| followed by a character other than \verb|s|, \verb|m| and \verb|e|, and a
-  missing word, are error~6 (\csource{main.c}{533}{577}); \verb|-l| and \verb|-u| read the ends of
-  the search intervals (Definition~\ref{def:cliIntervals}), a missing end failing with error~7, and
-  \verb|-dl| and \verb|-du| the C \verb|long| that follows them as the least and the largest
-  denominator of the options of the search, the last one winning, with error~6 for a missing or
-  malformed argument and for a word \verb|-d| followed by another character
-  (\csource{main.c}{650}{668}); after the options a pending interval is completed, the search
-  intervals of the options are the doubles of the intervals read and the exact ends go into the
-  settings of the output (\csource{main.c}{679}{679}), the format is the default unless \verb|-f|
-  gave one, and \verb|-q| cancels \verb|-v| (\csource{main.c}{688}{688}); any other word fails with
-  error~6.
+  Definition~\ref{def:sieveOptions} (\csource{main.c}{578}{593}), the last one winning, and the
+  other tuning options are ignored (until stage~I, but for \verb|-t| for good); \verb|-k| and
+  \verb|-K| (\csource{main.c}{594}{601}) and \verb|-s| and \verb|-S| (\csource{main.c}{638}{649}) go
+  into the options of Definition~\ref{def:Options}, the last of each pair winning: the reversal
+  forbidden or allowed, and the depth of the Sturm step, $-1$ for \verb|-s|, and for \verb|-S| the C
+  \verb|long| that the next word gives when there is one and it does not start with \verb|-|
+  (error~6 if it is malformed), and else $\mathrm{defaultSturm}$; \verb|-x| and \verb|-X|, \verb|-y|
+  and \verb|-Y| go into $\mathrm{noCheck}$ and $\mathrm{noY}$ of the options, and
+  \verb|-z -Z -1 -i -I| into the settings of the output (\csource{main.c}{602}{637}), of each pair
+  the last one winning; \verb|-f|, \verb|-fs|, \verb|-fm| and \verb|-fe| take the next word,
+  whatever it is, as the format or the string, and \verb|-f| followed by a character other than
+  \verb|s|, \verb|m| and \verb|e|, and a missing word, are error~6 (\csource{main.c}{533}{577});
+  \verb|-l| and \verb|-u| read the ends of the search intervals (Definition~\ref{def:cliIntervals}),
+  a missing end failing with error~7, and \verb|-dl| and \verb|-du| the C \verb|long| that follows
+  them as the least and the largest denominator of the options of the search, the last one winning,
+  with error~6 for a missing or malformed argument and for a word \verb|-d| followed by another
+  character (\csource{main.c}{650}{668}); after the options a pending interval is completed, the
+  search intervals of the options are the doubles of the intervals read and the exact ends go into
+  the settings of the output (\csource{main.c}{679}{679}), the format is the default unless
+  \verb|-f| gave one, and \verb|-q| cancels \verb|-v| (\csource{main.c}{688}{688}); any other word
+  fails with error~6.
 \end{definition}
 
 \begin{definition}[The program]\label{def:cliRun}

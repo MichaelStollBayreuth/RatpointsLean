@@ -946,7 +946,7 @@ theorem Factor.admits_mod_of_dvd (f : Factor) {m : Nat} (h : f.modulus ∣ m) (b
   | power pw => exact Power.admits_mod_of_dvd pw h b a
 
 /-- A sieve entry whose one factor `f` has the modulus of the entry, as a prime or a prime power is
-its own factor (`Ratpoints.makeModulus?`), has the row of the factor. -/
+its own factor (`Ratpoints.makeModulus`), has the row of the factor. -/
 theorem SieveEntry.admits_eq_of_factors_eq {e : SieveEntry} {f : Factor} (he : e.factors = [f])
     (hp : e.p = f.modulus) : e.admits = f.admits :=
   funext fun b ↦ funext fun a ↦ by

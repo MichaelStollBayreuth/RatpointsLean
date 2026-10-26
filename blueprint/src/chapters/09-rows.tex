@@ -43,17 +43,18 @@ The rows that the builders build are the closed forms of the admission tests: th
 arrays hold the bits that the admission test gives, and the $\mathrm{chunk} - 1$ after them are
 copies of the first ones; the chunked arm and-s the same words into a piece as the other arm, since
 its reads past the first $p$ bit arrays of a row meet copies of the bit arrays that the other arm
-reads; and every row in the tables of rows of the run is the closed form of the row of its entry,
-so that the rows that a denominator reads are the closed forms that the admission tests give. So
-the output of \verb|findPoints| is the same, and neither the statements that comparator certifies
-nor \verb|Params| and \verb|Params.WF| change: the well-formedness already makes every prime of the
+reads; and every row in the tables of rows of the run is the closed form of the row of its entry, so
+that the rows that a denominator reads are the closed forms that the admission tests give. So the
+output of \verb|findPoints| is the same, and neither the statements that comparator certifies nor
+\verb|Params| and its well-formedness changed: the well-formedness already made every prime of the
 moduli odd and every modulus a product of primes of the table below $\mathrm{maxPrimeEven}$, which
-is all the builders need. The contracts of the stages keep their conclusions; a sieve spec that
-fits also has the end $p$ of the walk through its row and a row with its copies; the contracts of
-one denominator and of the run take a store of the tables of rows that fits the sieve entries, the
-first giving it back fitting them, and that of \verb|sieving_info| gives one. Comparator accepted
-the seven statements on 2026-10-16, the date that Chapter~\ref{chap:sieve} and
-\verb|comparator/README.md| record.
+is all the builders need, and since stage~I the contract of the choice of the moduli states this of
+the entries that the choice makes (Lemma~\ref{lem:choice}). The contracts of the stages keep their
+conclusions; a sieve spec that fits also has the end $p$ of the walk through its row and a row with
+its copies; the contracts of one denominator and of the run take a store of the tables of rows that
+fits the sieve entries, the first giving it back fitting them, and that of \verb|sieving_info| gives
+one. Comparator accepted the seven statements on 2026-10-16, the date that Chapter~\ref{chap:sieve}
+and \verb|comparator/README.md| record.
 
 \section{What the C code does}\label{sec:rowsC}
 
@@ -145,8 +146,8 @@ a run, since its moduli of the first two stages share no prime (\verb|take_entri
 candidate whose primes meet those of the moduli taken, both calls with one mask,
 \csource{find_points.c}{2490}{2520}; \verb|rp-private.h| says so at lines 513-514), so that each
 table of rows is reached through one modulus only, the prime or the prime power itself or one
-product that has it as a factor, whereas well-formed parameters of the model may reach one table of
-rows through several. \verb|sift| sets up a denominator by \verb|set_rows|
+product that has it as a factor, whereas the contracts of the model admit sieve entries that reach
+one table of rows through several. \verb|sift| sets up a denominator by \verb|set_rows|
 (\csource{find_points.c}{3149}{3170}): for each modulus of the first two stages the row of its
 residue from the table of rows of its entry, perhaps absent, and the end $\mathrm{ptr} + p$, and
 whether a row is absent; then for each absent row it reads the pointer again under the lock of the
@@ -692,20 +693,16 @@ contract does not depend on the arm: the first stage of either arm gives the sam
   rows of a sieve entry, each made only when its reference is absent: the table of rows of the entry
   of each factor, and for a product the $m$ rows absent of its own entry, as \verb|make_power| and
   \verb|make_modulus| clear the arrays \verb|sieve| (\csource{find_points.c}{2427}{2427},
-  \csource{find_points.c}{2471}{2471}). The loop of the tables (Definition~\ref{def:examinePrimes})
-  makes the table of rows of each examined prime that says something, as \verb|examine_prime| makes
-  its entry, and returns the store; the function of the sieve entries of given moduli
-  (Definition~\ref{def:sievingInfo}) makes each sieve entry at the position $n$, the number of the
-  entries made before it (Definition~\ref{def:makeModulus}), and right after it the tables of rows
-  of that entry, and returns the store with the entries. The choice of the moduli, which the search
-  makes (Definition~\ref{def:choice}), makes the tables of rows of the primes that say something in
-  its loop of the tables, as \verb|examine_prime| makes their entries, and at its end those of all
-  its sieve entries, those of the third stage and of the reserve among them, and returns the store.
+  \csource{find_points.c}{2471}{2471}). The choice of the moduli, which the search makes
+  (Definition~\ref{def:choice}), makes the tables of rows of the primes that say something in its
+  loop of the tables (Definition~\ref{def:tablesLoop}), as \verb|examine_prime| makes their entries,
+  and at its end those of all its sieve entries, each at its position $n$
+  (Definition~\ref{def:compositeModuli}), those of the third stage and of the reserve among them,
+  and returns the store.
 \end{definition}
 
 \begin{lemma}[The store fits the sieve entries]\label{lem:storeTables}
-  \uses{def:storeTables, lem:fetchRow, lem:sieves0, lem:sieveEntry_admits, def:makeModulus,
-    def:closedRow}
+  \uses{def:storeTables, lem:fetchRow, lem:sieves0, lem:sieveEntry_admits, def:closedRow}
   \lean{Ratpoints.Sieve.RowStore.Holds, Ratpoints.Sieve.StoreHolds, Ratpoints.Sieve.SieveEntry.RefFits, Ratpoints.Sieve.SieveEntry.refFits_of_refInit_eq, Ratpoints.Sieve.SieveEntry.RowsFit, Ratpoints.Sieve.RowStore.PrimeZeroRows, Ratpoints.Sieve.RowStore.Holds.addTables, Ratpoints.Sieve.RowStore.PrimeZeroRows.addTables, Ratpoints.Sieve.runRows, Ratpoints.Sieve.SieveEntry.rowsFit_runRows, Ratpoints.Sieve.RowStore.MadeFor, Ratpoints.Sieve.RowStore.madeFor_nil, Ratpoints.Sieve.RowStore.MadeFor.addTables, Ratpoints.Sieve.RowStore.MadeFor.storeHolds, Ratpoints.Sieve.SieveEntry.RowsFit.of_eq, Ratpoints.Sieve.RowStore.Fits, Ratpoints.Sieve.RowStore.Fits.take, Ratpoints.Sieve.RowStore.Fits.map_dinv, Ratpoints.Sieve.PrimeStore, Ratpoints.IsModulusEntry.rowsFit_runRows}
   \leanok
   A store \emph{holds} a function $R$ of the references and the residues when every row present at
@@ -713,21 +710,22 @@ contract does not depend on the arm: the first stage of either arm gives the sam
   sieve entries when, besides, the table of rows of every prime factor of the entries has its row of
   $0$. A store is a \emph{store of the primes} when it holds every $R$ whose rows of $0$ of the
   primes are \verb|sieves0| and the table of rows of each prime in it has its row of $0$; the store
-  of the loop of the tables is one (Lemma~\ref{lem:examinePrimes}). A sieve entry at the position
-  $n$ \emph{fits} $R$ when it has the reference and the kind of builder of its position and its
-  factors, a positive modulus, at least one factor, moduli of the factors that divide its modulus,
-  buildable factors, and $R$ at its reference and at the references of its factors the closed forms
-  of their rows. A store \emph{fits} a list of sieve entries when it holds some $R$ for them that
-  every entry fits at its position. For a run of the polynomial with the coefficients $c$ of degree
-  $d$ and the sieve entries $\mathrm{es}$, the rows of the references are: for a prime $p$ the
-  closed forms of the rows of its table \verb|examinePrime c d p|
+  of the loop of the tables of the choice is one (Lemma~\ref{lem:choice}). A sieve entry at the
+  position $n$ \emph{fits} $R$ when it has the reference and the kind of builder of its position and
+  its factors, a positive modulus, at least one factor, moduli of the factors that divide its
+  modulus, buildable factors, and $R$ at its reference and at the references of its factors the
+  closed forms of their rows. A store \emph{fits} a list of sieve entries when it holds some $R$ for
+  them that every entry fits at its position. For a run of the polynomial with the coefficients $c$
+  of degree $d$ and the sieve entries $\mathrm{es}$, the rows of the references are: for a prime $p$
+  the closed forms of the rows of its table \verb|examinePrime c d p|
   (Definition~\ref{def:examinePrime}), for a prime power $p^e$ those of its tables
   \verb|examinePower c d p e false false| (Definition~\ref{def:examinePower}), whose rows do not
   depend on the switch whether denominators divisible by $p$ occur (Lemma~\ref{lem:densities}), and
-  for a product those of the entry at its position. The store that the loop of \verb|sieving_info|
-  makes from a store of the primes, with each entry made at its position, holds the rows of the
-  references of every run whose entries begin with the entries made, and every entry that
-  \verb|makeModulus?| makes at the position $n$ fits them.
+  for a product those of the entry at its position. The store that the end of the choice of the
+  moduli makes from a store of the primes, with the tables of rows of each entry at its position,
+  holds the rows of the references of every run whose entries begin with those entries, and every
+  entry of a modulus as the choice makes it (Lemma~\ref{lem:sieveEntry_admits}) with the reference
+  and the kind of builder of its position $n$ (Definition~\ref{def:compositeModuli}) fits them.
 \end{lemma}
 
 \begin{proof}
@@ -898,7 +896,7 @@ Each component of this chapter differs from the C code in a stated way, recorded
     type \verb|ratpoints_init_fun|, the call through it a match on the kind; the kind of the builder
     of a prime a function of $p$, for the generated table of pointers \verb|sieve_init|; the kind
     set where the model makes the sieve entry of every kind of modulus
-    (Definition~\ref{def:makeModulus}), where \verb|examine_prime| sets that of a prime when it
+    (Definition~\ref{def:compositeModuli}), where \verb|examine_prime| sets that of a prime when it
     makes its entry (line 1800), as the reciprocal, the bias and $\mathrm{rbainv}$ are; the table of
     the prime or the tables of the prime power and the reference to the entry as arguments, for the
     sieve entry \verb|se| from which the builders read them and into which they store the row, and
@@ -961,7 +959,7 @@ Each component of this chapter differs from the C code in a stated way, recorded
     reading again itself is modelled: with one thread it finds a row that an earlier spec of the
     same denominator built into the same table of rows, when a prime or a prime power occurs twice
     among the moduli of the first two stages or comes after a product among them that has it as a
-    factor, cases that well-formed parameters admit and ratpoints never has
+    factor, cases that the contracts of the model admit and ratpoints never has
     (Section~\ref{sec:rowsC}); a product that occurs twice has a table of rows of its own at each
     position, so that its reading again finds nothing;
   \item the bit arrays \verb|sq|, \verb|fsq| and \verb|gsq| of \verb|examine_power| fresh arrays of
@@ -1019,19 +1017,18 @@ arms of the first stage; \verb|Ratpoints/Model/Rows.lean|, new and above
 forbidden divisor and the row of $0$, the store of the tables of rows with the tables made with the
 entries, the macros and the builders of \verb|init.c|, and the row of a sieve entry read or built;
 and \verb|Ratpoints/Model/Sieve.lean|, above both, \verb|set_rows|, the missing rows of a
-denominator and \verb|sift|, with the choice of the arm in one piece. The loop of the tables of the
-sieve entries of given moduli, which makes the tables of rows of the primes, and the forbidden
-divisors, which read \verb|sieves0|, are in \verb|Ratpoints/Model/Denominators.lean|, the run, which
-hands the store on from one denominator and one block to the next, in
-\verb|Ratpoints/Model/Blocks.lean| since stage~I, the sieve entry of a modulus, the sieve entries of
-given moduli and the search in \verb|Ratpoints/Model/FindPoints.lean|, and, since stage~I,
+denominator and \verb|sift|, with the choice of the arm in one piece. The forbidden divisors, which
+read \verb|sieves0|, are in \verb|Ratpoints/Model/Denominators.lean|, the run, which hands the store
+on from one denominator and one block to the next, in \verb|Ratpoints/Model/Blocks.lean| since
+stage~I, the search in \verb|Ratpoints/Model/FindPoints.lean|, and, since stage~I, the loop of the
+tables, which makes the tables of rows of the primes, the sieve entries of the moduli and
 \verb|sieving_info| in \verb|Ratpoints/Model/Choice.lean|. So each file of the model stays below
 $1500$ lines (\verb|Ratpoints/Model/FirstStage.lean| has $476$, \verb|Ratpoints/Model/Rows.lean|
 $909$ and \verb|Ratpoints/Model/Sieve.lean| $1009$).
 
 The proofs of the sub-stage use Lean core and \verb|Std| only, but for those of the bit arrays of a
-prime power and of the entries of the moduli (\verb|Ratpoints/Proof/Moduli.lean|), of the loop of
-the tables (\verb|Ratpoints/Proof/Forbidden.lean|), of the run
+prime power and of the entries of the moduli (\verb|Ratpoints/Proof/Moduli.lean|), of the store of
+the loop of the tables (\verb|Ratpoints/Proof/Forbidden.lean|), of the run
 (\verb|Ratpoints/Proof/Correction.lean| since stage~I) and of the search
 (\verb|Ratpoints/Proof/FindPoints.lean|), which are in files with Mathlib.
 \verb|Ratpoints/Proof/Containers.lean|, new, has the general facts on vectors, arrays, lists, ranges
@@ -1064,19 +1061,18 @@ that wraps, the sieve spec that fits with its end and its copies, and the start 
 side above \verb|Ratpoints/Proof/Rows.lean|, the builders of a prime, and those of a prime power and
 of a product with the windows of the layout (\verb|getLsbD_window|), the second also above
 \verb|Ratpoints/Proof/Words.lean|, whose lemmas on the stores and the ands of bit arrays and on the
-admission tests modulo a multiple of the modulus it uses;
-\verb|Ratpoints/Proof/RowStore.lean|, new and above both, the builders through the store, the growth
-of the store (\verb|RowStore.Grows|, a structure with named fields), its invariant, the rows of the
-references of a run with the prime and the modulus of the tables of a prime power, and the missing
-rows of a denominator; \verb|Ratpoints/Proof/Moduli.lean| the bit arrays of a prime power and the
-sieve entry of a modulus with its reference, its kind of builder and its buildable factors;
+admission tests modulo a multiple of the modulus it uses; \verb|Ratpoints/Proof/RowStore.lean|, new
+and above both, the builders through the store, the growth of the store (\verb|RowStore.Grows|, a
+structure with named fields), its invariant, the rows of the references of a run with the prime and
+the modulus of the tables of a prime power, and the missing rows of a denominator;
+\verb|Ratpoints/Proof/Moduli.lean| the bit arrays of a prime power and the sieve entry of a modulus
+with its reference, its kind of builder and its buildable factors;
 \verb|Ratpoints/Proof/Forbidden.lean| the store of the loop of the tables;
 \verb|Ratpoints/Proof/Sift.lean| one piece through either arm (in
 \verb|Ratpoints/Proof/SiftBits.lean| since stage~I) and one denominator on the store;
 \verb|Ratpoints/Proof/Correction.lean| the run with the store, since stage~I (in
-\verb|Ratpoints/Proof/Denominators.lean| before); and
-\verb|Ratpoints/Proof/FindPoints.lean| the store of the sieve entries of given moduli and what the
-run needs of the search. Every file stays below $1500$ lines, the largest new one,
+\verb|Ratpoints/Proof/Denominators.lean| before); and \verb|Ratpoints/Proof/FindPoints.lean| what
+the run needs of the search. Every file stays below $1500$ lines, the largest new one,
 \verb|Ratpoints/Proof/RowStore.lean|, with $1358$ (\verb|Ratpoints/Proof/PrimeRows.lean| has $1078$,
 \verb|Ratpoints/Proof/CompositeRows.lean| $1040$, \verb|Ratpoints/Proof/FirstStage.lean| $949$ and
 \verb|Ratpoints/Proof/Rows.lean| $345$). The eight new modules are in their part roots and in the

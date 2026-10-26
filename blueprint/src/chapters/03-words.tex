@@ -138,11 +138,11 @@ to $2^{20}$, and rounds it up to a multiple of the chunk (\csource{find_points.c
 
 The array size is a field of the options of the sieve, which the program sets to the default
 $\mathrm{defaultArraySize}$ (Definition~\ref{def:cliRun}), as the C lines of the program that set it
-(\csource{main.c}{347}{347}, \csource{main.c}{221}{222}), and which the search hands on to its
-parameters (Definition~\ref{def:sieveParams}). The field is a free choice of the library that
+(\csource{main.c}{347}{347}, \csource{main.c}{221}{222}), and which the choice of the moduli hands
+on to its result (Definition~\ref{def:choice}). The field is a free choice of the library that
 changes neither the points found nor their order, so the theorems hold for every value of it, as for
-the other options of the sieve, and \verb|Params.WF| does not constrain it: every value gives pieces
-of at least one bit array. Until stage~H the comparator challenge imported \verb|Params|, whose
+the other options of the sieve, and nothing constrains it: every value gives pieces of at least one
+bit array. Until stage~H the comparator challenge imported \verb|Params|, whose
 structure has this field, and stage~C2 changed neither the statements of the challenge nor
 \verb|Params.WF|; since stage~I the statements take the options of the sieve. The number of
 registers of a chunk, \verb|RATPOINTS_CHUNK|, is the constant $\mathrm{chunk}$ of

@@ -151,9 +151,9 @@ points it prints; the differential tests compare search regions and depths of th
 4530 comparisons in the default suites and 13 in the suite run locally. Stage I, the choice of the
 moduli by the curve, the blocks of the run with the correction of the moduli, the numbers of the
 moduli used and the report under `-v`, is under way: the theorems and the challenge of Comparator
-take the options of the sieve with no hypothesis on them, in place of the sieving parameters and
-their well-formedness, which are internal to the search, so that the challenge has eleven
-statements, the well-formedness of the parameters of the program no longer among them;
+take the options of the sieve with no hypothesis on them, in place of the sieving parameters, which
+are internal to the search and have no well-formedness of their own any more, so that the challenge
+has eleven statements, the well-formedness of the parameters of the program no longer among them;
 `lake comparator --paranoid` accepted the eleven on 2026-10-25. The search chooses its moduli from
 the curve as ratpoints does and runs the denominators in blocks with the correction of the moduli
 between them, `lake comparator` accepting the eleven again on 2026-10-25, and the differential tests

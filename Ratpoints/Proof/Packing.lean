@@ -32,7 +32,7 @@ packings read, of each sieve entry, an odd modulus `1 < p ≤ Ratpoints.maxPrime
 reciprocal, the inverse of `Ratpoints.rbaLength` modulo `p` and the bias, the least multiple of `p`
 from `Ratpoints.rowBias` on, as `examine_prime`, `make_power` and `make_modulus` set them
 (`Ratpoints.Sieve.SieveEntry.Packable`), which the sieve entry of a modulus has
-(`Ratpoints.makeModulus?_spec`); they give each class with a pattern a row of the array of the
+(`Ratpoints.IsModulusEntry`); they give each class with a pattern a row of the array of the
 offsets, with the offset of its packing for each sieve entry
 (`Ratpoints.Sieve.SieveEntry.PackedFor`): between `Ratpoints.rowBias` and `Ratpoints.rowBias + 2 p`,
 `a₀ (2 ^ k Ratpoints.rbaLength)⁻¹` modulo `p`, with the inverse of the stride modulo `p` in the

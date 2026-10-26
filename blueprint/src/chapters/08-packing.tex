@@ -24,14 +24,16 @@ The rows are unchanged when the residue and the numerator are multiplied by the 
 modulus, so the packed sieve keeps exactly the numerators of the class $a_0 \bmod 2^k$ that the
 unpacked sieve keeps, in the same increasing order, and every numerator outside that class is one
 that the 2-adic information rejects anyway. So the output of \verb|findPoints| is the same, and
-neither the statements that comparator certifies nor \verb|Params| and \verb|Params.WF| change: the
-well-formedness already makes every modulus odd, above $1$, below $\mathrm{maxPrimeEven}$ and a
-product of primes of the table, which is all the packing needs of the parameters. The contracts of
-the sieve keep their conclusions, with the 2-adic words as ghost arguments, and their hypotheses
-grow: the class packs its word, the offsets and the residues are the right ones, and the tables of
-inverses of the sieve entries invert. Comparator accepted the seven statements on 2026-10-15, the
-date that Chapter~\ref{chap:sieve} and \verb|comparator/README.md| record, once after the packing
-was turned on and again on the final state of the sub-stage.
+neither the statements that comparator certifies nor \verb|Params| and its well-formedness changed:
+the well-formedness already made every modulus odd, above $1$, below $\mathrm{maxPrimeEven}$ and a
+product of primes of the table, which is all the packing needs of the parameters, and since stage~I
+the contract of the choice of the moduli states it of the entries that the choice makes
+(Lemma~\ref{lem:choice}, with the packable entries of Lemma~\ref{lem:sieveEntry_admits}). The
+contracts of the sieve keep their conclusions, with the 2-adic words as ghost arguments, and their
+hypotheses grow: the class packs its word, the offsets and the residues are the right ones, and the
+tables of inverses of the sieve entries invert. Comparator accepted the seven statements on
+2026-10-15, the date that Chapter~\ref{chap:sieve} and \verb|comparator/README.md| record, once
+after the packing was turned on and again on the final state of the sub-stage.
 
 F3 also makes the reductions by a reciprocal compute on $64$-bit words, as the C code does: the
 product of the reciprocal and the value is the C's $64$-bit product, and the high half of the
@@ -645,8 +647,8 @@ Each component of this chapter differs from the C code in a stated way, recorded
     them; $\mathrm{dinv}$ an array of the strides up to the largest in use, where the C code has
     \verb|RP_NUM_STRIDES| entries and leaves those above the largest unset and unread;
   \item the reciprocal, the bias and $\mathrm{rbainv}$ of every kind of modulus set where the model
-    makes the sieve entry of a modulus (Definition~\ref{def:makeModulus}), with the formulas of the
-    C code, where \verb|examine_prime|, \verb|make_power| and \verb|make_modulus| set them, the
+    makes the sieve entry of a modulus (Definition~\ref{def:compositeModuli}), with the formulas of
+    the C code, where \verb|examine_prime|, \verb|make_power| and \verb|make_modulus| set them, the
     inverse of $\mathrm{rbaLength}$ modulo a prime read from its table, as from the table
     \verb|inverses| of the build; $\mathrm{dinv}$ empty until the rows of offsets fill it;
   \item the residues of a denominator a list, made by a map over the entries of the first two stages

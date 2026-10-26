@@ -42,8 +42,8 @@ the proofs use only that its entries are the odd primes below 1022, in increasin
   of a prime.
 * `Ratpoints.defaultNumPrimes`, `Ratpoints.defaultMaxForbidden`: how many primes the sieve takes
   and at most how many forbidden divisors it tests, unless the options say.
-* `Ratpoints.defaultSp1`, `Ratpoints.sp2Extra`: where the first stage of the sieve ends, and how
-  many moduli the second stage adds, unless the options say.
+* `Ratpoints.sp2Extra`: how many moduli the second stage of the sieve adds in a long run, unless
+  the options say.
 * `Ratpoints.survivorsPerWord`, `Ratpoints.sp2U0`, `Ratpoints.sp3PerSurvivor`,
   `Ratpoints.sp3PerDenom`, `Ratpoints.sp3Coprime`, `Ratpoints.costTable`, `Ratpoints.compositeMax`,
   `Ratpoints.costBp`, `Ratpoints.costSetup`, `Ratpoints.costCall`, `Ratpoints.costLine`,
@@ -318,24 +318,11 @@ Deviation: a constant of the model, set here, for the macro that the compiler is
 (`-DUSE_LONG_IN_PHASE_2`), which the C code tests with `#ifdef` and `#ifndef`. -/
 def useLongInPhase2 : Bool := false
 
-/-- The end of the first stage of the sieve when the option `-n` does not say,
-`RATPOINTS_DEFAULT_SP1`: the fixed choice of the versions 2.x, which the header of ratpoints keeps
-(`Ratpoints.sieveParams`).
-
-C: `ratpoints.h:42`
-
-Deviation: the parameters of the executable, which the search does not call, take it for an absent
-`-n`; ratpoints reads the macro nowhere and chooses the end of the first stage from the curve by its
-costs, as the search of the model does (`Ratpoints.takeEntries`, with the target
-`Ratpoints.survivorsPerWord`). -/
-def defaultSp1 : Nat := 11
-
-/-- How many moduli the second stage of the sieve adds to the first when neither the option `-N` nor
-`-R` says, `RATPOINTS_SP2_EXTRA`, the compiled-in default of `-R`: the offset that ratpoints takes
-as it is under `-U 0` and otherwise scales by the length of the run (`Ratpoints.phase2Offset`), and
-that the parameters of the executable take as it is (`Ratpoints.sieveParams`); also the number of
-the next candidates whose mean density stands for the second stage of a long run
-(`Ratpoints.downstreamFactor`).
+/-- How many moduli the second stage of the sieve adds to the first when neither the option `-N`
+nor `-R` says, `RATPOINTS_SP2_EXTRA`, the compiled-in default of `-R`: the offset that ratpoints
+takes as it is under `-U 0` and otherwise scales by the length of the run
+(`Ratpoints.phase2Offset`); also the number of the next candidates whose mean density stands for
+the second stage of a long run (`Ratpoints.downstreamFactor`).
 
 C: `ratpoints.h:95-97` -/
 def sp2Extra : Nat := 11
@@ -649,7 +636,7 @@ theorem zero_lt_maxDegree : 0 < maxDegree := by decide
 #guard maxDivisors == 512 && veryBig == 1000 && jacobiPrimes == 16 && jacobiTable == 8192 &&
   mulModLimit == 4294967295
 
-#guard stage3Limit == 4294967296 && !useLongInPhase2 && defaultSp1 == 11 && sp2Extra == 11 &&
+#guard stage3Limit == 4294967296 && !useLongInPhase2 && sp2Extra == 11 &&
   rowBias == 2147483648 && numStrides == 7
 
 -- The numbers of primes that the header lists for the builds with moduli of 5 to 10 bits.

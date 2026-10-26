@@ -324,7 +324,7 @@ glibc's \verb|qsort|, since each sort takes its input in the order of the C code
   length of the blocks that a build may fix, \verb|RP_BLOCK_LEN|, is a constant of type
   \verb|Option Nat|, none in the default build, with the decided fact that a length it fixes is
   positive, which the loops over the steps of a block need to end. The offset and the two defaults
-  are the constants of the parameters of the executable (Definition~\ref{def:sieveParams}), which
+  are the constants of the parameters of the executable (Definition~\verb|def:sieveParams|), which
   move here with their links at I.1, so that the options of the sieve
   (Definition~\ref{def:sieveOptions}) read them from this node.
 \end{definition}
@@ -637,30 +637,31 @@ not read.
 \end{definition}
 
 The function keeps the name of the explicit $\mathrm{sievingInfo}$ of stage~F1
-(Definition~\ref{def:sievingInfo}), which made the entries of given moduli, and its contract the
+(Definition~\verb|def:sievingInfo|), which made the entries of given moduli, and its contract the
 names of the contract of that one (\verb|IsSievingInfo|, \verb|sievingInfo_spec|,
-Lemma~\ref{lem:sievingInfo}): I.8 renames the explicit function and its contract to
+Lemma~\verb|lem:sievingInfo|): I.8 renames the explicit function and its contract to
 \lname{Ratpoints.sievingInfoOf}, \lname{Ratpoints.IsSievingInfoOf} and
 \lname{Ratpoints.sievingInfoOf\_spec}, which then no longer model C code and which
-Definition~\ref{def:sievingInfo} and Lemma~\ref{lem:sievingInfo} carry until I.12 deletes them with
-the explicit route. The C ranges move to the components above from the definitions of the explicit
-route, each with the item that brings its new owner. With I.3 the lines 1619-1623 of
-\verb|find_points.c| go from the parameters of the executable (Definition~\ref{def:sieveParams}) to
+Definition~\verb|def:sievingInfo| and Lemma~\verb|lem:sievingInfo| carry until I.12 deletes them
+with the explicit route. The C ranges move to the components above from the definitions of the
+explicit route, each with the item that brings its new owner. With I.3 the lines 1619-1623 of
+\verb|find_points.c| go from the parameters of the executable (Definition~\verb|def:sieveParams|) to
 the offset of the second stage (Definition~\ref{def:costModel}). With I.7: from the parameters of
 the executable the lines 2503, 2845-2846, 2864-2869, 2922, 2949, 2973-2975, 2980 and 3015; from the
-factors of a modulus (Definition~\ref{def:modulusFactors}) its lines 2362, 2365, 2370-2386 and
-2396-2400; from the sieve entry of a modulus (Definition~\ref{def:makeModulus}) its lines 2350-2354,
-2358-2359, 2387-2395, 2414-2426, 2428-2429, 2434-2470, 2472-2475, 2976-2978 and 2994-2998; and from
-the explicit $\mathrm{sievingInfo}$ its lines 2894-2900. With I.8: from the parameters of the
-executable the lines 2566, 2571-2572, 2599, 2693-2705, 2808, 2815, 2926-2928 and 3017, and
-4643-4649, 4655-4656, 4662-4665 and \verb|main.c:347| to Definition~\ref{def:sieveOptions}; from the
-loop of the tables of stage~F1 (Definition~\ref{def:examinePrimes}) its lines 2537, 2545, 2601-2602,
-2605-2614, 2616, 2619, 2622, 2624-2626, 2677 and 2707; from the sieve entry of a modulus its lines
-2546 and 2548; from the explicit $\mathrm{sievingInfo}$ its lines 2522-2532, 3064-3070 and
-3102-3103; and from the search of the polynomial (Definition~\ref{def:searchPoints}) its lines
-2794-2795, the switch of the checked loop. The line 4577 and \verb|main.c:221-222| go with I.10 to
-the search and to the program. The comment lines among them (2369, 2793, 2892-2893) are left to no
-declaration. Nothing of the explicit route models C code after I.10.
+factors of a modulus (Definition~\verb|def:modulusFactors|) its lines 2362, 2365, 2370-2386 and
+2396-2400; from the sieve entry of a modulus (Definition~\verb|def:makeModulus|) its lines
+2350-2354, 2358-2359, 2387-2395, 2414-2426, 2428-2429, 2434-2470, 2472-2475, 2976-2978 and
+2994-2998; and from the explicit $\mathrm{sievingInfo}$ its lines 2894-2900. With I.8: from the
+parameters of the executable the lines 2566, 2571-2572, 2599, 2693-2705, 2808, 2815, 2926-2928 and
+3017, and 4643-4649, 4655-4656, 4662-4665 and \verb|main.c:347| to
+Definition~\ref{def:sieveOptions}; from the loop of the tables of stage~F1
+(Definition~\verb|def:examinePrimes|) its lines 2537, 2545, 2601-2602, 2605-2614, 2616, 2619, 2622,
+2624-2626, 2677 and 2707; from the sieve entry of a modulus its lines 2546 and 2548; from the
+explicit $\mathrm{sievingInfo}$ its lines 2522-2532, 3064-3070 and 3102-3103; and from the search of
+the polynomial (Definition~\ref{def:searchPoints}) its lines 2794-2795, the switch of the checked
+loop. The line 4577 and \verb|main.c:221-222| go with I.10 to the search and to the program. The
+comment lines among them (2369, 2793, 2892-2893) are left to no declaration. Nothing of the explicit
+route models C code after I.10.
 
 \begin{lemma}[The pool of the candidates]\label{lem:choicePool}
   \uses{def:costModel, def:firstStages, def:thirdStage, def:sieveOptions}
@@ -1548,18 +1549,18 @@ makes the old text untrue, so that the blueprint stays true between the commits;
 names keeps its label, a node enters with the uses of the declarations that it holds at its item and
 gains the others with the items that bring them, and the uses and the references of a deleted node
 go to the node that takes its place, in the item that deletes it. The references to the labels that
-I.12 deletes, Definitions~\ref{def:sieveParams}, \ref{def:examinePrimes}, \ref{def:modulusFactors},
-\ref{def:makeModulus} and~\ref{def:sievingInfo} and Lemmas~\ref{lem:examinePrimes},
-\ref{lem:modulusFactors} and~\ref{lem:sievingInfo}, are listed below with the item that retargets or
-drops each; by the lines of the chapters as they stand before stage~I, they are: in
-\verb|01-spec.tex| lines 300, 382, 403 and 428; in \verb|02-sieve.tex| lines 87, 97 and 446; in
-\verb|03-words.tex| lines 137 and 496; in \verb|04-setup.tex| lines 452, 472 and 503; in
-\verb|05-denominators.tex| lines 378 and 649; in \verb|06-tables.tex| lines 35, 395, 429, 435, 438,
-464, 465, 471, 565, 588 and 600, besides the deleted nodes themselves; in \verb|07-stages.tex| lines
-32, 113, 465 and 474; in \verb|08-packing.tex| lines 524 and 644; in \verb|09-rows.tex| lines 695,
-697, 699, 704, 713 and 893; in \verb|10-output.tex| lines 577, 1102 and 1139; in
-\verb|11-region.tex| line 863; and in this chapter the paragraph after Definition~\ref{def:choice},
-the proof of Lemma~\ref{lem:choice} and this section.
+I.12 deletes, Definitions~\verb|def:sieveParams|, \verb|def:examinePrimes|,
+\verb|def:modulusFactors|, \verb|def:makeModulus| and~\verb|def:sievingInfo| and
+Lemmas~\verb|lem:examinePrimes|, \verb|lem:modulusFactors| and~\verb|lem:sievingInfo|, are listed
+below with the item that retargets or drops each; by the lines of the chapters as they stand before
+stage~I, they are: in \verb|01-spec.tex| lines 300, 382, 403 and 428; in \verb|02-sieve.tex| lines
+87, 97 and 446; in \verb|03-words.tex| lines 137 and 496; in \verb|04-setup.tex| lines 452, 472 and
+503; in \verb|05-denominators.tex| lines 378 and 649; in \verb|06-tables.tex| lines 35, 395, 429,
+435, 438, 464, 465, 471, 565, 588 and 600, besides the deleted nodes themselves; in
+\verb|07-stages.tex| lines 32, 113, 465 and 474; in \verb|08-packing.tex| lines 524 and 644; in
+\verb|09-rows.tex| lines 695, 697, 699, 704, 713 and 893; in \verb|10-output.tex| lines 577, 1102
+and 1139; in \verb|11-region.tex| line 863; and in this chapter the paragraph after
+Definition~\ref{def:choice}, the proof of Lemma~\ref{lem:choice} and this section.
 \begin{itemize}
   \item The introduction of the blueprint: the proofs show that the model meets the specification
     for every value of the options of the sieve, whatever moduli the search chooses, no longer for
@@ -1576,17 +1577,17 @@ the proof of Lemma~\ref{lem:choice} and this section.
     I.11, I.13 and I.15); the list of Section~\ref{sec:cli}: the program prints message~4 (I.13) and
     under \verb|-v| the report of the library between the points (I.15), and its item on the tuning
     options refers to the options of the sieve (Definition~\ref{def:sieveOptions}) for
-    Definition~\ref{def:sieveParams} (I.12) and reads \verb|-r -R -U -C -A -Q -W| into the options
+    Definition~\verb|def:sieveParams| (I.12) and reads \verb|-r -R -U -C -A -Q -W| into the options
     of the sieve, only \verb|-t| being checked and ignored (I.14); the command line
     (Definition~\ref{def:cliInput}) refers to Definition~\ref{def:sieveOptions} for
-    Definition~\ref{def:sieveParams}, its uses likewise (I.12), and sets the options of the sieve of
-    the tuning options through \lname{Ratpoints.SieveOptions.store}, its uses gaining
+    Definition~\verb|def:sieveParams|, its uses likewise (I.12), and sets the options of the sieve
+    of the tuning options through \lname{Ratpoints.SieveOptions.store}, its uses gaining
     Definition~\ref{def:cliTuning} (I.14); the program (Definition~\ref{def:cliRun}) runs
     $\mathrm{findPointsVerbose}$ with the options of the sieve and the array size that it sets, its
     link \csource{main.c}{221}{222} added and its uses gaining
     Definition~\ref{def:findPointsVerbose} for Definitions~\ref{def:findPointsWith}
-    and~\ref{def:sieveParams} (I.10), with the print channel of \verb|-v| (I.15); the section on the
-    differential tests: its list of what the later stages added gains stage~I, the suite
+    and~\verb|def:sieveParams| (I.10), with the print channel of \verb|-v| (I.15); the section on
+    the differential tests: its list of what the later stages added gains stage~I, the suite
     \verb|adapt| and the pair with the block length $3$ (I.11), the suites \verb|tuning| and
     \verb|threads| (I.14) and \verb|verbose| (I.15); the runs left out, the four of \verb|test4.sh|
     whose filter looks at the report of the library and those of \verb|test3.sh| with a filtered
@@ -1600,12 +1601,13 @@ the proof of Lemma~\ref{lem:choice} and this section.
     estimates of the run, the cost of a check and the words of the first correction, their link
     \csource{ratpoints.h}{395}{397} added (I.8), are internal to the search (I.10) and the result of
     the choice (I.11), and lose $\mathrm{Params.WF}$, its instance and its three lemmas, with the
-    references to Definitions~\ref{def:examinePrimes} and~\ref{def:modulusFactors} and
-    Lemma~\ref{lem:modulusFactors}, the loop of the tables becoming Definition~\ref{def:tablesLoop},
-    and their uses of Definitions~\ref{def:barrett} and~\ref{def:primeTable}, which only the
-    well-formedness read (I.12); the parameters of the executable (Definition~\ref{def:sieveParams})
-    give $\mathrm{sp2Extra}$, $\mathrm{defaultNumPrimes}$ and $\mathrm{defaultMaxForbidden}$ with
-    their links \csource{ratpoints.h}{95}{97}, \csource{ratpoints.h}{333}{340} and
+    references to Definitions~\verb|def:examinePrimes| and~\verb|def:modulusFactors| and
+    Lemma~\verb|lem:modulusFactors|, the loop of the tables becoming
+    Definition~\ref{def:tablesLoop}, and their uses of Definitions~\ref{def:barrett}
+    and~\ref{def:primeTable}, which only the well-formedness read (I.12); the parameters of the
+    executable (Definition~\verb|def:sieveParams|) give $\mathrm{sp2Extra}$,
+    $\mathrm{defaultNumPrimes}$ and $\mathrm{defaultMaxForbidden}$ with their links
+    \csource{ratpoints.h}{95}{97}, \csource{ratpoints.h}{333}{340} and
     \csource{ratpoints.h}{345}{352} to Definition~\ref{def:choiceConstants}, their uses gaining it
     (I.1), give their lines of the choice to its components (I.3, I.7, I.8, as the paragraph after
     Definition~\ref{def:choice} lists them), give $\mathrm{SieveOptions}$ with its links
@@ -1637,8 +1639,8 @@ the proof of Lemma~\ref{lem:choice} and this section.
     \csource{find_points.c}{4894}{4896}, \csource{find_points.c}{4899}{4899},
     \csource{find_points.c}{5068}{5074} and \csource{find_points.c}{5078}{5099} (I.15); the search
     for the points (Definition~\ref{def:findPoints}) takes the options of the sieve (I.10) and, in
-    place of the tables and the sieve entries of Definition~\ref{def:sievingInfo}, the choice of the
-    moduli (Definition~\ref{def:choice}) and the run over the blocks (I.11); the list of the
+    place of the tables and the sieve entries of Definition~\verb|def:sievingInfo|, the choice of
+    the moduli (Definition~\ref{def:choice}) and the run over the blocks (I.11); the list of the
     deviations after it: the listing of the denominators and the cut points fixed for the run
     (I.11), no output under \verb|VERBOSE| (I.15); the reduction of the run to the reference
     (Theorem~\ref{thm:run_reference}) loses \verb|Ratpoints.Sieve.run_sieveRun_of_eq_filter| and
@@ -1665,7 +1667,7 @@ the proof of Lemma~\ref{lem:choice} and this section.
     four definitions and of the lemma gaining Definition~\ref{def:counters}, and those of one
     denominator and of the proof of the lemma Lemma~\ref{lem:counters} too, and the deviation that
     leaves the counts to stage~I is reworded (I.4); the passage after the run on what the search
-    hands it, the entries of Definition~\ref{def:sievingInfo}, is on the choice and the blocks
+    hands it, the entries of Definition~\verb|def:sievingInfo|, is on the choice and the blocks
     (I.11); and the files section: \verb|Ratpoints/Proof/Sift.lean| split (I.4), the run and its
     contract (I.11).
   \item Chapter~\ref{chap:setup}: the examination of a prime with the exit
@@ -1681,9 +1683,9 @@ the proof of Lemma~\ref{lem:choice} and this section.
     left the number of primes to the library and the print channel, its uses following (I.10), calls
     the search with the choice, its links of the choice and the sieve (lines 4996-5006, 5010-5012,
     5100-5103 and 5105-5106) going to Definition~\ref{def:chooseAndSearch}, its text on
-    Definition~\ref{def:sievingInfo} and Lemma~\ref{lem:sievingInfo} rewritten for the choice and
+    Definition~\verb|def:sievingInfo| and Lemma~\verb|lem:sievingInfo| rewritten for the choice and
     Lemma~\ref{lem:choice} and its uses Definition~\ref{def:chooseAndSearch} for
-    Definitions~\ref{def:Params}, \ref{def:sievingInfo} and~\ref{def:sieving} (I.11), and gives its
+    Definitions~\ref{def:Params}, \verb|def:sievingInfo| and~\ref{def:sieving} (I.11), and gives its
     lines of the report (4915-4918, 4921-4926, 4928-4941, 4960-4961, 5007-5009 and 5104) to
     Definition~\ref{def:report} (I.15); the paragraph after it on
     $\mathrm{findPointsWith}(c, H, P, o)$ takes $s$ (I.10); Theorems~\ref{thm:findPoints_perm}
@@ -1697,7 +1699,7 @@ the proof of Lemma~\ref{lem:choice} and this section.
   \item Chapter~\ref{chap:denominators}: the introduction, which leaves the blocks to stage~I, says
     that the model has them (I.11); the forbidden divisors (Definition~\ref{def:forbidden}) keep the
     reciprocal of their prime, their uses gaining Definition~\ref{def:mulMod} (I.2), their reference
-    to Definition~\ref{def:examinePrimes} going to Definition~\ref{def:tablesLoop} (I.12); the
+    to Definition~\verb|def:examinePrimes| going to Definition~\ref{def:tablesLoop} (I.12); the
     divisor set-up (Definition~\ref{def:setupUs1}) gains the link \csource{ratpoints.h}{390}{390}
     (I.8); the shapes (Definition~\ref{def:Shape}) give the lines 3750-3754 to the blocks and the
     lines of the listing (3812-3837, 3919-3925, 3937-3943, 3967-3991, 3993-4008, 4012, 4053-4058,
@@ -1709,7 +1711,7 @@ the proof of Lemma~\ref{lem:choice} and this section.
     a definition of the proofs, the node saying that the model has the blocks and no listing (I.11);
     the passage after Lemma~\ref{lem:shape_dens} on the run with its links, its contract and its
     plain equation is on the run over the blocks (I.11); Section~\ref{sec:denSearch}: what the
-    search does, with Definition~\ref{def:sievingInfo} and the cut points of the parameters (I.11),
+    search does, with Definition~\verb|def:sievingInfo| and the cut points of the parameters (I.11),
     for well-formed parameters (I.10), and the list of the C ranges of the node of the search, which
     loses lines 2793-2795 (I.8), the lines of the choice and the sieve (I.11) and those of the
     report (I.15); Theorem~\ref{thm:findPoints_order} takes $s$ (I.10) and its proof goes through
@@ -1721,7 +1723,7 @@ the proof of Lemma~\ref{lem:choice} and this section.
     \verb|Ratpoints/Proof/Denominators.lean| (I.11) and the contracts from one piece on in
     \verb|Ratpoints/Proof/Sift.lean| (I.4).
   \item Chapter~\ref{chap:tables}: the introduction refers to the options of the sieve for
-    Definition~\ref{def:sieveParams} (I.12) and speaks about the choice of the search (I.16); the
+    Definition~\verb|def:sieveParams| (I.12) and speaks about the choice of the search (I.16); the
     tables of a prime power (Definition~\ref{def:examinePower}) take whether denominators divisible
     by $p$ occur and give the density, with \lname{Ratpoints.Sieve.Power.useful}, their links
     becoming \csource{find_points.c}{2267}{2282}, \csource{find_points.c}{2285}{2293},
@@ -1730,11 +1732,11 @@ the proof of Lemma~\ref{lem:choice} and this section.
     Lemmas~\ref{lem:power_admits} and~\ref{lem:examinePrime_eq} the forms with the new results, the
     second with \lname{Array.any\_push\_id\_eq\_false\_iff}, the fact on arrays that its contract
     uses (I.2); the sieve entry (Definition~\ref{def:SieveEntry}) has its density and the count of
-    its factors (I.2); the loop of the tables of stage~F1 (Definition~\ref{def:examinePrimes} and
-    Lemma~\ref{lem:examinePrimes}), the factors of a modulus (Definition~\ref{def:modulusFactors}
-    and Lemma~\ref{lem:modulusFactors}), the explicit sieve entry of a modulus
-    (Definition~\ref{def:makeModulus}, \verb|makeModulus?|) and the explicit $\mathrm{sievingInfo}$
-    (Definition~\ref{def:sievingInfo} and Lemma~\ref{lem:sievingInfo}, renamed with their contract
+    its factors (I.2); the loop of the tables of stage~F1 (Definition~\verb|def:examinePrimes| and
+    Lemma~\verb|lem:examinePrimes|), the factors of a modulus (Definition~\verb|def:modulusFactors|
+    and Lemma~\verb|lem:modulusFactors|), the explicit sieve entry of a modulus
+    (Definition~\verb|def:makeModulus|, \verb|makeModulus?|) and the explicit $\mathrm{sievingInfo}$
+    (Definition~\verb|def:sievingInfo| and Lemma~\verb|lem:sievingInfo|, renamed with their contract
     at I.8) give their links to the components of the choice (I.3, I.7, I.8) and are deleted (I.12),
     \lname{Ratpoints.getElem!\_primeTable\_le\_of\_le} going to Definition~\ref{def:primeTable},
     \lname{Ratpoints.IsModulusEntry.isSound} to Lemma~\ref{lem:sieveEntry_admits}, and their uses
@@ -1742,19 +1744,19 @@ the proof of Lemma~\ref{lem:choice} and this section.
     and~\ref{def:choice} and Lemmas~\ref{lem:compositeModuli} and~\ref{lem:choice}; the rows of a
     modulus (Lemma~\ref{lem:sieveEntry_admits}) keep the factors' soundness and the entries' facts,
     without the invariants of \verb|makeModulus?|, their statement and proof rewritten without
-    Lemma~\ref{lem:modulusFactors}, and their uses those that the Lean then implies,
+    Lemma~\verb|lem:modulusFactors|, and their uses those that the Lean then implies,
     Definitions~\ref{def:SieveEntry}, \ref{def:examinePrime}, \ref{def:squaresMod}, \ref{def:mulMod}
     and~\ref{def:packingConstants} and Lemma~\ref{lem:mulMod}, the proof
     Lemma~\ref{lem:classOffsets} (I.12); Section~\ref{sec:tablesSearch}, on $\mathrm{Params.WF}$,
     the divisor form and the parameters of the command line, and the paragraph after
-    Lemma~\ref{lem:sievingInfo}, on the search for every well-formed choice, speak about the choice
+    Lemma~\verb|lem:sievingInfo|, on the search for every well-formed choice, speak about the choice
     of the search (I.12); the program and its differential tests (Section~\ref{sec:tablesCli}): the
     program chooses composite moduli itself (I.11); the deviations: the count of the residues (I.2),
     the density, the ranking and the choice not modelled (I.11), those of the explicit route, with
-    their references to Definition~\ref{def:makeModulus} (I.12), and the closing passage that leaves
-    the density, \verb|add_moduli|, the ranking and the choice to stage~I (I.11), its reference to
-    Definition~\ref{def:sievingInfo} going to Definition~\ref{def:choice} (I.12); and the files
-    section: the choice in \verb|Ratpoints/Model/Choice.lean| and its contracts in
+    their references to Definition~\verb|def:makeModulus| (I.12), and the closing passage that
+    leaves the density, \verb|add_moduli|, the ranking and the choice to stage~I (I.11), its
+    reference to Definition~\verb|def:sievingInfo| going to Definition~\ref{def:choice} (I.12); and
+    the files section: the choice in \verb|Ratpoints/Model/Choice.lean| and its contracts in
     \verb|Ratpoints/Proof/Choice.lean| and \verb|Ratpoints/Proof/ChoiceModuli.lean| (I.7, I.8), the
     factors, the explicit entry, the loop of the tables and the well-formedness gone (I.12).
   \item Chapter~\ref{chap:stages}: the introduction's sentence on \verb|wf_sieveParams|, which the
@@ -1765,7 +1767,7 @@ the proof of Lemma~\ref{lem:choice} and this section.
     uses gaining Definition~\ref{def:counters}, and the test gains
     \lname{Ratpoints.Sieve.fst\_run\_accepted}, that its verdict does not depend on the counters
     (I.4); the passage after the staged sieve, on the run with the cut points of the parameters and
-    what \verb|sieving_info| gives (Lemma~\ref{lem:sievingInfo}), is on the decisions of the blocks
+    what \verb|sieving_info| gives (Lemma~\verb|lem:sievingInfo|), is on the decisions of the blocks
     and the choice (I.11); the section on the cut points (Section~\ref{sec:cuts}) describes the cut
     points of the choice and their correction, not the counting rules of the parameters of the
     executable (I.11); the program and its differential tests (Section~\ref{sec:stagesCli}): the
@@ -1781,13 +1783,13 @@ the proof of Lemma~\ref{lem:choice} and this section.
   \item Chapter~\ref{chap:packing}: the introduction, on $\mathrm{Params.WF}$ and what the packing
     needs of the parameters (I.12); the passage on the sieve in the packing, the store fitting the
     entries of the first two stages and what \verb|sieving_info| gives
-    (Lemma~\ref{lem:sievingInfo}), is on the choice (I.11); what the run needs of the search
+    (Lemma~\verb|lem:sievingInfo|), is on the choice (I.11); what the run needs of the search
     (Lemma~\ref{lem:soundRun}) no longer reads $s_2$, with the entries that count no factor prime
     entries and the store fitting all the entries (I.11); the row offsets of the classes
     (Lemma~\ref{lem:classOffsets}) are made for all the entries, the reserve included (I.11); the
     bits of an interval (Definition~\ref{def:siftBits}, Lemma~\ref{lem:siftBits}) count, their uses
     gaining Definition~\ref{def:counters} (I.4); the deviations: the reserve of the offsets (I.11)
-    and the reference to Definition~\ref{def:makeModulus}, which goes to
+    and the reference to Definition~\verb|def:makeModulus|, which goes to
     Definition~\ref{def:compositeModuli} (I.12); the closing passage that leaves the cost model of
     the packing (I.3) and the reserve of the offsets (I.11) to stage~I; and the files section: the
     run (I.11), the contracts from one piece on (I.4).
@@ -1797,13 +1799,13 @@ the proof of Lemma~\ref{lem:choice} and this section.
     Definitions~\ref{def:tablesLoop}, \ref{def:choice} and~\ref{def:compositeModuli} for the deleted
     nodes (I.12); the store fits the sieve entries (Lemma~\ref{lem:storeTables}) with the forms with
     the flag of the prime powers, its proof using Lemma~\ref{lem:densities} (I.2), its use of
-    Definition~\ref{def:makeModulus} dropped and its references going to
+    Definition~\verb|def:makeModulus| dropped and its references going to
     Definition~\ref{def:compositeModuli} and Lemma~\ref{lem:choice}, its statement about the store
     of the choice (I.12); the passage after Lemma~\ref{lem:buildRows} on the run, the store of
     \verb|sieving_info| and the fit of the first $s_2$ entries is on the blocks and the store of the
     choice, which fits all the entries (I.11); the deviations that leave the acquire loads and the
     threads to stage~I say that the model has no threads (I.16), and their reference to
-    Definition~\ref{def:makeModulus} goes (I.12); the closing passage that leaves the lock of the
+    Definition~\verb|def:makeModulus| goes (I.12); the closing passage that leaves the lock of the
     tables, the pool of threads and the orderings to stage~I (I.11); and the files section: the
     entries and \verb|sieving_info| in \verb|Ratpoints/Model/FindPoints.lean| (I.8, I.12), the run
     and its contract (I.11), the contracts of one piece and one denominator (I.4).
@@ -1822,16 +1824,16 @@ the proof of Lemma~\ref{lem:choice} and this section.
     Definition~\ref{def:findPointsVerbose}, its uses gaining that node and losing
     Definition~\ref{def:Params} (I.10); the list of the search (Lemmas~\ref{lem:searchList}
     and~\ref{lem:findPoints_searchList}) on the choice, the uses of Lemma~\ref{lem:searchList} going
-    to Lemma~\ref{lem:choice} for Lemma~\ref{lem:sievingInfo} and those of its proof gaining
+    to Lemma~\ref{lem:choice} for Lemma~\verb|lem:sievingInfo| and those of its proof gaining
     Theorem~\ref{thm:blocks} and Lemma~\ref{lem:noCheckList}, for the denominators of the search
     without duplicates (I.11), for every $s$ with no hypothesis (I.10); Theorems~\ref{thm:protocol},
     \ref{thm:noCheck} and~\ref{thm:order} take $s$ (I.10), and the order goes through the
     block-listing lemma (I.11); Section~\ref{sec:certifiedG} records the change (I.10); the report
     (Definition~\ref{def:cliReport}) prints message~4, its link \csource{main.c}{979}{1033} in place
     of \csource{main.c}{979}{991} and \csource{main.c}{999}{1033} (I.13), and its uses go to
-    Definition~\ref{def:sieveOptions} for Definition~\ref{def:sieveParams} (I.12); the paragraph
+    Definition~\ref{def:sieveOptions} for Definition~\verb|def:sieveParams| (I.12); the paragraph
     after it, on $\mathrm{sieveParams}(s)$, and the program theorem (Theorem~\ref{thm:cliRun}) take
-    the options of the sieve, its uses losing Definition~\ref{def:sieveParams} (I.10), and the
+    the options of the sieve, its uses losing Definition~\verb|def:sieveParams| (I.10), and the
     hypothesis on \verb|-v|, its proof using Lemma~\ref{lem:cliVerbose}, and its
     \lname{Ratpoints.Cli.Data.keeps}, the points that the callback keeps, goes to the callback of
     the program (Definition~\ref{def:cliProcess}) (I.15); the section on the differential tests:
@@ -1853,7 +1855,7 @@ the proof of Lemma~\ref{lem:choice} and this section.
     the options of the search and the deviation that call \verb|sp3| stage~I's give it to
     $\mathrm{Params}$ (I.8); the loop over the intervals (Lemma~\ref{lem:siftIntervals}) counts, its
     uses gaining Definition~\ref{def:counters} (I.4); the passage on what \verb|sieving_info|
-    computes for every height refers to Lemma~\ref{lem:choice} for Lemma~\ref{lem:sievingInfo}
+    computes for every height refers to Lemma~\ref{lem:choice} for Lemma~\verb|lem:sievingInfo|
     (I.12); the passages of Section~\ref{sec:regionSearch} for well-formed parameters,
     Lemma~\ref{lem:elimSearchRegion} and Theorem~\ref{thm:sturmSpeed} take $s$ (I.10);
     Section~\ref{sec:certifiedH} records the change (I.10); the Sturm step of the search

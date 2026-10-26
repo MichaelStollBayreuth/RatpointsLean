@@ -194,13 +194,14 @@ structure CheckSpec where
 table `t`, for the denominator `b`, the height bound `H` and the reciprocal `mg` of `p` that the
 array `magics` holds at the position of the entry (`Ratpoints.Sieve.CheckSpec`): `p`; the inverse
 `t.inverses[r]` of the residue `r = b mod p`, computed by a multiplication with `mg`
-(`Ratpoints.Sieve.mulMod`) for `b ≤ Ratpoints.mulModLimit` and by `%` above, or `0` for `r = 0`;
-the bias `p H` when `2 p H < Ratpoints.stage3Limit` and `0` otherwise; the reciprocal of the entry;
-and the table of `t`. With the reciprocal `Ratpoints.Sieve.magic p` for `mg`, as the array of
+(`Ratpoints.Sieve.mulMod`) for `b ≤ Ratpoints.mulModLimit` and by `%` above, or `0` for `r = 0`; the
+bias `p H` when `2 p H < Ratpoints.stage3Limit` and `0` otherwise; the reciprocal of the entry; and
+the table of `t`. With the reciprocal `Ratpoints.Sieve.magic p` for `mg`, as the array of
 `Ratpoints.sievingInfo` holds it, the residue is `b mod p` for `p ≤ 2 ^ 32`
-(`Ratpoints.Sieve.binv_checkOf`). An entry of another shape, which the third stage of well-formed
-parameters never holds (`Ratpoints.Params.WF`), gets the inverse `0`, so that the stage skips it, as
-it skips a prime that divides `b`.
+(`Ratpoints.Sieve.binv_checkOf`). An entry of another shape, which the third stage of the choice of
+the moduli never holds, its entries counting no factor (`Ratpoints.Sieve.DecisionWF`) and so being
+primes of the table (`Ratpoints.IsSievingInfo`), gets the inverse `0`, so that the stage skips it,
+as it skips a prime that divides `b`.
 
 C: `sift.c:414-428`
 
@@ -236,9 +237,9 @@ Deviation: a list, made by a map over the entries of the third stage and their r
 that fills the array `checks` of the sieving thread; no bound `RATPOINTS_NUM_PRIMES` on its length
 (`stage3_list` and the arrays of the pool, `find_points.c:339`, `find_points.c:4372`), which
 ratpoints never reaches since each entry of `sieve_list` owns its own prime
-(`find_points.c:329-331`), where well-formed parameters may repeat a prime; the thunk that the sieve
-of one denominator makes of it (`Ratpoints.Sieve.sift`), for the flag `stage3_filled` of the sieving
-thread, which `sift` clears and `fill_checks` sets. -/
+(`find_points.c:329-331`), where the model takes any entries, which may repeat a prime; the thunk
+that the sieve of one denominator makes of it (`Ratpoints.Sieve.sift`), for the flag `stage3_filled`
+of the sieving thread, which `sift` clears and `fill_checks` sets. -/
 def fillChecks (b H : Nat) (es : List SieveEntry) (mgs : List Nat) : List CheckSpec :=
   List.zipWith (checkOf b H) es mgs
 
