@@ -68,13 +68,13 @@ set, the entries and the members of the first `m` entries of an array as a list,
 of a list as one of its members, and a bind of `Except` that succeeds. For the intersection of the
 Sturm step: the list of an array from a position within it on. For the choice of the moduli: the
 entry `xs[i]!` of an array with `xs[i]? = some x`, an array that extends another position by
-position, the size and the first entries of an array after `Array.eraseIdxIfInBounds`, the values
-of a map to `Option` that is `some` on every element of a list, and one division of `p > 1` off a
-positive multiple of `p`. For the blocks and the correction of the moduli: the first `m` entries of
-a list followed by the next `n - m`, a property of the elements of `l.drop m` from those of
-`l.drop n` and the entries between, the elements of the lists `g a, …, g b` that pass a test, a
-number of a range that passes a test, the image of the cursor of a loop over a range among the
-images that pass a test, and the images of a list with an element appended that pass a test. The
+position, the size, the first entries and the members of an array after `Array.eraseIdxIfInBounds`,
+the values of a map to `Option` that is `some` on every element of a list, and one division of
+`p > 1` off a positive multiple of `p`. For the blocks and the correction of the moduli: the first
+`m` entries of a list followed by the next `n - m`, a property of the elements of `l.drop m` from
+those of `l.drop n` and the entries between, the elements of the lists `g a, …, g b` that pass a
+test, a number of a range that passes a test, the image of the cursor of a loop over a range among
+the images that pass a test, and the images of a list with an element appended that pass a test. The
 lemmas on 64-bit words are in `Ratpoints.Proof.Bits`.
 
 ## Main definitions
@@ -129,8 +129,9 @@ lemmas on 64-bit words are in `Ratpoints.Proof.Bits`.
 * `Array.Extends.refl`, `Array.Extends.trans`, `Array.extends_push`, `Array.extends_ite_push`: an
   array extends itself, an array that extends one that extends `a` extends `a`, and a push extends
   an array.
-* `Array.size_eraseIdxIfInBounds_of_lt`, `Array.getElem_eraseIdxIfInBounds_of_lt`: the size of an
-  array after `Array.eraseIdxIfInBounds` at an index in bounds, and its entries before that index.
+* `Array.size_eraseIdxIfInBounds_of_lt`, `Array.getElem_eraseIdxIfInBounds_of_lt`,
+  `Array.mem_of_mem_eraseIdxIfInBounds`: the size of an array after `Array.eraseIdxIfInBounds` at an
+  index in bounds, its entries before that index, and its members, which are members of the array.
 * `List.foldl_gcd_natAbs_dvd_natAbs`: the gcd of the absolute values of the entries of a list, as a
   left fold, divides each of them.
 * `List.all_range_length_getElem!`, `List.all_and_left`, `List.all_congr_left`: the test of a list
@@ -492,6 +493,13 @@ theorem getElem_eraseIdxIfInBounds_of_lt {α : Type u} {xs : Array α} {n i : Na
     (hn : n < xs.size) (hi : i < n) (h : i < (xs.eraseIdxIfInBounds n).size) :
     (xs.eraseIdxIfInBounds n)[i] = xs[i] := by
   simp only [eraseIdxIfInBounds_eq, hn, ↓reduceDIte, getElem_eraseIdx, hi]
+
+theorem mem_of_mem_eraseIdxIfInBounds {α : Type u} {xs : Array α} {n : Nat} {a : α}
+    (h : a ∈ xs.eraseIdxIfInBounds n) : a ∈ xs := by
+  rw [eraseIdxIfInBounds_eq] at h
+  split at h
+  · exact mem_of_mem_eraseIdx h
+  · exact h
 
 end Array
 

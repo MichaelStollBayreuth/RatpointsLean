@@ -83,9 +83,9 @@ private theorem accepted_value (a : Int) (b : Nat) (checks : Thunk (List CheckSp
     ⦃ True ⦄ accepted a b checks cnt ⦃ fun r ↦ r = Id.run (accepted a b checks cnt) ⦄ :=
   ⟨fun _ ↦ rfl⟩
 
-/-- A pair whose first component is not `true` has no first component `true`, in the form of the
-verification conditions of a component that returns a Boolean with its counters. -/
-theorem _root_.Bool.not_fst_eq_true_of_eq {α : Type} {ok : Bool} {c : α} {p : Bool × α}
+-- A pair whose first component is not `true` has no first component `true`, in the shape of the
+-- verification conditions of a component that returns a Boolean with its counters.
+private theorem not_fst_eq_true_of_eq {α : Type} {ok : Bool} {c : α} {p : Bool × α}
     (h : (ok, c) = p) (hok : ¬ok = true) : ¬p.1 = true :=
   h ▸ hok
 
@@ -259,7 +259,7 @@ theorem walkWord_spec (w : Thunk (List Int)) (d b : Nat) (fl : CheckFlags)
     | exact WalkDeliveryInvariant.eq_deliver_of_accepted_of_quit ‹_› ‹_› ‹_›
         (congrArg Prod.fst ‹_›)
     | exact WalkDeliveryInvariant.and_sub_one_of_not_accepted ‹_› ‹_›
-        (Bool.not_fst_eq_true_of_eq ‹_› ‹_›)
+        (not_fst_eq_true_of_eq ‹_› ‹_›)
     | exact WalkDeliveryInvariant.eq_deliver_of_exit ‹_›
     | exact ‹_›
 

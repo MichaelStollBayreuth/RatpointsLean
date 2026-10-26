@@ -354,8 +354,8 @@ theorem le_and_lt_of_heightBound_eq_ok {h : String} {H : ℕ} (hH : heightBound 
 the height bound is a positive `long`, the reading of the options from the defaults succeeds, the
 search intervals of the options and the exact ends of the settings of the output are those of the
 intervals read and completed (`Ratpoints.Cli.Intervals.complete`), and `-q` cancels `-v`. -/
-theorem input_eq_ok {args : List String} {c : List ℤ} {H : ℕ} {s : SieveOptions} {o : Options}
-    {u : Output} (hi : input args = .ok (c, H, s, o, u)) :
+theorem exists_checkOptions_eq_ok_of_input_eq_ok {args : List String} {c : List ℤ} {H : ℕ}
+    {s : SieveOptions} {o : Options} {u : Output} (hi : input args = .ok (c, H, s, o, u)) :
     ∃ os iv, (∀ a ∈ os, a ∈ args) ∧ 1 ≤ H ∧ H < 2 ^ 63 ∧
       (∃ s' o' u', checkOptions H ({}, { bHigh := H }, {}, {}) os = .ok (s', o', u', iv)) ∧
       o.domain = (iv.complete H).domain.toList.take (iv.complete H).numInter ∧
@@ -380,7 +380,7 @@ the report of the library clear. -/
 theorem verbose_eq_false_of_input_eq_ok {args : List String} {c : List ℤ} {H : ℕ}
     {s : SieveOptions} {o : Options} {u : Output} (hi : input args = .ok (c, H, s, o, u))
     (hq : u.quiet = true) : u.verbose = false := by
-  obtain ⟨_, _, -, -, -, -, -, -, h⟩ := input_eq_ok hi
+  obtain ⟨_, _, -, -, -, -, -, -, h⟩ := exists_checkOptions_eq_ok_of_input_eq_ok hi
   exact h hq
 
 /-- What the program prints under `-q` for a command line on which the search
@@ -818,7 +818,8 @@ theorem reads_of_input_eq_ok {args : List String} {c : List ℤ} {H : ℕ} {s : 
     {o : Options} {u : Output} (hi : input args = .ok (c, H, s, o, u)) :
     1 ≤ H ∧ H < 2 ^ 63 ∧ ∃ iv : Intervals, iv.ReadsWF H iv.numInter false ∧
       o.domain = iv.domain.toList.take iv.numInter ∧ u.ends = iv.ends := by
-  obtain ⟨os, iv, -, hH, hH63, ⟨s', o', u', hk⟩, hdom, hends, -⟩ := input_eq_ok hi
+  obtain ⟨os, iv, -, hH, hH63, ⟨s', o', u', hk⟩, hdom, hends, -⟩ :=
+    exists_checkOptions_eq_ok_of_input_eq_ok hi
   refine ⟨hH, hH63, iv.complete H, ?_, hdom, hends⟩
   have hw := checkOptions_preserves (P := fun iv : Intervals ↦ iv.ReadsWF H iv.numInter iv.lSeen)
     (Q := fun _ ↦ True) (fun iv a iv' _ hw h ↦ hw.lower h) (fun iv a iv' _ hw h ↦ ?_)
@@ -909,7 +910,8 @@ theorem intervalsWF_joinIntervals_of_input_eq_ok {args : List String} {c : List 
     {s : SieveOptions} {o : Options} {u : Output} (hlen : ∀ a ∈ args, a.length < 2 ^ 56)
     (hi : input args = .ok (c, H, s, o, u)) :
     IntervalsWF (domainBits (Id.run (joinIntervals o.domain))) := by
-  obtain ⟨os, iv, hos, hH, hH63, ⟨_, _, _, hk⟩, hdom, -, -⟩ := input_eq_ok hi
+  obtain ⟨os, iv, hos, hH, hH63, ⟨_, _, _, hk⟩, hdom, -, -⟩ :=
+    exists_checkOptions_eq_ok_of_input_eq_ok hi
   have hP := checkOptions_preserves
     (P := fun iv : Intervals ↦ iv.ReadsWF H iv.numInter iv.lSeen ∧ iv.LowerMax iv.numInter iv.lSeen)
     (Q := fun a ↦ a.length < 2 ^ 56) (fun iv a iv' ha hw h ↦ ⟨hw.1.lower h, hw.2.lower hw.1 ha h⟩)

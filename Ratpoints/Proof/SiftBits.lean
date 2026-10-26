@@ -946,8 +946,9 @@ theorem eq_add_bitsCounts_of_not_le (h : ¬low ≤ high) (c : Counters) :
     c = c + bitsCounts b checks cl keep1 keep low high := by
   simp only [bitsCounts, h, ↓reduceIte, Counters.add_empty]
 
-/-- What the piece of the verification condition needs: the bound of the high mask. -/
-theorem ite_lt_rbaLength_and {p : Prop} [Decidable p] (x : Nat) {P : Prop} (hP : P) :
+-- The bound of the high mask, in the shape of the verification condition of the loop over the
+-- pieces.
+private theorem ite_lt_rbaLength_and {p : Prop} [Decidable p] (x : Nat) {P : Prop} (hP : P) :
     (if p then rbaLength - 1 - x else 0) < rbaLength ∧ P ∧ True :=
   ⟨by split <;> lia [rbaLength_pos], hP, trivial⟩
 

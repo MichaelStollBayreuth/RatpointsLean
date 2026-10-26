@@ -492,7 +492,7 @@ theorem ClearedBelow.filter_map_filter_range_succ_ctz (hx : ClearedBelow x0 k x)
   rw [hx.filter_range_succ_ctz hx0, List.map_append, List.filter_append]
   rfl
 
-theorem walkWhileInvariant_init (hq : st0.1.quit = false) (hQ : Q st0.2.1) :
+theorem walkDensInvariant_init (hq : st0.1.quit = false) (hQ : Q st0.2.1) :
     WalkWhileInvariant x0 (fun k st ↦ BlockInv process P L κ Q st0
       ((((List.range k).filter (x0.toBitVec.getLsbD ·)).map (base + ·)).filter keep) st) false
         (st0, x0) :=
@@ -514,7 +514,7 @@ theorem BlockPost.of_eq_none_walk (ho : o = none)
   · simp [ho] at hr
 
 /-- What the step at the lowest set bit of `x` needs: its denominator is one of the walk. -/
-theorem walkWhileInvariant_pre
+theorem walkDensInvariant_pre
     (hD : ∀ b ∈ (((List.range 64).filter (x0.toBitVec.getLsbD ·)).map (base + ·)).filter keep, D b)
     (h : x.toNat = mb ∧ o = none ∧ WalkWhileInvariant x0 (fun k st ↦ BlockInv process P L κ Q st0
       ((((List.range k).filter (x0.toBitVec.getLsbD ·)).map (base + ·)).filter keep) st) false
@@ -530,7 +530,7 @@ theorem walkWhileInvariant_pre
   exact ⟨_, ⟨UInt64.toNat_ctz_lt hx0, hc⟩, rfl⟩
 
 /-- The step at the lowest set bit of `x` after which the callback stops the search. -/
-theorem walkWhileInvariant_post_of_quit
+theorem walkDensInvariant_post_of_quit
     (h : x.toNat = mb ∧ o = none ∧ WalkWhileInvariant x0 (fun k st ↦ BlockInv process P L κ Q st0
       ((((List.range k).filter (x0.toBitVec.getLsbD ·)).map (base + ·)).filter keep) st) false
         (st, x))
@@ -548,7 +548,7 @@ theorem walkWhileInvariant_post_of_quit
 
 /-- A step of the walk at whose set bit the callback does not stop the search, or whose denominator
 the test rejects (`st' = st`). -/
-theorem walkWhileInvariant_and_sub_one
+theorem walkDensInvariant_and_sub_one
     (h : x.toNat = mb ∧ o = none ∧ WalkWhileInvariant x0 (fun k st ↦ BlockInv process P L κ Q st0
       ((((List.range k).filter (x0.toBitVec.getLsbD ·)).map (base + ·)).filter keep) st) false
         (st, x))
@@ -563,7 +563,7 @@ theorem walkWhileInvariant_and_sub_one
     exact (hk.append_list hs).blockInv hq
 
 /-- A step whose denominator the test passes. -/
-theorem walkWhileInvariant_and_sub_one_of_keep
+theorem walkDensInvariant_and_sub_one_of_keep
     (h : x.toNat = mb ∧ o = none ∧ WalkWhileInvariant x0 (fun k st ↦ BlockInv process P L κ Q st0
       ((((List.range k).filter (x0.toBitVec.getLsbD ·)).map (base + ·)).filter keep) st) false
         (st, x))
@@ -572,10 +572,10 @@ theorem walkWhileInvariant_and_sub_one_of_keep
     (x &&& x - 1).toNat < mb ∧ WalkWhileInvariant x0 (fun k st ↦ BlockInv process P L κ Q st0
       ((((List.range k).filter (x0.toBitVec.getLsbD ·)).map (base + ·)).filter keep) st) false
         (st', x &&& x - 1) :=
-  walkWhileInvariant_and_sub_one h hx ht (BlockPost.filter_singleton (hy' ▸ hy).symm hs) hq
+  walkDensInvariant_and_sub_one h hx ht (BlockPost.filter_singleton (hy' ▸ hy).symm hs) hq
 
 /-- A step whose denominator the test rejects. -/
-theorem walkWhileInvariant_and_sub_one_of_not_keep
+theorem walkDensInvariant_and_sub_one_of_not_keep
     (h : x.toNat = mb ∧ o = none ∧ WalkWhileInvariant x0 (fun k st ↦ BlockInv process P L κ Q st0
       ((((List.range k).filter (x0.toBitVec.getLsbD ·)).map (base + ·)).filter keep) st) false
         (st, x))
@@ -586,10 +586,10 @@ theorem walkWhileInvariant_and_sub_one_of_not_keep
         (st, x &&& x - 1) := by
   obtain ⟨k, -, hk, -⟩ := h.2.2
   have hq : st.1.quit = false := hk.1
-  refine walkWhileInvariant_and_sub_one h hx ht ?_ (by simp [hq])
+  refine walkDensInvariant_and_sub_one h hx ht ?_ (by simp [hq])
   simpa [← hy, hy'] using hk.blockPost_nil
 
-theorem walkWhileInvariant_exit {W : Nat → BlockState σ → Prop}
+theorem WalkWhileInvariant.exit_of_and {W : Nat → BlockState σ → Prop}
     (h : x.toNat = mb ∧ o = none ∧ WalkWhileInvariant x0 W false (st, x)) (hx : ¬(x != 0) = true) :
     WalkWhileInvariant x0 W true (st, x) :=
   WalkWhileInvariant.exit hx ⟨h.1, h.2.2⟩
@@ -627,15 +627,15 @@ theorem walkDens_spec (step : Nat → BlockState σ → Id (BlockState σ)) (D :
     and_false, Option.some.injEq, exists_eq_left', exists_false] at *
   all_goals obtain ⟨hq0, hQ0, hD⟩ := ‹st.1.quit = false ∧ _›
   all_goals first
-    | exact walkWhileInvariant_init hq0 hQ0
+    | exact walkDensInvariant_init hq0 hQ0
     | exact BlockPost.of_eq_some ‹_› ‹_›
     | exact BlockPost.of_eq_none_walk ‹_› ‹_›
     | exact bne_iff_ne.mp ‹_›
-    | exact walkWhileInvariant_pre hD ‹_› ‹_› ‹_› ‹_› ‹_›
-    | exact walkWhileInvariant_post_of_quit ‹_› ‹_› ‹_› ‹_› ‹_› ‹_› ‹_›
-    | exact walkWhileInvariant_and_sub_one_of_keep ‹_› ‹_› ‹_› ‹_› ‹_› ‹_› ‹_›
-    | exact walkWhileInvariant_and_sub_one_of_not_keep ‹_› ‹_› ‹_› ‹_› ‹_›
-    | exact walkWhileInvariant_exit ‹_› ‹_›
+    | exact walkDensInvariant_pre hD ‹_› ‹_› ‹_› ‹_› ‹_›
+    | exact walkDensInvariant_post_of_quit ‹_› ‹_› ‹_› ‹_› ‹_› ‹_› ‹_›
+    | exact walkDensInvariant_and_sub_one_of_keep ‹_› ‹_› ‹_› ‹_› ‹_› ‹_› ‹_›
+    | exact walkDensInvariant_and_sub_one_of_not_keep ‹_› ‹_› ‹_› ‹_› ‹_›
+    | exact WalkWhileInvariant.exit_of_and ‹_› ‹_›
 
 /-! ### The words of the word shape -/
 

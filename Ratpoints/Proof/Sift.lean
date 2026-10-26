@@ -902,16 +902,16 @@ theorem SiftIntervalsCounts.specs_eq_and_fits_of_eq_run_buildRows (hpos : cl.off
 
 /-- Once the sieve specs are made, they are those of `Ratpoints.Sieve.packedReads`, and the store
 fits the entries. -/
-theorem SiftIntervalsCounts.specs_eq_and_fits_of_not
+theorem SiftIntervalsCounts.specs_eq_and_fits_of_not_doSetup
     (h : o = none ∧ SiftIntervalsCounts b H sp1 es es3 mgs3 cl offsets pos cnt0 pref store doSetup
       specs c)
     (hd : ¬doSetup = true) :
     specs = (packedReads es b cl offsets pos).map Prod.fst ∧ store.Fits es :=
   ⟨h.2.specs_eq (Bool.eq_false_iff.mpr hd), h.2.fits⟩
 
-/-- What the contract of the counters of `Ratpoints.Sieve.siftBits` needs of the sieve specs of
-`Ratpoints.Sieve.packedReads`. -/
-theorem pre_siftBits_counters {A : Nat} (hA : 1 ≤ A)
+-- What the contract of the counters of `Ratpoints.Sieve.siftBits` needs of the sieve specs of
+-- `Ratpoints.Sieve.packedReads`, in the shape of the verification condition.
+private theorem pre_siftBits_counters {A : Nat} (hA : 1 ≤ A)
     (hoff : ∀ n (h : n < es.length), es[n].PackedFor cl offsets[pos + n]!)
     (hsp : specs' = (packedReads es b cl offsets pos).map Prod.fst ∧ st.Fits es) :
     1 ≤ A ∧ (∀ s ∈ specs', s.Fits) ∧
@@ -947,8 +947,8 @@ theorem SiftIntervalsCounts.append_of_siftBits {r : Delivery σ}
 
 end
 
-/-- A flag that is set is not clear. -/
-theorem _root_.Bool.eq_false_imp_of_eq_true {x : Bool} {P : Prop} (h : x = true) : x = false → P :=
+-- A flag that is set is not clear, in the shape of the verification condition.
+private theorem eq_false_imp_of_eq_true {x : Bool} {P : Prop} (h : x = true) : x = false → P :=
   fun h' ↦ absurd (h'.symm.trans h) Bool.false_ne_true
 
 open Std.WP Lean.Order in
@@ -976,10 +976,10 @@ private theorem sift_counters_spec_pos (c : List Int) (d H A b : Nat) (fl : Chec
     | exact SiftIntervalsCounts.eq_siftCounts ‹_›
     | exact SiftIntervalsCounts.post_of_two ‹_› ‹_› ‹_›
     | exact SiftIntervalsCounts.append_of_one ‹_› ‹_› ‹_›
-    | exact Bool.eq_false_imp_of_eq_true ‹_›
+    | exact eq_false_imp_of_eq_true ‹_›
     | (first
         | have hsf := SiftIntervalsCounts.specs_eq_and_fits_of_eq_run_buildRows hpos ‹_› ‹_›
-        | have hsf := SiftIntervalsCounts.specs_eq_and_fits_of_not ‹_› ‹_›)
+        | have hsf := SiftIntervalsCounts.specs_eq_and_fits_of_not_doSetup ‹_› ‹_›)
       first
         | exact pre_siftBits_counters hA hoff hsf
         | exact SiftIntervalsCounts.append_of_siftBits ‹_› ‹_› ‹_› hsf hinv hoff ‹_› ‹_› _
