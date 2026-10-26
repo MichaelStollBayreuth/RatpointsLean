@@ -22,7 +22,9 @@ the blocks at the end; the steps of block `i` are found from the segment that ho
 running sums of the numbers of their blocks (`Ratpoints.Sieve.numBlocks`); for a well-formed plan
 the search for the segment of a block ends, the steps of the block are those of
 `Ratpoints.Sieve.blockRange`, its first step at most its last, and the blocks in order cover the
-steps of the segments in order.
+steps of the segments in order. A decision of the correction of the moduli is well-formed for the
+entries of the run (`Ratpoints.Sieve.DecisionWF`) when its cut points are in order within the
+entries and the entries from its second cut point on count no factor.
 
 ## Main definitions
 
@@ -32,6 +34,7 @@ steps of the segments in order.
 * `Ratpoints.Sieve.BlockPlan.WF`: a well-formed plan of the blocks.
 * `Ratpoints.Sieve.BlockPlan.blockSteps`, `Ratpoints.Sieve.BlockPlan.blockSeg`: the steps and the
   segment of a block.
+* `Ratpoints.Sieve.DecisionWF`: a decision whose cut points the blocks can use.
 
 ## Main statements
 
@@ -45,6 +48,9 @@ steps of the segments in order.
   cover the steps of its segments in order.
 * `Ratpoints.Sieve.BlockPlan.WF.run_steps_le`: the first step of a block is at most its last, which
   the loops of the blocks need to end.
+* `Ratpoints.Sieve.DecisionWF.mk_sp2`, `Ratpoints.Sieve.DecisionWF.map_dinv`: a well-formed decision
+  stays well-formed with no third stage, and for the entries with the inverses of the strides that
+  `Ratpoints.Sieve.classOffsets` sets.
 
 ## Implementation notes
 
@@ -427,6 +433,32 @@ theorem BlockPlan.WF.run_steps_le {plan : BlockPlan} (h : plan.WF) {i : Nat}
   refine (blockRange_le h.1 ?_).2.1
   rw [h.segBlock_succ hs] at h2
   lia
+
+/-! ### Well-formed decisions -/
+
+/-- A decision `d` of the correction of the moduli is well-formed for the sieve entries `es` of the
+run and the end `sp1` of the first stage: `sp1 ≤ d.sp2 ≤ d.sp3 ≤ |es|`, and every entry from the
+position `d.sp2` on, those of the third stage and the reserve, counts no factor
+(`Ratpoints.Sieve.SieveEntry.nf` zero), so that, for the entries of the choice of the moduli, it is
+a prime of the table, as the third stage needs. -/
+def DecisionWF (es : List SieveEntry) (sp1 : Nat) (d : Decision) : Prop :=
+  sp1 ≤ d.sp2 ∧ d.sp2 ≤ d.sp3 ∧ d.sp3 ≤ es.length ∧ ∀ e ∈ es.drop d.sp2, e.nf = 0
+
+/-- A well-formed decision gives a well-formed decision with its end of the second stage and no
+third stage, for any first block. -/
+theorem DecisionWF.mk_sp2 {l : List SieveEntry} {sp1 : Nat} {d : Decision}
+    (h : DecisionWF l sp1 d) (b : Nat) : DecisionWF l sp1 ⟨b, d.sp2, d.sp2⟩ :=
+  ⟨h.1, Nat.le_refl _, by lia [h.2.1, h.2.2.1], h.2.2.2⟩
+
+/-- A well-formed decision stays well-formed for the sieve entries with the inverses of the strides
+that `Ratpoints.Sieve.classOffsets` sets. -/
+theorem DecisionWF.map_dinv {es : List SieveEntry} {sp1 : Nat} {d : Decision}
+    (h : DecisionWF es sp1 d) (dinv : SieveEntry → Array Nat) :
+    DecisionWF (es.map fun e ↦ { e with dinv := dinv e }) sp1 d := by
+  refine ⟨h.1, h.2.1, by simpa using h.2.2.1, fun e he ↦ ?_⟩
+  rw [← List.map_drop] at he
+  obtain ⟨e', he', rfl⟩ := List.mem_map.mp he
+  exact h.2.2.2 e' he'
 
 end Sieve
 

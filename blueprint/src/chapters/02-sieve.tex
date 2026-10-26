@@ -357,18 +357,18 @@ and~\ref{lem:power_admits}).
   (Definition~\ref{def:exactBounds}), which \verb|run_block| hands to the sieving thread for each
   block, with pieces of at most $A$ bit arrays and the flags of the check, in turn, the run
   returning after a denominator at which the callback stopped the search
-  (\csource{find_points.c}{3861}{3861}, \csource{find_points.c}{3889}{3899},
-  \csource{find_points.c}{3911}{3911}, \csource{find_points.c}{3913}{3913},
-  \csource{find_points.c}{4077}{4078}, \csource{find_points.c}{5120}{5120},
+  (\csource{find_points.c}{3861}{3861}, \csource{find_points.c}{5120}{5120},
   \csource{find_points.c}{5152}{5160}); the steps of a block and the loops of the shapes over them,
   whose lines of \verb|run_block| the listing of the shape replaces, are
-  Definitions~\ref{def:blockPlan} and~\ref{def:blockLoops}, which the run does not call yet
-  (stage~I). Its contract, for an array size $A \ge 1$, sieve entries whose reciprocals the array of
-  the reciprocals holds in their order, the first $s_2$ with their tables of inverses
-  (Lemma~\ref{lem:admits_mul}) and the row offsets of the classes with a pattern
-  (Lemma~\ref{lem:classOffsets}), whose bits are those of the word \verb|den_bits|, and a store of
-  the tables of rows that fits them (Lemma~\ref{lem:storeTables}), and those from $s_2$ on prime
-  entries (Definition~\ref{def:stage3}), as the third stage needs, denominators from
+  Definitions~\ref{def:blockPlan} and~\ref{def:blockLoops}, and one block, with the decision of the
+  correction in force for it, its counters from zero and its report, is
+  Definition~\ref{def:runBlock}; the run calls none of them yet (stage~I). Its contract, for an
+  array size $A \ge 1$, sieve entries whose reciprocals the array of the reciprocals holds in their
+  order, the first $s_2$ with their tables of inverses (Lemma~\ref{lem:admits_mul}) and the row
+  offsets of the classes with a pattern (Lemma~\ref{lem:classOffsets}), whose bits are those of the
+  word \verb|den_bits|, and a store of the tables of rows that fits them
+  (Lemma~\ref{lem:storeTables}), and those from $s_2$ on prime entries
+  (Definition~\ref{def:stage3}), as the third stage needs, denominators from
   $b_{\mathrm{low}} \ge 1$ to $b_{\mathrm{high}} < 2^{63}$ and $H < 2^{63}$, as the test for common
   factors on the words of the C code needs (the denominators of every shape lie between
   $b_{\mathrm{low}}$ and $b_{\mathrm{high}}$, Lemma~\ref{lem:shape_dens}): from a delivery whose

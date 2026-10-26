@@ -303,8 +303,9 @@ C: `rp-private.h:579-581`
 
 Deviation: a structure of its own, which the components of the sieve that count pass and return
 beside the delivery, for the fields of the sieving thread `rp_worker`, which `run_block` clears for
-each block (with the blocks, stage I; the run of the model discards the counters,
-`Ratpoints.Sieve.sieveRun`); `UInt64` for the `unsigned long`s, wrapping as they wrap. -/
+each block (`find_points.c:3914-3915`, `Ratpoints.Sieve.runBlock`, which the run of the model does
+not call yet: it discards the counters, `Ratpoints.Sieve.sieveRun`); `UInt64` for the
+`unsigned long`s, wrapping as they wrap. -/
 structure Counters where
   /-- `n_words`: the words of the bit arrays that the first stage swept. -/
   words : UInt64 := 0

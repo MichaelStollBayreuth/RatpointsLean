@@ -101,6 +101,9 @@ that the loop over the moduli of `Ratpoints.sievingInfo` makes holds
   the inverses of the strides.
 * `Ratpoints.Sieve.RowStore.Fits.buildRows_setRows`: the sieve specs of a denominator have the
   closed forms of the rows of their entries, and the store after them still fits the entries.
+* `Ratpoints.Sieve.buildRows_keeps`, `Ratpoints.Sieve.StoreHolds.buildRows_setRows_take`: building
+  the rows of a denominator keeps every row of the store, so that a store that holds the rows for
+  all the entries of a run still holds them after the rows of the first entries are built.
 
 ## Implementation notes
 
@@ -1358,6 +1361,87 @@ theorem RowStore.Fits.buildRows_setRows {store store' : RowStore} {es : List Sie
   have h' := Std.WP.Id.of_run_eq_wp hr.symm _
     ((buildRows_setRows_map_spec R store es g cl offsets).le_wp ⟨hs, hfit, hg⟩)
   ⟨h'.1, R, h'.2, hfit⟩
+
+/-! ### The rows that the store keeps -/
+
+/-- The store `s'` has every row that the store `s` has: what building rows into the tables of rows
+of a store does, which only adds rows (`Ratpoints.Sieve.RowStore.publish`). -/
+def RowStore.Keeps (s s' : RowStore) : Prop :=
+  ∀ ref r, s.row? ref r ≠ none → s'.row? ref r ≠ none
+
+theorem RowStore.Keeps.refl (s : RowStore) : s.Keeps s := fun _ _ h ↦ h
+
+theorem RowStore.Keeps.trans {s1 s2 s3 : RowStore} (h1 : s1.Keeps s2) (h2 : s2.Keeps s3) :
+    s1.Keeps s3 := fun ref r h ↦ h2 ref r (h1 ref r h)
+
+/-- A row fetched for a sieve entry (`Ratpoints.Sieve.SieveEntry.fetchRow_spec`) keeps the rows of
+the store. -/
+theorem RowStore.keeps_of_fetchRow {s s' : RowStore} {e : SieveEntry} {b : Nat}
+    (h : s' = s ∨ ∃ s'', s.Grows s'' (FactorRow e) ∧
+      s' = s''.publish e.ref b (closedRow e.admits e.p b)) : s.Keeps s' := by
+  rcases h with rfl | ⟨s'', hg, rfl⟩
+  · exact .refl _
+  · exact fun ref r h ↦ RowStore.row?_publish_ne_none (hg.row?_ne_none h)
+
+theorem BuildRowsInvariant.keeps_set {R : EntryRef → Nat → Array UInt64} {missing : Bool}
+    {es : List SieveEntry} {bp : List Nat} {specs : List SieveSpec} {store : RowStore}
+    (pre : BuildRowsPre R missing es bp specs store) {pref suff : List Nat} {cur : Nat}
+    (hl : ForIn.toList [:specs.length] = pref ++ cur :: suff) {st : List SieveSpec × RowStore}
+    (h : BuildRowsInvariant R es bp specs pref.length st ∧ RowStore.Keeps store st.2)
+    {row : Array UInt64} {st' : RowStore}
+    (hr : (row, st').1 = closedRow es[cur]!.admits es[cur]!.p bp[cur]! ∧ ((row, st').2 = st.2 ∨
+      ∃ s, st.2.Grows s (FactorRow es[cur]!) ∧
+        (row, st').2 =
+          s.publish es[cur]!.ref bp[cur]! (closedRow es[cur]!.admits es[cur]!.p bp[cur]!))) :
+    BuildRowsInvariant R es bp specs (pref ++ [cur]).length
+      (st.1.set cur { st.1[cur]! with row, stop := es[cur]!.p }, st') ∧
+      RowStore.Keeps store (st.1.set cur { st.1[cur]! with row, stop := es[cur]!.p }, st').2 :=
+  ⟨BuildRowsInvariant.set pre hl h.1 hr, h.2.trans (RowStore.keeps_of_fetchRow hr.2)⟩
+
+attribute [local irreducible] BuildRowsInvariant in
+open Std.WP Lean.Order in
+/-- `Ratpoints.Sieve.buildRows` keeps the rows of the store, since it only stores rows into it. -/
+theorem buildRows_keeps (R : EntryRef → Nat → Array UInt64) (missing : Bool)
+    (es : List SieveEntry) (bp : List Nat) (specs : List SieveSpec) (store : RowStore) :
+    ⦃ BuildRowsPre R missing es bp specs store ⦄ buildRows missing es bp specs store
+    ⦃ fun r ↦ RowStore.Keeps store r.2 ⦄ := by
+  vcgen [buildRows] invariants
+  | inv1 => fun pref _ st ↦ BuildRowsInvariant R es bp specs pref.length st ∧
+      RowStore.Keeps store st.2
+  all_goals first
+    | exact .refl _
+    | exact ⟨BuildRowsPre.buildRowsInvariant ‹_›, .refl _⟩
+    | exact ‹_ ∧ _›.2
+    | exact BuildRowsInvariant.fetchRow_pre ‹_› ‹_› ‹_ ∧ _›.1
+    | exact BuildRowsInvariant.keeps_set ‹_› ‹_› ‹_› ‹_›
+    | exact ⟨BuildRowsInvariant.skip ‹_› ‹_ ∧ _›.1 ‹_›, ‹_ ∧ _›.2⟩
+
+/-- The sieve specs of the first `k` sieve entries of `L` that `Ratpoints.Sieve.setRows` makes and
+`Ratpoints.Sieve.buildRows` completes for their residues `g e < p`, from a store that holds the
+rows `R` for all of `L` (`Ratpoints.Sieve.StoreHolds`), whose entries fit them: the store after
+them still holds the rows for all of `L`, since it keeps the rows of the store
+(`Ratpoints.Sieve.buildRows_keeps`). -/
+theorem StoreHolds.buildRows_setRows_take {R : EntryRef → Nat → Array UInt64}
+    {L : List SieveEntry} {store store' : RowStore} (h : StoreHolds R L store)
+    (hfit : ∀ n (h : n < L.length), L[n].RowsFit R n) {k : Nat} {g : SieveEntry → Nat}
+    (hg : ∀ e ∈ L.take k, g e < e.p) {cl : NumClass} {offsets : Array Nat}
+    {specs : List SieveSpec}
+    (hr : (specs, store') = Id.run (buildRows (setRows store (L.take k) ((L.take k).map g) cl
+      offsets).2 (L.take k) ((L.take k).map g) (setRows store (L.take k) ((L.take k).map g) cl
+        offsets).1 store)) :
+    StoreHolds R L store' := by
+  have hs : StoreHolds R (L.take k) store :=
+    h.of_factors fun e he ↦ ⟨e, List.mem_of_mem_take he, rfl⟩
+  have hfit' : ∀ n (h : n < (L.take k).length), (L.take k)[n].RowsFit R n := fun n hn ↦ by
+    rw [List.getElem_take]
+    exact hfit n (Nat.lt_of_lt_of_le hn (List.length_take_le' k L))
+  have h1 := Std.WP.Id.of_run_eq_wp hr.symm _
+    ((buildRows_setRows_map_spec R store (L.take k) g cl offsets).le_wp ⟨hs, hfit', hg⟩)
+  have h2 := Std.WP.Id.of_run_eq_wp hr.symm _ ((buildRows_keeps R _ (L.take k) _ _ store).le_wp
+    (buildRowsPre_setRows cl offsets hs hfit' (by simp) fun n hn ↦ by
+      rw [getElem!_pos _ n (by simpa using hn), List.getElem_map]
+      exact hg _ (List.getElem_mem hn)))
+  exact ⟨h1.2.holds, fun e he t ht ↦ h2 _ _ (h.zero e he t ht)⟩
 
 end Sieve
 

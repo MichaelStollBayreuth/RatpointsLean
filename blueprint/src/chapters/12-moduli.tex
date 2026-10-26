@@ -896,11 +896,11 @@ proof uses then, and rewords the docstrings of the model that name it.
 
 \begin{definition}[One block]\label{def:runBlock}
   \uses{def:blockLoops, def:counters}
-  Proposed names: \lname{Ratpoints.Sieve.Decision}, \lname{Ratpoints.Sieve.findDecision},
-  \lname{Ratpoints.Sieve.BlockStat}, \lname{Ratpoints.Sieve.runBlock}. A decision of the correction,
-  the first block it is for and the ends $s_2$ and $s_3$ from it on, an array of them for the three
-  arrays of the C code; the decision in force for block $i$, the last whose first block is at most
-  $i$, found from the last back (\csource{find_points.c}{3908}{3910},
+  \lean{Ratpoints.Sieve.Decision, Ratpoints.Sieve.findDecision, Ratpoints.Sieve.BlockStat, Ratpoints.Sieve.runBlock}
+  \leanok
+  A decision of the correction, the first block it is for and the ends $s_2$ and $s_3$ from it on,
+  an array of them for the three arrays of the C code; the decision in force for block $i$, the last
+  whose first block is at most $i$, found from the last back (\csource{find_points.c}{3908}{3910},
   \csource{find_points.c}{3912}{3912}); the report of a block, its counters with the index and the
   ends $s_2$ and $s_3$ of its decision (\csource{find_points.c}{4082}{4086}); and block $i$: its
   segment and steps, the decision in force, the entries and the reciprocals of the first two and of
@@ -913,12 +913,12 @@ proof uses then, and rewords the docstrings of the model that name it.
 
 \begin{definition}[A well-formed decision]\label{def:decisionWF}
   \uses{def:runBlock, def:SieveEntry}
-  Proposed names: \lname{Ratpoints.Sieve.DecisionWF}, \lname{Ratpoints.Sieve.DecisionWF.mk\_sp2},
-  \lname{Ratpoints.Sieve.DecisionWF.map\_dinv}. A decision is well formed for the sieve entries $E$
-  and the end $s_1$ of the first stage when $s_1 \le s_2 \le s_3 \le |E|$ and every entry from $s_2$
-  on counts no factor, so that it is a prime entry of the table for a result of the choice. A
-  well-formed decision stays so with $s_3 = s_2$ and for the entries with other inverses of the
-  strides.
+  \lean{Ratpoints.Sieve.DecisionWF, Ratpoints.Sieve.DecisionWF.mk_sp2, Ratpoints.Sieve.DecisionWF.map_dinv}
+  \leanok
+  A decision is well formed for the sieve entries $E$ and the end $s_1$ of the first stage when
+  $s_1 \le s_2 \le s_3 \le |E|$ and every entry from $s_2$ on counts no factor, so that it is a
+  prime entry of the table for a result of the choice. A well-formed decision stays so with
+  $s_3 = s_2$ and for the entries with other inverses of the strides.
 \end{definition}
 
 \begin{lemma}[The plan of the blocks]\label{lem:blockPlan}
@@ -970,21 +970,19 @@ proof uses then, and rewords the docstrings of the model that name it.
 
 \begin{lemma}[The blocks list the denominators of the shape]\label{lem:blockDens}
   \uses{def:blockPlan, lem:blockPlan, lem:blockLoops, def:Shape}
-  Proposed names: \lname{Ratpoints.Sieve.blockDens},
-  \lname{Ratpoints.Sieve.Shape.flatMap\_blockDens},
-  \lname{Ratpoints.Sieve.Shape.flatMap\_range\_numSegs},
-  \lname{Ratpoints.Sieve.Shape.mem\_dens\_of\_mem\_blockDens},
-  \lname{Ratpoints.Sieve.Shape.flatMap\_filter\_blockDens},
-  \lname{Ratpoints.Sieve.Shape.eq\_of\_mem\_blockDens}. The denominators of the steps of block $i$,
-  before the tests of the shape, concatenated over the blocks of the run in order, are the
-  denominators of the shape from $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$ in the order of its loop,
-  the listing of stage~E (Definition~\ref{def:Shape}), which the proofs keep as a definition of
-  their own; lists made block by block that agree on each block with lists of the denominators give
-  those lists over the listing filtered by the test of the shape; and when the listing has no
-  duplicates, a denominator lies in at most one block.
+  \lean{Ratpoints.Sieve.blockDens, Ratpoints.Sieve.Shape.flatMap_blockDens, Ratpoints.Sieve.Shape.flatMap_range_numSegs, Ratpoints.Sieve.Shape.mem_dens_of_mem_blockDens, Ratpoints.Sieve.Shape.flatMap_filter_blockDens, Ratpoints.Sieve.Shape.eq_of_mem_blockDens}
+  \leanok
+  The denominators of the steps of block $i$, before the tests of the shape, concatenated over the
+  blocks of the run in order, are the denominators of the shape from $b_{\mathrm{low}}$ to
+  $b_{\mathrm{high}}$ in the order of its loop, the listing of stage~E (Definition~\ref{def:Shape}),
+  a definition of the model until the run sifts the blocks (I.11) and of the proofs from then on;
+  lists made block by block that agree on each block with lists of the denominators give those lists
+  over the listing filtered by the test of the shape; and when the listing has no duplicates, a
+  denominator lies in at most one block.
 \end{lemma}
 
 \begin{proof}
+  \leanok
   By Lemma~\ref{lem:blockPlan}, the blocks in order give the steps of the segments in order; mapped
   by the denominators of the steps of each segment, these are the listing of each shape, segment by
   segment for the divisor shape, word by word for the shape of the words by
@@ -994,19 +992,8 @@ proof uses then, and rewords the docstrings of the model that name it.
 \begin{lemma}[One block]\label{lem:runBlock}
   \uses{def:runBlock, def:decisionWF, lem:blockLoops, lem:blockDens, lem:counters, lem:buildRows,
     lem:fetchRow, lem:forbidden, lem:fillBpList}
-  Proposed names: \lname{Ratpoints.Sieve.RunWords}, \lname{Ratpoints.Sieve.denPoints},
-  \lname{Ratpoints.Sieve.denCounts}, \lname{Ratpoints.Sieve.take\_append\_take\_drop},
-  \lname{Ratpoints.Sieve.siftDen\_spec}, \lname{Ratpoints.Sieve.runBlock\_spec},
-  \lname{Ratpoints.Sieve.decisionWF\_getElem!\_findDecision},
-  \lname{Ratpoints.Sieve.IsForbiddenEntry.mem\_primeTable},
-  \lname{Ratpoints.Sieve.forbFits\_of\_forall\_isForbiddenEntry},
-  \lname{Ratpoints.Sieve.forbFits\_fst\_run\_runSetup},
-  \lname{Ratpoints.Sieve.Shape.loopFits\_run\_blockPlan}, \lname{Ratpoints.Sieve.RowStore.Keeps},
-  \lname{Ratpoints.Sieve.RowStore.Keeps.refl}, \lname{Ratpoints.Sieve.RowStore.Keeps.trans},
-  \lname{Ratpoints.Sieve.RowStore.keeps\_of\_fetchRow}, \lname{Ratpoints.Sieve.buildRows\_keeps},
-  \lname{Ratpoints.Sieve.StoreHolds.buildRows\_setRows\_take},
-  \lname{Ratpoints.Sieve.RowStore.Fits.fits\_run\_sift}, \lname{Ratpoints.Sieve.sift\_storeHolds},
-  \lname{Ratpoints.Sieve.DecisionSearchInvariant}, \lname{Ratpoints.Sieve.findDecision\_spec}.
+  \lean{Ratpoints.Sieve.RunWords, Ratpoints.Sieve.denPoints, Ratpoints.Sieve.denCounts, Ratpoints.Sieve.take_append_take_drop, Ratpoints.Sieve.siftDen_spec, Ratpoints.Sieve.runBlock_spec, Ratpoints.Sieve.decisionWF_getElem!_findDecision, Ratpoints.Sieve.IsForbiddenEntry.mem_primeTable, Ratpoints.Sieve.forbFits_of_forall_isForbiddenEntry, Ratpoints.Sieve.forbFits_fst_run_runSetup, Ratpoints.Sieve.Shape.loopFits_run_blockPlan, Ratpoints.Sieve.RowStore.Keeps, Ratpoints.Sieve.RowStore.Keeps.refl, Ratpoints.Sieve.RowStore.Keeps.trans, Ratpoints.Sieve.RowStore.keeps_of_fetchRow, Ratpoints.Sieve.buildRows_keeps, Ratpoints.Sieve.StoreHolds.buildRows_setRows_take, Ratpoints.Sieve.RowStore.Fits.fits_run_sift, Ratpoints.Sieve.sift_storeHolds, Ratpoints.Sieve.DecisionSearchInvariant, Ratpoints.Sieve.findDecision_spec}
+  \leanok
   Building rows never removes a row, so that a store that fits all the entries, the reserve
   included, still fits them after any denominator, whose sieve reads and builds the rows of its
   first two stages only. For a callback that has not stopped the search, an array size $A \ge 1$,
@@ -1027,6 +1014,7 @@ proof uses then, and rewords the docstrings of the model that name it.
 
 \begin{proof}
   \uses{lem:densities, lem:shape_dens}
+  \leanok
   The step is one denominator, whose contract is that of Definition~\ref{def:sift} with the entries
   of the first two stages and of the third cut by the decision, $E_{:s_2}$ and
   $(E_{s_2:})_{:s_3 - s_2}$, which concatenate to $E_{:s_3}$, and with the frame of the store; the

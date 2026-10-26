@@ -26,7 +26,9 @@ each for any step that sifts a denominator: when the step delivers the lists `L 
 denominator `b`, for every `x` with `P x`, keeps a property `Q` of the store of the tables of rows
 and adds the counts `κ b` to the counters when the callback does not stop the search, the loop
 delivers the lists of the denominators of its steps that pass the tests of the shape, in order,
-keeps `Q`, and adds their counts (`Ratpoints.Sieve.BlockPost`).
+keeps `Q`, and adds their counts (`Ratpoints.Sieve.BlockPost`). The search for the decision in
+force for a block ends at the last decision whose first block is at most the block
+(`Ratpoints.Sieve.findDecision_spec`).
 
 ## Main definitions
 
@@ -51,13 +53,15 @@ keeps `Q`, and adds their counts (`Ratpoints.Sieve.BlockPost`).
   of `Ratpoints.Sieve.wordBits`, with the positions at the next word.
 * `Ratpoints.Sieve.Shape.blockLoop_spec`: the loop of a shape over a block delivers the lists of the
   denominators of its steps (`Ratpoints.Sieve.Shape.stepDens`) that pass the tests of the shape.
+* `Ratpoints.Sieve.findDecision_spec`: the decision in force for a block.
 
 ## Implementation notes
 
 The loops with a cursor (`repeat`, `while`) end by measures: the steps left for the loops of a block
-over `a ≤ e`, and the word for the walk. The deliveries are stated for a family `L x` of lists with
-a property `P x`, since the run states its delivery for every choice of the words of the classes and
-the ranges of the numerators, which the program does not mention.
+over `a ≤ e`, the word for the walk, the index for the search of the decision. The deliveries are
+stated for a family `L x` of lists with a property `P x`, since the run states its delivery for
+every choice of the words of the classes and the ranges of the numerators, which the program does
+not mention.
 -/
 
 @[expose] public section
@@ -1029,6 +1033,50 @@ theorem Shape.blockLoop_spec (shape : Shape) (step : Nat → BlockState σ → I
       ⟨hq, hQ, hae, rfl, rfl, hf.1, hD⟩
   · exact (allBlock_spec process step D P L κ Q hstep cls a e st).le_wp ⟨hq, hQ, hae,
       fun b hb ↦ hD b (by simpa [Shape.stepDens, Shape.keep] using hb)⟩
+
+/-! ### The decision in force for a block -/
+
+-- The search for the decision in force for block `i` goes back while the first block of the
+-- decision is above `i`, which is then not the first decision.
+private theorem findDecision_back {decs : Array Decision} {i dd : Nat} (h0 : decs[0]!.block = 0)
+    (hi : i < decs[dd]!.block)
+    (h : dd < decs.size ∧ ∀ j, dd < j → j < decs.size → i < decs[j]!.block) :
+    dd - 1 < dd ∧ dd - 1 < decs.size ∧ ∀ j, dd - 1 < j → j < decs.size → i < decs[j]!.block := by
+  have hd : dd ≠ 0 := by rintro rfl; rw [h0] at hi; lia
+  refine ⟨by lia, by lia, fun j h1 h2 ↦ ?_⟩
+  rcases Nat.lt_or_ge dd j with h3 | h3
+  · exact h.2 j h3 h2
+  · rwa [show j = dd by lia]
+
+/-- The invariant of the search of `Ratpoints.Sieve.findDecision` for the decision in force for
+block `i`, whose state is the index `dd` of a decision: every later decision is for a block after
+`i`, and at the exit the decision `dd` is for a block at most `i`. -/
+def DecisionSearchInvariant (decs : Array Decision) (i : Nat) : Std.WP.WhileInvariant Nat Prop :=
+  .mk fun exit dd ↦ dd < decs.size ∧ (∀ j, dd < j → j < decs.size → i < decs[j]!.block) ∧
+    (exit = true → decs[dd]!.block ≤ i)
+
+open Std.WP Lean.Order in
+/-- For decisions of which the first is for block `0`, the decision in force for block `i` is the
+last whose first block is at most `i`: the search from the last decision back ends there, at the
+first decision at the latest. -/
+theorem findDecision_spec (decs : Array Decision) (i : Nat) :
+    ⦃ 0 < decs.size ∧ decs[0]!.block = 0 ⦄ findDecision decs i
+    ⦃ fun dd ↦ dd < decs.size ∧ decs[dd]!.block ≤ i ∧
+        ∀ j, dd < j → j < decs.size → i < decs[j]!.block ⦄ := by
+  vcgen [findDecision] invariants
+  | inv1 => DecisionSearchInvariant decs i
+  | inv2 => .ofMeasure fun dd ↦ dd
+  all_goals simp only [DecisionSearchInvariant, WhileInvariant.mk_apply, Variant.evalsTo_ofMeasure,
+    Variant.evalsBelow_ofMeasure_nat, Assertion.NondetFun.evalsTo_pure, meet_prop_eq_and,
+    ofProp_prop_eq, true_implies, false_implies, Bool.false_eq_true, and_true] at *
+  all_goals first
+    | exact ⟨by lia, fun j h1 h2 ↦ absurd h2 (by lia)⟩
+    | exact ⟨‹_ ∧ _ ∧ _›.1, ‹_ ∧ _ ∧ _›.2.2, ‹_ ∧ _ ∧ _›.2.1⟩
+    | (rename_i hi h
+       obtain ⟨rfl, h⟩ := h
+       exact findDecision_back ‹_ ∧ _›.2 hi h)
+    | (rename_i hi h
+       exact ⟨h.2.1, h.2.2, Nat.le_of_not_lt hi⟩)
 
 end Sieve
 

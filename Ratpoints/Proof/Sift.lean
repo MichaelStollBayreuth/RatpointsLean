@@ -69,6 +69,9 @@ delivers with the flags of the search.
   without `RATPOINTS_NO_CHECK`, these are the points that the plain sieve of `b` with all the
   entries gives whose numerators lie in the ranges and pass `w`, mapped by
   `Ratpoints.Sieve.swapPoint` after a reversal, without those with `y < 0` under `RATPOINTS_NO_Y`.
+* `Ratpoints.Sieve.sift_storeHolds`, `Ratpoints.Sieve.RowStore.Fits.fits_run_sift`: the sieve of
+  one denominator with the first entries of a run as those of its first two stages keeps a store
+  that fits all the entries of the run, since it only adds rows.
 
 ## Implementation notes
 
@@ -87,9 +90,9 @@ sieve specs, made at the first interval that is neither below `-H` nor above `H`
 both branches, which a contract of its own also states without the class word and the ranges. The
 counters have a contract of their own too (the contracts of the counters of the components it calls
 are in `Ratpoints.Proof.ScanCounts` and `Ratpoints.Proof.SiftBits`), which needs neither the class
-word nor the ranges, and `Ratpoints.Sieve.sift_spec` states the three. The contract of the run over
-the denominators, which calls `Ratpoints.Sieve.sift` with the class of each denominator, is in
-`Ratpoints.Proof.Denominators`.
+word nor the ranges, and `Ratpoints.Sieve.sift_spec` states the three. The contracts of one block
+and of the run over the denominators, which call `Ratpoints.Sieve.sift` with the class of each
+denominator, are in `Ratpoints.Proof.Blocks` and `Ratpoints.Proof.Denominators`.
 -/
 
 @[expose] public section
@@ -690,6 +693,53 @@ private theorem sift_fits (c : List Int) (d H A b : Nat) (fl : CheckFlags) (sp1 
     | exact ‹_ ∧ _›.2
     | have h := ‹_ ∧ RowStore.Fits _ es›.2
       exact (h.buildRows_setRows (fun e he ↦ Nat.mod_lt _ (h.pos e he)) ‹_›).2
+
+-- The moduli of entries that fit the rows `R` are positive.
+private theorem pos_of_rowsFit {R : EntryRef → Nat → Array UInt64} {L : List SieveEntry}
+    (hfit : ∀ n (h : n < L.length), L[n].RowsFit R n) (e : SieveEntry) (he : e ∈ L) : 0 < e.p :=
+  have ⟨n, hn, he⟩ := List.getElem_of_mem he
+  he ▸ (hfit n hn).pos
+
+open Std.WP Lean.Order in
+/-- The sieve of one denominator with the first `k` entries of `L` as those of its first two stages
+keeps a store that holds the rows `R` for all of `L` (`Ratpoints.Sieve.StoreHolds`), since building
+rows keeps the rows of the store (`Ratpoints.Sieve.StoreHolds.buildRows_setRows_take`). -/
+theorem sift_storeHolds (c : List Int) (d H A b : Nat) (fl : CheckFlags) (sp1 : Nat)
+    {R : EntryRef → Nat → Array UInt64} {L : List SieveEntry} (k : Nat) (mgs : List Nat)
+    (cl : NumClass) (offsets : Array Nat) (es3 : List SieveEntry) (mgs3 : List Nat)
+    (iv : Array IntervalBounds) (store : RowStore) (r : Delivery σ) (cnt : Counters)
+    (hfit : ∀ n (h : n < L.length), L[n].RowsFit R n) :
+    ⦃ StoreHolds R L store ⦄
+    sift process c d H A b fl sp1 (L.take k) mgs ((L.take k).map fun e ↦ b * e.dinv[cl.k]! % e.p) cl
+      offsets es3 mgs3 iv store r cnt
+    ⦃ fun r' ↦ StoreHolds R L r'.2.1 ⦄ := by
+  vcgen [sift, buildRows_value, siftBits_value] invariants
+  · Std.WP.Invariant.withEarlyReturnNewDo Prop (fun _ _ s ↦ StoreHolds R L s.2.1)
+      (fun ret _ ↦ StoreHolds R L ret.2.1)
+  all_goals subst_vars
+  all_goals simp only [meet_prop_eq_and, join_prop_eq_or, iSup_prop_eq_exists, ofProp_prop_eq,
+    reduceCtorEq, false_and, or_false, false_or, true_and, and_false, Option.some.injEq,
+    exists_eq_left', exists_false, and_true] at *
+  all_goals first
+    | exact ‹_›
+    | exact ‹_ ∧ _›.2
+    | exact StoreHolds.buildRows_setRows_take ‹_ ∧ _›.2 hfit
+        (fun e he ↦ Nat.mod_lt _ (pos_of_rowsFit hfit e (List.mem_of_mem_take he))) ‹_›
+
+/-- The sieve of one denominator with the first `k` entries of the run `L` as those of its first two
+stages only adds rows to the store of the tables of rows, rows of the references of these entries:
+a store that fits `L` still fits `L` after it. -/
+theorem RowStore.Fits.fits_run_sift (c : List Int) (d H A b : Nat) (fl : CheckFlags) (sp1 : Nat)
+    {L : List SieveEntry} {k : Nat} (mgs bp : List Nat) (cl : NumClass) (offsets : Array Nat)
+    (es3 : List SieveEntry) (mgs3 : List Nat) (iv : Array IntervalBounds) {store : RowStore}
+    (r : Delivery σ) (cnt : Counters) (hs : store.Fits L)
+    (hbp : bp = (L.take k).map fun e ↦ b * e.dinv[cl.k]! % e.p) :
+    (Id.run (sift process c d H A b fl sp1 (L.take k) mgs bp cl offsets es3 mgs3 iv store r
+      cnt)).2.1.Fits L := by
+  obtain ⟨R, hR, hfit⟩ := hs
+  subst hbp
+  exact ⟨R, (sift_storeHolds process c d H A b fl sp1 k mgs cl offsets es3 mgs3 iv store r cnt
+    hfit).le_wp hR, hfit⟩
 
 /-! ### The counters of one denominator -/
 

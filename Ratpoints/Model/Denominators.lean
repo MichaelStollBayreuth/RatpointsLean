@@ -895,40 +895,40 @@ the third stage with their reciprocals, the bounds `iv` of the search intervals 
 `Ratpoints.Sieve.sift` builds going on to the next denominator; after each denominator the run
 returns if the callback has stopped the search.
 
-C: `find_points.c:3861`, `find_points.c:3889-3899`, `find_points.c:3911`, `find_points.c:3913`,
-`find_points.c:4077-4078`, `find_points.c:5120`, `find_points.c:5152-5160`
+C: `find_points.c:3861`, `find_points.c:5120`, `find_points.c:5152-5160`
 
 Deviation: the cut points `sp1` and `sp2` of the parameters for the whole run, for the cut points of
 the sieving thread: `sp1`, which `worker_init` copies from the arguments for the run (line 3124,
 `Ratpoints.Sieve.sift`), and `sp2` and the end of the list of the entries, for the ends `wk->sp2`
 and `wk->sp3` of the second and the third stage, which `run_block` sets for each block from the last
-decision of the correction of the moduli (`wk->dec`, `run->dec_sp2`, `run->dec_sp3`, line 3911), the
-first decision being that of the arguments (line 3861, with its first block `dec_block[0]`), and no
-count of the decisions and no later ones (lines 3862-3863; stage I); the denominators of the shape
-listed first, then tested and sifted one after the other, where `run_block` tests and sifts each as
-its loop reaches it (the loops of the shapes over a block, `Ratpoints.Sieve.Shape.blockLoop`, which
-the run does not call yet), so that after a stop of the callback the list holds denominators that
-the C code never reaches, whose listing still costs its time and memory
-(`Ratpoints.Sieve.Shape.dens`); no blocks (stage I): the steps of each segment in order, for the
-blocks of `len` consecutive steps (`Ratpoints.Sieve.Shape.blockPlan`,
-`Ratpoints.Sieve.BlockPlan.steps`), which the threads share and which deliver their points in the
-same order; the classes `cls` and the array `offsets` of their row offsets as arguments, for the
-field `cls` of the run that `run_block` reads (line 3893), whose classes reach their rows of offsets
-through their pointers `offset`; the class `cls[b mod 64]` and the residues of `fill_bp_list` passed
-to `Ratpoints.Sieve.sift` as values, for the pointers `cl` and `bp_list`, and the bounds of the
-search intervals of the run as an argument, for the pointer `iv` of the sieving thread that
-`run_block` sets to the bounds of the run (line 3913), and the residues a list of the length of the
-first two stages, for the array `bp_list` of `sp3_max` entries; the delivery `r` passed and
-returned, for the pointers `info` and `wk->quit` and the counts `total` that `run_block` and the
-loop over the blocks keep from zero and return, and one test of the flag after each denominator and
-one return, for the return of `run_block` in each shape (lines 3928, 3957, 4044, 4068) and the end
-of the loop over the blocks (line 5158); the store of the tables of rows passed from one denominator
-to the next, for the arrays `sieve` of the entries of the arguments, which the run reads and fills,
-its last state not returned, as nothing reads the tables of rows after the run; the counters of the
-sieve (`Ratpoints.Sieve.Counters`) started empty for each denominator and discarded, for the
-counters of the sieving thread, which `worker_init` and `run_block` clear and from which ratpoints
-corrects the moduli between the blocks (stage I); natural numbers for the `long`s; no correction of
-the moduli between the blocks (stage I); no output under `DEBUG`. -/
+decision of the correction of the moduli (`wk->dec`, `run->dec_sp2`, `run->dec_sp3`, line 3911; one
+block, `Ratpoints.Sieve.runBlock`, which the run does not call yet), the first decision being that
+of the arguments (line 3861, with its first block `dec_block[0]`), and no count of the decisions and
+no later ones (lines 3862-3863; stage I); the denominators of the shape listed first, then tested
+and sifted one after the other, where `run_block` tests and sifts each as its loop reaches it (the
+loops of the shapes over a block, `Ratpoints.Sieve.Shape.blockLoop`, which the run does not call
+yet), so that after a stop of the callback the list holds denominators that the C code never
+reaches, whose listing still costs its time and memory (`Ratpoints.Sieve.Shape.dens`); no blocks
+(stage I): the steps of each segment in order, for the blocks of `len` consecutive steps
+(`Ratpoints.Sieve.Shape.blockPlan`, `Ratpoints.Sieve.BlockPlan.steps`, `Ratpoints.Sieve.runBlock`),
+which the threads share and which deliver their points in the same order; the classes `cls` and the
+array `offsets` of their row offsets as arguments, for the field `cls` of the run that `run_block`
+reads (line 3893), whose classes reach their rows of offsets through their pointers `offset`; the
+class `cls[b mod 64]` and the residues of `fill_bp_list` passed to `Ratpoints.Sieve.sift` as values,
+for the pointers `cl` and `bp_list`, and the bounds of the search intervals of the run as an
+argument, for the pointer `iv` of the sieving thread that `run_block` sets to the bounds of the run
+(line 3913), and the residues a list of the length of the first two stages, for the array `bp_list`
+of `sp3_max` entries; the delivery `r` passed and returned, for the pointers `info` and `wk->quit`
+and the counts `total` that `run_block` and the loop over the blocks keep from zero and return, and
+one test of the flag after each denominator and one return, for the return of `run_block` in each
+shape (lines 3928, 3957, 4044, 4068) and the end of the loop over the blocks (line 5158); the store
+of the tables of rows passed from one denominator to the next, for the arrays `sieve` of the entries
+of the arguments, which the run reads and fills, its last state not returned, as nothing reads the
+tables of rows after the run; the counters of the sieve (`Ratpoints.Sieve.Counters`) started empty
+for each denominator and discarded, for the counters of the sieving thread, which `worker_init` and
+`run_block` clear and from which ratpoints corrects the moduli between the blocks (stage I); natural
+numbers for the `long`s; no correction of the moduli between the blocks (stage I); no output under
+`DEBUG`. -/
 def sieveRun {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : List Int) (d H A : Nat)
     (fl : CheckFlags) (sp1 sp2 : Nat) (entries : List SieveEntry) (magics : Array Nat)
     (cls : Vector NumClass 64) (offsets : Array Nat) (db : UInt64) (shape : Shape)
