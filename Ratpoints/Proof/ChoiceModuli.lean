@@ -6,10 +6,10 @@ Authors: Michael Stoll
 module
 
 public import Ratpoints.Proof.ChoicePool
+public import Ratpoints.Proof.Containers
 public import Ratpoints.Proof.Moduli
 public import Ratpoints.Proof.Stages
 
-import Ratpoints.Proof.Containers
 import Ratpoints.Proof.Params
 import Ratpoints.Proof.Tables
 import Std.Tactic.Do
@@ -98,7 +98,7 @@ theorem CodeOK.isSound {c : List ℤ} {primeSe : Array (Option (Entry × Float))
     simp only [factorOfCode, hc, ↓reduceIte, hr, Option.elim_some] at hd ⊢
     exact isSound_prime_examinePrime hc hd
   · obtain ⟨pw, hpw, pn, hpn, e, he, u, pinf, rfl⟩ := h.power (Nat.le_of_not_lt hc)
-    simp only [factorOfCode, hc, ↓reduceIte, Array.getElem!_eq_of_getElem?_eq_some hpw] at hd ⊢
+    simp only [factorOfCode, hc, ↓reduceIte, Array.getElem!_of_getElem? hpw] at hd ⊢
     exact isSound_power_run_examinePower u pinf hm0 hm hpn he hd
 
 /-- A code that `Ratpoints.makeModulus` can read stays so when the records of the prime powers are
@@ -116,8 +116,8 @@ theorem CodeOK.factorOfCode_extend {c : List ℤ} {primeSe : Array (Option (Entr
   by_cases hc : code < numPrimes
   · simp [factorOfCode, hc]
   · obtain ⟨pw, hpw, -⟩ := h.power (Nat.le_of_not_lt hc)
-    simp only [factorOfCode, hc, ↓reduceIte, Array.getElem!_eq_of_getElem?_eq_some hpw,
-      Array.getElem!_eq_of_getElem?_eq_some (hx _ _ hpw)]
+    simp only [factorOfCode, hc, ↓reduceIte, Array.getElem!_of_getElem? hpw,
+      Array.getElem!_of_getElem? (hx _ _ hpw)]
 
 /-! ### The candidates -/
 
@@ -303,8 +303,7 @@ theorem codeOK_add_of_getElem?_eq_some {c : List ℤ} (primeSe : Array (Option (
   refine ⟨⟨fun h' ↦ absurd h' (by lia), fun _ ↦
     ⟨pw, by simpa using h, pn, hpn, e, he, u, pinf, hpw⟩⟩, ?_⟩
   simp only [factorOfCode, Nat.not_lt.mpr (Nat.le_add_right numPrimes i), ↓reduceIte,
-    Nat.add_sub_cancel_left, Array.getElem!_eq_of_getElem?_eq_some h, Factor.modulus, hpw,
-    m_run_examinePower]
+    Nat.add_sub_cancel_left, Array.getElem!_of_getElem? h, Factor.modulus, hpw, m_run_examinePower]
 
 /-- The contract of `Ratpoints.takeFactor` for the factor `p ^ e`, `e ≥ 1`, of the prime
 `p = primeTable[st.pn]`, one of the first `Ratpoints.numPrimes`: the prime powers examined stay
@@ -386,17 +385,7 @@ theorem FacState.OK.of_takeFactor {c : List ℤ} {primeSe : Array (Option (Entry
 
 local grind_pattern FacState.OK.of_takeFactor => FacState.OK c primeSe m b, st.tab.OK c, rest * q
 
-/-- One division of `p > 1` off a positive multiple `a` of `p`. -/
-theorem div_lt_and_pos_and_div_mul_pow_succ {a p : ℕ} (e : ℕ) (hp : 1 < p) (ha : 0 < a)
-    (hd : a % p = 0) : a / p < a ∧ 0 < a / p ∧ a / p * p ^ (e + 1) = a * p ^ e := by
-  obtain ⟨k, rfl⟩ := Nat.dvd_of_mod_eq_zero hd
-  have hk : 0 < k := Nat.pos_of_mul_pos_left ha
-  refine ⟨?_, ?_, ?_⟩ <;> rw [Nat.mul_div_cancel_left k (by lia)]
-  · exact (Nat.lt_mul_iff_one_lt_left hk).mpr hp
-  · exact hk
-  · rw [Nat.pow_succ]; ac_rfl
-
-local grind_pattern div_lt_and_pos_and_div_mul_pow_succ => a / p, a * p ^ e
+local grind_pattern Nat.div_lt_and_pos_and_div_mul_pow_succ => a / p, a * p ^ e
 
 /-- The invariant of the loop of `Ratpoints.factorCandidate` over the primes, whose state is the
 value of a return and the state of the factorization, from the state `st₀`: both are states of the

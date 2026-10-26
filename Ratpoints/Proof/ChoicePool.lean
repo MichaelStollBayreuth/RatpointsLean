@@ -8,6 +8,7 @@ module
 public import Ratpoints.Model.Choice
 public import Std.WP
 
+import Ratpoints.Proof.Containers
 import Std.Tactic.Do
 
 /-!
@@ -25,7 +26,6 @@ doubles of the cost model, which no contract reads.
 
 * `Ratpoints.AllQ`: every candidate of the pool has a property.
 * `Ratpoints.TailNf`: the candidates from a position on count no factors.
-* `Array.Extends`: an array extends another, position by position.
 
 ## Main statements
 
@@ -44,30 +44,7 @@ namespace Ratpoints
 
 open Sieve
 
-/-! ### Arrays and lists -/
-
-theorem _root_.Array.getElem!_eq_of_getElem?_eq_some {α : Type _} [Inhabited α] {xs : Array α}
-    {i : Nat} {x : α} (h : xs[i]? = some x) : xs[i]! = x := by
-  rw [getElem!_def, h]
-
-/-- The array `b` extends the array `a`: each entry of `a` is at its index in `b`. -/
-def _root_.Array.Extends {α : Type _} (a b : Array α) : Prop :=
-  ∀ (i : Nat) (x : α), a[i]? = some x → b[i]? = some x
-
-theorem _root_.Array.Extends.refl {α : Type _} (a : Array α) : a.Extends a := fun _ _ ↦ id
-
-theorem _root_.Array.Extends.trans {α : Type _} {a b c : Array α} (hab : a.Extends b)
-    (hbc : b.Extends c) : a.Extends c := fun i x h ↦ hbc i x (hab i x h)
-
-theorem _root_.Array.extends_push {α : Type _} (a : Array α) (x : α) : a.Extends (a.push x) :=
-  fun i y h ↦ by
-    rwa [Array.getElem?_push_lt (Array.getElem?_eq_some_iff.mp h).1, ← Array.getElem?_eq_getElem]
-
-theorem _root_.Array.extends_ite_push {α : Type _} (b : Bool) (a : Array α) (x : α) :
-    a.Extends (if b then a.push x else a) := by
-  split
-  · exact a.extends_push x
-  · exact .refl a
+/-! ### Options -/
 
 theorem _root_.Option.eq_none_of_forall_prod4 {α β γ δ : Type _} {x : Option (α × β × γ × δ)}
     (h : ∀ a b c d, x = some (a, b, c, d) → False) : x = none :=
@@ -90,10 +67,6 @@ theorem AllQ.eraseIdxIfInBounds {Q : ModulusCandidate → Prop} {pool : Array Mo
 theorem AllQ.push {Q : ModulusCandidate → Prop} {pool : Array ModulusCandidate} (h : AllQ Q pool)
     {e : ModulusCandidate} (he : Q e) : AllQ Q (pool.push e) :=
   Array.forall_mem_push.mpr ⟨he, h⟩
-
-theorem size_eraseIdxIfInBounds_of_lt {pool : Array ModulusCandidate} {n : Nat}
-    (h : n < pool.size) : (pool.eraseIdxIfInBounds n).size = pool.size - 1 := by
-  simp [Array.eraseIdxIfInBounds_eq, h]
 
 -- The rule of the first stage, as a value: no contract reads it.
 private theorem phase1Wants_true (pool : Array ModulusCandidate) (n pnp taken : Nat)
@@ -119,7 +92,7 @@ theorem dropUsed_spec (Q : ModulusCandidate → Prop) (pool : Array ModulusCandi
   all_goals simp only [Variant.evalsTo_ofMeasure, Variant.evalsBelow_ofMeasure_nat,
     NondetFun.evalsTo_pure, meet_prop_eq_and, ofProp_prop_eq, DropUsedInvariant,
     WhileInvariant.mk] at *
-  all_goals grind [AllQ.eraseIdxIfInBounds, size_eraseIdxIfInBounds_of_lt]
+  all_goals grind [AllQ.eraseIdxIfInBounds, Array.size_eraseIdxIfInBounds_of_lt]
 
 /-- The invariant of the loop of `Ratpoints.takeEntries`. -/
 def TakeEntriesInvariant (Q : ModulusCandidate → Prop) (start : Nat) :
@@ -141,17 +114,12 @@ theorem takeEntries_spec (Q : ModulusCandidate → Prop) (pool : Array ModulusCa
   all_goals simp only [Variant.evalsTo_ofMeasure, Variant.evalsBelow_ofMeasure_nat,
     NondetFun.evalsTo_pure, meet_prop_eq_and, ofProp_prop_eq, TakeEntriesInvariant,
     WhileInvariant.mk] at *
-  all_goals grind [AllQ.eraseIdxIfInBounds, size_eraseIdxIfInBounds_of_lt]
+  all_goals grind [AllQ.eraseIdxIfInBounds, Array.size_eraseIdxIfInBounds_of_lt]
 
 /-- The candidates of the pool `pool` from the position `s` on have no factors counted: primes that
 say more than coprimality. -/
 def TailNf (pool : Array ModulusCandidate) (s : Nat) : Prop :=
   ∀ i (h : i < pool.size), s ≤ i → pool[i].nf = 0
-
-theorem getElem_eraseIdxIfInBounds_of_lt {pool : Array ModulusCandidate} {n i : Nat}
-    (hn : n < pool.size) (hi : i < n) (h : i < (pool.eraseIdxIfInBounds n).size) :
-    (pool.eraseIdxIfInBounds n)[i] = pool[i] := by
-  simp only [Array.eraseIdxIfInBounds_eq, hn, ↓reduceDIte, Array.getElem_eraseIdx, hi]
 
 /-- The invariant of the loop of `Ratpoints.dropComposites`. -/
 def DropCompositesInvariant (Q : ModulusCandidate → Prop) (start : Nat) :
@@ -174,8 +142,8 @@ theorem dropComposites_spec (Q : ModulusCandidate → Prop) (pool : Array Modulu
   all_goals simp only [Variant.evalsTo_ofMeasure, Variant.evalsBelow_ofMeasure_nat,
     NondetFun.evalsTo_pure, meet_prop_eq_and, ofProp_prop_eq, DropCompositesInvariant,
     WhileInvariant.mk, TailNf] at *
-  all_goals grind [AllQ.eraseIdxIfInBounds, size_eraseIdxIfInBounds_of_lt,
-    getElem_eraseIdxIfInBounds_of_lt]
+  all_goals grind [AllQ.eraseIdxIfInBounds, Array.size_eraseIdxIfInBounds_of_lt,
+    Array.getElem_eraseIdxIfInBounds_of_lt]
 
 /-- The contract of `Ratpoints.bestByR`: the position it returns is that of a candidate from `sp3`
 on. -/
@@ -276,12 +244,6 @@ theorem firstStages_run {Q : ModulusCandidate → Prop}
         (Id.run (firstStages pool s target ct est bpws sp2e)).1.size :=
   Std.WP.Id.of_run_eq_wp rfl _ ((firstStages_spec Q hQ pool s target ct est bpws sp2e).le_wp h)
 
-/-- The sieve entries of a list whose candidates all have theirs: one for each, in their order. -/
-theorem map_some_filterMap_ssp {l : List ModulusCandidate} (h : ∀ e ∈ l, e.ssp.isSome) :
-    (l.filterMap (·.ssp)).map some = l.map (·.ssp) := by
-  rw [List.map_filterMap_some_eq_filter_map_isSome, List.filter_eq_self.mpr]
-  simpa using h
-
 /-- The sieve entries of an array of candidates each with its sieve entry (`(·.ssp)`) with a
 property at its position: one for each candidate, each with the property at its position. -/
 theorem length_filterMap_ssp_and_forall {pool : Array ModulusCandidate}
@@ -290,12 +252,13 @@ theorem length_filterMap_ssp_and_forall {pool : Array ModulusCandidate}
     (pool.toList.filterMap (·.ssp)).length = pool.size ∧
       ∀ n (hn : n < (pool.toList.filterMap (·.ssp)).length),
         P n (pool.toList.filterMap (·.ssp))[n] := by
-  have hm := map_some_filterMap_ssp (l := pool.toList) fun e he ↦ by
+  have hsome (e : ModulusCandidate) (he : e ∈ pool.toList) : e.ssp.isSome := by
     obtain ⟨n, hn, rfl⟩ := List.getElem_of_mem he
     obtain ⟨se, hs, -⟩ := h n (by simpa using hn)
     simp [hs]
-  have hl : (pool.toList.filterMap (·.ssp)).length = pool.size := by
-    simpa using congrArg List.length hm
+  have hm := List.map_some_filterMap_of_forall_isSome hsome
+  have hl : (pool.toList.filterMap (·.ssp)).length = pool.size :=
+    (List.filterMap_length_eq_length.mpr hsome).trans Array.length_toList
   refine ⟨hl, fun n hn ↦ ?_⟩
   obtain ⟨se, hs, hp⟩ := h n (hl ▸ hn)
   have := congrArg (·[n]?) hm

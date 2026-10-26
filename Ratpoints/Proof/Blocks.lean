@@ -7,9 +7,9 @@ module
 
 public import Ratpoints.Proof.BlockLoops
 public import Ratpoints.Proof.BlockPlan
-public import Ratpoints.Proof.Shapes
 public import Ratpoints.Proof.Sift
 
+import Ratpoints.Proof.Containers
 import Ratpoints.Proof.Denominators
 import Ratpoints.Proof.Params
 
@@ -102,12 +102,6 @@ private theorem forall_mem_of_packedFor {es : List SieveEntry} {cl : NumClass} {
   have ⟨n, hn, he⟩ := List.getElem_of_mem he
   he ▸ ⟨(h n hn).pos, (h n hn).le_maxPrimeEven, (h n hn).dinv_lt⟩
 
-/-- The entries of the first two stages of a decision `sp2 ≤ sp3`, followed by those of the third,
-are the first `sp3` entries. -/
-theorem take_append_take_drop {α : Type} (l : List α) {m n : Nat} (h : m ≤ n) :
-    l.take m ++ (l.drop m).take (n - m) = l.take n := by
-  rw [← List.take_add, Nat.add_sub_cancel' h]
-
 /-- The counts that the sieve of the denominator `b` adds to the counters of its block
 (`Ratpoints.Sieve.siftCounts`), for the height `H`, the end `sp1` of the first stage, the first
 `sp2` sieve entries of `entries` in the first two stages and those up to `sp3` in the third, with
@@ -157,7 +151,7 @@ theorem siftDen_spec {σ : Type} (process : Int → Int → Int → σ → Answe
         (hent e (List.mem_of_mem_take he)).2, hQ.take sp2⟩
   refine ⟨fun x hx ↦ ?_, hQ.fits_run_sift process c d H A b fl sp1 _ _ _ offsets _ _ iv _ _ hbp,
     fun hq' ↦ ?_⟩
-  · rw [List.flatMap_singleton, denPoints, ← take_append_take_drop entries h23]
+  · rw [List.flatMap_singleton, denPoints, ← List.take_append_take_drop entries h23]
     exact hs.2.1 x.1[b % 64]! pos (x.2 b) (hx.1 _ (Nat.mod_lt _ (by decide))) hpos hpf
       (hx.2 b hb1 hb2)
   · exact hs.2.2 pos hpos hpf hq'

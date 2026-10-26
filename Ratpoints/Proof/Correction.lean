@@ -187,15 +187,6 @@ theorem adaptThird_spec (es : Array SieveEntry) (c : RunCounts) (sp2 : Nat)
     ofProp_prop_eq] at *
   all_goals lia
 
-theorem _root_.List.forall_mem_drop_of_forall_getElem! {α : Type} [Inhabited α] {P : α → Prop}
-    {l : List α} {m n : Nat} (hn : ∀ e ∈ l.drop n, P e) (hmn : ∀ k, m ≤ k → k < n → P l[k]!) :
-    ∀ e ∈ l.drop m, P e := by
-  intro e he
-  obtain ⟨i, hi, rfl⟩ := List.mem_drop_iff_getElem.mp he
-  by_cases h : m + i < n
-  · simpa [getElem!_pos l (m + i) (by lia)] using hmn (m + i) (by lia) h
-  · exact hn _ (List.mem_drop_iff_getElem.mpr ⟨m + i - n, by lia, by congr 1; lia⟩)
-
 -- The end of the second stage after the walk up is well-formed.
 private theorem DecisionWF.of_up {es : Array SieveEntry} {sp1 b b' x y : Nat}
     (h : DecisionWF es.toList sp1 ⟨b, x, x⟩) (hy : x ≤ y ∧ y ≤ x + (es.size - x)) :

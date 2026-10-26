@@ -66,8 +66,20 @@ that passes it. For the numbers of the command line: the characters that `Char.t
 `x`. For the search intervals of the command line: an entry set twice, an entry after another is
 set, the entries and the members of the first `m` entries of an array as a list, the entry `l[i]!`
 of a list as one of its members, and a bind of `Except` that succeeds. For the intersection of the
-Sturm step: the list of an array from a position within it on. The lemmas on 64-bit words are in
-`Ratpoints.Proof.Bits`.
+Sturm step: the list of an array from a position within it on. For the choice of the moduli: the
+entry `xs[i]!` of an array with `xs[i]? = some x`, an array that extends another position by
+position, the size and the first entries of an array after `Array.eraseIdxIfInBounds`, the values
+of a map to `Option` that is `some` on every element of a list, and one division of `p > 1` off a
+positive multiple of `p`. For the blocks and the correction of the moduli: the first `m` entries of
+a list followed by the next `n - m`, a property of the elements of `l.drop m` from those of
+`l.drop n` and the entries between, the elements of the lists `g a, …, g b` that pass a test, a
+number of a range that passes a test, the image of the cursor of a loop over a range among the
+images that pass a test, and the images of a list with an element appended that pass a test. The
+lemmas on 64-bit words are in `Ratpoints.Proof.Bits`.
+
+## Main definitions
+
+* `Array.Extends`: an array extends another, position by position.
 
 ## Main statements
 
@@ -113,11 +125,28 @@ Sturm step: the list of an array from a position within it on. The lemmas on 64-
   `Array.forall_getElem_push`: a predicate on the indices and the entries of an array after a push.
 * `Array.mem_of_forIn_toList_eq_append_cons`: the cursor of a loop over an array is one of its
   entries.
+* `Array.getElem!_of_getElem?`: the entry `xs[i]!` of an array with `xs[i]? = some x` is `x`.
+* `Array.Extends.refl`, `Array.Extends.trans`, `Array.extends_push`, `Array.extends_ite_push`: an
+  array extends itself, an array that extends one that extends `a` extends `a`, and a push extends
+  an array.
+* `Array.size_eraseIdxIfInBounds_of_lt`, `Array.getElem_eraseIdxIfInBounds_of_lt`: the size of an
+  array after `Array.eraseIdxIfInBounds` at an index in bounds, and its entries before that index.
 * `List.foldl_gcd_natAbs_dvd_natAbs`: the gcd of the absolute values of the entries of a list, as a
   left fold, divides each of them.
 * `List.all_range_length_getElem!`, `List.all_and_left`, `List.all_congr_left`: the test of a list
   by the indices of its entries, the test of a nonempty list that and-s a fixed Boolean with a test,
   and the tests of a list that agree on its entries.
+* `List.map_some_filterMap_of_forall_isSome`: a map to `Option` that is `some` on every element of
+  a list has one value for each element, in their order.
+* `List.take_append_take_drop`: the first `m` entries of a list followed by the next `n - m` are
+  its first `n`, for `m ≤ n`.
+* `List.forall_mem_drop_of_forall_getElem!`: a property of the elements of `l.drop n` and of the
+  entries `l[k]!` for `m ≤ k < n` holds for the elements of `l.drop m`.
+* `List.filter_flatMap_range'_sub_add_one`, `List.mem_filter_range'_of_le`,
+  `List.mem_filter_map_range'_of_toList_eq_append_cons`, `List.filter_map_append_singleton_of_pos`:
+  the elements of the lists `g a, …, g b` that pass a test, a number from `a` to `e` that passes a
+  test among those that pass it, the image of the cursor of a loop over `[a:e + 1]` among the
+  images that pass a test, and the images of a list with an element appended that pass a test.
 * `Int.toNat_add_emod_of_lt`, `Int.toNat_add_add_emod`: the residues modulo `p` of `a + j` before
   and from the first multiple of `p` from `a` on.
 * `Int.toNat_emod_lt`, `Int.toNat_emod_mod_of_dvd`, `Int.toNat_emod_add_mod`: the residue of `a`
@@ -160,6 +189,8 @@ Sturm step: the list of an array from a position within it on. The lemmas on 64-
   lies from `R` to below `R + m`, as the bias of a modulus does.
 * `Nat.eq_of_mod_eq_zero_of_le_of_lt`: the multiples of `p` lie `p` apart, as the loop over the
   multiples of `p` of `examine_power` steps through them.
+* `Nat.div_lt_and_pos_and_div_mul_pow_succ`: one division of `p > 1` off a positive multiple `a` of
+  `p`, with the cofactor below `a`, positive, and times `p ^ (e + 1)` equal to `a p ^ e`.
 * `List.filter_range_mod_eq`: the numbers below `N` that are `r` modulo `m > r`, `r, r + m, …`.
 * `Int.ediv_add_emod_sub_add_sub_one_ediv`, `Int.ediv_add_emod_sub_ediv`: the two ends of the split
   form of `numerators_to_bits`, `⌈(lo - a₀) / m⌉` and `⌊(hi - a₀) / m⌋`.
@@ -429,6 +460,39 @@ theorem any_push_id_eq_false_iff {t : Array Bool} {a : Bool} :
   rcases t with ⟨l⟩
   simp [List.count_eq_zero, List.any_eq_false]
 
+theorem getElem!_of_getElem? {α : Type u} [Inhabited α] {xs : Array α} {i : Nat} {x : α}
+    (h : xs[i]? = some x) : xs[i]! = x := by
+  rw [getElem!_def, h]
+
+/-- The array `b` extends the array `a`: each entry of `a` is at its index in `b`. This is
+`a.toList <+: b.toList` (`List.prefix_iff_getElem?`), stated entry by entry, so that an entry of `a`
+is read off `b` in one step. -/
+def Extends {α : Type u} (a b : Array α) : Prop :=
+  ∀ (i : Nat) (x : α), a[i]? = some x → b[i]? = some x
+
+theorem Extends.refl {α : Type u} (a : Array α) : a.Extends a := fun _ _ ↦ id
+
+theorem Extends.trans {α : Type u} {a b c : Array α} (hab : a.Extends b) (hbc : b.Extends c) :
+    a.Extends c := fun i x h ↦ hbc i x (hab i x h)
+
+theorem extends_push {α : Type u} (a : Array α) (x : α) : a.Extends (a.push x) := fun i y h ↦ by
+  rwa [getElem?_push_lt (getElem?_eq_some_iff.mp h).1, ← getElem?_eq_getElem]
+
+theorem extends_ite_push {α : Type u} (b : Bool) (a : Array α) (x : α) :
+    a.Extends (if b then a.push x else a) := by
+  split
+  · exact a.extends_push x
+  · exact .refl a
+
+theorem size_eraseIdxIfInBounds_of_lt {α : Type u} {xs : Array α} {n : Nat} (h : n < xs.size) :
+    (xs.eraseIdxIfInBounds n).size = xs.size - 1 := by
+  simp [eraseIdxIfInBounds_eq, h]
+
+theorem getElem_eraseIdxIfInBounds_of_lt {α : Type u} {xs : Array α} {n i : Nat}
+    (hn : n < xs.size) (hi : i < n) (h : i < (xs.eraseIdxIfInBounds n).size) :
+    (xs.eraseIdxIfInBounds n)[i] = xs[i] := by
+  simp only [eraseIdxIfInBounds_eq, hn, ↓reduceDIte, getElem_eraseIdx, hi]
+
 end Array
 
 /-! ### Lists -/
@@ -681,8 +745,65 @@ theorem flatMap_filter_eq_filter_any {l : List Int} (hl : l.Pairwise (· < ·))
       obtain ⟨⟨s, hs, hs'⟩, -⟩ := hb
       lia [hrs.1 s hs]
 
-/-- A list whose elements all pass `p` is its own longest prefix that passes `p`. -/
-theorem takeWhile_eq_self_of_forall {α : Type} {p : α → Bool} {l : List α}
+/-- When `f` is `some` on every element of `l`, `l.filterMap f` holds one value for each element,
+in their order. -/
+theorem map_some_filterMap_of_forall_isSome {α : Type u} {β : Type v} {f : α → Option β}
+    {l : List α} (h : ∀ a ∈ l, (f a).isSome) : (l.filterMap f).map some = l.map f := by
+  rw [map_filterMap_some_eq_filter_map_isSome, filter_eq_self.mpr]
+  simpa using h
+
+/-- `List.take_add` for the lengths `m` and `n - m`, for `m ≤ n`. -/
+theorem take_append_take_drop {α : Type u} (l : List α) {m n : Nat} (h : m ≤ n) :
+    l.take m ++ (l.drop m).take (n - m) = l.take n := by
+  rw [← take_add, Nat.add_sub_cancel' h]
+
+/-- A property of the elements of `l.drop n` and of the entries `l[k]!` for `m ≤ k < n` holds for
+the elements of `l.drop m`. -/
+theorem forall_mem_drop_of_forall_getElem! {α : Type u} [Inhabited α] {P : α → Prop} {l : List α}
+    {m n : Nat} (hn : ∀ e ∈ l.drop n, P e) (hmn : ∀ k, m ≤ k → k < n → P l[k]!) :
+    ∀ e ∈ l.drop m, P e := by
+  intro e he
+  obtain ⟨i, hi, rfl⟩ := mem_drop_iff_getElem.mp he
+  by_cases h : m + i < n
+  · simpa [getElem!_pos l (m + i) (by lia)] using hmn (m + i) (by lia) h
+  · exact hn _ (mem_drop_iff_getElem.mpr ⟨m + i - n, by lia, by congr 1; lia⟩)
+
+/-- For `a ≤ b`, the elements of the lists `g a, …, g b` that pass `keep` are those of
+`g a, …, g (b - 1)` followed by those of `g b`. -/
+theorem filter_flatMap_range'_sub_add_one {α : Type u} {g : Nat → List α} {keep : α → Bool}
+    {a b : Nat} (hab : a ≤ b) :
+    ((range' a (b - a + 1)).flatMap g).filter keep =
+      ((range' a (b - a)).flatMap g).filter keep ++ (g b).filter keep := by
+  rw [← range'_append_1, flatMap_append, filter_append]
+  simp [show a + (b - a) = b by lia]
+
+/-- A number `b` from `a` to `e` that passes `keep` is among the numbers `a, …, e` that pass it. -/
+theorem mem_filter_range'_of_le {keep : Nat → Bool} {a b e : Nat} (hab : a ≤ b) (hbe : b ≤ e)
+    (hk : keep b = true) : b ∈ (range' a (e + 1 - a)).filter keep := by
+  simp only [mem_filter, mem_range'_1, hk, and_true]
+  lia
+
+/-- The image `f cur` of the cursor `cur` of a loop over `[a:e + 1]` is among the images of
+`a, …, e` that pass `keep`, when it passes `keep`. -/
+theorem mem_filter_map_range'_of_toList_eq_append_cons {α : Type u} {f : Nat → α}
+    {keep : α → Bool} {a e cur : Nat} {pref suff : List Nat}
+    (hl : ForIn.toList [a:e + 1] = pref ++ cur :: suff) (hk : keep (f cur) = true) :
+    f cur ∈ ((range' a (e + 1 - a)).map f).filter keep := by
+  have : cur ∈ ForIn.toList [a:e + 1] := by simp [hl]
+  simp only [Std.Internal.ForIn.toList_range, Std.Legacy.Range.size] at this
+  simp only [mem_filter, mem_map, hk, and_true]
+  exact ⟨cur, by simpa using this, rfl⟩
+
+/-- The images under `f` of `pref ++ [cur]` that pass `keep` are those of `pref` followed by
+`f cur`, when `f cur` passes it. -/
+theorem filter_map_append_singleton_of_pos {α : Type u} {β : Type v} {f : α → β}
+    {keep : β → Bool} {pref : List α} {cur : α} (hk : keep (f cur) = true) :
+    ((pref ++ [cur]).map f).filter keep = (pref.map f).filter keep ++ [f cur] := by
+  simp [filter_append, hk]
+
+/-- A list whose elements all pass `p` is its own longest prefix that passes `p`: the direction from
+right to left of Mathlib's `List.takeWhile_eq_self_iff`, restated for the files without Mathlib. -/
+theorem takeWhile_eq_self_of_forall {α : Type u} {p : α → Bool} {l : List α}
     (h : ∀ a ∈ l, p a = true) : l.takeWhile p = l := by
   simpa using takeWhile_append_of_pos (l₂ := []) h
 
@@ -1035,6 +1156,16 @@ theorem eq_of_mod_eq_zero_of_le_of_lt {p t t' : Nat} (ht : t % p = 0) (ht' : t' 
     (hle : t ≤ t') (hlt : t' < t + p) : t' = t := by
   lia [Nat.eq_zero_of_dvd_of_lt (Nat.dvd_sub (Nat.dvd_of_mod_eq_zero ht')
     (Nat.dvd_of_mod_eq_zero ht)) (by lia)]
+
+/-- One division of `p > 1` off a positive multiple `a` of `p`. -/
+theorem div_lt_and_pos_and_div_mul_pow_succ {a p : Nat} (e : Nat) (hp : 1 < p) (ha : 0 < a)
+    (hd : a % p = 0) : a / p < a ∧ 0 < a / p ∧ a / p * p ^ (e + 1) = a * p ^ e := by
+  obtain ⟨k, rfl⟩ := Nat.dvd_of_mod_eq_zero hd
+  have hk : 0 < k := Nat.pos_of_mul_pos_left ha
+  refine ⟨?_, ?_, ?_⟩ <;> rw [Nat.mul_div_cancel_left k (by lia)]
+  · exact (Nat.lt_mul_iff_one_lt_left hk).mpr hp
+  · exact hk
+  · rw [Nat.pow_succ]; ac_rfl
 
 end Nat
 

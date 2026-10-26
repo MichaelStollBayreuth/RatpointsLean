@@ -9,7 +9,6 @@ public import Ratpoints.Proof.BlockPlan
 public import Ratpoints.Proof.ChoiceModuli
 public import Ratpoints.Proof.Forbidden
 
-import Ratpoints.Proof.Containers
 import Ratpoints.Proof.Params
 import Ratpoints.Proof.Tables
 import Std.Tactic.Do
@@ -351,21 +350,6 @@ theorem ChoicePoolOK.exists_entryOK {c : List ℤ} {sp2 : ℕ} {pool : Array Mod
     exact ⟨se, hs, he, fun h' ↦ absurd hk (by lia)⟩
   · obtain ⟨pn, hpn, r, -, hs⟩ := (h.isPrime n hn (by lia)).exists_eq
     exact ⟨_, hs, entryOK_primeEntry c hpn r n, fun _ ↦ rfl⟩
-
-theorem Sieve.RowStore.MadeFor.foldl_addTables {s : RowStore} {c : List ℤ} {d : ℕ}
-    {es : List SieveEntry} (h : s.MadeFor c d es) (l : List SieveEntry)
-    (hfit : ∀ n (hn : n < l.length), l[n].RefFits (es.length + n))
-    (hp : ∀ e ∈ l, ∀ t : Entry, .prime t ∈ e.factors → 0 < t.p) :
-    (l.foldl (fun s e ↦ e.addTables s) s).MadeFor c d (es ++ l) := by
-  induction l generalizing s es with
-  | nil => simpa using h
-  | cons e l ih =>
-    have h' := h.addTables (hfit 0 (by simp)) (hp e List.mem_cons_self)
-    have hfit' (n : ℕ) (hn : n < l.length) : l[n].RefFits ((es ++ [e]).length + n) := by
-      have := hfit (n + 1) (by simpa using hn)
-      rw [List.getElem_cons_succ] at this
-      rwa [List.length_append, List.length_singleton, Nat.add_assoc, Nat.add_comm 1]
-    simpa using ih h' hfit' fun e' he' ↦ hp e' (List.mem_cons_of_mem _ he')
 
 /-- The sieve entries `es` of the choice, each made for its position (`Ratpoints.EntryOK`), those
 from the end `sp2` of the second stage on with no factors counted. -/

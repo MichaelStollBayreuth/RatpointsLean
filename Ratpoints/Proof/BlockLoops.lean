@@ -166,18 +166,6 @@ theorem BlockPost.of_eq_none_range' (ho : o = none)
     exact h.2
   · simp [ho] at hr
 
--- `List.IsPrefix.flatMap`, which core does not have.
-private theorem isPrefix_flatMap {l₁ l₂ : List Nat} (h : l₁ <+: l₂) (g : Nat → List Nat) :
-    l₁.flatMap g <+: l₂.flatMap g := by
-  obtain ⟨t, rfl⟩ := h
-  exact ⟨t.flatMap g, by rw [List.flatMap_append]⟩
-
-theorem filter_flatMap_range'_succ (hab : a ≤ b) :
-    ((List.range' a (b - a + 1)).flatMap g).filter keep =
-      ((List.range' a (b - a)).flatMap g).filter keep ++ (g b).filter keep := by
-  rw [← List.range'_append_1, List.flatMap_append, List.filter_append]
-  simp [show a + (b - a) = b by lia]
-
 /-- The step `b` of a loop of a block with a cursor after which the callback stops the search. -/
 theorem BlockInv.post_of_quit_range' (h : e - b = mb ∧ o = none ∧ a ≤ b ∧ b ≤ e ∧
       BlockInv process P L κ Q st0 (((List.range' a (b - a)).flatMap g).filter keep) st)
@@ -186,9 +174,9 @@ theorem BlockInv.post_of_quit_range' (h : e - b = mb ∧ o = none ∧ a ≤ b �
   obtain ⟨-, -, hab, hbe, h⟩ := h
   have h' :
       BlockPost process P L κ Q (((List.range' a (b - a + 1)).flatMap g).filter keep) st0 st' := by
-    rw [filter_flatMap_range'_succ hab]
+    rw [List.filter_flatMap_range'_sub_add_one hab]
     exact h.append_list hs
-  refine h'.of_prefix ((isPrefix_flatMap ?_ g).filter keep) hq
+  refine h'.of_prefix ((List.IsPrefix.flatMap ?_ g).filter keep) hq
   rw [show e + 1 - a = (b - a + 1) + (e - b) by lia]
   exact ⟨_, List.range'_append_1⟩
 
@@ -201,7 +189,7 @@ theorem BlockInv.append_range'_of_eq (h : e - b = mb ∧ o = none ∧ a ≤ b �
       BlockInv process P L κ Q st0 (((List.range' a (b - a + 1)).flatMap g).filter keep) st' := by
   obtain ⟨-, -, hab, hbe', h⟩ := h
   refine ⟨hab, hbe', hbe, ?_⟩
-  rw [filter_flatMap_range'_succ hab]
+  rw [List.filter_flatMap_range'_sub_add_one hab]
   exact (h.append_list hs).blockInv hq
 
 /-- A step `b < e` of a loop of a block with a cursor after which the callback has not stopped the
@@ -214,7 +202,7 @@ theorem BlockInv.append_range'_of_ne (h : e - b = mb ∧ o = none ∧ a ≤ b �
       BlockInv process P L κ Q st0 (((List.range' a (b + 1 - a)).flatMap g).filter keep) st' := by
   obtain ⟨rfl, -, hab, hbe', h⟩ := h
   refine ⟨by lia, by lia, by lia, ?_⟩
-  rw [show b + 1 - a = b - a + 1 by lia, filter_flatMap_range'_succ hab]
+  rw [show b + 1 - a = b - a + 1 by lia, List.filter_flatMap_range'_sub_add_one hab]
   exact (h.append_list hs).blockInv hq
 
 /-- A step `b` with one denominator, sifted when it passes the test. -/
@@ -240,17 +228,12 @@ theorem BlockInv.append_range'_of_ne_of_not_keep (h : e - b = mb ∧ o = none �
   BlockInv.append_range'_of_ne h (by simpa [hk] using h.2.2.2.2.blockPost_nil)
     (by simp [h.2.2.2.2.1]) hbe
 
-theorem mem_filter_range'_of_le (hab : a ≤ b) (hbe : b ≤ e) (hk : keep b = true) :
-    b ∈ (List.range' a (e + 1 - a)).filter keep := by
-  simp only [List.mem_filter, List.mem_range'_1, hk, and_true]
-  lia
-
 /-- What the step at the denominator `b` of a loop with a cursor needs. -/
 theorem BlockInv.pre_range' {N : List Nat}
     (hD : ∀ b ∈ (List.range' a (e + 1 - a)).filter keep, D b) (hk : keep b = true)
     (h : e - b = mb ∧ o = none ∧ a ≤ b ∧ b ≤ e ∧ BlockInv process P L κ Q st0 N st) :
     D b ∧ st.1.quit = false ∧ Q st.2.1 :=
-  ⟨hD b (mem_filter_range'_of_le h.2.2.1 h.2.2.2.1 hk), h.2.2.2.2.1, h.2.2.2.2.2.2.1⟩
+  ⟨hD b (List.mem_filter_range'_of_le h.2.2.1 h.2.2.2.1 hk), h.2.2.2.2.1, h.2.2.2.2.2.2.1⟩
 
 end RepeatLoop
 
@@ -285,23 +268,12 @@ theorem BlockPost.of_eq_none (ho : o = none)
   · simpa using h.2
   · simp [ho] at hr
 
-theorem mem_filter_map_of_toList_eq_append_cons (hl : ForIn.toList [a:e + 1] = pref ++ cur :: suff)
-    (hk : keep (f cur) = true) : f cur ∈ ((List.range' a (e + 1 - a)).map f).filter keep := by
-  have : cur ∈ ForIn.toList [a:e + 1] := by simp [hl]
-  simp only [Std.Internal.ForIn.toList_range, Std.Legacy.Range.size] at this
-  simp only [List.mem_filter, List.mem_map, hk, and_true]
-  exact ⟨cur, by simpa using this, rfl⟩
-
 /-- What the step at the step `cur` needs. -/
 theorem BlockInv.pre_map (hl : ForIn.toList [a:e + 1] = pref ++ cur :: suff)
     (hk : keep (f cur) = true) (hD : ∀ b ∈ ((List.range' a (e + 1 - a)).map f).filter keep, D b)
     (h : o = none ∧ BlockInv process P L κ Q st0 N st) :
     D (f cur) ∧ st.1.quit = false ∧ Q st.2.1 :=
-  ⟨hD _ (mem_filter_map_of_toList_eq_append_cons hl hk), h.2.1, h.2.2.2.1⟩
-
-theorem filter_map_append_of_keep (hk : keep (f cur) = true) :
-    ((pref ++ [cur]).map f).filter keep = (pref.map f).filter keep ++ [f cur] := by
-  simp [List.filter_append, hk]
+  ⟨hD _ (List.mem_filter_map_range'_of_toList_eq_append_cons hl hk), h.2.1, h.2.2.2.1⟩
 
 /-- The step at the step `cur` at which the callback stops the search. -/
 theorem BlockInv.post_of_quit_map (hl : ForIn.toList [a:e + 1] = pref ++ cur :: suff)
@@ -310,7 +282,7 @@ theorem BlockInv.post_of_quit_map (hl : ForIn.toList [a:e + 1] = pref ++ cur :: 
     (hs : BlockPost process P L κ Q [f cur] st st') (hq : st'.1.quit = true) :
     BlockPost process P L κ Q (((List.range' a (e + 1 - a)).map f).filter keep) st0 st' := by
   refine (h.2.append hs).of_prefix ?_ hq
-  rw [← filter_map_append_of_keep hk]
+  rw [← List.filter_map_append_singleton_of_pos hk]
   refine (List.IsPrefix.map f ?_).filter keep
   rw [show List.range' a (e + 1 - a) = ForIn.toList [a:e + 1] by simp, hl]
   exact ⟨suff, by simp⟩
@@ -320,7 +292,7 @@ theorem BlockInv.append_map (hk : keep (f cur) = true)
     (h : o = none ∧ BlockInv process P L κ Q st0 ((pref.map f).filter keep) st)
     (hs : BlockPost process P L κ Q [f cur] st st') (hq : ¬st'.1.quit = true) :
     BlockInv process P L κ Q st0 (((pref ++ [cur]).map f).filter keep) st' := by
-  rw [filter_map_append_of_keep hk]
+  rw [List.filter_map_append_singleton_of_pos hk]
   exact (h.2.append hs).blockInv hq
 
 /-- A step whose denominator the test rejects. -/

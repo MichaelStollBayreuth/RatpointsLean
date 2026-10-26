@@ -93,8 +93,9 @@ that the loop over the moduli of `Ratpoints.sievingInfo` makes holds
 * `Ratpoints.Sieve.SieveEntry.rowsFit_runRows`: a sieve entry as `Ratpoints.makeModulus` makes it
   fits the rows of the references of the run.
 * `Ratpoints.Sieve.RowStore.madeFor_nil`, `Ratpoints.Sieve.RowStore.MadeFor.addTables`,
-  `Ratpoints.Sieve.RowStore.MadeFor.storeHolds`: the store of the loop over the moduli of
-  `Ratpoints.sievingInfo` holds the rows of the references of the run.
+  `Ratpoints.Sieve.RowStore.MadeFor.foldl_addTables`, `Ratpoints.Sieve.RowStore.MadeFor.storeHolds`:
+  the store of the loop over the moduli of `Ratpoints.sievingInfo` holds the rows of the references
+  of the run.
 * `Ratpoints.Sieve.StoreHolds.of_factors`, `Ratpoints.Sieve.SieveEntry.RowsFit.of_eq`,
   `Ratpoints.Sieve.RowStore.Fits.take`, `Ratpoints.Sieve.RowStore.Fits.map_dinv`: the invariant and
   the fit carry over to the first entries, those of the first two stages, and to the entries with
@@ -1281,6 +1282,23 @@ theorem RowStore.MadeFor.addTables {s : RowStore} {c : List Int} {d : Nat} {es :
         exact h.zero e' he' t ht
       · obtain rfl := List.mem_singleton.mp he'
         exact h.primeZeroRows.row?_addTables_ne_none he ht⟩
+
+/-- The tables of rows of the sieve entries `l` added in turn, each with the reference and the kind
+of builder of its position after `es` and positive primes: the store is made for `es ++ l`. -/
+theorem RowStore.MadeFor.foldl_addTables {s : RowStore} {c : List Int} {d : Nat}
+    {es : List SieveEntry} (h : s.MadeFor c d es) (l : List SieveEntry)
+    (hfit : ∀ n (hn : n < l.length), l[n].RefFits (es.length + n))
+    (hp : ∀ e ∈ l, ∀ t : Entry, .prime t ∈ e.factors → 0 < t.p) :
+    (l.foldl (fun s e ↦ e.addTables s) s).MadeFor c d (es ++ l) := by
+  induction l generalizing s es with
+  | nil => simpa using h
+  | cons e l ih =>
+    have h' := h.addTables (hfit 0 (by simp)) (hp e List.mem_cons_self)
+    have hfit' (n : Nat) (hn : n < l.length) : l[n].RefFits ((es ++ [e]).length + n) := by
+      have := hfit (n + 1) (by simpa using hn)
+      rw [List.getElem_cons_succ] at this
+      rwa [List.length_append, List.length_singleton, Nat.add_assoc, Nat.add_comm 1]
+    simpa using ih h' hfit' fun e' he' ↦ hp e' (List.mem_cons_of_mem _ he')
 
 /-- The store made for the entries `es` of a run holds the rows of the references of the run for
 them (`Ratpoints.Sieve.StoreHolds`). -/
