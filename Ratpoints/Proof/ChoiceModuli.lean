@@ -531,8 +531,8 @@ theorem entryOK_primeEntry (c : List ℤ) {pn : ℕ} (hpn : pn < numPrimes) (r :
     EntryOK c n (primeEntry (examinePrime c (degree c) primeTable[pn]!) r) := by
   have hp := prime_getElem!_primeTable (hpn.trans_le numPrimes_le_size_primeTable)
   have hm : 1 < primeTable[pn]! ∧ primeTable[pn]! < maxPrimeEven ∧ primeTable[pn]! % 2 = 1 :=
-    ⟨hp.one_lt, getElem!_primeTable_lt_maxPrimeEven hpn, mod_two_eq_one_of_forall_dvd
-      fun q hq hd ↦ ⟨pn, hpn, (hp.eq_one_or_self_of_dvd q hd).resolve_left (by lia) ▸ dvd_refl _⟩⟩
+    ⟨hp.one_lt, getElem!_primeTable_lt_maxPrimeEven hpn,
+      getElem!_primeTable_mod_two_eq_one (hpn.trans_le numPrimes_le_size_primeTable)⟩
   have hs := isSound_prime_examinePrime (c := c) hpn (dvd_refl primeTable[pn]!)
   exact ⟨isModulusEntry_of_forall_isSound hm (by simpa using hs) (by simp [Factor.modulus])
       (inverses_mulMod_rbaLength_of_isSound hm hs rfl) _ _ _ _, rfl,

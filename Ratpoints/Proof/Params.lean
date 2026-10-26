@@ -27,7 +27,7 @@ and the pieces of the numerators have at least one bit array.
 ## Main statements
 
 * `Ratpoints.prime_of_mem_primeTable`, `Ratpoints.prime_getElem!_primeTable`: every entry of
-  `Ratpoints.primeTable` is a prime.
+  `Ratpoints.primeTable` is a prime; `Ratpoints.getElem!_primeTable_mod_two_eq_one`: an odd one.
 * `Ratpoints.pairwise_lt_toList_primeTable`, `Ratpoints.lt_of_mem_primeTable`,
   `Ratpoints.mem_primeTable_of_prime`: the table lists every odd prime below 1022, and nothing
   larger, in increasing order, which `decide` checks; `Ratpoints.mem_of_toList_primeTable_eq`: so it
@@ -36,8 +36,7 @@ and the pieces of the numerators have at least one bit array.
   `Ratpoints.forIn_toList_primeTable`, `Ratpoints.eq_of_toList_primeTable_eq_append_singleton`: it
   begins with `3` and ends with `1021`.
 * `Ratpoints.getElem!_primeTable_lt_maxPrimeEven`: the first `Ratpoints.numPrimes` primes of the
-  table are below `Ratpoints.maxPrimeEven`; `Ratpoints.getElem!_primeTable_le_of_le`: the table
-  increases.
+  table are below `Ratpoints.maxPrimeEven`.
 * `Ratpoints.mul_add_lt_two_pow_64_of_lt_maxPrimeEven`,
   `Ratpoints.mul_self_lt_two_pow_63_of_lt_maxPrimeEven`: the values of `examine_power` stay in the
   range of their C types, the moduli being below `2 ^ 10` (`Ratpoints.maxPrimeEven_le_two_pow_10`);
@@ -138,19 +137,17 @@ theorem prime_getElem!_primeTable {pn : ℕ} (h : pn < primeTable.size) : primeT
 theorem one_lt_getElem!_primeTable {pn : ℕ} (h : pn < numPrimes) : 1 < primeTable[pn]! :=
   (prime_getElem!_primeTable (h.trans_le numPrimes_le_size_primeTable)).one_lt
 
+theorem getElem!_primeTable_mod_two_eq_one {pn : ℕ} (h : pn < primeTable.size) :
+    primeTable[pn]! % 2 = 1 :=
+  (prime_getElem!_primeTable h).eq_two_or_odd.resolve_left
+    (two_lt_of_mem_toList_primeTable (Array.mem_def.mp (Array.getElem!_mem h))).ne'
+
 /-- The first `Ratpoints.numPrimes` primes of the table are below `Ratpoints.maxPrimeEven`, since
 the table increases. -/
 theorem getElem!_primeTable_lt_maxPrimeEven {pn : ℕ} (h : pn < numPrimes) :
     primeTable[pn]! < maxPrimeEven := by
   rw [getElem!_pos primeTable pn (h.trans_le numPrimes_le_size_primeTable), ← Array.getElem_toList]
   exact pairwise_lt_toList_primeTable.sortedLT.sortedLE.getElem_lt_of_lt_length_filter h
-
-/-- The table increases: an entry is at most each entry after it. -/
-theorem getElem!_primeTable_le_of_le {i j : ℕ} (hij : i ≤ j) (hj : j < primeTable.size) :
-    primeTable[i]! ≤ primeTable[j]! := by
-  rw [getElem!_pos primeTable i (hij.trans_lt hj), getElem!_pos primeTable j hj,
-    ← Array.getElem_toList, ← Array.getElem_toList]
-  exact pairwise_lt_toList_primeTable.sortedLT.sortedLE.getElem_le_getElem_of_le hij
 
 /-! ### The moduli in the range of the C types -/
 

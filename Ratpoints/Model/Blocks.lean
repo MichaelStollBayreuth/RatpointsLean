@@ -876,8 +876,8 @@ against the points that ratpoints prints. -/
       ref := .prime 0, init := .sieve1, r := 0.5, nf := 0 }
   let c : RunCounts := { words := 2000000, arrays := 999, bits := 300, sp2 := 4 }
   let P : Params :=
-    { moduli := es.toList.map (·.p), examined := 0, lookedAt := 0, sp1 := 2, sp2 := 4, sp3 := 6,
-      maxForbidden := 64, jacobi := true, adaptAt := 0 }
+    { lookedAt := 0, sp1 := 2, sp2 := 4, sp3 := 6, maxForbidden := 64, jacobi := true
+      adaptAt := 0 }
   (Id.run (adaptRates es c 2)).isNone &&
     (Id.run (adaptRates es { c with arrays := 1000, words := 0 } 2)).isNone &&
     (Id.run (adaptRates es { c with arrays := 1000, bits := 199 } 2)).isNone &&
@@ -1022,8 +1022,8 @@ private def visited (s : Shape) (cls : Vector NumClass 64) (db : UInt64) (bLow b
   let offsets := Array.replicate (Id.run (numPackings cls) * entries.length) 0
   let (cls, entries, offsets) := Id.run (classOffsets cls entries offsets)
   let P : Params :=
-    { moduli := entries.map (·.p), examined := 30, lookedAt := 30, sp1 := 11, sp2 := 22,
-      sp3 := entries.length, maxForbidden := 64, jacobi := true, adaptAt := ~~~0 }
+    { lookedAt := 30, sp1 := 11, sp2 := 22, sp3 := entries.length, maxForbidden := 64
+      jacobi := true, adaptAt := ~~~0 }
   let (r, sp2, sp3) := Id.run (sieveRun appendPoint c 1 20 1 {} {} P entries
       (entries.toArray.map (·.magic)) cls offsets db (.squares1 [⟨2, 1, 2⟩] [1, 2])
       (Id.run (exactBounds [((Double.ofInt64 20).neg, Double.ofInt64 20)] 20 20)) 1 20

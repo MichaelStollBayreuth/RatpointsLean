@@ -25,17 +25,17 @@ and their rows are the rows of their factors, combined.
 
 In this sub-stage the theorems of Chapter~\ref{chap:denominators}, the refusal theorems and the
 statements that comparator certifies keep their text, and change only through the parameters that
-they quantify over (Definition~\ref{def:Params}): the parameters have the number of primes that the
-loop of the tables examines, and their well-formedness admits composite moduli, below
-$2^{\mathrm{maxBitsInPrime}}$ as in the C code, where before it admitted the $171$ primes of the
-table; it does not admit the primes of the table from $2^{\mathrm{maxBitsInPrime}}$ on. The bound is
-the C code's own: ratpoints examines only the primes below $2^{\mathrm{maxBitsInPrime}}$, and its
-schedule of the Barrett reduction is exact for them (and, at the $8$ bits of the build, for no
-larger prime from degree $7$ on). The parameters of the command line are well-formed as before, and
-the output is the same for every well-formed choice; since stage~I the program gives the options of
-the sieve (Definition~\ref{def:sieveOptions}), from which the search chooses its moduli itself,
-composite moduli among them, as ratpoints does (Chapter~\ref{chap:moduli}), and the theorems hold
-for every choice that it makes.
+they quantify over (Definition~\ref{def:Params}): the parameters gain the number of primes that the
+loop of the tables examines, which since stage~I stays inside the choice of the moduli, and their
+well-formedness admits composite moduli, below $2^{\mathrm{maxBitsInPrime}}$ as in the C code, where
+before it admitted the $171$ primes of the table; it does not admit the primes of the table from
+$2^{\mathrm{maxBitsInPrime}}$ on. The bound is the C code's own: ratpoints examines only the primes
+below $2^{\mathrm{maxBitsInPrime}}$, and its schedule of the Barrett reduction is exact for them
+(and, at the $8$ bits of the build, for no larger prime from degree $7$ on). The parameters of the
+command line are well-formed as before, and the output is the same for every well-formed choice;
+since stage~I the program gives the options of the sieve (Definition~\ref{def:sieveOptions}), from
+which the search chooses its moduli itself, composite moduli among them, as ratpoints does
+(Chapter~\ref{chap:moduli}), and the theorems hold for every choice that it makes.
 
 \section{What the C code does with its tables}\label{sec:tablesC}
 
@@ -296,7 +296,7 @@ which $\mathrm{maxPrimeEven} \le 2^{32}$ gives.
 \begin{lemma}[The rows of a modulus let every point through]\label{lem:sieveEntry_admits}
   \uses{def:SieveEntry, def:examinePrime, def:squaresMod, def:mulMod, def:packingConstants,
     lem:mulMod}
-  \lean{Ratpoints.Sieve.Factor.IsSound, Ratpoints.Sieve.Factor.IsSound.inverses_eq, Ratpoints.Sieve.mod_sixty_four_ne_zero_of_prime, Ratpoints.IsModulusEntry, Ratpoints.IsModulusEntry.isSound, Ratpoints.IsModulusEntry.factors_ne_nil, Ratpoints.IsModulusEntry.p_eq_modulus, Ratpoints.mod_two_eq_one_of_forall_dvd, Ratpoints.coprime_rbaLength_of_mod_two_eq_one}
+  \lean{Ratpoints.Sieve.Factor.IsSound, Ratpoints.Sieve.Factor.IsSound.inverses_eq, Ratpoints.Sieve.mod_sixty_four_ne_zero_of_prime, Ratpoints.IsModulusEntry, Ratpoints.IsModulusEntry.isSound, Ratpoints.IsModulusEntry.factors_ne_nil, Ratpoints.IsModulusEntry.p_eq_modulus, Ratpoints.coprime_rbaLength_of_mod_two_eq_one}
   \leanok
   A factor is \emph{sound} for a modulus $m$ when its row of $b \bmod m$ admits $a \bmod m$ for
   every $\gcd(a, b) = 1$ with $y^2 = F(a, b)$, its modulus divides $m$ and its table of inverses
@@ -338,25 +338,27 @@ primes.
 
 \section{The parameters and the search}\label{sec:tablesSearch}
 
-The parameters (Definition~\ref{def:Params}) have the number of primes that the loop of the tables
-examines, from which the forbidden divisors of the further primes start; their moduli may be primes
-of the table, powers of them and products of such powers. In this sub-stage they were well-formed
-when every modulus $m$ had $1 < m < \mathrm{maxPrimeEven}$ and every divisor $q > 1$ of $m$ was
-divisible by one of the first $\mathrm{numPrimes}$ primes of the table, the moduli of the third
-stage were primes of the table, at most $\mathrm{numPrimes}$ primes were examined and the cut points
-were in order within the moduli; since stage~I they are the result of the choice of the moduli that
-the search makes from the curve (Definition~\ref{def:choice}), as \verb|sieving_info| makes it: the
-primes of the table that say something about the curve, the composite moduli that \verb|add_moduli|
-offers and \verb|make_modulus| makes (Definition~\ref{def:compositeModuli}), all of them odd and
-below $\mathrm{maxPrimeEven}$, and in the third stage and the reserve primes of the table. The
-soundness of the sieve entries needs none of the rules by which the choice takes its moduli
-(pairwise coprimality, the bound of three factors, the bound $\mathrm{RATPOINTS\_COMPOSITE\_MAX}$,
-the cost of the table, what a modulus says about the curve, the number of candidates): it needs only
-that the factors of an entry are sound for its modulus and multiply to it
-(Lemma~\ref{lem:sieveEntry_admits}), which the contract of the choice states of every entry that it
-makes, with the reciprocals of the entries, the forbidden divisors of the two loops and the store of
-the tables of rows that fits all the entries (Lemma~\ref{lem:choice}); when the choice takes an
-exit, the curve has no points of any height, having none modulo a prime that it examined.
+In this sub-stage the parameters (Definition~\ref{def:Params}) had the number of primes that the
+loop of the tables examines, from which the forbidden divisors of the further primes start, and
+their moduli might be primes of the table, powers of them and products of such powers; they were
+well-formed when every modulus $m$ had $1 < m < \mathrm{maxPrimeEven}$ and every divisor $q > 1$ of
+$m$ was divisible by one of the first $\mathrm{numPrimes}$ primes of the table, the moduli of the
+third stage were primes of the table, at most $\mathrm{numPrimes}$ primes were examined and the cut
+points were in order within the moduli. Since stage~I the moduli are those of the choice of the
+moduli that the search makes from the curve (Definition~\ref{def:choice}), as \verb|sieving_info|
+makes it, which hands them to the run as their sieve entries, beside the parameters, and keeps the
+number of primes examined to itself: the primes of the table that say something about the curve, the
+composite moduli that \verb|add_moduli| offers and \verb|make_modulus| makes
+(Definition~\ref{def:compositeModuli}), all of them odd and below $\mathrm{maxPrimeEven}$, and in
+the third stage and the reserve primes of the table. The soundness of the sieve entries needs none
+of the rules by which the choice takes its moduli (pairwise coprimality, the bound of three factors,
+the bound $\mathrm{RATPOINTS\_COMPOSITE\_MAX}$, the cost of the table, what a modulus says about the
+curve, the number of candidates): it needs only that the factors of an entry are sound for its
+modulus and multiply to it (Lemma~\ref{lem:sieveEntry_admits}), which the contract of the choice
+states of every entry that it makes, with the reciprocals of the entries, the forbidden divisors of
+the two loops and the store of the tables of rows that fits all the entries
+(Lemma~\ref{lem:choice}); when the choice takes an exit, the curve has no points of any height,
+having none modulo a prime that it examined.
 
 The search (Definition~\ref{def:searchPoints}) takes its sieve entries and its forbidden divisors
 from the choice of the moduli, and otherwise runs as in Chapter~\ref{chap:denominators}; the

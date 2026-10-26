@@ -96,8 +96,7 @@ gives at its position it fits the rows of the references of the run
   prime reads from its table.
 * `Ratpoints.IsModulusEntry.rowsFit_runRows`: such an entry fits the rows of the references of the
   run (`Ratpoints.Sieve.runRows`).
-* `Ratpoints.mod_two_eq_one_of_forall_dvd`, `Ratpoints.coprime_rbaLength_of_mod_two_eq_one`: a
-  modulus whose divisors above `1` are divisible by primes of the table is odd, so prime to
+* `Ratpoints.coprime_rbaLength_of_mod_two_eq_one`: an odd modulus is prime to
   `Ratpoints.rbaLength`.
 
 ## Implementation notes
@@ -807,15 +806,6 @@ structure IsModulusEntry (c : List ℤ) (m : ℕ) (s : SieveEntry) : Prop where
   /-- Each prime-power factor has the tables that `Ratpoints.Sieve.examinePower` computes. -/
   power_eq : ∀ pw : Power, .power pw ∈ s.factors →
     ∃ pinf, pw = Id.run (examinePower c (degree c) pw.p pw.e false pinf)
-
-/-- A modulus each of whose divisors above `1` is divisible by one of the first
-`Ratpoints.numPrimes` primes of the table is odd, since the table holds no `2`. -/
-theorem mod_two_eq_one_of_forall_dvd {m : ℕ}
-    (h : ∀ q > 1, q ∣ m → ∃ pn < numPrimes, primeTable[pn]! ∣ q) : m % 2 = 1 := by
-  by_contra h2
-  obtain ⟨pn, hpn, hd⟩ := h 2 (by decide) (Nat.dvd_of_mod_eq_zero (by lia))
-  lia [getElem!_primeTable_le_of_le (Nat.zero_le pn) (hpn.trans_le numPrimes_le_size_primeTable),
-    Nat.le_of_dvd (by decide) hd, (by decide +kernel : primeTable[0]! = 3)]
 
 /-- The sieve entry of an odd modulus `1 < m < maxPrimeEven` with factors that are sound for `m`
 (`Ratpoints.Sieve.Factor.IsSound`) and whose moduli multiply to `m`, the reciprocal and the bias of

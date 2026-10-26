@@ -30,9 +30,10 @@ for every value of the options of the sieve, whatever moduli the search chooses.
 The parameters are the result of the choice of the moduli from the curve (`Ratpoints.sievingInfo`),
 from the options of the sieve that the caller gives (`Ratpoints.SieveOptions`) as the search
 normalizes them (`Ratpoints.SieveOptions.normalize`), with the end of the third stage, the number of
-primes looked at in all and the estimates of the run that the correction of the moduli reads. The
-sieve reads the moduli, the cut points of its stages and the array size, and the tests on the
-denominators read the bound on the forbidden divisors and the switch of the Jacobi test.
+primes looked at in all and the estimates of the run that the correction of the moduli reads; the
+moduli come to the sieve as their sieve entries (`Ratpoints.SievingInfo.entries`). The sieve reads
+the cut points of its stages and the array size, and the tests on the denominators read the bound on
+the forbidden divisors and the switch of the Jacobi test.
 
 ## Main definitions
 
@@ -48,45 +49,38 @@ denominators read the bound on the forbidden divisors and the switch of the Jaco
 namespace Ratpoints
 
 /-- The sieving parameters: the free choices of the sieve, internal to the search, as the choice of
-the moduli gives them to the run (`Ratpoints.sievingInfo`): the moduli, cut into stages, the first
-`sp1` of them, then those up to `sp2`, then those up to `sp3`, the rest being the reserve from which
-the correction of the moduli may take further primes; how many primes the loop of the tables
-examined and how many were looked at in all; at most how many forbidden divisors are tested, whether
-the Jacobi test may run, at most how many bit arrays a piece of the numerators has; and the
-estimates of the run, the cost of one exact check and the number of words at which the first
-correction of the moduli is made. The run of the search reads the cut points of the stages and the
-array size, and the correction of the moduli between its blocks the estimates of the run, the cost
-of a check and the words of the first correction; the moduli come to the run as their sieve entries
-(`Ratpoints.SievingInfo`).
+the moduli gives them to the run (`Ratpoints.sievingInfo`): the cut points of the stages of the
+moduli, the first `sp1` of them, then those up to `sp2`, then those up to `sp3`, the rest being the
+reserve from which the correction of the moduli may take further primes; how many primes were looked
+at in all; at most how many forbidden divisors are tested, whether the Jacobi test may run, at most
+how many bit arrays a piece of the numerators has; and the estimates of the run, the cost of one
+exact check and the number of words at which the first correction of the moduli is made. The run of
+the search reads the cut points of the stages and the array size, and the correction of the moduli
+between its blocks the estimates of the run, the cost of a check and the words of the first
+correction; the moduli come to the run as their sieve entries (`Ratpoints.SievingInfo`).
 
 C: `ratpoints.h:368`, `ratpoints.h:395-397`, `ratpoints.h:406`
 
 Deviation: the parameters as a structure of their own, for the fields of the arguments that
-`find_points_work` normalizes and `sieving_info` sets (`sp1`, `sp2`, `sp3`, `sp3_max` as the length
-of the moduli, `max_forbidden`, `array_size`, `run_words`, `run_denoms`, `adapt_at`, `check_rel`)
-and the local `pn_lim` of `sieving_info`, after the loop of the tables (`examined`) and at the end
-(`lookedAt`); the Jacobi switch a Boolean (`Ratpoints.Params.jacobi`), true when the bit
-`RATPOINTS_NO_JACOBI` of the flags is clear, for that bit of `args->flags`, which `main.c` clears
-with the others; a natural number for the `long` field `array_size` (`Ratpoints.Params.arraySize`),
-`0` for the default, which the library takes for every value `≤ 0`
-(`Ratpoints.Params.arraySizeAt`); `Float`s for the doubles and a `UInt64` for the
-`unsigned long`. -/
+`find_points_work` normalizes and `sieving_info` sets (`sp1`, `sp2`, `sp3`, `max_forbidden`,
+`array_size`, `run_words`, `run_denoms`, `adapt_at`, `check_rel`; `sp3_max` as the length of
+`Ratpoints.SievingInfo.entries`) and the local `pn_lim` of `sieving_info` at the end (`lookedAt`);
+the Jacobi switch a Boolean (`Ratpoints.Params.jacobi`), true when the bit `RATPOINTS_NO_JACOBI` of
+the flags is clear, for that bit of `args->flags`, which `main.c` clears with the others; a natural
+number for the `long` field `array_size` (`Ratpoints.Params.arraySize`), `0` for the default, which
+the library takes for every value `≤ 0` (`Ratpoints.Params.arraySizeAt`); `Float`s for the doubles
+and a `UInt64` for the `unsigned long`. -/
 structure Params where
-  /-- The moduli in the order of the stages, the reserve last: primes of `Ratpoints.primeTable`,
-  powers of them and products of such powers, below `Ratpoints.maxPrimeEven`. -/
-  moduli : List Nat
-  /-- How many primes the loop of the tables examines, the first of `Ratpoints.primeTable`: the
-  curve has no points when it has none modulo one of them, they give the first forbidden divisors,
-  and the moduli take the tables of those among their prime factors. -/
-  examined : Nat
   /-- How many primes were looked at in all, the third stage included. -/
   lookedAt : Nat
-  /-- The end of the first stage, a position in `Ratpoints.Params.moduli`. -/
+  /-- The end of the first stage, a position in the sieve entries of the choice
+  (`Ratpoints.SievingInfo.entries`). -/
   sp1 : Nat
-  /-- The end of the second stage, a position in `Ratpoints.Params.moduli`. -/
+  /-- The end of the second stage, a position in the sieve entries of the choice
+  (`Ratpoints.SievingInfo.entries`). -/
   sp2 : Nat
-  /-- The end of the third stage, a position in `Ratpoints.Params.moduli`; the reserve is the
-  rest. -/
+  /-- The end of the third stage, a position in the sieve entries of the choice
+  (`Ratpoints.SievingInfo.entries`); the reserve is the rest. -/
   sp3 : Nat
   /-- At most how many forbidden divisors of the denominators are tested. -/
   maxForbidden : Nat

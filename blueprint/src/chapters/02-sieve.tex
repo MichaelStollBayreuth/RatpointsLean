@@ -69,67 +69,68 @@ are no points modulo $p$ (D) and the options of the output (G) come in their sta
 \section{The parameters}\label{sec:params}
 
 \begin{definition}[The primes of the sieve]\label{def:primeTable}
-  \lean{Ratpoints.primeTable, Ratpoints.maxBitsInPrime, Ratpoints.numPrimes, Ratpoints.prime_of_mem_primeTable, Ratpoints.pairwise_lt_toList_primeTable, Ratpoints.lt_of_mem_primeTable, Ratpoints.getElem!_primeTable_le_of_le}
+  \lean{Ratpoints.primeTable, Ratpoints.maxBitsInPrime, Ratpoints.numPrimes, Ratpoints.prime_of_mem_primeTable, Ratpoints.pairwise_lt_toList_primeTable, Ratpoints.lt_of_mem_primeTable, Ratpoints.two_lt_of_mem_toList_primeTable, Ratpoints.getElem!_primeTable_mod_two_eq_one}
   \leanok
-  The 171 odd primes below $1024$, in increasing order, which \verb|decide| checks (so that an entry
-  is at most each entry after it), the table of \verb|primes.h| (\csource{primes.h}{29}{40}), which
-  \verb|find_points.c| includes (\csource{find_points.c}{32}{32}); every entry is a prime below
-  $1022$. The moduli are chosen among those below $2^b$, for the size in bits
-  $b = \mathrm{maxBitsInPrime}$ that the build of ratpoints fixes
-  (\csource{rp-private.h}{321}{323}): $8$ in the default build, whose Makefile sets it, where the
-  header takes $7$ when it is given none. There are $\mathrm{numPrimes}$ of them, $53$ for $b = 8$
-  (\csource{rp-private.h}{325}{361}, where the header lists the numbers for $b = 5, \dots, 10$).
+  The 171 odd primes below $1024$, in increasing order, which \verb|decide| checks, the table of
+  \verb|primes.h| (\csource{primes.h}{29}{40}), which \verb|find_points.c| includes
+  (\csource{find_points.c}{32}{32}); every entry is a prime below $1022$. The moduli are chosen
+  among those below $2^b$, for the size in bits $b = \mathrm{maxBitsInPrime}$ that the build of
+  ratpoints fixes (\csource{rp-private.h}{321}{323}): $8$ in the default build, whose Makefile sets
+  it, where the header takes $7$ when it is given none. There are $\mathrm{numPrimes}$ of them, $53$
+  for $b = 8$ (\csource{rp-private.h}{325}{361}, where the header lists the numbers for
+  $b = 5, \dots, 10$).
 \end{definition}
 
 \begin{definition}[Sieving parameters]\label{def:Params}
   \lean{Ratpoints.Params}
   \leanok
-  The free choices of the sieve: the moduli, in the order of the stages, primes of the table, powers
-  of them and products of such powers; how many primes the loop of the tables examines, the first of
-  the table (Definition~\ref{def:tablesLoop}); the cut points $s_1 \le s_2$, positions in the list
-  of the moduli, which end the first and the second stage; at most how many forbidden divisors are
-  tested; whether the Jacobi test may run; and at most how many bit arrays a piece of the numerators
-  has, the field \verb|array_size| of the arguments of the library (\csource{ratpoints.h}{368}{368};
-  Definition~\ref{def:arraySize}). The Jacobi switch stands for the bit \verb|RATPOINTS_NO_JACOBI|
-  of the flags (\csource{ratpoints.h}{406}{406}), on when the bit is clear. As the result of the
-  choice of the moduli (Definition~\ref{def:choice}) the parameters also have the end $s_3$ of the
-  third stage, the moduli after it being the reserve of the correction of the moduli, the number of
-  primes looked at in all, the estimates of the words and the denominators of the run, the cost of a
-  check relative to the reference and the number of words at which the first correction is made
-  (\csource{ratpoints.h}{395}{397}), which the run of the search reads: the end of the third stage
-  as that of the first decision, and the estimates, the cost and the words for the correction of the
-  moduli between its blocks (Definition~\ref{def:correction}). The parameters are internal to the
-  search, the result of the choice of the moduli that it makes from the curve with the options of
-  the sieve (Definition~\ref{def:choice}), whose contract states what the run needs of them
+  The free choices of the sieve: the cut points $s_1 \le s_2$, positions in the sieve entries of the
+  choice of the moduli, which end the first and the second stage; at most how many forbidden
+  divisors are tested; whether the Jacobi test may run; and at most how many bit arrays a piece of
+  the numerators has, the field \verb|array_size| of the arguments of the library
+  (\csource{ratpoints.h}{368}{368}; Definition~\ref{def:arraySize}). The Jacobi switch stands for
+  the bit \verb|RATPOINTS_NO_JACOBI| of the flags (\csource{ratpoints.h}{406}{406}), on when the bit
+  is clear. As the result of the choice of the moduli (Definition~\ref{def:choice}) the parameters
+  also have the end $s_3$ of the third stage, the moduli after it being the reserve of the
+  correction of the moduli, the number of primes looked at in all, the estimates of the words and
+  the denominators of the run, the cost of a check relative to the reference and the number of words
+  at which the first correction is made (\csource{ratpoints.h}{395}{397}), which the run of the
+  search reads: the end of the third stage as that of the first decision, and the estimates, the
+  cost and the words for the correction of the moduli between its blocks
+  (Definition~\ref{def:correction}). The parameters are internal to the search, the result of the
+  choice of the moduli that it makes from the curve with the options of the sieve
+  (Definition~\ref{def:choice}), whose contract states what the run needs of them
   (Lemma~\ref{lem:choice}), so that the parameters need no well-formedness of their own.
 \end{definition}
 
-\verb|Params| holds the choices of the sieve: which moduli the sieve uses, in which order and in
-which stage, and how many primes are examined. ratpoints makes them from the curve
-(\verb|sieving_info|, which ranks the primes and may look past the first $q$ when \verb|-p| is
-absent), and moves the end of the third stage during the run (\verb|adapt_primes|; with \verb|-A 2|
-also $s_2$), and so does the search of the model, with the choice and the correction of
-Chapter~\ref{chap:moduli}. None of this changes the points found or their order, since a modulus
-only removes candidates that are not points, a test on the denominators (the forbidden divisors
-among the examined primes and beyond them, at most the bound of them, and the Jacobi test that the
-switch lets run) removes only denominators without points, and the two shapes of the loop between
-which these choices decide, the words of 64 denominators and every denominator, both run in
-increasing order (\verb|-q| suppresses the report of the moduli used, which does depend on the
-choice). So the model makes the choice inside the search, as the C code does, and the theorems hold
-for every value of the options of the sieve, whatever moduli the search chooses: the proofs read of
-the result of the choice only what its contract states (Lemma~\ref{lem:choice}). Until stage~H the
-theorems quantified over the well-formed parameters, the comparator challenge importing
-\verb|Params.WF|, and \verb|wf_sieveParams|, certified with them, showed that every parameter set
-the command line produces is well-formed, which ruled out a well-formedness that nothing satisfies.
-C1 reads only the moduli and treats all stages alike, and C2 reads the array size too
-(Definition~\ref{def:arraySize}); the bound on the forbidden divisors and the Jacobi switch are read
-since stage~E, the number of primes examined since stage~F1 (Chapter~\ref{chap:tables}), the cut
-points from stage~F2 on, and the end of the third stage, the estimates of the run, the cost of a
+The choice of the moduli makes the choices of the sieve, the sieve entries and \verb|Params|: which
+moduli the sieve uses, in which order and in which stage, and how many primes are examined.
+ratpoints makes them from the curve (\verb|sieving_info|, which ranks the primes and may look past
+the first $q$ when \verb|-p| is absent), and moves the end of the third stage during the run
+(\verb|adapt_primes|; with \verb|-A 2| also $s_2$), and so does the search of the model, with the
+choice and the correction of Chapter~\ref{chap:moduli}. None of this changes the points found or
+their order, since a modulus only removes candidates that are not points, a test on the denominators
+(the forbidden divisors among the examined primes and beyond them, at most the bound of them, and
+the Jacobi test that the switch lets run) removes only denominators without points, and the two
+shapes of the loop between which these choices decide, the words of 64 denominators and every
+denominator, both run in increasing order (\verb|-q| suppresses the report of the moduli used, which
+does depend on the choice). So the model makes the choice inside the search, as the C code does, and
+the theorems hold for every value of the options of the sieve, whatever moduli the search chooses:
+the proofs read of the result of the choice only what its contract states (Lemma~\ref{lem:choice}).
+Until stage~H the theorems quantified over the well-formed parameters, the comparator challenge
+importing \verb|Params.WF|, and \verb|wf_sieveParams|, certified with them, showed that every
+parameter set the command line produces is well-formed, which ruled out a well-formedness that
+nothing satisfies. C1 reads only the moduli and treats all stages alike, and C2 reads the array size
+too (Definition~\ref{def:arraySize}); the bound on the forbidden divisors and the Jacobi switch are
+read since stage~E, the number of primes examined since stage~F1 (Chapter~\ref{chap:tables}), the
+cut points from stage~F2 on, and the end of the third stage, the estimates of the run, the cost of a
 check and the words of the first correction, which the correction of the moduli reads, since
-stage~I. The constants of the build that the table, the parameters and the options of the sieve
-read, the size in bits of the moduli and the defaults of \verb|-p| and \verb|-F|, are definitions of
-the model like $\mathrm{maxDegree}$ (Definition~\ref{def:maxDegree}), and no proof depends on their
-values (Definition~\ref{def:choiceConstants}).
+stage~I. Since then the moduli come to the run as their sieve entries, beside the parameters, and
+the number of primes examined stays inside the choice of the moduli, as \verb|pn_lim| stays inside
+\verb|sieving_info|. The constants of the build that the table, the parameters and the options of
+the sieve read, the size in bits of the moduli and the defaults of \verb|-p| and \verb|-F|, are
+definitions of the model like $\mathrm{maxDegree}$ (Definition~\ref{def:maxDegree}), and no proof
+depends on their values (Definition~\ref{def:choiceConstants}).
 
 \section{The table of a prime}\label{sec:primeTables}
 

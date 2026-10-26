@@ -20,13 +20,13 @@ the cut points $s_1$ and $s_2$ come from the parameters, and the parameters of t
 them by the counting rules of ratpoints until stage~I, whose search chooses them from the curve
 (Section~\ref{sec:cuts}).
 
-Each stage only tests the moduli of the parameters, so the numerators that reach the exact check are
-those of the unstaged sieve of Chapter~\ref{chap:words} with its check, in the same order. The test
-for common factors holds the numerator and the denominator in \verb|long|s, as the C code does,
-which is exact for the heights that a \verb|long| holds, the type of the height bound of the
-library: so \verb|findPoints| (Definition~\ref{def:findPoints}) refuses a height bound of $2^{63}$
-or more with error~4, the error with which the program refuses such a height when it reads it, so
-that \verb|ratpoints-lean| answers as the program does; the contracts below \verb|findPoints| take
+Each stage only tests its moduli, so the numerators that reach the exact check are those of the
+unstaged sieve of Chapter~\ref{chap:words} with its check, in the same order. The test for common
+factors holds the numerator and the denominator in \verb|long|s, as the C code does, which is exact
+for the heights that a \verb|long| holds, the type of the height bound of the library: so
+\verb|findPoints| (Definition~\ref{def:findPoints}) refuses a height bound of $2^{63}$ or more with
+error~4, the error with which the program refuses such a height when it reads it, so that
+\verb|ratpoints-lean| answers as the program does; the contracts below \verb|findPoints| take
 $H < 2^{63}$. The membership and no-duplicates theorems (Theorem~\ref{thm:findPoints}) keep their
 text, which speaks only of the searches that return points; the refusal theorems
 (Theorem~\ref{thm:refusals}) gain $2^{63} \le H$ next to $H = 0$; and \verb|wf_sieveParams| keeps

@@ -795,10 +795,9 @@ def choiceTail (c : List Int) (d : Nat) (useCLong mayExtend : Bool) (s : SieveOp
     return .ok {
       entries, magics, forb, forbVal, store, checkDenom
       params := {
-        moduli := entries.map (·.p), examined := st.pnLim, lookedAt := t.pnLim, sp1, sp2
-        sp3 := t.sp3, maxForbidden := s.maxForbidden.toNat, jacobi := s.jacobi
-        arraySize := if s.arraySize ≤ 0 then 0 else s.arraySize.toNat, runWords := est.words
-        runDenoms := est.denoms, checkRel, adaptAt := adaptStart s } }
+        lookedAt := t.pnLim, sp1, sp2, sp3 := t.sp3, maxForbidden := s.maxForbidden.toNat
+        jacobi := s.jacobi, arraySize := if s.arraySize ≤ 0 then 0 else s.arraySize.toNat
+        runWords := est.words, runDenoms := est.denoms, checkRel, adaptAt := adaptStart s } }
 
 /-- What `sieving_info` computes for the search of the polynomial with the coefficient list `c` of
 degree `d`, with the flag `useCLong` of the `long`s, the switch `checkDenom` of the checked loop of
