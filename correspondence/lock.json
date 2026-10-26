@@ -110,16 +110,52 @@
         "Ratpoints.Sieve.classOffsets"
       ]
     },
+    "find_points.c:1194-1198": {
+      "hash": "0fefc1a905ac0e04654754f524ae9b9f9229dc2c46475740af9de86490ce8d7f",
+      "owners": [
+        "Ratpoints.ModulusCandidate.keyLe"
+      ]
+    },
+    "find_points.c:1202-1206": {
+      "hash": "560f2d66676a827e0b2a1a30e8ec511b479ac54bf5fe67f385e492a5921878af",
+      "owners": [
+        "Ratpoints.ModulusCandidate.rLe"
+      ]
+    },
     "find_points.c:121-121": {
       "hash": "0ccbbb679fd4ba9d65221eda1db3d23321c1c8374220a10aa0fc146a724db015",
       "owners": [
         "Ratpoints.maxDivisors"
       ]
     },
+    "find_points.c:1220-1235": {
+      "hash": "52efb70d1347dc28597636ee73a3d3c1e9d8f14aa1f20de3ab17398e93026722",
+      "owners": [
+        "Ratpoints.primeCost"
+      ]
+    },
     "find_points.c:124-124": {
       "hash": "2cfb7d517efd2f7c9c7c3aadc3572e6bcc36674767cdf0b78200bc51ce0873d3",
       "owners": [
         "Ratpoints.maxArraySize"
+      ]
+    },
+    "find_points.c:1241-1247": {
+      "hash": "e0ed20795a310b295b3d2791b58f19eb19f2e682ab9e3bcac55e494cbd6139c9",
+      "owners": [
+        "Ratpoints.primeKey"
+      ]
+    },
+    "find_points.c:1256-1270": {
+      "hash": "3acef2a908ca84aabe5c76e3a27b4f19d407a4aa21081e6f19687139e0ac3f0d",
+      "owners": [
+        "Ratpoints.phase1Key"
+      ]
+    },
+    "find_points.c:1285-1318": {
+      "hash": "c52cf0478a5c251554eaa818c0cfd844af49b908921c2d92ef50340a34fab814",
+      "owners": [
+        "Ratpoints.checkCost"
       ]
     },
     "find_points.c:133-133": {
@@ -152,10 +188,22 @@
         "Ratpoints.adaptLag"
       ]
     },
+    "find_points.c:147-149": {
+      "hash": "96f3d4a64a4d837727650f87ce8109a93051b3841cedca9f1b2905b9d2b06fbd",
+      "owners": [
+        "Ratpoints.ModulusCandidate"
+      ]
+    },
     "find_points.c:153-153": {
       "hash": "165c719b89230b6a1a027335ea5dae10200136e0e35d68f1255edc46e7a4b718",
       "owners": [
         "Ratpoints.maxModuli"
+      ]
+    },
+    "find_points.c:1539-1561": {
+      "hash": "c835c3de1aae148d62d9553f3b80e57bafa25f8b9741b58ca5028649bf60f53c",
+      "owners": [
+        "Ratpoints.downstreamFactor"
       ]
     },
     "find_points.c:155-155": {
@@ -170,10 +218,22 @@
         "Ratpoints.Sieve.ForbiddenEntry"
       ]
     },
-    "find_points.c:1619-1623": {
-      "hash": "25ffe0f70b17392225e1ff668e84746cade25024a4354da617ae4231f551d12b",
+    "find_points.c:1583-1589": {
+      "hash": "46e491be76544e84af743357d511637e32f914f0418836f1f0fe4cc2b813b8c2",
       "owners": [
-        "Ratpoints.sieveParams"
+        "Ratpoints.phase1Wants"
+      ]
+    },
+    "find_points.c:1598-1609": {
+      "hash": "ee9a5e4a77f66f9a0f2b4b8b8575e065bdb8a73b7ef206f5ce510c361f467655",
+      "owners": [
+        "Ratpoints.primesForPhase1"
+      ]
+    },
+    "find_points.c:1619-1626": {
+      "hash": "60f5c05fb55d77eace38a429ffc26b31a0757809e4649c1bf0abce5ceed4c243",
+      "owners": [
+        "Ratpoints.phase2Offset"
       ]
     },
     "find_points.c:1639-1650": {
@@ -296,6 +356,18 @@
         "Ratpoints.Sieve.examinePrime?"
       ]
     },
+    "find_points.c:1836-1854": {
+      "hash": "4e09637b6c58fc0eb429bceab246011afe813770fc981f9d1dc951430fa9e6ff",
+      "owners": [
+        "Ratpoints.numeratorsFor"
+      ]
+    },
+    "find_points.c:1863-1876": {
+      "hash": "a05b4db87a6130bf0c8de660f130339a14af229be50a86a4b11f6dfa2f5f3829",
+      "owners": [
+        "Ratpoints.clippedPadding"
+      ]
+    },
     "find_points.c:1917-1917": {
       "hash": "cd2639e753074afecd02bfb4a5153337c2b2bc77768cc5c1b2c4387e0a624248",
       "owners": [
@@ -306,6 +378,180 @@
       "hash": "9b1a2d2dd4066cce007801fa9b6298d631a4ed85a7368d900a54ac57208c73be",
       "owners": [
         "Ratpoints.invStride"
+      ]
+    },
+    "find_points.c:1926-1937": {
+      "hash": "8aeae67bcc43fbd558d5355800088b95303493a181f9b288fafac3106323a6a7",
+      "owners": [
+        "Ratpoints.forbiddenFraction"
+      ]
+    },
+    "find_points.c:1939-1944": {
+      "hash": "4a68dfe25a7e7a822803eb636955201103644fbbd3dc10437298e782ed17a839",
+      "owners": [
+        "Ratpoints.runShape"
+      ]
+    },
+    "find_points.c:1945-1957": {
+      "hash": "52e93afc7b659a1fef718ccebdf7602a63dad88eabb1f2dddc918239b7e09a6d",
+      "owners": [
+        "Ratpoints.ShapeAcc"
+      ]
+    },
+    "find_points.c:1959-1959": {
+      "hash": "7f73171d6b3005edeecfc09fe33c447075689b6c97aa0ce36d29597355cd8d74",
+      "owners": [
+        "Ratpoints.runShape"
+      ]
+    },
+    "find_points.c:1960-1962": {
+      "hash": "071e5b1d8724ba8bf8dd67edfbe648be45e234d1c21e811ca8dbf4cab4c6350b",
+      "owners": [
+        "Ratpoints.shapeSquares"
+      ]
+    },
+    "find_points.c:1964-1973": {
+      "hash": "325b1a68d79b9b950efb939bb84f196b97c707632b697c2f2c80271f4753278c",
+      "owners": [
+        "Ratpoints.sampleSteps"
+      ]
+    },
+    "find_points.c:1976-1979": {
+      "hash": "46726eac782593b7c92b2ae68fa6555acab0dfa3c1f26a6008d506feb07e9d02",
+      "owners": [
+        "Ratpoints.shapeSquares"
+      ]
+    },
+    "find_points.c:1980-1981": {
+      "hash": "bd19206db6ba38483d7cae9535d63bffdeb28f516ec6234f7bcb642032a6fefa",
+      "owners": [
+        "Ratpoints.addClass"
+      ]
+    },
+    "find_points.c:1982-1985": {
+      "hash": "831ab3725e6353926de1aa14801d3900bb3af0106a05ce65a310b2c320e8757d",
+      "owners": [
+        "Ratpoints.shapeSquares"
+      ]
+    },
+    "find_points.c:1986-1986": {
+      "hash": "eb1ff8acedca01cac75db0a03b36ee478307225019f7078cb32cac34ac5784c8",
+      "owners": [
+        "Ratpoints.runShape"
+      ]
+    },
+    "find_points.c:1987-1992": {
+      "hash": "3ee0af2c5c56c2c6d197b734ae59be220593f297ce3293447f59eb6f3b8f48fe",
+      "owners": [
+        "Ratpoints.shapeSquares1"
+      ]
+    },
+    "find_points.c:1993-2009": {
+      "hash": "7711ca0b22a839d780d99faa7a90f76a44ac3b9c18b3b5117fbb2da91701765c",
+      "owners": [
+        "Ratpoints.sampleDivisor"
+      ]
+    },
+    "find_points.c:2010-2016": {
+      "hash": "a9d05e78b9c7fa5decda4beff8fc46f388d1596d1b5c3010570e66b6d3a3a3c5",
+      "owners": [
+        "Ratpoints.shapeSquares1"
+      ]
+    },
+    "find_points.c:2017-2018": {
+      "hash": "d2808615036de95c8049e81ba1532904e96ddc981e40a826ae73ab65c57ec1c9",
+      "owners": [
+        "Ratpoints.addClass"
+      ]
+    },
+    "find_points.c:2019-2023": {
+      "hash": "ffdfd1ea5afddb9cbad500f50c017ad9da5ce4e9806e3f6fb3bb5ea5a9d97a8c",
+      "owners": [
+        "Ratpoints.shapeSquares1"
+      ]
+    },
+    "find_points.c:2024-2024": {
+      "hash": "421185ca32f0cea532153b1b8c67d3fcf21af4997933f12d79a580b0ccfcceca",
+      "owners": [
+        "Ratpoints.runShape"
+      ]
+    },
+    "find_points.c:2025-2027": {
+      "hash": "c20a357dc1b30b4d8b7ead01ab4c211bacfc230caaaca3ecd6bcc4f2aaa5b872",
+      "owners": [
+        "Ratpoints.shapeAll"
+      ]
+    },
+    "find_points.c:2028-2037": {
+      "hash": "14f6a26b55e3eb7e73670dc95b645662855b10647618ccec89dac3ac4e6efee1",
+      "owners": [
+        "Ratpoints.sampleSteps"
+      ]
+    },
+    "find_points.c:2038-2044": {
+      "hash": "43ad03691e0b943d58824623e7c8dff76857183fdc96ccc410158f7c4131c095",
+      "owners": [
+        "Ratpoints.shapeAll"
+      ]
+    },
+    "find_points.c:2045-2046": {
+      "hash": "614b58dc93de01a34816281d45787126a0a0b557118c8e6dd1a34e0fa694ab8f",
+      "owners": [
+        "Ratpoints.addClass"
+      ]
+    },
+    "find_points.c:2047-2050": {
+      "hash": "2ee764a1d2d48cfb2e4e9dd313bcaf80ccc2347fd04e787210f71f7df3da9612",
+      "owners": [
+        "Ratpoints.shapeAll"
+      ]
+    },
+    "find_points.c:2051-2065": {
+      "hash": "80a2c4c79fdbca99cc433c626eab60f8660213c674d32a4c94494a1dd3fad7ab",
+      "owners": [
+        "Ratpoints.keepChecked"
+      ]
+    },
+    "find_points.c:2066-2066": {
+      "hash": "737db166c79ae98e44bbe5ad43e03bf3774f7b3696068842d56a72e863dfeb20",
+      "owners": [
+        "Ratpoints.shapeAll"
+      ]
+    },
+    "find_points.c:2074-2105": {
+      "hash": "44cc2686b6ed21adbc04f0cfe6fae7fcb1cc588ea7b578411c66d90c02155dcb",
+      "owners": [
+        "Ratpoints.shapeEstimate"
+      ]
+    },
+    "find_points.c:2106-2106": {
+      "hash": "d10b36aa74a59bcf4a88185837f658afaf3646eff2bb16c3928d0e9335e945d2",
+      "owners": [
+        "Ratpoints.runShape"
+      ]
+    },
+    "find_points.c:2128-2132": {
+      "hash": "34fc7d9985ba318f5acdc99b0876024eeeb3b263e63ba820ebd958fa8c428fa3",
+      "owners": [
+        "Ratpoints.bpwAdd"
+      ]
+    },
+    "find_points.c:2134-2142": {
+      "hash": "2af0992576e0d3e90be2cb06478cc465dcdba2ac28083e6e9c3be70af8b2e28d",
+      "owners": [
+        "Ratpoints.meanBitsPerWord"
+      ]
+    },
+    "find_points.c:2143-2151": {
+      "hash": "2144920103b204883e0c85287896ae76e3bf46bea953a7dbb492c8510a715851",
+      "owners": [
+        "Ratpoints.bpwSquares1"
+      ]
+    },
+    "find_points.c:2152-2159": {
+      "hash": "2b8ce3a317d4588ad84e5d650f705e1d552c72d0232d6737479c319ffde019fb",
+      "owners": [
+        "Ratpoints.meanBitsPerWord"
       ]
     },
     "find_points.c:2192-2197": {

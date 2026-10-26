@@ -329,26 +329,26 @@ the macro nowhere, chooses the end of the first stage from the curve by its cost
 with the target `Ratpoints.survivorsPerWord`; stage I). -/
 def defaultSp1 : Nat := 11
 
-/-- How many moduli the second stage of the sieve adds to the first when neither the option `-N`
-nor `-R` says, `RATPOINTS_SP2_EXTRA`, the compiled-in default of `-R`: the offset that ratpoints
-takes as it is under `-U 0` and otherwise scales by the length of the run (`phase_2_offset`;
-stage I), and that the parameters of the executable take as it is (`Ratpoints.sieveParams`); also
-the number of the next candidates whose mean density stands for the second stage of a long run
-(`downstream_factor`; stage I).
+/-- How many moduli the second stage of the sieve adds to the first when neither the option `-N` nor
+`-R` says, `RATPOINTS_SP2_EXTRA`, the compiled-in default of `-R`: the offset that ratpoints takes
+as it is under `-U 0` and otherwise scales by the length of the run (`Ratpoints.phase2Offset`), and
+that the parameters of the executable take as it is (`Ratpoints.sieveParams`); also the number of
+the next candidates whose mean density stands for the second stage of a long run
+(`Ratpoints.downstreamFactor`).
 
 C: `ratpoints.h:95-97` -/
 def sp2Extra : Nat := 11
 
 /-- The survivors per 64-bit word swept that one more modulus of the first stage has to remove, for
 a modulus that costs one and per word, `RATPOINTS_SURVIVORS_PER_WORD`: the target of the rule that
-ends the first stage (`phase_1_wants`; stage I), unless the option `-r` gives a positive value.
+ends the first stage (`Ratpoints.phase1Wants`), unless the option `-r` gives a positive value.
 
 C: `ratpoints.h:92-94` -/
 def survivorsPerWord : Float := 0.002
 
 /-- The run length, in numerator words, at which setting a modulus of the second stage up costs as
 much as sieving with it, `RATPOINTS_SP2_U0`: the scale of the offset of the second stage
-(`phase_2_offset`; stage I), unless the option `-U` gives a value `≥ 0`.
+(`Ratpoints.phase2Offset`), unless the option `-U` gives a value `≥ 0`.
 
 C: `ratpoints.h:120-122` -/
 def sp2U0 : Float := 1.6e6
@@ -375,8 +375,8 @@ C: `ratpoints.h:164-166` -/
 def sp3Coprime : Float := 0.7
 
 /-- What building one row of a sieve table costs, in units of one and of the first stage per word,
-`RATPOINTS_COST_TABLE`, unless the option `-C` gives a value `≥ 0` (`sieving_info`,
-`adapt_primes`; stage I).
+`RATPOINTS_COST_TABLE`, unless the option `-C` gives a value `≥ 0` (`Ratpoints.primeCost`, and
+`add_moduli`; stage I).
 
 C: `ratpoints.h:192-194` -/
 def costTable : Float := 38.0
@@ -387,14 +387,13 @@ composites from 9 up to it and below `Ratpoints.maxPrimeEven` (`add_moduli`; sta
 C: `ratpoints.h:210-212` -/
 def compositeMax : Nat := 64
 
-/-- What one entry of `bp_list` costs per denominator, `RATPOINTS_COST_BP` (`prime_cost`;
-stage I).
+/-- What one entry of `bp_list` costs per denominator, `RATPOINTS_COST_BP` (`Ratpoints.primeCost`).
 
 C: `ratpoints.h:213-218` -/
 def costBp : Float := 8.0
 
 /-- What the sieve spec of a modulus of the first two stages costs per denominator,
-`RATPOINTS_COST_SETUP` (`prime_cost`; stage I).
+`RATPOINTS_COST_SETUP` (`Ratpoints.primeCost`).
 
 C: `ratpoints.h:224-226` -/
 def costSetup : Float := 30.0
@@ -406,19 +405,19 @@ C: `ratpoints.h:241-243` -/
 def costCall : Float := 50.0
 
 /-- What fetching one line of 64 bytes of a row costs per denominator, `RATPOINTS_COST_LINE`
-(`phase_1_key`; stage I).
+(`Ratpoints.phase1Key`).
 
 C: `ratpoints.h:258-260` -/
 def costLine : Float := 4.5
 
 /-- What one and on a surviving bit array of the second stage costs, `RATPOINTS_COST_PHASE2`
-(`downstream_factor` and the keys of the second stage; stage I).
+(`Ratpoints.downstreamFactor`, and the keys of the second stage; stage I).
 
 C: `ratpoints.h:261-263` -/
 def costPhase2 : Float := 110.0
 
 /-- What one survivor of the second stage costs to extract and test, `RATPOINTS_COST_SURVIVOR`
-(`downstream_factor`, `adapt_primes`; stage I).
+(`Ratpoints.downstreamFactor`, and `adapt_primes`; stage I).
 
 C: `ratpoints.h:270-272` -/
 def costSurvivor : Float := 1400.0
@@ -430,25 +429,25 @@ C: `ratpoints.h:280-282` -/
 def costCheck : Float := 1600.0
 
 /-- The cost of one step of Horner's rule in the exact check, `RATPOINTS_CHECK_STEP`
-(`check_cost`; stage I).
+(`Ratpoints.checkCost`).
 
 C: `ratpoints.h:312-314` -/
 def checkStep : Float := 29.0
 
 /-- The cost of one step of Horner's rule per limb it carries, `RATPOINTS_CHECK_LIMB`
-(`check_cost`; stage I).
+(`Ratpoints.checkCost`).
 
 C: `ratpoints.h:315-317` -/
 def checkLimb : Float := 8.0
 
 /-- The cost of the call of the exact check and of a square root of one limb,
-`RATPOINTS_CHECK_CALL` (`check_cost`; stage I).
+`RATPOINTS_CHECK_CALL` (`Ratpoints.checkCost`).
 
 C: `ratpoints.h:318-320` -/
 def checkCall : Float := 94.0
 
 /-- The cost of each further limb of the square root of the exact check, `RATPOINTS_CHECK_ROOT`
-(`check_cost`; stage I).
+(`Ratpoints.checkCost`).
 
 C: `ratpoints.h:321-323` -/
 def checkRoot : Float := 170.0
@@ -462,7 +461,7 @@ def checkReference : Float := 306.0
 
 /-- A bound on the number of composite moduli offered, `RP_MAX_MODULI`: half of
 `Ratpoints.maxPrimeEven`; the pool of the candidates holds at most `Ratpoints.numPrimes` primes and
-this many composites (`add_moduli`, `phase_2_offset`; stage I).
+this many composites (`Ratpoints.phase2Offset`, and `add_moduli`; stage I).
 
 C: `find_points.c:153` -/
 def maxModuli : Nat := maxPrimeEven / 2
@@ -480,14 +479,14 @@ C: `find_points.c:2337` -/
 def modulusTableMax : Float := 2.0
 
 /-- The number of the samples of the denominators by which the run is estimated,
-`RUN_SHAPE_SAMPLES` (`run_shape`; stage I).
+`RUN_SHAPE_SAMPLES` (`Ratpoints.runShape`).
 
 C: `find_points.c:1917` -/
 def runShapeSamples : Nat := 64
 
 /-- The share of the numerators of a class of the stride `2 ^ k` that its bit arrays hold, `2 ^ -k`,
-the table `rp_inv_stride` of the strides `k < Ratpoints.numStrides` (`run_shape`, `bpw_add`;
-stage I).
+the table `rp_inv_stride` of the strides `k < Ratpoints.numStrides` (`Ratpoints.runShape`,
+`Ratpoints.bpwAdd`).
 
 C: `find_points.c:1921-1922`
 

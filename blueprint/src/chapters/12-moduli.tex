@@ -396,17 +396,14 @@ the executable, goes with them at I.12: the C code reads it nowhere.
 
 \begin{definition}[The keys and the rules of the stages]\label{def:costModel}
   \uses{def:choiceConstants, def:SieveEntry, def:rbaPack}
-  Proposed names: \lname{Ratpoints.ModulusCandidate}, \lname{Ratpoints.ModulusCandidate.keyLe},
-  \lname{Ratpoints.ModulusCandidate.rLe}, \lname{Ratpoints.sortFrom}, \lname{Ratpoints.checkCost},
-  \lname{Ratpoints.primeCost}, \lname{Ratpoints.primeKey}, \lname{Ratpoints.phase1Key},
-  \lname{Ratpoints.downstreamFactor}, \lname{Ratpoints.phase1Wants},
-  \lname{Ratpoints.primesForPhase1}, \lname{Ratpoints.phase2Offset}. A candidate modulus of the
-  ranking: its density, key and cost, the modulus, the mask of the indices of its primes (a prime
-  from the $65$th of the table on is in no mask), its sieve entry, made for a prime by its
-  examination and for a composite modulus when the ranking takes it, an option for the null pointer,
-  the count of its factors ($0$ for a prime, $-1$ for a prime that says only coprimality, the number
-  of factors of a composite modulus) and the codes of its factors, the index of a prime or
-  $\mathrm{numPrimes}$ plus the index of an examined prime power
+  \lean{Ratpoints.ModulusCandidate, Ratpoints.ModulusCandidate.keyLe, Ratpoints.ModulusCandidate.rLe, Ratpoints.sortFrom, Ratpoints.checkCost, Ratpoints.primeCost, Ratpoints.primeKey, Ratpoints.phase1Key, Ratpoints.downstreamFactor, Ratpoints.phase1Wants, Ratpoints.primesForPhase1, Ratpoints.phase2Offset}
+  \leanok
+  A candidate modulus of the ranking: its density, key and cost, the modulus, the mask of the
+  indices of its primes (a prime from the $65$th of the table on is in no mask), its sieve entry,
+  made for a prime by its examination and for a composite modulus when the ranking takes it, an
+  option for the null pointer, the count of its factors ($0$ for a prime, $-1$ for a prime that says
+  only coprimality, the number of factors of a composite modulus) and the codes of its factors, the
+  index of a prime or $\mathrm{numPrimes}$ plus the index of an examined prime power
   (\csource{find_points.c}{147}{149}); the orders by key and by density, as the test of a merge sort
   whether the comparison of the C code is at most $0$ (\csource{find_points.c}{1194}{1198},
   \csource{find_points.c}{1202}{1206}); and the stable sort of the candidates from a position on.
@@ -425,17 +422,12 @@ the executable, goes with them at I.12: the C code reads it nowhere.
 
 \begin{definition}[The estimate of the run]\label{def:runShape}
   \uses{def:numClasses, def:Double, def:ctz, def:forbidden, def:arraySize, def:choiceConstants}
-  Proposed names: \lname{Ratpoints.numeratorsFor}, \lname{Ratpoints.clippedPadding},
-  \lname{Ratpoints.forbiddenFraction}, \lname{Ratpoints.ShapeArgs}, \lname{Ratpoints.ShapeAcc},
-  \lname{Ratpoints.RunEstimate}, \lname{Ratpoints.sampleSteps}, \lname{Ratpoints.addClass},
-  \lname{Ratpoints.shapeSquares}, \lname{Ratpoints.sampleDivisor}, \lname{Ratpoints.shapeSquares1},
-  \lname{Ratpoints.keepChecked}, \lname{Ratpoints.shapeAll}, \lname{Ratpoints.shapeEstimate},
-  \lname{Ratpoints.runShape}, \lname{Ratpoints.popcount}, \lname{Ratpoints.bpwAdd},
-  \lname{Ratpoints.bpwSquares1}, \lname{Ratpoints.meanBitsPerWord}. The numerators that a
-  denominator considers, over the search intervals, whose ends enter the arithmetic as \verb|Float|s
-  by their bits (\csource{find_points.c}{1836}{1854}); what the rounding to whole bit arrays adds at
-  an end cut by the height bound (\csource{find_points.c}{1863}{1876}); the share of the
-  denominators whose valuation at $p$ a mask of a forbidden divisor excludes
+  \lean{Ratpoints.numeratorsFor, Ratpoints.clippedPadding, Ratpoints.forbiddenFraction, Ratpoints.ShapeArgs, Ratpoints.ShapeAcc, Ratpoints.RunEstimate, Ratpoints.sampleSteps, Ratpoints.addClass, Ratpoints.shapeSquares, Ratpoints.sampleDivisor, Ratpoints.shapeSquares1, Ratpoints.keepChecked, Ratpoints.shapeAll, Ratpoints.shapeEstimate, Ratpoints.runShape, Ratpoints.popcount, Ratpoints.bpwAdd, Ratpoints.bpwSquares1, Ratpoints.meanBitsPerWord}
+  \leanok
+  The numerators that a denominator considers, over the search intervals, whose ends enter the
+  arithmetic as \verb|Float|s by their bits (\csource{find_points.c}{1836}{1854}); what the rounding
+  to whole bit arrays adds at an end cut by the height bound (\csource{find_points.c}{1863}{1876});
+  the share of the denominators whose valuation at $p$ a mask of a forbidden divisor excludes
   (\csource{find_points.c}{1926}{1937}); what the estimate reads of the search (the shape, the
   Jacobi switch, the height bound, the range of the denominators, the search intervals, the word and
   the packings of the classes, the array size), its accumulators with their initial values

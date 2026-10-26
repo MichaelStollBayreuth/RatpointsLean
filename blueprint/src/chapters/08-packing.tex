@@ -696,8 +696,9 @@ pointers of the chunked first stage (\csource{sift.c}{596}{606}), which read \ve
 \verb|mod_mul| too, and the ends of the rows in the sieve specs are modelled since stage~F4
 (Chapter~\ref{chap:rows}), and the search intervals, among them the choice of the form of
 \verb|numerators_to_bits| and the clipping of an interval to the height bound, since stage~H
-(Chapter~\ref{chap:region}). Left to stage~I are the reserve of the offsets for the correction of
-the moduli and the cost model of the packing (\verb|clipped_padding|).
+(Chapter~\ref{chap:region}), and the cost model of the packing (\verb|clipped_padding|) since
+stage~I, in the estimate of the run (Definition~\ref{def:runShape}). Left to stage~I is the reserve
+of the offsets for the correction of the moduli.
 
 \section{Files and names}\label{sec:packingFiles}
 

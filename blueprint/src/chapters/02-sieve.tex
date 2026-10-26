@@ -127,8 +127,8 @@ are no points modulo $p$ (D) and the options of the output (G) come in their sta
   \csource{find_points.c}{2503}{2503}, \csource{find_points.c}{2845}{2846}); the second at
   $s_2 = \max(s_1, N)$, the first two stages topped up to $N$, or without \verb|-N| at
   $\min(s_1 + \mathrm{sp2Extra}, L)$, for the offset $\mathrm{sp2Extra} = 11$
-  (Definition~\ref{def:choiceConstants}) that ratpoints adds as it is under \verb|-U 0|
-  (\csource{find_points.c}{1619}{1623}, \csource{find_points.c}{2571}{2572},
+  (Definition~\ref{def:choiceConstants}) that ratpoints adds as it is under \verb|-U 0| (the offset
+  of the second stage, Definition~\ref{def:costModel}; \csource{find_points.c}{2571}{2572},
   \csource{find_points.c}{2599}{2599}, \csource{find_points.c}{2808}{2808},
   \csource{find_points.c}{2815}{2815}, \csource{find_points.c}{2864}{2869}); and the moduli are the
   first $\min(s_2 + P, L)$ primes of the table, or without \verb|-P| the first $\max(s_2, q)$, the

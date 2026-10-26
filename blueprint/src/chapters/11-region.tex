@@ -34,19 +34,20 @@ unordered and $-0.0$ equals $0.0$, the negation and \verb|fabs|, the conversions
 \verb|long|s and doubles, \verb|frexp|, \verb|ldexp|, \verb|nextafter| towards $\pm$\verb|HUGE_VAL|,
 \verb|strtod| and \verb|printf| under \verb|%f|. Apart from the estimate of the work in the choice
 of the moduli (\verb|numerators_for| and \verb|run_shape|, which multiply the ends by $b$ and
-subtract them in floating-point arithmetic, and are stage~I's), ratpoints does no other arithmetic
-on the ends of its intervals, so that everything the model does with them is computed exactly, on
-integers and rational numbers. The options of the search (Definition~\ref{def:Options}) hold the
-search intervals as a list of pairs of doubles, empty by default, and the least and the largest
-denominator as integers, $1$ and $0$ by default, a largest denominator below $1$ meaning $H$, as for
-the library; the search with a callback normalizes them as \verb|find_points_work_1| does, refuses
-intervals that are not well formed with the refusal $\mathrm{badArgs}$ (error~9 of the program,
-which no command line whose words have fewer than $2^{56}$ characters reaches,
-Theorem~\ref{thm:cliRegion}), runs the Sturm step on the search intervals, and returns the intervals
-that it leaves, for message~8. The command-line program reads \verb|-l|, \verb|-u|, \verb|-dl| and
-\verb|-du|, so that it reads every option of ratpoints, and the exit status~12 of the earlier
-stages, for an option not supported yet, is gone; the arguments of \verb|-t|, the number of threads,
-and of the tuning options that stage~I models are checked and then ignored.
+subtract them in floating-point arithmetic, as the estimate of the run of
+Definition~\ref{def:runShape} does), ratpoints does no other arithmetic on the ends of its
+intervals, so that everything else the model does with them is computed exactly, on integers and
+rational numbers. The options of the search (Definition~\ref{def:Options}) hold the search intervals
+as a list of pairs of doubles, empty by default, and the least and the largest denominator as
+integers, $1$ and $0$ by default, a largest denominator below $1$ meaning $H$, as for the library;
+the search with a callback normalizes them as \verb|find_points_work_1| does, refuses intervals that
+are not well formed with the refusal $\mathrm{badArgs}$ (error~9 of the program, which no command
+line whose words have fewer than $2^{56}$ characters reaches, Theorem~\ref{thm:cliRegion}), runs the
+Sturm step on the search intervals, and returns the intervals that it leaves, for message~8. The
+command-line program reads \verb|-l|, \verb|-u|, \verb|-dl| and \verb|-du|, so that it reads every
+option of ratpoints, and the exit status~12 of the earlier stages, for an option not supported yet,
+is gone; the arguments of \verb|-t|, the number of threads, and of the tuning options that stage~I
+models are checked and then ignored.
 
 For the default options the output of $\mathrm{findPoints}$ is that of the earlier stages: the
 default interval gives exactly the numerators $-H, \dots, H$ for every denominator, and the Sturm
@@ -236,8 +237,8 @@ change the order; the Jacobi tables need $b_{\mathrm{high}} \le$ \verb|RP_MULMOD
 the forbidden divisors are the prime powers up to $b_{\mathrm{high}}$ (lines 2217, 2230, 2637, 2639,
 2735); and the shapes list the denominators from $b_{\mathrm{low}}$ to $b_{\mathrm{high}}$ (lines
 3816-3830). The estimate of the work in the choice of the moduli reads the range and the intervals
-in floating-point arithmetic (\verb|numerators_for| and \verb|run_shape|, lines 1836-2106), which
-is stage~I's.
+in floating-point arithmetic (\verb|numerators_for| and \verb|run_shape|, lines 1836-2106,
+Definition~\ref{def:runShape}).
 
 \paragraph{The doubles.} Apart from that estimate, the C code does no floating-point arithmetic on
 the ends: it converts \verb|long|s to doubles, which rounds to nearest with ties to even (the
@@ -400,7 +401,7 @@ here.
 \section{The doubles}\label{sec:doubles}
 
 \begin{definition}[The doubles of the C code]\label{def:Double}
-  \lean{Ratpoints.Double, Ratpoints.Double.mantDig, Ratpoints.Double.zero, Ratpoints.Double.huge, Ratpoints.Double.twoPow63, Ratpoints.Double.signBit, Ratpoints.Double.expField, Ratpoints.Double.fracField, Ratpoints.Double.isNaN, Ratpoints.Double.isInf, Ratpoints.Double.isZero, Ratpoints.Double.isFinite, Ratpoints.Double.orderValue, Ratpoints.Double.lt, Ratpoints.Double.le, Ratpoints.Double.beq, Ratpoints.Double.neg, Ratpoints.Double.fabs, Ratpoints.Double.toDyadic, Ratpoints.Double.toRat, Ratpoints.Double.roundShift, Ratpoints.Double.assemble, Ratpoints.Double.ofSignificand, Ratpoints.Double.ofDyadic, Ratpoints.Double.ofRatio, Ratpoints.Double.ofInt64, Ratpoints.Double.toInt64, Ratpoints.Double.toUInt64, Ratpoints.Double.ldexp, Ratpoints.Double.frexp, Ratpoints.Double.nextUp, Ratpoints.Double.nextDown}
+  \lean{Ratpoints.Double, Ratpoints.Double.mantDig, Ratpoints.Double.zero, Ratpoints.Double.huge, Ratpoints.Double.twoPow63, Ratpoints.Double.signBit, Ratpoints.Double.expField, Ratpoints.Double.fracField, Ratpoints.Double.isNaN, Ratpoints.Double.isInf, Ratpoints.Double.isZero, Ratpoints.Double.isFinite, Ratpoints.Double.orderValue, Ratpoints.Double.lt, Ratpoints.Double.le, Ratpoints.Double.beq, Ratpoints.Double.neg, Ratpoints.Double.fabs, Ratpoints.Double.toDyadic, Ratpoints.Double.toRat, Ratpoints.Double.roundShift, Ratpoints.Double.assemble, Ratpoints.Double.ofSignificand, Ratpoints.Double.ofDyadic, Ratpoints.Double.ofRatio, Ratpoints.Double.ofInt64, Ratpoints.Double.toInt64, Ratpoints.Double.toUInt64, Ratpoints.Double.ldexp, Ratpoints.Double.frexp, Ratpoints.Double.nextUp, Ratpoints.Double.nextDown, Ratpoints.Double.toFloat}
   \leanok
   A C \verb|double| by its $64$ bits, a structure with no equality of its own, so that \verb|==|
   never means equality of the bits: the C language's \verb|==| is $\mathrm{beq}$. Its fields (the
@@ -425,7 +426,8 @@ here.
   of a double, with the least subnormals next to the zeros; these three pass a signalling NaN as it
   is, where glibc quiets it (ratpoints passes them no NaN). These model the C language and the C
   library on the platforms of ratpoints, IEEE~754 binary64 with rounding to nearest, as gcc and
-  glibc implement them, and hold no C range.
+  glibc implement them, and hold no C range. A double enters the arithmetic of Lean's \verb|Float|,
+  the doubles of the cost model of the choice of the moduli (Section~\ref{sec:costs}), by its bits.
 \end{definition}
 
 \begin{lemma}[The doubles and their values]\label{lem:Double}
@@ -1964,16 +1966,16 @@ integers of \verb|scan_end| and the allocation and release of its digits
 \csource{main.c}{874}{874}, \csource{main.c}{877}{877}), memory. The message of error~9
 (\verb|main.c:1048|) is modelled, as the program gives that error for the refusal
 $\mathrm{badArgs}$. Every line of \verb|sturm.c| is recorded. The lines left free after stage~H are
-stage~I's: in \verb|find_points.c| the estimate of the work and the choice of the moduli by the
-curve with its correction between the blocks, the blocks and the threads, and the numbers of the
-moduli used; in \verb|ratpoints.h| the tuning fields and the number of threads of
-\verb|ratpoints_args| (lines 365-367 and 370), and the numbers of the moduli used, the private data
-of \verb|ratpoints_args| and the end of the type (lines 378-400); in \verb|rp-private.h| the macros
-of the threads (lines 76-84) and, in \verb|rp_worker|, the counters of the block with the decision
-of the correction (lines 579-582) and the fields of the pool with the name of the type (lines
-584-585); and in \verb|main.c| the defaults of the tuning options \verb|-r -R -U -C -A -Q -W| (lines
-339-343 and 345-346), which the choice of the moduli by the curve and its correction read, and
-message~4, on the moduli used (lines 992-998).
+stage~I's: in \verb|find_points.c| the choice of the moduli by the curve, but for its cost model and
+the estimate of the work (Section~\ref{sec:costs}), with its correction between the blocks, the
+blocks and the threads, and the numbers of the moduli used; in \verb|ratpoints.h| the tuning fields
+and the number of threads of \verb|ratpoints_args| (lines 365-367 and 370), and the numbers of the
+moduli used, the private data of \verb|ratpoints_args| and the end of the type (lines 378-400); in
+\verb|rp-private.h| the macros of the threads (lines 76-84) and, in \verb|rp_worker|, the counters
+of the block with the decision of the correction (lines 579-582) and the fields of the pool with the
+name of the type (lines 584-585); and in \verb|main.c| the defaults of the tuning options
+\verb|-r -R -U -C -A -Q -W| (lines 339-343 and 345-346), which the choice of the moduli by the curve
+and its correction read, and message~4, on the moduli used (lines 992-998).
 
 \section{Files and names}\label{sec:regionFiles}
 

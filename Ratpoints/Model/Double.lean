@@ -11,17 +11,18 @@ module
 The C code of ratpoints holds the ends of its search intervals as `double`s: the intervals of the
 caller (`args->domain`), the default interval `[-h, h]` of the library and the ends of the intervals
 that the Sturm step keeps. Apart from the estimate of the work in the choice of the moduli
-(`numerators_for`, stage I), it does no floating-point arithmetic on them: it converts `long`s to
-doubles, compares doubles, takes them apart into mantissa and exponent (`frexp`), scales them by
-powers of 2 (`ldexp`), steps to the next double (`nextafter`), converts doubles to `long`s and
-`unsigned long`s, and prints them. The model holds a double as its IEEE 754 binary64 bits
-(`Ratpoints.Double`), with these operations as functions on the bits, each doing what the operation
-of the C language or the C library does to a double on the platforms of ratpoints (IEEE 754 binary64
-with rounding to nearest, ties to even, as gcc and glibc implement them): the comparisons, in which
-a NaN is unordered and `-0.0` equals `0.0`, the negation and `fabs`, which act on the sign bit, the
-conversions, `frexp`, `ldexp` and `nextafter` towards `±HUGE_VAL`, but for a signalling NaN, which
-glibc's `frexp`, `ldexp` and `nextafter` return quieted and the model as it is (ratpoints passes
-them no NaN). The exact value of a finite double is `m 2 ^ e` for the integers of
+(`numerators_for`, `Ratpoints.numeratorsFor`, where the ends enter the arithmetic of Lean's `Float`
+by their bits, `Ratpoints.Double.toFloat`), it does no floating-point arithmetic on them: it
+converts `long`s to doubles, compares doubles, takes them apart into mantissa and exponent
+(`frexp`), scales them by powers of 2 (`ldexp`), steps to the next double (`nextafter`), converts
+doubles to `long`s and `unsigned long`s, and prints them. The model holds a double as its IEEE 754
+binary64 bits (`Ratpoints.Double`), with these operations as functions on the bits, each doing what
+the operation of the C language or the C library does to a double on the platforms of ratpoints
+(IEEE 754 binary64 with rounding to nearest, ties to even, as gcc and glibc implement them): the
+comparisons, in which a NaN is unordered and `-0.0` equals `0.0`, the negation and `fabs`, which act
+on the sign bit, the conversions, `frexp`, `ldexp` and `nextafter` towards `±HUGE_VAL`, but for a
+signalling NaN, which glibc's `frexp`, `ldexp` and `nextafter` return quieted and the model as it is
+(ratpoints passes them no NaN). The exact value of a finite double is `m 2 ^ e` for the integers of
 `Ratpoints.Double.toDyadic`, and a dyadic number is rounded to a double, to nearest with ties to
 even, by `Ratpoints.Double.ofDyadic`, a fraction by `Ratpoints.Double.ofRatio` (for `strtod`, which
 the program uses).
@@ -44,6 +45,8 @@ the program uses).
   conversions between `long`s and doubles.
 * `Ratpoints.Double.ldexp`, `Ratpoints.Double.frexp`, `Ratpoints.Double.nextUp`,
   `Ratpoints.Double.nextDown`: the functions of the C library.
+* `Ratpoints.Double.toFloat`: a double as a value of Lean's `Float`, for the cost model of the
+  choice of the moduli.
 -/
 
 @[expose] public section
@@ -72,6 +75,12 @@ def huge : Double := ⟨0x7ff0000000000000⟩
 
 /-- The double `2 ^ 63`, the literal `9223372036854775808.0` of the C code. -/
 def twoPow63 : Double := ⟨0x43e0000000000000⟩
+
+/-- The double `x` as a value of Lean's `Float`, the IEEE 754 binary64 type with the arithmetic of
+the platform, by its bits: the doubles that the caller gives the cost model of the choice of the
+moduli enter its arithmetic so, the ends of the search intervals (`Ratpoints.numeratorsFor`) and,
+with stage I, the tuning values of the options of the sieve. -/
+def toFloat (x : Double) : Float := Float.ofBits x.bits
 
 /-- The sign bit. -/
 def signBit (x : Double) : Bool := x.bits >>> 63 == 1

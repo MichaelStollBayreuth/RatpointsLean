@@ -993,8 +993,9 @@ report empty (also one without numerators), so that it reads or builds its rows 
 \verb|do_setup|), is modelled since stage~H (Chapter~\ref{chap:region}). Left to stage~I are the
 lock of the tables and the pool of threads (among them the declarations at
 \csource{find_points.c}{41}{43}), the orderings of the acquire loads and the release stores, and the
-cost model of the choice of the moduli, which reads the array size rounded to the chunk, so that
-ratpoints chooses its moduli by the chunk too: the moduli of the model are those of the parameters.
+choice of the moduli by its cost model (Section~\ref{sec:costs}), which reads the array size rounded
+to the chunk, so that ratpoints chooses its moduli by the chunk too: the moduli of the model are
+those of the parameters.
 
 \section{Files and names}\label{sec:rowsFiles}
 
