@@ -290,26 +290,15 @@ glibc's \verb|qsort|, since each sort takes its input in the order of the C code
 
 \begin{definition}[The constants of the choice and of the blocks]\label{def:choiceConstants}
   \uses{def:barrett, def:primeTable}
-  Proposed names: \lname{Ratpoints.survivorsPerWord}, \lname{Ratpoints.sp2U0},
-  \lname{Ratpoints.sp3PerSurvivor}, \lname{Ratpoints.sp3PerDenom}, \lname{Ratpoints.sp3Coprime},
-  \lname{Ratpoints.costTable}, \lname{Ratpoints.compositeMax}, \lname{Ratpoints.costBp},
-  \lname{Ratpoints.costSetup}, \lname{Ratpoints.costCall}, \lname{Ratpoints.costLine},
-  \lname{Ratpoints.costPhase2}, \lname{Ratpoints.costSurvivor}, \lname{Ratpoints.costCheck},
-  \lname{Ratpoints.checkStep}, \lname{Ratpoints.checkLimb}, \lname{Ratpoints.checkCall},
-  \lname{Ratpoints.checkRoot}, \lname{Ratpoints.checkReference}, \lname{Ratpoints.maxModuli},
-  \lname{Ratpoints.maxFactors}, \lname{Ratpoints.modulusTableMax},
-  \lname{Ratpoints.runShapeSamples}, \lname{Ratpoints.invStride}, \lname{Ratpoints.adaptWords},
-  \lname{Ratpoints.adaptArrays}, \lname{Ratpoints.adaptBits}, \lname{Ratpoints.adaptLag},
-  \lname{Ratpoints.blocksWanted}, \lname{Ratpoints.blockMin}, \lname{Ratpoints.blockLen},
-  \lname{Ratpoints.blockLen\_pos}, and, from the parameters of the executable
-  (Definition~\ref{def:sieveParams}), \lname{Ratpoints.sp2Extra}, \lname{Ratpoints.defaultNumPrimes}
-  and \lname{Ratpoints.defaultMaxForbidden}. The tuning macros of \verb|ratpoints.h| that the choice
-  reads, each a definition of the model citing its macro, \verb|Float|-valued where the C code's
-  value is a double and a natural number otherwise: the target of the first stage $0.002$
-  (\csource{ratpoints.h}{92}{94}), the offset of the second stage $\mathrm{sp2Extra} = 11$
-  (\csource{ratpoints.h}{95}{97}) and its scale $1.6 \cdot 10^6$ (\csource{ratpoints.h}{120}{122}),
-  the costs of a prime of the third stage per survivor and per denominator and the share of the
-  survivors that are coprime (\csource{ratpoints.h}{150}{152}, \csource{ratpoints.h}{153}{155},
+  \lean{Ratpoints.survivorsPerWord, Ratpoints.sp2U0, Ratpoints.sp3PerSurvivor, Ratpoints.sp3PerDenom, Ratpoints.sp3Coprime, Ratpoints.costTable, Ratpoints.compositeMax, Ratpoints.costBp, Ratpoints.costSetup, Ratpoints.costCall, Ratpoints.costLine, Ratpoints.costPhase2, Ratpoints.costSurvivor, Ratpoints.costCheck, Ratpoints.checkStep, Ratpoints.checkLimb, Ratpoints.checkCall, Ratpoints.checkRoot, Ratpoints.checkReference, Ratpoints.maxModuli, Ratpoints.maxFactors, Ratpoints.modulusTableMax, Ratpoints.runShapeSamples, Ratpoints.invStride, Ratpoints.adaptWords, Ratpoints.adaptArrays, Ratpoints.adaptBits, Ratpoints.adaptLag, Ratpoints.blocksWanted, Ratpoints.blockMin, Ratpoints.blockLen, Ratpoints.blockLen_pos, Ratpoints.sp2Extra, Ratpoints.defaultNumPrimes, Ratpoints.defaultMaxForbidden}
+  \leanok
+  The tuning macros of \verb|ratpoints.h| that the choice reads, each a definition of the model
+  citing its macro, \verb|Float|-valued where the C code's value is a double and a natural number
+  otherwise: the target of the first stage $0.002$ (\csource{ratpoints.h}{92}{94}), the offset of
+  the second stage $\mathrm{sp2Extra} = 11$ (\csource{ratpoints.h}{95}{97}) and its scale
+  $1.6 \cdot 10^6$ (\csource{ratpoints.h}{120}{122}), the costs of a prime of the third stage per
+  survivor and per denominator and the share of the survivors that are coprime
+  (\csource{ratpoints.h}{150}{152}, \csource{ratpoints.h}{153}{155},
   \csource{ratpoints.h}{164}{166}), the cost of a row of a table (\csource{ratpoints.h}{192}{194}),
   the largest composite modulus offered, $64$ (\csource{ratpoints.h}{210}{212}), the costs of an
   entry of the list of residues, of the set-up of a modulus, of a call of the sieve, of a line of
@@ -335,8 +324,9 @@ glibc's \verb|qsort|, since each sort takes its input in the order of the C code
   length of the blocks that a build may fix, \verb|RP_BLOCK_LEN|, is a constant of type
   \verb|Option Nat|, none in the default build, with the decided fact that a length it fixes is
   positive, which the loops over the steps of a block need to end. The offset and the two defaults
-  are the constants of the parameters of the executable, which move here with their links at I.1, so
-  that the options of the sieve (Definition~\ref{def:sieveOptions}) read them from this node.
+  are the constants of the parameters of the executable (Definition~\ref{def:sieveParams}), which
+  move here with their links at I.1, so that the options of the sieve
+  (Definition~\ref{def:sieveOptions}) read them from this node.
 \end{definition}
 
 As for the constants of the earlier stages, no proof depends on their values: every proof holds for

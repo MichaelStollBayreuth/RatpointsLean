@@ -479,8 +479,9 @@ limit for every stage (\csource{find_points.c}{4577}{4577}), and $\mathrm{numPri
 since ratpoints then looks at further primes when its stages want more
 (\csource{find_points.c}{2693}{2705}, \csource{find_points.c}{2980}{2980}). With the values $n$, $N$
 and $P$ of \verb|-n|, \verb|-N| and \verb|-P|, each absent when negative, and the constants
-$\mathrm{defaultSp1} = 11$ (\verb|RATPOINTS_DEFAULT_SP1|) and $\mathrm{sp2Extra} = 11$
-(\verb|RATPOINTS_SP2_EXTRA|), which are in the node of the parameters of the executable:
+$\mathrm{defaultSp1} = 11$ (\verb|RATPOINTS_DEFAULT_SP1|), in the node of the parameters of the
+executable, and $\mathrm{sp2Extra} = 11$ (\verb|RATPOINTS_SP2_EXTRA|), among the constants of the
+choice (Definition~\ref{def:choiceConstants}):
 \begin{itemize}
   \item $N$ is capped at $q$, and the first stage takes $s_1 = \min(n, N)$ moduli, or
     $\min(n, L)$ without \verb|-N|, or $\min(\mathrm{defaultSp1}, L)$ without \verb|-n|, a count

@@ -22,8 +22,9 @@ is `2 ^ Ratpoints.rbaShift` with `Ratpoints.rbaShift < 32`
 (`Ratpoints.one_le_numStrides`), that `Ratpoints.hornerSteps` is at least 1
 (`Ratpoints.one_le_hornerSteps`), that `Ratpoints.maxBitsInPrime` is at most 10
 (`Ratpoints.maxBitsInPrime_le_ten`), that `Ratpoints.stage3Limit` is at most `2 ^ 32`
-(`Ratpoints.stage3Limit_le_two_pow_32`) and that `Ratpoints.maxDegree` is positive and below
-`2 ^ 57` (`Ratpoints.zero_lt_maxDegree`, `Ratpoints.maxDegree_lt_two_pow_57`), and of the table
+(`Ratpoints.stage3Limit_le_two_pow_32`), that `Ratpoints.maxDegree` is positive and below `2 ^ 57`
+(`Ratpoints.zero_lt_maxDegree`, `Ratpoints.maxDegree_lt_two_pow_57`) and that a block length that
+`Ratpoints.blockLen` fixes is positive (`Ratpoints.blockLen_pos`), and of the table
 the proofs use only that its entries are the odd primes below 1022, in increasing order
 (`Ratpoints.prime_of_mem_primeTable`, which checks them one by one, and
 `Ratpoints.lt_of_mem_primeTable`, `Ratpoints.mem_primeTable_of_prime` and
@@ -43,6 +44,20 @@ the proofs use only that its entries are the odd primes below 1022, in increasin
   and at most how many forbidden divisors it tests, unless the options say.
 * `Ratpoints.defaultSp1`, `Ratpoints.sp2Extra`: where the first stage of the sieve ends, and how
   many moduli the second stage adds, unless the options say.
+* `Ratpoints.survivorsPerWord`, `Ratpoints.sp2U0`, `Ratpoints.sp3PerSurvivor`,
+  `Ratpoints.sp3PerDenom`, `Ratpoints.sp3Coprime`, `Ratpoints.costTable`, `Ratpoints.compositeMax`,
+  `Ratpoints.costBp`, `Ratpoints.costSetup`, `Ratpoints.costCall`, `Ratpoints.costLine`,
+  `Ratpoints.costPhase2`, `Ratpoints.costSurvivor`, `Ratpoints.costCheck`, `Ratpoints.checkStep`,
+  `Ratpoints.checkLimb`, `Ratpoints.checkCall`, `Ratpoints.checkRoot`,
+  `Ratpoints.checkReference`: the tuning of the cost model by which ratpoints chooses its moduli,
+  the macros of `ratpoints.h`, doubles but for the largest composite modulus.
+* `Ratpoints.maxModuli`, `Ratpoints.maxFactors`, `Ratpoints.modulusTableMax`,
+  `Ratpoints.runShapeSamples`, `Ratpoints.invStride`: the bounds and the constants of the choice
+  of the moduli in `find_points.c` and `rp-private.h`.
+* `Ratpoints.adaptWords`, `Ratpoints.adaptArrays`, `Ratpoints.adaptBits`, `Ratpoints.adaptLag`:
+  when the run first corrects its moduli, and how many blocks later a correction takes effect.
+* `Ratpoints.blocksWanted`, `Ratpoints.blockMin`, `Ratpoints.blockLen`: the blocks into which the
+  run cuts its steps.
 * `Ratpoints.defaultSturm`: the depth of the Sturm step, unless the options say.
 * `Ratpoints.rbaPack`, `Ratpoints.rbaLength`, `Ratpoints.rbaShift`: how many words and how many
   bits a bit array of the sieve has, and the logarithm of the second.
@@ -311,16 +326,221 @@ C: `ratpoints.h:42`
 
 Deviation: the parameters of the program take it for an absent `-n`, where ratpoints, which reads
 the macro nowhere, chooses the end of the first stage from the curve by its costs (`sieving_info`,
-with the target `RATPOINTS_SURVIVORS_PER_WORD` of `ratpoints.h:92-94`; stage I). -/
+with the target `Ratpoints.survivorsPerWord`; stage I). -/
 def defaultSp1 : Nat := 11
 
 /-- How many moduli the second stage of the sieve adds to the first when neither the option `-N`
 nor `-R` says, `RATPOINTS_SP2_EXTRA`, the compiled-in default of `-R`: the offset that ratpoints
 takes as it is under `-U 0` and otherwise scales by the length of the run (`phase_2_offset`;
-`Ratpoints.sieveParams`).
+stage I), and that the parameters of the executable take as it is (`Ratpoints.sieveParams`); also
+the number of the next candidates whose mean density stands for the second stage of a long run
+(`downstream_factor`; stage I).
 
 C: `ratpoints.h:95-97` -/
 def sp2Extra : Nat := 11
+
+/-- The survivors per 64-bit word swept that one more modulus of the first stage has to remove, for
+a modulus that costs one and per word, `RATPOINTS_SURVIVORS_PER_WORD`: the target of the rule that
+ends the first stage (`phase_1_wants`; stage I), unless the option `-r` gives a positive value.
+
+C: `ratpoints.h:92-94` -/
+def survivorsPerWord : Float := 0.002
+
+/-- The run length, in numerator words, at which setting a modulus of the second stage up costs as
+much as sieving with it, `RATPOINTS_SP2_U0`: the scale of the offset of the second stage
+(`phase_2_offset`; stage I), unless the option `-U` gives a value `≥ 0`.
+
+C: `ratpoints.h:120-122` -/
+def sp2U0 : Float := 1.6e6
+
+/-- What one prime of the third stage costs per survivor, as a fraction of one exact check,
+`RATPOINTS_SP3_PER_SURVIVOR`, in the rule that chooses the third stage (`sieving_info` and
+`adapt_primes`; stage I).
+
+C: `ratpoints.h:150-152` -/
+def sp3PerSurvivor : Float := 0.055
+
+/-- What one prime of the third stage costs per denominator, as a fraction of one exact check,
+`RATPOINTS_SP3_PER_DENOM`, in the rule that chooses the third stage (`sieving_info` and
+`adapt_primes`; stage I), unless the option `-Q` gives a value `≥ 0`.
+
+C: `ratpoints.h:153-155` -/
+def sp3PerDenom : Float := 0.013
+
+/-- The share of the survivors of the first two stages that the test for common factors leaves,
+`RATPOINTS_SP3_COPRIME`, in the estimate of the survivors that reach the third stage
+(`sieving_info`; stage I).
+
+C: `ratpoints.h:164-166` -/
+def sp3Coprime : Float := 0.7
+
+/-- What building one row of a sieve table costs, in units of one and of the first stage per word,
+`RATPOINTS_COST_TABLE`, unless the option `-C` gives a value `≥ 0` (`sieving_info`,
+`adapt_primes`; stage I).
+
+C: `ratpoints.h:192-194` -/
+def costTable : Float := 38.0
+
+/-- The largest composite modulus that ratpoints offers, `RATPOINTS_COMPOSITE_MAX`: the odd
+composites from 9 up to it and below `Ratpoints.maxPrimeEven` (`add_moduli`; stage I).
+
+C: `ratpoints.h:210-212` -/
+def compositeMax : Nat := 64
+
+/-- What one entry of `bp_list` costs per denominator, `RATPOINTS_COST_BP` (`prime_cost`;
+stage I).
+
+C: `ratpoints.h:213-218` -/
+def costBp : Float := 8.0
+
+/-- What the sieve spec of a modulus of the first two stages costs per denominator,
+`RATPOINTS_COST_SETUP` (`prime_cost`; stage I).
+
+C: `ratpoints.h:224-226` -/
+def costSetup : Float := 30.0
+
+/-- What one call of the sieve costs a modulus of the first stage, `RATPOINTS_COST_CALL`
+(`sieving_info`; stage I).
+
+C: `ratpoints.h:241-243` -/
+def costCall : Float := 50.0
+
+/-- What fetching one line of 64 bytes of a row costs per denominator, `RATPOINTS_COST_LINE`
+(`phase_1_key`; stage I).
+
+C: `ratpoints.h:258-260` -/
+def costLine : Float := 4.5
+
+/-- What one and on a surviving bit array of the second stage costs, `RATPOINTS_COST_PHASE2`
+(`downstream_factor` and the keys of the second stage; stage I).
+
+C: `ratpoints.h:261-263` -/
+def costPhase2 : Float := 110.0
+
+/-- What one survivor of the second stage costs to extract and test, `RATPOINTS_COST_SURVIVOR`
+(`downstream_factor`, `adapt_primes`; stage I).
+
+C: `ratpoints.h:270-272` -/
+def costSurvivor : Float := 1400.0
+
+/-- What one exact check costs relative to the cost of an and, `RATPOINTS_COST_CHECK`, read by the
+correction of the second stage during the run (`adapt_primes`; stage I).
+
+C: `ratpoints.h:280-282` -/
+def costCheck : Float := 1600.0
+
+/-- The cost of one step of Horner's rule in the exact check, `RATPOINTS_CHECK_STEP`
+(`check_cost`; stage I).
+
+C: `ratpoints.h:312-314` -/
+def checkStep : Float := 29.0
+
+/-- The cost of one step of Horner's rule per limb it carries, `RATPOINTS_CHECK_LIMB`
+(`check_cost`; stage I).
+
+C: `ratpoints.h:315-317` -/
+def checkLimb : Float := 8.0
+
+/-- The cost of the call of the exact check and of a square root of one limb,
+`RATPOINTS_CHECK_CALL` (`check_cost`; stage I).
+
+C: `ratpoints.h:318-320` -/
+def checkCall : Float := 94.0
+
+/-- The cost of each further limb of the square root of the exact check, `RATPOINTS_CHECK_ROOT`
+(`check_cost`; stage I).
+
+C: `ratpoints.h:321-323` -/
+def checkRoot : Float := 170.0
+
+/-- The cost of one exact check on the curves on which the third stage was tuned,
+`RATPOINTS_CHECK_REFERENCE`, which the cost of the check of the curve is divided by
+(`sieving_info`; stage I).
+
+C: `ratpoints.h:329-331` -/
+def checkReference : Float := 306.0
+
+/-- A bound on the number of composite moduli offered, `RP_MAX_MODULI`: half of
+`Ratpoints.maxPrimeEven`; the pool of the candidates holds at most `Ratpoints.numPrimes` primes and
+this many composites (`add_moduli`, `phase_2_offset`; stage I).
+
+C: `find_points.c:153` -/
+def maxModuli : Nat := maxPrimeEven / 2
+
+/-- The largest number of prime-power factors of a modulus, `RP_MAX_FACTORS` (`add_moduli`;
+stage I).
+
+C: `rp-private.h:520` -/
+def maxFactors : Nat := 3
+
+/-- The largest cost of the table of a composite modulus per numerator word at which it is offered,
+`RP_MODULUS_TABLE_MAX` (`add_moduli`; stage I).
+
+C: `find_points.c:2337` -/
+def modulusTableMax : Float := 2.0
+
+/-- The number of the samples of the denominators by which the run is estimated,
+`RUN_SHAPE_SAMPLES` (`run_shape`; stage I).
+
+C: `find_points.c:1917` -/
+def runShapeSamples : Nat := 64
+
+/-- The share of the numerators of a class of the stride `2 ^ k` that its bit arrays hold, `2 ^ -k`,
+the table `rp_inv_stride` of the strides `k < Ratpoints.numStrides` (`run_shape`, `bpw_add`;
+stage I).
+
+C: `find_points.c:1921-1922`
+
+Deviation: an array of the seven doubles of the table, which `rp_inv_stride` sizes by
+`RP_NUM_STRIDES`, read by `getD` with `0.0`, the value of the entries beyond the seven initializers
+when `RP_NUM_STRIDES` is larger; the stride of a class is at most `2 ^ 6`. -/
+def invStride : Array Float := #[1.0, 0.5, 0.25, 0.125, 0.0625, 0.03125, 0.015625]
+
+/-- How many numerator words the run sweeps before the first correction of the moduli,
+`RP_ADAPT_WORDS`: the field `adapt_at` of the arguments, when the search may correct its choice
+(`sieving_info`; stage I).
+
+C: `find_points.c:1354` -/
+def adaptWords : Nat := 1000000
+
+/-- How many bit arrays that survive the first stage the run must have counted before it corrects
+the moduli, `RP_ADAPT_ARRAYS` (`adapt_primes`; stage I).
+
+C: `find_points.c:1355` -/
+def adaptArrays : Nat := 1000
+
+/-- How many numerators that survive the second stage the run must have counted before it corrects
+the moduli, `RP_ADAPT_BITS` (`adapt_primes`; stage I).
+
+C: `find_points.c:1356` -/
+def adaptBits : Nat := 200
+
+/-- How many blocks after the block at whose fold a correction of the moduli is decided the
+correction takes effect, less one, `RP_ADAPT_LAG`: a decision made at the fold of block `j` is for
+the blocks from `j + adaptLag + 1` on (`run_fold`; stage I), so that the decision of a block
+depends only on the folds of the blocks at least `adaptLag + 1` before it, whatever the number of
+threads.
+
+C: `find_points.c:1379-1381` -/
+def adaptLag : Nat := 32
+
+/-- About how many blocks the steps of a run are cut into, `RP_BLOCKS_WANTED` (`run_setup`;
+stage I).
+
+C: `find_points.c:3729-3731` -/
+def blocksWanted : Nat := 1024
+
+/-- The least number of steps of a block, `RP_BLOCK_MIN` (`run_setup`; stage I).
+
+C: `find_points.c:3732-3734` -/
+def blockMin : Nat := 16
+
+/-- The fixed length of the blocks that a build of ratpoints may set, `RP_BLOCK_LEN`, to test the
+boundaries of the blocks: none, as in the default build, which does not define the macro, and
+`some n` for a build with `-DRP_BLOCK_LEN=n`. It models no line of the C code: the macro is
+defined only on the command line of the compiler, and the lines of `run_setup` that read it
+(`find_points.c:3840-3842`) belong to the length of the blocks of a run (stage I). -/
+def blockLen : Option Nat := none
 
 /-- The lower bound of the multiple of a modulus `p` that the offset of a row of the sieve carries,
 `RP_ROW_BIAS`: in the packing of the numerators the offset of the row of `p` carries the least
@@ -352,6 +572,11 @@ def numStrides : Nat := 7
 theorem rbaPack_pos : 0 < rbaPack := by decide
 theorem defaultArraySize_pos : 0 < defaultArraySize := by decide
 theorem maxArraySize_pos : 0 < maxArraySize := by decide
+
+/-- The fixed length of the blocks, when a build sets one (`Ratpoints.blockLen`), is positive, as
+the C code assumes when it divides by it (`find_points.c:3847`): so the length of the blocks of a
+run is at least 1, and the loops of the shapes over the steps of a block end (stage I). -/
+theorem blockLen_pos : ∀ n ∈ blockLen, 0 < n := by decide
 
 /-- The chunk is positive, which the C code assumes without a check: the largest number of bit
 arrays of a piece of the numerators is rounded up to a multiple of it
@@ -427,6 +652,22 @@ theorem zero_lt_maxDegree : 0 < maxDegree := by decide
 -- The numbers of primes that the header lists for the builds with moduli of 5 to 10 bits.
 #guard [5, 6, 7, 8, 9, 10].map (fun b ↦ (primeTable.toList.filter (· < 2 ^ b)).length) ==
   [10, 17, 30, 53, 96, 171]
+
+-- The doubles of the cost model, bit for bit as gcc compiles the literals of the C code (the
+-- values of the tuning macros of `ratpoints.h` and the table `rp_inv_stride`).
+#guard [survivorsPerWord, sp2U0, sp3PerSurvivor, sp3PerDenom, sp3Coprime, costTable, costBp,
+    costSetup, costCall, costLine, costPhase2, costSurvivor, costCheck, checkStep, checkLimb,
+    checkCall, checkRoot, checkReference, modulusTableMax].map Float.toBits ==
+  [0x3F60624DD2F1A9FC, 0x41386A0000000000, 0x3FAC28F5C28F5C29, 0x3F8A9FBE76C8B439,
+    0x3FE6666666666666, 0x4043000000000000, 0x4020000000000000, 0x403E000000000000,
+    0x4049000000000000, 0x4012000000000000, 0x405B800000000000, 0x4095E00000000000,
+    0x4099000000000000, 0x403D000000000000, 0x4020000000000000, 0x4057800000000000,
+    0x4065400000000000, 0x4073200000000000, 0x4000000000000000]
+#guard invStride.map Float.toBits == [0, 1, 2, 3, 4, 5, 6].toArray.map fun k ↦
+  ((1023 - k) <<< 52 : Nat).toUInt64
+#guard compositeMax == 64 && maxModuli == 128 && maxFactors == 3 && runShapeSamples == 64 &&
+  adaptWords == 1000000 && adaptArrays == 1000 && adaptBits == 200 && adaptLag == 32 &&
+  blocksWanted == 1024 && blockMin == 16 && blockLen == none
 
 end Ratpoints
 

@@ -103,16 +103,16 @@ are no points modulo $p$ (D) and the options of the output (G) come in their sta
 \end{definition}
 
 \begin{definition}[The parameters of the executable]\label{def:sieveParams}
-  \uses{def:Params, def:primeTable, def:arraySize, def:barrett}
-  \lean{Ratpoints.SieveOptions, Ratpoints.sieveParams, Ratpoints.defaultParams, Ratpoints.defaultNumPrimes, Ratpoints.defaultMaxForbidden, Ratpoints.defaultSp1, Ratpoints.sp2Extra, Ratpoints.wf_sieveParams, Ratpoints.wf_defaultParams}
+  \uses{def:Params, def:primeTable, def:arraySize, def:barrett, def:choiceConstants}
+  \lean{Ratpoints.SieveOptions, Ratpoints.sieveParams, Ratpoints.defaultParams, Ratpoints.defaultSp1, Ratpoints.wf_sieveParams, Ratpoints.wf_defaultParams}
   \leanok
   The parameters made from the values of the options \verb|-p|, \verb|-n|, \verb|-N|, \verb|-P|,
   \verb|-F| and \verb|-j|/\verb|-J|, which are $-1$ and the Jacobi test on when the options are
   absent (\csource{main.c}{337}{338}, \csource{main.c}{344}{344}, \csource{main.c}{349}{350},
   \csource{main.c}{352}{352}), with the defaults and caps of ratpoints
-  (\csource{ratpoints.h}{333}{340}, \csource{ratpoints.h}{345}{352},
-  \csource{find_points.c}{4643}{4649}, \csource{find_points.c}{4655}{4656},
-  \csource{find_points.c}{4662}{4665}) and the rules by which it counts the moduli of its stages,
+  (\csource{find_points.c}{4643}{4649}, \csource{find_points.c}{4655}{4656},
+  \csource{find_points.c}{4662}{4665}; the defaults are constants of the model,
+  Definition~\ref{def:choiceConstants}) and the rules by which it counts the moduli of its stages,
   where these do not depend on the curve: the number of the primes looked at is
   $q = \min(k, \mathrm{numPrimes})$, for the value $k \ge 0$ of \verb|-p| or else
   $k = \mathrm{defaultNumPrimes} = 30$, and the first $q$ primes of the table are examined, the
@@ -126,20 +126,20 @@ are no points modulo $p$ (D) and the options of the output (G) come in their sta
   without \verb|-n|, for $\mathrm{defaultSp1} = 11$ (\csource{ratpoints.h}{42}{42},
   \csource{find_points.c}{2503}{2503}, \csource{find_points.c}{2845}{2846}); the second at
   $s_2 = \max(s_1, N)$, the first two stages topped up to $N$, or without \verb|-N| at
-  $\min(s_1 + \mathrm{sp2Extra}, L)$, for the offset $\mathrm{sp2Extra} = 11$ that ratpoints adds as
-  it is under \verb|-U 0| (\csource{ratpoints.h}{95}{97}, \csource{find_points.c}{1619}{1623},
-  \csource{find_points.c}{2571}{2572}, \csource{find_points.c}{2599}{2599},
-  \csource{find_points.c}{2808}{2808}, \csource{find_points.c}{2815}{2815},
-  \csource{find_points.c}{2864}{2869}); and the moduli are the first $\min(s_2 + P, L)$ primes of
-  the table, or without \verb|-P| the first $\max(s_2, q)$, the third stage holding the rest of the
-  first $q$ (\csource{find_points.c}{2922}{2922}, \csource{find_points.c}{2926}{2928},
-  \csource{find_points.c}{2949}{2949}, \csource{find_points.c}{2973}{2975},
-  \csource{find_points.c}{3015}{3015}, \csource{find_points.c}{3017}{3017}). At most $\min(F, 171)$
-  forbidden divisors are tested, for the value $F \ge 0$ of \verb|-F| or else
-  $F = \mathrm{defaultMaxForbidden} = 64$; the Jacobi test runs unless \verb|-j| is the last of
-  \verb|-j| and \verb|-J|; and a piece of the numerators has at most
-  $\mathrm{defaultArraySize} = 256$ bit arrays, the array size that the program sets when it reads
-  the arguments and again before the search (\csource{main.c}{347}{347},
+  $\min(s_1 + \mathrm{sp2Extra}, L)$, for the offset $\mathrm{sp2Extra} = 11$
+  (Definition~\ref{def:choiceConstants}) that ratpoints adds as it is under \verb|-U 0|
+  (\csource{find_points.c}{1619}{1623}, \csource{find_points.c}{2571}{2572},
+  \csource{find_points.c}{2599}{2599}, \csource{find_points.c}{2808}{2808},
+  \csource{find_points.c}{2815}{2815}, \csource{find_points.c}{2864}{2869}); and the moduli are the
+  first $\min(s_2 + P, L)$ primes of the table, or without \verb|-P| the first $\max(s_2, q)$, the
+  third stage holding the rest of the first $q$ (\csource{find_points.c}{2922}{2922},
+  \csource{find_points.c}{2926}{2928}, \csource{find_points.c}{2949}{2949},
+  \csource{find_points.c}{2973}{2975}, \csource{find_points.c}{3015}{3015},
+  \csource{find_points.c}{3017}{3017}). At most $\min(F, 171)$ forbidden divisors are tested, for
+  the value $F \ge 0$ of \verb|-F| or else $F = \mathrm{defaultMaxForbidden} = 64$; the Jacobi test
+  runs unless \verb|-j| is the last of \verb|-j| and \verb|-J|; and a piece of the numerators has at
+  most $\mathrm{defaultArraySize} = 256$ bit arrays, the array size that the program sets when it
+  reads the arguments and again before the search (\csource{main.c}{347}{347},
   \csource{main.c}{221}{222}). The default parameters are those of no options: $11$ moduli in the
   first stage, $11$ more in the second and $8$ in the third, the first $30$ primes in all. Every
   parameter set made this way is well-formed.
