@@ -487,14 +487,15 @@ Lemma~\ref{lem:sift_eq_checkDen} maps their side.
   nothing printed yet (\csource{find_points.c}{5007}{5009}, \csource{find_points.c}{5104}{5104};
   stage~I). The 2-adic exit returns the delivery as it came. The search returns what a search gives
   back (Definition~\ref{def:Outcome}): the data and the count of the delivery, with the flag of the
-  reversal, the squares, the success of the divisor set-up and the search intervals. A definition of
-  type \verb|Id|, which the search of \verb|find_points_work_1| runs
+  reversal, the squares, the success of the divisor set-up, the search intervals and the numbers of
+  the moduli used that the search after the choice returns, $0$ for each after the 2-adic exit. A
+  definition of type \verb|Id|, which the search of \verb|find_points_work_1| runs
   (Definition~\ref{def:findPointsVerbose}) with the normalized range of the denominators, the search
   intervals that the Sturm step leaves and its flag \verb|sturm_empty|
   (Definition~\ref{def:sturmRegion}). What it delivers for normalized options, with the print
-  channel that prints nothing, $1 \le H < 2^{63}$, as the refusals leave it, $1 \le
-  b_{\mathrm{low}}$, $b_{\mathrm{high}} \le H$, well-formed search intervals and $d$ the degree of
-  $c$ is the subject of Lemma~\ref{lem:searchList}: the points at infinity and, over the
+  channel that prints nothing, $1 \le H < 2^{63}$, as the refusals leave it,
+  $1 \le b_{\mathrm{low}}$, $b_{\mathrm{high}} \le H$, well-formed search intervals and $d$ the
+  degree of $c$ is the subject of Lemma~\ref{lem:searchList}: the points at infinity and, over the
   denominators of the search (Definition~\ref{def:searchDens}), the points of the check with the
   flags of the numerators in the search intervals, none when \verb|sturm_empty| is set, that a sound
   test of the sieve lets through, up to the first call that stops the search, also when an exit
@@ -688,7 +689,8 @@ Each component of the set-up differs from the C code in a stated way, recorded i
     switch of the reversal of the normalized options cleared (Definition~\ref{def:normalize});
   \item a list of integers for the array of GMP integers of the coefficients, a new list for the
     reversal in place, and nothing written back to the caller but the three bits of the flags that
-    the program reads and the search intervals (Definition~\ref{def:Outcome}): the reversed
+    the program reads, the search intervals and, since stage~I, the numbers of the moduli used
+    (Definition~\ref{def:Outcome}): the reversed
     coefficients and the degree stay unwritten, so that there is no state between calls for the
     reset of the flags to clear; the square test of $c_d$ made where it is used
     (\verb|Setup.reversal|, \verb|Sieve.pointsAtInfinity|, \verb|searchPoints|), for the flag

@@ -157,9 +157,11 @@ has eleven statements, the well-formedness of the parameters of the program no l
 `lake comparator --paranoid` accepted the eleven on 2026-10-25. The search chooses its moduli from
 the curve as ratpoints does and runs the denominators in blocks with the correction of the moduli
 between them, `lake comparator` accepting the eleven again on 2026-10-25, and the differential tests
-compare the pairs under `-x` exactly with the C program on the same command line. The blueprint and
-the API documentation will be at <https://michaelstollbayreuth.github.io/RatpointsLean/> once the
-repository is public.
+compare the pairs under `-x` exactly with the C program on the same command line; the search gives
+back the numbers of the moduli used, which `ratpoints-lean` prints in its report as ratpoints does
+(`lake comparator` accepting the eleven again on 2026-10-25), and the differential tests compare
+that message too. The blueprint and the API documentation will be at
+<https://michaelstollbayreuth.github.io/RatpointsLean/> once the repository is public.
 
 ## Layout
 
@@ -202,8 +204,8 @@ coefficients (constant term first), the height bound and the options as ratpoint
 checks, messages and exit statuses, and prints the points of height at most `H` on
 `y² = a_n xⁿ + ⋯ + a_0` as ratpoints does, through the callback of its `main.c`: by default one line
 `(x : y : z)` per point, with the options of the output `-x -X -y -Y -z -Z -1 -i -I` and the formats
-and strings of `-f -fs -fm -fe`, and without `-q` the report that ratpoints prints around them, but
-for the message on the moduli used and, under `-v`, the report of the library; under `-x` (no exact
+and strings of `-f -fs -fm -fe`, and without `-q` the report that ratpoints prints around them, but,
+under `-v`, for the report of the library; under `-x` (no exact
 check) it prints the pairs that pass its sieve, with the moduli that it chooses from the curve and
 corrects between the blocks of the run as ratpoints does, which are those that ratpoints prints
 unless one of the tuning options `-r -R -U -C -A -Q -W` that it ignores changes them. It finds the

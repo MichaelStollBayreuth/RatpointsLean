@@ -84,9 +84,21 @@ class Outputs(unittest.TestCase):
              'sieving,\n4 moduli used for both stages of sieving together,\n0 further primes '
              'used in the third stage.\nSearch intervals:\n[-5.000000, 5.000000]\n\n'
              '2 rational points found.\n\n')
-        lean = (head.format(cfg.lean_banner) + '(1 : 1 : 0)\n\n\nSearch intervals:\n'
-                '[-5.000000, 5.000000]\n\n2 rational points found.\n\n')
+        lean = (head.format(cfg.lean_banner) + '(1 : 1 : 0)\n\n\n3 moduli used for first stage of '
+                'sieving,\n4 moduli used for both stages of sieving together,\n0 further primes '
+                'used in the third stage.\nSearch intervals:\n[-5.000000, 5.000000]\n\n'
+                '2 rational points found.\n\n')
         self.assertTrue(dt.agrees(cfg, (lean, 0), (c, 0), 'report'))
+        # message 4 is compared: other numbers of moduli, or no message 4
+        self.assertFalse(dt.agrees(cfg, (lean, 0), (c.replace('3 moduli', '5 moduli'), 0),
+                                   'report'))
+        # but for a command line with a tuning option that ratpoints-lean ignores, where it is
+        # dropped from both reports
+        tuned = dt.settings(['-r', '0.5'])
+        self.assertTrue(dt.agrees(cfg, (lean, 0), (c.replace('3 moduli', '5 moduli'), 0),
+                                  'report', st=tuned))
+        self.assertFalse(dt.agrees(cfg, (lean, 0), (c.replace('[-5.000000', '[-4.000000'), 0),
+                                   'report', st=tuned))
         # messages 3 and 8 are compared: another search interval, no search region
         self.assertFalse(dt.agrees(cfg, (lean, 0), (c.replace('[-5.000000', '[-4.000000'), 0),
                                    'report'))
@@ -95,13 +107,13 @@ class Outputs(unittest.TestCase):
                                    'report'))
         self.assertFalse(dt.agrees(cfg, (lean, 0), (c.replace('2 rational', '3 rational'), 0),
                                    'report'))
-        # as test4.sh's m() records it: the first line of the banner and message 4 left out
+        # as test4.sh's m() records it, the first line of the banner and message 4 left out, which
+        # the comparison does not accept (a report of test4.sh is compared with the C program)
         m = '\n'.join(l for l in c.split('\n') if not l.startswith('This is ratpoints-') and
                       'used for' not in l and 'further primes' not in l)
-        self.assertTrue(dt.agrees(cfg, (lean, 0), (m, 0), 'report'))
-        # the lines that ratpoints-lean does not print are dropped from the C program's only
-        c_banner = c.replace(cfg.c_banner, cfg.lean_banner)
-        self.assertFalse(dt.agrees(cfg, (c_banner, 0), (c, 0), 'report'))
+        self.assertFalse(dt.agrees(cfg, (lean, 0), (m, 0), 'report'))
+        self.assertEqual(dt.as_recorded_by_m(c), m)
+        self.assertEqual(dt.as_recorded_by_m(m), m)
         refusal = '\nPolynomial is not square-free.\n\n'
         self.assertTrue(dt.agrees(cfg, (head.format(cfg.lean_banner) + refusal, 8),
                                   (head.format(cfg.c_banner) + refusal, 8), 'report'))

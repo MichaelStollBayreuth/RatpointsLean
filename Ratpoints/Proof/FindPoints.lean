@@ -745,7 +745,8 @@ private theorem chooseAndSearch_value {σ : Type} (process : ℤ → ℤ → ℤ
     (us1 : Option (List Setup.DenInfo × List ℕ)) (a : ShapeArgs) (bpw : Float) (sturmEmpty : Bool)
     (r : Delivery σ) :
     ⦃ True ⦄ chooseAndSearch process c d s mayExtend fl us1 a bpw sturmEmpty r
-    ⦃ fun r' ↦ r' = Id.run (chooseAndSearch process c d s mayExtend fl us1 a bpw sturmEmpty r) ⦄ :=
+    ⦃ fun r' ↦ r'.1 = (Id.run (chooseAndSearch process c d s mayExtend fl us1 a bpw sturmEmpty
+        r)).1 ⦄ :=
   ⟨fun _ ↦ rfl⟩
 
 -- The delivery after the choice of the moduli and the search after it, along its paths for the
@@ -758,7 +759,7 @@ private theorem chooseAndSearch_spec_paths {σ : Type} (process : ℤ → ℤ �
     (r : Delivery σ) (si : Except ℕ SievingInfo)
     (hsi : Id.run (sievingInfo c d (Setup.useCLong c d) (d % 2 == 0) mayExtend s a bpw) = si) :
     ⦃ True ⦄ chooseAndSearch process c d s mayExtend fl us1 a bpw sturmEmpty r
-    ⦃ fun out ↦ out = match (generalizing := false) si with
+    ⦃ fun out ↦ out.1 = match (generalizing := false) si with
         | .error _ => r
         | .ok si => if (pointsAtInfinity process c d fl r).quit || sturmEmpty then
             pointsAtInfinity process c d fl r else
@@ -788,7 +789,7 @@ private theorem searchPoints_spec_paths {σ : Type} (process : ℤ → ℤ → �
             Id.run (Setup.setupUs1 c d bHigh) else none)
           (searchShapeArgs c d H s bLow bHigh dom cls db)
           (Id.run (meanBitsPerWord (searchShapeArgs c d H s bLow bHigh dom cls db))) sturmEmpty
-          r))) ⦄ := by
+          r)).1) ⦄ := by
   vcgen [searchPoints, setupUs1_value, twoAdic_value, numClasses_value, meanBitsPerWord_value,
     chooseAndSearch_value]
   all_goals subst_vars
@@ -828,7 +829,7 @@ private theorem run_searchPoints_paths {σ : Type} (process : ℤ → ℤ → �
       hex).le_wp trivial)]
   cases ex
   · simp only [Bool.false_eq_true, ↓reduceIte]
-    rw [Std.WP.Id.of_run_eq_wp rfl (fun out : Delivery σ ↦ out = _)
+    rw [Std.WP.Id.of_run_eq_wp rfl (fun out : Delivery σ × ℕ × ℕ × ℕ ↦ out.1 = _)
       ((chooseAndSearch_spec_paths process c d s mayExtend fl _ _ _ sturmEmpty r si hsi).le_wp
         trivial)]
     rfl

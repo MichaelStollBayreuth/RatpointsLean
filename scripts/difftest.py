@@ -32,7 +32,8 @@ and compares it with the recorded outputs and with the C program:
           whose points do not depend on them;
   high    point-rich curves at the heights 2000, 5000 and 30000 against the C program, and curves
           at 16383 where the C program corrects its moduli during the run and the correction
-          changes the survivors under -x (-x without -A and with -A 1 and -A 2, and a report);
+          changes the survivors under -x and message 4 (-x without -A and with -A 1 and -A 2, and a
+          report with message 4);
   regions random search regions against the C program: intervals with ends of every kind (decimals,
           hexadecimal constants, ends that are no doubles, infinities, numbers beyond the doubles,
           tiny ones, -0, intervals that touch or whose doubles meet, a missing first -l or last -u),
@@ -58,52 +59,58 @@ whose leading coefficient is not +-1), since the model visits them in the same o
 points in the default format with -q is compared as a list of points with a recorded output (test4,
 rptest), and exactly, byte for byte, with an output of the C program, as is an output with the
 options of the output (-x -y -f -fs -fm -fe), also where it does not end with a newline. A report (a
-command line without -q) is compared exactly, with the messages on the search region (message 3) and
-the search intervals (message 8), but for the banner, which is exchanged for that of the C program,
-and for the lines that ratpoints-lean does not print, which are dropped from the report of the C
-program only: the message on the moduli used (message 4, stage I), as test4.sh's m() drops it. Under
--v, where the C program prints the report of its library too, ratpoints-lean is compared with the
-report of the C program on the same command line without -v, whose height and messages 4, 7 and 8
-are dropped, as main.c does under -v; the lines of that text must be among the lines of the output
-of the C program with -v, in their order, with the same lines of points and pairs (with a format or
-a string, whose points need not end their lines, only its characters among those of that output, in
-their order). The outputs that test4.sh filters through grep found, grep 'Curve equation' and grep
--c . are compared after the same filter, the banner exchanged first, with the exit status 0. Under
--x (no exact check), where the lines printed are the survivors of the sieve, which depend on the
-moduli and on the search region: exactly with the output of the C program on the same command line,
-since the model chooses its moduli from the curve and corrects them during the run as the C program
-does, also on the runs of test4.sh under -x, which are compared with the C program, a disagreement
-of the C program with the output that testbase4 records being noted apart, not counted as a failure,
-the choice of the moduli computing with the log and pow of the platform (the runs where the C
-program may correct its choice are counted: neither -n nor -N gives a value >= 0, -A does not give
-0, and the run can pass RP_ADAPT_WORDS = 10^6 numerator words, by an upper bound from the
-denominators, the search intervals and the height bound); but for the runs with a tuning option that
-ratpoints-lean ignores and the C program reads (-r -R -U -C -Q -W, or -A with a value other than 1
-or a negative one, which give the default correction; stage I); and, without a format or a string,
-also by a weaker check against the output of the C program (the only check on the runs with such a
-tuning option, their count given): every line (x : z) a normalized coprime pair in the range of the
-height and, but for (1 : 0), with z in the range of the denominators and x / z in the exact search
-region of the command line, none repeated, the pairs that are points the same and in the same order
-in both outputs, the pairs common to both in the same order, the pairs in one block at the same
-place among the other lines, with -1 one line in each output when one of them is a point (the same
-if both are) and else at most one, and the other lines equal, a count line but for its number, which
-must be that of the pairs printed (unless -z); without -q on reports. Exit codes are compared
-exactly, and ratpoints-lean must write nothing to its standard error: it runs with
-LEAN_ABORT_ON_PANIC=1, so that a panic of the Lean runtime ends it by SIGABRT. Messages are compared
-exactly, but for the banner and the usage, which differ by design: in the outputs of errors 2 and 6
-they are exchanged for those of the C program (the outputs of the two programs on an empty command
-line), and the errors suite checks the usage of ratpoints-lean against that of ratpoints. A few
-searches at a large height that both programs stop at a point at infinity before the sieve (-1) are
-run with a short timeout and a cap on the memory. A search above --max-height with a search region
-is compared, with a timeout and a cap on the memory, when the model sifts at most 10^5 denominators
-for it (an upper bound that mirrors the divisor set-up of the model) and sifts at most 2 * 10^10
-numerators (an upper bound from the widths of the intervals, and under -1 from the first point of
-the expected output, where the search stops): the searches of test4.sh at large heights in a narrow
-region. Skipped: the outputs that test4.sh filters to look at the report of the library and those
-that test3.sh filters; searches under -x with a format or a string and a tuning option that
-ratpoints-lean ignores; and the other searches above --max-height, which the suites that run the C
-program compare when they have no search region and it prints nothing (a search with -q that finds
-no points, as when no class of the denominators modulo 64 admits a numerator).
+command line without -q) is compared exactly, with the messages on the moduli used (message 4), the
+search region (message 3) and the search intervals (message 8), but for the banner, which is
+exchanged for that of the C program; on a command line with a tuning option that ratpoints-lean
+ignores and the C program reads (-r -R -U -C -Q -W, or -A with a value other than 1 or a negative
+one, which give the default correction; stage I), with which the two programs may choose other
+moduli, the lines of message 4 are dropped from both reports. A report of test4.sh, whose m() drops
+message 4 from the reports that it records, is compared with the C program on its command line, a
+disagreement of the C program with the record (both without the lines that m() drops) being noted
+apart, not counted as a failure. Under -v, where the C program prints the report of its library too,
+ratpoints-lean is compared with the report of the C program on the same command line without -v,
+whose height and messages 4, 7 and 8 are dropped, as main.c does under -v; the lines of that text
+must be among the lines of the output of the C program with -v, in their order, with the same lines
+of points and pairs (with a format or a string, whose points need not end their lines, only its
+characters among those of that output, in their order). The outputs that test4.sh filters through
+grep found, grep 'Curve equation' and grep -c . are compared after the same filter, the banner
+exchanged first, with the exit status 0. Under -x (no exact check), where the lines printed are the
+survivors of the sieve, which depend on the moduli and on the search region: exactly with the output
+of the C program on the same command line, since the model chooses its moduli from the curve and
+corrects them during the run as the C program does, also on the runs of test4.sh under -x, which are
+compared with the C program, a disagreement of the C program with the output that testbase4 records
+being noted apart, not counted as a failure, the choice of the moduli computing with the log and pow
+of the platform (the runs where the C program may correct its choice are counted: neither -n nor -N
+gives a value >= 0, -A does not give 0, and the run can pass RP_ADAPT_WORDS = 10^6 numerator words,
+by an upper bound from the denominators, the search intervals and the height bound); but for the
+runs with a tuning option that ratpoints-lean ignores and the C program reads (-r -R -U -C -Q -W, or
+-A with a value other than 1 or a negative one, which give the default correction; stage I); and,
+without a format or a string, also by a weaker check against the output of the C program (the only
+check on the runs with such a tuning option, their count given): every line (x : z) a normalized
+coprime pair in the range of the height and, but for (1 : 0), with z in the range of the
+denominators and x / z in the exact search region of the command line, none repeated, the pairs that
+are points the same and in the same order in both outputs, the pairs common to both in the same
+order, the pairs in one block at the same place among the other lines, with -1 one line in each
+output when one of them is a point (the same if both are) and else at most one, and the other lines
+equal, a count line but for its number, which must be that of the pairs printed (unless -z); without
+-q on reports. Exit codes are compared exactly, and ratpoints-lean must write nothing to its
+standard error: it runs with LEAN_ABORT_ON_PANIC=1, so that a panic of the Lean runtime ends it by
+SIGABRT. Messages are compared exactly, but for the banner and the usage, which differ by design: in
+the outputs of errors 2 and 6 they are exchanged for those of the C program (the outputs of the two
+programs on an empty command line), and the errors suite checks the usage of ratpoints-lean against
+that of ratpoints. A few searches at a large height that both programs stop at a point at infinity
+before the sieve (-1) are run with a short timeout and a cap on the memory. A search above
+--max-height with a search region is compared, with a timeout and a cap on the memory, when the
+model sifts at most 10^5 denominators for it (an upper bound that mirrors the divisor set-up of the
+model) and sifts at most 2 * 10^10 numerators (an upper bound from the widths of the intervals, and
+under -1 from the first point of the expected output, where the search stops): the searches of
+test4.sh at large heights in a narrow region. The runs of test3.sh whose output a pipe filters are
+compared with the C program on the whole output of the command before the pipe, but for those under
+-v. Skipped: the outputs that test4.sh and test3.sh filter to look at the report of the library
+under -v; searches under -x with a format or a string and a tuning option that ratpoints-lean
+ignores; and the other searches above --max-height, which the suites that run the C program compare
+when they have no search region and it prints nothing (a search with -q that finds no points, as
+when no class of the denominators modulo 64 admits a numerator).
 
 options:
   --lean PATH        the ratpoints-lean executable (default: .lake/build/bin/ratpoints-lean)
@@ -179,9 +186,9 @@ PARAM_CURVES = [('1 0 126 0 441', 200), ('-2 0 0 1', 130), ('1 1 1 1 0', 60),
 # The high suite: the first four of these curves at larger heights.
 HIGH_HEIGHTS = [2000, 5000, 30000]
 # The high suite also runs these curves of testdata.h at this height, where the C program corrects
-# its moduli during the run and the correction changes the survivors under -x (about a second
-# each): under -x without -A and with -A 1 and -A 2, the last by the weaker check only until
-# ratpoints-lean reads -A (stage I), and the first also in a report.
+# its moduli during the run and the correction changes the survivors under -x and message 4 (about a
+# second each): under -x without -A and with -A 1 and -A 2, the last by the weaker check only until
+# ratpoints-lean reads -A (stage I), and the first also in a report with message 4.
 CORRECTION_CURVES = ['1 4 16 -3 -11 5 4', '9 -5 5 2 2 1 1']
 CORRECTION_HEIGHT = 16383
 # The adapt suite: searches on which the C program corrects its moduli during the run
@@ -267,14 +274,16 @@ class Tally:
     and those of a search under -x, exactly against the C program on the same command line, and by
     the weaker check unless a format or a string is given (`x_exact`), of these the number where the
     C program may correct its moduli during the run (`x_adapt`), or by the weaker check only
-    (`x_weak`, with the reasons in `weak`); the skipped runs by their reason; the failures; and the
-    disagreements of the C program with the outputs that testbase4 records for its runs under -x,
-    which are no failures (`notes`)."""
+    (`x_weak`, with the reasons in `weak`); the reports compared with message 4 (`msg4`); the
+    skipped runs by their reason; the failures; and the disagreements of the C program with the
+    outputs that testbase4 records for its searches compared with the C program, which are no
+    failures (`notes`)."""
     compared: int = 0
     in_order: int = 0
     x_exact: int = 0
     x_adapt: int = 0
     x_weak: int = 0
+    msg4: int = 0
     weak: dict = field(default_factory=dict)
     skipped: dict = field(default_factory=dict)
     failures: list = field(default_factory=list)
@@ -667,20 +676,27 @@ def banner_of(usage):
     return usage[1:usage.index('Usage: ') - 1]
 
 
-def report_text(cfg, text, lean=False):
+# The lines of message 4, on the moduli used, as test4.sh's m() finds them.
+MODULI_LINES = re.compile('used for|further primes|primes used')
+
+
+def report_text(cfg, text, lean=False, moduli=True):
     """A report as it is compared: the first line of the banner, which test4.sh's m() drops, left
-    out, for ratpoints-lean (`lean`) after its banner is exchanged for that of the C program; and
-    of a report of the C program also the lines that ratpoints-lean does not print, which m() drops
-    too: those on the moduli used (message 4, stage I)."""
+    out, for ratpoints-lean (`lean`) after its banner is exchanged for that of the C program; and,
+    without `moduli`, the lines of message 4 on the moduli used, for a command line with a tuning
+    option that ratpoints-lean ignores and the C program reads (Settings.tuned; stage I), with which
+    the two programs may choose other moduli."""
     if lean:
         text = text.replace(cfg.lean_banner, cfg.c_banner)
-    out = []
-    for l in text.split('\n'):
-        if l.startswith('This is ratpoints-'):
-            continue
-        elif lean or not re.search('used for|further primes|primes used', l):
-            out.append(l)
-    return '\n'.join(out)
+    return '\n'.join(l for l in text.split('\n') if not l.startswith('This is ratpoints-') and
+                     (moduli or not MODULI_LINES.search(l)))
+
+
+def as_recorded_by_m(text):
+    """An output as test4.sh's m() records it: without the first line of the banner and the lines
+    of message 4, on the moduli used."""
+    return '\n'.join(l for l in text.split('\n')
+                     if not l.startswith('This is ratpoints-') and not MODULI_LINES.search(l))
 
 
 def as_verbose(text):
@@ -810,7 +826,8 @@ def weak_agrees(lean_text, exp_text, args, st):
 
 def agrees(cfg, lean, expected, mode, args=None, st=None):
     """Whether the output and exit code `lean` of ratpoints-lean agree with `expected`: in the mode
-    'points' as lists of points in their order (exit 0), in 'report' as reports (report_text), in
+    'points' as lists of points in their order (exit 0), in 'report' as reports (report_text,
+    without message 4 on a command line with a tuning option that ratpoints-lean ignores), in
     'weak' by the weaker check of -x (weak_agrees, on reports when there is no -q), in 'filter:F'
     after the filter F of test4.sh, the banner exchanged first (exit 0), in 'exact' exactly and in
     'e' as test4.sh's e() records them (the banner of a report exchanged for that of the C
@@ -819,11 +836,14 @@ def agrees(cfg, lean, expected, mode, args=None, st=None):
     if mode == 'points':
         got = points(out)
         return code == 0 and got is not None and got == points(exp)
+    moduli = st is None or not st.tuned
     if mode == 'report':
-        return code == exp_code and report_text(cfg, out, lean=True) == report_text(cfg, exp)
+        return code == exp_code and (report_text(cfg, out, lean=True, moduli=moduli) ==
+                                     report_text(cfg, exp, moduli=moduli))
     if mode == 'weak':
         if not st.quiet:
-            out, exp = report_text(cfg, out, lean=True), report_text(cfg, exp)
+            out, exp = (report_text(cfg, out, lean=True, moduli=moduli),
+                        report_text(cfg, exp, moduli=moduli))
         return code == exp_code and weak_agrees(out, exp, args, st)
     if mode.startswith('filter:'):  # all the filtered runs of test4.sh are searches: exit 0
         out = out.replace(cfg.lean_banner, cfg.c_banner)
@@ -872,6 +892,8 @@ def check(cfg, tally, label, args, expected, mode, st=None, lean=None, big=False
     ok = verdict(cfg, lean, expected, mode, args, st)
     tally.compared += 1
     tally.in_order += mode in ('points', 'report', 'exact') and expected[1] == 0
+    tally.msg4 += (mode == 'report' and MODULI_LINES.search(expected[0]) is not None and
+                   (st is None or not st.tuned))
     if not ok:
         tally.failures.append(failure_text(label, expected, lean))
     if cfg.verbose:
@@ -973,6 +995,7 @@ def check_x(cfg, tally, label, args, st, expected, big=False):
     if reason is None:
         tally.x_exact += 1
         tally.x_adapt += correction_possible(args, st)
+        tally.msg4 += not st.quiet and MODULI_LINES.search(expected[0]) is not None
     else:
         tally.weak_only(reason)
     tally.compared += 1
@@ -1044,17 +1067,21 @@ def compare_search(cfg, tally, label, args, text, st, big=False):
     """Compare ratpoints-lean with the output `text` of a search that testbase4 records for the
     command line `args` with the settings `st` (above --max-height, `big`, with a timeout and a cap
     on the memory): under -v with the C program (whose report of the library test4.sh's v()
-    filters), under -x by check_x with the output of the C program on `args`, a disagreement of that
-    output with `text` noted apart from the failures (the lines on the moduli used, message 4, which
-    test4.sh's m() drops, dropped from both), else with `text`."""
+    filters); under -x by check_x with the output of the C program on `args`, and without -q, a
+    report, with that output too (whose message 4 test4.sh's m() drops), a disagreement of that
+    output with `text` noted apart from the failures (the lines that m() drops dropped from both);
+    else with `text`."""
     if st.verbose:
         against_c(cfg, tally, label, args)
-    elif st.x:
+    elif st.x or not st.quiet:
         out, code = run(cfg.c, args)
-        if code != 0 or report_text(cfg, out) != report_text(cfg, text):
+        if code != 0 or as_recorded_by_m(out) != as_recorded_by_m(text):
             tally.notes.append(f'{label}: the C program gives exit {code} and {out[:500]!r}, its '
                                f'record {text[:500]!r}')
-        check_x(cfg, tally, label, args, st, (out, code), big)
+        if st.x:
+            check_x(cfg, tally, label, args, st, (out, code), big)
+        else:
+            check(cfg, tally, label, args, (out, code), 'report', st, big=big)
     else:
         check(cfg, tally, label, args, (text, 0), mode_of(st, 0), st, big=big)
 
@@ -1082,7 +1109,8 @@ def suite_test4(cfg, tally, window=None):
             continue
         if r.filt is not None:
             if r.filt not in FILTERS:
-                tally.skip('output filtered')
+                tally.skip('output filtered to look at the report of the library under -v '
+                           '(stage I)')
             else:
                 check(cfg, tally, label, r.args, (text, 0), 'filter:' + r.filt, st)
         elif code == 8 or 'Polynomial is not square-free.' in text:
@@ -1101,15 +1129,20 @@ def suite_test4(cfg, tally, window=None):
 
 
 def suite_test3(cfg, tally):
+    """The invocations of test3.sh against the C program; one whose output test3.sh filters with
+    its whole output, that of the command before the filter, its redirections dropped, but for those
+    under -v, whose filters look at the report of the library (stage I)."""
     script = git_show(cfg.repo, cfg.commit, 'test3.sh')
     for no, line in enumerate(script.split('\n'), 1):
         if not line.startswith('rp '):
             continue
-        if '|' in line:
-            tally.skip('output filtered')
+        cmd = line.split('|', 1)[0]
+        args = [w for w in shlex.split(cmd)[1:] if not re.fullmatch(r'\d*>&\d+', w)]
+        if '|' in line and settings(args[2:]).verbose:
+            tally.skip('output filtered to look at the report of the library under -v (stage I)')
             continue
-        args = shlex.split(line)[1:]
-        against_c(cfg, tally, f'test3.sh:{no} {args}', args)
+        against_c(cfg, tally, f'test3.sh:{no} {args}' + (' (unfiltered)' if '|' in line else ''),
+                  args)
 
 
 def strip_c_comments(text):
@@ -1209,8 +1242,8 @@ def suite_params(cfg, tally):
 def suite_high(cfg, tally):
     """The point-rich curves of the params suite at the heights HIGH_HEIGHTS, with -q; and the runs
     where the C program corrects its moduli with an effect on the output (CORRECTION_CURVES at
-    CORRECTION_HEIGHT), under -x without -A and with -A 1 and -A 2, and a report (-z), against the C
-    program."""
+    CORRECTION_HEIGHT), under -x without -A and with -A 1 and -A 2, and a report with message 4
+    (-z), against the C program."""
     for c, _ in PARAM_CURVES[:4]:
         for h in HIGH_HEIGHTS:
             args = [c, str(h), '-q']
@@ -1318,6 +1351,8 @@ def main(argv=None):
             parts.append(f'-x: {tally.x_exact} exactly ({tally.x_adapt} of them where the C '
                          f'program may correct its moduli), {tally.x_weak} by the weaker check only'
                          + (f' ({why})' if why else ''))
+        if tally.msg4:
+            parts.append(f'{tally.msg4} reports with message 4')
         if tally.notes:
             parts.append(f'{len(tally.notes)} where the C program disagrees with its record')
         detail = f' ({"; ".join(parts)})' if parts else ''

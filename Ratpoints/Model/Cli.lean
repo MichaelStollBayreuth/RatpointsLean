@@ -20,9 +20,9 @@ meta import Ratpoints.Model.FindPoints
 options. It reads them as `main.c` of ratpoints does, with its checks, messages and exit statuses,
 in its order, and prints what ratpoints prints: unless `-q` is given, the report, with the banner of
 `ratpoints-lean`, the curve, the height bound and the search region of the command line before the
-points, and after them what the search did, the search intervals that it searched and the count of
-the points found, but for message 4 on the moduli used (stage I) and, under `-v`, the report of the
-library; under `-x`, the pairs that pass the sieve of the model, with the moduli that the search
+points, and after them the numbers of the moduli used, what the search did, the search intervals
+that it searched and the count of the points found, but, under `-v`, for the report of the library;
+under `-x`, the pairs that pass the sieve of the model, with the moduli that the search
 chooses from the curve as ratpoints chooses them (`Ratpoints.sievingInfo`) and corrects between the
 blocks of the run (`Ratpoints.Sieve.adaptPrimes`), and over the numerators of the search intervals
 that the Sturm step leaves, which are those that ratpoints prints when none of the tuning options
@@ -721,8 +721,9 @@ def printPoly (c : List Int) : String :=
 
 /-- The messages of the report of `main.c` that `ratpoints-lean` prints, with the data they read:
 message 0, the banner; message 2, the count of the points found, of the pairs when the points are
-not checked exactly or only one point of each pair is delivered; message 3, the search region of
-the command line; message 5, the curve; message 6, the height bound; message 7, what the search did:
+not checked exactly or only one point of each pair is delivered; message 3, the search region of the
+command line; message 4, the numbers of the moduli used in the first stage, in the first two and in
+all three stages; message 5, the curve; message 6, the height bound; message 7, what the search did:
 whether the polynomial was reversed, whether the denominators could be restricted to squares
 (`RATPOINTS_USE_SQUARES`) or essentially to squares (`RATPOINTS_USE_SQUARES1`), whether the Jacobi
 test was off, and whether the points were not checked exactly; and message 8, the search intervals
@@ -735,6 +736,9 @@ inductive Message where
   /-- Message 3: the search region of the command line, the doubles `dom` of its intervals before
   they are joined. -/
   | region (dom : List (Double × Double))
+  /-- Message 4: the numbers `sp1`, `sp2` and `sp3` of the moduli used in the first stage, in the
+  first two and in all three stages. -/
+  | moduli (sp1 sp2 sp3 : Nat)
   /-- Message 5: the curve of the coefficient list `c`. -/
   | curve (c : List Int)
   /-- Message 6: the height bound `H`. -/
@@ -751,18 +755,22 @@ def showIntervals (dom : List (Double × Double)) : String :=
 
 /-- The text of a message of the report, as `message` of `main.c` prints it.
 
-C: `main.c:972-976`, `main.c:979-991`, `main.c:999-1033`
+C: `main.c:972-976`, `main.c:979-1033`
 
 Deviation: the banner of `ratpoints-lean` (`Ratpoints.Cli.banner`); a constructor for each message
 that `ratpoints-lean` prints, with its data, for the number `n` and the arguments of the library:
-message 1, which the program prints when `read_input` fails, which it never does, is left out, and
-message 4, on the moduli used, is stage I; the loops over the intervals of messages 3 and 8 as
-`Ratpoints.Cli.showIntervals`, the conversion `%lf` of message 8 being `%f`; no `fflush`. -/
+message 1, which the program prints when `read_input` fails, which it never does, is left out; the
+loops over the intervals of messages 3 and 8 as `Ratpoints.Cli.showIntervals`, the conversion `%lf`
+of message 8 being `%f`; the difference `sp3_used - sp2_used` of message 4 an integer, for the
+`long`; no `fflush`. -/
 def Message.text : Message → String
   | .banner => s!"\n{Cli.banner}\n"
   | .count total pairs =>
     s!"\n{total} rational point{if pairs then " pair" else ""}s found.\n\n"
   | .region dom => s!"Search region:\n  {showIntervals dom}\n"
+  | .moduli sp1 sp2 sp3 => s!"{sp1} moduli used for first stage of sieving,\n" ++
+    s!"{sp2} moduli used for both stages of sieving together,\n" ++
+    s!"{(sp3 : Int) - sp2} further primes used in the third stage.\n"
   | .curve c => s!"\nCurve equation is  y^2 = {printPoly c}\n"
   | .height H => s!"max. Height = {H}\n"
   | .flags rev us us1 nj nc =>
@@ -790,19 +798,20 @@ def preamble (c : List Int) (H : Nat) (u : Output) (dom : List (Double × Double
     if dom.isEmpty then "" else (Message.region dom).text
 
 /-- What `main.c` prints after the points for the settings of the output `u`: nothing when the
-report is left out (`-q`); otherwise, unless the report is that of `-v`, two line feeds, what the
-search did (message 7), from the flags that the search `r` writes back, the Jacobi switch of the
-options `s` and the switch of the exact check of the options `o`, and the search intervals as the
-search leaves them (message 8, from `r.domain`); then the count of the points found, the count
-`total` of the search, of the pairs under `-x` or `-y` (message 2).
+report is left out (`-q`); otherwise, unless the report is that of `-v`, two line feeds, the numbers
+of the moduli used that the search `r` writes back (message 4), what the search did (message 7),
+from the flags that the search `r` writes back, the Jacobi switch of the options `s` and the switch
+of the exact check of the options `o`, and the search intervals as the search leaves them (message
+8, from `r.domain`); then the count of the points found, the count `total` of the search, of the
+pairs under `-x` or `-y` (message 2).
 
-C: `main.c:268-276`
-
-Deviation: message 4 (the moduli used; stage I) is left out. -/
+C: `main.c:268-276` -/
 def report {σ : Type} (s : SieveOptions) (o : Options) (u : Output) (r : Outcome σ) : String :=
   let flags := Message.flags r.reversed r.useSquares r.useSquares1 (!s.jacobi) o.noCheck
+  let moduli := Message.moduli r.sp1Used r.sp2Used r.sp3Used
   if u.quiet then ""
-  else (if u.verbose then "" else "\n\n" ++ flags.text ++ (Message.intervals r.domain).text) ++
+  else (if u.verbose then "" else
+      "\n\n" ++ moduli.text ++ flags.text ++ (Message.intervals r.domain).text) ++
     (Message.count r.total (o.noCheck || o.noY)).text
 
 /-! ### The program -/
@@ -865,8 +874,8 @@ def main (args : List String) : IO UInt32 := do
 
 /-! ### Examples
 
-Each of them is what ratpoints 3.1.1 does, but for the banner; and for message 4 of the report
-and, under `-v`, the report of the library, which `ratpoints-lean` leaves out. -/
+Each of them is what ratpoints 3.1.1 does, but for the banner; and, under `-v`, for the report of
+the library, which `ratpoints-lean` leaves out. -/
 
 #guard (coefficients " +1\t0  -1 ").toOption == some [1, 0, -1]
 
@@ -999,11 +1008,28 @@ and, under `-v`, the report of the library, which `ratpoints-lean` leaves out. -
   run (["1 0 126 0 441", "30", "-q"] ++ os) == run ["1 0 126 0 441", "30", "-q"]
 #guard (run ["1 0 126 0 441", "30", "-q"]).1.startsWith "(1 : 21 : 0)\n(1 : -21 : 0)\n(0 : 1 : 1)\n"
 
--- The report of `ratpoints '1 0 126 0 441' 30 -z` and of `ratpoints '1 0 126 0 441' 30 -v -1 -y`,
--- without message 4 and without the report of the library under `-v`.
-#guard run ["1 0 126 0 441", "30", "-z"] ==
+-- The line `l` of a report with the number that it begins with masked when it is a line of message
+-- 4, whose numbers depend on the moduli that the choice makes from the curve with the functions of
+-- the C library of the platform; another line as it is.
+private def maskModuli (l : String) : String :=
+  if l.endsWith " moduli used for first stage of sieving," ||
+      l.endsWith " moduli used for both stages of sieving together," ||
+      l.endsWith " further primes used in the third stage." then
+    "#" ++ (l.dropWhile Char.isDigit).copy
+  else l
+
+-- The output and the exit status `r` of a run with the lines of message 4 masked (`maskModuli`).
+private def maskReport (r : String × UInt32) : String × UInt32 :=
+  ("\n".intercalate ((r.1.splitOn "\n").map maskModuli), r.2)
+
+-- The report of `ratpoints '1 0 126 0 441' 30 -z`, with message 4 on the moduli used, its numbers
+-- masked (`maskReport`), and that of `ratpoints '1 0 126 0 441' 30 -v -1 -y`, without the report of
+-- the library under `-v`.
+#guard maskReport (run ["1 0 126 0 441", "30", "-z"]) == maskReport
   (s!"\n{banner}\n\nCurve equation is  y^2 = 441 x^4 + 126 x^2 + 1\n\nmax. Height = 30\n\n" ++
-    "\n\nSearch intervals:\n[-30.000000, 30.000000]\n\n12 rational points found.\n\n", 0)
+    "\n\n" ++ "7 moduli used for first stage of sieving,\n7 moduli used for both stages of " ++
+    "sieving together,\n3 further primes used in the third stage.\n" ++
+    "Search intervals:\n[-30.000000, 30.000000]\n\n12 rational points found.\n\n", 0)
 #guard run ["1 0 126 0 441", "30", "-v", "-1", "-y"] ==
   (s!"\n{banner}\n\nCurve equation is  y^2 = 441 x^4 + 126 x^2 + 1\n\n" ++
     "(1 : 0)\n\n1 rational point pairs found.\n\n", 0)
@@ -1015,11 +1041,14 @@ and, under `-v`, the report of the library, which `ratpoints-lean` leaves out. -
     "\n6 rational points found.\n\n", 0)
 
 -- `1 0 126 0 441` at the height 200 in the search interval `[0, 1]` (`-l 0 -u 1`): message 3 before
--- the points, the points with `x / z` in `[0, 1]` and the points at infinity, and message 8.
-#guard run ["1 0 126 0 441", "200", "-l", "0", "-u", "1"] ==
+-- the points, the points with `x / z` in `[0, 1]` and the points at infinity, message 4 with its
+-- numbers masked (`maskReport`), and message 8.
+#guard maskReport (run ["1 0 126 0 441", "200", "-l", "0", "-u", "1"]) == maskReport
   (s!"\n{banner}\n\nCurve equation is  y^2 = 441 x^4 + 126 x^2 + 1\n\nmax. Height = 200\n\n" ++
     "Search region:\n  [0.000000, 1.000000]\n(1 : 21 : 0)\n(1 : -21 : 0)\n(0 : 1 : 1)\n" ++
     "(0 : -1 : 1)\n(1 : 31 : 2)\n(1 : -31 : 2)\n(2 : 651 : 21)\n(2 : -651 : 21)\n\n\n" ++
+    "9 moduli used for first stage of sieving,\n9 moduli used for both stages of " ++
+    "sieving together,\n2 further primes used in the third stage.\n" ++
     "Search intervals:\n[0.000000, 1.000000]\n\n8 rational points found.\n\n", 0)
 
 -- Two intervals whose doubles meet, joined for the search (the double nearest to `1 / 3` lies
@@ -1035,17 +1064,32 @@ and, under `-v`, the report of the library, which `ratpoints-lean` leaves out. -
 -- Messages 3 and 8: `-0.0` and an infinity in message 3, the ends `±2 ^ 63` that the Sturm step
 -- leaves for the infinite ones in message 8; a first `-u` below `-H`, whose lower end is `-∞`;
 -- two intervals of the command line joined into one search interval; and an interval beyond the
--- doubles, where message 8 has no interval and only the points at infinity are found.
+-- doubles, where message 8 has no interval and only the points at infinity are found, with no
+-- moduli used; message 4 between them, its numbers masked (`maskModuli`) where the search sifts.
 #guard [(["-l", "-0", "-u", "1e400"], ["  [-0.000000, inf]",
+      "4 moduli used for first stage of sieving,",
+      "4 moduli used for both stages of sieving together,",
+      "2 further primes used in the third stage.",
       "[-0.000000, 9223372036854775808.000000]", "8 rational points found."]),
-    (["-u", "-20"], ["  [-inf, -20.000000]", "[-9223372036854775808.000000, -20.000000]",
-      "2 rational points found."]),
+    (["-u", "-20"], ["  [-inf, -20.000000]", "5 moduli used for first stage of sieving,",
+      "5 moduli used for both stages of sieving together,",
+      "2 further primes used in the third stage.",
+      "[-9223372036854775808.000000, -20.000000]", "2 rational points found."]),
     (["-u", "0.74999999999999999", "-l", "0.75", "-u", "1"],
-      ["  [-10.000000, 0.750000] U [0.750000, 1.000000]", "[-10.000000, 1.000000]",
-        "10 rational points found."]),
-    (["-l", "1e400", "-u", "1e500"], ["  [inf, inf]", "2 rational points found."])].all
-  fun (os, ls) ↦ (((run (["1 0 1", "10", "-z"] ++ os)).1.splitOn "\n").filter
-    (fun l ↦ l ≠ "" && l.front != 'S')).drop 7 == ls
+      ["  [-10.000000, 0.750000] U [0.750000, 1.000000]",
+      "4 moduli used for first stage of sieving,",
+      "4 moduli used for both stages of sieving together,",
+      "2 further primes used in the third stage.",
+      "[-10.000000, 1.000000]", "10 rational points found."]),
+    (["-l", "1e400", "-u", "1e500"], ["  [inf, inf]", "0 moduli used for first stage of sieving,",
+      "0 moduli used for both stages of sieving together,",
+      "0 further primes used in the third stage.",
+      "2 rational points found."])].all
+  fun (os, ls) ↦
+    let got := (((run (["1 0 1", "10", "-z"] ++ os)).1.splitOn "\n").filter
+      (fun l ↦ l ≠ "" && l.front != 'S')).drop 7
+    if ls.contains "0 moduli used for first stage of sieving," then got == ls
+    else got.map maskModuli == ls.map maskModuli
 
 -- Error 7: an end missing or not a number, two lower or two upper ends in a row, ends not
 -- ordered (also `-u 0.75 -l 0.75`, though `[1, 1]` is an interval), and more than
@@ -1070,21 +1114,29 @@ and, under `-v`, the report of the library, which `ratpoints-lean` leaves out. -
     ("1 0 0 0 0 -1", "- x^5 + 1"), ("-12 0 0 7", "7 x^3 - 12"), ("1 -1", "- x + 1"),
     ("0 1", "x")].all fun (c, s) ↦ printPoly ((coefficients c).toOption.getD []) == s ++ "\n"
 
--- Message 7: the reversal, the squares, the Jacobi test and the exact check of
--- `ratpoints '0 1 2' 40 -j -x -z -n 15 -N 30 -p 30`, and the divisors of the leading coefficient of
--- `ratpoints '1 0 0 6' 200 -y -z`; the count of the pairs under `-x`, the survivors of the sieve,
--- which depend on the choice of the moduli, masked.
+-- Messages 4 and 7: the moduli used, the reversal, the squares, the Jacobi test and the exact check
+-- of `ratpoints '0 1 2' 40 -j -x -z -n 15 -N 30 -p 30`, and the moduli used and the divisors of the
+-- leading coefficient of `ratpoints '1 0 0 6' 200 -y -z`; the numbers of message 4 masked
+-- (`maskModuli`), and the count of the pairs under `-x`, the survivors of the sieve, too.
 #guard ((((run ["0 1 2", "40", "-j", "-x", "-z", "-n", "15", "-N", "30", "-p", "30"]).1.splitOn
     "\n").filter (· ≠ "")).drop 7).map (fun l ↦ if l.endsWith " rational point pairs found."
-      then (l.dropWhile Char.isDigit).copy else l) ==
-  ["Polynomial was reversed for better performance.",
+      then (l.dropWhile Char.isDigit).copy else maskModuli l) ==
+  ["15 moduli used for first stage of sieving,",
+      "30 moduli used for both stages of sieving together,",
+      "0 further primes used in the third stage.",
+    "Polynomial was reversed for better performance.",
     "(Reversed) polynomial is +-monic of odd degree:", "  could restrict denominators to squares.",
     "Jacobi symbol test was not used.", "Points were not checked exactly:",
     "   some of the printed x-coordinates may not give points.", "Search intervals:",
-    "[-2.000000, 40.000000]", " rational point pairs found."]
-#guard (((run ["1 0 0 6", "200", "-y", "-z"]).1.splitOn "\n").filter (· ≠ "")).drop 7 ==
-  ["(Reversed) polynomial has odd degree:", "  could restrict denominators essentially to squares.",
-    "Search intervals:", "[-0.550781, 200.000000]", "8 rational point pairs found."]
+    "[-2.000000, 40.000000]", " rational point pairs found."].map maskModuli
+#guard ((((run ["1 0 0 6", "200", "-y", "-z"]).1.splitOn "\n").filter (· ≠ "")).drop 7).map
+    maskModuli ==
+  ["8 moduli used for first stage of sieving,",
+      "8 moduli used for both stages of sieving together,",
+      "4 further primes used in the third stage.",
+    "(Reversed) polynomial has odd degree:",
+    "  could restrict denominators essentially to squares.",
+    "Search intervals:", "[-0.550781, 200.000000]", "8 rational point pairs found."].map maskModuli
 
 end Cli
 

@@ -177,7 +177,7 @@ theorem findPointsWith_eq (c : List ℤ) (H : ℕ) (s : SieveOptions) (o : Optio
           | none => .error .badArgs
           | some dom => match Id.run (sturmRegion c' d' (o.normalize H).sturm dom) with
             | .error e => .error e
-            | .ok none => .ok ⟨info, 0, rev, false, false, []⟩
+            | .ok none => .ok ⟨info, 0, rev, false, false, [], 0, 0, 0⟩
             | .ok (some (dom', empty)) => .ok (Id.run (searchPoints process c' d' H s.normalize
                 (decide (s.numPrimes < 0)) ⟨rev, o.noCheck, o.noY⟩ (o.normalize H).bLow.toNat
                 (o.normalize H).bHigh.toNat dom' empty (fun _ s ↦ s) ⟨info, 0, false⟩)) := by
@@ -206,7 +206,7 @@ theorem findPointsWith_eq_ok_iff {c : List ℤ} {H : ℕ} {s : SieveOptions} {o 
       Setup.reversal (o.normalize H).reverse c (degree c) = .ok (c', d', rev) ∧
       Id.run (searchIntervals H o.domain) = some dom ∧
       (Id.run (sturmRegion c' d' (o.normalize H).sturm dom) = .ok none ∧
-          out = ⟨info, 0, rev, false, false, []⟩ ∨
+          out = ⟨info, 0, rev, false, false, [], 0, 0, 0⟩ ∨
         ∃ dom' empty, Id.run (sturmRegion c' d' (o.normalize H).sturm dom) =
           .ok (some (dom', empty)) ∧
           out = Id.run (searchPoints process c' d' H s.normalize (decide (s.numPrimes < 0))
@@ -352,7 +352,7 @@ private theorem findPoints_eq_ok_elim {c : List ℤ} {H : ℕ} {s : SieveOptions
         ⟨rev, noCheck, noY⟩ (o.normalize H).bLow.toNat (o.normalize H).bHigh.toNat x.1 x.2
           (fun _ s ↦ s) ⟨#[], 0, false⟩)).info.toList) := by
   rcases r with _ | ⟨dom', empty⟩
-  · exact findPoints_eq_ok_of_findPointsWith (out := ⟨#[], 0, rev, false, false, []⟩)
+  · exact findPoints_eq_ok_of_findPointsWith (out := ⟨#[], 0, rev, false, false, [], 0, 0, 0⟩)
       (findPointsWith_eq_ok_iff.mpr ⟨c', _, rev, dom, h1, h2, hH, hH63, hl, hr, hsi,
         .inl ⟨hst, rfl⟩⟩)
   · exact findPoints_eq_ok_of_findPointsWith (findPointsWith_eq_ok_iff.mpr

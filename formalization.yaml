@@ -283,8 +283,10 @@ status:
     the curve as ratpoints does and runs the denominators in blocks with the correction of the
     moduli between them, the threads left out with the property that they preserve proved,
     comparator accepting the eleven again on 2026-10-25, and the differential tests compare -x
-    exactly against the C program on the same command line. Next: the rest of stage I, which the
-    blueprint plans.
+    exactly against the C program on the same command line; the search gives back the numbers of
+    the moduli used, which ratpoints-lean prints in its report as ratpoints does, comparator
+    accepting the eleven again on 2026-10-25, and the differential tests compare that message too.
+    Next: the rest of stage I, which the blueprint plans.
   sorry_count: 0
   sorry_in_definitions: 0
   axioms: ["propext", "Classical.choice", "Quot.sound"]

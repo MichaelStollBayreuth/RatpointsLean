@@ -35,8 +35,8 @@ ascending and $+y$ before $-y$, mapped back after a reversal; and a theorem says
 \verb|main.c| (\verb|-x -X -y -Y -z -Z -1 -i -I| and the formats and strings of
 \verb|-f -fs -fm -fe|), its callback \verb|process|, which prints the points as they are delivered,
 and the report that \verb|main.c| prints without \verb|-q|, with the messages on the search region
-(message~3) and on the search intervals that the search gives back (message~8) since stage~H, but
-for the message on the moduli used (message~4, stage~I); a theorem says what the program prints, in
+(message~3) and on the search intervals that the search gives back (message~8) since stage~H, and
+on the moduli used (message~4) since stage~I; a theorem says what the program prints, in
 particular that \verb|-1| prints the first point of the list that the callback keeps.
 
 With the appending callback the delivery of a list is that list, so \verb|findPoints| returns the
@@ -145,7 +145,10 @@ line 4889 (stage~H, Definition~\ref{def:sturmRegion}) comes for even degree only
 clear. The program reads them after the search, with \verb|RATPOINTS_NO_JACOBI| and
 \verb|RATPOINTS_NO_CHECK|, which it set itself (message 7). The numbers of the moduli used,
 \verb|sp1_used|, \verb|sp2_used| and \verb|sp3_used| (\csource{ratpoints.h}{378}{378}), which
-message 4 reads, belong to the correction of the moduli (stage~I). The search intervals,
+message 4 reads, are zeroed by \verb|find_points_work| on entry and set after the sieve, from the
+first stage of the choice of the moduli and the second and third stages of the last block of the
+run (stage~I, Definition~\ref{def:chooseAndSearch}), so that they are $0$ when the search returns
+before the sieve. The search intervals,
 \verb|num_inter| and \verb|domain|, which the search leaves as it made them (lines 4831-4841 and the
 Sturm step) and message 8 reads, belong to the search region (stage~H, Chapter~\ref{chap:region}).
 
@@ -470,7 +473,8 @@ infinity, the return when the callback has stopped the search or the Sturm step 
 search, the flag \verb|sturm_empty| that the search takes (\csource{find_points.c}{5100}{5106},
 which the search holds), and the sieving, a function of its own. Both exits return the delivery as
 it came. The search returns what a search gives back: the data and the count of the delivery with
-the bits of the flags and the search intervals written back.
+the bits of the flags and the search intervals written back, and since stage~I the numbers of the
+moduli used, $0$ after the exits.
 
 \begin{definition}[The sieving]\label{def:sieving}
   \uses{def:sieveRun, def:classOffsets, def:Shape, def:delivery, def:arraySize}
@@ -500,19 +504,24 @@ the bits of the flags and the search intervals written back.
   bits of \verb|args->flags| that the search writes back and the program reads after it:
   \verb|RATPOINTS_REVERSED|, \verb|RATPOINTS_USE_SQUARES|, set for odd degree and $|c_d| = 1$, and
   \verb|RATPOINTS_USE_SQUARES1|, set for odd degree otherwise when the divisor set-up succeeds
-  (\csource{ratpoints.h}{377}{377}, \csource{ratpoints.h}{414}{414},
-  \csource{ratpoints.h}{416}{417}), and the search intervals as the search leaves them, a list of
-  pairs of doubles (Definition~\ref{def:Double}) for \verb|args->domain| and \verb|args->num_inter|,
+  (\csource{ratpoints.h}{377}{383}, \csource{ratpoints.h}{414}{414},
+  \csource{ratpoints.h}{416}{417}), the search intervals as the search leaves them, a list of pairs
+  of doubles (Definition~\ref{def:Double}) for \verb|args->domain| and \verb|args->num_inter|,
   which message~8 of the program reads after the search: $[-h, h]$ when the caller gives none,
   narrowed by the Sturm step, in the coordinates of the polynomial searched, and none when the step
-  leaves none. The search sets the last two bits before its exits after the Sturm step and before
+  leaves none, and the numbers of the moduli used in the first stage, in the first two and in all
+  three stages, as natural numbers for the \verb|long|s \verb|sp1_used|, \verb|sp2_used| and
+  \verb|sp3_used|, which message~4 reads: as the last block of the run was sifted with them, and $0$
+  for each when the search returns before the sieve. The search sets the last two bits before its exits after the Sturm step and before
   the points at infinity, and the return after the Sturm step (line 4889) comes only for an even
   degree, where neither is set, so that they are written back on every path that does not refuse the
   input. Nothing else is written back: not the reversed coefficients and the degree, which nothing
   reads after the search; not the other internal bits of the flags, \verb|RATPOINTS_CHECK_DENOM|,
   \verb|RATPOINTS_USE_JACOBI| and \verb|RATPOINTS_NO_REVERSE_AUTO|, which the program does not read
   either, the bits of the input coming back as the caller set them (line 4606), which the program
-  takes from its own options and settings; and not the numbers of the moduli used (stage~I).
+  takes from its own options and settings; not \verb|args->sp3|, which \verb|find_points_work|
+  zeroes on entry and the last block sets (lines 4551 and 5163); and not the private fields that the
+  choice of the moduli and the correction write.
 \end{definition}
 
 \begin{definition}[The search with a callback]\label{def:findPointsWith}
@@ -1125,16 +1134,18 @@ the array of the coefficients (\csource{main.c}{54}{54}) to \verb|Ratpoints.Cli.
   points found, of the pairs under either option of the output; message 3, the search region of the
   command line, its intervals before the join as their doubles, each printed as \verb|[%f, %f]| by
   \verb|printF| (Definition~\ref{def:cliRegionTest}) and the intervals joined by \verb| U |; message
-  5, the curve; message 6, the height bound; message 7, what the search did, from the flags written
+  4, the numbers of the moduli used in the first stage and in the first two, and the number of the
+  further primes of the third stage, the difference of the last two, an integer for the
+  \verb|long|; message 5, the curve; message 6, the height bound; message 7, what the search did, from the flags written
   back, the Jacobi switch and $\mathrm{noCheck}$; and message 8, the search intervals as the search
   leaves them, written back in what it gives back (Definition~\ref{def:Outcome}), printed as
   message~3 prints its intervals, \verb|%lf| being \verb|%f| (\csource{main.c}{972}{976},
-  \csource{main.c}{979}{991}, \csource{main.c}{999}{1033}). What \verb|main.c| prints before the
+  \csource{main.c}{979}{1033}). What \verb|main.c| prints before the
   search: nothing under \verb|-q|, otherwise the banner, the curve and, unless \verb|-v|, the height
   bound and a blank line (\csource{main.c}{215}{220}), and then message 3 when the command line
   gives intervals, also under \verb|-v| (\csource{main.c}{224}{224}); and after it: nothing under
-  \verb|-q|, otherwise, unless \verb|-v|, two line feeds, message 7 and message 8, then message 2
-  with the count of the search (\csource{main.c}{268}{276}).
+  \verb|-q|, otherwise, unless \verb|-v|, two line feeds, messages 4, 7 and 8, then message 2 with
+  the count of the search (\csource{main.c}{268}{276}).
 \end{definition}
 
 The program (Definition~\ref{def:cliRun}, \verb|Ratpoints.Cli.run|) reads its command line, prints
@@ -1190,10 +1201,12 @@ what stage~H adds):
     of the C program, as is an output with the options of the output (\verb|-x -y -f -fs -fm -fe|),
     also one that does not end with a line feed;
   \item a report, a command line without \verb|-q|, is compared exactly, with the banner exchanged
-    for that of the C program and the message that \verb|ratpoints-lean| does not print dropped from
-    the report of the C program only: that on the moduli used (message 4, stage~I), as the filter
-    \verb|m()| of \verb|test4.sh| drops it; the messages on the search region (message 3) and on the
-    search intervals that the search gives back (message 8) are compared since stage~H;
+    for that of the C program; until stage~I the message on the moduli used (message 4), which
+    \verb|ratpoints-lean| did not print, was dropped from the report of the C program, as the filter
+    \verb|m()| of \verb|test4.sh| drops it, and since stage~I it is compared, a report of
+    \verb|test4.sh| with the C program on its command line (Section~\ref{sec:moduliTests}); the
+    messages on the search region (message 3) and on the search intervals that the search gives back
+    (message 8) are compared since stage~H;
   \item under \verb|-v|, where the C program prints the report of its library too,
     \verb|ratpoints-lean| is compared with the report of the C program on the same command line
     without \verb|-v|, its height and its messages 4, 7 and 8 dropped, as \verb|main.c| does under
@@ -1233,18 +1246,18 @@ what stage~H adds):
     kept in UTF-8, on an eighth line of each round.
 \end{itemize}
 Skipped are the outputs that \verb|test4.sh| (four runs) and \verb|test3.sh| (three runs) filter to
-look at the report of the library under \verb|-v|; the two runs of \verb|test3.sh| whose filter
-\verb|sed -n '/moduli used/,$p'| keeps the report from message 4 on, which needs message 4
-(stage~I); searches under \verb|-x| with a format or a string that are not compared exactly; and
-searches above the largest height of the tests, $30000$, which \verb|test4high| compares (since
-stage~H, those without a narrow search region). At the end of the stage the default suites compared
-$3784$ times with none failed: \verb|test4| $565$ (four outputs filtered, $13$ runs left to
-\verb|test4high| for their height), \verb|test3| $16$ (five outputs filtered), \verb|rptest| $1206$,
-\verb|random| $300$, \verb|outputs| $300$, the errors suite $313$ (the searches stopped at $10^{12}$
-among them), the fuzz $800$, the parameters $272$ and the high suite $12$, with $67$ runs under
-\verb|-x| compared exactly, none by the weaker check alone; and \verb|test4high| compared $13$, none
-failed. Every point list is compared in its order. Section~\ref{sec:regionTests} gives the counts
-after stage~H.
+look at the report of the library under \verb|-v|; until stage~I, the two runs of \verb|test3.sh|
+whose filter \verb|sed -n '/moduli used/,$p'| keeps the report from message 4 on, which needs
+message 4 (since stage~I they are compared on the whole output of the command before the filter);
+searches under \verb|-x| with a format or a string that are not compared exactly; and searches above
+the largest height of the tests, $30000$, which \verb|test4high| compares (since stage~H, those
+without a narrow search region). At the end of the stage the default suites compared $3784$ times
+with none failed: \verb|test4| $565$ (four outputs filtered, $13$ runs left to \verb|test4high| for
+their height), \verb|test3| $16$ (five outputs filtered), \verb|rptest| $1206$, \verb|random| $300$,
+\verb|outputs| $300$, the errors suite $313$ (the searches stopped at $10^{12}$ among them), the
+fuzz $800$, the parameters $272$ and the high suite $12$, with $67$ runs under \verb|-x| compared
+exactly, none by the weaker check alone; and \verb|test4high| compared $13$, none failed. Every
+point list is compared in its order. Section~\ref{sec:regionTests} gives the counts after stage~H.
 
 The \verb|#guard| examples of the model check the delivery against outputs of the C program and
 against the reference: a callback that stops at its $k$-th call, with the weight $2$, for every $k$
@@ -1311,26 +1324,30 @@ Each component of this chapter differs from the C code in a stated way, recorded
     of the denominators as arguments, the row offsets made with zeros), with no sieving thread made
     and no pool of threads (excluded with the threads); the exits of the search return the delivery
     as it came;
-  \item the result with the data, the count, three bits of the flags and the search intervals as a
-    list, the refusals returned apart, for the \verb|long| that \verb|find_points| returns, which
-    carries the codes of the errors too, the bits that it writes into \verb|args->flags| and the
-    intervals that it leaves in \verb|args->domain| with their number \verb|args->num_inter|, which
-    message~8 reads; nothing else written back: neither the reversed coefficients and the degree,
+  \item the result with the data, the count, three bits of the flags, the search intervals as a
+    list and, since stage~I, the numbers of the moduli used as natural numbers, the refusals returned
+    apart, for the \verb|long| that \verb|find_points| returns, which carries the codes of the
+    errors too, the bits that it writes into \verb|args->flags|, the intervals that it leaves in
+    \verb|args->domain| with their number \verb|args->num_inter|, which message~8 reads, and the
+    \verb|long|s \verb|sp1_used|, \verb|sp2_used| and \verb|sp3_used|, which message~4 reads;
+    nothing else written back: neither the reversed coefficients and the degree,
     which nothing reads after the search, nor the bits \verb|RATPOINTS_CHECK_DENOM|,
     \verb|RATPOINTS_USE_JACOBI| and \verb|RATPOINTS_NO_REVERSE_AUTO|, which the program does not
     read, the bits of the input coming back as the caller set them, which the program takes from its
-    own options and settings; the numbers of the moduli used left to stage~I;
+    own options and settings, nor \verb|args->sp3| and the private fields that the choice of the
+    moduli and the correction write;
   \item no failure for lack of memory, which the model cannot meet: neither a failed allocation of
     the sieving and the search (\verb|RATPOINTS_NO_MEMORY|) nor error 10 of the copies of the
     strings of the output that \verb|main.c| allocates;
   \item in the program, the data of \verb|main.c| a value, the callback's state, with the text
     printed so far, for the pointer \verb|info| and the standard output, an array for the pointer to
     the exact ends of the intervals of the command line and a natural number for their number, and
-    the output written once at the end, where \verb|main.c| prints and flushes after each point;
-    message 4 (the moduli used, stage~I) left out, and the loops over the intervals of messages 3
-    and 8 one function, \verb|%lf| being \verb|%f|; the report of the library under \verb|-v|, its
-    instrumentation, not printed; the strings of \verb|-f|, \verb|-fs|, \verb|-fm| and \verb|-fe|
-    kept as values, for the copies that \verb|main.c| allocates;
+    the output written once at the end, where \verb|main.c| prints and flushes after each point; the
+    loops over the intervals of messages 3 and 8 one function, \verb|%lf| being \verb|%f|, and the
+    difference of the numbers of the moduli of message 4 an integer, for the \verb|long|; the report
+    of the library under \verb|-v|, its instrumentation, not printed; the strings of \verb|-f|,
+    \verb|-fs|, \verb|-fm| and \verb|-fe| kept as values, for the copies that \verb|main.c|
+    allocates;
   \item in the output, one function for the two switches of the escapes of \verb|process| and
     \verb|print_string|; recursions over the characters, with an integer for the GMP integer $y$,
     and a fold over the coefficients, for the loops over C strings and over the coefficients of
@@ -1368,20 +1385,24 @@ the messages 3 and 8 and the fields of \verb|args| that \verb|read_input| sets f
 search region sets, and the fields of \verb|ratpoints_args| for the search region and the range of
 the denominators (lines 363 and 364) with the type of the intervals (line 359) and the depth of the
 Sturm step (line 369), the lines 364 and 369, which mix these fields with those of the parameters,
-with the deviation of the options that names the others. Left free for stage~I are message 4 and the
-numbers of the moduli used, their fields (line 378), zeroed on entry with \verb|sp3|
-(\csource{find_points.c}{4551}{4552}) and set after the sieve from the moduli of the last block
-(\csource{find_points.c}{5212}{5213}, which copies \verb|sp1|, \verb|sp2| and \verb|sp3|); line
-5163, which sets \verb|sp2| and \verb|sp3| from the last block, is recorded since stage~I with the
-run (Definition~\ref{def:sieveRun}), and the number of threads of \verb|ratpoints_args| (lines
-370-376) and of its private data the pool of threads (line 398) are excluded with the threads; the
-end of the type (lines 399-400) being recorded since stage~I with the search with a callback and a
-print channel (Definition~\ref{def:findPointsVerbose}). The tuning fields of \verb|ratpoints_args|
-(lines 365-367) and the defaults of the tuning options \verb|-r -R -U -C -A -Q -W| in \verb|main.c|
-(lines 339-343 and 345-346), which the choice of the moduli by the curve and its correction read,
-are recorded since stage~I with the options of the sieve (Definition~\ref{def:sieveOptions}), and
-the other private fields of the library with what holds their data or as memory that the model does
-not allocate (Chapter~\ref{chap:moduli}).
+with the deviation of the options that names the others. The lines that this stage left free for
+stage~I are recorded since stage~I: message 4 (lines 992-998) with the report
+(Definition~\ref{def:cliReport}), and the numbers of the moduli used, their fields (line 378) with
+what a search gives back (Definition~\ref{def:Outcome}), zeroed on entry with \verb|sp3|
+(\csource{find_points.c}{4551}{4552}) by the search with a callback and a print channel
+(Definition~\ref{def:findPointsVerbose}) and set after the sieve from the moduli of the last block
+(\csource{find_points.c}{5212}{5213}, which copies \verb|sp1|, \verb|sp2| and \verb|sp3|) by the
+search with the choice (Definition~\ref{def:chooseAndSearch}); line 5163, which sets \verb|sp2| and
+\verb|sp3| from the last block, is recorded since stage~I with the run
+(Definition~\ref{def:sieveRun}), and the number of threads of \verb|ratpoints_args| (lines 370-376)
+and of its private data the pool of threads (line 398) are excluded with the threads; the end of the
+type (lines 399-400) being recorded since stage~I with the search with a callback and a print
+channel (Definition~\ref{def:findPointsVerbose}). The tuning fields of \verb|ratpoints_args| (lines
+365-367) and the defaults of the tuning options \verb|-r -R -U -C -A -Q -W| in \verb|main.c| (lines
+339-343 and 345-346), which the choice of the moduli by the curve and its correction read, are
+recorded since stage~I with the options of the sieve (Definition~\ref{def:sieveOptions}), and the
+other private fields of the library with what holds their data or as memory that the model does not
+allocate (Chapter~\ref{chap:moduli}).
 
 \section{Files and names}\label{sec:outputFiles}
 
