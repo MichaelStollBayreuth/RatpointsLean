@@ -39,8 +39,8 @@ the exact check delivers with the flags of the search (`Ratpoints.Sieve.accepted
   the bits of the pieces before a word number, and the bits of a piece that its masks leave.
 * `Ratpoints.Sieve.PieceResult`: what a piece returns, as the two contracts of
   `Ratpoints.Sieve.siftPiece` state it.
-* `Ratpoints.Sieve.SiftInvariant`, `Ratpoints.Sieve.SiftWhileInvariant`: the invariant of the loop
-  of `Ratpoints.Sieve.siftBits` over the pieces, of the delivery and of the counters.
+* `Ratpoints.Sieve.SiftBitsInvariant`, `Ratpoints.Sieve.SiftBitsWhileInvariant`: the invariant of
+  the loop of `Ratpoints.Sieve.siftBits` over the pieces, of the delivery and of the counters.
 
 ## Main statements
 
@@ -256,6 +256,7 @@ def arraysWith (keep : Int → Bool) (w0 : Int) (n : Nat) : Nat :=
   (List.range n).countP fun pos : Nat ↦ (List.range rbaLength).any fun t : Nat ↦
     keep (rbaLength * (w0 + pos) + t)
 
+@[simp]
 theorem arraysWith_zero (keep : Int → Bool) (w0 : Int) : arraysWith keep w0 0 = 0 :=
   rfl
 
@@ -376,10 +377,8 @@ theorem lowMask_eq {low w0 : Int} (hw0 : low / rbaLength ≤ w0) :
   split
   · subst_vars
     rfl
-  · have := Int.lt_mul_ediv_self_add (x := low) hR
-    have := Int.mul_le_mul_of_nonneg_left (show low / rbaLength + 1 ≤ w0 by lia) (Int.le_of_lt hR)
-    rw [Int.mul_add, Int.mul_one] at this
-    lia
+  · lia [Int.lt_mul_ediv_self_add (x := low) hR,
+      Int.mul_le_mul_of_nonneg_left (show low / rbaLength + 1 ≤ w0 by lia) (Int.le_of_lt hR)]
 
 -- The high mask of `Ratpoints.Sieve.siftBits` on the last piece: the number of its bits above
 -- `high`.
@@ -473,14 +472,13 @@ theorem arraysWith_masked_eq {low high w0 w1' : Int} {rr mH : Nat} (hle : low / 
       arraysWith (fun j ↦ keep j && decide (low ≤ j ∧ j ≤ high)) w0 rr := by
   rw [lowMask_eq hle]
   refine arraysWith_congr fun pos hpos t ht ↦ ?_
-  have h1 := Nat.mul_add_lt_mul_of_lt_of_lt' hpos ht
   have h2 : (rbaLength : Int) * (w0 + pos) + t = rbaLength * w0 + (rbaLength * pos + t : Nat) := by
     push_cast
     rw [Int.mul_add, Int.add_assoc]
-  have h3 : (rbaLength : Int) * w1' = rbaLength * w0 + (rr * rbaLength : Nat) := by
-    rw [hr, Int.mul_add, Int.natCast_mul, Int.mul_comm (rr : Int)]
   rw [h2]
-  exact congrArg (keep _ && ·) (decide_eq_decide.mpr (by subst hmH; lia))
+  subst hr hmH
+  exact congrArg (keep _ && ·)
+    (decide_eq_decide.mpr (by lia [Nat.mul_add_lt_mul_of_lt_of_lt' hpos ht]))
 
 /-- The counts that the bits `low, …, high` of the class `cl` of the denominator `b` add to the
 counters when they go through the sieve in pieces (`Ratpoints.Sieve.siftBits`), for the tests
@@ -549,7 +547,7 @@ and the counters are `cnt0` plus their words, the number of them that hold a bit
 `low, …, high` that passes the pattern of the class and `keep1`, and the counts of the tests of a
 candidate, with the thunk `checks` of the third stage over the denominator `b`, of the numerators
 whose points are delivered. -/
-structure SiftInvariant (g : Int → List (Int × Int × Int)) (b : Nat)
+structure SiftBitsInvariant (g : Int → List (Int × Int × Int)) (b : Nat)
     (checks : Thunk (List CheckSpec)) (cl : NumClass) (keep1 keep : Int → Bool) (low high : Int)
     (r0 : Delivery σ) (cnt0 : Counters) (exit : Bool) (range : Nat) (w0 w1 : Int) (r : Delivery σ)
     (c : Counters) : Prop where
@@ -576,17 +574,17 @@ structure SiftInvariant (g : Int → List (Int × Int × Int)) (b : Nat)
     testedCounts b checks (((bitsBefore low high w0).filter fun j ↦
       classBit cl.bits j && keep j).map cl.numerator)
 
-/-- `Ratpoints.Sieve.SiftInvariant` as the invariant of the `while` loop of
+/-- `Ratpoints.Sieve.SiftBitsInvariant` as the invariant of the `while` loop of
 `Ratpoints.Sieve.siftBits`, with the value of a return at a stop: the delivery of the points of all
 the bits `low, …, high` that pass the pattern of the class and `keep`, whose flag of the stop is
 set. -/
-def SiftWhileInvariant (g : Int → List (Int × Int × Int)) (b : Nat)
+def SiftBitsWhileInvariant (g : Int → List (Int × Int × Int)) (b : Nat)
     (checks : Thunk (List CheckSpec)) (cl : NumClass) (keep1 keep : Int → Bool) (low high : Int)
     (r0 : Delivery σ) (cnt0 : Counters) :
     Std.WP.WhileInvariant (Option (Delivery σ × Counters) × Delivery σ × Counters × Nat × Int × Int)
       Prop :=
-  .mk fun exit s ↦ s.1 = none ∧ SiftInvariant process g b checks cl keep1 keep low high r0 cnt0 exit
-      s.2.2.2.1 s.2.2.2.2.1 s.2.2.2.2.2 s.2.1 s.2.2.1 ∨
+  .mk fun exit s ↦ s.1 = none ∧ SiftBitsInvariant process g b checks cl keep1 keep low high r0 cnt0
+      exit s.2.2.2.1 s.2.2.2.2.1 s.2.2.2.2.2 s.2.1 s.2.2.1 ∨
     exit = true ∧ s.1.map Prod.fst = some (r0.deliver process
       ((((List.range (high + 1 - low).toNat).map fun k : Nat ↦ low + k).filter fun j ↦
         classBit cl.bits j && keep j).flatMap g)) ∧ s.1.map (·.1.quit) = some true
@@ -597,22 +595,22 @@ variable {process} {g : Int → List (Int × Int × Int)} {b : Nat} {checks : Th
   {cl : NumClass} {keep1 keep : Int → Bool} {low high : Int} {r0 r r' : Delivery σ}
   {cnt0 c c' : Counters}
 
-theorem siftInvariant_init (h : low ≤ high) {A : Nat} (hA : 1 ≤ A) (hr : r0.quit = false) :
-    SiftInvariant process g b checks cl keep1 keep low high r0 cnt0 false A (low / rbaLength)
+theorem siftBitsInvariant_init (h : low ≤ high) {A : Nat} (hA : 1 ≤ A) (hr : r0.quit = false) :
+    SiftBitsInvariant process g b checks cl keep1 keep low high r0 cnt0 false A (low / rbaLength)
       (low / rbaLength + A) r0 cnt0 :=
   ⟨Int.le_refl _, by lia [Int.ediv_le_ediv natCast_rbaLength_pos h], nofun, rfl, hA, hr,
-    by simp [bitsBefore], by simp [bitsBefore, arraysWith_zero]⟩
+    by simp [bitsBefore], by simp [bitsBefore]⟩
 
 /-- A piece of `rr ≥ 1` bit arrays from the word number `w0` on, which ends at
 `w1' ≤ high / rbaLength + 1`, with the low mask of `Ratpoints.Sieve.siftBits` and a high mask `mH`,
 the number of its bits above `high`, when the callback does not stop the search in it. -/
-theorem SiftInvariant.append {range rr mH : Nat} {w0 w1 w1' : Int}
-    (h : SiftInvariant process g b checks cl keep1 keep low high r0 cnt0 false range w0 w1 r c)
+theorem SiftBitsInvariant.append {range rr mH : Nat} {w0 w1 w1' : Int}
+    (h : SiftBitsInvariant process g b checks cl keep1 keep low high r0 cnt0 false range w0 w1 r c)
     (hr : w1' = w0 + rr) (hr1 : 1 ≤ rr) (hw1' : w1' ≤ high / rbaLength + 1)
     (hmH : mH = (rbaLength * w1' - 1 - high).toNat)
     (hp : PieceResult process g b checks cl keep1 keep w0 rr (lowMask low w0) mH r r' c c')
     (hq : ¬r'.quit = true) :
-    SiftInvariant process g b checks cl keep1 keep low high r0 cnt0 false rr w1' (w1' + rr) r'
+    SiftBitsInvariant process g b checks cl keep1 keep low high r0 cnt0 false rr w1' (w1' + rr) r'
       c' := by
   have hl := flatMap_filter_range_append (g := fun j ↦ [cl.numerator j])
     (keep := fun j ↦ classBit cl.bits j && keep j) (high := high) h.le_w0 hr hmH
@@ -628,8 +626,8 @@ theorem SiftInvariant.append {range rr mH : Nat} {w0 w1 w1' : Int}
 
 /-- A piece that ends at `w1' ≤ high / rbaLength + 1`, when the callback stops the search in it: the
 delivery is that of all the bits `low, …, high` that pass the pattern of the class and `keep`. -/
-theorem SiftInvariant.eq_deliver_of_quit {range rr mH : Nat} {w0 w1 w1' : Int}
-    (h : SiftInvariant process g b checks cl keep1 keep low high r0 cnt0 false range w0 w1 r c)
+theorem SiftBitsInvariant.eq_deliver_of_quit {range rr mH : Nat} {w0 w1 w1' : Int}
+    (h : SiftBitsInvariant process g b checks cl keep1 keep low high r0 cnt0 false range w0 w1 r c)
     (hr : w1' = w0 + rr) (hw1' : w1' ≤ high / rbaLength + 1)
     (hmH : mH = (rbaLength * w1' - 1 - high).toNat)
     (hp : PieceResult process g b checks cl keep1 keep w0 rr (lowMask low w0) mH r r' c c')
@@ -644,46 +642,46 @@ theorem SiftInvariant.eq_deliver_of_quit {range rr mH : Nat} {w0 w1 w1' : Int}
 
 /-- The pieces advance: the measure `high / rbaLength + 1 - w0` of the loop of
 `Ratpoints.Sieve.siftBits` decreases from one piece to the next. -/
-theorem SiftInvariant.toNat_sub_lt {range : Nat} {w0 w1 : Int}
-    (h : SiftInvariant process g b checks cl keep1 keep low high r0 cnt0 false range w0 w1 r c)
+theorem SiftBitsInvariant.toNat_sub_lt {range : Nat} {w0 w1 : Int}
+    (h : SiftBitsInvariant process g b checks cl keep1 keep low high r0 cnt0 false range w0 w1 r c)
     (hw0 : w0 < high / rbaLength + 1) :
     (high / rbaLength + 1 - w1).toNat < (high / rbaLength + 1 - w0).toNat := by
   lia [h.w1_eq, h.one_le_range]
 
 /-- The loop of `Ratpoints.Sieve.siftBits` ends at the word number one past that of `high`. -/
-theorem SiftInvariant.exit_of_not_lt {range : Nat} {w0 w1 : Int}
-    (h : SiftInvariant process g b checks cl keep1 keep low high r0 cnt0 false range w0 w1 r c)
+theorem SiftBitsInvariant.exit_of_not_lt {range : Nat} {w0 w1 : Int}
+    (h : SiftBitsInvariant process g b checks cl keep1 keep low high r0 cnt0 false range w0 w1 r c)
     (hw0 : ¬w0 < high / rbaLength + 1) :
-    SiftInvariant process g b checks cl keep1 keep low high r0 cnt0 true range w0 w1 r c :=
+    SiftBitsInvariant process g b checks cl keep1 keep low high r0 cnt0 true range w0 w1 r c :=
   { h with eq_of_exit := fun _ ↦ Int.le_antisymm h.w0_le (Int.not_lt.mp hw0) }
 
 /-- A middle piece, which ends at the word number `w1 ≤ high / rbaLength + 1`, when the callback
 does not stop the search in it, in the shape of the verification condition. -/
-theorem SiftInvariant.append_of_not_lt {range mb : Nat} {w0 w1 : Int}
+theorem SiftBitsInvariant.append_of_not_lt {range mb : Nat} {w0 w1 : Int}
     {o : Option (Delivery σ × Counters)}
     (hm : (high / rbaLength + 1 - w0).toNat = mb ∧ o = none ∧
-      SiftInvariant process g b checks cl keep1 keep low high r0 cnt0 false range w0 w1 r c)
+      SiftBitsInvariant process g b checks cl keep1 keep low high r0 cnt0 false range w0 w1 r c)
     (hlt : w0 < high / rbaLength + 1) (hw : ¬high / rbaLength + 1 < w1)
     (hp : PieceResult process g b checks cl keep1 keep w0 range (lowMask low w0) (highMask high w1)
       r r' c c') (hq : ¬r'.quit = true) :
     (high / rbaLength + 1 - w1).toNat < mb ∧
-      SiftInvariant process g b checks cl keep1 keep low high r0 cnt0 false range w1 (w1 + range) r'
-        c' := by
+      SiftBitsInvariant process g b checks cl keep1 keep low high r0 cnt0 false range w1
+        (w1 + range) r' c' := by
   obtain ⟨rfl, -, h⟩ := hm
   exact ⟨h.toNat_sub_lt hlt, h.append h.w1_eq h.one_le_range (by lia) (highMask_eq (by lia)) hp hq⟩
 
 /-- The last piece, which ends at the word number `high / rbaLength + 1`, when the callback does not
 stop the search in it, in the shape of the verification condition. -/
-theorem SiftInvariant.append_of_lt {range mb : Nat} {w0 w1 : Int}
+theorem SiftBitsInvariant.append_of_lt {range mb : Nat} {w0 w1 : Int}
     {o : Option (Delivery σ × Counters)}
     (hm : (high / rbaLength + 1 - w0).toNat = mb ∧ o = none ∧
-      SiftInvariant process g b checks cl keep1 keep low high r0 cnt0 false range w0 w1 r c)
+      SiftBitsInvariant process g b checks cl keep1 keep low high r0 cnt0 false range w0 w1 r c)
     (hlt : w0 < high / rbaLength + 1)
     (hp : PieceResult process g b checks cl keep1 keep w0 (high / rbaLength + 1 - w0).toNat
       (lowMask low w0) (rbaLength - 1 - (high % rbaLength).toNat) r r' c c')
     (hq : ¬r'.quit = true) :
     (high / rbaLength + 1 - (high / rbaLength + 1)).toNat < mb ∧
-      SiftInvariant process g b checks cl keep1 keep low high r0 cnt0 false
+      SiftBitsInvariant process g b checks cl keep1 keep low high r0 cnt0 false
         (high / rbaLength + 1 - w0).toNat (high / rbaLength + 1)
         (high / rbaLength + 1 + (high / rbaLength + 1 - w0).toNat) r' c' := by
   obtain ⟨rfl, -, h⟩ := hm
@@ -693,10 +691,10 @@ theorem SiftInvariant.append_of_lt {range mb : Nat} {w0 w1 : Int}
 /-- A middle piece, when the callback stops the search in it, in the shape of the verification
 condition: the delivery is that of all the bits `low, …, high` that pass the pattern of the class
 and `keep`. -/
-theorem SiftInvariant.eq_deliver_of_quit_of_not_lt {range mb : Nat} {w0 w1 : Int}
+theorem SiftBitsInvariant.eq_deliver_of_quit_of_not_lt {range mb : Nat} {w0 w1 : Int}
     {o : Option (Delivery σ × Counters)}
     (hm : (high / rbaLength + 1 - w0).toNat = mb ∧ o = none ∧
-      SiftInvariant process g b checks cl keep1 keep low high r0 cnt0 false range w0 w1 r c)
+      SiftBitsInvariant process g b checks cl keep1 keep low high r0 cnt0 false range w0 w1 r c)
     (hw : ¬high / rbaLength + 1 < w1)
     (hp : PieceResult process g b checks cl keep1 keep w0 range (lowMask low w0) (highMask high w1)
       r r' c c') (hq : r'.quit = true) :
@@ -707,10 +705,10 @@ theorem SiftInvariant.eq_deliver_of_quit_of_not_lt {range mb : Nat} {w0 w1 : Int
 /-- The last piece, when the callback stops the search in it, in the shape of the verification
 condition: the delivery is that of all the bits `low, …, high` that pass the pattern of the class
 and `keep`. -/
-theorem SiftInvariant.eq_deliver_of_quit_of_lt {range mb : Nat} {w0 w1 : Int}
+theorem SiftBitsInvariant.eq_deliver_of_quit_of_lt {range mb : Nat} {w0 w1 : Int}
     {o : Option (Delivery σ × Counters)}
     (hm : (high / rbaLength + 1 - w0).toNat = mb ∧ o = none ∧
-      SiftInvariant process g b checks cl keep1 keep low high r0 cnt0 false range w0 w1 r c)
+      SiftBitsInvariant process g b checks cl keep1 keep low high r0 cnt0 false range w0 w1 r c)
     (hlt : w0 < high / rbaLength + 1)
     (hp : PieceResult process g b checks cl keep1 keep w0 (high / rbaLength + 1 - w0).toNat
       (lowMask low w0) (rbaLength - 1 - (high % rbaLength).toNat) r r' c c')
@@ -722,10 +720,10 @@ theorem SiftInvariant.eq_deliver_of_quit_of_lt {range mb : Nat} {w0 w1 : Int}
 
 /-- What the piece of the verification condition needs of the invariant: the callback has not
 stopped the search. -/
-theorem SiftInvariant.quit_eq_false_and {range mb mH : Nat} {w0 w1 : Int}
+theorem SiftBitsInvariant.quit_eq_false_and {range mb mH : Nat} {w0 w1 : Int}
     {o : Option (Delivery σ × Counters)} {P : Prop}
     (hm : (high / rbaLength + 1 - w0).toNat = mb ∧ o = none ∧
-      SiftInvariant process g b checks cl keep1 keep low high r0 cnt0 false range w0 w1 r c)
+      SiftBitsInvariant process g b checks cl keep1 keep low high r0 cnt0 false range w0 w1 r c)
     (hP : P) (hmH : mH < rbaLength) :
     r.quit = false ∧ mH < rbaLength ∧ P ∧ True :=
   ⟨hm.2.2.quit_eq_false, hmH, hP, trivial⟩
@@ -733,8 +731,8 @@ theorem SiftInvariant.quit_eq_false_and {range mb mH : Nat} {w0 w1 : Int}
 /-- At the exit of the loop of `Ratpoints.Sieve.siftBits`, the delivery is that of the points of the
 bits `low, …, high` that pass the pattern of the class and `keep`, and the counters are those of
 `Ratpoints.Sieve.bitsCounts`. -/
-theorem SiftInvariant.post {range : Nat} {w0 w1 : Int} (hlh : low ≤ high)
-    (h : SiftInvariant process g b checks cl keep1 keep low high r0 cnt0 true range w0 w1 r c) :
+theorem SiftBitsInvariant.post {range : Nat} {w0 w1 : Int} (hlh : low ≤ high)
+    (h : SiftBitsInvariant process g b checks cl keep1 keep low high r0 cnt0 true range w0 w1 r c) :
     r = r0.deliver process ((((List.range (high + 1 - low).toNat).map fun k : Nat ↦ low + k).filter
       fun j ↦ classBit cl.bits j && keep j).flatMap g) ∧
       (r.quit = false → c = cnt0 + bitsCounts b checks cl keep1 keep low high) := by
@@ -760,8 +758,8 @@ end
 /- The counts of the bit arrays and of the bits of one interval are irreducible from here on. -/
 attribute [local irreducible] arraysWith bitsCounts
 
--- The contract of `Ratpoints.Sieve.siftBits` for the reading list `sfs` of its moduli.
 open Std.WP Lean.Order in
+-- The contract of `Ratpoints.Sieve.siftBits` for the reading list `sfs` of its moduli.
 private theorem siftBits_spec_reads (w : Thunk (List Int)) (d b A : Nat) (fl : CheckFlags)
     (sp1 : Nat) (specs : List SieveSpec) (mgs : List Nat) (checks : Thunk (List CheckSpec))
     (cl : NumClass) (low high : Int) (r : Delivery σ) (cnt : Counters)
@@ -775,25 +773,25 @@ private theorem siftBits_spec_reads (w : Thunk (List Int)) (d b A : Nat) (fl : C
         (r'.1.quit = false → r'.2 = cnt + bitsCounts b checks cl
           (fun j ↦ (sfs.take sp1).all (·.2 j)) (fun j ↦ sfs.all (·.2 j)) low high) ⦄ := by
   vcgen [siftBits, siftPiece_spec_reads process (hspecs := hspecs) (hsfs := hsfs)] invariants
-  · SiftWhileInvariant process (fun j ↦ acceptedPoints w d b fl checks (cl.numerator j)) b checks cl
-      (fun j ↦ (sfs.take sp1).all (·.2 j)) (fun j ↦ sfs.all (·.2 j)) low high r cnt
+  · SiftBitsWhileInvariant process (fun j ↦ acceptedPoints w d b fl checks (cl.numerator j)) b
+      checks cl (fun j ↦ (sfs.take sp1).all (·.2 j)) (fun j ↦ sfs.all (·.2 j)) low high r cnt
   · .ofMeasure fun s ↦ (high / rbaLength + 1 - s.2.2.2.2.1).toNat
-  all_goals (subst_vars; try simp only [SiftWhileInvariant, WhileInvariant.mk_apply,
+  all_goals (subst_vars; try simp only [SiftBitsWhileInvariant, WhileInvariant.mk_apply,
     Variant.evalsTo_ofMeasure, Variant.evalsBelow_ofMeasure_nat, Assertion.NondetFun.evalsTo_pure,
     meet_prop_eq_and, ofProp_prop_eq, reduceCtorEq, false_and, or_false, false_or, true_and,
     and_false, Option.some.injEq, Option.map_some, Option.map_none] at *)
   all_goals first
-    | exact SiftInvariant.quit_eq_false_and ‹_› hfits (by (try split) <;> lia [rbaLength_pos])
+    | exact SiftBitsInvariant.quit_eq_false_and ‹_› hfits (by (try split) <;> lia [rbaLength_pos])
     | have : ¬high / rbaLength + 1 < _ := ‹_›
       first
-        | exact SiftInvariant.append_of_not_lt ‹_› ‹_› ‹_› ‹_› ‹_›
-        | exact SiftInvariant.eq_deliver_of_quit_of_not_lt ‹_› ‹_› ‹_› ‹_›
+        | exact SiftBitsInvariant.append_of_not_lt ‹_› ‹_› ‹_› ‹_› ‹_›
+        | exact SiftBitsInvariant.eq_deliver_of_quit_of_not_lt ‹_› ‹_› ‹_› ‹_›
     | have : high / rbaLength + 1 < _ := ‹_›
       first
-        | exact SiftInvariant.append_of_lt ‹_› ‹_› ‹_› ‹_›
-        | exact SiftInvariant.eq_deliver_of_quit_of_lt ‹_› ‹_› ‹_› ‹_›
-    | grind [siftInvariant_init, SiftInvariant.exit_of_not_lt, eq_deliver_and_of_not_le,
-        SiftInvariant.post]
+        | exact SiftBitsInvariant.append_of_lt ‹_› ‹_› ‹_› ‹_›
+        | exact SiftBitsInvariant.eq_deliver_of_quit_of_lt ‹_› ‹_› ‹_› ‹_›
+    | grind [siftBitsInvariant_init, SiftBitsInvariant.exit_of_not_lt, eq_deliver_and_of_not_le,
+        SiftBitsInvariant.post]
 
 /-- The bits from `low` to `high` in pieces of `A ≥ 1` bit arrays, with the moduli `specs` and their
 reciprocals, deliver the points of the numerators of the bits that pass the class word of `cl` and

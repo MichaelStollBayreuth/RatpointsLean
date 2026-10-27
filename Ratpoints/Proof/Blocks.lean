@@ -151,7 +151,7 @@ theorem siftDen_spec {σ : Type} (process : Int → Int → Int → σ → Answe
         (List.mem_of_mem_take he))).1 (hnf e (List.mem_of_mem_take he)), by
         simp [hmg], hmgs, hbp, fun e he ↦
         (hent e (List.mem_of_mem_take he)).2, hQ.take sp2⟩
-  refine ⟨fun x hx ↦ ?_, hQ.fits_run_sift process c d H A b fl sp1 _ _ _ offsets _ _ iv _ _ hbp,
+  refine ⟨fun x hx ↦ ?_, hQ.fits_run_sift process c d H A fl sp1 _ offsets _ _ iv _ _ hbp,
     fun hq' ↦ ?_⟩
   · rw [List.flatMap_singleton, denPoints, ← List.take_append_take_drop entries h23]
     exact hs.1 x.1[b % 64]! pos (x.2 b) (hx.1 _ (Nat.mod_lt _ (by decide))) hpos hpf

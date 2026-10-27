@@ -205,9 +205,8 @@ theorem NumClass.WF.key_lt {cl : NumClass} (h : cl.WF) : cl.key < 2 ^ (cl.k + 1)
   rw [NumClass.key, Nat.pow_succ]
   lia [h.a0_lt]
 
-theorem NumClass.WF.key_lt_128 {cl : NumClass} (h : cl.WF) : cl.key < 128 := by
-  have : 2 ^ (cl.k + 1) ≤ 2 ^ 7 := Nat.pow_le_pow_right (by decide) (by lia [h.k_le])
-  exact Nat.lt_of_lt_of_le h.key_lt this
+theorem NumClass.WF.key_lt_128 {cl : NumClass} (h : cl.WF) : cl.key < 128 :=
+  Nat.lt_of_lt_of_le h.key_lt (Nat.pow_le_pow_right (n := 2) (j := 7) (by decide) (by lia [h.k_le]))
 
 theorem NumClass.WF.a0_lt_sixty_four {cl : NumClass} (h : cl.WF) : cl.a0 < 64 :=
   Nat.lt_of_lt_of_le h.a0_lt (Nat.pow_le_pow_right (n := 2) (by decide) h.k_le)
@@ -221,13 +220,11 @@ theorem NumClass.WF.key_lt_key {cl cl' : NumClass} (h : cl.WF) (hk : cl.k < cl'.
   Nat.lt_of_lt_of_le h.key_lt (Nat.le_trans (Nat.pow_le_pow_right (by decide) hk)
     (Nat.le_add_right _ _))
 
-theorem NumClass.WF.k_eq_and_a0_eq {cl cl' : NumClass} (h : cl.WF) (h' : cl'.WF)
+theorem NumClass.WF.k_eq_and_a0_eq_of_key_eq {cl cl' : NumClass} (h : cl.WF) (h' : cl'.WF)
     (hk : cl.key = cl'.key) : cl.k = cl'.k ∧ cl.a0 = cl'.a0 := by
-  have hkk : cl.k = cl'.k := by
-    rcases Nat.lt_trichotomy cl.k cl'.k with hlt | heq | hlt
-    · exact absurd hk (Nat.ne_of_lt (h.key_lt_key hlt))
-    · exact heq
-    · exact absurd hk (Nat.ne_of_gt (h'.key_lt_key hlt))
+  have hkk : cl.k = cl'.k :=
+    Nat.le_antisymm (Nat.not_lt.mp fun hlt ↦ Nat.ne_of_lt (h'.key_lt_key hlt) hk.symm)
+      (Nat.not_lt.mp fun hlt ↦ Nat.ne_of_lt (h.key_lt_key hlt) hk)
   simp only [NumClass.key, hkk] at hk
   exact ⟨hkk, by lia⟩
 
@@ -339,7 +336,6 @@ theorem DoubleInvariant.or_shiftLeft {k s mb : Nat} {p0 packed : UInt64} (hk : k
     exact Nat.pow_dvd_pow 2 hj1
   have hj0 := Nat.two_pow_pos j
   have h3 : 2 ^ (j + 1) ≤ 2 ^ 6 := Nat.pow_le_pow_right (by decide) hj6
-  rw [Nat.pow_succ] at h3
   exact ⟨by lia, ⟨j + 1, by rw [Nat.pow_succ]; lia, by lia, by lia⟩, nofun, fun t ↦
     (UInt64.getLsbD_or_shiftLeft_of_dvd hPs hs hb t).trans (by rw [Nat.min_eq_left (by lia)])⟩
 
@@ -419,8 +415,7 @@ theorem NumClass.packs_mk {w packed : UInt64} {c k : Nat} (hk : k < numStrides) 
 
 /-- The class of the word `0`: the stride 1, the residue `0` and the pattern `0`. -/
 theorem NumClass.packs_zero {w : UInt64} (hw : ¬(w != 0) = true) : Packs ⟨0, 0, 0, none⟩ w := by
-  have hw : w = 0 := by simpa using hw
-  subst hw
+  obtain rfl : w = 0 := by simpa using hw
   exact packs_mk (c := 0) (Nat.lt_of_lt_of_le Nat.zero_lt_one one_le_numStrides) (by decide)
     (classOf_zero 0 0) fun t _ ↦ by simp
 
@@ -441,7 +436,8 @@ theorem strideInvariant_add_one {w : UInt64} {c k : Nat} (hw : (w != 0) = true)
   have := le_six_and_classOf_of_and_not (by simpa using hw) hb
   exact ⟨by lia, by lia, by lia, by simpa using this.2⟩
 
-theorem StrideInvariant.sub_one {w : UInt64} {c k : Nat} (h : StrideInvariant w c true k) :
+theorem StrideInvariant.le_six_and_classOf {w : UInt64} {c k : Nat}
+    (h : StrideInvariant w c true k) :
     k - 1 ≤ 6 ∧ ClassOf w c (k - 1) :=
   ⟨by lia [h.2.2.1], h.2.2.2⟩
 
@@ -451,7 +447,7 @@ theorem StrideInvariant.packs {w packed : UInt64} {c k : Nat} (h : StrideInvaria
     (hp : ∀ t < 64, packed.toBitVec.getLsbD t =
       w.toBitVec.getLsbD ((c % 2 ^ (k - 1) + 2 ^ (k - 1) * t) % 64)) :
     NumClass.Packs ⟨packed, k - 1, c % 2 ^ (k - 1), none⟩ w :=
-  NumClass.packs_mk (by lia [h.1, h.2.1]) h.sub_one.1 h.sub_one.2 hp
+  NumClass.packs_mk (by lia [h.1, h.2.1]) h.le_six_and_classOf.1 h.le_six_and_classOf.2 hp
 
 theorem StrideInvariant.packs_self {w : UInt64} {c k : Nat} (h : StrideInvariant w c true k)
     (hk : k - 1 = 0) : NumClass.Packs ⟨w, k - 1, c % 2 ^ (k - 1), none⟩ w :=
@@ -539,7 +535,7 @@ theorem numClasses_spec (nb : Vector UInt64 64) :
     | exact bne_iff_ne.mp ‹_›
     | exact strideInvariant_one _ _
     | exact NumClassesInvariant.set_or ‹_› ‹_› _ ‹_› (StrideInvariant.packs_self ‹_› ‹_›) rfl
-    | exact StrideInvariant.sub_one ‹_›
+    | exact StrideInvariant.le_six_and_classOf ‹_›
     | exact NumClassesInvariant.set_or ‹_› ‹_› _ ‹_› (StrideInvariant.packs ‹_› ‹_›) rfl
     | exact ‹_ ∧ _›.2
     | exact ⟨by lia, strideInvariant_add_one ‹_› ‹_› ‹_›⟩
@@ -598,11 +594,8 @@ theorem firstKeys_succ (cls : Vector NumClass 64) (n : Nat) :
   by_cases h : IsFirstKey cls n <;> simp [h]
 
 theorem firstKeys_mono (cls : Vector NumClass 64) {m n : Nat} (h : m ≤ n) :
-    firstKeys cls m ≤ firstKeys cls n := by
-  obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le h
-  induction d with
-  | zero => exact Nat.le_refl _
-  | succ d ih => rw [← Nat.add_assoc, firstKeys_succ]; lia
+    firstKeys cls m ≤ firstKeys cls n :=
+  ((List.range_sublist.mpr h).filter _).length_le
 
 /-- The invariant of the loop of `Ratpoints.Sieve.numPackings` after the classes below `n`: the two
 words `seen` mark the keys of the classes below `n` with a pattern, and the count is the number of
@@ -788,7 +781,7 @@ theorem ClassRowsInvariant.exists_row_of_getElem!_eq_some {cls : Vector NumClass
   obtain ⟨b, hbc, hb0, hkey⟩ := h.exists_of_isSome cls[cur]!.key (by simp [hrow])
   obtain ⟨r, hr, -, hrow', hv⟩ := (h.entry b hbc).2 hb0
   rw [hkey, hrow, Option.some.injEq] at hrow'
-  obtain ⟨hk, ha⟩ := (hwf b (by lia)).k_eq_and_a0_eq (hwf cur hc) hkey
+  obtain ⟨hk, ha⟩ := (hwf b (by lia)).k_eq_and_a0_eq_of_key_eq (hwf cur hc) hkey
   refine ⟨r, hr, hrow', fun n hn ↦ ?_, fun hf ↦ hf.2 b hbc hb0 hkey⟩
   rw [hv n hn]
   simp only [classOffset, hk, ha]
@@ -860,9 +853,7 @@ private theorem RowInvariant.getElem!_of_lt {es : Array SieveEntry} {rinv : Arra
     {cl : NumClass} {rows np : Nat} {o0 o : Array Nat}
     (h : RowInvariant es rinv cl (rows * np) o0 np o)
     {r n : Nat} (hr : r < rows) (hn : n < np) : o[r * np + n]! = o0[r * np + n]! := by
-  have : (r + 1) * np ≤ rows * np := Nat.mul_le_mul_right np hr
-  rw [Nat.succ_mul] at this
-  rw [h.2, ite_eq_right (by lia)]
+  rw [h.2, ite_eq_right (by lia [Nat.mul_le_mul_right np hr])]
 
 private theorem RowInvariant.getElem!_row {es : Array SieveEntry} {rinv : Array (Array Nat)}
     {cl : NumClass} {rows np : Nat} {o0 o : Array Nat}
@@ -1019,7 +1010,7 @@ theorem halveIter_mul_two_pow_mul_mod {p x0 L : Nat} (hp : p % 2 = 1) (hx : x0 *
     (k : Nat) : halveIter p k x0 * (2 ^ k * L) % p = 1 := by
   rw [← Nat.mul_assoc, Nat.mul_mod, halveIter_mul_two_pow_mod hp, ← Nat.mul_mod, hx]
 
-theorem getElem!_toArray_halveChain (p n x : Nat) {k : Nat} (hk : k < n) :
+theorem getElem!_toArray_halveChain {p n x k : Nat} (hk : k < n) :
     (halveChain p n x).toArray[k]! = halveIter p k x := by
   simp [halveChain, hk]
 
@@ -1089,9 +1080,9 @@ theorem SieveEntry.Packable.packedFor {e : SieveEntry} (he : e.Packable) {cl : N
   have hk' := Nat.lt_succ_of_le hk
   refine ⟨hp0, he.le_maxPrimeEven, by lia, by lia, Nat.mul_mod_add_mul_mod_eq_mod
     (halveIter_mul_two_pow_mul_mod he.odd he.rbainv_mul_mod cl.k) he.bias_mod, ?_, ?_⟩
-  · simp only [getElem!_toArray_halveChain _ _ _ hk']
+  · simp only [getElem!_toArray_halveChain hk']
     rw [halveIter_mul_two_pow_mod he.odd, Nat.mod_eq_of_lt he.one_lt]
-  · simp only [getElem!_toArray_halveChain _ _ _ hk']
+  · simp only [getElem!_toArray_halveChain hk']
     exact halveIter_lt he.one_lt _
 
 /-! ### The loops of the row offsets -/
@@ -1187,7 +1178,7 @@ theorem EntriesInvariant.packedFor {kmax : Nat} {es : List SieveEntry} {es' : Ar
   obtain ⟨h1, h2⟩ := he
   simp only at h1 h2
   simp only [classOffset, Array.getElem!_of_toList_eq_map h1 hn,
-    Array.getElem!_of_toList_eq_map h2 hn, getElem!_toArray_halveChain _ _ _ (Nat.lt_succ_of_le hk)]
+    Array.getElem!_of_toList_eq_map h2 hn, getElem!_toArray_halveChain (Nat.lt_succ_of_le hk)]
   exact (hes _ (List.getElem_mem hn)).packedFor hcl hk
 
 /-- The classes after `class_offsets` have the rows of their packings for the entries with their

@@ -188,7 +188,7 @@ theorem flatMap_acceptedPoints_eq_flatMap_checkNumWith {c : List Int} {d b : Nat
     (hb : 0 < b) (hb63 : b < 2 ^ 63) (hH : H < 2 ^ 63) :
     ((numerators H).filter fun a ↦ p a && survives entries b a).flatMap
         (acceptedPoints (.mk fun _ ↦ scaledCoeffs c d b) d b fl
-          (.mk fun _ ↦ fillChecks b H es3 (es3.map fun e ↦ magic e.p))) =
+          (.mk fun _ ↦ fillChecks b H es3 (es3.map (magic ·.p)))) =
       ((numerators H).filter fun a ↦ p a && survives (entries ++ es3) b a).flatMap
         (checkNumWith (scaledCoeffs c d b) (if d % 2 = 1 then b else 1) b fl) := by
   rw [List.flatMap, List.map_congr_left fun a ha ↦ acceptedPoints_eq_ite hes rfl _ _ fl hb hb63
@@ -287,7 +287,7 @@ theorem flatMap_filter_intervalBits_eq {c : List Int} {d b H : Nat} {fl : CheckF
         (intervalBits b.toInt64 bd H.toInt64 cl).2.1.toInt + k).filter fun j ↦
           classBit cl.bits j && (packedReads es b cl offsets pos).all (·.2 j)).flatMap
       (fun j ↦ acceptedPoints (.mk fun _ ↦ scaledCoeffs c d b) d b fl
-        (.mk fun _ ↦ fillChecks b H es3 (es3.map fun e ↦ magic e.p)) (cl.numerator j)) =
+        (.mk fun _ ↦ fillChecks b H es3 (es3.map (magic ·.p))) (cl.numerator j)) =
       ((numerators H).filter fun a ↦ decide (lo ≤ a ∧ a ≤ hi) &&
         (classBit w a && survives (es ++ es3) b a)).flatMap
           (checkNumWith (scaledCoeffs c d b) (if d % 2 = 1 then b else 1) b fl) := by
@@ -445,17 +445,11 @@ end
 
 theorem filter_numerators_eq_nil_of_lt_neg {H : Nat} {lo hi : Int} (h : hi < -H)
     (q : Int → Bool) : (numerators H).filter (fun a ↦ decide (lo ≤ a ∧ a ≤ hi) && q a) = [] :=
-  List.filter_eq_nil_iff.mpr fun a ha ↦ by
-    have := natAbs_le_of_mem_numerators ha
-    simp only [Bool.and_eq_true, decide_eq_true_eq, not_and]
-    lia
+  List.filter_eq_nil_iff.mpr fun a ha ↦ by simp; lia [natAbs_le_of_mem_numerators ha]
 
-theorem filter_numerators_eq_nil_of_lt {H : Nat} {lo hi : Int} (h : (H : Int) < lo)
+theorem filter_numerators_eq_nil_of_natCast_lt {H : Nat} {lo hi : Int} (h : (H : Int) < lo)
     (q : Int → Bool) : (numerators H).filter (fun a ↦ decide (lo ≤ a ∧ a ≤ hi) && q a) = [] :=
-  List.filter_eq_nil_iff.mpr fun a ha ↦ by
-    have := natAbs_le_of_mem_numerators ha
-    simp only [Bool.and_eq_true, decide_eq_true_eq, not_and]
-    lia
+  List.filter_eq_nil_iff.mpr fun a ha ↦ by simp; lia [natAbs_le_of_mem_numerators ha]
 
 /-- What the contract of `Ratpoints.Sieve.sift` on the ranges `rs` of the numerators that the bounds
 `iv` of the search intervals give (`Ratpoints.Sieve.RangesFor`) needs of its arguments: a
@@ -466,7 +460,7 @@ inverses and the offsets of the packing of `cl`. -/
 structure IsSiftArgs (es es3 : List SieveEntry) (w : UInt64) (cl : NumClass) (offsets : Array Nat)
     (pos : Nat) (iv : Array IntervalBounds) (b H : Nat) (rs : List (Int × Int)) : Prop where
   /-- The denominator is positive. -/
-  pos_b : 0 < b
+  b_pos : 0 < b
   /-- The denominator is below `2 ^ 63`. -/
   b_lt : b < 2 ^ 63
   /-- The height bound is below `2 ^ 63`. -/
@@ -511,7 +505,7 @@ theorem post_of_two (ha : IsSiftArgs es es3 w cl offsets pos iv b H rs)
     r = r0.deliver process (rs.flatMap fun rg ↦
       ((numerators H).filter fun a ↦ decide (rg.1 ≤ a ∧ a ≤ rg.2) && q a).flatMap g) :=
   have ⟨hk, hrep⟩ := ha.rangesFor.represents_of_eq_append_cons hl
-  h.2.post_of_forall_mem_drop fun rg hrg ↦ filter_numerators_eq_nil_of_lt
+  h.2.post_of_forall_mem_drop fun rg hrg ↦ filter_numerators_eq_nil_of_natCast_lt
     (ha.rangesFor.lt_fst_of_mem_drop hk (hrep.two cl ha.packs.toWF h2) rg hrg) q
 
 /-- An interval with the code `1`, below `-H`, keeps the invariant. -/
@@ -540,11 +534,12 @@ theorem specs_eq_and_fits_of_eq_run_buildRows (ha : IsSiftArgs es es3 w cl offse
     specs' = (packedReads es b cl offsets pos).map Prod.fst ∧ st.Fits es :=
   h.2.fits.specs_eq_and_fits_of_eq_run_buildRows ha.offset_eq hr
 
-/-- What `Ratpoints.Sieve.siftBits` needs of the delivery and the sieve specs of
-`Ratpoints.Sieve.packedReads`. -/
-theorem pre_siftBits (ha : IsSiftArgs es es3 w cl offsets pos iv b H rs) {A : Nat} (hA : 1 ≤ A)
-    {k : Nat} (h : o = none ∧ SiftIntervalsInvariant process (numerators H) q g es specs0 rs r0 k r
-      store doSetup specs)
+-- What `Ratpoints.Sieve.siftBits` needs of the delivery and the sieve specs of
+-- `Ratpoints.Sieve.packedReads`, in the shape of the verification condition.
+private theorem pre_siftBits (ha : IsSiftArgs es es3 w cl offsets pos iv b H rs) {A : Nat}
+    (hA : 1 ≤ A) {k : Nat}
+    (h : o = none ∧ SiftIntervalsInvariant process (numerators H) q g es specs0 rs r0 k r store
+      doSetup specs)
     (hsp : specs' = (packedReads es b cl offsets pos).map Prod.fst ∧ st.Fits es) :
     r.quit = false ∧ 1 ≤ A ∧ (∀ s ∈ specs', s.Fits) ∧
       es.map (magic ·.p) = specs'.map (magic ·.p) :=
@@ -568,7 +563,7 @@ theorem eq_deliver_getElem? (ha : IsSiftArgs es es3 w cl offsets pos iv b H rs)
         (intervalBits (Int64.ofNat b) cur (Int64.ofNat H) cl).2.1.toInt + k).filter
           fun j ↦ classBit cl.bits j && sfs.all (·.2 j)).flatMap
         fun j ↦ acceptedPoints (.mk fun _ ↦ scaledCoeffs c d b) d b fl
-          (.mk fun _ ↦ fillChecks b H es3 (es3.map fun e ↦ magic e.p)) (cl.numerator j)) ∧
+          (.mk fun _ ↦ fillChecks b H es3 (es3.map (magic ·.p))) (cl.numerator j)) ∧
         P sfs) :
     r' = r.deliver process (rs[pref.length]?.toList.flatMap fun rg ↦
       ((numerators H).filter fun a ↦ decide (rg.1 ≤ a ∧ a ≤ rg.2) &&
@@ -576,7 +571,7 @@ theorem eq_deliver_getElem? (ha : IsSiftArgs es es3 w cl offsets pos iv b H rs)
           (checkNumWith (scaledCoeffs c d b) (if d % 2 = 1 then b else 1) b fl)) := by
   obtain ⟨hk, hrep⟩ := ha.rangesFor.represents_of_eq_append_cons hl
   rw [(hsb _ hsp (reads_of_mem_packedReads ha.hasInverses ha.packedFor)).1,
-    flatMap_filter_intervalBits_eq ha.isPrimeEntry ha.packs hrep h1 h2 ha.pos_b ha.b_lt ha.H_lt,
+    flatMap_filter_intervalBits_eq ha.isPrimeEntry ha.packs hrep h1 h2 ha.b_pos ha.b_lt ha.H_lt,
     List.getElem?_eq_getElem hk]
   simp only [Option.toList_some, List.flatMap_singleton]
 
@@ -593,7 +588,7 @@ private theorem sift_spec_ranges (c : List Int) (d H A b : Nat) (fl : CheckFlags
     (hs : store.Fits es) :
     ⦃ r.quit = false ⦄
     sift process c d H A b fl sp1 es (es.map (magic ·.p)) (es.map fun e ↦ b * e.dinv[cl.k]! % e.p)
-      cl offsets es3 (es3.map fun e ↦ magic e.p) iv store r cnt
+      cl offsets es3 (es3.map (magic ·.p)) iv store r cnt
     ⦃ fun r' ↦ r'.1 = r.deliver process (rs.flatMap fun rg ↦
         ((numerators H).filter fun a ↦ decide (rg.1 ≤ a ∧ a ≤ rg.2) &&
           (classBit w a && survives (es ++ es3) b a)).flatMap
@@ -658,10 +653,10 @@ private theorem sift_storeHolds (c : List Int) (d H A b : Nat) (fl : CheckFlags)
 /-- The sieve of one denominator with the first `k` entries of the run `L` as those of its first two
 stages only adds rows to the store of the tables of rows, rows of the references of these entries:
 a store that fits `L` still fits `L` after it. -/
-theorem RowStore.Fits.fits_run_sift (c : List Int) (d H A b : Nat) (fl : CheckFlags) (sp1 : Nat)
-    {L : List SieveEntry} {k : Nat} (mgs bp : List Nat) (cl : NumClass) (offsets : Array Nat)
-    (es3 : List SieveEntry) (mgs3 : List Nat) (iv : Array IntervalBounds) {store : RowStore}
-    (r : Delivery σ) (cnt : Counters) (hs : store.Fits L)
+theorem RowStore.Fits.fits_run_sift (c : List Int) (d H A : Nat) {b : Nat} (fl : CheckFlags)
+    (sp1 : Nat) {L : List SieveEntry} {k : Nat} (mgs : List Nat) {bp : List Nat} {cl : NumClass}
+    (offsets : Array Nat) (es3 : List SieveEntry) (mgs3 : List Nat) (iv : Array IntervalBounds)
+    {store : RowStore} (r : Delivery σ) (cnt : Counters) (hs : store.Fits L)
     (hbp : bp = (L.take k).map fun e ↦ b * e.dinv[cl.k]! % e.p) :
     (Id.run (sift process c d H A b fl sp1 (L.take k) mgs bp cl offsets es3 mgs3 iv store r
       cnt)).2.1.Fits L := by
@@ -768,8 +763,7 @@ theorem siftIntervalsCounts_zero (hr : r.quit = false) (hs : store.Fits es)
     (specs : List SieveSpec) :
     SiftIntervalsCounts b H sp1 es es3 mgs3 cl offsets pos cnt0 [] r store true specs
       { cnt0 with sifts := cnt0.sifts + 1 } :=
-  ⟨hr, hs, nofun, nofun, Counters.ext (UInt64.add_zero _).symm (UInt64.add_zero _).symm
-    (UInt64.add_zero _).symm (UInt64.add_zero _).symm (UInt64.add_zero _).symm rfl⟩
+  ⟨hr, hs, nofun, nofun, by ext <;> simp⟩
 
 /-- After all the search intervals, none with the code `2`, the counters are those of
 `Ratpoints.Sieve.siftCounts`. -/
@@ -879,7 +873,7 @@ end
 
 -- A flag that is set is not clear, in the shape of the verification condition.
 private theorem eq_false_imp_of_eq_true {x : Bool} {P : Prop} (h : x = true) : x = false → P :=
-  fun h' ↦ absurd (h'.symm.trans h) Bool.false_ne_true
+  fun h' ↦ nomatch h'.symm.trans h
 
 open Std.WP Lean.Order in
 -- The contract of the counters of `Ratpoints.Sieve.sift` for the position `pos` of the row offsets
@@ -914,29 +908,26 @@ private theorem sift_counters_spec_pos (c : List Int) (d H A b : Nat) (fl : Chec
         | exact SiftIntervalsCounts.append_of_siftBits ‹_› ‹_› ‹_› hsf hinv hoff ‹_› ‹_› _
     | (simp_all; done)
 
-/-- For a store of the tables of rows that fits the sieve entries `es` of the first two stages
-(`Ratpoints.Sieve.RowStore.Fits`), with the rows built for the denominator when an interval asks for
-them (the lazy set-up), the denominator delivers, for the ranges `rs`
-of the numerators that the bounds `iv` of the search intervals give for it
-(`Ratpoints.Sieve.RangesFor`), the points of the check with the flags `fl`
-(`Ratpoints.Sieve.checkNumWith`) of the numerators `-H, …, H` in one of the ranges that pass the
-class word `w` and survive the sieve entries of all three stages. The class word `w` that the class
-`cl` packs, the position `pos` of the row offsets of `cl` and the ranges are quantified in the
-postcondition, since the program does not mention them; the reciprocals and the residues
-`b dinv[k] mod p` (`Ratpoints.Sieve.fillBpList_eq_map`) are those of the entries, which have their
-tables of inverses and the offsets of the packing of `cl` (`Ratpoints.Sieve.SieveEntry.PackedFor`);
-the test for common factors on the words of the C code needs `0 < b < 2 ^ 63` and the numerators
-`|a| ≤ H < 2 ^ 63` (`Ratpoints.Sieve.accepted_spec`), and the third stage entries of the shape of
-`Ratpoints.Sieve.SieveEntry.IsPrimeEntry` with the reciprocals of their moduli. When the callback
-does not stop the search, the denominator adds the counts of `Ratpoints.Sieve.siftCounts` to the
-counters, for the position `pos` of the row offsets of `cl`, quantified in the postcondition. -/
+/-- The sieve of one denominator `b` delivers, for every class word `w` that the class `cl` packs,
+the position `pos` of the row offsets of `cl` and the ranges `rs` of the numerators that the bounds
+`iv` of the search intervals give (`Ratpoints.Sieve.RangesFor`), quantified in the postcondition
+since the program does not mention them, the points of the check with the flags `fl`
+(`Ratpoints.Sieve.checkNumWith`) of the numerators `-H, …, H` in one of the ranges that pass `w`
+and survive the sieve entries of all three stages; when the callback does not stop the search, it
+adds the counts of `Ratpoints.Sieve.siftCounts` to the counters. The bounds `0 < b < 2 ^ 63` and
+`H < 2 ^ 63` are those of the test for common factors on the words of the C code
+(`Ratpoints.Sieve.accepted_spec`); the rows built for `b` at the first interval that asks for them
+(the lazy set-up) are read at the offsets of the packing of `cl`
+(`Ratpoints.Sieve.SieveEntry.PackedFor`), from a store that fits the entries of the first two stages
+(`Ratpoints.Sieve.RowStore.Fits`), with the residues `b dinv[k] mod p` of
+`Ratpoints.Sieve.fillBpList_eq_map`. -/
 @[spec]
 theorem sift_spec (c : List Int) (d H A b : Nat) (fl : CheckFlags) (sp1 : Nat)
     (es : List SieveEntry) (mgs bp : List Nat) (cl : NumClass) (offsets : Array Nat)
     (es3 : List SieveEntry) (mgs3 : List Nat) (iv : Array IntervalBounds) (store : RowStore)
     (r : Delivery σ) (cnt : Counters) :
     ⦃ r.quit = false ∧ 1 ≤ A ∧ 0 < b ∧ b < 2 ^ 63 ∧ H < 2 ^ 63 ∧ (∀ e ∈ es3, e.IsPrimeEntry) ∧
-        mgs3 = es3.map (fun e ↦ magic e.p) ∧ mgs = es.map (magic ·.p) ∧
+        mgs3 = es3.map (magic ·.p) ∧ mgs = es.map (magic ·.p) ∧
         bp = es.map (fun e ↦ b * e.dinv[cl.k]! % e.p) ∧ (∀ e ∈ es, e.HasInverses) ∧ store.Fits es ⦄
     sift process c d H A b fl sp1 es mgs bp cl offsets es3 mgs3 iv store r cnt
     ⦃ fun r' ↦ (∀ (w : UInt64) (pos : Nat) (rs : List (Int × Int)), cl.Packs w →
@@ -960,21 +951,14 @@ theorem sift_spec (c : List Int) (d H A b : Nat) (fl : CheckFlags) (sp1 : Nat)
         (pairwise_lt_numerators H) hiv.pairwise]
     simp only [Bool.and_assoc]⟩
 
-/-- Without `RATPOINTS_NO_CHECK`, `Ratpoints.Sieve.sift` with the flags `fl`, the class `cl` that
-packs the class word `w` with its row offsets from position `pos` of `offsets` on, the entries `es`
-of the first two stages with their reciprocals and residues `b dinv[k] mod p`, their tables of
-inverses and the offsets of the packing of `cl`, a store of the tables of rows that fits them
-(`Ratpoints.Sieve.RowStore.Fits`), the entries `es3` of the third, of the shape of
-`Ratpoints.Sieve.SieveEntry.IsPrimeEntry`, with the reciprocals of their moduli, and bounds of the
-search intervals that give the ranges `rs` of the numerators (`Ratpoints.Sieve.RangesFor`), for a
-denominator `0 < b < 2 ^ 63` and `H < 2 ^ 63`, delivers the points of the plain sieve with all these
-entries and its check, the reference of the words, whose numerators lie in one of the ranges and
-pass `w` (`Ratpoints.Sieve.classBit`), mapped by `Ratpoints.Sieve.swapPoint` when `fl.reversed` is
-set, those with `y < 0` left out under `RATPOINTS_NO_Y`: the plain sieve and its check give what the
-brute-force reference finds over `b` and the numerators `-H, …, H` that survive the sieve entries
-(`Ratpoints.Sieve.sieveDen_spec`, `Ratpoints.Sieve.checkDen_spec`), and `Ratpoints.Sieve.sift`
-delivers those of these points whose numerators lie in the ranges and pass `w`
-(`Ratpoints.Sieve.sift_spec`, `Ratpoints.BruteForce.pointsOfDen_filter`). -/
+/-- Without `RATPOINTS_NO_CHECK`, the points that the sieve of one denominator delivers are those of
+the plain sieve of `b` with all the entries and its check, the reference of the bit arrays of words,
+whose numerators lie in one of the ranges `rs` and pass the class word `w`
+(`Ratpoints.Sieve.classBit`), mapped by `Ratpoints.Sieve.swapPoint` after a reversal, without those
+with `y < 0` under `RATPOINTS_NO_Y`: both give the points of the brute-force reference over `b` and
+the numerators that survive the entries (`Ratpoints.Sieve.sift_spec`,
+`Ratpoints.Sieve.sieveDen_spec`, `Ratpoints.Sieve.checkDen_spec`,
+`Ratpoints.BruteForce.pointsOfDen_filter`). -/
 theorem run_sift_eq_deliver_checkDen (c : List Int) (d H b : Nat) {fl : CheckFlags}
     (hc : fl.noCheck = false) (sp1 : Nat) {A : Nat} (hA : 1 ≤ A) (hb : 0 < b) (hb63 : b < 2 ^ 63)
     (hH : H < 2 ^ 63) {es es3 : List SieveEntry} {w : UInt64} {cl : NumClass} {pos : Nat}
@@ -985,7 +969,7 @@ theorem run_sift_eq_deliver_checkDen (c : List Int) (d H b : Nat) {fl : CheckFla
     (hiv : RangesFor iv b H rs) (hs : store.Fits es) {r : Delivery σ} (hr : r.quit = false)
     (cnt : Counters) :
     (Id.run (sift process c d H A b fl sp1 es (es.map (magic ·.p))
-      (es.map fun e ↦ b * e.dinv[cl.k]! % e.p) cl offsets es3 (es3.map fun e ↦ magic e.p) iv
+      (es.map fun e ↦ b * e.dinv[cl.k]! % e.p) cl offsets es3 (es3.map (magic ·.p)) iv
         store r cnt)).1 =
       r.deliver process ((((Id.run (checkDen c d H b
         (Id.run (sieveDen H b (es ++ es3))))).toList.filter fun q ↦
