@@ -579,13 +579,6 @@ theorem Sturm.run_chain_eq_none_iff_of_reversal_eq_ok {allow rev : Bool} {c c' :
 
 /-! ### The map of a reversed search -/
 
-/-- The pair `(x, z)` of a normalized point of height at most `H`, the conditions of
-`Ratpoints.IsPoint` other than its equation: `x` prime to `z`, `z > 0` or `(x, z) = (1, 0)`, and
-`|x| ≤ H`, `z ≤ H`. Under `RATPOINTS_NO_CHECK` the search delivers the triples `(x, 0, z)` of such
-pairs (`Ratpoints.exists_eq_of_mem_searchList_of_noCheck`). -/
-def IsNormalizedPair (H : ℕ) (x z : ℤ) : Prop :=
-  Int.gcd x z = 1 ∧ (0 < z ∨ z = 0 ∧ x = 1) ∧ |x| ≤ H ∧ z ≤ H
-
 namespace Sieve
 
 /-- The map of the reversal is an involution on the triples `(x, y, z)` with `z > 0` or

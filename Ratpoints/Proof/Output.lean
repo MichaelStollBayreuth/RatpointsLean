@@ -476,7 +476,7 @@ theorem inRegion_ite_swapPoint_iff {o : Options} {H : ℕ} {rev : Bool}
   have hl := o.bLow_normalize_le_iff H (z := b) (by lia)
   cases rev
   · have hh := (o.le_toNat_bHigh_normalize_iff (H := H) (z := b) (by lia)).mp (by lia)
-    simp [inRegion_iff, hz, ← hl, hh, show b ≠ 0 by lia]
+    simp [InRegion, hz, ← hl, hh, show b ≠ 0 by lia]
   · obtain ⟨hd, h1, -⟩ := hb rfl
     refine iff_of_true (inRegion_of_isFullBox ((hb rfl).map _) ?_ ?_) ⟨by lia, .inl hd⟩ <;>
     · simp only [↓reduceIte, swapPoint]
@@ -780,17 +780,16 @@ theorem toFinset_eq_filter_points_of_findPoints_eq_ok {c : List ℤ} {H : ℕ} {
 
 /-! ### `RATPOINTS_NO_CHECK` -/
 
-/-- Under `RATPOINTS_NO_CHECK`, for every value of the options of the sieve, every triple of the
-list that `Ratpoints.findPoints` returns is `(x, 0, z)` for the pair `(x, z)` of a
-normalized point of height at most `H` in the search region of the options, whether it is a point or
-not: `x` prime to `z`, `z > 0` or `(x, z) = (1, 0)`, `|x| ≤ H`, `z ≤ H` and `(x, 0, z)` in the
-search region (`Ratpoints.exists_eq_of_mem_searchList_of_noCheck`,
+/-- Under `RATPOINTS_NO_CHECK`, for every value of the options of the sieve, every triple
+`(x, y, z)` of the list that `Ratpoints.findPoints` returns, whether it is a point or not, has
+`y = 0` and its pair `(x, z)` normalized and of height at most `H`, and lies in the search region
+of the options (`Ratpoints.exists_eq_of_mem_searchList_of_noCheck`,
 `Ratpoints.mem_region_of_mem_searchList`, `Ratpoints.searchRegion_subset`); comparator certifies
 this (`comparator/Challenge.lean`). -/
 theorem exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck {c : List ℤ} {H : ℕ} {s : SieveOptions}
     {o : Options} {L : List (ℤ × ℤ × ℤ)} (h : findPoints c H s o = .ok L)
     (hc : o.noCheck = true) {q : ℤ × ℤ × ℤ} (hq : q ∈ L) :
-    ∃ x z : ℤ, q = (x, 0, z) ∧ Int.gcd x z = 1 ∧ (0 < z ∨ z = 0 ∧ x = 1) ∧ |x| ≤ H ∧ z ≤ H ∧
+    q.2.1 = 0 ∧ IsNormalizedPair H q.1 q.2.2 ∧
       InRegion (domainValues o.domain) o.bLow o.bHigh q := by
   obtain ⟨c', rev, S, hi, -, rfl, -⟩ := exists_searchList_of_findPoints_eq_ok h
   rcases hreg : searchRegion c' (degree c') H o with _ | D
@@ -799,7 +798,7 @@ theorem exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck {c : List ℤ} {H : ℕ}
   have hbL := o.one_le_toNat_bLow_normalize H
   obtain ⟨x, z, rfl, hn⟩ := exists_eq_of_mem_searchList_of_noCheck hc hi.one_le hbL
     (o.toNat_bHigh_normalize_le H) hq
-  refine ⟨x, z, rfl, hn.1, hn.2.1, hn.2.2.1, hn.2.2.2, ?_⟩
+  refine ⟨rfl, hn, ?_⟩
   cases rev
   · rcases mem_region_of_mem_searchList rfl hbL hq with h0 | ⟨h1, h2, h3⟩
     · exact .inl h0
@@ -841,7 +840,7 @@ theorem mem_of_isPoint_of_findPoints_eq_ok_of_noCheck {c : List ℤ} {H : ℕ} {
   obtain ⟨c', rev, S, -, -, -, hall⟩ := exists_searchList_of_findPoints_eq_ok h
   have hp' := (mem_iff_isPoint_of_findPoints_eq_ok (o := { o with noCheck := false, noY := true })
     hS (hall false true) rfl (p := (p.1, |p.2.1|, p.2.2))).mpr
-      ⟨by simpa [IsPoint, sq_abs] using hp, fun _ ↦ abs_nonneg _, hr⟩
+      ⟨⟨(sq_abs _).trans hp.1, hp.2⟩, fun _ ↦ abs_nonneg _, hr⟩
   exact (map_sublist_of_findPoints_eq_ok_of_noCheck h hc (hall false true)).subset
     (List.mem_map.mpr ⟨_, hp', rfl⟩)
 

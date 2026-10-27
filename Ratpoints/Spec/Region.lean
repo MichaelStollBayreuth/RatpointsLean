@@ -26,6 +26,7 @@ restates its definitions verbatim.
   of a double.
 * `Ratpoints.AreSearchIntervals`, `Ratpoints.IntervalsWF`: closed intervals, increasing and
   strictly apart, over values and over the bits of doubles.
+* `Ratpoints.InIntervals`: a rational number lies in one of a list of intervals.
 * `Ratpoints.InRegion`: a point lies in the search region.
 * `Ratpoints.IsFullBox`: the search region is the whole box of height `H`, so that ratpoints may
   reverse the polynomial.
@@ -83,15 +84,23 @@ def IntervalsWF (dom : List (UInt64 × UInt64)) : Prop :=
 instance instDecidableIntervalsWF (dom : List (UInt64 × UInt64)) : Decidable (IntervalsWF dom) :=
   inferInstanceAs (Decidable (_ ∧ _))
 
+/-- The rational number `x` lies in one of the intervals `D`, over the values of their ends, both
+ends included. -/
+def InIntervals (D : List (WithBotTop ℚ × WithBotTop ℚ)) (x : ℚ) : Prop :=
+  ∃ i ∈ D, i.1 ≤ (x : WithBotTop ℚ) ∧ (x : WithBotTop ℚ) ≤ i.2
+
+instance instDecidablePredInIntervals (D : List (WithBotTop ℚ × WithBotTop ℚ)) :
+    DecidablePred (InIntervals D) :=
+  fun _ ↦ inferInstanceAs (Decidable (∃ _ ∈ D, _))
+
 /-- The triple `p = (x, y, z)` lies in the search region of the intervals `dom` (over the values of
 their ends) and the range of the denominators from `bLow` to `bHigh`: `z = 0` (a point at
 infinity), or `bLow ≤ z`, `z ≤ bHigh` unless `bHigh < 1` (no bound beyond the height bound), and
-`x / z` in one of the intervals, or anywhere when there are none. -/
+`x / z` in one of the intervals (`Ratpoints.InIntervals`), or anywhere when there are none. -/
 def InRegion (dom : List (WithBotTop ℚ × WithBotTop ℚ)) (bLow bHigh : ℤ) (p : ℤ × ℤ × ℤ) :
     Prop :=
   p.2.2 = 0 ∨ bLow ≤ p.2.2 ∧ (bHigh < 1 ∨ p.2.2 ≤ bHigh) ∧
-    (dom = [] ∨ ∃ i ∈ dom, i.1 ≤ (((p.1 : ℚ) / p.2.2 : ℚ) : WithBotTop ℚ) ∧
-      (((p.1 : ℚ) / p.2.2 : ℚ) : WithBotTop ℚ) ≤ i.2)
+    (dom = [] ∨ InIntervals dom (p.1 / p.2.2))
 
 instance instDecidablePredInRegion (dom : List (WithBotTop ℚ × WithBotTop ℚ)) (bLow bHigh : ℤ) :
     DecidablePred (InRegion dom bLow bHigh) :=

@@ -22,8 +22,8 @@ The points that ratpoints finds, for a coefficient list `c` (constant term first
 bound `H`: the binary form `F` of `c` and the normalized points `(x, y, z)` of height at most `H`
 on `y ^ 2 = F(x, z)`; and the binary form over `ℚ` that the refusals of the program speak about.
 The specification uses Mathlib and nothing of the model, so that it can be read on its own; the
-comparator challenge restates `Ratpoints.degree`, `Ratpoints.binaryForm`, `Ratpoints.IsPoint` and
-`Ratpoints.binaryFormPoly` verbatim.
+comparator challenge restates `Ratpoints.degree`, `Ratpoints.binaryForm`,
+`Ratpoints.IsNormalizedPair`, `Ratpoints.IsPoint` and `Ratpoints.binaryFormPoly` verbatim.
 
 ## Main definitions
 
@@ -31,6 +31,7 @@ comparator challenge restates `Ratpoints.degree`, `Ratpoints.binaryForm`, `Ratpo
 * `Ratpoints.binaryForm`: the binary form `F(x, z)` of even degree that the program evaluates.
 * `Ratpoints.binaryFormPoly`: the binary form over `ℚ` of degree `2 ⌈n / 2⌉`, where `n + 1` is the
   length of `c`, whose squarefreeness decides the refusals.
+* `Ratpoints.IsNormalizedPair`: the pair `(x, z)` is normalized and of height at most `H`.
 * `Ratpoints.IsPoint`: `(x, y, z)` is a normalized point of height at most `H`.
 * `Ratpoints.points`: the finite set of these points.
 
@@ -112,11 +113,21 @@ theorem eval_binaryFormPoly {c : List ℤ} (h : c.length / 2 ≤ (degree c + 1) 
     rw [List.getD_eq_default _ _ (by simpa using hi)]
     simp
 
+/-- The pair `(x, z)` is normalized and of height at most `H`, as the program prints the points:
+`gcd(x, z) = 1`, `0 < z` or `(x, z) = (1, 0)`, `|x| ≤ H` and `z ≤ H`. So is the pair `(x, z)` of
+every triple `(x, 0, z)` that the program prints under `RATPOINTS_NO_CHECK`, whether the triple is
+a point or not. -/
+def IsNormalizedPair (H : ℕ) (x z : ℤ) : Prop :=
+  Int.gcd x z = 1 ∧ (0 < z ∨ z = 0 ∧ x = 1) ∧ |x| ≤ H ∧ z ≤ H
+
+instance instDecidableIsNormalizedPair (H : ℕ) (x z : ℤ) : Decidable (IsNormalizedPair H x z) :=
+  inferInstanceAs (Decidable (_ ∧ _))
+
 /-- `(x, y, z)` is a point of height at most `H` on `y ^ 2 = F(x, z)`, `F = Ratpoints.binaryForm c`,
-normalized as the program prints it: `gcd(x, z) = 1`, and `0 < z`, or `z = 0` and `x = 1`. -/
+normalized as the program prints it: the equation holds, and `(x, z)` is normalized and of height
+at most `H` (`Ratpoints.IsNormalizedPair`). -/
 def IsPoint (c : List ℤ) (H : ℕ) (p : ℤ × ℤ × ℤ) : Prop :=
-  p.2.1 ^ 2 = binaryForm c p.1 p.2.2 ∧ Int.gcd p.1 p.2.2 = 1 ∧
-    (0 < p.2.2 ∨ p.2.2 = 0 ∧ p.1 = 1) ∧ |p.1| ≤ H ∧ p.2.2 ≤ H
+  p.2.1 ^ 2 = binaryForm c p.1 p.2.2 ∧ IsNormalizedPair H p.1 p.2.2
 
 instance instDecidablePredIsPoint (c : List ℤ) (H : ℕ) : DecidablePred (IsPoint c H) :=
   fun _ ↦ inferInstanceAs (Decidable (_ ∧ _))

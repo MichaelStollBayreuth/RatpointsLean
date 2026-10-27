@@ -935,8 +935,8 @@ theorem inRegion_joinIntervals_iff {args : List String} {c : List ℤ} {H : ℕ}
     InRegion (domainValues (Id.run (joinIntervals o.domain))) o.bLow o.bHigh p ↔
       InRegion [] o.bLow o.bHigh p := by
   by_cases hz : p.2.2 = 0
-  · simp [inRegion_iff, hz]
-  simp only [inRegion_iff, hz, false_or, true_or, and_true]
+  · simp [InRegion, hz]
+  simp only [InRegion, hz, false_or, true_or, and_true]
   refine ⟨fun h ↦ ⟨h.1, h.2.1⟩, fun h ↦ ⟨h.1, h.2, ?_⟩⟩
   rcases hx.resolve_left hz with h0 | h0
   · exact .inl (by simp [h0, joinIntervals])

@@ -258,7 +258,7 @@ theorem filter_bruteForce_eq_self (c : List ℤ) {H B : ℕ} (hB : H ≤ B) :
 theorem isPoint_iff_of_le {c : List ℤ} {H : ℕ} {x y z : ℤ} (hn : 0 < z ∨ z = 0 ∧ x = 1)
     (hx : |x| ≤ H) (hz : z ≤ H) :
     IsPoint c H (x, y, z) ↔ y ^ 2 = binaryForm c x z ∧ Int.gcd x z = 1 := by
-  simp [IsPoint, hn, hx, hz]
+  simp [IsPoint, IsNormalizedPair, hn, hx, hz]
 
 open BruteForce in
 /-- The points of the brute-force reference over the candidate `(x, z)`, normalized and of height

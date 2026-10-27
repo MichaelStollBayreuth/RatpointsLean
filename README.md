@@ -166,7 +166,8 @@ has eleven statements, the well-formedness of the parameters of the program no l
 `lake comparator --paranoid` accepted the eleven on 2026-10-25, and `lake comparator` again with the
 choice of the moduli and the run over the blocks on 2026-10-25, with the numbers of the moduli used
 in the outcome of the search on 2026-10-25, and with the report of the library under `-v` on
-2026-10-26, and `lake comparator --paranoid` again on the final state of the stage on 2026-10-26.
+2026-10-26; `lake comparator --paranoid` accepted the eleven statements as they read now on
+2026-10-27.
 `ratpoints-lean` prints the numbers of the moduli used in its report (message 4) and under `-v` the
 report of the library between the points, as ratpoints does, and reads the tuning options
 `-r -R -U -C -A -Q -W` into the options of the sieve. Since the choice of the moduli computes with

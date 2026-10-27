@@ -16,19 +16,18 @@ import Ratpoints.Mathlib.Data.List.Chain
 # The search region in the proofs
 
 The search intervals of the model, pairs of doubles (`Ratpoints.Double`), over the values of their
-ends (`Ratpoints.domainValues`) and their bits (`Ratpoints.domainBits`); a rational number in one of
-a list of intervals over values (`Ratpoints.InIntervals`); the ranges of the numerators of a
-denominator `b` that a list of intervals gives within `-H, …, H`
-(`Ratpoints.Sieve.numeratorRanges`), with the ends `⌈b l⌉` and `⌊b u⌋` clamped, which the bounds of
-the search intervals of a run give to the sieve of one denominator (`Ratpoints.Sieve.RangesFor`);
-and the normalized options of a search (`Ratpoints.Options.normalize`) in the terms of the
-specification of the search region (`Ratpoints.IsFullBox`, `Ratpoints.denominatorBound`).
+ends (`Ratpoints.domainValues`) and their bits (`Ratpoints.domainBits`); the ranges of the
+numerators of a denominator `b` that a list of intervals over values (`Ratpoints.InIntervals`) gives
+within `-H, …, H` (`Ratpoints.Sieve.numeratorRanges`), with the ends `⌈b l⌉` and `⌊b u⌋` clamped,
+which the bounds of the search intervals of a run give to the sieve of one denominator
+(`Ratpoints.Sieve.RangesFor`); and the normalized options of a search
+(`Ratpoints.Options.normalize`) in the terms of the specification of the search region
+(`Ratpoints.IsFullBox`, `Ratpoints.denominatorBound`).
 
 ## Main definitions
 
 * `Ratpoints.domainValues`, `Ratpoints.domainBits`: the values and the bits of the ends of the
   search intervals of the model.
-* `Ratpoints.InIntervals`: a rational number in one of a list of intervals.
 * `Ratpoints.Sieve.lowNumerator`, `Ratpoints.Sieve.highNumerator`,
   `Ratpoints.Sieve.numeratorRanges`: the ranges of the numerators of a denominator in a list of
   intervals.
@@ -55,19 +54,6 @@ abbrev domainValues (dom : List (Double × Double)) : List (WithBotTop ℚ × Wi
 /-- The bits of the ends of the search intervals `dom` of the model. -/
 abbrev domainBits (dom : List (Double × Double)) : List (UInt64 × UInt64) :=
   dom.map fun i ↦ (i.1.bits, i.2.bits)
-
-/-- The rational number `x` lies in one of the intervals `D`, over the values of their ends. -/
-def InIntervals (D : List (WithBotTop ℚ × WithBotTop ℚ)) (x : ℚ) : Prop :=
-  ∃ i ∈ D, i.1 ≤ (x : WithBotTop ℚ) ∧ (x : WithBotTop ℚ) ≤ i.2
-
-instance instDecidablePredInIntervals (D : List (WithBotTop ℚ × WithBotTop ℚ)) :
-    DecidablePred (InIntervals D) :=
-  fun _ ↦ inferInstanceAs (Decidable (∃ _ ∈ D, _))
-
-theorem inRegion_iff {D : List (WithBotTop ℚ × WithBotTop ℚ)} {bLow bHigh : ℤ} {p : ℤ × ℤ × ℤ} :
-    InRegion D bLow bHigh p ↔ p.2.2 = 0 ∨ bLow ≤ p.2.2 ∧ (bHigh < 1 ∨ p.2.2 ≤ bHigh) ∧
-      (D = [] ∨ InIntervals D (p.1 / p.2.2)) :=
-  Iff.rfl
 
 /-- A pair `(x, z)` of height at most `H` lies in the search region of the whole box. -/
 theorem inRegion_of_isFullBox {D : List (WithBotTop ℚ × WithBotTop ℚ)} {bLow bHigh : ℤ} {H : ℕ}

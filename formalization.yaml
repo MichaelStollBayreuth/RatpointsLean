@@ -299,8 +299,8 @@ status:
     eleven, the well-formedness of the parameters of the program no longer among them; comparator
     --paranoid accepted all eleven on 2026-10-25, and comparator accepted them again with the choice
     of the moduli and the run over the blocks on 2026-10-25, with the numbers of the moduli used in
-    the outcome on 2026-10-25 and with the report under -v on 2026-10-26, and comparator --paranoid
-    again on the final state of the stage on 2026-10-26. ratpoints-lean prints the
+    the outcome on 2026-10-25 and with the report under -v on 2026-10-26; comparator --paranoid
+    accepted the eleven statements as they read now on 2026-10-27. ratpoints-lean prints the
     numbers of the moduli used (message 4) and under -v the report of the library between the
     points, reads the tuning options -r -R -U -C -A -Q -W into the options of the sieve, and checks
     and ignores -t, the number of threads, since the model sieves the blocks in turn on one thread;
@@ -454,7 +454,8 @@ alignment:
       module: "Ratpoints.Spec.Basic"
       status: "formalized"
       note: >
-        the specification (Ratpoints.binaryForm, Ratpoints.IsPoint, Ratpoints.points); the
+        the specification (Ratpoints.binaryForm, Ratpoints.IsNormalizedPair, Ratpoints.IsPoint,
+        Ratpoints.points); the
         brute-force reference Ratpoints.bruteForce lists exactly these points, each once
         (Ratpoints.mem_bruteForce_iff, Ratpoints.nodup_bruteForce), certified by comparator
     - source: "find_points returns each such point exactly once"
@@ -525,8 +526,9 @@ alignment:
       module: "Ratpoints.Proof.Output"
       status: "formalized"
       note: >
-        under RATPOINTS_NO_CHECK every element of the list is (x, 0, z) for a normalized pair (x, z)
-        of height at most H (Ratpoints.exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck), every
+        under RATPOINTS_NO_CHECK every element (x, y, z) of the list has y = 0 and a normalized
+        pair (x, z) of height at most H (Ratpoints.IsNormalizedPair) and lies in the search region
+        (Ratpoints.exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck), every
         point (x, y, z) gives the element (x, 0, z)
         (Ratpoints.mem_of_isPoint_of_findPoints_eq_ok_of_noCheck), and the list of the search with
         the exact check and RATPOINTS_NO_Y, with y replaced by 0, is a sublist of it

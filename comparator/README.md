@@ -9,17 +9,18 @@ axioms (`propext`, `Quot.sound`, `Classical.choice`).
 
 - [`Challenge.lean`](Challenge.lean) may import only Mathlib and the model (`Ratpoints.Model`). It
   restates the specification verbatim: of `Ratpoints/Spec/Basic.lean` `degree`, `binaryForm`,
-  `IsPoint` with its decidability, and `binaryFormPoly`, which the refusal theorems of stage D speak
-  about (`points` stays out, as the blueprint explains); since stage G, all of
-  `Ratpoints/Spec/Order.lean`, the order of the points (`searchedPoly`, `FactorsByTrialDivision`
-  with its decidability, `binaryDivisors`, `searchDenominators`, `pointsWithDen`, `orderedPoints`);
-  and since stage H all of `Ratpoints/Spec/Region.lean`, the search region (`IsNaN`, `doubleValue`,
-  `AreSearchIntervals`, `IntervalsWF`, `InRegion`, `IsFullBox` with their decidability, and
-  `denominatorBound`), and `Ratpoints/Spec/Sturm.lean`, Sturm's theorem as a proposition
-  (`SturmTheorem`), which the statements with the Sturm step on assume. It states the main
-  theorems with `sorry`. The main theorems speak about the model's `findPoints` and, since stage G,
-  `findPointsWith`, since stage I with its trailing print argument at its default, the channel that
-  prints nothing (and, in stage B, the brute-force reference), which the challenge imports with
+  `IsNormalizedPair` and `IsPoint` with their decidability, and `binaryFormPoly`, which the refusal
+  theorems of stage D speak about (`points` stays out, as the blueprint explains); since stage G,
+  all of `Ratpoints/Spec/Order.lean`, the order of the points (`searchedPoly`,
+  `FactorsByTrialDivision` with its decidability, `binaryDivisors`, `searchDenominators`,
+  `pointsWithDen`, `orderedPoints`); and since stage H all of `Ratpoints/Spec/Region.lean`, the
+  search region (`IsNaN`, `doubleValue`, `AreSearchIntervals`, `IntervalsWF`, `InIntervals`,
+  `InRegion`, `IsFullBox` with their decidability, and `denominatorBound`), and
+  `Ratpoints/Spec/Sturm.lean`, Sturm's theorem as a proposition (`SturmTheorem`), which the
+  statements with the Sturm step on assume. It states the main theorems with `sorry`. The main
+  theorems speak about the model's `findPoints` and, since stage G, `findPointsWith`, since stage I
+  with its trailing print argument at its default, the channel that prints nothing (and, in stage B,
+  the brute-force reference), which the challenge imports with
   `Options`, the doubles `Double` of its search intervals, `SieveOptions`, `maxDegree`,
   `maxDivisors`, the result `Outcome` of `findPointsWith` (whose fields `info` and `total` the
   protocol reads), and the callback's `Answer` and `Delivery` with the reference of the delivery
@@ -80,8 +81,9 @@ Stage G restates the membership theorem for the options of the output: with the 
 (`o.noCheck = false`), `p ∈ L` exactly when `p` is a point and, under `o.noY`, `0 ≤ y`; no
 duplicates keeps its text and now holds for the options of the output too, the exact check off among
 them. With the exact check off (`o.noCheck = true`), three statements, which `challenges.json`
-lists, say what the list holds: every element is `(x, 0, z)` for a normalized pair `(x, z)` of
-height at most `H` (`challenge_exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck`), every point
+lists, say what the list holds: every element `(x, y, z)` has `y = 0` and a normalized pair
+`(x, z)` of height at most `H` (`IsNormalizedPair`,
+`challenge_exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck`), every point
 `(x, y, z)` of height at most `H` gives the element `(x, 0, z)`
 (`challenge_mem_of_isPoint_of_findPoints_eq_ok_of_noCheck`), and the list of the same search with
 the exact check on and `o.noY` set, with `y` replaced by `0`, is a sublist of it
@@ -126,8 +128,14 @@ not their text, on 2026-10-25 with the numbers of the moduli used in the result 
 `findPointsWith`, which changes a definition that the challenge imports and not their text, and on
 2026-10-26 with the report of the library under `-v` through the print channel of the search, which
 changes the search that `findPointsWith` runs, with its print channel at its default, and not their
-text. On 2026-10-26 `lake comparator --paranoid` accepted all eleven again, on the final state of
-the stage after its audit.
+text.
+
+The specification writes `IsPoint` as the equation and `IsNormalizedPair`, the conditions on the
+pair `(x, z)` of a normalized point of height at most `H`, which the first statement under the exact
+check off states for every element `(x, y, z)` with `y = 0`, and the last condition of `InRegion`
+with `InIntervals`, the rational number `x / z` in one of the search intervals. On 2026-10-27
+`lake comparator --paranoid` accepted all eleven statements as they read now, with Lean's kernel
+and the five external checkers.
 
 ## Running
 

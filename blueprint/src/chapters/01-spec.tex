@@ -74,7 +74,7 @@ tests.
 
 \begin{definition}[Normalized point of height at most $H$]\label{def:IsPoint}
   \uses{def:binaryForm}
-  \lean{Ratpoints.IsPoint}\leanok
+  \lean{Ratpoints.IsNormalizedPair, Ratpoints.IsPoint}\leanok
   A triple $(x, y, z)$ of integers is a
   \emph{normalized point of height at most $H$} on $y^2 = F_c(x, z)$ if
   \[ y^2 = F_c(x, z), \quad \gcd(x, z) = 1, \quad z > 0 \text{ or } (z = 0 \text{ and } x = 1),
@@ -275,9 +275,9 @@ well-formedness, \verb|wf_sieveParams| is gone, and \verb|Params|, \verb|Params.
 (Section~\ref{sec:certifiedI}), which \verb|lake comparator --paranoid| accepted on 2026-10-25, and
 \verb|lake comparator| again, with the choice of the moduli and the run over the blocks, on
 2026-10-25, with the numbers of the moduli used in what a search gives back on 2026-10-25, and with
-the report of the library under \verb|-v| on 2026-10-26, and \verb|lake comparator --paranoid| again
-on the final state of the stage on 2026-10-26; Section~\ref{sec:sieveTheorems} records the earlier
-acceptances.
+the report of the library under \verb|-v| on 2026-10-26; \verb|lake comparator --paranoid| accepted
+the eleven statements as they read now on 2026-10-27; Section~\ref{sec:sieveTheorems} records the
+earlier acceptances.
 
 \section{The command-line program}\label{sec:cli}
 

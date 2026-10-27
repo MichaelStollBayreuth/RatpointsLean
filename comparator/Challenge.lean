@@ -50,11 +50,12 @@ moduli from the curve:
   ratpoints (`Ratpoints.orderedPoints`, with the bound `Ratpoints.maxDivisors` of the model on the
   number of divisors, the reversal only for the whole box and the largest denominator
   `Ratpoints.denominatorBound`), filtered by `o.noY` and the search region;
-* with the exact check off (`o.noCheck = true`): every element of the list is `(x, 0, z)` for a
-  normalized coprime pair of height at most `H` in the search region; every point `(x, y, z)` of
-  height at most `H` in the search region gives the element `(x, 0, z)` (assuming Sturm's theorem
-  when the Sturm step is on); and the points with `y ≥ 0` of the same search with the exact check
-  on, with `y` replaced by `0`, are a sublist of the list, so that they come in the same order;
+* with the exact check off (`o.noCheck = true`): every element `(x, y, z)` of the list has `y = 0`,
+  a normalized pair `(x, z)` of height at most `H` (`Ratpoints.IsNormalizedPair`) and lies in the
+  search region; every point `(x, y, z)` of height at most `H` in the search region gives the
+  element `(x, 0, z)` (assuming Sturm's theorem when the Sturm step is on); and the points with
+  `y ≥ 0` of the same search with the exact check on, with `y` replaced by `0`, are a sublist of
+  the list, so that they come in the same order;
 * the protocol: the search with a callback (`Ratpoints.findPointsWith`, with its trailing print
   argument at its default, the channel that prints nothing) refuses what `Ratpoints.findPoints`
   refuses, and otherwise returns the data of the callback and the count of the delivery of the list
@@ -94,11 +95,21 @@ noncomputable def binaryFormPoly (c : List ℤ) : MvPolynomial (Fin 2) ℚ :=
     MvPolynomial.C (c.getD i 0 : ℚ) * MvPolynomial.X 0 ^ i *
       MvPolynomial.X 1 ^ (2 * (c.length / 2) - i)
 
+/-- The pair `(x, z)` is normalized and of height at most `H`, as the program prints the points:
+`gcd(x, z) = 1`, `0 < z` or `(x, z) = (1, 0)`, `|x| ≤ H` and `z ≤ H`. So is the pair `(x, z)` of
+every triple `(x, 0, z)` that the program prints under `RATPOINTS_NO_CHECK`, whether the triple is
+a point or not. -/
+def IsNormalizedPair (H : ℕ) (x z : ℤ) : Prop :=
+  Int.gcd x z = 1 ∧ (0 < z ∨ z = 0 ∧ x = 1) ∧ |x| ≤ H ∧ z ≤ H
+
+instance instDecidableIsNormalizedPair (H : ℕ) (x z : ℤ) : Decidable (IsNormalizedPair H x z) :=
+  inferInstanceAs (Decidable (_ ∧ _))
+
 /-- `(x, y, z)` is a point of height at most `H` on `y ^ 2 = F(x, z)`, `F = Ratpoints.binaryForm c`,
-normalized as the program prints it: `gcd(x, z) = 1`, and `0 < z`, or `z = 0` and `x = 1`. -/
+normalized as the program prints it: the equation holds, and `(x, z)` is normalized and of height
+at most `H` (`Ratpoints.IsNormalizedPair`). -/
 def IsPoint (c : List ℤ) (H : ℕ) (p : ℤ × ℤ × ℤ) : Prop :=
-  p.2.1 ^ 2 = binaryForm c p.1 p.2.2 ∧ Int.gcd p.1 p.2.2 = 1 ∧
-    (0 < p.2.2 ∨ p.2.2 = 0 ∧ p.1 = 1) ∧ |p.1| ≤ H ∧ p.2.2 ≤ H
+  p.2.1 ^ 2 = binaryForm c p.1 p.2.2 ∧ IsNormalizedPair H p.1 p.2.2
 
 instance instDecidablePredIsPoint (c : List ℤ) (H : ℕ) : DecidablePred (IsPoint c H) :=
   fun _ ↦ inferInstanceAs (Decidable (_ ∧ _))
@@ -142,15 +153,23 @@ def IntervalsWF (dom : List (UInt64 × UInt64)) : Prop :=
 instance instDecidableIntervalsWF (dom : List (UInt64 × UInt64)) : Decidable (IntervalsWF dom) :=
   inferInstanceAs (Decidable (_ ∧ _))
 
+/-- The rational number `x` lies in one of the intervals `D`, over the values of their ends, both
+ends included. -/
+def InIntervals (D : List (WithBotTop ℚ × WithBotTop ℚ)) (x : ℚ) : Prop :=
+  ∃ i ∈ D, i.1 ≤ (x : WithBotTop ℚ) ∧ (x : WithBotTop ℚ) ≤ i.2
+
+instance instDecidablePredInIntervals (D : List (WithBotTop ℚ × WithBotTop ℚ)) :
+    DecidablePred (InIntervals D) :=
+  fun _ ↦ inferInstanceAs (Decidable (∃ _ ∈ D, _))
+
 /-- The triple `p = (x, y, z)` lies in the search region of the intervals `dom` (over the values of
 their ends) and the range of the denominators from `bLow` to `bHigh`: `z = 0` (a point at
 infinity), or `bLow ≤ z`, `z ≤ bHigh` unless `bHigh < 1` (no bound beyond the height bound), and
-`x / z` in one of the intervals, or anywhere when there are none. -/
+`x / z` in one of the intervals (`Ratpoints.InIntervals`), or anywhere when there are none. -/
 def InRegion (dom : List (WithBotTop ℚ × WithBotTop ℚ)) (bLow bHigh : ℤ) (p : ℤ × ℤ × ℤ) :
     Prop :=
   p.2.2 = 0 ∨ bLow ≤ p.2.2 ∧ (bHigh < 1 ∨ p.2.2 ≤ bHigh) ∧
-    (dom = [] ∨ ∃ i ∈ dom, i.1 ≤ (((p.1 : ℚ) / p.2.2 : ℚ) : WithBotTop ℚ) ∧
-      (((p.1 : ℚ) / p.2.2 : ℚ) : WithBotTop ℚ) ≤ i.2)
+    (dom = [] ∨ InIntervals dom (p.1 / p.2.2))
 
 instance instDecidablePredInRegion (dom : List (WithBotTop ℚ × WithBotTop ℚ)) (bLow bHigh : ℤ) :
     DecidablePred (InRegion dom bLow bHigh) :=
@@ -313,7 +332,7 @@ theorem challenge_exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck (c : List ℤ)
     (s : Ratpoints.SieveOptions) (o : Ratpoints.Options) (L : List (ℤ × ℤ × ℤ))
     (hc : o.noCheck = true) (h : Ratpoints.findPoints c H s o = .ok L) (q : ℤ × ℤ × ℤ)
     (hq : q ∈ L) :
-    ∃ x z : ℤ, q = (x, 0, z) ∧ Int.gcd x z = 1 ∧ (0 < z ∨ z = 0 ∧ x = 1) ∧ |x| ≤ H ∧ z ≤ H ∧
+    q.2.1 = 0 ∧ Ratpoints.IsNormalizedPair H q.1 q.2.2 ∧
       Ratpoints.InRegion
         (o.domain.map fun i ↦ (Ratpoints.doubleValue i.1.bits, Ratpoints.doubleValue i.2.bits))
         o.bLow o.bHigh q :=
