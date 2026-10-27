@@ -8,8 +8,8 @@ Lean has no semantics of C, so the link between the model in `Ratpoints/Model` a
 
 Every line number refers to one commit of `ratpoints`, the pin in
 [`ratpoints.toml`](ratpoints.toml): release 3.1.1, commit `1a99853`. The project follows the
-releases of `ratpoints`, and a new optimization of the C code comes, as far as possible, with its
-soundness proof in the model. The C code is read with `git show <commit>:<file>`, so the working
+releases of `ratpoints`, and future changes to the C code come, as far as possible, with their
+soundness proofs in the model. The C code is read with `git show <commit>:<file>`, so the working
 tree of the C repository may be at any commit.
 
 ## The ranges

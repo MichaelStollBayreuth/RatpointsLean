@@ -7,7 +7,7 @@ specification for every value of the options of the sieve, and a record, checked
 Lean definition models which lines of C.
 
 The C code is that of `ratpoints` 3.1.1. The project follows the releases of `ratpoints`, and future
-changes of the C code come, as far as possible, with their soundness proofs here.
+changes to the C code come, as far as possible, with their soundness proofs here.
 
 ## What is verified
 
@@ -61,7 +61,7 @@ provided that the pool of threads of `ratpoints` behaves as its code says.
 
 ## What one has to trust
 
-What one has to trust is the specification, which the challenge of Comparator restates verbatim,
+One has to trust the specification, which the challenge of Comparator restates verbatim,
 with the definitions of Lean core and Mathlib that it is written in;
 the reference of the delivery, of which the protocol speaks; the fact that the executable
 `ratpoints-lean` runs the model; Lean's kernel and Comparator; and, in the statements with the
@@ -87,9 +87,6 @@ implements, and the first stage of the sieve is that of the default build, with 
 arrays. The compile-time constants of the C code are definitions of the model
 (`Ratpoints/Model/Constants.lean`), and no proof depends on their values beyond a few facts checked
 by `decide`, which its module docstring lists (`scripts/constants_check.py` checks this).
-
-The blueprint and the API documentation will be at
-<https://michaelstollbayreuth.github.io/RatpointsLean/> once the repository is public.
 
 ## Layout
 
@@ -133,6 +130,9 @@ values of the compile-time constants, one after the other, each without the `#gu
 the model, and reports whether the library still builds; it uses the built packages of the
 repository and runs on demand, not in CI.
 
+The blueprint and the API documentation will be at
+<https://michaelstollbayreuth.github.io/RatpointsLean/> once the repository is public.
+
 ## The program `ratpoints-lean`
 
 `ratpoints-lean 'a_0 a_1 ... a_n' H [options]` has the command line of `ratpoints`. It reads the
@@ -158,13 +158,15 @@ refuses a binary form that is not squarefree with error 8 as `ratpoints` does wi
 and prints the points of the search region of its command line in the order of `ratpoints`.
 
 At large height bounds, `ratpoints-lean` runs about 100 times slower than `ratpoints`.
-This is mostly due to overhead from not using the CPU's vector bit-wise AND operations and from
-memory inefficiencies in Lean's array handling. So, while `ratpoints-lean` can be used as a
-certified program for computing rational points on hyperelliptic curves, it is not really designed
+This is mostly due to the bit arrays: the C code ANDs 256 bits with one vector instruction, while
+the model ANDs the four 64-bit words one by one into a new array of boxed words, allocating and
+freeing memory for every bit array. So, while `ratpoints-lean` can be used as a
+verified program for computing rational points on hyperelliptic curves (subject to what one has
+to trust on the Lean side, as listed above), it is not really designed
 for that purpose (designing a reasonably fast Lean implementation is a different project).
 Rather, the purpose of this project is to get as close as reasonably possible to certifying
-the correctness of the original `ratpoints` code, thus providing efficiency and a good level
-of trust at the same time.
+the correctness of the original `ratpoints` code, so that the C program offers both efficiency and
+a good level of trust.
 
 ## Licence
 
