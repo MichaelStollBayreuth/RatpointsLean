@@ -23,7 +23,7 @@ does not stop the search, each component adds closed forms that depend neither o
 on the delivery: the counts of the tests of a candidate (`Ratpoints.Sieve.testedCounts`) of the
 numerators that the contracts of `Ratpoints.Proof.Scan` deliver the points of, and, for the scan of
 a piece, the number of its bit arrays that are not zero; so the counters, from which the search of
-ratpoints corrects its moduli between the blocks, do not depend on the callback, the flags of the
+`ratpoints` corrects its moduli between the blocks, do not depend on the callback, the flags of the
 output or the store of the tables of rows.
 
 ## Main definitions

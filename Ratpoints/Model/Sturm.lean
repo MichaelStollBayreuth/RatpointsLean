@@ -13,11 +13,11 @@ meta import Ratpoints.Model.Double
 /-!
 # The Sturm step
 
-The Sturm step of ratpoints, `_ratpoints_compute_sturm` of `sturm.c`, which restricts the search to
-the intervals where the polynomial `f` may be `≥ 0`, computed in integers and on the doubles of the
-C code as `sturm.c` computes it. First the remainder chain of `f` and its derivative `f'`, row by
-row and with its loops (`Ratpoints.Sturm.chain`): a remainder is zero exactly when `f` has a
-repeated factor; the chain is `none` then, and ratpoints refuses the form as not squarefree, as
+The Sturm step of `ratpoints`, `_ratpoints_compute_sturm` of `sturm.c`, which restricts the search
+to the intervals where the polynomial `f` may be `≥ 0`, computed in integers and on the doubles of
+the C code as `sturm.c` computes it. First the remainder chain of `f` and its derivative `f'`, row
+by row and with its loops (`Ratpoints.Sturm.chain`): a remainder is zero exactly when `f` has a
+repeated factor; the chain is `none` then, and `ratpoints` refuses the form as not squarefree, as
 `Ratpoints.findPoints` does with the Sturm step on. Then the numbers of sign changes of the chain at
 `-∞` and `+∞` from the leading coefficients (`Ratpoints.Sturm.countsAtInfinity`), with the exit
 when `f` has no real root and is negative; the bisection of the real line from `[-∞, +∞]`, which

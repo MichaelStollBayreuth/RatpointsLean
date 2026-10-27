@@ -17,7 +17,7 @@ meta import Ratpoints.Model.Double
 
 The free choices of the sieve: which moduli it uses, in which order and in which stage, at most how
 many forbidden divisors of the denominators it tests, whether it runs the Jacobi test, and at most
-how many bit arrays it treats at a time. ratpoints chooses the moduli and their stages from the
+how many bit arrays it treats at a time. `ratpoints` chooses the moduli and their stages from the
 curve and corrects the choice during the run, and takes the other choices from its options or its
 defaults (the program passes the array size `Ratpoints.defaultArraySize`); none of this changes the
 points found or their order, since a modulus only removes candidates that are not points, the pieces
@@ -121,7 +121,7 @@ field `arraySize` of the parameters `P` (`Ratpoints.arraySizeAt`); at least 1 fo
 (`Ratpoints.Params.one_le_arraySizeAt`). It models no C code of its own. -/
 def Params.arraySizeAt (P : Params) (H : Nat) : Nat := Ratpoints.arraySizeAt P.arraySize H
 
-/-- The values of the options of ratpoints that tune the sieve, as the program reads them into the
+/-- The values of the options of `ratpoints` that tune the sieve, as the program reads them into the
 fields of its `ratpoints_args` (`Ratpoints.SieveOptions.store`): `-p`, `-n`, `-N`, `-R`, `-A`, `-P`
 and `-F` give C `long`s, which are `-1`, as in `main.c`, when the option is absent; `-r`, `-U`,
 `-C`, `-Q` and `-W` give doubles, `-1.0` when absent; `-j` switches the Jacobi test off and `-J` on

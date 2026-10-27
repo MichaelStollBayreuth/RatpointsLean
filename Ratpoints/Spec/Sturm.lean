@@ -13,7 +13,7 @@ public import Mathlib.Data.List.SignVariations
 /-!
 # Sturm's theorem
 
-Sturm's theorem in the form that the theorems on the Sturm step of ratpoints assume: for a
+Sturm's theorem in the form that the theorems on the Sturm step of `ratpoints` assume: for a
 squarefree real polynomial `p` and reals `a ≤ b`, the number of roots of `p` in `(a, b]` is the
 number of sign variations of the Sturm sequence of `p` and `p'` at `a` less that at `b`. Mathlib has
 the Sturm sequence (`Polynomial.sturmSeq`) and the sign variations of a list

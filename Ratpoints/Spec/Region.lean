@@ -11,14 +11,14 @@ public import Mathlib.Order.WithBotTop
 /-!
 # The search region
 
-The search region of ratpoints: search intervals `[l, u]` for `x / z`, whose ends are IEEE binary64
-doubles, given here by their bits, and a range of the denominators `z`. A double has a value in `ℚ`
-extended by `⊥` and `⊤` (`WithBotTop ℚ`), the two infinities; a NaN has none (its value here is
-junk), and both zeros have the value `0`; ratpoints refuses search intervals with a NaN end, with
-`l > u` or that are not increasing and strictly apart. A point lies in the region when it is at
-infinity, or its denominator is in the range and `x / z` lies in one of the intervals (in any, when
-there are none). The specification uses Mathlib and nothing of the model; the comparator challenge
-restates its definitions verbatim.
+The search region of `ratpoints`: search intervals `[l, u]` for `x / z`, whose ends are IEEE
+binary64 doubles, given here by their bits, and a range of the denominators `z`. A double has a
+value in `ℚ` extended by `⊥` and `⊤` (`WithBotTop ℚ`), the two infinities; a NaN has none (its value
+here is junk), and both zeros have the value `0`; `ratpoints` refuses search intervals with a NaN
+end, with `l > u` or that are not increasing and strictly apart. A point lies in the region when it
+is at infinity, or its denominator is in the range and `x / z` lies in one of the intervals (in any,
+when there are none). The specification uses Mathlib and nothing of the model; the comparator
+challenge restates its definitions verbatim.
 
 ## Main definitions
 
@@ -28,7 +28,7 @@ restates its definitions verbatim.
   strictly apart, over values and over the bits of doubles.
 * `Ratpoints.InIntervals`: a rational number lies in one of a list of intervals.
 * `Ratpoints.InRegion`: a point lies in the search region.
-* `Ratpoints.IsFullBox`: the search region is the whole box of height `H`, so that ratpoints may
+* `Ratpoints.IsFullBox`: the search region is the whole box of height `H`, so that `ratpoints` may
   reverse the polynomial.
 * `Ratpoints.denominatorBound`: the largest denominator of the search.
 
@@ -74,7 +74,7 @@ instance instDecidableAreSearchIntervals (dom : List (WithBotTop ℚ × WithBotT
     Decidable (AreSearchIntervals dom) :=
   inferInstanceAs (Decidable (_ ∧ _))
 
-/-- The search intervals with the ends of the bits of doubles that ratpoints accepts, the test of
+/-- The search intervals with the ends of the bits of doubles that `ratpoints` accepts, the test of
 `RATPOINTS_BAD_ARGS`: no end is a NaN, and the values are closed intervals, increasing and strictly
 apart (`Ratpoints.AreSearchIntervals`); `-0` and `0` have the same value. -/
 def IntervalsWF (dom : List (UInt64 × UInt64)) : Prop :=
@@ -108,7 +108,7 @@ instance instDecidablePredInRegion (dom : List (WithBotTop ℚ × WithBotTop ℚ
 
 /-- The search region of the intervals `dom` and the range of the denominators from `bLow` to
 `bHigh` is the whole box of the height bound `H`: no intervals, `bLow ≤ 1` and no bound below `H`
-on the denominators (`bHigh < 1` or `H ≤ bHigh`). Only then may ratpoints reverse the polynomial
+on the denominators (`bHigh < 1` or `H ≤ bHigh`). Only then may `ratpoints` reverse the polynomial
 (otherwise it sets `RATPOINTS_NO_REVERSE_AUTO`). -/
 def IsFullBox {α : Type*} (dom : List α) (bLow bHigh : ℤ) (H : ℕ) : Prop :=
   dom = [] ∧ bLow ≤ 1 ∧ (bHigh < 1 ∨ H ≤ bHigh)

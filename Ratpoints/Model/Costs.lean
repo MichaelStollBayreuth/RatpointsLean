@@ -13,7 +13,7 @@ meta import Ratpoints.Model.Denominators
 /-!
 # The cost model of the choice of the moduli
 
-ratpoints chooses the moduli of its sieve and the cut points of its stages from the curve, by a
+`ratpoints` chooses the moduli of its sieve and the cut points of its stages from the curve, by a
 model of what each modulus costs and what it says (`sieving_info`, `Ratpoints.sievingInfo`): the
 candidates are ranked by their keys, what a modulus costs per word swept divided by what it says,
 `-log r` for its density `r`; the first stage takes them while the survivors per word that the next
@@ -30,17 +30,17 @@ them (`Ratpoints.addModuli`, `Ratpoints.takeEntries`, `Ratpoints.rankSecond`), a
 The doubles are Lean's `Float`, IEEE 754 binary64 with the arithmetic of the platform: `+`, `-`,
 `*`, `/` and `sqrt` correctly rounded, as the C code compiled without fused multiply-adds and
 without `-ffast-math` computes them; `ceil` and `floor`, which are exact, computed by the C library
-of the platform, where ratpoints computes them inline (gcc's `roundsd` under `-mavx2`); and `log`
+of the platform, where `ratpoints` computes them inline (gcc's `roundsd` under `-mavx2`); and `log`
 and `pow` the functions of the C library of the platform that the Lean runtime binds, on glibc an
-older symbol version of the routines that ratpoints binds (`log@GLIBC_2.2.5` and `pow@GLIBC_2.2.5`,
-where ratpoints binds `log@GLIBC_2.29` and `pow@GLIBC_2.29`), which give the same values on every
-argument that occurs here (`x ≥ 0` for `log`, and for `pow` a base in `[0, 1]` and a positive
-exponent, `pow(+0, y) = +0` for `y > 0` in both) and differ only in `errno` and in the sign of the
-NaN of the logarithm of a negative number. glibc's `log` and `pow` are not correctly rounded and
-choose between variants by the processor, so that the choice of ratpoints and that of the model
-depend on the machine, and agree on one machine. Every expression keeps the order of the operations
-of the C code, and every comparison is the C code's; no fact about the values is needed by the
-theorems, which hold for every choice.
+older symbol version of the routines that `ratpoints` binds (`log@GLIBC_2.2.5` and
+`pow@GLIBC_2.2.5`, where `ratpoints` binds `log@GLIBC_2.29` and `pow@GLIBC_2.29`), which give the
+same values on every argument that occurs here (`x ≥ 0` for `log`, and for `pow` a base in `[0, 1]`
+and a positive exponent, `pow(+0, y) = +0` for `y > 0` in both) and differ only in `errno` and in
+the sign of the NaN of the logarithm of a negative number. glibc's `log` and `pow` are not correctly
+rounded and choose between variants by the processor, so that the choice of `ratpoints` and that of
+the model depend on the machine, and agree on one machine. Every expression keeps the order of the
+operations of the C code, and every comparison is the C code's; no fact about the values is needed
+by the theorems, which hold for every choice.
 
 ## Main definitions
 
@@ -141,7 +141,7 @@ C: `find_points.c:1285-1318`
 
 Deviation: the coefficients, the degree and the height bound as arguments, for the fields of the
 arguments that `check_cost` reads; `log` the function of the C library of the platform that the Lean
-runtime binds (`Float.log`), on glibc an older symbol version of the routine that ratpoints binds,
+runtime binds (`Float.log`), on glibc an older symbol version of the routine that `ratpoints` binds,
 which gives the same values on every argument that occurs here, and which glibc does not round
 correctly and chooses by the processor, so that the value is that of the C program on the same
 machine; `log 2` computed at run time, where gcc folds `log(2.0)` into the same double; `ceil` the
@@ -186,9 +186,9 @@ says, `info = -log r`, and `10 ^ 300` when `info ≤ 0`.
 C: `find_points.c:1241-1247`
 
 Deviation: `log` the function of the C library of the platform that the Lean runtime binds
-(`Float.log`), on glibc an older symbol version of the routine that ratpoints binds, which gives the
-same values on every argument that occurs here, and which glibc does not round correctly and chooses
-by the processor, so that the value is that of the C program on the same machine. -/
+(`Float.log`), on glibc an older symbol version of the routine that `ratpoints` binds, which gives
+the same values on every argument that occurs here, and which glibc does not round correctly and
+chooses by the processor, so that the value is that of the C program on the same machine. -/
 def primeKey (r : Float) (p : Nat) (perWord : Float) (tabled : Bool) (ct U D : Float) : Float :=
   let info := -Float.log r
   if info ≤ 0.0 then 1.0e300 else primeCost p perWord tabled ct U D / info
@@ -203,10 +203,10 @@ denominator walks, `walk = min(p, U / (4 D))` bit arrays of 32 bytes; the key th
 C: `find_points.c:1256-1270`
 
 Deviation: `log` the function of the C library of the platform that the Lean runtime binds
-(`Float.log`), on glibc an older symbol version of the routine that ratpoints binds, which gives the
-same values on every argument that occurs here, and which glibc does not round correctly and chooses
-by the processor, so that the value is that of the C program on the same machine; the candidate
-returned with its key and cost, for the fields of the record that `phase_1_key` sets;
+(`Float.log`), on glibc an older symbol version of the routine that `ratpoints` binds, which gives
+the same values on every argument that occurs here, and which glibc does not round correctly and
+chooses by the processor, so that the value is that of the C program on the same machine; the
+candidate returned with its key and cost, for the fields of the record that `phase_1_key` sets;
 `Ratpoints.rbaPack` for `RBA_PACK` and `8 Ratpoints.rbaPack` for the size of a bit array in
 bytes. -/
 def phase1Key (ct U D cc : Float) (e : ModulusCandidate) : ModulusCandidate :=
@@ -228,10 +228,11 @@ survivor, `cost (1 - ρ) / COST_PHASE2` with `ρ` the geometric mean of the dens
 C: `find_points.c:1539-1561`
 
 Deviation: `pow` the function of the C library of the platform that the Lean runtime binds
-(`Float.pow`), on glibc an older symbol version of the routine that ratpoints binds, which gives the
-same values on every argument that occurs here, and which glibc does not round correctly and chooses
-by the processor, so that the value is that of the C program on the same machine; natural numbers
-for the `long` positions, the comparisons with the candidates left after `n` made on integers. -/
+(`Float.pow`), on glibc an older symbol version of the routine that `ratpoints` binds, which gives
+the same values on every argument that occurs here, and which glibc does not round correctly and
+chooses by the processor, so that the value is that of the C program on the same machine; natural
+numbers for the `long` positions, the comparisons with the candidates left after `n` made on
+integers. -/
 def downstreamFactor (pool : Array ModulusCandidate) (n pnp extra : Nat) : Id Float := do
   let rest : Int := (pnp : Int) - n - 1
   let stop := if rest ≤ extra then pnp else n + 1 + extra

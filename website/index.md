@@ -7,7 +7,7 @@ title: RatpointsLean
   <h1>{{ site.title }}</h1>
 </header>
 
-[ratpoints](https://github.com/MichaelStollBayreuth/ratpoints) is a C program by
+[`ratpoints`](https://github.com/MichaelStollBayreuth/ratpoints) is a C program by
 [Michael Stoll](https://www.mathe2.uni-bayreuth.de/stoll/) that finds the rational points of
 bounded height on the curves `y² = F(x, z)`, where `F` is a binary form of even degree with integer
 coefficients, by sieving. This project builds a model of it in [Lean 4](https://lean-lang.org)

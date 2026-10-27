@@ -8,7 +8,7 @@ module
 /-!
 # The doubles of the C code
 
-The C code of ratpoints holds the ends of its search intervals as `double`s: the intervals of the
+The C code of `ratpoints` holds the ends of its search intervals as `double`s: the intervals of the
 caller (`args->domain`), the default interval `[-h, h]` of the library and the ends of the intervals
 that the Sturm step keeps. Apart from the estimate of the work in the choice of the moduli
 (`numerators_for`, `Ratpoints.numeratorsFor`, where the ends enter the arithmetic of Lean's `Float`
@@ -19,13 +19,13 @@ doubles to `long`s and `unsigned long`s, and prints them, as `printf` of glibc d
 conversions `%f` and `%.pf` (`Ratpoints.Double.printFixed`); the report of the library prints
 doubles of its cost model too (`Ratpoints.Double.ofFloat`). The model holds a double as its IEEE 754
 binary64 bits (`Ratpoints.Double`), with these operations as functions on the bits, each doing what
-the operation of the C language or the C library does to a double on the platforms of ratpoints
+the operation of the C language or the C library does to a double on the platforms of `ratpoints`
 (IEEE 754 binary64 with rounding to nearest, ties to even, as gcc and glibc implement them): the
 comparisons, in which a NaN is unordered and `-0.0` equals `0.0`, the negation and `fabs`, which act
 on the sign bit, the conversions, `frexp`, `ldexp` and `nextafter` towards `±HUGE_VAL`, but for a
 signalling NaN, which glibc's `frexp`, `ldexp` and `nextafter` return quieted and the model as it is
-(ratpoints passes them no NaN). The exact value of a finite double is `m 2 ^ e` for the integers of
-`Ratpoints.Double.toDyadic`, and a dyadic number is rounded to a double, to nearest with ties to
+(`ratpoints` passes them no NaN). The exact value of a finite double is `m 2 ^ e` for the integers
+of `Ratpoints.Double.toDyadic`, and a dyadic number is rounded to a double, to nearest with ties to
 even, by `Ratpoints.Double.ofDyadic`, a fraction by `Ratpoints.Double.ofRatio` (for `strtod`, which
 the program uses).
 
@@ -67,7 +67,7 @@ structure Double where
 namespace Double
 
 /-- `DBL_MANT_DIG` of `float.h`, the number of bits of the significand of a double, `53`: a fact of
-the format, not a parameter of ratpoints. -/
+the format, not a parameter of `ratpoints`. -/
 def mantDig : Nat := 53
 
 /-- `0.0`. -/
@@ -223,7 +223,7 @@ def ofRatio (neg : Bool) (n d : Nat) : Double :=
     ofSignificand neg M q
 
 /-- The conversion `(double)n` of a `long` `n` to a double: the double nearest to `n`, ties to even,
-as gcc converts it on the platforms of ratpoints, exact for `|n| ≤ 2 ^ 53`, and `±2 ^ 63` for
+as gcc converts it on the platforms of `ratpoints`, exact for `|n| ≤ 2 ^ 53`, and `±2 ^ 63` for
 `n = ±(2 ^ 63 - 1)`. -/
 def ofInt64 (n : Int64) : Double := ofDyadic (n < 0) n.toInt.natAbs 0
 
@@ -243,8 +243,8 @@ def toUInt64 (x : Double) : UInt64 :=
   (if 0 ≤ e then m.natAbs <<< e.toNat else m.natAbs >>> (-e).toNat).toUInt64
 
 /-- `ldexp(x, n)` of `math.h`, `x 2 ^ n`: a zero, an infinity and a NaN as they are, as glibc
-returns them, but for a signalling NaN, which glibc returns quieted (by `x + x`; ratpoints passes it
-no NaN); otherwise the exact value of `x` times `2 ^ n` rounded to a double
+returns them, but for a signalling NaN, which glibc returns quieted (by `x + x`; `ratpoints` passes
+it no NaN); otherwise the exact value of `x` times `2 ^ n` rounded to a double
 (`Ratpoints.Double.ofDyadic`), which is exact unless it leaves the normal range, an infinity on
 overflow and rounded to nearest in the subnormal range, as glibc computes it. -/
 def ldexp (x : Double) (n : Int) : Double :=
@@ -256,7 +256,7 @@ def ldexp (x : Double) (n : Int) : Double :=
 /-- `frexp(x, &ex)` of `math.h`: the pair `(f, ex)` with `x = f 2 ^ ex` and `1/2 ≤ |f| < 1`, `f` of
 the sign of `x`, for a finite `x ≠ 0`, also a subnormal one; `(x, 0)` for a zero, an infinity and a
 NaN, as glibc returns them, but for a signalling NaN, which glibc returns quieted (by `x + x`;
-ratpoints passes it no NaN). -/
+`ratpoints` passes it no NaN). -/
 def frexp (x : Double) : Double × Int :=
   if x.isNaN || x.isInf || x.isZero then (x, 0)
   else
@@ -266,7 +266,7 @@ def frexp (x : Double) : Double × Int :=
 
 /-- `nextafter(x, HUGE_VAL)` of `math.h`: the least double above `x`; the least subnormal for both
 zeros, `+∞` for `+∞` and the largest finite double, a NaN as it is (glibc returns a signalling NaN
-quieted, by `x + y`; ratpoints passes it no NaN), and for a negative `x` the double towards zero,
+quieted, by `x + y`; `ratpoints` passes it no NaN), and for a negative `x` the double towards zero,
 `-0.0` above `-2 ^ (-1074)`. -/
 def nextUp (x : Double) : Double :=
   if x.isNaN || x.bits == huge.bits then x
@@ -276,7 +276,7 @@ def nextUp (x : Double) : Double :=
 
 /-- `nextafter(x, -HUGE_VAL)` of `math.h`: the greatest double below `x`; the least subnormal
 negated for both zeros, `-∞` for `-∞` and the least finite double, a NaN as it is (glibc returns a
-signalling NaN quieted, by `x + y`; ratpoints passes it no NaN), and for a positive `x` the double
+signalling NaN quieted, by `x + y`; `ratpoints` passes it no NaN), and for a positive `x` the double
 towards zero, `0.0` below `2 ^ (-1074)`. -/
 def nextDown (x : Double) : Double :=
   if x.isNaN || x.bits == huge.neg.bits then x
@@ -303,7 +303,7 @@ def printFixed (p : Nat) (x : Double) : String :=
 
 The operations on the edge cases that matter (both zeros, the subnormals, the largest finite
 doubles, the infinities, a NaN, `2 ^ 53` and `2 ^ 63` with their neighbours, ties of the rounding),
-against what a C program compiled with gcc and linked with glibc on the platform of ratpoints
+against what a C program compiled with gcc and linked with glibc on the platform of `ratpoints`
 prints for them, as bits. -/
 
 -- `(double)n`: exact up to `2 ^ 53`, ties to even above it, `±(2 ^ 63 - 1)` and `-2 ^ 63` to

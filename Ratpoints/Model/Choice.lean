@@ -15,8 +15,8 @@ meta import Ratpoints.Model.Params
 /-!
 # The choice of the moduli
 
-`Ratpoints.sievingInfo` is the model of `sieving_info` of ratpoints: the loop of the tables over the
-primes looked at, which ranks the primes that say something by their keys for the first stage
+`Ratpoints.sievingInfo` is the model of `sieving_info` of `ratpoints`: the loop of the tables over
+the primes looked at, which ranks the primes that say something by their keys for the first stage
 (`Ratpoints.phase1Key`), records the forbidden divisors of the denominators and, when the caller
 left the number of primes to the library, looks at further primes while the first two stages would
 be short of moduli (`Ratpoints.tablesLoop`); the further forbidden divisors; the composite moduli,
@@ -838,7 +838,7 @@ def sievingInfo (c : List Int) (d : Nat) (useCLong checkDenom mayExtend : Bool) 
 
 /-! ### Examples
 
-The forbidden divisors against those that a build of ratpoints at the pinned commit prints with a
+The forbidden divisors against those that a build of `ratpoints` at the pinned commit prints with a
 dump of the side of the denominators on the standard error (the dump), and against their rule; the
 stages, the composite moduli, the third stage and the end of the choice against their rule. -/
 

@@ -173,7 +173,7 @@ local notation:max "reducedCoeffArray " c:max d:max p:max =>
 /-! ### The squares, the inverses and Horner's rule modulo `p` -/
 
 /-- Modulo a prime `p`, the square of a residue `s ≠ 0` below `p` is the square of an odd residue,
-of `s` or of `p - s`: the squares that the generator of the tables of ratpoints marks. -/
+of `s` or of `p - s`: the squares that the generator of the tables of `ratpoints` marks. -/
 theorem exists_odd_mul_self_mod_eq {p s : ℕ} (hp : p.Prime) (hs : s < p) (hs0 : s ≠ 0) :
     ∃ i < p, Odd i ∧ i * i % p = s * s % p := by
   rcases Nat.even_or_odd' s with ⟨k, rfl | rfl⟩

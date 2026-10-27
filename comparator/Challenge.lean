@@ -47,7 +47,7 @@ no hypothesis on `s`, with which the search chooses its moduli from the curve:
   is off, or the search region is not the whole box (`Ratpoints.IsFullBox`); so a
   `Ratpoints.findPoints` that refuses every input, with or without the Sturm step, is ruled out;
 * the order: under the hypotheses of membership, the list is that of the points in the order of
-  ratpoints (`Ratpoints.orderedPoints`, with the bound `Ratpoints.maxDivisors` of the model on the
+  `ratpoints` (`Ratpoints.orderedPoints`, with the bound `Ratpoints.maxDivisors` of the model on the
   number of divisors, the reversal only for the whole box and the largest denominator
   `Ratpoints.denominatorBound`), filtered by `o.noY` and the search region;
 * with the exact check off (`o.noCheck = true`): every element `(x, y, z)` of the list has `y = 0`,
@@ -143,7 +143,7 @@ instance instDecidableAreSearchIntervals (dom : List (WithBotTop ℚ × WithBotT
     Decidable (AreSearchIntervals dom) :=
   inferInstanceAs (Decidable (_ ∧ _))
 
-/-- The search intervals with the ends of the bits of doubles that ratpoints accepts, the test of
+/-- The search intervals with the ends of the bits of doubles that `ratpoints` accepts, the test of
 `RATPOINTS_BAD_ARGS`: no end is a NaN, and the values are closed intervals, increasing and strictly
 apart (`Ratpoints.AreSearchIntervals`); `-0` and `0` have the same value. -/
 def IntervalsWF (dom : List (UInt64 × UInt64)) : Prop :=
@@ -177,7 +177,7 @@ instance instDecidablePredInRegion (dom : List (WithBotTop ℚ × WithBotTop ℚ
 
 /-- The search region of the intervals `dom` and the range of the denominators from `bLow` to
 `bHigh` is the whole box of the height bound `H`: no intervals, `bLow ≤ 1` and no bound below `H`
-on the denominators (`bHigh < 1` or `H ≤ bHigh`). Only then may ratpoints reverse the polynomial
+on the denominators (`bHigh < 1` or `H ≤ bHigh`). Only then may `ratpoints` reverse the polynomial
 (otherwise it sets `RATPOINTS_NO_REVERSE_AUTO`). -/
 def IsFullBox {α : Type*} (dom : List α) (bLow bHigh : ℤ) (H : ℕ) : Prop :=
   dom = [] ∧ bLow ≤ 1 ∧ (bHigh < 1 ∨ H ≤ bHigh)
@@ -202,13 +202,13 @@ def SturmTheorem : Prop :=
         ((sturmSeq p (derivative p)).map (eval b)).signVariations =
       ((sturmSeq p (derivative p)).map (eval a)).signVariations
 
-/-- The polynomial that ratpoints searches for the coefficient list `c` of degree `d`, and whether
+/-- The polynomial that `ratpoints` searches for the coefficient list `c` of degree `d`, and whether
 it is reversed, when the switch `reverse` allows a reversal (the option `-k` of the program forbids
 it): for even `d`, the list `c_d, …, c₀` when `c₀ = 0` (then `c₁ ≠ 0`, or the binary form is not
 squarefree and refused) or when `c_d` is a square and `c₀` is not; for odd `d`, the list
 `0, c_d, …, c₁` when `|c_d| ≠ 1`, `c₀ = 0` and `|c₁| = 1`; otherwise `c` itself. The binary form
 of a reversed list is that of `c` with `x` and `z` exchanged, except for even `d` with
-`c₀ = c₁ = 0`, which ratpoints refuses. -/
+`c₀ = c₁ = 0`, which `ratpoints` refuses. -/
 def searchedPoly (reverse : Bool) (c : List ℤ) : List ℤ × Bool :=
   let d := degree c
   if reverse ∧ d % 2 = 0 ∧
@@ -219,8 +219,8 @@ def searchedPoly (reverse : Bool) (c : List ℤ) : List ℤ × Bool :=
     (0 :: (c.take (d + 1)).tail.reverse, true)
   else (c, false)
 
-/-- Whether ratpoints factors `n` completely: it divides off `2` and the odd primes up to `1021` in
-turn and takes a cofactor below `p ^ 2`, for the next prime `p`, as a prime, which it is; so it
+/-- Whether `ratpoints` factors `n` completely: it divides off `2` and the odd primes up to `1021`
+in turn and takes a cofactor below `p ^ 2`, for the next prime `p`, as a prime, which it is; so it
 fails exactly when the part of `n` at the primes from `1021` on is at least `1021 ^ 2` and not a
 power of `1021`. -/
 def FactorsByTrialDivision (n : ℕ) : Prop :=
@@ -238,7 +238,7 @@ def binaryDivisors (n H : ℕ) : List ℕ :=
 
 /-- The denominators of the search of the polynomial with the coefficient list `c` of degree `d`,
 up to the largest denominator `H` of the search (the height bound, or the bound of the range of the
-denominators, `Ratpoints.denominatorBound`): when `d` is odd, `|c_d| ≠ 1`, ratpoints factors
+denominators, `Ratpoints.denominatorBound`): when `d` is odd, `|c_d| ≠ 1`, `ratpoints` factors
 `|c_d|` completely (`Ratpoints.FactorsByTrialDivision`) and it has fewer than `maxDiv` squarefree
 divisors at most `H` (`Ratpoints.binaryDivisors`), the numbers `e k ^ 2 ≤ H`, divisor `e` by
 divisor in that order and `k = 1, 2, …` for each; otherwise `1, …, H`. This is the order of the
@@ -263,7 +263,7 @@ def pointsWithDen (c : List ℤ) (H z : ℕ) : List (ℤ × ℤ × ℤ) :=
     (if y = 0 then [(x, 0, (z : ℤ))] else [(x, y, z), (x, -y, z)]).filter (IsPoint c H)
 
 /-- The points of height at most `H` on `y ^ 2 = F(x, z)` for the coefficient list `c` with
-denominators at most `B`, in the order in which ratpoints finds them, for the switch `reverse` of
+denominators at most `B`, in the order in which `ratpoints` finds them, for the switch `reverse` of
 the reversal and the bound `maxDiv` of the number of divisors: for the polynomial searched
 (`Ratpoints.searchedPoly`), its points at infinity, then the points of its denominators up to `B`
 (`Ratpoints.searchDenominators`) in turn (`Ratpoints.pointsWithDen`); after a reversal, each point

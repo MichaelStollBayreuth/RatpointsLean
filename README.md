@@ -1,12 +1,12 @@
 # RatpointsLean
 
-A Lean 4 model of [ratpoints](https://github.com/MichaelStollBayreuth/ratpoints), the C program that
-finds the rational points of bounded height on the curves `y² = F(x, z)`, where `F` is a binary form
-of even degree with integer coefficients, by sieving; with proofs that the model meets a short
+A Lean 4 model of [`ratpoints`](https://github.com/MichaelStollBayreuth/ratpoints), the C program
+that finds the rational points of bounded height on the curves `y² = F(x, z)`, where `F` is a binary
+form of even degree with integer coefficients, by sieving; with proofs that the model meets a short
 specification for every value of the options of the sieve, and a record, checked in CI, of which
 Lean definition models which lines of C.
 
-The C code is that of ratpoints 3.1.1. The project follows the releases of ratpoints, and a new
+The C code is that of `ratpoints` 3.1.1. The project follows the releases of `ratpoints`, and a new
 optimization of the C code comes, as far as possible, with its soundness proof here.
 
 ## What is verified
@@ -18,27 +18,27 @@ tables, bit arrays of 64-bit words and index arithmetic; the proofs (`Ratpoints/
 model meets the specification; and the link to the C code (`correspondence/` and the differential
 tests).
 
-The specification says what ratpoints computes. For a list `c` of integer coefficients and a height
-bound `H`, the points are the triples `(x, y, z)` with `y² = F(x, z)`, where `F` is the binary form
-of `c` of even degree, normalized as ratpoints prints them (`gcd(x, z) = 1`, and `z > 0` or
-`(x, z) = (1, 0)`), of height at most `H` (`|x| ≤ H` and `z ≤ H`), with both signs of `y`. The
-specification also gives the order in which ratpoints finds the points; the search region that the
-caller may give, made of search intervals whose ends are doubles, read by their values, and a range
-of the denominators; and Sturm's theorem, as a proposition that the theorems on the Sturm step
-assume, since Mathlib does not have it.
+The specification says what `ratpoints` computes. For a list `c` of integer coefficients and a
+height bound `H`, the points are the triples `(x, y, z)` with `y² = F(x, z)`, where `F` is the
+binary form of `c` of even degree, normalized as `ratpoints` prints them (`gcd(x, z) = 1`, and
+`z > 0` or `(x, z) = (1, 0)`), of height at most `H` (`|x| ≤ H` and `z ≤ H`), with both signs of
+`y`. The specification also gives the order in which `ratpoints` finds the points; the search region
+that the caller may give, made of search intervals whose ends are doubles, read by their values, and
+a range of the denominators; and Sturm's theorem, as a proposition that the theorems on the Sturm
+step assume, since Mathlib does not have it.
 
 For every coefficient list, height bound, options of the search and options of the sieve, with no
-hypothesis on the latter (from them and from the curve the search chooses its moduli, as ratpoints
+hypothesis on the latter (from them and from the curve the search chooses its moduli, as `ratpoints`
 does), the search `Ratpoints.findPoints`
 
-- refuses exactly the inputs that ratpoints refuses: with the Sturm step on, fewer than two or more
-  than `maxDegree + 1 = 101` coefficients, `H = 0` or `H ≥ 2^63` (a height that is not a C `long`),
-  a binary form that is not squarefree, and search intervals that are not well formed; with the
-  Sturm step off, exactly what ratpoints refuses under `-s`;
+- refuses exactly the inputs that `ratpoints` refuses: with the Sturm step on, fewer than two or
+  more than `maxDegree + 1 = 101` coefficients, `H = 0` or `H ≥ 2^63` (a height that is not a C
+  `long`), a binary form that is not squarefree, and search intervals that are not well formed; with
+  the Sturm step off, exactly what `ratpoints` refuses under `-s`;
 - returns otherwise, with the exact check on, exactly the points of height at most `H` in the
   search region, of each pair `(x, ±y, z)` only the one with `y ≥ 0` under `RATPOINTS_NO_Y`, each
-  once, in the order in which ratpoints finds them, assuming Sturm's theorem when the Sturm step is
-  on (a hypothesis, not an axiom);
+  once, in the order in which `ratpoints` finds them, assuming Sturm's theorem when the Sturm step
+  is on (a hypothesis, not an axiom);
 - returns, with the exact check off (`RATPOINTS_NO_CHECK`), triples `(x, 0, z)` of normalized pairs
   of height at most `H` in the search region, each once, among them those of all the points in it
   (assuming Sturm's theorem when the Sturm step is on), in the order of the search with the check;
@@ -54,18 +54,18 @@ statements are certified by Comparator: `lake comparator --paranoid` accepted th
 Sturm's theorem, so that with the exact check on its depth does not change the output
 (`Ratpoints.findPoints_sturm_neg_eq_ok`); and that the blocks of the loop over the denominators,
 sifted apart and delivered in their order, give what the run delivers
-(`Ratpoints.Sieve.run_deliverSlots_eq_fst_run_sieveRun`). The threads of ratpoints, which the
+(`Ratpoints.Sieve.run_deliverSlots_eq_fst_run_sieveRun`). The threads of `ratpoints`, which the
 model leaves out, sift the blocks apart and deliver their points in the order of the blocks, so the
 model, which sifts the blocks in turn on one thread, gives the output of every number of threads,
-provided that the pool of threads of ratpoints behaves as its code says.
+provided that the pool of threads of `ratpoints` behaves as its code says.
 
 What one has to trust is the specification, which the challenge of Comparator restates verbatim,
 with the definitions of Lean core and Mathlib that it is written in;
 the reference of the delivery, of which the protocol speaks; the fact that the executable
 `ratpoints-lean` runs the model; Lean's kernel and Comparator; and, in the statements with the
-Sturm step on, Sturm's theorem. The search chooses its moduli by the cost model of ratpoints, in
+Sturm step on, Sturm's theorem. The search chooses its moduli by the cost model of `ratpoints`, in
 doubles, which the model computes as Lean's `Float`, with the `log` and `pow` of the C library of
-the platform, as ratpoints does; no proof reads the value of a double, so the theorems hold for
+the platform, as `ratpoints` does; no proof reads the value of a double, so the theorems hold for
 every choice of the moduli that the search makes.
 
 Lean has no semantics of C, so the link between the model and the C code is not a proof. Every line
@@ -74,7 +74,7 @@ model leaves it out, and `scripts/correspondence.py` checks the record against t
 pinned commit (`correspondence/README.md`). The differential tests run `ratpoints-lean` and the C
 program on the same inputs and compare the outputs byte for byte, the points in their order, the
 exit statuses and the reports: 5397 comparisons in the default suites, 13 in the suite of the runs
-of `test4.sh` above height 30000 and 92 in the suite of the searches in which ratpoints corrects
+of `test4.sh` above height 30000 and 92 in the suite of the searches in which `ratpoints` corrects
 its moduli, none failed. Since the choice of the moduli computes with the `log` and `pow` of the
 platform, the tests run the C program on the same machine and compare exactly what depends on the
 choice: the pairs under `-x`, the numbers of the moduli used (message 4) and the output under `-v`.
@@ -94,7 +94,7 @@ The blueprint and the API documentation will be at
 | part | contents | depends on |
 |---|---|---|
 | `Ratpoints/Model` | the executable model as plain code, one definition per component of the C code; no Mathlib, no contracts, no experimental options | Lean core, `Std` |
-| `Ratpoints/Spec` | the specification: the binary form, the normalized points of height at most `H`, their order in the output of ratpoints, the value of a double of the C code from its bits, the search intervals that ratpoints accepts, the points in the search region and Sturm's theorem as a proposition | Mathlib |
+| `Ratpoints/Spec` | the specification: the binary form, the normalized points of height at most `H`, their order in the output of `ratpoints`, the value of a double of the C code from its bits, the search intervals that `ratpoints` accepts, the points in the search region and Sturm's theorem as a proposition | Mathlib |
 | `Ratpoints/Proof` | the contract of each component as a theorem, the main theorems, and the lemmas that Lean core lacks, on vectors, arrays, lists, ranges, natural numbers, integers, characters and strings (`Ratpoints/Proof/Containers.lean`) and on words (`Ratpoints/Proof/Bits.lean`), and the tactic `vc_simp` that the proofs by `vcgen` share (`Ratpoints/Proof/VCSimp.lean`) | Mathlib, the specification, the model, the candidates for Mathlib |
 | `Ratpoints/Mathlib` | statements of general interest, as candidates for Mathlib | Mathlib |
 | `comparator/` | the specification restated, and the main theorems with `sorry`, for [Comparator](https://github.com/leanprover/comparator); their proofs by the library | Mathlib, the model (the challenge); the library (the solution) |
@@ -119,7 +119,7 @@ python3 scripts/constants_check.py --workdir tmp/cc   # builds with other values
 ```
 
 `scripts/correspondence.py` and `scripts/difftest.py` read the C code and the test suites from a
-clone of ratpoints that contains the pinned commit, given by `--repo PATH` or the environment
+clone of `ratpoints` that contains the pinned commit, given by `--repo PATH` or the environment
 variable `RATPOINTS_REPO`; `scripts/difftest.py` also runs the C program built there (or the one
 that `--c PATH` or `RATPOINTS_BIN` names), which must be the default build at the pin, without a
 `tuning.mk`, which the harness refuses, on the same machine as `ratpoints-lean`, since the choice of
@@ -133,29 +133,29 @@ repository and runs on demand, not in CI.
 
 ## The program `ratpoints-lean`
 
-`ratpoints-lean 'a_0 a_1 ... a_n' H [options]` has the command line of ratpoints. It reads the
-coefficients (constant term first), the height bound and the options as ratpoints does, with its
+`ratpoints-lean 'a_0 a_1 ... a_n' H [options]` has the command line of `ratpoints`. It reads the
+coefficients (constant term first), the height bound and the options as `ratpoints` does, with its
 checks, messages and exit statuses, and prints the points of height at most `H` on
-`y² = a_n xⁿ + ⋯ + a_0` as ratpoints does, through the callback of its `main.c`: by default one line
-`(x : y : z)` per point, with the options of the output `-x -X -y -Y -z -Z -1 -i -I` and the formats
-and strings of `-f -fs -fm -fe`, and without `-q` the report that ratpoints prints around them,
-under `-v` with the report of the library between them; under `-x` (no exact check) it prints the
-pairs that pass its sieve, with the moduli that it chooses from the curve and corrects between the
-blocks of the run as ratpoints does, which are those that ratpoints prints on the same machine. It
-finds the points by the sieve on bit arrays of words in its three stages, the first in chunks of 16
-bit arrays with the rows that the builders of ratpoints build, the numerators of each denominator
-packed by the stride of its class, with the moduli that it chooses from the curve and the options
-`-p -n -N -r -R -U -C -A -P -Q -W -F -j -J`; `-k` and `-K` forbid and allow the reversal of the
-polynomial, `-s` and `-S [depth]` switch the Sturm step off and on, which narrows the search
+`y² = a_n xⁿ + ⋯ + a_0` as `ratpoints` does, through the callback of its `main.c`: by default one
+line `(x : y : z)` per point, with the options of the output `-x -X -y -Y -z -Z -1 -i -I` and the
+formats and strings of `-f -fs -fm -fe`, and without `-q` the report that `ratpoints` prints around
+them, under `-v` with the report of the library between them; under `-x` (no exact check) it prints
+the pairs that pass its sieve, with the moduli that it chooses from the curve and corrects between
+the blocks of the run as `ratpoints` does, which are those that `ratpoints` prints on the same
+machine. It finds the points by the sieve on bit arrays of words in its three stages, the first in
+chunks of 16 bit arrays with the rows that the builders of `ratpoints` build, the numerators of each
+denominator packed by the stride of its class, with the moduli that it chooses from the curve and
+the options `-p -n -N -r -R -U -C -A -P -Q -W -F -j -J`; `-k` and `-K` forbid and allow the reversal
+of the polynomial, `-s` and `-S [depth]` switch the Sturm step off and on, which narrows the search
 intervals to those where the polynomial may be `≥ 0`; `-l` and `-u` give the search intervals, read
-as ratpoints reads them, the ends as the numbers they are and the doubles outward of them, and `-dl`
-and `-du` the range of the denominators; it accepts `-t`, the number of threads of ratpoints,
-checking its argument, but ignores it, sieving the blocks in turn on one thread, which gives the
-output of every number of threads if the pool of ratpoints behaves as its code says. It refuses a binary form that is not squarefree with error 8 as
-ratpoints does with the same options, and prints the points of the search region of its command line
-in the order of ratpoints.
+as `ratpoints` reads them, the ends as the numbers they are and the doubles outward of them, and
+`-dl` and `-du` the range of the denominators; it accepts `-t`, the number of threads of
+`ratpoints`, checking its argument, but ignores it, sieving the blocks in turn on one thread, which
+gives the output of every number of threads if the pool of `ratpoints` behaves as its code says. It
+refuses a binary form that is not squarefree with error 8 as `ratpoints` does with the same options,
+and prints the points of the search region of its command line in the order of `ratpoints`.
 
 ## Licence
 
-Apache 2.0 (`LICENSE`). The C code of ratpoints is under the GPL; its copyright notices name
+Apache 2.0 (`LICENSE`). The C code of `ratpoints` is under the GPL; its copyright notices name
 Michael Stoll alone.

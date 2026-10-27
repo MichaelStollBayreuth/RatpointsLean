@@ -236,7 +236,7 @@ Deviation: a list, made by a map over the entries of the third stage and their r
 (`List.zipWith`), for the loop over the positions `sp2, …, sp3 - 1` of `sieve_list` and `magics`
 that fills the array `checks` of the sieving thread; no bound `RATPOINTS_NUM_PRIMES` on its length
 (`stage3_list` and the arrays of the pool, `find_points.c:339`, `find_points.c:4372`), which
-ratpoints never reaches since each entry of `sieve_list` owns its own prime
+`ratpoints` never reaches since each entry of `sieve_list` owns its own prime
 (`find_points.c:329-331`), where the model takes any entries, which may repeat a prime; the thunk
 that the sieve of one denominator makes of it (`Ratpoints.Sieve.sift`), for the flag `stage3_filled`
 of the sieving thread, which `sift` clears and `fill_checks` sets. -/

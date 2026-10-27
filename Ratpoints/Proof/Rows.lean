@@ -92,8 +92,8 @@ theorem getLsbD_wordOfBits (c : Nat → Bool) (t : Nat) :
 `m + chunk - 1` bit arrays of `Ratpoints.rbaPack` words, for the chunk `Ratpoints.chunk`, word `j`
 with bit `t` set exactly when `adm r` admits the numerator `64 j + t`. With the test
 `Ratpoints.Sieve.SieveEntry.admits` of a sieve entry, or `Ratpoints.Sieve.Factor.admits` of a
-factor, this is the row that ratpoints builds for the residue, `m` bit arrays and the copies of the
-first `chunk - 1` of them (`Ratpoints.Sieve.getElem!_closedRow_mod`). -/
+factor, this is the row that `ratpoints` builds for the residue, `m` bit arrays and the copies of
+the first `chunk - 1` of them (`Ratpoints.Sieve.getElem!_closedRow_mod`). -/
 def closedRow (adm : Nat → Int → Bool) (m r : Nat) : Array UInt64 :=
   (Array.range ((m + chunk - 1) * rbaPack)).map fun (j : Nat) ↦
     wordOfBits fun t ↦ adm r (64 * j + t)

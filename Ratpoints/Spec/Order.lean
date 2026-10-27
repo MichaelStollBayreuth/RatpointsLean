@@ -13,17 +13,17 @@ import Ratpoints.Spec.Region
 /-!
 # The order of the points
 
-The list of the points that ratpoints finds, in its order, for a coefficient list `c` and a height
-bound `H`. It is the order of the polynomial that ratpoints searches, which its set-up may reverse,
-exchanging `x` and `z` in the binary form: the points at infinity first, then the points of each
-denominator `z` in turn, in the order of the loop of the search, which visits those that its tests
-let through (the others carry no point), by ascending numerator `x`, `(x, y, z)` before
+The list of the points that `ratpoints` finds, in its order, for a coefficient list `c` and a height
+bound `H`. It is the order of the polynomial that `ratpoints` searches, which its set-up may
+reverse, exchanging `x` and `z` in the binary form: the points at infinity first, then the points of
+each denominator `z` in turn, in the order of the loop of the search, which visits those that its
+tests let through (the others carry no point), by ascending numerator `x`, `(x, y, z)` before
 `(x, -y, z)`, each point mapped back to the caller's curve after a reversal. The denominators of the
 polynomial searched ascend, except when it has odd degree `d` with `|c_d| ≠ 1` (its own degree and
-leading coefficient) and ratpoints factors `|c_d|` completely by trial division and finds fewer than
-`maxDiv` of its squarefree divisors up to the largest denominator `B` of the search: then they are
-`e k ^ 2`, divisor `e` by divisor in the order of binary counting over the primes of `c_d`, and `k`
-ascending. The largest denominator is the height bound `H`, or the bound of the range of the
+leading coefficient) and `ratpoints` factors `|c_d|` completely by trial division and finds fewer
+than `maxDiv` of its squarefree divisors up to the largest denominator `B` of the search: then they
+are `e k ^ 2`, divisor `e` by divisor in the order of binary counting over the primes of `c_d`, and
+`k` ascending. The largest denominator is the height bound `H`, or the bound of the range of the
 denominators of a search region (`Ratpoints.denominatorBound`); the other parts of a search region
 (the search intervals, the lower bound of the denominators) only filter the list, and a search
 region other than the whole box (`Ratpoints.IsFullBox`) forbids the reversal. The specification uses
@@ -32,11 +32,11 @@ Mathlib and nothing of the model; the comparator challenge restates its definiti
 ## Main definitions
 
 * `Ratpoints.searchedPoly`: the polynomial searched, and whether it is the reversed one.
-* `Ratpoints.FactorsByTrialDivision`: whether ratpoints factors a number completely.
+* `Ratpoints.FactorsByTrialDivision`: whether `ratpoints` factors a number completely.
 * `Ratpoints.binaryDivisors`: the squarefree divisors up to `H`, in the order of binary counting.
 * `Ratpoints.searchDenominators`: the denominators of the search, in its order.
 * `Ratpoints.pointsWithDen`: the points of one denominator, in their order.
-* `Ratpoints.orderedPoints`: the list of the points, in the order of ratpoints.
+* `Ratpoints.orderedPoints`: the list of the points, in the order of `ratpoints`.
 
 ## Implementation notes
 
@@ -50,13 +50,13 @@ imports of the files of the specification that it restates.
 
 namespace Ratpoints
 
-/-- The polynomial that ratpoints searches for the coefficient list `c` of degree `d`, and whether
+/-- The polynomial that `ratpoints` searches for the coefficient list `c` of degree `d`, and whether
 it is reversed, when the switch `reverse` allows a reversal (the option `-k` of the program forbids
 it): for even `d`, the list `c_d, …, c₀` when `c₀ = 0` (then `c₁ ≠ 0`, or the binary form is not
 squarefree and refused) or when `c_d` is a square and `c₀` is not; for odd `d`, the list
 `0, c_d, …, c₁` when `|c_d| ≠ 1`, `c₀ = 0` and `|c₁| = 1`; otherwise `c` itself. The binary form
 of a reversed list is that of `c` with `x` and `z` exchanged, except for even `d` with
-`c₀ = c₁ = 0`, which ratpoints refuses. -/
+`c₀ = c₁ = 0`, which `ratpoints` refuses. -/
 def searchedPoly (reverse : Bool) (c : List ℤ) : List ℤ × Bool :=
   let d := degree c
   if reverse ∧ d % 2 = 0 ∧
@@ -67,8 +67,8 @@ def searchedPoly (reverse : Bool) (c : List ℤ) : List ℤ × Bool :=
     (0 :: (c.take (d + 1)).tail.reverse, true)
   else (c, false)
 
-/-- Whether ratpoints factors `n` completely: it divides off `2` and the odd primes up to `1021` in
-turn and takes a cofactor below `p ^ 2`, for the next prime `p`, as a prime, which it is; so it
+/-- Whether `ratpoints` factors `n` completely: it divides off `2` and the odd primes up to `1021`
+in turn and takes a cofactor below `p ^ 2`, for the next prime `p`, as a prime, which it is; so it
 fails exactly when the part of `n` at the primes from `1021` on is at least `1021 ^ 2` and not a
 power of `1021`. -/
 def FactorsByTrialDivision (n : ℕ) : Prop :=
@@ -86,7 +86,7 @@ def binaryDivisors (n H : ℕ) : List ℕ :=
 
 /-- The denominators of the search of the polynomial with the coefficient list `c` of degree `d`,
 up to the largest denominator `H` of the search (the height bound, or the bound of the range of the
-denominators, `Ratpoints.denominatorBound`): when `d` is odd, `|c_d| ≠ 1`, ratpoints factors
+denominators, `Ratpoints.denominatorBound`): when `d` is odd, `|c_d| ≠ 1`, `ratpoints` factors
 `|c_d|` completely (`Ratpoints.FactorsByTrialDivision`) and it has fewer than `maxDiv` squarefree
 divisors at most `H` (`Ratpoints.binaryDivisors`), the numbers `e k ^ 2 ≤ H`, divisor `e` by
 divisor in that order and `k = 1, 2, …` for each; otherwise `1, …, H`. This is the order of the
@@ -111,7 +111,7 @@ def pointsWithDen (c : List ℤ) (H z : ℕ) : List (ℤ × ℤ × ℤ) :=
     (if y = 0 then [(x, 0, (z : ℤ))] else [(x, y, z), (x, -y, z)]).filter (IsPoint c H)
 
 /-- The points of height at most `H` on `y ^ 2 = F(x, z)` for the coefficient list `c` with
-denominators at most `B`, in the order in which ratpoints finds them, for the switch `reverse` of
+denominators at most `B`, in the order in which `ratpoints` finds them, for the switch `reverse` of
 the reversal and the bound `maxDiv` of the number of divisors: for the polynomial searched
 (`Ratpoints.searchedPoly`), its points at infinity, then the points of its denominators up to `B`
 (`Ratpoints.searchDenominators`) in turn (`Ratpoints.pointsWithDen`); after a reversal, each point

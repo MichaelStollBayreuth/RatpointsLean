@@ -156,10 +156,10 @@ def twoAdic (c : List Int) (d : Nat) : Id (Vector UInt64 64) := do
 /-- The classes of the denominators modulo 64 that admit a numerator, for the words `nb` of the
 2-adic information (`Ratpoints.Sieve.twoAdic`): bit `b` is set exactly when `nb[b] ≠ 0`. A
 denominator whose class has its bit clear carries no point; when no bit is set, the curve has no
-point at all, not even at infinity (`Ratpoints.Sieve.not_isPoint_of_denBits_eq_zero`), and ratpoints
-ends the search with none, after a test of the points at infinity that then always passes (the
-2-adic exit of `Ratpoints.searchPoints`). It is the reference of the word `den_bits` that
-`get_2adic_info` computes in the loop that makes the classes, with them
+point at all, not even at infinity (`Ratpoints.Sieve.not_isPoint_of_denBits_eq_zero`), and
+`ratpoints` ends the search with none, after a test of the points at infinity that then always
+passes (the 2-adic exit of `Ratpoints.searchPoints`). It is the reference of the word `den_bits`
+that `get_2adic_info` computes in the loop that makes the classes, with them
 (`Ratpoints.Sieve.numClasses`). -/
 def denBits (nb : Vector UInt64 64) : UInt64 :=
   Nat.fold 64 (fun b h db ↦ if nb[b] != 0 then db ||| 1 <<< b.toUInt64 else db) 0
@@ -710,11 +710,11 @@ def runSetup (useSquares : Bool) (us1 : Option (List Setup.DenInfo × List Nat))
 /-! ### Examples
 
 The words of the 2-adic information and the tables of the Jacobi test against those that a build of
-ratpoints at the pinned commit prints with a dump of the side of the denominators on the standard
+`ratpoints` at the pinned commit prints with a dump of the side of the denominators on the standard
 error (the words `fsq`, `gsq` and `nb` of `get_2adic_info`, `den_bits` and the tables of the Jacobi
 test), and against their rule. The forbidden divisors that the dump prints are in the examples of
 `Ratpoints.Model.Choice`, the denominators that the run sifts and the run of the divisor shape
-against the points that ratpoints prints in those of `Ratpoints.Model.Blocks`. -/
+against the points that `ratpoints` prints in those of `Ratpoints.Model.Blocks`. -/
 
 -- The squares modulo 64.
 #guard (List.range 64).all fun s ↦

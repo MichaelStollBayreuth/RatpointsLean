@@ -246,7 +246,7 @@ The ends that `exact_end` makes and the values of `exact_scale` for them, agains
 runs these functions of the pinned commit verbatim, on doubles of every kind (both zeros, the
 subnormals, the infinities, `2 ^ 63` and its neighbours, integers and fractions of either sign); the
 numerator intervals of the search intervals of a run are in the examples of
-`Ratpoints.Model.Sieve`, against the build of ratpoints with `DEBUG`. -/
+`Ratpoints.Model.Sieve`, against the build of `ratpoints` with `DEBUG`. -/
 
 -- For each double, at the lower and at the upper end: the fields `m`, `rl`, `rh`, `s` and `neg` of
 -- `exact_end` (`M = 2 ^ 64 - 1`), `exact_scale` at the denominators `1`, `12345`, `2 ^ 62 + 1`,

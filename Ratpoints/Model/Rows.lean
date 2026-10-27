@@ -131,7 +131,7 @@ def sieves0 (p : Nat) : Array UInt64 :=
 /-- The tables of rows of the entries of a run: for the reference to an entry
 (`Ratpoints.Sieve.EntryRef`), the table of its rows by the residue of the denominator modulo its
 modulus, `m` of them for the modulus `m`, each `none` until it is built. These are the arrays
-`sieve` of the sieve entries of ratpoints, which the C code reaches through the pointers to the
+`sieve` of the sieve entries of `ratpoints`, which the C code reaches through the pointers to the
 entries (`sieve_list[n]`, and the field `factor` of the entry of a product), with `none` for `NULL`.
 A table of rows is made, with the row of `0` of a prime from the build and the others absent, where
 the C code makes the entry (`Ratpoints.examineInLoop`, `Ratpoints.Sieve.SieveEntry.addTables`), and

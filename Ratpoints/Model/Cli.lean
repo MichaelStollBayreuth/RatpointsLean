@@ -15,19 +15,19 @@ meta import Ratpoints.Model.FindPoints
 /-!
 # The command-line program `ratpoints-lean`
 
-`ratpoints-lean` has the command line of ratpoints: the coefficient list `'a_0 a_1 ... a_n'` of
+`ratpoints-lean` has the command line of `ratpoints`: the coefficient list `'a_0 a_1 ... a_n'` of
 `y ^ 2 = a_n x ^ n + ⋯ + a_0` as one argument (constant term first), the height bound and the
-options. It reads them as `main.c` of ratpoints does, with its checks, messages and exit statuses,
-in its order, and prints what ratpoints prints: unless `-q` is given, the report, with the banner of
-`ratpoints-lean`, the curve, the height bound and the search region of the command line before the
-points, and after them the numbers of the moduli used, what the search did, the search intervals
+options. It reads them as `main.c` of `ratpoints` does, with its checks, messages and exit statuses,
+in its order, and prints what `ratpoints` prints: unless `-q` is given, the report, with the banner
+of `ratpoints-lean`, the curve, the height bound and the search region of the command line before
+the points, and after them the numbers of the moduli used, what the search did, the search intervals
 that it searched and the count of the points found, and, under `-v`, in place of the height bound
 and the messages after the points but the count, the report of the library (`Ratpoints.Report`),
-between the points as ratpoints prints it; under `-x`, the pairs that pass the sieve of the model,
-with the moduli that the search chooses from the curve as ratpoints chooses them
+between the points as `ratpoints` prints it; under `-x`, the pairs that pass the sieve of the model,
+with the moduli that the search chooses from the curve as `ratpoints` chooses them
 (`Ratpoints.sievingInfo`) and corrects between the blocks of the run
 (`Ratpoints.Sieve.adaptPrimes`), and over the numerators of the search intervals that the Sturm step
-leaves, which are those that ratpoints prints; and the points, through the callback `process` of
+leaves, which are those that `ratpoints` prints; and the points, through the callback `process` of
 `main.c` (`Ratpoints.Cli.process`), which the search calls for each point it finds
 (`Ratpoints.findPointsVerbose`), in the format of `-f` with the strings of `-fs`, `-fm` and `-fe`,
 the points at infinity passed over under `-i` (neither printed nor counted), none printed under
@@ -43,7 +43,7 @@ they meet (`Ratpoints.Cli.joinIntervals`), and against whose exact ends `process
 It runs the search with these options of the sieve, its array size set to
 `Ratpoints.defaultArraySize`, and these options of the search, so that it refuses a binary form that
 is not squarefree with error 8 and, after a reversal, prints the points of the reversed polynomial
-mapped back to the caller's curve, as ratpoints does with the same options.
+mapped back to the caller's curve, as `ratpoints` does with the same options.
 
 ## Main definitions
 
@@ -73,7 +73,7 @@ namespace Cli
 def version : String := "0.1"
 
 /-- The banner of `ratpoints-lean`, which it prints with the usage. Its first line names the
-program and its version, as that of ratpoints does, so that the test scripts of ratpoints, which
+program and its version, as that of `ratpoints` does, so that the test scripts of `ratpoints`, which
 leave out the line beginning `This is ratpoints-`, leave it out too; the rest says what the
 program is, under which licence it is released and where it lives.
 
@@ -87,7 +87,7 @@ def banner : String :=
     "It comes with ABSOLUTELY NO WARRANTY. It is free software, released\n" ++
     "under the Apache License 2.0.\n\n"
 
-/-- The usage of `ratpoints-lean`: that of ratpoints, all options included.
+/-- The usage of `ratpoints-lean`: that of `ratpoints`, all options included.
 
 C: `main.c:77-88`
 
@@ -121,7 +121,7 @@ inductive Failure where
   | incorrectHeight
   /-- Error 5 of `main.c`: fewer than two coefficients. -/
   | tooFewCoefficients
-  /-- Error 6 of `main.c`: an option that ratpoints does not have, a word without a leading `-`
+  /-- Error 6 of `main.c`: an option that `ratpoints` does not have, a word without a leading `-`
   among the options, or an option whose argument is missing or malformed, but for `-l` and `-u`. -/
   | optionSyntax
   /-- Error 7 of `main.c`: an end of a search interval (`-l`, `-u`) that is missing or no number,
@@ -876,11 +876,11 @@ def run (args : List String) : String × UInt32 :=
       (pre ++ r.info.out ++ before ++ printString u.stringAfter ++ report s o u r, 0)
 
 /-- The program `ratpoints-lean`: it prints the text of `Ratpoints.Cli.run` on the standard
-output, in one write once it is computed, and exits with its status. Like ratpoints, it ignores
+output, in one write once it is computed, and exits with its status. Like `ratpoints`, it ignores
 a failed write, but for one case: when the reader of the output is gone, the write fails with
 `IO.Error.resourceVanished`, since the Lean runtime ignores the signal `SIGPIPE` that ends
-ratpoints then, and the program exits quietly with the status 141 that the shell reports for
-ratpoints (where `SIGPIPE` has its default action). It flushes the standard output itself, since
+`ratpoints` then, and the program exits quietly with the status 141 that the shell reports for
+`ratpoints` (where `SIGPIPE` has its default action). It flushes the standard output itself, since
 a short output waits in the buffer of the C library until the exit, where a failed write goes
 unnoticed. -/
 def main (args : List String) : IO UInt32 := do
@@ -896,7 +896,7 @@ def main (args : List String) : IO UInt32 := do
 
 /-! ### Examples
 
-Each of them is what ratpoints 3.1.1 does, but for the banner, also under `-v`, with the report of
+Each of them is what `ratpoints` 3.1.1 does, but for the banner, also under `-v`, with the report of
 the library. -/
 
 #guard (coefficients " +1\t0  -1 ").toOption == some [1, 0, -1]

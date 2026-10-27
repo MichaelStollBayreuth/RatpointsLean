@@ -1,14 +1,14 @@
 # The correspondence with the C code
 
 Lean has no semantics of C, so the link between the model in `Ratpoints/Model` and the C code of
-ratpoints is a record of which Lean declaration models which lines of C, checked by
+`ratpoints` is a record of which Lean declaration models which lines of C, checked by
 `scripts/correspondence.py`, together with the differential tests.
 
 ## The pin
 
-Every line number refers to one commit of ratpoints, the pin in
+Every line number refers to one commit of `ratpoints`, the pin in
 [`ratpoints.toml`](ratpoints.toml): release 3.1.1, commit `1a99853`. The project follows the
-releases of ratpoints, and a new optimization of the C code comes, as far as possible, with its
+releases of `ratpoints`, and a new optimization of the C code comes, as far as possible, with its
 soundness proof in the model. The C code is read with `git show <commit>:<file>`, so the working
 tree of the C repository may be at any commit.
 
@@ -79,12 +79,12 @@ the model, reads the docstrings of its declarations with `scripts/Correspondence
   `scripts/correspondence.py coverage` lists the stretches not recorded, as after a move of the pin
   to a release with new code; without `--complete` the check ignores them.
 
-The script needs a clone of ratpoints that contains the pin, given by `--repo PATH` or the
+The script needs a clone of `ratpoints` that contains the pin, given by `--repo PATH` or the
 environment variable `RATPOINTS_REPO`.
 
 ## Moving the pin
 
-When the project moves to a new ratpoints release, the line numbers move with the C code:
+When the project moves to a new `ratpoints` release, the line numbers move with the C code:
 
 1. set the new commit and tag in `ratpoints.toml` and `\ratpointscommit` in
    `blueprint/src/macros/common.tex`;

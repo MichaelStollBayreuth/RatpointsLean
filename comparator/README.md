@@ -64,7 +64,7 @@ hypothesis on `s`, from which and from the curve the search chooses its moduli:
   (`IsFullBox`), and search intervals that are not well formed; so a `findPoints` that refuses
   every input, with or without the Sturm step, is ruled out;
 - the order (`challenge_eq_orderedPoints_of_findPoints_eq_ok`): under the hypotheses of
-  membership, the list is that of `orderedPoints`, the points in the order of ratpoints (with the
+  membership, the list is that of `orderedPoints`, the points in the order of `ratpoints` (with the
   bound `maxDivisors` of the model on the number of divisors, the reversal only for the whole box
   and the largest denominator `denominatorBound`), filtered by `o.noY` and the search region;
 - three statements with the exact check off (`o.noCheck = true`): every element `(x, y, z)` of the

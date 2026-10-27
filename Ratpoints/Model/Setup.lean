@@ -13,7 +13,7 @@ meta import Ratpoints.Model.Constants
 /-!
 # The set-up of a search
 
-What ratpoints does with its input before the sieve, as far as the model has it: the refusals of a
+What `ratpoints` does with its input before the sieve, as far as the model has it: the refusals of a
 search, each with the error of the program (`Ratpoints.Refusal`); the reversal check of
 `find_points_work_1`, which refuses the binary form when the degree `d` of the polynomial is even
 and `X ^ 2` divides the form (`c₀ = c₁ = 0`), and otherwise may reverse the polynomial, in three
@@ -72,7 +72,7 @@ inductive Refusal where
   deriving DecidableEq, Repr
 
 /-- Whether the integer `a` is a C `long`, `-2 ^ 63 ≤ a < 2 ^ 63`, as `mpz_fits_slong_p` of GMP
-decides it: ratpoints needs a `long` of 64 bits since version 3.0.0.
+decides it: `ratpoints` needs a `long` of 64 bits since version 3.0.0.
 
 C: `rp-private.h:41-43`, `rp-private.h:47`
 
@@ -289,14 +289,14 @@ def setupUs1 (c : List Int) (d bHigh : Nat) : Id (Option (List DenInfo × List N
 
 /-! ### Examples
 
-What ratpoints 3.1.1 does at the pinned commit: with `-v` it says whether it reverses and in which
+What `ratpoints` 3.1.1 does at the pinned commit: with `-v` it says whether it reverses and in which
 case, and prints the coefficients of case 3; `-k` switches the reversal off; and
 `ratpoints '0 0 1 1 1' 5 -q -s`, without the Sturm step, which would refuse the form too, ends with
 error 8, which `-s -k` does not. The test of the `long`s is checked at the ends of their range. The
 valuation is checked at 2, 3 and 5 and at 0; the factorizations over the table with their cofactors,
-the squarefree divisors and the slopes against what the build of ratpoints with `DEBUG` prints with
-`-v`, a factorization that is not complete among them; and the boundary of `Ratpoints.maxDivisors`
-divisors (511 at the height 2066, 512 at 2067). -/
+the squarefree divisors and the slopes against what the build of `ratpoints` with `DEBUG` prints
+with `-v`, a factorization that is not complete among them; and the boundary of
+`Ratpoints.maxDivisors` divisors (511 at the height 2066, 512 at 2067). -/
 
 #guard [0, 1, 4, 9, 2 ^ 126].all isSquare && !([2, 3, -1, -4, 2 ^ 127].any isSquare)
 

@@ -11,7 +11,7 @@ public import Ratpoints.Model.Choice
 # The report of the library
 
 Under the bit `RATPOINTS_VERBOSE` of the flags, which the option `-v` of the program sets, the
-library of ratpoints prints a report of the search on the standard output, between the points that
+library of `ratpoints` prints a report of the search on the standard output, between the points that
 the callback of the program prints there: the arguments as the search normalizes them, the reversal
 check, the Sturm step, the points at infinity and the tests on the denominators, the packing of the
 numerators, the choice of the moduli with the cost of a check and the forbidden divisors, the line

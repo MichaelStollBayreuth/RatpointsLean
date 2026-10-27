@@ -6,9 +6,9 @@ Authors: Michael Stoll
 module
 
 /-!
-# The compile-time constants of ratpoints
+# The compile-time constants of `ratpoints`
 
-The constants that the C code of ratpoints fixes when it is compiled, each a definition with the
+The constants that the C code of `ratpoints` fixes when it is compiled, each a definition with the
 value of the default build and a docstring that names its macro, and the table of primes from which
 the sieve takes its moduli. Changing a constant changes the model as changing the macro changes the
 C program: no proof depends on the values of the constants beyond the facts checked here by
@@ -32,7 +32,7 @@ only that its entries are the odd primes below 1022, in increasing order
 
 ## Main definitions
 
-* `Ratpoints.maxDegree`: the largest degree that ratpoints accepts.
+* `Ratpoints.maxDegree`: the largest degree that `ratpoints` accepts.
 * `Ratpoints.primeTable`: the odd primes below 1024, among which the moduli are chosen.
 * `Ratpoints.maxBitsInPrime`, `Ratpoints.numPrimes`, `Ratpoints.maxPrimeEven`: the moduli are
   chosen among the primes of the table below `maxPrimeEven = 2 ^ maxBitsInPrime`, the first
@@ -49,7 +49,7 @@ only that its entries are the odd primes below 1022, in increasing order
   `Ratpoints.costBp`, `Ratpoints.costSetup`, `Ratpoints.costCall`, `Ratpoints.costLine`,
   `Ratpoints.costPhase2`, `Ratpoints.costSurvivor`, `Ratpoints.costCheck`, `Ratpoints.checkStep`,
   `Ratpoints.checkLimb`, `Ratpoints.checkCall`, `Ratpoints.checkRoot`,
-  `Ratpoints.checkReference`: the tuning of the cost model by which ratpoints chooses its moduli,
+  `Ratpoints.checkReference`: the tuning of the cost model by which `ratpoints` chooses its moduli,
   the macros of `ratpoints.h`, doubles but for the largest composite modulus.
 * `Ratpoints.maxModuli`, `Ratpoints.maxFactors`, `Ratpoints.modulusTableMax`,
   `Ratpoints.runShapeSamples`, `Ratpoints.invStride`: the bounds and the constants of the choice
@@ -83,14 +83,14 @@ only that its entries are the odd primes below 1022, in increasing order
 
 namespace Ratpoints
 
-/-- The largest degree of a polynomial that ratpoints accepts, `RATPOINTS_MAX_DEGREE`: a list of
+/-- The largest degree of a polynomial that `ratpoints` accepts, `RATPOINTS_MAX_DEGREE`: a list of
 coefficients has at most `maxDegree + 1` entries.
 
 C: `ratpoints.h:33` -/
 def maxDegree : Nat := 100
 
 /-- The odd primes below 1024, in increasing order: the table `prime` of `primes.h`, of size
-`PRIMES1000`, which `find_points.c` includes, among which ratpoints chooses its moduli.
+`PRIMES1000`, which `find_points.c` includes, among which `ratpoints` chooses its moduli.
 
 C: `primes.h:29-40`, `find_points.c:32` -/
 def primeTable : Array Nat :=
@@ -109,7 +109,7 @@ among the primes of `Ratpoints.primeTable` below `2 ^ maxBitsInPrime`.
 
 C: `rp-private.h:321-323`
 
-Deviation: 8, the value of the default build, which the Makefile of ratpoints passes to the
+Deviation: 8, the value of the default build, which the Makefile of `ratpoints` passes to the
 compiler (its variable `PRIME_SIZE`), for the value 7 that the header takes when it is given
 none. -/
 def maxBitsInPrime : Nat := 8
@@ -319,7 +319,7 @@ Deviation: a constant of the model, set here, for the macro that the compiler is
 def useLongInPhase2 : Bool := false
 
 /-- How many moduli the second stage of the sieve adds to the first when neither the option `-N`
-nor `-R` says, `RATPOINTS_SP2_EXTRA`, the compiled-in default of `-R`: the offset that ratpoints
+nor `-R` says, `RATPOINTS_SP2_EXTRA`, the compiled-in default of `-R`: the offset that `ratpoints`
 takes as it is under `-U 0` and otherwise scales by the length of the run
 (`Ratpoints.phase2Offset`); also the number of the next candidates whose mean density stands for
 the second stage of a long run (`Ratpoints.downstreamFactor`).
@@ -370,7 +370,7 @@ def sp3Coprime : Float := 0.7
 C: `ratpoints.h:192-194` -/
 def costTable : Float := 38.0
 
-/-- The largest composite modulus that ratpoints offers, `RATPOINTS_COMPOSITE_MAX`: the odd
+/-- The largest composite modulus that `ratpoints` offers, `RATPOINTS_COMPOSITE_MAX`: the odd
 composites from 9 up to it and below `Ratpoints.maxPrimeEven` (`Ratpoints.addModuli`).
 
 C: `ratpoints.h:210-212` -/
@@ -524,7 +524,7 @@ def blocksWanted : Nat := 1024
 C: `find_points.c:3732-3734` -/
 def blockMin : Nat := 16
 
-/-- The fixed length of the blocks that a build of ratpoints may set, `RP_BLOCK_LEN`, to test the
+/-- The fixed length of the blocks that a build of `ratpoints` may set, `RP_BLOCK_LEN`, to test the
 boundaries of the blocks: none, as in the default build, which does not define the macro, and
 `some n` for a build with `-DRP_BLOCK_LEN=n` (`Ratpoints.Sieve.blockLength`). It models no line of
 the C code: the macro is defined only on the command line of the compiler, and the conditional

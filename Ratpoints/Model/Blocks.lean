@@ -34,7 +34,7 @@ of the end of the second stage and of the third stage once the run has swept eno
 `j + Ratpoints.adaptLag + 1` on (`Ratpoints.Sieve.Decision`, `Ratpoints.Sieve.Correction`). The run
 sifts the blocks in turn, each folded after it, and returns the ends of the second and the third
 stage of the last block folded, which the search reports as used (`Ratpoints.Sieve.sieveRun`). The
-pool of threads that ratpoints may sieve the blocks with is not modelled: with it, the blocks are
+pool of threads that `ratpoints` may sieve the blocks with is not modelled: with it, the blocks are
 sifted apart and delivered in their order, and the decision of a block is the same, since it depends
 only on the folds of the blocks at least `Ratpoints.adaptLag + 1` before it.
 
@@ -834,9 +834,9 @@ def sieveRun {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c
 
 The blocks, the decision in force, the fold of the counters, the correction and the denominators
 that the blocks visit against their rule; the shape and the denominators that the run sifts against
-those that a build of ratpoints at the pinned commit prints with a dump of the side of the
+those that a build of `ratpoints` at the pinned commit prints with a dump of the side of the
 denominators on the standard error (the dump); and the blocks and the run of the divisor shape
-against the points that ratpoints prints. -/
+against the points that `ratpoints` prints. -/
 
 -- The block length: at least 16 steps, about 1024 blocks for a long run.
 #guard [0, 1, 16000, 16383, 16384, 1048576].map blockLength == [16, 16, 16, 16, 17, 1025]

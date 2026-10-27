@@ -63,19 +63,19 @@ than `Ratpoints.maxDivisors` divisors.
 * `Ratpoints.even_add_of_sq_eq_binaryForm_of_odd`: the valuation test of the slopes.
 * `Ratpoints.factorsByTrialDivision_of_isRoughPart_one`,
   `Ratpoints.factorsByTrialDivision_of_isRoughPart_of_lt`,
-  `Ratpoints.eq_one_iff_factorsByTrialDivision_of_isRoughPart`: whether ratpoints factors a number
+  `Ratpoints.eq_one_iff_factorsByTrialDivision_of_isRoughPart`: whether `ratpoints` factors a number
   completely, read off its parts at the primes from a bound on.
 * `Ratpoints.Setup.factorLcf_spec`, `Ratpoints.Setup.squarefreeDivisors_spec`,
   `Ratpoints.Setup.slope_spec`, `Ratpoints.Setup.setupUs1_spec`: the contracts of the divisor
-  set-up; the factorization leaves the cofactor `1` exactly when ratpoints factors the number
+  set-up; the factorization leaves the cofactor `1` exactly when `ratpoints` factors the number
   completely, and then it lists the primes in increasing order, each with its valuation; the set-up
   succeeds exactly when the cofactor is `1` and the doubling loop gives fewer than
   `Ratpoints.maxDivisors` divisors.
 * `Ratpoints.Setup.foldl_extendDivisors_eq_filter`: the doubling loop lists the products of the
   sublists of the primes in the order of binary counting, up to the bound.
-* `Ratpoints.Setup.map_snd_run_setupUs1`: the divisor set-up succeeds exactly when ratpoints factors
-  `|c_d|` completely and finds fewer than `Ratpoints.maxDivisors` divisors, and its divisors are
-  then those of `Ratpoints.binaryDivisors`.
+* `Ratpoints.Setup.map_snd_run_setupUs1`: the divisor set-up succeeds exactly when `ratpoints`
+  factors `|c_d|` completely and finds fewer than `Ratpoints.maxDivisors` divisors, and its divisors
+  are then those of `Ratpoints.binaryDivisors`.
 * `Ratpoints.mem_binaryDivisors_iff`, `Ratpoints.nodup_binaryDivisors`: the divisors of
   `Ratpoints.binaryDivisors` are the squarefree divisors up to the bound, each once.
 * `Ratpoints.Setup.mem_iff_of_setupUs1_eq_some`, `Ratpoints.Setup.nodup_of_setupUs1_eq_some`: so
@@ -223,7 +223,7 @@ theorem exists_eq_mul_mul_of_sq_eq_binaryForm_of_odd {c : List ℤ} (hd : degree
 /-! ### Factoring by trial division -/
 
 /-- A number whose part at the primes from `q ≤ 1022` on is `1` has no prime factor above `1021`,
-so that ratpoints factors it completely. -/
+so that `ratpoints` factors it completely. -/
 theorem factorsByTrialDivision_of_isRoughPart_one {q n : ℕ} (h : Nat.IsRoughPart q n 1)
     (hq : q ≤ 1022) :
     FactorsByTrialDivision n := by
@@ -234,7 +234,7 @@ theorem factorsByTrialDivision_of_isRoughPart_one {q n : ℕ} (h : Nat.IsRoughPa
   lia
 
 /-- A number whose part at the primes from `q ≤ 1021` on is below `q ^ 2` has its part at the
-primes from `1021` on below `1021 ^ 2`, so that ratpoints factors it completely. -/
+primes from `1021` on below `1021 ^ 2`, so that `ratpoints` factors it completely. -/
 theorem factorsByTrialDivision_of_isRoughPart_of_lt {q n w : ℕ} (h : Nat.IsRoughPart q n w)
     (hn : n ≠ 0) (hq : q ≤ 1021) (hw : w < q * q) :
     FactorsByTrialDivision n := by
@@ -243,7 +243,7 @@ theorem factorsByTrialDivision_of_isRoughPart_of_lt {q n w : ℕ} (h : Nat.IsRou
   rw [h.eq_prod_filter hn]
   exact (List.monotone_filter_right _ fun p hp ↦ by simp at hp ⊢; lia).prod_dvd_prod
 
-/-- When the part `w` of `n ≠ 0` at the primes from `1021` on is at least `1021 ^ 2`, ratpoints
+/-- When the part `w` of `n ≠ 0` at the primes from `1021` on is at least `1021 ^ 2`, `ratpoints`
 factors `n` completely exactly when its part `m` at the primes from `1022` on is `1`. -/
 theorem eq_one_iff_factorsByTrialDivision_of_isRoughPart {n w m : ℕ} (h : Nat.IsRoughPart 1021 n w)
     (hn : n ≠ 0) (hw : 1021 * 1021 ≤ w) (hm : Nat.IsRoughPart 1022 n m) :
@@ -320,7 +320,7 @@ theorem fitsLong_of_lt_mul_self {w p : ℕ} (hp : p ∈ primeTable) (hw : w < p 
 /-- The part of the invariant of `Ratpoints.Setup.factorLcf` for its cofactor `w`, with the factors
 `fac` found and the primes `suff` of the table still to come: while a prime `cur` is still to come,
 the primes found lie below it and every prime factor of `w` is at least `cur`; at the end, `w = 1`
-exactly when ratpoints factors `w0` completely. -/
+exactly when `ratpoints` factors `w0` completely. -/
 def CofactorInvariant (w0 : ℕ) (fac : List (ℕ × ℕ)) : List ℕ → ℕ → Prop
   | [], w => w = 1 ↔ FactorsByTrialDivision w0
   | cur :: _, w => (∀ x ∈ fac, x.1 < cur) ∧ ∀ p, p.Prime → p ∣ w → cur ≤ p
@@ -407,7 +407,7 @@ theorem factorLcfInvariant_nil {w0 v2 r : ℕ} (hw0 : 0 < w0)
 /-- The cofactor `m` after the prime `cur` of the table, whose part `w ≥ cur ^ 2` of `w0` at the
 primes from `cur` on it has divided by the power of `cur`, with the primes found at most `cur`:
 while a prime is still to come, the primes found lie below it and `m` is the part of `w0` at the
-primes from it on; after the last prime, `1021`, `m = 1` exactly when ratpoints factors `w0`
+primes from it on; after the last prime, `1021`, `m = 1` exactly when `ratpoints` factors `w0`
 completely. -/
 theorem cofactorInvariant_of_isRoughPart {w0 w m cur : ℕ} {pref suff : List ℕ} {fac : List (ℕ × ℕ)}
     (hl : ForIn.toList primeTable = pref ++ cur :: suff) (hw0 : w0 ≠ 0)
@@ -488,8 +488,8 @@ theorem FactorLcfInvariant.of_not_fitsLong {w0 w cur : ℕ} {pref suff : List �
     FactorLcfInvariant w0 [] w fac :=
   absurd (fitsLong_of_lt_mul_self (Array.mem_of_forIn_toList_eq_append_cons hl) hlt) hf
 
-/-- At the end of the loop, the cofactor is `1` exactly when ratpoints factors `w0` completely, and
-then the factors found are the factorization of `w0`. -/
+/-- At the end of the loop, the cofactor is `1` exactly when `ratpoints` factors `w0` completely,
+and then the factors found are the factorization of `w0`. -/
 theorem FactorLcfInvariant.iff_and_isFactorization {w0 w : ℕ} {fac : Array (ℕ × ℕ)}
     (h : FactorLcfInvariant w0 [] w fac) :
     (w = 1 ↔ FactorsByTrialDivision w0) ∧ (w = 1 → IsFactorization w0 fac.toList) := by
@@ -504,7 +504,7 @@ theorem FactorLcfInvariant.iff_and_isFactorization {w0 w : ℕ} {fac : Array (�
 -- unfolding in a failed unification of the dispatch does not end.
 attribute [local irreducible] fitsLong valuation primeTable in
 /-- The factorization of `w ≥ 1` over `2` and the primes of the table leaves the cofactor `1`
-exactly when ratpoints factors `w` completely, and then it is the factorization of `w`, the primes
+exactly when `ratpoints` factors `w` completely, and then it is the factorization of `w`, the primes
 in increasing order, each with its valuation. -/
 @[spec]
 theorem factorLcf_spec (w : ℕ) :
@@ -909,7 +909,7 @@ theorem foldl_extendDivisors_eq_binaryDivisors {n bHigh : ℕ} {fac : List (ℕ 
       (Nat.prime_of_mem_primeFactorsList (List.mem_dedup.mp hp)).pos]
   rfl
 
-/-- The divisor set-up of `c_d ≠ 0` succeeds exactly when ratpoints factors `|c_d|` completely
+/-- The divisor set-up of `c_d ≠ 0` succeeds exactly when `ratpoints` factors `|c_d|` completely
 and `|c_d|` has fewer than `Ratpoints.maxDivisors` squarefree divisors up to `bHigh ≥ 1`; its
 divisors are then those of `Ratpoints.binaryDivisors`, in that order. -/
 theorem map_snd_run_setupUs1 {c : List ℤ} {d bHigh : ℕ} (hc : c.getD d 0 ≠ 0) (hb : 1 ≤ bHigh) :

@@ -18,7 +18,7 @@ import Mathlib.Data.List.GetD
 /-!
 # The specification
 
-The points that ratpoints finds, for a coefficient list `c` (constant term first) and a height
+The points that `ratpoints` finds, for a coefficient list `c` (constant term first) and a height
 bound `H`: the binary form `F` of `c` and the normalized points `(x, y, z)` of height at most `H`
 on `y ^ 2 = F(x, z)`; and the binary form over `ℚ` that the refusals of the program speak about.
 The specification uses Mathlib and nothing of the model, so that it can be read on its own; the

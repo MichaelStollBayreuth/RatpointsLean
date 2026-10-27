@@ -13,9 +13,9 @@ public import Ratpoints.Spec.Sturm
 /-!
 # The specification
 
-The specification of ratpoints: the binary form of the polynomial, the predicate "is a normalized
+The specification of `ratpoints`: the binary form of the polynomial, the predicate "is a normalized
 point of height at most `H`" and the finite set of these points, with their basic API
-(`Ratpoints.Spec.Basic`), the list of these points in the order in which ratpoints finds them
+(`Ratpoints.Spec.Basic`), the list of these points in the order in which `ratpoints` finds them
 (`Ratpoints.Spec.Order`), the search region with the values of the doubles that bound its intervals
 (`Ratpoints.Spec.Region`), and Sturm's theorem, which the theorems on the Sturm step assume
 (`Ratpoints.Spec.Sturm`). It depends on Mathlib only, so that it can be read without the model.

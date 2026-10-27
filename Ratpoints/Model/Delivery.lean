@@ -8,7 +8,7 @@ module
 /-!
 # The delivery of the points to the callback
 
-The library function `find_points` of ratpoints hands each point it finds to a callback of the
+The library function `find_points` of `ratpoints` hands each point it finds to a callback of the
 caller, `int process(long x, long z, const mpz_t y, void *info, int *quit)`: the caller's data
 `info` goes along unchanged, the library adds the value that `process` returns to its count `total`,
 which `find_points` returns, and `process` stops the search by setting `*quit`, which the library

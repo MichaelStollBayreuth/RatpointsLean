@@ -80,7 +80,7 @@ hand the flags (`Ratpoints.CheckFlags`) and the delivery on. Each component test
 of the callback after each call that can set it and returns when it is set; under
 `RATPOINTS_NO_CHECK` the sieve delivers every numerator that passes it, and under `RATPOINTS_NO_Y`
 only the points with `y ≥ 0`. The rows of the moduli as words, with the row of `0` of a prime that
-the build of ratpoints generates (`Ratpoints.Sieve.sieves0`), the builders of the rows of the
+the build of `ratpoints` generates (`Ratpoints.Sieve.sieves0`), the builders of the rows of the
 primes, the prime powers and the products, the row of a sieve entry read from its table of rows or
 built into it (`Ratpoints.Sieve.SieveEntry.fetchRow`) and the tables of rows of a run
 (`Ratpoints.Sieve.RowStore`), are in `Ratpoints.Model.Rows`.
@@ -276,10 +276,10 @@ C: `sift.c:1083`, `sift.c:1085`, `sift.c:1175-1202`
 Deviation: the moduli of the stage with their rows and their reciprocals as two lists, for the
 pointers `ssp` and `mg` that step through the sieve specs and the array `magics` from position `sp1`
 on and the count `sp2 - sp1`, with no bound `2 RATPOINTS_NUM_PRIMES` on their number (the length of
-`magics`, `find_points.c:347`), which ratpoints never reaches since each entry of `sieve_list` owns
-its own prime (`find_points.c:329-331`), where the model takes any moduli, which may repeat; one bit
-array of `Ratpoints.rbaPack` words, for the vector `nums`; natural numbers and integers for the
-`long`s, and the sum `v` a natural number for the `long` that `RP_MULMOD` converts to an
+`magics`, `find_points.c:347`), which `ratpoints` never reaches since each entry of `sieve_list`
+owns its own prime (`find_points.c:329-331`), where the model takes any moduli, which may repeat;
+one bit array of `Ratpoints.rbaPack` words, for the vector `nums`; natural numbers and integers for
+the `long`s, and the sum `v` a natural number for the `long` that `RP_MULMOD` converts to an
 `unsigned long`, which is not negative under `small`, and which stays a `long` where the helper
 `mod` reduces it outside `small` (`Ratpoints.Sieve.fitsLong_add`); a Boolean for the `int` `small`;
 no count of the ands of the second stage under `RP_PHASE_COUNTS`, and no output under `DEBUG`. -/
@@ -307,7 +307,7 @@ C: `sift.c:1135-1136`, `sift.c:1141-1152`
 Deviation: the moduli of the stage with their rows and their reciprocals as two lists, for the
 pointers `sspk` and `mg` that step through the sieve specs and the array `magics` from position
 `sp1` on and the count `sp2 - sp1`, with no bound `2 RATPOINTS_NUM_PRIMES` on their number (the
-length of `magics`, `find_points.c:347`), which ratpoints never reaches since each entry of
+length of `magics`, `find_points.c:347`), which `ratpoints` never reaches since each entry of
 `sieve_list` owns its own prime (`find_points.c:329-331`), where the model takes any moduli, which
 may repeat; natural numbers and integers for the `long`s, and the sum `v` a natural number for the
 `long` that `RP_MULMOD` converts to an `unsigned long`, which is not negative under `small`, and
@@ -387,7 +387,7 @@ before the loop over the words, that of word `κ` is that plus `κ` times the st
 one word to the next, and the step from one bit to the next is `2 ^ k`. Each numerator goes to the
 test of a candidate (`Ratpoints.Sieve.accepted`, with the thunk `checks` of the third stage) and,
 if it passes, to the exact check, with the thunk `w` of the products, the degree `d`, the
-denominator `b` and the flags `fl`. This is the arm that a build of ratpoints with
+denominator `b` and the flags `fl`. This is the arm that a build of `ratpoints` with
 `USE_LONG_IN_PHASE_2` compiles.
 
 C: `sift.c:1126-1134`, `sift.c:1137-1139`, `sift.c:1154-1159`, `sift.c:1172-1173`
@@ -433,7 +433,7 @@ numerator `a₀ + 2 ^ k (rbaLength i + 64 κ + t)`, for the number `rbaLength` o
 and the step from one bit to the next `2 ^ k`. Each numerator goes to the test of a candidate
 (`Ratpoints.Sieve.accepted`, with the thunk `checks` of the third stage) and, if it passes, to the
 exact check, with the thunk `w` of the products, the degree `d`, the denominator `b` and the flags
-`fl`. This is the arm that the default build of ratpoints compiles.
+`fl`. This is the arm that the default build of `ratpoints` compiles.
 
 C: `sift.c:1204-1210`, `sift.c:1213-1226`, `sift.c:1257-1264`, `sift.c:1293-1296`,
 `rp-private.h:135-136`, `rp-private.h:177-178`, `rp-private.h:238-239`, `rp-private.h:264-266`,
@@ -511,7 +511,7 @@ C: `sift.c:1061-1082`, `sift.c:1088-1092`, `sift.c:1298-1299`, `rp-private.h:133
 `rp-private.h:205`, `rp-private.h:236`, `rp-private.h:262`, `rp-private.h:286`
 
 Deviation: indices for the pointers into the survivors, and a scan that holds its position as an
-index, where ratpoints recovers the word number from a pointer difference; the copy `nums` of the
+index, where `ratpoints` recovers the word number from a pointer difference; the copy `nums` of the
 bit array a vector of `Ratpoints.rbaPack` words; the sentinel `~zero` of every build as
 `Ratpoints.rbaPack` words `~~~0`, written one at a time; natural numbers and integers for the
 `long`s; the counters `cnt` passed and returned, for the field `n_arrays` of the sieving thread,

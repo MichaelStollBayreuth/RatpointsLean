@@ -454,7 +454,7 @@ def render_table(pin, files, ranges, deviations):
            '',
            r'\chapter{The correspondence with the C code}\label{chap:correspondence}',
            '',
-           f'The model is checked against ratpoints {tex_escape(pin["tag"])} (commit '
+           rf'The model is checked against \ratpoints{{}} {tex_escape(pin["tag"])} (commit '
            rf'\texttt{{{pin["commit"][:12]}}}). The C files below are those of the library and '
            '\\texttt{main.c}, whose parts that the command-line program does not mirror are '
            'excluded. Every line of '

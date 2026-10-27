@@ -18,7 +18,7 @@ meta import Ratpoints.Model.Sturm
 # The search for the points
 
 `Ratpoints.findPointsWith c H s o process info` is the model of the library function `find_points`
-of ratpoints, with the options `s` of the sieve (`Ratpoints.SieveOptions`), the options `o` of the
+of `ratpoints`, with the options `s` of the sieve (`Ratpoints.SieveOptions`), the options `o` of the
 library that change the refusals, the order of the output or what is delivered
 (`Ratpoints.Options`), the callback `process` of the caller and its data `info`: it refuses, as the
 program does (`Ratpoints.Refusal`), more than `Ratpoints.maxDegree + 1` coefficients, fewer than
@@ -643,14 +643,14 @@ reversal and in the divisor shape, and with `-k` (`{ reverse := false }`); the l
 brute-force reference `Ratpoints.bruteForce` for other parameters, among them pieces of a few bit
 arrays; the refusals of forms that are not squarefree as the program makes them, with and without
 `-s` (`{ sturm := -1 }`) and `-k`, and the points of such forms that it searches; the search with
-the flag of the reversal, for polynomials to which ratpoints reverses others, and on curves without
-points modulo `3`, `5` and `7`, where it takes an exit, and without points modulo 64, where it takes
-the 2-adic exit; composite moduli, prime powers and products of them, in any order and with primes
-beyond the loop of the tables, made as the choice of the moduli makes them; the sieve entries of
-each kind, and the exit of the loop of the tables; the packing of `-2 0 0 1` as the build of
-ratpoints with `DEBUG` prints it, with its classes, the word of the classes that admit a numerator,
-its seven packings, the biases of its moduli and the residues and row offsets of four denominators;
-the row offsets of the packing and the inverses of the strides against their rule
+the flag of the reversal, for polynomials to which `ratpoints` reverses others, and on curves
+without points modulo `3`, `5` and `7`, where it takes an exit, and without points modulo 64, where
+it takes the 2-adic exit; composite moduli, prime powers and products of them, in any order and with
+primes beyond the loop of the tables, made as the choice of the moduli makes them; the sieve entries
+of each kind, and the exit of the loop of the tables; the packing of `-2 0 0 1` as the build of
+`ratpoints` with `DEBUG` prints it, with its classes, the word of the classes that admit a
+numerator, its seven packings, the biases of its moduli and the residues and row offsets of four
+denominators; the row offsets of the packing and the inverses of the strides against their rule
 (`Ratpoints.Sieve.classOffsets`); the sieve of one denominator in the packing of its class, with the
 residues of the denominator divided by the stride and the row offsets of the class, against the
 plain sieve of the numerators that the word of the class admits, also for words whose bits of the

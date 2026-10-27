@@ -16,7 +16,7 @@ import Std.Tactic.Do
 /-!
 # The contracts of the builders of the rows of a prime
 
-The contracts of the functions that the build of ratpoints generates for the primes of the table
+The contracts of the functions that the build of `ratpoints` generates for the primes of the table
 from `CODE_INIT_SIEVE1` (`Ratpoints.Sieve.sieveInit1`, a prime below 64) and `CODE_INIT_SIEVE2`
 (`Ratpoints.Sieve.sieveInit2`, a prime above 64), and of their pieces and macros, as `@[spec]`
 theorems proved with `vcgen`, the program logic of Lean core, with loop invariants that are named
