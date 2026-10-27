@@ -16,7 +16,7 @@ what is not verified, and how the rest of the blueprint is organized.
 
 The input is a list $c = [c_0, c_1, \dots, c_n]$ of integers, the coefficients of the polynomial
 $f = \sum_i c_i x^i$, constant term first, and a height bound~$H$. Let~$d$ be the degree of~$f$,
-the largest index with $c_d \ne 0$, and $D = d + (d \bmod 2)$ the even number at or just above it.
+the largest index with $c_d \ne 0$, and $D = 2 \lceil d/2 \rceil$ the even number at or just above it.
 The curve is $y^2 = F_c(x, z)$ with the binary form
 \[ F_c(x, z) = \sum_{i=0}^{d} c_i\, x^i z^{D - i} \]
 of even degree~$D$. Its points lie in the weighted projective plane with the weights

@@ -79,7 +79,7 @@ Definition~\ref{def:sieveEntry}.
     \item for a prime~$p$, $e \ge 1$ and $p^e \le 64\,\mathrm{modWords}$, the tables of~$p^e$ have
       these inverses, bit $x < p^e$ of \verb|fsq| set whenever~$f(x)$ is a square modulo~$p^e$, and
       bit $t < p^e$ of \verb|gsq|, for $p \mid t$, set whenever the reversed polynomial of the even
-      degree $D = d + (d \bmod 2)$ takes a square value at~$t$; only this direction is needed, since
+      degree $D = 2 \lceil d/2 \rceil$ takes a square value at~$t$; only this direction is needed, since
       a further bit loses no point.
   \end{enumerate}
 \end{lemma}

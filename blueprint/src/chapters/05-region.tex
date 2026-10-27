@@ -380,7 +380,7 @@ polynomials over a perfect field) are stated at Mathlib's generality under \verb
   count of~$f$ at the midpoint (Lemma~\ref{lem:sturmStep}), so that both halves have the invariant
   and one of them keeps each~$x$ that the interval keeps. Item~(2): the whole line has the invariant
   and keeps every $|x| \le 2^{63}$; at the exit $f < 0$ (Lemma~\ref{lem:sturmInterval}(4)); and
-  $F(a, b) = b^{d + (d \bmod 2)} f(a/b)$. Item~(3): each kept interval has a point with $f > 0$
+  $F(a, b) = b^{2 \lceil d/2 \rceil} f(a/b)$. Item~(3): each kept interval has a point with $f > 0$
   (Lemma~\ref{lem:sturmInterval}(3)), $f < 0$ somewhere between two of them, and~$f$ changes its
   sign at most~$d$ times; an intersection has fewer intervals than its two lists together.
 \end{proof}

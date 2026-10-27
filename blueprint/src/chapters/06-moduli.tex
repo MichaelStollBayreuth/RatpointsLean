@@ -17,7 +17,7 @@ doubles: the theorems hold for every choice that the search makes (Section~\ref{
 \section{The table of a prime and the loop of the tables}\label{sec:moduliPrimeTable}
 
 Write $f = \sum_{i \le d} c_i x^i$ and $F(x, z) = \sum_{i \le d} c_i x^i z^{D - i}$ with
-$D = d + (d \bmod 2)$ (Definition~\ref{def:binaryForm}). For a point $(a, y, b)$ with
+$D = 2 \lceil d/2 \rceil$ (Definition~\ref{def:binaryForm}). For a point $(a, y, b)$ with
 $\gcd(a, b) = 1$ and a prime $p \nmid b$, $F(a, b) \equiv b^D f(a b^{-1}) \bmod p$, and~$b^D$ is the
 square of a unit, so that $f(a b^{-1})$ is a square modulo~$p$, zero included; for $p \mid b$,
 $p \nmid a$. These two facts are all that the rows of a prime rest on.

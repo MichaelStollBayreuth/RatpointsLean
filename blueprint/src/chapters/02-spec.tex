@@ -23,7 +23,7 @@ Chapter~\ref{chap:theorems}.
 Throughout, $c = [c_0, c_1, \dots, c_n]$ is a list of integers, the coefficient list of the input
 with the constant term first, so that~$n + 1$ is its length; $d$ is its \emph{degree}, the largest
 index with $c_d \ne 0$, or~$0$ if there is none; and
-\[ D = d + (d \bmod 2), \qquad N = 2 \lceil n/2 \rceil \]
+\[ D = 2 \lceil d/2 \rceil, \qquad N = 2 \lceil n/2 \rceil \]
 are~$d$ and~$n$ rounded up to even numbers. The leading zero coefficients of~$c$ \emph{lower
 $\lceil n/2 \rceil$} when $\lceil d/2 \rceil < \lceil n/2 \rceil$, that is, when $D < N$, or
 equivalently $d + 2 \le N$; otherwise $D = N$, or equivalently $N \le d + 1$. $H$ is a natural
@@ -47,6 +47,8 @@ number, the height bound.
   odd (\csource{find_points.c}{5291}{5298}); the result is $F_c(a, b)$. The model evaluates the form
   in the same way, in the brute-force reference (Section~\ref{sec:specBruteForce}) and in the exact
   check of the sieve (Chapter~\ref{chap:sieve}), and both evaluations are proved equal to~$F_c$.
+  The C code writes the degree of the form as \verb|degree + (degree & 1)|, and the Lean
+  definition, which copies it, as $d + (d \bmod 2)$; both are $D = 2 \lceil d/2 \rceil$.
 \end{remark}
 
 \begin{definition}[The binary form of the refusals]\label{def:binaryFormPoly}
