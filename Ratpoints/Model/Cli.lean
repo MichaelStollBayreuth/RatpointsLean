@@ -69,8 +69,9 @@ namespace Cli
 
 /-! ### Messages -/
 
-/-- The version of `ratpoints-lean`, which its banner names. -/
-def version : String := "0.1"
+/-- The version of `ratpoints-lean`, which its banner names: that of the release of `ratpoints` that
+it models. -/
+def version : String := "3.1.1"
 
 /-- The banner of `ratpoints-lean`, which it prints with the usage. Its first line names the
 program and its version, as that of `ratpoints` does, so that the test scripts of `ratpoints`, which

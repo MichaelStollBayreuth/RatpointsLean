@@ -54,9 +54,9 @@ class Outputs(unittest.TestCase):
         self.assertEqual(dt.as_recorded_by_e(''), '\n')
 
     def test_agrees(self):
-        cfg = SimpleNamespace(lean_usage='\nThis is ratpoints-lean-0.1\nUsage: L\n',
+        cfg = SimpleNamespace(lean_usage='\nThis is ratpoints-lean-3.1.1\nUsage: L\n',
                               c_usage='\nThis is ratpoints-3.1.1\nUsage: C\n',
-                              lean_banner='This is ratpoints-lean-0.1\n\nLean\n\n',
+                              lean_banner='This is ratpoints-lean-3.1.1\n\nLean\n\n',
                               c_banner='This is ratpoints-3.1.1\n\nC\n\n')
         error6 = '\nWrong syntax for optional arguments:\n\n'
         self.assertTrue(dt.agrees(cfg, (error6 + cfg.lean_usage, 6), (error6 + cfg.c_usage, 6),
@@ -77,7 +77,7 @@ class Outputs(unittest.TestCase):
                                   (dt.as_recorded_by_e(report.format(cfg.c_banner)), 8), 'e'))
 
     def test_report(self):
-        cfg = SimpleNamespace(lean_banner='This is ratpoints-lean-0.1\n\nLean\n\n',
+        cfg = SimpleNamespace(lean_banner='This is ratpoints-lean-3.1.1\n\nLean\n\n',
                               c_banner='This is ratpoints-3.1.1\n\nC\n\n')
         head = '\n{}\n\nCurve equation is  y^2 = x^2 + 1\n\nmax. Height = 5\n\n'
         c = (head.format(cfg.c_banner) + '(1 : 1 : 0)\n\n\n3 moduli used for first stage of '

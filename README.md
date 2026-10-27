@@ -130,8 +130,7 @@ values of the compile-time constants, one after the other, each without the `#gu
 the model, and reports whether the library still builds; it uses the built packages of the
 repository and runs on demand, not in CI.
 
-The blueprint and the API documentation will be at
-<https://michaelstollbayreuth.github.io/RatpointsLean/> once the repository is public.
+The blueprint and the API documentation are at <https://michaelstollbayreuth.github.io/RatpointsLean/>.
 
 ## The program `ratpoints-lean`
 
