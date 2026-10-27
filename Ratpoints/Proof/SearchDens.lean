@@ -157,11 +157,9 @@ theorem perm_flatMap_squares1Dens {c : List ℤ} {H bLow bHigh : ℕ} (hbLow : 1
   obtain ⟨a, -, y, hg, hy⟩ := exists_sq_eq_of_pointsOfDen_ne_nil hne
   obtain ⟨s, k, hsq, hdvd, hbsk⟩ := exists_eq_mul_mul_of_sq_eq_binaryForm_of_odd hd hg hy
   have hk : 0 < k := Nat.pos_of_ne_zero fun h0 ↦ by simp [h0] at hbsk; lia
-  have hsb : s ≤ s * k * k := by
-    rw [Nat.mul_assoc]
-    exact Nat.le_mul_of_pos_right s (Nat.mul_pos hk hk)
   exact (mem_squares1Dens_iff (fun _ ↦ pos_of_mem_of_setupUs1_eq_some hb hd hs) hbLow).mpr
-    ⟨hb''.1, by lia, s, (hmem s).mpr ⟨hsq, hdvd, by lia⟩, k, hbsk⟩
+    ⟨hb''.1, by lia, s, (hmem s).mpr ⟨hsq, hdvd,
+      by lia [Nat.le_mul_of_pos_right s (Nat.mul_pos hk hk)]⟩, k, hbsk⟩
 
 /-- The points at infinity and those of the denominators of the search from `bLow ≥ 1` to
 `bHigh ≤ H` are a permutation of the brute-force reference restricted to the points at infinity and

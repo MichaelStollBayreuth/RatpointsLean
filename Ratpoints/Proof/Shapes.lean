@@ -462,7 +462,7 @@ theorem fitsLong_of_mem_wordsDens {db : UInt64} {forb : List ForbiddenEntry} {bL
 
 /-! ### The bounds of the denominators of the shapes -/
 
-/-- No divisor need be positive: a divisor `0` has an empty segment. -/
+/-- For any divisors, without positivity: a divisor `0` gives an empty segment. -/
 theorem le_and_le_of_mem_squares1Dens {divisors : List ℕ} {bLow bHigh b : ℕ} (hbLow : 1 ≤ bLow)
     (hb : b ∈ squares1Dens divisors bLow bHigh) : bLow ≤ b ∧ b ≤ bHigh := by
   simp only [squares1Dens, List.mem_flatMap, List.mem_map] at hb
@@ -578,7 +578,7 @@ theorem run_wordsTest_of_sq_eq {c : List ℤ} {H : ℕ} (hd : degree c % 2 = 0)
     (fun e he ↦ (hval e he).excludes_eq_false hd hb hab hy)
     fun _ _ ↦ run_jacobi_eq_one_of_sq_eq hd hb hab hy
   cases useJacobi
-  · exact absurd hji (by simp)
+  · simp at hji
   · exact run_jacobiTest_of_sq_eq hd hji hb hbH hab hy
 
 end Sieve

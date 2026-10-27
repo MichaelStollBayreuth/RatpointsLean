@@ -8,14 +8,15 @@ module
 public import Mathlib.Data.ZMod.Defs
 public import Mathlib.NumberTheory.Padics.PadicVal.Defs
 public import Ratpoints.Model.Denominators
-public import Ratpoints.Proof.RowStore
 public import Ratpoints.Spec.Basic
+public import Std.WP
 
 import Ratpoints.Mathlib.Data.Int.GCD
 import Ratpoints.Mathlib.Data.ZMod.Basic
 import Ratpoints.Mathlib.NumberTheory.Padics.PadicVal.Basic
 import Ratpoints.Proof.Containers
 import Ratpoints.Proof.Params
+import Ratpoints.Proof.Rows
 import Ratpoints.Proof.Tables
 import Ratpoints.Proof.Valuation
 import Std.Tactic.Do
@@ -44,10 +45,8 @@ one of the first `Ratpoints.numPrimes` primes of the table are the first `p` wor
 `0`, the pattern `sieves0`, which are those of `Ratpoints.Sieve.forbiddenRow`
 (`Ratpoints.Sieve.extract_sieves0`). A forbidden divisor tested with words holds the reciprocal of
 its prime (`Ratpoints.Sieve.IsForbiddenEntry.magic_eq`), with which the C code reduces the word
-number of the first word of a block. The loop of the tables also makes the tables of rows of the
-primes that say something with their rows of `0`, the patterns `sieves0`
-(`Ratpoints.Sieve.PrimeStore`). The masks, which the C code keeps in an `unsigned long`, have no
-bit from `40` on for an odd prime and a `long` `b_high`, so that its cap on the valuations never
+number of the first word of a block. The masks, which the C code keeps in an `unsigned long`, have
+no bit from `40` on for an odd prime and a `long` `b_high`, so that its cap on the valuations never
 binds (`Ratpoints.Sieve.lt_forty_of_pow_le`); the products `pm p` of its loops of the valuations and
 the square `p p` of a prime of the table that its loop over the further primes compares with
 `b_high` are `long`s (`Ratpoints.Setup.fitsLong_mul_of_le_div`,
@@ -65,7 +64,6 @@ of the model state, and no proof consumes them.
   add.
 * `Ratpoints.Sieve.ForbiddenVal.excludes`: whether a forbidden divisor tested by its valuation
   excludes a denominator.
-* `Ratpoints.Sieve.PrimeStore`: the store of the tables of rows that the loop of the tables makes.
 
 ## Main statements
 
@@ -503,9 +501,7 @@ theorem ValuationsInvariant.exit_of_div_lt {f : ℕ → Bool} {p bHigh mask m pm
   rw [testBit_eq_of_testBit_or hmask h' hm]
   have : p ^ t ≤ bHigh ↔ t < m + 1 := by
     refine ⟨fun ht ↦ Nat.lt_of_not_le fun ht' ↦ ?_, fun ht ↦ ?_⟩
-    · have := Nat.pow_le_pow_right hp ht'
-      rw [pow_succ] at this
-      lia [(Nat.div_lt_iff_lt_mul hp).mp hb]
+    · lia [Nat.pow_le_pow_right hp ht', (Nat.div_lt_iff_lt_mul hp).mp hb]
     · exact (Nat.pow_le_pow_right hp (Nat.le_of_lt_succ ht)).trans hpm
   grind
 
@@ -779,7 +775,7 @@ theorem IsForbiddenEntry.words_eq {c : List ℤ} {d bHigh : ℕ} {e : ForbiddenE
     (h : IsForbiddenEntry c d bHigh e) : e.words = forbiddenRow e.p := by
   rcases h with ⟨p, -, h⟩ | ⟨-, h, -⟩
   · obtain ⟨rfl, -⟩ := eq_of_run_forbiddenOfPrime_eq_inl h
-    dsimp only
+    rfl
   · exact h
 
 /-- A forbidden divisor tested with words holds the reciprocal of its prime, with which the C code
@@ -830,21 +826,6 @@ theorem run_forbiddenOfPrime_eq_of_run_examinePrime?_eq_some {c : List ℤ} {d k
         (examinePrime c d primeTable[k]!).isFSquare[primeTable[k]!]!) := by
   rw [eq_map_range_of_run_examinePrime?_eq_some he,
     eq_examinePrime_of_lt_numPrimes_of_run_examinePrime?_eq_some hk he]
-
-/-- The store of the tables of rows that the loop of the tables makes holds every function `R` of
-the references and the residues (`Ratpoints.Sieve.RowStore.Holds`) whose rows of `0` of the primes
-are the patterns `sieves0` (`Ratpoints.Sieve.sieves0`), since it holds only these rows, and every
-table of rows of a prime in it has its row of `0` (`Ratpoints.Sieve.RowStore.PrimeZeroRows`). -/
-def PrimeStore (store : RowStore) : Prop :=
-  (∀ R : EntryRef → ℕ → Array UInt64, (∀ p, 0 < p → R (.prime p) 0 = sieves0 p) → store.Holds R) ∧
-    store.PrimeZeroRows
-
-theorem primeStore_empty : PrimeStore {} :=
-  ⟨fun R _ ↦ RowStore.holds_empty R, RowStore.primeZeroRows_empty⟩
-
-theorem PrimeStore.insertIfNew {store : RowStore} (h : PrimeStore store) {p : ℕ} (hp : 0 < p) :
-    PrimeStore (store.insertIfNew (.prime p) (primeRows p)) :=
-  ⟨fun R hR ↦ (h.1 R hR).insertIfNew_primeRows (hR p hp), h.2.insertIfNew_primeRows p⟩
 
 /-- A forbidden divisor tested with words that the prime at the position `k < Ratpoints.numPrimes`
 gives from what its table hands back is one that the loop of the tables may record. -/

@@ -373,9 +373,7 @@ theorem JacobiOddInvariant.jacobiInvariant {b b' : ℕ} {lcf : ℤ}
 
 theorem JacobiInvariant.eq_jacobiSym_of_eq_some {b b' f : ℕ} {lcf r : ℤ} {o : Option ℤ}
     (hi : JacobiInvariant b lcf true (o, b', f)) (h : o = some r) :
-    r = J(lcf | b.coprimePart (2 * lcf.natAbs)) := by
-  subst h
-  exact hi.2
+    r = J(lcf | b.coprimePart (2 * lcf.natAbs)) := (h ▸ hi).2
 
 /-- At the exit of `Ratpoints.Sieve.jacobi` without a result, `b' ∣ lcf`, so that the part of `b`
 prime to `2 lcf`, that of `b'`, is `1`. -/

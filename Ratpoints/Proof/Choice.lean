@@ -35,6 +35,7 @@ position (`Ratpoints.IsChoiceEntries`), whose tables of rows the store then fits
 * `Ratpoints.Sieve.SieveEntry.IsSound`: a sieve entry that lets the numerator of every point
   through.
 * `Ratpoints.IsSievingInfo`: what the run needs of the result of the choice.
+* `Ratpoints.Sieve.PrimeStore`: the store of the tables of rows that the loop of the tables makes.
 * `Ratpoints.TableLoop.WF`: the state of the loop of the tables.
 * `Ratpoints.IsChoiceEntries`: the sieve entries of the choice, each made for its position.
 
@@ -131,6 +132,25 @@ theorem SieveOptions.maxForbidden_normalize_nonneg (s : SieveOptions) :
 private theorem examinePrime?_value (c : List ℤ) (d p : ℕ) (u : Bool) :
     ⦃ True ⦄ examinePrime? c d p u ⦃ fun r ↦ r = Id.run (examinePrime? c d p u) ⦄ :=
   ⟨fun _ ↦ rfl⟩
+
+namespace Sieve
+
+/-- The store of the tables of rows that the loop of the tables makes holds every function `R` of
+the references and the residues (`Ratpoints.Sieve.RowStore.Holds`) whose rows of `0` of the primes
+are the patterns `sieves0` (`Ratpoints.Sieve.sieves0`), since it holds only these rows, and every
+table of rows of a prime in it has its row of `0` (`Ratpoints.Sieve.RowStore.PrimeZeroRows`). -/
+def PrimeStore (store : RowStore) : Prop :=
+  (∀ R : EntryRef → ℕ → Array UInt64, (∀ p, 0 < p → R (.prime p) 0 = sieves0 p) → store.Holds R) ∧
+    store.PrimeZeroRows
+
+theorem primeStore_empty : PrimeStore {} :=
+  ⟨fun R _ ↦ RowStore.holds_empty R, RowStore.primeZeroRows_empty⟩
+
+theorem PrimeStore.insertIfNew {store : RowStore} (h : PrimeStore store) {p : ℕ} (hp : 0 < p) :
+    PrimeStore (store.insertIfNew (.prime p) (primeRows p)) :=
+  ⟨fun R hR ↦ (h.1 R hR).insertIfNew_primeRows (hR p hp), h.2.insertIfNew_primeRows p⟩
+
+end Sieve
 
 /-- The state of the loop of the tables (`Ratpoints.TableLoop`) for the curve with the coefficient
 list `c` and the largest denominator `bHigh`: at most `Ratpoints.numPrimes` primes to look at, the

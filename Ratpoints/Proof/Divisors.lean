@@ -138,10 +138,8 @@ private theorem pow_dvd_of_add_one_le {c : List ℤ} {a b' : ℤ} {p m val k : �
   have hc : (p : ℤ) ^ padicValNat p (c.getD k 0).natAbs ∣ c.getD k 0 :=
     Int.natCast_dvd.mpr (by simpa using pow_padicValNat_dvd)
   have hle : val + m + 1 ≤ padicValNat p (c.getD k 0).natAbs + m * (degree c + 1 - k) := by
-    have : m * (degree c + 1 - k) = (degree c - k) * m + m := by
-      rw [Nat.sub_add_comm hk.le]
-      ring
-    lia
+    rw [Nat.sub_add_comm hk.le]
+    lia [hmin h0]
   refine (pow_dvd_pow _ hle).trans ?_
   rw [pow_add, mul_pow, ← pow_mul]
   exact mul_dvd_mul (hc.mul_right _) (dvd_mul_right _ _)
@@ -257,8 +255,8 @@ theorem eq_one_iff_factorsByTrialDivision_of_isRoughPart {n w m : ℕ} (h : Nat.
   · by_contra h1
     obtain ⟨k, -, rfl, hk⟩ := hm
     have hp := Nat.minFac_prime h1
-    have := hf _ ((Nat.mem_primeFactorsList hn).mpr ⟨hp, (Nat.minFac_dvd m).mul_left k⟩)
-    lia [hk _ hp (Nat.minFac_dvd m)]
+    lia [hf _ ((Nat.mem_primeFactorsList hn).mpr ⟨hp, (Nat.minFac_dvd m).mul_left k⟩),
+      hk _ hp (Nat.minFac_dvd m)]
 
 /-! ### The squarefree divisors in the order of binary counting -/
 
