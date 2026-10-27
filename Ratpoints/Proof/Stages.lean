@@ -470,10 +470,6 @@ theorem bias_checkOf_eq_and_of_ne_zero {b H : Nat} {e : SieveEntry} {t : Entry}
   · exact ⟨by simp [hc], Nat.lt_of_lt_of_le hc stage3Limit_le_two_pow_32, rfl⟩
   · simp [hc] at h0
 
-theorem SieveEntry.admits_prime {e : SieveEntry} {t : Entry} (he : e.factors = [.prime t])
-    (hp : e.p = t.p) (b : Nat) (a : Int) : e.admits b a = t.admits b a := by
-  simp [SieveEntry.admits, he, hp, Factor.admits, Entry.admits]
-
 /-- The sieve entry `e` is that of a modulus `1 < p ≤ 2 ^ 32` whose single factor is a table `t` of
 `p` with inverses of the residues `0 < r < p` that are residues `0 < t.inverses[r]! < p`, and whose
 reciprocal is that of `p` (`Ratpoints.Sieve.magic`): the shape that the third stage needs of its
@@ -495,7 +491,7 @@ theorem SieveEntry.IsPrimeEntry.admits_checkOf {e : SieveEntry} (he : e.IsPrimeE
     (checkOf b H e (Sieve.magic e.p)).admits a = e.admits b a := by
   obtain ⟨t, hf, hpt, hm, h1, h32, hinv⟩ := he
   have hb := binv_checkOf (b := b) H hf (by lia) (by lia)
-  rw [SieveEntry.admits_prime hf hpt]
+  rw [SieveEntry.admits_eq_of_factors_eq hf hpt, Factor.admits]
   by_cases hr : b % e.p = 0
   · simp only [hr, ↓reduceIte] at hb
     simp [CheckSpec.admits_of_binv_eq_zero a hb, Entry.admits, ← hpt, hr,

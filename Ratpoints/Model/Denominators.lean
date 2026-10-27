@@ -430,6 +430,7 @@ C: `find_points.c:498-566`, `find_points.c:568-641`
 Deviation: one function for `jacobi`, on the GMP integer `lcf`, and `jacobi1`, on a `long`, which
 the run calls when all coefficients are `long`s (`use_c_long`), with the steps of `jacobi`:
 `jacobi1` takes the sign of `lcf` out as `(-1 / b)^neg` and its value `LONG_MIN` as `LONG_MIN / 4`,
+so that the negation of a negative `lcf` is a `long` (`Ratpoints.fitsLong_neg_ite_div_four`),
 reduces `|lcf|` modulo `b` only for `b < 2^59`, and does not reduce it after dividing `b` by the
 gcd, which changes the steps but not the symbol; the round of the algorithm and its two subtraction
 loops, which the C code writes out twice each, as helpers (`Ratpoints.Sieve.jacobiRound`,

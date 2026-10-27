@@ -48,8 +48,12 @@ bits of a word, and the contract of the first stage over a piece, as `@[spec]` t
 * `Ratpoints.Sieve.Entry.admits_mod_of_dvd`, `Ratpoints.Sieve.Power.admits_mod_of_dvd`,
   `Ratpoints.Sieve.Factor.admits_mod_of_dvd`: the row of a prime, a prime power or a factor reads
   the residues modulo a multiple of its modulus as those of the numbers.
+* `Ratpoints.Sieve.Factor.admits_congr`, `Ratpoints.Sieve.Factor.admits_mod_left`: the row of a
+  factor reads the residues of the denominator and the numerator modulo its modulus.
 * `Ratpoints.Sieve.SieveEntry.admits_eq_all`: the row of a sieve entry whose factors have moduli
-  dividing its modulus is the and of the rows of its factors.
+  dividing its modulus is the and of the rows of its factors;
+  `Ratpoints.Sieve.SieveEntry.admits_eq_of_factors_eq`: that of an entry with one factor of its
+  modulus is the row of the factor.
 * `Ratpoints.Sieve.SieveEntry.admits_mul`: the row of a sieve entry whose factors have their tables
   of inverses is unchanged when the denominator and the numerator are scaled by a unit.
 * `Ratpoints.Sieve.SieveEntry.reads_closedRow`: the closed form of the row of `b / 2 ^ k`
@@ -185,11 +189,29 @@ theorem Factor.admits_mod_of_dvd (f : Factor) {m : Nat} (h : f.modulus ∣ m) (b
   | prime t => exact Entry.admits_mod_of_dvd t h b a
   | power pw => exact Power.admits_mod_of_dvd pw h b a
 
+theorem Factor.admits_congr {f : Factor} (b : Nat) {a a' : Int}
+    (h : a % (f.modulus : Int) = a' % (f.modulus : Int)) : f.admits b a = f.admits b a' := by
+  cases f with
+  | prime t => simp only [Factor.modulus] at h; simp [Factor.admits, Entry.admits, h]
+  | power pw => simp only [Factor.modulus] at h; simp [Factor.admits, Power.admits, h]
+
+theorem Factor.admits_mod_left (f : Factor) (b : Nat) (a : Int) :
+    f.admits (b % f.modulus) a = f.admits b a := by
+  cases f <;> simp [Factor.admits, Factor.modulus, Entry.admits, Power.admits]
+
 /-- The row of a sieve entry whose factors have moduli dividing its modulus admits a numerator when
 each factor does, the factors reading the residues modulo their own moduli. -/
 theorem SieveEntry.admits_eq_all {e : SieveEntry} (h : ∀ f ∈ e.factors, f.modulus ∣ e.p) (b : Nat)
     (a : Int) : e.admits b a = e.factors.all (·.admits b a) :=
   List.all_congr_left fun f hf ↦ Factor.admits_mod_of_dvd f (h f hf) b a
+
+/-- A sieve entry whose one factor `f` has the modulus of the entry, as a prime or a prime power is
+its own factor (`Ratpoints.makeModulus`), has the row of the factor. -/
+theorem SieveEntry.admits_eq_of_factors_eq {e : SieveEntry} {f : Factor} (he : e.factors = [f])
+    (hp : e.p = f.modulus) : e.admits = f.admits :=
+  funext fun b ↦ funext fun a ↦ by
+    rw [SieveEntry.admits, he, List.all_cons, List.all_nil, Bool.and_true, hp,
+      Factor.admits_mod_of_dvd f (Nat.dvd_refl _)]
 
 /-- What the scaling of the rows by a unit needs of a factor of the modulus `P` of a sieve entry:
 the modulus of the factor divides `P`, and its table of inverses inverts the residues at which its

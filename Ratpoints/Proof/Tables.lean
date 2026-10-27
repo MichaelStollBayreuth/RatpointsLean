@@ -45,7 +45,9 @@ entry of the table, since `c_d` is then a square modulo `p` for even `d`
 (`Ratpoints.Sieve.isSquare_getD_degree_of_sq_eq_binaryForm`). The values of the C code that could
 leave the range of a `long` stay in it: those of `mod` for moduli below `2 ^ 59`, whose inputs are
 `long`s by the flag of the `long`s, the negations of the map of a reversed search, and the negation
-of a negative leading coefficient in `jacobi1`, with `LONG_MIN` replaced by its quarter.
+of a negative leading coefficient in `jacobi1`, with `LONG_MIN` replaced by its quarter; these
+lemmas discharge the range obligations that the Deviation paragraphs and the docstrings of the model
+state, and no proof consumes them.
 
 ## Main definitions
 
@@ -249,7 +251,7 @@ theorem natCast_evalMod (cs : List ℕ) (p x : ℕ) :
     exact congr($(Finset.sum_congr rfl fun k _ ↦ by ring) + _)
 
 /-- Entry `k ≤ d` of the coefficients `c₀, …, c_d` reduced modulo `m` is `c_k` in `ZMod m`. -/
-theorem natCast_getD_map_range_toNat_emod (c : List ℤ) (d : ℕ) {m : ℕ} [NeZero m] {k : ℕ}
+theorem natCast_getD_map_range_toNat_emod (c : List ℤ) {d m : ℕ} [NeZero m] {k : ℕ}
     (hk : k < d + 1) :
     ((((List.range (d + 1)).map fun n ↦ (c.getD n 0 % (m : ℤ)).toNat).getD k 0 : ℕ) : ZMod m) =
       c.getD k 0 := by
@@ -261,7 +263,7 @@ theorem natCast_evalMod_map_range (c : List ℤ) (d : ℕ) {p : ℕ} [NeZero p] 
       ∑ k ∈ Finset.range (d + 1), (c.getD k 0 : ZMod p) * t ^ k := by
   rw [natCast_evalMod, List.length_map, List.length_range]
   exact Finset.sum_congr rfl fun _ hk ↦
-    congr($(natCast_getD_map_range_toNat_emod c d (Finset.mem_range.mp hk)) * _)
+    congr($(natCast_getD_map_range_toNat_emod c (Finset.mem_range.mp hk)) * _)
 
 /-- Horner's rule modulo `m` on the reversed list of coefficients: the value at `x` of the
 polynomial whose coefficient of `x ^ (n - 1 - k)` is entry `k` of the list of length `n`. -/
@@ -503,14 +505,6 @@ theorem examinePrime?_eq_examinePrime?_false (c : List ℤ) (d p : ℕ) (u : Boo
     examinePrime? c d p u = examinePrime? c d p false := by
   simp [examinePrime?, modLong_eq_emod]
 
--- The coefficients of the table, reduced on the path that the flag of the `long`s chooses, are
--- those reduced by the Euclidean `%`.
-private theorem map_range_toNat_ite_modLong (c : List ℤ) (d p : ℕ) (u : Bool) :
-    ((Array.range (d + 1)).map fun n ↦
-      (if u = true then modLong (c.getD n 0) p else c.getD n 0 % (p : ℤ)).toNat) =
-      (Array.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat := by
-  simp [modLong_eq_emod]
-
 -- The coefficients of the table, reduced modulo `p > 0`, are below `p`.
 private theorem getElem!_map_range_emod_lt (c : List ℤ) (d : ℕ) {p : ℕ} (hp : 0 < p) (i : ℕ) :
     ((Array.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat)[i]! < p := by
@@ -603,11 +597,12 @@ theorem examinePrime?_spec (c : List ℤ) (d p : ℕ) (u : Bool) :
     ⦃ fun r ↦ r.map (fun x ↦ (x.1, x.2.1)) = if (examinePrime c d p).isFSquare.any id then
         some (examinePrime c d p, (Array.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat)
       else none ⦄ := by
+  rw [examinePrime?_eq_examinePrime?_false]
   vcgen [examinePrime?] invariants
   -- the count of the residues with a square value, kept beside the table, is the count of its
   -- true entries
   · fun pref _ s ↦ ExaminePrimeInvariant c d p pref.length s.2 ∧ s.1 = s.2.toList.count true
-  all_goals try rw [map_range_toNat_ite_modLong] at *
+  all_goals try simp only [Bool.false_eq_true, ↓reduceIte] at *
   all_goals obtain ⟨hp0, hp⟩ := ‹0 < p ∧ p < maxPrimeEven›
   all_goals first
     | exact ⟨examinePrimeInvariant_zero c d hp0, by split <;> simp_all⟩

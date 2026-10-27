@@ -459,23 +459,12 @@ theorem PatternBits.rotate {g : Nat → Bool} {p s ds k : Nat} {x0 x1 : UInt64}
     (h0 : PatternBits g p s 64 x0) (h1 : PatternBits g p (s + 64) ds x1) :
     PatternBits g p (s + 64) 64 (x1 ||| x0 <<< UInt64.ofNat ds) ∧
       PatternBits g p (s + 64 + 64) ds (x0 >>> UInt64.ofNat (64 - ds)) := by
-  refine ⟨fun j ↦ ?_, fun j ↦ ?_⟩
-  · rw [UInt64.toBitVec_or, BitVec.getLsbD_or, UInt64.getLsbD_shiftLeft_ofNat _ hds, h0, h1]
-    by_cases hj : j < ds
-    · simp [hj, show j < 64 by lia, show ¬ds ≤ j by lia]
-    · have : (s + (j - ds)) % p = (s + 64 + j) % p := by
-        rw [show s + 64 + j = s + (j - ds) + p * k by rw [Nat.mul_comm]; lia,
-          Nat.add_mul_mod_self_left]
-      by_cases hj' : j < 64
-      · simp [hj, hj', this, show j - ds < 64 by lia, show ds ≤ j by lia]
-      · simp [hj, hj']
-  · rw [UInt64.getLsbD_shiftRight_ofNat _ (by lia), h0]
-    have : (s + (64 - ds + j)) % p = (s + 64 + 64 + j) % p := by
-      rw [show s + 64 + 64 + j = s + (64 - ds + j) + p * k by rw [Nat.mul_comm]; lia,
-        Nat.add_mul_mod_self_left]
-    by_cases hj : j < ds
-    · simp [hj, this, show 64 - ds + j < 64 by lia]
-    · simp [hj, show ¬64 - ds + j < 64 by lia]
+  have hm (a : Nat) : (a + k * p) % p = a % p := Nat.add_mul_mod_self_right a k p
+  have h1' := h1.or_shiftLeft (h0.congr_left (by rw [Nat.add_assoc, hk, hm])) hds
+  have h0' := h0.shiftRight (k := 64 - ds) (by lia)
+  rw [Nat.min_eq_right (by lia)] at h1'
+  rw [show 64 - (64 - ds) = ds by lia] at h0'
+  exact ⟨h1', h0'.congr_left (by rw [show s + 64 + 64 = s + (64 - ds) + k * p by lia, hm])⟩
 
 /-- The invariant of the loop of the rotation of `Ratpoints.Sieve.sieve1Rows` after the words below
 `c + 1`: `help0` the window at `64 c`, `help1` the next `ds` bits, and the words below `c + 1` the
@@ -544,11 +533,11 @@ theorem sieve1Rows_spec (p : Nat) (help0 help1 : UInt64) :
     | exact RotInvariant.append ‹_› ‹_› ‹_›
 
 /-- One doubling `x | x << i` of the pattern of period `p ∣ i` in the bits below `i < 64`. -/
-theorem PatternBits.or_shiftLeft {g : Nat → Bool} {p i : Nat} {x : UInt64} (hpi : p ∣ i)
+theorem PatternBits.or_shiftLeft_self {g : Nat → Bool} {p i : Nat} {x : UInt64} (hpi : p ∣ i)
     (hi : i < 64) (h : PatternBits g p 0 i x) :
-    PatternBits g p 0 (min (2 * i) 64) (x ||| x <<< UInt64.ofNat i) := fun t ↦ by
-  rw [Nat.zero_add]
-  exact UInt64.getLsbD_or_shiftLeft_of_dvd hpi hi (fun u ↦ by rw [h u, Nat.zero_add]) t
+    PatternBits g p 0 (min (2 * i) 64) (x ||| x <<< UInt64.ofNat i) := by
+  rw [Nat.two_mul]
+  exact h.or_shiftLeft (h.congr_left (by simp [Nat.mod_eq_zero_of_dvd hpi])) hi
 
 /-- The invariant of the loop of `Ratpoints.Sieve.sieveInit1` that doubles the pattern of period
 `p` through the word, on the word and the shift. -/
@@ -567,7 +556,8 @@ theorem PatternDoubleInvariant.or_shiftLeft {g : Nat → Bool} {p i mb : Nat} {x
   dsimp only at hpi hi0 hx
   rw [Nat.min_eq_left (by lia)] at hx
   rw [Nat.shiftLeft_eq, Nat.pow_one, Nat.mul_comm]
-  exact ⟨by lia, Nat.dvd_trans hpi (Nat.dvd_mul_left i 2), by lia, nofun, hx.or_shiftLeft hpi hi⟩
+  exact ⟨by lia, Nat.dvd_trans hpi (Nat.dvd_mul_left i 2), by lia, nofun,
+    hx.or_shiftLeft_self hpi hi⟩
 
 theorem PatternDoubleInvariant.exit {g : Nat → Bool} {p i mb : Nat} {x : UInt64}
     (h : 64 - i = mb ∧ PatternDoubleInvariant g p false (x, i)) (hi : ¬i < 64) :
@@ -614,13 +604,9 @@ theorem PatternBits.shiftRight_mod {g : Nat → Bool} {p : Nat} {x : UInt64} (hp
     (h64 : p < 64) (h : PatternBits g p 0 p x) :
     PatternBits g p 64 ((64 / p + 1) * p % 64) (x >>> UInt64.ofNat (64 % p)) := by
   obtain ⟨-, hsum, -, -⟩ := sieve1_shifts p h64 hp
-  intro t
-  have := Nat.mod_lt 64 hp
-  rw [UInt64.getLsbD_shiftRight_ofNat _ (by lia), h]
-  have hm : (0 + (64 % p + t)) % p = (64 + t) % p := by
-    rw [Nat.zero_add, Nat.add_mod, Nat.mod_mod, ← Nat.add_mod]
-  rw [hm]
-  exact congrArg (· && _) (decide_eq_decide.mpr (by lia))
+  have h' := h.shiftRight (k := 64 % p) (by lia [Nat.mod_lt 64 hp])
+  rw [show p - 64 % p = (64 / p + 1) * p % 64 by lia] at h'
+  exact h'.congr_left (by rw [Nat.zero_add, Nat.mod_mod])
 
 theorem sieveInit1_post {t : Entry} {ref : EntryRef} {b : Nat} {store : RowStore} {x h0 : UInt64}
     {i : Nat} {si si' : Vector UInt64 ((t.p + chunk - 1) * rbaPack)}
@@ -860,14 +846,8 @@ theorem RingState.out {g : Nat → Bool} {p wp ds s a1 n : Nat} {help : Vector U
   obtain ⟨ha1, hcur, hrest⟩ := h
   have hnext := hrest 0 hwp
   rw [Nat.mul_zero, Nat.add_zero, ← Nat.ite_eq_add_one_mod_add_one ha1] at hnext
-  intro j
-  rw [UInt64.toBitVec_or, BitVec.getLsbD_or, UInt64.getLsbD_shiftLeft_ofNat _ hds, hcur, hnext]
-  by_cases hj : j < ds
-  · simp [hj, show j < 64 by lia, show ¬ds ≤ j by lia]
-  · by_cases hj' : j < 64
-    · simp [hj, hj', show j - ds < 64 by lia, show ds ≤ j by lia,
-        show s + ds + (j - ds) = s + j by lia]
-    · simp [hj, hj']
+  have h' := hcur.or_shiftLeft hnext hds
+  rwa [Nat.min_eq_right (by lia)] at h'
 
 /-- After a step of the ring, the word at the new cursor `t`, shifted right by `64 - ds`, holds the
 `ds` bits from `s + 64` on. -/
@@ -876,15 +856,12 @@ theorem RingState.cur {g : Nat → Bool} {p wp ds s a1 n t : Nat} {help : Vector
     (hn : wp < n) (ht : t = (a1 + 1) % (wp + 1)) (hta : a1 ≠ t) (htle : t ≤ wp) (x : UInt64) :
     PatternBits g p (s + 64) ds
       (((help.set! a1 x).set! t ((help.set! a1 x)[t]! >>> UInt64.ofNat (64 - ds)))[t]!) := by
-  intro j
-  rw [Vector.getElem!_set!_self (by lia), UInt64.getLsbD_shiftRight_ofNat _ (by lia),
-    Vector.getElem!_set!_ne hta]
-  have := h.2.2 0 hwp (64 - ds + j)
-  rw [Nat.add_zero, Nat.mul_zero, Nat.add_zero, ← ht] at this
-  rw [this]
-  by_cases hj : j < ds
-  · simp [hj, show 64 - ds + j < 64 by lia, show s + ds + (64 - ds + j) = s + 64 + j by lia]
-  · simp [hj, show ¬64 - ds + j < 64 by lia]
+  rw [Vector.getElem!_set!_self (by lia), Vector.getElem!_set!_ne hta]
+  have h0 := h.2.2 0 hwp
+  simp only [Nat.mul_zero, Nat.add_zero, ← ht] at h0
+  have h' := h0.shiftRight (k := 64 - ds) (by lia)
+  rw [show 64 - (64 - ds) = ds by lia] at h'
+  exact h'.congr_left (congrArg (· % p) (by lia))
 
 /-- After a step of the ring, the words after the new cursor hold the 64 bits from
 `s + 64 + ds + 64 k` on: the old ones moved up by one, the last the word written. -/

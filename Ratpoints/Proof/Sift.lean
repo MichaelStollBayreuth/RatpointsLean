@@ -694,16 +694,10 @@ private theorem sift_fits (c : List Int) (d H A b : Nat) (fl : CheckFlags) (sp1 
     | have h := ‹_ ∧ RowStore.Fits _ es›.2
       exact (h.buildRows_setRows (fun e he ↦ Nat.mod_lt _ (h.pos e he)) ‹_›).2
 
--- The moduli of entries that fit the rows `R` are positive.
-private theorem pos_of_rowsFit {R : EntryRef → Nat → Array UInt64} {L : List SieveEntry}
-    (hfit : ∀ n (h : n < L.length), L[n].RowsFit R n) (e : SieveEntry) (he : e ∈ L) : 0 < e.p :=
-  have ⟨n, hn, he⟩ := List.getElem_of_mem he
-  he ▸ (hfit n hn).pos
-
 open Std.WP Lean.Order in
 /-- The sieve of one denominator with the first `k` entries of `L` as those of its first two stages
 keeps a store that holds the rows `R` for all of `L` (`Ratpoints.Sieve.StoreHolds`), since building
-rows keeps the rows of the store (`Ratpoints.Sieve.StoreHolds.buildRows_setRows_take`). -/
+the rows of the first entries keeps it (`Ratpoints.Sieve.StoreHolds.buildRows_setRows_take`). -/
 theorem sift_storeHolds (c : List Int) (d H A b : Nat) (fl : CheckFlags) (sp1 : Nat)
     {R : EntryRef → Nat → Array UInt64} {L : List SieveEntry} (k : Nat) (mgs : List Nat)
     (cl : NumClass) (offsets : Array Nat) (es3 : List SieveEntry) (mgs3 : List Nat)
@@ -724,7 +718,7 @@ theorem sift_storeHolds (c : List Int) (d H A b : Nat) (fl : CheckFlags) (sp1 : 
     | exact ‹_›
     | exact ‹_ ∧ _›.2
     | exact StoreHolds.buildRows_setRows_take ‹_ ∧ _›.2 hfit
-        (fun e he ↦ Nat.mod_lt _ (pos_of_rowsFit hfit e (List.mem_of_mem_take he))) ‹_›
+        (fun _ he ↦ Nat.mod_lt _ (pos_of_rowsFit_of_mem hfit (List.mem_of_mem_take he))) ‹_›
 
 /-- The sieve of one denominator with the first `k` entries of the run `L` as those of its first two
 stages only adds rows to the store of the tables of rows, rows of the references of these entries:

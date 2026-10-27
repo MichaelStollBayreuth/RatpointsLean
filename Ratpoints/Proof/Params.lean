@@ -21,8 +21,10 @@ import Std.WP
 Every entry of `Ratpoints.primeTable` is a prime, which `norm_num` checks one entry at a time, the
 table lists every odd prime below 1022 in increasing order, which `decide` checks, so that its first
 `Ratpoints.numPrimes` entries are below `Ratpoints.maxPrimeEven`, a bound that keeps the accumulator
-of Horner's rule in `examine_prime` and the values of `examine_power` in the range of their C types;
-and the pieces of the numerators have at least one bit array.
+of Horner's rule in `examine_prime` and the values of `examine_power` in the range of their C types
+(the lemmas on the values of `examine_power` discharge the range obligations that the Deviation
+paragraphs of the model state, and no proof consumes them); and the pieces of the numerators have
+at least one bit array.
 
 ## Main statements
 

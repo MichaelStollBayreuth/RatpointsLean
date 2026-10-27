@@ -29,9 +29,11 @@ of every table of the prime, the first `p` of its words those of the forbidden d
 The words of a pattern in the shape in which the builders compute them: a word holding a stretch of
 bits of a pattern of period `m` (`Ratpoints.Sieve.PatternBits`), and the words of a row that are the
 windows of 64 bits of the pattern (`Ratpoints.Sieve.RowWords`), which give the closed form
-(`Ratpoints.Sieve.RowWords.toArray_eq_closedRow`). The proofs read the bits of a bit array of words
-off the bits of its words (`Ratpoints.Sieve.patBit`); these are the bits that the C code reads with
-a shift and a mask (`Ratpoints.Sieve.bitAt_eq_patBit`) and sets one at a time
+(`Ratpoints.Sieve.RowWords.toArray_eq_closedRow`); a word of a stretch, or-ed with another shifted
+left (`Ratpoints.Sieve.PatternBits.or_shiftLeft`), or shifted right
+(`Ratpoints.Sieve.PatternBits.shiftRight`), holds a stretch of the pattern again. The bits of a bit
+array of words that the C code reads with a shift and a mask (`Ratpoints.Sieve.bitAt`) are the bits
+of its words (`Ratpoints.Sieve.bitAt_eq_getLsbD`), set one at a time
 (`Ratpoints.Sieve.bitAt_setBitAt`).
 
 ## Main definitions
@@ -40,7 +42,6 @@ a shift and a mask (`Ratpoints.Sieve.bitAt_eq_patBit`) and sets one at a time
 * `Ratpoints.Sieve.closedRow`: the closed form of a row.
 * `Ratpoints.Sieve.PatternBits`, `Ratpoints.Sieve.RowWords`: a word holding a stretch of a periodic
   pattern, and the words of a row that are windows of it.
-* `Ratpoints.Sieve.patBit`: bit `x` of an array of words, read off the bits of its word.
 
 ## Main statements
 
@@ -49,9 +50,11 @@ a shift and a mask (`Ratpoints.Sieve.bitAt_eq_patBit`) and sets one at a time
 * `Ratpoints.Sieve.getElem!_closedRow_mod`, `Ratpoints.Sieve.wraps_closedRow`,
   `Ratpoints.Sieve.SieveEntry.wraps_closedRow`: the closed form of a test of period `m` repeats its
   first `m` bit arrays.
+* `Ratpoints.Sieve.PatternBits.or_shiftLeft`, `Ratpoints.Sieve.PatternBits.shiftRight`: the
+  stretches of a pattern under an or with a shifted word and under a shift right.
 * `Ratpoints.Sieve.RowWords.toArray_eq_closedRow`: words of a row that are the windows of a pattern
   are the closed form of a test that reads the pattern.
-* `Ratpoints.Sieve.bitAt_eq_patBit`, `Ratpoints.Sieve.bitAt_setBitAt`: the bit of a bit array of
+* `Ratpoints.Sieve.bitAt_eq_getLsbD`, `Ratpoints.Sieve.bitAt_setBitAt`: the bit of a bit array of
   words that the C code reads, and the bits after one is set.
 * `Ratpoints.Sieve.getLsbD_getElem!_forbiddenRow`: the bits of the words of a forbidden divisor.
 * `Ratpoints.Sieve.sieves0_eq_closedRow`, `Ratpoints.Sieve.extract_sieves0`: the row of `0` of a
@@ -166,6 +169,25 @@ theorem PatternBits.congr_left {g : Nat → Bool} {m s s' n : Nat} {x : UInt64}
   intro t
   rw [h t, Nat.add_mod, hs, ← Nat.add_mod]
 
+/-- The `k < 64` bits of the pattern from `s` on in `x`, or-ed with the `n` bits from `s + k` on in
+`y` shifted left by `k`: the `min (k + n) 64` bits from `s` on. -/
+theorem PatternBits.or_shiftLeft {g : Nat → Bool} {m s k n : Nat} {x y : UInt64}
+    (hx : PatternBits g m s k x) (hy : PatternBits g m (s + k) n y) (hk : k < 64) :
+    PatternBits g m s (min (k + n) 64) (x ||| y <<< UInt64.ofNat k) := fun t ↦ by
+  rw [UInt64.toBitVec_or, BitVec.getLsbD_or, UInt64.getLsbD_shiftLeft_ofNat _ hk, hx, hy]
+  by_cases ht : t < k
+  · simp [ht, show t < min (k + n) 64 by lia, show ¬k ≤ t by lia]
+  · rw [show s + k + (t - k) = s + t by lia]
+    cases g ((s + t) % m) <;> simp [ht] <;> lia
+
+/-- The `n` bits of the pattern from `s` on in `x`, shifted right by `k < 64`: the `n - k` bits from
+`s + k` on. -/
+theorem PatternBits.shiftRight {g : Nat → Bool} {m s n k : Nat} {x : UInt64}
+    (h : PatternBits g m s n x) (hk : k < 64) :
+    PatternBits g m (s + k) (n - k) (x >>> UInt64.ofNat k) := fun t ↦ by
+  rw [UInt64.getLsbD_shiftRight_ofNat _ hk, h, Nat.add_assoc]
+  exact congrArg (· && _) (decide_eq_decide.mpr (by lia))
+
 /-- The words `0, …, L - 1` of `si` are the windows of the pattern `g` of period `m`: word `j` the
 64 bits from the position `64 j` on. -/
 def RowWords (g : Nat → Bool) (m L : Nat) {n : Nat} (si : Vector UInt64 n) : Prop :=
@@ -204,43 +226,34 @@ theorem RowWords.toArray_eq_closedRow {g : Nat → Bool} {adm : Nat → Int → 
 
 /-! ### The bits of a bit array of words -/
 
-/-- Bit `x` of the words `pat`: bit `x mod 64` of word `⌊x / 64⌋`, read off the bits of the word, as
-the proofs read the patterns of the rows and the bit arrays of the tables of a prime power
-(`Ratpoints.Sieve.bitAt_eq_patBit`). -/
-def patBit (pat : Array UInt64) (x : Nat) : Bool := pat[x / 64]!.toBitVec.getLsbD (x % 64)
+/-- Bit `x` of a bit array of words, read with the shift and the mask of the C code, is bit
+`x mod 64` of word `⌊x / 64⌋`. -/
+theorem bitAt_eq_getLsbD (ws : Array UInt64) (x : Nat) :
+    bitAt ws x = ws[x / 64]!.toBitVec.getLsbD (x % 64) := by
+  rw [bitAt, bne, Nat.toUInt64_eq,
+    UInt64.shiftRight_and_one_beq_zero _ (Nat.mod_lt _ (by decide)), Bool.not_not]
 
-/-- Setting bit `x` of the words of a pattern, `x` within the words, sets bit `x` of the pattern. -/
-theorem patBit_setBitAt {pat : Array UInt64} {x : Nat} (hx : x / 64 < pat.size) (y : Nat) :
-    patBit (setBitAt pat x) y = (patBit pat y || decide (y = x)) := by
-  simp only [patBit, setBitAt]
+theorem size_setBitAt (ws : Array UInt64) (x : Nat) : (setBitAt ws x).size = ws.size := by
+  simp [setBitAt]
+
+/-- Setting bit `x` of a bit array of words, `x` within the words, sets bit `x`. -/
+theorem bitAt_setBitAt {ws : Array UInt64} {x : Nat} (hx : x / 64 < ws.size) (y : Nat) :
+    bitAt (setBitAt ws x) y = (bitAt ws y || decide (y = x)) := by
+  simp only [bitAt_eq_getLsbD, setBitAt]
   by_cases hq : x / 64 = y / 64
-  · have hs : (pat.set! (x / 64) (pat[x / 64]! ||| 1 <<< (x % 64).toUInt64))[y / 64]! =
-        pat[x / 64]! ||| 1 <<< (x % 64).toUInt64 := by
+  · have hs : (ws.set! (x / 64) (ws[x / 64]! ||| 1 <<< (x % 64).toUInt64))[y / 64]! =
+        ws[x / 64]! ||| 1 <<< (x % 64).toUInt64 := by
       rw [← hq]
       grind
     rw [hs, Nat.toUInt64_eq, UInt64.getLsbD_or_one_shiftLeft _ (Nat.mod_lt _ (by decide)), hq]
     congr 1
     exact decide_eq_decide.mpr ⟨fun h ↦ by lia, fun h ↦ by subst h; rfl⟩
-  · have hs : (pat.set! (x / 64) (pat[x / 64]! ||| 1 <<< (x % 64).toUInt64))[y / 64]! =
-        pat[y / 64]! := by
+  · have hs : (ws.set! (x / 64) (ws[x / 64]! ||| 1 <<< (x % 64).toUInt64))[y / 64]! =
+        ws[y / 64]! := by
       grind
     have : y ≠ x := fun h ↦ hq (by rw [h])
     rw [hs]
     simp [this]
-
-theorem size_setBitAt (pat : Array UInt64) (x : Nat) : (setBitAt pat x).size = pat.size := by
-  simp [setBitAt]
-
-/-- Bit `x` of a bit array of words read with the shift and the mask of the C code is the bit of
-the pattern. -/
-theorem bitAt_eq_patBit (ws : Array UInt64) (x : Nat) : bitAt ws x = patBit ws x := by
-  rw [bitAt, patBit, bne, Nat.toUInt64_eq,
-    UInt64.shiftRight_and_one_beq_zero _ (Nat.mod_lt _ (by decide)), Bool.not_not]
-
-/-- Setting bit `x` of a bit array of words, `x` within the words, sets bit `x`. -/
-theorem bitAt_setBitAt {ws : Array UInt64} {x : Nat} (hx : x / 64 < ws.size) (y : Nat) :
-    bitAt (setBitAt ws x) y = (bitAt ws y || decide (y = x)) := by
-  rw [bitAt_eq_patBit, bitAt_eq_patBit, patBit_setBitAt hx]
 
 /-! ### The words of a forbidden divisor -/
 

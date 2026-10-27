@@ -319,7 +319,8 @@ C: `find_points.c:2241-2252`
 
 Deviation: natural numbers for `x`, `m` and the remainders, which are never negative for `x ≥ 0`,
 so that the correction of a negative `x % m` has no counterpart; integers for the `long`
-cofactors, which stay between `-m` and `m`; the result a natural number. -/
+cofactors, which stay between `-m` and `m` (`Ratpoints.Sieve.ModinvInvariant.natAbs_add_mul_le`);
+the result a natural number. -/
 def modinv (x m : Nat) : Id Nat := do
   let mut r0 := m
   let mut r1 := x % m

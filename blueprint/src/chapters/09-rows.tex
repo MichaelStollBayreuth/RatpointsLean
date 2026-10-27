@@ -368,7 +368,7 @@ contract does not depend on the arm: the first stage of either arm gives the sam
 
 \begin{definition}[Bit arrays of words for the tables of a prime power]\label{def:powerWords}
   \uses{def:barrett, def:modinv}
-  \lean{Ratpoints.modWords, Ratpoints.Sieve.bitAt, Ratpoints.Sieve.setBitAt, Ratpoints.Sieve.patBit, Ratpoints.Sieve.setSquareBits, Ratpoints.Sieve.unitInverses}
+  \lean{Ratpoints.modWords, Ratpoints.Sieve.bitAt, Ratpoints.Sieve.setBitAt, Ratpoints.Sieve.setSquareBits, Ratpoints.Sieve.unitInverses}
   \leanok
   The number of words of a pattern of $\mathrm{maxPrimeEven}$ bits,
   $\mathrm{modWords} = \lceil \mathrm{maxPrimeEven}/64 \rceil$ (\verb|RP_MODWORDS|,
@@ -759,7 +759,7 @@ contract does not depend on the arm: the first stage of either arm gives the sam
 
 \begin{lemma}[The sieve specs of a denominator]\label{lem:buildRows}
   \uses{def:buildRows, lem:fetchRow, lem:storeTables, def:siftBits, lem:siftBits}
-  \lean{Ratpoints.Sieve.BuildRowsPre, Ratpoints.Sieve.BuildRowsInvariant, Ratpoints.Sieve.buildRows_spec, Ratpoints.Sieve.length_setRows, Ratpoints.Sieve.getElem!_setRows, Ratpoints.Sieve.buildRowsPre_setRows, Ratpoints.Sieve.mapIdx_setRows, Ratpoints.Sieve.buildRows_setRows_spec, Ratpoints.Sieve.buildRows_setRows_map_spec, Ratpoints.Sieve.StoreHolds.fetchRow_pre, Ratpoints.Sieve.StoreHolds.of_fetchRow, Ratpoints.Sieve.RowStore.Fits.buildRows_setRows, Ratpoints.Sieve.mapIdx_eq_map_fst_packedReads, Ratpoints.Sieve.eq_map_fst_packedReads_of_eq_run_buildRows}
+  \lean{Ratpoints.Sieve.BuildRowsPre, Ratpoints.Sieve.BuildRowsInvariant, Ratpoints.Sieve.buildRows_spec, Ratpoints.Sieve.length_setRows, Ratpoints.Sieve.getElem!_setRows, Ratpoints.Sieve.buildRowsPre_setRows, Ratpoints.Sieve.mapIdx_setRows, Ratpoints.Sieve.buildRows_setRows_map_spec, Ratpoints.Sieve.StoreHolds.fetchRow_pre, Ratpoints.Sieve.StoreHolds.of_fetchRow, Ratpoints.Sieve.RowStore.Fits.buildRows_setRows, Ratpoints.Sieve.mapIdx_eq_map_fst_packedReads, Ratpoints.Sieve.eq_map_fst_packedReads_of_eq_run_buildRows}
   \leanok
   For a store that holds $R$ for the sieve entries of the first two stages, entries that fit $R$ at
   their positions and residues below their moduli: the sieve specs that \verb|set_rows| makes and
