@@ -93,8 +93,8 @@ def WalkCountsInvariant (b : Nat) (checks : Thunk (List CheckSpec)) (x0 : UInt64
 the value of a return, the word, the delivery and the counters: before a return,
 `Ratpoints.Sieve.WalkWhileInvariant` for `Ratpoints.Sieve.WalkCountsInvariant`; the return comes at
 a stop, with the flag of the delivery returned set. -/
-def WalkCountsWhileInvariant {σ : Type} (b : Nat) (checks : Thunk (List CheckSpec)) (x0 : UInt64)
-    (a0 : Int) (step : Nat) (cnt0 : Counters) :
+def WalkCountsWhileInvariant (b : Nat) (checks : Thunk (List CheckSpec)) (x0 : UInt64) (a0 : Int)
+    (step : Nat) (cnt0 : Counters) :
     Std.WP.WhileInvariant (Option (Delivery σ × Counters) × UInt64 × Delivery σ × Counters) Prop :=
   .mk fun exit s ↦ s.1 = none ∧
     WalkWhileInvariant x0 (WalkCountsInvariant b checks x0 a0 step cnt0) exit (s.2.2.2, s.2.1) ∨

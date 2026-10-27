@@ -293,7 +293,7 @@ reciprocals, and the test of the denominators up to $b_{\mathrm{high}} \le \math
 
 \begin{lemma}[The test of a candidate]\label{lem:accepted}
   \uses{def:accepted, lem:relprime, lem:stage3, def:checkNumWith, def:counters}
-  \lean{Ratpoints.Sieve.accepted_spec, Ratpoints.Sieve.fst_run_accepted, Ratpoints.Sieve.run_accepted, Ratpoints.Sieve.acceptedPoints_eq_ite, Int64.minValue_lt_ofInt, Int64.ofNat_pos}
+  \lean{Ratpoints.Sieve.accepted_spec, Ratpoints.Sieve.fst_run_accepted_congr, Ratpoints.Sieve.fst_run_accepted_eq, Ratpoints.Sieve.acceptedPoints_eq_ite, Int64.minValue_lt_ofInt, Int64.ofNat_pos}
   \leanok
   For $1 \le b < 2^{63}$ and $|a| < 2^{63}$, the test of a candidate is the test of $\gcd(a, b) = 1$
   followed by the third stage; its verdict does not depend on the counters. For $1 \le b < 2^{63}$,

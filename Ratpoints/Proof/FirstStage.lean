@@ -331,7 +331,8 @@ def ChunkModInvariant (sv : Array SieveSpec) (cw : UInt64) (K : Nat) (st : Array
   (∀ j < chunk, ∀ κ < rbaPack, regs[rbaPack * j + κ]! = partialReg (sv.toList.take K) cw j κ) ∧
     st.size = sv.size ∧ ∀ k < sv.size, st[k]! = if k < K then sv[k]!.advance chunk else sv[k]!
 
-theorem chunkSieve_pre_zero {sv : Array SieveSpec}
+-- What the load of the first modulus needs of it.
+private theorem chunkSieve_pre_zero {sv : Array SieveSpec}
     (pre : 0 < sv.size ∧ ∀ s ∈ sv, 0 < s.p ∧ s.stop = s.p) :
     0 < sv[0]!.p ∧ sv[0]!.stop = sv[0]!.p :=
   pre.2 _ (Array.getElem!_mem pre.1)
@@ -384,7 +385,8 @@ theorem ChunkModInvariant.regsInvariant {sv st : Array SieveSpec} {cw : UInt64} 
     RegsInvariant sv cw chunk cur ([] : List Nat).length (fun j ↦ j) regs :=
   regsInvariant_init hl h.1
 
-theorem chunkSieve_pre_cur {sv st : Array SieveSpec} {cw : UInt64} {cur N : Nat}
+-- What the ands of the modulus `cur` need of its sieve spec, still that of the local array.
+private theorem chunkSieve_pre_cur {sv st : Array SieveSpec} {cw : UInt64} {cur N : Nat}
     {pref suff : List Nat} {regs : Vector UInt64 (chunk * rbaPack)}
     (pre : 0 < sv.size ∧ ∀ s ∈ sv, 0 < s.p ∧ s.stop = s.p)
     (hl : ForIn.toList [1:N] = pref ++ cur :: suff)
@@ -410,8 +412,7 @@ theorem RegsInvariant.chunkModInvariant {sv : Array SieveSpec} {cw : UInt64} {cu
     rw [ite_eq_left rfl, ite_eq_left (by lia), hmod.getElem!_eq hl hN]
     rfl
   · rw [ite_eq_right hkc, hmod.2.2 k hk]
-    congr 1
-    exact propext ⟨fun h ↦ by lia, fun h ↦ by lia⟩
+    split <;> split <;> first | rfl | lia
 
 attribute [local irreducible] ChunkModInvariant RegsInvariant in
 /-- The registers of a chunk hold the class word and-ed with the rows of all the moduli of the
@@ -467,8 +468,10 @@ theorem andChunksInvariant_init {specs : List SieveSpec} {sv : Array SieveSpec} 
     AndChunksInvariant specs cw w0 full surv false (sv, surv, 0) :=
   ⟨Nat.zero_mod _, Nat.zero_le _, nofun, by simpa using pre.2.1, fun y _ ↦ by simp⟩
 
-theorem chunkSieve_pre_of_andChunksInvariant {specs : List SieveSpec} {sv sv' : Array SieveSpec}
-    {cw : UInt64} {w0 : Int} {full m c mb : Nat} {surv surv' : Vector UInt64 m}
+-- What a chunk needs of the local array, whose starts are at the word number of the chunk.
+private theorem chunkSieve_pre_of_andChunksInvariant {specs : List SieveSpec}
+    {sv sv' : Array SieveSpec} {cw : UInt64} {w0 : Int} {full m c mb : Nat}
+    {surv surv' : Vector UInt64 m}
     (pre : (∀ s ∈ specs, s.Fits) ∧ sv.toList = specs.map (·.startAt w0) ∧ 0 < sv.size ∧
       full % chunk = 0)
     (h : full - c = mb ∧ AndChunksInvariant specs cw w0 full surv false (sv', surv', c)) :
@@ -751,7 +754,8 @@ theorem AndRowsFillInvariant.getElem!_eq_andWords {specs : List SieveSpec} {sv :
   rw [h y hy (by simp), this]
   rfl
 
-theorem andChunks_pre_of_toList_eq {specs : List SieveSpec} {mgs : List Nat} {small : Bool}
+-- What the whole chunks need of the local array with the starts at the first word number.
+private theorem andChunks_pre_of_toList_eq {specs : List SieveSpec} {mgs : List Nat} {small : Bool}
     {w0 : Int} {n : Nat} {sv : Array SieveSpec}
     (pre : chunk ≤ 16 ∧ StageFits specs mgs small w0 (w0 + n))
     (hsv : sv.toList = specs.map (·.startAt w0)) (hz : ¬sv.size = 0) :
@@ -759,8 +763,9 @@ theorem andChunks_pre_of_toList_eq {specs : List SieveSpec} {mgs : List Nat} {sm
       (n - n % chunk) % chunk = 0 :=
   ⟨pre.2.fits, hsv, Nat.pos_of_ne_zero hz, Nat.sub_mod_eq_zero_of_mod_eq (Nat.mod_mod n chunk).symm⟩
 
-theorem tailLegs_pre_of_toList_eq {specs : List SieveSpec} {sv0 sv : Array SieveSpec} {w0 : Int}
-    {n m : Nat} {cw : UInt64} {surv surv' : Vector UInt64 m} (hc : chunk ≤ 16)
+-- What the legs over the tail need of the local array after the whole chunks.
+private theorem tailLegs_pre_of_toList_eq {specs : List SieveSpec} {sv0 sv : Array SieveSpec}
+    {w0 : Int} {n m : Nat} {cw : UInt64} {surv surv' : Vector UInt64 m} (hc : chunk ≤ 16)
     (hsv : sv0.toList = specs.map (·.startAt w0)) (hz : ¬sv0.size = 0)
     (hch : (∀ y < m, surv'[y]! = if y < (n - n % chunk) * rbaPack then andWords specs cw w0 y
         else surv[y]!) ∧ sv.toList = specs.map (·.startAt (w0 + (n - n % chunk : Nat)))) :
@@ -769,8 +774,8 @@ theorem tailLegs_pre_of_toList_eq {specs : List SieveSpec} {sv0 sv : Array Sieve
     rw [← Array.length_toList, hch.2, ← Array.length_toList, hsv, List.length_map, List.length_map]
   exact ⟨hc, by lia [Nat.mod_lt n chunk_pos], by lia⟩
 
-/-- The bit arrays of the whole chunks and of the tail are those of the first stage. -/
-theorem andRowsChunked_post {specs : List SieveSpec} {mgs : List Nat} {small : Bool}
+-- The bit arrays of the whole chunks and of the tail are those of the first stage.
+private theorem andRowsChunked_post {specs : List SieveSpec} {mgs : List Nat} {small : Bool}
     {cw : UInt64} {w0 : Int} {n : Nat} {sv : Array SieveSpec}
     {surv surv' surv'' : Vector UInt64 ((n + 1) * rbaPack)}
     (pre : chunk ≤ 16 ∧ StageFits specs mgs small w0 (w0 + n))

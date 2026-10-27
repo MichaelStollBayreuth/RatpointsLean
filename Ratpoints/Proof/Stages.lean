@@ -246,8 +246,8 @@ private theorem toNatClampNeg_mod_two_of_and_one {m n x : Int64} {s : Nat}
     (hx : 0 < x ∧ 0 < n ∧ Int.gcd m.toInt n.toInt = Nat.gcd x.toNatClampNeg n.toNatClampNeg)
     (hxo : ¬(x &&& 1 == 0) = true) (hs : s = n.toUInt64.toBitVec.ctz.toNat) :
     x.toNatClampNeg % 2 = 1 ∧ (n >>> Int64.ofNat s).toNatClampNeg % 2 = 1 := by
-  have := mt (Int64.and_one_beq_zero_iff (Int64.le_of_lt hx.1)).mpr hxo
-  exact ⟨by lia, hs ▸ Int64.toNatClampNeg_shiftRight_ctz_mod_two hx.2.1⟩
+  exact ⟨Nat.mod_two_ne_zero.mp (mt (Int64.and_one_beq_zero_iff (Int64.le_of_lt hx.1)).mpr hxo),
+    hs ▸ Int64.toNatClampNeg_shiftRight_ctz_mod_two hx.2.1⟩
 
 -- The odd parts of a positive word and of an odd positive word have the gcd of the two words.
 private theorem eq_decide_gcd_of_shiftRight {m n x : Int64} {s t : Nat} {r : Bool}
@@ -257,11 +257,11 @@ private theorem eq_decide_gcd_of_shiftRight {m n x : Int64} {s t : Nat} {r : Boo
     (ht : t = x.toUInt64.toBitVec.ctz.toNat) (hs : s = n.toUInt64.toBitVec.ctz.toNat) :
     r = decide (Int.gcd m.toInt n.toInt = 1) := by
   subst ht hs hr
-  have := mt (Int64.and_one_beq_zero_iff (Int64.le_of_lt hx.2.1)).mpr hno
   rw [hx.2.2, decide_eq_decide, Nat.gcd_comm, Nat.gcd_eq_of_two_pow_mul_eq
     (Int64.two_pow_ctz_mul_toNatClampNeg_shiftRight hx.2.1)
     (Int64.toNatClampNeg_shiftRight_ctz_mod_two hx.1), Nat.gcd_comm,
-    Nat.gcd_eq_of_two_pow_mul_eq (Int64.two_pow_ctz_mul_toNatClampNeg_shiftRight hx.1) (by lia)]
+    Nat.gcd_eq_of_two_pow_mul_eq (Int64.two_pow_ctz_mul_toNatClampNeg_shiftRight hx.1)
+      (Nat.mod_two_ne_zero.mp (mt (Int64.and_one_beq_zero_iff (Int64.le_of_lt hx.2.1)).mpr hno))]
 
 -- An odd positive word and the odd part of a positive word have the gcd of the two words.
 private theorem eq_decide_gcd_of_shiftRight_right {m n x : Int64} {s : Nat} {r : Bool}
@@ -271,9 +271,10 @@ private theorem eq_decide_gcd_of_shiftRight_right {m n x : Int64} {s : Nat} {r :
     (hs : s = n.toUInt64.toBitVec.ctz.toNat) :
     r = decide (Int.gcd m.toInt n.toInt = 1) := by
   subst hs hr
-  have := mt (Int64.and_one_beq_zero_iff (Int64.le_of_lt hx.1)).mpr hxo
   rw [hx.2.2, decide_eq_decide, Nat.gcd_comm, Nat.gcd_eq_of_two_pow_mul_eq
-    (Int64.two_pow_ctz_mul_toNatClampNeg_shiftRight hx.2.1) (by lia), Nat.gcd_comm]
+    (Int64.two_pow_ctz_mul_toNatClampNeg_shiftRight hx.2.1)
+    (Nat.mod_two_ne_zero.mp (mt (Int64.and_one_beq_zero_iff (Int64.le_of_lt hx.1)).mpr hxo)),
+    Nat.gcd_comm]
 
 /-- The binary algorithm decides whether the numerator `m` is prime to the denominator `n ≥ 1`, for
 `m` other than `-2 ^ 63`, whose negation would leave the range of a `long`; no operation leaves
@@ -538,7 +539,7 @@ theorem accepted_value (a : Int) (b : Nat) (checks : Thunk (List CheckSpec)) (cn
   ⟨fun _ ↦ rfl⟩
 
 /-- Whether a numerator passes the test of a candidate does not depend on the counters. -/
-theorem fst_run_accepted (a : Int) (b : Nat) (checks : Thunk (List CheckSpec))
+theorem fst_run_accepted_congr (a : Int) (b : Nat) (checks : Thunk (List CheckSpec))
     (cnt cnt' : Counters) :
     (Id.run (accepted a b checks cnt)).1 = (Id.run (accepted a b checks cnt')).1 := by
   simp only [accepted]
@@ -550,7 +551,7 @@ theorem fst_run_accepted (a : Int) (b : Nat) (checks : Thunk (List CheckSpec))
 needs of the sieve entries `es` of the shape of `Ratpoints.Sieve.SieveEntry.IsPrimeEntry`, with the
 reciprocals of their moduli, for `b` and `H`, a numerator goes on to the exact check when it is
 prime to `b` and survives these entries. -/
-theorem run_accepted {es : List SieveEntry} (hes : ∀ e ∈ es, e.IsPrimeEntry) {a : Int}
+theorem fst_run_accepted_eq {es : List SieveEntry} (hes : ∀ e ∈ es, e.IsPrimeEntry) {a : Int}
     {b H : Nat} {checks : Thunk (List CheckSpec)} (cnt : Counters)
     (hc : checks.get = fillChecks b H es (es.map fun e ↦ magic e.p)) (hb : 0 < b)
     (hb63 : b < 2 ^ 63) (ha : a.natAbs ≤ H) (hH : H < 2 ^ 63) :
@@ -589,44 +590,35 @@ theorem Counters.checks_add (c k : Counters) : (c + k).checks = c.checks + k.che
 @[simp]
 theorem Counters.sifts_add (c k : Counters) : (c + k).sifts = c.sifts + k.sifts := rfl
 
-theorem Counters.add_assoc (a b c : Counters) : a + b + c = a + (b + c) :=
-  Counters.ext (UInt64.add_assoc ..) (UInt64.add_assoc ..) (UInt64.add_assoc ..)
-    (UInt64.add_assoc ..) (UInt64.add_assoc ..) (UInt64.add_assoc ..)
+theorem Counters.add_assoc (a b c : Counters) : a + b + c = a + (b + c) := by
+  ext <;> exact UInt64.add_assoc ..
 
-theorem Counters.add_comm (a b : Counters) : a + b = b + a :=
-  Counters.ext (UInt64.add_comm ..) (UInt64.add_comm ..) (UInt64.add_comm ..)
-    (UInt64.add_comm ..) (UInt64.add_comm ..) (UInt64.add_comm ..)
+theorem Counters.add_comm (a b : Counters) : a + b = b + a := by
+  ext <;> exact UInt64.add_comm ..
 
 instance : Std.Associative (α := Counters) (· + ·) := ⟨Counters.add_assoc⟩
 
 instance : Std.Commutative (α := Counters) (· + ·) := ⟨Counters.add_comm⟩
 
 @[simp]
-theorem Counters.add_empty (c : Counters) : c + {} = c :=
-  Counters.ext (UInt64.add_zero _) (UInt64.add_zero _) (UInt64.add_zero _) (UInt64.add_zero _)
-    (UInt64.add_zero _) (UInt64.add_zero _)
+theorem Counters.add_empty (c : Counters) : c + {} = c := by
+  ext <;> simp
 
-/-- The counters with the count `arrays` one up. -/
 theorem Counters.arrays_add_one (c : Counters) :
-    { c with arrays := c.arrays + 1 } = c + { arrays := 1 } :=
-  Counters.ext (UInt64.add_zero _).symm rfl (UInt64.add_zero _).symm (UInt64.add_zero _).symm
-    (UInt64.add_zero _).symm (UInt64.add_zero _).symm
+    { c with arrays := c.arrays + 1 } = c + { arrays := 1 } := by
+  ext <;> simp
 
-/-- The counters with the count `words` up by `x`. -/
 theorem Counters.words_add_eq (c : Counters) (x : UInt64) :
-    { c with words := c.words + x } = c + { words := x } :=
-  Counters.ext rfl (UInt64.add_zero _).symm (UInt64.add_zero _).symm (UInt64.add_zero _).symm
-    (UInt64.add_zero _).symm (UInt64.add_zero _).symm
+    { c with words := c.words + x } = c + { words := x } := by
+  ext <;> simp
 
 theorem Counters.words_mk_add (x y : UInt64) :
-    ({ words := x + y } : Counters) = { words := x } + { words := y } :=
-  Counters.ext rfl (UInt64.add_zero 0).symm (UInt64.add_zero 0).symm (UInt64.add_zero 0).symm
-    (UInt64.add_zero 0).symm (UInt64.add_zero 0).symm
+    ({ words := x + y } : Counters) = { words := x } + { words := y } := by
+  ext <;> simp
 
 theorem Counters.arrays_mk_add (x y : UInt64) :
-    ({ arrays := x + y } : Counters) = { arrays := x } + { arrays := y } :=
-  Counters.ext (UInt64.add_zero 0).symm rfl (UInt64.add_zero 0).symm (UInt64.add_zero 0).symm
-    (UInt64.add_zero 0).symm (UInt64.add_zero 0).symm
+    ({ arrays := x + y } : Counters) = { arrays := x } + { arrays := y } := by
+  ext <;> simp
 
 /-- The counts of the tests of a candidate (`Ratpoints.Sieve.accepted`) of the numerators `as` over
 the denominator `b`, with the thunk `checks` of the third stage, each numerator counted in `bits`
@@ -645,10 +637,8 @@ theorem testedCounts_nil (b : Nat) (checks : Thunk (List CheckSpec)) :
   rfl
 
 theorem testedCounts_append (b : Nat) (checks : Thunk (List CheckSpec)) (as bs : List Int) :
-    testedCounts b checks (as ++ bs) = testedCounts b checks as + testedCounts b checks bs :=
-  Counters.ext rfl rfl (by simp [testedCounts, UInt64.ofNat_add])
-    (by simp [testedCounts, List.countP_append, UInt64.ofNat_add])
-    (by simp [testedCounts, List.countP_append, UInt64.ofNat_add]) rfl
+    testedCounts b checks (as ++ bs) = testedCounts b checks as + testedCounts b checks bs := by
+  ext <;> simp [testedCounts, List.countP_append, UInt64.ofNat_add]
 
 /-- The counts of the test of a candidate, with the count of the numerator in `bits` before it as
 the walk through the set bits of a word counts it (`Ratpoints.Sieve.walkWord`). -/
@@ -667,6 +657,8 @@ theorem eq_add_testedCounts_of_eq_run_accepted {a : Int} {b : Nat}
     (h : (ok, c') = Id.run (accepted a b checks { c with bits := c.bits + 1 })) :
     c' = c + testedCounts b checks [a] :=
   (congrArg Prod.snd h).trans (snd_run_accepted ..)
+
+/-! ### The exact check -/
 
 /-- The map of the reversal keeps the `y`-coordinate. -/
 @[simp]
@@ -780,6 +772,14 @@ theorem mem_checkNumWith_of_noCheck {fl : CheckFlags} (hc : fl.noCheck = true) {
   rw [checkNumWith_of_noCheck_eq_true hc]
   by_cases h : Int.gcd a b = 1 <;> simp [h]
 
+/-- Without the flag of the reversal, the points of the check with the flags of the numerator `a`
+over `b` are `(a, y, b)`. -/
+theorem fst_eq_and_snd_snd_eq_of_mem_checkNumWith {w : List Int} {f b : Int} {fl : CheckFlags}
+    (hr : fl.reversed = false) {a : Int} {q : Int × Int × Int} (hq : q ∈ checkNumWith w f b fl a) :
+    q.1 = a ∧ q.2.2 = b := by
+  simp only [checkNumWith, checkPointList, hr, BruteForce.pointsAbove] at hq
+  grind
+
 -- The points of a value with `y ≥ 0`, with `y` replaced by `0`: at most the triple `(x, 0, z)`.
 private theorem map_filter_pointsAbove_sublist (x z v : Int) :
     (((BruteForce.pointsAbove x z v).filter fun p ↦ 0 ≤ p.2.1).map
@@ -831,7 +831,7 @@ theorem acceptedPoints_eq_ite {es : List SieveEntry} (hes : ∀ e ∈ es, e.IsPr
     (hH : H < 2 ^ 63) :
     acceptedPoints w d b fl checks a =
       if survives es b a then checkNumWith w.get (if d % 2 = 1 then b else 1) b fl a else [] := by
-  rw [acceptedPoints, run_accepted hes {} hc hb hb63 ha hH]
+  rw [acceptedPoints, fst_run_accepted_eq hes {} hc hb hb63 ha hH]
   by_cases hab : Int.gcd a b = 1 <;> simp [hab, checkNumWith]
 
 /-- The exact check of a numerator that passes the test of a candidate, on a delivery whose flag is
@@ -841,7 +841,7 @@ theorem checkPoint_eq_deliver_acceptedPoints {σ : Type} (process : Int → Int 
     {a : Int} {cnt : Counters} (h : (Id.run (accepted a b checks cnt)).1 = true) {r : Delivery σ}
     (hr : r.quit = false) :
     checkPoint process w d b fl a r = r.deliver process (acceptedPoints w d b fl checks a) := by
-  simp only [acceptedPoints, fst_run_accepted a b checks {} cnt, h, ↓reduceIte,
+  simp only [acceptedPoints, fst_run_accepted_congr a b checks {} cnt, h, ↓reduceIte,
     checkPoint_eq_deliver process w d b fl a hr]
 
 /-- A numerator that does not pass the test of a candidate has no points to deliver. -/
@@ -850,7 +850,7 @@ theorem deliver_acceptedPoints_of_not_accepted {σ : Type}
     (fl : CheckFlags) {checks : Thunk (List CheckSpec)} {a : Int}
     {cnt : Counters} (h : ¬(Id.run (accepted a b checks cnt)).1 = true) (r : Delivery σ) :
     r.deliver process (acceptedPoints w d b fl checks a) = r := by
-  simp [acceptedPoints, fst_run_accepted a b checks {} cnt, h]
+  simp [acceptedPoints, fst_run_accepted_congr a b checks {} cnt, h]
 
 /-- Without `RATPOINTS_NO_CHECK`, the checks with the flags of the numerators `xs` over `b` give the
 points of the brute-force reference, mapped by `Ratpoints.Sieve.swapPoint` after a reversal,
@@ -940,6 +940,14 @@ theorem eq_of_mem_pointsAtInfinityList_of_noCheck {fl : CheckFlags} (hc : fl.noC
     q = (if fl.reversed then swapPoint else id) (1, 0, 0) := by
   rw [pointsAtInfinityList_of_noCheck_eq_true hc] at hq
   split at hq <;> simp_all
+
+/-- Without the flag of the reversal, the points at infinity that the search delivers have
+`z = 0`. -/
+theorem snd_snd_eq_zero_of_mem_pointsAtInfinityList {c : List Int} {d : Nat} {fl : CheckFlags}
+    (hr : fl.reversed = false) {q : Int × Int × Int} (hq : q ∈ pointsAtInfinityList c d fl) :
+    q.2.2 = 0 := by
+  simp only [pointsAtInfinityList, hr] at hq
+  grind
 
 /-- Without `RATPOINTS_NO_CHECK` and with `RATPOINTS_NO_Y`, the points at infinity, with `y`
 replaced by `0`, are those under `RATPOINTS_NO_CHECK`. -/
@@ -1095,22 +1103,6 @@ theorem secondStageWord_spec (specs : List SieveSpec) (mgs : List Nat) (small : 
     | exact SecondStageWordInvariant.of_eq_zero ‹_› ‹_› ‹_›
     | exact absurd ‹_› (SecondStageWordInvariant.next?_ne_none ‹_› ‹_› ‹_›)
     | exact SecondStageWordInvariant.and hκ ‹_› ‹_› ‹_› ‹_›
-
-/-- Without the flag of the reversal, the points at infinity that the search delivers have
-`z = 0`. -/
-theorem snd_snd_eq_zero_of_mem_pointsAtInfinityList {c : List Int} {d : Nat} {fl : CheckFlags}
-    (hr : fl.reversed = false) {q : Int × Int × Int} (hq : q ∈ pointsAtInfinityList c d fl) :
-    q.2.2 = 0 := by
-  simp only [pointsAtInfinityList, hr] at hq
-  grind
-
-/-- Without the flag of the reversal, the points of the check with the flags of the numerator `a`
-over `b` are `(a, y, b)`. -/
-theorem fst_eq_and_snd_snd_eq_of_mem_checkNumWith {w : List Int} {f b : Int} {fl : CheckFlags}
-    (hr : fl.reversed = false) {a : Int} {q : Int × Int × Int} (hq : q ∈ checkNumWith w f b fl a) :
-    q.1 = a ∧ q.2.2 = b := by
-  simp only [checkNumWith, checkPointList, hr, BruteForce.pointsAbove] at hq
-  grind
 
 end Sieve
 
