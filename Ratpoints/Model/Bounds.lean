@@ -115,7 +115,7 @@ the high half of the quotient is not `0`. As `b m < 2 ^ 126` and `r < 2 ^ 127`, 
 C: `find_points.c:3231-3238`, `find_points.c:3257`
 
 Deviation: the 128-bit product, sum and shift on two 64-bit halves, the high half of the product by
-`Ratpoints.Sieve.mulHi`, for the `unsigned __int128` of the arm that the builds of the model compile
+`Ratpoints.Sieve.mulHi`, for the `unsigned __int128` of the arm that the modelled builds compile
 (the compiler defines `__SIZEOF_INT128__`, and `RP_NO_INT128` is not set), which Lean core does not
 have; the other arm (lines 3239-3256), for a build without a 128-bit type, is excluded; the `long`
 `b` converted to a 64-bit word, as the C code converts it to an `unsigned long`. -/
@@ -135,7 +135,7 @@ value of an end, as `exact_end` makes them: `ax = f 2 ^ ex` with `1/2 ≤ f < 1`
 `Ratpoints.Double.toUInt64`) and `s = 53 - ex`, so that `ax = m 2 ^ (-s)`; then `s = 0` for `m = 0`,
 and else, while `s > 0`, the trailing zero bits of `m` dropped (`Ratpoints.Sieve.ctz`), at most `s`
 of them; `m` shifted up by `-s` when `s < 0`; and `s` capped at `127`, which leaves
-`⌊b m 2 ^ (-s)⌋ = 0` and `⌈b m 2 ^ (-s)⌉ = 1` for every `b < 2 ^ 63`, as they are for `s = 127`.
+`⌊b m 2 ^ (-s)⌋ = 0` and `⌈b m 2 ^ (-s)⌉ = 1` for every `1 ≤ b < 2 ^ 63`, as they are for `s = 127`.
 
 C: `find_points.c:3272-3291`
 

@@ -384,12 +384,12 @@ theorem fitsLong_add {w : Int} {off : Nat} (hw : -2 ^ 63 ≤ rbaLength * w)
 /-! ### The numerator ranges of the search intervals -/
 
 /-- The bounds `bd` of a search interval give, for the denominator `b` and the height bound `H`, the
-range of the numerators `lo, …, hi` (empty when `hi < lo`), as `Ratpoints.Sieve.intervalBits`
-reads them for every class with `k ≤ 6` and `a₀ < 2 ^ k` (`Ratpoints.Sieve.NumClass.WF`): the code
-`2` only when the range lies above `H`, the code `1` only when it lies below `-H`, and otherwise the
-bits of the numerators from `max lo (-H)` to `min hi H` in the packing of the class
-(`Ratpoints.Sieve.toInt_numeratorsToBits`). For the bounds of a search interval `[l, u]` and a
-denominator up to the largest one, `lo = ⌈b l⌉` and `hi = ⌊b u⌋`. -/
+range of the numerators `lo, …, hi` (empty when `hi < lo`), as `Ratpoints.Sieve.intervalBits` reads
+them for every class with `k ≤ 6`, `k < Ratpoints.numStrides` and `a₀ < 2 ^ k`
+(`Ratpoints.Sieve.NumClass.WF`): the code `2` only when the range lies above `H`, the code `1` only
+when it lies below `-H`, and otherwise the bits of the numerators from `max lo (-H)` to `min hi H`
+in the packing of the class (`Ratpoints.Sieve.toInt_numeratorsToBits`). For the bounds of a search
+interval `[l, u]` and a denominator up to the largest one, `lo = ⌈b l⌉` and `hi = ⌊b u⌋`. -/
 structure IntervalBounds.Represents (bd : IntervalBounds) (b H : Nat) (lo hi : Int) : Prop where
   /-- The code `2` only for a range above `H`. -/
   two : ∀ cl : NumClass, cl.WF → (intervalBits b.toInt64 bd H.toInt64 cl).1 = 2 → (H : Int) < lo

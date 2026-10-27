@@ -197,7 +197,7 @@ Deviation: natural numbers for the `unsigned long`s, the product `u m` exact as 
 of the C code, and the difference exact, which does not wrap since the quotient times `p` is at most
 `u` for `m ≤ (2 ^ 64 - 1) / p`; the obligation that `u` is below `2 ^ 64`, which the C type gives, a
 hypothesis of the lemma that the result is `u % p` (`Ratpoints.Sieve.barrett_eq`); the form with the
-128-bit product, which the builds of the model compile (the compiler defines `__SIZEOF_INT128__`,
+128-bit product, which the modelled builds compile (the compiler defines `__SIZEOF_INT128__`,
 and `RP_NO_INT128` is not set), for the division `u % p` of the other builds, which gives the same
 remainder. -/
 def barrett (u p m : Nat) : Nat :=
@@ -564,7 +564,7 @@ Deviation: natural numbers for the `unsigned long` reciprocal, the `long`s `u` a
 and `p` to `unsigned long`s, so that the product `m u` wraps as the product of `unsigned long`s
 does; the argument `u` a natural number, for the `long` that the C code passes non-negative; the
 high half of the 128-bit product by `Ratpoints.Sieve.mulHi`; the form with the 128-bit product,
-which the builds of the model compile (the compiler defines `__SIZEOF_INT128__`, and neither
+which the modelled builds compile (the compiler defines `__SIZEOF_INT128__`, and neither
 `RP_MULMOD_DIVIDE` nor `RP_NO_INT128` is set), for the division `u % p` of the other builds, which
 gives the same remainder where the multiplication is exact. -/
 def mulMod (u p m : Nat) : Nat := (mulHi (m.toUInt64 * u.toUInt64) p.toUInt64).toNat
@@ -578,7 +578,7 @@ C: `rp-private.h:409-410`, `rp-private.h:415-416`
 Deviation: natural numbers for the `unsigned long` reciprocal, the `long` `u` and the `long`
 result, the arguments converted to `UInt64`, as the macro converts `u` to an `unsigned long`; the
 high half of the 128-bit product by `Ratpoints.Sieve.mulHi`; no argument `p`, which that form does
-not read; the form with the 128-bit product, which the builds of the model compile, for the
+not read; the form with the 128-bit product, which the modelled builds compile, for the
 division `u / p` of the other builds, which gives the same quotient where the multiplication is
 exact. -/
 def mulDiv (u m : Nat) : Nat := (mulHi u.toUInt64 m.toUInt64).toNat

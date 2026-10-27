@@ -284,7 +284,7 @@ reason = "the result of worker_init, whether the survivors array could be alloca
 file = "find_points.c"
 lines = "3239-3256"
 kind = "other"
-reason = "the arm of exact_scale for a build without a 128-bit type or with RP_NO_INT128, which puts the 128-bit product together from 32-bit halves; the builds of the model compile the arm with unsigned __int128 (Ratpoints.Sieve.exactScale)"
+reason = "the arm of exact_scale for a build without a 128-bit type or with RP_NO_INT128, which puts the 128-bit product together from 32-bit halves; the modelled builds compile the arm with unsigned __int128 (Ratpoints.Sieve.exactScale)"
 
 [[excluded]]
 file = "find_points.c"
