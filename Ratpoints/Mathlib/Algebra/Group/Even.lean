@@ -30,10 +30,8 @@ Mathlib has `IsSquare.mul` and, in a group, `IsSquare.div`. -/
 theorem IsUnit.isSquare_of_sq_eq_mul_pow {M : Type*} [CommMonoid M] {y v u : M} (hu : IsUnit u)
     {D : ℕ} (hD : Even D) (h : y ^ 2 = v * u ^ D) : IsSquare v := by
   obtain ⟨u, rfl⟩ := hu
-  obtain ⟨k, rfl⟩ := hD
-  refine ⟨y * ↑u⁻¹ ^ k, ?_⟩
-  calc v = v * (↑u * ↑u⁻¹) ^ (k + k) := by rw [Units.mul_inv, one_pow, mul_one]
-    _ = v * ↑u ^ (k + k) * ↑u⁻¹ ^ (k + k) := by rw [mul_pow, mul_assoc]
-    _ = y * ↑u⁻¹ ^ k * (y * ↑u⁻¹ ^ k) := by rw [← h, mul_mul_mul_comm, ← pow_add, sq]
+  have hv : v = y ^ 2 * (↑u⁻¹ : M) ^ D := by
+    rw [h, mul_assoc, ← mul_pow, Units.mul_inv, one_pow, mul_one]
+  exact hv ▸ (IsSquare.sq y).mul (hD.isSquare_pow _)
 
 end

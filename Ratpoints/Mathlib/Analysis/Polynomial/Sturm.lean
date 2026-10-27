@@ -12,22 +12,22 @@ public import Ratpoints.Mathlib.Analysis.Polynomial.Order
 /-!
 # The sign variations of positive multiples and of polynomials near infinity
 
-Candidates for the file of Mathlib that will hold Sturm's theorem: lists of polynomials over an
-ordered field that are entrywise positive multiples (`Polynomial.PosAssoc`), such as a generalized
-Sturm sequence and the Sturm sequence of its first two entries, have the same sign variations at
-every point and at `±∞` (`Polynomial.signVariations_map_eval_eq_of_forall₂`,
+Candidates for a file of Mathlib on Sturm's theorem: lists of polynomials over an ordered field that
+are entrywise positive multiples (`Polynomial.PosAssoc`), such as a generalized Sturm sequence and
+the Sturm sequence of its first two entries, have the same sign variations at every point and at
+`±∞` (`Polynomial.signVariations_map_eval_eq_of_forall₂`,
 `Polynomial.signVariations_map_leadingCoeff_eq_of_forall₂`,
-`Polynomial.signVariations_map_neg_one_pow_mul_leadingCoeff_eq_of_forall₂`); and far right, the
-sign variations of a list of nonzero polynomials at a point are those of their leading
-coefficients, and far left those of their leading coefficients, each times `(-1) ^ deg`
+`Polynomial.signVariations_map_neg_one_pow_mul_leadingCoeff_eq_of_forall₂`); and far right, the sign
+variations of a list of nonzero polynomials at a point are those of their leading coefficients, and
+far left those of their leading coefficients, each times `(-1) ^ deg`
 (`Polynomial.eventually_atTop_signVariations`, `Polynomial.eventually_atBot_signVariations`).
 
 ## Implementation notes
 
 The file has no Mathlib sibling: Mathlib has the Sturm sequence
 (`Mathlib.Algebra.Polynomial.Sturm.Sequence`) and the sign variations of a list
-(`Mathlib.Data.List.SignVariations`), but neither file imports the other, and Mathlib does not have
-Sturm's theorem yet, whose file will import both. So the file chooses its imports: the sign
+(`Mathlib.Data.List.SignVariations`), but neither file imports the other, and Mathlib has neither
+Sturm's theorem nor a file that imports both. So the file chooses its imports: the sign
 variations, and the mirrors of the Sturm sequence (`Polynomial.PosAssoc`) and of the eventual signs
 of polynomials (`Mathlib.Analysis.Polynomial.Order`, which brings the filters and the ordered
 normed fields of the statements).

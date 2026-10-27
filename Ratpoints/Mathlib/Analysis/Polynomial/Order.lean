@@ -41,9 +41,8 @@ The lemmas that rest on the intermediate value theorem are stated over `ℝ`, as
 they need a conditionally complete, densely ordered field.
 
 The signs just right and just left of a point are stated by the case distinction on `p(x) = 0`,
-without a definition of their own: Mathlib after the version that the project pins defines the sign
-just right of a point as a limit for every `p` (`Polynomial.signRight`, pull request #44248), which
-the project can take over at its next update of Mathlib.
+without a definition of their own; compare `Polynomial.signRight` of Mathlib pull request #44248,
+the sign just right of a point as a limit, for every `p`.
 -/
 
 @[expose] public section
