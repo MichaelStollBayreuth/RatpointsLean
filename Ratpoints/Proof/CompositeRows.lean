@@ -373,11 +373,6 @@ theorem RowWords.post_copy {g : Nat → Bool} {m n : Nat} {si : Vector UInt64 n}
   rwa [Std.Legacy.Range.length_toList, Nat.sub_zero, ← Nat.add_mul,
     ← Nat.add_sub_assoc chunk_pos] at h
 
-theorem layOutPattern_pre {m : Nat} {pat : Array UInt64}
-    (pre : 0 < m ∧ m ≤ 64 * modWords ∧ PatClear m pat) :
-    0 < m ∧ (m + 64 + 64 - 1) / 64 ≤ modWords + 2 ∧ PatClear m pat :=
-  ⟨pre.1, by lia, pre.2.2⟩
-
 attribute [local irreducible] RowLoopInvariant RepeatedBits in
 /-- The row of the pattern of period `0 < m ≤ 64 Ratpoints.modWords` in the words `pat`, without
 bits from `m` on, as `lay_out_pattern` lays it out: `m + chunk - 1` bit arrays, word `j` the window
@@ -392,12 +387,12 @@ theorem layOutPattern_spec (pat : Array UInt64) (m : Nat) :
   -- The alternatives match at reducible transparency: with a chunk of 1 and one word of the
   -- pattern a failing alternative otherwise unfolds the sizes into a timeout.
   all_goals first
-    | with_reducible exact layOutPattern_pre ‹_›
     | with_reducible exact rowLoopInvariant_init _ m
     | with_reducible exact RowLoopInvariant.rowWords ‹_›
     | with_reducible exact RowWords.post_copy ‹_›
     | with_reducible exact RowWords.set!_copy ‹0 < _ ∧ _›.1 ‹_› ‹_›
     | with_reducible exact RowLoopInvariant.set!_window ‹_› ‹_› ‹_› ‹_›
+    | grind
 
 /-! ### The rows of a prime power -/
 
@@ -616,16 +611,6 @@ theorem bitAt_mod_eq_admits_of_dvd {pw : Power} {b : Nat} {pat : Array UInt64} (
   · simp [h0]
   · simp [show 1 ≤ N % pw.m by lia, Nat.mod_lt _ hm]
 
-theorem sieveInitPower_pre_unit {pw : Power} {b : Nat} {pat : Array UInt64}
-    (pre : b < pw.m ∧ pw.m ≤ 64 * modWords ∧ pw.inv[b]! < pw.m) (h : PatZero pat) :
-    0 < pw.m ∧ pw.m ≤ 64 * modWords ∧ pw.inv[b]! < pw.m ∧ PatZero pat :=
-  ⟨by lia, pre.2.1, pre.2.2, h⟩
-
-theorem sieveInitPower_pre_nonunit {pw : Power} {b : Nat} {pat : Array UInt64}
-    (pre : b < pw.m ∧ pw.m ≤ 64 * modWords ∧ pw.inv[b]! < pw.m) (h : PatZero pat) :
-    0 < pw.m ∧ pw.m ≤ 64 * modWords ∧ PatZero pat :=
-  ⟨by lia, pre.2.1, h⟩
-
 theorem sieveInitPower_pre_layOut_unit {pw : Power} {b : Nat} {pat : Array UInt64}
     (pre : b < pw.m ∧ pw.m ≤ 64 * modWords ∧ pw.inv[b]! < pw.m) {g : Nat → Bool}
     (hpat : pat.size = modWords ∧ ∀ y, bitAt pat y = (decide (y < pw.m) && g y)) :
@@ -664,12 +649,11 @@ theorem sieveInitPower_spec (pw : Power) (ref : EntryRef) (b : Nat) (store : Row
   all_goals first
     | exact patZero_replicate
     | exact PatZero.set!_zero ‹_› _
-    | exact sieveInitPower_pre_unit ‹_› ‹_›
-    | exact sieveInitPower_pre_nonunit ‹_› ‹_›
     | exact sieveInitPower_pre_layOut_unit ‹_› ‹_›
     | exact sieveInitPower_pre_layOut_nonunit ‹_› ‹_›
     | exact sieveInitPower_post (bitAt_mod_eq_admits_of_unit ‹_ ∧ _›.1 ‹_› ‹_ ∧ _›.2) ‹_›
     | exact sieveInitPower_post (bitAt_mod_eq_admits_of_dvd ‹_ ∧ _›.1 ‹_› ‹_ ∧ _›.2) ‹_›
+    | grind
 
 /-! ### The blocks of the rows of a product -/
 
@@ -714,8 +698,7 @@ theorem FirstInvariant.storeBitArray {e : SieveEntry} {frows : Array (Array UInt
   have hc := Std.Legacy.Range.length_eq_of_toList_eq_append_cons hl
   have hcl := Std.Legacy.Range.lt_of_toList_eq_append_cons hl
   have hx0 : x % e.factors[0]!.modulus = 0 := hinv.2.1
-  have hxq := Nat.le_of_lt_add_of_dvd (Nat.add_lt_add_right hxm _)
-    (Nat.dvd_add (Nat.dvd_of_mod_eq_zero hx0) (Nat.dvd_refl _)) pre.2.1
+  have hxq := Nat.add_le_of_lt_of_dvd_of_mod_eq_zero hxm pre.2.1 hx0
   intro y hy
   rw [List.length_append, List.length_singleton] at hy
   have hyl := (Nat.div_lt_iff_lt_mul rbaPack_pos).mpr hy
@@ -736,9 +719,8 @@ theorem FirstInvariant.add {e : SieveEntry} {frows : Array (Array UInt64)} {n x 
     e.p - (x + e.factors[0]!.modulus) < mb ∧
       FirstInvariant e frows false (row, x + e.factors[0]!.modulus) := by
   have hx0 : x % e.factors[0]!.modulus = 0 := hinv.2.1
-  have hxq := Nat.le_of_lt_add_of_dvd (Nat.add_lt_add_right hxm _)
-    (Nat.dvd_add (Nat.dvd_of_mod_eq_zero hx0) (Nat.dvd_refl _)) pre.2.1
-  refine ⟨by lia, by rwa [Nat.add_mod_right], hxq, nofun, fun y hy ↦ h y ?_⟩
+  refine ⟨by lia, by rwa [Nat.add_mod_right],
+    Nat.add_le_of_lt_of_dvd_of_mod_eq_zero hxm pre.2.1 hx0, nofun, fun y hy ↦ h y ?_⟩
   simpa using hy
 
 theorem FirstInvariant.exit {e : SieveEntry} {frows : Array (Array UInt64)} {n x mb : Nat}
@@ -858,9 +840,8 @@ theorem FactorInvariant.add {e : SieveEntry} {frows : Array (Array UInt64)} {n i
   have hil := Std.Legacy.Range.lt_of_toList_eq_append_cons hl'
   have hq := pre.1 i hil
   have hx0 : x % e.factors[i]!.modulus = 0 := hinv.2.1
-  have hxq := Nat.le_of_lt_add_of_dvd (Nat.add_lt_add_right hxm _)
-    (Nat.dvd_add (Nat.dvd_of_mod_eq_zero hx0) (Nat.dvd_refl _)) hq.2
-  refine ⟨by lia, by rwa [Nat.add_mod_right], hxq, nofun, fun y hy ↦ ?_⟩
+  refine ⟨by lia, by rwa [Nat.add_mod_right], Nat.add_le_of_lt_of_dvd_of_mod_eq_zero hxm hq.2 hx0,
+    nofun, fun y hy ↦ ?_⟩
   simpa using h y hy
 
 theorem FactorInvariant.exit {e : SieveEntry} {frows : Array (Array UInt64)} {n i x mb : Nat}
@@ -957,10 +938,7 @@ theorem getLsbD_factorWord {e : SieveEntry} {frows : Array (Array UInt64)} {b i 
       (Nat.mul_le_mul_right _ (by lia [chunk_pos]))
   rw [factorWord, hf, getLsbD_closedRow _ _ _ hj, Factor.admits_mod_left]
   congr 1
-  refine Factor.admits_congr _ ?_
-  have := rbaPack_mul_mod_add_mod_eq e.factors[i]!.modulus y t
-  push_cast at this ⊢
-  exact_mod_cast this
+  exact Factor.admits_congr _ (mod_cast rbaPack_mul_mod_add_mod_eq e.factors[i]!.modulus y t)
 
 theorem getLsbD_productWord (e : SieveEntry) (frows : Array (Array UInt64)) {K : Nat} (hK : 1 ≤ K)
     (y t : Nat) : (productWord e frows K y).toBitVec.getLsbD t =
@@ -992,13 +970,11 @@ theorem toArray_eq_closedRow_of_productWord {e : SieveEntry} {frows : Array (Arr
   replace hi := List.mem_range.mp hi
   rw [getLsbD_factorWord (hq i hi).1 (hf i hi)]
   congr 1
-  refine Factor.admits_congr _ ?_
   have hm : e.factors[i]!.modulus ∣ e.p * rbaPack := Nat.dvd_mul_right_of_dvd (hq i hi).2 _
   have : (64 * (j % (e.p * rbaPack)) + t) % e.factors[i]!.modulus =
       (64 * j + t) % e.factors[i]!.modulus := by
     rw [Nat.add_mod, Nat.mul_mod, Nat.mod_mod_of_dvd _ hm, ← Nat.mul_mod, ← Nat.add_mod]
-  push_cast at this ⊢
-  exact_mod_cast this
+  exact Factor.admits_congr _ (mod_cast this)
 
 end Sieve
 

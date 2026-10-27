@@ -44,6 +44,12 @@ words (`Ratpoints.Sieve.RingState`); both end with the copies of `RP_INIT_REPLIC
   and above 64 are the closed forms of the rows of their tables, stored into the tables of rows of
   their entries.
 
+## Notation
+
+Local to the file: `diffShift p`, the `diff_shift` of `CODE_INIT_SIEVE1`; `wordLen p k`, the number
+of the bits of word `k` of the pattern in `CODE_INIT_SIEVE2`; `lanePatternOf t b`, the pattern of
+the lanes of the row of the residue `b` of the table `t`.
+
 ## Implementation notes
 
 The file uses Lean core and `Std` only, as the contracts of the sieve do. The proofs use only that
@@ -63,6 +69,13 @@ namespace Ratpoints
 
 namespace Sieve
 
+/-- `diff_shift` of `CODE_INIT_SIEVE1` for a prime `p < 64`, `(⌊64 / p⌋ + 1) p mod 64`. -/
+local notation:max "diffShift " p:max => (64 / p + 1) * p % 64
+
+/-- The number of the bits of word `k` of the pattern of a prime `p` in `CODE_INIT_SIEVE2`: 64,
+and `p mod 64` for the last word `k = ⌊p / 64⌋`. -/
+local notation:max "wordLen " p:max k:max => if k < p / 64 then 64 else p % 64
+
 /-! ### The four lanes -/
 
 /-- The pattern of the lanes from the residue `ab₀` on, stepping by `d` modulo `p`: bit `N` is the
@@ -72,6 +85,10 @@ def lanePattern (isfs : Array Bool) (p ab0 d N : Nat) : Bool := isfs[(ab0 + N * 
 theorem lanePattern_mod (isfs : Array Bool) (p ab0 d N : Nat) :
     lanePattern isfs p ab0 d (N % p) = lanePattern isfs p ab0 d N := by
   simp only [lanePattern, Nat.add_mod ab0, Nat.mod_mul_mod]
+
+/-- The pattern of the lanes of the row of the residue `b` of the table `t` of a prime. -/
+local notation:max "lanePatternOf " t:max b:max =>
+  lanePattern (Entry.isFSquare t) (Entry.p t) 0 (Entry.inverses t)[b]!
 
 /-- The four lanes at the bit `x` of the pattern from `ab₀` on: the residues of `ab₀ + (x + k) d`
 modulo `p`, `k < 4`. -/
@@ -259,10 +276,6 @@ theorem restInvariant_init {isfs : Array Bool} {p d ab0 i : Nat} {w : UInt64} {a
 
 /-! ### The rows of a prime below 64 -/
 
-theorem sieve1Pattern_pre {t : Entry} {b : Nat}
-    (pre : 0 < t.p ∧ t.p ≤ 64 ∧ t.inverses[b]! < t.p) : 0 < t.p ∧ t.p ≤ 64 :=
-  ⟨pre.1, pre.2.1⟩
-
 theorem sieve1Pattern_rest_init {t : Entry} {b : Nat} {r : UInt64 × Nat × Nat × Nat × Nat × Nat}
     (pre : 0 < t.p ∧ t.p ≤ 64 ∧ t.inverses[b]! < t.p)
     (h : r.2.1 = 4 * (t.p / 4) ∧ ∀ d < t.p, (initFourDecl t.p t.inverses[b]!).2.2.2 = 4 * d % t.p →
@@ -282,7 +295,7 @@ theorem sieve1Pattern_rest_post {t : Entry} {b : Nat} {r : UInt64 × Nat × Nat 
       FourLanes t.isFSquare t.p d 0 r.1 r.2.2.1 r.2.2.2.1 r.2.2.2.2.1 r.2.2.2.2.2 (4 * (t.p / 4)))
     (h : RestInvariant t.isFSquare t.p t.inverses[b]! 0 r.2.1
       (ForIn.toList [r.2.1:t.p]).length st) :
-    PatternBits (lanePattern t.isFSquare t.p 0 t.inverses[b]!) t.p 0 t.p st.1 :=
+    PatternBits (lanePatternOf t b) t.p 0 t.p st.1 :=
   (h.post (by rw [hr.1]; lia)).1
 
 attribute [local irreducible] RestInvariant in
@@ -291,15 +304,15 @@ attribute [local irreducible] RestInvariant in
 @[spec]
 theorem sieve1Pattern_spec (t : Entry) (b : Nat) :
     ⦃ 0 < t.p ∧ t.p ≤ 64 ∧ t.inverses[b]! < t.p ⦄ sieve1Pattern t b
-    ⦃ fun w ↦ PatternBits (lanePattern t.isFSquare t.p 0 t.inverses[b]!) t.p 0 t.p w ⦄ := by
+    ⦃ fun w ↦ PatternBits (lanePatternOf t b) t.p 0 t.p w ⦄ := by
   vcgen [sieve1Pattern] invariants
   | inv1 _ _ i _ _ _ _ _ => fun done _ st ↦
       RestInvariant t.isFSquare t.p t.inverses[b]! 0 i done.length st
   all_goals first
-    | exact sieve1Pattern_pre ‹_›
     | exact sieve1Pattern_rest_init ‹_› ‹_›
     | exact sieve1Pattern_rest_post ‹_› ‹_›
     | exact RestInvariant.append_initBit ‹_› ‹_› ‹_›
+    | lia
 
 /-! ### The copies of `RP_INIT_REPLICATE` -/
 
@@ -448,8 +461,8 @@ theorem initReplicate_spec {n : Nat} (p : Nat) (si : Vector UInt64 n) :
 `64 mod p` add up to `p`, `64 + diff_shift` is the multiple `(⌊64 / p⌋ + 1) p` of `p`, and
 `0 < diff_shift < 64`, so that every shift of the rotation is by an amount below 64. -/
 theorem sieve1_shifts : ∀ p < 64, 0 < p →
-    64 + (64 / p + 1) * p % 64 = (64 / p + 1) * p ∧ (64 / p + 1) * p % 64 + 64 % p = p ∧
-      0 < (64 / p + 1) * p % 64 ∧ (64 / p + 1) * p % 64 < 64 := by
+    64 + diffShift p = (64 / p + 1) * p ∧ diffShift p + 64 % p = p ∧
+      0 < diffShift p ∧ diffShift p < 64 := by
   decide
 
 /-- The rotation of `CODE_INIT_SIEVE1`: from the window at `s` in `x0` and the next `ds` bits in
@@ -475,8 +488,8 @@ def RotInvariant (g : Nat → Bool) (p ds c : Nat) {n : Nat}
     RowWords g p (c + 1) st.2.2
 
 theorem rotInvariant_init {p : Nat} {help0 help1 : UInt64} (pre : 0 < p ∧ p < 64) (g : Nat → Bool)
-    (h0 : PatternBits g p 0 64 help0) (h1 : PatternBits g p 64 ((64 / p + 1) * p % 64) help1) :
-    RotInvariant g p ((64 / p + 1) * p % 64) ([] : List Nat).length
+    (h0 : PatternBits g p 0 64 help0) (h1 : PatternBits g p 64 (diffShift p) help1) :
+    RotInvariant g p (diffShift p) ([] : List Nat).length
       (help0, help1, (Vector.replicate ((p + chunk - 1) * rbaPack) 0).set! 0 help0) := by
   refine ⟨h0, h1, fun j hj ↦ ?_⟩
   obtain rfl : j = 0 := by simpa using hj
@@ -487,13 +500,12 @@ theorem rotInvariant_init {p : Nat} {help0 help1 : UInt64} (pre : 0 < p ∧ p < 
 theorem RotInvariant.append {p cur : Nat} {pref suff : List Nat} {help0 help1 x0 x1 : UInt64}
     {si : Vector UInt64 ((p + chunk - 1) * rbaPack)} (pre : 0 < p ∧ p < 64)
     (hl : ForIn.toList [1:p] = pref ++ cur :: suff)
-    (h : ∀ g, PatternBits g p 0 64 help0 → PatternBits g p 64 ((64 / p + 1) * p % 64) help1 →
-      RotInvariant g p ((64 / p + 1) * p % 64) pref.length (x0, x1, si)) :
-    ∀ g, PatternBits g p 0 64 help0 → PatternBits g p 64 ((64 / p + 1) * p % 64) help1 →
-    RotInvariant g p ((64 / p + 1) * p % 64) (pref ++ [cur]).length
-      (x1 ||| x0 <<< UInt64.ofNat ((64 / p + 1) * p % 64),
-        x0 >>> UInt64.ofNat (64 - (64 / p + 1) * p % 64),
-        si.set! cur (x1 ||| x0 <<< UInt64.ofNat ((64 / p + 1) * p % 64))) := by
+    (h : ∀ g, PatternBits g p 0 64 help0 → PatternBits g p 64 (diffShift p) help1 →
+      RotInvariant g p (diffShift p) pref.length (x0, x1, si)) :
+    ∀ g, PatternBits g p 0 64 help0 → PatternBits g p 64 (diffShift p) help1 →
+    RotInvariant g p (diffShift p) (pref ++ [cur]).length
+      (x1 ||| x0 <<< UInt64.ofNat (diffShift p), x0 >>> UInt64.ofNat (64 - diffShift p),
+        si.set! cur (x1 ||| x0 <<< UInt64.ofNat (diffShift p))) := by
   intro g h0 h1
   obtain ⟨hk, -, h0', h64⟩ := sieve1_shifts p pre.2 pre.1
   have hc := Std.Legacy.Range.add_length_eq_of_toList_eq_append_cons hl
@@ -507,9 +519,9 @@ theorem RotInvariant.append {p cur : Nat} {pref suff : List Nat} {help0 help1 x0
 
 theorem RotInvariant.post {p : Nat} {help0 help1 : UInt64} {st : UInt64 × UInt64 ×
     Vector UInt64 ((p + chunk - 1) * rbaPack)} (pre : 0 < p ∧ p < 64)
-    (h : ∀ g, PatternBits g p 0 64 help0 → PatternBits g p 64 ((64 / p + 1) * p % 64) help1 →
-      RotInvariant g p ((64 / p + 1) * p % 64) (ForIn.toList [1:p]).length st) (g : Nat → Bool)
-    (h0 : PatternBits g p 0 64 help0) (h1 : PatternBits g p 64 ((64 / p + 1) * p % 64) help1) :
+    (h : ∀ g, PatternBits g p 0 64 help0 → PatternBits g p 64 (diffShift p) help1 →
+      RotInvariant g p (diffShift p) (ForIn.toList [1:p]).length st) (g : Nat → Bool)
+    (h0 : PatternBits g p 0 64 help0) (h1 : PatternBits g p 64 (diffShift p) help1) :
     RowWords g p p st.2.2 := by
   have hsi := (h g h0 h1).2.2
   rwa [Std.Legacy.Range.length_toList, Nat.sub_add_cancel (by lia)] at hsi
@@ -521,12 +533,11 @@ window of `g` at `64 a`. -/
 @[spec]
 theorem sieve1Rows_spec (p : Nat) (help0 help1 : UInt64) :
     ⦃ 0 < p ∧ p < 64 ⦄ sieve1Rows p help0 help1
-    ⦃ fun si ↦ ∀ g, PatternBits g p 0 64 help0 →
-        PatternBits g p 64 ((64 / p + 1) * p % 64) help1 → RowWords g p p si ⦄ := by
+    ⦃ fun si ↦ ∀ g, PatternBits g p 0 64 help0 → PatternBits g p 64 (diffShift p) help1 →
+        RowWords g p p si ⦄ := by
   vcgen [sieve1Rows] invariants
   | inv1 => fun done _ st ↦ ∀ g, PatternBits g p 0 64 help0 →
-      PatternBits g p 64 ((64 / p + 1) * p % 64) help1 →
-      RotInvariant g p ((64 / p + 1) * p % 64) done.length st
+      PatternBits g p 64 (diffShift p) help1 → RotInvariant g p (diffShift p) done.length st
   all_goals first
     | exact rotInvariant_init ‹_› _ ‹_› ‹_›
     | exact RotInvariant.post ‹_› ‹_› _ ‹_› ‹_›
@@ -567,7 +578,7 @@ theorem PatternDoubleInvariant.exit {g : Nat → Bool} {p i mb : Nat} {x : UInt6
 /-- The pattern of the lanes from `0` on with the inverse of `0 < b < p`, read at the residue of a
 numerator, is the row of the residue `b` of the table. -/
 theorem lanePattern_mod_eq_admits {t : Entry} {b : Nat} (hb0 : 0 < b) (hbp : b < t.p) (N : Nat) :
-    lanePattern t.isFSquare t.p 0 t.inverses[b]! (N % t.p) = t.admits b N := by
+    lanePatternOf t b (N % t.p) = t.admits b N := by
   simp only [lanePattern, Entry.admits, Nat.mod_eq_of_lt hbp, Nat.pos_iff_ne_zero.mp hb0,
     ↓reduceIte, Int.toNat_natCast_emod, Nat.zero_add]
 
@@ -576,7 +587,7 @@ through all the words, is the closed form of the row of `0 < b < p`, and so is w
 stores. -/
 theorem toArray_eq_closedRow_of_rowWords {t : Entry} {b : Nat} {ref : EntryRef} {store : RowStore}
     {si si' : Vector UInt64 ((t.p + chunk - 1) * rbaPack)} (hb0 : 0 < b) (hbp : b < t.p)
-    (hrows : RowWords (lanePattern t.isFSquare t.p 0 t.inverses[b]!) t.p t.p si)
+    (hrows : RowWords (lanePatternOf t b) t.p t.p si)
     (hrep : ∀ j < (t.p + chunk - 1) * rbaPack, si'[j]! = si[j % t.p]!) :
     (si', store.publish ref b si'.toArray).1.toArray = closedRow t.admits t.p b ∧
       (si', store.publish ref b si'.toArray).2 =
@@ -584,37 +595,28 @@ theorem toArray_eq_closedRow_of_rowWords {t : Entry} {b : Nat} {ref : EntryRef} 
   have h := (hrows.of_mod (by lia) hrep).toArray_eq_closedRow (lanePattern_mod_eq_admits hb0 hbp)
   exact ⟨h, by rw [← h]⟩
 
-theorem sieveInit1_pre {t : Entry} {b : Nat}
-    (pre : 0 < b ∧ b < t.p ∧ t.p < 64 ∧ t.inverses[b]! < t.p) :
-    0 < t.p ∧ t.p ≤ 64 ∧ t.inverses[b]! < t.p :=
-  ⟨by lia, by lia, pre.2.2.2⟩
-
-theorem sieveInit1_pre_rows {t : Entry} {b : Nat}
-    (pre : 0 < b ∧ b < t.p ∧ t.p < 64 ∧ t.inverses[b]! < t.p) : 0 < t.p ∧ t.p < 64 :=
-  ⟨by lia, pre.2.2.1⟩
-
 theorem doubleInvariant_init_of_pre {t : Entry} {b : Nat} {x : UInt64}
     (pre : 0 < b ∧ b < t.p ∧ t.p < 64 ∧ t.inverses[b]! < t.p)
-    (h : PatternBits (lanePattern t.isFSquare t.p 0 t.inverses[b]!) t.p 0 t.p x) :
-    PatternDoubleInvariant (lanePattern t.isFSquare t.p 0 t.inverses[b]!) t.p false (x, t.p) :=
+    (h : PatternBits (lanePatternOf t b) t.p 0 t.p x) :
+    PatternDoubleInvariant (lanePatternOf t b) t.p false (x, t.p) :=
   patternDoubleInvariant_init (by lia) pre.2.2.1 h
 
 /-- The pattern shifted right by `64 mod p` holds the `diff_shift` bits after the window at `0`. -/
 theorem PatternBits.shiftRight_mod {g : Nat → Bool} {p : Nat} {x : UInt64} (hp : 0 < p)
     (h64 : p < 64) (h : PatternBits g p 0 p x) :
-    PatternBits g p 64 ((64 / p + 1) * p % 64) (x >>> UInt64.ofNat (64 % p)) := by
+    PatternBits g p 64 (diffShift p) (x >>> UInt64.ofNat (64 % p)) := by
   obtain ⟨-, hsum, -, -⟩ := sieve1_shifts p h64 hp
   have h' := h.shiftRight (k := 64 % p) (by lia [Nat.mod_lt 64 hp])
-  rw [show p - 64 % p = (64 / p + 1) * p % 64 by lia] at h'
+  rw [show p - 64 % p = diffShift p by lia] at h'
   exact h'.congr_left (by rw [Nat.zero_add, Nat.mod_mod])
 
 theorem sieveInit1_post {t : Entry} {ref : EntryRef} {b : Nat} {store : RowStore} {x h0 : UInt64}
     {i : Nat} {si si' : Vector UInt64 ((t.p + chunk - 1) * rbaPack)}
     (pre : 0 < b ∧ b < t.p ∧ t.p < 64 ∧ t.inverses[b]! < t.p)
-    (hx : PatternBits (lanePattern t.isFSquare t.p 0 t.inverses[b]!) t.p 0 t.p x)
-    (hd : PatternDoubleInvariant (lanePattern t.isFSquare t.p 0 t.inverses[b]!) t.p true (h0, i))
+    (hx : PatternBits (lanePatternOf t b) t.p 0 t.p x)
+    (hd : PatternDoubleInvariant (lanePatternOf t b) t.p true (h0, i))
     (hrows : ∀ g, PatternBits g t.p 0 64 h0 →
-      PatternBits g t.p 64 ((64 / t.p + 1) * t.p % 64) (x >>> UInt64.ofNat (64 % t.p)) →
+      PatternBits g t.p 64 (diffShift t.p) (x >>> UInt64.ofNat (64 % t.p)) →
         RowWords g t.p t.p si)
     (hrep : ∀ j < (t.p + chunk - 1) * rbaPack, si'[j]! = si[j % t.p]!) :
     (si', store.publish ref b si'.toArray).1.toArray = closedRow t.admits t.p b ∧
@@ -637,18 +639,16 @@ theorem sieveInit1_spec (t : Entry) (ref : EntryRef) (b : Nat) (store : RowStore
     ⦃ fun r ↦ r.1.toArray = closedRow t.admits t.p b ∧
         r.2 = store.publish ref b (closedRow t.admits t.p b) ⦄ := by
   vcgen [sieveInit1] invariants
-  · PatternDoubleInvariant (lanePattern t.isFSquare t.p 0 t.inverses[b]!) t.p
+  · PatternDoubleInvariant (lanePatternOf t b) t.p
   · Variant.ofMeasure fun s : UInt64 × Nat ↦ 64 - s.2
   all_goals try simp only [Variant.evalsTo_ofMeasure, Assertion.NondetFun.evalsTo_pure,
     Variant.evalsBelow_ofMeasure_nat, meet_prop_eq_and, ofProp_prop_eq] at *
   all_goals first
-    | exact sieveInit1_pre ‹_›
-    | exact sieveInit1_pre_rows ‹_›
-    | exact (sieveInit1_pre_rows ‹_›).1
     | exact doubleInvariant_init_of_pre ‹_› ‹_›
     | exact sieveInit1_post ‹_› ‹_› ‹_› ‹_› ‹_›
     | exact PatternDoubleInvariant.or_shiftLeft ‹_› ‹_›
     | exact PatternDoubleInvariant.exit ‹_› ‹_›
+    | lia
 
 /-! ### `CODE_INIT_SIEVE2` -/
 
@@ -676,23 +676,13 @@ theorem PatternBits.unbase {isfs : Array Bool} {p d x m ab : Nat} {w : UInt64}
   rw [h t, Nat.zero_add, lanePattern_mod, lanePattern_mod, lanePattern, lanePattern, hab,
     Nat.mod_add_mod, Nat.zero_add, Nat.zero_add, Nat.add_mul]
 
-theorem sieve2Word_pre {t : Entry} {d d4 n ab ab1 ab2 ab3 : Nat}
-    (pre : (0 < t.p ∧ d < t.p ∧ d4 = 4 * d % t.p) ∧ LanesAt t.p d 0 (64 * n) ab ab1 ab2 ab3) :
-    0 < t.p ∧ (if n < t.p / 64 then 64 else t.p % 64) ≤ 64 :=
-  ⟨pre.1.1, by split <;> lia [Nat.mod_lt t.p (show 0 < 64 by decide)]⟩
-
-theorem sieve2Word_rest_pre {t : Entry} {d d4 n ab ab1 ab2 ab3 : Nat}
-    (pre : (0 < t.p ∧ d < t.p ∧ d4 = 4 * d % t.p) ∧ LanesAt t.p d 0 (64 * n) ab ab1 ab2 ab3) :
-    0 < t.p ∧ (if n < t.p / 64 then 64 else t.p % 64) ≤ 64 ∧ d < t.p :=
-  ⟨pre.1.1, (sieve2Word_pre pre).2, pre.1.2.1⟩
-
 theorem sieve2Word_rest_init {t : Entry} {d d4 n ab ab1 ab2 ab3 : Nat}
     {r : UInt64 × Nat × Nat × Nat × Nat × Nat}
     (pre : (0 < t.p ∧ d < t.p ∧ d4 = 4 * d % t.p) ∧ LanesAt t.p d 0 (64 * n) ab ab1 ab2 ab3)
-    (h : r.2.1 = 4 * ((if n < t.p / 64 then 64 else t.p % 64) / 4) ∧ ∀ d' < t.p,
+    (h : r.2.1 = 4 * (wordLen t.p n / 4) ∧ ∀ d' < t.p,
       d4 = 4 * d' % t.p → LanesAt t.p d' ab 0 ab ab1 ab2 ab3 →
       FourLanes t.isFSquare t.p d' ab r.1 r.2.2.1 r.2.2.2.1 r.2.2.2.2.1 r.2.2.2.2.2
-        (4 * ((if n < t.p / 64 then 64 else t.p % 64) / 4))) :
+        (4 * (wordLen t.p n / 4))) :
     RestInvariant t.isFSquare t.p d ab r.2.1 ([] : List Nat).length (r.1, r.2.2.1) := by
   rw [h.1]
   exact restInvariant_init (h.2 d pre.1.2.1 pre.1.2.2 pre.2.rebase)
@@ -701,18 +691,16 @@ theorem sieve2Word_rest_init {t : Entry} {d d4 n ab ab1 ab2 ab3 : Nat}
 theorem sieve2Word_post {t : Entry} {d d4 n ab ab1 ab2 ab3 : Nat}
     {r : UInt64 × Nat × Nat × Nat × Nat × Nat} {st : UInt64 × Nat}
     (pre : (0 < t.p ∧ d < t.p ∧ d4 = 4 * d % t.p) ∧ LanesAt t.p d 0 (64 * n) ab ab1 ab2 ab3)
-    (hr : r.2.1 = 4 * ((if n < t.p / 64 then 64 else t.p % 64) / 4) ∧ ∀ d' < t.p,
+    (hr : r.2.1 = 4 * (wordLen t.p n / 4) ∧ ∀ d' < t.p,
       d4 = 4 * d' % t.p → LanesAt t.p d' ab 0 ab ab1 ab2 ab3 →
       FourLanes t.isFSquare t.p d' ab r.1 r.2.2.1 r.2.2.2.1 r.2.2.2.2.1 r.2.2.2.2.2
-        (4 * ((if n < t.p / 64 then 64 else t.p % 64) / 4)))
+        (4 * (wordLen t.p n / 4)))
     (h : RestInvariant t.isFSquare t.p d ab r.2.1
-      (ForIn.toList [r.2.1:if n < t.p / 64 then 64 else t.p % 64]).length st) :
-    PatternBits (lanePattern t.isFSquare t.p 0 d) t.p (64 * n)
-        (if n < t.p / 64 then 64 else t.p % 64) st.1 ∧
-      ((if n < t.p / 64 then 64 else t.p % 64) % 4 = 0 →
-        LanesAt t.p d 0 (64 * n + if n < t.p / 64 then 64 else t.p % 64) st.2 r.2.2.2.1
-          r.2.2.2.2.1 r.2.2.2.2.2) := by
-  generalize hM : (if n < t.p / 64 then 64 else t.p % 64) = M at hr h ⊢
+      (ForIn.toList [r.2.1:wordLen t.p n]).length st) :
+    PatternBits (lanePattern t.isFSquare t.p 0 d) t.p (64 * n) (wordLen t.p n) st.1 ∧
+      (wordLen t.p n % 4 = 0 →
+        LanesAt t.p d 0 (64 * n + wordLen t.p n) st.2 r.2.2.2.1 r.2.2.2.2.1 r.2.2.2.2.2) := by
+  generalize hM : wordLen t.p n = M at hr h ⊢
   have hab := pre.2.1
   obtain ⟨hw, hst⟩ := h.post (by rw [hr.1]; lia)
   refine ⟨hw.unbase hab, fun h4 ↦ ?_⟩
@@ -729,18 +717,21 @@ bit `64 n` of the pattern from `0` on: the bits `64 n, …` of the pattern, 64 o
 theorem sieve2Word_spec (t : Entry) (d d4 n ab ab1 ab2 ab3 : Nat) :
     ⦃ (0 < t.p ∧ d < t.p ∧ d4 = 4 * d % t.p) ∧ LanesAt t.p d 0 (64 * n) ab ab1 ab2 ab3 ⦄
     sieve2Word t d d4 n ab ab1 ab2 ab3
-    ⦃ fun r ↦ PatternBits (lanePattern t.isFSquare t.p 0 d) t.p (64 * n)
-        (if n < t.p / 64 then 64 else t.p % 64) r.1 ∧
-      ((if n < t.p / 64 then 64 else t.p % 64) % 4 = 0 →
-        LanesAt t.p d 0 (64 * n + if n < t.p / 64 then 64 else t.p % 64) r.2.1 r.2.2.1
-          r.2.2.2.1 r.2.2.2.2) ⦄ := by
+    ⦃ fun r ↦ PatternBits (lanePattern t.isFSquare t.p 0 d) t.p (64 * n) (wordLen t.p n) r.1 ∧
+      (wordLen t.p n % 4 = 0 →
+        LanesAt t.p d 0 (64 * n + wordLen t.p n) r.2.1 r.2.2.1 r.2.2.2.1 r.2.2.2.2) ⦄ := by
   vcgen [sieve2Word] invariants
   | inv1 _ _ i _ _ _ _ _ => fun done _ st ↦ RestInvariant t.isFSquare t.p d ab i done.length st
   all_goals first
-    | exact sieve2Word_pre ‹_›
     | exact sieve2Word_rest_init ‹_› ‹_›
     | exact sieve2Word_post ‹_› ‹_› ‹_›
-    | exact RestInvariant.append_initBit (sieve2Word_rest_pre ‹_›) ‹_› ‹_›
+    | (refine RestInvariant.append_initBit ?_ ‹_› ‹_›; grind)
+    | grind
+
+/-- The words `help[k]`, `k ≤ ⌊p / 64⌋`, hold the pattern `g` of period `p`: word `k` the bits
+`64 k, …`, 64 of them for `k < ⌊p / 64⌋` and `p mod 64` for the last. -/
+def PatternWords (g : Nat → Bool) (p : Nat) {n : Nat} (help : Vector UInt64 n) : Prop :=
+  ∀ k < p / 64 + 1, PatternBits g p (64 * k) (wordLen p k) help[k]!
 
 /-- The invariant of the loop of `Ratpoints.Sieve.sieve2Pattern` over the words of the pattern
 after the words below `c`: word `k < c` holds the bits `64 k, …` of the pattern, 64 of them for
@@ -752,8 +743,8 @@ def PatInvariant (g : Nat → Bool) (p d wp ds c : Nat) {n : Nat}
 
 theorem patInvariant_init {t : Entry} {b n : Nat} (help : Vector UInt64 n)
     (pre : 0 < t.p ∧ t.inverses[b]! < t.p) :
-    PatInvariant (lanePattern t.isFSquare t.p 0 t.inverses[b]!) t.p t.inverses[b]! (t.p / 64)
-      (t.p % 64) ([] : List Nat).length (help, 0, (initFourDecl t.p t.inverses[b]!).1,
+    PatInvariant (lanePatternOf t b) t.p t.inverses[b]! (t.p / 64) (t.p % 64)
+      ([] : List Nat).length (help, 0, (initFourDecl t.p t.inverses[b]!).1,
         (initFourDecl t.p t.inverses[b]!).2.1, (initFourDecl t.p t.inverses[b]!).2.2.1) :=
   ⟨nofun, fun _ ↦ (initFourDecl_lanes pre.2).2⟩
 
@@ -761,8 +752,7 @@ theorem patInvariant_init {t : Entry} {b n : Nat} (help : Vector UInt64 n)
 theorem PatInvariant.pre {t : Entry} {b n cur : Nat} {pref suff : List Nat}
     {st : Vector UInt64 n × Nat × Nat × Nat × Nat} (pre : 0 < t.p ∧ t.inverses[b]! < t.p)
     (hl : ForIn.toList [0:t.p / 64 + 1] = pref ++ cur :: suff)
-    (h : PatInvariant (lanePattern t.isFSquare t.p 0 t.inverses[b]!) t.p t.inverses[b]!
-      (t.p / 64) (t.p % 64) pref.length st) :
+    (h : PatInvariant (lanePatternOf t b) t.p t.inverses[b]! (t.p / 64) (t.p % 64) pref.length st) :
     (0 < t.p ∧ t.inverses[b]! < t.p ∧
         (initFourDecl t.p t.inverses[b]!).2.2.2 = 4 * t.inverses[b]! % t.p) ∧
       LanesAt t.p t.inverses[b]! 0 (64 * cur) st.2.1 st.2.2.1 st.2.2.2.1 st.2.2.2.2 := by
@@ -774,16 +764,13 @@ theorem PatInvariant.pre {t : Entry} {b n cur : Nat} {pref suff : List Nat}
 theorem PatInvariant.set! {t : Entry} {b n cur : Nat} {pref suff : List Nat}
     {st : Vector UInt64 n × Nat × Nat × Nat × Nat} {r : UInt64 × Nat × Nat × Nat × Nat}
     (hn : t.p / 64 + 1 ≤ n) (hl : ForIn.toList [0:t.p / 64 + 1] = pref ++ cur :: suff)
-    (h : PatInvariant (lanePattern t.isFSquare t.p 0 t.inverses[b]!) t.p t.inverses[b]!
-      (t.p / 64) (t.p % 64) pref.length st)
-    (hw : PatternBits (lanePattern t.isFSquare t.p 0 t.inverses[b]!) t.p (64 * cur)
-        (if cur < t.p / 64 then 64 else t.p % 64) r.1 ∧
-      ((if cur < t.p / 64 then 64 else t.p % 64) % 4 = 0 →
-        LanesAt t.p t.inverses[b]! 0 (64 * cur + if cur < t.p / 64 then 64 else t.p % 64) r.2.1
-          r.2.2.1 r.2.2.2.1 r.2.2.2.2)) :
-    PatInvariant (lanePattern t.isFSquare t.p 0 t.inverses[b]!) t.p t.inverses[b]! (t.p / 64)
-      (t.p % 64) (pref ++ [cur]).length
-      (st.1.set! cur r.1, r.2.1, r.2.2.1, r.2.2.2.1, r.2.2.2.2) := by
+    (h : PatInvariant (lanePatternOf t b) t.p t.inverses[b]! (t.p / 64) (t.p % 64) pref.length st)
+    (hw : PatternBits (lanePatternOf t b) t.p (64 * cur) (wordLen t.p cur) r.1 ∧
+      (wordLen t.p cur % 4 = 0 →
+        LanesAt t.p t.inverses[b]! 0 (64 * cur + wordLen t.p cur) r.2.1 r.2.2.1 r.2.2.2.1
+          r.2.2.2.2)) :
+    PatInvariant (lanePatternOf t b) t.p t.inverses[b]! (t.p / 64) (t.p % 64)
+      (pref ++ [cur]).length (st.1.set! cur r.1, r.2.1, r.2.2.1, r.2.2.2.1, r.2.2.2.2) := by
   have hc := Std.Legacy.Range.length_eq_of_toList_eq_append_cons hl
   have hcl := Std.Legacy.Range.lt_of_toList_eq_append_cons hl
   rw [hc] at h
@@ -803,10 +790,9 @@ theorem PatInvariant.set! {t : Entry} {b n cur : Nat} {pref suff : List Nat}
 
 theorem PatInvariant.post {g : Nat → Bool} {p d n : Nat}
     {st : Vector UInt64 n × Nat × Nat × Nat × Nat}
-    (h : PatInvariant g p d (p / 64) (p % 64) (ForIn.toList [0:p / 64 + 1]).length st) (k : Nat)
-    (hk : k < p / 64 + 1) :
-    PatternBits g p (64 * k) (if k < p / 64 then 64 else p % 64) st.1[k]! :=
-  h.1 k (by simpa using hk)
+    (h : PatInvariant g p d (p / 64) (p % 64) (ForIn.toList [0:p / 64 + 1]).length st) :
+    PatternWords g p st.1 :=
+  fun k hk ↦ h.1 k (by simpa using hk)
 
 attribute [local irreducible] PatInvariant in
 /-- The pattern of the row of the residue `b` of a prime `p` in `CODE_INIT_SIEVE2`, for the inverse
@@ -815,21 +801,15 @@ from `0` on, 64 of them for `k < ⌊p / 64⌋` and `p mod 64` for the last. -/
 @[spec]
 theorem sieve2Pattern_spec (t : Entry) (b : Nat) (help : Vector UInt64 (t.p / 64 + 2)) :
     ⦃ 0 < t.p ∧ t.inverses[b]! < t.p ⦄ sieve2Pattern t b help
-    ⦃ fun help' ↦ ∀ k < t.p / 64 + 1, PatternBits (lanePattern t.isFSquare t.p 0 t.inverses[b]!)
-        t.p (64 * k) (if k < t.p / 64 then 64 else t.p % 64) help'[k]! ⦄ := by
+    ⦃ fun help' ↦ PatternWords (lanePatternOf t b) t.p help' ⦄ := by
   vcgen [sieve2Pattern] invariants
-  | inv1 => fun done _ st ↦ PatInvariant (lanePattern t.isFSquare t.p 0 t.inverses[b]!) t.p
-      t.inverses[b]! (t.p / 64) (t.p % 64) done.length st
+  | inv1 => fun done _ st ↦
+      PatInvariant (lanePatternOf t b) t.p t.inverses[b]! (t.p / 64) (t.p % 64) done.length st
   all_goals first
     | exact patInvariant_init help ‹_›
-    | exact PatInvariant.post ‹_› _ ‹_›
+    | exact PatInvariant.post ‹_›
     | exact PatInvariant.pre ‹_› ‹_› ‹_›
     | exact PatInvariant.set! (by lia) ‹_› ‹_› ‹_›
-
-/-- The words `help[k]`, `k ≤ ⌊p / 64⌋`, hold the pattern `g` of period `p`: word `k` the bits
-`64 k, …`, 64 of them for `k < ⌊p / 64⌋` and `p mod 64` for the last. -/
-def PatternWords (g : Nat → Bool) (p : Nat) {n : Nat} (help : Vector UInt64 n) : Prop :=
-  ∀ k < p / 64 + 1, PatternBits g p (64 * k) (if k < p / 64 then 64 else p % 64) help[k]!
 
 /-- The ring of `CODE_INIT_SIEVE2` at the bit `s` of the pattern with the cursor `a1 ≤ wp`: word
 `a1` holds the `ds` bits from `s` on, and word `(a1 + 1 + k) mod (wp + 1)` the 64 bits from
@@ -864,7 +844,8 @@ theorem RingState.cur {g : Nat → Bool} {p wp ds s a1 n t : Nat} {help : Vector
   exact h'.congr_left (congrArg (· % p) (by lia))
 
 /-- After a step of the ring, the words after the new cursor hold the 64 bits from
-`s + 64 + ds + 64 k` on: the old ones moved up by one, the last the word written. -/
+`s + 64 + ds + 64 k` on: the words of the ring before the step moved up by one, the last the word
+written. -/
 theorem RingState.rest {g : Nat → Bool} {p wp ds s a1 n t : Nat} {help : Vector UInt64 n}
     {x : UInt64} (h : RingState g p wp ds s a1 help) (hp : p = 64 * wp + ds) (hn : wp < n)
     (ht : t = (a1 + 1) % (wp + 1)) (hta : a1 ≠ t) (hout : PatternBits g p s 64 x) :
@@ -912,10 +893,6 @@ theorem RingState.rotate {g : Nat → Bool} {p wp ds s a1 n : Nat} {help : Vecto
 theorem sieve2_shifts {p : Nat} (pre : 64 ≤ p ∧ p % 64 ≠ 0) :
     p = 64 * (p / 64) + p % 64 ∧ 0 < p / 64 ∧ 0 < p % 64 ∧ p % 64 < 64 :=
   ⟨(Nat.div_add_mod p 64).symm, by lia, by lia, Nat.mod_lt _ (by decide)⟩
-
-theorem rowWords_nil {p n : Nat} (si : Vector UInt64 n) (g : Nat → Bool) :
-    RowWords g p ([] : List Nat).length si :=
-  nofun
 
 /-- A copy of word `cur < ⌊p / 64⌋` of the pattern into the row. -/
 theorem RowWords.copy {p cur m : Nat} {pref suff : List Nat}
@@ -1005,26 +982,16 @@ theorem sieve2Rows_spec (p : Nat) (help : Vector UInt64 (p / 64 + 2)) :
       RingState g p (p / 64) (p % 64) (64 * (p / 64 + done.length)) st.2.2 st.1 ∧
         RowWords g p (p / 64 + done.length) st.2.1
   all_goals first
-    | exact rowWords_nil _ _
+    | exact fun _ hj ↦ absurd hj (Nat.not_lt_zero _)
     | exact ringState_init ‹_› _ ‹_›
     | exact RingState.post ‹_› ‹_› _ ‹_›
     | exact RingState.append ‹_› (by lia) ‹_› ‹_›
     | exact RowWords.copy ‹_› ‹_› ‹_›
 
-theorem sieveInit2_pre_pattern {t : Entry} {b : Nat}
-    (pre : 0 < b ∧ b < t.p ∧ 64 ≤ t.p ∧ t.p % 64 ≠ 0 ∧ t.inverses[b]! < t.p) :
-    0 < t.p ∧ t.inverses[b]! < t.p :=
-  ⟨by lia, pre.2.2.2.2⟩
-
-theorem sieveInit2_pre_rows {t : Entry} {b : Nat}
-    (pre : 0 < b ∧ b < t.p ∧ 64 ≤ t.p ∧ t.p % 64 ≠ 0 ∧ t.inverses[b]! < t.p) :
-    64 ≤ t.p ∧ t.p % 64 ≠ 0 :=
-  ⟨pre.2.2.1, pre.2.2.2.1⟩
-
 theorem sieveInit2_post {t : Entry} {ref : EntryRef} {b : Nat} {store : RowStore}
     {help : Vector UInt64 (t.p / 64 + 2)} {si si' : Vector UInt64 ((t.p + chunk - 1) * rbaPack)}
     (pre : 0 < b ∧ b < t.p ∧ 64 ≤ t.p ∧ t.p % 64 ≠ 0 ∧ t.inverses[b]! < t.p)
-    (hpat : PatternWords (lanePattern t.isFSquare t.p 0 t.inverses[b]!) t.p help)
+    (hpat : PatternWords (lanePatternOf t b) t.p help)
     (hrows : ∀ g, PatternWords g t.p help → RowWords g t.p t.p si)
     (hrep : ∀ j < (t.p + chunk - 1) * rbaPack, si'[j]! = si[j % t.p]!) :
     (si', store.publish ref b si'.toArray).1.toArray = closedRow t.admits t.p b ∧
@@ -1043,10 +1010,8 @@ theorem sieveInit2_spec (t : Entry) (ref : EntryRef) (b : Nat) (store : RowStore
   vcgen [sieveInit2] invariants
   | inv1 => fun _ _ _ ↦ True
   all_goals first
-    | exact sieveInit2_pre_pattern ‹_›
-    | exact sieveInit2_pre_rows ‹_›
-    | exact (sieveInit2_pre_pattern ‹_›).1
     | exact sieveInit2_post ‹_› ‹_› ‹_› ‹_›
+    | lia
 
 end Sieve
 

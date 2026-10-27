@@ -547,9 +547,8 @@ theorem AndChunksInvariant.add_chunk {sv sv' sv'' : Array SieveSpec} {cw : UInt6
     full - (c + chunk) < mb ∧
       AndChunksInvariant sv cw full surv false (sv'', surv', c + chunk) := by
   obtain ⟨rfl, hcm, -, -, hsv, -⟩ := hc
-  have := Nat.le_of_lt_add_of_dvd (Nat.add_lt_add_right hcl chunk)
-    (Nat.dvd_add (Nat.dvd_of_mod_eq_zero hcm) (Nat.dvd_refl chunk)) (Nat.dvd_of_mod_eq_zero pre.2.2)
-  refine ⟨by lia [chunk_pos], by rw [Nat.add_mod_right, hcm], this, nofun, ?_,
+  refine ⟨by lia [chunk_pos], by rw [Nat.add_mod_right, hcm],
+    Nat.add_le_of_lt_of_dvd_of_mod_eq_zero hcl (Nat.dvd_of_mod_eq_zero pre.2.2) hcm, nofun, ?_,
     fun y hy ↦ by simpa using hs y hy⟩
   change sv''.toList = sv.toList.map (·.advance (c + chunk))
   rw [hr.2, hsv, List.map_map]

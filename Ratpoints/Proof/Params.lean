@@ -13,7 +13,7 @@ import Ratpoints.Mathlib.Data.List.Pairwise
 import Ratpoints.Mathlib.Data.List.Sort
 import Ratpoints.Proof.Containers
 import Ratpoints.Proof.Reductions
-import Std.WP
+import Std.Internal.ForIn.Lemmas
 
 /-!
 # The sieving parameters: the table and the array size

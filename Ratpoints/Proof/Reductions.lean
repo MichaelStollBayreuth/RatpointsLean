@@ -42,7 +42,8 @@ remainder.
 ## Main statements
 
 * `Ratpoints.maxPrimeEven_le_two_pow_10`, `Ratpoints.maxPrimeEven_le_two_pow_32`: the moduli are
-  below `2 ^ 10`, and so below `2 ^ 32`.
+  below `2 ^ 10`, and so below `2 ^ 32`; `Ratpoints.maxPrimeEven_le_sixty_four_mul_modWords`: they
+  fit the bit arrays of `Ratpoints.modWords` words.
 * `Ratpoints.rowBias_le_two_pow_31`: `Ratpoints.rowBias`, the lower bound of the bias of a modulus
   (the multiple of the modulus in an offset), is at most `2 ^ 31`.
 * `Ratpoints.mul_lt_two_pow_64_of_le_mulModLimit`: `u p < 2 ^ 64` for `u ≤ Ratpoints.mulModLimit`
@@ -104,6 +105,11 @@ reductions by a reciprocal of the values at most `Ratpoints.mulModLimit` are exa
 (`Ratpoints.fitsLong_sixteen_mul`, `Ratpoints.fitsLong_add_sixteen_mul`). -/
 theorem maxPrimeEven_le_two_pow_32 : maxPrimeEven ≤ 2 ^ 32 :=
   Nat.le_trans maxPrimeEven_le_two_pow_10 (by decide)
+
+/-- A prime power below `Ratpoints.maxPrimeEven`, the moduli of the parameters, fits the
+`Ratpoints.modWords` words of the bit arrays of its tables and of the patterns of its rows. -/
+theorem maxPrimeEven_le_sixty_four_mul_modWords : maxPrimeEven ≤ 64 * modWords :=
+  Nat.le_mul_add_sub_one_div _ (by decide)
 
 /-- `Ratpoints.rowBias` is at most `2 ^ 31`, since `2 rowBias - 1 ≤ Ratpoints.mulModLimit < 2 ^ 32`
 (`Ratpoints.two_mul_rowBias_sub_one_le_mulModLimit`, `Ratpoints.mulModLimit_lt_two_pow_32`): the

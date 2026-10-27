@@ -36,8 +36,8 @@ its bit arrays compute what they claim, and its rows let every point through
 modulo `p ^ e`, and for `p ∣ b`, since then `p ∤ a` and the reversed polynomial takes a square value
 at `b / a`, both from the lemmas of `Ratpoints.Proof.Tables` for any commutative ring, here
 `ZMod (p ^ e)`; the prime powers below `Ratpoints.maxPrimeEven` fit the words
-(`Ratpoints.Sieve.maxPrimeEven_le_sixty_four_mul_modWords`). The values of `examine_power` stay in
-the range of their C types for the prime powers below `Ratpoints.maxPrimeEven`: the cofactors of the
+(`Ratpoints.maxPrimeEven_le_sixty_four_mul_modWords`). The values of `examine_power` stay in the
+range of their C types for the prime powers below `Ratpoints.maxPrimeEven`: the cofactors of the
 extended Euclidean algorithm (`Ratpoints.Sieve.ModinvInvariant.natAbs_add_mul_le`), the steps of
 Horner's rule and the squares (`Ratpoints.mul_add_lt_two_pow_64_of_lt_maxPrimeEven`,
 `Ratpoints.mul_self_lt_two_pow_63_of_lt_maxPrimeEven`), and the inverses
@@ -76,8 +76,6 @@ references of the run (`Ratpoints.IsModulusEntry.rowsFit_runRows`).
 * `Ratpoints.Sieve.modinv_spec`: for `x` prime to `m > 1`, `Ratpoints.Sieve.modinv` gives the
   inverse of `x` modulo `m`, below `m`; `Ratpoints.Sieve.ModinvInvariant.natAbs_add_mul_le`: its
   cofactors stay between `-m` and `m`.
-* `Ratpoints.Sieve.maxPrimeEven_le_sixty_four_mul_modWords`: the moduli fit the bit arrays of
-  `Ratpoints.modWords` words.
 * `Ratpoints.Sieve.setSquareBits_spec`, `Ratpoints.Sieve.unitInverses_spec`: the bits of the squares
   and the inverses of the units of a prime power.
 * `Ratpoints.Sieve.examinePower_spec`, with its plain forms
@@ -249,11 +247,6 @@ theorem modinv_spec (x m : ℕ) :
     | exact ModinvInvariant.exit ‹_› ‹_›
 
 /-! ### The tables of a prime power -/
-
-/-- A prime power below `Ratpoints.maxPrimeEven`, the moduli of the parameters, fits the
-`Ratpoints.modWords` words of the bit arrays of its tables and of the patterns of its rows. -/
-theorem maxPrimeEven_le_sixty_four_mul_modWords : maxPrimeEven ≤ 64 * modWords :=
-  Nat.le_mul_add_sub_one_div _ (by decide)
 
 /-- The invariant of the loop of `Ratpoints.Sieve.setSquareBits` after the residues `pref`, on the
 bit array: `Ratpoints.modWords` words, the bits of the squares `x ^ 2 mod m` of the residues `x` of
@@ -555,11 +548,6 @@ theorem setSquareBits_pre {sq fsq gsq : Array UInt64} {p e : ℕ}
     (pre : p.Prime ∧ 1 ≤ e ∧ p ^ e ≤ 64 * modWords) : sq.size = modWords ∧ p ^ e ≤ 64 * modWords :=
   ⟨(size_eq_of_eq_replicate h).1, pre.2.2⟩
 
-/-- The precondition of `Ratpoints.Sieve.unitInverses` in `Ratpoints.Sieve.examinePower`. -/
-theorem unitInverses_pre {p e : ℕ} (pre : p.Prime ∧ 1 ≤ e ∧ p ^ e ≤ 64 * modWords) :
-    p.Prime ∧ 1 ≤ e :=
-  ⟨pre.1, pre.2.1⟩
-
 /-- The end of `Ratpoints.Sieve.examinePower`: the inverses of the units, and the bits of `fsq` and
 `gsq` of the residues and the multiples of `p` at which the polynomial and the reversed polynomial
 take square values modulo `m`. -/
@@ -609,7 +597,6 @@ theorem examinePower_spec (c : List ℤ) (d p e : ℕ) (u pinf : Bool) :
     NondetFun.evalsTo_pure, meet_prop_eq_and, ofProp_prop_eq, Bool.false_eq_true, ↓reduceIte] at *
   all_goals first
     | exact setSquareBits_pre ‹_› ‹_›
-    | exact unitInverses_pre ‹_›
     | exact fsqInvariant_nil c d _ ‹_›
     | exact gsqInvariant_zero c d p _ ‹_›
     | exact set!_eq_replicate _ ‹_›
@@ -619,6 +606,7 @@ theorem examinePower_spec (c : List ℤ) (d p e : ℕ) (u pinf : Bool) :
     | exact GsqInvariant.push_setBitAt ‹_› ‹_› ‹_› ‹_› ‹_›
     | exact GsqInvariant.push_of_not ‹_› ‹_› ‹_› ‹_› ‹_›
     | exact GsqInvariant.exit ‹_› ‹_›
+    | grind
 
 theorem getElem!_inv_run_examinePower_lt {c : List ℤ} {d p e : ℕ} (u pinf : Bool) (hp : p.Prime)
     (he : 1 ≤ e) (x : ℕ) : (Id.run (examinePower c d p e u pinf)).inv[x]! < p ^ e :=
@@ -627,8 +615,7 @@ theorem getElem!_inv_run_examinePower_lt {c : List ℤ} {d p e : ℕ} (u pinf : 
 /-- Entry `x` of the inverses of the prime power `p ^ e`, for a unit `x`, is its inverse modulo
 `p ^ e`, by `Ratpoints.Sieve.modinv`. -/
 theorem mul_getElem!_inv_run_examinePower_mod {c : List ℤ} {d p e : ℕ} (u pinf : Bool)
-    (hp : p.Prime)
-    (he : 1 ≤ e) {x : ℕ} (hx : x < p ^ e) (hpx : x % p ≠ 0) :
+    (hp : p.Prime) (he : 1 ≤ e) {x : ℕ} (hx : x < p ^ e) (hpx : x % p ≠ 0) :
     x * (Id.run (examinePower c d p e u pinf)).inv[x]! % p ^ e = 1 :=
   (Std.WP.Id.of_run_eq_wp rfl _ ((unitInverses_spec p e).le_wp ⟨hp, he⟩) x).2 hx hpx
 
@@ -647,8 +634,7 @@ theorem getElem!_inv_run_examinePower_lt_two_pow_16 {c : List ℤ} {d p e : ℕ}
 (`Ratpoints.Sieve.examinePower`), for `m` within the words of its bit arrays, is set when `f(x)` is
 a square modulo `m`. -/
 theorem bitAt_fsq_run_examinePower_of_isSquare {c : List ℤ} {d p e : ℕ} (u pinf : Bool)
-    (hp : p.Prime)
-    (he : 1 ≤ e) (hm : p ^ e ≤ 64 * modWords) {x : ℕ} (hx : x < p ^ e)
+    (hp : p.Prime) (he : 1 ≤ e) (hm : p ^ e ≤ 64 * modWords) {x : ℕ} (hx : x < p ^ e)
     (h : IsSquare (∑ k ∈ Finset.range (d + 1), (c.getD k 0 : ZMod (p ^ e)) * x ^ k)) :
     bitAt (Id.run (examinePower c d p e u pinf)).fsq x = true :=
   (Std.WP.Id.of_run_eq_wp rfl _ ((examinePower_spec c d p e u pinf).le_wp ⟨hp, he, hm⟩)).2.1 x hx h
@@ -658,9 +644,8 @@ theorem bitAt_fsq_run_examinePower_of_isSquare {c : List ℤ} {d p e : ℕ} (u p
 when the reversed polynomial `∑ cₖ t ^ (D - k)` of the even degree `D = d + d % 2` takes a square
 value modulo `m` at `t`. -/
 theorem bitAt_gsq_run_examinePower_of_isSquare {c : List ℤ} {d p e : ℕ} (u pinf : Bool)
-    (hp : p.Prime)
-    (he : 1 ≤ e) (hm : p ^ e ≤ 64 * modWords) {t : ℕ} (ht : t < p ^ e) (htp : t % p = 0)
-    (h : IsSquare (∑ k ∈ Finset.range (d + 1),
+    (hp : p.Prime) (he : 1 ≤ e) (hm : p ^ e ≤ 64 * modWords) {t : ℕ} (ht : t < p ^ e)
+    (htp : t % p = 0) (h : IsSquare (∑ k ∈ Finset.range (d + 1),
       (c.getD k 0 : ZMod (p ^ e)) * t ^ (d + d % 2 - k))) :
     bitAt (Id.run (examinePower c d p e u pinf)).gsq t = true :=
   (Std.WP.Id.of_run_eq_wp rfl _ ((examinePower_spec c d p e u pinf).le_wp ⟨hp, he, hm⟩)).2.2 t ht

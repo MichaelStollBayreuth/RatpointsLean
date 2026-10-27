@@ -691,6 +691,12 @@ theorem mul_add_lt_mul_of_lt {s a c P p : Nat} (hs : s < P) (ha : a ≤ p) (hc :
     _ = (s + 1) * p := (Nat.succ_mul s p).symm
     _ ≤ P * p := Nat.mul_le_mul_right p hs
 
+/-- After a multiple `x < m` of a divisor `q` of `m`, the next multiple `x + q` is at most `m`. -/
+theorem add_le_of_lt_of_dvd_of_mod_eq_zero {x m q : Nat} (hxm : x < m) (hq : q ∣ m)
+    (hx : x % q = 0) : x + q ≤ m :=
+  le_of_lt_add_of_dvd (Nat.add_lt_add_right hxm q)
+    (Nat.dvd_add (Nat.dvd_of_mod_eq_zero hx) (Nat.dvd_refl q)) hq
+
 /-- Word `κ < k` of block `j < c` of `c` blocks of `k` words is below `c k`: the statement of
 Batteries' `Nat.mul_add_lt_mul_of_lt_of_lt`, for the files that use Lean core only. -/
 theorem mul_add_lt_mul_of_lt_of_lt' {k c j κ : Nat} (hj : j < c) (hκ : κ < k) :

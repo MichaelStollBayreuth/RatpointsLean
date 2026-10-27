@@ -57,8 +57,10 @@ state, and no proof consumes them.
 
 ## Main statements
 
-* `Ratpoints.sum_mul_pow_mul_pow_sub_of_eq_mul`: the binary form of degree `D` at `a = k b` is
-  `f(k) b ^ D`, in any commutative semiring.
+* `Ratpoints.sum_mul_pow_mul_pow_sub_of_eq_mul`,
+  `Ratpoints.sum_mul_pow_mul_pow_sub_of_eq_mul_right`: the binary form of degree `D` at `a = k b` is
+  `f(k) b ^ D`, and at `b = t a` the value at `t` of the reversed polynomial times `a ^ D`, in any
+  commutative semiring.
 * `Ratpoints.isSquare_sum_mul_pow_of_sq_eq_binaryForm`,
   `Ratpoints.isSquare_sum_mul_pow_sub_of_sq_eq_binaryForm`: a point whose denominator, or numerator,
   is a unit of a commutative ring makes `f`, or the reversed polynomial, take a square value there.
@@ -96,6 +98,11 @@ state, and no proof consumes them.
   `Ratpoints.fitsLong_neg_ite_div_four`: the values of the C code that could leave the range of a
   `long` stay in it.
 * `Ratpoints.Setup.fitsLong_getD_of_useCLong`: the inputs of `mod` are `long`s.
+
+## Notation
+
+Local to the file: `reducedCoeffs c d p` and `reducedCoeffArray c d p`, the list and the array of
+the coefficients `c₀, …, c_d` reduced modulo `p`.
 -/
 
 @[expose] public section
@@ -120,8 +127,8 @@ theorem sum_mul_pow_mul_pow_sub_of_eq_mul {R : Type*} [CommSemiring R] {d D : �
 
 /-- The binary form `∑ fᵢ aⁱ b^(D - i)` of degree `D ≥ d` at `b = t a` is the value
 `∑ fᵢ t^(D - i)` of the reversed polynomial times `a ^ D`, in any commutative semiring. -/
-theorem sum_mul_pow_mul_pow_sub_of_eq_mul' {R : Type*} [CommSemiring R] {d D : ℕ} (hd : d ≤ D)
-    (f : ℕ → R) {a b t : R} (h : b = t * a) :
+theorem sum_mul_pow_mul_pow_sub_of_eq_mul_right {R : Type*} [CommSemiring R] {d D : ℕ}
+    (hd : d ≤ D) (f : ℕ → R) {a b t : R} (h : b = t * a) :
     ∑ i ∈ Finset.range (d + 1), f i * a ^ i * b ^ (D - i) =
       (∑ i ∈ Finset.range (d + 1), f i * t ^ (D - i)) * a ^ D := by
   rw [Finset.sum_mul]
@@ -150,10 +157,18 @@ theorem isSquare_sum_mul_pow_sub_of_sq_eq_binaryForm {R : Type*} [CommRing R] {c
       (c.getD i 0 : R) * t ^ (degree c + degree c % 2 - i)) := by
   have h2 := congr(($hy : R))
   push_cast [binaryForm] at h2
-  rw [sum_mul_pow_mul_pow_sub_of_eq_mul' (by lia) _ ht] at h2
+  rw [sum_mul_pow_mul_pow_sub_of_eq_mul_right (by lia) _ ht] at h2
   exact ha.isSquare_of_sq_eq_mul_pow (Nat.even_iff.mpr (by lia)) h2
 
 namespace Sieve
+
+/-- The coefficients `c₀, …, c_d` reduced modulo `p`, as the tables of a prime compute them. -/
+local notation:max "reducedCoeffs " c:max d:max p:max =>
+  List.map (fun n ↦ Int.toNat (List.getD c n 0 % (p : ℤ))) (List.range (d + 1))
+
+/-- The coefficients `c₀, …, c_d` reduced modulo `p`, as the table of a prime hands them back. -/
+local notation:max "reducedCoeffArray " c:max d:max p:max =>
+  Array.map (fun n ↦ Int.toNat (List.getD c n 0 % (p : ℤ))) (Array.range (d + 1))
 
 /-! ### The squares, the inverses and Horner's rule modulo `p` -/
 
@@ -198,10 +213,9 @@ theorem exists_mem_range'_mul_mod_eq_one {p r : ℕ} (hp : p.Prime) (hr : r < p)
   have hr' : (r : ZMod p) ≠ 0 := by
     rw [Ne, ZMod.natCast_eq_zero_iff]
     exact fun h ↦ hr0 (Nat.eq_zero_of_dvd_of_lt h hr)
-  have h0 := (ZMod.val_ne_zero _).mpr (inv_ne_zero hr')
-  refine ⟨((r : ZMod p)⁻¹).val, List.mem_range'_1.mpr ⟨by lia, ?_⟩, ?_⟩
-  · lia [((r : ZMod p)⁻¹).val_lt]
-  · rw [← ZMod.val_natCast, Nat.cast_mul, ZMod.natCast_zmod_val, inv_mul_cancel₀ hr', ZMod.val_one]
+  refine ⟨((r : ZMod p)⁻¹).val, List.mem_range'_1.mpr ⟨Nat.pos_of_ne_zero
+    ((ZMod.val_ne_zero _).mpr (inv_ne_zero hr')), by lia [((r : ZMod p)⁻¹).val_lt]⟩, ?_⟩
+  rw [← ZMod.val_natCast, Nat.cast_mul, ZMod.natCast_zmod_val, inv_mul_cancel₀ hr', ZMod.val_one]
 
 theorem getElem!_inversesMod_mul_mod {p r : ℕ} (hp : p.Prime) (hr : r < p) (hr0 : r ≠ 0) :
     (inversesMod p)[r]! * r % p = 1 := by
@@ -211,7 +225,6 @@ theorem getElem!_inversesMod_mul_mod {p r : ℕ} (hp : p.Prime) (hr : r < p) (hr
   rw [getElem!_pos (inversesMod p) r (by simpa [inversesMod] using hr)]
   simpa [inversesMod, hs] using List.find?_some hs
 
-/-- The entries of the table of the inverses modulo `p` are residues modulo `p`. -/
 theorem getElem!_inversesMod_lt {p r : ℕ} (hr : r < p) : (inversesMod p)[r]! < p := by
   rw [getElem!_pos (inversesMod p) r (by simpa [inversesMod] using hr)]
   simp only [inversesMod, Array.getElem_map, Array.getElem_range]
@@ -253,13 +266,13 @@ theorem natCast_evalMod (cs : List ℕ) (p x : ℕ) :
 /-- Entry `k ≤ d` of the coefficients `c₀, …, c_d` reduced modulo `m` is `c_k` in `ZMod m`. -/
 theorem natCast_getD_map_range_toNat_emod (c : List ℤ) {d m : ℕ} [NeZero m] {k : ℕ}
     (hk : k < d + 1) :
-    ((((List.range (d + 1)).map fun n ↦ (c.getD n 0 % (m : ℤ)).toNat).getD k 0 : ℕ) : ZMod m) =
+    (((reducedCoeffs c d m).getD k 0 : ℕ) : ZMod m) =
       c.getD k 0 := by
   rw [List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range hk, Option.map_some,
     Option.getD_some, ZMod.natCast_toNat_emod]
 
 theorem natCast_evalMod_map_range (c : List ℤ) (d : ℕ) {p : ℕ} [NeZero p] (t : ℕ) :
-    (evalMod ((List.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat) p t : ZMod p) =
+    (evalMod (reducedCoeffs c d p) p t : ZMod p) =
       ∑ k ∈ Finset.range (d + 1), (c.getD k 0 : ZMod p) * t ^ k := by
   rw [natCast_evalMod, List.length_map, List.length_range]
   exact Finset.sum_congr rfl fun _ hk ↦
@@ -449,8 +462,7 @@ theorem isPrimeEntry_examinePrime (c : List ℤ) (d : ℕ) {p : ℕ} (hp : p.Pri
       getElem!_inversesMod_lt hr⟩⟩
 
 theorem getElem!_isFSquare_examinePrime (c : List ℤ) (d : ℕ) {p t : ℕ} (ht : t < p) :
-    (examinePrime c d p).isFSquare[t]! = (squaresMod p)[evalMod
-      ((List.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat) p t]! := by
+    (examinePrime c d p).isFSquare[t]! = (squaresMod p)[evalMod (reducedCoeffs c d p) p t]! := by
   simp only [examinePrime]
   rw [getElem!_pos _ t (by simp; lia), Array.getElem_push_lt (by simpa using ht)]
   simp
@@ -460,8 +472,7 @@ theorem getElem!_isFSquare_examinePrime_self (c : List ℤ) (d p : ℕ) :
     (examinePrime c d p).isFSquare[p]! =
       (d % 2 == 1 || (squaresMod p)[(c.getD d 0 % (p : ℤ)).toNat]!) := by
   simpa [examinePrime, List.getD_eq_getElem?_getD] using Array.getElem!_push_eq
-    (xs := (Array.range p).map fun x ↦ (squaresMod p)[evalMod
-      ((List.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat) p x]!)
+    (xs := (Array.range p).map fun x ↦ (squaresMod p)[evalMod (reducedCoeffs c d p) p x]!)
     (x := d % 2 == 1 || (squaresMod p)[(c.getD d 0 % (p : ℤ)).toNat]!)
 
 /-! ### The rows let every point through -/
@@ -507,7 +518,7 @@ theorem examinePrime?_eq_examinePrime?_false (c : List ℤ) (d p : ℕ) (u : Boo
 
 -- The coefficients of the table, reduced modulo `p > 0`, are below `p`.
 private theorem getElem!_map_range_emod_lt (c : List ℤ) (d : ℕ) {p : ℕ} (hp : 0 < p) (i : ℕ) :
-    ((Array.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat)[i]! < p := by
+    (reducedCoeffArray c d p)[i]! < p := by
   by_cases hi : i < d + 1
   · rw [Array.getElem!_map_range _ hi]
     exact Int.toNat_emod_lt _ hp
@@ -518,12 +529,10 @@ table `t`: entry `0` and the entries of these residues, each whether the value m
 Horner's rule (`Ratpoints.Sieve.evalMod`) on the coefficients reduced modulo `p` is a square modulo
 `p`. -/
 def ExaminePrimeInvariant (c : List ℤ) (d p k : ℕ) (t : Array Bool) : Prop :=
-  t = (Array.range (k + 1)).map fun x ↦ (squaresMod p)[evalMod
-    ((List.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat) p x]!
+  t = (Array.range (k + 1)).map fun x ↦ (squaresMod p)[evalMod (reducedCoeffs c d p) p x]!
 
 theorem examinePrimeInvariant_zero (c : List ℤ) (d : ℕ) {p : ℕ} (hp : 0 < p) :
-    ExaminePrimeInvariant c d p 0
-      #[(squaresMod p)[((Array.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat)[0]!]!] := by
+    ExaminePrimeInvariant c d p 0 #[(squaresMod p)[(reducedCoeffArray c d p)[0]!]!] := by
   have h0 := getElem!_map_range_emod_lt c d hp 0
   rw [Array.getElem!_map_range _ (Nat.succ_pos d)] at h0 ⊢
   rw [ExaminePrimeInvariant, ← Array.toList_inj, Array.toList_map, Array.toList_range,
@@ -535,8 +544,7 @@ Horner's rule with Barrett's reduction being that of Horner's rule reduced at ev
 theorem ExaminePrimeInvariant.push {c : List ℤ} {d p cur s : ℕ} {pref suff : List ℕ}
     {t : Array Bool} (hl : ForIn.toList [1:p] = pref ++ cur :: suff)
     (h : ExaminePrimeInvariant c d p pref.length t)
-    (hs : s = evalMod ((Array.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat).toList p
-      cur) :
+    (hs : s = evalMod (reducedCoeffArray c d p).toList p cur) :
     ExaminePrimeInvariant c d p (pref ++ [cur]).length (t.push (squaresMod p)[s]!) := by
   rw [ExaminePrimeInvariant] at h ⊢
   rw [h, hs, Array.toList_map, Array.toList_range,
@@ -547,8 +555,7 @@ theorem ExaminePrimeInvariant.push {c : List ℤ} {d p cur s : ℕ} {pref suff :
 table with the entry at infinity is that of the reference. -/
 theorem ExaminePrimeInvariant.push_eq {c : List ℤ} {d p : ℕ} {t : Array Bool}
     (h : ExaminePrimeInvariant c d p (ForIn.toList [1:p]).length t) (hp : 0 < p) :
-    t.push (d % 2 == 1 ||
-      (squaresMod p)[((Array.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat)[d]!]!) =
+    t.push (d % 2 == 1 || (squaresMod p)[(reducedCoeffArray c d p)[d]!]!) =
       (examinePrime c d p).isFSquare := by
   rw [ExaminePrimeInvariant, Std.Legacy.Range.length_toList, Nat.sub_add_cancel hp] at h
   rw [h, examinePrime, Array.getElem!_map_range _ (Nat.lt_succ_self d)]
@@ -558,10 +565,10 @@ theorem ExaminePrimeInvariant.push_eq {c : List ℤ} {d p : ℕ} {t : Array Bool
 theorem ExaminePrimeInvariant.none_eq {c : List ℤ} {d p np : ℕ} {t : Array Bool} {α : Type}
     (f : Entry × Array ℕ × α → Entry × Array ℕ)
     (h : ExaminePrimeInvariant c d p (ForIn.toList [1:p]).length t ∧ np = t.toList.count true)
-    (hp : 0 < p) (hn : (np == 0 && !(d % 2 == 1 || (squaresMod p)[((Array.range (d + 1)).map
-      fun n ↦ (c.getD n 0 % (p : ℤ)).toNat)[d]!]!)) = true) :
+    (hp : 0 < p)
+    (hn : (np == 0 && !(d % 2 == 1 || (squaresMod p)[(reducedCoeffArray c d p)[d]!]!)) = true) :
     Option.map f none = if (examinePrime c d p).isFSquare.any id then
-      some (examinePrime c d p, (Array.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat)
+      some (examinePrime c d p, reducedCoeffArray c d p)
     else none := by
   rw [← h.1.push_eq hp, Array.any_push_id_eq_false_iff.mpr (by simpa [h.2] using hn)]
   rfl
@@ -569,13 +576,14 @@ theorem ExaminePrimeInvariant.none_eq {c : List ℤ} {d p np : ℕ} {t : Array B
 /-- The entry that `Ratpoints.Sieve.examinePrime?` returns when an entry of the table is true. -/
 theorem ExaminePrimeInvariant.some_eq {c : List ℤ} {d p np : ℕ} {t : Array Bool} {α : Type}
     (h : ExaminePrimeInvariant c d p (ForIn.toList [1:p]).length t ∧ np = t.toList.count true)
-    (hp : 0 < p) (hn : ¬(np == 0 && !(d % 2 == 1 || (squaresMod p)[((Array.range (d + 1)).map
-      fun n ↦ (c.getD n 0 % (p : ℤ)).toNat)[d]!]!)) = true) (x : α) :
-    Option.map (fun x ↦ (x.1, x.2.1)) (some (⟨p, t.push (d % 2 == 1 || (squaresMod p)[((Array.range
-      (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat)[d]!]!), inversesMod p⟩, (Array.range
-      (d + 1)).map (fun n ↦ (c.getD n 0 % (p : ℤ)).toNat), x)) =
+    (hp : 0 < p)
+    (hn : ¬(np == 0 && !(d % 2 == 1 || (squaresMod p)[(reducedCoeffArray c d p)[d]!]!)) = true)
+    (x : α) :
+    Option.map (fun x ↦ (x.1, x.2.1)) (some (⟨p, t.push (d % 2 == 1 ||
+      (squaresMod p)[(reducedCoeffArray c d p)[d]!]!), inversesMod p⟩,
+        reducedCoeffArray c d p, x)) =
       if (examinePrime c d p).isFSquare.any id then
-        some (examinePrime c d p, (Array.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat)
+        some (examinePrime c d p, reducedCoeffArray c d p)
       else none := by
   have ha : (examinePrime c d p).isFSquare.any id = true := by
     by_contra hc
@@ -595,7 +603,7 @@ of Horner's rule reduced at every step (`Ratpoints.Sieve.hornerBarrett_spec`). -
 theorem examinePrime?_spec (c : List ℤ) (d p : ℕ) (u : Bool) :
     ⦃ 0 < p ∧ p < maxPrimeEven ⦄ examinePrime? c d p u
     ⦃ fun r ↦ r.map (fun x ↦ (x.1, x.2.1)) = if (examinePrime c d p).isFSquare.any id then
-        some (examinePrime c d p, (Array.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat)
+        some (examinePrime c d p, reducedCoeffArray c d p)
       else none ⦄ := by
   rw [examinePrime?_eq_examinePrime?_false]
   vcgen [examinePrime?] invariants
@@ -616,7 +624,7 @@ theorem run_examinePrime? {c : List ℤ} {d p : ℕ} (u : Bool) (hp0 : 0 < p)
     (hp : p < maxPrimeEven) :
     (Id.run (examinePrime? c d p u)).map (fun x ↦ (x.1, x.2.1)) =
       if (examinePrime c d p).isFSquare.any id then
-        some (examinePrime c d p, (Array.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat)
+        some (examinePrime c d p, reducedCoeffArray c d p)
       else none :=
   Std.WP.Id.of_run_eq_wp rfl _ ((examinePrime?_spec c d p u).le_wp ⟨hp0, hp⟩)
 
@@ -638,8 +646,8 @@ theorem eq_examinePrime_of_lt_numPrimes_of_run_examinePrime?_eq_some {c : List �
 /-- The coefficients that the table hands back are those of `f` reduced modulo `p`. -/
 theorem eq_map_range_of_run_examinePrime?_eq_some {c : List ℤ} {d p : ℕ} {u : Bool} {e : Entry}
     {cm : Array ℕ} {k : ℕ} {r : Float} (h : Id.run (examinePrime? c d p u) = some (e, cm, k, r)) :
-    cm = (Array.range (d + 1)).map fun n ↦ (c.getD n 0 % (p : ℤ)).toNat := by
-  have h2 := congrArg (Option.map (·.2.1)) h
+    cm = reducedCoeffArray c d p := by
+  have h2 := congr(Option.map (·.2.1) $h)
   rw [examinePrime?_eq_examinePrime?_false] at h2
   simp only [examinePrime?, Bool.false_eq_true, ↓reduceIte, Id.run_bind] at h2
   repeat' split at h2
