@@ -765,7 +765,7 @@ $\mathrm{noCheck}$ the following lemma and theorem say what the list holds.
 \begin{theorem}[The output under NO\_CHECK]\label{thm:noCheck}
   \uses{lem:findPoints_searchList, lem:noCheckList, thm:findPoints, def:IsPoint, def:regionSpec,
     lem:searchListRegion, def:sturmTheorem}
-  \lean{Ratpoints.exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck, Ratpoints.mem_of_isPoint_of_findPoints_eq_ok_of_noCheck, Ratpoints.map_sublist_of_findPoints_eq_ok_of_noCheck}
+  \lean{Ratpoints.isNormalizedPair_of_mem_of_findPoints_eq_ok_of_noCheck, Ratpoints.mem_of_isPoint_of_findPoints_eq_ok_of_noCheck, Ratpoints.map_sublist_of_findPoints_eq_ok_of_noCheck}
   \leanok
   For the options $s$ of the sieve and options $o$ with $\mathrm{noCheck}$, if
   $\mathrm{findPoints}(c, H, s, o)$ returns the list $L$: every member of $L$ is $(x, 0, z)$ with
@@ -1037,7 +1037,7 @@ eleven (Section~\ref{sec:certifiedI}). They were, for all $c$, $H$, parameters $
     $|x| \le H$ and $z \le H$; for every normalized point $(x, y, z)$ of height at most $H$, $(x, 0,
     z) \in L$; and if the search with $\mathrm{noCheck}$ cleared and $\mathrm{noY}$ set returns
     $L'$, the list $L'$ with $y$ replaced by $0$ is a sublist of $L$
-    (\verb|challenge_exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck|,
+    (\verb|challenge_isNormalizedPair_of_mem_of_findPoints_eq_ok_of_noCheck|,
     \verb|challenge_mem_of_isPoint_of_findPoints_eq_ok_of_noCheck|,
     \verb|challenge_map_sublist_of_findPoints_eq_ok_of_noCheck|, new in stage~G);
   \item[12.] for $P$ well formed and every callback with its data, $\mathrm{findPointsWith}$ with

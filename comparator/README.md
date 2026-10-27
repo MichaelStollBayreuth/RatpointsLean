@@ -83,7 +83,7 @@ duplicates keeps its text and now holds for the options of the output too, the e
 them. With the exact check off (`o.noCheck = true`), three statements, which `challenges.json`
 lists, say what the list holds: every element `(x, y, z)` has `y = 0` and a normalized pair
 `(x, z)` of height at most `H` (`IsNormalizedPair`,
-`challenge_exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck`), every point
+`challenge_isNormalizedPair_of_mem_of_findPoints_eq_ok_of_noCheck`), every point
 `(x, y, z)` of height at most `H` gives the element `(x, 0, z)`
 (`challenge_mem_of_isPoint_of_findPoints_eq_ok_of_noCheck`), and the list of the same search with
 the exact check on and `o.noY` set, with `y` replaced by `0`, is a sublist of it

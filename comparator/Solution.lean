@@ -68,7 +68,7 @@ theorem challenge_eq_orderedPoints_of_findPoints_eq_ok (c : List ℤ) (H : ℕ)
         o.bLow o.bHigh p :=
   Ratpoints.eq_orderedPoints_of_findPoints_eq_ok hS h hc
 
-theorem challenge_exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck (c : List ℤ) (H : ℕ)
+theorem challenge_isNormalizedPair_of_mem_of_findPoints_eq_ok_of_noCheck (c : List ℤ) (H : ℕ)
     (s : Ratpoints.SieveOptions) (o : Ratpoints.Options) (L : List (ℤ × ℤ × ℤ))
     (hc : o.noCheck = true) (h : Ratpoints.findPoints c H s o = .ok L) (q : ℤ × ℤ × ℤ)
     (hq : q ∈ L) :
@@ -76,7 +76,7 @@ theorem challenge_exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck (c : List ℤ)
       Ratpoints.InRegion
         (o.domain.map fun i ↦ (Ratpoints.doubleValue i.1.bits, Ratpoints.doubleValue i.2.bits))
         o.bLow o.bHigh q :=
-  Ratpoints.exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck h hc hq
+  Ratpoints.isNormalizedPair_of_mem_of_findPoints_eq_ok_of_noCheck h hc hq
 
 theorem challenge_mem_of_isPoint_of_findPoints_eq_ok_of_noCheck (c : List ℤ) (H : ℕ)
     (s : Ratpoints.SieveOptions) (o : Ratpoints.Options) (L : List (ℤ × ℤ × ℤ))

@@ -350,7 +350,7 @@ status:
       sorry_count: 0
       axioms: ["propext", "Classical.choice", "Quot.sound"]
       comparator_config: "comparator/challenges.json"
-    - declaration: "Ratpoints.exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck"
+    - declaration: "Ratpoints.isNormalizedPair_of_mem_of_findPoints_eq_ok_of_noCheck"
       file: "Ratpoints/Proof/Output.lean"
       sorry_count: 0
       axioms: ["propext", "Classical.choice", "Quot.sound"]
@@ -522,14 +522,14 @@ alignment:
         to and including the first that stops the search, and refuses exactly what
         Ratpoints.findPoints refuses, with the same errors; certified by comparator
     - source: "RATPOINTS_NO_CHECK: the survivors of the sieve, delivered with y = 0"
-      lean: "Ratpoints.exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck"
+      lean: "Ratpoints.isNormalizedPair_of_mem_of_findPoints_eq_ok_of_noCheck"
       module: "Ratpoints.Proof.Output"
       status: "formalized"
       note: >
         under RATPOINTS_NO_CHECK every element (x, y, z) of the list has y = 0 and a normalized
         pair (x, z) of height at most H (Ratpoints.IsNormalizedPair) and lies in the search region
-        (Ratpoints.exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck), every
-        point (x, y, z) gives the element (x, 0, z)
+        (Ratpoints.isNormalizedPair_of_mem_of_findPoints_eq_ok_of_noCheck), every point (x, y, z)
+        gives the element (x, 0, z)
         (Ratpoints.mem_of_isPoint_of_findPoints_eq_ok_of_noCheck), and the list of the search with
         the exact check and RATPOINTS_NO_Y, with y replaced by 0, is a sublist of it
         (Ratpoints.map_sublist_of_findPoints_eq_ok_of_noCheck); all three certified by comparator

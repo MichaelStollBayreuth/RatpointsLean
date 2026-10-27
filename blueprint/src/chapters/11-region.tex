@@ -1467,7 +1467,7 @@ search region; and the coverage under \verb|RATPOINTS_NO_CHECK|
 (\verb|Ratpoints.mem_of_isPoint_of_findPoints_eq_ok_of_noCheck|, Theorem~\ref{thm:noCheck}): every
 normalized point of height at most $H$ in the search region gives the survivor $(x, 0, z)$. The
 range statement under \verb|RATPOINTS_NO_CHECK|
-(\verb|Ratpoints.exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck|, Theorem~\ref{thm:noCheck}) says,
+(\verb|Ratpoints.isNormalizedPair_of_mem_of_findPoints_eq_ok_of_noCheck|, Theorem~\ref{thm:noCheck}) says,
 besides the form of the survivors, that every survivor lies in the search region, without the
 assumption. The refusal theorems (Theorem~\ref{thm:refusals}) include the refusal of the search
 intervals, from Lemmas~\ref{lem:searchIntervals}, \ref{lem:reversalRegion}
@@ -1555,7 +1555,7 @@ $0 \le o.\mathrm{sturm} \to \mathrm{SturmTheorem}$:
   \item[9.] for $P$ well formed, $\mathrm{noCheck}$ set and $\mathrm{findPoints}(c, H, P, o) = L$:
     every member of $L$ is $(x, 0, z)$ with $\gcd(x, z) = 1$, $z > 0$ or ($z = 0$ and $x = 1$),
     $|x| \le H$ and $z \le H$, in the search region
-    (\verb|challenge_exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck|, with the search region since
+    (\verb|challenge_isNormalizedPair_of_mem_of_findPoints_eq_ok_of_noCheck|, with the search region since
     stage~H);
   \item[10.] under $h_S$, for $P$ well formed, $\mathrm{noCheck}$ set and
     $\mathrm{findPoints}(c, H, P, o) = L$: for every normalized point $(x, y, z)$ of height at most

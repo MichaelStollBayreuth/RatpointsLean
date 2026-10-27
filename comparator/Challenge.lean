@@ -328,7 +328,7 @@ theorem challenge_eq_orderedPoints_of_findPoints_eq_ok (c : List ℤ) (H : ℕ)
         o.bLow o.bHigh p :=
   sorry
 
-theorem challenge_exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck (c : List ℤ) (H : ℕ)
+theorem challenge_isNormalizedPair_of_mem_of_findPoints_eq_ok_of_noCheck (c : List ℤ) (H : ℕ)
     (s : Ratpoints.SieveOptions) (o : Ratpoints.Options) (L : List (ℤ × ℤ × ℤ))
     (hc : o.noCheck = true) (h : Ratpoints.findPoints c H s o = .ok L) (q : ℤ × ℤ × ℤ)
     (hq : q ∈ L) :

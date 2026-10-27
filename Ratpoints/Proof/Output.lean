@@ -95,7 +95,7 @@ duplicates, the three statements under `RATPOINTS_NO_CHECK` and both refusal the
 * `Ratpoints.findPoints_sturm_neg_eq_ok`: assuming Sturm's theorem when the Sturm step is on,
   without `RATPOINTS_NO_CHECK`, the Sturm step changes only the speed.
 * `Ratpoints.nodup_of_findPoints_eq_ok`: for every option, the list has no duplicates.
-* `Ratpoints.exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck`,
+* `Ratpoints.isNormalizedPair_of_mem_of_findPoints_eq_ok_of_noCheck`,
   `Ratpoints.mem_of_isPoint_of_findPoints_eq_ok_of_noCheck`,
   `Ratpoints.map_sublist_of_findPoints_eq_ok_of_noCheck`: under `RATPOINTS_NO_CHECK`, the list holds
   triples `(x, 0, z)` of normalized pairs of height at most `H` in the search region, among them,
@@ -786,8 +786,8 @@ theorem toFinset_eq_filter_points_of_findPoints_eq_ok {c : List ℤ} {H : ℕ} {
 of the options (`Ratpoints.exists_eq_of_mem_searchList_of_noCheck`,
 `Ratpoints.mem_region_of_mem_searchList`, `Ratpoints.searchRegion_subset`); comparator certifies
 this (`comparator/Challenge.lean`). -/
-theorem exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck {c : List ℤ} {H : ℕ} {s : SieveOptions}
-    {o : Options} {L : List (ℤ × ℤ × ℤ)} (h : findPoints c H s o = .ok L)
+theorem isNormalizedPair_of_mem_of_findPoints_eq_ok_of_noCheck {c : List ℤ} {H : ℕ}
+    {s : SieveOptions} {o : Options} {L : List (ℤ × ℤ × ℤ)} (h : findPoints c H s o = .ok L)
     (hc : o.noCheck = true) {q : ℤ × ℤ × ℤ} (hq : q ∈ L) :
     q.2.1 = 0 ∧ IsNormalizedPair H q.1 q.2.2 ∧
       InRegion (domainValues o.domain) o.bLow o.bHigh q := by
@@ -1009,11 +1009,11 @@ Classical.choice, Quot.sound]
 #print axioms map_findPointsWith_eq_map_findPoints
 
 /--
-info: 'Ratpoints.exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck' depends on axioms: [propext,
-Classical.choice, Quot.sound]
+info: 'Ratpoints.isNormalizedPair_of_mem_of_findPoints_eq_ok_of_noCheck' depends on axioms:
+[propext, Classical.choice, Quot.sound]
 -/
-#guard_msgs in
-#print axioms exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck
+#guard_msgs (whitespace := lax) in
+#print axioms isNormalizedPair_of_mem_of_findPoints_eq_ok_of_noCheck
 
 /--
 info: 'Ratpoints.mem_of_isPoint_of_findPoints_eq_ok_of_noCheck' depends on axioms: [propext,
