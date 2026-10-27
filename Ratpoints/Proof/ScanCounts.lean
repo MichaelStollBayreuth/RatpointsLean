@@ -69,12 +69,6 @@ namespace Sieve
 
 variable {σ : Type} (process : Int → Int → Int → σ → Answer σ)
 
--- The test of a candidate, as a value for the contract of the counters of the walk.
-private theorem accepted_value (a : Int) (b : Nat) (checks : Thunk (List CheckSpec))
-    (cnt : Counters) :
-    ⦃ True ⦄ accepted a b checks cnt ⦃ fun r ↦ r = Id.run (accepted a b checks cnt) ⦄ :=
-  ⟨fun _ ↦ rfl⟩
-
 /- The invariants of the delivery are irreducible here: the verification conditions of the
 counters are closed by their lemmas, never by unfolding them. -/
 attribute [local irreducible] WalkWhileInvariant ScanPieceSentinelInvariant
@@ -185,14 +179,12 @@ theorem walkWord_counters_spec (w : Thunk (List Int)) (d b : Nat) (fl : CheckFla
 /-- The property of the counters `c` of the loops of the two arms of `Ratpoints.Sieve.siftBitArray`
 over the words `words κ` of the bit array with the word number `i`, in the packing of the class
 `cl`, from the counters `cnt0`, after its first `k` words: they are `cnt0` plus the counts of the
-tests of a candidate (`Ratpoints.Sieve.testedCounts`) of the numerators of the bits
-`rbaLength i + 64 κ + t` of the set bits `t` of the words `κ < k`, over the denominator `b` with the
-thunk `checks` of the third stage. -/
+tests of a candidate (`Ratpoints.Sieve.testedCounts`) of the numerators of the bit numbers
+`rbaLength i + 64 κ + t` of the set bits `t` of the words `κ < k` (`Ratpoints.Sieve.bitNumbers`),
+over the denominator `b` with the thunk `checks` of the third stage. -/
 def SiftBitArrayCounts (words : Nat → UInt64) (b : Nat) (checks : Thunk (List CheckSpec))
     (cl : NumClass) (i : Int) (cnt0 : Counters) (k : Nat) (c : Counters) : Prop :=
-  c = cnt0 + testedCounts b checks (((List.range k).flatMap fun κ ↦
-    ((List.range 64).filter ((words κ).toBitVec.getLsbD ·)).map fun t : Nat ↦
-      i * rbaLength + 64 * κ + t).map cl.numerator)
+  c = cnt0 + testedCounts b checks ((bitNumbers words (rbaLength * i) k).map cl.numerator)
 
 /-- The invariant of the loop of `Ratpoints.Sieve.siftBitArrayByWords` over `[0:rbaPack]` for its
 counters, whose state is the value of a return, the delivery and the counters:
@@ -205,19 +197,15 @@ def SiftBitArrayCountsLoopInvariant (words : Nat → UInt64) (b : Nat)
     (fun done _ s ↦ SiftBitArrayCounts words b checks cl i cnt0 done.length s.2)
     (fun ret _ ↦ ret.1.quit = true)
 
-/-- `Ratpoints.Sieve.flatMap_numerator_range_succ` for the numerators themselves: the numerators of
-the set bits of the words `0, …, k` are those of the words `0, …, k - 1` followed by those of word
-`k`, as the walk through it computes them. -/
-theorem map_numerator_flatMap_range_succ (words : Nat → UInt64) (cl : NumClass) (i : Int)
-    (k : Nat) :
-    ((List.range (k + 1)).flatMap fun κ ↦
-      ((List.range 64).filter ((words κ).toBitVec.getLsbD ·)).map
-        fun t : Nat ↦ i * rbaLength + 64 * κ + t).map cl.numerator =
-      ((List.range k).flatMap fun κ ↦ ((List.range 64).filter ((words κ).toBitVec.getLsbD ·)).map
-        fun t : Nat ↦ i * rbaLength + 64 * κ + t).map cl.numerator ++
+/-- `Ratpoints.Sieve.flatMap_numerator_bitNumbers_succ` for the numerators themselves: the
+numerators of the bit numbers of the set bits of the words `0, …, k` are those of the words
+`0, …, k - 1` followed by those of word `k`, as the walk through it computes them. -/
+theorem map_numerator_bitNumbers_succ (words : Nat → UInt64) (cl : NumClass) (i : Int) (k : Nat) :
+    (bitNumbers words (rbaLength * i) (k + 1)).map cl.numerator =
+      (bitNumbers words (rbaLength * i) k).map cl.numerator ++
         ((List.range 64).filter ((words k).toBitVec.getLsbD ·)).map fun t : Nat ↦
           cl.a0 + i * (rbaLength * 2 ^ cl.k) + k * (64 * 2 ^ cl.k) + (2 ^ cl.k : Nat) * t := by
-  simpa [← List.map_eq_flatMap] using flatMap_numerator_range_succ words (fun a ↦ [a]) cl i k
+  simpa [← List.map_eq_flatMap] using flatMap_numerator_bitNumbers_succ words (fun a ↦ [a]) cl i k
 
 section
 
@@ -235,7 +223,7 @@ theorem SiftBitArrayCounts.succ {k : Nat} (h : SiftBitArrayCounts words b checks
       ((words k).toBitVec.getLsbD ·)).map fun t : Nat ↦
         cl.a0 + i * (rbaLength * 2 ^ cl.k) + k * (64 * 2 ^ cl.k) + (2 ^ cl.k : Nat) * t)) :
     SiftBitArrayCounts words b checks cl i cnt0 (k + 1) c' := by
-  rw [SiftBitArrayCounts, map_numerator_flatMap_range_succ, testedCounts_append,
+  rw [SiftBitArrayCounts, map_numerator_bitNumbers_succ, testedCounts_append,
     ← Counters.add_assoc, hc, h]
 
 /-- The walk through word `cur` of the loop over `[0:rbaPack]`, when the callback does not stop the
@@ -265,26 +253,22 @@ theorem SiftBitArrayCounts.append_of_eq_zero {done suff : List Nat} {cur : Nat}
 theorem SiftBitArrayCounts.congr {words' : Nat → UInt64} {k : Nat}
     (hw : ∀ κ < k, words κ = words' κ) (h : SiftBitArrayCounts words b checks cl i cnt0 k c) :
     SiftBitArrayCounts words' b checks cl i cnt0 k c := by
-  have hl := flatMap_numerator_range_congr hw (fun a ↦ [a]) cl i
-  simp only [← List.map_eq_flatMap] at hl
-  rw [SiftBitArrayCounts, h, hl]
+  rw [SiftBitArrayCounts, h, bitNumbers_congr hw]
 
 /-- After all the words of the bit array, the counters are those of their numerators. -/
 theorem SiftBitArrayCounts.eq_of_rbaPack {words' : Nat → UInt64}
     (hw : ∀ κ < rbaPack, words κ = words' κ)
     (h : SiftBitArrayCounts words b checks cl i cnt0 rbaPack c) :
-    c = cnt0 + testedCounts b checks (((List.range rbaPack).flatMap fun κ ↦
-      ((List.range 64).filter ((words' κ).toBitVec.getLsbD ·)).map fun t : Nat ↦
-        i * rbaLength + 64 * κ + t).map cl.numerator) :=
+    c = cnt0 + testedCounts b checks
+      ((bitNumbers words' (rbaLength * i) rbaPack).map cl.numerator) :=
   h.congr hw
 
 /-- At the end of the loop over `[0:rbaPack]`, the counters are those of the numerators of all the
 words of the bit array. -/
 theorem SiftBitArrayCounts.eq
     (h : SiftBitArrayCounts words b checks cl i cnt0 (ForIn.toList [0:rbaPack]).length c) :
-    c = cnt0 + testedCounts b checks (((List.range rbaPack).flatMap fun κ ↦
-      ((List.range 64).filter ((words κ).toBitVec.getLsbD ·)).map fun t : Nat ↦
-        i * rbaLength + 64 * κ + t).map cl.numerator) := by
+    c = cnt0 + testedCounts b checks
+      ((bitNumbers words (rbaLength * i) rbaPack).map cl.numerator) := by
   simp only [Std.Legacy.Range.length_toList, Nat.sub_zero] at h
   exact h
 
@@ -300,12 +284,11 @@ and-ed with the rows of the moduli of `specs`. -/
 theorem siftBitArrayByWords_counters_spec (w : Thunk (List Int)) (d b : Nat) (fl : CheckFlags)
     (specs : List SieveSpec) (mgs : List Nat) (small : Bool) (checks : Thunk (List CheckSpec))
     (cl : NumClass) (i : Int) (nums : Vector UInt64 rbaPack) (r : Delivery σ) (cnt : Counters) :
-    ⦃ (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p) ∧ SmallFits small i (i + 1) ⦄
+    ⦃ StageFits specs mgs small i (i + 1) ⦄
     siftBitArrayByWords process w d b fl specs mgs small checks cl i nums r cnt
     ⦃ fun r' ↦ r'.1.quit = false → r'.2 = cnt + testedCounts b checks
-        (((List.range rbaPack).flatMap fun κ ↦
-          ((List.range 64).filter ((andWords specs nums[κ]! i κ).toBitVec.getLsbD ·)).map
-            fun t : Nat ↦ i * rbaLength + 64 * κ + t).map cl.numerator) ⦄ := by
+        ((bitNumbers (fun κ ↦ andWords specs nums[κ]! i κ) (rbaLength * i) rbaPack).map
+          cl.numerator) ⦄ := by
   vcgen [siftBitArrayByWords, walkWord_counters_spec] invariants
   | inv1 => SiftBitArrayCountsLoopInvariant (σ := σ) (fun κ ↦ andWords specs nums[κ]! i κ) b
       checks cl i cnt
@@ -383,9 +366,8 @@ words of the bit array. -/
 theorem SiftBitArrayWalkCounts.eq {a : Int} {words' : Nat → UInt64}
     (hw : ∀ κ < rbaPack, words κ = words' κ)
     (h : SiftBitArrayWalkCounts words b checks cl i cnt0 (ForIn.toList [1:rbaPack]).length (c, a)) :
-    c = cnt0 + testedCounts b checks (((List.range rbaPack).flatMap fun κ ↦
-      ((List.range 64).filter ((words' κ).toBitVec.getLsbD ·)).map fun t : Nat ↦
-        i * rbaLength + 64 * κ + t).map cl.numerator) := by
+    c = cnt0 + testedCounts b checks
+      ((bitNumbers words' (rbaLength * i) rbaPack).map cl.numerator) := by
   have hl : (ForIn.toList [1:rbaPack]).length + 1 = rbaPack := by
     simp only [Std.Legacy.Range.length_toList]
     lia [rbaPack_pos]
@@ -397,13 +379,12 @@ theorem eq_add_testedCounts_of_isZeroAt {specs : List SieveSpec}
     {nums nums' : Vector UInt64 rbaPack}
     (hw : ∀ κ < rbaPack, nums'[κ]! = andWords specs nums[κ]! i κ)
     (hz : ¬(!isZeroAt nums' 0) = true) (c : Counters) :
-    c = c + testedCounts b checks (((List.range rbaPack).flatMap fun κ ↦
-      ((List.range 64).filter ((andWords specs nums[κ]! i κ).toBitVec.getLsbD ·)).map
-        fun t : Nat ↦ i * rbaLength + 64 * κ + t).map cl.numerator) := by
-  rw [(List.flatMap_eq_nil_iff (l := List.range rbaPack)).mpr fun κ hκ ↦ ?_]
+    c = c + testedCounts b checks
+      ((bitNumbers (fun κ ↦ andWords specs nums[κ]! i κ) (rbaLength * i) rbaPack).map
+        cl.numerator) := by
+  rw [bitNumbers_eq_nil fun κ hκ ↦ ?_]
   · simp
-  have hκ' := List.mem_range.mp hκ
-  have := (isZeroAt_eq_true_iff nums' 0).mp (by simpa using hz) κ hκ'
+  have := (isZeroAt_eq_true_iff nums' 0).mp (by simpa using hz) κ hκ
   simp_all
 
 end
@@ -419,12 +400,11 @@ the bit array zero. -/
 theorem siftBitArrayWhole_counters_spec (w : Thunk (List Int)) (d b : Nat) (fl : CheckFlags)
     (specs : List SieveSpec) (mgs : List Nat) (small : Bool) (checks : Thunk (List CheckSpec))
     (cl : NumClass) (i : Int) (nums : Vector UInt64 rbaPack) (r0 : Delivery σ) (cnt0 : Counters) :
-    ⦃ (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p) ∧ SmallFits small i (i + 1) ⦄
+    ⦃ StageFits specs mgs small i (i + 1) ⦄
     siftBitArrayWhole process w d b fl specs mgs small checks cl i nums r0 cnt0
     ⦃ fun r' ↦ r'.1.quit = false → r'.2 = cnt0 + testedCounts b checks
-        (((List.range rbaPack).flatMap fun κ ↦
-          ((List.range 64).filter ((andWords specs nums[κ]! i κ).toBitVec.getLsbD ·)).map
-            fun t : Nat ↦ i * rbaLength + 64 * κ + t).map cl.numerator) ⦄ := by
+        ((bitNumbers (fun κ ↦ andWords specs nums[κ]! i κ) (rbaLength * i) rbaPack).map
+          cl.numerator) ⦄ := by
   vcgen [siftBitArrayWhole, walkWord_counters_spec] invariants
   | inv1 => SiftBitArrayWalkCountsLoopInvariant (σ := σ) (fun κ ↦ nums[κ]!) b checks cl i cnt0
   all_goals subst_vars
@@ -447,12 +427,11 @@ theorem siftBitArray_counters_spec (useLong : Bool) (w : Thunk (List Int)) (d b 
     (fl : CheckFlags) (specs : List SieveSpec) (mgs : List Nat) (small : Bool)
     (checks : Thunk (List CheckSpec)) (cl : NumClass) (i : Int) (nums : Vector UInt64 rbaPack)
     (r : Delivery σ) (cnt : Counters) :
-    ⦃ (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p) ∧ SmallFits small i (i + 1) ⦄
+    ⦃ StageFits specs mgs small i (i + 1) ⦄
     siftBitArray process useLong w d b fl specs mgs small checks cl i nums r cnt
     ⦃ fun r' ↦ r'.1.quit = false → r'.2 = cnt + testedCounts b checks
-        (((List.range rbaPack).flatMap fun κ ↦
-          ((List.range 64).filter ((andWords specs nums[κ]! i κ).toBitVec.getLsbD ·)).map
-            fun t : Nat ↦ i * rbaLength + 64 * κ + t).map cl.numerator) ⦄ := by
+        ((bitNumbers (fun κ ↦ andWords specs nums[κ]! i κ) (rbaLength * i) rbaPack).map
+          cl.numerator) ⦄ := by
   cases useLong
   · exact siftBitArrayWhole_counters_spec process w d b fl specs mgs small checks cl i nums r cnt
   · exact siftBitArrayByWords_counters_spec process w d b fl specs mgs small checks cl i nums r cnt
@@ -471,9 +450,8 @@ def ScanPieceCounts {m : Nat} (sv : Vector UInt64 m) (specs : List SieveSpec) (b
     (checks : Thunk (List CheckSpec)) (cl : NumClass) (w0 : Int) (n : Nat) (cnt0 : Counters)
     (pos : Nat) (c : Counters) : Prop :=
   pos ≤ n ∧ c = cnt0 + { arrays := ((List.range pos).countP fun p ↦ !isZeroAt sv p).toUInt64 } +
-    testedCounts b checks (((List.range (rbaPack * pos)).flatMap fun y : Nat ↦
-      ((List.range 64).filter ((andWords specs sv[y]! w0 y).toBitVec.getLsbD ·)).map
-        fun t : Nat ↦ rbaLength * w0 + 64 * y + t).map cl.numerator)
+    testedCounts b checks ((bitNumbers (fun y ↦ andWords specs sv[y]! w0 y) (rbaLength * w0)
+      (rbaPack * pos)).map cl.numerator)
 
 /-- `Ratpoints.Sieve.ScanPieceCounts` as the invariant of the counters of the scan of
 `Ratpoints.Sieve.scanPiece`, whose state is the value of a return, the position, the delivery and
@@ -522,13 +500,10 @@ theorem ScanPieceCounts.add_one_of_isZeroAt {surv : Vector UInt64 m}
         (False → isZeroAt sv (pos + 1) = false) := by
   obtain ⟨rfl, h0, ⟨hle, h⟩, -⟩ := h
   have hlt : pos < n := Nat.lt_of_le_of_ne hle (hs.ne_of_isZeroAt hz)
-  have hl := flatMap_range_rbaPack_mul_succ sv specs (fun j ↦ [cl.numerator j]) w0 pos
-  simp only [← List.map_eq_flatMap] at hl
   refine ⟨by lia, by lia, ⟨hlt, ?_⟩, nofun⟩
-  rw [h, hl, (List.flatMap_eq_nil_iff (l := List.range rbaPack)).mpr fun κ hκ ↦ ?_]
+  rw [h, bitNumbers_rbaPack_mul_succ, bitNumbers_eq_nil (k := rbaPack) fun κ hκ ↦ ?_]
   · simp [List.range_succ, hz]
-  simp [Vector.getElem!_ofFn (List.mem_range.mp hκ),
-    (isZeroAt_eq_true_iff sv pos).mp hz κ (List.mem_range.mp hκ)]
+  simp [Vector.getElem!_ofFn hκ, (isZeroAt_eq_true_iff sv pos).mp hz κ hκ]
 
 /-- Bit array `pos`, which is not zero, copied and passed through
 `Ratpoints.Sieve.siftBitArray` with its word number `w0 + pos` after the count `arrays` one up, when
@@ -540,23 +515,21 @@ theorem ScanPieceCounts.add_one_of_siftBitArray {r : Delivery σ} {c0 : Counters
       (True → isZeroAt sv pos = false))
     (hlt : ¬n ≤ pos)
     (hc : r.quit = false → c' = { c with arrays := c.arrays + 1 } + testedCounts b checks
-      (((List.range rbaPack).flatMap fun κ ↦ ((List.range 64).filter
-        ((andWords specs (Vector.ofFn fun κ : Fin rbaPack ↦ sv[rbaPack * pos + κ]!)[κ]! (w0 + pos)
-          κ).toBitVec.getLsbD ·)).map fun t : Nat ↦ (w0 + pos) * rbaLength + 64 * κ + t).map
-            cl.numerator))
+      ((bitNumbers (fun κ ↦ andWords specs
+        (Vector.ofFn fun κ : Fin rbaPack ↦ sv[rbaPack * pos + κ]!)[κ]! (w0 + pos) κ)
+          (rbaLength * (w0 + pos)) rbaPack).map cl.numerator))
     (hq : ¬r.quit = true) :
     n - (pos + 1) < mb ∧ ScanPieceCounts sv specs b checks cl w0 n cnt0 (pos + 1) c' ∧
       (False → pos + 1 = n) := by
   obtain ⟨h0, ⟨-, h⟩, hz⟩ := h'
-  have hl := flatMap_range_rbaPack_mul_succ sv specs (fun j ↦ [cl.numerator j]) w0 pos
-  simp only [← List.map_eq_flatMap] at hl
   refine ⟨by lia [hm.1], ⟨by lia, ?_⟩, nofun⟩
   have hA : ({ arrays := ((List.range (pos + 1)).countP fun p ↦ !isZeroAt sv p).toUInt64 } :
       Counters) = { arrays := ((List.range pos).countP fun p ↦ !isZeroAt sv p).toUInt64 } +
         { arrays := 1 } := by
     simp [List.range_succ (n := pos), List.countP_append, hz trivial, UInt64.ofNat_add,
       Counters.ext_iff]
-  rw [hc (Bool.eq_false_iff.mpr hq), Counters.arrays_add_one, h, hl, testedCounts_append, hA]
+  rw [hc (Bool.eq_false_iff.mpr hq), Counters.arrays_add_one, h, bitNumbers_rbaPack_mul_succ,
+    List.map_append, testedCounts_append, hA]
   ac_rfl
 
 /-- At the end of the scan, the counters are those of the bit arrays of the piece that are not zero
@@ -566,15 +539,13 @@ theorem ScanPieceCounts.eq {surv : Vector UInt64 m}
     (h : ScanPieceCounts sv specs b checks cl w0 n cnt0 pos c ∧ (True → pos = n))
     (hs : ScanPieceSentinelInvariant n surv (ForIn.toList [0:rbaPack]).length sv) :
     c = cnt0 + { arrays := ((List.range n).countP fun p ↦ !isZeroAt surv p).toUInt64 } +
-      testedCounts b checks (((List.range (n * rbaPack)).flatMap fun y : Nat ↦
-        ((List.range 64).filter ((andWords specs surv[y]! w0 y).toBitVec.getLsbD ·)).map
-          fun t : Nat ↦ rbaLength * w0 + 64 * y + t).map cl.numerator) := by
+      testedCounts b checks ((bitNumbers (fun y ↦ andWords specs surv[y]! w0 y) (rbaLength * w0)
+        (n * rbaPack)).map cl.numerator) := by
   have hn := h.2 trivial
   have hc := h.1.2
   rw [hn] at hc
-  have hl := hs.flatMap_eq specs (fun j ↦ [cl.numerator j]) w0
-  simp only [← List.map_eq_flatMap] at hl
-  rw [hc, hl, List.countP_congr fun p hp ↦ by rw [hs.isZeroAt_eq (List.mem_range.mp hp)]]
+  rw [hc, hs.bitNumbers_eq,
+    List.countP_congr fun p hp ↦ by rw [hs.isZeroAt_eq (List.mem_range.mp hp)]]
 
 end
 
@@ -588,13 +559,12 @@ private theorem scanPiece_counters_spec_getLsbD (w : Thunk (List Int)) (d b : Na
     (specs : List SieveSpec) (mgs : List Nat) (small : Bool) (checks : Thunk (List CheckSpec))
     (cl : NumClass) (w0 : Int) (n : Nat) (surv : Vector UInt64 ((n + 1) * rbaPack))
     (r : Delivery σ) (cnt0 : Counters) :
-    ⦃ (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p) ∧ SmallFits small w0 (w0 + n) ⦄
+    ⦃ StageFits specs mgs small w0 (w0 + n) ⦄
     scanPiece process w d b fl specs mgs small checks cl w0 n surv r cnt0
     ⦃ fun r' ↦ r'.1.quit = false → r'.2 = cnt0 +
         { arrays := ((List.range n).countP fun p ↦ !isZeroAt surv p).toUInt64 } +
-        testedCounts b checks (((List.range (n * rbaPack)).flatMap fun y : Nat ↦
-          ((List.range 64).filter ((andWords specs surv[y]! w0 y).toBitVec.getLsbD ·)).map
-            fun t : Nat ↦ rbaLength * w0 + 64 * y + t).map cl.numerator) ⦄ := by
+        testedCounts b checks ((bitNumbers (fun y ↦ andWords specs surv[y]! w0 y) (rbaLength * w0)
+          (n * rbaPack)).map cl.numerator) ⦄ := by
   vcgen [scanPiece, siftBitArray_counters_spec] invariants
   | inv1 => fun done _ ↦ ScanPieceSentinelInvariant n surv done.length
   | inv2 sv _ => ScanPieceCountsWhileInvariant (σ := σ) sv specs b checks cl w0 n cnt0
@@ -609,7 +579,7 @@ private theorem scanPiece_counters_spec_getLsbD (w : Thunk (List Int)) (d b : Na
   all_goals first
     | exact ScanPieceSentinelInvariant.append_set! ‹_› ‹_›
     | exact ScanPieceCounts.eq ‹_› ‹_›
-    | exact fits_and_smallFits_add ‹_› ‹_›
+    | exact StageFits.mono ‹StageFits _ _ _ _ _› (by lia) (by lia)
     | exact ScanPieceCounts.add_one_of_siftBitArray ‹_› ‹_› ‹_› ‹_› ‹_›
     | exact ScanPieceCounts.add_one_of_isZeroAt ‹_› ‹_› ‹_›
     | grind [scanPieceSentinelInvariant_zero, scanPieceCounts_zero, → ScanPieceCounts.le]
@@ -624,7 +594,7 @@ theorem scanPiece_counters_spec (w : Thunk (List Int)) (d b : Nat) (fl : CheckFl
     (specs : List SieveSpec) (mgs : List Nat) (small : Bool) (checks : Thunk (List CheckSpec))
     (cl : NumClass) (w0 : Int) (n : Nat) (surv : Vector UInt64 ((n + 1) * rbaPack))
     (r : Delivery σ) (cnt : Counters) :
-    ⦃ (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p) ∧ SmallFits small w0 (w0 + n) ⦄
+    ⦃ StageFits specs mgs small w0 (w0 + n) ⦄
     scanPiece process w d b fl specs mgs small checks cl w0 n surv r cnt
     ⦃ fun r' ↦ ∀ keep : Int → Bool, (∀ y < n * rbaPack, ∀ t : Nat,
         (andWords specs surv[y]! w0 y).toBitVec.getLsbD t =
@@ -635,7 +605,7 @@ theorem scanPiece_counters_spec (w : Thunk (List Int)) (d b : Nat) (fl : CheckFl
           rbaLength * w0 + k).filter keep).map cl.numerator) ⦄ :=
   ⟨fun pre keep hkeep hq ↦ by
     rw [(scanPiece_counters_spec_getLsbD process w d b fl specs mgs small checks cl w0 n surv r
-      cnt).le_wp pre hq, List.flatMap_range_map_filter hkeep, rbaLength_eq, Nat.mul_left_comm]⟩
+      cnt).le_wp pre hq, bitNumbers_eq_filter hkeep, rbaLength_eq, Nat.mul_left_comm]⟩
 
 /-- A bit array of the words `v`, among the first `n`, whose bits are a test `keep` of the bits
 `rbaLength w0 + 64 y + t` of the set bits `t < 64` of the words `y`, for the number `rbaLength` of

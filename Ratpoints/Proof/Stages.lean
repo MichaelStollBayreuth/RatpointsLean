@@ -68,7 +68,7 @@ with loop invariants that are named definitions.
 * `Ratpoints.Sieve.CheckSpec.index_eq`: the residue at which it reads the table of a prime is
   `(a mod p) binv mod p`, with the bias and without it.
 * `Ratpoints.Sieve.SieveEntry.IsPrimeEntry.admits_checkOf`,
-  `Ratpoints.Sieve.run_stage3_fillChecks`: for a numerator prime to `b` with `|a| ≤ H`, a prime
+  `Ratpoints.Sieve.all_admits_fillChecks`: for a numerator prime to `b` with `|a| ≤ H`, a prime
   entry admits it in the third stage exactly when its row of `b` does, and the third stage is the
   survivor test of its entries.
 * `Ratpoints.Sieve.accepted_spec`: the test of a candidate is the test of `gcd(a, b) = 1` followed
@@ -474,7 +474,7 @@ theorem bias_checkOf_eq_and_of_ne_zero {b H : Nat} {e : SieveEntry} {t : Entry}
 `p` with inverses of the residues `0 < r < p` that are residues `0 < t.inverses[r]! < p`, and whose
 reciprocal is that of `p` (`Ratpoints.Sieve.magic`): the shape that the third stage needs of its
 entries (`Ratpoints.Sieve.checkOf`), whose rows it then tests
-(`Ratpoints.Sieve.run_stage3_fillChecks`); the fields of the packing (the bias, the inverses of
+(`Ratpoints.Sieve.all_admits_fillChecks`); the fields of the packing (the bias, the inverses of
 `Ratpoints.rbaLength` and of the strides) do not matter. The entry of a prime with the table of the
 reference has it (`Ratpoints.Sieve.isPrimeEntry_examinePrime`). -/
 def SieveEntry.IsPrimeEntry (e : SieveEntry) : Prop :=
@@ -516,15 +516,6 @@ theorem all_admits_fillChecks {es : List SieveEntry} (hes : ∀ e ∈ es, e.IsPr
   exact ⟨fun h e he ↦ (hes e he).admits_checkOf hab ha ▸ h e he,
     fun h e he ↦ ((hes e he).admits_checkOf hab ha).symm ▸ h e he⟩
 
-/-- **The third stage.** For a numerator `a` prime to `b` with `|a| ≤ H`, the third stage with the
-sieve entries `es` of its primes and the reciprocals of their moduli, for `b` and `H`, is the
-survivor test of these entries. -/
-theorem run_stage3_fillChecks {es : List SieveEntry} (hes : ∀ e ∈ es, e.IsPrimeEntry) {a : Int}
-    {b H : Nat} (hab : Int.gcd a b = 1) (ha : a.natAbs ≤ H) :
-    Id.run (stage3 a (fillChecks b H es (es.map fun e ↦ magic e.p))) = survives es b a := by
-  rw [Std.WP.Id.of_run_eq_wp rfl _ ((stage3_spec a _).le_wp trivial),
-    all_admits_fillChecks hes hab ha]
-
 /-! ### The test of a candidate -/
 
 /-- The test for common factors on the words of the numerator `|a| < 2 ^ 63` and the denominator
@@ -539,6 +530,12 @@ theorem accepted_spec (a : Int) (b : Nat) (checks : Thunk (List CheckSpec)) (cnt
   all_goals first
     | exact ⟨Int64.minValue_lt_ofInt ha, Int64.ofNat_pos hb0 hb⟩
     | simp_all [Int64.toInt_ofInt_of_le (n := a) (by lia) (by lia), Int64.toInt_ofNat_of_lt hb]
+
+/-- The test of a candidate as its value: the walks through the set bits of a word read it so, and
+their contracts need none of the hypotheses of `Ratpoints.Sieve.accepted_spec`. -/
+theorem accepted_value (a : Int) (b : Nat) (checks : Thunk (List CheckSpec)) (cnt : Counters) :
+    ⦃ True ⦄ accepted a b checks cnt ⦃ fun r ↦ r = Id.run (accepted a b checks cnt) ⦄ :=
+  ⟨fun _ ↦ rfl⟩
 
 /-- Whether a numerator passes the test of a candidate does not depend on the counters. -/
 theorem fst_run_accepted (a : Int) (b : Nat) (checks : Thunk (List CheckSpec))
@@ -609,10 +606,6 @@ theorem Counters.add_empty (c : Counters) : c + {} = c :=
   Counters.ext (UInt64.add_zero _) (UInt64.add_zero _) (UInt64.add_zero _) (UInt64.add_zero _)
     (UInt64.add_zero _) (UInt64.add_zero _)
 
-@[simp]
-theorem Counters.empty_add (c : Counters) : {} + c = c := by
-  rw [Counters.add_comm, Counters.add_empty]
-
 /-- The counters with the count `arrays` one up. -/
 theorem Counters.arrays_add_one (c : Counters) :
     { c with arrays := c.arrays + 1 } = c + { arrays := 1 } :=
@@ -656,34 +649,6 @@ theorem testedCounts_append (b : Nat) (checks : Thunk (List CheckSpec)) (as bs :
   Counters.ext rfl rfl (by simp [testedCounts, UInt64.ofNat_add])
     (by simp [testedCounts, List.countP_append, UInt64.ofNat_add])
     (by simp [testedCounts, List.countP_append, UInt64.ofNat_add]) rfl
-
-/-- The test for common factors on the words of the numerator `|a| < 2 ^ 63` and the denominator
-`0 < b < 2 ^ 63` is the test on the integers. -/
-theorem run_relprime_toInt64 {a : Int} {b : Nat} (hb0 : 0 < b) (ha : a.natAbs < 2 ^ 63)
-    (hb : b < 2 ^ 63) :
-    Id.run (relprime a.toInt64 b.toInt64) = decide (Int.gcd a b = 1) := by
-  rw [Std.WP.Id.of_run_eq_wp rfl _ ((relprime_spec _ _).le_wp
-    ⟨Int64.minValue_lt_ofInt ha, Int64.ofNat_pos hb0 hb⟩)]
-  simp [Int64.toInt_ofInt_of_le (n := a) (by lia) (by lia), Int64.toInt_ofNat_of_lt hb]
-
-/-- The counts of the tests of a candidate of numerators `|a| ≤ H < 2 ^ 63` over a denominator
-`0 < b < 2 ^ 63`, with the thunk of what the third stage needs of the sieve entries `es` of the
-shape of `Ratpoints.Sieve.SieveEntry.IsPrimeEntry` with the reciprocals of their moduli: the
-numerators, those prime to `b`, and those that survive the entries too. -/
-theorem testedCounts_eq {es : List SieveEntry} (hes : ∀ e ∈ es, e.IsPrimeEntry) {b H : Nat}
-    {checks : Thunk (List CheckSpec)}
-    (hc : checks.get = fillChecks b H es (es.map fun e ↦ magic e.p)) (hb : 0 < b)
-    (hb63 : b < 2 ^ 63) (hH : H < 2 ^ 63) {as : List Int}
-    (has : ∀ a ∈ as, a.natAbs ≤ H) :
-    testedCounts b checks as =
-      { bits := as.length.toUInt64
-        coprime := (as.countP fun a ↦ decide (Int.gcd a b = 1)).toUInt64
-        checks := (as.countP fun a ↦ decide (Int.gcd a b = 1) && survives es b a).toUInt64 } := by
-  refine Counters.ext rfl rfl rfl ?_ ?_ rfl
-  · exact congrArg UInt64.ofNat (List.countP_congr fun a ha ↦ by
-      rw [run_relprime_toInt64 hb (by lia [has a ha]) hb63])
-  · exact congrArg UInt64.ofNat (List.countP_congr fun a ha ↦ by
-      rw [run_accepted hes {} hc hb hb63 (has a ha) hH])
 
 /-- The counts of the test of a candidate, with the count of the numerator in `bits` before it as
 the walk through the set bits of a word counts it (`Ratpoints.Sieve.walkWord`). -/
@@ -998,10 +963,10 @@ def SecondStageInvariant (nums : Vector UInt64 rbaPack) (i : Int) (specs : List 
 
 theorem SecondStageInvariant.next?_ne_none {nums v : Vector UInt64 rbaPack} {i : Int} {small : Bool}
     {specs pref suff : List SieveSpec} {s : SieveSpec} {mgs rest : List Nat}
-    (pre : (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p) ∧ SmallFits small i (i + 1))
+    (pre : StageFits specs mgs small i (i + 1))
     (hs : specs = pref ++ s :: suff) (h : SecondStageInvariant nums i specs mgs pref (v, rest)) :
     Std.Stream.next? rest ≠ none :=
-  next?_ne_none_of_lt pre.2.1 hs h.1
+  next?_ne_none_of_lt pre.magics hs h.1
 
 theorem secondStageInvariant_nil (nums : Vector UInt64 rbaPack) (i : Int) (specs : List SieveSpec)
     (mgs : List Nat) : SecondStageInvariant nums i specs mgs [] (nums, Std.toStream mgs) :=
@@ -1029,14 +994,14 @@ reciprocal of the cursor gives under the test `small`
 (`Ratpoints.Sieve.SieveSpec.Fits.ite_mulMod_modLong_eq_toNat_emod`). -/
 theorem SecondStageInvariant.andBitArray {nums v : Vector UInt64 rbaPack} {i : Int} {small : Bool}
     {specs pref suff : List SieveSpec} {s : SieveSpec} {mgs rest rest' : List Nat} {mg : Nat}
-    (pre : (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p) ∧ SmallFits small i (i + 1))
+    (pre : StageFits specs mgs small i (i + 1))
     (hs : specs = pref ++ s :: suff) (h : SecondStageInvariant nums i specs mgs pref (v, rest))
     (hnext : Std.Stream.next? rest = some (mg, rest')) :
     SecondStageInvariant nums i specs mgs (pref ++ [s]) (Sieve.andBitArray v 0 s.row
       (if small then mulMod (i + s.offset).toNat s.p mg else (modLong (i + s.offset) s.p).toNat),
         rest') := by
-  obtain ⟨rfl, hc⟩ := eq_magic_and_of_next?_eq_some pre.2.1 hs h.1 hnext
-  rw [(pre.1 s (by simp [hs])).ite_mulMod_modLong_eq_toNat_emod pre.2.2]
+  obtain ⟨rfl, hc⟩ := eq_magic_and_of_next?_eq_some pre.magics hs h.1 hnext
+  rw [(pre.fits s (by simp [hs])).ite_mulMod_modLong_eq_toNat_emod pre.smallFits]
   refine ⟨fun _ ↦ hc, fun κ hκ ↦ ?_⟩
   simp only [getElem!_andBitArray _ _ _ _ hκ, Nat.div_eq_of_lt hκ, ↓reduceIte, Nat.mod_eq_of_lt hκ,
     h.2 κ hκ, andWords_concat, SieveSpec.wordAt_of_lt _ _ hκ]
@@ -1047,7 +1012,7 @@ reciprocals run in step with the moduli and do not run out before them. -/
 @[spec]
 theorem secondStage_spec (specs : List SieveSpec) (mgs : List Nat) (small : Bool) (i : Int)
     (nums : Vector UInt64 rbaPack) :
-    ⦃ (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p) ∧ SmallFits small i (i + 1) ⦄
+    ⦃ StageFits specs mgs small i (i + 1) ⦄
     secondStage specs mgs small i nums
     ⦃ fun r ↦ ∀ κ < rbaPack, r[κ]! = andWords specs nums[κ]! i κ ⦄ := by
   vcgen [secondStage] invariants
@@ -1073,14 +1038,14 @@ def SecondStageWordInvariant (x0 : UInt64) (i : Int) (κ : Nat) (specs : List Si
 theorem SecondStageWordInvariant.and {x0 x : UInt64} {i : Int} {κ : Nat} (hκ : κ < rbaPack)
     {small : Bool} {specs pref suff : List SieveSpec} {s : SieveSpec} {mgs rest rest' : List Nat}
     {mg : Nat}
-    (pre : (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p) ∧ SmallFits small i (i + 1))
+    (pre : StageFits specs mgs small i (i + 1))
     (hs : specs = pref ++ s :: suff) (h : SecondStageWordInvariant x0 i κ specs mgs pref (x, rest))
     (hnext : Std.Stream.next? rest = some (mg, rest')) :
     SecondStageWordInvariant x0 i κ specs mgs (pref ++ [s]) (x &&& s.row[rbaPack *
       (if small then mulMod (i + s.offset).toNat s.p mg else (modLong (i + s.offset) s.p).toNat) +
         κ]!, rest') := by
-  obtain ⟨rfl, hc⟩ := eq_magic_and_of_next?_eq_some pre.2.1 hs h.1 hnext
-  rw [(pre.1 s (by simp [hs])).ite_mulMod_modLong_eq_toNat_emod pre.2.2]
+  obtain ⟨rfl, hc⟩ := eq_magic_and_of_next?_eq_some pre.magics hs h.1 hnext
+  rw [(pre.fits s (by simp [hs])).ite_mulMod_modLong_eq_toNat_emod pre.smallFits]
   have h2 : x = andWords pref x0 i κ := h.2
   refine ⟨fun _ ↦ hc, ?_⟩
   change x &&& _ = _
@@ -1088,11 +1053,11 @@ theorem SecondStageWordInvariant.and {x0 x : UInt64} {i : Int} {κ : Nat} (hκ :
 
 theorem SecondStageWordInvariant.next?_ne_none {x0 x : UInt64} {i : Int} {κ : Nat} {small : Bool}
     {specs pref suff : List SieveSpec} {s : SieveSpec} {mgs rest : List Nat}
-    (pre : (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p) ∧ SmallFits small i (i + 1))
+    (pre : StageFits specs mgs small i (i + 1))
     (hs : specs = pref ++ s :: suff)
     (h : SecondStageWordInvariant x0 i κ specs mgs pref (x, rest)) :
     Std.Stream.next? rest ≠ none :=
-  next?_ne_none_of_lt pre.2.1 hs h.1
+  next?_ne_none_of_lt pre.magics hs h.1
 
 theorem secondStageWordInvariant_nil (x0 : UInt64) (i : Int) (κ : Nat) (specs : List SieveSpec)
     (mgs : List Nat) : SecondStageWordInvariant x0 i κ specs mgs [] (x0, Std.toStream mgs) :=
@@ -1120,7 +1085,7 @@ in step with the moduli and do not run out before them. -/
 @[spec]
 theorem secondStageWord_spec (specs : List SieveSpec) (mgs : List Nat) (small : Bool) (i : Int)
     {κ : Nat} (hκ : κ < rbaPack) (x : UInt64) :
-    ⦃ (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p) ∧ SmallFits small i (i + 1) ⦄
+    ⦃ StageFits specs mgs small i (i + 1) ⦄
     secondStageWord specs mgs small i κ x ⦃ fun r ↦ r = andWords specs x i κ ⦄ := by
   vcgen [secondStageWord] invariants
   · fun pref _ ↦ SecondStageWordInvariant x i κ specs mgs pref

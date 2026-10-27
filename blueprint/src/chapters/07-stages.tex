@@ -234,7 +234,7 @@ reciprocals, and the test of the denominators up to $b_{\mathrm{high}} \le \math
 
 \begin{lemma}[The third stage tests the rows]\label{lem:stage3}
   \uses{def:stage3, lem:mulMod, def:admits, def:SieveEntry, def:examinePrime}
-  \lean{Ratpoints.Sieve.Stage3Invariant, Ratpoints.Sieve.stage3_spec, Ratpoints.Sieve.CheckSpec.index_eq, Ratpoints.Sieve.le_mul_add_natCast_mul, Ratpoints.Sieve.mul_add_natCast_mul_le_two_mul_mul_sub, Ratpoints.Sieve.toNat_emod_mul_lt_sq, Ratpoints.Sieve.binv_checkOf, Ratpoints.Sieve.bias_checkOf_eq_and_of_ne_zero, Ratpoints.Sieve.SieveEntry.IsPrimeEntry.admits_checkOf, Ratpoints.Sieve.all_admits_fillChecks, Ratpoints.Sieve.run_stage3_fillChecks, Ratpoints.Sieve.getElem!_inversesMod_lt, Ratpoints.Sieve.isPrimeEntry_examinePrime}
+  \lean{Ratpoints.Sieve.Stage3Invariant, Ratpoints.Sieve.stage3_spec, Ratpoints.Sieve.CheckSpec.index_eq, Ratpoints.Sieve.le_mul_add_natCast_mul, Ratpoints.Sieve.mul_add_natCast_mul_le_two_mul_mul_sub, Ratpoints.Sieve.toNat_emod_mul_lt_sq, Ratpoints.Sieve.binv_checkOf, Ratpoints.Sieve.bias_checkOf_eq_and_of_ne_zero, Ratpoints.Sieve.SieveEntry.IsPrimeEntry.admits_checkOf, Ratpoints.Sieve.all_admits_fillChecks, Ratpoints.Sieve.getElem!_inversesMod_lt, Ratpoints.Sieve.isPrimeEntry_examinePrime}
   \leanok
   The third stage passes $a$ exactly when every prime lets it through. For prime entries with their
   reciprocals in \verb|magics|, $|a| \le H$ and $\gcd(a, b) = 1$: the residue at which the table of
@@ -383,7 +383,7 @@ reciprocals, and the test of the denominators up to $b_{\mathrm{high}} \le \math
 \begin{lemma}[A bit array through the second stage and the extraction]\label{lem:siftBitArray}
   \uses{def:siftBitArray, lem:secondStage, def:walkWord, def:andRows, def:numClasses,
     lem:numClasses, lem:rowIndices, def:deliver, def:counters}
-  \lean{Ratpoints.Sieve.SiftBitArrayInvariant, Ratpoints.Sieve.SiftBitArrayWalkInvariant, Ratpoints.Sieve.SiftBitArrayLoopInvariant, Ratpoints.Sieve.SiftBitArrayWalkLoopInvariant, Ratpoints.Sieve.SiftBitArrayInvariant.eq_deliver_of_quit, Ratpoints.Sieve.SiftBitArrayWalkInvariant.eq_deliver_of_quit, Ratpoints.Sieve.eq_deliver_of_quit_of_forall_eq, Ratpoints.Sieve.siftBitArrayByWords_spec, Ratpoints.Sieve.siftBitArrayWhole_spec, Ratpoints.Sieve.siftBitArray_spec}
+  \lean{Ratpoints.Sieve.SiftBitArrayInvariant, Ratpoints.Sieve.SiftBitArrayWalkInvariant, Ratpoints.Sieve.SiftBitArrayLoopInvariant, Ratpoints.Sieve.SiftBitArrayWalkLoopInvariant, Ratpoints.Sieve.SiftBitArrayInvariant.deliver_eq_of_quit, Ratpoints.Sieve.SiftBitArrayWalkInvariant.eq_deliver_of_quit, Ratpoints.Sieve.eq_deliver_of_quit_of_forall_eq, Ratpoints.Sieve.siftBitArrayByWords_spec, Ratpoints.Sieve.siftBitArrayWhole_spec, Ratpoints.Sieve.siftBitArray_spec}
   \leanok
   For sieve specs that fit (Lemma~\ref{lem:rowIndices}), the reciprocals of their moduli and the
   bounds of \verb|small| for the word number $i$, from a delivery whose flag is clear: in each arm,

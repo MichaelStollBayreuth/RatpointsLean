@@ -27,6 +27,7 @@ classes, of the 2-adic information and of the word shape share.
 * `Ratpoints.Sieve.ClearedBelow`: a word with the bits of another below a position cleared.
 * `Ratpoints.Sieve.WalkWhileInvariant`: the invariant of a walk through the set bits of a word,
   lowest first.
+* `Ratpoints.Sieve.bitNumbers`: the bit numbers of the set bits of some words, in increasing order.
 
 ## Main statements
 
@@ -182,6 +183,53 @@ theorem WalkWhileInvariant.exists_clearedBelow_zero {σ : Type u} {x0 w : UInt64
     ∃ k, ClearedBelow x0 k 0 ∧ P k s := by
   obtain ⟨k, hcl, hs, h0⟩ := h
   exact ⟨k, h0 rfl ▸ hcl, hs⟩
+
+/-! ### The bit numbers of the set bits of words -/
+
+/-- The bit numbers `base + 64 κ + t` of the set bits `t` of the words `words κ`, `κ < k`, in
+increasing order. -/
+def bitNumbers (words : Nat → UInt64) (base : Int) (k : Nat) : List Int :=
+  (List.range k).flatMap fun κ ↦
+    ((List.range 64).filter ((words κ).toBitVec.getLsbD ·)).map fun t : Nat ↦ base + 64 * κ + t
+
+@[simp]
+theorem bitNumbers_zero (words : Nat → UInt64) (base : Int) : bitNumbers words base 0 = [] :=
+  rfl
+
+theorem bitNumbers_succ (words : Nat → UInt64) (base : Int) (k : Nat) :
+    bitNumbers words base (k + 1) = bitNumbers words base k ++
+      ((List.range 64).filter ((words k).toBitVec.getLsbD ·)).map
+        fun t : Nat ↦ base + 64 * k + t := by
+  rw [bitNumbers, List.range_succ (n := k), List.flatMap_append, List.flatMap_singleton,
+    bitNumbers]
+
+theorem bitNumbers_add (words : Nat → UInt64) (base : Int) (k m : Nat) :
+    bitNumbers words base (k + m) =
+      bitNumbers words base k ++ bitNumbers (words <| k + ·) (base + 64 * k) m := by
+  rw [bitNumbers, List.range_add, List.flatMap_append, List.flatMap_map, ← bitNumbers]
+  congr 1
+  refine congrArg List.flatten (List.map_congr_left fun κ _ ↦ ?_)
+  simp only [Int.natCast_add, Int.mul_add, Int.add_assoc]
+
+theorem bitNumbers_prefix (words : Nat → UInt64) (base : Int) {k m : Nat} (h : k ≤ m) :
+    bitNumbers words base k <+: bitNumbers words base m := by
+  obtain ⟨l, hl⟩ := List.range_prefix_range h
+  exact ⟨_, by rw [bitNumbers, bitNumbers, ← hl, List.flatMap_append]⟩
+
+theorem bitNumbers_congr {words words' : Nat → UInt64} {k : Nat} (h : ∀ κ < k, words κ = words' κ)
+    (base : Int) : bitNumbers words base k = bitNumbers words' base k :=
+  congrArg List.flatten <| List.map_congr_left fun κ hκ ↦ by rw [h κ (List.mem_range.mp hκ)]
+
+theorem bitNumbers_eq_nil {words : Nat → UInt64} {k : Nat} (h : ∀ κ < k, words κ = 0)
+    (base : Int) : bitNumbers words base k = [] :=
+  List.flatMap_eq_nil_iff.mpr fun κ hκ ↦ by simp [h κ (List.mem_range.mp hκ)]
+
+/-- The bit numbers of the set bits of the words are the numbers `base, …, base + 64 k - 1` that
+pass `p`, when bit `t` of word `κ` is `t < 64` and `p (base + 64 κ + t)`. -/
+theorem bitNumbers_eq_filter {words : Nat → UInt64} {base : Int} {p : Int → Bool} {k : Nat}
+    (h : ∀ κ < k, ∀ t, (words κ).toBitVec.getLsbD t = (decide (t < 64) && p (base + 64 * κ + t))) :
+    bitNumbers words base k = ((List.range (64 * k)).map fun j : Nat ↦ base + j).filter p :=
+  List.flatMap_range_map_filter h
 
 end Sieve
 

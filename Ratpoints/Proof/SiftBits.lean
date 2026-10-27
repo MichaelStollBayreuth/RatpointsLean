@@ -165,39 +165,6 @@ theorem IsMasked.eq_deliver {n : Nat} {g : Int → List (Int × Int × Int)} {sp
     grind
   · simp [ht, BitVec.getLsbD_of_ge _ t (Nat.le_of_not_lt ht)]
 
-/-- What the first stage of a piece of `n` bit arrays from the word number `w0` on needs of the
-first `sp1` moduli and their reciprocals, with the test `small` that `Ratpoints.Sieve.siftPiece`
-computes. -/
-theorem fits_take {specs : List SieveSpec} {mgs : List Nat} {maskHigh : Nat}
-    (h : maskHigh < rbaLength ∧ (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p)) (sp1 : Nat)
-    (w0 : Int) (n : Nat) :
-    (∀ s ∈ specs.take sp1, s.Fits) ∧ mgs.take sp1 = (specs.take sp1).map (magic ·.p) ∧
-      SmallFits (decide (-rowBias ≤ w0 ∧ w0 + n ≤ rowBias - 2 * maxPrimeEven)) w0 (w0 + n) :=
-  ⟨fun s hs ↦ h.2.1 s (List.mem_of_mem_take hs), by rw [h.2.2, List.map_take],
-    smallFits_decide w0 n⟩
-
-/-- What the chunked first stage of a piece of `n` bit arrays from the word number `w0` on needs of
-the first `sp1` moduli and their reciprocals (`Ratpoints.Sieve.andRowsChunked_spec`), in the arm
-that the test `1 < chunk ∧ chunk ≤ 16` of `Ratpoints.Sieve.siftPiece` chooses. -/
-theorem chunk_le_and_fits_take {specs : List SieveSpec} {mgs : List Nat} {maskHigh : Nat}
-    (hc : 1 < chunk ∧ chunk ≤ 16)
-    (h : maskHigh < rbaLength ∧ (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p)) (sp1 : Nat)
-    (w0 : Int) (n : Nat) :
-    chunk ≤ 16 ∧ (∀ s ∈ specs.take sp1, s.Fits) ∧ mgs.take sp1 = (specs.take sp1).map (magic ·.p) ∧
-      SmallFits (decide (-rowBias ≤ w0 ∧ w0 + n ≤ rowBias - 2 * maxPrimeEven)) w0 (w0 + n) :=
-  ⟨hc.2, fits_take h sp1 w0 n⟩
-
-/-- What the scan of a piece of `n` bit arrays from the word number `w0` on needs of the moduli and
-their reciprocals after the first `sp1`, with the test `small` that `Ratpoints.Sieve.siftPiece`
-computes. -/
-theorem fits_drop {specs : List SieveSpec} {mgs : List Nat} {maskHigh : Nat}
-    (h : maskHigh < rbaLength ∧ (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p)) (sp1 : Nat)
-    (w0 : Int) (n : Nat) :
-    (∀ s ∈ specs.drop sp1, s.Fits) ∧ mgs.drop sp1 = (specs.drop sp1).map (magic ·.p) ∧
-      SmallFits (decide (-rowBias ≤ w0 ∧ w0 + n ≤ rowBias - 2 * maxPrimeEven)) w0 (w0 + n) :=
-  ⟨fun s hs ↦ h.2.1 s (List.mem_of_mem_drop hs), by rw [h.2.2, List.map_drop],
-    smallFits_decide w0 n⟩
-
 /-- The rows of the moduli, read at their offsets, are given by the tests `sf.2` of the bits that
 they read (`Ratpoints.Sieve.SieveSpec.Reads`), quantified in the postcondition since the program
 does not mention them; the first `sp1` moduli go to the first stage, in the chunked arm
@@ -220,9 +187,12 @@ theorem siftPiece_spec (w : Thunk (List Int)) (d b : Nat) (fl : CheckFlags) (sp1
               fun j ↦ acceptedPoints w d b fl checks (cl.numerator j)) ⦄ := by
   vcgen [siftPiece]
   all_goals first
-    | exact ⟨‹r.quit = false ∧ _›.1, fits_drop ‹r.quit = false ∧ _›.2 sp1 w0 n⟩
-    | exact chunk_le_and_fits_take ‹_› ‹r.quit = false ∧ _›.2 sp1 w0 n
-    | exact fits_take ‹r.quit = false ∧ _›.2 sp1 w0 n
+    | exact ⟨‹r.quit = false ∧ _›.1,
+        stageFits_drop ‹r.quit = false ∧ maskHigh < rbaLength ∧ _›.2.2 (smallFits_decide w0 n) sp1⟩
+    | exact ⟨‹1 < chunk ∧ chunk ≤ 16›.2,
+        stageFits_take ‹r.quit = false ∧ maskHigh < rbaLength ∧ _›.2.2 (smallFits_decide w0 n) sp1⟩
+    | exact stageFits_take ‹r.quit = false ∧ maskHigh < rbaLength ∧ _›.2.2
+        (smallFits_decide w0 n) sp1
     | exact IsMasked.eq_deliver ‹_› (isMasked_clearHighBits_clearLowBits _ _
         ‹r.quit = false ∧ maskHigh < rbaLength ∧ _›.2.1) ‹_› ‹_› ‹_›
     | exact IsMasked.eq_deliver ‹_› (isMasked_clearLowBits _ _ (Decidable.of_not_not ‹_›)) ‹_› ‹_›
@@ -360,9 +330,10 @@ theorem siftPiece_counters_spec (w : Thunk (List Int)) (d b : Nat) (fl : CheckFl
               classBit cl.bits j && sfs.all (·.2 j)).map cl.numerator) ⦄ := by
   vcgen [siftPiece, scanPiece_counters_spec]
   all_goals first
-    | exact fits_drop ‹_› sp1 w0 n
-    | exact chunk_le_and_fits_take ‹_› ‹_› sp1 w0 n
-    | exact fits_take ‹_› sp1 w0 n
+    | exact stageFits_drop ‹maskHigh < rbaLength ∧ _›.2 (smallFits_decide w0 n) sp1
+    | exact ⟨‹1 < chunk ∧ chunk ≤ 16›.2,
+        stageFits_take ‹maskHigh < rbaLength ∧ _›.2 (smallFits_decide w0 n) sp1⟩
+    | exact stageFits_take ‹maskHigh < rbaLength ∧ _›.2 (smallFits_decide w0 n) sp1
     | exact IsMasked.eq_counters ‹_› (isMasked_clearHighBits_clearLowBits _ _ ‹_ ∧ _›.1) ‹_› ‹_›
         ‹_› ‹_›
     | exact IsMasked.eq_counters ‹_› (isMasked_clearLowBits _ _ (Decidable.of_not_not ‹_›)) ‹_›

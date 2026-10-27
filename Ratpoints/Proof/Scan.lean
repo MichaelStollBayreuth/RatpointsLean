@@ -76,13 +76,6 @@ variable {σ : Type} (process : Int → Int → Int → σ → Answer σ)
 
 /-! ### The walk through the set bits of a word -/
 
--- The test of a candidate, as a value for the contract of the walk: the walk's contract speaks of
--- its result, without the hypotheses of `Ratpoints.Sieve.accepted_spec`.
-private theorem accepted_value (a : Int) (b : Nat) (checks : Thunk (List CheckSpec))
-    (cnt : Counters) :
-    ⦃ True ⦄ accepted a b checks cnt ⦃ fun r ↦ r = Id.run (accepted a b checks cnt) ⦄ :=
-  ⟨fun _ ↦ rfl⟩
-
 -- A pair whose first component is not `true` has no first component `true`, in the shape of the
 -- verification conditions of a component that returns a Boolean with its counters.
 private theorem not_fst_eq_true_of_eq {α : Type} {ok : Bool} {c : α} {p : Bool × α}
@@ -269,14 +262,15 @@ theorem walkWord_spec (w : Thunk (List Int)) (d b : Nat) (fl : CheckFlags)
 the bit array with the word number `i`, after its first `k` words, for the words `words κ` that the
 walks go through, the class `cl` and the points `g a` of a numerator `a`, from the delivery `r0`:
 the callback has not stopped the search, and `r` is the delivery of the points of the numerators of
-the bits `rbaLength i + 64 κ + t` of the set bits `t` of the words `κ < k` in the packing of `cl`
-(`Ratpoints.Sieve.NumClass.numerator`), in increasing order. -/
+the bit numbers `rbaLength i + 64 κ + t` of the set bits `t` of the words `κ < k`
+(`Ratpoints.Sieve.bitNumbers`) in the packing of `cl` (`Ratpoints.Sieve.NumClass.numerator`), in
+increasing order. The invariant of the scan of a piece (`Ratpoints.Sieve.ScanPieceInvariant`) is
+this one for the words of the piece from its first word number on. -/
 def SiftBitArrayInvariant (words : Nat → UInt64) (g : Int → List (Int × Int × Int)) (cl : NumClass)
     (i : Int) (r0 : Delivery σ) (k : Nat) (r : Delivery σ) :
     Prop :=
-  r.quit = false ∧ r = r0.deliver process (((List.range k).flatMap fun κ ↦
-    ((List.range 64).filter ((words κ).toBitVec.getLsbD ·)).map fun t : Nat ↦
-      i * rbaLength + 64 * κ + t).flatMap fun j ↦ g (cl.numerator j))
+  r.quit = false ∧ r = r0.deliver process
+    ((bitNumbers words (rbaLength * i) k).flatMap fun j ↦ g (cl.numerator j))
 
 /-- `Ratpoints.Sieve.SiftBitArrayInvariant` after the words `0, …, k`, with the numerator `a0` of
 bit `0` of word `k`, `a₀ + i (rbaLength 2 ^ cl.k) + k (64 2 ^ cl.k)` as the program computes it,
@@ -299,9 +293,8 @@ def SiftBitArrayLoopInvariant (words : Nat → UInt64) (g : Int → List (Int ×
     Std.WP.Invariant Nat (Option (Delivery σ × Counters) × Delivery σ × Counters) Prop :=
   Std.WP.Invariant.withEarlyReturnNewDo Prop
     (fun done _ s ↦ SiftBitArrayInvariant process words g cl i r0 done.length s.1)
-    (fun ret _ ↦ ret.1 = r0.deliver process (((List.range rbaPack).flatMap fun κ ↦
-      ((List.range 64).filter ((words κ).toBitVec.getLsbD ·)).map fun t : Nat ↦
-        i * rbaLength + 64 * κ + t).flatMap fun j ↦ g (cl.numerator j)))
+    (fun ret _ ↦ ret.1 = r0.deliver process
+      ((bitNumbers words (rbaLength * i) rbaPack).flatMap fun j ↦ g (cl.numerator j)))
 
 /-- The invariant of the loop of `Ratpoints.Sieve.siftBitArrayWhole` over `[1:rbaPack]`, whose state
 is the value of a return, the delivery and the numerator of bit `0` of the word:
@@ -313,45 +306,28 @@ def SiftBitArrayWalkLoopInvariant (words : Nat → UInt64) (g : Int → List (In
     Std.WP.Invariant Nat (Option (Delivery σ × Counters) × Delivery σ × Counters × Int) Prop :=
   Std.WP.Invariant.withEarlyReturnNewDo Prop
     (fun done _ s ↦ SiftBitArrayWalkInvariant process words g cl i r0 done.length (s.1, s.2.2))
-    (fun ret _ ↦ ret.1 = r0.deliver process (((List.range rbaPack).flatMap fun κ ↦
-      ((List.range 64).filter ((words κ).toBitVec.getLsbD ·)).map fun t : Nat ↦
-        i * rbaLength + 64 * κ + t).flatMap fun j ↦ g (cl.numerator j)))
+    (fun ret _ ↦ ret.1 = r0.deliver process
+      ((bitNumbers words (rbaLength * i) rbaPack).flatMap fun j ↦ g (cl.numerator j)))
 
 -- The numerator of bit `t` of word `κ` as the walk computes it from that of bit `0` of the word.
 private theorem numerator_rbaLength_mul_add (cl : NumClass) (i : Int) (κ t : Nat) :
     cl.a0 + i * (rbaLength * 2 ^ cl.k) + κ * (64 * 2 ^ cl.k) + (2 ^ cl.k : Nat) * t =
-      cl.numerator (i * rbaLength + 64 * κ + t) := by
+      cl.numerator (rbaLength * i + 64 * κ + t) := by
   simp only [NumClass.numerator]
   push_cast
   grind
 
-/-- The points of the numerators of the set bits of the words `0, …, k` are those of the words
-`0, …, k - 1` followed by those of word `k`, whose numerators the walk through it computes from the
-numerator `a₀ + i (rbaLength 2 ^ cl.k) + k (64 2 ^ cl.k)` of its bit `0`. -/
-theorem flatMap_numerator_range_succ (words : Nat → UInt64) {β : Type} (g : Int → List β)
+/-- The points of the numerators of the bit numbers of the set bits of the words `0, …, k` are
+those of the words `0, …, k - 1` followed by those of word `k`, whose numerators the walk through
+it computes from the numerator `a₀ + i (rbaLength 2 ^ cl.k) + k (64 2 ^ cl.k)` of its bit `0`. -/
+theorem flatMap_numerator_bitNumbers_succ (words : Nat → UInt64) {β : Type} (g : Int → List β)
     (cl : NumClass) (i : Int) (k : Nat) :
-    ((List.range (k + 1)).flatMap fun κ ↦
-      ((List.range 64).filter ((words κ).toBitVec.getLsbD ·)).map
-        fun t : Nat ↦ i * rbaLength + 64 * κ + t).flatMap (fun j ↦ g (cl.numerator j)) =
-      ((List.range k).flatMap fun κ ↦ ((List.range 64).filter ((words κ).toBitVec.getLsbD ·)).map
-        fun t : Nat ↦ i * rbaLength + 64 * κ + t).flatMap (fun j ↦ g (cl.numerator j)) ++
+    (bitNumbers words (rbaLength * i) (k + 1)).flatMap (fun j ↦ g (cl.numerator j)) =
+      (bitNumbers words (rbaLength * i) k).flatMap (fun j ↦ g (cl.numerator j)) ++
         (((List.range 64).filter ((words k).toBitVec.getLsbD ·)).map fun t : Nat ↦
           cl.a0 + i * (rbaLength * 2 ^ cl.k) + k * (64 * 2 ^ cl.k) +
             (2 ^ cl.k : Nat) * t).flatMap g := by
-  rw [List.range_succ (n := k), List.flatMap_append, List.flatMap_singleton, List.flatMap_append,
-    List.flatMap_map, List.flatMap_map]
-  simp only [numerator_rbaLength_mul_add]
-
-/-- The points of the numerators of the set bits of the first `k ≤ m` words come first among those
-of the first `m`. -/
-theorem flatMap_numerator_range_prefix (words : Nat → UInt64) {β : Type} (g : Int → List β)
-    (cl : NumClass) (i : Int) {k m : Nat} (h : k ≤ m) :
-    ((List.range k).flatMap fun κ ↦ ((List.range 64).filter ((words κ).toBitVec.getLsbD ·)).map
-      fun t : Nat ↦ i * rbaLength + 64 * κ + t).flatMap (fun j ↦ g (cl.numerator j)) <+:
-      ((List.range m).flatMap fun κ ↦ ((List.range 64).filter ((words κ).toBitVec.getLsbD ·)).map
-        fun t : Nat ↦ i * rbaLength + 64 * κ + t).flatMap (fun j ↦ g (cl.numerator j)) := by
-  obtain ⟨l, hl⟩ := List.range_prefix_range h
-  exact ⟨_, by rw [← hl, List.flatMap_append, List.flatMap_append]⟩
+  simp only [bitNumbers_succ, List.flatMap_append, List.flatMap_map, numerator_rbaLength_mul_add]
 
 section
 
@@ -368,6 +344,31 @@ theorem siftBitArrayInvariant_zero (words : Nat → UInt64) (g : Int → List (I
     SiftBitArrayInvariant process words g cl i r0 0 r0 :=
   ⟨h, by simp⟩
 
+/-- The delivery of the list `D` of the points that follow those of the bit numbers of the words
+before `k` among those of the words before `k'`, when the callback does not stop the search in
+it. -/
+theorem SiftBitArrayInvariant.deliver_of_flatMap_eq {k k' : Nat} {D : List (Int × Int × Int)}
+    (h : SiftBitArrayInvariant process words g cl i r0 k r)
+    (hD : (bitNumbers words (rbaLength * i) k').flatMap (fun j ↦ g (cl.numerator j)) =
+      (bitNumbers words (rbaLength * i) k).flatMap (fun j ↦ g (cl.numerator j)) ++ D)
+    (hq : ¬(r.deliver process D).quit = true) :
+    SiftBitArrayInvariant process words g cl i r0 k' (r.deliver process D) :=
+  ⟨Bool.eq_false_iff.mpr hq, by rw [hD, Delivery.deliver_append, ← h.2]⟩
+
+/-- The delivery of the list `D` of the points that follow those of the bit numbers of the words
+before `k` among those of the words before `k'`, when the callback stops the search in it: the
+delivery is that of the points of the words before any `m ≥ k'`, since the points after the stop
+are passed over. -/
+theorem SiftBitArrayInvariant.deliver_eq_of_quit {k k' m : Nat} {D : List (Int × Int × Int)}
+    (h : SiftBitArrayInvariant process words g cl i r0 k r)
+    (hD : (bitNumbers words (rbaLength * i) k').flatMap (fun j ↦ g (cl.numerator j)) =
+      (bitNumbers words (rbaLength * i) k).flatMap (fun j ↦ g (cl.numerator j)) ++ D)
+    (hk' : k' ≤ m) (hq : (r.deliver process D).quit = true) :
+    r.deliver process D = r0.deliver process
+      ((bitNumbers words (rbaLength * i) m).flatMap fun j ↦ g (cl.numerator j)) := by
+  rw [h.2, ← Delivery.deliver_append, ← hD] at hq ⊢
+  exact (Delivery.deliver_flatMap_eq_of_prefix process (bitNumbers_prefix _ _ hk') _ hq).symm
+
 /-- The walk through word `k` from its first numerator, when the callback does not stop the
 search in it. -/
 theorem SiftBitArrayInvariant.succ {k : Nat} (h : SiftBitArrayInvariant process words g cl i r0 k r)
@@ -378,25 +379,7 @@ theorem SiftBitArrayInvariant.succ {k : Nat} (h : SiftBitArrayInvariant process 
       (r.deliver process ((((List.range 64).filter ((words k).toBitVec.getLsbD ·)).map
         fun t : Nat ↦ cl.a0 + i * (rbaLength * 2 ^ cl.k) + k * (64 * 2 ^ cl.k) +
           (2 ^ cl.k : Nat) * t).flatMap g)) :=
-  ⟨Bool.eq_false_iff.mpr hq, by
-    rw [flatMap_numerator_range_succ, Delivery.deliver_append, ← h.2]⟩
-
-/-- The walk through word `k < rbaPack` from its first numerator, when the callback stops the
-search in it: the delivery is that of all the words of the bit array. -/
-theorem SiftBitArrayInvariant.eq_deliver_of_quit {k : Nat}
-    (h : SiftBitArrayInvariant process words g cl i r0 k r) (hk : k < rbaPack)
-    (hq : (r.deliver process ((((List.range 64).filter ((words k).toBitVec.getLsbD ·)).map
-      fun t : Nat ↦ cl.a0 + i * (rbaLength * 2 ^ cl.k) + k * (64 * 2 ^ cl.k) +
-        (2 ^ cl.k : Nat) * t).flatMap g)).quit = true) :
-    r.deliver process ((((List.range 64).filter ((words k).toBitVec.getLsbD ·)).map
-      fun t : Nat ↦ cl.a0 + i * (rbaLength * 2 ^ cl.k) + k * (64 * 2 ^ cl.k) +
-        (2 ^ cl.k : Nat) * t).flatMap g) =
-      r0.deliver process (((List.range rbaPack).flatMap fun κ ↦
-        ((List.range 64).filter ((words κ).toBitVec.getLsbD ·)).map fun t : Nat ↦
-          i * rbaLength + 64 * κ + t).flatMap fun j ↦ g (cl.numerator j)) := by
-  rw [h.2, ← Delivery.deliver_append, ← flatMap_numerator_range_succ] at hq ⊢
-  exact (Delivery.deliver_eq_of_prefix process (flatMap_numerator_range_prefix words g cl i hk)
-    hq).symm
+  h.deliver_of_flatMap_eq (flatMap_numerator_bitNumbers_succ words g cl i k) hq
 
 /-- The walk through word `cur` of the loop over `[0:rbaPack]`, when the callback does not stop the
 search in it. -/
@@ -425,7 +408,7 @@ theorem SiftBitArrayInvariant.append_of_eq_zero {done suff : List Nat} {cur : Na
   obtain rfl := Std.Legacy.Range.length_eq_of_toList_eq_append_cons hl
   rw [List.length_append, List.length_singleton]
   refine ⟨h.1, ?_⟩
-  rw [flatMap_numerator_range_succ, hz, Delivery.deliver_append, ← h.2]
+  rw [flatMap_numerator_bitNumbers_succ, hz, Delivery.deliver_append, ← h.2]
   simp only [UInt64.toBitVec_zero, BitVec.getLsbD_zero,
     List.filter_eq_nil_iff.mpr fun _ _ ↦ Bool.false_ne_true, List.map_nil, List.flatMap_nil,
     Delivery.deliver_nil]
@@ -441,32 +424,19 @@ theorem SiftBitArrayInvariant.eq_deliver_of_quit_append {done suff : List Nat} {
         (2 ^ cl.k : Nat) * t).flatMap g)).quit = true) :
     r.deliver process ((((List.range 64).filter ((words cur).toBitVec.getLsbD ·)).map
       fun t : Nat ↦ cl.a0 + i * (rbaLength * 2 ^ cl.k) + cur * (64 * 2 ^ cl.k) +
-        (2 ^ cl.k : Nat) * t).flatMap g) =
-      r0.deliver process (((List.range rbaPack).flatMap fun κ ↦
-        ((List.range 64).filter ((words κ).toBitVec.getLsbD ·)).map fun t : Nat ↦
-          i * rbaLength + 64 * κ + t).flatMap fun j ↦ g (cl.numerator j)) := by
+        (2 ^ cl.k : Nat) * t).flatMap g) = r0.deliver process
+      ((bitNumbers words (rbaLength * i) rbaPack).flatMap fun j ↦ g (cl.numerator j)) := by
   obtain rfl := Std.Legacy.Range.length_eq_of_toList_eq_append_cons hl
-  exact h.2.eq_deliver_of_quit (Std.Legacy.Range.lt_of_toList_eq_append_cons hl) hq
+  exact h.2.deliver_eq_of_quit (flatMap_numerator_bitNumbers_succ words g cl i _)
+    (Std.Legacy.Range.lt_of_toList_eq_append_cons hl) hq
 
 /-- At the end of the loop over `[0:rbaPack]`, the delivery is that of all the words of the bit
 array. -/
 theorem SiftBitArrayInvariant.eq_deliver
     (h : SiftBitArrayInvariant process words g cl i r0 (ForIn.toList [0:rbaPack]).length r) :
-    r = r0.deliver process (((List.range rbaPack).flatMap fun κ ↦
-      ((List.range 64).filter ((words κ).toBitVec.getLsbD ·)).map fun t : Nat ↦
-        i * rbaLength + 64 * κ + t).flatMap fun j ↦ g (cl.numerator j)) := by
+    r = r0.deliver process
+      ((bitNumbers words (rbaLength * i) rbaPack).flatMap fun j ↦ g (cl.numerator j)) := by
   simpa using h.2
-
-/-- The points of the numerators of the set bits of words that agree. -/
-theorem flatMap_numerator_range_congr {words words' : Nat → UInt64} {m : Nat}
-    (hw : ∀ κ < m, words κ = words' κ) {β : Type} (g : Int → List β) (cl : NumClass)
-    (i : Int) :
-    ((List.range m).flatMap fun κ ↦ ((List.range 64).filter ((words κ).toBitVec.getLsbD ·)).map
-      fun t : Nat ↦ i * rbaLength + 64 * κ + t).flatMap (fun j ↦ g (cl.numerator j)) =
-      ((List.range m).flatMap fun κ ↦ ((List.range 64).filter ((words' κ).toBitVec.getLsbD ·)).map
-        fun t : Nat ↦ i * rbaLength + 64 * κ + t).flatMap (fun j ↦ g (cl.numerator j)) :=
-  congrArg (List.flatMap _) <| congrArg List.flatten <| List.map_congr_left fun κ hκ ↦ by
-    rw [hw κ (List.mem_range.mp hκ)]
 
 /-- The walk through the first word, from the first numerator `a₀ + i (rbaLength 2 ^ cl.k)` of the
 bit array, when the callback does not stop the search in it, starts the invariant of the loop over
@@ -526,28 +496,26 @@ theorem SiftBitArrayWalkInvariant.eq_deliver_of_quit {done suff : List Nat} {cur
       fun t : Nat ↦ s.2 + (64 * 2 ^ cl.k : Nat) + (2 ^ cl.k : Nat) * t).flatMap g)).quit = true) :
     s.1.deliver process ((((List.range 64).filter ((words cur).toBitVec.getLsbD ·)).map
       fun t : Nat ↦ s.2 + (64 * 2 ^ cl.k : Nat) + (2 ^ cl.k : Nat) * t).flatMap g) =
-      r0.deliver process (((List.range rbaPack).flatMap fun κ ↦
-        ((List.range 64).filter ((words κ).toBitVec.getLsbD ·)).map fun t : Nat ↦
-          i * rbaLength + 64 * κ + t).flatMap fun j ↦ g (cl.numerator j)) := by
+      r0.deliver process
+        ((bitNumbers words (rbaLength * i) rbaPack).flatMap fun j ↦ g (cl.numerator j)) := by
   obtain ⟨-, h⟩ := h'
   have hlt := Std.Legacy.Range.lt_of_toList_eq_append_cons hl
   obtain rfl : cur = done.length + 1 := by
     lia [Std.Legacy.Range.add_length_eq_of_toList_eq_append_cons hl]
   rw [add_eq_numerator_succ h.1] at hq ⊢
-  exact h.2.eq_deliver_of_quit hlt hq
+  exact h.2.deliver_eq_of_quit (flatMap_numerator_bitNumbers_succ words g cl i _) hlt hq
 
 /-- At the end of the loop over `[1:rbaPack]`, the delivery is that of all the words of the bit
 array. -/
 theorem SiftBitArrayWalkInvariant.eq_deliver {s : Delivery σ × Int} {words' : Nat → UInt64}
     (hw : ∀ κ < rbaPack, words κ = words' κ)
     (h : SiftBitArrayWalkInvariant process words g cl i r0 (ForIn.toList [1:rbaPack]).length s) :
-    s.1 = r0.deliver process (((List.range rbaPack).flatMap fun κ ↦
-      ((List.range 64).filter ((words' κ).toBitVec.getLsbD ·)).map fun t : Nat ↦
-        i * rbaLength + 64 * κ + t).flatMap fun j ↦ g (cl.numerator j)) := by
+    s.1 = r0.deliver process
+      ((bitNumbers words' (rbaLength * i) rbaPack).flatMap fun j ↦ g (cl.numerator j)) := by
   have hl : (ForIn.toList [1:rbaPack]).length + 1 = rbaPack := by
     simp only [Std.Legacy.Range.length_toList]
     lia [rbaPack_pos]
-  rw [← flatMap_numerator_range_congr hw]
+  rw [← bitNumbers_congr hw]
   exact (hl ▸ h.2).2
 
 /-- The walk through the first word of words that agree with `words'`, from the first numerator
@@ -560,33 +528,28 @@ theorem eq_deliver_of_quit_of_forall_eq {words' : Nat → UInt64} (hr : r0.quit 
         true) :
     r0.deliver process ((((List.range 64).filter ((words 0).toBitVec.getLsbD ·)).map
       fun t : Nat ↦ cl.a0 + i * (rbaLength * 2 ^ cl.k) + (2 ^ cl.k : Nat) * t).flatMap g) =
-      r0.deliver process (((List.range rbaPack).flatMap fun κ ↦
-        ((List.range 64).filter ((words' κ).toBitVec.getLsbD ·)).map fun t : Nat ↦
-          i * rbaLength + 64 * κ + t).flatMap fun j ↦ g (cl.numerator j)) := by
-  rw [← flatMap_numerator_range_congr hw]
-  simpa using (siftBitArrayInvariant_zero words g cl i hr).eq_deliver_of_quit rbaPack_pos
-    (by simpa using hq)
+      r0.deliver process
+        ((bitNumbers words' (rbaLength * i) rbaPack).flatMap fun j ↦ g (cl.numerator j)) := by
+  rw [← bitNumbers_congr hw]
+  simpa using (siftBitArrayInvariant_zero words g cl i hr).deliver_eq_of_quit
+    (flatMap_numerator_bitNumbers_succ words g cl i 0) rbaPack_pos (by simpa using hq)
 
-/-- When the second stage leaves the bit array zero, the words walked through have no set bits, and
-nothing is delivered. -/
+/-- The words of a bit array that the second stage leaves zero have no set bits: nothing is
+delivered. -/
 theorem eq_deliver_of_isZeroAt {specs : List SieveSpec} {nums nums' : Vector UInt64 rbaPack}
     (hw : ∀ κ < rbaPack, nums'[κ]! = andWords specs nums[κ]! i κ)
     (hz : ¬(!isZeroAt nums' 0) = true) (r : Delivery σ) :
-    r = r.deliver process (((List.range rbaPack).flatMap fun κ ↦
-      ((List.range 64).filter ((andWords specs nums[κ]! i κ).toBitVec.getLsbD ·)).map
-        fun t : Nat ↦ i * rbaLength + 64 * κ + t).flatMap fun j ↦ g (cl.numerator j)) := by
-  rw [(List.flatMap_eq_nil_iff (l := List.range rbaPack)).mpr fun κ hκ ↦ ?_]
+    r = r.deliver process ((bitNumbers (fun κ ↦ andWords specs nums[κ]! i κ) (rbaLength * i)
+      rbaPack).flatMap fun j ↦ g (cl.numerator j)) := by
+  rw [bitNumbers_eq_nil fun κ hκ ↦ ?_]
   · simp
-  have hκ' := List.mem_range.mp hκ
-  have := (isZeroAt_eq_true_iff nums' 0).mp (by simpa using hz) κ hκ'
+  have := (isZeroAt_eq_true_iff nums' 0).mp (by simpa using hz) κ hκ
   simp_all
 
 end
 
-/- The invariants are irreducible from here on: the verification conditions of the two arms of
-`Ratpoints.Sieve.siftBitArray` are closed by their lemmas, never by unfolding them. -/
-attribute [local irreducible] SiftBitArrayInvariant SiftBitArrayWalkInvariant
 
+attribute [local irreducible] SiftBitArrayInvariant SiftBitArrayWalkInvariant in
 open Std.WP Lean.Order in
 /-- The arm for one word at a time walks through the set bits of the words of `nums` and-ed with the
 rows of the moduli of `specs` (`Ratpoints.Sieve.secondStageWord_spec`), each bit `j` standing for
@@ -596,13 +559,11 @@ it returns at a stop. -/
 theorem siftBitArrayByWords_spec (w : Thunk (List Int)) (d b : Nat) (fl : CheckFlags)
     (specs : List SieveSpec) (mgs : List Nat) (small : Bool) (checks : Thunk (List CheckSpec))
     (cl : NumClass) (i : Int) (nums : Vector UInt64 rbaPack) (r : Delivery σ) (cnt : Counters) :
-    ⦃ r.quit = false ∧ (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p) ∧
-        SmallFits small i (i + 1) ⦄
+    ⦃ r.quit = false ∧ StageFits specs mgs small i (i + 1) ⦄
     siftBitArrayByWords process w d b fl specs mgs small checks cl i nums r cnt
-    ⦃ fun r' ↦ r'.1 = r.deliver process (((List.range rbaPack).flatMap fun κ ↦
-        ((List.range 64).filter ((andWords specs nums[κ]! i κ).toBitVec.getLsbD ·)).map
-          fun t : Nat ↦ i * rbaLength + 64 * κ + t).flatMap
-            fun j ↦ acceptedPoints w d b fl checks (cl.numerator j)) ⦄ := by
+    ⦃ fun r' ↦ r'.1 = r.deliver process ((bitNumbers (fun κ ↦ andWords specs nums[κ]! i κ)
+        (rbaLength * i) rbaPack).flatMap
+          fun j ↦ acceptedPoints w d b fl checks (cl.numerator j)) ⦄ := by
   vcgen [siftBitArrayByWords] invariants
   | inv1 => SiftBitArrayLoopInvariant process (fun κ ↦ andWords specs nums[κ]! i κ)
       (acceptedPoints w d b fl checks) cl i r
@@ -621,6 +582,7 @@ theorem siftBitArrayByWords_spec (w : Thunk (List Int)) (d b : Nat) (fl : CheckF
     | exact SiftBitArrayInvariant.append ‹_› ‹_› ‹_›
     | exact SiftBitArrayInvariant.append_of_eq_zero ‹_› ‹_› (by simp_all)
 
+attribute [local irreducible] SiftBitArrayInvariant SiftBitArrayWalkInvariant in
 open Std.WP Lean.Order in
 /-- The arm of the second stage on the whole bit array walks through the set bits of the words of
 `nums` and-ed with the rows of the moduli of `specs` (`Ratpoints.Sieve.secondStage_spec`), each bit
@@ -630,13 +592,11 @@ stage leaves the bit array zero, which loses nothing; it returns at a stop. -/
 theorem siftBitArrayWhole_spec (w : Thunk (List Int)) (d b : Nat) (fl : CheckFlags)
     (specs : List SieveSpec) (mgs : List Nat) (small : Bool) (checks : Thunk (List CheckSpec))
     (cl : NumClass) (i : Int) (nums : Vector UInt64 rbaPack) (r0 : Delivery σ) (cnt : Counters) :
-    ⦃ r0.quit = false ∧ (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p) ∧
-        SmallFits small i (i + 1) ⦄
+    ⦃ r0.quit = false ∧ StageFits specs mgs small i (i + 1) ⦄
     siftBitArrayWhole process w d b fl specs mgs small checks cl i nums r0 cnt
-    ⦃ fun r' ↦ r'.1 = r0.deliver process (((List.range rbaPack).flatMap fun κ ↦
-        ((List.range 64).filter ((andWords specs nums[κ]! i κ).toBitVec.getLsbD ·)).map
-          fun t : Nat ↦ i * rbaLength + 64 * κ + t).flatMap
-            fun j ↦ acceptedPoints w d b fl checks (cl.numerator j)) ⦄ := by
+    ⦃ fun r' ↦ r'.1 = r0.deliver process ((bitNumbers (fun κ ↦ andWords specs nums[κ]! i κ)
+        (rbaLength * i) rbaPack).flatMap
+          fun j ↦ acceptedPoints w d b fl checks (cl.numerator j)) ⦄ := by
   vcgen [siftBitArrayWhole] invariants
   | inv1 => SiftBitArrayWalkLoopInvariant process (fun κ ↦ nums[κ]!)
       (acceptedPoints w d b fl checks) cl i r0
@@ -649,7 +609,7 @@ theorem siftBitArrayWhole_spec (w : Thunk (List Int)) (d b : Nat) (fl : CheckFla
     | exact ‹_ ∧ _›.1
     | exact eq_deliver_of_quit_of_forall_eq ‹_ ∧ _›.1 ‹_› ‹_›
     | exact siftBitArrayWalkInvariant_zero ‹_ ∧ _›.1 ‹_›
-    | exact ‹_ = _›.trans (congrArg (r0.deliver process) (flatMap_numerator_range_congr ‹_› _ _ _))
+    | exact ‹_ = _›.trans (by rw [bitNumbers_congr ‹_›])
     | exact SiftBitArrayWalkInvariant.eq_deliver ‹_› ‹_›
     | exact SiftBitArrayWalkInvariant.quit_eq_false ‹_›
     | exact SiftBitArrayWalkInvariant.eq_deliver_of_quit ‹_› ‹_› ‹_›
@@ -663,13 +623,11 @@ theorem siftBitArrayWhole_spec (w : Thunk (List Int)) (d b : Nat) (fl : CheckFla
 theorem siftBitArray_spec (useLong : Bool) (w : Thunk (List Int)) (d b : Nat) (fl : CheckFlags)
     (specs : List SieveSpec) (mgs : List Nat) (small : Bool) (checks : Thunk (List CheckSpec))
     (cl : NumClass) (i : Int) (nums : Vector UInt64 rbaPack) (r : Delivery σ) (cnt : Counters) :
-    ⦃ r.quit = false ∧ (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p) ∧
-        SmallFits small i (i + 1) ⦄
+    ⦃ r.quit = false ∧ StageFits specs mgs small i (i + 1) ⦄
     siftBitArray process useLong w d b fl specs mgs small checks cl i nums r cnt
-    ⦃ fun r' ↦ r'.1 = r.deliver process (((List.range rbaPack).flatMap fun κ ↦
-        ((List.range 64).filter ((andWords specs nums[κ]! i κ).toBitVec.getLsbD ·)).map
-          fun t : Nat ↦ i * rbaLength + 64 * κ + t).flatMap
-            fun j ↦ acceptedPoints w d b fl checks (cl.numerator j)) ⦄ := by
+    ⦃ fun r' ↦ r'.1 = r.deliver process ((bitNumbers (fun κ ↦ andWords specs nums[κ]! i κ)
+        (rbaLength * i) rbaPack).flatMap
+          fun j ↦ acceptedPoints w d b fl checks (cl.numerator j)) ⦄ := by
   cases useLong
   · exact siftBitArrayWhole_spec process w d b fl specs mgs small checks cl i nums r cnt
   · exact siftBitArrayByWords_spec process w d b fl specs mgs small checks cl i nums r cnt
@@ -689,14 +647,14 @@ with their rows and the points `g a` of the numerator `a` of a bit in the packin
 (in the scan, those of `Ratpoints.Sieve.acceptedPoints`), from the delivery `r0`: `pos ≤ n`, the
 callback has not stopped the search, and `r` is the delivery of the points of the bits
 `rbaLength w0 + 64 y + t` of the set bits `t` of the words `y < rbaPack pos` and-ed with the rows of
-`specs` (`Ratpoints.Sieve.andWords`), in increasing order. -/
+`specs` (`Ratpoints.Sieve.andWords`), in increasing order: the invariant of the extraction of one
+bit array (`Ratpoints.Sieve.SiftBitArrayInvariant`) for the words of the piece from `w0` on. -/
 def ScanPieceInvariant {m : Nat} (sv : Vector UInt64 m) (specs : List SieveSpec)
     (g : Int → List (Int × Int × Int)) (cl : NumClass) (w0 : Int) (n : Nat) (r0 : Delivery σ)
     (pos : Nat) (r : Delivery σ) :
     Prop :=
-  pos ≤ n ∧ r.quit = false ∧ r = r0.deliver process (((List.range (rbaPack * pos)).flatMap
-    fun y : Nat ↦ ((List.range 64).filter ((andWords specs sv[y]! w0 y).toBitVec.getLsbD ·)).map
-      fun t : Nat ↦ rbaLength * w0 + 64 * y + t).flatMap fun j ↦ g (cl.numerator j))
+  pos ≤ n ∧
+    SiftBitArrayInvariant process (fun y ↦ andWords specs sv[y]! w0 y) g cl w0 r0 (rbaPack * pos) r
 
 /-- `Ratpoints.Sieve.ScanPieceInvariant` as the invariant of the scan of
 `Ratpoints.Sieve.scanPiece`, whose state is the value of a return, the position and the delivery,
@@ -707,9 +665,8 @@ def ScanPieceWhileInvariant {m : Nat} (sv : Vector UInt64 m) (specs : List Sieve
     Std.WP.WhileInvariant (Option (Delivery σ × Counters) × Nat × Delivery σ × Counters) Prop :=
   .mk fun exit s ↦ s.1 = none ∧ ScanPieceInvariant process sv specs g cl w0 n r0 s.2.1 s.2.2.1 ∧
     (exit = true → s.2.1 = n) ∨ exit = true ∧ s.1.map Prod.fst = some (r0.deliver process
-      (((List.range (rbaPack * n)).flatMap fun y : Nat ↦
-        ((List.range 64).filter ((andWords specs sv[y]! w0 y).toBitVec.getLsbD ·)).map
-          fun t : Nat ↦ rbaLength * w0 + 64 * y + t).flatMap fun j ↦ g (cl.numerator j)))
+      ((bitNumbers (fun y ↦ andWords specs sv[y]! w0 y) (rbaLength * w0) (rbaPack * n)).flatMap
+        fun j ↦ g (cl.numerator j)))
 
 /-- The invariant of the loop of `Ratpoints.Sieve.scanPiece` that steps over the bit arrays that are
 zero, from bit array `pos0` on, with the delivery `r` of the bit arrays before `pos0`: the position
@@ -720,16 +677,6 @@ def ScanPieceZeroInvariant {m : Nat} (sv : Vector UInt64 m) (specs : List SieveS
     (pos0 : Nat) (r : Delivery σ) :
     Std.WP.WhileInvariant Nat Prop :=
   .mk fun _ pos ↦ pos0 ≤ pos ∧ ScanPieceInvariant process sv specs g cl w0 n r0 pos r
-
-/-- What the second stage needs of the bit array `pos < n` of a piece of `n` bit arrays from the
-word number `w0` on: the moduli and their reciprocals, and the test `small` of the piece. -/
-theorem fits_and_smallFits_add {specs : List SieveSpec} {mgs : List Nat} {small : Bool} {w0 : Int}
-    {n pos : Nat}
-    (h : (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p) ∧ SmallFits small w0 (w0 + n))
-    (hpos : ¬n ≤ pos) :
-    (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p) ∧
-      SmallFits small (w0 + pos) (w0 + pos + 1) :=
-  ⟨h.1, h.2.1, h.2.2.mono (by lia) (by lia)⟩
 
 theorem scanPieceSentinelInvariant_zero {m : Nat} (n : Nat) (surv : Vector UInt64 m) :
     ScanPieceSentinelInvariant n surv 0 surv :=
@@ -762,20 +709,15 @@ theorem ScanPieceSentinelInvariant.ne_of_isZeroAt {m n : Nat} {surv sv : Vector 
   rw [h.2 0 (by simpa using rbaPack_pos)] at h0
   exact absurd h0 (by decide)
 
-/-- The points of the bits of the words of a piece before the sentinel are those of the words of
-`surv`, since the sentinel was written past them. -/
-theorem ScanPieceSentinelInvariant.flatMap_eq {m n : Nat} {surv sv : Vector UInt64 m}
+/-- The bit numbers of the set bits of the words of a piece before the sentinel are those of the
+words of `surv`, since the sentinel was written past them. -/
+theorem ScanPieceSentinelInvariant.bitNumbers_eq {m n : Nat} {surv sv : Vector UInt64 m}
     (hs : ScanPieceSentinelInvariant n surv (ForIn.toList [0:rbaPack]).length sv)
-    (specs : List SieveSpec) {β : Type} (g : Int → List β) (w0 : Int) :
-    ((List.range (rbaPack * n)).flatMap fun y : Nat ↦
-      ((List.range 64).filter ((andWords specs sv[y]! w0 y).toBitVec.getLsbD ·)).map
-        fun t : Nat ↦ rbaLength * w0 + 64 * y + t).flatMap g =
-      ((List.range (n * rbaPack)).flatMap fun y : Nat ↦
-        ((List.range 64).filter ((andWords specs surv[y]! w0 y).toBitVec.getLsbD ·)).map
-          fun t : Nat ↦ rbaLength * w0 + 64 * y + t).flatMap g := by
+    (specs : List SieveSpec) (w0 : Int) :
+    bitNumbers (fun y ↦ andWords specs sv[y]! w0 y) (rbaLength * w0) (rbaPack * n) =
+      bitNumbers (fun y ↦ andWords specs surv[y]! w0 y) (rbaLength * w0) (n * rbaPack) := by
   rw [Nat.mul_comm rbaPack n]
-  exact congrArg (List.flatMap _) <| congrArg List.flatten <| List.map_congr_left fun y hy ↦ by
-    rw [hs.1 y (List.mem_range.mp hy)]
+  exact bitNumbers_congr (fun y hy ↦ by rw [hs.1 y hy]) _
 
 /-- The bit arrays of a piece before the sentinel are those of `surv`, since the sentinel was
 written past them. -/
@@ -787,43 +729,22 @@ theorem ScanPieceSentinelInvariant.isZeroAt_eq {m n : Nat} {surv sv : Vector UIn
   refine forall₂_congr fun κ hκ ↦ ?_
   rw [hs.1 _ (Nat.mul_add_lt_mul_of_lt_of_lt' hp hκ)]
 
-/-- The points of the bits of the first `pos + 1` bit arrays of a piece are those of the first
-`pos` followed by those of bit array `pos`, copied and passed through
+/-- The bit numbers of the set bits of the first `pos + 1` bit arrays of a piece are those of the
+first `pos` followed by those of bit array `pos`, copied and passed through
 `Ratpoints.Sieve.siftBitArray` with its word number `w0 + pos`. -/
-theorem flatMap_range_rbaPack_mul_succ {m : Nat} (sv : Vector UInt64 m) (specs : List SieveSpec)
-    {β : Type} (g : Int → List β) (w0 : Int) (pos : Nat) :
-    ((List.range (rbaPack * (pos + 1))).flatMap fun y : Nat ↦
-      ((List.range 64).filter ((andWords specs sv[y]! w0 y).toBitVec.getLsbD ·)).map
-        fun t : Nat ↦ rbaLength * w0 + 64 * y + t).flatMap g =
-      ((List.range (rbaPack * pos)).flatMap fun y : Nat ↦
-        ((List.range 64).filter ((andWords specs sv[y]! w0 y).toBitVec.getLsbD ·)).map
-          fun t : Nat ↦ rbaLength * w0 + 64 * y + t).flatMap g ++
-      ((List.range rbaPack).flatMap fun κ ↦ ((List.range 64).filter ((andWords specs
-        (Vector.ofFn fun κ : Fin rbaPack ↦ sv[rbaPack * pos + κ]!)[κ]! (w0 + pos)
-          κ).toBitVec.getLsbD ·)).map fun t : Nat ↦
-            (w0 + pos) * rbaLength + 64 * κ + t).flatMap g := by
-  have key (κ t : Nat) : (w0 + pos) * (rbaLength : Int) + 64 * κ + t =
-      rbaLength * w0 + 64 * ((rbaPack * pos + κ : Nat) : Int) + t := by
+theorem bitNumbers_rbaPack_mul_succ {m : Nat} (sv : Vector UInt64 m) (specs : List SieveSpec)
+    (w0 : Int) (pos : Nat) :
+    bitNumbers (fun y ↦ andWords specs sv[y]! w0 y) (rbaLength * w0) (rbaPack * (pos + 1)) =
+      bitNumbers (fun y ↦ andWords specs sv[y]! w0 y) (rbaLength * w0) (rbaPack * pos) ++
+        bitNumbers (fun κ ↦ andWords specs
+          (Vector.ofFn fun κ : Fin rbaPack ↦ sv[rbaPack * pos + κ]!)[κ]! (w0 + pos) κ)
+          (rbaLength * (w0 + pos)) rbaPack := by
+  have hb : (rbaLength : Int) * w0 + 64 * (rbaPack * pos : Nat) = rbaLength * (w0 + pos) := by
     push_cast [rbaLength_eq]
     grind
-  rw [Nat.mul_succ, List.range_add, List.flatMap_append, List.flatMap_map, List.flatMap_append]
-  refine congrArg (_ ++ ·) <| congrArg (List.flatMap g) <| congrArg List.flatten <|
-    List.map_congr_left fun κ hκ ↦ ?_
-  have hκ' := List.mem_range.mp hκ
-  simp only [Vector.getElem!_ofFn hκ', andWords_rbaPack_mul_add _ _ _ _ hκ', key]
-
-/-- The points of the bits of the first `pos ≤ n` bit arrays of a piece come first among those of
-the first `n`. -/
-theorem flatMap_range_rbaPack_mul_prefix {m : Nat} (sv : Vector UInt64 m) (specs : List SieveSpec)
-    {β : Type} (g : Int → List β) (w0 : Int) {pos n : Nat} (h : pos ≤ n) :
-    ((List.range (rbaPack * pos)).flatMap fun y : Nat ↦
-      ((List.range 64).filter ((andWords specs sv[y]! w0 y).toBitVec.getLsbD ·)).map
-        fun t : Nat ↦ rbaLength * w0 + 64 * y + t).flatMap g <+:
-      ((List.range (rbaPack * n)).flatMap fun y : Nat ↦
-        ((List.range 64).filter ((andWords specs sv[y]! w0 y).toBitVec.getLsbD ·)).map
-          fun t : Nat ↦ rbaLength * w0 + 64 * y + t).flatMap g := by
-  obtain ⟨l, hl⟩ := List.range_prefix_range (Nat.mul_le_mul_left rbaPack h)
-  exact ⟨_, by rw [← hl, List.flatMap_append, List.flatMap_append]⟩
+  rw [Nat.mul_succ, bitNumbers_add, hb]
+  exact congrArg (_ ++ ·) (bitNumbers_congr (fun κ hκ ↦ by
+    simp only [Vector.getElem!_ofFn hκ, andWords_rbaPack_mul_add _ _ _ _ hκ]) _)
 
 section
 
@@ -846,39 +767,31 @@ theorem ScanPieceInvariant.add_one_of_siftBitArray {pos0 mb : Nat}
     {r' : Delivery σ} (hm : n - pos0 = mb ∧ o = none ∧
       ScanPieceInvariant process sv specs g cl w0 n r0 pos0 r' ∧ (False → pos0 = n))
     (h' : pos0 ≤ pos ∧ ScanPieceInvariant process sv specs g cl w0 n r0 pos r) (hlt : ¬n ≤ pos)
-    (hq : ¬(r.deliver process (((List.range rbaPack).flatMap fun κ ↦ ((List.range 64).filter
-      ((andWords specs (Vector.ofFn fun κ : Fin rbaPack ↦ sv[rbaPack * pos + κ]!)[κ]! (w0 + pos)
-        κ).toBitVec.getLsbD ·)).map fun t : Nat ↦
-          (w0 + pos) * rbaLength + 64 * κ + t).flatMap fun j ↦ g (cl.numerator j))).quit = true) :
+    (hq : ¬(r.deliver process ((bitNumbers (fun κ ↦ andWords specs
+      (Vector.ofFn fun κ : Fin rbaPack ↦ sv[rbaPack * pos + κ]!)[κ]! (w0 + pos) κ)
+        (rbaLength * (w0 + pos)) rbaPack).flatMap fun j ↦ g (cl.numerator j))).quit = true) :
     n - (pos + 1) < mb ∧ ScanPieceInvariant process sv specs g cl w0 n r0 (pos + 1)
-      (r.deliver process (((List.range rbaPack).flatMap fun κ ↦ ((List.range 64).filter
-        ((andWords specs (Vector.ofFn fun κ : Fin rbaPack ↦ sv[rbaPack * pos + κ]!)[κ]! (w0 + pos)
-          κ).toBitVec.getLsbD ·)).map fun t : Nat ↦
-            (w0 + pos) * rbaLength + 64 * κ + t).flatMap fun j ↦ g (cl.numerator j))) ∧
-        (False → pos + 1 = n) := by
-  obtain ⟨h0, h⟩ := h'
-  refine ⟨by lia [hm.1], ⟨by lia, Bool.eq_false_iff.mpr hq, ?_⟩, nofun⟩
-  rw [flatMap_range_rbaPack_mul_succ, Delivery.deliver_append, ← h.2.2]
+      (r.deliver process ((bitNumbers (fun κ ↦ andWords specs
+        (Vector.ofFn fun κ : Fin rbaPack ↦ sv[rbaPack * pos + κ]!)[κ]! (w0 + pos) κ)
+          (rbaLength * (w0 + pos)) rbaPack).flatMap fun j ↦ g (cl.numerator j))) ∧
+        (False → pos + 1 = n) :=
+  ⟨by lia [hm.1], ⟨by lia, h'.2.2.deliver_of_flatMap_eq
+    (by rw [bitNumbers_rbaPack_mul_succ, List.flatMap_append]) hq⟩, nofun⟩
 
 /-- Bit array `pos`, copied and passed through `Ratpoints.Sieve.siftBitArray` with its word number
 `w0 + pos`, when the callback stops the search in it: the delivery is that of the whole piece. -/
 theorem ScanPieceInvariant.eq_deliver_of_quit {pos0 : Nat}
     (h' : pos0 ≤ pos ∧ ScanPieceInvariant process sv specs g cl w0 n r0 pos r) (hlt : ¬n ≤ pos)
-    (hq : (r.deliver process (((List.range rbaPack).flatMap fun κ ↦ ((List.range 64).filter
-      ((andWords specs (Vector.ofFn fun κ : Fin rbaPack ↦ sv[rbaPack * pos + κ]!)[κ]! (w0 + pos)
-        κ).toBitVec.getLsbD ·)).map fun t : Nat ↦
-          (w0 + pos) * rbaLength + 64 * κ + t).flatMap fun j ↦ g (cl.numerator j))).quit = true) :
-    r.deliver process (((List.range rbaPack).flatMap fun κ ↦ ((List.range 64).filter
-      ((andWords specs (Vector.ofFn fun κ : Fin rbaPack ↦ sv[rbaPack * pos + κ]!)[κ]! (w0 + pos)
-        κ).toBitVec.getLsbD ·)).map fun t : Nat ↦
-          (w0 + pos) * rbaLength + 64 * κ + t).flatMap fun j ↦ g (cl.numerator j)) =
-      r0.deliver process (((List.range (rbaPack * n)).flatMap fun y : Nat ↦
-        ((List.range 64).filter ((andWords specs sv[y]! w0 y).toBitVec.getLsbD ·)).map
-          fun t : Nat ↦ rbaLength * w0 + 64 * y + t).flatMap fun j ↦ g (cl.numerator j)) := by
-  obtain ⟨-, h⟩ := h'
-  rw [h.2.2, ← Delivery.deliver_append, ← flatMap_range_rbaPack_mul_succ] at hq ⊢
-  exact (Delivery.deliver_eq_of_prefix process
-    (flatMap_range_rbaPack_mul_prefix sv specs _ w0 (by lia)) hq).symm
+    (hq : (r.deliver process ((bitNumbers (fun κ ↦ andWords specs
+      (Vector.ofFn fun κ : Fin rbaPack ↦ sv[rbaPack * pos + κ]!)[κ]! (w0 + pos) κ)
+        (rbaLength * (w0 + pos)) rbaPack).flatMap fun j ↦ g (cl.numerator j))).quit = true) :
+    r.deliver process ((bitNumbers (fun κ ↦ andWords specs
+      (Vector.ofFn fun κ : Fin rbaPack ↦ sv[rbaPack * pos + κ]!)[κ]! (w0 + pos) κ)
+        (rbaLength * (w0 + pos)) rbaPack).flatMap fun j ↦ g (cl.numerator j)) =
+      r0.deliver process ((bitNumbers (fun y ↦ andWords specs sv[y]! w0 y) (rbaLength * w0)
+        (rbaPack * n)).flatMap fun j ↦ g (cl.numerator j)) :=
+  h'.2.2.deliver_eq_of_quit (by rw [bitNumbers_rbaPack_mul_succ, List.flatMap_append])
+    (Nat.mul_le_mul_left rbaPack (by lia)) hq
 
 /-- A bit array that is zero adds nothing; it is not the sentinel, so that the measure `n - pos` of
 the loop that steps over the bit arrays that are zero decreases. -/
@@ -891,45 +804,33 @@ theorem ScanPieceInvariant.add_one_of_isZeroAt {surv : Vector UInt64 m} {pos0 mb
   obtain ⟨rfl, h0, h⟩ := h
   have hlt : pos < n := Nat.lt_of_le_of_ne h.1 (hs.ne_of_isZeroAt hz)
   refine ⟨by lia, by lia, hlt, h.2.1, ?_⟩
-  rw [flatMap_range_rbaPack_mul_succ, Delivery.deliver_append, ← h.2.2,
-    (List.flatMap_eq_nil_iff (l := List.range rbaPack)).mpr fun κ hκ ↦ ?_]
-  · simp
-  simp [Vector.getElem!_ofFn (List.mem_range.mp hκ),
-    (isZeroAt_eq_true_iff sv pos).mp hz κ (List.mem_range.mp hκ)]
+  rw [bitNumbers_rbaPack_mul_succ, bitNumbers_eq_nil (k := rbaPack) (fun κ hκ ↦ ?_),
+    List.append_nil, ← h.2.2]
+  simp [Vector.getElem!_ofFn hκ, (isZeroAt_eq_true_iff sv pos).mp hz κ hκ]
 
-/-- What the extraction of bit array `pos < n` needs: the callback has not stopped the search, and
-the moduli, their reciprocals and the test `small` fit the bit array
-(`Ratpoints.Sieve.fits_and_smallFits_add`). -/
-theorem ScanPieceInvariant.pre_siftBitArray {pos0 : Nat} {mgs : List Nat} {small : Bool}
-    (h : pos0 ≤ pos ∧ ScanPieceInvariant process sv specs g cl w0 n r0 pos r)
-    (hpre : r0.quit = false ∧ (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p) ∧
-      SmallFits small w0 (w0 + n)) (hpos : ¬n ≤ pos) :
-    r.quit = false ∧ (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p) ∧
-      SmallFits small (w0 + pos) (w0 + pos + 1) :=
-  ⟨h.2.2.1, fits_and_smallFits_add hpre.2 hpos⟩
+theorem ScanPieceInvariant.quit_eq_false {pos0 : Nat}
+    (h : pos0 ≤ pos ∧ ScanPieceInvariant process sv specs g cl w0 n r0 pos r) : r.quit = false :=
+  h.2.2.1
 
 /-- The value returned at a stop in the scan, the delivery of the points of the bits of the words
 before the sentinel, is the delivery of those of the words of `surv`. -/
 theorem ScanPieceSentinelInvariant.eq_deliver_of_eq {surv : Vector UInt64 m} {r' : Delivery σ}
-    (h : r' = r0.deliver process (((List.range (rbaPack * n)).flatMap fun y : Nat ↦
-      ((List.range 64).filter ((andWords specs sv[y]! w0 y).toBitVec.getLsbD ·)).map
-        fun t : Nat ↦ rbaLength * w0 + 64 * y + t).flatMap fun j ↦ g (cl.numerator j)))
+    (h : r' = r0.deliver process ((bitNumbers (fun y ↦ andWords specs sv[y]! w0 y) (rbaLength * w0)
+      (rbaPack * n)).flatMap fun j ↦ g (cl.numerator j)))
     (hs : ScanPieceSentinelInvariant n surv (ForIn.toList [0:rbaPack]).length sv) :
-    r' = r0.deliver process (((List.range (n * rbaPack)).flatMap fun y : Nat ↦
-      ((List.range 64).filter ((andWords specs surv[y]! w0 y).toBitVec.getLsbD ·)).map
-        fun t : Nat ↦ rbaLength * w0 + 64 * y + t).flatMap fun j ↦ g (cl.numerator j)) := by
-  rw [h, hs.flatMap_eq]
+    r' = r0.deliver process ((bitNumbers (fun y ↦ andWords specs surv[y]! w0 y) (rbaLength * w0)
+      (n * rbaPack)).flatMap fun j ↦ g (cl.numerator j)) := by
+  rw [h, hs.bitNumbers_eq]
 
 /-- At the end of the scan, the delivery is that of the points of the set bits of the words of the
 piece and-ed with the rows, which are those of `surv`, since the sentinel was written past them. -/
 theorem ScanPieceInvariant.eq_deliver {surv : Vector UInt64 m}
     (h : ScanPieceInvariant process sv specs g cl w0 n r0 pos r ∧ (True → pos = n))
     (hs : ScanPieceSentinelInvariant n surv (ForIn.toList [0:rbaPack]).length sv) :
-    r = r0.deliver process (((List.range (n * rbaPack)).flatMap fun y : Nat ↦
-      ((List.range 64).filter ((andWords specs surv[y]! w0 y).toBitVec.getLsbD ·)).map
-        fun t : Nat ↦ rbaLength * w0 + 64 * y + t).flatMap fun j ↦ g (cl.numerator j)) := by
+    r = r0.deliver process ((bitNumbers (fun y ↦ andWords specs surv[y]! w0 y) (rbaLength * w0)
+      (n * rbaPack)).flatMap fun j ↦ g (cl.numerator j)) := by
   obtain ⟨h, rfl⟩ := And.intro h.1 (h.2 trivial)
-  rw [h.2.2, hs.flatMap_eq]
+  rw [h.2.2, hs.bitNumbers_eq]
 
 end
 
@@ -944,13 +845,11 @@ private theorem scanPiece_spec_getLsbD (w : Thunk (List Int)) (d b : Nat) (fl : 
     (specs : List SieveSpec) (mgs : List Nat) (small : Bool) (checks : Thunk (List CheckSpec))
     (cl : NumClass) (w0 : Int) (n : Nat) (surv : Vector UInt64 ((n + 1) * rbaPack))
     (r : Delivery σ) (cnt : Counters) :
-    ⦃ r.quit = false ∧ (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p) ∧
-        SmallFits small w0 (w0 + n) ⦄
+    ⦃ r.quit = false ∧ StageFits specs mgs small w0 (w0 + n) ⦄
     scanPiece process w d b fl specs mgs small checks cl w0 n surv r cnt
-    ⦃ fun r' ↦ r'.1 = r.deliver process (((List.range (n * rbaPack)).flatMap fun y : Nat ↦
-        ((List.range 64).filter ((andWords specs surv[y]! w0 y).toBitVec.getLsbD ·)).map
-          fun t : Nat ↦ rbaLength * w0 + 64 * y + t).flatMap
-            fun j ↦ acceptedPoints w d b fl checks (cl.numerator j)) ⦄ := by
+    ⦃ fun r' ↦ r'.1 = r.deliver process ((bitNumbers (fun y ↦ andWords specs surv[y]! w0 y)
+        (rbaLength * w0) (n * rbaPack)).flatMap
+          fun j ↦ acceptedPoints w d b fl checks (cl.numerator j)) ⦄ := by
   vcgen [scanPiece] invariants
   | inv1 => fun done _ ↦ ScanPieceSentinelInvariant n surv done.length
   | inv2 sv _ => ScanPieceWhileInvariant process sv specs (acceptedPoints w d b fl checks) cl w0 n r
@@ -966,7 +865,7 @@ private theorem scanPiece_spec_getLsbD (w : Thunk (List Int)) (d b : Nat) (fl : 
     | exact ScanPieceSentinelInvariant.append_set! ‹_› ‹_›
     | exact ScanPieceSentinelInvariant.eq_deliver_of_eq ‹_› ‹_›
     | exact ScanPieceInvariant.eq_deliver ‹_› ‹_›
-    | exact ScanPieceInvariant.pre_siftBitArray ‹_› ‹_› ‹_›
+    | exact ⟨ScanPieceInvariant.quit_eq_false ‹_›, StageFits.mono ‹_ ∧ _›.2 (by lia) (by lia)⟩
     | exact ScanPieceInvariant.eq_deliver_of_quit ‹_› ‹_› ‹_›
     | exact ScanPieceInvariant.add_one_of_siftBitArray ‹_› ‹_› ‹_› ‹_›
     | exact ScanPieceInvariant.add_one_of_isZeroAt ‹_› ‹_› ‹_›
@@ -980,8 +879,7 @@ theorem scanPiece_spec (w : Thunk (List Int)) (d b : Nat) (fl : CheckFlags)
     (specs : List SieveSpec) (mgs : List Nat) (small : Bool) (checks : Thunk (List CheckSpec))
     (cl : NumClass) (w0 : Int) (n : Nat) (surv : Vector UInt64 ((n + 1) * rbaPack))
     (r : Delivery σ) (cnt : Counters) :
-    ⦃ r.quit = false ∧ (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p) ∧
-        SmallFits small w0 (w0 + n) ⦄
+    ⦃ r.quit = false ∧ StageFits specs mgs small w0 (w0 + n) ⦄
     scanPiece process w d b fl specs mgs small checks cl w0 n surv r cnt
     ⦃ fun r' ↦ ∀ keep : Int → Bool, (∀ y < n * rbaPack, ∀ t : Nat,
         (andWords specs surv[y]! w0 y).toBitVec.getLsbD t =
@@ -992,7 +890,7 @@ theorem scanPiece_spec (w : Thunk (List Int)) (d b : Nat) (fl : CheckFlags)
   ⟨fun pre keep hkeep ↦ by
     rw [(scanPiece_spec_getLsbD process w d b fl specs mgs small checks cl w0 n surv r cnt).le_wp
       pre,
-      List.flatMap_range_map_filter hkeep, rbaLength_eq, Nat.mul_left_comm]⟩
+      bitNumbers_eq_filter hkeep, rbaLength_eq, Nat.mul_left_comm]⟩
 
 end Sieve
 

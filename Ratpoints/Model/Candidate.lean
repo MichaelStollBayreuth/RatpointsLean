@@ -274,9 +274,9 @@ prime to the denominator `b` with `|a| ≤ H`, and the sieve entries of primes `
 their tables and reciprocals (`Ratpoints.Sieve.SieveEntry.IsPrimeEntry`,
 `Ratpoints.Sieve.fillChecks`), it is the test of the rows of these entries
 (`Ratpoints.Sieve.survives`): a prime that divides `b` admits every numerator prime to `b`
-(`Ratpoints.Sieve.run_stage3_fillChecks`). A numerator with a common factor would pass the primes
-that do not divide `b` too, and the stage runs after the test for common factors
-(`Ratpoints.Sieve.accepted`).
+(`Ratpoints.Sieve.stage3_spec`, `Ratpoints.Sieve.all_admits_fillChecks`). A numerator with a
+common factor would pass the primes that do not divide `b` too, and the stage runs after the test
+for common factors (`Ratpoints.Sieve.accepted`).
 
 C: `sift.c:291-301`, `sift.c:309-312`
 

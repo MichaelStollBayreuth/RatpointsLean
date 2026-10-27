@@ -324,7 +324,7 @@ closed forms (Section~\ref{sec:storeRun}).
 
 \begin{lemma}[The chunked first stage and-s the rows]\label{lem:andRowsChunked}
   \uses{def:andRowsChunked, def:closedRow, lem:rowIndices, def:andRows}
-  \lean{Ratpoints.Sieve.SieveSpec.startAt, Ratpoints.Sieve.SieveSpec.advance, Ratpoints.Sieve.SieveSpec.WalkFits, Ratpoints.Sieve.SieveSpec.Fits.walkFits_startAt, Ratpoints.Sieve.partialReg, Ratpoints.Sieve.andFrom, Ratpoints.Sieve.ChunkStartsInvariant, Ratpoints.Sieve.chunkStarts_spec, Ratpoints.Sieve.WrapStartInvariant, Ratpoints.Sieve.wrapStart_spec, Ratpoints.Sieve.ChunkModInvariant, Ratpoints.Sieve.ChunkAndInvariant, Ratpoints.Sieve.chunkSieve_spec, Ratpoints.Sieve.AndChunksInvariant, Ratpoints.Sieve.andChunks_spec, Ratpoints.Sieve.LegAndInvariant, Ratpoints.Sieve.LegStoreInvariant, Ratpoints.Sieve.tailLeg_spec, Ratpoints.Sieve.TailDone, Ratpoints.Sieve.tailLegs_spec, Ratpoints.Sieve.andRowsChunked_spec, Ratpoints.Sieve.andRowsChunked_post}
+  \lean{Ratpoints.Sieve.SieveSpec.startAt, Ratpoints.Sieve.SieveSpec.advance, Ratpoints.Sieve.partialReg, Ratpoints.Sieve.ChunkStartsInvariant, Ratpoints.Sieve.chunkStarts_spec, Ratpoints.Sieve.WrapStartInvariant, Ratpoints.Sieve.wrapStart_spec, Ratpoints.Sieve.ChunkModInvariant, Ratpoints.Sieve.RegsInvariant, Ratpoints.Sieve.chunkSieve_spec, Ratpoints.Sieve.AndChunksInvariant, Ratpoints.Sieve.andChunks_spec, Ratpoints.Sieve.RegsStored, Ratpoints.Sieve.tailLeg_spec, Ratpoints.Sieve.tailLegs_spec, Ratpoints.Sieve.andRowsChunked_spec, Ratpoints.Sieve.andRowsChunked_post}
   \leanok
   For sieve specs that fit (Lemma~\ref{lem:rowIndices}), the reciprocals of their moduli and the
   bounds of \verb|small|: the local array holds the specs with their starts at $w_0$, the remainder

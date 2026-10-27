@@ -38,6 +38,8 @@ remainder.
   that repeats its first bit arrays.
 * `Ratpoints.Sieve.SmallFits`: when the test `small` holds, the word numbers lie between
   `-Ratpoints.rowBias` and `Ratpoints.rowBias - 2 Ratpoints.maxPrimeEven`.
+* `Ratpoints.Sieve.StageFits`: what the stages of the sieve need of their moduli, the reciprocals
+  and the test `small`.
 
 ## Main statements
 
@@ -380,6 +382,35 @@ theorem smallFits_decide (w0 : Int) (n : Nat) :
 theorem SmallFits.mono {small : Bool} {lo hi lo' hi' : Int} (h : SmallFits small lo hi)
     (hlo : lo ≤ lo') (hhi : hi' ≤ hi) : SmallFits small lo' hi' :=
   fun hs ↦ ⟨Int.le_trans (h hs).1 hlo, Int.le_trans hhi (h hs).2⟩
+
+/-- What the stages of the sieve need of the moduli `specs` with their reciprocals `mgs`, for the
+word numbers from `lo` to `hi`: the sieve specs in the range of the packing, the reciprocals of
+their moduli in the same order, and the test `small` of `Ratpoints.Sieve.SmallFits`. -/
+structure StageFits (specs : List SieveSpec) (mgs : List Nat) (small : Bool) (lo hi : Int) :
+    Prop where
+  /-- The sieve specs are in the range of the packing. -/
+  fits : ∀ s ∈ specs, s.Fits
+  /-- The reciprocals are those of the moduli, in the same order. -/
+  magics : mgs = specs.map (magic ·.p)
+  /-- The test `small` fits the word numbers. -/
+  smallFits : SmallFits small lo hi
+
+theorem StageFits.mono {specs : List SieveSpec} {mgs : List Nat} {small : Bool}
+    {lo hi lo' hi' : Int} (h : StageFits specs mgs small lo hi) (hlo : lo ≤ lo') (hhi : hi' ≤ hi) :
+    StageFits specs mgs small lo' hi' :=
+  ⟨h.fits, h.magics, h.smallFits.mono hlo hhi⟩
+
+/-- The first `k` of the moduli, with their reciprocals. -/
+theorem stageFits_take {specs : List SieveSpec} {mgs : List Nat} {small : Bool} {lo hi : Int}
+    (h : (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p)) (hs : SmallFits small lo hi)
+    (k : Nat) : StageFits (specs.take k) (mgs.take k) small lo hi :=
+  ⟨fun s hs ↦ h.1 s (List.mem_of_mem_take hs), by rw [h.2, List.map_take], hs⟩
+
+/-- The moduli after the first `k`, with their reciprocals. -/
+theorem stageFits_drop {specs : List SieveSpec} {mgs : List Nat} {small : Bool} {lo hi : Int}
+    (h : (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p)) (hs : SmallFits small lo hi)
+    (k : Nat) : StageFits (specs.drop k) (mgs.drop k) small lo hi :=
+  ⟨fun s hs ↦ h.1 s (List.mem_of_mem_drop hs), by rw [h.2, List.map_drop], hs⟩
 
 /-- For a word number `-Ratpoints.rowBias ≤ w0 ≤ Ratpoints.rowBias - 2 Ratpoints.maxPrimeEven`, the
 value `-w0 - offset` that the first stage reduces is at most `Ratpoints.mulModLimit` in absolute

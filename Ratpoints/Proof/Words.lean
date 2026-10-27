@@ -41,7 +41,8 @@ bits of a word, and the contract of the first stage over a piece, as `@[spec]` t
 * `Ratpoints.Sieve.getElem!_andBitArray`, `Ratpoints.Sieve.getElem!_loadBitArray`,
   `Ratpoints.Sieve.getElem!_storeBitArray`, `Ratpoints.Sieve.getElem!_fillBitArray`: the operations
   on bit arrays of the first stage set the words of one bit array and leave the other words as they
-  are.
+  are; `Ratpoints.Sieve.getElem!_andBitArray_mul_add`,
+  `Ratpoints.Sieve.getElem!_loadBitArray_mul_add`: the same at word `κ` of bit array `j`.
 * `Ratpoints.Sieve.getLsbD_clearLowBits`, `Ratpoints.Sieve.getLsbD_clearHighBits`: which bits the
   masks at the two ends of the numerator range keep.
 * `Ratpoints.Sieve.isZeroAt_eq_true_iff`: a bit array is zero when all its words are.
@@ -125,6 +126,22 @@ theorem getElem!_loadBitArray {m : Nat} (v : Vector UInt64 m) (j : Nat) (cw : UI
       if y / rbaPack = j then cw &&& row[rbaPack * x + y % rbaPack]! else v[y]! := by
   rw [loadBitArray, Vector.getElem!_fold_set! (fun κ _ ↦ cw &&& row[rbaPack * x + κ]!) hy]
   by_cases h : y / rbaPack = j <;> simp only [rbaPack_mul_le_and_lt_iff, h, ↓reduceIte, Nat.mod_def]
+
+/-- `Ratpoints.Sieve.getElem!_andBitArray` at word `κ` of bit array `j`. -/
+theorem getElem!_andBitArray_mul_add {m : Nat} (v : Vector UInt64 m) (cur : Nat)
+    (row : Array UInt64) (x : Nat) {j κ : Nat} (hκ : κ < rbaPack) (hy : rbaPack * j + κ < m) :
+    (andBitArray v cur row x)[rbaPack * j + κ]! =
+      if j = cur then v[rbaPack * j + κ]! &&& row[rbaPack * x + κ]! else v[rbaPack * j + κ]! := by
+  rw [getElem!_andBitArray _ _ _ _ hy, Nat.mul_add_div rbaPack_pos, Nat.div_eq_of_lt hκ,
+    Nat.add_zero, Nat.mul_add_mod, Nat.mod_eq_of_lt hκ]
+
+/-- `Ratpoints.Sieve.getElem!_loadBitArray` at word `κ` of bit array `j`. -/
+theorem getElem!_loadBitArray_mul_add {m : Nat} (v : Vector UInt64 m) (cur : Nat) (cw : UInt64)
+    (row : Array UInt64) (x : Nat) {j κ : Nat} (hκ : κ < rbaPack) (hy : rbaPack * j + κ < m) :
+    (loadBitArray v cur cw row x)[rbaPack * j + κ]! =
+      if j = cur then cw &&& row[rbaPack * x + κ]! else v[rbaPack * j + κ]! := by
+  rw [getElem!_loadBitArray _ _ _ _ _ hy, Nat.mul_add_div rbaPack_pos, Nat.div_eq_of_lt hκ,
+    Nat.add_zero, Nat.mul_add_mod, Nat.mod_eq_of_lt hκ]
 
 theorem getElem!_storeBitArray {m k : Nat} (v : Vector UInt64 m) (y' : Nat)
     (regs : Vector UInt64 k) (j : Nat) {y : Nat} (hy : y < m) :
@@ -559,10 +576,10 @@ theorem AndRowsLoopInvariant.getElem!_eq {m n : Nat} {cw : UInt64} {w0 : Int} {m
 theorem AndRowsLoopInvariant.next?_ne_none {m k n : Nat} {cw : UInt64} {w0 : Int} {small : Bool}
     {specs pref suff : List SieveSpec} {s : SieveSpec} {mgs rest : List Nat}
     {surv : Vector UInt64 m}
-    (pre : (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p) ∧ SmallFits small w0 (w0 + n))
+    (pre : StageFits specs mgs small w0 (w0 + n))
     (hs : specs = pref ++ s :: suff) (h : AndRowsLoopInvariant cw w0 k mgs pref (surv, rest)) :
     Std.Stream.next? rest ≠ none :=
-  next?_ne_none_of_lt pre.2.1 hs fun _ ↦ h.1
+  next?_ne_none_of_lt pre.magics hs fun _ ↦ h.1
 
 /-- The index of the first row of the first stage, as `Ratpoints.Sieve.andRows` computes it with the
 reciprocal `mg` of the cursor, is the residue of `-(w0 + offset)`
@@ -571,26 +588,26 @@ modulus. -/
 theorem AndRowsLoopInvariant.andRowsHeadInvariant {m n : Nat} {cw : UInt64} {w0 : Int}
     {small : Bool} {specs pref suff : List SieveSpec} {s : SieveSpec} {mgs rest rest' : List Nat}
     {mg : Nat} {surv : Vector UInt64 m}
-    (pre : (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p) ∧ SmallFits small w0 (w0 + n))
+    (pre : StageFits specs mgs small w0 (w0 + n))
     (hs : specs = pref ++ s :: suff)
     (h : AndRowsLoopInvariant cw w0 n mgs pref (surv, rest))
     (hnext : Std.Stream.next? rest = some (mg, rest')) :
     AndRowsHeadInvariant small cw w0 n pref s mg [] surv := by
-  obtain ⟨rfl, -⟩ := eq_magic_and_of_next?_eq_some pre.2.1 hs (fun _ ↦ h.1) hnext
-  have hfit := pre.1 s (by simp [hs])
+  obtain ⟨rfl, -⟩ := eq_magic_and_of_next?_eq_some pre.magics hs (fun _ ↦ h.1) hnext
+  have hfit := pre.fits s (by simp [hs])
   refine ⟨⟨hfit.pos, ?_⟩, fun y hy ↦ by simp [h.2 y hy]⟩
-  rw [andRowsStart, hfit.ite_modMul_modLong_eq_emod pre.2.2, Int.neg_add, Int.sub_eq_add_neg]
+  rw [andRowsStart, hfit.ite_modMul_modLong_eq_emod pre.smallFits, Int.neg_add, Int.sub_eq_add_neg]
 
 /-- After the bit arrays of the modulus `s` are all done, the cursor moves on. -/
 theorem AndRowsLoopInvariant.push {m n c : Nat} {cw : UInt64} {w0 : Int} {small : Bool}
     {specs pref suff : List SieveSpec} {s : SieveSpec} {mgs rest rest' : List Nat} {r mg : Nat}
     {surv surv' : Vector UInt64 m}
-    (pre : (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p) ∧ SmallFits small w0 (w0 + n))
+    (pre : StageFits specs mgs small w0 (w0 + n))
     (hs : specs = pref ++ s :: suff) (h : AndRowsLoopInvariant cw w0 n mgs pref (surv, rest))
     (hnext : Std.Stream.next? rest = some (mg, rest'))
     (h' : AndRowsStartInvariant cw w0 n pref s r c surv') (hc : n ≤ c) :
     AndRowsLoopInvariant cw w0 n mgs (pref ++ [s]) (surv', rest') := by
-  refine ⟨(eq_magic_and_of_next?_eq_some pre.2.1 hs (fun _ ↦ h.1) hnext).2, fun y hy ↦ ?_⟩
+  refine ⟨(eq_magic_and_of_next?_eq_some pre.magics hs (fun _ ↦ h.1) hnext).2, fun y hy ↦ ?_⟩
   have : y / rbaPack < c := Nat.lt_of_lt_of_le ((Nat.div_lt_iff_lt_mul rbaPack_pos).mpr hy) hc
   simp [h'.2 y hy, this, andWords_concat]
 
@@ -689,7 +706,7 @@ moduli and do not run out before them. -/
 @[spec]
 theorem andRows_spec (specs : List SieveSpec) (mgs : List Nat) (small : Bool) (cw : UInt64)
     (w0 : Int) (n : Nat) (surv : Vector UInt64 ((n + 1) * rbaPack)) :
-    ⦃ (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p) ∧ SmallFits small w0 (w0 + n) ⦄
+    ⦃ StageFits specs mgs small w0 (w0 + n) ⦄
     andRows specs mgs small cw w0 n surv
     ⦃ fun surv' ↦ ∀ y < n * rbaPack, surv'[y]! = andWords specs cw w0 y ⦄ := by
   vcgen [andRows] invariants
