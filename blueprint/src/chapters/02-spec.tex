@@ -141,8 +141,8 @@ only to decide whether it is a NaN and to give its value in~$\QQ$ extended by~$\
   \]
   so that both zeros have the value~$0$. The intervals of a list over the values \emph{are search
   intervals} when each $[l, u]$ has $l \le u$ and each upper end lies below the lower end of the
-  next interval; a list of pairs of bits is \emph{well formed} when no end is a NaN and the values
-  of the ends are search intervals. A rational number~$r$ \emph{lies in} a list~$D$ of intervals
+  next interval; a list of pairs of doubles, each given by its bits~$w$, is \emph{well formed} when
+  no end is a NaN and the values of the ends are search intervals. A rational number~$r$ \emph{lies in} a list~$D$ of intervals
   over the values when $l \le r \le u$ for some $[l, u] \in D$. A triple $(x, y, z)$ lies \emph{in
   the search region} of the intervals~$D$ (over the values) and the range
   from~$b_{\mathrm{low}}$ to~$b_{\mathrm{high}}$ when
