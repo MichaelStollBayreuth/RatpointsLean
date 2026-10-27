@@ -97,6 +97,25 @@ namespace Ratpoints
 
 namespace Sieve
 
+/-! ### Residues modulo 64 and the strides of the packing -/
+
+-- The residue modulo 64 of `a + m j` from that of `j`.
+private theorem toNat_add_mul_emod_sixty_four (a m : Nat) (j : Int) :
+    ((a + m * j) % 64).toNat = (a + m * (j % 64).toNat) % 64 := by
+  have h1 : (m : Int) * j = m * (j % 64) + 64 * (m * (j / 64)) := by
+    rw [← Int.mul_assoc, Int.mul_comm 64, Int.mul_assoc, ← Int.mul_add, Int.emod_add_mul_ediv]
+  have h2 : ((j % 64).toNat : Int) = j % 64 := Int.toNat_of_nonneg (Int.emod_nonneg j (by decide))
+  rw [h1, ← h2, ← Int.add_assoc, Int.add_mul_emod_self_left]
+  lia
+
+-- A stride `2 ^ k ≤ 64` of the packing times the number `64 / 2 ^ k` of its bits is 64.
+private theorem two_pow_mul_sixty_four_div {k : Nat} (hk : k ≤ 6) : 2 ^ k * (64 / 2 ^ k) = 64 :=
+  Nat.mul_div_cancel' (Nat.pow_dvd_pow 2 hk : 2 ^ k ∣ 2 ^ 6)
+
+-- The number `64 / 2 ^ k` of the bits of a stride `2 ^ k ≤ 64` of the packing is a power of 2.
+private theorem sixty_four_div_two_pow {k : Nat} (hk : k ≤ 6) : 64 / 2 ^ k = 2 ^ (6 - k) :=
+  Nat.pow_div hk (by decide : 0 < 2)
+
 /-! ### The classes -/
 
 /-- The numerator of bit `j` in the packing of the class `cl`: `a₀ + 2 ^ k j`. -/
@@ -128,14 +147,14 @@ has bit `j`. -/
 theorem NumClass.Packs.classBit_bits {cl : NumClass} {w : UInt64} (h : cl.Packs w) (j : Int) :
     classBit cl.bits j = classBit w (cl.numerator j) := by
   rw [classBit_eq, classBit_eq, h.getLsbD_bits _ (by lia), NumClass.numerator,
-    show ((2 : Int) ^ cl.k) = ((2 ^ cl.k : Nat) : Int) by simp, Int.toNat_add_mul_emod_sixty_four]
+    show ((2 : Int) ^ cl.k) = ((2 ^ cl.k : Nat) : Int) by simp, toNat_add_mul_emod_sixty_four]
 
 /-- A numerator that the class word lets through lies in the class `a₀ mod 2 ^ k`. -/
 theorem NumClass.Packs.emod_eq_of_classBit {cl : NumClass} {w : UInt64} (h : cl.Packs w) {a : Int}
     (ha : classBit w a = true) : a % 2 ^ cl.k = cl.a0 := by
   have h0 : ((a % 64).toNat : Int) = a % 64 := Int.toNat_of_nonneg (Int.emod_nonneg a (by decide))
   have hm := h.mod_eq _ (by lia) ha
-  have hd : (2 : Int) ^ cl.k ∣ 64 := mod_cast Nat.two_pow_dvd_sixty_four h.k_le
+  have hd : (2 : Int) ^ cl.k ∣ 64 := mod_cast (Nat.pow_dvd_pow 2 h.k_le : 2 ^ cl.k ∣ 64)
   rw [← Int.emod_emod_of_dvd a hd, ← h0]
   exact mod_cast hm
 
@@ -300,8 +319,8 @@ theorem WalkWhileInvariant.doubleInvariant {w p0 x : UInt64} {k a0 : Nat} (hk : 
     (h : WalkWhileInvariant w (PackInvariant w k a0) true (p0, x)) :
     DoubleInvariant k p0 false (p0, 64 / 2 ^ k) := by
   obtain ⟨n, hcl, hp⟩ := h.exists_clearedBelow_zero
-  have hP := Nat.two_pow_mul_sixty_four_div hk
-  refine ⟨⟨6 - k, Nat.sixty_four_div_two_pow hk, Nat.le_refl _, by lia⟩, nofun, fun t ↦ ?_⟩
+  have hP := two_pow_mul_sixty_four_div hk
+  refine ⟨⟨6 - k, sixty_four_div_two_pow hk, Nat.le_refl _, by lia⟩, nofun, fun t ↦ ?_⟩
   rw [hp t]
   by_cases ht : t < 64 / 2 ^ k
   · simp [ht, Nat.mod_eq_of_lt ht, hp t]
@@ -317,7 +336,7 @@ theorem DoubleInvariant.or_shiftLeft {k s mb : Nat} {p0 packed : UInt64} (hk : k
   subst hj
   have hj6 : j < 6 := (Nat.pow_lt_pow_iff_right (by decide : 1 < 2)).mp (by simpa using hs)
   have hPs : 64 / 2 ^ k ∣ 2 ^ j := by
-    rw [Nat.sixty_four_div_two_pow hk]
+    rw [sixty_four_div_two_pow hk]
     exact Nat.pow_dvd_pow 2 hj1
   have hj0 := Nat.two_pow_pos j
   have h3 : 2 ^ (j + 1) ≤ 2 ^ 6 := Nat.pow_le_pow_right (by decide) hj6
@@ -336,7 +355,7 @@ theorem exists_getLsbD_sub_mod_div_iff {w : UInt64} {c k t : Nat} (hk : k ≤ 6)
     (hcl : ClassOf w c k) :
     (∃ j < 64, w.toBitVec.getLsbD j = true ∧ (j - c % 2 ^ k) % 64 / 2 ^ k = t % (64 / 2 ^ k)) ↔
       w.toBitVec.getLsbD ((c % 2 ^ k + 2 ^ k * t) % 64) = true := by
-  have hm := Nat.two_pow_mul_sixty_four_div hk
+  have hm := two_pow_mul_sixty_four_div hk
   refine ⟨fun ⟨j, hj, hwj, hjt⟩ ↦ ?_, fun h ↦ ?_⟩
   · rwa [← (Nat.sub_mod_div_eq_mod_iff hm hj (hcl j hj hwj)).mp hjt]
   · have hlt := Nat.mod_lt (c % 2 ^ k + 2 ^ k * t) (by decide : 0 < 64)

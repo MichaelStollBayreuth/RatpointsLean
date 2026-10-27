@@ -15,19 +15,19 @@ import Ratpoints.Proof.Containers
 
 The high half of the product of two 64-bit words from the products of their 32-bit halves
 (`Ratpoints.Sieve.mulHi`) is the high half of the product of natural numbers
-(`Nat.mul_div_two_pow_64_eq`, in `Ratpoints.Proof.Containers`), so that the reductions by a
-reciprocal on 64-bit words (`Ratpoints.Sieve.mulMod`, `Ratpoints.Sieve.mulDiv`) compute the
-remainder and the quotient where the C code relies on them: with the reciprocal
-`Ratpoints.Sieve.magic p`, which exceeds `2 ^ 64 / p` by less than `1`, for every `u` with
-`u p < 2 ^ 64`, and so for the values at most `Ratpoints.mulModLimit` and the moduli up to `2 ^ 32`;
-the quotient for `p ≥ 2`, since the reciprocal `2 ^ 64` of `1` wraps to `0` on a word, as in the C
-code. So does the remainder of a value of either sign (`Ratpoints.Sieve.modMul`), and the helper
-`mod` of the C code (`Ratpoints.Sieve.modLong`) is the Euclidean `%` for every integer. The first
-two stages of the sieve reduce the sums of a word number and the offset of a row modulo the moduli
-of their sieve specs, by a multiplication with the reciprocal when the test `small` says that the
-word numbers of the piece allow it and by the helper `mod` otherwise; for a sieve spec whose offset
-lies in the range that the packing gives it (`Ratpoints.Sieve.SieveSpec.Fits`), both give the
-Euclidean remainder.
+(`Ratpoints.Sieve.toNat_mulHi`), so that the reductions by a reciprocal on 64-bit words
+(`Ratpoints.Sieve.mulMod`, `Ratpoints.Sieve.mulDiv`) compute the remainder and the quotient where
+the C code relies on them: with the reciprocal `Ratpoints.Sieve.magic p`, which exceeds `2 ^ 64 / p`
+by less than `1`, for every `u` with `u p < 2 ^ 64`, and so for the values at most
+`Ratpoints.mulModLimit` and the moduli up to `2 ^ 32`; the quotient for `p ≥ 2`, since the
+reciprocal `2 ^ 64` of `1` wraps to `0` on a word, as in the C code. So does the remainder of a
+value of either sign (`Ratpoints.Sieve.modMul`), and the helper `mod` of the C code
+(`Ratpoints.Sieve.modLong`) is the Euclidean `%` for every integer. The first two stages of the
+sieve reduce the sums of a word number and the offset of a row modulo the moduli of their sieve
+specs, by a multiplication with the reciprocal when the test `small` says that the word numbers of
+the piece allow it and by the helper `mod` otherwise; for a sieve spec whose offset lies in the
+range that the packing gives it (`Ratpoints.Sieve.SieveSpec.Fits`), both give the Euclidean
+remainder.
 
 ## Main definitions
 
@@ -169,6 +169,27 @@ namespace Sieve
 
 /-! ### The high half of a product -/
 
+-- The high half of the product of `2 ^ 32 a₁ + a₀` and `2 ^ 32 b₁ + b₀` from the four products of
+-- the halves, as `Ratpoints.Sieve.mulHi` adds them: the high product, the high halves of the two
+-- middle products, and the carry of the high half of the low product with the low halves of the
+-- middle products.
+private theorem mul_div_two_pow_64_eq (a0 a1 b0 b1 : Nat) :
+    (2 ^ 32 * a1 + a0) * (2 ^ 32 * b1 + b0) / 2 ^ 64 =
+      a1 * b1 + a0 * b1 / 2 ^ 32 + a1 * b0 / 2 ^ 32 +
+        (a0 * b0 / 2 ^ 32 + a0 * b1 % 2 ^ 32 + a1 * b0 % 2 ^ 32) / 2 ^ 32 := by
+  have e : (2 ^ 32 * a1 + a0) * (2 ^ 32 * b1 + b0) =
+      2 ^ 64 * (a1 * b1) + 2 ^ 32 * (a0 * b1 + a1 * b0) + a0 * b0 := by
+    simp only [Nat.add_mul, Nat.mul_add]
+    lia
+  rw [e]
+  generalize a0 * b0 = P0, a0 * b1 = P1, a1 * b0 = P2, a1 * b1 = P3
+  lia
+
+-- A product of two halves of 32 bits is at most `(2 ^ 32 - 1) ^ 2`.
+private theorem mul_le_of_lt_two_pow_32 {x y : Nat} (hx : x < 2 ^ 32) (hy : y < 2 ^ 32) :
+    x * y ≤ 2 ^ 64 - 2 ^ 33 + 1 :=
+  Nat.le_trans (Nat.mul_le_mul (Nat.le_sub_one_of_lt hx) (Nat.le_sub_one_of_lt hy)) (by decide)
+
 -- The partial sums of `Ratpoints.Sieve.mulHi` stay below `2 ^ 64`, for products of 32-bit halves.
 private theorem sum_halves_mod {P0 P1 P2 P3 : Nat} (h0 : P0 ≤ 2 ^ 64 - 2 ^ 33 + 1)
     (h1 : P1 ≤ 2 ^ 64 - 2 ^ 33 + 1) (h2 : P2 ≤ 2 ^ 64 - 2 ^ 33 + 1)
@@ -188,7 +209,7 @@ private theorem sum_halves_mod {P0 P1 P2 P3 : Nat} (h0 : P0 ≤ 2 ^ 64 - 2 ^ 33 
 /-- The high half of the product of two 64-bit words from the products of their 32-bit halves is
 the high half of the product of natural numbers: no partial sum wraps. -/
 theorem toNat_mulHi (a b : UInt64) : (mulHi a b).toNat = a.toNat * b.toNat / 2 ^ 64 := by
-  have e := Nat.mul_div_two_pow_64_eq (a.toNat % 2 ^ 32) (a.toNat / 2 ^ 32) (b.toNat % 2 ^ 32)
+  have e := mul_div_two_pow_64_eq (a.toNat % 2 ^ 32) (a.toNat / 2 ^ 32) (b.toNat % 2 ^ 32)
     (b.toNat / 2 ^ 32)
   rw [Nat.div_add_mod, Nat.div_add_mod] at e
   have ha1 : a.toNat / 2 ^ 32 < 2 ^ 32 := Nat.div_lt_of_lt_mul a.toNat_lt
@@ -198,8 +219,8 @@ theorem toNat_mulHi (a b : UInt64) : (mulHi a b).toNat = a.toNat * b.toNat / 2 ^
   simp only [mulHi, UInt64.toNat_add, UInt64.toNat_mul, UInt64.toNat_shiftRight_32,
     UInt64.toNat_and_0xffffffff]
   rw [e]
-  exact sum_halves_mod (Nat.mul_le_of_lt_two_pow_32 ha0 hb0) (Nat.mul_le_of_lt_two_pow_32 ha0 hb1)
-    (Nat.mul_le_of_lt_two_pow_32 ha1 hb0) (Nat.mul_le_of_lt_two_pow_32 ha1 hb1)
+  exact sum_halves_mod (mul_le_of_lt_two_pow_32 ha0 hb0) (mul_le_of_lt_two_pow_32 ha0 hb1)
+    (mul_le_of_lt_two_pow_32 ha1 hb0) (mul_le_of_lt_two_pow_32 ha1 hb1)
 
 /-! ### The reductions by a reciprocal -/
 

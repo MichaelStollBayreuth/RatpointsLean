@@ -511,6 +511,18 @@ private theorem mantissaDigits_props {isD : Char → Bool} {b : ℕ} (s : List C
   obtain ⟨h1, h2, h3, h4⟩ := mantissaDigits_bounds_and_eq_dropWhile isD false s
   exact ⟨h1, h2, fun ch hch ↦ hd ch (h3 ch hch), fun hf ↦ h4 ▸ exponentDigits_snd_isDigit hexp hf⟩
 
+-- The characters that `Char.toLower` takes to `x` are `x` and `X`.
+private theorem toLower_eq_x_iff (c : Char) : c.toLower = 'x' ↔ c = 'x' ∨ c = 'X' := by
+  simp only [Char.ext_iff, ← UInt32.toNat_inj]
+  have h1 : 'A'.val.toNat = 65 := rfl
+  have h2 : 'Z'.val.toNat = 90 := rfl
+  have h3 : 'a'.val.toNat = 97 := rfl
+  have h4 : 'x'.val.toNat = 120 := rfl
+  have h5 : 'X'.val.toNat = 88 := rfl
+  by_cases h : c.val ≥ 'A'.val ∧ c.val ≤ 'Z'.val <;>
+    simp only [Char.toLower, h, ↓reduceDIte, h4, h5] <;>
+    simp only [ge_iff_le, UInt32.le_iff_toNat_le, h1, h2] at h <;> lia
+
 /-- The parts of the word `w` (`Ratpoints.Cli.floatParts`): as many digits after the point at most
 as in all, no more than the characters of `w`, all digits of the base, and the decimal digits of the
 exponent when `w` is a floating constant that is not an infinity. -/
@@ -530,11 +542,11 @@ theorem floatParts_bounds_and_isDigit_exponentDigits (w : List Char) :
     · rename_i hx
       obtain ⟨h1, h2, h3, h4⟩ := mantissaDigits_props (b := 16) (exp := ['p', 'P']) t
         (fun _ ↦ digitValue_lt_sixteen) (by simp)
-      have hl : x.toLower = 'x' := (Char.toLower_eq_x_iff x).mpr (by simpa using hx)
+      have hl : x.toLower = 'x' := (toLower_eq_x_iff x).mpr (by simpa using hx)
       refine ⟨h1, by rw [heq] at hv; simp at hv; lia, h3, fun hd hi ↦ h4 ?_⟩
       simpa [hi, hl] using hd
     · rename_i hx
-      have hl : ¬x.toLower = 'x' := fun h ↦ hx (by simpa using (Char.toLower_eq_x_iff x).mp h)
+      have hl : ¬x.toLower = 'x' := fun h ↦ hx (by simpa using (toLower_eq_x_iff x).mp h)
       exact ⟨hdec.1, by lia, hdec.2.2.1, fun hd hi ↦ hdec.2.2.2 (by simpa [hi, hl] using hd)⟩
   · exact ⟨hdec.1, by lia, hdec.2.2.1, fun hd hi ↦ hdec.2.2.2 (by simpa [hi] using hd)⟩
 

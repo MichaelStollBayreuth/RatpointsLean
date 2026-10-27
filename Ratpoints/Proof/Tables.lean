@@ -59,9 +59,7 @@ of a negative leading coefficient in `jacobi1`, with `LONG_MIN` replaced by its 
   `f(k) b ^ D`, in any commutative semiring.
 * `Ratpoints.isSquare_sum_mul_pow_of_sq_eq_binaryForm`,
   `Ratpoints.isSquare_sum_mul_pow_sub_of_sq_eq_binaryForm`: a point whose denominator, or numerator,
-  is a unit of a commutative ring makes `f`, or the reversed polynomial, take a square value there;
-  `Ratpoints.isSquare_sum_mul_div_pow_of_sq_eq`: in a semifield, a square value of the form gives a
-  square value of `f`.
+  is a unit of a commutative ring makes `f`, or the reversed polynomial, take a square value there.
 * `Ratpoints.Sieve.getElem!_squaresMod_mul_self_mod`,
   `Ratpoints.Sieve.getElem!_squaresMod_of_isSquare`, `Ratpoints.Sieve.getElem!_inversesMod_mul_mod`,
   `Ratpoints.Sieve.natCast_evalMod`, `Ratpoints.Sieve.natCast_evalMod_reverse`: the tables compute
@@ -128,15 +126,6 @@ theorem sum_mul_pow_mul_pow_sub_of_eq_mul' {R : Type*} [CommSemiring R] {d D : �
   refine Finset.sum_congr rfl fun i hi ↦ ?_
   rw [h, mul_pow, ← pow_mul_pow_sub a ((Finset.mem_range_succ_iff.mp hi).trans hd)]
   ring
-
-/-- If `y ^ 2` is the value at `(a, b)` of the binary form of even degree `D ≥ d` made from
-`f = ∑ fᵢ Xⁱ`, then `f(a / b)` is the square of `y / b ^ (D / 2)`. -/
-theorem isSquare_sum_mul_div_pow_of_sq_eq {K : Type*} [Semifield K] {d D : ℕ} (hd : d ≤ D)
-    (hD : Even D) {f : ℕ → K} {a b y : K} (hb : b ≠ 0)
-    (h : y ^ 2 = ∑ i ∈ Finset.range (d + 1), f i * a ^ i * b ^ (D - i)) :
-    IsSquare (∑ i ∈ Finset.range (d + 1), f i * (a / b) ^ i) := by
-  rw [sum_mul_pow_mul_pow_sub_of_eq_mul hd f (div_mul_cancel₀ a hb).symm] at h
-  exact hb.isUnit.isSquare_of_sq_eq_mul_pow hD h
 
 /-- A point `(a, y, b)` whose denominator `b` is a unit of the commutative ring `R` makes `f` take a
 square value at the `k` with `a = k b` in `R`: `F(a, b) = f(k) b ^ D` with `D` even. -/

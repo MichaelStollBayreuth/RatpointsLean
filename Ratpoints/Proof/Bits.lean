@@ -10,8 +10,9 @@ module
 
 Lemmas on the 64-bit words, unsigned and signed, that the contracts of the model need and Lean core
 lacks, under their names in the namespaces of Lean core: their bits, masks and shifts, their lowest
-set bit, and the arithmetic of `long`s that does not overflow. The lemmas on vectors, arrays, lists,
-ranges, natural numbers and integers are in `Ratpoints.Proof.Containers`.
+set bit, the arithmetic of `long`s that does not overflow, and the branch-free minimum, distance and
+absolute value of `long`s. The lemmas on vectors, arrays, lists, ranges, natural numbers and
+integers are in `Ratpoints.Proof.Containers`.
 
 ## Main statements
 
@@ -138,18 +139,8 @@ theorem getLsbD_one_shiftLeft {t : Nat} (ht : t < 64) (s : Nat) :
     ((1 : UInt64) <<< t.toUInt64).toBitVec.getLsbD s = decide (s = t) := by
   grind [UInt64.toBitVec_shiftLeft, UInt64.toBitVec_one]
 
-/-- The bits `i < k` for which `c i` holds, set one after the other in the word `0`. -/
-theorem getLsbD_fold_or_one_shiftLeft (c : Nat → Bool) {k : Nat} (hk : k ≤ 64) (t : Nat) :
-    (Nat.fold k (fun i _ w ↦ if c i then w ||| (1 : UInt64) <<< i.toUInt64 else w)
-      0).toBitVec.getLsbD t = (decide (t < k) && c t) := by
-  induction k with
-  | zero => simp
-  | succ k ih =>
-    rw [Nat.fold_succ]
-    grind [UInt64.toBitVec_or, getLsbD_one_shiftLeft]
-
 /-- The bits `f i` for the `i < k` for which `c i` holds, set one after the other in the word `0`,
-for `f i < 64`: `UInt64.getLsbD_fold_or_one_shiftLeft` with the bit `f i` at step `i`. -/
+for `f i < 64`. -/
 theorem getLsbD_fold_or_one_shiftLeft_comp (c : Nat → Bool) (f : Nat → Nat) {k : Nat}
     (hf : ∀ i < k, f i < 64) (t : Nat) :
     (Nat.fold k (fun i _ w ↦ if c i then w ||| (1 : UInt64) <<< (f i).toUInt64 else w)
@@ -161,6 +152,13 @@ theorem getLsbD_fold_or_one_shiftLeft_comp (c : Nat → Bool) (f : Nat → Nat) 
     have := getLsbD_one_shiftLeft (hf k (Nat.lt_succ_self k)) t
     have := ih fun i hi ↦ hf i (Nat.lt_succ_of_lt hi)
     split <;> grind [UInt64.toBitVec_or]
+
+/-- The bits `i < k` for which `c i` holds, set one after the other in the word `0`: the case
+`f i = i` of `UInt64.getLsbD_fold_or_one_shiftLeft_comp`. -/
+theorem getLsbD_fold_or_one_shiftLeft (c : Nat → Bool) {k : Nat} (hk : k ≤ 64) (t : Nat) :
+    (Nat.fold k (fun i _ w ↦ if c i then w ||| (1 : UInt64) <<< i.toUInt64 else w)
+      0).toBitVec.getLsbD t = (decide (t < k) && c t) := by
+  simpa using getLsbD_fold_or_one_shiftLeft_comp c (fun i ↦ i) (fun i hi ↦ by lia) t
 
 theorem getLsbD_or_one_shiftLeft (x : UInt64) {n : Nat} (hn : n < 64) (t : Nat) :
     (x ||| 1 <<< UInt64.ofNat n).toBitVec.getLsbD t = (x.toBitVec.getLsbD t || decide (t = n)) := by

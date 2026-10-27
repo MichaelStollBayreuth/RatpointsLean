@@ -18,15 +18,17 @@ Candidates for `Mathlib.Analysis.Polynomial.Order`: over a linearly ordered norm
 order topology, such as `ℝ`, a nonzero polynomial has, far right, the sign of its leading
 coefficient and, far left, that sign times `(-1) ^ deg` (`Polynomial.eventually_atTop_sign_eval`,
 `Polynomial.eventually_atBot_sign_eval`); near a point it keeps a nonzero sign
-(`Polynomial.eventually_sign_eval_eq`), and just right of a point `x` where it or its derivative
-does not vanish it has the sign of `p(x)`, or of `p'(x)` when `p(x) = 0`, and just left of `x` that
-of `p(x)`, or of `-p'(x)` when `p(x) = 0` (`Polynomial.eventually_sign_eval_nhdsGT`,
-`Polynomial.eventually_sign_eval_nhdsLT`). By the intermediate value theorem, opposite signs of a
-real polynomial at two points give a root between them
-(`Polynomial.exists_isRoot_of_eval_mul_eval_neg`), a negative sign just right of the left end of an
-interval without a root holds on the whole interval (`Polynomial.eval_neg_of_forall_not_isRoot`),
-and a nonzero real polynomial of degree `n` changes its sign at most `n` times along increasing
-points (`Polynomial.length_le_natDegree_add_one_of_isChain`).
+(`Polynomial.eventually_sign_eval_eq`), near a root `x` where its derivative does not vanish it has
+the sign of `(y - x) p'(x)` at `y` (`Polynomial.eventually_sign_eval_eq_sign_sub_mul`), and just
+right of a point `x` where it or its derivative does not vanish it has the sign of `p(x)`, or of
+`p'(x)` when `p(x) = 0`, and just left of `x` that of `p(x)`, or of `-p'(x)` when `p(x) = 0`
+(`Polynomial.eventually_sign_eval_nhdsGT`, `Polynomial.eventually_sign_eval_nhdsLT`). By the
+intermediate value theorem, opposite signs of a real polynomial at two points give a root between
+them (`Polynomial.exists_isRoot_of_eval_mul_eval_neg`), a negative sign just right of the left end
+of an interval without a root holds on the whole interval
+(`Polynomial.eval_neg_of_forall_not_isRoot`), and a nonzero real polynomial of degree `n` changes
+its sign at most `n` times along increasing points
+(`Polynomial.length_le_natDegree_add_one_of_isChain`).
 
 ## Implementation notes
 
@@ -89,6 +91,15 @@ theorem eventually_atBot_sign_eval {p : 𝕜[X]} (hp : p ≠ 0) :
   filter_upwards [tendsto_neg_atBot_atTop.eventually h] with x hx
   simpa [eval_comp] using hx
 
+/-- Near a root `x` of `p` with `p'(x) ≠ 0`, `p(y)` has the sign of `(y - x) p'(x)`. -/
+theorem eventually_sign_eval_eq_sign_sub_mul {p : 𝕜[X]} {x : 𝕜} (h0 : p.eval x = 0)
+    (h : p.derivative.eval x ≠ 0) : ∀ᶠ y in 𝓝 x,
+      SignType.sign (p.eval y) = SignType.sign (y - x) * SignType.sign (p.derivative.eval x) := by
+  filter_upwards [eventually_sign_eval_eq (eval_divByMonic_X_sub_C p x ▸ h)] with y hy
+  rw [← eval_divByMonic_X_sub_C, ← hy]
+  nth_rw 1 [← mul_divByMonic_eq_iff_isRoot.mpr h0]
+  simp [sign_mul]
+
 /-- Just right of a point `x` where `p(x) ≠ 0` or `p'(x) ≠ 0`, a polynomial `p` has the sign of
 `p(x)`, or of `p'(x)` when `p(x) = 0`. -/
 theorem eventually_sign_eval_nhdsGT {p : 𝕜[X]} {x : 𝕜}
@@ -96,12 +107,9 @@ theorem eventually_sign_eval_nhdsGT {p : 𝕜[X]} {x : 𝕜}
     ∀ᶠ y in 𝓝[>] x, SignType.sign (p.eval y) =
       if p.eval x = 0 then SignType.sign (p.derivative.eval x) else SignType.sign (p.eval x) := by
   split_ifs with h0
-  · have hq0 := eval_divByMonic_X_sub_C p x ▸ h.resolve_left (not_not.mpr h0)
-    filter_upwards [nhdsWithin_le_nhds (eventually_sign_eval_eq hq0), self_mem_nhdsWithin]
-      with y hy hyx
-    rw [← eval_divByMonic_X_sub_C, ← hy]
-    nth_rw 1 [← mul_divByMonic_eq_iff_isRoot.mpr h0]
-    simp [sign_mul, sign_pos (sub_pos.mpr (Set.mem_Ioi.mp hyx))]
+  · filter_upwards [nhdsWithin_le_nhds (eventually_sign_eval_eq_sign_sub_mul h0
+      (h.resolve_left (not_not.mpr h0))), self_mem_nhdsWithin] with y hy hyx
+    rw [hy, sign_pos (sub_pos.mpr (Set.mem_Ioi.mp hyx)), one_mul]
   · exact nhdsWithin_le_nhds (eventually_sign_eval_eq h0)
 
 /-- Just left of a point `x` where `p(x) ≠ 0` or `p'(x) ≠ 0`, a polynomial `p` has the sign of
@@ -111,12 +119,9 @@ theorem eventually_sign_eval_nhdsLT {p : 𝕜[X]} {x : 𝕜}
     ∀ᶠ y in 𝓝[<] x, SignType.sign (p.eval y) =
       if p.eval x = 0 then -SignType.sign (p.derivative.eval x) else SignType.sign (p.eval x) := by
   split_ifs with h0
-  · have hq0 := eval_divByMonic_X_sub_C p x ▸ h.resolve_left (not_not.mpr h0)
-    filter_upwards [nhdsWithin_le_nhds (eventually_sign_eval_eq hq0), self_mem_nhdsWithin]
-      with y hy hyx
-    rw [← eval_divByMonic_X_sub_C, ← hy]
-    nth_rw 1 [← mul_divByMonic_eq_iff_isRoot.mpr h0]
-    simp [sign_mul, sign_neg (sub_neg.mpr (Set.mem_Iio.mp hyx))]
+  · filter_upwards [nhdsWithin_le_nhds (eventually_sign_eval_eq_sign_sub_mul h0
+      (h.resolve_left (not_not.mpr h0))), self_mem_nhdsWithin] with y hy hyx
+    rw [hy, sign_neg (sub_neg.mpr (Set.mem_Iio.mp hyx)), neg_one_mul]
   · exact nhdsWithin_le_nhds (eventually_sign_eval_eq h0)
 
 end OrderTopology
@@ -125,10 +130,8 @@ end OrderTopology
 theorem exists_isRoot_of_eval_mul_eval_neg {p : ℝ[X]} {a b : ℝ} (hab : a < b)
     (h : p.eval a * p.eval b < 0) : ∃ z ∈ Set.Ioo a b, p.IsRoot z := by
   rcases mul_neg_iff.mp h with ⟨ha, hb⟩ | ⟨ha, hb⟩
-  · obtain ⟨z, hz, hz0⟩ := intermediate_value_Ioo' hab.le p.continuous.continuousOn ⟨hb, ha⟩
-    exact ⟨z, hz, hz0⟩
-  · obtain ⟨z, hz, hz0⟩ := intermediate_value_Ioo hab.le p.continuous.continuousOn ⟨ha, hb⟩
-    exact ⟨z, hz, hz0⟩
+  · exact intermediate_value_Ioo' hab.le p.continuous.continuousOn ⟨hb, ha⟩
+  · exact intermediate_value_Ioo hab.le p.continuous.continuousOn ⟨ha, hb⟩
 
 /-- An interval `(l, r)` without a root of a real polynomial `p`, on which `p` is negative just
 right of `l`, holds no `x` with `p(x) ≥ 0`. -/
@@ -143,14 +146,14 @@ theorem eval_neg_of_forall_not_isRoot {p : ℝ[X]} {l r : ℝ}
 
 -- The roots of `p` in the gaps of a strictly increasing list of points at which the signs of `p`
 -- alternate: one in each gap, all above the first point.
-private theorem exists_roots_of_isChain {p : ℝ[X]} {l : List ℝ} (x : ℝ)
+private theorem exists_roots_of_isChain {p : ℝ[X]} {l : List ℝ} {x : ℝ}
     (hl : (x :: l).IsChain fun a b ↦ a < b ∧ p.eval a * p.eval b < 0) :
     ∃ rs : List ℝ, rs.length = l.length ∧ rs.Nodup ∧ ∀ r ∈ rs, x < r ∧ p.IsRoot r := by
   induction l generalizing x with
   | nil => exact ⟨[], rfl, .nil, by simp⟩
   | cons y l ih =>
     rw [List.isChain_cons_cons] at hl
-    obtain ⟨rs, hlen, hnd, hrs⟩ := ih y hl.2
+    obtain ⟨rs, hlen, hnd, hrs⟩ := ih hl.2
     obtain ⟨z, hz, hz0⟩ := exists_isRoot_of_eval_mul_eval_neg hl.1.1 hl.1.2
     refine ⟨z :: rs, by simp [hlen], .cons (fun hm ↦ lt_asymm hz.2 (hrs z hm).1) hnd, ?_⟩
     simp only [List.mem_cons, forall_eq_or_imp]
@@ -162,7 +165,7 @@ theorem length_le_natDegree_add_one_of_isChain {p : ℝ[X]} (hp : p ≠ 0) {l : 
     (hl : l.IsChain fun a b ↦ a < b ∧ p.eval a * p.eval b < 0) : l.length ≤ p.natDegree + 1 := by
   rcases l with _ | ⟨x, l⟩
   · simp
-  obtain ⟨rs, hlen, hnd, hrs⟩ := exists_roots_of_isChain x hl
+  obtain ⟨rs, hlen, hnd, hrs⟩ := exists_roots_of_isChain hl
   have h1 : rs.toFinset ⊆ p.roots.toFinset := fun r hr ↦ by
     simpa [mem_roots hp] using (hrs r (List.mem_toFinset.mp hr)).2
   have h2 := (Finset.card_le_card h1).trans (p.roots.toFinset_card_le.trans (card_roots' p))
