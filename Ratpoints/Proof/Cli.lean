@@ -229,12 +229,12 @@ theorem call_process_of_not_keep {r : Delivery Data} {p : ℤ × ℤ × ℤ}
 count `t`, with the flag of the stop clear: the points that the callback counts
 (`Ratpoints.Cli.countedPoints`) are printed in turn and counted, and the search is stopped when one
 point is enough and `L` has a point that the callback keeps (`Ratpoints.Cli.Data.keeps`). -/
--- The delivery is passed to the lemmas of a call by name: unifying its projection with the data
--- would unfold `Ratpoints.Cli.Data.keeps` and the loop of `Ratpoints.Cli.inRegion`.
 theorem deliver_process (d : Data) (t : ℤ) (L : List (ℤ × ℤ × ℤ)) :
     (⟨d, t, false⟩ : Delivery Data).deliver process L =
       ⟨(countedPoints d.keeps d.onePoint L).foldl Data.printPoint d,
         t + (countedPoints d.keeps d.onePoint L).length, d.onePoint && L.any d.keeps⟩ := by
+  -- The delivery is passed to the lemmas of a call by name: unifying its projection with the data
+  -- would unfold `Ratpoints.Cli.Data.keeps` and the loop of `Ratpoints.Cli.inRegion`.
   induction L generalizing d t with
   | nil => simp [countedPoints_nil]
   | cons p L ih =>
@@ -357,15 +357,10 @@ theorem exists_checkOptions_eq_ok_of_input_eq_ok {args : List String} {c : List 
       u.ends = (iv.complete H).ends ∧ (u.quiet = true → u.verbose = false) := by
   match args, hi with
   | s0 :: h :: os, hi =>
-    simp only [input] at hi
-    rcases hc : coefficients s0 with _ | c0
-    · rw [hc] at hi; cases hi
-    rcases hH : heightBound h with _ | H0
-    · rw [hc, hH] at hi; cases hi
-    rcases hk : checkOptions H0 ({}, { bHigh := H0 }, {}, {}) os with _ | ⟨s1, o1, u1, iv⟩
-    · rw [hc, hH] at hi; simp only [bind, Except.bind] at hi; rw [hk] at hi; cases hi
-    rw [hc, hH] at hi
-    simp only [bind, Except.bind, hk, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hi
+    obtain ⟨c0, -, hi⟩ := Except.bind_eq_ok hi
+    obtain ⟨H0, hH, hi⟩ := Except.bind_eq_ok hi
+    obtain ⟨⟨s1, o1, u1, iv⟩, hk, hi⟩ := Except.bind_eq_ok hi
+    simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hi
     obtain ⟨-, rfl, -, rfl, rfl⟩ := hi
     exact ⟨os, iv, fun a ha ↦ .tail _ (.tail _ ha), (le_and_lt_of_heightBound_eq_ok hH).1,
       (le_and_lt_of_heightBound_eq_ok hH).2, ⟨s1, o1, u1, hk⟩, rfl, rfl, fun hq ↦ by simp_all⟩
@@ -419,7 +414,7 @@ theorem run_eq_of_onePoint {args : List String} {c : List ℤ} {H : ℕ} {s : Si
 
 /-! ### The search region of the command line -/
 
-theorem Intervals.lower_eq_ok {iv iv' : Intervals} {a : String} (h : iv.lower a = .ok iv') :
+theorem Intervals.eq_of_lower_eq_ok {iv iv' : Intervals} {a : String} (h : iv.lower a = .ok iv') :
     iv.lSeen = false ∧ iv.numInter ≠ maxDegree ∧ ∃ e d, Id.run (scanEnd a (-1)) = some (e, d) ∧
       (0 < iv.numInter → cmpEnd iv.ends[2 * iv.numInter - 1]! e < 0) ∧
       iv' = { iv with
@@ -442,7 +437,7 @@ theorem Intervals.lower_eq_ok {iv iv' : Intervals} {a : String} (h : iv.lower a 
   rw [ite_eq_right h3] at h
   exact ⟨fun hn ↦ not_le.mp fun h' ↦ h3 ⟨hn, h'⟩, (Except.ok.inj h).symm⟩
 
-theorem Intervals.upper_eq_ok_of_lSeen {iv iv' : Intervals} {H : ℕ} {a : String}
+theorem Intervals.eq_of_upper_eq_ok_of_lSeen {iv iv' : Intervals} {H : ℕ} {a : String}
     (hl : iv.lSeen = true) (h : iv.upper H a = .ok iv') :
     ∃ e d, Id.run (scanEnd a 1) = some (e, d) ∧
       ¬0 < cmpEnd (iv.ends.set! (2 * iv.numInter + 1) e)[2 * iv.numInter]!
@@ -463,7 +458,7 @@ theorem Intervals.upper_eq_ok_of_lSeen {iv iv' : Intervals} {H : ℕ} {a : Strin
   · cases h
   exact ⟨‹_›, (Except.ok.inj h).symm⟩
 
-theorem Intervals.upper_eq_ok_of_not_lSeen {iv iv' : Intervals} {H : ℕ} {a : String}
+theorem Intervals.eq_of_upper_eq_ok_of_lSeen_eq_false {iv iv' : Intervals} {H : ℕ} {a : String}
     (hl : iv.lSeen = false) (hd : 0 < iv.domain.size) (he : 1 < iv.ends.size)
     (h : iv.upper H a = .ok iv') :
     iv.numInter = 0 ∧ ∃ e d, Id.run (scanEnd a 1) = some (e, d) ∧
@@ -587,7 +582,7 @@ theorem readsWF_default (H : ℕ) : Intervals.ReadsWF H {} 0 false where
 theorem Intervals.ReadsWF.lower {H : ℕ} {iv iv' : Intervals} {a : String}
     (hw : iv.ReadsWF H iv.numInter iv.lSeen) (h : iv.lower a = .ok iv') :
     iv'.ReadsWF H iv'.numInter iv'.lSeen := by
-  obtain ⟨hl, hn, e, d, hs, hc, rfl⟩ := Intervals.lower_eq_ok h
+  obtain ⟨hl, hn, e, d, hs, hc, rfl⟩ := Intervals.eq_of_lower_eq_ok h
   obtain ⟨he1, hd1, hd2, -⟩ := inf_mem_and_isNaN_eq_false_and_le_of_run_scanEnd_eq_some hs
   rw [hl] at hw
   have hnm : iv.numInter < maxDegree := by lia [hw.le_maxDegree']
@@ -682,7 +677,7 @@ theorem Intervals.ReadsWF.close {H : ℕ} {iv : Intervals} {e : ExactEnd} {u : D
 theorem Intervals.ReadsWF.upper_of_lSeen {H : ℕ} {iv iv' : Intervals} {a : String}
     (hw : iv.ReadsWF H iv.numInter iv.lSeen) (hl : iv.lSeen = true) (h : iv.upper H a = .ok iv') :
     iv'.ReadsWF H iv'.numInter iv'.lSeen := by
-  obtain ⟨e, d, hs, hc, rfl⟩ := Intervals.upper_eq_ok_of_lSeen hl h
+  obtain ⟨e, d, hs, hc, rfl⟩ := Intervals.eq_of_upper_eq_ok_of_lSeen hl h
   obtain ⟨he1, hd1, -, hd2⟩ := inf_mem_and_isNaN_eq_false_and_le_of_run_scanEnd_eq_some hs
   rw [hl] at hw
   have hes : 2 * iv.numInter + 1 < iv.ends.size := by rw [hw.size_ends]; lia [hw.lt_maxDegree]
@@ -696,7 +691,7 @@ theorem Intervals.ReadsWF.upper_of_not_lSeen {H : ℕ} {iv iv' : Intervals} {a :
     (hl : iv.lSeen = false) (h : iv.upper H a = .ok iv') :
     iv'.ReadsWF H iv'.numInter iv'.lSeen := by
   have hm := zero_lt_maxDegree
-  obtain ⟨hn0, e, d, hs, -, rfl⟩ := Intervals.upper_eq_ok_of_not_lSeen hl
+  obtain ⟨hn0, e, d, hs, -, rfl⟩ := Intervals.eq_of_upper_eq_ok_of_lSeen_eq_false hl
     (by rw [hw.size_domain]; lia) (by rw [hw.size_ends]; lia) h
   obtain ⟨he1, hd1, -, hd2⟩ := inf_mem_and_isNaN_eq_false_and_le_of_run_scanEnd_eq_some hs
   have e0 : (iv.ends.set! 0 { iv.ends[0]! with inf := -1 })[0]! = { iv.ends[0]! with inf := -1 } :=
@@ -747,7 +742,7 @@ theorem Intervals.LowerMax.lower {H : ℕ} {iv iv' : Intervals} {a : String}
     (hw : iv.ReadsWF H iv.numInter iv.lSeen) (hm : iv.LowerMax iv.numInter iv.lSeen)
     (hlen : a.length < 2 ^ 56) (h : iv.lower a = .ok iv') :
     iv'.LowerMax iv'.numInter iv'.lSeen := by
-  obtain ⟨hl, hn, e, d, hs, -, rfl⟩ := Intervals.lower_eq_ok h
+  obtain ⟨hl, hn, e, d, hs, -, rfl⟩ := Intervals.eq_of_lower_eq_ok h
   rw [hl] at hw hm
   have hnm := hw.le_maxDegree'
   intro j hj1 hj2
@@ -780,11 +775,11 @@ theorem Intervals.LowerMax.upper {H : ℕ} {iv iv' : Intervals} {a : String}
     (hw : iv.ReadsWF H iv.numInter iv.lSeen) (hm : iv.LowerMax iv.numInter iv.lSeen)
     (h : iv.upper H a = .ok iv') : iv'.LowerMax iv'.numInter iv'.lSeen := by
   cases hl : iv.lSeen
-  · obtain ⟨hn0, -, -, -, -, rfl⟩ := Intervals.upper_eq_ok_of_not_lSeen hl
+  · obtain ⟨hn0, -, -, -, -, rfl⟩ := Intervals.eq_of_upper_eq_ok_of_lSeen_eq_false hl
       (by rw [hw.size_domain]; have := zero_lt_maxDegree; lia)
       (by rw [hw.size_ends]; have := zero_lt_maxDegree; lia) h
     exact fun j h1 h2 ↦ absurd h2 (by simp; lia)
-  obtain ⟨e, d, -, -, rfl⟩ := Intervals.upper_eq_ok_of_lSeen hl h
+  obtain ⟨e, d, -, -, rfl⟩ := Intervals.eq_of_upper_eq_ok_of_lSeen hl h
   rw [hl] at hm hw
   exact hm.close false (by rw [hw.size_domain]; lia [hw.lt_maxDegree])
 
@@ -842,32 +837,35 @@ theorem reads_of_input_eq_ok {args : List String} {c : List ℤ} {H : ℕ} {s : 
     (fun iv a iv' _ hw h ↦ hw.upper hH hH63 h) (fun _ _ ↦ trivial) (readsWF_default H) hk
   exact hw.complete hH hH63
 
-theorem length_domain_of_reads {H : ℕ} {iv : Intervals} (hw : iv.ReadsWF H iv.numInter false) :
+theorem Intervals.ReadsWF.length_take {H : ℕ} {iv : Intervals}
+    (hw : iv.ReadsWF H iv.numInter false) :
     (iv.domain.toList.take iv.numInter).length = iv.numInter := by
   simp [hw.size_domain]; lia [hw.le_maxDegree']
 
-theorem noNaN_of_reads {H : ℕ} {iv : Intervals} (hw : iv.ReadsWF H iv.numInter false) :
+theorem Intervals.ReadsWF.noNaN_take {H : ℕ} {iv : Intervals}
+    (hw : iv.ReadsWF H iv.numInter false) :
     NoNaN (iv.domain.toList.take iv.numInter) := fun p hp ↦ by
   obtain ⟨j, hj, -, rfl⟩ := Array.exists_eq_of_mem_take_toList hp
   exact ⟨(hw.interval j hj).1, (hw.interval j hj).2.1⟩
 
-theorem joinsWell_of_reads {H : ℕ} {iv : Intervals} (hw : iv.ReadsWF H iv.numInter false)
-    (hm : iv.LowerMax iv.numInter false) : JoinsWell (iv.domain.toList.take iv.numInter) := by
+theorem Intervals.ReadsWF.joinsWell_take {H : ℕ} {iv : Intervals}
+    (hw : iv.ReadsWF H iv.numInter false) (hm : iv.LowerMax iv.numInter false) :
+    JoinsWell (iv.domain.toList.take iv.numInter) := by
   have hs : iv.numInter ≤ iv.domain.size := by rw [hw.size_domain]; lia [hw.le_maxDegree']
   refine ⟨fun p hp ↦ ?_, fun i j hi hij hj ↦ ?_⟩
   · obtain ⟨k, hk, -, rfl⟩ := Array.exists_eq_of_mem_take_toList hp
     exact (hw.interval k hk).2.2.1
-  · rw [length_domain_of_reads hw] at hj
+  · rw [hw.length_take] at hj
     rw [Array.getElem!_take_toList (by lia) hs, Array.getElem!_take_toList hj hs]
     exact (hm j (by lia) (by simpa using hj)).2 _ (hw.interval i (by lia)).1
       ((hm i hi (by simp; lia)).1.trans (hw.chainEnds_two_mul.le (by lia) (by lia)))
 
-theorem intervalsWF_take_of_reads {H : ℕ} {iv : Intervals} (hw : iv.ReadsWF H iv.numInter false)
-    (hm : iv.LowerMax iv.numInter false) :
+theorem Intervals.ReadsWF.intervalsWF_joinIntervals {H : ℕ} {iv : Intervals}
+    (hw : iv.ReadsWF H iv.numInter false) (hm : iv.LowerMax iv.numInter false) :
     IntervalsWF (domainBits (Id.run (joinIntervals (iv.domain.toList.take iv.numInter)))) := by
-  obtain ⟨-, hnan, -, hwf⟩ := run_joinIntervals (noNaN_of_reads hw)
+  obtain ⟨-, hnan, -, hwf⟩ := run_joinIntervals hw.noNaN_take
   refine ⟨fun i hi ↦ ?_,
-    by simpa [List.map_map, Function.comp_def] using hwf (joinsWell_of_reads hw hm)⟩
+    by simpa [List.map_map, Function.comp_def] using hwf (hw.joinsWell_take hm)⟩
   obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hi
   exact ⟨(isNaN_eq_false_iff _).mp (hnan p hp).1, (isNaN_eq_false_iff _).mp (hnan p hp).2⟩
 
@@ -880,7 +878,7 @@ theorem inRegion_iff_of_input_eq_ok {args : List String} {c : List ℤ} {H : ℕ
     Id.run (inRegion a b u.ends o.domain.length) = true ↔
       InExactRegion u.ends o.domain.length (a / b) := by
   obtain ⟨-, -, iv, hw, hdom, hends⟩ := reads_of_input_eq_ok hi
-  rw [hdom, length_domain_of_reads hw, hends]
+  rw [hdom, hw.length_take, hends]
   exact run_inRegion a b hw.chainEnds_two_mul
 
 /-- The search intervals that the program gives the library hold the exact search region of its
@@ -892,11 +890,11 @@ theorem inIntervals_joinIntervals_of_inExactRegion {args : List String} {c : Lis
     (hx : |x| ≤ H) (hex : InExactRegion u.ends o.domain.length x) :
     InIntervals (domainValues (Id.run (joinIntervals o.domain))) x := by
   obtain ⟨-, -, iv, hw, hdom, hends⟩ := reads_of_input_eq_ok hi
-  rw [hdom, length_domain_of_reads hw, hends] at hex
+  rw [hdom, hw.length_take, hends] at hex
   obtain ⟨j, hj, h1, h2⟩ := hex
   have hm := hw.le_maxDegree'
   rw [hdom]
-  obtain ⟨-, -, hcov, -⟩ := run_joinIntervals (noNaN_of_reads hw)
+  obtain ⟨-, -, hcov, -⟩ := run_joinIntervals hw.noNaN_take
   obtain ⟨p, hp, hpx⟩ := hcov x ⟨_, Array.mem_take_toList_of_lt hj (by rw [hw.size_domain]; lia),
     (hw.interval j hj).2.2.2 x hx h1 h2⟩
   exact ⟨_, List.mem_map_of_mem hp, hpx⟩
@@ -925,7 +923,7 @@ theorem intervalsWF_joinIntervals_of_input_eq_ok {args : List String} {c : List 
     (fun iv a iv' _ hw h ↦ ⟨hw.1.upper hH hH63 h, hw.2.upper hw.1 h⟩)
     (fun a ha ↦ hlen a (hos a ha)) ⟨readsWF_default H, lowerMax_default⟩ hk
   rw [hdom]
-  exact intervalsWF_take_of_reads (hP.1.complete hH hH63) (hP.2.complete hP.1)
+  exact (hP.1.complete hH hH63).intervalsWF_joinIntervals (hP.2.complete hP.1)
 
 /-- For a point of height at most `H` of a command line that the program accepts, the search
 region of the search on the joined intervals is that of the range of the denominators, given that
@@ -940,8 +938,7 @@ theorem inRegion_joinIntervals_iff {args : List String} {c : List ℤ} {H : ℕ}
   · simp [inRegion_iff, hz]
   simp only [inRegion_iff, hz, false_or, true_or, and_true]
   refine ⟨fun h ↦ ⟨h.1, h.2.1⟩, fun h ↦ ⟨h.1, h.2, ?_⟩⟩
-  rcases hx with h0 | h0 | h0
-  · exact absurd h0 hz
+  rcases hx.resolve_left hz with h0 | h0
   · exact .inl (by simp [h0, joinIntervals])
   · exact .inr (inIntervals_joinIntervals_of_inExactRegion hi
       ((abs_intCast_div_intCast_le_abs p.1 p.2.2).trans (mod_cast hp.2.2.2.1)) h0)
@@ -966,11 +963,9 @@ theorem mem_filter_keeps_iff_of_input_eq_ok {args : List String} {c : List ℤ} 
   rw [List.mem_filter, mem_iff_isPoint_of_findPoints_eq_ok
     (o := { o with domain := Id.run (joinIntervals o.domain) }) hS hL hc,
     keeps_ofOutput_iff, inRegion_iff_of_input_eq_ok hi]
-  constructor
-  · intro ⟨⟨hp, hy, hr⟩, hk1, hx⟩
-    exact ⟨hp, hy, hk1, (inRegion_joinIntervals_iff hi hp hx).mp hr, hx⟩
-  · intro ⟨hp, hy, hk1, hr, hx⟩
-    exact ⟨⟨hp, hy, (inRegion_joinIntervals_iff hi hp hx).mpr hr⟩, hk1, hx⟩
+  exact ⟨fun ⟨⟨hp, hy, hr⟩, hk1, hx⟩ ↦
+      ⟨hp, hy, hk1, (inRegion_joinIntervals_iff hi hp hx).mp hr, hx⟩,
+    fun ⟨hp, hy, hk1, hr, hx⟩ ↦ ⟨⟨hp, hy, (inRegion_joinIntervals_iff hi hp hx).mpr hr⟩, hk1, hx⟩⟩
 
 end Ratpoints.Cli
 

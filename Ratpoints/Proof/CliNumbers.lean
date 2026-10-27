@@ -103,7 +103,7 @@ theorem isNaN_nearestDecimal (neg : Bool) (m : ℕ) (t : ℤ) :
     (nearestDecimal neg m t).isNaN = false := by
   simp only [nearestDecimal]
   split_ifs <;> simp only [isNaN_ofRatio _ _ one_ne_zero,
-    isNaN_ofRatio _ _ (pow_ne_zero _ (by norm_num : (10 : ℕ) ≠ 0)), isNaN_huge, isNaN_huge_neg]
+    isNaN_ofRatio _ _ (pow_ne_zero _ (by decide : (10 : ℕ) ≠ 0)), isNaN_huge, isNaN_huge_neg]
 
 theorem isNaN_strtod (w : List Char) : (strtod w).isNaN = false := by
   simp only [strtod]
@@ -339,8 +339,7 @@ theorem digitValue_lt_ten {ch : Char} (h : ch.isDigit = true) : digitValue ch < 
   rw [digitValue_of_isDigit h]
   simp only [Char.isDigit, Bool.and_eq_true, decide_eq_true_eq, UInt32.le_iff_toNat_le] at h
   simp only [Char.toNat, show '0'.val.toNat = 48 from rfl] at h ⊢
-  have : '9'.val.toNat = 57 := rfl
-  lia
+  lia [(show '9'.val.toNat = 57 from rfl)]
 
 theorem digitValue_lt_sixteen {ch : Char} (h : ch.isHexDigit = true) : digitValue ch < 16 := by
   by_cases hd : ch.isDigit = true
@@ -560,7 +559,7 @@ theorem ite_natCast_mul_pow_eq (m b : ℕ) (t : ℤ) :
 -- The exponent `E` of a floating constant of fewer than `2 ^ 56` characters lies below
 -- `LONG_MAX / 20` when it meets the bounds of `Ratpoints.Cli.nearestBinary_eq` (hexadecimal) or
 -- `Ratpoints.Cli.nearestDecimal_eq` (decimal) for a finite double that is not a zero.
-private theorem natAbs_exponent_lt {E k len : ℕ} {l : ℕ} {eneg hex : Bool} (hk : k ≤ len)
+private theorem lt_of_exponent_bounds {E k len : ℕ} {l : ℕ} {eneg hex : Bool} (hk : k ≤ len)
     (hlen : len < 2 ^ 56) (hl : l < 4 * len + 1)
     (hb : hex = true → (l : ℤ) + ((if eneg then -(E : ℤ) else E) - 4 * k) < 1024 ∧
       -1075 < (l : ℤ) + 1 + ((if eneg then -(E : ℤ) else E) - 4 * k))
@@ -582,7 +581,7 @@ theorem log2_natOfDigitsIn_lt {w : List Char} :
   rcases Nat.eq_zero_or_pos (natOfDigitsIn (if (floatParts w).2.1 then 16 else 10)
     (floatParts w).2.2.1) with h | h
   · rw [h]; simp
-  · have := (Nat.log2_lt h.ne').mpr (h1.trans_le h2); lia
+  · lia [(Nat.log2_lt h.ne').mpr (h1.trans_le h2)]
 
 -- The exponent of a floating constant whose double is finite and not a zero, of fewer than `2 ^ 56`
 -- characters, lies below the bound `LONG_MAX / 20` at which `scan_end` stops taking digits, and the
@@ -598,10 +597,10 @@ private theorem exponent_lt_of_strtod {w : List Char} (hi : isInfWord (dropSign 
   by_cases hx : (floatParts w).2.1 = true
   · simp only [hx, ↓reduceIte] at hf hz hl ⊢
     obtain ⟨h1, h2, h3, -⟩ := nearestBinary_eq hf hz
-    exact ⟨natAbs_exponent_lt (hex := true) hk (by lia) hl (fun _ ↦ ⟨h2, h3⟩) nofun, h1⟩
+    exact ⟨lt_of_exponent_bounds (hex := true) hk (by lia) hl (fun _ ↦ ⟨h2, h3⟩) nofun, h1⟩
   · simp only [hx, Bool.false_eq_true, ↓reduceIte] at hf hz hl ⊢
     obtain ⟨h1, h2, h3⟩ := nearestDecimal_eq hf hz
-    exact ⟨natAbs_exponent_lt (hex := false) hk (by lia) hl nofun
+    exact ⟨lt_of_exponent_bounds (hex := false) hk (by lia) hl nofun
       fun _ ↦ ⟨fun h ↦ (h2 h).1, fun h ↦ (h3 h).1⟩, h1⟩
 
 /-- For a floating constant of fewer than `2 ^ 56` characters whose double is finite and not a
@@ -762,15 +761,15 @@ theorem InRegionInvariant.post {e : Array ExactEnd} {a b : ℤ} {n lo hi : ℕ}
     (decide (lo < n) && decide (cmpEndX e[2 * lo]! a b ≤ 0)) = true ↔
       InExactRegion e n (a / b) := by
   obtain ⟨h1, h2, h3, h4, h5⟩ := h
-  have hlo : lo = hi := by have := h5 rfl; lia
+  have hlo : lo = hi := by lia [h5 rfl]
   subst hlo
   simp only [Bool.and_eq_true, decide_eq_true_eq, cmpEndX_nonpos_iff, InExactRegion]
   refine ⟨fun h ↦ ⟨lo, h.1, h.2, h4 lo le_rfl h.1⟩, fun ⟨j, hj, hl, hu⟩ ↦ ?_⟩
   rcases lt_trichotomy j lo with hjl | rfl | hjl
   · exact absurd hu (not_le.mpr (h3 j hjl))
   · exact ⟨hj, hl⟩
-  · exact absurd ((h4 lo le_rfl (by lia)).trans_lt ((hc.lt (by lia) (by lia) (by lia)).trans_le hl))
-      (lt_irrefl _)
+  · exact ((h4 lo le_rfl (by lia)).trans_lt
+      ((hc.lt (by lia) (by lia) (by lia)).trans_le hl)).false.elim
 
 attribute [local irreducible] InRegionInvariant in
 /-- The binary search of `in_region` over increasing and disjoint intervals decides whether
@@ -831,7 +830,7 @@ structure JoinInvariant (dom : List (Double × Double)) (k : ℕ) (iv : Array (D
   covers : ∀ i ≤ k, ∀ x, InPair dom[i]! x → ∃ j ≤ n, InPair iv[j]! x
   /-- For intervals that join well, the intervals kept have `l ≤ u` and are increasing and strictly
   apart, and the lower end of the last one, when it is not the first, is at most those of the
-  intervals of `dom` still to come. -/
+  intervals of `dom` after the `k`-th. -/
   wellJoined : JoinsWell dom →
     (∀ j ≤ n, doubleValue iv[j]!.1.bits ≤ doubleValue iv[j]!.2.bits) ∧
       (∀ j < n, doubleValue iv[j]!.2.bits < doubleValue iv[j + 1]!.1.bits) ∧

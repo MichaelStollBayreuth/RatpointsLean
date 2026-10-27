@@ -87,10 +87,8 @@ theorem valueOfOrderValue_neg_maxOrderValue : valueOfOrderValue (-(maxOrderValue
 
 theorem expField_mul_add_fracField_lt {x : Double} (hf : x.isFinite = true) :
     x.expField * 2 ^ 52 + x.fracField < maxOrderValue := by
-  have := fracField_lt x
-  have := expField_lt x
   simp only [isFinite, bne_iff_ne, ne_eq] at hf
-  rw [maxOrderValue]; lia
+  rw [maxOrderValue]; lia [fracField_lt x, expField_lt x]
 
 theorem ne_huge_of_isFinite {x : Double} (hf : x.isFinite = true) :
     x.bits ≠ huge.bits ∧ x.bits ≠ huge.neg.bits := by
@@ -182,7 +180,6 @@ theorem isFinite_nextUp_of_expField_lt {x : Double} (hf : x.isFinite = true)
   rw [isFinite_iff_natAbs_orderValue_lt h2, h1, orderValue_eq, maxOrderValue]
   split <;> lia [fracField_lt x]
 
-/-- The predecessor of a finite double is finite or `-∞`. -/
 theorem isFinite_nextDown_or_doubleValue_eq_bot {x : Double} (hf : x.isFinite = true) :
     (nextDown x).isFinite = true ∨ doubleValue (nextDown x).bits = ⊥ := by
   have hx := isNaN_eq_false_of_isFinite hf
@@ -195,7 +192,6 @@ theorem isFinite_nextDown_or_doubleValue_eq_bot {x : Double} (hf : x.isFinite = 
   · exact .inl h
   · exact .inr (by rw [h, valueOfOrderValue_neg_maxOrderValue])
 
-/-- The successor of a finite double is finite or `+∞`. -/
 theorem isFinite_nextUp_or_doubleValue_eq_top {x : Double} (hf : x.isFinite = true) :
     (nextUp x).isFinite = true ∨ doubleValue (nextUp x).bits = ⊤ := by
   have hx := isNaN_eq_false_of_isFinite hf
@@ -208,17 +204,12 @@ theorem isFinite_nextUp_or_doubleValue_eq_top {x : Double} (hf : x.isFinite = tr
   · exact .inl h
   · exact .inr (by rw [h, valueOfOrderValue_maxOrderValue])
 
-/-- A double below the successor of `x` is at most `x`. -/
 theorem le_of_lt_nextUp {x y : Double} (hx : x.isNaN = false) (hy : y.isNaN = false)
     (hi : x.bits ≠ huge.bits) (h : doubleValue y.bits < doubleValue (nextUp x).bits) :
-    doubleValue y.bits ≤ doubleValue x.bits := by
-  have h1 := (orderValue_nextUp hx hi).2
-  by_contra h2
-  have h3 := (le_eq_true_iff h1 hy).mp (nextUp_le_of_lt hx hy hi ((lt_eq_true_iff hx hy).mpr
-    (not_le.mp h2)))
-  exact absurd h (not_lt.mpr h3)
+    doubleValue y.bits ≤ doubleValue x.bits :=
+  not_lt.mp fun h2 ↦ h.not_ge ((le_eq_true_iff (orderValue_nextUp hx hi).2 hy).mp
+    (nextUp_le_of_lt hx hy hi ((lt_eq_true_iff hx hy).mpr h2)))
 
-/-- A double below `x` is at most the predecessor of `x`. -/
 theorem le_nextDown_of_doubleValue_lt {x y : Double} (hx : x.isNaN = false)
     (hy : y.isNaN = false) (hi : x.bits ≠ huge.neg.bits)
     (h : doubleValue y.bits < doubleValue x.bits) :
@@ -342,7 +333,7 @@ theorem magnitudeUnits_normal_pred_mul {M : ℕ} {q : ℤ} (h1 : 2 ^ 52 ≤ M) (
 
 /-- A subnormal or zero `x = ±M 2 ^ (-1074)` (`M < 2 ^ 52`) and a positive `v` within less than
 `2 ^ (-1074)` of `M 2 ^ (-1074)`: the neighbours of `x` lie on either side of `±v`. -/
-theorem lt_nextUp_and_nextDown_lt_of_lt {neg : Bool} {M : ℕ} {v : ℚ} (h : M < 2 ^ 52)
+theorem lt_nextUp_and_nextDown_lt_assemble_of_lt {neg : Bool} {M : ℕ} {v : ℚ} (h : M < 2 ^ 52)
     (hv : 0 < v) (hup : v < (M + 1) * 2 ^ (-1074 : ℤ))
     (hdown : M ≠ 0 → (M - 1 : ℚ) * 2 ^ (-1074 : ℤ) < v) :
     ((if neg then -v else v : ℚ) : WithBotTop ℚ) <
@@ -362,8 +353,8 @@ theorem lt_nextUp_and_nextDown_lt_of_lt {neg : Bool} {M : ℕ} {v : ℚ} (h : M 
 /-- A normal `x = ±M 2 ^ q` (`2 ^ 52 ≤ M < 2 ^ 53`) and a positive `v` below `(M + 1) 2 ^ q` and
 above the value of the magnitude below that of `x`: the neighbours of `x` lie on either side of
 `±v`. -/
-theorem lt_nextUp_and_nextDown_lt_of_le {neg : Bool} {M : ℕ} {q : ℤ} {v : ℚ} (h1 : 2 ^ 52 ≤ M)
-    (h2 : M < 2 ^ 53) (hq : -1074 ≤ q) (hq' : q + 1075 < 2047) (hv : 0 < v)
+theorem lt_nextUp_and_nextDown_lt_assemble_of_two_pow_le {neg : Bool} {M : ℕ} {q : ℤ} {v : ℚ}
+    (h1 : 2 ^ 52 ≤ M) (h2 : M < 2 ^ 53) (hq : -1074 ≤ q) (hq' : q + 1075 < 2047) (hv : 0 < v)
     (hup : v < (M + 1) * 2 ^ q)
     (hdown : M * 2 ^ q - (if M = 2 ^ 52 ∧ -1074 < q then 2 ^ (q - 1) else 2 ^ q) < v) :
     ((if neg then -v else v : ℚ) : WithBotTop ℚ) < doubleValue (nextUp (assemble neg M q)).bits ∧
@@ -394,7 +385,8 @@ theorem lt_nextUp_and_nextDown_lt_ofSignificand_two_pow {neg : Bool} {q : ℤ} {
   have ht : (0 : ℚ) < 2 ^ q := by positivity
   rw [zpow_sub_one₀ two_ne_zero] at hlo hhi
   push_cast at hlo hhi
-  refine lt_nextUp_and_nextDown_lt_of_le le_rfl (by norm_num) (by lia) hq' hv ?_ ?_
+  refine lt_nextUp_and_nextDown_lt_assemble_of_two_pow_le le_rfl (by norm_num) (by lia) hq' hv
+    ?_ ?_
   · rw [zpow_add_one₀ two_ne_zero]; push_cast; linarith
   · rw [ite_eq_left ⟨rfl, by lia⟩, add_sub_cancel_right, zpow_add_one₀ two_ne_zero]
     push_cast; linarith
@@ -409,7 +401,7 @@ private theorem eq_of_lt_of_two_zpow_le {M : ℕ} {q : ℤ} {v : ℚ} (h : M < 2
   have h2 : (M : ℚ) + 1 ≤ 2 ^ 52 := mod_cast (by lia : M + 1 ≤ 2 ^ 52)
   have ht : (0 : ℚ) < 2 ^ q := by positivity
   rw [zpow_sub_one₀ two_ne_zero] at hhi
-  rw [zpow_add₀ two_ne_zero, show ((52 : ℤ)) = ((52 : ℕ) : ℤ) from rfl, zpow_natCast] at h1
+  rw [zpow_add₀ two_ne_zero, zpow_ofNat] at h1
   have := mul_le_mul_of_nonneg_right h2 ht.le
   linarith
 
@@ -426,14 +418,14 @@ theorem lt_nextUp_and_nextDown_lt_ofSignificand_of_ne {neg : Bool} {M : ℕ} {q 
   · obtain rfl := eq_of_lt_of_two_zpow_le hs hhi hnorm hq
     rw [zpow_sub_one₀ two_ne_zero] at hlo hhi
     have ht : (0 : ℚ) < 2 ^ (-1074 : ℤ) := by positivity
-    exact lt_nextUp_and_nextDown_lt_of_lt hs hv (by linarith) fun _ ↦ by linarith
+    exact lt_nextUp_and_nextDown_lt_assemble_of_lt hs hv (by linarith) fun _ ↦ by linarith
   have hq' : q + 1075 < 2047 := ((isFinite_assemble_iff hM).mp hf).resolve_left hs
   have ht : (0 : ℚ) < 2 ^ (q - 1) := by positivity
-  refine lt_nextUp_and_nextDown_lt_of_le (by lia) hM hq hq' hv ?_ ?_
+  refine lt_nextUp_and_nextDown_lt_assemble_of_two_pow_le (by lia) hM hq hq' hv ?_ ?_
   · rw [zpow_sub_one₀ two_ne_zero] at hhi ht; linarith
   · split_ifs with hc
     · have h := hnorm hc.2
-      rw [zpow_add₀ two_ne_zero, show ((52 : ℤ)) = ((52 : ℕ) : ℤ) from rfl, zpow_natCast] at h
+      rw [zpow_add₀ two_ne_zero, zpow_ofNat] at h
       rw [hc.1]; push_cast; linarith
     · rw [zpow_sub_one₀ two_ne_zero] at hlo ht; linarith
 
@@ -473,16 +465,12 @@ theorem roundDiv_bounds (a : ℕ) {b : ℕ} (hb : 0 < b) :
   have hb' : (0 : ℚ) < b := mod_cast hb
   have h1' : (2 * roundDiv a b * b : ℚ) ≤ 2 * a + b := mod_cast h1
   have h2' : (2 * a : ℚ) ≤ (2 * roundDiv a b + 1) * b := mod_cast h2
-  constructor
-  · rw [le_div_iff₀ hb']; linarith
-  · rw [div_le_iff₀ hb']; linarith
+  exact ⟨by rw [le_div_iff₀ hb']; linarith, by rw [div_le_iff₀ hb']; linarith⟩
 
 theorem roundShift_eq_roundDiv (m : ℕ) {k : ℤ} (hk : 0 < k) :
     roundShift m k = roundDiv m (2 ^ k.toNat) := by
-  have h : 2 * 2 ^ (k.toNat - 1) = 2 ^ k.toNat := by
-    rw [← Nat.pow_succ']; congr 1; lia
   simp only [roundShift, show ¬k ≤ 0 by lia, ↓reduceIte, Nat.shiftRight_eq_div_pow, roundDiv]
-  split_ifs <;> lia
+  split_ifs <;> lia [Nat.two_pow_pred_mul_two (show 0 < k.toNat by lia)]
 
 theorem roundShift_bounds (m : ℕ) (k : ℤ) :
     (roundShift m k : ℚ) - 1 / 2 ≤ m / 2 ^ k ∧ (m : ℚ) / 2 ^ k ≤ roundShift m k + 1 / 2 := by
@@ -504,7 +492,7 @@ private theorem round_bounds {M : ℕ} {q : ℤ} {v : ℚ} (h1 : (M : ℚ) - 1 /
   have ht : (0 : ℚ) < 2 ^ q := by positivity
   rw [le_div_iff₀ ht] at h1
   rw [div_le_iff₀ ht] at h2
-  rw [zpow_add₀ two_ne_zero, show ((53 : ℤ)) = ((53 : ℕ) : ℤ) from rfl, zpow_natCast] at hv
+  rw [zpow_add₀ two_ne_zero, zpow_ofNat] at hv
   have h3 : ((M : ℚ) - 1 / 2) * 2 ^ q < 2 ^ 53 * 2 ^ q := by linarith
   have h4 : M < 2 ^ 53 + 1 := by
     have := lt_of_mul_lt_mul_right h3 ht.le

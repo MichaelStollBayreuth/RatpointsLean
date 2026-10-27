@@ -87,18 +87,17 @@ theorem toNat_and_mask (b : UInt64) : (b &&& 0x7fffffffffffffff).toNat = b.toNat
     Nat.and_two_pow_sub_one_eq_mod]
 
 theorem signBit_eq_decide (x : Double) : x.signBit = decide (2 ^ 63 ≤ x.bits.toNat) := by
-  have := x.bits.toNat_lt
   simp only [signBit]
-  exact decide_eq_decide.mpr (by lia)
+  exact decide_eq_decide.mpr (by lia [x.bits.toNat_lt])
 
 theorem signBit_eq_true_iff (x : Double) : x.signBit = true ↔ 2 ^ 63 ≤ x.bits.toNat := by
   simp [signBit_eq_decide]
 
-theorem fracField_lt (x : Double) : x.fracField < 2 ^ 52 := by
-  rw [fracField_eq]; exact Nat.mod_lt _ (by decide)
+theorem fracField_lt (x : Double) : x.fracField < 2 ^ 52 :=
+  fracField_eq x ▸ Nat.mod_lt _ (Nat.two_pow_pos 52)
 
-theorem expField_lt (x : Double) : x.expField < 2048 := by
-  rw [expField_eq]; exact Nat.mod_lt _ (by decide)
+theorem expField_lt (x : Double) : x.expField < 2048 :=
+  expField_eq x ▸ Nat.mod_lt _ (Nat.two_pow_pos 11)
 
 theorem toNat_bits (x : Double) :
     x.bits.toNat = (if x.signBit then 2 ^ 63 else 0) + (x.expField * 2 ^ 52 + x.fracField) := by
@@ -115,12 +114,12 @@ theorem expField_mul_add_fracField (x : Double) :
 theorem isNaN_iff (x : Double) : x.isNaN = true ↔ IsNaN x.bits := by
   simp [isNaN, IsNaN, expField_eq, fracField_eq]
 
-theorem eq_of_fields {x : Double} {neg : Bool} {E F : ℕ} (hE : E < 2048) (hF : F < 2 ^ 52)
-    (h : x.bits.toNat = (if neg then 2 ^ 63 else 0) + (E * 2 ^ 52 + F)) :
+theorem fields_eq_of_toNat_bits_eq {x : Double} {neg : Bool} {E F : ℕ} (hE : E < 2048)
+    (hF : F < 2 ^ 52) (h : x.bits.toNat = (if neg then 2 ^ 63 else 0) + (E * 2 ^ 52 + F)) :
     x.signBit = neg ∧ x.expField = E ∧ x.fracField = F := by
   have e : F + 2 ^ 52 * ((if neg then 2 ^ 11 else 0) + E) = x.bits.toNat := by
     rw [h]; cases neg <;> simp <;> lia
-  have hd := (Nat.div_mod_unique (show 0 < 2 ^ 52 by decide)).mpr ⟨e, hF⟩
+  have hd := (Nat.div_mod_unique (Nat.two_pow_pos 52)).mpr ⟨e, hF⟩
   rw [signBit_eq_decide, expField_eq, fracField_eq, hd.1, hd.2, Nat.add_mod,
     Nat.mod_eq_of_lt (show E < 2 ^ 11 by lia)]
   cases neg <;> simp [h] <;> lia
@@ -191,8 +190,8 @@ def valueOfOrderValue (k : ℤ) : WithBotTop ℚ :=
 theorem magnitudeUnits_lt_two_pow (a : ℕ) : magnitudeUnits a < 2 ^ (52 + a / 2 ^ 52) := by
   simp only [magnitudeUnits]
   split_ifs with h
-  · rw [h]; exact Nat.mod_lt _ (by decide)
-  · have := Nat.mod_lt a (show 0 < 2 ^ 52 by decide)
+  · rw [h]; exact Nat.mod_lt _ (Nat.two_pow_pos 52)
+  · have := Nat.mod_lt a (Nat.two_pow_pos 52)
     calc (2 ^ 52 + a % 2 ^ 52) * 2 ^ (a / 2 ^ 52 - 1) < 2 ^ 53 * 2 ^ (a / 2 ^ 52 - 1) :=
           Nat.mul_lt_mul_of_pos_right (by lia) (Nat.two_pow_pos _)
       _ = 2 ^ (52 + a / 2 ^ 52) := by rw [← Nat.pow_add]; congr 1; lia
@@ -224,13 +223,13 @@ theorem magnitudeUnits_zero : magnitudeUnits 0 = 0 := rfl
 theorem orderValueUnits_strictMono : StrictMono orderValueUnits := by
   intro k l hkl
   have hm := magnitudeUnits_strictMono
-  have h0 : ∀ n, 0 < n → 0 < magnitudeUnits n := fun n hn ↦ magnitudeUnits_zero ▸ hm hn
+  have h0 (n : ℕ) (hn : 0 < n) : 0 < magnitudeUnits n := magnitudeUnits_zero ▸ hm hn
   simp only [orderValueUnits]
   split_ifs with h1 h2 h2
-  · have := hm (show l.natAbs < k.natAbs by lia); lia
-  · have := h0 k.natAbs (by lia); lia
+  · lia [hm (show l.natAbs < k.natAbs by lia)]
+  · lia [h0 k.natAbs (by lia)]
   · lia
-  · have := hm (show k.natAbs < l.natAbs by lia); lia
+  · lia [hm (show k.natAbs < l.natAbs by lia)]
 
 theorem strictMonoOn_valueOfOrderValue :
     StrictMonoOn valueOfOrderValue (Set.Icc (-(maxOrderValue : ℤ)) maxOrderValue) := by
@@ -255,24 +254,21 @@ theorem orderValue_eq (x : Double) : x.orderValue =
 
 theorem expField_lt_or_of_isNaN_eq_false {x : Double} (hx : x.isNaN = false) :
     x.expField < 2047 ∨ x.expField = 2047 ∧ x.fracField = 0 := by
-  have := expField_lt x
   simp only [isNaN, Bool.and_eq_false_iff, beq_eq_false_iff_ne, bne_eq_false_iff_eq] at hx
-  lia
+  lia [expField_lt x]
 
 theorem natAbs_orderValue_le {x : Double} (hx : x.isNaN = false) :
     x.orderValue.natAbs ≤ maxOrderValue := by
-  have := fracField_lt x
   rw [orderValue_eq, maxOrderValue]
-  rcases expField_lt_or_of_isNaN_eq_false hx with h | h <;> split <;> lia
+  rcases expField_lt_or_of_isNaN_eq_false hx with h | h <;> split <;> lia [fracField_lt x]
 
 theorem orderValue_mem_Icc {x : Double} (hx : x.isNaN = false) :
     x.orderValue ∈ Set.Icc (-(maxOrderValue : ℤ)) maxOrderValue := by
-  have := natAbs_orderValue_le hx
-  constructor <;> lia
+  constructor <;> lia [natAbs_orderValue_le hx]
 
 theorem magnitudeUnits_fields {E F : ℕ} (hF : F < 2 ^ 52) :
     magnitudeUnits (E * 2 ^ 52 + F) = if E = 0 then F else (2 ^ 52 + F) * 2 ^ (E - 1) := by
-  have hd := (Nat.div_mod_unique (show 0 < 2 ^ 52 by decide)).mpr
+  have hd := (Nat.div_mod_unique (Nat.two_pow_pos 52)).mpr
     ⟨show F + 2 ^ 52 * E = E * 2 ^ 52 + F by lia, hF⟩
   rw [magnitudeUnits, hd.1, hd.2]
 
@@ -352,10 +348,8 @@ theorem toNat_bits_eq_mod (x : Double) :
 theorem isNaN_eq_false_iff_le (x : Double) :
     x.isNaN = false ↔ x.bits.toNat % 2 ^ 63 ≤ maxOrderValue := by
   rw [← expField_mul_add_fracField, maxOrderValue]
-  have := fracField_lt x
-  have := expField_lt x
   simp only [isNaN, Bool.and_eq_false_iff, beq_eq_false_iff_ne, bne_eq_false_iff_eq]
-  lia
+  lia [fracField_lt x, expField_lt x]
 
 theorem signBit_and_mod_of_toNat_eq {x : Double} {s : Bool} {n : ℕ} (hn : n < 2 ^ 63)
     (h : x.bits.toNat = (if s then 2 ^ 63 else 0) + n) :
@@ -413,7 +407,7 @@ theorem orderValue_neg (x : Double) : (neg x).orderValue = -x.orderValue := by
 
 theorem div_mod_eq_fields (x : Double) :
     x.bits.toNat % 2 ^ 63 / 2 ^ 52 = x.expField ∧ x.bits.toNat % 2 ^ 63 % 2 ^ 52 = x.fracField :=
-  (Nat.div_mod_unique (show 0 < 2 ^ 52 by decide)).mpr
+  (Nat.div_mod_unique (Nat.two_pow_pos 52)).mpr
     ⟨by rw [← expField_mul_add_fracField]; lia, fracField_lt x⟩
 
 theorem expField_eq_mod (x : Double) : x.expField = x.bits.toNat % 2 ^ 63 / 2 ^ 52 :=
@@ -454,7 +448,7 @@ theorem toRat_neg (x : Double) : (neg x).toRat = -x.toRat := by
 theorem toRat_fabs (x : Double) : (fabs x).toRat = |x.toRat| := by
   have h0 : 0 ≤ if x.expField = 0 then (x.fracField : ℚ) * 2 ^ (-1074 : ℤ)
       else (2 ^ 52 + x.fracField) * 2 ^ ((x.expField : ℤ) - 1075) := by
-    split_ifs <;> exact mul_nonneg (by positivity) (zpow_nonneg (by norm_num) _)
+    split_ifs <;> exact mul_nonneg (by positivity) (zpow_nonneg zero_le_two _)
   rw [toRat_eq_fields, toRat_eq_fields, signBit_fabs, expField_fabs, fracField_fabs]
   cases x.signBit <;> simp only [Bool.false_eq_true, ↓reduceIte, neg_one_mul, one_mul, abs_neg,
     abs_of_nonneg h0]
@@ -488,7 +482,7 @@ theorem toRat_of_toNat_eq {x : Double} {neg : Bool} {E F : ℕ} (hE : E < 2047) 
     (h : x.bits.toNat = (if neg then 2 ^ 63 else 0) + (E * 2 ^ 52 + F)) :
     x.isFinite = true ∧ x.signBit = neg ∧ x.toRat = (if neg then -1 else 1) *
       (if E = 0 then (F : ℚ) * 2 ^ (-1074 : ℤ) else (2 ^ 52 + F) * 2 ^ ((E : ℤ) - 1075)) := by
-  obtain ⟨h1, h2, h3⟩ := eq_of_fields (by lia) hF h
+  obtain ⟨h1, h2, h3⟩ := fields_eq_of_toNat_bits_eq (by lia) hF h
   refine ⟨by simp [isFinite, h2]; lia, h1, ?_⟩
   rw [toRat_eq_fields, h1, h2, h3]
 
@@ -518,16 +512,16 @@ theorem fields_assemble (neg : Bool) {M : ℕ} (q : ℤ) (hM : M < 2 ^ 53) :
         if M < 2 ^ 52 then M else if 2047 ≤ q + 1075 then 0 else M - 2 ^ 52 := by
   by_cases h1 : M < 2 ^ 52
   · simp only [h1, ↓reduceIte]
-    refine eq_of_fields (by decide) h1 ?_
+    refine fields_eq_of_toNat_bits_eq (by decide) h1 ?_
     simp only [assemble, h1, ↓reduceIte]
     rw [toNat_sign_or (by lia)]; simp
   by_cases h2 : 2047 ≤ q + 1075
   · simp only [h1, h2, ↓reduceIte]
-    refine eq_of_fields (by decide) (by decide) ?_
+    refine fields_eq_of_toNat_bits_eq (by decide) (by decide) ?_
     simp only [assemble, h1, h2, ↓reduceIte]
     exact toNat_sign_or (n := 2047 * 2 ^ 52 + 0) (by norm_num)
   · simp only [h1, h2, ↓reduceIte]
-    refine eq_of_fields (by lia) (by lia) ?_
+    refine fields_eq_of_toNat_bits_eq (by lia) (by lia) ?_
     simp only [assemble, h1, h2, ↓reduceIte]
     exact toNat_sign_or_or (by lia) (by lia)
 
@@ -584,8 +578,7 @@ theorem ofDyadic_exact {neg : Bool} {m : ℕ} {e : ℤ} (hm0 : m ≠ 0) (hm : m 
   rw [ofSignificand_of_ne q hM.ne]
   have hsub (h : m * 2 ^ (e - q).toNat < 2 ^ 52) : q = -1074 := by
     by_contra hq
-    have := two_pow_le_mul_two_pow hm0 (t := (e - q).toNat) (by lia)
-    lia
+    lia [two_pow_le_mul_two_pow hm0 (t := (e - q).toNat) (by lia)]
   refine ⟨(isFinite_assemble_iff hM).mpr (.inr (by lia)), (fields_assemble neg q hM).1, ?_⟩
   rw [toRat_assemble hM hsub fun _ ↦ ⟨hq2, by lia⟩, natCast_mul_two_pow_mul_zpow m (by lia)]
 
@@ -857,9 +850,9 @@ theorem toRat_frexp_mul_zpow_eq_and_bounds {x : Double} (hx : x.isFinite = true)
   refine ⟨h1, h2, ?_, ?_, ?_⟩ <;> dsimp only <;> rw [h3]
   · rw [mul_assoc, mul_assoc, ← zpow_add₀ two_ne_zero, neg_add_cancel_left,
       ← add_zero x.toDyadic.2, sign_mul_natAbs_mul_zpow, zpow_zero, mul_one]
-  · rw [abs_sign_mul _ (mul_nonneg (Nat.cast_nonneg _) (zpow_nonneg (by norm_num) _))]
+  · rw [abs_sign_mul _ (mul_nonneg (Nat.cast_nonneg _) (zpow_nonneg zero_le_two _))]
     exact hb.1
-  · rw [abs_sign_mul _ (mul_nonneg (Nat.cast_nonneg _) (zpow_nonneg (by norm_num) _))]
+  · rw [abs_sign_mul _ (mul_nonneg (Nat.cast_nonneg _) (zpow_nonneg zero_le_two _))]
     exact hb.2
 
 theorem ofInt64_exact_of_lt {n : Int64} (hn : n.toInt.natAbs < 2 ^ 53) :
@@ -914,23 +907,21 @@ theorem toDyadic_snd_nonneg {x : Double} (h : 2 ^ 52 ≤ |x.toRat|) : 0 ≤ x.to
   obtain ⟨hm, -, -⟩ := toDyadic_bounds x
   rw [abs_toRat] at h
   have h' : (2 : ℚ) ^ (52 : ℤ) ≤ x.toDyadic.1.natAbs * 2 ^ x.toDyadic.2 := mod_cast h
-  have := lt_add_of_two_pow_le_mul hm h'
-  lia
+  lia [lt_add_of_two_pow_le_mul hm h']
 
 theorem toRat_eq_natCast_floor {x : Double} (h : 2 ^ 52 ≤ x.toRat) :
     x.toRat = (⌊x.toRat⌋₊ : ℚ) := by
   have h0 : 0 ≤ x.toRat := le_trans (by norm_num) h
   have he := toDyadic_snd_nonneg (h.trans (le_abs_self _))
   have hm := toDyadic_fst_nonneg h0
-  have hc : ((x.toDyadic.1.toNat : ℕ) : ℚ) = x.toDyadic.1 := by
-    exact_mod_cast Int.toNat_of_nonneg hm
+  have hc : ((x.toDyadic.1.toNat : ℕ) : ℚ) = x.toDyadic.1 := mod_cast Int.toNat_of_nonneg hm
   rw [toRat_eq, ← Int.toNat_of_nonneg he, zpow_natCast, ← hc, ← Nat.cast_ofNat, ← Nat.cast_pow,
     ← Nat.cast_mul, Nat.floor_natCast]
 
 theorem toRat_nonneg {x : Double} (hs : x.signBit = false) : 0 ≤ x.toRat := by
   rw [toRat_eq_fields, hs]
   simp only [Bool.false_eq_true, ↓reduceIte, one_mul]
-  split_ifs <;> exact mul_nonneg (by positivity) (zpow_nonneg (by norm_num) _)
+  split_ifs <;> exact mul_nonneg (by positivity) (zpow_nonneg zero_le_two _)
 
 theorem lt_zero_eq_true_iff {x : Double} (hx : x.isNaN = false) :
     x.lt .zero = true ↔ x.orderValue < 0 := by
@@ -974,10 +965,9 @@ theorem isFinite_and_abs_lt_of_lt {x : Double} (h : x.fabs.lt .twoPow63 = true) 
     have : x.bits.toNat % 2 ^ 63 / 2 ^ 52 < 1086 := Nat.div_lt_of_lt_mul (by lia)
     lia
   refine ⟨hf, ?_⟩
-  have hf' : x.fabs.isFinite = true := by rw [isFinite_fabs]; exact hf
-  rw [lt_eq_true_iff hn (by decide), doubleValue_eq_toRat hf', doubleValue_eq_toRat (by decide),
-    toRat_fabs, show twoPow63.toRat = 2 ^ 63 by decide, WithBotTop.coe_lt_coe] at h
-  exact h
+  rwa [lt_eq_true_iff hn (by decide), doubleValue_eq_toRat (isFinite_fabs x ▸ hf),
+    doubleValue_eq_toRat (by decide), toRat_fabs, show twoPow63.toRat = 2 ^ 63 by decide,
+    WithBotTop.coe_lt_coe] at h
 
 theorem lt_twoPow63_eq_true_iff_toRat {x : Double} (hf : x.isFinite = true) :
     x.lt .twoPow63 = true ↔ x.toRat < 2 ^ 63 := by
