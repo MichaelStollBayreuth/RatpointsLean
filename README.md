@@ -1,5 +1,11 @@
 # RatpointsLean
 
+[![Website](https://img.shields.io/badge/Website-ready-green)](https://michaelstollbayreuth.github.io/RatpointsLean/)
+[![Blueprint](https://img.shields.io/badge/Blueprint-complete-green)](https://michaelstollbayreuth.github.io/RatpointsLean/blueprint/)
+[![Blueprint PDF](https://img.shields.io/badge/Blueprint-PDF-blue)](https://michaelstollbayreuth.github.io/RatpointsLean/blueprint.pdf)
+[![Documentation](https://img.shields.io/badge/Documentation-API-green)](https://michaelstollbayreuth.github.io/RatpointsLean/docs/)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-lightblue.svg)](https://opensource.org/licenses/Apache-2.0)
+
 A Lean 4 model of [`ratpoints`](https://github.com/MichaelStollBayreuth/ratpoints), the C program
 that finds the rational points of bounded height on the curves `y² = F(x, z)`, where `F` is a binary
 form of even degree with integer coefficients, by sieving; with proofs that the model meets a short
