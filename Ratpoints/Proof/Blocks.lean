@@ -36,6 +36,7 @@ of its denominators (`Ratpoints.Sieve.denCounts`) with its decision, a closed fo
 * `Ratpoints.Sieve.RunWords`, `Ratpoints.Sieve.denPoints`, `Ratpoints.Sieve.denCounts`: the words of
   the classes and the ranges of the numerators that the deliveries are stated for, the points of a
   denominator, and the counts of its sieve.
+* `Ratpoints.Sieve.IsRunEntries`: what the run needs of its sieve entries.
 * `Ratpoints.Sieve.blockDens`: the denominators of a block, before the tests of the shape.
 * `Ratpoints.Sieve.blockReport`: the report of a block in closed form.
 
@@ -52,8 +53,6 @@ of its denominators (`Ratpoints.Sieve.denCounts`) with its decision, a closed fo
   `Ratpoints.Sieve.forbFits_fst_run_runSetup`: the forbidden divisors of the loop of the tables have
   what the loop of the word shape needs, and so has the shape that `Ratpoints.Sieve.runSetup`
   chooses with them.
-* `Ratpoints.Sieve.decisionWF_getElem!_findDecision`: the decision in force for a block, among
-  well-formed decisions, is well-formed.
 * `Ratpoints.Sieve.runBlock_spec`: the contract of one block.
 
 ## Implementation notes
@@ -97,6 +96,22 @@ def denPoints (c : List Int) (d H : Nat) (fl : CheckFlags) (es : List SieveEntry
   ((numerators H).filter fun a ↦ inRanges (x.2 b) a && classBit x.1[b % 64]! a &&
     survives es b a).flatMap (checkNumWith (scaledCoeffs c d b) (if d % 2 = 1 then b else 1) b fl)
 
+/-- What the run needs of its sieve entries `entries`, the reciprocals `magics` of their moduli and
+the row offsets `offsets` of the packings of the classes `cls`: prime entries wherever no factor is
+counted, as the third stage needs, the tables of inverses of the factors, the reciprocals in the
+order of the entries, and the offsets of the classes with a pattern for all the entries, since a
+correction may move the cut points. -/
+structure IsRunEntries (entries : List SieveEntry) (magics : Array Nat) (cls : Vector NumClass 64)
+    (offsets : Array Nat) : Prop where
+  /-- An entry with no factors counted is a prime entry of the table. -/
+  isPrimeEntry_of_nf : ∀ e ∈ entries, e.nf = 0 → e.IsPrimeEntry
+  /-- The factors of the entries have their tables of inverses. -/
+  hasInverses : ∀ e ∈ entries, e.HasInverses
+  /-- The reciprocals of the moduli, in the order of the entries. -/
+  magics_eq : magics.toList = entries.map fun e ↦ magic e.p
+  /-- The classes with a pattern have their row offsets for all the entries. -/
+  offsetsFor : OffsetsFor cls entries offsets
+
 -- The entries with the offsets of the packing of a class have what `fill_bp_list` needs.
 private theorem forall_mem_of_packedFor {es : List SieveEntry} {cl : NumClass} {offsets : Array Nat}
     {pos : Nat} (h : ∀ n (hn : n < es.length), es[n].PackedFor cl offsets[pos + n]!) :
@@ -120,17 +135,14 @@ those up to `sp3` in the third, delivers the points of `Ratpoints.Sieve.denPoint
 `sp3` entries, for every choice of the words of the classes and the ranges of the numerators of
 `Ratpoints.Sieve.RunWords`, keeps a store of the tables of rows that fits all the entries, and adds
 the counts of `Ratpoints.Sieve.siftCounts` to the counters, for a denominator between `bLow ≥ 1` and
-`bHigh < 2 ^ 63` whose class has a pattern, entries with the tables of inverses of their factors,
-prime entries from `sp2` on, the reciprocals of the moduli and the offsets of the packings of the
-classes with a pattern. -/
+`bHigh < 2 ^ 63` whose class has a pattern, entries with what the run needs of them
+(`Ratpoints.Sieve.IsRunEntries`) that count no factors from `sp2` on. -/
 theorem siftDen_spec {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : List Int)
     (d H A : Nat) (fl : CheckFlags) (sp1 : Nat) (entries : List SieveEntry) (magics : Array Nat)
     (sp2 sp3 : Nat) (cls : Vector NumClass 64) (offsets : Array Nat) (iv : Array IntervalBounds)
-    (bLow bHigh : Nat) (hA : 1 ≤ A)
-    (hent : ∀ e ∈ entries, (e.nf = 0 → e.IsPrimeEntry) ∧ e.HasInverses)
-    (hmg : magics.toList = entries.map fun e ↦ magic e.p) (hoff : OffsetsFor cls entries offsets)
-    (h23 : sp2 ≤ sp3) (hnf : ∀ e ∈ entries.drop sp2, e.nf = 0) (hbLow : 1 ≤ bLow)
-    (hbHigh : bHigh < 2 ^ 63) (hH : H < 2 ^ 63) (b : Nat) (st : BlockState σ) :
+    (bLow bHigh : Nat) (hA : 1 ≤ A) (hw : IsRunEntries entries magics cls offsets) (h23 : sp2 ≤ sp3)
+    (hnf : ∀ e ∈ entries.drop sp2, e.nf = 0) (hbLow : 1 ≤ bLow) (hbHigh : bHigh < 2 ^ 63)
+    (hH : H < 2 ^ 63) (b : Nat) (st : BlockState σ) :
     ⦃ (bLow ≤ b ∧ b ≤ bHigh ∧ cls[b % 64]!.bits ≠ 0) ∧ st.1.quit = false ∧ st.2.1.Fits entries ⦄
     siftDen process c d H A fl sp1 (entries.take sp2) (magics.toList.take sp2)
       ((entries.drop sp2).take (sp3 - sp2)) ((magics.toList.drop sp2).take (sp3 - sp2)) cls offsets
@@ -139,18 +151,17 @@ theorem siftDen_spec {σ : Type} (process : Int → Int → Int → σ → Answe
         (denPoints c d H fl (entries.take sp3))
         (denCounts H sp1 entries magics cls iv sp2 sp3) (·.Fits entries) [b] st st' ⦄ := by
   refine ⟨fun ⟨⟨hb1, hb2, hbits⟩, hq, hQ⟩ ↦ ?_⟩
-  obtain ⟨pos, hpos, hpf⟩ := hoff.take sp2 (b % 64) (Nat.mod_lt _ (by decide)) hbits
+  obtain ⟨pos, hpos, hpf⟩ := hw.offsetsFor.take sp2 (b % 64) (Nat.mod_lt _ (by decide)) hbits
   have hmgs : magics.toList.take sp2 = (entries.take sp2).map (magic ·.p) := by
-    rw [hmg, List.map_take]
+    rw [hw.magics_eq, List.map_take]
   have hbp := hmgs ▸ fillBpList_eq_map (b := b) (forall_mem_of_packedFor hpf)
   have hs := (sift_spec process c d H A b fl sp1 (entries.take sp2) (magics.toList.take sp2)
     (fillBpList b cls[b % 64]!.k (entries.take sp2) (magics.toList.take sp2)) cls[b % 64]! offsets
     ((entries.drop sp2).take (sp3 - sp2)) ((magics.toList.drop sp2).take (sp3 - sp2)) iv st.2.1
     st.1 st.2.2).le_wp
-      ⟨hq, hA, by lia, by lia, hH, fun e he ↦ (hent e (List.mem_of_mem_drop
-        (List.mem_of_mem_take he))).1 (hnf e (List.mem_of_mem_take he)), by
-        simp [hmg], hmgs, hbp, fun e he ↦
-        (hent e (List.mem_of_mem_take he)).2, hQ.take sp2⟩
+      ⟨hq, hA, by lia, by lia, hH, fun e he ↦ hw.isPrimeEntry_of_nf e (List.mem_of_mem_drop
+        (List.mem_of_mem_take he)) (hnf e (List.mem_of_mem_take he)), by simp [hw.magics_eq], hmgs,
+        hbp, fun e he ↦ hw.hasInverses e (List.mem_of_mem_take he), hQ.take sp2⟩
   refine ⟨fun x hx ↦ ?_, hQ.fits_run_sift process c d H A fl sp1 _ offsets _ _ iv _ _ hbp,
     fun hq' ↦ ?_⟩
   · rw [List.flatMap_singleton, denPoints, ← List.take_append_take_drop entries h23]
@@ -166,28 +177,6 @@ order (`Ratpoints.Sieve.Shape.stepDens`, `Ratpoints.Sieve.BlockPlan.blockSteps`)
 def blockDens (shape : Shape) (db : UInt64) (plan : BlockPlan) (bLow bHigh i : Nat) : List Nat :=
   (plan.blockSteps i).flatMap (shape.stepDens db bLow bHigh (plan.blockSeg i))
 
--- A list over the positions of a list, read with `[i]!`, is that over its entries.
-private theorem flatMap_range_length_getElem! {α β : Type} [Inhabited α] (l : List α)
-    (g : α → List β) : (List.range l.length).flatMap (fun i ↦ g l[i]!) = l.flatMap g := by
-  induction l with
-  | nil => rfl
-  | cons x l ih =>
-    rw [List.length_cons, List.range_succ_eq_map, List.flatMap_cons, List.flatMap_map]
-    simp only [Nat.succ_eq_add_one, List.getElem!_cons_succ, List.getElem!_cons_zero, ih,
-      List.flatMap_cons]
-
--- The segments of the blocks of a shape, as the plan of its blocks holds them.
-private theorem flatMap_range_size_segs {β : Type} {segs : Array (Nat × Nat)} {n : Nat}
-    {f : Nat → Nat × Nat} (hs : segs.toList = (List.range n).map f) (F : Nat → Nat × Nat → List β) :
-    (List.range segs.size).flatMap (fun seg ↦ F seg segs[seg]!) =
-      (List.range n).flatMap fun seg ↦ F seg (f seg) := by
-  have hn : segs.size = n := by simpa using congrArg List.length hs
-  rw [hn]
-  refine congrArg List.flatten (List.map_congr_left fun seg hseg ↦ ?_)
-  have hlt := List.mem_range.mp hseg
-  rw [getElem!_pos segs seg (by lia), ← Array.getElem_toList, List.getElem_of_eq hs]
-  simp
-
 /-- The steps of the segments of a shape, in order, with the denominators of each step, are the
 denominators of the listing of the shape (`Ratpoints.Sieve.Shape.dens`): the squares, the divisors
 one after the other, the words with their denominators, and every denominator. -/
@@ -200,7 +189,7 @@ theorem Shape.flatMap_range_numSegs (shape : Shape) (db : UInt64) (bLow bHigh : 
       List.range_one, List.flatMap_singleton]
     rfl
   · simp only [Shape.numSegs, Shape.segment, Shape.dens, squares1Dens]
-    rw [← flatMap_range_length_getElem! divisors]
+    rw [← List.flatMap_range_length_getElem! divisors]
     simp only [List.map_eq_flatMap]
     rfl
   · change _ = (Id.run (wordsDens db forb bLow bHigh)).toList
@@ -223,8 +212,8 @@ theorem Shape.flatMap_blockDens (shape : Shape) (db : UInt64) (bLow bHigh : Nat)
       (List.range shape.numSegs).map (shape.segment bLow bHigh) := by
     rw [hp.2, Shape.toList_fst_run_segments]
   refine (hp.1.flatMap_blockSteps (shape.stepDens db bLow bHigh)).trans ?_
-  rw [flatMap_range_size_segs hs fun seg sg ↦ (List.range' sg.1 (sg.2 + 1 - sg.1)).flatMap
-      (shape.stepDens db bLow bHigh seg)]
+  rw [Array.flatMap_range_size_getElem!_of_toList_eq_map hs fun seg sg ↦
+      (List.range' sg.1 (sg.2 + 1 - sg.1)).flatMap (shape.stepDens db bLow bHigh seg)]
   exact shape.flatMap_range_numSegs db bLow bHigh
 
 /-- A denominator of a block of the run of a shape is one of the listing of the shape. -/
@@ -259,24 +248,8 @@ theorem Shape.eq_of_mem_blockDens {shape : Shape} {db : UInt64} {bLow bHigh i j 
     (hbi : b ∈ blockDens shape db (Id.run (shape.blockPlan bLow bHigh)) bLow bHigh i)
     (hbj : b ∈ blockDens shape db (Id.run (shape.blockPlan bLow bHigh)) bLow bHigh j) : i = j := by
   rw [← shape.flatMap_blockDens db bLow bHigh, List.nodup_flatMap] at hnd
-  have hp := List.pairwise_iff_getElem.mp hnd.2
   by_contra hne
-  rcases Nat.lt_or_gt_of_ne hne with h | h
-  · have := hp i j (by simpa using hi) (by simpa using hj) h
-    simp only [List.getElem_range, Function.onFun] at this
-    exact List.disjoint_left.mp this hbi hbj
-  · have := hp j i (by simpa using hj) (by simpa using hi) h
-    simp only [List.getElem_range, Function.onFun] at this
-    exact List.disjoint_left.mp this hbj hbi
-
-/-- The decision in force for a block, among well-formed decisions of which the first is for block
-`0`, is well-formed. -/
-theorem decisionWF_getElem!_findDecision {es : List SieveEntry} {sp1 : Nat} {decs : Array Decision}
-    (h0 : 0 < decs.size) (hb : decs[0]!.block = 0) (h : ∀ d ∈ decs, DecisionWF es sp1 d) (i : Nat) :
-    DecisionWF es sp1 decs[Id.run (findDecision decs i)]! := by
-  have hf := (findDecision_spec decs i).le_wp ⟨h0, hb⟩
-  rw [getElem!_pos decs _ hf.1]
-  exact h _ (Array.getElem_mem hf.1)
+  exact hnd.2.forall (List.mem_range.mpr hi) (List.mem_range.mpr hj) hne hbi hbj
 
 /-- A forbidden divisor tested with words that the loop of the tables may record is a prime of the
 table, with the words of `Ratpoints.Sieve.forbiddenRow`. -/
@@ -373,20 +346,18 @@ the words of the classes and the ranges of the numerators of `Ratpoints.Sieve.Ru
 store of the tables of rows that fits all the entries and, when the callback does not stop the
 search, reports the sum of the counts of these denominators (`Ratpoints.Sieve.denCounts`) with the
 decision, its report in closed form (`Ratpoints.Sieve.blockReport`). The block needs a well-formed
-decision (`Ratpoints.Sieve.DecisionWF`), entries with the tables of inverses of their factors, prime
-entries where no factor is counted, the reciprocals of the moduli, the offsets of the packings of
-the classes with a pattern, whose bits the word `db` has, the blocks of the shape
-(`Ratpoints.Sieve.Shape.blockPlan`) with `i` one of them, forbidden divisors of the word shape that
-have what its loop needs (`Ratpoints.Sieve.Shape.ForbFits`), the denominators from `bLow ≥ 1` to
-`bHigh < 2 ^ 63` and the height below `2 ^ 63`. -/
+decision (`Ratpoints.Sieve.DecisionWF`), entries with what the run needs of them
+(`Ratpoints.Sieve.IsRunEntries`), the word `db` whose bits mark the classes with a pattern, the
+blocks of the shape (`Ratpoints.Sieve.Shape.blockPlan`) with `i` one of them, forbidden divisors of
+the word shape that have what its loop needs (`Ratpoints.Sieve.Shape.ForbFits`), the denominators
+from `bLow ≥ 1` to `bHigh < 2 ^ 63` and the height below `2 ^ 63`. -/
 @[spec]
 theorem runBlock_spec {σ : Type} (process : Int → Int → Int → σ → Answer σ) (c : List Int)
     (d H A : Nat) (fl : CheckFlags) (sp1 : Nat) (entries : List SieveEntry) (magics : Array Nat)
     (cls : Vector NumClass 64) (offsets : Array Nat) (db : UInt64) (shape : Shape)
     (iv : Array IntervalBounds) (bLow bHigh : Nat) (plan : BlockPlan) (decs : Array Decision)
     (i : Nat) (store : RowStore) (r : Delivery σ) :
-    ⦃ r.quit = false ∧ 1 ≤ A ∧ (∀ e ∈ entries, (e.nf = 0 → e.IsPrimeEntry) ∧ e.HasInverses) ∧
-        magics.toList = entries.map (fun e ↦ magic e.p) ∧ OffsetsFor cls entries offsets ∧
+    ⦃ r.quit = false ∧ 1 ≤ A ∧ IsRunEntries entries magics cls offsets ∧
         (∀ j < 64, db.toBitVec.getLsbD j = (cls[j]!.bits != 0)) ∧
         DecisionWF entries sp1 decs[Id.run (findDecision decs i)]! ∧
         plan = Id.run (shape.blockPlan bLow bHigh) ∧ shape.ForbFits ∧ i < plan.nblocks ∧
@@ -399,19 +370,19 @@ theorem runBlock_spec {σ : Type} (process : Int → Int → Int → σ → Answ
             (denPoints c d H fl (entries.take decs[Id.run (findDecision decs i)]!.sp3) x))) ∧
         (res.1.quit = false →
           res.2.2 = blockReport H sp1 entries magics cls db shape iv bLow bHigh decs i) ⦄ :=
-  ⟨fun ⟨hr, hA, hent, hmg, hoff, hdb, hdec, hplan, hforb, hi, hbLow, hbHigh, hH, hs⟩ ↦ by
+  ⟨fun ⟨hr, hA, hw, hdb, hdec, hplan, hforb, hi, hbLow, hbHigh, hH, hs⟩ ↦ by
     subst hplan
     have hwf := (Std.WP.Id.of_run_eq_wp rfl _ ((shape.blockPlan_spec bLow bHigh).le_wp trivial)).1
     have h := (Shape.blockLoop_spec process shape _ _ (RunWords cls iv H bLow bHigh)
       (denPoints c d H fl (entries.take decs[Id.run (findDecision decs i)]!.sp3))
       (denCounts H sp1 entries magics cls iv decs[Id.run (findDecision decs i)]!.sp2
         decs[Id.run (findDecision decs i)]!.sp3) (·.Fits entries)
-      (siftDen_spec process c d H A fl sp1 entries magics _ _ cls offsets iv bLow bHigh hA hent hmg
-        hoff hdec.sp2_le_sp3 hdec.nf_eq_zero hbLow hbHigh hH) cls db _ _ _ _ bLow bHigh
+      (siftDen_spec process c d H A fl sp1 entries magics _ _ cls offsets iv bLow bHigh hA hw
+        hdec.sp2_le_sp3 hdec.nf_eq_zero hbLow hbHigh hH) cls db _ _ _ _ bLow bHigh
         (r, store, {})).le_wp
       ⟨hr, hs, hwf.run_steps_le hi, Shape.loopFits_run_blockPlan hforb bLow bHigh,
         fun b hb ↦ le_and_le_and_bits_ne_zero_of_mem hdb hbLow hi hb⟩
-    exact ⟨h.2.1, h.1, fun hq ↦ congr(BlockStat.mk $(h.2.2 hq) _ _ _)⟩⟩
+    exact ⟨h.store, h.deliver, fun hq ↦ congr(BlockStat.mk $(h.counts hq) _ _ _)⟩⟩
 
 end Sieve
 

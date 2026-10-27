@@ -41,9 +41,8 @@ position (`Ratpoints.IsChoiceEntries`), whose tables of rows the store then fits
 
 ## Main statements
 
-* `Ratpoints.SieveOptions.numPrimes_normalize_le`,
-  `Ratpoints.SieveOptions.maxForbidden_normalize_nonneg`: the normalized options look at most
-  `Ratpoints.numPrimes` primes and test a nonnegative number of forbidden divisors.
+* `Ratpoints.SieveOptions.numPrimes_normalize_le`: the normalized options look at most
+  `Ratpoints.numPrimes` primes.
 * `Ratpoints.IsModulusEntry.isSound`: an entry of a modulus as the choice makes it is sound.
 * `Ratpoints.tablesLoop_spec`: the loop of the tables.
 * `Ratpoints.isSievingInfo_choiceEnd`, `Ratpoints.choiceTail_spec`: the end of the choice.
@@ -120,18 +119,7 @@ theorem SieveOptions.numPrimes_normalize_le (s : SieveOptions) :
   simp only [SieveOptions.normalize]
   lia
 
-/-- The normalized options test a nonnegative number of forbidden divisors. -/
-theorem SieveOptions.maxForbidden_normalize_nonneg (s : SieveOptions) :
-    0 ≤ s.normalize.maxForbidden := by
-  simp only [SieveOptions.normalize]
-  split <;> lia [defaultMaxForbidden]
-
 /-! ### The loop of the tables -/
-
--- The examination of a prime, as a value: the contracts read it through its own lemmas.
-private theorem examinePrime?_value (c : List ℤ) (d p : ℕ) (u : Bool) :
-    ⦃ True ⦄ examinePrime? c d p u ⦃ fun r ↦ r = Id.run (examinePrime? c d p u) ⦄ :=
-  ⟨fun _ ↦ rfl⟩
 
 namespace Sieve
 
@@ -203,16 +191,6 @@ private theorem forbiddenOfPrime_value (c : List ℤ) (d p bHigh : ℕ) (cm : Ar
     ⦃ fun r ↦ r = Id.run (forbiddenOfPrime c d p bHigh cm atInf) ⦄ :=
   ⟨fun _ ↦ rfl⟩
 
-theorem TableLoop.WF.push_ba {c : List ℤ} {bHigh : ℕ} {st : TableLoop} (h : st.WF c bHigh)
-    {f : ForbiddenEntry} (hf : IsForbiddenEntry c (degree c) bHigh f) :
-    TableLoop.WF c bHigh { st with ba := st.ba.push f } :=
-  ⟨h.pnLim_le, h.primeSe, h.isPrime, Array.forall_mem_push.mpr ⟨hf, h.ba⟩, h.val, h.store⟩
-
-theorem TableLoop.WF.push_val {c : List ℤ} {bHigh : ℕ} {st : TableLoop} (h : st.WF c bHigh)
-    {f : ForbiddenVal} (hf : IsForbiddenVal c (degree c) bHigh f) :
-    TableLoop.WF c bHigh { st with val := st.val.push f } :=
-  ⟨h.pnLim_le, h.primeSe, h.isPrime, h.ba, Array.forall_mem_push.mpr ⟨hf, h.val⟩, h.store⟩
-
 /-- A forbidden divisor tested with words that the prime at the position `pn < numPrimes` gives from
 what its table hands back, recorded. -/
 theorem TableLoop.WF.push_ba_of_run {c : List ℤ} {bHigh : ℕ} {st : TableLoop} (h : st.WF c bHigh)
@@ -222,7 +200,9 @@ theorem TableLoop.WF.push_ba_of_run {c : List ℤ} {bHigh : ℕ} {st : TableLoop
     (hf : Id.run (forbiddenOfPrime c (degree c) primeTable[pn]! bHigh cm
       t.isFSquare[primeTable[pn]!]!) = some (.inl f)) :
     TableLoop.WF c bHigh { st with ba := st.ba.push f } :=
-  h.push_ba (isForbiddenEntry_of_run_examinePrime?_eq_some hpn he hf)
+  ⟨h.pnLim_le, h.primeSe, h.isPrime,
+    Array.forall_mem_push.mpr ⟨isForbiddenEntry_of_run_examinePrime?_eq_some hpn he hf, h.ba⟩,
+    h.val, h.store⟩
 
 /-- A forbidden divisor tested by its valuation that the prime at the position `pn < numPrimes`
 gives from what its table hands back, recorded. -/
@@ -233,7 +213,9 @@ theorem TableLoop.WF.push_val_of_run {c : List ℤ} {bHigh : ℕ} {st : TableLoo
     (hf : Id.run (forbiddenOfPrime c (degree c) primeTable[pn]! bHigh cm
       t.isFSquare[primeTable[pn]!]!) = some (.inr f)) :
     TableLoop.WF c bHigh { st with val := st.val.push f } :=
-  h.push_val (isForbiddenVal_of_run_examinePrime?_eq_some hpn he hf)
+  ⟨h.pnLim_le, h.primeSe, h.isPrime, h.ba,
+    Array.forall_mem_push.mpr ⟨isForbiddenVal_of_run_examinePrime?_eq_some hpn he hf, h.val⟩,
+    h.store⟩
 
 /-- The state of the loop of the tables after the prime at the position `pn = st.primeSe.size`,
 which says something, with its candidate, its table and its table of rows. -/
@@ -248,10 +230,9 @@ theorem TableLoop.WF.push_ofPrime {c : List ℤ} {bHigh : ℕ} {st : TableLoop} 
         pinf := st.pinf.push atInf, ba := st.ba, val := st.val,
         store := st.store.insertIfNew (.prime primeTable[pn]!) (primeRows primeTable[pn]!) } := by
   have ht := eq_examinePrime_of_lt_numPrimes_of_run_examinePrime?_eq_some hpn he
-  refine ⟨h.pnLim_le, ht ▸ h.primeSe.set!_push_none hpn hs r,
-    Array.forall_mem_push.mpr ⟨?_, h.isPrime⟩, h.ba, h.val,
+  exact ⟨h.pnLim_le, ht ▸ h.primeSe.set!_push_none hpn hs r,
+    Array.forall_mem_push.mpr ⟨isPrime_ofPrime hpn he _ _, h.isPrime⟩, h.ba, h.val,
     h.store.insertIfNew (one_lt_getElem!_primeTable hpn).le⟩
-  exact (isPrime_ofPrime hpn he 0.0 0.0).of_eq rfl rfl rfl
 
 /-- The state of the loop of the tables after the prime at the position `pn`, which says nothing. -/
 theorem TableLoop.WF.push_none {c : List ℤ} {bHigh : ℕ} {st : TableLoop} (h : st.WF c bHigh)
@@ -519,22 +500,21 @@ private theorem checkRelOf_true (c : List ℤ) (d H : ℕ) (s : SieveOptions) :
   ⟨fun _ ↦ trivial⟩
 
 /-- The contract of the choice of the moduli and the cut points from the curve, for options that
-look at most `Ratpoints.numPrimes` primes and test a nonnegative number of forbidden divisors
-(normalized options, `Ratpoints.SieveOptions.numPrimes_normalize_le`,
-`Ratpoints.SieveOptions.maxForbidden_normalize_nonneg`), the test of the denominators only for even
-degree and any values of the doubles: at an exit, at a prime of the loop of the tables or of the
+look at most `Ratpoints.numPrimes` primes (normalized options,
+`Ratpoints.SieveOptions.numPrimes_normalize_le`), the test of the denominators only for even degree
+and any values of the doubles: at an exit, at a prime of the loop of the tables or of the
 third stage without points modulo it, the curve has no points; otherwise the result is what the run
 needs (`Ratpoints.IsSievingInfo`). -/
 @[spec]
 theorem sievingInfo_spec (c : List ℤ) (u checkDenom mayExtend : Bool) (s : SieveOptions)
     (a : ShapeArgs) (bpw : Float) :
-    ⦃ s.numPrimes ≤ (numPrimes : ℤ) ∧ 0 ≤ s.maxForbidden ∧ (checkDenom = true → degree c % 2 = 0) ⦄
+    ⦃ s.numPrimes ≤ (numPrimes : ℤ) ∧ (checkDenom = true → degree c % 2 = 0) ⦄
     sievingInfo c (degree c) u checkDenom mayExtend s a bpw
     ⦃ fun r ↦ (∀ p, r = .error p → ∀ H q, ¬IsPoint c H q) ∧
         ∀ si, r = .ok si → IsSievingInfo c a.bHigh si ⦄ := by
   vcgen [sievingInfo, checkRelOf_true, runShape_true, tablesLoop_spec, forbidden_spec,
     choiceTail_spec]
-  all_goals obtain ⟨hn, -, hcd⟩ := ‹s.numPrimes ≤ (numPrimes : ℤ) ∧ _›
+  all_goals obtain ⟨hn, hcd⟩ := ‹s.numPrimes ≤ (numPrimes : ℤ) ∧ _›
   · exact hn
   all_goals obtain ⟨he, hok⟩ := ‹(∀ p, _ = Except.error p → _) ∧ _›
   · subst ‹_ = Except.error _›

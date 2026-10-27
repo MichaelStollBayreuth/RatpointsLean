@@ -709,7 +709,7 @@ $\mathrm{lookedAt}$.
 \begin{lemma}[The choice is what the run needs]\label{lem:choice}
   \uses{def:choice, lem:choicePool, lem:compositeModuli, lem:densities, lem:forbidden,
     lem:examinePrime_none, lem:storeTables, def:decisionWF}
-  \lean{Ratpoints.IsSievingInfo, Ratpoints.sievingInfo_spec, Ratpoints.TableLoop.WF, Ratpoints.TableLoop.wf_init, Ratpoints.TablesLoopInvariant, Ratpoints.examineInLoop_spec, Ratpoints.raiseLimit_spec, Ratpoints.tablesLoop_spec, Ratpoints.IsChoiceEntries, Ratpoints.isChoiceEntries_choiceEnd, Ratpoints.isSievingInfo_choiceEnd, Ratpoints.ChoicePoolWF.sortFrom, Ratpoints.ChoicePoolWF.exists_isChoiceEntry, Ratpoints.firstStages_post, Ratpoints.thirdOf_spec, Ratpoints.choiceTail_spec, Ratpoints.Sieve.RowStore.MadeFor.foldl_addTables, Ratpoints.SieveOptions.numPrimes_normalize_le, Ratpoints.SieveOptions.maxForbidden_normalize_nonneg}
+  \lean{Ratpoints.IsSievingInfo, Ratpoints.sievingInfo_spec, Ratpoints.TableLoop.WF, Ratpoints.TableLoop.wf_init, Ratpoints.TablesLoopInvariant, Ratpoints.examineInLoop_spec, Ratpoints.raiseLimit_spec, Ratpoints.tablesLoop_spec, Ratpoints.IsChoiceEntries, Ratpoints.isChoiceEntries_choiceEnd, Ratpoints.isSievingInfo_choiceEnd, Ratpoints.ChoicePoolWF.sortFrom, Ratpoints.ChoicePoolWF.exists_isChoiceEntry, Ratpoints.firstStages_post, Ratpoints.thirdOf_spec, Ratpoints.choiceTail_spec, Ratpoints.Sieve.RowStore.MadeFor.foldl_addTables, Ratpoints.SieveOptions.numPrimes_normalize_le}
   \leanok
   For options that look at no more than $\mathrm{numPrimes}$ primes and test a nonnegative number of
   forbidden divisors, as the normalized options do, the checked loop only for even degree, and any
@@ -952,7 +952,7 @@ well formed.
 \begin{lemma}[One block]\label{lem:runBlock}
   \uses{def:runBlock, def:decisionWF, lem:blockLoops, lem:blockDens, lem:counters, lem:buildRows,
     lem:fetchRow, lem:forbidden, lem:fillBpList}
-  \lean{Ratpoints.Sieve.RunWords, Ratpoints.Sieve.denPoints, Ratpoints.Sieve.denCounts, List.take_append_take_drop, Ratpoints.Sieve.siftDen_spec, Ratpoints.Sieve.blockReport, Ratpoints.Sieve.runBlock_spec, Ratpoints.Sieve.decisionWF_getElem!_findDecision, Ratpoints.Sieve.IsForbiddenEntry.mem_primeTable, Ratpoints.Sieve.forbFits_of_forall_isForbiddenEntry, Ratpoints.Sieve.forbFits_fst_run_runSetup, Ratpoints.Sieve.Shape.loopFits_run_blockPlan, Ratpoints.Sieve.StoreHolds.buildRows_setRows_take, Ratpoints.Sieve.RowStore.Fits.fits_run_sift, Ratpoints.Sieve.Decision.InForce, Ratpoints.Sieve.DecisionSearchInvariant, Ratpoints.Sieve.findDecision_spec}
+  \lean{Ratpoints.Sieve.RunWords, Ratpoints.Sieve.denPoints, Ratpoints.Sieve.denCounts, List.take_append_take_drop, Ratpoints.Sieve.siftDen_spec, Ratpoints.Sieve.blockReport, Ratpoints.Sieve.runBlock_spec, Ratpoints.Sieve.Correction.WF.decisionWF_findDecision, Ratpoints.Sieve.IsForbiddenEntry.mem_primeTable, Ratpoints.Sieve.forbFits_of_forall_isForbiddenEntry, Ratpoints.Sieve.forbFits_fst_run_runSetup, Ratpoints.Sieve.Shape.loopFits_run_blockPlan, Ratpoints.Sieve.StoreHolds.buildRows_setRows_take, Ratpoints.Sieve.RowStore.Fits.fits_run_sift, Ratpoints.Sieve.Decision.InForce, Ratpoints.Sieve.DecisionSearchInvariant, Ratpoints.Sieve.findDecision_spec}
   \leanok
   Building rows never removes a row, so that a store that fits all the entries, the reserve
   included, still fits them after any denominator, whose sieve reads and builds the rows of its

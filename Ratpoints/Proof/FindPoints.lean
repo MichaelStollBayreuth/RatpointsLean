@@ -420,6 +420,13 @@ structure IsSoundRun (c : List ℤ) (entries : List SieveEntry) (magics : Array 
   /-- The store of the tables of rows fits all the entries. -/
   fits : store.Fits entries
 
+-- The sieve entries of a sound run have what the run over the blocks needs of them.
+private theorem IsSoundRun.isRunEntries {c : List ℤ} {entries : List SieveEntry}
+    {magics : Array ℕ} {cls : Vector NumClass 64} {offsets : Array ℕ} {db : UInt64}
+    {store : RowStore} (h : IsSoundRun c entries magics cls offsets db store) :
+    IsRunEntries entries magics cls offsets :=
+  ⟨h.isPrimeEntry_of_nf, h.hasInverses, h.magics_eq, h.offsetsFor⟩
+
 /-- The class test of a sound run on the denominator `b` is the test of the word of its class in
 the 2-adic information. -/
 theorem IsSoundRun.bits_bne_zero {c : List ℤ} {entries : List SieveEntry}
@@ -610,8 +617,7 @@ theorem exists_isSoundTest_run_sieveRun {c : List ℤ} {H A bLow bHigh : ℕ} {s
     checkDenom useJacobi forb forbVal (c.getD (degree c) 0) H bHigh dom)).1 = shape
     at hdens hkeep hff ⊢
   obtain ⟨sp3At, hsp⟩ := exists_run_sieveRun_eq_deliver c (degree c) H A s P entries magics cls
-    offsets db shape _ bLow bHigh store hA (fun e he ↦ ⟨hrun.isPrimeEntry_of_nf e he,
-      hrun.hasInverses e he⟩) hrun.magics_eq hrun.offsetsFor (fun _ ↦ hrun.getLsbD_db) hdec hff
+    offsets db shape _ bLow bHigh store hA hrun.isRunEntries (fun _ ↦ hrun.getLsbD_db) hdec hff
     (hdens ▸ (nodup_searchDens c hbLow).filter p) hbLow (by lia) hH63 hrun.fits
   refine ⟨fun b a ↦ p b && Id.run (shape.keep cls b) &&
       classBit (Id.run (twoAdic c (degree c)))[b % 64]! a && survives (entries.take (sp3At b)) b a,
@@ -869,7 +875,7 @@ private theorem run_sievingInfo_spec (c : List ℤ) (u mayExtend : Bool) (s : Si
       ∀ si, Id.run (sievingInfo c (degree c) u (degree c % 2 == 0) mayExtend s.normalize a bpw) =
         .ok si → IsSievingInfo c a.bHigh si :=
   Std.WP.Id.of_run_eq_wp rfl _ ((sievingInfo_spec c u _ mayExtend s.normalize a bpw).le_wp
-    ⟨s.numPrimes_normalize_le, s.maxForbidden_normalize_nonneg, fun h ↦ by simpa using h⟩)
+    ⟨s.numPrimes_normalize_le, fun h ↦ by simpa using h⟩)
 
 -- After the exits, the sieving with a result of the choice of the moduli as its contract gives it
 -- delivers the points of the denominators of the search from `bLow` to `bHigh` in the well-formed

@@ -290,6 +290,21 @@ theorem Correction.wf_start {es : List SieveEntry} {sp1 sp2 sp3 : Nat} (adaptAt 
     (h : DecisionWF es sp1 ⟨0, sp2, sp3⟩) : (Correction.start sp2 sp3 adaptAt).WF es sp1 :=
   ⟨by simp [Correction.start], rfl, by simpa [Correction.start] using h, h, h.mk_sp2 0⟩
 
+/-- The decision in force for block `i` among the decisions of a well-formed state of the
+correction (`Ratpoints.Sieve.findDecision_spec`). -/
+theorem Correction.WF.inForce {es : List SieveEntry} {sp1 : Nat} {corr : Correction}
+    (h : corr.WF es sp1) (i : Nat) :
+    Decision.InForce corr.decisions i (Id.run (findDecision corr.decisions i)) :=
+  (findDecision_spec _ i).le_wp ⟨h.size_pos, h.block_zero⟩
+
+/-- The decision in force for a block among the decisions of a well-formed state of the correction
+is well-formed. -/
+theorem Correction.WF.decisionWF_findDecision {es : List SieveEntry} {sp1 : Nat}
+    {corr : Correction} (h : corr.WF es sp1) (i : Nat) :
+    DecisionWF es sp1 corr.decisions[Id.run (findDecision corr.decisions i)]! := by
+  rw [getElem!_pos corr.decisions _ (h.inForce i).1]
+  exact h.decisionWF _ (Array.getElem_mem _)
+
 -- The end of the second stage that the counters of the run are counted under after the fold of a
 -- block reported with one of the decisions is one of a well-formed decision.
 private theorem Correction.WF.fold {es : List SieveEntry} {sp1 : Nat} {st : Correction}
@@ -298,19 +313,6 @@ private theorem Correction.WF.fold {es : List SieveEntry} {sp1 : Nat} {st : Corr
       (st.cnt.fold st.decisions[b.dec]!.sp2 b.cnt).sp2⟩ := by
   rw [RunCounts.sp2_fold]
   exact (h.decisionWF _ (getElem!_pos st.decisions b.dec hb ▸ Array.getElem_mem hb)).mk_sp2 0
-
--- The fold of a block before the words of the next correction.
-private theorem Correction.WF.fold_of_lt {es : List SieveEntry} {sp1 : Nat} {st : Correction}
-    {b : BlockStat} (h : st.WF es sp1) (hb : b.dec < st.decisions.size) :
-    Correction.WF es sp1
-      { st with
-        cnt := st.cnt.fold st.decisions[b.dec]!.sp2 b.cnt
-        folded := st.folded + 1
-        lastSp2 := b.sp2
-        lastSp3 := b.sp3 } ∧
-      ∃ L, st.decisions.toList = st.decisions.toList ++ L ∧
-        ∀ d ∈ L, d.block = st.folded + adaptLag + 1 :=
-  ⟨⟨h.size_pos, h.block_zero, h.decisionWF, h.latest, h.fold hb⟩, [], by simp, by simp⟩
 
 -- The fold of a block with a correction, whose decision is well-formed.
 private theorem Correction.WF.fold_adapt {es : List SieveEntry} {sp1 : Nat} {st : Correction}
@@ -326,19 +328,15 @@ private theorem Correction.WF.fold_adapt {es : List SieveEntry} {sp1 : Nat} {st 
         sp3 := sp3
         adaptAt := adaptAt
         decisions := if (sp2 != st.sp2 || sp3 != st.sp3) = true then
-          st.decisions.push ⟨st.folded + adaptLag + 1, sp2, sp3⟩ else st.decisions } ∧
-      ∃ L, (if (sp2 != st.sp2 || sp3 != st.sp3) = true then
-          st.decisions.push ⟨st.folded + adaptLag + 1, sp2, sp3⟩ else st.decisions).toList =
-        st.decisions.toList ++ L ∧ ∀ d ∈ L, d.block = st.folded + adaptLag + 1 := by
+          st.decisions.push ⟨st.folded + adaptLag + 1, sp2, sp3⟩ else st.decisions } := by
   split
-  · refine ⟨⟨by simp, ?_, fun d hd ↦ ?_, ha, h.fold hb⟩, [⟨st.folded + adaptLag + 1, sp2, sp3⟩],
-      by simp, by simp⟩
+  · refine ⟨by simp, ?_, fun d hd ↦ ?_, ha, h.fold hb⟩
     · rw [getElem!_pos _ 0 (by simp), Array.getElem_push_lt h.size_pos,
         ← getElem!_pos _ 0 h.size_pos, h.block_zero]
     · rcases Array.mem_push.mp hd with hd | rfl
       · exact h.decisionWF d hd
       · exact ⟨ha.sp1_le_sp2, ha.sp2_le_sp3, ha.sp3_le_length, ha.nf_eq_zero⟩
-  · exact ⟨⟨h.size_pos, h.block_zero, h.decisionWF, ha, h.fold hb⟩, [], by simp, by simp⟩
+  · exact ⟨h.size_pos, h.block_zero, h.decisionWF, ha, h.fold hb⟩
 
 open Std.WP Lean.Order in
 /-- The fold of a block reported with one of the decisions keeps the correction well-formed: the
@@ -352,9 +350,9 @@ theorem runFold_spec (s : SieveOptions) (P : Params) (es : List SieveEntry) (st 
   all_goals dsimp only at *
   all_goals obtain ⟨h, hb⟩ := ‹Correction.WF _ _ _ ∧ _›
   all_goals first
-    | exact (h.fold_of_lt hb).1
+    | exact ⟨h.size_pos, h.block_zero, h.decisionWF, h.latest, h.fold hb⟩
     | exact ⟨h.latest, h.fold hb⟩
-    | exact (h.fold_adapt hb _ ‹_›).1
+    | exact h.fold_adapt hb _ ‹_›
 
 -- The decisions after the fold of a block, with or without a new one.
 private theorem exists_toList_ite_push (c : Bool) (decs : Array Decision) (j sp2 sp3 : Nat) :
@@ -427,6 +425,7 @@ theorem folded_correctionAfter (k : Nat) :
   | succ k ih =>
     exact ((runFold_decisions_spec s P _ _ _).le_wp trivial).1.trans (congrArg (· + 1) ih)
 
+variable (H s P entries magics cls db shape iv bLow bHigh) in
 /-- The decisions after the folds of the first `k` blocks are those after the first `m ≤ k`
 followed by decisions for the blocks from `m + Ratpoints.adaptLag + 1` on. -/
 theorem exists_toList_decisions_correctionAfter {m k : Nat} (hmk : m ≤ k) :
@@ -452,9 +451,8 @@ theorem size_pos_and_block_zero_correctionAfter (k : Nat) :
     0 < (correctionAfter H s P entries magics cls db shape iv bLow bHigh k).decisions.size ∧
       (correctionAfter H s P entries magics cls db shape iv bLow bHigh k).decisions[0]!.block =
         0 := by
-  obtain ⟨L, hL, -⟩ := exists_toList_decisions_correctionAfter (H := H) (s := s) (P := P)
-    (entries := entries) (magics := magics) (cls := cls) (db := db) (shape := shape) (iv := iv)
-    (bLow := bLow) (bHigh := bHigh) (Nat.zero_le k)
+  obtain ⟨L, hL, -⟩ := exists_toList_decisions_correctionAfter H s P entries magics cls db shape iv
+    bLow bHigh (Nat.zero_le k)
   replace hL : _ = [⟨0, P.sp2, P.sp3⟩] ++ L := hL
   have hs :
       0 < (correctionAfter H s P entries magics cls db shape iv bLow bHigh k).decisions.size := by
@@ -471,28 +469,11 @@ theorem wf_correctionAfter (hdec : DecisionWF entries P.sp1 ⟨0, P.sp2, P.sp3�
   induction k with
   | zero => exact Correction.wf_start _ hdec
   | succ k ih =>
-    exact (runFold_spec s P entries _ _).le_wp ⟨ih, ((findDecision_spec _ k).le_wp ⟨ih.size_pos,
-      ih.block_zero⟩).1⟩
+    exact (runFold_spec s P entries _ _).le_wp ⟨ih, (ih.inForce k).1⟩
 
 end
 
 /-! ### The decision in force for a block: the lag -/
-
--- The entries of the decisions extended by `L` at the positions of the decisions.
-private theorem getElem!_eq_of_toList_eq_append {decs decs' : Array Decision} {L : List Decision}
-    (h : decs'.toList = decs.toList ++ L) {j : Nat} (hj : j < decs.size) :
-    decs'[j]! = decs[j]! := by
-  have hs : decs'.size = decs.size + L.length := by simpa using congrArg List.length h
-  rw [getElem!_pos decs' j (by lia), getElem!_pos decs j hj, ← Array.getElem_toList,
-    List.getElem_of_eq h, List.getElem_append_left (by simpa using hj), Array.getElem_toList]
-
--- The entries of the decisions extended by `L` beyond the positions of the decisions.
-private theorem getElem!_mem_of_toList_eq_append {decs decs' : Array Decision} {L : List Decision}
-    (h : decs'.toList = decs.toList ++ L) {j : Nat} (hj : decs.size ≤ j) (hj' : j < decs'.size) :
-    decs'[j]! ∈ L := by
-  rw [getElem!_pos decs' j hj', ← Array.getElem_toList, List.getElem_of_eq h,
-    List.getElem_append_right (by simpa using hj)]
-  exact List.getElem_mem _
 
 /-- The decision in force for block `i` is unique: the last whose first block is at most `i`. -/
 theorem Decision.InForce.unique {decs : Array Decision} {i dd dd' : Nat}
@@ -512,13 +493,13 @@ theorem findDecision_eq_of_toList_eq_append {decs decs' : Array Decision} {L : L
   have hs : decs'.size = decs.size + L.length := by simpa using congrArg List.length h
   obtain ⟨h1, h2, h3⟩ := (findDecision_spec decs i).le_wp ⟨h0, hb⟩
   refine Decision.InForce.unique ((findDecision_spec decs' i).le_wp ⟨by lia,
-    (congrArg Decision.block (getElem!_eq_of_toList_eq_append h h0)).trans hb⟩)
+    (congrArg Decision.block (Array.getElem!_eq_of_toList_eq_append h h0)).trans hb⟩)
     ⟨by rw [hs]; exact Nat.lt_add_right _ h1, ?_, fun j hj hj' ↦ ?_⟩
-  · exact (congrArg Decision.block (getElem!_eq_of_toList_eq_append h h1)).trans_le h2
+  · exact (congrArg Decision.block (Array.getElem!_eq_of_toList_eq_append h h1)).trans_le h2
   · rcases Nat.lt_or_ge j decs.size with hjs | hjs
-    · rw [getElem!_eq_of_toList_eq_append h hjs]
+    · rw [Array.getElem!_eq_of_toList_eq_append h hjs]
       exact h3 j hj hjs
-    · exact hL _ (getElem!_mem_of_toList_eq_append h hjs hj')
+    · exact hL _ (Array.getElem!_mem_of_toList_eq_append h hjs hj')
 
 /-- The decision in force for block `i` among decisions of which the first is for block `0` is
 also that among these decisions followed by decisions for blocks after block `i`. -/
@@ -527,7 +508,7 @@ theorem getElem!_findDecision_eq_of_toList_eq_append {decs decs' : Array Decisio
     (h : decs'.toList = decs.toList ++ L) (hL : ∀ d ∈ L, i < d.block) :
     decs'[Id.run (findDecision decs' i)]! = decs[Id.run (findDecision decs i)]! := by
   rw [findDecision_eq_of_toList_eq_append h0 hb h hL]
-  exact getElem!_eq_of_toList_eq_append h ((findDecision_spec decs i).le_wp ⟨h0, hb⟩).1
+  exact Array.getElem!_eq_of_toList_eq_append h ((findDecision_spec decs i).le_wp ⟨h0, hb⟩).1
 
 section
 
@@ -543,9 +524,8 @@ private theorem getElem!_findDecision_correctionAfter_eq {i k : Nat} (hk : i - a
       (correctionAfter H s P entries magics cls db shape iv bLow bHigh (i - adaptLag)).decisions[
         Id.run (findDecision (correctionAfter H s P entries magics cls db shape iv bLow bHigh
           (i - adaptLag)).decisions i)]! := by
-  obtain ⟨L, hL, hb⟩ := exists_toList_decisions_correctionAfter (H := H) (s := s) (P := P)
-    (entries := entries) (magics := magics) (cls := cls) (db := db) (shape := shape) (iv := iv)
-    (bLow := bLow) (bHigh := bHigh) hk
+  obtain ⟨L, hL, hb⟩ := exists_toList_decisions_correctionAfter H s P entries magics cls db shape iv
+    bLow bHigh hk
   exact getElem!_findDecision_eq_of_toList_eq_append (size_pos_and_block_zero_correctionAfter _).1
     (size_pos_and_block_zero_correctionAfter _).2 hL fun d hd ↦ by lia [hb d hd]
 
@@ -630,9 +610,7 @@ theorem SieveRunLoopInvariant.pre (hdec : DecisionWF entries P.sp1 ⟨0, P.sp2, 
       cur)]! ∧ st.Fits entries := by
   have hq := h.2.2.resolve_left nofun
   obtain ⟨rfl, hs⟩ := h.2.1 hq
-  have hwf := wf_correctionAfter (H := H) (s := s) (magics := magics) (cls := cls) (db := db)
-    (shape := shape) (iv := iv) (bLow := bLow) (bHigh := bHigh) hdec pref.length
-  exact ⟨hq, decisionWF_getElem!_findDecision hwf.size_pos hwf.block_zero hwf.decisionWF cur, hs⟩
+  exact ⟨hq, (wf_correctionAfter hdec _).decisionWF_findDecision cur, hs⟩
 
 -- The delivery after the block at the cursor `cur`, with the decision of the block.
 private theorem deliver_append_blockPoints (hl : ForIn.toList [:n] = pref ++ cur :: suff)
@@ -705,9 +683,8 @@ end
 attribute [local irreducible] SieveRunLoopInvariant in
 open Std.WP Lean.Order in
 /-- The contract of the run over the blocks with the correction of the moduli, the block lemma: for
-sieve entries with the tables of inverses of their factors, prime entries wherever no factor is
-counted, the reciprocals of their moduli, the row offsets of the packings of the classes `cls` with
-a pattern, whose bits are those of the word `db`, a well-formed decision of the choice
+sieve entries with what the run needs of them (`Ratpoints.Sieve.IsRunEntries`), the word `db` whose
+bits mark the classes `cls` with a pattern, a well-formed decision of the choice
 (`Ratpoints.Sieve.DecisionWF`), forbidden divisors of the word shape that have what its loop needs,
 pieces of at least one bit array, the denominators from `bLow ≥ 1` to `bHigh < 2 ^ 63` and the
 height below `2 ^ 63`, the run, with a delivery whose flag of the stop is clear and a store of the
@@ -720,8 +697,7 @@ theorem sieveRun_spec (c : List Int) (d H A : Nat) (fl : CheckFlags) (s : SieveO
     (P : Params) (entries : List SieveEntry) (magics : Array Nat) (cls : Vector NumClass 64)
     (offsets : Array Nat) (db : UInt64) (shape : Shape) (iv : Array IntervalBounds)
     (bLow bHigh : Nat) (store : RowStore) (r : Delivery σ) (hA : 1 ≤ A)
-    (hent : ∀ e ∈ entries, (e.nf = 0 → e.IsPrimeEntry) ∧ e.HasInverses)
-    (hmg : magics.toList = entries.map fun e ↦ magic e.p) (hoff : OffsetsFor cls entries offsets)
+    (hw : IsRunEntries entries magics cls offsets)
     (hdb : ∀ j < 64, db.toBitVec.getLsbD j = (cls[j]!.bits != 0))
     (hdec : DecisionWF entries P.sp1 ⟨0, P.sp2, P.sp3⟩) (hforb : shape.ForbFits) (hbLow : 1 ≤ bLow)
     (hbHigh : bHigh < 2 ^ 63) (hH : H < 2 ^ 63) :
@@ -738,7 +714,7 @@ theorem sieveRun_spec (c : List Int) (d H A : Nat) (fl : CheckFlags) (s : SieveO
     | exact sieveRunLoopInvariant_nil ‹_ ∧ _›.1 ‹_ ∧ _›.2 _
     | exact SieveRunLoopInvariant.post ‹_› _ ‹_›
     | (obtain ⟨hq, hd, hs⟩ := SieveRunLoopInvariant.pre hdec ‹_›
-       exact ⟨hq, hA, hent, hmg, hoff, hdb, hd, rfl, hforb,
+       exact ⟨hq, hA, hw, hdb, hd, rfl, hforb,
          Std.Legacy.Range.lt_of_toList_eq_append_cons ‹_›, hbLow, hbHigh, hH, hs⟩)
     | (obtain ⟨hs, hb, hc⟩ := ‹RowStore.Fits _ _ ∧ _›
        first
@@ -750,8 +726,7 @@ theorem fst_run_sieveRun (c : List Int) (d H A : Nat) (fl : CheckFlags) (s : Sie
     (P : Params) (entries : List SieveEntry) (magics : Array Nat) (cls : Vector NumClass 64)
     (offsets : Array Nat) (db : UInt64) (shape : Shape) (iv : Array IntervalBounds)
     (bLow bHigh : Nat) (store : RowStore) {r : Delivery σ} (hA : 1 ≤ A)
-    (hent : ∀ e ∈ entries, (e.nf = 0 → e.IsPrimeEntry) ∧ e.HasInverses)
-    (hmg : magics.toList = entries.map fun e ↦ magic e.p) (hoff : OffsetsFor cls entries offsets)
+    (hw : IsRunEntries entries magics cls offsets)
     (hdb : ∀ j < 64, db.toBitVec.getLsbD j = (cls[j]!.bits != 0))
     (hdec : DecisionWF entries P.sp1 ⟨0, P.sp2, P.sp3⟩) (hforb : shape.ForbFits) (hbLow : 1 ≤ bLow)
     (hbHigh : bHigh < 2 ^ 63) (hH : H < 2 ^ 63) (hr : r.quit = false) (hs : store.Fits entries)
@@ -761,33 +736,30 @@ theorem fst_run_sieveRun (c : List Int) (d H A : Nat) (fl : CheckFlags) (s : Sie
         ((List.range (Id.run (shape.blockPlan bLow bHigh)).nblocks).flatMap
           (blockPoints c d H fl s P entries magics cls db shape iv bLow bHigh x)) :=
   (sieveRun_spec process c d H A fl s P entries magics cls offsets db shape iv bLow bHigh store r hA
-    hent hmg hoff hdb hdec hforb hbLow hbHigh hH).le_wp ⟨hr, hs⟩ x hx
+    hw hdb hdec hforb hbLow hbHigh hH).le_wp ⟨hr, hs⟩ x hx
 
 /-- The contract of the run over the blocks with the correction of the moduli, per denominator: for
-sieve entries with the tables of inverses of their factors, prime entries wherever no factor is
-counted, the row offsets of the packings of the classes `cls` with a pattern
-(`Ratpoints.Sieve.OffsetsFor`), whose bits are those of the word `db`, the reciprocals of the moduli
-in their order, a store of the tables of rows that fits all the entries, a first decision of the
-parameters that is well-formed (`Ratpoints.Sieve.DecisionWF`), forbidden divisors of the word shape
-that have what its loop needs (`Ratpoints.Sieve.Shape.ForbFits`), a listing of the shape with no
-denominator twice, so that each lies in one block (`Ratpoints.Sieve.Shape.eq_of_mem_blockDens`),
-pieces of at least one bit array, the denominators from `bLow ≥ 1` to `bHigh < 2 ^ 63` and the
-height below `2 ^ 63`, there is a number `sp3At b` of the entries of the first three stages for each
-denominator `b`, the end of the third stage of the decision of its block
-(`Ratpoints.Sieve.blockDecision`), which depends neither on the callback nor on the flags of the
-output, such that the run, with any callback, flags and delivery whose flag of the stop is clear,
-delivers for each denominator `b` of the listing of the shape that passes its tests
-(`Ratpoints.Sieve.Shape.dens`, `Ratpoints.Sieve.Shape.keep`), in order, the points of the check with
-the flags of the numerators `-H, …, H` in one of the ranges `rs b` that the bounds of the search
-intervals give for `b` (`Ratpoints.Sieve.RangesFor`), that pass the class word `nb[b mod 64]` for
-words `nb` that the classes pack, and survive the first `sp3At b` entries: the blocks in order
+sieve entries with what the run needs of them (`Ratpoints.Sieve.IsRunEntries`), the word `db` whose
+bits mark the classes `cls` with a pattern, a store of the tables of rows that fits all the entries,
+a first decision of the parameters that is well-formed (`Ratpoints.Sieve.DecisionWF`), forbidden
+divisors of the word shape that have what its loop needs (`Ratpoints.Sieve.Shape.ForbFits`), a
+listing of the shape with no denominator twice, so that each lies in one block
+(`Ratpoints.Sieve.Shape.eq_of_mem_blockDens`), pieces of at least one bit array, the denominators
+from `bLow ≥ 1` to `bHigh < 2 ^ 63` and the height below `2 ^ 63`, there is a number `sp3At b` of
+the entries of the first three stages for each denominator `b`, the end of the third stage of the
+decision of its block (`Ratpoints.Sieve.blockDecision`), which depends neither on the callback nor
+on the flags of the output, such that the run, with any callback, flags and delivery whose flag of
+the stop is clear, delivers for each denominator `b` of the listing of the shape that passes its
+tests (`Ratpoints.Sieve.Shape.dens`, `Ratpoints.Sieve.Shape.keep`), in order, the points of the
+check with the flags of the numerators `-H, …, H` in one of the ranges `rs b` that the bounds of the
+search intervals give for `b` (`Ratpoints.Sieve.RangesFor`), that pass the class word `nb[b mod 64]`
+for words `nb` that the classes pack, and survive the first `sp3At b` entries: the blocks in order
 (`Ratpoints.Sieve.sieveRun_spec`) visit the denominators of the listing in its order
 (`Ratpoints.Sieve.Shape.flatMap_filter_blockDens`). -/
 theorem exists_run_sieveRun_eq_deliver (c : List ℤ) (d H A : ℕ) (s : SieveOptions) (P : Params)
     (entries : List SieveEntry) (magics : Array ℕ) (cls : Vector NumClass 64) (offsets : Array ℕ)
     (db : UInt64) (shape : Shape) (iv : Array IntervalBounds) (bLow bHigh : ℕ) (store : RowStore)
-    (hA : 1 ≤ A) (hent : ∀ e ∈ entries, (e.nf = 0 → e.IsPrimeEntry) ∧ e.HasInverses)
-    (hmg : magics.toList = entries.map fun e ↦ magic e.p) (hoff : OffsetsFor cls entries offsets)
+    (hA : 1 ≤ A) (hw : IsRunEntries entries magics cls offsets)
     (hdb : ∀ j < 64, db.toBitVec.getLsbD j = (cls[j]!.bits != 0))
     (hdec : DecisionWF entries P.sp1 ⟨0, P.sp2, P.sp3⟩) (hforb : shape.ForbFits)
     (hnd : (Id.run (shape.dens db bLow bHigh)).Nodup) (hbLow : 1 ≤ bLow)
@@ -807,7 +779,7 @@ theorem exists_run_sieveRun_eq_deliver (c : List ℤ) (d H A : ℕ) (s : SieveOp
       (blockDecision H s P entries magics cls db shape iv bLow bHigh h.choose).sp3 else 0,
     fun process fl r hr nb rs hnb hrs ↦ ?_⟩
   rw [fst_run_sieveRun process c d H A fl s P entries magics cls offsets db shape iv bLow bHigh
-    store hA hent hmg hoff hdb hdec hforb hbLow hbHigh hH hr hs (x := (nb, rs)) ⟨hnb, hrs⟩]
+    store hA hw hdb hdec hforb hbLow hbHigh hH hr hs (x := (nb, rs)) ⟨hnb, hrs⟩]
   refine congrArg (r.deliver process) (shape.flatMap_filter_blockDens db cls bLow bHigh
     fun i hi b hb ↦ ?_)
   have h : ∃ i < (Id.run (shape.blockPlan bLow bHigh)).nblocks,
@@ -902,8 +874,7 @@ theorem toList_info_run_runBlock_appendPoint (c : List Int) (d H A : Nat) (fl : 
     (s : SieveOptions) (P : Params) (entries : List SieveEntry) (magics : Array Nat)
     (cls : Vector NumClass 64) (offsets : Array Nat) (db : UInt64) (shape : Shape)
     (iv : Array IntervalBounds) (bLow bHigh : Nat) {i k : Nat} {store : RowStore} (hA : 1 ≤ A)
-    (hent : ∀ e ∈ entries, (e.nf = 0 → e.IsPrimeEntry) ∧ e.HasInverses)
-    (hmg : magics.toList = entries.map fun e ↦ magic e.p) (hoff : OffsetsFor cls entries offsets)
+    (hw : IsRunEntries entries magics cls offsets)
     (hdb : ∀ j < 64, db.toBitVec.getLsbD j = (cls[j]!.bits != 0))
     (hdec : DecisionWF entries P.sp1 ⟨0, P.sp2, P.sp3⟩) (hforb : shape.ForbFits) (hbLow : 1 ≤ bLow)
     (hbHigh : bHigh < 2 ^ 63) (hH : H < 2 ^ 63) (hk : i - adaptLag ≤ k)
@@ -914,12 +885,11 @@ theorem toList_info_run_runBlock_appendPoint (c : List Int) (d H A : Nat) (fl : 
       (correctionAfter H s P entries magics cls db shape iv bLow bHigh k).decisions i store
       ⟨#[], 0, false⟩)).1.info.toList =
       blockPoints c d H fl s P entries magics cls db shape iv bLow bHigh x i := by
-  have hwf := wf_correctionAfter (H := H) (s := s) (magics := magics) (cls := cls) (db := db)
-    (shape := shape) (iv := iv) (bLow := bLow) (bHigh := bHigh) hdec k
+  have hwf : (correctionAfter H s P entries magics cls db shape iv bLow bHigh k).WF entries P.sp1 :=
+    wf_correctionAfter hdec k
   have h := Std.WP.Id.of_run_eq_wp rfl _ ((runBlock_spec appendPoint c d H A fl P.sp1 entries
-    magics cls offsets db shape iv bLow bHigh _ _ i store ⟨#[], 0, false⟩).le_wp ⟨rfl, hA, hent,
-      hmg, hoff, hdb, decisionWF_getElem!_findDecision hwf.size_pos hwf.block_zero hwf.decisionWF i,
-      rfl, hforb, hi, hbLow, hbHigh, hH, hs⟩)
+    magics cls offsets db shape iv bLow bHigh _ _ i store ⟨#[], 0, false⟩).le_wp ⟨rfl, hA, hw, hdb,
+      hwf.decisionWF_findDecision i, rfl, hforb, hi, hbLow, hbHigh, hH, hs⟩)
   rw [h.2.1 x hx, Delivery.deliver_appendPoint, getElem!_findDecision_correctionAfter hk]
   simp [blockPoints]
 
@@ -939,8 +909,7 @@ theorem run_deliverSlots_eq_fst_run_sieveRun (c : List Int) (d H A : Nat) (fl : 
     (cls : Vector NumClass 64) (offsets : Array Nat) (db : UInt64) (shape : Shape)
     (iv : Array IntervalBounds) (bLow bHigh : Nat) {store : RowStore} {r : Delivery σ}
     {k : Nat → Nat} {stores : Nat → RowStore} (hA : 1 ≤ A)
-    (hent : ∀ e ∈ entries, (e.nf = 0 → e.IsPrimeEntry) ∧ e.HasInverses)
-    (hmg : magics.toList = entries.map fun e ↦ magic e.p) (hoff : OffsetsFor cls entries offsets)
+    (hw : IsRunEntries entries magics cls offsets)
     (hdb : ∀ j < 64, db.toBitVec.getLsbD j = (cls[j]!.bits != 0))
     (hdec : DecisionWF entries P.sp1 ⟨0, P.sp2, P.sp3⟩) (hforb : shape.ForbFits) (hbLow : 1 ≤ bLow)
     (hbHigh : bHigh < 2 ^ 63) (hH : H < 2 ^ 63) (hk : ∀ i, i - adaptLag ≤ k i)
@@ -953,12 +922,11 @@ theorem run_deliverSlots_eq_fst_run_sieveRun (c : List Int) (d H A : Nat) (fl : 
       (Id.run (sieveRun process c d H A fl s P entries magics cls offsets db shape iv bLow bHigh
         store r)).1 := by
   rw [fst_run_sieveRun process c d H A fl s P entries magics cls offsets db shape iv bLow bHigh
-    store hA hent hmg hoff hdb hdec hforb hbLow hbHigh hH hr hs hx,
+    store hA hw hdb hdec hforb hbLow hbHigh hH hr hs hx,
     (deliverSlots_spec process _ _ r).le_wp hr]
   exact congrArg (r.deliver process) (List.flatMap_congr fun i hi ↦
     toList_info_run_runBlock_appendPoint c d H A fl s P entries magics cls offsets db shape iv bLow
-      bHigh hA hent hmg hoff hdb hdec hforb hbLow hbHigh hH (hk i) (List.mem_range.mp hi) (hst i)
-      hx)
+      bHigh hA hw hdb hdec hforb hbLow hbHigh hH (hk i) (List.mem_range.mp hi) (hst i) hx)
 
 end Sieve
 

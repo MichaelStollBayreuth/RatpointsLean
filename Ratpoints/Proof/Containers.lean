@@ -13,10 +13,11 @@ import Std.Internal.ForIn.Lemmas
 Lemmas that Lean core lacks, under their names in the namespaces of core, on vectors (the entries
 after `Vector.set!` and after a fold of it, of `Vector.ofFn f` and of the array of a vector), arrays
 (the entries after `Array.set!`, `Array.push`, `Array.pop`, `Array.map`, a concatenation and
-`Array.eraseIdxIfInBounds`, the cursor of a loop over an array, an array that extends another),
-lists (filters and `List.flatMap` over ranges, tests by the entries, prefixes, the cursors of loops
-over two lists), ranges (the cursor of a loop over `[a:m]`), natural numbers and integers (residues
-and quotients, Barrett's estimate, the remainder and the quotient by a reciprocal, the steps of the
+`Array.eraseIdxIfInBounds`, the cursor of a loop over an array, an array that extends another, the
+entries of an array whose list extends that of another), lists (filters and `List.flatMap` over
+ranges, a list read by its indices, tests by the entries, prefixes, the cursors of loops over two
+lists), ranges (the cursor of a loop over `[a:m]`), natural numbers and integers (residues and
+quotients, Barrett's estimate, the remainder and the quotient by a reciprocal, the steps of the
 binary algorithm for the gcd), `Except` and strings. The lemmas on 64-bit words are in
 `Ratpoints.Proof.Bits`.
 
@@ -229,6 +230,34 @@ theorem getElem!_of_toList_eq_map {α : Type u} {β : Type v} [Inhabited β] {xs
   have hs : n < xs.size := by rwa [← Array.length_toList, h, List.length_map]
   rw [getElem!_pos xs n hs, ← Array.getElem_toList]
   simp only [h, List.getElem_map]
+
+/-- A list over the positions of an array whose list is `(List.range n).map f`, read with `[i]!`,
+is that over the values of `f`. -/
+theorem flatMap_range_size_getElem!_of_toList_eq_map {α : Type u} {β : Type v} [Inhabited α]
+    {xs : Array α} {n : Nat} {f : Nat → α} (h : xs.toList = (List.range n).map f)
+    (F : Nat → α → List β) :
+    (List.range xs.size).flatMap (fun i ↦ F i xs[i]!) =
+      (List.range n).flatMap fun i ↦ F i (f i) := by
+  have hn : xs.size = n := by simpa using congrArg List.length h
+  rw [hn]
+  refine congrArg List.flatten (List.map_congr_left fun i hi ↦ ?_)
+  rw [getElem!_of_toList_eq_map h (by simpa using hi), List.getElem_range]
+
+/-- The entries of an array whose list extends that of `xs` are those of `xs` at its positions. -/
+theorem getElem!_eq_of_toList_eq_append {α : Type u} [Inhabited α] {xs ys : Array α} {L : List α}
+    (h : ys.toList = xs.toList ++ L) {j : Nat} (hj : j < xs.size) : ys[j]! = xs[j]! := by
+  have hs : ys.size = xs.size + L.length := by simpa using congrArg List.length h
+  rw [getElem!_pos ys j (by lia), getElem!_pos xs j hj, ← Array.getElem_toList,
+    List.getElem_of_eq h, List.getElem_append_left (by simpa using hj), Array.getElem_toList]
+
+/-- The entries of an array whose list is that of `xs` followed by `L`, beyond the positions of
+`xs`, are entries of `L`. -/
+theorem getElem!_mem_of_toList_eq_append {α : Type u} [Inhabited α] {xs ys : Array α}
+    {L : List α} (h : ys.toList = xs.toList ++ L) {j : Nat} (hj : xs.size ≤ j)
+    (hj' : j < ys.size) : ys[j]! ∈ L := by
+  rw [getElem!_pos ys j hj', ← Array.getElem_toList, List.getElem_of_eq h,
+    List.getElem_append_right (by simpa using hj)]
+  exact List.getElem_mem _
 
 /-- Setting an entry twice keeps the second value. -/
 theorem set!_set! {α : Type u} (xs : Array α) (i : Nat) (a b : α) :
@@ -483,15 +512,21 @@ theorem next?_drop_map_ne_none {α : Type u} {β : Type v} (f : α → β) {l pr
   subst hl
   simp [Std.Stream.next?]
 
+/-- The entries of a list read by their indices are the list. -/
+theorem map_range_length_getElem! {α : Type u} [Inhabited α] (l : List α) :
+    (range l.length).map (fun i ↦ l[i]!) = l := by
+  refine ext_getElem (by simp) fun i h _ ↦ ?_
+  rw [getElem_map, getElem_range, getElem!_pos l i (by simpa using h)]
+
 /-- A test of the entries of a list by their indices is the test of the list. -/
 theorem all_range_length_getElem! {α : Type u} [Inhabited α] (l : List α) (P : α → Bool) :
-    ((range l.length).all fun i ↦ P l[i]!) = l.all P := by
-  rw [Bool.eq_iff_iff, all_eq_true, all_eq_true]
-  refine ⟨fun h a ha ↦ ?_, fun h i hi ↦ ?_⟩
-  · obtain ⟨i, hi, rfl⟩ := getElem_of_mem ha
-    simpa [getElem!_pos l i hi] using h i (mem_range.mpr hi)
-  · rw [getElem!_pos l i (mem_range.mp hi)]
-    exact h _ (getElem_mem _)
+    ((range l.length).all fun i ↦ P l[i]!) = l.all P :=
+  all_map.symm.trans (congrArg (·.all P) (map_range_length_getElem! l))
+
+/-- A list over the positions of a list, read by their indices, is that over its entries. -/
+theorem flatMap_range_length_getElem! {α : Type u} {β : Type v} [Inhabited α] (l : List α)
+    (g : α → List β) : (range l.length).flatMap (fun i ↦ g l[i]!) = l.flatMap g :=
+  (flatMap_map ..).symm.trans (congrArg (·.flatMap g) (map_range_length_getElem! l))
 
 /-- A test of the entries of a nonempty list that and-s a fixed Boolean with a test is the Boolean
 and-ed with the test of the list. -/

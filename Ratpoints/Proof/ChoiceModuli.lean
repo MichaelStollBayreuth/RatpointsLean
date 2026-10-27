@@ -136,12 +136,6 @@ structure ModulusCandidate.IsPrime (c : List ℤ) (e : ModulusCandidate) : Prop 
   exists_eq : ∃ pn < numPrimes, ∃ r, e.p = primeTable[pn]! ∧
     e.ssp = some (primeEntry (examinePrime c (degree c) primeTable[pn]!) r)
 
-/-- A candidate with the count of factors, the modulus and the sieve entry of a prime candidate is
-one: the predicate reads neither the density, the key, the cost, the mask nor the codes. -/
-theorem ModulusCandidate.IsPrime.of_eq {c : List ℤ} {e e' : ModulusCandidate} (h : e.IsPrime c)
-    (hnf : e'.nf = e.nf) (hp : e'.p = e.p) (hs : e'.ssp = e.ssp) : e'.IsPrime c :=
-  ⟨hnf ▸ h.nf_le, hp ▸ hs ▸ h.exists_eq⟩
-
 /-- The candidate of a composite modulus as `Ratpoints.addModuli` offers it for the curve with the
 coefficient list `c`, the tables of the loop of the tables `primeSe` and the records of the prime
 powers `pws`: the count of its factors, with codes that `Ratpoints.makeModulus` can read and whose
@@ -597,11 +591,15 @@ structure ChoicePoolWF (c : List ℤ) (sp2 : ℕ) (pool : Array ModulusCandidate
 /-- The invariant of the loop of `Ratpoints.stageEntries` after the positions below `k`, from the
 pool `pool₀`: the size kept, the candidates below `k` with their sieve entries made for their
 positions, and the others as they were. -/
-def StageEntriesInvariant (c : List ℤ) (pool₀ : Array ModulusCandidate) (k : ℕ)
-    (pool : Array ModulusCandidate) : Prop :=
-  pool.size = pool₀.size ∧
-    (∀ n (h : n < pool.size), n < k → ∃ se, pool[n].ssp = some se ∧ IsChoiceEntry c n se) ∧
-    ∀ n (h : n < pool.size), k ≤ n → pool[n]! = pool₀[n]!
+structure StageEntriesInvariant (c : List ℤ) (pool₀ : Array ModulusCandidate) (k : ℕ)
+    (pool : Array ModulusCandidate) : Prop where
+  /-- The size is kept. -/
+  size_eq : pool.size = pool₀.size
+  /-- The candidates below `k` have their sieve entries, made for their positions. -/
+  exists_isChoiceEntry_of_lt :
+    ∀ n (h : n < pool.size), n < k → ∃ se, pool[n].ssp = some se ∧ IsChoiceEntry c n se
+  /-- The other candidates are as they were. -/
+  getElem!_eq : ∀ n < pool.size, k ≤ n → pool[n]! = pool₀[n]!
 
 theorem ModulusCandidate.IsPrimeOrComposite.isPrime_of_ssp_isSome {c : List ℤ}
     {primeSe : Array (Option (Entry × Float))} {pws : Array Power} {e : ModulusCandidate}
@@ -637,9 +635,9 @@ private theorem StageEntriesInvariant.lt_size_and_isPrimeOrComposite {c : List �
     (h : StageEntriesInvariant c pool pref.length p) :
     cur < p.size ∧ p[cur]!.IsPrimeOrComposite c primeSe pws := by
   have hc := Std.Legacy.Range.lt_of_toList_eq_append_cons hl
-  have hcp : cur < p.size := by lia [h.1, hpre.2.2]
+  have hcp : cur < p.size := by lia [h.size_eq, hpre.2.2]
   refine ⟨hcp, ?_⟩
-  rw [h.2.2 cur hcp (Std.Legacy.Range.length_eq_of_toList_eq_append_cons hl).le,
+  rw [h.getElem!_eq cur hcp (Std.Legacy.Range.length_eq_of_toList_eq_append_cons hl).le,
     getElem!_pos pool cur (by lia [hpre.2.2])]
   exact hpre.1 _ (Array.getElem_mem _)
 
@@ -665,15 +663,15 @@ theorem StageEntriesInvariant.set {c : List ℤ} {primeSe : Array (Option (Entry
   have hlen := Std.Legacy.Range.length_eq_of_toList_eq_append_cons hl
   rw [List.length_append, List.length_singleton, hlen]
   simp only [Array.set!_eq_setIfInBounds]
-  refine ⟨by simp [h.1], fun n hn hk ↦ ?_, fun n hn hk ↦ ?_⟩ <;>
+  refine ⟨by simp [h.size_eq], fun n hn hk ↦ ?_, fun n hn hk ↦ ?_⟩ <;>
     rw [Array.size_setIfInBounds] at hn
   · rcases Nat.lt_succ_iff_lt_or_eq.mp hk with hk | rfl
     · rw [Array.getElem_setIfInBounds_ne hn (Nat.ne_of_gt hk)]
-      exact h.2.1 n hn (by lia)
+      exact h.exists_isChoiceEntry_of_lt n hn (by lia)
     · exact ⟨se, by simp, hse⟩
   · rw [getElem!_pos _ n (by simpa using hn), Array.getElem_setIfInBounds_ne hn (Nat.ne_of_lt hk),
       ← getElem!_pos p n hn]
-    exact h.2.2 n hn (by lia)
+    exact h.getElem!_eq n hn (by lia)
 
 theorem StageEntriesInvariant.skip {c : List ℤ} {primeSe : Array (Option (Entry × Float))}
     {pws : Array Power} {pool p : Array ModulusCandidate} {sp2 : ℕ}
@@ -685,9 +683,9 @@ theorem StageEntriesInvariant.skip {c : List ℤ} {primeSe : Array (Option (Entr
   obtain ⟨hcp, hok⟩ := h.lt_size_and_isPrimeOrComposite hpre hl
   have hlen := Std.Legacy.Range.length_eq_of_toList_eq_append_cons hl
   rw [List.length_append, List.length_singleton, hlen]
-  refine ⟨h.1, fun n hn' hk ↦ ?_, fun n hn' hk ↦ h.2.2 n hn' (by lia)⟩
+  refine ⟨h.size_eq, fun n hn' hk ↦ ?_, fun n hn' hk ↦ h.getElem!_eq n hn' (by lia)⟩
   rcases Nat.lt_succ_iff_lt_or_eq.mp hk with hk | rfl
-  · exact h.2.1 n hn' (by lia)
+  · exact h.exists_isChoiceEntry_of_lt n hn' (by lia)
   · rw [← getElem!_pos p n hn']
     exact (hok.isPrime_of_ssp_isSome hn).exists_isChoiceEntry n
 
@@ -698,14 +696,13 @@ theorem StageEntriesInvariant.post {c : List ℤ} {primeSe : Array (Option (Entr
     (h : StageEntriesInvariant c pool (ForIn.toList [:sp2]).length p) :
     ChoicePoolWF c sp2 p ∧ p.size = pool.size := by
   rw [Std.Legacy.Range.length_toList, Nat.sub_zero] at h
-  refine ⟨⟨h.2.1, fun n hn hk ↦ ?_⟩, h.1⟩
-  have hn' : n < pool.size := h.1 ▸ hn
-  rw [← getElem!_pos p n hn, h.2.2 n hn hk, getElem!_pos pool n hn']
+  refine ⟨⟨h.exists_isChoiceEntry_of_lt, fun n hn hk ↦ ?_⟩, h.size_eq⟩
+  have hn' : n < pool.size := h.size_eq ▸ hn
+  rw [← getElem!_pos p n hn, h.getElem!_eq n hn hk, getElem!_pos pool n hn']
   refine (hpre.1 _ (Array.getElem_mem hn')).resolve_right fun hc ↦ ?_
   have := hc.nf_eq.symm.trans (hpre.2.1 n hn' hk)
   simp [hc.fac_ne_nil] at this
 
-attribute [local irreducible] StageEntriesInvariant in
 /-- The contract of `Ratpoints.stageEntries`: after the stages, which leave composite moduli only
 before `sp2`, every candidate before `sp2` has its sieve entry, made for its position, and those
 from `sp2` on are primes (`Ratpoints.ChoicePoolWF`). -/
@@ -740,8 +737,9 @@ theorem ChoicePoolWF.swapIfInBounds {c : List ℤ} {sp2 : ℕ} {pool : Array Mod
     repeat' split
   all_goals first | lia | exact h.exists_isChoiceEntry_of_lt n _ hk | exact h.isPrime _ _ (by lia)
 
--- The examination of a prime, as a value: the contracts read it through its own lemmas.
-private theorem examinePrime?_value (c : List ℤ) (d p : ℕ) (u : Bool) :
+/-- The result of `Ratpoints.Sieve.examinePrime?` as its own value, for the contracts of the loops
+that bind it and read it through its own lemmas. -/
+theorem examinePrime?_value (c : List ℤ) (d p : ℕ) (u : Bool) :
     ⦃ True ⦄ examinePrime? c d p u ⦃ fun r ↦ r = Id.run (examinePrime? c d p u) ⦄ :=
   ⟨fun _ ↦ rfl⟩
 

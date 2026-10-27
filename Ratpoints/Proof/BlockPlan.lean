@@ -183,8 +183,11 @@ theorem Shape.toList_fst_run_segments (s : Shape) (bLow bHigh : Nat) :
 /-- The blocks `plan` are well-formed: blocks of at least one step, and the first block of each
 segment the number of the blocks of the segments before it
 (`Ratpoints.Sieve.numBlocks`), the number of all the blocks at the end. -/
-def BlockPlan.WF (plan : BlockPlan) : Prop :=
-  1 ≤ plan.len ∧ plan.segBlock.toList = (List.range (plan.segs.size + 1)).map fun j ↦
+structure BlockPlan.WF (plan : BlockPlan) : Prop where
+  /-- The blocks have at least one step. -/
+  one_le_len : 1 ≤ plan.len
+  /-- The first block of each segment, and the number of all the blocks at the end. -/
+  segBlock_eq : plan.segBlock.toList = (List.range (plan.segs.size + 1)).map fun j ↦
     ((plan.segs.toList.take j).map fun sg ↦ numBlocks sg.1 sg.2 plan.len).sum
 
 /-- A block has at least one step: the length that a build sets is positive
@@ -267,13 +270,13 @@ section
 variable {plan : BlockPlan}
 
 theorem BlockPlan.WF.size_segBlock (h : plan.WF) : plan.segBlock.size = plan.segs.size + 1 := by
-  simpa using congrArg List.length h.2
+  simpa using congrArg List.length h.segBlock_eq
 
 theorem BlockPlan.WF.getElem!_segBlock (h : plan.WF) {j : Nat} (hj : j ≤ plan.segs.size) :
     plan.segBlock[j]! =
       ((plan.segs.toList.take j).map fun sg ↦ numBlocks sg.1 sg.2 plan.len).sum := by
   rw [getElem!_pos plan.segBlock j (by rw [h.size_segBlock]; lia), ← Array.getElem_toList]
-  simp [h.2]
+  simp [h.segBlock_eq]
 
 theorem BlockPlan.WF.segBlock_succ (h : plan.WF) {j : Nat} (hj : j < plan.segs.size) :
     plan.segBlock[j + 1]! =
@@ -406,7 +409,7 @@ private theorem BlockPlan.WF.flatMap_range'_segBlock {plan : BlockPlan} (h : pla
           (fun i ↦ (plan.blockSteps i).flatMap (g (plan.blockSeg i))) =
       (List.range' plan.segs[seg]!.1 (plan.segs[seg]!.2 + 1 - plan.segs[seg]!.1)).flatMap
         (g seg) := by
-  rw [← flatMap_blockRange h.1 (g seg), List.range'_eq_map_range, List.flatMap_map]
+  rw [← flatMap_blockRange h.one_le_len (g seg), List.range'_eq_map_range, List.flatMap_map]
   refine flatMap_congr_mem fun j hj ↦ ?_
   have := h.run_steps_eq hs (Nat.le_add_right _ j)
     (by rw [h.segBlock_succ hs]; exact Nat.add_lt_add_left (List.mem_range.mp hj) _)
@@ -429,7 +432,7 @@ theorem BlockPlan.WF.run_steps_le {plan : BlockPlan} (h : plan.WF) {i : Nat}
     (hi : i < plan.nblocks) : (Id.run (plan.steps i)).2.1 ≤ (Id.run (plan.steps i)).2.2 := by
   obtain ⟨seg, hs, h1, h2, he⟩ := h.run_steps hi
   rw [he]
-  refine (blockRange_le h.1 ?_).2.1
+  refine (blockRange_le h.one_le_len ?_).2.1
   rw [h.segBlock_succ hs] at h2
   lia
 

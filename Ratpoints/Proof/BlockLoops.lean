@@ -82,17 +82,25 @@ step that delivers the points `L b` of each denominator `b`, keeps the property 
 the tables of rows and adds the counts `κ b` to the counters: the delivery is that of the points of
 the denominators of `M` in order, the store has the property `Q`, and when the callback has not
 stopped the search, the counters are those of `st` plus the counts of the denominators of `M`. -/
-def BlockPost {ι : Type} (P : ι → Prop) (L : ι → Nat → List (Int × Int × Int))
-    (κ : Nat → Counters) (Q : RowStore → Prop) (M : List Nat) (st st' : BlockState σ) : Prop :=
-  (∀ x, P x → st'.1 = st.1.deliver process (M.flatMap (L x))) ∧ Q st'.2.1 ∧
-    (st'.1.quit = false → st'.2.2 = (M.map κ).foldl (· + ·) st.2.2)
+structure BlockPost {ι : Type} (P : ι → Prop) (L : ι → Nat → List (Int × Int × Int))
+    (κ : Nat → Counters) (Q : RowStore → Prop) (M : List Nat) (st st' : BlockState σ) : Prop where
+  /-- The delivery is that of the points of the denominators of `M`, for every `x` with `P x`. -/
+  deliver : ∀ x, P x → st'.1 = st.1.deliver process (M.flatMap (L x))
+  /-- The store has the property `Q`. -/
+  store : Q st'.2.1
+  /-- While the callback has not stopped the search, the counts of the denominators of `M` are
+  added to the counters. -/
+  counts : st'.1.quit = false → st'.2.2 = (M.map κ).foldl (· + ·) st.2.2
 
 /-- `Ratpoints.Sieve.BlockPost` with the callback not stopping the search: the invariant of the
 loops of the blocks after the denominators `M`. -/
-def BlockInv {ι : Type} (P : ι → Prop) (L : ι → Nat → List (Int × Int × Int))
+structure BlockInv {ι : Type} (P : ι → Prop) (L : ι → Nat → List (Int × Int × Int))
     (κ : Nat → Counters) (Q : RowStore → Prop) (st0 : BlockState σ) (M : List Nat)
-    (st : BlockState σ) : Prop :=
-  st.1.quit = false ∧ BlockPost process P L κ Q M st0 st
+    (st : BlockState σ) : Prop where
+  /-- The callback has not stopped the search. -/
+  quit_eq_false : st.1.quit = false
+  /-- What the loop did to the state, after the denominators `M`. -/
+  post : BlockPost process P L κ Q M st0 st
 
 section
 
@@ -115,7 +123,7 @@ theorem BlockInv.append_list {N : List Nat} (h : BlockInv process P L κ Q st0 M
 /-- No denominator: the state is kept. -/
 theorem BlockInv.blockPost_nil (h : BlockInv process P L κ Q st0 M st) :
     BlockPost process P L κ Q [] st st :=
-  ⟨fun _ _ ↦ by simp, h.2.2.1, fun _ ↦ rfl⟩
+  ⟨fun _ _ ↦ by simp, h.post.store, fun _ ↦ rfl⟩
 
 theorem BlockPost.blockInv (h : BlockPost process P L κ Q M st0 st) (hq : ¬st.1.quit = true) :
     BlockInv process P L κ Q st0 M st :=
@@ -154,7 +162,7 @@ theorem BlockPost.of_eq_none_range' (ho : o = none)
     BlockPost process P L κ Q (((List.range' a (e + 1 - a)).flatMap g).filter keep) st0 s := by
   rcases h with ⟨-, hab, -, rfl, h⟩ | ⟨r, hr, -⟩
   · rw [show b + 1 - a = b - a + 1 by lia]
-    exact h.2
+    exact h.post
   · simp [ho] at hr
 
 /-- The step `b` of a loop of a block with a cursor after which the callback stops the search. -/
@@ -208,7 +216,7 @@ theorem BlockInv.append_range'_of_eq_of_not_keep (h : e - b = mb ∧ o = none �
     a ≤ b ∧ b ≤ e ∧ b = e ∧ BlockInv process P L κ Q st0
       (((List.range' a (b - a + 1)).flatMap fun b ↦ [b]).filter keep) st :=
   BlockInv.append_range'_of_eq h (by simpa [hk] using h.2.2.2.2.blockPost_nil)
-    (by simp [h.2.2.2.2.1]) hbe
+    (by simp [h.2.2.2.2.quit_eq_false]) hbe
 
 /-- A step `b < e` with one denominator that the test rejects. -/
 theorem BlockInv.append_range'_of_ne_of_not_keep (h : e - b = mb ∧ o = none ∧ a ≤ b ∧ b ≤ e ∧
@@ -217,14 +225,15 @@ theorem BlockInv.append_range'_of_ne_of_not_keep (h : e - b = mb ∧ o = none �
     e - (b + 1) < mb ∧ a ≤ b + 1 ∧ b + 1 ≤ e ∧ BlockInv process P L κ Q st0
       (((List.range' a (b + 1 - a)).flatMap fun b ↦ [b]).filter keep) st :=
   BlockInv.append_range'_of_ne h (by simpa [hk] using h.2.2.2.2.blockPost_nil)
-    (by simp [h.2.2.2.2.1]) hbe
+    (by simp [h.2.2.2.2.quit_eq_false]) hbe
 
 /-- What the step at the denominator `b` of a loop with a cursor needs. -/
 theorem BlockInv.pre_range' {N : List Nat}
     (hD : ∀ b ∈ (List.range' a (e + 1 - a)).filter keep, D b) (hk : keep b = true)
     (h : e - b = mb ∧ o = none ∧ a ≤ b ∧ b ≤ e ∧ BlockInv process P L κ Q st0 N st) :
     D b ∧ st.1.quit = false ∧ Q st.2.1 :=
-  ⟨hD b (List.mem_filter_range'_of_le h.2.2.1 h.2.2.2.1 hk), h.2.2.2.2.1, h.2.2.2.2.2.2.1⟩
+  ⟨hD b (List.mem_filter_range'_of_le h.2.2.1 h.2.2.2.1 hk), h.2.2.2.2.quit_eq_false,
+    h.2.2.2.2.post.store⟩
 
 end RepeatLoop
 
@@ -256,7 +265,7 @@ theorem BlockPost.of_eq_none (ho : o = none)
       ∃ r, o = some r ∧ BlockPost process P L κ Q M st0 r) :
     BlockPost process P L κ Q (((List.range' a (e + 1 - a)).map f).filter keep) st0 s := by
   rcases h with ⟨-, h⟩ | ⟨r, hr, -⟩
-  · simpa using h.2
+  · simpa using h.post
   · simp [ho] at hr
 
 /-- What the step at the step `cur` needs. -/
@@ -264,7 +273,8 @@ theorem BlockInv.pre_map (hl : ForIn.toList [a:e + 1] = pref ++ cur :: suff)
     (hk : keep (f cur) = true) (hD : ∀ b ∈ ((List.range' a (e + 1 - a)).map f).filter keep, D b)
     (h : o = none ∧ BlockInv process P L κ Q st0 N st) :
     D (f cur) ∧ st.1.quit = false ∧ Q st.2.1 :=
-  ⟨hD _ (List.mem_filter_map_range'_of_toList_eq_append_cons hl hk), h.2.1, h.2.2.2.1⟩
+  ⟨hD _ (List.mem_filter_map_range'_of_toList_eq_append_cons hl hk), h.2.quit_eq_false,
+    h.2.post.store⟩
 
 /-- The step at the step `cur` at which the callback stops the search. -/
 theorem BlockInv.post_of_quit_map (hl : ForIn.toList [a:e + 1] = pref ++ cur :: suff)
@@ -309,7 +319,6 @@ def MapBlockInvariant {ι : Type} (P : ι → Prop) (L : ι → Nat → List (In
     (fun ret _ ↦ BlockPost process P L κ Q (((List.range' a (e + 1 - a)).map f).filter keep) st0
       ret)
 
-attribute [local irreducible] BlockInv BlockPost WalkWhileInvariant in
 open Std.WP Lean.Order in
 /-- The loop of the square shape over the steps `a, …, e` of a block, for a step that delivers the
 lists of `L`, keeps `Q` and counts `κ b` for each denominator `b` with `D b`: the squares `k ^ 2` of
@@ -358,7 +367,6 @@ private theorem denInfoTest_value (info : List Setup.DenInfo) (b : Nat) :
     ⦃ True ⦄ denInfoTest info b ⦃ fun r ↦ r = Id.run (denInfoTest info b) ⦄ :=
   ⟨fun _ ↦ rfl⟩
 
-attribute [local irreducible] BlockInv BlockPost WalkWhileInvariant in
 open Std.WP Lean.Order in
 /-- The loop of a segment of the divisor shape, of the divisor `dv`, over the steps `a, …, e` of a
 block, for a step that delivers the lists of `L`, keeps `Q` and counts `κ b` for each denominator
@@ -409,7 +417,6 @@ def AllBlockInvariant {ι : Type} (P : ι → Prop) (L : ι → Nat → List (In
     (exit = true ∧ ∃ r, s.1 = some r ∧ BlockPost process P L κ Q
       (((List.range' a (e + 1 - a)).flatMap fun b ↦ [b]).filter keep) st0 r)
 
-attribute [local irreducible] BlockInv BlockPost WalkWhileInvariant in
 open Std.WP Lean.Order in
 /-- The loop of the shape of every denominator over the steps `a ≤ e` of a block, for a step that
 delivers the lists of `L`, keeps `Q` and counts `κ b` for each denominator `b` with `D b`: the
@@ -498,7 +505,7 @@ theorem BlockPost.of_eq_none_walk (ho : o = none)
   rcases h with ⟨-, h⟩ | ⟨r, hr, -⟩
   · obtain ⟨k, hcl, hk⟩ := h.exists_clearedBelow_zero
     rw [← hcl.filter_range_of_eq_zero]
-    exact hk.2
+    exact hk.post
   · simp [ho] at hr
 
 /-- What the step at the lowest set bit of `x` needs: its denominator is one of the walk. -/
@@ -511,7 +518,7 @@ theorem walkDensInvariant_pre
     (hy' : y = true) : D (base + t) ∧ st.1.quit = false ∧ Q st.2.1 := by
   obtain ⟨-, -, k, hcl, hk, -⟩ := h
   have hx0 := bne_iff_ne.mp hx
-  refine ⟨hD _ ?_, hk.1, hk.2.2.1⟩
+  refine ⟨hD _ ?_, hk.quit_eq_false, hk.post.store⟩
   subst ht
   obtain ⟨hc, -⟩ := hcl.getLsbD_ctz_and_le_ctz hx0
   simp only [List.mem_filter, List.mem_map, List.mem_range, ← hy, hy', and_true]
@@ -573,7 +580,7 @@ theorem walkDensInvariant_and_sub_one_of_not_keep
       ((((List.range k).filter (x0.toBitVec.getLsbD ·)).map (base + ·)).filter keep) st) false
         (st, x &&& x - 1) := by
   obtain ⟨k, -, hk, -⟩ := h.2.2
-  have hq : st.1.quit = false := hk.1
+  have hq : st.1.quit = false := hk.quit_eq_false
   refine walkDensInvariant_and_sub_one h hx ht ?_ (by simp [hq])
   simpa [← hy, hy'] using hk.blockPost_nil
 
@@ -589,7 +596,7 @@ private theorem test_value (test : Nat → Id Bool) (b : Nat) :
     ⦃ True ⦄ test b ⦃ fun r ↦ r = Id.run (test b) ⦄ :=
   ⟨fun _ ↦ rfl⟩
 
-attribute [local irreducible] BlockInv BlockPost WalkWhileInvariant in
+attribute [local irreducible] WalkWhileInvariant in
 open Std.WP Lean.Order in
 /-- The walk through the set bits `t` of the word `x`, lowest first, for a step that delivers
 the lists of `L`, keeps `Q` and counts `κ b` for each denominator `b` with `D b`: the denominators
@@ -819,7 +826,7 @@ theorem wordsBlockInvariant_pre_walk
         PosAt forb cur w) :
     st.1.quit = false ∧ Q st.2.1 ∧ ∀ b ∈ (((List.range 64).filter x.toBitVec.getLsbD).map
       (HAdd.hAdd (64 * w))).filter keep, D b := by
-  refine ⟨h.2.2.2.2.1.1, h.2.2.2.2.1.2.2.1, fun b hb ↦ hD b ?_⟩
+  refine ⟨h.2.2.2.2.1.quit_eq_false, h.2.2.2.2.1.post.store, fun b hb ↦ hD b ?_⟩
   rw [hx.1] at hb
   obtain ⟨hb, hk⟩ := List.mem_filter.mp hb
   exact List.mem_filter.mpr
@@ -866,7 +873,7 @@ theorem wordsBlockInvariant_append_of_ne
 
 end Words
 
-attribute [local irreducible] BlockInv BlockPost WalkWhileInvariant in
+attribute [local irreducible] WalkWhileInvariant in
 open Std.WP Lean.Order in
 /-- The loop of the word shape over the words `a ≤ e` of a block, with the first and last words of
 the run `bLow / 64` and `bHigh / 64` and forbidden divisors that have what the loop needs
