@@ -21,7 +21,10 @@ the result `x` (`Ratpoints.Double.lt_nextUp_and_nextDown_lt_ofRatio`,
 `Ratpoints.Double.lt_nextUp_and_nextDown_lt_ofDyadic`), so that no double other than `x` lies
 between `x` and the number. This is what the program needs of `strtod`: the end of a search
 interval that it moves outward to a double from the double that `strtod` reads lands on the
-nearest double on its side.
+nearest double on its side. The successor of the double of a height bound `1 ≤ H < 2 ^ 63` is
+finite and above `H` (`Ratpoints.Double.isFinite_ofInt64_and_lt_toRat_nextUp`), which gives the
+bound `h` of the default search interval `[-h, h]`
+(`Ratpoints.Double.isFinite_and_le_toRat_ofInt64_nextUp`).
 
 The proof goes through the significand `M` and the exponent `q` of its last place that both
 functions round to, `M 2 ^ q` within half a unit `2 ^ (q - 1)` of the number
@@ -43,6 +46,9 @@ of the result, in units of `2 ^ (-1074)` (`Ratpoints.Double.magnitudeUnits_field
 * `Ratpoints.Double.lt_nextUp_and_nextDown_lt_ofRatio`,
   `Ratpoints.Double.lt_nextUp_and_nextDown_lt_ofDyadic`: the faithful rounding.
 * `Ratpoints.Double.isNaN_ofRatio`, `Ratpoints.Double.isNaN_ofDyadic`: no NaN.
+* `Ratpoints.Double.isFinite_and_le_toRat_ofInt64_nextUp`: the double of `1 ≤ H < 2 ^ 63`, moved
+  up to the next double when it is below `2 ^ 63` and its conversion to a `long` below `H`, is
+  finite and at least `H`.
 -/
 
 @[expose] public section
@@ -72,20 +78,6 @@ theorem magnitudeUnits_fields_succ {E F : ℕ} (hF : F < 2 ^ 52) :
     · rw [show max E 1 - 1 = E - 1 by lia, show E = E - 1 + 1 by lia, pow_succ]
       simp only [Nat.add_sub_cancel]
       ring
-
-theorem valueOfOrderValue_natCast {k : ℕ} (hk : k < maxOrderValue) :
-    valueOfOrderValue k = (((magnitudeUnits k : ℚ) * 2 ^ (-1074 : ℤ) : ℚ) : WithBotTop ℚ) := by
-  have h1 : ¬((k : ℤ) ≤ -(maxOrderValue : ℤ)) := by lia
-  have h2 : ¬((maxOrderValue : ℤ) ≤ k) := by lia
-  simp only [valueOfOrderValue, h1, h2, ↓reduceIte, orderValueUnits_natCast, Int.cast_natCast]
-
-theorem valueOfOrderValue_neg_natCast {k : ℕ} (hk : k < maxOrderValue) :
-    valueOfOrderValue (-(k : ℤ)) =
-      ((-((magnitudeUnits k : ℚ) * 2 ^ (-1074 : ℤ)) : ℚ) : WithBotTop ℚ) := by
-  have h1 : ¬(-(k : ℤ) ≤ -(maxOrderValue : ℤ)) := by lia
-  have h2 : ¬((maxOrderValue : ℤ) ≤ -(k : ℤ)) := by lia
-  simp only [valueOfOrderValue, h1, h2, ↓reduceIte, orderValueUnits_neg_natCast, Int.cast_neg,
-    Int.cast_natCast, neg_mul]
 
 theorem valueOfOrderValue_maxOrderValue : valueOfOrderValue maxOrderValue = ⊤ := by
   simp [valueOfOrderValue, maxOrderValue]
@@ -183,6 +175,13 @@ theorem isFinite_iff_natAbs_orderValue_lt {x : Double} (hx : x.isNaN = false) :
       orderValue_eq, h.2, maxOrderValue]
     split <;> lia
 
+theorem isFinite_nextUp_of_expField_lt {x : Double} (hf : x.isFinite = true)
+    (hE : x.expField < 2046) : (nextUp x).isFinite = true := by
+  have hx := isNaN_eq_false_of_isFinite hf
+  obtain ⟨h1, h2⟩ := orderValue_nextUp hx (ne_huge_of_isFinite hf).1
+  rw [isFinite_iff_natAbs_orderValue_lt h2, h1, orderValue_eq, maxOrderValue]
+  split <;> lia [fracField_lt x]
+
 /-- The predecessor of a finite double is finite or `-∞`. -/
 theorem isFinite_nextDown_or_doubleValue_eq_bot {x : Double} (hf : x.isFinite = true) :
     (nextDown x).isFinite = true ∨ doubleValue (nextDown x).bits = ⊥ := by
@@ -230,7 +229,7 @@ theorem le_nextDown_of_doubleValue_lt {x y : Double} (hx : x.isNaN = false)
 theorem doubleValue_of_isInf {x : Double} (hi : x.isInf = true) :
     doubleValue x.bits = if x.signBit then ⊥ else ⊤ := by
   simp only [isInf, Bool.and_eq_true, beq_iff_eq] at hi
-  simp only [doubleValue, ← expField_eq, hi.1, ↓reduceIte, signBit_eq_decide, decide_eq_true_eq]
+  rw [doubleValue_bits, ite_eq_left hi.1]
 
 theorem zero_lt_of_isInf {x : Double} (hi : x.isInf = true) : zero.lt x = !x.signBit := by
   have hx : x.isNaN = false := by simp_all [isInf, isNaN]
@@ -248,6 +247,10 @@ theorem isNaN_huge : huge.isNaN = false := by decide
 
 theorem isNaN_huge_neg : huge.neg.isNaN = false := by decide
 
+theorem doubleValue_huge : doubleValue huge.bits = ⊤ := by decide
+
+theorem doubleValue_huge_neg : doubleValue huge.neg.bits = ⊥ := by decide
+
 /-! ### The last step of `ofRatio` and `ofDyadic` -/
 
 theorem isNaN_assemble (neg : Bool) {M : ℕ} (q : ℤ) (hM : M < 2 ^ 53) :
@@ -262,6 +265,19 @@ theorem isNaN_ofSignificand (neg : Bool) {M : ℕ} (q : ℤ) (hM : M ≤ 2 ^ 53)
   rcases hM.lt_or_eq with hM | rfl
   · rw [ofSignificand_of_ne q hM.ne]; exact isNaN_assemble neg q hM
   · rw [ofSignificand_two_pow]; exact isNaN_assemble neg _ (by norm_num)
+
+theorem isFinite_ofSignificand {neg : Bool} {M : ℕ} {q : ℤ} (hM : M ≤ 2 ^ 53)
+    (hq : q + 1076 < 2046) :
+    (ofSignificand neg M q).isFinite = true ∧ (ofSignificand neg M q).signBit = neg ∧
+      (ofSignificand neg M q).expField < 2046 := by
+  rcases hM.lt_or_eq with hM | rfl
+  · rw [ofSignificand_of_ne q hM.ne]
+    obtain ⟨hs, he, -⟩ := fields_assemble neg q hM
+    exact ⟨(isFinite_assemble_iff hM).mpr (.inr (by lia)), hs, by rw [he]; split_ifs <;> lia⟩
+  · rw [ofSignificand_two_pow]
+    obtain ⟨hs, he, -⟩ := fields_assemble neg (q + 1) (M := 2 ^ 52) (by norm_num)
+    exact ⟨(isFinite_assemble_iff (by norm_num)).mpr (.inr (by lia)), hs,
+      by rw [he]; split_ifs <;> lia⟩
 
 /-! ### The magnitudes next to an assembled double -/
 
@@ -621,15 +637,6 @@ theorem ofDyadic_eq {neg : Bool} {m : ℕ} (e : ℤ) (hm : m ≠ 0) :
       (max ((m.log2 : ℤ) + e - 52) (-1074)) := by
   rw [ofDyadic, ite_eq_right hm]
 
-theorem two_zpow_log2_le_mul {m : ℕ} (hm : m ≠ 0) (e : ℤ) :
-    (2 : ℚ) ^ ((m.log2 : ℤ) + e) ≤ m * 2 ^ e ∧ (m : ℚ) * 2 ^ e < 2 ^ ((m.log2 : ℤ) + 1 + e) := by
-  have h1 : (2 : ℚ) ^ m.log2 ≤ m := mod_cast Nat.log2_self_le hm
-  have h2 : (m : ℚ) < 2 ^ (m.log2 + 1) := mod_cast Nat.lt_log2_self
-  have ht : (0 : ℚ) < 2 ^ e := by positivity
-  rw [zpow_add₀ two_ne_zero, zpow_add₀ two_ne_zero, zpow_natCast, ← zpow_natCast,
-    show ((m.log2 : ℤ) + 1) = ((m.log2 + 1 : ℕ) : ℤ) by push_cast; ring, zpow_natCast]
-  exact ⟨mul_le_mul_of_nonneg_right h1 ht.le, mul_lt_mul_of_pos_right h2 ht⟩
-
 /-- The significand `M` and the exponent `q` of its last place that `Ratpoints.Double.ofDyadic`
 rounds `m 2 ^ e` to: `M ≤ 2 ^ 53`, `q ≥ -1074`, `M 2 ^ q` within half a unit `2 ^ (q - 1)` of
 `m 2 ^ e`, and `m 2 ^ e ≥ 2 ^ (q + 52)` when `q` is not the least exponent. -/
@@ -670,6 +677,50 @@ theorem isNaN_ofDyadic (neg : Bool) (m : ℕ) (e : ℤ) : (ofDyadic neg m e).isN
   by_cases hm : m = 0
   · subst hm; cases neg <;> simp [ofDyadic, isNaN, expField, fracField]
   · rw [ofDyadic_eq e hm]; exact isNaN_ofSignificand neg _ (ofDyadic_rounding hm e).1
+
+/-! ### The double of the height bound -/
+
+/-- The double of `1 ≤ H < 2 ^ 63` is finite, with the sign bit clear, and the next double is finite
+and above `H`. -/
+theorem isFinite_ofInt64_and_lt_toRat_nextUp {H : ℕ} (hH : 1 ≤ H) (hH63 : H < 2 ^ 63) :
+    (ofInt64 H.toInt64).isFinite = true ∧ (ofInt64 H.toInt64).signBit = false ∧
+      (nextUp (ofInt64 H.toInt64)).isFinite = true ∧
+      (H : ℚ) < (nextUp (ofInt64 H.toInt64)).toRat := by
+  have hH' : H.toInt64.toInt = H := Int64.toInt_ofNat_of_lt hH63
+  have hm : H ≠ 0 := by lia
+  have hl : H.log2 < 63 := (Nat.log2_lt hm).mpr hH63
+  rw [ofInt64, hH', show decide (H.toInt64 < 0) = false by simp [Int64.lt_iff_toInt_lt, hH'],
+    Int.natAbs_natCast]
+  obtain ⟨hf, hs, hE⟩ : (ofDyadic false H 0).isFinite = true ∧
+      (ofDyadic false H 0).signBit = false ∧ (ofDyadic false H 0).expField < 2046 := by
+    rw [ofDyadic_eq 0 hm]
+    exact isFinite_ofSignificand (ofDyadic_rounding hm 0).1 (by lia)
+  have hf' := isFinite_nextUp_of_expField_lt hf hE
+  refine ⟨hf, hs, hf', ?_⟩
+  have h := (lt_nextUp_and_nextDown_lt_ofDyadic (neg := false) hm hf).1
+  rw [doubleValue_eq_toRat hf', WithBotTop.coe_lt_coe] at h
+  simpa using h
+
+/-- The double of `1 ≤ H < 2 ^ 63`, moved up to the next double when it is below `2 ^ 63` and its
+conversion to a `long` is below `H`, is finite and at least `H`: the bound `h` of the default
+search interval `[-h, h]` of `Ratpoints.searchIntervals`, and `Ratpoints.Cli.heightEnd`. -/
+theorem isFinite_and_le_toRat_ofInt64_nextUp {H : ℕ} (hH : 1 ≤ H) (hH63 : H < 2 ^ 63) :
+    let h := ofInt64 H.toInt64
+    let h := if h.lt .twoPow63 && decide (h.toInt64 < H.toInt64) then h.nextUp else h
+    h.isFinite = true ∧ (H : ℚ) ≤ h.toRat := by
+  intro h0 h
+  obtain ⟨hf, hs, hf', hv⟩ := isFinite_ofInt64_and_lt_toRat_nextUp hH hH63
+  have hlt := lt_twoPow63_eq_true_iff_toRat hf
+  by_cases h1 : h0.lt .twoPow63 = true
+  · by_cases h2 : h0.toInt64 < H.toInt64
+    · simp only [h, h1, h2, decide_true, Bool.and_self, ↓reduceIte]
+      exact ⟨hf', hv.le⟩
+    · simp only [h, h1, h2, decide_false, Bool.and_false, Bool.false_eq_true, ↓reduceIte]
+      exact ⟨hf, le_toRat_of_not_toInt64_lt (toRat_nonneg hs) (hlt.mp h1) hH63 h2⟩
+  · simp only [h, h1, Bool.false_and, Bool.false_eq_true, ↓reduceIte]
+    have : (2 : ℚ) ^ 63 ≤ h0.toRat := not_lt.mp (mt hlt.mpr h1)
+    have : (H : ℚ) < 2 ^ 63 := mod_cast hH63
+    exact ⟨hf, by linarith⟩
 
 /-! ### Zeros and infinities -/
 

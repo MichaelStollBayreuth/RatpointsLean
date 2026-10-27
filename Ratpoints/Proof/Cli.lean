@@ -155,11 +155,6 @@ theorem printPoint_of_not_noOutput {d : Data} (h : d.noOutput = false) (p : ℤ 
   simp [printPoint, h]
 
 @[simp]
-theorem pointsAtInfty_printPoint (d : Data) (p : ℤ × ℤ × ℤ) :
-    (d.printPoint p).pointsAtInfty = d.pointsAtInfty := by
-  cases h : d.noOutput <;> simp [printPoint, h]
-
-@[simp]
 theorem onePoint_printPoint (d : Data) (p : ℤ × ℤ × ℤ) :
     (d.printPoint p).onePoint = d.onePoint := by
   cases h : d.noOutput <;> simp [printPoint, h]
@@ -524,6 +519,22 @@ structure Intervals.ReadsWF (H : ℕ) (iv : Intervals) (n : ℕ) (l : Bool) : Pr
   /-- The doubles of each complete interval hold it as far as the search goes. -/
   interval (j : ℕ) : j < n → IntervalOf H iv.domain[j]! iv.ends[2 * j]! iv.ends[2 * j + 1]!
 
+theorem Intervals.ReadsWF.lt_maxDegree {H n : ℕ} {iv : Intervals} (hw : iv.ReadsWF H n true) :
+    n < maxDegree :=
+  Nat.lt_of_add_one_le (by simpa using hw.le_maxDegree)
+
+theorem Intervals.ReadsWF.le_maxDegree' {H n : ℕ} {iv : Intervals} (hw : iv.ReadsWF H n false) :
+    n ≤ maxDegree := by
+  simpa using hw.le_maxDegree
+
+theorem Intervals.ReadsWF.chainEnds_two_mul {H n : ℕ} {iv : Intervals}
+    (hw : iv.ReadsWF H n false) : ChainEnds (fun j ↦ iv.ends[j]!.value) (2 * n) := by
+  simpa using hw.chain
+
+theorem Intervals.ReadsWF.chainEnds_two_mul_add_one {H n : ℕ} {iv : Intervals}
+    (hw : iv.ReadsWF H n true) : ChainEnds (fun j ↦ iv.ends[j]!.value) (2 * n + 1) := by
+  simpa using hw.chain
+
 theorem ChainEnds.snoc {v w : ℕ → WithBotTop ℚ} {m : ℕ} (h : ChainEnds v m)
     (hvw : ∀ i < m, w i = v i)
     (hlast : 0 < m → w (m - 1) ≤ w m ∧ ((m - 1) % 2 = 1 → w (m - 1) < w m)) :
@@ -560,13 +571,6 @@ theorem intervalOf_set! {H n i k : ℕ} {dom : Array (Double × Double)} {ends :
     Array.getElem!_set!_ne _ _ _ _ (by lia)]
   exact h j hj
 
-theorem intervalOf_push {H n : ℕ} {dom : Array (Double × Double)} {ends : Array ExactEnd}
-    (h : ∀ j < n, IntervalOf H dom[j]! ends[2 * j]! ends[2 * j + 1]!)
-    (hn : IntervalOf H dom[n]! ends[2 * n]! ends[2 * n + 1]!) (j : ℕ) (hj : j < n + 1) :
-    IntervalOf H dom[j]! ends[2 * j]! ends[2 * j + 1]! := by
-  rcases (show j < n ∨ j = n by lia) with hj | rfl
-  exacts [h j hj, hn]
-
 theorem readsWF_default (H : ℕ) : Intervals.ReadsWF H {} 0 false where
   size_ends := by simp
   size_domain := by simp
@@ -586,15 +590,14 @@ theorem Intervals.ReadsWF.lower {H : ℕ} {iv iv' : Intervals} {a : String}
   obtain ⟨hl, hn, e, d, hs, hc, rfl⟩ := Intervals.lower_eq_ok h
   obtain ⟨he1, hd1, hd2, -⟩ := inf_mem_and_isNaN_eq_false_and_le_of_run_scanEnd_eq_some hs
   rw [hl] at hw
-  have hnm : iv.numInter < maxDegree := by have := hw.le_maxDegree; simp at this; lia
+  have hnm : iv.numInter < maxDegree := by lia [hw.le_maxDegree']
   have hes : 2 * iv.numInter < iv.ends.size := by rw [hw.size_ends]; lia
-  have hch : ChainEnds (fun j ↦ iv.ends[j]!.value) (2 * iv.numInter) := by simpa using hw.chain
   have hlt (h0 : 0 < iv.numInter) := (cmpEnd_neg_iff (hw.inf_mem _) he1).mp (hc h0)
   dsimp only
   refine ⟨by simp [hw.size_ends], by simp [hw.size_domain], by simp; lia,
     inf_mem_set! hw.inf_mem he1 _, ?_, fun _ ↦ ?_, intervalOf_set! hw.interval le_rfl (by lia)⟩
   · change ChainEnds _ (2 * iv.numInter + 1)
-    exact hch.set! hes fun h0 ↦ ⟨(hlt (by lia)).le, fun _ ↦ hlt (by lia)⟩
+    exact hw.chainEnds_two_mul.set! hes fun h0 ↦ ⟨(hlt (by lia)).le, fun _ ↦ hlt (by lia)⟩
   · rw [Array.getElem!_set!_self _ _ _ (by rw [hw.size_domain]; lia),
       Array.getElem!_set!_self _ _ _ hes]
     exact ⟨hd1, hd2 (by decide)⟩
@@ -629,10 +632,10 @@ theorem intervalOf_heightEnd_neg {H : ℕ} (hH : 1 ≤ H) (hH63 : H < 2 ^ 63) {d
     rw [isNaN_neg]; exact isNaN_eq_false_of_isFinite (isFinite_heightEnd_and_le_toRat hH hH63).1
   refine ⟨by split <;> simp [isNaN_huge_neg, hh], hd, ?_, fun x hx _ hx2 ↦ ⟨?_, hx2.trans he⟩⟩
   · split_ifs with hc
-    · rw [show doubleValue Double.huge.neg.bits = ⊥ by decide]; exact bot_le
+    · exact doubleValue_huge_neg ▸ bot_le
     · exact not_lt.mp fun h ↦ hc ((lt_eq_true_iff hd hh).mpr h)
   · split_ifs
-    · rw [show doubleValue Double.huge.neg.bits = ⊥ by decide]; exact bot_le
+    · exact doubleValue_huge_neg ▸ bot_le
     · exact doubleValue_neg_heightEnd_le hH hH63 hx
 
 /-- The last interval of a lower end without an upper one, `[el, +∞]` of the command line, and its
@@ -645,11 +648,36 @@ theorem intervalOf_heightEnd {H : ℕ} (hH : 1 ≤ H) (hH63 : H < 2 ^ 63) {l : D
     isNaN_eq_false_of_isFinite (isFinite_heightEnd_and_le_toRat hH hH63).1
   refine ⟨hl, by split <;> simp [isNaN_huge, hh], ?_, fun x hx hx1 _ ↦ ⟨hle.trans hx1, ?_⟩⟩
   · split_ifs with hc
-    · rw [show doubleValue Double.huge.bits = ⊤ by decide]; exact le_top
+    · exact doubleValue_huge ▸ le_top
     · exact not_lt.mp fun h ↦ hc ((lt_eq_true_iff hh hl).mpr h)
   · split_ifs
-    · rw [show doubleValue Double.huge.bits = ⊤ by decide]; exact le_top
+    · exact doubleValue_huge ▸ le_top
     · exact le_doubleValue_heightEnd hH hH63 hx
+
+/-- Closing the pending interval of a reading with the exact upper end `e` and the upper double `u`,
+which hold it as far as the search goes, keeps the invariant, whatever the field `lSeen` of the
+result, which the invariant does not read: the step of both `Ratpoints.Cli.Intervals.upper` and
+`Ratpoints.Cli.Intervals.complete`. -/
+theorem Intervals.ReadsWF.close {H : ℕ} {iv : Intervals} {e : ExactEnd} {u : Double} (b : Bool)
+    (hw : iv.ReadsWF H iv.numInter true) (he : e.inf = -1 ∨ e.inf = 0 ∨ e.inf = 1)
+    (hle : iv.ends[2 * iv.numInter]!.value ≤ e.value)
+    (hI : IntervalOf H (iv.domain[iv.numInter]!.1, u) iv.ends[2 * iv.numInter]! e) :
+    ReadsWF H
+      { lSeen := b, numInter := iv.numInter + 1,
+        domain := iv.domain.set! iv.numInter (iv.domain[iv.numInter]!.1, u),
+        ends := iv.ends.set! (2 * iv.numInter + 1) e } (iv.numInter + 1) false := by
+  have hnm := hw.lt_maxDegree
+  have hes : 2 * iv.numInter + 1 < iv.ends.size := by rw [hw.size_ends]; lia
+  refine ⟨by simp [hw.size_ends], by simp [hw.size_domain], by simp; lia,
+    inf_mem_set! hw.inf_mem he _, ?_, nofun, fun j hj ↦ ?_⟩
+  · change ChainEnds _ (2 * iv.numInter + 1 + 1)
+    exact hw.chainEnds_two_mul_add_one.set! hes fun _ ↦
+      ⟨by simpa using hle, fun h' ↦ absurd h' (by lia)⟩
+  · rcases (show j < iv.numInter ∨ j = iv.numInter by lia) with hj | rfl
+    · exact intervalOf_set! hw.interval le_rfl (by lia) j hj
+    · rw [Array.getElem!_set!_self _ _ _ (by rw [hw.size_domain]; lia),
+        Array.getElem!_set!_ne _ _ _ _ (by lia), Array.getElem!_set!_self _ _ _ hes]
+      exact hI
 
 theorem Intervals.ReadsWF.upper_of_lSeen {H : ℕ} {iv iv' : Intervals} {a : String}
     (hw : iv.ReadsWF H iv.numInter iv.lSeen) (hl : iv.lSeen = true) (h : iv.upper H a = .ok iv') :
@@ -657,20 +685,11 @@ theorem Intervals.ReadsWF.upper_of_lSeen {H : ℕ} {iv iv' : Intervals} {a : Str
   obtain ⟨e, d, hs, hc, rfl⟩ := Intervals.upper_eq_ok_of_lSeen hl h
   obtain ⟨he1, hd1, -, hd2⟩ := inf_mem_and_isNaN_eq_false_and_le_of_run_scanEnd_eq_some hs
   rw [hl] at hw
-  have hnm : iv.numInter + 1 ≤ maxDegree := by simpa using hw.le_maxDegree
-  have hes : 2 * iv.numInter + 1 < iv.ends.size := by rw [hw.size_ends]; lia
+  have hes : 2 * iv.numInter + 1 < iv.ends.size := by rw [hw.size_ends]; lia [hw.lt_maxDegree]
   rw [Array.getElem!_set!_ne _ _ _ _ (by lia), Array.getElem!_set!_self _ _ _ hes] at hc
   have hle := not_lt.mp fun h' ↦ hc ((cmpEnd_pos_iff (hw.inf_mem _) he1).mpr h')
-  have hch : ChainEnds (fun j ↦ iv.ends[j]!.value) (2 * iv.numInter + 1) := by simpa using hw.chain
-  dsimp only
-  refine ⟨by simp [hw.size_ends], by simp [hw.size_domain], by simp; lia,
-    inf_mem_set! hw.inf_mem he1 _, ?_, nofun,
-    intervalOf_push (intervalOf_set! hw.interval le_rfl (by lia)) ?_⟩
-  · change ChainEnds _ (2 * iv.numInter + 1 + 1)
-    exact hch.set! hes fun _ ↦ ⟨by simpa using hle, fun h' ↦ absurd h' (by lia)⟩
-  · rw [Array.getElem!_set!_self _ _ _ (by rw [hw.size_domain]; lia),
-      Array.getElem!_set!_ne _ _ _ _ (by lia), Array.getElem!_set!_self _ _ _ hes]
-    exact intervalOf_of_le (hw.pending rfl).1 hd1 (hw.pending rfl).2 hle (hd2 (by decide))
+  exact hw.close false he1 hle
+    (intervalOf_of_le (hw.pending rfl).1 hd1 (hw.pending rfl).2 hle (hd2 (by decide)))
 
 theorem Intervals.ReadsWF.upper_of_not_lSeen {H : ℕ} {iv iv' : Intervals} {a : String}
     (hH : 1 ≤ H) (hH63 : H < 2 ^ 63) (hw : iv.ReadsWF H iv.numInter iv.lSeen)
@@ -695,6 +714,13 @@ theorem Intervals.ReadsWF.upper_of_not_lSeen {H : ℕ} {iv iv' : Intervals} {a :
       Array.getElem!_set!_ne _ _ _ _ (by decide), e0, e1]
     exact intervalOf_heightEnd_neg hH hH63 hd1 (hd2 (by decide))
 
+theorem Intervals.ReadsWF.upper {H : ℕ} {iv iv' : Intervals} {a : String} (hH : 1 ≤ H)
+    (hH63 : H < 2 ^ 63) (hw : iv.ReadsWF H iv.numInter iv.lSeen) (h : iv.upper H a = .ok iv') :
+    iv'.ReadsWF H iv'.numInter iv'.lSeen := by
+  cases hl : iv.lSeen
+  · exact hw.upper_of_not_lSeen hH hH63 hl h
+  · exact hw.upper_of_lSeen hl h
+
 theorem Intervals.ReadsWF.complete {H : ℕ} {iv : Intervals} (hH : 1 ≤ H) (hH63 : H < 2 ^ 63)
     (hw : iv.ReadsWF H iv.numInter iv.lSeen) :
     (iv.complete H).ReadsWF H (iv.complete H).numInter false := by
@@ -702,18 +728,9 @@ theorem Intervals.ReadsWF.complete {H : ℕ} {iv : Intervals} (hH : 1 ≤ H) (hH
   · simp only [Intervals.complete, hl, Bool.false_eq_true, ↓reduceIte]
     rwa [hl] at hw
   rw [hl] at hw
-  have hnm : iv.numInter + 1 ≤ maxDegree := by simpa using hw.le_maxDegree
-  have hes : 2 * iv.numInter + 1 < iv.ends.size := by rw [hw.size_ends]; lia
-  have hch : ChainEnds (fun j ↦ iv.ends[j]!.value) (2 * iv.numInter + 1) := by simpa using hw.chain
   simp only [Intervals.complete, hl, ↓reduceIte]
-  refine ⟨by simp [hw.size_ends], by simp [hw.size_domain], by simp; lia,
-    inf_mem_set! hw.inf_mem (by simp) _, ?_, nofun,
-    intervalOf_push (intervalOf_set! hw.interval le_rfl (by lia)) ?_⟩
-  · change ChainEnds _ (2 * iv.numInter + 1 + 1)
-    exact hch.set! hes fun _ ↦ ⟨by simp [ExactEnd.value], fun h' ↦ absurd h' (by lia)⟩
-  · rw [Array.getElem!_set!_self _ _ _ (by rw [hw.size_domain]; lia),
-      Array.getElem!_set!_ne _ _ _ _ (by lia), Array.getElem!_set!_self _ _ _ hes]
-    exact intervalOf_heightEnd hH hH63 (hw.pending rfl).1 (hw.pending rfl).2
+  exact hw.close true (by simp) (by simp [ExactEnd.value])
+    (intervalOf_heightEnd hH hH63 (hw.pending rfl).1 (hw.pending rfl).2)
 
 /-- The doubles of the lower ends after the first that the reading `iv` of the search intervals has
 read, `n` complete intervals and a pending lower end when `l`, are the largest doubles at most their
@@ -731,8 +748,8 @@ theorem Intervals.LowerMax.lower {H : ℕ} {iv iv' : Intervals} {a : String}
     (hlen : a.length < 2 ^ 56) (h : iv.lower a = .ok iv') :
     iv'.LowerMax iv'.numInter iv'.lSeen := by
   obtain ⟨hl, hn, e, d, hs, -, rfl⟩ := Intervals.lower_eq_ok h
-  have hnm := hw.le_maxDegree
-  simp only [hl, Bool.false_eq_true, ↓reduceIte, Nat.add_zero] at hnm hm
+  rw [hl] at hw hm
+  have hnm := hw.le_maxDegree'
   intro j hj1 hj2
   simp only [↓reduceIte] at hj2
   rcases (show j < iv.numInter ∨ j = iv.numInter by lia) with hj | rfl
@@ -742,6 +759,22 @@ theorem Intervals.LowerMax.lower {H : ℕ} {iv iv' : Intervals} {a : String}
       Array.getElem!_set!_self _ _ _ (by rw [hw.size_ends]; lia)]
     exact ⟨(inf_mem_and_isNaN_eq_false_and_le_of_run_scanEnd_eq_some hs).2.2.1 (by decide),
       run_scanEnd_isMaxBelow hs hlen⟩
+
+/-- Closing the pending interval of a reading keeps the doubles of the lower ends the largest
+doubles at most their exact ends: the lower ends do not change. -/
+theorem Intervals.LowerMax.close {iv : Intervals} {e : ExactEnd} {u : Double} (b : Bool)
+    (hs : iv.numInter < iv.domain.size) (hm : iv.LowerMax iv.numInter true) :
+    LowerMax
+      { lSeen := b, numInter := iv.numInter + 1,
+        domain := iv.domain.set! iv.numInter (iv.domain[iv.numInter]!.1, u),
+        ends := iv.ends.set! (2 * iv.numInter + 1) e } (iv.numInter + 1) false := by
+  intro j hj1 hj2
+  simp only [Bool.false_eq_true, ↓reduceIte, Nat.add_zero] at hj2
+  rw [Array.getElem!_set!_ne iv.ends (2 * iv.numInter + 1) (2 * j) e (by lia)]
+  rcases (show j < iv.numInter ∨ j = iv.numInter by lia) with hj | rfl
+  · rw [Array.getElem!_set!_ne _ _ _ _ (by lia)]; exact hm j hj1 (by simp; lia)
+  · rw [Array.getElem!_set!_self _ _ _ hs]
+    exact hm _ hj1 (by simp)
 
 theorem Intervals.LowerMax.upper {H : ℕ} {iv iv' : Intervals} {a : String}
     (hw : iv.ReadsWF H iv.numInter iv.lSeen) (hm : iv.LowerMax iv.numInter iv.lSeen)
@@ -753,33 +786,16 @@ theorem Intervals.LowerMax.upper {H : ℕ} {iv iv' : Intervals} {a : String}
     exact fun j h1 h2 ↦ absurd h2 (by simp; lia)
   obtain ⟨e, d, -, -, rfl⟩ := Intervals.upper_eq_ok_of_lSeen hl h
   rw [hl] at hm hw
-  have hnm := hw.le_maxDegree
-  simp only [↓reduceIte] at hnm
-  dsimp only
-  intro j hj1 hj2
-  simp only [Bool.false_eq_true, ↓reduceIte, Nat.add_zero] at hj2
-  rw [Array.getElem!_set!_ne iv.ends (2 * iv.numInter + 1) (2 * j) e (by lia)]
-  rcases (show j < iv.numInter ∨ j = iv.numInter by lia) with hj | rfl
-  · rw [Array.getElem!_set!_ne _ _ _ _ (by lia)]; exact hm j hj1 (by simp; lia)
-  · rw [Array.getElem!_set!_self _ _ _ (by rw [hw.size_domain]; lia)]
-    exact hm _ hj1 (by simp)
+  exact hm.close false (by rw [hw.size_domain]; lia [hw.lt_maxDegree])
 
 theorem Intervals.LowerMax.complete {H : ℕ} {iv : Intervals}
     (hw : iv.ReadsWF H iv.numInter iv.lSeen) (hm : iv.LowerMax iv.numInter iv.lSeen) :
     (iv.complete H).LowerMax (iv.complete H).numInter false := by
   cases hl : iv.lSeen
   · simp only [Intervals.complete, hl, Bool.false_eq_true, ↓reduceIte]; rwa [hl] at hm
-  rw [hl] at hm
-  have hnm := hw.le_maxDegree
-  simp only [hl, ↓reduceIte] at hnm
+  rw [hl] at hm hw
   simp only [Intervals.complete, hl, ↓reduceIte]
-  intro j hj1 hj2
-  simp only [Bool.false_eq_true, ↓reduceIte, Nat.add_zero] at hj2
-  rw [Array.getElem!_set!_ne iv.ends (2 * iv.numInter + 1) (2 * j) _ (by lia)]
-  rcases (show j < iv.numInter ∨ j = iv.numInter by lia) with hj | rfl
-  · rw [Array.getElem!_set!_ne _ _ _ _ (by lia)]; exact hm j hj1 (by simp; lia)
-  · rw [Array.getElem!_set!_self _ _ _ (by rw [hw.size_domain]; lia)]
-    exact hm _ hj1 (by simp)
+  exact hm.close true (by rw [hw.size_domain]; lia [hw.lt_maxDegree])
 
 theorem checkOptions_store_intervals (s : SieveOptions × Options × Output × Intervals) (o : String)
     (a : Option String) : (checkOptions.store s o a).2.2.2 = s.2.2.2 := by
@@ -822,18 +838,13 @@ theorem reads_of_input_eq_ok {args : List String} {c : List ℤ} {H : ℕ} {s : 
     exists_checkOptions_eq_ok_of_input_eq_ok hi
   refine ⟨hH, hH63, iv.complete H, ?_, hdom, hends⟩
   have hw := checkOptions_preserves (P := fun iv : Intervals ↦ iv.ReadsWF H iv.numInter iv.lSeen)
-    (Q := fun _ ↦ True) (fun iv a iv' _ hw h ↦ hw.lower h) (fun iv a iv' _ hw h ↦ ?_)
-    (fun _ _ ↦ trivial) (readsWF_default H) hk
-  · exact hw.complete hH hH63
-  · cases hl : iv.lSeen
-    · exact hw.upper_of_not_lSeen hH hH63 hl h
-    · exact hw.upper_of_lSeen hl h
+    (Q := fun _ ↦ True) (fun iv a iv' _ hw h ↦ hw.lower h)
+    (fun iv a iv' _ hw h ↦ hw.upper hH hH63 h) (fun _ _ ↦ trivial) (readsWF_default H) hk
+  exact hw.complete hH hH63
 
 theorem length_domain_of_reads {H : ℕ} {iv : Intervals} (hw : iv.ReadsWF H iv.numInter false) :
     (iv.domain.toList.take iv.numInter).length = iv.numInter := by
-  have := hw.le_maxDegree
-  simp only [Bool.false_eq_true, ↓reduceIte, Nat.add_zero] at this
-  simp [hw.size_domain]; lia
+  simp [hw.size_domain]; lia [hw.le_maxDegree']
 
 theorem noNaN_of_reads {H : ℕ} {iv : Intervals} (hw : iv.ReadsWF H iv.numInter false) :
     NoNaN (iv.domain.toList.take iv.numInter) := fun p hp ↦ by
@@ -842,17 +853,14 @@ theorem noNaN_of_reads {H : ℕ} {iv : Intervals} (hw : iv.ReadsWF H iv.numInter
 
 theorem joinsWell_of_reads {H : ℕ} {iv : Intervals} (hw : iv.ReadsWF H iv.numInter false)
     (hm : iv.LowerMax iv.numInter false) : JoinsWell (iv.domain.toList.take iv.numInter) := by
-  have hn := hw.le_maxDegree
-  simp only [Bool.false_eq_true, ↓reduceIte, Nat.add_zero] at hn hm
-  have hs : iv.numInter ≤ iv.domain.size := by rw [hw.size_domain]; lia
-  have hch : ChainEnds (fun j ↦ iv.ends[j]!.value) (2 * iv.numInter) := by simpa using hw.chain
+  have hs : iv.numInter ≤ iv.domain.size := by rw [hw.size_domain]; lia [hw.le_maxDegree']
   refine ⟨fun p hp ↦ ?_, fun i j hi hij hj ↦ ?_⟩
   · obtain ⟨k, hk, -, rfl⟩ := Array.exists_eq_of_mem_take_toList hp
     exact (hw.interval k hk).2.2.1
   · rw [length_domain_of_reads hw] at hj
     rw [Array.getElem!_take_toList (by lia) hs, Array.getElem!_take_toList hj hs]
     exact (hm j (by lia) (by simpa using hj)).2 _ (hw.interval i (by lia)).1
-      ((hm i hi (by simp; lia)).1.trans (hch.le (by lia) (by lia)))
+      ((hm i hi (by simp; lia)).1.trans (hw.chainEnds_two_mul.le (by lia) (by lia)))
 
 theorem intervalsWF_take_of_reads {H : ℕ} {iv : Intervals} (hw : iv.ReadsWF H iv.numInter false)
     (hm : iv.LowerMax iv.numInter false) :
@@ -873,7 +881,7 @@ theorem inRegion_iff_of_input_eq_ok {args : List String} {c : List ℤ} {H : ℕ
       InExactRegion u.ends o.domain.length (a / b) := by
   obtain ⟨-, -, iv, hw, hdom, hends⟩ := reads_of_input_eq_ok hi
   rw [hdom, length_domain_of_reads hw, hends]
-  exact run_inRegion a b (by simpa using hw.chain)
+  exact run_inRegion a b hw.chainEnds_two_mul
 
 /-- The search intervals that the program gives the library hold the exact search region of its
 command line as far as the search goes, for `|x| ≤ H`: their ends are the doubles outward of the
@@ -886,8 +894,7 @@ theorem inIntervals_joinIntervals_of_inExactRegion {args : List String} {c : Lis
   obtain ⟨-, -, iv, hw, hdom, hends⟩ := reads_of_input_eq_ok hi
   rw [hdom, length_domain_of_reads hw, hends] at hex
   obtain ⟨j, hj, h1, h2⟩ := hex
-  have hm := hw.le_maxDegree
-  simp only [Bool.false_eq_true, ↓reduceIte, Nat.add_zero] at hm
+  have hm := hw.le_maxDegree'
   rw [hdom]
   obtain ⟨-, -, hcov, -⟩ := run_joinIntervals (noNaN_of_reads hw)
   obtain ⟨p, hp, hpx⟩ := hcov x ⟨_, Array.mem_take_toList_of_lt hj (by rw [hw.size_domain]; lia),
@@ -915,13 +922,10 @@ theorem intervalsWF_joinIntervals_of_input_eq_ok {args : List String} {c : List 
   have hP := checkOptions_preserves
     (P := fun iv : Intervals ↦ iv.ReadsWF H iv.numInter iv.lSeen ∧ iv.LowerMax iv.numInter iv.lSeen)
     (Q := fun a ↦ a.length < 2 ^ 56) (fun iv a iv' ha hw h ↦ ⟨hw.1.lower h, hw.2.lower hw.1 ha h⟩)
-    (fun iv a iv' _ hw h ↦ ⟨?_, hw.2.upper hw.1 h⟩) (fun a ha ↦ hlen a (hos a ha))
-    ⟨readsWF_default H, lowerMax_default⟩ hk
-  · rw [hdom]
-    exact intervalsWF_take_of_reads (hP.1.complete hH hH63) (hP.2.complete hP.1)
-  · cases hl : iv.lSeen
-    · exact hw.1.upper_of_not_lSeen hH hH63 hl h
-    · exact hw.1.upper_of_lSeen hl h
+    (fun iv a iv' _ hw h ↦ ⟨hw.1.upper hH hH63 h, hw.2.upper hw.1 h⟩)
+    (fun a ha ↦ hlen a (hos a ha)) ⟨readsWF_default H, lowerMax_default⟩ hk
+  rw [hdom]
+  exact intervalsWF_take_of_reads (hP.1.complete hH hH63) (hP.2.complete hP.1)
 
 /-- For a point of height at most `H` of a command line that the program accepts, the search
 region of the search on the joined intervals is that of the range of the denominators, given that

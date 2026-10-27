@@ -12,7 +12,7 @@ import Mathlib.Data.Nat.Cast.Field
 import Ratpoints.Mathlib.Algebra.Order.Field.Basic
 import Ratpoints.Mathlib.Data.Rat.Floor
 import Ratpoints.Proof.Bits
-import Ratpoints.Proof.Double
+import Ratpoints.Proof.Rounding
 
 /-!
 # The bounds of the search intervals

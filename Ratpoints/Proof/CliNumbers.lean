@@ -356,7 +356,7 @@ theorem digitValue_lt_sixteen {ch : Char} (h : ch.isHexDigit = true) : digitValu
   simp only [h1, h2, h3, h4] at h ⊢
   split_ifs <;> lia
 
-theorem foldl_digits_lt (b : ℕ) {ds : List Char} (h : ∀ ch ∈ ds, digitValue ch < b) (n : ℕ) :
+theorem foldl_digits_lt {b : ℕ} {ds : List Char} (h : ∀ ch ∈ ds, digitValue ch < b) (n : ℕ) :
     ds.foldl (fun n ch ↦ b * n + digitValue ch) n < (n + 1) * b ^ ds.length := by
   induction ds generalizing n with
   | nil => simp
@@ -368,9 +368,9 @@ theorem foldl_digits_lt (b : ℕ) {ds : List Char} (h : ∀ ch ∈ ds, digitValu
       _ ≤ (b * (n + 1)) * b ^ ds.length := Nat.mul_le_mul_right _ (by lia)
       _ = _ := by ring
 
-theorem natOfDigitsIn_lt (b : ℕ) {ds : List Char} (h : ∀ ch ∈ ds, digitValue ch < b) :
+theorem natOfDigitsIn_lt {b : ℕ} {ds : List Char} (h : ∀ ch ∈ ds, digitValue ch < b) :
     natOfDigitsIn b ds < b ^ ds.length := by
-  simpa [natOfDigitsIn] using foldl_digits_lt b h 0
+  simpa [natOfDigitsIn] using foldl_digits_lt h 0
 
 theorem le_foldl_digits (b : ℕ) (hb : 1 ≤ b) (ds : List Char) (n : ℕ) :
     n ≤ ds.foldl (fun n ch ↦ b * n + digitValue ch) n := by
@@ -575,7 +575,7 @@ theorem log2_natOfDigitsIn_lt {w : List Char} :
     (natOfDigitsIn (if (floatParts w).2.1 then 16 else 10) (floatParts w).2.2.1).log2 <
       4 * (floatParts w).2.2.1.length + 1 := by
   have hd := (floatParts_bounds_and_isDigit_exponentDigits w).2.2.1
-  have h1 := natOfDigitsIn_lt _ hd
+  have h1 := natOfDigitsIn_lt hd
   have h2 : (if (floatParts w).2.1 then 16 else 10) ^ (floatParts w).2.2.1.length ≤
       2 ^ (4 * (floatParts w).2.2.1.length) := by
     rw [pow_mul]; exact Nat.pow_le_pow_left (by split <;> norm_num) _
