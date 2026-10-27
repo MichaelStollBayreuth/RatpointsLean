@@ -3,16 +3,16 @@
 % how to read the blueprint.
 \chapter{Overview}\label{chap:overview}
 
-ratpoints is a C program, built around a library function, that finds the rational points of
+\ratpoints{} is a C program, built around a library function, that finds the rational points of
 bounded height on the curves $y^2 = F(x, z)$, where~$F$ is a binary form of even degree with integer
 coefficients, by sieving. This blueprint describes a Lean~4 development that verifies it: an
-executable model of ratpoints in Lean, which follows the C code component by component; proofs
+executable model of \ratpoints{} in Lean, which follows the C code component by component; proofs
 that the model meets a short specification; and a link from the model to the C code. This chapter
 states the specification and the main theorems in words, each statement linked to the node where
 it is stated precisely, with its Lean names; it says how the proofs go, what one has to trust and
 what is not verified, and how the rest of the blueprint is organized.
 
-\section{What ratpoints computes}\label{sec:overviewRatpoints}
+\section{What \ratpoints{} computes}\label{sec:overviewRatpoints}
 
 The input is a list $c = [c_0, c_1, \dots, c_n]$ of integers, the coefficients of the polynomial
 $f = \sum_i c_i x^i$, constant term first, and a height bound~$H$. Let~$d$ be the degree of~$f$,
@@ -20,7 +20,7 @@ the largest index with $c_d \ne 0$, and $D = d + (d \bmod 2)$ the even number at
 The curve is $y^2 = F_c(x, z)$ with the binary form
 \[ F_c(x, z) = \sum_{i=0}^{d} c_i\, x^i z^{D - i} \]
 of even degree~$D$. Its points lie in the weighted projective plane with the weights
-$(1, D/2, 1)$, where $(x : y : z)$ and $(-x : (-1)^{D/2} y : -z)$ are the same point. ratpoints
+$(1, D/2, 1)$, where $(x : y : z)$ and $(-x : (-1)^{D/2} y : -z)$ are the same point. \ratpoints{}
 lists the points $(a : y : b)$ with integer coordinates, normalized so that $\gcd(a, b) = 1$ and
 $b > 0$, or $(a, b) = (1, 0)$ for a point at infinity, whose height $\max(|a|, b)$ is at most~$H$;
 a point with $y \ne 0$ comes with both signs of~$y$. We call~$a$ the numerator and~$b$ the
@@ -53,10 +53,10 @@ modulus and residue, a row of bits says which numerators can give a square value
 modulo the modulus. For each denominator it and-s these rows into bit arrays of numerators, packed
 by a stride that the 2-adic information allows, with vector instructions; it tests the survivors
 for common factors with the denominator and against further primes, and checks the rest exactly.
-The loop over the denominators runs in blocks, between which ratpoints may correct its choice of the
+The loop over the denominators runs in blocks, between which \ratpoints{} may correct its choice of the
 moduli by what the sieve has counted, and which it may hand to a pool of threads.
 
-The C code is that of ratpoints~3.1.1. Every line number in this blueprint refers to one commit of
+The C code is that of \ratpoints{}~3.1.1. Every line number in this blueprint refers to one commit of
 its repository, the one that the record of the correspondence pins (Chapter~\ref{chap:ccode}).
 
 \section{The four parts}\label{sec:overviewParts}
@@ -65,18 +65,18 @@ The development has four parts, in separate folders. The specification and the m
 neither each other nor the proofs, and the proofs import both; \verb|scripts/check_layout.py|
 checks the imports.
 \begin{enumerate}
-  \item The \emph{specification} (\verb|Ratpoints/Spec|) states what ratpoints computes: the
+  \item The \emph{specification} (\verb|Ratpoints/Spec|) states what \ratpoints{} computes: the
     binary form, the normalized points of height at most~$H$, the search region that the caller
     may give, Sturm's theorem as a proposition, and the list of the points in the order in which
-    ratpoints finds them. It consists of four short files that use Mathlib and nothing of the
+    \ratpoints{} finds them. It consists of four short files that use Mathlib and nothing of the
     model, so that they can be read on their own (Chapter~\ref{chap:spec}).
-  \item The \emph{model} (\verb|Ratpoints/Model|) is an executable version of ratpoints in Lean.
+  \item The \emph{model} (\verb|Ratpoints/Model|) is an executable version of \ratpoints{} in Lean.
     It mirrors the hardware-independent structure of the C code function by function: the same
     loops, tables, bit arrays of 64-bit words and index arithmetic. It is plain code on Lean core
     and \verb|Std|, without Mathlib and without contracts (its only proofs are a few decided facts
     about its constants, the termination of one recursion and the bounds of some array accesses),
     and forms a library of its own; the program \verb|ratpoints-lean| imports it alone and has the
-    command line of ratpoints (Chapters~\ref{chap:setup} to~\ref{chap:output}).
+    command line of \ratpoints{} (Chapters~\ref{chap:setup} to~\ref{chap:output}).
   \item The \emph{proofs} (\verb|Ratpoints/Proof|) show that the model meets the specification.
     Each component of the model has a contract, and the main theorems put the contracts together
     (Chapter~\ref{chap:theorems}). Statements of general interest that Mathlib lacks, on
@@ -90,13 +90,13 @@ checks the imports.
 \end{enumerate}
 The model does without Mathlib so that the executable and the differential tests depend neither on
 Mathlib nor on the proofs. The specification does without the model so that one can read what the
-theorems claim without reading how ratpoints works.
+theorems claim without reading how \ratpoints{} works.
 
 \section{The specification}\label{sec:overviewSpec}
 
 The specification is the one part whose correctness no proof can check. Wherever there was a
 choice, it therefore copies what the C code computes, and Chapter~\ref{chap:spec} compares each of
-its clauses with ratpoints~3.1.1.
+its clauses with \ratpoints{}~3.1.1.
 
 \emph{Points.} The binary form~$F_c$ above is Definition~\ref{def:binaryForm}. A triple
 $(x, y, z)$ of integers is a \emph{normalized point of height at most~$H$} on the curve
@@ -106,17 +106,17 @@ $(x, y, z)$ of integers is a \emph{normalized point of height at most~$H$} on th
 The last four conditions say that the pair $(x, z)$ is normalized and of height at most~$H$, which
 is what the statement on the output without the exact check concludes. Remark~\ref{rem:pointsC}
 compares each clause with the C code; for instance, $\gcd(0, z) = z$, so that $x = 0$ occurs only
-with $z = 1$, as in the test of ratpoints for common factors.
+with $z = 1$, as in the test of \ratpoints{} for common factors.
 
 \emph{Squarefreeness.} The refusals speak about a second binary form, the polynomial made
 homogeneous of the even degree $N = 2 \lceil n/2 \rceil$ that the length of the coefficient list
 allows,
 \[ \Phi_c = \sum_{i=0}^{n} c_i X^i Z^{N - i} \in \QQ[X, Z] \]
 (Definition~\ref{def:binaryFormPoly}), and about its squarefreeness in the sense of Mathlib. This is
-what ratpoints means by a polynomial that is ``not squarefree as a binary form of even degree'':
+what \ratpoints{} means by a polynomial that is ``not squarefree as a binary form of even degree'':
 $\Phi_c$ is squarefree exactly when~$f$ is squarefree and the leading zeros of~$c$ do not lower
 $\lceil n/2 \rceil$, the two conditions that the C code tests
-(Lemma~\ref{lem:squarefree_binaryFormPoly}). On every input that ratpoints accepts, $\Phi_c$
+(Lemma~\ref{lem:squarefree_binaryFormPoly}). On every input that \ratpoints{} accepts, $\Phi_c$
 and~$F_c$ take the same values.
 
 \emph{The search region.} The caller may restrict the search to \emph{search intervals} for~$x/z$,
@@ -131,7 +131,7 @@ there are any (Definition~\ref{def:regionSpec}). As the C code does no arithmeti
 could decide a point, the specification can speak about their exact values
 (Remark~\ref{rem:regionC}).
 
-\emph{Sturm's theorem.} The Sturm step of ratpoints drops an interval when the numbers of sign
+\emph{Sturm's theorem.} The Sturm step of \ratpoints{} drops an interval when the numbers of sign
 changes of a remainder chain agree at its ends and~$f$ is negative just inside it. That no point is
 lost rests on Sturm's theorem, which Mathlib does not have, although it has the Sturm sequence and
 the sign changes of a list. The specification states the theorem as a proposition, for every
@@ -139,12 +139,12 @@ squarefree real polynomial and every interval $(a, b]$ (Definition~\ref{def:stur
 statements that need it take it as a hypothesis, and only when the Sturm step is on.
 
 \emph{The order.} The list $\mathrm{orderedPoints}$ (Definition~\ref{def:orderedPoints}) gives the
-points in the order in which ratpoints finds them: for the polynomial that ratpoints searches, the
+points in the order in which \ratpoints{} finds them: for the polynomial that \ratpoints{} searches, the
 reversal of~$c$ in three cases and~$c$ itself otherwise, its points at infinity, then its
 denominators in the order of the loop, the numerators of each in increasing order, $y > 0$ before
 $y < 0$, each point mapped back to the caller's curve after a reversal. The denominators increase
 unless the polynomial searched has odd degree and a leading coefficient~$\ell$ with $|\ell| \ne 1$
-that ratpoints can factor by trial division and that has fewer than $\mathrm{maxDivisors} = 512$
+that \ratpoints{} can factor by trial division and that has fewer than $\mathrm{maxDivisors} = 512$
 squarefree divisors up to the largest denominator; then they are the numbers~$e k^2$, divisor~$e$
 by divisor (Definition~\ref{def:maxDegree} and Remark~\ref{rem:orderC}).
 
@@ -203,7 +203,7 @@ with the step switched off returns the same list (this part is proved, not certi
 refuses exactly when~$c$ has fewer than two or more than $\mathrm{maxDegree} + 1 = 101$ entries,
 $H = 0$ or $H \ge 2^{63}$ (not a C \verb|long|), $\Phi_c$ is not squarefree, or the search
 intervals are not well formed. With the Sturm step off, the condition on~$\Phi_c$ is replaced by the
-two tests that ratpoints makes without the remainder chain of the Sturm step, on the leading zeros
+two tests that \ratpoints{} makes without the remainder chain of the Sturm step, on the leading zeros
 and in the reversal check. A search that refused every input would contradict these statements, so
 that membership and the order are not vacuous.
 
@@ -236,7 +236,7 @@ and~\ref{thm:threads}). The run delivers the points of its blocks in order, each
 moduli that depend neither on the callback nor on the options of the output; a block reads only
 corrections of the moduli made at least $\mathrm{adaptLag} + 1$ blocks before it; and blocks sifted
 apart and delivered in their order give what the run delivers. So the output of the model, which
-sifts the blocks in turn on one thread, is that of ratpoints with any number of threads, provided
+sifts the blocks in turn on one thread, is that of \ratpoints{} with any number of threads, provided
 that its pool of threads behaves as its code says (Section~\ref{sec:theoremsBlocks}).
 
 Comparator certifies eleven statements: the two on the brute-force reference, membership, no
@@ -282,7 +282,7 @@ sequences use Mathlib.
 
 \section{What one has to trust}\label{sec:overviewTrust}
 
-\emph{The specification.} No proof can show that the specification describes ratpoints; one has to
+\emph{The specification.} No proof can show that the specification describes \ratpoints{}; one has to
 read it. Chapter~\ref{chap:spec} compares each clause with the C code, and three of the four files
 of the specification check examples of their definitions by \verb|decide| against outputs of the C
 program. The specification is written with definitions of Lean core, Batteries and Mathlib, whose
@@ -310,7 +310,7 @@ runs the model is not certified. What is checked is that the model contains no \
 the compiled code differ from the definitions that the proofs see, and that the program imports the
 model alone (Section~\ref{sec:ccodeCI}). The theorems on the program speak about its pure core
 \lname{Ratpoints.Cli.run}; the function \lname{Ratpoints.Cli.main} around it writes the text once
-and, where ratpoints is ended by \verb|SIGPIPE| when the reader of its output is gone, exits with
+and, where \ratpoints{} is ended by \verb|SIGPIPE| when the reader of its output is gone, exits with
 the status~$141$ that the shell reports for that (Chapter~\ref{chap:output}).
 
 \emph{Sturm's theorem.} Membership, the order and the statement that every point appears without
@@ -368,10 +368,10 @@ the proofs cover the models of the builds that have \verb|unsigned __int128|, wh
 the default build.
 
 \emph{The platform.} The doubles of the search region are their bits, with a function for each
-operation that ratpoints applies to them, from the comparisons to \verb|frexp|, \verb|ldexp| and
+operation that \ratpoints{} applies to them, from the comparisons to \verb|frexp|, \verb|ldexp| and
 \verb|nextafter|, and the program reads and prints numbers as glibc's \verb|strtod| and
 \verb|printf| do (Chapters~\ref{chap:region} and~\ref{chap:output}). These functions model the
-platform, not ratpoints: they are checked against gcc and glibc on the cases at the edges, and the
+platform, not \ratpoints{}: they are checked against gcc and glibc on the cases at the edges, and the
 proofs show of them what the theorems need, but they are not proved to be what glibc computes.
 
 \emph{What is compared but not proved.} The report of the library under \verb|-v| and the messages

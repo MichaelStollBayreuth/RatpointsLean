@@ -1,6 +1,6 @@
 \chapter{The link to the C code}\label{chap:ccode}
 
-Lean has no semantics of C, and no theorem of this blueprint speaks about the C code of ratpoints:
+Lean has no semantics of C, and no theorem of this blueprint speaks about the C code of \ratpoints{}:
 the theorems speak about the model, which mirrors the C code component by component, with the same
 loops, tables, bit arrays of 64-bit words and index arithmetic. This chapter describes what ties
 the model to the C code of release~3.1.1: the record of which declaration models which lines of C,
@@ -19,7 +19,7 @@ certifies the statements about the model and says nothing about the C code
 
 \section{The record}\label{sec:ccodeRecord}
 
-Every line number refers to one commit of ratpoints, the pin: release~3.1.1, tag \verb|v3.1.1|,
+Every line number refers to one commit of \ratpoints{}, the pin: release~3.1.1, tag \verb|v3.1.1|,
 commit \verb|1a99853|, named in \verb|correspondence/ratpoints.toml| and, for the links of the
 blueprint, in the macro \verb|\ratpointscommit|. The record covers \verb|find_points.c|,
 \verb|sift.c|, \verb|init.c|, \verb|sturm.c|, the headers \verb|rp-private.h|, \verb|ratpoints.h|
@@ -48,7 +48,7 @@ record gives it, with a kind and the reason (Section~\ref{sec:ccodeExclusions}).
 
 The script \verb|scripts/correspondence.py| checks the record. It reads the docstrings of the model
 with the help of \verb|scripts/Correspondence.lean|, and the C files at the pin from a clone of
-ratpoints, and it checks:
+\ratpoints{}, and it checks:
 \begin{enumerate}
   \item that the pin is a commit of the clone, to which its tag points where the clone has the tag,
     that every range lies within the lines of a file of the record, that no line lies in two ranges,
@@ -67,7 +67,7 @@ ratpoints, and it checks:
 \end{enumerate}
 After a move of the pin, a range counts as locked when some locked range has its text and its
 owners, and a link when some locked link shows its text, wherever their lines are; so a move of the
-pin to another release of ratpoints makes the check report exactly the ranges whose text or owners
+pin to another release of \ratpoints{} makes the check report exactly the ranges whose text or owners
 changed and the links whose text changed (\verb|correspondence/README.md| describes the procedure).
 
 \section{The exclusions}\label{sec:ccodeExclusions}
@@ -75,7 +75,7 @@ changed and the links whose text changed (\verb|correspondence/README.md| descri
 An excluded range has one of the kinds \verb|threads|, \verb|memory|, \verb|instrumentation|,
 \verb|interface| and \verb|other|.
 
-\verb|threads|: the pool of threads, with which ratpoints sieves the blocks of its loop over the
+\verb|threads|: the pool of threads, with which \ratpoints{} sieves the blocks of its loop over the
 denominators apart (\csource{find_points.c}{4129}{4519}), its set-up in the search, the atomic loads
 and stores of the fields that the threads share (\csource{rp-private.h}{76}{84}), the fields of the
 arguments that hold the number of threads and the pool, and the default of one thread in
@@ -165,7 +165,7 @@ on the constant (Chapter~\ref{chap:sieve}). The other builds differ in these con
 (Section~\ref{sec:ccodeConstants}).
 
 \emph{Doubles.} The doubles of the search region are their IEEE~754 bits (\lname{Ratpoints.Double}),
-with a function, which owns no range of C, for each operation that ratpoints applies to them, as gcc
+with a function, which owns no range of C, for each operation that \ratpoints{} applies to them, as gcc
 and glibc compute it with rounding to nearest; \verb|strtod| and \verb|printf| under \verb|%f| are
 modelled by their values, not by glibc's algorithms (Chapter~\ref{chap:region}). The doubles of the
 cost model are Lean's \verb|Float|, with the platform's arithmetic, \verb|log| and \verb|pow|, and
@@ -181,11 +181,11 @@ for \verb|find_points|, \verb|find_points_work| and the start of \verb|find_poin
 rest is \lname{Ratpoints.findPointsWork}; parts of long functions and bodies of loops are functions
 of their own; arrays that the C code fills once per denominator under a flag are thunks; and the
 report under \verb|RATPOINTS_VERBOSE| goes through a print channel of the search. The program writes
-its output once, at the end, where \verb|main.c| prints after every point; it differs from ratpoints
+its output once, at the end, where \verb|main.c| prints after every point; it differs from \ratpoints{}
 on a closed pipe and on format words that are not UTF-8, where the runtime of Lean acts otherwise
 than that of C (Chapter~\ref{chap:output}).
 
-\emph{Inputs that ratpoints never meets.} Where the C code would overflow or divide by zero on an
+\emph{Inputs that \ratpoints{} never meets.} Where the C code would overflow or divide by zero on an
 input that it is never given, the model takes a defined value, and the contract excludes the input
 or the proofs show that it does not occur: the negation of~$-2^{63}$ in the test for common factors
 wraps, and the integer square root rounded up gives~$1$ at~$0$. The loop that counts the trailing
@@ -196,7 +196,7 @@ forbidden valuations drop the bound $m < 63$ of the C code, which never binds fo
 \section{The differential tests}\label{sec:ccodeTests}
 
 The script \verb|scripts/difftest.py| runs \verb|ratpoints-lean|, the model compiled by Lean
-(Chapter~\ref{chap:output}), on the test suites of ratpoints and on further command lines, and
+(Chapter~\ref{chap:output}), on the test suites of \ratpoints{} and on further command lines, and
 compares it with the outputs that the suites record and with the C program at the pin on the same
 command line; the C program must be the default build, without the machine-dependent tuning that
 \verb|make tune| writes. Every list of points is compared in its order. Under \verb|-q| the points
@@ -207,7 +207,7 @@ program, also under \verb|-v|, where the report of the library comes between the
 outputs that \verb|test4.sh| filters are compared after the filter and as a whole; those that
 \verb|test3.sh| filters, as a whole, before the filter. Under \verb|-x|, where the program prints
 the pairs that survive the sieve, the pairs are compared byte for byte with the C program, since the
-model chooses and corrects its moduli as ratpoints does, and, without a format and without
+model chooses and corrects its moduli as \ratpoints{} does, and, without a format and without
 \verb|-v|, they also pass a check that does not depend on the moduli: normalized coprime pairs in
 the range of the height and in the search region, none repeated, and the points among them the
 same, in the same order, in both outputs. Exit statuses and messages are compared exactly, but for
@@ -296,7 +296,7 @@ adds an axiom, such as \verb|native_decide|), the style of the Lean code and the
 lines, and the listing \verb|Ratpoints.lean| of the modules; builds, with every warning a failure,
 the model, the specification and the proofs, \verb|ratpoints-lean| and the solution of comparator,
 and then the challenge, whose \verb|sorry|s warn by design; runs the tests of the scripts; checks
-the record with \verb|--complete| against ratpoints at the pin; and builds the C program at the pin
+the record with \verb|--complete| against \ratpoints{} at the pin; and builds the C program at the pin
 and runs the default suites of the differential tests against it. The build fails if a main theorem
 depends on an axiom beyond \verb|propext|, \verb|Classical.choice| and \verb|Quot.sound|, by the
 guards \verb|#print axioms| under \verb|#guard_msgs|. Comparator (Section~\ref{sec:comparator}),

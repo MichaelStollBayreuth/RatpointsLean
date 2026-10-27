@@ -1,6 +1,6 @@
 \chapter{Tables and rows}\label{chap:rows}
 
-This chapter describes how ratpoints computes the tables of its moduli and how it builds and keeps
+This chapter describes how \ratpoints{} computes the tables of its moduli and how it builds and keeps
 the rows that the sieve reads (Chapter~\ref{chap:sieve}). Chapter~\ref{chap:moduli} says what the
 tables say and why their \emph{admission tests} let the numerator of every point through: the row
 of a denominator~$b$ in the sieve entry of a modulus admits a numerator~$a$ when the tables allow
@@ -10,18 +10,18 @@ every point through. The contracts of the tables, which reason modulo~$p$ and~$p
 the others Lean core and \verb|Std| only; the proofs use that the constants $\mathrm{rbaPack}$ and
 $\mathrm{chunk}$ (Chapter~\ref{chap:sieve}) are positive, never their values.
 
-\section{The tables as ratpoints computes them}\label{sec:rowsResidues}
+\section{The tables as \ratpoints{} computes them}\label{sec:rowsResidues}
 
 \verb|examine_prime| (\csource{find_points.c}{1683}{1826}) computes the table of a prime~$p$
 (Definition~\ref{def:tableOfPrime}) by Horner's rule in \verb|unsigned long|s with Barrett's
 reduction, on a fixed schedule (\csource{find_points.c}{1628}{1655},
 \csource{find_points.c}{1716}{1747}): below $\mathrm{maxPrimeEven} = 2^{\mathrm{maxBitsInPrime}}$
 an accumulator below~$p$ survives $\mathrm{hornerSteps} = 64/\mathrm{maxBitsInPrime} - 1$ steps
-$s \mapsto s a + c$ within 64 bits, and ratpoints examines no larger prime. For a factor $q = p^e$
+$s \mapsto s a + c$ within 64 bits, and \ratpoints{} examines no larger prime. For a factor $q = p^e$
 with $e \ge 2$, \verb|examine_power| (\csource{find_points.c}{2254}{2331}) computes the tables of
 Definition~\ref{def:sieveEntry}.
 
-\begin{lemma}[The table of a prime as ratpoints computes it]\label{lem:hornerBarrett}
+\begin{lemma}[The table of a prime as \ratpoints{} computes it]\label{lem:hornerBarrett}
   \uses{def:tableOfPrime}
   \lean{Ratpoints.Sieve.examinePrime?, Ratpoints.Sieve.examinePrime?_spec, Ratpoints.hornerSteps, Ratpoints.Sieve.barrett, Ratpoints.Sieve.hornerBarrett, Ratpoints.Sieve.barrett_eq, Ratpoints.Sieve.HornerInvariant, Ratpoints.pow_hornerSteps_add_one_lt, Ratpoints.Sieve.hornerBarrett_spec}
   \leanok
@@ -110,7 +110,7 @@ numerator a bit stands for is the business of the packing (Chapter~\ref{chap:sie
   $\mathrm{adm}$, which says whether the row of~$r$ admits a number~$N$, is the array of
   $(m + \mathrm{chunk} - 1)\,\mathrm{rbaPack}$ words whose word~$j$ has bit~$t$ set exactly when
   $t < 64$ and $\mathrm{adm}(r)$ admits $64 j + t$. With the admission test of a sieve entry, of
-  the table of a prime or of the tables of a prime power, it is the row that ratpoints builds; it
+  the table of a prime or of the tables of a prime power, it is the row that \ratpoints{} builds; it
   has no C code of its own. Then:
   \begin{enumerate}
     \item bit~$t$ of word $j < (m + \mathrm{chunk} - 1)\,\mathrm{rbaPack}$ is $t < 64$ and
@@ -135,7 +135,7 @@ numerator a bit stands for is the business of the packing (Chapter~\ref{chap:sie
 
 \section{The tables of rows and the builders}\label{sec:rowBuilders}
 
-A sieve entry of ratpoints (\csource{rp-private.h}{542}{555}) holds the array \verb|sieve| of the
+A sieve entry of \ratpoints{} (\csource{rp-private.h}{542}{555}) holds the array \verb|sieve| of the
 rows of its residues, \verb|NULL| for a row not built, and the pointer \verb|init| to its builder.
 A prime has its row of~$0$ from the table \verb|sieves0| that the build generates
 (\csource{gen_find_points_h.c}{102}{134}, \csource{find_points.c}{1820}{1821}) and the others

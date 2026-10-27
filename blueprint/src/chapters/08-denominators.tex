@@ -1,6 +1,6 @@
 \chapter{The denominators}\label{chap:denominators}
 
-Before it sieves the numerators of a denominator~$b$ (Chapter~\ref{chap:sieve}), ratpoints decides
+Before it sieves the numerators of a denominator~$b$ (Chapter~\ref{chap:sieve}), \ratpoints{} decides
 which denominators it sieves at all, in which order, and which numerators modulo~$64$ each class of
 the denominators modulo~$64$ admits. This chapter describes these choices and proves that none of
 them loses a point. They are made for the polynomial searched, of degree~$d$ with the coefficients
@@ -14,7 +14,7 @@ $b_{\mathrm{high}}$, which are~$1$ and the height bound~$H$ unless the options n
 
 The 2-adic information says which numerators modulo~$64$ each class of $b \bmod 64$ admits
 (Section~\ref{sec:twoAdic}). For odd~$d$ the denominator of a point is a squarefree divisor
-of~$c_d$ times a square (Section~\ref{sec:oddDegree}). For even~$d$ ratpoints looks for primes that
+of~$c_d$ times a square (Section~\ref{sec:oddDegree}). For even~$d$ \ratpoints{} looks for primes that
 divide no denominator of a point, or only to certain powers (Section~\ref{sec:forbidden}), and tests
 the denominators by a Jacobi symbol (Section~\ref{sec:jacobi}). The loop over the denominators takes
 one of four shapes that combine these tests (Section~\ref{sec:shapes}). Each test removes only
@@ -127,7 +127,7 @@ least valuation in $G(a, b)$, so that $v_p(b) + v_p(c_d) = v_p(y^2)$ is even.
   (\csource{find_points.c}{894}{912}). The records and the divisors are returned exactly when the
   factorization ends with the cofactor~$1$ and there are fewer than~$\mathrm{maxDivisors}$ divisors
   (\csource{find_points.c}{914}{935}). The contracts say so, and: for $c_d \ne 0$ the factorization
-  ends with the cofactor~$1$ exactly when ratpoints factors~$|c_d|$ completely in the sense of the
+  ends with the cofactor~$1$ exactly when \ratpoints{} factors~$|c_d|$ completely in the sense of the
   specification ($\mathrm{FactorsByTrialDivision}$, Definition~\ref{def:orderedPoints}), and then
   lists the primes of~$|c_d|$ in increasing order with their valuations; the slope satisfies
   $n \ge 1$ and $1 + v_p(c_d) - v_p(c_k) \le (d - k)\, n$ for all $k < d$, where
@@ -382,7 +382,7 @@ go divisor by divisor. The denominators that the other shapes and the tests leav
 (Lemma~\ref{lem:shapes}), so among those that carry points only the divisor shape changes the
 order. For $y^2 = 1 + 2x$ and $H = 20$, with the divisors~$1$ and~$2$, the loop visits
 $1, 4, 9, 16$ and then $2, 8, 18$ ($4$ and~$16$ fail the valuation test of the prime~$2$), so that
-ratpoints prints $(-4 : 3 : 9)$ before $(-1 : 0 : 2)$.
+\ratpoints{} prints $(-4 : 3 : 9)$ before $(-1 : 0 : 2)$.
 
 \begin{lemma}[The denominators of the search]\label{lem:searchDens}
   \uses{def:setupUs1, def:Shape, def:orderedPoints, def:bruteForce, def:maxDegree}

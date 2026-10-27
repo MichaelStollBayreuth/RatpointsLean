@@ -12,7 +12,7 @@ fit the arrays that the C code gives it. The remainder chain of~$f$ and~$f'$, wi
 step begins, is Chapter~\ref{chap:setup}'s; the main theorems (Chapter~\ref{chap:theorems}) use
 this chapter through the region that the search uses (Section~\ref{sec:searchRegion}).
 
-Ratpoints does no floating-point arithmetic on the ends of its intervals (Chapter~\ref{chap:spec}).
+\ratpoints{} does no floating-point arithmetic on the ends of its intervals (Chapter~\ref{chap:spec}).
 So the model holds a double as its bits, with a function for each operation that the C code applies
 to it, and computes everything else exactly; only the value of a double and well-formedness, the
 test of \verb|RATPOINTS_BAD_ARGS|, read the bits.
@@ -23,13 +23,13 @@ test of \verb|RATPOINTS_BAD_ARGS|, read the bits.
   \lean{Ratpoints.Double, Ratpoints.Double.lt, Ratpoints.Double.toRat, Ratpoints.Double.ofRatio, Ratpoints.Double.ldexp, Ratpoints.Double.nextUp}
   \leanok
   A C \verb|double| by its~$64$~bits of IEEE~754 binary64, in a structure with no equality of its
-  own (equality of the bits is not \verb|==|); and the operations that ratpoints applies to
+  own (equality of the bits is not \verb|==|); and the operations that \ratpoints{} applies to
   doubles, as gcc and glibc compute them with rounding to nearest, ties to even: the comparisons,
   false when either side is a NaN and otherwise the order of a key (the bits without the sign bit,
   negated when it is set); negation and \verb|fabs|; the exact value of a finite double; the double
   nearest to $\pm m\,2^k$ and to~$\pm n/d$; the conversions from and to \verb|long|, and to
   \verb|unsigned long|; and \verb|frexp|, \verb|ldexp| and \verb|nextafter| towards
-  $\pm$\verb|HUGE_VAL|, which pass a signalling NaN on as it is, where glibc quiets it (ratpoints
+  $\pm$\verb|HUGE_VAL|, which pass a signalling NaN on as it is, where glibc quiets it (\ratpoints{}
   passes them no NaN). These functions model the platform and hold no C range.
 \end{definition}
 

@@ -2,7 +2,7 @@
 
 For each denominator~$b$ that the loop over the denominators visits and that passes the tests of
 Chapter~\ref{chap:denominators}, the search looks for the points $(a : y : b)$ with
-$\gcd(a, b) = 1$, $|a| \le H$ and $a/b$ in a search interval. ratpoints does this with a sieve. The
+$\gcd(a, b) = 1$, $|a| \le H$ and $a/b$ in a search interval. \ratpoints{} does this with a sieve. The
 numerators become the bits of bit arrays of 64-bit words, packed by the stride of the 2-adic class
 of~$b$. The rows of the moduli for~$b$, which say for which numerators the form can be a square
 modulo the modulus (Chapter~\ref{chap:rows}), are and-ed into them, in a first stage over every bit
@@ -78,7 +78,7 @@ The proofs use of the width only $\mathrm{rbaPack} > 0$ and, for the packing, $\
 
 \section{Reductions by a reciprocal}\label{sec:reciprocal}
 
-ratpoints reduces modulo~$p$ by a multiplication with the reciprocal of~$p$ wherever that is exact:
+\ratpoints{} reduces modulo~$p$ by a multiplication with the reciprocal of~$p$ wherever that is exact:
 the row indices of the first two stages, the residues of a denominator for its stride and for the
 third stage, the offsets of the rows, the third stage, the first word of the forbidden divisors of
 a block and the Jacobi test (Chapter~\ref{chap:denominators}). The reciprocal is a field of the
@@ -130,7 +130,7 @@ with the operator~\verb|%|.
 
 The 2-adic information gives for each class of the denominators modulo~$64$ the word~$w$ of the
 numerators modulo~$64$ that a point can have (Chapter~\ref{chap:denominators}). In most classes the
-set bits of~$w$ lie in one residue class $a_0 \bmod 2^k$, and ratpoints sieves only that class:
+set bits of~$w$ lie in one residue class $a_0 \bmod 2^k$, and \ratpoints{} sieves only that class:
 bit~$n$ of the sieve of~$b$ stands for the numerator $a_0 + 2^k n$, and bit~$t$ of the bit array
 with the \emph{word number}~$i$ is the bit $n = \mathrm{rbaLength}\, i + t$. Each modulus~$p$ then
 reads the row of $b\, 2^{-k} \bmod p$, at the bit array $(i + \mathrm{offset}) \bmod p$, with an

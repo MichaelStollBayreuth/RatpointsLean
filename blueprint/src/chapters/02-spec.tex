@@ -2,7 +2,7 @@
 
 This chapter states what the main theorems of Chapter~\ref{chap:theorems} speak about: the binary
 form of a coefficient list, the points of bounded height on the curve, the search region, Sturm's
-theorem as a proposition and the order in which ratpoints finds the points; and, from the model, the
+theorem as a proposition and the order in which \ratpoints{} finds the points; and, from the model, the
 interface of a search (its options, its refusals and what it gives back), the reference of the
 delivery of the points to a callback, and the brute-force reference. The specification proper is
 the four files \verb|Basic.lean|, \verb|Region.lean|, \verb|Sturm.lean| and \verb|Order.lean| in
@@ -14,7 +14,7 @@ what one has to read.
 
 The specification is the one part whose correctness no proof can check. So wherever there was a
 choice, it copies what the C code computes, and each of its clauses is compared below with
-ratpoints~3.1.1 at the pinned commit. Where the library function \verb|find_points| and the
+\ratpoints{}~3.1.1 at the pinned commit. Where the library function \verb|find_points| and the
 command-line program \verb|ratpoints| differ, as in the order of the checks on the input, the
 specification and the model follow the program. The specification enters the chapters on the model
 (Chapters~\ref{chap:setup} to~\ref{chap:output}) only through the statements of
@@ -60,15 +60,15 @@ number, the height bound.
 
 The refusal theorems (Theorem~\ref{thm:refusals}) speak about~$\Phi_c$ with Mathlib's
 \verb|Squarefree|: no square of a non-unit divides it. The units of $\QQ[X, Z]$ are the nonzero
-constants, so $4(X^2 + Z^2)$ is squarefree (ratpoints accepts \verb|4 0 4|), and~$0$ is not.
+constants, so $4(X^2 + Z^2)$ is squarefree (\ratpoints{} accepts \verb|4 0 4|), and~$0$ is not.
 $\Phi_c$ is squarefree exactly when $N \le d + 1$ and~$f$ is squarefree
 (Section~\ref{sec:setupSquarefree}). The C code tests the first condition by the leading zeros
 (\csource{find_points.c}{4629}{4631}) and the second in the remainder chain of the Sturm step,
-which runs only when \verb|args->sturm| $\ge 0$. With the step off, ratpoints refuses as not
+which runs only when \verb|args->sturm| $\ge 0$. With the step off, \ratpoints{} refuses as not
 squarefree only the forms with $d + 2 \le N$ and, when the reversal is allowed, the search region is
 the whole box and~$d$ is even, those with $c_0 = c_1 = 0$ (then $X^2 \mid \Phi_c$); it accepts
 other forms that are not squarefree, such as \verb|1 0 2 0 1| or \verb|0 0 1 1| under \verb|-s|.
-Every input that ratpoints does not refuse has $N \le d + 1$, so that there~$\Phi_c$ and~$F_c$
+Every input that \ratpoints{} does not refuse has $N \le d + 1$, so that there~$\Phi_c$ and~$F_c$
 agree.
 
 \section{The points}\label{sec:specPoints}
@@ -85,7 +85,7 @@ agree.
   $|y| \le y^2 = F_c(x, z)$.
 \end{definition}
 
-\begin{remark}[The clauses compared with ratpoints]\label{rem:pointsC}
+\begin{remark}[The clauses compared with \ratpoints{}]\label{rem:pointsC}
   \emph{The normalization} is the one in which the program prints the points. As~$D$ is even,
   $(-x : (-1)^{D/2} y : -z)$ is the same point as $(x : y : z)$ in the weighted projective plane
   with the weights $(1, D/2, 1)$; as both signs of~$y$ are listed, the condition can pick $z > 0$,
@@ -162,11 +162,11 @@ The statements take the search intervals of the options, a list of pairs of doub
 their bits where they test well-formedness (Definition~\ref{def:Options}). The value of a NaN is
 junk, an infinity, and nothing depends on it: the statements that read the values assume a
 successful search, which refuses a NaN end. \verb|Region.lean| checks its definitions by
-\verb|decide +kernel|, which adds no axiom, on a few doubles and on intervals that ratpoints accepts
+\verb|decide +kernel|, which adds no axiom, on a few doubles and on intervals that \ratpoints{} accepts
 and refuses: $[-0.0, 0.0]$ and $[0.0, -0.0]$ are accepted, and $[-1, -0.0]$ followed by $[0.0, 1]$
 is refused.
 
-\begin{remark}[The region compared with ratpoints]\label{rem:regionC}
+\begin{remark}[The region compared with \ratpoints{}]\label{rem:regionC}
   The ends of the intervals are C doubles (\verb|ratpoints_interval|,
   \csource{ratpoints.h}{359}{359}). The C code does no floating-point arithmetic on them that could
   decide a point: it compares them, converts between \verb|long|s and doubles, takes doubles apart
@@ -201,7 +201,7 @@ is refused.
   the number of roots is \verb|Set.ncard|.
 \end{definition}
 
-The Sturm step of ratpoints narrows the search intervals to those on which~$f$ may take a value
+The Sturm step of \ratpoints{} narrows the search intervals to those on which~$f$ may take a value
 $\ge 0$ (Chapter~\ref{chap:region}); that it keeps every point rests on Sturm's theorem, which
 Mathlib does not have, though it has the Sturm sequence and the sign changes of a list. The form for
 $(a, b]$ is the one that the bisection of the step needs, as it evaluates the sequence at midpoints
@@ -210,19 +210,19 @@ coverage when the exact check is off) take the hypothesis $0 \le \mathrm{sturm} 
 \mathrm{SturmTheorem}$, so that they hold outright with the Sturm step off. It is a hypothesis, not
 an axiom; a proof of the theorem would discharge it without changing a statement.
 
-\section{The order of ratpoints}\label{sec:specOrder}
+\section{The order of \ratpoints{}}\label{sec:specOrder}
 
-The file \verb|Order.lean| defines the list of the points in the order in which ratpoints finds
+The file \verb|Order.lean| defines the list of the points in the order in which \ratpoints{} finds
 them, in terms of the polynomial, and the order theorem (Theorem~\ref{thm:order}) says that a search
 with the exact check on returns this list, filtered by~$\mathrm{noY}$ and the search region,
 assuming Sturm's theorem when the Sturm step is on. It uses the prime factors of a number
 (\verb|Nat.primeFactorsList|, in increasing order with multiplicity).
 
-\begin{definition}[The points in the order of ratpoints]\label{def:orderedPoints}
+\begin{definition}[The points in the order of \ratpoints{}]\label{def:orderedPoints}
   \uses{def:binaryForm, def:IsPoint}
   \lean{Ratpoints.searchedPoly, Ratpoints.FactorsByTrialDivision, Ratpoints.binaryDivisors, Ratpoints.searchDenominators, Ratpoints.pointsWithDen, Ratpoints.orderedPoints}\leanok
   For the switch~$r$ of the reversal and the coefficient list~$c$ of degree~$d$, the polynomial that
-  ratpoints searches and whether it is the reversed one, $\mathrm{searchedPoly}(r, c)$, is the first
+  \ratpoints{} searches and whether it is the reversed one, $\mathrm{searchedPoly}(r, c)$, is the first
   of the following that applies:
   \begin{enumerate}
     \item $((c_d, c_{d-1}, \dots, c_0), \mathrm{true})$ if~$r$ is true, $d$ is even and $c_0 = 0$;
@@ -245,7 +245,7 @@ assuming Sturm's theorem when the Sturm step is on. It uses the prime factors of
   denominator}~$z$: for $x = -H, \dots, H$ in turn, with $y = \lfloor \sqrt{F_c(x, z)} \rfloor$ ($0$
   when $F_c(x, z) < 0$), those among $(x, y, z)$ and $(x, -y, z)$ that are normalized points of
   height at most~$H$, in this order, one triple when $y = 0$; the denominator~$0$ gives the points
-  at infinity. The \emph{points in the order of ratpoints}, $\mathrm{orderedPoints}(m, r, c, H, B)$:
+  at infinity. The \emph{points in the order of \ratpoints{}}, $\mathrm{orderedPoints}(m, r, c, H, B)$:
   for $(c', \mathrm{rev}) = \mathrm{searchedPoly}(r, c)$, the points of~$c'$ with the
   denominator~$0$ and then with the denominators of the search of~$c'$ up to~$B$, in turn, each
   $(a, y, b)$ mapped to $(b, y, a)$ for $a \ge 0$ and to $(-b, y, -a)$ for $a < 0$
@@ -253,13 +253,13 @@ assuming Sturm's theorem when the Sturm step is on. It uses the prime factors of
 \end{definition}
 
 The binary form of a reversed list is that of~$c$ with~$x$ and~$z$ exchanged, except for even~$d$
-with $c_0 = c_1 = 0$, which ratpoints refuses; so the map at the end is a bijection from the points
+with $c_0 = c_1 = 0$, which \ratpoints{} refuses; so the map at the end is a bijection from the points
 of~$c'$ to those of~$c$ that preserves the box (Chapter~\ref{chap:setup}). In the order theorem,
 $m$ is $\mathrm{maxDivisors}$ (Definition~\ref{def:maxDegree}), $r$ the switch of the reversal when
 the search region is the whole box and false otherwise, and~$B$ the largest denominator: the search
 intervals and the least denominator only filter the list.
 
-\begin{remark}[The order compared with ratpoints]\label{rem:orderC}
+\begin{remark}[The order compared with \ratpoints{}]\label{rem:orderC}
   $\mathrm{searchedPoly}$ is the reversal check of \verb|find_points_work_1|
   (\csource{find_points.c}{4732}{4803}) on the coefficient list; items (1) to~(3) are its cases~1
   to~3. In case~(1) the check refuses the form as not squarefree when also $c_1 = 0$, since then
@@ -351,13 +351,13 @@ gives them, as \verb|find_points_work| restores the fields that it normalized.
 
 \begin{definition}[The bounds that the statements mention]\label{def:maxDegree}
   \lean{Ratpoints.maxDegree, Ratpoints.maxDivisors, Ratpoints.fitsLong}\leanok
-  $\mathrm{maxDegree} = 100$, the largest degree of a polynomial that ratpoints accepts, the value
+  $\mathrm{maxDegree} = 100$, the largest degree of a polynomial that \ratpoints{} accepts, the value
   of \verb|RATPOINTS_MAX_DEGREE| (\csource{ratpoints.h}{33}{33}): a list of coefficients has at most
   $\mathrm{maxDegree} + 1 = 101$ entries. $\mathrm{maxDivisors} = 512$, the value of
   \verb|MAX_DIVISORS| (\csource{find_points.c}{121}{121}): the loop over the denominators of a
   polynomial of odd degree runs over the divisors of its leading coefficient times squares only when
   there are fewer than this many divisors up to the largest denominator. An integer is a C
-  \verb|long| when it lies in $[-2^{63}, 2^{63})$ (\csource{rp-private.h}{41}{43}): ratpoints needs
+  \verb|long| when it lies in $[-2^{63}, 2^{63})$ (\csource{rp-private.h}{41}{43}): \ratpoints{} needs
   a \verb|long| of~$64$ bits, and the height bound is one.
 \end{definition}
 
@@ -417,8 +417,8 @@ model, in Lean core without Mathlib. It evaluates the form as the exact check of
 computes the degree by the expression of $\mathrm{degree}$, which the model cannot import. It takes
 no hypothesis on~$c$ or~$H$. The proofs of the main theorems compare the list of the search with
 this reference, denominator by denominator (Chapter~\ref{chap:theorems}); for a polynomial that
-ratpoints neither reverses nor searches in the order of the divisors, and for the whole box with the
-options of the output clear, its list is that of ratpoints, in the same order.
+\ratpoints{} neither reverses nor searches in the order of the divisors, and for the whole box with the
+options of the output clear, its list is that of \ratpoints{}, in the same order.
 
 \begin{theorem}[The brute-force reference finds exactly the points]\label{thm:bruteForce}
   \uses{def:bruteForce, def:IsPoint}

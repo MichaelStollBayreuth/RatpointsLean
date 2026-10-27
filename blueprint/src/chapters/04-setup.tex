@@ -7,7 +7,7 @@ This chapter describes what a search does with its input before the sieve: it ch
 list and the height bound, drops the leading zero coefficients, refuses a binary form that is not
 squarefree, may reverse the polynomial, delivers the points at infinity, and ends when the curve has
 no points modulo one of the primes it examines. The refusal theorems (Theorem~\ref{thm:refusals})
-rest on it, and so do the statements on the points delivered, since after a reversal ratpoints
+rest on it, and so do the statements on the points delivered, since after a reversal \ratpoints{}
 searches another polynomial and maps its points back. The rest of the Sturm step, which begins with
 the remainder chain of this chapter, is in Chapter~\ref{chap:region}, the tests on the denominators
 that follow the set-up in Chapter~\ref{chap:denominators}, and the loop over the primes in which the
@@ -155,7 +155,7 @@ squarefree, which the search accepts when the Sturm step is off.
 
 \section{The reversal}\label{sec:reversal}
 
-When the caller allows it and the search region is the whole box, ratpoints may replace the
+When the caller allows it and the search region is the whole box, \ratpoints{} may replace the
 polynomial by its reversal, in three cases in which it expects the search of the reversed polynomial
 to be faster. The reversal exchanges~$x$ and~$z$ in the binary form; the C code maps each point of
 the reversed curve back to the caller's curve before it delivers it, so that the output holds the
@@ -317,7 +317,7 @@ infinity after the choice of the moduli and returns when a call stops it there
 
 \section{The exit by a prime}\label{sec:exitByPrime}
 
-While it chooses the moduli (Chapter~\ref{chap:moduli}), ratpoints computes for each prime~$p$ it
+While it chooses the moduli (Chapter~\ref{chap:moduli}), \ratpoints{} computes for each prime~$p$ it
 examines the table of the residues~$x$ with~$f(x)$ a square modulo~$p$, with a last entry for the
 points at infinity modulo~$p$ (Chapter~\ref{chap:rows}). When no entry is true,
 \verb|examine_prime| returns~$-1$ (\csource{find_points.c}{1762}{1762}) and the search ends with no

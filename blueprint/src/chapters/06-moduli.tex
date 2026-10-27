@@ -5,9 +5,9 @@
 
 The sieve of one denominator (Chapter~\ref{chap:sieve}) removes a numerator when the row of one of
 its moduli does not admit it. This chapter says what the moduli are, how the search chooses them, as
-ratpoints does in \verb|sieving_info|, and how it runs over the denominators in blocks, between
+\ratpoints{} does in \verb|sieving_info|, and how it runs over the denominators in blocks, between
 which it may correct its choice, as \verb|adapt_primes| does. A modulus is a prime of the table of
-ratpoints, a power of such a prime or a product of such powers; its rows come from tables computed
+\ratpoints{}, a power of such a prime or a product of such powers; its rows come from tables computed
 from the curve (Chapter~\ref{chap:rows}). The search ranks the candidates by a model of what each
 costs and what it says, computed in doubles.
 
@@ -26,7 +26,7 @@ $p \nmid a$. These two facts are all that the rows of a prime rest on.
   \lean{Ratpoints.primeTable, Ratpoints.maxBitsInPrime, Ratpoints.numPrimes, Ratpoints.Sieve.Entry, Ratpoints.Sieve.examinePrime, Ratpoints.Sieve.Entry.admits}
   \leanok
   The primes of the sieve are the odd primes below~$1024$ in increasing order
-  (\csource{primes.h}{29}{40}), which \verb|decide| checks; ratpoints chooses its moduli among the
+  (\csource{primes.h}{29}{40}), which \verb|decide| checks; \ratpoints{} chooses its moduli among the
   $\mathrm{numPrimes}$ of them below $2^{\mathrm{maxBitsInPrime}}$, the~$53$ primes up to~$251$ for
   the~$8$ bits of the default build, whose Makefile passes \verb|PRIME_SIZE| $= 8$ in place of the
   header's own default~$7$ (\csource{rp-private.h}{321}{323}, \csource{rp-private.h}{325}{361}).
@@ -39,7 +39,7 @@ $p \nmid a$. These two facts are all that the rows of a prime rest on.
   ratpoints.
 \end{definition}
 
-ratpoints computes this table in \verb|examine_prime|, by Horner's rule with Barrett's reduction;
+\ratpoints{} computes this table in \verb|examine_prime|, by Horner's rule with Barrett's reduction;
 that it is the table of Definition~\ref{def:tableOfPrime} is shown in Chapter~\ref{chap:rows}.
 
 \begin{definition}[The loop of the tables]\label{def:tablesLoop}
@@ -69,7 +69,7 @@ that it is the table of Definition~\ref{def:tableOfPrime} is shown in Chapter~\r
 
 \section{Prime powers and products}\label{sec:moduliComposite}
 
-ratpoints also sieves with odd composite moduli from~$9$ up to $\mathrm{compositeMax} = 64$,
+\ratpoints{} also sieves with odd composite moduli from~$9$ up to $\mathrm{compositeMax} = 64$,
 products of at most three powers of primes looked at. The tables of a power $q = p^e$ of a prime,
 which \verb|examine_power| computes (Chapter~\ref{chap:rows}), test the numerator against~$f$ when
 $p \nmid b$, and the denominator against the reversed polynomial
@@ -143,7 +143,7 @@ with the inverse of $\mathrm{rbaLength}$ modulo~$m$ by the extended Euclidean al
 
 \section{The cost model}\label{sec:moduliCosts}
 
-ratpoints ranks the candidate moduli by what each costs per word of numerators swept, divided by
+\ratpoints{} ranks the candidate moduli by what each costs per word of numerators swept, divided by
 what it says: a modulus of density~$r$ says $-\log r$.
 
 \begin{definition}[The cost model]\label{def:costModel}
@@ -177,7 +177,7 @@ what it says: a modulus of density~$r$ says $-\log r$.
   the entries from the end of the second stage on counting no factor, which holds whatever the
   doubles are, NaN included. So the theorems hold for every choice that the cost model may make, and
   nothing is proved about the quality of the choice. Since glibc's \verb|log| and \verb|pow| are
-  not correctly rounded and glibc chooses their variant by the processor, the choice of ratpoints
+  not correctly rounded and glibc chooses their variant by the processor, the choice of \ratpoints{}
   depends on the machine; the model calls the same routines of the same library (on glibc an older
   symbol version of them, with the same values on every argument that occurs here), and the
   differential tests compare the choices of the two programs on one machine
@@ -271,7 +271,7 @@ of primes looked at by $\mathrm{numPrimes}$, so that the theorems need no hypoth
 
 The run cuts the steps of the loop of the shape (Chapter~\ref{chap:denominators}) into about~$1024$
 blocks of consecutive steps and sifts each block with the moduli of the decision of the correction
-in force for it; the model sifts the blocks in turn, as ratpoints does without threads. No proof
+in force for it; the model sifts the blocks in turn, as \ratpoints{} does without threads. No proof
 depends on the values of the constants of the blocks and of the correction but for the positivity
 of a block length that the build fixes (\lname{Ratpoints.blockLen\_pos}).
 
@@ -401,7 +401,7 @@ options of the sieve and the same region, which differ only in the flags of the 
 has the exact check on and \verb|NO_Y| set); neither the choice nor the decisions read these flags
 or the callback.
 
-With threads (\verb|-t|) ratpoints sifts the blocks apart in a pool, which the model leaves out
+With threads (\verb|-t|) \ratpoints{} sifts the blocks apart in a pool, which the model leaves out
 (Chapter~\ref{chap:ccode}). The lag and thread lemmas (Theorems~\ref{thm:lag}
 and~\ref{thm:threads}) prove that blocks sifted apart, block~$i$ once the blocks before block
 $i - \mathrm{adaptLag}$ are folded and each with a store of its own, and delivered in their order
