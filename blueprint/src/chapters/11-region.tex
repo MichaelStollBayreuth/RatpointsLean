@@ -543,7 +543,7 @@ read the intervals through their values and their bits.
 
 \begin{lemma}[The normalized options]\label{lem:normalize}
   \uses{def:normalize, def:regionSpec, def:inIntervals}
-  \lean{Ratpoints.Options.reverse_normalize, Ratpoints.Options.domain_normalize, Ratpoints.Options.noCheck_normalize, Ratpoints.Options.noY_normalize, Ratpoints.Options.toNat_bHigh_normalize, Ratpoints.Options.one_le_toNat_bLow_normalize, Ratpoints.Options.one_le_toNat_bHigh_normalize, Ratpoints.Options.toNat_bHigh_normalize_le, Ratpoints.Options.lt_one_or_le_bHigh_of_le, Ratpoints.Options.le_toNat_bHigh_normalize_of_le, Ratpoints.Options.bLow_normalize_le_iff, Ratpoints.Options.sturm_normalize_nonneg_iff, Ratpoints.Options.sturm_normalize_neg_iff, Ratpoints.Options.sturm_normalize_le, Ratpoints.inRegion_iff, Ratpoints.inRegion_of_isFullBox}
+  \lean{Ratpoints.Options.reverse_normalize, Ratpoints.Options.toNat_bHigh_normalize, Ratpoints.Options.one_le_toNat_bLow_normalize, Ratpoints.Options.one_le_toNat_bHigh_normalize, Ratpoints.Options.toNat_bHigh_normalize_le, Ratpoints.Options.le_toNat_bHigh_normalize_iff, Ratpoints.Options.bLow_normalize_le_iff, Ratpoints.Options.sturm_normalize_nonneg_iff, Ratpoints.Options.sturm_normalize_neg_iff, Ratpoints.Options.sturm_normalize_le, Ratpoints.inRegion_iff, Ratpoints.inRegion_of_isFullBox}
   \leanok
   The normalized switch of the reversal is the switch and the whole box
   (Definition~\ref{def:regionSpec}); the normalization keeps the intervals and the options of the
@@ -1019,7 +1019,7 @@ them.
 
 \begin{lemma}[The bisection keeps exact intervals]\label{lem:bisection}
   \uses{def:iterate, lem:Double, def:regionSpec}
-  \lean{Ratpoints.Sturm.endValue, Ratpoints.Sturm.HasValue, Ratpoints.Sturm.hasValue_ldexp_ofInt64, Ratpoints.Sturm.hasValue_ldexp_ofInt64_longMax, Ratpoints.Sturm.hasValue_ldexp_ofInt64_neg_longMax, Ratpoints.Sturm.EndsWF, Ratpoints.Sturm.endsWF_zero, Ratpoints.Sturm.EndsWF.hasValue_left, Ratpoints.Sturm.EndsWF.hasValue_right, Ratpoints.Sturm.endValue_eq_div, Ratpoints.Sturm.EndsWF.halves, Ratpoints.Sturm.EndsWF.lt_midpoint_and_midpoint_lt, Ratpoints.Sturm.IsInterval, Ratpoints.Sturm.EndsBefore, Ratpoints.Sturm.forall_isInterval_and_pairwise_addInterval_and_back?_eq, Ratpoints.Sturm.exists_mem_addInterval, Ratpoints.Sturm.exists_mem_addInterval_of_exists_mem, Ratpoints.Sturm.iterate_wf, Int64.toInt_two_mul, Int64.toInt_and_one, Int64.toInt_shiftRight_one, Int64.toInt_one_shiftLeft, Int64.toInt_one_shiftLeft_ofNat}
+  \lean{Ratpoints.Sturm.endValue, Ratpoints.Sturm.HasValue, Ratpoints.Sturm.hasValue_ldexp_ofInt64, Ratpoints.Sturm.hasValue_ldexp_ofInt64_longMax, Ratpoints.Sturm.hasValue_ldexp_ofInt64_neg_longMax, Ratpoints.Sturm.EndsWF, Ratpoints.Sturm.endsWF_zero, Ratpoints.Sturm.EndsWF.hasValue_left, Ratpoints.Sturm.EndsWF.hasValue_right, Ratpoints.Sturm.endValue_eq_div, Ratpoints.Sturm.EndsWF.halves, Ratpoints.Sturm.IsInterval, Ratpoints.Sturm.EndsBefore, Ratpoints.Sturm.AreIntervals.addInterval, Ratpoints.Sturm.exists_mem_addInterval, Ratpoints.Sturm.exists_mem_addInterval_of_exists_mem, Ratpoints.Sturm.iterate_wf, Int64.toInt_two_mul, Int64.toInt_and_one, Int64.toInt_shiftRight_one, Int64.toInt_one_shiftLeft, Int64.toInt_one_shiftLeft_ofNat}
   \leanok
   The value of an end of the bisection is $n\,2^{-e}$, and $\pm 2^{63}$ for $\pm\mathrm{LONG\_MAX}$;
   a double has the value $q$ when it is not a NaN and $\mathrm{doubleValue}$ of its bits is $q$. An
@@ -1049,7 +1049,7 @@ them.
 
 \begin{lemma}[The intersection and the step]\label{lem:intersect}
   \uses{def:intersect, def:computeSturm, lem:bisection, def:inIntervals}
-  \lean{Ratpoints.Sturm.intersectList, Ratpoints.Sturm.IntersectInvariant, Ratpoints.Sturm.intersect_spec, Ratpoints.Sturm.toList_run_intersect, Ratpoints.Sturm.meet_eq, Ratpoints.Sturm.intervalsWF_domainBits_iff_pairwise, Ratpoints.Sturm.pairwise_intersectList, Ratpoints.Sturm.intervalsWF_intersectList, Ratpoints.Sturm.inIntervals_of_inIntervals_intersectList, Ratpoints.Sturm.inIntervals_intersectList, Ratpoints.Sturm.length_intersectList_le, Ratpoints.Sturm.inIntervals_domainValues_iff, Ratpoints.Sturm.run_computeSturm_eq_none_iff, Ratpoints.Sturm.run_computeSturm_of_chain_eq_some, Ratpoints.Sturm.computeSturm_wf, Array.drop_toList_eq_getElem!_cons}
+  \lean{Ratpoints.Sturm.intersectList, Ratpoints.Sturm.IntersectInvariant, Ratpoints.Sturm.intersect_spec, Ratpoints.Sturm.toList_run_intersect, Ratpoints.Sturm.meet_eq, Ratpoints.Sturm.intervalsWF_domainBits_iff, Ratpoints.Sturm.pairwise_intersectList, Ratpoints.Sturm.intervalsWF_intersectList, Ratpoints.Sturm.inIntervals_of_inIntervals_intersectList, Ratpoints.Sturm.inIntervals_intersectList, Ratpoints.Sturm.length_intersectList_le, Ratpoints.Sturm.inIntervals_domainValues_iff, Ratpoints.Sturm.run_computeSturm_eq_none_iff, Ratpoints.Sturm.run_computeSturm_of_chain_eq_some, Ratpoints.Sturm.computeSturm_wf, Array.drop_toList_eq_getElem!_cons}
   \leanok
   The intersection is a recursion on the two lists, of which the loop computes the list; well-formed
   intervals are those without a NaN end, with $l \le u$ by the values, and pairwise strictly apart;
@@ -1195,7 +1195,7 @@ coverage.
 \begin{lemma}[The Sturm step keeps the points]\label{lem:coverage}
   \uses{lem:sturmCounts, lem:chainSturm, lem:bisection, lem:intersect, def:computeSturm,
     def:binaryForm}
-  \lean{Ratpoints.Sturm.lowerEnd, Ratpoints.Sturm.upperEnd, Ratpoints.Sturm.HalvingInv, Ratpoints.Sturm.Kept, Ratpoints.Sturm.SignsOf, Ratpoints.Sturm.HalvingInv.not_kept, Ratpoints.Sturm.HalvingInv.halves, Ratpoints.Sturm.kept_halves, Ratpoints.Sturm.covers_addInterval, Ratpoints.Sturm.covers_iterate, Ratpoints.Sturm.squarefree_chainPoly, Ratpoints.Sturm.halvingInv_zero, Ratpoints.Sturm.kept_neg_longMax_longMax_of_abs_le, Ratpoints.Sturm.eval_neg_of_vBot_eq_vTop, Ratpoints.Sturm.IsChain.signsOf, Ratpoints.Sturm.isChain_of_run_chain_eq_some, Ratpoints.Sturm.covers_computeSturm, Ratpoints.binaryForm_eq_mul_eval, Ratpoints.Sturm.eval_chainPoly_nonneg}
+  \lean{Ratpoints.Sturm.lowerEnd, Ratpoints.Sturm.upperEnd, Ratpoints.Sturm.HalvingInv, Ratpoints.Sturm.Kept, Ratpoints.Sturm.SignsOf, Ratpoints.Sturm.HalvingInv.not_kept, Ratpoints.Sturm.HalvingInv.halves, Ratpoints.Sturm.kept_halves, Ratpoints.Sturm.covers_addInterval, Ratpoints.Sturm.covers_iterate, Ratpoints.Sturm.squarefree_chainPoly, Ratpoints.Sturm.halvingInv_zero, Ratpoints.Sturm.kept_neg_longMax_longMax_of_abs_le, Ratpoints.eval_neg_of_vBot_eq_vTop, Ratpoints.Sturm.IsChain.signsOf, Ratpoints.Sturm.isChain_of_run_chain_eq_some, Ratpoints.Sturm.covers_computeSturm, Ratpoints.binaryForm_eq_mul_eval, Ratpoints.Sturm.eval_chainPoly_nonneg}
   \leanok
   The invariant of the bisection for $f$, read over $\mathbb{R}$: a well-formed interval
   (Lemma~\ref{lem:bisection}) whose counts and signs are those of $f$ at its ends
@@ -1229,7 +1229,7 @@ coverage.
 
 \begin{lemma}[The arrays of the Sturm step]\label{lem:sturmBuffers}
   \uses{lem:coverage, lem:polySigns, lem:intersect}
-  \lean{Ratpoints.Sturm.Witnessed, Ratpoints.Sturm.witnessed_iterate, Ratpoints.Sturm.length_le_of_witnessed, Ratpoints.Sturm.size_run_iterate_le_of_chain_eq_some, Ratpoints.size_run_iterate_le, Ratpoints.size_run_computeSturm_le}
+  \lean{Ratpoints.Sturm.Witnessed, Ratpoints.Sturm.witnessed_iterate, Ratpoints.Sturm.length_le_of_witnessed, Ratpoints.Sturm.size_run_iterate_le_of_chain_eq_some, Ratpoints.Sturm.size_run_computeSturm_le}
   \leanok
   An interval of doubles is \emph{witnessed} for a real polynomial $p$ when its ends have values in
   $[-2^{63}, 2^{63}]$ and $p$ is positive at a point that lies at or above the lower end unless that
@@ -1298,7 +1298,7 @@ the lines of its report under \verb|RATPOINTS_VERBOSE|, which belong to the repo
 
 \begin{lemma}[The Sturm step of the search]\label{lem:sturmRegion}
   \uses{def:sturmRegion, lem:intersect, lem:coverage, lem:normalize, def:reversal, def:maxDegree}
-  \lean{Ratpoints.run_sturmRegion_of_neg, Ratpoints.run_sturmRegion_of_nonneg, Ratpoints.run_sturmRegion_eq_error_iff, Ratpoints.run_sturmRegion_eq_ok_none, Ratpoints.run_sturmRegion_subset, Ratpoints.run_sturmRegion_covers, Ratpoints.not_nonneg_and_chain_eq_none_of_run_sturmRegion_eq_ok, Ratpoints.Setup.degree_le_of_reversal_eq_ok, Ratpoints.maxDegree_lt_two_pow_57}
+  \lean{Ratpoints.run_sturmRegion_of_neg, Ratpoints.run_sturmRegion_of_nonneg, Ratpoints.run_sturmRegion_eq_error_iff, Ratpoints.run_sturmRegion_eq_ok_none, Ratpoints.run_sturmRegion_subset, Ratpoints.run_sturmRegion_covers, Ratpoints.chain_ne_none_of_run_sturmRegion_eq_ok, Ratpoints.Setup.degree_le_of_reversal_eq_ok, Ratpoints.maxDegree_lt_two_pow_57}
   \leanok
   With the step off it gives the intervals as they are; it refuses exactly when it is on and the
   chain is none, with $\mathrm{notSquarefree}$; it returns at once only for an even degree whose

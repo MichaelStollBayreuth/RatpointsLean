@@ -41,9 +41,6 @@ on, it holds the `x / z` of every point in them.
   where the search clamps it, are well formed and lie inside the given ones.
 * `Ratpoints.run_sturmRegion_covers`: assuming Sturm's theorem, they hold every `a / b` of the given
   intervals with `F(a, b) ≥ 0` and `|a| ≤ 2 ^ 63`.
-* `Ratpoints.size_run_iterate_le`, `Ratpoints.size_run_computeSturm_le`: assuming Sturm's theorem,
-  the intervals of the bisection, at most `1 + ⌊d / 2⌋`, and those of the intersection fit the
-  arrays of the C code.
 * `Ratpoints.searchRegion_subset`, `Ratpoints.searchRegion_covers`,
   `Ratpoints.searchRegion_eq_none`: the search region inside the caller's intervals, holding the
   `x / z` of every point in them, and none only for even degree and a leading coefficient that is
@@ -156,50 +153,6 @@ theorem run_sturmRegion_covers {c : List ℤ} {d : ℕ} {s : ℤ} {dom : List (D
   simp only [hc, hiv, ↓reduceIte] at h
   exact ⟨iv.toList, (Except.ok.inj h).symm, hin⟩
 
-/-- Assuming Sturm's theorem, the bisection of the Sturm step at a depth of at most `55` for the
-polynomial `c` of degree `0 < d < 2 ^ 57` whose remainder chain succeeds keeps at most
-`1 + ⌊d / 2⌋` intervals: each holds a point where `f` is positive and `f` is negative between two
-of them, so that they give `2 m - 1` sign changes of `f`
-(`Ratpoints.Sturm.size_run_iterate_le_of_chain_eq_some`). The array `ivlocal` of the C code has room
-for them. -/
-theorem size_run_iterate_le (hS : SturmTheorem) {c : List ℤ} {d : ℕ} (hd : d = degree c)
-    (hd0 : 0 < d) (hd57 : d < 2 ^ 57) {rows : Array (Array ℤ)}
-    (hrows : Id.run (Sturm.chain c d) = some rows) {iter : ℕ} (hit : iter ≤ 55) :
-    (Id.run (Sturm.iterate rows (rows.size - 1) iter (-Sturm.longMax) Sturm.longMax 0 0
-      (Id.run (Sturm.countsAtInfinity rows (rows.size - 1))).2
-      (Id.run (Sturm.countsAtInfinity rows (rows.size - 1))).1
-      (if d % 2 = 1 then -(c.getD d 0).sign else (c.getD d 0).sign) (c.getD d 0).sign 0
-      #[])).size ≤ 1 + d / 2 := by
-  subst hd
-  exact Sturm.size_run_iterate_le_of_chain_eq_some hS hd0 (getD_degree_ne_zero_of_pos hd0) hd57
-    hit hrows
-
-/-- Assuming Sturm's theorem, the intersection of the intervals of the Sturm step at a depth of at
-most `55` with intervals `iv` has at most `iv.size + d` intervals, `0 < d < 2 ^ 57` the degree of
-the polynomial `c`: the room that the caller's array of the C code has for them. -/
-theorem size_run_computeSturm_le (hS : SturmTheorem) {c : List ℤ} {d : ℕ} (hd : d = degree c)
-    (hd0 : 0 < d) (hd57 : d < 2 ^ 57) {iter : ℕ} (hit : iter ≤ 55)
-    {iv iv' : Array (Double × Double)} (h : Id.run (Sturm.computeSturm c d iter iv) = some iv') :
-    iv'.size ≤ iv.size + d := by
-  rcases hc : Id.run (Sturm.chain c d) with _ | rows
-  · rw [← Sturm.run_computeSturm_eq_none_iff c d iter iv] at hc
-    simp [hc] at h
-  have hk := size_run_iterate_le hS hd hd0 hd57 hc hit
-  rw [Sturm.run_computeSturm_of_chain_eq_some hc] at h
-  by_cases hex : (Id.run (Sturm.countsAtInfinity rows (rows.size - 1))).2 =
-      (Id.run (Sturm.countsAtInfinity rows (rows.size - 1))).1 ∧ c.getD 0 0 < 0
-  · rw [ite_eq_left hex, Option.some.injEq] at h
-    simp [← h]
-  rw [ite_eq_right hex, Option.some.injEq] at h
-  rw [← h, ← Array.length_toList, Sturm.toList_run_intersect]
-  have := Sturm.length_intersectList_le (Id.run (Sturm.iterate rows (rows.size - 1) iter
-    (-Sturm.longMax) Sturm.longMax 0 0 (Id.run (Sturm.countsAtInfinity rows (rows.size - 1))).2
-    (Id.run (Sturm.countsAtInfinity rows (rows.size - 1))).1
-    (if d % 2 = 1 then -(c.getD d 0).sign else (c.getD d 0).sign) (c.getD d 0).sign 0
-    #[])).toList iv.toList
-  simp only [Array.length_toList] at this hk ⊢
-  lia
-
 /-! ### The search region of the search -/
 
 /-- The search intervals, over the values of their ends, of the search that
@@ -243,7 +196,7 @@ caller holds every `a / b` with `b ≥ 1`, `|a| ≤ H` and `F(a, b) ≥ 0` in th
 (anywhere when there are none), when the Sturm step does not refuse. -/
 theorem searchRegion_covers {c : List ℤ} {d H : ℕ} {o : Options} (hS : 0 ≤ o.sturm → SturmTheorem)
     (hdom : IntervalsWF (domainBits o.domain)) (hd : d = degree c) (hd0 : 0 < d) (hd57 : d < 2 ^ 57)
-    (hH : 1 ≤ H) (hH63 : H < 2 ^ 63) (hc : ¬(0 ≤ o.sturm ∧ Id.run (Sturm.chain c d) = none))
+    (hH : 1 ≤ H) (hH63 : H < 2 ^ 63) (hc : 0 ≤ o.sturm → Id.run (Sturm.chain c d) ≠ none)
     {a : ℤ} {b : ℕ} (hb : 0 < b) (ha : a.natAbs ≤ H) (hF : 0 ≤ binaryForm c a b)
     (hx : o.domain = [] ∨ InIntervals (domainValues o.domain) (a / b)) :
     ∃ D, searchRegion c d H o = some D ∧ InIntervals D (a / b) := by
@@ -255,7 +208,7 @@ theorem searchRegion_covers {c : List ℤ} {d H : ℕ} {o : Options} (hS : 0 ≤
     · exact ⟨_, run_searchIntervals_of_ne_nil H hn hdom, hdom, hx.resolve_left hn⟩
   rcases hst : Id.run (sturmRegion c d (o.normalize H).sturm dom) with e | r
   · obtain ⟨h1, h2, -⟩ := (run_sturmRegion_eq_error_iff ..).mp hst
-    exact absurd ⟨(o.sturm_normalize_nonneg_iff H).mp h1, h2⟩ hc
+    exact (hc ((o.sturm_normalize_nonneg_iff H).mp h1) h2).elim
   obtain ⟨dom', rfl, hin⟩ := run_sturmRegion_covers
     (fun h ↦ hS ((o.sturm_normalize_nonneg_iff H).mp h)) (o.sturm_normalize_le H) hwf hd hd0 hd57
     hst hb (by lia) hF hx'
@@ -265,13 +218,13 @@ theorem searchRegion_covers {c : List ℤ} {d H : ℕ} {o : Options} (hS : 0 ≤
 not a square, when the search intervals are well formed and the Sturm step does not refuse. -/
 theorem searchRegion_eq_none {c : List ℤ} {d H : ℕ} {o : Options}
     (hdom : IntervalsWF (domainBits o.domain))
-    (hc : ¬(0 ≤ o.sturm ∧ Id.run (Sturm.chain c d) = none)) (h : searchRegion c d H o = none) :
+    (hc : 0 ≤ o.sturm → Id.run (Sturm.chain c d) ≠ none) (h : searchRegion c d H o = none) :
     d % 2 = 0 ∧ Setup.isSquare (c.getD d 0) = false := by
   rcases hsi : Id.run (searchIntervals H o.domain) with _ | dom
   · exact absurd hdom ((run_searchIntervals_eq_none_iff H o.domain).mp hsi)
   rcases hst : Id.run (sturmRegion c d (o.normalize H).sturm dom) with e | _ | ⟨dom', empty⟩
   · obtain ⟨h1, h2, -⟩ := (run_sturmRegion_eq_error_iff ..).mp hst
-    exact absurd ⟨(o.sturm_normalize_nonneg_iff H).mp h1, h2⟩ hc
+    exact (hc ((o.sturm_normalize_nonneg_iff H).mp h1) h2).elim
   · exact run_sturmRegion_eq_ok_none hst
   · simp [searchRegion, hsi, hst] at h
 
@@ -284,13 +237,13 @@ theorem searchRegion_eq_of_run_sturmRegion_eq {c : List ℤ} {d H : ℕ} {o : Op
     searchRegion c d H o = r.map fun x ↦ if x.2 then [] else domainValues x.1 := by
   rcases r with _ | ⟨dom', empty⟩ <;> simp [searchRegion, hsi, hst]
 
-/-- The Sturm step of the normalized options does not refuse exactly when the step is off or the
-remainder chain succeeds (`Ratpoints.run_sturmRegion_eq_error_iff`). -/
-theorem not_nonneg_and_chain_eq_none_of_run_sturmRegion_eq_ok {c : List ℤ} {d H : ℕ} {o : Options}
+/-- When the Sturm step of the normalized options is on and does not refuse, the remainder chain
+succeeds (`Ratpoints.run_sturmRegion_eq_error_iff`). -/
+theorem chain_ne_none_of_run_sturmRegion_eq_ok {c : List ℤ} {d H : ℕ} {o : Options}
     {dom : List (Double × Double)} {r : Option (List (Double × Double) × Bool)}
-    (h : Id.run (sturmRegion c d (o.normalize H).sturm dom) = .ok r) :
-    ¬(0 ≤ o.sturm ∧ Id.run (Sturm.chain c d) = none) := fun ⟨h1, h2⟩ ↦ by
-  simp [(run_sturmRegion_eq_error_iff ..).mpr ⟨(o.sturm_normalize_nonneg_iff H).mpr h1, h2, rfl⟩]
+    (h : Id.run (sturmRegion c d (o.normalize H).sturm dom) = .ok r) (hs : 0 ≤ o.sturm) :
+    Id.run (Sturm.chain c d) ≠ none := fun hc ↦ by
+  simp [(run_sturmRegion_eq_error_iff ..).mpr ⟨(o.sturm_normalize_nonneg_iff H).mpr hs, hc, rfl⟩]
     at h
 
 end Ratpoints

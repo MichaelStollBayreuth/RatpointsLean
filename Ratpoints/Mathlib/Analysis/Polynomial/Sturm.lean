@@ -9,6 +9,8 @@ public import Mathlib.Data.List.SignVariations
 public import Ratpoints.Mathlib.Algebra.Polynomial.Sturm.Sequence
 public import Ratpoints.Mathlib.Analysis.Polynomial.Order
 
+import Ratpoints.Mathlib.Algebra.Polynomial.Eval.Coeff
+
 /-!
 # The sign variations of positive multiples and of polynomials near infinity
 
@@ -20,7 +22,10 @@ the Sturm sequence of its first two entries, have the same sign variations at ev
 `Polynomial.signVariations_map_neg_one_pow_mul_leadingCoeff_eq_of_forall₂`); and far right, the sign
 variations of a list of nonzero polynomials at a point are those of their leading coefficients, and
 far left those of their leading coefficients, each times `(-1) ^ deg`
-(`Polynomial.eventually_atTop_signVariations`, `Polynomial.eventually_atBot_signVariations`).
+(`Polynomial.eventually_atTop_signVariations`, `Polynomial.eventually_atBot_signVariations`). The
+image of a rational polynomial in an ordered field has at a rational point the sign of the value of
+the polynomial (`Polynomial.sign_eval_map_ratCastHom`), so that a remainder chain computed over `ℚ`
+has the signs of its image over `ℝ`.
 
 ## Implementation notes
 
@@ -30,7 +35,9 @@ The file has no Mathlib sibling: Mathlib has the Sturm sequence
 Sturm's theorem nor a file that imports both. So the file chooses its imports: the sign
 variations, and the mirrors of the Sturm sequence (`Polynomial.PosAssoc`) and of the eventual signs
 of polynomials (`Mathlib.Analysis.Polynomial.Order`, which brings the filters and the ordered
-normed fields of the statements).
+normed fields of the statements), and for its proofs the mirror of
+`Mathlib.Algebra.Polynomial.Eval.Coeff`, with the values of the images of polynomials at rational
+points (`Polynomial.eval_ratCast_map`).
 -/
 
 @[expose] public section
@@ -117,6 +124,14 @@ theorem eventually_atBot_signVariations {ps : List 𝕜[X]} (h : ∀ p ∈ ps, p
   simpa only [List.map_map, Function.comp_def] using List.map_congr_left hx
 
 end OrderTopology
+
+/-- The sign of the value of the image of a rational polynomial in an ordered field at a rational
+point is the sign of the value of the polynomial. -/
+theorem sign_eval_map_ratCastHom {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+    (p : ℚ[X]) (q : ℚ) :
+    SignType.sign ((p.map (Rat.castHom K)).eval (q : K)) = SignType.sign (p.eval q) := by
+  rw [eval_ratCast_map]
+  simp only [sign_apply, Rat.coe_castHom, Rat.cast_id, Rat.cast_pos, Rat.cast_lt_zero]
 
 end Polynomial
 

@@ -23,11 +23,10 @@ and `0 ≤ e ≤ 55`, increasing, whose midpoints (`Ratpoints.Sturm.midpoint`) t
 without overflow strictly between the ends (`Ratpoints.Sturm.EndsWF.halves`); the doubles
 `ldexp((double)n, -e)` of the ends are exact, `±2 ^ 63` at infinity
 (`Ratpoints.Sturm.EndsWF.hasValue_left`), so that the intervals it keeps, joined where one ends at
-the beginning of the next
-(`Ratpoints.Sturm.forall_isInterval_and_pairwise_addInterval_and_back?_eq`), are closed, increasing
-and strictly apart (`Ratpoints.Sturm.iterate_wf`). Their intersection with well-formed intervals of
-the caller (`Ratpoints.Sturm.intersectList`, the loop of `Ratpoints.Sturm.intersect`) is well
-formed, inside both, and holds every value that lies in both
+the beginning of the next (`Ratpoints.Sturm.AreIntervals.addInterval`), are closed, increasing and
+strictly apart (`Ratpoints.Sturm.AreIntervals`, `Ratpoints.Sturm.iterate_wf`). Their intersection
+with well-formed intervals of the caller (`Ratpoints.Sturm.intersectList`, the loop of
+`Ratpoints.Sturm.intersect`) is well formed, inside both, and holds every value that lies in both
 (`Ratpoints.Sturm.intervalsWF_intersectList`,
 `Ratpoints.Sturm.inIntervals_of_inIntervals_intersectList`,
 `Ratpoints.Sturm.inIntervals_intersectList`); hence the Sturm step leaves well-formed intervals
@@ -40,6 +39,8 @@ inside the caller's (`Ratpoints.Sturm.computeSturm_wf`).
 * `Ratpoints.Sturm.EndsWF`: the intervals that the bisection meets at a depth.
 * `Ratpoints.Sturm.IsInterval`, `Ratpoints.Sturm.EndsBefore`: an interval of doubles without a NaN
   whose ends are in order, and one interval ending strictly before another begins.
+* `Ratpoints.Sturm.AreIntervals`: intervals of doubles without a NaN, increasing and strictly apart,
+  equivalently well formed (`Ratpoints.Sturm.intervalsWF_domainBits_iff`).
 
 ## Main statements
 
@@ -265,16 +266,22 @@ theorem endsWF_right_inf {depth : ℕ} {nl : Int64} (hd : depth ≤ 55) (h1 : 1 
   linarith
 
 theorem endsWF_finite {depth : ℕ} {nl nr del der : Int64} (hd : depth ≤ 55) (h1 : 1 ≤ depth)
-    (hp : 0 ≤ del.toInt ∧ del.toInt ≤ depth) (hq : 0 ≤ der.toInt ∧ der.toInt ≤ depth)
-    (heq : del = der → del = 0)
+    (hp0 : 0 ≤ del.toInt) (hpd : del.toInt ≤ depth) (hq0 : 0 ≤ der.toInt)
+    (hqd : der.toInt ≤ depth) (heq : del = der → del = 0)
     (hA : 4 * |nl.toInt| * 2 ^ (der.toInt - del.toInt).toNat ≤ 2 ^ depth)
     (hB : 4 * |nr.toInt| * 2 ^ (del.toInt - der.toInt).toNat ≤ 2 ^ depth)
     (hlt : nl.toInt * 2 ^ der.toInt.toNat < nr.toInt * 2 ^ del.toInt.toNat) :
     EndsWF depth nl nr del der := by
   obtain ⟨hl1, hl2⟩ := ne_longMax_of_natAbs_le (natAbs_le_of_four_mul_le hd hA)
   obtain ⟨hr1, hr2⟩ := ne_longMax_of_natAbs_le (natAbs_le_of_four_mul_le hd hB)
-  exact ⟨.inr (.inr (.inr ⟨hl2, hr1, heq⟩)), hl1, hr2, hp.1, hq.1, hp.2, hq.2, fun _ ↦ ⟨h1, hA⟩,
-    fun _ ↦ ⟨h1, hB⟩, (endValue_lt_endValue_iff hl1 hl2 hr1 hr2 hp.1 hq.1).mpr hlt⟩
+  exact ⟨.inr (.inr (.inr ⟨hl2, hr1, heq⟩)), hl1, hr2, hp0, hq0, hpd, hqd, fun _ ↦ ⟨h1, hA⟩,
+    fun _ ↦ ⟨h1, hB⟩, (endValue_lt_endValue_iff hl1 hl2 hr1 hr2 hp0 hq0).mpr hlt⟩
+
+theorem endsWF_finite_zero {depth : ℕ} {nl nr : Int64} (hd : depth ≤ 55) (h1 : 1 ≤ depth)
+    (hA : 4 * |nl.toInt| ≤ 2 ^ depth) (hB : 4 * |nr.toInt| ≤ 2 ^ depth)
+    (hlt : nl.toInt < nr.toInt) : EndsWF depth nl nr 0 0 :=
+  endsWF_finite hd h1 (by simp) (by simp) (by simp) (by simp) (fun _ ↦ rfl) (by simpa using hA)
+    (by simpa using hB) (by simpa using hlt)
 
 /-! ### The midpoint -/
 
@@ -320,16 +327,11 @@ theorem EndsWF.midpoint_left_inf {depth : ℕ} {nr del der : Int64}
   obtain ⟨h1, hB⟩ := h.bound_right hr
   simp only [Int64.toInt_zero, sub_self, Int.toNat_zero, pow_zero, mul_one] at hB
   have hM := toInt_ite_two_mul (-1) (h.natAbs_right_le (by lia) hr)
-  have hp : (2 : ℤ) ^ (depth + 1) = 2 * 2 ^ depth := pow_succ' 2 depth
-  have h4 : (4 : ℤ) ≤ 2 ^ (depth + 1) :=
-    le_trans (by norm_num) (pow_le_pow_right₀ (by norm_num) (by lia : 2 ≤ depth + 1))
+  have h4 : (2 : ℤ) ^ 2 ≤ 2 ^ (depth + 1) := pow_le_pow_right₀ one_le_two (by lia)
   rw [midpoint_of_left_inf 0 0 hr]
-  have h0 : 0 ≤ (0 : Int64).toInt ∧ (0 : Int64).toInt ≤ ↑(depth + 1) := by
-    simp only [Int64.toInt_zero]; lia
-  refine ⟨endsWF_left_inf (by lia) (by lia) ?_ ?_, endsWF_finite (by lia) (by lia) h0 h0
-    (fun _ ↦ rfl) ?_ ?_ ?_⟩ <;> simp only [hM, Int64.toInt_zero, sub_self,
-      Int.toNat_zero, pow_zero, mul_one, show (-1 : Int64).toInt = -1 by decide] <;>
-    (try split_ifs) <;>
+  refine ⟨endsWF_left_inf (by lia) (by lia) ?_ ?_,
+    endsWF_finite_zero (by lia) (by lia) ?_ ?_ ?_⟩ <;>
+    (try simp only [hM, show (-1 : Int64).toInt = -1 by decide]) <;> (try split_ifs) <;>
     (try simp only [abs_neg, abs_one, abs_mul, abs_two]) <;> lia
 
 theorem EndsWF.midpoint_right_inf {depth : ℕ} {nl del der : Int64}
@@ -342,57 +344,42 @@ theorem EndsWF.midpoint_right_inf {depth : ℕ} {nl del der : Int64}
   obtain ⟨h1, hA⟩ := h.bound_left hl
   simp only [Int64.toInt_zero, sub_self, Int.toNat_zero, pow_zero, mul_one] at hA
   have hM := toInt_ite_two_mul 1 (h.natAbs_left_le (by lia) hl)
-  have hp : (2 : ℤ) ^ (depth + 1) = 2 * 2 ^ depth := pow_succ' 2 depth
-  have h4 : (4 : ℤ) ≤ 2 ^ (depth + 1) :=
-    le_trans (by norm_num) (pow_le_pow_right₀ (by norm_num) (by lia : 2 ≤ depth + 1))
+  have h4 : (2 : ℤ) ^ 2 ≤ 2 ^ (depth + 1) := pow_le_pow_right₀ one_le_two (by lia)
   rw [midpoint_of_right_inf 0 0 hl]
-  have h0 : 0 ≤ (0 : Int64).toInt ∧ (0 : Int64).toInt ≤ ↑(depth + 1) := by
-    simp only [Int64.toInt_zero]; lia
-  refine ⟨endsWF_finite (by lia) (by lia) h0 h0 (fun _ ↦ rfl) ?_ ?_ ?_,
-    endsWF_right_inf (by lia) (by lia) ?_ ?_⟩ <;> simp only [hM, Int64.toInt_zero, sub_self,
-      Int.toNat_zero, pow_zero, mul_one, show (1 : Int64).toInt = 1 by decide] <;>
-    (try split_ifs) <;> (try simp only [abs_one, abs_mul, abs_two]) <;> lia
+  refine ⟨endsWF_finite_zero (by lia) (by lia) ?_ ?_ ?_,
+    endsWF_right_inf (by lia) (by lia) ?_ ?_⟩ <;>
+    (try simp only [hM, show (1 : Int64).toInt = 1 by decide]) <;> (try split_ifs) <;>
+    (try simp only [abs_one, abs_mul, abs_two]) <;> lia
 
 /-- The halves of a finite interval `[a, b]` with the exponents `0` at its midpoint `m`,
 `2 m = a + b`, when `a + b` is even. -/
-theorem endsWF_halves_of_even {depth : ℕ} {nl nr m : Int64} (hd : depth < 55) (h1 : 1 ≤ depth)
+theorem endsWF_halves_of_even {depth : ℕ} {nl nr m : Int64} (hd : depth < 55)
     (hA : 4 * (nl.toInt.natAbs : ℤ) ≤ 2 ^ depth) (hB : 4 * (nr.toInt.natAbs : ℤ) ≤ 2 ^ depth)
     (hlt : nl.toInt < nr.toInt) (hm : 2 * m.toInt = nl.toInt + nr.toInt) :
     EndsWF (depth + 1) nl m 0 0 ∧ EndsWF (depth + 1) m nr 0 0 := by
-  have hp : (2 : ℤ) ^ (depth + 1) = 2 * 2 ^ depth := pow_succ' 2 depth
-  have h4 : (4 : ℤ) ≤ 2 ^ (depth + 1) :=
-    le_trans (by norm_num) (pow_le_pow_right₀ (by norm_num) (by lia : 2 ≤ depth + 1))
-  have h0 : 0 ≤ (0 : Int64).toInt ∧ (0 : Int64).toInt ≤ ↑(depth + 1) := by
-    simp only [Int64.toInt_zero]; lia
-  refine ⟨endsWF_finite (by lia) (by lia) h0 h0 (fun _ ↦ rfl) ?_ ?_ ?_,
-    endsWF_finite (by lia) (by lia) h0 h0 (fun _ ↦ rfl) ?_ ?_ ?_⟩ <;>
-  simp only [Int64.toInt_zero, sub_self, Int.toNat_zero, pow_zero, mul_one,
-    Int.abs_eq_natAbs] <;> lia
+  refine ⟨endsWF_finite_zero (by lia) (by lia) ?_ ?_ ?_,
+    endsWF_finite_zero (by lia) (by lia) ?_ ?_ ?_⟩ <;> (try simp only [Int.abs_eq_natAbs]) <;>
+    lia
 
 /-- The halves of a finite interval `[a, b]` with the exponents `0` at its midpoint `(a + b) / 2`
 with the exponent `1`, when `a + b` is odd. -/
-theorem endsWF_halves_of_odd {depth : ℕ} {nl nr m : Int64} (hd : depth < 55) (h1 : 1 ≤ depth)
+theorem endsWF_halves_of_odd {depth : ℕ} {nl nr m : Int64} (hd : depth < 55)
     (hA : 4 * (nl.toInt.natAbs : ℤ) ≤ 2 ^ depth) (hB : 4 * (nr.toInt.natAbs : ℤ) ≤ 2 ^ depth)
     (hlt : nl.toInt < nr.toInt) (hm : m.toInt = nl.toInt + nr.toInt) :
     EndsWF (depth + 1) nl m 0 1 ∧ EndsWF (depth + 1) m nr 1 0 := by
-  have hp : (2 : ℤ) ^ (depth + 1) = 2 * 2 ^ depth := pow_succ' 2 depth
-  have h4 : (4 : ℤ) ≤ 2 ^ (depth + 1) :=
-    le_trans (by norm_num) (pow_le_pow_right₀ (by norm_num) (by lia : 2 ≤ depth + 1))
-  have h0 : 0 ≤ (0 : Int64).toInt ∧ (0 : Int64).toInt ≤ ↑(depth + 1) := by
-    simp only [Int64.toInt_zero]; lia
-  have h01 : 0 ≤ (1 : Int64).toInt ∧ (1 : Int64).toInt ≤ ↑(depth + 1) := by
-    simp only [show (1 : Int64).toInt = 1 by decide]; lia
-  refine ⟨endsWF_finite (by lia) (by lia) h0 h01 (fun _ ↦ rfl) ?_ ?_ ?_,
-    endsWF_finite (by lia) (by lia) h01 h0 id ?_ ?_ ?_⟩ <;>
-  simp only [hm, Int64.toInt_zero, show (1 : Int64).toInt = 1 by decide, sub_zero, zero_sub,
-    Int.toNat_one, pow_one, Int.toNat_zero, pow_zero, mul_one, Int.abs_eq_natAbs] <;> lia
+  have h0 : (0 : Int64).toInt = 0 := Int64.toInt_zero
+  have h1 : (1 : Int64).toInt = 1 := by decide
+  refine ⟨endsWF_finite (by lia) (by lia) (by lia) (by lia) (by lia) (by lia) (fun _ ↦ rfl)
+    ?_ ?_ ?_, endsWF_finite (by lia) (by lia) (by lia) (by lia) (by lia) (by lia) id ?_ ?_ ?_⟩ <;>
+  simp only [hm, h0, h1, sub_zero, zero_sub, Int.toNat_one, pow_one, Int.toNat_zero, pow_zero,
+    mul_one, Int.abs_eq_natAbs] <;> lia
 
 theorem EndsWF.midpoint_eq {depth : ℕ} {nl nr del : Int64} (h : EndsWF depth nl nr del del)
     (hd : depth < 55) (hl : nl ≠ -longMax) (hr : nr ≠ longMax) :
     EndsWF (depth + 1) nl (midpoint nl nr del del).1 del (midpoint nl nr del del).2 ∧
       EndsWF (depth + 1) (midpoint nl nr del del).1 nr (midpoint nl nr del del).2 del := by
   obtain rfl : del = 0 := by rcases h.shape with h' | h' | h' | h' <;> grind
-  obtain ⟨h1, hA⟩ := h.bound_left hl
+  obtain ⟨-, hA⟩ := h.bound_left hl
   obtain ⟨-, hB⟩ := h.bound_right hr
   have hlt := (endValue_lt_endValue_iff h.left_ne hl hr h.right_ne (by simp) (by simp)).mp h.lt
   simp only [Int64.toInt_zero, sub_self, Int.toNat_zero, pow_zero, mul_one,
@@ -404,9 +391,9 @@ theorem EndsWF.midpoint_eq {depth : ℕ} {nl nr del : Int64} (h : EndsWF depth n
   by_cases hev : (nl + nr) &&& 1 = 0
   · have := congr(Int64.toInt $hev)
     rw [Int64.toInt_and_one, hs, Int64.toInt_zero] at this
-    simpa only [hev, ↓reduceIte] using endsWF_halves_of_even hd h1 hA hB hlt
+    simpa only [hev, ↓reduceIte] using endsWF_halves_of_even hd hA hB hlt
       (by rw [Int64.toInt_shiftRight_one, hs]; lia)
-  · simpa only [hev, ↓reduceIte] using endsWF_halves_of_odd hd h1 hA hB hlt hs
+  · simpa only [hev, ↓reduceIte] using endsWF_halves_of_odd hd hA hB hlt hs
 
 -- The halves of `[a, b X]` at its midpoint `a + b X`, scaled by `2 Q X`, for the bisection.
 private theorem lt_and_lt_of_lt_mul {a b X Q : ℤ} (hQ : 0 < Q) (hX : 0 < X) (h : a < b * X) :
@@ -429,13 +416,13 @@ theorem endsWF_halves_of_lt {depth k : ℕ} {nl nr m del der dem : Int64} (hd : 
     rw [← pow_add]; congr 1; lia
   have hP1 : (2 : ℤ) ^ dem.toInt.toNat = 2 * (2 ^ der.toInt.toNat * 2 ^ (k + 1)) := by
     rw [← hP, ← pow_succ']; congr 1; lia
-  have hd1 : (2 : ℤ) ^ (depth + 1) = 2 * 2 ^ depth := by ring
+  have hd1 : (2 : ℤ) ^ (depth + 1) = 2 * 2 ^ depth := pow_succ' 2 depth
   have hab' := abs_add_le nl.toInt (nr.toInt * 2 ^ (k + 1))
   have hbX : |nr.toInt * 2 ^ (k + 1)| = |nr.toInt| * 2 ^ (k + 1) := by rw [abs_mul, abs_of_pos hX0]
   have hab := lt_and_lt_of_lt_mul (Q := 2 ^ der.toInt.toNat) (by positivity) hX0 hlt
-  refine ⟨endsWF_finite (by lia) (by lia) ⟨by lia, by lia⟩ ⟨by lia, by lia⟩
+  refine ⟨endsWF_finite (by lia) (by lia) (by lia) (by lia) (by lia) (by lia)
     (fun h' ↦ absurd congr(Int64.toInt $h') (by lia)) ?_ ?_ ?_,
-    endsWF_finite (by lia) (by lia) ⟨by lia, by lia⟩ ⟨hq, by lia⟩
+    endsWF_finite (by lia) (by lia) (by lia) (by lia) hq (by lia)
     (fun h' ↦ absurd congr(Int64.toInt $h') (by lia)) ?_ ?_ ?_⟩ <;>
   simp only [hm, hP1, hP, show (dem.toInt - del.toInt).toNat = 1 by lia,
     show (del.toInt - dem.toInt).toNat = 0 by lia, show (der.toInt - dem.toInt).toNat = 0 by lia,
@@ -504,13 +491,13 @@ theorem endsWF_halves_of_gt {depth k : ℕ} {nl nr m del der dem : Int64} (hd : 
     rw [← pow_add]; congr 1; lia
   have hP1 : (2 : ℤ) ^ dem.toInt.toNat = 2 * (2 ^ del.toInt.toNat * 2 ^ (k + 1)) := by
     rw [← hP, ← pow_succ']; congr 1; lia
-  have hd1 : (2 : ℤ) ^ (depth + 1) = 2 * 2 ^ depth := by ring
+  have hd1 : (2 : ℤ) ^ (depth + 1) = 2 * 2 ^ depth := pow_succ' 2 depth
   have hab' := abs_add_le (nl.toInt * 2 ^ (k + 1)) nr.toInt
   have haX : |nl.toInt * 2 ^ (k + 1)| = |nl.toInt| * 2 ^ (k + 1) := by rw [abs_mul, abs_of_pos hX0]
   have hab := lt_and_lt_of_mul_lt (P := 2 ^ del.toInt.toNat) (by positivity) hX0 hlt
-  refine ⟨endsWF_finite (by lia) (by lia) ⟨hp, by lia⟩ ⟨by lia, by lia⟩
+  refine ⟨endsWF_finite (by lia) (by lia) hp (by lia) (by lia) (by lia)
     (fun h' ↦ absurd congr(Int64.toInt $h') (by lia)) ?_ ?_ ?_,
-    endsWF_finite (by lia) (by lia) ⟨by lia, by lia⟩ ⟨by lia, by lia⟩
+    endsWF_finite (by lia) (by lia) (by lia) (by lia) (by lia) (by lia)
     (fun h' ↦ absurd congr(Int64.toInt $h') (by lia)) ?_ ?_ ?_⟩ <;>
   simp only [hm, hP1, hP, show (dem.toInt - der.toInt).toNat = 1 by lia,
     show (der.toInt - dem.toInt).toNat = 0 by lia, show (del.toInt - dem.toInt).toNat = 0 by lia,
@@ -574,16 +561,6 @@ theorem EndsWF.halves {depth : ℕ} {nl nr del der : Int64} (h : EndsWF depth nl
       exact h.midpoint_eq hd hl hr
     · exact h.midpoint_lt hd hl hr (Int64.lt_iff_toInt_lt.mpr h')
 
-/-- The midpoint of an interval of the bisection at a depth below `55` is finite and lies strictly
-between its ends. -/
-theorem EndsWF.lt_midpoint_and_midpoint_lt {depth : ℕ} {nl nr del der : Int64}
-    (h : EndsWF depth nl nr del der) (hd : depth < 55) :
-    endValue nl del < endValue (midpoint nl nr del der).1 (midpoint nl nr del der).2 ∧
-      endValue (midpoint nl nr del der).1 (midpoint nl nr del der).2 < endValue nr der ∧
-      (midpoint nl nr del der).1 ≠ longMax ∧ (midpoint nl nr del der).1 ≠ -longMax :=
-  ⟨(h.halves hd).1.lt, (h.halves hd).2.lt, (h.halves hd).2.left_ne,
-    (h.halves hd).1.right_ne⟩
-
 /-- An interval of doubles whose ends are not NaNs and whose lower end is at most its upper end, by
 their values. -/
 def IsInterval (i : Double × Double) : Prop :=
@@ -592,6 +569,14 @@ def IsInterval (i : Double × Double) : Prop :=
 /-- The relation of two intervals of doubles of which the first ends strictly before the second
 begins, by the values of their ends. -/
 def EndsBefore (i j : Double × Double) : Prop := doubleValue i.2.bits < doubleValue j.1.bits
+
+/-- Intervals of doubles without a NaN, each with its ends in order, increasing and strictly apart,
+by the values of their ends. -/
+def AreIntervals (l : List (Double × Double)) : Prop :=
+  (∀ i ∈ l, IsInterval i) ∧ l.Pairwise EndsBefore
+
+theorem AreIntervals.nil : AreIntervals [] :=
+  ⟨by simp, .nil⟩
 
 theorem addInterval_eq (iv : Array (Double × Double)) (nl nr del der : Int64) :
     addInterval iv nl nr del der = match iv.back? with
@@ -602,10 +587,9 @@ theorem addInterval_eq (iv : Array (Double × Double)) (nl nr del der : Int64) :
       | none => iv.push ((Double.ofInt64 nl).ldexp (-del.toInt),
           (Double.ofInt64 nr).ldexp (-der.toInt)) := rfl
 
-theorem forall_isInterval_and_pairwise_append_singleton {l : List (Double × Double)}
-    {x : Double × Double} (hl : (∀ i ∈ l, IsInterval i) ∧ l.Pairwise EndsBefore) (hx : IsInterval x)
-    (hlx : ∀ i ∈ l, EndsBefore i x) :
-    (∀ i ∈ l ++ [x], IsInterval i) ∧ (l ++ [x]).Pairwise EndsBefore := by
+theorem AreIntervals.append_singleton {l : List (Double × Double)} {x : Double × Double}
+    (hl : AreIntervals l) (hx : IsInterval x) (hlx : ∀ i ∈ l, EndsBefore i x) :
+    AreIntervals (l ++ [x]) := by
   refine ⟨fun i hi ↦ ?_, List.pairwise_append.mpr ⟨hl.2, by simp, fun i hi j hj ↦ ?_⟩⟩
   · rcases List.mem_append.mp hi with hi | hi
     exacts [hl.1 i hi, List.mem_singleton.mp hi ▸ hx]
@@ -613,10 +597,9 @@ theorem forall_isInterval_and_pairwise_append_singleton {l : List (Double × Dou
 
 /-- Every interval of increasing intervals strictly apart ends at the end of the last at the
 latest. -/
-theorem le_of_mem_of_back?_eq_some {iv : Array (Double × Double)}
-    (hiv : (∀ i ∈ iv.toList, IsInterval i) ∧ iv.toList.Pairwise EndsBefore) {x : Double × Double}
-    (hx : iv.back? = some x) {i : Double × Double} (hi : i ∈ iv.toList) :
-    doubleValue i.2.bits ≤ doubleValue x.2.bits := by
+theorem AreIntervals.le_of_back?_eq_some {iv : Array (Double × Double)}
+    (hiv : AreIntervals iv.toList) {x : Double × Double} (hx : iv.back? = some x)
+    {i : Double × Double} (hi : i ∈ iv.toList) : doubleValue i.2.bits ≤ doubleValue x.2.bits := by
   obtain ⟨ys, rfl⟩ := Array.back?_eq_some_iff.mp hx
   rw [Array.toList_push] at hi hiv
   rcases List.mem_append.mp hi with hi | hi
@@ -626,64 +609,62 @@ theorem le_of_mem_of_back?_eq_some {iv : Array (Double × Double)}
 
 /-- The join of the interval up to `u` to the last interval kept, from `lo` to `up`, keeps the
 intervals increasing and strictly apart when `u` lies above `up`. -/
-theorem addInterval_join {iv : Array (Double × Double)}
-    (hiv : (∀ i ∈ iv.toList, IsInterval i) ∧ iv.toList.Pairwise EndsBefore) {lo up u : Double}
-    (hback : iv.back? = some (lo, up)) (hu : u.isNaN = false)
+theorem AreIntervals.pop_push {iv : Array (Double × Double)} (hiv : AreIntervals iv.toList)
+    {lo up u : Double} (hback : iv.back? = some (lo, up)) (hu : u.isNaN = false)
     (hlt : doubleValue up.bits ≤ doubleValue u.bits) :
-    (∀ i ∈ (iv.pop.push (lo, u)).toList, IsInterval i) ∧
-      (iv.pop.push (lo, u)).toList.Pairwise EndsBefore := by
+    AreIntervals (iv.pop.push (lo, u)).toList := by
   obtain ⟨ys, rfl⟩ := Array.back?_eq_some_iff.mp hback
   rw [Array.toList_push] at hiv
   rw [Array.pop_push, Array.toList_push]
   have hlo := hiv.1 (lo, up) (by simp)
-  refine forall_isInterval_and_pairwise_append_singleton ⟨fun i hi ↦ hiv.1 i (by simp [hi]),
+  refine AreIntervals.append_singleton ⟨fun i hi ↦ hiv.1 i (by simp [hi]),
     (List.pairwise_append.mp hiv.2).1⟩ ⟨hlo.1, hu, hlo.2.2.trans hlt⟩ fun i hi ↦ ?_
   exact (List.pairwise_append.mp hiv.2).2.2 i hi (lo, up) (by simp)
 
-/-- A new last interval `x` after increasing intervals strictly apart that end before a value
-`L ≤ x.1` keeps them so. -/
-theorem push_of_back?_lt {iv : Array (Double × Double)}
-    (hiv : (∀ i ∈ iv.toList, IsInterval i) ∧ iv.toList.Pairwise EndsBefore) {y x : Double × Double}
-    (hback : iv.back? = some y) (hx : IsInterval x)
-    (hlt : doubleValue y.2.bits < doubleValue x.1.bits) :
-    (∀ i ∈ (iv.push x).toList, IsInterval i) ∧ (iv.push x).toList.Pairwise EndsBefore := by
+/-- A new last interval `x` after increasing intervals strictly apart that end before `x` begins
+keeps them so. -/
+theorem AreIntervals.push {iv : Array (Double × Double)} (hiv : AreIntervals iv.toList)
+    {y x : Double × Double} (hback : iv.back? = some y) (hx : IsInterval x)
+    (hlt : doubleValue y.2.bits < doubleValue x.1.bits) : AreIntervals (iv.push x).toList := by
   rw [Array.toList_push]
-  exact forall_isInterval_and_pairwise_append_singleton hiv hx fun i hi ↦
-    (le_of_mem_of_back?_eq_some hiv hback hi).trans_lt hlt
+  exact hiv.append_singleton hx fun i hi ↦ (hiv.le_of_back?_eq_some hback hi).trans_lt hlt
+
+/-- The last interval kept after the bisection adds the interval up to `u` ends at `u`, whether
+it is the new interval or the join of it to the last interval before. -/
+theorem snd_eq_of_mem_back?_addInterval (iv : Array (Double × Double)) (nl nr del der : Int64) :
+    ∀ i ∈ (addInterval iv nl nr del der).back?, i.2 = (Double.ofInt64 nr).ldexp (-der.toInt) := by
+  rw [addInterval_eq]
+  split
+  · split <;> simp
+  · simp
 
 /-- The intervals kept stay increasing and strictly apart when the bisection adds the interval from
 `l` to `u` (their values `L < U`) after kept intervals that end at `L` at the latest, joining it
-to the last of them when that ends at `L`; they end at `U` then. -/
-theorem forall_isInterval_and_pairwise_addInterval_and_back?_eq {iv : Array (Double × Double)}
-    {nl nr del der : Int64} {L U : ℚ}
-    (hiv : (∀ i ∈ iv.toList, IsInterval i) ∧ iv.toList.Pairwise EndsBefore)
+to the last of them when that ends at `L`. -/
+theorem AreIntervals.addInterval {iv : Array (Double × Double)} {nl nr del der : Int64} {L U : ℚ}
+    (hiv : AreIntervals iv.toList)
     (hb : ∀ i ∈ iv.back?, doubleValue i.2.bits ≤ (L : WithBotTop ℚ))
     (hl : HasValue ((Double.ofInt64 nl).ldexp (-del.toInt)) L)
-    (hu : HasValue ((Double.ofInt64 nr).ldexp (-der.toInt)) U)
-    (hLU : L < U) :
-    ((∀ i ∈ (addInterval iv nl nr del der).toList, IsInterval i) ∧
-      (addInterval iv nl nr del der).toList.Pairwise EndsBefore) ∧
-      ∀ i ∈ (addInterval iv nl nr del der).back?, doubleValue i.2.bits = (U : WithBotTop ℚ) := by
+    (hu : HasValue ((Double.ofInt64 nr).ldexp (-der.toInt)) U) (hLU : L < U) :
+    AreIntervals (addInterval iv nl nr del der).toList := by
   have hLU' : (L : WithBotTop ℚ) < U := WithBotTop.coe_lt_coe.mpr hLU
   have hx : IsInterval ((Double.ofInt64 nl).ldexp (-del.toInt),
       (Double.ofInt64 nr).ldexp (-der.toInt)) := ⟨hl.1, hu.1, by rw [hl.2, hu.2]; exact hLU'.le⟩
   rw [addInterval_eq]
   rcases hback : iv.back? with _ | ⟨lo, up⟩
   · obtain rfl : iv = #[] := by simpa using hback
-    refine ⟨?_, by simp [hu.2]⟩
-    rw [Array.toList_push]
-    exact forall_isInterval_and_pairwise_append_singleton (by simp) hx (by simp)
+    exact AreIntervals.nil.append_singleton hx nofun
   have hup : doubleValue up.bits ≤ L := hb (lo, up) (by simp [hback])
   have hlo := hiv.1 (lo, up) (Array.mem_toList_iff.mpr (Array.mem_of_back? hback))
   by_cases hbeq : up.beq ((Double.ofInt64 nl).ldexp (-del.toInt)) = true
   · have hv : doubleValue up.bits = L := by
       rw [← hl.2]; exact (Double.beq_eq_true_iff hlo.2.1 hl.1).mp hbeq
     simp only [hbeq, ↓reduceIte]
-    refine ⟨addInterval_join hiv hback hu.1 (by rw [hv, hu.2]; exact hLU'.le), by simp [hu.2]⟩
+    exact hiv.pop_push hback hu.1 (by rw [hv, hu.2]; exact hLU'.le)
   · have hv : doubleValue up.bits < L := lt_of_le_of_ne hup fun h ↦ hbeq <| by
       rw [Double.beq_eq_true_iff hlo.2.1 hl.1, hl.2, h]
     simp only [hbeq, Bool.false_eq_true, ↓reduceIte]
-    exact ⟨push_of_back?_lt hiv hback hx (hv.trans_le hl.2.ge), by simp [hu.2]⟩
+    exact hiv.push hback hx (hv.trans_le hl.2.ge)
 
 /-- What the intervals kept hold stays held when the bisection adds an interval up to `u` after
 them, with the value `U` above `L`, the last of them ending at `L` at the latest: the join extends
@@ -741,23 +722,18 @@ at the depth `depth ≤ iter ≤ 55`, after kept intervals that end at its lower
 increasing and strictly apart and end at its upper end at the latest. -/
 theorem iterate_wf {rows : Array (Array ℤ)} {k iter : ℕ} {nl nr del der : Int64} {cleft cright : ℕ}
     {sl sr : ℤ} {depth : ℕ} {acc : Array (Double × Double)} (hE : EndsWF depth nl nr del der)
-    (hit : iter ≤ 55) (hd : depth ≤ iter)
-    (hacc : (∀ i ∈ acc.toList, IsInterval i) ∧ acc.toList.Pairwise EndsBefore)
+    (hit : iter ≤ 55) (hd : depth ≤ iter) (hacc : AreIntervals acc.toList)
     (hb : ∀ i ∈ acc.back?, doubleValue i.2.bits ≤ (endValue nl del : WithBotTop ℚ)) :
-    ((∀ i ∈ (Id.run (iterate rows k iter nl nr del der cleft cright sl sr depth acc)).toList,
-        IsInterval i) ∧
-      (Id.run (iterate rows k iter nl nr del der cleft cright sl sr depth acc)).toList.Pairwise
-        EndsBefore) ∧
+    AreIntervals (Id.run (iterate rows k iter nl nr del der cleft cright sl sr depth acc)).toList ∧
       ∀ i ∈ (Id.run (iterate rows k iter nl nr del der cleft cright sl sr depth acc)).back?,
         doubleValue i.2.bits ≤ (endValue nr der : WithBotTop ℚ) := by
   fun_induction iterate rows k iter nl nr del der cleft cright sl sr depth acc with
   | case1 => exact ⟨hacc, fun i hi ↦ (hb i hi).trans (WithBotTop.coe_le_coe.mpr hE.lt.le)⟩
   | case2 =>
-    obtain ⟨h1, h2⟩ := forall_isInterval_and_pairwise_addInterval_and_back?_eq hacc hb
-      (hE.hasValue_left (by lia)) (hE.hasValue_right (by lia)) hE.lt
-    exact ⟨h1, fun i hi ↦ (h2 i hi).le⟩
+    refine ⟨hacc.addInterval hb (hE.hasValue_left (by lia)) (hE.hasValue_right (by lia)) hE.lt,
+      fun i hi ↦ ?_⟩
+    rw [snd_eq_of_mem_back?_addInterval _ _ _ _ _ i hi, (hE.hasValue_right (by lia)).2]
   | case3 nl nr del der cleft cright sl sr depth acc _ hk nm dem hm ih2 ih1 =>
-    have hd' : depth < iter := by lia
     obtain ⟨hL, hR⟩ := hE.halves (by lia)
     rw [hm] at hL hR
     simp only [Id.run_bind]
@@ -765,8 +741,16 @@ theorem iterate_wf {rows : Array (Array ℤ)} {k iter : ℕ} {nl nr del der : In
     obtain ⟨h1, h2⟩ := ih2 s0 s1 cmid hL (by lia) hacc hb
     simpa only [dite_eq_ite] using ih1 s0 s1 cmid _ hR (by lia) h1 h2
 
-theorem intervalsWF_domainBits_iff_pairwise (l : List (Double × Double)) :
-    IntervalsWF (domainBits l) ↔ (∀ i ∈ l, IsInterval i) ∧ l.Pairwise EndsBefore := by
+/-- The first call of the bisection, on the whole line at the depth `0` with no interval kept so
+far, keeps intervals increasing and strictly apart. -/
+theorem areIntervals_run_iterate_zero {rows : Array (Array ℤ)} {k iter cleft cright : ℕ} {sl sr : ℤ}
+    (hit : iter ≤ 55) :
+    AreIntervals
+      (Id.run (iterate rows k iter (-longMax) longMax 0 0 cleft cright sl sr 0 #[])).toList :=
+  (iterate_wf endsWF_zero hit (Nat.zero_le _) .nil nofun).1
+
+theorem intervalsWF_domainBits_iff (l : List (Double × Double)) :
+    IntervalsWF (domainBits l) ↔ AreIntervals l := by
   have h (h1 : ∀ i ∈ l, doubleValue i.1.bits ≤ doubleValue i.2.bits) :
       (domainValues l).IsChain (fun i j ↦ i.2 < j.1) ↔ l.Pairwise EndsBefore := by
     have hm := List.pairwise_map (f := fun i : Double × Double ↦
@@ -775,8 +759,8 @@ theorem intervalsWF_domainBits_iff_pairwise (l : List (Double × Double)) :
       fun hp ↦ (hm.mpr hp).isChain⟩
     obtain ⟨j, hj, rfl⟩ := List.mem_map.mp hi
     exact h1 j hj
-  simp only [IntervalsWF, AreSearchIntervals, domainBits, List.map_map, List.forall_mem_map,
-    Function.comp_def, ← Double.isNaN_eq_false_iff, IsInterval]
+  simp only [IntervalsWF, AreSearchIntervals, AreIntervals, domainBits, List.map_map,
+    List.forall_mem_map, Function.comp_def, ← Double.isNaN_eq_false_iff, IsInterval]
   constructor
   · intro ⟨h0, h1, hc⟩
     exact ⟨fun i hi ↦ ⟨(h0 i hi).1, (h0 i hi).2, h1 _ hi⟩, (h fun i hi ↦ h1 _ hi).mp hc⟩
@@ -965,7 +949,7 @@ theorem length_intersectList_le (as bs : List (Double × Double)) :
 theorem intervalsWF_intersectList {loc ivs : List (Double × Double)}
     (hloc : IntervalsWF (domainBits loc)) (hivs : IntervalsWF (domainBits ivs)) :
     IntervalsWF (domainBits (intersectList loc ivs)) := by
-  rw [intervalsWF_domainBits_iff_pairwise] at hloc hivs ⊢
+  rw [intervalsWF_domainBits_iff] at hloc hivs ⊢
   refine ⟨fun i hi ↦ ?_, pairwise_intersectList hloc.1 hivs.1 hloc.2 hivs.2⟩
   obtain ⟨a, ha, b, hb, h⟩ := exists_of_mem_intersectList hloc.1 hivs.1 hi
   exact isInterval_of_meet_fst_eq_some (hloc.1 a ha) (hivs.1 b hb) h
@@ -979,7 +963,7 @@ theorem inIntervals_of_inIntervals_intersectList {loc ivs : List (Double × Doub
     (hloc : IntervalsWF (domainBits loc)) (hivs : IntervalsWF (domainBits ivs)) {x : ℚ}
     (hx : InIntervals (domainValues (intersectList loc ivs)) x) :
     InIntervals (domainValues loc) x ∧ InIntervals (domainValues ivs) x := by
-  rw [intervalsWF_domainBits_iff_pairwise] at hloc hivs
+  rw [intervalsWF_domainBits_iff] at hloc hivs
   simp only [inIntervals_domainValues_iff] at hx ⊢
   obtain ⟨i, hi, h1, h2⟩ := hx
   obtain ⟨a, ha, b, hb, h⟩ := exists_of_mem_intersectList hloc.1 hivs.1 hi
@@ -990,7 +974,7 @@ theorem inIntervals_intersectList {loc ivs : List (Double × Double)}
     (hloc : IntervalsWF (domainBits loc)) (hivs : IntervalsWF (domainBits ivs)) {x : ℚ}
     (h1 : InIntervals (domainValues loc) x) (h2 : InIntervals (domainValues ivs) x) :
     InIntervals (domainValues (intersectList loc ivs)) x := by
-  rw [intervalsWF_domainBits_iff_pairwise] at hloc hivs
+  rw [intervalsWF_domainBits_iff] at hloc hivs
   rw [inIntervals_domainValues_iff] at h1 h2 ⊢
   exact exists_mem_intersectList hloc.1 hivs.1 hloc.2 hivs.2 h1 h2
 
@@ -1028,13 +1012,10 @@ theorem computeSturm_wf {c : List ℤ} {d iter : ℕ} {ivs iv' : Array (Double �
     exact ⟨by simp [IntervalsWF, AreSearchIntervals], fun x hx ↦ by simp [InIntervals] at hx⟩
   simp only [hcnt, ↓reduceIte, Option.some.injEq] at h
   subst h
-  have hloc := iterate_wf (rows := rows) (k := rows.size - 1) (cleft := cnt.2) (cright := cnt.1)
-    (sl := if d % 2 = 1 then -(c.getD d 0).sign else (c.getD d 0).sign) (sr := (c.getD d 0).sign)
-    (acc := #[]) endsWF_zero hit (by lia) (by simp) (by simp)
-  rw [← intervalsWF_domainBits_iff_pairwise] at hloc
   rw [toList_run_intersect]
-  exact ⟨intervalsWF_intersectList hloc.1 hwf,
-    fun x hx ↦ (inIntervals_of_inIntervals_intersectList hloc.1 hwf hx).2⟩
+  refine ⟨intervalsWF_intersectList ?_ hwf,
+    fun x hx ↦ (inIntervals_of_inIntervals_intersectList ?_ hwf hx).2⟩ <;>
+  exact (intervalsWF_domainBits_iff _).mpr (areIntervals_run_iterate_zero hit)
 
 end Sturm
 

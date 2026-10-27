@@ -56,7 +56,9 @@ remainder.
 * `Ratpoints.rbaLength_eq`, `Ratpoints.rbaLength_pos`, `Ratpoints.natCast_rbaLength_pos`,
   `Ratpoints.natCast_rbaLength_dvd_two_pow`: the width `Ratpoints.rbaLength` of the bit arrays is
   `64 Ratpoints.rbaPack`, positive, and divides `2 ^ n` for `n ≥ Ratpoints.rbaShift`.
-* `Ratpoints.Sieve.toNat_mulHi`: `Ratpoints.Sieve.mulHi a b` is `⌊a b / 2 ^ 64⌋`.
+* `Ratpoints.Sieve.toNat_mulHi`: `Ratpoints.Sieve.mulHi a b` is `⌊a b / 2 ^ 64⌋`;
+  `Ratpoints.Sieve.toNat_hi_mul_add_lo`, `Ratpoints.Sieve.toNat_ite_bne_zero`: the 128-bit sum
+  `a m + r` of `exact_scale` in its two words, and the quotient on two words capped at `2 ^ 64 - 1`.
 * `Ratpoints.Sieve.mulMod_eq`, `Ratpoints.Sieve.mulDiv_eq`: the reductions on 64-bit words are those
   of the macros on natural numbers reduced modulo `2 ^ 64`.
 * `Ratpoints.Sieve.magic_mul_eq`: `magic p · p = 2 ^ 64 + δ` with `δ < p`.
@@ -229,6 +231,44 @@ theorem toNat_mulHi (a b : UInt64) : (mulHi a b).toNat = a.toNat * b.toNat / 2 ^
   rw [e]
   exact sum_halves_mod (mul_le_of_lt_two_pow_32 ha0 hb0) (mul_le_of_lt_two_pow_32 ha0 hb1)
     (mul_le_of_lt_two_pow_32 ha1 hb0) (mul_le_of_lt_two_pow_32 ha1 hb1)
+
+/-- The 128-bit sum `b m + r` of `Ratpoints.Sieve.exactScale` in its two words. -/
+theorem toNat_hi_mul_add_lo {a m rl rh : UInt64}
+    (h : a.toNat * m.toNat + (rh.toNat * 2 ^ 64 + rl.toNat) < 2 ^ 128) :
+    (mulHi a m + rh + (if a * m + rl < rl then 1 else 0)).toNat * 2 ^ 64 + (a * m + rl).toNat =
+      a.toNat * m.toNat + (rh.toNat * 2 ^ 64 + rl.toNat) := by
+  have hc := Nat.mod_add_carry (Nat.mod_lt (a.toNat * m.toNat) (Nat.two_pow_pos 64)) rl.toNat_lt
+  have hd := Nat.div_add_mod (a.toNat * m.toNat) (2 ^ 64)
+  have hlt : (a * m + rl < rl) ↔ (a.toNat * m.toNat % 2 ^ 64 + rl.toNat) % 2 ^ 64 < rl.toNat := by
+    rw [UInt64.lt_iff_toNat_lt, UInt64.toNat_add, UInt64.toNat_mul]
+  have hlo : (a * m + rl).toNat = (a.toNat * m.toNat % 2 ^ 64 + rl.toNat) % 2 ^ 64 := by
+    rw [UInt64.toNat_add, UInt64.toNat_mul]
+  generalize hcar : (if a * m + rl < rl then (1 : UInt64) else 0) = c
+  have hcn : c.toNat =
+      if (a.toNat * m.toNat % 2 ^ 64 + rl.toNat) % 2 ^ 64 < rl.toNat then 1 else 0 := by
+    rw [← hcar]
+    by_cases h1 : a * m + rl < rl
+    · simp only [h1, ↓reduceIte, hlt.mp h1, UInt64.toNat_one]
+    · simp only [h1, ↓reduceIte, mt hlt.mpr h1, UInt64.toNat_zero]
+  have hhi : (mulHi a m + rh + c).toNat =
+      (a.toNat * m.toNat / 2 ^ 64 + rh.toNat + c.toNat) % 2 ^ 64 := by
+    rw [UInt64.toNat_add, UInt64.toNat_add, toNat_mulHi, Nat.mod_add_mod]
+  rw [hhi, hlo, Nat.mod_eq_of_lt (b := 2 ^ 64)]
+  · rw [hcn]; lia
+  · rw [hcn]; lia
+
+/-- The result of `Ratpoints.Sieve.exactScale` from the two words of its quotient: `2 ^ 64 - 1` when
+the high word is not `0`. -/
+theorem toNat_ite_bne_zero {qh ql : UInt64} {N : Nat} (h : qh.toNat * 2 ^ 64 + ql.toNat = N) :
+    (if qh != 0 then ~~~0 else ql).toNat = min (2 ^ 64 - 1) N := by
+  by_cases hq : qh = 0
+  · simp only [hq, bne_self_eq_false, Bool.false_eq_true, ↓reduceIte]
+    rw [hq, UInt64.toNat_zero] at h
+    have := ql.toNat_lt; lia
+  · have : 1 ≤ qh.toNat := Nat.one_le_iff_ne_zero.mpr fun h0 ↦ hq (UInt64.toNat_inj.mp h0)
+    simp only [hq, bne_iff_ne, ne_eq, not_false_eq_true, ↓reduceIte, UInt64.toNat_not,
+      UInt64.toNat_zero]
+    lia
 
 /-! ### The reductions by a reciprocal -/
 

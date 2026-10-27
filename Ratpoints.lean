@@ -17,11 +17,13 @@ public import Ratpoints.Mathlib.Data.List.Chain
 public import Ratpoints.Mathlib.Data.List.Nodup
 public import Ratpoints.Mathlib.Data.List.Pairwise
 public import Ratpoints.Mathlib.Data.List.Prime
+public import Ratpoints.Mathlib.Data.List.SignVariations
 public import Ratpoints.Mathlib.Data.List.Sort
 public import Ratpoints.Mathlib.Data.Nat.Factors
 public import Ratpoints.Mathlib.Data.Nat.PadicValNat
 public import Ratpoints.Mathlib.Data.Nat.Prime.Defs
 public import Ratpoints.Mathlib.Data.Nat.Squarefree
+public import Ratpoints.Mathlib.Data.Rat.Floor
 public import Ratpoints.Mathlib.Data.ZMod.Basic
 public import Ratpoints.Mathlib.FieldTheory.Perfect
 public import Ratpoints.Mathlib.NumberTheory.LegendreSymbol.JacobiSymbol

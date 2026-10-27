@@ -210,15 +210,6 @@ theorem reverse_normalize (o : Options) (H : ℕ) :
   by_cases h1 : o.bLow < 1 <;> by_cases h2 : o.bHigh < 1 <;> by_cases h3 : (H : ℤ) < o.bHigh <;>
     simp [h1, h2, h3] <;> grind
 
-@[simp]
-theorem domain_normalize (o : Options) (H : ℕ) : (o.normalize H).domain = o.domain := rfl
-
-@[simp]
-theorem noCheck_normalize (o : Options) (H : ℕ) : (o.normalize H).noCheck = o.noCheck := rfl
-
-@[simp]
-theorem noY_normalize (o : Options) (H : ℕ) : (o.normalize H).noY = o.noY := rfl
-
 theorem toNat_bHigh_normalize (o : Options) (H : ℕ) :
     (o.normalize H).bHigh.toNat = denominatorBound o.bHigh H := by
   simp only [normalize, denominatorBound]
@@ -237,17 +228,10 @@ theorem toNat_bHigh_normalize_le (o : Options) (H : ℕ) : (o.normalize H).bHigh
   simp only [normalize]
   split_ifs <;> lia
 
-/-- A denominator `z ≤ H` up to the normalized largest denominator satisfies the bound of the
-search region of the specification (`Ratpoints.InRegion`). -/
-theorem lt_one_or_le_bHigh_of_le (o : Options) {H : ℕ} {z : ℤ}
-    (hz : z ≤ (o.normalize H).bHigh.toNat) (hzH : z ≤ H) : o.bHigh < 1 ∨ z ≤ o.bHigh := by
-  simp only [normalize] at hz
-  split_ifs at hz <;> lia
-
-/-- A denominator `z ≤ H` within the bound of the search region of the specification
-(`Ratpoints.InRegion`) lies below the normalized largest denominator. -/
-theorem le_toNat_bHigh_normalize_of_le (o : Options) {H : ℕ} {z : ℤ} (hzH : z ≤ H)
-    (h : o.bHigh < 1 ∨ z ≤ o.bHigh) : z ≤ (o.normalize H).bHigh.toNat := by
+/-- A denominator `z ≤ H` lies below the normalized largest denominator exactly when it satisfies
+the bound of the search region of the specification (`Ratpoints.InRegion`). -/
+theorem le_toNat_bHigh_normalize_iff (o : Options) {H : ℕ} {z : ℤ} (hzH : z ≤ H) :
+    z ≤ (o.normalize H).bHigh.toNat ↔ o.bHigh < 1 ∨ z ≤ o.bHigh := by
   simp only [normalize]
   split_ifs <;> lia
 

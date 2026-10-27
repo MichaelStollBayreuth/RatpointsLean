@@ -18,9 +18,11 @@ import Ratpoints.Proof.Double
 
 Assuming Sturm's theorem (`Ratpoints.SturmTheorem`), the intervals that the Sturm step
 (`Ratpoints.Sturm.computeSturm`) leaves hold every value `x` with `|x| ≤ 2 ^ 63` and `f(x) ≥ 0`
-of the caller's intervals (`Ratpoints.Sturm.covers_computeSturm`), and the bisection keeps at most
+of the caller's intervals (`Ratpoints.Sturm.covers_computeSturm`); the bisection keeps at most
 `1 + ⌊d / 2⌋` intervals, the room of the array `ivlocal` of the C code
-(`Ratpoints.Sturm.size_run_iterate_le_of_chain_eq_some`).
+(`Ratpoints.Sturm.size_run_iterate_le_of_chain_eq_some`), and the intersection with the caller's
+intervals has at most `⌊d / 2⌋` intervals more than they, within the room that the caller's array
+must have (`Ratpoints.Sturm.size_run_computeSturm_le`).
 
 The bisection (`Ratpoints.Sturm.iterate`) keeps the invariant `Ratpoints.Sturm.HalvingInv`: its
 intervals are intervals of the bisection (`Ratpoints.Sturm.EndsWF`), and the counts and signs it
@@ -53,8 +55,9 @@ at most `d` times (`Ratpoints.Sturm.length_le_of_witnessed`).
   keep.
 * `Ratpoints.Sturm.covers_computeSturm`: the Sturm step keeps every value with `f ≥ 0` of the
   caller's intervals.
-* `Ratpoints.Sturm.size_run_iterate_le_of_chain_eq_some`: the bisection keeps at most
-  `1 + ⌊d / 2⌋` intervals.
+* `Ratpoints.Sturm.size_run_iterate_le_of_chain_eq_some`,
+  `Ratpoints.Sturm.size_run_computeSturm_le`: the bisection keeps at most `1 + ⌊d / 2⌋` intervals,
+  and the intersection adds at most `⌊d / 2⌋` to the intervals of the caller.
 -/
 
 @[expose] public section
@@ -231,7 +234,7 @@ theorem covers_iterate (hS : SturmTheorem) {F : ℝ[X]} (hF : Squarefree F)
     {rows : Array (Array ℤ)} {k iter : ℕ} (hsig : SignsOf F rows k) (hit : iter ≤ 55)
     {nl nr del der : Int64} {cl cr : ℕ} {sl sr : ℤ} {depth : ℕ} {acc : Array (Double × Double)}
     (hI : HalvingInv F depth nl nr del der cl cr sl sr) (hd : depth ≤ iter)
-    (hacc : (∀ i ∈ acc.toList, IsInterval i) ∧ acc.toList.Pairwise EndsBefore)
+    (hacc : AreIntervals acc.toList)
     (hb : ∀ i ∈ acc.back?, doubleValue i.2.bits ≤ (endValue nl del : WithBotTop ℚ)) :
     (∀ x, InIntervals (domainValues acc.toList) x → InIntervals (domainValues
       (Id.run (iterate rows k iter nl nr del der cl cr sl sr depth acc)).toList) x) ∧
@@ -281,21 +284,6 @@ theorem kept_neg_longMax_longMax_of_abs_le {sl sr : ℤ} {x : ℚ} (hx : |x| ≤
   rw [Kept, h1, h2]
   obtain ⟨hl, hr⟩ := abs_le.mp hx
   exact ⟨hl.lt_or_eq.imp id fun h ↦ ⟨h.symm, .inl rfl⟩, hr.lt_or_eq.imp id fun h ↦ ⟨h, .inl rfl⟩⟩
-
-/-- By Sturm's theorem, a squarefree real polynomial with equal counts at `∓∞` has no real root,
-so that it is negative everywhere when it is negative at `0`. -/
-theorem eval_neg_of_vBot_eq_vTop (hS : SturmTheorem) {F : ℝ[X]} (hF : Squarefree F)
-    (h : vBot F = vTop F) (h0 : F.eval 0 < 0) (x : ℝ) : F.eval x < 0 := by
-  have hroot := (vLeft_eq_vRight_iff hS hF (l := none) (r := none) (by simp)).mp h
-  have hx0 (y : ℝ) : F.eval y ≠ 0 := hroot y (by simp [Inside])
-  by_contra! hx
-  have hx' := lt_of_le_of_ne hx (hx0 x).symm
-  rcases lt_trichotomy x 0 with hlt | rfl | hgt
-  · obtain ⟨z, -, hz⟩ := exists_isRoot_of_eval_mul_eval_neg hlt (mul_neg_of_pos_of_neg hx' h0)
-    exact hx0 z hz
-  · linarith
-  · obtain ⟨z, -, hz⟩ := exists_isRoot_of_eval_mul_eval_neg hgt (mul_neg_of_neg_of_pos h0 hx')
-    exact hx0 z hz
 
 theorem eval_zero_chainPoly (c : List ℤ) (d : ℕ) : (chainPoly c d).eval 0 = c.getD 0 0 := by
   rw [← coeff_zero_eq_eval_zero, coeff_map, coeff_poly]
@@ -354,14 +342,9 @@ theorem covers_computeSturm (hS : SturmTheorem) {c : List ℤ} {d iter : ℕ}
   rw [ite_eq_right hex, Option.some.injEq] at h
   subst h
   rw [← hch.sgnLeftEnd_none, ← hch.sgnRightEnd_none, toList_run_intersect]
-  have hloc := (iterate_wf (rows := rows) (k := rows.size - 1) (cleft := vBot (chainPoly c d))
-    (cright := vTop (chainPoly c d)) (sl := sgnLeftEnd (chainPoly c d) none)
-    (sr := sgnRightEnd (chainPoly c d) none) (acc := #[]) endsWF_zero hit (by lia) (by simp)
-    (by simp)).1
-  rw [← intervalsWF_domainBits_iff_pairwise] at hloc
-  exact inIntervals_intersectList hloc hwf ((covers_iterate hS hF (hch.signsOf h1 hd57 hF) hit
-    (halvingInv_zero _) (by lia) (by simp) (by simp)).2 x hx
-      (kept_neg_longMax_longMax_of_abs_le hb)) hxi
+  exact inIntervals_intersectList ((intervalsWF_domainBits_iff _).mpr
+    (areIntervals_run_iterate_zero hit)) hwf ((covers_iterate hS hF (hch.signsOf h1 hd57 hF) hit
+      (halvingInv_zero _) (by lia) .nil nofun).2 x hx (kept_neg_longMax_longMax_of_abs_le hb)) hxi
 
 /-! ### The size of the intervals kept -/
 
@@ -470,7 +453,7 @@ theorem witnessed_iterate (hS : SturmTheorem) {F : ℝ[X]} (hF : Squarefree F)
     {rows : Array (Array ℤ)} {k iter : ℕ} (hsig : SignsOf F rows k) (hit : iter ≤ 55)
     {nl nr del der : Int64} {cl cr : ℕ} {sl sr : ℤ} {depth : ℕ} {acc : Array (Double × Double)}
     (hI : HalvingInv F depth nl nr del der cl cr sl sr) (hd : depth ≤ iter)
-    (hacc : (∀ i ∈ acc.toList, IsInterval i) ∧ acc.toList.Pairwise EndsBefore)
+    (hacc : AreIntervals acc.toList)
     (hb : ∀ i ∈ acc.back?, doubleValue i.2.bits ≤ (endValue nl del : WithBotTop ℚ))
     (hw : ∀ i ∈ acc.toList, Witnessed F i) :
     ∀ i ∈ (Id.run (iterate rows k iter nl nr del der cl cr sl sr depth acc)).toList,
@@ -620,16 +603,40 @@ theorem size_run_iterate_le_of_chain_eq_some (hS : SturmTheorem) {c : List ℤ} 
   have hF := squarefree_chainPoly hd hcd hrows
   rw [hch.run_countsAtInfinity_eq h1, ← hch.sgnLeftEnd_none, ← hch.sgnRightEnd_none,
     ← Array.length_toList]
-  have hwf := iterate_wf (rows := rows) (k := rows.size - 1) (iter := iter)
+  have hwf := areIntervals_run_iterate_zero (rows := rows) (k := rows.size - 1)
     (cleft := vBot (chainPoly c d)) (cright := vTop (chainPoly c d))
-    (sl := sgnLeftEnd (chainPoly c d) none) (sr := sgnRightEnd (chainPoly c d) none)
-    (acc := #[]) endsWF_zero hit (by lia) (by simp) (by simp)
+    (sl := sgnLeftEnd (chainPoly c d) none) (sr := sgnRightEnd (chainPoly c d) none) hit
   have hsig := hch.signsOf h1 hd57 hF
   refine (length_le_of_witnessed hF.ne_zero (witnessed_iterate hS hF hsig hit
-    (halvingInv_zero _) (by lia) (by simp) (by simp) (by simp)) hwf.1.1 hwf.1.2 fun x h1 h2 h3 ↦
-    (covers_iterate hS hF hsig hit (halvingInv_zero _) (by lia) (by simp) (by simp)).2 x h3
+    (halvingInv_zero _) (by lia) .nil nofun nofun) hwf.1 hwf.2 fun x h1 h2 h3 ↦
+    (covers_iterate hS hF hsig hit (halvingInv_zero _) (by lia) .nil nofun).2 x h3
       (kept_neg_longMax_longMax_of_abs_le (abs_le.mpr ⟨h1, h2⟩))).trans ?_
   rw [hch.natDegree_chainPoly]
+
+/-- By Sturm's theorem, the intersection of the intervals of the Sturm step at a depth of at most
+`55`, for a polynomial of degree `1 ≤ d < 2 ^ 57` with `c_d ≠ 0`, with the intervals `iv` of the
+caller has at most `iv.size + ⌊d / 2⌋` intervals (from
+`Ratpoints.Sturm.size_run_iterate_le_of_chain_eq_some`): within both the room `num_inter + degree`
+that the manual asks of the caller's array and the room of `1 + ⌊degree / 2⌋` intervals more than
+it holds that the C code relies on (`sturm.c:52-53`), the latter from the degree `3` on only by
+the bound with `⌊d / 2⌋`. -/
+theorem size_run_computeSturm_le (hS : SturmTheorem) {c : List ℤ} {d iter : ℕ} (hd : 1 ≤ d)
+    (hcd : c.getD d 0 ≠ 0) (hd57 : d < 2 ^ 57) (hit : iter ≤ 55) {iv iv' : Array (Double × Double)}
+    (h : Id.run (computeSturm c d iter iv) = some iv') : iv'.size ≤ iv.size + d / 2 := by
+  rcases hc : Id.run (chain c d) with _ | rows
+  · rw [← run_computeSturm_eq_none_iff c d iter iv] at hc
+    simp [hc] at h
+  have hk := size_run_iterate_le_of_chain_eq_some hS hd hcd hd57 hit hc
+  rw [run_computeSturm_of_chain_eq_some hc] at h
+  by_cases hex : (Id.run (countsAtInfinity rows (rows.size - 1))).2 =
+      (Id.run (countsAtInfinity rows (rows.size - 1))).1 ∧ c.getD 0 0 < 0
+  · rw [ite_eq_left hex, Option.some.injEq] at h
+    simp [← h]
+  rw [ite_eq_right hex, Option.some.injEq] at h
+  rw [← h, ← Array.length_toList, toList_run_intersect]
+  refine (length_intersectList_le _ _).trans ?_
+  simp only [Array.length_toList]
+  lia
 
 /-- The value of the real polynomial of the chain of `c` and its degree at a rational point. -/
 theorem eval_chainPoly_degree (c : List ℤ) (q : ℚ) :

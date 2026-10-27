@@ -228,7 +228,8 @@ C: `sturm.c:209-227`
 Deviation: a function of its own for the branch of `iterate` that keeps an interval; the intervals
 kept as an array, passed and returned, for the array `ivlocal` on the stack and the pointer `iptr`
 of `_ratpoints_compute_sturm`, which `iterate` reaches as a nested function of gcc, with no bound
-`1 + ⌊degree / 2⌋` on their number, the size of `ivlocal`, which the C code relies on; the doubles
+`1 + ⌊degree / 2⌋` on their number, the size of `ivlocal`, which the C code relies on and which
+holds assuming Sturm's theorem (`Ratpoints.Sturm.size_run_iterate_le_of_chain_eq_some`); the doubles
 as their bits (`Ratpoints.Double`); `Int64` for the `long`s, converted to integers for the `int`
 casts of the exponents. -/
 def addInterval (iv : Array (Double × Double)) (nl nr del der : Int64) : Array (Double × Double) :=
@@ -308,8 +309,9 @@ Deviation: the intervals of the caller read from the array it gives, where the C
 from a copy on the heap (lines 274-275, 286) and writes the intersection over them; the intersection
 returned as a new array, with no bound on its length, for the writes into `ivlist`, the caller's
 array, which must have room for `1 + ⌊degree / 2⌋` intervals more than it holds (lines 52-53), as
-the C code relies on, and for the number `num_inter` of the arguments that it sets; natural numbers
-for the `long` indices. -/
+the C code relies on and as suffices assuming Sturm's theorem
+(`Ratpoints.Sturm.size_run_computeSturm_le`), and for the number `num_inter` of the arguments that
+it sets; natural numbers for the `long` indices. -/
 def intersect (loc ivs : Array (Double × Double)) : Id (Array (Double × Double)) := do
   let mut n1 := 0
   let mut n2 := 0
@@ -341,7 +343,8 @@ array for `0`, with `num_inter = 0`, and else the intervals, their number the re
 table of the chain made by `Ratpoints.Sturm.chain`, whose rows the step reads, for the table on the
 stack with the degrees, which `_ratpoints_compute_sturm` fills itself, the index of the last row
 the size of the chain less one, for the `k` of line 163; the array of the intervals kept made by
-`Ratpoints.Sturm.iterate`, for the array `ivlocal` on the stack of `1 + ⌊degree / 2⌋` intervals;
+`Ratpoints.Sturm.iterate`, for the array `ivlocal` on the stack of `1 + ⌊degree / 2⌋` intervals,
+which suffice assuming Sturm's theorem (`Ratpoints.Sturm.size_run_iterate_le_of_chain_eq_some`);
 integers for the GMP integers and `Int.sign` for `mpz_sgn`; no `mpz_init` and `mpz_clear`, no copy
 of the caller's intervals on the heap and no failure for lack of memory (`RATPOINTS_NO_MEMORY`),
 which the model cannot meet. -/

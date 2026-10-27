@@ -10,6 +10,7 @@ public import Ratpoints.Proof.Region
 
 import Mathlib.Data.Nat.Cast.Field
 import Ratpoints.Mathlib.Algebra.Order.Field.Basic
+import Ratpoints.Mathlib.Data.Rat.Floor
 import Ratpoints.Proof.Bits
 import Ratpoints.Proof.Double
 
@@ -191,51 +192,13 @@ theorem wf_of_run_searchIntervals_eq_some {H : ℕ} (hH : 1 ≤ H) (hH63 : H < 2
 
 namespace Sieve
 
-/-- The 128-bit sum `b m + r` of `Ratpoints.Sieve.exactScale` in its two words. -/
-theorem toNat_hi_mul_add_lo (a m rl rh : UInt64)
-    (h : a.toNat * m.toNat + (rh.toNat * 2 ^ 64 + rl.toNat) < 2 ^ 128) :
-    (mulHi a m + rh + (if a * m + rl < rl then 1 else 0)).toNat * 2 ^ 64 + (a * m + rl).toNat =
-      a.toNat * m.toNat + (rh.toNat * 2 ^ 64 + rl.toNat) := by
-  have hc := Nat.mod_add_carry (Nat.mod_lt (a.toNat * m.toNat) (Nat.two_pow_pos 64)) rl.toNat_lt
-  have hd := Nat.div_add_mod (a.toNat * m.toNat) (2 ^ 64)
-  have hlt : (a * m + rl < rl) ↔ (a.toNat * m.toNat % 2 ^ 64 + rl.toNat) % 2 ^ 64 < rl.toNat := by
-    rw [UInt64.lt_iff_toNat_lt, UInt64.toNat_add, UInt64.toNat_mul]
-  have hlo : (a * m + rl).toNat = (a.toNat * m.toNat % 2 ^ 64 + rl.toNat) % 2 ^ 64 := by
-    rw [UInt64.toNat_add, UInt64.toNat_mul]
-  generalize hcar : (if a * m + rl < rl then (1 : UInt64) else 0) = c
-  have hcn : c.toNat =
-      if (a.toNat * m.toNat % 2 ^ 64 + rl.toNat) % 2 ^ 64 < rl.toNat then 1 else 0 := by
-    rw [← hcar]
-    by_cases h1 : a * m + rl < rl
-    · simp only [h1, ↓reduceIte, hlt.mp h1, UInt64.toNat_one]
-    · simp only [h1, ↓reduceIte, mt hlt.mpr h1, UInt64.toNat_zero]
-  have hhi : (mulHi a m + rh + c).toNat =
-      (a.toNat * m.toNat / 2 ^ 64 + rh.toNat + c.toNat) % 2 ^ 64 := by
-    rw [UInt64.toNat_add, UInt64.toNat_add, toNat_mulHi, Nat.mod_add_mod]
-  rw [hhi, hlo, Nat.mod_eq_of_lt (b := 2 ^ 64)]
-  · rw [hcn]; lia
-  · rw [hcn]; lia
-
-/-- The result of `Ratpoints.Sieve.exactScale` from the two words of its quotient: `2 ^ 64 - 1` when
-the high word is not `0`. -/
-theorem toNat_ite_bne_zero {qh ql : UInt64} {N : ℕ} (h : qh.toNat * 2 ^ 64 + ql.toNat = N) :
-    (if qh != 0 then ~~~0 else ql).toNat = min (2 ^ 64 - 1) N := by
-  by_cases hq : qh = 0
-  · simp only [hq, bne_self_eq_false, Bool.false_eq_true, ↓reduceIte]
-    rw [hq, UInt64.toNat_zero] at h
-    have := ql.toNat_lt; lia
-  · have : 1 ≤ qh.toNat := Nat.one_le_iff_ne_zero.mpr fun h0 ↦ hq (UInt64.toNat_inj.mp h0)
-    simp only [hq, bne_iff_ne, ne_eq, not_false_eq_true, ↓reduceIte, UInt64.toNat_not,
-      UInt64.toNat_zero]
-    lia
-
 /-- `exact_scale`: `min (2 ^ 64 - 1) ⌊(b m + r) / 2 ^ s⌋` whenever `b m + r` fits 128 bits, with the
 end `±m 2 ^ (-s)` and its rounding `r = rh 2 ^ 64 + rl`. -/
-theorem toNat_exactScale (b : Int64) (e : ExactEnd) (hs : e.s ≤ 127)
+theorem toNat_exactScale {b : Int64} {e : ExactEnd} (hs : e.s ≤ 127)
     (h : b.toUInt64.toNat * e.m.toNat + (e.rh.toNat * 2 ^ 64 + e.rl.toNat) < 2 ^ 128) :
     (exactScale b e).toNat = min (2 ^ 64 - 1)
       ((b.toUInt64.toNat * e.m.toNat + (e.rh.toNat * 2 ^ 64 + e.rl.toNat)) / 2 ^ e.s) := by
-  have hP := toNat_hi_mul_add_lo b.toUInt64 e.m e.rl e.rh h
+  have hP := toNat_hi_mul_add_lo h
   simp only [exactScale]
   generalize mulHi b.toUInt64 e.m + e.rh + (if b.toUInt64 * e.m + e.rl < e.rl then 1 else 0) = hi
     at hP
@@ -318,7 +281,8 @@ theorem isExactMantissa_cap {v : ℚ} {m : UInt64} {s : ℤ} (hs : 127 < s) (h0 
     _ = 2 ^ (53 : ℤ) := rfl
     _ ≤ 2 ^ (-75 + s) := zpow_le_zpow_right₀ (by norm_num) (by lia)
 
-theorem natCast_div_two_pow_div_zpow {m z : ℕ} (hdvd : 2 ^ z ∣ m) (s : ℤ) :
+-- `m / 2 ^ z` for `2 ^ z ∣ m` scaled by `2 ^ (s - z)` is `m` scaled by `2 ^ s`.
+private theorem natCast_div_two_pow_div_zpow {m z : ℕ} (hdvd : 2 ^ z ∣ m) (s : ℤ) :
     ((m / 2 ^ z : ℕ) : ℚ) / 2 ^ (s - z) = m / 2 ^ s := by
   rw [Nat.cast_div hdvd (by positivity), div_div, Nat.cast_pow, Nat.cast_ofNat, ← zpow_natCast,
     ← zpow_add₀ two_ne_zero, add_sub_cancel]
@@ -372,14 +336,18 @@ private theorem isExactMantissa_shiftLeft {m0 : UInt64} {s0 : ℤ} {v : ℚ}
   refine isExactMantissa_of_eq (by simp) (by rw [hm]; positivity) (by rw [hm]; exact h63') ?_
   rw [hm, Int.toNat_zero, pow_zero, div_one]; exact hv'
 
-theorem isExactMantissa_run_exactMantissa {ax : Double} (hf : ax.isFinite = true)
-    (hs : ax.signBit = false) (h0 : ax.toRat ≠ 0) (h63 : ax.toRat < 2 ^ 63) :
-    IsExactMantissa ax.toRat (Id.run (exactMantissa ax)) := by
-  obtain ⟨hv, h52, h53⟩ := spec_toUInt64_ldexp_frexp hf hs h0
-  rw [show ax.frexp.2 - 53 = -(53 - ax.frexp.2) by ring, zpow_neg, ← div_eq_mul_inv] at hv
+/-- The mantissa and the exponent that `exact_end` makes for the absolute value of a finite end
+`x ≠ 0` with `|x| < 2 ^ 63`. -/
+theorem isExactMantissa_run_exactMantissa {x : Double} (ha : x.fabs.lt .twoPow63 = true)
+    (h0 : x.toRat ≠ 0) : IsExactMantissa |x.toRat| (Id.run (exactMantissa x.fabs)) := by
+  obtain ⟨hf, h63⟩ := Double.isFinite_and_abs_lt_of_lt ha
+  obtain ⟨hv, h52, h53⟩ := spec_toUInt64_ldexp_frexp (by rwa [Double.isFinite_fabs])
+    (Double.signBit_fabs x) (by rw [Double.toRat_fabs]; exact abs_ne_zero.mpr h0)
+  rw [← Double.toRat_fabs] at h63 ⊢
+  rw [show x.fabs.frexp.2 - 53 = -(53 - x.fabs.frexp.2) by ring, zpow_neg, ← div_eq_mul_inv] at hv
   simp only [exactMantissa]
-  generalize (ax.frexp.1.ldexp (Double.mantDig : ℤ)).toUInt64 = m0 at hv h52 h53 ⊢
-  generalize 53 - ax.frexp.2 = s0 at hv ⊢
+  generalize (x.fabs.frexp.1.ldexp (Double.mantDig : ℤ)).toUInt64 = m0 at hv h52 h53 ⊢
+  generalize 53 - x.fabs.frexp.2 = s0 at hv ⊢
   have hm0 : m0 ≠ 0 := fun h ↦ by rw [h] at h52; simp at h52
   simp only [hm0, ↓reduceIte]
   by_cases hs0 : 0 < s0
@@ -425,7 +393,7 @@ theorem neg_run_exactEnd (x : Double) (lower : Bool) :
     (Id.run (exactEnd x lower)).neg = x.lt .zero := by
   simp only [exactEnd]; split <;> rfl
 
-theorem rounding_run_exactEnd (x : Double) (lower : Bool)
+theorem rounding_run_exactEnd {x : Double} {lower : Bool}
     (hs : (Id.run (exactEnd x lower)).s ≤ 127) :
     (Id.run (exactEnd x lower)).rh.toNat * 2 ^ 64 + (Id.run (exactEnd x lower)).rl.toNat =
       if lower != x.lt .zero then 2 ^ (Id.run (exactEnd x lower)).s - 1 else 0 := by
@@ -433,10 +401,11 @@ theorem rounding_run_exactEnd (x : Double) (lower : Bool)
   simp only [exactEnd]
   split <;> exact fun hs ↦ toNat_rounding _ hs
 
-theorem run_exactMantissa_of_toRat_eq_zero {ax : Double} (h : ax.toRat = 0) :
-    Id.run (exactMantissa ax) = (0, 0) := by
+theorem run_exactMantissa_fabs_of_toRat_eq_zero {x : Double} (h : x.toRat = 0) :
+    Id.run (exactMantissa x.fabs) = (0, 0) := by
+  replace h : x.fabs.toRat = 0 := by rw [Double.toRat_fabs, h, abs_zero]
   have hz := Double.isZero_eq_true_iff.mpr h
-  have hm : (ax.frexp.1.ldexp (Double.mantDig : ℤ)).toUInt64 = 0 := by
+  have hm : (x.fabs.frexp.1.ldexp (Double.mantDig : ℤ)).toUInt64 = 0 := by
     simp only [Double.frexp, Double.ldexp, hz, Bool.or_true, ↓reduceIte]
     apply UInt64.toNat_inj.mp
     rw [Double.toNat_toUInt64 (by rw [h]) (by rw [h]; norm_num), h]; simp
@@ -515,30 +484,6 @@ theorem lowNumerator_eq_and_highNumerator_eq_run_exactEnd_of_lt_eq_false {x : Do
     rw [e1, e2, e3, e4]
     exact ⟨rfl, rfl⟩
 
-theorem ceil_eq_one_and_floor_eq_zero {p : ℚ} (hp : 0 < p) (hp1 : p < 1) :
-    ⌈p⌉ = 1 ∧ ⌊p⌋ = 0 :=
-  ⟨Int.ceil_eq_iff.mpr ⟨by norm_num; linarith, by norm_num; linarith⟩,
-    Int.floor_eq_iff.mpr ⟨by norm_num; linarith, by norm_num; linarith⟩⟩
-
-/-- Two rationals of the same sign strictly between `-1` and `1`, not `0`, have the same ceiling
-and the same floor: `1` and `0` when positive, `0` and `-1` when negative. -/
-theorem ceil_eq_and_floor_eq_of_abs_lt_one {p p' : ℚ} (hp : p ≠ 0) (hp1 : |p| < 1)
-    (hp' : p' ≠ 0) (hp1' : |p'| < 1) (hs : p < 0 ↔ p' < 0) : ⌈p⌉ = ⌈p'⌉ ∧ ⌊p⌋ = ⌊p'⌋ := by
-  rcases lt_or_gt_of_ne hp with h | h
-  · have h' := hs.mp h
-    rw [abs_of_neg h] at hp1; rw [abs_of_neg h'] at hp1'
-    obtain ⟨c1, f1⟩ := ceil_eq_one_and_floor_eq_zero (neg_pos.mpr h) hp1
-    obtain ⟨c2, f2⟩ := ceil_eq_one_and_floor_eq_zero (neg_pos.mpr h') hp1'
-    have e1 := Int.ceil_neg (a := -p); have e2 := Int.ceil_neg (a := -p')
-    have e3 := Int.floor_neg (a := -p); have e4 := Int.floor_neg (a := -p')
-    simp only [neg_neg] at e1 e2 e3 e4
-    exact ⟨by rw [e1, e2, f1, f2], by rw [e3, e4, c1, c2]⟩
-  · have h' : 0 < p' := lt_of_le_of_ne (not_lt.mp (mt hs.mpr (not_lt.mpr h.le))) (Ne.symm hp')
-    rw [abs_of_pos h] at hp1; rw [abs_of_pos h'] at hp1'
-    obtain ⟨c1, f1⟩ := ceil_eq_one_and_floor_eq_zero h hp1
-    obtain ⟨c2, f2⟩ := ceil_eq_one_and_floor_eq_zero h' hp1'
-    exact ⟨c1.trans c2.symm, f1.trans f2.symm⟩
-
 /-- A tiny end `0 < |q| < 2 ^ (-75)` has the numerators of `exact_end`'s `±m 2 ^ (-127)` with
 `0 < m < 2 ^ 53` and the same sign, for every denominator `1 ≤ b < 2 ^ 63`: `b |q|` and
 `b m 2 ^ (-127)` lie strictly between `0` and `1`. -/
@@ -565,11 +510,12 @@ theorem lowNumerator_eq_and_highNumerator_eq_of_abs_lt {b H : ℕ} (hb : 1 ≤ b
   have hs : (b : ℚ) * q < 0 ↔ (b : ℚ) * ((if neg then -1 else 1) * ((m : ℚ) / 2 ^ 127)) < 0 := by
     rw [mul_neg_iff, mul_neg_iff, ← hneg]
     cases neg <;> simp [hb0, hv, hv.le, not_lt.mpr hb0.le]
-  have h := ceil_eq_and_floor_eq_of_abs_lt_one (mul_ne_zero hb0.ne' hq) h1
+  have h := Rat.ceil_eq_and_floor_eq_of_abs_lt_one (mul_ne_zero hb0.ne' hq) h1
     (mul_ne_zero hb0.ne' (by split_ifs <;> positivity)) h2 hs
   exact lowNumerator_eq_and_highNumerator_eq_of_ceil_eq_of_floor_eq h.1 h.2
 
-theorem sign_mul_abs {q : ℚ} {neg : Bool} (h : neg = true ↔ q < 0) :
+-- A rational number `q` is its absolute value times the sign that the flag `neg` of `q < 0` gives.
+private theorem sign_mul_abs {q : ℚ} {neg : Bool} (h : neg = true ↔ q < 0) :
     (if neg then -1 else 1) * |q| = q := by
   cases neg
   · simp only [Bool.false_eq_true, false_iff, not_lt] at h; simp [abs_of_nonneg h]
@@ -588,12 +534,9 @@ theorem lowNumerator_eq_and_highNumerator_eq_run_exactEnd_of_lt_eq_true {x : Dou
   rw [Double.doubleValue_eq_toRat hf]
   simp only [ExactEnd.value, m_run_exactEnd, s_run_exactEnd, neg_run_exactEnd, ha, ↓reduceIte]
   by_cases h0 : x.toRat = 0
-  · rw [run_exactMantissa_of_toRat_eq_zero (by rw [Double.toRat_fabs, h0, abs_zero]), h0]
+  · rw [run_exactMantissa_fabs_of_toRat_eq_zero h0, h0]
     simp
-  have hm := isExactMantissa_run_exactMantissa (by rwa [Double.isFinite_fabs])
-    (Double.signBit_fabs x) (by rw [Double.toRat_fabs]; exact abs_ne_zero.mpr h0)
-    (by rwa [Double.toRat_fabs])
-  rw [Double.toRat_fabs] at hm
+  have hm := isExactMantissa_run_exactMantissa ha h0
   generalize Id.run (exactMantissa x.fabs) = ms at hm ⊢
   obtain ⟨-, hm0, -, hv | ⟨hs, hm53, h75⟩⟩ := hm
   · rw [hv, sign_mul_abs hneg]; exact ⟨rfl, rfl⟩
@@ -617,41 +560,26 @@ def IsEnd (e : ExactEnd) (lower : Bool) : Prop :=
   e.s ≤ 127 ∧ e.m.toNat ≤ 2 ^ 63 ∧
     e.rh.toNat * 2 ^ 64 + e.rl.toNat = if lower != e.neg then 2 ^ e.s - 1 else 0
 
-theorem bounds_run_exactEnd (x : Double) (lower : Bool) :
-    (Id.run (exactEnd x lower)).s ≤ 127 ∧ (Id.run (exactEnd x lower)).m.toNat ≤ 2 ^ 63 := by
-  rw [m_run_exactEnd, s_run_exactEnd]
-  cases ha : x.fabs.lt .twoPow63
-  · exact ⟨by simp, by simp⟩
-  · obtain ⟨hf, habs⟩ := Double.isFinite_and_abs_lt_of_lt ha
-    simp only [↓reduceIte]
-    by_cases h0 : x.toRat = 0
-    · rw [run_exactMantissa_of_toRat_eq_zero (by rw [Double.toRat_fabs, h0, abs_zero])]; simp
-    · obtain ⟨hs, -, hm, -⟩ := isExactMantissa_run_exactMantissa (by rwa [Double.isFinite_fabs])
-        (Double.signBit_fabs x) (by rw [Double.toRat_fabs]; exact abs_ne_zero.mpr h0)
-        (by rwa [Double.toRat_fabs])
-      exact ⟨hs, hm.le⟩
-
 theorem isEnd_run_exactEnd (x : Double) (lower : Bool) :
     IsEnd (Id.run (exactEnd x lower)) lower := by
-  obtain ⟨hs, hm⟩ := bounds_run_exactEnd x lower
-  exact ⟨hs, hm, by rw [rounding_run_exactEnd x lower hs, neg_run_exactEnd]⟩
+  have hs : (Id.run (exactEnd x lower)).s ≤ 127 ∧ (Id.run (exactEnd x lower)).m.toNat ≤ 2 ^ 63 := by
+    rw [m_run_exactEnd, s_run_exactEnd]
+    cases ha : x.fabs.lt .twoPow63
+    · exact ⟨by simp, by simp⟩
+    simp only [↓reduceIte]
+    by_cases h0 : x.toRat = 0
+    · rw [run_exactMantissa_fabs_of_toRat_eq_zero h0]; simp
+    · obtain ⟨hs, -, hm, -⟩ := isExactMantissa_run_exactMantissa ha h0
+      exact ⟨hs, hm.le⟩
+  exact ⟨hs.1, hs.2, by rw [rounding_run_exactEnd hs.1, neg_run_exactEnd]⟩
 
 theorem ceil_mul_div_two_pow (B m s : ℕ) :
     ⌈(B : ℚ) * ((m : ℚ) / 2 ^ s)⌉ = (((B * m + (2 ^ s - 1)) / 2 ^ s : ℕ) : ℤ) := by
-  have hd := Nat.div_add_mod (B * m + (2 ^ s - 1)) (2 ^ s)
-  have hr := Nat.mod_lt (B * m + (2 ^ s - 1)) (Nat.two_pow_pos s)
-  have h1 := Nat.one_le_two_pow (n := s)
-  set z := (B * m + (2 ^ s - 1)) / 2 ^ s
-  have hz1 : B * m ≤ 2 ^ s * z := by lia
-  have hz2 : 2 ^ s * z < B * m + 2 ^ s := by lia
-  have h2 : (0 : ℚ) < 2 ^ s := by positivity
-  have q1 : (B : ℚ) * m ≤ 2 ^ s * z := mod_cast hz1
-  have q2 : (2 : ℚ) ^ s * z < B * m + 2 ^ s := mod_cast hz2
-  rw [Int.ceil_eq_iff, ← mul_div_assoc]
-  push_cast
-  constructor
-  · rw [lt_div_iff₀ h2]; linarith
-  · rw [div_le_iff₀ h2]; linarith
+  rw [← mul_div_assoc, ← Nat.cast_mul, show ((2 : ℚ) ^ s) = ((2 ^ s : ℕ) : ℚ) by push_cast; rfl,
+    ← Int.cast_natCast (B * m),
+    Rat.ceil_intCast_div_natCast_eq_add_sub_one_div _ (Nat.two_pow_pos s)]
+  push_cast [Nat.cast_sub Nat.one_le_two_pow, add_sub_assoc]
+  rfl
 
 theorem floor_mul_div_two_pow (B m s : ℕ) :
     ⌊(B : ℚ) * ((m : ℚ) / 2 ^ s)⌋ = ((B * m / 2 ^ s : ℕ) : ℤ) := by
@@ -666,7 +594,7 @@ theorem toNat_exactScale_of_isEnd {e : ExactEnd} {lower : Bool} (he : IsEnd e lo
   obtain ⟨hs, hm, hr⟩ := he
   have hB' := Nat.toNat_toUInt64_toInt64 hB
   have h127 : 2 ^ e.s ≤ 2 ^ 127 := Nat.pow_le_pow_right (by decide) hs
-  rw [toNat_exactScale _ _ hs, hB', hr]
+  rw [toNat_exactScale hs, hB', hr]
   · split <;> simp
   · rw [hB', hr]
     have : B * e.m.toNat ≤ 2 ^ 63 * 2 ^ 63 := Nat.mul_le_mul hB.le hm
@@ -867,24 +795,6 @@ theorem toInt_mul_add_shiftRight {B : ℕ} (hB : B < 2 ^ 63) {M C : Int64} {s : 
     Int64.toInt_add_of_lt (by rw [hm]; lia) (by rw [hm]; lia), hm, Int.shiftRight_eq_div_pow]
   push_cast; rfl
 
-theorem ceil_intCast_div_two_pow (n : ℤ) (s : ℕ) :
-    ⌈(n : ℚ) / 2 ^ s⌉ = (n + 2 ^ s - 1) / 2 ^ s := by
-  have h2 : (0 : ℤ) < 2 ^ s := by positivity
-  have h2' : (0 : ℚ) < 2 ^ s := by positivity
-  refine le_antisymm (Int.ceil_le.mpr ?_) ?_
-  · rw [div_le_iff₀ h2']
-    have := Int.lt_ediv_add_one_mul_self (n + 2 ^ s - 1) h2
-    exact_mod_cast (by lia : n ≤ (n + 2 ^ s - 1) / 2 ^ s * 2 ^ s)
-  · have := Int.le_ceil ((n : ℚ) / 2 ^ s)
-    rw [div_le_iff₀ h2'] at this
-    have h3 : n ≤ ⌈(n : ℚ) / 2 ^ s⌉ * 2 ^ s := mod_cast this
-    exact Int.lt_add_one_iff.mp ((Int.ediv_lt_iff_lt_mul h2).mpr (by lia))
-
-theorem floor_intCast_div_two_pow (n : ℤ) (s : ℕ) : ⌊(n : ℚ) / 2 ^ s⌋ = n / 2 ^ s := by
-  have := Rat.floor_intCast_div_natCast n (2 ^ s)
-  push_cast at this
-  exact this
-
 theorem toInt_ite_neg_toInt64 {e : ExactEnd} (hm : e.m.toNat < 2 ^ 63) :
     (if e.neg then -e.m.toInt64 else e.m.toInt64).toInt =
       (if e.neg then -1 else 1) * (e.m.toNat : ℤ) := by
@@ -899,44 +809,20 @@ theorem natCast_mul_value {e : ExactEnd} (B : ℕ) :
   simp only [ExactEnd.value]
   split_ifs <;> push_cast <;> ring
 
-/-- The form `(b M + C) >> s` of a lower end with `C = 2 ^ s - 1`, without overflow for `b` up to
-the largest denominator by the guard of `end_form`, is `⌈b x⌉`. -/
-theorem toInt_form_lower {e : ExactEnd} {B bHigh : ℕ} (hs : e.s < 64) (hB1 : 1 ≤ B)
-    (hB : B ≤ bHigh) (hB63 : B < 2 ^ 63) (hg : e.m.toNat * bHigh + (2 ^ e.s - 1) ≤ 2 ^ 63 - 1) :
-    ((B.toInt64 * (if e.neg then -e.m.toInt64 else e.m.toInt64) +
-        (((1 : UInt64) <<< e.s.toUInt64) - 1).toInt64) >>> e.s.toInt64).toInt =
-      ⌈(B : ℚ) * e.value⌉ := by
+/-- The form `(b M + C) >> s` of an end with `C ≥ 0`, without overflow for `b` up to the largest
+denominator by the guard of `end_form`, on the `long`s: the floor of `(b (±m) + C) / 2 ^ s`. -/
+theorem toInt_form {e : ExactEnd} {B bHigh : ℕ} {C : Int64} (hs : e.s < 64) (hB1 : 1 ≤ B)
+    (hB : B ≤ bHigh) (hB63 : B < 2 ^ 63) (hC : 0 ≤ C.toInt)
+    (hg : (e.m.toNat : ℤ) * bHigh + C.toInt ≤ 2 ^ 63 - 1) :
+    ((B.toInt64 * (if e.neg then -e.m.toInt64 else e.m.toInt64) + C) >>> e.s.toInt64).toInt =
+      (B * ((if e.neg then -1 else 1) * e.m.toNat) + C.toInt) / 2 ^ e.s := by
   have hm : e.m.toNat < 2 ^ 63 := by
     have := Nat.mul_le_mul_left e.m.toNat (hB1.trans hB); lia
   have hBm : (B : ℤ) * e.m.toNat ≤ e.m.toNat * bHigh := by
     rw [mul_comm]; exact_mod_cast Nat.mul_le_mul_left _ hB
-  have hg' : (e.m.toNat : ℤ) * bHigh + (2 ^ e.s - 1) ≤ 2 ^ 63 - 1 := by
-    have := Nat.one_le_two_pow (n := e.s); lia
-  have hc : ((((1 : UInt64) <<< e.s.toUInt64) - 1).toInt64).toInt = 2 ^ e.s - 1 := by
-    rw [UInt64.toInt_toInt64_of_lt (by rw [UInt64.toNat_one_shiftLeft_sub_one hs]; lia),
-      UInt64.toNat_one_shiftLeft_sub_one hs]
-    have := Nat.one_le_two_pow (n := e.s); push_cast [Nat.cast_sub this]; rfl
   have hM := toInt_ite_neg_toInt64 hm
-  rw [toInt_mul_add_shiftRight hB63 hs, hc, hM, natCast_mul_value, ceil_intCast_div_two_pow]
-  · ring_nf
-  all_goals rw [hM]; try rw [hc]
-  all_goals split_ifs <;> lia
-
-/-- The form `(b M) >> s` of an upper end, without overflow for `b` up to the largest denominator
-by the guard of `end_form`, is `⌊b x⌋`. -/
-theorem toInt_form_upper {e : ExactEnd} {B bHigh : ℕ} (hs : e.s < 64) (hB1 : 1 ≤ B)
-    (hB : B ≤ bHigh) (hB63 : B < 2 ^ 63) (hg : e.m.toNat * bHigh ≤ 2 ^ 63 - 1) :
-    ((B.toInt64 * (if e.neg then -e.m.toInt64 else e.m.toInt64) + 0) >>> e.s.toInt64).toInt =
-      ⌊(B : ℚ) * e.value⌋ := by
-  have hm : e.m.toNat < 2 ^ 63 := by
-    have := Nat.mul_le_mul_left e.m.toNat (hB1.trans hB); lia
-  have hBm : (B : ℤ) * e.m.toNat ≤ e.m.toNat * bHigh := by
-    rw [mul_comm]; exact_mod_cast Nat.mul_le_mul_left _ hB
-  have hg' : (e.m.toNat : ℤ) * bHigh ≤ 2 ^ 63 - 1 := by lia
-  have hM := toInt_ite_neg_toInt64 hm
-  rw [toInt_mul_add_shiftRight hB63 hs, Int64.toInt_zero, add_zero, hM, natCast_mul_value,
-    floor_intCast_div_two_pow]
-  all_goals rw [hM]; try rw [Int64.toInt_zero]
+  rw [toInt_mul_add_shiftRight hB63 hs, hM]
+  all_goals rw [hM]
   all_goals split_ifs <;> lia
 
 /-- The guard `m ≤ (LONG_MAX - c) / b_high` of `end_form` on the `long`s: `m b_high + c` is a
@@ -968,11 +854,14 @@ theorem lowNumerator_of_form {e : ExactEnd} {H bHigh B : ℕ} (hH : H < 2 ^ 63) 
         (((1 : UInt64) <<< e.s.toUInt64) - 1).toInt64) >>> e.s.toInt64).toInt (H + 1)) =
       lowNumerator B H (e.value : WithBotTop ℚ) := by
   have hc := UInt64.toInt_toInt64_one_shiftLeft_sub_one hs
-  have hg' := mul_add_le_of_le_toUInt64_div (by rw [hc]; have := Nat.one_le_two_pow (n := e.s); lia)
-    (by lia) (by lia) hg
-  rw [hc] at hg'
-  rw [toInt_form_lower hs hB1 hB (by lia) (by have := Nat.one_le_two_pow (n := e.s); lia)]
-  simp only [lowNumerator, WithBotTop.rec_coe]
+  have hC : 0 ≤ ((((1 : UInt64) <<< e.s.toUInt64) - 1).toInt64).toInt := by
+    rw [hc]; lia [Nat.one_le_two_pow (n := e.s)]
+  rw [toInt_form hs hB1 hB (by lia) hC (mul_add_le_of_le_toUInt64_div hC (by lia) (by lia) hg), hc,
+    lowNumerator, WithBotTop.rec_coe, natCast_mul_value,
+    show (2 : ℚ) ^ e.s = ((2 ^ e.s : ℕ) : ℚ) by push_cast; rfl,
+    Rat.ceil_intCast_div_natCast_eq_add_sub_one_div _ (Nat.two_pow_pos e.s)]
+  push_cast [add_sub_assoc]
+  rfl
 
 theorem toInt_const_shiftRight_zero {B : ℕ} (hB : B < 2 ^ 63) {C : Int64} :
     ((B.toInt64 * 0 + C) >>> (0 : ℕ).toInt64).toInt = C.toInt := by
@@ -1037,10 +926,11 @@ theorem highNumerator_of_form {e : ExactEnd} {H bHigh B : ℕ} (hH : H < 2 ^ 63)
     (hg : e.m ≤ ((9223372036854775807 - 0) / bHigh.toInt64).toUInt64) :
     max (-(H : ℤ) - 1) (min ((B.toInt64 * (if e.neg then -e.m.toInt64 else e.m.toInt64) + 0) >>>
         e.s.toInt64).toInt H) = highNumerator B H (e.value : WithBotTop ℚ) := by
-  have hg' := mul_add_le_of_le_toUInt64_div (by simp) (by lia) (by lia) hg
-  rw [Int64.toInt_zero, add_zero] at hg'
-  rw [toInt_form_upper hs hB1 hB (by lia) (by lia)]
-  simp only [highNumerator, WithBotTop.rec_coe]
+  rw [toInt_form hs hB1 hB (by lia) (by simp) (mul_add_le_of_le_toUInt64_div (by simp) (by lia)
+    (by lia) hg), Int64.toInt_zero, add_zero, highNumerator, WithBotTop.rec_coe, natCast_mul_value,
+    show (2 : ℚ) ^ e.s = ((2 ^ e.s : ℕ) : ℚ) by push_cast; rfl, Rat.floor_intCast_div_natCast]
+  push_cast
+  rfl
 
 /-- The form `(0, H, 0)` of an upper end `x ≥ H`, clamped, is the largest numerator `H`. -/
 theorem highNumerator_of_le_exactScale_one {e : ExactEnd} (he : IsEnd e false) {H B : ℕ}

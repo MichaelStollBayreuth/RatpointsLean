@@ -413,7 +413,7 @@ theorem exists_searchList_of_findPoints_eq_ok {c : List ℤ} {H : ℕ} {s : Siev
     {L : List (ℤ × ℤ × ℤ)} (h : findPoints c H s o = .ok L) :
     ∃ c' rev S, Setup.reversal (o.normalize H).reverse c (degree c) = .ok (c', degree c', rev) ∧
       0 < degree c' ∧ 1 ≤ H ∧ H < 2 ^ 63 ∧ IntervalsWF (domainBits o.domain) ∧
-      ¬(0 ≤ o.sturm ∧ Id.run (Sturm.chain c' (degree c')) = none) ∧
+      (0 ≤ o.sturm → Id.run (Sturm.chain c' (degree c')) ≠ none) ∧
       IsSoundTest c' H (o.normalize H).bLow.toNat (o.normalize H).bHigh.toNat S ∧
       L = (searchRegion c' (degree c') H o).elim [] (fun D ↦ searchList c' H
         (o.normalize H).bLow.toNat (o.normalize H).bHigh.toNat D S ⟨rev, o.noCheck, o.noY⟩) ∧
@@ -432,7 +432,7 @@ theorem exists_searchList_of_findPoints_eq_ok {c : List ℤ} {H : ℕ} {s : Siev
   have key := findPoints_eq_ok_searchList (s := s) h1 h2 hH hH63 hl hr hsi hst hr₀ hS'
   exact ⟨c', rev, S, hr, Setup.one_le_of_reversal_eq_ok hr (by lia), hH, hH63,
     intervalsWF_of_run_searchIntervals_eq_some hsi,
-    not_nonneg_and_chain_eq_none_of_run_sturmRegion_eq_ok hst, hS,
+    chain_ne_none_of_run_sturmRegion_eq_ok hst, hS,
     Except.ok.inj ((findPoints_eq_ok_of_findPointsWith hout).symm.trans (key o.noCheck o.noY)),
     key⟩
 
@@ -448,7 +448,7 @@ theorem exists_eq_of_findPoints_eq_ok {c : List ℤ} {H : ℕ} {s : SieveOptions
     (hc : o.noCheck = false) :
     ∃ c' rev, Setup.reversal (o.normalize H).reverse c (degree c) = .ok (c', degree c', rev) ∧
       1 ≤ H ∧ H < 2 ^ 63 ∧ IntervalsWF (domainBits o.domain) ∧
-      ¬(0 ≤ o.sturm ∧ Id.run (Sturm.chain c' (degree c')) = none) ∧
+      (0 ≤ o.sturm → Id.run (Sturm.chain c' (degree c')) ≠ none) ∧
       L = (searchRegion c' (degree c') H o).elim [] fun D ↦
         ((pointsOfDen c' (degree c') 0 [1] ++
           (searchDens c' (degree c') (o.normalize H).bLow.toNat (o.normalize H).bHigh.toNat).flatMap
@@ -506,7 +506,7 @@ theorem inRegion_ite_swapPoint_iff {o : Options} {H : ℕ} {rev : Bool}
   have hbH := o.toNat_bHigh_normalize_le H
   have hl := o.bLow_normalize_le_iff H (z := b) (by lia)
   cases rev
-  · have hh := o.lt_one_or_le_bHigh_of_le (H := H) (z := b) (by lia) (by lia)
+  · have hh := (o.le_toNat_bHigh_normalize_iff (H := H) (z := b) (by lia)).mp (by lia)
     simp [inRegion_iff, hz, ← hl, hh, show b ≠ 0 by lia]
   · obtain ⟨hd, h1, -⟩ := hb rfl
     refine iff_of_true (inRegion_of_isFullBox (by simpa [IsFullBox] using hb rfl) ?_ ?_)
@@ -581,7 +581,7 @@ theorem eq_zero_or_le_toNat_bHigh_normalize_of_inRegion {o : Options}
   rcases h with h0 | ⟨-, hb, -⟩
   · exact .inl h0
   · rcases hz.eq_or_lt with h0 | h1
-    exacts [.inl h0.symm, .inr ⟨h1, o.le_toNat_bHigh_normalize_of_le hzH hb⟩]
+    exacts [.inl h0.symm, .inr ⟨h1, (o.le_toNat_bHigh_normalize_iff hzH).mpr hb⟩]
 
 /-- The points of the brute-force reference at infinity or with a denominator up to the normalized
 largest denominator that pass a test `t` and lie in the search region of the options are those of
@@ -615,7 +615,7 @@ infinity: it does so only for even degree and a leading coefficient that is not 
 (`Ratpoints.searchRegion_eq_none`). -/
 theorem elim_searchRegion_pointsOfDen_zero {c : List ℤ} {d H : ℕ} {o : Options}
     (hdom : IntervalsWF (domainBits o.domain))
-    (hc : ¬(0 ≤ o.sturm ∧ Id.run (Sturm.chain c d) = none)) :
+    (hc : 0 ≤ o.sturm → Id.run (Sturm.chain c d) ≠ none) :
     (searchRegion c d H o).elim [] (fun _ ↦ pointsOfDen c d 0 [1]) = pointsOfDen c d 0 [1] := by
   rcases h : searchRegion c d H o with _ | D
   · obtain ⟨hd, hs⟩ := searchRegion_eq_none hdom hc h
@@ -633,7 +633,7 @@ caller's search intervals, when there are some (`Ratpoints.searchRegion_covers`,
 theorem elim_searchRegion_pointsOfDen_filter {c : List ℤ} {d H : ℕ} {o : Options}
     (hS : 0 ≤ o.sturm → SturmTheorem) (hdom : IntervalsWF (domainBits o.domain))
     (hd : d = degree c) (hd0 : 0 < d) (hd57 : d < 2 ^ 57) (hH : 1 ≤ H) (hH63 : H < 2 ^ 63)
-    (hc : ¬(0 ≤ o.sturm ∧ Id.run (Sturm.chain c d) = none)) {b : ℕ} (hb : 0 < b) :
+    (hc : 0 ≤ o.sturm → Id.run (Sturm.chain c d) ≠ none) {b : ℕ} (hb : 0 < b) :
     (searchRegion c d H o).elim [] (fun D ↦ pointsOfDen c d b ((numerators H).filter
       fun a : ℤ ↦ decide (InIntervals D (a / b)))) =
       pointsOfDen c d b ((numerators H).filter fun a : ℤ ↦
@@ -883,7 +883,7 @@ theorem exists_eq_of_mem_of_findPoints_eq_ok_of_noCheck {c : List ℤ} {H : ℕ}
   · rcases mem_region_of_mem_searchList rfl hbL hq with h0 | ⟨h1, h2, h3⟩
     · exact .inl h0
     · refine .inr ⟨(o.bLow_normalize_le_iff H (by lia)).mp h1,
-        o.lt_one_or_le_bHigh_of_le h2 hn.2.2.2, ?_⟩
+        (o.le_toNat_bHigh_normalize_iff hn.2.2.2).mp h2, ?_⟩
       exact (searchRegion_subset hwf hreg _ h3).imp List.map_eq_nil_iff.mpr id
   · have hb := isFullBox_of_reversal_normalize_eq_ok hr
     exact inRegion_of_isFullBox (by simpa [IsFullBox] using hb)

@@ -14,16 +14,17 @@ import Ratpoints.Mathlib.FieldTheory.Perfect
 /-!
 # What Sturm's theorem says about an interval
 
-The consequences of Sturm's theorem (`Ratpoints.SturmTheorem`) for an interval with ends that may
-be infinite, which the bisection of the Sturm step relies on: the counts of the Sturm sequence at
-the ends (`Ratpoints.vLeft`, `Ratpoints.vRight`: `V(l)` at the lower end, `V(r)` plus `1` at a root
-`r` at the upper end, `V(∓∞)` at the ends at infinity) agree exactly when the squarefree polynomial
-`F` has no root strictly between them (`Ratpoints.vLeft_eq_vRight_iff`); then, when `F` is negative
-just inside the lower end, it is negative between the ends and just inside the upper end
-(`Ratpoints.eval_neg_of_vLeft_eq_vRight`); and when the counts differ, or `F` is positive just
-inside the lower end, `F` is positive somewhere between the ends
-(`Ratpoints.exists_inside_eval_pos`). Infinite ends are replaced by points far out, where the counts
-and the signs are those at infinity (`Ratpoints.eventually_atBot_sturm`,
+The consequences of Sturm's theorem (`Ratpoints.SturmTheorem`) for an interval with ends that may be
+infinite, which the bisection of the Sturm step relies on: the counts of the Sturm sequence at the
+ends (`Ratpoints.vLeft`, `Ratpoints.vRight`: `V(l)` at the lower end, `V(r)` plus `1` at a root `r`
+at the upper end, `V(∓∞)` at the ends at infinity) agree exactly when the squarefree polynomial `F`
+has no root strictly between them (`Ratpoints.vLeft_eq_vRight_iff`); then, when `F` is negative just
+inside the lower end, it is negative between the ends and just inside the upper end
+(`Ratpoints.eval_neg_of_vLeft_eq_vRight`); when the counts differ, or `F` is positive just inside
+the lower end, `F` is positive somewhere between the ends (`Ratpoints.exists_inside_eval_pos`); and
+equal counts at `∓∞` leave no root at all, so that `F` is negative everywhere when it is negative at
+`0` (`Ratpoints.eval_neg_of_vBot_eq_vTop`). Infinite ends are replaced by points far out, where the
+counts and the signs are those at infinity (`Ratpoints.eventually_atBot_sturm`,
 `Ratpoints.eventually_atTop_sturm`).
 
 ## Main definitions
@@ -42,6 +43,8 @@ and the signs are those at infinity (`Ratpoints.eventually_atBot_sturm`,
   `F(x) ≥ 0`.
 * `Ratpoints.exists_inside_eval_pos`: an interval that the bisection keeps holds an `x` with
   `F(x) > 0`.
+* `Ratpoints.eval_neg_of_vBot_eq_vTop`: a polynomial with equal counts at `∓∞`, negative at `0`, is
+  negative everywhere.
 -/
 
 @[expose] public section
@@ -145,7 +148,7 @@ theorem eventually_atTop_sturm {F : ℝ[X]} (hF : F ≠ 0) :
 
 /-- A finite point `l' < x` standing for the lower end `l` left of `x`: `l` itself, or a point far
 left, with the count and the sign just right of it of the end. -/
-theorem exists_lt_sturmV_eq_vLeft {F : ℝ[X]} (hF : F ≠ 0) (l : Option ℝ) {x : ℝ}
+theorem exists_lt_sturmV_eq_vLeft {F : ℝ[X]} (hF : F ≠ 0) {l : Option ℝ} {x : ℝ}
     (hx : ∀ a ∈ l, a < x) :
     ∃ l' < x, (∀ a ∈ l, l' = a) ∧ sturmV F l' = vLeft F l ∧
       sgnLeftEnd F (some l') = sgnLeftEnd F l := by
@@ -159,7 +162,7 @@ theorem exists_lt_sturmV_eq_vLeft {F : ℝ[X]} (hF : F ≠ 0) (l : Option ℝ) {
 
 /-- A finite point `r' > x` standing for the upper end `r` right of `x`: `r` itself, or a point far
 right, with the count and the sign just left of it of the end. -/
-theorem exists_gt_sturmV_add_eq_vRight {F : ℝ[X]} (hF : F ≠ 0) (r : Option ℝ) {x : ℝ}
+theorem exists_gt_sturmV_add_eq_vRight {F : ℝ[X]} (hF : F ≠ 0) {r : Option ℝ} {x : ℝ}
     (hx : ∀ b ∈ r, x < b) :
     ∃ r' > x, (∀ b ∈ r, r' = b) ∧ sturmV F r' + (if F.IsRoot r' then 1 else 0) = vRight F r ∧
       sgnRightEnd F (some r') = sgnRightEnd F r := by
@@ -198,12 +201,12 @@ theorem vLeft_eq_vRight_iff (hS : SturmTheorem) {F : ℝ[X]} (hF : Squarefree F)
     (hlr : ∀ a ∈ l, ∀ b ∈ r, a < b) :
     vLeft F l = vRight F r ↔ ∀ x, Inside l r x → ¬ F.IsRoot x := by
   refine ⟨fun h x hx ↦ ?_, fun h ↦ ?_⟩
-  · obtain ⟨l', hl', -, hvl, -⟩ := exists_lt_sturmV_eq_vLeft hF.ne_zero l hx.1
-    obtain ⟨r', hr', -, hvr, -⟩ := exists_gt_sturmV_add_eq_vRight hF.ne_zero r hx.2
+  · obtain ⟨l', hl', -, hvl, -⟩ := exists_lt_sturmV_eq_vLeft hF.ne_zero hx.1
+    obtain ⟨r', hr', -, hvr, -⟩ := exists_gt_sturmV_add_eq_vRight hF.ne_zero hx.2
     exact (sturmV_eq_iff hS hF (hl'.trans hr')).mp (by rw [hvl, h, hvr]) x hl' hr'
   · obtain ⟨x, hx⟩ := exists_inside hlr
-    obtain ⟨l', hl', hle, hvl, -⟩ := exists_lt_sturmV_eq_vLeft hF.ne_zero l hx.1
-    obtain ⟨r', hr', hre, hvr, -⟩ := exists_gt_sturmV_add_eq_vRight hF.ne_zero r hx.2
+    obtain ⟨l', hl', hle, hvl, -⟩ := exists_lt_sturmV_eq_vLeft hF.ne_zero hx.1
+    obtain ⟨r', hr', hre, hvr, -⟩ := exists_gt_sturmV_add_eq_vRight hF.ne_zero hx.2
     rw [← hvl, ← hvr]
     exact (sturmV_eq_iff hS hF (hl'.trans hr')).mpr fun y h1 h2 ↦ h y
       ⟨fun a ha ↦ hle a ha ▸ h1, fun b hb ↦ hre b hb ▸ h2⟩
@@ -226,8 +229,8 @@ theorem eval_neg_of_vLeft_eq_vRight (hS : SturmTheorem) {F : ℝ[X]} (hF : Squar
     (hs : sgnLeftEnd F l = -1) : (∀ x, Inside l r x → F.eval x < 0) ∧ sgnRightEnd F r = -1 := by
   have hroot := (vLeft_eq_vRight_iff hS hF hlr).mp h
   have key (x : ℝ) (hx : Inside l r x) : F.eval x < 0 := by
-    obtain ⟨l', hl', hle, -, hsl⟩ := exists_lt_sturmV_eq_vLeft hF.ne_zero l hx.1
-    obtain ⟨r', hr', hre, -, -⟩ := exists_gt_sturmV_add_eq_vRight hF.ne_zero r hx.2
+    obtain ⟨l', hl', hle, -, hsl⟩ := exists_lt_sturmV_eq_vLeft hF.ne_zero hx.1
+    obtain ⟨r', hr', hre, -, -⟩ := exists_gt_sturmV_add_eq_vRight hF.ne_zero hx.2
     refine eval_neg_of_forall_not_isRoot (fun y h1 h2 ↦ hroot y
       ⟨fun a ha ↦ hle a ha ▸ h1, fun b hb ↦ hre b hb ▸ h2⟩) ?_ hl' hr'
     filter_upwards [eventually_sign_eval_nhdsGT (hF.eval_ne_zero_or_eval_derivative_ne_zero l')]
@@ -235,11 +238,26 @@ theorem eval_neg_of_vLeft_eq_vRight (hS : SturmTheorem) {F : ℝ[X]} (hF : Squar
     exact sign_eq_neg_one_iff.mp (hy.trans (hsl.trans hs))
   refine ⟨key, ?_⟩
   obtain ⟨x, hx⟩ := exists_inside hlr
-  obtain ⟨r', hr', hre, -, hsr⟩ := exists_gt_sturmV_add_eq_vRight hF.ne_zero r hx.2
+  obtain ⟨r', hr', hre, -, hsr⟩ := exists_gt_sturmV_add_eq_vRight hF.ne_zero hx.2
   obtain ⟨y, hy, hxy, hyr⟩ := ((eventually_sign_eval_nhdsLT
     (hF.eval_ne_zero_or_eval_derivative_ne_zero r')).and (Ioo_mem_nhdsLT hr')).exists
   exact hsr.symm.trans <| hy.symm.trans <| sign_neg
     (key y ⟨fun a ha ↦ (hx.1 a ha).trans hxy, fun b hb ↦ hre b hb ▸ hyr⟩)
+
+/-- By Sturm's theorem, a squarefree real polynomial with equal counts at `∓∞` has no real root,
+so that it is negative everywhere when it is negative at `0`. -/
+theorem eval_neg_of_vBot_eq_vTop (hS : SturmTheorem) {F : ℝ[X]} (hF : Squarefree F)
+    (h : vBot F = vTop F) (h0 : F.eval 0 < 0) (x : ℝ) : F.eval x < 0 := by
+  have hroot := (vLeft_eq_vRight_iff hS hF (l := none) (r := none) (by simp)).mp h
+  have hx0 (y : ℝ) : F.eval y ≠ 0 := hroot y (by simp [Inside])
+  by_contra! hx
+  have hx' := lt_of_le_of_ne hx (hx0 x).symm
+  rcases lt_trichotomy x 0 with hlt | rfl | hgt
+  · obtain ⟨z, -, hz⟩ := exists_isRoot_of_eval_mul_eval_neg hlt (mul_neg_of_pos_of_neg hx' h0)
+    exact hx0 z hz
+  · linarith
+  · obtain ⟨z, -, hz⟩ := exists_isRoot_of_eval_mul_eval_neg hgt (mul_neg_of_neg_of_pos h0 hx')
+    exact hx0 z hz
 
 /-- Next to a root of a squarefree `F` between the ends of an interval, `F` is positive at some
 point between them: it changes its sign at the root. -/
@@ -269,7 +287,7 @@ theorem exists_inside_eval_pos (hS : SturmTheorem) {F : ℝ[X]} (hF : Squarefree
       exact h ((vLeft_eq_vRight_iff hS hF hlr).mpr h')
     exact exists_inside_eval_pos_of_isRoot hF hz hz0
   · obtain ⟨x, hx⟩ := exists_inside hlr
-    obtain ⟨l', hl', hle, -, hsl⟩ := exists_lt_sturmV_eq_vLeft hF.ne_zero l hx.1
+    obtain ⟨l', hl', hle, -, hsl⟩ := exists_lt_sturmV_eq_vLeft hF.ne_zero hx.1
     obtain ⟨y, hy, hly, hyx⟩ := ((eventually_sign_eval_nhdsGT
       (hF.eval_ne_zero_or_eval_derivative_ne_zero l')).and (Ioo_mem_nhdsGT hl')).exists
     exact ⟨y, ⟨fun a ha ↦ hle a ha ▸ hly, fun b hb ↦ hyx.trans (hx.2 b hb)⟩,

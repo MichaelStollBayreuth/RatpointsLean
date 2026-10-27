@@ -10,10 +10,10 @@ public import Ratpoints.Proof.Setup
 public import Ratpoints.Proof.SturmCounts
 
 import Mathlib.Data.List.GetD
-import Ratpoints.Mathlib.Algebra.Polynomial.Eval.Coeff
 import Ratpoints.Mathlib.Algebra.Polynomial.FieldDivision
 import Ratpoints.Mathlib.Analysis.Polynomial.Sturm
 import Ratpoints.Mathlib.Basic.Sign.Defs
+import Ratpoints.Mathlib.Data.List.SignVariations
 import Ratpoints.Mathlib.FieldTheory.Perfect
 import Ratpoints.Proof.Containers
 
@@ -53,8 +53,7 @@ signs of the real polynomial `f` and its derivative and the count `V` of Sturm's
 * `Ratpoints.Sturm.signCount_eq_signVariations`,
   `Ratpoints.Sturm.ite_add_signCount_eq_signVariations`,
   `Ratpoints.Sturm.run_signsAt_eq_signVariations`: the count of the signs at a midpoint.
-* `Ratpoints.Sturm.countP_ne_eq_signVariations`,
-  `Ratpoints.Sturm.run_countsAtInfinity_eq_signVariations`: the counts at `±∞`.
+* `Ratpoints.Sturm.run_countsAtInfinity_eq_signVariations`: the counts at `±∞`.
 * `Ratpoints.Sturm.IsChain.forall₂_posAssoc_sturmSeq_map`: the chain as the Sturm sequence over `ℝ`.
 * `Ratpoints.Sturm.IsChain.run_signsAt_eq`, `Ratpoints.Sturm.IsChain.run_countsAtInfinity_eq`: the
   signs and counts of the Sturm step are those of the real polynomial.
@@ -130,28 +129,6 @@ theorem ite_add_signCount_eq_signVariations {s0 s1 : ℤ} (h0 : s0 = -1 ∨ s0 =
   rcases h0 with rfl | rfl | rfl <;> rcases h1 with rfl | rfl | rfl <;>
     simp_all [signCount_eq_signVariations, List.signVariations_cons_cons_of_ne_zero, add_comm]
 
-/-- The number of neighbours that differ in a sequence of nonzero signs is its number of sign
-variations. -/
-theorem countP_ne_eq_signVariations {s : ℕ → ℤ} {k : ℕ} (hs : ∀ n ≤ k, s n = -1 ∨ s n = 1) :
-    (List.range k).countP (fun n ↦ s n != s (n + 1)) =
-      ((List.range (k + 1)).map s).signVariations := by
-  induction k generalizing s with
-  | zero => simp
-  | succ k ih =>
-    have ih' := ih (s := fun n ↦ s (n + 1)) fun n hn ↦ hs (n + 1) (by lia)
-    have hR (t : ℕ → ℤ) (m : ℕ) : (List.range (m + 1)).map t =
-        t 0 :: (List.range m).map fun n ↦ t (n + 1) := by
-      rw [List.range_succ_eq_map, List.map_cons, List.map_map]; rfl
-    have hL : (List.range (k + 1)).countP (fun n ↦ s n != s (n + 1)) =
-        (List.range k).countP (fun n ↦ s (n + 1) != s (n + 1 + 1)) +
-          if s 0 != s 1 then 1 else 0 := by
-      rw [List.range_succ_eq_map, List.countP_cons, List.countP_map]; rfl
-    rw [hL, ih', hR s (k + 1), hR (fun n ↦ s (n + 1)) k,
-      List.signVariations_cons_cons_of_ne_zero]
-    · rcases hs 0 (by lia) with h0 | h0 <;> rcases hs 1 (by lia) with h1 | h1 <;> simp [h0, h1]
-    · rcases hs 0 (by lia) with h0 | h0 <;> simp [h0]
-    · rcases hs 1 (by lia) with h1 | h1 <;> simp [h1]
-
 /-- The counts of `Ratpoints.Sturm.countsAtInfinity` for rows with nonzero leading coefficients:
 the sign variations of the signs of the rows `0, …, k` at `+∞` and at `-∞`. -/
 theorem run_countsAtInfinity_eq_signVariations {rows : Array (Array ℤ)} {k : ℕ}
@@ -166,7 +143,8 @@ theorem run_countsAtInfinity_eq_signVariations {rows : Array (Array ℤ)} {k : �
     · exact .inr (Int.sign_eq_one_of_pos h')
   have hb (n : ℕ) (hn : n ≤ k) : signAtBot rows n = -1 ∨ signAtBot rows n = 1 := by
     simp only [signAtBot]; rcases ht n hn with h' | h' <;> split_ifs <;> simp [h']
-  rw [run_countsAtInfinity, countP_ne_eq_signVariations ht, countP_ne_eq_signVariations hb]
+  rw [run_countsAtInfinity, List.countP_ne_eq_signVariations ht,
+    List.countP_ne_eq_signVariations hb]
 
 /-- `Ratpoints.Sturm.evalSign` returns a sign. -/
 theorem run_evalSign_eq_neg_one_or_eq_zero_or_eq_one (row : Array ℤ) (num denexp : Int64) :
@@ -275,12 +253,6 @@ theorem IsChain.size_getElem!_le {c : List ℤ} {d : ℕ} {ch : Array (Array ℤ
   rcases n with _ | n
   · simp [h.getElem!_zero]
   · lia [h.size_getElem!_add_one_add_le hn]
-
-/-- The sign of the value of a rational polynomial at a rational point, over `ℝ`. -/
-theorem sign_eval_map_ratCastHom (p : ℚ[X]) (q : ℚ) :
-    SignType.sign ((p.map (Rat.castHom ℝ)).eval (q : ℝ)) = SignType.sign (p.eval q) := by
-  rw [eval_ratCast_map]
-  simp only [sign_apply, Rat.coe_castHom, Rat.cast_id, Rat.cast_pos, Rat.cast_lt_zero]
 
 /-- `Ratpoints.Sturm.evalSign` computes the sign of the real polynomial of a row of a chain of a
 polynomial of degree `d < 2 ^ 57` at `nm / 2 ^ dem` for `0 ≤ dem ≤ 55`, the depths of the Sturm
