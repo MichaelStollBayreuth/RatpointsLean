@@ -227,12 +227,13 @@ class EndToEnd(unittest.TestCase):
         self.run_main('table')
         code, out = self.run_main('check')
         self.assertEqual(code, 1)
-        self.assertIn('node lem:f lacks \\csource{a.c}{5}{9}', out)
         self.assertIn('node lem:f has \\csource{a.c}{5}{8}', out)
         self.assertIn('\\csource{a.c}{4}{20} is not a range of a.c', out)
         # a remark is no node of the graph: it may cite freely, and it names nothing
         self.assertNotIn('a.c}{1}{2}', out)
-        self.assertIn('Ratpoints.Model.g models C code but is named by no node', out)
+        # a node need not cite every range of its declarations, nor every declaration a node
+        self.assertNotIn('{5}{9}', out)
+        self.assertNotIn('Ratpoints.Model.g', out)
 
     def test_thms_option(self):
         self.decl('Ratpoints.Model.f', 'C: `a.c:5-9`')
@@ -241,9 +242,13 @@ class EndToEnd(unittest.TestCase):
         self.lock_and_table()
         code, out = self.run_main('check')
         self.assertEqual(code, 0, out)
-        self.write_blueprint(self.node('Ratpoints.Model.f', (5, 9), env='lemma'), web=web)
+        self.write_blueprint(self.node('Ratpoints.Model.f', (5, 8), env='facts'), web=web)
         code, out = self.run_main('check')
-        self.assertIn('Ratpoints.Model.f models C code but is named by no node', out)
+        self.assertIn('node facts has \\csource{a.c}{5}{8}', out)
+        # under thms=definition+facts a lemma is no node of the graph: its links are free
+        self.write_blueprint(self.node('Ratpoints.Model.f', (5, 8), env='lemma'), web=web)
+        code, out = self.run_main('check')
+        self.assertNotIn('{5}{8}, which', out)
 
     def test_tex_whitespace_and_comments(self):
         self.decl('Ratpoints.Model.f', 'C: `a.c:5-9`')

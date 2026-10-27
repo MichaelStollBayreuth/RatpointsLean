@@ -28,8 +28,9 @@ The record (correspondence/README.md has the details):
   owners (the Lean declarations that model it, or its exclusion), and the hash of the text of
   every C link of the blueprint; the `lock` command writes it after a review;
 - the blueprint links to the C code with \\csource{file}{first}{last}; inside a node of the
-  dependency graph that names declarations with \\lean, the links are exactly the ranges of the
-  model declarations it names; elsewhere (prose, remarks) any range may be cited.
+  dependency graph that names declarations with \\lean, every link is a range of one of the model
+  declarations it names; elsewhere (prose, remarks) any range may be cited. The generated chapter
+  of the blueprint lists every range with its owners, so a node need not cite all of them.
 
 The checks: the pin exists in the repository (and its tag, if present there, points to it); every
 range lies in a listed file and within its lines; no line lies in two different ranges; the
@@ -38,8 +39,7 @@ carries a record; every range and every C link of the blueprint is in the lock w
 and the same owners (after a move of the pin: has the text and the owners of some locked range or
 link, so that exactly the new and changed ones are reported); the generated blueprint chapter is
 up to date; the blueprint's \\ratpointscommit is the pin; the C links of the nodes are as above;
-every model declaration with a range is named by a node; with --complete, every non-comment line
-lies in a range.
+with --complete, every non-comment line lies in a range.
 """
 
 import argparse
@@ -573,20 +573,12 @@ def check_blueprint(pin, bp, decl_ranges, errors):
         errors.append(r'the blueprint does not define \ratpointscommit')
     elif bp.commit != pin['commit']:
         errors.append(rf'\ratpointscommit is {bp.commit}, the pin is {pin["commit"]}')
-    named = set()
     for where, names, cites in bp.nodes:
-        named |= set(names)
         want = {(r.file, r.first, r.last) for n in names for r in decl_ranges.get(n, [])}
         have = {(f, int(a), int(b)) for f, a, b in cites if a.isdigit() and b.isdigit()}
-        for f, a, b in sorted(want - have):
-            errors.append(rf'{where} lacks \csource{{{f}}}{{{a}}}{{{b}}}, a range of its '
-                          rf'declarations')
         for f, a, b in sorted(have - want):
             errors.append(rf'{where} has \csource{{{f}}}{{{a}}}{{{b}}}, which is no range of its '
                           rf'declarations')
-    for n in sorted(set(decl_ranges) - named):
-        errors.append(rf'{n} models C code but is named by no node of the dependency graph '
-                      rf'(\lean{{{n}}})')
 
 
 # ---------------------------------------------------------------------------------------------

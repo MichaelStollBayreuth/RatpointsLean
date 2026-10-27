@@ -64,12 +64,13 @@ the model, reads the docstrings of its declarations with `scripts/Correspondence
   from C to Lean, with the lines not yet recorded) is up to date (`scripts/correspondence.py
   table` regenerates it);
 - that the blueprint's `\ratpointscommit` is the pin, that every `\csource{file}{first}{last}`
-  is a range of a listed file, that the C links of each node of the dependency graph (the
+  is a range of a listed file, and that every C link of a node of the dependency graph (the
   environments of the `thms=` option of the blueprint package in `web.tex`, by default
   definition, lemma, proposition, theorem and corollary) that names declarations with
-  `\lean{…}` are exactly the ranges of the model declarations it names, and that every model
-  declaration with a range is named by such a node. Prose and other environments, such as
-  remarks, may link to any range;
+  `\lean{…}` is a range of one of the model declarations it names. A node need not cite every
+  range of its declarations, and a model declaration need not be named by a node: the generated
+  chapter lists every range with its owners. Prose and other environments, such as remarks, may
+  link to any range;
 - with `--complete`, that every line of code lies in a range: every line of code of the files is
   recorded, and a line that no declaration models and no exclusion covers fails the check.
   `scripts/correspondence.py coverage` lists the stretches not recorded, as after a move of the pin
