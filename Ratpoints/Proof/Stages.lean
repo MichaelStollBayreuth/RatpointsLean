@@ -394,7 +394,7 @@ theorem binv_checkOf {b : Nat} (H : Nat) {e : SieveEntry} {t : Entry} (he : e.fa
     (checkOf b H e (magic e.p)).binv = if b % e.p = 0 then 0 else t.inverses[b % e.p]! := by
   have : (if b ≤ mulModLimit then mulMod b e.p (magic e.p) else b % e.p) = b % e.p := by
     split
-    · exact mulMod_magic hp (mul_lt_two_pow_64_of_le_mulModLimit ‹_› hp32)
+    · exact mulMod_magic_of_le_mulModLimit hp hp32 ‹_›
     · rfl
   simp only [checkOf, he, this]
 
@@ -1041,7 +1041,7 @@ theorem SecondStageInvariant.andBitArray {nums v : Vector UInt64 rbaPack} {i : I
         rest') := by
   obtain ⟨rfl, hc⟩ := eq_magic_and_of_next?_eq_some pre.2.1 hs h.1 hnext
   rw [(pre.1 s (by simp [hs])).ite_mulMod_modLong_eq_toNat_emod pre.2.2]
-  refine ⟨hc, fun κ hκ ↦ ?_⟩
+  refine ⟨fun _ ↦ hc, fun κ hκ ↦ ?_⟩
   simp only [getElem!_andBitArray _ _ _ _ hκ, Nat.div_eq_of_lt hκ, ↓reduceIte, Nat.mod_eq_of_lt hκ,
     h.2 κ hκ, andWords_concat, SieveSpec.wordAt_of_lt _ _ hκ]
 
@@ -1086,7 +1086,7 @@ theorem SecondStageWordInvariant.and {x0 x : UInt64} {i : Int} {κ : Nat} (hκ :
   obtain ⟨rfl, hc⟩ := eq_magic_and_of_next?_eq_some pre.2.1 hs h.1 hnext
   rw [(pre.1 s (by simp [hs])).ite_mulMod_modLong_eq_toNat_emod pre.2.2]
   have h2 : x = andWords pref x0 i κ := h.2
-  refine ⟨hc, ?_⟩
+  refine ⟨fun _ ↦ hc, ?_⟩
   change x &&& _ = _
   rw [h2, andWords_concat, SieveSpec.wordAt_of_lt _ _ hκ]
 

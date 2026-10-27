@@ -44,9 +44,8 @@ of the factors.
   the factors of a product.
 * `Ratpoints.Sieve.toArray_eq_closedRow_of_productWord`: the rows of the factors in closed form,
   and-ed in their blocks, are the closed form of the row of the product.
-* `Ratpoints.Sieve.SieveEntry.admits_eq_all`, `Ratpoints.Sieve.SieveEntry.admits_eq_of_factors_eq`:
-  the row of a sieve entry whose factors have moduli dividing its modulus is the and of the rows of
-  its factors, and that of an entry with one factor of its modulus is the row of the factor.
+* `Ratpoints.Sieve.SieveEntry.admits_eq_of_factors_eq`: the row of a sieve entry with one factor of
+  its modulus is the row of the factor.
 
 ## Implementation notes
 
@@ -54,7 +53,8 @@ The file uses Lean core and `Std` only, as the contracts of the sieve do. The pr
 `Ratpoints.rbaPack` and `Ratpoints.chunk` are positive, never their values. The bits of the words of
 a pattern (`Ratpoints.Sieve.patBit`) are in `Ratpoints.Proof.Rows`, the contracts of the builders of
 the rows of a prime in `Ratpoints.Proof.PrimeRows`, and those of the builders through the tables of
-rows in `Ratpoints.Proof.RowStore`.
+rows in `Ratpoints.Proof.RowStore`, and the row of a sieve entry as the and of the rows of its
+factors in `Ratpoints.Proof.Words` (`Ratpoints.Sieve.SieveEntry.admits_eq_all`).
 -/
 
 @[expose] public section
@@ -939,12 +939,6 @@ theorem Factor.admits_mod_left (f : Factor) (b : Nat) (a : Int) :
     f.admits (b % f.modulus) a = f.admits b a := by
   cases f <;> simp [Factor.admits, Factor.modulus, Entry.admits, Power.admits]
 
-theorem Factor.admits_mod_of_dvd (f : Factor) {m : Nat} (h : f.modulus ∣ m) (b : Nat) (a : Int) :
-    f.admits (b % m) (a % m) = f.admits b a := by
-  cases f with
-  | prime t => exact Entry.admits_mod_of_dvd t h b a
-  | power pw => exact Power.admits_mod_of_dvd pw h b a
-
 /-- A sieve entry whose one factor `f` has the modulus of the entry, as a prime or a prime power is
 its own factor (`Ratpoints.makeModulus`), has the row of the factor. -/
 theorem SieveEntry.admits_eq_of_factors_eq {e : SieveEntry} {f : Factor} (he : e.factors = [f])
@@ -995,12 +989,6 @@ theorem getLsbD_productWord (e : SieveEntry) (frows : Array (Array UInt64)) {K :
   obtain ⟨K, rfl⟩ : ∃ k, K = k + 1 := ⟨K - 1, by lia⟩
   rw [productWord, UInt64.getLsbD_foldl_and, List.range_eq_range', List.range'_succ]
   simp
-
-/-- The row of a sieve entry whose factors have moduli dividing its modulus admits a numerator when
-each factor does, the factors reading the residues modulo their own moduli. -/
-theorem SieveEntry.admits_eq_all {e : SieveEntry} (h : ∀ f ∈ e.factors, f.modulus ∣ e.p) (b : Nat)
-    (a : Int) : e.admits b a = e.factors.all (·.admits b a) :=
-  List.all_congr_left fun f hf ↦ Factor.admits_mod_of_dvd f (h f hf) b a
 
 /-- The row of a product whose words are those of the rows of its factors, in closed form at the
 residue `b` modulo their moduli, and-ed in the blocks of their lengths and repeated after the first

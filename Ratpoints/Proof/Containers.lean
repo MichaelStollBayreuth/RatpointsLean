@@ -46,35 +46,33 @@ remainder, which truncates, made non-negative, and the residue of `(a mod p) b` 
 `u` with an inverse modulo `q`, zero or not, modulo a divisor of `q` too, the residue `x i mod q`
 read with an inverse `i` of `r`, the residue `u (b v mod p)` for an inverse `v` of `u`, and the
 residue of `u a` for an integer `a`. For the loops over two lists: the cursor of the second list of
-a loop `for x in l, y in l.map f`, and a list whose next element is known. For the classes of the
-packing: the residues in a packing of the stride `2 ^ k` dividing 64, the place `(a - a₀) mod n / m`
-of a residue `a ≡ a₀ (mod m)` below `n = m P`, and a residue `a + m j` modulo 64. For the rows of
-offsets: the multiple `m ⌈R / m⌉` of `m > 0`, from `R` to below `R + m`, the residue
-`(a y mod p + c) M` of `a` for a multiple `c` of `p` and an inverse `M` of `y`, and the entries of a
-vector after `Vector.set`, of an array of `none`s and of an array whose list is a map. For the
-residues and the bits of an interval: the numbers of a range in one class modulo `m`, the multiples
-of `m` among `N + (m - r)`, a numerator `i - H` in a class modulo `m`, the quotient by `m > 0` of a
-number above a negative bound, which stays above it, the quotients of the split form of
-`numerators_to_bits`, its carries and their sums with a quotient, in the range of a `long`, the
-multiples of a divisor of `N` at or below a number `≥ -N` and above a number `< N`, which lie in
-`[-N, N]`, the product `a ^ m a ^ (n - m) = a ^ n` of integers, and the strings joined by a
-separator. For the search intervals: the elements of a list that pass one of two tests, those that
-pass the first coming before those that pass the second, and the elements of an increasing list of
-integers in ranges that are increasing and strictly apart, range after range. For the counters of
-the loop over the search intervals: a list whose elements all pass a test as its own longest prefix
-that passes it. For the numbers of the command line: the characters that `Char.toLower` takes to
-`x`. For the search intervals of the command line: an entry set twice, an entry after another is
-set, the entries and the members of the first `m` entries of an array as a list, the entry `l[i]!`
-of a list as one of its members, and a bind of `Except` that succeeds. For the intersection of the
-Sturm step: the list of an array from a position within it on. For the choice of the moduli: the
-entry `xs[i]!` of an array with `xs[i]? = some x`, an array that extends another position by
-position, the size, the first entries and the members of an array after `Array.eraseIdxIfInBounds`,
-the values of a map to `Option` that is `some` on every element of a list, and one division of
-`p > 1` off a positive multiple of `p`. For the blocks and the correction of the moduli: the first
-`m` entries of a list followed by the next `n - m`, a property of the elements of `l.drop m` from
-those of `l.drop n` and the entries between, the elements of the lists `g a, …, g b` that pass a
-test, a number of a range that passes a test, the image of the cursor of a loop over a range among
-the images that pass a test, and the images of a list with an element appended that pass a test. The
+a loop `for x in l, y in l.map f`. For the classes of the packing: the residues in a packing of the
+stride `2 ^ k` dividing 64, the place `(a - a₀) mod n / m` of a residue `a ≡ a₀ (mod m)` below
+`n = m P`, and a residue `a + m j` modulo 64. For the rows of offsets: the multiple `m ⌈R / m⌉` of
+`m > 0`, from `R` to below `R + m`, the residue `(a y mod p + c) M` of `a` for a multiple `c` of `p`
+and an inverse `M` of `y`, and the entries of a vector after `Vector.set`, of an array of `none`s
+and of an array whose list is a map. For the residues and the bits of an interval: the numbers of a
+range in one class modulo `m`, the multiples of `m` among `N + (m - r)`, a numerator `i - H` in a
+class modulo `m`, the quotient by `m > 0` of a number above a negative bound, which stays above it,
+the quotients of the split form of `numerators_to_bits`, the multiples of a divisor of `N` at or
+below a number `≥ -N` and above a number `< N`, which lie in `[-N, N]`, the product
+`a ^ m a ^ (n - m) = a ^ n` of integers, and the strings joined by a separator. For the search
+intervals: the elements of a list that pass one of two tests, those that pass the first coming
+before those that pass the second, and the elements of an increasing list of integers in ranges that
+are increasing and strictly apart, range after range. For the counters of the loop over the search
+intervals: a list whose elements all pass a test as its own longest prefix that passes it. For the
+numbers of the command line: the characters that `Char.toLower` takes to `x`. For the search
+intervals of the command line: an entry set twice, an entry after another is set, the entries and
+the members of the first `m` entries of an array as a list, the entry `l[i]!` of a list as one of
+its members, and a bind of `Except` that succeeds. For the intersection of the Sturm step: the list
+of an array from a position within it on. For the choice of the moduli: the entry `xs[i]!` of an
+array with `xs[i]? = some x`, an array that extends another position by position, the size and the
+first entries of an array after `Array.eraseIdxIfInBounds`, and the values of a map to `Option` that
+is `some` on every element of a list. For the blocks and the correction of the moduli: the first `m`
+entries of a list followed by the next `n - m`, a property of the elements of `l.drop m` from those
+of `l.drop n` and the entries between, the elements of the lists `g a, …, g b` that pass a test, a
+number of a range that passes a test, the image of the cursor of a loop over a range among the
+images that pass a test, and the images of a list with an element appended that pass a test. The
 lemmas on 64-bit words are in `Ratpoints.Proof.Bits`.
 
 ## Main definitions
@@ -121,17 +119,15 @@ lemmas on 64-bit words are in `Ratpoints.Proof.Bits`.
 * `Array.getElem!_foldl_setIfInBounds`, `Array.any_id_eq_true_of_getElem!_eq_true`: the entries of
   an array of Booleans that a fold of `setIfInBounds · true` marks, and an array with a true entry.
 * `Array.forall_mem_toList_push`: a property of the members of the list of an array after a push;
-  `Array.pairwise_map_toList_push`: the order of the images of its members after a push;
-  `Array.forall_getElem_push`: a predicate on the indices and the entries of an array after a push.
+  `Array.pairwise_map_toList_push`: the order of the images of its members after a push.
 * `Array.mem_of_forIn_toList_eq_append_cons`: the cursor of a loop over an array is one of its
   entries.
 * `Array.getElem!_of_getElem?`: the entry `xs[i]!` of an array with `xs[i]? = some x` is `x`.
 * `Array.Extends.refl`, `Array.Extends.trans`, `Array.extends_push`, `Array.extends_ite_push`: an
   array extends itself, an array that extends one that extends `a` extends `a`, and a push extends
   an array.
-* `Array.size_eraseIdxIfInBounds_of_lt`, `Array.getElem_eraseIdxIfInBounds_of_lt`,
-  `Array.mem_of_mem_eraseIdxIfInBounds`: the size of an array after `Array.eraseIdxIfInBounds` at an
-  index in bounds, its entries before that index, and its members, which are members of the array.
+* `Array.size_eraseIdxIfInBounds_of_lt`, `Array.getElem_eraseIdxIfInBounds_of_lt`: the size of an
+  array after `Array.eraseIdxIfInBounds` at an index in bounds, and its entries before that index.
 * `List.foldl_gcd_natAbs_dvd_natAbs`: the gcd of the absolute values of the entries of a list, as a
   left fold, divides each of them.
 * `List.all_range_length_getElem!`, `List.all_and_left`, `List.all_congr_left`: the test of a list
@@ -155,9 +151,10 @@ lemmas on 64-bit words are in `Ratpoints.Proof.Bits`.
   `m`, and that of the residue plus `x` is the residue of `a + x`.
 * `Nat.and_two_ne_zero_iff`, `Nat.and_and_two_ne_zero_iff`: bit 1 of odd numbers says whether they
   are `3 (mod 4)`; `Nat.gcd_div_two_of_mod_two`: halving an even number keeps its gcd with an odd
-  one; `Nat.mod_eq_ite_of_lt_two_mul`: a residue below `2 q` modulo `q` by one subtraction, and
-  `Nat.ite_eq_add_one_mod_add_one`, `Nat.ite_mod_add_one_eq_add_one_mod`: the position after `a`
-  in a ring of `n + 1` positions, and after `w mod p` in a ring of `p` positions.
+  one; `Nat.mod_eq_ite_of_lt_two_mul`, `Int.emod_eq_ite_of_lt_two_mul`: a residue below `2 q`
+  modulo `q` by one subtraction, and `Nat.ite_eq_add_one_mod_add_one`,
+  `Nat.ite_mod_add_one_eq_add_one_mod`: the position after `a` in a ring of `n + 1` positions, and
+  after `w mod p` in a ring of `p` positions.
 * `Nat.mul_sub_one_div_div_mul_le`, `Nat.lt_mul_sub_one_div_div_add_two_mul`: Barrett's estimate
   `⌊u ⌊(N - 1) / p⌋ / N⌋` of `⌊u / p⌋` for `u < N` is the quotient or one less.
 * `Nat.mul_add_lt_mul_of_lt`, `Nat.pow_lt_two_pow_of_lt`: a step of Horner's rule multiplies a bound
@@ -190,8 +187,6 @@ lemmas on 64-bit words are in `Ratpoints.Proof.Bits`.
   lies from `R` to below `R + m`, as the bias of a modulus does.
 * `Nat.eq_of_mod_eq_zero_of_le_of_lt`: the multiples of `p` lie `p` apart, as the loop over the
   multiples of `p` of `examine_power` steps through them.
-* `Nat.div_lt_and_pos_and_div_mul_pow_succ`: one division of `p > 1` off a positive multiple `a` of
-  `p`, with the cofactor below `a`, positive, and times `p ^ (e + 1)` equal to `a p ^ e`.
 * `List.filter_range_mod_eq`: the numbers below `N` that are `r` modulo `m > r`, `r, r + m, …`.
 * `Int.ediv_add_emod_sub_add_sub_one_ediv`, `Int.ediv_add_emod_sub_ediv`: the two ends of the split
   form of `numerators_to_bits`, `⌈(lo - a₀) / m⌉` and `⌊(hi - a₀) / m⌋`.
@@ -342,17 +337,6 @@ theorem getElem!_push_eq {α : Type u} [Inhabited α] {xs : Array α} {x : α} :
     (xs.push x)[xs.size]! = x := by
   simp
 
-/-- A predicate on the indices and the entries of `xs` that holds at every index of `xs`, and at
-`xs.size` for `a`, holds at every index of `xs.push a`. -/
-theorem forall_getElem_push {α : Type u} {P : Nat → α → Prop} {xs : Array α} {a : α}
-    (h : ∀ i (hi : i < xs.size), P i xs[i]) (ha : P xs.size a) (i : Nat)
-    (hi : i < (xs.push a).size) : P i (xs.push a)[i] := by
-  rw [getElem_push]
-  split
-  · exact h i ‹_›
-  · obtain rfl : i = xs.size := by simp at hi; lia
-    exact ha
-
 theorem getElem!_map {α : Type u} {β : Type v} [Inhabited α] [Inhabited β] {f : α → β}
     (hf : f default = default) (xs : Array α) (i : Nat) : (xs.map f)[i]! = f xs[i]! := by
   grind
@@ -367,13 +351,14 @@ theorem getElem!_pop_of_back!_eq {α : Type u} [Inhabited α] {xs : Array α} (h
 
 /-- The entries of an array of Booleans that a fold of `setIfInBounds · true` over the list `l`
 marks: entry `t` in range is set when it was set before or one of the positions `f i` is `t`. -/
-theorem getElem!_foldl_setIfInBounds {α : Type u} (l : List α) (f : α → Nat) (w : Array Bool)
+theorem getElem!_foldl_setIfInBounds {α : Type u} (l : List α) (f : α → Nat) {w : Array Bool}
     {t : Nat} (ht : t < w.size) :
     (l.foldl (fun w i ↦ w.setIfInBounds (f i) true) w)[t]! = (w[t]! || l.any (f · == t)) := by
   induction l generalizing w with
   | nil => simp
   | cons j l ih =>
-    rw [List.foldl_cons, ih _ (by simpa using ht), List.any_cons, getElem!_pos w t ht,
+    rw [List.foldl_cons, ih (by simpa using ht : t < (w.setIfInBounds (f j) true).size),
+      List.any_cons, getElem!_pos w t ht,
       getElem!_pos (w.setIfInBounds (f j) true) t (by simpa using ht),
       Array.getElem_setIfInBounds ht]
     grind
@@ -493,13 +478,6 @@ theorem getElem_eraseIdxIfInBounds_of_lt {α : Type u} {xs : Array α} {n i : Na
     (hn : n < xs.size) (hi : i < n) (h : i < (xs.eraseIdxIfInBounds n).size) :
     (xs.eraseIdxIfInBounds n)[i] = xs[i] := by
   simp only [eraseIdxIfInBounds_eq, hn, ↓reduceDIte, getElem_eraseIdx, hi]
-
-theorem mem_of_mem_eraseIdxIfInBounds {α : Type u} {xs : Array α} {n : Nat} {a : α}
-    (h : a ∈ xs.eraseIdxIfInBounds n) : a ∈ xs := by
-  rw [eraseIdxIfInBounds_eq] at h
-  split at h
-  · exact mem_of_mem_eraseIdx h
-  · exact h
 
 end Array
 
@@ -667,7 +645,7 @@ theorem foldl_gcd_natAbs_dvd_natAbs {l : List Int} (g : Nat) {x : Int} (hx : x �
 
 /-- The cursor of the second list of a loop `for x in l, y in l.map f`, after the entries `pref` of
 `l`, at the entry `a`: the next value is `f a`, and the rest of the list follows. -/
-theorem next?_drop_map {α : Type u} {β : Type v} (f : α → β) {l pref suff : List α} {a : α}
+theorem next?_drop_map {α : Type u} {β : Type v} {f : α → β} {l pref suff : List α} {a : α}
     (hl : l = pref ++ a :: suff) {b : β} {rest : List β}
     (h : Std.Stream.next? ((l.map f).drop pref.length) = some (b, rest)) :
     b = f a ∧ rest = (l.map f).drop (pref.length + 1) := by
@@ -683,10 +661,6 @@ theorem next?_drop_map_ne_none {α : Type u} {β : Type v} (f : α → β) {l pr
     Std.Stream.next? ((l.map f).drop pref.length) ≠ none := by
   subst hl
   simp [Std.Stream.next?]
-
-theorem eq_cons_of_next?_eq_some {α : Type u} {l l' : List α} {b : α}
-    (h : Std.Stream.next? l = some (b, l')) : l = b :: l' := by
-  cases l <;> simp_all [Std.Stream.next?]
 
 /-- A test of the entries of a list by their indices is the test of the list. -/
 theorem all_range_length_getElem! {α : Type u} [Inhabited α] (l : List α) (P : α → Bool) :
@@ -894,12 +868,11 @@ theorem lt_mul_sub_one_div_div_add_two_mul {u N p : Nat} (hp : 0 < p) (hu : u < 
   have hup := Nat.mul_lt_mul_of_pos_right hu hp
   exact Nat.lt_of_mul_lt_mul_right (a := N) (by grind)
 
-/-- One step of Horner's rule with an argument and a coefficient below `p` multiplies a bound on
-the accumulator by `p`. -/
-theorem mul_add_lt_mul_of_lt {s a c P p : Nat} (hs : s < P) (ha : a < p) (hc : c < p) :
+/-- One step of Horner's rule with an argument at most `p` and a coefficient below `p` multiplies a
+bound on the accumulator by `p`. -/
+theorem mul_add_lt_mul_of_lt {s a c P p : Nat} (hs : s < P) (ha : a ≤ p) (hc : c < p) :
     s * a + c < P * p :=
-  calc s * a + c < s * p + p :=
-        Nat.add_lt_add_of_le_of_lt (Nat.mul_le_mul_left s (Nat.le_of_lt ha)) hc
+  calc s * a + c < s * p + p := Nat.add_lt_add_of_le_of_lt (Nat.mul_le_mul_left s ha) hc
     _ = (s + 1) * p := (Nat.succ_mul s p).symm
     _ ≤ P * p := Nat.mul_le_mul_right p hs
 
@@ -1165,16 +1138,6 @@ theorem eq_of_mod_eq_zero_of_le_of_lt {p t t' : Nat} (ht : t % p = 0) (ht' : t' 
   lia [Nat.eq_zero_of_dvd_of_lt (Nat.dvd_sub (Nat.dvd_of_mod_eq_zero ht')
     (Nat.dvd_of_mod_eq_zero ht)) (by lia)]
 
-/-- One division of `p > 1` off a positive multiple `a` of `p`. -/
-theorem div_lt_and_pos_and_div_mul_pow_succ {a p : Nat} (e : Nat) (hp : 1 < p) (ha : 0 < a)
-    (hd : a % p = 0) : a / p < a ∧ 0 < a / p ∧ a / p * p ^ (e + 1) = a * p ^ e := by
-  obtain ⟨k, rfl⟩ := Nat.dvd_of_mod_eq_zero hd
-  have hk : 0 < k := Nat.pos_of_mul_pos_left ha
-  refine ⟨?_, ?_, ?_⟩ <;> rw [Nat.mul_div_cancel_left k (by lia)]
-  · exact (Nat.lt_mul_iff_one_lt_left hk).mpr hp
-  · exact hk
-  · rw [Nat.pow_succ]; ac_rfl
-
 end Nat
 
 /-- The numbers below `N` that are `r` modulo `m`, for `r < m`: `r, r + m, r + 2 m, …`, of which
@@ -1381,37 +1344,12 @@ theorem lt_ediv_of_neg {c z m : Int} (hc : c < 0) (hz : c < z) (hm : 0 < m) : c 
   · exact Int.lt_of_lt_of_le hz (self_le_ediv_of_nonpos_of_nonneg (by lia) (by lia))
   · exact Int.lt_of_lt_of_le hc (ediv_nonneg h (by lia))
 
-theorem neg_two_pow_62_le_ediv_and_ediv_lt_two_pow_62 {z m : Int} (hz : -2 ^ 63 ≤ z)
-    (hz' : z < 2 ^ 63) (hm : 2 ≤ m) :
-    -2 ^ 62 ≤ z / m ∧ z / m < 2 ^ 62 :=
-  ⟨(Int.le_ediv_iff_mul_le (by lia)).mpr (by lia), (Int.ediv_lt_iff_lt_mul (by lia)).mpr (by lia)⟩
-
-/-- The carry `⌈(r - a₀) / m⌉` of the split form of `Ratpoints.Sieve.numeratorsToBits` at the low
-end, for `0 ≤ r, a₀ < m`: `0` or `1`. -/
-theorem sub_add_sub_one_ediv_nonneg_and_le_one {r a0 m : Int} (hr : 0 ≤ r) (hr' : r < m)
-    (ha : 0 ≤ a0) (ha' : a0 < m) :
-    0 ≤ (r - a0 + (m - 1)) / m ∧ (r - a0 + (m - 1)) / m ≤ 1 :=
-  ⟨Int.ediv_nonneg (by lia) (by lia),
-    Int.lt_add_one_iff.mp ((Int.ediv_lt_iff_lt_mul (by lia)).mpr (by lia))⟩
-
-/-- The carry `⌊(r - a₀) / m⌋` of the split form of `Ratpoints.Sieve.numeratorsToBits` at the high
-end, for `0 ≤ r, a₀ < m`: `-1` or `0`. -/
-theorem neg_one_le_sub_ediv_and_sub_ediv_nonpos {r a0 m : Int} (hr : 0 ≤ r) (hr' : r < m)
-    (ha : 0 ≤ a0) (ha' : a0 < m) :
-    -1 ≤ (r - a0) / m ∧ (r - a0) / m ≤ 0 :=
-  ⟨(Int.le_ediv_iff_mul_le (by lia)).mpr (by lia),
-    Int.lt_add_one_iff.mp ((Int.ediv_lt_iff_lt_mul (by lia)).mpr (by lia))⟩
-
-/-- For `m ≥ 1` and `-1 ≤ c ≤ 1`, with `c = 0` when `m = 1`, `z / m + c` is a `long` for a `long`
-`z`: an arithmetic shift plus a carry, as in the split form of
-`Ratpoints.Sieve.numeratorsToBits`. -/
-theorem neg_two_pow_63_le_ediv_add_and_ediv_add_lt_two_pow_63 {z c m : Int} (hz : -2 ^ 63 ≤ z)
-    (hz' : z < 2 ^ 63) (hm : 1 ≤ m) (hc : -1 ≤ c) (hc' : c ≤ 1) (h1 : m = 1 → c = 0) :
-    -2 ^ 63 ≤ z / m + c ∧ z / m + c < 2 ^ 63 := by
-  rcases Int.lt_or_le m 2 with h | h
-  · rw [show m = 1 by lia, h1 (by lia), Int.ediv_one]
-    lia
-  · lia [Int.neg_two_pow_62_le_ediv_and_ediv_lt_two_pow_62 hz hz' h]
+/-- A residue `0 ≤ a < 2 m` modulo `m` by one conditional subtraction. -/
+theorem emod_eq_ite_of_lt_two_mul {a m : Int} (h0 : 0 ≤ a) (h1 : a < 2 * m) :
+    a % m = if m ≤ a then a - m else a := by
+  split
+  · rw [← Int.sub_emod_right a m, Int.emod_eq_of_lt (by lia) (by lia)]
+  · rw [Int.emod_eq_of_lt h0 (by lia)]
 
 /-- The multiple `d ⌊lo / d⌋` of `d > 0` at or below `lo` is at least every multiple `-N ≤ lo` of
 `d`. -/

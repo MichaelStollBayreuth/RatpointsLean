@@ -97,7 +97,7 @@ structure IsSievingInfo (c : List ℤ) (bHigh : ℕ) (si : SievingInfo) : Prop w
   /-- The sieve entries have the fields that the packing reads. -/
   packable : ∀ e ∈ si.entries, e.Packable
   /-- The factors of the sieve entries have their tables of inverses. -/
-  hasInverses : ∀ e ∈ si.entries, ∀ f ∈ e.factors, f.HasInverses e.p
+  hasInverses : ∀ e ∈ si.entries, e.HasInverses
   /-- An entry with no factors counted is a prime entry of the table. -/
   isPrimeEntry_of_nf : ∀ e ∈ si.entries, e.nf = 0 → e.IsPrimeEntry
   /-- The reciprocals of the moduli, in the order of the entries. -/

@@ -72,7 +72,7 @@ theorem dropUsed_spec (Q : ModulusCandidate → Prop) (pool : Array ModulusCandi
   all_goals simp only [Variant.evalsTo_ofMeasure, Variant.evalsBelow_ofMeasure_nat,
     NondetFun.evalsTo_pure, meet_prop_eq_and, ofProp_prop_eq, DropUsedInvariant,
     WhileInvariant.mk] at *
-  all_goals grind [Array.mem_of_mem_eraseIdxIfInBounds, Array.size_eraseIdxIfInBounds_of_lt]
+  all_goals grind [Array.size_eraseIdxIfInBounds_of_lt]
 
 /-- The invariant of the loop of `Ratpoints.takeEntries`. -/
 def TakeEntriesInvariant (Q : ModulusCandidate → Prop) (start : Nat) :
@@ -94,7 +94,7 @@ theorem takeEntries_spec (Q : ModulusCandidate → Prop) (pool : Array ModulusCa
   all_goals simp only [Variant.evalsTo_ofMeasure, Variant.evalsBelow_ofMeasure_nat,
     NondetFun.evalsTo_pure, meet_prop_eq_and, ofProp_prop_eq, TakeEntriesInvariant,
     WhileInvariant.mk] at *
-  all_goals grind [Array.mem_of_mem_eraseIdxIfInBounds, Array.size_eraseIdxIfInBounds_of_lt]
+  all_goals grind [Array.size_eraseIdxIfInBounds_of_lt]
 
 /-- The candidates of the pool `pool` from the position `s` on have no factors counted: primes that
 say more than coprimality. -/
@@ -122,8 +122,7 @@ theorem dropComposites_spec (Q : ModulusCandidate → Prop) (pool : Array Modulu
   all_goals simp only [Variant.evalsTo_ofMeasure, Variant.evalsBelow_ofMeasure_nat,
     NondetFun.evalsTo_pure, meet_prop_eq_and, ofProp_prop_eq, DropCompositesInvariant,
     WhileInvariant.mk, NfEqZeroFrom] at *
-  all_goals grind [Array.mem_of_mem_eraseIdxIfInBounds, Array.size_eraseIdxIfInBounds_of_lt,
-    Array.getElem_eraseIdxIfInBounds_of_lt]
+  all_goals grind [Array.size_eraseIdxIfInBounds_of_lt, Array.getElem_eraseIdxIfInBounds_of_lt]
 
 /-- The contract of `Ratpoints.bestByR`: the position it returns is that of a candidate from `sp3`
 on. -/

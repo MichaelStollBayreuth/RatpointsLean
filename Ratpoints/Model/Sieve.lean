@@ -281,9 +281,8 @@ its own prime (`find_points.c:329-331`), where the model takes any moduli, which
 array of `Ratpoints.rbaPack` words, for the vector `nums`; natural numbers and integers for the
 `long`s, and the sum `v` a natural number for the `long` that `RP_MULMOD` converts to an
 `unsigned long`, which is not negative under `small`, and which stays a `long` where the helper
-`mod` reduces it outside `small` (`Ratpoints.Sieve.fitsLong_neg_sub_and_fitsLong_add`); a Boolean
-for the `int` `small`; no count of the ands of the second stage under `RP_PHASE_COUNTS`, and no
-output under `DEBUG`. -/
+`mod` reduces it outside `small` (`Ratpoints.Sieve.fitsLong_add`); a Boolean for the `int` `small`;
+no count of the ands of the second stage under `RP_PHASE_COUNTS`, and no output under `DEBUG`. -/
 def secondStage (specs : List SieveSpec) (mgs : List Nat) (small : Bool) (i : Int)
     (nums : Vector UInt64 rbaPack) :
     Id (Vector UInt64 rbaPack) := do
@@ -313,8 +312,8 @@ length of `magics`, `find_points.c:347`), which ratpoints never reaches since ea
 may repeat; natural numbers and integers for the `long`s, and the sum `v` a natural number for the
 `long` that `RP_MULMOD` converts to an `unsigned long`, which is not negative under `small`, and
 which stays a `long` where the helper `mod` reduces it outside `small`
-(`Ratpoints.Sieve.fitsLong_neg_sub_and_fitsLong_add`); a Boolean for the `int` `small`; no count of
-the ands of the second stage under `RP_PHASE_COUNTS`. -/
+(`Ratpoints.Sieve.fitsLong_add`); a Boolean for the `int` `small`; no count of the ands of the
+second stage under `RP_PHASE_COUNTS`. -/
 def secondStageWord (specs : List SieveSpec) (mgs : List Nat) (small : Bool) (i : Int) (κ : Nat)
     (x : UInt64) :
     Id UInt64 := do

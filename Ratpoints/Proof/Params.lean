@@ -158,7 +158,7 @@ and `c` below `m`, are below `m ^ 2 ≤ 2 ^ 64` (`Ratpoints.maxPrimeEven_le_two_
 `Ratpoints.mul_self_lt_two_pow_63_of_lt_maxPrimeEven`. -/
 theorem mul_add_lt_two_pow_64_of_lt_maxPrimeEven {m v x c : ℕ} (hm : m < maxPrimeEven)
     (hv : v < m) (hx : x < m) (hc : c < m) : v * x + c < 2 ^ 64 :=
-  calc v * x + c < m * m := Nat.mul_add_lt_mul_of_lt hv hx hc
+  calc v * x + c < m * m := Nat.mul_add_lt_mul_of_lt hv hx.le hc
     _ ≤ 2 ^ 32 * 2 ^ 32 := Nat.mul_le_mul (hm.trans_le maxPrimeEven_le_two_pow_32).le
       (hm.trans_le maxPrimeEven_le_two_pow_32).le
     _ = 2 ^ 64 := by norm_num

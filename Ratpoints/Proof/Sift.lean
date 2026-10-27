@@ -154,7 +154,7 @@ private theorem map_magic_packedReads (es : List SieveEntry) (b : Nat) (cl : Num
 /-- The rows of `Ratpoints.Sieve.packedReads` read their tests, for entries whose factors have their
 tables of inverses and whose offsets are those of the packing of the class. -/
 theorem reads_of_mem_packedReads {es : List SieveEntry} {b : Nat} {cl : NumClass}
-    {offsets : Array Nat} {pos : Nat} (hinv : ∀ e ∈ es, ∀ f ∈ e.factors, f.HasInverses e.p)
+    {offsets : Array Nat} {pos : Nat} (hinv : ∀ e ∈ es, e.HasInverses)
     (hoff : ∀ n (h : n < es.length), es[n].PackedFor cl offsets[pos + n]!) :
     ∀ sf ∈ packedReads es b cl offsets pos, sf.1.Reads sf.2 := by
   intro sf hsf
@@ -465,7 +465,7 @@ structure IsSiftArgs (es es3 : List SieveEntry) (w : UInt64) (cl : NumClass) (of
   /-- The row offsets of the class start at `pos`. -/
   offset_eq : cl.offset = some pos
   /-- The entries of the first two stages have their tables of inverses. -/
-  hasInverses : ∀ e ∈ es, ∀ f ∈ e.factors, f.HasInverses e.p
+  hasInverses : ∀ e ∈ es, e.HasInverses
   /-- The entries of the first two stages have the offsets of the packing of the class. -/
   packedFor : ∀ n (h : n < es.length), es[n].PackedFor cl offsets[pos + n]!
   /-- The bounds of the search intervals give the ranges. -/
@@ -927,7 +927,7 @@ theorem SiftIntervalsCounts.append_of_siftBits {r : Delivery σ}
     (h2 : ¬(intervalBits (Int64.ofNat b) cur (Int64.ofNat H) cl).1 = 2)
     (h1 : ¬(intervalBits (Int64.ofNat b) cur (Int64.ofNat H) cl).1 = 1)
     (hsf : specs' = (packedReads es b cl offsets pos).map Prod.fst ∧ st.Fits es)
-    (hinv : ∀ e ∈ es, ∀ f ∈ e.factors, f.HasInverses e.p)
+    (hinv : ∀ e ∈ es, e.HasInverses)
     (hoff : ∀ n (h : n < es.length), es[n].PackedFor cl offsets[pos + n]!)
     (hc : ∀ sfs : List (SieveSpec × (Int → Bool)), specs' = sfs.map Prod.fst →
       (∀ sf ∈ sfs, sf.1.Reads sf.2) → r.quit = false →
@@ -957,8 +957,7 @@ open Std.WP Lean.Order in
 private theorem sift_counters_spec_pos (c : List Int) (d H A b : Nat) (fl : CheckFlags)
     (sp1 : Nat) {es es3 : List SieveEntry} {mgs3 : List Nat} {cl : NumClass} {pos : Nat}
     (offsets : Array Nat) (iv : Array IntervalBounds) (store : RowStore) (r : Delivery σ)
-    (cnt0 : Counters) (hA : 1 ≤ A) (hpos : cl.offset = some pos)
-    (hinv : ∀ e ∈ es, ∀ f ∈ e.factors, f.HasInverses e.p)
+    (cnt0 : Counters) (hA : 1 ≤ A) (hpos : cl.offset = some pos) (hinv : ∀ e ∈ es, e.HasInverses)
     (hoff : ∀ n (h : n < es.length), es[n].PackedFor cl offsets[pos + n]!)
     (hs : store.Fits es) :
     ⦃ True ⦄
@@ -1008,8 +1007,7 @@ theorem sift_spec (c : List Int) (d H A b : Nat) (fl : CheckFlags) (sp1 : Nat)
     (r : Delivery σ) (cnt : Counters) :
     ⦃ r.quit = false ∧ 1 ≤ A ∧ 0 < b ∧ b < 2 ^ 63 ∧ H < 2 ^ 63 ∧ (∀ e ∈ es3, e.IsPrimeEntry) ∧
         mgs3 = es3.map (fun e ↦ magic e.p) ∧ mgs = es.map (magic ·.p) ∧
-        bp = es.map (fun e ↦ b * e.dinv[cl.k]! % e.p) ∧
-        (∀ e ∈ es, ∀ f ∈ e.factors, f.HasInverses e.p) ∧ store.Fits es ⦄
+        bp = es.map (fun e ↦ b * e.dinv[cl.k]! % e.p) ∧ (∀ e ∈ es, e.HasInverses) ∧ store.Fits es ⦄
     sift process c d H A b fl sp1 es mgs bp cl offsets es3 mgs3 iv store r cnt
     ⦃ fun r' ↦ r'.2.1.Fits es ∧ (∀ (w : UInt64) (pos : Nat) (rs : List (Int × Int)), cl.Packs w →
         cl.offset = some pos → (∀ n (h : n < es.length), es[n].PackedFor cl offsets[pos + n]!) →
@@ -1053,7 +1051,7 @@ theorem run_sift_eq_deliver_checkDen (c : List Int) (d H b : Nat) {fl : CheckFla
     (hH : H < 2 ^ 63) {es es3 : List SieveEntry} {w : UInt64} {cl : NumClass} {pos : Nat}
     (offsets : Array Nat) {iv : Array IntervalBounds} {rs : List (Int × Int)} {store : RowStore}
     (hes : ∀ e ∈ es3, e.IsPrimeEntry) (hcl : cl.Packs w) (hpos : cl.offset = some pos)
-    (hinv : ∀ e ∈ es, ∀ f ∈ e.factors, f.HasInverses e.p)
+    (hinv : ∀ e ∈ es, e.HasInverses)
     (hoff : ∀ n (h : n < es.length), es[n].PackedFor cl offsets[pos + n]!)
     (hiv : RangesFor iv b H rs) (hs : store.Fits es) {r : Delivery σ} (hr : r.quit = false)
     (cnt : Counters) :

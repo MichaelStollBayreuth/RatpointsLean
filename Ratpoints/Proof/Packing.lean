@@ -1238,15 +1238,14 @@ theorem classOffsets_spec (cls : Vector NumClass 64) (es : List SieveEntry) (off
 the product `b dinv` is reduced at once, exactly. -/
 theorem mulMod_mul_magic {b d p : Nat} (hp : 0 < p) (hpm : p ≤ maxPrimeEven) (hd : d < p)
     (hb : b ≤ mulModLimit / maxPrimeEven) : mulMod (b * d) p (magic p) = b * d % p :=
-  mulMod_magic hp (mul_lt_two_pow_64_of_le_mulModLimit (mul_le_mulModLimit_of_le_div hb hd hpm)
-    (Nat.le_trans hpm maxPrimeEven_le_two_pow_32))
+  mulMod_magic_of_le_mulModLimit hp (Nat.le_trans hpm maxPrimeEven_le_two_pow_32)
+    (mul_le_mulModLimit_of_le_div hb hd hpm)
 
 /-- The second branch of `fill_bp_list`: for `b ≤ Ratpoints.mulModLimit`, `b` is reduced first and
 then its product with `dinv`, both exactly. -/
 theorem mulMod_mulMod_mul_magic {b d p : Nat} (hp : 0 < p) (hpm : p ≤ maxPrimeEven) (hd : d < p)
     (hb : b ≤ mulModLimit) : mulMod (mulMod b p (magic p) * d) p (magic p) = b * d % p := by
-  rw [mulMod_magic hp (mul_lt_two_pow_64_of_le_mulModLimit hb
-      (Nat.le_trans hpm maxPrimeEven_le_two_pow_32)),
+  rw [mulMod_magic_of_le_mulModLimit hp (Nat.le_trans hpm maxPrimeEven_le_two_pow_32) hb,
     mulMod_magic hp (mul_mul_lt_two_pow_64 (mod_le_two_pow_10 b hp hpm) hd hpm), Nat.mod_mul_mod]
 
 /-- The third branch of `fill_bp_list`: `b` reduced by the helper `mod` of the C code, then the

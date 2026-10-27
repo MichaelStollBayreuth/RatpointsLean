@@ -203,16 +203,11 @@ theorem ChunkStartsInvariant.push {w0 : Int} {small : Bool} {specs pref suff : L
     ChunkStartsInvariant w0 mgs (pref ++ [s])
       (sv.push { s with start := (if small then modMul (w0 + s.offset) s.p mg
         else modLong (w0 + s.offset) s.p).toNat }, rest') := by
-  obtain ⟨rfl, -⟩ := eq_magic_and_of_next?_eq_some pre.2.1 hs (fun _ ↦ h.1) hnext
-  have hfit := pre.1 s (by simp [hs])
-  have hrest : rest = mgs.drop pref.length := h.1
-  refine ⟨?_, ?_⟩
-  · change rest' = mgs.drop (pref ++ [s]).length
-    rw [List.length_append, List.length_singleton, ← List.drop_drop, ← hrest,
-      List.eq_cons_of_next?_eq_some hnext]
-    rfl
-  · rw [hfit.ite_modMul_modLong_add_eq_emod pre.2.2, Array.toList_push, h.2, List.map_append]
-    rfl
+  obtain ⟨rfl, hc⟩ := eq_magic_and_of_next?_eq_some pre.2.1 hs (fun _ ↦ h.1) hnext
+  refine ⟨hc, ?_⟩
+  rw [(pre.1 s (by simp [hs])).ite_modMul_modLong_add_eq_emod pre.2.2, Array.toList_push, h.2,
+    List.map_append]
+  rfl
 
 theorem ChunkStartsInvariant.next?_ne_none {w0 : Int} {small : Bool}
     {specs pref suff : List SieveSpec} {s : SieveSpec} {mgs rest : List Nat} {sv : Array SieveSpec}

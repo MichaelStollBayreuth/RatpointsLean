@@ -400,7 +400,18 @@ theorem FacState.WF.of_takeFactor {c : List ℤ} {primeSe : Array (Option (Entry
 
 local grind_pattern FacState.WF.of_takeFactor => FacState.WF c primeSe m b, st.tab.WF c, rest * q
 
-local grind_pattern Nat.div_lt_and_pos_and_div_mul_pow_succ => a / p, a * p ^ e
+-- One division of `p > 1` off a positive multiple `a` of `p`, with the cofactor below `a`,
+-- positive, and times `p ^ (e + 1)` equal to `a p ^ e`.
+private theorem div_lt_and_pos_and_div_mul_pow_succ {a p : ℕ} (e : ℕ) (hp : 1 < p) (ha : 0 < a)
+    (hd : a % p = 0) : a / p < a ∧ 0 < a / p ∧ a / p * p ^ (e + 1) = a * p ^ e := by
+  obtain ⟨k, rfl⟩ := Nat.dvd_of_mod_eq_zero hd
+  have hk : 0 < k := Nat.pos_of_mul_pos_left ha
+  refine ⟨?_, ?_, ?_⟩ <;> rw [Nat.mul_div_cancel_left k (by lia)]
+  · exact (Nat.lt_mul_iff_one_lt_left hk).mpr hp
+  · exact hk
+  · rw [Nat.pow_succ]; ac_rfl
+
+local grind_pattern div_lt_and_pos_and_div_mul_pow_succ => a / p, a * p ^ e
 
 /-- The invariant of the loop of `Ratpoints.factorCandidate` over the primes, whose state is the
 value of a return and the state of the factorization, from the state `st₀`: both are states of the

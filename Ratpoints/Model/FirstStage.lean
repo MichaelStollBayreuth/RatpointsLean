@@ -165,10 +165,10 @@ a bit array, for the vector `RBA(packed)` that `get_2adic_info` makes once per c
 `sift.c:954`); the moduli of the stage with their rows and their reciprocals as two lists, for the
 first `sp1` sieve specs and the array `magics` from position `0` on; the value `-w_low - offset`
 written out in both reductions, for the `long` `a`, which stays a `long` where the helper `mod`
-reduces it outside `small` (`Ratpoints.Sieve.fitsLong_neg_sub_and_fitsLong_add`); indices for the
-pointers into the rows and into the survivors, and the number of whole periods and the rest
-computed before their loops; natural numbers and integers for the `long`s; a Boolean for the `int`
-`small`; no output under `DEBUG`. -/
+reduces it outside `small` (`Ratpoints.Sieve.fitsLong_neg_sub`); indices for the pointers into the
+rows and into the survivors, and the number of whole periods and the rest computed before their
+loops; natural numbers and integers for the `long`s; a Boolean for the `int` `small`; no output
+under `DEBUG`. -/
 def andRows (specs : List SieveSpec) (mgs : List Nat) (small : Bool) (cw : UInt64) (w0 : Int)
     (n : Nat) (surv : Vector UInt64 ((n + 1) * rbaPack)) :
     Id (Vector UInt64 ((n + 1) * rbaPack)) := do
@@ -211,7 +211,7 @@ reciprocal under `small` alone, for `small && RP_USE_MOD_MUL`, with `RP_USE_MOD_
 of the production build (`sift.c:236-238`, excluded with the switch of the development builds); the
 start an index into the row, for the pointer `ptr` plus the remainder; integers for the `long`s, the
 sum `a = w_low + offset` staying a `long` where the helper `mod` reduces it outside `small`
-(`Ratpoints.Sieve.fitsLong_neg_sub_and_fitsLong_add`); a Boolean for the `int` `small`. -/
+(`Ratpoints.Sieve.fitsLong_add`); a Boolean for the `int` `small`. -/
 def chunkStarts (specs : List SieveSpec) (mgs : List Nat) (small : Bool) (w0 : Int) :
     Id (Array SieveSpec) := do
   let mut sv := #[]

@@ -94,6 +94,11 @@ theorem mod_add_carry {x y : Nat} (hx : x < 2 ^ 64) (hy : y < 2 ^ 64) :
   · rw [Nat.mod_eq_sub_mod h, Nat.mod_eq_of_lt (by lia)]
     simp only [show x + y - 2 ^ 64 < y by lia, ↓reduceIte]; lia
 
+/-- A shift amount `n < 64` is its own reduction modulo `64`, which the shifts of words take. -/
+theorem toNat_toUInt64_mod_sixty_four {n : Nat} (hn : n < 64) : n.toUInt64.toNat % 64 = n := by
+  rw [toUInt64_eq, UInt64.toNat_ofNat', Nat.mod_eq_of_lt (show n < 2 ^ 64 by lia),
+    Nat.mod_eq_of_lt hn]
+
 end Nat
 
 namespace UInt64
@@ -184,23 +189,22 @@ theorem getLsbD_or_one_shiftLeft (x : UInt64) {n : Nat} (hn : n < 64) (t : Nat) 
     (x ||| 1 <<< UInt64.ofNat n).toBitVec.getLsbD t = (x.toBitVec.getLsbD t || decide (t = n)) := by
   rw [UInt64.toBitVec_or, BitVec.getLsbD_or, ← Nat.toUInt64_eq, getLsbD_one_shiftLeft hn]
 
+-- `Nat.toNat_toUInt64_mod_sixty_four` in the form that the shifts of bit vectors take.
+private theorem toNat_toBitVec_ofNat_mod {n : Nat} (hn : n < 64) :
+    (UInt64.ofNat n).toBitVec.toNat % (64 : BitVec 64).toNat = n :=
+  Nat.toNat_toUInt64_mod_sixty_four hn
+
 theorem getLsbD_shiftLeft_ofNat (x : UInt64) {n : Nat} (hn : n < 64) (t : Nat) :
     (x <<< UInt64.ofNat n).toBitVec.getLsbD t =
       (decide (t < 64) && decide (n ≤ t) && x.toBitVec.getLsbD (t - n)) := by
-  have : (UInt64.ofNat n).toBitVec.toNat % (64 : BitVec 64).toNat = n := by
-    simp [UInt64.toBitVec_ofNat']
-    lia
   rw [UInt64.toBitVec_shiftLeft, BitVec.shiftLeft_eq', BitVec.getLsbD_shiftLeft,
-    BitVec.toNat_umod, this]
+    BitVec.toNat_umod, toNat_toBitVec_ofNat_mod hn]
   grind
 
 theorem getLsbD_shiftRight_ofNat (x : UInt64) {n : Nat} (hn : n < 64) (t : Nat) :
     (x >>> UInt64.ofNat n).toBitVec.getLsbD t = x.toBitVec.getLsbD (n + t) := by
-  have : (UInt64.ofNat n).toBitVec.toNat % (64 : BitVec 64).toNat = n := by
-    simp [UInt64.toBitVec_ofNat']
-    lia
   rw [UInt64.toBitVec_shiftRight, BitVec.ushiftRight_eq', BitVec.getLsbD_ushiftRight,
-    BitVec.toNat_umod, this]
+    BitVec.toNat_umod, toNat_toBitVec_ofNat_mod hn]
 
 /-- The bits of a Boolean shifted to the position `n < 64`, as `RP_INIT_BIT` sets a bit. -/
 theorem getLsbD_toUInt64_shiftLeft (v : Bool) {n : Nat} (hn : n < 64) (t : Nat) :
@@ -315,8 +319,7 @@ theorem getLsbD_getElem!_set!_or_one_shiftLeft {seen : Array UInt64} (hs : seen.
 
 theorem toNat_shiftRight_toUInt64 (x : UInt64) {s : Nat} (hs : s < 64) :
     (x >>> s.toUInt64).toNat = x.toNat / 2 ^ s := by
-  rw [UInt64.toNat_shiftRight, Nat.toUInt64_eq, UInt64.toNat_ofNat',
-    Nat.mod_eq_of_lt (show s < 2 ^ 64 by lia), Nat.mod_eq_of_lt hs, Nat.shiftRight_eq_div_pow]
+  rw [UInt64.toNat_shiftRight, Nat.toNat_toUInt64_mod_sixty_four hs, Nat.shiftRight_eq_div_pow]
 
 /-- The two words of a 128-bit number `hi 2 ^ 64 + lo` shifted right by `0 < s < 64`. -/
 theorem toNat_shift_words_of_lt (hi lo : UInt64) {s : Nat} (hs0 : 0 < s) (hs : s < 64) :
@@ -327,8 +330,7 @@ theorem toNat_shift_words_of_lt (hi lo : UInt64) {s : Nat} (hs0 : 0 < s) (hs : s
   have hl : lo.toNat / 2 ^ s < 2 ^ (64 - s) :=
     Nat.div_lt_of_lt_mul (by rw [Nat.mul_comm, ← h64]; exact lo.toNat_lt)
   have hsh : (hi <<< (64 - s).toUInt64).toNat = 2 ^ (64 - s) * (hi.toNat % 2 ^ s) := by
-    rw [UInt64.toNat_shiftLeft, Nat.toUInt64_eq, UInt64.toNat_ofNat',
-      Nat.mod_eq_of_lt (show 64 - s < 2 ^ 64 by lia), Nat.mod_eq_of_lt (show 64 - s < 64 by lia),
+    rw [UInt64.toNat_shiftLeft, Nat.toNat_toUInt64_mod_sixty_four (show 64 - s < 64 by lia),
       Nat.shiftLeft_eq, h64, Nat.mul_comm (2 ^ (64 - s)) (2 ^ s), Nat.mul_mod_mul_right,
       Nat.mul_comm]
   rw [UInt64.toNat_or, toNat_shiftRight_toUInt64 _ hs, toNat_shiftRight_toUInt64 _ hs, hsh,
@@ -361,8 +363,7 @@ theorem two_pow_ctz_dvd {w : UInt64} : 2 ^ w.toBitVec.ctz.toNat ∣ w.toNat := b
 theorem toNat_one_shiftLeft_sub_one {s : Nat} (hs : s < 64) :
     (((1 : UInt64) <<< s.toUInt64) - 1).toNat = 2 ^ s - 1 := by
   have h1 : ((1 : UInt64) <<< s.toUInt64).toNat = 2 ^ s := by
-    rw [UInt64.toNat_shiftLeft, Nat.toUInt64_eq, UInt64.toNat_ofNat',
-      Nat.mod_eq_of_lt (show s < 2 ^ 64 by lia), Nat.mod_eq_of_lt hs, UInt64.toNat_one,
+    rw [UInt64.toNat_shiftLeft, Nat.toNat_toUInt64_mod_sixty_four hs, UInt64.toNat_one,
       Nat.shiftLeft_eq, Nat.one_mul, Nat.mod_eq_of_lt (Nat.pow_lt_pow_right (by decide) hs)]
   rw [UInt64.toNat_sub_of_le _ _
       (UInt64.le_iff_toNat_le.mpr (by rw [h1]; exact Nat.one_le_two_pow)),
@@ -596,14 +597,13 @@ theorem toInt_one_shiftLeft {k : Int64} (h0 : 0 ≤ k.toInt) (h : k.toInt < 63) 
   rw [hk, toInt_one_shiftLeft_ofNat (by lia), toInt_ofNat_of_lt (by lia)]
   simp
 
-/-- The quotient of a non-negative `long` by a natural number `0 < n < 2 ^ 63`, the floor of the
+/-- The quotient of a non-negative `long` by a natural number `n < 2 ^ 63`, the floor of the
 quotient of the values. -/
-theorem toInt_div_ofNat {a : Int64} (ha : 0 ≤ a.toInt) {n : Nat} (hn : 0 < n)
-    (hn63 : n < 2 ^ 63) : (a / n.toInt64).toInt = a.toInt / n := by
-  have h2 : a.toInt / (n : Int) ≤ a.toInt := Int.ediv_le_self _ ha
-  have := a.toInt_lt
-  rw [Int64.toInt_div, Nat.toInt64, Int64.toInt_ofNat_of_lt hn63, Int.tdiv_eq_ediv_of_nonneg ha,
-    Int.bmod_eq_of_le (by have := Int.ediv_nonneg ha (show (0 : Int) ≤ n by lia); lia) (by lia)]
+theorem toInt_div_ofNat {a : Int64} (ha : 0 ≤ a.toInt) {n : Nat} (hn63 : n < 2 ^ 63) :
+    (a / n.toInt64).toInt = a.toInt / n := by
+  have hne : a ≠ minValue := fun h ↦ by rw [h, toInt_minValue] at ha; lia
+  rw [toInt_div_of_ne_left _ _ hne, Nat.toInt64, toInt_ofNat_of_lt hn63,
+    Int.tdiv_eq_ediv_of_nonneg ha]
 
 theorem natCast_toNat_toUInt64 {x : Int64} (hx : 0 ≤ x.toInt) :
     (x.toUInt64.toNat : Int) = x.toInt := by

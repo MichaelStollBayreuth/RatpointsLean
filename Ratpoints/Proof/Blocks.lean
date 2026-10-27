@@ -127,7 +127,7 @@ theorem siftDen_spec {σ : Type} (process : Int → Int → Int → σ → Answe
     (d H A : Nat) (fl : CheckFlags) (sp1 : Nat) (entries : List SieveEntry) (magics : Array Nat)
     (sp2 sp3 : Nat) (cls : Vector NumClass 64) (offsets : Array Nat) (iv : Array IntervalBounds)
     (bLow bHigh : Nat) (hA : 1 ≤ A)
-    (hent : ∀ e ∈ entries, (e.nf = 0 → e.IsPrimeEntry) ∧ ∀ f ∈ e.factors, f.HasInverses e.p)
+    (hent : ∀ e ∈ entries, (e.nf = 0 → e.IsPrimeEntry) ∧ e.HasInverses)
     (hmg : magics.toList = entries.map fun e ↦ magic e.p) (hoff : OffsetsFor cls entries offsets)
     (h23 : sp2 ≤ sp3) (hnf : ∀ e ∈ entries.drop sp2, e.nf = 0) (hbLow : 1 ≤ bLow)
     (hbHigh : bHigh < 2 ^ 63) (hH : H < 2 ^ 63) (b : Nat) (st : BlockState σ) :
@@ -385,8 +385,7 @@ theorem runBlock_spec {σ : Type} (process : Int → Int → Int → σ → Answ
     (cls : Vector NumClass 64) (offsets : Array Nat) (db : UInt64) (shape : Shape)
     (iv : Array IntervalBounds) (bLow bHigh : Nat) (plan : BlockPlan) (decs : Array Decision)
     (i : Nat) (store : RowStore) (r : Delivery σ) :
-    ⦃ r.quit = false ∧ 1 ≤ A ∧
-        (∀ e ∈ entries, (e.nf = 0 → e.IsPrimeEntry) ∧ ∀ f ∈ e.factors, f.HasInverses e.p) ∧
+    ⦃ r.quit = false ∧ 1 ≤ A ∧ (∀ e ∈ entries, (e.nf = 0 → e.IsPrimeEntry) ∧ e.HasInverses) ∧
         magics.toList = entries.map (fun e ↦ magic e.p) ∧ OffsetsFor cls entries offsets ∧
         (∀ j < 64, db.toBitVec.getLsbD j = (cls[j]!.bits != 0)) ∧
         DecisionWF entries sp1 decs[Id.run (findDecision decs i)]! ∧

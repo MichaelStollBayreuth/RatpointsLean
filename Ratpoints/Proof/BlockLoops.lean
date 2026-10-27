@@ -649,7 +649,7 @@ theorem posAt_forbStarts {forb : Array ForbiddenEntry} (h : ForbFits forb.toList
     getElem!_pos forb n hn]
   split
   · rename_i hle
-    rw [hm, mulMod_magic hp (mul_lt_two_pow_64_of_le_mulModLimit (of_decide_eq_true hle) hp32)]
+    rw [hm, mulMod_magic_of_le_mulModLimit hp hp32 (of_decide_eq_true hle)]
   · rw [modLong_eq_emod _ (Int.natCast_nonneg _), ← Int.natCast_emod, Int.toNat_natCast]
 
 -- The invariant of the loop of `Ratpoints.Sieve.denWord` over the forbidden divisors done, `pref`:

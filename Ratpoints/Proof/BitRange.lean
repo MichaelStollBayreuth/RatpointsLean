@@ -20,15 +20,15 @@ bit `j` stands for the numerator `a₀ + 2 ^ k j` (`Ratpoints.Sieve.NumClass.num
 `⌈(low - a₀) / 2 ^ k⌉` and `⌊(high - a₀) / 2 ^ k⌋`, the split form for all ends and the plain form
 when the differences `a₀ - low` and `high - a₀` are `long`s, with no overflow, since the arithmetic
 shift of a `long` is the floor of its quotient by `2 ^ k` and its and with the mask `2 ^ k - 1` the
-Euclidean remainder. For the numerators `-H, …, H` of a height bound `H < 2 ^ 63`, in the form that
-the C code takes for them, a numerator of the class lies in the interval exactly when its bit lies
-between the two bits, and the numerators of these bits, in increasing order, are those of
-`-H, …, H` in the class `a₀ mod 2 ^ k`. The values that the C code holds in `long`s for the packing
-stay in range (`Ratpoints.fitsLong`): the offsets of the rows, the first and the last bit of the bit
-arrays of `-H, …, H`, the numerators of their bits, and the sums of a word number and an offset that
-the first two stages reduce outside the test `small`; the products of `fill_bp_list` and of
-`class_offsets` are bounded in `Ratpoints.Proof.Reductions`. The ranges of the numerators that the
-bounds of the search intervals give for a denominator are stated here too, on Lean core.
+Euclidean remainder. For the numerators `-H, …, H` of a height bound `H < 2 ^ 63`, a numerator of
+the class lies in the interval exactly when its bit lies between the two bits, and the numerators of
+these bits, in increasing order, are those of `-H, …, H` in the class `a₀ mod 2 ^ k`. The values
+that the C code holds in `long`s for the packing stay in range (`Ratpoints.fitsLong`): the offsets
+of the rows, the first and the last bit of the bit arrays of `-H, …, H`, the numerators of their
+bits, and the sums of a word number and an offset that the first two stages reduce outside the test
+`small`; the products of `fill_bp_list` and of `class_offsets` are bounded in
+`Ratpoints.Proof.Reductions`. The ranges of the numerators that the bounds of the search intervals
+give for a denominator are stated here too, on Lean core.
 
 ## Main definitions
 
@@ -40,8 +40,8 @@ bounds of the search intervals give for a denominator are stated here too, on Le
 
 ## Main statements
 
-* `Ratpoints.Sieve.toInt_numeratorsToBits`, `Ratpoints.Sieve.toInt_numeratorsToBits_height`: the
-  bits of the numerators of an interval, in both forms, and those of `-H, …, H`.
+* `Ratpoints.Sieve.toInt_numeratorsToBits`: the bits of the numerators of an interval, in both
+  forms.
 * `Ratpoints.Sieve.NumClass.le_numerator_and_numerator_le_iff`,
   `Ratpoints.Sieve.NumClass.WF.map_range_numerator_eq_filter_numerators`: the numerator of a bit
   lies in an interval exactly when the bit lies between its bits, and the numerators of the bits of
@@ -54,8 +54,8 @@ bounds of the search intervals give for a denominator are stated here too, on Le
   `[-2 ^ (63 - k), 2 ^ (63 - k)]`, for `k ≤ 6`.
 * `Ratpoints.Sieve.NumClass.fitsLong_numerator`: the numerators of the bits of the bit arrays of
   `-H, …, H` are `long`s.
-* `Ratpoints.Sieve.fitsLong_neg_sub_and_fitsLong_add`: the values `-w_low - offset` and
-  `i + offset` that the first two stages reduce by the helper `mod` are `long`s.
+* `Ratpoints.Sieve.fitsLong_neg_sub`, `Ratpoints.Sieve.fitsLong_add`: the values `-w_low - offset`
+  and `i + offset` that the first two stages reduce by the helper `mod` are `long`s.
 * `Ratpoints.Sieve.flatMap_flatMap_filter_eq_flatMap_filter_inRanges`: for ranges that increase and
   are strictly apart, the points of the elements of an increasing list, range after range, are those
   of the elements in one of the ranges.
@@ -68,7 +68,9 @@ them, never their values: that `Ratpoints.rbaLength = 2 ^ Ratpoints.rbaShift` wi
 `Ratpoints.rbaShift < 32`, that `Ratpoints.rbaPack > 0`, that `Ratpoints.maxBitsInPrime ≤ 10` and
 that `2 Ratpoints.rowBias - 1 ≤ Ratpoints.mulModLimit < 2 ^ 32`; the facts on words that are not
 about the model are in `Ratpoints.Proof.Bits`, those on natural numbers and integers in
-`Ratpoints.Proof.Containers`.
+`Ratpoints.Proof.Containers`. The lemmas on the `long`s of the offsets and of the bit ranges and
+`Ratpoints.Sieve.NumClass.fitsLong_numerator` discharge range obligations that the Deviation
+paragraphs of the model cite, and no contract uses them.
 -/
 
 @[expose] public section
@@ -108,6 +110,41 @@ private theorem stride_facts {k a0 : Nat} (hk : k ≤ 6) (ha : a0 < 2 ^ k) :
   refine ⟨mod_cast this, mod_cast h64, mod_cast ha, Int64.toInt_ofNat_of_lt (by lia),
     Int64.toInt_ofNat_two_pow_sub_one (by lia)⟩
 
+-- The carry `⌈(r - a₀) / m⌉` of the split form at the low end, for `0 ≤ r, a₀ < m`: `0` or `1`.
+private theorem sub_add_sub_one_ediv_nonneg_and_le_one {r a0 m : Int} (hr : 0 ≤ r) (hr' : r < m)
+    (ha : 0 ≤ a0) (ha' : a0 < m) :
+    0 ≤ (r - a0 + (m - 1)) / m ∧ (r - a0 + (m - 1)) / m ≤ 1 :=
+  ⟨Int.ediv_nonneg (by lia) (by lia),
+    Int.lt_add_one_iff.mp ((Int.ediv_lt_iff_lt_mul (by lia)).mpr (by lia))⟩
+
+-- The carry `⌊(r - a₀) / m⌋` of the split form at the high end, for `0 ≤ r, a₀ < m`: `-1` or `0`.
+private theorem neg_one_le_sub_ediv_and_sub_ediv_nonpos {r a0 m : Int} (hr : 0 ≤ r) (hr' : r < m)
+    (ha : 0 ≤ a0) (ha' : a0 < m) :
+    -1 ≤ (r - a0) / m ∧ (r - a0) / m ≤ 0 :=
+  ⟨(Int.le_ediv_iff_mul_le (by lia)).mpr (by lia),
+    Int.lt_add_one_iff.mp ((Int.ediv_lt_iff_lt_mul (by lia)).mpr (by lia))⟩
+
+-- For `m ≥ 1` and `-1 ≤ c ≤ 1`, with `c = 0` when `m = 1`, `z / m + c` is a `long` for a `long`
+-- `z`: an arithmetic shift plus a carry, as in the split form; for `m ≥ 2`, `|z / m| ≤ 2 ^ 62`.
+private theorem neg_two_pow_63_le_ediv_add_and_ediv_add_lt_two_pow_63 {z c m : Int}
+    (hz : -2 ^ 63 ≤ z) (hz' : z < 2 ^ 63) (hm : 1 ≤ m) (hc : -1 ≤ c) (hc' : c ≤ 1)
+    (h1 : m = 1 → c = 0) :
+    -2 ^ 63 ≤ z / m + c ∧ z / m + c < 2 ^ 63 := by
+  rcases Int.lt_or_le m 2 with h | h
+  · rw [show m = 1 by lia, h1 (by lia), Int.ediv_one]
+    lia
+  · lia [(Int.le_ediv_iff_mul_le (by lia)).mpr (show -2 ^ 62 * m ≤ z by lia),
+      (Int.ediv_lt_iff_lt_mul (by lia)).mpr (show z < 2 ^ 62 * m by lia)]
+
+-- The residue of `x` modulo `2 ^ k` less `a₀ < 2 ^ k`, with no overflow.
+private theorem toInt_and_sub_ofNat (x : Int64) {k a0 : Nat} (hk : k ≤ 6) (ha : a0 < 2 ^ k) :
+    ((x &&& Int64.ofNat (2 ^ k - 1)) - Int64.ofNat a0).toInt = x.toInt % 2 ^ k - a0 := by
+  obtain ⟨hm, h64, ha', hA, -⟩ := stride_facts hk ha
+  rw [Int64.toInt_sub_of_lt] <;>
+    lia [Int64.toInt_and_ofNat_two_pow_sub_one x (by lia : k < 63),
+      Int.emod_lt_of_pos x.toInt (by lia : (0 : Int) < 2 ^ k),
+      Int.emod_nonneg x.toInt (by lia : (2 : Int) ^ k ≠ 0)]
+
 -- The low end of the split form: the multiple of `2 ^ k` in `x`, shifted, and the carry
 -- `⌈(x mod 2 ^ k - a₀) / 2 ^ k⌉`, with no overflow.
 private theorem toInt_shiftRight_add_shiftRight_add (x : Int64) {k a0 : Nat} (hk : k ≤ 6)
@@ -118,13 +155,12 @@ private theorem toInt_shiftRight_add_shiftRight_add (x : Int64) {k a0 : Nat} (hk
   obtain ⟨hm, h64, ha', hA, hM⟩ := stride_facts hk ha
   have hl := Int.emod_lt_of_pos x.toInt (by lia : (0 : Int) < 2 ^ k)
   have hl0 := Int.emod_nonneg x.toInt (by lia : (2 : Int) ^ k ≠ 0)
-  have e2 : ((x &&& Int64.ofNat (2 ^ k - 1)) - Int64.ofNat a0).toInt = x.toInt % 2 ^ k - a0 := by
-    rw [Int64.toInt_sub_of_lt] <;> lia [Int64.toInt_and_ofNat_two_pow_sub_one x (by lia : k < 63)]
+  have e2 := toInt_and_sub_ofNat x hk ha
   have e3 : ((x &&& Int64.ofNat (2 ^ k - 1)) - Int64.ofNat a0 + Int64.ofNat (2 ^ k - 1)).toInt =
       x.toInt % 2 ^ k - a0 + (2 ^ k - 1) := by
     rw [Int64.toInt_add_of_lt] <;> lia
-  have hc := Int.sub_add_sub_one_ediv_nonneg_and_le_one hl0 hl (Int.natCast_nonneg a0) ha'
-  have hb := Int.neg_two_pow_63_le_ediv_add_and_ediv_add_lt_two_pow_63 x.le_toInt x.toInt_lt hm
+  have hc := sub_add_sub_one_ediv_nonneg_and_le_one hl0 hl (Int.natCast_nonneg a0) ha'
+  have hb := neg_two_pow_63_le_ediv_add_and_ediv_add_lt_two_pow_63 x.le_toInt x.toInt_lt hm
     (by lia) hc.2 fun h ↦ by
       rw [h] at hl ha' ⊢
       lia
@@ -141,16 +177,14 @@ private theorem toInt_shiftRight_add_shiftRight (x : Int64) {k a0 : Nat} (hk : k
   obtain ⟨hm, h64, ha', hA, -⟩ := stride_facts hk ha
   have hh := Int.emod_lt_of_pos x.toInt (by lia : (0 : Int) < 2 ^ k)
   have hh0 := Int.emod_nonneg x.toInt (by lia : (2 : Int) ^ k ≠ 0)
-  have f2 : ((x &&& Int64.ofNat (2 ^ k - 1)) - Int64.ofNat a0).toInt = x.toInt % 2 ^ k - a0 := by
-    rw [Int64.toInt_sub_of_lt] <;> lia [Int64.toInt_and_ofNat_two_pow_sub_one x (by lia : k < 63)]
-  have hc := Int.neg_one_le_sub_ediv_and_sub_ediv_nonpos hh0 hh (Int.natCast_nonneg a0) ha'
-  have hb := Int.neg_two_pow_63_le_ediv_add_and_ediv_add_lt_two_pow_63 x.le_toInt x.toInt_lt hm
+  have hc := neg_one_le_sub_ediv_and_sub_ediv_nonpos hh0 hh (Int.natCast_nonneg a0) ha'
+  have hb := neg_two_pow_63_le_ediv_add_and_ediv_add_lt_two_pow_63 x.le_toInt x.toInt_lt hm
     hc.1 (by lia) fun h ↦ by
       rw [h] at hh ha' ⊢
       lia
   rw [Int64.toInt_add_of_lt] <;>
-    simp only [Int64.toInt_shiftRight_ofNat _ (by lia : k < 64), f2, Int.shiftRight_eq_div_pow,
-      Int.natCast_pow, Int.cast_ofNat_Int, hb.1, hb.2]
+    simp only [Int64.toInt_shiftRight_ofNat _ (by lia : k < 64), toInt_and_sub_ofNat x hk ha,
+      Int.shiftRight_eq_div_pow, Int.natCast_pow, Int.cast_ofNat_Int, hb.1, hb.2]
 
 theorem toInt_numeratorsToBits_true {low high : Int64} {cl : NumClass} (hcl : cl.WF) :
     (numeratorsToBits low high cl true).1.toInt = -((cl.a0 - low.toInt) / 2 ^ cl.k) ∧
@@ -173,23 +207,6 @@ theorem toInt_numeratorsToBits {low high : Int64} {cl : NumClass} (hcl : cl.WF) 
   | false => exact toInt_numeratorsToBits_false hcl (hplain rfl).1 (hplain rfl).2
   | true => exact toInt_numeratorsToBits_true hcl
 
-/-- The bits of the numerators `-H, …, H` of a height bound `H < 2 ^ 63` in the packing of a class,
-in the form of `numerators_to_bits` that `sift` takes, the split one for `H > 2 ^ 63 - 65`: from
-`⌈(-H - a₀) / 2 ^ k⌉` to `⌊(H - a₀) / 2 ^ k⌋`. -/
-theorem toInt_numeratorsToBits_height {H : Nat} (hH : H < 2 ^ 63) {cl : NumClass} (hcl : cl.WF) :
-    (numeratorsToBits (-H.toInt64) H.toInt64 cl (decide (2 ^ 63 - 65 < H))).1.toInt =
-        -((cl.a0 + H : Int) / 2 ^ cl.k) ∧
-      (numeratorsToBits (-H.toInt64) H.toInt64 cl (decide (2 ^ 63 - 65 < H))).2.toInt =
-        ((H : Int) - cl.a0) / 2 ^ cl.k := by
-  have hl : (-H.toInt64).toInt = -H := Int64.toInt_neg_ofNat_of_le (by lia)
-  have hh : H.toInt64.toInt = H := Int64.toInt_ofNat_of_lt hH
-  have := toInt_numeratorsToBits hcl (low := -H.toInt64) (high := H.toInt64)
-    (split := decide (2 ^ 63 - 65 < H)) fun h ↦ by
-      simp only [decide_eq_false_iff_not, Nat.not_lt] at h
-      rw [hl, hh]
-      constructor <;> lia [hcl.a0_lt_sixty_four]
-  rwa [hl, hh, Int.sub_neg] at this
-
 /-- The numerator of bit `t` of a class lies in `lo, …, hi` exactly when `t` lies between the bits
 of `numerators_to_bits` (`Ratpoints.Sieve.toInt_numeratorsToBits`). -/
 theorem NumClass.le_numerator_and_numerator_le_iff (cl : NumClass) (lo hi t : Int) :
@@ -200,9 +217,9 @@ theorem NumClass.le_numerator_and_numerator_le_iff (cl : NumClass) (lo hi t : In
   constructor <;> intro h <;> constructor <;> lia
 
 /-- The bits from `⌈(lo - a₀) / 2 ^ k⌉` to `⌊(hi - a₀) / 2 ^ k⌋` of the packing of a class, for
-`-H ≤ lo` and `hi ≤ H`, are those of the numerators `-H, …, H`
-(`Ratpoints.Sieve.toInt_numeratorsToBits_height`) whose numerators lie in `lo, …, hi`
-(`Ratpoints.Sieve.NumClass.le_numerator_and_numerator_le_iff`). -/
+`-H ≤ lo` and `hi ≤ H`, are those from `⌈(-H - a₀) / 2 ^ k⌉` to `⌊(H - a₀) / 2 ^ k⌋`, the bits of
+the numerators `-H, …, H` (`Ratpoints.Sieve.toInt_numeratorsToBits`), whose numerators lie in
+`lo, …, hi` (`Ratpoints.Sieve.NumClass.le_numerator_and_numerator_le_iff`). -/
 theorem NumClass.map_range_eq_filter_map_range (cl : NumClass) {H : Nat} {lo hi : Int}
     (hlo : -(H : Int) ≤ lo) (hhi : hi ≤ H) :
     (List.range ((hi - cl.a0) / 2 ^ cl.k + 1 - -((cl.a0 - lo) / 2 ^ cl.k)).toNat).map
@@ -278,7 +295,8 @@ theorem NumClass.WF.map_range_numerator_eq_filter_numerators {cl : NumClass} (hc
 /-! ### The longs of the offsets and of the bit ranges -/
 
 /-- The offsets of the rows are below `Ratpoints.rowBias + 2 p ≤ 2 ^ 31 + 2 ^ 11 < 2 ^ 32`, so
-`long`s, and in the range that `Ratpoints.Sieve.fitsLong_neg_sub_and_fitsLong_add` takes. -/
+`long`s, and in the range that `Ratpoints.Sieve.fitsLong_neg_sub` and `Ratpoints.Sieve.fitsLong_add`
+take. -/
 theorem SieveEntry.PackedFor.lt_two_pow_32 {e : SieveEntry} {cl : NumClass} {off : Nat}
     (h : e.PackedFor cl off) : off < 2 ^ 32 := by
   have := h.lt_rowBias_add
@@ -309,9 +327,10 @@ theorem rbaLength_mul_ediv_add_one_le_two_pow {k : Nat} (hk : k ≤ 6) {hi : Int
     (natCast_rbaLength_dvd_two_pow (by lia [rbaShift_lt_thirty_two])) hhi
 
 /-- The numerators of the bits of the bit arrays from `⌊lo / Ratpoints.rbaLength⌋` to
-`⌊hi / Ratpoints.rbaLength⌋`, for the bits `lo, hi` of the numerators `-H, …, H` of a height bound
-`H < 2 ^ 63` in the packing of a class (`Ratpoints.Sieve.toInt_numeratorsToBits_height`), are
-`long`s: the extraction computes them, and the first numerators of the words, as `long`s. -/
+`⌊hi / Ratpoints.rbaLength⌋`, for the bits `lo = ⌈(-H - a₀) / 2 ^ k⌉` and `hi = ⌊(H - a₀) / 2 ^ k⌋`
+of the numerators `-H, …, H` of a height bound `H < 2 ^ 63` in the packing of a class
+(`Ratpoints.Sieve.toInt_numeratorsToBits`), are `long`s: the extraction computes them, and the
+first numerators of the words, as `long`s. -/
 theorem NumClass.fitsLong_numerator {cl : NumClass} (hcl : cl.WF) {H : Nat} (hH : H < 2 ^ 63)
     {j : Int} (hj : rbaLength * (-((cl.a0 + H : Int) / 2 ^ cl.k) / rbaLength) ≤ j)
     (hj' : j < rbaLength * (((H : Int) - cl.a0) / 2 ^ cl.k / rbaLength + 1)) :
@@ -334,23 +353,38 @@ theorem NumClass.fitsLong_numerator {cl : NumClass} (hcl : cl.WF) {H : Nat} (hH 
   simp only [fitsLong, NumClass.numerator, Bool.and_eq_true]
   constructor <;> lia
 
-theorem sixty_four_le_rbaLength : 64 ≤ rbaLength :=
-  Nat.le_mul_of_pos_right 64 rbaPack_pos
+-- A word number `w` with `-2 ^ 63 ≤ Ratpoints.rbaLength w ≤ 2 ^ 63` lies in `[-2 ^ 57, 2 ^ 57]`,
+-- since `64 ≤ Ratpoints.rbaLength`.
+private theorem neg_two_pow_57_le_and_le_two_pow_57 {w : Int} (hw : -2 ^ 63 ≤ rbaLength * w)
+    (hw' : rbaLength * w ≤ 2 ^ 63) : -2 ^ 57 ≤ w ∧ w ≤ 2 ^ 57 := by
+  have hR : (64 : Int) ≤ rbaLength := mod_cast Nat.le_mul_of_pos_right 64 rbaPack_pos
+  rcases Int.lt_or_le w 0 with h | h
+  · constructor <;> lia [Int.mul_le_mul_of_nonpos_right hR (Int.le_of_lt h)]
+  · constructor <;> lia [Int.mul_le_mul_of_nonneg_right hR h]
 
 /-- A word number `w` with `-2 ^ 63 ≤ Ratpoints.rbaLength w ≤ 2 ^ 63`, the word numbers of the bit
 arrays of the numerators of a height bound below `2 ^ 63`
 (`Ratpoints.Sieve.neg_two_pow_le_rbaLength_mul_ediv`,
-`Ratpoints.Sieve.rbaLength_mul_ediv_add_one_le_two_pow`), minus or plus an offset below `2 ^ 32` is
-a `long`: the values `-w_low - offset` and `i + offset` that the first two stages reduce by the
-helper `mod` outside the test `small`. -/
-theorem fitsLong_neg_sub_and_fitsLong_add {w : Int} {off : Nat} (hw : -2 ^ 63 ≤ rbaLength * w)
-    (hw' : rbaLength * w ≤ 2 ^ 63) (hoff : off < 2 ^ 32) :
-    fitsLong (-w - off) = true ∧ fitsLong (w + off) = true := by
-  have hR : (64 : Int) ≤ rbaLength := mod_cast sixty_four_le_rbaLength
+`Ratpoints.Sieve.rbaLength_mul_ediv_add_one_le_two_pow`), minus an offset below `2 ^ 32` is a
+`long`: the value `-w_low - offset` that the first stage reduces by the helper `mod` outside the
+test `small`. -/
+theorem fitsLong_neg_sub {w : Int} {off : Nat} (hw : -2 ^ 63 ≤ rbaLength * w)
+    (hw' : rbaLength * w ≤ 2 ^ 63) (hoff : off < 2 ^ 32) : fitsLong (-w - off) = true := by
+  have := neg_two_pow_57_le_and_le_two_pow_57 hw hw'
   simp only [fitsLong, Bool.and_eq_true, decide_eq_true_eq]
-  rcases Int.lt_or_le w 0 with h | h
-  · constructor <;> constructor <;> lia [Int.mul_le_mul_of_nonpos_right hR (Int.le_of_lt h)]
-  · constructor <;> constructor <;> lia [Int.mul_le_mul_of_nonneg_right hR h]
+  constructor <;> lia
+
+/-- A word number `w` with `-2 ^ 63 ≤ Ratpoints.rbaLength w ≤ 2 ^ 63`, the word numbers of the bit
+arrays of the numerators of a height bound below `2 ^ 63`
+(`Ratpoints.Sieve.neg_two_pow_le_rbaLength_mul_ediv`,
+`Ratpoints.Sieve.rbaLength_mul_ediv_add_one_le_two_pow`), plus an offset below `2 ^ 32` is a
+`long`: the values `w_low + offset` and `i + offset` that the chunked first stage and the second
+stage reduce by the helper `mod` outside the test `small`. -/
+theorem fitsLong_add {w : Int} {off : Nat} (hw : -2 ^ 63 ≤ rbaLength * w)
+    (hw' : rbaLength * w ≤ 2 ^ 63) (hoff : off < 2 ^ 32) : fitsLong (w + off) = true := by
+  have := neg_two_pow_57_le_and_le_two_pow_57 hw hw'
+  simp only [fitsLong, Bool.and_eq_true, decide_eq_true_eq]
+  constructor <;> lia
 
 /-! ### The numerator ranges of the search intervals -/
 

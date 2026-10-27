@@ -410,7 +410,7 @@ structure IsSoundRun (c : List ℤ) (entries : List SieveEntry) (magics : Array 
   /-- The reciprocals of the moduli, in the order of the entries. -/
   magics_eq : magics.toList = entries.map fun e ↦ magic e.p
   /-- The sieve entries have their tables of inverses. -/
-  hasInverses : ∀ e ∈ entries, ∀ f ∈ e.factors, f.HasInverses e.p
+  hasInverses : ∀ e ∈ entries, e.HasInverses
   /-- The classes with a pattern have their row offsets for all the entries. -/
   offsetsFor : OffsetsFor cls entries offsets
   /-- The classes pack the words of the 2-adic information. -/
@@ -639,8 +639,7 @@ theorem exists_isSoundTest_run_sieveRun {c : List ℤ} {H A bLow bHigh : ℕ} {s
 private theorem isSoundRun_of_map {c : List ℤ} {entries : List SieveEntry}
     {magics : Array ℕ} {cls cls' : Vector NumClass 64} {offsets : Array ℕ} {store : RowStore}
     {dinv : SieveEntry → Array ℕ}
-    (hsound : ∀ e ∈ entries, e.IsSound c)
-    (hinv : ∀ e ∈ entries, ∀ f ∈ e.factors, f.HasInverses e.p)
+    (hsound : ∀ e ∈ entries, e.IsSound c) (hinv : ∀ e ∈ entries, e.HasInverses)
     (hnf : ∀ e ∈ entries, e.nf = 0 → e.IsPrimeEntry)
     (hmg : magics.toList = entries.map fun e ↦ magic e.p)
     (hcls : ∀ b < 64, cls[b]!.Packs (Id.run (twoAdic c (degree c)))[b]!)

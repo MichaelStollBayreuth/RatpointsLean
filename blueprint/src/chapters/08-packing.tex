@@ -330,7 +330,7 @@ order: a data refinement.
 
 \begin{lemma}[A row is unchanged under a unit]\label{lem:admits_mul}
   \uses{def:SieveEntry, def:examinePower, def:admits}
-  \lean{Ratpoints.Sieve.Factor.HasInverses, Ratpoints.Sieve.Entry.admits_mul, Ratpoints.Sieve.Power.admits_mul, Ratpoints.Sieve.Factor.HasInverses.admits_mod, Ratpoints.Sieve.Factor.HasInverses.modulus_dvd, Ratpoints.Sieve.Factor.HasInverses.admits_mul, Ratpoints.Sieve.SieveEntry.admits_mul, Ratpoints.Sieve.Entry.admits_mod_of_dvd, Ratpoints.Sieve.Power.admits_mod_of_dvd}
+  \lean{Ratpoints.Sieve.Factor.HasInverses, Ratpoints.Sieve.Entry.admits_mul, Ratpoints.Sieve.Power.admits_mul, Ratpoints.Sieve.Factor.HasInverses.modulus_dvd, Ratpoints.Sieve.Factor.HasInverses.admits_mul, Ratpoints.Sieve.SieveEntry.admits_mul, Ratpoints.Sieve.Entry.admits_mod_of_dvd, Ratpoints.Sieve.Power.admits_mod_of_dvd}
   \leanok
   If the modulus of each factor of a sieve entry divides $p$ and its table of inverses inverts its
   units (the nonzero residues of a prime, the residues prime to $\ell$ of a prime power $\ell^e$),
@@ -429,7 +429,7 @@ fitting specs and the reciprocals of their moduli.
 
 \begin{lemma}[The bits of the heights]\label{lem:numeratorsToBits}
   \uses{def:numeratorsToBits, lem:numClasses}
-  \lean{Ratpoints.Sieve.toInt_numeratorsToBits, Ratpoints.Sieve.toInt_numeratorsToBits_height, Ratpoints.Sieve.NumClass.le_numerator_and_numerator_le_iff, Ratpoints.Sieve.NumClass.WF.map_range_numerator_eq_filter_numerators, Ratpoints.Sieve.toInt_numeratorsToBits_false, Ratpoints.Sieve.toInt_numeratorsToBits_true, Ratpoints.BruteForce.filter_numerators_emod_eq}
+  \lean{Ratpoints.Sieve.toInt_numeratorsToBits, Ratpoints.Sieve.NumClass.le_numerator_and_numerator_le_iff, Ratpoints.Sieve.NumClass.WF.map_range_numerator_eq_filter_numerators, Ratpoints.Sieve.toInt_numeratorsToBits_false, Ratpoints.Sieve.toInt_numeratorsToBits_true, Ratpoints.BruteForce.filter_numerators_emod_eq}
   \leanok
   For a class with $k \le 6$, $k < \mathrm{numStrides}$ and $a_0 < 2^k$, the split form gives
   $-\lfloor(a_0 - \mathrm{low})/2^k\rfloor$ and $\lfloor(\mathrm{high} - a_0)/2^k\rfloor$ without
@@ -552,7 +552,7 @@ that fits them (Lemma~\ref{lem:choice}), and hands that store on to the run.
 
 \begin{lemma}[The longs of the packing]\label{lem:packingLongs}
   \uses{lem:classOffsets, def:packingConstants, def:useCLong}
-  \lean{Ratpoints.Sieve.NumClass.fitsLong_numerator, Ratpoints.Sieve.neg_two_pow_le_rbaLength_mul_ediv, Ratpoints.Sieve.rbaLength_mul_ediv_add_one_le_two_pow, Ratpoints.Sieve.fitsLong_neg_sub_and_fitsLong_add, Ratpoints.Sieve.SieveEntry.PackedFor.lt_two_pow_32, Ratpoints.mul_le_mulModLimit_of_le_div, Ratpoints.mul_lt_two_pow_63, Ratpoints.rowBias_le_two_pow_31, Ratpoints.Sieve.natCast_rbaLength_dvd_two_pow, Ratpoints.Sieve.sixty_four_le_rbaLength}
+  \lean{Ratpoints.Sieve.NumClass.fitsLong_numerator, Ratpoints.Sieve.neg_two_pow_le_rbaLength_mul_ediv, Ratpoints.Sieve.rbaLength_mul_ediv_add_one_le_two_pow, Ratpoints.Sieve.fitsLong_neg_sub, Ratpoints.Sieve.fitsLong_add, Ratpoints.Sieve.SieveEntry.PackedFor.lt_two_pow_32, Ratpoints.mul_le_mulModLimit_of_le_div, Ratpoints.mul_lt_two_pow_63, Ratpoints.rowBias_le_two_pow_31, Ratpoints.Sieve.natCast_rbaLength_dvd_two_pow}
   \leanok
   The values that the C code holds in longs fit a long ($\mathrm{fitsLong}$,
   Definition~\ref{def:useCLong}) for $H < 2^{63}$: the numerator of every bit of the bit arrays of

@@ -58,9 +58,13 @@ Euclidean remainder.
 * `Ratpoints.Sieve.magic_mul_eq`: `magic p · p = 2 ^ 64 + δ` with `δ < p`.
 * `Ratpoints.Sieve.mulMod_magic`, `Ratpoints.Sieve.mulDiv_magic`: with the reciprocal
   `Ratpoints.Sieve.magic p`, the reductions give `u % p` and, for `p ≥ 2`, `u / p` for
-  `u p < 2 ^ 64`; `Ratpoints.Sieve.sub_mulDiv_magic_mul`: the remainder as `u - RP_MULDIV(u) p`.
+  `u p < 2 ^ 64`; `Ratpoints.Sieve.mulMod_magic_of_le_mulModLimit`: the remainder of the values at
+  most `Ratpoints.mulModLimit` modulo `p ≤ 2 ^ 32`.
 * `Ratpoints.Sieve.modMul_magic`: `mod_mul` gives the Euclidean `a % p` for `|a| p < 2 ^ 64`.
 * `Ratpoints.Sieve.modLong_eq_emod`: the helper `mod` of the C code is the Euclidean `%`.
+* `Ratpoints.Sieve.SieveSpec.Fits.ite_modMul_modLong_eq_emod_of_natAbs_le`: the reduction by
+  `mod_mul` under the test `small` and by the helper `mod` otherwise is the Euclidean remainder of
+  a value at most `Ratpoints.mulModLimit` in absolute value under `small`.
 * `Ratpoints.Sieve.SieveSpec.Fits.ite_modMul_modLong_eq_emod`,
   `Ratpoints.Sieve.SieveSpec.Fits.ite_modMul_modLong_add_eq_emod`,
   `Ratpoints.Sieve.SieveSpec.Fits.ite_mulMod_modLong_eq_toNat_emod`: the first row index of the
@@ -75,7 +79,10 @@ Mathlib, can use it. The proofs use only the facts on the constants that `decide
 them, that `Ratpoints.rbaPack > 0`, that `Ratpoints.mulModLimit < 2 ^ 32`, that
 `Ratpoints.maxBitsInPrime ≤ 10` and that `2 Ratpoints.rowBias - 1 ≤ Ratpoints.mulModLimit`, never
 their values; `Ratpoints.rowBias` is generalized before `lia`, which otherwise fails on its value
-with a deep recursion of the kernel.
+with a deep recursion of the kernel. `Ratpoints.mul_lt_two_pow_63` and
+`Ratpoints.rowBias_le_two_pow_31` (through `Ratpoints.Sieve.SieveEntry.PackedFor.lt_two_pow_32`)
+discharge range obligations of the `long`s that the Deviation paragraphs of the model cite, and no
+contract uses them.
 -/
 
 @[expose] public section
@@ -238,11 +245,11 @@ theorem mulDiv_magic {u p : Nat} (hp : 1 < p) (hu : u * p < 2 ^ 64) :
   exact Nat.mul_div_eq_div_of_mul_eq_add (by lia) (magic_mul_eq (by lia))
     (Nat.lt_of_le_of_lt (Nat.mul_le_mul_left u (by lia)) hu)
 
-/-- The remainder `u - RP_MULDIV(u) p`, as the Jacobi test by tables of the C code takes it
-(`find_points.c:755`), is `u % p` for `p ≥ 2` and `u p < 2 ^ 64`. -/
-theorem sub_mulDiv_magic_mul {u p : Nat} (hp : 1 < p) (hu : u * p < 2 ^ 64) :
-    u - mulDiv u (magic p) * p = u % p := by
-  rw [mulDiv_magic hp hu, Nat.mod_eq_sub_div_mul]
+/-- `RP_MULMOD` with the reciprocal of a modulus `0 < p ≤ 2 ^ 32` computes the remainder of every
+`u ≤ Ratpoints.mulModLimit` (`Ratpoints.mul_lt_two_pow_64_of_le_mulModLimit`). -/
+theorem mulMod_magic_of_le_mulModLimit {u p : Nat} (hp : 0 < p) (hp32 : p ≤ 2 ^ 32)
+    (hu : u ≤ mulModLimit) : mulMod u p (magic p) = u % p :=
+  mulMod_magic hp (mul_lt_two_pow_64_of_le_mulModLimit hu hp32)
 
 /-- `mod_mul` with the reciprocal of `p` computes the Euclidean remainder of every `a` with
 `|a| p < 2 ^ 64`: the remainder of `|a|`, and its complement for a negative `a`. -/
@@ -263,17 +270,12 @@ theorem modMul_magic {a : Int} {p : Nat} (hp : 0 < p) (ha : a.natAbs * p < 2 ^ 6
 
 /-! ### The helper `mod` -/
 
--- A conditional subtraction of `m` reduces `0 ≤ a < 2 m` modulo `m`: a rung of the ladder of `mod`.
-private theorem ite_le_sub_eq_emod {a m : Int} (h0 : 0 ≤ a) (h1 : a < 2 * m) :
-    (if m ≤ a then a - m else a) = a % m := by
-  split
-  · rw [← Int.sub_emod_right a m, Int.emod_eq_of_lt (by lia) (by lia)]
-  · rw [Int.emod_eq_of_lt h0 (by lia)]
-
--- The rung on a residue modulo `n = 2 m`.
+-- A rung of the ladder of `mod` on a residue modulo `n = 2 m`: a conditional subtraction of `m`
+-- (`Int.emod_eq_ite_of_lt_two_mul`).
 private theorem ite_le_emod_sub_eq_emod (a m : Int) {n : Int} (hm : 0 < m) (hn : n = 2 * m) :
     (if m ≤ a % n then a % n - m else a % n) = a % m := by
-  rw [ite_le_sub_eq_emod (Int.emod_nonneg _ (by lia)) (hn ▸ Int.emod_lt_of_pos _ (by lia)),
+  rw [← Int.emod_eq_ite_of_lt_two_mul (Int.emod_nonneg _ (by lia))
+      (hn ▸ Int.emod_lt_of_pos _ (by lia)),
     Int.emod_emod_of_dvd _ (hn ▸ Int.dvd_mul_left 2 m)]
 
 -- `mod` for `-16 b ≤ a < 16 b`: `16 b` added to a negative `a`, then the ladder of conditional
@@ -285,7 +287,8 @@ private theorem modLong_eq_emod_of_le_of_lt {a b : Int} (hb : 0 < b) (h0 : -(16 
   have h2 : 0 ≤ (if a < 0 then a + 16 * b else a) := by split <;> lia
   have h3 : (if a < 0 then a + 16 * b else a) < 2 * (8 * b) := by split <;> lia
   generalize (if a < 0 then a + 16 * b else a) = y at hy h2 h3 ⊢
-  rw [← hy, ite_le_sub_eq_emod h2 h3, ite_le_emod_sub_eq_emod y (4 * b) (by lia) (by lia),
+  rw [← hy, ← Int.emod_eq_ite_of_lt_two_mul h2 h3,
+    ite_le_emod_sub_eq_emod y (4 * b) (by lia) (by lia),
     ite_le_emod_sub_eq_emod y (2 * b) (by lia) (by lia), ite_le_emod_sub_eq_emod y b hb rfl]
 
 /-- The helper `mod` of the C code is the Euclidean `%`, for every integer `a` and every `b ≥ 0`:
@@ -377,20 +380,26 @@ theorem SieveSpec.Fits.add_nonneg_and_toNat_le {s : SieveSpec} (hs : s.Fits) {i 
   generalize rowBias = R at *
   lia
 
+/-- The reduction of `a` modulo the modulus of a sieve spec in the range of the packing, by
+`mod_mul` under the test `small` and by the helper `mod` otherwise, is the Euclidean remainder, for
+`|a| ≤ Ratpoints.mulModLimit` under `small`. -/
+theorem SieveSpec.Fits.ite_modMul_modLong_eq_emod_of_natAbs_le {s : SieveSpec} (hs : s.Fits)
+    {small : Bool} {a : Int} (h : small = true → a.natAbs ≤ mulModLimit) :
+    (if small then modMul a s.p (magic s.p) else modLong a s.p) = a % s.p := by
+  cases small with
+  | false => exact modLong_eq_emod _ (Int.natCast_nonneg _)
+  | true => exact modMul_magic hs.pos (mul_lt_two_pow_64_of_le_mulModLimit (h rfl)
+      (Nat.le_trans hs.le_maxPrimeEven maxPrimeEven_le_two_pow_32))
+
 /-- The index of the first row of the first stage over a piece from the word number `w0` on, by
 `mod_mul` under the test `small` and by the helper `mod` otherwise, is the Euclidean remainder of
 `-w0 - offset`. -/
 theorem SieveSpec.Fits.ite_modMul_modLong_eq_emod {s : SieveSpec} (hs : s.Fits) {small : Bool}
     {w0 : Int} {n : Nat} (h : SmallFits small w0 (w0 + n)) :
     (if small then modMul (-w0 - s.offset) s.p (magic s.p) else modLong (-w0 - s.offset) s.p) =
-      (-w0 - s.offset) % s.p := by
-  cases small with
-  | false => exact modLong_eq_emod _ (Int.natCast_nonneg _)
-  | true =>
-    have h' := h rfl
-    exact modMul_magic hs.pos (mul_lt_two_pow_64_of_le_mulModLimit
-      (hs.natAbs_neg_sub_le h'.1 (by lia))
-      (Nat.le_trans hs.le_maxPrimeEven maxPrimeEven_le_two_pow_32))
+      (-w0 - s.offset) % s.p :=
+  hs.ite_modMul_modLong_eq_emod_of_natAbs_le fun hsm ↦
+    hs.natAbs_neg_sub_le (h hsm).1 (by lia [(h hsm).2])
 
 /-- The start of the row of the chunked first stage at the first word number `w0` of a piece, by
 `mod_mul` under the test `small` and by the helper `mod` otherwise, is the Euclidean remainder of
@@ -398,15 +407,10 @@ theorem SieveSpec.Fits.ite_modMul_modLong_eq_emod {s : SieveSpec} (hs : s.Fits) 
 theorem SieveSpec.Fits.ite_modMul_modLong_add_eq_emod {s : SieveSpec} (hs : s.Fits) {small : Bool}
     {w0 : Int} (h : SmallFits small w0 w0) :
     (if small then modMul (w0 + s.offset) s.p (magic s.p) else modLong (w0 + s.offset) s.p) =
-      (w0 + s.offset) % s.p := by
-  cases small with
-  | false => exact modLong_eq_emod _ (Int.natCast_nonneg _)
-  | true =>
-    have hle : (w0 + s.offset).natAbs ≤ mulModLimit := by
-      rw [← Int.natAbs_neg, Int.neg_add, ← Int.sub_eq_add_neg]
-      exact hs.natAbs_neg_sub_le (h rfl).1 (h rfl).2
-    exact modMul_magic hs.pos (mul_lt_two_pow_64_of_le_mulModLimit hle
-      (Nat.le_trans hs.le_maxPrimeEven maxPrimeEven_le_two_pow_32))
+      (w0 + s.offset) % s.p :=
+  hs.ite_modMul_modLong_eq_emod_of_natAbs_le fun hsm ↦ by
+    rw [← Int.natAbs_neg, Int.neg_add, ← Int.sub_eq_add_neg]
+    exact hs.natAbs_neg_sub_le (h hsm).1 (h hsm).2
 
 /-- The row index of the second stage at the word number `i`, by a multiplication with the
 reciprocal under the test `small` and by the helper `mod` otherwise, is the Euclidean remainder of
@@ -420,9 +424,9 @@ theorem SieveSpec.Fits.ite_mulMod_modLong_eq_toNat_emod {s : SieveSpec} (hs : s.
   | true =>
     have ⟨h0, h1⟩ := hs.add_nonneg_and_toNat_le (h rfl).1 (by lia [(h rfl).2])
     simp only [↓reduceIte]
-    rw [mulMod_magic hs.pos (mul_lt_two_pow_64_of_le_mulModLimit h1
-      (Nat.le_trans hs.le_maxPrimeEven maxPrimeEven_le_two_pow_32)), Int.toNat_emod h0
-      (Int.natCast_nonneg _), Int.toNat_natCast]
+    rw [mulMod_magic_of_le_mulModLimit hs.pos
+      (Nat.le_trans hs.le_maxPrimeEven maxPrimeEven_le_two_pow_32) h1,
+      Int.toNat_emod h0 (Int.natCast_nonneg _), Int.toNat_natCast]
 
 end Sieve
 

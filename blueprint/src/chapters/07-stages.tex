@@ -126,7 +126,7 @@ the unstaged sieve with its check: the same numerators reach the exact check, in
 
 \begin{lemma}[The reductions are exact]\label{lem:mulMod}
   \uses{def:mulMod, lem:mulHi}
-  \lean{Ratpoints.Sieve.magic_mul_eq, Ratpoints.Sieve.magic_lt_two_pow_64, Ratpoints.Sieve.mulMod_magic, Ratpoints.Sieve.mulDiv_magic, Ratpoints.Sieve.sub_mulDiv_magic_mul}
+  \lean{Ratpoints.Sieve.magic_mul_eq, Ratpoints.Sieve.magic_lt_two_pow_64, Ratpoints.Sieve.mulMod_magic, Ratpoints.Sieve.mulDiv_magic}
   \leanok
   For $0 < p$ and $u p < 2^{64}$, the reduction with the reciprocal of $p$ gives $u \bmod p$; for
   $1 < p$, whose reciprocal is below $2^{64}$, the quotient gives $\lfloor u / p \rfloor$, so that

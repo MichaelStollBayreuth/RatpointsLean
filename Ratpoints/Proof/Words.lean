@@ -23,8 +23,9 @@ bits of a word, and the contract of the first stage over a piece, as `@[spec]` t
 
 ## Main definitions
 
-* `Ratpoints.Sieve.Factor.HasInverses`: what the scaling of the rows by a unit needs of a factor of
-  a modulus: its modulus divides the modulus, and its table of inverses inverts its units.
+* `Ratpoints.Sieve.Factor.HasInverses`, `Ratpoints.Sieve.SieveEntry.HasInverses`: what the scaling
+  of the rows by a unit needs of a factor of a modulus, its modulus dividing the modulus and its
+  table of inverses inverting its units, and of a sieve entry, all its factors having it.
 * `Ratpoints.Sieve.SieveSpec.wordAt`, `Ratpoints.Sieve.andWords`: the row word that the first stage
   ands into a word of a piece, at the offset of the row, and the words of a piece after it.
 * `Ratpoints.Sieve.SieveSpec.Reads`: the rows of a modulus read a test of the bits.
@@ -44,9 +45,11 @@ bits of a word, and the contract of the first stage over a piece, as `@[spec]` t
 * `Ratpoints.Sieve.getLsbD_clearLowBits`, `Ratpoints.Sieve.getLsbD_clearHighBits`: which bits the
   masks at the two ends of the numerator range keep.
 * `Ratpoints.Sieve.isZeroAt_eq_true_iff`: a bit array is zero when all its words are.
-* `Ratpoints.Sieve.Entry.admits_mod_of_dvd`, `Ratpoints.Sieve.Power.admits_mod_of_dvd`: the row of
-  a prime or a prime power reads the residues modulo a multiple of its modulus as those of the
-  numbers.
+* `Ratpoints.Sieve.Entry.admits_mod_of_dvd`, `Ratpoints.Sieve.Power.admits_mod_of_dvd`,
+  `Ratpoints.Sieve.Factor.admits_mod_of_dvd`: the row of a prime, a prime power or a factor reads
+  the residues modulo a multiple of its modulus as those of the numbers.
+* `Ratpoints.Sieve.SieveEntry.admits_eq_all`: the row of a sieve entry whose factors have moduli
+  dividing its modulus is the and of the rows of its factors.
 * `Ratpoints.Sieve.SieveEntry.admits_mul`: the row of a sieve entry whose factors have their tables
   of inverses is unchanged when the denominator and the numerator are scaled by a unit.
 * `Ratpoints.Sieve.SieveEntry.reads_row`: the closed form of the row of `b / 2 ^ k`
@@ -171,10 +174,6 @@ theorem SieveEntry.admits_congr (e : SieveEntry) (b : Nat) {a a' : Int} (h : a %
     e.admits b a = e.admits b a' := by
   simp [SieveEntry.admits, h]
 
-theorem SieveEntry.admits_add_mul (e : SieveEntry) (b : Nat) (a k : Int) :
-    e.admits b (a + e.p * k) = e.admits b a :=
-  e.admits_congr b (Int.add_mul_emod_self_left a e.p k)
-
 theorem SieveEntry.admits_mod (e : SieveEntry) (b : Nat) : e.admits (b % e.p) = e.admits b :=
   funext fun _ ↦ by simp [SieveEntry.admits]
 
@@ -190,6 +189,18 @@ theorem Power.admits_mod_of_dvd (pw : Power) {m : Nat} (h : pw.m ∣ m) (b : Nat
   simp only [Power.admits, Nat.mod_mod_of_dvd b h,
     Int.emod_emod_of_dvd a (Int.natCast_dvd_natCast.mpr h)]
 
+theorem Factor.admits_mod_of_dvd (f : Factor) {m : Nat} (h : f.modulus ∣ m) (b : Nat) (a : Int) :
+    f.admits (b % m) (a % m) = f.admits b a := by
+  cases f with
+  | prime t => exact Entry.admits_mod_of_dvd t h b a
+  | power pw => exact Power.admits_mod_of_dvd pw h b a
+
+/-- The row of a sieve entry whose factors have moduli dividing its modulus admits a numerator when
+each factor does, the factors reading the residues modulo their own moduli. -/
+theorem SieveEntry.admits_eq_all {e : SieveEntry} (h : ∀ f ∈ e.factors, f.modulus ∣ e.p) (b : Nat)
+    (a : Int) : e.admits b a = e.factors.all (·.admits b a) :=
+  List.all_congr_left fun f hf ↦ Factor.admits_mod_of_dvd f (h f hf) b a
+
 /-- What the scaling of the rows by a unit needs of a factor of the modulus `P` of a sieve entry:
 the modulus of the factor divides `P`, and its table of inverses inverts the residues at which its
 row reads it, the nonzero residues of a prime and the units of a prime power `p ^ e`, whose prime
@@ -204,6 +215,12 @@ theorem Factor.HasInverses.modulus_dvd {f : Factor} {P : Nat} (hf : f.HasInverse
   cases f with
   | prime t => exact hf.1
   | power pw => exact hf.2.1
+
+/-- The factors of a sieve entry have their tables of inverses for its modulus
+(`Ratpoints.Sieve.Factor.HasInverses`): what the scaling of its row by a unit needs
+(`Ratpoints.Sieve.SieveEntry.admits_mul`). -/
+def SieveEntry.HasInverses (e : SieveEntry) : Prop :=
+  ∀ f ∈ e.factors, f.HasInverses e.p
 
 /-- The row of a prime `q > 0` whose table inverts the nonzero residues is unchanged when the
 denominator and the numerator are scaled by a unit `u` modulo `q`. -/
@@ -246,12 +263,6 @@ theorem Power.admits_mul {pw : Power} (hm : 0 < pw.m) (hpm : pw.p ∣ pw.m)
     rw [Nat.mul_mod_eq_mul_mod_of_mul_mod_eq_one (Nat.mod_mod _ _) hm1
       (hinv _ (Nat.mod_lt b hm) hb) (hinv _ (Nat.mod_lt _ hm) (mt hzb.mp hb))]
 
-theorem Factor.HasInverses.admits_mod {f : Factor} {P : Nat} (hf : f.HasInverses P) (b : Nat)
-    (a : Int) : f.admits (b % P) (a % P) = f.admits b a := by
-  cases f with
-  | prime t => exact Entry.admits_mod_of_dvd t hf.1 b a
-  | power pw => exact Power.admits_mod_of_dvd pw hf.2.1 b a
-
 /-- The row of a factor of a modulus `P > 0` with its tables of inverses is unchanged when the
 denominator and the numerator are scaled by a unit `u` modulo `P`. -/
 theorem Factor.HasInverses.admits_mul {f : Factor} {P : Nat} (hf : f.HasInverses P) (hP : 0 < P)
@@ -267,15 +278,15 @@ theorem Factor.HasInverses.admits_mul {f : Factor} {P : Nat} (hf : f.HasInverses
 
 /-- The row of a sieve entry whose factors have their tables of inverses is unchanged when the
 denominator and the numerator are scaled by a unit `u` modulo the modulus, with an inverse `v`. -/
-theorem SieveEntry.admits_mul {e : SieveEntry} (he : ∀ f ∈ e.factors, f.HasInverses e.p)
-    {u v : Nat} (huv : v * u % e.p = 1) (b : Nat) (a : Int) :
+theorem SieveEntry.admits_mul {e : SieveEntry} (he : e.HasInverses) {u v : Nat}
+    (huv : v * u % e.p = 1) (b : Nat) (a : Int) :
     e.admits (u * b) (u * a) = e.admits b a := by
   rcases Nat.eq_zero_or_pos e.p with h0 | hP
   · rw [h0, Nat.mod_zero] at huv
     rw [Nat.eq_one_of_mul_eq_one_left huv, Nat.one_mul, Int.natCast_one, Int.one_mul]
-  · rw [SieveEntry.admits, SieveEntry.admits, Bool.eq_iff_iff, List.all_eq_true, List.all_eq_true]
-    refine forall₂_congr fun f hf ↦ ?_
-    rw [(he f hf).admits_mod, (he f hf).admits_mul hP huv, (he f hf).admits_mod]
+  · have hd (f : Factor) (hf : f ∈ e.factors) : f.modulus ∣ e.p := (he f hf).modulus_dvd
+    rw [admits_eq_all hd, admits_eq_all hd]
+    exact List.all_congr_left fun f hf ↦ (he f hf).admits_mul hP huv b a
 
 /-! ### One piece -/
 
@@ -300,7 +311,7 @@ theorem SieveSpec.wordAt_rbaPack_mul_add (s : SieveSpec) (w0 : Int) (pos : Nat) 
 
 -- The position in the row of bit `t` of the row word of word `y` is congruent modulo `p` to the
 -- numerator of bit `t` of word `y`.
-private theorem emod_wordIndex (p : Nat) (hp : 0 < p) (w0 : Int) (y t : Nat) :
+private theorem emod_wordIndex {p : Nat} (hp : 0 < p) (w0 : Int) (y t : Nat) :
     (64 * ((rbaPack * ((w0 + (y / rbaPack : Nat)) % (p : Int)).toNat + y % rbaPack : Nat) : Int) +
         t) % p = (rbaLength * w0 + 64 * y + t) % p := by
   have hy := Nat.div_add_mod y rbaPack
@@ -321,7 +332,7 @@ private theorem emod_wordIndex (p : Nat) (hp : 0 < p) (w0 : Int) (y t : Nat) :
 /-- Bit `t` of the row word of word `y` of a piece from the word number `w0` on, in the closed form
 of the row of the denominator `b` with the offset `off` and any start and end, is the bit of the
 numerator `rbaLength (w0 + off) + 64 y + t` in the row of `b`. -/
-theorem SieveSpec.getLsbD_wordAt_mk (e : SieveEntry) (b : Nat) (hp : 0 < e.p) (off st stop : Nat)
+theorem SieveSpec.getLsbD_wordAt_mk {e : SieveEntry} (b : Nat) (hp : 0 < e.p) (off st stop : Nat)
     (w0 : Int) (y t : Nat) :
     (wordAt ⟨e.p, off, closedRow e.admits e.p b, st, stop⟩ w0 y).toBitVec.getLsbD t =
       (decide (t < 64) && e.admits b (rbaLength * (w0 + off) + 64 * y + t)) := by
@@ -329,7 +340,7 @@ theorem SieveSpec.getLsbD_wordAt_mk (e : SieveEntry) (b : Nat) (hp : 0 < e.p) (o
     lia [Int.toNat_emod_lt (w0 + off + (y / rbaPack : Nat)) hp, chunk_pos]
   rw [wordAt,
     getLsbD_closedRow _ _ _ (Nat.mul_add_lt_mul_of_lt_of_lt' hu (Nat.mod_lt y rbaPack_pos)),
-    e.admits_congr b (emod_wordIndex e.p hp _ y t)]
+    e.admits_congr b (emod_wordIndex hp _ y t)]
 
 /-- The rows of the sieve spec `s` read the test `f` of the bits: bit `t` of the row word of word
 `y` of a piece from the word number `i` on is `f` at the bit `rbaLength i + 64 y + t`. -/
@@ -343,13 +354,13 @@ def SieveSpec.Reads (s : SieveSpec) (f : Int → Bool) : Prop :=
 admits the numerator `a₀ + 2 ^ k j`, when `2 ^ k` has an inverse `v` modulo `p` and the factors of
 the entry have their tables of inverses: the rows are unchanged when the denominator and the
 numerator are scaled by the unit `2 ^ k` (`Ratpoints.Sieve.SieveEntry.admits_mul`). -/
-theorem SieveEntry.reads_row {e : SieveEntry} (he : ∀ f ∈ e.factors, f.HasInverses e.p)
-    (hp : 0 < e.p) {k a0 off bp b v st stop : Nat} (hv : v * 2 ^ k % e.p = 1)
+theorem SieveEntry.reads_row {e : SieveEntry} (he : e.HasInverses) (hp : 0 < e.p)
+    {k a0 off bp b v st stop : Nat} (hv : v * 2 ^ k % e.p = 1)
     (hoff : off * (2 ^ k * rbaLength) % e.p = a0 % e.p) (hbp : 2 ^ k * bp % e.p = b % e.p) :
     SieveSpec.Reads ⟨e.p, off, closedRow e.admits e.p bp, st, stop⟩ fun j ↦
       e.admits b (a0 + 2 ^ k * j) := by
   intro i y t
-  rw [SieveSpec.getLsbD_wordAt_mk e bp hp, ← e.admits_mul he hv, ← e.admits_mod, hbp,
+  rw [SieveSpec.getLsbD_wordAt_mk bp hp, ← e.admits_mul he hv, ← e.admits_mod, hbp,
     e.admits_mod]
   refine congrArg (decide (t < 64) && ·) (e.admits_congr b ?_)
   have h' : ((off * (2 ^ k * rbaLength) : Nat) : Int) % e.p = (a0 : Int) % e.p := by
@@ -412,11 +423,10 @@ theorem eq_magic_and_of_next?_eq_some {specs pref suff : List SieveSpec} {s : Si
     (hs : specs = pref ++ s :: suff)
     (hrest : pref.length < specs.length → rest = mgs.drop pref.length)
     (hnext : Std.Stream.next? rest = some (mg, rest')) :
-    mg = magic s.p ∧
-      ((pref ++ [s]).length < specs.length → rest' = mgs.drop (pref ++ [s]).length) := by
+    mg = magic s.p ∧ rest' = mgs.drop (pref ++ [s]).length := by
   rw [hrest (by simp [hs]), hmg] at hnext
-  obtain ⟨rfl, h⟩ := List.next?_drop_map _ hs hnext
-  exact ⟨rfl, fun _ ↦ by rw [h, hmg, List.length_append, List.length_singleton]⟩
+  obtain ⟨rfl, h⟩ := List.next?_drop_map hs hnext
+  exact ⟨rfl, by rw [h, hmg, List.length_append, List.length_singleton]⟩
 
 /-- The reciprocals of a loop over the moduli and their reciprocals in step do not run out before
 the moduli. -/
@@ -560,20 +570,17 @@ theorem AndRowsLoopInvariant.andRowsHeadInvariant {m n : Nat} {cw : UInt64} {w0 
   rw [andRowsStart, hfit.ite_modMul_modLong_eq_emod pre.2.2, Int.neg_add, Int.sub_eq_add_neg]
 
 /-- After the bit arrays of the modulus `s` are all done, the cursor moves on. -/
-theorem AndRowsLoopInvariant.push {m n c : Nat} {cw : UInt64} {w0 : Int}
-    {mgs rest rest' : List Nat} {pref : List SieveSpec} {s : SieveSpec} {r mg : Nat}
+theorem AndRowsLoopInvariant.push {m n c : Nat} {cw : UInt64} {w0 : Int} {small : Bool}
+    {specs pref suff : List SieveSpec} {s : SieveSpec} {mgs rest rest' : List Nat} {r mg : Nat}
     {surv surv' : Vector UInt64 m}
-    (h : AndRowsLoopInvariant cw w0 n mgs pref (surv, rest))
+    (pre : (∀ s ∈ specs, s.Fits) ∧ mgs = specs.map (magic ·.p) ∧ SmallFits small w0 (w0 + n))
+    (hs : specs = pref ++ s :: suff) (h : AndRowsLoopInvariant cw w0 n mgs pref (surv, rest))
     (hnext : Std.Stream.next? rest = some (mg, rest'))
     (h' : AndRowsStartInvariant cw w0 n pref s r c surv') (hc : n ≤ c) :
     AndRowsLoopInvariant cw w0 n mgs (pref ++ [s]) (surv', rest') := by
-  refine ⟨?_, fun y hy ↦ ?_⟩
-  · change rest' = mgs.drop (pref ++ [s]).length
-    rw [List.length_append, List.length_singleton, ← List.drop_drop, ← show rest = _ from h.1,
-      List.eq_cons_of_next?_eq_some hnext]
-    rfl
-  · have : y / rbaPack < c := Nat.lt_of_lt_of_le ((Nat.div_lt_iff_lt_mul rbaPack_pos).mpr hy) hc
-    simp [h'.2 y hy, this, andWords_concat]
+  refine ⟨(eq_magic_and_of_next?_eq_some pre.2.1 hs (fun _ ↦ h.1) hnext).2, fun y hy ↦ ?_⟩
+  have : y / rbaPack < c := Nat.lt_of_lt_of_le ((Nat.div_lt_iff_lt_mul rbaPack_pos).mpr hy) hc
+  simp [h'.2 y hy, this, andWords_concat]
 
 theorem AndRowsStartInvariant.of_eq {m n : Nat} {cw : UInt64} {w0 : Int} {pref : List SieveSpec}
     {s : SieveSpec} {r c c' : Nat} {surv : Vector UInt64 m}
@@ -691,7 +698,7 @@ theorem andRows_spec (specs : List SieveSpec) (mgs : List Nat) (small : Bool) (c
     | exact AndRowsStartInvariant.append_andBitArray_sub ‹_› ‹_› (by lia)
     | exact AndRowsStartInvariant.append_andBitArray_period ‹_› ‹_› ‹_›
     | exact AndRowsStartInvariant.append_andBitArray_tail ‹_› ‹_›
-    | exact AndRowsLoopInvariant.push ‹_› ‹_› ‹_› (by simp [Nat.add_assoc] <;> lia)
+    | exact AndRowsLoopInvariant.push ‹_› ‹_› ‹_› ‹_› ‹_› (by simp [Nat.add_assoc] <;> lia)
     | exact AndRowsStartInvariant.of_eq ‹_› (by simp [Nat.add_mul, Nat.add_assoc]; done)
 
 /-! ### The check of a numerator and the set bits of a word -/

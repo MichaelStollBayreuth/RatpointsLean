@@ -949,7 +949,7 @@ theorem mul_add_le_of_le_toUInt64_div {m : UInt64} {c : Int64} {bHigh : ℕ} (hc
   have hK : (9223372036854775807 : Int64).toInt = 2 ^ 63 - 1 := by decide
   have hs : (9223372036854775807 - c).toInt = 2 ^ 63 - 1 - c.toInt := by
     rw [Int64.toInt_sub_of_lt (by rw [hK]; lia) (by rw [hK]; lia), hK]
-  have hd := Int64.toInt_div_ofNat (a := 9223372036854775807 - c) (by rw [hs]; lia) hb hb63
+  have hd := Int64.toInt_div_ofNat (a := 9223372036854775807 - c) (by rw [hs]; lia) hb63
   rw [hs] at hd
   have h1 : 0 ≤ (2 ^ 63 - 1 - c.toInt) / (bHigh : ℤ) := Int.ediv_nonneg (by lia) (by lia)
   rw [UInt64.le_iff_toNat_le] at h

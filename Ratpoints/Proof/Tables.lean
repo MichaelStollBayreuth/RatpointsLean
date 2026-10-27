@@ -181,7 +181,7 @@ theorem getElem!_squaresMod_mul_self_mod {p s : ℕ} (hp : p.Prime) (hs : s < p)
     (squaresMod p)[s * s % p]! = true := by
   have ht : s * s % p < ((Array.replicate p false).setIfInBounds 0 true).size := by
     simpa using Nat.mod_lt _ hp.pos
-  simp only [squaresMod, Array.set!_eq_setIfInBounds, Array.getElem!_foldl_setIfInBounds _ _ _ ht,
+  simp only [squaresMod, Array.set!_eq_setIfInBounds, Array.getElem!_foldl_setIfInBounds _ _ ht,
     Bool.or_eq_true, List.any_eq_true, beq_iff_eq, List.mem_range']
   obtain rfl | hs0 := eq_or_ne s 0
   · left
@@ -340,7 +340,7 @@ theorem HornerInvariant.add_one {cm : Array ℕ} {d p a i k s : ℕ}
     (h : HornerInvariant cm d p a i k s) (hsize : cm.size = d + 1) (hi : i < d) (ha : a < p)
     (hc : cm[d - 1 - i]! < p) :
     HornerInvariant cm d p a (i + 1) (k + 1) (s * a + cm[d - 1 - i]!) := by
-  refine ⟨?_, Nat.pow_succ p (k + 1) ▸ Nat.mul_add_lt_mul_of_lt h.2 ha hc⟩
+  refine ⟨?_, Nat.pow_succ p (k + 1) ▸ Nat.mul_add_lt_mul_of_lt h.2 ha.le hc⟩
   rw [Nat.sub_right_comm d 1 i, Nat.sub_add_eq d i 1, evalMod_drop (by simp; lia),
     Nat.sub_one_add_one_eq_of_pos (Nat.sub_pos_of_lt hi), ← h.1, Array.getElem_toList,
     getElem!_pos cm (d - i - 1) (by lia)]
