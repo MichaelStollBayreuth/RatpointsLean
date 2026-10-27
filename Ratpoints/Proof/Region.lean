@@ -78,6 +78,10 @@ theorem inRegion_of_isFullBox {D : List (WithBotTop ℚ × WithBotTop ℚ)} {bLo
   · exact .inl h0.symm
   · exact .inr ⟨by lia, by lia, .inl hD⟩
 
+theorem IsFullBox.map {α β : Type*} {dom : List α} {bLow bHigh : ℤ} {H : ℕ}
+    (h : IsFullBox dom bLow bHigh H) (f : α → β) : IsFullBox (dom.map f) bLow bHigh H :=
+  ⟨List.map_eq_nil_iff.mpr h.1, h.2⟩
+
 namespace Sieve
 
 /-- The least numerator of the denominator `b` in an interval with the lower end `x`, within

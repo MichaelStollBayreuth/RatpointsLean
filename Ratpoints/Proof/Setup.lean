@@ -162,8 +162,8 @@ exceeds the degree of the polynomial by at most one: the two conditions that the
 second when it drops the leading zeros, the first with the remainder chain of its Sturm step. -/
 theorem squarefree_binaryFormPoly_iff (c : List ℤ) :
     Squarefree (binaryFormPoly c) ↔ Squarefree (poly c) ∧ 2 * (c.length / 2) ≤ degree c + 1 := by
-  have := degree_le_length_sub_one c
-  rw [binaryFormPoly_eq_homogenize, squarefree_homogenize_iff (by rw [natDegree_poly]; lia),
+  rw [binaryFormPoly_eq_homogenize,
+    squarefree_homogenize_iff (by rw [natDegree_poly]; lia [degree_le_length_sub_one c]),
     natDegree_poly]
 
 /-- When the leading zeros of `c` lower `⌈n / 2⌉`, for `n + 1` the length of `c`, the square of the

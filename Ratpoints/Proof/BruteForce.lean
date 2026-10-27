@@ -17,7 +17,7 @@ import Ratpoints.Proof.Containers
 # The brute-force reference finds exactly the points
 
 `Ratpoints.bruteForce c H` lists every normalized point of height at most `H` on
-`y ^ 2 = F(x, z)`, and nothing else, each once: the theorem of stage B, which comparator certifies
+`y ^ 2 = F(x, z)`, and nothing else, each once; comparator certifies this
 (`comparator/Challenge.lean`).
 
 ## Main statements
@@ -60,8 +60,7 @@ theorem horner_eq_sum (w : List ℤ) (x : ℤ) :
     simp only [horner, List.foldr_cons, List.length_cons, Finset.sum_range_succ',
       List.getD_cons_succ, List.getD_cons_zero, pow_zero, mul_one] at ih ⊢
     rw [ih, Finset.mul_sum, add_comm]
-    congr 1
-    exact Finset.sum_congr rfl fun k _ ↦ by ring
+    exact congr($(Finset.sum_congr rfl fun k _ ↦ by ring) + a)
 
 theorem horner_scaledCoeffs (c : List ℤ) (d : ℕ) (x z : ℤ) :
     horner (scaledCoeffs c d z) x =
@@ -249,9 +248,8 @@ theorem filter_bruteForce_eq_self (c : List ℤ) {H B : ℕ} (hB : H ≤ B) :
     (bruteForce c H).filter (fun p : ℤ × ℤ × ℤ ↦ p.2.2 = 0 ∨ 1 ≤ p.2.2 ∧ p.2.2 ≤ B) =
       bruteForce c H :=
   List.filter_eq_self.mpr fun p hp ↦ by
-    have := (mem_bruteForce_iff.mp hp).2.2
     simp only [decide_eq_true_eq]
-    lia
+    lia [(mem_bruteForce_iff.mp hp).2.2]
 
 /-! ### The points of one candidate, as the specification of the order lists them -/
 

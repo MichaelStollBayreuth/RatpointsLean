@@ -71,7 +71,7 @@ theorem le_and_le_of_mem_searchDenominators {maxDiv H b : ℕ} {c : List ℤ}
   · obtain ⟨hb, hbH⟩ := List.mem_filter.mp hb
     obtain ⟨e, he, k, hk, rfl⟩ := by simpa using hb
     exact ⟨Nat.mul_pos (pos_of_mem_binaryDivisors he) (Nat.pow_pos (by lia)), by simpa using hbH⟩
-  · exact ⟨(List.mem_range'_1.mp hb).1, by lia [List.mem_range'_1.mp hb]⟩
+  · lia [List.mem_range'_1.mp hb]
 
 /-! ### The points of a denominator -/
 
