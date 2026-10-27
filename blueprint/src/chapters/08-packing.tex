@@ -351,7 +351,7 @@ order: a data refinement.
 
 \begin{lemma}[The rows read in the packing]\label{lem:reads_row}
   \uses{lem:admits_mul, def:rows, def:andRows, def:closedRow}
-  \lean{Ratpoints.Sieve.SieveSpec.Reads, Ratpoints.Sieve.SieveSpec.getLsbD_wordAt_mk, Ratpoints.Sieve.SieveEntry.reads_row, Ratpoints.Sieve.getLsbD_andWords}
+  \lean{Ratpoints.Sieve.SieveSpec.Reads, Ratpoints.Sieve.SieveSpec.getLsbD_wordAt_mk, Ratpoints.Sieve.SieveEntry.reads_closedRow, Ratpoints.Sieve.getLsbD_andWords}
   \leanok
   A sieve spec reads a test $f$ of the bit numbers when bit $t$ of its row word for word $y$ of the
   piece from the word number $i$ is $f(\mathrm{rbaLength}\, i + 64 y + t)$ for $t < 64$. For a sieve
@@ -376,7 +376,7 @@ order: a data refinement.
 \begin{lemma}[The row indices]\label{lem:rowIndices}
   \uses{lem:mulMod, lem:modMul, def:packingConstants, def:rows, def:barrett, def:useCLong,
     def:closedRow}
-  \lean{Ratpoints.Sieve.SieveSpec.Fits, Ratpoints.Sieve.SmallFits, Ratpoints.Sieve.smallFits_decide, Ratpoints.Sieve.SmallFits.mono, Ratpoints.Sieve.SieveSpec.Fits.natAbs_neg_sub_le, Ratpoints.Sieve.SieveSpec.Fits.add_nonneg_and_toNat_le, Ratpoints.Sieve.SieveSpec.Fits.ite_modMul_modLong_eq_emod, Ratpoints.Sieve.SieveSpec.Fits.ite_modMul_modLong_add_eq_emod, Ratpoints.Sieve.SieveSpec.Fits.ite_mulMod_modLong_eq_toNat_emod, Ratpoints.maxPrimeEven_pos}
+  \lean{Ratpoints.Sieve.SieveSpec.Fits, Ratpoints.Sieve.SmallFits, Ratpoints.Sieve.smallFits_decide, Ratpoints.Sieve.SmallFits.mono, Ratpoints.Sieve.SieveSpec.Fits.natAbs_neg_sub_le, Ratpoints.Sieve.SieveSpec.Fits.add_nonneg_and_toNat_le, Ratpoints.Sieve.SieveSpec.Fits.ite_modMul_modLong_eq_emod, Ratpoints.Sieve.SieveSpec.Fits.ite_modMul_modLong_add_eq_emod, Ratpoints.Sieve.SieveSpec.Fits.ite_mulMod_modLong_eq_toNat_emod}
   \leanok
   A sieve spec \emph{fits} when $0 < p \le \mathrm{maxPrimeEven}$,
   $\mathrm{rowBias} \le \mathrm{offset} < \mathrm{rowBias} + 2p$, its end is $p$ and its row wraps
@@ -552,7 +552,7 @@ that fits them (Lemma~\ref{lem:choice}), and hands that store on to the run.
 
 \begin{lemma}[The longs of the packing]\label{lem:packingLongs}
   \uses{lem:classOffsets, def:packingConstants, def:useCLong}
-  \lean{Ratpoints.Sieve.NumClass.fitsLong_numerator, Ratpoints.Sieve.neg_two_pow_le_rbaLength_mul_ediv, Ratpoints.Sieve.rbaLength_mul_ediv_add_one_le_two_pow, Ratpoints.Sieve.fitsLong_neg_sub, Ratpoints.Sieve.fitsLong_add, Ratpoints.Sieve.SieveEntry.PackedFor.lt_two_pow_32, Ratpoints.mul_le_mulModLimit_of_le_div, Ratpoints.mul_lt_two_pow_63, Ratpoints.rowBias_le_two_pow_31, Ratpoints.Sieve.natCast_rbaLength_dvd_two_pow}
+  \lean{Ratpoints.Sieve.NumClass.fitsLong_numerator, Ratpoints.Sieve.neg_two_pow_le_rbaLength_mul_ediv, Ratpoints.Sieve.rbaLength_mul_ediv_add_one_le_two_pow, Ratpoints.Sieve.fitsLong_neg_sub, Ratpoints.Sieve.fitsLong_add, Ratpoints.Sieve.SieveEntry.PackedFor.lt_two_pow_32, Ratpoints.mul_le_mulModLimit_of_le_div, Ratpoints.mul_lt_two_pow_63, Ratpoints.rowBias_le_two_pow_31, Ratpoints.natCast_rbaLength_dvd_two_pow}
   \leanok
   The values that the C code holds in longs fit a long ($\mathrm{fitsLong}$,
   Definition~\ref{def:useCLong}) for $H < 2^{63}$: the numerator of every bit of the bit arrays of

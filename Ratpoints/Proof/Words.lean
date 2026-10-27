@@ -52,7 +52,7 @@ bits of a word, and the contract of the first stage over a piece, as `@[spec]` t
   dividing its modulus is the and of the rows of its factors.
 * `Ratpoints.Sieve.SieveEntry.admits_mul`: the row of a sieve entry whose factors have their tables
   of inverses is unchanged when the denominator and the numerator are scaled by a unit.
-* `Ratpoints.Sieve.SieveEntry.reads_row`: the closed form of the row of `b / 2 ^ k`
+* `Ratpoints.Sieve.SieveEntry.reads_closedRow`: the closed form of the row of `b / 2 ^ k`
   (`Ratpoints.Sieve.closedRow`) at the offset of the class `a₀ mod 2 ^ k` reads at bit `j` whether
   the row of `b` admits the numerator `a₀ + 2 ^ k j`.
 * `Ratpoints.Sieve.getLsbD_andWords`: the words of rows that read tests of the bits, and-ed into a
@@ -63,9 +63,9 @@ bits of a word, and the contract of the first stage over a piece, as `@[spec]` t
   moduli in the range of the packing and their reciprocals (`Ratpoints.Sieve.SieveSpec.Fits`) and
   the test `small` of the piece (`Ratpoints.Sieve.SmallFits`), each word of the piece is `cw` and-ed
   with its row words (`Ratpoints.Sieve.andWords`).
-* `Ratpoints.Sieve.pointsOfDen_eq_flatMap_checkNum`: the points that the brute-force reference finds
-  over a denominator are those of `Ratpoints.Sieve.checkNum` for its numerators, one after the
-  other, with the flag of the reversal clear.
+* `Ratpoints.BruteForce.pointsOfDen_eq_flatMap_checkNum`: the points that the brute-force
+  reference finds over a denominator are those of `Ratpoints.Sieve.checkNum` for its numerators,
+  one after the other, with the flag of the reversal clear.
 * `Ratpoints.Sieve.checkNum_eq_map`, `Ratpoints.Sieve.flatMap_checkNum`: with the flag of the
   reversal set, the check of a numerator gives the points of the check with the flag clear, mapped
   by `Ratpoints.Sieve.swapPoint`, and so do the checks of a list of numerators, one after the
@@ -74,18 +74,8 @@ bits of a word, and the contract of the first stage over a piece, as `@[spec]` t
 ## Implementation notes
 
 The file uses Lean core and `Std` only, as `Ratpoints.Proof.Sieve` does; the lemmas on words that
-are not about the model are in `Ratpoints.Proof.Bits`, the closed form of the rows in
-`Ratpoints.Proof.Rows`. The proofs use only that `Ratpoints.rbaPack` and `Ratpoints.chunk` are
-positive, never their values. The contract of the chunked first stage is in
-`Ratpoints.Proof.FirstStage`, those of the builders of the rows in `Ratpoints.Proof.PrimeRows`,
-`Ratpoints.Proof.CompositeRows` and `Ratpoints.Proof.RowStore`. The scaling by a unit needs an
-inverse of the unit and the tables of inverses, no primality. The contracts of the second and the
-third stage and of the check are in `Ratpoints.Proof.Stages`, those of the walk and of the scan in
-`Ratpoints.Proof.Scan`, that of one piece in `Ratpoints.Proof.SiftBits` and that of one denominator
-in `Ratpoints.Proof.Sift`. The bit of a number in a word (`Ratpoints.Sieve.classBit`), the contract
-of the lowest set bit of a word and the invariant of a `while` loop over the set bits of a word are
-in `Ratpoints.Proof.SetBits`, the reductions by a reciprocal and of the row indices and the
-positivity of the width `Ratpoints.rbaLength` of the bit arrays in `Ratpoints.Proof.Reductions`.
+are not about the model are in `Ratpoints.Proof.Bits`. The proofs use only that `Ratpoints.rbaPack`
+and `Ratpoints.chunk` are positive, never their values.
 -/
 
 @[expose] public section
@@ -354,7 +344,7 @@ def SieveSpec.Reads (s : SieveSpec) (f : Int → Bool) : Prop :=
 admits the numerator `a₀ + 2 ^ k j`, when `2 ^ k` has an inverse `v` modulo `p` and the factors of
 the entry have their tables of inverses: the rows are unchanged when the denominator and the
 numerator are scaled by the unit `2 ^ k` (`Ratpoints.Sieve.SieveEntry.admits_mul`). -/
-theorem SieveEntry.reads_row {e : SieveEntry} (he : e.HasInverses) (hp : 0 < e.p)
+theorem SieveEntry.reads_closedRow {e : SieveEntry} (he : e.HasInverses) (hp : 0 < e.p)
     {k a0 off bp b v st stop : Nat} (hv : v * 2 ^ k % e.p = 1)
     (hoff : off * (2 ^ k * rbaLength) % e.p = a0 % e.p) (hbp : 2 ^ k * bp % e.p = b % e.p) :
     SieveSpec.Reads ⟨e.p, off, closedRow e.admits e.p bp, st, stop⟩ fun j ↦
@@ -703,7 +693,8 @@ theorem andRows_spec (specs : List SieveSpec) (mgs : List Nat) (small : Bool) (c
 
 /-! ### The check of a numerator and the set bits of a word -/
 
-theorem pointsOfDen_eq_flatMap_checkNum (c : List Int) (d : Nat) (b : Int) (xs : List Int) :
+theorem _root_.Ratpoints.BruteForce.pointsOfDen_eq_flatMap_checkNum (c : List Int) (d : Nat)
+    (b : Int) (xs : List Int) :
     BruteForce.pointsOfDen c d b xs =
       xs.flatMap (checkNum (BruteForce.scaledCoeffs c d b) (if d % 2 = 1 then b else 1) b false) :=
   rfl

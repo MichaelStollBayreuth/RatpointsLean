@@ -900,7 +900,7 @@ theorem flatMap_checkNumWith_of_noCheck_eq_false {fl : CheckFlags} (hc : fl.noCh
       ((BruteForce.pointsOfDen c d b xs).map (if fl.reversed then swapPoint else id)).filter
         fun p ↦ !fl.noY || 0 ≤ p.2.1 := by
   rw [funext (checkNumWith_of_noCheck_eq_false hc _ _ b), ← List.filter_flatMap, flatMap_checkNum,
-    pointsOfDen_eq_flatMap_checkNum]
+    BruteForce.pointsOfDen_eq_flatMap_checkNum]
 
 /-! ### The points at infinity -/
 

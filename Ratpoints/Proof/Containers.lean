@@ -411,12 +411,7 @@ theorem set!_set! {α : Type u} (xs : Array α) (i : Nat) (a b : α) :
 
 theorem getElem!_set!_eq_or {α : Type u} [Inhabited α] (xs : Array α) (i j : Nat) (x : α) :
     (xs.set! i x)[j]! = x ∨ (xs.set! i x)[j]! = xs[j]! := by
-  by_cases hij : i = j
-  · subst hij
-    by_cases hi : i < xs.size
-    · exact .inl (getElem!_set!_self _ _ _ hi)
-    · exact .inr (by rw [getElem!_neg _ i (by simpa using hi), getElem!_neg _ i hi])
-  · exact .inr (getElem!_set!_ne _ _ _ _ hij)
+  grind
 
 theorem getElem!_take_toList {α : Type u} [Inhabited α] {xs : Array α} {m j : Nat} (hj : j < m)
     (hm : m ≤ xs.size) : (xs.toList.take m)[j]! = xs[j]! := by
@@ -699,8 +694,8 @@ theorem filter_append_filter_of_pairwise {α : Type u} {R : α → α → Prop} 
     rw [pairwise_cons] at hl
     have ih := ih hl.2 fun a ha b hb ↦ h a (.tail _ ha) b (.tail _ hb)
     by_cases hp : p x <;> by_cases hq : q x
-    · exact absurd (h x mem_cons_self x mem_cons_self hp hq)
-        (Std.Asymm.asymm _ _ (h x mem_cons_self x mem_cons_self hp hq))
+    · have hxx := h x mem_cons_self x mem_cons_self hp hq
+      exact (Std.Asymm.asymm _ _ hxx hxx).elim
     · simp [hp, hq, ih]
     · have ht : t.filter p = [] := filter_eq_nil_iff.mpr fun a ha hpa ↦ Std.Asymm.asymm _ _
         (hl.1 a ha) (h a (.tail _ ha) x mem_cons_self hpa hq)
@@ -855,14 +850,8 @@ theorem lt_mul_sub_one_div_div_add_two_mul {u N p : Nat} (hp : 0 < p) (hu : u < 
     u < (u * ((N - 1) / p) / N + 2) * p := by
   generalize hm : (N - 1) / p = m
   generalize hq : u * m / N = q
-  have h2 : u * m < (q + 1) * N := by
-    have := Nat.lt_div_mul_add (a := u * m) (b := N) (by lia)
-    rw [hq] at this
-    lia
-  have h4 : N ≤ (m + 1) * p := by
-    have := Nat.lt_div_mul_add (a := N - 1) (b := p) hp
-    rw [hm] at this
-    lia
+  have h2 : u * m < (q + 1) * N := by lia [hq ▸ Nat.lt_div_mul_add (a := u * m) (b := N) (by lia)]
+  have h4 : N ≤ (m + 1) * p := by lia [hm ▸ Nat.lt_div_mul_add (a := N - 1) (b := p) hp]
   have h2p := Nat.mul_lt_mul_of_pos_right h2 hp
   have h4u := Nat.mul_le_mul_left u h4
   have hup := Nat.mul_lt_mul_of_pos_right hu hp
@@ -1099,9 +1088,7 @@ theorem sub_mod_div_eq_mod_iff {a a0 m P t n : Nat} (hm : m * P = n) (ha : a < n
   rw [h5, ← haa, Nat.mod_eq_of_lt (by lia : a - a % m < n)]
   have : a - a % m = m * (a / m) := by lia
   rw [this, Nat.mul_div_cancel_left _ hm0]
-  constructor
-  · intro h; rw [← h]; lia
-  · intro h; exact Nat.eq_of_mul_eq_mul_left hm0 (by lia)
+  exact ⟨fun h ↦ by rw [← h]; lia, fun h ↦ Nat.eq_of_mul_eq_mul_left hm0 (by lia)⟩
 
 /-- The multiple `m ⌈R / m⌉ = m ((R + m - 1) / m)` of `m > 0` is at least `R`. -/
 theorem le_mul_add_sub_one_div (R : Nat) {m : Nat} (hm : 0 < m) : R ≤ m * ((R + m - 1) / m) :=
@@ -1197,8 +1184,8 @@ theorem toNat_emod_lt (a : Int) {p : Nat} (hp : 0 < p) : (a % (p : Int)).toNat <
   (toNat_lt' hp).mpr (emod_lt_of_pos a (by lia))
 
 @[simp]
-theorem toNat_natCast_emod (a b : Nat) : ((a : Int) % (b : Int)).toNat = a % b := by
-  rw [← natCast_emod, toNat_natCast]
+theorem toNat_natCast_emod (a b : Nat) : ((a : Int) % (b : Int)).toNat = a % b :=
+  rfl
 
 theorem toNat_emod_add_mod (a : Int) (x : Nat) {p : Nat} (hp : 0 < p) :
     ((a % (p : Int)).toNat + x) % p = ((a + x) % (p : Int)).toNat := by
@@ -1392,13 +1379,9 @@ theorem Char.toLower_eq_x_iff (c : Char) : c.toLower = 'x' ↔ c = 'x' ∨ c = '
   have h3 : 'a'.val.toNat = 97 := rfl
   have h4 : 'x'.val.toNat = 120 := rfl
   have h5 : 'X'.val.toNat = 88 := rfl
-  by_cases h : c.val ≥ 'A'.val ∧ c.val ≤ 'Z'.val
-  · simp only [Char.toLower, h, h4, h5]
-    simp only [ge_iff_le, UInt32.le_iff_toNat_le, h1, h2] at h
-    lia
-  · simp only [Char.toLower, h, ↓reduceDIte, h4, h5]
-    simp only [ge_iff_le, UInt32.le_iff_toNat_le, h1, h2] at h
-    lia
+  by_cases h : c.val ≥ 'A'.val ∧ c.val ≤ 'Z'.val <;>
+    simp only [Char.toLower, h, ↓reduceDIte, h4, h5] <;>
+    simp only [ge_iff_le, UInt32.le_iff_toNat_le, h1, h2] at h <;> lia
 
 /-! ### Strings -/
 

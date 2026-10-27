@@ -9,29 +9,9 @@ module
 # Lemmas on 64-bit words for the contracts
 
 Lemmas on the 64-bit words, unsigned and signed, that the contracts of the model need and Lean core
-lacks, under their names in the namespaces of Lean core: two words with the same bits, the bits of
-the word `~~~0` and of the masks `~~~0 <<< n` and `~~~0 >>> n`, the lowest bit and the lowest set
-bit of a word, the word `x &&& (x - 1)`, which is `x` with its lowest set bit cleared, the bits of a
-word set one at a time, at their own positions or at others, the bits of a word and of a Boolean
-shifted by an amount below 64, the 64 bits of two words from a position within the first, the bits
-of a word and-ed in turn with the words of a list, the odd part of a number below `2 ^ 64` by the
-lowest set bit of its word, the halves of a word, and, for the signed 64-bit words, the arithmetic
-shift, the mask `x >>> 63` with the smaller and the distance of two non-negative words that it gives
-without a branch, the odd part of a positive word by the lowest set bit of the word read as
-unsigned, its lowest bit, the absolute value, and the words of an integer and of a natural number
-below `2 ^ 63`. For the classes of the packing: the bits of a word and-ed with the complement of a
-mask. For the classes of the packing and the rows of a prime: the bits of a word or-ed with itself
-shifted, `x ||| x <<< s`, which doubles a pattern of period `P ∣ s`. For the rows of offsets: the
-bit `(x >>> j) &&& 1` of a word, and the 128 bits of two words after one bit is set. For the bits of
-an interval: the sums, differences and negations of `long`s that do not overflow, the mask
-`(1 <<< k) - 1` and the and with it, the Euclidean remainder modulo `2 ^ k` also of a negative
-`long`. For the bounds of the search intervals: the low word of the sum of two numbers below
-`2 ^ 64` and its carry, the two words of a 128-bit number shifted right, the power of `2` at the
-lowest set bit of a word, which divides the word, the mask `(1 <<< s) - 1` of a word, also read as
-a `long`, a word below `2 ^ 63` read as a `long`, the word of the `long` of a natural number below
-`2 ^ 63`, the quotient of a non-negative `long` by a natural number, and the word of a non-negative
-`long` read as unsigned; for the bisection of the Sturm step, the successor of a `long`. The lemmas
-on vectors, arrays, lists, ranges, natural numbers and integers are in `Ratpoints.Proof.Containers`.
+lacks, under their names in the namespaces of Lean core: their bits, masks and shifts, their lowest
+set bit, and the arithmetic of `long`s that does not overflow. The lemmas on vectors, arrays, lists,
+ranges, natural numbers and integers are in `Ratpoints.Proof.Containers`.
 
 ## Main statements
 
@@ -89,10 +69,7 @@ namespace Nat
 `1` exactly when the low word is below `y`. -/
 theorem mod_add_carry {x y : Nat} (hx : x < 2 ^ 64) (hy : y < 2 ^ 64) :
     (x + y) % 2 ^ 64 + (if (x + y) % 2 ^ 64 < y then 1 else 0) * 2 ^ 64 = x + y := by
-  rcases Nat.lt_or_ge (x + y) (2 ^ 64) with h | h
-  · rw [Nat.mod_eq_of_lt h]; simp only [show ¬x + y < y by lia, ↓reduceIte]; lia
-  · rw [Nat.mod_eq_sub_mod h, Nat.mod_eq_of_lt (by lia)]
-    simp only [show x + y - 2 ^ 64 < y by lia, ↓reduceIte]; lia
+  split <;> lia
 
 /-- A shift amount `n < 64` is its own reduction modulo `64`, which the shifts of words take. -/
 theorem toNat_toUInt64_mod_sixty_four {n : Nat} (hn : n < 64) : n.toUInt64.toNat % 64 = n := by
@@ -290,7 +267,7 @@ theorem getLsbD_or_shiftLeft (x : UInt64) {s : Nat} (hs : s < 64) (t : Nat) :
   rw [UInt64.toBitVec_or, BitVec.getLsbD_or, getLsbD_shiftLeft_ofNat _ hs]
 
 /-- One doubling of a pattern `g` of period `P ∣ s`, `s < 64`, that fills the bits below `s`: the
-pattern now fills the bits below `min (2 s) 64`. -/
+pattern then fills the bits below `min (2 s) 64`. -/
 theorem getLsbD_or_shiftLeft_of_dvd {x : UInt64} {g : Nat → Bool} {s P : Nat} (hPs : P ∣ s)
     (hs : s < 64) (hx : ∀ t, x.toBitVec.getLsbD t = (decide (t < s) && g (t % P))) (t : Nat) :
     (x ||| x <<< UInt64.ofNat s).toBitVec.getLsbD t =
@@ -504,10 +481,8 @@ theorem toNatClampNeg_eq_natAbs {x : Int64} (hx : 0 ≤ x) : x.toNatClampNeg = x
 theorem toNatClampNeg_ite_neg {x : Int64} (h : minValue < x) :
     (if x < 0 then -x else x).toNatClampNeg = x.toInt.natAbs := by
   split
-  · have h1 := lt_iff_toInt_lt.mp h
-    have h2 := lt_iff_toInt_lt.mp ‹x < 0›
-    rw [toInt_minValue] at h1
-    rw [toInt_zero] at h2
+  · have h1 := toInt_minValue ▸ lt_iff_toInt_lt.mp h
+    have h2 := toInt_zero ▸ lt_iff_toInt_lt.mp ‹x < 0›
     rw [← toNat_toInt, toInt_neg, Int.bmod_eq_of_le (by lia) (by lia)]
     lia
   · exact toNatClampNeg_eq_natAbs (Int64.not_lt.mp ‹_›)
@@ -558,10 +533,8 @@ theorem toInt_and_ofNat_two_pow_sub_one (x : Int64) {k : Nat} (hk : k < 63) :
 
 theorem toInt_ofNat_two_pow_sub_one {k : Nat} (hk : k < 63) :
     (ofNat (2 ^ k - 1)).toInt = 2 ^ k - 1 := by
-  have h := Nat.one_le_two_pow (n := k)
-  rw [toInt_ofNat_of_lt (by lia [Nat.pow_lt_pow_right (a := 2) (by decide) hk])]
-  have h1 : ((2 ^ k - 1 : Nat) : Int) = ((2 ^ k : Nat) : Int) - 1 := by lia
-  rw [h1, Int.natCast_pow]
+  rw [toInt_ofNat_of_lt (by lia [Nat.pow_lt_pow_right (a := 2) (by decide) hk]),
+    Int.natCast_sub Nat.one_le_two_pow, Int.natCast_pow]
   rfl
 
 /-- The product of two `long`s that does not overflow. -/
@@ -570,9 +543,8 @@ theorem toInt_mul_of_lt {a b : Int64} (h1 : -2 ^ 63 ≤ a.toInt * b.toInt)
   rw [toInt_mul, Int.bmod_eq_of_le (by lia) (by lia)]
 
 theorem toInt_two_mul {x : Int64} (h : x.toInt.natAbs < 2 ^ 62) : (2 * x).toInt = 2 * x.toInt := by
-  rw [toInt_mul_of_lt (by rw [show (2 : Int64).toInt = 2 by decide]; lia)
-    (by rw [show (2 : Int64).toInt = 2 by decide]; lia)]
-  rfl
+  have h2 : (2 : Int64).toInt = 2 := by decide
+  rw [toInt_mul_of_lt (by rw [h2]; lia) (by rw [h2]; lia), h2]
 
 /-- The lowest bit `x &&& 1` of a `long`, its remainder modulo `2`, also for a negative one. -/
 theorem toInt_and_one (x : Int64) : (x &&& 1).toInt = x.toInt % 2 :=
@@ -608,7 +580,7 @@ theorem toInt_div_ofNat {a : Int64} (ha : 0 ≤ a.toInt) {n : Nat} (hn63 : n < 2
 theorem natCast_toNat_toUInt64 {x : Int64} (hx : 0 ≤ x.toInt) :
     (x.toUInt64.toNat : Int) = x.toInt := by
   rw [Int64.toNat_toUInt64_of_le (by rw [Int64.le_iff_toInt_le, Int64.toInt_zero]; exact hx),
-    show x.toNatClampNeg = x.toInt.toNat from rfl, Int.toNat_of_nonneg hx]
+    ← toNat_toInt, Int.toNat_of_nonneg hx]
 
 theorem toInt_add_one_of_lt {e : Int64} (h : e.toInt < 2 ^ 63 - 1) :
     (e + 1).toInt = e.toInt + 1 :=

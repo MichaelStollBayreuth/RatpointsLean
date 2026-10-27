@@ -305,11 +305,6 @@ theorem SieveEntry.PackedFor.lt_two_pow_32 {e : SieveEntry} {cl : NumClass} {off
   generalize rowBias = R at *
   lia
 
-/-- The width `Ratpoints.rbaLength = 2 ^ Ratpoints.rbaShift` of the bit arrays divides `2 ^ n` for
-`n ≥ Ratpoints.rbaShift`. -/
-theorem natCast_rbaLength_dvd_two_pow {n : Nat} (hn : rbaShift ≤ n) : (rbaLength : Int) ∣ 2 ^ n :=
-  rbaLength_eq_two_pow_rbaShift ▸ mod_cast Nat.pow_dvd_pow 2 hn
-
 /-- The first bit `Ratpoints.rbaLength ⌊lo / Ratpoints.rbaLength⌋` of the bit array of the bit
 `lo ≥ -2 ^ (63 - k)` is at least `-2 ^ (63 - k)`, for a stride `2 ^ k`, `k ≤ 6`, since
 `Ratpoints.rbaLength` divides `2 ^ (63 - k)`. -/

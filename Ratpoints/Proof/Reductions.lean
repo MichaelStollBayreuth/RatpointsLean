@@ -50,8 +50,9 @@ Euclidean remainder.
 * `Ratpoints.mul_le_mulModLimit_of_le_div`, `Ratpoints.mul_lt_two_pow_63`: the products of
   `fill_bp_list` and of `class_offsets` are `long`s, those of the first branch of `fill_bp_list` at
   most `Ratpoints.mulModLimit`.
-* `Ratpoints.rbaLength_eq`, `Ratpoints.rbaLength_pos`, `Ratpoints.natCast_rbaLength_pos`: the width
-  `Ratpoints.rbaLength` of the bit arrays is `64 Ratpoints.rbaPack`, and positive.
+* `Ratpoints.rbaLength_eq`, `Ratpoints.rbaLength_pos`, `Ratpoints.natCast_rbaLength_pos`,
+  `Ratpoints.natCast_rbaLength_dvd_two_pow`: the width `Ratpoints.rbaLength` of the bit arrays is
+  `64 Ratpoints.rbaPack`, positive, and divides `2 ^ n` for `n ≥ Ratpoints.rbaShift`.
 * `Ratpoints.Sieve.toNat_mulHi`: `Ratpoints.Sieve.mulHi a b` is `⌊a b / 2 ^ 64⌋`.
 * `Ratpoints.Sieve.mulMod_eq`, `Ratpoints.Sieve.mulDiv_eq`: the reductions on 64-bit words are those
   of the macros on natural numbers reduced modulo `2 ^ 64`.
@@ -97,21 +98,16 @@ namespace Ratpoints
 theorem maxPrimeEven_le_two_pow_10 : maxPrimeEven ≤ 2 ^ 10 :=
   Nat.pow_le_pow_right Nat.two_pos maxBitsInPrime_le_ten
 
-/-- The moduli below `Ratpoints.maxPrimeEven` are below `2 ^ 32`
-(`Ratpoints.maxPrimeEven_le_two_pow_10`): so the helper `mod` of the C code keeps its values in the
-range of a `long` for them (`Ratpoints.fitsLong_sixteen_mul`, `Ratpoints.fitsLong_add_sixteen_mul`,
-for `b < 2 ^ 59`), where `examine_power` calls it (`find_points.c:2278`), and the reductions by a
-reciprocal of the values at most `Ratpoints.mulModLimit` modulo them are exact
-(`Ratpoints.mul_lt_two_pow_64_of_le_mulModLimit`). -/
+/-- The moduli, below `Ratpoints.maxPrimeEven`, are below `2 ^ 32`, the bound under which the
+reductions by a reciprocal of the values at most `Ratpoints.mulModLimit` are exact
+(`Ratpoints.mul_lt_two_pow_64_of_le_mulModLimit`) and the helper `mod` keeps its values `long`s
+(`Ratpoints.fitsLong_sixteen_mul`, `Ratpoints.fitsLong_add_sixteen_mul`). -/
 theorem maxPrimeEven_le_two_pow_32 : maxPrimeEven ≤ 2 ^ 32 :=
   Nat.le_trans maxPrimeEven_le_two_pow_10 (by decide)
 
-theorem maxPrimeEven_pos : 0 < maxPrimeEven := Nat.two_pow_pos _
-
 /-- `Ratpoints.rowBias` is at most `2 ^ 31`, since `2 rowBias - 1 ≤ Ratpoints.mulModLimit < 2 ^ 32`
-(`Ratpoints.two_mul_rowBias_sub_one_le_mulModLimit`, `Ratpoints.mulModLimit_lt_two_pow_32`): so the
-offsets of the rows, below `rowBias + 2 p`, and the sums of a word number and an offset that the
-first two stages reduce stay far within the range of a `long`. -/
+(`Ratpoints.two_mul_rowBias_sub_one_le_mulModLimit`, `Ratpoints.mulModLimit_lt_two_pow_32`): the
+bound of the offsets of the rows (`Ratpoints.Sieve.SieveEntry.PackedFor.lt_two_pow_32`). -/
 theorem rowBias_le_two_pow_31 : rowBias ≤ 2 ^ 31 := by
   have := two_mul_rowBias_sub_one_le_mulModLimit
   have := mulModLimit_lt_two_pow_32
@@ -163,6 +159,11 @@ theorem rbaLength_eq : rbaLength = 64 * rbaPack := rfl
 theorem rbaLength_pos : 0 < rbaLength := rbaLength_eq ▸ Nat.mul_pos (by decide) rbaPack_pos
 
 theorem natCast_rbaLength_pos : (0 : Int) < rbaLength := Int.natCast_pos.mpr rbaLength_pos
+
+/-- The width `Ratpoints.rbaLength = 2 ^ Ratpoints.rbaShift` of the bit arrays divides `2 ^ n` for
+`n ≥ Ratpoints.rbaShift`. -/
+theorem natCast_rbaLength_dvd_two_pow {n : Nat} (hn : rbaShift ≤ n) : (rbaLength : Int) ∣ 2 ^ n :=
+  rbaLength_eq_two_pow_rbaShift ▸ mod_cast Nat.pow_dvd_pow 2 hn
 
 namespace Sieve
 
@@ -291,9 +292,8 @@ private theorem modLong_eq_emod_of_le_of_lt {a b : Int} (hb : 0 < b) (h0 : -(16 
     ite_le_emod_sub_eq_emod y (4 * b) (by lia) (by lia),
     ite_le_emod_sub_eq_emod y (2 * b) (by lia) (by lia), ite_le_emod_sub_eq_emod y b hb rfl]
 
-/-- The helper `mod` of the C code is the Euclidean `%`, for every integer `a` and every `b ≥ 0`:
-the model computes with integers, and the obligations that the values of the C code stay in the
-range of a `long` are `Ratpoints.fitsLong_sixteen_mul`, `Ratpoints.fitsLong_neg` and
+/-- The helper `mod` of the C code is the Euclidean `%`, for every integer `a` and every `b ≥ 0`;
+that its values stay `long`s is `Ratpoints.fitsLong_sixteen_mul`, `Ratpoints.fitsLong_neg` and
 `Ratpoints.fitsLong_add_sixteen_mul`. -/
 theorem modLong_eq_emod (a : Int) {b : Int} (hb : 0 ≤ b) : modLong a b = a % b := by
   rcases Int.lt_or_eq_of_le hb with hb | rfl
@@ -364,7 +364,6 @@ theorem SieveSpec.Fits.natAbs_neg_sub_le {s : SieveSpec} (hs : s.Fits) {w0 : Int
   have := hs.le_maxPrimeEven
   have := hs.rowBias_le
   have := hs.lt_rowBias_add
-  have := maxPrimeEven_pos
   generalize rowBias = R at *
   lia
 

@@ -49,7 +49,7 @@ delivers with the flags of the search.
   `Ratpoints.Sieve.reads_of_mem_packedReads`: the rows that `Ratpoints.Sieve.setRows` and
   `Ratpoints.Sieve.buildRows` give for the residues `b dinv[k] mod p`, the closed forms of the rows
   of the entries, at the offsets of the class read whether the rows of `b` admit the numerators of
-  the bits (`Ratpoints.Sieve.SieveEntry.reads_row`).
+  the bits (`Ratpoints.Sieve.SieveEntry.reads_closedRow`).
 * `Ratpoints.Sieve.flatMap_filter_bits_eq`: the bits of `numerators_to_bits` of the height in the
   packing of the class of a class word `w` give the numerators `-H, …, H` that pass `w`;
   `Ratpoints.Sieve.flatMap_filter_intervalBits_eq`: the bits of a search interval that
@@ -116,7 +116,7 @@ with the row offsets from position `pos` of `offsets` on, as `Ratpoints.Sieve.se
 `Ratpoints.Sieve.buildRows` make them: the closed forms of the rows of the residues
 `b dinv[k] mod p` (`Ratpoints.Sieve.closedRow`), with the start `0` and the end `p`, each with the
 test of the bits that it reads (`Ratpoints.Sieve.SieveSpec.Reads`): whether the row of `b` admits
-the numerator of the bit (`Ratpoints.Sieve.SieveEntry.reads_row`). -/
+the numerator of the bit (`Ratpoints.Sieve.SieveEntry.reads_closedRow`). -/
 def packedReads (es : List SieveEntry) (b : Nat) (cl : NumClass) (offsets : Array Nat) (pos : Nat) :
     List (SieveSpec × (Int → Bool)) :=
   es.mapIdx fun n e ↦ (⟨e.p, offsets[pos + n]!, closedRow e.admits e.p (b * e.dinv[cl.k]! % e.p),
@@ -160,7 +160,7 @@ theorem reads_of_mem_packedReads {es : List SieveEntry} {b : Nat} {cl : NumClass
   intro sf hsf
   obtain ⟨n, hn, rfl⟩ := List.mem_mapIdx.mp hsf
   have h := hoff n hn
-  exact SieveEntry.reads_row (hinv _ (List.getElem_mem hn)) h.pos h.dinv_mul_mod h.mul_mod
+  exact SieveEntry.reads_closedRow (hinv _ (List.getElem_mem hn)) h.pos h.dinv_mul_mod h.mul_mod
     (Nat.mul_mul_mod_mod_of_mul_mod_eq_one _ h.dinv_mul_mod)
 
 -- The tests of `Ratpoints.Sieve.packedReads` pass the bit `j` exactly when its numerator survives
