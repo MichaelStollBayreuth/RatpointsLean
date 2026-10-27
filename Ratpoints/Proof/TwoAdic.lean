@@ -18,6 +18,7 @@ import Ratpoints.Proof.BruteForce
 import Ratpoints.Proof.Containers
 import Ratpoints.Proof.Packing
 import Ratpoints.Proof.Tables
+import Ratpoints.Proof.VCSimp
 import Std.Tactic.Do
 
 /-!
@@ -337,9 +338,7 @@ theorem twoAdic_spec (c : List ℤ) (d : ℕ) :
   | inv4 => .ofMeasure fun s : Vector UInt64 64 × UInt64 ↦ s.2.toNat
   | inv5 nb _ _ _ _ _ => fun pref _ nb' ↦ ScatterEvenInvariant nb t pref nb'
   | inv6 nb _ _ _ _ _ => fun pref _ nb' ↦ ScatterOddInvariant nb k pref nb'
-  all_goals try simp only [Std.WP.Variant.evalsTo_ofMeasure,
-    Std.WP.Variant.evalsBelow_ofMeasure_nat, Std.WP.Assertion.NondetFun.evalsTo_pure,
-    Lean.Order.meet_prop_eq_and, Lean.Order.ofProp_prop_eq] at *
+  all_goals try vc_simp
   all_goals solve_by_elim (maxDepth := 10) [walkWhileInvariant_self, twoAdicBits_replicate_zero,
     twoAdicBits_of_walkWhileInvariant_left, twoAdicBits_of_walkWhileInvariant_right,
     scatterOddInvariant_nil, scatterEvenInvariant_nil, WalkWhileInvariant.and_sub_one,

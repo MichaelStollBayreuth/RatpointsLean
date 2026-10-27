@@ -17,6 +17,7 @@ import Ratpoints.Mathlib.Data.ZMod.Basic
 import Ratpoints.Proof.Containers
 import Ratpoints.Proof.Params
 import Ratpoints.Proof.Tables
+import Ratpoints.Proof.VCSimp
 import Std.Tactic.Do
 
 /-!
@@ -235,9 +236,7 @@ theorem modinv_spec (x m : ℕ) :
   vcgen [modinv] invariants
   · ModinvInvariant x m
   · .ofMeasure fun s : ℕ × ℕ × ℤ × ℤ ↦ s.2.1
-  all_goals try simp only [Std.WP.Variant.evalsTo_ofMeasure,
-    Std.WP.Variant.evalsBelow_ofMeasure_nat, Std.WP.Assertion.NondetFun.evalsTo_pure,
-    Lean.Order.meet_prop_eq_and, Lean.Order.ofProp_prop_eq] at *
+  all_goals try vc_simp
   all_goals try obtain ⟨rfl, _⟩ := ‹_ = _ ∧ ModinvInvariant _ _ false _›
   all_goals obtain ⟨hm, hx⟩ := ‹1 < m ∧ _›
   all_goals first
@@ -572,7 +571,6 @@ private theorem powerDensity_value (p e m np : ℕ) (gsq : Array UInt64) (pinf :
 -- on a goal of `gsq` it would otherwise unify its hypothesis on the bit of `fsq` with that on the
 -- bit of `gsq`, unfolding Horner's rule into a timeout.
 attribute [local irreducible] FsqInvariant GsqInvariant in
-open Std.WP Std.WP.Assertion Lean.Order in
 /-- The contract of `Ratpoints.Sieve.examinePower` for a prime `p`, `e ≥ 1` and `p ^ e` within the
 words of its bit arrays: the inverses of the prime power `p ^ e` are below `p ^ e`, and that of a
 unit is its inverse modulo `p ^ e` (`Ratpoints.Sieve.unitInverses_spec`); bit `x` of `fsq` is set
@@ -593,8 +591,7 @@ theorem examinePower_spec (c : List ℤ) (d p e : ℕ) (u pinf : Bool) :
   | inv2 => fun pref _ s ↦ FsqInvariant c d (p ^ e) pref s.1
   | inv3 => GsqInvariant c d p (p ^ e)
   | inv4 => .ofMeasure fun s : Array UInt64 × ℕ ↦ p ^ e - s.2
-  all_goals try simp only [Variant.evalsTo_ofMeasure, Variant.evalsBelow_ofMeasure_nat,
-    NondetFun.evalsTo_pure, meet_prop_eq_and, ofProp_prop_eq, Bool.false_eq_true, ↓reduceIte] at *
+  all_goals try vc_simp [Bool.false_eq_true, ↓reduceIte]
   all_goals first
     | exact setSquareBits_pre ‹_› ‹_›
     | exact fsqInvariant_nil c d _ ‹_›

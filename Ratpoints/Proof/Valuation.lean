@@ -10,6 +10,7 @@ public import Ratpoints.Model.Setup
 public import Std.WP
 
 import Ratpoints.Mathlib.Data.Nat.PadicValNat
+import Ratpoints.Proof.VCSimp
 import Std.Tactic.Do
 
 /-!
@@ -91,9 +92,7 @@ theorem valuation_spec (n : ℤ) (p : ℕ) :
   vcgen [valuation] invariants
   · ValuationInvariant n p
   · .ofMeasure fun s : ℕ × ℕ × ℕ ↦ s.1
-  all_goals try simp only [Std.WP.Variant.evalsTo_ofMeasure,
-    Std.WP.Variant.evalsBelow_ofMeasure_nat, Std.WP.Assertion.NondetFun.evalsTo_pure,
-    Lean.Order.meet_prop_eq_and, Lean.Order.ofProp_prop_eq] at *
+  all_goals try vc_simp
   all_goals first
     | exact .inl ⟨‹_›, trivial⟩
     | exact valuationInvariant_div_mod ‹_›

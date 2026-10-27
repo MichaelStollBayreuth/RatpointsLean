@@ -11,6 +11,7 @@ public import Ratpoints.Proof.Stages
 import Ratpoints.Proof.Bits
 import Ratpoints.Proof.Containers
 import Ratpoints.Proof.Delivery
+import Ratpoints.Proof.VCSimp
 import Std.Tactic.Do
 
 /-!
@@ -240,10 +241,8 @@ theorem walkWord_spec (w : Thunk (List Int)) (d b : Nat) (fl : CheckFlags)
   · Variant.ofMeasure fun s : Option (Delivery σ × Counters) × UInt64 × Delivery σ × Counters ↦
       s.2.1.toNat
   all_goals subst_vars
-  all_goals simp only [WalkDeliveryWhileInvariant, WhileInvariant.mk_apply,
-    Variant.evalsTo_ofMeasure, Variant.evalsBelow_ofMeasure_nat, Assertion.NondetFun.evalsTo_pure,
-    meet_prop_eq_and, ofProp_prop_eq, reduceCtorEq, false_and, or_false, false_or, true_and,
-    Option.some.injEq, Option.map_some, Option.map_none] at *
+  all_goals vc_simp [WalkDeliveryWhileInvariant, reduceCtorEq, false_and, or_false, false_or,
+    true_and, Option.some.injEq, Option.map_some, Option.map_none]
   all_goals first
     | exact walkWhileInvariant_self (walkDeliveryInvariant_zero _ _ _ _ ‹_›)
     | exact bne_iff_ne.mp ‹_›
@@ -857,10 +856,8 @@ private theorem scanPiece_spec_getLsbD (w : Thunk (List Int)) (d b : Nat) (fl : 
   | inv4 sv _ _ pos0 r' _ _ _ => ScanPieceZeroInvariant process sv specs
       (acceptedPoints w d b fl checks) cl w0 n r pos0 r'
   | inv5 => Variant.ofMeasure fun s : Nat ↦ n - s
-  all_goals (subst_vars; try simp only [ScanPieceWhileInvariant, ScanPieceZeroInvariant,
-    WhileInvariant.mk_apply, Variant.evalsTo_ofMeasure, Variant.evalsBelow_ofMeasure_nat,
-    Assertion.NondetFun.evalsTo_pure, meet_prop_eq_and, ofProp_prop_eq, reduceCtorEq, false_and,
-    or_false, false_or, true_and, and_false, Option.some.injEq, Option.map] at *)
+  all_goals (subst_vars; try vc_simp [ScanPieceWhileInvariant, ScanPieceZeroInvariant, reduceCtorEq,
+    false_and, or_false, false_or, true_and, and_false, Option.some.injEq, Option.map])
   all_goals first
     | exact ScanPieceSentinelInvariant.append_set! ‹_› ‹_›
     | exact ScanPieceSentinelInvariant.eq_deliver_of_eq ‹_› ‹_›

@@ -10,6 +10,7 @@ public import Ratpoints.Proof.Words
 import Ratpoints.Proof.Bits
 import Ratpoints.Proof.Containers
 import Ratpoints.Proof.Delivery
+import Ratpoints.Proof.VCSimp
 import Std.Tactic.Do
 
 /-!
@@ -191,9 +192,7 @@ theorem relprimeOdd_spec (m n : Int64) :
   vcgen [relprimeOdd] invariants
   · RelprimeOddInvariant (Nat.gcd m.toNatClampNeg n.toNatClampNeg)
   · Std.WP.Variant.ofMeasure fun s : Int64 × Int64 ↦ s.1.toNatClampNeg + s.2.toNatClampNeg
-  all_goals try simp only [Std.WP.Variant.evalsTo_ofMeasure,
-    Std.WP.Variant.evalsBelow_ofMeasure_nat, Std.WP.Assertion.NondetFun.evalsTo_pure,
-    Lean.Order.meet_prop_eq_and, Lean.Order.ofProp_prop_eq] at *
+  all_goals try vc_simp
   all_goals first
     | exact relprimeOddInvariant_self ‹_›
     | exact RelprimeOddInvariant.post ‹_›

@@ -10,6 +10,7 @@ public import Std.WP
 
 import Ratpoints.Proof.Bits
 import Ratpoints.Proof.Containers
+import Ratpoints.Proof.VCSimp
 import Ratpoints.Proof.Words
 import Std.Tactic.Do
 
@@ -272,8 +273,7 @@ theorem repeatPattern_spec (pat : Array UInt64) (m words : Nat)
   | inv3 => Variant.ofMeasure fun s : Vector UInt64 (modWords + 2) × Nat ↦ words * 64 - s.2
   | inv4 _ _ _ o _ _ _ => LayInnerInvariant (bitAt pat) m words o
   | inv5 => Variant.ofMeasure fun s : Vector UInt64 (modWords + 2) × Nat ↦ (m + 64 - 1) / 64 - s.2
-  all_goals try simp only [Variant.evalsTo_ofMeasure, Assertion.NondetFun.evalsTo_pure,
-    Variant.evalsBelow_ofMeasure_nat, meet_prop_eq_and, ofProp_prop_eq] at *
+  all_goals try vc_simp
   all_goals first
     | exact repeatedBits_nil _ m rep
     | exact RepeatedBits.set!_zero ‹_› ‹_›
@@ -756,8 +756,7 @@ theorem productCopy_spec {n : Nat} (row : Vector UInt64 n) (e : SieveEntry)
   | inv2 => Variant.ofMeasure fun s : Vector UInt64 n × Nat ↦ e.p - s.2
   | inv3 _ x _ _ _ => fun done _ row ↦ ∀ y < (x + done.length) * rbaPack,
       row[y]! = factorWord e frows 0 y
-  all_goals try simp only [Variant.evalsTo_ofMeasure, Assertion.NondetFun.evalsTo_pure,
-    Variant.evalsBelow_ofMeasure_nat, meet_prop_eq_and, ofProp_prop_eq] at *
+  all_goals try vc_simp
   all_goals first
     | exact firstInvariant_init row
     | exact FirstInvariant.post ‹_› ‹_›
@@ -893,8 +892,7 @@ theorem productAnd_spec {n : Nat} (row : Vector UInt64 n) (e : SieveEntry)
   | inv4 _ _ i _ _ _ _ _ x _ _ _ => fun done _ row ↦ ∀ y < e.p * rbaPack, row[y]! =
       if y / rbaPack < x + done.length then productWord e frows (i + 1) y
       else productWord e frows i y
-  all_goals try simp only [Variant.evalsTo_ofMeasure, Assertion.NondetFun.evalsTo_pure,
-    Variant.evalsBelow_ofMeasure_nat, meet_prop_eq_and, ofProp_prop_eq] at *
+  all_goals try vc_simp
   all_goals first
     | exact productAnd_init ‹_ ∧ _ ∧ ∀ y < _, _›.2.2 ‹_›
     | exact productAnd_post ‹_› ‹_›

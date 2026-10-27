@@ -14,6 +14,7 @@ public import Std.WP
 import Ratpoints.Mathlib.NumberTheory.LegendreSymbol.JacobiSymbol
 import Ratpoints.Proof.Containers
 import Ratpoints.Proof.Tables
+import Ratpoints.Proof.VCSimp
 import Std.Tactic.Do
 
 /-!
@@ -177,9 +178,7 @@ theorem jacobiReduce_spec (x y : ℕ) (s : ℤ) :
   | inv2 => .ofMeasure fun st : ℕ × ℤ ↦ st.1
   | inv3 x₀ _ _ _ _ => JacobiReduceHalveInvariant x y x₀ s
   | inv4 => .ofMeasure fun st : ℕ × ℤ ↦ st.1
-  all_goals try simp only [Std.WP.Variant.evalsTo_ofMeasure,
-    Std.WP.Variant.evalsBelow_ofMeasure_nat, Std.WP.Assertion.NondetFun.evalsTo_pure,
-    Lean.Order.meet_prop_eq_and, Lean.Order.ofProp_prop_eq] at *
+  all_goals try vc_simp
   all_goals first
     | exact jacobiReduceInvariant_self s ‹_›
     | exact JacobiReduceInvariant.isJacobiReduction ‹_›
@@ -304,9 +303,7 @@ theorem jacobiRound_spec (f b : ℕ) :
   | inv2 => .ofMeasure fun st : ℤ × ℕ ↦ st.2
   | inv3 => JacobiRoundInvariant f b
   | inv4 => .ofMeasure fun st : ℤ × ℕ × ℕ ↦ st.2.1 + st.2.2
-  all_goals try simp only [Std.WP.Variant.evalsTo_ofMeasure,
-    Std.WP.Variant.evalsBelow_ofMeasure_nat, Std.WP.Assertion.NondetFun.evalsTo_pure,
-    Lean.Order.meet_prop_eq_and, Lean.Order.ofProp_prop_eq] at *
+  all_goals try vc_simp
   all_goals first
     | exact jacobiRoundHalveInvariant_one ‹_›
     | exact JacobiRoundHalveInvariant.div_two ‹_› ‹_› ‹_›
@@ -467,9 +464,7 @@ theorem jacobi_spec (b : ℕ) (lcf : ℤ) :
   | inv2 => .ofMeasure fun st : ℕ ↦ st
   | inv3 => JacobiInvariant b lcf
   | inv4 => .ofMeasure fun st ↦ st.2.1
-  all_goals try simp only [Std.WP.Variant.evalsTo_ofMeasure,
-    Std.WP.Variant.evalsBelow_ofMeasure_nat, Std.WP.Assertion.NondetFun.evalsTo_pure,
-    Lean.Order.meet_prop_eq_and, Lean.Order.ofProp_prop_eq] at *
+  all_goals try vc_simp
   all_goals first
     | exact jacobiOddInvariant_self lcf ‹_›
     | exact JacobiOddInvariant.div_two ‹_› ‹_›

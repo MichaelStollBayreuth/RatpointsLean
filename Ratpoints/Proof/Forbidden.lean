@@ -18,6 +18,7 @@ import Ratpoints.Proof.Containers
 import Ratpoints.Proof.Params
 import Ratpoints.Proof.Rows
 import Ratpoints.Proof.Tables
+import Ratpoints.Proof.VCSimp
 import Ratpoints.Proof.Valuation
 import Std.Tactic.Do
 
@@ -594,9 +595,7 @@ theorem forbiddenValuations_spec (c : List ℤ) (d p bHigh : ℕ) (cm : Array �
   · ValuationsInvariant
       (fun m ↦ Id.run (forbiddenAt (Id.run (unitParts c d p cm)) (squaresMod p) m)) p bHigh
   · .ofMeasure fun s : ℕ × ℕ × ℕ ↦ bHigh + 1 - s.2.2
-  all_goals try simp only [Std.WP.Variant.evalsTo_ofMeasure,
-    Std.WP.Variant.evalsBelow_ofMeasure_nat, Std.WP.Assertion.NondetFun.evalsTo_pure,
-    Lean.Order.meet_prop_eq_and, Lean.Order.ofProp_prop_eq] at *
+  all_goals try vc_simp
   all_goals try obtain ⟨rfl, _⟩ := ‹_ = _ ∧ ValuationsInvariant _ _ _ false _›
   all_goals subst ‹_ = Id.run (unitParts _ _ _ _)›
   all_goals first
@@ -620,9 +619,7 @@ theorem allValuations_spec (p bHigh : ℕ) :
   vcgen [allValuations] invariants
   · ValuationsInvariant (fun _ ↦ true) p bHigh
   · .ofMeasure fun s : ℕ × ℕ × ℕ ↦ bHigh + 1 - s.2.2
-  all_goals try simp only [Std.WP.Variant.evalsTo_ofMeasure,
-    Std.WP.Variant.evalsBelow_ofMeasure_nat, Std.WP.Assertion.NondetFun.evalsTo_pure,
-    Lean.Order.meet_prop_eq_and, Lean.Order.ofProp_prop_eq] at *
+  all_goals try vc_simp
   all_goals try obtain ⟨rfl, _⟩ := ‹_ = _ ∧ ValuationsInvariant _ _ _ false _›
   all_goals first
     | exact valuationsInvariant_zero_one _ _ _

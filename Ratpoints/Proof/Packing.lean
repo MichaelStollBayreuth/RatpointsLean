@@ -12,6 +12,7 @@ public import Ratpoints.Proof.SetBits
 
 import Ratpoints.Proof.Bits
 import Ratpoints.Proof.Containers
+import Ratpoints.Proof.VCSimp
 import Std.Tactic.Do
 
 /-!
@@ -386,8 +387,7 @@ theorem packPattern_spec (w : UInt64) (k c : Nat) :
   · Variant.ofMeasure fun s : UInt64 × UInt64 ↦ s.2.toNat
   · by rename_i p0 _ _; exact DoubleInvariant k p0
   · Variant.ofMeasure fun s : UInt64 × Nat ↦ 64 - s.2
-  all_goals try simp only [Variant.evalsTo_ofMeasure, Assertion.NondetFun.evalsTo_pure,
-    Variant.evalsBelow_ofMeasure_nat, meet_prop_eq_and, ofProp_prop_eq] at *
+  all_goals try vc_simp
   all_goals try subst_vars
   all_goals first
     | exact walkWhileInvariant_self (packInvariant_zero _ _ _)
@@ -526,8 +526,7 @@ theorem numClasses_spec (nb : Vector UInt64 64) :
   · fun pref _ s ↦ NumClassesInvariant nb pref.length s
   · by rename_i hw _; exact (fun {w : UInt64} (_ : (w != 0) = true) ↦ StrideInvariant w a) hw
   · Variant.ofMeasure fun k : Nat ↦ numStrides - k
-  all_goals try simp only [Variant.evalsTo_ofMeasure, Assertion.NondetFun.evalsTo_pure,
-    Variant.evalsBelow_ofMeasure_nat, meet_prop_eq_and, ofProp_prop_eq] at *
+  all_goals try vc_simp
   all_goals try subst_vars
   all_goals first
     | exact numClassesInvariant_zero nb

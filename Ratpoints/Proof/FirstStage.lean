@@ -8,6 +8,7 @@ module
 public import Ratpoints.Proof.Words
 
 import Ratpoints.Proof.Containers
+import Ratpoints.Proof.VCSimp
 import Std.Tactic.Do
 
 /-!
@@ -313,8 +314,7 @@ theorem wrapStart_spec (st stop p : Nat) :
   vcgen [wrapStart] invariants
   · WrapStartInvariant st p
   · Variant.ofMeasure fun s : Nat ↦ s
-  all_goals try simp only [Variant.evalsTo_ofMeasure, Assertion.NondetFun.evalsTo_pure,
-    Variant.evalsBelow_ofMeasure_nat, meet_prop_eq_and, ofProp_prop_eq] at *
+  all_goals try vc_simp
   all_goals first
     | exact ⟨rfl, nofun⟩
     | exact WrapStartInvariant.post ‹_›
@@ -580,8 +580,7 @@ theorem andChunks_spec (specs : List SieveSpec) (w0 : Int) (sv : Array SieveSpec
   | inv2 => Variant.ofMeasure fun s : Array SieveSpec × Vector UInt64 m × Nat ↦ full - s.2.2
   | inv3 _ _ _ c _ _ _ _ => fun done _ surv' ↦
       StoreChunkInvariant specs cw w0 c done.length surv surv'
-  all_goals try simp only [Variant.evalsTo_ofMeasure, Assertion.NondetFun.evalsTo_pure,
-    Variant.evalsBelow_ofMeasure_nat, meet_prop_eq_and, ofProp_prop_eq] at *
+  all_goals try vc_simp
   all_goals first
     | exact andChunksInvariant_init surv ‹_›
     | exact AndChunksInvariant.post ‹_›

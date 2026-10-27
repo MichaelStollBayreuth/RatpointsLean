@@ -12,6 +12,7 @@ public import Ratpoints.Proof.Stages
 import Ratpoints.Proof.Bits
 import Ratpoints.Proof.Containers
 import Ratpoints.Proof.Delivery
+import Ratpoints.Proof.VCSimp
 import Std.Tactic.Do
 
 /-!
@@ -112,7 +113,7 @@ theorem blockInv_nil (hq : st0.1.quit = false) (hQ : Q st0.2.1) :
   ⟨hq, fun _ _ ↦ by simp, hQ, fun _ ↦ rfl⟩
 
 /-- The denominators `N` after the denominators `M`. -/
-theorem BlockInv.append_list {N : List Nat} (h : BlockInv process P L κ Q st0 M st)
+theorem BlockInv.blockPost_append {N : List Nat} (h : BlockInv process P L κ Q st0 M st)
     (hs : BlockPost process P L κ Q N st st') : BlockPost process P L κ Q (M ++ N) st0 st' := by
   obtain ⟨h0, h1, -, h3⟩ := h
   obtain ⟨hs1, hs2, hs3⟩ := hs
@@ -174,7 +175,7 @@ theorem BlockInv.post_of_quit_range' (h : e - b = mb ∧ o = none ∧ a ≤ b �
   have h' :
       BlockPost process P L κ Q (((List.range' a (b - a + 1)).flatMap g).filter keep) st0 st' := by
     rw [List.filter_flatMap_range'_sub_add_one hab]
-    exact h.append_list hs
+    exact h.blockPost_append hs
   refine h'.of_prefix ((List.IsPrefix.flatMap ?_ g).filter keep) hq
   rw [show e + 1 - a = (b - a + 1) + (e - b) by lia]
   exact ⟨_, List.range'_append_1⟩
@@ -189,7 +190,7 @@ theorem BlockInv.append_range'_of_eq (h : e - b = mb ∧ o = none ∧ a ≤ b �
   obtain ⟨-, -, hab, hbe', h⟩ := h
   refine ⟨hab, hbe', hbe, ?_⟩
   rw [List.filter_flatMap_range'_sub_add_one hab]
-  exact (h.append_list hs).blockInv hq
+  exact (h.blockPost_append hs).blockInv hq
 
 /-- A step `b < e` of a loop of a block with a cursor after which the callback has not stopped the
 search. -/
@@ -202,7 +203,7 @@ theorem BlockInv.append_range'_of_ne (h : e - b = mb ∧ o = none ∧ a ≤ b �
   obtain ⟨rfl, -, hab, hbe', h⟩ := h
   refine ⟨by lia, by lia, by lia, ?_⟩
   rw [show b + 1 - a = b - a + 1 by lia, List.filter_flatMap_range'_sub_add_one hab]
-  exact (h.append_list hs).blockInv hq
+  exact (h.blockPost_append hs).blockInv hq
 
 /-- A step `b` with one denominator, sifted when it passes the test. -/
 theorem BlockPost.filter_singleton (hk : keep b = true) (h : BlockPost process P L κ Q [b] st st') :
@@ -246,10 +247,6 @@ variable {process} {ι : Type} {P : ι → Prop} {L : ι → Nat → List (Int �
   {D : Nat → Prop} {st0 st st' s : BlockState σ} {f : Nat → Nat} {keep : Nat → Bool} {a e : Nat}
   {pref suff : List Nat} {cur : Nat} {o : Option (BlockState σ)} {M N : List Nat}
 
-theorem blockInv_map_nil (hq : st0.1.quit = false) (hQ : Q st0.2.1) :
-    BlockInv process P L κ Q st0 ((([] : List Nat).map f).filter keep) st0 :=
-  blockInv_nil hq hQ
-
 /-- After the return of a loop of a block at a stop, the state returned. -/
 theorem BlockPost.of_eq_some {R : Prop} (ho : o = some s)
     (h : o = none ∧ R ∨ ∃ r, o = some r ∧ BlockPost process P L κ Q M st0 r) :
@@ -282,7 +279,7 @@ theorem BlockInv.post_of_quit_map (hl : ForIn.toList [a:e + 1] = pref ++ cur :: 
     (h : o = none ∧ BlockInv process P L κ Q st0 ((pref.map f).filter keep) st)
     (hs : BlockPost process P L κ Q [f cur] st st') (hq : st'.1.quit = true) :
     BlockPost process P L κ Q (((List.range' a (e + 1 - a)).map f).filter keep) st0 st' := by
-  refine (h.2.append_list hs).of_prefix ?_ hq
+  refine (h.2.blockPost_append hs).of_prefix ?_ hq
   rw [← List.filter_map_append_singleton_of_pos hk]
   refine (List.IsPrefix.map f ?_).filter keep
   rw [show List.range' a (e + 1 - a) = ForIn.toList [a:e + 1] by simp, hl]
@@ -294,7 +291,7 @@ theorem BlockInv.append_map (hk : keep (f cur) = true)
     (hs : BlockPost process P L κ Q [f cur] st st') (hq : ¬st'.1.quit = true) :
     BlockInv process P L κ Q st0 (((pref ++ [cur]).map f).filter keep) st' := by
   rw [List.filter_map_append_singleton_of_pos hk]
-  exact (h.2.append_list hs).blockInv hq
+  exact (h.2.blockPost_append hs).blockInv hq
 
 /-- A step whose denominator the test rejects. -/
 theorem BlockInv.append_map_of_not_keep (hk : ¬keep (f cur) = true)
@@ -342,7 +339,7 @@ theorem squaresBlock_spec (step : Nat → BlockState σ → Id (BlockState σ)) 
     Option.some.injEq, exists_eq_left', exists_false, and_true] at *
   all_goals obtain ⟨hq0, hQ0, hD⟩ := ‹st.1.quit = false ∧ _›
   all_goals first
-    | exact blockInv_map_nil hq0 hQ0
+    | exact blockInv_nil hq0 hQ0
     | exact BlockPost.of_eq_some ‹_› ‹_›
     | exact BlockPost.of_eq_none ‹_› ‹_›
     | exact BlockInv.pre_map ‹_› ‹_› hD ‹_›
@@ -393,7 +390,7 @@ theorem squares1Block_spec (step : Nat → BlockState σ → Id (BlockState σ))
     Option.some.injEq, exists_eq_left', exists_false, and_true] at *
   all_goals obtain ⟨hq0, hQ0, hD⟩ := ‹st.1.quit = false ∧ _›
   all_goals first
-    | exact blockInv_map_nil hq0 hQ0
+    | exact blockInv_nil hq0 hQ0
     | exact BlockPost.of_eq_some ‹_› ‹_›
     | exact BlockPost.of_eq_none ‹_› ‹_›
     | exact BlockInv.pre_map ‹_› (and_eq_true_of_eq ‹_› ‹_› ‹_›) hD ‹_›
@@ -417,7 +414,6 @@ def AllBlockInvariant {ι : Type} (P : ι → Prop) (L : ι → Nat → List (In
     (exit = true ∧ ∃ r, s.1 = some r ∧ BlockPost process P L κ Q
       (((List.range' a (e + 1 - a)).flatMap fun b ↦ [b]).filter keep) st0 r)
 
-open Std.WP Lean.Order in
 /-- The loop of the shape of every denominator over the steps `a ≤ e` of a block, for a step that
 delivers the lists of `L`, keeps `Q` and counts `κ b` for each denominator `b` with `D b`: the
 denominators `a, …, e` whose class has a pattern, in order; the loop ends, since the steps left
@@ -436,11 +432,9 @@ theorem allBlock_spec (step : Nat → BlockState σ → Id (BlockState σ)) (D :
   vcgen [allBlock, hstep] invariants
   | inv1 => AllBlockInvariant process P L κ Q (fun b ↦ cls[b % 64]!.bits != 0) st a e
   | inv2 => .ofMeasure fun s ↦ e - s.2.2
-  all_goals simp only [AllBlockInvariant, WhileInvariant.mk_apply,
-    Variant.evalsTo_ofMeasure, Variant.evalsBelow_ofMeasure_nat, Assertion.NondetFun.evalsTo_pure,
-    meet_prop_eq_and, ofProp_prop_eq, reduceCtorEq, false_and, or_false, false_or, true_and,
+  all_goals vc_simp [AllBlockInvariant, reduceCtorEq, false_and, or_false, false_or, true_and,
     and_false, Option.some.injEq, exists_eq_left', exists_false, ↓reduceIte, Nat.add_zero,
-    forall_const, false_implies] at *
+    forall_const, false_implies]
   all_goals obtain ⟨hq0, hQ0, hae, hD⟩ := ‹st.1.quit = false ∧ _›
   all_goals first
     | exact blockInv_range'_init hae hq0 hQ0
@@ -536,7 +530,7 @@ theorem walkDensInvariant_post_of_quit
   obtain ⟨-, -, k, hcl, hk, -⟩ := h
   have hx0 := bne_iff_ne.mp hx
   subst ht
-  have h' := hk.append_list (BlockPost.filter_singleton (hy' ▸ hy).symm hs)
+  have h' := hk.blockPost_append (BlockPost.filter_singleton (hy' ▸ hy).symm hs)
   rw [← hcl.filter_map_filter_range_succ_ctz hx0] at h'
   exact h'.of_prefix (((List.range_prefix_range (UInt64.toNat_ctz_lt hx0)).filter _).map _
     |>.filter _) hq
@@ -555,7 +549,7 @@ theorem walkDensInvariant_and_sub_one
   subst ht
   exact WalkWhileInvariant.and_sub_one ⟨h.1, h.2.2⟩ hx fun _ hcl hk ↦ by
     rw [hcl.filter_map_filter_range_succ_ctz (bne_iff_ne.mp hx)]
-    exact (hk.append_list hs).blockInv hq
+    exact (hk.blockPost_append hs).blockInv hq
 
 /-- A step whose denominator the test passes. -/
 theorem walkDensInvariant_and_sub_one_of_keep
@@ -597,7 +591,6 @@ private theorem test_value (test : Nat → Id Bool) (b : Nat) :
   ⟨fun _ ↦ rfl⟩
 
 attribute [local irreducible] WalkWhileInvariant in
-open Std.WP Lean.Order in
 /-- The walk through the set bits `t` of the word `x`, lowest first, for a step that delivers
 the lists of `L`, keeps `Q` and counts `κ b` for each denominator `b` with `D b`: the denominators
 `base + t` that pass the test `test`, in order; the walk ends, since clearing the lowest set bit
@@ -616,10 +609,8 @@ theorem walkDens_spec (step : Nat → BlockState σ → Id (BlockState σ)) (D :
   vcgen [walkDens, hstep, test_value test] invariants
   | inv1 => WalkDensWhileInvariant process P L κ Q (fun b ↦ Id.run (test b)) x base st
   | inv2 => .ofMeasure fun s ↦ s.2.1.toNat
-  all_goals simp only [WalkDensWhileInvariant, WhileInvariant.mk_apply,
-    Variant.evalsTo_ofMeasure, Variant.evalsBelow_ofMeasure_nat, Assertion.NondetFun.evalsTo_pure,
-    meet_prop_eq_and, ofProp_prop_eq, reduceCtorEq, false_and, or_false, false_or, true_and,
-    and_false, Option.some.injEq, exists_eq_left', exists_false] at *
+  all_goals vc_simp [WalkDensWhileInvariant, reduceCtorEq, false_and, or_false, false_or, true_and,
+    and_false, Option.some.injEq, exists_eq_left', exists_false]
   all_goals obtain ⟨hq0, hQ0, hD⟩ := ‹st.1.quit = false ∧ _›
   all_goals first
     | exact walkDensInvariant_init hq0 hQ0
@@ -813,8 +804,7 @@ theorem BlockPost.wordDens_of_eq
     (hs : BlockPost process P L κ Q ((((List.range 64).filter x.toBitVec.getLsbD).map
       (HAdd.hAdd (64 * w))).filter keep) st st') :
     BlockPost process P L κ Q ((wordDens db forb.toList bLow bHigh w).filter keep) st st' := by
-  rw [hx.1] at hs
-  exact hs
+  rwa [hx.1] at hs
 
 /-- What the walk through the word of `w` needs: its denominators are those of the block. -/
 theorem wordsBlockInvariant_pre_walk
@@ -874,7 +864,6 @@ theorem wordsBlockInvariant_append_of_ne
 end Words
 
 attribute [local irreducible] WalkWhileInvariant in
-open Std.WP Lean.Order in
 /-- The loop of the word shape over the words `a ≤ e` of a block, with the first and last words of
 the run `bLow / 64` and `bHigh / 64` and forbidden divisors that have what the loop needs
 (`Ratpoints.Sieve.ForbFits`), for a step that delivers the lists of `L`, keeps `Q` and counts `κ b`
@@ -898,11 +887,9 @@ theorem wordsBlock_spec (step : Nat → BlockState σ → Id (BlockState σ)) (D
   vcgen [wordsBlock, denWord_spec, walkDens_spec process step D P L κ Q hstep test] invariants
   | inv1 => WordsBlockInvariant process P L κ Q (fun b ↦ Id.run (test b)) db forb bLow bHigh st a e
   | inv2 => .ofMeasure fun s ↦ e - s.2.2.2
-  all_goals simp only [WordsBlockInvariant, WhileInvariant.mk_apply,
-    Variant.evalsTo_ofMeasure, Variant.evalsBelow_ofMeasure_nat, Assertion.NondetFun.evalsTo_pure,
-    meet_prop_eq_and, ofProp_prop_eq, reduceCtorEq, false_and, or_false, false_or, true_and,
+  all_goals vc_simp [WordsBlockInvariant, reduceCtorEq, false_and, or_false, false_or, true_and,
     and_false, Option.some.injEq, exists_eq_left', exists_false, ↓reduceIte, Nat.add_zero,
-    forall_const, false_implies] at *
+    forall_const, false_implies]
   all_goals obtain ⟨hq0, hQ0, hae, rfl, rfl, hforb, hD⟩ := ‹st.1.quit = false ∧ _›
   all_goals first
     | exact wordsBlockInvariant_init hae hq0 hQ0 hforb
@@ -1028,7 +1015,6 @@ def DecisionSearchInvariant (decs : Array Decision) (i : Nat) : Std.WP.WhileInva
   .mk fun exit dd ↦ if exit then Decision.InForce decs i dd else
     dd < decs.size ∧ ∀ j, dd < j → j < decs.size → i < decs[j]!.block
 
-open Std.WP Lean.Order in
 /-- For decisions of which the first is for block `0`, the decision in force for block `i` is the
 last whose first block is at most `i`: the search from the last decision back ends there, at the
 first decision at the latest. -/
@@ -1038,9 +1024,7 @@ theorem findDecision_spec (decs : Array Decision) (i : Nat) :
   vcgen [findDecision] invariants
   | inv1 => DecisionSearchInvariant decs i
   | inv2 => .ofMeasure fun dd ↦ dd
-  all_goals simp only [DecisionSearchInvariant, WhileInvariant.mk_apply, Variant.evalsTo_ofMeasure,
-    Variant.evalsBelow_ofMeasure_nat, Assertion.NondetFun.evalsTo_pure, meet_prop_eq_and,
-    ofProp_prop_eq, Bool.false_eq_true, ↓reduceIte] at *
+  all_goals vc_simp [DecisionSearchInvariant, Bool.false_eq_true, ↓reduceIte]
   all_goals first
     | assumption
     | exact ⟨by lia, fun j h1 h2 ↦ absurd h2 (by lia)⟩

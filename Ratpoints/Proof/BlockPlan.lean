@@ -8,6 +8,7 @@ module
 public import Ratpoints.Model.Blocks
 public import Std.WP
 
+import Ratpoints.Proof.VCSimp
 import Std.Tactic.Do
 
 /-!
@@ -94,8 +95,7 @@ theorem blockRange_le {lo hi len j : Nat} (hlen : 1 ≤ len) (hj : j < numBlocks
       (blockRange lo hi len j).2 ≤ hi := by
   simp only [numBlocks] at hj
   split at hj
-  · have : j * len ≤ hi - lo :=
-      Nat.le_trans (Nat.mul_le_mul_right len (Nat.lt_succ_iff.mp hj)) (Nat.div_mul_le_self _ _)
+  · have : j * len ≤ hi - lo := (Nat.le_div_iff_mul_le hlen).mp (Nat.lt_succ_iff.mp hj)
     simp only [blockRange]
     split <;> lia
   · lia
@@ -328,7 +328,6 @@ def SegmentSearchInvariant (plan : BlockPlan) (i : Nat) : Std.WP.WhileInvariant 
   .mk fun exit seg ↦ seg < plan.segs.size ∧ plan.segBlock[seg]! ≤ i ∧
     (exit = true → i < plan.segBlock[seg + 1]!)
 
-open Std.WP Lean.Order in
 /-- The steps of block `i < plan.nblocks` of well-formed blocks: its segment, the one whose blocks
 hold it, and its first and last steps (`Ratpoints.Sieve.blockRange`). The search for the segment
 ends, since the first block after the last segment is the number of the blocks. -/
@@ -340,9 +339,7 @@ theorem BlockPlan.WF.steps_spec {plan : BlockPlan} (h : plan.WF) (i : Nat) :
   vcgen [BlockPlan.steps] invariants
   | inv1 => SegmentSearchInvariant plan i
   | inv2 => .ofMeasure fun seg ↦ plan.segs.size - seg
-  all_goals try simp only [SegmentSearchInvariant, Variant.evalsTo_ofMeasure,
-    Variant.evalsBelow_ofMeasure_nat, Assertion.NondetFun.evalsTo_pure, meet_prop_eq_and,
-    ofProp_prop_eq, WhileInvariant.mk] at *
+  all_goals try vc_simp [SegmentSearchInvariant]
   all_goals first
     | exact h.segment_pre ‹_›
     | exact h.segment_succ ‹_› ‹_› ‹_›

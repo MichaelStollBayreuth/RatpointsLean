@@ -9,6 +9,7 @@ public import Ratpoints.Proof.Scan
 
 import Ratpoints.Proof.Bits
 import Ratpoints.Proof.Containers
+import Ratpoints.Proof.VCSimp
 import Std.Tactic.Do
 
 /-!
@@ -161,10 +162,8 @@ theorem walkWord_counters_spec (w : Thunk (List Int)) (d b : Nat) (fl : CheckFla
   · Variant.ofMeasure fun s : Option (Delivery σ × Counters) × UInt64 × Delivery σ × Counters ↦
       s.2.1.toNat
   all_goals subst_vars
-  all_goals simp only [WalkCountsWhileInvariant, WhileInvariant.mk_apply,
-    Variant.evalsTo_ofMeasure, Variant.evalsBelow_ofMeasure_nat, Assertion.NondetFun.evalsTo_pure,
-    meet_prop_eq_and, ofProp_prop_eq, reduceCtorEq, false_and, or_false, false_or, true_and,
-    Option.some.injEq, Option.map_some, Option.map_none] at *
+  all_goals vc_simp [WalkCountsWhileInvariant, reduceCtorEq, false_and, or_false, false_or,
+    true_and, Option.some.injEq, Option.map_some, Option.map_none]
   all_goals first
     | exact walkCountsInvariant_zero _ _ _ _ _ _
     | exact bne_iff_ne.mp ‹_›
@@ -571,11 +570,9 @@ private theorem scanPiece_counters_spec_getLsbD (w : Thunk (List Int)) (d b : Na
   | inv3 => Variant.ofMeasure fun s ↦ n - s.2.1
   | inv4 sv _ _ pos0 _ c0 _ _ => ScanPieceCountsZeroInvariant sv specs b checks cl w0 n cnt0 pos0 c0
   | inv5 => Variant.ofMeasure fun s : Nat ↦ n - s
-  all_goals (subst_vars; try simp only [ScanPieceCountsWhileInvariant,
-    ScanPieceCountsZeroInvariant, WhileInvariant.mk_apply, Variant.evalsTo_ofMeasure,
-    Variant.evalsBelow_ofMeasure_nat, Assertion.NondetFun.evalsTo_pure, meet_prop_eq_and,
-    ofProp_prop_eq, reduceCtorEq, false_and, or_false, false_or, true_and, and_false,
-    Option.some.injEq, Option.map] at *)
+  all_goals (subst_vars; try vc_simp [ScanPieceCountsWhileInvariant, ScanPieceCountsZeroInvariant,
+    reduceCtorEq, false_and, or_false, false_or, true_and, and_false, Option.some.injEq,
+    Option.map])
   all_goals first
     | exact ScanPieceSentinelInvariant.append_set! ‹_› ‹_›
     | exact ScanPieceCounts.eq ‹_› ‹_›

@@ -21,6 +21,7 @@ import Ratpoints.Proof.Containers
 import Ratpoints.Proof.Jacobi
 import Ratpoints.Proof.Params
 import Ratpoints.Proof.Stages
+import Ratpoints.Proof.VCSimp
 import Ratpoints.Proof.Valuation
 import Std.Tactic.Do
 
@@ -595,10 +596,7 @@ theorem jacobiTest_spec (ji : JacobiInfo) (b : ℕ) :
   | inv2 b' _ => fun pref _ s ↦ JacobiTestSignInvariant ji b' (pref.map Prod.fst) s
   | inv3 pref q _ _ _ _ _ _ => JacobiDivideInvariant ji b (pref.map Prod.fst) q
   | inv4 => .ofMeasure fun b' : ℕ ↦ b'
-  all_goals try simp only [Std.WP.Variant.evalsTo_ofMeasure,
-    Std.WP.Variant.evalsBelow_ofMeasure_nat, Std.WP.Assertion.NondetFun.evalsTo_pure,
-    Lean.Order.meet_prop_eq_and, Lean.Order.ofProp_prop_eq, List.map_append, List.map_cons,
-    List.map_nil, List.zipIdx_map_fst] at *
+  all_goals try vc_simp [List.map_append, List.map_cons, List.map_nil, List.zipIdx_map_fst]
   all_goals first
     | exact UInt64.ofNat_ne_zero_of_lt ‹JacobiTestPre _ _›.pos ‹JacobiTestPre _ _›.lt_size
     | exact jacobiTestInvariant_nil ‹_› ‹_›

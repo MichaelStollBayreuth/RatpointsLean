@@ -10,6 +10,7 @@ public import Std.WP
 
 import Ratpoints.Proof.Bits
 import Ratpoints.Proof.Containers
+import Ratpoints.Proof.VCSimp
 import Std.Tactic.Do
 
 /-!
@@ -219,8 +220,7 @@ theorem initFourLoop_spec (isfs : Array Bool) (p d4 : Nat) (w : UInt64)
   vcgen [initFourLoop] invariants
   · FourInvariant isfs p d4 ab ab1 ab2 ab3 hi
   · Variant.ofMeasure fun s : UInt64 × Nat × Nat × Nat × Nat × Nat ↦ hi - s.2.2.2.2.2
-  all_goals try simp only [Variant.evalsTo_ofMeasure, Assertion.NondetFun.evalsTo_pure,
-    Variant.evalsBelow_ofMeasure_nat, meet_prop_eq_and, ofProp_prop_eq] at *
+  all_goals try vc_simp
   all_goals first
     | exact fourInvariant_zero isfs ‹_›
     | exact FourInvariant.post ‹_›
@@ -641,8 +641,7 @@ theorem sieveInit1_spec (t : Entry) (ref : EntryRef) (b : Nat) (store : RowStore
   vcgen [sieveInit1] invariants
   · PatternDoubleInvariant (lanePatternOf t b) t.p
   · Variant.ofMeasure fun s : UInt64 × Nat ↦ 64 - s.2
-  all_goals try simp only [Variant.evalsTo_ofMeasure, Assertion.NondetFun.evalsTo_pure,
-    Variant.evalsBelow_ofMeasure_nat, meet_prop_eq_and, ofProp_prop_eq] at *
+  all_goals try vc_simp
   all_goals first
     | exact doubleInvariant_init_of_pre ‹_› ‹_›
     | exact sieveInit1_post ‹_› ‹_› ‹_› ‹_› ‹_›

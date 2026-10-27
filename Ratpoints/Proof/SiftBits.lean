@@ -12,6 +12,7 @@ import Ratpoints.Proof.Containers
 import Ratpoints.Proof.Delivery
 import Ratpoints.Proof.FirstStage
 import Ratpoints.Proof.ScanCounts
+import Ratpoints.Proof.VCSimp
 import Std.Tactic.Do
 
 /-!
@@ -758,7 +759,6 @@ end
 /- The counts of the bit arrays and of the bits of one interval are irreducible from here on. -/
 attribute [local irreducible] arraysWith bitsCounts
 
-open Std.WP Lean.Order in
 -- The contract of `Ratpoints.Sieve.siftBits` for the reading list `sfs` of its moduli.
 private theorem siftBits_spec_reads (w : Thunk (List Int)) (d b A : Nat) (fl : CheckFlags)
     (sp1 : Nat) (specs : List SieveSpec) (mgs : List Nat) (checks : Thunk (List CheckSpec))
@@ -776,10 +776,8 @@ private theorem siftBits_spec_reads (w : Thunk (List Int)) (d b A : Nat) (fl : C
   · SiftBitsWhileInvariant process (fun j ↦ acceptedPoints w d b fl checks (cl.numerator j)) b
       checks cl (fun j ↦ (sfs.take sp1).all (·.2 j)) (fun j ↦ sfs.all (·.2 j)) low high r cnt
   · .ofMeasure fun s ↦ (high / rbaLength + 1 - s.2.2.2.2.1).toNat
-  all_goals (subst_vars; try simp only [SiftBitsWhileInvariant, WhileInvariant.mk_apply,
-    Variant.evalsTo_ofMeasure, Variant.evalsBelow_ofMeasure_nat, Assertion.NondetFun.evalsTo_pure,
-    meet_prop_eq_and, ofProp_prop_eq, reduceCtorEq, false_and, or_false, false_or, true_and,
-    and_false, Option.some.injEq, Option.map_some, Option.map_none] at *)
+  all_goals (subst_vars; try vc_simp [SiftBitsWhileInvariant, reduceCtorEq, false_and, or_false,
+    false_or, true_and, and_false, Option.some.injEq, Option.map_some, Option.map_none])
   all_goals first
     | exact SiftBitsInvariant.quit_eq_false_and ‹_› hfits (by (try split) <;> lia [rbaLength_pos])
     | have : ¬high / rbaLength + 1 < _ := ‹_›

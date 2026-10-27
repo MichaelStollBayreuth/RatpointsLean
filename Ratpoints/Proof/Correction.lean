@@ -9,6 +9,7 @@ public import Ratpoints.Proof.Blocks
 
 import Ratpoints.Proof.Containers
 import Ratpoints.Proof.Delivery
+import Ratpoints.Proof.VCSimp
 import Std.Tactic.Do
 
 /-!
@@ -139,7 +140,6 @@ theorem AdaptDownInvariant.sub_one {es : Array SieveEntry} {sp1 sp2 want n : Nat
     exact hc.2
   · exact h3 k hge hk'
 
-open Std.WP Lean.Order in
 /-- The walk of the correction down from the end `sp2` of the second stage drops some of the
 entries below `sp2`, only primes of the table and never below `sp1`: for any values of the doubles,
 the new end is at most `sp2`, at least `sp1` if `sp2` is, and the entries from it to `sp2` count no
@@ -151,9 +151,7 @@ theorem adaptDown_spec (es : Array SieveEntry) (sp1 sp2 : Nat)
   vcgen [adaptDown] invariants
   | inv1 => AdaptDownInvariant es sp1 sp2
   | inv2 => .ofMeasure fun st ↦ st.2.2.2
-  all_goals simp only [AdaptDownInvariant, WhileInvariant.mk_apply, Variant.evalsTo_ofMeasure,
-    Variant.evalsBelow_ofMeasure_nat, Assertion.NondetFun.evalsTo_pure, meet_prop_eq_and,
-    ofProp_prop_eq] at *
+  all_goals vc_simp [AdaptDownInvariant]
   all_goals first
     | exact adaptDownInvariant_init es sp1 sp2
     | (rename_i hc _ h
@@ -170,7 +168,6 @@ def AdaptThirdInvariant (es : Array SieveEntry) (sp2 : Nat) :
     Std.WP.WhileInvariant (Float × Nat) Prop :=
   .mk fun _ st ↦ sp2 ≤ st.2 ∧ st.2 ≤ sp2 + (es.size - sp2)
 
-open Std.WP Lean.Order in
 /-- The correction of the third stage takes some of the entries from the end `sp2` of the second
 stage on: for any values of the doubles, the end of the third stage is at least `sp2` and at most
 the number of the entries, if `sp2` is. -/
@@ -183,9 +180,7 @@ theorem adaptThird_spec (es : Array SieveEntry) (c : RunCounts) (sp2 : Nat)
   | inv2 => .ofMeasure fun st ↦ es.size - st.2
   | inv3 => AdaptThirdInvariant es sp2
   | inv4 => .ofMeasure fun st ↦ es.size - st.2
-  all_goals simp only [AdaptThirdInvariant, WhileInvariant.mk_apply, Variant.evalsTo_ofMeasure,
-    Variant.evalsBelow_ofMeasure_nat, Assertion.NondetFun.evalsTo_pure, meet_prop_eq_and,
-    ofProp_prop_eq] at *
+  all_goals vc_simp [AdaptThirdInvariant]
   all_goals lia
 
 -- The end of the second stage after the walk up is well-formed.
@@ -423,7 +418,7 @@ theorem folded_correctionAfter (k : Nat) :
   induction k with
   | zero => rfl
   | succ k ih =>
-    exact ((runFold_decisions_spec s P _ _ _).le_wp trivial).1.trans (congrArg (· + 1) ih)
+    exact ((runFold_decisions_spec s P _ _ _).le_wp trivial).1.trans congr($ih + 1)
 
 variable (H s P entries magics cls db shape iv bLow bHigh) in
 /-- The decisions after the folds of the first `k` blocks are those after the first `m ≤ k`
@@ -490,12 +485,12 @@ theorem findDecision_eq_of_toList_eq_append {decs decs' : Array Decision} {L : L
     {i : Nat} (h0 : 0 < decs.size) (hb : decs[0]!.block = 0) (h : decs'.toList = decs.toList ++ L)
     (hL : ∀ d ∈ L, i < d.block) :
     Id.run (findDecision decs' i) = Id.run (findDecision decs i) := by
-  have hs : decs'.size = decs.size + L.length := by simpa using congrArg List.length h
+  have hs : decs'.size = decs.size + L.length := by simpa using congr(List.length $h)
   obtain ⟨h1, h2, h3⟩ := (findDecision_spec decs i).le_wp ⟨h0, hb⟩
   refine Decision.InForce.unique ((findDecision_spec decs' i).le_wp ⟨by lia,
-    (congrArg Decision.block (Array.getElem!_eq_of_toList_eq_append h h0)).trans hb⟩)
+    congr(Decision.block $(Array.getElem!_eq_of_toList_eq_append h h0)).trans hb⟩)
     ⟨by rw [hs]; exact Nat.lt_add_right _ h1, ?_, fun j hj hj' ↦ ?_⟩
-  · exact (congrArg Decision.block (Array.getElem!_eq_of_toList_eq_append h h1)).trans_le h2
+  · exact congr(Decision.block $(Array.getElem!_eq_of_toList_eq_append h h1)).trans_le h2
   · rcases Nat.lt_or_ge j decs.size with hjs | hjs
     · rw [Array.getElem!_eq_of_toList_eq_append h hjs]
       exact h3 j hj hjs
@@ -780,8 +775,8 @@ theorem exists_run_sieveRun_eq_deliver (c : List ℤ) (d H A : ℕ) (s : SieveOp
     fun process fl r hr nb rs hnb hrs ↦ ?_⟩
   rw [fst_run_sieveRun process c d H A fl s P entries magics cls offsets db shape iv bLow bHigh
     store hA hw hdb hdec hforb hbLow hbHigh hH hr hs (x := (nb, rs)) ⟨hnb, hrs⟩]
-  refine congrArg (r.deliver process) (shape.flatMap_filter_blockDens db cls bLow bHigh
-    fun i hi b hb ↦ ?_)
+  refine congr(r.deliver process $(shape.flatMap_filter_blockDens db cls bLow bHigh
+    fun i hi b hb ↦ ?_))
   have h : ∃ i < (Id.run (shape.blockPlan bLow bHigh)).nblocks,
       b ∈ blockDens shape db (Id.run (shape.blockPlan bLow bHigh)) bLow bHigh i := ⟨i, hi, hb⟩
   dsimp only
@@ -866,10 +861,8 @@ theorem deliverSlots_spec (slot : Nat → Array (Int × Int × Int)) (n : Nat) (
 appending callback (`Ratpoints.appendPoint`) from an empty array the points of the block with its
 decision (`Ratpoints.Sieve.blockPoints`): the contract of one block
 (`Ratpoints.Sieve.runBlock_spec`) and the lag of the correction
-(`Ratpoints.Sieve.getElem!_findDecision_correctionAfter`). The pool of threads of the C code meets
-these hypotheses: it starts block `i` only once the blocks before block `i - RP_ADAPT_LAG` are
-folded (`find_points.c:4292-4296`), and the tables of rows that its threads share only gain complete
-rows (`init.c:180`, `init.c:241`, `init.c:391`, `init.c:443`). -/
+(`Ratpoints.Sieve.getElem!_findDecision_correctionAfter`); the step of
+`Ratpoints.Sieve.run_deliverSlots_eq_fst_run_sieveRun`. -/
 theorem toList_info_run_runBlock_appendPoint (c : List Int) (d H A : Nat) (fl : CheckFlags)
     (s : SieveOptions) (P : Params) (entries : List SieveEntry) (magics : Array Nat)
     (cls : Vector NumClass 64) (offsets : Array Nat) (db : UInt64) (shape : Shape)
@@ -924,9 +917,9 @@ theorem run_deliverSlots_eq_fst_run_sieveRun (c : List Int) (d H A : Nat) (fl : 
   rw [fst_run_sieveRun process c d H A fl s P entries magics cls offsets db shape iv bLow bHigh
     store hA hw hdb hdec hforb hbLow hbHigh hH hr hs hx,
     (deliverSlots_spec process _ _ r).le_wp hr]
-  exact congrArg (r.deliver process) (List.flatMap_congr fun i hi ↦
+  exact congr(r.deliver process $(List.flatMap_congr fun i hi ↦
     toList_info_run_runBlock_appendPoint c d H A fl s P entries magics cls offsets db shape iv bLow
-      bHigh hA hw hdb hdec hforb hbLow hbHigh hH (hk i) (List.mem_range.mp hi) (hst i) hx)
+      bHigh hA hw hdb hdec hforb hbLow hbHigh hH (hk i) (List.mem_range.mp hi) (hst i) hx))
 
 end Sieve
 

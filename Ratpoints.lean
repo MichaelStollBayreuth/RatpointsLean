@@ -108,6 +108,7 @@ public import Ratpoints.Proof.SturmRegion
 public import Ratpoints.Proof.SturmSigns
 public import Ratpoints.Proof.Tables
 public import Ratpoints.Proof.TwoAdic
+public import Ratpoints.Proof.VCSimp
 public import Ratpoints.Proof.Valuation
 public import Ratpoints.Proof.Words
 public import Ratpoints.Spec

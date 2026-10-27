@@ -15,6 +15,7 @@ import Ratpoints.Proof.Jacobi
 import Ratpoints.Proof.JacobiTables
 import Ratpoints.Proof.Setup
 import Ratpoints.Proof.TwoAdic
+import Ratpoints.Proof.VCSimp
 import Ratpoints.Proof.Valuation
 import Ratpoints.Proof.Words
 import Std.Tactic.Do
@@ -394,9 +395,7 @@ theorem wordsDens_spec (db : UInt64) (forb : List ForbiddenEntry) (bLow bHigh : 
   | inv2 _ cur _ _ out0 _ => WalkWhileInvariant (wordBits db forb bLow bHigh cur)
       (WalkWordInvariant (fun t ↦ [64 * cur + t]) (wordBits db forb bLow bHigh cur) out0)
   | inv3 => .ofMeasure fun s : Array ℕ × UInt64 ↦ s.2.toNat
-  all_goals try simp only [Std.WP.Variant.evalsTo_ofMeasure,
-    Std.WP.Variant.evalsBelow_ofMeasure_nat, Std.WP.Assertion.NondetFun.evalsTo_pure,
-    Lean.Order.meet_prop_eq_and, Lean.Order.ofProp_prop_eq] at *
+  all_goals try vc_simp
   all_goals subst_vars
   all_goals first
     | exact walkWhileInvariant_self (walkWordInvariant_zero ..)

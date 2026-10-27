@@ -13,6 +13,7 @@ import Mathlib.Algebra.Order.Field.Power
 import Mathlib.Data.List.SplitBy
 import Ratpoints.Mathlib.Order.WithBotTop
 import Ratpoints.Proof.Containers
+import Ratpoints.Proof.VCSimp
 import Std.Tactic.Do
 
 /-!
@@ -193,9 +194,7 @@ theorem outward_spec (x : Double) (v : ℚ) (dir : ℤ) :
   · OutwardInvariant x v dir
   · Std.WP.Variant.ofMeasure fun x : Double ↦
       if dir < 0 then (x.orderValue + maxOrderValue).toNat else (maxOrderValue - x.orderValue).toNat
-  all_goals try simp only [Std.WP.Variant.evalsTo_ofMeasure,
-    Std.WP.Variant.evalsBelow_ofMeasure_nat, Std.WP.Assertion.NondetFun.evalsTo_pure,
-    Lean.Order.meet_prop_eq_and, Lean.Order.ofProp_prop_eq] at *
+  all_goals try vc_simp
   all_goals first
     | exact outwardInvariant_start v dir ‹_›
     | exact OutwardInvariant.post ‹_›
@@ -783,9 +782,7 @@ theorem inRegion_spec (a b : ℤ) (e : Array ExactEnd) (n : ℕ) :
   vcgen [inRegion] invariants
   · InRegionInvariant (fun j ↦ e[j]!.value) (((a : ℚ) / b : ℚ) : WithBotTop ℚ) n
   · Std.WP.Variant.ofMeasure fun s : ℕ × ℕ ↦ s.2 - s.1
-  all_goals try simp only [Std.WP.Variant.evalsTo_ofMeasure,
-    Std.WP.Variant.evalsBelow_ofMeasure_nat, Std.WP.Assertion.NondetFun.evalsTo_pure,
-    Lean.Order.meet_prop_eq_and, Lean.Order.ofProp_prop_eq] at *
+  all_goals try vc_simp
   all_goals first
     | exact inRegionInvariant_zero _ _ _
     | exact InRegionInvariant.post ‹_› ‹_›

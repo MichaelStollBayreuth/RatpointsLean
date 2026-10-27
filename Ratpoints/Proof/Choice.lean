@@ -366,6 +366,10 @@ theorem IsChoiceEntries.exists_isChoiceEntry_of_mem {c : List ℤ} {sp2 : ℕ} {
   obtain ⟨n, hn, rfl⟩ := List.getElem_of_mem he
   exact ⟨n, (h n hn).1⟩
 
+theorem IsChoiceEntries.isModulusEntry_of_mem {c : List ℤ} {sp2 : ℕ} {es : List SieveEntry}
+    (h : IsChoiceEntries c sp2 es) {e : SieveEntry} (he : e ∈ es) : IsModulusEntry c e.p e :=
+  (h.exists_isChoiceEntry_of_mem he).elim fun _ h ↦ h.isModulusEntry
+
 /-- The store of the loop of the tables with the tables of rows of the sieve entries of the choice
 fits them. -/
 theorem IsChoiceEntries.fits_foldl_addTables {c : List ℤ} {sp2 : ℕ} {es : List SieveEntry}
@@ -374,8 +378,7 @@ theorem IsChoiceEntries.fits_foldl_addTables {c : List ℤ} {sp2 : ℕ} {es : Li
   have hm := (RowStore.madeFor_nil c (degree c) hs.1 hs.2).foldl_addTables es
     (fun n hn ↦ SieveEntry.refFits_of_refInit_eq ((Nat.zero_add n).symm ▸ (h n hn).1.refInit)
       fun _ ↦ (h n hn).1.isModulusEntry.p_eq_modulus) fun e he t ht ↦
-    have ⟨_, he'⟩ := h.exists_isChoiceEntry_of_mem he
-    (he'.isModulusEntry.buildable _ ht).1
+    ((h.isModulusEntry_of_mem he).buildable _ ht).1
   exact ⟨_, hm.storeHolds, fun n hn ↦ (h n hn).1.isModulusEntry.rowsFit_runRows (h n hn).1.refInit
     (List.getElem?_eq_getElem hn)⟩
 
@@ -415,15 +418,14 @@ theorem isSievingInfo_choiceEnd {c : List ℤ} {bHigh sp1 sp2 : ℕ} {t : ThirdS
         forb, forbVal, store := (choiceEnd t sp2 store).2.2, checkDenom } := by
   obtain ⟨hE, hl⟩ := isChoiceEntries_choiceEnd ht store
   subst h1 h2
-  refine ⟨fun e he ↦ (hE.exists_isChoiceEntry_of_mem he).elim fun _ h ↦ h.isModulusEntry.isSound,
-    fun e he ↦ (hE.exists_isChoiceEntry_of_mem he).elim fun _ h ↦ h.isModulusEntry.packable,
-    fun e he ↦ (hE.exists_isChoiceEntry_of_mem he).elim fun _ h ↦ h.isModulusEntry.hasInverses,
+  refine ⟨fun _ he ↦ (hE.isModulusEntry_of_mem he).isSound,
+    fun _ he ↦ (hE.isModulusEntry_of_mem he).packable,
+    fun _ he ↦ (hE.isModulusEntry_of_mem he).hasInverses,
     fun e he ↦ (hE.exists_isChoiceEntry_of_mem he).elim fun _ h ↦ h.isPrimeEntry, ?_,
     ⟨h12, h3 ▸ ht.2.1, h3 ▸ hl ▸ ht.2.2, fun _ he ↦ hE.nf_eq_zero_of_mem_drop he⟩, hforb, hval,
     hE.fits_foldl_addTables hs, hcd⟩
   simp only [choiceEnd, List.toList_toArray]
-  exact List.map_congr_left fun e he ↦
-    (hE.exists_isChoiceEntry_of_mem he).elim fun _ h ↦ h.isModulusEntry.packable.magic_eq
+  exact List.map_congr_left fun _ he ↦ (hE.isModulusEntry_of_mem he).packable.magic_eq
 
 /-- The contract of `Ratpoints.thirdOf`: `Ratpoints.thirdStage_spec` from the end `sp2` of the
 second stage. -/

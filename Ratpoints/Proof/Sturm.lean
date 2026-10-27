@@ -10,6 +10,7 @@ public import Std.WP
 
 import Ratpoints.Proof.Bits
 import Ratpoints.Proof.Containers
+import Ratpoints.Proof.VCSimp
 import Std.Tactic.Do
 
 /-!
@@ -537,9 +538,7 @@ theorem chain_spec (c : List Int) (d : Nat) :
   | inv4 => fun pref _ g ↦ ContentInvariant pref g
   | inv5 _ cur _ _ _ ch _ _ t _ _ _ => .mk (DropZerosInvariant (reduce ch[cur - 1]! t).pop)
   | inv6 => .ofMeasure fun t : Array Int ↦ t.size
-  all_goals try simp only [Std.WP.WhileInvariant.mk_apply, Std.WP.Variant.evalsTo_ofMeasure,
-    Std.WP.Variant.evalsBelow_ofMeasure_nat, Std.WP.Assertion.NondetFun.evalsTo_pure,
-    Lean.Order.meet_prop_eq_and, Lean.Order.ofProp_prop_eq] at *
+  all_goals try vc_simp
   all_goals solve_by_elim (maxDepth := 10) [chainInvariant_nil, ChainInvariant.isChainResult,
     ChainInvariant.isChainResult_some, ChainInvariant.reduceInvariant,
     ChainInvariant.of_reduceInvariant_some, ChainInvariant.push_of_size_eq_one,
@@ -881,9 +880,7 @@ theorem intersect_spec (loc ivs : Array (Double × Double)) :
   vcgen [intersect] invariants
   | inv1 => .mk (IntersectInvariant loc ivs)
   | inv2 => .ofMeasure fun x ↦ loc.size + ivs.size - x.1 - x.2.1
-  all_goals try simp only [Std.WP.WhileInvariant.mk_apply, Std.WP.Variant.evalsTo_ofMeasure,
-    Std.WP.Variant.evalsBelow_ofMeasure_nat, Std.WP.Assertion.NondetFun.evalsTo_pure,
-    Lean.Order.meet_prop_eq_and, Lean.Order.ofProp_prop_eq] at *
+  all_goals try vc_simp
   all_goals first
     | exact intersectInvariant_zero loc ivs
     | exact ‹IntersectInvariant _ _ true _›.eq

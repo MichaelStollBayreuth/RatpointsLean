@@ -9,6 +9,7 @@ public import Ratpoints.Model.Choice
 public import Std.WP
 
 import Ratpoints.Proof.Containers
+import Ratpoints.Proof.VCSimp
 import Std.Tactic.Do
 
 /-!
@@ -59,7 +60,6 @@ def DropUsedInvariant (Q : ModulusCandidate → Prop) (start : Nat) :
     Std.WP.WhileInvariant (Array ModulusCandidate × Nat) Prop :=
   .mk fun _ st ↦ (∀ e ∈ st.1, Q e) ∧ start ≤ st.2 ∧ st.2 ≤ st.1.size
 
-open Std.WP Std.WP.Assertion Lean.Order in
 /-- The contract of `Ratpoints.dropUsed`: it keeps a property `Q` of the candidates and the position
 `start` within the pool, since it only drops candidates from `start` on. -/
 theorem dropUsed_spec (Q : ModulusCandidate → Prop) (pool : Array ModulusCandidate) (start : Nat)
@@ -69,9 +69,7 @@ theorem dropUsed_spec (Q : ModulusCandidate → Prop) (pool : Array ModulusCandi
   vcgen [dropUsed] invariants
   | inv1 => DropUsedInvariant Q start
   | inv2 => .ofMeasure fun st : Array ModulusCandidate × Nat ↦ st.1.size + (st.1.size - st.2)
-  all_goals simp only [Variant.evalsTo_ofMeasure, Variant.evalsBelow_ofMeasure_nat,
-    NondetFun.evalsTo_pure, meet_prop_eq_and, ofProp_prop_eq, DropUsedInvariant,
-    WhileInvariant.mk] at *
+  all_goals vc_simp [DropUsedInvariant]
   all_goals grind [Array.size_eraseIdxIfInBounds_of_lt]
 
 /-- The invariant of the loop of `Ratpoints.takeEntries`. -/
@@ -79,7 +77,6 @@ def TakeEntriesInvariant (Q : ModulusCandidate → Prop) (start : Nat) :
     Std.WP.WhileInvariant (Array ModulusCandidate × UInt64 × Float × Nat × Nat) Prop :=
   .mk fun _ st ↦ (∀ e ∈ st.1, Q e) ∧ st.2.2.2.1 = start + st.2.2.2.2 ∧ st.2.2.2.1 ≤ st.1.size
 
-open Std.WP Std.WP.Assertion Lean.Order in
 /-- The contract of `Ratpoints.takeEntries`, for any values of the doubles and any rule of the first
 stage: it keeps a property `Q` of the candidates, since it only drops candidates, and the candidates
 taken from `start` on lie within the pool. -/
@@ -91,9 +88,7 @@ theorem takeEntries_spec (Q : ModulusCandidate → Prop) (pool : Array ModulusCa
   | inv1 => TakeEntriesInvariant Q start
   | inv2 => .ofMeasure fun st : Array ModulusCandidate × UInt64 × Float × Nat × Nat ↦
       st.1.size + (st.1.size - st.2.2.2.1)
-  all_goals simp only [Variant.evalsTo_ofMeasure, Variant.evalsBelow_ofMeasure_nat,
-    NondetFun.evalsTo_pure, meet_prop_eq_and, ofProp_prop_eq, TakeEntriesInvariant,
-    WhileInvariant.mk] at *
+  all_goals vc_simp [TakeEntriesInvariant]
   all_goals grind [Array.size_eraseIdxIfInBounds_of_lt]
 
 /-- The candidates of the pool `pool` from the position `s` on have no factors counted: primes that
@@ -108,7 +103,6 @@ def DropCompositesInvariant (Q : ModulusCandidate → Prop) (start : Nat) :
     (∀ i (h : i < st.1.size), start ≤ i → i < st.2 → st.1[i].nf = 0) ∧
     (exit = true → st.1.size ≤ st.2)
 
-open Std.WP Std.WP.Assertion Lean.Order in
 /-- The contract of `Ratpoints.dropComposites`: it keeps a property `Q` of the candidates and the
 position `start` within the pool, and the candidates from `start` on count no factors
 (`Ratpoints.NfEqZeroFrom`). -/
@@ -119,9 +113,7 @@ theorem dropComposites_spec (Q : ModulusCandidate → Prop) (pool : Array Modulu
   vcgen [dropComposites] invariants
   | inv1 => DropCompositesInvariant Q start
   | inv2 => .ofMeasure fun st : Array ModulusCandidate × Nat ↦ st.1.size + (st.1.size - st.2)
-  all_goals simp only [Variant.evalsTo_ofMeasure, Variant.evalsBelow_ofMeasure_nat,
-    NondetFun.evalsTo_pure, meet_prop_eq_and, ofProp_prop_eq, DropCompositesInvariant,
-    WhileInvariant.mk, NfEqZeroFrom] at *
+  all_goals vc_simp [DropCompositesInvariant, NfEqZeroFrom]
   all_goals grind [Array.size_eraseIdxIfInBounds_of_lt, Array.getElem_eraseIdxIfInBounds_of_lt]
 
 /-- The contract of `Ratpoints.bestByR`: the position it returns is that of a candidate from `sp3`

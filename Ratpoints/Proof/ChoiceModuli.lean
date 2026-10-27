@@ -12,6 +12,7 @@ public import Ratpoints.Proof.Stages
 
 import Ratpoints.Proof.Params
 import Ratpoints.Proof.Tables
+import Ratpoints.Proof.VCSimp
 import Std.Tactic.Do
 
 /-!
@@ -266,16 +267,12 @@ theorem powerIndex_spec (c : List ℤ) (u pinf : Bool) (pn p e : ℕ) (tab : Pow
   · exact h.lookup_post ‹_›
   · rename_i pw hpw
     rw [hp] at hpw
-    refine ⟨hpw ▸ h.push hpn he u pinf _, ?_, fun i hi ↦ ?_⟩
-    · dsimp only
-      split
-      · exact Array.extends_push _ _
-      · exact .refl _
-    · dsimp only at hi ⊢
-      split at hi
-      · obtain rfl := Option.some.inj hi
-        exact ⟨pw, by simp_all, u, pinf, hpw⟩
-      · cases hi
+    refine ⟨hpw ▸ h.push hpn he u pinf _, Array.extends_ite_push _ _ _, fun i hi ↦ ?_⟩
+    dsimp only at hi ⊢
+    split at hi
+    · obtain rfl := Option.some.inj hi
+      exact ⟨pw, by simp_all, u, pinf, hpw⟩
+    · cases hi
 
 /-- The code of a prime whose table the loop of the tables holds can be read. -/
 theorem isFactorCode_of_getD_eq_some {c : List ℤ} {primeSe : Array (Option (Entry × Float))}
@@ -328,15 +325,14 @@ theorem takeFactor_spec (c : List ℤ) (u : Bool) (primeSe : Array (Option (Entr
           (factorOfCode primeSe st'.tab.pws code).modulus = p ^ e) ∧ st.pn ≤ st'.pn ⦄ := by
   vcgen [takeFactor, powerIndex_spec]
   all_goals obtain ⟨hse, hok, hpn, he, hp⟩ := ‹IsExaminedPrimeSe c primeSe ∧ _›
-  · exact ⟨hok, .refl _, fun h ↦ absurd h Bool.false_ne_true, Nat.le_refl _⟩
-  · exact ⟨hok, .refl _, fun h ↦ absurd h Bool.false_ne_true, Nat.le_refl _⟩
+  iterate 2 exact ⟨hok, .refl _, nofun, Nat.le_refl _⟩
   · exact ⟨hok, .refl _, fun _ ↦ ⟨rfl, st.pn, rfl,
       isFactorCode_of_getD_eq_some hse st.tab.pws ‹_›, by
         rw [modulus_factorOfCode_of_getD_eq_some hse st.tab.pws ‹_›, hp, ‹e = 1›, Nat.pow_one]⟩,
       Nat.le_succ _⟩
   · exact ⟨hok, hpn, he, hp⟩
   · obtain ⟨hok', hl, -⟩ := ‹PowerTable.WF c _ ∧ _›
-    exact ⟨hok', hl, fun h ↦ absurd h Bool.false_ne_true, Nat.le_refl _⟩
+    exact ⟨hok', hl, nofun, Nat.le_refl _⟩
   · obtain ⟨hok', hl, hi⟩ := ‹PowerTable.WF c _ ∧ _›
     obtain ⟨pw, hpw, u', pinf', hpw'⟩ := hi _ ‹_›
     exact ⟨hok', hl, fun _ ↦ ⟨rfl, _, rfl,
@@ -442,11 +438,8 @@ theorem factorCandidate_spec (c : List ℤ) (u : Bool) (primeSe : Array (Option 
   | inv6 => .ofMeasure fun s : ℕ × ℕ ↦ s.1
   | inv7 b _ _ _ _ _ => DivideInvariant b.rest primeTable[b.pn]!
   | inv8 => .ofMeasure fun s : ℕ × ℕ ↦ s.1
-  all_goals simp only [Std.WP.Variant.evalsTo_ofMeasure, Std.WP.Variant.evalsBelow_ofMeasure_nat,
-    Std.WP.Assertion.NondetFun.evalsTo_pure, Lean.Order.meet_prop_eq_and,
-    Lean.Order.ofProp_prop_eq, Std.WP.WhileInvariant.mk, FactorLoopInvariant, DivideInvariant,
-    reduceCtorEq, false_implies, implies_true, true_and, and_true, Option.some.injEq,
-    forall_eq'] at *
+  all_goals vc_simp [FactorLoopInvariant, DivideInvariant, reduceCtorEq, false_implies,
+    implies_true, true_and, and_true, Option.some.injEq, forall_eq']
   all_goals grind [FacState.WF.of_eq, FacState.WF.of_ok_eq_false, Array.Extends.trans,
     Array.Extends.refl, FacState.WF.tab, one_lt_getElem!_primeTable]
 
@@ -518,9 +511,7 @@ theorem addModuli_spec (c : List ℤ) (u : Bool) (pool : Array ModulusCandidate)
   vcgen [addModuli, offerModulus_spec] invariants
   | inv1 => AddModuliInvariant c primeSe
   | inv2 => .ofMeasure fun s : Array ModulusCandidate × PowerTable × ℕ ↦ maxPrimeEven - s.2.2
-  all_goals simp only [Std.WP.Variant.evalsTo_ofMeasure, Std.WP.Variant.evalsBelow_ofMeasure_nat,
-    Std.WP.Assertion.NondetFun.evalsTo_pure, Lean.Order.meet_prop_eq_and,
-    Lean.Order.ofProp_prop_eq, Std.WP.WhileInvariant.mk, AddModuliInvariant] at *
+  all_goals vc_simp [AddModuliInvariant]
   all_goals grind [ModulusCandidate.IsPrimeOrComposite.extend,
     ModulusCandidate.IsPrimeOrComposite.phase1Key, PowerTable.wf_empty,
     ModulusCandidate.IsPrimeOrComposite]
@@ -557,12 +548,9 @@ theorem isChoiceEntry_primeEntry (c : List ℤ) {pn : ℕ} (hpn : pn < numPrimes
 /-- The factors of a composite candidate whose codes can be read are sound for its modulus. -/
 theorem ModulusCandidate.IsComposite.isSound {c : List ℤ} {primeSe : Array (Option (Entry × Float))}
     {pws : Array Power} {e : ModulusCandidate} (h : e.IsComposite c primeSe pws) :
-    ∀ f ∈ e.fac.map (factorOfCode primeSe pws), f.IsSound c e.p := by
-  intro f hf
-  obtain ⟨code, hc, rfl⟩ := List.mem_map.mp hf
-  refine (h.isFactorCode code hc).isSound (by lia [h.one_lt]) h.lt_maxPrimeEven ?_
-  rw [← h.prod_eq]
-  exact List.dvd_prod (List.mem_map_of_mem hc)
+    ∀ f ∈ e.fac.map (factorOfCode primeSe pws), f.IsSound c e.p :=
+  List.forall_mem_map.mpr fun code hc ↦ (h.isFactorCode code hc).isSound (by lia [h.one_lt])
+    h.lt_maxPrimeEven (h.prod_eq ▸ List.dvd_prod (List.mem_map_of_mem hc))
 
 /-- The contract of `Ratpoints.makeModulus`: the sieve entry of a composite candidate whose codes
 can be read is one that the choice makes at the position `n` (`Ratpoints.IsChoiceEntry`). -/
@@ -601,7 +589,7 @@ structure StageEntriesInvariant (c : List ℤ) (pool₀ : Array ModulusCandidate
   /-- The other candidates are as they were. -/
   getElem!_eq : ∀ n < pool.size, k ≤ n → pool[n]! = pool₀[n]!
 
-theorem ModulusCandidate.IsPrimeOrComposite.isPrime_of_ssp_isSome {c : List ℤ}
+theorem ModulusCandidate.IsPrimeOrComposite.isPrime_of_not_ssp_isNone {c : List ℤ}
     {primeSe : Array (Option (Entry × Float))} {pws : Array Power} {e : ModulusCandidate}
     (h : e.IsPrimeOrComposite c primeSe pws) (hs : ¬e.ssp.isNone = true) : e.IsPrime c :=
   h.resolve_right fun hc ↦ hs (by simp [hc.ssp_eq])
@@ -687,7 +675,7 @@ theorem StageEntriesInvariant.skip {c : List ℤ} {primeSe : Array (Option (Entr
   rcases Nat.lt_succ_iff_lt_or_eq.mp hk with hk | rfl
   · exact h.exists_isChoiceEntry_of_lt n hn' (by lia)
   · rw [← getElem!_pos p n hn']
-    exact (hok.isPrime_of_ssp_isSome hn).exists_isChoiceEntry n
+    exact (hok.isPrime_of_not_ssp_isNone hn).exists_isChoiceEntry n
 
 theorem StageEntriesInvariant.post {c : List ℤ} {primeSe : Array (Option (Entry × Float))}
     {pws : Array Power} {pool p : Array ModulusCandidate} {sp2 : ℕ}
@@ -802,11 +790,9 @@ theorem thirdStage_spec (c : List ℤ) (u mayExtend : Bool) (sp3Extra : ℤ) (sp
   | inv1 => ThirdStageInvariant c sp2
   | inv2 => .ofMeasure fun s : Option (Except ℕ ThirdState) × ThirdState ↦
       (numPrimes - s.2.pnLim) + (sp3Want - s.2.sp3)
-  all_goals simp only [Std.WP.Variant.evalsTo_ofMeasure, Std.WP.Variant.evalsBelow_ofMeasure_nat,
-    Std.WP.Assertion.NondetFun.evalsTo_pure, Lean.Order.meet_prop_eq_and,
-    Lean.Order.ofProp_prop_eq, Std.WP.WhileInvariant.mk, ThirdStageInvariant, ThirdState.WF,
-    reduceCtorEq, false_implies, implies_true, true_and, and_true, Option.some.injEq,
-    Except.error.injEq, Except.ok.injEq, forall_eq', ← Option.eq_none_iff_forall_ne_some] at *
+  all_goals vc_simp [ThirdStageInvariant, ThirdState.WF, reduceCtorEq, false_implies, implies_true,
+    true_and, and_true, Option.some.injEq, Except.error.injEq, Except.ok.injEq, forall_eq',
+    ← Option.eq_none_iff_forall_ne_some]
   all_goals grind [ChoicePoolWF.push, ChoicePoolWF.swapIfInBounds]
 
 end Ratpoints

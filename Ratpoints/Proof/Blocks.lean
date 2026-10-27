@@ -277,13 +277,8 @@ theorem forbFits_fst_run_runSetup {c : List ℤ} {d bHigh' : ℕ} (useSquares : 
     (Id.run (runSetup useSquares us1 checkDenom useJacobi forb forbVal lcf H bHigh
       domain)).1.ForbFits := by
   rw [fst_run_runSetup]
-  split
-  · trivial
-  · split
-    · trivial
-    · split
-      · exact forbFits_of_forall_isForbiddenEntry h
-      · trivial
+  repeat' split
+  all_goals first | trivial | exact forbFits_of_forall_isForbiddenEntry h
 
 /-! ### One block -/
 
@@ -300,7 +295,7 @@ theorem Shape.loopFits_run_blockPlan {shape : Shape} (hf : shape.ForbFits) (bLow
       fast lcf) bLow bHigh).le_wp trivial)
     have hs := Shape.toList_fst_run_segments (.words forb forbVal useJacobi fast lcf) bLow bHigh
     have h1 : (Id.run ((Shape.words forb forbVal useJacobi fast lcf).segments bLow bHigh)).1.size =
-        1 := by simpa [Shape.numSegs] using congrArg List.length hs
+        1 := by simpa [Shape.numSegs] using congr(List.length $hs)
     rw [hp.2, getElem!_pos _ 0 (by lia),
       ← Array.getElem_toList, List.getElem_of_eq hs]
     rfl
