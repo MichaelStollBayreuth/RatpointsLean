@@ -30,9 +30,12 @@ invariants that are named definitions.
 The file uses Lean core and `Std` only, so that the `grind` calls of the proofs see only the lemmas
 of core, untouched by the updates of Mathlib. The lemmas on the brute-force reference that the
 contracts need, `Ratpoints.BruteForce.pointsOfDen_nil`, `Ratpoints.BruteForce.pointsOfDen_append`,
-`Ratpoints.BruteForce.pointsOfDen_singleton`, `Ratpoints.BruteForce.pointsOfDen_filter` and
-`Ratpoints.BruteForce.map_toList_range_eq_numerators`, are stated here, without Mathlib, rather than
-with the other lemmas on the reference in `Ratpoints.Proof.BruteForce`.
+`Ratpoints.BruteForce.pointsOfDen_singleton` and `Ratpoints.BruteForce.pointsOfDen_filter`, and
+those on the numerators `-H, …, H` that the contracts of the sieve need,
+`Ratpoints.BruteForce.map_toList_range_eq_numerators`,
+`Ratpoints.BruteForce.natAbs_le_of_mem_numerators` and
+`Ratpoints.BruteForce.pairwise_lt_numerators`, are stated here, without Mathlib, rather than with
+the other lemmas on the reference in `Ratpoints.Proof.BruteForce`.
 -/
 
 @[expose] public section
@@ -70,6 +73,14 @@ theorem pointsOfDen_filter (c : List Int) (d : Nat) (z : Int) (xs : List Int) (p
 theorem map_toList_range_eq_numerators (H : Nat) :
     (ForIn.toList [0:2 * H + 1]).map (fun i : Nat ↦ (i : Int) - H) = numerators H := by
   simp [numerators, List.range_eq_range']
+
+theorem natAbs_le_of_mem_numerators {H : Nat} {a : Int} (h : a ∈ numerators H) : a.natAbs ≤ H := by
+  simp only [numerators, List.mem_map, List.mem_range] at h
+  lia
+
+/-- The numerators `-H, …, H` are increasing. -/
+theorem pairwise_lt_numerators (H : Nat) : (numerators H).Pairwise (· < ·) :=
+  List.pairwise_map.mpr (List.pairwise_lt_range.imp fun h ↦ by lia)
 
 end BruteForce
 

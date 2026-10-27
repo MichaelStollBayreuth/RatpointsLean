@@ -193,10 +193,9 @@ theorem NumClass.Packs.bits_bne_zero {cl : NumClass} {w : UInt64} (h : cl.Packs 
 
 /-- `Ratpoints.Sieve.NumClass.Packs` reads only the pattern, the stride and the residue of the
 class, not its row offsets. -/
-theorem NumClass.Packs.congr {cl cl' : NumClass} {w : UInt64} (h : cl.Packs w)
-    (hb : cl'.bits = cl.bits) (hk : cl'.k = cl.k) (ha : cl'.a0 = cl.a0) : cl'.Packs w :=
-  ⟨⟨hk ▸ h.k_lt, hk ▸ h.k_le, hk ▸ ha ▸ h.a0_lt⟩, hk ▸ ha ▸ h.mod_eq,
-    hb ▸ hk ▸ ha ▸ h.getLsbD_bits⟩
+theorem NumClass.Packs.withOffset {cl : NumClass} {w : UInt64} (h : cl.Packs w)
+    (o : Option Nat) : { cl with offset := o }.Packs w :=
+  ⟨⟨h.k_lt, h.k_le, h.a0_lt⟩, h.mod_eq, h.getLsbD_bits⟩
 
 /-- The key `2 ^ k + a₀` of the packing of a class, by which `num_packings` and `class_offsets`
 tell the packings apart. -/
@@ -626,55 +625,51 @@ theorem NumPackingsInvariant.post {cls : Vector NumClass 64} {seen : Array UInt6
   rw [h.2.2]
   split <;> lia
 
-/-- A class with a pattern whose key `seen` does not mark is the first with its key, and marking its
-key and counting it keeps the invariant. -/
-theorem NumPackingsInvariant.mark {cls : Vector NumClass 64} {pref suff : List Nat} {cur : Nat}
-    (hl : ForIn.toList [:64] = pref ++ cur :: suff) (hwf : ∀ b < 64, cls[b]!.WF)
-    {seen : Array UInt64} {n : Nat} (h : NumPackingsInvariant cls pref.length (seen, n))
-    (hc : cur < 64) (hb : (cls[cur].bits != 0 && seen[(2 ^ cls[cur].k + cls[cur].a0) / 64]! >>>
+/-- The test of `num_packings` at the class `cur`, that it has a pattern and that `seen` does not
+mark its key, is whether it is the first class with its key. -/
+theorem NumPackingsInvariant.test_eq_decide {cls : Vector NumClass 64} {cur : Nat}
+    (hwf : ∀ b < 64, cls[b]!.WF) {seen : Array UInt64} {n : Nat}
+    (h : NumPackingsInvariant cls cur (seen, n)) (hc : cur < 64) :
+    (cls[cur].bits != 0 && seen[(2 ^ cls[cur].k + cls[cur].a0) / 64]! >>>
+      UInt64.ofNat ((2 ^ cls[cur].k + cls[cur].a0) % 64) &&& 1 == 0) =
+      decide (IsFirstKey cls cur) := by
+  have hK := (hwf cur hc).key_lt_128
+  rw [getElem!_pos cls cur hc] at hK
+  rw [UInt64.shiftRight_and_one_beq_zero _ (by lia), ← NumClass.key, h.2.1 _ hK]
+  simp only [IsFirstKey, getElem!_pos cls cur hc]
+  grind
+
+/-- A class that is the first with its key gets its key marked and is counted. -/
+theorem NumPackingsInvariant.mark {cls : Vector NumClass 64} {cur : Nat}
+    (hwf : ∀ b < 64, cls[b]!.WF) {seen : Array UInt64} {n : Nat}
+    (h : NumPackingsInvariant cls cur (seen, n)) (hc : cur < 64)
+    (hb : (cls[cur].bits != 0 && seen[(2 ^ cls[cur].k + cls[cur].a0) / 64]! >>>
       UInt64.ofNat ((2 ^ cls[cur].k + cls[cur].a0) % 64) &&& 1 == 0) = true) :
-    NumPackingsInvariant cls (pref ++ [cur]).length
+    NumPackingsInvariant cls (cur + 1)
       (seen.set! ((2 ^ cls[cur].k + cls[cur].a0) / 64)
         (seen[(2 ^ cls[cur].k + cls[cur].a0) / 64]! |||
           1 <<< UInt64.ofNat ((2 ^ cls[cur].k + cls[cur].a0) % 64)), n + 1) := by
-  rw [List.length_append, List.length_singleton,
-    Std.Legacy.Range.length_eq_of_toList_eq_append_cons hl] at *
-  simp only [NumPackingsInvariant] at h ⊢
+  have hf := of_decide_eq_true (h.test_eq_decide hwf hc ▸ hb)
   obtain ⟨hs, hseen, rfl⟩ := h
   have hK := (hwf cur hc).key_lt_128
-  rw [getElem!_pos cls cur hc] at hK
-  simp only [Bool.and_eq_true, bne_iff_ne, ne_eq] at hb
-  rw [UInt64.shiftRight_and_one_beq_zero _ (by lia), Bool.not_eq_true', ← NumClass.key,
-    hseen _ hK, decide_eq_false_iff_not] at hb
-  have hf : IsFirstKey cls cur := by
-    simp only [IsFirstKey, getElem!_pos cls cur hc]
-    exact ⟨hb.1, fun b hb' h' h'' ↦ hb.2 ⟨b, hb', h', h''⟩⟩
   refine ⟨by simp [hs], fun K hK' ↦ ?_, by simp [firstKeys_succ, hf]⟩
-  rw [← NumClass.key, UInt64.getLsbD_getElem!_set!_or_one_shiftLeft hs hK', hseen K hK',
-    ← Bool.decide_or, decide_eq_decide, Nat.exists_lt_succ_right, getElem!_pos cls cur hc]
+  rw [← NumClass.key, ← getElem!_pos cls cur hc,
+    UInt64.getLsbD_getElem!_set!_or_one_shiftLeft hs hK', hseen K hK', ← Bool.decide_or,
+    decide_eq_decide, Nat.exists_lt_succ_right]
   grind
 
-theorem NumPackingsInvariant.skip {cls : Vector NumClass 64} {pref suff : List Nat} {cur : Nat}
-    (hl : ForIn.toList [:64] = pref ++ cur :: suff) (hwf : ∀ b < 64, cls[b]!.WF)
-    {seen : Array UInt64} {n : Nat} (h : NumPackingsInvariant cls pref.length (seen, n))
-    (hc : cur < 64) (hb : ¬(cls[cur].bits != 0 && seen[(2 ^ cls[cur].k + cls[cur].a0) / 64]! >>>
+/-- A class that is not the first with its key leaves the marks and the count as they are. -/
+theorem NumPackingsInvariant.skip {cls : Vector NumClass 64} {cur : Nat}
+    (hwf : ∀ b < 64, cls[b]!.WF) {seen : Array UInt64} {n : Nat}
+    (h : NumPackingsInvariant cls cur (seen, n)) (hc : cur < 64)
+    (hb : ¬(cls[cur].bits != 0 && seen[(2 ^ cls[cur].k + cls[cur].a0) / 64]! >>>
       UInt64.ofNat ((2 ^ cls[cur].k + cls[cur].a0) % 64) &&& 1 == 0) = true) :
-    NumPackingsInvariant cls (pref ++ [cur]).length (seen, n) := by
-  rw [List.length_append, List.length_singleton,
-    Std.Legacy.Range.length_eq_of_toList_eq_append_cons hl] at *
-  simp only [NumPackingsInvariant] at h ⊢
+    NumPackingsInvariant cls (cur + 1) (seen, n) := by
+  have hf : ¬IsFirstKey cls cur := fun hf ↦ hb (h.test_eq_decide hwf hc ▸ decide_eq_true hf)
   obtain ⟨hs, hseen, rfl⟩ := h
-  have hK := (hwf cur hc).key_lt_128
-  rw [getElem!_pos cls cur hc] at hK
-  simp only [Bool.and_eq_true, bne_iff_ne, ne_eq, not_and] at hb
-  rw [UInt64.shiftRight_and_one_beq_zero _ (by lia), Bool.not_eq_true', ← NumClass.key,
-    hseen _ hK, decide_eq_false_iff_not, Classical.not_not] at hb
-  have hf : ¬IsFirstKey cls cur := by
-    simp only [IsFirstKey, getElem!_pos cls cur hc]
-    exact fun ⟨h1, h2⟩ ↦ (hb h1).elim fun b ⟨hb', h', h''⟩ ↦ h2 b hb' h' h''
   refine ⟨hs, fun K hK' ↦ ?_, by simp [firstKeys_succ, hf]⟩
-  rw [hseen K hK', decide_eq_decide, Nat.exists_lt_succ_right, getElem!_pos cls cur hc]
-  grind
+  rw [hseen K hK', decide_eq_decide, Nat.exists_lt_succ_right]
+  grind [IsFirstKey]
 
 attribute [local irreducible] NumPackingsInvariant in
 open Std.WP Lean.Order in
@@ -685,11 +680,13 @@ theorem numPackings_spec (cls : Vector NumClass 64) :
   vcgen [numPackings] invariants
   · fun pref _ s ↦ NumPackingsInvariant cls pref.length s
   all_goals try simp only at *
+  all_goals try rw [List.length_append, List.length_singleton,
+    Std.Legacy.Range.length_eq_of_toList_eq_append_cons ‹_›] at *
   all_goals first
     | exact numPackingsInvariant_zero cls
     | exact NumPackingsInvariant.post ‹_›
-    | exact NumPackingsInvariant.mark ‹_› ‹_› ‹_› _ ‹_›
-    | exact NumPackingsInvariant.skip ‹_› ‹_› ‹_› _ ‹_›
+    | exact NumPackingsInvariant.mark ‹_› ‹_› _ ‹_›
+    | exact NumPackingsInvariant.skip ‹_› ‹_› _ ‹_›
 
 /-! ### The rows of the packings -/
 
@@ -716,11 +713,11 @@ structure ClassRowsInvariant (cls : Vector NumClass 64) (es : Array SieveEntry)
   rows_eq : rows = firstKeys cls m
   /-- The classes from `m` on are as they were. -/
   eq_of_le : ∀ b < 64, m ≤ b → cls'[b]! = cls[b]!
-  /-- Each class below `m` keeps its pattern, stride and residue, and one with a pattern has the
-  row of its packing, at a position `r np` for some `r < rows`, which the table of the rows holds
-  at its key and whose `np` offsets are those of the class. -/
-  entry : ∀ b < m, cls'[b]!.bits = cls[b]!.bits ∧ cls'[b]!.k = cls[b]!.k ∧
-    cls'[b]!.a0 = cls[b]!.a0 ∧ (cls[b]!.bits ≠ 0 → ∃ r < rows, cls'[b]!.offset = some (r * np) ∧
+  /-- Each class below `m` changes only in its row offsets, and one with a pattern has the row of
+  its packing, at a position `r np` for some `r < rows`, which the table of the rows holds at its
+  key and whose `np` offsets are those of the class. -/
+  entry : ∀ b < m, cls'[b]! = { cls[b]! with offset := cls'[b]!.offset } ∧
+    (cls[b]!.bits ≠ 0 → ∃ r < rows, cls'[b]!.offset = some (r * np) ∧
       rowOf[cls[b]!.key]! = some (r * np) ∧
       ∀ n < np, o[r * np + n]! = classOffset es rinv cls[b]! n)
   /-- The table holds a row only at the key of a class below `m` with a pattern. -/
@@ -746,15 +743,13 @@ theorem ClassRowsInvariant.post {cls : Vector NumClass 64} {es : Array SieveEntr
     {rinv : Array (Array Nat)} {np : Nat} {offsets : Array Nat} {cls' : Vector NumClass 64}
     {o : Array Nat} {rowOf : Array (Option Nat)} {rows : Nat}
     (h : ClassRowsInvariant cls es rinv np offsets.size (ForIn.toList [:64]).length cls' o rowOf
-      rows) :
-    o.size = offsets.size ∧ ∀ b < 64, cls'[b]!.bits = cls[b]!.bits ∧ cls'[b]!.k = cls[b]!.k ∧
-      cls'[b]!.a0 = cls[b]!.a0 ∧ (¬cls[b]!.bits = 0 →
-        ∃ pos, cls'[b]!.offset = some pos ∧
-          ∀ n < np, o[pos + n]! = classOffset es rinv cls[b]! n) := by
+      rows) {b : Nat} (hb : b < 64) :
+    cls'[b]! = { cls[b]! with offset := cls'[b]!.offset } ∧ (¬cls[b]!.bits = 0 →
+      ∃ pos, cls'[b]!.offset = some pos ∧
+        ∀ n < np, o[pos + n]! = classOffset es rinv cls[b]! n) := by
   rw [Std.Legacy.Range.length_toList] at h
-  refine ⟨h.size_eq, fun b hb ↦ ?_⟩
-  obtain ⟨h1, h2, h3, h4⟩ := h.entry b hb
-  exact ⟨h1, h2, h3, fun hb0 ↦ (h4 hb0).elim fun _ ⟨_, hr, _, hv⟩ ↦ ⟨_, hr, hv⟩⟩
+  obtain ⟨h1, h2⟩ := h.entry b hb
+  exact ⟨h1, fun hb0 ↦ (h2 hb0).elim fun _ ⟨_, hr, _, hv⟩ ↦ ⟨_, hr, hv⟩⟩
 
 /-- A class without a pattern is stepped over: it is not the first with its key, and it keeps its
 offsets. -/
@@ -777,7 +772,7 @@ theorem ClassRowsInvariant.skip {cls : Vector NumClass 64} {es : Array SieveEntr
   rcases Nat.lt_succ_iff_lt_or_eq.mp hb' with hb' | rfl
   · exact h5 b hb'
   · rw [getElem!_pos cls' b hc, hcur]
-    exact ⟨rfl, rfl, rfl, fun h ↦ absurd hb h⟩
+    exact ⟨rfl, fun h ↦ absurd hb h⟩
 
 /-- A key with a row is the key of an earlier class with a pattern, whose row it is: a class with
 that key is not the first with it, and its row holds its offsets, since the earlier class has the
@@ -791,7 +786,7 @@ theorem ClassRowsInvariant.exists_row_of_getElem!_eq_some {cls : Vector NumClass
     ∃ r < rows, row = r * np ∧ (∀ n < np, o[r * np + n]! = classOffset es rinv cls[cur]! n) ∧
       ¬IsFirstKey cls cur := by
   obtain ⟨b, hbc, hb0, hkey⟩ := h.exists_of_isSome cls[cur]!.key (by simp [hrow])
-  obtain ⟨r, hr, -, hrow', hv⟩ := (h.entry b hbc).2.2.2 hb0
+  obtain ⟨r, hr, -, hrow', hv⟩ := (h.entry b hbc).2 hb0
   rw [hkey, hrow, Option.some.injEq] at hrow'
   obtain ⟨hk, ha⟩ := (hwf b (by lia)).k_eq_and_a0_eq (hwf cur hc) hkey
   refine ⟨r, hr, hrow', fun n hn ↦ ?_, fun hf ↦ hf.2 b hbc hb0 hkey⟩
@@ -822,7 +817,7 @@ theorem ClassRowsInvariant.reuse {cls : Vector NumClass 64} {es : Array SieveEnt
   · rw [Vector.getElem!_set hc (by lia)]
     split <;> rename_i hcb
     · subst hcb
-      exact ⟨by simp [hcur], by simp [hcur], by simp [hcur], fun _ ↦ ⟨r, hr, rfl, hrow, hv⟩⟩
+      exact ⟨by simp [hcur], fun _ ↦ ⟨r, hr, rfl, hrow, hv⟩⟩
     · exact h5 b' (by lia)
 
 theorem rowInvariant_nil (es : Array SieveEntry) (rinv : Array (Array Nat)) (cl : NumClass)
@@ -857,7 +852,7 @@ theorem ClassRowsInvariant.isFirstKey {cls : Vector NumClass 64} {es : Array Sie
     (h : ClassRowsInvariant cls es rinv np size cur cls' o rowOf rows) (hb : cls[cur]!.bits ≠ 0)
     (hnone : rowOf[cls[cur]!.key]! = none) : IsFirstKey cls cur := by
   refine ⟨hb, fun b hb' hb0 hkey ↦ ?_⟩
-  obtain ⟨r, -, -, hr, -⟩ := (h.entry b hb').2.2.2 hb0
+  obtain ⟨r, -, -, hr, -⟩ := (h.entry b hb').2 hb0
   rw [hkey, hnone] at hr
   simp at hr
 
@@ -895,12 +890,12 @@ private theorem ClassRowsInvariant.entry_newRow {cls : Vector NumClass 64} {es :
     {rowOf : Array (Option Nat)} {rows : Nat} {cl : NumClass}
     (h : ClassRowsInvariant cls es rinv np size cur cls' o rowOf rows) (hf : IsFirstKey cls cur)
     (hrow : RowInvariant es rinv cl (rows * np) o np o') {b : Nat} (hb : b < cur) :
-    cls'[b]!.bits = cls[b]!.bits ∧ cls'[b]!.k = cls[b]!.k ∧ cls'[b]!.a0 = cls[b]!.a0 ∧
+    cls'[b]! = { cls[b]! with offset := cls'[b]!.offset } ∧
       (cls[b]!.bits ≠ 0 → ∃ r < rows + 1, cls'[b]!.offset = some (r * np) ∧
         (rowOf.set! cls[cur]!.key (some (rows * np)))[cls[b]!.key]! = some (r * np) ∧
         ∀ n < np, o'[r * np + n]! = classOffset es rinv cls[b]! n) := by
-  obtain ⟨e1, e2, e3, e4⟩ := h.entry b hb
-  refine ⟨e1, e2, e3, fun hb0 ↦ (e4 hb0).elim fun r ⟨hr, ho, hro, hv⟩ ↦
+  obtain ⟨e1, e2⟩ := h.entry b hb
+  refine ⟨e1, fun hb0 ↦ (e2 hb0).elim fun r ⟨hr, ho, hro, hv⟩ ↦
     ⟨r, by lia, ho, ?_, fun n hn ↦ by rw [hrow.getElem!_of_lt hr hn, hv n hn]⟩⟩
   rw [Array.getElem!_set!_ne _ _ _ _ (fun hk ↦ hf.2 b hb hb0 hk.symm), hro]
 
@@ -948,10 +943,12 @@ theorem ClassRowsInvariant.newRow {cls : Vector NumClass 64} {es : Array SieveEn
   · rw [Vector.getElem!_set hc (by lia)]
     split <;> rename_i hcb
     · subst hcb
-      exact ⟨rfl, rfl, rfl, fun _ ↦ ⟨rows, by lia, rfl, Array.getElem!_set!_self _ _ _ hK,
+      exact ⟨rfl, fun _ ↦ ⟨rows, by lia, rfl, Array.getElem!_set!_self _ _ _ hK,
         fun n hn ↦ hrow.getElem!_row (h.size_eq ▸ hlt) hn⟩⟩
     · exact h.entry_newRow hf hrow (by lia)
 
+-- The classes are stated by their constructor, not as `{ cls[b]! with offset := … }`, whose `let`
+-- of the source `vcgen` does not take.
 attribute [local irreducible] RowInvariant in
 open Std.WP Lean.Order in
 /-- Each class with a pattern gets the row of its packing, whose offset for the `n`-th modulus is
@@ -962,10 +959,9 @@ theorem classRows_spec (cls : Vector NumClass 64) (es : Array SieveEntry)
     (rinv : Array (Array Nat)) (np : Nat) (offsets : Array Nat) :
     ⦃ (∀ b < 64, cls[b]!.WF) ∧ firstKeys cls 64 * np ≤ offsets.size ⦄
     classRows cls es rinv np offsets
-    ⦃ fun r ↦ r.2.size = offsets.size ∧ ∀ b < 64, r.1[b]!.bits = cls[b]!.bits ∧
-        r.1[b]!.k = cls[b]!.k ∧ r.1[b]!.a0 = cls[b]!.a0 ∧ (¬cls[b]!.bits = 0 →
-          ∃ pos, r.1[b]!.offset = some pos ∧
-            ∀ n < np, r.2[pos + n]! = classOffset es rinv cls[b]! n) ⦄ := by
+    ⦃ fun r ↦ ∀ b < 64, r.1[b]! = ⟨cls[b]!.bits, cls[b]!.k, cls[b]!.a0, r.1[b]!.offset⟩ ∧
+        (¬cls[b]!.bits = 0 → ∃ pos, r.1[b]!.offset = some pos ∧
+          ∀ n < np, r.2[pos + n]! = classOffset es rinv cls[b]! n) ⦄ := by
   vcgen [classRows] invariants
   · fun pref _ s ↦ ClassRowsInvariant cls es rinv np offsets.size pref.length s.1 s.2.1 s.2.2.1
       s.2.2.2
@@ -976,7 +972,7 @@ theorem classRows_spec (cls : Vector NumClass 64) (es : Array SieveEntry)
   all_goals try simp only at *
   all_goals first
     | exact classRowsInvariant_init cls es rinv np offsets
-    | exact ClassRowsInvariant.post ‹_›
+    | exact ClassRowsInvariant.post ‹_› ‹_›
     | exact ClassRowsInvariant.skip ‹_› ‹_› _ ‹_›
     | exact ClassRowsInvariant.reuse ‹_› ‹_ ∧ _›.1 ‹_› _ ‹_›
     | exact rowInvariant_nil _ _ _ _ _
@@ -1048,11 +1044,11 @@ structure SieveEntry.PackedFor (e : SieveEntry) (cl : NumClass) (off : Nat) : Pr
   /-- Entry `k` of `dinv` is below the modulus. -/
   dinv_lt : e.dinv[cl.k]! < e.p
 
-/-- `Ratpoints.Sieve.SieveEntry.PackedFor` reads only the stride and the residue of the class. -/
-theorem SieveEntry.PackedFor.congr {e : SieveEntry} {cl cl' : NumClass} {off : Nat}
-    (h : e.PackedFor cl off) (hk : cl'.k = cl.k) (ha : cl'.a0 = cl.a0) : e.PackedFor cl' off :=
-  ⟨h.pos, h.le_maxPrimeEven, h.rowBias_le, h.lt_rowBias_add, hk ▸ ha ▸ h.mul_mod,
-    hk ▸ h.dinv_mul_mod, hk ▸ h.dinv_lt⟩
+/-- `Ratpoints.Sieve.SieveEntry.PackedFor` reads only the stride and the residue of the class, not
+its row offsets. -/
+theorem SieveEntry.PackedFor.withOffset {e : SieveEntry} {cl : NumClass} {off : Nat}
+    (h : e.PackedFor cl off) (o : Option Nat) : e.PackedFor { cl with offset := o } off :=
+  ⟨h.pos, h.le_maxPrimeEven, h.rowBias_le, h.lt_rowBias_add, h.mul_mod, h.dinv_mul_mod, h.dinv_lt⟩
 
 /-- The sieve spec of a modulus with the offset of the packing of a class, the closed form of a row
 of the entry and the end `p` has the modulus and the offset in the range that the reductions of the
@@ -1201,23 +1197,23 @@ theorem classOffsets_post {cls cls' : Vector NumClass 64} {es : List SieveEntry}
     (hpre : (∀ e ∈ es, e.Packable) ∧ (∀ b < 64, cls[b]!.WF) ∧ firstKeys cls 64 * es.length ≤ size)
     (hk : KmaxInvariant cls (ForIn.toList [:64]).length kmax)
     (he : EntriesInvariant kmax es (es', rinv))
-    (hr : o.size = size ∧ ∀ b < 64, cls'[b]!.bits = cls[b]!.bits ∧ cls'[b]!.k = cls[b]!.k ∧
-      cls'[b]!.a0 = cls[b]!.a0 ∧ (¬cls[b]!.bits = 0 → ∃ pos, cls'[b]!.offset = some pos ∧
+    (hr : ∀ b < 64, cls'[b]! = { cls[b]! with offset := cls'[b]!.offset } ∧
+      (¬cls[b]!.bits = 0 → ∃ pos, cls'[b]!.offset = some pos ∧
         ∀ n < es.length, o[pos + n]! = classOffset es' rinv cls[b]! n)) :
-    (∀ b < 64, cls'[b]!.bits = cls[b]!.bits ∧ cls'[b]!.k = cls[b]!.k ∧ cls'[b]!.a0 = cls[b]!.a0) ∧
+    (∀ b < 64, cls'[b]! = { cls[b]! with offset := cls'[b]!.offset }) ∧
       (∃ f : SieveEntry → Array Nat, es'.toList = es.map fun e ↦ { e with dinv := f e }) ∧
       OffsetsFor cls' es'.toList o := by
   rw [Std.Legacy.Range.length_toList] at hk
   obtain ⟨hes, hwf, -⟩ := hpre
-  replace hr := hr.2
-  refine ⟨fun b hb ↦ ⟨(hr b hb).1, (hr b hb).2.1, (hr b hb).2.2.1⟩, ⟨_, he.1⟩, fun b hb hb0 ↦ ?_⟩
-  obtain ⟨h1, h2, h3, h4⟩ := hr b hb
-  obtain ⟨pos, hpos, hv⟩ := h4 (h1 ▸ hb0)
+  refine ⟨fun b hb ↦ (hr b hb).1, ⟨_, he.1⟩, fun b hb hb0 ↦ ?_⟩
+  obtain ⟨h1, h2⟩ := hr b hb
+  have hb0' : cls[b]!.bits ≠ 0 := by rwa [h1] at hb0
+  obtain ⟨pos, hpos, hv⟩ := h2 hb0'
   have hn (n : Nat) (h : n < es'.toList.length) : n < es.length := by
     rwa [he.1, List.length_map] at h
   refine ⟨pos, hpos, fun n h ↦ ?_⟩
   rw [hv n (hn n h), Array.getElem_toList, ← getElem!_pos es' n (by simpa using h)]
-  exact (he.packedFor hes (hwf b hb) (hk b hb (h1 ▸ hb0)) (hn n h)).congr h2 h3
+  exact h1 ▸ (he.packedFor hes (hwf b hb) (hk b hb hb0') (hn n h)).withOffset _
 
 attribute [local irreducible] KmaxInvariant EntriesInvariant HalvingInvariant in
 open Std.WP Lean.Order in
@@ -1231,8 +1227,7 @@ theorem classOffsets_spec (cls : Vector NumClass 64) (es : List SieveEntry) (off
     ⦃ (∀ e ∈ es, e.Packable) ∧ (∀ b < 64, cls[b]!.WF) ∧
         firstKeys cls 64 * es.length ≤ offsets.size ⦄
     classOffsets cls es offsets
-    ⦃ fun r ↦ (∀ b < 64, r.1[b]!.bits = cls[b]!.bits ∧ r.1[b]!.k = cls[b]!.k ∧
-          r.1[b]!.a0 = cls[b]!.a0) ∧
+    ⦃ fun r ↦ (∀ b < 64, r.1[b]! = ⟨cls[b]!.bits, cls[b]!.k, cls[b]!.a0, r.1[b]!.offset⟩) ∧
         (∃ f : SieveEntry → Array Nat, r.2.1 = es.map fun e ↦ { e with dinv := f e }) ∧
         OffsetsFor r.1 r.2.1 r.2.2 ⦄ := by
   vcgen [classOffsets] invariants

@@ -63,15 +63,15 @@ delivers with the flags of the search.
   ranges of the numerators that the bounds of the search intervals give
   (`Ratpoints.Sieve.RangesFor`), the points of the check with the flags
   (`Ratpoints.Sieve.checkNumWith`) of the numerators `-H, …, H` in one of the ranges that pass `w`
-  and survive the sieve entries of all three stages, the store with the rows built for `b` still
-  fits the entries, and, when the callback does not stop the search, they add the counts of
-  `Ratpoints.Sieve.siftCounts` to the counters; `Ratpoints.Sieve.run_sift_eq_deliver_checkDen`:
-  without `RATPOINTS_NO_CHECK`, these are the points that the plain sieve of `b` with all the
-  entries gives whose numerators lie in the ranges and pass `w`, mapped by
-  `Ratpoints.Sieve.swapPoint` after a reversal, without those with `y < 0` under `RATPOINTS_NO_Y`.
-* `Ratpoints.Sieve.sift_storeHolds`, `Ratpoints.Sieve.RowStore.Fits.fits_run_sift`: the sieve of
-  one denominator with the first entries of a run as those of its first two stages keeps a store
-  that fits all the entries of the run, since it only adds rows.
+  and survive the sieve entries of all three stages, and, when the callback does not stop the
+  search, they add the counts of `Ratpoints.Sieve.siftCounts` to the counters;
+  `Ratpoints.Sieve.run_sift_eq_deliver_checkDen`: without `RATPOINTS_NO_CHECK`, these are the points
+  that the plain sieve of `b` with all the entries gives whose numerators lie in the ranges and pass
+  `w`, mapped by `Ratpoints.Sieve.swapPoint` after a reversal, without those with `y < 0` under
+  `RATPOINTS_NO_Y`.
+* `Ratpoints.Sieve.RowStore.Fits.fits_run_sift`: the sieve of one denominator with the first
+  entries of a run as those of its first two stages keeps a store that fits all the entries of the
+  run, since it only adds rows.
 
 ## Implementation notes
 
@@ -87,12 +87,13 @@ the points of the ranges done, range after range, which are those of the numerat
 ranges, the ranges being increasing and strictly apart (`List.flatMap_filter_eq_filter_any`); the
 sieve specs, made at the first interval that is neither below `-H` nor above `H`, are those of
 `Ratpoints.Sieve.packedReads` from then on, and the store of the tables of rows fits the entries in
-both branches, which a contract of its own also states without the class word and the ranges. The
-counters have a contract of their own too (the contracts of the counters of the components it calls
-are in `Ratpoints.Proof.ScanCounts` and `Ratpoints.Proof.SiftBits`), which needs neither the class
-word nor the ranges, and `Ratpoints.Sieve.sift_spec` states the three. The contracts of one block
-and of the run over the blocks, which call `Ratpoints.Sieve.sift` with the class of each
-denominator, are in `Ratpoints.Proof.Blocks` and `Ratpoints.Proof.Correction`.
+both branches. The counters have a contract of their own, on the contract of the bits of one
+interval (`Ratpoints.Sieve.siftBits_spec`, which states the delivery and the counters), which needs
+neither the class word nor the ranges, and `Ratpoints.Sieve.sift_spec` states the two; the store
+frame is a contract of its own (`Ratpoints.Sieve.RowStore.Fits.fits_run_sift`), without the class
+word and the ranges. The contracts of one block and of the run over the blocks, which call
+`Ratpoints.Sieve.sift` with the class of each denominator, are in `Ratpoints.Proof.Blocks` and
+`Ratpoints.Proof.Correction`.
 -/
 
 @[expose] public section
@@ -175,16 +176,6 @@ private theorem all_packedReads (es : List SieveEntry) (b : Nat) (cl : NumClass)
   · obtain ⟨n, hn, rfl⟩ := List.mem_mapIdx.mp hsf
     exact h _ (List.getElem_mem hn)
 
-theorem _root_.Ratpoints.BruteForce.natAbs_le_of_mem_numerators {H : Nat} {a : Int}
-    (h : a ∈ numerators H) : a.natAbs ≤ H := by
-  simp only [numerators, List.mem_map, List.mem_range] at h
-  lia
-
-/-- The numerators `-H, …, H` are increasing. -/
-theorem _root_.Ratpoints.BruteForce.pairwise_lt_numerators (H : Nat) :
-    (numerators H).Pairwise (· < ·) :=
-  List.pairwise_map.mpr (List.pairwise_lt_range.imp fun h ↦ by lia)
-
 /-- For the points of `Ratpoints.Sieve.acceptedPoints` with the thunks of the products and of what
 the third stage needs of the entries `es3` of the shape of
 `Ratpoints.Sieve.SieveEntry.IsPrimeEntry`, with the reciprocals of their moduli, for a denominator
@@ -248,6 +239,29 @@ theorem eq_map_fst_packedReads_of_eq_run_buildRows {store store' : RowStore}
     specs = (packedReads es b cl offsets pos).map Prod.fst :=
   ((hs.buildRows_setRows (fun e he ↦ Nat.mod_lt _ (hs.pos e he)) hr).1).trans
     (mapIdx_eq_map_fst_packedReads es b hpos offsets)
+
+-- The sieve specs that `Ratpoints.Sieve.setRows` and `Ratpoints.Sieve.buildRows` make for the
+-- residues `b dinv[k] mod p`, for a store that fits the entries, are those of
+-- `Ratpoints.Sieve.packedReads`, and the store after them fits the entries.
+private theorem RowStore.Fits.specs_eq_and_fits_of_eq_run_buildRows {store st : RowStore}
+    {es : List SieveEntry} (hs : store.Fits es) {b : Nat} {cl : NumClass} {pos : Nat}
+    (hpos : cl.offset = some pos) {offsets : Array Nat} {specs : List SieveSpec}
+    (hr : (specs, st) = Id.run (buildRows
+      (setRows store es (es.map fun e ↦ b * e.dinv[cl.k]! % e.p) cl offsets).2 es
+      (es.map fun e ↦ b * e.dinv[cl.k]! % e.p)
+      (setRows store es (es.map fun e ↦ b * e.dinv[cl.k]! % e.p) cl offsets).1 store)) :
+    specs = (packedReads es b cl offsets pos).map Prod.fst ∧ st.Fits es :=
+  ⟨eq_map_fst_packedReads_of_eq_run_buildRows hs hpos hr,
+    (hs.buildRows_setRows (fun e he ↦ Nat.mod_lt _ (hs.pos e he)) hr).2⟩
+
+-- What the contract of `Ratpoints.Sieve.siftBits` needs of the sieve specs of
+-- `Ratpoints.Sieve.packedReads`, besides the flag of the stop.
+private theorem pre_siftBits_specs {es : List SieveEntry} {b : Nat} {cl : NumClass}
+    {offsets : Array Nat} {pos : Nat} {specs : List SieveSpec} {st : RowStore} {A : Nat}
+    (hA : 1 ≤ A) (hoff : ∀ n (h : n < es.length), es[n].PackedFor cl offsets[pos + n]!)
+    (hsp : specs = (packedReads es b cl offsets pos).map Prod.fst ∧ st.Fits es) :
+    1 ≤ A ∧ (∀ s ∈ specs, s.Fits) ∧ es.map (magic ·.p) = specs.map (magic ·.p) :=
+  hsp.1 ▸ ⟨hA, fits_of_mem_packedReads hoff, map_magic_packedReads ..⟩
 
 -- For a numerator `|a| ≤ H`, the range `lo, …, hi` within `-H, …, H` holds `a` exactly when the
 -- range does.
@@ -316,8 +330,8 @@ ranges `rs` of the numerators, whose state is the value of a return, the deliver
 tables of rows, the flag of the set-up and the sieve specs: before a return,
 `Ratpoints.Sieve.SiftIntervalsInvariant` after the intervals done, for the numerators `-H, …, H`,
 their test by `w` and the entries, and the points of the check with the flags `fl`; after the
-return at a stop or at an interval above the height bound, the store returned fits the entries and
-the delivery returned is that of the points of all the ranges. -/
+return at a stop or at an interval above the height bound, the delivery returned is that of the
+points of all the ranges. -/
 def SiftIntervalsLoopInvariant (c : List Int) (d H b : Nat) (fl : CheckFlags)
     (es es3 : List SieveEntry) (w : UInt64) (cl : NumClass) (offsets : Array Nat) (pos : Nat)
     (rs : List (Int × Int)) (r0 : Delivery σ) :
@@ -330,7 +344,7 @@ def SiftIntervalsLoopInvariant (c : List Int) (d H b : Nat) (fl : CheckFlags)
       (checkNumWith (scaledCoeffs c d b) (if d % 2 = 1 then b else 1) b fl) es
       ((packedReads es b cl offsets pos).map Prod.fst) rs r0 pref.length s.1 s.2.1 s.2.2.2.1
       s.2.2.2.2)
-    (fun ret _ ↦ RowStore.Fits ret.2.1 es ∧ ret.1 = r0.deliver process (rs.flatMap fun rg ↦
+    (fun ret _ ↦ ret.1 = r0.deliver process (rs.flatMap fun rg ↦
       ((numerators H).filter fun a ↦ decide (rg.1 ≤ a ∧ a ≤ rg.2) &&
         (classBit w a && survives (es ++ es3) b a)).flatMap
           (checkNumWith (scaledCoeffs c d b) (if d % 2 = 1 then b else 1) b fl)))
@@ -352,18 +366,17 @@ theorem siftIntervalsInvariant_zero (hr : r0.quit = false) (hs : store.Fits es)
 theorem SiftIntervalsInvariant.post_of_length_le {k : Nat}
     (h : SiftIntervalsInvariant process l q g es specs0 rs r0 k r store doSetup specs)
     (hk : rs.length ≤ k) :
-    store.Fits es ∧ r = r0.deliver process (rs.flatMap fun rg ↦
-      (l.filter fun a ↦ decide (rg.1 ≤ a ∧ a ≤ rg.2) && q a).flatMap g) :=
-  ⟨h.fits, by rw [h.eq_deliver, List.take_of_length_le hk]⟩
+    r = r0.deliver process (rs.flatMap fun rg ↦
+      (l.filter fun a ↦ decide (rg.1 ≤ a ∧ a ≤ rg.2) && q a).flatMap g) := by
+  rw [h.eq_deliver, List.take_of_length_le hk]
 
 /-- When the ranges from the `k`-th on hold no element of `l` that passes `q`, the delivery after
 the first `k` ranges is that of the points of all of them. -/
 theorem SiftIntervalsInvariant.post_of_forall_mem_drop {k : Nat}
     (h : SiftIntervalsInvariant process l q g es specs0 rs r0 k r store doSetup specs)
     (hnil : ∀ rg ∈ rs.drop k, l.filter (fun a ↦ decide (rg.1 ≤ a ∧ a ≤ rg.2) && q a) = []) :
-    store.Fits es ∧ r = r0.deliver process (rs.flatMap fun rg ↦
+    r = r0.deliver process (rs.flatMap fun rg ↦
       (l.filter fun a ↦ decide (rg.1 ≤ a ∧ a ≤ rg.2) && q a).flatMap g) := by
-  refine ⟨h.fits, ?_⟩
   rw [h.eq_deliver]
   conv => rhs; rw [← List.take_append_drop k rs]
   rw [List.flatMap_append, List.flatMap_eq_nil_iff.mpr fun rg (hrg : rg ∈ rs.drop k) ↦ by
@@ -414,12 +427,12 @@ theorem SiftIntervalsInvariant.post_of_quit
       doSetup specs)
     (hr : r' = r.deliver process (rs[pref.length]?.toList.flatMap fun rg ↦
       (l.filter fun a ↦ decide (rg.1 ≤ a ∧ a ≤ rg.2) && q a).flatMap g))
-    (hq : r'.quit = true) (hs : st.Fits es) :
-    st.Fits es ∧ r' = r0.deliver process (rs.flatMap fun rg ↦
+    (hq : r'.quit = true) :
+    r' = r0.deliver process (rs.flatMap fun rg ↦
       (l.filter fun a ↦ decide (rg.1 ≤ a ∧ a ≤ rg.2) && q a).flatMap g) := by
   have he := h.2.eq_deliver_take_succ hr
   rw [he] at hq ⊢
-  exact ⟨hs, (Delivery.deliver_flatMap_eq_of_prefix process (List.take_prefix _ rs) _ hq).symm⟩
+  exact (Delivery.deliver_flatMap_eq_of_prefix process (List.take_prefix _ rs) _ hq).symm
 
 /-- Once the sieve specs are made, they are `specs0`, and the store fits the entries. -/
 theorem SiftIntervalsInvariant.specs_eq_and_fits_of_not {k : Nat}
@@ -484,7 +497,7 @@ variable {process} {c : List Int} {d b H : Nat} {fl : CheckFlags} {es es3 : List
 theorem post_of_length (ha : IsSiftArgs es es3 w cl offsets pos iv b H rs)
     (h : SiftIntervalsInvariant process (numerators H) q g es specs0 rs r0 (ForIn.toList iv).length
       r store doSetup specs) :
-    store.Fits es ∧ r = r0.deliver process (rs.flatMap fun rg ↦
+    r = r0.deliver process (rs.flatMap fun rg ↦
       ((numerators H).filter fun a ↦ decide (rg.1 ≤ a ∧ a ≤ rg.2) && q a).flatMap g) :=
   h.post_of_length_le (by simp [Std.Internal.ForIn.toList_array, ha.rangesFor.length_eq])
 
@@ -495,7 +508,7 @@ theorem post_of_two (ha : IsSiftArgs es es3 w cl offsets pos iv b H rs)
     (h : o = none ∧ SiftIntervalsInvariant process (numerators H) q g es specs0 rs r0 pref.length r
       store doSetup specs)
     (h2 : (intervalBits (Int64.ofNat b) cur (Int64.ofNat H) cl).1 = 2) :
-    store.Fits es ∧ r = r0.deliver process (rs.flatMap fun rg ↦
+    r = r0.deliver process (rs.flatMap fun rg ↦
       ((numerators H).filter fun a ↦ decide (rg.1 ≤ a ∧ a ≤ rg.2) && q a).flatMap g) :=
   have ⟨hk, hrep⟩ := ha.rangesFor.represents_of_eq_append_cons hl
   h.2.post_of_forall_mem_drop fun rg hrg ↦ filter_numerators_eq_nil_of_lt
@@ -525,17 +538,17 @@ theorem specs_eq_and_fits_of_eq_run_buildRows (ha : IsSiftArgs es es3 w cl offse
       (es.map fun e ↦ b * e.dinv[cl.k]! % e.p)
       (setRows store es (es.map fun e ↦ b * e.dinv[cl.k]! % e.p) cl offsets).1 store)) :
     specs' = (packedReads es b cl offsets pos).map Prod.fst ∧ st.Fits es :=
-  ⟨eq_map_fst_packedReads_of_eq_run_buildRows h.2.fits ha.offset_eq hr,
-    (h.2.fits.buildRows_setRows (fun e he ↦ Nat.mod_lt _ (h.2.fits.pos e he)) hr).2⟩
+  h.2.fits.specs_eq_and_fits_of_eq_run_buildRows ha.offset_eq hr
 
-/-- What `Ratpoints.Sieve.siftBits` needs of the sieve specs of `Ratpoints.Sieve.packedReads`. -/
+/-- What `Ratpoints.Sieve.siftBits` needs of the delivery and the sieve specs of
+`Ratpoints.Sieve.packedReads`. -/
 theorem pre_siftBits (ha : IsSiftArgs es es3 w cl offsets pos iv b H rs) {A : Nat} (hA : 1 ≤ A)
     {k : Nat} (h : o = none ∧ SiftIntervalsInvariant process (numerators H) q g es specs0 rs r0 k r
       store doSetup specs)
     (hsp : specs' = (packedReads es b cl offsets pos).map Prod.fst ∧ st.Fits es) :
     r.quit = false ∧ 1 ≤ A ∧ (∀ s ∈ specs', s.Fits) ∧
-      es.map (fun x ↦ magic x.p) = specs'.map (fun x ↦ magic x.p) :=
-  hsp.1 ▸ ⟨h.2.quit_eq_false, hA, fits_of_mem_packedReads ha.packedFor, map_magic_packedReads ..⟩
+      es.map (magic ·.p) = specs'.map (magic ·.p) :=
+  ⟨h.2.quit_eq_false, pre_siftBits_specs hA ha.packedFor hsp⟩
 
 /-- The delivery after `Ratpoints.Sieve.siftBits` on the bits that `Ratpoints.Sieve.intervalBits`
 gives for the interval at the position `pref.length`, neither of the codes `1` and `2`, with the
@@ -546,6 +559,7 @@ theorem eq_deliver_getElem? (ha : IsSiftArgs es es3 w cl offsets pos iv b H rs)
     (h2 : ¬(intervalBits (Int64.ofNat b) cur (Int64.ofNat H) cl).1 = 2)
     (h1 : ¬(intervalBits (Int64.ofNat b) cur (Int64.ofNat H) cl).1 = 1)
     (hsp : specs = (packedReads es b cl offsets pos).map Prod.fst)
+    {P : List (SieveSpec × (Int → Bool)) → Prop}
     (hsb : ∀ sfs : List (SieveSpec × (Int → Bool)), specs = sfs.map Prod.fst →
       (∀ sf ∈ sfs, sf.1.Reads sf.2) →
       r' = r.deliver process ((((List.range
@@ -554,73 +568,17 @@ theorem eq_deliver_getElem? (ha : IsSiftArgs es es3 w cl offsets pos iv b H rs)
         (intervalBits (Int64.ofNat b) cur (Int64.ofNat H) cl).2.1.toInt + k).filter
           fun j ↦ classBit cl.bits j && sfs.all (·.2 j)).flatMap
         fun j ↦ acceptedPoints (.mk fun _ ↦ scaledCoeffs c d b) d b fl
-          (.mk fun _ ↦ fillChecks b H es3 (es3.map fun e ↦ magic e.p)) (cl.numerator j))) :
+          (.mk fun _ ↦ fillChecks b H es3 (es3.map fun e ↦ magic e.p)) (cl.numerator j)) ∧
+        P sfs) :
     r' = r.deliver process (rs[pref.length]?.toList.flatMap fun rg ↦
       ((numerators H).filter fun a ↦ decide (rg.1 ≤ a ∧ a ≤ rg.2) &&
         (classBit w a && survives (es ++ es3) b a)).flatMap
           (checkNumWith (scaledCoeffs c d b) (if d % 2 = 1 then b else 1) b fl)) := by
   obtain ⟨hk, hrep⟩ := ha.rangesFor.represents_of_eq_append_cons hl
-  rw [hsb _ hsp (reads_of_mem_packedReads ha.hasInverses ha.packedFor),
+  rw [(hsb _ hsp (reads_of_mem_packedReads ha.hasInverses ha.packedFor)).1,
     flatMap_filter_intervalBits_eq ha.isPrimeEntry ha.packs hrep h1 h2 ha.pos_b ha.b_lt ha.H_lt,
     List.getElem?_eq_getElem hk]
   simp only [Option.toList_some, List.flatMap_singleton]
-
-/-- An interval whose bits `Ratpoints.Sieve.siftBits` delivers with the sieve specs
-of `Ratpoints.Sieve.packedReads`, after which the callback has stopped the search: the delivery is
-that of the points of all the ranges (`Ratpoints.Sieve.IsSiftArgs.eq_deliver_getElem?`). -/
-theorem post_of_siftBits (ha : IsSiftArgs es es3 w cl offsets pos iv b H rs)
-    (h : o = none ∧ SiftIntervalsInvariant process (numerators H)
-      (fun a ↦ classBit w a && survives (es ++ es3) b a)
-      (checkNumWith (scaledCoeffs c d b) (if d % 2 = 1 then b else 1) b fl) es
-      ((packedReads es b cl offsets pos).map Prod.fst) rs r0 pref.length r store doSetup specs)
-    (hl : ForIn.toList iv = pref ++ cur :: suff)
-    (h2 : ¬(intervalBits (Int64.ofNat b) cur (Int64.ofNat H) cl).1 = 2)
-    (h1 : ¬(intervalBits (Int64.ofNat b) cur (Int64.ofNat H) cl).1 = 1)
-    (hsf : specs' = (packedReads es b cl offsets pos).map Prod.fst ∧ st.Fits es)
-    (hsb : ∀ sfs : List (SieveSpec × (Int → Bool)), specs' = sfs.map Prod.fst →
-      (∀ sf ∈ sfs, sf.1.Reads sf.2) →
-      r' = r.deliver process ((((List.range
-        ((intervalBits (Int64.ofNat b) cur (Int64.ofNat H) cl).2.2.toInt + 1 -
-          (intervalBits (Int64.ofNat b) cur (Int64.ofNat H) cl).2.1.toInt).toNat).map fun k : Nat ↦
-        (intervalBits (Int64.ofNat b) cur (Int64.ofNat H) cl).2.1.toInt + k).filter
-          fun j ↦ classBit cl.bits j && sfs.all (·.2 j)).flatMap
-        fun j ↦ acceptedPoints (.mk fun _ ↦ scaledCoeffs c d b) d b fl
-          (.mk fun _ ↦ fillChecks b H es3 (es3.map fun e ↦ magic e.p)) (cl.numerator j)))
-    (hq : r'.quit = true) :
-    st.Fits es ∧ r' = r0.deliver process (rs.flatMap fun rg ↦
-      ((numerators H).filter fun a ↦ decide (rg.1 ≤ a ∧ a ≤ rg.2) &&
-        (classBit w a && survives (es ++ es3) b a)).flatMap
-          (checkNumWith (scaledCoeffs c d b) (if d % 2 = 1 then b else 1) b fl)) :=
-  SiftIntervalsInvariant.post_of_quit h (ha.eq_deliver_getElem? hl h2 h1 hsf.1 hsb) hq hsf.2
-
-/-- An interval whose bits `Ratpoints.Sieve.siftBits` delivers with the sieve specs
-of `Ratpoints.Sieve.packedReads`, after which the callback has not stopped the search, keeps the
-invariant (`Ratpoints.Sieve.IsSiftArgs.eq_deliver_getElem?`). -/
-theorem append_of_siftBits (ha : IsSiftArgs es es3 w cl offsets pos iv b H rs)
-    (h : o = none ∧ SiftIntervalsInvariant process (numerators H)
-      (fun a ↦ classBit w a && survives (es ++ es3) b a)
-      (checkNumWith (scaledCoeffs c d b) (if d % 2 = 1 then b else 1) b fl) es
-      ((packedReads es b cl offsets pos).map Prod.fst) rs r0 pref.length r store doSetup specs)
-    (hl : ForIn.toList iv = pref ++ cur :: suff)
-    (h2 : ¬(intervalBits (Int64.ofNat b) cur (Int64.ofNat H) cl).1 = 2)
-    (h1 : ¬(intervalBits (Int64.ofNat b) cur (Int64.ofNat H) cl).1 = 1)
-    (hsf : specs' = (packedReads es b cl offsets pos).map Prod.fst ∧ st.Fits es)
-    (hsb : ∀ sfs : List (SieveSpec × (Int → Bool)), specs' = sfs.map Prod.fst →
-      (∀ sf ∈ sfs, sf.1.Reads sf.2) →
-      r' = r.deliver process ((((List.range
-        ((intervalBits (Int64.ofNat b) cur (Int64.ofNat H) cl).2.2.toInt + 1 -
-          (intervalBits (Int64.ofNat b) cur (Int64.ofNat H) cl).2.1.toInt).toNat).map fun k : Nat ↦
-        (intervalBits (Int64.ofNat b) cur (Int64.ofNat H) cl).2.1.toInt + k).filter
-          fun j ↦ classBit cl.bits j && sfs.all (·.2 j)).flatMap
-        fun j ↦ acceptedPoints (.mk fun _ ↦ scaledCoeffs c d b) d b fl
-          (.mk fun _ ↦ fillChecks b H es3 (es3.map fun e ↦ magic e.p)) (cl.numerator j)))
-    (hq : ¬r'.quit = true) (ds : Bool) :
-    SiftIntervalsInvariant process (numerators H) (fun a ↦ classBit w a && survives (es ++ es3) b a)
-      (checkNumWith (scaledCoeffs c d b) (if d % 2 = 1 then b else 1) b fl) es
-      ((packedReads es b cl offsets pos).map Prod.fst) rs r0 (pref ++ [cur]).length r' st ds
-      specs' :=
-  SiftIntervalsInvariant.append_of_eq_deliver h (ha.eq_deliver_getElem? hl h2 h1 hsf.1 hsb) hq hsf.2
-    hsf.1 ds
 
 end IsSiftArgs
 
@@ -636,16 +594,15 @@ private theorem sift_spec_ranges (c : List Int) (d H A b : Nat) (fl : CheckFlags
     ⦃ r.quit = false ⦄
     sift process c d H A b fl sp1 es (es.map (magic ·.p)) (es.map fun e ↦ b * e.dinv[cl.k]! % e.p)
       cl offsets es3 (es3.map fun e ↦ magic e.p) iv store r cnt
-    ⦃ fun r' ↦ r'.2.1.Fits es ∧ r'.1 = r.deliver process (rs.flatMap fun rg ↦
+    ⦃ fun r' ↦ r'.1 = r.deliver process (rs.flatMap fun rg ↦
         ((numerators H).filter fun a ↦ decide (rg.1 ≤ a ∧ a ≤ rg.2) &&
           (classBit w a && survives (es ++ es3) b a)).flatMap
             (checkNumWith (scaledCoeffs c d b) (if d % 2 = 1 then b else 1) b fl)) ⦄ := by
   vcgen [sift, buildRows_value] invariants
   · SiftIntervalsLoopInvariant process c d H b fl es es3 w cl offsets pos rs r
-  all_goals subst_vars
-  all_goals simp only [SiftIntervalsLoopInvariant, meet_prop_eq_and, join_prop_eq_or,
+  all_goals (subst_vars; simp only [SiftIntervalsLoopInvariant, meet_prop_eq_and, join_prop_eq_or,
     iSup_prop_eq_exists, ofProp_prop_eq, reduceCtorEq, false_and, or_false, false_or, true_and,
-    and_false, Option.some.injEq, exists_eq_left', exists_false, and_true] at *
+    and_false, Option.some.injEq, exists_eq_left', exists_false, and_true] at *)
   all_goals first
     | exact ‹_›
     | exact siftIntervalsInvariant_zero ‹_› hs _
@@ -657,8 +614,10 @@ private theorem sift_spec_ranges (c : List Int) (d H A b : Nat) (fl : CheckFlags
         | have hsf := SiftIntervalsInvariant.specs_eq_and_fits_of_not ‹_› ‹_›)
       first
         | exact ha.pre_siftBits hA ‹_› hsf
-        | exact ha.post_of_siftBits ‹_› ‹_› ‹_› ‹_› hsf ‹_› ‹_›
-        | exact ha.append_of_siftBits ‹_› ‹_› ‹_› ‹_› hsf ‹_› ‹_› _
+        | exact SiftIntervalsInvariant.post_of_quit ‹_›
+            (ha.eq_deliver_getElem? ‹_› ‹_› ‹_› hsf.1 ‹_›) ‹_›
+        | exact SiftIntervalsInvariant.append_of_eq_deliver ‹_›
+            (ha.eq_deliver_getElem? ‹_› ‹_› ‹_› hsf.1 ‹_›) ‹_› hsf.2 hsf.1 _
 
 -- The delivery of `Ratpoints.Sieve.siftBits`, as a value for the contract of the store of
 -- `Ratpoints.Sieve.sift`.
@@ -670,35 +629,11 @@ private theorem siftBits_value (w : Thunk (List Int)) (d b A : Nat) (fl : CheckF
   ⟨fun _ ↦ rfl⟩
 
 open Std.WP Lean.Order in
--- The store of the tables of rows that `Ratpoints.Sieve.sift` returns fits the sieve entries `es`
--- of the first two stages when the one it is given does: the rows built for the residues
--- `b dinv[k] mod p` (`Ratpoints.Sieve.RowStore.Fits.buildRows_setRows`).
-private theorem sift_fits (c : List Int) (d H A b : Nat) (fl : CheckFlags) (sp1 : Nat)
-    (es : List SieveEntry) (mgs : List Nat) (cl : NumClass) (offsets : Array Nat)
-    (es3 : List SieveEntry) (mgs3 : List Nat) (iv : Array IntervalBounds) (store : RowStore)
-    (r : Delivery σ) (cnt : Counters) :
-    ⦃ store.Fits es ⦄
-    sift process c d H A b fl sp1 es mgs (es.map fun e ↦ b * e.dinv[cl.k]! % e.p) cl offsets es3
-      mgs3 iv store r cnt
-    ⦃ fun r' ↦ r'.2.1.Fits es ⦄ := by
-  vcgen [sift, buildRows_value, siftBits_value] invariants
-  · Std.WP.Invariant.withEarlyReturnNewDo Prop (fun _ _ s ↦ RowStore.Fits s.2.1 es)
-      (fun ret _ ↦ RowStore.Fits ret.2.1 es)
-  all_goals subst_vars
-  all_goals simp only [meet_prop_eq_and, join_prop_eq_or, iSup_prop_eq_exists, ofProp_prop_eq,
-    reduceCtorEq, false_and, or_false, false_or, true_and, and_false, Option.some.injEq,
-    exists_eq_left', exists_false, and_true] at *
-  all_goals first
-    | exact ‹_›
-    | exact ‹_ ∧ _›.2
-    | have h := ‹_ ∧ RowStore.Fits _ es›.2
-      exact (h.buildRows_setRows (fun e he ↦ Nat.mod_lt _ (h.pos e he)) ‹_›).2
-
-open Std.WP Lean.Order in
-/-- The sieve of one denominator with the first `k` entries of `L` as those of its first two stages
-keeps a store that holds the rows `R` for all of `L` (`Ratpoints.Sieve.StoreHolds`), since building
-the rows of the first entries keeps it (`Ratpoints.Sieve.StoreHolds.buildRows_setRows_take`). -/
-theorem sift_storeHolds (c : List Int) (d H A b : Nat) (fl : CheckFlags) (sp1 : Nat)
+-- The sieve of one denominator with the first `k` entries of `L` as those of its first two stages
+-- keeps a store that holds the rows `R` for all of `L` (`Ratpoints.Sieve.StoreHolds`), since
+-- building the rows of the first entries keeps it
+-- (`Ratpoints.Sieve.StoreHolds.buildRows_setRows_take`).
+private theorem sift_storeHolds (c : List Int) (d H A b : Nat) (fl : CheckFlags) (sp1 : Nat)
     {R : EntryRef → Nat → Array UInt64} {L : List SieveEntry} (k : Nat) (mgs : List Nat)
     (cl : NumClass) (offsets : Array Nat) (es3 : List SieveEntry) (mgs3 : List Nat)
     (iv : Array IntervalBounds) (store : RowStore) (r : Delivery σ) (cnt : Counters)
@@ -764,15 +699,17 @@ def siftCounts (b H sp1 : Nat) (es es3 : List SieveEntry) (mgs3 : List Nat) (cl 
 
 /-- The invariant of the counters of the loop of `Ratpoints.Sieve.sift` over the bounds of the
 search intervals of the denominator `b`, after the intervals `pref`, for the sieve entries `es` with
-the row offsets of the class `cl` from position `pos` of `offsets` on: the store of the tables of
-rows fits `es`, the sieve specs are those of `Ratpoints.Sieve.packedReads` once they are made
-(`doSetup` false), none of the intervals of `pref` has the code `2`, and the counters are `cnt0`
-plus one denominator and the counts of the intervals of `pref`
-(`Ratpoints.Sieve.intervalCounts`). -/
+the row offsets of the class `cl` from position `pos` of `offsets` on: the callback has not stopped
+the search on the delivery `r`, the store of the tables of rows fits `es`, the sieve specs are those
+of `Ratpoints.Sieve.packedReads` once they are made (`doSetup` false), none of the intervals of
+`pref` has the code `2`, and the counters are `cnt0` plus one denominator and the counts of the
+intervals of `pref` (`Ratpoints.Sieve.intervalCounts`). -/
 structure SiftIntervalsCounts (b H sp1 : Nat) (es es3 : List SieveEntry) (mgs3 : List Nat)
     (cl : NumClass) (offsets : Array Nat) (pos : Nat) (cnt0 : Counters)
-    (pref : List IntervalBounds) (store : RowStore) (doSetup : Bool) (specs : List SieveSpec)
-    (c : Counters) : Prop where
+    (pref : List IntervalBounds) (r : Delivery σ) (store : RowStore) (doSetup : Bool)
+    (specs : List SieveSpec) (c : Counters) : Prop where
+  /-- The callback has not stopped the search. -/
+  quit_eq_false : r.quit = false
   /-- The store fits the sieve entries of the first two stages. -/
   fits : store.Fits es
   /-- The sieve specs, once made. -/
@@ -795,7 +732,7 @@ def SiftIntervalsCountsLoopInvariant (b H sp1 : Nat) (es es3 : List SieveEntry) 
       (Option (Delivery σ × RowStore × Counters) × Delivery σ × RowStore × Counters × Bool ×
         List SieveSpec) Prop :=
   Std.WP.Invariant.withEarlyReturnNewDo Prop
-    (fun pref _ s ↦ SiftIntervalsCounts b H sp1 es es3 mgs3 cl offsets pos cnt0 pref s.2.1
+    (fun pref _ s ↦ SiftIntervalsCounts b H sp1 es es3 mgs3 cl offsets pos cnt0 pref s.1 s.2.1
       s.2.2.2.1 s.2.2.2.2 s.2.2.1)
     (fun ret _ ↦ ret.1.quit = false → ret.2.2 = cnt0 + siftCounts b H sp1 es es3 mgs3 cl iv)
 
@@ -823,20 +760,21 @@ section
 
 variable {b H sp1 : Nat} {es es3 : List SieveEntry} {mgs3 : List Nat} {cl : NumClass}
   {offsets : Array Nat} {pos : Nat} {iv : Array IntervalBounds} {cnt0 c c' : Counters}
-  {pref suff : List IntervalBounds} {cur : IntervalBounds} {store st : RowStore}
-  {doSetup : Bool} {specs specs' : List SieveSpec}
+  {pref suff : List IntervalBounds} {cur : IntervalBounds} {r r' : Delivery σ}
+  {store st : RowStore} {doSetup : Bool} {specs specs' : List SieveSpec}
   {o : Option (Delivery σ × RowStore × Counters)}
 
-theorem siftIntervalsCounts_zero (hs : store.Fits es) (specs : List SieveSpec) :
-    SiftIntervalsCounts b H sp1 es es3 mgs3 cl offsets pos cnt0 [] store true specs
+theorem siftIntervalsCounts_zero (hr : r.quit = false) (hs : store.Fits es)
+    (specs : List SieveSpec) :
+    SiftIntervalsCounts b H sp1 es es3 mgs3 cl offsets pos cnt0 [] r store true specs
       { cnt0 with sifts := cnt0.sifts + 1 } :=
-  ⟨hs, nofun, nofun, Counters.ext (UInt64.add_zero _).symm (UInt64.add_zero _).symm
+  ⟨hr, hs, nofun, nofun, Counters.ext (UInt64.add_zero _).symm (UInt64.add_zero _).symm
     (UInt64.add_zero _).symm (UInt64.add_zero _).symm (UInt64.add_zero _).symm rfl⟩
 
 /-- After all the search intervals, none with the code `2`, the counters are those of
 `Ratpoints.Sieve.siftCounts`. -/
 theorem SiftIntervalsCounts.eq_siftCounts
-    (h : SiftIntervalsCounts b H sp1 es es3 mgs3 cl offsets pos cnt0 (ForIn.toList iv) store
+    (h : SiftIntervalsCounts b H sp1 es es3 mgs3 cl offsets pos cnt0 (ForIn.toList iv) r store
       doSetup specs c) :
     c = cnt0 + siftCounts b H sp1 es es3 mgs3 cl iv := by
   have hne := h.ne_two
@@ -848,8 +786,8 @@ theorem SiftIntervalsCounts.eq_siftCounts
 intervals before it are those that `Ratpoints.Sieve.siftCounts` counts. -/
 theorem SiftIntervalsCounts.post_of_two (hl : ForIn.toList iv = pref ++ cur :: suff)
     (h2 : (intervalBits (Int64.ofNat b) cur (Int64.ofNat H) cl).1 = 2)
-    (h : o = none ∧ SiftIntervalsCounts b H sp1 es es3 mgs3 cl offsets pos cnt0 pref store doSetup
-      specs c) {r : Delivery σ} :
+    (h : o = none ∧ SiftIntervalsCounts b H sp1 es es3 mgs3 cl offsets pos cnt0 pref r store
+      doSetup specs c) :
     r.quit = false → c = cnt0 + siftCounts b H sp1 es es3 mgs3 cl iv := by
   rw [Std.Internal.ForIn.toList_array] at hl
   intro
@@ -859,7 +797,7 @@ theorem SiftIntervalsCounts.post_of_two (hl : ForIn.toList iv = pref ++ cur :: s
 
 /-- The counters after one more interval with the counts `k`, not with the code `2`. -/
 theorem SiftIntervalsCounts.eq_counts_append
-    (h : SiftIntervalsCounts b H sp1 es es3 mgs3 cl offsets pos cnt0 pref store doSetup specs c)
+    (h : SiftIntervalsCounts b H sp1 es es3 mgs3 cl offsets pos cnt0 pref r store doSetup specs c)
     (hc : c' = c + intervalCounts b H sp1 es es3 mgs3 cl cur) :
     c' = cnt0 + ((pref ++ [cur]).map (intervalCounts b H sp1 es es3 mgs3 cl)).foldl (· + ·)
       { sifts := 1 } := by
@@ -870,73 +808,71 @@ theorem SiftIntervalsCounts.eq_counts_append
 theorem SiftIntervalsCounts.append_of_one
     (h2 : ¬(intervalBits (Int64.ofNat b) cur (Int64.ofNat H) cl).1 = 2)
     (h1 : (intervalBits (Int64.ofNat b) cur (Int64.ofNat H) cl).1 = 1)
-    (h : o = none ∧ SiftIntervalsCounts b H sp1 es es3 mgs3 cl offsets pos cnt0 pref store doSetup
-      specs c) :
-    SiftIntervalsCounts b H sp1 es es3 mgs3 cl offsets pos cnt0 (pref ++ [cur]) store doSetup
+    (h : o = none ∧ SiftIntervalsCounts b H sp1 es es3 mgs3 cl offsets pos cnt0 pref r store
+      doSetup specs c) :
+    SiftIntervalsCounts b H sp1 es es3 mgs3 cl offsets pos cnt0 (pref ++ [cur]) r store doSetup
       specs c :=
-  ⟨h.2.fits, h.2.specs_eq, fun bd hbd ↦ by
-    rcases List.mem_append.mp hbd with hbd | hbd
-    · exact h.2.ne_two bd hbd
-    · rw [List.mem_singleton.mp hbd]; exact h2,
+  ⟨h.2.quit_eq_false, h.2.fits, h.2.specs_eq,
+    List.forall_mem_append.mpr ⟨h.2.ne_two, List.forall_mem_singleton.mpr h2⟩,
     h.2.eq_counts_append (by simp [intervalCounts, h1])⟩
 
 /-- The sieve specs that `Ratpoints.Sieve.setRows` and `Ratpoints.Sieve.buildRows` make at the first
 interval that asks for them are those of `Ratpoints.Sieve.packedReads`, and the store after them
 fits the entries (`Ratpoints.Sieve.eq_map_fst_packedReads_of_eq_run_buildRows`). -/
 theorem SiftIntervalsCounts.specs_eq_and_fits_of_eq_run_buildRows (hpos : cl.offset = some pos)
-    (h : o = none ∧ SiftIntervalsCounts b H sp1 es es3 mgs3 cl offsets pos cnt0 pref store doSetup
-      specs c)
+    (h : o = none ∧ SiftIntervalsCounts b H sp1 es es3 mgs3 cl offsets pos cnt0 pref r store
+      doSetup specs c)
     (hr : (specs', st) = Id.run (buildRows
       (setRows store es (es.map fun e ↦ b * e.dinv[cl.k]! % e.p) cl offsets).2 es
       (es.map fun e ↦ b * e.dinv[cl.k]! % e.p)
       (setRows store es (es.map fun e ↦ b * e.dinv[cl.k]! % e.p) cl offsets).1 store)) :
     specs' = (packedReads es b cl offsets pos).map Prod.fst ∧ st.Fits es :=
-  ⟨eq_map_fst_packedReads_of_eq_run_buildRows h.2.fits hpos hr,
-    (h.2.fits.buildRows_setRows (fun e he ↦ Nat.mod_lt _ (h.2.fits.pos e he)) hr).2⟩
+  h.2.fits.specs_eq_and_fits_of_eq_run_buildRows hpos hr
 
 /-- Once the sieve specs are made, they are those of `Ratpoints.Sieve.packedReads`, and the store
 fits the entries. -/
 theorem SiftIntervalsCounts.specs_eq_and_fits_of_not_doSetup
-    (h : o = none ∧ SiftIntervalsCounts b H sp1 es es3 mgs3 cl offsets pos cnt0 pref store doSetup
-      specs c)
+    (h : o = none ∧ SiftIntervalsCounts b H sp1 es es3 mgs3 cl offsets pos cnt0 pref r store
+      doSetup specs c)
     (hd : ¬doSetup = true) :
     specs = (packedReads es b cl offsets pos).map Prod.fst ∧ store.Fits es :=
   ⟨h.2.specs_eq (Bool.eq_false_iff.mpr hd), h.2.fits⟩
 
--- What the contract of the counters of `Ratpoints.Sieve.siftBits` needs of the sieve specs of
+-- What the contract of `Ratpoints.Sieve.siftBits` needs of the delivery and the sieve specs of
 -- `Ratpoints.Sieve.packedReads`, in the shape of the verification condition.
-private theorem pre_siftBits_counters {A : Nat} (hA : 1 ≤ A)
+private theorem SiftIntervalsCounts.pre_siftBits {A : Nat} (hA : 1 ≤ A)
+    (h : o = none ∧ SiftIntervalsCounts b H sp1 es es3 mgs3 cl offsets pos cnt0 pref r store
+      doSetup specs c)
     (hoff : ∀ n (h : n < es.length), es[n].PackedFor cl offsets[pos + n]!)
     (hsp : specs' = (packedReads es b cl offsets pos).map Prod.fst ∧ st.Fits es) :
-    1 ≤ A ∧ (∀ s ∈ specs', s.Fits) ∧
-      es.map (fun x ↦ magic x.p) = specs'.map (fun x ↦ magic x.p) :=
-  hsp.1 ▸ ⟨hA, fits_of_mem_packedReads hoff, map_magic_packedReads ..⟩
+    r.quit = false ∧ 1 ≤ A ∧ (∀ s ∈ specs', s.Fits) ∧
+      es.map (magic ·.p) = specs'.map (magic ·.p) :=
+  ⟨h.2.quit_eq_false, pre_siftBits_specs hA hoff hsp⟩
 
 /-- An interval whose bits `Ratpoints.Sieve.siftBits` sifts with the sieve specs of
 `Ratpoints.Sieve.packedReads`, after which the callback has not stopped the search, adds its counts
 (`Ratpoints.Sieve.bitsCounts_packedReads_eq_intervalCounts`). -/
-theorem SiftIntervalsCounts.append_of_siftBits {r : Delivery σ}
-    (h : o = none ∧ SiftIntervalsCounts b H sp1 es es3 mgs3 cl offsets pos cnt0 pref store doSetup
-      specs c)
+theorem SiftIntervalsCounts.append_of_siftBits {P : List (SieveSpec × (Int → Bool)) → Prop}
+    (h : o = none ∧ SiftIntervalsCounts b H sp1 es es3 mgs3 cl offsets pos cnt0 pref r store
+      doSetup specs c)
     (h2 : ¬(intervalBits (Int64.ofNat b) cur (Int64.ofNat H) cl).1 = 2)
     (h1 : ¬(intervalBits (Int64.ofNat b) cur (Int64.ofNat H) cl).1 = 1)
     (hsf : specs' = (packedReads es b cl offsets pos).map Prod.fst ∧ st.Fits es)
     (hinv : ∀ e ∈ es, e.HasInverses)
     (hoff : ∀ n (h : n < es.length), es[n].PackedFor cl offsets[pos + n]!)
     (hc : ∀ sfs : List (SieveSpec × (Int → Bool)), specs' = sfs.map Prod.fst →
-      (∀ sf ∈ sfs, sf.1.Reads sf.2) → r.quit = false →
+      (∀ sf ∈ sfs, sf.1.Reads sf.2) → P sfs ∧ (r'.quit = false →
         c' = c + bitsCounts b (.mk fun _ ↦ fillChecks b H es3 mgs3) cl
           (fun j ↦ (sfs.take sp1).all (·.2 j)) (fun j ↦ sfs.all (·.2 j))
           (intervalBits (Int64.ofNat b) cur (Int64.ofNat H) cl).2.1.toInt
-          (intervalBits (Int64.ofNat b) cur (Int64.ofNat H) cl).2.2.toInt)
-    (hq : ¬r.quit = true) (ds : Bool) :
-    SiftIntervalsCounts b H sp1 es es3 mgs3 cl offsets pos cnt0 (pref ++ [cur]) st ds specs' c' :=
-  ⟨hsf.2, fun _ ↦ hsf.1, fun bd hbd ↦ by
-    rcases List.mem_append.mp hbd with hbd | hbd
-    · exact h.2.ne_two bd hbd
-    · rw [List.mem_singleton.mp hbd]; exact h2,
+          (intervalBits (Int64.ofNat b) cur (Int64.ofNat H) cl).2.2.toInt))
+    (hq : ¬r'.quit = true) (ds : Bool) :
+    SiftIntervalsCounts b H sp1 es es3 mgs3 cl offsets pos cnt0 (pref ++ [cur]) r' st ds specs'
+      c' :=
+  ⟨Bool.eq_false_iff.mpr hq, hsf.2, fun _ ↦ hsf.1,
+    List.forall_mem_append.mpr ⟨h.2.ne_two, List.forall_mem_singleton.mpr h2⟩,
     h.2.eq_counts_append (by
-      rw [hc _ hsf.1 (reads_of_mem_packedReads hinv hoff) (Bool.eq_false_iff.mpr hq),
+      rw [(hc _ hsf.1 (reads_of_mem_packedReads hinv hoff)).2 (Bool.eq_false_iff.mpr hq),
         bitsCounts_packedReads_eq_intervalCounts h1])⟩
 
 end
@@ -954,18 +890,18 @@ private theorem sift_counters_spec_pos (c : List Int) (d H A b : Nat) (fl : Chec
     (cnt0 : Counters) (hA : 1 ≤ A) (hpos : cl.offset = some pos) (hinv : ∀ e ∈ es, e.HasInverses)
     (hoff : ∀ n (h : n < es.length), es[n].PackedFor cl offsets[pos + n]!)
     (hs : store.Fits es) :
-    ⦃ True ⦄
+    ⦃ r.quit = false ⦄
     sift process c d H A b fl sp1 es (es.map (magic ·.p)) (es.map fun e ↦ b * e.dinv[cl.k]! % e.p)
       cl offsets es3 mgs3 iv store r cnt0
     ⦃ fun r' ↦ r'.1.quit = false → r'.2.2 = cnt0 + siftCounts b H sp1 es es3 mgs3 cl iv ⦄ := by
-  vcgen [sift, buildRows_value, siftBits_counters_spec] invariants
+  vcgen [sift, buildRows_value] invariants
   · SiftIntervalsCountsLoopInvariant (σ := σ) b H sp1 es es3 mgs3 cl offsets pos iv cnt0
   all_goals subst_vars
   all_goals simp only [SiftIntervalsCountsLoopInvariant, meet_prop_eq_and, join_prop_eq_or,
     iSup_prop_eq_exists, ofProp_prop_eq, reduceCtorEq, false_and, or_false, false_or, true_and,
     and_false, Option.some.injEq, exists_eq_left', exists_false, and_true] at *
   all_goals first
-    | exact siftIntervalsCounts_zero hs _
+    | exact siftIntervalsCounts_zero ‹_› hs _
     | exact SiftIntervalsCounts.eq_siftCounts ‹_›
     | exact SiftIntervalsCounts.post_of_two ‹_› ‹_› ‹_›
     | exact SiftIntervalsCounts.append_of_one ‹_› ‹_› ‹_›
@@ -974,13 +910,13 @@ private theorem sift_counters_spec_pos (c : List Int) (d H A b : Nat) (fl : Chec
         | have hsf := SiftIntervalsCounts.specs_eq_and_fits_of_eq_run_buildRows hpos ‹_› ‹_›
         | have hsf := SiftIntervalsCounts.specs_eq_and_fits_of_not_doSetup ‹_› ‹_›)
       first
-        | exact pre_siftBits_counters hA hoff hsf
+        | exact SiftIntervalsCounts.pre_siftBits hA ‹_› hoff hsf
         | exact SiftIntervalsCounts.append_of_siftBits ‹_› ‹_› ‹_› hsf hinv hoff ‹_› ‹_› _
     | (simp_all; done)
 
-/-- The store of the tables of rows fits the sieve entries `es` of the first two stages
-(`Ratpoints.Sieve.RowStore.Fits`) before the denominator and after it, with the rows built for it
-when an interval asks for them (the lazy set-up), and the denominator delivers, for the ranges `rs`
+/-- For a store of the tables of rows that fits the sieve entries `es` of the first two stages
+(`Ratpoints.Sieve.RowStore.Fits`), with the rows built for the denominator when an interval asks for
+them (the lazy set-up), the denominator delivers, for the ranges `rs`
 of the numerators that the bounds `iv` of the search intervals give for it
 (`Ratpoints.Sieve.RangesFor`), the points of the check with the flags `fl`
 (`Ratpoints.Sieve.checkNumWith`) of the numerators `-H, …, H` in one of the ranges that pass the
@@ -1003,7 +939,7 @@ theorem sift_spec (c : List Int) (d H A b : Nat) (fl : CheckFlags) (sp1 : Nat)
         mgs3 = es3.map (fun e ↦ magic e.p) ∧ mgs = es.map (magic ·.p) ∧
         bp = es.map (fun e ↦ b * e.dinv[cl.k]! % e.p) ∧ (∀ e ∈ es, e.HasInverses) ∧ store.Fits es ⦄
     sift process c d H A b fl sp1 es mgs bp cl offsets es3 mgs3 iv store r cnt
-    ⦃ fun r' ↦ r'.2.1.Fits es ∧ (∀ (w : UInt64) (pos : Nat) (rs : List (Int × Int)), cl.Packs w →
+    ⦃ fun r' ↦ (∀ (w : UInt64) (pos : Nat) (rs : List (Int × Int)), cl.Packs w →
         cl.offset = some pos → (∀ n (h : n < es.length), es[n].PackedFor cl offsets[pos + n]!) →
         RangesFor iv b H rs →
         r'.1 = r.deliver process (((numerators H).filter fun a ↦
@@ -1014,13 +950,12 @@ theorem sift_spec (c : List Int) (d H A b : Nat) (fl : CheckFlags) (sp1 : Nat)
           r'.2.2 = cnt + siftCounts b H sp1 es es3 mgs3 cl iv ⦄ :=
   ⟨fun ⟨hr, hA, hb, hb63, hH, hes, hmg3, hmg, hbp, hinv, hs⟩ ↦ by
     subst hmg hbp
-    refine ⟨(sift_fits process c d H A b fl sp1 es _ cl offsets es3 _ iv store r cnt).le_wp hs,
-      fun w pos rs hcl hpos hoff hiv ↦ ?_, fun pos hpos hoff ↦
-        (sift_counters_spec_pos process c d H A b fl sp1 offsets iv store r cnt hA hpos hinv hoff
-          hs).le_wp trivial⟩
+    refine ⟨fun w pos rs hcl hpos hoff hiv ↦ ?_, fun pos hpos hoff ↦
+      (sift_counters_spec_pos process c d H A b fl sp1 offsets iv store r cnt hA hpos hinv hoff
+        hs).le_wp hr⟩
     subst hmg3
-    rw [((sift_spec_ranges process c d H A b fl sp1 offsets store r cnt hA
-      ⟨hb, hb63, hH, hes, hcl, hpos, hinv, hoff, hiv⟩ hs).le_wp hr).2,
+    rw [(sift_spec_ranges process c d H A b fl sp1 offsets store r cnt hA
+      ⟨hb, hb63, hH, hes, hcl, hpos, hinv, hoff, hiv⟩ hs).le_wp hr,
       flatMap_flatMap_filter_eq_flatMap_filter_inRanges
         (pairwise_lt_numerators H) hiv.pairwise]
     simp only [Bool.and_assoc]⟩
@@ -1057,7 +992,7 @@ theorem run_sift_eq_deliver_checkDen (c : List Int) (d H b : Nat) {fl : CheckFla
           inRanges rs q.1 && classBit w q.1).map
             (if fl.reversed then swapPoint else id)).filter fun p ↦ !fl.noY || 0 ≤ p.2.1) :=
   (((sift_spec process c d H A b fl sp1 es _ _ cl offsets es3 _ iv store r cnt).le_wp
-    ⟨hr, hA, hb, hb63, hH, hes, rfl, rfl, rfl, hinv, hs⟩).2.1 w pos rs hcl hpos hoff hiv).trans <|
+    ⟨hr, hA, hb, hb63, hH, hes, rfl, rfl, rfl, hinv, hs⟩).1 w pos rs hcl hpos hoff hiv).trans <|
     by
     rw [flatMap_checkNumWith_of_noCheck_eq_false hc, ← List.filter_filter, pointsOfDen_filter,
       ← (checkDen_spec c d H b _).le_wp trivial _ ((sieveDen_spec H b (es ++ es3)).le_wp trivial)]

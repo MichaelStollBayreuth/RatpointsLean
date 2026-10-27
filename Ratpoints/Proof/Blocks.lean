@@ -154,9 +154,9 @@ theorem siftDen_spec {σ : Type} (process : Int → Int → Int → σ → Answe
   refine ⟨fun x hx ↦ ?_, hQ.fits_run_sift process c d H A b fl sp1 _ _ _ offsets _ _ iv _ _ hbp,
     fun hq' ↦ ?_⟩
   · rw [List.flatMap_singleton, denPoints, ← List.take_append_take_drop entries h23]
-    exact hs.2.1 x.1[b % 64]! pos (x.2 b) (hx.1 _ (Nat.mod_lt _ (by decide))) hpos hpf
+    exact hs.1 x.1[b % 64]! pos (x.2 b) (hx.1 _ (Nat.mod_lt _ (by decide))) hpos hpf
       (hx.2 b hb1 hb2)
-  · exact hs.2.2 pos hpos hpf hq'
+  · exact hs.2 pos hpos hpf hq'
 
 /-! ### The denominators of a block -/
 

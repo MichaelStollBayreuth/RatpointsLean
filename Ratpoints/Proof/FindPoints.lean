@@ -643,14 +643,13 @@ private theorem isSoundRun_of_map {c : List ℤ} {entries : List SieveEntry}
     (hnf : ∀ e ∈ entries, e.nf = 0 → e.IsPrimeEntry)
     (hmg : magics.toList = entries.map fun e ↦ magic e.p)
     (hcls : ∀ b < 64, cls[b]!.Packs (Id.run (twoAdic c (degree c)))[b]!)
-    (hbits : ∀ b < 64, cls'[b]!.bits = cls[b]!.bits ∧ cls'[b]!.k = cls[b]!.k ∧
-      cls'[b]!.a0 = cls[b]!.a0)
+    (hbits : ∀ b < 64, cls'[b]! = { cls[b]! with offset := cls'[b]!.offset })
     (hoff : OffsetsFor cls' (entries.map fun e ↦ { e with dinv := dinv e }) offsets)
     (hs : store.Fits entries) :
     IsSoundRun c (entries.map fun e ↦ { e with dinv := dinv e }) magics cls' offsets
       (denBits (Id.run (twoAdic c (degree c)))) store := by
   refine ⟨fun e he ↦ ?_, fun e he ↦ ?_, by simp [hmg], fun e he ↦ ?_, hoff,
-    fun b hb ↦ (hcls b hb).congr (hbits b hb).1 (hbits b hb).2.1 (hbits b hb).2.2, rfl,
+    fun b hb ↦ hbits b hb ▸ (hcls b hb).withOffset _, rfl,
     hs.map_dinv dinv⟩ <;> obtain ⟨e', he', rfl⟩ := List.mem_map.mp he
   · exact ⟨(hsound e' he').pos, (hsound e' he').admits_of_sq_eq⟩
   · exact hnf e' he'
